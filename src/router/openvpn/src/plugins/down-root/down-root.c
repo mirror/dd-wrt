@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2026 OpenVPN Inc <sales@openvpn.net>
+ *  Copyright (C) 2002-2024 OpenVPN Inc <sales@openvpn.net>
  *  Copyright (C) 2013      David Sommerseth <davids@redhat.com>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -18,7 +18,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, see <https://www.gnu.org/licenses/>.
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 /*
@@ -87,8 +88,9 @@ get_env(const char *name, const char *envp[])
 {
     if (envp)
     {
-        const size_t namelen = strlen(name);
-        for (int i = 0; envp[i]; ++i)
+        int i;
+        const int namelen = strlen(name);
+        for (i = 0; envp[i]; ++i)
         {
             if (!strncmp(envp[i], name, namelen))
             {
@@ -106,10 +108,10 @@ get_env(const char *name, const char *envp[])
 /*
  * Return the length of a string array
  */
-static size_t
+static int
 string_array_len(const char *array[])
 {
-    size_t i = 0;
+    int i = 0;
     if (array)
     {
         while (array[i])
@@ -139,14 +141,14 @@ recv_control(int fd)
     }
 }
 
-static ssize_t
+static int
 send_control(int fd, int code)
 {
-    unsigned char c = (unsigned char)code;
+    unsigned char c = (unsigned char) code;
     const ssize_t size = write(fd, &c, sizeof(c));
     if (size == sizeof(c))
     {
-        return size;
+        return (int) size;
     }
     else
     {
@@ -252,7 +254,7 @@ run_script(char *const *argv, char *const *envp)
     int ret = 0;
 
     pid = fork();
-    if (pid == (pid_t)0) /* child side */
+    if (pid == (pid_t)0)   /* child side */
     {
         execve(argv[0], argv, envp);
         /* If execve() fails to run, exit child with exit code 127 */
@@ -263,13 +265,12 @@ run_script(char *const *argv, char *const *envp)
         warn("DOWN-ROOT: Failed to fork child to run %s", argv[0]);
         return -1;
     }
-    else /* parent side */
+    else     /* parent side */
     {
         if (waitpid(pid, &ret, 0) != pid)
         {
             /* waitpid does not return error information via errno */
-            fprintf(stderr, "DOWN-ROOT: waitpid() failed, don't know exit code of child (%s)\n",
-                    argv[0]);
+            fprintf(stderr, "DOWN-ROOT: waitpid() failed, don't know exit code of child (%s)\n", argv[0]);
             return -1;
         }
     }
@@ -280,11 +281,12 @@ OPENVPN_EXPORT openvpn_plugin_handle_t
 openvpn_plugin_open_v1(unsigned int *type_mask, const char *argv[], const char *envp[])
 {
     struct down_root_context *context;
+    int i = 0;
 
     /*
      * Allocate our context
      */
-    context = (struct down_root_context *)calloc(1, sizeof(struct down_root_context));
+    context = (struct down_root_context *) calloc(1, sizeof(struct down_root_context));
     if (!context)
     {
         warn("DOWN-ROOT: Could not allocate memory for plug-in context");
@@ -318,9 +320,9 @@ openvpn_plugin_open_v1(unsigned int *type_mask, const char *argv[], const char *
     }
 
     /* Ignore argv[0], as it contains just the plug-in file name */
-    for (int i = 1; i < string_array_len(argv); i++)
+    for (i = 1; i < string_array_len(argv); i++)
     {
-        context->command[i - 1] = (char *)argv[i];
+        context->command[i-1] = (char *) argv[i];
     }
 
     /*
@@ -334,7 +336,7 @@ openvpn_plugin_open_v1(unsigned int *type_mask, const char *argv[], const char *
         }
     }
 
-    return (openvpn_plugin_handle_t)context;
+    return (openvpn_plugin_handle_t) context;
 
 error:
     free_context(context);
@@ -342,13 +344,11 @@ error:
 }
 
 OPENVPN_EXPORT int
-openvpn_plugin_func_v1(openvpn_plugin_handle_t handle, const int type, const char *argv[],
-                       const char *envp[])
+openvpn_plugin_func_v1(openvpn_plugin_handle_t handle, const int type, const char *argv[], const char *envp[])
 {
-    struct down_root_context *context = (struct down_root_context *)handle;
+    struct down_root_context *context = (struct down_root_context *) handle;
 
-    if (type == OPENVPN_PLUGIN_UP
-        && context->foreground_fd == -1) /* fork off a process to hold onto root */
+    if (type == OPENVPN_PLUGIN_UP && context->foreground_fd == -1) /* fork off a process to hold onto root */
     {
         pid_t pid;
         int fd[2];
@@ -412,7 +412,7 @@ openvpn_plugin_func_v1(openvpn_plugin_handle_t handle, const int type, const cha
             daemonize(envp);
 
             /* execute the event loop */
-            down_root_server(fd[1], context->command, (char *const *)envp, context->verb);
+            down_root_server(fd[1], context->command, (char *const *) envp, context->verb);
 
             close(fd[1]);
             exit(0);
@@ -434,8 +434,7 @@ openvpn_plugin_func_v1(openvpn_plugin_handle_t handle, const int type, const cha
             }
             if (status == -1)
             {
-                warn(
-                    "DOWN-ROOT: Error receiving script execution confirmation from background process");
+                warn("DOWN-ROOT: Error receiving script execution confirmation from background process");
             }
         }
     }
@@ -445,7 +444,7 @@ openvpn_plugin_func_v1(openvpn_plugin_handle_t handle, const int type, const cha
 OPENVPN_EXPORT void
 openvpn_plugin_close_v1(openvpn_plugin_handle_t handle)
 {
-    struct down_root_context *context = (struct down_root_context *)handle;
+    struct down_root_context *context = (struct down_root_context *) handle;
 
     if (DEBUG(context->verb))
     {
@@ -476,7 +475,7 @@ openvpn_plugin_close_v1(openvpn_plugin_handle_t handle)
 OPENVPN_EXPORT void
 openvpn_plugin_abort_v1(openvpn_plugin_handle_t handle)
 {
-    struct down_root_context *context = (struct down_root_context *)handle;
+    struct down_root_context *context = (struct down_root_context *) handle;
 
     if (context && context->foreground_fd >= 0)
     {
@@ -529,7 +528,7 @@ down_root_server(const int fd, char *const *argv, char *const *envp, const int v
         switch (command_code)
         {
             case COMMAND_RUN_SCRIPT:
-                if ((exit_code = run_script(argv, envp)) == 0) /* Succeeded */
+                if ( (exit_code = run_script(argv, envp)) == 0) /* Succeeded */
                 {
                     if (send_control(fd, RESPONSE_SCRIPT_SUCCEEDED) == -1)
                     {
@@ -539,8 +538,7 @@ down_root_server(const int fd, char *const *argv, char *const *envp, const int v
                 }
                 else /* Failed */
                 {
-                    fprintf(stderr, "DOWN-ROOT: BACKGROUND: %s exited with exit code %i\n", argv[0],
-                            exit_code);
+                    fprintf(stderr, "DOWN-ROOT: BACKGROUND: %s exited with exit code %i\n", argv[0], exit_code);
                     if (send_control(fd, RESPONSE_SCRIPT_FAILED) == -1)
                     {
                         warn("DOWN-ROOT: BACKGROUND: write error on response socket [3]");

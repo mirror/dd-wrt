@@ -7,7 +7,7 @@
 # OCSP server using the -port option to "openssl ocsp".
 
 # Full documentation and examples:
-# https://docs.openssl.org/master/man1/openssl-ocsp/#openssl-ocsp
+# http://www.openssl.org/docs/apps/ocsp.html
 
 
 # Edit the following values to suit your needs

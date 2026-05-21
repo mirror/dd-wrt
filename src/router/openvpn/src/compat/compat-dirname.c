@@ -17,7 +17,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, see <https://www.gnu.org/licenses/>.
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -89,7 +90,7 @@ dirname(char *path)
         /* The '/' is the last character, we have to look further.  */
         if (runp != path)
         {
-            last_slash = (char *)__memrchr(path, separator, runp - path);
+            last_slash = (char *) __memrchr(path, separator, runp - path);
         }
     }
 
@@ -134,7 +135,7 @@ dirname(char *path)
         /* This assignment is ill-designed but the XPG specs require to
          * return a string containing "." in any case no directory part is
          * found and so a static and constant string is required.  */
-        path = (char *)dot;
+        path = (char *) dot;
     }
 
     return path;

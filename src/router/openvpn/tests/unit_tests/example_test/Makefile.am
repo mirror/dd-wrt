@@ -1,7 +1,5 @@
 AUTOMAKE_OPTIONS = foreign
 
-AM_TESTSUITE_SUMMARY_HEADER = ' for $(PACKAGE_STRING) example Unit-Tests'
-
 check_PROGRAMS = example_testdriver example2_testdriver
 
 if !CROSS_COMPILING

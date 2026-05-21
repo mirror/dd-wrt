@@ -5,8 +5,8 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2026 OpenVPN Inc <sales@openvpn.net>
- *  Copyright (C) 2016-2026 Selva Nair <selva.nair@gmail.com>
+ *  Copyright (C) 2002-2024 OpenVPN Inc <sales@openvpn.net>
+ *  Copyright (C) 2016-2024 Selva Nair <selva.nair@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -18,7 +18,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, see <https://www.gnu.org/licenses/>.
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 /*
@@ -99,14 +100,12 @@ struct auth_pam_context
 
 #define N_NAME_VALUE 16
 
-struct name_value
-{
+struct name_value {
     const char *name;
     const char *value;
 };
 
-struct name_value_list
-{
+struct name_value_list {
     int len;
     struct name_value data[N_NAME_VALUE];
 };
@@ -115,8 +114,7 @@ struct name_value_list
  * Used to pass the username/password
  * to the PAM conversation function.
  */
-struct user_pass
-{
+struct user_pass {
     int verb;
 
     char username[128];
@@ -129,8 +127,7 @@ struct user_pass
 };
 
 /* Background process function */
-static void pam_server(int fd, const char *service, int verb,
-                       const struct name_value_list *name_value_list);
+static void pam_server(int fd, const char *service, int verb, const struct name_value_list *name_value_list);
 
 
 /*
@@ -156,11 +153,11 @@ recv_control(int fd)
 static int
 send_control(int fd, int code)
 {
-    unsigned char c = (unsigned char)code;
+    unsigned char c = (unsigned char) code;
     const ssize_t size = write(fd, &c, sizeof(c));
     if (size == sizeof(c))
     {
-        return (int)size;
+        return (int) size;
     }
     else
     {
@@ -168,30 +165,31 @@ send_control(int fd, int code)
     }
 }
 
-static ssize_t
-recv_string(int fd, char *buffer, size_t len)
+static int
+recv_string(int fd, char *buffer, int len)
 {
     if (len > 0)
     {
+        ssize_t size;
         memset(buffer, 0, len);
-        ssize_t size = read(fd, buffer, len);
-        buffer[len - 1] = 0;
+        size = read(fd, buffer, len);
+        buffer[len-1] = 0;
         if (size >= 1)
         {
-            return size;
+            return (int)size;
         }
     }
     return -1;
 }
 
-static ssize_t
+static int
 send_string(int fd, const char *string)
 {
-    const size_t len = strlen(string) + 1;
+    const int len = strlen(string) + 1;
     const ssize_t size = write(fd, string, len);
     if (size == len)
     {
-        return size;
+        return (int) size;
     }
     else
     {
@@ -224,7 +222,7 @@ daemonize(const char *envp[])
 #endif
         if (daemon(0, 0) < 0)
         {
-            plugin_log(PLOG_ERR | PLOG_ERRNO, MODULE, "daemonization failed");
+            plugin_log(PLOG_ERR|PLOG_ERRNO, MODULE, "daemonization failed");
         }
 #if defined(__APPLE__) && defined(__clang__)
 #pragma clang diagnostic pop
@@ -325,11 +323,11 @@ split_scrv1_password(struct user_pass *up)
     }
     *resp++ = '\0';
 
-    int n = plugin_base64_decode(pass, up->password, sizeof(up->password) - 1);
+    int n = plugin_base64_decode(pass, up->password, sizeof(up->password)-1);
     if (n >= 0)
     {
         up->password[n] = '\0';
-        n = plugin_base64_decode(resp, up->response, sizeof(up->response) - 1);
+        n = plugin_base64_decode(resp, up->response, sizeof(up->response)-1);
         if (n >= 0)
         {
             up->response[n] = '\0';
@@ -357,7 +355,8 @@ out:
 }
 
 OPENVPN_EXPORT int
-openvpn_plugin_open_v3(const int v3structver, struct openvpn_plugin_args_open_in const *args,
+openvpn_plugin_open_v3(const int v3structver,
+                       struct openvpn_plugin_args_open_in const *args,
                        struct openvpn_plugin_args_open_return *ret)
 {
     pid_t pid;
@@ -374,15 +373,14 @@ openvpn_plugin_open_v3(const int v3structver, struct openvpn_plugin_args_open_in
     /* Check API compatibility -- struct version 5 or higher needed */
     if (v3structver < 5)
     {
-        fprintf(stderr,
-                "AUTH-PAM: This plugin is incompatible with the running version of OpenVPN\n");
+        fprintf(stderr, "AUTH-PAM: This plugin is incompatible with the running version of OpenVPN\n");
         return OPENVPN_PLUGIN_FUNC_ERROR;
     }
 
     /*
      * Allocate our context
      */
-    context = (struct auth_pam_context *)calloc(1, sizeof(struct auth_pam_context));
+    context = (struct auth_pam_context *) calloc(1, sizeof(struct auth_pam_context));
     if (!context)
     {
         goto error;
@@ -430,7 +428,7 @@ openvpn_plugin_open_v3(const int v3structver, struct openvpn_plugin_args_open_in
         {
             const int base = base_parms + i * 2;
             name_value_list.data[i].name = argv[base];
-            name_value_list.data[i].value = argv[base + 1];
+            name_value_list.data[i].value = argv[base+1];
         }
     }
 
@@ -451,7 +449,7 @@ openvpn_plugin_open_v3(const int v3structver, struct openvpn_plugin_args_open_in
      */
     if (socketpair(PF_UNIX, SOCK_DGRAM, 0, fd) == -1)
     {
-        plugin_log(PLOG_ERR | PLOG_ERRNO, MODULE, "socketpair call failed");
+        plugin_log(PLOG_ERR|PLOG_ERRNO, MODULE, "socketpair call failed");
         goto error;
     }
 
@@ -477,8 +475,7 @@ openvpn_plugin_open_v3(const int v3structver, struct openvpn_plugin_args_open_in
         /* don't let future subprocesses inherit child socket */
         if (fcntl(fd[0], F_SETFD, FD_CLOEXEC) < 0)
         {
-            plugin_log(PLOG_ERR | PLOG_ERRNO, MODULE,
-                       "Set FD_CLOEXEC flag on socket file descriptor failed");
+            plugin_log(PLOG_ERR|PLOG_ERRNO, MODULE, "Set FD_CLOEXEC flag on socket file descriptor failed");
         }
 
         /* wait for background child process to initialize */
@@ -486,8 +483,8 @@ openvpn_plugin_open_v3(const int v3structver, struct openvpn_plugin_args_open_in
         if (status == RESPONSE_INIT_SUCCEEDED)
         {
             context->foreground_fd = fd[0];
-            ret->handle = (openvpn_plugin_handle_t *)context;
-            plugin_log(PLOG_NOTE, MODULE, "initialization succeeded (fg)");
+            ret->handle = (openvpn_plugin_handle_t *) context;
+            plugin_log( PLOG_NOTE, MODULE, "initialization succeeded (fg)" );
             return OPENVPN_PLUGIN_FUNC_SUCCESS;
         }
     }
@@ -523,10 +520,9 @@ error:
 }
 
 OPENVPN_EXPORT int
-openvpn_plugin_func_v1(openvpn_plugin_handle_t handle, const int type, const char *argv[],
-                       const char *envp[])
+openvpn_plugin_func_v1(openvpn_plugin_handle_t handle, const int type, const char *argv[], const char *envp[])
 {
-    struct auth_pam_context *context = (struct auth_pam_context *)handle;
+    struct auth_pam_context *context = (struct auth_pam_context *) handle;
 
     if (type == OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY && context->foreground_fd >= 0)
     {
@@ -555,7 +551,8 @@ openvpn_plugin_func_v1(openvpn_plugin_handle_t handle, const int type, const cha
         {
             if (DEBUG(context->verb))
             {
-                plugin_log(PLOG_NOTE, MODULE, "do deferred auth '%s'", auth_control_file);
+                plugin_log(PLOG_NOTE, MODULE, "do deferred auth '%s'",
+                           auth_control_file);
             }
         }
         else
@@ -572,8 +569,7 @@ openvpn_plugin_func_v1(openvpn_plugin_handle_t handle, const int type, const cha
                 || send_string(context->foreground_fd, auth_control_file) == -1
                 || send_string(context->foreground_fd, remote) == -1)
             {
-                plugin_log(PLOG_ERR | PLOG_ERRNO, MODULE,
-                           "Error sending auth info to background process");
+                plugin_log(PLOG_ERR|PLOG_ERRNO, MODULE, "Error sending auth info to background process");
             }
             else
             {
@@ -592,8 +588,7 @@ openvpn_plugin_func_v1(openvpn_plugin_handle_t handle, const int type, const cha
                 }
                 if (status == -1)
                 {
-                    plugin_log(PLOG_ERR | PLOG_ERRNO, MODULE,
-                               "Error receiving auth confirmation from background process");
+                    plugin_log(PLOG_ERR|PLOG_ERRNO, MODULE, "Error receiving auth confirmation from background process");
                 }
             }
         }
@@ -604,7 +599,7 @@ openvpn_plugin_func_v1(openvpn_plugin_handle_t handle, const int type, const cha
 OPENVPN_EXPORT void
 openvpn_plugin_close_v1(openvpn_plugin_handle_t handle)
 {
-    struct auth_pam_context *context = (struct auth_pam_context *)handle;
+    struct auth_pam_context *context = (struct auth_pam_context *) handle;
 
     if (DEBUG(context->verb))
     {
@@ -616,7 +611,7 @@ openvpn_plugin_close_v1(openvpn_plugin_handle_t handle)
         /* tell background process to exit */
         if (send_control(context->foreground_fd, COMMAND_EXIT) == -1)
         {
-            plugin_log(PLOG_ERR | PLOG_ERRNO, MODULE, "Error signaling background process to exit");
+            plugin_log(PLOG_ERR|PLOG_ERRNO, MODULE, "Error signaling background process to exit");
         }
 
         /* wait for background process to exit */
@@ -635,7 +630,7 @@ openvpn_plugin_close_v1(openvpn_plugin_handle_t handle)
 OPENVPN_EXPORT void
 openvpn_plugin_abort_v1(openvpn_plugin_handle_t handle)
 {
-    struct auth_pam_context *context = (struct auth_pam_context *)handle;
+    struct auth_pam_context *context = (struct auth_pam_context *) handle;
 
     /* tell background process to exit */
     if (context && context->foreground_fd >= 0)
@@ -650,26 +645,27 @@ openvpn_plugin_abort_v1(openvpn_plugin_handle_t handle)
  * PAM conversation function
  */
 static int
-my_conv(int num_msg, const struct pam_message **msg_array, struct pam_response **response_array,
-        void *appdata_ptr)
+my_conv(int n, const struct pam_message **msg_array,
+        struct pam_response **response_array, void *appdata_ptr)
 {
-    const struct user_pass *up = (const struct user_pass *)appdata_ptr;
+    const struct user_pass *up = ( const struct user_pass *) appdata_ptr;
     struct pam_response *aresp;
+    int i;
     int ret = PAM_SUCCESS;
 
     *response_array = NULL;
 
-    if (num_msg <= 0 || num_msg > PAM_MAX_NUM_MSG)
+    if (n <= 0 || n > PAM_MAX_NUM_MSG)
     {
         return (PAM_CONV_ERR);
     }
-    if ((aresp = calloc((size_t)num_msg, sizeof *aresp)) == NULL)
+    if ((aresp = calloc(n, sizeof *aresp)) == NULL)
     {
         return (PAM_BUF_ERR);
     }
 
     /* loop through each PAM-module query */
-    for (int i = 0; i < num_msg; ++i)
+    for (i = 0; i < n; ++i)
     {
         const struct pam_message *msg = msg_array[i];
         aresp[i].resp_retcode = 0;
@@ -677,17 +673,19 @@ my_conv(int num_msg, const struct pam_message **msg_array, struct pam_response *
 
         if (DEBUG(up->verb))
         {
-            plugin_log(PLOG_NOTE, MODULE, "BACKGROUND: my_conv[%d] query='%s' style=%d", i,
-                       msg->msg ? msg->msg : "NULL", msg->msg_style);
+            plugin_log(PLOG_NOTE, MODULE, "BACKGROUND: my_conv[%d] query='%s' style=%d",
+                       i,
+                       msg->msg ? msg->msg : "NULL",
+                       msg->msg_style);
         }
 
         if (up->name_value_list && up->name_value_list->len > 0)
         {
             /* use name/value list match method */
             const struct name_value_list *list = up->name_value_list;
+            int j;
 
             /* loop through name/value pairs */
-            int j; /* checked after loop */
             for (j = 0; j < list->len; ++j)
             {
                 const char *match_name = list->data[j].name;
@@ -700,10 +698,10 @@ my_conv(int num_msg, const struct pam_message **msg_array, struct pam_response *
 
                     if (DEBUG(up->verb))
                     {
-                        plugin_log(
-                            PLOG_NOTE, MODULE,
-                            "BACKGROUND: name match found, query/match-string ['%s', '%s'] = '%s'",
-                            msg->msg, match_name, match_value);
+                        plugin_log(PLOG_NOTE, MODULE, "BACKGROUND: name match found, query/match-string ['%s', '%s'] = '%s'",
+                                   msg->msg,
+                                   match_name,
+                                   match_value);
                     }
 
                     if (strstr(match_value, "USERNAME"))
@@ -716,8 +714,7 @@ my_conv(int num_msg, const struct pam_message **msg_array, struct pam_response *
                     }
                     else if (strstr(match_value, "COMMONNAME"))
                     {
-                        aresp[i].resp =
-                            searchandreplace(match_value, "COMMONNAME", up->common_name);
+                        aresp[i].resp = searchandreplace(match_value, "COMMONNAME", up->common_name);
                     }
                     else if (strstr(match_value, "OTP"))
                     {
@@ -828,7 +825,8 @@ pam_auth(const char *service, const struct user_pass *up)
         if (!ret)
         {
             plugin_log(PLOG_ERR, MODULE, "BACKGROUND: user '%s' failed to authenticate: %s",
-                       up->username, pam_strerror(pamh, status));
+                       up->username,
+                       pam_strerror(pamh, status));
         }
 
         /* Close PAM */
@@ -849,12 +847,12 @@ pam_auth(const char *service, const struct user_pass *up)
  */
 
 static void
-do_deferred_pam_auth(int fd, const char *ac_file_name, const char *service,
-                     const struct user_pass *up)
+do_deferred_pam_auth(int fd, const char *ac_file_name,
+                     const char *service, const struct user_pass *up)
 {
     if (send_control(fd, RESPONSE_DEFER) == -1)
     {
-        plugin_log(PLOG_ERR | PLOG_ERRNO, MODULE, "BACKGROUND: write error on response socket [4]");
+        plugin_log(PLOG_ERR|PLOG_ERRNO, MODULE, "BACKGROUND: write error on response socket [4]");
         return;
     }
 
@@ -863,50 +861,52 @@ do_deferred_pam_auth(int fd, const char *ac_file_name, const char *service,
 
     if (p1 < 0)
     {
-        plugin_log(PLOG_ERR | PLOG_ERRNO, MODULE, "BACKGROUND: fork(1) failed");
+        plugin_log(PLOG_ERR|PLOG_ERRNO, MODULE, "BACKGROUND: fork(1) failed");
         return;
     }
-    if (p1 != 0) /* parent */
+    if (p1 != 0)                           /* parent */
     {
         waitpid(p1, NULL, 0);
-        return; /* parent's job succeeded */
+        return;                            /* parent's job succeeded */
     }
 
     /* child */
-    close(fd); /* socketpair no longer needed */
+    close(fd);                              /* socketpair no longer needed */
 
     pid_t p2 = fork();
     if (p2 < 0)
     {
-        plugin_log(PLOG_ERR | PLOG_ERRNO, MODULE, "BACKGROUND: fork(2) failed");
+        plugin_log(PLOG_ERR|PLOG_ERRNO, MODULE, "BACKGROUND: fork(2) failed");
         exit(1);
     }
 
-    if (p2 != 0) /* new parent: exit right away */
+    if (p2 != 0)                            /* new parent: exit right away */
     {
         exit(0);
     }
 
     /* grandchild */
-    plugin_log(PLOG_NOTE, MODULE, "BACKGROUND: deferred auth for '%s', pid=%d", up->username,
-               (int)getpid());
+    plugin_log(PLOG_NOTE, MODULE, "BACKGROUND: deferred auth for '%s', pid=%d",
+               up->username, (int) getpid() );
 
     /* the rest is very simple: do PAM, write status byte to file, done */
-    int ac_fd = open(ac_file_name, O_WRONLY);
+    int ac_fd = open( ac_file_name, O_WRONLY );
     if (ac_fd < 0)
     {
-        plugin_log(PLOG_ERR | PLOG_ERRNO, MODULE, "cannot open '%s' for writing", ac_file_name);
+        plugin_log(PLOG_ERR|PLOG_ERRNO, MODULE, "cannot open '%s' for writing",
+                   ac_file_name );
         exit(1);
     }
     int pam_success = pam_auth(service, up);
 
-    if (write(ac_fd, pam_success ? "1" : "0", 1) != 1)
+    if (write( ac_fd, pam_success ? "1" : "0", 1 ) != 1)
     {
-        plugin_log(PLOG_ERR | PLOG_ERRNO, MODULE, "cannot write to '%s'", ac_file_name);
+        plugin_log(PLOG_ERR|PLOG_ERRNO, MODULE, "cannot write to '%s'",
+                   ac_file_name );
     }
     close(ac_fd);
-    plugin_log(PLOG_NOTE, MODULE, "BACKGROUND: %s: deferred auth: PAM %s", up->username,
-               pam_success ? "succeeded" : "rejected");
+    plugin_log(PLOG_NOTE, MODULE, "BACKGROUND: %s: deferred auth: PAM %s",
+               up->username, pam_success ? "succeeded" : "rejected" );
     exit(0);
 }
 
@@ -937,8 +937,7 @@ pam_server(int fd, const char *service, int verb, const struct name_value_list *
      */
     if (!dlopen_pam(pam_so))
     {
-        plugin_log(PLOG_ERR, MODULE, "BACKGROUND: could not load PAM lib %s: %s", pam_so,
-                   dlerror());
+        plugin_log(PLOG_ERR, MODULE, "BACKGROUND: could not load PAM lib %s: %s", pam_so, dlerror());
         send_control(fd, RESPONSE_INIT_FAILED);
         goto done;
     }
@@ -949,7 +948,7 @@ pam_server(int fd, const char *service, int verb, const struct name_value_list *
      */
     if (send_control(fd, RESPONSE_INIT_SUCCEEDED) == -1)
     {
-        plugin_log(PLOG_ERR | PLOG_ERRNO, MODULE, "BACKGROUND: write error on response socket [1]");
+        plugin_log(PLOG_ERR|PLOG_ERRNO, MODULE, "BACKGROUND: write error on response socket [1]");
         goto done;
     }
 
@@ -981,8 +980,7 @@ pam_server(int fd, const char *service, int verb, const struct name_value_list *
                     || recv_string(fd, ac_file_name, sizeof(ac_file_name)) == -1
                     || recv_string(fd, up.remote, sizeof(up.remote)) == -1)
                 {
-                    plugin_log(PLOG_ERR | PLOG_ERRNO, MODULE,
-                               "BACKGROUND: read error on command channel: code=%d, exiting",
+                    plugin_log(PLOG_ERR|PLOG_ERRNO, MODULE, "BACKGROUND: read error on command channel: code=%d, exiting",
                                command);
                     goto done;
                 }
@@ -1017,8 +1015,7 @@ pam_server(int fd, const char *service, int verb, const struct name_value_list *
                 {
                     if (send_control(fd, RESPONSE_VERIFY_SUCCEEDED) == -1)
                     {
-                        plugin_log(PLOG_ERR | PLOG_ERRNO, MODULE,
-                                   "BACKGROUND: write error on response socket [2]");
+                        plugin_log(PLOG_ERR|PLOG_ERRNO, MODULE, "BACKGROUND: write error on response socket [2]");
                         goto done;
                     }
                 }
@@ -1026,8 +1023,7 @@ pam_server(int fd, const char *service, int verb, const struct name_value_list *
                 {
                     if (send_control(fd, RESPONSE_VERIFY_FAILED) == -1)
                     {
-                        plugin_log(PLOG_ERR | PLOG_ERRNO, MODULE,
-                                   "BACKGROUND: write error on response socket [3]");
+                        plugin_log(PLOG_ERR|PLOG_ERRNO, MODULE, "BACKGROUND: write error on response socket [3]");
                         goto done;
                     }
                 }
@@ -1038,8 +1034,7 @@ pam_server(int fd, const char *service, int verb, const struct name_value_list *
                 goto done;
 
             case -1:
-                plugin_log(PLOG_ERR | PLOG_ERRNO, MODULE,
-                           "BACKGROUND: read error on command channel");
+                plugin_log(PLOG_ERR|PLOG_ERRNO, MODULE, "BACKGROUND: read error on command channel");
                 goto done;
 
             default:

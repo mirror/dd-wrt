@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2026 OpenVPN Inc <sales@openvpn.net>
+ *  Copyright (C) 2002-2024 OpenVPN Inc <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -17,7 +17,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, see <https://www.gnu.org/licenses/>.
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 
@@ -34,9 +35,9 @@
  * file
  */
 
-#define TUN_OUT(c)  (BLEN(&(c)->c2.to_tun) > 0)
-#define LINK_OUT(c) (BLEN(&(c)->c2.to_link) > 0)
-#define ANY_OUT(c)  (TUN_OUT(c) || LINK_OUT(c))
+#define TUN_OUT(c)      (BLEN(&(c)->c2.to_tun) > 0)
+#define LINK_OUT(c)     (BLEN(&(c)->c2.to_link) > 0)
+#define ANY_OUT(c)      (TUN_OUT(c) || LINK_OUT(c))
 
 #ifdef ENABLE_FRAGMENT
 #define TO_LINK_FRAG(c) ((c)->c2.fragment && fragment_outgoing_defined((c)->c2.fragment))
@@ -44,38 +45,34 @@
 #define TO_LINK_FRAG(c) (false)
 #endif
 
-#define TO_LINK_DEF(c) (LINK_OUT(c) || TO_LINK_FRAG(c))
+#define TO_LINK_DEF(c)  (LINK_OUT(c) || TO_LINK_FRAG(c))
 
 #include "openvpn.h"
 #include "occ.h"
 #include "ping.h"
-#include "multi_io.h"
 
-#define IOW_TO_TUN         (1 << 0)
-#define IOW_TO_LINK        (1 << 1)
-#define IOW_READ_TUN       (1 << 2)
-#define IOW_READ_LINK      (1 << 3)
-#define IOW_SHAPER         (1 << 4)
-#define IOW_CHECK_RESIDUAL (1 << 5)
-#define IOW_FRAG           (1 << 6)
-#define IOW_MBUF           (1 << 7)
-#define IOW_READ_TUN_FORCE (1 << 8)
-#define IOW_WAIT_SIGNAL    (1 << 9)
+#define IOW_TO_TUN          (1<<0)
+#define IOW_TO_LINK         (1<<1)
+#define IOW_READ_TUN        (1<<2)
+#define IOW_READ_LINK       (1<<3)
+#define IOW_SHAPER          (1<<4)
+#define IOW_CHECK_RESIDUAL  (1<<5)
+#define IOW_FRAG            (1<<6)
+#define IOW_MBUF            (1<<7)
+#define IOW_READ_TUN_FORCE  (1<<8)
+#define IOW_WAIT_SIGNAL     (1<<9)
 
-#define IOW_READ (IOW_READ_TUN | IOW_READ_LINK)
+#define IOW_READ            (IOW_READ_TUN|IOW_READ_LINK)
 
 extern counter_type link_read_bytes_global;
 
 extern counter_type link_write_bytes_global;
 
-void get_io_flags_udp(struct context *c, struct multi_io *multi_io, const unsigned int flags);
-
-void io_wait(struct context *c, const unsigned int flags);
+void io_wait_dowork(struct context *c, const unsigned int flags);
 
 void pre_select(struct context *c);
 
-void process_io(struct context *c, struct link_socket *sock);
-
+void process_io(struct context *c);
 
 /**********************************************************************/
 /**
@@ -88,11 +85,11 @@ void process_io(struct context *c, struct link_socket *sock);
  * - Check that the client authentication has succeeded; if not, drop the
  *   packet.
  * - If the \a comp_frag argument is true:
- *   - Call \c lzo_compress() of the \link compression Data Channel Compression
+ *   - Call \c lzo_compress() of the \link Data Channel Compression
  *     module\endlink to (possibly) compress the packet.
- *   - Call \c fragment_outgoing() of the \link fragmentation Data Channel Fragmentation
+ *   - Call \c fragment_outgoing() of the \link Data Channel Fragmentation
  *     module\endlink to (possibly) fragment the packet.
- * - Activate the \link data_crypto Data Channel Crypto module\endlink to perform
+ * - Activate the \link Data Channel Crypto module\endlink to perform
  *   security operations on the packet.
  *   - Call \c tls_pre_encrypt() to choose the appropriate security
  *     parameters for this packet.
@@ -131,11 +128,10 @@ int get_server_poll_remaining_time(struct event_timeout *server_poll_timeout);
  * context associated with the appropriate VPN tunnel for which data is
  * available to be read.
  *
- * @param c    The context structure which contains the external
- *             network socket from which to read incoming packets.
- * @param sock   The socket where the packet can be read from.
+ * @param c - The context structure which contains the external
+ *     network socket from which to read incoming packets.
  */
-void read_incoming_link(struct context *c, struct link_socket *sock);
+void read_incoming_link(struct context *c);
 
 /**
  * Starts processing a packet read from the external network interface.
@@ -190,8 +186,7 @@ bool process_incoming_link_part1(struct context *c, struct link_socket_info *lsi
  * @param orig_buf - Pointer to a buffer data.
  *
  */
-void process_incoming_link_part2(struct context *c, struct link_socket_info *lsi,
-                                 const uint8_t *orig_buf);
+void process_incoming_link_part2(struct context *c, struct link_socket_info *lsi, const uint8_t *orig_buf);
 
 /**
  * Transfers \c float_sa data extracted from an incoming DCO
@@ -203,15 +198,10 @@ void process_incoming_link_part2(struct context *c, struct link_socket_info *lsi
  * @param float_sa - The sockaddr struct containing the data received from the
  *      DCO notification
  */
-void extract_dco_float_peer_addr(sa_family_t socket_family, struct openvpn_sockaddr *out_osaddr,
-                                 const struct sockaddr *float_sa);
-
-/**
- * Process an incoming DCO message (from kernel space).
- *
- * @param dco - Pointer to the structure representing the DCO context.
- */
-void process_incoming_dco(dco_context_t *dco);
+void
+extract_dco_float_peer_addr(sa_family_t socket_family,
+                            struct openvpn_sockaddr *out_osaddr,
+                            const struct sockaddr *float_sa);
 
 /**
  * Write a packet to the external network interface.
@@ -222,11 +212,10 @@ void process_incoming_dco(dco_context_t *dco);
  *
  * If an error occurs, it is logged and the packet is dropped.
  *
- * @param c   The context structure of the VPN tunnel associated with the
- *            packet.
- * @param sock  The socket to be used to send the packet.
+ * @param c - The context structure of the VPN tunnel associated with the
+ *     packet.
  */
-void process_outgoing_link(struct context *c, struct link_socket *sock);
+void process_outgoing_link(struct context *c);
 
 
 /**************************************************************************/
@@ -254,12 +243,10 @@ void read_incoming_tun(struct context *c);
  *
  * If an error occurs, it is logged and the packet is dropped.
  *
- * @param c       The context structure of the VPN tunnel associated with
- *                the packet.
- * @param out_sock  Socket that will be used to send out the packet.
- *
+ * @param c - The context structure of the VPN tunnel associated with the
+ *     packet.
  */
-void process_incoming_tun(struct context *c, struct link_socket *out_sock);
+void process_incoming_tun(struct context *c);
 
 
 /**
@@ -271,11 +258,10 @@ void process_incoming_tun(struct context *c, struct link_socket *out_sock);
  *
  * If an error occurs, it is logged and the packet is dropped.
  *
- * @param c      The context structure of the VPN tunnel associated
- *               with the packet.
- * @param in_sock  Socket where the packet was received.
+ * @param c - The context structure of the VPN tunnel associated with
+ *     the packet.
  */
-void process_outgoing_tun(struct context *c, struct link_socket *in_sock);
+void process_outgoing_tun(struct context *c);
 
 
 /**************************************************************************/
@@ -289,7 +275,8 @@ void process_outgoing_tun(struct context *c, struct link_socket *in_sock);
  * @param str        - The message to be sent
  * @param msglevel   - Message level to use for logging
  */
-bool send_control_channel_string(struct context *c, const char *str, msglvl_t msglevel);
+bool
+send_control_channel_string(struct context *c, const char *str, int msglevel);
 
 /*
  * Send a string to remote over the TLS control channel.
@@ -307,8 +294,9 @@ bool send_control_channel_string(struct context *c, const char *str, msglvl_t ms
  * @param msglevel   - Message level to use for logging
  */
 
-bool send_control_channel_string_dowork(struct tls_session *session, const char *str,
-                                        msglvl_t msglevel);
+bool
+send_control_channel_string_dowork(struct tls_session *session,
+                                   const char *str, int msglevel);
 
 
 /**
@@ -319,35 +307,33 @@ bool send_control_channel_string_dowork(struct tls_session *session, const char 
  */
 void reschedule_multi_process(struct context *c);
 
-#define PIPV4_PASSTOS             (1u << 0)
-#define PIP_MSSFIX                (1u << 1) /* v4 and v6 */
-#define PIP_OUTGOING              (1u << 2)
-#define PIPV4_EXTRACT_DHCP_ROUTER (1u << 3)
-#define PIPV4_CLIENT_NAT          (1u << 4)
-#define PIPV6_ICMP_NOHOST_CLIENT  (1u << 5)
-#define PIPV6_ICMP_NOHOST_SERVER  (1u << 6)
+#define PIPV4_PASSTOS                   (1<<0)
+#define PIP_MSSFIX                      (1<<1)         /* v4 and v6 */
+#define PIP_OUTGOING                    (1<<2)
+#define PIPV4_EXTRACT_DHCP_ROUTER       (1<<3)
+#define PIPV4_CLIENT_NAT                (1<<4)
+#define PIPV6_IMCP_NOHOST_CLIENT        (1<<5)
+#define PIPV6_IMCP_NOHOST_SERVER        (1<<6)
 
-
-void process_ip_header(struct context *c, unsigned int flags, struct buffer *buf,
-                       struct link_socket *sock);
+void process_ip_header(struct context *c, unsigned int flags, struct buffer *buf);
 
 bool schedule_exit(struct context *c);
 
 static inline struct link_socket_info *
 get_link_socket_info(struct context *c)
 {
-    if (c->c2.link_socket_infos)
+    if (c->c2.link_socket_info)
     {
-        return c->c2.link_socket_infos[0];
+        return c->c2.link_socket_info;
     }
     else
     {
-        return &c->c2.link_sockets[0]->info;
+        return &c->c2.link_socket->info;
     }
 }
 
 static inline void
-register_activity(struct context *c, const int64_t size)
+register_activity(struct context *c, const int size)
 {
     if (c->options.inactivity_timeout)
     {
@@ -367,7 +353,7 @@ register_activity(struct context *c, const int64_t size)
 static inline unsigned int
 p2p_iow_flags(const struct context *c)
 {
-    unsigned int flags = (IOW_SHAPER | IOW_CHECK_RESIDUAL | IOW_FRAG | IOW_READ | IOW_WAIT_SIGNAL);
+    unsigned int flags = (IOW_SHAPER|IOW_CHECK_RESIDUAL|IOW_FRAG|IOW_READ|IOW_WAIT_SIGNAL);
     if (c->c2.to_link.len > 0)
     {
         flags |= IOW_TO_LINK;
@@ -376,9 +362,70 @@ p2p_iow_flags(const struct context *c)
     {
         flags |= IOW_TO_TUN;
     }
+#ifdef _WIN32
+    if (tuntap_ring_empty(c->c1.tuntap))
+    {
+        flags &= ~IOW_READ_TUN;
+    }
+#endif
     return flags;
 }
 
+/*
+ * This is the core I/O wait function, used for all I/O waits except
+ * for TCP in server mode.
+ */
+static inline void
+io_wait(struct context *c, const unsigned int flags)
+{
+    if (c->c2.fast_io && (flags & (IOW_TO_TUN|IOW_TO_LINK|IOW_MBUF)))
+    {
+        /* fast path -- only for TUN/TAP/UDP writes */
+        unsigned int ret = 0;
+        if (flags & IOW_TO_TUN)
+        {
+            ret |= TUN_WRITE;
+        }
+        if (flags & (IOW_TO_LINK|IOW_MBUF))
+        {
+            ret |= SOCKET_WRITE;
+        }
+        c->c2.event_set_status = ret;
+    }
+    else
+    {
+#ifdef _WIN32
+        bool skip_iowait = flags & IOW_TO_TUN;
+        if (flags & IOW_READ_TUN)
+        {
+            /*
+             * don't read from tun if we have pending write to link,
+             * since every tun read overwrites to_link buffer filled
+             * by previous tun read
+             */
+            skip_iowait = !(flags & IOW_TO_LINK);
+        }
+        if (tuntap_is_wintun(c->c1.tuntap) && skip_iowait)
+        {
+            unsigned int ret = 0;
+            if (flags & IOW_TO_TUN)
+            {
+                ret |= TUN_WRITE;
+            }
+            if (flags & IOW_READ_TUN)
+            {
+                ret |= TUN_READ;
+            }
+            c->c2.event_set_status = ret;
+        }
+        else
+#endif /* ifdef _WIN32 */
+        {
+            /* slow path */
+            io_wait_dowork(c, flags);
+        }
+    }
+}
 
 static inline bool
 connection_established(struct context *c)

@@ -5,8 +5,8 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2026 OpenVPN Inc <sales@openvpn.net>
- *  Copyright (C) 2010-2026 Sentyron B.V. <openvpn@sentyron.com>
+ *  Copyright (C) 2002-2024 OpenVPN Inc <sales@openvpn.net>
+ *  Copyright (C) 2010-2021 Fox Crypto B.V. <openvpn@foxcrypto.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -18,12 +18,12 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, see <https://www.gnu.org/licenses/>.
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 /**
- * @file
- * PKCS #11 OpenSSL backend
+ * @file PKCS #11 OpenSSL backend
  */
 
 #ifdef HAVE_CONFIG_H
@@ -43,21 +43,18 @@
 #ifdef HAVE_XKEY_PROVIDER
 static XKEY_EXTERNAL_SIGN_fn xkey_pkcs11h_sign;
 
-#if PKCS11H_VERSION > ((1 << 16) | (27 << 8)) /* version > 1.27 */
+#if PKCS11H_VERSION > ((1<<16) | (27<<8)) /* version > 1.27 */
 
 /* Table linking OpenSSL digest NID with CKM and CKG constants in PKCS#11 */
-#define MD_TYPE(n) { NID_sha##n, CKM_SHA##n, CKG_MGF1_SHA##n }
+#define MD_TYPE(n) {NID_sha ## n, CKM_SHA ## n, CKG_MGF1_SHA ## n}
 static const struct
 {
     int nid;
     unsigned long ckm_id;
     unsigned long mgf_id;
-} mdtypes[] = { MD_TYPE(224),
-                MD_TYPE(256),
-                MD_TYPE(384),
-                MD_TYPE(512),
-                { NID_sha1, CKM_SHA_1, CKG_MGF1_SHA1 }, /* SHA_1 naming is an oddity */
-                { NID_undef, 0, 0 } };
+} mdtypes[] = {MD_TYPE(224), MD_TYPE(256), MD_TYPE(384), MD_TYPE(512),
+               {NID_sha1, CKM_SHA_1, CKG_MGF1_SHA1}, /* SHA_1 naming is an oddity */
+               {NID_undef, 0, 0}};
 
 /* From sigalg, derive parameters for pss signature and fill in  pss_params.
  * Its of type CK_RSA_PKCS_PSS_PARAMS struct with three fields to be filled in:
@@ -65,13 +62,15 @@ static const struct
  * where hashAlg is CKM_SHA256 etc., mgf is CKG_MGF1_SHA256 etc.
  */
 static int
-set_pss_params(CK_RSA_PKCS_PSS_PARAMS *pss_params, XKEY_SIGALG sigalg, pkcs11h_certificate_t cert)
+set_pss_params(CK_RSA_PKCS_PSS_PARAMS *pss_params, XKEY_SIGALG sigalg,
+               pkcs11h_certificate_t cert)
 {
     int ret = 0;
     X509 *x509 = NULL;
     EVP_PKEY *pubkey = NULL;
 
-    if ((x509 = pkcs11h_openssl_getX509(cert)) == NULL || (pubkey = X509_get0_pubkey(x509)) == NULL)
+    if ((x509 = pkcs11h_openssl_getX509(cert)) == NULL
+        || (pubkey = X509_get0_pubkey(x509)) == NULL)
     {
         msg(M_WARN, "PKCS#11: Unable get public key");
         goto cleanup;
@@ -91,10 +90,8 @@ set_pss_params(CK_RSA_PKCS_PSS_PARAMS *pss_params, XKEY_SIGALG sigalg, pkcs11h_c
     const EVP_MD *md = EVP_get_digestbyname(sigalg.mdname);
     if (!md)
     {
-        msg(M_WARN,
-            "WARN: set_pss_params: EVP_get_digestbyname returned NULL "
-            "for mdname = <%s>",
-            sigalg.mdname);
+        msg(M_WARN, "WARN: set_pss_params: EVP_get_digestbyname returned NULL "
+            "for mdname = <%s>", sigalg.mdname);
         goto cleanup;
     }
     int mdsize = EVP_MD_get_size(md);
@@ -111,16 +108,14 @@ set_pss_params(CK_RSA_PKCS_PSS_PARAMS *pss_params, XKEY_SIGALG sigalg, pkcs11h_c
 
     if (saltlen < 0 || pss_params->hashAlg == 0)
     {
-        msg(M_WARN,
-            "WARN: invalid RSA_PKCS1_PSS parameters: saltlen = <%s> "
-            "mdname = <%s>.",
-            sigalg.saltlen, sigalg.mdname);
+        msg(M_WARN, "WARN: invalid RSA_PKCS1_PSS parameters: saltlen = <%s> "
+            "mdname = <%s>.", sigalg.saltlen, sigalg.mdname);
         goto cleanup;
     }
-    pss_params->sLen = (unsigned long)saltlen; /* saltlen >= 0 at this point */
+    pss_params->sLen = (unsigned long) saltlen; /* saltlen >= 0 at this point */
 
-    msg(D_XKEY, "set_pss_params: sLen = %lu, hashAlg = %lu, mgf = %lu", pss_params->sLen,
-        pss_params->hashAlg, pss_params->mgf);
+    msg(D_XKEY, "set_pss_params: sLen = %lu, hashAlg = %lu, mgf = %lu",
+        pss_params->sLen, pss_params->hashAlg, pss_params->mgf);
 
     ret = 1;
 
@@ -143,14 +138,14 @@ cleanup:
  * is PSS in which case we return an error.
  */
 static CK_RV
-pkcs11h_certificate_signAny_ex(const pkcs11h_certificate_t cert, const CK_MECHANISM *mech,
-                               const unsigned char *tbs, size_t tbslen, unsigned char *sig,
-                               size_t *siglen)
+pkcs11h_certificate_signAny_ex(const pkcs11h_certificate_t cert,
+                               const CK_MECHANISM *mech, const unsigned char *tbs,
+                               size_t tbslen, unsigned char *sig, size_t *siglen)
 {
     if (mech->mechanism == CKM_RSA_PKCS_PSS)
     {
         msg(M_NONFATAL, "PKCS#11: Error: PSS padding is not supported by "
-                        "this version of pkcs11-helper library.");
+            "this version of pkcs11-helper library.");
         return CKR_MECHANISM_INVALID;
     }
     return pkcs11h_certificate_signAny(cert, mech->mechanism, tbs, tbslen, sig, siglen);
@@ -163,15 +158,15 @@ pkcs11h_certificate_signAny_ex(const pkcs11h_certificate_t cert, const CK_MECHAN
  * We support ECDSA, RSA_NO_PADDING, RSA_PKCS1_PADDING, RSA_PKCS_PSS_PADDING
  */
 static int
-xkey_pkcs11h_sign(void *handle, unsigned char *sig, size_t *siglen, const unsigned char *tbs,
-                  size_t tbslen, XKEY_SIGALG sigalg)
+xkey_pkcs11h_sign(void *handle, unsigned char *sig,
+                  size_t *siglen, const unsigned char *tbs, size_t tbslen, XKEY_SIGALG sigalg)
 {
     pkcs11h_certificate_t cert = handle;
-    CK_MECHANISM mech = { CKM_RSA_PKCS, NULL, 0 }; /* default value */
-    CK_RSA_PKCS_PSS_PARAMS pss_params = { 0 };
+    CK_MECHANISM mech = {CKM_RSA_PKCS, NULL, 0}; /* default value */
+    CK_RSA_PKCS_PSS_PARAMS pss_params = {0};
 
     unsigned char buf[EVP_MAX_MD_SIZE];
-    size_t buflen = 0;
+    size_t buflen;
     size_t siglen_max = *siglen;
 
     unsigned char enc[EVP_MAX_MD_SIZE + 32]; /* 32 bytes enough for DigestInfo header */
@@ -183,7 +178,7 @@ xkey_pkcs11h_sign(void *handle, unsigned char *sig, size_t *siglen, const unsign
         if (xkey_digest(tbs, tbslen, buf, &buflen, sigalg.mdname))
         {
             tbs = buf;
-            tbslen = (size_t)buflen;
+            tbslen = (size_t) buflen;
             sigalg.op = "Sign";
         }
         else
@@ -199,7 +194,8 @@ xkey_pkcs11h_sign(void *handle, unsigned char *sig, size_t *siglen, const unsign
     }
     else if (!strcmp(sigalg.keytype, "RSA"))
     {
-        msg(D_XKEY, "xkey_pkcs11h_sign: signing with RSA key: padmode = %s", sigalg.padmode);
+        msg(D_XKEY, "xkey_pkcs11h_sign: signing with RSA key: padmode = %s",
+            sigalg.padmode);
         if (!strcmp(sigalg.padmode, "none"))
         {
             mech.mechanism = CKM_RSA_X_509;
@@ -234,10 +230,11 @@ xkey_pkcs11h_sign(void *handle, unsigned char *sig, size_t *siglen, const unsign
     }
     else
     {
-        ASSERT(0); /* coding error -- we couldnt have created any such key */
+        ASSERT(0);  /* coding error -- we couldnt have created any such key */
     }
 
-    if (CKR_OK != pkcs11h_certificate_signAny_ex(cert, &mech, tbs, tbslen, sig, siglen))
+    if (CKR_OK != pkcs11h_certificate_signAny_ex(cert, &mech,
+                                                 tbs, tbslen, sig, siglen))
     {
         return 0;
     }
@@ -247,7 +244,7 @@ xkey_pkcs11h_sign(void *handle, unsigned char *sig, size_t *siglen, const unsign
     }
 
     /* For EC keys, pkcs11 returns signature as r|s: convert to der encoded */
-    int derlen = ecdsa_bin2der(sig, (int)*siglen, siglen_max);
+    int derlen = ecdsa_bin2der(sig, (int) *siglen, siglen_max);
 
     if (derlen <= 0)
     {
@@ -277,7 +274,8 @@ xkey_handle_free(void *handle)
  *                             other xkey_load_.. routines
  */
 static int
-xkey_load_from_pkcs11h(pkcs11h_certificate_t certificate, struct tls_root_ctx *const ctx)
+xkey_load_from_pkcs11h(pkcs11h_certificate_t certificate,
+                       struct tls_root_ctx *const ctx)
 {
     int ret = 0;
 
@@ -328,8 +326,10 @@ cleanup:
 #endif /* HAVE_XKEY_PROVIDER */
 
 int
-pkcs11_init_tls_session(pkcs11h_certificate_t certificate, struct tls_root_ctx *const ssl_ctx)
+pkcs11_init_tls_session(pkcs11h_certificate_t certificate,
+                        struct tls_root_ctx *const ssl_ctx)
 {
+
 #ifdef HAVE_XKEY_PROVIDER
     return (xkey_load_from_pkcs11h(certificate, ssl_ctx) == 0); /* inverts the return value */
 #else
@@ -403,7 +403,7 @@ cleanup:
         openssl_session = NULL;
     }
     return ret;
-#endif                                                          /* ifdef HAVE_XKEY_PROVIDER */
+#endif /* ifdef HAVE_XKEY_PROVIDER */
 }
 
 char *
@@ -429,11 +429,13 @@ cleanup:
 }
 
 int
-pkcs11_certificate_serial(pkcs11h_certificate_t certificate, char *serial, size_t serial_len)
+pkcs11_certificate_serial(pkcs11h_certificate_t certificate, char *serial,
+                          size_t serial_len)
 {
     X509 *x509 = NULL;
     BIO *bio = NULL;
     int ret = 1;
+    int n;
 
     if ((x509 = pkcs11h_openssl_getX509(certificate)) == NULL)
     {
@@ -448,10 +450,9 @@ pkcs11_certificate_serial(pkcs11h_certificate_t certificate, char *serial, size_
     }
 
     i2a_ASN1_INTEGER(bio, X509_get_serialNumber(x509));
-    ASSERT(serial_len <= INT_MAX);
-    int n = BIO_read(bio, serial, (int)serial_len - 1);
+    n = BIO_read(bio, serial, serial_len-1);
 
-    if (n < 0)
+    if (n<0)
     {
         serial[0] = '\x0';
     }
@@ -468,5 +469,4 @@ cleanup:
 
     return ret;
 }
-
 #endif /* defined(ENABLE_PKCS11) && defined(ENABLE_OPENSSL) */

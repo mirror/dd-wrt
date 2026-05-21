@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2026 OpenVPN Inc <sales@openvpn.net>
+ *  Copyright (C) 2002-2024 OpenVPN Inc <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -17,13 +17,14 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, see <https://www.gnu.org/licenses/>.
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include <asm/types.h>
+
 #include "syshead.h"
 
 #include "common.h"
@@ -38,7 +39,8 @@
 
 /* allocate a buffer for socket or tun layer */
 void
-alloc_buf_sock_tun(struct buffer *buf, const struct frame *frame)
+alloc_buf_sock_tun(struct buffer *buf,
+                   const struct frame *frame)
 {
     /* allocate buffer for overlapped I/O */
     *buf = alloc_buf(BUF_SIZE(frame));
@@ -50,6 +52,13 @@ alloc_buf_sock_tun(struct buffer *buf, const struct frame *frame)
 unsigned int
 calc_packet_id_size_dc(const struct options *options, const struct key_type *kt)
 {
+    /* Unless no-replay is enabled, we have a packet id, no matter if
+     * encryption is used or not */
+    if (!options->replay)
+    {
+        return 0;
+    }
+
     bool tlsmode = options->tls_server || options->tls_client;
 
     bool packet_id_long_form = !tlsmode || cipher_kt_mode_ofb_cfb(kt->cipher);
@@ -58,7 +67,8 @@ calc_packet_id_size_dc(const struct options *options, const struct key_type *kt)
 }
 
 size_t
-frame_calculate_protocol_header_size(const struct key_type *kt, const struct options *options,
+frame_calculate_protocol_header_size(const struct key_type *kt,
+                                     const struct options *options,
                                      bool occ)
 {
     /* Sum of all the overhead that reduces the usable packet size */
@@ -66,11 +76,11 @@ frame_calculate_protocol_header_size(const struct key_type *kt, const struct opt
 
     bool tlsmode = options->tls_server || options->tls_client;
 
-    /* A socks proxy adds extra header to each packet
+    /* A socks proxy adds 10 byte of extra header to each packet
      * (we only support Socks with IPv4, this value is different for IPv6) */
     if (options->ce.socks_proxy_server && proto_is_udp(options->ce.proto))
     {
-        header_size += SOCKS_UDPv4_HEADROOM;
+        header_size += 10;
     }
 
     /* TCP stream based packets have a 16 bit length field */
@@ -95,7 +105,8 @@ frame_calculate_protocol_header_size(const struct key_type *kt, const struct opt
 
 
 size_t
-frame_calculate_payload_overhead(size_t extra_tun, const struct options *options,
+frame_calculate_payload_overhead(size_t extra_tun,
+                                 const struct options *options,
                                  const struct key_type *kt)
 {
     size_t overhead = 0;
@@ -135,7 +146,8 @@ frame_calculate_payload_overhead(size_t extra_tun, const struct options *options
 }
 
 size_t
-frame_calculate_payload_size(const struct frame *frame, const struct options *options,
+frame_calculate_payload_size(const struct frame *frame,
+                             const struct options *options,
                              const struct key_type *kt)
 {
     size_t payload_size = options->ce.tun_mtu;
@@ -162,7 +174,7 @@ calc_options_string_link_mtu(const struct options *o, const struct frame *frame)
      */
     const char *ciphername = o->ciphername;
 
-    size_t overhead = 0;
+    unsigned int overhead = 0;
 
     if (strcmp(o->ciphername, "BF-CBC") == 0)
     {
@@ -170,7 +182,7 @@ calc_options_string_link_mtu(const struct options *o, const struct frame *frame)
          * overhead */
 
         /* overhead of BF-CBC: 64 bit block size, 64 bit IV size */
-        overhead += 64 / 8 + 64 / 8;
+        overhead += 64/8 + 64/8;
         /* set ciphername to none, so its size does get added in the
          * fake_kt and the cipher is not tried to be resolved */
         ciphername = "none";
@@ -180,14 +192,16 @@ calc_options_string_link_mtu(const struct options *o, const struct frame *frame)
      * the ciphers are actually valid for non tls in occ calucation */
     init_key_type(&occ_kt, ciphername, o->authname, true, false);
 
-    size_t payload = frame_calculate_payload_size(frame, o, &occ_kt);
+    unsigned int payload = frame_calculate_payload_size(frame, o, &occ_kt);
     overhead += frame_calculate_protocol_header_size(&occ_kt, o, true);
 
     return payload + overhead;
 }
 
 void
-frame_print(const struct frame *frame, msglvl_t msglevel, const char *prefix)
+frame_print(const struct frame *frame,
+            int level,
+            const char *prefix)
 {
     struct gc_arena gc = gc_new();
     struct buffer out = alloc_buf_gc(256, &gc);
@@ -196,7 +210,7 @@ frame_print(const struct frame *frame, msglvl_t msglevel, const char *prefix)
         buf_printf(&out, "%s ", prefix);
     }
     buf_printf(&out, "[");
-    buf_printf(&out, " mss_fix:%" PRIu16, frame->mss_fix);
+    buf_printf(&out, " mss_fix:%d", frame->mss_fix);
 #ifdef ENABLE_FRAGMENT
     buf_printf(&out, " max_frag:%d", frame->max_fragment_size);
 #endif
@@ -208,7 +222,7 @@ frame_print(const struct frame *frame, msglvl_t msglevel, const char *prefix)
     buf_printf(&out, " ET:%d", frame->extra_tun);
     buf_printf(&out, " ]");
 
-    msg(msglevel, "%s", out.data);
+    msg(level, "%s", out.data);
     gc_free(&gc);
 }
 
@@ -223,18 +237,19 @@ set_mtu_discover_type(socket_descriptor_t sd, int mtu_type, sa_family_t proto_af
         {
 #if defined(IP_MTU_DISCOVER)
             case AF_INET:
-                if (setsockopt(sd, IPPROTO_IP, IP_MTU_DISCOVER, (void *)&mtu_type,
-                               sizeof(mtu_type)))
+                if (setsockopt(sd, IPPROTO_IP, IP_MTU_DISCOVER,
+                               (void *) &mtu_type, sizeof(mtu_type)))
                 {
-                    msg(M_ERR, "Error setting IP_MTU_DISCOVER type=%d on TCP/UDP socket", mtu_type);
+                    msg(M_ERR, "Error setting IP_MTU_DISCOVER type=%d on TCP/UDP socket",
+                        mtu_type);
                 }
                 break;
 
 #endif
 #if defined(IPV6_MTU_DISCOVER)
             case AF_INET6:
-                if (setsockopt(sd, IPPROTO_IPV6, IPV6_MTU_DISCOVER, (void *)&mtu_type,
-                               sizeof(mtu_type)))
+                if (setsockopt(sd, IPPROTO_IPV6, IPV6_MTU_DISCOVER,
+                               (void *) &mtu_type, sizeof(mtu_type)))
                 {
                     msg(M_ERR, "Error setting IPV6_MTU_DISCOVER type=%d on TCP6/UDP6 socket",
                         mtu_type);
@@ -265,16 +280,16 @@ translate_mtu_discover_type_name(const char *name)
     {
         return IP_PMTUDISC_DONT;
     }
-    msg(M_FATAL, "invalid --mtu-disc type: '%s' -- valid types are 'yes', 'maybe', or 'no'", name);
-#else
+    msg(M_FATAL,
+        "invalid --mtu-disc type: '%s' -- valid types are 'yes', 'maybe', or 'no'",
+        name);
+#else  /* if defined(IP_PMTUDISC_DONT) && defined(IP_PMTUDISC_WANT) && defined(IP_PMTUDISC_DO) */
     msg(M_FATAL, MTUDISC_NOT_SUPPORTED_MSG);
 #endif
-    return -1; /* NOTREACHED */
+    return -1;                  /* NOTREACHED */
 }
 
 #if EXTENDED_SOCKET_ERROR_CAPABILITY
-
-#include <linux/errqueue.h>
 
 struct probehdr
 {
@@ -285,6 +300,7 @@ struct probehdr
 const char *
 format_extended_socket_error(int fd, int *mtu, struct gc_arena *gc)
 {
+    int res;
     struct probehdr rcvbuf;
     struct iovec iov;
     struct msghdr msg;
@@ -292,7 +308,7 @@ format_extended_socket_error(int fd, int *mtu, struct gc_arena *gc)
     struct sock_extended_err *e;
     struct sockaddr_storage addr;
     struct buffer out = alloc_buf_gc(256, gc);
-    char *cbuf = (char *)gc_malloc(256, false, gc);
+    char *cbuf = (char *) gc_malloc(256, false, gc);
 
     *mtu = 0;
 
@@ -301,7 +317,7 @@ format_extended_socket_error(int fd, int *mtu, struct gc_arena *gc)
         memset(&rcvbuf, -1, sizeof(rcvbuf));
         iov.iov_base = &rcvbuf;
         iov.iov_len = sizeof(rcvbuf);
-        msg.msg_name = (uint8_t *)&addr;
+        msg.msg_name = (uint8_t *) &addr;
         msg.msg_namelen = sizeof(addr);
         msg.msg_iov = &iov;
         msg.msg_iovlen = 1;
@@ -309,7 +325,7 @@ format_extended_socket_error(int fd, int *mtu, struct gc_arena *gc)
         msg.msg_control = cbuf;
         msg.msg_controllen = 256; /* size of cbuf */
 
-        ssize_t res = recvmsg(fd, &msg, MSG_ERRQUEUE);
+        res = recvmsg(fd, &msg, MSG_ERRQUEUE);
         if (res < 0)
         {
             goto exit;
@@ -323,7 +339,7 @@ format_extended_socket_error(int fd, int *mtu, struct gc_arena *gc)
             {
                 if (cmsg->cmsg_type == IP_RECVERR)
                 {
-                    e = (struct sock_extended_err *)CMSG_DATA(cmsg);
+                    e = (struct sock_extended_err *) CMSG_DATA(cmsg);
                 }
                 else
                 {
@@ -334,7 +350,7 @@ format_extended_socket_error(int fd, int *mtu, struct gc_arena *gc)
             {
                 if (cmsg->cmsg_type == IPV6_RECVERR)
                 {
-                    e = (struct sock_extended_err *)CMSG_DATA(cmsg);
+                    e = (struct sock_extended_err *) CMSG_DATA(cmsg);
                 }
                 else
                 {
@@ -397,7 +413,7 @@ set_sock_extended_error_passing(int sd, sa_family_t proto_af)
     /* see "man 7 ip" (on Linux)
      * this works on IPv4 and IPv6(-dual-stack) sockets (v4-mapped)
      */
-    if (setsockopt(sd, SOL_IP, IP_RECVERR, (void *)&on, sizeof(on)) != 0)
+    if (setsockopt(sd, SOL_IP, IP_RECVERR, (void *) &on, sizeof(on)) != 0)
     {
         msg(M_WARN | M_ERRNO,
             "Note: enable extended error passing on TCP/UDP socket failed (IP_RECVERR)");
@@ -406,7 +422,7 @@ set_sock_extended_error_passing(int sd, sa_family_t proto_af)
      * this only works on IPv6 sockets
      */
     if (proto_af == AF_INET6
-        && setsockopt(sd, IPPROTO_IPV6, IPV6_RECVERR, (void *)&on, sizeof(on)) != 0)
+        && setsockopt(sd, IPPROTO_IPV6, IPV6_RECVERR, (void *) &on, sizeof(on)) != 0)
     {
         msg(M_WARN | M_ERRNO,
             "Note: enable extended error passing on TCP/UDP socket failed (IPV6_RECVERR)");

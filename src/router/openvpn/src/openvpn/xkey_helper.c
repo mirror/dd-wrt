@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2021-2026 Selva Nair <selva.nair@gmail.com>
+ *  Copyright (C) 2021-2024 Selva Nair <selva.nair@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by the
@@ -18,7 +18,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, see <https://www.gnu.org/licenses/>.
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -48,7 +49,7 @@ static const char *const props = XKEY_PROV_PROPS;
 XKEY_EXTERNAL_SIGN_fn xkey_management_sign;
 
 static void
-print_openssl_errors(void)
+print_openssl_errors()
 {
     unsigned long e;
     while ((e = ERR_get_error()))
@@ -59,8 +60,8 @@ print_openssl_errors(void)
 
 /** helper to compute digest */
 int
-xkey_digest(const unsigned char *src, size_t srclen, unsigned char *buf, size_t *buflen,
-            const char *mdname)
+xkey_digest(const unsigned char *src, size_t srclen, unsigned char *buf,
+            size_t *buflen, const char *mdname)
 {
     dmsg(D_XKEY, "In xkey_digest");
     EVP_MD *md = EVP_MD_fetch(NULL, mdname, NULL); /* from default context */
@@ -70,7 +71,7 @@ xkey_digest(const unsigned char *src, size_t srclen, unsigned char *buf, size_t 
         return 0;
     }
 
-    unsigned int len = (unsigned int)*buflen;
+    unsigned int len = (unsigned int) *buflen;
     if (EVP_Digest(src, srclen, buf, &len, md, NULL) != 1)
     {
         msg(M_WARN, "WARN: xkey_digest: EVP_Digest failed");
@@ -121,17 +122,18 @@ xkey_load_generic_key(OSSL_LIB_CTX *libctx, void *handle, EVP_PKEY *pubkey,
 
     /* UTF8 string pointers in here are only read from, so cast is safe */
     OSSL_PARAM params[] = {
-        { "xkey-origin", OSSL_PARAM_UTF8_STRING, (char *)origin, 0, 0 },
-        { "pubkey", OSSL_PARAM_OCTET_STRING, &pubkey, sizeof(pubkey), 0 },
-        { "handle", OSSL_PARAM_OCTET_PTR, &handle, sizeof(handle), 0 },
-        { "sign_op", OSSL_PARAM_OCTET_PTR, (void **)&sign_op, sizeof(sign_op), 0 },
-        { "free_op", OSSL_PARAM_OCTET_PTR, (void **)&free_op, sizeof(free_op), 0 },
-        { NULL, 0, NULL, 0, 0 }
+        {"xkey-origin", OSSL_PARAM_UTF8_STRING, (char *) origin, 0, 0},
+        {"pubkey", OSSL_PARAM_OCTET_STRING, &pubkey, sizeof(pubkey), 0},
+        {"handle", OSSL_PARAM_OCTET_PTR, &handle, sizeof(handle), 0},
+        {"sign_op", OSSL_PARAM_OCTET_PTR, (void **) &sign_op, sizeof(sign_op), 0},
+        {"free_op", OSSL_PARAM_OCTET_PTR, (void **) &free_op, sizeof(free_op), 0},
+        {NULL, 0, NULL, 0, 0}
     };
 
     /* Do not use EVP_PKEY_new_from_pkey as that will take keymgmt from pubkey */
     EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_from_name(libctx, EVP_PKEY_get0_type_name(pubkey), props);
-    if (!ctx || EVP_PKEY_fromdata_init(ctx) != 1
+    if (!ctx
+        || EVP_PKEY_fromdata_init(ctx) != 1
         || EVP_PKEY_fromdata(ctx, &pkey, EVP_PKEY_KEYPAIR, params) != 1)
     {
         print_openssl_errors();
@@ -160,12 +162,13 @@ xkey_load_generic_key(OSSL_LIB_CTX *libctx, void *handle, EVP_PKEY *pubkey,
  * @return              signature length or -1 on error.
  */
 int
-xkey_management_sign(void *unused, unsigned char *sig, size_t *siglen, const unsigned char *tbs,
-                     size_t tbslen, XKEY_SIGALG alg)
+xkey_management_sign(void *unused, unsigned char *sig, size_t *siglen,
+                     const unsigned char *tbs, size_t tbslen, XKEY_SIGALG alg)
 {
-    dmsg(D_XKEY, "In xkey_management_sign with keytype = %s, op = %s", alg.keytype, alg.op);
+    dmsg(D_XKEY, "In xkey_management_sign with keytype = %s, op = %s",
+         alg.keytype, alg.op);
 
-    (void)unused;
+    (void) unused;
     char alg_str[128];
     unsigned char buf[EVP_MAX_MD_SIZE]; /* for computing digest if required */
     size_t buflen = sizeof(buf);
@@ -202,7 +205,7 @@ xkey_management_sign(void *unused, unsigned char *sig, size_t *siglen, const uns
         }
         else
         {
-            snprintf(alg_str, sizeof(alg_str), "ECDSA,hashalg=%s", alg.mdname);
+            openvpn_snprintf(alg_str, sizeof(alg_str), "ECDSA,hashalg=%s", alg.mdname);
         }
     }
     else if (!strcmp(alg.keytype, "ED448") || !strcmp(alg.keytype, "ED25519"))
@@ -226,7 +229,8 @@ xkey_management_sign(void *unused, unsigned char *sig, size_t *siglen, const uns
         /* For undigested message, add hashalg=digest parameter */
         else
         {
-            snprintf(alg_str, sizeof(alg_str), "%s,hashalg=%s", "RSA_PKCS1_PADDING", alg.mdname);
+            openvpn_snprintf(alg_str, sizeof(alg_str), "%s,hashalg=%s",
+                             "RSA_PKCS1_PADDING", alg.mdname);
         }
     }
     else if (!strcmp(alg.padmode, "none") && (flags & MF_EXTERNAL_KEY_NOPADDING)
@@ -236,12 +240,13 @@ xkey_management_sign(void *unused, unsigned char *sig, size_t *siglen, const uns
     }
     else if (!strcmp(alg.padmode, "pss") && (flags & MF_EXTERNAL_KEY_PSSPAD))
     {
-        snprintf(alg_str, sizeof(alg_str), "%s,hashalg=%s,saltlen=%s", "RSA_PKCS1_PSS_PADDING",
-                 alg.mdname, alg.saltlen);
+        openvpn_snprintf(alg_str, sizeof(alg_str), "%s,hashalg=%s,saltlen=%s",
+                         "RSA_PKCS1_PSS_PADDING", alg.mdname, alg.saltlen);
     }
     else
     {
-        msg(M_NONFATAL, "RSA padding mode not supported by management-client <%s>", alg.padmode);
+        msg(M_NONFATAL, "RSA padding mode not supported by management-client <%s>",
+            alg.padmode);
         return 0;
     }
 
@@ -256,7 +261,7 @@ xkey_management_sign(void *unused, unsigned char *sig, size_t *siglen, const uns
     char *out_b64 = NULL;
     int len = -1;
 
-    int bencret = openvpn_base64_encode(tbs, (int)tbslen, &in_b64);
+    int bencret = openvpn_base64_encode(tbs, (int) tbslen, &in_b64);
 
     if (management && bencret > 0)
     {
@@ -264,7 +269,7 @@ xkey_management_sign(void *unused, unsigned char *sig, size_t *siglen, const uns
     }
     if (out_b64)
     {
-        len = openvpn_base64_decode(out_b64, sig, (int)*siglen);
+        len = openvpn_base64_decode(out_b64, sig, (int) *siglen);
     }
     free(in_b64);
     free(out_b64);
@@ -287,12 +292,12 @@ xkey_management_sign(void *unused, unsigned char *sig, size_t *siglen, const uns
  * @return              false on error, true  on success
  *
  * On return enc_len is  set to actual size of the result.
- * If enc is NULL or enc_len is not enough to store the result, it is set
+ * enc is NULL or enc_len is not enough to store the result, it is set
  * to the required size and false is returned.
  */
 bool
-encode_pkcs1(unsigned char *enc, size_t *enc_len, const char *mdname, const unsigned char *tbs,
-             size_t tbslen)
+encode_pkcs1(unsigned char *enc, size_t *enc_len, const char *mdname,
+             const unsigned char *tbs, size_t tbslen)
 {
     ASSERT(enc_len != NULL);
     ASSERT(tbs != NULL);
@@ -305,39 +310,35 @@ encode_pkcs1(unsigned char *enc, size_t *enc_len, const char *mdname, const unsi
      * Also see the table in RFC 8017 section 9.2, Note 1.
      */
 
-    const unsigned char sha1[] = { 0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e,
-                                   0x03, 0x02, 0x1a, 0x05, 0x00, 0x04, 0x14 };
-    const unsigned char sha256[] = { 0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01,
-                                     0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20 };
-    const unsigned char sha384[] = { 0x30, 0x41, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01,
-                                     0x65, 0x03, 0x04, 0x02, 0x02, 0x05, 0x00, 0x04, 0x30 };
-    const unsigned char sha512[] = { 0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01,
-                                     0x65, 0x03, 0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40 };
-    const unsigned char sha224[] = { 0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01,
-                                     0x65, 0x03, 0x04, 0x02, 0x04, 0x05, 0x00, 0x04, 0x1c };
-    const unsigned char sha512_224[] = { 0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01,
-                                         0x65, 0x03, 0x04, 0x02, 0x05, 0x05, 0x00, 0x04, 0x1c };
-    const unsigned char sha512_256[] = { 0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01,
-                                         0x65, 0x03, 0x04, 0x02, 0x06, 0x05, 0x00, 0x04, 0x20 };
+    const unsigned char sha1[] = {0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b,
+                                  0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00, 0x04, 0x14};
+    const unsigned char sha256[] = {0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48,
+                                    0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20};
+    const unsigned char sha384[] = {0x30, 0x41, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48,
+                                    0x01, 0x65, 0x03, 0x04, 0x02, 0x02, 0x05, 0x00, 0x04, 0x30};
+    const unsigned char sha512[] = {0x30, 0x51, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48,
+                                    0x01, 0x65, 0x03, 0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40};
+    const unsigned char sha224[] = {0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48,
+                                    0x01, 0x65, 0x03, 0x04, 0x02, 0x04, 0x05, 0x00, 0x04, 0x1c};
+    const unsigned char sha512_224[] = {0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48,
+                                        0x01, 0x65, 0x03, 0x04, 0x02, 0x05, 0x05, 0x00, 0x04, 0x1c};
+    const unsigned char sha512_256[] = {0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48,
+                                        0x01, 0x65, 0x03, 0x04, 0x02, 0x06, 0x05, 0x00, 0x04, 0x20};
 
-    typedef struct
-    {
+    typedef struct {
         const int nid;
         const unsigned char *header;
         size_t sz;
     } DIG_INFO;
 
-#define MAKE_DI(x) { NID_##x, x, sizeof(x) }
+#define MAKE_DI(x) {NID_ ## x, x, sizeof(x)}
 
-    /* clang-format off */
-    DIG_INFO dinfo[] = {
-        MAKE_DI(sha1),   MAKE_DI(sha256),     MAKE_DI(sha384),     MAKE_DI(sha512),
-        MAKE_DI(sha224), MAKE_DI(sha512_224), MAKE_DI(sha512_256), { 0, NULL, 0 }
-    };
-    /* clang-format on */
+    DIG_INFO dinfo[] = {MAKE_DI(sha1), MAKE_DI(sha256), MAKE_DI(sha384),
+                        MAKE_DI(sha512), MAKE_DI(sha224), MAKE_DI(sha512_224),
+                        MAKE_DI(sha512_256), {0, NULL, 0}};
 
-    size_t out_len = 0;
-    bool ret = false;
+    int out_len = 0;
+    int ret = 0;
 
     int nid = OBJ_sn2nid(mdname);
     if (nid == NID_undef)
@@ -351,9 +352,9 @@ encode_pkcs1(unsigned char *enc, size_t *enc_len, const char *mdname, const unsi
         }
     }
 
-    if (tbslen != (size_t)EVP_MD_size(EVP_get_digestbyname(mdname)))
+    if (tbslen != EVP_MD_size(EVP_get_digestbyname(mdname)))
     {
-        msg(M_WARN, "Error: encode_pkcs11: invalid input length <%zu>", tbslen);
+        msg(M_WARN, "Error: encode_pkcs11: invalid input length <%d>", (int)tbslen);
         goto done;
     }
 
@@ -382,12 +383,13 @@ encode_pkcs1(unsigned char *enc, size_t *enc_len, const char *mdname, const unsi
 
     out_len = tbslen + di->sz;
 
-    if (enc && (out_len <= *enc_len))
+    if (enc && (out_len <= (int) *enc_len))
     {
         /* combine header and digest */
         memcpy(enc, di->header, di->sz);
         memcpy(enc + di->sz, tbs, tbslen);
-        dmsg(D_XKEY, "encode_pkcs1: digest length = %zu encoded length = %zu", tbslen, out_len);
+        dmsg(D_XKEY, "encode_pkcs1: digest length = %d encoded length = %d",
+             (int) tbslen, (int) out_len);
         ret = true;
     }
 
@@ -407,9 +409,9 @@ int
 ecdsa_bin2der(unsigned char *buf, int len, size_t capacity)
 {
     ECDSA_SIG *ecsig = NULL;
-    int rlen = len / 2;
+    int rlen = len/2;
     BIGNUM *r = BN_bin2bn(buf, rlen, NULL);
-    BIGNUM *s = BN_bin2bn(buf + rlen, rlen, NULL);
+    BIGNUM *s = BN_bin2bn(buf+rlen, rlen, NULL);
     if (!r || !s)
     {
         goto err;
@@ -426,7 +428,7 @@ ecdsa_bin2der(unsigned char *buf, int len, size_t capacity)
     }
 
     int derlen = i2d_ECDSA_SIG(ecsig, NULL);
-    if (derlen > (int)capacity)
+    if (derlen > (int) capacity)
     {
         ECDSA_SIG_free(ecsig);
         msg(M_NONFATAL, "Error: DER encoded ECDSA signature is too long (%d)", derlen);

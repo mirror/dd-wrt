@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2026 OpenVPN Inc <sales@openvpn.net>
+ *  Copyright (C) 2002-2024 OpenVPN Inc <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -17,7 +17,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, see <https://www.gnu.org/licenses/>.
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -34,11 +35,7 @@
 #include "integer.h"
 #include "memdbg.h"
 
-#define FRAG_ERR(s) \
-    {               \
-        errmsg = s; \
-        goto error; \
-    }
+#define FRAG_ERR(s) { errmsg = s; goto error; }
 
 static void
 fragment_list_buf_init(struct fragment_list *list, const struct frame *frame)
@@ -136,7 +133,8 @@ fragment_frame_init(struct fragment_master *f, const struct frame *frame)
  * If a fragment fully completes the datagram, return the datagram.
  */
 void
-fragment_incoming(struct fragment_master *f, struct buffer *buf, const struct frame *frame)
+fragment_incoming(struct fragment_master *f, struct buffer *buf,
+                  const struct frame *frame)
 {
     const char *errmsg = NULL;
     fragment_header_type flags = 0;
@@ -167,8 +165,11 @@ fragment_incoming(struct fragment_master *f, struct buffer *buf, const struct fr
         /* handle the fragment type */
         if (frag_type == FRAG_WHOLE)
         {
-            dmsg(D_FRAG_DEBUG, "FRAG_IN buf->len=%d type=FRAG_WHOLE flags=" fragment_header_format,
-                 buf->len, flags);
+            dmsg(D_FRAG_DEBUG,
+                 "FRAG_IN buf->len=%d type=FRAG_WHOLE flags="
+                 fragment_header_format,
+                 buf->len,
+                 flags);
 
             if (flags & (FRAG_SEQ_ID_MASK | FRAG_ID_MASK))
             {
@@ -179,18 +180,22 @@ fragment_incoming(struct fragment_master *f, struct buffer *buf, const struct fr
         {
             const int seq_id = ((flags >> FRAG_SEQ_ID_SHIFT) & FRAG_SEQ_ID_MASK);
             const int n = ((flags >> FRAG_ID_SHIFT) & FRAG_ID_MASK);
-            const int size =
-                ((frag_type == FRAG_YES_LAST)
-                     ? (int)(((flags >> FRAG_SIZE_SHIFT) & FRAG_SIZE_MASK) << FRAG_SIZE_ROUND_SHIFT)
-                     : buf->len);
+            const int size = ((frag_type == FRAG_YES_LAST)
+                              ? (int)(((flags >> FRAG_SIZE_SHIFT) & FRAG_SIZE_MASK) << FRAG_SIZE_ROUND_SHIFT)
+                              : buf->len);
 
             /* get the appropriate fragment buffer based on received seq_id */
             struct fragment *frag = fragment_list_get_buf(&f->incoming, seq_id);
 
-            dmsg(
-                D_FRAG_DEBUG,
-                "FRAG_IN len=%d type=%d seq_id=%d frag_id=%d size=%d flags=" fragment_header_format,
-                buf->len, frag_type, seq_id, n, size, flags);
+            dmsg(D_FRAG_DEBUG,
+                 "FRAG_IN len=%d type=%d seq_id=%d frag_id=%d size=%d flags="
+                 fragment_header_format,
+                 buf->len,
+                 frag_type,
+                 seq_id,
+                 n,
+                 size,
+                 flags);
 
             /* make sure that size is an even multiple of 1<<FRAG_SIZE_ROUND_SHIFT */
             if (size & FRAG_SIZE_ROUND_MASK)
@@ -253,7 +258,11 @@ error:
 
 /* pack fragment parms into a uint32_t and prepend to buffer */
 static void
-fragment_prepend_flags(struct buffer *buf, int type, int seq_id, int frag_id, int frag_size)
+fragment_prepend_flags(struct buffer *buf,
+                       int type,
+                       int seq_id,
+                       int frag_id,
+                       int frag_size)
 {
     fragment_header_type flags = ((type & FRAG_TYPE_MASK) << FRAG_TYPE_SHIFT)
                                  | ((seq_id & FRAG_SEQ_ID_MASK) << FRAG_SEQ_ID_SHIFT)
@@ -265,19 +274,19 @@ fragment_prepend_flags(struct buffer *buf, int type, int seq_id, int frag_id, in
          * If you want to set FRAG_EXTRA_MASK/FRAG_EXTRA_SHIFT bits,
          * do it here.
          */
-        dmsg(
-            D_FRAG_DEBUG,
-            "FRAG_OUT len=%d type=%d seq_id=%d frag_id=%d frag_size=%d flags=" fragment_header_format,
-            buf->len, type, seq_id, frag_id, frag_size, flags);
+        dmsg(D_FRAG_DEBUG,
+             "FRAG_OUT len=%d type=%d seq_id=%d frag_id=%d frag_size=%d flags="
+             fragment_header_format,
+             buf->len, type, seq_id, frag_id, frag_size, flags);
     }
     else
     {
         flags |= (((frag_size >> FRAG_SIZE_ROUND_SHIFT) & FRAG_SIZE_MASK) << FRAG_SIZE_SHIFT);
 
-        dmsg(
-            D_FRAG_DEBUG,
-            "FRAG_OUT len=%d type=%d seq_id=%d frag_id=%d frag_size=%d flags=" fragment_header_format,
-            buf->len, type, seq_id, frag_id, frag_size, flags);
+        dmsg(D_FRAG_DEBUG,
+             "FRAG_OUT len=%d type=%d seq_id=%d frag_id=%d frag_size=%d flags="
+             fragment_header_format,
+             buf->len, type, seq_id, frag_id, frag_size, flags);
     }
 
     flags = hton_fragment_header_type(flags);
@@ -298,9 +307,8 @@ optimal_fragment_size(int len, int max_frag_size)
 
     if (div > 0 && mod > 0 && mod < mfs_aligned * 3 / 4)
     {
-        return min_int(mfs_aligned,
-                       (max_frag_size - ((max_frag_size - mod) / (div + 1)) + FRAG_SIZE_ROUND_MASK)
-                           & ~FRAG_SIZE_ROUND_MASK);
+        return min_int(mfs_aligned, (max_frag_size - ((max_frag_size - mod) / (div + 1))
+                                     + FRAG_SIZE_ROUND_MASK) & ~FRAG_SIZE_ROUND_MASK);
     }
     else
     {
@@ -310,7 +318,8 @@ optimal_fragment_size(int len, int max_frag_size)
 
 /* process an outgoing datagram, possibly breaking it up into fragments */
 void
-fragment_outgoing(struct fragment_master *f, struct buffer *buf, const struct frame *frame)
+fragment_outgoing(struct fragment_master *f, struct buffer *buf,
+                  const struct frame *frame)
 {
     const char *errmsg = NULL;
     if (buf->len > 0)
@@ -318,8 +327,8 @@ fragment_outgoing(struct fragment_master *f, struct buffer *buf, const struct fr
         /* The outgoing buffer should be empty so we can put new data in it */
         if (f->outgoing.len)
         {
-            msg(D_FRAG_ERRORS, "FRAG: outgoing buffer is not empty, len=[%d,%d]", buf->len,
-                f->outgoing.len);
+            msg(D_FRAG_ERRORS, "FRAG: outgoing buffer is not empty, len=[%d,%d]",
+                buf->len, f->outgoing.len);
         }
         if (buf->len > frame->max_fragment_size) /* should we fragment? */
         {
@@ -343,7 +352,11 @@ fragment_outgoing(struct fragment_master *f, struct buffer *buf, const struct fr
             /*
              * Send the datagram whole.
              */
-            fragment_prepend_flags(buf, FRAG_WHOLE, 0, 0, 0);
+            fragment_prepend_flags(buf,
+                                   FRAG_WHOLE,
+                                   0,
+                                   0,
+                                   0);
         }
     }
     return;
@@ -351,8 +364,8 @@ fragment_outgoing(struct fragment_master *f, struct buffer *buf, const struct fr
 error:
     if (errmsg)
     {
-        msg(D_FRAG_ERRORS, "FRAG_OUT error, len=%d frag_size=%d MAX_FRAGS=%d: %s", buf->len,
-            f->outgoing_frag_size, MAX_FRAGS, errmsg);
+        msg(D_FRAG_ERRORS, "FRAG_OUT error, len=%d frag_size=%d MAX_FRAGS=%d: %s",
+            buf->len, f->outgoing_frag_size, MAX_FRAGS, errmsg);
     }
     buf->len = 0;
     return;
@@ -360,7 +373,8 @@ error:
 
 /* return true (and set buf) if we have an outgoing fragment which is ready to send */
 bool
-fragment_ready_to_send(struct fragment_master *f, struct buffer *buf, const struct frame *frame)
+fragment_ready_to_send(struct fragment_master *f, struct buffer *buf,
+                       const struct frame *frame)
 {
     if (fragment_outgoing_defined(f))
     {
@@ -379,12 +393,13 @@ fragment_ready_to_send(struct fragment_master *f, struct buffer *buf, const stru
         ASSERT(buf_copy_n(buf, &f->outgoing, size));
 
         /* fragment flags differ based on whether or not we are sending the last fragment */
-        fragment_prepend_flags(buf, last ? FRAG_YES_LAST : FRAG_YES_NOTLAST, f->outgoing_seq_id,
-                               f->outgoing_frag_id++, f->outgoing_frag_size);
+        fragment_prepend_flags(buf,
+                               last ? FRAG_YES_LAST : FRAG_YES_NOTLAST,
+                               f->outgoing_seq_id,
+                               f->outgoing_frag_id++,
+                               f->outgoing_frag_size);
 
-        ASSERT(!last
-               || !f->outgoing
-                       .len); /* outgoing buffer length should be zero after last fragment sent */
+        ASSERT(!last || !f->outgoing.len); /* outgoing buffer length should be zero after last fragment sent */
 
         return true;
     }

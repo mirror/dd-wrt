@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2010-2026 Sentyron B.V. <openvpn@sentyron.com>
+ *  Copyright (C) 2010-2021 Fox Crypto B.V. <openvpn@foxcrypto.com>
  *
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -18,7 +18,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, see <https://www.gnu.org/licenses/>.
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 /**
@@ -94,11 +95,11 @@
  * to supply cryptographically strong pseudo-random data.  The following links
  * contain more information on this subject:
  * - For OpenSSL's \c RAND_bytes() function:
- *   https://docs.openssl.org/master/man3/RAND_bytes/#rand_bytes
+ *   http://www.openssl.org/docs/crypto/RAND_bytes.html
  * - For OpenSSL's pseudo-random number generating system:
- *   https://docs.openssl.org/master/man7/RAND/#rand
+ *   http://www.openssl.org/docs/crypto/rand.html
  * - For OpenSSL's support for external crypto modules:
- *   https://docs.openssl.org/master/man7/provider/#provider
+ *   http://www.openssl.org/docs/crypto/engine.html
  *
  * In mbed TLS, the Havege random number generator is used. For details, see
  * the mbed TLS documentation.

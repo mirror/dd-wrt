@@ -5,7 +5,7 @@
 #             packet encryption, packet authentication, and
 #             packet compression.
 #
-#  Copyright (C) 2002-2026 OpenVPN Inc <sales@openvpn.net>
+#  Copyright (C) 2002-2024 OpenVPN Inc <sales@openvpn.net>
 #  Copyright (C) 2006-2012 Alon Bar-Lev <alon.barlev@gmail.com>
 #
 
@@ -14,11 +14,8 @@ MAINTAINERCLEANFILES = \
 
 SUBDIRS = unit_tests
 
-AM_TESTSUITE_SUMMARY_HEADER = ' for $(PACKAGE_STRING) System Tests'
-SH_LOG_DRIVER = $(SHELL) $(top_srcdir)/forked-test-driver
-
 if !WIN32
-test_scripts = t_client.sh t_lpback.sh t_cltsrv.sh t_server_null.sh
+test_scripts = t_client.sh t_lpback.sh t_cltsrv.sh
 
 check_PROGRAMS = ntlm_support
 if HAVE_SITNL
@@ -27,7 +24,6 @@ endif
 endif
 
 TESTS_ENVIRONMENT = top_srcdir="$(top_srcdir)"
-TEST_EXTENSIONS = .sh
 TESTS = $(test_scripts)
 
 dist_noinst_SCRIPTS = \
@@ -35,13 +31,7 @@ dist_noinst_SCRIPTS = \
 	t_cltsrv-down.sh \
 	t_lpback.sh \
 	t_net.sh \
-	t_server_null.sh \
-	t_server_null_client.sh \
-	t_server_null_server.sh \
-	t_server_null_default.rc \
 	update_t_client_ips.sh
-
-t_client.log: t_server_null.log
 
 dist_noinst_DATA = \
 	t_client.rc-sample
@@ -52,10 +42,8 @@ ntlm_support_SOURCES = ntlm_support.c \
 	unit_tests/openvpn/mock_msg.c unit_tests/openvpn/mock_msg.h \
 	$(top_srcdir)/src/openvpn/buffer.c \
 	$(top_srcdir)/src/openvpn/crypto.c \
-	$(top_srcdir)/src/openvpn/crypto_epoch.c \
 	$(top_srcdir)/src/openvpn/crypto_openssl.c \
 	$(top_srcdir)/src/openvpn/crypto_mbedtls.c \
-	$(top_srcdir)/src/openvpn/crypto_mbedtls_legacy.c \
 	$(top_srcdir)/src/openvpn/otime.c \
 	$(top_srcdir)/src/openvpn/packet_id.c \
 	$(top_srcdir)/src/openvpn/platform.c

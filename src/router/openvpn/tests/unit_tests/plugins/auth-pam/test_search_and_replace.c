@@ -10,8 +10,9 @@
 #include "utils.h"
 
 static void
-pass_any_null_param__returns_null(void **state)
+pass_any_null_param__returns_null()
 {
+
     char DUMMY[] = "DUMMY";
 
     assert_null(searchandreplace(NULL, DUMMY, DUMMY));
@@ -20,8 +21,9 @@ pass_any_null_param__returns_null(void **state)
 }
 
 static void
-pass_any_empty_string__returns_null(void **state)
+pass_any_empty_string__returns_null()
 {
+
     char DUMMY[] = "DUMMY";
     char EMPTY[] = "";
 
@@ -31,7 +33,7 @@ pass_any_empty_string__returns_null(void **state)
 }
 
 static void
-replace_single_char__one_time__match_is_replaced(void **state)
+replace_single_char__one_time__match_is_replaced()
 {
     char *replaced = searchandreplace("X", "X", "Y");
 
@@ -42,7 +44,7 @@ replace_single_char__one_time__match_is_replaced(void **state)
 }
 
 static void
-replace_single_char__multiple_times__match_all_matches_are_replaced(void **state)
+replace_single_char__multiple_times__match_all_matches_are_replaced()
 {
     char *replaced = searchandreplace("XaX", "X", "Y");
 
@@ -53,7 +55,7 @@ replace_single_char__multiple_times__match_all_matches_are_replaced(void **state
 }
 
 static void
-replace_longer_text__multiple_times__match_all_matches_are_replaced(void **state)
+replace_longer_text__multiple_times__match_all_matches_are_replaced()
 {
     char *replaced = searchandreplace("XXaXX", "XX", "YY");
 
@@ -64,7 +66,7 @@ replace_longer_text__multiple_times__match_all_matches_are_replaced(void **state
 }
 
 static void
-pattern_not_found__returns_original(void **state)
+pattern_not_found__returns_original()
 {
     char *replaced = searchandreplace("abc", "X", "Y");
 

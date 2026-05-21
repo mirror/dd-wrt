@@ -15,11 +15,12 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, see <https://www.gnu.org/licenses/>.
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 
 set -eu
 top_builddir="${top_builddir:-..}"
-openvpn="${openvpn:-${top_builddir}/src/openvpn/openvpn}"
 trap "rm -f key.$$ tc-server-key.$$ tc-client-key.$$ log.$$ ; trap 0 ; exit 77" 1 2 15
 trap "rm -f key.$$ tc-server-key.$$ tc-client-key.$$ log.$$ ; exit 1" 0 3
 
@@ -70,7 +71,7 @@ fi
 
 
 # Get list of supported ciphers from openvpn --show-ciphers output
-CIPHERS=$(${openvpn} --show-ciphers | \
+CIPHERS=$(${top_builddir}/src/openvpn/openvpn --show-ciphers | \
             sed -e '/The following/,/^$/d' -e s'/ .*//' -e '/^[[:space:]]*$/d')
 
 # SK, 2014-06-04: currently the DES-EDE3-CFB1 implementation of OpenSSL is
@@ -89,22 +90,23 @@ fi
 # Also test cipher 'none'
 CIPHERS=${CIPHERS}$(printf "\nnone")
 
+"${top_builddir}/src/openvpn/openvpn" --genkey secret key.$$
 set +e
 
 for cipher in ${CIPHERS}
 do
     test_start "Testing cipher ${cipher}... "
-    ( "${openvpn}" --test-crypto --cipher ${cipher} ) >log.$$ 2>&1
+    ( "${top_builddir}/src/openvpn/openvpn" --test-crypto --secret key.$$ --cipher ${cipher} ) >log.$$ 2>&1
     test_end $? log.$$
 done
 
 test_start "Testing tls-crypt-v2 server key generation... "
-"${openvpn}" \
+"${top_builddir}/src/openvpn/openvpn" \
     --genkey tls-crypt-v2-server tc-server-key.$$ >log.$$ 2>&1
 test_end $? log.$$
 
 test_start "Testing tls-crypt-v2 key generation (no metadata)... "
-"${openvpn}" --tls-crypt-v2 tc-server-key.$$ \
+"${top_builddir}/src/openvpn/openvpn" --tls-crypt-v2 tc-server-key.$$ \
     --genkey tls-crypt-v2-client tc-client-key.$$ >log.$$ 2>&1
 test_end $? log.$$
 
@@ -116,7 +118,7 @@ while [ $i -lt 732 ]; do
     i=$(expr $i + 1)
 done
 test_start "Testing tls-crypt-v2 key generation (max length metadata)... "
-"${openvpn}" --tls-crypt-v2 tc-server-key.$$ \
+"${top_builddir}/src/openvpn/openvpn" --tls-crypt-v2 tc-server-key.$$ \
     --genkey tls-crypt-v2-client tc-client-key.$$ "${METADATA}" \
     >log.$$ 2>&1
 test_end $? log.$$
@@ -125,6 +127,6 @@ if [ "$V" -ge 1  ] ; then
     echo "$0: tests passed: $tests_passed  failed: $tests_failed"
 fi
 
-rm tc-server-key.$$ tc-client-key.$$ log.$$
+rm key.$$ tc-server-key.$$ tc-client-key.$$ log.$$
 trap 0
 exit $e

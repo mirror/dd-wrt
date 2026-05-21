@@ -2,7 +2,7 @@
  *  openvpnmsica -- Custom Action DLL to provide OpenVPN-specific support to MSI packages
  *                  https://community.openvpn.net/openvpn/wiki/OpenVPNMSICA
  *
- *  Copyright (C) 2018-2026 Simon Rozman <simon@rozman.si>
+ *  Copyright (C) 2018-2024 Simon Rozman <simon@rozman.si>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -14,20 +14,21 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, see <https://www.gnu.org/licenses/>.
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 #ifndef MSICA_ARG_H
 #define MSICA_ARG_H
 
 #include <windows.h>
-#include <wchar.h>
+#include <tchar.h>
 #include "../tapctl/basic.h"
 
 
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable : 4200) /* Using zero-sized arrays in struct/union. */
+#pragma warning(disable: 4200) /* Using zero-sized arrays in struct/union. */
 #endif
 
 
@@ -36,8 +37,8 @@
  */
 struct msica_arg
 {
-    struct msica_arg *next; /**< Pointer to the next argument in the sequence */
-    WCHAR val[];            /**< Zero terminated argument string */
+    struct msica_arg *next; /** Pointer to the next argument in the sequence */
+    TCHAR val[];            /** Zero terminated argument string */
 };
 
 
@@ -46,8 +47,8 @@ struct msica_arg
  */
 struct msica_arg_seq
 {
-    struct msica_arg *head; /**< Pointer to the first argument in the sequence */
-    struct msica_arg *tail; /**< Pointer to the last argument in the sequence */
+    struct msica_arg *head; /** Pointer to the first argument in the sequence */
+    struct msica_arg *tail; /** Pointer to the last argument in the sequence */
 };
 
 
@@ -56,7 +57,8 @@ struct msica_arg_seq
  *
  * @param seq           Pointer to uninitialized argument sequence
  */
-void msica_arg_seq_init(_Inout_ struct msica_arg_seq *seq);
+void
+msica_arg_seq_init(_Inout_ struct msica_arg_seq *seq);
 
 
 /**
@@ -64,7 +66,8 @@ void msica_arg_seq_init(_Inout_ struct msica_arg_seq *seq);
  *
  * @param seq           Pointer to the argument sequence
  */
-void msica_arg_seq_free(_Inout_ struct msica_arg_seq *seq);
+void
+msica_arg_seq_free(_Inout_ struct msica_arg_seq *seq);
 
 
 /**
@@ -74,7 +77,10 @@ void msica_arg_seq_free(_Inout_ struct msica_arg_seq *seq);
  *
  * @param argument      Zero-terminated argument string to insert.
  */
-void msica_arg_seq_add_head(_Inout_ struct msica_arg_seq *seq, _In_z_ LPCWSTR argument);
+void
+msica_arg_seq_add_head(
+    _Inout_ struct msica_arg_seq *seq,
+    _In_z_ LPCTSTR argument);
 
 
 /**
@@ -84,7 +90,10 @@ void msica_arg_seq_add_head(_Inout_ struct msica_arg_seq *seq, _In_z_ LPCWSTR ar
  *
  * @param argument      Zero-terminated argument string to append.
  */
-void msica_arg_seq_add_tail(_Inout_ struct msica_arg_seq *seq, _Inout_ LPCWSTR argument);
+void
+msica_arg_seq_add_tail(
+    _Inout_ struct msica_arg_seq *seq,
+    _Inout_ LPCTSTR argument);
 
 /**
  * Join arguments of the argument sequence into a space delimited string
@@ -93,7 +102,7 @@ void msica_arg_seq_add_tail(_Inout_ struct msica_arg_seq *seq, _Inout_ LPCWSTR a
  *
  * @return Joined argument string. Must be released with free() after use.
  */
-LPWSTR
+LPTSTR
 msica_arg_seq_join(_In_ const struct msica_arg_seq *seq);
 
 #ifdef _MSC_VER

@@ -41,7 +41,8 @@
 
 #include "memdbg.h"
 
-static char base64_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static char base64_chars[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 /*
  * base64 encode input data of length size to malloced
  * buffer which is returned as *str.  Returns string
@@ -50,32 +51,32 @@ static char base64_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwx
 int
 openvpn_base64_encode(const void *data, int size, char **str)
 {
+    char *s, *p;
+    int i;
+    int c;
+    const unsigned char *q;
+
     if (size < 0)
     {
         return -1;
     }
-    size_t out_size = (size_t)size * 4 / 3 + 4;
-    if (out_size > INT_MAX)
-    {
-        return -1;
-    }
-    char *p = (char *)malloc(out_size);
-    char *start = p;
+    p = s = (char *) malloc(size * 4 / 3 + 4);
     if (p == NULL)
     {
         return -1;
     }
-    const unsigned char *q = (const unsigned char *)data;
-    for (int i = 0; i < size;)
+    q = (const unsigned char *) data;
+    i = 0;
+    for (i = 0; i < size; )
     {
-        unsigned int c = q[i++];
-        c <<= 8;
+        c = q[i++];
+        c *= 256;
         if (i < size)
         {
             c += q[i];
         }
         i++;
-        c <<= 8;
+        c *= 256;
         if (i < size)
         {
             c += q[i];
@@ -96,18 +97,19 @@ openvpn_base64_encode(const void *data, int size, char **str)
         p += 4;
     }
     *p = 0;
-    *str = start;
-    return (int)strlen(start);
+    *str = s;
+    return strlen(s);
 }
 
 static int
 pos(char c)
 {
-    for (char *p = base64_chars; *p; p++)
+    char *p;
+    for (p = base64_chars; *p; p++)
     {
         if (*p == c)
         {
-            return (int)(p - base64_chars);
+            return p - base64_chars;
         }
     }
     return -1;
@@ -118,15 +120,16 @@ pos(char c)
 static unsigned int
 token_decode(const char *token)
 {
+    int i;
     unsigned int val = 0;
-    unsigned int marker = 0;
+    int marker = 0;
     if (!token[0] || !token[1] || !token[2] || !token[3])
     {
         return DECODE_ERROR;
     }
-    for (unsigned int i = 0; i < 4; i++)
+    for (i = 0; i < 4; i++)
     {
-        val <<= 6;
+        val *= 64;
         if (token[i] == '=')
         {
             marker++;
@@ -137,12 +140,7 @@ token_decode(const char *token)
         }
         else
         {
-            int char_pos = pos(token[i]);
-            if (unlikely(char_pos < 0)) /* caller should check */
-            {
-                return DECODE_ERROR;
-            }
-            val += (unsigned int)char_pos;
+            val += pos(token[i]);
         }
     }
     if (marker > 2)
@@ -198,5 +196,5 @@ openvpn_base64_decode(const char *str, void *data, int size)
             *q++ = val & 0xff;
         }
     }
-    return (int)(q - (unsigned char *)data);
+    return q - (unsigned char *) data;
 }

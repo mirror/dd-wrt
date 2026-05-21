@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2026 OpenVPN Inc <sales@openvpn.net>
+ *  Copyright (C) 2002-2024 OpenVPN Inc <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -17,7 +17,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, see <https://www.gnu.org/licenses/>.
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -45,7 +46,8 @@ stub_compress_uninit(struct compress_context *compctx)
 }
 
 static void
-stub_compress(struct buffer *buf, struct buffer work, struct compress_context *compctx,
+stub_compress(struct buffer *buf, struct buffer work,
+              struct compress_context *compctx,
               const struct frame *frame)
 {
     if (buf->len <= 0)
@@ -55,7 +57,7 @@ stub_compress(struct buffer *buf, struct buffer work, struct compress_context *c
     if (compctx->flags & COMP_F_SWAP)
     {
         uint8_t *head = BPTR(buf);
-        uint8_t *tail = BEND(buf);
+        uint8_t *tail  = BEND(buf);
         ASSERT(buf_safe(buf, 1));
         ++buf->len;
 
@@ -71,7 +73,8 @@ stub_compress(struct buffer *buf, struct buffer work, struct compress_context *c
 }
 
 static void
-stub_decompress(struct buffer *buf, struct buffer work, struct compress_context *compctx,
+stub_decompress(struct buffer *buf, struct buffer work,
+                struct compress_context *compctx,
                 const struct frame *frame)
 {
     uint8_t c;
@@ -105,7 +108,8 @@ stub_decompress(struct buffer *buf, struct buffer work, struct compress_context 
 
 
 static void
-stubv2_compress(struct buffer *buf, struct buffer work, struct compress_context *compctx,
+stubv2_compress(struct buffer *buf, struct buffer work,
+                struct compress_context *compctx,
                 const struct frame *frame)
 {
     if (buf->len <= 0)
@@ -117,7 +121,8 @@ stubv2_compress(struct buffer *buf, struct buffer work, struct compress_context 
 }
 
 static void
-stubv2_decompress(struct buffer *buf, struct buffer work, struct compress_context *compctx,
+stubv2_decompress(struct buffer *buf, struct buffer work,
+                  struct compress_context *compctx,
                   const struct frame *frame)
 {
     if (buf->len <= 0)
@@ -153,9 +158,19 @@ stubv2_decompress(struct buffer *buf, struct buffer work, struct compress_contex
     }
 }
 
-const struct compress_alg compv2_stub_alg = { "stubv2", stub_compress_init, stub_compress_uninit,
-                                              stubv2_compress, stubv2_decompress };
+const struct compress_alg compv2_stub_alg = {
+    "stubv2",
+    stub_compress_init,
+    stub_compress_uninit,
+    stubv2_compress,
+    stubv2_decompress
+};
 
-const struct compress_alg comp_stub_alg = { "stub", stub_compress_init, stub_compress_uninit,
-                                            stub_compress, stub_decompress };
+const struct compress_alg comp_stub_alg = {
+    "stub",
+    stub_compress_init,
+    stub_compress_uninit,
+    stub_compress,
+    stub_decompress
+};
 #endif /* USE_STUB */

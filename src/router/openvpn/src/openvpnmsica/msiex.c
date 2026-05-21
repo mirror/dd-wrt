@@ -2,7 +2,7 @@
  *  openvpnmsica -- Custom Action DLL to provide OpenVPN-specific support to MSI packages
  *                  https://community.openvpn.net/openvpn/wiki/OpenVPNMSICA
  *
- *  Copyright (C) 2018-2026 Simon Rozman <simon@rozman.si>
+ *  Copyright (C) 2018-2024 Simon Rozman <simon@rozman.si>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -14,7 +14,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, see <https://www.gnu.org/licenses/>.
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -34,7 +35,10 @@
 
 
 UINT
-msi_get_string(_In_ MSIHANDLE hInstall, _In_z_ LPCWSTR szName, _Out_ LPWSTR *pszValue)
+msi_get_string(
+    _In_ MSIHANDLE hInstall,
+    _In_z_ LPCTSTR szName,
+    _Out_ LPTSTR *pszValue)
 {
     if (pszValue == NULL)
     {
@@ -42,29 +46,29 @@ msi_get_string(_In_ MSIHANDLE hInstall, _In_z_ LPCWSTR szName, _Out_ LPWSTR *psz
     }
 
     /* Try with stack buffer first. */
-    WCHAR szBufStack[128];
+    TCHAR szBufStack[128];
     DWORD dwLength = _countof(szBufStack);
     UINT uiResult = MsiGetProperty(hInstall, szName, szBufStack, &dwLength);
     if (uiResult == ERROR_SUCCESS)
     {
         /* Copy from stack. */
-        *pszValue = (LPWSTR)malloc(++dwLength * sizeof(WCHAR));
+        *pszValue = (LPTSTR)malloc(++dwLength * sizeof(TCHAR));
         if (*pszValue == NULL)
         {
-            msg(M_FATAL, "%s: malloc(%u) failed", dwLength * sizeof(WCHAR));
+            msg(M_FATAL, "%s: malloc(%u) failed", dwLength * sizeof(TCHAR));
             return ERROR_OUTOFMEMORY;
         }
 
-        memcpy(*pszValue, szBufStack, dwLength * sizeof(WCHAR));
+        memcpy(*pszValue, szBufStack, dwLength * sizeof(TCHAR));
         return ERROR_SUCCESS;
     }
     else if (uiResult == ERROR_MORE_DATA)
     {
         /* Allocate on heap and retry. */
-        LPWSTR szBufHeap = (LPWSTR)malloc(++dwLength * sizeof(WCHAR));
+        LPTSTR szBufHeap = (LPTSTR)malloc(++dwLength * sizeof(TCHAR));
         if (szBufHeap == NULL)
         {
-            msg(M_FATAL, "%s: malloc(%u) failed", __FUNCTION__, dwLength * sizeof(WCHAR));
+            msg(M_FATAL, "%s: malloc(%u) failed", __FUNCTION__, dwLength * sizeof(TCHAR));
             return ERROR_OUTOFMEMORY;
         }
 
@@ -81,8 +85,7 @@ msi_get_string(_In_ MSIHANDLE hInstall, _In_z_ LPCWSTR szName, _Out_ LPWSTR *psz
     }
     else
     {
-        SetLastError(uiResult); /* MSDN does not mention MsiGetProperty() to set GetLastError(). But
-                                   we do have an error code. Set last error manually. */
+        SetLastError(uiResult); /* MSDN does not mention MsiGetProperty() to set GetLastError(). But we do have an error code. Set last error manually. */
         msg(M_NONFATAL | M_ERRNO, "%s: MsiGetProperty failed", __FUNCTION__);
         return uiResult;
     }
@@ -90,7 +93,10 @@ msi_get_string(_In_ MSIHANDLE hInstall, _In_z_ LPCWSTR szName, _Out_ LPWSTR *psz
 
 
 UINT
-msi_get_record_string(_In_ MSIHANDLE hRecord, _In_ unsigned int iField, _Out_ LPWSTR *pszValue)
+msi_get_record_string(
+    _In_ MSIHANDLE hRecord,
+    _In_ unsigned int iField,
+    _Out_ LPTSTR *pszValue)
 {
     if (pszValue == NULL)
     {
@@ -98,29 +104,29 @@ msi_get_record_string(_In_ MSIHANDLE hRecord, _In_ unsigned int iField, _Out_ LP
     }
 
     /* Try with stack buffer first. */
-    WCHAR szBufStack[128];
+    TCHAR szBufStack[128];
     DWORD dwLength = _countof(szBufStack);
     UINT uiResult = MsiRecordGetString(hRecord, iField, szBufStack, &dwLength);
     if (uiResult == ERROR_SUCCESS)
     {
         /* Copy from stack. */
-        *pszValue = (LPWSTR)malloc(++dwLength * sizeof(WCHAR));
+        *pszValue = (LPTSTR)malloc(++dwLength * sizeof(TCHAR));
         if (*pszValue == NULL)
         {
-            msg(M_FATAL, "%s: malloc(%u) failed", __FUNCTION__, dwLength * sizeof(WCHAR));
+            msg(M_FATAL, "%s: malloc(%u) failed", __FUNCTION__, dwLength * sizeof(TCHAR));
             return ERROR_OUTOFMEMORY;
         }
 
-        memcpy(*pszValue, szBufStack, dwLength * sizeof(WCHAR));
+        memcpy(*pszValue, szBufStack, dwLength * sizeof(TCHAR));
         return ERROR_SUCCESS;
     }
     else if (uiResult == ERROR_MORE_DATA)
     {
         /* Allocate on heap and retry. */
-        LPWSTR szBufHeap = (LPWSTR)malloc(++dwLength * sizeof(WCHAR));
+        LPTSTR szBufHeap = (LPTSTR)malloc(++dwLength * sizeof(TCHAR));
         if (szBufHeap == NULL)
         {
-            msg(M_FATAL, "%s: malloc(%u) failed", __FUNCTION__, dwLength * sizeof(WCHAR));
+            msg(M_FATAL, "%s: malloc(%u) failed", __FUNCTION__, dwLength * sizeof(TCHAR));
             return ERROR_OUTOFMEMORY;
         }
 
@@ -137,8 +143,7 @@ msi_get_record_string(_In_ MSIHANDLE hRecord, _In_ unsigned int iField, _Out_ LP
     }
     else
     {
-        SetLastError(uiResult); /* MSDN does not mention MsiRecordGetString() to set GetLastError().
-                                   But we do have an error code. Set last error manually. */
+        SetLastError(uiResult); /* MSDN does not mention MsiRecordGetString() to set GetLastError(). But we do have an error code. Set last error manually. */
         msg(M_NONFATAL | M_ERRNO, "%s: MsiRecordGetString failed", __FUNCTION__);
         return uiResult;
     }
@@ -146,7 +151,10 @@ msi_get_record_string(_In_ MSIHANDLE hRecord, _In_ unsigned int iField, _Out_ LP
 
 
 UINT
-msi_format_record(_In_ MSIHANDLE hInstall, _In_ MSIHANDLE hRecord, _Out_ LPWSTR *pszValue)
+msi_format_record(
+    _In_ MSIHANDLE hInstall,
+    _In_ MSIHANDLE hRecord,
+    _Out_ LPTSTR *pszValue)
 {
     if (pszValue == NULL)
     {
@@ -154,29 +162,29 @@ msi_format_record(_In_ MSIHANDLE hInstall, _In_ MSIHANDLE hRecord, _Out_ LPWSTR 
     }
 
     /* Try with stack buffer first. */
-    WCHAR szBufStack[128];
+    TCHAR szBufStack[128];
     DWORD dwLength = _countof(szBufStack);
     UINT uiResult = MsiFormatRecord(hInstall, hRecord, szBufStack, &dwLength);
     if (uiResult == ERROR_SUCCESS)
     {
         /* Copy from stack. */
-        *pszValue = (LPWSTR)malloc(++dwLength * sizeof(WCHAR));
+        *pszValue = (LPTSTR)malloc(++dwLength * sizeof(TCHAR));
         if (*pszValue == NULL)
         {
-            msg(M_FATAL, "%s: malloc(%u) failed", __FUNCTION__, dwLength * sizeof(WCHAR));
+            msg(M_FATAL, "%s: malloc(%u) failed", __FUNCTION__, dwLength * sizeof(TCHAR));
             return ERROR_OUTOFMEMORY;
         }
 
-        memcpy(*pszValue, szBufStack, dwLength * sizeof(WCHAR));
+        memcpy(*pszValue, szBufStack, dwLength * sizeof(TCHAR));
         return ERROR_SUCCESS;
     }
     else if (uiResult == ERROR_MORE_DATA)
     {
         /* Allocate on heap and retry. */
-        LPWSTR szBufHeap = (LPWSTR)malloc(++dwLength * sizeof(WCHAR));
+        LPTSTR szBufHeap = (LPTSTR)malloc(++dwLength * sizeof(TCHAR));
         if (szBufHeap == NULL)
         {
-            msg(M_FATAL, "%s: malloc(%u) failed", __FUNCTION__, dwLength * sizeof(WCHAR));
+            msg(M_FATAL, "%s: malloc(%u) failed", __FUNCTION__, dwLength * sizeof(TCHAR));
             return ERROR_OUTOFMEMORY;
         }
 
@@ -193,8 +201,7 @@ msi_format_record(_In_ MSIHANDLE hInstall, _In_ MSIHANDLE hRecord, _Out_ LPWSTR 
     }
     else
     {
-        SetLastError(uiResult); /* MSDN does not mention MsiFormatRecord() to set GetLastError().
-                                   But we do have an error code. Set last error manually. */
+        SetLastError(uiResult); /* MSDN does not mention MsiFormatRecord() to set GetLastError(). But we do have an error code. Set last error manually. */
         msg(M_NONFATAL | M_ERRNO, "%s: MsiFormatRecord failed", __FUNCTION__);
         return uiResult;
     }
@@ -202,8 +209,11 @@ msi_format_record(_In_ MSIHANDLE hInstall, _In_ MSIHANDLE hRecord, _Out_ LPWSTR 
 
 
 UINT
-msi_format_field(_In_ MSIHANDLE hInstall, _In_ MSIHANDLE hRecord, _In_ unsigned int iField,
-                 _Out_ LPWSTR *pszValue)
+msi_format_field(
+    _In_ MSIHANDLE hInstall,
+    _In_ MSIHANDLE hRecord,
+    _In_ unsigned int iField,
+    _Out_ LPTSTR *pszValue)
 {
     if (pszValue == NULL)
     {
@@ -211,7 +221,7 @@ msi_format_field(_In_ MSIHANDLE hInstall, _In_ MSIHANDLE hRecord, _In_ unsigned 
     }
 
     /* Read string to format. */
-    LPWSTR szValue = NULL;
+    LPTSTR szValue = NULL;
     UINT uiResult = msi_get_record_string(hRecord, iField, &szValue);
     if (uiResult != ERROR_SUCCESS)
     {
@@ -237,8 +247,7 @@ msi_format_field(_In_ MSIHANDLE hInstall, _In_ MSIHANDLE hRecord, _In_ unsigned 
     uiResult = MsiRecordSetString(hRecordEx, 0, szValue);
     if (uiResult != ERROR_SUCCESS)
     {
-        SetLastError(uiResult); /* MSDN does not mention MsiRecordSetString() to set GetLastError().
-                                   But we do have an error code. Set last error manually. */
+        SetLastError(uiResult); /* MSDN does not mention MsiRecordSetString() to set GetLastError(). But we do have an error code. Set last error manually. */
         msg(M_NONFATAL | M_ERRNO, "%s: MsiRecordSetString failed", __FUNCTION__);
         goto cleanup_hRecordEx;
     }

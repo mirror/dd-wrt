@@ -14,22 +14,26 @@ Overview of current release
 
 Getting started (Linux)
 -----------------------
-The new DCO linux kernel module (namely `ovpn`) has been merged upstream
-as of linux-6.16. From this kernel version onwards you directly get
-the DCO module as shipped by your kernel.
-NOTE: the new `ovpn` Linux kernel module is compatible only with OpenVPN
-2.7 and greater.
+- Use a recent Linux kernel. Linux 5.4.0 and newer are known to work with
+  ovpn-dco.
 
-Alternatively, if you run an older kernel or if you want to use a more
-recent DCO module than the one shipped by your kernel, you need to use
-the ovpn-backports project.
+Get the ovpn-dco module from one these urls and build it:
 
-To learn how to use the ovpn-backports project and build your own DCO
-kernel module, please refer to the README file available at:
+* https://gitlab.com/openvpn/ovpn-dco
+* https://github.com/OpenVPN/ovpn-dco
 
-  https://github.com/OpenVPN/ovpn-backports/blob/main/README.md
+e.g.
 
-Then clone and build OpenVPN (or use OpenVPN 2.7+). For example:
+    git clone https://github.com/OpenVPN/ovpn-dco
+    cd ovpn-dco
+    make
+    sudo make install
+
+If you want to report bugs please ensure to compile ovpn-dco with
+`make DEBUG=1` and include any debug message being printed by the
+kernel (you can view those messages with `dmesg`).
+
+Clone and build OpenVPN (or use OpenVPN 2.6+). For example:
 
     git clone https://github.com/openvpn/openvpn.git
     cd openvpn
@@ -44,8 +48,8 @@ support. If the configuration contains an option that is incompatible with
 data channel offloading, OpenVPN will automatically disable DCO support and
 warn the user.
 
-Should OpenVPN be configured to use a feature that is not supported by ovpn
-or should the ovpn kernel module not be available on the system, you will
+Should OpenVPN be configured to use a feature that is not supported by ovpn-dco
+or should the ovpn-dco kernel module not be available on the system, you will
 see a message like
 
     Note: Kernel support for ovpn-dco missing, disabling data channel offload.
@@ -127,3 +131,4 @@ Current implementation limitations
 - `--persist-tun` not tested;
 - IPv6 mapped IPv4 addresses need Linux 5.4.189+/5.10.110+/5.12+ to work;
 - some incompatible options may not properly fallback to non-dco;
+- no per client statistics. Only total statistics available on the interface.
