@@ -1,0 +1,2 @@
+compat-dirname.lo: ../../../src/compat/compat-dirname.c ../../config.h
+../../config.h:

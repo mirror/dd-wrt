@@ -1,0 +1,2 @@
+compat-daemon.lo: ../../../src/compat/compat-daemon.c ../../config.h
+../../config.h:

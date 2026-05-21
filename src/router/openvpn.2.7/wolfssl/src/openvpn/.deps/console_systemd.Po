@@ -1,0 +1,2 @@
+console_systemd.o: ../../../src/openvpn/console_systemd.c ../../config.h
+../../config.h:

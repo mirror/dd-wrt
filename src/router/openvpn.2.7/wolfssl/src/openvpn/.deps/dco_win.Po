@@ -1,0 +1,2 @@
+dco_win.o: ../../../src/openvpn/dco_win.c ../../config.h
+../../config.h:

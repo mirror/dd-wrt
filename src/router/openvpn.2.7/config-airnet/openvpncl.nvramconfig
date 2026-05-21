@@ -1,0 +1,8 @@
+ "openvpncl_enable"   "OpenVPN Enable"   "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "openvpncl_ca"  "OpenVPN Public Key"  "NULL"   "FALSE" "0"
+ "openvpncl_client"  "Client Public Key"  "NULL"   "FALSE" "0"
+ "openvpncl_key"  "Client Private Key"  "NULL"   "FALSE" "0"
+ "openvpncl_config"  "OpenVPN Client config"  "NULL"   "FALSE" "0"
+ "openvpncl_routeup"  "OpenVPN route-up script"  "NULL"   "FALSE" "0"
+ "openvpncl_routedown"  "OpenVPN route-down script"  "NULL"   "FALSE" "0"
+ 

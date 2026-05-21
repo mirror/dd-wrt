@@ -1,0 +1,2 @@
+dco_freebsd.o: ../../../src/openvpn/dco_freebsd.c ../../config.h
+../../config.h:
