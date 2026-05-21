@@ -36,8 +36,8 @@
 /* Enable debugging support */
 #undef ENABLE_DEBUG
 
-/* We have persist tun capability */
-#undef ENABLE_FEATURE_TUN_PERSIST
+/* Enable dns-updown hook by default */
+#undef ENABLE_DNS_UPDOWN_BY_DEFAULT
 
 /* Enable internal fragmentation support */
 #undef ENABLE_FRAGMENT
@@ -53,6 +53,9 @@
 
 /* Enable management server capability */
 #undef ENABLE_MANAGEMENT
+
+/* Enable NTLMv2 proxy support */
+#undef ENABLE_NTLM
 
 /* Enable OFB and CFB cipher modes */
 #undef ENABLE_OFB_CFB_MODE
@@ -78,32 +81,26 @@
 /* Enable systemd integration */
 #undef ENABLE_SYSTEMD
 
-/* Enable --x509-username-field feature */
-#undef ENABLE_X509ALTUSERNAME
-
 /* Include options.h from wolfSSL library */
 #undef EXTERNAL_OPTS_OPENVPN
-
-/* Define to 1 if you have the 'access' function. */
-#undef HAVE_ACCESS
-
-/* Compiler supports anonymous unions */
-#undef HAVE_ANONYMOUS_UNION_SUPPORT
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
-/* Define to 1 if you have the 'basename' function. */
+/* Define to 1 if you have the `basename' function. */
 #undef HAVE_BASENAME
 
-/* Define to 1 if you have the 'chdir' function. */
+/* Define to 1 if you have the `chdir' function. */
 #undef HAVE_CHDIR
 
-/* Define to 1 if you have the 'chroot' function. */
+/* Define to 1 if you have the `chroot' function. */
 #undef HAVE_CHROOT
 
-/* Define to 1 if you have the 'chsize' function. */
+/* Define to 1 if you have the `chsize' function. */
 #undef HAVE_CHSIZE
+
+/* Define to 1 if you have the <cmocka_version.h> header file. */
+#undef HAVE_CMOCKA_VERSION_H
 
 /* struct cmsghdr needed for extended socket error support */
 #undef HAVE_CMSGHDR
@@ -111,38 +108,10 @@
 /* extra version available in config-version.h */
 #undef HAVE_CONFIG_VERSION_H
 
-/* Define to 1 if you have the 'daemon' function. */
+/* Define to 1 if you have the `daemon' function. */
 #undef HAVE_DAEMON
 
-/* Define to 1 if you have the declaration of 'SIGHUP', and to 0 if you don't.
-   */
-#undef HAVE_DECL_SIGHUP
-
-/* Define to 1 if you have the declaration of 'SIGINT', and to 0 if you don't.
-   */
-#undef HAVE_DECL_SIGINT
-
-/* Define to 1 if you have the declaration of 'SIGTERM', and to 0 if you
-   don't. */
-#undef HAVE_DECL_SIGTERM
-
-/* Define to 1 if you have the declaration of 'SIGUSR1', and to 0 if you
-   don't. */
-#undef HAVE_DECL_SIGUSR1
-
-/* Define to 1 if you have the declaration of 'SIGUSR2', and to 0 if you
-   don't. */
-#undef HAVE_DECL_SIGUSR2
-
-/* Define to 1 if you have the declaration of 'SO_MARK', and to 0 if you
-   don't. */
-#undef HAVE_DECL_SO_MARK
-
-/* Define to 1 if you have the declaration of 'TUNSETPERSIST', and to 0 if you
-   don't. */
-#undef HAVE_DECL_TUNSETPERSIST
-
-/* Define to 1 if you have the 'dirname' function. */
+/* Define to 1 if you have the `dirname' function. */
 #undef HAVE_DIRNAME
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
@@ -151,55 +120,52 @@
 /* Define to 1 if you have the <dmalloc.h> header file. */
 #undef HAVE_DMALLOC_H
 
-/* Define to 1 if you have the 'dup' function. */
+/* Define to 1 if you have the `dup' function. */
 #undef HAVE_DUP
 
-/* Define to 1 if you have the 'dup2' function. */
+/* Define to 1 if you have the `dup2' function. */
 #undef HAVE_DUP2
 
-/* Define to 1 if you have the 'ENGINE_load_builtin_engines' function. */
+/* Define to 1 if you have the `ENGINE_load_builtin_engines' function. */
 #undef HAVE_ENGINE_LOAD_BUILTIN_ENGINES
 
-/* Define to 1 if you have the 'ENGINE_register_all_complete' function. */
+/* Define to 1 if you have the `ENGINE_register_all_complete' function. */
 #undef HAVE_ENGINE_REGISTER_ALL_COMPLETE
 
-/* Define to 1 if you have the 'epoll_create' function. */
+/* Define to 1 if you have the `epoll_create' function. */
 #undef HAVE_EPOLL_CREATE
 
 /* Define to 1 if you have the <err.h> header file. */
 #undef HAVE_ERR_H
 
-/* Define to 1 if you have the 'execve' function. */
+/* Define to 1 if you have the `execve' function. */
 #undef HAVE_EXECVE
-
-/* Crypto library supports keying material exporter */
-#undef HAVE_EXPORT_KEYING_MATERIAL
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
-/* Define to 1 if you have the 'flock' function. */
+/* Define to 1 if you have the `flock' function. */
 #undef HAVE_FLOCK
 
-/* Define to 1 if you have the 'fork' function. */
+/* Define to 1 if you have the `fork' function. */
 #undef HAVE_FORK
 
-/* Define to 1 if you have the 'ftruncate' function. */
+/* Define to 1 if you have the `ftruncate' function. */
 #undef HAVE_FTRUNCATE
 
-/* Define to 1 if you have the 'getgrnam' function. */
+/* Define to 1 if you have the `getgrnam' function. */
 #undef HAVE_GETGRNAM
 
-/* Define to 1 if you have the 'getpeereid' function. */
+/* Define to 1 if you have the `getpeereid' function. */
 #undef HAVE_GETPEEREID
 
-/* Define to 1 if you have the 'getpwnam' function. */
+/* Define to 1 if you have the `getpwnam' function. */
 #undef HAVE_GETPWNAM
 
-/* Define to 1 if you have the 'getrlimit' function. */
+/* Define to 1 if you have the `getrlimit' function. */
 #undef HAVE_GETRLIMIT
 
-/* Define to 1 if you have the 'gettimeofday' function. */
+/* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
 
 /* Define to 1 if you have the <grp.h> header file. */
@@ -208,20 +174,11 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if the system has the type 'in_addr_t'. */
-#undef HAVE_IN_ADDR_T
-
 /* struct in_pktinfo needed for IP_PKTINFO support */
 #undef HAVE_IN_PKTINFO
 
-/* Define to 1 if the system has the type 'in_port_t'. */
-#undef HAVE_IN_PORT_T
-
 /* Define to 1 if you have the <io.h> header file. */
 #undef HAVE_IO_H
-
-/* struct iphdr needed for IPv6 support */
-#undef HAVE_IPHDR
 
 /* struct in_pktinfo.ipi_spec_dst needed for IP_PKTINFO support */
 #undef HAVE_IPI_SPEC_DST
@@ -232,23 +189,14 @@
 /* Define to 1 if you have the <libgen.h> header file. */
 #undef HAVE_LIBGEN_H
 
-/* Define to 1 if you have the 'lz4' library (-llz4). */
+/* Define to 1 if you have the `lz4' library (-llz4). */
 #undef HAVE_LIBLZ4
 
-/* Define to 1 if you have the 'wolfssl' library (-lwolfssl). */
+/* Define to 1 if you have the `wolfssl' library (-lwolfssl). */
 #undef HAVE_LIBWOLFSSL
-
-/* Define to 1 if you have the <linux/errqueue.h> header file. */
-#undef HAVE_LINUX_ERRQUEUE_H
 
 /* Define to 1 if you have the <linux/if_tun.h> header file. */
 #undef HAVE_LINUX_IF_TUN_H
-
-/* Define to 1 if you have the <linux/sockios.h> header file. */
-#undef HAVE_LINUX_SOCKIOS_H
-
-/* Define to 1 if you have the <linux/types.h> header file. */
-#undef HAVE_LINUX_TYPES_H
 
 /* Define to 1 if you have the <lz4.h> header file. */
 #undef HAVE_LZ4_H
@@ -259,31 +207,10 @@
 /* Define to 1 if you have the <lzo/lzo1x.h> header file. */
 #undef HAVE_LZO_LZO1X_H
 
-/* Define to 1 if you have the 'mbedtls_cipher_check_tag' function. */
-#undef HAVE_MBEDTLS_CIPHER_CHECK_TAG
-
-/* Define to 1 if you have the 'mbedtls_cipher_write_tag' function. */
-#undef HAVE_MBEDTLS_CIPHER_WRITE_TAG
-
-/* Use mbedtls_ctr_drbg_update_ret from mbed TLS */
-#undef HAVE_MBEDTLS_CTR_DRBG_UPDATE_RET
-
-/* no */
-#undef HAVE_MBEDTLS_PSA_CRYPTO_H
-
-/* no */
-#undef HAVE_MBEDTLS_SSL_CONF_EXPORT_KEYS_EXT_CB
-
-/* no */
-#undef HAVE_MBEDTLS_SSL_SET_EXPORT_KEYS_CB
-
-/* no */
-#undef HAVE_MBEDTLS_SSL_TLS_PRF
-
 /* Define to 1 if you have the <minix/config.h> header file. */
 #undef HAVE_MINIX_CONFIG_H
 
-/* Define to 1 if you have the 'mlockall' function. */
+/* Define to 1 if you have the `mlockall' function. */
 #undef HAVE_MLOCKALL
 
 /* struct msghdr needed for extended socket error support */
@@ -294,9 +221,6 @@
 
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
-
-/* Define to 1 if you have the <netinet/in_systm.h> header file. */
-#undef HAVE_NETINET_IN_SYSTM_H
 
 /* Define to 1 if you have the <netinet/ip.h> header file. */
 #undef HAVE_NETINET_IP_H
@@ -313,16 +237,13 @@
 /* Define to 1 if you have the <net/if_tun.h> header file. */
 #undef HAVE_NET_IF_TUN_H
 
-/* Define to 1 if you have the <net/if_utun.h> header file. */
-#undef HAVE_NET_IF_UTUN_H
-
 /* Define to 1 if you have the <net/tun/if_tun.h> header file. */
 #undef HAVE_NET_TUN_IF_TUN_H
 
-/* Define to 1 if you have the 'nice' function. */
+/* Define to 1 if you have the `nice' function. */
 #undef HAVE_NICE
 
-/* Define to 1 if you have the 'openlog' function. */
+/* Define to 1 if you have the `openlog' function. */
 #undef HAVE_OPENLOG
 
 /* OpenSSL engine support available */
@@ -331,13 +252,13 @@
 /* Define to 1 if you have the <poll.h> header file. */
 #undef HAVE_POLL_H
 
+/* Define to 1 if you have the <psa/crypto.h> header file. */
+#undef HAVE_PSA_CRYPTO_H
+
 /* Define to 1 if you have the <pwd.h> header file. */
 #undef HAVE_PWD_H
 
-/* Define to 1 if you have the 'readv' function. */
-#undef HAVE_READV
-
-/* Define to 1 if you have the 'recvmsg' function. */
+/* Define to 1 if you have the `recvmsg' function. */
 #undef HAVE_RECVMSG
 
 /* Define to 1 if you have the <resolv.h> header file. */
@@ -346,25 +267,22 @@
 /* sa_family_t, needed to hold AF_* info */
 #undef HAVE_SA_FAMILY_T
 
-/* Define to 1 if you have the 'sd_booted' function. */
-#undef HAVE_SD_BOOTED
-
-/* Define to 1 if you have the 'sendmsg' function. */
+/* Define to 1 if you have the `sendmsg' function. */
 #undef HAVE_SENDMSG
 
-/* Define to 1 if you have the 'setgid' function. */
+/* Define to 1 if you have the `setgid' function. */
 #undef HAVE_SETGID
 
-/* Define to 1 if you have the 'setgroups' function. */
+/* Define to 1 if you have the `setgroups' function. */
 #undef HAVE_SETGROUPS
 
-/* Define to 1 if you have the 'setsid' function. */
+/* Define to 1 if you have the `setsid' function. */
 #undef HAVE_SETSID
 
-/* Define to 1 if you have the 'setuid' function. */
+/* Define to 1 if you have the `setuid' function. */
 #undef HAVE_SETUID
 
-/* Define to 1 if you have the 'SSL_CTX_new' function. */
+/* Define to 1 if you have the `SSL_CTX_new' function. */
 #undef HAVE_SSL_CTX_NEW
 
 /* Define to 1 if you have the <stdint.h> header file. */
@@ -385,20 +303,14 @@
 /* Define to 1 if you have the <stropts.h> header file. */
 #undef HAVE_STROPTS_H
 
-/* Define to 1 if you have the 'strsep' function. */
+/* Define to 1 if you have the `strsep' function. */
 #undef HAVE_STRSEP
 
-/* Define to 1 if you have the 'syslog' function. */
+/* Define to 1 if you have the `syslog' function. */
 #undef HAVE_SYSLOG
 
 /* Define to 1 if you have the <syslog.h> header file. */
 #undef HAVE_SYSLOG_H
-
-/* Define to 1 if you have the 'system' function. */
-#undef HAVE_SYSTEM
-
-/* Define to 1 if you have the <systemd/sd-daemon.h> header file. */
-#undef HAVE_SYSTEMD_SD_DAEMON_H
 
 /* Define to 1 if you have the <sys/epoll.h> header file. */
 #undef HAVE_SYS_EPOLL_H
@@ -448,16 +360,13 @@
 /* Define to 1 if you have the <termios.h> header file. */
 #undef HAVE_TERMIOS_H
 
-/* Define to 1 if you have the 'time' function. */
-#undef HAVE_TIME
-
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
 /* Define to 1 if you have the <valgrind/memcheck.h> header file. */
 #undef HAVE_VALGRIND_MEMCHECK_H
 
-/* Define to 1 if you have the 'vfork' function. */
+/* Define to 1 if you have the `vfork' function. */
 #undef HAVE_VFORK
 
 /* Define to 1 if you have the <vfork.h> header file. */
@@ -466,14 +375,11 @@
 /* Define to 1 if you have the <wchar.h> header file. */
 #undef HAVE_WCHAR_H
 
-/* Define to 1 if 'fork' works. */
+/* Define to 1 if `fork' works. */
 #undef HAVE_WORKING_FORK
 
-/* Define to 1 if 'vfork' works. */
+/* Define to 1 if `vfork' works. */
 #undef HAVE_WORKING_VFORK
-
-/* Define to 1 if you have the 'writev' function. */
-#undef HAVE_WRITEV
 
 /* Path to ifconfig tool */
 #undef IFCONFIG_PATH
@@ -495,6 +401,9 @@
 
 /* Version in windows resource format */
 #undef OPENVPN_VERSION_RESOURCE
+
+/* Path to p11tool */
+#undef P11TOOL_PATH
 
 /* Name of package */
 #undef PACKAGE
@@ -523,37 +432,19 @@
 /* Path to route tool */
 #undef ROUTE_PATH
 
-/* SIGHUP replacement */
-#undef SIGHUP
+/* Path to softhsm2 module */
+#undef SOFTHSM2_MODULE_PATH
 
-/* SIGINT replacement */
-#undef SIGINT
+/* Path to softhsm2-util */
+#undef SOFTHSM2_UTIL_PATH
 
-/* SIGTERM replacement */
-#undef SIGTERM
-
-/* SIGUSR1 replacement */
-#undef SIGUSR1
-
-/* SIGUSR2 replacement */
-#undef SIGUSR2
-
-/* The size of 'unsigned int', as computed by sizeof. */
-#undef SIZEOF_UNSIGNED_INT
-
-/* The size of 'unsigned long', as computed by sizeof. */
-#undef SIZEOF_UNSIGNED_LONG
-
-/* Define to 1 if all of the C89 standard headers exist (not just the ones
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
 /* Path to systemd-ask-password tool */
 #undef SYSTEMD_ASK_PASSWORD_PATH
-
-/* systemd is newer than v216 */
-#undef SYSTEMD_NEWER_THAN_216
 
 /* The tap-windows id */
 #undef TAP_WIN_COMPONENT_ID
@@ -579,6 +470,9 @@
 /* Are we running on FreeBSD? */
 #undef TARGET_FREEBSD
 
+/* Are we running Haiku? */
+#undef TARGET_HAIKU
+
 /* Are we running on Linux? */
 #undef TARGET_LINUX
 
@@ -600,7 +494,7 @@
 /* dlopen libpam */
 #undef USE_PAM_DLOPEN
 
-/* Enable extensions on AIX, Interix, z/OS.  */
+/* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
 # undef _ALL_SOURCE
 #endif
@@ -661,15 +555,11 @@
 #ifndef __STDC_WANT_IEC_60559_DFP_EXT__
 # undef __STDC_WANT_IEC_60559_DFP_EXT__
 #endif
-/* Enable extensions specified by C23 Annex F.  */
-#ifndef __STDC_WANT_IEC_60559_EXT__
-# undef __STDC_WANT_IEC_60559_EXT__
-#endif
 /* Enable extensions specified by ISO/IEC TS 18661-4:2015.  */
 #ifndef __STDC_WANT_IEC_60559_FUNCS_EXT__
 # undef __STDC_WANT_IEC_60559_FUNCS_EXT__
 #endif
-/* Enable extensions specified by C23 Annex H and ISO/IEC TS 18661-3:2015.  */
+/* Enable extensions specified by ISO/IEC TS 18661-3:2015.  */
 #ifndef __STDC_WANT_IEC_60559_TYPES_EXT__
 # undef __STDC_WANT_IEC_60559_TYPES_EXT__
 #endif
@@ -701,42 +591,17 @@
 /* Use custom user_settings.h file for wolfSSL library */
 #undef WOLFSSL_USER_SETTINGS
 
-/* Define to empty if 'const' does not conform to ANSI C. */
-#undef const
-
-/* Define as 'int' if <sys/types.h> doesn't define. */
-#undef gid_t
-
-/* Workaround missing in_addr_t */
-#undef in_addr_t
-
-/* Workaround missing in_port_t */
-#undef in_port_t
-
-/* Define to '__inline__' or '__inline' if that's what the C compiler
+/* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
 #undef inline
 #endif
 
-/* Define to 'long int' if <sys/types.h> does not define. */
-#undef off_t
-
 /* Define as a signed integer type capable of holding a process identifier. */
 #undef pid_t
-
-/* Define as 'unsigned int' if <stddef.h> doesn't define. */
-#undef size_t
 
 /* type to use in place of socklen_t if not defined */
 #undef socklen_t
 
-/* Define as 'int' if <sys/types.h> doesn't define. */
-#undef uid_t
-
-/* Define as 'fork' if 'vfork' does not work. */
+/* Define as `fork' if `vfork' does not work. */
 #undef vfork
-
-/* Define to empty if the keyword 'volatile' does not work. Warning: valid
-   code using 'volatile' can become incorrect without. Disable with care. */
-#undef volatile
