@@ -2186,6 +2186,9 @@ open_tun(const char *dev, const char *dev_type, const char *dev_node, struct tun
 
 #ifdef ENABLE_FEATURE_TUN_PERSIST
 
+#ifndef TUNSETGROUP
+#define TUNSETGROUP   _IOW('T', 206, int)
+#endif
 void
 tuncfg(const char *dev, const char *dev_type, const char *dev_node, int persist_mode,
        const char *username, const char *groupname, const struct tuntap_options *options,

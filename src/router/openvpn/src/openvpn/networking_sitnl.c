@@ -20,7 +20,7 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-
+#include <asm/types.h>
 #ifdef TARGET_LINUX
 
 #include "syshead.h"

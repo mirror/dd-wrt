@@ -25,6 +25,7 @@
  */
 #include <stddef.h>
 #include <stdbool.h>
+#include <asm/types.h>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"

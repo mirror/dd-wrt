@@ -549,6 +549,9 @@ socket_set_tcp_nodelay(socket_descriptor_t sd, int state)
 static inline void
 socket_set_mark(socket_descriptor_t sd, int mark)
 {
+#ifndef  SO_MARK
+#define SO_MARK			36
+#endif
 #if defined(TARGET_LINUX)
     if (mark && setsockopt(sd, SOL_SOCKET, SO_MARK, (void *)&mark, sizeof(mark)) != 0)
     {

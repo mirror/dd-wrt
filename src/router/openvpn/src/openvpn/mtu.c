@@ -23,7 +23,7 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-
+#include <asm/types.h>
 #include "syshead.h"
 
 #include "common.h"
