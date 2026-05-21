@@ -1,6 +1,6 @@
 libpcap-configure:
-	rm -f  libpcap.old/libpcap*.so*
-	cd libpcap.old ; ac_cv_linux_vers=2; ac_cv_prog_cc_c99=yes; ./configure \
+	rm -f libpcap/libpcap*.so*
+	cd libpcap ; ac_cv_linux_vers=2; ac_cv_prog_cc_c99=yes; ./configure \
 		--target=$(ARCH)-openwrt-linux \
 		--host=$(ARCH)-linux-uclibc  \
 		--libdir=/usr/lib \
@@ -16,13 +16,13 @@ libpcap-configure:
 		--disable-canusb --disable-can --disable-bluetooth \
 		CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -std=c99 -D_GNU_SOURCE -fPIC"
 libpcap:
-	rm -f $(TOP)/libpcap.old/libpcap.a
-	rm -f $(TOP)/libpcap.old/libpcap.so
-	$(MAKE) -C libpcap.old CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.so
-	cp -f $(TOP)/libpcap.old/libpcap.so* $(TOP)/libpcap/libpcap.so
+	rm -f $(TOP)/libpcap/libpcap.a
+	rm -f $(TOP)/libpcap/libpcap.so
+	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.so
+	cp -f $(TOP)/libpcap/libpcap.so* $(TOP)/libpcap/libpcap.so
 
 libpcap-install:
-	$(MAKE) -C libpcap.old install DESTDIR=$(INSTALLDIR)/libpcap
+	$(MAKE) -C libpcap install DESTDIR=$(INSTALLDIR)/libpcap
 	rm -rf $(INSTALLDIR)/libpcap/usr/bin
 	rm -rf $(INSTALLDIR)/libpcap/usr/include
 	rm -rf $(INSTALLDIR)/libpcap/usr/lib/pkgconfig

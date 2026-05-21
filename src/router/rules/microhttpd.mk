@@ -21,7 +21,6 @@ libmicrohttpd-configure:
 		--enable-epoll \
 		--disable-messages \
 		--with-pic \
-		ax_cv_have_epoll=yes \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections" LDFLAGS="$(LDLTO)" \
 		AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
