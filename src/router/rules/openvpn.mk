@@ -198,14 +198,14 @@ ifeq ($(CONFIG_OPENVPN_SSLSTATIC),y)
 	rm -f openssl/*.so*
 endif
 ifeq ($(CONFIG_WOLFSSL),y)
-	make -C $(OVPN)/wolfssl
+	-make -C $(OVPN)/wolfssl
 else
 	make -C $(OVPN)/openssl
 endif
 
 openvpn-install:
 ifeq ($(CONFIG_WOLFSSL),y)
-	make -C $(OVPN)/wolfssl install DESTDIR=$(INSTALLDIR)/openvpn
+	-make -C $(OVPN)/wolfssl install DESTDIR=$(INSTALLDIR)/openvpn
 else
 	make -C $(OVPN)/openssl install DESTDIR=$(INSTALLDIR)/openvpn
 endif

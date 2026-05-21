@@ -10,11 +10,15 @@ json-c-configure:
 	make -C json-c
 	-mkdir -p $(TOP)/_staging
 	make -C json-c install
+	rm -f $(TOP)/_staging/usr/include/json
+	cd $(TOP)/_staging/usr/include && ln -s json-c json
 
 json-c:
 	make -C json-c
 	-mkdir -p $(TOP)/_staging
 	make -C json-c install
+	rm -f $(TOP)/_staging/usr/include/json
+	cd $(TOP)/_staging/usr/include && ln -s json-c json
 
 json-c-install:
 	install -D json-c/.libs/libjson-c.so.2.0.2 $(INSTALLDIR)/json-c/usr/lib/libjson-c.so.2.0.2

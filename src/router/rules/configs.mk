@@ -31,12 +31,11 @@ obj-$(CONFIG_DNSMASQ) += dnsmasq
 obj-$(CONFIG_DNSCRYPT) += libsodium dnscrypt
 obj-$(CONFIG_ETHTOOL) += libmnl ethtool
 obj-$(CONFIG_MOXA) += moxa
-obj-$(CONFIG_DANTE) += libtirpc dante
-ifeq ($(CONFIG_IPV6),y)
-obj-$(CONFIG_IPTABLES) += iptables-new
-else
+#ifeq ($(CONFIG_IPV6),y)
+#obj-$(CONFIG_IPTABLES) += iptables-new
+#else
 obj-$(CONFIG_IPTABLES) += iptables
-endif
+#endif
 ifeq ($(KERNELVERSION),6.1-nss)
 #obj-$(CONFIG_IPV6) += nat46
 obj-y += portscan

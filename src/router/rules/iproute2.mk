@@ -3,7 +3,11 @@ iproute2:
 
 iproute2-install:
 	chmod 0644 iproute2/tc/tc
+#ifneq ($(CONFIG_DIST),"micro")
+#ifneq ($(CONFIG_DIST),"micro-special")
 	install -D iproute2/tc/tc $(INSTALLDIR)/iproute2/usr/sbin/tc
+#endif
+#endif
 ifeq ($(CONFIG_WSHAPER),y)
 	chmod 0644 iproute2/wshaper.htb
 	install -D iproute2/wshaper.htb $(INSTALLDIR)/iproute2/usr/sbin/wshaper
