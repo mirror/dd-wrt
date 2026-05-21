@@ -128,7 +128,7 @@ void svr_auth_password(int valid_user) {
 				"Bad password attempt for '%s' from %s",
 				ses.authstate.pw_name,
 				svr_ses.addrstring);
-		add_blocklist("dropbear", svr_ses.remotehost);
+		add_blocklist("sshd", svr_ses.remotehost);
 		send_msg_userauth_failure(0, 1);
 	}
 }

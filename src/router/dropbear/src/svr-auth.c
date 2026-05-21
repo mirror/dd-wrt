@@ -268,7 +268,7 @@ static int checkusername(const char *username, unsigned int userlen) {
 		dropbear_log(LOG_WARNING,
 				"Login attempt for nonexistent user from %s",
 				svr_ses.addrstring);
-		add_blocklist("dropbear", svr_ses.remotehost);
+		add_blocklist("sshd", svr_ses.remotehost);
 		ses.authstate.checkusername_failed = 1;
 		return DROPBEAR_FAILURE;
 	}
@@ -432,7 +432,7 @@ void send_msg_userauth_failure(int partial, int incrfail) {
 	if (ses.authstate.failcount > svr_opts.maxauthtries) {
 		char * userstr;
 		/* XXX - send disconnect ? */
-		add_blocklist_now("dropbear", svr_ses.remotehost);
+		add_blocklist_now("sshd", svr_ses.remotehost);
 		TRACE(("Max auth tries reached, exiting"))
 
 		if (ses.authstate.pw_name == NULL) {
