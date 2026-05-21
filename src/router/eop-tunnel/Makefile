@@ -12,7 +12,9 @@ endif
 MODULE:=eop-tunnel
 
 all: install
+	@true
 	-make -C mtik
+	@true
 
 clean:
 	-make -C mtik clean
