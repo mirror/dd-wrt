@@ -12,12 +12,10 @@ endif
 MODULE:=eop-tunnel
 
 all: install
-	@true
-	-make -C mtik
-	@true
+	@-make -C mtik
 
 clean:
-	-make -C mtik clean
+	@-make -C mtik clean
 
 install: all
 	install -d $(INSTALLDIR)/etc
