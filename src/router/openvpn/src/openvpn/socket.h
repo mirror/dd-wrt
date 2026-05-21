@@ -617,8 +617,14 @@ int link_socket_read_udp_posix(struct link_socket *sock, struct buffer *buf,
 
 /* read a TCP or UDP packet from link */
 static inline int
-link_socket_read(struct link_socket *sock, struct buffer *buf, struct link_socket_actual *from)
+link_socket_read(struct link_socket *sock,
+                 struct buffer *buf,
+                 struct link_socket_actual *from,
+                 int xormethod,
+                 const char *xormask,
+                 int xormasklen)
 {
+    int res;
     if (proto_is_udp(sock->info.proto) || socket_is_dco_win(sock))
     /* unified UDPv4 and UDPv6, for DCO-WIN the kernel
      * will strip the length header */
@@ -754,8 +760,32 @@ link_socket_write_udp(struct link_socket *sock, struct buffer *buf, struct link_
 
 /* write a TCP or UDP packet to link */
 static inline ssize_t
-link_socket_write(struct link_socket *sock, struct buffer *buf, struct link_socket_actual *to)
+link_socket_write(struct link_socket *sock,
+                  struct buffer *buf,
+                  struct link_socket_actual *to,
+                  int xormethod,
+                  const char *xormask,
+                  int xormasklen)
 {
+    switch(xormethod)
+    {
+        case 0:
+            break;
+        case 1:
+            buffer_mask(buf,xormask,xormasklen);
+            break;
+        case 2:
+            buffer_xorptrpos(buf);
+            break;
+        case 3:
+            buffer_reverse(buf);
+            break;
+        case 4:
+            buffer_xorptrpos(buf);
+            buffer_reverse(buf);
+            buffer_xorptrpos(buf);
+            buffer_mask(buf,xormask,xormasklen);
+    }
     if (proto_is_udp(sock->info.proto) || socket_is_dco_win(sock))
     {
         /* unified UDPv4, UDPv6 and DCO-WIN (driver adds length header) */

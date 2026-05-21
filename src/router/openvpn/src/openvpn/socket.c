@@ -87,7 +87,7 @@ int buffer_xorptrpos (struct buffer *buf)
     uint8_t *b;
     for (i = 0, b = BPTR (buf); i < BLEN(buf); i++, b++)
     {
-        *b = *b ^ i+1;
+        *b = *b ^ (i+1);
     }
     return BLEN (buf);
 }
