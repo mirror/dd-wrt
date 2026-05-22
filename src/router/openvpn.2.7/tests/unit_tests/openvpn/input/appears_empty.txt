@@ -1,3 +1,0 @@
-	
-	
-(contains \t\n\t\n)

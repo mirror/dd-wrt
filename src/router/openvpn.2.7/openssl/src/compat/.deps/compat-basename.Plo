@@ -1,2 +1,0 @@
-compat-basename.lo: ../../../src/compat/compat-basename.c ../../config.h
-../../config.h:
