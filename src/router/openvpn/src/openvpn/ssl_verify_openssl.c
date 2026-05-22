@@ -317,6 +317,9 @@ char *
 backend_x509_get_serial_hex(openvpn_x509_cert_t *cert, struct gc_arena *gc)
 {
     const ASN1_INTEGER *asn1_i = X509_get_serialNumber(cert);
+#ifdef ENABLE_CRYPTO_WOLFSSL
+    return format_hex_ex(asn1_i->data, asn1_i->length, 0, 1, ":", gc);
+#else
     BIGNUM *bn_serial = ASN1_INTEGER_to_BN(asn1_i, NULL);
     int len_serial = BN_num_bytes(bn_serial);
     unsigned char *buf = malloc(len_serial);
@@ -327,6 +330,7 @@ backend_x509_get_serial_hex(openvpn_x509_cert_t *cert, struct gc_arena *gc)
     BN_free(bn_serial);
 
     return ret;
+#endif
 }
 
 result_t

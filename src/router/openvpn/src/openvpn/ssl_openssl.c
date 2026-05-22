@@ -306,6 +306,7 @@ tls_ctx_set_tls_versions(struct tls_root_ctx *ctx, unsigned int ssl_flags)
     return true;
 }
 
+#ifndef ENABLE_CRYPTO_WOLFSSL
 static int
 cert_verify_callback(X509_STORE_CTX *ctx, void *arg)
 {
@@ -321,6 +322,7 @@ cert_verify_callback(X509_STORE_CTX *ctx, void *arg)
     X509_STORE_CTX_set0_crls(ctx, session->opt->ssl_ctx->crls);
     return X509_verify_cert(ctx);
 }
+#endif
 
 bool
 tls_ctx_set_options(struct tls_root_ctx *ctx, unsigned int ssl_flags)
@@ -364,7 +366,9 @@ tls_ctx_set_options(struct tls_root_ctx *ctx, unsigned int ssl_flags)
         verify_flags = SSL_VERIFY_PEER;
     }
     SSL_CTX_set_verify(ctx->ctx, verify_flags, verify_callback);
+#ifndef ENABLE_CRYPTO_WOLFSSL
     SSL_CTX_set_cert_verify_callback(ctx->ctx, cert_verify_callback, NULL);
+#endif
 
     SSL_CTX_set_info_callback(ctx->ctx, info_callback);
 
