@@ -1,6 +1,6 @@
 /* sakke.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -2510,7 +2510,7 @@ int wc_GetSakkeAuthSize(SakkeKey* key, word16* authSz)
         err = sakke_load_params(key);
     }
     if (err == 0) {
-        word16 n = (word16)((mp_count_bits(&key->params.prime) + 7) / 8);
+        word16 n = (word16)WC_BITS_TO_BYTES(mp_count_bits(&key->params.prime));
         *authSz = (word16)(1 + 2 * n);
     }
 
@@ -6709,7 +6709,7 @@ int wc_MakeSakkeEncapsulatedSSV(SakkeKey* key, enum wc_HashType hashType,
         err = sakke_load_params(key);
     }
     if (err == 0) {
-        n = (word16)((mp_count_bits(&key->params.prime) + 7) / 8);
+        n = (word16)WC_BITS_TO_BYTES(mp_count_bits(&key->params.prime));
 
         /* Uncompressed point */
         outSz = (word16)(1 + 2 * n);
@@ -6807,7 +6807,7 @@ int wc_GenerateSakkeSSV(SakkeKey* key, WC_RNG* rng, byte* ssv, word16* ssvSz)
         err = sakke_load_params(key);
     }
     if (err == 0) {
-        n = (word16)((mp_count_bits(&key->params.prime) + 7) / 8);
+        n = (word16)WC_BITS_TO_BYTES(mp_count_bits(&key->params.prime));
 
         if ((ssv != NULL) && (*ssvSz > n)) {
             err = BAD_FUNC_ARG;
@@ -6886,7 +6886,7 @@ int wc_DeriveSakkeSSV(SakkeKey* key, enum wc_HashType hashType, byte* ssv,
         err = sakke_load_params(key);
     }
     if (err == 0) {
-        n = (word16)((mp_count_bits(&key->params.prime) + 7) / 8);
+        n = (word16)WC_BITS_TO_BYTES(mp_count_bits(&key->params.prime));
 
         if (authSz != 2 * n + 1) {
             err = BAD_FUNC_ARG;
@@ -6941,7 +6941,8 @@ int wc_DeriveSakkeSSV(SakkeKey* key, enum wc_HashType hashType, byte* ssv,
 
         err = sakke_compute_point_r(key, key->id, key->idSz, ri, n, test);
     }
-    if ((err == 0) && (XMEMCMP(auth, test, (size_t)(2 * n + 1)) != 0)) {
+    /* n is word16, so 2*n+1 always fits in int */
+    if ((err == 0) && (ConstantCompare(auth, test, (int)(2 * n + 1)) != 0)) {
         err = SAKKE_VERIFY_FAIL_E;
     }
 

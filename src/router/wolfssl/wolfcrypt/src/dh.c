@@ -1,6 +1,6 @@
 /* dh.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -1032,13 +1032,13 @@ static int _ffc_pairwise_consistency_test(DhKey* key,
 #ifndef WOLFSSL_DH_CONST
     #define WOLFSSL_DH_ROUND(x) WC_DO_NOTHING
 #else
-    #define WOLFSSL_DH_ROUND(x) \
-        do {                    \
-            if (x % 128) {      \
-                x &= 0xffffff80;\
-                x += 128;       \
-            }                   \
-        }                       \
+    #define WOLFSSL_DH_ROUND(x)   \
+        do {                      \
+            if ((x) % 128) {      \
+                (x) &= 0xffffff80;\
+                (x) += 128;       \
+            }                     \
+        }                         \
         while (0)
 #endif
 
@@ -1157,8 +1157,9 @@ static int GeneratePrivateDh186(DhKey* key, WC_RNG* rng, byte* priv,
         if (err == MP_OKAY)
             err = mp_read_unsigned_bin(tmpX, cBuf, cSz);
         if (err != MP_OKAY) {
-            mp_clear(tmpX);
+            mp_forcezero(tmpX);
             mp_clear(tmpQ);
+            ForceZero(cBuf, cSz);
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
             XFREE(cBuf, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
             XFREE(tmpQ, key->heap, DYNAMIC_TYPE_DH);
@@ -1464,7 +1465,7 @@ static int wc_DhGenerateKeyPair_Async(DhKey* key, WC_RNG* rng,
         if (ret == MP_OKAY)
             ret = IntelQaDhKeyGen(&key->asyncDev, &key->p.raw, &key->g.raw,
                 &x.raw, pub, pubSz);
-        mp_clear(&x);
+        mp_forcezero(&x);
 
         return ret;
     }
@@ -2029,12 +2030,13 @@ static int wc_DhAgree_Sync(DhKey* key, byte* agree, word32* agreeSz,
         WOLFSSL_MSG("wc_DhAgree wc_DhCheckPrivKey failed");
         return DH_CHECK_PRIV_E;
     }
+#endif
 
+    /* Always validate peer public key (2 <= y <= p-2) per SP 800-56A */
     if (wc_DhCheckPubKey(key, otherPub, pubSz) != 0) {
         WOLFSSL_MSG("wc_DhAgree wc_DhCheckPubKey failed");
         return DH_CHECK_PUB_E;
     }
-#endif
 
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     y = (mp_int*)XMALLOC(sizeof(mp_int), key->heap, DYNAMIC_TYPE_DH);
@@ -2226,8 +2228,10 @@ static int wc_DhAgree_Sync(DhKey* key, byte* agree, word32* agreeSz,
 #endif
     XFREE(y, key->heap, DYNAMIC_TYPE_DH);
 #elif defined(WOLFSSL_CHECK_MEM_ZERO)
+#if !defined(WOLFSSL_SP_MATH)
     mp_memzero_check(x);
     mp_memzero_check(z);
+#endif
 #endif
 
     return ret;
@@ -2403,7 +2407,7 @@ int wc_DhImportKeyPair(DhKey* key, const byte* priv, word32 privSz,
     }
     if (havePriv) {
         if (mp_read_unsigned_bin(&key->priv, priv, privSz) != MP_OKAY) {
-            mp_clear(&key->priv);
+            mp_forcezero(&key->priv);
             havePriv = 0;
         } else {
             WOLFSSL_MSG("DH Private Key Set");

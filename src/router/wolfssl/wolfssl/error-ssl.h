@@ -1,6 +1,6 @@
 /* error-ssl.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -82,6 +82,7 @@ enum wolfSSL_ErrorCodes {
     CLIENT_ID_ERROR              = -331,   /* psk client identity error  */
     SERVER_HINT_ERROR            = -332,   /* psk server hint error  */
     PSK_KEY_ERROR                = -333,   /* psk key error  */
+    DUPE_ENTRY_E                 = -334,   /* duplicate entry error */
 
     GETTIME_ERROR                = -337,   /* gettimeofday failed ??? */
     GETITIMER_ERROR              = -338,   /* getitimer failed ??? */
@@ -184,7 +185,7 @@ enum wolfSSL_ErrorCodes {
     TLS13_SECRET_CB_E            = -438,   /* TLS1.3 secret Cb fcn failure */
     DTLS_SIZE_ERROR              = -439,   /* Trying to send too much data */
     NO_CERT_ERROR                = -440,   /* TLS1.3 - no cert set error */
-    APP_DATA_READY               = -441,   /* DTLS1.2 application data ready for read */
+    APP_DATA_READY               = -441,   /* Application data ready for read */
     TOO_MUCH_EARLY_DATA          = -442,   /* Too much Early data */
     SOCKET_FILTERED_E            = -443,   /* Session stopped by network filter */
     HTTP_RECV_ERR                = -444,   /* HTTP Receive error */
@@ -237,7 +238,9 @@ enum wolfSSL_ErrorCodes {
     CRYPTO_POLICY_FORBIDDEN      = -516,   /* operation forbidden by system
                                             * crypto-policy */
 
-    WOLFSSL_LAST_E               = -516
+    SESSION_TICKET_NONCE_OVERFLOW = -517,  /* Session ticket nonce overflow */
+
+    WOLFSSL_LAST_E               = -517
 
     /* codes -1000 to -1999 are reserved for wolfCrypt. */
 };

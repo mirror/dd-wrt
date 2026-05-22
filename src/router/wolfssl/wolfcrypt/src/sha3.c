@@ -1,6 +1,6 @@
 /* sha3.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -17,6 +17,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
+ */
+
+/*
+ * SHA-3 Build Options:
+ *
+ * Core:
+ * WOLFSSL_SHA3:             Enable SHA-3 support                  default: off
+ * WOLFSSL_SHA3_SMALL:       Use smaller SHA-3 implementation      default: off
+ * WOLFSSL_SHAKE128:         Enable SHAKE128 XOF                   default: off
+ * WOLFSSL_SHAKE256:         Enable SHAKE256 XOF                   default: off
+ * SHA3_BY_SPEC:             Use specification Keccak-f order      default: off
+ * WC_SHA3_NO_ASM:           Disable SHA-3 assembly optimizations  default: off
+ * WC_SHA3_FAULT_HARDEN:     Harden SHA-3 against fault attacks    default: off
+ *
+ * Hardware Acceleration (SHA-3-specific):
+ * WC_ASYNC_ENABLE_SHA3:     Enable async SHA-3 operations         default: off
+ * WOLFSSL_ARMASM_CRYPTO_SHA3: ARM crypto SHA-3 instructions       default: off
+ * STM32_HASH_SHA3:          STM32 hardware SHA-3                  default: off
+ * PSOC6_HASH_SHA3:          PSoC6 hardware SHA-3                  default: off
  */
 
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
@@ -585,7 +604,7 @@ static WC_INLINE word64 Load64Unaligned(const unsigned char *a)
  * a  Array of bytes.
  * returns a 64-bit integer.
  */
-static word64 Load64BitBigEndian(const byte* a)
+static word64 Load64BitLittleEndian(const byte* a)
 {
     word64 n = 0;
     int i;
@@ -594,6 +613,31 @@ static word64 Load64BitBigEndian(const byte* a)
         n |= (word64)a[i] << (8 * i);
 
     return n;
+}
+#elif defined(WC_SHA3_FAULT_HARDEN)
+static WC_INLINE word64 Load64Unaligned(const unsigned char *a)
+{
+#ifdef WC_64BIT_CPU
+    return *(word64*)a;
+#elif defined(WC_32BIT_CPU)
+    return (((word64)((word32*)a)[1]) << 32) |
+                     ((word32*)a)[0];
+#else
+    return (((word64)((word16*)a)[3]) << 48) |
+           (((word64)((word16*)a)[2]) << 32) |
+           (((word64)((word16*)a)[1]) << 16) |
+                     ((word16*)a)[0];
+#endif
+}
+
+/* Convert the array of bytes, in little-endian order, to a 64-bit integer.
+ *
+ * a  Array of bytes.
+ * returns a 64-bit integer.
+ */
+static word64 Load64BitLittleEndian(const byte* a)
+{
+    return Load64Unaligned(a);
 }
 #endif
 
@@ -687,6 +731,10 @@ static int Sha3Update(wc_Sha3* sha3, const byte* data, word32 len, byte p)
 {
     word32 i;
     word32 blocks;
+#ifdef WC_SHA3_FAULT_HARDEN
+    word32 check = 0;
+    word32 total_check = 0;
+#endif
 
 #if defined(WOLFSSL_USE_SAVE_VECTOR_REGISTERS) && defined(USE_INTEL_SPEEDUP)
     if (SHA3_BLOCK == sha3_block_avx2) {
@@ -703,19 +751,37 @@ static int Sha3Update(wc_Sha3* sha3, const byte* data, word32 len, byte p)
         t = &sha3->t[sha3->i];
         for (i = 0; i < l; i++) {
             t[i] = data[i];
+    #ifdef WC_SHA3_FAULT_HARDEN
+            check++;
+    #endif
         }
+    #ifdef WC_SHA3_FAULT_HARDEN
+        if (check != l) {
+            return BAD_COND_E;
+        }
+        total_check += l;
+    #endif
         data += i;
         len -= i;
         sha3->i = (byte)(sha3->i + i);
 
         if (sha3->i == p * 8) {
-        #if !defined(BIG_ENDIAN_ORDER)
+    #if !defined(BIG_ENDIAN_ORDER) && !defined(WC_SHA3_FAULT_HARDEN)
             xorbuf(sha3->s, sha3->t, (word32)(p * 8));
-        #else
+    #else
             for (i = 0; i < p; i++) {
-                sha3->s[i] ^= Load64BitBigEndian(sha3->t + 8 * i);
+                sha3->s[i] ^= Load64BitLittleEndian(sha3->t + 8 * i);
+            #ifdef WC_SHA3_FAULT_HARDEN
+                check++;
+            #endif
             }
+        #ifdef WC_SHA3_FAULT_HARDEN
+            if (check != p + l) {
+                return BAD_COND_E;
+            }
+            total_check += p;
         #endif
+    #endif
         #ifdef SHA3_FUNC_PTR
             (*SHA3_BLOCK)(sha3->s);
         #else
@@ -733,14 +799,25 @@ static int Sha3Update(wc_Sha3* sha3, const byte* data, word32 len, byte p)
         blocks = 0;
     }
     #endif
+#ifdef WC_SHA3_FAULT_HARDEN
+    total_check += blocks * p;
+#endif
     for (; blocks > 0; blocks--) {
-    #if !defined(BIG_ENDIAN_ORDER)
+#if !defined(BIG_ENDIAN_ORDER) && !defined(WC_SHA3_FAULT_HARDEN)
         xorbuf(sha3->s, data, (word32)(p * 8));
-    #else
+#else
         for (i = 0; i < p; i++) {
             sha3->s[i] ^= Load64Unaligned(data + 8 * i);
+        #ifdef WC_SHA3_FAULT_HARDEN
+            check++;
+        #endif
+        }
+    #ifdef WC_SHA3_FAULT_HARDEN
+        if (check != total_check - ((blocks - 1) * p)) {
+            return BAD_COND_E;
         }
     #endif
+#endif
     #ifdef SHA3_FUNC_PTR
         (*SHA3_BLOCK)(sha3->s);
     #else
@@ -749,6 +826,11 @@ static int Sha3Update(wc_Sha3* sha3, const byte* data, word32 len, byte p)
         len -= p * 8U;
         data += p * 8U;
     }
+#ifdef WC_SHA3_FAULT_HARDEN
+    if (check != total_check) {
+        return BAD_COND_E;
+    }
+#endif
 #if defined(WOLFSSL_USE_SAVE_VECTOR_REGISTERS) && defined(USE_INTEL_SPEEDUP)
     if (SHA3_BLOCK == sha3_block_avx2) {
         RESTORE_VECTOR_REGISTERS();
@@ -774,11 +856,14 @@ static int Sha3Final(wc_Sha3* sha3, byte padChar, byte* hash, byte p, word32 l)
 {
     word32 rate = p * 8U;
     word32 j;
-#if defined(BIG_ENDIAN_ORDER)
+#if defined(BIG_ENDIAN_ORDER) || defined(WC_SHA3_FAULT_HARDEN)
     word32 i;
 #endif
+#ifdef WC_SHA3_FAULT_HARDEN
+    int check = 0;
+#endif
 
-#if !defined(BIG_ENDIAN_ORDER)
+#if !defined(BIG_ENDIAN_ORDER) && !defined(WC_SHA3_FAULT_HARDEN)
     xorbuf(sha3->s, sha3->t, sha3->i);
 #ifdef WOLFSSL_HASH_FLAGS
     if ((p == WC_SHA3_256_COUNT) && (sha3->flags & WC_HASH_SHA3_KECCAK256)) {
@@ -800,8 +885,16 @@ static int Sha3Final(wc_Sha3* sha3, byte padChar, byte* hash, byte p, word32 l)
         XMEMSET(sha3->t + sha3->i + 1, 0, rate - 1U - (sha3->i + 1U));
     }
     for (i = 0; i < p; i++) {
-        sha3->s[i] ^= Load64BitBigEndian(sha3->t + 8 * i);
+        sha3->s[i] ^= Load64BitLittleEndian(sha3->t + 8 * i);
+    #ifdef WC_SHA3_FAULT_HARDEN
+        check++;
+    #endif
     }
+#ifdef WC_SHA3_FAULT_HARDEN
+    if (check != p) {
+        return BAD_COND_E;
+    }
+#endif
 #endif
 
 #if defined(WOLFSSL_USE_SAVE_VECTOR_REGISTERS) && defined(USE_INTEL_SPEEDUP)
@@ -843,80 +936,79 @@ static int Sha3Final(wc_Sha3* sha3, byte padChar, byte* hash, byte p, word32 l)
 #endif
 #if defined(STM32_HASH_SHA3)
 
-    /* Supports CubeMX HAL or Standard Peripheral Library */
+/* Supports CubeMX HAL or Standard Peripheral Library */
 
-    static int wc_InitSha3(wc_Sha3* sha3, void* heap, int devId)
-    {
-        if (sha3 == NULL)
-            return BAD_FUNC_ARG;
+static int wc_InitSha3(wc_Sha3* sha3, void* heap, int devId)
+{
+    if (sha3 == NULL)
+        return BAD_FUNC_ARG;
 
-        (void)devId;
-        (void)heap;
+    (void)devId;
+    (void)heap;
 
-        XMEMSET(sha3, 0, sizeof(wc_Sha3));
-        wc_Stm32_Hash_Init(&sha3->stmCtx);
+    XMEMSET(sha3, 0, sizeof(wc_Sha3));
+    wc_Stm32_Hash_Init(&sha3->stmCtx);
+    return 0;
+}
+
+static int Stm32GetAlgo(byte p)
+{
+    switch(p) {
+        case WC_SHA3_224_COUNT:
+            return HASH_ALGOSELECTION_SHA3_224;
+        case WC_SHA3_256_COUNT:
+            return HASH_ALGOSELECTION_SHA3_256;
+        case WC_SHA3_384_COUNT:
+            return HASH_ALGOSELECTION_SHA3_384;
+        case WC_SHA3_512_COUNT:
+            return HASH_ALGOSELECTION_SHA3_512;
+    }
+    /* Should never get here */
+    return WC_SHA3_224_COUNT;
+}
+
+static int wc_Sha3Update(wc_Sha3* sha3, const byte* data, word32 len, byte p)
+{
+    int ret = 0;
+
+    if (sha3 == NULL) {
+        return BAD_FUNC_ARG;
+    }
+    if (data == NULL && len == 0) {
+        /* valid, but do nothing */
         return 0;
     }
-
-    static int Stm32GetAlgo(byte p)
-    {
-        switch(p) {
-            case WC_SHA3_224_COUNT:
-                return HASH_ALGOSELECTION_SHA3_224;
-            case WC_SHA3_256_COUNT:
-                return HASH_ALGOSELECTION_SHA3_256;
-            case WC_SHA3_384_COUNT:
-                return HASH_ALGOSELECTION_SHA3_384;
-            case WC_SHA3_512_COUNT:
-                return HASH_ALGOSELECTION_SHA3_512;
-        }
-        /* Should never get here */
-        return WC_SHA3_224_COUNT;
+    if (data == NULL) {
+        return BAD_FUNC_ARG;
     }
 
-    static int wc_Sha3Update(wc_Sha3* sha3, const byte* data, word32 len, byte p)
-    {
-        int ret = 0;
+    ret = wolfSSL_CryptHwMutexLock();
+    if (ret == 0) {
+        ret = wc_Stm32_Hash_Update(&sha3->stmCtx, Stm32GetAlgo(p), data, len,
+            p * 8);
+        wolfSSL_CryptHwMutexUnLock();
+    }
+    return ret;
+}
 
-        if (sha3 == NULL) {
-            return BAD_FUNC_ARG;
-        }
-        if (data == NULL && len == 0) {
-            /* valid, but do nothing */
-            return 0;
-        }
-        if (data == NULL) {
-            return BAD_FUNC_ARG;
-        }
+static int wc_Sha3Final(wc_Sha3* sha3, byte* hash, byte p, byte len)
+{
+    int ret = 0;
 
-        ret = wolfSSL_CryptHwMutexLock();
-        if (ret == 0) {
-            ret = wc_Stm32_Hash_Update(&sha3->stmCtx,
-                Stm32GetAlgo(p), data, len, p * 8);
-            wolfSSL_CryptHwMutexUnLock();
-        }
-        return ret;
+    if (sha3 == NULL || hash == NULL) {
+        return BAD_FUNC_ARG;
     }
 
-    static int wc_Sha3Final(wc_Sha3* sha3, byte* hash, byte p, byte len)
-    {
-        int ret = 0;
-
-        if (sha3 == NULL || hash == NULL) {
-            return BAD_FUNC_ARG;
-        }
-
-        ret = wolfSSL_CryptHwMutexLock();
-        if (ret == 0) {
-            ret = wc_Stm32_Hash_Final(&sha3->stmCtx,
-                Stm32GetAlgo(p), hash, len);
-            wolfSSL_CryptHwMutexUnLock();
-        }
-
-        (void)wc_InitSha3(sha3, NULL, 0); /* reset state */
-
-        return ret;
+    ret = wolfSSL_CryptHwMutexLock();
+    if (ret == 0) {
+        ret = wc_Stm32_Hash_Final(&sha3->stmCtx, Stm32GetAlgo(p), hash, len);
+        wolfSSL_CryptHwMutexUnLock();
     }
+
+    (void)wc_InitSha3(sha3, NULL, 0); /* reset state */
+
+    return ret;
+}
 #elif defined(PSOC6_HASH_SHA3)
 
 static int wc_InitSha3(wc_Sha3* sha3, void* heap, int devId)
@@ -1179,7 +1271,7 @@ static void wc_Sha3Free(wc_Sha3* sha3)
     #endif
     {
         ret = wc_CryptoCb_Free(sha3->devId, WC_ALGO_TYPE_HASH,
-                         sha3->hashType, (void*)sha3);
+                         sha3->hashType, 0, (void*)sha3);
         /* If they want the standard free, they can call it themselves */
         /* via their callback setting devId to INVALID_DEVID */
         /* otherwise assume the callback handled it */
@@ -1233,6 +1325,9 @@ static int wc_Sha3Copy(wc_Sha3* src, wc_Sha3* dst)
     ret = 0; /* Reset ret to 0 to avoid returning the callback error code */
 #endif /* WOLF_CRYPTO_CB && WOLF_CRYPTO_CB_COPY */
 
+    /* Free dst resources before copy to prevent memory leaks (e.g.,
+     * hardware contexts). XMEMCPY overwrites dst. */
+    wc_Sha3Free(dst);
     XMEMCPY(dst, src, sizeof(wc_Sha3));
 
 #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_SHA3)
@@ -1269,6 +1364,7 @@ static int wc_Sha3GetHash(wc_Sha3* sha3, byte* hash, byte p, byte len)
     if (sha3 == NULL || hash == NULL)
         return BAD_FUNC_ARG;
 
+    XMEMSET(&tmpSha3, 0, sizeof(tmpSha3));
     ret = wc_Sha3Copy(sha3, &tmpSha3);
     if (ret == 0) {
         ret = wc_Sha3Final(&tmpSha3, hash, p, len);

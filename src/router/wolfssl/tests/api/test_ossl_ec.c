@@ -1,6 +1,6 @@
 /* test_ossl_ec.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -314,6 +314,7 @@ int test_wolfSSL_EC_POINT(void)
     EC_POINT* set_point = NULL;
     EC_POINT* get_point = NULL;
     EC_POINT* infinity = NULL;
+    EC_POINT* dup_point = NULL;
     BIGNUM* k = NULL;
     BIGNUM* Gx = NULL;
     BIGNUM* Gy = NULL;
@@ -475,8 +476,7 @@ int test_wolfSSL_EC_POINT(void)
     /* check if point X coordinate is zero */
     ExpectIntEQ(BN_is_zero(new_point->X), 0);
 
-#if defined(USE_ECC_B_PARAM) && !defined(HAVE_SELFTEST) && \
-    (!defined(HAVE_FIPS) || FIPS_VERSION_GT(2,0))
+#if !defined(HAVE_SELFTEST) && (!defined(HAVE_FIPS) || FIPS_VERSION_GT(2,0))
     ExpectIntEQ(EC_POINT_is_on_curve(group, new_point, ctx), 1);
 #endif
 
@@ -507,6 +507,12 @@ int test_wolfSSL_EC_POINT(void)
     ExpectIntEQ(EC_POINT_copy(new_point, NULL), 0);
     ExpectIntEQ(EC_POINT_copy(new_point, set_point), 1);
 
+    /* Test duplicating */
+    ExpectNull(EC_POINT_dup(NULL, group));
+    ExpectNull(EC_POINT_dup(set_point, NULL));
+    ExpectNotNull(dup_point = EC_POINT_dup(set_point, group));
+    ExpectIntEQ(EC_POINT_cmp(group, dup_point, set_point, ctx), 0);
+
     /* Test inverting */
     ExpectIntEQ(EC_POINT_invert(NULL, NULL, ctx), 0);
     ExpectIntEQ(EC_POINT_invert(NULL, new_point, ctx), 0);
@@ -523,6 +529,12 @@ int test_wolfSSL_EC_POINT(void)
                     1);
         /* new_point should be set_point inverted so adding it will revert
          * the point back to set_point */
+        ExpectIntEQ(EC_POINT_add(group, orig_point, orig_point, new_point,
+                                 NULL), 1);
+        ExpectIntEQ(EC_POINT_cmp(group, orig_point, set_point, NULL), 0);
+        /* dup_point equals set_point so let's test with that too */
+        ExpectIntEQ(EC_POINT_add(group, orig_point, dup_point, dup_point, NULL),
+                    1);
         ExpectIntEQ(EC_POINT_add(group, orig_point, orig_point, new_point,
                                  NULL), 1);
         ExpectIntEQ(EC_POINT_cmp(group, orig_point, set_point, NULL), 0);
@@ -610,7 +622,7 @@ int test_wolfSSL_EC_POINT(void)
     hexStr = EC_POINT_point2hex(group, Gxy, POINT_CONVERSION_COMPRESSED, ctx);
     ExpectNotNull(hexStr);
     ExpectStrEQ(hexStr, compG);
-    #ifdef HAVE_COMP_KEY
+    #if defined(HAVE_COMP_KEY) && !defined(HAVE_SELFTEST)
     ExpectNotNull(get_point = EC_POINT_hex2point
                                             (group, hexStr, get_point, ctx));
     ExpectIntEQ(EC_POINT_cmp(group, Gxy, get_point, ctx), 0);
@@ -769,6 +781,7 @@ int test_wolfSSL_EC_POINT(void)
     BN_free(k);
     BN_free(set_point_bn);
     EC_POINT_free(infinity);
+    EC_POINT_free(dup_point);
     EC_POINT_free(new_point);
     EC_POINT_free(set_point);
     EC_POINT_clear_free(Gxy);
@@ -1345,12 +1358,15 @@ int test_wolfSSL_EC_KEY_print_fp(void)
     EC_KEY* key = NULL;
 
     /* Bad file pointer. */
-    ExpectIntEQ(wolfSSL_EC_KEY_print_fp(NULL, key, 0), WC_NO_ERR_TRACE(WOLFSSL_FAILURE));
+    ExpectIntEQ(wolfSSL_EC_KEY_print_fp(NULL, key, 0),
+        WC_NO_ERR_TRACE(WOLFSSL_FAILURE));
     /* NULL key. */
-    ExpectIntEQ(wolfSSL_EC_KEY_print_fp(stderr, NULL, 0), WC_NO_ERR_TRACE(WOLFSSL_FAILURE));
+    ExpectIntEQ(wolfSSL_EC_KEY_print_fp(stderr, NULL, 0),
+        WC_NO_ERR_TRACE(WOLFSSL_FAILURE));
     ExpectNotNull((key = wolfSSL_EC_KEY_new_by_curve_name(NID_secp224r1)));
     /* Negative indent. */
-    ExpectIntEQ(wolfSSL_EC_KEY_print_fp(stderr, key, -1), WC_NO_ERR_TRACE(WOLFSSL_FAILURE));
+    ExpectIntEQ(wolfSSL_EC_KEY_print_fp(stderr, key, -1),
+        WC_NO_ERR_TRACE(WOLFSSL_FAILURE));
 
     ExpectIntEQ(wolfSSL_EC_KEY_print_fp(stderr, key, 4), WOLFSSL_SUCCESS);
     ExpectIntEQ(wolfSSL_EC_KEY_generate_key(key), WOLFSSL_SUCCESS);

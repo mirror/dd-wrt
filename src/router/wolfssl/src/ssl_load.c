@@ -1,6 +1,6 @@
 /* ssl_load.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -28,7 +28,8 @@
  */
 
 #ifdef WOLFSSL_SYS_CA_CERTS
-/* Will be turned off automatically when NO_FILESYSTEM is defined */
+/* Will be turned off automatically when NO_FILESYSTEM is defined
+ * for non Mac/Windows systems */
 
 #ifdef _WIN32
     #define _WINSOCKAPI_ /* block inclusion of winsock.h header file */
@@ -769,11 +770,13 @@ static int ProcessBufferTryDecodeEd448(WOLFSSL_CTX* ctx, WOLFSSL* ssl,
                 WOLFSSL_MSG("ED448 private key too small");
                 ret = ECC_KEY_SIZE_E;
             }
+        #if !defined(WOLFSSL_NO_CLIENT_AUTH) && !defined(NO_ED448_CLIENT_AUTH)
             if (ssl != NULL) {
                 /* Ed448 requires caching enabled for tracking message
                  * hash used in EdDSA_Update for signing */
                 ssl->options.cacheMessages = 1;
             }
+        #endif
         }
         /* Not an Ed448 key but check whether we know what it is. */
         else if (*keyFormat == 0) {
@@ -925,7 +928,8 @@ static int ProcessBufferTryDecodeDilithium(WOLFSSL_CTX* ctx, WOLFSSL* ssl,
     if (ret == 0) {
         /* Decode as a Dilithium private key. */
         idx = 0;
-        ret = wc_Dilithium_PrivateKeyDecode(der->buffer, &idx, key, der->length);
+        ret = wc_Dilithium_PrivateKeyDecode(der->buffer, &idx, key,
+            der->length);
         if (ret == 0) {
             ret = dilithium_get_oid_sum(key, &keyFormatTemp);
             if (ret == 0) {
@@ -1076,11 +1080,9 @@ static int ProcessBufferTryDecode(WOLFSSL_CTX* ctx, WOLFSSL* ssl,
     }
 #ifdef WC_RSA_PSS
     if((ret == 0) && (*keyFormat == RSAPSSk)) {
-        /*
-            Require logic to verify that the der is RSAPSSk (when *keyFormat == RSAPSSK),
-            and to detect that the der is RSAPSSk (when *keyFormat == 0).
-        */
-
+        /* Require logic to verify that the der is RSAPSSk
+         * (when *keyFormat == RSAPSSK), and to detect that the der is RSAPSSk
+         * (when *keyFormat == 0). */
         matchAnyKey = 1;
     }
 #endif /* WC_RSA_PSS */
@@ -1607,6 +1609,9 @@ static int ProcessBufferCertPublicKey(WOLFSSL_CTX* ctx, WOLFSSL* ssl,
 #ifndef NO_RSA
     word32 idx;
 #endif
+    if (ctx == NULL && ssl == NULL) {
+        return BAD_FUNC_ARG;
+    }
 
     /* Get key size and check unless not verifying. */
     switch (cert->keyOID) {
@@ -1624,6 +1629,14 @@ static int ProcessBufferCertPublicKey(WOLFSSL_CTX* ctx, WOLFSSL* ssl,
                 ret = CHECK_KEY_SZ(ssl ? ssl->options.minRsaKeySz :
                     ctx->minRsaKeySz, RSA_MAX_SIZE / 8, keySz, RSA_KEY_SIZE_E);
             }
+    #ifdef WC_RSA_PSS
+            if (ssl) {
+                ssl->useRsaPss = cert->keyOID == RSAPSSk;
+            }
+            if (ctx) {
+                ctx->useRsaPss = cert->keyOID == RSAPSSk;
+            }
+    #endif
             break;
 #endif /* !NO_RSA */
     #ifdef HAVE_ECC
@@ -2053,7 +2066,7 @@ static int ProcessBufferCert(WOLFSSL_CTX* ctx, WOLFSSL* ssl, DerBuffer* der)
             }
             /* Don't check if no SSL object verification is disabled for SSL
              * context. */
-            else if ((ssl == NULL) && ctx->verifyNone) {
+            else if ((ssl == NULL) && (ctx != NULL) && ctx->verifyNone) {
                 checkKeySz = 0;
             }
 
@@ -2124,7 +2137,8 @@ static int ProcessBufferCertHandleDer(WOLFSSL_CTX* ctx, WOLFSSL* ssl,
          * certificates so we can inject them at verification time */
         if (ret == 1 && ctx->doAppleNativeCertValidationFlag == 1) {
             WOLFSSL_MSG("ANCV Test: Appending CA to cert list");
-            ret = wolfSSL_TestAppleNativeCertValidation_AppendCA(ctx, derBuf, (int)derLen);
+            ret = wolfSSL_TestAppleNativeCertValidation_AppendCA(ctx, derBuf,
+                (int)derLen);
             if (ret == WOLFSSL_SUCCESS) {
                 WOLFSSL_MSG("ANCV Test: Clearing CA table");
                 /* Clear the CA table so we can ensure they won't be used for
@@ -2935,8 +2949,8 @@ int wolfSSL_CTX_load_verify_locations_ex(WOLFSSL_CTX* ctx, const char* file,
                 NULL, verify);
 #else
             /* Load the DER formatted CA file */
-            ret = ProcessFile(ctx, file, WOLFSSL_FILETYPE_ASN1, CA_TYPE, NULL, 0,
-                NULL, verify);
+            ret = ProcessFile(ctx, file, WOLFSSL_FILETYPE_ASN1, CA_TYPE, NULL,
+                0, NULL, verify);
 #endif
 #ifndef NO_WOLFSSL_DIR
             if (ret == 1) {
@@ -3029,303 +3043,6 @@ int wolfSSL_CTX_load_verify_locations_compat(WOLFSSL_CTX* ctx, const char* file,
     /* Return 1 on success or 0 on failure. */
     return WS_RETURN_CODE(ret, 0);
 }
-
-#ifdef WOLFSSL_SYS_CA_CERTS
-
-#ifdef USE_WINDOWS_API
-
-/* Load CA certificate from Windows store.
- *
- * Assumes loaded is 0.
- *
- * @param [in, out] ctx     SSL context object.
- * @param [out]     loaded  Whether CA certificates were loaded.
- * @return  1 on success.
- * @return  0 on failure.
- */
-static int LoadSystemCaCertsWindows(WOLFSSL_CTX* ctx, byte* loaded)
-{
-    int ret = 1;
-    word32 i;
-    HANDLE handle = NULL;
-    PCCERT_CONTEXT certCtx = NULL;
-    LPCSTR storeNames[2] = {"ROOT", "CA"};
-    HCRYPTPROV_LEGACY hProv = (HCRYPTPROV_LEGACY)NULL;
-
-    if ((ctx == NULL) || (loaded == NULL)) {
-        ret = 0;
-    }
-
-    for (i = 0; (ret == 1) && (i < sizeof(storeNames)/sizeof(*storeNames));
-         ++i) {
-        handle = CertOpenSystemStoreA(hProv, storeNames[i]);
-        if (handle != NULL) {
-            while ((certCtx = CertEnumCertificatesInStore(handle, certCtx))
-                   != NULL) {
-                if (certCtx->dwCertEncodingType == X509_ASN_ENCODING) {
-                    if (ProcessBuffer(ctx, certCtx->pbCertEncoded,
-                          certCtx->cbCertEncoded, WOLFSSL_FILETYPE_ASN1,
-                          CA_TYPE, NULL, NULL, 0,
-                          GET_VERIFY_SETTING_CTX(ctx),
-                          storeNames[i]) == 1) {
-                        /*
-                         * Set "loaded" as long as we've loaded one CA
-                         * cert.
-                         */
-                        *loaded = 1;
-                    }
-                }
-            }
-        }
-        else {
-            WOLFSSL_MSG_EX("Failed to open cert store %s.", storeNames[i]);
-        }
-
-        if (handle != NULL && !CertCloseStore(handle, 0)) {
-            WOLFSSL_MSG_EX("Failed to close cert store %s.", storeNames[i]);
-            ret = 0;
-        }
-    }
-
-    return ret;
-}
-
-#elif defined(__APPLE__)
-
-#if defined(HAVE_SECURITY_SECTRUSTSETTINGS_H) \
-  && !defined(WOLFSSL_APPLE_NATIVE_CERT_VALIDATION)
-/* Manually obtains certificates from the system trust store and loads them
- * directly into wolfSSL "the old way".
- *
- * As of MacOS 14.0 we are still able to use this method to access system
- * certificates. Accessibility of this API is indicated by the presence of the
- * Security/SecTrustSettings.h header. In the likely event that Apple removes
- * access to this API on Macs, this function should be removed and the
- * DoAppleNativeCertValidation() routine should be used for all devices.
- *
- * Assumes loaded is 0.
- *
- * @param [in, out] ctx     SSL context object.
- * @param [out]     loaded  Whether CA certificates were loaded.
- * @return  1 on success.
- * @return  0 on failure.
- */
-static int LoadSystemCaCertsMac(WOLFSSL_CTX* ctx, byte* loaded)
-{
-    int ret = 1;
-    word32 i;
-    const unsigned int trustDomains[] = {
-        kSecTrustSettingsDomainUser,
-        kSecTrustSettingsDomainAdmin,
-        kSecTrustSettingsDomainSystem
-    };
-    CFArrayRef certs;
-    OSStatus stat;
-    CFIndex numCerts;
-    CFDataRef der;
-    CFIndex j;
-
-    if ((ctx == NULL) || (loaded == NULL)) {
-        ret = 0;
-    }
-
-    for (i = 0; (ret == 1) && (i < sizeof(trustDomains)/sizeof(*trustDomains));
-         ++i) {
-        stat = SecTrustSettingsCopyCertificates(
-            (SecTrustSettingsDomain)trustDomains[i], &certs);
-        if (stat == errSecSuccess) {
-            numCerts = CFArrayGetCount(certs);
-            for (j = 0; j < numCerts; ++j) {
-                der = SecCertificateCopyData((SecCertificateRef)
-                          CFArrayGetValueAtIndex(certs, j));
-                if (der != NULL) {
-                    if (ProcessBuffer(ctx, CFDataGetBytePtr(der),
-                          CFDataGetLength(der), WOLFSSL_FILETYPE_ASN1,
-                          CA_TYPE, NULL, NULL, 0,
-                          GET_VERIFY_SETTING_CTX(ctx),
-                          "MacOSX trustDomains") == 1) {
-                        /*
-                         * Set "loaded" as long as we've loaded one CA
-                         * cert.
-                         */
-                        *loaded = 1;
-                    }
-
-                    CFRelease(der);
-                }
-            }
-
-            CFRelease(certs);
-        }
-        else if (stat == errSecNoTrustSettings) {
-            WOLFSSL_MSG_EX("No trust settings for domain %d, moving to next "
-                "domain.", trustDomains[i]);
-        }
-        else {
-            WOLFSSL_MSG_EX("SecTrustSettingsCopyCertificates failed with"
-                " status %d.", stat);
-            ret = 0;
-            break;
-        }
-    }
-
-    return ret;
-}
-#endif /* defined(HAVE_SECURITY_SECTRUSTSETTINGS_H) */
-
-#else
-
-/* Potential system CA certs directories on Linux/Unix distros. */
-static const char* systemCaDirs[] = {
-#if defined(__ANDROID__) || defined(ANDROID)
-    "/system/etc/security/cacerts"      /* Android */
-#else
-    "/etc/ssl/certs",                   /* Debian, Ubuntu, Gentoo, others */
-    "/etc/pki/ca-trust/source/anchors", /* Fedora, RHEL */
-    "/etc/pki/tls/certs"                /* Older RHEL */
-#endif
-};
-
-/* Get CA directory list.
- *
- * @param [out] num  Number of CA directories.
- * @return  CA directory list.
- * @return  NULL when num is NULL.
- */
-const char** wolfSSL_get_system_CA_dirs(word32* num)
-{
-    const char** ret;
-
-    /* Validate parameters. */
-    if (num == NULL) {
-        ret = NULL;
-    }
-    else {
-        ret = systemCaDirs;
-        *num = sizeof(systemCaDirs)/sizeof(*systemCaDirs);
-    }
-
-    return ret;
-}
-
-/* Load CA certificate from default system directories.
- *
- * Assumes loaded is 0.
- *
- * @param [in, out] ctx     SSL context object.
- * @param [out]     loaded  Whether CA certificates were loaded.
- * @return  1 on success.
- * @return  0 on failure.
- */
-static int LoadSystemCaCertsNix(WOLFSSL_CTX* ctx, byte* loaded) {
-    int ret = 1;
-    word32 i;
-
-    if ((ctx == NULL) || (loaded == NULL)) {
-        ret = 0;
-    }
-
-    for (i = 0; (ret == 1) && (i < sizeof(systemCaDirs)/sizeof(*systemCaDirs));
-         ++i) {
-        WOLFSSL_MSG_EX("Attempting to load system CA certs from %s.",
-            systemCaDirs[i]);
-        /*
-         * We want to keep trying to load more CA certs even if one cert in
-         * the directory is bad and can't be used (e.g. if one is expired),
-         * so we use WOLFSSL_LOAD_FLAG_IGNORE_ERR.
-         */
-        if (wolfSSL_CTX_load_verify_locations_ex(ctx, NULL, systemCaDirs[i],
-                WOLFSSL_LOAD_FLAG_IGNORE_ERR) != 1) {
-            WOLFSSL_MSG_EX("Failed to load CA certs from %s, trying "
-                "next possible location.", systemCaDirs[i]);
-        }
-        else {
-            WOLFSSL_MSG_EX("Loaded CA certs from %s.",
-                systemCaDirs[i]);
-            *loaded = 1;
-            /* Stop searching after we've loaded one directory. */
-            break;
-        }
-    }
-
-    return ret;
-}
-
-#endif
-
-/* Load CA certificates from system defined locations.
- *
- * @param [in, out] ctx  SSL context object.
- * @return  1 on success.
- * @return  0 on failure.
- * @return  WOLFSSL_BAD_PATH when no error but no certificates loaded.
- */
-int wolfSSL_CTX_load_system_CA_certs(WOLFSSL_CTX* ctx)
-{
-    int ret;
-    byte loaded = 0;
-
-    WOLFSSL_ENTER("wolfSSL_CTX_load_system_CA_certs");
-
-#ifdef USE_WINDOWS_API
-
-    ret = LoadSystemCaCertsWindows(ctx, &loaded);
-
-#elif defined(__APPLE__)
-
-#if defined(HAVE_SECURITY_SECTRUSTSETTINGS_H) \
-  && !defined(WOLFSSL_APPLE_NATIVE_CERT_VALIDATION)
-    /* As of MacOS 14.0 we are still able to access system certificates and
-     * load them manually into wolfSSL "the old way". Accessibility of this API
-     * is indicated by the presence of the Security/SecTrustSettings.h header */
-    ret = LoadSystemCaCertsMac(ctx, &loaded);
-#elif defined(WOLFSSL_APPLE_NATIVE_CERT_VALIDATION)
-    /* For other Apple devices, Apple has removed the ability to obtain
-     * certificates from the trust store, so we can't use wolfSSL's built-in
-     * certificate validation mechanisms anymore. We instead must call into the
-     * Security Framework APIs to authenticate peer certificates when received.
-     * (see src/internal.c:DoAppleNativeCertValidation()).
-     * Thus, there is no CA "loading" required, but to keep behavior consistent
-     * with the current API (not using system CA certs unless this function has
-     * been called), we simply set a flag indicating that the new apple trust
-     * verification routine should be used later */
-    ctx->doAppleNativeCertValidationFlag = 1;
-    ret = 1;
-    loaded = 1;
-
-#if FIPS_VERSION_GE(2,0) /* Gate back to cert 3389 FIPS modules */
-#warning "Cryptographic operations may occur outside the FIPS module boundary" \
-         "Please review FIPS claims for cryptography on this Apple device"
-#endif /* FIPS_VERSION_GE(2,0) */
-
-#else
-/* HAVE_SECURITY_SECXXX_H macros are set by autotools or CMake when searching
- * system for the required SDK headers. If building with user_settings.h, you
- * will need to manually define WOLFSSL_APPLE_NATIVE_CERT_VALIDATION
- * and ensure the appropriate Security.framework headers and libraries are
- * visible to your compiler */
-#error "WOLFSSL_SYS_CA_CERTS on Apple devices requires Security.framework" \
-       " header files to be detected, or a manual override with" \
-       " WOLFSSL_APPLE_NATIVE_CERT_VALIDATION"
-#endif
-
-#else
-
-    ret = LoadSystemCaCertsNix(ctx, &loaded);
-
-#endif
-
-    /* If we didn't fail but didn't load then we error out. */
-    if ((ret == 1) && (!loaded)) {
-        ret = WOLFSSL_BAD_PATH;
-    }
-
-    WOLFSSL_LEAVE("wolfSSL_CTX_load_system_CA_certs", ret);
-
-    return ret;
-}
-
-#endif /* WOLFSSL_SYS_CA_CERTS */
 
 #ifdef WOLFSSL_TRUST_PEER_CERT
 /* Load a trusted peer certificate into SSL context.
@@ -3517,8 +3234,8 @@ int wolfSSL_CTX_use_certificate_chain_file(WOLFSSL_CTX* ctx, const char* file)
     ret = ProcessFile(ctx, file, WOLFSSL_FILETYPE_PEM, CERT_TYPE, NULL, 1, NULL,
         GET_VERIFY_SETTING_CTX(ctx));
 #else
-    ret = ProcessFile(ctx, file, WOLFSSL_FILETYPE_ASN1, CERT_TYPE, NULL, 1, NULL,
-        GET_VERIFY_SETTING_CTX(ctx));
+    ret = ProcessFile(ctx, file, WOLFSSL_FILETYPE_ASN1, CERT_TYPE, NULL, 1,
+        NULL, GET_VERIFY_SETTING_CTX(ctx));
 #endif
 
     /* Return 1 on success or 0 on failure. */
@@ -3551,6 +3268,303 @@ int wolfSSL_CTX_use_certificate_chain_file_format(WOLFSSL_CTX* ctx,
 }
 
 #endif /* NO_FILESYSTEM */
+
+#ifdef WOLFSSL_SYS_CA_CERTS
+
+#ifdef USE_WINDOWS_API
+
+/* Load CA certificate from Windows store.
+ *
+ * Assumes loaded is 0.
+ *
+ * @param [in, out] ctx     SSL context object.
+ * @param [out]     loaded  Whether CA certificates were loaded.
+ * @return  1 on success.
+ * @return  0 on failure.
+ */
+static int LoadSystemCaCertsWindows(WOLFSSL_CTX* ctx, byte* loaded)
+{
+    int ret = 1;
+    word32 i;
+    HANDLE handle = NULL;
+    PCCERT_CONTEXT certCtx = NULL;
+    LPCSTR storeNames[2] = {"ROOT", "CA"};
+    HCRYPTPROV_LEGACY hProv = (HCRYPTPROV_LEGACY)NULL;
+
+    if ((ctx == NULL) || (loaded == NULL)) {
+        ret = 0;
+    }
+
+    for (i = 0; (ret == 1) && (i < sizeof(storeNames)/sizeof(*storeNames));
+         ++i) {
+        handle = CertOpenSystemStoreA(hProv, storeNames[i]);
+        if (handle != NULL) {
+            while ((certCtx = CertEnumCertificatesInStore(handle, certCtx))
+                   != NULL) {
+                if (certCtx->dwCertEncodingType == X509_ASN_ENCODING) {
+                    if (ProcessBuffer(ctx, certCtx->pbCertEncoded,
+                          certCtx->cbCertEncoded, WOLFSSL_FILETYPE_ASN1,
+                          CA_TYPE, NULL, NULL, 0,
+                          GET_VERIFY_SETTING_CTX(ctx),
+                          storeNames[i]) == 1) {
+                        /*
+                         * Set "loaded" as long as we've loaded one CA
+                         * cert.
+                         */
+                        *loaded = 1;
+                    }
+                }
+            }
+        }
+        else {
+            WOLFSSL_MSG_EX("Failed to open cert store %s.", storeNames[i]);
+        }
+
+        if (handle != NULL && !CertCloseStore(handle, 0)) {
+            WOLFSSL_MSG_EX("Failed to close cert store %s.", storeNames[i]);
+            ret = 0;
+        }
+    }
+
+    return ret;
+}
+
+#elif defined(__APPLE__)
+
+#if defined(HAVE_SECURITY_SECTRUSTSETTINGS_H) \
+  && !defined(WOLFSSL_APPLE_NATIVE_CERT_VALIDATION)
+/* Manually obtains certificates from the system trust store and loads them
+ * directly into wolfSSL "the old way".
+ *
+ * As of MacOS 14.0 we are still able to use this method to access system
+ * certificates. Accessibility of this API is indicated by the presence of the
+ * Security/SecTrustSettings.h header. In the likely event that Apple removes
+ * access to this API on Macs, this function should be removed and the
+ * DoAppleNativeCertValidation() routine should be used for all devices.
+ *
+ * Assumes loaded is 0.
+ *
+ * @param [in, out] ctx     SSL context object.
+ * @param [out]     loaded  Whether CA certificates were loaded.
+ * @return  1 on success.
+ * @return  0 on failure.
+ */
+static int LoadSystemCaCertsMac(WOLFSSL_CTX* ctx, byte* loaded)
+{
+    int ret = 1;
+    word32 i;
+    const unsigned int trustDomains[] = {
+        kSecTrustSettingsDomainUser,
+        kSecTrustSettingsDomainAdmin,
+        kSecTrustSettingsDomainSystem
+    };
+    CFArrayRef certs;
+    OSStatus stat;
+    CFIndex numCerts;
+    CFDataRef der;
+    CFIndex j;
+
+    if ((ctx == NULL) || (loaded == NULL)) {
+        ret = 0;
+    }
+
+    for (i = 0; (ret == 1) && (i < sizeof(trustDomains)/sizeof(*trustDomains));
+         ++i) {
+        stat = SecTrustSettingsCopyCertificates(
+            (SecTrustSettingsDomain)trustDomains[i], &certs);
+        if (stat == errSecSuccess) {
+            numCerts = CFArrayGetCount(certs);
+            for (j = 0; j < numCerts; ++j) {
+                der = SecCertificateCopyData((SecCertificateRef)
+                          CFArrayGetValueAtIndex(certs, j));
+                if (der != NULL) {
+                    if (ProcessBuffer(ctx, CFDataGetBytePtr(der),
+                          CFDataGetLength(der), WOLFSSL_FILETYPE_ASN1,
+                          CA_TYPE, NULL, NULL, 0,
+                          GET_VERIFY_SETTING_CTX(ctx),
+                          "MacOSX trustDomains") == 1) {
+                        /*
+                         * Set "loaded" as long as we've loaded one CA
+                         * cert.
+                         */
+                        *loaded = 1;
+                    }
+
+                    CFRelease(der);
+                }
+            }
+
+            CFRelease(certs);
+        }
+        else if (stat == errSecNoTrustSettings) {
+            WOLFSSL_MSG_EX("No trust settings for domain %d, moving to next "
+                "domain.", trustDomains[i]);
+        }
+        else {
+            WOLFSSL_MSG_EX("SecTrustSettingsCopyCertificates failed with"
+                " status %d.", stat);
+            ret = 0;
+            break;
+        }
+    }
+
+    return ret;
+}
+#endif /* defined(HAVE_SECURITY_SECTRUSTSETTINGS_H) */
+
+#elif !defined(NO_FILESYSTEM)
+
+/* Potential system CA certs directories on Linux/Unix distros. */
+static const char* systemCaDirs[] = {
+#if defined(__ANDROID__) || defined(ANDROID)
+    "/system/etc/security/cacerts"      /* Android */
+#else
+    "/etc/ssl/certs",                   /* Debian, Ubuntu, Gentoo, others */
+    "/etc/pki/ca-trust/source/anchors", /* Fedora, RHEL */
+    "/etc/pki/tls/certs"                /* Older RHEL */
+#endif
+};
+
+/* Get CA directory list.
+ *
+ * @param [out] num  Number of CA directories.
+ * @return  CA directory list.
+ * @return  NULL when num is NULL.
+ */
+const char** wolfSSL_get_system_CA_dirs(word32* num)
+{
+    const char** ret;
+
+    /* Validate parameters. */
+    if (num == NULL) {
+        ret = NULL;
+    }
+    else {
+        ret = systemCaDirs;
+        *num = sizeof(systemCaDirs)/sizeof(*systemCaDirs);
+    }
+
+    return ret;
+}
+
+/* Load CA certificate from default system directories.
+ *
+ * Assumes loaded is 0.
+ *
+ * @param [in, out] ctx     SSL context object.
+ * @param [out]     loaded  Whether CA certificates were loaded.
+ * @return  1 on success.
+ * @return  0 on failure.
+ */
+static int LoadSystemCaCertsNix(WOLFSSL_CTX* ctx, byte* loaded) {
+    int ret = 1;
+    word32 i;
+
+    if ((ctx == NULL) || (loaded == NULL)) {
+        ret = 0;
+    }
+
+    for (i = 0; (ret == 1) && (i < sizeof(systemCaDirs)/sizeof(*systemCaDirs));
+         ++i) {
+        WOLFSSL_MSG_EX("Attempting to load system CA certs from %s.",
+            systemCaDirs[i]);
+        /*
+         * We want to keep trying to load more CA certs even if one cert in
+         * the directory is bad and can't be used (e.g. if one is expired),
+         * so we use WOLFSSL_LOAD_FLAG_IGNORE_ERR.
+         */
+        if (wolfSSL_CTX_load_verify_locations_ex(ctx, NULL, systemCaDirs[i],
+                WOLFSSL_LOAD_FLAG_IGNORE_ERR) != 1) {
+            WOLFSSL_MSG_EX("Failed to load CA certs from %s, trying "
+                "next possible location.", systemCaDirs[i]);
+        }
+        else {
+            WOLFSSL_MSG_EX("Loaded CA certs from %s.",
+                systemCaDirs[i]);
+            *loaded = 1;
+            /* Stop searching after we've loaded one directory. */
+            break;
+        }
+    }
+
+    return ret;
+}
+
+#endif
+
+/* Load CA certificates from system defined locations.
+ *
+ * @param [in, out] ctx  SSL context object.
+ * @return  1 on success.
+ * @return  0 on failure.
+ * @return  WOLFSSL_BAD_PATH when no error but no certificates loaded.
+ */
+int wolfSSL_CTX_load_system_CA_certs(WOLFSSL_CTX* ctx)
+{
+    int ret;
+    byte loaded = 0;
+
+    WOLFSSL_ENTER("wolfSSL_CTX_load_system_CA_certs");
+
+#ifdef USE_WINDOWS_API
+
+    ret = LoadSystemCaCertsWindows(ctx, &loaded);
+
+#elif defined(__APPLE__)
+
+#if defined(HAVE_SECURITY_SECTRUSTSETTINGS_H) \
+  && !defined(WOLFSSL_APPLE_NATIVE_CERT_VALIDATION)
+    /* As of MacOS 14.0 we are still able to access system certificates and
+     * load them manually into wolfSSL "the old way". Accessibility of this API
+     * is indicated by the presence of the Security/SecTrustSettings.h header */
+    ret = LoadSystemCaCertsMac(ctx, &loaded);
+#elif defined(WOLFSSL_APPLE_NATIVE_CERT_VALIDATION)
+    /* For other Apple devices, Apple has removed the ability to obtain
+     * certificates from the trust store, so we can't use wolfSSL's built-in
+     * certificate validation mechanisms anymore. We instead must call into the
+     * Security Framework APIs to authenticate peer certificates when received.
+     * (see src/internal.c:DoAppleNativeCertValidation()).
+     * Thus, there is no CA "loading" required, but to keep behavior consistent
+     * with the current API (not using system CA certs unless this function has
+     * been called), we simply set a flag indicating that the new apple trust
+     * verification routine should be used later */
+    ctx->doAppleNativeCertValidationFlag = 1;
+    ret = 1;
+    loaded = 1;
+
+#if FIPS_VERSION_GE(2,0) /* Gate back to cert 3389 FIPS modules */
+#warning "Cryptographic operations may occur outside the FIPS module boundary" \
+         "Please review FIPS claims for cryptography on this Apple device"
+#endif /* FIPS_VERSION_GE(2,0) */
+
+#else
+/* HAVE_SECURITY_SECXXX_H macros are set by autotools or CMake when searching
+ * system for the required SDK headers. If building with user_settings.h, you
+ * will need to manually define WOLFSSL_APPLE_NATIVE_CERT_VALIDATION
+ * and ensure the appropriate Security.framework headers and libraries are
+ * visible to your compiler */
+#error "WOLFSSL_SYS_CA_CERTS on Apple devices requires Security.framework" \
+       " header files to be detected, or a manual override with" \
+       " WOLFSSL_APPLE_NATIVE_CERT_VALIDATION"
+#endif
+
+#else
+
+    ret = LoadSystemCaCertsNix(ctx, &loaded);
+
+#endif
+
+    /* If we didn't fail but didn't load then we error out. */
+    if ((ret == 1) && (!loaded)) {
+        ret = WOLFSSL_BAD_PATH;
+    }
+
+    WOLFSSL_LEAVE("wolfSSL_CTX_load_system_CA_certs", ret);
+
+    return ret;
+}
+
+#endif /* WOLFSSL_SYS_CA_CERTS */
 
 #ifdef OPENSSL_EXTRA
 
@@ -4143,6 +4157,8 @@ int wolfSSL_CTX_use_PrivateKey_Id(WOLFSSL_CTX* ctx, const unsigned char* id,
 {
     int ret = 1;
 
+    WOLFSSL_ENTER("wolfSSL_CTX_use_PrivateKey_Id");
+
     /* Dispose of old private key and allocate and copy in id. */
     FreeDer(&ctx->privateKey);
     if (AllocCopyDer(&ctx->privateKey, id, (word32)sz, PRIVATEKEY_TYPE,
@@ -4168,6 +4184,7 @@ int wolfSSL_CTX_use_PrivateKey_Id(WOLFSSL_CTX* ctx, const unsigned char* id,
     #endif
     }
 
+    WOLFSSL_LEAVE("wolfSSL_CTX_use_PrivateKey_Id", ret);
     return ret;
 }
 
@@ -4184,12 +4201,17 @@ int wolfSSL_CTX_use_PrivateKey_Id(WOLFSSL_CTX* ctx, const unsigned char* id,
 int wolfSSL_CTX_use_PrivateKey_id(WOLFSSL_CTX* ctx, const unsigned char* id,
     long sz, int devId, long keySz)
 {
-    int ret = wolfSSL_CTX_use_PrivateKey_Id(ctx, id, sz, devId);
+    int ret;
+
+    WOLFSSL_ENTER("wolfSSL_CTX_use_PrivateKey_id");
+
+    ret = wolfSSL_CTX_use_PrivateKey_Id(ctx, id, sz, devId);
     if (ret == 1) {
         /* Set the key size which normally is calculated during decoding. */
         ctx->privateKeySz = (int)keySz;
     }
 
+    WOLFSSL_LEAVE("wolfSSL_CTX_use_PrivateKey_id", ret);
     return ret;
 }
 
@@ -4206,6 +4228,8 @@ int wolfSSL_CTX_use_PrivateKey_Label(WOLFSSL_CTX* ctx, const char* label,
 {
     int ret = 1;
     word32 sz = (word32)XSTRLEN(label) + 1;
+
+    WOLFSSL_ENTER("wolfSSL_CTX_use_PrivateKey_Label");
 
     /* Dispose of old private key and allocate and copy in label. */
     FreeDer(&ctx->privateKey);
@@ -4232,6 +4256,7 @@ int wolfSSL_CTX_use_PrivateKey_Label(WOLFSSL_CTX* ctx, const char* label,
     #endif
     }
 
+    WOLFSSL_LEAVE("wolfSSL_CTX_use_PrivateKey_Label", ret);
     return ret;
 }
 
@@ -4240,6 +4265,8 @@ int wolfSSL_CTX_use_AltPrivateKey_Id(WOLFSSL_CTX* ctx, const unsigned char* id,
     long sz, int devId)
 {
     int ret = 1;
+
+    WOLFSSL_ENTER("wolfSSL_CTX_use_AltPrivateKey_Id");
 
     if ((ctx == NULL) || (id == NULL)) {
         ret = 0;
@@ -4263,17 +4290,23 @@ int wolfSSL_CTX_use_AltPrivateKey_Id(WOLFSSL_CTX* ctx, const unsigned char* id,
         }
     }
 
+    WOLFSSL_LEAVE("wolfSSL_CTX_use_AltPrivateKey_Id", ret);
     return ret;
 }
 
 int wolfSSL_CTX_use_AltPrivateKey_id(WOLFSSL_CTX* ctx, const unsigned char* id,
     long sz, int devId, long keySz)
 {
-    int ret = wolfSSL_CTX_use_AltPrivateKey_Id(ctx, id, sz, devId);
+    int ret;
+
+    WOLFSSL_ENTER("wolfSSL_CTX_use_AltPrivateKey_id");
+
+    ret = wolfSSL_CTX_use_AltPrivateKey_Id(ctx, id, sz, devId);
     if (ret == 1) {
         ctx->altPrivateKeySz = (word32)keySz;
     }
 
+    WOLFSSL_LEAVE("wolfSSL_CTX_use_AltPrivateKey_id", ret);
     return ret;
 }
 
@@ -4282,6 +4315,8 @@ int wolfSSL_CTX_use_AltPrivateKey_Label(WOLFSSL_CTX* ctx, const char* label,
 {
     int ret = 1;
     word32 sz;
+
+    WOLFSSL_ENTER("wolfSSL_CTX_use_AltPrivateKey_Label");
 
     if ((ctx == NULL) || (label == NULL)) {
         ret = 0;
@@ -4306,6 +4341,7 @@ int wolfSSL_CTX_use_AltPrivateKey_Label(WOLFSSL_CTX* ctx, const char* label,
         }
     }
 
+    WOLFSSL_LEAVE("wolfSSL_CTX_use_AltPrivateKey_Label", ret);
     return ret;
 }
 #endif /* WOLFSSL_DUAL_ALG_CERTS */
@@ -4795,11 +4831,20 @@ static int wolfssl_add_to_chain(DerBuffer** chain, int weOwn, const byte* cert,
         /* Get length of previous chain. */
         len = oldChain->length;
     }
-    /* Allocate DER buffer bug enough to hold old and new certificates. */
-    ret = AllocDer(&newChain, len + CERT_HEADER_SZ + certSz, CERT_TYPE, heap);
-    if (ret != 0) {
-        WOLFSSL_MSG("AllocDer error");
+    /* Check for integer overflow in size calculation. */
+    if ((len > WOLFSSL_MAX_32BIT - CERT_HEADER_SZ) ||
+            (certSz > WOLFSSL_MAX_32BIT - CERT_HEADER_SZ - len)) {
+        WOLFSSL_MSG("wolfssl_add_to_chain overflow");
         res = 0;
+    }
+    if (res == 1) {
+        /* Allocate DER buffer big enough to hold old and new certificates. */
+        ret = AllocDer(&newChain, len + CERT_HEADER_SZ + certSz, CERT_TYPE,
+            heap);
+        if (ret != 0) {
+            WOLFSSL_MSG("AllocDer error");
+            res = 0;
+        }
     }
 
     if (res == 1) {
@@ -4857,7 +4902,8 @@ static int wolfssl_ctx_add_to_chain(WOLFSSL_CTX* ctx, const byte* der,
 
     if (res == 1) {
          /* Add chain to DER buffer. */
-         res = wolfssl_add_to_chain(&ctx->certChain, 1, der, (word32)derSz, ctx->heap);
+         res = wolfssl_add_to_chain(&ctx->certChain, 1, der, (word32)derSz,
+             ctx->heap);
     #ifdef WOLFSSL_TLS13
         /* Update count of certificates. */
         ctx->certChainCnt++;
@@ -5403,7 +5449,8 @@ int wolfSSL_CTX_set_default_verify_paths(WOLFSSL_CTX* ctx)
         }
     #else
         /* OpenSSL's implementation of this API does not require loading the
-           system CA cert directory.  Allow skipping this without erroring out. */
+         * system CA cert directory.  Allow skipping this without erroring out.
+         */
         ret = 1;
     #endif
     }
@@ -5524,8 +5571,10 @@ int wolfSSL_SetTmpDH(WOLFSSL* ssl, const unsigned char* p, int pSz,
 
     if (ret == 1) {
         /* Allocate buffers for p and g to be assigned into SSL. */
-        pAlloc = (byte*)XMALLOC((size_t)pSz, ssl->heap, DYNAMIC_TYPE_PUBLIC_KEY);
-        gAlloc = (byte*)XMALLOC((size_t)gSz, ssl->heap, DYNAMIC_TYPE_PUBLIC_KEY);
+        pAlloc = (byte*)XMALLOC((size_t)pSz, ssl->heap,
+            DYNAMIC_TYPE_PUBLIC_KEY);
+        gAlloc = (byte*)XMALLOC((size_t)gSz, ssl->heap,
+            DYNAMIC_TYPE_PUBLIC_KEY);
         if ((pAlloc == NULL) || (gAlloc == NULL)) {
             /* Memory will be freed below in the (ret != 1) block */
             ret = MEMORY_E;
@@ -5576,7 +5625,8 @@ static int wolfssl_check_dh_key(unsigned char* p, int pSz, unsigned char* g,
         /* Initialize a DH object. */
         if ((ret = wc_InitDhKey(checkKey)) == 0) {
             /* Check DH parameters. */
-            ret = wc_DhSetCheckKey(checkKey, p, (word32)pSz, g, (word32)gSz, NULL, 0, 0, &rng);
+            ret = wc_DhSetCheckKey(checkKey, p, (word32)pSz, g, (word32)gSz,
+                NULL, 0, 0, &rng);
             /* Dispose of DH object. */
             wc_FreeDhKey(checkKey);
         }
@@ -5672,8 +5722,10 @@ int wolfSSL_CTX_SetTmpDH(WOLFSSL_CTX* ctx, const unsigned char* p, int pSz,
 
     if (ret == 1) {
         /* Allocate buffers for p and g to be assigned into SSL context. */
-        pAlloc = (byte*)XMALLOC((size_t)pSz, ctx->heap, DYNAMIC_TYPE_PUBLIC_KEY);
-        gAlloc = (byte*)XMALLOC((size_t)gSz, ctx->heap, DYNAMIC_TYPE_PUBLIC_KEY);
+        pAlloc = (byte*)XMALLOC((size_t)pSz, ctx->heap,
+            DYNAMIC_TYPE_PUBLIC_KEY);
+        gAlloc = (byte*)XMALLOC((size_t)gSz, ctx->heap,
+            DYNAMIC_TYPE_PUBLIC_KEY);
         if ((pAlloc == NULL) || (gAlloc == NULL)) {
             ret = MEMORY_E;
         }

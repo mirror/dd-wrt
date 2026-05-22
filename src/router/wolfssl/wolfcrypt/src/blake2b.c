@@ -12,7 +12,7 @@
 */
 /* blake2b.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -33,10 +33,16 @@
 
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
-#ifdef HAVE_BLAKE2
+#ifdef HAVE_BLAKE2B
 
 #include <wolfssl/wolfcrypt/blake2.h>
 #include <wolfssl/wolfcrypt/blake2-impl.h>
+#ifdef NO_INLINE
+    #include <wolfssl/wolfcrypt/misc.h>
+#else
+    #define WOLFSSL_MISC_INCLUDED
+    #include <wolfcrypt/src/misc.c>
+#endif
 
 static const word64 blake2b_IV[8] =
 {
@@ -100,9 +106,9 @@ static WC_INLINE int blake2b_init0( blake2b_state *S )
 int blake2b_init_param( blake2b_state *S, const blake2b_param *P )
 {
   word32 i;
-  byte *p ;
+  const byte *p ;
   blake2b_init0( S );
-  p =  ( byte * )( P );
+  p =  ( const byte * )( P );
 
   /* IV XOR ParamBlock */
   for( i = 0; i < 8; ++i )
@@ -114,71 +120,37 @@ int blake2b_init_param( blake2b_state *S, const blake2b_param *P )
 
 int blake2b_init( blake2b_state *S, const byte outlen )
 {
-#ifdef WOLFSSL_BLAKE2B_INIT_EACH_FIELD
-  blake2b_param P[1];
-#else
-  volatile blake2b_param P[1];
-#endif
+  volatile blake2b_param P;
 
   if ( ( !outlen ) || ( outlen > BLAKE2B_OUTBYTES ) ) return BAD_FUNC_ARG;
 
-#ifdef WOLFSSL_BLAKE2B_INIT_EACH_FIELD
-  P->digest_length = outlen;
-  P->key_length    = 0;
-  P->fanout        = 1;
-  P->depth         = 1;
-  store32( &P->leaf_length, 0 );
-  store64( &P->node_offset, 0 );
-  P->node_depth    = 0;
-  P->inner_length  = 0;
-  XMEMSET( P->reserved, 0, sizeof( P->reserved ) );
-  XMEMSET( P->salt,     0, sizeof( P->salt ) );
-  XMEMSET( P->personal, 0, sizeof( P->personal ) );
-#else
-  XMEMSET( (blake2b_param *)P, 0, sizeof( *P ) );
-  P->digest_length = outlen;
-  P->fanout        = 1;
-  P->depth         = 1;
-#endif
-  return blake2b_init_param( S, (blake2b_param *)P );
-}
+  XMEMSET((void *)(wc_ptr_t)&P, 0, sizeof(P));
+  WC_BARRIER();
+  P.digest_length = outlen;
+  P.fanout        = 1;
+  P.depth         = 1;
 
+  return blake2b_init_param(S, (const blake2b_param *)(wc_ptr_t)&P);
+}
 
 int blake2b_init_key( blake2b_state *S, const byte outlen, const void *key,
                       const byte keylen )
 {
   int ret = 0;
-#ifdef WOLFSSL_BLAKE2B_INIT_EACH_FIELD
-  blake2b_param P[1];
-#else
-  volatile blake2b_param P[1];
-#endif
+  volatile blake2b_param P;
 
   if ( ( !outlen ) || ( outlen > BLAKE2B_OUTBYTES ) ) return BAD_FUNC_ARG;
 
   if ( !key || !keylen || keylen > BLAKE2B_KEYBYTES ) return BAD_FUNC_ARG;
 
-#ifdef WOLFSSL_BLAKE2B_INIT_EACH_FIELD
-  P->digest_length = outlen;
-  P->key_length    = keylen;
-  P->fanout        = 1;
-  P->depth         = 1;
-  store32( &P->leaf_length, 0 );
-  store64( &P->node_offset, 0 );
-  P->node_depth    = 0;
-  P->inner_length  = 0;
-  XMEMSET( P->reserved, 0, sizeof( P->reserved ) );
-  XMEMSET( P->salt,     0, sizeof( P->salt ) );
-  XMEMSET( P->personal, 0, sizeof( P->personal ) );
-#else
-  XMEMSET( (blake2b_param *)P, 0, sizeof( *P ) );
-  P->digest_length = outlen;
-  P->key_length    = keylen;
-  P->fanout        = 1;
-  P->depth         = 1;
-#endif
+  XMEMSET( (void *)(wc_ptr_t)&P, 0, sizeof( P ) );
+  WC_BARRIER();
+  P.digest_length = outlen;
+  P.key_length    = keylen;
+  P.fanout        = 1;
+  P.depth         = 1;
 
-  ret = blake2b_init_param( S, (blake2b_param *)P );
+  ret = blake2b_init_param(S, (const blake2b_param *)(wc_ptr_t)&P);
   if ( ret < 0 ) return ret;
 
   {
@@ -403,7 +375,7 @@ int blake2b( byte *out, const void *in, const void *key, const byte outlen,
   }
 
   {
-    int ret = blake2b_update( S, ( byte * )in, inlen );
+    int ret = blake2b_update( S, ( const byte * )in, inlen );
     if (ret < 0) return ret;
   }
 
@@ -454,6 +426,9 @@ int wc_InitBlake2b(Blake2b* b2b, word32 digestSz)
     if (b2b == NULL){
         return BAD_FUNC_ARG;
     }
+    if (digestSz == 0 || digestSz > BLAKE2B_OUTBYTES) {
+        return BAD_FUNC_ARG;
+    }
     b2b->digestSz = digestSz;
 
     return blake2b_init(b2b->S, (byte)digestSz);
@@ -463,6 +438,9 @@ int wc_InitBlake2b(Blake2b* b2b, word32 digestSz)
 int wc_InitBlake2b_WithKey(Blake2b* b2b, word32 digestSz, const byte *key, word32 keylen)
 {
     if (b2b == NULL){
+        return BAD_FUNC_ARG;
+    }
+    if (digestSz == 0 || digestSz > BLAKE2B_OUTBYTES) {
         return BAD_FUNC_ARG;
     }
     b2b->digestSz = digestSz;
@@ -506,12 +484,123 @@ int wc_Blake2bFinal(Blake2b* b2b, byte* final, word32 requestSz)
     }
 
     sz = requestSz ? requestSz : b2b->digestSz;
+    if (sz == 0 || sz > BLAKE2B_OUTBYTES) {
+        return BAD_FUNC_ARG;
+    }
 
     return blake2b_final(b2b->S, final, (byte)sz);
 }
 
 
-/* end CTaoCrypt API */
+int wc_Blake2bHmacInit(Blake2b* b2b, const byte* key, size_t key_len)
+{
+    byte x_key[BLAKE2B_BLOCKBYTES];
+    int i;
+    int ret = 0;
 
-#endif  /* HAVE_BLAKE2 */
+    if (key == NULL)
+        return BAD_FUNC_ARG;
 
+    if (key_len > BLAKE2B_BLOCKBYTES) {
+        ret = wc_InitBlake2b(b2b, BLAKE2B_OUTBYTES);
+        if (ret == 0)
+            ret = wc_Blake2bUpdate(b2b, key, (word32)key_len);
+        if (ret == 0)
+            ret = wc_Blake2bFinal(b2b, x_key, 0);
+    } else {
+        XMEMCPY(x_key, key, key_len);
+        if (key_len < BLAKE2B_BLOCKBYTES) {
+            XMEMSET(x_key + key_len, 0, BLAKE2B_BLOCKBYTES - key_len);
+        }
+    }
+
+    if (ret == 0) {
+        for (i = 0; i < BLAKE2B_BLOCKBYTES; ++i)
+            x_key[i] ^= 0x36U;
+    }
+
+    if (ret == 0)
+        ret = wc_InitBlake2b(b2b, BLAKE2B_OUTBYTES);
+    if (ret == 0)
+        ret = wc_Blake2bUpdate(b2b, x_key, BLAKE2B_BLOCKBYTES);
+
+    ForceZero(x_key, sizeof(x_key));
+
+    return ret;
+}
+
+int wc_Blake2bHmacUpdate(Blake2b* b2b, const byte* in, size_t in_len)
+{
+    if (in == NULL)
+        return BAD_FUNC_ARG;
+
+    return wc_Blake2bUpdate(b2b, in, (word32)in_len);
+}
+
+int wc_Blake2bHmacFinal(Blake2b* b2b, const byte* key, size_t key_len,
+        byte* out, size_t out_len)
+{
+    byte x_key[BLAKE2B_BLOCKBYTES];
+    int i;
+    int ret = 0;
+
+    if (key == NULL)
+        return BAD_FUNC_ARG;
+
+    if (out_len != BLAKE2B_OUTBYTES)
+        return BUFFER_E;
+
+    if (key_len > BLAKE2B_BLOCKBYTES) {
+        ret = wc_InitBlake2b(b2b, BLAKE2B_OUTBYTES);
+        if (ret == 0)
+            ret = wc_Blake2bUpdate(b2b, key, (word32)key_len);
+        if (ret == 0)
+            ret = wc_Blake2bFinal(b2b, x_key, 0);
+    } else {
+        XMEMCPY(x_key, key, key_len);
+        if (key_len < BLAKE2B_BLOCKBYTES) {
+            XMEMSET(x_key + key_len, 0, BLAKE2B_BLOCKBYTES - key_len);
+        }
+    }
+
+    if (ret == 0) {
+        for (i = 0; i < BLAKE2B_BLOCKBYTES; ++i)
+            x_key[i] ^= 0x5CU;
+    }
+
+    if (ret == 0)
+        ret = wc_Blake2bFinal(b2b, out, 0);
+
+    if (ret == 0)
+        ret = wc_InitBlake2b(b2b, BLAKE2B_OUTBYTES);
+    if (ret == 0)
+        ret = wc_Blake2bUpdate(b2b, x_key, BLAKE2B_BLOCKBYTES);
+    if (ret == 0)
+        ret = wc_Blake2bUpdate(b2b, out, BLAKE2B_OUTBYTES);
+    if (ret == 0)
+        ret = wc_Blake2bFinal(b2b, out, 0);
+
+    ForceZero(x_key, sizeof(x_key));
+
+    return ret;
+}
+
+int wc_Blake2bHmac(const byte* in, size_t in_len,
+        const byte* key, size_t key_len,
+        byte* out, size_t out_len)
+{
+    Blake2b state;
+    int ret;
+
+    ret = wc_Blake2bHmacInit(&state, key, key_len);
+    if (ret == 0)
+        ret = wc_Blake2bHmacUpdate(&state, in, in_len);
+    if (ret == 0)
+        ret = wc_Blake2bHmacFinal(&state, key, key_len, out, out_len);
+
+    return ret;
+}
+
+/* end wolfCrypt API */
+
+#endif  /* HAVE_BLAKE2B */

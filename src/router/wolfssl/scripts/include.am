@@ -18,7 +18,9 @@ if BUILD_RSA
 if BUILD_CRL
 # make revoked test rely on completion of resume test
 dist_noinst_SCRIPTS+= scripts/crl-revoked.test
+dist_noinst_SCRIPTS+= scripts/crl-gen-openssl.test
 scripts/crl-revoked.log: scripts/resume.log
+scripts/crl-gen-openssl.log: scripts/crl-revoked.log
 endif
 
 # arrange to serialize ocsp.test, ocsp-stapling.test, ocsp-stapling-with-ca-as-responder.test, ocsp-stapling2.test, and testsuite,
@@ -54,6 +56,20 @@ else
 scripts/ocsp-stapling2.log: scripts/ocsp.log
 endif
 
+endif
+
+if BUILD_OCSP_RESPONDER
+if BUILD_OCSP_STAPLING
+dist_noinst_SCRIPTS+= scripts/ocsp-stapling-with-wolfssl-responder.test
+scripts/ocsp-stapling-with-wolfssl-responder.log: scripts/ocsp-stapling-with-ca-as-responder.log
+dist_noinst_SCRIPTS+= scripts/ocsp-responder-openssl-interop.test
+scripts/ocsp-responder-openssl-interop.log: scripts/ocsp-stapling-with-wolfssl-responder.log
+testsuite/testsuite.log: scripts/ocsp-responder-openssl-interop.log
+else
+dist_noinst_SCRIPTS+= scripts/ocsp-responder-openssl-interop.test
+scripts/ocsp-responder-openssl-interop.log: scripts/ocsp.log
+testsuite/testsuite.log: scripts/ocsp-responder-openssl-interop.log
+endif
 endif
 
 endif
@@ -116,6 +132,7 @@ EXTRA_DIST +=  scripts/sniffer-static-rsa.pcap \
 
 # leave openssl.test as extra until non bash works
 EXTRA_DIST +=  scripts/openssl.test
+EXTRA_DIST +=  scripts/rsapss.test
 
 EXTRA_DIST +=  scripts/dertoc.pl
 

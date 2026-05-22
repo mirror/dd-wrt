@@ -1,6 +1,6 @@
 /* renesas_fspsm_sha.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -785,7 +785,7 @@ int wc_Sha512_256Final(wc_Sha512* sha, byte* hash)
 }
 int wc_Sha512_256GetHash(wc_Sha512* sha, byte* hash)
 {
-    return FSPSM_HashGet(sha, hash, WC_SHA512_224_DIGEST_SIZE);
+    return FSPSM_HashGet(sha, hash, WC_SHA512_256_DIGEST_SIZE);
 }
 
 int wc_Sha512_256Copy(wc_Sha512* src, wc_Sha512* dst)

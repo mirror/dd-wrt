@@ -1,6 +1,6 @@
 /* bio.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -1303,6 +1303,13 @@ size_t wolfSSL_BIO_ctrl_pending(WOLFSSL_BIO *bio)
         return 0;
     }
 
+    if (bio->method != NULL && bio->method->ctrlCb != NULL) {
+        long ret;
+        WOLFSSL_MSG("Calling custom BIO ctrl pending callback");
+        ret = bio->method->ctrlCb(bio, WOLFSSL_BIO_CTRL_PENDING, 0, NULL);
+        return (ret < 0) ? 0 : (size_t)ret;
+    }
+
     if (bio->type == WOLFSSL_BIO_MD ||
             bio->type == WOLFSSL_BIO_BASE64) {
         /* these are wrappers only, get next bio */
@@ -1713,6 +1720,11 @@ int wolfSSL_BIO_reset(WOLFSSL_BIO *bio)
         return WOLFSSL_BIO_ERROR;
     }
 
+    if (bio->method != NULL && bio->method->ctrlCb != NULL) {
+        WOLFSSL_MSG("Calling custom BIO reset callback");
+        return (int)bio->method->ctrlCb(bio, WOLFSSL_BIO_CTRL_RESET, 0, NULL);
+    }
+
     switch (bio->type) {
         #ifndef NO_FILESYSTEM
         case WOLFSSL_BIO_FILE:
@@ -1938,6 +1950,8 @@ int wolfSSL_BIO_get_len(WOLFSSL_BIO *bio)
             len = BAD_FUNC_ARG;
         if (len == 0) {
             len = wolfssl_file_len(file, &memSz);
+            if (len == WC_NO_ERR_TRACE(WOLFSSL_BAD_FILETYPE))
+                len = 0;
         }
         if (len == 0) {
             len = (int)memSz;
@@ -2012,6 +2026,13 @@ void* wolfSSL_BIO_get_data(WOLFSSL_BIO* bio)
 
     WOLFSSL_MSG("WOLFSSL_BIO was null");
     return NULL;
+}
+
+void wolfSSL_BIO_set_init(WOLFSSL_BIO* bio, int init)
+{
+    WOLFSSL_ENTER("wolfSSL_BIO_set_init");
+    if (bio != NULL)
+        bio->init = (byte)(init != 0);
 }
 
 /* If flag is 0 then blocking is set, if 1 then non blocking.
@@ -2182,7 +2203,10 @@ int wolfSSL_BIO_get_mem_data(WOLFSSL_BIO* bio, void* p)
 
     if (bio == NULL)
         return WOLFSSL_FATAL_ERROR;
-
+    if (bio->method != NULL && bio->method->ctrlCb != NULL) {
+        WOLFSSL_MSG("Calling custom BIO get mem data callback");
+        return (int)bio->method->ctrlCb(bio, WOLFSSL_BIO_CTRL_INFO, 0, p);
+    }
     mem_bio = bio;
     /* Return pointer from last memory BIO in chain */
     while (bio->next) {
@@ -2644,7 +2668,7 @@ int wolfSSL_BIO_flush(WOLFSSL_BIO* bio)
 
         if (b->ptr.ssl != NULL) {
             int rc = wolfSSL_shutdown(b->ptr.ssl);
-            if (rc == WOLFSSL_SHUTDOWN_NOT_DONE) {
+            if (rc == WC_NO_ERR_TRACE(WOLFSSL_SHUTDOWN_NOT_DONE)) {
                 /* In this case, call again to give us a chance to read the
                  * close notify alert from the other end. */
                 wolfSSL_shutdown(b->ptr.ssl);
@@ -3617,20 +3641,6 @@ int wolfSSL_BIO_new_bio_pair(WOLFSSL_BIO **bio1_p, size_t writebuf1,
 #endif
 
 #ifdef OPENSSL_ALL
-
-#ifndef NO_WOLFSSL_STUB
-void wolfSSL_BIO_set_init(WOLFSSL_BIO* bio, int init)
-{
-    WOLFSSL_STUB("wolfSSL_BIO_set_init");
-    (void)bio;
-    (void)init;
-}
-int wolfSSL_BIO_get_init(WOLFSSL_BIO* bio)
-{
-    WOLFSSL_STUB("wolfSSL_BIO_get_init");
-    (void)bio;
-}
-#endif /* NO_WOLFSSL_STUB */
 
 void wolfSSL_BIO_set_shutdown(WOLFSSL_BIO* bio, int shut)
 {

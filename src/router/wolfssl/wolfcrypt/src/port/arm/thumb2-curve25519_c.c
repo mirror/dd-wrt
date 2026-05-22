@@ -1,6 +1,6 @@
 /* thumb2-curve25519
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -296,7 +296,7 @@ WC_OMIT_FRAME_POINTER void fe_add(fe r, const fe a, const fe b)
     );
 }
 
-#ifdef HAVE_ED25519
+#if defined(HAVE_ED25519) || defined(WOLFSSL_CURVE25519_USE_ED25519)
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 WC_OMIT_FRAME_POINTER void fe_frombytes(fe out_p, const unsigned char* in_p)
 #else
@@ -571,17 +571,18 @@ WC_OMIT_FRAME_POINTER int fe_isnegative(const fe a)
     return (word32)(size_t)a;
 }
 
-#if defined(HAVE_ED25519_MAKE_KEY) || defined(HAVE_ED25519_SIGN)
+#if defined(HAVE_ED25519_MAKE_KEY) || defined(HAVE_ED25519_SIGN) || defined(WOLFSSL_CURVE25519_USE_ED25519)
 #ifndef WC_NO_CACHE_RESISTANT
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r_p, fe* base_p, signed char b_p)
+WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r_p, const fe* base_p,
+    signed char b_p)
 #else
-WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r, fe* base, signed char b)
+WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r, const fe* base, signed char b)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
     register fe* r __asm__ ("r0") = (fe*)r_p;
-    register fe* base __asm__ ("r1") = (fe*)base_p;
+    register const fe* base __asm__ ("r1") = (const fe*)base_p;
     register signed char b __asm__ ("r2") = (signed char)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
@@ -1558,14 +1559,15 @@ WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r, fe* base, signed char b)
 
 #else
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r_p, fe* base_p, signed char b_p)
+WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r_p, const fe* base_p,
+    signed char b_p)
 #else
-WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r, fe* base, signed char b)
+WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r, const fe* base, signed char b)
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
     register fe* r __asm__ ("r0") = (fe*)r_p;
-    register fe* base __asm__ ("r1") = (fe*)base_p;
+    register const fe* base __asm__ ("r1") = (const fe*)base_p;
     register signed char b __asm__ ("r2") = (signed char)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
@@ -1670,8 +1672,8 @@ WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r, fe* base, signed char b)
 }
 
 #endif /* WC_NO_CACHE_RESISTANT */
-#endif /* HAVE_ED25519_MAKE_KEY || HAVE_ED25519_SIGN */
-#endif /* HAVE_ED25519 */
+#endif /* HAVE_ED25519_MAKE_KEY || HAVE_ED25519_SIGN || WOLFSSL_CURVE25519_USE_ED25519 */
+#endif /* HAVE_ED25519 || WOLFSSL_CURVE25519_USE_ED25519 */
 #ifdef WOLFSSL_ARM_ARCH_7M
 void fe_mul_op(void);
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -3663,7 +3665,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
 
 #endif /* WC_NO_CACHE_RESISTANT */
 #endif /* HAVE_CURVE25519 */
-#ifdef HAVE_ED25519
+#if defined(HAVE_ED25519) || defined(WOLFSSL_CURVE25519_USE_ED25519)
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 WC_OMIT_FRAME_POINTER void fe_invert(fe r_p, const fe a_p)
 #else
@@ -5156,6 +5158,8 @@ WC_OMIT_FRAME_POINTER void ge_sub(ge_p1p1 * r, const ge_p3 * p,
     );
 }
 
+#endif /* HAVE_ED25519 || WOLFSSL_CURVE25519_USE_ED25519 */
+#ifdef HAVE_ED25519
 #ifdef WOLFSSL_ARM_ARCH_7M
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 WC_OMIT_FRAME_POINTER void sc_reduce(byte* s_p)

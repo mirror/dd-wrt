@@ -1,6 +1,6 @@
 /* quic.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -72,7 +72,7 @@ static QuicRecord *quic_record_make(WOLFSSL *ssl,
 
     qr = (QuicRecord*)XMALLOC(sizeof(*qr), ssl->heap, DYNAMIC_TYPE_TMP_BUFFER);
     if (qr) {
-        memset(qr, 0, sizeof(*qr));
+        XMEMSET(qr, 0, sizeof(*qr));
         qr->level = level;
         if (level == wolfssl_encryption_early_data) {
             qr->capacity = qr->len = (word32)len;
@@ -184,13 +184,14 @@ static word32 add_rec_header(byte* output, word32 length, byte type)
 
 static sword32 quic_record_transfer(QuicRecord* qr, byte* buf, word32 sz)
 {
-    word32 len = qr->end - qr->start;
+    word32 len;
     word32 offset = 0;
     word32 rlen;
 
-    if (len <= 0) {
+    if (qr->end <= qr->start) {
         return 0;
     }
+    len = qr->end - qr->start;
 
     /* We check if the buf is at least RECORD_HEADER_SZ */
     if (sz < RECORD_HEADER_SZ) {
@@ -227,7 +228,7 @@ const QuicTransportParam* QuicTransportParam_new(const uint8_t* data,
 {
     QuicTransportParam* tp;
 
-    if (len > 65353) return NULL;
+    if (len > 65535) return NULL;
     tp = (QuicTransportParam*)XMALLOC(sizeof(*tp), heap, DYNAMIC_TYPE_TLSX);
     if (!tp) return NULL;
     tp->data = (uint8_t*)XMALLOC(len, heap, DYNAMIC_TYPE_TLSX);
@@ -430,7 +431,7 @@ int wolfSSL_get_peer_quic_transport_version(const WOLFSSL* ssl)
 {
     return ssl->quic.transport_peer ?
         TLSX_KEY_QUIC_TP_PARAMS : (ssl->quic.transport_peer_draft ?
-        TLSX_KEY_QUIC_TP_PARAMS : -1);
+        TLSX_KEY_QUIC_TP_PARAMS_DRAFT : -1);
 }
 
 

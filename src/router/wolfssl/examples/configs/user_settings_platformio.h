@@ -1,6 +1,6 @@
 /* examples/configs/user_settings_platformio.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -103,7 +103,6 @@
 #define TEST_ESPIDF_ALL_WOLFSSL
 #ifdef  TEST_ESPIDF_ALL_WOLFSSL
     #define WOLFSSL_MD2
-    #define HAVE_BLAKE2
     #define HAVE_BLAKE2B
     #define HAVE_BLAKE2S
 

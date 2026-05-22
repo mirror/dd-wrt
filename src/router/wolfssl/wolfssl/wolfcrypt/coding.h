@@ -1,6 +1,6 @@
 /* coding.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -74,15 +74,6 @@ WOLFSSL_API int Base64_Decode_nonCT(const byte* in, word32 inLen, byte* out,
     WOLFSSL_API
     int Base64_Encode_NoNl(const byte* in, word32 inLen, byte* out,
                                   word32* outLen);
-#endif
-
-#if defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL) || \
-    defined(HAVE_WEBSERVER) || defined(HAVE_FIPS) || \
-    defined(HAVE_ECC_CDH) || defined(HAVE_SELFTEST) || \
-    defined(WOLFSSL_ENCRYPTED_KEYS)
-    #ifndef WOLFSSL_BASE16
-        #define WOLFSSL_BASE16
-    #endif
 #endif
 
 #ifdef WOLFSSL_BASE16

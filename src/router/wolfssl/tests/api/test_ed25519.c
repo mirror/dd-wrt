@@ -1,6 +1,6 @@
 /* test_ed25519.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -168,6 +168,52 @@ int test_wc_ed25519_sign_msg(void)
     return EXPECT_RESULT();
 
 } /* END test_wc_ed25519_sign_msg */
+
+/*
+ * Test that wc_ed25519_sign_msg() rejects a public-key-only key object.
+ * A key with pubKeySet=1 but privKeySet=0 must not silently sign.
+ */
+int test_wc_ed25519_sign_msg_pubonly_fails(void)
+{
+    EXPECT_DECLS;
+#if !defined(HAVE_FIPS) || FIPS_VERSION3_GE(7,0,0)
+#if defined(HAVE_ED25519) && defined(HAVE_ED25519_SIGN) && \
+    defined(HAVE_ED25519_KEY_IMPORT) && defined(HAVE_ED25519_KEY_EXPORT)
+    ed25519_key fullKey;
+    ed25519_key pubOnlyKey;
+    WC_RNG      rng;
+    byte        pubBuf[ED25519_PUB_KEY_SIZE];
+    word32      pubSz = sizeof(pubBuf);
+    byte        msg[] = "test message for pubonly check";
+    byte        sig[ED25519_SIG_SIZE];
+    word32      sigLen = sizeof(sig);
+
+    XMEMSET(&fullKey, 0, sizeof(fullKey));
+    XMEMSET(&pubOnlyKey, 0, sizeof(pubOnlyKey));
+    XMEMSET(&rng, 0, sizeof(rng));
+
+    ExpectIntEQ(wc_ed25519_init(&fullKey), 0);
+    ExpectIntEQ(wc_ed25519_init(&pubOnlyKey), 0);
+    ExpectIntEQ(wc_InitRng(&rng), 0);
+
+    /* Generate a real key pair and export its public key. */
+    ExpectIntEQ(wc_ed25519_make_key(&rng, ED25519_KEY_SIZE, &fullKey), 0);
+    ExpectIntEQ(wc_ed25519_export_public(&fullKey, pubBuf, &pubSz), 0);
+
+    /* Import only the public key into a fresh key object. */
+    ExpectIntEQ(wc_ed25519_import_public(pubBuf, pubSz, &pubOnlyKey), 0);
+
+    /* Signing with a public-key-only object must fail. */
+    ExpectIntEQ(wc_ed25519_sign_msg(msg, sizeof(msg), sig, &sigLen,
+        &pubOnlyKey), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+
+    DoExpectIntEQ(wc_FreeRng(&rng), 0);
+    wc_ed25519_free(&pubOnlyKey);
+    wc_ed25519_free(&fullKey);
+#endif
+#endif
+    return EXPECT_RESULT();
+} /* END test_wc_ed25519_sign_msg_pubonly_fails */
 
 /*
  * Testing wc_ed25519_import_public()
@@ -489,8 +535,16 @@ int test_wc_Ed25519PublicKeyToDer(void)
     ExpectIntEQ(wc_Ed25519PublicKeyToDer(NULL, NULL, 0, 0),
         WC_NO_ERR_TRACE(BAD_FUNC_ARG));
     ExpectIntEQ(wc_ed25519_init(&key), 0);
+#if defined(HAVE_FIPS) && FIPS_VERSION3_LT(7,0,0)
+    if (EXPECT_SUCCESS()) {
+        int ret = wc_Ed25519PublicKeyToDer(&key, derBuf, 0, 0);
+        ExpectTrue((ret == WC_NO_ERR_TRACE(BUFFER_E)) ||
+                   (ret == WC_NO_ERR_TRACE(PUBLIC_KEY_E)));
+    }
+#else
     ExpectIntEQ(wc_Ed25519PublicKeyToDer(&key, derBuf, 0, 0),
-        WC_NO_ERR_TRACE(BUFFER_E));
+        WC_NO_ERR_TRACE(PUBLIC_KEY_E));
+#endif
     wc_ed25519_free(&key);
 
     /*  Test good args */

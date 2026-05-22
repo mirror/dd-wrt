@@ -1,6 +1,6 @@
 /* dtls.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -403,8 +403,9 @@ static int TlsTicketIsValid(const WOLFSSL* ssl, WolfSSL_ConstVector exts,
         if (!IsAtLeastTLSv1_3(it->pv))
             *resume = TRUE;
     }
-    if (it != NULL)
-        ForceZero(it, sizeof(InternalTicket));
+    /* `it` points into tempTicket on successful decryption so clearing it will
+     * also satisfy the WOLFSSL_CHECK_MEM_ZERO check. */
+    ForceZero(tempTicket, SESSION_TICKET_LEN);
     return 0;
 }
 #endif /* HAVE_SESSION_TICKET */
@@ -856,9 +857,9 @@ static int SendStatelessReplyDtls13(const WOLFSSL* ssl, WolfSSL_CH* ch)
         nonConstSSL->options.tls1_1 = 1;
         nonConstSSL->options.tls1_3 = 1;
 
-        XMEMCPY(nonConstSSL->session->sessionID, ch->sessionId.elements,
-                ch->sessionId.size);
-        nonConstSSL->session->sessionIDSz = (byte)ch->sessionId.size;
+        /* RFC 9147 Section 5.3: DTLS 1.3 ServerHello must have empty
+         * legacy_session_id_echo. Don't copy the client's session ID. */
+        nonConstSSL->session->sessionIDSz = 0;
         nonConstSSL->options.cipherSuite0 = cs.cipherSuite0;
         nonConstSSL->options.cipherSuite = cs.cipherSuite;
         nonConstSSL->extensions = parsedExts;

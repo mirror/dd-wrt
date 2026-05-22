@@ -1,6 +1,6 @@
 /* test_ecc.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -676,7 +676,8 @@ int test_wc_ecc_export_x963_ex(void)
         WC_NO_ERR_TRACE(BAD_FUNC_ARG));
     ExpectIntEQ(wc_ecc_export_x963_ex(&key, out, NULL, COMP),
         WC_NO_ERR_TRACE(BAD_FUNC_ARG));
-#if defined(HAVE_FIPS) && (!defined(FIPS_VERSION_LT) || FIPS_VERSION_LT(5,3))
+#if (defined(HAVE_FIPS) && (!defined(FIPS_VERSION_LT) || FIPS_VERSION_LT(5,3)))\
+    || defined(HAVE_SELFTEST)
     ExpectIntEQ(wc_ecc_export_x963_ex(&key, out, &badOutLen, COMP),
         WC_NO_ERR_TRACE(BUFFER_E));
 #else
@@ -1313,6 +1314,7 @@ int test_wc_ecc_encryptDecrypt(void)
 
 #ifdef WOLFSSL_ECIES_OLD
     tmpKey.dp = cliKey.dp;
+    tmpKey.idx = cliKey.idx;
     ExpectIntEQ(wc_ecc_copy_point(&cliKey.pubkey, &tmpKey.pubkey), 0);
 #endif
 
@@ -1444,7 +1446,6 @@ int test_wc_ecc_pointFns(void)
 
 #if !defined(HAVE_SELFTEST) && (!defined(HAVE_FIPS) || \
     (defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION>2)))
-#ifdef USE_ECC_B_PARAM
     /* On curve if ret == 0 */
     ExpectIntEQ(wc_ecc_point_is_on_curve(point, idx), 0);
     /* Test bad args. */
@@ -1452,7 +1453,6 @@ int test_wc_ecc_pointFns(void)
         WC_NO_ERR_TRACE(BAD_FUNC_ARG));
     ExpectIntEQ(wc_ecc_point_is_on_curve(point, 1000),
         WC_NO_ERR_TRACE(ECC_BAD_ARG_E));
-#endif /* USE_ECC_B_PARAM */
 #endif /* !HAVE_SELFTEST && (!HAVE_FIPS || HAVE_FIPS_VERSION > 2) */
 
     /* Free */

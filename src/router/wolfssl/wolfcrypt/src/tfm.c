@@ -1,6 +1,6 @@
 /* tfm.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -4540,9 +4540,9 @@ int mp_exptmod_nct (mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
 
 
 /* compare two ints (signed)*/
-int mp_cmp (mp_int * a, mp_int * b)
+int mp_cmp (const mp_int * a, const mp_int * b)
 {
-  return fp_cmp(a, b);
+  return fp_cmp((mp_int *)a, (mp_int *)b);
 }
 
 /* compare a digit */

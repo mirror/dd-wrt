@@ -1,6 +1,6 @@
 /* x509.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -67,9 +67,6 @@
 
 #define WOLFSSL_XN_FLAG_MULTILINE       0xFFFF
 #define WOLFSSL_XN_FLAG_ONELINE (WOLFSSL_XN_FLAG_SEP_CPLUS_SPC | WOLFSSL_XN_FLAG_SPC_EQ | WOLFSSL_XN_FLAG_FN_SN)
-
-#define WOLFSSL_X509_V_ERR_CRL_HAS_EXPIRED              12
-#define WOLFSSL_X509_V_ERR_UNABLE_TO_GET_CRL            3
 
 #ifndef OPENSSL_COEXIST
 

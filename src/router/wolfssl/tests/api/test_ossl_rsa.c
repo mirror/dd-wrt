@@ -1,6 +1,6 @@
 /* test_ossl_rsa.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -402,12 +402,11 @@ int test_wolfSSL_RSA_DER(void)
 
     for (i = 0; tbl[i].der != NULL; i++)
     {
-        /* Passing in pointer results in pointer moving. */
+        /* d2i_RSAPublicKey should fail when given private key DER.
+         * wc_RsaPublicKeyDecode correctly rejects private key format. */
         buff = tbl[i].der;
-        ExpectNotNull(d2i_RSAPublicKey(&rsa, &buff, tbl[i].sz));
-        ExpectNotNull(rsa);
-        RSA_free(rsa);
-        rsa = NULL;
+        ExpectNull(d2i_RSAPublicKey(&rsa, &buff, tbl[i].sz));
+        ExpectNull(rsa);
     }
     for (i = 0; tbl[i].der != NULL; i++)
     {
@@ -1470,8 +1469,10 @@ int test_wolfSSL_RSA_To_Der(void)
     rsa = NULL;
     ExpectNotNull(wolfSSL_d2i_RSAPrivateKey(&rsa, &der, privDerSz));
 
-    ExpectIntEQ(wolfSSL_RSA_To_Der(NULL, &outDer, 0, HEAP_HINT), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
-    ExpectIntEQ(wolfSSL_RSA_To_Der(rsa, &outDer, 2, HEAP_HINT), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    ExpectIntEQ(wolfSSL_RSA_To_Der(NULL, &outDer, 0, HEAP_HINT),
+        WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    ExpectIntEQ(wolfSSL_RSA_To_Der(rsa, &outDer, 2, HEAP_HINT),
+        WC_NO_ERR_TRACE(BAD_FUNC_ARG));
 
     ExpectIntEQ(wolfSSL_RSA_To_Der(rsa, NULL, 0, HEAP_HINT), privDerSz);
     outDer = out;
@@ -1491,14 +1492,17 @@ int test_wolfSSL_RSA_To_Der(void)
     RSA_free(rsa);
 
     ExpectNotNull(rsa = RSA_new());
-    ExpectIntEQ(wolfSSL_RSA_To_Der(rsa, &outDer, 0, HEAP_HINT), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
-    ExpectIntEQ(wolfSSL_RSA_To_Der(rsa, &outDer, 1, HEAP_HINT), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    ExpectIntEQ(wolfSSL_RSA_To_Der(rsa, &outDer, 0, HEAP_HINT),
+        WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    ExpectIntEQ(wolfSSL_RSA_To_Der(rsa, &outDer, 1, HEAP_HINT),
+        WC_NO_ERR_TRACE(BAD_FUNC_ARG));
     RSA_free(rsa);
 
     der = pubDer;
     rsa = NULL;
     ExpectNotNull(wolfSSL_d2i_RSAPublicKey(&rsa, &der, pubDerSz));
-    ExpectIntEQ(wolfSSL_RSA_To_Der(rsa, &outDer, 0, HEAP_HINT), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    ExpectIntEQ(wolfSSL_RSA_To_Der(rsa, &outDer, 0, HEAP_HINT),
+        WC_NO_ERR_TRACE(BAD_FUNC_ARG));
     RSA_free(rsa);
 #endif
 #endif

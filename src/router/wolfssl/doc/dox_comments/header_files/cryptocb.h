@@ -52,6 +52,17 @@
                 }
             }
         #endif
+        #if defined(WC_RSA_PSS) && !defined(NO_RSA)
+            if (info->pk.type == WC_PK_TYPE_RSA_PSS) {
+                // RSA-PSS sign/verify
+                ret = wc_RsaPSS_Sign_ex(
+                    info->pk.rsa.in, info->pk.rsa.inLen,
+                    info->pk.rsa.out, *info->pk.rsa.outLen,
+                    WC_HASH_TYPE_SHA256, WC_MGF1SHA256,
+                    RSA_PSS_SALT_LEN_DEFAULT,
+                    info->pk.rsa.key, info->pk.rsa.rng);
+            }
+        #endif
         #ifdef HAVE_ECC
             if (info->pk.type == WC_PK_TYPE_ECDSA_SIGN) {
                 // ECDSA
@@ -109,3 +120,134 @@ int  wc_CryptoCb_RegisterDevice(int devId, CryptoDevCallbackFunc cb, void* ctx);
     \sa wolfSSL_CTX_SetDevId
 */
 void wc_CryptoCb_UnRegisterDevice(int devId);
+
+/*!
+    \ingroup CryptoCb
+    \brief This function returns the default device ID for crypto
+    callbacks. This is useful when you want to get the device ID that
+    was set as the default for the library.
+
+    \return The default device ID, or INVALID_DEVID if no default is set.
+
+    _Example_
+    \code
+    int devId = wc_CryptoCb_DefaultDevID();
+    if (devId != INVALID_DEVID) {
+        // default device ID is set
+    }
+    \endcode
+
+    \sa wc_CryptoCb_RegisterDevice
+    \sa wc_CryptoCb_UnRegisterDevice
+*/
+int wc_CryptoCb_DefaultDevID(void);
+
+/*!
+    \ingroup CryptoCb
+    \brief This function sets a callback for finding crypto devices.
+    The callback is invoked when a device ID needs to be resolved to
+    a device context. This is useful for dynamic device management.
+
+    \return none No returns.
+
+    \param cb callback function with prototype:
+    typedef void* (*CryptoDevCallbackFind)(int devId);
+
+    _Example_
+    \code
+    void* myDeviceFindCb(int devId) {
+        // lookup device context by ID
+        return deviceContext;
+    }
+
+    wc_CryptoCb_SetDeviceFindCb(myDeviceFindCb);
+    \endcode
+
+    \sa wc_CryptoCb_RegisterDevice
+*/
+void wc_CryptoCb_SetDeviceFindCb(CryptoDevCallbackFind cb);
+
+/*!
+    \ingroup CryptoCb
+    \brief This function converts a wc_CryptoInfo structure to a
+    human-readable string for debugging purposes. The string is printed
+    to stdout and describes the cryptographic operation being performed.
+
+    \return none No returns.
+
+    \param info pointer to the wc_CryptoInfo structure to convert
+
+    _Example_
+    \code
+    int myCryptoCb(int devId, wc_CryptoInfo* info, void* ctx) {
+        // print debug info about the operation
+        wc_CryptoCb_InfoString(info);
+
+        // handle the operation
+        return CRYPTOCB_UNAVAILABLE;
+    }
+    \endcode
+
+    \sa wc_CryptoCb_RegisterDevice
+*/
+void wc_CryptoCb_InfoString(wc_CryptoInfo* info);
+
+/*!
+    \ingroup CryptoCb
+
+    \brief Import an AES key into a CryptoCB device for hardware offload.
+
+    This function allows AES keys to be handled by an external device
+    (e.g. Secure Element or HSM). When supported, the device callback stores
+    the key internally and sets an opaque handle in aes->devCtx.
+
+    When CryptoCB AES SetKey support is enabled
+    (WOLF_CRYPTO_CB_AES_SETKEY), wolfCrypt routes AES-GCM operations
+    through the CryptoCB interface.
+
+    **TLS Builds (Default):**
+    - Key bytes ARE stored in wolfCrypt memory (devKey) for fallback
+    - GCM tables ARE generated for software fallback
+    - Provides hardware acceleration with automatic fallback
+
+    **Crypto-Only Builds (--disable-tls):**
+    - Key bytes NOT stored in wolfCrypt memory (true key isolation)
+    - GCM tables skipped (true hardware offload)
+    - Callback must handle all GCM operations (SetKey, Encrypt, Decrypt, Free)
+
+    If the callback returns success (0), full AES-GCM offload is assumed.
+    The callback must handle SetKey, Encrypt, Decrypt, and Free operations.
+
+    \param aes          AES context
+    \param key          Pointer to raw AES key material
+    \param keySz        Size of key in bytes
+
+    \return 0 on success
+    \return CRYPTOCB_UNAVAILABLE if device does not support this operation
+    \return BAD_FUNC_ARG on invalid parameters
+
+    _Example_
+    \code
+    #include <wolfssl/wolfcrypt/cryptocb.h>
+    #include <wolfssl/wolfcrypt/aes.h>
+
+    Aes aes;
+    byte key[32] = { /* 256-bit key */ };
+    int devId = 1;
+
+    /* Register your CryptoCB callback first */
+    wc_CryptoCb_RegisterDevice(devId, myCryptoCallback, NULL);
+
+    wc_AesInit(&aes, NULL, devId);
+    /* wc_AesGcmSetKey internally calls wc_CryptoCb_AesSetKey */
+    if (wc_CryptoCb_AesSetKey(&aes, key, sizeof(key)) == 0) {
+        /* Key successfully imported to device via callback */
+        /* aes.devCtx now contains device handle */
+        /* Full GCM offload is assumed - callback must handle all operations */
+    }
+    \endcode
+
+    \sa wc_CryptoCb_RegisterDevice
+    \sa wc_AesInit
+*/
+int wc_CryptoCb_AesSetKey(Aes* aes, const byte* key, word32 keySz);

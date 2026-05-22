@@ -1,6 +1,6 @@
 /* x509v3.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -97,6 +97,24 @@ struct WOLFSSL_X509_EXTENSION {
 #define WOLFSSL_GEN_IPADD       7
 #define WOLFSSL_GEN_RID         8
 #define WOLFSSL_GEN_IA5         9
+
+/* CRL reason codes per RFC 5280 section 5.3.1 */
+#ifndef CRL_REASON_UNSPECIFIED
+#ifndef CRL_REASON_NONE
+#define CRL_REASON_NONE                         (-1)
+#endif
+#define CRL_REASON_UNSPECIFIED                  0
+#define CRL_REASON_KEY_COMPROMISE               1
+#define CRL_REASON_CA_COMPROMISE                2
+#define CRL_REASON_AFFILIATION_CHANGED          3
+#define CRL_REASON_SUPERSEDED                   4
+#define CRL_REASON_CESSATION_OF_OPERATION       5
+#define CRL_REASON_CERTIFICATE_HOLD             6
+/* value 7 is not used */
+#define CRL_REASON_REMOVE_FROM_CRL              8
+#define CRL_REASON_PRIVILEGE_WITHDRAWN          9
+#define CRL_REASON_AA_COMPROMISE               10
+#endif
 
 typedef WOLF_STACK_OF(WOLFSSL_ACCESS_DESCRIPTION) WOLFSSL_AUTHORITY_INFO_ACCESS;
 
@@ -199,8 +217,16 @@ typedef struct WOLFSSL_v3_ext_method X509V3_EXT_METHOD;
 typedef struct WOLFSSL_AUTHORITY_KEYID AUTHORITY_KEYID;
 typedef struct WOLFSSL_BASIC_CONSTRAINTS BASIC_CONSTRAINTS;
 typedef struct WOLFSSL_ACCESS_DESCRIPTION ACCESS_DESCRIPTION;
+typedef struct WOLFSSL_GENERAL_SUBTREE  GENERAL_SUBTREE;
+typedef struct WOLFSSL_NAME_CONSTRAINTS NAME_CONSTRAINTS;
 
 #define BASIC_CONSTRAINTS_free    wolfSSL_BASIC_CONSTRAINTS_free
+#define NAME_CONSTRAINTS_new      wolfSSL_NAME_CONSTRAINTS_new
+#define NAME_CONSTRAINTS_free     wolfSSL_NAME_CONSTRAINTS_free
+#define GENERAL_SUBTREE_new       wolfSSL_GENERAL_SUBTREE_new
+#define GENERAL_SUBTREE_free      wolfSSL_GENERAL_SUBTREE_free
+#define sk_GENERAL_SUBTREE_num    wolfSSL_sk_GENERAL_SUBTREE_num
+#define sk_GENERAL_SUBTREE_value  wolfSSL_sk_GENERAL_SUBTREE_value
 #define AUTHORITY_KEYID_free      wolfSSL_AUTHORITY_KEYID_free
 #define SSL_CTX_get_cert_store(x) wolfSSL_CTX_get_cert_store ((x))
 #define ASN1_INTEGER              WOLFSSL_ASN1_INTEGER

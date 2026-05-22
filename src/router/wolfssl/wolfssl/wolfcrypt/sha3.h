@@ -1,6 +1,6 @@
 /* sha3.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -86,8 +86,11 @@ enum {
     WC_SHA3_256_BLOCK_SIZE = 136,
     WC_SHA3_384_BLOCK_SIZE = 104,
     WC_SHA3_512_BLOCK_SIZE = 72,
+#else
+    /* For SELFTEST version < 2, define WC_SHA3_128_BLOCK_SIZE
+     * for Kyber/Dilithium */
+    WC_SHA3_128_BLOCK_SIZE = 168,
 #endif
-
     WOLF_ENUM_DUMMY_LAST_ELEMENT(WC_SHA3)
 };
 

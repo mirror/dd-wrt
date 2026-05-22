@@ -1,6 +1,6 @@
 /* ge_operations.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -27,9 +27,9 @@
 
 #include <wolfssl/wolfcrypt/settings.h>
 
-#ifdef HAVE_ED25519
-
 #include <wolfssl/wolfcrypt/fe_operations.h>
+
+#if defined(HAVE_ED25519) || defined(WOLFSSL_CURVE25519_USE_ED25519)
 
 /*
 ge means group element.
@@ -85,6 +85,11 @@ WOLFSSL_LOCAL void sc_reduce(byte* s);
 WOLFSSL_LOCAL void sc_muladd(byte* s, const byte* a, const byte* b,
                              const byte* c);
 WOLFSSL_LOCAL void ge_tobytes(unsigned char *s,const ge_p2 *h);
+#ifndef ED25519_SMALL
+WOLFSSL_LOCAL void ge_tobytes_nct(unsigned char *s,const ge_p2 *h);
+#else
+#define ge_tobytes_nct ge_tobytes
+#endif
 #ifndef GE_P3_TOBYTES_IMPL
 #define ge_p3_tobytes(s, h) ge_tobytes((s), (const ge_p2 *)(h))
 #else
@@ -117,7 +122,7 @@ typedef struct {
 WOLFSSL_LOCAL void ge_p1p1_to_p2(ge_p2 *r, const ge_p1p1 *p);
 WOLFSSL_LOCAL void ge_p1p1_to_p3(ge_p3 *r, const ge_p1p1 *p);
 WOLFSSL_LOCAL void ge_p2_dbl(ge_p1p1 *r, const ge_p2 *p);
-#define ge_p3_dbl(r, p)     ge_p2_dbl((ge_p1p1 *)(r), (ge_p2 *)(p))
+#define ge_p3_dbl(r, p)     ge_p2_dbl((ge_p1p1 *)(r), (const ge_p2 *)(p))
 WOLFSSL_LOCAL void ge_madd(ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q);
 WOLFSSL_LOCAL void ge_msub(ge_p1p1 *r, const ge_p3 *p, const ge_precomp *q);
 WOLFSSL_LOCAL void ge_add(ge_p1p1 *r, const ge_p3 *p, const ge_cached *q);

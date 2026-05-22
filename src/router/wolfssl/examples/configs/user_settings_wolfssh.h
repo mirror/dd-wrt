@@ -1,6 +1,6 @@
 /* user_settings_wolfssh.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -46,8 +46,8 @@ wolfSSH:
 make
 */
 
-#ifndef WOLFSSL_USER_SETTINGS_SSH_H
-#define WOLFSSL_USER_SETTINGS_SSH_H
+#ifndef WOLFSSL_USER_SETTINGS_H
+#define WOLFSSL_USER_SETTINGS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -211,4 +211,4 @@ extern "C" {
 #endif
 
 
-#endif /* WOLFSSL_USER_SETTINGS_SSH_H */
+#endif /* WOLFSSL_USER_SETTINGS_H */

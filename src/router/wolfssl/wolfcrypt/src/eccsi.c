@@ -1,6 +1,6 @@
 /* eccsi.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -68,8 +68,6 @@ int wc_InitEccsiKey_ex(EccsiKey* key, int keySz, int curveId, void* heap,
         int devId)
 {
     int err = 0;
-    ecc_key* ecc = NULL;
-    ecc_key* pubkey = NULL;
     EccsiKeyParams* params = NULL;
 
     if (key == NULL) {
@@ -84,7 +82,6 @@ int wc_InitEccsiKey_ex(EccsiKey* key, int keySz, int curveId, void* heap,
         err = wc_ecc_init_ex(&key->ecc, heap, devId);
     }
     if (err == 0) {
-        ecc = &key->ecc;
         err = wc_ecc_init_ex(&key->pubkey, heap, devId);
     }
     if (err == 0) {
@@ -94,7 +91,6 @@ int wc_InitEccsiKey_ex(EccsiKey* key, int keySz, int curveId, void* heap,
         }
     }
     if (err == 0) {
-        pubkey = &key->pubkey;
         err = mp_init_multi(&params->order,
 #ifdef WOLFCRYPT_ECCSI_CLIENT
                 &params->a, &params->b, &params->prime, &key->tmp, &key->ssk
@@ -111,8 +107,7 @@ int wc_InitEccsiKey_ex(EccsiKey* key, int keySz, int curveId, void* heap,
     }
 
     if (err != 0) {
-        wc_ecc_free(pubkey);
-        wc_ecc_free(ecc);
+        wc_FreeEccsiKey(key);
     }
 
     return err;
@@ -2164,6 +2159,18 @@ static int eccsi_calc_j(EccsiKey* key, const mp_int* hem, const byte* sig,
     if (err == 0) {
         err = eccsi_decode_sig_s(key, sig, sigSz, s);
     }
+    /* Validate s is in [1, q-1]: reject zero or out-of-range second signature
+     * component.  With s=0, [s](...) yields the point at infinity whose
+     * affine x-coordinate is 0, making the final mp_cmp(0,0) accept any
+     * forged signature. */
+    if (err == 0) {
+        if (mp_iszero(s)) {
+            err = MP_ZERO_E;
+        }
+        else if (mp_cmp(s, &key->params.order) != MP_LT) {
+            err = ECC_OUT_OF_RANGE_E;
+        }
+    }
     /* [s]( [HE]G + [r]Y ) */
     if (err == 0) {
         err = eccsi_mulmod_point(key, s, j, j, 1);
@@ -2243,6 +2250,19 @@ int wc_VerifyEccsiHash(EccsiKey* key, enum wc_HashType hashType,
         err = mp_montgomery_setup(&params->prime, &mp);
     }
 
+    /* Validate r is in [1, q-1]: reject zero or out-of-range first signature
+     * component before any scalar multiplication takes place.
+     * Without this check, r=0 causes J_x=0 and the final mp_cmp(0,0)==MP_EQ
+     * comparison accepts the forged signature unconditionally. */
+    if (err == 0) {
+        if (mp_iszero(r)) {
+            err = MP_ZERO_E;
+        }
+        else if (mp_cmp(r, &params->order) != MP_LT) {
+            err = ECC_OUT_OF_RANGE_E;
+        }
+    }
+
     /* Step 1: Validate PVT is on curve */
     if (err == 0) {
         err = wc_ecc_is_point(pvt, &params->a, &params->b, &params->prime);
@@ -2276,6 +2296,16 @@ int wc_VerifyEccsiHash(EccsiKey* key, enum wc_HashType hashType,
         j = params->base;
         err = eccsi_calc_j(key, hem, sig, sigSz, y, mp, j);
         key->params.haveBase = 0;
+    }
+
+    /* Defense-in-depth: reject J = point at infinity before the final
+     * comparison. Catches any future path that might reach this point
+     * with a neutral-element result (e.g. s = 0 mod q for a non-zero
+     * encoded s). */
+    if (err == 0) {
+        if (wc_ecc_point_is_at_infinity(j)) {
+            err = ECC_INF_E;
+        }
     }
 
     /* Step 6: Jx fitting, compare with r */

@@ -1,6 +1,6 @@
 /* rsa.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -119,7 +119,7 @@ RSA keys can be used to encrypt, decrypt, sign and verify data.
         #endif
     #elif defined(WOLFSSL_SP_MATH_ALL) || defined(WOLFSSL_SP_MATH)
         /* SP implementation supports numbers of SP_INT_BITS bits. */
-        #define RSA_MAX_SIZE    (((SP_INT_BITS + 7) / 8) * 8)
+        #define RSA_MAX_SIZE    WC_BITS_FULL_BYTES(SP_INT_BITS)
         #if defined(WOLFSSL_MYSQL_COMPATIBLE) && RSA_MAX_SIZE < 8192
             #error "MySQL needs SP_INT_BITS at least at 8192"
         #endif
@@ -140,9 +140,6 @@ RSA keys can be used to encrypt, decrypt, sign and verify data.
 
 #ifdef WOLFSSL_ASYNC_CRYPT
     #include <wolfssl/wolfcrypt/async.h>
-    #ifdef WOLFSSL_CERT_GEN
-        #include <wolfssl/wolfcrypt/asn.h>
-    #endif
 #endif
 
 #if FIPS_VERSION3_GE(6,0,0)
@@ -214,8 +211,10 @@ struct RsaKey {
     int   type;                               /* public or private */
     int   state;
     word32 dataLen;
-#ifdef WC_RSA_BLINDING
-    WC_RNG* rng;                              /* for PrivateDecrypt blinding */
+#ifndef WC_NO_RNG
+    WC_RNG* rng;                              /* for PrivateDecrypt blinding and
+                                               * _ifc_pairwise_consistency_test()
+                                               */
 #endif
 #ifdef WOLFSSL_SE050
     word32 keyId;
@@ -330,6 +329,7 @@ WOLFSSL_API int  wc_RsaPrivateDecrypt(const byte* in, word32 inLen, byte* out,
                                   word32 outLen, RsaKey* key);
 WOLFSSL_API int  wc_RsaSSL_Sign(const byte* in, word32 inLen, byte* out,
                             word32 outLen, RsaKey* key, WC_RNG* rng);
+#ifdef WC_RSA_PSS
 WOLFSSL_API int  wc_RsaPSS_Sign(const byte* in, word32 inLen, byte* out,
                                 word32 outLen, enum wc_HashType hash, int mgf,
                                 RsaKey* key, WC_RNG* rng);
@@ -337,6 +337,7 @@ WOLFSSL_API int  wc_RsaPSS_Sign_ex(const byte* in, word32 inLen, byte* out,
                                    word32 outLen, enum wc_HashType hash,
                                    int mgf, int saltLen, RsaKey* key,
                                    WC_RNG* rng);
+#endif
 WOLFSSL_API int  wc_RsaSSL_VerifyInline(byte* in, word32 inLen, byte** out,
                                     RsaKey* key);
 WOLFSSL_API int  wc_RsaSSL_Verify(const byte* in, word32 inLen, byte* out,
@@ -346,6 +347,7 @@ WOLFSSL_API int  wc_RsaSSL_Verify_ex(const byte* in, word32 inLen, byte* out,
 WOLFSSL_API int  wc_RsaSSL_Verify_ex2(const byte* in, word32 inLen, byte* out,
                               word32 outLen, RsaKey* key, int pad_type,
                               enum wc_HashType hash);
+#ifdef WC_RSA_PSS
 WOLFSSL_API int  wc_RsaPSS_VerifyInline(byte* in, word32 inLen, byte** out,
                                         enum wc_HashType hash, int mgf,
                                         RsaKey* key);
@@ -378,6 +380,7 @@ WOLFSSL_API int  wc_RsaPSS_VerifyCheck(const byte* in, word32 inLen,
                                const byte* digest, word32 digestLen,
                                enum wc_HashType hash, int mgf,
                                RsaKey* key);
+#endif
 
 WOLFSSL_API int  wc_RsaEncryptSize(const RsaKey* key);
 
@@ -399,7 +402,7 @@ WOLFSSL_API int  wc_RsaPublicKeyDecodeRaw(const byte* n, word32 nSz,
     WOLFSSL_API int wc_RsaKeyToDer(RsaKey* key, byte* output, word32 inLen);
 #endif
 
-#ifdef WC_RSA_BLINDING
+#ifndef WC_NO_RNG
     WOLFSSL_API int wc_RsaSetRNG(RsaKey* key, WC_RNG* rng);
 #endif
 #ifdef WC_RSA_NONBLOCK

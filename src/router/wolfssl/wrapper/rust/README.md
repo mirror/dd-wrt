@@ -1,6 +1,11 @@
 # wolfSSL Rust Wrapper
 
-## Building the wolfssl Rust Wrapper
+The wolfSSL Rust wrapper currently consists of a single Rust crate named
+`wolfssl-wolfcrypt`.
+The `wolfssl-wolfcrypt` crate is a Rust wrapper for the wolfCrypt cryptographic
+algorithms portion of the wolfSSL C library.
+
+## Locally building and testing the wolfSSL Rust Wrapper
 
 First, configure and build wolfssl C library.
 
@@ -17,6 +22,5 @@ Run tests with:
 | Repository Directory | Description |
 | --- | --- |
 | `/wrapper/rust` | Top level container for all Rust wrapper functionality. |
-| `/wrapper/rust/wolfssl` | Top level for the `wolfssl` library crate. |
-| `/wrapper/rust/wolfssl/src` | Source directory for `wolfssl` crate top-level modules. |
-| `/wrapper/rust/wolfssl/src/wolfcrypt` | Source directory for submodules of `wolfssl::wolfcrypt` module. |
+| `/wrapper/rust/wolfssl-wolfcrypt` | Top level for the `wolfssl-wolfcrypt` library crate. |
+| `/wrapper/rust/wolfssl-wolfcrypt/src` | Source directory for `wolfssl-wolfcrypt` crate top-level modules. |

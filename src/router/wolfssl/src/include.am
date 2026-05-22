@@ -17,10 +17,16 @@ MAINTAINERCLEANFILES+= $(FIPS_FILES)
 EXTRA_DIST += src/bio.c
 EXTRA_DIST += src/conf.c
 EXTRA_DIST += src/pk.c
+EXTRA_DIST += src/pk_rsa.c
+EXTRA_DIST += src/pk_ec.c
+EXTRA_DIST += src/ssl_api_cert.c
+EXTRA_DIST += src/ssl_api_crl_ocsp.c
+EXTRA_DIST += src/ssl_api_pk.c
 EXTRA_DIST += src/ssl_asn1.c
 EXTRA_DIST += src/ssl_bn.c
 EXTRA_DIST += src/ssl_certman.c
 EXTRA_DIST += src/ssl_crypto.c
+EXTRA_DIST += src/ssl_ech.c
 EXTRA_DIST += src/ssl_load.c
 EXTRA_DIST += src/ssl_misc.c
 EXTRA_DIST += src/ssl_p7p12.c
@@ -181,6 +187,14 @@ src_libwolfssl@LIBSUFFIX@_la_SOURCES += \
                wolfcrypt/src/hmac.c \
                wolfcrypt/src/random.c
 
+if BUILD_MEMUSE
+src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/wolfentropy.c
+endif
+
+if BUILD_RNG_BANK
+src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/rng_bank.c
+endif
+
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/kdf.c
 
 if BUILD_RSA
@@ -300,7 +314,11 @@ if BUILD_PPC32_ASM
 if BUILD_PPC32_ASM_INLINE
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/port/ppc32/ppc32-sha256-asm_c.c
 else
+if BUILD_PPC32_ASM_INLINE_REG
+src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/port/ppc32/ppc32-sha256-asm_cr.c
+else
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/port/ppc32/ppc32-sha256-asm.S
+endif !BUILD_PPC32_ASM_INLINE_REG
 endif !BUILD_PPC32_ASM_INLINE
 endif BUILD_PPC32_ASM
 
@@ -422,6 +440,24 @@ src_libwolfssl@LIBSUFFIX@_la_SOURCES += \
                wolfcrypt/src/hmac.c \
                wolfcrypt/src/random.c
 
+if BUILD_FIPS_V6
+if BUILD_MEMUSE
+if BUILD_KERNEL_MODE_DEFAULTS
+src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/wolfentropy.c
+endif
+endif
+endif
+
+if !BUILD_FIPS_V6
+if BUILD_MEMUSE
+src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/wolfentropy.c
+endif
+endif
+
+if BUILD_RNG_BANK
+src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/rng_bank.c
+endif
+
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/kdf.c
 
 if BUILD_RSA
@@ -531,7 +567,11 @@ if BUILD_PPC32_ASM
 if BUILD_PPC32_ASM_INLINE
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/port/ppc32/ppc32-sha256-asm_c.c
 else
+if BUILD_PPC32_ASM_INLINE_REG
+src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/port/ppc32/ppc32-sha256-asm_cr.c
+else
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/port/ppc32/ppc32-sha256-asm.S
+endif !BUILD_PPC32_ASM_INLINE_REG
 endif !BUILD_PPC32_ASM_INLINE
 endif BUILD_PPC32_ASM
 
@@ -770,6 +810,12 @@ endif !BUILD_FIPS_V5
 if !BUILD_FIPS_V2_PLUS
 if BUILD_RNG
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/random.c
+if BUILD_MEMUSE
+src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/wolfentropy.c
+endif
+if BUILD_RNG_BANK
+src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/rng_bank.c
+endif
 endif
 endif !BUILD_FIPS_V2_PLUS
 
@@ -819,7 +865,11 @@ if BUILD_PPC32_ASM
 if BUILD_PPC32_ASM_INLINE
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/port/ppc32/ppc32-sha256-asm_c.c
 else
+if BUILD_PPC32_ASM_INLINE_REG
+src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/port/ppc32/ppc32-sha256-asm_cr.c
+else
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/port/ppc32/ppc32-sha256-asm.S
+endif !BUILD_PPC32_ASM_INLINE_REG
 endif !BUILD_PPC32_ASM_INLINE
 endif BUILD_PPC32_ASM
 
@@ -1254,7 +1304,7 @@ if BUILD_RIPEMD
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/ripemd.c
 endif
 
-if BUILD_BLAKE2
+if BUILD_BLAKE2B
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/blake2b.c
 endif
 if BUILD_BLAKE2S
@@ -1378,6 +1428,10 @@ src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/wc_xmss.c
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/wc_xmss_impl.c
 endif
 
+if BUILD_WC_SLHDSA
+src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/wc_slhdsa.c
+endif
+
 if !BUILD_FIPS_V6_PLUS
 if BUILD_CURVE25519
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/curve25519.c
@@ -1390,6 +1444,7 @@ endif !BUILD_FIPS_V6_PLUS
 
 if BUILD_FEMATH
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/fe_low_mem.c
+src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/ge_operations.c
 if BUILD_CURVE25519_INTELASM
 if !BUILD_X86_ASM
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/fe_x25519_asm.S
@@ -1449,8 +1504,8 @@ endif BUILD_FEMATH
 
 if BUILD_GEMATH
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/ge_low_mem.c
-src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/ge_operations.c
 if !BUILD_FEMATH
+src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/ge_operations.c
 if BUILD_CURVE25519_INTELASM
 if !BUILD_X86_ASM
 src_libwolfssl@LIBSUFFIX@_la_SOURCES += wolfcrypt/src/fe_x25519_asm.S

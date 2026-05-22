@@ -1,6 +1,6 @@
 /* esp_sdk_wifi_lib.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -324,6 +324,7 @@ static EventGroupHandle_t s_wifi_event_group;
 
 
 static int s_retry_num = 0;
+/* TODO: use event in wc_wifi_show_ip - logging the IP string causes a panic. */
 ip_event_got_ip_t* event;
 
 

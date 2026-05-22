@@ -1,6 +1,6 @@
 /* snifftest.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -466,7 +466,7 @@ static void show_appinfo(void)
     #ifdef HAVE_CURVE448
         "x448 "
     #endif
-    #ifdef HAVE_CURVE22519
+    #ifdef HAVE_CURVE25519
         "x22519 "
     #endif
     #ifdef WOLFSSL_STATIC_RSA

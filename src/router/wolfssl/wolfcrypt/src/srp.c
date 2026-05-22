@@ -1,6 +1,6 @@
 /* srp.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -259,6 +259,13 @@ int wc_SrpInit_ex(Srp* srp, SrpType type, SrpSide side, void* heap, int devId)
     /* initializing variables */
     XMEMSET(srp, 0, sizeof(Srp));
 
+    /* default heap hint to NULL or test value */
+#ifdef WOLFSSL_HEAP_TEST
+    srp->heap = (void*)WOLFSSL_HEAP_TEST;
+#else
+    srp->heap = heap;
+#endif /* WOLFSSL_HEAP_TEST */
+
     if ((r = SrpHashInit(&srp->client_proof, type, srp->heap)) != 0)
         return r;
 
@@ -280,13 +287,6 @@ int wc_SrpInit_ex(Srp* srp, SrpType type, SrpSide side, void* heap, int devId)
 
     srp->keyGenFunc_cb = wc_SrpSetKey;
 
-    /* default heap hint to NULL or test value */
-#ifdef WOLFSSL_HEAP_TEST
-    srp->heap = (void*)WOLFSSL_HEAP_TEST;
-#else
-    srp->heap = heap;
-#endif /* WOLFSSL_HEAP_TEST */
-
     (void)devId; /* future */
 
     return 0;
@@ -300,8 +300,8 @@ int wc_SrpInit(Srp* srp, SrpType type, SrpSide side)
 void wc_SrpTerm(Srp* srp)
 {
     if (srp) {
-        mp_clear(&srp->N);    mp_clear(&srp->g);
-        mp_clear(&srp->auth); mp_clear(&srp->priv);
+        mp_clear(&srp->N);       mp_clear(&srp->g);
+        mp_forcezero(&srp->auth); mp_forcezero(&srp->priv);
         if (srp->salt) {
             ForceZero(srp->salt, srp->saltSz);
             XFREE(srp->salt, srp->heap, DYNAMIC_TYPE_SRP);
@@ -389,11 +389,11 @@ int wc_SrpSetParams(Srp* srp, const byte* N,    word32 nSz,
 
     /* Set k = H(N, g) */
     r = SrpHashInit(&hash, srp->type, srp->heap);
-    if (!r) r = SrpHashUpdate(&hash, (byte*) N, nSz);
+    if (!r) r = SrpHashUpdate(&hash, (const byte*) N, nSz);
     for (i = 0; (word32)i < nSz - gSz; i++) {
         if (!r) r = SrpHashUpdate(&hash, &pad, 1);
     }
-    if (!r) r = SrpHashUpdate(&hash, (byte*) g, gSz);
+    if (!r) r = SrpHashUpdate(&hash, (const byte*) g, gSz);
     if (!r) r = SrpHashFinal(&hash, srp->k);
     SrpHashFree(&hash);
 
@@ -401,13 +401,13 @@ int wc_SrpSetParams(Srp* srp, const byte* N,    word32 nSz,
 
     /* digest1 = H(N) */
     if (!r) r = SrpHashInit(&hash, srp->type, srp->heap);
-    if (!r) r = SrpHashUpdate(&hash, (byte*) N, nSz);
+    if (!r) r = SrpHashUpdate(&hash, (const byte*) N, nSz);
     if (!r) r = SrpHashFinal(&hash, digest1);
     SrpHashFree(&hash);
 
     /* digest2 = H(g) */
     if (!r) r = SrpHashInit(&hash, srp->type, srp->heap);
-    if (!r) r = SrpHashUpdate(&hash, (byte*) g, gSz);
+    if (!r) r = SrpHashUpdate(&hash, (const byte*) g, gSz);
     if (!r) r = SrpHashFinal(&hash, digest2);
     SrpHashFree(&hash);
 
@@ -543,12 +543,16 @@ int wc_SrpSetPrivate(Srp* srp, const byte* priv, word32 size)
 static int wc_SrpGenPrivate(Srp* srp, byte* priv, word32 size)
 {
     WC_RNG rng;
-    int r = wc_InitRng_ex(&rng, srp->heap, INVALID_DEVID);
+    int r;
 
-    if (!r) r = wc_RNG_GenerateBlock(&rng, priv, size);
-    if (!r) r = wc_SrpSetPrivate(srp, priv, size);
-    if (!r) wc_FreeRng(&rng);
-
+    r = wc_InitRng_ex(&rng, srp->heap, INVALID_DEVID);
+    if (r == 0) {
+        r = wc_RNG_GenerateBlock(&rng, priv, size);
+        if (r == 0) {
+            r = wc_SrpSetPrivate(srp, priv, size);
+        }
+        wc_FreeRng(&rng);
+    }
     return r;
 }
 
@@ -627,8 +631,10 @@ int wc_SrpGetPublic(Srp* srp, byte* pub, word32* size)
         }
     }
 
+    /* Clear buffer */
+    XMEMSET(pub, 0, *size);
+
     /* extract public key to buffer */
-    XMEMSET(pub, 0, modulusSz);
     if (!r) r = mp_to_unsigned_bin(pubkey, pub);
     if (!r) *size = (word32)mp_unsigned_bin_size(pubkey);
 
@@ -906,30 +912,30 @@ int wc_SrpComputeKey(Srp* srp, byte* clientPubKey, word32 clientPubKeySz,
     XFREE(digest, srp->heap, DYNAMIC_TYPE_SRP);
     if (u) {
         if (r != WC_NO_ERR_TRACE(MP_INIT_E))
-            mp_clear(u);
+            mp_forcezero(u);
         XFREE(u, srp->heap, DYNAMIC_TYPE_SRP);
     }
     if (s) {
         if (r != WC_NO_ERR_TRACE(MP_INIT_E))
-            mp_clear(s);
+            mp_forcezero(s);
         XFREE(s, srp->heap, DYNAMIC_TYPE_SRP);
     }
     if (temp1) {
         if (r != WC_NO_ERR_TRACE(MP_INIT_E))
-            mp_clear(temp1);
+            mp_forcezero(temp1);
         XFREE(temp1, srp->heap, DYNAMIC_TYPE_SRP);
     }
     if (temp2) {
         if (r != WC_NO_ERR_TRACE(MP_INIT_E))
-            mp_clear(temp2);
+            mp_forcezero(temp2);
         XFREE(temp2, srp->heap, DYNAMIC_TYPE_SRP);
     }
 #else
     if (r != WC_NO_ERR_TRACE(MP_INIT_E)) {
-        mp_clear(u);
-        mp_clear(s);
-        mp_clear(temp1);
-        mp_clear(temp2);
+        mp_forcezero(u);
+        mp_forcezero(s);
+        mp_forcezero(temp1);
+        mp_forcezero(temp2);
     }
 #endif
 
@@ -980,7 +986,7 @@ int wc_SrpVerifyPeersProof(Srp* srp, byte* proof, word32 size)
     if (hashSize < 0)
         return ALGO_ID_E;
 
-    if (size != (word32)hashSize)
+    if (size != (word32)hashSize || size > INT_MAX)
         return BUFFER_E;
 
     r = SrpHashFinal(srp->side == SRP_CLIENT_SIDE ? &srp->server_proof
@@ -992,8 +998,10 @@ int wc_SrpVerifyPeersProof(Srp* srp, byte* proof, word32 size)
         if (!r) r = SrpHashUpdate(&srp->server_proof, srp->key, srp->keySz);
     }
 
-    if (!r && XMEMCMP(proof, digest, size) != 0)
+    if (!r && ConstantCompare(proof, digest, (int)size) != 0)
         r = SRP_VERIFY_E;
+
+    ForceZero(digest, sizeof(digest));
 
     return r;
 }

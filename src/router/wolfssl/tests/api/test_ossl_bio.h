@@ -1,6 +1,6 @@
 /* test_ossl_bio.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -40,6 +40,9 @@ int test_wolfSSL_BIO_f_md(void);
 int test_wolfSSL_BIO_up_ref(void);
 int test_wolfSSL_BIO_reset(void);
 int test_wolfSSL_BIO_get_len(void);
+int test_wolfSSL_BIO(void);
+int test_wolfSSL_BIO_BIO_ring_read(void);
+int test_wolfSSL_BIO_custom_method(void);
 
 #define TEST_OSSL_BIO_DECLS                                       \
     TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_gets),           \
@@ -52,7 +55,10 @@ int test_wolfSSL_BIO_get_len(void);
     TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_f_md),           \
     TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_up_ref),         \
     TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_reset),          \
-    TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_get_len)
+    TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_get_len),        \
+    TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO),                \
+    TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_BIO_ring_read),  \
+    TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_custom_method)
 
 #define TEST_OSSL_BIO_TLS_DECLS                                   \
     TEST_DECL_GROUP("ossl_bio_tls", test_wolfSSL_BIO_connect),    \

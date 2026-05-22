@@ -1,6 +1,6 @@
 /* test_aes.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -289,7 +289,7 @@ int test_wc_AesEncryptDecryptDirect(void)
 
 #if !defined(NO_AES) && defined(HAVE_AES_ECB)
 /* Assembly code doing 8 iterations at a time. */
-#define ECB_LEN     (9 * WC_AES_BLOCK_SIZE)
+#define ECB_LEN     (15 * WC_AES_BLOCK_SIZE)
 
 static int test_wc_AesEcbEncryptDecrypt_BadArgs(Aes* aes, byte* key,
     word32 keyLen)
@@ -1993,7 +1993,7 @@ int test_wc_AesCtrSetKey(void)
 
 #if !defined(NO_AES) && defined(WOLFSSL_AES_COUNTER)
 /* Assembly code doing 8 iterations at a time. */
-#define CTR_LEN     (9 * WC_AES_BLOCK_SIZE)
+#define CTR_LEN     (15 * WC_AES_BLOCK_SIZE)
 
 static int test_wc_AesCtrEncrypt_BadArgs(Aes* aes, byte* key,
     word32 keyLen, byte* iv)
@@ -2237,6 +2237,18 @@ int test_wc_AesCtrEncryptDecrypt(void)
         0x86, 0x8f, 0x83, 0xff, 0x3d, 0xbe, 0x6e, 0xfa,
         0xd2, 0x2b, 0x3e, 0x70, 0x21, 0x1c, 0xe8, 0x7b,
         0xe4, 0x01, 0x2c, 0xd0, 0x82, 0xe2, 0x7a, 0x4a,
+        0xcf, 0x67, 0x82, 0x1c, 0x80, 0x79, 0x85, 0x5e,
+        0xe5, 0xf9, 0x3a, 0x0d, 0x1a, 0xa7, 0x89, 0x29,
+        0xee, 0xe7, 0x2b, 0xd6, 0x29, 0xac, 0xfa, 0xca,
+        0xc8, 0xcb, 0x4e, 0x6c, 0x1f, 0x30, 0x5e, 0x95,
+        0xa5, 0xa2, 0x17, 0xe2, 0x93, 0xd3, 0xe6, 0xbe,
+        0x91, 0x37, 0x84, 0x01, 0xdb, 0x44, 0x4c, 0x60,
+        0x1c, 0x2c, 0x64, 0x7d, 0xb7, 0x73, 0x12, 0x11,
+        0xc2, 0x6a, 0xfd, 0xac, 0x6d, 0x85, 0xd8, 0xeb,
+        0x0e, 0x70, 0xd3, 0x82, 0x93, 0x65, 0xff, 0x18,
+        0x4e, 0x22, 0x07, 0x8a, 0xf6, 0xfd, 0x36, 0x9d,
+        0x5c, 0x15, 0x1c, 0x84, 0x69, 0x13, 0x68, 0x78,
+        0xf1, 0x04, 0x02, 0x66, 0xec, 0x37, 0xcc, 0x0d,
     };
 #elif defined(WOLFSSL_AES_192)
     byte expected24[CTR_LEN] = {
@@ -2258,6 +2270,18 @@ int test_wc_AesCtrEncryptDecrypt(void)
         0x8d, 0x3b, 0xa9, 0x17, 0x4c, 0x2a, 0xc7, 0x97,
         0x99, 0xb7, 0xaf, 0x86, 0x17, 0xf9, 0xe4, 0x2c,
         0x5a, 0x4d, 0x6d, 0x7f, 0xfe, 0xb8, 0xaa, 0x9b,
+        0xf8, 0xb6, 0xcb, 0x6f, 0x2f, 0xa4, 0x57, 0x61,
+        0x88, 0x6c, 0x94, 0xaa, 0xf7, 0x97, 0xcf, 0xcd,
+        0x19, 0x29, 0x9e, 0xf3, 0x30, 0xb8, 0xaa, 0x56,
+        0x49, 0xcb, 0xf0, 0x56, 0xdd, 0xac, 0x4b, 0x41,
+        0x00, 0xb3, 0x19, 0xdd, 0xef, 0x69, 0xd0, 0x9c,
+        0xd1, 0x67, 0x48, 0x62, 0x9f, 0x56, 0x21, 0x2d,
+        0x05, 0xb3, 0x4d, 0x0b, 0xac, 0xb6, 0x63, 0xf4,
+        0x44, 0xfc, 0x43, 0xc0, 0xa9, 0x8c, 0x37, 0xd6,
+        0xc3, 0x8c, 0xa4, 0x42, 0x68, 0x08, 0x2c, 0x1e,
+        0xe7, 0xcc, 0xe4, 0x1f, 0x82, 0x9a, 0xe0, 0xfb,
+        0x18, 0x84, 0x55, 0xaf, 0x02, 0xcc, 0x55, 0x13,
+        0x7e, 0xc7, 0x05, 0xb8, 0xb9, 0x5e, 0x90, 0xc3,
     };
 #else
     byte expected32[CTR_LEN] = {
@@ -2279,6 +2303,18 @@ int test_wc_AesCtrEncryptDecrypt(void)
         0xf1, 0x7b, 0x2b, 0x87, 0xe4, 0xcd, 0x93, 0x22,
         0x07, 0xdc, 0x35, 0x46, 0x8a, 0x1d, 0xf5, 0xe4,
         0x23, 0x01, 0x67, 0x00, 0x66, 0x7b, 0xd6, 0x56,
+        0x0d, 0x57, 0x4f, 0x6f, 0x45, 0x82, 0x91, 0x58,
+        0x81, 0x37, 0xcc, 0xb4, 0xa4, 0xa3, 0x3c, 0x57,
+        0x42, 0x05, 0x95, 0xa3, 0x04, 0x1f, 0xfd, 0x32,
+        0xb7, 0xc8, 0xbb, 0x14, 0xe7, 0xf1, 0xc1, 0x1f,
+        0xe9, 0x33, 0x6a, 0xb0, 0x10, 0x0d, 0xfb, 0x91,
+        0x88, 0xca, 0x20, 0x29, 0xeb, 0xcd, 0x9c, 0x71,
+        0x07, 0xfd, 0x3f, 0x6b, 0x1f, 0xb3, 0x76, 0xb7,
+        0x6b, 0xa1, 0xad, 0xbe, 0xd3, 0x45, 0xb5, 0xe9,
+        0x04, 0x9a, 0xfd, 0x6a, 0x85, 0xa2, 0xbc, 0x4e,
+        0xca, 0xdb, 0x84, 0xbc, 0x0e, 0x0c, 0x96, 0x65,
+        0xc9, 0x95, 0x2b, 0xcb, 0x98, 0x8c, 0xd2, 0x78,
+        0x85, 0x7e, 0x1a, 0xa2, 0x6a, 0x73, 0x90, 0x80,
     };
 #endif
     byte    iv[]   = "1234567890abcdef";
@@ -3406,6 +3442,275 @@ int test_wc_AesCcmEncryptDecrypt(void)
 #endif  /* HAVE_AESCCM */
     return EXPECT_RESULT();
 } /* END test_wc_AesCcmEncryptDecrypt */
+
+/*******************************************************************************
+ * AES-XTS
+ ******************************************************************************/
+
+/*
+ * test function for wc_AesXtsSetKey()
+ */
+int test_wc_AesXtsSetKey(void)
+{
+    EXPECT_DECLS;
+#if !defined(NO_AES) && defined(WOLFSSL_AES_XTS)
+    XtsAes aes;
+#ifdef WOLFSSL_AES_128
+    byte key16[] = {
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+    };
+#endif
+#if defined(WOLFSSL_AES_192) && !defined(HAVE_FIPS)
+    byte key24[] = {
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66
+    };
+#endif
+#ifdef WOLFSSL_AES_256
+    byte key32[] = {
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66
+    };
+#endif
+    byte badKey16[] = {
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65
+    };
+    byte badKey24[] = {
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36
+    };
+    byte badKey32[] = {
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x37, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65
+    };
+    byte* key;
+    word32 keyLen;
+
+#ifdef WOLFSSL_AES_128
+    key = key16;
+    keyLen = sizeof(key16)/sizeof(byte);
+#elif defined(WOLFSSL_AES_192)
+    key = key24;
+    keyLen = sizeof(key24)/sizeof(byte);
+#else
+    key = key32;
+    keyLen = sizeof(key32)/sizeof(byte);
+#endif
+
+#ifdef WOLFSSL_AES_128
+    ExpectIntEQ(wc_AesXtsSetKey(&aes, key16, sizeof(key16)/sizeof(byte),
+        AES_ENCRYPTION, NULL, INVALID_DEVID), 0);
+    wc_AesXtsFree(&aes);
+#endif
+#if defined(WOLFSSL_AES_192) && !defined(HAVE_FIPS)
+    ExpectIntEQ(wc_AesXtsSetKey(&aes, key24, sizeof(key24)/sizeof(byte),
+        AES_ENCRYPTION, NULL, INVALID_DEVID), 0);
+    wc_AesXtsFree(&aes);
+#endif
+#ifdef WOLFSSL_AES_256
+    ExpectIntEQ(wc_AesXtsSetKey(&aes, key32, sizeof(key32)/sizeof(byte),
+        AES_ENCRYPTION, NULL, INVALID_DEVID), 0);
+    wc_AesXtsFree(&aes);
+#endif
+
+    /* Pass in bad args. */
+    ExpectIntEQ(wc_AesXtsSetKey(NULL, NULL, keyLen, AES_ENCRYPTION, NULL,
+        INVALID_DEVID), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    ExpectIntEQ(wc_AesXtsSetKey(NULL, key, keyLen, AES_ENCRYPTION, NULL,
+        INVALID_DEVID), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    ExpectIntEQ(wc_AesXtsSetKey(&aes, NULL, keyLen, AES_ENCRYPTION, NULL,
+        INVALID_DEVID), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    ExpectIntEQ(wc_AesXtsSetKey(&aes, badKey16, sizeof(badKey16)/sizeof(byte),
+        AES_ENCRYPTION, NULL, INVALID_DEVID), WC_NO_ERR_TRACE(WC_KEY_SIZE_E));
+    ExpectIntEQ(wc_AesXtsSetKey(&aes, badKey24, sizeof(badKey24)/sizeof(byte),
+        AES_ENCRYPTION, NULL, INVALID_DEVID), WC_NO_ERR_TRACE(WC_KEY_SIZE_E));
+    ExpectIntEQ(wc_AesXtsSetKey(&aes, badKey32, sizeof(badKey32)/sizeof(byte),
+        AES_ENCRYPTION, NULL, INVALID_DEVID), WC_NO_ERR_TRACE(WC_KEY_SIZE_E));
+    ExpectIntEQ(wc_AesXtsSetKey(&aes, key, keyLen, -2, NULL, INVALID_DEVID),
+        WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+#endif
+    return EXPECT_RESULT();
+} /* END test_wc_AesXtsSetKey */
+
+int test_wc_AesXtsEncryptDecrypt_Sizes(void)
+{
+    EXPECT_DECLS;
+#if !defined(NO_AES) && defined(WOLFSSL_AES_XTS) && \
+    defined(WOLFSSL_AES_256) && !defined(WOLFSSL_AFALG) && \
+    !defined(WOLFSSL_KCAPI)
+    #define XTS_LEN     (WC_AES_BLOCK_SIZE * 16)
+    byte key32[] = {
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66
+    };
+    byte tweak[] = {
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+    };
+    XtsAes aes;
+    word32 tweakLen = (word32)sizeof(tweak)/sizeof(byte);
+    int sz;
+    WC_DECLARE_VAR(plain, byte, XTS_LEN, NULL);
+    WC_DECLARE_VAR(cipher, byte, XTS_LEN, NULL);
+#ifdef HAVE_AES_DECRYPT
+    WC_DECLARE_VAR(decrypted, byte, XTS_LEN, NULL);
+#endif
+
+    WC_ALLOC_VAR(plain, byte, XTS_LEN, NULL);
+    WC_ALLOC_VAR(cipher, byte, XTS_LEN, NULL);
+#ifdef HAVE_AES_DECRYPT
+    WC_ALLOC_VAR(decrypted, byte, XTS_LEN, NULL);
+#endif
+
+#ifdef WC_DECLARE_VAR_IS_HEAP_ALLOC
+    ExpectNotNull(plain);
+    ExpectNotNull(cipher);
+#ifdef HAVE_AES_DECRYPT
+    ExpectNotNull(decrypted);
+#endif
+#endif
+
+    XMEMSET(&aes, 0, sizeof(Aes));
+    XMEMSET(plain, 0xa5, XTS_LEN);
+
+    for (sz = WC_AES_BLOCK_SIZE; sz <= XTS_LEN; sz *= 2) {
+        ExpectIntEQ(wc_AesXtsSetKey(&aes, key32, sizeof(key32)/sizeof(byte),
+            AES_ENCRYPTION, NULL, INVALID_DEVID), 0);
+        XMEMSET(cipher, 0, XTS_LEN);
+        ExpectIntEQ(wc_AesXtsEncrypt(&aes, cipher, plain, sz, tweak, tweakLen),
+            0);
+        wc_AesXtsFree(&aes);
+
+#ifdef HAVE_AES_DECRYPT
+        ExpectIntEQ(wc_AesXtsSetKey(&aes, key32, sizeof(key32)/sizeof(byte),
+            AES_DECRYPTION, NULL, INVALID_DEVID), 0);
+        XMEMSET(decrypted, 0xff, XTS_LEN);
+        ExpectIntEQ(wc_AesXtsDecrypt(&aes, decrypted, cipher, sz, tweak,
+            tweakLen), 0);
+        ExpectBufEQ(decrypted, plain, sz);
+        wc_AesXtsFree(&aes);
+#endif
+    }
+
+    WC_FREE_VAR(plain, NULL);
+    WC_FREE_VAR(cipher, NULL);
+#ifdef HAVE_AES_DECRYPT
+    WC_FREE_VAR(decrypted, NULL);
+#endif
+#endif
+    return EXPECT_RESULT();
+}
+
+/*
+ * test function for wc_AesXtsEncrypt and wc_AesXtsDecrypt
+ */
+int test_wc_AesXtsEncryptDecrypt(void)
+{
+    EXPECT_DECLS;
+#if !defined(NO_AES) && defined(WOLFSSL_AES_XTS) && \
+    defined(WOLFSSL_AES_256)
+    XtsAes  aes;
+    byte key32[] = {
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66
+    };
+    byte vector[] = { /* Now is the time for all w/o trailing 0 */
+        0x4e,0x6f,0x77,0x20,0x69,0x73,0x20,0x74,
+        0x68,0x65,0x20,0x74,0x69,0x6d,0x65,0x20,
+        0x66,0x6f,0x72,0x20,0x61,0x6c,0x6c,0x20
+    };
+    byte tweak[] = {
+        0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+    };
+    word32 tweakLen = (word32)sizeof(tweak)/sizeof(byte);
+    byte enc[sizeof(vector)];
+    byte resultT[WC_AES_BLOCK_SIZE];
+    byte dec[sizeof(vector)];
+
+    /* Init stack variables. */
+    XMEMSET(&aes, 0, sizeof(Aes));
+    XMEMSET(enc, 0, sizeof(vector));
+    XMEMSET(dec, 0, sizeof(vector));
+    XMEMSET(resultT, 0, WC_AES_BLOCK_SIZE);
+
+    ExpectIntEQ(wc_AesXtsSetKey(&aes, key32, sizeof(key32)/sizeof(byte),
+        AES_ENCRYPTION, NULL, INVALID_DEVID), 0);
+    ExpectIntEQ(wc_AesXtsEncrypt(&aes, enc, vector, sizeof(vector), tweak,
+        tweakLen), 0);
+    wc_AesXtsFree(&aes);
+    ExpectIntEQ(wc_AesXtsSetKey(&aes, key32, sizeof(key32)/sizeof(byte),
+        AES_DECRYPTION, NULL, INVALID_DEVID), 0);
+    ExpectIntEQ(wc_AesXtsDecrypt(&aes, dec, enc, sizeof(vector), tweak,
+        tweakLen), 0);
+    ExpectIntEQ(XMEMCMP(vector, dec, sizeof(vector)), 0);
+    wc_AesXtsFree(&aes);
+
+    ExpectIntEQ(wc_AesXtsSetKey(&aes, key32, sizeof(key32)/sizeof(byte),
+        AES_ENCRYPTION, NULL, INVALID_DEVID), 0);
+    /* Test bad args for wc_AesXtsEncrypt and wc_AesXtsDecrypt */
+    ExpectIntEQ(wc_AesXtsEncrypt(NULL, enc, vector, sizeof(vector), tweak,
+        tweakLen), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    ExpectIntEQ(wc_AesXtsEncrypt(&aes, NULL, vector, sizeof(vector), tweak,
+        tweakLen), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    ExpectIntEQ(wc_AesXtsEncrypt(&aes, enc, NULL, sizeof(vector), tweak,
+        tweakLen), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    wc_AesXtsFree(&aes);
+    /* END wc_AesXtsEncrypt */
+
+#ifdef HAVE_AES_DECRYPT
+    ExpectIntEQ(wc_AesXtsSetKey(&aes, key32, sizeof(key32)/sizeof(byte),
+        AES_DECRYPTION, NULL, INVALID_DEVID), 0);
+    ExpectIntEQ(wc_AesXtsDecrypt(NULL, dec, enc, sizeof(enc)/sizeof(byte),
+        tweak, tweakLen), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    ExpectIntEQ(wc_AesXtsDecrypt(&aes, NULL, enc, sizeof(enc)/sizeof(byte),
+        tweak, tweakLen), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    ExpectIntEQ(wc_AesXtsDecrypt(&aes, dec, NULL, sizeof(enc)/sizeof(byte),
+        tweak, tweakLen), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    wc_AesXtsFree(&aes);
+#endif /* HAVE_AES_DECRYPT */
+#endif
+
+    return EXPECT_RESULT();
+} /* END test_wc_AesXtsEncryptDecrypt */
 
 #if defined(WOLFSSL_AES_EAX) && defined(WOLFSSL_AES_256) && \
     (!defined(HAVE_FIPS) || FIPS_VERSION_GE(5, 3)) && !defined(HAVE_SELFTEST)
@@ -4916,4 +5221,743 @@ int test_wc_AesEaxDecryptAuth(void)
 #endif /* WOLFSSL_AES_EAX && WOLFSSL_AES_256
         * (!HAVE_FIPS || FIPS_VERSION_GE(5, 3)) && !HAVE_SELFTEST
         */
+
+/*----------------------------------------------------------------------------*
+ | CryptoCB AES SetKey Test
+ *----------------------------------------------------------------------------*/
+
+#if defined(WOLF_CRYPTO_CB) && defined(WOLF_CRYPTO_CB_AES_SETKEY) && \
+    !defined(NO_AES) && defined(HAVE_AESGCM)
+
+#include <wolfssl/wolfcrypt/cryptocb.h>
+
+#define TEST_CRYPTOCB_AES_DEVID  7
+
+/* Test state tracking */
+static int cryptoCbAesSetKeyCalled = 0;
+static int cryptoCbAesFreeCalled = 0;
+
+/* Simulated SE key storage - in real SE this would be in secure hardware */
+typedef struct {
+    byte key[AES_256_KEY_SIZE];
+    word32 keySz;
+    int valid;
+} MockSeKeySlot;
+
+static MockSeKeySlot mockSeKey = {0};
+
+/* Mock handle pointing to our key slot */
+static void* cryptoCbAesMockHandle = (void*)&mockSeKey;
+
+/* Test CryptoCB callback for AES key import operations
+ * This emulates a Secure Element by:
+ * - Storing the key on SetKey (simulating SE key import)
+ * - Using stored key for encrypt/decrypt (simulating SE crypto)
+ * - Clearing key on Free (simulating SE key deletion)
+ */
+static int test_CryptoCb_Aes_Cb(int devId, wc_CryptoInfo* info, void* ctx)
+{
+    (void)ctx;
+
+    if (devId != TEST_CRYPTOCB_AES_DEVID)
+        return CRYPTOCB_UNAVAILABLE;
+
+    /* AES SetKey operation - simulate SE key import */
+    if (info->algo_type == WC_ALGO_TYPE_CIPHER &&
+        info->cipher.type == WC_CIPHER_AES &&
+        info->cipher.aessetkey.aes != NULL) {
+
+        Aes* aes = info->cipher.aessetkey.aes;
+        const byte* key = info->cipher.aessetkey.key;
+        word32 keySz = info->cipher.aessetkey.keySz;
+
+        /* Validate key */
+        if (key == NULL || keySz == 0 || keySz > AES_256_KEY_SIZE) {
+            return BAD_FUNC_ARG;
+        }
+
+        /* "Import" key to simulated SE storage */
+        XMEMCPY(mockSeKey.key, key, keySz);
+        mockSeKey.keySz = keySz;
+        mockSeKey.valid = 1;
+
+        /* Store handle in aes->devCtx - this is what wolfSSL will use */
+        aes->devCtx = cryptoCbAesMockHandle;
+
+
+        cryptoCbAesSetKeyCalled++;
+
+        return 0;
+    }
+
+    /* AES-GCM Encrypt - simulate SE encryption using stored key */
+    if (info->algo_type == WC_ALGO_TYPE_CIPHER &&
+        info->cipher.type == WC_CIPHER_AES_GCM &&
+        info->cipher.enc) {
+
+        Aes* aes = info->cipher.aesgcm_enc.aes;
+        MockSeKeySlot* slot;
+        Aes tempAes;
+        int ret;
+
+        /* Verify handle points to our key slot */
+        if (aes == NULL || aes->devCtx != cryptoCbAesMockHandle) {
+            return BAD_FUNC_ARG;
+        }
+
+        slot = (MockSeKeySlot*)aes->devCtx;
+        if (!slot->valid) {
+            return BAD_STATE_E;
+        }
+
+        /* Initialize a temporary Aes for software crypto (simulating SE internal operation) */
+        XMEMSET(&tempAes, 0, sizeof(tempAes));
+        ret = wc_AesInit(&tempAes, NULL, INVALID_DEVID);  /* No CryptoCB for internal use */
+        if (ret != 0) return ret;
+
+        ret = wc_AesGcmSetKey(&tempAes, slot->key, slot->keySz);
+        if (ret != 0) {
+            wc_AesFree(&tempAes);
+            return ret;
+        }
+
+        /* Perform the actual encryption */
+        ret = wc_AesGcmEncrypt(&tempAes,
+            info->cipher.aesgcm_enc.out,
+            info->cipher.aesgcm_enc.in,
+            info->cipher.aesgcm_enc.sz,
+            info->cipher.aesgcm_enc.iv,
+            info->cipher.aesgcm_enc.ivSz,
+            info->cipher.aesgcm_enc.authTag,
+            info->cipher.aesgcm_enc.authTagSz,
+            info->cipher.aesgcm_enc.authIn,
+            info->cipher.aesgcm_enc.authInSz);
+
+        wc_AesFree(&tempAes);
+
+        return ret;
+    }
+
+    /* AES-GCM Decrypt - simulate SE decryption using stored key */
+    if (info->algo_type == WC_ALGO_TYPE_CIPHER &&
+        info->cipher.type == WC_CIPHER_AES_GCM &&
+        !info->cipher.enc) {
+
+        Aes* aes = info->cipher.aesgcm_dec.aes;
+        MockSeKeySlot* slot;
+        Aes tempAes;
+        int ret;
+
+        /* Verify handle points to our key slot */
+        if (aes == NULL || aes->devCtx != cryptoCbAesMockHandle) {
+            return BAD_FUNC_ARG;
+        }
+
+        slot = (MockSeKeySlot*)aes->devCtx;
+        if (!slot->valid) {
+            return BAD_STATE_E;
+        }
+
+        /* Initialize a temporary Aes for software crypto (simulating SE internal operation) */
+        XMEMSET(&tempAes, 0, sizeof(tempAes));
+        ret = wc_AesInit(&tempAes, NULL, INVALID_DEVID);
+        if (ret != 0) return ret;
+
+        ret = wc_AesGcmSetKey(&tempAes, slot->key, slot->keySz);
+        if (ret != 0) {
+            wc_AesFree(&tempAes);
+            return ret;
+        }
+
+        /* Perform the actual decryption */
+        ret = wc_AesGcmDecrypt(&tempAes,
+            info->cipher.aesgcm_dec.out,
+            info->cipher.aesgcm_dec.in,
+            info->cipher.aesgcm_dec.sz,
+            info->cipher.aesgcm_dec.iv,
+            info->cipher.aesgcm_dec.ivSz,
+            info->cipher.aesgcm_dec.authTag,
+            info->cipher.aesgcm_dec.authTagSz,
+            info->cipher.aesgcm_dec.authIn,
+            info->cipher.aesgcm_dec.authInSz);
+
+        wc_AesFree(&tempAes);
+
+        return ret;
+    }
+
+#ifdef WOLF_CRYPTO_CB_FREE
+    /* Free operation - simulate SE key deletion */
+    if (info->algo_type == WC_ALGO_TYPE_FREE &&
+        info->free.algo == WC_ALGO_TYPE_CIPHER &&
+        info->free.type == WC_CIPHER_AES) {
+
+        Aes* aes = (Aes*)info->free.obj;
+
+        if (aes != NULL && aes->devCtx == cryptoCbAesMockHandle) {
+            /* "Delete" key from simulated SE */
+            ForceZero(&mockSeKey, sizeof(mockSeKey));
+            cryptoCbAesFreeCalled++;
+        }
+
+        return 0;
+    }
+#endif
+
+    return CRYPTOCB_UNAVAILABLE;
+}
+
+/*
+ * Test: CryptoCB AES SetKey hook for key import / secure element support
+ */
+int test_wc_CryptoCb_AesSetKey(void)
+{
+    EXPECT_DECLS;
+#ifdef WOLFSSL_SMALL_STACK
+    Aes* aes = NULL;
+    byte* key = NULL;
+    byte* iv = NULL;
+    byte* plain = NULL;
+    byte* cipher = NULL;
+    byte* decrypted = NULL;
+    byte* authTag = NULL;
+#else
+    Aes aes[1];
+    byte key[AES_128_KEY_SIZE];
+    byte iv[GCM_NONCE_MID_SZ];
+    byte plain[16];
+    byte cipher[16];
+    byte decrypted[16];
+    byte authTag[AES_BLOCK_SIZE];
+#endif
+    int ret;
+
+#ifdef WOLFSSL_SMALL_STACK
+    aes = (Aes*)XMALLOC(sizeof(Aes), NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    key = (byte*)XMALLOC(AES_128_KEY_SIZE, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    iv = (byte*)XMALLOC(GCM_NONCE_MID_SZ, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    plain = (byte*)XMALLOC(16, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    cipher = (byte*)XMALLOC(16, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    decrypted = (byte*)XMALLOC(16, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    authTag = (byte*)XMALLOC(AES_BLOCK_SIZE, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+
+    if (aes == NULL || key == NULL || iv == NULL || plain == NULL ||
+        cipher == NULL || decrypted == NULL || authTag == NULL) {
+        ret = MEMORY_E;
+        goto out;
+    }
+#endif
+
+    /* Initialize key, iv, plain arrays */
+    {
+        static const byte keyData[AES_128_KEY_SIZE] = {
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+            0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+        };
+        static const byte plainData[16] = {
+            0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x2c, 0x20, 0x77,
+            0x6f, 0x6c, 0x66, 0x53, 0x53, 0x4c, 0x21, 0x00
+        };
+        XMEMCPY(key, keyData, AES_128_KEY_SIZE);
+        XMEMSET(iv, 0, GCM_NONCE_MID_SZ);
+        XMEMCPY(plain, plainData, 16);
+    }
+
+    XMEMSET(aes, 0, sizeof(Aes));
+    XMEMSET(&mockSeKey, 0, sizeof(mockSeKey));
+
+    /* Reset test state */
+    cryptoCbAesSetKeyCalled = 0;
+    cryptoCbAesFreeCalled = 0;
+
+    /* Register test callback */
+    ret = wc_CryptoCb_RegisterDevice(TEST_CRYPTOCB_AES_DEVID,
+                                     test_CryptoCb_Aes_Cb, NULL);
+    ExpectIntEQ(ret, 0);
+
+    /* Initialize Aes with device ID */
+    ret = wc_AesInit(aes, NULL, TEST_CRYPTOCB_AES_DEVID);
+    ExpectIntEQ(ret, 0);
+    ExpectIntEQ(aes->devId, TEST_CRYPTOCB_AES_DEVID);
+
+    /* Set key - should trigger CryptoCB and "import" to mock SE */
+    ret = wc_AesGcmSetKey(aes, key, sizeof(key));
+    ExpectIntEQ(ret, 0);
+
+    /* Verify callback was invoked */
+    ExpectIntEQ(cryptoCbAesSetKeyCalled, 1);
+
+    /* Verify handle stored in devCtx */
+    ExpectPtrEq(aes->devCtx, cryptoCbAesMockHandle);
+
+    /* Verify key was "imported" to mock SE */
+    ExpectIntEQ(mockSeKey.valid, 1);
+    ExpectIntEQ(mockSeKey.keySz, (int)sizeof(key));
+
+    /* Verify keylen metadata stored in Aes struct */
+    ExpectIntEQ(aes->keylen, (int)sizeof(key));
+
+    /* After SetKey succeeds via CryptoCB, verify key NOT in devKey */
+    {
+        byte zeroKey[AES_128_KEY_SIZE] = {0};
+        /* Key should NOT be copied to devKey - SE owns it */
+        ExpectIntEQ(XMEMCMP(aes->devKey, zeroKey, sizeof(key)), 0);
+    }
+
+    /* Test encrypt - callback performs crypto using stored key */
+    ret = wc_AesGcmEncrypt(aes, cipher, plain, sizeof(plain),
+                           iv, sizeof(iv), authTag, sizeof(authTag),
+                           NULL, 0);
+    ExpectIntEQ(ret, 0);
+
+    /* Test decrypt - callback performs crypto using stored key */
+    ret = wc_AesGcmDecrypt(aes, decrypted, cipher, sizeof(cipher),
+                           iv, sizeof(iv), authTag, sizeof(authTag),
+                           NULL, 0);
+    ExpectIntEQ(ret, 0);
+
+    /* Verify round-trip */
+    ExpectIntEQ(XMEMCMP(plain, decrypted, sizeof(plain)), 0);
+
+#ifdef WOLF_CRYPTO_CB_FREE
+    /* Free should trigger callback and "delete" key from mock SE */
+    cryptoCbAesFreeCalled = 0;
+    wc_AesFree(aes);
+
+    /* Verify free callback invoked */
+    ExpectIntEQ(cryptoCbAesFreeCalled, 1);
+
+    /* Verify devCtx cleared */
+    ExpectPtrEq(aes->devCtx, NULL);
+
+    /* Verify key was "deleted" from mock SE */
+    ExpectIntEQ(mockSeKey.valid, 0);
+#else
+    wc_AesFree(aes);
+#endif
+
+    /* Cleanup */
+    wc_CryptoCb_UnRegisterDevice(TEST_CRYPTOCB_AES_DEVID);
+
+    /* Test software path (no devId) still works */
+    XMEMSET(aes, 0, sizeof(Aes));
+    cryptoCbAesSetKeyCalled = 0;
+
+    ret = wc_AesInit(aes, NULL, INVALID_DEVID);
+    ExpectIntEQ(ret, 0);
+
+    ret = wc_AesGcmSetKey(aes, key, sizeof(key));
+    ExpectIntEQ(ret, 0);
+
+    /* Callback should NOT have been invoked */
+    ExpectIntEQ(cryptoCbAesSetKeyCalled, 0);
+
+    /* devCtx should be NULL */
+    ExpectPtrEq(aes->devCtx, NULL);
+
+    wc_AesFree(aes);
+
+#ifdef WOLFSSL_SMALL_STACK
+out:
+    XFREE(aes, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(key, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(iv, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(plain, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(cipher, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(decrypted, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(authTag, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+#endif
+
+    return EXPECT_RESULT();
+}
+
+#endif /* WOLF_CRYPTO_CB && WOLF_CRYPTO_CB_AES_SETKEY && !NO_AES && HAVE_AESGCM */
+
+/*----------------------------------------------------------------------------*
+ | CryptoCB AES-GCM End-to-End Offload Test
+ *----------------------------------------------------------------------------*/
+
+#if defined(WOLF_CRYPTO_CB) && defined(WOLF_CRYPTO_CB_AES_SETKEY) && \
+    !defined(NO_AES) && defined(HAVE_AESGCM)
+
+#define TEST_CRYPTOCB_AESGCM_OFFLOAD_DEVID  8
+
+/* Test state tracking for end-to-end offload test */
+static int cryptoCbAesGcmSetKeyCalled = 0;
+static int cryptoCbAesGcmEncryptCalled = 0;
+static int cryptoCbAesGcmDecryptCalled = 0;
+static int cryptoCbAesGcmFreeCalled = 0;
+
+/* Mock SE key storage for offload test */
+typedef struct {
+    byte key[AES_256_KEY_SIZE];
+    word32 keySz;
+    int valid;
+} MockSeKeySlotOffload;
+
+static MockSeKeySlotOffload mockSeKeyOffload = {0};
+
+/* Mock handle pointing to our key slot */
+static void* cryptoCbAesGcmMockHandle = (void*)&mockSeKeyOffload;
+
+/* Mock CryptoCB callback for end-to-end AES-GCM offload test
+ * This emulates a Secure Element that:
+ * - Stores the key on SetKey (simulating SE key import)
+ * - Performs encryption/decryption using stored key (simulating SE crypto)
+ * - Tracks all callback invocations to verify offload is working
+ * - Uses software AES internally (simulating SE internal operation)
+ */
+static int test_CryptoCb_AesGcm_Offload_Cb(int devId, wc_CryptoInfo* info, void* ctx)
+{
+    (void)ctx;
+
+    if (devId != TEST_CRYPTOCB_AESGCM_OFFLOAD_DEVID)
+        return CRYPTOCB_UNAVAILABLE;
+
+    /* AES SetKey operation - simulate SE key import */
+    if (info->algo_type == WC_ALGO_TYPE_CIPHER &&
+        info->cipher.type == WC_CIPHER_AES &&
+        info->cipher.aessetkey.aes != NULL) {
+
+        Aes* aes = info->cipher.aessetkey.aes;
+        const byte* key = info->cipher.aessetkey.key;
+        word32 keySz = info->cipher.aessetkey.keySz;
+
+        /* Validate key */
+        if (key == NULL || keySz == 0 || keySz > AES_256_KEY_SIZE) {
+            return BAD_FUNC_ARG;
+        }
+
+        /* "Import" key to simulated SE storage */
+        XMEMCPY(mockSeKeyOffload.key, key, keySz);
+        mockSeKeyOffload.keySz = keySz;
+        mockSeKeyOffload.valid = 1;
+
+        /* Store handle in aes->devCtx - this is what wolfSSL will use */
+        aes->devCtx = cryptoCbAesGcmMockHandle;
+
+
+        cryptoCbAesGcmSetKeyCalled++;
+
+        return 0;
+    }
+
+    /* AES-GCM Encrypt - simulate SE encryption using stored key */
+    if (info->algo_type == WC_ALGO_TYPE_CIPHER &&
+        info->cipher.type == WC_CIPHER_AES_GCM &&
+        info->cipher.enc) {
+
+        Aes* aes = info->cipher.aesgcm_enc.aes;
+        MockSeKeySlotOffload* slot;
+        Aes tempAes;
+        int ret;
+
+        /* Verify handle points to our key slot */
+        if (aes == NULL || aes->devCtx != cryptoCbAesGcmMockHandle) {
+            return BAD_FUNC_ARG;
+        }
+
+        slot = (MockSeKeySlotOffload*)aes->devCtx;
+        if (!slot->valid) {
+            return BAD_STATE_E;
+        }
+
+        /* Track that encrypt callback was invoked */
+        cryptoCbAesGcmEncryptCalled++;
+
+        /* Initialize a temporary Aes for software crypto (simulating SE internal operation) */
+        XMEMSET(&tempAes, 0, sizeof(tempAes));
+        ret = wc_AesInit(&tempAes, NULL, INVALID_DEVID);  /* No CryptoCB for internal use */
+        if (ret != 0) return ret;
+
+        ret = wc_AesGcmSetKey(&tempAes, slot->key, slot->keySz);
+        if (ret != 0) {
+            wc_AesFree(&tempAes);
+            return ret;
+        }
+
+        /* Perform the actual encryption using software AES (simulating SE internal operation) */
+        ret = wc_AesGcmEncrypt(&tempAes,
+            info->cipher.aesgcm_enc.out,
+            info->cipher.aesgcm_enc.in,
+            info->cipher.aesgcm_enc.sz,
+            info->cipher.aesgcm_enc.iv,
+            info->cipher.aesgcm_enc.ivSz,
+            info->cipher.aesgcm_enc.authTag,
+            info->cipher.aesgcm_enc.authTagSz,
+            info->cipher.aesgcm_enc.authIn,
+            info->cipher.aesgcm_enc.authInSz);
+
+        wc_AesFree(&tempAes);
+
+        return ret;
+    }
+
+    /* AES-GCM Decrypt - simulate SE decryption using stored key */
+    if (info->algo_type == WC_ALGO_TYPE_CIPHER &&
+        info->cipher.type == WC_CIPHER_AES_GCM &&
+        !info->cipher.enc) {
+
+        Aes* aes = info->cipher.aesgcm_dec.aes;
+        MockSeKeySlotOffload* slot;
+        Aes tempAes;
+        int ret;
+
+        /* Verify handle points to our key slot */
+        if (aes == NULL || aes->devCtx != cryptoCbAesGcmMockHandle) {
+            return BAD_FUNC_ARG;
+        }
+
+        slot = (MockSeKeySlotOffload*)aes->devCtx;
+        if (!slot->valid) {
+            return BAD_STATE_E;
+        }
+
+        /* Track that decrypt callback was invoked */
+        cryptoCbAesGcmDecryptCalled++;
+
+        /* Initialize a temporary Aes for software crypto (simulating SE internal operation) */
+        XMEMSET(&tempAes, 0, sizeof(tempAes));
+        ret = wc_AesInit(&tempAes, NULL, INVALID_DEVID);
+        if (ret != 0) return ret;
+
+        ret = wc_AesGcmSetKey(&tempAes, slot->key, slot->keySz);
+        if (ret != 0) {
+            wc_AesFree(&tempAes);
+            return ret;
+        }
+
+        /* Perform the actual decryption using software AES (simulating SE internal operation) */
+        ret = wc_AesGcmDecrypt(&tempAes,
+            info->cipher.aesgcm_dec.out,
+            info->cipher.aesgcm_dec.in,
+            info->cipher.aesgcm_dec.sz,
+            info->cipher.aesgcm_dec.iv,
+            info->cipher.aesgcm_dec.ivSz,
+            info->cipher.aesgcm_dec.authTag,
+            info->cipher.aesgcm_dec.authTagSz,
+            info->cipher.aesgcm_dec.authIn,
+            info->cipher.aesgcm_dec.authInSz);
+
+        wc_AesFree(&tempAes);
+
+        return ret;
+    }
+
+#ifdef WOLF_CRYPTO_CB_FREE
+    /* Free operation - simulate SE key deletion */
+    if (info->algo_type == WC_ALGO_TYPE_FREE &&
+        info->free.algo == WC_ALGO_TYPE_CIPHER &&
+        info->free.type == WC_CIPHER_AES) {
+
+        Aes* aes = (Aes*)info->free.obj;
+
+        if (aes != NULL && aes->devCtx == cryptoCbAesGcmMockHandle) {
+            /* "Delete" key from simulated SE */
+            ForceZero(&mockSeKeyOffload, sizeof(mockSeKeyOffload));
+            cryptoCbAesGcmFreeCalled++;
+        }
+
+        return 0;
+    }
+#endif
+
+    return CRYPTOCB_UNAVAILABLE;
+}
+
+/*
+ * Test: End-to-End AES-GCM Offload via CryptoCB
+ * This test verifies that:
+ * - AES-GCM encryption/decryption operations are routed through CryptoCb
+ * - Software AES is bypassed when offload is enabled
+ * - Encrypted output and auth tag are correct
+ * - Decryption via CryptoCb restores the original plaintext
+ */
+int test_wc_CryptoCb_AesGcm_EncryptDecrypt(void)
+{
+    EXPECT_DECLS;
+#ifdef WOLFSSL_SMALL_STACK
+    Aes* aes = NULL;
+    byte* key = NULL;
+    byte* iv = NULL;
+    byte* aad = NULL;
+    byte* plaintext = NULL;
+    byte* ciphertext = NULL;
+    byte* decrypted = NULL;
+    byte* authTag = NULL;
+#else
+    Aes aes[1];
+    byte key[AES_128_KEY_SIZE];
+    byte iv[GCM_NONCE_MID_SZ];
+    byte aad[16];
+    byte plaintext[32];
+    byte ciphertext[32];
+    byte decrypted[32];
+    byte authTag[AES_BLOCK_SIZE];
+#endif
+    int ret;
+    int i;
+    int hasNonZero = 0;
+
+#ifdef WOLFSSL_SMALL_STACK
+    aes = (Aes*)XMALLOC(sizeof(Aes), NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    key = (byte*)XMALLOC(AES_128_KEY_SIZE, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    iv = (byte*)XMALLOC(GCM_NONCE_MID_SZ, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    aad = (byte*)XMALLOC(16, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    plaintext = (byte*)XMALLOC(32, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    ciphertext = (byte*)XMALLOC(32, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    decrypted = (byte*)XMALLOC(32, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    authTag = (byte*)XMALLOC(AES_BLOCK_SIZE, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+
+    if (aes == NULL || key == NULL || iv == NULL || aad == NULL ||
+        plaintext == NULL || ciphertext == NULL || decrypted == NULL ||
+        authTag == NULL) {
+        ret = MEMORY_E;
+        goto out;
+    }
+#endif
+
+    /* Initialize key, iv, aad, plaintext arrays */
+    {
+        static const byte keyData[AES_128_KEY_SIZE] = {
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+            0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+        };
+        static const byte ivData[GCM_NONCE_MID_SZ] = {
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+            0x08, 0x09, 0x0a, 0x0b
+        };
+        static const byte aadData[16] = {
+            0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+            0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f
+        };
+        static const byte plaintextData[32] = {
+            0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x2c, 0x20, 0x77,
+            0x6f, 0x6c, 0x66, 0x53, 0x53, 0x4c, 0x21, 0x00,
+            0x54, 0x65, 0x73, 0x74, 0x20, 0x6d, 0x65, 0x73,
+            0x73, 0x61, 0x67, 0x65, 0x20, 0x32, 0x21, 0x00
+        };
+        XMEMCPY(key, keyData, AES_128_KEY_SIZE);
+        XMEMCPY(iv, ivData, GCM_NONCE_MID_SZ);
+        XMEMCPY(aad, aadData, 16);
+        XMEMCPY(plaintext, plaintextData, 32);
+    }
+
+    XMEMSET(aes, 0, sizeof(Aes));
+    XMEMSET(&mockSeKeyOffload, 0, sizeof(mockSeKeyOffload));
+    XMEMSET(ciphertext, 0, 32);
+    XMEMSET(decrypted, 0, 32);
+    XMEMSET(authTag, 0, AES_BLOCK_SIZE);
+
+    /* Reset test state */
+    cryptoCbAesGcmSetKeyCalled = 0;
+    cryptoCbAesGcmEncryptCalled = 0;
+    cryptoCbAesGcmDecryptCalled = 0;
+    cryptoCbAesGcmFreeCalled = 0;
+
+    /* Register test callback */
+    ret = wc_CryptoCb_RegisterDevice(TEST_CRYPTOCB_AESGCM_OFFLOAD_DEVID,
+                                     test_CryptoCb_AesGcm_Offload_Cb, NULL);
+    ExpectIntEQ(ret, 0);
+
+    /* Initialize Aes with device ID */
+    ret = wc_AesInit(aes, NULL, TEST_CRYPTOCB_AESGCM_OFFLOAD_DEVID);
+    ExpectIntEQ(ret, 0);
+    ExpectIntEQ(aes->devId, TEST_CRYPTOCB_AESGCM_OFFLOAD_DEVID);
+
+    /* Set key - should trigger CryptoCB and "import" to mock SE */
+    ret = wc_AesGcmSetKey(aes, key, sizeof(key));
+    ExpectIntEQ(ret, 0);
+
+    /* Verify SetKey callback was invoked */
+    ExpectIntEQ(cryptoCbAesGcmSetKeyCalled, 1);
+
+    /* Verify handle stored in devCtx */
+    ExpectPtrEq(aes->devCtx, cryptoCbAesGcmMockHandle);
+
+    /* Verify key was "imported" to mock SE */
+    ExpectIntEQ(mockSeKeyOffload.valid, 1);
+    ExpectIntEQ(mockSeKeyOffload.keySz, (int)sizeof(key));
+
+    /* Verify keylen metadata stored in Aes struct */
+    ExpectIntEQ(aes->keylen, (int)sizeof(key));
+
+    /* Encrypt via wolfCrypt API - should route through CryptoCb */
+    ret = wc_AesGcmEncrypt(aes, ciphertext, plaintext, 32,
+                           iv, sizeof(iv), authTag, sizeof(authTag),
+                           aad, 16);
+    ExpectIntEQ(ret, 0);
+
+    /* Assert: Encrypt callback was invoked */
+    ExpectIntEQ(cryptoCbAesGcmEncryptCalled, 1);
+
+    /* Assert: Ciphertext is different from plaintext */
+    ExpectIntNE(XMEMCMP(plaintext, ciphertext, 32), 0);
+
+    /* Assert: Auth tag is non-zero */
+    hasNonZero = 0;
+    for (i = 0; i < (int)sizeof(authTag); i++) {
+        if (authTag[i] != 0) {
+            hasNonZero = 1;
+            break;
+        }
+    }
+    ExpectIntEQ(hasNonZero, 1);
+
+    /* Decrypt via wolfCrypt API - should route through CryptoCb */
+    ret = wc_AesGcmDecrypt(aes, decrypted, ciphertext, 32,
+                           iv, sizeof(iv), authTag, sizeof(authTag),
+                           aad, 16);
+    ExpectIntEQ(ret, 0);
+
+    /* Assert: Decrypt callback was invoked */
+    ExpectIntEQ(cryptoCbAesGcmDecryptCalled, 1);
+
+    /* Assert: Decrypted plaintext matches original */
+    ExpectIntEQ(XMEMCMP(plaintext, decrypted, 32), 0);
+
+#ifdef WOLF_CRYPTO_CB_FREE
+    /* Free should trigger callback and "delete" key from mock SE */
+    cryptoCbAesGcmFreeCalled = 0;
+    wc_AesFree(aes);
+
+    /* Verify free callback invoked */
+    ExpectIntEQ(cryptoCbAesGcmFreeCalled, 1);
+
+    /* Verify devCtx cleared */
+    ExpectPtrEq(aes->devCtx, NULL);
+
+    /* Verify key was "deleted" from mock SE */
+    ExpectIntEQ(mockSeKeyOffload.valid, 0);
+#else
+    wc_AesFree(aes);
+#endif
+
+    /* Cleanup */
+    wc_CryptoCb_UnRegisterDevice(TEST_CRYPTOCB_AESGCM_OFFLOAD_DEVID);
+
+    /* Verify lifecycle: SetKey -> Encrypt -> Decrypt -> Free */
+    ExpectIntEQ(cryptoCbAesGcmSetKeyCalled, 1);
+    ExpectIntEQ(cryptoCbAesGcmEncryptCalled, 1);
+    ExpectIntEQ(cryptoCbAesGcmDecryptCalled, 1);
+#ifdef WOLF_CRYPTO_CB_FREE
+    ExpectIntEQ(cryptoCbAesGcmFreeCalled, 1);
+#endif
+
+#ifdef WOLFSSL_SMALL_STACK
+out:
+    XFREE(aes, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(key, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(iv, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(aad, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(plaintext, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(ciphertext, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(decrypted, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(authTag, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+#endif
+
+    return EXPECT_RESULT();
+}
+
+#endif /* WOLF_CRYPTO_CB && WOLF_CRYPTO_CB_AES_SETKEY && !NO_AES && HAVE_AESGCM */
 

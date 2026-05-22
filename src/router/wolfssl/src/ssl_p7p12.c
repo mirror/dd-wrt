@@ -1,6 +1,6 @@
 /* ssl_p7p12.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -292,6 +292,7 @@ WOLFSSL_STACK* wolfSSL_PKCS7_get0_signers(PKCS7* pkcs7, WOLFSSL_STACK* certs,
     }
 
     if (wolfSSL_sk_X509_push(signers, x509) <= 0) {
+        wolfSSL_X509_free(x509);
         wolfSSL_sk_X509_pop_free(signers, NULL);
         return NULL;
     }
@@ -1029,7 +1030,8 @@ int wolfSSL_PEM_write_bio_PKCS7(WOLFSSL_BIO* bio, PKCS7* p7)
 
     XMEMSET(pem, 0, pemSz);
 
-    if (wc_DerToPemEx(output, outputSz, pem, (word32)pemSz, NULL, CERT_TYPE) < 0) {
+    if (wc_DerToPemEx(output, outputSz, pem, (word32)pemSz, NULL,CERT_TYPE)
+                                                                          < 0) {
         goto error;
     }
     if ((wolfSSL_BIO_write(bio, pem, pemSz) == pemSz)) {
@@ -1205,12 +1207,14 @@ PKCS7* wolfSSL_SMIME_read_PKCS7(WOLFSSL_BIO* in,
                 /* If line endings were added, the initial length may be
                  * exceeded. */
                 if ((canonPos + canonLineLen) >= canonSize) {
+                    char* newCanonSection;
                     canonSize = canonPos + canonLineLen;
-                    canonSection = (char*)XREALLOC(canonSection, canonSize,
+                    newCanonSection = (char*)XREALLOC(canonSection, canonSize,
                                                    NULL, DYNAMIC_TYPE_PKCS7);
-                    if (canonSection == NULL) {
+                    if (newCanonSection == NULL) {
                         goto error;
                     }
+                    canonSection = newCanonSection;
                 }
                 XMEMCPY(&canonSection[canonPos], canonLine,
                         (int)canonLineLen - 1);
@@ -1368,8 +1372,8 @@ PKCS7* wolfSSL_SMIME_read_PKCS7(WOLFSSL_BIO* in,
         WOLFSSL_MSG("Error base64 decoding S/MIME message.");
         goto error;
     }
-    pkcs7 = wolfSSL_d2i_PKCS7_only(NULL, (const unsigned char**)&out, (int)outLen,
-        bcontMem, (word32)bcontMemSz);
+    pkcs7 = wolfSSL_d2i_PKCS7_only(NULL, (const unsigned char**)&out,
+        (int)outLen, bcontMem, (word32)bcontMemSz);
 
     wc_MIME_free_hdrs(allHdrs);
     XFREE(outHead, NULL, DYNAMIC_TYPE_PKCS7);
@@ -1912,7 +1916,8 @@ int wolfSSL_PKCS12_parse(WC_PKCS12* pkcs12, const char* psw,
                 DYNAMIC_TYPE_X509);
             InitX509(x509, 1, heap);
             InitDecodedCert(DeCert, current->buffer, current->bufferSz, heap);
-            if (ParseCertRelative(DeCert, CERT_TYPE, NO_VERIFY, NULL, NULL) != 0) {
+            if (ParseCertRelative(DeCert, CERT_TYPE, NO_VERIFY, NULL, NULL)
+                                                                         != 0) {
                 WOLFSSL_MSG("Issue with parsing certificate");
                 FreeDecodedCert(DeCert);
                 wolfSSL_X509_free(x509);

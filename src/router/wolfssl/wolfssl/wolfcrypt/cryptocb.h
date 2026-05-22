@@ -1,6 +1,6 @@
 /* cryptocb.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -377,6 +377,13 @@ typedef struct wc_CryptoInfo {
                 word32      sz;
             } des3;
         #endif
+        #if !defined(NO_AES) && defined(WOLF_CRYPTO_CB_AES_SETKEY)
+            struct {
+                Aes*        aes;
+                const byte* key;
+                word32      keySz;
+            } aessetkey;
+        #endif
             void* ctx;
 #ifdef HAVE_ANONYMOUS_INLINE_AGGREGATES
         };
@@ -481,6 +488,7 @@ typedef struct wc_CryptoInfo {
     struct {      /* uses wc_AlgoType=WC_ALGO_TYPE_FREE */
         int algo; /* enum wc_AlgoType - HASH, CIPHER, etc */
         int type; /* For HASH: wc_HashType, CIPHER: wc_CipherType */
+        int subType; /* For PQC: wc_PqcKemType, wc_PqcSignatureType */
         void *obj; /* Object structure to free */
     } free;
 #endif /* WOLF_CRYPTO_CB_FREE */
@@ -678,6 +686,9 @@ WOLFSSL_LOCAL int wc_CryptoCb_AesEcbEncrypt(Aes* aes, byte* out,
 WOLFSSL_LOCAL int wc_CryptoCb_AesEcbDecrypt(Aes* aes, byte* out,
                                const byte* in, word32 sz);
 #endif /* HAVE_AES_ECB */
+#ifdef WOLF_CRYPTO_CB_AES_SETKEY
+WOLFSSL_API int wc_CryptoCb_AesSetKey(Aes* aes, const byte* key, word32 keySz);
+#endif /* WOLF_CRYPTO_CB_AES_SETKEY */
 #endif /* !NO_AES */
 
 #ifndef NO_DES3
@@ -737,7 +748,7 @@ WOLFSSL_LOCAL int wc_CryptoCb_Kdf_TwostepCmac(const byte * salt, word32 saltSz,
 #endif /* HAVE_CMAC_KDF */
 
 #ifndef WC_NO_RNG
-WOLFSSL_LOCAL int wc_CryptoCb_RandomBlock(WC_RNG* rng, byte* out, word32 sz);
+WOLFSSL_TEST_VIS int wc_CryptoCb_RandomBlock(WC_RNG* rng, byte* out, word32 sz);
 WOLFSSL_LOCAL int wc_CryptoCb_RandomSeed(OS_Seed* os, byte* seed, word32 sz);
 #endif
 
@@ -758,7 +769,8 @@ WOLFSSL_LOCAL int wc_CryptoCb_Copy(int devId, int algo, int type, void* src,
                                     void* dst);
 #endif /* WOLF_CRYPTO_CB_COPY */
 #ifdef WOLF_CRYPTO_CB_FREE
-WOLFSSL_LOCAL int wc_CryptoCb_Free(int devId, int algo, int type, void* obj);
+WOLFSSL_LOCAL int wc_CryptoCb_Free(int devId, int algo, int type, int subType,
+    void* obj);
 #endif /* WOLF_CRYPTO_CB_FREE */
 
 #endif /* WOLF_CRYPTO_CB */

@@ -1,6 +1,6 @@
 /* sp.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -134,14 +134,20 @@
 #define SP_PRINT_INT(var, name)                       \
     fprintf(stderr, name "=%d\n", var)
 
-#if ((defined(WOLFSSL_HAVE_SP_RSA) || defined(WOLFSSL_HAVE_SP_DH)) && \
-     ((!defined(WC_NO_CACHE_RESISTANT) && \
-       (defined(WOLFSSL_HAVE_SP_RSA) || defined(WOLFSSL_HAVE_SP_DH))) || \
-      (defined(WOLFSSL_SP_SMALL) && !defined(WOLFSSL_SP_FAST_MODEXP))) && \
-    !defined(WOLFSSL_RSA_PUBLIC_ONLY)) || (defined(WOLFSSL_SP_SMALL) && \
+#if defined(WOLFSSL_SP_SMALL) && \
     defined(WOLFSSL_HAVE_SP_ECC) && (!defined(WOLFSSL_SP_NO_256) || \
     defined(WOLFSSL_SP_384) || defined(WOLFSSL_SP_521) || \
-    defined(WOLFSSL_SP_1024)))
+    defined(WOLFSSL_SP_1024))
+    #define NEED_ADDR_MASK
+#endif
+#if defined(WOLFSSL_HAVE_SP_RSA) || defined(WOLFSSL_HAVE_SP_DH)
+    #if !defined(WC_NO_CACHE_RESISTANT) && \
+        (defined(WOLFSSL_HAVE_SP_DH) || !defined(WOLFSSL_RSA_PUBLIC_ONLY))
+        #define NEED_ADDR_MASK
+    #endif
+#endif
+
+#ifdef NEED_ADDR_MASK
 /* Mask for address to obfuscate which of the two address will be used. */
 static const size_t addr_mask[2] = { 0, (size_t)-1 };
 #endif
@@ -2317,7 +2323,7 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, const mp_int* em,
 
 #ifndef WOLFSSL_RSA_PUBLIC_ONLY
 #if !defined(SP_RSA_PRIVATE_EXP_D) && !defined(RSA_LOW_MEM)
-#endif /* !SP_RSA_PRIVATE_EXP_D & !RSA_LOW_MEM */
+#endif /* !SP_RSA_PRIVATE_EXP_D && !RSA_LOW_MEM */
 /* RSA private key operation.
  *
  * in      Array of bytes representing the number to exponentiate, base.
@@ -5564,7 +5570,7 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, const mp_int* em,
 
 #ifndef WOLFSSL_RSA_PUBLIC_ONLY
 #if !defined(SP_RSA_PRIVATE_EXP_D) && !defined(RSA_LOW_MEM)
-#endif /* !SP_RSA_PRIVATE_EXP_D & !RSA_LOW_MEM */
+#endif /* !SP_RSA_PRIVATE_EXP_D && !RSA_LOW_MEM */
 /* RSA private key operation.
  *
  * in      Array of bytes representing the number to exponentiate, base.
@@ -8494,7 +8500,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
 
 #ifndef WOLFSSL_RSA_PUBLIC_ONLY
 #if !defined(SP_RSA_PRIVATE_EXP_D) && !defined(RSA_LOW_MEM)
-#endif /* !SP_RSA_PRIVATE_EXP_D & !RSA_LOW_MEM */
+#endif /* !SP_RSA_PRIVATE_EXP_D && !RSA_LOW_MEM */
 /* RSA private key operation.
  *
  * in      Array of bytes representing the number to exponentiate, base.
@@ -11890,7 +11896,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
 
 #ifndef WOLFSSL_RSA_PUBLIC_ONLY
 #if !defined(SP_RSA_PRIVATE_EXP_D) && !defined(RSA_LOW_MEM)
-#endif /* !SP_RSA_PRIVATE_EXP_D & !RSA_LOW_MEM */
+#endif /* !SP_RSA_PRIVATE_EXP_D && !RSA_LOW_MEM */
 /* RSA private key operation.
  *
  * in      Array of bytes representing the number to exponentiate, base.
@@ -14857,7 +14863,7 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
 
 #ifndef WOLFSSL_RSA_PUBLIC_ONLY
 #if !defined(SP_RSA_PRIVATE_EXP_D) && !defined(RSA_LOW_MEM)
-#endif /* !SP_RSA_PRIVATE_EXP_D & !RSA_LOW_MEM */
+#endif /* !SP_RSA_PRIVATE_EXP_D && !RSA_LOW_MEM */
 /* RSA private key operation.
  *
  * in      Array of bytes representing the number to exponentiate, base.
@@ -15686,7 +15692,7 @@ static void sp_4096_to_bin_78(sp_digit* r, byte* a)
     }
 }
 
-#if (defined(WOLFSSL_HAVE_SP_RSA) && !defined(WOLFSSL_RSA_PUBLIC_ONLY)) || defined(WOLFSSL_HAVE_SP_DH)
+#if (defined(WOLFSSL_HAVE_SP_RSA) || defined(WOLFSSL_HAVE_SP_DH)) && !defined(WOLFSSL_RSA_PUBLIC_ONLY)
 #if defined(WOLFSSL_HAVE_SP_RSA) && !defined(SP_RSA_PRIVATE_EXP_D)
 /* Normalize the values in each word to 53 bits.
  *
@@ -15714,7 +15720,11 @@ static void sp_4096_norm_39(sp_digit* a)
 }
 
 #endif /* WOLFSSL_HAVE_SP_RSA & !SP_RSA_PRIVATE_EXP_D */
-#endif /* (WOLFSSL_HAVE_SP_RSA && !WOLFSSL_RSA_PUBLIC_ONLY) || WOLFSSL_HAVE_SP_DH */
+#endif /* (WOLFSSL_HAVE_SP_RSA || WOLFSSL_HAVE_SP_DH) && !WOLFSSL_RSA_PUBLIC_ONLY */
+#if (defined(WOLFSSL_HAVE_SP_RSA) || defined(WOLFSSL_HAVE_SP_DH)) && !defined(WOLFSSL_RSA_PUBLIC_ONLY)
+#if defined(WOLFSSL_HAVE_SP_RSA) && !defined(SP_RSA_PRIVATE_EXP_D)
+#endif /* WOLFSSL_HAVE_SP_RSA & !SP_RSA_PRIVATE_EXP_D */
+#endif /* (WOLFSSL_HAVE_SP_RSA || WOLFSSL_HAVE_SP_DH) && !WOLFSSL_RSA_PUBLIC_ONLY */
 /* Normalize the values in each word to 53 bits.
  *
  * a  Array of sp_digit to normalize.
@@ -18350,7 +18360,7 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
 
 #ifndef WOLFSSL_RSA_PUBLIC_ONLY
 #if !defined(SP_RSA_PRIVATE_EXP_D) && !defined(RSA_LOW_MEM)
-#endif /* !SP_RSA_PRIVATE_EXP_D & !RSA_LOW_MEM */
+#endif /* !SP_RSA_PRIVATE_EXP_D && !RSA_LOW_MEM */
 /* RSA private key operation.
  *
  * in      Array of bytes representing the number to exponentiate, base.
@@ -20599,15 +20609,15 @@ static int sp_256_proj_point_add_5_nb(sp_ecc_ctx_t* sp_ctx, sp_point_256* r,
     int err = FP_WOULDBLOCK;
     sp_256_proj_point_add_5_ctx* ctx = (sp_256_proj_point_add_5_ctx*)sp_ctx->data;
 
+    typedef char ctx_size_test[sizeof(sp_256_proj_point_add_5_ctx) >= sizeof(*sp_ctx) ? -1 : 1];
+    (void)sizeof(ctx_size_test);
+
     /* Ensure only the first point is the same as the result. */
     if (q == r) {
         const sp_point_256* a = p;
         p = q;
         q = a;
     }
-
-    typedef char ctx_size_test[sizeof(sp_256_proj_point_add_5_ctx) >= sizeof(*sp_ctx) ? -1 : 1];
-    (void)sizeof(ctx_size_test);
 
     switch (ctx->state) {
     case 0: /* INIT */
@@ -21130,7 +21140,7 @@ static void sp_256_proj_point_dbl_n_5(sp_point_256* p, int i,
     sp_digit* x;
     sp_digit* y;
     sp_digit* z;
-    volatile int n = i;
+    volatile int n = i - 1;
 
     x = p->x;
     y = p->y;
@@ -21142,9 +21152,9 @@ static void sp_256_proj_point_dbl_n_5(sp_point_256* p, int i,
     sp_256_mont_sqr_5(w, z, p256_mod, p256_mp_mod);
     sp_256_mont_sqr_5(w, w, p256_mod, p256_mp_mod);
 #ifndef WOLFSSL_SP_SMALL
-    while (--n > 0)
+    while (n > 0)
 #else
-    while (--n >= 0)
+    while (n >= 0)
 #endif
     {
         /* A = 3*(X^2 - W) */
@@ -21175,6 +21185,7 @@ static void sp_256_proj_point_dbl_n_5(sp_point_256* p, int i,
         /* y = 2*A*(B - X) - Y^4 */
         sp_256_mont_mul_5(y, b, a, p256_mod, p256_mp_mod);
         sp_256_mont_sub_5(y, y, t1, p256_mod);
+        n = n - 1;
     }
 #ifndef WOLFSSL_SP_SMALL
     /* A = 3*(X^2 - W) */
@@ -21807,7 +21818,9 @@ static void sp_256_get_entry_256_5(sp_point_256* r,
     r->y[3] = 0;
     r->y[4] = 0;
     for (i = 1; i < 256; i++) {
-        mask = (sp_digit)0 - (i == idx);
+        sp_digit gte = (sp_digit)((((sp_uint64)i - (sp_uint64)idx) >> 63) - 1);
+        sp_digit lte = (sp_digit)((((sp_uint64)idx - (sp_uint64)i) >> 63) - 1);
+        mask = gte & lte;
         r->x[0] |= mask & table[i].x[0];
         r->x[1] |= mask & table[i].x[1];
         r->x[2] |= mask & table[i].x[2];
@@ -22053,10 +22066,6 @@ static int sp_256_ecc_mulmod_5(sp_point_256* r, const sp_point_256* g,
         if (cache->cnt == 2)
             sp_256_gen_stripe_table_5(g, cache->table, tmp, heap);
 
-#ifndef HAVE_THREAD_LS
-        wc_UnLockMutex(&sp_cache_256_lock);
-#endif /* HAVE_THREAD_LS */
-
         if (cache->cnt < 2) {
             err = sp_256_ecc_mulmod_win_add_sub_5(r, g, k, map, ct, heap);
         }
@@ -22064,6 +22073,9 @@ static int sp_256_ecc_mulmod_5(sp_point_256* r, const sp_point_256* g,
             err = sp_256_ecc_mulmod_stripe_5(r, g, cache->table, k,
                     map, ct, heap);
         }
+#ifndef HAVE_THREAD_LS
+        wc_UnLockMutex(&sp_cache_256_lock);
+#endif /* HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -24230,7 +24242,7 @@ static int sp_256_mont_inv_order_5_nb(sp_ecc_ctx_t* sp_ctx, sp_digit* r, const s
             sp_256_mont_mul_order_5(t, t, a);
         }
         ctx->i--;
-        ctx->state = (ctx->i == 0) ? 3 : 1;
+        ctx->state = (ctx->i >= 0) ? 1 : 3;
         break;
     case 3:
         XMEMCPY(r, t, sizeof(sp_digit) * 5U);
@@ -27086,15 +27098,15 @@ static int sp_384_proj_point_add_7_nb(sp_ecc_ctx_t* sp_ctx, sp_point_384* r,
     int err = FP_WOULDBLOCK;
     sp_384_proj_point_add_7_ctx* ctx = (sp_384_proj_point_add_7_ctx*)sp_ctx->data;
 
+    typedef char ctx_size_test[sizeof(sp_384_proj_point_add_7_ctx) >= sizeof(*sp_ctx) ? -1 : 1];
+    (void)sizeof(ctx_size_test);
+
     /* Ensure only the first point is the same as the result. */
     if (q == r) {
         const sp_point_384* a = p;
         p = q;
         q = a;
     }
-
-    typedef char ctx_size_test[sizeof(sp_384_proj_point_add_7_ctx) >= sizeof(*sp_ctx) ? -1 : 1];
-    (void)sizeof(ctx_size_test);
 
     switch (ctx->state) {
     case 0: /* INIT */
@@ -27653,7 +27665,7 @@ static void sp_384_proj_point_dbl_n_7(sp_point_384* p, int i,
     sp_digit* x;
     sp_digit* y;
     sp_digit* z;
-    volatile int n = i;
+    volatile int n = i - 1;
 
     x = p->x;
     y = p->y;
@@ -27665,9 +27677,9 @@ static void sp_384_proj_point_dbl_n_7(sp_point_384* p, int i,
     sp_384_mont_sqr_7(w, z, p384_mod, p384_mp_mod);
     sp_384_mont_sqr_7(w, w, p384_mod, p384_mp_mod);
 #ifndef WOLFSSL_SP_SMALL
-    while (--n > 0)
+    while (n > 0)
 #else
-    while (--n >= 0)
+    while (n >= 0)
 #endif
     {
         /* A = 3*(X^2 - W) */
@@ -27698,6 +27710,7 @@ static void sp_384_proj_point_dbl_n_7(sp_point_384* p, int i,
         /* y = 2*A*(B - X) - Y^4 */
         sp_384_mont_mul_7(y, b, a, p384_mod, p384_mp_mod);
         sp_384_mont_sub_7(y, y, t1, p384_mod);
+        n = n - 1;
     }
 #ifndef WOLFSSL_SP_SMALL
     /* A = 3*(X^2 - W) */
@@ -28346,7 +28359,9 @@ static void sp_384_get_entry_256_7(sp_point_384* r,
     r->y[5] = 0;
     r->y[6] = 0;
     for (i = 1; i < 256; i++) {
-        mask = (sp_digit)0 - (i == idx);
+        sp_digit gte = (sp_digit)((((sp_uint64)i - (sp_uint64)idx) >> 63) - 1);
+        sp_digit lte = (sp_digit)((((sp_uint64)idx - (sp_uint64)i) >> 63) - 1);
+        mask = gte & lte;
         r->x[0] |= mask & table[i].x[0];
         r->x[1] |= mask & table[i].x[1];
         r->x[2] |= mask & table[i].x[2];
@@ -28596,10 +28611,6 @@ static int sp_384_ecc_mulmod_7(sp_point_384* r, const sp_point_384* g,
         if (cache->cnt == 2)
             sp_384_gen_stripe_table_7(g, cache->table, tmp, heap);
 
-#ifndef HAVE_THREAD_LS
-        wc_UnLockMutex(&sp_cache_384_lock);
-#endif /* HAVE_THREAD_LS */
-
         if (cache->cnt < 2) {
             err = sp_384_ecc_mulmod_win_add_sub_7(r, g, k, map, ct, heap);
         }
@@ -28607,6 +28618,9 @@ static int sp_384_ecc_mulmod_7(sp_point_384* r, const sp_point_384* g,
             err = sp_384_ecc_mulmod_stripe_7(r, g, cache->table, k,
                     map, ct, heap);
         }
+#ifndef HAVE_THREAD_LS
+        wc_UnLockMutex(&sp_cache_384_lock);
+#endif /* HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -31291,7 +31305,7 @@ static int sp_384_mont_inv_order_7_nb(sp_ecc_ctx_t* sp_ctx, sp_digit* r, const s
             sp_384_mont_mul_order_7(t, t, a);
         }
         ctx->i--;
-        ctx->state = (ctx->i == 0) ? 3 : 1;
+        ctx->state = (ctx->i >= 0) ? 1 : 3;
         break;
     case 3:
         XMEMCPY(r, t, sizeof(sp_digit) * 7U);
@@ -34189,15 +34203,15 @@ static int sp_521_proj_point_add_9_nb(sp_ecc_ctx_t* sp_ctx, sp_point_521* r,
     int err = FP_WOULDBLOCK;
     sp_521_proj_point_add_9_ctx* ctx = (sp_521_proj_point_add_9_ctx*)sp_ctx->data;
 
+    typedef char ctx_size_test[sizeof(sp_521_proj_point_add_9_ctx) >= sizeof(*sp_ctx) ? -1 : 1];
+    (void)sizeof(ctx_size_test);
+
     /* Ensure only the first point is the same as the result. */
     if (q == r) {
         const sp_point_521* a = p;
         p = q;
         q = a;
     }
-
-    typedef char ctx_size_test[sizeof(sp_521_proj_point_add_9_ctx) >= sizeof(*sp_ctx) ? -1 : 1];
-    (void)sizeof(ctx_size_test);
 
     switch (ctx->state) {
     case 0: /* INIT */
@@ -34649,7 +34663,7 @@ static void sp_521_proj_point_dbl_n_9(sp_point_521* p, int i,
     sp_digit* x;
     sp_digit* y;
     sp_digit* z;
-    volatile int n = i;
+    volatile int n = i - 1;
 
     x = p->x;
     y = p->y;
@@ -34661,9 +34675,9 @@ static void sp_521_proj_point_dbl_n_9(sp_point_521* p, int i,
     sp_521_mont_sqr_9(w, z, p521_mod, p521_mp_mod);
     sp_521_mont_sqr_9(w, w, p521_mod, p521_mp_mod);
 #ifndef WOLFSSL_SP_SMALL
-    while (--n > 0)
+    while (n > 0)
 #else
-    while (--n >= 0)
+    while (n >= 0)
 #endif
     {
         /* A = 3*(X^2 - W) */
@@ -34694,6 +34708,7 @@ static void sp_521_proj_point_dbl_n_9(sp_point_521* p, int i,
         /* y = 2*A*(B - X) - Y^4 */
         sp_521_mont_mul_9(y, b, a, p521_mod, p521_mp_mod);
         sp_521_mont_sub_9(y, y, t1, p521_mod);
+        n = n - 1;
     }
 #ifndef WOLFSSL_SP_SMALL
     /* A = 3*(X^2 - W) */
@@ -35358,7 +35373,9 @@ static void sp_521_get_entry_256_9(sp_point_521* r,
     r->y[7] = 0;
     r->y[8] = 0;
     for (i = 1; i < 256; i++) {
-        mask = (sp_digit)0 - (i == idx);
+        sp_digit gte = (sp_digit)((((sp_uint64)i - (sp_uint64)idx) >> 63) - 1);
+        sp_digit lte = (sp_digit)((((sp_uint64)idx - (sp_uint64)i) >> 63) - 1);
+        mask = gte & lte;
         r->x[0] |= mask & table[i].x[0];
         r->x[1] |= mask & table[i].x[1];
         r->x[2] |= mask & table[i].x[2];
@@ -35612,10 +35629,6 @@ static int sp_521_ecc_mulmod_9(sp_point_521* r, const sp_point_521* g,
         if (cache->cnt == 2)
             sp_521_gen_stripe_table_9(g, cache->table, tmp, heap);
 
-#ifndef HAVE_THREAD_LS
-        wc_UnLockMutex(&sp_cache_521_lock);
-#endif /* HAVE_THREAD_LS */
-
         if (cache->cnt < 2) {
             err = sp_521_ecc_mulmod_win_add_sub_9(r, g, k, map, ct, heap);
         }
@@ -35623,6 +35636,9 @@ static int sp_521_ecc_mulmod_9(sp_point_521* r, const sp_point_521* g,
             err = sp_521_ecc_mulmod_stripe_9(r, g, cache->table, k,
                     map, ct, heap);
         }
+#ifndef HAVE_THREAD_LS
+        wc_UnLockMutex(&sp_cache_521_lock);
+#endif /* HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -38316,7 +38332,7 @@ static int sp_521_mont_inv_order_9_nb(sp_ecc_ctx_t* sp_ctx, sp_digit* r, const s
             sp_521_mont_mul_order_9(t, t, a);
         }
         ctx->i--;
-        ctx->state = (ctx->i == 0) ? 3 : 1;
+        ctx->state = (ctx->i >= 0) ? 1 : 3;
         break;
     case 3:
         XMEMCPY(r, t, sizeof(sp_digit) * 9U);
@@ -41640,15 +41656,15 @@ static int sp_1024_proj_point_add_18_nb(sp_ecc_ctx_t* sp_ctx, sp_point_1024* r,
     int err = FP_WOULDBLOCK;
     sp_1024_proj_point_add_18_ctx* ctx = (sp_1024_proj_point_add_18_ctx*)sp_ctx->data;
 
+    typedef char ctx_size_test[sizeof(sp_1024_proj_point_add_18_ctx) >= sizeof(*sp_ctx) ? -1 : 1];
+    (void)sizeof(ctx_size_test);
+
     /* Ensure only the first point is the same as the result. */
     if (q == r) {
         const sp_point_1024* a = p;
         p = q;
         q = a;
     }
-
-    typedef char ctx_size_test[sizeof(sp_1024_proj_point_add_18_ctx) >= sizeof(*sp_ctx) ? -1 : 1];
-    (void)sizeof(ctx_size_test);
 
     switch (ctx->state) {
     case 0: /* INIT */
@@ -42100,7 +42116,7 @@ static void sp_1024_proj_point_dbl_n_18(sp_point_1024* p, int i,
     sp_digit* x;
     sp_digit* y;
     sp_digit* z;
-    volatile int n = i;
+    volatile int n = i - 1;
 
     x = p->x;
     y = p->y;
@@ -42112,9 +42128,9 @@ static void sp_1024_proj_point_dbl_n_18(sp_point_1024* p, int i,
     sp_1024_mont_sqr_18(w, z, p1024_mod, p1024_mp_mod);
     sp_1024_mont_sqr_18(w, w, p1024_mod, p1024_mp_mod);
 #ifndef WOLFSSL_SP_SMALL
-    while (--n > 0)
+    while (n > 0)
 #else
-    while (--n >= 0)
+    while (n >= 0)
 #endif
     {
         /* A = 3*(X^2 - W) */
@@ -42145,6 +42161,7 @@ static void sp_1024_proj_point_dbl_n_18(sp_point_1024* p, int i,
         /* y = 2*A*(B - X) - Y^4 */
         sp_1024_mont_mul_18(y, b, a, p1024_mod, p1024_mp_mod);
         sp_1024_mont_sub_18(y, y, t1, p1024_mod);
+        n = n - 1;
     }
 #ifndef WOLFSSL_SP_SMALL
     /* A = 3*(X^2 - W) */
@@ -42934,10 +42951,6 @@ static int sp_1024_ecc_mulmod_18(sp_point_1024* r, const sp_point_1024* g,
         if (cache->cnt == 2)
             sp_1024_gen_stripe_table_18(g, cache->table, tmp, heap);
 
-#ifndef HAVE_THREAD_LS
-        wc_UnLockMutex(&sp_cache_1024_lock);
-#endif /* HAVE_THREAD_LS */
-
         if (cache->cnt < 2) {
             err = sp_1024_ecc_mulmod_win_add_sub_18(r, g, k, map, ct, heap);
         }
@@ -42945,6 +42958,9 @@ static int sp_1024_ecc_mulmod_18(sp_point_1024* r, const sp_point_1024* g,
             err = sp_1024_ecc_mulmod_stripe_18(r, g, cache->table, k,
                     map, ct, heap);
         }
+#ifndef HAVE_THREAD_LS
+        wc_UnLockMutex(&sp_cache_1024_lock);
+#endif /* HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);

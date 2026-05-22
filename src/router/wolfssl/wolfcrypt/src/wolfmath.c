@@ -1,6 +1,6 @@
 /* wolfmath.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -43,9 +43,12 @@
 
 #if !defined(NO_BIG_INT) || defined(WOLFSSL_SP_MATH)
 
-#if !defined(WC_NO_CACHE_RESISTANT) && \
-    ((defined(HAVE_ECC) && defined(ECC_TIMING_RESISTANT)) || \
-     (defined(USE_FAST_MATH) && defined(TFM_TIMING_RESISTANT)))
+#if (!defined(WC_NO_CACHE_RESISTANT) && \
+     ((defined(HAVE_ECC) && defined(ECC_TIMING_RESISTANT)) || \
+      (defined(USE_FAST_MATH) && defined(TFM_TIMING_RESISTANT)))) || \
+    ((defined(WOLFSSL_SP_MATH_ALL) && !defined(WOLFSSL_RSA_VERIFY_ONLY) && \
+      !defined(WOLFSSL_RSA_PUBLIC_ONLY)) || !defined(NO_DH) || \
+     defined(OPENSSL_ALL) && defined(WC_PROTECT_ENCRYPTED_MEM))
 
     /* all off / all on pointer addresses for constant calculations */
     /* ecc.c uses same table */

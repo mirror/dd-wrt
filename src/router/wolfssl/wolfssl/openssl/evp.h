@@ -1,6 +1,6 @@
 /* evp.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -60,6 +60,9 @@
 #include <wolfssl/wolfcrypt/pwdbased.h>
 #ifdef WOLFSSL_SM3
     #include <wolfssl/wolfcrypt/sm3.h>
+#endif
+#if defined(HAVE_BLAKE2B) || defined(HAVE_BLAKE2S)
+    #include <wolfssl/wolfcrypt/blake2.h>
 #endif
 #ifdef WOLFSSL_SM4
     #include <wolfssl/wolfcrypt/sm4.h>
@@ -223,6 +226,12 @@ typedef union {
     #endif
     #if defined(WOLFSSL_SHAKE128) || defined(WOLFSSL_SHAKE256)
         wc_Shake            shake;
+    #endif
+    #ifdef HAVE_BLAKE2B
+        Blake2b             blake2b;
+    #endif
+    #ifdef HAVE_BLAKE2S
+        Blake2s             blake2s;
     #endif
 } WOLFSSL_Hasher;
 

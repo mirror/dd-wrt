@@ -1,6 +1,6 @@
 /* memory.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -313,7 +313,7 @@ void wc_MemZero_Check(void* addr, size_t len)
         nextIdx--;
         if (nextIdx > 0) {
             /* Remove entry. */
-            XMEMCPY(memZero + i, memZero + i + 1,
+            XMEMMOVE(memZero + i, memZero + i + 1,
                 sizeof(MemZero) * (nextIdx - i));
             /* Clear out top to make it easier to see what is to be checked. */
             XMEMSET(&memZero[nextIdx], 0, sizeof(MemZero));
@@ -520,6 +520,11 @@ void* wolfSSL_Realloc(void *ptr, size_t size)
 #endif
 }
 #endif /* WOLFSSL_STATIC_MEMORY */
+
+#ifdef WOLFSSL_TRACK_MEMORY
+#include <wolfssl/wolfcrypt/mem_track.h>
+WOLFSSL_API memoryStats *wc_MemStats_Ptr;
+#endif
 
 #ifdef WOLFSSL_STATIC_MEMORY
 
@@ -1822,6 +1827,7 @@ WOLFSSL_LOCAL int SAVE_VECTOR_REGISTERS2_fuzzer(void) {
 
 #endif /* DEBUG_VECTOR_REGISTER_ACCESS_FUZZING */
 
-#ifdef WOLFSSL_LINUXKM
-    #include "../../linuxkm/linuxkm_memory.c"
+#if defined(WOLFSSL_LINUXKM) || defined(WC_SYM_RELOC_TABLES) || \
+    defined(WC_SYM_RELOC_TABLES_SUPPORT)
+    #include "linuxkm/linuxkm_memory.c"
 #endif

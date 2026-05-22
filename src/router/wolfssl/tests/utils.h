@@ -1,6 +1,6 @@
 /* utils.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -26,6 +26,11 @@
 
 #ifndef TESTS_UTILS_H
 #define TESTS_UTILS_H
+
+#ifdef WOLFSSL_DUMP_MEMIO_STREAM
+extern char tmpDirName[16];
+extern const char* currentTestName;
+#endif
 
 #if !defined(NO_FILESYSTEM) && !defined(NO_CERTS) && \
     (!defined(NO_RSA) || defined(HAVE_RPK)) && \
@@ -80,6 +85,15 @@ int test_memio_move_message(struct test_memio_ctx *ctx, int client,
 int test_memio_drop_message(struct test_memio_ctx *ctx, int client, int msg_pos);
 int test_memio_modify_message_len(struct test_memio_ctx *ctx, int client, int msg_pos, int new_len);
 int test_memio_remove_from_buffer(struct test_memio_ctx *ctx, int client, int off, int sz);
+#endif
+
+#if !defined(NO_FILESYSTEM) && defined(OPENSSL_EXTRA) && \
+    defined(DEBUG_UNIT_TEST_CERTS)
+void DEBUG_WRITE_CERT_X509(WOLFSSL_X509* x509, const char* fileName);
+void DEBUG_WRITE_DER(const byte* der, int derSz, const char* fileName);
+#else
+#define DEBUG_WRITE_CERT_X509(x509, fileName) WC_DO_NOTHING
+#define DEBUG_WRITE_DER(der, derSz, fileName) WC_DO_NOTHING
 #endif
 
 #endif /* TESTS_UTILS_H */

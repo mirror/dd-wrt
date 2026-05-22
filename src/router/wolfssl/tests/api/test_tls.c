@@ -1,6 +1,6 @@
 /* test_tls.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -30,6 +30,7 @@
 
 #include <tests/utils.h>
 #include <tests/api/test_tls.h>
+#include <wolfssl/internal.h>
 
 
 int test_utils_memio_move_message(void)
@@ -346,7 +347,7 @@ int test_tls_certreq_order(void)
 }
 
 #if !defined(WOLFSSL_NO_TLS12) && !defined(NO_RSA) && defined(HAVE_ECC) && \
-    !defined(NO_WOLFSSL_SERVER)
+    !defined(NO_WOLFSSL_SERVER) && !defined(WOLFSSL_NO_CLIENT_AUTH)
 /* Called when writing. */
 static int CsSend(WOLFSSL* ssl, char* buf, int sz, void* ctx)
 {
@@ -382,7 +383,7 @@ int test_tls12_bad_cv_sig_alg(void)
 {
     EXPECT_DECLS;
 #if !defined(WOLFSSL_NO_TLS12) && !defined(NO_RSA) && defined(HAVE_ECC) && \
-    !defined(NO_WOLFSSL_SERVER)
+    !defined(NO_WOLFSSL_SERVER) && !defined(WOLFSSL_NO_CLIENT_AUTH)
     byte clientMsgs[] = {
         /* Client Hello */
         0x16, 0x03, 0x03, 0x00, 0xe7,
@@ -662,6 +663,107 @@ int test_tls12_bad_cv_sig_alg(void)
     ExpectIntEQ(wolfSSL_get_error(ssl, WOLFSSL_FATAL_ERROR), -425);
     wolfSSL_free(ssl);
     wolfSSL_CTX_free(ctx);
+#endif
+    return EXPECT_RESULT();
+}
+
+int test_tls12_no_null_compression(void)
+{
+    EXPECT_DECLS;
+#if defined(HAVE_MANUAL_MEMIO_TESTS_DEPENDENCIES) && !defined(WOLFSSL_NO_TLS12)
+    /* ClientHello with compression list missing the required null method (RFC
+     * 5246 7.4.1.2: the list MUST include the null compression method). */
+    const byte badClientHello[] = {
+        /* record header */
+        0x16, 0x03, 0x03, 0x00, 0x2d,
+        /* handshake header: ClientHello, length 41 */
+        0x01, 0x00, 0x00, 0x29,
+        /* client version: TLS 1.2 */
+        0x03, 0x03,
+        /* random: 32 bytes */
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+        0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+        /* session id length: 0 */
+        0x00,
+        /* cipher suites length: 2, TLS_RSA_WITH_AES_128_CBC_SHA */
+        0x00, 0x02, 0x00, 0x2f,
+        /* compression methods: 1 entry, ZLIB only (null is absent) */
+        0x01, 0xdd,
+    };
+    WOLFSSL_CTX *ctx_s = NULL;
+    WOLFSSL *ssl_s = NULL;
+    struct test_memio_ctx test_ctx;
+
+    XMEMSET(&test_ctx, 0, sizeof(test_ctx));
+    ExpectIntEQ(test_memio_inject_message(&test_ctx, 0,
+            (const char*)badClientHello, sizeof(badClientHello)), 0);
+    ExpectIntEQ(test_memio_setup(&test_ctx, NULL, &ctx_s, NULL, &ssl_s,
+                    NULL, wolfTLSv1_2_server_method), 0);
+    ExpectIntEQ(wolfSSL_accept(ssl_s), WOLFSSL_FATAL_ERROR);
+    ExpectIntEQ(wolfSSL_get_error(ssl_s, WOLFSSL_FATAL_ERROR),
+            WC_NO_ERR_TRACE(COMPRESSION_ERROR));
+#ifdef WOLFSSL_EXTRA_ALERTS
+    {
+        const byte illegalParamAlert[] = {
+            0x15,             /* alert content type */
+            0x03, 0x03,       /* version: TLS 1.2 */
+            0x00, 0x02,       /* length: 2 */
+            0x02,             /* level: fatal */
+            0x2f,             /* description: illegal_parameter (47) */
+        };
+        ExpectIntEQ(test_ctx.c_len, (int)sizeof(illegalParamAlert));
+        ExpectBufEQ(test_ctx.c_buff, illegalParamAlert,
+                sizeof(illegalParamAlert));
+    }
+#endif
+    wolfSSL_free(ssl_s);
+    wolfSSL_CTX_free(ctx_s);
+#endif
+    return EXPECT_RESULT();
+}
+
+/* Test that set_curves_list correctly resolves ECC curve names that fall
+ * through the kNistCurves table and reach the wc_ecc_get_curve_idx_from_name
+ * fallback path.  The kNistCurves lookup uses a case-sensitive XSTRNCMP, so
+ * uppercase names like "SECP384R1" do not match the lowercase "secp384r1"
+ * entry; they fall through to the wolfCrypt ECC look-up which uses
+ * XSTRCASECMP. */
+int test_tls_set_curves_list_ecc_fallback(void)
+{
+    EXPECT_DECLS;
+#if defined(WOLFSSL_TLS13) && defined(HAVE_ECC) && \
+    (defined(OPENSSL_EXTRA) || defined(HAVE_CURL)) && \
+    !defined(HAVE_FIPS) && !defined(HAVE_SELFTEST) && \
+    (defined(HAVE_ECC384) || defined(HAVE_ALL_CURVES)) && \
+    ECC_MIN_KEY_SZ <= 384
+#ifndef NO_WOLFSSL_CLIENT
+    WOLFSSL_CTX* ctx = NULL;
+    WOLFSSL*     ssl = NULL;
+
+    /* "SECP384R1" (uppercase) is NOT in kNistCurves (case-sensitive table),
+     * so set_curves_list must use the wc_ecc_get_curve_idx_from_name fallback.
+     */
+    ExpectNotNull(ctx = wolfSSL_CTX_new(wolfTLSv1_3_client_method()));
+
+    /* CTX-level: set single curve via its wolfCrypt name (uppercase) */
+    ExpectIntEQ(wolfSSL_CTX_set1_curves_list(ctx, "SECP384R1"),
+                WOLFSSL_SUCCESS);
+
+    /* Verify the correct curve was stored, not ecc_sets[0] */
+    ExpectIntEQ(ctx->numGroups, 1);
+    ExpectIntEQ(ctx->group[0], WOLFSSL_ECC_SECP384R1);
+
+    /* SSL-level: same check via wolfSSL_set1_curves_list */
+    ExpectNotNull(ssl = wolfSSL_new(ctx));
+    ExpectIntEQ(wolfSSL_set1_curves_list(ssl, "SECP384R1"), WOLFSSL_SUCCESS);
+    ExpectIntEQ(ssl->numGroups, 1);
+    ExpectIntEQ(ssl->group[0], WOLFSSL_ECC_SECP384R1);
+
+    wolfSSL_free(ssl);
+    wolfSSL_CTX_free(ctx);
+#endif /* NO_WOLFSSL_CLIENT */
 #endif
     return EXPECT_RESULT();
 }

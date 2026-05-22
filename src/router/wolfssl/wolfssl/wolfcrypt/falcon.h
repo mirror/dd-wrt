@@ -1,6 +1,6 @@
 /* falcon.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -74,8 +74,8 @@
 /* Structs */
 
 struct falcon_key {
-    bool pubKeySet;
-    bool prvKeySet;
+    WC_BITFIELD pubKeySet:1;
+    WC_BITFIELD prvKeySet:1;
     byte level;
 
 #ifdef WOLF_CRYPTO_CB

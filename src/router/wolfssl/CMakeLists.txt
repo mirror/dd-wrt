@@ -34,7 +34,7 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
      You must delete them, or cmake will refuse to work.")
 endif()
 
-project(wolfssl VERSION 5.8.4 LANGUAGES C ASM)
+project(wolfssl VERSION 5.9.1 LANGUAGES C ASM)
 
 # Set WOLFSSL_ROOT if not already defined
 if ("${WOLFSSL_ROOT}" STREQUAL "")
@@ -53,12 +53,12 @@ set(WOLFSSL_LIBRARY_VERSION_FIRST 44)
 
 # increment if interfaces have been added
 # set to zero if WOLFSSL_LIBRARY_VERSION_FIRST is incremented
-set(WOLFSSL_LIBRARY_VERSION_SECOND 0)
+set(WOLFSSL_LIBRARY_VERSION_SECOND 2)
 
 # increment if source code has changed
 # set to zero if WOLFSSL_LIBRARY_VERSION_FIRST is incremented or
 # WOLFSSL_LIBRARY_VERSION_SECOND is incremented
-set(WOLFSSL_LIBRARY_VERSION_THIRD 1)
+set(WOLFSSL_LIBRARY_VERSION_THIRD 0)
 
 set(LIBTOOL_FULL_VERSION ${WOLFSSL_LIBRARY_VERSION_FIRST}.${WOLFSSL_LIBRARY_VERSION_SECOND}.${WOLFSSL_LIBRARY_VERSION_THIRD})
 
@@ -427,6 +427,18 @@ if(WOLFSSL_DTLS_CID)
     list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_DTLS_CID")
 endif()
 
+# DTLS 1.3 Fragment ClientHello
+add_option("WOLFSSL_DTLS_CH_FRAG"
+    "Enable wolfSSL DTLS 1.3 Fragment ClientHello (default: disabled)"
+    "no" "yes;no")
+
+if(WOLFSSL_DTLS_CH_FRAG)
+    if(NOT WOLFSSL_DTLS13)
+        message(FATAL_ERROR "DTLS 1.3 Fragment ClientHello is supported only for DTLSv1.3")
+    endif()
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_DTLS_CH_FRAG")
+endif()
+
 # RNG
 add_option("WOLFSSL_RNG"
     "Enable compiling and using RNG (default: enabled)"
@@ -511,9 +523,6 @@ if(WOLFSSL_WOLFSSH)
     list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_WOLFSSH")
 endif()
 
-if(WOLFSSL_WOLFSSH OR WOLFSSL_WPAS)
-    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_PUBLIC_MP")
-endif()
 
 # TODO: - DTLS-SCTP
 #       - DTLS multicast
@@ -601,7 +610,66 @@ add_option(WOLFSSL_OQS
 # ML-KEM/Kyber
 add_option(WOLFSSL_MLKEM
     "Enable the wolfSSL PQ ML-KEM library (default: disabled)"
+    "yes" "yes;no")
+
+if (WOLFSSL_MLKEM)
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_HAVE_MLKEM")
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_WC_MLKEM")
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_SHA3")
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_SHAKE128")
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_SHAKE256")
+
+    set_wolfssl_definitions("WOLFSSL_HAVE_MLKEM" RESULT)
+    set_wolfssl_definitions("WOLFSSL_WC_MLKEM"   RESULT)
+    set_wolfssl_definitions("WOLFSSL_SHA3"       RESULT)
+    set_wolfssl_definitions("WOLFSSL_SHAKE128"   RESULT)
+    set_wolfssl_definitions("WOLFSSL_SHAKE256"   RESULT)
+endif()
+
+# When MLKEM and DTLS 1.3 are both enabled, DTLS ClientHello fragmenting is
+# required (PQC keys in ClientHello can exceed MTU), so enable it automatically.
+if(WOLFSSL_MLKEM AND WOLFSSL_DTLS13 AND NOT WOLFSSL_DTLS_CH_FRAG)
+    message(STATUS "MLKEM and DTLS 1.3 are enabled; enabling DTLS ClientHello fragmenting")
+    override_cache(WOLFSSL_DTLS_CH_FRAG "yes")
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_DTLS_CH_FRAG")
+endif()
+
+# Disable ML-KEM as standalone TLS key exchange (non-hybrid); when enabled (default), standalone is disabled
+add_option(WOLFSSL_TLS_NO_MLKEM_STANDALONE
+    "Disable ML-KEM as standalone TLS key exchange (non-hybrid) (default: enabled, i.e. standalone disabled)"
+    "yes" "yes;no")
+
+if (WOLFSSL_TLS_NO_MLKEM_STANDALONE)
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_TLS_NO_MLKEM_STANDALONE")
+endif()
+
+# PQ/T hybrid combinations
+add_option(WOLFSSL_PQC_HYBRIDS
+    "Enable PQ/T hybrid combinations (default: enabled)"
+    "yes" "yes;no")
+
+if (WOLFSSL_PQC_HYBRIDS)
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_PQC_HYBRIDS")
+endif()
+
+# Dilithium
+add_option(WOLFSSL_DILITHIUM
+    "Enable the wolfSSL PQ Dilithium (ML-DSA) implementation (default: disabled)"
     "no" "yes;no")
+
+if (WOLFSSL_DILITHIUM)
+    list(APPEND WOLFSSL_DEFINITIONS "-DHAVE_DILITHIUM")
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_WC_DILITHIUM")
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_SHA3")
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_SHAKE128")
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_SHAKE256")
+
+    set_wolfssl_definitions("HAVE_DILITHIUM"       RESULT)
+    set_wolfssl_definitions("WOLFSSL_WC_DILITHIUM" RESULT)
+    set_wolfssl_definitions("WOLFSSL_SHA3"         RESULT)
+    set_wolfssl_definitions("WOLFSSL_SHAKE128"     RESULT)
+    set_wolfssl_definitions("WOLFSSL_SHAKE256"     RESULT)
+endif()
 
 # LMS
 add_option(WOLFSSL_LMS
@@ -612,9 +680,29 @@ add_option(WOLFSSL_LMSSHA256192
     "Enable the LMS SHA_256_192 truncated variant (default: disabled)"
     "no" "yes;no")
 
+if (WOLFSSL_LMS)
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_HAVE_LMS")
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_WC_LMS")
+
+    set_wolfssl_definitions("WOLFSSL_HAVE_LMS" RESULT)
+    set_wolfssl_definitions("WOLFSSL_WC_LMS"   RESULT)
+
+    if (WOLFSSL_LMSSHA256192)
+        list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_LMS_SHA256_192")
+        list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_NO_LMS_SHA256_256")
+
+        set_wolfssl_definitions("WOLFSSL_LMS_SHA256_192"    RESULT)
+        set_wolfssl_definitions("WOLFSSL_NO_LMS_SHA256_256" RESULT)
+    endif()
+endif()
+
 # Experimental features
 add_option(WOLFSSL_EXPERIMENTAL
     "Enable experimental features (default: disabled)"
+    "no" "yes;no")
+
+add_option(WOLFSSL_EXTRA_PQC_HYBRIDS
+    "Enable extra PQ/T hybrid combinations (default: disabled)"
     "no" "yes;no")
 
 message(STATUS "Looking for WOLFSSL_EXPERIMENTAL")
@@ -652,52 +740,14 @@ if (WOLFSSL_EXPERIMENTAL)
         message(STATUS "Looking for WOLFSSL_OQS - not found")
     endif()
 
-    # Checking for experimental feature: WOLFSSL_MLKEM
-    message(STATUS "Looking for WOLFSSL_MLKEM")
-    if (WOLFSSL_MLKEM)
+    # Checking for experimental feature: extra PQ/T hybrid combinations
+    message(STATUS "Looking for WOLFSSL_EXTRA_PQC_HYBRIDS")
+    if (WOLFSSL_EXTRA_PQC_HYBRIDS)
         set(WOLFSSL_FOUND_EXPERIMENTAL_FEATURE 1)
-
-        message(STATUS "Automatically set related requirements for ML-KEM:")
-        add_definitions("-DWOLFSSL_HAVE_MLKEM")
-        add_definitions("-DWOLFSSL_WC_MLKEM")
-        add_definitions("-DWOLFSSL_SHA3")
-        add_definitions("-DWOLFSSL_SHAKE128")
-        add_definitions("-DWOLFSSL_SHAKE256")
-
-        set_wolfssl_definitions("WOLFSSL_HAVE_MLKEM" RESULT)
-        set_wolfssl_definitions("WOLFSSL_WC_MLKEM"   RESULT)
-        set_wolfssl_definitions("WOLFSSL_SHA3"       RESULT)
-        set_wolfssl_definitions("WOLFSSL_SHAKE128"   RESULT)
-        set_wolfssl_definitions("WOLFSSL_SHAKE256"   RESULT)
-        message(STATUS "Looking for WOLFSSL_MLKEM - found")
+        message(STATUS "Looking for WOLFSSL_EXTRA_PQC_HYBRIDS - found")
+        list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_EXTRA_PQC_HYBRIDS")
     else()
-        message(STATUS "Looking for WOLFSSL_MLKEM - not found")
-    endif()
-
-    # Checking for experimental feature: WOLFSSL_LMS
-    message(STATUS "Looking for WOLFSSL_LMS")
-    if (WOLFSSL_LMS)
-        set(WOLFSSL_FOUND_EXPERIMENTAL_FEATURE 2)
-
-        message(STATUS "Automatically set related requirements for LMS")
-        add_definitions("-DWOLFSSL_HAVE_LMS")
-        add_definitions("-DWOLFSSL_WC_LMS")
-        set_wolfssl_definitions("WOLFSSL_HAVE_LMS" RESULT)
-        set_wolfssl_definitions("WOLFSSL_WC_LMS"   RESULT)
-        message(STATUS "Looking for WOLFSSL_LMS - found")
-        # Checking for experimental feature: WOLFSSL_LMSSHA256192
-        if (WOLFSSL_LMSSHA256192)
-            message(STATUS "Automatically set related requirements for LMS SHA256-192")
-            add_definitions("-DWOLFSSL_LMS_SHA256_192")
-            add_definitions("-DWOLFSSL_NO_LMS_SHA256_256")
-            set_wolfssl_definitions("WOLFSSL_LMS_SHA256_192"    RESULT)
-            set_wolfssl_definitions("WOLFSSL_NO_LMS_SHA256_256" RESULT)
-            message(STATUS "Looking for WOLFSSL_LMSSHA256192 - found")
-        else()
-            message(STATUS "Looking for WOLFSSL_LMSSHA256192 - not found")
-        endif()
-    else()
-        message(STATUS "Looking for WOLFSSL_LMS - not found")
+        message(STATUS "Looking for WOLFSSL_EXTRA_PQC_HYBRIDS - not found")
     endif()
 
     # Other experimental feature detection can be added here...
@@ -713,15 +763,14 @@ if (WOLFSSL_EXPERIMENTAL)
     if(WOLFSSL_OQS AND WOLFSSL_MLKEM)
         message(FATAL_ERROR "Error: cannot enable both WOLFSSL_OQS and WOLFSSL_MLKEM at the same time.")
     endif()
-
+    if(WOLFSSL_OQS AND WOLFSSL_DILITHIUM)
+        message(FATAL_ERROR "Error: cannot enable both WOLFSSL_OQS and WOLFSSL_DILITHIUM at the same time.")
+    endif()
 else()
     # Experimental mode not enabled, but were any experimental features enabled? Error out if so:
     message(STATUS "Looking for WOLFSSL_EXPERIMENTAL - not found")
     if (WOLFSSL_OQS)
         message(FATAL_ERROR "Error: WOLFSSL_OQS requires WOLFSSL_EXPERIMENTAL at this time.")
-    endif()
-    if(WOLFSSL_MLKEM)
-        message(FATAL_ERROR "Error: WOLFSSL_MLKEM requires WOLFSSL_EXPERIMENTAL at this time.")
     endif()
 endif()
 
@@ -734,6 +783,23 @@ add_option(WOLFSSL_LMS
 add_option(WOLFSSL_XMSS
     "Enable the wolfSSL XMSS implementation (default: disabled)"
     "no" "yes;no")
+
+# SLH-DSA
+add_option(WOLFSSL_SLHDSA
+    "Enable the wolfSSL SLH-DSA implementation (default: disabled)"
+    "no" "yes;no")
+
+if (WOLFSSL_SLHDSA)
+    message(STATUS "Automatically set related requirements for SLH-DSA")
+    add_definitions("-DWOLFSSL_HAVE_SLHDSA")
+    add_definitions("-DWOLFSSL_WC_SLHDSA")
+    add_definitions("-DWOLFSSL_SHAKE256")
+
+    set_wolfssl_definitions("WOLFSSL_HAVE_SLHDSA" RESULT)
+    set_wolfssl_definitions("WOLFSSL_WC_SLHDSA"   RESULT)
+    set_wolfssl_definitions("WOLFSSL_SHAKE256"    RESULT)
+    message(STATUS "Looking for WOLFSSL_SLHDSA - found")
+endif()
 
 # TODO: - Lean PSK
 #       - Lean TLS
@@ -848,6 +914,27 @@ add_option("WOLFSSL_AESOFB"
     "Enable wolfSSL AES-OFB support (default: disabled)"
     "no" "yes;no")
 
+# AES-ECB
+add_option("WOLFSSL_AESECB"
+    "Enable wolfSSL AES-ECB support (default: disabled)"
+    "no" "yes;no")
+
+if(WOLFSSL_AESECB)
+    list(APPEND WOLFSSL_DEFINITIONS "-DHAVE_AES_ECB")
+endif()
+
+# AES-CTS
+add_option("WOLFSSL_AESCTS"
+    "Enable wolfSSL AES-CTS support (default: disabled)"
+    "no" "yes;no")
+
+if(WOLFSSL_AESCTS)
+    if(NOT WOLFSSL_AESCBC)
+        message(FATAL_ERROR "AES-CTS requires AES-CBC.")
+    endif()
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_AES_CTS")
+endif()
+
 # TODO: - AES-GCM stream
 #       - AES-ARM
 #       - Xilinx hardened crypto
@@ -858,7 +945,6 @@ add_option("WOLFSSL_AESOFB"
 #       - Linux dev crpyto calls
 #       - Camellia
 #       - MD2
-#       - NULL cipher
 #       - RIPEMD
 #       - BLAKE2
 
@@ -1035,6 +1121,53 @@ if(WOLFSSL_ECC)
     if("${WOLFSSL_ECC}" STREQUAL "nonblock")
         list(APPEND WOLFSSL_DEFINITIONS "-DWC_ECC_NONBLOCK")
     endif()
+endif()
+
+# ECCSI
+add_option("WOLFSSL_ECCSI"
+    "Enable ECCSI (default: disabled)"
+    "no" "yes;no")
+
+if(WOLFSSL_ECCSI)
+    if (NOT WOLFSSL_ECC)
+        message(FATAL_ERROR "cannot enable ECCSI without enabling ECC.")
+    endif()
+
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFCRYPT_HAVE_ECCSI")
+endif()
+
+# SAKKE
+add_option("WOLFSSL_SAKKE"
+    "Enable SAKKE (default: disabled)"
+    "no" "yes;no")
+
+if(WOLFSSL_SAKKE)
+    if (NOT WOLFSSL_ECC)
+        message(FATAL_ERROR "cannot enable SAKKE without enabling ECC.")
+    endif()
+
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFCRYPT_HAVE_SAKKE")
+endif()
+
+# SipHash
+add_option("WOLFSSL_SIPHASH"
+    "Enable SipHash (default: disabled)"
+    "no" "yes;no")
+
+if(WOLFSSL_SIPHASH)
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_SIPHASH")
+endif()
+
+add_option("WOLFSSL_PUBLIC_MP"
+    "Enable public MP API (default: disabled)"
+    "no" "yes;no")
+
+if(WOLFSSL_WOLFSSH OR WOLFSSL_WPAS OR WOLFSSL_ECCSI)
+    override_cache(WOLFSSL_PUBLIC_MP "yes")
+endif()
+
+if(WOLFSSL_PUBLIC_MP)
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_PUBLIC_MP")
 endif()
 
 # TODO: - Compressed key
@@ -1242,6 +1375,15 @@ else()
     endif()
 endif()
 
+# RSA Direct
+add_option("WOLFSSL_WC_RSA_DIRECT"
+    "Enable RSA Direct (default: disabled)"
+    "no" "yes;no")
+
+if(WOLFSSL_RSA AND WOLFSSL_WC_RSA_DIRECT)
+    list(APPEND WOLFSSL_DEFINITIONS "-DWC_RSA_DIRECT")
+endif()
+
 # OAEP
 add_option("WOLFSSL_OAEP"
     "Enable RSA OAEP (default: enabled)"
@@ -1366,6 +1508,12 @@ if(NOT WOLFSSL_AES)
     endif()
     if(WOLFSSL_AESCTR)
         message(FATAL_ERROR "AESCTR requires AES.")
+    endif()
+    if(WOLFSSL_AESECB)
+        message(FATAL_ERROR "AES-ECB requires AES.")
+    endif()
+    if(WOLFSSL_AESCTS)
+        message(FATAL_ERROR "AES-CTS requires AES.")
     endif()
 else()
     if(WOLFSSL_LEAN_PSK)
@@ -1790,6 +1938,8 @@ add_option(WOLFSSL_AESKEYWRAP ${WOLFSSL_AESKEYWRAP_HELP_STRING} "no" "yes;no")
 set(WOLFSSL_X963KDF_HELP_STRING "Enable X9.63 KDF support (default: disabled)")
 add_option(WOLFSSL_X963KDF ${WOLFSSL_X963KDF_HELP_STRING} "no" "yes;no")
 
+set(WOLFSSL_NULL_CIPHER_HELP_STRING "Enable NULL cipher support (default: disabled)")
+add_option(WOLFSSL_NULL_CIPHER ${WOLFSSL_NULL_CIPHER_HELP_STRING} "no" "yes;no")
 
 # Encrypt-then-mac
 add_option("WOLFSSL_ENC_THEN_MAC"
@@ -1864,6 +2014,16 @@ endif()
 
 if(NOT WOLFSSL_PKCS12)
   list(APPEND WOLFSSL_DEFINITIONS "-DNO_PKCS12")
+endif()
+
+# PKCS#11
+add_option("WOLFSSL_PKCS11"
+    "Enable PKCS#11 (default: disabled)"
+    "no" "yes;no")
+
+if(WOLFSSL_PKCS11 AND NOT WIN32)
+    list(APPEND WOLFSSL_DEFINITIONS "-DHAVE_PKCS11 -DHAVE_WOLF_BIGINT")
+    list(APPEND WOLFSSL_LINK_LIBS ${CMAKE_DL_LIBS})
 endif()
 
 
@@ -1964,7 +2124,6 @@ add_option("WOLFSSL_CRYPT_TESTS_HELP"
     "no" "yes;no")
 
 # TODO: - LIBZ
-#       - PKCS#11
 #       - Cavium
 #       - Cavium V
 #       - Cavium Octeon
@@ -2063,10 +2222,7 @@ add_option("WOLFSSL_SYS_CA_CERTS"
     "yes" "yes;no")
 
 if(WOLFSSL_SYS_CA_CERTS)
-    if(NOT WOLFSSL_FILESYSTEM)
-        message("Can't enable system CA certs without a filesystem.")
-        override_cache(WOLFSSL_SYS_CA_CERTS "no")
-    elseif(APPLE)
+    if(APPLE)
         # Headers used for MacOS default system CA certs behavior. Only MacOS SDK will have this header
         check_include_file("Security/SecTrustSettings.h" HAVE_SECURITY_SECTRUSTSETTINGS_H)
         # Headers used for Apple native cert validation. All device SDKs should have these headers
@@ -2100,6 +2256,9 @@ if(WOLFSSL_SYS_CA_CERTS)
         else()
             message(FATAL_ERROR "Can't enable system CA certs without Apple Security.framework headers.")
         endif()
+    elseif(NOT WIN32 AND NOT WOLFSSL_FILESYSTEM)
+        message("Can't enable system CA certs without a filesystem.")
+        override_cache(WOLFSSL_SYS_CA_CERTS "no")
     endif()
 
 
@@ -2119,13 +2278,14 @@ if(WOLFSSL_AESOFB)
 endif()
 
 if(WOLFSSL_TPM)
-    override_cache(WOLFSSL_KEYGEN   "yes")
-    override_cache(WOLFSSL_CERTGEN  "yes")
-    override_cache(WOLFSSL_CRYPTOCB "yes")
-    override_cache(WOLFSSL_CERTREQ  "yes")
-    override_cache(WOLFSSL_CERTEXT  "yes")
-    override_cache(WOLFSSL_PKCS7    "yes")
-    override_cache(WOLFSSL_AESCFB   "yes")
+    override_cache(WOLFSSL_KEYGEN    "yes")
+    override_cache(WOLFSSL_CERTGEN   "yes")
+    override_cache(WOLFSSL_CRYPTOCB  "yes")
+    override_cache(WOLFSSL_CERTREQ   "yes")
+    override_cache(WOLFSSL_CERTEXT   "yes")
+    override_cache(WOLFSSL_PKCS7     "yes")
+    override_cache(WOLFSSL_AESCFB    "yes")
+    override_cache(WOLFSSL_PUBLIC_MP "yes")
     list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_ALLOW_ENCODING_CA_FALSE")
 endif()
 
@@ -2171,6 +2331,10 @@ if(WOLFSSL_AESKEYWRAP)
         "-DHAVE_AES_KEYWRAP"
         "-DWOLFSSL_AES_DIRECT"
         )
+endif()
+
+if(WOLFSSL_NULL_CIPHER)
+    list(APPEND WOLFSSL_DEFINITIONS "-DHAVE_NULL_CIPHER")
 endif()
 
 # Hybrid Public Key Encryption (RFC9180)
@@ -2523,7 +2687,7 @@ target_compile_definitions(wolfssl PRIVATE "BUILDING_WOLFSSL")
 if(${BUILD_SHARED_LIBS})
     target_compile_definitions(wolfssl PUBLIC "WOLFSSL_DLL")
 endif()
-target_compile_definitions(wolfssl PUBLIC ${WOLFSSL_DEFINITIONS})
+target_compile_definitions(wolfssl PRIVATE ${WOLFSSL_DEFINITIONS})
 
 ####################################################
 # Include Directories
@@ -2586,6 +2750,7 @@ if(WOLFSSL_EXAMPLES)
     add_executable(client
         ${CMAKE_CURRENT_SOURCE_DIR}/examples/client/client.c)
     target_link_libraries(client wolfssl)
+    target_compile_definitions(client PRIVATE ${WOLFSSL_DEFINITIONS})
     set_property(TARGET client
                  PROPERTY RUNTIME_OUTPUT_DIRECTORY
                  ${WOLFSSL_OUTPUT_BASE}/examples/client)
@@ -2594,6 +2759,7 @@ if(WOLFSSL_EXAMPLES)
     add_executable(server
         ${CMAKE_CURRENT_SOURCE_DIR}/examples/server/server.c)
     target_link_libraries(server wolfssl)
+    target_compile_definitions(server PRIVATE ${WOLFSSL_DEFINITIONS})
     set_property(TARGET server
                  PROPERTY RUNTIME_OUTPUT_DIRECTORY
                  ${WOLFSSL_OUTPUT_BASE}/examples/server)
@@ -2604,6 +2770,7 @@ if(WOLFSSL_EXAMPLES)
     target_include_directories(echoclient PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR})
     target_link_libraries(echoclient wolfssl)
+    target_compile_definitions(echoclient PRIVATE ${WOLFSSL_DEFINITIONS})
     set_property(TARGET echoclient
                  PROPERTY RUNTIME_OUTPUT_DIRECTORY
                  ${WOLFSSL_OUTPUT_BASE}/examples/echoclient)
@@ -2614,6 +2781,7 @@ if(WOLFSSL_EXAMPLES)
     target_include_directories(echoserver PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR})
     target_link_libraries(echoserver wolfssl)
+    target_compile_definitions(echoserver PRIVATE ${WOLFSSL_DEFINITIONS})
     set_property(TARGET echoserver
                  PROPERTY RUNTIME_OUTPUT_DIRECTORY
                  ${WOLFSSL_OUTPUT_BASE}/examples/echoserver)
@@ -2623,6 +2791,7 @@ if(WOLFSSL_EXAMPLES)
         add_executable(tls_bench
             ${CMAKE_CURRENT_SOURCE_DIR}/examples/benchmark/tls_bench.c)
         target_link_libraries(tls_bench wolfssl)
+        target_compile_definitions(tls_bench PRIVATE ${WOLFSSL_DEFINITIONS})
         if(CMAKE_USE_PTHREADS_INIT)
             target_link_libraries(tls_bench Threads::Threads)
         endif()
@@ -2671,6 +2840,7 @@ if(WOLFSSL_EXAMPLES)
         tests/api/test_ed448.c
         tests/api/test_mlkem.c
         tests/api/test_mldsa.c
+        tests/api/test_slhdsa.c
         tests/api/test_signature.c
         tests/api/test_dtls.c
         tests/api/test_ocsp.c
@@ -2693,6 +2863,25 @@ if(WOLFSSL_EXAMPLES)
         tests/api/test_ossl_mac.c
         tests/api/test_ossl_rsa.c
         tests/api/test_ossl_sk.c
+        tests/api/test_ossl_x509.c
+        tests/api/test_ossl_x509_ext.c
+        tests/api/test_ossl_x509_name.c
+        tests/api/test_ossl_x509_pk.c
+        tests/api/test_ossl_x509_vp.c
+        tests/api/test_ossl_x509_io.c
+        tests/api/test_ossl_x509_crypto.c
+        tests/api/test_ossl_x509_acert.c
+        tests/api/test_ossl_x509_info.c
+        tests/api/test_ossl_x509_str.c
+        tests/api/test_ossl_x509_lu.c
+        tests/api/test_ossl_pem.c
+        tests/api/test_ossl_rand.c
+        tests/api/test_ossl_obj.c
+        tests/api/test_ossl_p7p12.c
+        tests/api/test_evp_digest.c
+        tests/api/test_evp_cipher.c
+        tests/api/test_evp_pkey.c
+        tests/api/test_certman.c
         tests/api/test_tls13.c
         tests/srp.c
         tests/suites.c
@@ -2708,6 +2897,7 @@ if(WOLFSSL_EXAMPLES)
         ${CMAKE_CURRENT_BINARY_DIR})
     target_compile_options(unit_test PUBLIC "-DNO_MAIN_DRIVER")
     target_link_libraries(unit_test wolfssl)
+    target_compile_definitions(unit_test PRIVATE ${WOLFSSL_DEFINITIONS})
     if(CMAKE_USE_PTHREADS_INIT)
         target_link_libraries(unit_test Threads::Threads)
     endif()
@@ -2733,6 +2923,7 @@ if(WOLFSSL_CRYPT_TESTS)
             ${CMAKE_CURRENT_SOURCE_DIR}/wolfcrypt/test/test.c)
         set_target_properties(wolfcrypttest_lib PROPERTIES OUTPUT_NAME "wolfcrypttest")
         target_link_libraries(wolfcrypttest_lib wolfssl)
+        target_compile_definitions(wolfcrypttest_lib PRIVATE ${WOLFSSL_DEFINITIONS})
         target_compile_options(wolfcrypttest_lib PRIVATE "-DNO_MAIN_DRIVER")
         if(WOLFSSL_CRYPT_TESTS_HELP)
             target_compile_options(wolfcrypttest_lib PRIVATE "-DHAVE_WOLFCRYPT_TEST_OPTIONS")
@@ -2743,6 +2934,7 @@ if(WOLFSSL_CRYPT_TESTS)
             ${CMAKE_CURRENT_SOURCE_DIR}/wolfcrypt/benchmark/benchmark.c)
         set_target_properties(wolfcryptbench_lib PROPERTIES OUTPUT_NAME "wolfcryptbench")
         target_link_libraries(wolfcryptbench_lib wolfssl)
+        target_compile_definitions(wolfcryptbench_lib PRIVATE ${WOLFSSL_DEFINITIONS})
         target_compile_options(wolfcryptbench_lib PRIVATE "-DNO_MAIN_DRIVER")
     endif()
 
@@ -2750,6 +2942,7 @@ if(WOLFSSL_CRYPT_TESTS)
     add_executable(wolfcrypttest
         ${CMAKE_CURRENT_SOURCE_DIR}/wolfcrypt/test/test.c)
     target_link_libraries(wolfcrypttest wolfssl)
+    target_compile_definitions(wolfcrypttest PRIVATE ${WOLFSSL_DEFINITIONS})
     set_property(TARGET wolfcrypttest
                  PROPERTY RUNTIME_OUTPUT_DIRECTORY
                  ${WOLFSSL_OUTPUT_BASE}/wolfcrypt/test)
@@ -2769,6 +2962,7 @@ if(WOLFSSL_CRYPT_TESTS)
     target_include_directories(wolfcryptbench PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR})
     target_link_libraries(wolfcryptbench wolfssl)
+    target_compile_definitions(wolfcryptbench PRIVATE ${WOLFSSL_DEFINITIONS})
     set_property(TARGET wolfcryptbench
                  PROPERTY RUNTIME_OUTPUT_DIRECTORY
                  ${WOLFSSL_OUTPUT_BASE}/wolfcrypt/benchmark)
@@ -2923,9 +3117,9 @@ if(WOLFSSL_INSTALL)
     # Install the library
     install(TARGETS wolfssl
             EXPORT wolfssl-targets
-            LIBRARY DESTINATION lib
-            ARCHIVE DESTINATION lib
-            RUNTIME DESTINATION bin
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
             )
     # Install the headers
     install(DIRECTORY ${WOLFSSL_OUTPUT_BASE}/wolfssl/

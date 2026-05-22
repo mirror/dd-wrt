@@ -34,6 +34,49 @@ int wc_SrpInit(Srp* srp, SrpType type, SrpSide side);
 
 /*!
     \ingroup SRP
+    \brief Initializes the Srp struct for usage with extended parameters.
+    This function is similar to wc_SrpInit but allows specification of a
+    custom heap hint and device ID for hardware acceleration.
+
+    \return 0 on success.
+    \return BAD_FUNC_ARG Returns when there's an issue with the arguments
+    such as srp being null or SrpSide not being SRP_CLIENT_SIDE or
+    SRP_SERVER_SIDE.
+    \return NOT_COMPILED_IN Returns when a type is passed as an argument
+    but hasn't been configured in the wolfCrypt build.
+    \return <0 on error.
+
+    \param srp the Srp structure to be initialized.
+    \param type the hash type to be used.
+    \param side the side of the communication.
+    \param heap pointer to heap hint for memory allocation (can be NULL).
+    \param devId device ID for hardware acceleration (use INVALID_DEVID
+    for software only).
+
+    _Example_
+    \code
+    Srp srp;
+    void* heap = NULL;
+    int devId = INVALID_DEVID;
+
+    if (wc_SrpInit_ex(&srp, SRP_TYPE_SHA, SRP_CLIENT_SIDE, heap,
+                      devId) != 0) {
+        // Initialization error
+    }
+    else {
+        wc_SrpTerm(&srp);
+    }
+    \endcode
+
+    \sa wc_SrpInit
+    \sa wc_SrpTerm
+    \sa wc_SrpSetUsername
+*/
+int wc_SrpInit_ex(Srp* srp, SrpType type, SrpSide side, void* heap,
+                  int devId);
+
+/*!
+    \ingroup SRP
 
     \brief Releases the Srp struct resources after usage.
 
@@ -340,6 +383,8 @@ int wc_SrpSetPrivate(Srp* srp, const byte* priv, word32 size);
     This function MUST be called after wc_SrpSetPassword or wc_SrpSetVerifier.
     The function wc_SrpSetPrivate may be called before wc_SrpGetPublic.
 
+    Caller must observe value of size upon return to know the actual size.
+
     \return 0 Success
     \return BAD_FUNC_ARG Returned if srp, pub, or size is null.
     \return SRP_CALL_ORDER_E Returned if wc_SrpGetPublic is called out
@@ -349,8 +394,8 @@ int wc_SrpSetPrivate(Srp* srp, const byte* priv, word32 size);
 
     \param srp the Srp structure.
     \param pub the buffer to write the public ephemeral value.
-    \param size the the buffer size in bytes. Will be updated with
-    the ephemeral value size.
+    \param size IN: the buffer size in bytes.
+                OUT: Will be updated with the ephemeral value size.
 
     _Example_
     \code
@@ -369,7 +414,7 @@ int wc_SrpSetPrivate(Srp* srp, const byte* priv, word32 size);
     wc_SrpSetPassword(&srp, password, passwordSize)
 
     byte public[64];
-    word32 publicSz = 0;
+    word32 publicSz = sizeof(public);
 
     if( wc_SrpGetPublic(&srp, public, &publicSz) != 0)
     {

@@ -1,6 +1,6 @@
 /* test_dsa.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -61,7 +61,7 @@ int test_wc_InitDsaKey(void)
 int test_wc_DsaSignVerify(void)
 {
     EXPECT_DECLS;
-#if !defined(NO_DSA)
+#if !defined(NO_DSA) && !defined(WC_FIPS_186_5_PLUS)
     DsaKey key;
     WC_RNG rng;
     wc_Sha sha;
@@ -117,7 +117,7 @@ int test_wc_DsaSignVerify(void)
     ExpectIntEQ(wc_DsaVerify(hash, signature, NULL, &answer), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
     ExpectIntEQ(wc_DsaVerify(hash, signature, &key, NULL), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
 
-#if !defined(HAVE_FIPS) && defined(WOLFSSL_PUBLIC_MP)
+#if !defined(HAVE_SELFTEST) && !defined(HAVE_FIPS) && defined(WOLFSSL_PUBLIC_MP)
     /* hard set q to 0 and test fail case */
     mp_free(&key.q);
     ExpectIntEQ(mp_init(&key.q), 0);
@@ -130,7 +130,8 @@ int test_wc_DsaSignVerify(void)
     DoExpectIntEQ(wc_FreeRng(&rng),0);
     wc_FreeDsaKey(&key);
     wc_ShaFree(&sha);
-#endif
+#endif /* !NO_DSA && !WC_FIPS_186_5_PLUS */
+
     return EXPECT_RESULT();
 } /* END test_wc_DsaSign */
 

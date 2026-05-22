@@ -1,6 +1,6 @@
 /* ext_lms.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -838,6 +838,22 @@ int wc_LmsKey_Sign(LmsKey* key, byte * sig, word32 * sigSz, const byte * msg,
         WOLFSSL_MSG("error: hss_get_signature_len failed");
         key->state = WC_LMS_STATE_BAD;
         return -1;
+    }
+
+    if ((size_t)*sigSz < len) {
+        /* Signature buffer too small. */
+        WOLFSSL_MSG("error: LMS sig buffer too small");
+        return BUFFER_E;
+    }
+
+    if (key->write_private_key == NULL) {
+        WOLFSSL_MSG("error: LmsKey write/read callbacks are not set");
+        return BAD_FUNC_ARG;
+    }
+
+    if (key->context == NULL) {
+        WOLFSSL_MSG("error: LmsKey context is not set");
+        return BAD_FUNC_ARG;
     }
 
     result = hss_generate_signature(key->working_key, LmsWritePrivKey,

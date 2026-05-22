@@ -1,6 +1,6 @@
 /* sha256.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -102,13 +102,7 @@
 #define WOLFSSL_NO_HASH_RAW
 #endif
 
-#if defined(_MSC_VER)
-    #define SHA256_NOINLINE __declspec(noinline)
-#elif defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC__)
-    #define SHA256_NOINLINE __attribute__((noinline))
-#else
-    #define SHA256_NOINLINE
-#endif
+#define SHA256_NOINLINE WC_NO_INLINE
 
 #if !defined(NO_OLD_SHA_NAMES)
     #define SHA256             WC_SHA256
@@ -122,12 +116,10 @@
 #endif
 
 /* in bytes */
-enum {
-    WC_SHA256              =  WC_HASH_TYPE_SHA256,
-    WC_SHA256_BLOCK_SIZE   = 64,
-    WC_SHA256_DIGEST_SIZE  = 32,
-    WC_SHA256_PAD_SIZE     = 56
-};
+#define WC_SHA256              WC_HASH_TYPE_SHA256
+#define WC_SHA256_BLOCK_SIZE   64
+#define WC_SHA256_DIGEST_SIZE  32
+#define WC_SHA256_PAD_SIZE     56
 
 
 #ifdef WOLFSSL_TI_HASH
@@ -214,9 +206,6 @@ struct wc_Sha256 {
 #endif /* !FREESCALE_LTC_SHA && !STM32_HASH_SHA2 */
 #ifdef WOLFSSL_DEVCRYPTO_HASH
     WC_CRYPTODEV ctx;
-#endif
-#if defined(MAX3266X_SHA_CB) || defined(MAX3266X_SHA)
-    wc_MXC_Sha mxcCtx;
 #endif
 #if defined(WOLFSSL_DEVCRYPTO_HASH) || defined(WOLFSSL_HASH_KEEP)
     byte*  msg;
@@ -312,12 +301,10 @@ WOLFSSL_API void wc_Sha256SizeSet(wc_Sha256* sha256, word32 len);
 #endif
 
 /* in bytes */
-enum {
-    WC_SHA224              =   WC_HASH_TYPE_SHA224,
-    WC_SHA224_BLOCK_SIZE   =   WC_SHA256_BLOCK_SIZE,
-    WC_SHA224_DIGEST_SIZE  =   28,
-    WC_SHA224_PAD_SIZE     =   WC_SHA256_PAD_SIZE
-};
+#define WC_SHA224             WC_HASH_TYPE_SHA224
+#define WC_SHA224_BLOCK_SIZE  WC_SHA256_BLOCK_SIZE
+#define WC_SHA224_DIGEST_SIZE 28
+#define WC_SHA224_PAD_SIZE    WC_SHA256_PAD_SIZE
 
 
 #ifndef WC_SHA224_TYPE_DEFINED

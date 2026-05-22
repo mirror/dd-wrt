@@ -1,6 +1,6 @@
 /* stm32.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -29,6 +29,8 @@
 #include <wolfssl/wolfcrypt/types.h> /* for MATH_INT_T */
 
 #ifdef STM32_HASH
+
+#include <stdint.h> /* for uint32_t */
 
 #define WOLFSSL_NO_HASH_RAW
 
@@ -73,6 +75,9 @@
 /* Handle hash differences between CubeMX and StdPeriLib */
 #if !defined(HASH_ALGOMODE_HASH) && defined(HASH_AlgoMode_HASH)
     #define HASH_ALGOMODE_HASH HASH_AlgoMode_HASH
+#endif
+#if !defined(HASH_ALGOMODE_HMAC) && defined(HASH_AlgoMode_HMAC)
+    #define HASH_ALGOMODE_HMAC HASH_AlgoMode_HMAC
 #endif
 #if !defined(HASH_DATATYPE_8B)
     #if defined(HASH_DataType_8b)
@@ -129,6 +134,19 @@ int  wc_Stm32_Hash_Update(STM32_HASH_Context* stmCtx, word32 algo,
 int  wc_Stm32_Hash_Final(STM32_HASH_Context* stmCtx, word32 algo,
     byte* hash, word32 digestSize);
 
+#ifdef STM32_HMAC
+/* STM32 Hardware HMAC API */
+int wc_Stm32_Hmac_GetAlgoInfo(int macType, word32* algo, word32* blockSize,
+    word32* digestSize);
+int wc_Stm32_Hmac_SetKey(STM32_HASH_Context* stmCtx, int macType,
+    const byte* key, word32 keySz);
+/* HMAC Update uses the same data feeding as Hash Update */
+#define wc_Stm32_Hmac_Update(stmCtx, algo, data, len, blockSize) \
+    wc_Stm32_Hash_Update((stmCtx), (algo), (data), (len), (blockSize))
+int wc_Stm32_Hmac_Final(STM32_HASH_Context* stmCtx, word32 algo,
+    const byte* key, word32 keySz, byte* hash, word32 digestSize);
+#endif /* STM32_HMAC */
+
 #endif /* STM32_HASH */
 
 
@@ -150,7 +168,7 @@ int  wc_Stm32_Hash_Final(STM32_HASH_Context* stmCtx, word32 algo,
             defined(WOLFSSL_STM32L5) || defined(WOLFSSL_STM32H7) || \
             defined(WOLFSSL_STM32U5) || defined(WOLFSSL_STM32H5) || \
             defined(WOLFSSL_STM32MP13) || defined(WOLFSSL_STM32H7S) || \
-            defined(WOLFSSL_STM32N6))
+            defined(WOLFSSL_STM32N6) || defined(WOLFSSL_STM32G0))
         /* Hardware supports AES GCM acceleration */
         #define STM32_CRYPTO_AES_GCM
     #endif
@@ -166,8 +184,10 @@ int  wc_Stm32_Hash_Final(STM32_HASH_Context* stmCtx, word32 algo,
         #define STM32_HAL_V2
     #endif
     #if defined(WOLFSSL_STM32L4) || defined(WOLFSSL_STM32L5) || \
-        defined(WOLFSSL_STM32U5) || defined(WOLFSSL_STM32H5)
-        #if defined(WOLFSSL_STM32L4) || defined(WOLFSSL_STM32U5)
+        defined(WOLFSSL_STM32U5) || defined(WOLFSSL_STM32H5) || \
+        defined(WOLFSSL_STM32G0)
+        #if defined(WOLFSSL_STM32L4) || defined(WOLFSSL_STM32U5) || \
+            defined(WOLFSSL_STM32G0)
             #define STM32_CRYPTO_AES_ONLY /* crypto engine only supports AES */
         #endif
         #if defined(WOLFSSL_STM32H5)
@@ -185,7 +205,8 @@ int  wc_Stm32_Hash_Final(STM32_HASH_Context* stmCtx, word32 algo,
         (defined(WOLFSSL_STM32F7) || defined(WOLFSSL_STM32L5) || \
          defined(WOLFSSL_STM32H7) || defined(WOLFSSL_STM32U5) || \
          defined(WOLFSSL_STM32H5) || defined(WOLFSSL_STM32MP13) || \
-         defined(WOLFSSL_STM32H7S) || defined(WOLFSSL_STM32N6))
+         defined(WOLFSSL_STM32H7S) || defined(WOLFSSL_STM32N6) || \
+         defined(WOLFSSL_STM32G0))
         #define STM32_HAL_V2
     #endif
 

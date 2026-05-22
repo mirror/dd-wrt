@@ -1,6 +1,6 @@
 /* test_random.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -327,7 +327,7 @@ int test_wc_RNG_TestSeed(void)
 #if defined(HAVE_HASHDRBG) && \
     (!(defined(HAVE_FIPS) || defined(HAVE_SELFTEST)) || \
     (defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2)))
-    byte seed[16];
+    byte seed[32];
     byte i;
 
 #ifdef TEST_WC_RNG_TESTSEED_BAD_PARAMS
@@ -345,7 +345,12 @@ int test_wc_RNG_TestSeed(void)
     /* Bad seed as it repeats. */
     XMEMSET(seed, 0xa5, sizeof(seed));
     /* Return value is DRBG_CONT_FAILURE which is not public. */
+    /* Moving forward with the RCT test check LT instead of GT */
+#if !defined(HAVE_FIPS) || ( defined(HAVE_FIPS) && FIPS_VERSION3_GE(7,0,0) )
+    ExpectIntLT(wc_RNG_TestSeed(seed, sizeof(seed)), 0);
+#else
     ExpectIntGT(wc_RNG_TestSeed(seed, sizeof(seed)), 0);
+#endif
 
     /* Good seed. */
     for (i = 0; i < (byte)sizeof(seed); i++)

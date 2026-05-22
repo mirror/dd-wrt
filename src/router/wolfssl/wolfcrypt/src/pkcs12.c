@@ -1,6 +1,6 @@
 /* pkcs12.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -63,7 +63,7 @@ static const byte WC_PKCS12_ShroudedKeyBag_OID[] =
 
 
 typedef struct ContentInfo {
-    byte* data;
+    const byte* data;
     struct ContentInfo* next;
     word32 encC;  /* encryptedContent */
     word32 dataSz;
@@ -334,6 +334,12 @@ static int GetSafeContent(WC_PKCS12* pkcs12, const byte* input,
                 return ret;
             }
 
+            /* Check that OID did not consume more than the sequence length */
+            if (localIdx > curIdx + (word32)curSz) {
+                freeSafe(safe, pkcs12->heap);
+                return ASN_PARSE_E;
+            }
+
             /* create new content info struct ... possible OID sanity check? */
             ci = (ContentInfo*)XMALLOC(sizeof(ContentInfo), pkcs12->heap,
                                        DYNAMIC_TYPE_PKCS);
@@ -344,7 +350,7 @@ static int GetSafeContent(WC_PKCS12* pkcs12, const byte* input,
 
             ci->type   = (int)oid;
             ci->dataSz = (word32)curSz - (localIdx-curIdx);
-            ci->data   = (byte*)input + localIdx;
+            ci->data   = input + localIdx;
             localIdx  += ci->dataSz;
 
         #ifdef WOLFSSL_DEBUG_PKCS12
@@ -509,6 +515,7 @@ exit_gsd:
     if (ret != 0) {
         if (mac) {
             XFREE(mac->digest, pkcs12->heap, DYNAMIC_TYPE_DIGEST);
+            XFREE(mac->salt, pkcs12->heap, DYNAMIC_TYPE_SALT);
             XFREE(mac, pkcs12->heap, DYNAMIC_TYPE_PKCS);
         }
     }
@@ -636,7 +643,13 @@ static int wc_PKCS12_verify(WC_PKCS12* pkcs12, byte* data, word32 dataSz,
     }
 #endif
 
-    return XMEMCMP(digest, mac->digest, mac->digestSz);
+    if (ConstantCompare(digest, mac->digest, (int)mac->digestSz) != 0) {
+        ForceZero(digest, sizeof(digest));
+        return MAC_CMP_FAILED_E;
+    }
+
+    ForceZero(digest, sizeof(digest));
+    return 0;
 }
 
 int wc_PKCS12_verify_ex(WC_PKCS12* pkcs12, const byte* psw, word32 pswSz)
@@ -1134,6 +1147,7 @@ static byte* PKCS12_ConcatenateContent(WC_PKCS12* pkcs12,byte* mergedData,
 {
     byte* oldContent;
     word32 oldContentSz;
+    word32 newSz = 0;
 
     (void)pkcs12;
 
@@ -1145,14 +1159,19 @@ static byte* PKCS12_ConcatenateContent(WC_PKCS12* pkcs12,byte* mergedData,
     oldContentSz = *mergedSz;
 
     /* re-allocate new buffer to fit appended data */
-    mergedData = (byte*)XMALLOC(oldContentSz + inSz, pkcs12->heap,
+    if (WC_SAFE_SUM_WORD32(oldContentSz, inSz, newSz) == 0) {
+        XFREE(oldContent, pkcs12->heap, DYNAMIC_TYPE_PKCS);
+        return NULL;
+    }
+
+    mergedData = (byte*)XMALLOC(newSz, pkcs12->heap,
             DYNAMIC_TYPE_PKCS);
     if (mergedData != NULL) {
         if (oldContent != NULL) {
             XMEMCPY(mergedData, oldContent, oldContentSz);
         }
         XMEMCPY(mergedData + oldContentSz, in, inSz);
-        *mergedSz += inSz;
+        *mergedSz = newSz;
     }
     XFREE(oldContent, pkcs12->heap, DYNAMIC_TYPE_PKCS);
 
@@ -1161,7 +1180,8 @@ static byte* PKCS12_ConcatenateContent(WC_PKCS12* pkcs12,byte* mergedData,
 
 /* Check if constructed [0] is seen after wc_BerToDer() or not.
  * returns 1 if seen, 0 if not, ASN_PARSE_E on error */
-static int PKCS12_CheckConstructedZero(byte* data, word32 dataSz, word32* idx)
+static int PKCS12_CheckConstructedZero(const byte* data, word32 dataSz,
+                                       word32* idx)
 {
     word32 oid;
     int    ret = 0;
@@ -1336,7 +1356,7 @@ int wc_PKCS12_parse_ex(WC_PKCS12* pkcs12, const char* psw,
     /* if there is sign data then verify the MAC */
     if (pkcs12->signData != NULL ) {
         if ((ret = wc_PKCS12_verify(pkcs12, pkcs12->safe->data,
-                               pkcs12->safe->dataSz, (byte*)psw, (word32)pswSz)) != 0) {
+                 pkcs12->safe->dataSz, (const byte*)psw, (word32)pswSz)) != 0) {
             WOLFSSL_MSG("PKCS12 Bad MAC on verify");
             WOLFSSL_LEAVE("wc_PKCS12_parse verify ", ret);
             (void)ret;
@@ -1352,7 +1372,7 @@ int wc_PKCS12_parse_ex(WC_PKCS12* pkcs12, const char* psw,
     /* Decode content infos */
     ci = pkcs12->safe->CI;
     for (i = 0; i < pkcs12->safe->numCI; i++) {
-        byte*  data;
+        const byte* data;
         word32 idx = 0;
         int    size, totalSz;
         byte   tag;
@@ -1403,9 +1423,13 @@ int wc_PKCS12_parse_ex(WC_PKCS12* pkcs12, const char* psw,
              * the DecryptContent() expects */
             if (pkcs12->indefinite && PKCS12_CheckConstructedZero(data,
                                                     ci->dataSz, &idx) == 1) {
-                data[idx-1] = ASN_LONG_LENGTH;
-                ret = PKCS12_CoalesceOctetStrings(pkcs12, data, ci->dataSz,
-                                                  &idx, &curIdx);
+                /* safe casts -- pkcs12->indefinite signals that data is inside
+                 * the earlier allocation of der by wc_d2i_PKCS12(().
+                 */
+                ((byte *)(wc_ptr_t)data)[idx-1] = ASN_LONG_LENGTH;
+                ret = PKCS12_CoalesceOctetStrings(
+                    pkcs12, ((byte *)(wc_ptr_t)data), ci->dataSz,
+                    &idx, &curIdx);
                 if (ret < 0) {
                     goto exit_pk12par;
                 }

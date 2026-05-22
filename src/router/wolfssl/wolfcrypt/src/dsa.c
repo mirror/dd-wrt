@@ -1,6 +1,6 @@
 /* dsa.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -27,6 +27,7 @@
 #include <wolfssl/wolfcrypt/wolfmath.h>
 #include <wolfssl/wolfcrypt/sha.h>
 #include <wolfssl/wolfcrypt/dsa.h>
+#include <wolfssl/wolfcrypt/hash.h>
 
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
@@ -85,10 +86,7 @@ void wc_FreeDsaKey(DsaKey* key)
     if (key == NULL)
         return;
 
-    if (key->type == DSA_PRIVATE)
-        mp_forcezero(&key->x);
-
-    mp_clear(&key->x);
+    mp_forcezero(&key->x);
     mp_clear(&key->y);
     mp_clear(&key->g);
     mp_clear(&key->q);
@@ -227,10 +225,11 @@ int wc_MakeDsaKey(WC_RNG *rng, DsaKey *dsa)
         dsa->type = DSA_PRIVATE;
 
     if (err != MP_OKAY) {
-        mp_clear(&dsa->x);
+        mp_forcezero(&dsa->x);
         mp_clear(&dsa->y);
     }
 
+    ForceZero(cBuf, (word32)cSz);
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     XFREE(cBuf, dsa->heap, DYNAMIC_TYPE_TMP_BUFFER);
     if (tmpQ != NULL) {
@@ -323,7 +322,7 @@ int wc_MakeDsaParameters(WC_RNG *rng, int modulus_size, DsaKey *dsa)
 
     if (err == MP_OKAY)
 #endif
-        err = mp_init_multi(tmp, tmp2, &dsa->p, &dsa->q, 0, 0);
+        err = mp_init_multi(tmp, tmp2, &dsa->p, &dsa->q, &dsa->g, 0);
 
     if (err == MP_OKAY)
         err = mp_read_unsigned_bin(tmp2, buf, (word32)(msize - qsize));
@@ -368,9 +367,6 @@ int wc_MakeDsaParameters(WC_RNG *rng, int modulus_size, DsaKey *dsa)
             err = mp_add_d(tmp2, 2 * (mp_digit)loop_check_prime, tmp2);
     }
 
-    if (err == MP_OKAY)
-        err = mp_init(&dsa->g);
-
     /* find a value g for which g^tmp2 != 1 */
     if (err == MP_OKAY)
         err = mp_set(&dsa->g, 1);
@@ -399,18 +395,24 @@ int wc_MakeDsaParameters(WC_RNG *rng, int modulus_size, DsaKey *dsa)
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
     XFREE(buf, dsa->heap, DYNAMIC_TYPE_TMP_BUFFER);
     if (tmp != NULL) {
-        mp_clear(tmp);
+        if ((err != WC_NO_ERR_TRACE(MP_INIT_E)) &&
+                (err != WC_NO_ERR_TRACE(MEMORY_E)))
+            mp_clear(tmp);
         XFREE(tmp, NULL, DYNAMIC_TYPE_WOLF_BIGINT);
     }
     if (tmp2 != NULL) {
-        mp_clear(tmp2);
+        if ((err != WC_NO_ERR_TRACE(MP_INIT_E)) &&
+                (err != WC_NO_ERR_TRACE(MEMORY_E)))
+            mp_clear(tmp2);
         XFREE(tmp2, NULL, DYNAMIC_TYPE_WOLF_BIGINT);
     }
 #else
-    mp_clear(tmp);
-    mp_clear(tmp2);
+    if (err != WC_NO_ERR_TRACE(MP_INIT_E)) {
+        mp_clear(tmp);
+        mp_clear(tmp2);
+    }
 #endif
-    if (err != MP_OKAY) {
+    if ((err != MP_OKAY) && (err != WC_NO_ERR_TRACE(MP_INIT_E))) {
         mp_clear(&dsa->q);
         mp_clear(&dsa->p);
         mp_clear(&dsa->g);
@@ -687,6 +689,12 @@ int wc_DsaSign_ex(const byte* digest, word32 digestSz, byte* out, DsaKey* key,
 
     if (digest == NULL || out == NULL || key == NULL || rng == NULL)
         return BAD_FUNC_ARG;
+
+    if ((digestSz > WC_MAX_DIGEST_SIZE) ||
+        (digestSz < WC_MIN_DIGEST_SIZE))
+    {
+        return BAD_LENGTH_E;
+    }
 
     SAVE_VECTOR_REGISTERS(return _svr_ret;);
 
@@ -1020,6 +1028,16 @@ int wc_DsaVerify_ex(const byte* digest, word32 digestSz, const byte* sig,
 
     if (digest == NULL || sig == NULL || key == NULL || answer == NULL)
         return BAD_FUNC_ARG;
+
+    /* Note the min allowed digestSz here is WC_SHA_DIGEST_SIZE, not
+     * WC_MIN_DIGEST_SIZE, to allow verify-only legacy DSA operations, as
+     * expressly allowed under FIPS 186-5, FIPS 140-3, and SP 800-131A.
+     */
+    if ((digestSz > WC_MAX_DIGEST_SIZE) ||
+        (digestSz < WC_SHA_DIGEST_SIZE))
+    {
+        return BAD_LENGTH_E;
+    }
 
     do {
 #ifdef WOLFSSL_SMALL_STACK

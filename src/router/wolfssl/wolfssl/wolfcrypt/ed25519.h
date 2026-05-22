@@ -1,6 +1,6 @@
 /* ed25519.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -29,7 +29,7 @@
 
 #include <wolfssl/wolfcrypt/types.h>
 
-#ifdef HAVE_ED25519
+#if defined(HAVE_ED25519) || defined(WOLFSSL_CURVE25519_USE_ED25519)
 
 #include <wolfssl/wolfcrypt/random.h>
 #ifndef WOLFSSL_SHA512

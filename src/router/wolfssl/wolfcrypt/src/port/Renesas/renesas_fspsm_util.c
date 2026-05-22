@@ -1,6 +1,6 @@
 /* renesas_fspsm_util.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -195,7 +195,7 @@ int wc_fspsm_GenerateRandBlock(byte* output, word32 sz)
     uint32_t fspbuf[RANDGEN_WORDS];
 
     while (sz > 0) {
-        word32 len = sizeof(buffer);
+        word32 len = sizeof(fspbuf);
 
         if (sz < len) {
             len = sz;
@@ -853,8 +853,8 @@ int wc_fspsm_generateSessionKey(WOLFSSL *ssl,
                     SCE_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 ||
                 cbInfo->internal->cipher ==
                     SCE_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256) {
-                enc->aes->nonceSz = AEAD_MAX_IMP_SZ;
-                dec->aes->nonceSz = AEAD_MAX_IMP_SZ;
+                enc->aes->nonceSz = AEAD_NONCE_SZ;
+                dec->aes->nonceSz = AEAD_NONCE_SZ;
              }
              enc->aes->devId = devId;
              dec->aes->devId = devId;

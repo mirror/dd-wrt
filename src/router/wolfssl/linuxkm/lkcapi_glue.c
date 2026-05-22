@@ -1,7 +1,7 @@
 /* lkcapi_glue.c -- glue logic to register wolfCrypt implementations with
  * the Linux Kernel Cryptosystem
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -212,8 +212,13 @@ WC_MAYBE_UNUSED static int check_shash_driver_masking(struct crypto_shash *tfm, 
 #endif
 }
 
+static wolfSSL_Atomic_Int linuxkm_lkcapi_registering_now = WOLFSSL_ATOMIC_INITIALIZER(0);
+
 #include "lkcapi_aes_glue.c"
-#include "lkcapi_sha_glue.c"
+#include "lkcapi_sha_glue.c" /* must be included before the PK glue, to make the
+                              * crypto_default_rng usable therein when
+                              * LINUXKM_LKCAPI_REGISTER_HASH_DRBG_DEFAULT.
+                              */
 #include "lkcapi_ecdsa_glue.c"
 #include "lkcapi_ecdh_glue.c"
 #include "lkcapi_rsa_glue.c"
@@ -311,7 +316,6 @@ static int linuxkm_lkcapi_sysfs_deinstall(void) {
     return 0;
 }
 
-static wolfSSL_Atomic_Int linuxkm_lkcapi_registering_now = WOLFSSL_ATOMIC_INITIALIZER(0);
 static int linuxkm_lkcapi_registered = 0;
 static int linuxkm_lkcapi_n_registered = 0;
 
@@ -375,7 +379,7 @@ static int linuxkm_lkcapi_register(void)
                            "with return code %d.\n",                         \
                            (alg).base.cra_driver_name, ret);                 \
                     (crypto_unregister_ ## alg_class)(&(alg));               \
-                    if (! (alg.base.cra_flags & CRYPTO_ALG_DEAD)) {          \
+                    if (! ((alg).base.cra_flags & CRYPTO_ALG_DEAD)) {        \
                         pr_err("ERROR: alg %s not _DEAD "                    \
                                "after crypto_unregister_%s -- "              \
                                "marking as loaded despite test failure.",    \
@@ -475,6 +479,9 @@ static int linuxkm_lkcapi_register(void)
     REGISTER_ALG(ecbAesAlg, skcipher, linuxkm_test_aesecb);
 #endif
 
+/* SHA algs must be registered before PK algs, to make the crypto_default_rng
+ * available beforehand when LINUXKM_LKCAPI_REGISTER_HASH_DRBG_DEFAULT.
+ */
 #ifdef LINUXKM_LKCAPI_REGISTER_SHA1_HMAC
     REGISTER_ALG(sha1_hmac_alg, shash, linuxkm_test_sha1_hmac);
 #endif
@@ -780,18 +787,18 @@ static int linuxkm_lkcapi_unregister(void)
 #define UNREGISTER_ALG(alg, alg_class)                                   \
     do {                                                                 \
         if (alg ## _loaded) {                                            \
-            if (alg.base.cra_flags & CRYPTO_ALG_DEAD) {                  \
+            if ((alg).base.cra_flags & CRYPTO_ALG_DEAD) {                \
                 pr_err("alg %s already CRYPTO_ALG_DEAD.",                \
-                       alg.base.cra_driver_name);                        \
+                       (alg).base.cra_driver_name);                      \
                 alg ## _loaded = 0;                                      \
                 ++n_deregistered;                                        \
             }                                                            \
             else {                                                       \
                 int cur_refcnt =                                         \
-                    WC_LKM_REFCOUNT_TO_INT(alg.base.cra_refcnt);         \
+                    WC_LKM_REFCOUNT_TO_INT((alg).base.cra_refcnt);       \
                 if (cur_refcnt == 1) {                                   \
                     (crypto_unregister_ ## alg_class)(&(alg));           \
-                    if (! (alg.base.cra_flags & CRYPTO_ALG_DEAD)) {      \
+                    if (! ((alg).base.cra_flags & CRYPTO_ALG_DEAD)) {    \
                         pr_err("ERROR: alg %s not _DEAD after "          \
                                "crypto_unregister_%s -- "                \
                                "leaving marked as loaded.",              \
@@ -805,7 +812,7 @@ static int linuxkm_lkcapi_unregister(void)
                 }                                                        \
                 else {                                                   \
                     pr_err("alg %s cannot be uninstalled (refcnt = %d)", \
-                           alg.base.cra_driver_name, cur_refcnt);        \
+                           (alg).base.cra_driver_name, cur_refcnt);      \
                     if (cur_refcnt > 0) { seen_err = -EBUSY; }           \
                 }                                                        \
             }                                                            \

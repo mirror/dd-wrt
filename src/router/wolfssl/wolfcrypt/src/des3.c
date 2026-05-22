@@ -1,6 +1,6 @@
 /* des3.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -17,6 +17,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
+ */
+
+/*
+ * DES3 Build Options:
+ *
+ * NO_DES3:                  Disable 3DES support entirely         default: off
+ * WOLFSSL_DES_ECB:          Enable DES-ECB mode                   default: off
+ *
+ * Hardware Acceleration (DES3-specific):
+ * WC_ASYNC_ENABLE_3DES:     Enable async 3DES operations          default: off
+ * FREESCALE_LTC_DES:        Freescale LTC DES acceleration        default: off
  */
 
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>

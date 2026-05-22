@@ -1,6 +1,6 @@
 /* chacha.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -119,6 +119,10 @@ int wc_ChaCha20Poly1305_Decrypt(
     if (ret == 0)
         ret = wc_ChaCha20Poly1305_CheckTag(inAuthTag, calculatedAuthTag);
 
+    if (ret != 0) {
+        /* zero plaintext on error */
+        ForceZero(outPlaintext, inCiphertextLen);
+    }
     WC_FREE_VAR_EX(aead, NULL, DYNAMIC_TYPE_TMP_BUFFER);
 
     return ret;
@@ -186,6 +190,8 @@ int wc_ChaCha20Poly1305_Init(ChaChaPoly_Aead* aead,
     if (ret == 0) {
         aead->state = CHACHA20_POLY1305_STATE_READY;
     }
+
+    ForceZero(authKey, sizeof(authKey));
 
     return ret;
 }
@@ -313,7 +319,8 @@ int wc_XChaCha20Poly1305_Init(
     byte authKey[CHACHA20_POLY1305_AEAD_KEYSIZE];
     int ret;
 
-    if ((ad == NULL) || (nonce == NULL) || (key == NULL))
+    if ((aead == NULL) || (ad == NULL && ad_len > 0) || (nonce == NULL) ||
+        (key == NULL))
         return BAD_FUNC_ARG;
 
     if ((key_len != CHACHA20_POLY1305_AEAD_KEYSIZE) ||
@@ -331,25 +338,30 @@ int wc_XChaCha20Poly1305_Init(
     /* Create the Poly1305 key */
     if ((ret = wc_Chacha_Process(&aead->chacha, authKey, authKey,
                                  (word32)sizeof authKey)) < 0)
-        return ret;
+        goto out;
     /* advance to start of the next ChaCha block. */
     wc_Chacha_purge_current_block(&aead->chacha);
 
     /* Initialize Poly1305 context */
     if ((ret = wc_Poly1305SetKey(&aead->poly, authKey,
                                  (word32)sizeof authKey)) < 0)
-        return ret;
+        goto out;
 
     if ((ret = wc_Poly1305Update(&aead->poly, ad, (word32)ad_len)) < 0)
-        return ret;
+        goto out;
 
     if ((ret = wc_Poly1305_Pad(&aead->poly, (word32)ad_len)) < 0)
-        return ret;
+        goto out;
 
     aead->isEncrypt = isEncrypt ? 1 : 0;
     aead->state = CHACHA20_POLY1305_STATE_AAD;
 
-    return 0;
+    ret = 0;
+
+out:
+    ForceZero(authKey, sizeof(authKey));
+
+    return ret;
 }
 
 static WC_INLINE int wc_XChaCha20Poly1305_crypt_oneshot(
@@ -361,9 +373,7 @@ static WC_INLINE int wc_XChaCha20Poly1305_crypt_oneshot(
     int isEncrypt)
 {
     int ret;
-    long int dst_len = isEncrypt ?
-        (long int)src_len + POLY1305_DIGEST_SIZE :
-        (long int)src_len - POLY1305_DIGEST_SIZE;
+    size_t dst_len;
     const byte *src_i;
     byte *dst_i;
     size_t src_len_rem;
@@ -376,12 +386,27 @@ static WC_INLINE int wc_XChaCha20Poly1305_crypt_oneshot(
     ChaChaPoly_Aead aead_buf, *aead = &aead_buf;
 #endif
 
+    if (isEncrypt) {
+        if (src_len > (size_t)(CHACHA20_POLY1305_MAX - POLY1305_DIGEST_SIZE)) {
+            ret = BAD_FUNC_ARG;
+            goto out;
+        }
+        dst_len = src_len + (size_t)POLY1305_DIGEST_SIZE;
+    }
+    else {
+        if (src_len < POLY1305_DIGEST_SIZE) {
+            ret = BAD_FUNC_ARG;
+            goto out;
+        }
+        dst_len = src_len - (size_t)POLY1305_DIGEST_SIZE;
+    }
+
     if ((dst == NULL) || (src == NULL)) {
         ret = BAD_FUNC_ARG;
         goto out;
     }
 
-    if (dst_len < 0 || (long int)dst_space < dst_len) {
+    if (dst_space < dst_len) {
         ret = BUFFER_E;
         goto out;
     }
@@ -400,7 +425,7 @@ static WC_INLINE int wc_XChaCha20Poly1305_crypt_oneshot(
      * and to exploit hot cache for the input data.
      */
     src_i = src;
-    src_len_rem = isEncrypt ? src_len : (size_t)dst_len;
+    src_len_rem = isEncrypt ? src_len : dst_len;
     dst_i = dst;
     while (src_len_rem > 0) {
         word32 this_src_len =
@@ -421,13 +446,13 @@ static WC_INLINE int wc_XChaCha20Poly1305_crypt_oneshot(
 
     if (aead->poly.leftover) {
         if ((ret = wc_Poly1305_Pad(&aead->poly, (word32)aead->poly.leftover)) < 0)
-            return ret;
+            goto out;
     }
 
 #ifdef WORD64_AVAILABLE
-    ret = wc_Poly1305_EncodeSizes64(&aead->poly, ad_len, isEncrypt ? src_len : (size_t)dst_len);
+    ret = wc_Poly1305_EncodeSizes64(&aead->poly, ad_len, isEncrypt ? src_len : dst_len);
 #else
-    ret = wc_Poly1305_EncodeSizes(&aead->poly, ad_len, isEncrypt ? src_len : (size_t)dst_len);
+    ret = wc_Poly1305_EncodeSizes(&aead->poly, ad_len, isEncrypt ? src_len : dst_len);
 #endif
     if (ret < 0)
         goto out;

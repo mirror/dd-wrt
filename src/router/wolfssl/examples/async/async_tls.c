@@ -1,6 +1,6 @@
 /* async-tls.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -23,13 +23,134 @@
     #include <config.h>
 #endif
 
-#ifndef WOLFSSL_USER_SETTINGS
-#include <wolfssl/options.h>
+#ifdef WOLFSSL_USER_SETTINGS
+    #include "user_settings.h"
+#else
+    #include <wolfssl/options.h>
 #endif
+#include "examples/async/async_tls.h"
 #include <wolfssl/ssl.h>
 #include <wolfssl/wolfio.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
-#include "examples/async/async_tls.h"
+#ifndef NET_CUSTOM
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+
+/* ---------------------------------------------------------------------------*/
+/* --- Ready file helpers (CI/automation sync) --- */
+/* ---------------------------------------------------------------------------*/
+#include <stdio.h>
+#include <sys/stat.h>
+#include <sys/select.h>
+
+static int async_readyfile_exists(const char* path)
+{
+    struct stat st;
+    if (path == NULL || path[0] == '\0') {
+        return 0;
+    }
+    return (stat(path, &st) == 0);
+}
+
+int async_readyfile_touch(const char* path)
+{
+    FILE* f;
+    if (path == NULL || path[0] == '\0') {
+        return -1;
+    }
+    f = fopen(path, "w");
+    if (f == NULL) {
+        return -1;
+    }
+    fclose(f);
+    return 0;
+}
+
+void async_readyfile_clear(const char* path)
+{
+    if (path == NULL || path[0] == '\0') {
+        return;
+    }
+    (void)remove(path);
+}
+
+int async_readyfile_wait(const char* path, int timeout_ms)
+{
+    int waited_ms = 0;
+    const int step_ms = 50;
+    struct timeval tv;
+
+    while (waited_ms < timeout_ms) {
+        if (async_readyfile_exists(path)) {
+            return 0;
+        }
+        tv.tv_sec = 0;
+        tv.tv_usec = step_ms * 1000;
+        (void)select(0, NULL, NULL, NULL, &tv);
+        waited_ms += step_ms;
+    }
+
+    return -1;
+}
+
+/* ---------------------------------------------------------------------------*/
+/* --- Default POSIX transport callbacks --- */
+/* ---------------------------------------------------------------------------*/
+#ifndef NET_CUSTOM
+int async_posix_send_cb(WOLFSSL* ssl, char* buf, int sz, void* ctx)
+{
+    (void)ssl;
+    int fd = (int)(intptr_t)ctx;
+    int ret = (int)NET_SEND(fd, buf, sz);
+    if (ret >= 0) {
+        return ret;
+    }
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        return WOLFSSL_CBIO_ERR_WANT_WRITE;
+    }
+    return WOLFSSL_CBIO_ERR_GENERAL;
+}
+
+int async_posix_recv_cb(WOLFSSL* ssl, char* buf, int sz, void* ctx)
+{
+    (void)ssl;
+    int fd = (int)(intptr_t)ctx;
+    int ret = (int)NET_RECV(fd, buf, sz);
+    if (ret >= 0) {
+        return ret;
+    }
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        return WOLFSSL_CBIO_ERR_WANT_READ;
+    }
+    return WOLFSSL_CBIO_ERR_GENERAL;
+}
+
+int async_posix_getdevrandom(unsigned char *out, unsigned int sz)
+{
+    ssize_t ret;
+    int fd = open("/dev/urandom", O_RDONLY);
+    if (fd < 0) {
+        return -1;
+    }
+    ret = read(fd, out, sz);
+    close(fd);
+    if (ret != (ssize_t)sz) {
+        return -1;
+    }
+    return 0;
+}
+#endif /* !NET_CUSTOM */
+
+int posix_getdevrandom(unsigned char *out, unsigned int sz)
+{
+#ifdef NET_CUSTOM
+    return NET_GETDEVRANDOM(out, sz);
+#else
+    return async_posix_getdevrandom(out, sz);
+#endif
+}
 
 /* ---------------------------------------------------------------------------*/
 /* --- Example Crypto Callback --- */
@@ -57,12 +178,17 @@ int AsyncTlsCryptoCb(int devIdArg, wc_CryptoInfo* info, void* ctx)
 
     if (info->algo_type == WC_ALGO_TYPE_PK) {
 #ifdef WOLFSSL_ASYNC_CRYPT
-        /* Test pending response */
+        /* Simulate async pending for RSA and ECC signing operations.
+         * This matches a typical hardware crypto scenario (e.g., TPM) where
+         * only signing is offloaded to hardware. Keygen, verify, and ECDH
+         * are performed synchronously in software.
+         * Note: WOLFSSL_ASYNC_CRYPT + WOLF_CRYPTO_CB pending simulation
+         * requires operations whose TLS state machines properly handle retry
+         * via wolfSSL_AsyncPop. ECC keygen in TLSX_KeyShare_GenEccKey does
+         * not support this because the keygen call is inside the key
+         * allocation guard (kse->key == NULL) which is skipped on retry. */
         if (info->pk.type == WC_PK_TYPE_RSA ||
-            info->pk.type == WC_PK_TYPE_EC_KEYGEN ||
-            info->pk.type == WC_PK_TYPE_ECDSA_SIGN ||
-            info->pk.type == WC_PK_TYPE_ECDSA_VERIFY ||
-            info->pk.type == WC_PK_TYPE_ECDH)
+            info->pk.type == WC_PK_TYPE_ECDSA_SIGN)
         {
             if (myCtx->pendingCount++ < TEST_PEND_COUNT) return WC_PENDING_E;
             myCtx->pendingCount = 0;
@@ -159,4 +285,3 @@ int AsyncTlsCryptoCb(int devIdArg, wc_CryptoInfo* info, void* ctx)
 #ifdef HAVE_PK_CALLBACKS
 
 #endif
-

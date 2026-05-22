@@ -1,6 +1,6 @@
 /* error-crypt.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -46,6 +46,7 @@ enum wolfCrypt_ErrorCodes {
     /* note that WOLFSSL_FATAL_ERROR is defined as -1 in error-ssl.h, for
      * reasons of backward compatibility.
      */
+    WC_SUCCESS         =    0,
     WC_FAILURE         =   -1,  /* Generic but traceable back compat errcode.
                                  * Note, not reflected in MAX_CODE_E or
                                  * WC_FIRST_E.
@@ -307,9 +308,14 @@ enum wolfCrypt_ErrorCodes {
     WC_ACCEL_INHIBIT_E  = -1002, /* Crypto acceleration is currently inhibited */
     BAD_INDEX_E         = -1003, /* Bad index */
     INTERRUPTED_E       = -1004, /* Process interrupted */
+    MLKEM_PUB_HASH_E    = -1005, /* Encoded public key in decapsulation key does
+                                  * not match stored hash*/
+    BUSY_E              = -1006, /* Object is busy */
+    ALREADY_E           = -1007, /* Operation was redundant or preempted */
 
-    WC_SPAN2_LAST_E     = -1004, /* Update to indicate last used error code */
-    WC_LAST_E           = -1004, /* the last code used either here or in
+    SEQ_OVERFLOW_E      = -1008, /* Sequence counter would overflow */
+    WC_SPAN2_LAST_E     = -1008, /* Update to indicate last used error code */
+    WC_LAST_E           = -1008, /* the last code used either here or in
                                   * error-ssl.h */
 
     WC_SPAN2_MIN_CODE_E = -1999, /* Last usable code in span 2 */
@@ -339,27 +345,45 @@ WOLFSSL_ABI WOLFSSL_API const char* wc_GetErrorString(int error);
 #if defined(WOLFSSL_DEBUG_TRACE_ERROR_CODES) && \
         (defined(BUILDING_WOLFSSL) || \
          defined(WOLFSSL_DEBUG_TRACE_ERROR_CODES_ALWAYS))
-    WOLFSSL_API extern void wc_backtrace_render(void);
+    WOLFSSL_API extern int wc_backtrace_render(void);
     #define WC_NO_ERR_TRACE(label) (CONST_NUM_ERR_ ## label)
     #ifndef WOLFSSL_DEBUG_BACKTRACE_RENDER_CLAUSE
         #ifdef WOLFSSL_DEBUG_BACKTRACE_ERROR_CODES
             #define WOLFSSL_DEBUG_BACKTRACE_RENDER_CLAUSE wc_backtrace_render()
         #else
-            #define WOLFSSL_DEBUG_BACKTRACE_RENDER_CLAUSE (void)0
+            #define WOLFSSL_DEBUG_BACKTRACE_RENDER_CLAUSE 0
         #endif
     #endif
     #ifndef WC_ERR_TRACE
-        #define WC_ERR_TRACE(label)                                   \
-            ( WOLFSSL_DEBUG_PRINTF_FN(WOLFSSL_DEBUG_PRINTF_FIRST_ARGS \
-                                      "ERR TRACE: %s L %d %s (%d)\n", \
-                      __FILE__, __LINE__, #label, label),             \
-              WOLFSSL_DEBUG_BACKTRACE_RENDER_CLAUSE,                  \
-              label                                                   \
-            )
+        #if defined(__GNUC__) && !defined(__STRICT_ANSI__)
+            #define WC_ERR_TRACE(label) __extension__                     \
+                ({ if (wc_debug_trace_error_codes_enabled()) {            \
+                    (void)WOLFSSL_DEBUG_PRINTF_FN(                        \
+                                          WOLFSSL_DEBUG_PRINTF_FIRST_ARGS \
+                                          "ERR TRACE: %s L %d %s (%d)\n", \
+                                      __FILE__, __LINE__, #label, label); \
+                    (void)WOLFSSL_DEBUG_BACKTRACE_RENDER_CLAUSE; }        \
+                  (label);                                                \
+                })
+        #else /* ! __GNUC__ || __STRICT_ANSI__ */
+            #define WC_ERR_TRACE(label)                                   \
+                ((void)(wc_debug_trace_error_codes_enabled() &&           \
+                          WOLFSSL_DEBUG_PRINTF_FN(                        \
+                                          WOLFSSL_DEBUG_PRINTF_FIRST_ARGS \
+                                          "ERR TRACE: %s L %d %s (%d)\n", \
+                                     __FILE__, __LINE__, #label, label)), \
+                 (void)(wc_debug_trace_error_codes_enabled() &&           \
+                          WOLFSSL_DEBUG_BACKTRACE_RENDER_CLAUSE),         \
+                  (label)                                                 \
+                )
+        #endif /* ! __GNUC__ || __STRICT_ANSI__ */
     #endif
     #include <wolfssl/debug-trace-error-codes.h>
 #else
     #define WC_NO_ERR_TRACE(label) (label)
+    #ifndef WC_ERR_TRACE
+        #define WC_ERR_TRACE(label) (label)
+    #endif
 #endif
 
 #ifdef __cplusplus

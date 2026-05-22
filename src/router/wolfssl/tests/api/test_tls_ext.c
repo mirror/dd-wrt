@@ -1,6 +1,6 @@
 /* test_tls_ext.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -323,6 +323,138 @@ static int certificate_authorities_server_cb(WOLFSSL *ssl, void *_arg) {
 }
 #endif
 
+#if defined(HAVE_TRUSTED_CA) && !defined(NO_SHA) && \
+    defined(HAVE_MANUAL_MEMIO_TESTS_DEPENDENCIES) && \
+    !defined(NO_WOLFSSL_SERVER) && !defined(NO_WOLFSSL_CLIENT)
+/* Walk the TLSX list to find an extension by type. Avoids calling the
+ * WOLFSSL_LOCAL TLSX_Find which is not available in shared library builds. */
+static TLSX* test_TLSX_find_ext(TLSX* list, TLSX_Type type)
+{
+    while (list) {
+        if (list->type == type)
+            return list;
+        list = list->next;
+    }
+    return NULL;
+}
+#endif
+
+int test_TLSX_TCA_Find(void)
+{
+    EXPECT_DECLS;
+#if defined(HAVE_TRUSTED_CA) && !defined(NO_SHA) && \
+    defined(HAVE_MANUAL_MEMIO_TESTS_DEPENDENCIES) && \
+    !defined(NO_WOLFSSL_SERVER) && !defined(NO_WOLFSSL_CLIENT)
+    /* Two different 20-byte SHA1 ids */
+    byte id_A[WC_SHA_DIGEST_SIZE];
+    byte id_B[WC_SHA_DIGEST_SIZE];
+    TLSX* ext;
+
+    XMEMSET(id_A, 0xAA, sizeof(id_A));
+    XMEMSET(id_B, 0xBB, sizeof(id_B));
+
+    /* Test 1: Exact match - same type and same id should match */
+    {
+        struct test_memio_ctx test_ctx;
+        WOLFSSL_CTX *ctx_c = NULL, *ctx_s = NULL;
+        WOLFSSL *ssl_c = NULL, *ssl_s = NULL;
+
+        XMEMSET(&test_ctx, 0, sizeof(test_ctx));
+        ExpectIntEQ(test_memio_setup(&test_ctx, &ctx_c, &ctx_s, &ssl_c,
+            &ssl_s, wolfTLSv1_2_client_method, wolfTLSv1_2_server_method), 0);
+
+        /* Server has KEY_SHA1 with id_A */
+        ExpectIntEQ(wolfSSL_UseTrustedCA(ssl_s, WOLFSSL_TRUSTED_CA_KEY_SHA1,
+            id_A, sizeof(id_A)), WOLFSSL_SUCCESS);
+        /* Client sends KEY_SHA1 with id_A (same) */
+        ExpectIntEQ(wolfSSL_UseTrustedCA(ssl_c, WOLFSSL_TRUSTED_CA_KEY_SHA1,
+            id_A, sizeof(id_A)), WOLFSSL_SUCCESS);
+
+        ExpectIntEQ(test_memio_do_handshake(ssl_c, ssl_s, 10, NULL), 0);
+
+        /* Server should have found a match and responded */
+        ext = test_TLSX_find_ext(ssl_c ? ssl_c->extensions : NULL,
+            TLSX_TRUSTED_CA_KEYS);
+        ExpectNotNull(ext);
+        if (EXPECT_SUCCESS())
+            ExpectIntEQ(ext->resp, 1);
+
+        wolfSSL_free(ssl_c);
+        wolfSSL_free(ssl_s);
+        wolfSSL_CTX_free(ctx_c);
+        wolfSSL_CTX_free(ctx_s);
+    }
+
+    /* Test 2: Same type, different id - should NOT match.
+     * This is the key test that exposes the logic bug in TLSX_TCA_Find
+     * where matching on type alone (without checking id content) causes
+     * a false positive. */
+    {
+        struct test_memio_ctx test_ctx;
+        WOLFSSL_CTX *ctx_c = NULL, *ctx_s = NULL;
+        WOLFSSL *ssl_c = NULL, *ssl_s = NULL;
+
+        XMEMSET(&test_ctx, 0, sizeof(test_ctx));
+        ExpectIntEQ(test_memio_setup(&test_ctx, &ctx_c, &ctx_s, &ssl_c,
+            &ssl_s, wolfTLSv1_2_client_method, wolfTLSv1_2_server_method), 0);
+
+        /* Server has KEY_SHA1 with id_A */
+        ExpectIntEQ(wolfSSL_UseTrustedCA(ssl_s, WOLFSSL_TRUSTED_CA_KEY_SHA1,
+            id_A, sizeof(id_A)), WOLFSSL_SUCCESS);
+        /* Client sends KEY_SHA1 with id_B (different!) */
+        ExpectIntEQ(wolfSSL_UseTrustedCA(ssl_c, WOLFSSL_TRUSTED_CA_KEY_SHA1,
+            id_B, sizeof(id_B)), WOLFSSL_SUCCESS);
+
+        ExpectIntEQ(test_memio_do_handshake(ssl_c, ssl_s, 10, NULL), 0);
+
+        /* Server should NOT have found a match - ids differ */
+        ext = test_TLSX_find_ext(ssl_c ? ssl_c->extensions : NULL,
+            TLSX_TRUSTED_CA_KEYS);
+        ExpectNotNull(ext);
+        if (EXPECT_SUCCESS())
+            ExpectIntEQ(ext->resp, 0);
+
+        wolfSSL_free(ssl_c);
+        wolfSSL_free(ssl_s);
+        wolfSSL_CTX_free(ctx_c);
+        wolfSSL_CTX_free(ctx_s);
+    }
+
+    /* Test 3: PRE_AGREED should match any server entry */
+    {
+        struct test_memio_ctx test_ctx;
+        WOLFSSL_CTX *ctx_c = NULL, *ctx_s = NULL;
+        WOLFSSL *ssl_c = NULL, *ssl_s = NULL;
+
+        XMEMSET(&test_ctx, 0, sizeof(test_ctx));
+        ExpectIntEQ(test_memio_setup(&test_ctx, &ctx_c, &ctx_s, &ssl_c,
+            &ssl_s, wolfTLSv1_2_client_method, wolfTLSv1_2_server_method), 0);
+
+        /* Server has KEY_SHA1 with id_A */
+        ExpectIntEQ(wolfSSL_UseTrustedCA(ssl_s, WOLFSSL_TRUSTED_CA_KEY_SHA1,
+            id_A, sizeof(id_A)), WOLFSSL_SUCCESS);
+        /* Client sends PRE_AGREED (no id needed) */
+        ExpectIntEQ(wolfSSL_UseTrustedCA(ssl_c, WOLFSSL_TRUSTED_CA_PRE_AGREED,
+            NULL, 0), WOLFSSL_SUCCESS);
+
+        ExpectIntEQ(test_memio_do_handshake(ssl_c, ssl_s, 10, NULL), 0);
+
+        /* Server should have matched (PRE_AGREED matches anything) */
+        ext = test_TLSX_find_ext(ssl_c ? ssl_c->extensions : NULL,
+            TLSX_TRUSTED_CA_KEYS);
+        ExpectNotNull(ext);
+        if (EXPECT_SUCCESS())
+            ExpectIntEQ(ext->resp, 1);
+
+        wolfSSL_free(ssl_c);
+        wolfSSL_free(ssl_s);
+        wolfSSL_CTX_free(ctx_c);
+        wolfSSL_CTX_free(ctx_s);
+    }
+#endif
+    return EXPECT_RESULT();
+}
+
 int test_certificate_authorities_client_hello(void) {
     EXPECT_DECLS;
 #if !defined(NO_WOLFSSL_CLIENT) && !defined(NO_WOLFSSL_SERVER) && \
@@ -410,6 +542,70 @@ int test_certificate_authorities_client_hello(void) {
         wolfSSL_free(ssl_srv);
         wolfSSL_CTX_free(ctx_srv);
     }
+#endif
+    return EXPECT_RESULT();
+}
+
+/* Test that the SNI size calculation returns 0 on overflow instead of
+ * wrapping around to a small value (integer overflow vulnerability). */
+int test_TLSX_SNI_GetSize_overflow(void)
+{
+    EXPECT_DECLS;
+#if defined(HAVE_SNI) && !defined(NO_WOLFSSL_CLIENT) && !defined(NO_TLS)
+    WOLFSSL_CTX* ctx = NULL;
+    WOLFSSL* ssl = NULL;
+    TLSX* sni_ext = NULL;
+    SNI* head = NULL;
+    SNI* sni = NULL;
+    int i;
+    /* Each SNI adds ENUM_LEN(1) + OPAQUE16_LEN(2) + hostname_len to the size.
+     * With a 1-byte hostname, each entry adds 4 bytes. Starting from
+     * OPAQUE16_LEN(2) base, we need enough entries to exceed UINT16_MAX. */
+    const int num_sni = (0xFFFF / 4) + 2;
+
+    ExpectNotNull(ctx = wolfSSL_CTX_new(wolfSSLv23_client_method()));
+    ExpectNotNull(ssl = wolfSSL_new(ctx));
+
+    /* Add initial SNI via public API */
+    ExpectIntEQ(WOLFSSL_SUCCESS,
+                wolfSSL_UseSNI(ssl, WOLFSSL_SNI_HOST_NAME, "a", 1));
+
+    /* Find the SNI extension and manually build a long chain */
+    if (EXPECT_SUCCESS()) {
+        sni_ext = TLSX_Find(ssl->extensions, TLSX_SERVER_NAME);
+        ExpectNotNull(sni_ext);
+    }
+
+    if (EXPECT_SUCCESS()) {
+        head = (SNI*)sni_ext->data;
+        ExpectNotNull(head);
+    }
+
+    /* Append many SNI nodes to force overflow in the size calculation */
+    for (i = 1; EXPECT_SUCCESS() && i < num_sni; i++) {
+        sni = (SNI*)XMALLOC(sizeof(SNI), NULL, DYNAMIC_TYPE_TLSX);
+        ExpectNotNull(sni);
+        if (sni != NULL) {
+            XMEMSET(sni, 0, sizeof(SNI));
+            sni->type = WOLFSSL_SNI_HOST_NAME;
+            sni->data.host_name = (char*)XMALLOC(2, NULL, DYNAMIC_TYPE_TLSX);
+            ExpectNotNull(sni->data.host_name);
+            if (sni->data.host_name != NULL) {
+                sni->data.host_name[0] = 'a';
+                sni->data.host_name[1] = '\0';
+            }
+            sni->next = head->next;
+            head->next = sni;
+        }
+    }
+
+    if (EXPECT_SUCCESS()) {
+        /* The fixed calculation should return 0 (overflow detected) */
+        ExpectIntEQ(TLSX_SNI_GetSize((SNI*)sni_ext->data), 0);
+    }
+
+    wolfSSL_free(ssl);
+    wolfSSL_CTX_free(ctx);
 #endif
     return EXPECT_RESULT();
 }

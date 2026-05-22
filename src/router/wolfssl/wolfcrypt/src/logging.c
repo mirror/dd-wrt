@@ -1,6 +1,6 @@
 /* logging.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -430,7 +430,11 @@ static void wolfssl_log(const int logLevel, const char* const file_name,
 #endif /* (!WOLFSSL_DEBUG_CERTS && !DEBUG_WOLFSSL) || NO_WOLFSSL_DEBUG_CERTS */
 
 #if defined(XVSNPRINTF) && !defined(NO_WOLFSSL_MSG_EX)
-#include <stdarg.h> /* for var args */
+#if defined(WOLFSSL_BSDKM)
+    #include <machine/stdarg.h> /* for var args */
+#else
+    #include <stdarg.h> /* for var args */
+#endif /* WOLFSSL_BSDKM */
 
 #ifndef WOLFSSL_MSG_EX_BUF_SZ
 #define WOLFSSL_MSG_EX_BUF_SZ 100
@@ -1818,12 +1822,38 @@ void WOLFSSL_ERROR_MSG(const char* msg)
 
 #endif  /* DEBUG_WOLFSSL || WOLFSSL_NGINX || WOLFSSL_HAPROXY */
 
+#ifdef WOLFSSL_DEBUG_TRACE_ERROR_CODES
+
+#ifndef WOLFSSL_DEBUG_TRACE_ERROR_CODES_INIT_STATE
+    #define WOLFSSL_DEBUG_TRACE_ERROR_CODES_INIT_STATE 1
+#endif
+
+#ifdef WOLFSSL_ATOMIC_OPS
+static wolfSSL_Atomic_Int wc_debug_trace_error_codes_state =
+    WOLFSSL_ATOMIC_INITIALIZER(WOLFSSL_DEBUG_TRACE_ERROR_CODES_INIT_STATE);
+#else
+static int wc_debug_trace_error_codes_state =
+    WOLFSSL_DEBUG_TRACE_ERROR_CODES_INIT_STATE;
+#endif
+
+int wc_debug_trace_error_codes_enabled(void) {
+    return WOLFSSL_ATOMIC_LOAD(wc_debug_trace_error_codes_state);
+}
+
+int wc_debug_trace_error_codes_set(int state) {
+    return wolfSSL_Atomic_Int_Exchange(&wc_debug_trace_error_codes_state,
+                                       state);
+}
+
+#endif /* WOLFSSL_DEBUG_TRACE_ERROR_CODES */
+
 #ifdef WOLFSSL_DEBUG_BACKTRACE_ERROR_CODES
 
 #ifdef WOLFSSL_LINUXKM
 
-void wc_backtrace_render(void) {
+int wc_backtrace_render(void) {
     dump_stack();
+    return 0;
 }
 
 #else /* !WOLFSSL_LINUXKM */
@@ -1896,11 +1926,12 @@ static int backtrace_init(struct backtrace_state **backtrace_state) {
     return 0;
 }
 
-void wc_backtrace_render(void) {
+int wc_backtrace_render(void) {
     static wolfSSL_Mutex backtrace_mutex
         WOLFSSL_MUTEX_INITIALIZER_CLAUSE(backtrace_mutex);
     static struct backtrace_state *backtrace_state = NULL;
     int depth = 0;
+    int ret;
 
 #ifndef WOLFSSL_MUTEX_INITIALIZER
     static wolfSSL_Atomic_Int init_count = 0;
@@ -1908,10 +1939,11 @@ void wc_backtrace_render(void) {
         int cur_init_count = wolfSSL_Atomic_Int_FetchSub(&init_count, 1);
         if (cur_init_count != 0) {
             (void)wolfSSL_Atomic_Int_FetchAdd(&init_count, 1);
-            return;
+            return WC_NO_ERR_TRACE(DEADLOCK_AVERTED_E);
         }
-        if (wc_InitMutex(&backtrace_mutex) != 0)
-            return;
+        ret = wc_InitMutex(&backtrace_mutex);
+        if (ret != 0)
+            return ret;
         /* set init_count to 1, race-free: (-1) - (0-2) = 1 */
         (void)wolfSSL_Atomic_Int_FetchSub(&init_count, cur_init_count - 2);
     }
@@ -1921,13 +1953,14 @@ void wc_backtrace_render(void) {
      * BACKTRACE_SUPPORTS_THREADS == 1, so we serialize the render op.  this
      * helpfully mutexes the initialization too.
      */
-    if (wc_LockMutex(&backtrace_mutex) != 0)
-        return;
+    ret = wc_LockMutex(&backtrace_mutex);
+    if (ret != 0)
+        return ret;
 
     if (backtrace_state == NULL) {
         if (backtrace_init(&backtrace_state) < 0) {
             wc_UnLockMutex(&backtrace_mutex);
-            return;
+            return WC_NO_ERR_TRACE(BAD_STATE_E);
         }
     }
 
@@ -1939,6 +1972,8 @@ void wc_backtrace_render(void) {
                    (void *)&depth);
 
     wc_UnLockMutex(&backtrace_mutex);
+
+    return 0;
 }
 #endif /* !WOLFSSL_LINUXKM */
 

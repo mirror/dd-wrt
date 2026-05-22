@@ -1,6 +1,6 @@
 /* linuxkm_wc_port.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -24,7 +24,12 @@
 #ifndef LINUXKM_WC_PORT_H
 #define LINUXKM_WC_PORT_H
 
+    #if defined(WOLFSSL_KERNEL_VERBOSE_DEBUG) && !defined(WOLFSSL_LINUXKM_VERBOSE_DEBUG)
+        #define WOLFSSL_LINUXKM_VERBOSE_DEBUG
+    #endif
+
     #include <linux/version.h>
+    #include <linux/kconfig.h>
 
     #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
         #error Unsupported kernel.
@@ -33,6 +38,25 @@
     #if defined(HAVE_FIPS) && defined(LINUXKM_LKCAPI_REGISTER_AESXTS) && defined(CONFIG_CRYPTO_MANAGER_EXTRA_TESTS)
         /* CONFIG_CRYPTO_MANAGER_EXTRA_TESTS expects AES-XTS-384 to work, even when CONFIG_CRYPTO_FIPS, but FIPS 140-3 only allows AES-XTS-256 and AES-XTS-512. */
         #error CONFIG_CRYPTO_MANAGER_EXTRA_TESTS is incompatible with FIPS wolfCrypt AES-XTS -- please reconfigure the target kernel to disable CONFIG_CRYPTO_MANAGER_EXTRA_TESTS.
+    #endif
+
+    /* The first vector set in /usr/src/linux/crypto/testmgr.h
+     * ecdsa_nist_p192_tv_template[], ecdsa_nist_p256_tv_template[], and
+     * ecdsa_nist_p384_tv_template[] use SHA-1 (even if CONFIG_CRYPTO_SHA1 is
+     * disabled), and kernel module signatures frequently use SHA-1 until quite
+     * recently (dependent on CONFIG_CRYPTO_SHA1).  If either is enabled, force
+     * downgrade to 186-4.
+     */
+    #if defined(WC_FIPS_186_5_PLUS) && \
+        (defined(CONFIG_CRYPTO_SHA1) || (defined(CONFIG_CRYPTO_MANAGER) && !defined(CONFIG_CRYPTO_MANAGER_DISABLE_TESTS))) && \
+        (defined(LINUXKM_LKCAPI_REGISTER_ALL) || defined(LINUXKM_LKCAPI_REGISTER_ALL_KCONFIG) || defined(CONFIG_CRYPTO_ECDSA))
+        #undef WC_FIPS_186_5_PLUS
+        #ifdef WC_FIPS_186_5
+            #undef WC_FIPS_186_5
+        #else
+            #error Unknown and incompatible FIPS 186 is enabled.
+        #endif
+        #define WC_FIPS_186_4
     #endif
 
     #ifdef HAVE_CONFIG_H
@@ -116,9 +140,23 @@
         #endif
     #endif
 
+    #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
+        /* added by 6bab69c650 */
+        #define static_assert(expr, ...) __static_assert(expr, ##__VA_ARGS__, #expr)
+        #define __static_assert(expr, msg, ...) _Static_assert(expr, msg)
+    #endif
+
     /* kernel printf doesn't implement fp. */
     #ifndef WOLFSSL_NO_FLOAT_FMT
         #define WOLFSSL_NO_FLOAT_FMT
+    #endif
+
+    #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)) || \
+        (defined(RHEL_MAJOR) && \
+         ((RHEL_MAJOR > 9) || ((RHEL_MAJOR == 9) && (RHEL_MINOR >= 5))))
+        #define WOLFSSL_DEBUG_PRINTF_FN _printk
+    #else
+        #define WOLFSSL_DEBUG_PRINTF_FN printk
     #endif
 
 #ifndef WOLFSSL_LINUXKM_USE_MUTEXES
@@ -178,15 +216,37 @@
         #endif
     #endif
 
-    #if defined(HAVE_HASHDRBG) && defined(HAVE_FIPS) && FIPS_VERSION3_LT(6, 0, 0) && \
+    #if defined(HAVE_HASHDRBG) && defined(HAVE_FIPS) && \
+            defined(HAVE_ENTROPY_MEMUSE) && \
+            !defined(WC_LINUXKM_WOLFENTROPY_IN_GLUE_LAYER)
+        #define WC_LINUXKM_WOLFENTROPY_IN_GLUE_LAYER
+    #elif defined(HAVE_HASHDRBG) && defined(HAVE_FIPS) && \
             (defined(HAVE_INTEL_RDSEED) || defined(HAVE_AMD_RDSEED)) && \
+            !defined(HAVE_ENTROPY_MEMUSE) && \
             !defined(WC_LINUXKM_RDSEED_IN_GLUE_LAYER)
         #define WC_LINUXKM_RDSEED_IN_GLUE_LAYER
     #endif
-    #ifdef WC_LINUXKM_RDSEED_IN_GLUE_LAYER
+    #if defined(WC_LINUXKM_WOLFENTROPY_IN_GLUE_LAYER)
+        struct OS_Seed;
+        extern int wc_linuxkm_GenerateSeed_wolfEntropy(struct OS_Seed* os, unsigned char* output, unsigned int sz);
+        #define WC_GENERATE_SEED_DEFAULT wc_linuxkm_GenerateSeed_wolfEntropy
+    #elif defined(WC_LINUXKM_RDSEED_IN_GLUE_LAYER)
         struct OS_Seed;
         extern int wc_linuxkm_GenerateSeed_IntelRD(struct OS_Seed* os, unsigned char* output, unsigned int sz);
         #define WC_GENERATE_SEED_DEFAULT wc_linuxkm_GenerateSeed_IntelRD
+    #endif
+
+    /* setup for LINUXKM_LKCAPI_REGISTER_HASH_DRBG_DEFAULT needs to be here
+     * to assure that calls to get_random_bytes() in random.c are gated out
+     * (they would recurse, potentially infinitely).
+     */
+    #if defined(LINUXKM_LKCAPI_REGISTER_ALL) && \
+        !defined(LINUXKM_LKCAPI_DONT_REGISTER_HASH_DRBG) && \
+        !defined(LINUXKM_LKCAPI_DONT_REGISTER_HASH_DRBG_DEFAULT) && \
+        !defined(NO_LINUXKM_DRBG_GET_RANDOM_BYTES) && \
+        !defined(LINUXKM_LKCAPI_REGISTER_HASH_DRBG_DEFAULT) && \
+        defined(HAVE_HASHDRBG)
+        #define LINUXKM_LKCAPI_REGISTER_HASH_DRBG_DEFAULT
     #endif
 
     #ifdef BUILDING_WOLFSSL
@@ -208,7 +268,7 @@
         #endif
     #endif
 
-    #if defined(CONFIG_MIPS) && defined(WC_PIE_RELOC_TABLES)
+    #if defined(CONFIG_MIPS) && defined(WC_SYM_RELOC_TABLES)
         /* __ZBOOT__ disables some unhelpful macros around the mem*() funcs in
          * legacy arch/mips/include/asm/string.h
          */
@@ -236,13 +296,14 @@
     _Pragma("GCC diagnostic ignored \"-Wsign-compare\"");
     _Pragma("GCC diagnostic ignored \"-Wpointer-sign\"");
     _Pragma("GCC diagnostic ignored \"-Wbad-function-cast\"");
+#ifndef __clang__
     _Pragma("GCC diagnostic ignored \"-Wdiscarded-qualifiers\"");
+#endif
     _Pragma("GCC diagnostic ignored \"-Wtype-limits\"");
     _Pragma("GCC diagnostic ignored \"-Wswitch-enum\"");
     _Pragma("GCC diagnostic ignored \"-Wcast-function-type\""); /* needed for kernel 4.14.336 */
     _Pragma("GCC diagnostic ignored \"-Wformat-nonliteral\""); /* needed for kernel 4.9.282 */
-
-    #include <linux/kconfig.h>
+    _Pragma("GCC diagnostic ignored \"-Wattributes\"");
 
     #ifdef CONFIG_KASAN
         #ifndef WC_SANITIZE_DISABLE
@@ -255,7 +316,7 @@
 
     #if defined(CONFIG_FORTIFY_SOURCE) && \
         !defined(WC_FORCE_LINUXKM_FORTIFY_SOURCE) && \
-        (defined(WC_PIE_RELOC_TABLES) || \
+        (defined(WC_SYM_RELOC_TABLES) || \
          (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)))
         /* fortify-source causes all sorts of awkward problems for the PIE
          * build, up to and including stubborn external references and multiple
@@ -272,16 +333,38 @@
         #error WC_FORCE_LINUXKM_FORTIFY_SOURCE without CONFIG_FORTIFY_SOURCE.
     #endif
 
-    #if defined(__PIE__) && defined(CONFIG_ARM64)
-        #define alt_cb_patch_nops my__alt_cb_patch_nops
+    #if defined(WC_CONTAINERIZE_THIS) && defined(CONFIG_ARM64)
+        /* alt_cb_patch_nops and queued_spin_lock_slowpath are defined early
+         * to allow shimming in system headers.
+         */
+        /* alt_cb_patch_nops added by d926079f17, release 6.1 */
+        #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+            #define alt_cb_patch_nops my__alt_cb_patch_nops
+        #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0) */
         #define queued_spin_lock_slowpath my__queued_spin_lock_slowpath
     #endif
+
+    /*
+     * Disable ARM64 LSE atomics for out-of-tree modules.
+     *
+     * When CONFIG_ARM64_LSE_ATOMICS is enabled, the kernel uses static keys
+     * (jump labels) in system_uses_lse_atomics() to choose between LSE and
+     * LL/SC atomic implementations at runtime. These static keys generate
+     * asm goto statements that reference .jump_table section symbols which
+     * cannot be resolved in out-of-tree modules, causing:
+     *   "error: impossible constraint in 'asm'"
+     *
+     * By undefining CONFIG_ARM64_LSE_ATOMICS here (before any kernel headers
+     * that use atomics are included), we force use of the LL/SC fallback path
+     * which works correctly in out-of-tree modules.
+     */
+    #undef CONFIG_ARM64_LSE_ATOMICS
 
     #include <linux/kernel.h>
     #include <linux/ctype.h>
 
     #if defined(CONFIG_FORTIFY_SOURCE) || defined(DEBUG_LINUXKM_FORTIFY_OVERLAY)
-        #ifdef __PIE__
+        #ifdef WC_CONTAINERIZE_THIS
             /* the inline definitions in fortify-string.h use non-inline
              * fortify_panic().
              */
@@ -412,9 +495,10 @@
 
     #endif /* !CONFIG_FORTIFY_SOURCE */
 
-    #ifndef __PIE__
+    #ifndef WC_CONTAINERIZE_THIS
         #include <linux/init.h>
         #include <linux/module.h>
+        #include <linux/moduleparam.h>
         #include <linux/delay.h>
     #endif
 
@@ -426,7 +510,7 @@
          * mm.h.  however, mm.h brings in static, but not inline, pmd_to_page(),
          * with direct references to global vmem variables.
          */
-        #ifdef __PIE__
+        #ifdef WC_CONTAINERIZE_THIS
             #include <linux/mm_types.h>
             #if USE_SPLIT_PMD_PTLOCKS
             static __always_inline struct page *pmd_to_page(pmd_t *pmd);
@@ -435,13 +519,50 @@
         #include <linux/mm.h>
     #endif
 
-#ifndef __PIE__
+#ifndef WC_CONTAINERIZE_THIS
     #include <linux/kthread.h>
     #include <linux/net.h>
-#endif
+    #ifndef WOLFCRYPT_ONLY
+        #include <linux/inet.h>
+        static inline int wc_linuxkm_inet_pton(int af, const char *src, void *dst)
+        {
+            int ret;
 
+            if (!src || !dst)
+                return -EFAULT;
+
+            switch (af) {
+            case AF_INET:
+                ret = in4_pton(src, -1, (u8 *)dst, '\0', NULL);
+                return ret == 1 ? 1 : 0;
+
+            case AF_INET6:
+                ret = in6_pton(src, -1, (u8 *)dst, '\0', NULL);
+                return ret == 1 ? 1 : 0;
+
+            default:
+                return -EAFNOSUPPORT;
+            }
+        }
+        #define XINET_PTON(af, src, dst) wc_linuxkm_inet_pton(af, src, dst)
+    #endif /* !WOLFCRYPT_ONLY */
+#endif /* !WC_CONTAINERIZE_THIS */
+
+    #if defined(WC_SYM_RELOC_TABLES) && defined(DEBUG_LINUXKM_PIE_SUPPORT) && \
+        !defined(WC_LINUXKM_SUPPORT_DUMP_TO_FILE)
+        #define WC_LINUXKM_SUPPORT_DUMP_TO_FILE
+    #endif
+
+    #ifdef WC_LINUXKM_SUPPORT_DUMP_TO_FILE
+        #include <linux/fs.h>
+        #include <linux/uaccess.h>
+    #endif
     #include <linux/slab.h>
     #include <linux/sched.h>
+    #if __has_include(<linux/sched/task_stack.h>)
+        /* for task_stack_page() */
+        #include <linux/sched/task_stack.h>
+    #endif
     #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
         /* for signal_pending() */
         #include <linux/sched/signal.h>
@@ -450,7 +571,7 @@
     #endif
     #include <linux/random.h>
 
-    #if !defined(__PIE__) && defined(CONFIG_HAVE_KPROBES)
+    #if !defined(WC_CONTAINERIZE_THIS) && defined(CONFIG_HAVE_KPROBES)
         #include <linux/kprobes.h>
     #endif
 
@@ -472,18 +593,7 @@
             #define WC_AES_XTS_SUPPORT_SIMULTANEOUS_ENC_AND_DEC_KEYS
         #endif
 
-        /* setup for LINUXKM_LKCAPI_REGISTER_HASH_DRBG_DEFAULT needs to be here
-         * to assure that calls to get_random_bytes() in random.c are gated out
-         * (they would recurse, potentially infinitely).
-         */
-        #if (defined(LINUXKM_LKCAPI_REGISTER_ALL) && \
-             !defined(LINUXKM_LKCAPI_DONT_REGISTER_HASH_DRBG) && \
-             !defined(LINUXKM_LKCAPI_DONT_REGISTER_HASH_DRBG_DEFAULT)) && \
-            !defined(LINUXKM_LKCAPI_REGISTER_HASH_DRBG_DEFAULT)
-            #define LINUXKM_LKCAPI_REGISTER_HASH_DRBG_DEFAULT
-        #endif
-
-        #ifndef __PIE__
+        #ifndef WC_CONTAINERIZE_THIS
             #include <linux/crypto.h>
             #include <linux/scatterlist.h>
             #include <crypto/scatterwalk.h>
@@ -513,7 +623,8 @@
                 }
             #endif
             #define WC_LKM_REFCOUNT_TO_INT(refcount) wc_lkm_refcount_to_int(&(refcount))
-        #endif /* !__PIE__ */
+        #endif /* !WC_CONTAINERIZE_THIS */
+
     #endif /* LINUXKM_LKCAPI_REGISTER */
 
     /* benchmarks.c uses floating point math, so needs a working
@@ -535,9 +646,16 @@
 
         #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0)
             #include <asm/i387.h>
+            #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0)
+                /* added by a62b01cd6c */
+                #include <asm-generic/simd.h>
+            #endif
         #else
             #include <asm/simd.h>
-            #include <crypto/internal/simd.h>
+            #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+                /* added by 266d051601 */
+                #include <crypto/internal/simd.h>
+            #endif
         #endif
         #ifndef CAN_SAVE_VECTOR_REGISTERS
             #ifdef DEBUG_VECTOR_REGISTER_ACCESS_FUZZING
@@ -712,6 +830,9 @@
                 struct Signer* GetCAByKeyHash(void* vp, const unsigned char* keyHash);
             #endif /* HAVE_OCSP */
             #ifdef WOLFSSL_AKID_NAME
+                #ifdef WOLFSSL_API_PREFIX_MAP
+                    #define GetCAByAKID wolfSSL_GetCAByAKID
+                #endif
                 struct Signer* GetCAByAKID(void* vp, const unsigned char* issuer,
                                            unsigned int issuerSz,
                                            const unsigned char* serial,
@@ -730,17 +851,11 @@
 
     #endif /* !WOLFCRYPT_ONLY && !NO_CERTS */
 
-    #if defined(__PIE__) && !defined(WC_PIE_RELOC_TABLES)
-        #error "compiling -fPIE requires PIE relocation tables."
+    #if defined(WC_CONTAINERIZE_THIS) && !defined(WC_SYM_RELOC_TABLES)
+        #error "compiling -DWC_CONTAINERIZE_THIS requires relocation tables."
     #endif
 
-    #ifdef WC_PIE_RELOC_TABLES
-
-    #ifndef WOLFSSL_TEXT_SEGMENT_CANONICALIZER
-        #define WOLFSSL_TEXT_SEGMENT_CANONICALIZER(text_in, text_in_len, text_out, cur_index_p) \
-            wc_linuxkm_normalize_relocations(text_in, text_in_len, text_out, cur_index_p)
-        #define WOLFSSL_TEXT_SEGMENT_CANONICALIZER_BUFSIZ 8192
-    #endif
+    #ifdef WC_SYM_RELOC_TABLES
 
     extern __attribute__((error("uncallable fencepost"))) int __wc_text_start(void);
     extern __attribute__((error("uncallable fencepost"))) int __wc_text_end(void);
@@ -759,13 +874,18 @@
         __wc_rwdata_end[],
         __wc_bss_start[],
         __wc_bss_end[];
-    extern const unsigned int wc_linuxkm_pie_reloc_tab[];
-    extern const unsigned long wc_linuxkm_pie_reloc_tab_length;
+
     extern ssize_t wc_linuxkm_normalize_relocations(
         const u8 *text_in,
         size_t text_in_len,
         u8 *text_out,
         ssize_t *cur_index_p);
+
+    #ifndef WOLFSSL_TEXT_SEGMENT_CANONICALIZER
+        #define WOLFSSL_TEXT_SEGMENT_CANONICALIZER(text_in, text_in_len, text_out, cur_index_p) \
+            wc_linuxkm_normalize_relocations(text_in, text_in_len, text_out, cur_index_p)
+        #define WOLFSSL_TEXT_SEGMENT_CANONICALIZER_BUFSIZ 8192
+    #endif
 
 #ifdef CONFIG_MIPS
     #undef __ARCH_MEMCMP_NO_REDIRECT
@@ -774,7 +894,9 @@
 #endif
 
     struct wolfssl_linuxkm_pie_redirect_table {
+    #ifdef HAVE_FIPS
         typeof(wc_linuxkm_normalize_relocations) *wc_linuxkm_normalize_relocations;
+    #endif
 
     #ifndef __ARCH_MEMCMP_NO_REDIRECT
         typeof(memcmp) *memcmp;
@@ -881,7 +1003,9 @@
         typeof(kfree) *kfree;
         typeof(ksize) *ksize;
 
+#ifndef LINUXKM_LKCAPI_REGISTER_HASH_DRBG_DEFAULT
         typeof(get_random_bytes) *get_random_bytes;
+#endif
         #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0)
             typeof(getnstimeofday) *getnstimeofday;
         #elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
@@ -906,7 +1030,15 @@
 
         #endif /* WOLFSSL_USE_SAVE_VECTOR_REGISTERS */
 
-        typeof(__mutex_init) *__mutex_init;
+        #ifndef CONFIG_PREEMPT_RT
+            typeof(__mutex_init) *__mutex_init;
+        #else
+            typeof(__rt_mutex_init) *__rt_mutex_init;
+            typeof(rt_mutex_base_init) *rt_mutex_base_init;
+            typeof(rt_spin_lock) *rt_spin_lock;
+            typeof(rt_spin_unlock) *rt_spin_unlock;
+        #endif
+
         #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0)
             typeof(mutex_lock_nested) *mutex_lock_nested;
         #else
@@ -1008,23 +1140,27 @@
 
         #endif /* !WOLFCRYPT_ONLY && !NO_CERTS */
 
-        #ifdef WOLFSSL_DEBUG_BACKTRACE_ERROR_CODES
         typeof(dump_stack) *dump_stack;
-        #endif
 
         #ifdef CONFIG_ARM64
-        #ifdef __PIE__
+        #ifndef CONFIG_ARCH_TEGRA
+        #ifdef WC_CONTAINERIZE_THIS
             /* alt_cb_patch_nops and queued_spin_lock_slowpath are defined early
              * to allow shimming in system headers, but now we need the native
              * ones.
              */
+            #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
             #undef alt_cb_patch_nops
             typeof(my__alt_cb_patch_nops) *alt_cb_patch_nops;
+            #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0) */
             #undef queued_spin_lock_slowpath
             typeof(my__queued_spin_lock_slowpath) *queued_spin_lock_slowpath;
         #else
+            #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
             typeof(alt_cb_patch_nops) *alt_cb_patch_nops;
+            #endif
             typeof(queued_spin_lock_slowpath) *queued_spin_lock_slowpath;
+        #endif
         #endif
         #endif
 
@@ -1047,6 +1183,11 @@
         typeof(wc_linuxkm_sig_ignore_end) *wc_linuxkm_sig_ignore_end;
         typeof(wc_linuxkm_check_for_intr_signals) *wc_linuxkm_check_for_intr_signals;
         typeof(wc_linuxkm_relax_long_loop) *wc_linuxkm_relax_long_loop;
+
+        #ifdef CONFIG_KASAN
+            typeof(kasan_disable_current) *kasan_disable_current;
+            typeof(kasan_enable_current) *kasan_enable_current;
+        #endif
 
         const void *_last_slot;
     };
@@ -1088,10 +1229,12 @@
         #error no WC_PIE_INDIRECT_SYM method defined.
     #endif
 
-    #ifdef __PIE__
+    #ifdef WC_CONTAINERIZE_THIS
 
-    #define wc_linuxkm_normalize_relocations \
-        WC_PIE_INDIRECT_SYM(wc_linuxkm_normalize_relocations)
+    #ifdef HAVE_FIPS
+        #define wc_linuxkm_normalize_relocations \
+            WC_PIE_INDIRECT_SYM(wc_linuxkm_normalize_relocations)
+    #endif
 
     #ifndef __ARCH_MEMCMP_NO_REDIRECT
         #define memcmp WC_PIE_INDIRECT_SYM(memcmp)
@@ -1203,7 +1346,9 @@
     #endif
     #define ksize WC_PIE_INDIRECT_SYM(ksize)
 
+#ifndef LINUXKM_LKCAPI_REGISTER_HASH_DRBG_DEFAULT
     #define get_random_bytes WC_PIE_INDIRECT_SYM(get_random_bytes)
+#endif
     #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0)
         #define getnstimeofday WC_PIE_INDIRECT_SYM(getnstimeofday)
     #elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
@@ -1225,7 +1370,17 @@
         #error WOLFSSL_USE_SAVE_VECTOR_REGISTERS is set for an unimplemented architecture.
     #endif /* WOLFSSL_USE_SAVE_VECTOR_REGISTERS */
 
-    #define __mutex_init WC_PIE_INDIRECT_SYM(__mutex_init)
+    #ifndef CONFIG_PREEMPT_RT
+        #define __mutex_init WC_PIE_INDIRECT_SYM(__mutex_init)
+    #else
+        /* On RT kernels, __mutex_init is a macro pointing to __rt_mutex_init */
+        #undef __mutex_init
+        #define __rt_mutex_init WC_PIE_INDIRECT_SYM(__rt_mutex_init)
+        #define __mutex_init(mutex, name, key) __rt_mutex_init(mutex, name, key)
+        #define rt_mutex_base_init WC_PIE_INDIRECT_SYM(rt_mutex_base_init)
+        #define rt_spin_lock WC_PIE_INDIRECT_SYM(rt_spin_lock)
+        #define rt_spin_unlock WC_PIE_INDIRECT_SYM(rt_spin_unlock)
+    #endif
     #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0)
         #define mutex_lock_nested WC_PIE_INDIRECT_SYM(mutex_lock_nested)
     #else
@@ -1237,8 +1392,8 @@
     #endif
 
     /* per linux/ctype.h, tolower() and toupper() are macros bound to static inlines
-     * that use macros that bring in the _ctype global.  for __PIE__, this needs to
-     * be masked out.
+     * that use macros that bring in the _ctype global.  for WC_CONTAINERIZE_THIS,
+     * this needs to be masked out.
      */
     #undef tolower
     #undef toupper
@@ -1254,7 +1409,11 @@
             #endif /* HAVE_OCSP */
         #endif /* NO_SKID */
         #ifdef WOLFSSL_AKID_NAME
-            #define GetCAByAKID WC_PIE_INDIRECT_SYM(GetCAByAKID)
+            #ifdef WOLFSSL_API_PREFIX_MAP
+                #define wolfSSL_GetCAByAKID WC_PIE_INDIRECT_SYM(wolfSSL_GetCAByAKID)
+            #else
+                #define GetCAByAKID WC_PIE_INDIRECT_SYM(GetCAByAKID)
+            #endif
         #endif
 
         #if defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)
@@ -1265,9 +1424,7 @@
 
     #endif /* !WOLFCRYPT_ONLY && !NO_CERTS */
 
-    #ifdef WOLFSSL_DEBUG_BACKTRACE_ERROR_CODES
         #define dump_stack WC_PIE_INDIRECT_SYM(dump_stack)
-    #endif
 
     #undef preempt_count /* just in case -- not a macro on x86. */
     #define preempt_count WC_PIE_INDIRECT_SYM(preempt_count)
@@ -1288,17 +1445,173 @@
 
     /* this is defined in linux/spinlock.h as an inline that calls the unshimmed
      * raw_spin_unlock_irqrestore().  use a macro here to supersede it.
+     * Note: On PREEMPT_RT kernels, spinlock_t doesn't have rlock member,
+     * so we skip this redefinition and use the kernel's native implementation.
      */
-    #define spin_unlock_irqrestore(lock, flags) raw_spin_unlock_irqrestore(&((lock)->rlock), flags)
+    #ifndef CONFIG_PREEMPT_RT
+        #define spin_unlock_irqrestore(lock, flags) raw_spin_unlock_irqrestore(&((lock)->rlock), flags)
+    #else
+        /* Undo internal wolfSSL PIE macro rewriting */
+        #ifdef rt_spin_unlock
+        #undef rt_spin_unlock
+        #endif
+        #ifdef rt_spin_lock
+        #undef rt_spin_lock
+        #endif
+        static inline int wolfssl_spin_unlock_irqrestore_rt(spinlock_t *lock,
+                                                             unsigned long flags)
+        {
+            (void)flags; /* rt_spin_unlock ignores flags */
+            WC_PIE_INDIRECT_SYM(rt_spin_unlock)(lock);
+            return 0;
+        }
+
+        #undef spin_unlock_irqrestore
+        #define spin_unlock_irqrestore(lock, flags) \
+        wolfssl_spin_unlock_irqrestore_rt((lock), (flags))
+    #endif
 
     #define wc_linuxkm_sig_ignore_begin WC_PIE_INDIRECT_SYM(wc_linuxkm_sig_ignore_begin);
     #define wc_linuxkm_sig_ignore_end WC_PIE_INDIRECT_SYM(wc_linuxkm_sig_ignore_end);
     #define wc_linuxkm_check_for_intr_signals WC_PIE_INDIRECT_SYM(wc_linuxkm_check_for_intr_signals)
     #define wc_linuxkm_relax_long_loop WC_PIE_INDIRECT_SYM(wc_linuxkm_relax_long_loop)
 
-    #endif /* __PIE__ */
+    #ifdef CONFIG_KASAN
+        #define kasan_disable_current WC_PIE_INDIRECT_SYM(kasan_disable_current)
+        #define kasan_enable_current WC_PIE_INDIRECT_SYM(kasan_enable_current)
+    #endif
 
-    #endif /* WC_PIE_RELOC_TABLES */
+    #endif /* WC_CONTAINERIZE_THIS */
+
+    #endif /* WC_SYM_RELOC_TABLES */
+
+#if defined(WOLFSSL_KERNEL_STACK_DEBUG) || defined(WC_LINUXKM_STACK_DEBUG)
+
+    #ifndef CONFIG_THREAD_INFO_IN_TASK
+        #error WC_LINUXKM_STACK_DEBUG requires CONFIG_THREAD_INFO_IN_TASK
+    #endif
+    #ifdef CONFIG_STACK_GROWSUP
+        #error WC_LINUXKM_STACK_DEBUG requires !CONFIG_STACK_GROWSUP
+    #endif
+
+    static __always_inline unsigned long wc_linuxkm_stack_bottom(void) {
+        void *ret = task_stack_page(get_current());
+        return (unsigned long)(uintptr_t)ret;
+    }
+
+    static __always_inline unsigned long wc_linuxkm_stack_top(void) {
+        return wc_linuxkm_stack_bottom() + THREAD_SIZE;
+    }
+
+    #if defined(CONFIG_X86)
+
+    static __always_inline unsigned long wc_linuxkm_stack_current(void) {
+        unsigned long rsp;
+
+        asm volatile("mov %%rsp, %0" : "=r" (rsp));
+        return wc_linuxkm_stack_top() - rsp;
+    }
+
+    static __always_inline unsigned long wc_linuxkm_stack_left(void) {
+        unsigned long rsp;
+        asm volatile("mov %%rsp, %0" : "=r" (rsp));
+        return rsp - wc_linuxkm_stack_bottom();
+    }
+
+    #define WC_LINUXKM_HAVE_STACK_DEBUG
+
+    #elif defined(CONFIG_ARM64)
+
+    static __always_inline unsigned long wc_linuxkm_stack_current(void) {
+        unsigned long sp;
+        asm volatile("mov %0, sp" : "=r" (sp));
+        return wc_linuxkm_stack_top() - sp;
+    }
+
+    static __always_inline unsigned long wc_linuxkm_stack_left(void) {
+        unsigned long sp;
+        asm volatile("mov %0, sp" : "=r" (sp));
+        return sp - wc_linuxkm_stack_bottom();
+    }
+
+    #define WC_LINUXKM_HAVE_STACK_DEBUG
+
+    #elif defined(CONFIG_ARM)
+
+    static __always_inline unsigned long wc_linuxkm_stack_current(void) {
+        unsigned long sp;
+        asm volatile("mov %0, sp" : "=r" (sp));
+        return wc_linuxkm_stack_top() - sp;
+    }
+
+    static __always_inline unsigned long wc_linuxkm_stack_left(void) {
+        unsigned long sp;
+        asm volatile("mov %0, sp" : "=r" (sp));
+        return sp - wc_linuxkm_stack_bottom();
+    }
+
+    #define WC_LINUXKM_HAVE_STACK_DEBUG
+
+    #endif /* CONFIG_ARM */
+
+    #ifndef WC_LINUXKM_HAVE_STACK_DEBUG
+        #error WC_LINUXKM_STACK_DEBUG implementation missing for target.
+    #endif
+
+    /* An unsigned long STACK_END_MAGIC is stored at the bottom of the stack.
+     * Additionally, though the kernel stack doesn't have a red zone, it
+     * nonetheless uses some bytes below the current stack pointer and mayhem
+     * ensues immediately if it's overwritten.
+     */
+    #ifndef WC_KERNEL_STACK_MARGIN_BOTTOM
+        #define WC_KERNEL_STACK_MARGIN_BOTTOM sizeof(unsigned long)
+    #endif
+    #ifndef WC_KERNEL_STACK_MARGIN_TOP
+        #define WC_KERNEL_STACK_MARGIN_TOP 8
+    #endif
+
+    static __always_inline void wc_linuxkm_stack_hwm_prepare(unsigned char sentinel) {
+        unsigned long s = wc_linuxkm_stack_bottom();
+        unsigned long z;
+        unsigned long flags;
+
+        if (*(unsigned long *)s != STACK_END_MAGIC)
+            pr_err("ERROR: bottom of stack is not STACK_END_MAGIC.\n");
+
+        local_irq_save(flags);
+        kasan_disable_current();
+        z = wc_linuxkm_stack_left();
+        if (z > WC_KERNEL_STACK_MARGIN_BOTTOM + WC_KERNEL_STACK_MARGIN_TOP)
+            memset((void *)(s + WC_KERNEL_STACK_MARGIN_BOTTOM), sentinel,
+                   z - (WC_KERNEL_STACK_MARGIN_BOTTOM + WC_KERNEL_STACK_MARGIN_TOP));
+        kasan_enable_current();
+        local_irq_restore(flags);
+        if (z <= WC_KERNEL_STACK_MARGIN_BOTTOM + WC_KERNEL_STACK_MARGIN_TOP)
+            pr_err("ERROR: wc_linuxkm_stack_hwm_prepare() called with only %lu bytes of stack left, "
+                   "versus margin %zu.\n", z, WC_KERNEL_STACK_MARGIN_BOTTOM + WC_KERNEL_STACK_MARGIN_TOP);
+    }
+    static __always_inline unsigned long wc_linuxkm_stack_hwm_measure_rel(unsigned char sentinel) {
+        unsigned long s = wc_linuxkm_stack_bottom();
+        unsigned long z = wc_linuxkm_stack_left();
+        unsigned char *i;
+        if (z <= WC_KERNEL_STACK_MARGIN_BOTTOM + WC_KERNEL_STACK_MARGIN_TOP)
+            return (unsigned long)-1;
+        kasan_disable_current();
+        for (i = (unsigned char *)s + WC_KERNEL_STACK_MARGIN_BOTTOM;
+             i < ((unsigned char *)s + z) && (*i == sentinel);
+             ++i);
+        kasan_enable_current();
+        return z - ((unsigned long)i - s);
+    }
+    static __always_inline unsigned long wc_linuxkm_stack_hwm_measure_total(unsigned char sentinel) {
+        unsigned long rel = wc_linuxkm_stack_hwm_measure_rel(sentinel);
+        if (rel == (unsigned long)-1)
+            return rel;
+        else
+            return rel + wc_linuxkm_stack_current();
+    }
+
+#endif /* WC_LINUXKM_STACK_DEBUG */
 
     /* remove this multifariously conflicting macro, picked up from
      * Linux arch/<arch>/include/asm/current.h.
@@ -1444,7 +1757,12 @@
 
         static __always_inline int wc_InitMutex(wolfSSL_Mutex* m)
         {
+        /* Tegra vendor kernels do not support assignment of __SPIN_LOCK_UNLOCKED() */
+        # ifndef CONFIG_ARCH_TEGRA
             m->lock = __SPIN_LOCK_UNLOCKED(m);
+        # else
+            spin_lock_init(&m->lock);
+        #endif
             m->irq_flags = 0;
 
             return 0;
@@ -1456,8 +1774,8 @@
             return 0;
         }
 
-        #ifdef __PIE__
-        /* wc_lkm_LockMutex() can't be used inline in __PIE__ objects, due to
+        #ifdef WC_CONTAINERIZE_THIS
+        /* wc_lkm_LockMutex() can't be used inline in WC_CONTAINERIZE_THIS objects, due to
          * direct access to pv_ops.
          */
         static __must_check __always_inline int wc_LockMutex(wolfSSL_Mutex *m)
@@ -1465,14 +1783,14 @@
             return WC_PIE_INDIRECT_SYM(wc_lkm_LockMutex)(m);
         }
 
-        #else /* !__PIE__ */
+        #else /* !WC_CONTAINERIZE_THIS */
 
         static __must_check __always_inline int wc_LockMutex(wolfSSL_Mutex *m)
         {
             return wc_lkm_LockMutex(m);
         }
 
-        #endif /* !__PIE__ */
+        #endif /* !WC_CONTAINERIZE_THIS */
 
         static __always_inline int wc_UnLockMutex(wolfSSL_Mutex* m)
         {
@@ -1480,6 +1798,11 @@
             return 0;
         }
 
+    #endif
+
+    #ifdef LINUXKM_LKCAPI_REGISTER_HASH_DRBG_DEFAULT
+        struct crypto_rng;
+        WOLFSSL_API int wc_linux_kernel_rng_is_wolfcrypt(struct crypto_rng *rng);
     #endif
 
     /* Undo copied defines from wc_port.h, to avoid redefinition warnings. */
@@ -1567,8 +1890,10 @@
      * them to be evaluable by the preprocessor, for use in sp_int.h.
      */
     #if BITS_PER_LONG == 64
+        /* NOLINTBEGIN(bugprone-sizeof-expression) */
         static_assert(sizeof(ULONG_MAX) == 8,
                        "BITS_PER_LONG is 64, but ULONG_MAX is not.");
+        /* NOLINTEND(bugprone-sizeof-expression) */
 
         #undef UCHAR_MAX
         #define UCHAR_MAX 255
@@ -1619,6 +1944,15 @@
 
 #else
         #error unexpected BITS_PER_LONG value.
+#endif
+
+/* WC_DUMP_BACKTRACE_NONDEBUG is intended to dump a backtrace only if it hasn't
+ * already been dumped by the called function.
+ */
+#if defined(WOLFSSL_DEBUG_TRACE_ERROR_CODES) && defined(WOLFSSL_DEBUG_BACKTRACE_ERROR_CODES)
+    #define WC_DUMP_BACKTRACE_NONDEBUG WC_DO_NOTHING
+#else
+    #define WC_DUMP_BACKTRACE_NONDEBUG dump_stack()
 #endif
 
 #endif /* LINUXKM_WC_PORT_H */

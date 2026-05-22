@@ -1,6 +1,6 @@
 /* test_chacha20_poly1305.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -25,8 +25,10 @@
 #include <tests/api/api_decl.h>
 
 int test_wc_ChaCha20Poly1305_aead(void);
+int test_wc_XChaCha20Poly1305_aead(void);
 
-#define TEST_CHACHA20_POLY1305_DECLS                                    \
-    TEST_DECL_GROUP("chacha20-poly1305", test_wc_ChaCha20Poly1305_aead)
+#define TEST_CHACHA20_POLY1305_DECLS                                     \
+    TEST_DECL_GROUP("chacha20-poly1305", test_wc_ChaCha20Poly1305_aead), \
+    TEST_DECL_GROUP("xchacha20-poly1305", test_wc_XChaCha20Poly1305_aead)
 
 #endif /* WOLFCRYPT_TEST_CHACHA20_POLY1305_H */

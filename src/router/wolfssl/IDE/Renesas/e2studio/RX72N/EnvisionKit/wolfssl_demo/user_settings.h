@@ -1,6 +1,6 @@
 /* user_settings.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -294,5 +294,3 @@
 /*-- strcasecmp */
 #define XSTRCASECMP(s1,s2) strcmp((s1),(s2))
 
-/* use original ASN parsing */
-#define WOLFSSL_ASN_ORIGINAL

@@ -1,6 +1,6 @@
 /* ed448.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -367,6 +367,14 @@ int wc_ed448_sign_msg_ex(const byte* in, word32 inLen, byte* out,
     if ((ret == 0) && (!key->pubKeySet)) {
         ret = BAD_FUNC_ARG;
     }
+    if ((ret == 0) && (!key->privKeySet)) {
+        ret = BAD_FUNC_ARG;
+    }
+
+    if ((ret == 0) && (type == Ed448ph) && (inLen != ED448_PREHASH_SIZE))
+    {
+        ret = BAD_LENGTH_E;
+    }
 
     /* check and set up out length */
     if ((ret == 0) && (*outLen < ED448_SIG_SIZE)) {
@@ -391,16 +399,15 @@ int wc_ed448_sign_msg_ex(const byte* in, word32 inLen, byte* out,
 #else
         wc_Shake sha[1];
         ret = ed448_hash_init(key, sha);
-        if (ret < 0)
-            return ret;
 #endif
         /* apply clamp */
         az[0]  &= 0xfc;
         az[55] |= 0x80;
         az[56]  = 0x00;
 
-        ret = ed448_hash_update(key, sha, ed448Ctx, ED448CTX_SIZE);
-
+        if (ret == 0) {
+            ret = ed448_hash_update(key, sha, ed448Ctx, ED448CTX_SIZE);
+        }
         if (ret == 0) {
             ret = ed448_hash_update(key, sha, &type, sizeof(type));
         }
@@ -429,15 +436,14 @@ int wc_ed448_sign_msg_ex(const byte* in, word32 inLen, byte* out,
 #else
         wc_Shake sha[1];
         ret = ed448_hash_init(key, sha);
-        if (ret < 0)
-            return ret;
 #endif
-        sc448_reduce(nonce);
-
+        if (ret == 0)
+            sc448_reduce(nonce);
         /* step 2: computing R = rB where rB is the scalar multiplication of
            r and B */
-        ret = ge448_scalarmult_base(&R,nonce);
-
+        if (ret == 0) {
+            ret = ge448_scalarmult_base(&R,nonce);
+        }
         /* step 3: hash R + public key + message getting H(R,A,M) then
            creating S = (r + H(R,A,M)a) mod l */
         if (ret == 0) {
@@ -487,6 +493,8 @@ int wc_ed448_sign_msg_ex(const byte* in, word32 inLen, byte* out,
     }
 #endif
 
+    ForceZero(az, sizeof(az));
+    ForceZero(nonce, sizeof(nonce));
     return ret;
 }
 
@@ -708,6 +716,18 @@ static int ed448_verify_msg_final_with_sha(const byte* sig, word32 sigLen,
     if (i == -1)
         return BAD_FUNC_ARG;
 
+    /* Reject identity public key (0,1): 0x01 followed by 56 zero bytes. */
+    {
+        int isIdentity = (key->p[0] == 0x01);
+        int j;
+        for (j = 1; j < ED448_PUB_KEY_SIZE && isIdentity; j++) {
+            if (key->p[j] != 0x00)
+                isIdentity = 0;
+        }
+        if (isIdentity)
+            return BAD_FUNC_ARG;
+    }
+
     /* uncompress A (public key), test if valid, and negate it */
     if (ge448_from_bytes_negate_vartime(&A, key->p) != 0)
         return BAD_FUNC_ARG;
@@ -792,6 +812,12 @@ int wc_ed448_verify_msg_ex(const byte* sig, word32 sigLen, const byte* msg,
 
     if (key == NULL)
         return BAD_FUNC_ARG;
+
+    if ((type == Ed448ph) &&
+        (msgLen != ED448_PREHASH_SIZE))
+    {
+        return BAD_LENGTH_E;
+    }
 
 #ifdef WOLFSSL_ED448_PERSISTENT_SHA
     sha = &key->sha;
@@ -1332,14 +1358,28 @@ int wc_ed448_check_key(ed448_key* key)
     }
     /* No private key, check Y is valid. */
     else if ((ret == 0) && (!key->privKeySet)) {
-        /* Verify that Q is not identity element 0.
-         * 0 has no representation for Ed448. */
+        /* Reject the identity element (0, 1).
+         * Encoding: 0x01 followed by 56 zero bytes. */
+        {
+            int isIdentity = 1;
+            int i;
+            if (key->p[0] != 0x01)
+                isIdentity = 0;
+            for (i = 1; i < ED448_PUB_KEY_SIZE && isIdentity; i++) {
+                if (key->p[i] != 0x00)
+                    isIdentity = 0;
+            }
+            if (isIdentity) {
+                WOLFSSL_MSG("Ed448 public key is the identity element");
+                ret = PUBLIC_KEY_E;
+            }
+        }
 
         /* Verify that xQ and yQ are integers in the interval [0, p - 1].
          * Only have yQ so check that ordinate.
          * p = 2^448-2^224-1 = 0xff..fe..ff
          */
-        {
+        if (ret == 0) {
             int i;
             ret = PUBLIC_KEY_E;
 

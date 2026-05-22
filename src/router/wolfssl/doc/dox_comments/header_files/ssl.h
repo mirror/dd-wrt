@@ -4,7 +4,7 @@
     \return pointer This function returns a pointer to a new
     WOLFSSL_METHOD structure.
 
-    \param none No parameters.
+    \param heap pointer to a heap hint for memory allocation.
 
     _Example_
     \code
@@ -721,7 +721,7 @@ int wolfSSL_use_old_poly(WOLFSSL* ssl, int value);
     \sa wolfSSL_CTX_new
     \sa wolfSSL_CTX_dtls_set_export
 */
-int wolfSSL_dtls_import(WOLFSSL* ssl, unsigned char* buf,
+int wolfSSL_dtls_import(WOLFSSL* ssl, const unsigned char* buf,
                                                                unsigned int sz);
 
 
@@ -1078,7 +1078,10 @@ int wolfSSL_CTX_use_certificate_file(WOLFSSL_CTX* ctx, const char* file,
     decoding fails on the file. The key file is encrypted but no password
     is provided.
 
-    \param none No parameters.
+    \param ctx pointer to a WOLFSSL_CTX structure.
+    \param file path to the private key file.
+    \param format format of the key file (SSL_FILETYPE_PEM or
+    SSL_FILETYPE_ASN1).
 
     _Example_
     \code
@@ -1229,7 +1232,7 @@ int wolfSSL_CTX_load_verify_locations(WOLFSSL_CTX* ctx, const char* file,
     \sa wolfSSL_use_certificate_chain_file
 */
 int wolfSSL_CTX_load_verify_locations_ex(WOLFSSL_CTX* ctx, const char* file,
-                                         const char* path, unsigned int flags);
+                                         const char* path, word32 flags);
 
 /*!
     \ingroup CertsKeys
@@ -1742,6 +1745,7 @@ int wolfSSL_CTX_der_load_verify_locations(WOLFSSL_CTX* ctx,
     \param method pointer to the desired WOLFSSL_METHOD to use for the SSL
     context. This is created using one of the wolfSSLvXX_XXXX_method()
     functions to specify SSL/TLS/DTLS protocol level.
+    This function frees the passed in WOLFSSL_METHOD struct on failure.
 
     _Example_
     \code
@@ -1888,7 +1892,8 @@ int wolfSSL_set_dtls_fd_connected(WOLFSSL* ssl, int fd);
     \return BAD_FUNC_ARG upon failure.
 
     \param ssl pointer to the SSL session, created with wolfSSL_new().
-    \param fd file descriptor to use with SSL/TLS connection.
+    \param cb ClientHelloGoodCb callback function pointer.
+    \param user_ctx pointer to user context to be passed to callback.
 
     _Example_
     \code
@@ -2019,7 +2024,7 @@ const char* wolfSSL_get_cipher_name(WOLFSSL* ssl);
     \sa wolfSSL_set_read_fd
     \sa wolfSSL_set_write_fd
 */
-int  wolfSSL_get_fd(const WOLFSSL*);
+int  wolfSSL_get_fd(const WOLFSSL* ssl);
 
 /*!
     \ingroup IO
@@ -2046,7 +2051,7 @@ int  wolfSSL_get_fd(const WOLFSSL*);
     \sa wolfSSL_set_read_fd
     \sa wolfSSL_set_write_fd
 */
-int  wolfSSL_get_wfd(const WOLFSSL*);
+int  wolfSSL_get_wfd(const WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -2316,7 +2321,7 @@ int  wolfSSL_peek(WOLFSSL* ssl, void* data, int sz);
     \sa wolfSSL_get_error
     \sa wolfSSL_connect
 */
-int  wolfSSL_accept(WOLFSSL*);
+int  wolfSSL_accept(WOLFSSL* ssl);
 
 /*!
     \ingroup IO
@@ -2382,7 +2387,7 @@ int  wolfDTLS_accept_stateless(WOLFSSL* ssl);
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-void wolfSSL_CTX_free(WOLFSSL_CTX*);
+void wolfSSL_CTX_free(WOLFSSL_CTX* ctx);
 
 /*!
     \ingroup Setup
@@ -2406,7 +2411,7 @@ void wolfSSL_CTX_free(WOLFSSL_CTX*);
     \sa wolfSSL_new
     \sa wolfSSL_CTX_free
 */
-void wolfSSL_free(WOLFSSL*);
+void wolfSSL_free(WOLFSSL* ssl);
 
 /*!
     \ingroup TLS
@@ -2452,7 +2457,7 @@ void wolfSSL_free(WOLFSSL*);
     \sa wolfSSL_free
     \sa wolfSSL_CTX_free
 */
-int  wolfSSL_shutdown(WOLFSSL*);
+int  wolfSSL_shutdown(WOLFSSL* ssl);
 
 /*!
     \ingroup IO
@@ -2830,7 +2835,7 @@ int wolfSSL_GetSessionIndex(WOLFSSL* ssl);
     \return BAD_MUTEX_E returned if there was an unlock or lock mutex error.
     \return SSL_FAILURE returned if the function did not execute successfully.
 
-    \param idx an int type representing the session index.
+    \param index an int type representing the session index.
     \param session a pointer to the WOLFSSL_SESSION structure.
 
     _Example_
@@ -2847,7 +2852,7 @@ int wolfSSL_GetSessionIndex(WOLFSSL* ssl);
     \sa LockMutex
     \sa wolfSSL_GetSessionIndex
 */
-int wolfSSL_GetSessionAtIndex(int idx, WOLFSSL_SESSION* session);
+int wolfSSL_GetSessionAtIndex(int index, WOLFSSL_SESSION* session);
 
 /*!
     \ingroup IO
@@ -3054,7 +3059,7 @@ void wolfSSL_CTX_SetCertCbCtx(WOLFSSL_CTX* ctx, void* userCtx);
     \sa wolfSSL_read
     \sa wolfSSL_peek
 */
-int  wolfSSL_pending(WOLFSSL*);
+int  wolfSSL_pending(WOLFSSL* ssl);
 
 /*!
     \ingroup Debug
@@ -3786,7 +3791,7 @@ void  wolfSSL_dtls13_set_send_more_acks(WOLFSSL *ssl, int value);
     \sa wolfSSL_dtls_set_timeout_max
     \sa wolfSSL_dtls_got_timeout
 */
-int  wolfSSL_dtls_set_timeout_init(WOLFSSL* ssl, int);
+int  wolfSSL_dtls_set_timeout_init(WOLFSSL* ssl, int timeout);
 
 /*!
     \brief This function sets the maximum dtls timeout.
@@ -3814,7 +3819,7 @@ int  wolfSSL_dtls_set_timeout_init(WOLFSSL* ssl, int);
     \sa wolfSSL_dtls_set_timeout_init
     \sa wolfSSL_dtls_got_timeout
 */
-int  wolfSSL_dtls_set_timeout_max(WOLFSSL* ssl, int);
+int  wolfSSL_dtls_set_timeout_max(WOLFSSL* ssl, int timeout);
 
 /*!
     \brief When using non-blocking sockets with DTLS, this function should
@@ -4208,7 +4213,7 @@ int  wolfSSL_session_reused(WOLFSSL* ssl);
     \sa wolfSSL_get_keys
     \sa wolfSSL_set_shutdown
 */
-int  wolfSSL_is_init_finished(WOLFSSL* ssl);
+int  wolfSSL_is_init_finished(const WOLFSSL* ssl);
 
 /*!
     \ingroup IO
@@ -4498,9 +4503,9 @@ int wolfSSL_BIO_get_mem_data(WOLFSSL_BIO* bio,void* p);
 
     \return SSL_SUCCESS(1) upon success.
 
-    \param bio WOLFSSL_BIO structure to set fd.
+    \param b WOLFSSL_BIO structure to set fd.
     \param fd file descriptor to use.
-    \param closeF flag for behavior when closing fd.
+    \param flag flag for behavior when closing fd.
 
     _Example_
     \code
@@ -4523,7 +4528,7 @@ long wolfSSL_BIO_set_fd(WOLFSSL_BIO* b, int fd, int flag);
 
     \return SSL_SUCCESS(1) upon success.
 
-    \param bio WOLFSSL_BIO structure.
+    \param b WOLFSSL_BIO structure.
     \param flag flag for behavior when closing i/o stream.
 
     _Example_
@@ -4570,7 +4575,7 @@ WOLFSSL_BIO_METHOD *wolfSSL_BIO_s_socket(void);
     \return SSL_SUCCESS On successfully setting the write buffer.
     \return SSL_FAILURE If an error case was encountered.
 
-    \param bio WOLFSSL_BIO structure to set fd.
+    \param b WOLFSSL_BIO structure to set write buffer size.
     \param size size of buffer to allocate.
 
     _Example_
@@ -4630,7 +4635,7 @@ int  wolfSSL_BIO_make_bio_pair(WOLFSSL_BIO *b1, WOLFSSL_BIO *b2);
     \return SSL_SUCCESS On successfully setting value.
     \return SSL_FAILURE If an error case was encountered.
 
-    \param bio WOLFSSL_BIO structure to set read request flag.
+    \param b WOLFSSL_BIO structure to set read request flag.
 
     _Example_
     \code
@@ -4644,7 +4649,7 @@ int  wolfSSL_BIO_make_bio_pair(WOLFSSL_BIO *b1, WOLFSSL_BIO *b2);
     \sa wolfSSL_BIO_new, wolfSSL_BIO_s_mem
     \sa wolfSSL_BIO_new, wolfSSL_BIO_free
 */
-int  wolfSSL_BIO_ctrl_reset_read_request(WOLFSSL_BIO *bio);
+int  wolfSSL_BIO_ctrl_reset_read_request(WOLFSSL_BIO *b);
 
 /*!
     \ingroup IO
@@ -4671,7 +4676,6 @@ int  wolfSSL_BIO_ctrl_reset_read_request(WOLFSSL_BIO *bio);
     \endcode
 
     \sa wolfSSL_BIO_new
-    \sa wolfSSL_BIO_nwrite0
 */
 int  wolfSSL_BIO_nread0(WOLFSSL_BIO *bio, char **buf);
 
@@ -4864,7 +4868,7 @@ long wolfSSL_BIO_set_mem_eof_return(WOLFSSL_BIO *bio, int v);
     value of 0).
 
     \param bio pointer to the WOLFSSL_BIO structure for getting memory pointer.
-    \param ptr structure that is currently a char*. Is set to point to
+    \param m pointer to WOLFSSL_BUF_MEM structure. Is set to point to
     bio’s memory.
 
     _Example_
@@ -4985,7 +4989,7 @@ WOLFSSL_X509_NAME*  wolfSSL_X509_get_subject_name(WOLFSSL_X509* cert);
     structure is returned.
     \return 0 returned if there is not a valid x509 structure passed in.
 
-    \param cert a pointer to a WOLFSSL_X509 structure.
+    \param x509 a pointer to a WOLFSSL_X509 structure.
 
     _Example_
     \code
@@ -5004,7 +5008,7 @@ WOLFSSL_X509_NAME*  wolfSSL_X509_get_subject_name(WOLFSSL_X509* cert);
     \sa wolfSSL_X509_get_issuer_name
     \sa wolfSSL_X509_get_isCA
 */
-int  wolfSSL_X509_get_isCA(WOLFSSL_X509* cert);
+int  wolfSSL_X509_get_isCA(WOLFSSL_X509* x509);
 
 /*!
     \ingroup CertsKeys
@@ -5046,7 +5050,7 @@ int wolfSSL_X509_NAME_get_text_by_NID(WOLFSSL_X509_NAME* name, int nid,
     \return int an integer value is returned which was retrieved from
     the x509 object.
 
-    \param cert a pointer to a WOLFSSL_X509 structure.
+    \param x509 a pointer to a WOLFSSL_X509 structure.
 
     _Example_
     \code
@@ -5068,7 +5072,7 @@ int wolfSSL_X509_NAME_get_text_by_NID(WOLFSSL_X509_NAME* name, int nid,
     \sa wolfSSL_X509_notAfter
     \sa wolfSSL_X509_free
 */
-int wolfSSL_X509_get_signature_type(WOLFSSL_X509* cert);
+int wolfSSL_X509_get_signature_type(WOLFSSL_X509* x509);
 
 /*!
     \brief This function frees a WOLFSSL_X509 structure.
@@ -5138,7 +5142,7 @@ int wolfSSL_X509_get_signature(WOLFSSL_X509* x509, unsigned char* buf, int* bufS
     \return SSL_SUCCESS If certificate is added successfully.
     \return SSL_FATAL_ERROR: If certificate is not added successfully.
 
-    \param str certificate store to add the certificate to.
+    \param store certificate store to add the certificate to.
     \param x509 certificate to add.
 
     _Example_
@@ -5712,7 +5716,7 @@ long wolfSSL_set_options(WOLFSSL *s, long op);
 
     \return val Returns the mask value stored in ssl.
 
-    \param ssl WOLFSSL structure to get options mask from.
+    \param s WOLFSSL structure to get options mask from.
 
     _Example_
     \code
@@ -5726,7 +5730,7 @@ long wolfSSL_set_options(WOLFSSL *s, long op);
     \sa wolfSSL_free
     \sa wolfSSL_set_options
 */
-long wolfSSL_get_options(const WOLFSSL *ssl);
+long wolfSSL_get_options(const WOLFSSL *s);
 
 /*!
     \ingroup Setup
@@ -5736,7 +5740,7 @@ long wolfSSL_get_options(const WOLFSSL *ssl);
     \return SSL_SUCCESS On successful setting argument.
     \return SSL_FAILURE If an NULL ssl passed in.
 
-    \param ssl WOLFSSL structure to set argument in.
+    \param s WOLFSSL structure to set argument in.
     \param arg argument to use.
 
     _Example_
@@ -5752,7 +5756,7 @@ long wolfSSL_get_options(const WOLFSSL *ssl);
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-long wolfSSL_set_tlsext_debug_arg(WOLFSSL *ssl, void *arg);
+long wolfSSL_set_tlsext_debug_arg(WOLFSSL *s, void *arg);
 
 /*!
     \ingroup openSSL
@@ -5950,7 +5954,7 @@ void wolfSSL_CTX_set_psk_client_callback(WOLFSSL_CTX* ctx,
     \sa wolfSSL_set_psk_server_callback
 */
 void wolfSSL_set_psk_client_callback(WOLFSSL* ssl,
-                                                    wc_psk_client_callback);
+                                                    wc_psk_client_callback cb);
 
 /*!
     \ingroup CertsKeys
@@ -6244,7 +6248,7 @@ void* wolfSSL_CTX_get_psk_callback_ctx(WOLFSSL_CTX* ctx);
 
     \sa none
 */
-int wolfSSL_CTX_allow_anon_cipher(WOLFSSL_CTX*);
+int wolfSSL_CTX_allow_anon_cipher(WOLFSSL_CTX* ctx);
 
 /*!
     \ingroup Setup
@@ -6368,7 +6372,7 @@ WOLFSSL_X509* wolfSSL_get_peer_certificate(WOLFSSL* ssl);
     \sa wolfSSL_want_write
     \sa wolfSSL_get_error
 */
-int wolfSSL_want_read(WOLFSSL*);
+int wolfSSL_want_read(WOLFSSL* ssl);
 
 /*!
     \ingroup Debug
@@ -6398,7 +6402,7 @@ int wolfSSL_want_read(WOLFSSL*);
     \sa wolfSSL_want_read
     \sa wolfSSL_get_error
 */
-int wolfSSL_want_write(WOLFSSL*);
+int wolfSSL_want_write(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -6431,6 +6435,37 @@ int wolfSSL_want_write(WOLFSSL*);
     \sa none
 */
 int wolfSSL_check_domain_name(WOLFSSL* ssl, const char* dn);
+
+/*!
+    \ingroup Setup
+
+    \brief Calling this function before wolfSSL_connect() or wolfSSL_accept()
+    adds an IP-address identity check against the peer certificate SAN
+    iPAddress entries.
+
+    \return SSL_SUCCESS upon success.
+    \return SSL_FAILURE if parameters are invalid or memory allocation fails.
+
+    \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param ipaddr NULL-terminated ASCII IP address string to verify against the
+    peer certificate.
+
+    _Example_
+    \code
+    int ret = 0;
+    WOLFSSL* ssl;
+    const char* ip = "127.0.0.1";
+    ...
+
+    ret = wolfSSL_check_ip_address(ssl, ip);
+    if (ret != SSL_SUCCESS) {
+       // failed to enable IP check
+    }
+    \endcode
+
+    \sa wolfSSL_check_domain_name
+*/
+int wolfSSL_check_ip_address(WOLFSSL* ssl, const char* ipaddr);
 
 /*!
     \ingroup TLS
@@ -6959,7 +6994,7 @@ WOLFSSL_ASN1_TIME* wolfSSL_X509_get_notAfter(WOLFSSL_X509*);
     \return 0 returned if the x509 structure is NULL.
     \return version the version stored in the x509 structure will be returned.
 
-    \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param x509 a pointer to a WOLFSSL_X509 structure.
 
     _Example_
     \code
@@ -6977,7 +7012,7 @@ WOLFSSL_ASN1_TIME* wolfSSL_X509_get_notAfter(WOLFSSL_X509*);
     \sa wolfSSL_X509_get_isCA
     \sa wolfSSL_get_peer_certificate
 */
-int wolfSSL_X509_version(WOLFSSL_X509*);
+int wolfSSL_X509_version(WOLFSSL_X509* x509);
 
 /*!
     \ingroup CertsKeys
@@ -7615,7 +7650,8 @@ int  wolfSSL_CTX_SetTmpDH_file(WOLFSSL_CTX* ctx, const char* f,
     \return BAD_FUNC_ARG returned if the WOLFSSL_CTX struct is NULL or if
     the keySz_bits is greater than 16,000 or not divisible by 8.
 
-    \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param ctx a pointer to a WOLFSSL_CTX structure, created using
+    wolfSSL_CTX_new().
     \param keySz_bits a word16 type used to set the minimum DH key size in bits.
     The WOLFSSL_CTX struct holds this information in the minDhKeySz member.
 
@@ -7632,7 +7668,7 @@ int  wolfSSL_CTX_SetTmpDH_file(WOLFSSL_CTX* ctx, const char* f,
     \sa wolfSSL_GetDhKey_Sz
     \sa wolfSSL_CTX_SetTMpDH_file
 */
-int wolfSSL_CTX_SetMinDhKey_Sz(WOLFSSL_CTX* ctx, word16);
+int wolfSSL_CTX_SetMinDhKey_Sz(WOLFSSL_CTX* ctx, word16 keySz_bits);
 
 /*!
     \ingroup CertsKeys
@@ -7673,7 +7709,8 @@ int wolfSSL_SetMinDhKey_Sz(WOLFSSL* ssl, word16 keySz_bits);
     \return BAD_FUNC_ARG returned if the WOLFSSL_CTX struct is NULL or if
     the keySz_bits is greater than 16,000 or not divisible by 8.
 
-    \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param ctx a pointer to a WOLFSSL_CTX structure, created using
+    wolfSSL_CTX_new().
     \param keySz_bits a word16 type used to set the maximum DH key size in bits.
     The WOLFSSL_CTX struct holds this information in the maxDhKeySz member.
 
@@ -7754,7 +7791,7 @@ int wolfSSL_SetMaxDhKey_Sz(WOLFSSL* ssl, word16 keySz_bits);
     \sa wolfSSL_SetTmpDH
     \sa wolfSSL_CTX_SetTmpDH_file
 */
-int wolfSSL_GetDhKey_Sz(WOLFSSL*);
+int wolfSSL_GetDhKey_Sz(WOLFSSL* ssl);
 
 /*!
     \ingroup CertsKeys
@@ -7844,7 +7881,7 @@ int wolfSSL_SetMinRsaKey_Sz(WOLFSSL* ssl, short keySz);
 
     \sa wolfSSL_SetMinEccKey_Sz
 */
-int wolfSSL_CTX_SetMinEccKey_Sz(WOLFSSL_CTX* ssl, short keySz);
+int wolfSSL_CTX_SetMinEccKey_Sz(WOLFSSL_CTX* ctx, short keySz);
 
 /*!
     \ingroup CertsKeys
@@ -7985,7 +8022,7 @@ int wolfSSL_writev(WOLFSSL* ssl, const struct iovec* iov,
     \sa LockMutex
     \sa UnlockMutex
 */
-int wolfSSL_CTX_UnloadCAs(WOLFSSL_CTX*);
+int wolfSSL_CTX_UnloadCAs(WOLFSSL_CTX* ctx);
 
 
 /*!
@@ -8049,7 +8086,7 @@ int wolfSSL_CTX_UnloadIntermediateCerts(WOLFSSL_CTX* ctx);
     \sa wolfSSL_CTX_trust_peer_buffer
     \sa wolfSSL_CTX_trust_peer_cert
 */
-int wolfSSL_CTX_Unload_trust_peers(WOLFSSL_CTX*);
+int wolfSSL_CTX_Unload_trust_peers(WOLFSSL_CTX* ctx);
 
 /*!
     \ingroup Setup
@@ -8581,7 +8618,7 @@ int wolfSSL_use_certificate_chain_buffer(WOLFSSL* ssl,
 
     \sa wolfSSL_CTX_UnloadCAs
 */
-int wolfSSL_UnloadCertsKeys(WOLFSSL*);
+int wolfSSL_UnloadCertsKeys(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -8606,7 +8643,7 @@ int wolfSSL_UnloadCertsKeys(WOLFSSL*);
     \sa wolfSSL_set_group_messages
     \sa wolfSSL_CTX_new
 */
-int wolfSSL_CTX_set_group_messages(WOLFSSL_CTX*);
+int wolfSSL_CTX_set_group_messages(WOLFSSL_CTX* ctx);
 
 /*!
     \ingroup Setup
@@ -8631,7 +8668,7 @@ int wolfSSL_CTX_set_group_messages(WOLFSSL_CTX*);
     \sa wolfSSL_CTX_set_group_messages
     \sa wolfSSL_new
 */
-int wolfSSL_set_group_messages(WOLFSSL*);
+int wolfSSL_set_group_messages(WOLFSSL* ssl);
 
 /*!
     \brief This function sets the fuzzer callback.
@@ -8695,8 +8732,8 @@ void wolfSSL_SetFuzzerCb(WOLFSSL* ssl, CallbackFuzzer cbf, void* fCtx);
     \sa wc_RNG_GenerateBlock
 */
 int   wolfSSL_DTLS_SetCookieSecret(WOLFSSL* ssl,
-                                               const unsigned char* secret,
-                                               unsigned int secretSz);
+                                               const byte* secret,
+                                               word32 secretSz);
 
 /*!
     \brief This function retrieves the random number.
@@ -8850,7 +8887,7 @@ int wolfSSL_GetOutputSize(WOLFSSL* ssl, int inSz);
 
     \sa wolfSSL_GetOutputSize
 */
-int wolfSSL_GetMaxOutputSize(WOLFSSL*);
+int wolfSSL_GetMaxOutputSize(WOLFSSL* ssl);
 
 /*!
     \ingroup Setup
@@ -8900,7 +8937,8 @@ int wolfSSL_SetVersion(WOLFSSL* ssl, int version);
 
     \return none No return.
 
-    \param No parameters.
+    \param ctx pointer to the SSL context, created with wolfSSL_CTX_new().
+    \param cb callback function to register for Mac/Encrypt.
 
     _Example_
     \code
@@ -8910,7 +8948,7 @@ int wolfSSL_SetVersion(WOLFSSL* ssl, int version);
     \sa wolfSSL_SetMacEncryptCtx
     \sa wolfSSL_GetMacEncryptCtx
 */
-void  wolfSSL_CTX_SetMacEncryptCb(WOLFSSL_CTX* ctx, CallbackMacEncrypti cb);
+void  wolfSSL_CTX_SetMacEncryptCb(WOLFSSL_CTX* ctx, CallbackMacEncrypt cb);
 
 /*!
     \brief Allows caller to set the Atomic User Record Processing Mac/Encrypt
@@ -8918,7 +8956,8 @@ void  wolfSSL_CTX_SetMacEncryptCb(WOLFSSL_CTX* ctx, CallbackMacEncrypti cb);
 
     \return none No return.
 
-    \param none No parameters.
+    \param ssl pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param ctx pointer to the user context to be stored.
 
     _Example_
     \code
@@ -8939,7 +8978,7 @@ void  wolfSSL_SetMacEncryptCtx(WOLFSSL* ssl, void *ctx);
     to the context.
     \return NULL will be returned for a blank context.
 
-    \param none No parameters.
+    \param ssl pointer to a WOLFSSL structure, created using wolfSSL_new().
 
     _Example_
     \code
@@ -8965,7 +9004,8 @@ void* wolfSSL_GetMacEncryptCtx(WOLFSSL* ssl);
 
     \return none No returns.
 
-    \param none No parameters.
+    \param ctx pointer to the SSL context, created with wolfSSL_CTX_new().
+    \param cb callback function to register for Decrypt/Verify.
 
     _Example_
     \code
@@ -8984,7 +9024,8 @@ void  wolfSSL_CTX_SetDecryptVerifyCb(WOLFSSL_CTX* ctx,
 
     \return none No returns.
 
-    \param none No parameters.
+    \param ssl pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param ctx pointer to the user context to be stored.
 
     _Example_
     \code
@@ -9005,7 +9046,7 @@ void  wolfSSL_SetDecryptVerifyCtx(WOLFSSL* ssl, void *ctx);
     context.
     \return NULL will be returned for a blank context.
 
-    \param none No parameters.
+    \param ssl pointer to a WOLFSSL structure, created using wolfSSL_new().
 
     _Example_
     \code
@@ -9127,7 +9168,7 @@ const unsigned char* wolfSSL_GetServerWriteIV(WOLFSSL*);
     \sa wolfSSL_GetClientWriteKey
     \sa wolfSSL_GetServerWriteKey
 */
-int                  wolfSSL_GetKeySize(WOLFSSL*);
+int                  wolfSSL_GetKeySize(WOLFSSL* ssl);
 
 /*!
     \ingroup CertsKeys
@@ -9157,7 +9198,7 @@ int                  wolfSSL_GetKeySize(WOLFSSL*);
     \sa wolfSSL_GetClientWriteIV
     \sa wolfSSL_GetServerWriteIV
 */
-int                  wolfSSL_GetIVSize(WOLFSSL*);
+int                  wolfSSL_GetIVSize(WOLFSSL* ssl);
 
 /*!
     \brief Allows retrieval of the side of this WOLFSSL connection.
@@ -9177,7 +9218,7 @@ int                  wolfSSL_GetIVSize(WOLFSSL*);
     \sa wolfSSL_GetClientWriteKey
     \sa wolfSSL_GetServerWriteKey
 */
-int                  wolfSSL_GetSide(WOLFSSL*);
+int                  wolfSSL_GetSide(WOLFSSL* ssl);
 
 /*!
     \brief Allows caller to determine if the negotiated protocol version
@@ -9196,7 +9237,7 @@ int                  wolfSSL_GetSide(WOLFSSL*);
 
     \sa wolfSSL_GetSide
 */
-int                  wolfSSL_IsTLSv1_1(WOLFSSL*);
+int                  wolfSSL_IsTLSv1_1(WOLFSSL* ssl);
 
 /*!
     \brief Allows caller to determine the negotiated bulk cipher algorithm
@@ -9217,7 +9258,7 @@ int                  wolfSSL_IsTLSv1_1(WOLFSSL*);
     \sa wolfSSL_GetCipherBlockSize
     \sa wolfSSL_GetKeySize
 */
-int                  wolfSSL_GetBulkCipher(WOLFSSL*);
+int                  wolfSSL_GetBulkCipher(WOLFSSL* ssl);
 
 /*!
     \brief Allows caller to determine the negotiated cipher block size from
@@ -9237,7 +9278,7 @@ int                  wolfSSL_GetBulkCipher(WOLFSSL*);
     \sa wolfSSL_GetBulkCipher
     \sa wolfSSL_GetKeySize
 */
-int                  wolfSSL_GetCipherBlockSize(WOLFSSL*);
+int                  wolfSSL_GetCipherBlockSize(WOLFSSL* ssl);
 
 /*!
     \brief Allows caller to determine the negotiated aead mac size from the
@@ -9257,7 +9298,7 @@ int                  wolfSSL_GetCipherBlockSize(WOLFSSL*);
     \sa wolfSSL_GetBulkCipher
     \sa wolfSSL_GetKeySize
 */
-int                  wolfSSL_GetAeadMacSize(WOLFSSL*);
+int                  wolfSSL_GetAeadMacSize(WOLFSSL* ssl);
 
 /*!
     \brief Allows caller to determine the negotiated (h)mac size from the
@@ -9277,7 +9318,7 @@ int                  wolfSSL_GetAeadMacSize(WOLFSSL*);
     \sa wolfSSL_GetBulkCipher
     \sa wolfSSL_GetHmacType
 */
-int                  wolfSSL_GetHmacSize(WOLFSSL*);
+int                  wolfSSL_GetHmacSize(WOLFSSL* ssl);
 
 /*!
     \brief Allows caller to determine the negotiated (h)mac type from the
@@ -9298,7 +9339,7 @@ int                  wolfSSL_GetHmacSize(WOLFSSL*);
     \sa wolfSSL_GetBulkCipher
     \sa wolfSSL_GetHmacSize
 */
-int                  wolfSSL_GetHmacType(WOLFSSL*);
+int                  wolfSSL_GetHmacType(WOLFSSL* ssl);
 
 /*!
     \brief Allows caller to determine the negotiated cipher type
@@ -9318,7 +9359,7 @@ int                  wolfSSL_GetHmacType(WOLFSSL*);
     \sa wolfSSL_GetBulkCipher
     \sa wolfSSL_GetHmacType
 */
-int                  wolfSSL_GetCipherType(WOLFSSL*);
+int                  wolfSSL_GetCipherType(WOLFSSL* ssl);
 
 /*!
     \brief Allows caller to set the Hmac Inner vector for message
@@ -9358,7 +9399,8 @@ int wolfSSL_SetTlsHmacInner(WOLFSSL* ssl, byte* inner,
 
     \return none No returns.
 
-    \param none No parameters.
+    \param ctx pointer to the SSL context, created with wolfSSL_CTX_new().
+    \param cb callback function to register for ECC signing.
 
     _Example_
     \code
@@ -9464,7 +9506,8 @@ void* wolfSSL_CTX_GetEccSignCtx(WOLFSSL_CTX* ctx);
 
     \return none No returns.
 
-    \param none No parameters.
+    \param ctx pointer to the SSL context, created with wolfSSL_CTX_new().
+    \param cb callback function to register for ECC verification.
 
     _Example_
     \code
@@ -9482,7 +9525,8 @@ void  wolfSSL_CTX_SetEccVerifyCb(WOLFSSL_CTX* ctx, CallbackEccVerify cb);
 
     \return none No returns.
 
-    \param none No parameters.
+    \param ssl pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param ctx pointer to the user context to be stored.
 
     _Example_
     \code
@@ -9502,7 +9546,7 @@ void  wolfSSL_SetEccVerifyCtx(WOLFSSL* ssl, void *ctx);
     context.
     \return NULL will be returned for a blank context.
 
-    \param none No parameters.
+    \param ssl pointer to a WOLFSSL structure, created using wolfSSL_new().
 
     _Example_
     \code
@@ -9528,7 +9572,8 @@ void* wolfSSL_GetEccVerifyCtx(WOLFSSL* ssl);
 
     \return none No returns.
 
-    \param none No parameters.
+    \param ctx pointer to the SSL context, created with wolfSSL_CTX_new().
+    \param cb callback function to register for RSA signing.
 
     _Example_
     \code
@@ -9546,7 +9591,8 @@ void  wolfSSL_CTX_SetRsaSignCb(WOLFSSL_CTX* ctx, CallbackRsaSign cb);
 
     \return none No Returns.
 
-    \param none No parameters.
+    \param ssl pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param ctx pointer to the user context to be stored.
 
     _Example_
     \code
@@ -9566,8 +9612,7 @@ void  wolfSSL_SetRsaSignCtx(WOLFSSL* ssl, void *ctx);
     context.
     \return NULL will be returned for a blank context.
 
-    \param none No parameters.
-    \param none No parameters.
+    \param ssl pointer to a WOLFSSL structure, created using wolfSSL_new().
 
     _Example_
     \code
@@ -9591,7 +9636,8 @@ void* wolfSSL_GetRsaSignCtx(WOLFSSL* ssl);
 
     \return none No returns.
 
-    \param none No parameters.
+    \param ctx pointer to the SSL context, created with wolfSSL_CTX_new().
+    \param cb callback function to register for RSA verification.
 
     \sa wolfSSL_SetRsaVerifyCtx
     \sa wolfSSL_GetRsaVerifyCtx
@@ -9604,7 +9650,8 @@ void  wolfSSL_CTX_SetRsaVerifyCb(WOLFSSL_CTX* ctx, CallbackRsaVerify cb);
 
     \return none No returns.
 
-    \param none No parameters.
+    \param ssl pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param ctx pointer to the user context to be stored.
 
     _Example_
     \code
@@ -9624,7 +9671,7 @@ void  wolfSSL_SetRsaVerifyCtx(WOLFSSL* ssl, void *ctx);
     the context.
     \return NULL will be returned for a blank context.
 
-    \param none No parameters.
+    \param ssl pointer to a WOLFSSL structure, created using wolfSSL_new().
 
     _Example_
     \code
@@ -9650,7 +9697,8 @@ void* wolfSSL_GetRsaVerifyCtx(WOLFSSL* ssl);
 
     \return none No returns.
 
-    \param none No parameters.
+    \param ctx pointer to the SSL context, created with wolfSSL_CTX_new().
+    \param cb callback function to register for RSA public encrypt.
 
     _Examples_
     \code
@@ -9668,7 +9716,8 @@ void  wolfSSL_CTX_SetRsaEncCb(WOLFSSL_CTX* ctx, CallbackRsaEnc cb);
 
     \return none No returns.
 
-    \param none No parameters.
+    \param ssl pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param ctx pointer to the user context to be stored.
 
     _Example_
     \code
@@ -9688,7 +9737,7 @@ void  wolfSSL_SetRsaEncCtx(WOLFSSL* ssl, void *ctx);
     to the context.
     \return NULL will be returned for a blank context.
 
-    \param none No parameters.
+    \param ssl pointer to a WOLFSSL structure, created using wolfSSL_new().
 
     _Example_
     \code
@@ -9713,7 +9762,8 @@ void* wolfSSL_GetRsaEncCtx(WOLFSSL* ssl);
 
     \return none No returns.
 
-    \param none No parameters.
+    \param ctx pointer to the SSL context, created with wolfSSL_CTX_new().
+    \param cb callback function to register for RSA private decrypt.
 
     _Example_
     \code
@@ -9731,7 +9781,8 @@ void  wolfSSL_CTX_SetRsaDecCb(WOLFSSL_CTX* ctx, CallbackRsaDec cb);
 
     \return none No returns.
 
-    \param none No parameters.
+    \param ssl pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param ctx pointer to the user context to be stored.
 
     _Example_
     \code
@@ -9751,7 +9802,7 @@ void  wolfSSL_SetRsaDecCtx(WOLFSSL* ssl, void *ctx);
     to the context.
     \return NULL will be returned for a blank context.
 
-    \param none No parameters.
+    \param ssl pointer to a WOLFSSL structure, created using wolfSSL_new().
 
     _Example_
     \code
@@ -9772,7 +9823,7 @@ void* wolfSSL_GetRsaDecCtx(WOLFSSL* ssl);
     \return none No return.
 
     \param ctx pointer to the SSL context, created with wolfSSL_CTX_new().
-    \param callback function to be registered as the CA callback for the
+    \param cb function to be registered as the CA callback for the
     wolfSSL context, ctx. The signature of this function must follow that
     as shown above in the Synopsis section.
 
@@ -9807,7 +9858,7 @@ void wolfSSL_CTX_SetCACb(WOLFSSL_CTX* ctx, CallbackCACache cb);
     WOLFSSL_CERT_MANAGER pointer.
     \return NULL will be returned for an error state.
 
-    \param none No parameters.
+    \param heap pointer to a heap hint for memory allocation.
 
     \sa wolfSSL_CertManagerFree
 */
@@ -9861,7 +9912,7 @@ WOLFSSL_CERT_MANAGER* wolfSSL_CertManagerNew(void);
 
     \sa wolfSSL_CertManagerNew
 */
-void wolfSSL_CertManagerFree(WOLFSSL_CERT_MANAGER*);
+void wolfSSL_CertManagerFree(WOLFSSL_CERT_MANAGER* cm);
 
 /*!
     \ingroup CertManager
@@ -9941,7 +9992,8 @@ int wolfSSL_CertManagerLoadCA(WOLFSSL_CERT_MANAGER* cm, const char* f,
     \sa cm_pick_method
 */
 int wolfSSL_CertManagerLoadCABuffer(WOLFSSL_CERT_MANAGER* cm,
-                                  const unsigned char* in, long sz, int format);
+                                  const unsigned char* buff, long sz,
+                                  int format);
 
 /*!
     \ingroup CertManager
@@ -10198,7 +10250,7 @@ void wolfSSL_CertManagerSetVerify(WOLFSSL_CERT_MANAGER* cm,
     \sa InitDecodedCert
 */
 int wolfSSL_CertManagerCheckCRL(WOLFSSL_CERT_MANAGER* cm,
-                                unsigned char* der, int sz);
+                                const unsigned char* der, int sz);
 
 /*!
     \ingroup CertManager
@@ -10273,7 +10325,7 @@ int wolfSSL_CertManagerEnableCRL(WOLFSSL_CERT_MANAGER* cm,
 
     \sa wolfSSL_CertManagerEnableCRL
 */
-int wolfSSL_CertManagerDisableCRL(WOLFSSL_CERT_MANAGER*);
+int wolfSSL_CertManagerDisableCRL(WOLFSSL_CERT_MANAGER* cm);
 
 /*!
     \ingroup CertManager
@@ -10533,7 +10585,7 @@ int wolfSSL_CertManagerFreeCRL(WOLFSSL_CERT_MANAGER* cm);
     \sa CheckCertOCSP
 */
 int wolfSSL_CertManagerCheckOCSP(WOLFSSL_CERT_MANAGER* cm,
-                                 unsigned char* der, int sz);
+                                const unsigned char* der, int sz);
 
 /*!
     \ingroup CertManager
@@ -10578,7 +10630,7 @@ int wolfSSL_CertManagerEnableOCSP(WOLFSSL_CERT_MANAGER* cm,
     crlEnabled member of the WOLFSSL_CERT_MANAGER structure.
     \return BAD_FUNC_ARG the WOLFSSL structure was NULL.
 
-    \param ssl - a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param cm a pointer to a WOLFSSL_CERT_MANAGER structure.
 
     _Example_
     \code
@@ -10594,7 +10646,7 @@ int wolfSSL_CertManagerEnableOCSP(WOLFSSL_CERT_MANAGER* cm,
 
     \sa wolfSSL_DisableCRL
 */
-int wolfSSL_CertManagerDisableOCSP(WOLFSSL_CERT_MANAGER*);
+int wolfSSL_CertManagerDisableOCSP(WOLFSSL_CERT_MANAGER* cm);
 
 /*!
     \ingroup CertManager
@@ -10871,7 +10923,7 @@ int wolfSSL_EnableOCSP(WOLFSSL* ssl, int options);
 
     \sa wolfSSL_CertManagerDisableOCSP
 */
-int wolfSSL_DisableOCSP(WOLFSSL*);
+int wolfSSL_DisableOCSP(WOLFSSL* ssl);
 
 /*!
     \brief This function sets the ocspOverrideURL member in the
@@ -10960,7 +11012,9 @@ int wolfSSL_SetOCSP_Cb(WOLFSSL* ssl, CbOCSPIO ioCb, CbOCSPRespFree respFreeCb,
     WOLFSSL_CERT_MANAGER fails to initialize correctly.
     \return NOT_COMPILED_IN wolfSSL was not compiled with the HAVE_CRL option.
 
-    \param ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param ctx a pointer to a WOLFSSL_CTX structure, created using
+    wolfSSL_CTX_new().
+    \param options option flags for enabling CRL.
 
     _Example_
     \code
@@ -11131,7 +11185,7 @@ int wolfSSL_CTX_EnableOCSP(WOLFSSL_CTX* ctx, int options);
     \sa wolfSSL_DisableOCSP
     \sa wolfSSL_CertManagerDisableOCSP
 */
-int wolfSSL_CTX_DisableOCSP(WOLFSSL_CTX*);
+int wolfSSL_CTX_DisableOCSP(WOLFSSL_CTX* ctx);
 
 /*!
     \brief This function manually sets the URL for OCSP to use. By default,
@@ -11226,7 +11280,7 @@ int wolfSSL_CTX_SetOCSP_Cb(WOLFSSL_CTX* ctx,
     \sa wolfSSL_CertManagerEnableOCSPStapling
     \sa InitOCSP
 */
-int wolfSSL_CTX_EnableOCSPStapling(WOLFSSL_CTX*);
+int wolfSSL_CTX_EnableOCSPStapling(WOLFSSL_CTX* ctx);
 
 /*!
     \ingroup CertsKeys
@@ -11252,7 +11306,7 @@ int wolfSSL_CTX_EnableOCSPStapling(WOLFSSL_CTX*);
 
     \sa wolfSSL_FreeArrays
 */
-void wolfSSL_KeepArrays(WOLFSSL*);
+void wolfSSL_KeepArrays(WOLFSSL* ssl);
 
 /*!
     \ingroup CertsKeys
@@ -11277,7 +11331,7 @@ void wolfSSL_KeepArrays(WOLFSSL*);
 
     \sa wolfSSL_KeepArrays
 */
-void wolfSSL_FreeArrays(WOLFSSL*);
+void wolfSSL_FreeArrays(WOLFSSL* ssl);
 
 /*!
     \brief This function enables the use of Server Name Indication in the SSL
@@ -12379,7 +12433,7 @@ int wolfSSL_send_SessionTicket(WOLFSSL* ssl);
     \sa wolfSSL_CTX_set_TicketEncCtx
 */
 int wolfSSL_CTX_set_TicketEncCb(WOLFSSL_CTX* ctx,
-                                            SessionTicketEncCb);
+                                            SessionTicketEncCb cb);
 
 /*!
     \brief This function sets the session ticket hint relayed to the client.
@@ -12399,7 +12453,7 @@ int wolfSSL_CTX_set_TicketEncCb(WOLFSSL_CTX* ctx,
 
     \sa wolfSSL_CTX_set_TicketEncCb
 */
-int wolfSSL_CTX_set_TicketHint(WOLFSSL_CTX* ctx, int);
+int wolfSSL_CTX_set_TicketHint(WOLFSSL_CTX* ctx, int hint);
 
 /*!
     \brief This function sets the session ticket encrypt user context for the
@@ -12420,7 +12474,7 @@ int wolfSSL_CTX_set_TicketHint(WOLFSSL_CTX* ctx, int);
 
     \sa wolfSSL_CTX_set_TicketEncCb
 */
-int wolfSSL_CTX_set_TicketEncCtx(WOLFSSL_CTX* ctx, void*);
+int wolfSSL_CTX_set_TicketEncCtx(WOLFSSL_CTX* ctx, void* userCtx);
 
 /*!
     \brief This function gets the session ticket encrypt user context for the
@@ -12649,7 +12703,10 @@ int wolfSSL_DeriveTlsKeys(unsigned char* key_data, word32 keyLen,
     \return SSL_FATAL_ERROR will be returned if the underlying SSL_connect()
     call encountered an error.
 
-    \param none No parameters.
+    \param ssl pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param hsCb HandShake Callback function pointer.
+    \param toCb Timeout Callback function pointer.
+    \param timeout timeout value to use with the Timeout Callback.
 
     _Example_
     \code
@@ -12681,7 +12738,10 @@ int wolfSSL_connect_ex(WOLFSSL* ssl, HandShakeCallBack hsCb,
     \return SSL_FATAL_ERROR will be returned if the underlying
     SSL_accept() call encountered an error.
 
-    \param none No parameters.
+    \param ssl pointer to a WOLFSSL structure, created using wolfSSL_new().
+    \param hsCb HandShake Callback function pointer.
+    \param toCb Timeout Callback function pointer.
+    \param timeout timeout value to use with the Timeout Callback.
 
     _Example_
     \code
@@ -12690,7 +12750,7 @@ int wolfSSL_connect_ex(WOLFSSL* ssl, HandShakeCallBack hsCb,
 
     \sa wolfSSL_connect_ex
 */
-int wolfSSL_accept_ex(WOLFSSL* ssl, HandShakeCallBacki hsCb,
+int wolfSSL_accept_ex(WOLFSSL* ssl, HandShakeCallBack hsCb,
                       TimeoutCallBack toCb, WOLFSSL_TIMEVAL timeout);
 
 /*!
@@ -12785,9 +12845,9 @@ int wolfSSL_check_private_key(const WOLFSSL* ssl);
     \return >= 0 If successful the extension index is returned.
     \return -1 If extension is not found or error is encountered.
 
-    \param x509 certificate to get parse through for extension.
+    \param x certificate to get parse through for extension.
     \param nid extension OID to be found.
-    \param lastPos start search from extension after lastPos.
+    \param lastpos start search from extension after lastpos.
                    Set to -1 initially.
 
     _Example_
@@ -12800,8 +12860,7 @@ int wolfSSL_check_private_key(const WOLFSSL* ssl);
     \endcode
 
 */
-int wolfSSL_X509_get_ext_by_NID(const WOLFSSL_X509* x509,
-                                             int nid, int lastPos);
+int wolfSSL_X509_get_ext_by_NID(const WOLFSSL_X509 *x, int nid, int lastpos);
 
 /*!
     \ingroup CertsKeys
@@ -12918,8 +12977,8 @@ int wolfSSL_use_certificate(WOLFSSL* ssl, WOLFSSL_X509* x509);
     \sa wolfSSL_new
     \sa wolfSSL_free
 */
-int wolfSSL_use_certificate_ASN1(WOLFSSL* ssl, unsigned char* der,
-                                                                     int derSz);
+int wolfSSL_use_certificate_ASN1(WOLFSSL* ssl, const unsigned char* der,
+                                 int derSz);
 
 /*!
     \ingroup CertsKeys
@@ -12980,7 +13039,7 @@ int wolfSSL_use_PrivateKey(WOLFSSL* ssl, WOLFSSL_EVP_PKEY* pkey);
     \sa wolfSSL_use_PrivateKey
 */
 int wolfSSL_use_PrivateKey_ASN1(int pri, WOLFSSL* ssl,
-                                            unsigned char* der, long derSz);
+                        const unsigned char* der, long derSz);
 
 /*!
     \ingroup CertsKeys
@@ -14071,7 +14130,7 @@ int  wolfSSL_request_certificate(WOLFSSL* ssl);
     \sa wolfSSL_UseKeyShare
     \sa wolfSSL_preferred_group
 */
-int  wolfSSL_CTX_set1_groups_list(WOLFSSL_CTX *ctx, char *list);
+int  wolfSSL_CTX_set1_groups_list(WOLFSSL_CTX *ctx, const char *list);
 
 /*!
     \ingroup Setup
@@ -14109,7 +14168,7 @@ int  wolfSSL_CTX_set1_groups_list(WOLFSSL_CTX *ctx, char *list);
     \sa wolfSSL_UseKeyShare
     \sa wolfSSL_preferred_group
 */
-int  wolfSSL_set1_groups_list(WOLFSSL *ssl, char *list);
+int  wolfSSL_set1_groups_list(WOLFSSL *ssl, const char *list);
 
 /*!
     \ingroup TLS
@@ -14284,7 +14343,7 @@ int  wolfSSL_set_groups(WOLFSSL* ssl, int* groups, int count);
     \sa wolfSSL_accept_TLSv13
     \sa wolfSSL_accept
 */
-int  wolfSSL_connect_TLSv13(WOLFSSL*);
+int  wolfSSL_connect_TLSv13(WOLFSSL* ssl);
 
 /*!
     \ingroup IO
@@ -14419,8 +14478,7 @@ int  wolfSSL_set_max_early_data(WOLFSSL* ssl, unsigned int sz);
     \ingroup IO
 
     \brief This function writes early data to the server on resumption.
-    Call this function instead of wolfSSL_connect() or wolfSSL_connect_TLSv13()
-    to connect to the server and send the data in the handshake.
+    Call this function before wolfSSL_connect() or wolfSSL_connect_TLSv13().
     This function is only used with clients.
 
     \param [in,out] ssl a pointer to a WOLFSSL structure, created using wolfSSL_new().
@@ -14431,8 +14489,10 @@ int  wolfSSL_set_max_early_data(WOLFSSL* ssl, unsigned int sz);
     \return BAD_FUNC_ARG if a pointer parameter is NULL, sz is less than 0 or
     not using TLSv1.3.
     \return SIDE_ERROR if called with a server.
+    \return BAD_STATE_E if invoked without a valid session or without a valid
+    PSK cb
     \return WOLFSSL_FATAL_ERROR if the connection is not made.
-    \return WOLFSSL_SUCCESS if successful.
+    \return the amount of early data written in bytes if successful.
 
     _Example_
     \code
@@ -14445,7 +14505,7 @@ int  wolfSSL_set_max_early_data(WOLFSSL* ssl, unsigned int sz);
     ...
 
     ret = wolfSSL_write_early_data(ssl, earlyData, sizeof(earlyData), &outSz);
-    if (ret != WOLFSSL_SUCCESS) {
+    if (ret < 0) {
         err = wolfSSL_get_error(ssl, ret);
         printf(“error = %d, %s\n”, err, wolfSSL_ERR_error_string(err, buffer));
         goto err_label;
@@ -15023,8 +15083,8 @@ int wolfSSL_get_ephemeral_key(WOLFSSL* ssl, int keyAlgo,
  \param padding   Padding to use. Only RSA_PKCS1_PSS_PADDING and
                   RSA_PKCS1_PADDING are currently supported for signing.
  */
-int wolfSSL_RSA_sign_generic_padding(int type, const unsigned char* m,
-                               unsigned int mLen, unsigned char* sigRet,
+int wolfSSL_RSA_sign_generic_padding(int hashAlg, const unsigned char* hash,
+                               unsigned int hLen, unsigned char* sigRet,
                                unsigned int* sigLen, WOLFSSL_RSA* rsa,
                                int flag, int padding);
 /*!
@@ -15061,13 +15121,26 @@ unsigned int wolfSSL_SESSION_get_max_early_data(const WOLFSSL_SESSION *s);
            - wolfSSL_SESSION_get_ex_new_index
            - wolfSSL_X509_get_ex_new_index
 
-    \param [in] All input parameters are ignored. The callback functions are not
-                supported with wolfSSL.
+    \param [in] class_index Identifier for the object class the external data
+                 index applies to. Ignored by wolfSSL.
+    \param [in] argl Optional long argument passed through for compatibility.
+                 Ignored by wolfSSL.
+    \param [in] argp Optional pointer argument passed through for compatibility.
+                 Ignored by wolfSSL.
+    \param [in] new_func Pointer to an external data constructor callback.
+                 Ignored by wolfSSL.
+    \param [in] dup_func Pointer to an external data duplicate callback.
+                 Ignored by wolfSSL.
+    \param [in] free_func Pointer to an external data destructor callback.
+                 Ignored by wolfSSL.
 
     \return The new index value to be used with the external data API for this
             object class.
- */
-int wolfSSL_CRYPTO_get_ex_new_index(int, void*, void*, void*, void*);
+*/
+int wolfSSL_CRYPTO_get_ex_new_index(int class_index, long argl, void *argp,
+                                    WOLFSSL_CRYPTO_EX_new* new_func,
+                                    WOLFSSL_CRYPTO_EX_dup* dup_func,
+                                    WOLFSSL_CRYPTO_EX_free* free_func);
 
 /*!
  \ingroup Setup
@@ -15826,11 +15899,12 @@ void wolfSSL_CTX_set_cert_cb(WOLFSSL_CTX* ctx,
     ciphersuites and signature algorithms.
 
     \param [in] ssl The WOLFSSL object to extract the lists from.
-    \param [out] optional suites Raw and unfiltered list of client ciphersuites
-    \param [out] optional suiteSz Size of suites in bytes
-    \param [out] optional hashSigAlgo Raw and unfiltered list of client
-                          signature algorithms
-    \param [out] optional hashSigAlgoSz Size of hashSigAlgo in bytes
+    \param [out] suites Raw and unfiltered list of client ciphersuites.
+                        May be NULL if no suites are available.
+    \param [out] suiteSz Size of suites in bytes.
+    \param [out] hashSigAlgo Raw and unfiltered list of client signature
+                        algorithms. May be NULL if not provided.
+    \param [out] hashSigAlgoSz Size of hashSigAlgo in bytes.
     \return WOLFSSL_SUCCESS when suites available
     \return WOLFSSL_FAILURE when suites not available
 
@@ -15923,3 +15997,118 @@ WOLFSSL_CIPHERSUITE_INFO wolfSSL_get_ciphersuite_info(byte first,
 */
 int wolfSSL_get_sigalg_info(byte first, byte second,
         int* hashAlgo, int* sigAlgo);
+
+/*!
+    \brief This function will set the password callback in the provided CTX.
+    This callback is used when loading an encrypted cert or key which requires
+    a password.
+
+    \param ctx a pointer to a WOLFSSL_CTX structure, created with
+    wolfSSL_CTX_new().
+    \param cb a function pointer to (*wc_pem_password_cb) that is set to the
+    passwd_cb member of the WOLFSSL_CTX.
+
+    _Example_
+    \code
+    WOLFSSL_CTX* ctx = wolfSSL_CTX_new( protocol method );
+    int PasswordCallBack(char* passwd, int sz, int rw, void* userdata) {
+
+    }
+    …
+    wolfSSL_CTX_set_default_passwd_cb(ctx, PasswordCallBack);
+    \endcode
+
+    \sa wolfSSL_CTX_set_default_passwd_cb_userdata
+*/
+void wolfSSL_CTX_set_default_passwd_cb(WOLFSSL_CTX* ctx,
+                                        wc_pem_password_cb* cb);
+
+/*!
+    \brief This function will set the userdata argument to the passwd_userdata
+    member of the WOLFSSL_CTX structure.
+    This member is passed into the CTX's password callback when called.
+
+    \param ctx a pointer to a WOLFSSL_CTX structure, created with
+    wolfSSL_CTX_new().
+    \param userdata a pointer to userdata which is passed into the
+    password callback.
+
+    _Example_
+    \code
+    WOLFSSL_CTX* ctx = wolfSSL_CTX_new( protocol method );
+    int data;
+    …
+    wolfSSL_CTX_set_default_passwd_cb_userdata(ctx, (void*)&data);
+    \endcode
+
+    \sa wolfSSL_CTX_set_default_passwd_cb
+*/
+void wolfSSL_CTX_set_default_passwd_cb_userdata(WOLFSSL_CTX* ctx,
+                                                   void* userdata);
+
+/*!
+    \ingroup Setup
+
+    \brief Gets the state of the secure renegotiation (SCR) check requirement.
+
+    This function returns whether the client requires the server to acknowledge
+    the secure renegotiation extension and enable secure renegotiation when
+    sending it from the client. When enabled, the client will generate a fatal
+    handshake_failure alert if the server does not acknowledge the extension
+    in the ServerHello message, as required by RFC 9325.
+
+    \return 1 if the SCR check is enabled.
+    \return 0 if the SCR check is disabled.
+    \return BAD_FUNC_ARG if ssl is NULL.
+
+    \param ssl Pointer to the WOLFSSL structure, created with wolfSSL_new().
+
+    _Example_
+    \code
+    WOLFSSL* ssl;
+    int enabled;
+
+    ssl = wolfSSL_new(ctx);
+    enabled = wolfSSL_get_scr_check_enabled(ssl);
+    if (enabled) {
+        // SCR check is enabled
+    }
+    \endcode
+
+    \sa wolfSSL_set_scr_check_enabled
+*/
+int wolfSSL_get_scr_check_enabled(const WOLFSSL* ssl);
+
+/*!
+    \ingroup Setup
+
+    \brief Sets the state of the secure renegotiation (SCR) check requirement.
+
+    This function enables or disables the requirement for the server to
+    acknowledge the secure renegotiation extension and enable secure
+    renegotiation when sending it from the client. When enabled, the client
+    will generate a fatal handshake_failure alert if the server does not
+    acknowledge the extension in the ServerHello message, as required by
+    RFC 9325.
+
+    \return WOLFSSL_SUCCESS on success.
+    \return BAD_FUNC_ARG if ssl is NULL.
+
+    \param ssl Pointer to the WOLFSSL structure, created with wolfSSL_new().
+    \param enabled Non-zero to enable the SCR check, zero to disable it.
+
+    _Example_
+    \code
+    WOLFSSL* ssl;
+    int ret;
+
+    ssl = wolfSSL_new(ctx);
+    ret = wolfSSL_set_scr_check_enabled(ssl, 1);
+    if (ret != WOLFSSL_SUCCESS) {
+        // Error setting SCR check
+    }
+    \endcode
+
+    \sa wolfSSL_get_scr_check_enabled
+*/
+int wolfSSL_set_scr_check_enabled(WOLFSSL* ssl, byte enabled);

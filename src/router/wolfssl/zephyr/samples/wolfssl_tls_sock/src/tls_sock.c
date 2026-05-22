@@ -1,6 +1,6 @@
 /* tls_sock.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -34,6 +34,8 @@
 #define BUFFER_SIZE           2048
 #define STATIC_MEM_SIZE       (256*1024)
 #define MAX_SEND_SIZE         256
+
+K_SEM_DEFINE(server_ready, 0, 1);
 
 #ifdef WOLFSSL_STATIC_MEMORY
     static WOLFSSL_HEAP_HINT* HEAP_HINT_SERVER;
@@ -323,6 +325,7 @@ int wolfssl_server_accept_tcp(WOLFSSL* ssl, SOCKET_T* fd, SOCKET_T* acceptfd)
         *fd = sockfd;
         printf("Server Listen\n");
         listen(sockfd, 5);
+        k_sem_give(&server_ready);
         if (WOLFSSL_SOCKET_IS_INVALID(sockfd))
             ret = -1;
     }
@@ -512,7 +515,7 @@ int main()
         return -1;
     }
 
-    k_sleep(Z_TIMEOUT_TICKS(100));
+    k_sem_take(&server_ready, K_FOREVER);
     client_thread();
     /* Join is not working in qemu when the thread is still active. Wait for it
      * to shut down to join it. */

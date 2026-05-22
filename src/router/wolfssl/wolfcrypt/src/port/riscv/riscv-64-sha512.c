@@ -1,6 +1,6 @@
 /* riscv-sha512.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -22,7 +22,7 @@
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #ifdef WOLFSSL_RISCV_ASM
-#if !defined(NO_SHA512) || defined(WOLFSSL_SHA384)
+#if defined(WOLFSSL_SHA512) || defined(WOLFSSL_SHA384)
 
 #if FIPS_VERSION3_LT(6,0,0) && defined(HAVE_FIPS)
     #undef HAVE_FIPS
@@ -984,7 +984,7 @@ static WC_INLINE void Sha512Final(wc_Sha512* sha512, byte* hash, int hashLen)
 }
 
 
-#ifndef NO_SHA512
+#ifdef WOLFSSL_SHA512
 
 /* Initialize SHA-512 object for hashing.
  *
@@ -1140,6 +1140,7 @@ int wc_Sha512GetHash(wc_Sha512* sha512, byte* hash)
     }
     else {
         wc_Sha512 tmpSha512;
+        XMEMSET(&tmpSha512, 0, sizeof(tmpSha512));
         /* Create a copy of the hash to finalize. */
         ret = wc_Sha512Copy(sha512, &tmpSha512);
         if (ret == 0) {
@@ -1357,6 +1358,7 @@ int wc_Sha512_224GetHash(wc_Sha512* sha512, byte* hash)
     }
     else {
         wc_Sha512 tmpSha512;
+        XMEMSET(&tmpSha512, 0, sizeof(tmpSha512));
         /* Create a copy of the hash to finalize. */
         ret = wc_Sha512Copy(sha512, &tmpSha512);
         if (ret == 0) {
@@ -1456,6 +1458,7 @@ int wc_Sha512_256GetHash(wc_Sha512* sha512, byte* hash)
     }
     else {
         wc_Sha512 tmpSha512;
+        XMEMSET(&tmpSha512, 0, sizeof(tmpSha512));
         /* Create a copy of the hash to finalize. */
         ret = wc_Sha512Copy(sha512, &tmpSha512);
         if (ret == 0) {
@@ -1494,7 +1497,7 @@ int wc_Sha512_256Transform(wc_Sha512* sha512, const unsigned char* data)
 
 #endif /* !HAVE_FIPS && !HAVE_SELFTEST */
 
-#endif /* !NO_SHA512 */
+#endif /* WOLFSSL_SHA512 */
 
 
 #ifdef WOLFSSL_SHA384
@@ -1671,6 +1674,7 @@ int wc_Sha384GetHash(wc_Sha384* sha384, byte* hash)
     }
     else {
         wc_Sha384 tmpSha384;
+        XMEMSET(&tmpSha384, 0, sizeof(tmpSha384));
         /* Create a copy of the hash to finalize. */
         ret = wc_Sha384Copy(sha384, &tmpSha384);
         if (ret == 0) {
@@ -1737,5 +1741,5 @@ int wc_Sha384Copy(wc_Sha384* src, wc_Sha384* dst)
 
 #endif /* WOLFSSL_SHA384 */
 
-#endif /* !NO_SHA512 || WOLFSSL_SHA384 */
+#endif /* WOLFSSL_SHA512 || WOLFSSL_SHA384 */
 #endif /* WOLFSSL_RISCV_ASM */

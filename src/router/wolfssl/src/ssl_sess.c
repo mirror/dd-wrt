@@ -1,6 +1,6 @@
 /* ssl_sess.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -483,6 +483,38 @@ int wolfSSL_memsave_session_cache(void* mem, int sz)
 }
 
 
+#if !defined(SESSION_CACHE_DYNAMIC_MEM) && \
+    (defined(HAVE_SESSION_TICKET) || \
+    (defined(SESSION_CERTS) && defined(OPENSSL_EXTRA)))
+static void SessionSanityPointerSet(SessionRow* row)
+{
+    int j;
+
+    /* Reset pointers to safe values after raw copy */
+    for (j = 0; j < SESSIONS_PER_ROW; j++) {
+        WOLFSSL_SESSION* s = &row->Sessions[j];
+#ifdef HAVE_SESSION_TICKET
+        s->ticket = s->staticTicket;
+        s->ticketLenAlloc = 0;
+        if (s->ticketLen > SESSION_TICKET_LEN) {
+            s->ticketLen = SESSION_TICKET_LEN;
+        }
+#endif
+#if defined(WOLFSSL_TLS13) && defined(HAVE_SESSION_TICKET) &&                 \
+    defined(WOLFSSL_TICKET_NONCE_MALLOC) &&                                    \
+    (!defined(HAVE_FIPS) || (defined(FIPS_VERSION_GE) && FIPS_VERSION_GE(5,3)))
+        s->ticketNonce.data = s->ticketNonce.dataStatic;
+        if (s->ticketNonce.len > MAX_TICKET_NONCE_STATIC_SZ) {
+            s->ticketNonce.len = MAX_TICKET_NONCE_STATIC_SZ;
+        }
+#endif
+#if defined(SESSION_CERTS) && defined(OPENSSL_EXTRA)
+        s->peer = NULL;
+#endif
+    }
+}
+#endif
+
 /* Restore the persistent session cache from memory */
 int wolfSSL_memrestore_session_cache(const void* mem, int sz)
 {
@@ -522,6 +554,11 @@ int wolfSSL_memrestore_session_cache(const void* mem, int sz)
     #endif
 
         XMEMCPY(&SessionCache[i], row++, SIZEOF_SESSION_ROW);
+    #if !defined(SESSION_CACHE_DYNAMIC_MEM) && \
+        (defined(HAVE_SESSION_TICKET) || \
+        (defined(SESSION_CERTS) && defined(OPENSSL_EXTRA)))
+        SessionSanityPointerSet(&SessionCache[i]);
+    #endif
     #ifdef ENABLE_SESSION_CACHE_ROW_LOCK
         SESSION_ROW_UNLOCK(&SessionCache[i]);
     #endif
@@ -681,6 +718,11 @@ int wolfSSL_restore_session_cache(const char *fname)
     #endif
 
         ret = (int)XFREAD(&SessionCache[i], SIZEOF_SESSION_ROW, 1, file);
+    #if !defined(SESSION_CACHE_DYNAMIC_MEM) && \
+        (defined(HAVE_SESSION_TICKET) || \
+        (defined(SESSION_CERTS) && defined(OPENSSL_EXTRA)))
+        SessionSanityPointerSet(&SessionCache[i]);
+    #endif
     #ifdef ENABLE_SESSION_CACHE_ROW_LOCK
         SESSION_ROW_UNLOCK(&SessionCache[i]);
     #endif
@@ -968,7 +1010,8 @@ WOLFSSL_SESSION* wolfSSL_GetSessionClient(WOLFSSL* ssl, const byte* id, int len)
     }
 
     /* start from most recently used */
-    count = (int)min((word32)ClientCache[row].totalCount, CLIENT_SESSIONS_PER_ROW);
+    count = (int)min((word32)ClientCache[row].totalCount,
+        CLIENT_SESSIONS_PER_ROW);
     idx = ClientCache[row].nextIdx - 1;
     if (idx < 0 || idx >= CLIENT_SESSIONS_PER_ROW) {
         /* if back to front, the previous was end */
@@ -997,7 +1040,8 @@ WOLFSSL_SESSION* wolfSSL_GetSessionClient(WOLFSSL* ssl, const byte* id, int len)
 #else
         current = &sessRow->Sessions[clSess[idx].serverIdx];
 #endif
-        if (current && XMEMCMP(current->serverID, id, (unsigned long)len) == 0) {
+        if (current && XMEMCMP(current->serverID, id,
+                                                     (unsigned long)len) == 0) {
             WOLFSSL_MSG("Found a serverid match for client");
             if (LowResTimer() < (current->bornOn + current->timeout)) {
                 WOLFSSL_MSG("Session valid");
@@ -1140,10 +1184,8 @@ static int CheckSessionMatch(const WOLFSSL* ssl, const WOLFSSL_SESSION* sess)
            XMEMCMP(ssl->sessionCtx, sess->sessionCtx, sess->sessionCtxSz) != 0))
         return 0;
 #endif
-#if defined(WOLFSSL_TLS13) && defined(HAVE_SESSION_TICKET)
     if (IsAtLeastTLSv1_3(ssl->version) != IsAtLeastTLSv1_3(sess->version))
         return 0;
-#endif
     return 1;
 }
 
@@ -1265,8 +1307,8 @@ int wolfSSL_GetSessionFromCache(WOLFSSL* ssl, WOLFSSL_SESSION* output)
 #endif
         if (output->ticketLenAlloc)
             XFREE(output->ticket, output->heap, DYNAMIC_TYPE_SESSION_TICK);
-        output->ticket = tmpTicket; /* cppcheck-suppress autoVariables
-                                     */
+        /* cppcheck-suppress autoVariables */
+        output->ticket = tmpTicket;
         output->ticketLenAlloc = PREALLOC_SESSION_TICKET_LEN;
         output->ticketLen = 0;
         tmpBufSet = 1;
@@ -1394,7 +1436,8 @@ int wolfSSL_GetSessionFromCache(WOLFSSL* ssl, WOLFSSL_SESSION* output)
             output->ticketLen = 0;
         }
         if (error == WOLFSSL_SUCCESS) {
-            XMEMCPY(output->ticket, tmpTicket, output->ticketLen); /* cppcheck-suppress uninitvar */
+            /* cppcheck-suppress uninitvar */
+            XMEMCPY(output->ticket, tmpTicket, output->ticketLen);
         }
     }
     WC_FREE_VAR_EX(tmpTicket, output->heap, DYNAMIC_TYPE_TMP_BUFFER);
@@ -1550,12 +1593,11 @@ int wolfSSL_SetSession(WOLFSSL* ssl, WOLFSSL_SESSION* session)
     ssl->options.resuming = 1;
     ssl->options.haveEMS = (ssl->session->haveEMS) ? 1 : 0;
 
-#if defined(SESSION_CERTS) || (defined(WOLFSSL_TLS13) && \
-                           defined(HAVE_SESSION_TICKET))
-    ssl->version              = ssl->session->version;
-    if (IsAtLeastTLSv1_3(ssl->version))
-        ssl->options.tls1_3 = 1;
-#endif
+    if (ssl->session->version.major != 0) {
+        ssl->version              = ssl->session->version;
+        if (IsAtLeastTLSv1_3(ssl->version))
+            ssl->options.tls1_3 = 1;
+    }
 #if defined(SESSION_CERTS) || !defined(NO_RESUME_SUITE_CHECK) || \
                     (defined(WOLFSSL_TLS13) && defined(HAVE_SESSION_TICKET))
     ssl->options.cipherSuite0 = ssl->session->cipherSuite0;
@@ -1839,8 +1881,9 @@ int AddSessionToCache(WOLFSSL_CTX* ctx, WOLFSSL_SESSION* addSession,
     if (SESSION_ROW_WR_LOCK(sessRow) != 0) {
     #ifdef HAVE_SESSION_TICKET
         XFREE(ticBuff, NULL, DYNAMIC_TYPE_SESSION_TICK);
-    #if defined(WOLFSSL_TLS13) && defined(WOLFSSL_TICKET_NONCE_MALLOC) &&          \
-    (!defined(HAVE_FIPS) || (defined(FIPS_VERSION_GE) && FIPS_VERSION_GE(5,3)))
+    #if defined(WOLFSSL_TLS13) && defined(WOLFSSL_TICKET_NONCE_MALLOC) && \
+        (!defined(HAVE_FIPS) || (defined(FIPS_VERSION_GE) && \
+                                 FIPS_VERSION_GE(5,3)))
         XFREE(preallocNonce, addSession->heap, DYNAMIC_TYPE_SESSION_TICK);
     #endif
     #endif
@@ -1879,8 +1922,9 @@ int AddSessionToCache(WOLFSSL_CTX* ctx, WOLFSSL_SESSION* addSession,
         if (cacheSession == NULL) {
         #ifdef HAVE_SESSION_TICKET
             XFREE(ticBuff, NULL, DYNAMIC_TYPE_SESSION_TICK);
-        #if defined(WOLFSSL_TLS13) && defined(WOLFSSL_TICKET_NONCE_MALLOC) &&          \
-        (!defined(HAVE_FIPS) || (defined(FIPS_VERSION_GE) && FIPS_VERSION_GE(5,3)))
+        #if defined(WOLFSSL_TLS13) && defined(WOLFSSL_TICKET_NONCE_MALLOC) && \
+            (!defined(HAVE_FIPS) || (defined(FIPS_VERSION_GE) && \
+                                     FIPS_VERSION_GE(5,3)))
             XFREE(preallocNonce, addSession->heap, DYNAMIC_TYPE_SESSION_TICK);
         #endif
         #endif
@@ -2028,8 +2072,8 @@ int AddSessionToCache(WOLFSSL_CTX* ctx, WOLFSSL_SESSION* addSession,
 
 #ifndef NO_CLIENT_CACHE
     if (ret == 0 && clientCacheEntry != NULL) {
-        ClientSession* clientCache = AddSessionToClientCache(side, row, (int)idx,
-                addSession->serverID, addSession->idLen, id, useTicket);
+        ClientSession* clientCache = AddSessionToClientCache(side, row,
+            (int)idx, addSession->serverID, addSession->idLen, id, useTicket);
         if (clientCache != NULL)
             *clientCacheEntry = clientCache;
     }
@@ -2596,11 +2640,8 @@ int wolfSSL_i2d_SSL_SESSION(WOLFSSL_SESSION* sess, unsigned char** p)
     for (i = 0; i < sess->chain.count; i++)
         size += OPAQUE16_LEN + sess->chain.certs[i].length;
 #endif
-#if defined(SESSION_CERTS) || (defined(WOLFSSL_TLS13) && \
-                               defined(HAVE_SESSION_TICKET))
     /* Protocol version */
     size += OPAQUE16_LEN;
-#endif
 #if defined(SESSION_CERTS) || !defined(NO_RESUME_SUITE_CHECK) || \
                         (defined(WOLFSSL_TLS13) && defined(HAVE_SESSION_TICKET))
     /* cipher suite */
@@ -2676,11 +2717,8 @@ int wolfSSL_i2d_SSL_SESSION(WOLFSSL_SESSION* sess, unsigned char** p)
             idx += sess->chain.certs[i].length;
         }
 #endif
-#if defined(SESSION_CERTS) || (defined(WOLFSSL_TLS13) && \
-                               defined(HAVE_SESSION_TICKET))
         data[idx++] = sess->version.major;
         data[idx++] = sess->version.minor;
-#endif
 #if defined(SESSION_CERTS) || !defined(NO_RESUME_SUITE_CHECK) || \
                         (defined(WOLFSSL_TLS13) && defined(HAVE_SESSION_TICKET))
         data[idx++] = sess->cipherSuite0;
@@ -2790,6 +2828,10 @@ WOLFSSL_SESSION* wolfSSL_d2i_SSL_SESSION(WOLFSSL_SESSION** sess,
     ato32(data + idx, &s->bornOn); idx += OPAQUE32_LEN;
     ato32(data + idx, &s->timeout); idx += OPAQUE32_LEN;
     s->sessionIDSz = data[idx++];
+    if (s->sessionIDSz > ID_LEN) {
+        ret = BUFFER_ERROR;
+        goto end;
+    }
 
     /* sessionID | secret | haveEMS | haveAltSessionID */
     if (i - idx < s->sessionIDSz + SECRET_LEN + OPAQUE8_LEN + OPAQUE8_LEN) {
@@ -2822,12 +2864,20 @@ WOLFSSL_SESSION* wolfSSL_d2i_SSL_SESSION(WOLFSSL_SESSION** sess,
         goto end;
     }
     s->chain.count = data[idx++];
+    if (s->chain.count > MAX_CHAIN_DEPTH) {
+        ret = BUFFER_ERROR;
+        goto end;
+    }
     for (j = 0; j < s->chain.count; j++) {
         if (i - idx < OPAQUE16_LEN) {
             ret = BUFFER_ERROR;
             goto end;
         }
         ato16(data + idx, &length); idx += OPAQUE16_LEN;
+        if (length > MAX_X509_SIZE) {
+            ret = BUFFER_ERROR;
+            goto end;
+        }
         s->chain.certs[j].length = length;
         if (i - idx < length) {
             ret = BUFFER_ERROR;
@@ -2837,8 +2887,6 @@ WOLFSSL_SESSION* wolfSSL_d2i_SSL_SESSION(WOLFSSL_SESSION** sess,
         idx += length;
     }
 #endif
-#if defined(SESSION_CERTS) || (defined(WOLFSSL_TLS13) && \
-                               defined(HAVE_SESSION_TICKET))
     /* Protocol Version */
     if (i - idx < OPAQUE16_LEN) {
         ret = BUFFER_ERROR;
@@ -2846,7 +2894,6 @@ WOLFSSL_SESSION* wolfSSL_d2i_SSL_SESSION(WOLFSSL_SESSION** sess,
     }
     s->version.major = data[idx++];
     s->version.minor = data[idx++];
-#endif
 #if defined(SESSION_CERTS) || !defined(NO_RESUME_SUITE_CHECK) || \
                         (defined(WOLFSSL_TLS13) && defined(HAVE_SESSION_TICKET))
     /* Cipher suite */
@@ -2864,6 +2911,10 @@ WOLFSSL_SESSION* wolfSSL_d2i_SSL_SESSION(WOLFSSL_SESSION** sess,
         goto end;
     }
     ato16(data + idx, &s->idLen); idx += OPAQUE16_LEN;
+    if (s->idLen > SERVER_ID_LEN) {
+        ret = BUFFER_ERROR;
+        goto end;
+    }
 
     /* ServerID */
     if (i - idx < s->idLen) {
@@ -2879,6 +2930,10 @@ WOLFSSL_SESSION* wolfSSL_d2i_SSL_SESSION(WOLFSSL_SESSION** sess,
         goto end;
     }
     s->sessionCtxSz = data[idx++];
+    if (s->sessionCtxSz > ID_LEN) {
+        ret = BUFFER_ERROR;
+        goto end;
+    }
 
     /* app session context ID */
     if (i - idx < s->sessionCtxSz) {
@@ -2905,17 +2960,21 @@ WOLFSSL_SESSION* wolfSSL_d2i_SSL_SESSION(WOLFSSL_SESSION** sess,
 #endif
 #if defined(HAVE_SESSION_TICKET) || !defined(NO_PSK)
 #ifdef WOLFSSL_TLS13
+
+#ifdef WOLFSSL_32BIT_MILLI_TIME
+    if (i - idx < OPAQUE32_LEN) {
+        ret = BUFFER_ERROR;
+        goto end;
+    }
+    ato32(data + idx, &s->ticketSeen);
+    idx += OPAQUE32_LEN;
+#else
     if (i - idx < (OPAQUE32_LEN * 2)) {
         ret = BUFFER_ERROR;
         goto end;
     }
-#ifdef WOLFSSL_32BIT_MILLI_TIME
-    ato32(data + idx, &s->ticketSeen);
-    idx += OPAQUE32_LEN;
-#else
     {
         word32 seenHi, seenLo;
-
         ato32(data + idx, &seenHi);
         idx += OPAQUE32_LEN;
         ato32(data + idx, &seenLo);
@@ -2923,6 +2982,11 @@ WOLFSSL_SESSION* wolfSSL_d2i_SSL_SESSION(WOLFSSL_SESSION** sess,
         s->ticketSeen = ((sword64)seenHi << 32) + seenLo;
     }
 #endif
+
+    if (i - idx < OPAQUE32_LEN) {
+        ret = BUFFER_ERROR;
+        goto end;
+    }
     ato32(data + idx, &s->ticketAdd);
     idx += OPAQUE32_LEN;
     if (i - idx < OPAQUE8_LEN) {
@@ -3142,10 +3206,8 @@ static void SESSION_ex_data_cache_update(WOLFSSL_SESSION* session, int idx,
         if (cacheSession && cacheSession->sessionIDSz == ID_LEN &&
                 XMEMCMP(id, cacheSession->sessionID, ID_LEN) == 0
                 && session->side == cacheSession->side
-        #if defined(WOLFSSL_TLS13) && defined(HAVE_SESSION_TICKET)
                 && (IsAtLeastTLSv1_3(session->version) ==
                     IsAtLeastTLSv1_3(cacheSession->version))
-        #endif
             ) {
             if (get) {
                 if (getRet) {
@@ -3570,10 +3632,7 @@ void SetupSession(WOLFSSL* ssl)
 #ifndef NO_ASN_TIME
     session->bornOn  = LowResTimer();
 #endif
-#if defined(SESSION_CERTS) || (defined(WOLFSSL_TLS13) && \
-                               defined(HAVE_SESSION_TICKET))
     session->version = ssl->version;
-#endif
 #if defined(SESSION_CERTS) || !defined(NO_RESUME_SUITE_CHECK) || \
                         (defined(WOLFSSL_TLS13) && defined(HAVE_SESSION_TICKET))
     session->cipherSuite0 = ssl->options.cipherSuite0;
@@ -4088,7 +4147,8 @@ void wolfSSL_FreeSession(WOLFSSL_CTX* ctx, WOLFSSL_SESSION* session)
     ForceZero(session->sessionID, ID_LEN);
 
     if (session->type == WOLFSSL_SESSION_TYPE_HEAP) {
-        XFREE(session, session->heap, DYNAMIC_TYPE_SESSION); /* // NOLINT(clang-analyzer-unix.Malloc) */
+        /* // NOLINTNEXTLINE(clang-analyzer-unix.Malloc) */
+        XFREE(session, session->heap, DYNAMIC_TYPE_SESSION);
     }
 }
 

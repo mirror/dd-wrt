@@ -1,6 +1,6 @@
 /* sp_x86_64_asm.S */
 /*
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -66434,7 +66434,7 @@ _sp_521_mont_add_9:
 /* Double a Montgomery form number (r = a + a % m).
  *
  * r   Result of addition.
- * a   Number to souble in Montgomery form.
+ * a   Number to double in Montgomery form.
  * m   Modulus (prime).
  */
 #ifndef __APPLE__
@@ -76656,7 +76656,7 @@ _sp_1024_mont_add_16:
 /* Double a Montgomery form number (r = a + a % m).
  *
  * r   Result of addition.
- * a   Number to souble in Montgomery form.
+ * a   Number to double in Montgomery form.
  * m   Modulus (prime).
  */
 #ifndef __APPLE__
@@ -76830,7 +76830,7 @@ _sp_1024_mont_dbl_16:
 /* Triple a Montgomery form number (r = a + a + a % m).
  *
  * r   Result of addition.
- * a   Number to souble in Montgomery form.
+ * a   Number to double in Montgomery form.
  * m   Modulus (prime).
  */
 #ifndef __APPLE__
@@ -77984,7 +77984,7 @@ _sp_1024_mont_add_avx2_16:
 /* Double a Montgomery form number (r = a + a % m).
  *
  * r   Result of addition.
- * a   Number to souble in Montgomery form.
+ * a   Number to double in Montgomery form.
  * m   Modulus (prime).
  */
 #ifndef __APPLE__
@@ -78142,7 +78142,7 @@ _sp_1024_mont_dbl_avx2_16:
 /* Triple a Montgomery form number (r = a + a + a % m).
  *
  * r   Result of addition.
- * a   Number to souble in Montgomery form.
+ * a   Number to double in Montgomery form.
  * m   Modulus (prime).
  */
 #ifndef __APPLE__

@@ -1,6 +1,6 @@
 /* ssl_sk.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -113,24 +113,6 @@ WOLFSSL_STACK* wolfSSL_sk_get_node(WOLFSSL_STACK* stack, int idx)
 #endif /* !NO_CERT && OPENSSL_EXTRA*/
 
 #if defined(OPENSSL_EXTRA) || defined(WOLFSSL_WPAS_SMALL)
-/* Copy all fields from src into dst.
- *
- * Shallow copy only.
- *
- * @param [in, out] dst  Node to copy into.
- * @param [in]      src  Node to copy.
- */
-static void wolfssl_sk_node_copy(WOLFSSL_STACK* dst, WOLFSSL_STACK* src)
-{
-    dst->data.generic = src->data.generic;
-    dst->next         = src->next;
-#ifdef OPENSSL_ALL
-    dst->hash_fn      = src->hash_fn;
-    dst->hash         = src->hash;
-#endif
-    dst->type         = src->type;
-    dst->num          = src->num;
-}
 
 #ifndef NO_CERTS
 /* Get data pointer from node.
@@ -168,6 +150,8 @@ static void* wolfssl_sk_node_get_data(WOLFSSL_STACK* node, int no_static)
         case STACK_TYPE_X509_OBJ:
         case STACK_TYPE_DIST_POINT:
         case STACK_TYPE_X509_CRL:
+        case STACK_TYPE_X509_REVOKED:
+        case STACK_TYPE_GENERAL_SUBTREE:
         default:
             ret = node->data.generic;
             break;
@@ -187,13 +171,12 @@ static void wolfssl_sk_node_set_data(WOLFSSL_STACK* node, WOLF_STACK_TYPE type,
 {
     switch (type) {
         case STACK_TYPE_CIPHER:
-#if defined(OPENSSL_ALL) || defined(WOLFSSL_QT)
             node->data.cipher = *(WOLFSSL_CIPHER*)data;
-            if (node->hash_fn != NULL) {
+#ifdef OPENSSL_ALL
+            if (node->hash_fn != NULL)
                 node->hash = node->hash_fn(&node->data.cipher);
-            }
-            break;
 #endif
+            break;
         case STACK_TYPE_X509:
         case STACK_TYPE_GEN_NAME:
         case STACK_TYPE_BIO:
@@ -212,6 +195,8 @@ static void wolfssl_sk_node_set_data(WOLFSSL_STACK* node, WOLF_STACK_TYPE type,
         case STACK_TYPE_X509_OBJ:
         case STACK_TYPE_DIST_POINT:
         case STACK_TYPE_X509_CRL:
+        case STACK_TYPE_X509_REVOKED:
+        case STACK_TYPE_GENERAL_SUBTREE:
         default:
             node->data.generic = (void*)data;
 #ifdef OPENSSL_ALL
@@ -257,6 +242,50 @@ int wolfSSL_sk_push_node(WOLFSSL_STACK** stack, WOLFSSL_STACK* node)
     return ret;
 }
 
+/* Pushes the node onto the back of the stack.
+ *
+ * If *stack is NULL, node becomes the head.
+ *
+ * @param [in, out] stack  Stack of nodes.
+ * @param [in]      node   Node to append.
+ *
+ * @return WOLFSSL_SUCCESS on success
+ * @return WOLFSSL_FAILURE when stack or node is NULL.
+ */
+int wolfSSL_sk_push_back_node(WOLFSSL_STACK** stack, WOLFSSL_STACK* node)
+{
+    int ret = WOLFSSL_SUCCESS;
+
+    /* Validate parameters. */
+    if (stack == NULL || node == NULL) {
+        ret = WOLFSSL_FAILURE;
+    }
+    if (ret == WOLFSSL_SUCCESS) {
+        node->next = NULL;
+        /* Tail node has num of 1, indicating 1 node till the end */
+        node->num = 1;
+
+        if (*stack == NULL) {
+            /* First node. */
+            *stack = node;
+        }
+        else {
+            /* Walk to the end and append.  Each node's num field holds the
+             * count of nodes from that node to the tail (inclusive), so
+             * every existing node's num increases by one. */
+            WOLFSSL_STACK* cur = *stack;
+            while (cur->next != NULL) {
+                cur->num++;
+                cur = cur->next;
+            }
+            cur->num++;
+            cur->next = node;
+        }
+    }
+
+    return ret;
+}
+
 /* Removes the node at the index from the stack and returns data.
  *
  * This is an internal API.
@@ -285,7 +314,7 @@ void* wolfSSL_sk_pop_node(WOLFSSL_STACK* stack, int idx)
             if (stack->next) {
                 /* Keep the first node as it is the pointer passed in. */
                 tmp = stack->next;
-                wolfssl_sk_node_copy(stack, stack->next);
+                XMEMCPY(stack, stack->next, sizeof(WOLFSSL_STACK));
                 wolfSSL_sk_free_node(tmp);
             }
         }
@@ -328,7 +357,12 @@ void* wolfSSL_sk_pop_node(WOLFSSL_STACK* stack, int idx)
  */
 WOLFSSL_STACK* wolfssl_sk_new_type(WOLF_STACK_TYPE type)
 {
-    WOLFSSL_STACK* stack = wolfSSL_sk_new_node(NULL);
+    return wolfssl_sk_new_type_ex(type, NULL);
+}
+
+WOLFSSL_STACK* wolfssl_sk_new_type_ex(WOLF_STACK_TYPE type, void* heap)
+{
+    WOLFSSL_STACK* stack = wolfSSL_sk_new_node(heap);
     if (stack != NULL) {
         stack->type = type;
     }
@@ -402,8 +436,24 @@ static int wolfssl_sk_dup_data(WOLFSSL_STACK* dst, WOLFSSL_STACK* src)
                 break;
             }
             break;
+        case STACK_TYPE_X509_CRL:
+#if defined(OPENSSL_EXTRA) && defined(HAVE_CRL)
+            if (src->data.crl == NULL) {
+                break;
+            }
+            dst->data.crl = wolfSSL_X509_CRL_dup(src->data.crl);
+            if (dst->data.crl == NULL) {
+                WOLFSSL_MSG("wolfSSL_X509_CRL_dup error");
+                err = 1;
+                break;
+            }
+#else
+            WOLFSSL_MSG("CRL support not enabled");
+            err = 1;
+#endif
+            break;
         case STACK_TYPE_X509_OBJ:
-        #if defined(OPENSSL_ALL)
+#if defined(OPENSSL_ALL)
             if (src->data.x509_obj == NULL) {
                 break;
             }
@@ -414,8 +464,11 @@ static int wolfssl_sk_dup_data(WOLFSSL_STACK* dst, WOLFSSL_STACK* src)
                 err = 1;
                 break;
             }
+#else
+            WOLFSSL_MSG("OPENSSL_ALL support not enabled");
+            err = 1;
+#endif
             break;
-        #endif
         case STACK_TYPE_BIO:
         case STACK_TYPE_STRING:
         case STACK_TYPE_ACCESS_DESCRIPTION:
@@ -429,7 +482,8 @@ static int wolfssl_sk_dup_data(WOLFSSL_STACK* dst, WOLFSSL_STACK* src)
         case STACK_TYPE_BY_DIR_entry:
         case STACK_TYPE_BY_DIR_hash:
         case STACK_TYPE_DIST_POINT:
-        case STACK_TYPE_X509_CRL:
+        case STACK_TYPE_X509_REVOKED:
+        case STACK_TYPE_GENERAL_SUBTREE:
         default:
             WOLFSSL_MSG("Unsupported stack type");
             err = 1;
@@ -441,7 +495,8 @@ static int wolfssl_sk_dup_data(WOLFSSL_STACK* dst, WOLFSSL_STACK* src)
 
 /* Duplicate the stack of nodes.
  *
- * TODO: OpenSSL does a shallow copy but we have wolfSSL_shallow_sk_dup().
+ * OpenSSL does a shallow copy but we map to wolfSSL_shallow_sk_dup()
+ * when we want a shallow copy.
  *
  * Data is copied/duplicated - deep copy.
  *
@@ -480,7 +535,7 @@ WOLFSSL_STACK* wolfSSL_sk_dup(WOLFSSL_STACK* stack)
         /* Update last node in linked list. */
         last = cur;
 
-        wolfssl_sk_node_copy(cur, stack);
+        XMEMCPY(cur, stack, sizeof(WOLFSSL_STACK));
         /* We will allocate new memory for this */
         XMEMSET(&cur->data, 0, sizeof(cur->data));
         cur->next = NULL;
@@ -522,7 +577,7 @@ WOLFSSL_STACK* wolfSSL_shallow_sk_dup(WOLFSSL_STACK* stack)
             break;
         }
 
-        wolfssl_sk_node_copy(cur, stack);
+        XMEMCPY(cur, stack, sizeof(WOLFSSL_STACK));
         cur->next = NULL;
 
         *prev = cur;
@@ -622,6 +677,8 @@ void* wolfSSL_sk_value(const WOLFSSL_STACK* sk, int i)
             case STACK_TYPE_X509_OBJ:
             case STACK_TYPE_DIST_POINT:
             case STACK_TYPE_X509_CRL:
+            case STACK_TYPE_X509_REVOKED:
+            case STACK_TYPE_GENERAL_SUBTREE:
             default:
                 val = sk->data.generic;
                 break;
@@ -635,7 +692,7 @@ void* wolfSSL_sk_value(const WOLFSSL_STACK* sk, int i)
 #if (!defined(NO_CERTS) && (defined(OPENSSL_EXTRA) || \
      defined(WOLFSSL_WPAS_SMALL))) || defined(WOLFSSL_QT) || \
      defined(OPENSSL_ALL)
-/* Put the data into a node at the top of the stack.
+/* Put the data into a node at the end of the list.
  *
  * @param [in, out] stack  Stack of objects.
  * @param [in]      data   Data to store in stack.
@@ -650,7 +707,7 @@ int wolfSSL_sk_push(WOLFSSL_STACK* stack, const void *data)
     return wolfSSL_sk_insert(stack, data, -1);
 }
 
-/* Put the data into a node at an index in the stack.
+/* Put the data into a node at an index in the list.
  *
  * @param [in, out] stack  Stack of objects.
  * @param [in]      data   Data to store in stack.
@@ -689,7 +746,7 @@ int wolfSSL_sk_insert(WOLFSSL_STACK *stack, const void *data, int idx)
             if (idx == 0) {
                 /* Special case where we need to change the values in the head
                  * element to avoid changing the initial pointer. */
-                wolfssl_sk_node_copy(node, stack);
+                XMEMCPY(node, stack, sizeof(WOLFSSL_STACK));
                 wolfssl_sk_node_set_data(stack, stack->type, data);
                 stack->num++;
                 stack->next = node;
@@ -806,6 +863,11 @@ static wolfSSL_sk_freefunc wolfssl_sk_get_free_func(WOLF_STACK_TYPE type)
         case STACK_TYPE_GEN_NAME:
             func = (wolfSSL_sk_freefunc)wolfSSL_GENERAL_NAME_free;
             break;
+        case STACK_TYPE_GENERAL_SUBTREE:
+        #if defined(OPENSSL_EXTRA) && !defined(IGNORE_NAME_CONSTRAINTS)
+            func = (wolfSSL_sk_freefunc)wolfSSL_GENERAL_SUBTREE_free;
+        #endif
+            break;
         case STACK_TYPE_STRING:
         #if defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY) || \
             defined(OPENSSL_EXTRA) || defined(OPENSSL_ALL)
@@ -866,6 +928,11 @@ static wolfSSL_sk_freefunc wolfssl_sk_get_free_func(WOLF_STACK_TYPE type)
         #if defined(HAVE_CRL) && (defined(OPENSSL_EXTRA) || \
             defined(WOLFSSL_WPAS_SMALL))
             func = (wolfSSL_sk_freefunc)wolfSSL_X509_CRL_free;
+        #endif
+            break;
+        case STACK_TYPE_X509_REVOKED:
+        #if defined(HAVE_CRL) && defined(OPENSSL_EXTRA)
+            func = (wolfSSL_sk_freefunc)wolfSSL_X509_REVOKED_free;
         #endif
             break;
         case STACK_TYPE_CIPHER:

@@ -1,6 +1,6 @@
 /* sha.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -101,12 +101,10 @@
 #endif
 
 /* in bytes */
-enum {
-    WC_SHA              =  WC_HASH_TYPE_SHA,
-    WC_SHA_BLOCK_SIZE   = 64,
-    WC_SHA_DIGEST_SIZE  = 20,
-    WC_SHA_PAD_SIZE     = 56
-};
+#define WC_SHA              WC_HASH_TYPE_SHA
+#define WC_SHA_BLOCK_SIZE   64
+#define WC_SHA_DIGEST_SIZE  20
+#define WC_SHA_PAD_SIZE     56
 
 
 #if defined(WOLFSSL_TI_HASH)
@@ -174,9 +172,6 @@ struct wc_Sha {
 #ifdef WOLF_CRYPTO_CB
     int    devId;
     void*  devCtx; /* generic crypto callback context */
-#endif
-#if defined(MAX3266X_SHA_CB) || defined(MAX3266X_SHA)
-    wc_MXC_Sha mxcCtx;
 #endif
 #ifdef WOLFSSL_IMXRT1170_CAAM
     caam_hash_ctx_t ctx;

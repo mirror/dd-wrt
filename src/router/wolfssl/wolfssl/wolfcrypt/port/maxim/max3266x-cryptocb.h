@@ -1,6 +1,6 @@
 /* max3266x-cryptocb.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -58,12 +58,6 @@
 #endif
 #endif /* HAVE_AES_DECRYPT */
 
-
-    WOLFSSL_LOCAL int wc_MXC_Sha256Update(wc_MXC_Sha* sha256,
-                                            const unsigned char* data,
-                                            unsigned int len);
-    WOLFSSL_LOCAL int wc_MXC_Sha256Final(wc_MXC_Sha* sha256,
-                                            unsigned char* hash);
 
 #ifdef __cplusplus
     } /* extern "C" */

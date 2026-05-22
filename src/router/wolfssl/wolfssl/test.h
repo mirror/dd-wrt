@@ -1,6 +1,6 @@
 /* test.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -31,9 +31,6 @@
 #include <wolfssl/wolfcrypt/settings.h>
 
 #undef TEST_OPENSSL_COEXIST /* can't use this option with this example */
-#if defined(OPENSSL_EXTRA) && defined(OPENSSL_COEXIST)
-    #error "Example apps built with OPENSSL_EXTRA can't also be built with OPENSSL_COEXIST."
-#endif
 
 #include <wolfssl/wolfcrypt/wc_port.h>
 
@@ -188,7 +185,15 @@
     #include <pthread.h>
     #define SOCKET_T int
 #elif defined(WOLFSSL_ZEPHYR)
-    #include <version.h>
+    #ifdef __has_include
+        #if __has_include(<zephyr/version.h>)
+            #include <zephyr/version.h>
+        #else
+            #include <version.h>
+        #endif
+    #else
+        #include <version.h>
+    #endif
     #include <string.h>
     #include <sys/types.h>
     #if KERNEL_VERSION_NUMBER >= 0x30100
@@ -209,9 +214,10 @@
         #endif
     #endif
     #define SOCKET_T int
-    #define SOL_SOCKET 1
     #define WOLFSSL_USE_GETADDRINFO
 
+    #if !defined(CONFIG_POSIX_API)
+    #define SOL_SOCKET 1
     static unsigned long inet_addr(const char *cp)
     {
         unsigned int a[4]; unsigned long ret;
@@ -227,6 +233,7 @@
         ret = ((a[3]<<24) + (a[2]<<16) + (a[1]<<8) + a[0]) ;
         return(ret) ;
     }
+    #endif
 #elif defined(NETOS)
     #include <string.h>
     #include <sys/types.h>
@@ -1226,7 +1233,7 @@ static WC_INLINE void ShowX509Ex(WOLFSSL_X509* x509, const char* hdr,
     XFREE(subject, 0, DYNAMIC_TYPE_OPENSSL);
     XFREE(issuer,  0, DYNAMIC_TYPE_OPENSSL);
 
-#if defined(SHOW_CERTS) && defined(OPENSSL_EXTRA)
+#if defined(SHOW_CERTS) && defined(OPENSSL_EXTRA) && !defined(OPENSSL_COEXIST)
     {
         WOLFSSL_BIO* bio;
         char buf[WC_ASN_NAME_MAX];
@@ -1247,7 +1254,7 @@ static WC_INLINE void ShowX509Ex(WOLFSSL_X509* x509, const char* hdr,
             wolfSSL_BIO_free(bio);
         }
     }
-#endif /* SHOW_CERTS && OPENSSL_EXTRA */
+#endif /* SHOW_CERTS && OPENSSL_EXTRA && !OPENSSL_COEXIST */
 }
 /* original ShowX509 to maintain compatibility */
 static WC_INLINE void ShowX509(WOLFSSL_X509* x509, const char* hdr)
@@ -1296,7 +1303,8 @@ static WC_INLINE void showPeerEx(WOLFSSL* ssl, int lng_index)
 #ifndef NO_DH
     int bits;
 #endif
-#if defined(OPENSSL_EXTRA) && !defined(WOLFCRYPT_ONLY)
+#if defined(OPENSSL_EXTRA) && !defined(WOLFCRYPT_ONLY) && \
+    !defined(OPENSSL_COEXIST)
     int nid;
 #endif
 #ifdef KEEP_PEER_CERT
@@ -1316,7 +1324,8 @@ static WC_INLINE void showPeerEx(WOLFSSL* ssl, int lng_index)
 
     cipher = wolfSSL_get_current_cipher(ssl);
     printf("%s %s\n", words[1], wolfSSL_CIPHER_get_name(cipher));
-#if defined(OPENSSL_EXTRA) && !defined(WOLFCRYPT_ONLY)
+#if defined(OPENSSL_EXTRA) && !defined(WOLFCRYPT_ONLY) && \
+    !defined(OPENSSL_COEXIST)
     if (wolfSSL_get_signature_nid(ssl, &nid) == WOLFSSL_SUCCESS) {
         printf("%s %s\n", words[2], OBJ_nid2sn(nid));
     }
@@ -2334,7 +2343,7 @@ static WC_INLINE void OCSPRespFreeCb(void* ioCtx, unsigned char* response)
         LIBCALL_CHECK_RET(XFSEEK(lFile, 0, XSEEK_SET));
         if (fileSz  > 0) {
             *bufLen = (size_t)fileSz;
-            *buf = (byte*)malloc(*bufLen);
+            *buf = (byte*)XMALLOC(*bufLen, NULL, DYNAMIC_TYPE_TMP_BUFFER);
             if (*buf == NULL) {
                 ret = MEMORY_E;
                 fprintf(stderr,
@@ -2399,7 +2408,7 @@ static WC_INLINE void OCSPRespFreeCb(void* ioCtx, unsigned char* response)
         }
 
         if (buff)
-            free(buff);
+            XFREE(buff, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     }
 
     static WC_INLINE void load_ssl_buffer(WOLFSSL* ssl, const char* fname, int type)
@@ -2441,7 +2450,7 @@ static WC_INLINE void OCSPRespFreeCb(void* ioCtx, unsigned char* response)
         }
 
         if (buff)
-            free(buff);
+            XFREE(buff, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     }
 
     #ifdef TEST_PK_PRIVKEY
@@ -2457,18 +2466,18 @@ static WC_INLINE void OCSPRespFreeCb(void* ioCtx, unsigned char* response)
 
         *derBuf = (byte*)malloc(bufLen);
         if (*derBuf == NULL) {
-            free(buf);
+            XFREE(buf, NULL, DYNAMIC_TYPE_TMP_BUFFER);
             return MEMORY_E;
         }
 
         ret = wc_KeyPemToDer(buf, (word32)bufLen, *derBuf, (word32)bufLen, NULL);
         if (ret < 0) {
-            free(buf);
+            XFREE(buf, NULL, DYNAMIC_TYPE_TMP_BUFFER);
             free(*derBuf);
             return ret;
         }
         *derLen = ret;
-        free(buf);
+        XFREE(buf, NULL, DYNAMIC_TYPE_TMP_BUFFER);
 
         return 0;
     }
@@ -2499,10 +2508,11 @@ static WC_INLINE int myVerify(int preverify, WOLFSSL_X509_STORE_CTX* store)
 #if defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL)
     WOLFSSL_X509* peer;
 #endif
-#if defined(OPENSSL_EXTRA) && defined(SHOW_CERTS) && !defined(NO_FILESYSTEM)
+#if defined(OPENSSL_EXTRA) && defined(SHOW_CERTS) && !defined(NO_FILESYSTEM) \
+    && !defined(OPENSSL_COEXIST)
     WOLFSSL_BIO* bio = NULL;
     WOLFSSL_STACK* sk = NULL;
-    X509* x509 = NULL;
+    WOLFSSL_X509* x509 = NULL;
 #endif
 
     /* Verify Callback Arguments:
@@ -2550,7 +2560,8 @@ static WC_INLINE int myVerify(int preverify, WOLFSSL_X509_STORE_CTX* store)
 
         XFREE(subject, 0, DYNAMIC_TYPE_OPENSSL);
         XFREE(issuer,  0, DYNAMIC_TYPE_OPENSSL);
-#if defined(OPENSSL_EXTRA) && defined(SHOW_CERTS) && !defined(NO_FILESYSTEM)
+#if defined(OPENSSL_EXTRA) && defined(SHOW_CERTS) && !defined(NO_FILESYSTEM) \
+    && !defined(OPENSSL_COEXIST)
         /* avoid printing duplicate certs */
         if (store->depth == 1) {
             int i;
@@ -2830,7 +2841,7 @@ static WC_INLINE int myMacEncryptCb(WOLFSSL* ssl, unsigned char* macOut,
     ret = wc_HmacFinal(&hmac, macOut);
     if (ret != 0)
         return ret;
-
+    wc_HmacFree(&hmac);
 
     /* encrypt setup on first time */
     if (encCtx->keySetup == 0) {
@@ -2959,6 +2970,7 @@ static WC_INLINE int myDecryptVerifyCb(WOLFSSL* ssl,
     ret = wc_HmacFinal(&hmac, verify);
     if (ret != 0)
         return ret;
+    wc_HmacFree(&hmac);
 
     if (XMEMCMP(verify, decOut + decSz - digestSz - pad - padByte,
                (size_t) digestSz) != 0) {
@@ -3041,7 +3053,9 @@ static WC_INLINE int myEncryptMacCb(WOLFSSL* ssl, unsigned char* macOut,
     ret = wc_HmacUpdate(&hmac, encOut, encSz);
     if (ret != 0)
         return ret;
-    return wc_HmacFinal(&hmac, macOut);
+    ret = wc_HmacFinal(&hmac, macOut);
+    wc_HmacFree(&hmac);
+    return ret;
 }
 
 
@@ -3088,6 +3102,7 @@ static WC_INLINE int myVerifyDecryptCb(WOLFSSL* ssl,
     ret = wc_HmacFinal(&hmac, verify);
     if (ret != 0)
         return ret;
+    wc_HmacFree(&hmac);
 
     if (XMEMCMP(verify, decOut + decSz, (size_t) digestSz) != 0) {
         printf("myDecryptVerify verify failed\n");
@@ -4865,7 +4880,7 @@ static WC_INLINE word16 GetRandomPort(void)
 static WC_INLINE void EarlyDataStatus(WOLFSSL* ssl)
 {
     int earlyData_status;
-#ifdef OPENSSL_EXTRA
+#if defined(OPENSSL_EXTRA) && !defined(OPENSSL_COEXIST)
     earlyData_status = SSL_get_early_data_status(ssl);
 #else
     earlyData_status = wolfSSL_get_early_data_status(ssl);

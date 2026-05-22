@@ -1,6 +1,6 @@
 /* cryptocb.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -22,18 +22,36 @@
 /* This framework provides a central place for crypto hardware integration
    using the devId scheme. If not supported return `CRYPTOCB_UNAVAILABLE`. */
 
-/* Some common, optional build settings:
- * these can also be set in wolfssl/options.h or user_settings.h
- * -------------------------------------------------------------
- * enable the find device callback functions
- * WOLF_CRYPTO_CB_FIND
+/*
+Crypto Callback Build Options:
+ * WOLF_CRYPTO_CB:      Master enable for crypto callback       default: off
+ *                      framework. Required for all options below.
+ * WOLF_CRYPTO_CB_FIND: Enable find device callback functions   default: off
+ *                      Allows lookup of registered crypto devices.
+ * WOLF_CRYPTO_CB_CMD:  Enable command callbacks invoked during default: off
+ *                      register and unregister of crypto devices.
+ * WOLF_CRYPTO_CB_COPY: Enable copy callback for algorithm      default: off
+ *                      structures (hash, cipher state copying).
+ * WOLF_CRYPTO_CB_FREE: Enable free callback for algorithm      default: off
+ *                      structures (cleanup of crypto objects).
+ * WOLF_CRYPTO_CB_AES_SETKEY: Enable callback for AES key setup default: off
+ * WOLF_CRYPTO_CB_RSA_PAD: Enable callback for RSA padding      default: off
+ *                      operations (custom padding handling).
+ * DEBUG_CRYPTOCB:      Enable debug InfoString functions        default: off
  *
- * enable the command callback functions to invoke the callback during
- * register and unregister
- * WOLF_CRYPTO_CB_CMD
+ * Device ID options:
+ * WC_USE_DEVID:        Specify a default device ID to use      default: off
+ *                      when no hardware device is detected.
+ * WC_NO_DEFAULT_DEVID: Disable automatic default device ID     default: off
+ *                      selection. Requires explicit devId passing.
+ * WOLFSSL_CAAM_DEVID:  Device ID constant (value 7) for NXP    default: off
+ *                      CAAM hardware crypto.
  *
- * enable debug InfoString functions
- * DEBUG_CRYPTOCB
+ * Algorithm-specific callback options:
+ * NO_SHA2_CRYPTO_CB:   Disable crypto callbacks for SHA-384    default: off
+ *                      and SHA-512 operations.
+ * WOLF_CRYPTO_CB_ONLY_ECC: Use only callbacks for ECC          default: off
+ * WOLF_CRYPTO_CB_ONLY_RSA: Use only callbacks for RSA          default: off
  */
 
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
@@ -219,7 +237,7 @@ void wc_CryptoCb_InfoString(wc_CryptoInfo* info)
         printf("Crypto CB: %s %s (%d) (%p ctx)\n",
             GetAlgoTypeStr(info->algo_type),
             GetCipherTypeStr(info->cipher.type),
-            info->cipher.type, info->cipher.ctx);
+            info->cipher.type, (void*)info->cipher.ctx);
     }
 #endif /* !NO_AES || !NO_DES3 */
 #if !defined(NO_SHA) || !defined(NO_SHA256) || \
@@ -228,7 +246,7 @@ void wc_CryptoCb_InfoString(wc_CryptoInfo* info)
         printf("Crypto CB: %s %s (%d) (%p ctx) %s\n",
             GetAlgoTypeStr(info->algo_type),
             GetHashTypeStr(info->hash.type),
-            info->hash.type, info->hash.ctx,
+            info->hash.type, (void*)info->hash.ctx,
             (info->hash.in != NULL) ? "Update" : "Final");
     }
 #endif
@@ -237,7 +255,7 @@ void wc_CryptoCb_InfoString(wc_CryptoInfo* info)
         printf("Crypto CB: %s %s (%d) (%p ctx) %s\n",
             GetAlgoTypeStr(info->algo_type),
             GetHashTypeStr(info->hmac.macType),
-            info->hmac.macType, info->hmac.hmac,
+            info->hmac.macType, (void*)info->hmac.hmac,
             (info->hmac.in != NULL) ? "Update" : "Final");
     }
 #endif
@@ -246,7 +264,7 @@ void wc_CryptoCb_InfoString(wc_CryptoInfo* info)
         printf("Crypto CB: %s %s (%d) (%p ctx) %s %s %s\n",
             GetAlgoTypeStr(info->algo_type),
             GetCmacTypeStr(info->cmac.type),
-            info->cmac.type, info->cmac.cmac,
+            info->cmac.type, (void*)info->cmac.cmac,
             (info->cmac.key != NULL) ? "Init " : "",
             (info->cmac.in != NULL) ? "Update " : "",
             (info->cmac.out != NULL) ? "Final" : "");
@@ -1537,6 +1555,36 @@ int wc_CryptoCb_AesEcbDecrypt(Aes* aes, byte* out,
     return wc_CryptoCb_TranslateErrorCode(ret);
 }
 #endif /* HAVE_AES_ECB */
+
+#ifdef WOLF_CRYPTO_CB_AES_SETKEY
+int wc_CryptoCb_AesSetKey(Aes* aes, const byte* key, word32 keySz)
+{
+    int ret = WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE);
+    CryptoCb* dev;
+
+    if (aes == NULL || key == NULL)
+        return BAD_FUNC_ARG;
+
+    if (aes->devId == INVALID_DEVID)
+        return CRYPTOCB_UNAVAILABLE;
+
+    /* locate registered callback */
+    dev = wc_CryptoCb_FindDevice(aes->devId, WC_ALGO_TYPE_CIPHER);
+    if (dev && dev->cb) {
+        wc_CryptoInfo cryptoInfo;
+        XMEMSET(&cryptoInfo, 0, sizeof(cryptoInfo));
+        cryptoInfo.algo_type = WC_ALGO_TYPE_CIPHER;
+        cryptoInfo.cipher.type = WC_CIPHER_AES;
+        cryptoInfo.cipher.aessetkey.aes = aes;
+        cryptoInfo.cipher.aessetkey.key = key;
+        cryptoInfo.cipher.aessetkey.keySz = keySz;
+
+        ret = dev->cb(dev->devId, &cryptoInfo, dev->ctx);
+    }
+
+    return wc_CryptoCb_TranslateErrorCode(ret);
+}
+#endif /* WOLF_CRYPTO_CB_AES_SETKEY */
 #endif /* !NO_AES */
 
 #ifndef NO_DES3
@@ -2090,11 +2138,13 @@ int wc_CryptoCb_Copy(int devId, int algo, int type, void* src, void* dst)
  *       WC_ALGO_TYPE_CIPHER, etc
  * type: Specific type - for HASH: enum wc_HashType, for CIPHER:
  *       enum wc_CipherType
+ * subType: Specific subtype - for PQC: enum wc_PqcKemType,
+ *       enum wc_PqcSignatureType
  * obj: Pointer to object structure to free
  * Returns: 0 on success, negative on error, CRYPTOCB_UNAVAILABLE if not
  *          handled
  */
-int wc_CryptoCb_Free(int devId, int algo, int type, void* obj)
+int wc_CryptoCb_Free(int devId, int algo, int type, int subType, void* obj)
 {
     int ret = WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE);
     CryptoCb* dev;
@@ -2107,6 +2157,7 @@ int wc_CryptoCb_Free(int devId, int algo, int type, void* obj)
         cryptoInfo.algo_type = WC_ALGO_TYPE_FREE;
         cryptoInfo.free.algo = algo;
         cryptoInfo.free.type = type;
+        cryptoInfo.free.subType = subType;
         cryptoInfo.free.obj = obj;
 
         ret = dev->cb(dev->devId, &cryptoInfo, dev->ctx);

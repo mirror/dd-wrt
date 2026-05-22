@@ -1,6 +1,6 @@
 /* dh.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -104,7 +104,7 @@ enum {
         #endif
     #elif defined(WOLFSSL_SP_MATH_ALL) || defined(WOLFSSL_SP_MATH)
         /* SP implementation supports numbers of SP_INT_BITS bits. */
-        #define DH_MAX_SIZE    (((SP_INT_BITS + 7) / 8) * 8)
+        #define DH_MAX_SIZE    WC_BITS_FULL_BYTES(SP_INT_BITS)
         #if defined(WOLFSSL_MYSQL_COMPATIBLE) && DH_MAX_SIZE < 8192
             #error "MySQL needs SP_INT_BITS at least at 8192"
         #endif

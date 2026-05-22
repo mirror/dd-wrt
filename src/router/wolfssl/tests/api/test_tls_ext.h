@@ -1,6 +1,6 @@
 /* test_tls_ext.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -26,5 +26,7 @@ int test_tls_ems_downgrade(void);
 int test_wolfSSL_DisableExtendedMasterSecret(void);
 int test_certificate_authorities_certificate_request(void);
 int test_certificate_authorities_client_hello(void);
+int test_TLSX_TCA_Find(void);
+int test_TLSX_SNI_GetSize_overflow(void);
 
 #endif /* TESTS_API_TEST_TLS_EMS_H */

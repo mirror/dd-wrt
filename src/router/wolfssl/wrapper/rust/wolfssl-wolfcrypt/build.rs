@@ -1,0 +1,489 @@
+extern crate bindgen;
+
+use regex::Regex;
+use std::env;
+use std::fs;
+use std::io::{self, Read, Result};
+use std::path::{Path,PathBuf};
+
+/// Perform crate build.
+fn main() {
+    if let Err(e) = run_build() {
+        eprintln!("Build failed: {}", e);
+        std::process::exit(1);
+    }
+}
+
+/// Perform all build steps.
+///
+/// Returns `Ok(())` if successful, or an error if any step fails.
+fn run_build() -> Result<()> {
+    generate_bindings()?;
+    generate_fips_aliases()?;
+    setup_wolfssl_link()?;
+    scan_cfg()?;
+    Ok(())
+}
+
+fn crate_dir() -> Result<String> {
+    Ok(std::env::current_dir()?.display().to_string())
+}
+
+fn wolfssl_repo_base_dir() -> Result<String> {
+    Ok(format!("{}/../../..", crate_dir()?))
+}
+
+fn wolfssl_repo_lib_dir() -> Result<String> {
+    Ok(format!("{}/src/.libs", wolfssl_repo_base_dir()?))
+}
+
+/// Returns the include directory for wolfssl headers.
+///
+/// If `WOLFSSL_PREFIX` is set, returns `{WOLFSSL_PREFIX}/include`.
+/// Otherwise falls back to the repo root if it exists (for in-tree host builds).
+fn wolfssl_include_dir() -> Result<Option<String>> {
+    if let Ok(prefix) = env::var("WOLFSSL_PREFIX") {
+        let include_dir = format!("{}/include", prefix);
+        let wolfssl_dir = Path::new(&include_dir).join("wolfssl");
+        if !wolfssl_dir.is_dir() {
+            println!("cargo:warning=WOLFSSL_PREFIX is set but {} does not exist", wolfssl_dir.display());
+            return Ok(None);
+        }
+        Ok(Some(include_dir))
+    } else {
+        let base = wolfssl_repo_base_dir()?;
+        let base_path = Path::new(&base);
+        // Treat this as an in-tree wolfSSL repo only if the expected layout exists.
+        let wolfssl_dir = base_path.join("wolfssl");
+        let wolfssl_options = wolfssl_dir.join("options.h");
+        if wolfssl_options.is_file() {
+            Ok(Some(base))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+/// Returns the library directory for libwolfssl.
+///
+/// If `WOLFSSL_PREFIX` is set, returns `{WOLFSSL_PREFIX}/lib`.
+/// Otherwise falls back to the in-tree build output directory if it exists.
+fn wolfssl_lib_dir() -> Result<Option<String>> {
+    if let Ok(prefix) = env::var("WOLFSSL_PREFIX") {
+        Ok(Some(format!("{}/lib", prefix)))
+    } else {
+        let repo_lib_dir = wolfssl_repo_lib_dir()?;
+        if Path::new(&repo_lib_dir).exists() {
+            Ok(Some(repo_lib_dir))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+fn bindings_path() -> String {
+    PathBuf::from(env::var("OUT_DIR").unwrap()).join("bindings.rs").display().to_string()
+}
+
+/// Map a Rust target triple to the equivalent clang target triple.
+///
+/// Rust triples embed ISA extensions in the arch component
+/// (e.g. `riscv64imac-unknown-none-elf`) while clang uses only the base arch
+/// (e.g. `riscv64-unknown-elf`).  Bare-metal targets use `<arch>-<vendor>-elf`
+/// in clang convention.
+fn rust_target_to_clang_target(rust_target: &str) -> String {
+    let parts: Vec<&str> = rust_target.splitn(4, '-').collect();
+    if parts.len() < 3 {
+        return rust_target.to_string();
+    }
+
+    // Strip ISA extensions: riscv64imac → riscv64, riscv32imac → riscv32
+    let arch = if parts[0].starts_with("riscv64") {
+        "riscv64"
+    } else if parts[0].starts_with("riscv32") {
+        "riscv32"
+    } else {
+        parts[0]
+    };
+
+    let vendor = parts[1];
+    let os     = parts[2];
+    let abi    = parts.get(3).copied().unwrap_or("");
+
+    // Bare-metal: (os=none, abi=elf) → <arch>-<vendor>-elf
+    if os == "none" && abi == "elf" {
+        format!("{}-{}-elf", arch, vendor)
+    } else if abi.is_empty() {
+        format!("{}-{}-{}", arch, vendor, os)
+    } else {
+        format!("{}-{}-{}-{}", arch, vendor, os, abi)
+    }
+}
+
+/// Return the sysroot path for a bare-metal clang target triple, if it exists.
+///
+/// Queries the cross-compiler for its sysroot via `--print-sysroot` rather
+/// than assuming a fixed install prefix.  Tries the candidate compiler names
+/// `<arch>-<vendor>-elf-gcc` and `<arch>-elf-gcc` (vendor omitted) in order.
+/// Returns `None` if no suitable compiler is found or its sysroot is invalid.
+fn bare_metal_sysroot(clang_target: &str) -> Option<String> {
+    let parts: Vec<&str> = clang_target.splitn(3, '-').collect();
+    if parts.len() < 3 || !clang_target.ends_with("-elf") {
+        return None;
+    }
+    let (arch, vendor) = (parts[0], parts[1]);
+    let candidates = [
+        format!("{}-{}-elf-gcc", arch, vendor),
+        format!("{}-elf-gcc", arch),
+    ];
+    for compiler in &candidates {
+        if let Ok(output) = std::process::Command::new(compiler)
+                .arg("--print-sysroot")
+                .output()
+                && output.status.success() {
+            let sysroot = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !sysroot.is_empty() && sysroot != "/" && Path::new(&sysroot).exists() {
+                return Some(sysroot);
+            }
+        }
+    }
+    None
+}
+
+/// Generate Rust bindings for the wolfssl C library using bindgen.
+///
+/// Returns `Ok(())` if successful, or an error if binding generation fails.
+fn generate_bindings() -> Result<()> {
+    let mut builder = bindgen::Builder::default()
+        .header("headers.h")
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+        .use_core();
+
+    if let Some(include_dir) = wolfssl_include_dir()? {
+        builder = builder.clang_arg(format!("-I{}", include_dir));
+    }
+
+    // When cross-compiling, tell clang the target so it generates correct
+    // type layouts and evaluates architecture-specific preprocessor guards.
+    let target = env::var("TARGET").unwrap();
+    let host = env::var("HOST").unwrap();
+    if target != host {
+        let clang_target = rust_target_to_clang_target(&target);
+        builder = builder.clang_arg(format!("--target={}", clang_target));
+
+        if target.ends_with("-none-elf") {
+            // For bare-metal targets, add the toolchain C runtime headers
+            // (newlib's time.h etc.) using -idirafter so they appear after
+            // clang's own built-in includes.  This lets clang's stdatomic.h
+            // take priority over newlib's incompatible version.
+            if let Some(sysroot) = bare_metal_sysroot(&clang_target) {
+                builder = builder
+                    .clang_arg("-ffreestanding")
+                    .clang_arg(format!("-idirafter{}/include", sysroot));
+            }
+        }
+    }
+
+    let bindings = builder
+        .generate()
+        .map_err(|_| io::Error::other("Failed to generate bindings"))?;
+
+    bindings
+        .write_to_file(bindings_path())
+        .map_err(|e| {
+            io::Error::other(format!("Couldn't write bindings: {}", e))
+        })
+}
+
+/// Generate FIPS symbol aliases.
+///
+/// Since Rust can't use fips.h's #defines which map the "regular" wc function
+/// name to the _fips variant, and since bindgen has only seen the _fips
+/// variant, we will generate aliases that allow the non-_fips variant function
+/// name to be called without the _fips prefix by Rust sources in a manner
+/// similar to which C sources would be able to call the non-_fips variant
+/// function name.
+///
+/// Returns `Ok(())` if successful, or an error if generation fails.
+fn generate_fips_aliases() -> Result<()> {
+    let binding = read_file(bindings_path())?;
+    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let aliases_path = out_dir.join("fips_aliases.rs");
+
+    let mut aliases = String::new();
+
+    // Find all _fips symbol names
+    let fips_sym_re = Regex::new(r"pub fn (wc_\w+)_fips\s*\(").unwrap();
+
+    for cap in fips_sym_re.captures_iter(&binding) {
+        let mut base_name = &cap[1];
+        let fips_name = format!("{}_fips", base_name);
+
+        // Exception mappings: (standard_name, fips_name)
+        // For cases where FIPS name doesn't follow the simple <name>_fips pattern
+        let exceptions: &[(&str, &str)] = &[
+            // _ex suffix changed to Ex before _fips
+            ("wc_InitRsaKey_ex", "wc_InitRsaKeyEx_fips"),
+            ("wc_RsaPublicEncrypt_ex", "wc_RsaPublicEncryptEx_fips"),
+            ("wc_RsaPrivateDecryptInline_ex", "wc_RsaPrivateDecryptInlineEx_fips"),
+            ("wc_RsaPrivateDecrypt_ex", "wc_RsaPrivateDecryptEx_fips"),
+            ("wc_RsaPSS_Sign_ex", "wc_RsaPSS_SignEx_fips"),
+            ("wc_RsaPSS_VerifyInline_ex", "wc_RsaPSS_VerifyInlineEx_fips"),
+            ("wc_RsaPSS_Verify_ex", "wc_RsaPSS_VerifyEx_fips"),
+            ("wc_RsaPSS_CheckPadding_ex", "wc_RsaPSS_CheckPaddingEx_fips"),
+            ("wc_DhSetKey_ex", "wc_DhSetKeyEx_fips"),
+            ("wc_DhCheckPubKey_ex", "wc_DhCheckPubKeyEx_fips"),
+            ("wc_DhCheckPrivKey_ex", "wc_DhCheckPrivKeyEx_fips"),
+
+            // Name change
+            ("wc_PRF_TLS", "wc_PRF_TLSv12_fips"),
+        ];
+
+        // Handle exceptions
+        for (exc_base_name, exc_fips_name) in exceptions {
+            if fips_name == *exc_fips_name {
+                base_name = exc_base_name;
+                break;
+            }
+        }
+
+        // Check if the non-_fips version exists in bindings
+        let non_fips_pattern = format!(r"pub fn {}\s*\(", regex::escape(base_name));
+        let non_fips_re = Regex::new(&non_fips_pattern).unwrap();
+
+        if non_fips_re.is_match(&binding) {
+            // Add any new known names defined with both a _fips suffix and not
+            // here. Warn if any new ones are discovered.
+            let known_both = &[
+                "wc_AesGcmEncrypt",
+                "wc_AesCcmEncrypt",
+            ];
+            if !known_both.contains(&base_name) {
+                println!("cargo:warning=Skipping FIPS symbols alias for {}", base_name);
+            }
+        } else {
+            // Only alias if the base name doesn't already exist
+            aliases.push_str(&format!("pub use {} as {};\n", fips_name, base_name));
+        }
+    }
+
+    fs::write(&aliases_path, aliases)?;
+
+    Ok(())
+}
+
+/// Instruct cargo to link against wolfssl C library
+///
+/// Returns `Ok(())` if successful, or an error if any step fails.
+fn setup_wolfssl_link() -> Result<()> {
+    if let Some(lib_dir) = wolfssl_lib_dir()? {
+        println!("cargo:rustc-link-search={}", lib_dir);
+
+        // Prefer a shared library if present, otherwise fall back to static.
+        let has_shared = Path::new(&lib_dir).join("libwolfssl.so").exists()
+            || Path::new(&lib_dir).join("libwolfssl.dylib").exists();
+        if has_shared {
+            println!("cargo:rustc-link-lib=wolfssl");
+            // Only set rpath where a dynamic linker exists (not bare-metal).
+            let target = env::var("TARGET").unwrap();
+            if !target.ends_with("-none-elf") {
+                println!("cargo:rustc-link-arg=-Wl,-rpath,{}", lib_dir);
+            }
+        } else {
+            println!("cargo:rustc-link-lib=static=wolfssl");
+        }
+    } else {
+        // No local lib dir found; rely on whatever is installed system-wide.
+        println!("cargo:rustc-link-lib=wolfssl");
+    }
+
+    Ok(())
+}
+
+fn read_file(path: String) -> Result<String> {
+    let mut file = fs::File::open(path)?;
+    let mut content = String::new();
+    file.read_to_string(&mut content)?;
+    Ok(content)
+}
+
+fn check_cfg(binding: &str, function_name: &str, cfg_name: &str) -> bool {
+    let pattern = format!(r"\b{}(_fips)?\b", function_name);
+    let re = match Regex::new(&pattern) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("Error compiling regex '{}': {}", pattern, e);
+            std::process::exit(1);
+        }
+    };
+    println!("cargo::rustc-check-cfg=cfg({})", cfg_name);
+    if re.is_match(binding) {
+        println!("cargo:rustc-cfg={}", cfg_name);
+        true
+    } else {
+        false
+    }
+}
+
+fn scan_cfg() -> Result<()> {
+    let binding = read_file(bindings_path())?;
+
+    /* aes */
+    check_cfg(&binding, "wc_AesSetKey", "aes");
+    check_cfg(&binding, "wc_AesCbcEncrypt", "aes_cbc");
+    check_cfg(&binding, "wc_AesCcmSetKey", "aes_ccm");
+    check_cfg(&binding, "wc_AesCfbEncrypt", "aes_cfb");
+    check_cfg(&binding, "wc_AesCtrEncrypt", "aes_ctr");
+    check_cfg(&binding, "wc_AesCtsEncrypt", "aes_cts");
+    check_cfg(&binding, "wc_AesCfbDecrypt", "aes_decrypt");
+    check_cfg(&binding, "wc_AesEaxInit", "aes_eax");
+    check_cfg(&binding, "wc_AesEcbEncrypt", "aes_ecb");
+    check_cfg(&binding, "wc_AesGcmSetKey", "aes_gcm");
+    check_cfg(&binding, "wc_AesGcmInit", "aes_gcm_stream");
+    check_cfg(&binding, "wc_AesOfbEncrypt", "aes_ofb");
+    check_cfg(&binding, "wc_AesXtsInit", "aes_xts");
+    check_cfg(&binding, "wc_AesXtsEncryptInit", "aes_xts_stream");
+    check_cfg(&binding, "WC_AES_BLOCK_SIZE", "aes_wc_block_size");
+
+    /* blake2 */
+    check_cfg(&binding, "wc_InitBlake2b", "blake2b");
+    check_cfg(&binding, "wc_Blake2bHmac", "blake2b_hmac");
+    check_cfg(&binding, "wc_InitBlake2s", "blake2s");
+    check_cfg(&binding, "wc_Blake2sHmac", "blake2s_hmac");
+
+    /* chacha20_poly1305 */
+    check_cfg(&binding, "wc_ChaCha20Poly1305_Encrypt", "chacha20_poly1305");
+    check_cfg(&binding, "wc_XChaCha20Poly1305_Encrypt", "xchacha20_poly1305");
+
+    /* cmac */
+    check_cfg(&binding, "wc_InitCmac", "cmac");
+
+    /* curve25519 */
+    check_cfg(&binding, "wc_curve25519_make_pub", "curve25519");
+    check_cfg(&binding, "wc_curve25519_make_pub_blind", "curve25519_blinding");
+
+    /* dh */
+    check_cfg(&binding, "wc_InitDhKey", "dh");
+    check_cfg(&binding, "wc_DhGenerateParams", "dh_keygen");
+    check_cfg(&binding, "wc_Dh_ffdhe2048_Get", "dh_ffdhe_2048");
+    check_cfg(&binding, "wc_Dh_ffdhe3072_Get", "dh_ffdhe_3072");
+    check_cfg(&binding, "wc_Dh_ffdhe4096_Get", "dh_ffdhe_4096");
+    check_cfg(&binding, "wc_Dh_ffdhe6144_Get", "dh_ffdhe_6144");
+    check_cfg(&binding, "wc_Dh_ffdhe8192_Get", "dh_ffdhe_8192");
+
+    /* ecc */
+    check_cfg(&binding, "wc_ecc_init", "ecc");
+    check_cfg(&binding, "wc_ecc_export_point_der_compressed", "ecc_comp_key");
+    check_cfg(&binding, "wc_ecc_shared_secret", "ecc_dh");
+    check_cfg(&binding, "wc_ecc_sign_hash", "ecc_sign");
+    check_cfg(&binding, "wc_ecc_verify_hash", "ecc_verify");
+    check_cfg(&binding, "wc_ecc_export_x963", "ecc_export");
+    check_cfg(&binding, "wc_ecc_import_x963", "ecc_import");
+    if check_cfg(&binding, "ecc_curve_ids_ECC_CURVE_INVALID", "ecc_curve_ids") {
+        check_cfg(&binding, "ecc_curve_ids_ECC_SM2P256V1", "ecc_curve_sm2p256v1");
+        check_cfg(&binding, "ecc_curve_ids_ECC_X25519", "ecc_curve_25519");
+        check_cfg(&binding, "ecc_curve_ids_ECC_X448", "ecc_curve_448");
+        check_cfg(&binding, "ecc_curve_ids_ECC_SAKKE_1", "ecc_curve_sakke");
+        check_cfg(&binding, "ecc_curve_ids_ECC_CURVE_CUSTOM", "ecc_custom_curves");
+    } else {
+        check_cfg(&binding, "ecc_curve_id_ECC_SM2P256V1", "ecc_curve_sm2p256v1");
+        check_cfg(&binding, "ecc_curve_id_ECC_X25519", "ecc_curve_25519");
+        check_cfg(&binding, "ecc_curve_id_ECC_X448", "ecc_curve_448");
+        check_cfg(&binding, "ecc_curve_id_ECC_SAKKE_1", "ecc_curve_sakke");
+        check_cfg(&binding, "ecc_curve_id_ECC_CURVE_CUSTOM", "ecc_custom_curves");
+    }
+
+    /* ed25519 */
+    check_cfg(&binding, "wc_ed25519_init", "ed25519");
+    check_cfg(&binding, "wc_ed25519_import_public", "ed25519_import");
+    check_cfg(&binding, "wc_ed25519_export_public", "ed25519_export");
+    check_cfg(&binding, "wc_ed25519_sign_msg", "ed25519_sign");
+    check_cfg(&binding, "wc_ed25519_verify_msg_ex", "ed25519_verify");
+    check_cfg(&binding, "wc_ed25519_verify_msg_init", "ed25519_streaming_verify");
+
+    /* ed448 */
+    check_cfg(&binding, "wc_ed448_init", "ed448");
+    check_cfg(&binding, "wc_ed448_import_public", "ed448_import");
+    check_cfg(&binding, "wc_ed448_export_public", "ed448_export");
+    check_cfg(&binding, "wc_ed448_sign_msg", "ed448_sign");
+    check_cfg(&binding, "wc_ed448_verify_msg_ex", "ed448_verify");
+    check_cfg(&binding, "wc_ed448_verify_msg_init", "ed448_streaming_verify");
+
+    /* fips */
+    check_cfg(&binding, "wc_SetSeed_Cb_fips", "fips");
+
+    /* hkdf */
+    check_cfg(&binding, "wc_HKDF_Extract_ex", "hkdf");
+
+    /* hmac */
+    check_cfg(&binding, "wc_HmacSetKey", "hmac");
+    check_cfg(&binding, "wc_HmacSetKey_ex", "hmac_setkey_ex");
+
+    /* kdf */
+    check_cfg(&binding, "wc_PBKDF2", "kdf_pbkdf2");
+    check_cfg(&binding, "wc_PKCS12_PBKDF_ex", "kdf_pkcs12");
+    check_cfg(&binding, "wc_SRTP_KDF", "kdf_srtp");
+    check_cfg(&binding, "wc_SSH_KDF", "kdf_ssh");
+    check_cfg(&binding, "wc_Tls13_HKDF_Extract_ex", "kdf_tls13");
+
+    /* prf */
+    check_cfg(&binding, "wc_PRF", "prf");
+
+    /* random */
+    check_cfg(&binding, "wc_RNG_DRBG_Reseed", "random_hashdrbg");
+    check_cfg(&binding, "wc_InitRng", "random");
+
+    /* rsa */
+    check_cfg(&binding, "wc_InitRsaKey", "rsa");
+    check_cfg(&binding, "wc_RsaDirect", "rsa_direct");
+    check_cfg(&binding, "wc_MakeRsaKey", "rsa_keygen");
+    check_cfg(&binding, "wc_RsaPSS_Sign", "rsa_pss");
+    check_cfg(&binding, "wc_RsaSetRNG", "rsa_setrng");
+    check_cfg(&binding, "WC_MGF1SHA512_224", "rsa_mgf1sha512_224");
+    check_cfg(&binding, "WC_MGF1SHA512_256", "rsa_mgf1sha512_256");
+    // Detect whether wc_RsaExportKey takes a const first arg (new API) or non-const (old API)
+    let re = Regex::new(r"pub fn wc_RsaExportKey(_fips)?\s*\(\s*\w+\s*:\s*\*\s*const").unwrap();
+    println!("cargo::rustc-check-cfg=cfg(rsa_const_api)");
+    if re.is_match(&binding) {
+        println!("cargo:rustc-cfg=rsa_const_api");
+    }
+
+    /* dilithium / ML-DSA */
+    check_cfg(&binding, "wc_dilithium_init", "dilithium");
+    check_cfg(&binding, "wc_dilithium_make_key", "dilithium_make_key");
+    check_cfg(&binding, "wc_dilithium_make_key_from_seed", "dilithium_make_key_from_seed");
+    check_cfg(&binding, "wc_dilithium_sign_ctx_msg", "dilithium_sign");
+    check_cfg(&binding, "wc_dilithium_sign_ctx_msg_with_seed", "dilithium_sign_with_seed");
+    check_cfg(&binding, "wc_dilithium_verify_ctx_msg", "dilithium_verify");
+    check_cfg(&binding, "wc_dilithium_import_public", "dilithium_import");
+    check_cfg(&binding, "wc_dilithium_export_public", "dilithium_export");
+    check_cfg(&binding, "wc_dilithium_check_key", "dilithium_check_key");
+    check_cfg(&binding, "DILITHIUM_LEVEL2_KEY_SIZE", "dilithium_level2");
+    check_cfg(&binding, "DILITHIUM_LEVEL3_KEY_SIZE", "dilithium_level3");
+    check_cfg(&binding, "DILITHIUM_LEVEL5_KEY_SIZE", "dilithium_level5");
+    check_cfg(&binding, "DILITHIUM_SEED_SZ", "dilithium_make_key_seed_sz");
+    check_cfg(&binding, "DILITHIUM_RND_SZ", "dilithium_rnd_sz");
+
+    /* mlkem / ML-KEM */
+    check_cfg(&binding, "wc_MlKemKey_Init", "mlkem");
+
+    /* lms / HSS */
+    check_cfg(&binding, "wc_LmsKey_Init", "lms");
+    check_cfg(&binding, "wc_LmsKey_MakeKey", "lms_make_key");
+    check_cfg(&binding, "wc_LmsParm_WC_LMS_PARM_L1_H5_W1", "lms_sha256_256");
+    check_cfg(&binding, "wc_LmsParm_WC_LMS_PARM_SHA256_192_L1_H5_W1", "lms_sha256_192");
+
+    /* sha */
+    check_cfg(&binding, "wc_InitSha", "sha");
+    check_cfg(&binding, "wc_InitSha224", "sha224");
+    check_cfg(&binding, "wc_InitSha256", "sha256");
+    check_cfg(&binding, "wc_InitSha384", "sha384");
+    check_cfg(&binding, "wc_InitSha512", "sha512");
+    check_cfg(&binding, "wc_HashType_WC_HASH_TYPE_SHA512_224", "sha512_224");
+    check_cfg(&binding, "wc_HashType_WC_HASH_TYPE_SHA512_256", "sha512_256");
+    check_cfg(&binding, "wc_InitSha3_224", "sha3");
+    check_cfg(&binding, "wc_InitShake128", "shake128");
+    check_cfg(&binding, "wc_InitShake256", "shake256");
+
+    Ok(())
+}

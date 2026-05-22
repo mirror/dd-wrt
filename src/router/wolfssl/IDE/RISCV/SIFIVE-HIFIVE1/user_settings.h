@@ -1,6 +1,6 @@
 /* user_settings.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -330,9 +330,9 @@ extern "C" {
 #endif
 
 /* Blake2B */
-#undef HAVE_BLAKE2
+#undef HAVE_BLAKE2B
 #if 0
-    #define HAVE_BLAKE2
+    #define HAVE_BLAKE2B
 #endif
 
 /* Blake2S */

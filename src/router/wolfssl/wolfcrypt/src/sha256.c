@@ -1,6 +1,6 @@
 /* sha256.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -678,7 +678,10 @@ static int InitSha256(wc_Sha256* sha256)
         sha256->devCtx = NULL;
     #endif
     #ifdef WOLFSSL_SMALL_STACK_CACHE
-        sha256->W = NULL;
+        sha256->W = (word32*)XMALLOC(sizeof(word32) * WC_SHA256_BLOCK_SIZE,
+                                     sha256->heap, DYNAMIC_TYPE_DIGEST);
+        if (sha256->W == NULL)
+            return MEMORY_E;
     #endif
 
         ret = InitSha256(sha256);
@@ -1103,7 +1106,13 @@ int wc_InitSha256_ex(wc_Sha256* sha256, void* heap, int devId)
         return ret;
 
     sha256->heap = heap;
+#ifdef WOLF_CRYPTO_CB
+    sha256->devId = devId;
+    sha256->devCtx = NULL;
+#else
     (void)devId;
+#endif
+
 
     #ifdef WOLFSSL_SMALL_STACK_CACHE
     sha256->W = NULL;
@@ -1156,14 +1165,11 @@ static WC_INLINE int Transform_Sha256_Len(wc_Sha256* sha256, const byte* data,
         sha256->devId = devId;
         sha256->devCtx = NULL;
     #endif
-    #ifdef MAX3266X_SHA_CB
-        ret = wc_MXC_TPU_SHA_Init(&(sha256->mxcCtx));
-        if (ret != 0) {
-            return ret;
-        }
-    #endif
     #ifdef WOLFSSL_SMALL_STACK_CACHE
-        sha256->W = NULL;
+        sha256->W = (word32*)XMALLOC(sizeof(word32) * WC_SHA256_BLOCK_SIZE,
+                                     sha256->heap, DYNAMIC_TYPE_DIGEST);
+        if (sha256->W == NULL)
+            return MEMORY_E;
     #endif
 
     #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_SHA256)
@@ -1244,13 +1250,8 @@ static WC_INLINE int Transform_Sha256_Len(wc_Sha256* sha256, const byte* data,
 
     #if defined(WOLFSSL_SMALL_STACK_CACHE) && !defined(WOLFSSL_NO_MALLOC)
         word32* W = sha256->W;
-        if (W == NULL) {
-            W = (word32*)XMALLOC(sizeof(word32) * WC_SHA256_BLOCK_SIZE,
-                                 sha256->heap, DYNAMIC_TYPE_DIGEST);
-            if (W == NULL)
-                return MEMORY_E;
-            sha256->W = W;
-        }
+        if (W == NULL)
+            return BAD_FUNC_ARG;
     #elif defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
         word32* W;
         W = (word32*)XMALLOC(sizeof(word32) * WC_SHA256_BLOCK_SIZE,
@@ -1728,7 +1729,7 @@ static WC_INLINE int Transform_Sha256_Len(wc_Sha256* sha256, const byte* data,
                 2 * sizeof(word32));
         }
     #endif
-    #if defined(WOLFSSL_ARMASM)
+    #if defined(WOLFSSL_ARMASM) && !defined(FREESCALE_MMCAU_SHA)
         ByteReverseWords( &sha256->buffer[WC_SHA256_PAD_SIZE / sizeof(word32)],
             &sha256->buffer[WC_SHA256_PAD_SIZE / sizeof(word32)],
             2 * sizeof(word32));
@@ -2065,6 +2066,15 @@ static WC_INLINE int Transform_Sha256_Len(wc_Sha256* sha256, const byte* data,
     {
         int ret = 0;
 
+#ifdef WOLFSSL_SMALL_STACK_CACHE
+    if (sha224->W == NULL) {
+        sha224->W = (word32*)XMALLOC(sizeof(word32) * WC_SHA256_BLOCK_SIZE,
+                                     sha224->heap, DYNAMIC_TYPE_DIGEST);
+        if (sha224->W == NULL)
+            return MEMORY_E;
+    }
+#endif
+
         sha224->digest[0] = 0xc1059ed8;
         sha224->digest[1] = 0x367cd507;
         sha224->digest[2] = 0x3070dd17;
@@ -2295,7 +2305,7 @@ static WC_INLINE int Transform_Sha256_Len(wc_Sha256* sha256, const byte* data,
     #endif
         {
             ret = wc_CryptoCb_Free(sha224->devId, WC_ALGO_TYPE_HASH,
-                             WC_HASH_TYPE_SHA224, (void*)sha224);
+                             WC_HASH_TYPE_SHA224, 0, (void*)sha224);
             /* If they want the standard free, they can call it themselves */
             /* via their callback setting devId to INVALID_DEVID */
             /* otherwise assume the callback handled it */
@@ -2372,7 +2382,7 @@ void wc_Sha256Free(wc_Sha256* sha256)
     #endif
     {
         ret = wc_CryptoCb_Free(sha256->devId, WC_ALGO_TYPE_HASH,
-                         WC_HASH_TYPE_SHA256, (void*)sha256);
+                         WC_HASH_TYPE_SHA256, 0, (void*)sha256);
         /* If they want the standard free, they can call it themselves */
         /* via their callback setting devId to INVALID_DEVID */
         /* otherwise assume the callback handled it */
@@ -2400,9 +2410,6 @@ void wc_Sha256Free(wc_Sha256* sha256)
     }
 #endif
 
-#ifdef MAX3266X_SHA_CB
-    wc_MXC_TPU_SHA_Free(&(sha256->mxcCtx));
-#endif
 
 #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_SHA256)
     wolfAsync_DevCtxFree(&sha256->asyncDev, WOLFSSL_ASYNC_MARKER_SHA256);
@@ -2536,7 +2543,7 @@ int wc_Sha224_Grow(wc_Sha224* sha224, const byte* in, int inSz)
             return BAD_FUNC_ARG;
         }
 
-        WC_ALLOC_VAR_EX(tmpSha224, wc_Sha224, 1, NULL,
+        WC_CALLOC_VAR_EX(tmpSha224, wc_Sha224, 1, NULL,
             DYNAMIC_TYPE_TMP_BUFFER, return MEMORY_E);
 
         ret = wc_Sha224Copy(sha224, tmpSha224);
@@ -2572,10 +2579,18 @@ int wc_Sha224_Grow(wc_Sha224* sha224, const byte* in, int inSz)
         ret = 0; /* Reset ret to 0 to avoid returning the callback error code */
 #endif /* WOLF_CRYPTO_CB && WOLF_CRYPTO_CB_COPY */
 
+        /* Free dst resources before copy to prevent memory leaks (e.g., msg
+         * buffer, W cache, hardware contexts). XMEMCPY overwrites dst. */
+        wc_Sha224Free(dst);
         XMEMCPY(dst, src, sizeof(wc_Sha224));
 
     #ifdef WOLFSSL_SMALL_STACK_CACHE
-        dst->W = NULL;
+        dst->W = (word32*)XMALLOC(sizeof(word32) * WC_SHA256_BLOCK_SIZE,
+                                  dst->heap, DYNAMIC_TYPE_DIGEST);
+        if (dst->W == NULL) {
+            XMEMSET(dst, 0, sizeof(wc_Sha224));
+            return MEMORY_E;
+        }
     #endif
 
     #if defined(WOLFSSL_SILABS_SE_ACCEL) && defined(WOLFSSL_SILABS_SE_ACCEL_3)
@@ -2676,7 +2691,7 @@ int wc_Sha256GetHash(wc_Sha256* sha256, byte* hash)
         return BAD_FUNC_ARG;
     }
 
-    WC_ALLOC_VAR_EX(tmpSha256, wc_Sha256, 1, NULL, DYNAMIC_TYPE_TMP_BUFFER,
+    WC_CALLOC_VAR_EX(tmpSha256, wc_Sha256, 1, NULL, DYNAMIC_TYPE_TMP_BUFFER,
         return MEMORY_E);
 
     ret = wc_Sha256Copy(sha256, tmpSha256);
@@ -2713,21 +2728,23 @@ int wc_Sha256Copy(wc_Sha256* src, wc_Sha256* dst)
     ret = 0; /* Reset ret to 0 to avoid returning the callback error code */
 #endif /* WOLF_CRYPTO_CB && WOLF_CRYPTO_CB_COPY */
 
+    /* Free dst resources before copy to prevent memory leaks (e.g., msg
+     * buffer, W cache, hardware contexts). XMEMCPY overwrites dst. */
+    wc_Sha256Free(dst);
     XMEMCPY(dst, src, sizeof(wc_Sha256));
 
 #ifdef WOLFSSL_MAXQ10XX_CRYPTO
     wc_MAXQ10XX_Sha256Copy(src);
 #endif
 
-#ifdef MAX3266X_SHA_CB
-    ret = wc_MXC_TPU_SHA_Copy(&(src->mxcCtx), &(dst->mxcCtx));
-    if (ret != 0) {
-        return ret;
-    }
-#endif
 
 #ifdef WOLFSSL_SMALL_STACK_CACHE
-    dst->W = NULL;
+    dst->W = (word32*)XMALLOC(sizeof(word32) * WC_SHA256_BLOCK_SIZE,
+                              dst->heap, DYNAMIC_TYPE_DIGEST);
+    if (dst->W == NULL) {
+        XMEMSET(dst, 0, sizeof(wc_Sha256));
+        return MEMORY_E;
+    }
 #endif
 
 #if defined(WOLFSSL_SILABS_SE_ACCEL) && defined(WOLFSSL_SILABS_SE_ACCEL_3)

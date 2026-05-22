@@ -1,6 +1,6 @@
 /* ecc.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -44,9 +44,6 @@
 
 #ifdef WOLFSSL_ASYNC_CRYPT
     #include <wolfssl/wolfcrypt/async.h>
-    #ifdef WOLFSSL_CERT_GEN
-        #include <wolfssl/wolfcrypt/asn.h>
-    #endif
 #endif
 
 #if defined(WOLFSSL_ATECC508A) || defined(WOLFSSL_ATECC608A)
@@ -85,13 +82,6 @@
 #if FIPS_VERSION3_GE(6,0,0)
     extern const unsigned int wolfCrypt_FIPS_ecc_ro_sanity[2];
     WOLFSSL_LOCAL int wolfCrypt_FIPS_ECC_sanity(void);
-#endif
-
-/* Enable curve B parameter if needed */
-#if defined(HAVE_COMP_KEY) || defined(ECC_CACHE_CURVE)
-    #ifndef USE_ECC_B_PARAM /* Allow someone to force enable */
-        #define USE_ECC_B_PARAM
-    #endif
 #endif
 
 
@@ -772,7 +762,7 @@ int wc_ecc_init_label(ecc_key* key, const char* label, void* heap, int devId);
 #endif
 #ifdef WOLFSSL_CUSTOM_CURVES
 WOLFSSL_LOCAL
-void wc_ecc_free_curve(const ecc_set_type* curve, void* heap);
+void wc_ecc_free_curve(ecc_set_type* curve, void* heap);
 #endif
 WOLFSSL_ABI WOLFSSL_API
 int wc_ecc_free(ecc_key* key);
@@ -866,6 +856,9 @@ int wc_ecc_import_x963(const byte* in, word32 inLen, ecc_key* key);
 WOLFSSL_API
 int wc_ecc_import_x963_ex(const byte* in, word32 inLen, ecc_key* key,
                           int curve_id);
+WOLFSSL_API
+int wc_ecc_import_x963_ex2(const byte* in, word32 inLen, ecc_key* key,
+                           int curve_id, int untrusted);
 WOLFSSL_ABI WOLFSSL_API
 int wc_ecc_import_private_key(const byte* priv, word32 privSz, const byte* pub,
                            word32 pubSz, ecc_key* key);

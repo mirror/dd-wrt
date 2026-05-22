@@ -1,6 +1,6 @@
 /* renesas_common.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -440,12 +440,12 @@ int wc_CryptoCb_CryptInitRenesasCmn(struct WOLFSSL* ssl, void* ctx)
         if (cbInfo->internal == NULL) {
             return MEMORY_E;
         }
+        ForceZero(cbInfo->internal, internal_sz);
        #if defined(WOLFSSL_RENESAS_FSPSM_TLS) ||\
             defined(WOLFSSL_RENESAS_TSIP_TLS)
         if (ssl)
             cbInfo->internal->heap = ssl->heap;
        #endif
-        ForceZero(cbInfo->internal, internal_sz);
     }
     /* need exclusive control because of static variable */
     if ((cmn_hw_lock()) == 0) {

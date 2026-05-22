@@ -1,6 +1,6 @@
 /* user_settings_all.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -210,14 +210,14 @@ extern "C" {
 #define WOLFSSL_SHAKE256
 #define WOLFSSL_SHA3
 #define WOLFSSL_HASH_FLAGS /* enable hash flag API's */
-#define WOLFSSL_SHAKE256
 
 /* Additional Algorithms */
 #define HAVE_HASHDRBG
 #define HAVE_CURVE25519
 #define HAVE_ED25519
+#define ED25519_SMALL
 #define WOLFSSL_ED25519_STREAMING_VERIFY
-#define CURVED25519_SMALL
+#define CURVE25519_SMALL
 #define HAVE_ED448
 #define WOLFSSL_ED448_STREAMING_VERIFY
 #define HAVE_CURVE448
@@ -228,7 +228,6 @@ extern "C" {
 #define HAVE_X963_KDF
 #define WOLFSSL_CMAC
 #define WOLFSSL_DES_ECB
-#define HAVE_BLAKE2
 #define HAVE_BLAKE2B
 #define HAVE_BLAKE2S
 #define WOLFSSL_SIPHASH

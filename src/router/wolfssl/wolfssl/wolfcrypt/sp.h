@@ -1,6 +1,6 @@
 /* sp.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -26,6 +26,10 @@
 #include <wolfssl/wolfcrypt/types.h>
 #include <wolfssl/wolfcrypt/settings.h>
 
+#if defined(__riscv) && (__riscv_xlen == 32) && !defined(__riscv_mul)
+    #define SP_NO_MUL_INSTRUCTION
+#endif
+
 #if defined(WOLFSSL_HAVE_SP_RSA) || defined(WOLFSSL_HAVE_SP_DH) || \
                                     defined(WOLFSSL_HAVE_SP_ECC)
 #ifdef _WIN32_WCE
@@ -48,18 +52,7 @@
     #undef WOLFSSL_HAVE_SP_ECC
 #endif
 
-#ifdef noinline
-    #define SP_NOINLINE noinline
-#elif defined(_MSC_VER)
-    #define SP_NOINLINE __declspec(noinline)
-#elif defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
-    #define SP_NOINLINE _Pragma("inline = never")
-#elif defined(__GNUC__) || defined(__KEIL__) || defined(__DCC__)
-    #define SP_NOINLINE __attribute__((noinline))
-#else
-    #define SP_NOINLINE
-#endif
-
+#define SP_NOINLINE WC_NO_INLINE
 
 #ifdef __cplusplus
     extern "C" {

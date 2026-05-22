@@ -47,6 +47,8 @@ nobase_include_HEADERS+= \
                          wolfssl/wolfcrypt/chacha.h \
                          wolfssl/wolfcrypt/chacha20_poly1305.h \
                          wolfssl/wolfcrypt/random.h \
+                         wolfssl/wolfcrypt/wolfentropy.h \
+                         wolfssl/wolfcrypt/rng_bank.h \
                          wolfssl/wolfcrypt/ripemd.h \
                          wolfssl/wolfcrypt/rsa.h \
                          wolfssl/wolfcrypt/rc2.h \
@@ -86,6 +88,7 @@ nobase_include_HEADERS+= \
                          wolfssl/wolfcrypt/xmss.h \
                          wolfssl/wolfcrypt/wc_xmss.h \
                          wolfssl/wolfcrypt/ext_xmss.h \
+                         wolfssl/wolfcrypt/wc_slhdsa.h \
                          wolfssl/wolfcrypt/oid_sum.h
 
 noinst_HEADERS+= \

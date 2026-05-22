@@ -1,6 +1,6 @@
 /* aes.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -36,6 +36,11 @@ block cipher mechanism that uses n-bit binary string parameter key with 128-bits
 
 #include <wolfssl/wolfcrypt/types.h>
 
+#if defined(WOLFSSL_ARMASM) && !defined(GCM_SMALL) && !defined(GCM_TABLE) && \
+    !defined(GCM_TABLE_4BIT)
+    #define GCM_TABLE_4BIT
+#endif
+
 #if !defined(NO_AES) || defined(WOLFSSL_SM4)
 typedef struct Gcm {
     ALIGN16 byte H[16];
@@ -47,7 +52,7 @@ typedef struct Gcm {
     /* key-based fast multiplication table. */
     ALIGN16 byte M0[256][16];
 #elif defined(GCM_TABLE_4BIT)
-    #if defined(BIG_ENDIAN_ORDER) || defined(WC_16BIT_CPU)
+    #if defined(WC_16BIT_CPU)
         ALIGN16 byte M0[16][16];
     #else
         ALIGN16 byte M0[32][16];
@@ -156,6 +161,9 @@ WOLFSSL_LOCAL void GHASH(Gcm* gcm, const byte* a, word32 aSz, const byte* c,
     #include <wolfssl/wolfcrypt/port/maxim/maxq10xx.h>
 #endif
 
+#if defined(WOLFSSL_PSOC6_CRYPTO)
+    #include "cy_crypto_common.h"
+#endif /* WOLFSSL_PSOC6_CRYPTO */
 
 #ifdef __cplusplus
     extern "C" {
@@ -326,7 +334,7 @@ struct Aes {
 #endif /* __aarch64__ && WOLFSSL_ARMASM && !WOLFSSL_ARMASM_NO_HW_CRYPTO */
 #if defined(WOLF_CRYPTO_CB) || defined(WOLFSSL_STM32U5_DHUK)
     int    devId;
-    void*  devCtx;
+    void*  devCtx;  /* Opaque handle for CryptoCB device */
 #endif
 #ifdef WOLF_PRIVATE_KEY_ID
     byte id[AES_MAX_ID_LEN];
@@ -433,6 +441,12 @@ struct Aes {
 #ifdef WOLFSSL_AES_CTS
     byte ctsBlock[WC_AES_BLOCK_SIZE * 2];
 #endif
+#if defined(WOLFSSL_PSOC6_CRYPTO)
+    cy_stc_crypto_aes_state_t aes_state;
+#ifdef HAVE_AESGCM
+    cy_stc_crypto_aes_gcm_state_t aes_gcm_state;
+#endif
+#endif /* WOLFSSL_PSOC6_CRYPTO */
 };
 
 #ifndef WC_AES_TYPE_DEFINED
@@ -792,6 +806,13 @@ int wc_AesSivDecrypt_ex(const byte* key, word32 keySz, const AesSivAssoc* assoc,
                         const byte* in, word32 inSz, byte* siv, byte* out);
 #endif
 
+#ifdef WOLFSSL_CMAC
+/* forward declaration, in case aes.h is being included by cmac.h */
+struct Cmac;
+WOLFSSL_LOCAL int wc_local_CmacUpdateAes(struct Cmac *cmac, const byte* in,
+                                   word32 inSz);
+#endif
+
 #ifdef WOLFSSL_AES_EAX
 
 /* Because of the circular dependency between AES and CMAC, we need to prevent
@@ -879,9 +900,74 @@ WOLFSSL_API int wc_AesCtsDecryptFinal(Aes* aes, byte* out, word32* outSz);
 
 #endif
 
-#if defined(__aarch64__) && defined(WOLFSSL_ARMASM) && \
-    !defined(WOLFSSL_ARMASM_NO_HW_CRYPTO)
+#if defined(WOLFSSL_ARMASM)
+#if defined(__aarch64__) || defined(WOLFSSL_ARMASM_NO_HW_CRYPTO)
+WOLFSSL_LOCAL void AES_set_encrypt_key(const unsigned char* key, word32 len,
+    unsigned char* ks);
+WOLFSSL_LOCAL void AES_invert_key(unsigned char* ks, word32 rounds);
+WOLFSSL_LOCAL void AES_ECB_encrypt(const unsigned char* in, unsigned char* out,
+    unsigned long len, const unsigned char* ks, int nr);
+WOLFSSL_LOCAL void AES_ECB_decrypt(const unsigned char* in, unsigned char* out,
+    unsigned long len, const unsigned char* ks, int nr);
+WOLFSSL_LOCAL void AES_CBC_encrypt(const unsigned char* in, unsigned char* out,
+    unsigned long len, const unsigned char* ks, int nr, unsigned char* iv);
+WOLFSSL_LOCAL void AES_CBC_decrypt(const unsigned char* in, unsigned char* out,
+    unsigned long len, const unsigned char* ks, int nr, unsigned char* iv);
+WOLFSSL_LOCAL void AES_CTR_encrypt(const unsigned char* in, unsigned char* out,
+    unsigned long len, const unsigned char* ks, int nr, unsigned char* ctr);
+#if defined(GCM_TABLE) || defined(GCM_TABLE_4BIT)
+/* in pre-C2x C, constness conflicts for dimensioned arrays can't be resolved.
+ */
+WOLFSSL_LOCAL void GCM_gmult_len(byte* x, const byte** m,
+    const unsigned char* data, unsigned long len);
+#endif
+WOLFSSL_LOCAL void AES_GCM_encrypt(const unsigned char* in, unsigned char* out,
+    unsigned long len, const unsigned char* ks, int nr, unsigned char* ctr);
 
+#if defined(WOLFSSL_AES_XTS) && defined(__aarch64__)
+WOLFSSL_LOCAL void AES_XTS_encrypt(const byte* in, byte* out, word32 sz,
+    const byte* i, byte* key, byte* key2, byte* tmp, int nr);
+WOLFSSL_LOCAL void AES_XTS_decrypt(const byte* in, byte* out, word32 sz,
+    const byte* i, byte* key, byte* key2, byte* tmp, int nr);
+#endif
+#endif /* __aarch64__ || WOLFSSL_ARMASM_NO_HW_CRYPTO */
+
+#if defined(__aarch64__) && !defined(WOLFSSL_ARMASM_NO_NEON)
+WOLFSSL_LOCAL void AES_set_encrypt_key_NEON(const unsigned char* key,
+    word32 len, unsigned char* ks);
+WOLFSSL_LOCAL void AES_invert_key_NEON(unsigned char* ks, word32 rounds);
+WOLFSSL_LOCAL void AES_ECB_encrypt_NEON(const unsigned char* in,
+    unsigned char* out, unsigned long len, const unsigned char* ks, int nr);
+WOLFSSL_LOCAL void AES_ECB_decrypt_NEON(const unsigned char* in,
+    unsigned char* out, unsigned long len, const unsigned char* ks, int nr);
+WOLFSSL_LOCAL void AES_CBC_encrypt_NEON(const unsigned char* in,
+    unsigned char* out, unsigned long len, const unsigned char* ks, int nr,
+    unsigned char* iv);
+WOLFSSL_LOCAL void AES_CBC_decrypt_NEON(const unsigned char* in,
+    unsigned char* out, unsigned long len, const unsigned char* ks, int nr,
+    unsigned char* iv);
+WOLFSSL_LOCAL void AES_CTR_encrypt_NEON(const unsigned char* in,
+    unsigned char* out, unsigned long len, const unsigned char* ks, int nr,
+    unsigned char* ctr);
+#if defined(GCM_TABLE) || defined(GCM_TABLE_4BIT)
+/* in pre-C2x C, constness conflicts for dimensioned arrays can't be resolved.
+ */
+WOLFSSL_LOCAL void GCM_gmult_len_NEON(byte* x, const byte* h,
+    const unsigned char* data, unsigned long len);
+#endif
+WOLFSSL_LOCAL void AES_GCM_encrypt_NEON(const unsigned char* in,
+    unsigned char* out, unsigned long len, const unsigned char* ks, int nr,
+    unsigned char* ctr);
+#endif
+
+#ifdef WOLFSSL_AES_XTS
+WOLFSSL_LOCAL void AES_XTS_encrypt_NEON(const byte* in, byte* out, word32 sz,
+    const byte* i, byte* key, byte* key2, byte* tmp, int nr);
+WOLFSSL_LOCAL void AES_XTS_decrypt_NEON(const byte* in, byte* out, word32 sz,
+    const byte* i, byte* key, byte* key2, byte* tmp, int nr);
+#endif /* WOLFSSL_AES_XTS */
+
+#if defined(__aarch64__) && !defined(WOLFSSL_ARMASM_NO_HW_CRYPTO)
 WOLFSSL_LOCAL void AES_set_key_AARCH64(const byte* userKey, int keylen,
     byte* key, int dir);
 
@@ -970,7 +1056,7 @@ WOLFSSL_LOCAL void AES_GCM_decrypt_final_AARCH64_EOR3(byte* tag,
     const byte* authTag, word32 tbytes, word32 nbytes, word32 abytes, byte* h,
     byte* initCtr, int* res);
 #endif
-#endif
+#endif /* WOLFSSL_AESGCM_STREAM */
 
 #ifdef WOLFSSL_AES_XTS
 WOLFSSL_LOCAL void AES_XTS_encrypt_AARCH64(const byte* in, byte* out,
@@ -978,31 +1064,9 @@ WOLFSSL_LOCAL void AES_XTS_encrypt_AARCH64(const byte* in, byte* out,
 WOLFSSL_LOCAL void AES_XTS_decrypt_AARCH64(const byte* in, byte* out,
     word32 sz, const byte* i, byte* key, byte* key2, byte* tmp, int nr);
 #endif /* WOLFSSL_AES_XTS */
-#endif /* __aarch64__ && WOLFSSL_ARMASM && !WOLFSSL_ARMASM_NO_HW_CRYPTO */
+#endif /* __aarch64__ && !WOLFSSL_ARMASM_NO_HW_CRYPTO */
 
-#if !defined(__aarch64__) && defined(WOLFSSL_ARMASM)
-#if !defined(WOLFSSL_ARMASM_NO_HW_CRYPTO)
-WOLFSSL_LOCAL void AES_set_key_AARCH32(const byte* userKey, int keylen,
-    byte* key, int dir);
-
-WOLFSSL_LOCAL void AES_encrypt_AARCH32(const byte* inBlock, byte* outBlock,
-    byte* key, int nr);
-WOLFSSL_LOCAL void AES_decrypt_AARCH32(const byte* inBlock, byte* outBlock,
-    byte* key, int nr);
-WOLFSSL_LOCAL void AES_encrypt_blocks_AARCH32(const byte* in, byte* out,
-    word32 sz, byte* key, int nr);
-#endif
-
-#ifdef WOLFSSL_AES_XTS
-WOLFSSL_LOCAL void AES_XTS_encrypt_AARCH64(const byte* in, byte* out,
-    word32 sz, const byte* i, byte* key, byte* key2, byte* tmp, int nr);
-WOLFSSL_LOCAL void AES_XTS_decrypt_AARCH64(const byte* in, byte* out,
-    word32 sz, const byte* i, byte* key, byte* key2, byte* tmp, int nr);
-#endif /* WOLFSSL_AES_XTS */
-#endif /* __aarch64__ && WOLFSSL_ARMASM && !WOLFSSL_ARMASM_NO_HW_CRYPTO */
-
-#if !defined(__aarch64__) && defined(WOLFSSL_ARMASM)
-#if !defined(WOLFSSL_ARMASM_NO_HW_CRYPTO)
+#if !defined(__aarch64__) && !defined(WOLFSSL_ARMASM_NO_HW_CRYPTO)
 WOLFSSL_LOCAL void AES_set_key_AARCH32(const byte* userKey, int keylen,
     byte* key, int dir);
 
@@ -1040,30 +1104,8 @@ WOLFSSL_LOCAL void AES_XTS_encrypt_AARCH32(const byte* in, byte* out,
 WOLFSSL_LOCAL void AES_XTS_decrypt_AARCH32(const byte* in, byte* out,
     word32 sz, const byte* i, byte* key, byte* key2, byte* tmp, int nr);
 #endif /* WOLFSSL_AES_XTS */
-#else
-WOLFSSL_LOCAL void AES_set_encrypt_key(const unsigned char* key, word32 len,
-    unsigned char* ks);
-WOLFSSL_LOCAL void AES_invert_key(unsigned char* ks, word32 rounds);
-WOLFSSL_LOCAL void AES_ECB_encrypt(const unsigned char* in, unsigned char* out,
-    unsigned long len, const unsigned char* ks, int nr);
-WOLFSSL_LOCAL void AES_ECB_decrypt(const unsigned char* in, unsigned char* out,
-    unsigned long len, const unsigned char* ks, int nr);
-WOLFSSL_LOCAL void AES_CBC_encrypt(const unsigned char* in, unsigned char* out,
-    unsigned long len, const unsigned char* ks, int nr, unsigned char* iv);
-WOLFSSL_LOCAL void AES_CBC_decrypt(const unsigned char* in, unsigned char* out,
-    unsigned long len, const unsigned char* ks, int nr, unsigned char* iv);
-WOLFSSL_LOCAL void AES_CTR_encrypt(const unsigned char* in, unsigned char* out,
-    unsigned long len, const unsigned char* ks, int nr, unsigned char* ctr);
-#if defined(GCM_TABLE) || defined(GCM_TABLE_4BIT)
-/* in pre-C2x C, constness conflicts for dimensioned arrays can't be resolved.
- */
-WOLFSSL_LOCAL void GCM_gmult_len(byte* x, const byte** m,
-    const unsigned char* data, unsigned long len);
-#endif
-WOLFSSL_LOCAL void AES_GCM_encrypt(const unsigned char* in, unsigned char* out,
-    unsigned long len, const unsigned char* ks, int nr, unsigned char* ctr);
-#endif /* !WOLFSSL_ARMASM_NO_HW_CRYPTO */
-#endif
+#endif /* !__aarch64__ && !WOLFSSL_ARMASM_NO_HW_CRYPTO */
+#endif /* WOLFSSL_ARMASM */
 
 #ifdef __cplusplus
     } /* extern "C" */

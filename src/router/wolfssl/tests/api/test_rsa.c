@@ -1,6 +1,6 @@
 /* test_rsa.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -26,10 +26,6 @@
 #else
     #define WOLFSSL_MISC_INCLUDED
     #include <wolfcrypt/src/misc.c>
-#endif
-
-#ifdef WOLFSSL_ASYNC_CRYPT
-    #define WOLFSSL_SMALL_STACK
 #endif
 
 #include <wolfssl/wolfcrypt/rsa.h>
@@ -823,6 +819,20 @@ int test_wc_RsaPublicEncryptDecrypt(void)
         &key), 0);
     ExpectIntEQ(XMEMCMP(plain, inStr, plainLen), 0);
     /* Pass bad args - tested in another testing function.*/
+
+#if !defined(HAVE_SELFTEST) && (!defined(HAVE_FIPS) || FIPS_VERSION3_GE(7,0,0))
+    {
+        WC_DECLARE_VAR(shortPlain, byte, TEST_STRING_SZ - 4, NULL);
+        WC_ALLOC_VAR(shortPlain, byte, TEST_STRING_SZ - 4, NULL);
+    #ifdef WC_DECLARE_VAR_IS_HEAP_ALLOC
+        ExpectNotNull(shortPlain);
+    #endif
+        /* Test for when plain length is less than required. */
+        ExpectIntEQ(wc_RsaPrivateDecrypt(cipher, cipherLenResult, shortPlain,
+                                         TEST_STRING_SZ - 4, &key), RSA_BUFFER_E);
+        WC_FREE_VAR(shortPlain, NULL);
+    }
+#endif /* !HAVE_SELFTEST && (!HAVE_FIPS || FIPS_VERSION3_GE(7,0,0)) */
 
     WC_FREE_VAR(in, NULL);
     WC_FREE_VAR(plain, NULL);

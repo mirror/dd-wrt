@@ -1,6 +1,6 @@
 /* conf.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -98,7 +98,7 @@ WOLFSSL_TXT_DB *wolfSSL_TXT_DB_read(WOLFSSL_BIO *in, int num)
         if (*idx == '#')
             continue;
         *lineEnd = '\0';
-        strBuf = (char*)XMALLOC(fieldsSz + lineEnd - idx + 1, NULL,
+        strBuf = (char*)XMALLOC(fieldsSz + (lineEnd - idx) + 1, NULL,
                                 DYNAMIC_TYPE_OPENSSL);
         if (!strBuf) {
             WOLFSSL_MSG("malloc error");

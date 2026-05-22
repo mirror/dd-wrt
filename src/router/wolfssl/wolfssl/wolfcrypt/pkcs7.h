@@ -1,6 +1,6 @@
 /* pkcs7.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -229,6 +229,14 @@ typedef int (*CallbackRsaSignRawDigest)(wc_PKCS7* pkcs7, byte* digest,
                                    int devId, int hashOID);
 #endif
 
+#if defined(HAVE_PKCS7_ECC_RAW_SIGN_CALLBACK) && defined(HAVE_ECC)
+/* ECC sign raw digest callback, user signs hash directly */
+typedef int (*CallbackEccSignRawDigest)(wc_PKCS7* pkcs7, byte* digest,
+                                   word32 digestSz, byte* out, word32 outSz,
+                                   byte* privateKey, word32 privateKeySz,
+                                   int devId, int hashOID);
+#endif
+
 
 /* Public Structure Warning:
  * Existing members must not be changed to maintain backwards compatibility!
@@ -376,6 +384,17 @@ struct wc_PKCS7 {
 
     CallbackAESKeyWrapUnwrap aesKeyWrapUnwrapCb;
 
+#if defined(HAVE_PKCS7_ECC_RAW_SIGN_CALLBACK) && defined(HAVE_ECC)
+    CallbackEccSignRawDigest eccSignRawDigestCb;
+#endif
+
+#if defined(WC_RSA_PSS) && !defined(NO_RSA)
+    int pssSaltLen;   /* RSASSA-PSS params from SignerInfo; valid when */
+    int pssHashType;  /* pssParamsPresent == 1; else verify path uses  */
+    int pssMgf;       /* RSA_PSS_SALT_LEN_DEFAULT / digest algo defaults */
+    byte pssParamsPresent;
+#endif
+
     /* !! NEW DATA MEMBERS MUST BE ADDED AT END !! */
 };
 
@@ -509,6 +528,11 @@ WOLFSSL_API int  wc_PKCS7_SetAESKeyWrapUnwrapCb(wc_PKCS7* pkcs7,
 #if defined(HAVE_PKCS7_RSA_RAW_SIGN_CALLBACK) && !defined(NO_RSA)
 WOLFSSL_API int  wc_PKCS7_SetRsaSignRawDigestCb(wc_PKCS7* pkcs7,
         CallbackRsaSignRawDigest cb);
+#endif
+
+#if defined(HAVE_PKCS7_ECC_RAW_SIGN_CALLBACK) && defined(HAVE_ECC)
+WOLFSSL_API int  wc_PKCS7_SetEccSignRawDigestCb(wc_PKCS7* pkcs7,
+        CallbackEccSignRawDigest cb);
 #endif
 
 /* CMS/PKCS#7 EnvelopedData */

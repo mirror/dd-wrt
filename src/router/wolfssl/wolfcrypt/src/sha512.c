@@ -1,6 +1,6 @@
 /* sha512.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -19,10 +19,45 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
+/*
+ * SHA-512/384 Build Options:
+ *
+ * Core:
+ * WOLFSSL_SHA512:           Enable SHA-512 support                default: off
+ * WOLFSSL_SHA384:           Enable SHA-384 support                default: off
+ * WOLFSSL_NOSHA512_224:     Disable SHA-512/224 variant           default: off
+ * WOLFSSL_NOSHA512_256:     Disable SHA-512/256 variant           default: off
+ *
+ * Performance:
+ * USE_SLOW_SHA512:          Disable SHA-512 loop unrolling        default: off
+ * USE_SLOW_SHA2:            Disable SHA-2 loop unrolling          default: off
+ * WOLFSSL_HASH_FLAGS:       Enable hash flags for state tracking  default: off
+ * WOLFSSL_HASH_KEEP:        Keep hash input data for reuse        default: off
+ * WOLFSSL_SMALL_STACK_CACHE: Cache hash state on small stack      default: off
+ * WC_NO_INTERNAL_FUNCTION_POINTERS: Disable internal func ptrs   default: off
+ *
+ * Hardware Acceleration (SHA-512-specific):
+ * WC_ASYNC_ENABLE_SHA512:   Enable async SHA-512 operations       default: off
+ * WC_ASYNC_ENABLE_SHA384:   Enable async SHA-384 operations       default: off
+ * WOLFSSL_KCAPI_HASH:       Linux kernel crypto API for hashing  default: off
+ * WOLFSSL_SE050_HASH:       SE050 hardware hashing               default: off
+ * WOLFSSL_SILABS_SHA384:    Silicon Labs SHA-384 acceleration    default: off
+ * WOLFSSL_SILABS_SHA512:    Silicon Labs SHA-512 acceleration    default: off
+ * NO_IMX6_CAAM_HASH:        Disable i.MX6 CAAM hash             default: off
+ * NO_WOLFSSL_ESP32_CRYPT_HASH: Disable ESP32 hash acceleration   default: off
+ * WOLFSSL_ARMASM_CRYPTO_SHA512: ARM crypto SHA-512 instructions  default: off
+ * STM32_HASH_SHA384:        STM32 hardware SHA-384               default: off
+ * STM32_HASH_SHA512:        STM32 hardware SHA-512               default: off
+ * WOLFSSL_SHA512_HASHTYPE:  SHA-512 hash type for hw dispatch    default: off
+ * MAX3266X_SHA:             MAX3266X hardware SHA                 default: off
+ * PSOC6_HASH_SHA2:          PSoC6 hardware SHA-2                 default: off
+ * WOLFSSL_RENESAS_RSIP:     Renesas RSIP SHA acceleration        default: off
+ */
+
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
 #if (defined(WOLFSSL_SHA512) || defined(WOLFSSL_SHA384)) && \
-    !defined(WOLFSSL_PSOC6_CRYPTO) && !defined(WOLFSSL_RISCV_ASM)
+    !defined(WOLFSSL_RISCV_ASM)
 
 /* determine if we are using Espressif SHA hardware acceleration */
 #undef WOLFSSL_USE_ESP32_CRYPT_HASH_HW
@@ -867,20 +902,23 @@ static int InitSha512_Family(wc_Sha512* sha512, void* heap, int devId,
         return BAD_FUNC_ARG;
     }
 
+    XMEMSET(sha512, 0, sizeof(*sha512));
 
     sha512->heap = heap;
 #ifdef WOLFSSL_SMALL_STACK_CACHE
-    sha512->W = NULL;
+    /* This allocation combines the customary W buffer used by
+     * _Transform_Sha512() with additional buffer space used by
+     * wc_Sha512Transform().
+     */
+    sha512->W = (word64 *)XMALLOC((sizeof(word64) * 16) + WC_SHA512_BLOCK_SIZE,
+                                  sha512->heap, DYNAMIC_TYPE_DIGEST);
+    if (sha512->W == NULL)
+        return MEMORY_E;
 #endif
 #ifdef WOLF_CRYPTO_CB
     sha512->devId = devId;
     sha512->devCtx = NULL;
 #endif
-
-    /* call the initialization function pointed to by initfp */
-    ret = initfp(sha512);
-    if (ret != 0)
-        return ret;
 
 #ifdef WOLFSSL_HASH_KEEP
     sha512->msg  = NULL;
@@ -888,15 +926,29 @@ static int InitSha512_Family(wc_Sha512* sha512, void* heap, int devId,
     sha512->used = 0;
 #endif
 
+    /* call the initialization function pointed to by initfp */
+    ret = initfp(sha512);
+
 #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_SHA512)
-    ret = wolfAsync_DevCtxInit(&sha512->asyncDev,
+    if (ret == 0) {
+        ret = wolfAsync_DevCtxInit(&sha512->asyncDev,
                         WOLFSSL_ASYNC_MARKER_SHA512, sha512->heap, devId);
+    }
 #else
     (void)devId;
 #endif /* WOLFSSL_ASYNC_CRYPT */
 #ifdef WOLFSSL_IMXRT1170_CAAM
-     ret = wc_CAAM_HashInit(&sha512->hndl, &sha512->ctx, WC_HASH_TYPE_SHA512);
+    if (ret == 0)
+        ret = wc_CAAM_HashInit(&sha512->hndl, &sha512->ctx, WC_HASH_TYPE_SHA512);
 #endif
+
+#ifdef WOLFSSL_SMALL_STACK_CACHE
+    if (ret != 0) {
+        XFREE(sha512->W, sha512->heap, DYNAMIC_TYPE_DIGEST);
+        sha512->W = NULL;
+    }
+#endif
+
     return ret;
 } /* InitSha512_Family */
 
@@ -912,11 +964,6 @@ int wc_InitSha512_ex(wc_Sha512* sha512, void* heap, int devId)
     sha512->ctx.mode = ESP32_SHA_INIT;
 #endif
 
-#ifdef MAX3266X_SHA_CB
-    if (wc_MXC_TPU_SHA_Init(&(sha512->mxcCtx)) != 0){
-        return BAD_FUNC_ARG;
-    }
-#endif
 
     return InitSha512_Family(sha512, heap, devId, InitSha512);
 }
@@ -1031,14 +1078,10 @@ static int _Transform_Sha512(wc_Sha512* sha512)
     word32 j;
     word64 T[8];
 
-#ifdef WOLFSSL_SMALL_STACK_CACHE
+#if defined(WOLFSSL_SMALL_STACK_CACHE)
     word64* W = sha512->W;
-    if (W == NULL) {
-        W = (word64*)XMALLOC(sizeof(word64) * 16, sha512->heap, DYNAMIC_TYPE_TMP_BUFFER);
-        if (W == NULL)
-            return MEMORY_E;
-        sha512->W = W;
-    }
+    if (W == NULL)
+        return BAD_FUNC_ARG;
 #elif defined(WOLFSSL_SMALL_STACK)
     word64* W;
     W = (word64*) XMALLOC(sizeof(word64) * 16, sha512->heap, DYNAMIC_TYPE_TMP_BUFFER);
@@ -1624,7 +1667,7 @@ void wc_Sha512Free(wc_Sha512* sha512)
     #endif
     {
         ret = wc_CryptoCb_Free(sha512->devId, WC_ALGO_TYPE_HASH,
-                         WC_HASH_TYPE_SHA512, (void*)sha512);
+                         WC_HASH_TYPE_SHA512, 0, (void*)sha512);
         /* If they want the standard free, they can call it themselves */
         /* via their callback setting devId to INVALID_DEVID */
         /* otherwise assume the callback handled it */
@@ -1646,7 +1689,7 @@ void wc_Sha512Free(wc_Sha512* sha512)
 
 #ifdef WOLFSSL_SMALL_STACK_CACHE
     if (sha512->W != NULL) {
-        ForceZero(sha512->W, sizeof(word64) * 16);
+        ForceZero(sha512->W, (sizeof(word64) * 16) + WC_SHA512_BLOCK_SIZE);
         XFREE(sha512->W, sha512->heap, DYNAMIC_TYPE_TMP_BUFFER);
         sha512->W = NULL;
     }
@@ -1665,9 +1708,6 @@ void wc_Sha512Free(wc_Sha512* sha512)
     }
 #endif
 
-#ifdef MAX3266X_SHA_CB
-    wc_MXC_TPU_SHA_Free(&(sha512->mxcCtx));
-#endif
 
 #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_SHA512)
     wolfAsync_DevCtxFree(&sha512->asyncDev, WOLFSSL_ASYNC_MARKER_SHA512);
@@ -1699,7 +1739,15 @@ int wc_Sha512Transform(wc_Sha512* sha, const unsigned char* data)
         return BAD_FUNC_ARG;
     }
 
-#ifdef WOLFSSL_SMALL_STACK
+
+#if defined(WOLFSSL_SMALL_STACK_CACHE)
+    if (sha->W == NULL)
+        return BAD_FUNC_ARG;
+    /* Skip over the initial `W' buffer at the start (used by
+     * _Transform_Sha512()).
+     */
+    buffer = sha->W + 16;
+#elif defined(WOLFSSL_SMALL_STACK)
     buffer = (word64*)XMALLOC(WC_SHA512_BLOCK_SIZE, sha->heap,
         DYNAMIC_TYPE_TMP_BUFFER);
     if (buffer == NULL)
@@ -1733,7 +1781,7 @@ int wc_Sha512Transform(wc_Sha512* sha, const unsigned char* data)
 
     XMEMCPY(sha->buffer, buffer, WC_SHA512_BLOCK_SIZE);
 #endif
-#ifdef WOLFSSL_SMALL_STACK
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_SMALL_STACK_CACHE)
     ForceZero(buffer, WC_SHA512_BLOCK_SIZE);
     XFREE(buffer, sha->heap, DYNAMIC_TYPE_TMP_BUFFER);
 #endif
@@ -1866,6 +1914,19 @@ static int InitSha384(wc_Sha384* sha384)
     if (sha384 == NULL) {
         return BAD_FUNC_ARG;
     }
+
+#ifdef WOLFSSL_SMALL_STACK_CACHE
+    if (sha384->W == NULL) {
+        /* This allocation combines the customary W buffer used by
+         * _Transform_Sha512() with additional buffer space used by
+         * wc_Sha512Transform().
+         */
+        sha384->W = (word64 *)XMALLOC((sizeof(word64) * 16) + WC_SHA512_BLOCK_SIZE,
+                                      sha384->heap, DYNAMIC_TYPE_DIGEST);
+        if (sha384->W == NULL)
+            return MEMORY_E;
+    }
+#endif
 
     sha384->digest[0] = W64LIT(0xcbbb9d5dc1059ed8);
     sha384->digest[1] = W64LIT(0x629a292a367cd507);
@@ -2030,12 +2091,6 @@ int wc_InitSha384_ex(wc_Sha384* sha384, void* heap, int devId)
     sha384->ctx.mode = ESP32_SHA_INIT;
 #endif
 
-#ifdef MAX3266X_SHA_CB
-    ret = wc_MXC_TPU_SHA_Init(&(sha384->mxcCtx));
-    if (ret != 0) {
-        return ret;
-    }
-#endif
 
     ret = InitSha384(sha384);
     if (ret != 0) {
@@ -2085,7 +2140,7 @@ void wc_Sha384Free(wc_Sha384* sha384)
     #endif
     {
         ret = wc_CryptoCb_Free(sha384->devId, WC_ALGO_TYPE_HASH,
-                         WC_HASH_TYPE_SHA384, (void*)sha384);
+                         WC_HASH_TYPE_SHA384, 0, (void*)sha384);
         /* If they want the standard free, they can call it themselves */
         /* via their callback setting devId to INVALID_DEVID */
         /* otherwise assume the callback handled it */
@@ -2106,7 +2161,7 @@ void wc_Sha384Free(wc_Sha384* sha384)
 
 #ifdef WOLFSSL_SMALL_STACK_CACHE
     if (sha384->W != NULL) {
-        ForceZero(sha384->W, sizeof(word64) * 16);
+        ForceZero(sha384->W, (sizeof(word64) * 16) + WC_SHA512_BLOCK_SIZE);
         XFREE(sha384->W, sha384->heap, DYNAMIC_TYPE_TMP_BUFFER);
         sha384->W = NULL;
     }
@@ -2140,9 +2195,6 @@ void wc_Sha384Free(wc_Sha384* sha384)
     }
 #endif
 
-#ifdef MAX3266X_SHA_CB
-    wc_MXC_TPU_SHA_Free(&(sha384->mxcCtx));
-#endif
 
     ForceZero(sha384, sizeof(*sha384));
 }
@@ -2174,7 +2226,7 @@ static int Sha512_Family_GetHash(wc_Sha512* sha512, byte* hash,
         return BAD_FUNC_ARG;
     }
 
-    WC_ALLOC_VAR_EX(tmpSha512, wc_Sha512, 1, NULL, DYNAMIC_TYPE_TMP_BUFFER,
+    WC_CALLOC_VAR_EX(tmpSha512, wc_Sha512, 1, NULL, DYNAMIC_TYPE_TMP_BUFFER,
         return MEMORY_E);
 
     /* copy this sha512 into tmpSha */
@@ -2217,9 +2269,21 @@ int wc_Sha512Copy(wc_Sha512* src, wc_Sha512* dst)
     ret = 0; /* Reset ret to 0 to avoid returning the callback error code */
 #endif /* WOLF_CRYPTO_CB && WOLF_CRYPTO_CB_COPY */
 
+    /* Free dst resources before copy to prevent memory leaks (e.g., msg
+     * buffer, W cache, hardware contexts). XMEMCPY overwrites dst. */
+    wc_Sha512Free(dst);
     XMEMCPY(dst, src, sizeof(wc_Sha512));
 #ifdef WOLFSSL_SMALL_STACK_CACHE
-    dst->W = NULL;
+    /* This allocation combines the customary W buffer used by
+     * _Transform_Sha512() with additional buffer space used by
+     * wc_Sha512Transform().
+     */
+    dst->W = (word64 *)XMALLOC((sizeof(word64) * 16) + WC_SHA512_BLOCK_SIZE,
+                               dst->heap, DYNAMIC_TYPE_DIGEST);
+    if (dst->W == NULL) {
+        XMEMSET(dst, 0, sizeof(wc_Sha512));
+        return MEMORY_E;
+    }
 #endif
 
 #if defined(WOLFSSL_SILABS_SE_ACCEL) && defined(WOLFSSL_SILABS_SE_ACCEL_3) && \
@@ -2269,12 +2333,6 @@ int wc_Sha512Copy(wc_Sha512* src, wc_Sha512* dst)
     }
 #endif
 
-#ifdef MAX3266X_SHA_CB
-    ret = wc_MXC_TPU_SHA_Copy(&(src->mxcCtx), &(dst->mxcCtx));
-    if (ret != 0) {
-        return ret;
-    }
-#endif
 
 #if defined(PSOC6_HASH_SHA2)
     wc_Psoc6_Sha1_Sha2_Init(dst, WC_PSOC6_SHA512, 0);
@@ -2608,7 +2666,7 @@ int wc_Sha384GetHash(wc_Sha384* sha384, byte* hash)
         return BAD_FUNC_ARG;
     }
 
-    WC_ALLOC_VAR_EX(tmpSha384, wc_Sha384, 1, NULL, DYNAMIC_TYPE_TMP_BUFFER,
+    WC_CALLOC_VAR_EX(tmpSha384, wc_Sha384, 1, NULL, DYNAMIC_TYPE_TMP_BUFFER,
         return MEMORY_E);
 
     /* copy this sha384 into tmpSha */
@@ -2646,10 +2704,22 @@ int wc_Sha384Copy(wc_Sha384* src, wc_Sha384* dst)
     ret = 0; /* Reset ret to 0 to avoid returning the callback error code */
 #endif /* WOLF_CRYPTO_CB && WOLF_CRYPTO_CB_COPY */
 
+    /* Free dst resources before copy to prevent memory leaks (e.g., msg
+     * buffer, W cache, hardware contexts). XMEMCPY overwrites dst. */
+    wc_Sha384Free(dst);
     XMEMCPY(dst, src, sizeof(wc_Sha384));
 
 #ifdef WOLFSSL_SMALL_STACK_CACHE
-    dst->W = NULL;
+    /* This allocation combines the customary W buffer used by
+     * _Transform_Sha512() with additional buffer space used by
+     * wc_Sha512Transform().
+     */
+    dst->W = (word64 *)XMALLOC((sizeof(word64) * 16) + WC_SHA384_BLOCK_SIZE,
+                               dst->heap, DYNAMIC_TYPE_DIGEST);
+    if (dst->W == NULL) {
+        XMEMSET(dst, 0, sizeof(wc_Sha384));
+        return MEMORY_E;
+    }
 #endif
 
 #if defined(WOLFSSL_SILABS_SE_ACCEL) && defined(WOLFSSL_SILABS_SE_ACCEL_3) && \
@@ -2700,12 +2770,6 @@ int wc_Sha384Copy(wc_Sha384* src, wc_Sha384* dst)
     }
 #endif
 
-#ifdef MAX3266X_SHA_CB
-    ret = wc_MXC_TPU_SHA_Copy(&(src->mxcCtx), &(dst->mxcCtx));
-    if (ret != 0) {
-        return ret;
-    }
-#endif
 
 #if defined(PSOC6_HASH_SHA2)
     wc_Psoc6_Sha1_Sha2_Init(dst, WC_PSOC6_SHA384, 0);

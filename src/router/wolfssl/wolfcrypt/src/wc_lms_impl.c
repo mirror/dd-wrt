@@ -1,6 +1,6 @@
 /* wc_lms_impl.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -1962,7 +1962,8 @@ static int wc_lms_treehash_init(LmsState* state, LmsPrivState* privState,
 
         /* Cache leaf node if in range. */
         if ((ret == 0) && (i >= leaf->idx) && (i < leaf->idx + max_cb)) {
-            XMEMCPY(leaf->cache + i * params->hash_len, temp, params->hash_len);
+            XMEMCPY(leaf->cache + (i - leaf->idx) * params->hash_len, temp,
+                    params->hash_len);
         }
 
         /* Store the node if on the authentication path. */
@@ -3185,9 +3186,14 @@ int wc_hss_reload_key(LmsState* state, const byte* priv_raw,
     (void)pub_root;
 
     /* Defend against undefined shifts; LmsParams* params = state->params */
-    if ((state->params->cacheBits >= 32U) || (state->params->height >= 32U)) {
+    if (state->params->height >= 32U) {
         return BAD_FUNC_ARG;
     }
+#ifndef WOLFSSL_WC_LMS_SMALL
+    if (state->params->cacheBits >= 32U) {
+        return BAD_FUNC_ARG;
+    }
+#endif
 
     wc_hss_priv_data_load(state->params, priv_key, priv_data);
 #ifndef WOLFSSL_WC_LMS_SMALL

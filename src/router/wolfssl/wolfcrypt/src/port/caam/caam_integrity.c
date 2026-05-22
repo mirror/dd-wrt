@@ -1,6 +1,6 @@
 /* caam_integrity.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -759,6 +759,9 @@ static Error caamAes(struct DescStruct* desc)
             ctx[ctxIdx] = buf;
             sz += buf->dataSz;
 
+            if (ctx[ctxIdx]->dataSz + offset > (MAX_CTX * sizeof(UINT4))) {
+                return SizeIsTooLarge;
+            }
             memcpy((unsigned char*)&local[offset],
                    (unsigned char*)ctx[ctxIdx]->data, ctx[ctxIdx]->dataSz);
             offset += ctx[ctxIdx]->dataSz;
@@ -958,6 +961,9 @@ static Error caamAead(struct DescStruct* desc)
             ctx[ctxIdx] = buf;
             sz += buf->dataSz;
 
+            if (ctx[ctxIdx]->dataSz + offset > (MAX_CTX * sizeof(UINT4))) {
+                return SizeIsTooLarge;
+            }
             memcpy((unsigned char*)&local[offset],
                    (unsigned char*)ctx[ctxIdx]->data, ctx[ctxIdx]->dataSz);
             offset += ctx[ctxIdx]->dataSz;

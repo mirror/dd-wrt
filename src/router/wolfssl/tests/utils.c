@@ -1,6 +1,6 @@
 /* utils.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -21,6 +21,7 @@
 
 #include <tests/unit.h>
 #include <tests/utils.h>
+#include <wolfssl/wolfcrypt/error-crypt.h>
 
 #ifdef HAVE_MANUAL_MEMIO_TESTS_DEPENDENCIES
 
@@ -79,12 +80,12 @@ int test_memio_write_cb(WOLFSSL *ssl, char *data, int sz, void *ctx)
 #ifdef WOLFSSL_DUMP_MEMIO_STREAM
     {
         char dump_file_name[64];
-        WOLFSSL_BIO *dump_file;
+        XFILE dump_file;
         sprintf(dump_file_name, "%s/%s.dump", tmpDirName, currentTestName);
-        dump_file = wolfSSL_BIO_new_file(dump_file_name, "a");
-        if (dump_file != NULL) {
-            (void)wolfSSL_BIO_write(dump_file, data, sz);
-            wolfSSL_BIO_free(dump_file);
+        dump_file = XFOPEN(dump_file_name, "ab");
+        if (dump_file != XBADFILE) {
+            (void)XFWRITE(data, 1, (size_t)sz, dump_file);
+            XFCLOSE(dump_file);
         }
     }
 #endif
@@ -182,9 +183,16 @@ int test_memio_do_handshake(WOLFSSL *ssl_c, WOLFSSL *ssl_s,
             }
             else {
                 err = wolfSSL_get_error(ssl_c, ret);
-                if (err != WOLFSSL_ERROR_WANT_READ &&
-                    err != WOLFSSL_ERROR_WANT_WRITE)
+                if (err == WC_NO_ERR_TRACE(MP_WOULDBLOCK)) {
+                    /* retry non-blocking math */
+                }
+                else if (err != WOLFSSL_ERROR_WANT_READ &&
+                         err != WOLFSSL_ERROR_WANT_WRITE) {
+                    char buff[WOLFSSL_MAX_ERROR_SZ];
+                    fprintf(stderr, "memio client error = %d, %s\n", err,
+                        wolfSSL_ERR_error_string((word32)err, buff));
                     return -1;
+                }
             }
         }
         if (!hs_s) {
@@ -196,9 +204,16 @@ int test_memio_do_handshake(WOLFSSL *ssl_c, WOLFSSL *ssl_s,
             }
             else {
                 err = wolfSSL_get_error(ssl_s, ret);
-                if (err != WOLFSSL_ERROR_WANT_READ &&
-                    err != WOLFSSL_ERROR_WANT_WRITE)
+                if (err == WC_NO_ERR_TRACE(MP_WOULDBLOCK)) {
+                    /* retry non-blocking math */
+                }
+                else if (err != WOLFSSL_ERROR_WANT_READ &&
+                         err != WOLFSSL_ERROR_WANT_WRITE) {
+                    char buff[WOLFSSL_MAX_ERROR_SZ];
+                    fprintf(stderr, "memio server error = %d, %s\n", err,
+                        wolfSSL_ERR_error_string((word32)err, buff));
                     return -1;
+                }
             }
         }
         handshake_complete = hs_c && hs_s;
@@ -770,3 +785,25 @@ int test_memio_setup(struct test_memio_ctx *ctx,
 }
 
 #endif /* HAVE_MANUAL_MEMIO_TESTS_DEPENDENCIES */
+
+#if !defined(NO_FILESYSTEM) && defined(OPENSSL_EXTRA) && \
+    defined(DEBUG_UNIT_TEST_CERTS)
+/* Used when debugging name constraint tests. Not static to allow use in
+ * multiple locations with complex define guards. */
+void DEBUG_WRITE_CERT_X509(WOLFSSL_X509* x509, const char* fileName)
+{
+    BIO* out = BIO_new_file(fileName, "wb");
+    if (out != NULL) {
+        PEM_write_bio_X509(out, x509);
+        BIO_free(out);
+    }
+}
+void DEBUG_WRITE_DER(const byte* der, int derSz, const char* fileName)
+{
+    BIO* out = BIO_new_file(fileName, "wb");
+    if (out != NULL) {
+        BIO_write(out, der, derSz);
+        BIO_free(out);
+    }
+}
+#endif

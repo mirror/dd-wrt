@@ -1,7 +1,7 @@
 /* lkcapi_dh_glue.c -- glue logic to register dh and ffdhe wolfCrypt
  * implementations with the Linux Kernel Cryptosystem
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -58,7 +58,10 @@
     #undef LINUXKM_LKCAPI_REGISTER_DH
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 18, 0)) &&                  \
+    !(defined(RHEL_MAJOR) &&                                            \
+      ((RHEL_MAJOR > 9) || ((RHEL_MAJOR == 9) && (RHEL_MINOR >= 5))))
+
     /* Support for FFDHE was added in kernel 5.18, and generic DH support
      * pre-5.18 used a different binary format for the secret (an additional
      * slot for q).
@@ -73,7 +76,8 @@
 
 #if defined(LINUXKM_LKCAPI_REGISTER_ALL_KCONFIG) && \
     (defined(CONFIG_CRYPTO_DH) || defined(CONFIG_CRYPTO_DH_RFC7919_GROUPS)) && \
-    !defined(LINUXKM_LKCAPI_REGISTER_DH)
+    !defined(LINUXKM_LKCAPI_REGISTER_DH) && \
+    !defined(LINUXKM_LKCAPI_DONT_REGISTER_DH)
     #error Config conflict: target kernel has CONFIG_CRYPTO_DH and/or \
         _DH_RFC7919_GROUPS, but module is missing LINUXKM_LKCAPI_REGISTER_DH.
 #endif
@@ -745,7 +749,7 @@ static int km_ffdhe_init(struct crypto_kpp *tfm, int name, word32 nbits)
     ctx->name = name;
     ctx->nbits = nbits;
 
-    err = wc_InitRng(&ctx->rng);
+    err = LKCAPI_INITRNG(&ctx->rng);
     if (err) {
         #ifdef WOLFKM_DEBUG_DH
         pr_err("%s: init rng returned: %d\n", WOLFKM_DH_DRIVER, err);

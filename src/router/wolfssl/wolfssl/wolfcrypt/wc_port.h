@@ -1,6 +1,6 @@
 /* wc_port.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -76,7 +76,7 @@
 #endif /* !WARN_UNUSED_RESULT */
 
 #ifndef WC_MAYBE_UNUSED
-    #if (defined(__GNUC__) && (__GNUC__ >= 4)) || defined(__clang__) || \
+    #if (defined(__GNUC__) && (__GNUC__ >= 3)) || defined(__clang__) || \
             defined(__IAR_SYSTEMS_ICC__)
         #define WC_MAYBE_UNUSED __attribute__((unused))
     #else
@@ -95,8 +95,8 @@
     #elif defined(__WATCOMC__)
           /* Watcom macro needs to expand to something, here just a comment: */
           #define WC_DEPRECATED(msg) /* null expansion */
-    #elif defined(_MSC_VER) || defined(__MINGW32__) || defined(__CYGWIN__) || \
-          defined(_WIN32_WCE)
+    #elif (defined(_MSC_VER) && _MSC_VER >= 1400) || defined(__MINGW32__) || \
+          defined(__CYGWIN__) || defined(_WIN32_WCE)
         #define WC_DEPRECATED(msg) __declspec(deprecated(msg))
     #elif (defined(__GNUC__) && (__GNUC__ >= 4)) || \
           defined(__IAR_SYSTEMS_ICC__)
@@ -104,7 +104,7 @@
     #else
         #define WC_DEPRECATED(msg) /* null expansion */
     #endif
-#endif /* !WC_MAYBE_UNUSED */
+#endif /* !WC_DEPRECATED */
 
 /* use inlining if compiler allows */
 #ifndef WC_INLINE
@@ -141,6 +141,20 @@
 #else
     #define WC_INLINE WC_MAYBE_UNUSED
 #endif
+#endif
+
+#ifndef WC_NO_INLINE
+    #ifdef noinline
+        #define WC_NO_INLINE noinline
+    #elif defined(_MSC_VER)
+        #define WC_NO_INLINE __declspec(noinline)
+    #elif defined(__ICCARM__) || defined(__IAR_SYSTEMS_ICC__)
+        #define WC_NO_INLINE _Pragma("inline = never")
+    #elif defined(__GNUC__) || defined(__KEIL__) || defined(__DCC__)
+        #define WC_NO_INLINE __attribute__((noinline))
+    #else
+        #define WC_NO_INLINE
+    #endif
 #endif
 
 #ifndef WC_OMIT_FRAME_POINTER
@@ -283,24 +297,43 @@
 #elif defined(WOLFSSL_APACHE_MYNEWT)
     /* do nothing */
 #elif defined(WOLFSSL_ZEPHYR)
-    #include <version.h>
+    #ifdef __cplusplus
+        }  /* extern "C" */
+    #endif
+
+    #ifdef __has_include
+        #if __has_include(<zephyr/version.h>)
+            #include <zephyr/version.h>
+        #else
+            #include <version.h>
+        #endif
+    #else
+        #include <version.h>
+    #endif
+    /* Include sys/types.h early so host libc sets __timer_t_defined
+     * before Zephyr's posix_types.h can define a conflicting timer_t */
+    #include <sys/types.h>
     #ifndef SINGLE_THREADED
         #if !defined(CONFIG_PTHREAD_IPC) && !defined(CONFIG_POSIX_THREADS)
             #error "Threading needs CONFIG_PTHREAD_IPC / CONFIG_POSIX_THREADS"
         #endif
-    #ifdef max
-    #undef max
+        #if KERNEL_VERSION_NUMBER >= 0x30100
+            #include <zephyr/kernel.h>
+            #ifndef CONFIG_ARCH_POSIX
+                #include <zephyr/posix/posix_types.h>
+                #include <zephyr/posix/pthread.h>
+            #endif
+        #else
+            #include <kernel.h>
+            #ifndef CONFIG_ARCH_POSIX
+                #include <posix/posix_types.h>
+                #include <posix/pthread.h>
+            #endif
+        #endif
     #endif
-    #if KERNEL_VERSION_NUMBER >= 0x30100
-        #include <zephyr/kernel.h>
-        #include <zephyr/posix/posix_types.h>
-        #include <zephyr/posix/pthread.h>
-    #else
-        #include <kernel.h>
-        #include <posix/posix_types.h>
-        #include <posix/pthread.h>
-    #endif
-    #define max MAX
+
+    #ifdef __cplusplus
+        extern "C" {
     #endif
 #elif defined(WOLFSSL_TELIT_M2MB)
 
@@ -506,7 +539,8 @@
      * should not be included. Use FreeBSD <machine/atomic.h> instead.
      * definitions are in bsdkm/bsdkm_wc_port.h */
     #elif defined(HAVE_C___ATOMIC) && defined(WOLFSSL_HAVE_ATOMIC_H) && \
-        !defined(__cplusplus)
+        !defined(__cplusplus) && \
+        !(defined(__clang__) && defined(WOLFSSL_KERNEL_MODE))
         /* Default C Implementation */
         #include <stdatomic.h>
         typedef atomic_int wolfSSL_Atomic_Int;
@@ -552,7 +586,7 @@
     #define WOLFSSL_ATOMIC_STORE(x, val) (x) = (val)
 #endif /* WOLFSSL_NO_ATOMICS */
 
-/* WOLFSSL_ATOMIC_COERCE_INT() needs to accept either a regular int or an
+/* WOLFSSL_ATOMIC_COERCE_INT() needs to accept either a regular int or a
  * wolfSSL_Atomic_Int as its argument, and evaluate to a regular int.
  * Allows a user-supplied override definition with type introspection.
  */
@@ -580,6 +614,8 @@
     WOLFSSL_API int wolfSSL_Atomic_Int_FetchSub(wolfSSL_Atomic_Int* c, int i);
     WOLFSSL_API int wolfSSL_Atomic_Int_AddFetch(wolfSSL_Atomic_Int* c, int i);
     WOLFSSL_API int wolfSSL_Atomic_Int_SubFetch(wolfSSL_Atomic_Int* c, int i);
+    WOLFSSL_API int wolfSSL_Atomic_Int_Exchange(
+        wolfSSL_Atomic_Int* c, int new_i);
     WOLFSSL_API int wolfSSL_Atomic_Int_CompareExchange(
         wolfSSL_Atomic_Int* c, int *expected_i, int new_i);
     WOLFSSL_API unsigned int wolfSSL_Atomic_Uint_FetchAdd(
@@ -593,7 +629,7 @@
     WOLFSSL_API int wolfSSL_Atomic_Uint_CompareExchange(
         wolfSSL_Atomic_Uint* c, unsigned int *expected_i, unsigned int new_i);
     WOLFSSL_API int wolfSSL_Atomic_Ptr_CompareExchange(
-        void** c, void **expected_ptr, void *new_ptr);
+        void* volatile * c, void **expected_ptr, void *new_ptr);
 #else
     /* Code using these fallback implementations in non-SINGLE_THREADED builds
      * needs to arrange its own explicit fallback to int for wolfSSL_Atomic_Int
@@ -619,6 +655,13 @@
     static WC_INLINE int wolfSSL_Atomic_Int_SubFetch(int *c, int i) {
         return (*c -= i);
     }
+    static WC_INLINE int wolfSSL_Atomic_Int_Exchange(
+        int *c, int new_i)
+    {
+        int ret = *c;
+        *c = new_i;
+        return ret;
+    }
     static WC_INLINE int wolfSSL_Atomic_Int_CompareExchange(
         int *c, int *expected_i, int new_i)
     {
@@ -632,14 +675,14 @@
         }
     }
     static WC_INLINE int wolfSSL_Atomic_Ptr_CompareExchange(
-        void **c, void *expected_ptr, void *new_ptr)
+        void * volatile *c, void **expected_ptr, void *new_ptr)
     {
-        if (*(char **)c == *(char **)expected_ptr) {
-            *(char **)c = (char *)new_ptr;
+        if (*(char * volatile *)c == *(char **)expected_ptr) {
+            *(char * volatile *)c = (char *)new_ptr;
             return 1;
         }
         else {
-            *(char **)expected_ptr = *(char **)c;
+            *(char * volatile *)expected_ptr = *(char * volatile *)c;
             return 0;
         }
     }
@@ -688,13 +731,15 @@ typedef struct wolfSSL_RefWithMutex {
 #endif
     int count;
 } wolfSSL_RefWithMutex;
-
+#define wolfSSL_RefWithMutexCur(ref) ((ref).count)
 #if defined(WOLFSSL_ATOMIC_OPS) && !defined(SINGLE_THREADED)
 typedef struct wolfSSL_Ref {
     wolfSSL_Atomic_Int count;
 } wolfSSL_Ref;
+#define wolfSSL_RefCur(ref) WOLFSSL_ATOMIC_LOAD((ref).count)
 #else
 typedef struct wolfSSL_RefWithMutex wolfSSL_Ref;
+#define wolfSSL_RefCur(ref) wolfSSL_RefWithMutexCur(ref)
 #endif
 
 #if defined(SINGLE_THREADED) || defined(WOLFSSL_ATOMIC_OPS)
@@ -704,10 +749,18 @@ typedef struct wolfSSL_RefWithMutex wolfSSL_Ref;
         wolfSSL_Atomic_Int_Init(&(ref)->count, 1); \
         *(err) = 0;                          \
     } while(0)
-#define wolfSSL_RefFree(ref) WC_DO_NOTHING
+#define wolfSSL_RefFree(ref)                 \
+    do {                                     \
+        wolfSSL_Atomic_Int_Init(&(ref)->count, 0); \
+    } while(0)
 #define wolfSSL_RefInc(ref, err)             \
     do {                                     \
         (void)wolfSSL_Atomic_Int_FetchAdd(&(ref)->count, 1); \
+        *(err) = 0;                          \
+    } while(0)
+#define wolfSSL_RefInc2(ref, new_count, err) \
+    do {                                     \
+        *(new_count) = wolfSSL_Atomic_Int_AddFetch(&(ref)->count, 1); \
         *(err) = 0;                          \
     } while(0)
 #define wolfSSL_RefDec(ref, isZero, err)     \
@@ -715,6 +768,11 @@ typedef struct wolfSSL_RefWithMutex wolfSSL_Ref;
         int __prev = wolfSSL_Atomic_Int_FetchSub(&(ref)->count, 1); \
         /* __prev holds the value of count before subtracting 1 */ \
         *(isZero) = (__prev == 1);     \
+        *(err) = 0;                          \
+    } while(0)
+#define wolfSSL_RefDec2(ref, new_count, err) \
+    do {                                     \
+        *(new_count) = wolfSSL_Atomic_Int_SubFetch(&(ref)->count, 1);    \
         *(err) = 0;                          \
     } while(0)
 
@@ -725,7 +783,9 @@ typedef struct wolfSSL_RefWithMutex wolfSSL_Ref;
 #define wolfSSL_RefInit wolfSSL_RefWithMutexInit
 #define wolfSSL_RefFree wolfSSL_RefWithMutexFree
 #define wolfSSL_RefInc wolfSSL_RefWithMutexInc
+#define wolfSSL_RefInc2 wolfSSL_RefWithMutexInc2
 #define wolfSSL_RefDec wolfSSL_RefWithMutexDec
+#define wolfSSL_RefDec2 wolfSSL_RefWithMutexDec2
 
 #endif
 
@@ -734,9 +794,11 @@ typedef struct wolfSSL_RefWithMutex wolfSSL_Ref;
 #define wolfSSL_RefWithMutexInit wolfSSL_RefInit
 #define wolfSSL_RefWithMutexFree wolfSSL_RefFree
 #define wolfSSL_RefWithMutexInc wolfSSL_RefInc
+#define wolfSSL_RefWithMutexInc2 wolfSSL_RefInc2
 #define wolfSSL_RefWithMutexLock(ref) 0
 #define wolfSSL_RefWithMutexUnlock(ref) 0
 #define wolfSSL_RefWithMutexDec wolfSSL_RefDec
+#define wolfSSL_RefWithMutexDec2 wolfSSL_RefDec2
 
 #else
 
@@ -745,10 +807,15 @@ WOLFSSL_LOCAL void wolfSSL_RefWithMutexInit(wolfSSL_RefWithMutex* ref,
 WOLFSSL_LOCAL void wolfSSL_RefWithMutexFree(wolfSSL_RefWithMutex* ref);
 WOLFSSL_LOCAL void wolfSSL_RefWithMutexInc(wolfSSL_RefWithMutex* ref,
                                             int* err);
+WOLFSSL_LOCAL void wolfSSL_RefWithMutexInc2(wolfSSL_RefWithMutex* ref,
+                                            int *new_count,
+                                            int* err);
 WOLFSSL_LOCAL int wolfSSL_RefWithMutexLock(wolfSSL_RefWithMutex* ref);
 WOLFSSL_LOCAL int wolfSSL_RefWithMutexUnlock(wolfSSL_RefWithMutex* ref);
 WOLFSSL_LOCAL void wolfSSL_RefWithMutexDec(wolfSSL_RefWithMutex* ref,
                                             int* isZero, int* err);
+WOLFSSL_LOCAL void wolfSSL_RefWithMutexDec2(wolfSSL_RefWithMutex* ref,
+                                            int* new_count, int* err);
 
 #endif
 
@@ -935,6 +1002,7 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XSEEK_END               IO_SEEK_END
     #define XBADFILE                NULL
     #define XFGETS                  fgets
+    #define XFPRINTF                fprintf
 
 #elif defined(WOLFSSL_DEOS)
     #define NO_FILESYSTEM
@@ -982,7 +1050,15 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XFGETS(b,s,f) -2 /* Not ported yet */
 
 #elif defined(WOLFSSL_ZEPHYR)
+    #ifdef __cplusplus
+        }  /* extern "C" */
+    #endif
+
     #include <zephyr/fs/fs.h>
+
+    #ifdef __cplusplus
+        extern "C" {
+    #endif
 
     #define XFILE      struct fs_file_t*
 
@@ -1003,6 +1079,7 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XSEEK_SET           FS_SEEK_SET
     #define XSEEK_END           FS_SEEK_END
     #define XBADFILE            NULL
+    #define XBADFD              (-1)
     #define XFGETS(b,s,f)       -2 /* Not ported yet */
 
     #define XSTAT               fs_stat
@@ -1112,6 +1189,7 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XSEEK_SET  SEEK_SET
     #define XSEEK_END  SEEK_END
     #define XBADFILE   NULL
+    #define XBADFD     (-1)
     #define XFGETS     fgets
     #define XFPRINTF   fprintf
     #define XFFLUSH    fflush
@@ -1467,15 +1545,24 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define USE_WOLF_TIME_T
 
 #elif defined(WOLFSSL_ZEPHYR)
-    #include <version.h>
-    #ifndef _POSIX_C_SOURCE
-        #if KERNEL_VERSION_NUMBER >= 0x30100
-            #include <zephyr/posix/time.h>
-        #else
-            #include <posix/time.h>
-        #endif
-    #else
+    #ifdef __cplusplus
+        }  /* extern "C" */
+    #endif
+
+    #if KERNEL_VERSION_NUMBER >= 0x40300
         #include <time.h>
+    #elif KERNEL_VERSION_NUMBER >= 0x30100
+        #include <zephyr/posix/time.h>
+    #else
+        #include <posix/time.h>
+    #endif
+
+    #ifndef CLOCK_REALTIME
+        #ifdef SYS_CLOCK_REALTIME
+            #define CLOCK_REALTIME  SYS_CLOCK_REALTIME
+            #define clock_gettime   sys_clock_gettime
+            #define clock_settime   sys_clock_settime
+        #endif
     #endif
 
     #if defined(CONFIG_RTC)
@@ -1484,6 +1571,10 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
         #else
             #warning "RTC support needs picolibc or newlib (nano)"
         #endif
+    #endif
+
+    #ifdef __cplusplus
+        extern "C" {
     #endif
 
     time_t z_time(time_t *timer);
@@ -1579,7 +1670,7 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
 #endif
 #if !defined(XVALIDATE_DATE) && !defined(HAVE_VALIDATE_DATE)
     #define USE_WOLF_VALIDDATE
-    #define XVALIDATE_DATE(d, f, t) wc_ValidateDate((d), (f), (t))
+    #define XVALIDATE_DATE(d, f, t, l) wc_ValidateDate((d), (f), (t), (l))
 #endif
 
 /* wolf struct tm and time_t */
@@ -1734,6 +1825,18 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #endif
 #else
     #define XFENCE() WC_DO_NOTHING
+#endif
+
+#ifdef WC_BARRIER
+    /* use user-supplied WC_BARRIER() definition. */
+#elif defined(__GNUC__) && !defined(WOLFSSL_NO_ASM)
+    #define WC_BARRIER() __asm__ __volatile__("" ::: "memory")
+#else
+    /* XFENCE() is a no-op on some targets.  The fallback construct uses C89
+     * intrinsics as an additional (but weak) portable barrier.
+     */
+    #define WC_BARRIER() do { volatile byte _xfence = 0; (void)_xfence; XFENCE(); \
+        } while(0)
 #endif
 
 

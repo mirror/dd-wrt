@@ -1,6 +1,6 @@
 /* sha.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -17,6 +17,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
+ */
+
+/*
+ * SHA-1 Build Options:
+ *
+ * Core:
+ * NO_SHA:                   Disable SHA-1 support entirely        default: off
+ * USE_SLOW_SHA:             Disable SHA-1 loop unrolling          default: off
+ * WC_HASH_DATA_ALIGNMENT:   Required data alignment for hashing   default: off
+ *
+ * Hardware Acceleration (SHA-1-specific):
+ * WC_ASYNC_ENABLE_SHA:      Enable async SHA-1 operations         default: off
+ * WOLFSSL_PIC32MZ_HASH:     PIC32MZ hardware SHA                  default: off
+ * WOLFSSL_PSA_NO_HASH:      Disable PSA hash                      default: off
+ * WOLFSSL_TI_HASH:          TI hardware hash                      default: off
+ * WOLFSSL_RENESAS_RX64_HASH: Renesas RX64 hardware hash           default: off
+ * FREESCALE_LTC_SHA:        Freescale LTC SHA acceleration        default: off
+ * FREESCALE_MMCAU_SHA:      Freescale MMCAU SHA acceleration      default: off
+ * STM32_HASH:               STM32 hardware hash                   default: off
+ * PSOC6_HASH_SHA1:          PSoC6 hardware SHA-1                  default: off
  */
 
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
@@ -434,7 +454,7 @@ static WC_INLINE void AddLength(wc_Sha* sha, word32 len)
 #ifndef XTRANSFORM
     #define XTRANSFORM(S,B)   Transform((S),(B))
 
-    #define blk0(i) (W[i] = *((word32*)&data[(i)*sizeof(word32)]))
+    #define blk0(i) (W[i] = *((const word32*)&data[(i)*sizeof(word32)]))
     #define blk1(i) (W[(i)&15] = \
         rotlFixed(W[((i)+13)&15]^W[((i)+8)&15]^W[((i)+2)&15]^W[(i)&15],1))
 
@@ -561,12 +581,10 @@ int wc_InitSha_ex(wc_Sha* sha, void* heap, int devId)
     sha->devId = devId;
     sha->devCtx = NULL;
 #endif
-
-#ifdef MAX3266X_SHA_CB
-    ret = wc_MXC_TPU_SHA_Init(&(sha->mxcCtx));
-    if (ret != 0) {
-        return ret;
-    }
+#ifdef WOLFSSL_HASH_KEEP
+    sha->msg  = NULL;
+    sha->len  = 0;
+    sha->used = 0;
 #endif
 
 #ifdef WOLFSSL_USE_ESP32_CRYPT_HASH_HW
@@ -1062,7 +1080,7 @@ void wc_ShaFree(wc_Sha* sha)
     #endif
     {
         ret = wc_CryptoCb_Free(sha->devId, WC_ALGO_TYPE_HASH,
-                         WC_HASH_TYPE_SHA, (void*)sha);
+                         WC_HASH_TYPE_SHA, 0, (void*)sha);
         /* If they want the standard free, they can call it themselves */
         /* via their callback setting devId to INVALID_DEVID */
         /* otherwise assume the callback handled it */
@@ -1087,9 +1105,6 @@ void wc_ShaFree(wc_Sha* sha)
 #ifdef WOLFSSL_PIC32MZ_HASH
     wc_ShaPic32Free(sha);
 #endif
-#ifdef MAX3266X_SHA_CB
-    wc_MXC_TPU_SHA_Free(&(sha->mxcCtx));
-#endif
 #if defined(WOLFSSL_SE050) && defined(WOLFSSL_SE050_HASH)
     se050_hash_free(&sha->se050Ctx);
 #endif
@@ -1103,6 +1118,14 @@ void wc_ShaFree(wc_Sha* sha)
 #endif
 #ifdef WOLFSSL_IMXRT_DCP
     DCPShaFree(sha);
+#endif
+
+#ifdef WOLFSSL_HASH_KEEP
+    if (sha->msg != NULL) {
+        ForceZero(sha->msg, sha->len);
+        XFREE(sha->msg, sha->heap, DYNAMIC_TYPE_TMP_BUFFER);
+        sha->msg = NULL;
+    }
 #endif
 
 #if defined(PSOC6_HASH_SHA1)
@@ -1137,7 +1160,7 @@ int wc_ShaGetHash(wc_Sha* sha, byte* hash)
         return BAD_FUNC_ARG;
     }
 
-    WC_ALLOC_VAR_EX(tmpSha, wc_Sha, 1, NULL, DYNAMIC_TYPE_TMP_BUFFER,
+    WC_CALLOC_VAR_EX(tmpSha, wc_Sha, 1, NULL, DYNAMIC_TYPE_TMP_BUFFER,
         return MEMORY_E);
 
     ret = wc_ShaCopy(sha, tmpSha);
@@ -1172,6 +1195,9 @@ int wc_ShaCopy(wc_Sha* src, wc_Sha* dst)
     ret = 0; /* Reset ret to 0 to avoid returning the callback error code */
 #endif /* WOLF_CRYPTO_CB && WOLF_CRYPTO_CB_COPY */
 
+    /* Free dst resources before copy to prevent memory leaks (e.g., msg
+     * buffer, W cache, hardware contexts). XMEMCPY overwrites dst. */
+    wc_ShaFree(dst);
     XMEMCPY(dst, src, sizeof(wc_Sha));
 
 #if defined(WOLFSSL_SILABS_SE_ACCEL) && defined(WOLFSSL_SILABS_SE_ACCEL_3)
@@ -1195,12 +1221,6 @@ int wc_ShaCopy(wc_Sha* src, wc_Sha* dst)
     esp_sha_ctx_copy(src, dst);
 #endif
 
-#ifdef MAX3266X_SHA_CB
-    ret = wc_MXC_TPU_SHA_Copy(&(src->mxcCtx), &(dst->mxcCtx));
-    if (ret != 0) {
-        return ret;
-    }
-#endif
 
 #if defined(PSOC6_HASH_SHA1)
     wc_Psoc6_Sha1_Sha2_Init(dst, WC_PSOC6_SHA1, 0);
@@ -1209,6 +1229,18 @@ int wc_ShaCopy(wc_Sha* src, wc_Sha* dst)
 #ifdef WOLFSSL_HASH_FLAGS
     dst->flags |= WC_HASH_FLAG_ISCOPY;
 #endif
+
+#if defined(WOLFSSL_HASH_KEEP)
+    if (src->msg != NULL) {
+        dst->msg = (byte*)XMALLOC(src->len, dst->heap,
+                                  DYNAMIC_TYPE_TMP_BUFFER);
+        if (dst->msg == NULL) {
+            return MEMORY_E;
+        }
+        XMEMCPY(dst->msg, src->msg, src->used);
+    }
+#endif
+
     return ret;
 }
 #endif /* WOLFSSL_RENESAS_RX64_HASH */

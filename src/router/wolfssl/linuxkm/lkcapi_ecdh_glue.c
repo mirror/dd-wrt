@@ -1,7 +1,7 @@
 /* lkcapi_ecdh_glue.c -- glue logic to register ecdh wolfCrypt
  * implementations with the Linux Kernel Cryptosystem
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -43,7 +43,8 @@
         /* currently incompatible with kernel 5.12 or earlier. */
         #undef LINUXKM_LKCAPI_REGISTER_ECDH
 
-        #if defined(LINUXKM_LKCAPI_REGISTER_ALL_KCONFIG) && defined(CONFIG_CRYPTO_ECDH)
+        #if defined(LINUXKM_LKCAPI_REGISTER_ALL_KCONFIG) && defined(CONFIG_CRYPTO_ECDH) && \
+            !defined(LINUXKM_LKCAPI_DONT_REGISTER_ECDH)
             #error Config conflict: missing implementation forces off LINUXKM_LKCAPI_REGISTER_ECDH.
         #endif
     #endif
@@ -51,6 +52,7 @@
 
 #if defined(LINUXKM_LKCAPI_REGISTER_ALL_KCONFIG) && \
     defined(CONFIG_CRYPTO_ECDH) && \
+    !defined(LINUXKM_LKCAPI_DONT_REGISTER_ECDH) && \
     !defined(LINUXKM_LKCAPI_REGISTER_ECDH)
     #error Config conflict: target kernel has CONFIG_CRYPTO_ECDH, but module is missing LINUXKM_LKCAPI_REGISTER_ECDH.
 #endif
@@ -385,7 +387,7 @@ static int km_ecdh_init(struct crypto_kpp *tfm, int curve_id)
         ctx->curve_len = (word32) ret;
     }
 
-    ret = wc_InitRng(&ctx->rng);
+    ret = LKCAPI_INITRNG(&ctx->rng);
     if (ret) {
         #ifdef WOLFKM_DEBUG_ECDH
         pr_err("%s: init rng returned: %d\n", WOLFKM_ECDH_DRIVER, ret);

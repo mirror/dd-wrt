@@ -76,6 +76,9 @@ CLEANFILES+= ecc-key.der \
              pkcs7encryptedDataDES3.der \
              pkcs7encryptedDataDES.der \
              pkcs7envelopedDataAES256CBC_ECDH.der \
+             cmake/wolfssl-config.cmake \
+             cmake/wolfssl-config-version.cmake \
+             cmake/wolfssl-targets.cmake \
              pkcs7envelopedDataAES128CBC_ECDH_SHA1KDF.der \
              pkcs7envelopedDataAES256CBC_ECDH_SHA256KDF.der \
              pkcs7envelopedDataAES256CBC_ECDH_SHA512KDF.der \
@@ -146,6 +149,7 @@ EXTRA_DIST+= valgrind-bash.supp
 EXTRA_DIST+= fips-hash.sh
 EXTRA_DIST+= gencertbuf.pl
 EXTRA_DIST+= README.md
+EXTRA_DIST+= README-async.md
 EXTRA_DIST+= README
 EXTRA_DIST+= ChangeLog.md
 EXTRA_DIST+= LICENSING
@@ -219,13 +223,20 @@ if BUILD_LINUXKM
         CFLAGS_FPU_DISABLE CFLAGS_FPU_ENABLE CFLAGS_SIMD_DISABLE CFLAGS_SIMD_ENABLE \
         CFLAGS_AUTO_VECTORIZE_DISABLE CFLAGS_AUTO_VECTORIZE_ENABLE \
         ASFLAGS_FPU_DISABLE_SIMD_ENABLE ASFLAGS_FPU_ENABLE_SIMD_DISABLE \
-        ASFLAGS_FPUSIMD_DISABLE ASFLAGS_FPUSIMD_ENABLE ENABLED_KERNEL_BENCHMARKS
+        ASFLAGS_FPUSIMD_DISABLE ASFLAGS_FPUSIMD_ENABLE ENABLED_KERNEL_BENCHMARKS \
+        FIPS_FLAVOR
 
 module:
-	+$(MAKE) -C linuxkm libwolfssl.ko
+	+$(MAKE) -C linuxkm module
 
 module-update-fips-hash:
 	+$(MAKE) -C linuxkm module-update-fips-hash
+
+module-with-matching-fips-hash:
+	+$(MAKE) -C linuxkm module-with-matching-fips-hash
+
+module-with-matching-fips-hash-no-sign:
+	+$(MAKE) -C linuxkm module-with-matching-fips-hash-no-sign
 
 clean_module:
 	+$(MAKE) -C linuxkm clean
@@ -244,8 +255,9 @@ if BUILD_BSDKM
         EXTRA_CFLAGS EXTRA_CPPFLAGS EXTRA_CCASFLAGS EXTRA_LDFLAGS \
         AM_CPPFLAGS CPPFLAGS AM_CFLAGS CFLAGS \
         AM_CCASFLAGS CCASFLAGS \
-        src_libwolfssl_la_OBJECTS ENABLED_CRYPT_TESTS
-
+        src_libwolfssl_la_OBJECTS ENABLED_CRYPT_TESTS ENABLED_BSDKM_REGISTER \
+        ENABLED_ASM ENABLED_INTELASM ENABLED_AESNI ENABLED_AESNI_WITH_AVX \
+        ENABLED_KERNEL_BENCHMARKS
 endif
 
 

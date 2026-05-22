@@ -1,6 +1,6 @@
 /* renesas_tsip_sha.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -398,6 +398,7 @@ static int TSIPHashFinal(wolfssl_TSIP_Hash* hash, byte* out, word32 outSz)
         if (ret == TSIP_SUCCESS) {
             ret = Final(&handle, out, (uint32_t*)&sz);
             if (ret != TSIP_SUCCESS || sz != outSz) {
+                tsip_hw_unlock();
                 return ret;
             }
         }
@@ -442,6 +443,7 @@ static int TSIPHashGet(wolfssl_TSIP_Hash* hash, byte* out, word32 outSz)
         if (ret == TSIP_SUCCESS) {
             ret = Final(&handle, out, &sz);
             if (ret != TSIP_SUCCESS || sz != outSz) {
+                tsip_hw_unlock();
                 return ret;
             }
         }

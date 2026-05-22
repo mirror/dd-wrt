@@ -16,12 +16,18 @@ EXTRA_DIST += \
 		certs/crl/wolfssl.cnf \
 		certs/crl/crl.der \
 		certs/crl/crl2.der \
-        certs/crl/crl_rsapss.pem
+		certs/crl/crl_rsapss.pem \
+		certs/crl/crl_reason.pem \
+		certs/crl/bad_time_fmt.pem
 
 EXTRA_DIST += \
 		certs/crl/crl.revoked \
 		certs/crl/extra-crls/ca-int-cert-revoked.pem \
-		certs/crl/extra-crls/general-server-crl.pem
+		certs/crl/extra-crls/general-server-crl.pem \
+		certs/crl/extra-crls/large_crlnum.pem \
+		certs/crl/extra-crls/large_crlnum2.pem \
+		certs/crl/extra-crls/crlnum_57oct.pem \
+		certs/crl/extra-crls/crlnum_64oct.pem
 
 # Intermediate cert CRL's
 EXTRA_DIST += \

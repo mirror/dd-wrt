@@ -1,6 +1,6 @@
 /* integer.c
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -1392,10 +1392,10 @@ LBL_ERR:mp_clear(&x);
 
 
 /* compare magnitude of two ints (unsigned) */
-int mp_cmp_mag (mp_int * a, mp_int * b)
+int mp_cmp_mag (const mp_int * a, const mp_int * b)
 {
   int     n;
-  mp_digit *tmpa, *tmpb;
+  const mp_digit *tmpa, *tmpb;
 
   /* compare based on # of non-zero digits */
   if (a->used > b->used) {
@@ -1430,7 +1430,7 @@ int mp_cmp_mag (mp_int * a, mp_int * b)
 
 
 /* compare two ints (signed)*/
-int mp_cmp (mp_int * a, mp_int * b)
+int mp_cmp (const mp_int * a, const mp_int * b)
 {
   /* compare based on sign */
   if (a->sign != b->sign) {
@@ -3278,8 +3278,10 @@ int mp_div_3 (mp_int * a, mp_int *c, mp_digit * d)
   q.sign = a->sign;
   w = 0;
 
-  if (a->used == 0)
+  if (a->used == 0) {
+      mp_clear(&q);
       return MP_VAL;
+  }
 
   for (ix = a->used - 1; ix >= 0; ix--) {
      w = (w << ((mp_word)DIGIT_BIT)) | ((mp_word)a->dp[ix]);

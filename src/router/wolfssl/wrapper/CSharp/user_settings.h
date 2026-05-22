@@ -1,6 +1,6 @@
 /* user_settings.h
  *
- * Copyright (C) 2006-2025 wolfSSL Inc.
+ * Copyright (C) 2006-2026 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -91,6 +91,7 @@
 
 /* Disable Algorithms */
 #define NO_DES3
+#define NO_DES3_TLS_SUITES
 #define NO_DSA
 #define NO_RC4
 #define NO_MD4
