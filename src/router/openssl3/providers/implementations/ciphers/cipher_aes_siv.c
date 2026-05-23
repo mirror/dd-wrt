@@ -114,6 +114,7 @@ static int siv_cipher(void *vctx, unsigned char *out, size_t *outl,
     size_t outsize, const unsigned char *in, size_t inl)
 {
     PROV_AES_SIV_CTX *ctx = (PROV_AES_SIV_CTX *)vctx;
+    static const unsigned char empty;
 
     if (!ossl_prov_is_running())
         return 0;
@@ -122,6 +123,9 @@ static int siv_cipher(void *vctx, unsigned char *out, size_t *outl,
         ERR_raise(ERR_LIB_PROV, PROV_R_OUTPUT_BUFFER_TOO_SMALL);
         return 0;
     }
+
+    if (in == NULL)
+        in = &empty;
 
     if (ctx->hw->cipher(ctx, out, in, inl) <= 0)
         return 0;

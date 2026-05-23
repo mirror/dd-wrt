@@ -140,6 +140,7 @@ static int ossl_aes_gcm_siv_cipher(void *vctx, unsigned char *out, size_t *outl,
 {
     PROV_AES_GCM_SIV_CTX *ctx = (PROV_AES_GCM_SIV_CTX *)vctx;
     int error = 0;
+    static const unsigned char empty;
 
     if (!ossl_prov_is_running())
         return 0;
@@ -148,6 +149,9 @@ static int ossl_aes_gcm_siv_cipher(void *vctx, unsigned char *out, size_t *outl,
         ERR_raise(ERR_LIB_PROV, PROV_R_OUTPUT_BUFFER_TOO_SMALL);
         return 0;
     }
+
+    if (in == NULL)
+        in = &empty;
 
     error |= !ctx->hw->cipher(ctx, out, in, inl);
 
