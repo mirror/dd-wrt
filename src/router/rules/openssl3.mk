@@ -51,10 +51,10 @@ export OPENSSL_TARGET := linux-aarch64-openwrt
 export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections -Os
 endif
 ifeq ($(KERNELVERSION),6.1)
-export ENABLE_TLS := enable-ktls
+#export ENABLE_TLS := enable-ktls
 endif
 ifeq ($(KERNELVERSION),6.1-nss)
-export ENABLE_TLS := enable-ktls
+#export ENABLE_TLS := enable-ktls
 endif
 ifeq ($(KERNELVERSION),6.6)
 export ENABLE_TLS := enable-ktls
