@@ -30,6 +30,7 @@ ifeq ($(ARCH),i386)
 	cp -vr amdgpu $(INSTALLDIR)$(FIRMWAREDIR)
 	cp -vr radeon $(INSTALLDIR)$(FIRMWAREDIR)
 	cp -vr i915 $(INSTALLDIR)$(FIRMWAREDIR)
+	cp -v *.bin $(INSTALLDIR)$(FIRMWAREDIR)
 endif
 ifeq ($(ARCH),x86_64)
 	cp -vr rtl_nic $(INSTALLDIR)$(FIRMWAREDIR)
@@ -40,6 +41,7 @@ ifeq ($(ARCH),x86_64)
 	cp -vr amdgpu $(INSTALLDIR)$(FIRMWAREDIR)
 	cp -vr radeon $(INSTALLDIR)$(FIRMWAREDIR)
 	cp -vr i915 $(INSTALLDIR)$(FIRMWAREDIR)
+	cp -v *.bin $(INSTALLDIR)$(FIRMWAREDIR)
 endif
 	-rm -f $(INSTALLDIR)/usbdux/*dux $(INSTALLDIR)/*/*.asm
 	-rm -f $(INSTALLDIR)$(FIRMWAREDIR)/{WHENCE,LICENSE.*,LICENCE.*}
