@@ -376,6 +376,11 @@ define kernelfeatures
 		echo "# CONFIG_NTFSPLUS_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NTFSPLUS_FS_POSIX_ACL=y" >> $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_NTFS3)" = "y" ] && [ "$(KERNELVERSION)" = "6.12-nss"]; then \
+		sed -i 's/\# CONFIG_NTFSPLUS_FS is not set/CONFIG_NTFSPLUS_FS=m/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_NTFSPLUS_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NTFSPLUS_FS_POSIX_ACL=y" >> $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_NTFS3)" = "y" ] && [ "$(KERNELVERSION)" = "6.1"]; then \
 		sed -i 's/\# CONFIG_NTFSPLUS_FS is not set/CONFIG_NTFSPLUS_FS=m/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_NTFSPLUS_DEBUG is not set" >> $(LINUXDIR)/.config; \
@@ -397,6 +402,29 @@ define kernelfeatures
 		echo "CONFIG_NTFSPLUS_FS_POSIX_ACL=y" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_OPENVPN)" = "y" ] && [ "$(KERNELVERSION)" = "6.12"]; then \
+		sed -i 's/\# CONFIG_TUN is not set/CONFIG_TUN=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CMAC is not set/CONFIG_CRYPTO_CMAC=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CHACHA20 is not set/CONFIG_CRYPTO_CHACHA20=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_POLY1305 is not set/CONFIG_CRYPTO_POLY1305=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CTS is not set/CONFIG_CRYPTO_CTS=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CTR is not set/CONFIG_CRYPTO_CTR=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_SEQIV is not set/CONFIG_CRYPTO_SEQIV=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_GHASH is not set/CONFIG_CRYPTO_GHASH=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_GCM is not set/CONFIG_CRYPTO_GCM=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CCM is not set/CONFIG_CRYPTO_CCM=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CHACHA20POLY1305 is not set/CONFIG_CRYPTO_CHACHA20POLY1305=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CMAC=m/CONFIG_CRYPTO_CMAC=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CHACHA20=m/CONFIG_CRYPTO_CHACHA20=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_POLY1305=m/CONFIG_CRYPTO_POLY1305=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CTS=m/CONFIG_CRYPTO_CTS=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CTR=m/CONFIG_CRYPTO_CTR=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_SEQIV=m/CONFIG_CRYPTO_SEQIV=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_GHASH=m/CONFIG_CRYPTO_GHASH=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_GCM=m/CONFIG_CRYPTO_GCM=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CCM=m/CONFIG_CRYPTO_CCM=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_CRYPTO_CHACHA20POLY1305=m/CONFIG_CRYPTO_CHACHA20POLY1305=y/g' $(LINUXDIR)/.config; \
+	fi
+	if [ "$(CONFIG_OPENVPN)" = "y" ] && [ "$(KERNELVERSION)" = "6.12-nss"]; then \
 		sed -i 's/\# CONFIG_TUN is not set/CONFIG_TUN=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_CMAC is not set/CONFIG_CRYPTO_CMAC=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_CHACHA20 is not set/CONFIG_CRYPTO_CHACHA20=y/g' $(LINUXDIR)/.config; \
@@ -1121,6 +1149,10 @@ define kernelfeatures
 		echo "# CONFIG_WIREGUARD_DEBUG is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_WIREGUARD)" = "y" ] && [ "$(KERNELVERSION)" = "6.12" ]; then \
+		sed -i 's/\# CONFIG_WIREGUARD is not set/CONFIG_WIREGUARD=m/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_WIREGUARD_DEBUG is not set" >> $(LINUXDIR)/.config; \
+	fi
+	if [ "$(CONFIG_WIREGUARD)" = "y" ] && [ "$(KERNELVERSION)" = "6.12-nss" ]; then \
 		sed -i 's/\# CONFIG_WIREGUARD is not set/CONFIG_WIREGUARD=m/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_WIREGUARD_DEBUG is not set" >> $(LINUXDIR)/.config; \
 	fi
