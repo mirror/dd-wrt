@@ -720,11 +720,12 @@ static int _smartdns_run(void)
 
 static void _smartdns_exit(void)
 {
-	dns_server_exit();
-	dns_client_exit();
 	_smartdns_plugin_exit();
-	proxy_exit();
+	/* Client and ping cleanup may complete server requests. Keep server/cache alive until both are drained. */
+	dns_client_exit();
 	fast_ping_exit();
+	dns_server_exit();
+	proxy_exit();
 	dns_stats_exit();
 #ifdef HAVE_OPENSSL
 	_smartdns_destroy_ssl();
