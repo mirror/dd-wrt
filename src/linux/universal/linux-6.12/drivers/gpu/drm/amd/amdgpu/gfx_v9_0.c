@@ -4760,9 +4760,9 @@ fail:
 	return r;
 }
 
-static int gfx_v9_0_early_init(void *handle)
+static int gfx_v9_0_early_init(struct amdgpu_ip_block *ip_block)
 {
-	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
+	struct amdgpu_device *adev = ip_block->adev;
 
 	adev->gfx.funcs = &gfx_v9_0_gfx_funcs;
 
@@ -7364,9 +7364,9 @@ static void gfx_v9_ip_print(void *handle, struct drm_printer *p)
 
 }
 
-static void gfx_v9_ip_dump(void *handle)
+static void gfx_v9_ip_dump(struct amdgpu_ip_block *ip_block)
 {
-	struct amdgpu_device *adev = (struct amdgpu_device *)handle;
+	struct amdgpu_device *adev = ip_block->adev;
 	uint32_t i, j, k, reg, index = 0;
 	uint32_t reg_count = ARRAY_SIZE(gc_reg_list_9);
 
