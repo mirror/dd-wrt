@@ -68,7 +68,7 @@ chillispot-configure:
 	    AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 	    RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
-chillispot:
+chillispot: openssl
 ifneq ($(CONFIG_FON),y)
 	install -D $(CHILLIDIR)/config/chillispot.webhotspot httpd/ej_temp/chillispot.webhotspot
 endif
