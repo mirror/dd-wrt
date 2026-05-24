@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86_64 6.12.79 Kernel Configuration
+# Linux/x86_64 6.12.90 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="x86_64-openwrt-linux-gcc (OpenWrt GCC 15.1.0 r29931+14-53b87d660b) 15.1.0"
 CONFIG_CC_IS_GCC=y
@@ -1627,7 +1627,9 @@ CONFIG_MPLS_IPTUNNEL=m
 # CONFIG_HSR is not set
 # CONFIG_NET_SWITCHDEV is not set
 # CONFIG_NET_L3_MASTER_DEV is not set
-# CONFIG_QRTR is not set
+CONFIG_QRTR=y
+# CONFIG_QRTR_TUN is not set
+CONFIG_QRTR_MHI=y
 # CONFIG_NET_NCSI is not set
 CONFIG_PCPU_DEV_REFCNT=y
 CONFIG_MAX_SKB_FRAGS=17
@@ -1925,7 +1927,9 @@ CONFIG_DMA_SHARED_BUFFER=y
 #
 # Bus devices
 #
-# CONFIG_MHI_BUS is not set
+CONFIG_MHI_BUS=y
+# CONFIG_MHI_BUS_DEBUG is not set
+CONFIG_MHI_BUS_PCI_GENERIC=y
 # CONFIG_MHI_BUS_EP is not set
 # end of Bus devices
 
@@ -2451,6 +2455,7 @@ CONFIG_TUN=m
 # CONFIG_VETH is not set
 CONFIG_VIRTIO_NET=m
 # CONFIG_NLMON is not set
+# CONFIG_MHI_NET is not set
 CONFIG_SUNGEM_PHY=m
 # CONFIG_ARCNET is not set
 CONFIG_ETHERNET=y
@@ -5215,6 +5220,7 @@ CONFIG_RESET_CONTROLLER=y
 #
 # PHY Subsystem
 #
+CONFIG_PHY_COMMON_PROPS=y
 CONFIG_GENERIC_PHY=y
 # CONFIG_USB_LGM_PHY is not set
 # CONFIG_PHY_CAN_TRANSCEIVER is not set
