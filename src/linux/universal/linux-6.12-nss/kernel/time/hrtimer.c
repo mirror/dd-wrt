@@ -1237,7 +1237,6 @@ static int __hrtimer_start_range_ns_on_cpu(struct hrtimer *timer, ktime_t tim,
 	force_local = base->cpu_base == this_cpu_ptr(&hrtimer_bases);
 	force_local &= base->cpu_base->next_timer == timer;
 
-	was_armed = remove_hrtimer(timer, base, true, force_local);
 
 	/*
 	 * Remove an active timer from the queue. In case it is not queued
@@ -1250,7 +1249,7 @@ static int __hrtimer_start_range_ns_on_cpu(struct hrtimer *timer, ktime_t tim,
 	 * avoids programming the underlying clock event twice (once at
 	 * removal and once after enqueue).
 	 */
-	remove_hrtimer(timer, base, true, force_local);
+	was_armed = remove_hrtimer(timer, base, true, force_local);
 
 	if (mode & HRTIMER_MODE_REL)
 		tim = ktime_add_safe(tim, base->get_time());
