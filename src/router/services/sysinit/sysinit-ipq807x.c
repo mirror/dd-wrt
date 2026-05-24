@@ -656,10 +656,14 @@ void start_setup_affinity(void)
 			set_named_smp_affinity("DP_EXT_IRQ", 1, 2);
 			set_named_smp_affinity("DP_EXT_IRQ", 2, 3);
 			set_named_smp_affinity("DP_EXT_IRQ", 3, 4);
-			set_named_smp_affinity("DP_EXT_IRQ", 1, 5);
-			set_named_smp_affinity("DP_EXT_IRQ", 2, 6);
-			set_named_smp_affinity("DP_EXT_IRQ", 3, 7);
-			set_named_smp_affinity("DP_EXT_IRQ", 4, 8);
+			set_named_smp_affinity("DP_EXT_IRQ", 0, 5);
+			set_named_smp_affinity("DP_EXT_IRQ", 1, 6);
+			set_named_smp_affinity("DP_EXT_IRQ", 2, 7);
+			set_named_smp_affinity("DP_EXT_IRQ", 3, 8);
+			set_named_smp_affinity("DP_EXT_IRQ", 0, 9);
+			set_named_smp_affinity("DP_EXT_IRQ", 1, 10);
+			set_named_smp_affinity("DP_EXT_IRQ", 2, 11);
+			set_named_smp_affinity("DP_EXT_IRQ", 3, 12);
 
 			set_named_smp_affinity("edma_ppeds_rxfill", 3, 1);
 			set_named_smp_affinity("edma_ppeds_rxfill", 2, 2);
