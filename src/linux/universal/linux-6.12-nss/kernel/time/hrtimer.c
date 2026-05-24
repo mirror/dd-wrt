@@ -1224,7 +1224,7 @@ static int __hrtimer_start_range_ns_on_cpu(struct hrtimer *timer, ktime_t tim,
 				    struct hrtimer_clock_base *base)
 {
 	struct hrtimer_clock_base *new_base;
-	bool force_local, first;
+	bool force_local, first, was_armed;
 
 	/*
 	 * If the timer is on the local cpu base and is the first expiring
@@ -1236,6 +1236,8 @@ static int __hrtimer_start_range_ns_on_cpu(struct hrtimer *timer, ktime_t tim,
 	 */
 	force_local = base->cpu_base == this_cpu_ptr(&hrtimer_bases);
 	force_local &= base->cpu_base->next_timer == timer;
+
+	was_armed = remove_hrtimer(timer, base, true, force_local);
 
 	/*
 	 * Remove an active timer from the queue. In case it is not queued
@@ -1259,7 +1261,7 @@ static int __hrtimer_start_range_ns_on_cpu(struct hrtimer *timer, ktime_t tim,
 
 	new_base = base;
 
-	first = enqueue_hrtimer(timer, new_base, mode);
+	first = enqueue_hrtimer(timer, new_base, mode, was_armed);
 	if (!force_local)
 		return first;
 
