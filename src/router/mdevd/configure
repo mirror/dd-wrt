@@ -376,14 +376,14 @@ if test -z "$target" ; then
   fi
 fi
 echo "  ... $target"
-if test ! -d $sysdeps || test ! -f $sysdeps/target ; then
-  echo "$0: error: $sysdeps is not a valid sysdeps directory"
-  exit 1
-fi
-if test "$target" != "$(cat $sysdeps/target)" ; then
-  echo "$0: error: target $target does not match the contents of $sysdeps/target"
-  exit 1
-fi
+#if test ! -d $sysdeps || test ! -f $sysdeps/target ; then
+#  echo "$0: error: $sysdeps is not a valid sysdeps directory"
+#  exit 1
+#fi
+#if test "$target" != "$(cat $sysdeps/target)" ; then
+#  echo "$0: error: target $target does not match the contents of $sysdeps/target"
+#  exit 1
+#fi
 
 echo "Shared libraries will be named ..."
 libc="${target##*-}"

@@ -1,0 +1,107 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skalibs: the fmtscan header</title>
+    <meta name="Description" content="skalibs: the fmtscan header" />
+    <meta name="Keywords" content="skalibs header fmtscan format scan printf scanf" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">libstddjb</a><br />
+<a href="../libskarnet.html">libskarnet</a><br />
+<a href="../index.html">skalibs</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> Formatting and scanning functions </h1>
+
+<p>
+ The preferred skalibs way of converting objects to string for output is to use
+the various <tt>*_fmt</tt> functions available in <tt>skalibs/fmtscan.h</tt>
+and other object-specific headers. These functions take at least two parameters:
+</p>
+
+<ul>
+ <li> The target buffer into which the formatted object will be written.
+This buffer must be large enough to hold the formatted object. </li>
+ <li> The object that should be formatted into the buffer. </li>
+</ul>
+
+<p>
+ They return the number of bytes written into the buffer.
+</p>
+
+<p>
+ To ensure that the buffer is large enough, <tt>skalibs</tt> provides several
+<tt>x_FMT</tt> macros corresponding to the minimum buffer size necessary for
+formatting an object of type <em>x</em> to a string, including the terminating
+nul byte.
+</p>
+
+<p>
+ Conversely, to scan objects from a string, skalibs provides several
+<tt>*_scan</tt> functions. They take the same parameters as the <tt>*_fmt</tt>
+ones, with meaning reversed. They return the number of bytes read from the
+input buffer
+</p>
+
+<h2> Examples </h2>
+
+<pre>
+ uint32_t u = ... ;
+ char buf[UINT32_FMT] ;
+ buf[uint32_fmt(buf, u)] = 0 ;
+</pre>
+
+<pre>
+ char *buf = "123a" ;
+ uint32_t u ;
+ size_t p ;
+ p = uint32_scan(buf, &u) ;
+ // p is 3, u is 123
+</pre>
+
+<h2> Functions </h2>
+
+<p>
+ Formatting and scanning functions for the integer types can be found in
+<tt>skalibs/uint16h</tt>, <tt>skalibs/uint32.h</tt> and
+<tt>skalibs/uint64.h</tt>, those for standard unix types (such as
+<tt>pid_t</tt> or <tt>uid_t</tt>) can be found in <tt>skalibs/types.h</tt>.
+Other formatting functions can be found in <tt>skalibs/fmtscan.h</tt>.
+</p>
+
+<p>
+<code> size_t uint64_fmt_generic (char *s, uint64_t i, uint8_t b) </code> <br />
+Write the representation in base <em>b</em> of integer <em>i</em> into the buffer
+pointed to by <em>s</em>. Returns the number of bytes written.
+</p>
+
+<p>
+<code> size_t uint640_fmt_generic (char *s, uint64_t i, size_t pad, uint8_t b) </code> <br />
+Write the representation in base <em>b</em> of integer <em>i</em> into the buffer
+pointed to by <em>s</em>, padding if necessary with zeros to ensure the
+written string is at least <em>pad</em> bytes long. Returns the number of
+bytes written.
+</p>
+
+<p>
+<code> size_t uint64_scan_base (char const *s, uint64_t *i, uint8_t b) </code> <br />
+Scan the first bytes of the buffer pointed to by <em>s</em> for an <tt>uint64_t</tt>
+exrpessed in base <em>b</em> and write it into <em>i</em>. Returns the number of
+bytes read.
+<p>
+
+<p>
+ The above are the most fundamental functions. Other functions are usually expressed
+in terms of these, or have self-explanatory prototypes.
+</p>
+
+</body>
+</html>

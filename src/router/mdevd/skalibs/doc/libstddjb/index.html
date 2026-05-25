@@ -1,0 +1,125 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skalibs: the stddjb library interface</title>
+    <meta name="Description" content="skalibs: the stddjb library interface" />
+    <meta name="Keywords" content="skalibs stddjb libstddjb library interface" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="../libskarnet.html">libskarnet</a><br />
+<a href="../index.html">skalibs</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">www.skarnet.org</a>
+</p>
+
+<h1> The <tt>stddjb</tt> library interface </h1>
+
+<p>
+ <tt>libstddjb</tt> is the base, and the most important part, of skalibs.
+It is a set of general-purpose C functions wrapping some
+system calls, hiding some Unix portability problems, providing some
+basic low-level buffering functions and string handling, and generally
+offering a nice API to Unix programming - in many ways nicer and safer
+than the "standard" Unix APIs like <tt>stdio.h</tt>.
+</p>
+
+<p>
+ It is mostly based on some excellent code written and placed into the
+public domain by <a href="../djblegacy.html">D. J. Bernstein</a>.
+</p>
+
+<h2> Compiling </h2>
+
+<ul>
+ <li> The libstddjb functions are available under the <tt>skalibs/stddjb.h</tt>
+header, which includes a lot of lower-level headers. If you know what
+lower-level headers to use, you might speed up your compilation process by
+including them directly. </li>
+</ul>
+
+<h2> Programming </h2>
+
+<ul>
+ <li> <a href="alarm.html">skalibs/alarm.h</a>: sub-second precision <a href="https://pubs.opengroup.org/onlinepubs/9799919799/functions/alarm.html">alarm()</a> </li>
+ <li> <a href="alloc.html">skalibs/alloc.h</a>: basic heap memory allocation primitives </li>
+ <li> <a href="allreadwrite.html">skalibs/allreadwrite.h</a>: <a href="safewrappers.html">safe
+wrappers</a> around I/O functions, extra I/O functions </li>
+ <li> <a href="bitarray.html">skalibs/bitarray.h</a>: how to handle large arrays of bits </li>
+ <li> <a href="bufalloc.html">skalibs/bufalloc.h</a>: bufferized output (with dynamically allocated buffers)</li>
+ <li> <a href="buffer.html">skalibs/buffer.h</a>: bufferized I/O (with statically allocated buffers) </li>
+ <li> <a href="bytestr.html">skalibs/bytestr.h</a>: basic operations on strings and byte arrays </li>
+ <li> <a href="cdb.html">skalibs/cdb.h</a>: how to read
+<a href="https://en.wikipedia.org/wiki/Cdb_%28software%29">cdb</a> files </li>
+ <li> <a href="cdbmake.html">skalibs/cdbmake.h</a>: how to write
+<a href="https://en.wikipedia.org/wiki/Cdb_%28software%29">cdb</a> files </li>
+ <li> <a href="cspawn.html">skalibs/cspawn.h</a>: child spawning primitives that use posix_spawn instead of fork when supported </li>
+ <li> <a href="direntry.html">skalibs/direntry.h</a>: portable directory operations </li>
+ <li> <a href="djbtime.html">skalibs/djbtime.h</a>: conversions between date and time formats </li>
+ <li> <a href="djbunix.html">skalibs/djbunix.h</a>: management of basic Unix concepts </li>
+ <li> <a href="envalloc.html">skalibs/envalloc.h</a>: management of dynamically allocated <em>argv</em> and <em>envp</em> </li>
+ <li> <a href="env.html">skalibs/env.h</a>: management of <em>argv</em> and <em>envp</em> </li>
+ <li> <a href="exec.html">skalibs/exec.h</a>: execution functions, with or without a newly built environment </li>
+ <li> <a href="fmtscan.html">skalibs/fmtscan.h</a>: formatters (printers) and scanners (parsers) for basic C types </li>
+ <li> <a href="genalloc.html">skalibs/genalloc.h</a>: generic advanced management of dynamically allocated structures </li>
+ <li> <a href="genwrite.html">skalibs/genwrite.h</a>: interface to generic writes either to strallocs or to buffers </li>
+ <li> <a href="getpeereid.html">skalibs/getpeereid.h</a>: the <tt>getpeereid()</tt> system call </li>
+ <li> <a href="iopause.html">skalibs/iopause.h</a>: the skalibs event loop selection function </li>
+ <li> <a href="lolstdio.html">skalibs/lolstdio.h</a>:
+<a href="https://pubs.opengroup.org/onlinepubs/9799919799/functions/printf.html">printf</a>-like
+functions writing into <a href="buffer.html">buffers</a> or <a href="bufalloc.html">bufallocs</a> </li>
+ <li> <a href="mininetstring.html">skalibs/mininetstring.h</a>: a protocol to transmit variable-length messages (limited to 64kB) </li>
+ <li> <a href="netstring.html">skalibs/netstring.h</a>: a protocol to transmit variable-length messages (limited to 2^32 bytes) </li>
+ <li> <a href="segfault.html">skalibs/segfault.h</a>: voluntary error generation </li>
+ <li> <a href="selfpipe.html">skalibs/selfpipe.h</a>: automated selfpipe trick (i.e.
+how to safely handle signals in event loops) </li>
+ <li> <a href="sgetopt.html">skalibs/sgetopt.h</a>: <tt>getopt()</tt>-style command-line options management </li>
+ <li> <a href="sig.html">skalibs/sig.h</a>: safe signal management </li>
+ <li> <a href="siovec.html">skalibs/siovec.h</a>: scatter/gather IO primitives working with an
+<a href="https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/sys_uio.h.html">iovec</a>
+structure </li>
+ <li> <a href="skamisc.html">skalibs/skamisc.h</a>: general string quoting and parsing; miscellaneous, unclassifiable functions </li>
+ <li> <a href="socket.html">skalibs/socket.h</a>: UNIX, INET and INET6 domain sockets </li>
+ <li> <a href="stralloc.html">skalibs/stralloc.h</a>: advanced management of dynamically allocated strings </li>
+ <li> <a href="strerr.html">skalibs/strerr.h</a>: print error messages </li>
+ <li> <a href="tai.html">skalibs/tai.h</a>: time, timers and system clock </li>
+</ul>
+
+<p>
+ The following headers are automatically generated at compile-time, when the
+<em>headers</em> subsystem is made. The <tt>skalibs/stddjb.h</tt> file also
+includes them.
+</p>
+
+<ul>
+ <li> skalibs/uint16.h: operations with 16-bit unsigned integers </li>
+ <li> skalibs/uint32.h: operations with 32-bit unsigned integers </li>
+ <li> skalibs/uint64.h: operations with 64-bit unsigned integers </li>
+ <li> skalibs/types.h: portable helpers for common Unix types: size_t,
+uid_t, gid_t, pid_t, time_t, dev_t and ino_t. </li>
+ <li> skalibs/error.h: portable macros for errno management </li>
+ <li> skalibs/setgroups.h: stub for the setgroups() function, for systems that do not define it</li>
+ <li> <a href="ip46.html">skalibs/ip46.h</a>: IPv4/IPv6 abstraction layer </li>
+</ul>
+
+<p>
+ Additionally, <tt>stddjb.h</tt> also includes the following headers, which
+are not associated with any code and are mostly self-explanatory:
+</p>
+
+<ul>
+ <li> <a href="gccattributes.html">skalibs/gccattributes.h</a>: wrappers around a few GCC-specific optimizations </li>
+ <li> skalibs/diuint.h: for associative arrays of unsigned integers </li>
+ <li> skalibs/diuint32.h: for associative arrays of 32-bit unsigned integers </li>
+ <li> skalibs/disize.h: for associative arrays of size_t </li>
+ <li> skalibs/nsig.h: the number of system signals, for systems that do not define it </li>
+ <li> skalibs/nonposix.h: feature test macros for non-POSIX-compliant systems </li>
+</ul>
+
+</body>
+</html>

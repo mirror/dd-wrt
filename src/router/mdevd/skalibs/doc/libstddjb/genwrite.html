@@ -1,0 +1,100 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skalibs: the genwrite library interface</title>
+    <meta name="Description" content="skalibs: the genwrite library interface" />
+    <meta name="Keywords" content="skalibs c unix genwrite buffer stralloc write library libstddjb" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">libstddjb</a><br />
+<a href="../libskarnet.html">libskarnet</a><br />
+<a href="../index.html">skalibs</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>genwrite</tt> library interface </h1>
+
+<p>
+ The following functions are declared in the <tt>skalibs/genwrite.h</tt> header,
+and implemented in the <tt>libskarnet.a</tt> or <tt>libskarnet.so</tt> library.
+</p>
+
+<h2> General information </h2>
+
+<p>
+ <tt>genwrite</tt> is syntactic sugar to help write functions that might
+want to write either to memory or to a file descriptor.
+</p>
+
+<p>
+ Writing to memory is achieved via appending to a
+<a href="stralloc.html">stralloc</a>; writing to a file descriptor is achieved
+via appending to a <a href="buffer.html">buffer</a> or a
+<a href="bufalloc.html">bufalloc</a>.
+</p>
+
+<h2> Usage </h2>
+
+<p>
+ A <tt>genwrite_t</tt> structure contains a pointer to a function that writes
+stuff to the target without flushing it
+(which can be <tt>genwrite_put_stralloc</tt>, <tt>genwrite_put_buffer</tt>,
+<tt>genwrite_put_bufalloc</tt> or any
+compatible user-defined function) in <tt>.put</tt>, a pointer to a function
+that flushes the target (which can be <tt>genwrite_flush_stralloc</tt>,
+<tt>genwrite_flush_buffer</tt>, <tt>genwrite_flush_bufalloc</tt> or any
+compatible user-defined function) in <tt>.flush</tt>, and a pointer to
+the target writing structure in <tt>.target</tt>.
+</p>
+
+<p>
+ Users should define a <tt>genwrite_t</tt> first, using the provided functions,
+and give applications a pointer <tt>gp</tt> to this structure. To write <em>len</em>
+characters at position <em>s</em> to the target, the application should then call
+<code>(*gp-&gt;put)(gp-&gt;target, s, len)</code>. When it is done writing, the
+application should call <code>(*gp-&gt;flush)(gp-&gt;target)</code> to flush the
+output.
+</p>
+
+<p>
+ <tt>genwrite_stdout</tt> and <tt>genwrite_stderr</tt> are predefined; they
+write to <tt>buffer_1</tt> and <tt>buffer_2</tt> respectively.
+</p>
+
+<h2> Macros </h2>
+
+<p>
+<code> GENWRITE_STRALLOC_INIT(sa) </code> <br />
+Declares a <tt>genwrite_t</tt> writing to the stralloc *<em>sa</em>.
+</p>
+
+<p>
+<code> GENWRITE_BUFFER_INIT(b) </code> <br />
+Declares a <tt>genwrite_t</tt> writing to the buffer *<em>b</em>. Use
+of such a buffer might interact badly with nonblocking I/O.
+</p>
+
+<p>
+<code> GENWRITE_BUFALLOC_INIT(ba) </code> <br />
+Declares a <tt>genwrite_t</tt> writing to the bufalloc *<em>ba</em>.
+</p>
+
+<h2> Note </h2>
+
+<p>
+Object-oriented programming in C is inefficient and cumbersome. It is
+usually possible to avoid it in Unix system programming, because Unix
+primitives are often generic enough. Unfortunately, it is not the case
+here: Unix does not provide an abstraction representing either a file
+or a memory buffer. So an object-oriented approach is unavoidable.
+</p>
+
+</body>
+</html>

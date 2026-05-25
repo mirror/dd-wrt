@@ -1,0 +1,142 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skalibs: a C library for system programming</title>
+    <meta name="Description" content="skalibs: a C library for system programming" />
+    <meta name="Keywords" content="skalibs package skarnet.org libraries public domain" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> skalibs </h1>
+
+<h2> What is it&nbsp;? </h2>
+
+<p>
+ skalibs is a package centralizing the free software / open source C development
+files used for building all software at skarnet.org: it contains essentially
+general-purpose libraries.
+You will need to install skalibs if you plan to build skarnet.org software.
+ The point is that you won't have to download and compile big libraries, and care
+about portability issues,
+everytime you need to build a package: do it only once.
+</p>
+
+<p>
+ skalibs can also be used as a sound basic start for C development. There
+are a lot of general-purpose libraries out there; but if your main goal is
+to produce <em>small</em> and <em>secure</em> C code with a focus on system
+programming, skalibs might be for you.
+</p>
+
+<hr />
+
+<h2> Installation </h2>
+
+<h3> Requirements </h3>
+
+<ul>
+ <li> A Unix-like system, compliant with
+<a href="https://pubs.opengroup.org/onlinepubs/9799919799/">The
+Open Group Base Specifications Issue 7</a>,
+with a standard C development environment </li>
+ <li> GNU make, version 3.81 or later </li>
+</ul>
+
+<h3> Licensing </h3>
+
+<p>
+ skalibs is free software. It is available under the
+<a href="https://opensource.org/licenses/ISC">ISC license</a>.
+</p>
+
+<h3> Download </h3>
+
+<ul>
+ <li> The current released version of skalibs is <a href="skalibs-2.15.0.1.tar.gz">2.15.0.1</a>.
+You can access its checksum <a href="skalibs-2.15.0.1.tar.gz.sha256">here</a>. </li>
+ <li> Alternatively, you can checkout a copy of the
+<a href="//git.skarnet.org/cgi-bin/cgit.cgi/skalibs/">skalibs
+git repository</a>:
+<pre> git clone git://git.skarnet.org/skalibs </pre> </li>
+ <li> There's also a
+<a href="https://codeberg.org/skarnet/skalibs">Codeberg mirror</a>, or a
+<a href="https://github.com/skarnet/skalibs">GitHub mirror</a>, or a
+<a href="https://git.sr.ht/~skarnet/skalibs">SourceHut mirror</a>
+of the skalibs git repository </li>
+</ul>
+
+<h3> Compilation </h3>
+
+<ul>
+ <li> See the enclosed INSTALL file for installation details. </li>
+ <li> skalibs sports a few uncommon options to its <tt>./configure</tt> script.
+<a href="flags.html">This page</a> documents them in detail. </li>
+</ul>
+
+<h3> Upgrade notes </h3>
+
+<ul>
+ <li> <a href="upgrade.html">This page</a> lists the differences to be aware of between
+the previous versions of skalibs and the current one. </li>
+</ul>
+
+<h3> Cross-compilation </h3>
+
+<p>
+ Cross-compilation is tricky. skalibs provides system-agnostic interfaces, so all the
+other skarnet.org packages cross-compile easily; but some effort needs to be made to
+cross-compile skalibs, see <a href="crosscompile.html">this page</a>.
+
+<hr />
+
+<h2> Reference </h2>
+
+<h3> Libraries </h3>
+
+<ul>
+<li> <a href="libskarnet.html">The <tt>skarnet</tt> library interface</a> </li>
+</ul>
+
+<hr />
+
+<h2> Similar work </h2>
+
+<p>
+ Here are a few other libraries originating from the same place as
+skalibs, i.e. people start to reuse and package, or rewrite,
+<a href="djblegacy.html">code from Dan J. Bernstein</a>, and then patch
+after patch, addition after addition, the code evolves into a project
+of its own:
+</p>
+
+<ul>
+ <li> <a href="http://b0llix.net/">Wayne Marshall</a>'s <em>libasagna</em>,
+available for instance in the
+<a href="http://b0llix.net/perp/site.cgi">perp</a> package </li>
+ <li> <a href="http://www.fefe.de/">Felix von Leitner</a>'s
+<a href="http://www.fefe.de/libowfat/">libowfat</a> </li>
+ <li> <a href="http://untroubled.org/">Bruce Guenter</a>'s
+<a href="http://untroubled.org/bglibs/">bglibs</a> </li>
+ <li> <a href="https://dogmap.org/">Paul Jarc</a>'s
+<a href="https://code.dogmap.org./prjlibs/">prjlibs</a>, which also
+includes libraries for Scheme programming </li>
+</ul>
+
+<h2> Related resources </h2>
+
+<ul>
+ <li> <tt>skalibs</tt> is discussed on the
+<a href="//skarnet.org/lists/#skaware">skaware</a> mailing-list. </li>
+</ul>
+
+</body>
+</html>

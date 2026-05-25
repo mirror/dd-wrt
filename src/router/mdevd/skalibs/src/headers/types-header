@@ -1,0 +1,13 @@
+/* ISC license. */
+
+#ifndef SKALIBS_TYPES_H
+#define SKALIBS_TYPES_H
+
+#include <sys/types.h>
+#include <stdint.h>
+
+#include <skalibs/uint16.h>
+#include <skalibs/uint32.h>
+#include <skalibs/uint64.h>
+
+

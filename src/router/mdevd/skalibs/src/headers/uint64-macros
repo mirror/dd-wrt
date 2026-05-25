@@ -1,0 +1,25 @@
+
+#ifndef INT_LEAST64_MIN
+# define INT_LEAST64_MIN INT64_MIN
+#endif
+
+#ifndef INT_FAST64_MIN
+# define INT_FAST64_MIN INT64_MIN
+#endif
+
+#ifndef INT_LEAST64_MAX 
+# define INT_LEAST64_MAX INT64_MAX
+#endif
+
+#ifndef INT_FAST64_MAX 
+# define INT_FAST64_MAX INT64_MAX
+#endif
+
+#ifndef UINT_LEAST64_MAX
+# define UINT_LEAST64_MAX UINT64_MAX
+#endif
+
+#ifndef UINT_FAST64_MAX
+# define UINT_FAST64_MAX UINT64_MAX
+#endif
+

@@ -1,0 +1,736 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skalibs: the djbunix library interface</title>
+    <meta name="Description" content="skalibs: the djbunix library interface" />
+    <meta name="Keywords" content="skalibs c unix djbunix library libstddjb" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">libstddjb</a><br />
+<a href="../libskarnet.html">libskarnet</a><br />
+<a href="../index.html">skalibs</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>djbunix</tt> library interface </h1>
+
+<p>
+ The following functions are declared in the <tt>skalibs/djbunix.h</tt> header,
+and implemented in the <tt>libskarnet.a</tt> or <tt>libskarnet.so</tt> library.
+</p>
+
+<h2> General information </h2>
+
+<p>
+ <tt>djbunix</tt> is an alternative API to management of basic Unix
+concepts: file descriptors, files, environment, and so on. It is a
+rather chaotic mix of <a href="safewrappers.html">safe wrappers</a>
+around Unix system calls, better reimplementations of standard libc
+functionalities, and higher-level manipulations of Unix concepts.
+</p>
+
+<p>
+ Understanding <tt>djbunix</tt> is essential to understanding any piece
+of code depending on skalibs.
+</p>
+
+<h2> Functions </h2>
+
+<h3> Basic fd operations </h3>
+
+<p>
+<code> int coe (int fd) </code> <br />
+Sets the close-on-exec flag on <em>fd</em>.
+Returns 0 if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int uncoe (int fd) </code> <br />
+Clears the close-on-exec flag on <em>fd</em>.
+Returns 0 if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int ndelay_on (int fd) </code> <br />
+Sets the O_NONBLOCK flag on <em>fd</em>: sets it to non-blocking mode.
+Returns 0 if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int ndelay_off (int fd) </code> <br />
+Clears the O_NONBLOCK flag on <em>fd</em>: sets it to blocking mode.
+Returns 0 if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int pipenb (int *p) </code> <br />
+Like
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/pipe.html">pipe()</a>,
+but both ends of the created pipe are in non-blocking mode.
+</p>
+
+<p>
+<code> int pipecoe (int *p) </code> <br />
+Like
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/pipe.html">pipe()</a>,
+but both ends of the created pipe are close-on-exec.
+</p>
+
+<p>
+<code> int pipenbcoe (int *p) </code> <br />
+Like
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/pipe.html">pipe()</a>,
+but both ends of the created pipe are in non-blocking mode <em>and</em> close-on-exec.
+</p>
+
+<p>
+<code> int fd_copy (int to, int from) </code> <br />
+Copies the open fd <em>from</em> to number <em>to</em>. If <em>to</em>
+was already open, it is closed before the copy.
+Returns 0 if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int fd_copy2 (int to1, int from1, int to2, int from2) </code> <br />
+Copies the open fd <em>from1</em> to number <em>to2</em>. Also copies
+<em>from2</em> to <em>to2</em> at the same time.
+Returns 0 if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int fd_move (int to, int from) </code> <br />
+Moves the open fd <em>from</em> to number <em>to</em>. If <em>to</em>
+was already open, it is closed before the move.
+Returns 0 if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int fd_move2 (int to1, int from1, int to2, int from2) </code> <br />
+Moves the open fd <em>from</em> to number <em>to</em>. Also moves
+<em>from2</em> to <em>to2</em> at the same time. This is useful for instance
+when you want to swap two fds: <tt>fd_move2</tt> will handle the situation
+correctly.
+Returns 0 if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> void fd_close (int fd) </code> <br />
+Closes <em>fd</em>.
+This is a <a href="safewrappers.html">safe wrapper</a> around
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/close.html">close()</a>.
+</p>
+
+<p>
+<code> int fd_chmod (int fd, unsigned int mode) </code> <br />
+Safe wrapper around
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/fchmod.html">fchmod()</a>.
+</p>
+
+<p>
+<code> int fd_chown (int fd, uid_t uid, gid_t gid) </code> <br />
+Safe wrapper around
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/fchown.html">fchown()</a>.
+This function requires root privileges.
+</p>
+
+<p>
+<code> int fd_sync (int fd) </code> <br />
+Safe wrapper around
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/fsync.html">fsync()</a>.
+</p>
+
+<p>
+<code> int fd_chdir (int fd) </code> <br />
+Safe wrapper around
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/fchdir.html">fchdir()</a>.
+</p>
+
+<p>
+<code> off_t fd_cat (int from, int to) </code> <br />
+Synchronously copies data from fd <em>from</em> to fd <em>to</em>,
+until it encounters EOF or an error. Returns -1 (and sets errno) if
+it fails; returns the number of transmitted bytes if it gets an EOF.
+</p>
+
+<p>
+When the underlying OS allows it, zero-copy transmission is
+performed. Currently, the following zero-copy implementations are
+supported:
+</p>
+
+<ul>
+ <li> <a href="https://man7.org/linux/man-pages/man2/splice.2.html">splice()</a>,
+in Linux 2.6.17 and later </li>
+</ul>
+
+<p>
+<code> off_t fd_catn (int from, int to, off_t n) </code> <br />
+Synchronously copies at most <em>n</em> bytes from fd <em>from</em> to fd <em>to</em>.
+Returns the total number of transmitted bytes; sets errno if this number
+is lesser than <em>n</em>. EOF is reported as EPIPE. See above for zero-copy
+transmission; zero-copy transmission is not attempted for less than 64k of data.
+</p>
+
+<p>
+<code> int fd_ensure_open (int fd, int w) </code> <br />
+If <em>fd</em> is not open, opens it to <tt>/dev/null</tt>,
+for reading if <em>w</em> is zero, and for writing otherwise.
+Returns 1 if it succeeds and 0 if it fails.
+</p>
+
+<p>
+<code> int fd_sanitize (void) </code> <br />
+Ensures stdin, stdout and stderr are open. If one of those
+file descriptors was closed, it now points to <tt>/dev/null</tt>.
+Returns 1 if it succeeds and 0 if it fails.
+</p>
+
+<p>
+<code> void fd_shutdown (int fd, int w) </code> <br />
+Shuts down socket <em>fd</em>, for reading if <em>w</em> is zero,
+and for writing otherwise. Does not return an error code; does
+not modify errno. This is just a call to
+<a href="https://pubs.opengroup.org/onlinepubs/9799919799/functions/shutdown.html">shutdown()</a>
+with errno saved, used essentially to isolate application code from
+<tt>sys/socket.h</tt> which is a portability nightmare.
+</p>
+
+<p>
+<code> int fd_lock (int fd, int w, int nb) </code> <br />
+Gets an advisory lock on <em>fd</em>: shared if <em>w</em> is
+zero, exclusive otherwise. <em>fd</em> must point to
+a regular file, open for writing or reading depending on whether
+you want an exclusive lock or not. If <em>nb</em> is zero, the
+function blocks until the lock can be obtained; otherwise it
+returns 0 immediately. On success, the function returns 1 ; it
+returns 0 if it cannot take the lock, or -1 (and sets errno) if
+an error occurs.
+</p>
+
+<p>
+<code> void fd_unlock (int fd) </code> <br />
+Releases a previously held lock on <em>fd</em>.
+</p>
+
+<p>
+<code> int fd_islocked (int fd) </code> <br />
+Returns 1 if a lock is currently held on fd, 0 otherwise.
+Returns -1 (and sets errno) if an error occurs.
+</p>
+
+<p>
+<code> int open2 (char const *file, unsigned int flags) </code> <br />
+Safe wrapper around
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/open.html">open()</a>
+when it takes 2 arguments.
+</p>
+
+<p>
+<code> int open3 (char const *file, unsigned int flags, unsigned int mode) </code> <br />
+Safe wrapper around
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/open.html">open()</a>
+when it takes 3 arguments.
+</p>
+
+<p>
+<code> int open_read (char const *file) </code> <br />
+Opens <em>file</em> in read-only, non-blocking mode.
+Returns a valid fd number if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int openc_read (char const *file) </code> <br />
+Opens <em>file</em> in read-only, non-blocking mode, close-on-exec.
+Returns a valid fd number if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int openb_read (char const *file) </code> <br />
+Opens <em>file</em> in read-only, blocking mode.
+Returns a valid fd number if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int openbc_read (char const *file) </code> <br />
+Opens <em>file</em> in read-only, blocking mode, close-on-exec.
+Returns a valid fd number if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int open_readb (char const *file) </code> <br />
+Opens <em>file</em> in read-only, blocking mode.
+Returns a valid fd number if it succeeds, or -1 (and sets errno) if it fails.
+<em>This call does not block.</em> The
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/open.html">open()</a>
+system call is actually performed with the O_NONBLOCK option, and blocking mode
+is set afterwards; this behaviour allows for more transparent interactions
+with FIFOs.
+</p>
+
+<p>
+<code> int openc_readb (char const *file) </code> <br />
+Same as above, but the file is opened close-on-exec.
+</p>
+
+<p>
+<code> int open_excl (char const *file) </code> <br />
+Opens <em>file</em> in write-only, non-blocking mode, with the
+additional O_EXCL and O_CREAT flags.
+Returns a valid fd number if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int openc_excl (char const *file) </code> <br />
+Opens <em>file</em> in write-only, non-blocking mode, close-on-exec, with the
+additional O_EXCL and O_CREAT flags.
+Returns a valid fd number if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int open_append (char const *file) </code> <br />
+Opens <em>file</em> in write-only, non-blocking mode, with the
+additional O_APPEND and O_CREAT flags.
+Returns a valid fd number if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int openc_append (char const *file) </code> <br />
+Opens <em>file</em> in write-only, non-blocking mode, close-on-exec, with the
+additional O_APPEND and O_CREAT flags.
+Returns a valid fd number if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int open_trunc (char const *file) </code> <br />
+Opens <em>file</em> in write-only, non-blocking mode, with the
+additional O_TRUNC and O_CREAT flags.
+Returns a valid fd number if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int openc_trunc (char const *file) </code> <br />
+Opens <em>file</em> in write-only, non-blocking mode, close-on-exec, with the
+additional O_TRUNC and O_CREAT flags.
+Returns a valid fd number if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int open_create (char const *file) </code> <br />
+Opens <em>file</em> in write-only, non-blocking mode, with the
+additional O_CREAT flag.
+Returns a valid fd number if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int openc_create (char const *file) </code> <br />
+Opens <em>file</em> in write-only, non-blocking mode, close-on-exec, with the
+additional O_CREAT flag.
+Returns a valid fd number if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int open_write (char const *file) </code> <br />
+Opens <em>file</em> in write-only, non-blocking mode.
+Returns a valid fd number if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int openc_write (char const *file) </code> <br />
+Opens <em>file</em> in write-only, non-blocking mode, close-on-exec.
+Returns a valid fd number if it succeeds, or -1 (and sets errno) if it fails.
+</p>
+
+<h3> Forking children </h3>
+
+<p>
+<code> pid_t doublefork () </code> <br />
+Performs a double fork. Returns -1 if it fails (and
+sets errno, EINTR meaning that the intermediate process
+was killed by a signal), 0 if the current process is the grandchild,
+and the grandchild's PID if the current process is the parent.
+</p>
+
+<p>
+The <tt>child_spawn</tt> family of functions has been moved to the
+<a href="cspawn.html">skalibs/cspawn.h</a> header.
+</p>
+
+<h3> Waiting for children </h3>
+
+<p>
+<code> unsigned int wait_reap () </code> <br />
+Instantly reaps all the pending zombies, without blocking, without a look at
+the exit codes.
+Returns the number of reaped zombies.
+</p>
+
+<p>
+<code> int waitn (pid_t *pids, unsigned int n) </code> <br />
+Waits until all processes whose PIDs are stored in the
+<em>pids</em> array, of size <em>n</em>, have died.
+Returns 1 if it succeeds, and 0 (and sets errno) if it fails. The
+<em>pid</em> array is not guaranteed to be unchanged.
+</p>
+
+<p>
+<code> int waitn_posix (pid_t *pids, unsigned int n, int *wstat) </code> <br />
+Like <tt>waitn</tt>, but stores into <em>*wstat</em> the status
+of the last process in the <em>pids</em> array (i.e. <tt>pids[n-1]</tt>).
+</p>
+
+<p>
+<code> int waitn_reap (pid_t *pids, unsigned int n) </code> <br />
+Instantly reaps all zombies whose PIDs are stored in the
+<em>pids</em> array, of size <em>n</em>.
+Returns -1 (and sets errno) if it fails, and the number of reaped
+zombies if it succeeds. The <em>pid</em> array is not guaranteed to
+be unchanged.
+</p>
+
+<p>
+<code> int waitn_reap_posix (pid_t *pids, unsigned int n, int *wstat) </code> <br />
+Like <tt>waitn_reap</tt>, but stores into <em>*wstat</em> the status
+of the last process in the <em>pids</em> array (i.e. <tt>pids[n-1]</tt>),
+if applicable; otherwise <em>*wstat</em> is unchanged.
+</p>
+
+<p>
+<code> pid_t wait_nohang (int *wstat) </code> <br />
+Instantly reaps one zombie, and stores the status information into
+*<em>wstat</em>.
+Returns the PID of the reaped zombie if it succeeds, 0 if there was
+nothing to reap (and the current process still has children), -1 ECHILD
+if there was nothing to reap (and the current process has no children),
+or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> pid_t waitpid_nointr (pid_t pid, int *wstat, int flags) </code> <br />
+Safe wrapper around
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/waitpid.html">waitpid()</a>.
+</p>
+
+<p>
+<code> pid_t wait_pid_nohang (pid_t pid, int *wstat) </code> <br />
+Instantly reaps an undetermined number of zombies until it finds <em>pid</em>.
+Stores the status information for dead <em>pid</em> into *<em>wstat</em>.
+Returns <em>pid</em> if it succeeds, 0 if there was
+nothing to reap (and the current process still has children), -1 ECHILD
+if there was nothing to reap (and the current process has no children),
+or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int wait_pids_nohang (pid_t const *pids, unsigned int len, int *wstat) </code> <br />
+Instantly reaps an undetermined number of zombies until it finds one whose
+PID is in the <em>pids</em> array, of size <em>len</em>.
+Stores the status information for that dead process into *<em>wstat</em>.
+Returns the index of the found PID in <em>pids</em>, starting at 1.
+Returns 0 if there was
+nothing to reap (and the current process still has children), -1 ECHILD
+if there was nothing to reap (and the current process has no children),
+or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+ When asynchronously dealing with a child (resp. several children) and
+getting a SIGCHLD - which should be handled via a
+<a href="selfpipe.html">selfpipe</a> - it is generally a good idea to
+use the <tt>wait_pid_nohang()</tt> (resp. <tt>wait_pids_nohang()</tt>)
+function over the basic Unix APIs. This allows a program to:
+</p>
+
+<ul>
+ <li> Automatically and silently take care of children it does not know
+it has. This situation can happen when a process forks and the parent
+execs. When the child dies, the new parent process has to drag the
+"zombie bastard" along, which is ugly; <tt>wait_pids_nohang()</tt>
+prevents this. </li>
+ <li> Still take appropriate care of its legitimate children, in
+any order. </li>
+</ul>
+
+<h3> Reading and writing whole files </h3>
+
+<p>
+<code> int slurp (stralloc *sa, int fd) </code> <br />
+Slurps the contents of open descriptor <em>fd</em> into
+the *<em>sa</em> <a href="stralloc.html">stralloc</a>. If you are
+doing this, you should either have full control over the slurped
+file, or run your process with suitable
+<a href="//skarnet.org/software/s6/s6-softlimit.html">limits</a>
+to the amount of heap memory it can get.
+The function returns 1 if it succeeds, or 0 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int slurpn (stralloc *sa, int fd, size_t max) </code> <br />
+Same as <tt>slurp</tt>, but only grows the stralloc to a maximum
+of <em>max</em> bytes of total length. If there is still more to
+read on <em>fd</em> after <em>sa&rarr;len</em> has reached <em>max</em>,
+the function returns 0 with errno set to ENOBUFS.
+</p>
+
+<p>
+<code> int openslurpclose (stralloc *sa, char const *file) </code> <br />
+Slurps the contents of file <em>file</em> into *<em>sa</em>.
+Returns 1 if it succeeds, and 0 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> ssize_t openreadnclose (char const *file, char *s, size_t n) </code> <br />
+Reads at most <em>n</em> bytes from file <em>file</em> into preallocated
+buffer <em>s</em>. Returns -1 (and sets errno) if it fails; else returns the
+number of read bytes.
+</p>
+
+<p>
+<code> ssize_t openreadnclose_nb (char const *file, char *s, size_t n) </code> <br />
+Like <tt>openreadnclose</tt>, but can fail with EAGAIN if the file cannot be
+immediately read (for instance if it's a named pipe or other special file).
+</p>
+
+<p>
+<code> int openreadfileclose (char const *file, stralloc *sa, size_t n) </code> <br />
+Reads at most <em>n</em> bytes from file <em>file</em> into the *<em>sa</em>
+stralloc, which is grown (if needed) to <em>just</em> accommodate the file
+size. Returns 1 if it succeeds and 0 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int openwritenclose_unsafe5 (char const *file, char const *s, size_t len, devino *devino, unsigned int options) </code> <br>
+Writes the <em>n</em> bytes stored at <em>s</em> into file <em>file</em>.
+The previous contents of <em>file</em> are destroyed even if the function
+fails. If <em>options</em> has bit 0 set, the new contents of <em>file</em>
+are synced to disk before the function returns. If <em>devino</em> is not null,
+the device number of <em>file</em> is stored in <em>devino&rarr;dev</em>
+and its inode number in <em>devino&arr;ino</em>.
+The function returns 1 if it succeeds, or 0 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int openwritenclose_unsafe (char const *file, char const *s, size_t len) <br>
+int openwritenclose_unsafe_sync (char const *file, char const *s, size_t len) </code> <br>
+Trivial shortcuts around <tt>openwritenclose_unsafe5()</tt>. The
+reader can easily figure out what they do.
+</p>
+
+<p>
+<code> int openwritenclose_suffix6 (char const *file, char const *s, size_t len, devino *devino, unsigned int options, char const *suffix) </code> <br>
+Writes the <em>n</em> bytes stored at <em>s</em> into file <em>file</em>,
+by first writing into <em>filesuffix</em> and atomically renaming
+<em>filesuffix</em> to <em>file</em>. IOW, the old contents of <em>file</em>
+are preserved if the operation fails, and are atomically replaced with the
+new contents if the operation succeeds.
+If <em>options</em> has bit 0 set, the new contents of <em>filesuffix</em>
+are synced to disk before the atomic replace. If <em>devino</em> is not null,
+the device number of <em>file</em> is stored in <em>devino&rarr;dev</em>
+and its inode number in <em>devino&arr;ino</em>.
+The function returns 1 if it succeeds, or 0 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int openwritenclose_suffix (char const *file, char const *s, size_t len, char const *suffix) <br>
+int openwritenclose_suffix_sync (char const *file, char const *s, size_t len, char const *suffix) </code> <br>
+Trivial shortcuts around <tt>openwritenclose_suffix_internal()</tt>. The
+reader can easily figure out what they do.
+</p>
+
+<p>
+<code> int openwritevnclose_unsafe5 (char const *file, struct iovec const *v, unsigned int vlen, devino *devino, int dosync) </code> <br>
+Like <tt>openwritenclose_unsafe5</tt>, but the content to
+write is taken from a
+<a href="siovec.html">scatter/gather array</a> of <em>vlen</em>
+elements instead of a single string.
+</p>
+
+<p>
+<code> int openwritevnclose_unsafe (char const *file, struct iovec const *v, unsigned int vlen) <br>
+int openwritevnclose_unsafe_sync (char const *file, struct iovec const *v, unsigned int vlen) </code> <br>
+Trivial wrappers around <tt>openwritevnclose_unsafe5()</tt>.
+</p>
+
+<p>
+<code> int openwritevnclose_suffix6 (char const *file, struct iovec const *v, unsigned int vlen, devino *devino, int dosync, char const *suffix) </code> <br>
+Like <tt>openwritenclose_suffix6</tt>, but the content to
+write is taken from a
+<a href="siovec.html">scatter/gather array</a> of <em>vlen</em>
+elements instead of a single string.
+</p>
+
+<p>
+<code> int openwritevnclose_suffix (char const *file, struct iovec const *v, unsigned int vlen, char const *suffix) <br>
+int openwritevnclose_suffix_sync (char const *file, struct iovec const *v, unsigned int vlen, char const *suffix) </code> <br>
+Trivial wrappers around <tt>openwritevnclose_suffix6()</tt>.
+</p>
+
+<h3> Filesystem deletion </h3>
+
+<p>
+The following operations are not atomic, so if they fail, the
+relevant subtree might end up partially deleted.
+</p>
+
+<p>
+<code> int rm_rf (char const *path) </code> <br />
+Deletes the filesystem subtree at <em>path</em>.
+Returns 0 if it succeeds or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int rm_rf_tmp (char const *path, stralloc *tmp) </code> <br />
+Deletes the filesystem subtree at <em>path</em>, using *<em>tmp</em>
+as heap-allocated temporary space.
+Returns 0 if it succeeds or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int rm_rf_in_tmp (stralloc *tmp, size_t n) </code> <br />
+Deletes a filesystem subtree, using *<em>tmp</em>
+as heap-allocated temporary space.
+Returns 0 if it succeeds or -1 (and sets errno) if it fails.
+When the function is called, *<em>tmp</em> must contain the
+null-terminated name of the subtree to delete at offset <em>n</em>.
+</p>
+
+<p>
+<code> int rmstar (char const *dir) </code> <br />
+Deletes all the filesystem subtrees in directory <em>dir</em>.
+Returns 0 if it succeeds or -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int rmstar_tmp (char const *dir, stralloc *tmp) </code> <br />
+Deletes all the filesystem subtrees in directory <em>dir</em>,
+using *<em>tmp</em> as heap-allocated temporary space.
+Returns 0 if it succeeds or -1 (and sets errno) if it fails.
+</p>
+
+<h3> Filesystem copy </h3>
+
+<p>
+<code> int hiercopy_tmp (char const *src, char const *dst, stralloc *tmp) </code> <br />
+Recursively copies the filesystem hierarchy at <em>src</em> into
+<em>dst</em>, preserving modes, and also preserving the uids/gids if the
+process is running as the super-user.
+Uses *<em>tmp</em> as heap-allocated temporary space.
+Returns 1 if it succeeds or 0 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int hiercopy (char const *src, char const *dst) </code> <br />
+Same as above, using the <tt>satmp</tt> global stralloc as
+heap-allocated temporary space.
+</p>
+
+<h3> Directory listing </h3>
+
+<p>
+<code> int sals (char const *dir, stralloc *sa, size_t *maxlen) </code> <br />
+Appends the base names of all the files (save <tt>.</tt> and <tt>..</tt>) in
+<em>dir</em> to the stralloc <em>*sa</em>; each name is null-terminated.
+On error, returns -1 and sets errno. On success, returns the number of files
+it found, and writes to <em>*maxlen</em> the size of the largest file name
+it found (0 for an empty directory).
+</p>
+
+<h3> Variable length wrappers around Single Unix calls </h3>
+
+<p>
+<code> int sarealpath (stralloc *sa, char const *path) </code> <br />
+Resolves <em>path</em> into a symlink-free absolute path, appending
+the result to the *<em>sa</em>
+<a href="stralloc.html">stralloc</a>.
+Returns 0 if it succeeds and -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int sarealpath_tmp (stralloc *sa, char const *path, stralloc *tmp) </code> <br />
+Resolves <em>path</em> into a symlink-free absolute path, appending
+the result to *<em>sa</em>. Uses *<em>tmp</em> as heap-allocated
+temporary space.
+Returns 0 if it succeeds and -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int sabasename (stralloc *sa, char const *s, size_t len) </code> <br />
+Appends the basename of filename <em>s</em> (of length <em>len</em>)
+to *<em>sa</em>.
+Returns 1 if it succeeds and 0 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int sadirname (stralloc *sa, char const *s, size_t len) </code> <br />
+Appends the dirname of filename <em>s</em> (of length <em>len</em>)
+to *<em>sa</em>.
+Returns 1 if it succeeds and 0 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int sagetcwd (stralloc *sa) </code> <br />
+Appends the current working directory to *<em>sa</em>.
+Returns 0 if it succeeds and -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int sareadlink (stralloc *sa, char const *link) </code> <br />
+Appends the contents of symbolic link <em>link</em> to *<em>sa</em>.
+Returns 0 if it succeeds and -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int sagethostname (stralloc *sa) </code> <br />
+Appends the machine's hostname to *<em>sa</em>.
+Returns 0 if it succeeds and -1 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int sagetexecname (stralloc *sa) </code> <br />
+Appends the full path of the current executable to *<em>sa</em>.
+Returns 0 if it succeeds and -1 (and sets errno) if it fails.
+</p>
+
+<h3> Temporization </h3>
+
+<p>
+<code> void deepsleepuntil (tain const *deadline, tain *stamp) </code> <br />
+Sleeps until the absolute time represented by the
+<a href="tai.html">tain</a> *<em>deadline</em>. *<em>stamp</em>
+must contain the current time. When the function returns, *<em>stamp</em>
+has been updated to reflect the new current time.
+</p>
+
+<p>
+<code> void deepsleep (unsigned int n) </code> <br />
+Sleeps <em>n</em> seconds. Signals received during that time are handled,
+but <em>do not</em> interrupt the sleep.
+</p>
+
+<p>
+<code> void deepmillisleep (unsigned long n) </code> <br />
+Sleeps <em>n</em> milliseconds. Signals received during that time are handled,
+but <em>do not</em> interrupt the sleep.
+</p>
+
+<h3> Miscellaneous functions </h3>
+
+<p>
+<code> size_t path_canonicalize (char *out, char const *in, int check) </code> <br />
+Writes into <em>out</em> the canonical form of the Unix path given in
+<em>in</em>. The <em>out</em> array must be preallocated with at least
+<tt>strlen(in)+2</tt> bytes. Returns the length of the <em>out</em> path, without
+counting the terminating null byte. If <em>check</em> is nonzero, <em>in</em> is tested
+for every <tt>foobar/..</tt> element, and the function returns 0, and sets errno
+appropriately, if <tt>foobar</tt> is not a valid directory; in that case, <em>out</em>
+contains the problematic path.
+</p>
+
+</body>
+</html>

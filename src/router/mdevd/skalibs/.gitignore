@@ -1,0 +1,15 @@
+*.o
+*.lo
+/tmp-configure-*
+/*.pc
+/*.a.xyzzy
+/*.so.xyzzy
+/config.mak
+/src/include/skalibs/config.h
+/src/include/skalibs/ip46.h
+/src/include/skalibs/sysdeps.h
+/src/include/skalibs/types.h
+/src/include/skalibs/uint16.h
+/src/include/skalibs/uint32.h
+/src/include/skalibs/uint64.h
+/sysdeps.cfg/

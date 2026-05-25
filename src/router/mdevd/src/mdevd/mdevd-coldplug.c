@@ -13,6 +13,7 @@
 #include <skalibs/direntry.h>
 #include <skalibs/djbunix.h>
 
+
 #include "mdevd-internal.h"
 
 #define USAGE "mdevd-coldplug [ -v verbosity ] [ -s slashsys ] [ -O nlgroup ] [ -b kbufsz ]"

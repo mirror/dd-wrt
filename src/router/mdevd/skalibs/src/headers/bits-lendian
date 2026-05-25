@@ -1,0 +1,12 @@
+
+#define UINT@BITS@_LITTLE(u) (u)
+#define UINT@BITS@_BIG(u) UINT@BITS@_BSWAP(u)
+
+#define uint@BITS@_little(u) (u)
+#define uint@BITS@_big(u) uint@BITS@_bswap(u)
+
+#define uint@BITS@_littlep(u)
+#define uint@BITS@_bigp(u) uint@BITS@_bswapp(u)
+
+#define uint@BITS@_littlen(array, n)
+#define uint@BITS@_bign(array, n) uint@BITS@_bswapn(array, n)

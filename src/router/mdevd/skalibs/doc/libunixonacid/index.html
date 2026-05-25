@@ -1,0 +1,60 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skalibs: the unixonacid library interface</title
+    <meta name="Description" content="skalibs: the unixonacid library interface" />
+    <meta name="Keywords" content="skalibs library unixonacid libunixonacid unixonacid.h" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="../libskarnet.html">libskarnet</a><br />
+<a href="../index.html">skalibs</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>unixonacid</tt> library interface </h1>
+
+<p>
+<tt>libunixonacid</tt> provides higher-level interfaces to Unix
+concepts such as the filesystem - for instance, it provides a way to
+access several files atomically, be it for reading or for writing - or
+interprocess communication.
+</p>
+
+
+<h2> Compiling </h2>
+
+<ul>
+ <li> Use <tt>#include &lt;skalibs/unixonacid.h&gt;</tt> </li>
+</ul>
+
+<h2> Programming </h2>
+
+<p>
+ The <tt>skalibs/unixonacid.h</tt> header is actually a concatenation of other
+headers, every one of each declaring related structures, macros and
+functions.
+</p>
+
+<ul>
+ <li> <a href="unix-transactional.html">skalibs/unix-transactional.h</a>:
+transactional filesystem operations </li>
+ <li> <a href="unix-timed.html">skalibs/unix-timed.h</a>: timed synchronous
+IPC or network operations </li>
+ <li> <a href="unixmessage.html">skalibs/unixmessage.h</a>: safe
+asynchronous and synchronous message
+transmission between processes via Unix sockets, including fd-passing </li>
+ <li> <a href="kolbak.html">skalibs/kolbak.h</a>: simple callback management
+for asynchronous message transmission </li>
+ <li> <a href="skaclient.html">skalibs/skaclient.h</a>: higher-level
+client-server interface using messages </li>
+</ul>
+
+</body>
+</html>

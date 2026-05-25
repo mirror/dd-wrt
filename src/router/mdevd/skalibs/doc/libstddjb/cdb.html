@@ -1,0 +1,132 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skalibs: the cdb header</title>
+    <meta name="Description" content="skalibs: the cdb header" />
+    <meta name="Keywords" content="skalibs header cdb constant database map hashmap reading" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">libstddjb</a><br />
+<a href="../libskarnet.html">libskarnet</a><br />
+<a href="../index.html">skalibs</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>skalibs/cdb.h</tt> header </h1>
+
+<h2> General information </h2>
+
+<p>
+ A <a href="https://cr.yp.to/cdb/cdb.txt">cdb</a>, for <em>constant database</em>,
+is an immutable key-value store. In skalibs, a cdb is built once via the
+<a href="cdbmake.html">cdbmake</a> primitives and stored on disk; the <tt>cdb</tt>
+primitives, documented here, are about accessing the information.
+</p>
+
+<h2> Data structures </h2>
+
+<ul>
+ <li> A <tt>cdb</tt> is an opaque structure, that must be initialized to <tt>CDB_ZERO</tt> when declared. </li>
+ <li> A <tt>cdb_data</tt> is a structure that is passed by address to cdb-reading primitives, which fill
+it with record information. It contains (at least) two fields:
+  <ul>
+   <li> <tt>s</tt>, a <tt>char const *</tt>, which holds a pointer to the record; the <tt>const</tt> indicates
+that a cdb is read-only, you cannot write to the record even when you have a pointer to it. </li>
+   <li> <tt>len</tt>, a <tt>uint32_t</tt>, which holds the record length. It can be zero (records can be
+empty). A cdb must fit into 4 GB, so record lengths always fit in 32 bits. </li>
+  </ul>
+Pointers returned in a <tt>cdb_data</tt> are only valid while the cdb is mapped.
+Make sure to copy the information before calling <tt>cdb_free()</tt>.
+ </li>
+ <li> A <tt>cdb_find_state</tt> is an opaque structure, that should be initialized to <tt>CDB_FIND_STATE_ZERO</tt>
+when declared. It is passed by address to <tt>cdb_findnext</tt>, to maintain position state when looking for
+all the data records under one key. </li>
+</ul>
+
+<h2> Macros and functions </h2>
+
+<h3> Starting and ending </h3>
+
+<p>
+<code> int cdb_init (cdb *c, char const *file) </code> <br />
+Maps the file named <em>file</em> to the cdb pointed to by <em>c</em>.
+<em>*c</em> must be CDB_ZERO before the call. The function returns a
+positive integer if it succeeds, and 0 (and sets errno) if it fails.
+</p>
+
+<p>
+<code> int cdb_init_at (cdb *c, int dfd, char const *file) </code> <br />
+Like <tt>cdb_init</tt>, but <em>file</em> is interpreted relative to the
+file descriptor <em>dfd</em>, which must be open on a directory.
+</p>
+
+<p>
+<code> int cdb_init_fromfd (cdb *c, int fd) </code> <br />
+Like <tt>cdb_init</tt>, but the database file is already open and
+readable via then file descriptor <em>fd</em>.
+</p>
+
+<p>
+<code> void cdb_free (cdb *c) </code> <br />
+Frees the resources used by a cdb mapping. After the call, <em>c</em>
+is immediately reusable by another <tt>cdb_init</tt> function.
+</p>
+
+<h3> cdb lookup </h3>
+
+<h4> Single record lookup </h4>
+
+<p>
+<code> int cdb_find (cdb const *c, cdb_data *data, char const *key, uint32_t klen) </code> <br />
+Looks up key <em>key</em> of length <em>klen</em> in the cdb <em>*c</em>. The function returns
+-1 if <em>*c</em> isn't a valid cdb; 0 if no record can be found for the key; and 1 on success, in
+which case the corresponding value is returned in <em>*data</em>: <tt><em>data</em>&rarr;s</tt>
+points to the start of the value, and <tt><em>data</em>&rarr;len</tt> contains the length of
+the value. Only the first record with the same key can be obtained this way.
+</p>
+
+<h4> Multiple record lookup </h4>
+
+<p>
+<code> void cdb_findstart (cdb_find_state *state) </code> <br />
+Initializes <em>state</em> so that the next invocation of <tt>cdb_findnext()</tt>
+finds the first record for a given key.
+</p>
+
+<p>
+<code> int cdb_findnext (cdb const *c, cdb_data *data, char const *key, uint32_t klen, cdb_find_state *state) </code> <br />
+Like <tt>cdb_find</tt>, except that the extra argument <em>state</em> memorizes
+internal cdb lookup data, so the next <tt>cdb_findnext()</tt> invocation with the
+same <em>key</em>, <em>klen</em> and <em>state</em> will yield the next record
+for the key. <tt>cdb_findnext</tt> returns 0 when all the records for the key have
+been exhausted.
+</p>
+
+<h3> cdb enumeration </h3>
+
+<p>
+<code> void cdb_traverse_init (uint32_t *pos) </code> <br />
+Initializes <em>*pos</em> so that the next invocation of <tt>cdb_traverse_next</tt>
+finds the first entry in the cdb. <em>*pos</em> can also be initialized to the
+macro CDB_TRAVERSE_INIT() instead.
+</p>
+
+<p>
+<code> int cdb_traverse_next (cdb const *c, cdb_data *key, cdb_data *data, uint32_t *pos) </code> <br />
+Gets the next entry in the cdb <em>*c</em>. On success, the key is stored in <em>*key</em> and the
+data is stored in <em>*data</em>. <em>*pos*</em> is an opaque integer storing internal
+state; it is automatically updated so that the next invocation of <tt>cdb_traverse_next()</tt>
+yields the next entry. The function returns -1 if <em>*c</em> is not a valid cdb or <em>*pos</em>
+is not valid state, 1 on success, and 0 if no entry can be found, i.e. the end of the cdb has
+been reached.
+</p>
+
+</body>
+</html>
