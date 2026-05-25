@@ -1,3 +1,2 @@
 #!/bin/sh
-/sbin/hotplug2 --set-rules-file /etc/hotplug2.rules --no-persistent
 /sbin/hotplug2 --set-rules-file /etc/hotplug2.rules --persistent &
