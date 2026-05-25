@@ -43,6 +43,9 @@ ifeq ($(ARCH),x86_64)
 	cp -vr i915 $(INSTALLDIR)$(FIRMWAREDIR)
 	cp -v *.bin $(INSTALLDIR)$(FIRMWAREDIR)
 endif
+ifeq ($(CONFIG_REALTEK),y)
+	cp -v *.bin $(INSTALLDIR)$(FIRMWAREDIR)
+endif
 	-rm -f $(INSTALLDIR)/usbdux/*dux $(INSTALLDIR)/*/*.asm
 	-rm -f $(INSTALLDIR)$(FIRMWAREDIR)/{WHENCE,LICENSE.*,LICENCE.*}
 
