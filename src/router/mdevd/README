@@ -1,0 +1,27 @@
+mdevd - a mdev-compatible hotplug manager daemon
+------------------------------------------------
+
+ mdevd is a daemon managing kernel hotplug events, similarly to udevd.
+ It uses the same configuration file as mdev, which is a hotplug
+manager integrated in the Busybox suite of tools. However, mdev
+needs to be registered as a hotplug manager and the kernel forks
+an instance of mdev for every event; by contrast, mdevd is a daemon
+listening to the netlink, and does not fork.
+
+ See https://skarnet.org/software/mdevd/ for details.
+
+
+* Installation
+  ------------
+
+ See the INSTALL file.
+
+
+* Contact information
+  -------------------
+
+ Laurent Bercot <ska-skaware at skarnet.org>
+
+ Please use the <skaware at list.skarnet.org> mailing-list for
+questions about mdevd.
+

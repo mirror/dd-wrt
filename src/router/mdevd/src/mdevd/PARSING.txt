@@ -1,0 +1,193 @@
+
+ /etc/mdev.conf parsing
+
+ First pass: just count envmatches and scriptelems, to allocate arrays in the stack.
+
+class	|	0	1	2	3	4	5	6	7	8
+st\ev	|	\0	space	;	$	#	-	@	\n	other
+
+START	|				env+ele			ele	+	ele
+00	|	END	START	X	ENDLINE	ENDLINE	MINUS	ENDLINE	START	DEVVAR
+
+MINUS	|				env+ele			ele		ele
+01	|	X	X	X	ENDLINE	X	X	ENDLINE	X	DEVVAR
+
+DEVVAR	|			env
+02	|	X	ENDLINE	SEMI	DEVVAR	X	DEVVAR	DEVVAR	X	DEVVAR
+
+SEMI	|
+03	|	X	X	X	DEVVAR	X	DEVVAR	DEVVAR	X	DEVVAR
+
+ENDLINE	|								+
+04	|	END	ENDLINE	ENDLINE	ENDLINE	ENDLINE	ENDLINE	ENDLINE	START	ENDLINE
+
+ END = 05, X = 06
+ States -> 0x00 to 0x06
+ Actions -> 0x10 (add an envmatch), 0x20 (add a scriptelem), 0x40 (line++)
+ Everything fits easily in an unsigned char.
+
+
+ Second pass: we need to fill the envmatches and scriptelems with values.
+ The whole mdev.conf semantics must be encoded in here.
+
+class	|	`	a	b	c	d	e	f	g	h	i	j	k	l	m	n	o	p	q	r
+st\ev	|	\0	space	;	$	#	-	@	\n	,	=	>	:	*	!	0-7	8-9	+	&	other
+
+START	|				$		cont	@	+	m|d			m|d	m|d	m|d	m|d	m|d	m|d	m|d	m|d
+00	|	END	START	X	ENV1	COMMENT	MINUS	TOMAJ	START	DEVNAME	X	X	DEVNAME	DEVNAME	DEVNAME	DEVNAME	DEVNAME	DEVNAME	DEVNAME	DEVNAME
+
+COMMENT	|								+
+01	|	END	COMMENT	COMMENT	COMMENT	COMMENT	COMMENT	COMMENT	START	COMMENT	COMMENT	COMMENT	COMMENT	COMMENT	COMMENT	COMMENT	COMMENT	COMMENT	COMMENT	COMMENT
+
+MINUS	|				$			@		m|d			m|d	m|d	m|d	m|d	m|d	m|d	m|d	m|d
+02	|	X	X	X	ENV1	X	X	TOMAJ	X	DEVNAME	X	X	DEVNAME	DEVNAME	DEVNAME	DEVNAME	DEVNAME	DEVNAME	DEVNAME	DEVNAME
+
+ENV1	|				m|v		m|v	m|v		m|v		m|v	m|v	m|v	m|v	m|v	m|v	m|v	m|v	m|v
+03	|	X	X	X	INVAR1	X	INVAR1	INVAR1	X	INVAR1	X	INVAR1	INVAR1	INVAR1	INVAR1	INVAR1	INVAR1	INVAR1	INVAR1	INVAR1
+
+INVAR1	|										z
+04	|	X	X	X	INVAR1	X	INVAR1	INVAR1	X	INVAR1	TOVAL1	INVAR1	INVAR1	INVAR1	INVAR1	INVAR1	INVAR1	INVAR1	INVAR1	INVAR1
+
+TOVAL1	|						m	m		m		m	m	m	m	m	m	m	m	m
+05	|	X	X	X	X	X	INVAL1	INVAL1	X	INVAL1	X	INVAL1	INVAL1	INVAL1	INVAL1	INVAL1	INVAL1	INVAL1	INVAL1	INVAL1
+
+INVAL1	|		z|re$
+06	|	X	TOUSER	X	INVAL1	X	INVAL1	INVAL1	X	INVAL1	INVAL1	INVAL1	INVAL1	INVAL1	INVAL1	INVAL1	INVAL1	INVAL1	INVAL1	INVAL1
+
+TOMAJ	|															m	m
+07	|	X	X	X	X	X	X	X	X	X	X	X	X	X	X	INMAJ	INMAJ	X	X	X
+
+INMAJ	|									z|mj
+08	|	X	X	X	X	X	X	X	X	TOMIN	X	X	X	X	X	INMAJ	INMAJ	X	X	X
+
+TOMIN	|															m	m
+09	|	X	X	X	X	X	X	X	X	X	X	X	X	X	X	INMIL	INMIL	X	X	X
+
+INMIL	|		z|ml|h				z|ml
+0a	|	X	TOUSER	X	X	X	TOMIH	X	X	X	X	X	X	X	X	INMIL	INMIL	X	X	X
+
+TOMIH	|															m	m
+0b	|	X	X	X	X	X	X	X	X	X	X	X	X	X	X	INMIH	INMIH	X	X	X
+
+INMIH	|		z|mh
+0c	|	X	TOUSER	X	X	X	X	X	X	X	X	X	X	X	X	INMIH	INMIH	X	X	X
+
+DEVNAME	|		z|re								z|v
+0d	|	X	TOUSER	X	DEVNAME	X	DEVNAME	DEVNAME	X	DEVNAME	TORE	X	DEVNAME	DEVNAME	DEVNAME	DEVNAME	DEVNAME	DEVNAME	DEVNAME	DEVNAME
+
+TORE	|				m		m	m		m	m	m	m	m	m	m	m	m	m	m
+0e	|	X	X	X	INRE	X	INRE	INRE	X	INRE	INRE	INRE	INRE	INRE	INRE	INRE	INRE	INRE	INRE	INRE
+
+INRE	|			z|re$
+0f	|	X	X	TODEV	INRE	X	INRE	INRE	X	INRE	INRE	INRE	INRE	INRE	INRE	INRE	INRE	INRE	INRE	INRE
+
+TODEV	|				m		m	m		m			m	m	m	m	m	m	m	m
+10	|	X	X	X	LASTRE	X	DEVNAME	DEVNAME	X	DEVNAME	X	X	DEVNAME	DEVNAME	DEVNAME	DEVNAME	DEVNAME	DEVNAME	DEVNAME	DEVNAME
+
+LASTRE	|		z|re
+11	|	X	TOUSER	X	LASTRE	X	LASTRE	LASTRE	X	LASTRE	LASTRE	LASTRE	LASTRE	LASTRE	LASTRE	LASTRE	LASTRE	LASTRE	LASTRE	LASTRE
+
+TOUSER	|						m									m	m	m	m	m
+12	|	X	TOUSER	X	X	X	INUSER	X	X	X	X	X	X	X	X	INUSER	INUSER	INUSER	INUSER	INUSER
+
+INUSER	|												z|u
+13	|	X	X	X	X	X	INUSER	X	X	X	X	X	TOGRP	X	X	INUSER	INUSER	INUSER	INUSER	INUSER
+
+TOGRP	|						m									m	m	m	m	m
+14	|	X	X	X	X	X	INGRP	X	X	X	X	X	X	X	X	INGRP	INGRP	INGRP	INGRP	INGRP
+
+INGRP	|		z|g
+15	|	X	TOMODE	X	X	X	INGRP	X	X	X	X	X	X	X	X	INGRP	INGRP	INGRP	INGRP	INGRP
+
+TOMODE	|															m
+16	|	X	TOMODE	X	X	X	X	X	X	X	X	X	X	X	X	INMODE	X	X	X	X
+
+INMODE	|		z|M						z|M|L|+
+17	|	X	TOPATH	X	X	X	X	X	START	X	X	X	X	X	X	INMODE	X	X	X	X
+
+TOPATH	|	L			r	L	r|E	a	L|+		=	>		r|a	!			a|E	r|a|E
+18	|	END	TOPATH	X	CMD	COMMENT	CMD	CMD	START	X	PATH	PATH	X	CMD	TOCMD	X	X	CMD	CMD	X
+
+PATH	|						p	p		p	p		p		p	p	p	p	p	p
+19	|	X	X	X	X	X	INPATH	INPATH	X	INPATH	INPATH	X	INPATH	X	INPATH	INPATH	INPATH	INPATH	INPATH	INPATH
+
+INPATH	|	L	z			z|L			z|L|+
+1a	|	END	TOCMD	X	X	COMMENT	INPATH	INPATH	START	INPATH	INPATH	X	INPATH	X	INPATH	INPATH	INPATH	INPATH	INPATH	INPATH
+
+TOCMD	|	L			r	L	r|E	a	L|+					r|a				a|E	r|a|E
+1b	|	END	TOCMD	X	CMD	COMMENT	CMD	CMD	START	X	X	X	X	CMD	X	X	X	CMD	CMD	X
+
+CMD	|		c		c		c	c		c	c	c	c	c	c	c	c	c	c	c
+1c	|	X	INCMD	X	INCMD	X	INCMD	INCMD	X	INCMD	INCMD	INCMD	INCMD	INCMD	INCMD	INCMD	INCMD	INCMD	INCMD	INCMD
+
+INCMD	|	L							z|L|+
+1d	|	END	INCMD	INCMD	INCMD	INCMD	INCMD	INCMD	START	INCMD	INCMD	INCMD	INCMD	INCMD	INCMD	INCMD	INCMD	INCMD	INCMD	INCMD
+
+st/ev	|	\0	space	;	$	#	-	@	\n	,	=	>	:	*	!	0-7	8-9	+	&	other
+class	|	`	a	b	c	d	e	f	g	h	i	j	k	l	m	n	o	p	q	r	
+
+END = 1e, X = 1f
+
+ States : 30+2. They fit exactly into 5 bits.
+ Actions: 26.
+
+ 0x80000000	unused, to avoid having to explicitly write U everywhere
+ 0x40000000	$: prepare an envmatch, the scriptelem is DEVMATCH_NOTHING
+ 0x20000000	@: the scriptelem is DEVMATCH_MAJMIN
+ 0x10000000	d: the scriptelem is DEVMATCH_DEVRE
+ 0x08000000	cont: scriptelem.flagcont = 1
+ 0x04000000	m: set the marker
+ 0x02000000	z: zero the current character
+ 0x01000000	re$: compile regex, finalize envmatch
+ 0x00800000	mj: compute maj
+ 0x00400000	ml: compute minlo
+ 0x00200000	h: minhi = minlo
+ 0x00100000	mh: compute minhi
+ 0x00080000	re: compile regex -> devmatch
+ 0x00040000	v: mark is a variable name, prepare envmatch
+ 0x00020000	u: compute uid
+ 0x00010000	g: compute gid
+ 0x00008000	M: compute mode
+ 0x00004000	L: finalize/accept scriptelem, move to next one
+ 0x00002000	r: elem->cmdtype |= ACTION_REMOVE, interpreter=sh
+ 0x00001000	a: elem->cmdtype |= ACTION_ADD, interpreter=sh
+ 0x00000800	=: elem->movetype = MOVEINFO_MOVE
+ 0x00000400	>: elem->movetype = MOVEINFO_MOVEANDLINK
+ 0x00000200	!: elem->movetype = MOVEINFO_NOCREATE
+ 0x00000100	p: set movepath
+ 0x00000080	c: set command
+ 0x00000040	+: line++
+ 0x00000020	E: interpreter=execlineb
+
+ Actions + states fit in a uint32_t.
+
+ To debug script_secondpass: at the start of the loop, add
+
+    LOLDEBUG("state: %02x  char: %c  newstate: %02x  actions: %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s", state, s[pos] == '\n' ? '\\' : s[pos], what & 0x1f,
+    what & 0x40000000 ? "$ " : "",
+    what & 0x20000000 ? "@ " : "",
+    what & 0x10000000 ? "d " : "",
+    what & 0x08000000 ? "cont " : "",
+    what & 0x04000000 ? "m " : "",
+    what & 0x02000000 ? "z " : "",
+    what & 0x01000000 ? "re$ " : "",
+    what & 0x00800000 ? "mj " : "",
+    what & 0x00400000 ? "ml " : "",
+    what & 0x00200000 ? "h " : "",
+    what & 0x00100000 ? "mh " : "",
+    what & 0x00080000 ? "re " : "",
+    what & 0x00040000 ? "v " : "",
+    what & 0x00020000 ? "u " : "",
+    what & 0x00010000 ? "g " : "",
+    what & 0x00008000 ? "M " : "",
+    what & 0x00004000 ? "L " : "",
+    what & 0x00002000 ? "r " : "",
+    what & 0x00001000 ? "a " : "",
+    what & 0x00000800 ? "= " : "",
+    what & 0x00000400 ? "> " : "",
+    what & 0x00000200 ? "! " : "",
+    what & 0x00000100 ? "p " : "",
+    what & 0x00000080 ? "c " : "",
+    what & 0x00000040 ? "+ " : "",
+    what & 0x00000020 ? "E " : "") ;
+

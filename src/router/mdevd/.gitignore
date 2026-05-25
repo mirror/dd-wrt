@@ -1,0 +1,9 @@
+/*.pc
+*.o
+*.lo
+/*.a.xyzzy
+/*.so.xyzzy
+/config.mak
+/src/include/mdevd/config.h
+/mdevd
+/mdevd-coldplug

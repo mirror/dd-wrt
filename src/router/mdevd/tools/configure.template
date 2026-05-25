@@ -1,0 +1,560 @@
+#!/bin/sh
+
+cd `dirname "$0"`
+. package/info
+
+usage () {
+cat <<EOF
+Usage: $0 [OPTION]... [TARGET]
+
+Defaults for the options are specified in brackets.
+
+System types:
+  --target=TARGET               configure to run on target TARGET [detected]
+  --host=TARGET                 same as --target
+
+Installation directories:
+  --prefix=PREFIX               main installation prefix [/]
+  --exec-prefix=EPREFIX         installation prefix for executable files [PREFIX]
+
+Fine tuning of the installation directories:
+  --dynlibdir=DIR               shared library files [PREFIX/lib]
+  --bindir=BINDIR               user executables [EPREFIX/bin]
+  --libexecdir=DIR              package-scoped executables [EPREFIX/libexec]
+  --libdir=DIR                  static library files [PREFIX/lib]
+  --includedir=DIR              C header files [PREFIX/include]
+  --sysconfdir=DIR              global configuration files [PREFIX/etc]
+  --pkgconfdir=DIR              pkg-config .pc files [PREFIX/lib/pkgconfig]
+${configure_help_install}
+ If no --prefix option is given, by default libdir (but not dynlibdir) will be
+ /usr/lib, and includedir will be /usr/include.
+
+Dependencies:
+  --with-sysdeps=DIR            use sysdeps in DIR [PREFIX/lib/skalibs/sysdeps]
+  --with-include=DIR            add DIR to the list of searched directories for headers
+  --with-lib=DIR                add DIR to the list of searched directories for static libraries
+  --with-dynlib=DIR             add DIR to the list of searched directories for shared libraries
+  --with-pkgconfig[=PROG]       use pkg-config to look for dependencies
+${configure_help_dependencies}
+ If no --prefix option is given, by default sysdeps will be fetched from
+ /usr/lib/skalibs/sysdeps.
+
+Optional features:
+  --enable-shared               build shared libraries [disabled]
+  --disable-static              do not build static libraries [enabled]
+  --disable-allstatic           do not prefer linking against static libraries [enabled]
+  --enable-static-libc          make entirely static binaries [disabled]
+  --disable-all-pic             do not build executables or static libs as PIC [enabled]
+  --disable-rpath               do not embed RPATH in libraries [enabled]
+  --enable-pkgconfig            Build and install .pc files for pkg-config [disabled]
+  --enable-slashpackage[=ROOT]  assume /package installation at ROOT [disabled]
+  --enable-absolute-paths       hardcode absolute BINDIR/foobar paths in binaries [disabled]
+${configure_help_options}
+EOF
+exit 0
+}
+
+# Helper functions
+
+# If your system does not have printf, you can comment this, but it is
+# generally not a good idea to use echo.
+# See http://www.etalabs.net/sh_tricks.html
+echo () {
+  printf %s\\n "$*"
+}
+
+quote () {
+  tr '\n' ' ' <<EOF | grep '^[-[:alnum:]_=,./:]* $' >/dev/null 2>&1 && { echo "$1" ; return 0 ; }
+$1
+EOF
+  echo "$1" | sed -e "s/'/'\\\\''/g" -e "1s/^/'/" -e "\$s/\$/'/" -e "s#^'\([-[:alnum:]_,./:]*\)=\(.*\)\$#\1='\2#" -e "s|\*/|* /|g"
+}
+
+fail () {
+  echo "$*"
+  exit 1
+}
+
+fnmatch () {
+  eval "case \"\$2\" in $1) return 0 ;; *) return 1 ;; esac"
+}
+
+cmdexists () {
+  type "$1" >/dev/null 2>&1
+}
+
+trycc () {
+  test -z "$CC_AUTO" && cmdexists "$1" && CC_AUTO="$*"
+}
+
+stripdir () {
+  while eval "fnmatch '*/' \"\${$1}\"" ; do
+    eval "$1=\${$1%/}"
+  done
+}
+
+tryflag () {
+  echo "Checking whether compiler accepts $2 ..."
+  echo "typedef int x;" > "$tmpc"
+  if $CC_AUTO $CPPFLAGS_AUTO $CPPFLAGS $CPPFLAGS_POST $CFLAGS_AUTO $CFLAGS $CFLAGS_POST "$2" -c -o "$tmpo" "$tmpc" >/dev/null 2>&1 ; then
+    echo "  ... yes"
+    eval "$1=\"\${$1} \$2\""
+    eval "$1=\${$1# }"
+    return 0
+  else
+    echo "  ... no"
+    return 1
+  fi
+}
+
+tryldflag () {
+  echo "Checking whether linker accepts $2 ..."
+  echo "typedef int x;" > "$tmpc"
+  if $CC_AUTO $CFLAGS_AUTO $CFLAGS $CFLAGS_POST $LDFLAGS_AUTO $LDFLAGS $LDFLAGS_POST -nostdlib "$2" -o "$tmpe" "$tmpc" >/dev/null 2>&1 ; then
+    echo "  ... yes"
+    eval "$1=\"\${$1} \$2\""
+    eval "$1=\${$1# }"
+    return 0
+  else
+    echo "  ... no"
+    return 1
+  fi
+}
+
+
+# Actual script
+
+CC_AUTO=
+CPPFLAGS_AUTO="-D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700 -iquote src/include-local -Isrc/include"
+CPPFLAGS_POST="$CPPFLAGS"
+CPPFLAGS=
+CFLAGS_AUTO="-pipe -Wall"
+CFLAGS_POST="$CFLAGS"
+CFLAGS=-O2
+LDFLAGS_AUTO=
+LDFLAGS_POST="$LDFLAGS"
+LDFLAGS=
+LDFLAGS_NOSHARED=
+LDFLAGS_SHARED=-shared
+prefix=
+exec_prefix='$prefix'
+dynlibdir='$prefix/lib'
+libexecdir='$exec_prefix/libexec'
+bindir='$exec_prefix/bin'
+libdir='$prefix/lib'
+includedir='$prefix/include'
+sysconfdir='$prefix/etc'
+pkgconfdir='$prefix/lib/pkgconfig'
+shebangdir='$bindir'
+sysdeps='$prefix/lib/skalibs/sysdeps'
+manualsysdeps=false
+shlibext=so
+shared=false
+static=true
+allpic=true
+rpath=true
+slashpackage=false
+abspath=false
+pcw=false
+sproot=
+home=
+exthome=
+allstatic=true
+evenmorestatic=false
+pkgconf=
+addincpath=''
+addlibspath=''
+addlibdpath=''
+depincpath=''
+deplibpath=''
+vpaths=''
+vpathd=''
+build=
+${configure_init_vars}
+
+for arg ; do
+  case "$arg" in
+    --help) usage ;;
+    --prefix=*) prefix=${arg#*=} ;;
+    --exec-prefix=*) exec_prefix=${arg#*=} ;;
+    --dynlibdir=*) dynlibdir=${arg#*=} ;;
+    --libexecdir=*) libexecdir=${arg#*=} ;;
+    --bindir=*) bindir=${arg#*=} ;;
+    --libdir=*) libdir=${arg#*=} ;;
+    --includedir=*) includedir=${arg#*=} ;;
+    --sysconfdir=*) sysconfdir=${arg#*=} ;;
+    --pkgconfdir=*) pkgconfdir=${arg#*=} ;;
+    --with-sysdeps=*) sysdeps=${arg#*=} manualsysdeps=true ;;
+    --with-include=*) var=${arg#*=} ; stripdir var ; addincpath="$addincpath -I$var" ; depincpath="${depincpath}${depincpath:+ }-I$var" ;;
+    --with-lib=*) var=${arg#*=} ; stripdir var ; addlibspath="$addlibspath -L$var" ; deplibpath="${deplibpath}${deplibpath:+ }-L$var" ; vpaths="$vpaths $var" ;;
+    --with-dynlib=*) var=${arg#*=} ; stripdir var ; addlibdpath="$addlibdpath -L$var" ; vpathd="$vpathd $var" ;;
+    --with-pkgconfig=*) pkgconf=${arg#*=} ;;
+    --with-pkgconfig) pkgconf=${PKG_CONFIG:-pkg-config} ;;
+    --without-pkgconfig) pkgconf= ;;
+    --enable-shared|--enable-shared=yes) shared=true ;;
+    --disable-shared|--enable-shared=no) shared=false ;;
+    --enable-static|--enable-static=yes) static=true ;;
+    --disable-static|--enable-static=no) static=false ;;
+    --enable-allstatic|--enable-allstatic=yes) static=true ; allstatic=true ;;
+    --disable-allstatic|--enable-allstatic=no) allstatic=false ; evenmorestatic=false ; shared=true ;;
+    --enable-static-libc|--enable-static-libc=yes) static=true ; allstatic=true ; evenmorestatic=true ;;
+    --disable-static-libc|--enable-static-libc=no) evenmorestatic=false ;;
+    --enable-all-pic|--enable-all-pic=yes) allpic=true ;;
+    --disable-all-pic|--enable-all-pic=no) allpic=false ;;
+    --enable-rpath|--enable-rpath=yes) rpath=true ;;
+    --disable-rpath|--enable-rpath=no) rpath=false ;;
+    --enable-pkgconfig|--enable-pkgconfig=yes) pcw=true ;;
+    --disable-pkgconfig|--enable-pkgconfig=no) pcw=false ;;
+    --enable-slashpackage=*) sproot=${arg#*=} ; slashpackage=true ; ;;
+    --enable-slashpackage) sproot= ; slashpackage=true ;;
+    --disable-slashpackage) sproot= ; slashpackage=false ;;
+    --enable-absolute-paths|--enable-absolute-paths=yes) abspath=true ;;
+    --disable-absolute-paths|--enable-absolute-paths=no) abspath=false ;;
+${configure_case_lines}
+    --enable-*|--disable-*|--with-*|--without-*|--*dir=*) ;;
+    --enable-*|--disable-*|--with-*|--without-*|--*dir=*) ;;
+    --host=*|--target=*) target=${arg#*=} ;;
+    --build=*) build=${arg#*=} ;;
+    -* ) echo "$0: unknown option $arg" ;;
+    *=*) eval "${arg%%=*}=\${arg#*=}" ;;
+    *) target=$arg ;;
+  esac
+done
+
+# Add /usr in the default default case
+if test -z "$prefix" ; then
+  if test "$libdir" = '$prefix/lib' ; then
+    libdir=/usr/lib
+  fi
+  if test "$includedir" = '$prefix/include' ; then
+    includedir=/usr/include
+  fi
+  if test "$pkgconfdir" = '$prefix/lib/pkgconfig' ; then
+    pkgconfdir=/usr/lib/pkgconfig
+  fi
+  if test "$sysdeps" = '$prefix/lib/skalibs/sysdeps' ; then
+    sysdeps=/usr/lib/skalibs/sysdeps
+  fi
+fi
+
+# Expand installation directories
+stripdir prefix
+for i in exec_prefix dynlibdir libexecdir bindir libdir includedir sysconfdir pkgconfdir sysdeps sproot ${configure_expand_dirs} ; do
+  eval tmp=\${$i}
+  eval $i=$tmp
+  stripdir $i
+done
+
+# Process deps-build
+if test -n "$pkgconf" || $pcw || $slashpackage ; then
+  oldifs="$IFS"
+  while IFS=" 	" read cond usedinlibs pkg ver libs ; do
+    IFS="$oldifs"
+    eval "cond=$cond; usedinlibs=$usedinlibs"
+    if $cond ; then
+      if test -n "$pkgconf" ; then
+        for lib in $libs ; do
+          if ! $pkgconf --atleast-version=${ver} --print-errors -- "$lib" ; then
+            echo "./configure: fatal: $pkgconf --atleast-version=${ver} --print-errors -- $lib failed" 1>&2
+            exit 1
+          fi
+          thisinc="`$pkgconf --cflags-only-I -- $lib`"
+          sldflags="`$pkgconf --libs-only-L --static -- $lib`"
+          dldflags="`$pkgconf --libs-only-L -- $lib`"
+          addincpath="${addincpath}${thisinc:+ }$thisinc"
+          addlibspath="${addlibspath}${sldflags:+ }$sldflags"
+          addlibdpath="${addlibdpath}${dldflags:+ }$dldflags"
+          for i in $sldflags ; do
+            vpaths="$vpaths ${i##-L}"
+          done
+          for i in $dldflags ; do
+            vpathd="$vpathd ${i##-L}"
+          done
+          if $usedinlibs ; then
+            depincpath="${depincpath}${thisinc:+ }$thisinc"
+            deplibpath="${deplibpath}${sldflags:+ }$sldflags"
+          fi
+        done
+      fi
+      if $slashpackage ; then
+        addincpath="$addincpath -I${DESTDIR}${sproot}${pkg}/include"
+        vpaths="$vpaths ${DESTDIR}${sproot}${pkg}/library"
+        addlibspath="$addlibspath -L${DESTDIR}${sproot}${pkg}/library"
+        vpathd="$vpathd ${DESTDIR}${sproot}${pkg}/library.so"
+        addlibdpath="$addlibdpath -L${DESTDIR}${sproot}${pkg}/library.so"
+        if $usedinlibs ; then
+          depincpath="$depincpath -I${DESTDIR}${sproot}${pkg}/include"
+          deplibpath="$deplibpath -L${DESTDIR}${sproot}${pkg}/library"
+        fi
+      fi
+    fi
+  done < package/deps-build
+  IFS="$oldifs"
+fi
+
+# Other slashpackage values
+if $slashpackage ; then
+  home=${sproot}/package/${category}/${package}-${version}
+  exthome=${sproot}/package/${category}/${package}
+  if $manualsysdeps ; then
+    :
+  else
+    sysdeps=${DESTDIR}${sproot}/package/prog/skalibs/sysdeps
+  fi
+  extbinprefix=${exthome}/command
+  dynlibdir=${home}/library.so
+  bindir=${home}/command
+  libdir=${home}/library
+  libexecdir=$bindir
+  includedir=${home}/include
+  pkgconfdir=${home}/pkgconfig
+${configure_slashpackage_other}
+fi
+
+# Get usable temp filenames
+i=0
+set -C
+while : ; do
+  i=$(($i+1))
+  tmpc="./tmp-configure-$$-$PPID-$i.c"
+  tmpo="./tmp-configure-$$-$PPID-$i.o"
+  tmpe="./tmp-configure-$$-$PPID-$i.tmp"
+  2>|/dev/null > "$tmpc" && break
+  2>|/dev/null > "$tmpo" && break
+  2>|/dev/null > "$tmpe" && break
+  test "$i" -gt 50 && fail "$0: cannot create temporary files"
+done
+set +C
+trap 'rm -f "$tmpc" "$tmpo" "$tmpe"' EXIT ABRT INT QUIT TERM HUP
+
+# Find a C compiler to use
+if test -n "$target" && test x${build} != x${target} ; then
+  cross=${target}-
+else
+  cross=
+fi
+echo "Checking for C compiler..."
+trycc ${CC}
+if test -n "$CC_AUTO" ; then
+  b=`basename "$CC"`
+  adjust_cross=false
+  if test "$b" != "$CC" ; then
+    adjust_cross=true
+    echo "$0: warning: compiler $CC is declared with its own path. If it's not accessible via PATH, you will need to pass AR, RANLIB and STRIP make variables to the make invocation." 1>&2
+  fi
+  if test -n "$cross" ; then
+    if test "$b" = "${b##$cross}" ; then
+      echo "$0: warning: compiler $CC is declared as a cross-compiler for target $target but does not start with prefix ${cross}" 1>&2
+    elif $adjust_cross ; then
+      cross=`dirname "$CC"`/"$cross"
+    fi
+  fi
+fi
+trycc ${cross}gcc
+trycc ${cross}clang
+trycc ${cross}cc
+test -n "$CC_AUTO" || { echo "$0: cannot find a C compiler" ; exit 1 ; }
+echo "  ... $CC_AUTO"
+echo "Checking whether C compiler works... "
+echo "typedef int x;" > "$tmpc"
+if $CC_AUTO $CPPFLAGS_AUTO $CPPFLAGS $CPPFLAGS_POST $CFLAGS_AUTO $CFLAGS $CFLAGS_POST -c -o "$tmpo" "$tmpc" 2>"$tmpe" ; then
+  echo "  ... yes"
+else
+  echo "  ... no. Compiler output follows:"
+  cat < "$tmpe"
+  exit 1
+fi
+
+echo "Checking target system type..."
+if test -z "$target" ; then
+  if test -n "$build" ; then
+    target=$build ;
+  else
+    target=$($CC_AUTO -dumpmachine 2>/dev/null) || target=unknown
+  fi
+fi
+echo "  ... $target"
+if test ! -d $sysdeps || test ! -f $sysdeps/target ; then
+  echo "$0: error: $sysdeps is not a valid sysdeps directory"
+  exit 1
+fi
+if test "$target" != "$(cat $sysdeps/target)" ; then
+  echo "$0: error: target $target does not match the contents of $sysdeps/target"
+  exit 1
+fi
+
+echo "Shared libraries will be named ..."
+libc="${target##*-}"
+if test "${libc##darwin}" != "$libc" ; then
+  shlibext=dylib
+fi
+echo "  ... *.$shlibext"
+
+if $allpic ; then
+  tryflag CPPFLAGS_AUTO -fPIC
+fi
+
+pthread_lib=$(cat $sysdeps/pthread.lib)
+socket_lib=$(cat $sysdeps/socket.lib)
+spawn_lib=$(cat $sysdeps/spawn.lib)
+sysclock_lib=$(cat $sysdeps/sysclock.lib)
+timer_lib=$(cat $sysdeps/timer.lib)
+util_lib=$(cat $sysdeps/util.lib)
+
+tryflag CFLAGS_AUTO -std=c99
+tryflag CFLAGS -fomit-frame-pointer
+tryflag CFLAGS_AUTO -fno-exceptions
+tryflag CFLAGS_AUTO -fno-unwind-tables
+tryflag CFLAGS_AUTO -fno-asynchronous-unwind-tables
+tryflag CPPFLAGS_AUTO -Werror=implicit-function-declaration
+tryflag CPPFLAGS_AUTO -Werror=implicit-int
+tryflag CPPFLAGS_AUTO -Werror=pointer-sign
+tryflag CPPFLAGS_AUTO -Werror=pointer-arith
+tryflag CFLAGS_AUTO -ffunction-sections
+tryflag CFLAGS_AUTO -fdata-sections
+
+tryldflag LDFLAGS_AUTO -Wl,--sort-section=alignment
+tryldflag LDFLAGS_AUTO -Wl,--sort-common
+
+CPPFLAGS_AUTO="${CPPFLAGS_AUTO}${addincpath}"
+
+if $evenmorestatic ; then
+  LDFLAGS_NOSHARED=" -static"
+fi
+
+if $shared ; then
+  tryldflag LDFLAGS -Wl,--hash-style=both
+fi
+
+LDFLAGS_SHARED="${LDFLAGS_SHARED}${addlibdpath}"
+
+if $allstatic ; then
+  LDFLAGS_NOSHARED="${LDFLAGS_NOSHARED}${addlibspath}"
+  tryldflag LDFLAGS_NOSHARED -Wl,--gc-sections
+else
+  LDFLAGS_NOSHARED="${LDFLAGS_NOSHARED}${addlibdpath}"
+fi
+
+${configure_extra_checks}
+
+echo "Creating config.mak..."
+cmdline=$(quote "$0")
+for i ; do cmdline="$cmdline $(quote "$i")" ; done
+exec 3>&1 1>config.mak
+cat << EOF
+# This file was generated by:
+# $cmdline
+# Any changes made here will be lost if configure is re-run.
+
+target := $target
+package := $package
+prefix := $prefix
+exec_prefix := $exec_prefix
+dynlibdir := $dynlibdir
+libexecdir := $libexecdir
+bindir := $bindir
+libdir := $libdir
+includedir := $includedir
+sysconfdir := $sysconfdir
+pkgconfdir := $pkgconfdir
+sysdeps := $sysdeps
+slashpackage := $slashpackage
+sproot := $sproot
+version := $version
+home := $home
+exthome := $exthome
+extra_includedirs :=$depincpath
+extra_libdirs :=$deplibpath
+
+PTHREAD_LIB := ${pthread_lib}
+SOCKET_LIB := ${socket_lib}
+SPAWN_LIB := ${spawn_lib}
+SYSCLOCK_LIB := ${sysclock_lib}
+TIMER_LIB := ${timer_lib}
+UTIL_LIB := ${util_lib}
+
+CC := $CC_AUTO
+CPPFLAGS_AUTO := $CPPFLAGS_AUTO
+CPPFLAGS := ${CPPFLAGS}${CPPFLAGS_POST:+ }$CPPFLAGS_POST
+CFLAGS_AUTO := $CFLAGS_AUTO
+CFLAGS := ${CFLAGS}${CFLAGS_POST:+ }$CFLAGS_POST
+LDFLAGS_AUTO := $LDFLAGS_AUTO
+LDFLAGS := ${LDFLAGS}${LDFLAGS_POST:+ }$LDFLAGS_POST
+LDFLAGS_SHARED := $LDFLAGS_SHARED
+LDFLAGS_NOSHARED :=$LDFLAGS_NOSHARED
+CROSS_COMPILE := $cross
+SHLIB_EXT := ${shlibext}
+
+vpath lib%.a$vpaths
+vpath lib%.${shlibext}$vpathd
+
+EOF
+if $allstatic ; then
+  echo ".LIBPATTERNS := lib%.a"
+  echo "DO_ALLSTATIC := 1"
+else
+  echo ".LIBPATTERNS := lib%.${shlibext}"
+  echo "DO_ALLSTATIC :="
+fi
+if $static ; then
+  echo "DO_STATIC := 1"
+else
+  echo "DO_STATIC :="
+fi
+if $shared ; then
+  echo "DO_SHARED := 1"
+else
+  echo "DO_SHARED :="
+fi
+if $rpath ; then
+  echo "LDFLAGS_RPATH := -Wl,-rpath=${dynlibdir}"
+else
+  echo "LDFLAGS_RPATH :="
+fi
+if $pcw ; then
+  echo "DO_PKGCONFIG := 1"
+else
+  echo "DO_PKGCONFIG :="
+fi
+if $allpic ; then
+  echo "STATIC_LIBS_ARE_PIC := 1"
+else
+  echo "STATIC_LIBS_ARE_PIC :="
+fi
+${configure_generate_make}
+exec 1>&3 3>&-
+echo "  ... done."
+
+echo "Creating src/include/${package}/config.h..."
+mkdir -p -m 0755 src/include/${package}
+exec 3>&1 1> src/include/${package}/config.h
+cat <<EOF
+/* ISC license. */
+
+/* Generated by: $cmdline */
+
+#ifndef ${package_macro_name}_CONFIG_H
+#define ${package_macro_name}_CONFIG_H
+
+#define ${package_macro_name}_VERSION "$version"
+EOF
+if $slashpackage ; then
+  echo "#define ${package_macro_name}_BINPREFIX \"$bindir/\""
+  echo "#define ${package_macro_name}_EXTBINPREFIX \"$extbinprefix/\""
+  echo "#define ${package_macro_name}_EXTLIBEXECPREFIX \"$extbinprefix/\""
+elif $abspath ; then
+  echo "#define ${package_macro_name}_BINPREFIX \"$bindir/\""
+  echo "#define ${package_macro_name}_EXTBINPREFIX \"$bindir/\""
+  echo "#define ${package_macro_name}_EXTLIBEXECPREFIX \"$libexecdir/\""
+else
+  echo "#define ${package_macro_name}_BINPREFIX \"\""
+  echo "#define ${package_macro_name}_EXTBINPREFIX \"\""
+  echo "#define ${package_macro_name}_EXTLIBEXECPREFIX \"$libexecdir/\""
+fi
+echo "#define ${package_macro_name}_LIBEXECPREFIX \"$libexecdir/\""
+echo "#define ${package_macro_name}_SYSCONFPREFIX \"$sysconfdir/\""
+${configure_generate_configh}
+echo
+echo "#endif"
+exec 1>&3 3>&-
+echo "  ... done."

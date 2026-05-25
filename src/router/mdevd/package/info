@@ -1,0 +1,4 @@
+package=mdevd
+version=0.1.8.2
+category=admin
+package_macro_name=MDEVD

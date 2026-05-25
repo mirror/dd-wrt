@@ -1,0 +1,1 @@
+s6-mount -wt sysfs sys /sys
