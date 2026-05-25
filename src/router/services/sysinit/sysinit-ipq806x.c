@@ -717,7 +717,7 @@ void start_sysinit(void)
 		insmod("qca-mcs");
 		insmod("nss-ifb");
 		insmod("qca-nss-netlink-ipq806x");
-		insmod("qca-nss-bridge-mgr-ipq806x");
+//		insmod("qca-nss-bridge-mgr-ipq806x");
 		sysprintf("echo 1 > /proc/sys/dev/nss/rps/enable");
 	}
 	/*
