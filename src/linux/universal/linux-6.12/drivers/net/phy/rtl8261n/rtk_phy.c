@@ -20,6 +20,8 @@
 #define   REALTEK_HSO_INV               BIT(7)
 #define   REALTEK_HSI_INV               BIT(6)
 
+int rtl822x_hwmon_init(struct phy_device *phydev);
+
 static int rtl826xb_get_features(struct phy_device *phydev)
 {
     int ret;
@@ -64,6 +66,9 @@ static int rtl826xb_probe(struct phy_device *phydev)
     priv->pnswap_rx = device_property_read_bool(dev, "realtek,pnswap-rx");
     priv->pnswap_tx = device_property_read_bool(dev, "realtek,pnswap-tx");
     phydev->priv = priv;
+
+	if (IS_ENABLED(CONFIG_REALTEK_PHY_HWMON))
+		return rtl822x_hwmon_init(phydev);
 
     return 0;
 }
