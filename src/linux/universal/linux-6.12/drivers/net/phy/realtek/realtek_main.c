@@ -3608,7 +3608,9 @@ static struct phy_driver realtek_drvs[] = {
 		.get_wol        = rtl826x_get_wol,
 		.get_tunable    = rtl826x_get_tunable,
 		.set_tunable    = rtl826x_set_tunable,
-	}, {
+	}
+/*
+	, {
 		.name           = "RTL8261BE 10Gbps PHY",
 		.config_init    = rtl826x_config_init,
 		.probe          = rtl8261n_probe,
@@ -3676,7 +3678,7 @@ static struct phy_driver realtek_drvs[] = {
 		.get_wol        = rtl826x_get_wol,
 		.get_tunable    = rtl826x_get_tunable,
 		.set_tunable    = rtl826x_set_tunable,
-	},
+	},*/
 };
 
 module_phy_driver(realtek_drvs);
