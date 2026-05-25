@@ -1044,6 +1044,7 @@ hwmon_device_register_with_info(struct device *dev, const char *name,
 	if (!dev || !name || !chip)
 		return ERR_PTR(-EINVAL);
 
+
 	if (!chip->ops || !(chip->ops->visible || chip->ops->is_visible) || !chip->info)
 		return ERR_PTR(-EINVAL);
 
@@ -1138,6 +1139,13 @@ devm_hwmon_device_register_with_groups(struct device *dev, const char *name,
 
 	if (!dev)
 		return ERR_PTR(-EINVAL);
+
+	if (!name) {
+		name = devm_hwmon_sanitize_name(dev, dev_name(dev));
+		if (IS_ERR(name))
+			return ERR_CAST(name);
+	}
+
 
 	ptr = devres_alloc(devm_hwmon_release, sizeof(*ptr), GFP_KERNEL);
 	if (!ptr)
