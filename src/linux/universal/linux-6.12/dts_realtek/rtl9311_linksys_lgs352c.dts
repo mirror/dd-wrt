@@ -140,16 +140,16 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		SWITCH_PORT_SDS(0, 01, 2, usxgmii)
-		SWITCH_PORT_SDS(1, 02, 2, usxgmii)
-		SWITCH_PORT_SDS(2, 03, 2, usxgmii)
-		SWITCH_PORT_SDS(3, 04, 2, usxgmii)
-		SWITCH_PORT_SDS(4, 05, 2, usxgmii)
-		SWITCH_PORT_SDS(5, 06, 2, usxgmii)
-		SWITCH_PORT_SDS(6, 07, 2, usxgmii)
-		SWITCH_PORT_SDS(7, 08, 2, usxgmii)
+		SWITCH_PORT_SDS(0, 1, 2, usxgmii)
+		SWITCH_PORT_SDS(1, 2, 2, usxgmii)
+		SWITCH_PORT_SDS(2, 3, 2, usxgmii)
+		SWITCH_PORT_SDS(3, 4, 2, usxgmii)
+		SWITCH_PORT_SDS(4, 5, 2, usxgmii)
+		SWITCH_PORT_SDS(5, 6, 2, usxgmii)
+		SWITCH_PORT_SDS(6, 7, 2, usxgmii)
+		SWITCH_PORT_SDS(7, 8, 2, usxgmii)
 
-		SWITCH_PORT_SDS(8, 09, 3, usxgmii)
+		SWITCH_PORT_SDS(8, 9, 3, usxgmii)
 		SWITCH_PORT_SDS(9, 10, 3, usxgmii)
 		SWITCH_PORT_SDS(10, 11, 3, usxgmii)
 		SWITCH_PORT_SDS(11, 12, 3, usxgmii)
