@@ -86,7 +86,7 @@ endif
 install: install-sysconf install-sysdeps install-dynlib install-lib install-include install-pkgconfig
 install-sysconf: $(ALL_DATA:src/etc/%=$(DESTDIR)$(sysconfdir)/%)
 install-sysdeps: $(ALL_SYSDEPS:$(sysdeps)/%=$(DESTDIR)$(sysdepdir)/%)
-install-dynlib: $(SHARED_LIBS:lib%.$(SHLIB_EXT).xyzzy=$(DESTDIR)$(dynlibdir)/lib%.$(SHLIB_EXT))
+install-dynlib: $(SHARED_LIBS:lib%.$(SHLIB_EXT)=$(DESTDIR)$(dynlibdir)/lib%.$(SHLIB_EXT))
 install-lib: $(STATIC_LIBS:lib%.a.xyzzy=$(DESTDIR)$(libdir)/lib%.a)
 install-include: $(ALL_INCLUDES:src/include/$(package)/%.h=$(DESTDIR)$(includedir)/$(package)/%.h)
 install-pkgconfig: $(PC_TARGETS:%=$(DESTDIR)$(pkgconfdir)/%)
