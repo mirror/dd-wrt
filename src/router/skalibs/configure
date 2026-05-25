@@ -793,12 +793,12 @@ if test -n "$vpathd" ; then
 fi
 
 if $static ; then
-  echo "STATIC_LIBS := libskarnet.a.xyzzy"
+  echo "STATIC_LIBS := libskarnet.a"
 else
   echo "STATIC_LIBS :="
 fi
 if $shared ; then
-  echo "SHARED_LIBS := libskarnet.${shlibext}.xyzzy"
+  echo "SHARED_LIBS := libskarnet.${shlibext}"
 else
   echo "SHARED_LIBS :="
 fi

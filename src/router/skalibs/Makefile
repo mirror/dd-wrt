@@ -87,7 +87,7 @@ install: install-sysconf install-sysdeps install-dynlib install-lib install-incl
 install-sysconf: $(ALL_DATA:src/etc/%=$(DESTDIR)$(sysconfdir)/%)
 install-sysdeps: $(ALL_SYSDEPS:$(sysdeps)/%=$(DESTDIR)$(sysdepdir)/%)
 install-dynlib: $(SHARED_LIBS:lib%.$(SHLIB_EXT)=$(DESTDIR)$(dynlibdir)/lib%.$(SHLIB_EXT))
-install-lib: $(STATIC_LIBS:lib%.a.xyzzy=$(DESTDIR)$(libdir)/lib%.a)
+install-lib: $(STATIC_LIBS:lib%.a=$(DESTDIR)$(libdir)/lib%.a)
 install-include: $(ALL_INCLUDES:src/include/$(package)/%.h=$(DESTDIR)$(includedir)/$(package)/%.h)
 install-pkgconfig: $(PC_TARGETS:%=$(DESTDIR)$(pkgconfdir)/%)
 
@@ -98,7 +98,7 @@ $(DESTDIR)$(exthome): $(DESTDIR)$(home)
 
 update: $(DESTDIR)$(exthome)
 
-global-links: $(DESTDIR)$(exthome) $(SHARED_LIBS:lib%.so.xyzzy=$(DESTDIR)$(sproot)/library.so/lib%.so.$(version_M))
+global-links: $(DESTDIR)$(exthome) $(SHARED_LIBS:lib%.so=$(DESTDIR)$(sproot)/library.so/lib%.so.$(version_M))
 
 $(DESTDIR)$(sproot)/library.so/lib%.so.$(version_M): $(DESTDIR)$(dynlibdir)/lib%.so.$(version_M)
 	exec $(INSTALL) -D -l ..$(subst $(sproot),,$(exthome))/library.so/$(<F) $@
@@ -113,12 +113,12 @@ $(DESTDIR)$(sysconfdir)/%: src/etc/%
 $(DESTDIR)$(sysdepdir)/%: $(sysdeps)/%
 	exec $(INSTALL) -D -m 644 $< $@
 
-$(DESTDIR)$(dynlibdir)/lib%.so $(DESTDIR)$(dynlibdir)/lib%.so.$(version_M) $(DESTDIR)$(dynlibdir)/lib%.so.$(version): lib%.so.xyzzy
+$(DESTDIR)$(dynlibdir)/lib%.so $(DESTDIR)$(dynlibdir)/lib%.so.$(version_M) $(DESTDIR)$(dynlibdir)/lib%.so.$(version): lib%.so
 	$(INSTALL) -D -m 755 $< $(@D)/lib$(*F).so.$(version) && \
 	$(INSTALL) -l lib$(*F).so.$(version) $(@D)/lib$(*F).so.$(version_M) && \
 	exec $(INSTALL) -l lib$(*F).so.$(version_M) $(@D)/lib$(*F).so
 
-$(DESTDIR)$(libdir)/lib%.a: lib%.a.xyzzy
+$(DESTDIR)$(libdir)/lib%.a: lib%.a
 	exec $(INSTALL) -D -m 644 $< $@
 
 $(DESTDIR)$(includedir)/$(package)/%.h: src/include/$(package)/%.h
@@ -133,11 +133,11 @@ $(DESTDIR)$(pkgconfdir)/lib%.pc: lib%.pc
 %.lo: %.c
 	exec $(CC) $(CPPFLAGS_ALL) $(CFLAGS_ALL) $(CFLAGS_SHARED) -c -o $@ $<
 
-libskarnet.a.xyzzy: $(ALL_SOBJS)
+libskarnet.a: $(ALL_SOBJS)
 	exec $(AR) rc $@ $^
 	exec $(RANLIB) $@
 
-libskarnet.so.xyzzy: $(ALL_DOBJS)
+libskarnet.so: $(ALL_DOBJS)
 	exec $(CC) -o $@ $(CFLAGS_ALL) $(CFLAGS_SHARED) $(LDFLAGS_ALL) $(LDFLAGS_SHARED) -Wl,-soname,libskarnet.so.$(version_M) $(LDFLAGS_RPATH) $^ $(SYSTEM_LIBS)
 
 libskarnet.pc:
@@ -192,18 +192,18 @@ version_XY := $(version_X)$(suffix $(version_m))
 version_XYZ := $(version_XY)$(suffix $(version))
 
 ifneq ($(exthome),)
-global-links: $(SHARED_LIBS:lib%.dylib.xyzzy=$(DESTDIR)$(sproot)/library.so/lib%.$(version_X).dylib)
+global-links: $(SHARED_LIBS:lib%.dylib=$(DESTDIR)$(sproot)/library.so/lib%.$(version_X).dylib)
 
 $(DESTDIR)$(sproot)/library.so/lib%.$(version_X).dylib: $(DESTDIR)$(sproot)/library.so/lib%.$(version_M).dylib
 	exec $(INSTALL) -l $(<F) $@
 endif
 
-$(DESTDIR)$(dynlibdir)/lib%.dylib $(DESTDIR)$(dynlibdir)/lib%.$(version_X).dylib $(DESTDIR)$(dynlibdir)/lib%.$(version_M).dylib $(DESTDIR)$(dynlibdir)/lib%.$(version).dylib: lib%.dylib.xyzzy
+$(DESTDIR)$(dynlibdir)/lib%.dylib $(DESTDIR)$(dynlibdir)/lib%.$(version_X).dylib $(DESTDIR)$(dynlibdir)/lib%.$(version_M).dylib $(DESTDIR)$(dynlibdir)/lib%.$(version).dylib: lib%.dylib
 	$(INSTALL) -D -m 755 $< $(@D)/lib$(*F).$(version).dylib && \
 	$(INSTALL) -l lib$(*F).$(version).dylib $(@D)/lib$(*F).$(version_M).dylib && \
 	$(INSTALL) -l lib$(*F).$(version_M).dylib $(@D)/lib$(*F).$(version_X).dylib && \
 	exec $(INSTALL) -l lib$(*F).$(version_X).dylib $(@D)/lib$(*F).dylib
 
-libskarnet.dylib.xyzzy: $(ALL_DOBJS)
+libskarnet.dylib: $(ALL_DOBJS)
 	exec $(CC) -o $@ $(CFLAGS_ALL) $(CFLAGS_SHARED) $(LDFLAGS_ALL) $(LDFLAGS_SHARED) -Wl,-dylib_install_name,$(dynlibdir)/libskarnet.$(version_M).dylib -Wl,-dylib_compatibility_version,$(version_XY) -Wl,-dylib_current_version,$(version_XYZ) $^ $(SYSTEM_LIBS)
 endif

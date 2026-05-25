@@ -36,8 +36,8 @@ LDFLAGS_NOSHARED :=
 LDFLAGS_SHARED := -shared
 CROSS_COMPILE := 
 SHLIB_EXT := so
-STATIC_LIBS := libskarnet.a.xyzzy
-SHARED_LIBS := libskarnet.so.xyzzy
+STATIC_LIBS := libskarnet.a
+SHARED_LIBS := libskarnet.so
 LDFLAGS_RPATH := -Wl,-rpath=/usr/lib
 DO_PKGCONFIG :=
 STATIC_LIBS_ARE_PIC := 1

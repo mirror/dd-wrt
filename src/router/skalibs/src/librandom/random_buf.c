@@ -2,7 +2,7 @@
 
 #include <skalibs/sysdeps.h>
 
-#if defined(SKALIBS_HASARC4RANDOM)
+#if 0 //defined(SKALIBS_HASARC4RANDOM)
 
 #include <skalibs/nonposix.h>
 #include <stdlib.h>
