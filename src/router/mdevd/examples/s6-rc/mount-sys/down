@@ -1,2 +1,0 @@
-foreground { s6-umount /sys }
-exit 0

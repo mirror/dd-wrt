@@ -1,3 +1,0 @@
-#!/bin/execlineb -S0
-exec -c
-mdevd -D 3 -b 200000 -O4

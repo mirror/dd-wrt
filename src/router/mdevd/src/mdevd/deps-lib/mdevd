@@ -1,3 +1,0 @@
-mdevd_netlink_init.o
-mdevd_uevent_read.o
-mdevd_uevent_getvar.o

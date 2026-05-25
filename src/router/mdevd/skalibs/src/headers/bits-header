@@ -1,7 +1,0 @@
-/* ISC license. */
-
-#ifndef SKALIBS_UINT@BITS@_H
-#define SKALIBS_UINT@BITS@_H
-
-#include <stddef.h>
-#include <stdint.h>
