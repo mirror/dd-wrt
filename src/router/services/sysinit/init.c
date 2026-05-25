@@ -558,6 +558,7 @@ void start_init_start(void)
 #endif
 	load_drivers(1);
 	start_reset_bootfails();
+	eval("/sbin/udevtrigger");
 #ifdef HAVE_X86
 	eval("service", "bootconfig", "restart");
 #endif
