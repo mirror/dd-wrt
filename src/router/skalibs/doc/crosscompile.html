@@ -1,0 +1,101 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>How to cross-compile skalibs</title>
+    <meta name="Description" content="How to cross-compile skalibs" />
+    <meta name="Keywords" content="skalibs build cross-compilation" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">skalibs</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> How to cross-compile skalibs </h1>
+
+<p>
+ There are three issues in the world of cross-compilation:
+</p>
+
+<ul>
+ <li> support for parallel builds: the source directory must be read-only
+and each build process must have its own build tree. </li>
+ <li> support for compiler options: to specify the target architecture,
+the header and library files that should be used, etc.
+ <li> build-time tests performed on the build architecture are invalid
+if the target architecture is different. </li>
+</ul>
+
+<h2> Support for parallel builds </h2>
+
+<p>
+ skalibs does not support out-of-tree builds at the moment,
+but since the source code tree is small, it's not costly to duplicate it
+to perform parallel builds. If the source code tree grows significantly
+larger, out-of-tree build support will be considered.
+</p>
+
+<h3> Support for staging </h3>
+
+<p>
+ The skalibs Makefile, as well as every other
+<a href="//skarnet.org/software/">skarnet.org package</a>'s
+Makefile, supports the DESTDIR convention for staging. To install
+skalibs under a <em>stage</em> fake root:
+</p>
+
+<ul>
+ <li> Give the options you need to <tt>./configure</tt>.
+The arguments to the <tt>--prefix</tt>, <tt>--libdir</tt> and similar
+options must be the valid paths for <strong>run-time</strong>. </li>
+ <li> To install the software, run <tt>make install
+DESTDIR=<em>stage</em></tt>. </li>
+</ul>
+
+<h2> Support for build-time options and bypassing target execution tests </h2>
+
+<p>
+ skalibs uses a standard <tt>./configure &amp;&amp; make &amp;&amp; make install</tt>
+process, and cross-compiling build-time options can be given on the
+<tt>./configure</tt> command line.
+</p>
+
+<p>
+ skalibs performs a certain number of build-time tests, to collect
+behaviour information on the target architecture. Most of these tests
+work when cross-compiling, because they only involve characteristics
+of the target that the cross-toolchain knows at build time; but some
+actually require code execution on the target, and so they cannot be
+performed when cross-compiling. For those, you have to manually
+give a special option to configure, to tell the build system what the
+behaviour of the target architecture is. The option is of the form
+<tt>--with-sysdep-<em>key</em>=<em>value</em></tt>, where <em>key</em>
+is the name of the sysdep (i.e. the element of target behaviour that
+is being tested), and <em>value</em> the associated value, most of
+the time <tt>yes</tt> or <tt>no</tt>.
+</p>
+
+<p>
+ At all times, <tt>./configure --help</tt> provides the list of sysdeps
+you need to provide a <tt>--with-sysdep-*</tt> option for. As of
+skalibs-2.14.0.1, there are two sysdeps in this case:
+</p>
+
+<ul>
+ <li> <tt>devurandom</tt>: <tt>yes</tt> if the target has a valid
+pseudorandom generation device in <tt>/dev/urandom</tt>, and <tt>no</tt>
+otherwise. </li>
+ <li> <tt>posixspawnearlyreturn</tt>: <tt>yes</tt> if the target has a broken
+<a href="https://pubs.opengroup.org/onlinepubs/9799919799/functions/posix_spawn.html">posix_spawn()</a>
+implementation that can return before the child has successfully exec'ed.
+That happens with old glibcs and some virtual platforms. </li>
+</ul>
+
+</body>
+</html>

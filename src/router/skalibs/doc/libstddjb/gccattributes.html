@@ -1,0 +1,50 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skalibs: the gccattributes header</title>
+    <meta name="Description" content="skalibs: the gccattributes header" />
+    <meta name="Keywords" content="skalibs header gccattributes gcc attributes" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">libstddjb</a><br />
+<a href="../libskarnet.html">libskarnet</a><br />
+<a href="../index.html">skalibs</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>skalibs/gccattributes.h</tt> header </h1>
+
+<p>
+ <tt>skalibs/gccattributes.h</tt> is a set of wrappers around
+<a href="https://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html">gcc
+attributes</a> (duh). It defines macros that are always valid, and
+that have no effect if the compiler is not gcc or the used version
+of gcc does not support the wanted attribute.
+</p>
+
+<p>
+ For instance:
+</p>
+
+<pre>
+ extern size_t str_len (char const *) gccattr_pure ;
+</pre>
+
+<p>
+ defines the <tt>str_len</tt> function as <em>pure</em> if it is
+supported.
+</p>
+
+<p>
+ The source code is self-explanatory.
+</p>
+
+</body>
+</html>

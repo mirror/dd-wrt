@@ -1,0 +1,2 @@
+
+#define UINT16_BSWAP(a) (((a) & 0x00ffu) << 8 | ((a) & 0xff00u) >> 8)

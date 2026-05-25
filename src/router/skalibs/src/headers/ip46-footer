@@ -1,0 +1,13 @@
+
+#define ip46_from_ip(i, s, h) ((h) ? ip46_from_ip6(i, s) : ip46_from_ip4(i, s))
+
+extern ssize_t socket_recv46 (int, char *, size_t, ip46 *, uint16_t *, int) ;
+extern ssize_t socket_recvnb46 (int, char *, size_t, ip46 *, uint16_t *, int, tain const *, tain *) ;
+
+#define socket_recvnb46_g(fd, buf, len, i, port, h, deadline) socket_recvnb46(fd, buf, len, i, port, h, (deadline), &STAMP)
+#define socket_sendnb46_g(fd, buf, len, i, port, deadline) socket_sendnb46(fd, buf, len, i, port, (deadline), &STAMP)
+
+extern int socket_deadlineconnstamp46 (int, ip46 const *, uint16_t, tain const *, tain *) ;
+#define socket_deadlineconnstamp46_g(fd, ip, port, deadline) socket_deadlineconnstamp46(fd, ip, port, (deadline), &STAMP)
+
+#endif

@@ -1,0 +1,125 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skalibs: the random library interface</title
+    <meta name="Description" content="skalibs: the random library interface" />
+    <meta name="Keywords" content="skalibs library random librandom random.h" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="../libskarnet.html">libskarnet</a><br />
+<a href="../index.html">skalibs</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>random</tt> library interface </h1>
+
+<p>
+<tt>librandom</tt> is a small library designed to provide an
+interface to some reasonable-quality pseudorandom number
+generation. <tt>librandom</tt> uses arc4random when available,
+or getrandom - else it defaults to  <tt>/dev/urandom</tt> and a
+a SURF PRNG.
+</p>
+
+<h2> Compiling </h2>
+
+<ul>
+ <li> Use <tt>#include &lt;skalibs/random.h&gt;</tt> </li>
+</ul>
+
+<h2> Programming </h2>
+
+<p>
+ You should refer to the <tt>skalibs/random.h</tt> header for the exact
+function prototypes.
+</p>
+
+<h3> Basic functions </h3>
+
+<pre>
+  unsigned char c ;
+  uint32_t max ;
+  uint32_t n ;
+  size_t b ;
+  char data[at least b] ;
+  int r ;
+
+  r = random_init() ;
+  c = random_char() ;
+  n = random_uint32(max) ;
+  random_string(data, b) ;
+  random_finish() ;
+</pre>    
+
+<p>
+ <tt>random_init()</tt> must be called before any other function in
+the random library. It returns 0 (and sets errno) on failure, and
+nonzero on success.
+</p>
+
+<p>
+ It is recommended that you let the library perform cleanups after you
+are done using it, by calling <tt>random_finish()</tt> - unless your
+process exits right away.
+</p>
+
+<ul>
+  <li> <tt>random_char()</tt> returns a random character. </li>
+  <li> <tt>random_uint32(<em>max</em>)</tt> returns a random integer
+between 0 and <em>max</em>-1. </li>
+  <li> <tt>random_string(<em>data</em>, <em>b</em>)</tt> fills
+<em>b</em> bytes in <em>data</em> (which must be preallocated)
+with random data. </li>
+</ul>
+
+<h3> Advanced functions </h3>
+
+<p>
+<code> void random_unsort (char *s, unsigned int n, unsigned int chunksize) </code> <br />
+Shuffles the array <em>s</em> (of size at least <em>n</em>*<em>chunksize</em>) by
+performing a random permutation of the <em>n</em> blocks of <em>chunksize</em> bytes.
+Bytes are not permuted inside chunks.
+</p>
+
+<p>
+<code> void random_name (char *s, size_t n) </code> <br />
+Writes <em>n</em> random readable ASCII characters into <em>s</em>:
+letters, numbers, hyphens or underscores. Does not terminate with a
+null character.
+</p>
+
+<p>
+<code> int random_sauniquename (stralloc *sa, unsigned int n) </code> <br />
+Appends a (non-null-terminated) unique, unpredictable ASCII name to the
+<a href="../libstddjb/stralloc.html">stralloc</a> <em>*sa</em>. That
+name includes <em>n</em> randomly generated ASCII characters.
+</p>
+
+<h2> Notes </h2>
+
+<ul>
+ <li> The <tt>random</tt> library is a thin wrapper around the best
+available random generator provided by the underlying system. By
+decreasing order of preference, it will use the following
+implementations if available:
+ <ul>
+  <li> <a href="https://man.openbsd.org/arc4random.3">arc4random()</a> </li>
+  <li> <a href="https://man7.org/linux/man-pages/man2/getrandom.2.html">getrandom()</a> </li>
+  <li> <tt>/dev/urandom</tt> </li>
+  <li> a basic <a href="https://cr.yp.to/papers/surf.pdf">SURF</a> pseudo-random generator</li>
+ </ul> </li>
+ <li> The <tt>random_init()</tt> function tries to automatically add some
+reasonably random data to the underlying random generator's entropy pool.
+However, that pseudorandom data is not 100% unpredictable, so it will not
+replace proper seeding of the random generator at boot time. </li>
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,256 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skalibs: the selfpipe library interface</title>
+    <meta name="Description" content="skalibs: the selfpipe library interface" />
+    <meta name="Keywords" content="skalibs stddjb libstddjb selfpipe self-pipe library interface" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">libstddjb</a><br />
+<a href="../libskarnet.html">libskarnet</a><br />
+<a href="../index.html">skalibs</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>selfpipe</tt> library interface </h1>
+
+<p>
+ The selfpipe functions are declared in the
+<tt>skalibs/selfpipe.h</tt> header and implemented in the <tt>libskarnet.a</tt>
+or <tt>libskarnet.so</tt> library.
+</p>
+
+<h2> What does it do&nbsp;? </h2>
+
+<p>
+Signal handlers suck.
+</p>
+
+<p>
+They do. I don't care how experienced you are with C/Unix programming,
+they do. You can be Ken Thompson, if you use signal handlers as a
+regular part of your C programming model, you <em>are</em> going to
+screw up, and write buggy code.
+</p>
+
+<p>
+ Unix is tricky enough with interruptions. Even when you have a single
+thread, signals can make the execution flow very non-intuitive.
+They mess up the logic of linear and structured code,
+they introduce non-determinism; you always have to think "and what
+if I get interrupted here and the flow goes into a handler...". This
+is annoying.
+</p>
+
+<p>
+ Moreover, signal handler code is <em>very</em> limited in what it can
+do. It can't use any non-reentrant function! If you call a non-reentrant
+function, and by chance you were precisely in that non-reentrant function
+code when you got interrupted by a signal... you lose. That means, no
+malloc(). No bufferized IO. No globals. The list goes on and on. <br />
+ If you're going to catch signals, you'll want to handle them <em>outside</em>
+the signal handler. You actually want to spend <em>the least possible
+time</em> inside a signal handler - just enough to notify your main
+execution flow that there's a signal to take care of.
+</p>
+
+<p>
+ And, of course, signal handlers don't mix with event loops, which is
+a classic source of headaches for programmers and led to the birth of
+abominations such as
+<a href="https://www.opengroup.org/onlinepubs/009695399/functions/pselect.html">
+pselect</a>. So much for the "everything is a file" concept that Unix was
+built on.
+</p>
+
+<p>
+ A signal should be an event like any other.
+There should be a unified interface - receiving a signal should make some
+fd readable or something.
+</p>
+
+<p>
+ And that's exactly what the
+<a href="https://cr.yp.to/docs/selfpipe.html">self-pipe trick</a>, invented
+by <a href="../djblegacy.html">DJB</a>, does.
+</p>
+
+<p>
+ As long as you're in some kind of event loop, the self-pipe trick allows
+you to forget about signal handlers... <em>forever</em>. It works this way:
+</p>
+
+<ol>
+ <li> Create a pipe <tt>p</tt>. Make both ends close-on-exec and nonblocking. </li>
+ <li> Write a tiny signal handler ("top half") for all the signals you want to
+catch. This
+signal handler should just write one byte into <tt>p[1]</tt>, and do nothing
+more; ideally, the written byte identifies the signal. </li>
+ <li> In your event loop, add <tt>p[0]</tt> to the list of fds you're watching
+for readability. </li>
+</ol>
+
+<p>
+ When you get a signal, a byte will be written to the self-pipe, and your
+execution flow will resume. When you next go through the event loop,
+<tt>p[0]</tt> will be readable; you'll then be able to read a byte from
+it, identify the signal, and handle it - in your unrestricted main
+environment (the "bottom half" of the handler).
+</p>
+
+<p>
+ The selfpipe library does it all for you - you don't even have to write
+the top half yourself. You can forget their existence and recover
+some peace of mind.
+</p>
+
+<p>
+ Note that in an asynchronous event loop, you need to protect your
+system calls against EINTR by using <a href="safewrappers.html">safe
+wrappers</a>.
+</p>
+
+<h2> How do I use it&nbsp;? </h2>
+
+<h3> Starting </h3>
+
+<pre>
+int fd = selfpipe_init() ;
+</pre>
+
+<p>
+<tt>selfpipe_init()</tt> sets up a selfpipe. You must use that
+function first. <br />
+If <tt>fd</tt> is -1, then an error occurred. Else <tt>fd</tt> is a
+non-blocking descriptor that can be used in your event loop. It will
+be selected for readability when you've caught a signal.
+</p>
+
+<h3> Trapping signals </h3>
+
+<pre>
+int r = selfpipe_trap(SIGTERM) ;
+</pre>
+
+<p>
+<tt>selfpipe_trap()</tt> catches a signal and sends it to the selfpipe.
+Uncaught signals won't trigger the selfpipe. <tt>r</tt> is 1 if
+the operation succeeded, and 0 if it failed. If it succeeded, you
+can forget about the trapped signal entirely. <br />
+In our example, if <tt>r</tt> is 1, then a SIGTERM will instantly
+trigger readability on <tt>fd</tt>.
+</p>
+
+<pre>
+int r ;
+sigset_t set ;
+sigemptyset(&amp;set) ;
+sigaddset(&amp;set, SIGTERM) ;
+sigaddset(&amp;set, SIGHUP) ;
+r = selfpipe_trapset(&amp;set) ;
+</pre>
+
+<p>
+<tt>selfpipe_trap()</tt> handles signals one
+by one. Alternatively (and often preferrably), you can use
+<tt>selfpipe_trapset()</tt> to directly handle signal sets. When you call
+<tt>selfpipe_trapset()</tt>, signals that are present in <tt>set</tt> will
+be caught by the selfpipe, and signals that are absent from <tt>set</tt>
+will be uncaught. <tt>r</tt> is 1 if the operation succeeded and 0 if it
+failed.
+</p>
+
+<h3> Handling events </h3>
+
+<pre>
+int c = selfpipe_read() ;
+</pre>
+
+<p>
+ Call <tt>selfpipe_read()</tt> when your <tt>fd</tt> is readable.
+That's where you write your <em>real</em> signal handler: in the
+body of your event loop, in a "normal" context. <br />
+<tt>c</tt> is -1 if an error occurred - in which case chances are
+it's a serious one and your system has become very unstable.
+<tt>c</tt> is 0 if there are no more pending signals. If <tt>c</tt>
+is positive, it is the number of the signal that was caught.
+</p>
+
+<h3> Accessing the selfpipe </h3>
+
+<pre>
+int fd = selfpipe_fd() ;
+</pre>
+
+<p>
+ Sometimes you need to access the fd of the selfpipe in two
+very distinct translation units (typically to poll on it), and you
+rightly don't want to add a global variable to store it, especially
+since it's already stored in a global internal variable in skalibs.
+No need to bloat your binary anymore: <tt>selfpipe_fd()</tt> will
+now retrieve the value for you, wherever you are.
+</p>
+
+<h3> Finishing </h3>
+
+<pre>
+selfpipe_finish() ;
+</pre>
+
+<p>
+ Call <tt>selfpipe_finish()</tt> when you're done using the selfpipe.
+Signal handlers will be restored to SIG_DFL, i.e. signals will not
+be trapped anymore.
+</p>
+
+<h2> Any limitations&nbsp;? </h2>
+
+<p>
+ Some, as always.
+</p>
+
+<ul>
+ <li> The selfpipe library uses a global pipe;
+so, it's theoretically not safe for multithreading. However, as long as you dedicate
+one thread to signal handling and block signals in all the other threads
+(see <a href="https://pubs.opengroup.org/onlinepubs/9799919799/functions/pthread_sigmask.html">pthread_sigmask()</a>)
+then you should be able to use the selfpipe in the thread that handles
+signals without trouble. Since reading the selfpipe involves waiting for
+a file descriptor to become readable, it is recommended to do this in a
+thread that will already have a regular input/output loop (via
+<a href="https://pubs.opengroup.org/onlinepubs/9799919799/functions/poll.html">poll()</a>
+or <a href="iopause.html">iopause()</a>) so you can just add the selfpipe
+to the list of fds you're reading on. </li>
+ <li> In rare cases, the self-pipe can theoretically be filled, if some
+application sends more than PIPE_BUF signals before you have time to
+<tt>selfpipe_read()</tt>. On most Unix systems, PIPE_BUF is 4096,
+so it's a very acceptable margin. Unless your code is waiting where
+it should not be, only malicious applications will fill the self-pipe
+- and malicious applications could just send you a SIGKILL and be done
+with you, so this is not a concern. Protect yourself from malicious
+applications with clever use of uids. </li>
+</ul>
+
+<h2> Hey, Linux has <a href="https://man7.org/linux/man-pages/man2/signalfd.2.html">signalfd()</a> for this&nbsp;! </h2>
+
+<p>
+ Yes, the Linux team loves to gratuitously add new system calls to do
+things that could already be done before without much effort. This
+adds API complexity, which is not a sign of good engineering.
+</p>
+
+<p>
+ However, now that <tt>signalfd()</tt> exists, it is indeed marginally more
+efficient than a pipe, and it saves one fd: so the selfpipe library
+is implemented via <tt>signalfd()</tt> when this call is available.
+</p>
+
+</body>
+</html>

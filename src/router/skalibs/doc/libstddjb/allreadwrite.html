@@ -1,0 +1,196 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skalibs: the allreadwrite library interface</title>
+    <meta name="Description" content="skalibs: the allreadwrite library interface" />
+    <meta name="Keywords" content="skalibs c unix allreadwrite library libstddjb" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">libstddjb</a><br />
+<a href="../libskarnet.html">libskarnet</a><br />
+<a href="../index.html">skalibs</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>allreadwrite</tt> library interface </h1>
+
+<p>
+ The following functions are declared in the <tt>skalibs/allreadwrite.h</tt> header,
+and implemented in the <tt>libskarnet.a</tt> or <tt>libskarnet.so</tt> library.
+</p>
+
+<h2> General information </h2>
+
+<p>
+ <tt>allreadwrite</tt> is a set of IO function helpers. It's the
+basis for safe reading and writing, either in blocking or in
+non-blocking mode. The <a href="buffer.html">buffer</a> interface
+relies heavily on <tt>allreadwrite</tt>.
+</p>
+
+<p>
+ Unless the IO you need is very simple, you generally should not
+be using the <tt>allreadwrite</tt> functions directly; you should
+use higher-level APIs such as <a href="buffer.html">buffer</a> and
+<a href="bufalloc.html">bufalloc</a>.
+</p>
+
+<h2> Function types </h2>
+
+<p>
+<code> typedef ssize_t io_func (int fd, char *buf, size_t len) </code> <br />
+This is the simplified type of IO functions such as
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/read.html">read()</a>
+and
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/write.html">write()</a>.
+</p>
+
+<p>
+<code> typedef ssize_t iov_func (int fd, struct iovec const *v, unsigned int vlen) </code> <br />
+This is the simplified type of IO functions such as
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/readv.html">readv()</a>
+and
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/writev.html">writev()</a>,
+where the content to perform IO on is specified as a
+<a href="siovec.html">scatter/gather array</a> of <em>vlen</em>
+elements instead of a single string.
+</p>
+
+
+<p>
+<code> typedef size_t allio_func (int fd, char *buf, size_t len) </code> <br />
+This is the type of an IO operation that expects <em>all</em> of its
+<em>len</em> bytes to be sent or received, and that will loop around a
+lower-level IO function until either <em>len</em> bytes have been
+transmitted or an error has occurred. The return value is the actual
+number of transmitted bytes; if this value is lesser than <em>len</em>,
+it means that an error has occurred and <tt>errno</tt> is set.
+</p>
+
+<h2> Functions </h2>
+
+<p>
+<code> ssize_t sanitize_read (ssize_t r) </code> <br />
+Reading functions such as <tt>read()</tt> and <tt>fd_read</tt> return
+a positive number when they succeed, -1 when they fail, and 0 when they
+read an EOF. No data available on the descriptor when reading in
+non-blocking mode is treated as a failure: -1 EWOULDBLOCK. But sometimes
+(namely, in asynchronous IO loops) it's preferrable to handle EOF as an
+exception condition and EWOULDBLOCK as a normal condition.
+<tt>sanitize_read()</tt>, when applied to the result of a basic reading
+function, returns 0 if <em>r</em> is -1 and errno is EWOULDBLOCK (or
+EAGAIN). If <em>r</em> is zero, it returns -1 EPIPE. Else it returns <em>r</em>.
+</p>
+
+<p>
+ (No system reading function can ever set errno to EPIPE, and the
+semantics are appropriate, so EPIPE is a good candidate to signal EOF
+on reading.)
+</p>
+
+<p>
+<code> ssize_t unsanitize_read (ssize_t r) </code> <br />
+Returns the inverse of <code>sanitize_read</code>.
+</p>
+
+<p>
+<code> size_t allreadwrite (io_func *f, int fd, char *s, size_t len) </code> <br />
+*<em>f</em> must be a basic reading or writing function such as
+<tt>fd_read</tt> or <tt>fd_write</tt>. <tt>allreadwrite()</tt> performs
+*<em>f</em> on <em>fd</em>, <em>s</em> and <em>len</em> until <em>len</em>
+bytes have been read or written, or until an error occurs. It returns the
+total number of handled bytes, and sets errno if this number is not
+<em>len</em>. <tt>allreadwrite</tt> may block if <em>fd</em> is in
+blocking mode; if <em>fd</em> is in non-blocking mode, it might
+set errno to EWOULDBLOCK or EAGAIN.
+</p>
+
+<p>
+<code> size_t allreadwritev (iov_func *f, int fd, struct iovec const *v, unsigned int vlen) </code> <br />
+Like <code> allreadwrite </code>
+but the content to perform IO on is specified as a
+<a href="siovec.html">scatter/gather array</a> of <em>vlen</em>
+elements instead of a single string.
+</p>
+
+<p>
+<code> ssize_t fd_read (int fd, char *s, size_t len) </code> <br />
+<a href="safewrappers.html">Safe wrapper</a> around the
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/read.html">read()</a>
+function.
+</p>
+
+<p>
+<code> ssize_t fd_write (int fd, char const *s, size_t len) </code> <br />
+<a href="safewrappers.html">Safe wrapper</a> around the
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/write.html">write()</a>
+function.
+</p>
+<p>
+
+<code> ssize_t fd_readv (int fd, struct iovec const *v, unsigned int vlen) </code> <br />
+<a href="safewrappers.html">Safe wrapper</a> around the
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/readv.html">readv()</a>
+function.
+</p>
+
+<p>
+<code> ssize_t fd_writev (int fd, struct iovec const *v, unsigned int vlen) </code> <br />
+<a href="safewrappers.html">Safe wrapper</a> around the
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/writev.html">writev()</a>
+function.
+</p>
+
+<p>
+<code> ssize_t fd_recv (int fd, char *s, size_t len, unsigned int flags) </code> <br />
+<a href="safewrappers.html">Safe wrapper</a> around the
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/recv.html">recv()</a>
+function.
+</p>
+
+<p>
+<code> ssize_t fd_send (int fd, char const *s, size_t len, unsigned int flags) </code> <br />
+<a href="safewrappers.html">Safe wrapper</a> around the
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/send.html">send()</a>
+function.
+</p>
+
+<p>
+<code> size_t allread (int fd, char *s, size_t len) </code> <br />
+Equivalent to <code> allreadwrite(&amp;fd_read, fd, s, len) </code>: attempts
+to read <em>len</em> bytes from <em>fd</em> into <em>s</em>, looping around
+<tt>fd_read()</tt> if necessary, until either <em>len</em> bytes are read or
+an error occurs.
+</p>
+
+<p>
+<code> size_t allwrite (int fd, char const *s, size_t len) </code> <br />
+Equivalent to <code> allreadwrite((io_func *)&amp;fd_write, fd, s, len) </code>:
+attempts to write <em>len</em> bytes from <em>s</em> to <em>fd</em>, looping
+around <tt>fd_write()</tt> if necessary, until either <em>len</em> bytes are
+written or an error occurs.
+</p>
+
+<p>
+<code> size_t allreadv (int fd, struct iovec *v, unsigned int vlen) </code> <br />
+Like <tt>allread</tt>, but the bytes from <em>fd</em> are read into a
+<a href="siovec.html">scatter/gather array</a> of <em>vlen</em>
+elements instead of a single string.
+</p>
+
+<p>
+<code> size_t allwritev (int fd, struct iovec const *v, unsigned int vlen) </code> <br />
+Like <tt>allwrite</tt>, but the content to write is taken from a
+<a href="siovec.html">scatter/gather array</a> of <em>vlen</em>
+elements instead of a single string.
+</p>
+
+</body>
+</html>

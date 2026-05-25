@@ -1,0 +1,4 @@
+package=skalibs
+version=2.15.0.1
+category=prog
+package_macro_name=SKALIBS

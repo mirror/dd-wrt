@@ -1,0 +1,170 @@
+Build Instructions
+------------------
+
+* Requirements
+  ------------
+
+  - A POSIX-compliant C development environment
+  - GNU make version 3.81 or later
+  - If cross-compiling: you have to know the correct value for some
+non-autodetectable sysdeps for your target architecture. See the
+"Cross-compilation" section below.
+
+ This software will install on any operating system that implements
+POSIX.1-2024, available at:
+  https://pubs.opengroup.org/onlinepubs/9799919799/
+
+
+* Standard usage
+  --------------
+
+  ./configure && make && sudo make install
+
+ will work for most users.
+ It will install the static libraries in /usr/lib, the shared
+libraries in /lib, and the sysdeps in /usr/lib/skalibs/sysdeps.
+
+ You can strip the libraries of their extra symbols via "make strip"
+before the "make install" phase. It will shave a few bytes off them.
+
+
+* Customization
+  -------------
+
+ You can customize the installation process via flags given to configure.
+ See ./configure --help for a list of all available configure options.
+
+
+* Environment variables
+  ---------------------
+
+ Controlling a build process via environment variables is a big and
+dangerous hammer. You should try and pass flags to configure instead;
+nevertheless, a few standard environment variables are recognized.
+
+ If the CC environment variable is set, its value will override compiler
+detection by configure. The --host=HOST option will still add a HOST-
+prefix to the value of CC.
+
+ The values of CFLAGS, CPPFLAGS and LDFLAGS will be appended to the
+default flags set by configure. To override those defaults instead
+of appending to them, use the CPPFLAGS, CFLAGS and LDFLAGS
+_make variables_ instead of environment variables.
+
+
+* Make variables
+  --------------
+
+ You can invoke make with a few variables for more configuration.
+
+ CC, CFLAGS, CPPFLAGS, LDFLAGS, LDLIBS, AR, RANLIB, STRIP, INSTALL and
+CROSS_COMPILE can all be overridden on the make command line. This is
+an even bigger hammer than running ./configure with environment
+variables, so it is advised to only do this when it is the only way of
+obtaining the behaviour you want.
+ 
+ DESTDIR can be given on the "make install" command line in order to
+install to a staging directory.
+
+
+* Shared libraries
+  ----------------
+
+ Software from skarnet.org is small enough that shared libraries are
+generally not worth using. Static linking is simpler and incurs less
+runtime overhead and less points of failure: but since skalibs only
+provides libraries, both versions are built by default.
+ Nevertheless, you can:
+  * avoid building shared libraries: --disable-shared
+  * avoid building static libraries: --disable-static
+
+ If you are using a GNU/Linux system, be aware that the GNU libc
+behaves badly with static linking and produces huge executables,
+so if you plan on making static executables, you should consider
+using another libc, which you also need to use when compiling
+skalibs. musl is recommended: http://musl-libc.org/
+
+
+* Cross-compilation
+  -----------------
+
+ skarnet.org centralizes all the difficulty of cross-compilation
+in skalibs.
+ The native skalibs build process runs some tests to gather "sysdeps",
+i.e. system-dependent properties of the target, and stores those
+into a sysdeps directory; software depending on skalibs is provided
+the name of the sysdeps directory at build time, and can depend on
+its contents - that's how skarnet.org packages are easily made
+portable.
+ However, when the host differs from the target - the cross-compilation
+case - some of those build-time tests, i.e. the ones that require
+code execution on the target, are invalid. So you must manually
+provide configure with appropriate values for the list of sysdeps that
+cannot be autodetected.
+ For a sysdep named K with a value V, the correct option to give to
+configure is: --with-sysdep-K=V
+ Most of the time, sysdeps have a boolean value, so the correct V is
+"yes" or "no".
+ For instance, to say that the target has a working pseudorandom
+number generator in /dev/urandom, you would give the following
+option to configure: --with-sysdep-devurandom=yes
+ If there are additional arguments to the sysdep, such as linker
+flags, give them separated by commas. Example:
+--with-sysdep-posixspawn=yes,-lrt
+
+ ./configure --help lists all the sysdeps you need to manually
+provide a value for when cross-compiling.
+
+ Note that you can provide manual sysdeps values at any time,
+for any existing sysdep, to bypass autodetection - and you can
+even do it when building natively. It's just not recommended
+(you should let skalibs autodetect everything it can), and
+and it's only mandatory for a small subset of sysdeps in the
+cross-compilation case.
+
+
+* The slashpackage convention
+  ---------------------------
+
+ The slashpackage convention (http://cr.yp.to/slashpackage.html)
+is a package installation scheme that provides a few guarantees
+over other conventions such as the FHS, for instance fixed
+absolute pathnames. skarnet.org packages support it: use the
+--enable-slashpackage option to configure, or
+--enable-slashpackage=DIR for a prefixed DIR/package tree.
+This option will activate slashpackage support during the build
+and set slashpackage-compatible installation directories. If
+$version is the current skalibs version number:
+
+ --bindir will be set to /package/prog/skalibs-$version/command
+ --includedir will be set to /package/prog/skalibs-$version/include
+ --libdir will be set to /package/prog/skalibs-$version/library
+ --dynlibdir will be set to /package/prog/skalibs-$version/library.so
+ --sysdepdir will be set to /package/prog/skalibs-$version/sysdeps
+
+ Note that --datadir will be unchanged, because the data exported
+by skalibs, i.e. the leap second table, is system-wide. You should
+manually specify --datadir=... if you want to deviate from the default.
+
+ --prefix is pretty much ignored when you use --enable-slashpackage:
+it will only impact --datadir. You should probably not use both
+--enable-slashpackage and --prefix.
+
+ When using slashpackage, two additional Makefile targets are
+available after "make install":
+ - "make -L update" changes the default version of the software to the
+freshly installed one. (This is useful when you have several installed
+versions of the same software, which slashpackage supports.)
+ - "make -L global-links" adds links from DIR/command and DIR/library.so
+to the default version of the binaries and shared libraries.
+ The "-L" option to make is necessary because targets are symbolic links,
+and the default make behaviour is to check the pointed file's timestamp
+and not the symlink's timestamp.
+
+
+* Out-of-tree builds
+  ------------------
+
+ skarnet.org packages do not support out-of-tree builds. They
+are small, so it does not cost much to duplicate the entire
+source tree if parallel builds are needed.

@@ -1,0 +1,48 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skalibs: the genalloc library interface</title>
+    <meta name="Description" content="skalibs: the genalloc library interface" />
+    <meta name="Keywords" content="skalibs c unix genalloc library libstddjb" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">libstddjb</a><br />
+<a href="../libskarnet.html">libskarnet</a><br />
+<a href="../index.html">skalibs</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>genalloc</tt> library interface </h1>
+
+<p>
+ The following functions are declared in the <tt>skalibs/genalloc.h</tt> header,
+and implemented in the <tt>libskarnet.a</tt> or <tt>libskarnet.so</tt> library.
+</p>
+
+<h2> General information </h2>
+
+<p>
+ <tt>genalloc</tt> is the skalibs way of handling dynamic arrays, i.e.
+dynamically growing arrays of fixed-size objects. Any array that needs
+to be stored in heap memory can be implemented via genalloc.
+</p>
+
+<p>
+ Most genalloc functions are just macro calls around
+<a href="stralloc.html">stralloc</a> functions.
+</p>
+
+<p>
+ The <tt>genalloc.h</tt> header is actually very simple and the
+prototypes there are self-explaining.
+</p>
+
+</body>
+</html>

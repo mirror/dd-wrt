@@ -1,0 +1,147 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skalibs: the stdcrypto library interface</title>
+    <meta name="Description" content="skalibs: the stdcrypto library interface" />
+    <meta name="Keywords" content="skalibs stdcrypto libstdcrypto library interface" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="../libskarnet.html">libskarnet</a><br />
+<a href="../index.html">skalibs</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>stdcrypto</tt> library interface </h1>
+
+<p>
+<tt>stdcrypto</tt> is a small collection of standard,
+public-domain cryptographic primitives. Currently, the following
+operations are provided:
+</p>
+
+<ul>
+  <li> sha1 </li>
+  <li> sha256 </li>
+  <li> sha512 </li>
+  <li> blake2s </li>
+  <li> crc32c </li>
+</ul>
+
+<p>
+ Please bear in mind that sha1 is practically broken.
+Do not use it in security-critical applications.
+</p>
+
+<h2> Compiling </h2>
+
+<ul>
+ <li> Use <tt>#include &lt;skalibs/stdcrypto.h&gt;</tt> </li>
+</ul>
+
+<h2> Programming </h2>
+
+<p>
+ You should refer to the <tt>skalibs/stdcrypto.h</tt> header and included headers
+for the exact function prototypes.
+</p>
+
+<h3> <a name="sha1"></a>
+SHA1 </h3>
+
+<pre>
+  SHA1Schedule ctx ;
+  char const *message ;
+  size_t messagelen ;
+  unsigned char digest[20] ;
+
+  sha1_init(&amp;ctx) ;
+  sha1_update(&amp;ctx, message, messagelen) ;
+  sha1_final(&amp;ctx, digest) ;
+</pre>
+
+<ul>
+  <li> <tt>sha1_init()</tt> prepares a SHA1Schedule structure for computation </li>
+  <li> <tt>sha1_update()</tt> adds <em>message</em> to the message to be digested </li>
+  <li> <tt>sha1_final()</tt> computes the digest </li>
+</ul>
+
+<h3> <a name="sha256"></a>
+SHA256 </h3>
+
+<pre>
+  SHA256Schedule ctx ;
+  char const *message ;
+  size_t messagelen ;
+  char digest[32] ;
+
+  sha256_init(&amp;ctx) ;
+  sha256_update(&amp;ctx, message, messagelen) ;
+  sha256_final(&amp;ctx, digest) ;
+</pre>
+
+<ul>
+  <li> <tt>sha256_init()</tt> prepares a SHA256Schedule structure for computation </li>
+  <li> <tt>sha256_update()</tt> adds <em>message</em> to the message to be digested </li>
+  <li> <tt>sha256_final()</tt> computes the digest </li>
+</ul>
+
+<h3> <a name="sha512"></a>
+SHA512 </h3>
+
+<pre>
+  SHA512Schedule ctx ;
+  char const *message ;
+  size_t messagelen ;
+  char digest[64] ;
+
+  sha512_init(&amp;ctx) ;
+  sha512_update(&amp;ctx, message, messagelen) ;
+  sha512_final(&amp;ctx, digest) ;
+</pre>
+
+<ul>
+  <li> <tt>sha512_init()</tt> prepares a SHA512Schedule structure for computation </li>
+  <li> <tt>sha512_update()</tt> adds <em>message</em> to the message to be digested </li>
+  <li> <tt>sha512_final()</tt> computes the digest </li>
+</ul>
+
+<h3> <a name="blake2s"></a>
+blake2s </h3>
+
+ Same scheme as with the other hashes.
+
+<pre>
+  blake2s_ctx ctx ;
+  char const *message ;
+  size_t messagelen ;
+  size_t outlen = 32 ;  /* the user gives the length of the digest */
+  char digest[outlen] ;
+
+  blake2s_init(&amp;ctx, outlen) ;
+  blake2s_update(&amp;ctx, message, messagelen) ;
+  blake2s_final(&amp;ctx, digest) ;
+</pre>
+
+<h3> <a name="crc32c"></a>
+crc32c </h3>
+
+ This isn't a cryptography primitive, but just a function to compute
+the Castagnoli version of a cyclic redundancy code.
+
+<pre>
+  uint32_t crc = 0 ;  /* no need for context except that crc needs to be initialized to 0 */
+  char const *message ;
+  size_t messagelen ;
+
+  crc = crc32c(crc, message, messagelen) ;
+</pre>
+
+</body>
+</html>

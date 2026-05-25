@@ -1,0 +1,93 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skalibs: the lolstdio library interface</title>
+    <meta name="Description" content="skalibs: the lolstdio library interface" />
+    <meta name="Keywords" content="skalibs c unix stdio lol printf fprintf library libstddjb" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">libstddjb</a><br />
+<a href="../libskarnet.html">libskarnet</a><br />
+<a href="../index.html">skalibs</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>lolstdio</tt> library interface </h1>
+
+<p>
+ The following functions are declared in the <tt>skalibs/lolstdio.h</tt> header,
+and implemented in the <tt>libskarnet.a</tt> or <tt>libskarnet.so</tt> library.
+</p>
+
+<h2> General information </h2>
+
+<p>
+ <tt>lolstdio</tt> is a set of convenience functions providing
+<a href="https://pubs.opengroup.org/onlinepubs/9799919799/functions/printf.html">printf</a>-style
+formatting but interacting with <a href="buffer.html">buffers</a> or
+<a href="bufalloc.html">bufallocs</a> instead of stdio FILEs.
+</p>
+
+<p>
+ Like any printf-style functions, the lolstdio functions are rather
+complex and inefficient, and not recommended for general use; they are
+provided as a quick and dirty way to debug or test things. Programmers
+are advised to use type-specific formatting functions instead in
+production-quality code.
+</p>
+
+<p>
+ Be aware that functions writing into buffers interact badly with
+non-blocking fds (and asynchronism in general) - just as you cannot
+use FILEs with non-blocking output. Functions writing into bufallocs,
+however, are fine, because bufallocs are much more suited to asynchronous
+writing than fixed-size buffers or FILEs are.
+</p>
+
+<p>
+ The current lolstdio implementation relies on the libc's
+<a href="https://pubs.opengroup.org/onlinepubs/9799919799/functions/vsnprintf.html">vsnprintf</a>
+function.
+</p>
+
+<h2> Functions </h2>
+
+<p>
+<code> int vbprintf (buffer *b, char const *format, va_list args) </code> <br />
+Like <a href="https://pubs.opengroup.org/onlinepubs/9799919799/functions/vfprintf.html">vfprintf</a>
+except that the result is written to the buffer <em>b</em>.
+</p>
+
+<p>
+<code> int bprintf (buffer *b, char const *format, ...) </code> <br />
+Like <a href="https://pubs.opengroup.org/onlinepubs/9799919799/functions/fprintf.html">fprintf</a>
+except that the result is written to the buffer <em>b</em>.
+</p>
+
+<p>
+<code> int lolprintf (char const *format, ...) </code> <br />
+Like <a href="https://pubs.opengroup.org/onlinepubs/9799919799/functions/printf.html">printf</a>
+except that the result is written to the buffer <tt>buffer_1</tt>.
+</p>
+
+<p>
+<code> int vbaprintf (bufalloc *ba, char const *format, va_list args) </code> <br />
+Like <a href="https://pubs.opengroup.org/onlinepubs/9799919799/functions/vfprintf.html">vfprintf</a>
+except that the result is written to the bufalloc <em>ba</em>.
+</p>
+
+<p>
+<code> int baprintf (bufalloc *ba, char const *format, ...) </code> <br />
+Like <a href="https://pubs.opengroup.org/onlinepubs/9799919799/functions/fprintf.html">fprintf</a>
+except that the result is written to the bufalloc <em>ba</em>.
+</p>
+
+</body>
+</html>

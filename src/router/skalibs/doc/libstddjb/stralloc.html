@@ -1,0 +1,120 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skalibs: the stralloc library interface</title>
+    <meta name="Description" content="skalibs: the stralloc library interface" />
+    <meta name="Keywords" content="skalibs c unix stralloc library libstddjb" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">libstddjb</a><br />
+<a href="../libskarnet.html">libskarnet</a><br />
+<a href="../index.html">skalibs</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>stralloc</tt> library interface </h1>
+
+<p>
+ The following functions are declared in the <tt>skalibs/stralloc.h</tt> header,
+and implemented in the <tt>libskarnet.a</tt> or <tt>libskarnet.so</tt> library.
+</p>
+
+<h2> General information </h2>
+
+<p>
+ <tt>stralloc</tt> is the preferred skalibs way of storing objects into
+heap memory. It focuses on strings of <em>char</em>, which is the generic
+way to handle any object. For easy structure manipulation, the
+<a href="genalloc.html">genalloc</a>
+series of functions can be used; those functions are mostly macros wrapping
+calls to their stralloc counterparts.
+</p>
+
+<p>
+ A stralloc is a structure containing the following fields:
+</p>
+
+<ul>
+ <li> <em>s</em>: a pointer to a zone of heap memory. The stralloc
+functions internally manipulate those via the
+<a href="alloc.html">alloc</a> series of functions. It is recommended
+to never modify that field manually. </li>
+ <li> <em>len</em>: the <strong>used</strong> length of the
+allocated zone. It is the only field that the user can modify
+directly. </li>
+ <li> <em>a</em>: the number of allocated bytes. The user should never
+have to access that field, because the memory allocation management
+should be entirely transparent. <em>len</em> cannot exceed <em>a</em>:
+if an operation needs a bigger <em>len</em>, it will automatically
+reallocate as needed. </li>
+</ul>
+
+<p>
+ The benefits of using stralloc are as follows:
+</p>
+
+<ul>
+ <li> Memory allocation is performed on-demand and automatically, with
+a suitable size. Heuristics are used to accommodate constantly growing
+strings while minimizing the amount of needed reallocations. </li>
+ <li> If every heap-allocated object is represented by a stralloc, then
+it is very easy to identify what pointer is in the heap. When you stop
+using a pointer <em>p</em>, should you free it&nbsp;? Sometimes it's not
+easy to find out. When you stop using a stralloc <em>sa</em>, you
+<em>know</em> you must call <tt>stralloc_free(&amp;sa)</tt>. Store
+your strong references as strallocs and weak references as simple
+pointers, and never free simple pointers. This policy allows me to
+boast that <em>no skarnet.org software has ever leaked memory</em>. </li>
+ <li> Repeated for emphasis:
+<strong> the golden rule for programming with strallocs is
+<em>every pointer to the heap must be owned by a stralloc</em>. </strong>
+Every pointer you handle yourself either does not point to the heap,
+or is weak. That sometimes implies unusual programming practices, such
+as having storage separated from structure, but it's hands down the
+easiest way to keep control of your heap in complex situations. </li>
+<li> The indirection layer makes weak references immune to
+reallocation troubles. The <em>s</em> field may change when a
+reallocation happens, but the stralloc structure's address never
+changes. </li>
+</ul>
+
+<p>
+ A stralloc can be declared anywhere: static/global data, stack or heap. (Of course,
+as a general rule, you should favor the stack whenever possible.)
+A stralloc should be initialized to STRALLOC_ZERO before its first use. 
+</p>
+
+<h2> Functions </h2>
+
+<p>
+<code> int stralloc_catb (stralloc *sa, char const *s, size_t len) </code> <br />
+Appends the <em>len</em> bytes pointed to by <em>s</em> to the end of the
+memory zone handled by *<em>sa</em>, automatically allocating more memory
+if needed. Returns 1 if it succeeds, and 0 if it fails.
+</p>
+
+<p>
+<code> void stralloc_free (stralloc *sa) </code> <br />
+Frees <em>*sa</em>, i.e. calls <a href="alloc.html">alloc_free</a>
+on <em>sa</em>&rarr;s then zeroes the structure. *<em>sa</em> is
+then reusable. However, it is not good practice to call this function
+if you're going to reuse *<em>sa</em> soon: it takes time and causes
+memory fragmentation. Just setting <em>sa</em>&rarr;len to 0 allows
+you to instantly reuse the allocated block of memory.
+</p>
+
+<p>
+ The above are the most important and fundamental functions of
+<tt>skalibs/stralloc.h</tt>. Other functions can be found in this header and
+their prototypes are self-explaining.
+</p>
+
+</body>
+</html>

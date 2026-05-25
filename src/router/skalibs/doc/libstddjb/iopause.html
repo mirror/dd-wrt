@@ -1,0 +1,199 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skalibs: the iopause library interface</title>
+    <meta name="Description" content="skalibs: the iopause library interface" />
+    <meta name="Keywords" content="skalibs c unix iopause library libstddjb" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">libstddjb</a><br />
+<a href="../libskarnet.html">libskarnet</a><br />
+<a href="../index.html">skalibs</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>iopause</tt> library interface </h1>
+
+<p>
+ The following functions are declared in the <tt>skalibs/iopause.h</tt> header,
+and implemented in the <tt>libskarnet.a</tt> or <tt>libskarnet.so</tt> library.
+</p>
+
+<h2> General information </h2>
+
+<p>
+ <tt>iopause</tt> is the skalibs API for event loop selection. It's a
+wrapper around the system's <tt>ppoll()</tt> or
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/poll.html">poll()</a>
+(if available) or
+<a href="https://www.opengroup.org/onlinepubs/9799919799/functions/select.html">select()</a>
+(if neither <tt>ppoll()</tt> nor <tt>poll()</tt> is available) function.
+ It works around some system-dependent quirks; also it works with
+<em>absolute dates</em> instead of timeouts. This is a good thing:
+see below.
+</p>
+
+<p>
+ <tt>iopause</tt> is a derived work from Dan J. Bernstein's
+<a href="https://cr.yp.to/lib/iopause.html">iopause</a> library, but the
+skalibs implementation is subtly different.
+</p>
+
+<h2> Data structures </h2>
+
+<p>
+ An <tt>iopause_fd</tt> structure is similar to a
+<a href="https://www.opengroup.org/onlinepubs/9799919799/basedefs/poll.h.html">struct pollfd</a>
+structure, and must be filled the same way. Usually, the user declares
+an array of <tt>iopause_fd</tt> and fills it, one element per descriptor
+to select on. If <em>x</em> is an <tt>iopause_fd</tt>:
+</p>
+
+<ul>
+ <li> <em>x</em>.fd must be set to the fd number to select on. </li>
+ <li> <em>x</em>.events must be a disjunction of the following flags:
+ <ul>
+  <li> IOPAUSE_READ if the fd is to be selected for reading. </li>
+  <li> IOPAUSE_WRITE if the fd is to be selected for writing. </li>
+ </ul> </li>
+ <li> When the selection function returns, <em>x</em>.revents contains
+a disjunction of the following flags:
+ <ul>
+  <li> IOPAUSE_READ if the fd is readable (this includes reception of an EOF). </li>
+  <li> IOPAUSE_WRITE if the fd is writable. </li>
+  <li> IOPAUSE_EXCEPT if an exception (such as EOF or an error) occurred on the fd. </li>
+ </ul> </li>
+</ul>
+
+<p>
+ Unlike <tt>poll()</tt> or <tt>select()</tt>, which use a <em>timeout</em>
+argument, the <tt>iopause()</tt> function uses a <em>deadline</em> argument,
+i.e. an absolute time at which it must return 0 if no event has happened
+so far, as well as a <em>stamp</em> argument, i.e. an absolute time meaning
+<em>now</em>. Those arguments are stored in
+<a href="tai.html">tain</a>s. Here is why:
+</p>
+
+<p>
+ The event loop pattern is mostly used to multiplex several asynchronous
+events that can happen independently, at the same time or not. Let's
+say you have 3 events, <em>x</em>, <em>y</em> and <em>z</em>. Each of
+those has a separate timeout: if <em>x</em> happens before <em>x-timeout</em>
+milliseconds, you call the <em>x-event-handler</em> function, but
+if <em>x-timeout</em> milliseconds elapse without <em>x</em> happening,
+you call <em>x-timeout-handler</em> function. And similarly with <em>y</em>
+and <em>z</em>.
+</p>
+
+<p>
+ But the selection function returning does not mean <em>x</em> has happened
+or that <em>x</em> has timed out. It might also mean that <em>y</em> has
+happened, that <em>y</em> has timed out, that <em>z</em> has happened, that
+<em>z</em> has timed out, or something else entirely. In the post-selection
+part of the loop, the proper handler is called for the event or timeout
+that has happened; then the loop is executed again, and in the
+pre-selection part of the loop, the array describing the events is filled,
+and the selection timeout is computed.
+</p>
+
+<p>
+ How are you going to compute that global selection timeout? Easy: it's the
+shortest of the three. But we just spent some amount of time waiting, so the
+individual timeouts must be recomputed! This means:
+<ul>
+ <li> You need a way to know the time spent in a selection primitive, which
+basically means getting a timestamp before the selection and once again
+after the timestamp. </li>
+ <li> You need to recompute every individual timeout everytime you enter
+the loop. </li>
+</ul>
+
+<p>
+ That is really cumbersome. A much simpler way of doing things is:
+</p>
+
+<ul>
+ <li> Always keep a reasonably accurate estimation of the current
+time in a <em>stamp</em> variable. That means getting the current time
+at the start of the process, and updating it <em>right after</em> any
+action that takes a significant amount of time. When to update <em>stamp</em>
+can be difficult to estimate in CPU-bound processes; fortunately, most
+processes using an event loop are IO-bound, and the only actions that take
+a non-negligible amount of time in an IO-bound process are the blocking
+primitives. So, <em>stamp</em> must be updated <em>right after a selection
+function returns</em>, and if the program has been correctly written and
+cannot block anywhere else, it's the only place where it needs to be. </li>
+ <li> For every event, compute the <em>deadline</em> of that event:
+<em>x-deadline</em> is <em>x-timeout</em> added to the current <em>stamp</em>
+value when <em>x</em> enters the loop. This is done only once per event:
+you never have to recompute event deadlines - unlike timeouts, which diminish
+over time, deadlines do not change. </li>
+ <li> At every iteration, the selection deadline is the earliest of all the
+available event deadlines. </li>
+ <li> As an added bonus: after the selection function returns and
+ <em>stamp</em> has been updated, it is easy to check which events have
+timed out and which have not: <em>x</em> has timed out iff <em>x-deadline</em>
+is earlier than <em>stamp</em>. </li>
+</ul>
+
+<p>
+ Maintaining a global timestamp and using absolute times instead of relative
+times really is the right way to work with event loops, and the <tt>iopause</tt>
+interface reflects that. Of course, you need a reliable, bug-free time library
+and a monotonic, constant system clock to handle absolute times correctly;
+that is why <tt>iopause</tt> relies on the <a href="tai.html">tai</a> library.
+</p>
+
+<h2> Functions </h2>
+
+<p>
+<code> int iopause (iopause_fd *x, unsigned int len, tain const *deadline, tain const *stamp) </code> <br />
+Blocks until one of the events described in the <em>x</em> array, of length
+<em>len</em>, happens, or until the absolute date *<em>deadline</em> is
+reached. <em>deadline</em> may be null, in which case the function blocks
+indefinitely until an event happens. If <em>deadline</em> is not null, then
+<em>stamp</em> must not be null, and must contain an accurate estimation
+of the current time. The function returns the number of events that have
+happened, 0 for a timeout, or -1 (and sets errno) for an error.
+</p>
+
+<p>
+<code> int iopause_stamp (iopause_fd *x, unsigned int len, tain const *deadline, tain *stamp) </code> <br />
+Like <tt>iopause()</tt>, but if <em>stamp</em> is not null, it is updated
+right before the function returns. This helps the user always keep a
+reasonably accurate estimation of the current time in <em>stamp</em>;
+it is recommended to use this function instead of the lower-level
+<tt>iopause()</tt>.
+</p>
+
+<h3> Underlying implementations </h3>
+
+<p>
+ <tt>iopause</tt> is an alias to one of <tt>iopause_ppoll</tt>, <tt>iopause_poll</tt> or
+<tt>iopause_select</tt>. It is always aliased to <tt>iopause_ppoll</tt> if
+the <tt>ppoll()</tt> function is available on the system; else, it's aliased to
+<tt>iopause_poll</tt> by default, and users can alias it to <tt>iopause_select</tt>
+instead if they configure skalibs with the <tt>--enable-iopause-select</tt> option.
+</p>
+
+<p>
+<a href="https://pubs.opengroup.org/onlinepubs/9799919799/functions/poll.html">poll()</a>
+has a more comfortable API than
+<a href="https://pubs.opengroup.org/onlinepubs/9799919799/functions/select.html">select()</a>,
+but its maximum precision is 1 millisecond, which might not be enough for some applications;
+using <tt>select()</tt> instead incurs some CPU overhead for the API conversion, but has a
+1 microsecond precision.
+<a href="https://man7.org/linux/man-pages/man2/poll.2.html">ppoll()</a> gets the best of
+both worlds with the same interface model as <tt>poll()</tt> and a 1 nanosecond precision,
+which is why skalibs always uses it when available.
+</p>
+
+</body>
+</html>

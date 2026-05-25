@@ -1,0 +1,9 @@
+
+extern size_t uint64_fmt_generic (char *, uint64_t, uint8_t) ;
+extern size_t uint640_fmt_generic (char *, uint64_t, size_t, uint8_t) ;
+extern size_t int64_fmt_generic (char *, int64_t, uint8_t) ;
+extern size_t uint64_fmtlist_generic (char *, void const *, size_t, uint8_t, uint64_t (*)(void const *, size_t)) ;
+
+extern size_t uint64_scan_base_max (char const *, uint64_t *, uint8_t, uint64_t) ;
+extern size_t int64_scan_base_max (char const *, int64_t *, uint8_t, uint64_t) ;
+

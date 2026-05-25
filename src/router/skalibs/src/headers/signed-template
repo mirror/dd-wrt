@@ -1,0 +1,14 @@
+#define @TYPE@_PACK @BYTES@
+#define @type@_pack uint@BITS@_pack
+#define @type@_pack_big uint@BITS@_pack_big
+#define @type@_unpack(pack, p) uint@BITS@_unpack(pack, (uint@BITS@_t *)(p))
+#define @type@_unpack_big(pack, p) uint@BITS@_unpack_big(pack, (uint@BITS@_t *)(p))
+
+#define @TYPE@_FMT (1+UINT@BITS@_FMT)
+#define @type@_fmt int@BITS@_fmt
+#define @type@_fmtlist int@BITS@_fmtlist
+#define @type@_scan(s, d) int@BITS@_scan(s, (int@BITS@_t *)d)
+#define @type@0_scan(s, d) int@BITS@0_scan(s, (int@BITS@_t *)d)
+#define @type@_scanlist(tab, max, s, num) int@BITS@_scanlist((int@BITS@_t *)tab, max, s, num)
+
+
