@@ -110,8 +110,6 @@ static void trigger_uevent(const char *devpath)
 	strlcat(filename, devpath, sizeof(filename));
 	strlcat(filename, "/uevent", sizeof(filename));
 
-	if (verbose)
-		printf("%s\n", devpath);
 
 	if (dry_run)
 		return;
@@ -121,6 +119,8 @@ static void trigger_uevent(const char *devpath)
 		dbg("error on opening %s: %s\n", filename, strerror(errno));
 		return;
 	}
+	if (verbose)
+		printf("%s\n", filename);
 
 	if (write(fd, "add", 3) < 0)
 		info("error on triggering %s: %s\n", filename, strerror(errno));
