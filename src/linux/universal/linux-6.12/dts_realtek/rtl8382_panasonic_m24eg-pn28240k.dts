@@ -150,7 +150,7 @@
 		SWITCH_PORT_SDS(6, 7, 1, qsgmii)
 		SWITCH_PORT_SDS(7, 8, 1, qsgmii)
 
-		SWITCH_PORT(8, 09, internal)
+		SWITCH_PORT(8, 9, internal)
 		SWITCH_PORT(9, 10, internal)
 		SWITCH_PORT(10, 11, internal)
 		SWITCH_PORT(11, 12, internal)
