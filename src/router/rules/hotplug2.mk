@@ -11,7 +11,7 @@ hotplug2-install:
 	cd hotplug2/config/etc/ ; cp -av * $(INSTALLDIR)/hotplug2/etc/
 
 udev:
-	$(MAKE) COPTS="$(COPTS)  $(MIPS16_OPT)  $(LTO) $(THUMB) -ffunction-sections -fdata-sections -Wl,--gc-sections" -C udev udevtrigger
+	$(MAKE) COPTS="$(COPTS) $(MIPS16_OPT)  $(LTO) $(THUMB) -DBEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" -C udev udevtrigger
 
 udev-clean:
 	$(MAKE) -C udev clean
