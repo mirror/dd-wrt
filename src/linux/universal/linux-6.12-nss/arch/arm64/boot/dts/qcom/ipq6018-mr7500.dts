@@ -25,7 +25,11 @@
 		led-running = &led_system_blue;
 		led-failsafe = &led_system_red;
 		led-upgrade = &led_system_green;
-		label-mac-device = &dp5_syn;
+		ethernet0 = &dp1;
+		ethernet1 = &dp2;
+		ethernet2 = &dp3;
+		ethernet3 = &dp4;
+		ethernet4 = &dp5_syn;
 	};
 
 	chosen {
@@ -240,8 +244,6 @@
 		compatible = "qcom,qca8075-package";
 		reg = <0>;
 
-		qcom,package-mode = "qsgmii";
-
 		qca8075_0: ethernet-phy@0 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <0>;
@@ -336,9 +338,6 @@
 		reset-gpios = <&tlmm 77 GPIO_ACTIVE_HIGH>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		firmware-name = "marvell/AQR114C.cld";
-
-		nvmem-cells = <&aqr_fw>;
-		nvmem-cell-names = "firmware";
 		leds {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -365,8 +364,6 @@
 	label = "lan1";
 	phy-handle = <&qca8075_0>;
 	phy-mode = "qsgmii";
-	nvmem-cells = <&hw_mac_addr 1>;
-	nvmem-cell-names = "mac-address";
 };
 
 &dp2 {
@@ -374,8 +371,6 @@
 	label = "lan2";
 	phy-handle = <&qca8075_1>;
 	phy-mode = "qsgmii";
-	nvmem-cells = <&hw_mac_addr 1>;
-	nvmem-cell-names = "mac-address";
 };
 
 &dp3 {
@@ -383,8 +378,6 @@
 	label = "lan3";
 	phy-handle = <&qca8075_2>;
 	phy-mode = "qsgmii";
-	nvmem-cells = <&hw_mac_addr 1>;
-	nvmem-cell-names = "mac-address";
 };
 
 &dp4 {
@@ -392,17 +385,12 @@
 	label = "lan4";
 	phy-handle = <&qca8075_3>;
 	phy-mode = "qsgmii";
-	nvmem-cells = <&hw_mac_addr 1>;
-	nvmem-cell-names = "mac-address";
 };
 
 &dp5_syn {
 	status = "okay";
 	label = "wan";
 	phy-handle = <&aqr114c>;
-	phy-mode = "usxgmii";
-	nvmem-cells = <&hw_mac_addr 0>;
-	nvmem-cell-names = "mac-address";
 };
 
 &edma {
@@ -413,7 +401,7 @@
 	status = "okay";
 	switch_lan_bmp = <( ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4 )>;
 	switch_wan_bmp = <ESS_PORT5>;
-	switch_mac_mode = <MAC_MODE_QSGMII>;
+	switch_mac_mode = <MAC_MODE_PSGMII>;
 	switch_mac_mode1 = <MAC_MODE_USXGMII>;
 
 	qcom,port_phyinfo {
@@ -443,7 +431,7 @@
 };
 
 &blsp1_uart3 {
-	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-0 = <&uart_pins>;
 	pinctrl-names = "default";
 	status = "okay";
 };
@@ -551,16 +539,6 @@
 			partition@a00000 {
 				label = "ethphyfw";
 				reg = <0x000a00000 0x00080000>;
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					aqr_fw: firmware@0 {
-						/* Skip the QCOM MBN Header of 40 bytes */
-						reg = <0x28 0x60002>;
-					};
-				};
 				
 			};
 
@@ -577,16 +555,7 @@
 			partition@b40000 {
 				label = "devinfo";
 				reg = <0x000b40000 0x00040000>;
-				nvmem-layout {
-					compatible = "ascii-eq-delim-env";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					hw_mac_addr: hw_mac_addr {
-						compatible = "mac-base";
-						#nvmem-cell-cells = <1>;
-					};
-				};
+				
 			};
 
 			partition@b80000 {
