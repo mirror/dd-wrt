@@ -67,7 +67,8 @@ static int rtl826xb_probe(struct phy_device *phydev)
     priv->pnswap_tx = device_property_read_bool(dev, "realtek,pnswap-tx");
     phydev->priv = priv;
 
-    return rtl822x_hwmon_init(phydev);
+    rtl822x_hwmon_init(phydev);
+    return 0;
 }
 
 static int rtkphy_config_init(struct phy_device *phydev)
