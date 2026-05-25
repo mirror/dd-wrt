@@ -125,6 +125,7 @@ int fwnode_mdiobus_register_phy(struct mii_bus *bus,
 	struct mii_timestamper *mii_ts = NULL;
 	struct pse_control *psec = NULL;
 	struct phy_device *phy;
+	struct phy_c45_device_ids c45_ids;
 	bool is_c45;
 	u32 phy_id;
 	int rc, retries = 0;
