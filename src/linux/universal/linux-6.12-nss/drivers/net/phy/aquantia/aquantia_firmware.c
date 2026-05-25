@@ -168,7 +168,14 @@ static int aqr_fw_boot(struct phy_device *phydev, const u8 *data, size_t size,
 	if (read_crc != calculated_crc) {
 		phydev_err(phydev, "bad firmware CRC: file 0x%04x calculated 0x%04x\n",
 			   read_crc, calculated_crc);
-		return -EINVAL;
+		/* OEM-provisioned NVMEM partitions may contain the raw
+		 * payload without the .cld file format's trailing CRC.
+		 * Trust the partition content for NVMEM source.
+		 */
+		if (fw_src != AQR_FW_SRC_NVMEM)
+			return -EINVAL;
+		phydev_warn(phydev,
+			    "CRC mismatch ignored for NVMEM source - partition lacks .cld trailing CRC\n");
 	}
 
 	/* Get the primary offset to extract DRAM and IRAM sections. */
