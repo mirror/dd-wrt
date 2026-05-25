@@ -244,6 +244,8 @@
 		compatible = "qcom,qca8075-package";
 		reg = <0>;
 
+		qcom,package-mode = "qsgmii";
+
 		qca8075_0: ethernet-phy@0 {
 			compatible = "ethernet-phy-ieee802.3-c22";
 			reg = <0>;
@@ -338,6 +340,9 @@
 		reset-gpios = <&tlmm 77 GPIO_ACTIVE_HIGH>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		firmware-name = "marvell/AQR114C.cld";
+
+		nvmem-cells = <&aqr_fw>;
+		nvmem-cell-names = "firmware";
 		leds {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -401,7 +406,7 @@
 	status = "okay";
 	switch_lan_bmp = <( ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4 )>;
 	switch_wan_bmp = <ESS_PORT5>;
-	switch_mac_mode = <MAC_MODE_PSGMII>;
+	switch_mac_mode = <MAC_MODE_QSGMII>;
 	switch_mac_mode1 = <MAC_MODE_USXGMII>;
 
 	qcom,port_phyinfo {
@@ -539,6 +544,16 @@
 			partition@a00000 {
 				label = "ethphyfw";
 				reg = <0x000a00000 0x00080000>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					aqr_fw: firmware@0 {
+						/* Skip the QCOM MBN Header of 40 bytes */
+						reg = <0x28 0x60002>;
+					};
+				};
 				
 			};
 
