@@ -304,6 +304,7 @@ void shutdown_system(void)
 	int sig;
 	dd_loginfo("init", "wait for nvram write to finish");
 	waitfordead("async_commit", 10);
+	sleep(5); //give http server some time
 
 	/* 
 	 * Disable signal handlers 
