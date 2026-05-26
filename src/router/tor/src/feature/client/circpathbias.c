@@ -971,8 +971,9 @@ pathbias_count_valid_cells(circuit_t *circ, const relay_msg_t *msg)
        * just process them. This closes the circ, but it was junk anyway.
        * No reason to wait for the probe. */
       circuit_read_valid_data(ocirc, msg->length);
-      circuit_truncated(TO_ORIGIN_CIRCUIT(circ), get_uint8(msg->body));
-
+      if (msg->length > 0) {
+        circuit_truncated(TO_ORIGIN_CIRCUIT(circ), get_uint8(msg->body));
+      }
       break;
 
     case RELAY_COMMAND_END:

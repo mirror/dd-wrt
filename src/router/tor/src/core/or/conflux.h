@@ -45,6 +45,8 @@ typedef struct {
 size_t conflux_handle_oom(size_t bytes_to_remove);
 uint64_t conflux_get_total_bytes_allocation(void);
 uint64_t conflux_get_circ_bytes_allocation(const circuit_t *circ);
+void conflux_clear_ooo_q(conflux_t *cfx);
+size_t conflux_msg_alloc_cost(conflux_msg_t *msg);
 
 void conflux_update_rtt(conflux_t *cfx, circuit_t *circ, uint64_t rtt_usec);
 

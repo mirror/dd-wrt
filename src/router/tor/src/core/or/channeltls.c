@@ -1116,8 +1116,17 @@ channel_tls_handle_cell(cell_t *cell, or_connection_t *conn)
     return;
   }
 
-  if (conn->base_.state == OR_CONN_STATE_OR_HANDSHAKING_V3)
+  if (conn->base_.state == OR_CONN_STATE_OR_HANDSHAKING_V3) {
+    /* Defense in depth considering bug #41420. */
+    if (BUG(!chan->conn->handshake_state)) {
+      log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
+             "Received a cell but handshake state is missing on %s",
+             connection_describe(TO_CONN(chan->conn)));
+      connection_or_close_for_error(chan->conn, 0);
+      return;
+    }
     or_handshake_state_record_cell(conn, conn->handshake_state, cell, 1);
+  }
 
   /* We note that we're on the internet whenever we read a cell. This is
    * a fast operation. */
@@ -1266,9 +1275,18 @@ channel_tls_handle_var_cell(var_cell_t *var_cell, or_connection_t *conn)
       }
       break;
     case OR_CONN_STATE_OR_HANDSHAKING_V3:
-      if (var_cell->command != CELL_AUTHENTICATE)
+      if (var_cell->command != CELL_AUTHENTICATE) {
+        /* Defense in depth considering bug #41420. */
+        if (BUG(!chan->conn->handshake_state)) {
+          log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
+                 "Received a var cell but handshake state is missing on %s",
+                 connection_describe(TO_CONN(chan->conn)));
+          connection_or_close_for_error(chan->conn, 0);
+          return;
+        }
         or_handshake_state_record_var_cell(conn, conn->handshake_state,
                                            var_cell, 1);
+      }
       break; /* Everything is allowed */
     case OR_CONN_STATE_OPEN:
       if (conn->link_proto < 3) {
@@ -2048,13 +2066,18 @@ channel_tls_process_certs_cell(var_cell_t *cell, channel_tls_t *chan)
     goto err;                                                   \
   } while (0)
 
+  if (chan->conn->base_.state != OR_CONN_STATE_OR_HANDSHAKING_V3) {
+    ERR("We're not doing a v3 handshake!");
+  }
+  if (BUG(!chan->conn->handshake_state)) {
+    ERR("Handshake state not present.");
+  }
+
   /* Can't use connection_or_nonopen_was_started_here(); its conn->tls
    * check looks like it breaks
    * test_link_handshake_recv_certs_ok_server().  */
   started_here = chan->conn->handshake_state->started_here;
 
-  if (chan->conn->base_.state != OR_CONN_STATE_OR_HANDSHAKING_V3)
-    ERR("We're not doing a v3 handshake!");
   if (chan->conn->link_proto < 3)
     ERR("We're not using link protocol >= 3");
   if (chan->conn->handshake_state->received_certs_cell)
@@ -2296,6 +2319,8 @@ channel_tls_process_auth_challenge_cell(var_cell_t *cell, channel_tls_t *chan)
     ERR("We're not currently doing a v3 handshake");
   if (chan->conn->link_proto < 3)
     ERR("We're not using link protocol >= 3");
+  if (BUG(!chan->conn->handshake_state))
+    ERR("Handshake state not present.");
   if (!(chan->conn->handshake_state->started_here))
     ERR("We didn't originate this connection");
   if (chan->conn->handshake_state->received_auth_challenge)
@@ -2399,6 +2424,8 @@ channel_tls_process_authenticate_cell(var_cell_t *cell, channel_tls_t *chan)
     ERR("We're not doing a v3 handshake");
   if (chan->conn->link_proto < 3)
     ERR("We're not using link protocol >= 3");
+  if (BUG(!chan->conn->handshake_state))
+    ERR("Handshake state not present.");
   if (chan->conn->handshake_state->started_here)
     ERR("We originated this connection");
   if (chan->conn->handshake_state->received_authenticate)

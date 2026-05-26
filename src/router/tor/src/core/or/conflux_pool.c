@@ -196,8 +196,7 @@ conflux_free_(conflux_t *cfx)
   } SMARTLIST_FOREACH_END(leg);
   smartlist_free(cfx->legs);
 
-  SMARTLIST_FOREACH(cfx->ooo_q, conflux_msg_t *, cell,
-                    conflux_relay_msg_free(cell));
+  conflux_clear_ooo_q(cfx);
   smartlist_free(cfx->ooo_q);
 
   memwipe(cfx->nonce, 0, sizeof(cfx->nonce));
@@ -1411,9 +1410,16 @@ conflux_predict_new(time_t now)
 }
 
 /** Return the first circuit from the linked pool that will work with the conn.
- * If no such circuit exists, return NULL. */
+ * If no such circuit exists, return NULL.
+ *
+ * The need_internal argument must match the caller's stream requirement. When
+ * it is true (for example, for anonymized directory requests), non-internal
+ * conflux circuits are excluded by circuit_is_acceptable(). At present,
+ * conflux circuits in this pool are non-internal.
+ */
 origin_circuit_t *
-conflux_get_circ_for_conn(const entry_connection_t *conn, time_t now)
+conflux_get_circ_for_conn(const entry_connection_t *conn, time_t now,
+                          int need_internal)
 {
   /* Use conn to check the exit policy of the first circuit
    * of each set in the linked pool. */
@@ -1434,12 +1440,16 @@ conflux_get_circ_for_conn(const entry_connection_t *conn, time_t now)
     }
     origin_circuit_t *ocirc = TO_ORIGIN_CIRCUIT(leg->circ);
 
-    /* Make sure the connection conforms with the exit policy and the isolation
-     * flags also allows it. */
+    /* Make sure the connection conforms with the exit policy and isolation
+     * flags.
+     *
+     * Conflux circuits in this pool are currently built as non-internal,
+     * so a true need_internal requirement will reject them.
+     */
     if (!circuit_is_acceptable(ocirc, conn, 1 /* Must be open */,
                                CIRCUIT_PURPOSE_CONFLUX_LINKED,
                                1 /* Need uptime */,
-                               0 /* No need for internal */, now)) {
+                               need_internal, now)) {
       continue;
     }
 

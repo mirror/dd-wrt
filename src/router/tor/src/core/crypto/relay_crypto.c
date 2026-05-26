@@ -23,6 +23,7 @@
 #include "core/or/sendme.h"
 
 #include "core/or/or_circuit_st.h"
+#include "core/or/cell_st.h"
 #include "core/or/origin_circuit_st.h"
 
 #define CGO_AES_BITS 128
@@ -262,8 +263,10 @@ relay_encrypt_cell_outbound(cell_t *cell,
  *
  * The integrity field and recognized field of <b>cell</b>'s relay headers
  * must be set to zero.
+ *
+ * Returns 0 on success, -1 on error.
  */
-void
+int
 relay_encrypt_cell_inbound(cell_t *cell,
                            or_circuit_t *or_circ)
 {
@@ -271,14 +274,21 @@ relay_encrypt_cell_inbound(cell_t *cell,
   switch (crypto->kind) {
     case RCK_TOR1:
       tor1_crypt_relay_originate(&crypto->c.tor1, cell);
-      break;
+      return 0;
     case RCK_CGO: {
       const uint8_t *tag = NULL;
       cgo_crypt_relay_originate(crypto->c.cgo.back, cell, &tag);
       tor_assert(tag);
       memcpy(&crypto->c.cgo.last_tag, tag, SENDME_TAG_LEN_CGO);
-      break;
+      return 0;
     }
+    default:
+      /* Do not silently accept unknown crypto algs as a no-op.
+       * This mitigates the heap spray vector used in #41243.
+       * (heap spray vectors in Tor are rare, so this is worthwhile). */
+      tor_fragile_assert();
+      memwipe(cell, 0, sizeof(*cell));
+      return -1;
   }
 }
 

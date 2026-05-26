@@ -224,6 +224,23 @@ test_cfmt_begin_cells(void *arg)
   make_relay_msg(&msg, RELAY_COMMAND_BEGIN, "a.b:80", 6);
   tt_int_op(-1, OP_EQ, begin_cell_parse(&msg, &bcell, &end_reason));
 
+  /* bad begin cell: this makes sure we never read out of bound (#41245).
+   *
+   * We set 10 bytes in the payload (address + 3 bytes of flags). Omitting the
+   * last flag byte triggers an off-by-one: the buggy condition (>=) would read
+   * out of ound. The fixed condition (>) does not set flags at all. */
+  memset(&bcell, 0x7f, sizeof(bcell));
+  const char payload[] = "a.b:80\x00\x42\x43\x44";
+  make_relay_msg(&msg, RELAY_COMMAND_BEGIN, payload, sizeof(payload) - 1);
+  tt_int_op(0, OP_EQ, begin_cell_parse(&msg, &bcell, &end_reason));
+  tt_int_op(5, OP_EQ, bcell.stream_id);
+  tt_str_op("a.b", OP_EQ, bcell.address);
+  tt_int_op(80, OP_EQ, bcell.port);
+  /* With the bug it would be 0x424344<junk> */
+  tt_int_op(0, OP_EQ, bcell.flags);
+  tt_int_op(0, OP_EQ, bcell.is_begindir);
+  tor_free(bcell.address);
+
  done:
   tor_free(bcell.address);
 }

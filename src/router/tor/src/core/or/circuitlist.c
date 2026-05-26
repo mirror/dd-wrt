@@ -708,6 +708,18 @@ circuit_close_all_marked(void)
   smartlist_clear(circuits_pending_close);
 }
 
+#ifdef TOR_UNIT_TESTS
+/** Return the number of circuits on the circuits_pending_close list.
+ *  Exposed for testing. */
+STATIC int
+circuit_count_pending_close(void)
+{
+  if (!circuits_pending_close)
+    return 0;
+  return smartlist_len(circuits_pending_close);
+}
+#endif
+
 /** Return a pointer to the global list of circuits. */
 MOCK_IMPL(smartlist_t *,
 circuit_get_global_list,(void))
@@ -2203,6 +2215,14 @@ circuit_mark_for_close_, (circuit_t *circ, int reason, int line,
 
     /* We don't send reasons when closing circuits at the origin. */
     reason = END_CIRC_REASON_NONE;
+  }
+
+  /* If a callback above (e.g. pathbias probing failing to send on a full
+   * queue) recursively called circuit_mark_for_close on this circuit, it is
+   * already marked and on circuits_pending_close. Bail out to avoid
+   * performing cleanup twice. */
+  if (circ->marked_for_close) {
+    return;
   }
 
   circuit_synchronize_written_or_bandwidth(circ, CIRCUIT_N_CHAN);

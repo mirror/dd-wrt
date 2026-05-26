@@ -333,7 +333,7 @@ circuit_is_better(const origin_circuit_t *oa, const origin_circuit_t *ob,
  * If it's INTRODUCE_ACK_WAIT and must_be_open==0, then return the
  * closest introduce-purposed circuit that you can find.
  */
-static origin_circuit_t *
+STATIC origin_circuit_t *
 circuit_get_best(const entry_connection_t *conn,
                  int must_be_open, uint8_t purpose,
                  int need_uptime, int need_internal)
@@ -357,7 +357,7 @@ circuit_get_best(const entry_connection_t *conn,
   // Prefer pre-built conflux circuits here, if available but only for general
   // purposes. We don't have onion service conflux support at the moment.
   if (purpose == CIRCUIT_PURPOSE_C_GENERAL &&
-      (best = conflux_get_circ_for_conn(conn, now_sec))) {
+      (best = conflux_get_circ_for_conn(conn, now_sec, need_internal))) {
     return best;
   }
 
