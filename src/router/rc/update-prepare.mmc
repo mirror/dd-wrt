@@ -1,0 +1,58 @@
+#!/bin/sh
+copylibs(){
+P=$2
+/usr/sbin/ldd.sh $1 | awk '{if (NF == 4) print $1" "$3}' | while read link file
+do
+		DIR=`dirname $file`
+		if [ ! -d ${DIR} ]
+		then
+			mkdir -p ${P}/${DIR}
+		fi
+
+		if [ -L $file ] ;then 
+			ODIR="$PWD"
+			LFILEDIR="$(dirname $file)"
+			cd "$LFILEDIR"
+			lfile="$(ls -l $file | awk '{print $NF}')"
+			cp -a $lfile ${P}/${LFILEDIR}/ 2>&1 | grep -v "File exists"
+			cd "$ODIR"
+		fi
+
+		cp -a $file ${P}/${DIR}/ 2>&1 | grep -v "File exists"
+		cp -a ${DIR}/${link} ${P}/${DIR}/ 2>&1 | grep -v "File exists"
+done
+}
+R=/tmp/new_root/
+# for pivot we need a new root, folder is not enough
+mkdir -p ${R}
+mount -n -t tmpfs none $R
+mkdir -p ${R}/tmp
+
+for i in etc bin lib usr/lib sbin proc dev sys usr/sbin usr/bin oldroot
+do
+	mkdir -p ${R}/$i
+done
+for i in /bin/busybox /bin/sh /bin/mount /bin/umount /bin/sync /bin/ls /bin/cat /bin/ps /bin/cp /bin/login /bin/mv /sbin/reboot \
+		/sbin/pivot_root /usr/sbin/chroot /bin/dd /bin/sleep /bin/echo /sbin/write /sbin/mtd /bin/init /sbin/hotplug2 \
+	/sbin/rc /sbin/hdparm /sbin/event /sbin/startservice /sbin/stopservice /sbin/service /sbin/servicemanager /sbin/write /sbin/ledtool \
+	/usr/sbin/httpd /sbin/service /usr/sbin/writetool /sbin/watchdog \
+	/usr/sbin/sdparm /usr/sbin/wpa_supplicant  /usr/sbin/hostapd  /usr/sbin/wpad /usr/bin/killall
+do
+	cp -a $i $R/$i
+	copylibs $i $R
+done
+
+#for httpd:
+# for big mem routers ok, this is mostly 2.xMB
+cp /etc/www $R/etc
+cat /etc/passwd >$R/etc/passwd
+mount -t proc proc ${R}proc 
+mount -t sysfs sys ${R}sys 
+#mount -o remount,ro /usr/local
+#umount /usr/local
+cp -av /dev ${R}/
+#ignore stopping of watchdog
+rm -f /tmp/services/watchdog.0
+
+cd ${R}
+pivot_root . oldroot

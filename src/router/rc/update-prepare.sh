@@ -71,8 +71,8 @@ do
 	mkdir -p ${R}/$i
 done
 for i in /bin/busybox /bin/sh /bin/mount /bin/umount /bin/sync /bin/ls /bin/cat /bin/ps /bin/cp /bin/login /bin/mv /sbin/reboot \
-		/sbin/pivot_root /usr/sbin/chroot /bin/dd /bin/sleep /bin/echo /sbin/mtd /sbin/hotplug2 \
-	/sbin/rc /sbin/hdparm /sbin/event /sbin/startservice /sbin/stopservice /sbin/service /sbin/write /sbin/ledtool \
+		/sbin/pivot_root /usr/sbin/chroot /bin/dd /bin/sleep /bin/echo /sbin/write /sbin/mtd /bin/init /sbin/hotplug2 \
+	/sbin/rc /sbin/hdparm /sbin/event /sbin/startservice /sbin/stopservice /sbin/service /sbin/servicemanager /sbin/write /sbin/ledtool \
 	/usr/sbin/httpd /sbin/service /usr/sbin/writetool /sbin/watchdog \
 	/usr/sbin/sdparm /usr/sbin/wpa_supplicant  /usr/sbin/hostapd  /usr/sbin/wpad /usr/bin/killall
 do
