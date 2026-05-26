@@ -1357,6 +1357,16 @@ void of_set_phy_eee_broken(struct phy_device *phydev);
 int phy_speed_down_core(struct phy_device *phydev);
 
 /**
+ * phy_set_eee_broken - Mark an EEE mode as broken so that it isn't advertised.
+ * @phydev: The phy_device struct
+ * @link_mode: The broken EEE mode
+ */
+static inline void phy_set_eee_broken(struct phy_device *phydev, u32 link_mode)
+{
+	phydev->eee_broken_modes |= link_mode;
+}
+
+/**
  * phy_is_started - Convenience function to check whether PHY is started
  * @phydev: The phy_device struct
  */

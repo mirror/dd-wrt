@@ -1,12 +1,15 @@
 # SPDX-License-Identifier: GPL-2.0-only
 config REALTEK_PHY
 	tristate "Realtek PHYs"
+	select PHY_COMMON_PROPS
 	select PHY_PACKAGE
 	help
 	  Currently supports RTL821x/RTL822x and fast ethernet PHYs
 
 config REALTEK_PHY_MULTIPORT
 	tristate "Realtek multiport PHYs"
+	depends on PHYLIB
+	select PHY_PACKAGE
 	help
 	  Currently supports RTL8214x/RTL8218x gigabit multiport PHYs
 

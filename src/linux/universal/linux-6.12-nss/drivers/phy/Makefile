@@ -3,6 +3,8 @@
 # Makefile for the phy drivers.
 #
 
+obj-$(CONFIG_PHY_COMMON_PROPS)		+= phy-common-props.o
+obj-$(CONFIG_PHY_COMMON_PROPS_TEST)	+= phy-common-props-test.o
 obj-$(CONFIG_GENERIC_PHY)		+= phy-core.o
 obj-$(CONFIG_PHY_AR7100_USB)		+= phy-ar7100-usb.o
 obj-$(CONFIG_PHY_AR7200_USB)		+= phy-ar7200-usb.o
