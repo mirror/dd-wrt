@@ -1227,7 +1227,6 @@ ifeq ($(CONFIG_VENTANA),y)
 	install update-prepare.sh $(INSTALLDIR)/usr/sbin	
 	install update-after-pivot.sh $(INSTALLDIR)/usr/sbin	
 	install ldd.sh $(INSTALLDIR)/usr/sbin
-	install update-prepare.mmc $(INSTALLDIR)/usr/sbin	
 endif
 ifeq ($(CONFIG_IPQ6018),y)
 	install ldd.sh $(INSTALLDIR)/usr/sbin
@@ -1238,7 +1237,6 @@ ifeq ($(CONFIG_NEWPORT),y)
 	install -D update-after-pivot.sh.newport $(INSTALLDIR)/usr/sbin/update-after-pivot.sh
 	install ldd.sh $(INSTALLDIR)/usr/sbin
 	install writetool $(INSTALLDIR)/usr/sbin
-	install update-prepare.mmc $(INSTALLDIR)/usr/sbin	
 endif
 ifeq ($(CONFIG_OCTEON),y)
 	install update-prepare.sh $(INSTALLDIR)/usr/sbin	
