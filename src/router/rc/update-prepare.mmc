@@ -70,11 +70,9 @@ killall wdswatchdog.sh
 killall schedulerb.sh
 killall proxywatchdog.sh
 
-service syslog stop
 mount -f -o remount,ro /jffs
 umount -r -f /jffs
 umount -r -f /usr/local
 mount -f -o remount,ro /
-service syslog start
 
 pivot_root . oldroot
