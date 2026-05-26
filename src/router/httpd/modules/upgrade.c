@@ -81,7 +81,6 @@ static int do_upgrade_cgi(unsigned char method, struct mime_handler *handler, ch
 	 * Reboot if successful 
 	 */
 	if (stream->upgrade_ret == 0) {
-		nvram_set("shutdown", "fast");
 		sys_reboot();
 	}
 #else

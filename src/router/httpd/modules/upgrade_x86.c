@@ -64,7 +64,6 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url,
 	 */
 	if (stream->upgrade_ret == 0) {
 		eval("umount", "/usr/local");
-		nvram_set("shutdown", "fast");
 		sys_reboot();
 	}
 #else
