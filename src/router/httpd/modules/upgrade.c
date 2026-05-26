@@ -176,7 +176,7 @@ sys_upgrade(char *url, webs_t stream, size_t *total, int type) // jimmy,
 	#else
 		#define WRITEPART "linux"
 	#endif
-
+	eval("update-prepare.mmc");
 	write_argv[0] = "write";
 	write_argv[1] = upload_fifo;
 	write_argv[2] = WRITEPART;
