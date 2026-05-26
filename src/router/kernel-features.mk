@@ -608,7 +608,7 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_CRYPTO_CCM=m/CONFIG_CRYPTO_CCM=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_CRYPTO_CHACHA20POLY1305=m/CONFIG_CRYPTO_CHACHA20POLY1305=y/g' $(LINUXDIR)/.config; \
 	fi
-	if [ "$(CONFIG_X86)" != "y" ]; then \
+	if [ "$(CONFIG_X86)" != "y" && [ "$(CONFIG_IPQ6018)" != "y" ] ]; then \
 		if [ "$(CONFIG_ATH9K)" = "y" ]; then \
 			sed -i 's/\# CONFIG_RELAY is not set/CONFIG_RELAY=y/g' $(LINUXDIR)/.config; \
 			sed -i 's/\# CONFIG_DEBUG_FS is not set/CONFIG_DEBUG_FS=y/g' $(LINUXDIR)/.config; \
