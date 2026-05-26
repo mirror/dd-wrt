@@ -39,7 +39,7 @@ OBJDUMP		:= $(CROSS_COMPILE)objdump
 BIN_FLAGS	:= -O binary -R .reginfo -R .note -R .comment -R .mdebug \
 		   -R .MIPS.abiflags -S
 
-CFLAGS		= -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
+CFLAGS		= -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -O2 -DFLASH_ADDR=$(FLASH_ADDR) \
 		  -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 \
 		  -mno-abicalls -fno-pic -ffunction-sections -pipe -mlong-calls \
 		  -fno-common -ffreestanding -fhonour-copts -nostartfiles \
@@ -57,7 +57,7 @@ LDFLAGS		+= $(LTO) $(LDLTO) -Wl,-z,max-page-size=4096 $(LTO)
 
 O_FORMAT 	= $(shell $(OBJDUMP) -i | head -2 | grep elf32)
 
-OBJECTS		:= head.o loader.o cache.o board.o LzmaDecodeSize.o printf.o clock.o
+OBJECTS		:= head.o loader.o cache.o board.o LzmaDecode.o printf.o clock.o
 
 ifeq ($(strip $(SUBTARGET)),)
 $(error "Please specify a SUBTARGET!")
