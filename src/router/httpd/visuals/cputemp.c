@@ -96,6 +96,10 @@ static SENSORMAPS maps[] = {
 	{ "90000mdio100", "Aquantia Phy0" },
 	{ "90000mdio107", "Aquantia Phy1" },
 	{ "90000mdio108", "Aquantia Phy1" },
+#ifdef HAVE_IPQ90XX
+	{ "90000.mdio_1:01", "LAN1 (GPHY211C)" },
+	{ "90000.mdio_1:1c", "LAN2 (RTL8261BE)" },
+#endif
 	{ "TX_power", "TX Power" },
 	{ "RX_power", "RX Power" },
 	{ "bias", "Bias" },
