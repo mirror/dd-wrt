@@ -474,11 +474,11 @@ rewrite:;
 	}
 #endif
 	fseek(f_kernel, 0, SEEK_END);
-	size_t kernellen = ftello(f_kernel);
+	off_t kernellen = ftello(f_kernel);
 	rewind(f_kernel);
 
 	fseek(f_rootfs, 0, SEEK_END);
-	size_t rootfslen = ftello(f_rootfs);
+	off_t rootfslen = ftello(f_rootfs);
 	rewind(f_rootfs);
 
 	if (STORE32_LE(trx.flag_version) & TRX_NO_HEADER)

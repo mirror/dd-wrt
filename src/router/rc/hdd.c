@@ -420,7 +420,7 @@ rewrite:;
 	}
 
 	fseek(f_kernel, 0, SEEK_END);
-	size_t kernellen = ftello(f_kernel);
+	off_t kernellen = ftello(f_kernel);
 	rewind(f_kernel);
 
 	if (STORE32_LE(trx.flag_version) & TRX_NO_HEADER)
