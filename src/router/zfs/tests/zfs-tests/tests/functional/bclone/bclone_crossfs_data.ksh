@@ -32,6 +32,13 @@ verify_runnable "both"
 
 verify_crossfs_block_cloning
 
+function cleanup
+{
+	log_must zfs inherit compress $TESTSRCFS
+	log_must zfs inherit compress $TESTDSTFS
+}
+log_onexit cleanup
+
 log_assert "Verify block cloning properly clones regular files across datasets"
 
 # Disable compression to make sure we won't use embedded blocks.
@@ -42,5 +49,8 @@ for filesize in 1 107 113 511 512 513 4095 4096 4097 131071 131072 131073 \
   1048575 1048576 1048577 4194303 4194304 4194305; do
     bclone_test random $filesize false $TESTSRCDIR $TESTDSTDIR
 done
+
+sync_pool $TESTPOOL
+log_must zdb -b $TESTPOOL
 
 log_pass

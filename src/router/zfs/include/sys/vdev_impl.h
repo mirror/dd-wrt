@@ -155,14 +155,6 @@ struct vdev_queue {
 	kmutex_t	vq_lock;
 };
 
-typedef enum vdev_alloc_bias {
-	VDEV_BIAS_NONE,
-	VDEV_BIAS_LOG,		/* dedicated to ZIL data (SLOG) */
-	VDEV_BIAS_SPECIAL,	/* dedicated to ddt, metadata, and small blks */
-	VDEV_BIAS_DEDUP		/* dedicated to dedup metadata */
-} vdev_alloc_bias_t;
-
-
 /*
  * On-disk indirect vdev state.
  *
@@ -425,6 +417,7 @@ struct vdev {
 	boolean_t	vdev_resilver_deferred;  /* resilver deferred */
 	boolean_t	vdev_kobj_flag; /* kobj event record */
 	boolean_t	vdev_attaching; /* vdev attach ashift handling */
+	boolean_t	vdev_is_blkdev; /* vdev is backed by block device */
 	vdev_queue_t	vdev_queue;	/* I/O deadline schedule queue	*/
 	spa_aux_vdev_t	*vdev_aux;	/* for l2cache and spares vdevs	*/
 	zio_t		*vdev_probe_zio; /* root of current probe	*/
@@ -473,6 +466,7 @@ struct vdev {
 	boolean_t	vdev_slow_io_events;
 	uint64_t	vdev_slow_io_n;
 	uint64_t	vdev_slow_io_t;
+	uint64_t	vdev_scheduler; /* control how I/Os are submitted */
 };
 
 #define	VDEV_PAD_SIZE		(8 << 10)

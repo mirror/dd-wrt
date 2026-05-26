@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: CDDL-1.0
 libzfs_la_CFLAGS  = $(AM_CFLAGS) $(LIBRARY_CFLAGS)
 libzfs_la_CFLAGS += $(LIBCRYPTO_CFLAGS) $(ZLIB_CFLAGS)
 libzfs_la_CFLAGS += -fvisibility=hidden
@@ -15,6 +16,7 @@ dist_libzfs_la_SOURCES = \
 	%D%/libzfs_diff.c \
 	%D%/libzfs_import.c \
 	%D%/libzfs_iter.c \
+	%D%/libzfs_mnttab.c \
 	%D%/libzfs_mount.c \
 	%D%/libzfs_pool.c \
 	%D%/libzfs_share.c \
@@ -57,6 +59,15 @@ nodist_libzfs_la_SOURCES = \
 	module/zcommon/zfs_valstr.c \
 	module/zcommon/zpool_prop.c \
 	module/zcommon/zprop_common.c
+
+# Special case:
+#
+# We need to include btree.c and range_tree.c as SOURCES rather than
+# LIBADD'ing them.  This is because  LIBADD'ing them will add their symbols to
+# the libzfs API, which we do not want at this time.
+nodist_libzfs_la_SOURCES += \
+	module/zfs/btree.c \
+	module/zfs/range_tree.c
 
 libzfs_la_LIBADD = \
 	libzfs_core.la \

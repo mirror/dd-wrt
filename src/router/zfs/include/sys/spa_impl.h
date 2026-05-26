@@ -52,6 +52,7 @@
 #include <sys/dsl_crypt.h>
 #include <sys/zfeature.h>
 #include <sys/zthr.h>
+#include <sys/arc_impl.h>
 #include <sys/dsl_deadlist.h>
 #include <zfeature_common.h>
 
@@ -221,12 +222,14 @@ struct spa {
 	 * Fields protected by spa_namespace_lock.
 	 */
 	char		spa_name[ZFS_MAX_DATASET_NAME_LEN];	/* pool name */
+	char		*spa_load_name;		/* unmodified pool name */
 	char		*spa_comment;		/* comment */
 	avl_node_t	spa_avl;		/* node in spa_namespace_avl */
 	nvlist_t	*spa_config;		/* last synced config */
 	nvlist_t	*spa_config_syncing;	/* currently syncing config */
 	nvlist_t	*spa_config_splitting;	/* config for splitting */
 	nvlist_t	*spa_load_info;		/* info and errors from load */
+	nvlist_t	*spa_create_info;	/* info from create */
 	uint64_t	spa_config_txg;		/* txg of last config change */
 	uint32_t	spa_sync_pass;		/* iterate-to-convergence */
 	pool_state_t	spa_state;		/* pool state */
@@ -283,6 +286,7 @@ struct spa {
 	spa_aux_vdev_t	spa_spares;		/* hot spares */
 	spa_aux_vdev_t	spa_l2cache;		/* L2ARC cache devices */
 	boolean_t	spa_aux_sync_uber;	/* need to sync aux uber */
+	l2arc_info_t	spa_l2arc_info;		/* L2ARC state and stats */
 	nvlist_t	*spa_label_features;	/* Features for reading MOS */
 	uint64_t	spa_config_object;	/* MOS object for pool config */
 	uint64_t	spa_config_generation;	/* config generation number */
@@ -295,6 +299,7 @@ struct spa {
 	void		*spa_cksum_tmpls[ZIO_CHECKSUM_FUNCTIONS];
 	uberblock_t	spa_ubsync;		/* last synced uberblock */
 	uberblock_t	spa_uberblock;		/* current uberblock */
+	boolean_t	spa_activity_check; 	/* activity check required */
 	boolean_t	spa_extreme_rewind;	/* rewind past deferred frees */
 	kmutex_t	spa_scrub_lock;		/* resilver/scrub lock */
 	uint64_t	spa_scrub_inflight;	/* in-flight scrub bytes */

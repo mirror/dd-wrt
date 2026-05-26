@@ -11,6 +11,7 @@ zfs_include = @abs_top_srcdir@/include
 icp_include = @abs_srcdir@/icp/include
 zstd_include = @abs_srcdir@/zstd/include
 ZFS_MODULE_CFLAGS += -include @abs_top_builddir@/zfs_config.h
+ZFS_MODULE_CFLAGS += -include $(zfs_include)/sys/simd_config.h
 ZFS_MODULE_CFLAGS += -I@abs_top_builddir@/include
 src = @abs_srcdir@
 obj = @abs_builddir@
@@ -19,6 +20,7 @@ zfs_include = $(srctree)/include/zfs
 icp_include = $(src)/icp/include
 zstd_include = $(src)/zstd/include
 ZFS_MODULE_CFLAGS += -include $(zfs_include)/zfs_config.h
+ZFS_MODULE_CFLAGS += -include $(zfs_include)/sys/simd_config.h
 endif
 
 ZFS_MODULE_CFLAGS += -I$(zfs_include)/os/linux/kernel
@@ -47,6 +49,13 @@ CFLAGS_zfs/range_tree.o += -mllvm -x86-cmov-converter=false
 CFLAGS_zfs/zap_micro.o += -mllvm -x86-cmov-converter=false
 endif
 endif
+
+# These are internal functions for 64-bit math on 32-bit platforms. The
+# compiler will generate references to them if necessary, to be resolved at
+# link time. We don't need or provide prototypes for them, so we disable
+# warnings that would complain about them.
+CFLAGS_REMOVE_os/linux/spl/spl-math-compat.o += -Wmissing-prototypes
+CFLAGS_REMOVE_os/linux/spl/spl-math-compat.o += -Wmissing-declarations
 
 ifneq ($(KBUILD_EXTMOD),)
 @CONFIG_QAT_TRUE@ZFS_MODULE_CFLAGS += -I@QAT_SRC@/include
@@ -79,7 +88,6 @@ ccflags-$(CONFIG_SPARC64) += -Wno-unused-value
 obj-$(CONFIG_ZFS) := spl.o zfs.o
 
 SPL_OBJS := \
-	spl-atomic.o \
 	spl-condvar.o \
 	spl-cred.o \
 	spl-err.o \
@@ -87,6 +95,7 @@ SPL_OBJS := \
 	spl-kmem-cache.o \
 	spl-kmem.o \
 	spl-kstat.o \
+	spl-math-compat.o \
 	spl-proc.o \
 	spl-procfs-list.o \
 	spl-shrinker.o \
@@ -263,10 +272,19 @@ ZFS_ZSTD_FLAGS := -O3
 ZFS_ZSTD_FLAGS += -fno-tree-vectorize
 
 # SSE register return with SSE disabled if -march=znverX is passed
-ZFS_ZSTD_FLAGS += -U__BMI__ -U__BMI2__ -DZSTD_NO_TRACE
+ZFS_ZSTD_FLAGS += -U__BMI__
 
 # Quiet warnings about frame size due to unused code in unmodified zstd lib
 ZFS_ZSTD_FLAGS += -Wframe-larger-than=20480
+
+# Disable assembly for kernel compatibility
+ZFS_ZSTD_FLAGS += -DZSTD_DISABLE_ASM
+
+# Disable intrinsics for EL10 x86_64-v3 baseline
+ZFS_ZSTD_FLAGS += -DZSTD_NO_INTRINSICS
+
+# Disable tracing for kernel builds
+ZFS_ZSTD_FLAGS += -DZSTD_TRACE=0
 
 ZSTD_OBJS := \
 	zfs_zstd.o \
@@ -278,7 +296,6 @@ ZSTD_UPSTREAM_OBJS := \
 	lib/common/fse_decompress.o \
 	lib/common/pool.o \
 	lib/common/zstd_common.o \
-	lib/common/xxhash.o \
 	lib/compress/fse_compress.o \
 	lib/compress/hist.o \
 	lib/compress/huf_compress.o \
@@ -291,19 +308,16 @@ ZSTD_UPSTREAM_OBJS := \
 	lib/compress/zstd_lazy.o \
 	lib/compress/zstd_ldm.o \
 	lib/compress/zstd_opt.o \
+	lib/compress/zstd_preSplit.o \
 	lib/decompress/huf_decompress.o \
 	lib/decompress/zstd_ddict.o \
 	lib/decompress/zstd_decompress.o \
 	lib/decompress/zstd_decompress_block.o
 
-ZSTD_OBJS_X86_64 := lib/decompress/huf_decompress_amd64.o
-
 zfs-objs += $(addprefix zstd/,$(ZSTD_OBJS) $(ZSTD_UPSTREAM_OBJS))
-zfs-$(CONFIG_X86_64)   += $(addprefix zstd/,$(ZSTD_OBJS_X86_64))
 
-# Disable aarch64 neon SIMD instructions for kernel mode
-$(addprefix $(obj)/zstd/,$(ZSTD_OBJS) $(ZSTD_UPSTREAM_OBJS) $(ZSTD_OBJS_X86_64)) : ccflags-y += -I$(zstd_include) $(ZFS_ZSTD_FLAGS)
-$(addprefix $(obj)/zstd/,$(ZSTD_OBJS) $(ZSTD_UPSTREAM_OBJS) $(ZSTD_OBJS_X86_64)) : asflags-y += -I$(zstd_include)
+$(addprefix $(obj)/zstd/,$(ZSTD_OBJS) $(ZSTD_UPSTREAM_OBJS)) : ccflags-y += -I$(zstd_include) $(ZFS_ZSTD_FLAGS)
+$(addprefix $(obj)/zstd/,$(ZSTD_OBJS) $(ZSTD_UPSTREAM_OBJS)) : asflags-y += -I$(zstd_include)
 $(addprefix $(obj)/zstd/,$(ZSTD_UPSTREAM_OBJS)) : ccflags-y += -include $(zstd_include)/zstd_compat_wrapper.h -Wp,-w
 $(obj)/zstd/zfs_zstd.o : ccflags-y += -include $(zstd_include)/zstd_compat_wrapper.h
 
@@ -404,6 +418,8 @@ ZFS_OBJS := \
 	vdev_root.o \
 	vdev_trim.o \
 	zap.o \
+	zap_fat.o \
+	zap_impl.o \
 	zap_leaf.o \
 	zap_micro.o \
 	zcp.o \

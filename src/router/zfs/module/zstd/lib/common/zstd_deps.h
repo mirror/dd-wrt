@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSD-3-Clause OR GPL-2.0-only
 /*
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  * All rights reserved.
@@ -23,6 +24,18 @@
  */
 #ifndef ZSTD_DEPS_COMMON
 #define ZSTD_DEPS_COMMON
+
+/* Even though we use qsort_r only for the dictionary builder, the macro
+ * _GNU_SOURCE has to be declared *before* the inclusion of any standard
+ * header and the script 'combine.sh' combines the whole zstd source code
+ * in a single file.
+ */
+#if defined(__linux) || defined(__linux__) || defined(linux) || defined(__gnu_linux__) || \
+    defined(__CYGWIN__) || defined(__MSYS__)
+#if !defined(_GNU_SOURCE) && !defined(__ANDROID__) /* NDK doesn't ship qsort_r(). */
+#define _GNU_SOURCE
+#endif
+#endif
 
 #include <limits.h>
 #include <stddef.h>

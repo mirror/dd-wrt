@@ -95,8 +95,7 @@ typedef void arc_prune_func_t(uint64_t bytes, void *priv);
 extern uint_t zfs_arc_average_blocksize;
 extern int l2arc_exclude_special;
 
-/* generic arc_done_func_t's which you can use */
-arc_read_done_func_t arc_bcopy_func;
+/* generic arc_done_func_t which can be used */
 arc_read_done_func_t arc_getbuf_func;
 
 /* generic arc_prune_func_t wrapper for callbacks */
@@ -354,8 +353,6 @@ boolean_t l2arc_range_check_overlap(uint64_t bottom, uint64_t top,
     uint64_t check);
 void l2arc_init(void);
 void l2arc_fini(void);
-void l2arc_start(void);
-void l2arc_stop(void);
 void l2arc_spa_rebuild_start(spa_t *spa);
 void l2arc_spa_rebuild_stop(spa_t *spa);
 

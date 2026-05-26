@@ -44,6 +44,7 @@
 #include <sys/zio.h>
 #include <zfs_fletcher.h>
 #include "zstream.h"
+#include "zstream_util.h"
 
 /*
  * If dump mode is enabled, the number of bytes to print per line
@@ -59,18 +60,6 @@ static uint64_t total_stream_len = 0;
 static FILE *send_stream = 0;
 static boolean_t do_byteswap = B_FALSE;
 static boolean_t do_cksum = B_TRUE;
-
-void *
-safe_malloc(size_t size)
-{
-	void *rv = malloc(size);
-	if (rv == NULL) {
-		(void) fprintf(stderr, "ERROR; failed to allocate %zu bytes\n",
-		    size);
-		abort();
-	}
-	return (rv);
-}
 
 /*
  * ssread - send stream read.
@@ -396,6 +385,20 @@ zstream_do_dump(int argc, char *argv[])
 				(void) ssread(buf, sz, &zc);
 				if (ferror(send_stream))
 					perror("fread");
+
+				uint8_t *nv_header = (uint8_t *)buf;
+				boolean_t xdr = nv_header[0] == NV_ENCODE_XDR;
+				boolean_t big_endian = nv_header[1] == 0;
+				const char *nc;
+				if (xdr) {
+					nc = "NV_ENCODE_XDR";
+				} else if (big_endian) {
+					nc = "NV_ENCODE_NATIVE (big-endian)";
+				} else {
+					nc = "NV_ENCODE_NATIVE (little-endian)";
+				}
+				printf("nvlist encoding = %s\n", nc);
+
 				err = nvlist_unpack(buf, sz, &nv, 0);
 				if (err) {
 					perror(strerror(err));

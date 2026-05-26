@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: CDDL-1.0
 if BUILD_LINUX
 include $(srcdir)/%D%/os/linux/Makefile.am
 endif
@@ -81,6 +82,7 @@ COMMON_H = \
 	sys/sa.h \
 	sys/sa_impl.h \
 	sys/sha2.h \
+	sys/simd_config.h \
 	sys/skein.h \
 	sys/spa.h \
 	sys/spa_checkpoint.h \

@@ -136,6 +136,14 @@ do {									\
 		(uint64_t)(RIGHT);	\
 } while (0)
 
+#define	VERIFY3UF(LEFT, OP, RIGHT, STR, ...)					\
+do {									\
+	const uint64_t __left __attribute__((unused)) = \
+		(uint64_t)(LEFT);	\
+	const uint64_t __right __attribute__((unused)) = \
+		(uint64_t)(RIGHT);	\
+} while (0)
+
 #define	VERIFY3P(LEFT, OP, RIGHT)					\
 do {									\
 	const uintptr_t __left __attribute__((unused)) = \

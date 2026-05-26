@@ -35,7 +35,6 @@
  * Copyright (c) 2018-2020, Sebastian Gottschall
  * Copyright (c) 2019-2020, Michael Niewöhner
  * Copyright (c) 2020, The FreeBSD Foundation [1]
- * Copyright (c) 2020, Mateusz Guzik
  *
  * [1] Portions of this software were developed by Allan Jude
  *     under sponsorship from the FreeBSD Foundation.
@@ -265,6 +264,8 @@ static struct zstd_pool *zstd_mempool_dctx;
 #if defined(ZFS_ASAN_ENABLED)
 #define	ADDRESS_SANITIZER 1
 #endif
+
+/* Kernel space. */
 #if defined(_KERNEL) && defined(ADDRESS_SANITIZER)
 void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
 void __asan_poison_memory_region(void const volatile *addr, size_t size);
@@ -272,6 +273,14 @@ void __asan_unpoison_memory_region(void const volatile *addr, size_t size) {};
 void __asan_poison_memory_region(void const volatile *addr, size_t size) {};
 #endif
 
+/* User space. */
+#if defined(ADDRESS_SANITIZER) && !defined(_KERNEL)
+#define	ZSTD_ASAN_POISON(p, n)   __asan_poison_memory_region((p), (n))
+#define	ZSTD_ASAN_UNPOISON(p, n) __asan_unpoison_memory_region((p), (n))
+#else
+#define	ZSTD_ASAN_POISON(p, n)   do { } while (0)
+#define	ZSTD_ASAN_UNPOISON(p, n) do { } while (0)
+#endif
 
 static void
 zstd_mempool_reap(struct zstd_pool *zstd_mempool)
@@ -409,6 +418,10 @@ zstd_mempool_alloc(struct zstd_pool *zstd_mempool, size_t size)
 static void
 zstd_mempool_free(struct zstd_kmem *z)
 {
+	/* Poison only the user-visible region (exclude header). */
+	ZSTD_ASAN_POISON((char *)z + sizeof (struct zstd_kmem),
+	    z->kmem_size - sizeof (struct zstd_kmem));
+
 	mutex_exit(&z->pool->barrier);
 }
 
@@ -704,7 +717,6 @@ ZFS_COMPRESS_WRAP_DECL(zfs_zstd_compress)
 ZFS_DECOMPRESS_WRAP_DECL(zfs_zstd_decompress)
 ZFS_DECOMPRESS_LEVEL_WRAP_DECL(zfs_zstd_decompress_level)
 
-
 /* Allocator for zstd compression context using mempool_allocator */
 static void *
 zstd_alloc(void *opaque __maybe_unused, size_t size)
@@ -719,7 +731,9 @@ zstd_alloc(void *opaque __maybe_unused, size_t size)
 		return (NULL);
 	}
 
-	return ((void*)z + (sizeof (struct zstd_kmem)));
+	void *p = (char *)z + sizeof (struct zstd_kmem);
+	ZSTD_ASAN_UNPOISON(p, size);
+	return (p);
 }
 
 /*
@@ -734,15 +748,15 @@ zstd_dctx_alloc(void *opaque __maybe_unused, size_t size)
 	enum zstd_kmem_type type = ZSTD_KMEM_DEFAULT;
 
 	z = (struct zstd_kmem *)zstd_mempool_alloc(zstd_mempool_dctx, nbytes);
-	if (!z) {
+	if (z) {
+		type = ZSTD_KMEM_POOL;
+	} else {
 		/* Try harder, decompression shall not fail */
 		z = vmem_alloc(nbytes, KM_SLEEP);
 		if (z) {
 			z->pool = NULL;
 		}
 		ZSTDSTAT_BUMP(zstd_stat_alloc_fail);
-	} else {
-		return ((void*)z + (sizeof (struct zstd_kmem)));
 	}
 
 	/* Fallback if everything fails */
@@ -767,14 +781,17 @@ zstd_dctx_alloc(void *opaque __maybe_unused, size_t size)
 	z->kmem_type = type;
 	z->kmem_size = nbytes;
 
-	return ((void*)z + (sizeof (struct zstd_kmem)));
+	void *p = (char *)z + sizeof (struct zstd_kmem);
+	ZSTD_ASAN_UNPOISON(p, size);
+	return (p);
 }
 
 /* Free allocated memory by its specific type */
 static void
 zstd_free(void *opaque __maybe_unused, void *ptr)
 {
-	struct zstd_kmem *z = (ptr - sizeof (struct zstd_kmem));
+	struct zstd_kmem *z =
+	    (struct zstd_kmem *)((char *)ptr - sizeof (struct zstd_kmem));
 	enum zstd_kmem_type type;
 
 	ASSERT3U(z->kmem_type, <, ZSTD_KMEM_COUNT);
@@ -789,6 +806,8 @@ zstd_free(void *opaque __maybe_unused, void *ptr)
 		zstd_mempool_free(z);
 		break;
 	case ZSTD_KMEM_DCTX:
+		/* Poison fallback user region on release. */
+		ZSTD_ASAN_POISON(ptr, z->kmem_size - sizeof (struct zstd_kmem));
 		mutex_exit(&zstd_dctx_fallback.barrier);
 		break;
 	default:

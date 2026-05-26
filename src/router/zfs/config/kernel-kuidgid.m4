@@ -1,3 +1,4 @@
+dnl # SPDX-License-Identifier: CDDL-1.0
 dnl #
 dnl # User namespaces, use kuid_t in place of uid_t
 dnl # where available. Not strictly a user namespaces thing

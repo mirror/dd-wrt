@@ -40,7 +40,7 @@
 .Sh SYNOPSIS
 .Nm zfs
 .Cm clone
-.Op Fl p
+.Op Fl pu
 .Oo Fl o Ar property Ns = Ns Ar value Oc Ns …
 .Ar snapshot Ar filesystem Ns | Ns Ar volume
 .
@@ -62,8 +62,14 @@ Creates all the non-existing parent datasets.
 Datasets created in this manner are automatically mounted according to the
 .Sy mountpoint
 property inherited from their parent.
+If the
+.Fl p
+option is specified multiple times, parent datasets are created with
+.Sy canmount Ns = Ns Ar off .
 If the target filesystem or volume already exists, the operation completes
 successfully.
+.It Fl u
+Do not mount the newly created file system.
 .El
 .
 .Sh EXAMPLES

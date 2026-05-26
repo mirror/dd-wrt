@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: CDDL-1.0
 scripts_zfs_tests_bindir = $(datadir)/$(PACKAGE)/zfs-tests/bin
 
 
@@ -27,13 +28,14 @@ scripts_zfs_tests_bin_PROGRAMS += %D%/btree_test
 %C%_btree_test_CPPFLAGS = $(AM_CPPFLAGS) $(LIBZPOOL_CPPFLAGS)
 %C%_btree_test_LDADD = \
 	libzpool.la \
-	libzfs_core.la
-
+	libbtree.la
 
 scripts_zfs_tests_bin_PROGRAMS += %D%/crypto_test
 %C%_crypto_test_SOURCES = %D%/crypto_test.c
 %C%_crypto_test_LDADD = libzpool.la
 
+scripts_zfs_tests_bin_PROGRAMS += %D%/clone_after_trunc
+%C%_clone_after_trunc_LDADD = -lpthread
 
 if WANT_DEVNAME2DEVID
 scripts_zfs_tests_bin_PROGRAMS += %D%/devname2devid
@@ -63,6 +65,10 @@ scripts_zfs_tests_bin_PROGRAMS += %D%/libzfs_input_check
 %C%_libzfs_input_check_LDADD = \
 	libzfs_core.la \
 	libnvpair.la
+
+scripts_zfs_tests_bin_PROGRAMS += %D%/libzfs_mnttab_cache_check
+%C%_libzfs_mnttab_cache_check_LDADD = \
+	libzfs.la
 
 scripts_zfs_tests_bin_PROGRAMS += %D%/manipulate_user_buffer
 %C%_manipulate_user_buffer_LDADD = -lpthread
@@ -129,6 +135,7 @@ scripts_zfs_tests_bin_PROGRAMS += %D%/statx
 scripts_zfs_tests_bin_PROGRAMS += %D%/xattrtest
 scripts_zfs_tests_bin_PROGRAMS += %D%/zed_fd_spill-zedlet
 scripts_zfs_tests_bin_PROGRAMS += %D%/idmap_util
+scripts_zfs_tests_bin_PROGRAMS += %D%/setlease
 
 %C%_idmap_util_LDADD = libspl.la
 

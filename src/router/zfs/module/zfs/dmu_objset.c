@@ -3011,7 +3011,7 @@ dmu_objset_get_user(objset_t *os)
 int
 dmu_fsname(const char *snapname, char *buf)
 {
-	char *atp = strchr(snapname, '@');
+	const char *atp = strchr(snapname, '@');
 	if (atp == NULL)
 		return (SET_ERROR(EINVAL));
 	if (atp - snapname >= ZFS_MAX_DATASET_NAME_LEN)
@@ -3044,6 +3044,24 @@ dmu_objset_willuse_space(objset_t *os, int64_t space, dmu_tx_t *tx)
 	}
 
 	dsl_pool_dirty_space(dmu_tx_pool(tx), space, tx);
+}
+
+/*
+ * Check if a block is shared with a snapshot in this objset.
+ * Returns B_TRUE if block was created before or at the time of the
+ * previous snapshot, B_FALSE otherwise.
+ */
+boolean_t
+dmu_objset_block_is_shared(objset_t *os, const blkptr_t *bp)
+{
+	if (BP_IS_HOLE(bp))
+		return (B_FALSE);
+
+	dsl_dataset_t *ds = os->os_dsl_dataset;
+	if (ds == NULL)
+		return (B_FALSE);
+
+	return (BP_GET_BIRTH(bp) <= dsl_dataset_phys(ds)->ds_prev_snap_txg);
 }
 
 #if defined(_KERNEL)
@@ -3090,4 +3108,5 @@ EXPORT_SYMBOL(dmu_objset_projectquota_enabled);
 EXPORT_SYMBOL(dmu_objset_projectquota_present);
 EXPORT_SYMBOL(dmu_objset_projectquota_upgradable);
 EXPORT_SYMBOL(dmu_objset_id_quota_upgrade);
+EXPORT_SYMBOL(dmu_objset_block_is_shared);
 #endif

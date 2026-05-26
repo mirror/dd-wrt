@@ -22,6 +22,7 @@
 
 /*
  * Copyright (c) 2022 Tino Reichardt <milky-zfs@mcmilk.de>
+ * Copyright (c) 2026, TrueNAS.
  */
 
 #include <sys/simd.h>
@@ -64,7 +65,7 @@ const sha512_ops_t sha512_x64_impl = {
 	.name = "x64"
 };
 
-#if defined(HAVE_AVX)
+#if HAVE_SIMD(AVX)
 static boolean_t sha2_have_avx(void)
 {
 	return (kfpu_allowed() && zfs_avx_available());
@@ -78,7 +79,7 @@ const sha512_ops_t sha512_avx_impl = {
 };
 #endif
 
-#if defined(HAVE_AVX2)
+#if HAVE_SIMD(AVX2)
 static boolean_t sha2_have_avx2(void)
 {
 	return (kfpu_allowed() && zfs_avx2_available());
@@ -89,6 +90,20 @@ const sha512_ops_t sha512_avx2_impl = {
 	.is_supported = sha2_have_avx2,
 	.transform = tf_sha512_avx2,
 	.name = "avx2"
+};
+#endif
+
+#if HAVE_SIMD(SHA512EXT)
+static boolean_t sha2_have_sha512ext(void)
+{
+	return (kfpu_allowed() && zfs_sha512ext_available());
+}
+
+TF(zfs_sha512_transform_sha512ext, tf_sha512_sha512ext);
+const sha512_ops_t sha512_sha512ext_impl = {
+	.is_supported = sha2_have_sha512ext,
+	.transform = tf_sha512_sha512ext,
+	.name = "sha512ext"
 };
 #endif
 
@@ -158,11 +173,14 @@ static const sha512_ops_t *const sha512_impls[] = {
 #if defined(__x86_64)
 	&sha512_x64_impl,
 #endif
-#if defined(__x86_64) && defined(HAVE_AVX)
+#if defined(__x86_64) && HAVE_SIMD(AVX)
 	&sha512_avx_impl,
 #endif
-#if defined(__x86_64) && defined(HAVE_AVX2)
+#if defined(__x86_64) && HAVE_SIMD(AVX2)
 	&sha512_avx2_impl,
+#endif
+#if defined(__x86_64) && HAVE_SIMD(SHA512EXT)
+	&sha512_sha512ext_impl,
 #endif
 #if defined(__aarch64__) || defined(__arm__)
 	&sha512_armv7_impl,

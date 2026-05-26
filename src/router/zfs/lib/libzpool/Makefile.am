@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: CDDL-1.0
 include $(srcdir)/%D%/include/Makefile.am
 
 libzpool_la_CFLAGS  = $(AM_CFLAGS) $(KERNEL_CFLAGS) $(LIBRARY_CFLAGS)
@@ -15,6 +16,7 @@ dist_libzpool_la_SOURCES = \
 	%D%/kernel.c \
 	%D%/util.c \
 	%D%/vdev_label_os.c \
+	%D%/zfs_file_os.c \
 	%D%/zfs_racct.c \
 	%D%/zfs_debug.c
 
@@ -73,7 +75,6 @@ nodist_libzpool_la_SOURCES = \
 	module/zfs/bpobj.c \
 	module/zfs/bptree.c \
 	module/zfs/bqueue.c \
-	module/zfs/btree.c \
 	module/zfs/brt.c \
 	module/zfs/dbuf.c \
 	module/zfs/dbuf_stats.c \
@@ -118,7 +119,6 @@ nodist_libzpool_la_SOURCES = \
 	module/zfs/multilist.c \
 	module/zfs/objlist.c \
 	module/zfs/pathname.c \
-	module/zfs/range_tree.c \
 	module/zfs/refcount.c \
 	module/zfs/rrwlock.c \
 	module/zfs/sa.c \
@@ -166,6 +166,8 @@ nodist_libzpool_la_SOURCES = \
 	module/zfs/vdev_root.c \
 	module/zfs/vdev_trim.c \
 	module/zfs/zap.c \
+	module/zfs/zap_fat.c \
+	module/zfs/zap_impl.c \
 	module/zfs/zap_leaf.c \
 	module/zfs/zap_micro.c \
 	module/zfs/zcp.c \
@@ -194,6 +196,15 @@ nodist_libzpool_la_SOURCES = \
 	module/zfs/zle.c \
 	module/zfs/zrlock.c \
 	module/zfs/zthr.c
+
+# Special case:
+#
+# We need to include btree.c and range_tree.c as SOURCES rather than
+# LIBADD'ing them.  This is because  LIBADD'ing them will add their symbols to
+# the libzpool API, which we do not want at this time.
+nodist_libzpool_la_SOURCES += \
+	module/zfs/btree.c \
+	module/zfs/range_tree.c
 
 libzpool_la_LIBADD = \
 	libicp.la \

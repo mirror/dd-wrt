@@ -1,7 +1,11 @@
+# SPDX-License-Identifier: CDDL-1.0
 dist_noinst_man_MANS = \
 	%D%/man1/cstyle.1
 
 dist_man_MANS = \
+	%D%/man1/dbufstat.1 \
+	%D%/man1/zilstat.1 \
+	%D%/man1/zarcsummary.1 \
 	%D%/man1/zarcstat.1 \
 	%D%/man1/raidz_test.1 \
 	%D%/man1/test-runner.1 \
@@ -111,6 +115,7 @@ endif
 
 if BUILD_LINUX
 dist_man_MANS += \
+	%D%/man8/pam_zfs_key.8 \
 	%D%/man8/zfs-unzone.8 \
 	%D%/man8/zfs-zone.8
 endif
@@ -126,17 +131,18 @@ SUBSTFILES += $(nodist_man_MANS)
 
 MANFILES = $(dist_noinst_man_MANS) $(dist_man_MANS) $(nodist_man_MANS)
 
-PHONY += mancheck
-
 mancheck_verbose = $(mancheck_verbose_@AM_V@)
 mancheck_verbose_ = $(mancheck_verbose_@AM_DEFAULT_V@)
-mancheck_verbose_0 = @echo MANCHECK $(_MTGT);
+mancheck_verbose_0 = @echo MANCHECK $<;
 
-_MTGT = $(subst ^,/,$(subst mancheck-,,$@))
-mancheck-%:
-	$(mancheck_verbose)scripts/mancheck.sh $(_MTGT)
+MANCHECK_TARGETS = $(foreach manfile, $(MANFILES), $(addprefix mancheck-,$(manfile)))
 
-mancheck: $(foreach manfile, $(MANFILES), $(addprefix mancheck-,$(subst /,^,$(manfile))))
+PHONY += $(MANCHECK_TARGETS) mancheck
+
+$(MANCHECK_TARGETS): mancheck-%: %
+	$(mancheck_verbose)scripts/mancheck.sh $<
+
+mancheck: $(MANCHECK_TARGETS)
 
 CHECKS += mancheck
 

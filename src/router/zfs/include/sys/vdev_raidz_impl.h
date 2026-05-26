@@ -119,6 +119,7 @@ typedef struct raidz_col {
 	uint8_t rc_need_orig_restore:1;	/* need to restore from orig_data? */
 	uint8_t rc_force_repair:1;	/* Write good data to this column */
 	uint8_t rc_allow_repair:1;	/* Allow repair I/O to this column */
+	uint8_t rc_tgt_is_dspare:1;	/* The target is draid spare vdev */
 	uint8_t rc_latency_outlier:1;	/* Latency outlier for this device */
 	int rc_shadow_devidx;		/* for double write during expansion */
 	int rc_shadow_error;		/* for double write during expansion */
@@ -172,19 +173,19 @@ typedef struct reflow_node {
 extern const raidz_impl_ops_t vdev_raidz_scalar_impl;
 extern boolean_t raidz_will_scalar_work(void);
 
-#if defined(__x86_64) && defined(HAVE_SSE2)	/* only x86_64 for now */
+#if defined(__x86_64) && HAVE_SIMD(SSE2)	/* only x86_64 for now */
 extern const raidz_impl_ops_t vdev_raidz_sse2_impl;
 #endif
-#if defined(__x86_64) && defined(HAVE_SSSE3)	/* only x86_64 for now */
+#if defined(__x86_64) && HAVE_SIMD(SSSE3)	/* only x86_64 for now */
 extern const raidz_impl_ops_t vdev_raidz_ssse3_impl;
 #endif
-#if defined(__x86_64) && defined(HAVE_AVX2)	/* only x86_64 for now */
+#if defined(__x86_64) && HAVE_SIMD(AVX2)	/* only x86_64 for now */
 extern const raidz_impl_ops_t vdev_raidz_avx2_impl;
 #endif
-#if defined(__x86_64) && defined(HAVE_AVX512F)	/* only x86_64 for now */
+#if defined(__x86_64) && HAVE_SIMD(AVX512F)	/* only x86_64 for now */
 extern const raidz_impl_ops_t vdev_raidz_avx512f_impl;
 #endif
-#if defined(__x86_64) && defined(HAVE_AVX512BW)	/* only x86_64 for now */
+#if defined(__x86_64) && HAVE_SIMD(AVX512BW)	/* only x86_64 for now */
 extern const raidz_impl_ops_t vdev_raidz_avx512bw_impl;
 #endif
 #if defined(__aarch64__)

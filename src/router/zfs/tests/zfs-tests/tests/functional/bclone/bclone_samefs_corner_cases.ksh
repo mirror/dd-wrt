@@ -30,6 +30,13 @@
 
 verify_runnable "both"
 
+function cleanup
+{
+	log_must zfs inherit compress $TESTSRCFS
+	log_must zfs inherit recordsize $TESTSRCFS
+}
+log_onexit cleanup
+
 log_assert "Verify various corner cases in block cloning within the same dataset"
 
 # Disable compression to make sure we won't use embedded blocks.
@@ -37,5 +44,8 @@ log_must zfs set compress=off $TESTSRCFS
 log_must zfs set recordsize=$RECORDSIZE $TESTSRCFS
 
 bclone_corner_cases_test $TESTSRCDIR $TESTSRCDIR
+
+sync_pool $TESTPOOL
+log_must zdb -b $TESTPOOL
 
 log_pass

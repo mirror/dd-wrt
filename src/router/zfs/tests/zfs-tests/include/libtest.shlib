@@ -30,6 +30,7 @@
 # Copyright (c) 2017, Open-E Inc. All rights reserved.
 # Copyright (c) 2021, The FreeBSD Foundation.
 # Copyright (c) 2025, Klara, Inc.
+# Copyright (c) 2026, TrueNAS.
 # Use is subject to license terms.
 #
 
@@ -559,7 +560,7 @@ function default_cleanup_noexit
 		# Here, we loop through the pools we're allowed to
 		# destroy, only destroying them if it's safe to do
 		# so.
-		while [ ! -z ${ALL_POOLS} ]
+		while [ -n "${ALL_POOLS}" ]
 		do
 			for pool in ${ALL_POOLS}
 			do
@@ -1168,6 +1169,22 @@ function datasetnonexists
 	done
 
 	return 0
+}
+
+# Check if the specified dataset property has the expected value or fail
+function dataset_has_prop # property expected_value dataset
+{
+	typeset prop=$1
+	typeset expected=$2
+	typeset dataset=$3
+
+	typeset value=""
+
+	value="$(get_prop "$prop" "$dataset")"
+	[[ "$value" == "$expected" ]] || {
+		log_note "dataset $dataset: property $prop == $value (!= $expected)"
+		return 1
+	}
 }
 
 # FreeBSD breaks exports(5) at whitespace and doesn't process escapes
@@ -2004,6 +2021,26 @@ function wait_sit_out #pool vdev timeout
 
 #
 # Check the output of 'zpool status -v <pool>',
+# and to see if the counts of <device> contain the <regex> specified.
+#
+# Return 0 is contain, 1 otherwise
+#
+function check_pool_device # pool device regex <verbose>
+{
+	typeset pool=$1
+	typeset device=$2
+	typeset regex=$3
+	typeset verbose=${4:-false}
+
+	scan=$(zpool status -v "$pool" 2>/dev/null | grep $device)
+	if [[ $verbose == true ]]; then
+		log_note $scan
+	fi
+	echo $scan | grep -qi "$regex"
+}
+
+#
+# Check the output of 'zpool status -v <pool>',
 # and to see if the content of <token> contain the <keyword> specified.
 #
 # Return 0 is contain, 1 otherwise
@@ -2628,9 +2665,14 @@ function verify_opt_p_ops
 	typeset datatype=$2
 	typeset dataset=$3
 	typeset newdataset=$4
+	typeset popt=$5
 
 	if [[ $datatype != "fs" && $datatype != "vol" ]]; then
 		log_fail "$datatype is not supported."
+	fi
+
+	if [[ -z "$popt" ]]; then
+		popt=-p
 	fi
 
 	# check parameters accordingly
@@ -2670,7 +2712,7 @@ function verify_opt_p_ops
 	log_mustnot datasetexists $newdataset ${newdataset%/*}
 
 	# with -p option, operation should succeed
-	log_must zfs $ops -p $dataset $newdataset
+	log_must zfs $ops $popt $dataset $newdataset
 	block_device_wait
 
 	if ! datasetexists $newdataset ; then
@@ -2679,7 +2721,7 @@ function verify_opt_p_ops
 
 	# when $ops is create or clone, redo the operation still return zero
 	if [[ $ops != "rename" ]]; then
-		log_must zfs $ops -p $dataset $newdataset
+		log_must zfs $ops $popt $dataset $newdataset
 	fi
 
 	return 0
@@ -2896,7 +2938,7 @@ function is_mp
 function get_cpu_freq
 {
 	if is_linux; then
-		lscpu | awk '/CPU MHz/ { print $3 }'
+		lscpu | awk '/CPU( max)? MHz/ { print $NF }'
 	elif is_freebsd; then
 		sysctl -n hw.clockrate
 	else
@@ -3135,6 +3177,21 @@ function wait_scrubbed #pool timeout
        typeset pool=${1:-$TESTPOOL}
        for (( timer = 0; timer < $timeout; timer++ )); do
                is_pool_scrubbed $pool && break;
+               sleep 1;
+       done
+}
+
+# Wait for a pool to be resilvered
+#
+# $1 pool name
+# $2 timeout
+#
+function wait_resilvered #pool timeout
+{
+       typeset timeout=${2:-300}
+       typeset pool=${1:-$TESTPOOL}
+       for (( timer = 0; timer < $timeout; timer++ )); do
+               is_pool_resilvered $pool && break;
                sleep 1;
        done
 }
@@ -3941,6 +3998,55 @@ function pop_coredump_pattern
 		sysctl kern.corefile="$(<"$1")" >/dev/null
 		;;
 	esac
+}
+
+#
+# get_same_blocks dataset1 path/to/file1 dataset2 path/to/file2 [key]
+#
+# Returns a space-separated list of the indexes (starting at 0) of the L0
+# blocks that are shared between both files (by first DVA and checksum).
+#
+function get_same_blocks # dataset1 file1 dataset2 file2 [key]
+{
+	typeset ds1=$1
+	typeset file1=$2
+	typeset ds2=$3
+	typeset file2=$4
+
+	typeset key=$5
+	typeset keyarg=
+	if [ ${#key} -gt 0 ]; then
+		keyarg="--key=$key"
+	fi
+
+	# this is usually called as $(get_same_blocks ...), and so expected
+	# to put its result on stdout, and usually the caller is not watching
+	# for failure. this makes things a little tricky to fail properly if
+	# zdb fails or crashes, as we end up returning an empty string, which
+	# is a valid return (no blocks the same)
+	#
+	# to get around this, we check zdb's return and echo a dummy value
+	# before returning failure. this will not match whatever the caller
+	# is checking for. if they do call it with log_must, then they get
+	# a failure as expected.
+
+	typeset zdbout1=$(mktemp)
+	typeset zdbout2=$(mktemp)
+	typeset awkout1=$(mktemp)
+	typeset awkout2=$(mktemp)
+
+	zdb $keyarg -vvvvv $ds1 -O $file1 > $zdbout1
+	[[ $? -ne 0 ]] && echo "zdb $ds1 failed" && return 1
+
+	zdb $keyarg -vvvvv $ds2 -O $file2 > $zdbout2
+	[[ $? -ne 0 ]] && echo "zdb $ds2 failed" && return 1
+
+	awk '/ L0 / { print l++ " " $3 " " $7 }' < $zdbout1 > $awkout1
+	awk '/ L0 / { print l++ " " $3 " " $7 }' < $zdbout2 > $awkout2
+
+	echo $(sort -n $awkout1 $awkout2 | uniq -d | cut -f1 -d' ')
+
+	rm -f $zdbout1 $zdbout2 $awkout1 $awkout2
 }
 
 . ${STF_SUITE}/include/kstat.shlib

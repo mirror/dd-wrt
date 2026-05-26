@@ -1109,8 +1109,29 @@ vdev_label_init(vdev_t *vd, uint64_t crtxg, vdev_labeltype_t reason)
 	 * Determine if the vdev is in use.
 	 */
 	if (reason != VDEV_LABEL_REMOVE && reason != VDEV_LABEL_SPLIT &&
-	    vdev_inuse(vd, crtxg, reason, &spare_guid, &l2cache_guid))
+	    vdev_inuse(vd, crtxg, reason, &spare_guid, &l2cache_guid)) {
+		if (spa->spa_create_info == NULL) {
+			nvlist_t *nv = fnvlist_alloc();
+			nvlist_t *cfg;
+
+			if (vd->vdev_path != NULL)
+				fnvlist_add_string(nv,
+				    ZPOOL_CREATE_INFO_VDEV, vd->vdev_path);
+
+			cfg = vdev_label_read_config(vd, -1ULL);
+			if (cfg != NULL) {
+				const char *pname;
+				if (nvlist_lookup_string(cfg,
+				    ZPOOL_CONFIG_POOL_NAME, &pname) == 0)
+					fnvlist_add_string(nv,
+					    ZPOOL_CREATE_INFO_POOL, pname);
+				nvlist_free(cfg);
+			}
+
+			spa->spa_create_info = nv;
+		}
 		return (SET_ERROR(EBUSY));
+	}
 
 	/*
 	 * If this is a request to add or replace a spare or l2cache device
@@ -1491,7 +1512,7 @@ vdev_label_write_bootenv(vdev_t *vd, nvlist_t *env)
  * conflicting uberblocks on disk with the same txg.  The solution is simple:
  * among uberblocks with equal txg, choose the one with the latest timestamp.
  */
-static int
+int
 vdev_uberblock_compare(const uberblock_t *ub1, const uberblock_t *ub2)
 {
 	int cmp = TREE_CMP(ub1->ub_txg, ub2->ub_txg);
@@ -1622,8 +1643,10 @@ vdev_uberblock_load(vdev_t *rvd, uberblock_t *ub, nvlist_t **config)
 	 * matches the txg for our uberblock.
 	 */
 	if (cb.ubl_vd != NULL) {
-		vdev_dbgmsg(cb.ubl_vd, "best uberblock found for spa %s. "
-		    "txg %llu", spa->spa_name, (u_longlong_t)ub->ub_txg);
+		vdev_dbgmsg(cb.ubl_vd, "best uberblock found for spa %s, "
+		    "txg=%llu seq=%llu", spa_load_name(spa),
+		    (u_longlong_t)ub->ub_txg,
+		    (u_longlong_t)(MMP_SEQ_VALID(ub) ? MMP_SEQ(ub) : 0));
 
 		if (ub->ub_raidz_reflow_info !=
 		    cb.ubl_latest.ub_raidz_reflow_info) {
@@ -1631,7 +1654,7 @@ vdev_uberblock_load(vdev_t *rvd, uberblock_t *ub, nvlist_t **config)
 			    "spa=%s best uberblock (txg=%llu info=0x%llx) "
 			    "has different raidz_reflow_info than latest "
 			    "uberblock (txg=%llu info=0x%llx)",
-			    spa->spa_name,
+			    spa_load_name(spa),
 			    (u_longlong_t)ub->ub_txg,
 			    (u_longlong_t)ub->ub_raidz_reflow_info,
 			    (u_longlong_t)cb.ubl_latest.ub_txg,

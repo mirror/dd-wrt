@@ -910,33 +910,26 @@ zio_bookmark_compare(const void *x1, const void *x2)
 {
 	const zio_t *z1 = x1;
 	const zio_t *z2 = x2;
+	const zbookmark_phys_t *zb1 = &z1->io_bookmark;
+	const zbookmark_phys_t *zb2 = &z2->io_bookmark;
 
-	if (z1->io_bookmark.zb_objset < z2->io_bookmark.zb_objset)
-		return (-1);
-	if (z1->io_bookmark.zb_objset > z2->io_bookmark.zb_objset)
-		return (1);
+	int cmp = TREE_CMP(zb1->zb_objset, zb2->zb_objset);
+	if (cmp != 0)
+		return (cmp);
 
-	if (z1->io_bookmark.zb_object < z2->io_bookmark.zb_object)
-		return (-1);
-	if (z1->io_bookmark.zb_object > z2->io_bookmark.zb_object)
-		return (1);
+	cmp = TREE_CMP(zb1->zb_object, zb2->zb_object);
+	if (cmp != 0)
+		return (cmp);
 
-	if (z1->io_bookmark.zb_level < z2->io_bookmark.zb_level)
-		return (-1);
-	if (z1->io_bookmark.zb_level > z2->io_bookmark.zb_level)
-		return (1);
+	cmp = TREE_CMP(zb1->zb_level, zb2->zb_level);
+	if (cmp != 0)
+		return (cmp);
 
-	if (z1->io_bookmark.zb_blkid < z2->io_bookmark.zb_blkid)
-		return (-1);
-	if (z1->io_bookmark.zb_blkid > z2->io_bookmark.zb_blkid)
-		return (1);
+	cmp = TREE_CMP(zb1->zb_blkid, zb2->zb_blkid);
+	if (cmp != 0)
+		return (cmp);
 
-	if (z1 < z2)
-		return (-1);
-	if (z1 > z2)
-		return (1);
-
-	return (0);
+	return (TREE_PCMP(z1, z2));
 }
 
 /*
@@ -1669,9 +1662,11 @@ zio_vdev_child_io(zio_t *pio, blkptr_t *bp, vdev_t *vd, uint64_t offset,
 
 	/*
 	 * If we've decided to do a repair, the write is not speculative --
-	 * even if the original read was.
+	 * even if the original read was. Rebuild is an exception since we
+	 * cannot always ensure its data integrity.
 	 */
-	if (flags & ZIO_FLAG_IO_REPAIR)
+	if ((flags & ZIO_FLAG_IO_REPAIR) &&
+	    pio->io_priority != ZIO_PRIORITY_REBUILD)
 		flags &= ~ZIO_FLAG_SPECULATIVE;
 
 	/*
@@ -1681,10 +1676,10 @@ zio_vdev_child_io(zio_t *pio, blkptr_t *bp, vdev_t *vd, uint64_t offset,
 	 * have already processed the original allocating I/O.
 	 */
 	if (flags & ZIO_FLAG_ALLOC_THROTTLED &&
-	    (vd != vd->vdev_top || (flags & ZIO_FLAG_IO_RETRY))) {
+	    (vd != vd->vdev_top || (flags & ZIO_FLAG_IO_RETRY)) &&
+	    type == ZIO_TYPE_WRITE) {
 		ASSERT(pio->io_metaslab_class != NULL);
 		ASSERT(pio->io_metaslab_class->mc_alloc_throttle_enabled);
-		ASSERT(type == ZIO_TYPE_WRITE);
 		ASSERT(priority == ZIO_PRIORITY_ASYNC_WRITE);
 		ASSERT(!(flags & ZIO_FLAG_IO_REPAIR));
 		ASSERT(!(pio->io_flags & ZIO_FLAG_IO_REWRITE) ||
@@ -3835,7 +3830,6 @@ zio_ddt_write(zio_t *zio)
 
 	int p = DDT_PHYS_FOR_COPIES(ddt, zp->zp_copies);
 	ddt_phys_variant_t v = DDT_PHYS_VARIANT(ddt, p);
-	ddt_univ_phys_t *ddp = dde->dde_phys;
 
 	/*
 	 * In the common cases, at this point we have a regular BP with no
@@ -3866,14 +3860,6 @@ zio_ddt_write(zio_t *zio)
 	 * end of the chain and letting the sequence play out.
 	 */
 
-	/*
-	 * Number of DVAs in the DDT entry. If the BP is encrypted we ignore
-	 * the third one as normal.
-	 */
-	int have_dvas = ddt_phys_dva_count(ddp, v, BP_IS_ENCRYPTED(bp));
-	IMPLY(have_dvas == 0, ddt_phys_birth(ddp, v) == 0);
-	boolean_t is_ganged = ddt_phys_is_gang(ddp, v);
-
 	/* Number of DVAs requested by the IO. */
 	uint8_t need_dvas = zp->zp_copies;
 	/* Number of DVAs in outstanding writes for this dde. */
@@ -3887,6 +3873,21 @@ zio_ddt_write(zio_t *zio)
 	ddt_entry_io_t *dde_io = dde->dde_io;
 	if (dde_io != NULL)
 		mutex_enter(&dde_io->dde_io_lock);
+
+	/*
+	 * Number of DVAs in the DDT entry. If the BP is encrypted we ignore
+	 * the third one as normal.
+	 *
+	 * Must be computed after taking dde_io_lock (if held) to avoid
+	 * racing with ddt_phys_unextend() in zio_ddt_child_write_done()
+	 * error path, which can zero DVAs under dde_io_lock. Without the
+	 * lock, a stale have_dvas causes ddt_bp_fill() to copy a zeroed
+	 * DVA into the BP, producing a hole that reads back as zeros.
+	 */
+	ddt_univ_phys_t *ddp = dde->dde_phys;
+	int have_dvas = ddt_phys_dva_count(ddp, v, BP_IS_ENCRYPTED(bp));
+	IMPLY(have_dvas == 0, ddt_phys_birth(ddp, v) == 0);
+	boolean_t is_ganged = ddt_phys_is_gang(ddp, v);
 
 	if (dde_io == NULL || dde_io->dde_lead_zio[p] == NULL) {
 		/*
@@ -4173,14 +4174,21 @@ zio_ddt_free(zio_t *zio)
 	}
 	ddt_exit(ddt);
 
-	/*
-	 * When no entry was found, it must have been pruned,
-	 * so we can free it now instead of decrementing the
-	 * refcount in the DDT.
-	 */
-	if (!dde) {
+	if (dde) {
+		/*
+		 * DDT entry found and the refcount has been decremented.
+		 * Stop the pipeline — there is nothing more to do right now.
+		 */
+		zio->io_pipeline = ZIO_INTERLOCK_PIPELINE;
+	} else {
+		/*
+		 * No DDT entry; the block must have been pruned from the
+		 * table.  Clear the DEDUP bit so it is treated as a normal
+		 * block from here on.  BRT_FREE and DVA_FREE follow in the
+		 * pipeline and will handle any cloned references and the
+		 * actual block free respectively.
+		 */
 		BP_SET_DEDUP(bp, 0);
-		zio->io_pipeline |= ZIO_STAGE_DVA_FREE;
 	}
 
 	return (zio);
@@ -4784,11 +4792,17 @@ zio_vdev_io_start(zio_t *zio)
 		}
 		zio->io_delay = gethrtime();
 
-		if (zio_handle_device_injection(vd, zio, ENOSYS) != 0) {
+		int error = zio_handle_device_injections(vd, zio, ENOSYS,
+		    EFAULT);
+		if (error == ENOSYS || (error == EFAULT &&
+		    !(zio->io_flags & ZIO_FLAG_IO_REPAIR))) {
 			/*
 			 * "no-op" injections return success, but do no actual
-			 * work. Just return it.
+			 * work. Just return it. "io-prefail" injections are
+			 * similar, but don't return success.
 			 */
+			if (error == EFAULT)
+				zio->io_error = EIO;
 			zio_delay_interrupt(zio);
 			return (NULL);
 		}
@@ -5518,6 +5532,12 @@ zio_dva_throttle_done(zio_t *zio)
 	}
 }
 
+static void
+zio_done_postread_done(zio_t *zio)
+{
+	abd_free(zio->io_abd);
+}
+
 static zio_t *
 zio_done(zio_t *zio)
 {
@@ -5848,6 +5868,24 @@ zio_done(zio_t *zio)
 		zfs_ereport_free_checksum(zcr);
 	}
 
+	if (zio->io_flags & ZIO_FLAG_POSTREAD) {
+		ASSERT3U(zio->io_type, ==, ZIO_TYPE_WRITE);
+		zl = NULL;
+		zio_t *pio = zio_walk_parents(zio, &zl);
+		blkptr_t *bp = zio->io_bp;
+		abd_t *abd = abd_alloc_for_io(BP_GET_PSIZE(bp), B_FALSE);
+		zio_priority_t prio = zio->io_priority ==
+		    ZIO_PRIORITY_SYNC_WRITE ? ZIO_PRIORITY_SYNC_READ :
+		    ZIO_PRIORITY_SCRUB;
+		zio_t *cio = zio_vdev_child_io(pio, zio->io_bp, zio->io_vd,
+		    zio->io_offset, abd, zio->io_size, ZIO_TYPE_READ, prio,
+		    ZIO_FLAG_SCRUB | ZIO_FLAG_RAW | ZIO_FLAG_CANFAIL |
+		    ZIO_FLAG_RESILVER | ZIO_FLAG_DONT_PROPAGATE,
+		    zio_done_postread_done, NULL);
+		cio->io_flags &= ~ZIO_FLAG_ALLOC_THROTTLED;
+		zio_nowait(cio);
+	}
+
 	/*
 	 * It is the responsibility of the done callback to ensure that this
 	 * particular zio is no longer discoverable for adoption, and as
@@ -5900,11 +5938,11 @@ static zio_pipe_stage_t *zio_pipeline[] = {
 	zio_encrypt,
 	zio_checksum_generate,
 	zio_nop_write,
-	zio_brt_free,
 	zio_ddt_read_start,
 	zio_ddt_read_done,
 	zio_ddt_write,
 	zio_ddt_free,
+	zio_brt_free,
 	zio_gang_assemble,
 	zio_gang_issue,
 	zio_dva_throttle,

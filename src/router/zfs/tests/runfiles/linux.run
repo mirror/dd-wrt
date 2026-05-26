@@ -30,10 +30,6 @@ tags = ['functional', 'acl', 'posix']
 tests = ['posix_001_pos', 'posix_002_pos', 'posix_003_pos', 'posix_004_pos']
 tags = ['functional', 'acl', 'posix-sa']
 
-[tests/functional/atime:Linux]
-tests = ['atime_003_pos', 'root_relatime_on']
-tags = ['functional', 'atime']
-
 [tests/functional/block_cloning:Linux]
 tests = ['block_cloning_ficlone', 'block_cloning_ficlonerange',
     'block_cloning_ficlonerange_partial', 'block_cloning_disabled_ficlone',
@@ -124,7 +120,8 @@ tests = ['auto_offline_001_pos', 'auto_online_001_pos', 'auto_online_002_pos',
     'auto_spare_002_pos', 'auto_spare_double', 'auto_spare_multiple',
     'auto_spare_ashift', 'auto_spare_shared', 'decrypt_fault',
     'decompress_fault', 'fault_limits', 'scrub_after_resilver',
-    'suspend_on_probe_errors', 'suspend_resume_single', 'zpool_status_-s']
+    'suspend_on_probe_errors', 'suspend_resume_single', 'suspend_draid_fgroups',
+    'zpool_status_-s']
 tags = ['functional', 'fault']
 
 [tests/functional/features/large_dnode:Linux]
@@ -140,6 +137,10 @@ tests = ['largest_pool_001_pos']
 pre =
 post =
 tags = ['functional', 'largest_pool']
+
+[tests/functional/lease:Linux]
+tests = ['lease_setlease']
+tags = ['functional', 'lease']
 
 [tests/functional/longname:Linux]
 tests = ['longname_001_pos', 'longname_002_pos', 'longname_003_pos']
@@ -159,8 +160,10 @@ tags = ['functional', 'mmap']
 tests = ['mmp_on_thread', 'mmp_on_uberblocks', 'mmp_on_off', 'mmp_interval',
     'mmp_active_import', 'mmp_inactive_import', 'mmp_exported_import',
     'mmp_write_uberblocks', 'mmp_reset_interval', 'multihost_history',
-    'mmp_on_zdb', 'mmp_write_distribution', 'mmp_hostid', 'mmp_write_slow_disk']
+    'mmp_on_zdb', 'mmp_write_distribution', 'mmp_hostid', 'mmp_write_slow_disk',
+    'mmp_concurrent_import']
 tags = ['functional', 'mmp']
+timeout = 1200
 
 [tests/functional/mount:Linux]
 tests = ['umount_unlinked_drain', 'mount_loopback']

@@ -445,7 +445,14 @@ vdev_disk_open(vdev_t *v, uint64_t *psize, uint64_t *max_psize,
 	v->vdev_has_securetrim = bdev_secure_discard_supported(bdev);
 
 	/* Inform the ZIO pipeline that we are non-rotational */
+#ifdef HAVE_BLK_QUEUE_ROT
+	v->vdev_nonrot = !blk_queue_rot(bdev_get_queue(bdev));
+#else
 	v->vdev_nonrot = blk_queue_nonrot(bdev_get_queue(bdev));
+#endif
+
+	/* Is backed by a block device. */
+	v->vdev_is_blkdev = B_TRUE;
 
 	/* Physical volume size in bytes for the partition */
 	*psize = bdev_capacity(bdev);
@@ -924,8 +931,14 @@ vdev_disk_io_rw(zio_t *zio)
 		return (SET_ERROR(EIO));
 	}
 
+	vdev_t *iter = v;
+	while (iter != NULL && iter->vdev_failfast == ZPROP_BOOLEAN_INHERIT)
+		iter = iter->vdev_parent;
+
+	boolean_t failfast = iter ? iter->vdev_failfast == 1 :
+	    vdev_prop_default_numeric(VDEV_PROP_FAILFAST);
 	if (!(zio->io_flags & (ZIO_FLAG_IO_RETRY | ZIO_FLAG_TRYHARD)) &&
-	    v->vdev_failfast == B_TRUE) {
+	    failfast) {
 		bio_set_flags_failfast(bdev, &flags, zfs_vdev_failfast_mask & 1,
 		    zfs_vdev_failfast_mask & 2, zfs_vdev_failfast_mask & 4);
 	}

@@ -160,6 +160,7 @@ typedef enum zfs_error {
 	EZFS_SHAREFAILED,	/* filesystem share failed */
 	EZFS_RAIDZ_EXPAND_IN_PROGRESS,	/* a raidz is currently expanding */
 	EZFS_ASHIFT_MISMATCH,   /* can't add vdevs with different ashifts */
+	EZFS_NO_USER_NS_SUPPORT, /* kernel built without CONFIG_USER_NS */
 	EZFS_UNKNOWN
 } zfs_error_t;
 
@@ -443,6 +444,7 @@ typedef enum {
 	 * checksum errors) has been lost.
 	 */
 	ZPOOL_STATUS_FAULTED_DEV_R,	/* faulted device with replicas */
+	ZPOOL_STATUS_FAULTED_FDOM_R,	/* faulted fdomain with replicas */
 	ZPOOL_STATUS_FAULTED_DEV_NR,	/* faulted device with no replicas */
 
 	/*
@@ -766,6 +768,8 @@ _LIBZFS_H void libzfs_add_handle(get_all_cb_t *, zfs_handle_t *);
 _LIBZFS_H int zfs_create(libzfs_handle_t *, const char *, zfs_type_t,
     nvlist_t *);
 _LIBZFS_H int zfs_create_ancestors(libzfs_handle_t *, const char *);
+_LIBZFS_H int zfs_create_ancestors_props(libzfs_handle_t *, const char *,
+	nvlist_t *);
 _LIBZFS_H int zfs_destroy(zfs_handle_t *, boolean_t);
 _LIBZFS_H int zfs_destroy_snaps(zfs_handle_t *, char *, boolean_t);
 _LIBZFS_H int zfs_destroy_snaps_nvl(libzfs_handle_t *, nvlist_t *, boolean_t);
@@ -844,6 +848,9 @@ typedef struct sendflags {
 
 	/* stream represents a partially received dataset */
 	boolean_t saved;
+
+	/* allow sending datasets with props, without preserving encryption */
+	boolean_t no_preserve_encryption;
 } sendflags_t;
 
 typedef boolean_t (snapfilter_cb_t)(zfs_handle_t *, void *);

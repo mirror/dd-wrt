@@ -395,11 +395,7 @@ perm_set_compare(const void *arg1, const void *arg2)
 {
 	const perm_set_t *node1 = (const perm_set_t *)arg1;
 	const perm_set_t *node2 = (const perm_set_t *)arg2;
-	int val;
-
-	val = strcmp(node1->p_setname, node2->p_setname);
-
-	return (TREE_ISIGN(val));
+	return (TREE_ISIGN(strcmp(node1->p_setname, node2->p_setname)));
 }
 
 /*
@@ -595,13 +591,16 @@ dsl_deleg_access_impl(dsl_dataset_t *ds, const char *perm, cred_t *cr)
 		 * the zoned property is set
 		 */
 		if (!INGLOBALZONE(curproc)) {
-			uint64_t zoned;
+			uint64_t zoned = 0;
+			uint64_t zoned_uid_val = 0;
 
-			if (dsl_prop_get_dd(dd,
+			(void) dsl_prop_get_dd(dd,
 			    zfs_prop_to_name(ZFS_PROP_ZONED),
-			    8, 1, &zoned, NULL, B_FALSE) != 0)
-				break;
-			if (!zoned)
+			    8, 1, &zoned, NULL, B_FALSE);
+			(void) dsl_prop_get_dd(dd,
+			    zfs_prop_to_name(ZFS_PROP_ZONED_UID),
+			    8, 1, &zoned_uid_val, NULL, B_FALSE);
+			if (!zoned && zoned_uid_val == 0)
 				break;
 		}
 		zapobj = dsl_dir_phys(dd)->dd_deleg_zapobj;
