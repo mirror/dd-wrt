@@ -53,4 +53,11 @@ mount -t sysfs sys ${R}sys
 cp -av /dev ${R}/
 
 cd ${R}
+service syslog stop
+mount -f -o remount,ro /jffs
+umount -r -f /jffs
+umount -r -f /usr/local
+mount -f -o remount,ro /
+service syslog start
+
 pivot_root . oldroot
