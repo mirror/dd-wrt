@@ -56,7 +56,7 @@ static void check_fan(int brand)
 	}
 	#endif
 	#ifdef HAVE_REALTEK
-	if (nvram_match("DD_BOARD", "Zyxel XGS1250-12") || nvram_match("DD_BOARD", "Zyxel XGS1250-12 B1")) {
+	if (nvram_match("DD_BOARD", "Zyxel XGS1250-12") || nvram_match("DD_BOARD", "Zyxel XGS1250-12 A1")) {
 		int psu = 0;
 		FILE *tempfp;
 		tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
@@ -67,6 +67,20 @@ static void check_fan(int brand)
 				sysprintf("/bin/echo 250 > /sys/class/hwmon/hwmon0/pwm1");
 			} else {
 				sysprintf("/bin/echo 0 > /sys/class/hwmon/hwmon0/pwm1");
+			}
+		}
+	}
+	if (nvram_match("DD_BOARD", "Zyxel XGS1250-12 B1")) {
+		int psu = 0;
+		FILE *tempfp;
+		tempfp = fopen("/sys/class/hwmon/hwmon4/temp1_input", "rb");
+		if (tempfp) {
+			fscanf(tempfp, "%d", &psu);
+			fclose(tempfp);
+			if (psu >= 51000) {
+				sysprintf("/bin/echo 250 > /sys/class/hwmon/hwmon3/pwm1");
+			} else {
+				sysprintf("/bin/echo 0 > /sys/class/hwmon/hwmon3/pwm1");
 			}
 		}
 	}
