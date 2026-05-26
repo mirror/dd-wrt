@@ -346,38 +346,6 @@ rewrite:;
 		goto fail;
 	}
 	sysinfo(&info);
-#ifdef HAVE_SNMP
-	stop_service("snmp");
-#endif
-#ifdef HAVE_PPPOESERVER
-	stop_service("pppoeserver");
-#endif
-#ifdef HAVE_OLSRD
-	stop_service("olsrd");
-#endif
-#ifdef HAVE_UPNP
-	stop_service("upnpd");
-#endif
-#ifdef HAVE_FREERADIUS
-	stop_service("freeradius");
-#endif
-#ifdef HAVE_TRANSMISSION
-	stop_service("transmission");
-#endif
-#ifdef HAVE_PLEX
-	stop_service("plex");
-#endif
-#ifdef HAVE_IPV6
-	stop_service("radvd");
-#endif
-	stop_service("resetbutton");
-	stop_service("cron");
-	stop_service("process_monitor");
-	stop_service("wland");
-	killall("wdswatchdog.sh", SIGTERM);
-	killall("schedulerb.sh", SIGTERM);
-	killall("proxywatchdog.sh", SIGTERM);
-
 #if defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
 	#if defined(HAVE_R9000)
 	int mtddev = getMTD("plex");

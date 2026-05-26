@@ -53,6 +53,23 @@ mount -t sysfs sys ${R}sys
 cp -av /dev ${R}/
 
 cd ${R}
+
+service snmp stop
+service pppoeserver stop
+service olsrd stop
+service upnpd stop
+service freeradius stop
+service transmission stop
+service plex stop
+service radvd stop
+service resetbutton stop
+service cron stop
+service process_monitor stop
+service wland stop
+killall wdswatchdog.sh
+killall schedulerb.sh
+killall proxywatchdog.sh
+
 service syslog stop
 mount -f -o remount,ro /jffs
 umount -r -f /jffs
