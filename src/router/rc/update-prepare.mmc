@@ -51,8 +51,6 @@ mount -t sysfs sys ${R}sys
 #mount -o remount,ro /usr/local
 #umount /usr/local
 cp -av /dev ${R}/
-#ignore stopping of watchdog
-rm -f /tmp/services/watchdog.0
 
 cd ${R}
 pivot_root . oldroot
