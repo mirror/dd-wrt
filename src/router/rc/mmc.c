@@ -232,8 +232,8 @@ extern int http_get(const char *server, char *buf, size_t count, off_t offset);
 
 static int write_main(int argc, char *argv[])
 {
-	struct erase_info_user erase_info;
-	struct erase_info_user tmp_erase_info;
+	size_t erase_info_start;
+	size_t erase_info_length;
 
 	struct sysinfo info;
 	struct trx_header trx;
@@ -435,11 +435,11 @@ rewrite:;
 		goto fail;
 	}
 #endif
-	fseek(f_kernel, 0, SEEK_END);
+	fseeko(f_kernel, 0, SEEK_END);
 	off_t kernellen = ftello(f_kernel);
 	rewind(f_kernel);
 
-	fseek(f_rootfs, 0, SEEK_END);
+	fseeko(f_rootfs, 0, SEEK_END);
 	off_t rootfslen = ftello(f_rootfs);
 	rewind(f_rootfs);
 
@@ -468,21 +468,21 @@ rewrite:;
 	// found a a solution
 	if (info.freeram >= (trx.len + MINEXTRA * 1024 * 1024) && brand != ROUTER_ASUS_AC58U) {
 		dd_loginfoverbose("flash", "The free memory is enough, writing image once.");
-		erase_info.length = trx.len;
+		erase_info_length = trx.len;
 	} else {
-		erase_info.length = WRITE_BLOCKSIZE;
-		dd_loginfoverbose("flash", "The free memory is not enough, writing image per %d bytes.", erase_info.length);
+		erase_info_length = WRITE_BLOCKSIZE;
+		dd_loginfoverbose("flash", "The free memory is not enough, writing image per %d bytes.", erase_info_length);
 	}
 
 	/* 
 	 * Allocate temporary buffer 
 	 */
-	if (!(buf = malloc(erase_info.length))) {
+	if (!(buf = malloc(erase_info_length))) {
 		mul = 1;
-		erase_info.length = WRITE_BLOCKSIZE;
-		dd_loginfoverbose("flash", "The free memory is not enough, writing image per %d bytes.", erase_info.length);
-		if (!(buf = malloc(erase_info.length))) {
-			dd_logerror("flash", "memory allocation of %d bytes failed", erase_info.length);
+		erase_info_length = WRITE_BLOCKSIZE;
+		dd_loginfoverbose("flash", "The free memory is not enough, writing image per %d bytes.", erase_info_length);
+		if (!(buf = malloc(erase_info_length))) {
+			dd_logerror("flash", "memory allocation of %d bytes failed", erase_info_length);
 			perror("malloc");
 			goto fail;
 		}
@@ -506,9 +506,9 @@ rewrite:;
 	unsigned long long f_rootfslen = 0;
 	char kernelname[32];
 	char rootfsname[32];
-	for (erase_info.start = 0; erase_info.start < trx.len; erase_info.start += count) {
-		len = MIN(erase_info.length, trx.len - erase_info.start);
-		if ((STORE32_LE(trx.flag_version) & TRX_NO_HEADER) || erase_info.start)
+	for (erase_info_start = 0; erase_info_start < trx.len; erase_info_start += count) {
+		len = MIN(erase_info_length, trx.len - erase_info_start);
+		if ((STORE32_LE(trx.flag_version) & TRX_NO_HEADER) || erase_info_start)
 			count = off = 0;
 		else {
 			count = off = sizeof(struct trx_header);
@@ -574,18 +574,16 @@ rewrite:;
 			printf("\n");
 		}
 
-		erase_info.length = WRITE_BLOCKSIZE;
+		erase_info_length = WRITE_BLOCKSIZE;
 
 		int length = ROUNDUP(count, WRITE_BLOCKSIZE);
-		int base = erase_info.start;
+		int base = erase_info_start;
 		for (i = 0; i < (length / WRITE_BLOCKSIZE); i++) {
 			int redo = 0;
 again:;
 			dd_loginfoverbose("flash", "write block [%d] at [0x%08X]", (base + (i * WRITE_BLOCKSIZE)),
 					  base + (i * WRITE_BLOCKSIZE) + badblocks);
-			erase_info.start = base + (i * WRITE_BLOCKSIZE);
-			memcpy(&tmp_erase_info, &erase_info, sizeof(erase_info));
-			tmp_erase_info.start += badblocks;
+			erase_info_start = base + (i * WRITE_BLOCKSIZE);
 
 			int l;
 			for (l = 0; l < WRITE_BLOCKSIZE - ptr; l++) {
@@ -604,8 +602,8 @@ again:;
 	fsync(fileno(f_kernel));
 	sync();
 
-	fseek(f_rootfs, 0, SEEK_SET);
-	fseek(f_kernel, 0, SEEK_SET);
+	fseeko(f_rootfs, 0, SEEK_SET);
+	fseeko(f_kernel, 0, SEEK_SET);
 	dd_loginfoverbose("flash", "reread kernel partition");
 	for (i = 0; i < kernellen; i++)
 		getc(f_kernel);
