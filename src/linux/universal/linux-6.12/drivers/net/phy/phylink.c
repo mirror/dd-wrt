@@ -126,6 +126,7 @@ do {									\
 static const phy_interface_t phylink_sfp_interface_preference[] = {
 	PHY_INTERFACE_MODE_25GBASER,
 	PHY_INTERFACE_MODE_USXGMII,
+	PHY_INTERFACE_MODE_HSGMII,
 	PHY_INTERFACE_MODE_10GBASER,
 	PHY_INTERFACE_MODE_5GBASER,
 	PHY_INTERFACE_MODE_2500BASEX,
@@ -251,6 +252,7 @@ static int phylink_interface_max_speed(phy_interface_t interface)
 		return SPEED_1000;
 
 	case PHY_INTERFACE_MODE_2500BASEX:
+	case PHY_INTERFACE_MODE_HSGMII:
 	case PHY_INTERFACE_MODE_10G_QXGMII:
 		return SPEED_2500;
 
@@ -563,6 +565,7 @@ static unsigned long phylink_get_capabilities(phy_interface_t interface,
 		caps |= MAC_1000FD;
 		break;
 
+	case PHY_INTERFACE_MODE_HSGMII:
 	case PHY_INTERFACE_MODE_2500BASEX:
 		caps |= MAC_2500FD;
 		break;
@@ -947,6 +950,7 @@ static int phylink_parse_mode(struct phylink *pl,
 		case PHY_INTERFACE_MODE_RGMII_TXID:
 		case PHY_INTERFACE_MODE_RTBI:
 		case PHY_INTERFACE_MODE_1000BASEX:
+		case PHY_INTERFACE_MODE_HSGMII:
 		case PHY_INTERFACE_MODE_2500BASEX:
 		case PHY_INTERFACE_MODE_5GBASER:
 		case PHY_INTERFACE_MODE_25GBASER:

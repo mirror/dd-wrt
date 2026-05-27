@@ -478,6 +478,9 @@ static int rtpcs_sds_determine_hw_mode(struct rtpcs_serdes *sds,
 	case PHY_INTERFACE_MODE_QSGMII:
 		*hw_mode = RTPCS_SDS_MODE_QSGMII;
 		break;
+	case PHY_INTERFACE_MODE_HSGMII:
+		*hw_mode = RTPCS_SDS_MODE_HISGMII;
+		break;
 	case PHY_INTERFACE_MODE_USXGMII:
 		if (n_links == 1)
 			*hw_mode = RTPCS_SDS_MODE_USXGMII_10GSXGMII;
@@ -564,6 +567,7 @@ static int rtpcs_sds_select_pll_speed(enum rtpcs_sds_mode hw_mode, enum rtpcs_sd
 	case RTPCS_SDS_MODE_QSGMII:
 		*speed = RTPCS_SDS_PLL_SPD_1000;
 		break;
+	case RTPCS_SDS_MODE_HISGMII:
 	case RTPCS_SDS_MODE_2500BASEX:
 		*speed = RTPCS_SDS_PLL_SPD_2500;
 		break;
@@ -1843,6 +1847,7 @@ static int rtpcs_930x_sds_set_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode
 
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_HISGMII:
 	case RTPCS_SDS_MODE_1000BASEX:
 	case RTPCS_SDS_MODE_2500BASEX:
 	case RTPCS_SDS_MODE_10GBASER:
@@ -3358,6 +3363,7 @@ static int rtpcs_931x_sds_cmu_page_get(enum rtpcs_sds_mode hw_mode)
 	case RTPCS_SDS_MODE_SGMII:
 	case RTPCS_SDS_MODE_1000BASEX:
 		return 0x24;			/* ANA_1G */
+	case RTPCS_SDS_MODE_HISGMII:
 	case RTPCS_SDS_MODE_2500BASEX:
 		return 0x28;			/* ANA_3G */
 	case RTPCS_SDS_MODE_QSGMII:

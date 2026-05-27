@@ -125,7 +125,9 @@
 #define RTL822X_VND1_SERDES_OPTION			0x697a
 #define RTL822X_VND1_SERDES_OPTION_MODE_MASK		GENMASK(5, 0)
 #define RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII		0
+#define RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII_HSGMII	1
 #define RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX		2
+#define RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_HSGMII	3
 
 #define RTL822X_VND1_SERDES_CTRL3			0x7580
 #define RTL822X_VND1_SERDES_CTRL3_MODE_MASK		GENMASK(5, 0)
@@ -1580,7 +1582,7 @@ static int rtl8226_probe(struct phy_device *phydev)
 
 static int rtl822x_set_serdes_option_mode(struct phy_device *phydev, bool gen1)
 {
-	bool has_2500, has_sgmii;
+	bool has_2500, has_sgmii, has_hsgmii;
 	u16 mode;
 	int ret;
 
@@ -1592,24 +1594,45 @@ static int rtl822x_set_serdes_option_mode(struct phy_device *phydev, bool gen1)
 			     phydev->host_interfaces) ||
 		    phydev->interface == PHY_INTERFACE_MODE_SGMII;
 
+	has_hsgmii = test_bit(PHY_INTERFACE_MODE_HSGMII,
+			     phydev->host_interfaces) ||
+		    phydev->interface == PHY_INTERFACE_MODE_HSGMII;
+
 	/* fill in possible interfaces */
 	__assign_bit(PHY_INTERFACE_MODE_2500BASEX, phydev->possible_interfaces,
 		     has_2500);
 	__assign_bit(PHY_INTERFACE_MODE_SGMII, phydev->possible_interfaces,
 		     has_sgmii);
 
-	if (!has_2500 && !has_sgmii)
+	__assign_bit(PHY_INTERFACE_MODE_HSGMII, phydev->possible_interfaces,
+		     has_hsgmii);
+
+	if (!has_2500 && !has_sgmii && !has_hsgmii)
 		return 0;
 
 	/* determine SerDes option mode */
-	if (has_2500 && (!has_sgmii || !phydev->is_c45)) {
+	if (has_2500 && !has_sgmii && !has_hsgmii) {
 		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX;
 		phydev->rate_matching = RATE_MATCH_PAUSE;
+	} else if (has_2500 && has_sgmii && !has_hsgmii) {
+		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII_HSGMII;
+		phydev->rate_matching = RATE_MATCH_PAUSE;
+	} else if (has_sgmii && has_hsgmii) {
+		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII_HSGMII;
+		phydev->rate_matching = RATE_MATCH_PAUSE;
+	} else if (has_hsgmii) {
+		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_HSGMII;
+		phydev->rate_matching = RATE_MATCH_PAUSE;
+	} else if (has_2500) {
+		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX;
+		phydev->rate_matching = RATE_MATCH_PAUSE;
+	} else if (has_sgmii) {
+		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII_HSGMII;
+		phydev->rate_matching = RATE_MATCH_PAUSE;
 	} else {
-		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII;
+		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII_HSGMII;
 		phydev->rate_matching = RATE_MATCH_NONE;
 	}
-
 	/* the following sequence with magic numbers sets up the SerDes
 	 * option mode
 	 */

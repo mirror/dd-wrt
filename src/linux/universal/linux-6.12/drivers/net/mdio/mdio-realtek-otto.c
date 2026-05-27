@@ -331,8 +331,9 @@ static int rtmd_run_cmd(struct mii_bus *bus, u32 cmd,
 	}
 
 	if (cmdstate & ctrl->cfg->cmd_fail) {
+		printk(KERN_INFO "fail for cmd %X\n", cmd);
 		dev_warn_once(&bus->dev, "access failed\n");
-		return -EIO;
+		return 0;
 	}
 
 	if (!val)
