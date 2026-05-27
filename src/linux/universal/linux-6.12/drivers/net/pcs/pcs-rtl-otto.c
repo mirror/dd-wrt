@@ -3799,6 +3799,7 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 		rtpcs_931x_sds_config_fiber_1g(sds);
 		break;
 
+	case RTPCS_SDS_MODE_HISGMII:
 	case RTPCS_SDS_MODE_2500BASEX:
 		rtpcs_sds_write_bits(sds, 0x41, 0x14, 8, 8, 1);
 		break;
