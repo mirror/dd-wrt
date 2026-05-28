@@ -1019,6 +1019,7 @@ config RTL838X
 	depends on MACH_REALTEK_RTL
 	select CPU_SUPPORTS_CPUFREQ
 	select MIPS_EXTERNAL_TIMER
+	select MIPS_L1_CACHE_SHIFT_4
 
 config RTL839X
 	bool "Realtek RTL839X based platforms"
