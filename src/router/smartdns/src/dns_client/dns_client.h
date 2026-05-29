@@ -237,6 +237,7 @@ struct dns_conn_stream {
 	struct dns_query_struct *query;
 	struct dns_server_info *server_info;
 
+	int recv_done;
 #ifdef HAVE_OPENSSL
 	SSL *quic_stream;
 	struct http2_stream *http2_stream;
