@@ -190,9 +190,12 @@
 #define RTL931X_FORCE_EN			BIT(9)
 #define RTL931X_FORCE_LINK_EN			BIT(0)
 #define RTL931X_DUPLEX_MODE			BIT(2)
+#define RTL931X_SPEED_SHIFT			3
+#define RTL931X_SPEED_MASK			GENMASK(6, RTL931X_SPEED_SHIFT)
 #define RTL931X_MAC_FORCE_FC_EN			BIT(4)
 #define RTL931X_TX_PAUSE_EN			BIT(16)
 #define RTL931X_RX_PAUSE_EN			BIT(17)
+#define RTL931X_SMI_PHY_ABLTY_GET_SEL		(0x0CAC)
 
 /* EEE */
 #define RTL838X_MAC_EEE_ABLTY			(0xa1a8)
@@ -1737,6 +1740,7 @@ void rtldsa_930x_print_matrix(void);
 
 /* RTL931x-specific */
 void rtldsa_931x_print_matrix(void);
+void rtldsa_931x_config_phy_ability_source(struct rtl838x_switch_priv *priv);
 
 int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_lag_upper_info *info);
 int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port);
