@@ -87,6 +87,36 @@
 	i2c5: i2c@5 { reg = <5>; };
 
 };
+&mdio_aux {
+	status = "okay";
+	gpio1: expander@3 {
+		compatible = "realtek,rtl8231";
+		reg = <3>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio-ranges = <&gpio1 0 0 37>;
+
+		led-controller {
+			compatible = "realtek,rtl8231-leds";
+			status = "disabled";
+		};
+	};
+
+	gpio2: expander@24 {
+		compatible = "realtek,rtl8231";
+		reg = <24>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio-ranges = <&gpio2 0 0 37>;
+
+		led-controller {
+			compatible = "realtek,rtl8231-leds";
+			status = "disabled";
+		};
+	};
+};
 
 &spi0 {
 	status = "okay";
