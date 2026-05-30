@@ -128,6 +128,7 @@ static int _rule_address_ipv6_get_size(struct dns_rule *rule)
 	return sizeof(struct dns_rule_address_IPV6) + ((struct dns_rule_address_IPV6 *)rule)->addr_num * DNS_RR_AAAA_LEN;
 }
 
+#ifdef HAVE_OPENSSL
 static void _rule_https_clone(struct dns_rule *new_rule, struct dns_rule *old_rule)
 {
 	struct dns_https_record_rule *new_https = (struct dns_https_record_rule *)new_rule;
@@ -146,6 +147,7 @@ static void _rule_https_clone(struct dns_rule *new_rule, struct dns_rule *old_ru
 		}
 	}
 }
+#endif
 
 static void _rule_srv_clone(struct dns_rule *new_rule, struct dns_rule *old_rule)
 {

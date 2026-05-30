@@ -28,9 +28,11 @@ static int _dns_server_has_exact_local_record(struct dns_request *request)
 	case DNS_T_SRV:
 		rule = DOMAIN_RULE_SRV;
 		break;
+#ifdef HAVE_OPENSSL
 	case DNS_T_HTTPS:
 		rule = DOMAIN_RULE_HTTPS;
 		break;
+#endif
 	default:
 		return 0;
 	}
