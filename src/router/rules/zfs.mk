@@ -40,7 +40,7 @@ zfs-distclean:
 zfs-install:
 	cd zfs/$(KERNELVERSION) && find . -name "*.la" -exec sed -i 's/relink_command/# relink_command/g' {} +
 	cd zfs/$(KERNELVERSION) && find . -name "*.la" -exec touch {} +
-	make -C zfs/$(KERNELVERSION) install DESTDIR=$(INSTALLDIR)/zfs
+	make -C zfs/$(KERNELVERSION) install DESTDIR=$(INSTALLDIR)/zfs DEPMOD=true
 	rm -rf $(INSTALLDIR)/zfs/usr/include
 	rm -rf $(INSTALLDIR)/zfs/usr/lib/pkgconfig
 	rm -rf $(INSTALLDIR)/zfs/usr/share
