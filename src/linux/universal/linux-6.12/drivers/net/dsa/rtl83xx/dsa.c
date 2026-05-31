@@ -262,9 +262,6 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	}
 	priv->r->traffic_set(priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
 
-	/* Configure per-port PHY ability source for RTL931x */
-	if (priv->family_id == RTL9310_FAMILY_ID)
-		rtldsa_931x_config_phy_ability_source(priv);
 	priv->r->print_matrix();
 
 	/* TODO: Initialize statistics */

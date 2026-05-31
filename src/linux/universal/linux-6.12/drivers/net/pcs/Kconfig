@@ -40,7 +40,7 @@ config PCS_MTK_USXGMII
 config PCS_RTL_OTTO
 	tristate "Realtek Otto SerDes PCS"
 	depends on MACH_REALTEK_RTL || COMPILE_TEST
-	selete FWNODE_PCS
+	select FWNODE_PCS
 	select PHY_COMMON_PROPS
 	select PHYLINK
 	select REGMAP
