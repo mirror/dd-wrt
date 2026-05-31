@@ -34,6 +34,7 @@ enum {
 	PHYLINK_DISABLE_STOPPED,
 	PHYLINK_DISABLE_LINK,
 	PHYLINK_DISABLE_MAC_WOL,
+	PHYLINK_DISABLE_REPLAY,
 
 	PCS_STATE_DOWN = 0,
 	PCS_STATE_STARTING,
@@ -82,6 +83,8 @@ struct phylink {
 
 	bool link_failed;
 	bool using_mac_select_pcs;
+	bool major_config_failed;
+	bool force_major_config;
 
 	struct sfp_bus *sfp_bus;
 	bool sfp_may_have_phy;
@@ -701,6 +704,17 @@ static int phylink_validate_mac_and_pcs(struct phylink *pl,
 			phylink_err(pl, "interface %s: uninitialised PCS\n",
 				    phy_modes(state->interface));
 			dump_stack();
+			return -EINVAL;
+		}
+
+		/* Ensure that this PCS supports the interface which the MAC
+		 * returned it for. It is an error for the MAC to return a PCS
+		 * that does not support the interface mode.
+		 */
+		if (!phy_interface_empty(pcs->supported_interfaces) &&
+		    !test_bit(state->interface, pcs->supported_interfaces)) {
+			phylink_err(pl, "MAC returned PCS which does not support %s\n",
+				    phy_modes(state->interface));
 			return -EINVAL;
 		}
 
@@ -1370,12 +1384,16 @@ static void phylink_major_config(struct phylink *pl, bool restart,
 		    phylink_an_mode_str(pl->req_link_an_mode),
 		    phy_modes(state->interface));
 
+	pl->major_config_failed = false;
+
 	if (pl->using_mac_select_pcs) {
 		pcs = pl->mac_ops->mac_select_pcs(pl->config, state->interface);
 		if (IS_ERR(pcs)) {
 			phylink_err(pl,
 				    "mac_select_pcs unexpectedly failed: %pe\n",
 				    pcs);
+
+			pl->major_config_failed = true;
 			return;
 		}
 
@@ -1397,6 +1415,7 @@ static void phylink_major_config(struct phylink *pl, bool restart,
 		if (err < 0) {
 			phylink_err(pl, "mac_prepare failed: %pe\n",
 				    ERR_PTR(err));
+			pl->major_config_failed = true;
 			return;
 		}
 	}
@@ -1420,8 +1439,15 @@ static void phylink_major_config(struct phylink *pl, bool restart,
 
 	phylink_mac_config(pl, state);
 
-	if (pl->pcs)
-		phylink_pcs_post_config(pl->pcs, state->interface);
+	if (pl->pcs) {
+		err = phylink_pcs_post_config(pl->pcs, state->interface);
+		if (err < 0) {
+			phylink_err(pl, "pcs_post_config failed: %pe\n",
+				    ERR_PTR(err));
+
+			pl->major_config_failed = true;
+		}
+	}
 
 	if (pl->pcs_state == PCS_STATE_STARTING || pcs_changed)
 		phylink_pcs_enable(pl->pcs);
@@ -1432,11 +1458,12 @@ static void phylink_major_config(struct phylink *pl, bool restart,
 
 	err = phylink_pcs_config(pl->pcs, neg_mode, state,
 				 !!(pl->link_config.pause & MLO_PAUSE_AN));
-	if (err < 0)
-		phylink_err(pl, "pcs_config failed: %pe\n",
-			    ERR_PTR(err));
-	else if (err > 0)
+	if (err < 0) {
+		phylink_err(pl, "pcs_config failed: %pe\n", ERR_PTR(err));
+		pl->major_config_failed = true;
+	} else if (err > 0) {
 		restart = true;
+	}
 
 	if (restart)
 		phylink_pcs_an_restart(pl);
@@ -1444,16 +1471,22 @@ static void phylink_major_config(struct phylink *pl, bool restart,
 	if (pl->mac_ops->mac_finish) {
 		err = pl->mac_ops->mac_finish(pl->config, pl->act_link_an_mode,
 					      state->interface);
-		if (err < 0)
+		if (err < 0) {
 			phylink_err(pl, "mac_finish failed: %pe\n",
 				    ERR_PTR(err));
+
+			pl->major_config_failed = true;
+		}
 	}
 
 	if (pl->phydev && pl->phy_ib_mode) {
 		err = phy_config_inband(pl->phydev, pl->phy_ib_mode);
-		if (err < 0)
+		if (err < 0) {
 			phylink_err(pl, "phy_config_inband: %pe\n",
 				    ERR_PTR(err));
+
+			pl->major_config_failed = true;
+		}
 	}
 
 	if (pl->sfp_bus) {
@@ -1741,19 +1774,25 @@ static void phylink_resolve(struct work_struct *w)
 	if (pl->act_link_an_mode != MLO_AN_FIXED)
 		phylink_apply_manual_flow(pl, &link_state);
 
-	if (mac_config) {
-		if (link_state.interface != pl->link_config.interface) {
-			/* The interface has changed, force the link down and
-			 * then reconfigure.
-			 */
-			if (cur_link_state) {
-				phylink_link_down(pl);
-				cur_link_state = false;
-			}
-			phylink_major_config(pl, false, &link_state);
-			pl->link_config.interface = link_state.interface;
+	if ((mac_config && link_state.interface != pl->link_config.interface) ||
+	    pl->force_major_config) {
+		/* The interface has changed or a forced major configuration
+		 * was requested, so force the link down and then reconfigure.
+		 */
+		if (cur_link_state) {
+			phylink_link_down(pl);
+			cur_link_state = false;
 		}
+		phylink_major_config(pl, false, &link_state);
+		pl->link_config.interface = link_state.interface;
+		pl->force_major_config = false;
 	}
+
+	/* If configuration of the interface failed, force the link down
+	 * until we get a successful configuration.
+	 */
+	if (pl->major_config_failed)
+		link_state.link = false;
 
 	if (link_state.link != cur_link_state) {
 		pl->old_link_state = link_state.link;
@@ -4117,6 +4156,57 @@ void phylink_mii_c45_pcs_get_state(struct mdio_device *pcs,
 	}
 }
 EXPORT_SYMBOL_GPL(phylink_mii_c45_pcs_get_state);
+
+/**
+ * phylink_replay_link_begin() - begin replay of link callbacks for driver
+ *				 which loses state
+ * @pl: a pointer to a &struct phylink returned from phylink_create()
+ *
+ * Helper for MAC drivers which may perform a destructive reset at runtime.
+ * Both the own driver's mac_link_down() method is called, as well as the
+ * pcs_link_down() method of the split PCS (if any).
+ *
+ * This is similar to phylink_stop(), except it does not alter the state of
+ * the phylib PHY (it is assumed that it is not affected by the MAC destructive
+ * reset).
+ */
+void phylink_replay_link_begin(struct phylink *pl)
+{
+	ASSERT_RTNL();
+
+	phylink_run_resolve_and_disable(pl, PHYLINK_DISABLE_REPLAY);
+}
+EXPORT_SYMBOL_GPL(phylink_replay_link_begin);
+
+/**
+ * phylink_replay_link_end() - end replay of link callbacks for driver
+ *			       which lost state
+ * @pl: a pointer to a &struct phylink returned from phylink_create()
+ *
+ * Helper for MAC drivers which may perform a destructive reset at runtime.
+ * Both the own driver's mac_config() and mac_link_up() methods, as well as the
+ * pcs_config() and pcs_link_up() method of the split PCS (if any), are called.
+ *
+ * This is similar to phylink_start(), except it does not alter the state of
+ * the phylib PHY.
+ *
+ * One must call this method only within the same rtnl_lock() critical section
+ * as a previous phylink_replay_link_start().
+ */
+void phylink_replay_link_end(struct phylink *pl)
+{
+	ASSERT_RTNL();
+
+	if (WARN(!test_bit(PHYLINK_DISABLE_REPLAY,
+			   &pl->phylink_disable_state),
+		 "phylink_replay_link_end() called without a prior phylink_replay_link_begin()\n"))
+		return;
+
+	pl->force_major_config = true;
+	phylink_enable_and_run_resolve(pl, PHYLINK_DISABLE_REPLAY);
+	flush_work(&pl->resolve);
+}
+EXPORT_SYMBOL_GPL(phylink_replay_link_end);
 
 static int __init phylink_init(void)
 {
