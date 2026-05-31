@@ -5,14 +5,16 @@
 #include <linux/of.h>
 #include <linux/of_mdio.h>
 #include <linux/of_platform.h>
+#include <linux/pcs/pcs-provider.h>
 #include <linux/phy.h>
 #include <linux/phy/phy-common-props.h>
 #include <linux/phylink.h>
 #include <linux/platform_device.h>
+#include <linux/property.h>
 #include <linux/regmap.h>
+#include <linux/rtnetlink.h>
 
 #define RTPCS_SDS_CNT				14
-#define RTPCS_PORT_CNT				57
 #define RTPCS_MAX_LINKS_PER_SDS			8
 
 #define RTPCS_SPEED_10				0
@@ -212,7 +214,7 @@ struct rtpcs_sds_regs {
 
 struct rtpcs_serdes {
 	struct rtpcs_ctrl *ctrl;
-	struct device_node *of_node;
+	struct fwnode_handle *fwnode;
 	const struct rtpcs_sds_ops *ops;
 	const struct rtpcs_sds_regs *regs;
 	enum rtpcs_sds_type type;
@@ -221,6 +223,8 @@ struct rtpcs_serdes {
 		struct regmap_field *mac_mode_force;	/* nullable, 931x only */
 		struct regmap_field *usxgmii_submode;	/* nullable, 93xx only */
 	} swcore_regs;
+	struct rtpcs_link *link[RTPCS_MAX_LINKS_PER_SDS];
+	s16 link_port[RTPCS_MAX_LINKS_PER_SDS];
 
 	enum rtpcs_sds_mode hw_mode;
 	u8 id;
@@ -234,7 +238,6 @@ struct rtpcs_ctrl {
 	struct mii_bus *bus;
 	const struct rtpcs_config *cfg;
 	struct rtpcs_serdes serdes[RTPCS_SDS_CNT];
-	struct rtpcs_link *link[RTPCS_PORT_CNT];
 	struct mutex lock;
 
 	/* meaning and source may be family-specific */
@@ -3999,16 +4002,14 @@ static int rtpcs_sds_config_polarity(struct rtpcs_serdes *sds, phy_interface_t i
 	unsigned int rx_pol, tx_pol;
 	int ret;
 
-	if (!sds->of_node)
+	if (!sds->fwnode)
 		return 0;
 
-	ret = phy_get_manual_rx_polarity(of_fwnode_handle(sds->of_node), phy_modes(if_mode),
-					 &rx_pol);
+	ret = phy_get_manual_rx_polarity(sds->fwnode, phy_modes(if_mode), &rx_pol);
 	if (ret < 0)
 		return ret;
 
-	ret = phy_get_manual_tx_polarity(of_fwnode_handle(sds->of_node), phy_modes(if_mode),
-					 &tx_pol);
+	ret = phy_get_manual_tx_polarity(sds->fwnode, phy_modes(if_mode), &tx_pol);
 	if (ret < 0)
 		return ret;
 
@@ -4142,8 +4143,8 @@ out:
 	return ret;
 }
 
-struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int port);
-struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int port)
+struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int link_idx, int port);
+struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int link_idx, int port)
 {
 	struct platform_device *pdev;
 	struct device_node *pcs_np;
@@ -4189,6 +4190,15 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	if (sds->num_of_links >= RTPCS_MAX_LINKS_PER_SDS)
 		return ERR_PTR(-ERANGE);
 
+	if (link_idx >= RTPCS_MAX_LINKS_PER_SDS) {
+		put_device(&pdev->dev);
+		return ERR_PTR(-EINVAL);
+	}
+	if (sds->link[link_idx]) {
+		put_device(&pdev->dev);
+		return ERR_PTR(-EBUSY);
+	}
+
 	link = devm_kzalloc(ctrl->dev, sizeof(*link), GFP_KERNEL);
 	if (!link) {
 		put_device(&pdev->dev);
@@ -4203,10 +4213,10 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	link->sds = sds;
 	link->pcs.ops = ctrl->cfg->pcs_ops;
 
-	ctrl->link[port] = link;
+	sds->link[link_idx] = link;
 
-	dev_dbg(ctrl->dev, "phylink_pcs created, port %d, sds %d\n", port, sds_id);
-
+	dev_dbg(ctrl->dev, "phylink_pcs created, port %d, sds %d, link_idx %d\n",
+		port, sds_id, link_idx);
 	return &link->pcs;
 }
 EXPORT_SYMBOL(rtpcs_create);
@@ -4238,11 +4248,11 @@ static struct mii_bus *rtpcs_probe_serdes_bus(struct rtpcs_ctrl *ctrl)
 	return bus;
 }
 
-static void rtpcs_sds_put_of_node(void *data)
+static void rtpcs_sds_put_fwnode(void *data)
 {
 	struct rtpcs_serdes *sds = data;
 
-	of_node_put(sds->of_node);
+	fwnode_handle_put(sds->fwnode);
 }
 
 static int rtpcs_probe(struct platform_device *pdev)
@@ -4278,6 +4288,8 @@ static int rtpcs_probe(struct platform_device *pdev)
 		sds->id = i;
 		sds->ops = ctrl->cfg->sds_ops;
 		sds->regs = ctrl->cfg->sds_regs;
+		for (int j = 0; j < RTPCS_MAX_LINKS_PER_SDS; j++)
+			sds->link_port[j] = -1;
 
 		ret = ctrl->cfg->sds_probe(sds);
 		if (ret)
@@ -4293,8 +4305,8 @@ static int rtpcs_probe(struct platform_device *pdev)
 			return -EINVAL;
 
 		sds = &ctrl->serdes[sds_id];
-		sds->of_node = of_node_get(child);
-		ret = devm_add_action_or_reset(dev, rtpcs_sds_put_of_node, sds);
+		sds->fwnode = fwnode_handle_get(of_fwnode_handle(child));
+		ret = devm_add_action_or_reset(dev, rtpcs_sds_put_fwnode, sds);
 		if (ret)
 			return ret;
 	}
@@ -4311,8 +4323,21 @@ static int rtpcs_probe(struct platform_device *pdev)
 	 */
 	platform_set_drvdata(pdev, ctrl);
 
-	dev_info(dev, "Realtek PCS driver initialized\n");
+	for (i = 0; i < ctrl->cfg->serdes_count; i++) {
+		sds = &ctrl->serdes[i];
+		if (!sds->fwnode)
+			continue;
 
+		ret = fwnode_pcs_add_provider(sds->fwnode, rtpcs_pcs_get, sds);
+		if (ret)
+			return ret;
+		ret = devm_add_action_or_reset(dev, rtpcs_del_provider_action,
+					       sds);
+		if (ret)
+			return ret;
+	}
+
+	dev_info(dev, "Realtek PCS driver initialized\n");
 	return 0;
 }
 

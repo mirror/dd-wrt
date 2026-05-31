@@ -1377,78 +1377,95 @@ static int adt7475_update_limits(struct i2c_client *client)
 	int i;
 	int ret;
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	ret = adt7475_read(REG_CONFIG4);
 	if (ret < 0)
 		return ret;
 	data->config4 = ret;
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	ret = adt7475_read(REG_CONFIG5);
 	if (ret < 0)
 		return ret;
 	data->config5 = ret;
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	for (i = 0; i < ADT7475_VOLTAGE_COUNT; i++) {
 		if (!(data->has_voltage & (1 << i)))
 			continue;
 		/* Adjust values so they match the input precision */
 		ret = adt7475_read(VOLTAGE_MIN_REG(i));
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		if (ret < 0)
 			return ret;
 		data->voltage[MIN][i] = ret << 2;
 
 		ret = adt7475_read(VOLTAGE_MAX_REG(i));
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		if (ret < 0)
 			return ret;
 		data->voltage[MAX][i] = ret << 2;
 	}
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	if (data->has_voltage & (1 << 5)) {
 		ret = adt7475_read(REG_VTT_MIN);
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		if (ret < 0)
 			return ret;
 		data->voltage[MIN][5] = ret << 2;
 
 		ret = adt7475_read(REG_VTT_MAX);
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		if (ret < 0)
 			return ret;
 		data->voltage[MAX][5] = ret << 2;
 	}
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (data->has_voltage & (1 << 6)) {
 		ret = adt7475_read(REG_IMON_MIN);
 		if (ret < 0)
 			return ret;
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		data->voltage[MIN][6] = ret << 2;
 
 		ret = adt7475_read(REG_IMON_MAX);
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		if (ret < 0)
 			return ret;
 		data->voltage[MAX][6] = ret << 2;
 	}
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	for (i = 0; i < ADT7475_TEMP_COUNT; i++) {
 		/* Adjust values so they match the input precision */
 		ret = adt7475_read(TEMP_MIN_REG(i));
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		if (ret < 0)
 			return ret;
 		data->temp[MIN][i] = ret << 2;
 
 		ret = adt7475_read(TEMP_MAX_REG(i));
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		if (ret < 0)
 			return ret;
 		data->temp[MAX][i] = ret << 2;
 
 		ret = adt7475_read(TEMP_TMIN_REG(i));
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		if (ret < 0)
 			return ret;
 		data->temp[AUTOMIN][i] = ret << 2;
 
 		ret = adt7475_read(TEMP_THERM_REG(i));
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		if (ret < 0)
 			return ret;
 		data->temp[THERM][i] = ret << 2;
 
 		ret = adt7475_read(TEMP_OFFSET_REG(i));
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		if (ret < 0)
 			return ret;
 		data->temp[OFFSET][i] = ret;
@@ -1459,20 +1476,24 @@ static int adt7475_update_limits(struct i2c_client *client)
 		if (i == 3 && !data->has_fan4)
 			continue;
 		ret = adt7475_read_word(client, TACH_MIN_REG(i));
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		if (ret < 0)
 			return ret;
 		data->tach[MIN][i] = ret;
 	}
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	for (i = 0; i < ADT7475_PWM_COUNT; i++) {
 		if (i == 1 && !data->has_pwm2)
 			continue;
 		ret = adt7475_read(PWM_MAX_REG(i));
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		if (ret < 0)
 			return ret;
 		data->pwm[MAX][i] = ret;
 
 		ret = adt7475_read(PWM_MIN_REG(i));
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		if (ret < 0)
 			return ret;
 		data->pwm[MIN][i] = ret;
@@ -1481,16 +1502,19 @@ static int adt7475_update_limits(struct i2c_client *client)
 	}
 
 	ret = adt7475_read(TEMP_TRANGE_REG(0));
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (ret < 0)
 		return ret;
 	data->range[0] = ret;
 
 	ret = adt7475_read(TEMP_TRANGE_REG(1));
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (ret < 0)
 		return ret;
 	data->range[1] = ret;
 
 	ret = adt7475_read(TEMP_TRANGE_REG(2));
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (ret < 0)
 		return ret;
 	data->range[2] = ret;
@@ -1801,17 +1825,20 @@ static int adt7475_probe(struct i2c_client *client)
 	struct device *hwmon_dev;
 	int i, ret = 0, revision, group_num = 0;
 	u8 config3;
-
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	data = devm_kzalloc(&client->dev, sizeof(*data), GFP_KERNEL);
 	if (data == NULL)
 		return -ENOMEM;
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	mutex_init(&data->lock);
 	data->client = client;
 	i2c_set_clientdata(client, data);
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	chip = (uintptr_t)i2c_get_match_data(client);
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	/* Initialize device-specific values */
 	switch (chip) {
 	case adt7476:
@@ -1829,20 +1856,25 @@ static int adt7475_probe(struct i2c_client *client)
 		revision = adt7475_read(REG_DEVID2) & 0x07;
 	}
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	ret = load_config(client, chip);
 	if (ret)
 		return ret;
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	config3 = adt7475_read(REG_CONFIG3);
 	/* Pin PWM2 may alternatively be used for ALERT output */
 	if (!(config3 & CONFIG3_SMBALERT))
 		data->has_pwm2 = 1;
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	/* Meaning of this bit is inverted for the ADT7473-1 */
 	if (chip == adt7473 && revision >= 1)
 		data->has_pwm2 = !data->has_pwm2;
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	data->config4 = adt7475_read(REG_CONFIG4);
 	/* Pin TACH4 may alternatively be used for THERM */
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if ((data->config4 & CONFIG4_PINFUNC) == 0x0)
 		data->has_fan4 = 1;
 
@@ -1851,17 +1883,20 @@ static int adt7475_probe(struct i2c_client *client)
 	 * because 2 different pins (TACH4 and +2.5 Vin) can be used for
 	 * this function
 	 */
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (chip == adt7490) {
 		if ((data->config4 & CONFIG4_PINFUNC) == 0x1 &&
 		    !(config3 & CONFIG3_THERM))
 			data->has_fan4 = 1;
 	}
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (chip == adt7476 || chip == adt7490) {
 		if (!(config3 & CONFIG3_THERM) ||
 		    (data->config4 & CONFIG4_PINFUNC) == 0x1)
 			data->has_voltage |= (1 << 0);		/* in0 */
 	}
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	/*
 	 * On the ADT7476, the +12V input pin may instead be used as VID5,
 	 * and VID pins may alternatively be used as GPIO
@@ -1874,12 +1909,14 @@ static int adt7475_probe(struct i2c_client *client)
 		data->has_vid = !(adt7475_read(REG_CONFIG5) & CONFIG5_VIDGPIO);
 	}
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	/* Voltage attenuators can be bypassed, globally or individually */
 	data->config2 = adt7475_read(REG_CONFIG2);
 	ret = load_attenuators(client, chip, data);
 	if (ret)
 		dev_warn(&client->dev, "Error configuring attenuator bypass\n");
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (data->config2 & CONFIG2_ATTN) {
 		data->bypass_attn = (0x3 << 3) | 0x3;
 	} else {
@@ -1888,6 +1925,7 @@ static int adt7475_probe(struct i2c_client *client)
 	}
 	data->bypass_attn &= data->has_voltage;
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	/*
 	 * Call adt7475_read_pwm for all pwm's as this will reprogram any
 	 * pwm's which are disabled to manual mode with 0% duty cycle
@@ -1895,14 +1933,18 @@ static int adt7475_probe(struct i2c_client *client)
 	for (i = 0; i < ADT7475_PWM_COUNT; i++)
 		adt7475_read_pwm(client, i);
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	ret = adt7475_set_pwm_polarity(client);
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (ret && ret != -EINVAL)
 		dev_warn(&client->dev, "Error configuring pwm polarity\n");
 
 	ret = adt7475_fan_pwm_config(client);
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (ret)
 		dev_warn(&client->dev, "Error %d configuring fan/pwm\n", ret);
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	/* Start monitoring */
 	switch (chip) {
 	case adt7475:
@@ -1942,12 +1984,14 @@ static int adt7475_probe(struct i2c_client *client)
 		data->vrm = vid_which_vrm();
 		data->groups[group_num] = &vid_attr_group;
 	}
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 
 	/* register device with all the acquired attributes */
 	hwmon_dev = devm_hwmon_device_register_with_groups(&client->dev,
 							   client->name, data,
 							   data->groups);
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (IS_ERR(hwmon_dev)) {
 		ret = PTR_ERR(hwmon_dev);
 		return ret;
@@ -1955,6 +1999,7 @@ static int adt7475_probe(struct i2c_client *client)
 
 	dev_info(&client->dev, "%s device, revision %d\n",
 		 names[chip], revision);
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if ((data->has_voltage & 0x11) || data->has_fan4 || data->has_pwm2)
 		dev_info(&client->dev, "Optional features:%s%s%s%s%s\n",
 			 (data->has_voltage & (1 << 0)) ? " in0" : "",
@@ -1962,6 +2007,7 @@ static int adt7475_probe(struct i2c_client *client)
 			 data->has_fan4 ? " fan4" : "",
 			 data->has_pwm2 ? " pwm2" : "",
 			 data->has_vid ? " vid" : "");
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (data->bypass_attn)
 		dev_info(&client->dev, "Bypassing attenuators on:%s%s%s%s\n",
 			 (data->bypass_attn & (1 << 0)) ? " in0" : "",
@@ -1969,6 +2015,7 @@ static int adt7475_probe(struct i2c_client *client)
 			 (data->bypass_attn & (1 << 3)) ? " in3" : "",
 			 (data->bypass_attn & (1 << 4)) ? " in4" : "");
 
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	/* Limits and settings, should never change update more than once */
 	ret = adt7475_update_limits(client);
 	if (ret)

@@ -290,6 +290,18 @@ config MENF21BMC_WATCHDOG
 	  This driver can also be built as a module. If so the module
 	  will be called menf21bmc_wdt.
 
+config HASIVO_MCU_WATCHDOG
+	tristate "Hasivo MCU Watchdog"
+	depends on I2C
+	select WATCHDOG_CORE
+	help
+	  Hardware watchdog driver for the external management MCU found
+	  on Hasivo and Horaco network switches, reachable over I2C. The
+	  MCU resets the board unless it is periodically retriggered.
+
+	  This driver can also be built as a module. If so the module
+	  will be called hasivo-mcu-wdt.
+
 config MENZ069_WATCHDOG
 	tristate "MEN 16Z069 Watchdog"
 	depends on MCB

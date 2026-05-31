@@ -364,10 +364,12 @@ static int lm75_read_config(struct lm75_data *data)
 
 	if (data->params->config_reg_16bits) {
 		ret = regmap_read(data->regmap, LM75_REG_CONF, &status);
+    		printk(KERN_INFO "%s:%d ret %d\n", __func__, __LINE__, ret);
 		return ret ? ret : status;
 	}
-
-	return i2c_smbus_read_byte_data(data->client, LM75_REG_CONF);
+	ret = i2c_smbus_read_byte_data(data->client, LM75_REG_CONF);
+    	printk(KERN_INFO "%s:%d ret %d\n", __func__, __LINE__, ret);
+	return ret;
 }
 
 static irqreturn_t lm75_alarm_handler(int irq, void *private)
@@ -633,7 +635,7 @@ static int lm75_probe(struct i2c_client *client)
 	struct lm75_data *data;
 	int status, err;
 	u16 set_mask;
-
+printk(KERN_INFO "check %X\n", I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA);
 	if (!i2c_check_functionality(client->adapter,
 			I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA))
 		return -EIO;
@@ -649,6 +651,7 @@ static int lm75_probe(struct i2c_client *client)
 	if (IS_ERR(data->vs))
 		return PTR_ERR(data->vs);
 
+printk(KERN_INFO "%s:%d check %X\n",__func__,__LINE__, I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA);
 	data->regmap = devm_regmap_init_i2c(client, &lm75_regmap_config);
 	if (IS_ERR(data->regmap))
 		return PTR_ERR(data->regmap);
@@ -670,16 +673,19 @@ static int lm75_probe(struct i2c_client *client)
 		return err;
 	}
 
+printk(KERN_INFO "%s:%d check %X\n",__func__,__LINE__, I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA);
 	err = devm_add_action_or_reset(dev, lm75_disable_regulator, data);
 	if (err)
 		return err;
 
+printk(KERN_INFO "%s:%d check %X\n",__func__,__LINE__, I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA);
 	/* Cache original configuration */
 	status = lm75_read_config(data);
 	if (status < 0) {
 		dev_dbg(dev, "Can't read config? %d\n", status);
 		return status;
 	}
+printk(KERN_INFO "%s:%d check %X\n",__func__,__LINE__, I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA);
 	data->orig_conf = status;
 	data->current_conf = status;
 	
@@ -692,17 +698,20 @@ static int lm75_probe(struct i2c_client *client)
 	err = lm75_write_config(data, set_mask, data->params->clr_mask);
 	if (err)
 		return err;
+printk(KERN_INFO "%s:%d check %X\n",__func__,__LINE__, I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA);
 
 	err = devm_add_action_or_reset(dev, lm75_remove, data);
 	if (err)
 		return err;
 
+printk(KERN_INFO "%s:%d check %X\n",__func__,__LINE__, I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA);
 	hwmon_dev = devm_hwmon_device_register_with_info(dev, client->name,
 							 data, &lm75_chip_info,
 							 NULL);
 	if (IS_ERR(hwmon_dev))
 		return PTR_ERR(hwmon_dev);
 
+printk(KERN_INFO "%s:%d check %X\n",__func__,__LINE__, I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA);
 	if (client->irq) {
 		if (data->params->alarm) {
 			err = devm_request_threaded_irq(dev,
@@ -720,6 +729,7 @@ static int lm75_probe(struct i2c_client *client)
 		}
 	}
 
+printk(KERN_INFO "%s:%d check %X\n",__func__,__LINE__, I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA);
 	dev_info(dev, "%s: sensor '%s'\n", dev_name(hwmon_dev), client->name);
 
 	return 0;
