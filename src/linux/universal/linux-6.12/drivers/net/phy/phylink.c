@@ -1397,7 +1397,7 @@ static void phylink_major_config(struct phylink *pl, bool restart,
 			return;
 		}
 
-		pcs_changed = pcs && pl->pcs != pcs;
+		pcs_changed = pl->pcs != pcs;
 	}
 
 	phylink_pcs_neg_mode(pl, pcs, state->interface, state->advertising);
@@ -1429,7 +1429,8 @@ static void phylink_major_config(struct phylink *pl, bool restart,
 		if (pl->pcs)
 			pl->pcs->phylink = NULL;
 
-		pcs->phylink = pl;
+		if (pcs)
+			pcs->phylink = pl;
 
 		pl->pcs = pcs;
 	}
