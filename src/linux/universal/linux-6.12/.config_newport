@@ -2258,6 +2258,7 @@ CONFIG_MDIO_THUNDER=y
 # PCS device drivers
 #
 # CONFIG_PCS_XPCS is not set
+# CONFIG_FWNODE_PCS is not set
 # CONFIG_PCS_MTK_USXGMII is not set
 # end of PCS device drivers
 
@@ -2988,6 +2989,7 @@ CONFIG_WATCHDOG_OPEN_TIMEOUT=0
 #
 # CONFIG_SOFT_WATCHDOG is not set
 # CONFIG_GPIO_WATCHDOG is not set
+# CONFIG_HASIVO_MCU_WATCHDOG is not set
 # CONFIG_XILINX_WATCHDOG is not set
 # CONFIG_XILINX_WINDOW_WATCHDOG is not set
 # CONFIG_ZIIRAVE_WATCHDOG is not set

@@ -2906,6 +2906,7 @@ CONFIG_MDIO_REGMAP=m
 #
 CONFIG_PCS_XPCS=m
 CONFIG_PCS_LYNX=m
+# CONFIG_FWNODE_PCS is not set
 # CONFIG_PCS_MTK_USXGMII is not set
 # end of PCS device drivers
 
