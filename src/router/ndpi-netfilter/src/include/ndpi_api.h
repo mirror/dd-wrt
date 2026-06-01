@@ -155,7 +155,7 @@ extern "C" {
 				     struct in_addr *pin);
   NDPI_STATIC u_int16_t ndpi_network_ptree6_match(struct ndpi_detection_module_struct *ndpi_str,
 				      struct in6_addr *pin);
-  u_int16_t ndpi_network_prefix_match(struct ndpi_detection_module_struct *ndpi_str,
+  NDPI_STATIC u_int16_t ndpi_network_prefix_match(struct ndpi_detection_module_struct *ndpi_str,
 				      ndpi_prefix_t *prefix);
 
   /**
@@ -2143,11 +2143,11 @@ NDPI_STATIC  const char* ndpi_tls_supported_version2str(u_int16_t version_id, ch
   NDPI_STATIC void ndpi_list_free(ndpi_list *l);
   NDPI_STATIC bool ndpi_list_append(ndpi_list *l, void *value);
 
-#ifndef __KERNEL__
   NDPI_STATIC const char *ndpi_ikev2_encr_name(u_int16_t id);
   NDPI_STATIC const char *ndpi_ikev2_prf_name(u_int16_t id);
   NDPI_STATIC const char *ndpi_ikev2_integ_name(u_int16_t id);
- NDPI_STATIC  const char *ndpi_ikev2_dh_name(u_int16_t id);
+  NDPI_STATIC const char *ndpi_ikev2_dh_name(u_int16_t id);
+#ifndef __KERNEL__
   NDPI_STATIC int ndpi_load_geoip(struct ndpi_detection_module_struct *ndpi_str,
 		      const char *ip_city_data, const char *ip_as_data);
   NDPI_STATIC void ndpi_free_geoip(struct ndpi_detection_module_struct *ndpi_str);
