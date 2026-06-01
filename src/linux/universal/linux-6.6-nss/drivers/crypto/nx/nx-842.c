@@ -101,13 +101,9 @@ static int update_param(struct nx842_crypto_param *p,
 	return 0;
 }
 
-void *nx842_crypto_alloc_ctx(struct nx842_driver *driver)
+int nx842_crypto_init(struct crypto_tfm *tfm, struct nx842_driver *driver)
 {
-	struct nx842_crypto_ctx *ctx;
-
-	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
-	if (!ctx)
-		return ERR_PTR(-ENOMEM);
+	struct nx842_crypto_ctx *ctx = crypto_tfm_ctx(tfm);
 
 	spin_lock_init(&ctx->lock);
 	ctx->driver = driver;
@@ -115,24 +111,25 @@ void *nx842_crypto_alloc_ctx(struct nx842_driver *driver)
 	ctx->sbounce = (u8 *)__get_free_pages(GFP_KERNEL, BOUNCE_BUFFER_ORDER);
 	ctx->dbounce = (u8 *)__get_free_pages(GFP_KERNEL, BOUNCE_BUFFER_ORDER);
 	if (!ctx->wmem || !ctx->sbounce || !ctx->dbounce) {
-		nx842_crypto_free_ctx(ctx);
-		return ERR_PTR(-ENOMEM);
+		kfree(ctx->wmem);
+		free_pages((unsigned long)ctx->sbounce, BOUNCE_BUFFER_ORDER);
+		free_pages((unsigned long)ctx->dbounce, BOUNCE_BUFFER_ORDER);
+		return -ENOMEM;
 	}
 
-	return ctx;
+	return 0;
 }
-EXPORT_SYMBOL_GPL(nx842_crypto_alloc_ctx);
+EXPORT_SYMBOL_GPL(nx842_crypto_init);
 
-void nx842_crypto_free_ctx(void *p)
+void nx842_crypto_exit(struct crypto_tfm *tfm)
 {
-	struct nx842_crypto_ctx *ctx = p;
+	struct nx842_crypto_ctx *ctx = crypto_tfm_ctx(tfm);
 
 	kfree(ctx->wmem);
 	free_pages((unsigned long)ctx->sbounce, BOUNCE_BUFFER_ORDER);
 	free_pages((unsigned long)ctx->dbounce, BOUNCE_BUFFER_ORDER);
-	kfree(ctx);
 }
-EXPORT_SYMBOL_GPL(nx842_crypto_free_ctx);
+EXPORT_SYMBOL_GPL(nx842_crypto_exit);
 
 static void check_constraints(struct nx842_constraints *c)
 {
@@ -249,11 +246,11 @@ nospc:
 	return update_param(p, slen, dskip + dlen);
 }
 
-int nx842_crypto_compress(struct crypto_scomp *tfm,
+int nx842_crypto_compress(struct crypto_tfm *tfm,
 			  const u8 *src, unsigned int slen,
-			  u8 *dst, unsigned int *dlen, void *pctx)
+			  u8 *dst, unsigned int *dlen)
 {
-	struct nx842_crypto_ctx *ctx = pctx;
+	struct nx842_crypto_ctx *ctx = crypto_tfm_ctx(tfm);
 	struct nx842_crypto_header *hdr =
 				container_of(&ctx->header,
 					     struct nx842_crypto_header, hdr);
@@ -434,11 +431,11 @@ usesw:
 	return update_param(p, slen + padding, dlen);
 }
 
-int nx842_crypto_decompress(struct crypto_scomp *tfm,
+int nx842_crypto_decompress(struct crypto_tfm *tfm,
 			    const u8 *src, unsigned int slen,
-			    u8 *dst, unsigned int *dlen, void *pctx)
+			    u8 *dst, unsigned int *dlen)
 {
-	struct nx842_crypto_ctx *ctx = pctx;
+	struct nx842_crypto_ctx *ctx = crypto_tfm_ctx(tfm);
 	struct nx842_crypto_header *hdr;
 	struct nx842_crypto_param p;
 	struct nx842_constraints c = *ctx->driver->constraints;

@@ -148,16 +148,10 @@ out:
 
 static void css_sch_todo(struct work_struct *work);
 
-static int css_sch_create_locks(struct subchannel *sch)
+static void css_sch_create_locks(struct subchannel *sch)
 {
-	sch->lock = kmalloc(sizeof(*sch->lock), GFP_KERNEL);
-	if (!sch->lock)
-		return -ENOMEM;
-
-	spin_lock_init(sch->lock);
+	spin_lock_init(&sch->lock);
 	mutex_init(&sch->reg_mutex);
-
-	return 0;
 }
 
 static void css_subchannel_release(struct device *dev)
@@ -166,8 +160,6 @@ static void css_subchannel_release(struct device *dev)
 
 	sch->config.intparm = 0;
 	cio_commit_config(sch);
-	kfree(sch->driver_override);
-	kfree(sch->lock);
 	kfree(sch);
 }
 
@@ -219,9 +211,7 @@ struct subchannel *css_alloc_subchannel(struct subchannel_id schid,
 	sch->schib = *schib;
 	sch->st = schib->pmcw.st;
 
-	ret = css_sch_create_locks(sch);
-	if (ret)
-		goto err;
+	css_sch_create_locks(sch);
 
 	INIT_WORK(&sch->todo_work, css_sch_todo);
 	sch->dev.release = &css_subchannel_release;
@@ -233,19 +223,17 @@ struct subchannel *css_alloc_subchannel(struct subchannel_id schid,
 	 */
 	ret = dma_set_coherent_mask(&sch->dev, DMA_BIT_MASK(31));
 	if (ret)
-		goto err_lock;
+		goto err;
 	/*
 	 * But we don't have such restrictions imposed on the stuff that
 	 * is handled by the streaming API.
 	 */
 	ret = dma_set_mask(&sch->dev, DMA_BIT_MASK(64));
 	if (ret)
-		goto err_lock;
+		goto err;
 
 	return sch;
 
-err_lock:
-	kfree(sch->lock);
 err:
 	put_device(&sch->dev);
 	return ERR_PTR(ret);
@@ -320,7 +308,7 @@ static ssize_t type_show(struct device *dev, struct device_attribute *attr,
 {
 	struct subchannel *sch = to_subchannel(dev);
 
-	return sprintf(buf, "%01x\n", sch->st);
+	return sysfs_emit(buf, "%01x\n", sch->st);
 }
 
 static DEVICE_ATTR_RO(type);
@@ -330,42 +318,14 @@ static ssize_t modalias_show(struct device *dev, struct device_attribute *attr,
 {
 	struct subchannel *sch = to_subchannel(dev);
 
-	return sprintf(buf, "css:t%01X\n", sch->st);
+	return sysfs_emit(buf, "css:t%01X\n", sch->st);
 }
 
 static DEVICE_ATTR_RO(modalias);
 
-static ssize_t driver_override_store(struct device *dev,
-				     struct device_attribute *attr,
-				     const char *buf, size_t count)
-{
-	struct subchannel *sch = to_subchannel(dev);
-	int ret;
-
-	ret = driver_set_override(dev, &sch->driver_override, buf, count);
-	if (ret)
-		return ret;
-
-	return count;
-}
-
-static ssize_t driver_override_show(struct device *dev,
-				    struct device_attribute *attr, char *buf)
-{
-	struct subchannel *sch = to_subchannel(dev);
-	ssize_t len;
-
-	device_lock(dev);
-	len = snprintf(buf, PAGE_SIZE, "%s\n", sch->driver_override);
-	device_unlock(dev);
-	return len;
-}
-static DEVICE_ATTR_RW(driver_override);
-
 static struct attribute *subch_attrs[] = {
 	&dev_attr_type.attr,
 	&dev_attr_modalias.attr,
-	&dev_attr_driver_override.attr,
 	NULL,
 };
 
@@ -407,8 +367,8 @@ static ssize_t pimpampom_show(struct device *dev,
 	struct subchannel *sch = to_subchannel(dev);
 	struct pmcw *pmcw = &sch->schib.pmcw;
 
-	return sprintf(buf, "%02x %02x %02x\n",
-		       pmcw->pim, pmcw->pam, pmcw->pom);
+	return sysfs_emit(buf, "%02x %02x %02x\n",
+			  pmcw->pim, pmcw->pam, pmcw->pom);
 }
 static DEVICE_ATTR_RO(pimpampom);
 
@@ -604,12 +564,12 @@ static void css_sch_todo(struct work_struct *work)
 
 	sch = container_of(work, struct subchannel, todo_work);
 	/* Find out todo. */
-	spin_lock_irq(sch->lock);
+	spin_lock_irq(&sch->lock);
 	todo = sch->todo;
 	CIO_MSG_EVENT(4, "sch_todo: sch=0.%x.%04x, todo=%d\n", sch->schid.ssid,
 		      sch->schid.sch_no, todo);
 	sch->todo = SCH_TODO_NOTHING;
-	spin_unlock_irq(sch->lock);
+	spin_unlock_irq(&sch->lock);
 	/* Perform todo. */
 	switch (todo) {
 	case SCH_TODO_NOTHING:
@@ -617,9 +577,9 @@ static void css_sch_todo(struct work_struct *work)
 	case SCH_TODO_EVAL:
 		ret = css_evaluate_known_subchannel(sch, 1);
 		if (ret == -EAGAIN) {
-			spin_lock_irq(sch->lock);
+			spin_lock_irq(&sch->lock);
 			css_sched_sch_todo(sch, todo);
-			spin_unlock_irq(sch->lock);
+			spin_unlock_irq(&sch->lock);
 		}
 		break;
 	case SCH_TODO_UNREG:
@@ -892,7 +852,7 @@ static ssize_t real_cssid_show(struct device *dev, struct device_attribute *a,
 	if (!css->id_valid)
 		return -EINVAL;
 
-	return sprintf(buf, "%x\n", css->cssid);
+	return sysfs_emit(buf, "%x\n", css->cssid);
 }
 static DEVICE_ATTR_RO(real_cssid);
 
@@ -915,7 +875,7 @@ static ssize_t cm_enable_show(struct device *dev, struct device_attribute *a,
 	int ret;
 
 	mutex_lock(&css->mutex);
-	ret = sprintf(buf, "%x\n", css->cm_enabled);
+	ret = sysfs_emit(buf, "%x\n", css->cm_enabled);
 	mutex_unlock(&css->mutex);
 	return ret;
 }
@@ -1028,12 +988,7 @@ static int __init setup_css(int nr)
 	css->pseudo_subchannel->dev.parent = &css->device;
 	css->pseudo_subchannel->dev.release = css_subchannel_release;
 	mutex_init(&css->pseudo_subchannel->reg_mutex);
-	ret = css_sch_create_locks(css->pseudo_subchannel);
-	if (ret) {
-		kfree(css->pseudo_subchannel);
-		device_unregister(&css->device);
-		goto out_err;
-	}
+	css_sch_create_locks(css->pseudo_subchannel);
 
 	dev_set_name(&css->pseudo_subchannel->dev, "defunct");
 	ret = device_register(&css->pseudo_subchannel->dev);
@@ -1368,9 +1323,11 @@ static int css_bus_match(struct device *dev, struct device_driver *drv)
 	struct subchannel *sch = to_subchannel(dev);
 	struct css_driver *driver = to_cssdriver(drv);
 	struct css_device_id *id;
+	int ret;
 
 	/* When driver_override is set, only bind to the matching driver */
-	if (sch->driver_override && strcmp(sch->driver_override, drv->name))
+	ret = device_match_driver_override(dev, drv);
+	if (ret == 0)
 		return 0;
 
 	for (id = driver->subchannel_type; id->match_flags; id++) {
@@ -1427,6 +1384,7 @@ static int css_uevent(const struct device *dev, struct kobj_uevent_env *env)
 
 static struct bus_type css_bus_type = {
 	.name     = "css",
+	.driver_override = true,
 	.match    = css_bus_match,
 	.probe    = css_probe,
 	.remove   = css_remove,
