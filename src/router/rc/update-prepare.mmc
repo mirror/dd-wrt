@@ -48,9 +48,14 @@ cp /etc/www $R/etc
 cat /etc/passwd >$R/etc/passwd
 mount -t proc proc ${R}proc 
 mount -t sysfs sys ${R}sys 
+
 #mount -o remount,ro /usr/local
 #umount /usr/local
 cp -av /dev ${R}/
+mkdir ${R}/dev/pts ${R}/dev/pts
+mount -t devpts devpts ${R}/dev/pts
+mount -t usbfs usbfs ${R}/proc/bus/usb
+mount -t debugfs debugfs ${R}/sys/kernel/debug
 
 cd ${R}
 
