@@ -539,6 +539,8 @@ int create_helper(int event_fd, int err_fd, uid_t uid, gid_t gid, long max_fd)
 		  while (get_line_alloc(fp, &line, &linesz)) {
 		    send_event(event_fd, EVENT_SCRIPT_LOG, 0, line);
 		    free(line);
+	            line = NULL;
+    		    linesz = 0;
 		  }
 		    
 		  fclose(fp);

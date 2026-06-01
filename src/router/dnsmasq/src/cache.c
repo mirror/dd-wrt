@@ -1413,7 +1413,6 @@ static int gettok(FILE *f, char *token, size_t buffsz)
 {
   int c;
   unsigned int count = 0;
- 
   while (1)
     {
       if ((c = getc(f)) == EOF)
@@ -1452,6 +1451,7 @@ int read_hostsfile(char *filename, unsigned int index, int cache_size, struct cr
   
   while ((atnl = gettok(f, token, MAXDNAMESTR)) != -1)
     {
+
       if (inet_pton(AF_INET, token, &addr) > 0)
 	{
 	  flags = F_NAMEP | F_HOSTS | F_IMMORTAL | F_FORWARD | F_REVERSE | F_IPV4;

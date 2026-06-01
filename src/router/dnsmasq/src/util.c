@@ -1041,7 +1041,7 @@ void free_real(const char *func, unsigned int line, void *ptr)
    EOF reached and we return zero. */
 int get_line_alloc(FILE *f, char **buffp, size_t *sizep)
 {
-  char c;
+  int c;
   size_t cnt = 0;
   char *buff = *buffp;
   
