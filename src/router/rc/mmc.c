@@ -325,7 +325,6 @@ static int write_main(int argc, char *argv[])
 rewrite:;
 	count = off = 0;
 	nvram_seti("flash_active", 1);
-	sleep(1);
 
 	/* 
 	 * Examine TRX/CHK header 
