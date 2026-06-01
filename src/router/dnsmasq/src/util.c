@@ -1080,7 +1080,6 @@ int get_line_alloc(FILE *f, char **buffp, size_t *sizep)
 	if (cnt != 0)
 	  return 1;
 
-	free(buff);
 	return 0;
       }
 	
