@@ -527,3 +527,5 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/msgpack.c"
 #undef NDPI_CURRENT_PROTO
+#include "protocols/iris.c"
+#undef NDPI_CURRENT_PROTO

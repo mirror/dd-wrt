@@ -142,6 +142,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/ipsec.c \
 		     protocols/ipp.c \
 		     protocols/irc.c \
+		     protocols/iris.c \
 		     protocols/iqiyi.c \
 		     protocols/iso9506-1-mms.c \
 		     protocols/ethersbus.c \

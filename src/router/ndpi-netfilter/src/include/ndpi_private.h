@@ -1153,6 +1153,7 @@ NDPI_STATIC void init_matter_dissector(struct ndpi_detection_module_struct *ndpi
 NDPI_STATIC void init_json_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_msgpack_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_sbe_dissector(struct ndpi_detection_module_struct *ndpi_struct);
+NDPI_STATIC void init_iris_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 
 
 #ifdef CUSTOM_NDPI_PROTOCOLS

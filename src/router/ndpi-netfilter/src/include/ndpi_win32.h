@@ -57,6 +57,7 @@
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
 #define strdup _strdup
+#define access _access
 #endif
 
 #ifndef F_OK

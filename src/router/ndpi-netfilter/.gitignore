@@ -167,6 +167,7 @@
 /fuzz/testpcaps.zip
 /influxdb/Makefile
 /libndpi.pc
+/libndpi-uninstalled.pc
 /libtool
 /ltmain.sh
 /m4/libtool.m4

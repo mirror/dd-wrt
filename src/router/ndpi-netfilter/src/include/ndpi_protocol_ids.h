@@ -504,6 +504,8 @@ typedef enum {
   NDPI_PROTOCOL_GITHUB_ACTIONS        = 472,
   NDPI_PROTOCOL_YOUTUBE_KIDS          = 473,
   NDPI_PROTOCOL_SBE                   = 474,
+  NDPI_PROTOCOL_IRIS                  = 475,
+  NDPI_PROTOCOL_LIBP2P                = 476,
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_protocol_ids.h"

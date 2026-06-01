@@ -4309,3 +4309,21 @@ References: `YouTube Kids official site <https://www.youtubekids.com/>`_
 A FIX standard for binary message encoding.
 
 References: `Official Protocol Specs <https://github.com/FIXTradingCommunity/fix-simple-binary-encoding/tree/master>`_
+
+
+.. _Proto_475:
+
+`NDPI_PROTOCOL_IRIS`
+====================
+InterSystems IRIS is a high-performance unified data platform that combines a multi-model database, processing, and integration to handle real-time, mission-critical data.
+
+References: `InterSystems IRIS official site: <https://www.intersystems.com/products/intersystems-iris/>`_, `Free Docker image useful for testing: <https://hub.docker.com/r/intersystems/iris-community/>`_
+
+
+.. _Proto_476:
+
+`NDPI_PROTOCOL_LIBP2P`
+======================
+libp2p is a modular network stack and open-source library that enables developers to build decentralised, peer-to-peer (P2P) applications.
+
+References: `Official site: <https://libp2p.io>`_

@@ -78,7 +78,7 @@ static void ssh_analyze_signature_version(struct ndpi_detection_module_struct *n
   u_int8_t obsolete_ssh_version = 0;  
   const ssh_pattern ssh_servers_strings[] =
     {
-     { (const char*)"SSH-%*f-OpenSSH_%d.%d.%d", 7, 0, 0 },     /* OpenSSH */
+     { (const char*)"SSH-%*f-OpenSSH_%d.%d.%d", 10, 0, 0 },    /* OpenSSH */
      { (const char*)"SSH-%*f-APACHE-SSHD-%d.%d.%d", 2, 5, 1 }, /* Apache MINA SSHD */
      { (const char*)"SSH-%*f-FileZilla_%d.%d.%d", 3, 40, 0 },  /* FileZilla SSH*/
      { (const char*)"SSH-%*f-paramiko_%d.%d.%d", 2, 4, 0 },    /* Paramiko SSH */

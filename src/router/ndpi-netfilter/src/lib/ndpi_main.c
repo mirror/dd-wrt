@@ -248,6 +248,7 @@ static ndpi_risk_info ndpi_known_risks[] = {
   { NDPI_PROBING_ATTEMPT,                       NDPI_RISK_MEDIUM, CLIENT_FAIR_RISK_PERCENTAGE, NDPI_CLIENT_ACCOUNTABLE },
   { NDPI_OBFUSCATED_TRAFFIC,                    NDPI_RISK_HIGH,   CLIENT_HIGH_RISK_PERCENTAGE, NDPI_BOTH_ACCOUNTABLE   },
   { NDPI_SLOW_DOS,                              NDPI_RISK_HIGH,   CLIENT_HIGH_RISK_PERCENTAGE, NDPI_CLIENT_ACCOUNTABLE },
+  { NDPI_NON_PQC,                               NDPI_RISK_MEDIUM, CLIENT_FAIR_RISK_PERCENTAGE, NDPI_BOTH_ACCOUNTABLE   },
 
   /* Leave this as last member */
   { NDPI_MAX_RISK,                              NDPI_RISK_LOW,    CLIENT_FAIR_RISK_PERCENTAGE, NDPI_NO_ACCOUNTABILITY   }
@@ -3114,6 +3115,16 @@ static void init_protocol_defaults(struct ndpi_detection_module_struct *ndpi_str
                           0);
   ndpi_set_proto_defaults(ndpi_str, 1 /* cleartext */, 0 /* nw proto */, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SBE,
                           "SimpleBinaryEncoding", NDPI_PROTOCOL_CATEGORY_NETWORK, NDPI_PROTOCOL_QOE_CATEGORY_UNSPECIFIED,
+                          ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
+                          ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */,
+                          0);
+  ndpi_set_proto_defaults(ndpi_str, 1 /* cleartext */, 0 /* nw proto */, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_IRIS,
+                          "Iris", NDPI_PROTOCOL_CATEGORY_DATABASE, NDPI_PROTOCOL_QOE_CATEGORY_UNSPECIFIED,
+                          ndpi_build_default_ports(ports_a, 1972, 0, 0, 0, 0) /* TCP */,
+                          ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */,
+                          0);
+  ndpi_set_proto_defaults(ndpi_str, 0 /* encrypted */, 1 /* nw proto */, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_LIBP2P,
+                          "libp2p", NDPI_PROTOCOL_CATEGORY_VPN, NDPI_PROTOCOL_QOE_CATEGORY_UNSPECIFIED,
                           ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
                           ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */,
                           0);
@@ -7777,6 +7788,9 @@ static int dissectors_init(struct ndpi_detection_module_struct *ndpi_str) {
 
   /* Simple Binary Encoding (SBE) */
   init_sbe_dissector(ndpi_str);
+
+  /* Iris */
+  init_iris_dissector(ndpi_str);
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_main_init.c"

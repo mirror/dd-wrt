@@ -352,3 +352,9 @@ This risk is triggered when a connection is likely using some obfuscation techni
 NDPI_SLOW_DOS
 =======================
 This risk is triggered when a TCP connection is likely subject to slow DoS attacks
+
+.. _Risk 058:
+
+NDPI_NON_OQC
+============
+This risk is triggered when an encrypted stream (e.g. TLS, QUIC, SSH, IPSEC) is not using post-quantum cryptography algorithms.
