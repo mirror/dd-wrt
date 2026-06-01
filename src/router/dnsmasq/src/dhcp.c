@@ -968,9 +968,6 @@ void dhcp_read_ethers(void)
 	line[strlen(line)-1] = 0;
       
       if ((*line == '#') || (*line == '+') || (*line == 0)) {
-        free(line);
-        line = NULL;
-        linesz = 0;
 	continue;
       }
       
@@ -980,9 +977,6 @@ void dhcp_read_ethers(void)
       if (!*ip || parse_hex(line, hwaddr, ETHER_ADDR_LEN, NULL, NULL) != ETHER_ADDR_LEN)
 	{
 	  my_syslog(MS_DHCP | LOG_ERR, _("bad line at %s line %d"), ETHERSFILE, lineno); 
-          free(line);
-          line = NULL;
-          linesz = 0;
 	  continue;
 	}
       
@@ -996,9 +990,6 @@ void dhcp_read_ethers(void)
 	  if (inet_pton(AF_INET, ip, &addr.s_addr) < 1)
 	    {
 	      my_syslog(MS_DHCP | LOG_ERR, _("bad address at %s line %d"), ETHERSFILE, lineno); 
-	      free(line);
-              line = NULL;
-              linesz = 0;
 	      continue;
 	    }
 
@@ -1032,9 +1023,6 @@ void dhcp_read_ethers(void)
       if (config && (config->flags & CONFIG_FROM_ETHERS))
 	{
 	  my_syslog(MS_DHCP | LOG_ERR, _("ignoring %s line %d, duplicate name or IP address"), ETHERSFILE, lineno); 
-	  free(line);
-          line = NULL;
-          linesz = 0;
 	  continue;
 	}
 	
@@ -1055,9 +1043,6 @@ void dhcp_read_ethers(void)
 	  if (!config)
 	    {
 	      if (!(config = whine_malloc(sizeof(struct dhcp_config)))) {
-	        free(line);
-                line = NULL;
-                linesz = 0;
 		continue;
 	      }
 	      config->flags = CONFIG_FROM_ETHERS;
@@ -1094,11 +1079,9 @@ void dhcp_read_ethers(void)
       count++;
       
       free(host);
-      free(line);
-      line = NULL;
-      linesz = 0;
 
     }
+    free(line);
   
   fclose(f);
 

@@ -1717,21 +1717,12 @@ int reload_servers(char *fname)
       char *token = strtok(line, " \t\n\r");
       
       if (!token) {
-        free(line);
-        line = NULL;
-        linesz = 0;
 	continue;
       }
       if (strcmp(token, "nameserver") != 0 && strcmp(token, "server") != 0) {
-        free(line);
-        line = NULL;
-        linesz = 0;
 	continue;
       }
       if (!(token = strtok(NULL, " \t\n\r"))) {
-        free(line);
-        line = NULL;
-        linesz = 0;
 	continue;
       }
       
@@ -1773,19 +1764,14 @@ int reload_servers(char *fname)
 	      source_addr.in6.sin6_scope_id = 0;
 	    }
 	  else {
-	    free(line);
-            line = NULL;
-            linesz = 0;
 	    continue;
 	 }
 	}
 
       add_update_server(SERV_FROM_RESOLV, &addr, &source_addr, NULL, NULL, NULL);
       gotone = 1;
-      free(line);
-      line = NULL;
-      linesz = 0;
     }
+    free(line);
   
   fclose(f);
   cleanup_servers();
