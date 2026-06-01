@@ -393,6 +393,7 @@ static l7filters filters_list[] = {
 #endif
 	{ "irc", DPI, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "iris", NDPI_ONLY, 0, NULL },
 	{ "iso9506_1_mms", NDPI_ONLY, 0, NULL },
 #endif
 	{ "jabber", DPI, 0, NULL },
@@ -419,6 +420,7 @@ static l7filters filters_list[] = {
 	{ "lastfm", NDPI_ONLY, 0, NULL },
 	{ "ldap", NDPI_ONLY, 0, NULL },
 	{ "ldp", NDPI_ONLY, 0, NULL },
+	{ "libp2p", NDPI_ONLY, 0, NULL },
 	{ "likee", NDPI_ONLY, 0, NULL },
 	{ "line", NDPI_ONLY, 0, NULL },
 	{ "line_call", NDPI_ONLY, 0, NULL },
