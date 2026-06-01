@@ -527,6 +527,8 @@ static char *prot_short_str[NDPI_MAX_NUM_STATIC_BITMAP+1] = {
 	"github_actions",
 	"youtube_kids",
 	"sbe",
+	"iris",
+	"libp2p",
 	NULL,
 };
 
