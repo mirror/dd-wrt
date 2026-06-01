@@ -439,10 +439,8 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
 
 static u32 rtl9300_i2c_func(struct i2c_adapter *a)
 {
-	return I2C_FUNC_SMBUS_BYTE | 
-	       I2C_FUNC_SMBUS_BYTE_DATA | 
-	       I2C_FUNC_SMBUS_WORD_DATA | 
-	       I2C_FUNC_SMBUS_BLOCK_DATA |
+	return I2C_FUNC_SMBUS_BYTE | I2C_FUNC_SMBUS_BYTE_DATA |
+	       I2C_FUNC_SMBUS_WORD_DATA | I2C_FUNC_SMBUS_BLOCK_DATA |
 	       I2C_FUNC_SMBUS_I2C_BLOCK;
 }
 
