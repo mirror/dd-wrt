@@ -968,8 +968,10 @@ void dhcp_read_ethers(void)
       while (strlen(line) > 0 && isspace((unsigned char)line[strlen(line)-1]))
 	line[strlen(line)-1] = 0;
       
-      if ((*line == '#') || (*line == '+') || (*line == 0))
+      if ((*line == '#') || (*line == '+') || (*line == 0)) {
+        free(line);
 	continue;
+      }
       
       for (ip = line; *ip && !isspace((unsigned char)*ip); ip++);
       for(; *ip && isspace((unsigned char)*ip); ip++)
@@ -977,6 +979,7 @@ void dhcp_read_ethers(void)
       if (!*ip || parse_hex(line, hwaddr, ETHER_ADDR_LEN, NULL, NULL) != ETHER_ADDR_LEN)
 	{
 	  my_syslog(MS_DHCP | LOG_ERR, _("bad line at %s line %d"), ETHERSFILE, lineno); 
+        free(line);
 	  continue;
 	}
       
@@ -990,6 +993,7 @@ void dhcp_read_ethers(void)
 	  if (inet_pton(AF_INET, ip, &addr.s_addr) < 1)
 	    {
 	      my_syslog(MS_DHCP | LOG_ERR, _("bad address at %s line %d"), ETHERSFILE, lineno); 
+	      free(line);
 	      continue;
 	    }
 
@@ -1007,6 +1011,7 @@ void dhcp_read_ethers(void)
 	      if (!nomem)
 		my_syslog(MS_DHCP | LOG_ERR, _("bad name at %s line %d"), ETHERSFILE, lineno); 
 	      free(host);
+	      free(line);
 	      continue;
 	    }
 	      
@@ -1020,6 +1025,7 @@ void dhcp_read_ethers(void)
       if (config && (config->flags & CONFIG_FROM_ETHERS))
 	{
 	  my_syslog(MS_DHCP | LOG_ERR, _("ignoring %s line %d, duplicate name or IP address"), ETHERSFILE, lineno); 
+	  free(line);
 	  continue;
 	}
 	
@@ -1039,8 +1045,10 @@ void dhcp_read_ethers(void)
 	  
 	  if (!config)
 	    {
-	      if (!(config = whine_malloc(sizeof(struct dhcp_config))))
+	      if (!(config = whine_malloc(sizeof(struct dhcp_config)))) {
+	        free(line);
 		continue;
+	      }
 	      config->flags = CONFIG_FROM_ETHERS;
 	      config->hwaddr = NULL;
 	      config->domain = NULL;
@@ -1075,6 +1083,7 @@ void dhcp_read_ethers(void)
       count++;
       
       free(host);
+      free(line);
 
     }
   

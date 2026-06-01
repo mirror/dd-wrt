@@ -5556,9 +5556,10 @@ static void read_file(char *file, FILE *f, int hard_opt, int from_script)
       /* strip trailing spaces */
       for (len = strlen(start); (len != 0) && (start[len-1] == ' '); len--);
       
-      if (len == 0)
+      if (len == 0) {
+        free(buff);
 	continue; 
-      else
+      } else
 	start[len] = 0;
       
       if (option != 0)
@@ -5608,6 +5609,7 @@ static void read_file(char *file, FILE *f, int hard_opt, int from_script)
 	  else
 	    die("%s", daemon->namebuff, EC_BADCONF);
 	}
+	free(buff);
     }
 
   mem_recover = 0;
@@ -6265,12 +6267,17 @@ void read_opts(int argc, char **argv, char *compile_opts)
 	{
 	  char *token = strtok(line, " \t\n\r");
 	  
-	  if (!token || strcmp(token, "search") != 0)
+	  if (!token || strcmp(token, "search") != 0) {
+	    free(line);
 	    continue;
+	  }
 	  
 	  if ((token = strtok(NULL, " \t\n\r")) &&  
-	      (daemon->domain_suffix = canonicalise_opt(token)))
+	      (daemon->domain_suffix = canonicalise_opt(token))) {
+	      free(line);
 	    break;
+	  }
+	    free(line);
 	}
 
       fclose(f);
