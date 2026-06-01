@@ -29,8 +29,8 @@
 #include "ndpi_private.h"
 
 enum message_type { HANDSHAKE =  21320,
-                    CONNECT = 20035,
-                    DISCONNECT = 17220,
+                    IRIS_CONNECT = 20035,
+                    IRIS_DISCONNECT = 17220,
                     PREPARE = 20560,
                     DIRECT_UPDATE = 21828,
                     DIRECT_QUERY = 20804,
@@ -125,8 +125,8 @@ static int iris_check_msg_type_or_error_code(struct ndpi_packet_struct *packet) 
 
     switch (message_type_or_error_code) {
         case HANDSHAKE:
-        case CONNECT:
-        case DISCONNECT:
+        case IRIS_CONNECT:
+        case IRIS_DISCONNECT:
         case PREPARE:
         case DIRECT_UPDATE:
         case DIRECT_QUERY:
