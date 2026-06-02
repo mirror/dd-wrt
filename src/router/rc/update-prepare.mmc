@@ -34,7 +34,8 @@ do
 done
 for i in /bin/busybox /bin/sh /bin/mount /bin/umount /bin/sync /bin/ls /bin/cat /sbin/emergency_reboot /bin/login /usr/sbin/telnetd /bin/ps /bin/cp /bin/login /bin/mv /sbin/reboot \
 		/sbin/pivot_root /usr/sbin/chroot /bin/dd /bin/df /sbin/get_lanip /bin/sleep /bin/echo /sbin/write /sbin/mtd /sbin/init /sbin/hotplug2 \
-	/sbin/rc /sbin/hdparm /sbin/event /sbin/startservice /sbin/stopservice /sbin/service /sbin/servicemanager /sbin/write /sbin/ledtool \
+	/sbin/rc /sbin/hdparm /sbin/event /sbin/startservice /sbin/stopservice /sbin/service /usr/sbin/fw_setenv  /usr/sbin/fw_printenv \
+	/usr/sbin/nvram /usr/sbin/ubiupdatevol  /usr/sbin/ubiformat /sbin/servicemanager /sbin/write /sbin/ledtool /usr/sbin/ubootenv \
 	/usr/sbin/httpd /sbin/service /sbin/watchdog /usr/sbin/dropbearmulti /usr/bin/ssh /usr/bin/scp /sbin/syslogd /sbin/klogd /sbin/ledtool \
 	/usr/sbin/sdparm /usr/sbin/wpa_supplicant  /usr/sbin/hostapd  /usr/sbin/wpad /usr/bin/killall
 do
@@ -54,6 +55,7 @@ mount -t sysfs sys ${R}sys
 cp -av /dev ${R}/
 #copy ssh keys 
 cp -av /tmp/root ${R}/tmp
+cp /tmp/fw_env.config ${R}/tmp
 #mount the usual suspects required for terminal, usb, and debugging
 mkdir ${R}/dev/pts ${R}/dev/pts
 mount -t devpts devpts ${R}/dev/pts
