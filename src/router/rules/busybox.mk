@@ -2,7 +2,7 @@ busybox-config: -
 	cd busybox && rm -f Config.h && ln -sf configs/$(CONFIG_BUSYBOX_CONFIG).h Config.h
 
 busybox: busybox-config nvram
-	mv -f busybox/.config busybox/.config.temp
+	-mv -f busybox/.config busybox/.config.temp
 ifeq ($(ARCH),mipsel)
 	cp busybox/.config_std busybox/.config
 ifeq ($(CONFIG_MMC),y)
