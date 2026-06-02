@@ -67,9 +67,9 @@
 
 &i2c_mst1 {
 	status = "okay";
-	realtek,scl = <13>; 
+/*	realtek,scl = <13>; */
 
-	i2c0: i2c@0 {
+/*	i2c0: i2c@0 {
 		reg = <0>;
 	};
 
@@ -83,7 +83,7 @@
 	i2c3: i2c@3 { 
 	reg = <3>; };
 
-
+*/
 	/* i2c of the left SFP+ cage seen from the front; port 11 */
 	i2c4: i2c@4 {
 		reg = <4>;
@@ -93,18 +93,37 @@
 	/* i2c of the right SFP+ cage seen from the front; port 12 */
 	i2c5: i2c@5 { 
 	reg = <5>; };
+
+/*	i2c6: i2c@6 { 
+	reg = <6>; };
+
+	i2c7: i2c@7 { 
+	reg = <7>; };
+
+	i2c8: i2c@8 { 
+	reg = <8>; };
+
+	i2c9: i2c@9 { 
+	reg = <9>; };
+
+	i2c10: i2c@10 { 
+	reg = <10>; };
+
+	i2c11: i2c@11 { 
+	reg = <11>; };*/
+
 };
 &i2c_mst2 {
 	status = "okay";
-	realtek,scl = <14>; 
+/*	realtek,scl = <14>; */
 
-	i2c6: i2c@6 {
+	i2c12: i2c@12 {
 		reg = <0>;
 
-/*		lm75: sensorlm75@4f {
+		lm75: sensorlm75@4f {
 			compatible = "national,lm75b";
 			reg = <0x4f>;
-		};*/
+		};
 
 		lm92: sensorlm92@4f {
 			compatible = "lm92";
@@ -126,55 +145,40 @@
 		};
 	};
 
-	i2c7: i2c@7 {
+/*	i2c13: i2c@13 {
 		reg = <1>;
 	};
 
-	i2c8: i2c@8 { 
+	i2c14: i2c@14 { 
 	reg = <2>; };
 
-	i2c9: i2c@9 { 
+	i2c15: i2c@15 { 
 	reg = <3>; };
 
-	i2c10: i2c@10 { 
+	i2c16: i2c@16 { 
 	reg = <4>; };
 
-	i2c11: i2c@11 { 
+	i2c17: i2c@17 { 
 	reg = <5>; 
 	};
-	i2c12: i2c@12 { 
+	i2c18: i2c@18 { 
 	reg = <6>; 
 	};
-	i2c13: i2c@13 { 
+	i2c19: i2c@19 { 
 	reg = <7>; 
 	};
-	i2c14: i2c@14 { 
+	i2c20: i2c@20 { 
 	reg = <8>; 
 	};
-	i2c15: i2c@15 { 
+	i2c21: i2c@21 { 
 	reg = <9>; 
 	};
-	i2c16: i2c@16 { 
+	i2c22: i2c@22 { 
 	reg = <10>; 
 	};
-	i2c17: i2c@17 { 
+	i2c23: i2c@23 { 
 	reg = <11>; 
-	};
-	i2c18: i2c@18 { 
-	reg = <12>; 
-	};
-	i2c19: i2c@19 { 
-	reg = <13>; 
-	};
-	i2c20: i2c@20 { 
-	reg = <14>; 
-	};
-	i2c21: i2c@21 { 
-	reg = <15>; 
-	};
-	i2c22: i2c@22 { 
-	reg = <16>; 
-	};
+	};*/
 };
 
 &spi0 {
