@@ -1716,15 +1716,12 @@ int reload_servers(char *fname)
       union mysockaddr addr, source_addr;
       char *token = strtok(line, " \t\n\r");
       
-      if (!token) {
+      if (!token)
 	continue;
-      }
-      if (strcmp(token, "nameserver") != 0 && strcmp(token, "server") != 0) {
+      if (strcmp(token, "nameserver") != 0 && strcmp(token, "server") != 0)
 	continue;
-      }
-      if (!(token = strtok(NULL, " \t\n\r"))) {
+      if (!(token = strtok(NULL, " \t\n\r")))
 	continue;
-      }
       
       memset(&addr, 0, sizeof(addr));
       memset(&source_addr, 0, sizeof(source_addr));
@@ -1763,15 +1760,13 @@ int reload_servers(char *fname)
 	      source_addr.in6.sin6_port = htons(daemon->query_port);
 	      source_addr.in6.sin6_scope_id = 0;
 	    }
-	  else {
+	  else
 	    continue;
-	 }
 	}
 
       add_update_server(SERV_FROM_RESOLV, &addr, &source_addr, NULL, NULL, NULL);
       gotone = 1;
     }
-    free(line);
   
   fclose(f);
   cleanup_servers();

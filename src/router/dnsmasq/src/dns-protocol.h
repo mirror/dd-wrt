@@ -47,7 +47,7 @@
    503 characters.
 */
 #define MAXDNAME        255             /* Maximum size of a domain name in wire format */
-#define MAXDNAMESTR     503             /* Maximum size of dnsmasq c-string representaion of a domain name. */
+#define MAXDNAMESTR     1503             /* Maximum size of dnsmasq c-string representaion of a domain name. */
 					   
 #define PACKETSZ	512		/* maximum packet size */
 #define RRFIXEDSZ	10		/* #/bytes of fixed data in r record */

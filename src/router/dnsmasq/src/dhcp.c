@@ -933,6 +933,7 @@ void dhcp_read_ethers(void)
   struct dhcp_config **up, *tmp;
   struct dhcp_config *config;
   int count = 0, lineno = 0;
+
   addr.s_addr = 0; /* eliminate warning */
   
   if (!f)
@@ -967,9 +968,8 @@ void dhcp_read_ethers(void)
       while (strlen(line) > 0 && isspace((unsigned char)line[strlen(line)-1]))
 	line[strlen(line)-1] = 0;
       
-      if ((*line == '#') || (*line == '+') || (*line == 0)) {
+      if ((*line == '#') || (*line == '+') || (*line == 0))
 	continue;
-      }
       
       for (ip = line; *ip && !isspace((unsigned char)*ip); ip++);
       for(; *ip && isspace((unsigned char)*ip); ip++)
@@ -1007,9 +1007,6 @@ void dhcp_read_ethers(void)
 	      if (!nomem)
 		my_syslog(MS_DHCP | LOG_ERR, _("bad name at %s line %d"), ETHERSFILE, lineno); 
 	      free(host);
-	      free(line);
-              line = NULL;
-              linesz = 0;
 	      continue;
 	    }
 	      
@@ -1042,9 +1039,8 @@ void dhcp_read_ethers(void)
 	  
 	  if (!config)
 	    {
-	      if (!(config = whine_malloc(sizeof(struct dhcp_config)))) {
+	      if (!(config = whine_malloc(sizeof(struct dhcp_config))))
 		continue;
-	      }
 	      config->flags = CONFIG_FROM_ETHERS;
 	      config->hwaddr = NULL;
 	      config->domain = NULL;
@@ -1081,7 +1077,6 @@ void dhcp_read_ethers(void)
       free(host);
 
     }
-    free(line);
   
   fclose(f);
 

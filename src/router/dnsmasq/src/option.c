@@ -5556,9 +5556,9 @@ static void read_file(char *file, FILE *f, int hard_opt, int from_script)
       /* strip trailing spaces */
       for (len = strlen(start); (len != 0) && (start[len-1] == ' '); len--);
       
-      if (len == 0) {
+      if (len == 0)
 	continue; 
-      } else
+      else
 	start[len] = 0;
       
       if (option != 0)
@@ -5609,7 +5609,7 @@ static void read_file(char *file, FILE *f, int hard_opt, int from_script)
 	    die("%s", daemon->namebuff, EC_BADCONF);
 	}
     }
-    free(buff);
+
   mem_recover = 0;
 }
 
@@ -6265,16 +6265,17 @@ void read_opts(int argc, char **argv, char *compile_opts)
 	{
 	  char *token = strtok(line, " \t\n\r");
 	  
-	  if (!token || strcmp(token, "search") != 0) {
+	  if (!token || strcmp(token, "search") != 0)
 	    continue;
-	  }
 	  
 	  if ((token = strtok(NULL, " \t\n\r")) &&  
-	      (daemon->domain_suffix = canonicalise_opt(token))) {
-	    break;
-	  }
+	      (daemon->domain_suffix = canonicalise_opt(token)))
+	    {
+	      /* We don't call get_line_alloc() until it returns false and frees the automatically */
+	      get_line_alloc(NULL, &line, &linesz);
+	      break;
+	    }
 	}
-	free(line);
 
       fclose(f);
 
