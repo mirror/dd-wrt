@@ -3162,19 +3162,24 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			#endif
 	websWrite(wp, "<div class=\"setting\">\n");
 			#ifdef HAVE_ATH9K
-
+#ifdef HAVE_ANTAIRA
+#ifdef HAVE_FMS2111
 	websWrite(
 		wp,
-		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" type=\"number\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\ onblur=\"valid_range(this,-10,40,wl_basic.TXpower)\"" /
-			> dBm(Max % d)\n ",
-			power,
-		txpower + wifi_gettxpoweroffset(prefix), mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
+		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" type=\"number\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" onblur=\"valid_range(this,0,20,wl_basic.TXpower)\"/> dBm (Max %d)\n",
+		power, txpower + wifi_gettxpoweroffset(prefix), mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
+#endif
+#else
+	websWrite(
+		wp,
+		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" type=\"number\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" onblur=\"valid_range(this,-10,40,wl_basic.TXpower)\"/> dBm (Max %d)\n",
+		power, txpower + wifi_gettxpoweroffset(prefix), mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
+#endif
 			#else
 	websWrite(
 		wp,
-		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" type=\"number\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" onblur=\"valid_range(this,-10,40,wl_basic.TXpower)\" /> dBm\n",
+		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" type=\"number\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" onblur=\"valid_range(this,-10,40,wl_basic.TXpower)\"/> dBm\n",
 		power, txpower + wifi_gettxpoweroffset(prefix));
-
 			#endif
 	websWrite(wp, "</div>\n");
 	sprintf(power, "%s_antgain", prefix);
