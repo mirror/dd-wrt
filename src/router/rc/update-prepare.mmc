@@ -55,6 +55,7 @@ mount -t sysfs sys ${R}sys
 #umount /usr/local
 cp -av /dev ${R}/
 #copy ssh keys 
+cp -v /tmp/.rc_shutdown ${R}/tmp
 cp -av /tmp/root ${R}/tmp
 cp -av /var ${R}/
 cp -av /tmp/var ${R}/tmp
