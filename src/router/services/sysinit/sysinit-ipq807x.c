@@ -642,6 +642,7 @@ void start_setup_affinity(void)
 	int brand = getRouterBrand();
 	if (!nvram_match("ath11k_affinity", "0")) {
 		switch (brand) {
+		case ROUTER_XIAOMI_BE7000:
 		case ROUTER_8DEVICES_KIWI:
 			sysprintf("3 > /proc/sys/net/edma/rps_num_cores");
 			set_named_smp_affinity("edma_rxdesc", 0, 1);
@@ -890,6 +891,11 @@ void start_sysinit(void)
 	int fwlen = 0x10000;
 	int profile = 512;
 	switch (brand) {
+	case ROUTER_XIAOMI_BE7000:
+	case ROUTER_8DEVICES_KIWI:
+		fwlen = 0x20000;
+		load_nss_ipq95xx(1024);
+	break;
 	case ROUTER_8DEVICES_KIWI:
 		fwlen = 0x20000;
 		load_nss_ipq95xx(1024);
@@ -1674,6 +1680,13 @@ void start_wifi_drivers(void)
 		insmod("cfg80211");
 		load_mac80211_internal(!nvram_match("ath11k_nss", "0") && !nss_disabled(0));
 		switch (brand) {
+		case ROUTER_XIAOMI_BE7000:
+			insmod("qmi_helpers");
+			char overdrive[32];
+			int od = nvram_default_geti("power_overdrive", 0);
+			sprintf(overdrive, "poweroffset=%d", od);
+//			eval("insmod","ath12k", overdrive);
+			break;
 		case ROUTER_8DEVICES_KIWI:
 			insmod("qmi_helpers");
 			char overdrive[32];

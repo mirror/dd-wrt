@@ -1733,6 +1733,10 @@ generic:;
 		setRouter("8devices Kiwi-DVK");
 		return ROUTER_8DEVICES_KIWI;
 	}
+	if (!strcmp(modelstr, "BE7000")) {
+		setRouter("Xiaomi BE7000");
+		return ROUTER_XIAOMI_BE7000;
+	}
 	if (!strcmp(modelstr, "Labs")) {
 		setRouter("Alta Labs Route10");
 		return ROUTER_8DEVICES_KIWI;

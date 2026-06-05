@@ -884,6 +884,8 @@
 
 #define ROUTER_8DEVICES_KIWI 0x12e0ff
 
+#define ROUTER_XIAOMI_BE7000 0x12f0ff
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
