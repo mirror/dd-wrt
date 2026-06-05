@@ -352,13 +352,36 @@
 	status = "okay";
 };
 
+&soc {
+
+	wifi: wifi_ahb@c0000000 {
+			compatible = "qcom,ipq9574-wifi";
+			reg = <0xc000000 0x1000000>;
+			qcom,hw-mode-id = <0x1>;
+			qcom,tgt-mem-mode = <0x0>;
+			qcom,rproc = <0x37>;
+			qcom,bdf-addr = <0x4b700000>;
+			qcom,caldb-addr = <0x4d800000>;
+			qcom,caldb-size = <0x500000>;
+			m3-dump-addr = <0x4d600000>;
+			status = "ok";
+			qcom,pta-num = <0x0>;
+			qcom,coex-mode = <0x2>;
+			qcom,bt-active-time = <0x12>;
+			qcom,bt-priority-time = <0xc>;
+			qcom,coex-algo = <0x2>;
+			qcom,pta-priority = <0x80800505>;
+			led-gpio = <0x11 0x40 0x1>;
+			qcom,board_id = <0x20>;
+	};
+};
 &pcie2 {
 	pinctrl-0 = <&pcie2_default>;
 	pinctrl-names = "default";
 
 	perst-gpios = <&tlmm 29 GPIO_ACTIVE_LOW>;
 	wake-gpios = <&tlmm 30 GPIO_ACTIVE_LOW>;
-	status = "disabled";
+	status = "enabled";
 
 	pcie@0,0 {
 		#address-cells = <3>;
@@ -373,6 +396,7 @@
 	};
 };
 
+
 &pcie3_phy {
 	status = "okay";
 };
@@ -383,7 +407,7 @@
 
 	perst-gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
 	wake-gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
-	status = "disabled";
+	status = "enabled";
 
 	pcie@0,0 {
 		#address-cells = <3>;
