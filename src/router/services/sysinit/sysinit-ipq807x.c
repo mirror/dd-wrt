@@ -643,6 +643,18 @@ void start_setup_affinity(void)
 	if (!nvram_match("ath11k_affinity", "0")) {
 		switch (brand) {
 		case ROUTER_XIAOMI_BE7000:
+			set_named_smp_affinity("reo2host-destination-ring1", 0, 1);
+			set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
+			set_named_smp_affinity("reo2host-destination-ring3", 2, 1);
+			set_named_smp_affinity("reo2host-destination-ring4", 3, 1);
+
+			set_named_smp_affinity("wbm2host-tx-completions-ring1", 1, 1);
+			set_named_smp_affinity("wbm2host-tx-completions-ring2", 2, 1);
+			set_named_smp_affinity("wbm2host-tx-completions-ring3", 3, 1);
+
+			set_named_smp_affinity("ppdu-end-interrupts-mac1", 1, 1);
+			set_named_smp_affinity("ppdu-end-interrupts-mac2", 2, 1);
+			set_named_smp_affinity("ppdu-end-interrupts-mac3", 3, 1);
 		case ROUTER_8DEVICES_KIWI:
 			sysprintf("3 > /proc/sys/net/edma/rps_num_cores");
 			set_named_smp_affinity("edma_rxdesc", 0, 1);
@@ -665,6 +677,9 @@ void start_setup_affinity(void)
 			set_named_smp_affinity("DP_EXT_IRQ", 1, 10);
 			set_named_smp_affinity("DP_EXT_IRQ", 2, 11);
 			set_named_smp_affinity("DP_EXT_IRQ", 3, 12);
+			set_named_smp_affinity("DP_EXT_IRQ", 1, 13);
+			set_named_smp_affinity("DP_EXT_IRQ", 2, 14);
+			set_named_smp_affinity("DP_EXT_IRQ", 3, 15);
 
 			set_named_smp_affinity("edma_ppeds_rxfill", 3, 1);
 			set_named_smp_affinity("edma_ppeds_rxfill", 2, 2);
@@ -892,10 +907,9 @@ void start_sysinit(void)
 	int profile = 512;
 	switch (brand) {
 	case ROUTER_XIAOMI_BE7000:
-	case ROUTER_8DEVICES_KIWI:
 		fwlen = 0x20000;
 		load_nss_ipq95xx(1024);
-	break;
+		break;
 	case ROUTER_8DEVICES_KIWI:
 		fwlen = 0x20000;
 		load_nss_ipq95xx(1024);
@@ -1441,8 +1455,8 @@ void start_sysinit(void)
 		setscaling(1800000);
 		//      disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
-//		eval("fw_setenv", "bootcmd",
-//		     "aq_load_fw; if test $auto_recovery = no; then bootipq; elif test $boot_part = 1; then run bootpart1; else run bootpart2; fi");
+		//		eval("fw_setenv", "bootcmd",
+		//		     "aq_load_fw; if test $auto_recovery = no; then bootipq; elif test $boot_part = 1; then run bootpart1; else run bootpart2; fi");
 
 		//reload firmware
 		/* turn on leds */
@@ -1680,20 +1694,20 @@ void start_wifi_drivers(void)
 		insmod("cfg80211");
 		load_mac80211_internal(!nvram_match("ath11k_nss", "0") && !nss_disabled(0));
 		switch (brand) {
-		case ROUTER_XIAOMI_BE7000:
+		case ROUTER_XIAOMI_BE7000: {
 			insmod("qmi_helpers");
 			char overdrive[32];
 			int od = nvram_default_geti("power_overdrive", 0);
 			sprintf(overdrive, "poweroffset=%d", od);
-//			eval("insmod","ath12k", overdrive);
-			break;
-		case ROUTER_8DEVICES_KIWI:
+			//			eval("insmod","ath12k", overdrive);
+		} break;
+		case ROUTER_8DEVICES_KIWI: {
 			insmod("qmi_helpers");
 			char overdrive[32];
 			int od = nvram_default_geti("power_overdrive", 0);
 			sprintf(overdrive, "poweroffset=%d", od);
-			eval("insmod","ath12k", overdrive);
-			break;
+			eval("insmod", "ath12k", overdrive);
+		} break;
 		case ROUTER_LINKSYS_MR5500:
 		case ROUTER_LINKSYS_MX5500:
 			if (frame_mode == 2)
