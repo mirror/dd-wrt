@@ -352,28 +352,20 @@
 	status = "okay";
 };
 
-&soc {
+&q6_region {
+	status = "okay";
+};
 
-	wifi: wifi_ahb@c0000000 {
-			compatible = "qcom,ipq9574-wifi";
-			reg = <0xc000000 0x1000000>;
-			qcom,hw-mode-id = <0x1>;
-			qcom,tgt-mem-mode = <0x0>;
-			qcom,rproc = <0x37>;
-			qcom,bdf-addr = <0x4b700000>;
-			qcom,caldb-addr = <0x4d800000>;
-			qcom,caldb-size = <0x500000>;
-			m3-dump-addr = <0x4d600000>;
-			status = "ok";
-			qcom,pta-num = <0x0>;
-			qcom,coex-mode = <0x2>;
-			qcom,bt-active-time = <0x12>;
-			qcom,bt-priority-time = <0xc>;
-			qcom,coex-algo = <0x2>;
-			qcom,pta-priority = <0x80800505>;
-			led-gpio = <0x11 0x40 0x1>;
-			qcom,board_id = <0x20>;
-	};
+&q6_caldb_region {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+	qcom,ath11k-calibration-variant = "Xiaomi-BE7000";
+	qcom,bdf-addr = <0x4b700000>;
+	qcom,caldb-addr = <0x4d800000>;
+	qcom,caldb-size = <0x500000>;
 };
 &pcie2 {
 	pinctrl-0 = <&pcie2_default>;
@@ -1291,3 +1283,4 @@
 &xo_clk {
 	clock-frequency = <48000000>;
 };
+
