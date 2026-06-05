@@ -221,4 +221,7 @@
 #define GCC_PCIE2_PIPE_CLK				212
 #define GCC_PCIE3_PIPE_CLK				213
 #define GPLL0_OUT_AUX					214
+#define GCC_WCSS_AHB_S_CLK				215
+#define GCC_WCSS_AXI_M_CLK				216
+#define GCC_Q6_AXIM2_CLK				217
 #endif
