@@ -1114,6 +1114,45 @@ void start_sysinit(void)
 			fclose(out);
 			break;
 		}
+		case ROUTER_XIAOMI_BE7000: {
+			fseek(fp, 0x65000, SEEK_SET);
+			out = fopen("/tmp/cal-pci-0002:01:00.0.bin", "wb");
+			for (i = 0; i < 184320; i++)
+				putc(getc(fp), out);
+			fclose(out);
+			break;
+
+#if 0
+                    if [ "$is_5g_split" -eq 0 ]; then
+                        dd if=${mtdblock} of=${apdk}/qcn9224/caldata_3.bin bs=1 count=$WKK_FILESIZE skip=413696 #0x65000
+                    else
+                        dd if=${mtdblock} of=${apdk}/qcn9224/caldata_3.bin bs=1 count=$WKK_FILESIZE skip=208896 #0x33000
+                    fi
+
+
+
+                    echo "no found 9574/caldata.bin in /lib/firmware, re create" >/dev/console
+                    AL_BD_FILENAME=/lib/firmware/IPQ9574/bdwlan.bin
+                    mkdir -p ${apdk}/IPQ9574
+                    if [ -f "$AL_BD_FILENAME" ]; then
+                        FILESIZE=$(stat -Lc%s "$AL_BD_FILENAME")
+                    else
+                        FILESIZE=131072
+                    fi
+                    dd if=${mtdblock} of=${apdk}/IPQ9574/caldata.bin bs=1 count=$FILESIZE skip=4096
+                    WKK_FILESIZE=184320
+                    mkdir -p ${apdk}/qcn9224
+
+                    #miwifi add for 5G split phy
+                    is_5g_split=$(/usr/sbin/wifi_5g_split get 2>/dev/null)
+                    if [ "$is_5g_split" -eq 0 ]; then
+                        dd if=${mtdblock} of=${apdk}/qcn9224/caldata_3.bin bs=1 count=$WKK_FILESIZE skip=413696 #0x65000
+                    else
+                        dd if=${mtdblock} of=${apdk}/qcn9224/caldata_3.bin bs=1 count=$WKK_FILESIZE skip=208896 #0x33000
+                    fi
+#endif
+
+		}
 		case ROUTER_LINKSYS_MX8500: {
 			fseek(fp, 0x26800, SEEK_SET);
 			out = fopen("/tmp/cal-pci-0000:01:00.0.bin", "wb");
@@ -1684,6 +1723,7 @@ void start_wifi_drivers(void)
 			minif = 3;
 		case ROUTER_DYNALINK_DLWRX36:
 		case ROUTER_BUFFALO_WXR5950AX12:
+		case ROUTER_XIAOMI_BE7000:
 		case ROUTER_ASUS_AX89X:
 			//		case ROUTER_GLINET_AX1800:
 			profile = 1024;
@@ -1695,11 +1735,13 @@ void start_wifi_drivers(void)
 		load_mac80211_internal(!nvram_match("ath11k_nss", "0") && !nss_disabled(0));
 		switch (brand) {
 		case ROUTER_XIAOMI_BE7000: {
+			load_ath11k_internal(profile, 0, 0, frame_mode,
+					     cert_region, 0);
 			insmod("qmi_helpers");
 			char overdrive[32];
 			int od = nvram_default_geti("power_overdrive", 0);
 			sprintf(overdrive, "poweroffset=%d", od);
-			//			eval("insmod","ath12k", overdrive);
+			eval("insmod","ath12k", overdrive);
 		} break;
 		case ROUTER_8DEVICES_KIWI: {
 			insmod("qmi_helpers");
