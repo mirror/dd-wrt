@@ -916,8 +916,10 @@ static int get_phy_c45_ids(struct mii_bus *bus, int addr,
 			return -EIO;
 
 		/* no device there, let's get out of here */
-		if ((devs_in_pkg & 0x1fffffff) == 0x1fffffff)
-			return -ENODEV;
+		if ((devs_in_pkg & 0x1fffffff) == 0x1fffffff) {
+			*phy_id = 0xffffffff;
+			return 0;
+		}
 	}
 
 	/* Now probe Device Identifiers for each device present. */
