@@ -4,7 +4,10 @@ if [ x$MYDEV = xmtdblock ]
 then
         MINDEV=`echo $DEVICENAME | cut -c9-`
         mkdir -p /dev/mtdblock >/dev/null 2>&1
-        ln -s /dev/$DEVICENAME /dev/mtdblock/$MINDEV
+	if [ ! -e /dev/$DEVICENAME ]        
+	then
+		ln -s /dev/$DEVICENAME /dev/mtdblock/$MINDEV
+	fi
 #boeshack
 #	if [ ! -e /dev/$DEVICENAME ]
 #	then
@@ -14,5 +17,8 @@ then
 else
         MINDEV=`echo $DEVICENAME | cut -c4-`
         mkdir -p /dev/mtd >/dev/null 2>&1
-        ln -s /dev/$DEVICENAME /dev/mtd/$MINDEV
+	if [ ! -e /dev/$DEVICENAME ]        
+	then
+    		ln -s /dev/$DEVICENAME /dev/mtd/$MINDEV
+        fi
 fi
