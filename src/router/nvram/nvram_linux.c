@@ -134,7 +134,7 @@ int nvram_getall(char *buf, int count)
 #if defined(HAVE_IPQ95XX)
 	FILE *in = fopen("/dev/mmcblk0p30", "rb");
 	if (in == NULL) {
-		return NULL;
+		return -1;
 	}
 	fclose(in);
 #endif

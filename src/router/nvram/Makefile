@@ -158,7 +158,7 @@ endif
 ifeq ($(CONFIG_NVRAM_64K),y)
 CFLAGS += -DHAVE_NVRAM_64K
 endif
-ifeq ($(CONFIG_IPQ95XX),y)
+ifeq ($(CONFIG_NVRAM_MMC),y)
 CFLAGS += -DHAVE_IPQ95XX
 endif
 
