@@ -1483,7 +1483,7 @@ static int cpr4_apss_init_controller(struct cpr3_controller *ctrl)
 
 	rc = cpr3_parse_common_ctrl_data(ctrl);
 	if (rc) {
-//		if (rc != -EPROBE_DEFER)
+		if (rc != -EPROBE_DEFER)
 			cpr3_err(ctrl, "unable to parse common controller data, rc=%d\n",
 				rc);
 		return rc;
@@ -1756,7 +1756,7 @@ static int cpr4_apss_regulator_probe(struct platform_device *pdev)
 
 	rc = cpr4_apss_init_controller(ctrl);
 	if (rc) {
-//		if (rc != -EPROBE_DEFER)
+		if (rc != -EPROBE_DEFER)
 			cpr3_err(ctrl, "failed to initialize CPR controller parameters, rc=%d\n",
 				rc);
 		return rc;

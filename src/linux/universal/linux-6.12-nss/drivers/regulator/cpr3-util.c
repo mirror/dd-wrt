@@ -1159,39 +1159,34 @@ static int cpr3_panic_notifier_init(struct cpr3_controller *ctrl)
 int cpr3_parse_common_ctrl_data(struct cpr3_controller *ctrl)
 {
 	int rc;
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
+
 	rc = cpr3_parse_ctrl_u32(ctrl, "qcom,cpr-sensor-time",
 			&ctrl->sensor_time, 0, UINT_MAX);
 	if (rc)
 		return rc;
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 
 	rc = cpr3_parse_ctrl_u32(ctrl, "qcom,cpr-loop-time",
 			&ctrl->loop_time, 0, UINT_MAX);
 	if (rc)
 		return rc;
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 
 	rc = cpr3_parse_ctrl_u32(ctrl, "qcom,cpr-idle-cycles",
 			&ctrl->idle_clocks, CPR3_IDLE_CLOCKS_MIN,
 			CPR3_IDLE_CLOCKS_MAX);
 	if (rc)
 		return rc;
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 
 	rc = cpr3_parse_ctrl_u32(ctrl, "qcom,cpr-step-quot-init-min",
 			&ctrl->step_quot_init_min, CPR3_STEP_QUOT_MIN,
 			CPR3_STEP_QUOT_MAX);
 	if (rc)
 		return rc;
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 
 	rc = cpr3_parse_ctrl_u32(ctrl, "qcom,cpr-step-quot-init-max",
 			&ctrl->step_quot_init_max, CPR3_STEP_QUOT_MIN,
 			CPR3_STEP_QUOT_MAX);
 	if (rc)
 		return rc;
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 
 	rc = of_property_read_u32(ctrl->dev->of_node, "qcom,voltage-step",
 				&ctrl->step_volt);
@@ -1200,13 +1195,11 @@ printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 			rc);
 		return rc;
 	}
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 	if (ctrl->step_volt <= 0) {
 		cpr3_err(ctrl, "qcom,voltage-step=%d is invalid\n",
 			ctrl->step_volt);
 		return -EINVAL;
 	}
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 
 	rc = cpr3_parse_ctrl_u32(ctrl, "qcom,cpr-count-mode",
 			&ctrl->count_mode, CPR3_COUNT_MODE_ALL_AT_ONCE_MIN,
@@ -1214,7 +1207,6 @@ printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 	if (rc)
 		return rc;
 
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 	/* Count repeat is optional */
 	ctrl->count_repeat = 0;
 	of_property_read_u32(ctrl->dev->of_node, "qcom,cpr-count-repeat",
@@ -1228,7 +1220,6 @@ printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 	if (rc)
 		return rc;
 
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 	/* Aging reference voltage is optional */
 	ctrl->aging_ref_volt = 0;
 	of_property_read_u32(ctrl->dev->of_node, "qcom,cpr-aging-ref-voltage",
@@ -1240,26 +1231,23 @@ printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 			"qcom,cpr-aging-allowed-reg-mask",
 			&ctrl->aging_possible_mask);
 
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 	if (ctrl->aging_possible_mask) {
 		/*
 		 * Aging possible register value required if bitmask is
 		 * specified
 		 */
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 		rc = cpr3_parse_ctrl_u32(ctrl,
 				"qcom,cpr-aging-allowed-reg-value",
 				&ctrl->aging_possible_val, 0, UINT_MAX);
 		if (rc)
 			return rc;
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 	}
 
 	if (of_find_property(ctrl->dev->of_node, "clock-names", NULL)) {
 		ctrl->core_clk = devm_clk_get(ctrl->dev, "core_clk");
 		if (IS_ERR(ctrl->core_clk)) {
 			rc = PTR_ERR(ctrl->core_clk);
-//			if (rc != -EPROBE_DEFER)
+			if (rc != -EPROBE_DEFER)
 				cpr3_err(ctrl, "unable request core clock, rc=%d\n",
 				rc);
 			return rc;
@@ -1270,12 +1258,11 @@ printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 	if (rc)
 		return rc;
 
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 	if (of_find_property(ctrl->dev->of_node, "vdd-supply", NULL)) {
 		ctrl->vdd_regulator = devm_regulator_get(ctrl->dev, "vdd");
 		if (IS_ERR(ctrl->vdd_regulator)) {
 			rc = PTR_ERR(ctrl->vdd_regulator);
-//			if (rc != -EPROBE_DEFER)
+			if (rc != -EPROBE_DEFER)
 				cpr3_err(ctrl, "unable to request vdd regulator, rc=%d\n",
 					 rc);
 			return rc;
@@ -1287,28 +1274,24 @@ printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 
 	ctrl->system_regulator = devm_regulator_get_optional(ctrl->dev,
 								"system");
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 	if (IS_ERR(ctrl->system_regulator)) {
 		rc = PTR_ERR(ctrl->system_regulator);
 		if (rc != -EPROBE_DEFER) {
 			rc = 0;
 			ctrl->system_regulator = NULL;
 		} else {
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 			return rc;
 		}
 	}
 
 	ctrl->mem_acc_regulator = devm_regulator_get_optional(ctrl->dev,
 							      "mem-acc");
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 	if (IS_ERR(ctrl->mem_acc_regulator)) {
 		rc = PTR_ERR(ctrl->mem_acc_regulator);
 		if (rc != -EPROBE_DEFER) {
 			rc = 0;
 			ctrl->mem_acc_regulator = NULL;
 		} else {
-printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 			return rc;
 		}
 	}
