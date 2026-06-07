@@ -1967,8 +1967,8 @@ static const struct wcss_data wcss_ipq5018_res_init = {
 
 static const struct wcss_data wcss_ipq9574_res_init = {
 	.init_clock = ipq9574_init_clocks,
-	.q6_firmware_name = "ath11k/IPQ9574/q6_fw.mdt",
-	.m3_firmware_name = "ath11k/IPQ9574/m3_fw.mdt",
+	.q6_firmware_name = "ath11k/IPQ9574/hw1.0/q6_fw.mdt",
+	.m3_firmware_name = "ath11k/IPQ9574/hw1.0/m3_fw.mdt",
 	.version = WCSS_IPQ9574,
 	.crash_reason_smem = WCSS_CRASH_REASON,
 	.aon_reset_required = true,
