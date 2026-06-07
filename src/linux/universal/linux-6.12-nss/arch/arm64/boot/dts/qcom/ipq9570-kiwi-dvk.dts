@@ -19,6 +19,7 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
+		bootargs-append = " pci=pcie_bus_perf mitigations=off";
 	};
 
 	regulator_fixed_3p3: s3300 {

@@ -22,6 +22,7 @@
 	#size-cells = <2>;
 
 	clocks {
+
 		ref_48mhz_clk: ref-48mhz-clk {
 			compatible = "fixed-factor-clock";
 			clocks = <&xo_clk>;
@@ -241,6 +242,49 @@
 			reg = <0x0 0x4D800000 0x0 0x500000>;
 			status = "disabled";
 		};
+
+		m3_dump: m3_dump@4d600000 {
+			no-map;
+			reg = <0x0 0x4d600000 0x0 0x100000>;
+			status = "disabled";
+		};
+
+		 q6_etr_dump: q6_etr_dump@1 {
+			no-map;
+			reg = <0x0 0x4d700000 0x0 0x100000>;
+			status = "disabled";
+		};
+
+		qcn9224_pci0: qcn9224_pcie0@4dd00000 {
+			no-map;
+			reg = <0x0 0x4dd00000 0x0 0x3200000>;
+			status = "disabled";
+		};
+
+		qcn9224_pci1: qcn9224_pcie1@50f00000 {
+			no-map;
+			reg = <0x0 0x50f00000 0x0 0x3200000>;
+			status = "disabled";
+		};
+
+		qcn9224_pci2: qcn9224_pcie2@54100000 {
+			no-map;
+			reg = <0x0 0x54100000 0x0 0x3200000>;
+			status = "disabled";
+		};
+
+		qcn9224_pci3: qcn9224_pcie3@57300000 {
+			no-map;
+			reg = <0x0 0x57300000 0x0 0x3200000>;
+			status = "disabled";
+		};
+
+		qcn9000_pci0: qcn9000_pcie0@5c500000 {
+			no-map;
+			reg = <0x0 0x5c500000 0x0 0x3a00000>;
+			status = "disabled";
+		};
+
 	};
 
 	wcss: smp2p-wcss {
@@ -944,112 +988,135 @@
 		};
 
 		wifi: wifi@c000000 {
-			compatible = "qcom,ipq9074-wifi";
-			reg = <0x0 0xc000000 0x0 0x1000000>;
+			compatible = "qcom,ipq9574-wifi";
+			reg = <0xc000000 0x1000000>;
 			qcom,rproc = <&q6v5_wcss>;
 
 			qcom,bdf-addr = <0x4b700000>;
 			qcom,caldb-addr = <0x4d800000>;
 			qcom,caldb-size = <0x500000>;
 
-			interrupts = <GIC_SPI 320 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 319 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 318 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 317 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 316 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 315 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 314 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 311 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 310 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 411 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 410 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 40 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 39 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 302 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 301 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 37 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 36 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 296 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 295 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 294 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 293 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 292 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 291 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 290 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 289 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 288 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 239 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 236 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 235 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 234 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 233 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 232 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 231 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 230 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 229 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 228 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 224 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 223 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 203 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 183 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 180 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 179 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 178 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 177 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 176 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 163 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 162 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 160 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 159 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 158 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 157 IRQ_TYPE_EDGE_RISING>,
-				     <GIC_SPI 156 IRQ_TYPE_EDGE_RISING>;
-			interrupt-names = "misc-pulse1", "misc-latch", "sw-exception",
-					  "watchdog", "ce0", "ce1", "ce2", "ce3", "ce4",
-					  "ce5", "ce6", "ce7", "ce8", "ce9", "ce10",
-					  "ce11", "host2wbm-desc-feed",
-					  "host2reo-re-injection", "host2reo-command",
-					  "host2rxdma-monitor-ring3",
-					  "host2rxdma-monitor-ring2",
-					  "host2rxdma-monitor-ring1",
-					  "reo2host-exception", "wbm2host-rx-release",
-					  "reo2host-status",
-					  "reo2host-destination-ring4",
-					  "reo2host-destination-ring3",
-					  "reo2host-destination-ring2",
-					  "reo2host-destination-ring1",
-					  "rxdma2host-monitor-destination-mac3",
-					  "rxdma2host-monitor-destination-mac2",
-					  "rxdma2host-monitor-destination-mac1",
-					  "ppdu-end-interrupts-mac3",
-					  "ppdu-end-interrupts-mac2",
-					  "ppdu-end-interrupts-mac1",
-					  "rxdma2host-monitor-status-ring-mac3",
-					  "rxdma2host-monitor-status-ring-mac2",
-					  "rxdma2host-monitor-status-ring-mac1",
-					  "host2rxdma-host-buf-ring-mac3",
-					  "host2rxdma-host-buf-ring-mac2",
-					  "host2rxdma-host-buf-ring-mac1",
-					  "rxdma2host-destination-ring-mac3",
-					  "rxdma2host-destination-ring-mac2",
-					  "rxdma2host-destination-ring-mac1",
-					  "host2tcl-input-ring4",
-					  "host2tcl-input-ring3",
-					  "host2tcl-input-ring2",
-					  "host2tcl-input-ring1",
-					  "wbm2host-tx-completions-ring3",
-					  "wbm2host-tx-completions-ring2",
-					  "wbm2host-tx-completions-ring1",
-					  "tcl2host-status-ring";
+			interrupts = <GIC_SPI 320 IRQ_TYPE_EDGE_RISING>, /* o_wcss_apps_intr[0] =  */
+				<GIC_SPI 319 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 318 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 316 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 315 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 314 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 311 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 310 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 411 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 410 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 40 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 39 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 302 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 301 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 37 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 36 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 296 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 295 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 294 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 293 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 292 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 291 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 290 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 289 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 288 IRQ_TYPE_EDGE_RISING>, /* o_wcss_apps_intr[25] */
+				<GIC_SPI 239 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 236 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 235 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 234 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 233 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 232 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 231 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 230 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 229 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 228 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 224 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 223 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 203 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 183 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 180 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 179 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 178 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 177 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 176 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 163 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 162 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 160 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 414 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 159 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 158 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 157 IRQ_TYPE_EDGE_RISING>,
+				<GIC_SPI 156 IRQ_TYPE_EDGE_RISING>; /* o_wcss_apps_intr[51] */
+
+			interrupt-names = "misc-pulse1",
+				"misc-latch",
+				"sw-exception",
+				"ce0",
+				"ce1",
+				"ce2",
+				"ce3",
+				"ce4",
+				"ce5",
+				"ce6",
+				"ce7",
+				"ce8",
+				"ce9",
+				"ce10",
+				"ce11",
+				"host2wbm-desc-feed",
+				"host2reo-re-injection",
+				"host2reo-command",
+				"host2rxdma-monitor-ring3",
+				"host2rxdma-monitor-ring2",
+				"host2rxdma-monitor-ring1",
+				"reo2host-exception",
+				"wbm2host-rx-release",
+				"reo2host-status",
+				"reo2host-destination-ring4",
+				"reo2host-destination-ring3",
+				"reo2host-destination-ring2",
+				"reo2host-destination-ring1",
+				"rxdma2host-monitor-destination-mac3",
+				"rxdma2host-monitor-destination-mac2",
+				"rxdma2host-monitor-destination-mac1",
+				"ppdu-end-interrupts-mac3",
+				"ppdu-end-interrupts-mac2",
+				"ppdu-end-interrupts-mac1",
+				"rxdma2host-monitor-status-ring-mac3",
+				"rxdma2host-monitor-status-ring-mac2",
+				"rxdma2host-monitor-status-ring-mac1",
+				"host2rxdma-host-buf-ring-mac3",
+				"host2rxdma-host-buf-ring-mac2",
+				"host2rxdma-host-buf-ring-mac1",
+				"rxdma2host-destination-ring-mac3",
+				"rxdma2host-destination-ring-mac2",
+				"rxdma2host-destination-ring-mac1",
+				"host2tcl-input-ring4",
+				"host2tcl-input-ring3",
+				"host2tcl-input-ring2",
+				"host2tcl-input-ring1",
+				"wbm2host-tx-completions-ring4",
+				"wbm2host-tx-completions-ring3",
+				"wbm2host-tx-completions-ring2",
+				"wbm2host-tx-completions-ring1",
+				"tcl2host-status-ring";
+
+			qcom,pta-num = <0>;
+			qcom,coex-mode = <0x2>;
+			qcom,bt-active-time = <0x12>;
+			qcom,bt-priority-time = <0x0c>;
+			qcom,coex-algo = <0x2>;
+			qcom,pta-priority = <0x80800505>;
 			status = "disabled";
 		};
 
 		q6v5_wcss: remoteproc@cd00000 {
 			compatible = "qcom,ipq9574-wcss-pil";
 			reg = <0x0cd00000 0x4040>,
-			      <0x004ab000 0x20>;
+			      <0xCB50000 0x8>;
 			reg-names = "qdsp6",
-				    "rmb";
+				    "wcmn";
 
 			interrupts-extended = <&intc GIC_SPI 325 IRQ_TYPE_EDGE_RISING>,
 					      <&wcss_smp2p_in 0 IRQ_TYPE_NONE>,
@@ -1070,33 +1137,40 @@
 				      "wcss_q6_reset";
 
 			clocks = <&gcc GCC_ANOC_WCSS_AXI_M_CLK>,
+				 <&gcc GCC_WCSS_AHB_S_CLK>,
+				 <&gcc GCC_WCSS_ECAHB_CLK>,
+				 <&gcc GCC_WCSS_ACMT_CLK>,
+				 <&gcc GCC_WCSS_AXI_M_CLK>,
+				 <&gcc GCC_Q6_AXIM_CLK>,
+				 <&gcc GCC_Q6_AXIM2_CLK>,
 				 <&gcc GCC_Q6_AHB_CLK>,
 				 <&gcc GCC_Q6_AHB_S_CLK>,
-				 <&gcc GCC_Q6_AXIM_CLK>,
 				 <&gcc GCC_Q6SS_BOOT_CLK>,
+				 <&gcc GCC_Q6_TSCTR_1TO2_CLK>,
+				 <&gcc GCC_Q6SS_ATBM_CLK>,
+				 <&gcc GCC_Q6SS_PCLKDBG_CLK>,
+				 <&gcc GCC_Q6SS_TRIG_CLK>,
 				 <&gcc GCC_MEM_NOC_Q6_AXI_CLK>,
-				 <&gcc GCC_SYS_NOC_WCSS_AHB_CLK>,
-				 <&gcc GCC_WCSS_ACMT_CLK>,
-				 <&gcc GCC_WCSS_ECAHB_CLK>,
 				 <&gcc GCC_WCSS_Q6_TBU_CLK>,
-				 <&gcc GCC_WCSS_AHB_S_CLK>,
-				 <&gcc GCC_Q6_AXIM2_CLK>,
-				 <&gcc GCC_WCSS_AXI_M_CLK>;
+				 <&gcc GCC_SYS_NOC_WCSS_AHB_CLK>;
 
 			clock-names = "anoc_wcss_axi_m",
+				      "wcss_ahb_s",
+				      "wcss_ecahb",
+				      "wcss_acmt",
+				      "wcss_axi_m",
+				      "q6_axim",
+				      "q6_axim2",
 				      "q6_ahb",
 				      "q6_ahb_s",
-				      "q6_axim",
 				      "q6ss_boot",
+				      "q6_tsctr_1to2_clk",
+				      "q6ss_atbm_clk",
+				      "q6ss_pclkdbg_clk",
+				      "q6ss_trig_clk",
 				      "mem_noc_q6_axi",
-				      "sys_noc_wcss_ahb",
-				      "wcss_acmt",
-				      "wcss_ecahb",
 				      "wcss_q6_tbu",
-				      "q6_axim2",
-				      "wcss_ahb_s",
-				      "wcss_axi_m";
-
+				      "sys_noc_wcss_ahb";
 			qcom,halt-regs = <&tcsr 0x18000 0x1b000 0xe000>;
 
 			qcom,smem-states = <&wcss_smp2p_out 0>,
@@ -1433,7 +1507,6 @@
 			status = "disabled";
 		};
 
-
 		nsscc: clock-controller@39b00000 {
 			compatible = "qcom,ipq9574-nsscc";
 			reg = <0x39b00000 0x80000>;
@@ -1685,3 +1758,4 @@
 			     <GIC_PPI 1 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
 	};
 };
+#include "ipq9574-cpr-regulator.dtsi"

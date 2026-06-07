@@ -389,7 +389,7 @@
 	};
 
 	aqr114c: ethernet-phy@8 {
-		compatible = "ethernet-phy-ieee802.3-c45";
+		compatible = "ethernet-phy-ieee802.3-c45", "aquantia";
 		reg = <8>;
 		reset-gpios = <&tlmm 44 GPIO_ACTIVE_LOW>;
 		firmware-name = "marvell/AQR-G4_v5.6.5-AQR_WNC_SAQA-L2_GT_ID45287_VER24005.cld";
