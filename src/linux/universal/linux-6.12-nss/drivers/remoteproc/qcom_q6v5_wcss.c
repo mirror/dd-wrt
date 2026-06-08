@@ -1797,7 +1797,7 @@ static int ipq9574_init_clocks(struct q6v5_wcss *wcss)
 	static const char *const pre_boot_clks[] = {
 		"anoc_wcss_axi_m", "q6_ahb", "q6_ahb_s", "q6_axim", "q6ss_boot",
 		"mem_noc_q6_axi", "sys_noc_wcss_ahb", "wcss_acmt", "wcss_ecahb",
-		"wcss_q6_tbu", "q6_tsctr_1to2_clk", "q6ss_atbm_clk", "q6ss_pclkdbg_clk", "q6ss_trig_clk" };
+		"wcss_q6_tbu" };
 	static const char *const clks[] = {
 		"q6_axim2", "wcss_ahb_s", "wcss_axi_m" };
 	int i, ret;
