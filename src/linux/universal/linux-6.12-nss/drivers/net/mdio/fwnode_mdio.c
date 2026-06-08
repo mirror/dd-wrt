@@ -126,10 +126,9 @@ int fwnode_mdiobus_register_phy(struct mii_bus *bus,
 	struct pse_control *psec = NULL;
 	struct phy_device *phy;
 	struct phy_c45_device_ids c45_ids;
-	bool is_c45;
+	bool is_c45, is_aqr;
 	u32 phy_id;
 	int rc, retries = 0;
-
 	psec = fwnode_find_pse_control(child);
 	if (IS_ERR(psec))
 		return PTR_ERR(psec);
@@ -141,39 +140,51 @@ int fwnode_mdiobus_register_phy(struct mii_bus *bus,
 	}
 
 	is_c45 = fwnode_device_is_compatible(child, "ethernet-phy-ieee802.3-c45");
+	is_aqr = fwnode_device_is_compatible(child, "aquantia");
 
-	memset(&c45_ids, 0xff, sizeof(c45_ids));
-	c45_ids.devices_in_package = BIT(MDIO_MMD_PMAPMD);
-	c45_ids.mmds_present = BIT(MDIO_MMD_PMAPMD);
+	
 
-	if (!fwnode_get_phy_id(child, &phy_id)) {
-		if (is_c45) {
-			/*
-			 * DT supplied a Clause 45 PHY ID in the form
-			 * "ethernet-phy-idXXXX.XXXX". Populate synthetic
-			 * c45_ids so normal C45 driver matching and module
-			 * autoload work.
-			 */
-			c45_ids.device_ids[MDIO_MMD_PMAPMD] = phy_id;
-			phy = phy_device_create(bus, addr, 0, true, &c45_ids);
+//	if (of_machine_is_compatible("qcom,ipq6018")) {
+	if (is_aqr) {
+		memset(&c45_ids, 0xff, sizeof(c45_ids));
+		c45_ids.devices_in_package = BIT(MDIO_MMD_PMAPMD);
+		c45_ids.mmds_present = BIT(MDIO_MMD_PMAPMD);
+
+		if (!fwnode_get_phy_id(child, &phy_id)) {
+			if (is_c45) {
+				/*
+				 * DT supplied a Clause 45 PHY ID in the form
+				 * "ethernet-phy-idXXXX.XXXX". Populate synthetic
+				 * c45_ids so normal C45 driver matching and module
+				 * autoload work.
+				 */
+				c45_ids.device_ids[MDIO_MMD_PMAPMD] = phy_id;
+				phy = phy_device_create(bus, addr, 0, true, &c45_ids);
+			} else {
+				phy = phy_device_create(bus, addr, phy_id, false, NULL);
+			}
 		} else {
-			phy = phy_device_create(bus, addr, phy_id, false, NULL);
+	 		phy = get_phy_device(bus, addr, is_c45);
+	
+			if (IS_ERR(phy) && is_c45 && PTR_ERR(phy) == -ENODEV) {
+				/*
+				 * Some DT-declared Clause 45 PHYs can take time after
+				 * power-on/reset before they answer ID reads.
+				 * Retry for up to 5 seconds before giving up.
+				 */
+				for (retries = 1; retries <= 50; retries++) {
+					msleep(100);
+					phy = get_phy_device(bus, addr, true);
+					if (!IS_ERR(phy) || PTR_ERR(phy) != -ENODEV)
+						break;
+				}
+			}
 		}
 	} else {
- 		phy = get_phy_device(bus, addr, is_c45);
-
-		if (IS_ERR(phy) && is_c45 && PTR_ERR(phy) == -ENODEV) {
-			/*
-			 * Some DT-declared Clause 45 PHYs can take time after
-			 * power-on/reset before they answer ID reads.
-			 * Retry for up to 5 seconds before giving up.
-			 */
-			for (retries = 1; retries <= 50; retries++) {
-				msleep(100);
-				phy = get_phy_device(bus, addr, true);
-				if (!IS_ERR(phy) || PTR_ERR(phy) != -ENODEV)
-					break;
-			}
+		if (is_c45 || fwnode_get_phy_id(child, &phy_id)) {
+			phy = get_phy_device(bus, addr, is_c45);
+		} else {
+			phy = phy_device_create(bus, addr, phy_id, 0, NULL);
 		}
 	}
 

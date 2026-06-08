@@ -32,6 +32,12 @@ struct mdio_gpio_info {
 	struct gpio_desc *mdc, *mdio, *mdo;
 };
 
+#if IS_ENABLED(CONFIG_MDIO_IPQ4019)
+extern void ipq_mii_preinit(struct mii_bus *bus);
+extern u32 ipq_mii_read(struct mii_bus *mii_bus, u32 reg);
+extern void ipq_mii_write(struct mii_bus *mii_bus, u32 reg, u32 val);
+#endif
+
 static int mdio_gpio_get_data(struct device *dev,
 			      struct mdio_gpio_info *bitbang)
 {
@@ -114,6 +120,9 @@ static struct mii_bus *mdio_gpio_bus_init(struct device *dev,
 	struct mii_bus *new_bus;
 
 	bitbang->ctrl.ops = &mdio_gpio_ops;
+	bitbang->ctrl.preinit = ipq_mii_preinit;
+	bitbang->ctrl.sw_read = ipq_mii_read;
+	bitbang->ctrl.sw_write = ipq_mii_write;
 
 	new_bus = alloc_mdio_bitbang(&bitbang->ctrl);
 	if (!new_bus)
@@ -123,16 +132,17 @@ static struct mii_bus *mdio_gpio_bus_init(struct device *dev,
 	new_bus->parent = dev;
 
 	if (bus_id != -1)
-		snprintf(new_bus->id, sizeof(new_bus->id), "gpio-%x", bus_id);
+		snprintf(new_bus->id, MII_BUS_ID_SIZE, "gpio-%x", bus_id);
 	else
-		strscpy(new_bus->id, "gpio", sizeof(new_bus->id));
+		strncpy(new_bus->id, "gpio", MII_BUS_ID_SIZE);
 
 	if (pdata) {
 		new_bus->phy_mask = pdata->phy_mask;
 		new_bus->phy_ignore_ta_mask = pdata->phy_ignore_ta_mask;
 	}
 
-	if (device_is_compatible(dev, "microchip,mdio-smi0")) {
+	if (dev->of_node &&
+	    of_device_is_compatible(dev->of_node, "microchip,mdio-smi0")) {
 		bitbang->ctrl.op_c22_read = 0;
 		bitbang->ctrl.op_c22_write = 0;
 		bitbang->ctrl.override_op_c22 = 1;
@@ -186,6 +196,9 @@ static int mdio_gpio_probe(struct platform_device *pdev)
 	if (!new_bus)
 		return -ENODEV;
 
+#if IS_ENABLED(CONFIG_MDIO_IPQ4019)
+	bitbang->ctrl.preinit(new_bus);
+#endif
 	ret = of_mdiobus_register(new_bus, pdev->dev.of_node);
 	if (ret)
 		mdio_gpio_bus_deinit(&pdev->dev);
@@ -196,6 +209,8 @@ static int mdio_gpio_probe(struct platform_device *pdev)
 static void mdio_gpio_remove(struct platform_device *pdev)
 {
 	mdio_gpio_bus_destroy(&pdev->dev);
+
+	return;
 }
 
 static const struct of_device_id mdio_gpio_of_match[] = {
@@ -207,7 +222,7 @@ MODULE_DEVICE_TABLE(of, mdio_gpio_of_match);
 
 static struct platform_driver mdio_gpio_driver = {
 	.probe = mdio_gpio_probe,
-	.remove_new = mdio_gpio_remove,
+	.remove = mdio_gpio_remove,
 	.driver		= {
 		.name	= "mdio-gpio",
 		.of_match_table = mdio_gpio_of_match,
