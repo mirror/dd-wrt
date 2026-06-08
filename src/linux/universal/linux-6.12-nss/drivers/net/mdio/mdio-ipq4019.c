@@ -89,10 +89,9 @@
 #define CMN_PLL_CMN_PLL_CLK50M_62P5M_EN1	BIT(10)
 #define CMN_PLL_CMN_PLL_CLK50M_62P5M_EN2	BIT(14)
 
-#define SWITCH_REG_TYPE_MASK			GENMASK(31, 29)
+#define SWITCH_REG_TYPE_MASK			GENMASK(31, 28)
 #define SWITCH_REG_TYPE_QCA8386			0
 #define SWITCH_REG_TYPE_QCA8337			1
-#define SWITCH_REG_TYPE_QCA81XX			2
 #define SWITCH_HIGH_ADDR_DFLT			0x200
 
 enum mdio_clk_id {
@@ -116,7 +115,6 @@ struct ipq4019_mdio_data {
 	u32 (*sw_read)(struct mii_bus *bus, u32 reg);
 	void (*sw_write)(struct mii_bus *bus, u32 reg, u32 val);
 	struct clk *clk[MDIO_CLK_CNT];
-	void *i2c;
 };
 
 const char * const ppe_clk_name[] = {
@@ -148,7 +146,6 @@ static int _ipq4019_mdio_read_c45(struct mii_bus *bus, int mii_id, int mmd,
 	data = readl(priv->membase[0] + MDIO_MODE_REG);
 
 	data |= MDIO_MODE_C45;
-	data &= ~MDIO_CLK_DIV_MASK;
 	data |= FIELD_PREP(MDIO_CLK_DIV_MASK, priv->clk_div);
 
 	writel(data, priv->membase[0] + MDIO_MODE_REG);
@@ -191,7 +188,6 @@ static int ipq4019_mdio_read_c22(struct mii_bus *bus, int mii_id, int regnum)
 	data = readl(priv->membase[0] + MDIO_MODE_REG);
 
 	data &= ~MDIO_MODE_C45;
-	data &= ~MDIO_CLK_DIV_MASK;
 	data |= FIELD_PREP(MDIO_CLK_DIV_MASK, priv->clk_div);
 
 	writel(data, priv->membase[0] + MDIO_MODE_REG);
@@ -225,7 +221,6 @@ static int _ipq4019_mdio_write_c45(struct mii_bus *bus, int mii_id, int mmd,
 	data = readl(priv->membase[0] + MDIO_MODE_REG);
 
 	data |= MDIO_MODE_C45;
-	data &= ~MDIO_CLK_DIV_MASK;
 	data |= FIELD_PREP(MDIO_CLK_DIV_MASK, priv->clk_div);
 
 	writel(data, priv->membase[0] + MDIO_MODE_REG);
@@ -270,7 +265,6 @@ static int ipq4019_mdio_write_c22(struct mii_bus *bus, int mii_id, int regnum,
 	data = readl(priv->membase[0] + MDIO_MODE_REG);
 
 	data &= ~MDIO_MODE_C45;
-	data &= ~MDIO_CLK_DIV_MASK;
 	data |= FIELD_PREP(MDIO_CLK_DIV_MASK, priv->clk_div);
 
 	writel(data, priv->membase[0] + MDIO_MODE_REG);
@@ -422,93 +416,34 @@ int qca8386_write(struct mii_bus *bus, unsigned int reg, unsigned int val)
 	return 0;
 };
 
-static inline void qca81xx_split_addr(u32 regaddr, u16 *reg_low, u16 *reg_mid,
-					u16 *reg_high)
-{
-	*reg_low = (regaddr & 0xc) << 1;
-
-	*reg_mid = regaddr >> 4 & 0xffff;
-
-	*reg_high = ((regaddr >> 20 & 0xf) << 1) | BIT(0);
-}
-
-static u32 qca81xx_read(struct mii_bus *bus, u32 reg)
-{
-	u16 reg_low, reg_mid, reg_high;
-	u16 lo, hi;
-	u32 addr;
-
-	addr = FIELD_GET(GENMASK(28, 24), reg);
-	qca81xx_split_addr(reg, &reg_low, &reg_mid, &reg_high);
-	/*write ahb address bit4~bit23*/
-	__mdiobus_write(bus, addr, reg_high & 0x1f, reg_mid);
-	udelay(100);
-	/*write ahb address bit0~bit3 and read low 16bit data*/
-	lo = __mdiobus_read(bus, addr, reg_low);
-	/*write ahb address bit0~bit3 and read high 16 bit data*/
-	hi = __mdiobus_read(bus, addr, (reg_low + 4));
-
-	return (hi << 16) | lo;
-}
-
-static void qca81xx_write(struct mii_bus *bus, u32 reg, u32 val)
-{
-	u16 reg_low, reg_mid, reg_high;
-	u16 lo, hi;
-	u32 addr;
-
-	addr = FIELD_GET(GENMASK(28, 24), reg);
-
-	qca81xx_split_addr(reg, &reg_low, &reg_mid, &reg_high);
-	lo = val & 0xffff;
-	hi = (u16)(val >> 16);
-
-	/*write ahb address bit4~bit23*/
-	__mdiobus_write(bus, addr, reg_high & 0x1f, reg_mid);
-	udelay(100);
-	/*write ahb address bit0~bit3 and write low 16 bit data*/
-	__mdiobus_write(bus, addr, reg_low, lo);
-	/*write ahb address bit0~bit3 and write high 16 bit data*/
-	__mdiobus_write(bus, addr, (reg_low + 4), hi);
-}
-
 u32 ipq_mii_read(struct mii_bus *mii_bus, u32 reg)
 {
 	u32 val = 0xffffffff;
-
 	switch (FIELD_GET(SWITCH_REG_TYPE_MASK, reg)) {
-	case SWITCH_REG_TYPE_QCA81XX:
-		val = qca81xx_read(mii_bus, reg);
-		break;
-	case SWITCH_REG_TYPE_QCA8337:
-		val = qca8337_read(mii_bus, reg);
-		break;
-	case SWITCH_REG_TYPE_QCA8386:
-	default:
-		val = qca8386_read(mii_bus, reg);
-		break;
+		case SWITCH_REG_TYPE_QCA8337:
+			val = qca8337_read(mii_bus, reg);
+			break;
+		case SWITCH_REG_TYPE_QCA8386:
+		default:
+			val = qca8386_read(mii_bus, reg);
+			break;
 	}
+
 	return val;
 }
-EXPORT_SYMBOL_GPL(ipq_mii_read);
 
 void ipq_mii_write(struct mii_bus *mii_bus, u32 reg, u32 val)
 {
 	switch (FIELD_GET(SWITCH_REG_TYPE_MASK, reg)) {
-	case SWITCH_REG_TYPE_QCA81XX:
-		qca81xx_write(mii_bus, reg, val);
-		break;
-	case SWITCH_REG_TYPE_QCA8337:
-		qca8337_write(mii_bus, reg, val);
-		break;
-	case SWITCH_REG_TYPE_QCA8386:
-	default:
-		qca8386_write(mii_bus, reg, val);
-		break;
+		case SWITCH_REG_TYPE_QCA8337:
+			qca8337_write(mii_bus, reg, val);
+			break;
+		case SWITCH_REG_TYPE_QCA8386:
+		default:
+			qca8386_write(mii_bus, reg, val);
+			break;
 	}
-	qca8386_write(mii_bus, reg, val);
 }
-EXPORT_SYMBOL_GPL(ipq_mii_write);
 
 static inline void ipq_qca8386_clk_enable(struct mii_bus *mii_bus, u32 reg)
 {
@@ -564,16 +499,12 @@ static void ipq_phy_addr_fixup(struct mii_bus *bus, struct device_node *np)
 	struct device_node *child;
 	int phy_index, addr, len;
 	const __be32 *phy_cfg, *uniphy_cfg;
-	const __be32 *phy_cfg_fix, *uniphy_cfg_fix;
 	u32 val;
 	bool mdio_access = false;
 	unsigned long phyaddr_mask = 0;
 
 	phy_cfg = of_get_property(np, "phyaddr_fixup", &len);
 	uniphy_cfg = of_get_property(np, "uniphyaddr_fixup", NULL);
-
-	phy_cfg_fix = of_get_property(np, "phyaddr_fixup_fix", &len);
-	uniphy_cfg_fix = of_get_property(np, "uniphyaddr_fixup_fix", NULL);
 
 	/*
 	 * For MDIO access, phyaddr_fixup only provides the register address,
@@ -604,6 +535,7 @@ static void ipq_phy_addr_fixup(struct mii_bus *bus, struct device_node *np)
 			continue;
 		}
 		phyaddr_mask |= BIT(addr);
+
 		if (!of_find_property(child, "fixup", NULL))
 			continue;
 
@@ -612,8 +544,7 @@ static void ipq_phy_addr_fixup(struct mii_bus *bus, struct device_node *np)
 		val |= addr << (phy_index * PHY_ADDR_LENGTH);
 		phy_index++;
 	}
-	if (phy_cfg_fix)
-	    val = be32_to_cpup(phy_cfg_fix);
+
 	/* Programe the PHY address */
 	dev_info(bus->parent, "Program EPHY reg 0x%x with 0x%x\n",
 			be32_to_cpup(phy_cfg), val);
@@ -659,8 +590,6 @@ static void ipq_phy_addr_fixup(struct mii_bus *bus, struct device_node *np)
 				}
 			}
 
-			if (uniphy_cfg_fix)
-				val = be32_to_cpup(uniphy_cfg_fix);
 			dev_info(bus->parent, "Program UNIPHY reg 0x%x with 0x%x\n",
 					be32_to_cpup(uniphy_cfg), val);
 
@@ -674,7 +603,6 @@ static void ipq_qca8386_efuse_loading(struct mii_bus *mii_bus, u8 ethphy)
 	u32 val = 0, ldo_efuse = 0, icc_efuse = 0, phy_addr = 0;
 	u16 reg_val = 0;
 
-	printk(KERN_INFO "%s\n", __func__);
 	phy_addr = ipq_mii_read(mii_bus, EPHY_CFG);
 	phy_addr = (phy_addr >> (ethphy * PHY_ADDR_LENGTH)) & GENMASK(4, 0);
 
@@ -732,7 +660,7 @@ static void ipq_qca8386_clock_init(struct mii_bus *mii_bus)
 {
 	u32 val = 0;
 	int i;
-	printk(KERN_INFO "%s\n", __func__);
+
 	/* Enable serdes */
 	ipq_qca8386_clk_enable(mii_bus, SRDS0_SYS_CBCR);
 	ipq_qca8386_clk_enable(mii_bus, SRDS1_SYS_CBCR);
@@ -939,8 +867,6 @@ static int ipq_mdio_reset(struct mii_bus *bus)
 		gpiod_set_array_value_cansleep(priv->reset_gpios->ndescs, priv->reset_gpios->desc,
 				priv->reset_gpios->info, values);
 		bitmap_free(values);
-
-		fsleep(IPQ_PHY_SET_DELAY_US);
 	}
 
 	/* Configure MDIO clock source frequency if clock is specified in the device tree */
@@ -965,7 +891,7 @@ static int ipq4019_mdio_probe(struct platform_device *pdev)
 	struct mii_bus *bus;
 	struct resource *res;
 	int ret, i;
-
+	printk(KERN_INFO "reprobe mdio\n");
 	bus = devm_mdiobus_alloc_size(&pdev->dev, sizeof(*priv));
 	if (!bus)
 		return -ENOMEM;
@@ -1010,8 +936,7 @@ static int ipq4019_mdio_probe(struct platform_device *pdev)
 				    bus->id);
 		return ret;
 	}
-
-	
+//	ipq_mdio_reset(bus);
 	/* MDIO default frequency is 6.25MHz */
 	priv->clk_div = 0xf;
 	priv->force_c22 = of_property_read_bool(pdev->dev.of_node, "force_clause22");
@@ -1036,7 +961,7 @@ static int ipq4019_mdio_probe(struct platform_device *pdev)
 	}
 
 	platform_set_drvdata(pdev, bus);
-	ipq_mdio_reset(bus);
+
 	return 0;
 }
 
