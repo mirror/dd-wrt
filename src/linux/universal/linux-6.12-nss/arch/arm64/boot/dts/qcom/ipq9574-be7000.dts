@@ -323,42 +323,6 @@
 		};
 };
 
-&rpm_requests {
-	regulators {
-		compatible = "qcom,rpm-mp5496-regulators";
-
-		ipq9574_s1: s1 {
-		 /*
-		 * During kernel bootup, the SoC runs at 800MHz with 875mV set by the bootloaders.
-		 * During regulator registration, kernel not knowing the initial voltage,
-		 * considers it as zero and brings up the regulators with minimum supported voltage.
-		 * Updating the regulator-min-microvolt with SVS voltage of 725000uV so that
-		 * the regulators are brought up with 725000uV which is sufficient for all the
-		 * corner parts to operate at 800MHz
-		 */
-			regulator-min-microvolt = <587500>;
-			regulator-max-microvolt = <1075000>;
-		};
-		ipq9574_s2: s2 {
-			regulator-min-microvolt = <700000>;
-			regulator-max-microvolt = <1000000>;
-		};
-
-		ipq9574_s4: s4 {
-			regulator-min-microvolt = <1>;
-			regulator-max-microvolt = <9>;
-			regulator-always-on;
-		};
-
-		mp5496_l5: l5 {
-			regulator-min-microvolt = <1800000>;
-			regulator-max-microvolt = <1800000>;
-			regulator-always-on;
-			regulator-boot-on;
-		};
-	};
-};
-
 &sleep_clk {
 	clock-frequency = <32000>;
 };
@@ -545,15 +509,15 @@
 
 &mdio {
 	status = "okay";
-	clock-frequency = <6250000>;
+/*	clock-frequency = <6250000>; */
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
 	reset-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
-/*	phyaddr_fixup = <0xc90f018>;
+	phyaddr_fixup = <0xc90f018>;
 	uniphyaddr_fixup = <0xc90f014>;	
-	mdio_clk_fixup; */
+	mdio_clk_fixup; 
 
-	qca8k_nsscc: clock-controller@18 {
+/*	qca8k_nsscc: clock-controller@18 {
 		compatible = "qcom,qca8084-nsscc";
 		reg = <0x18>;
 		clocks = <&cmn_pll ETH0_50MHZ_CLK>,
@@ -565,11 +529,11 @@
 			 <0>;
 		#clock-cells = <1>;
 		#reset-cells = <1>;
-	};
+	};*/
 	
 
 
-#if 0
+#if 1
 	phy0: ethernet-phy@0 {
 		      reg = <1>;
 		      fixup;
@@ -597,7 +561,7 @@
 #endif
 
 
-#if 1
+#if 0
 	ethernet-phy-package@1 {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -1104,10 +1068,9 @@
 
 };
 
-&ess_instance {
-			num_devices = <0x1>;
 
-			ess-switch@3a000000 {
+&switch {
+				status = "okay";
 				switch_cpu_bmp = <0x1>;
 				switch_inner_bmp = <0x80>;
 				switch_lan_bmp = <0x3e>;
@@ -1578,7 +1541,7 @@
 					active = "high";
 				};
 			};
-		};
+
 
 
 &usb_0_dwc3 {
@@ -1586,7 +1549,7 @@
 };
 
 &usb_0_qmpphy {
-	/*vdda-pll-supply = <&mp5496_l5>;*/
+/*	vdda-pll-supply = <&mp5496_l5>;*/
 	vdda-phy-supply = <&regulator_fixed_0p925>;
 
 	status = "okay";
@@ -1594,7 +1557,7 @@
 
 &usb_0_qusbphy {
 	vdd-supply = <&regulator_fixed_0p925>;
-	/*vdda-pll-supply = <&mp5496_l5>;*/
+/*	vdda-pll-supply = <&mp5496_l5>;*/
 	vdda-phy-dpdm-supply = <&regulator_fixed_3p3>;
 
 	status = "okay";
@@ -1603,6 +1566,7 @@
 &usb3 {
 	status = "okay";
 };
+
 
 &apc_apm {
 	status = "okay";
@@ -1617,6 +1581,7 @@
 	vdd-supply = <&ipq9574_s2>;
 	status = "okay";
 };
+
 
 /*
  * The bootstrap pins for the board select the XO clock frequency
@@ -1642,3 +1607,67 @@
 	clock-frequency = <48000000>;
 };
 
+&CPU0 {
+	cpu-supply = <&apc_vreg>;
+};
+
+&CPU1 {
+	cpu-supply = <&apc_vreg>;
+};
+
+&CPU2 {
+	cpu-supply = <&apc_vreg>;
+};
+
+&CPU3 {
+	cpu-supply = <&apc_vreg>;
+};
+/*
+&rpm_requests {
+	regulators {
+		compatible = "qcom,rpm-mp5496-regulators";
+
+		ipq9574_s1: s1 {
+			regulator-min-microvolt = <587500>;
+			regulator-max-microvolt = <1075000>;
+		};
+
+		ipq9574_s2: s2 {
+			regulator-min-microvolt = <700000>;
+			regulator-max-microvolt = <1000000>;
+		};
+
+		ipq9574_s4: s4 {
+			regulator-min-microvolt = <1>;
+			regulator-max-microvolt = <9>;
+			regulator-always-on;
+		};
+
+		mp5496_l5: l5 {
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-always-on;
+			regulator-boot-on;
+		};
+	};
+};
+
+
+&rpm_requests {
+	regulators {
+		compatible = "qcom,rpm-mp5496-regulators";
+
+		ipq9574_s1: ipq9574-s1 {
+			regulator-min-microvolt = <725000>;
+			regulator-max-microvolt = <1075000>;
+		};
+
+		mp5496_l5: mp5496-l5 {
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-always-on;
+			regulator-boot-on;
+		};
+	};
+};
+*/

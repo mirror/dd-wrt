@@ -98,7 +98,6 @@
 			clocks = <&apcs_glb APCS_ALIAS0_CORE_CLK>;
 			clock-names = "cpu";
 			operating-points-v2 = <&cpu_opp_table>;
-			cpu-supply = <&ipq9574_s1>;
 			#cooling-cells = <2>;
 		};
 
@@ -126,52 +125,60 @@
 		compatible = "operating-points-v2-kryo-cpu";
 		opp-shared;
 		nvmem-cells = <&cpu_speed_bin>;
+		nvmem-cell-names = "speed_bin";
 
 		opp-936000000 {
 			opp-hz = /bits/ 64 <936000000>;
-			opp-microvolt = <725000>;
+			opp-microvolt = <1>;
 			opp-supported-hw = <0xf>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1104000000 {
 			opp-hz = /bits/ 64 <1104000000>;
-			opp-microvolt = <787500>;
+			opp-microvolt = <2>;
 			opp-supported-hw = <0xf>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1200000000 {
 			opp-hz = /bits/ 64 <1200000000>;
-			opp-microvolt = <862500>;
-			opp-supported-hw = <0xf>;
+			opp-microvolt = <3>;
+			opp-supported-hw = <0x8>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1416000000 {
 			opp-hz = /bits/ 64 <1416000000>;
-			opp-microvolt = <862500>;
+			opp-microvolt = <3>;
 			opp-supported-hw = <0x7>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1488000000 {
 			opp-hz = /bits/ 64 <1488000000>;
-			opp-microvolt = <925000>;
+			opp-microvolt = <4>;
 			opp-supported-hw = <0x7>;
+			clock-latency-ns = <200000>;
+		};
+
+		opp-1608000000 {
+			opp-hz = /bits/ 64 <1608000000>;
+			opp-microvolt = <4>;
+			opp-supported-hw = <0x0>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1800000000 {
 			opp-hz = /bits/ 64 <1800000000>;
-			opp-microvolt = <987500>;
-			opp-supported-hw = <0x5>;
+			opp-microvolt = <5>;
+			opp-supported-hw = <0x3>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-2208000000 {
 			opp-hz = /bits/ 64 <2208000000>;
-			opp-microvolt = <1062500>;
+			opp-microvolt = <6>;
 			opp-supported-hw = <0x1>;
 			clock-latency-ns = <200000>;
 		};
@@ -199,9 +206,76 @@
 			rpm_requests: rpm-requests {
 				compatible = "qcom,rpm-ipq9574", "qcom,glink-smd-rpm";
 				qcom,glink-channels = "rpm_requests";
+				regulators {
+	        			compatible = "qcom,rpm-mp5496-regulators";
+					ipq9574_s1: s1 {
+					    	regulator-min-microvolt = <587500>;
+						regulator-max-microvolt = <1075000>;
+					    	regulator-always-on;
+					};
+
+					ipq9574_s2: s2 {
+						regulator-min-microvolt = <700000>;
+						regulator-max-microvolt = <1000000>;
+						regulator-always-on;
+					};
+
+					ipq9574_s4: s4 {
+						regulator-min-microvolt = <1>;
+						regulator-max-microvolt = <9>;
+						regulator-always-on;
+					};
+
+					mp5496_l2: l2 {
+		    				regulator-min-microvolt = <1800000>;
+		    				regulator-max-microvolt = <1800000>;
+						regulator-always-on;
+						regulator-boot-on;
+					};
+				};
 			};
 		};
 	};
+	
+
+/*	rpm-glink {
+		compatible = "qcom,glink-rpm";
+		interrupts = <GIC_SPI 168 IRQ_TYPE_EDGE_RISING>;
+		qcom,rpm-msg-ram = <&rpm_msg_ram>;
+		mboxes = <&apcs_glb 0>;
+
+		rpm_requests: glink-channel {
+			compatible = "qcom,rpm-ipq9574";
+			qcom,glink-channels = "rpm_requests";
+			regulators {
+	        		compatible = "qcom,rpm-mp5496-regulators";
+				ipq9574_s1: s1 {
+				    	regulator-min-microvolt = <587500>;
+					regulator-max-microvolt = <1075000>;
+				    	regulator-always-on;
+				};
+			    	ipq9574_s2: s2 {
+					regulator-min-microvolt = <700000>;
+					regulator-max-microvolt = <1000000>;
+					regulator-always-on;
+				};
+				
+				ipq9574_s4: s4 {
+					regulator-min-microvolt = <1>;
+					regulator-max-microvolt = <9>;
+					regulator-always-on;
+				};
+				
+				mp5496_l2: l2 {
+					regulator-min-microvolt = <1800000>;
+    					regulator-max-microvolt = <1800000>;
+    		    			regulator-always-on;
+					regulator-boot-on;
+				};
+			};
+
+		};
+	};*/
 
 	reserved-memory {
 		#address-cells = <2>;
@@ -1111,12 +1185,13 @@
 			status = "disabled";
 		};
 
+
 		q6v5_wcss: remoteproc@cd00000 {
 			compatible = "qcom,ipq9574-wcss-pil";
 			reg = <0x0cd00000 0x4040>,
-			      <0xCB50000 0x8>;
+			      <0x004ab000 0x20>;
 			reg-names = "qdsp6",
-				    "wcmn";
+				    "rmb";
 
 			interrupts-extended = <&intc GIC_SPI 325 IRQ_TYPE_EDGE_RISING>,
 					      <&wcss_smp2p_in 0 IRQ_TYPE_NONE>,
@@ -1137,40 +1212,33 @@
 				      "wcss_q6_reset";
 
 			clocks = <&gcc GCC_ANOC_WCSS_AXI_M_CLK>,
-				 <&gcc GCC_WCSS_AHB_S_CLK>,
-				 <&gcc GCC_WCSS_ECAHB_CLK>,
-				 <&gcc GCC_WCSS_ACMT_CLK>,
-				 <&gcc GCC_WCSS_AXI_M_CLK>,
-				 <&gcc GCC_Q6_AXIM_CLK>,
-				 <&gcc GCC_Q6_AXIM2_CLK>,
 				 <&gcc GCC_Q6_AHB_CLK>,
 				 <&gcc GCC_Q6_AHB_S_CLK>,
+				 <&gcc GCC_Q6_AXIM_CLK>,
 				 <&gcc GCC_Q6SS_BOOT_CLK>,
-				 <&gcc GCC_Q6_TSCTR_1TO2_CLK>,
-				 <&gcc GCC_Q6SS_ATBM_CLK>,
-				 <&gcc GCC_Q6SS_PCLKDBG_CLK>,
-				 <&gcc GCC_Q6SS_TRIG_CLK>,
 				 <&gcc GCC_MEM_NOC_Q6_AXI_CLK>,
+				 <&gcc GCC_SYS_NOC_WCSS_AHB_CLK>,
+				 <&gcc GCC_WCSS_ACMT_CLK>,
+				 <&gcc GCC_WCSS_ECAHB_CLK>,
 				 <&gcc GCC_WCSS_Q6_TBU_CLK>,
-				 <&gcc GCC_SYS_NOC_WCSS_AHB_CLK>;
+				 <&gcc GCC_WCSS_AHB_S_CLK>,
+				 <&gcc GCC_Q6_AXIM2_CLK>,
+				 <&gcc GCC_WCSS_AXI_M_CLK>;
 
 			clock-names = "anoc_wcss_axi_m",
-				      "wcss_ahb_s",
-				      "wcss_ecahb",
-				      "wcss_acmt",
-				      "wcss_axi_m",
-				      "q6_axim",
-				      "q6_axim2",
 				      "q6_ahb",
 				      "q6_ahb_s",
+				      "q6_axim",
 				      "q6ss_boot",
-				      "q6_tsctr_1to2_clk",
-				      "q6ss_atbm_clk",
-				      "q6ss_pclkdbg_clk",
-				      "q6ss_trig_clk",
 				      "mem_noc_q6_axi",
+				      "sys_noc_wcss_ahb",
+				      "wcss_acmt",
+				      "wcss_ecahb",
 				      "wcss_q6_tbu",
-				      "sys_noc_wcss_ahb";
+				      "q6_axim2",
+				      "wcss_ahb_s",
+				      "wcss_axi_m";
+
 			qcom,halt-regs = <&tcsr 0x18000 0x1b000 0xe000>;
 
 			qcom,smem-states = <&wcss_smp2p_out 0>,
