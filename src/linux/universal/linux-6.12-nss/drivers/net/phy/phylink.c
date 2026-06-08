@@ -245,11 +245,11 @@ static int phylink_interface_max_speed(phy_interface_t interface)
 	case PHY_INTERFACE_MODE_RGMII:
 	case PHY_INTERFACE_MODE_PSGMII:
 	case PHY_INTERFACE_MODE_QSGMII:
-	case PHY_INTERFACE_MODE_QUSGMII:
 	case PHY_INTERFACE_MODE_SGMII:
 	case PHY_INTERFACE_MODE_GMII:
 		return SPEED_1000;
 
+	case PHY_INTERFACE_MODE_QUSGMII:
 	case PHY_INTERFACE_MODE_2500BASEX:
 	case PHY_INTERFACE_MODE_10G_QXGMII:
 		return SPEED_2500;
@@ -534,7 +534,6 @@ static unsigned long phylink_get_capabilities(phy_interface_t interface,
 	case PHY_INTERFACE_MODE_RGMII:
 	case PHY_INTERFACE_MODE_PSGMII:
 	case PHY_INTERFACE_MODE_QSGMII:
-	case PHY_INTERFACE_MODE_QUSGMII:
 	case PHY_INTERFACE_MODE_SGMII:
 	case PHY_INTERFACE_MODE_GMII:
 		caps |= MAC_1000HD | MAC_1000FD;
@@ -563,8 +562,14 @@ static unsigned long phylink_get_capabilities(phy_interface_t interface,
 		caps |= MAC_1000FD;
 		break;
 
+	case PHY_INTERFACE_MODE_QUSGMII:
 	case PHY_INTERFACE_MODE_2500BASEX:
 		caps |= MAC_2500FD;
+		if (interface == PHY_INTERFACE_MODE_QUSGMII) {
+			caps |= MAC_1000HD | MAC_1000FD;
+			caps |= MAC_100HD | MAC_100FD;
+			caps |= MAC_10HD | MAC_10FD;
+		}
 		break;
 
 	case PHY_INTERFACE_MODE_5GBASER:
@@ -3886,6 +3891,9 @@ static void phylink_decode_usgmii_word(struct phylink_link_state *state,
 		break;
 	case MDIO_USXGMII_1000:
 		state->speed = SPEED_1000;
+		break;
+	case MDIO_USXGMII_2500:
+		state->speed = SPEED_2500;
 		break;
 	default:
 		state->link = false;
