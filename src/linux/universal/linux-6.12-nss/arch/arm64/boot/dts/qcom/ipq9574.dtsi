@@ -304,14 +304,12 @@
 			no-map;
 		};
 
-
 		q6_region: wcnss@4ab00000 {
 			no-map;
 			reg = <0x0 0x4ab00000 0x0 0x02b00000>;
-			status = "disabled";
 		};
 
-		q6_caldb_region: q6_caldb_region@4d800000 {
+/*		q6_caldb_region: q6_caldb_region@4d800000 {
 			no-map;
 			reg = <0x0 0x4D800000 0x0 0x500000>;
 			status = "disabled";
@@ -328,7 +326,7 @@
 			reg = <0x0 0x4d700000 0x0 0x100000>;
 			status = "disabled";
 		};
-
+*/
 		qcn9224_pci0: qcn9224_pcie0@4dd00000 {
 			no-map;
 			reg = <0x0 0x4dd00000 0x0 0x3200000>;
@@ -375,7 +373,7 @@
 
 		wcss_smp2p_out: master-kernel {
 			qcom,entry-name = "master-kernel";
-			qcom,smp2p-feature-ssr-ack;
+	/*		qcom,smp2p-feature-ssr-ack; */
 			#qcom,smem-state-cells = <1>;
 		};
 
@@ -443,7 +441,7 @@
 			status = "disabled";
 		};
 
-		rng: rng@e3000 {
+		prng: prng@e3000 {
 			compatible = "qcom,trng";
 			reg = <0x000e3000 0x1000>;
 			clocks = <&gcc GCC_PRNG_AHB_CLK>;
@@ -1066,9 +1064,9 @@
 			reg = <0xc000000 0x1000000>;
 			qcom,rproc = <&q6v5_wcss>;
 
-			qcom,bdf-addr = <0x4b700000>;
+/*			qcom,bdf-addr = <0x4b700000>;
 			qcom,caldb-addr = <0x4d800000>;
-			qcom,caldb-size = <0x500000>;
+			qcom,caldb-size = <0x500000>;*/
 
 			interrupts = <GIC_SPI 320 IRQ_TYPE_EDGE_RISING>, /* o_wcss_apps_intr[0] =  */
 				<GIC_SPI 319 IRQ_TYPE_EDGE_RISING>,
@@ -1176,12 +1174,12 @@
 				"wbm2host-tx-completions-ring1",
 				"tcl2host-status-ring";
 
-			qcom,pta-num = <0>;
+/*			qcom,pta-num = <0>;
 			qcom,coex-mode = <0x2>;
 			qcom,bt-active-time = <0x12>;
 			qcom,bt-priority-time = <0x0c>;
 			qcom,coex-algo = <0x2>;
-			qcom,pta-priority = <0x80800505>;
+			qcom,pta-priority = <0x80800505>;*/
 			status = "disabled";
 		};
 

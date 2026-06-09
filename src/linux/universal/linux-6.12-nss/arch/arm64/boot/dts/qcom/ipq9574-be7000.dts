@@ -36,6 +36,7 @@
 	chosen {
 		stdout-path = "serial0:115200n8";
 		bootargs-append = " pci=pcie_bus_perf mitigations=off";
+/*		bootargs-append = " mitigations=off"; */
 	};
 
 	regulator_fixed_3p3: s3300 {
@@ -242,7 +243,6 @@
 			local-mac-address = [00 00 00 00 00 00];
 			qcom,phy-mdio-addr = <0x1>;
 			phy-mode = "sgmii";
-			phy-handle = <&phy0>;
 			label = "lan1";
 		};
 
@@ -257,7 +257,6 @@
 			local-mac-address = [00 00 00 00 00 00];
 			qcom,phy-mdio-addr = <0x2>;
 			phy-mode = "sgmii";
-			phy-handle = <&phy1>;
 			label = "lan2";
 		};
 
@@ -272,7 +271,6 @@
 			local-mac-address = [00 00 00 00 00 00];
 			qcom,phy-mdio-addr = <0x3>;
 			phy-mode = "sgmii";
-			phy-handle = <&phy2>;
 			label = "lan3";
 		};
 
@@ -287,7 +285,6 @@
 			local-mac-address = [00 00 00 00 00 00];
 			qcom,phy-mdio-addr = <0x4>;
 			phy-mode = "sgmii";
-			phy-handle = <&phy3>;
 			label = "lan4";
 		};
 
@@ -304,7 +301,6 @@
 			local-mac-address = [00 00 00 00 00 00];
 			qcom,phy-mdio-addr = <0x8>;
 			phy-mode = "sgmii";
-			phy-handle = <&phy4>;
 		};
 
 		dp6: dp6@3a514000 {
@@ -319,7 +315,6 @@
 			local-mac-address = [00 00 00 00 00 00];
 			qcom,phy-mdio-addr = <0x0>;
 			phy-mode = "sgmii";
-			phy-handle = <&phy5>;
 		};
 };
 
@@ -332,7 +327,7 @@
 	status = "okay";
 };
 
-&m3_dump {
+/*&m3_dump {
 	status = "okay";
 };
 
@@ -343,16 +338,16 @@
 &q6_etr_dump {
 	status = "okay";
 };
-
+*/
 
 
 &wifi {
 	status = "okay";
 	qcom,ath11k-calibration-variant = "Xiaomi-BE7000";
-	qcom,bdf-addr = <0x4b700000>;
+/*	qcom,bdf-addr = <0x4b700000>;
 	qcom,caldb-addr = <0x4d800000>;
 	qcom,caldb-size = <0x500000>;
-	qcom,m3-dump-addr = <0x4d600000>;
+	qcom,m3-dump-addr = <0x4d600000>;*/
 	qcom,board_id = <0x20>;
 };
 
@@ -379,7 +374,7 @@
 		wifi6: pcie@0 {
 			compatible = "pci17cb,1109";
 			reg = <0 0 0 0 0>;
-			qcom,board_id = <0x4>;
+			qcom,board_id = <0x2>;
 /*			qcom,board_id = <0x1008>;*/
 /*			hremote_node = <&qcn9224_pci2>;*/
 			qcom,m3-dump-addr = <0x55d00000>;
@@ -424,7 +419,7 @@
 			caldb-size = <0x800000>;
 			hremote-size = <0x1c00000>;
 			pageable-size = <0xc00000>;
-			qcom,board_id = <0x2>;
+			qcom,board_id = <0x4>;
 /*			qcom,board_id = <0x1008>;*/
 		};
 	};
@@ -514,7 +509,7 @@
 	pinctrl-names = "default";
 	reset-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
 	phyaddr_fixup = <0xc90f018>;
-	uniphyaddr_fixup = <0xc90f014>;	
+	uniphyaddr_fixup = <0xc90f014>;
 	mdio_clk_fixup; 
 
 /*	qca8k_nsscc: clock-controller@18 {
@@ -1459,45 +1454,33 @@
 					port@0 {
 						port_id = <0x1>;
 						phy_address = <0x1>;
-						phy-handle = <&phy0>;
-						phy-mode = "sgmii";
 					};
 
 					port@1 {
 						port_id = <0x2>;
 						phy_address = <0x2>;
-						phy-handle = <&phy1>;
-						phy-mode = "sgmii";
 					};
 
 					port@2 {
 						port_id = <0x3>;
 						phy_address = <0x3>;
-						phy-handle = <&phy2>;
-						phy-mode = "sgmii";
 					};
 
 					port@3 {
 						port_id = <0x4>;
 						phy_address = <0x4>;
-						phy-handle = <&phy3>;
-						phy-mode = "sgmii";
 					};
 
 					port@4 {
 						port_id = <0x5>;
 						phy_address = <0x8>;
 						ethernet-phy-ieee802.3-c45;
-						phy-handle = <&phy4>;
-						phy-mode = "usxgmii";
 					};
 
 					port@5 {
 						port_id = <0x6>;
 						phy_address = <0x0>;
 						ethernet-phy-ieee802.3-c45;
-						phy-handle = <&phy5>;
-						phy-mode = "usxgmii";
 					};
 				};
 
