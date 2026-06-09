@@ -327,7 +327,7 @@
 	status = "okay";
 };
 
-/*&m3_dump {
+&m3_dump {
 	status = "okay";
 };
 
@@ -338,16 +338,16 @@
 &q6_etr_dump {
 	status = "okay";
 };
-*/
+
 
 
 &wifi {
 	status = "okay";
 	qcom,ath11k-calibration-variant = "Xiaomi-BE7000";
-/*	qcom,bdf-addr = <0x4b700000>;
+	qcom,bdf-addr = <0x4b700000>;
 	qcom,caldb-addr = <0x4d800000>;
 	qcom,caldb-size = <0x500000>;
-	qcom,m3-dump-addr = <0x4d600000>;*/
+	qcom,m3-dump-addr = <0x4d600000>;
 	qcom,board_id = <0x20>;
 };
 
@@ -1574,7 +1574,7 @@
  */
 &ref_48mhz_clk {
 	clock-div = <1>;
-	clock-mult = <1>;
+	clock-mult = <2>;
 };
 
 /*
@@ -1587,7 +1587,7 @@
 };
 
 &xo_clk {
-	clock-frequency = <48000000>;
+	clock-frequency = <24000000>;
 };
 
 &CPU0 {

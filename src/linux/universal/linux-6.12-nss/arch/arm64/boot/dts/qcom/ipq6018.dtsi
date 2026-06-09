@@ -887,7 +887,7 @@
 			};
 		};
 
-		wifi: wifi@c000000 {
+		wifi: wifi@c0000000 {
 			compatible = "qcom,ipq6018-wifi";
 			reg = <0x0 0xc000000 0x0 0x1000000>;
 			qcom,rproc = <&q6v5_wcss>;

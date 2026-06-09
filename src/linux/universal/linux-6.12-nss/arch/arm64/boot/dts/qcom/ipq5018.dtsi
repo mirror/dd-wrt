@@ -855,7 +855,7 @@
 			};
 		};
 
-		wifi: wifi@c000000 {
+		wifi: wifi@c0000000 {
 			compatible = "qcom,ipq5018-wifi";
 			reg = <0x0c000000 0x1000000>;
 			qcom,bdf-addr = <0x4ba00000>;

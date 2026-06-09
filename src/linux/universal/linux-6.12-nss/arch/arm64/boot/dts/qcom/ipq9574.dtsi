@@ -309,7 +309,7 @@
 			reg = <0x0 0x4ab00000 0x0 0x02b00000>;
 		};
 
-/*		q6_caldb_region: q6_caldb_region@4d800000 {
+		q6_caldb_region: q6_caldb_region@4d800000 {
 			no-map;
 			reg = <0x0 0x4D800000 0x0 0x500000>;
 			status = "disabled";
@@ -326,7 +326,7 @@
 			reg = <0x0 0x4d700000 0x0 0x100000>;
 			status = "disabled";
 		};
-*/
+
 		qcn9224_pci0: qcn9224_pcie0@4dd00000 {
 			no-map;
 			reg = <0x0 0x4dd00000 0x0 0x3200000>;
@@ -592,6 +592,11 @@
 			#clock-cells = <1>;
 			#reset-cells = <1>;
 			#interconnect-cells = <1>;
+
+
+			interconnects = <&gcc MASTER_NSSNOC_NSSCC &gcc SLAVE_NSSNOC_NSSCC>,
+					<&gcc MASTER_NSSNOC_SNOC_0 &gcc SLAVE_NSSNOC_SNOC_0>,
+					<&gcc MASTER_NSSNOC_SNOC_1 &gcc SLAVE_NSSNOC_SNOC_1>;
 		};
 
 		tcsr_mutex: hwlock@1905000 {
@@ -1059,14 +1064,14 @@
 			};
 		};
 
-		wifi: wifi@c000000 {
+		wifi: wifi@c0000000 {
 			compatible = "qcom,ipq9574-wifi";
-			reg = <0xc000000 0x1000000>;
+			reg = <0xc000000 0x2000000>;
 			qcom,rproc = <&q6v5_wcss>;
 
-/*			qcom,bdf-addr = <0x4b700000>;
+			qcom,bdf-addr = <0x4b700000>;
 			qcom,caldb-addr = <0x4d800000>;
-			qcom,caldb-size = <0x500000>;*/
+			qcom,caldb-size = <0x500000>;
 
 			interrupts = <GIC_SPI 320 IRQ_TYPE_EDGE_RISING>, /* o_wcss_apps_intr[0] =  */
 				<GIC_SPI 319 IRQ_TYPE_EDGE_RISING>,
@@ -1174,12 +1179,12 @@
 				"wbm2host-tx-completions-ring1",
 				"tcl2host-status-ring";
 
-/*			qcom,pta-num = <0>;
+			qcom,pta-num = <0>;
 			qcom,coex-mode = <0x2>;
 			qcom,bt-active-time = <0x12>;
 			qcom,bt-priority-time = <0x0c>;
 			qcom,coex-algo = <0x2>;
-			qcom,pta-priority = <0x80800505>;*/
+			qcom,pta-priority = <0x80800505>;
 			status = "disabled";
 		};
 
@@ -1573,6 +1578,7 @@
 			status = "disabled";
 		};
 
+
 		nsscc: clock-controller@39b00000 {
 			compatible = "qcom,ipq9574-nsscc";
 			reg = <0x39b00000 0x80000>;
@@ -1580,18 +1586,131 @@
 				 <&cmn_pll NSS_1200MHZ_CLK>,
 				 <&cmn_pll PPE_353MHZ_CLK>,
 				 <&gcc GPLL0_OUT_AUX>,
-				 <0>,
-				 <0>,
-				 <0>,
-				 <0>,
-				 <0>,
-				 <0>,
-				 <&gcc GCC_NSSCC_CLK>;
+				 <&pcs0 0>,
+				 <&pcs0 1>,
+				 <&pcs1 0>,
+				 <&pcs1 1>,
+				 <&pcs2 0>,
+				 <&pcs2 1>,
+				 <&gcc GCC_NSSCC_CLK>,
+				 <&gcc GCC_NSSNOC_NSSCC_CLK>,
+				 <&gcc GCC_NSSNOC_SNOC_CLK>,
+				 <&gcc GCC_NSSNOC_SNOC_1_CLK>;
+			clock-names = "xo",
+				      "nss_1200",
+				      "ppe_353",
+				      "gpll0_out",
+				      "uniphy0_rx",
+				      "uniphy0_tx",
+				      "uniphy1_rx",
+				      "uniphy1_tx",
+				      "uniphy2_rx",
+				      "uniphy2_tx",
+				      "bus",
+				      "nssnoc",
+				      "snoc",
+				      "snoc_1";
 			#clock-cells = <1>;
 			#reset-cells = <1>;
-			#power-domain-cells = <1>;
 			#interconnect-cells = <1>;
+
+
+			interconnects = <&gcc MASTER_NSSNOC_NSSCC &gcc SLAVE_NSSNOC_NSSCC>,
+					<&gcc MASTER_NSSNOC_SNOC_0 &gcc SLAVE_NSSNOC_SNOC_0>,
+					<&gcc MASTER_NSSNOC_SNOC_1 &gcc SLAVE_NSSNOC_SNOC_1>;
+
+			post-init-providers = <&pcs0>,
+					      <&pcs1>,
+					      <&pcs2>;
 		};
+		pcs0: ethernet-pcs@7a00000 {
+			compatible = "qcom,ipq9574-pcs";
+			reg = <0x7a00000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcc GCC_UNIPHY0_SYS_CLK>,
+				 <&gcc GCC_UNIPHY0_AHB_CLK>;
+			clock-names = "sys",
+				      "ahb";
+			resets = <&gcc GCC_UNIPHY0_XPCS_RESET>;
+			#clock-cells = <1>;
+
+			pcs0_ch0: pcs-mii@0 {
+				reg = <0>;
+				clocks = <&nsscc NSS_CC_UNIPHY_PORT1_RX_CLK>,
+					 <&nsscc NSS_CC_UNIPHY_PORT1_TX_CLK>;
+				clock-names = "rx",
+					      "tx";
+			};
+
+			pcs0_ch1: pcs-mii@1 {
+				reg = <1>;
+				clocks = <&nsscc NSS_CC_UNIPHY_PORT2_RX_CLK>,
+					 <&nsscc NSS_CC_UNIPHY_PORT2_TX_CLK>;
+				clock-names = "rx",
+					      "tx";
+			};
+
+			pcs0_ch2: pcs-mii@2 {
+				reg = <2>;
+				clocks = <&nsscc NSS_CC_UNIPHY_PORT3_RX_CLK>,
+					 <&nsscc NSS_CC_UNIPHY_PORT3_TX_CLK>;
+				clock-names = "rx",
+					      "tx";
+			};
+
+			pcs0_ch3: pcs-mii@3 {
+				reg = <3>;
+				clocks = <&nsscc NSS_CC_UNIPHY_PORT4_RX_CLK>,
+					 <&nsscc NSS_CC_UNIPHY_PORT4_TX_CLK>;
+				clock-names = "rx",
+					      "tx";
+			};
+		};
+
+		pcs1: ethernet-uniphy@7a10000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "qcom,ipq9574-pcs";
+			reg = <0x7a10000 0x10000>;
+			clocks = <&gcc GCC_UNIPHY1_SYS_CLK>,
+				 <&gcc GCC_UNIPHY1_AHB_CLK>;
+			clock-names = "sys",
+				      "ahb";
+			resets = <&gcc GCC_UNIPHY1_XPCS_RESET>;
+			#clock-cells = <1>;
+
+			pcs1_ch0: uniphy-ch@0 {
+				reg = <0>;
+				clocks = <&nsscc NSS_CC_UNIPHY_PORT5_RX_CLK>,
+					 <&nsscc NSS_CC_UNIPHY_PORT5_TX_CLK>;
+				clock-names = "rx",
+					      "tx";
+			};
+		};
+
+		pcs2: ethernet-pcs@7a20000 {
+			compatible = "qcom,ipq9574-pcs";
+			reg = <0x7a20000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcc GCC_UNIPHY2_SYS_CLK>,
+				 <&gcc GCC_UNIPHY2_AHB_CLK>;
+			clock-names = "sys",
+				      "ahb";
+			resets = <&gcc GCC_UNIPHY2_XPCS_RESET>;
+			#clock-cells = <1>;
+
+			pcs2_ch0: pcs-mii@0 {
+				reg = <0>;
+				clocks = <&nsscc NSS_CC_UNIPHY_PORT6_RX_CLK>,
+					 <&nsscc NSS_CC_UNIPHY_PORT6_TX_CLK>;
+				clock-names = "rx",
+					      "tx";
+			};
+		};
+
+
 	};
 
 	thermal-zones {
