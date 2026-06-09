@@ -2747,23 +2747,6 @@ static struct clk_rcg2 wcss_ahb_clk_src = {
 	},
 };
 
-
-static struct clk_branch gcc_wcss_ahb_s_clk = {
-	.halt_reg = 0x25060,
-	.clkr = {
-		.enable_reg = 0x25060,
-		.enable_mask = BIT(0),
-		.hw.init = &(struct clk_init_data) {
-			.name = "gcc_wcss_ahb_s_clk",
-			.parent_hws = (const struct clk_hw *[]) {
-					&wcss_ahb_clk_src.clkr.hw },
-			.num_parents = 1,
-			.flags = CLK_SET_RATE_PARENT,
-			.ops = &clk_branch2_ops,
-		},
-	},
-};
-
 static struct clk_branch gcc_q6_ahb_clk = {
 	.halt_reg = 0x25014,
 	.clkr = {
@@ -2825,6 +2808,23 @@ static struct clk_branch gcc_wcss_acmt_clk = {
 			.parent_hws = (const struct clk_hw *[]) {
 				&wcss_ahb_clk_src.clkr.hw
 			},
+			.num_parents = 1,
+			.flags = CLK_SET_RATE_PARENT,
+			.ops = &clk_branch2_ops,
+		},
+	},
+};
+
+
+static struct clk_branch gcc_wcss_ahb_s_clk = {
+	.halt_reg = 0x25060,
+	.clkr = {
+		.enable_reg = 0x25060,
+		.enable_mask = BIT(0),
+		.hw.init = &(struct clk_init_data) {
+			.name = "gcc_wcss_ahb_s_clk",
+			.parent_hws = (const struct clk_hw *[]) {
+					&wcss_ahb_clk_src.clkr.hw },
 			.num_parents = 1,
 			.flags = CLK_SET_RATE_PARENT,
 			.ops = &clk_branch2_ops,
@@ -4451,7 +4451,7 @@ static const struct qcom_reset_map gcc_ipq9574_resets[] = {
 
 #define IPQ_APPS_ID			9574	/* some unique value */
 
-static struct qcom_icc_hws_data icc_ipq9574_hws[] = {
+static const struct qcom_icc_hws_data icc_ipq9574_hws[] = {
 	{ MASTER_ANOC_PCIE0, SLAVE_ANOC_PCIE0, GCC_ANOC_PCIE0_1LANE_M_CLK },
 	{ MASTER_SNOC_PCIE0, SLAVE_SNOC_PCIE0, GCC_SNOC_PCIE0_1LANE_S_CLK },
 	{ MASTER_ANOC_PCIE1, SLAVE_ANOC_PCIE1, GCC_ANOC_PCIE1_1LANE_M_CLK },
