@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -245,8 +245,8 @@ qcaphy_c45_get_link_status(a_uint32_t dev_id, a_uint32_t phy_addr)
 sw_error_t
 qcaphy_c45_poweron(a_uint32_t dev_id, a_uint32_t phy_addr)
 {
-	return hsl_phy_modify_mmd(dev_id, phy_addr, A_TRUE, QCAPHY_MMD31_NUM,
-		QCAPHY_MMD31_CONTROL, QCAPHY_POWER_DOWN, 0);
+	return hsl_phy_modify_mmd(dev_id, phy_addr, A_TRUE, QCAPHY_MMD1_NUM,
+		QCAPHY_MMD1_PMA_CONTROL, QCAPHY_POWER_DOWN, 0);
 }
 /*
  * @brief poweroff the phy
@@ -258,8 +258,8 @@ qcaphy_c45_poweron(a_uint32_t dev_id, a_uint32_t phy_addr)
 sw_error_t
 qcaphy_c45_poweroff(a_uint32_t dev_id, a_uint32_t phy_addr)
 {
-	return hsl_phy_modify_mmd(dev_id, phy_addr, A_TRUE, QCAPHY_MMD31_NUM,
-		QCAPHY_MMD31_CONTROL, QCAPHY_POWER_DOWN, QCAPHY_POWER_DOWN);
+	return hsl_phy_modify_mmd(dev_id, phy_addr, A_TRUE, QCAPHY_MMD1_NUM,
+		QCAPHY_MMD1_PMA_CONTROL, QCAPHY_POWER_DOWN, QCAPHY_POWER_DOWN);
 }
 /*
  * @brief reset the phy
@@ -271,8 +271,8 @@ qcaphy_c45_poweroff(a_uint32_t dev_id, a_uint32_t phy_addr)
 sw_error_t
 qcaphy_c45_sw_reset(a_uint32_t dev_id, a_uint32_t phy_addr)
 {
-	return hsl_phy_modify_mmd(dev_id, phy_addr, A_TRUE, QCAPHY_MMD31_NUM,
-		QCAPHY_MMD31_CONTROL, QCAPHY_CTRL_SOFTWARE_RESET,
+	return hsl_phy_modify_mmd(dev_id, phy_addr, A_TRUE, QCAPHY_MMD1_NUM,
+		QCAPHY_MMD1_PMA_CONTROL, QCAPHY_CTRL_SOFTWARE_RESET,
 		QCAPHY_CTRL_SOFTWARE_RESET);
 }
 /*
@@ -449,10 +449,10 @@ qcaphy_c45_get_eee_status(a_uint32_t dev_id, a_uint32_t phy_addr,
 	sw_error_t rv = SW_OK;
 	a_uint32_t adv = 0, lp_adv = 0;
 
-	rv = qcaphy_get_eee_adv(dev_id, phy_addr, &adv);
+	rv = qcaphy_c45_get_eee_adv(dev_id, phy_addr, &adv);
 	SW_RTN_ON_ERROR(rv);
 
-	rv = qcaphy_get_eee_partner_adv(dev_id, phy_addr, &lp_adv);
+	rv = qcaphy_c45_get_eee_partner_adv(dev_id, phy_addr, &lp_adv);
 	SW_RTN_ON_ERROR(rv);
 
 	*status = (adv & lp_adv);
@@ -491,9 +491,9 @@ qcaphy_c45_get_8023az(a_uint32_t dev_id, a_uint32_t phy_addr, a_bool_t * enable)
 
 	*enable = A_FALSE;
 
-	rv = qcaphy_get_eee_adv(dev_id, phy_addr, &eee_adv);
+	rv = qcaphy_c45_get_eee_adv(dev_id, phy_addr, &eee_adv);
 	PHY_RTN_ON_ERROR(rv);
-	if (eee_adv && FAL_PHY_EEE_ALL_ADV)
+	if (eee_adv == FAL_PHY_EEE_ALL_ADV)
 		*enable = A_TRUE;
 
 	return SW_OK;
@@ -539,7 +539,14 @@ qcaphy_c45_force_speed_set(a_uint32_t dev_id, a_uint32_t phy_addr,
 			phy_speed_type = QCAPHY_PMA_TYPE_10000M;
 			break;
 		default:
-			return SW_NOT_SUPPORTED;
+			if (hsl_phydev_support_10m(dev_id, phy_addr)) {
+				phy_speed_ctrl = QCAPHY_PMA_CONTROL_10M;
+				phy_speed_type = QCAPHY_PMA_TYPE_10M;
+			} else {
+				phy_speed_ctrl = QCAPHY_PMA_CONTROL_100M;
+				phy_speed_type = QCAPHY_PMA_TYPE_100M;
+			}
+			break;
 	}
 	rv = hsl_phy_modify_mmd(dev_id, phy_addr, A_TRUE, QCAPHY_MMD1_NUM,
 		QCAPHY_MMD1_PMA_CONTROL, QCAPHY_PMA_SPEED_MASK, phy_speed_ctrl);
