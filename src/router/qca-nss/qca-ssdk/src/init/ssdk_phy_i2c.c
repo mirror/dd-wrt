@@ -24,6 +24,9 @@
 #include "hsl_phy.h"
 
 #define I2C_RW_LIMIT           8
+/*qcom SFP PHY device addr is 0x1d and PHY I2C addr is 0x4c*/
+#define TO_SFP_PHY_ADDR(phy_addr)		(phy_addr + 0x2f)
+
 /******************************************************************************
 *
 * _qca_i2c_read - read data per i2c bus
@@ -331,8 +334,7 @@ __qca_phy_i2c_mmd_read(a_uint32_t dev_id, a_uint32_t phy_addr, a_uint16_t mmd_nu
 		{ .addr = phy_addr, .flags = I2C_M_RD,
 		  .buf = rx, .len = sizeof(rx) } };
 
-	if((mmd_num != QCA_PHY_MMD1_NUM) && (mmd_num != QCA_PHY_MMD3_NUM) &&
-		(mmd_num != QCA_PHY_MMD7_NUM)) {
+	if(mmd_num > 31) {
 		SSDK_ERROR("wrong MMD number:[%d]\n", mmd_num);
 		return SW_FAIL;
 	}
@@ -394,8 +396,7 @@ __qca_phy_i2c_mmd_write(a_uint32_t dev_id, a_uint32_t phy_addr, a_uint16_t mmd_n
 		{ .addr = phy_addr, .flags = 0,
 		  .buf = tx2, .len = sizeof(tx2) } };
 
-	if((mmd_num != QCA_PHY_MMD1_NUM) && (mmd_num != QCA_PHY_MMD3_NUM) &&
-		(mmd_num != QCA_PHY_MMD7_NUM)) {
+	 if(mmd_num > 31) {
 		SSDK_ERROR("wrong MMD number:[%d]\n", mmd_num);
 		return SW_FAIL;
 	}
@@ -450,7 +451,7 @@ __qca_phy_i2c_read(a_uint32_t dev_id, a_uint32_t phy_addr,
 
 	phy_addr = TO_PHY_I2C_ADDR_VAL(phy_addr);
 	if(qca_phy_is_i2c_addr(phy_addr) == A_FALSE) {
-		return SW_BAD_PARAM;
+		phy_addr = TO_SFP_PHY_ADDR(phy_addr);
 	}
 
 	if(QCA_PHY_MII_ADDR_C45_IS_MMD(reg_addr_c45)) {
@@ -493,7 +494,7 @@ __qca_phy_i2c_write(a_uint32_t dev_id, a_uint32_t phy_addr,
 
 	phy_addr = TO_PHY_I2C_ADDR_VAL(phy_addr);
 	if(qca_phy_is_i2c_addr(phy_addr) == A_FALSE) {
-		return SW_BAD_PARAM;
+		phy_addr = TO_SFP_PHY_ADDR(phy_addr);
 	}
 
 	if(QCA_PHY_MII_ADDR_C45_IS_MMD(reg_addr_c45)) {
@@ -520,6 +521,103 @@ qca_phy_i2c_write(a_uint32_t dev_id, a_uint32_t phy_addr,
 	i2c_unlock_bus(adapt, I2C_LOCK_SEGMENT);
 
 	return rv;
+}
+
+a_uint32_t
+__qca_phy_i2c_read_soc(a_uint32_t dev_id,       a_uint32_t reg)
+{
+	struct i2c_msg msgs[2];
+	int bus_addr, ret, addr;
+	u8 data[4] = { 0 };
+	u8 tx[5] = {0xa0, (reg >> 24) & 0xff, (reg >> 16) & 0xff, (reg >> 8) & 0xff, reg & 0xff};
+	struct i2c_adapter *adapt = i2c_get_adapter(I2C_ADAPTER_DEFAULT_ID);
+
+	addr = FIELD_GET(GENMASK(28, 24), reg);
+	bus_addr = TO_SFP_PHY_ADDR(addr);
+	msgs[0].addr = bus_addr;
+	msgs[0].flags = 0;
+	msgs[0].len = sizeof(tx);
+	msgs[0].buf = tx;
+	msgs[1].addr = bus_addr;
+	msgs[1].flags = I2C_M_RD;
+	msgs[1].len = sizeof(data);
+	msgs[1].buf = data;
+
+	ret = __i2c_transfer(adapt, msgs, ARRAY_SIZE(msgs));
+	if (ret != ARRAY_SIZE(msgs))
+		return 0xffffffff;
+
+	return ((data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3]);
+}
+
+a_uint32_t
+qca_phy_i2c_read_soc(a_uint32_t dev_id,       a_uint32_t reg)
+{
+	a_uint32_t data = 0;
+	struct i2c_adapter *adapt = i2c_get_adapter(I2C_ADAPTER_DEFAULT_ID);
+
+	SW_RTN_ON_NULL(adapt);
+
+	i2c_lock_bus(adapt, I2C_LOCK_SEGMENT);
+	data = __qca_phy_i2c_read_soc(dev_id, reg);
+	i2c_unlock_bus(adapt, I2C_LOCK_SEGMENT);
+
+	return data;
+}
+
+void
+__qca_phy_i2c_write_soc(a_uint32_t dev_id, a_uint32_t reg, a_uint32_t data)
+{
+	struct i2c_msg msgs[2];
+	int bus_addr, addr;
+	u8 tx[5] = {0x20, (reg >> 24) & 0xff, (reg >> 16) & 0xff, (reg >> 8) & 0xff, reg & 0xff};
+	u8 tx1[5] = {0, (data >> 24) & 0xff, (data >> 16) & 0xff, (data >> 8) & 0xff, data & 0xff};
+	struct i2c_adapter *adapt = i2c_get_adapter(I2C_ADAPTER_DEFAULT_ID);
+
+	addr = FIELD_GET(GENMASK(28, 24), reg);
+	bus_addr = TO_SFP_PHY_ADDR(addr);
+	msgs[0].addr = bus_addr;
+	msgs[0].flags = 0;
+	msgs[0].len = sizeof(tx);
+	msgs[0].buf = tx;
+	msgs[1].addr = bus_addr;
+	msgs[1].flags = 0;
+	msgs[1].len = sizeof(tx1);
+	msgs[1].buf = tx1;
+
+	__i2c_transfer(adapt, msgs, ARRAY_SIZE(msgs));
+}
+
+void
+qca_phy_i2c_write_soc(a_uint32_t dev_id,       a_uint32_t reg, a_uint32_t data)
+{
+	struct i2c_adapter *adapt = i2c_get_adapter(I2C_ADAPTER_DEFAULT_ID);
+
+	if (!adapt)
+		return;
+
+	i2c_lock_bus(adapt, I2C_LOCK_SEGMENT);
+	__qca_phy_i2c_write_soc(dev_id, reg, data);
+	i2c_unlock_bus(adapt, I2C_LOCK_SEGMENT);
+}
+
+int
+qca_phy_i2c_modify_soc(a_uint32_t dev_id, a_uint32_t reg, a_uint32_t mask,
+	a_uint32_t val)
+{
+	a_uint32_t reg_val;
+	struct i2c_adapter *adapt = i2c_get_adapter(I2C_ADAPTER_DEFAULT_ID);
+
+	SW_RTN_ON_NULL(adapt);
+
+	i2c_lock_bus(adapt, I2C_LOCK_SEGMENT);
+	reg_val = __qca_phy_i2c_read_soc(dev_id, reg);
+	reg_val &= ~mask;
+	reg_val |= val;
+	__qca_phy_i2c_write_soc(dev_id, reg, reg_val);
+	i2c_unlock_bus(adapt, I2C_LOCK_SEGMENT);
+
+	return 0;
 }
 /*qca808x_end*/
 EXPORT_SYMBOL(qca_phy_i2c_read);
