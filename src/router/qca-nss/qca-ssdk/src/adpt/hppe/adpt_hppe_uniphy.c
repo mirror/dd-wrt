@@ -611,7 +611,6 @@ __adpt_hppe_uniphy_usxgmii_mode_set(a_uint32_t dev_id, a_uint32_t uniphy_index)
 {
 	sw_error_t rv = SW_OK;
 	a_uint32_t ssdk_port = 0;
-	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 
 	union uniphy_mode_ctrl_u uniphy_mode_ctrl;
 	union vr_xs_pcs_dig_ctrl1_u vr_xs_pcs_dig_ctrl1;
@@ -709,7 +708,6 @@ __adpt_hppe_uniphy_usxgmii_mode_set(a_uint32_t dev_id, a_uint32_t uniphy_index)
 	if(adpt_ppe_type_get(dev_id) == APPE_TYPE &&
 		uniphy_index == SSDK_UNIPHY_INSTANCE0) {
 		union qp_usxg_opiton1_u qp_usxg_opiton1 = {0};
-	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 
 		/*select gmii of xpcs*/
 		hppe_qp_usxg_opiton1_get(dev_id, uniphy_index, &qp_usxg_opiton1);
@@ -747,7 +745,6 @@ __adpt_hppe_uniphy_10g_r_mode_set(a_uint32_t dev_id, a_uint32_t uniphy_index)
 	memset(&uniphy_mode_ctrl, 0, sizeof(uniphy_mode_ctrl));
 	memset(&uniphy_instance_link_detect, 0, sizeof(uniphy_instance_link_detect));
 	ADPT_DEV_ID_CHECK(dev_id);
-	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 
 	/* keep xpcs to reset status */
 	__adpt_hppe_gcc_uniphy_xpcs_reset(dev_id, uniphy_index, A_TRUE);
@@ -827,7 +824,7 @@ __adpt_hppe_uniphy_sgmiiplus_mode_set(a_uint32_t dev_id, a_uint32_t uniphy_index
 	memset(&uniphy_mode_ctrl, 0, sizeof(uniphy_mode_ctrl));
 	ADPT_DEV_ID_CHECK(dev_id);
 
-	SSDK_INFO("uniphy %d is sgmiiplus mode\n", uniphy_index);
+	SSDK_DEBUG("uniphy %d is sgmiiplus mode\n", uniphy_index);
 #if defined(CPPE)
 	if ((adpt_ppe_type_get(dev_id) == CPPE_TYPE)
 		&& (uniphy_index == SSDK_UNIPHY_INSTANCE0)) {
@@ -933,7 +930,7 @@ __adpt_hppe_uniphy_sgmii_mode_set(a_uint32_t dev_id, a_uint32_t uniphy_index, a_
 	memset(&uniphy_mode_ctrl, 0, sizeof(uniphy_mode_ctrl));
 	ADPT_DEV_ID_CHECK(dev_id);
 
-	SSDK_INFO("uniphy %d is sgmii mode\n", uniphy_index);
+	SSDK_DEBUG("uniphy %d is sgmii mode\n", uniphy_index);
 #if defined(CPPE)
 	if ((uniphy_index == SSDK_UNIPHY_INSTANCE0) &&
 		(channel == SSDK_UNIPHY_CHANNEL0)) {
@@ -1105,7 +1102,6 @@ __adpt_hppe_uniphy_qsgmii_mode_set(a_uint32_t dev_id, a_uint32_t uniphy_index)
 	sw_error_t rv = SW_OK;
 
 	union uniphy_mode_ctrl_u uniphy_mode_ctrl;
-	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 
 	memset(&uniphy_mode_ctrl, 0, sizeof(uniphy_mode_ctrl));
 	ADPT_DEV_ID_CHECK(dev_id);
@@ -1164,10 +1160,6 @@ __adpt_hppe_uniphy_psgmii_mode_set(a_uint32_t dev_id, a_uint32_t uniphy_index)
 {
 	a_uint32_t i;
 	sw_error_t rv = SW_OK;
-#if defined(CPPE)
-	a_uint32_t phy_type = 0;
-#endif
-	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 
 	union uniphy_mode_ctrl_u uniphy_mode_ctrl;
 
@@ -1177,9 +1169,7 @@ __adpt_hppe_uniphy_psgmii_mode_set(a_uint32_t dev_id, a_uint32_t uniphy_index)
 	SSDK_DEBUG("uniphy %d is psgmii mode\n", uniphy_index);
 #if defined(CPPE)
 	if (adpt_ppe_type_get(dev_id) == CPPE_TYPE) {
-		phy_type = hsl_port_phyid_get(dev_id,
-				SSDK_PHYSICAL_PORT3);
-		if (phy_type == MALIBU2PORT_PHY) {
+		if (ssdk_dts_port3_pcs_channel_get(dev_id) == 4) {
 			SSDK_INFO("cypress uniphy %d is qca8072 psgmii mode\n", uniphy_index);
 			rv = __adpt_cppe_uniphy_mode_set(dev_id, uniphy_index,
 				PORT_WRAPPER_PSGMII);
@@ -1401,7 +1391,7 @@ adpt_hppe_uniphy_mode_set(a_uint32_t dev_id, a_uint32_t index, a_uint32_t mode)
 		ssdk_uniphy_raw_clock_reset(index);
 		return SW_OK;
 	}
-	SSDK_INFO("set mode %d on uniphy:%d\n", mode, index);
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,4,0))
 	if ((ssdk_uniphy_valid_check(dev_id, index, mode)) == A_FALSE &&
 		(ssdk_is_emulation(dev_id) == A_FALSE)) {
@@ -1413,58 +1403,49 @@ adpt_hppe_uniphy_mode_set(a_uint32_t dev_id, a_uint32_t index, a_uint32_t mode)
 	switch(mode) {
 		case PORT_WRAPPER_PSGMII:
 		case PORT_WRAPPER_PSGMII_FIBER:
-	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 			rv = __adpt_hppe_uniphy_psgmii_mode_set(dev_id, index);
 			break;
 
 		case PORT_WRAPPER_QSGMII:
-	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 			rv = __adpt_hppe_uniphy_qsgmii_mode_set(dev_id, index);
 			break;
 
 		case PORT_WRAPPER_SGMII0_RGMII4:
 		case PORT_WRAPPER_SGMII_CHANNEL0:
 		case PORT_WRAPPER_SGMII_FIBER:
-	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 			rv = __adpt_hppe_uniphy_sgmii_mode_set(dev_id, index,
 				SSDK_UNIPHY_CHANNEL0);
 			break;
 
 		case PORT_WRAPPER_SGMII1_RGMII4:
 		case PORT_WRAPPER_SGMII_CHANNEL1:
-	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 			rv = __adpt_hppe_uniphy_sgmii_mode_set(dev_id, index,
 				SSDK_UNIPHY_CHANNEL1);
 			break;
 
 		case PORT_WRAPPER_SGMII4_RGMII4:
 		case PORT_WRAPPER_SGMII_CHANNEL4:
-	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 			rv = __adpt_hppe_uniphy_sgmii_mode_set(dev_id, index,
 				SSDK_UNIPHY_CHANNEL4);
 			break;
 
 		case PORT_WRAPPER_SGMII_PLUS:
-	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 			rv = __adpt_hppe_uniphy_sgmiiplus_mode_set(dev_id, index);
 			clock = UNIPHY_CLK_RATE_312M;
 			break;
 
 		case PORT_WRAPPER_10GBASE_R:
-	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 			rv = __adpt_hppe_uniphy_10g_r_mode_set(dev_id, index);
 			clock = UNIPHY_CLK_RATE_312M;
 			break;
 
 		case PORT_WRAPPER_USXGMII:
-	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 			rv = __adpt_hppe_uniphy_usxgmii_mode_set(dev_id, index);
 			clock = UNIPHY_CLK_RATE_312M;
 			break;
 		case PORT_WRAPPER_UQXGMII:
 		case PORT_WRAPPER_UQXGMII_3CHANNELS:
 		case PORT_WRAPPER_UDXGMII:
-	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 			rv = __adpt_hppe_uniphy_uxgmii_mode_set(dev_id, index, mode);
 			clock = UNIPHY_CLK_RATE_312M;
 			break;

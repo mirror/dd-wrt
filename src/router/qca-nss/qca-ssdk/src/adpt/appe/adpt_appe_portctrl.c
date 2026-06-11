@@ -102,7 +102,7 @@ _adpt_appe_port_mux_mac_set(a_uint32_t dev_id, fal_port_t port_id,
 	rv = appe_port_mux_ctrl_set(dev_id, &appe_port_mux_ctrl);
 	SW_RTN_ON_ERROR (rv);
 
-	SSDK_INFO("appe port %d mac type is %d\n", port_id, port_type);
+	SSDK_DEBUG("appe port %d mac type is %d\n", port_id, port_type);
 
 	return rv;
 }
@@ -578,7 +578,7 @@ sw_error_t adpt_appe_port_erp_power_mode_set(a_uint32_t dev_id,
 				/* switch bypass mode */
 				if (ssdk_mht_clk_is_asserted(dev_id, MHT_SRDS0_SYS_CLK)) {
 					fal_mac_config_t mac_config = {0};
-					SSDK_INFO("configure manhattan serdes0\n");
+					SSDK_DEBUG("configure manhattan serdes0\n");
 					mac_config.mac_mode = FAL_MAC_MODE_SGMII;
 					mac_config.config.sgmii.clock_mode =
 						FAL_INTERFACE_CLOCK_PHY_MODE;
@@ -589,7 +589,7 @@ sw_error_t adpt_appe_port_erp_power_mode_set(a_uint32_t dev_id,
 			} else {
 				/* uqxgmii mode */
 				if (ssdk_mht_clk_is_asserted(dev_id, MHT_SRDS1_SYS_CLK)) {
-					SSDK_INFO("configure manhattan serdes1\n");
+					SSDK_DEBUG("configure manhattan serdes1\n");
 #if 0
 					/* configure phy serdes as uqxgmii mode then set port mode
 					 * as auto to auto configure alder uniphy as uqxgmii mode

@@ -20,8 +20,6 @@
 #include <linux/ptp_classify.h>
 
 #include "qca808x.h"
-#include "qca808x_lib.h"
-#include "qca81xx.h"
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0))
 #include <linux/time64.h>
@@ -51,34 +49,6 @@
 #define GPS_WORK_TIMEOUT             HZ
 
 #define HWTSTAMP_TX_ONESTEP_P2P     (HWTSTAMP_TX_ONESTEP_SYNC + 1)
-
-#define QCA81XX_DBG_PORT31			0x1f
-#define QCA81XX_1588_EN				BIT(1)
-
-/* AFE ADC has the different clock frequency supplied on the different
- * link speed.
- *
- * link_speed	clock_freq	divider		PTP reference clock
- * 10 G		800 MHZ		4		200 MHZ
- * 5 G		400 MHZ		2		200 MHZ
- * 2.5 G	200 MHZ		1		200 MHZ
- * 100 M/1 G	125 MHZ		1		125 MHZ
- */
-#define QCA81XX_MMD1_SYNCE_CLK_CTRL		0x2000
-#define QCA81XX_SYNCE_CLK_SEL			GENMASK(6, 0)
-#define QCA81XX_SYNCE_SEL_AFE_ADC_CLK_0		0x10
-#define QCA81XX_SYNCE_SEL_AFE_ADC_CLK_1		0x12
-#define QCA81XX_SYNCE_CLK_DISABLE		BIT(7)
-#define QCA81XX_SYNCE_CLK_DIV			GENMASK(10, 8)
-
-#define QCA81XX_MMD3_PTP_OPTION			0x8550
-#define QCA81XX_RX_DELAY_COMPENSATION		GENMASK(1, 0)
-#define QCA81XX_TX_DELAY_COMPENSATION		GENMASK(7, 5)
-
-static const char *qca_phy_driver_ptp_supported_names[] = {
-	QCA808X_PHY_DRIVER_NAME,
-	QCA81XX_PHY_DRIVER_NAME,
-};
 
 extern struct list_head g_qca808x_phy_list;
 void qca808x_ptp_gm_gps_seconds_sync_enable(a_uint32_t dev_id,
@@ -218,34 +188,36 @@ sw_error_t qca808x_ptp_config_init(struct phy_device *phydev)
 	return ret;
 }
 
-static a_uint8_t* skb_ptp_header(struct sk_buff *skb, int ptp_type)
+static a_uint8_t* skb_ptp_header(struct sk_buff *skb, int type)
 {
-	a_uint8_t *mac_header = skb_mac_header(skb);
-	a_uint32_t ptp_offset = 0;
+	a_uint8_t *data = skb_mac_header(skb);
+	a_uint32_t offset = 0;
 
-	if (ptp_type & PTP_CLASS_VLAN)
-		ptp_offset += VLAN_HLEN;
+	if (type & PTP_CLASS_VLAN) {
+		offset += VLAN_HLEN;
+	}
 
-	switch (ptp_type & PTP_CLASS_PMASK) {
-	case PTP_CLASS_IPV4:
-		ptp_offset += ETH_HLEN + IPV4_HLEN(mac_header + ptp_offset) + UDP_HLEN;
-		break;
-	case PTP_CLASS_IPV6:
-		ptp_offset += ETH_HLEN + IP6_HLEN + UDP_HLEN;
-		break;
-	case PTP_CLASS_L2:
-		ptp_offset += ETH_HLEN;
-		break;
-	default:
+	switch (type & PTP_CLASS_PMASK) {
+		case PTP_CLASS_IPV4:
+			offset += ETH_HLEN + IPV4_HLEN(data + offset) + UDP_HLEN;
+			break;
+		case PTP_CLASS_IPV6:
+			offset += ETH_HLEN + IP6_HLEN + UDP_HLEN;
+			break;
+		case PTP_CLASS_L2:
+			offset += ETH_HLEN;
+			break;
+		default:
+			return NULL;
+	}
+
+	if (skb->len + ETH_HLEN < offset +
+			OFF_PTP_SEQUENCE_ID + sizeof(a_uint16_t)) {
 		return NULL;
 	}
 
-	if (skb->len + ETH_HLEN < ptp_offset + OFF_PTP_SEQUENCE_ID + sizeof(a_uint16_t))
-		return NULL;
-
-	return mac_header + ptp_offset;
+	return data + offset;
 }
-
 
 void qca808x_pkt_info_get(struct sk_buff *skb,
 		unsigned int type, fal_ptp_pkt_info_t *pkt_info)
@@ -865,72 +837,6 @@ static int qca808x_ptp_verify(struct ptp_clock_info *ptp, unsigned int pin,
 }
 #endif
 
-static void qca81xx_link_state(struct phy_device *phydev, struct qca808x_phy_info *pdata)
-{
-	u16 reg_val, div = 0, compensation = 0;
-	int ret;
-
-	/* Enable PTP RX & TX delay compensation on the link speed 100M/1G. */
-	switch (phydev->speed) {
-	case SPEED_100:
-	case SPEED_1000:
-		compensation = QCA81XX_RX_DELAY_COMPENSATION |
-			       QCA81XX_TX_DELAY_COMPENSATION;
-		div = 1;
-		break;
-	case SPEED_2500:
-		div = 1;
-		break;
-	case SPEED_5000:
-		div = 2;
-		break;
-	case SPEED_10000:
-		div = 4;
-		break;
-	default:
-		return;
-	}
-
-	ret = hsl_phy_modify_mmd(pdata->dev_id, pdata->phy_addr, A_TRUE, MDIO_MMD_PCS,
-			QCA81XX_MMD3_PTP_OPTION,
-			QCA81XX_RX_DELAY_COMPENSATION | QCA81XX_TX_DELAY_COMPENSATION,
-			compensation);
-	if (ret) {
-		phydev_err(phydev, "configure delay compensation failed %d", ret);
-		return;
-	}
-
-	reg_val = FIELD_PREP(QCA81XX_SYNCE_CLK_SEL, QCA81XX_SYNCE_SEL_AFE_ADC_CLK_0);
-	reg_val |= FIELD_PREP(QCA81XX_SYNCE_CLK_DIV, div - 1);
-
-	ret = hsl_phy_modify_mmd(pdata->dev_id, pdata->phy_addr, A_TRUE, MDIO_MMD_PMAPMD,
-			QCA81XX_MMD1_SYNCE_CLK_CTRL,
-			QCA81XX_SYNCE_CLK_SEL | QCA81XX_SYNCE_CLK_DIV,
-			reg_val);
-	if (ret)
-		phydev_err(phydev, "configure synce failed %d", ret);
-}
-
-static bool qca808x_phy_id_compare(struct phy_device *phydev, u32 phy_id, u32 mask)
-{
-	const int num_ids = ARRAY_SIZE(phydev->c45_ids.device_ids);
-	int i;
-
-	if (phydev->is_c45) {
-		for (i = 1; i < num_ids; i++) {
-			if (phydev->c45_ids.device_ids[i] == 0xffffffff)
-				continue;
-
-			if ((phy_id & mask) ==
-			    (phydev->c45_ids.device_ids[i] & mask))
-				return 1;
-		}
-		return 0;
-	} else {
-		return (phy_id & mask) == (phydev->phy_id & mask);
-	}
-}
-
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0))
 void qca808x_ptp_change_notify(struct mii_timestamper *mii_ts, struct phy_device *phydev)
 {
@@ -949,97 +855,48 @@ void qca808x_ptp_change_notify(struct phy_device *phydev)
 		return;
 	}
 
-	if (qca808x_phy_id_compare(phydev, QCA8111_PHY, 0x00ffffff))
-		qca81xx_link_state(phydev, pdata);
+	if (pdata->speed != phydev->speed) {
+		if (phydev->speed == SPEED_2500 &&
+				pdata->speed < SPEED_2500) {
+			/* adjust frequency to 5ns(200MHz) */
+			nanoseconds = QCA808X_PTP_TICK_RATE_200M;
+		} else if (pdata->speed == SPEED_2500 &&
+				phydev->speed < SPEED_2500) {
+			/* adjust frequency to 8ns(125MHz) */
+			nanoseconds = QCA808X_PTP_TICK_RATE_125M;
+		}
 
-	if (pdata->speed == phydev->speed)
-		return;
+		if (phydev->speed == SPEED_10) {
+			/* local free running clock for 10M */
+			ptp_ref_clock = FAL_REF_CLOCK_LOCAL;
+		} else if (pdata->speed == SPEED_10) {
+			ptp_ref_clock = FAL_REF_CLOCK_SYNCE;
+		}
 
-	switch (phydev->speed) {
-	case SPEED_10000:
-	case SPEED_5000:
-	case SPEED_2500:
-		nanoseconds = QCA808X_PTP_TICK_RATE_200M;
-		ptp_ref_clock = FAL_REF_CLOCK_SYNCE;
-		break;
-	case SPEED_1000:
-	case SPEED_100:
-		nanoseconds = QCA808X_PTP_TICK_RATE_125M;
-		ptp_ref_clock = FAL_REF_CLOCK_SYNCE;
-		break;
-	case SPEED_10:
-	default:
-		nanoseconds = QCA808X_PTP_TICK_RATE_125M;
-		ptp_ref_clock = FAL_REF_CLOCK_LOCAL;
-		break;
+		if (ptp_ref_clock != FAL_REF_CLOCK_EXTERNAL) {
+			qca808x_phy_ptp_reference_clock_set(pdata->dev_id,
+					pdata->phy_addr, ptp_ref_clock);
+		}
+
+		pdata->speed = phydev->speed;
+		if (nanoseconds != 0) {
+			ptp_cycle_time.nanoseconds = nanoseconds;
+			qca808x_phy_ptp_rtc_adjfreq_set(pdata->dev_id,
+					pdata->phy_addr, &ptp_cycle_time);
+		}
 	}
-
-	qca808x_phy_ptp_reference_clock_set(pdata->dev_id,
-			pdata->phy_addr, ptp_ref_clock);
-
-	ptp_cycle_time.nanoseconds = nanoseconds;
-	qca808x_phy_ptp_rtc_adjfreq_set(pdata->dev_id,
-			pdata->phy_addr, &ptp_cycle_time);
-
-	pdata->speed = phydev->speed;
 }
-#ifdef IN_QCA81XX_PHY
-static int qca81xx_ptp_synce_pin_config(struct phy_device *phydev, a_bool_t en)
-{
-	int  ret, pin_id;
-
-	for (pin_id = GPIO5_PPS_IN; pin_id <= GPIO7_REFCLK_IN; pin_id++) {
-		ret = qca81xx_soc_modify(phydev, TO_TLMM_CFG_REG(pin_id),
-					 TLMM_FUNC_MASK, en ? BIT(2) : 0);
-		if (ret)
-			return ret;
-	}
-
-	for (pin_id = GPIO10_PPS_OUT; pin_id <= GPIO12_CLK125_TDI; pin_id++) {
-		ret = qca81xx_soc_modify(phydev, TO_TLMM_CFG_REG(pin_id),
-					 TLMM_FUNC_MASK, en ? BIT(2) : 0);
-		if (ret)
-			return ret;
-	}
-
-	return 0;
-}
-
-static int qca81xx_ptp_clock_set(struct phy_device *phydev, a_bool_t enable,
-		struct qca808x_phy_info *pdata)
-{
-	int ret;
-
-	ret = hsl_phy_modify_mmd(pdata->dev_id, pdata->phy_addr, true,
-			MDIO_MMD_PMAPMD, QCA81XX_MMD1_SYNCE_CLK_CTRL,
-			QCA81XX_SYNCE_CLK_DISABLE,
-			enable ? 0 : QCA81XX_SYNCE_CLK_DISABLE);
-	if (ret)
-		return ret;
-
-	ret = qca81xx_phy_debug_modify(phydev, QCA81XX_DBG_PORT31,
-				       QCA81XX_1588_EN,
-				       enable ? QCA81XX_1588_EN : 0);
-	if (ret)
-		return ret;
-
-	return qca81xx_ptp_synce_pin_config(phydev, enable);
-}
-#endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0))
-int qca808x_hwtstamp(struct mii_timestamper *mii_ts, struct kernel_hwtstamp_config *config, struct netlink_ext_ack *ack)
+int qca808x_hwtstamp(struct mii_timestamper *mii_ts, struct ifreq *ifr)
 {
 	qca808x_priv *priv = container_of(mii_ts, qca808x_priv, mii_ts);
-	struct phy_device *phydev = priv->phydev;
-	struct hwtstamp_config cfg;
-	memcpy(&cfg, config, sizeof(cfg));
 #else
 int qca808x_hwtstamp(struct phy_device *phydev, struct ifreq *ifr)
 {
 	qca808x_priv *priv = phydev->priv;
-	struct hwtstamp_config cfg;
 #endif
+	struct hwtstamp_config cfg;
 	a_uint32_t gm_mode = 0;
 	fal_ptp_reference_clock_t ref_clock = FAL_REF_CLOCK_LOCAL;
 	sw_error_t ret = SW_OK;
@@ -1052,10 +909,8 @@ int qca808x_hwtstamp(struct phy_device *phydev, struct ifreq *ifr)
 		return -EFAULT;
 	}
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(6,1,0))
 	if (copy_from_user(&cfg, ifr->ifr_data, sizeof(cfg)))
 		return -EFAULT;
-#endif
 	if (cfg.flags) /* reserved for future extensions */
 		return -EINVAL;
 
@@ -1111,10 +966,6 @@ int qca808x_hwtstamp(struct phy_device *phydev, struct ifreq *ifr)
 		return -EFAULT;
 	}
 
-#ifdef IN_QCA81XX_PHY
-	if (qca808x_phy_id_compare(phydev, QCA8111_PHY, 0x00ffffff))
-		qca81xx_ptp_clock_set(phydev, ptp_config.ptp_en, pdata);
-#endif
 	/*
 	 * disable SYNCE clock output by default,
 	 * only enabling the clock output under the
@@ -1148,9 +999,7 @@ int qca808x_hwtstamp(struct phy_device *phydev, struct ifreq *ifr)
 
 	pdata->step_mode = ptp_config.step_mode;
 
-	memcpy(config, &cfg, sizeof(cfg));
-
-	return 0;
+	return copy_to_user(ifr->ifr_data, &cfg, sizeof(cfg)) ? -EFAULT : 0;
 }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0))
@@ -1410,7 +1259,7 @@ void qca808x_txtstamp(struct phy_device *phydev, struct sk_buff *org_skb, int ty
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0))
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0))
 int qca808x_ts_info(struct mii_timestamper *mii_ts,
-		struct kernel_ethtool_ts_info *info)
+		struct ethtool_ts_info *info)
 {
 	qca808x_priv *priv = container_of(mii_ts, qca808x_priv, mii_ts);
 #else
@@ -1599,26 +1448,24 @@ static int qca808x_ptp_callback_init(struct device *dev, void *ptp_instance)
 
 int qca808x_ptp_hook_init(void)
 {
-	struct phy_driver *phydrv = NULL;
-	struct device_driver *drv = NULL;
+	int rv = 0;
 	int ptp_instance = 0;
-	int i, rv = 0;
+	struct device_driver *drv = NULL;
+	struct phy_driver *phydrv = NULL;
 
-	for (i = 0; i < ARRAY_SIZE(qca_phy_driver_ptp_supported_names); i++) {
-		drv = driver_find(qca_phy_driver_ptp_supported_names[i], &mdio_bus_type);
-		if (drv) {
-			phydrv = to_phy_driver(drv);
+	drv = driver_find(QCA808X_PHY_DRIVER_NAME, &mdio_bus_type);
+	if (drv) {
+		phydrv = to_phy_driver(drv);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6,1,0))
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0))
-			phydrv->link_change_notify = qca808x_ptp_change_notify;
-			phydrv->ts_info = qca808x_ts_info;
+		phydrv->link_change_notify = qca808x_ptp_change_notify;
+		phydrv->ts_info = qca808x_ts_info;
 #endif
-			phydrv->hwtstamp = qca808x_hwtstamp;
-			phydrv->rxtstamp = qca808x_rxtstamp;
-			phydrv->txtstamp = qca808x_txtstamp;
+		phydrv->hwtstamp = qca808x_hwtstamp;
+		phydrv->rxtstamp = qca808x_rxtstamp;
+		phydrv->txtstamp = qca808x_txtstamp;
 #endif
-			rv = driver_for_each_device(drv, NULL, &ptp_instance, qca808x_ptp_callback_init);
-		}
+		rv = driver_for_each_device(drv, NULL, &ptp_instance, qca808x_ptp_callback_init);
 	}
 
 	if (ptp_instance)
@@ -1643,25 +1490,23 @@ static int qca808x_ptp_callback_cleanup(struct device *dev, void *p)
 
 void qca808x_ptp_hook_cleanup(void)
 {
-	struct phy_driver *phydrv = NULL;
+	int rv = 0;
 	struct device_driver *drv = NULL;
-	int i, rv = 0;
+	struct phy_driver *phydrv = NULL;
 
-	for (i = 0; i < ARRAY_SIZE(qca_phy_driver_ptp_supported_names); i++) {
-		drv = driver_find(qca_phy_driver_ptp_supported_names[i], &mdio_bus_type);
-		if (drv) {
-			rv = driver_for_each_device(drv, NULL, NULL, qca808x_ptp_callback_cleanup);
-			phydrv = to_phy_driver(drv);
+	drv = driver_find(QCA808X_PHY_DRIVER_NAME, &mdio_bus_type);
+	if (drv) {
+		rv = driver_for_each_device(drv, NULL, NULL, qca808x_ptp_callback_cleanup);
+		phydrv = to_phy_driver(drv);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6,1,0))
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0))
-			phydrv->link_change_notify = NULL;
-			phydrv->ts_info = NULL;
+		phydrv->link_change_notify = NULL;
+		phydrv->ts_info = NULL;
 #endif
-			phydrv->hwtstamp = NULL;
-			phydrv->rxtstamp = NULL;
-			phydrv->txtstamp = NULL;
+		phydrv->hwtstamp = NULL;
+		phydrv->rxtstamp = NULL;
+		phydrv->txtstamp = NULL;
 #endif
-		}
 	}
 
 	return;

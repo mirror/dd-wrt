@@ -3664,26 +3664,6 @@ cmd_data_check_ledpattern(char *info, void * val, a_uint32_t size)
         {
             pattern.map |= (1 << POWER_ON_LIGHT_EN);
         }
-        rv = __cmd_data_check_boolean("link_10000m_light", "no",
-                        "usage: <yes/no/y/n>\n",
-                        cmd_data_check_confirm, A_FALSE, &tmpdata,
-                        sizeof (a_bool_t));
-        if (rv)
-            return rv;
-        if (1 == tmpdata)
-        {
-            pattern.map |= (1 << LINK_10000M_LIGHT_EN);
-        }
-        rv = __cmd_data_check_boolean("link_5000m_light", "no",
-                        "usage: <yes/no/y/n>\n",
-                        cmd_data_check_confirm, A_FALSE, &tmpdata,
-                        sizeof (a_bool_t));
-        if (rv)
-            return rv;
-        if (1 == tmpdata)
-        {
-            pattern.map |= (1 << LINK_5000M_LIGHT_EN);
-        }
         rv = __cmd_data_check_boolean("link_2500m_light", "no",
                         "usage: <yes/no/y/n>\n",
                         cmd_data_check_confirm, A_FALSE, &tmpdata,

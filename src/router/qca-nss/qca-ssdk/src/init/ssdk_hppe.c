@@ -1326,7 +1326,6 @@ sw_error_t qca_hppe_acl_remark_ptp_servcode(a_uint32_t dev_id) {
 
 	/* only marking ptp packet with service code for the qca808x phy */
 	ptp_port_bmp = qca_ssdk_phy_type_port_bmp_get(dev_id, QCA808X_PHY_CHIP);
-	ptp_port_bmp |= qca_ssdk_phy_type_port_bmp_get(dev_id, QCA81XX_PHY_CHIP);
 
 	/* Not found the PHY with ptp feature */
 	if (ptp_port_bmp == 0) {
