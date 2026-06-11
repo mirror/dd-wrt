@@ -275,7 +275,7 @@ mht_uniphy_xpcs_soft_reset(a_uint32_t dev_id)
 	return rv;
 }
 
-#if 0
+#if 1
 sw_error_t
 mht_uniphy_xpcs_speed_set(a_uint32_t dev_id, a_uint32_t mht_port_id,
 	fal_port_speed_t speed)
@@ -470,8 +470,8 @@ _mht_interface_uqxgmii_mode_set(a_uint32_t dev_id, a_uint32_t uniphy_addr)
 	{
 		/* ethphy software reset will power on the phy, for erp low power port
 		 * which has power off, can not power on it */
-		if (hsl_port_feature_get(dev_id, mht_port_id, PHY_F_ERP_LOW_POWER))
-			continue;
+//		if (hsl_port_feature_get(dev_id, mht_port_id, PHY_F_ERP_LOW_POWER))
+//			continue;
 		rv = qca_mht_ephy_addr_get(dev_id, mht_port_id, &phy_addr);
 		PHY_RTN_ON_ERROR (rv);
 		rv = qca808x_phy_reset(dev_id, phy_addr);
@@ -515,10 +515,10 @@ mht_interface_uqxgmii_mode_set(a_uint32_t dev_id)
 	a_uint32_t uniphy_addr = 0, mht_port_id = 0;
 
 	/* dassert serdes if it is asserted */
-	if (ssdk_mht_clk_is_asserted(dev_id, MHT_SRDS1_SYS_CLK)) {
+/*	if (ssdk_mht_clk_is_asserted(dev_id, MHT_SRDS1_SYS_CLK)) {
 		rv = ssdk_mht_clk_deassert(dev_id, MHT_SRDS1_SYS_CLK);
 		PHY_RTN_ON_ERROR (rv);
-	}
+	}*/
 
 	rv = qca_mht_serdes_addr_get(dev_id, MHT_UNIPHY_SGMII_1, &uniphy_addr);
 	PHY_RTN_ON_ERROR (rv);
@@ -570,9 +570,9 @@ mht_interface_uqxgmii_mode_set(a_uint32_t dev_id)
 		PHY_RTN_ON_ERROR (rv);
 
 		/*enable phy mode control to sync phy link information to xpcs*/
-		rv = mht_uniphy_xpcs_modify_port_mmd(dev_id, mht_port_id,
-			MHT_UNIPHY_MMD_MII_DIG_CTRL, BIT(0), MHT_UNIPHY_MMD_PHY_MODE_CTRL_EN);
-		PHY_RTN_ON_ERROR (rv);
+//		rv = mht_uniphy_xpcs_modify_port_mmd(dev_id, mht_port_id,
+//			MHT_UNIPHY_MMD_MII_DIG_CTRL, BIT(0), MHT_UNIPHY_MMD_PHY_MODE_CTRL_EN);
+//		PHY_RTN_ON_ERROR (rv);
 	}
 
 	/*enable EEE for xpcs*/
@@ -592,7 +592,7 @@ mht_interface_sgmii_mode_set(a_uint32_t dev_id, a_uint32_t uniphy_index,
 	a_uint64_t raw_clk = 0;
 
 	/* dassert serdes if it is asserted */
-	if (uniphy_index == MHT_UNIPHY_SGMII_0) {
+/*	if (uniphy_index == MHT_UNIPHY_SGMII_0) {
 		if (ssdk_mht_clk_is_asserted(dev_id, MHT_SRDS0_SYS_CLK)) {
 			rv = ssdk_mht_clk_deassert(dev_id, MHT_SRDS0_SYS_CLK);
 			PHY_RTN_ON_ERROR (rv);
@@ -602,7 +602,7 @@ mht_interface_sgmii_mode_set(a_uint32_t dev_id, a_uint32_t uniphy_index,
 			rv = ssdk_mht_clk_deassert(dev_id, MHT_SRDS1_SYS_CLK);
 			PHY_RTN_ON_ERROR (rv);
 		}
-	}
+	}*/
 
 	/*get the uniphy address*/
 	rv = qca_mht_serdes_addr_get(dev_id, uniphy_index, &uniphy_addr);

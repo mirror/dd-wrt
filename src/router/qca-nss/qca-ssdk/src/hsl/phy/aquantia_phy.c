@@ -26,6 +26,22 @@
 #include <linux/of.h>
 
 sw_error_t
+aquantia_phy_poweron(a_uint32_t dev_id, a_uint32_t phy_addr)
+{
+	return hsl_phy_modify_mmd(dev_id, phy_addr, A_TRUE,
+		AQUANTIA_MMD_GLOBAL_REGISTERS, QCAPHY_CONTROL, QCAPHY_CTRL_POWER_MASK, 0);
+}
+
+sw_error_t
+aquantia_phy_poweroff(a_uint32_t dev_id, a_uint32_t phy_addr)
+{
+	return hsl_phy_modify_mmd(dev_id, phy_addr, A_TRUE,
+		AQUANTIA_MMD_GLOBAL_REGISTERS, QCAPHY_CONTROL, QCAPHY_CTRL_POWER_MASK,
+		QCAPHY_CTRL_POWER_DOWN);
+}
+ 
+
+sw_error_t
 aquantia_phy_get_speed(a_uint32_t dev_id, a_uint32_t phy_addr,
 	fal_port_speed_t * speed)
 {
@@ -75,7 +91,9 @@ sw_error_t aquantia_phy_reset(a_uint32_t dev_id, a_uint32_t phy_addr)
 {
 	sw_error_t rv = SW_OK;
 
-	rv = qcaphy_c45_sw_reset(dev_id, phy_addr);
+	rv = hsl_phy_modify_mmd(dev_id, phy_addr, A_TRUE,
+		AQUANTIA_MMD_GLOBAL_REGISTERS, QCAPHY_CONTROL, QCAPHY_CTRL_SOFTWARE_RESET,
+		QCAPHY_CTRL_SOFTWARE_RESET);
 	aos_mdelay(100);
 
 	return rv;
@@ -1521,8 +1539,8 @@ static int aquantia_phy_api_ops_init(void)
 	aquantia_phy_api_ops->phy_8023az_set = aquantia_phy_set_8023az;
 	aquantia_phy_api_ops->phy_8023az_get = aquantia_phy_get_8023az;
 #endif
-	aquantia_phy_api_ops->phy_power_on = qcaphy_c45_poweron;
-	aquantia_phy_api_ops->phy_power_off = qcaphy_c45_poweroff;
+	aquantia_phy_api_ops->phy_power_on = aquantia_phy_poweron;
+	aquantia_phy_api_ops->phy_power_off = aquantia_phy_poweroff;
 	aquantia_phy_api_ops->phy_cdt = aquantia_phy_cdt;
 	aquantia_phy_api_ops->phy_link_status_get = qcaphy_c45_get_link_status;
 #ifndef IN_PORTCONTROL_MINI
@@ -1533,7 +1551,7 @@ static int aquantia_phy_api_ops_init(void)
 	aquantia_phy_api_ops->phy_local_loopback_get = aquantia_phy_get_local_loopback;
 	aquantia_phy_api_ops->phy_remote_loopback_set = aquantia_phy_set_remote_loopback;
 	aquantia_phy_api_ops->phy_remote_loopback_get = aquantia_phy_get_remote_loopback;
-	aquantia_phy_api_ops->phy_reset = qcaphy_c45_sw_reset;
+	aquantia_phy_api_ops->phy_reset = aquantia_phy_reset;
 	aquantia_phy_api_ops->phy_wol_status_set = aquantia_phy_set_wol_status;
 	aquantia_phy_api_ops->phy_wol_status_get = aquantia_phy_get_wol_status;
 	aquantia_phy_api_ops->phy_magic_frame_mac_get = aquantia_phy_get_magic_frame_mac;

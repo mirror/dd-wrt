@@ -273,13 +273,6 @@ struct clk *ssdk_dts_cmnclk_get(a_uint32_t dev_id)
 	return cfg->cmnblk_clk;
 }
 
-a_uint32_t ssdk_dts_port3_pcs_channel_get(a_uint32_t dev_id)
-{
-	ssdk_dt_cfg* cfg = ssdk_dt_global.ssdk_dt_switch_nodes[dev_id];
-
-	return cfg->port3_pcs_channel;
-}
-
 #if defined(CONFIG_OF) && (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
 static void ssdk_dt_parse_mac_mode(a_uint32_t dev_id,
 		struct device_node *switch_node, ssdk_init_cfg *cfg)
@@ -313,25 +306,6 @@ static void ssdk_dt_parse_mac_mode(a_uint32_t dev_id,
 
 	return;
 }
-
-static void ssdk_dt_parse_port3_pcs_channel(a_uint32_t dev_id,
-		struct device_node *switch_node, ssdk_init_cfg *cfg)
-{
-	const __be32 *port3_pcs_channel;
-	a_uint32_t len = 0;
-
-	port3_pcs_channel = of_get_property(switch_node, "port3_pcs_channel", &len);
-	if (!port3_pcs_channel) {
-		ssdk_dt_global.ssdk_dt_switch_nodes[dev_id]->port3_pcs_channel = 2;
-	}
-	else {
-		ssdk_dt_global.ssdk_dt_switch_nodes[dev_id]->port3_pcs_channel =
-			be32_to_cpup(port3_pcs_channel);
-	}
-
-	return;
-}
-
 #ifdef IN_UNIPHY
 static void ssdk_dt_parse_uniphy(a_uint32_t dev_id)
 {
@@ -339,12 +313,12 @@ static void ssdk_dt_parse_uniphy(a_uint32_t dev_id)
 	a_uint32_t len = 0;
 	const __be32 *reg_cfg;
 	ssdk_dt_cfg *cfg;
+
 	/* read uniphy register base and address space */
 	uniphy_node = of_find_node_by_name(NULL, "ess-uniphy");
 	if (!uniphy_node)
 		SSDK_INFO("ess-uniphy DT doesn't exist!\n");
 	else {
-		SSDK_INFO("ess-uniphy DT exist!\n");
 		cfg = ssdk_dt_global.ssdk_dt_switch_nodes[dev_id];
 		reg_cfg = of_get_property(uniphy_node, "reg", &len);
 		if(!reg_cfg)
@@ -679,6 +653,7 @@ static sw_error_t ssdk_dt_parse_phy_info(struct device_node *switch_node, a_uint
 
 		if (mdio_node)
 		{
+			printk(KERN_INFO "reset gpio\n");
 			ssdk_miibus_add(dev_id, of_mdio_find_bus(mdio_node), &miibus_index);
 			phy_reset_gpio = of_get_named_gpio(mdio_node, "phy-reset-gpio",
 				SSDK_PHY_RESET_GPIO_INDEX);
@@ -813,7 +788,6 @@ static sw_error_t ssdk_dt_parse_phy_info(struct device_node *switch_node, a_uint
 			}
 		}
 		hsl_port_feature_set(dev_id, port_id, phy_features | PHY_F_INIT);
-
 		/*
 		* Save the port node so it can be passed as the
 		* fake SFP PHY OF node in order to be able to
@@ -1250,6 +1224,10 @@ static void ssdk_dt_parse_led_source(a_uint32_t dev_id,
 				source_pattern.map |= LED_MAP_1000M_SPEED;
 			if (!strcmp(led_str, "2500M"))
 				source_pattern.map |= LED_MAP_2500M_SPEED;
+			if (!strcmp(led_str, "5000M"))
+				source_pattern.map |= LED_MAP_5000M_SPEED;
+			if (!strcmp(led_str, "10000M"))
+				source_pattern.map |= LED_MAP_10000M_SPEED;
 			if (!strcmp(led_str, "all"))
 				source_pattern.map |= LED_MAP_ALL_SPEED;
 
@@ -1383,7 +1361,6 @@ sw_error_t ssdk_dt_parse(ssdk_init_cfg *cfg, a_uint32_t num, a_uint32_t *dev_id)
 	rv = ssdk_dt_parse_access_mode(switch_node, ssdk_dt_priv);
 	SW_RTN_ON_ERROR(rv);
 	ssdk_dt_parse_mac_mode(*dev_id, switch_node, cfg);
-	ssdk_dt_parse_port3_pcs_channel(*dev_id, switch_node, cfg);
 	ssdk_dt_parse_mdio(*dev_id, switch_node, cfg);
 	ssdk_dt_parse_port_bmp(*dev_id, switch_node, cfg);
 	ssdk_dt_parse_interrupt(*dev_id, switch_node);

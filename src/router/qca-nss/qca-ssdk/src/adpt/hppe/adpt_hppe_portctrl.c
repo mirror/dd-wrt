@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  *
- * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -2885,28 +2885,36 @@ adpt_hppe_port_interface_mode_status_get(a_uint32_t dev_id, fal_port_t port_id,
 {
 
 	sw_error_t rv = SW_OK;
-
+printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	ADPT_DEV_ID_CHECK(dev_id);
+printk(KERN_INFO "%s:%d %d\n", __func__, __LINE__, dev_id);
 	ADPT_NULL_POINT_CHECK(mode);
+printk(KERN_INFO "%s:%d %X\n", __func__, __LINE__, mode);
 
 	if (A_TRUE != hsl_port_prop_check(dev_id, port_id, HSL_PP_PHY))
 	{
+		printk(KERN_INFO "%s:%d bad param\n", __func__,__LINE__);
 		return SW_BAD_PARAM;
 	}
 	if (A_TRUE == hsl_port_feature_get(dev_id, port_id, PHY_F_FORCE) ||
 		hsl_port_feature_get(dev_id, port_id, PHY_F_FORCE_INTERFACE_MODE))
 	{
+		printk(KERN_INFO "%s:%d port interface_mode_Getn", __func__,__LINE__);
+
 		return adpt_hppe_port_interface_mode_get(dev_id, port_id, mode);
 	}
 
 	if (A_TRUE == hsl_port_is_sfp(dev_id, port_id)) {
+		printk(KERN_INFO "%s:%d port sfp status get", __func__,__LINE__);
 #if defined(IN_SFP_PHY)
 		rv = sfp_phy_interface_get_mode_status(dev_id, port_id, mode);
 #endif
 		SW_RTN_ON_ERROR (rv);
 	} else {
+		printk(KERN_INFO "%s:%d port phy interface mode status get", __func__,__LINE__);
 		rv = hsl_port_phy_interface_mode_status_get(dev_id, port_id, mode);
 		SW_RTN_ON_ERROR(rv);
+		printk(KERN_INFO "%s:%d port phy interface mode status get return %d", __func__,__LINE__, rv);
 	}
 
 	return rv;
@@ -3247,7 +3255,7 @@ adpt_hppe_port_mux_set(a_uint32_t dev_id, fal_port_t port_id, a_uint32_t port_ty
 	sw_error_t rv = SW_OK;
 	union port_mux_ctrl_u port_mux_ctrl;
 	a_uint32_t mode, mode1;
-
+	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 	memset(&port_mux_ctrl, 0, sizeof(port_mux_ctrl));
 	ADPT_DEV_ID_CHECK(dev_id);
 
@@ -3299,6 +3307,7 @@ adpt_hppe_port_mux_set(a_uint32_t dev_id, fal_port_t port_id, a_uint32_t port_ty
 	{
 		return SW_OK;
 	}
+	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 	rv = hppe_port_mux_ctrl_set(dev_id, &port_mux_ctrl);
 
 	return rv;
@@ -4000,7 +4009,7 @@ adpt_hppe_uniphy_usxgmii_autoneg_completed(a_uint32_t dev_id,
 		mdelay(1);
 		if (retries-- == 0)
 		{
-			printk("uniphy autoneg time out!\n");
+			printk("uniphy%d autoneg time out!\n", port_id);
 			return SW_TIMEOUT;
 		}
 		adpt_hppe_uniphy_usxgmii_autoneg_status_get(dev_id, uniphy_index,
@@ -4025,6 +4034,7 @@ adpt_hppe_uniphy_speed_set(a_uint32_t dev_id, a_uint32_t port_id, fal_port_speed
 		(mode == PORT_WRAPPER_UDXGMII)) {
 		/* adpt_hppe_uniphy_usxgmii_autoneg_completed(dev_id,uniphy_index); */
 		/* configure xpcs speed at usxgmii mode */
+		printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		adpt_hppe_uniphy_usxgmii_speed_set(dev_id, uniphy_index, port_id, speed);
 	}
 
@@ -4055,6 +4065,7 @@ adpt_hppe_uniphy_autoneg_status_check(a_uint32_t dev_id, a_uint32_t port_id)
 	mode = ssdk_dt_global_get_mac_mode(dev_id, uniphy_index);
 	if ((mode == PORT_WRAPPER_UQXGMII) || (mode == PORT_WRAPPER_USXGMII) ||
 		(mode == PORT_WRAPPER_UDXGMII)) {
+		printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 		adpt_hppe_uniphy_usxgmii_autoneg_completed(dev_id,uniphy_index, port_id);
 	}
 	return;
@@ -4219,16 +4230,18 @@ adpt_hppe_port_interface_mode_switch(a_uint32_t dev_id, a_uint32_t port_id)
 	fal_port_interface_mode_t port_mode_new = PORT_INTERFACE_MODE_MAX;
 
 	rv = adpt_hppe_port_interface_mode_get(dev_id, port_id, &port_mode_old);
+	printk(KERN_INFO "%s:%d mode get %d oldmode %d\n", __func__, __LINE__, rv, port_mode_old);
 	SW_RTN_ON_ERROR(rv);
 	if (port_mode_old != PORT_INTERFACE_MODE_MAX)
 		port_mode_old = ssdk_dt_get_port_mode(dev_id, port_id);
 	port_mode_new = port_mode_old;
-	rv = adpt_hppe_port_interface_mode_status_get(dev_id, port_id,
-				&port_mode_new);
+	rv = adpt_hppe_port_interface_mode_status_get(dev_id, port_id, &port_mode_new);
+	printk(KERN_INFO "%s:%d mode status get %d\n", __func__, __LINE__, rv, port_mode_new);
 	SW_RTN_ON_ERROR(rv);
+	printk(KERN_INFO "%s:%d return %d\n", __func__, __LINE__, rv);
 
 	if (port_mode_new != port_mode_old) {
-		SSDK_DEBUG("Port %d change interface mode to %d from %d\n", port_id,
+		SSDK_INFO("Port %d change interface mode to %d from %d\n", port_id,
 				port_mode_new, port_mode_old);
 		rv = _adpt_hppe_port_interface_mode_set(dev_id, port_id,
 				port_mode_new);
@@ -4262,7 +4275,7 @@ adpt_hppe_phy_interface_mode_switch(a_uint32_t dev_id,
 	sw_error_t rv = SW_OK;
 
 	if (A_TRUE == _adpt_hppe_port_phy_connected(dev_id, port_id)) {
-		SSDK_DEBUG("phy port %d change interface mode!\n", port_id);
+		SSDK_INFO("phy port %d change interface mode!\n", port_id);
 		rv = adpt_hppe_port_interface_mode_switch(dev_id, port_id);
 		SW_RTN_ON_ERROR(rv);
 	}
@@ -4369,6 +4382,8 @@ qca_hppe_mac_sw_sync_task(struct qca_phy_priv *priv)
 #ifdef IN_FDB
 			adpt_hppe_fdb_del_by_port(priv->device_id, port_id, !(FAL_FDB_DEL_STATIC));
 #endif
+			if(_adpt_hppe_port_phy_connected(priv->device_id, port_id))
+				hsl_port_phy_adjust_link_post(priv->device_id, port_id);
 		}
 		/* link status from down to up*/
 		if ((phy_status.link_status == PORT_LINK_UP) &&
@@ -4382,7 +4397,7 @@ qca_hppe_mac_sw_sync_task(struct qca_phy_priv *priv)
 			/* switch interface mode if necessary */
 			if (adpt_hppe_phy_interface_mode_switch(priv->device_id,
 					port_id) == SW_OK) {
-				SSDK_DEBUG("Port %d the interface mode switched\n",
+				SSDK_INFO("Port %d the interface mode switched\n",
 						port_id);
 			}
 			/* first check uniphy auto-neg complete interrupt to usxgmii */
