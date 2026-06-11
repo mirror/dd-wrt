@@ -301,7 +301,7 @@ adpt_mp_uniphy_mode_configure(a_uint32_t dev_id, a_uint32_t index, a_uint32_t mo
 {
 	sw_error_t rv = SW_OK;
 	a_uint32_t clock = UNIPHY_CLK_RATE_125M;
-
+	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 	union uniphy_misc2_phy_mode_u uniphy_misc2_phy_mode;
 
 	memset(&uniphy_misc2_phy_mode, 0, sizeof(uniphy_misc2_phy_mode));
