@@ -33,7 +33,6 @@
 #include "hsl_phy.h"
 #include "hsl_port_prop.h"
 #include "hppe_init.h"
-#include "ssdk_dts.h"
 #include "adpt.h"
 #include "adpt_hppe.h"
 #include "adpt_cppe_portctrl.h"
@@ -61,7 +60,8 @@ _adpt_cppe_port_mux_mac_set(a_uint32_t dev_id, fal_port_t port_id,
 		case SSDK_PHYSICAL_PORT3:
 		case SSDK_PHYSICAL_PORT4:
 			if (mode0 == PORT_WRAPPER_PSGMII) {
-				if (ssdk_dts_port3_pcs_channel_get(dev_id) == 4) {
+				if (hsl_port_phyid_get(dev_id,
+					SSDK_PHYSICAL_PORT3) == MALIBU2PORT_PHY) {
 					cppe_port_mux_ctrl.bf.port3_pcs_sel =
 						CPPE_PORT3_PCS_SEL_PCS0_CHANNEL4;
 					cppe_port_mux_ctrl.bf.port4_pcs_sel =

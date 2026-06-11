@@ -133,7 +133,7 @@ a_bool_t mht_uniphy_mode_check(a_uint32_t dev_id, a_uint32_t uniphy_index,
 
 sw_error_t
 mht_uniphy_xpcs_autoneg_restart(a_uint32_t dev_id, a_uint32_t port_id);
-#if 0
+#if 1
 sw_error_t
 mht_uniphy_xpcs_speed_set(a_uint32_t dev_id, a_uint32_t port_id,
 	fal_port_speed_t speed);

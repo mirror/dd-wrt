@@ -270,14 +270,14 @@ FAL_PHY_ADV_PAUSE | FAL_PHY_ADV_ASY_PAUSE)
 
 /** Phy counter information */
 typedef struct {
-	a_uint32_t RxGoodFrame;
-	a_uint32_t RxBadCRC;
-	a_uint32_t TxGoodFrame;
-	a_uint32_t TxBadCRC;
-	a_uint32_t SysRxGoodFrame;
-	a_uint32_t SysRxBadCRC;
-	a_uint32_t SysTxGoodFrame;
-	a_uint32_t SysTxBadCRC;
+	a_uint64_t RxGoodFrame;
+	a_uint64_t RxBadCRC;
+	a_uint64_t TxGoodFrame;
+	a_uint64_t TxBadCRC;
+	a_uint64_t SysRxGoodFrame;
+	a_uint64_t SysRxBadCRC;
+	a_uint64_t SysTxGoodFrame;
+	a_uint64_t SysTxBadCRC;
 } fal_port_counter_info_t;
 
 /*above is new add for malibu phy*/

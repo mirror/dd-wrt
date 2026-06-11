@@ -29,11 +29,11 @@ extern "C" {
 
     sw_error_t
     fal_phy_get(a_uint32_t dev_id, a_uint32_t phy_addr,
-                a_uint32_t reg, a_uint16_t * value);
+                a_uint32_t reg, a_uint32_t * value);
 
     sw_error_t
     fal_phy_set(a_uint32_t dev_id, a_uint32_t phy_addr,
-                a_uint32_t reg, a_uint16_t value);
+                a_uint32_t reg, a_uint32_t value);
 /*qca808x_end*/
 
     sw_error_t

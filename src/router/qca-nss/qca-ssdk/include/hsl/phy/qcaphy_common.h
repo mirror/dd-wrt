@@ -88,6 +88,8 @@ extern "C" {
 #define QCAPHY_MDIX_STATUS                                         0x0040
 #define QCAPHY_STATUS_LINK_PASS                                    0x0400
 #define QCAPHY_STATUS_SPEED_MASK                                   0x380
+#define QCAPHY_STATUS_SPEED_10000MBS                               0x180
+#define QCAPHY_STATUS_SPEED_5000MBS                                0x280
 #define QCAPHY_STATUS_SPEED_2500MBS                                0x200
 #define QCAPHY_STATUS_SPEED_1000MBS                                0x100
 #define QCAPHY_STATUS_SPEED_100MBS                                 0x80
@@ -103,12 +105,13 @@ extern "C" {
 #define QCAPHY_MMD1_NUM                                            0x1
 #define QCAPHY_MMD3_NUM                                            0x3
 #define QCAPHY_MMD7_NUM                                            0x7
-#define QCAPHY_MMD31_NUM                                           0x1e
+#define QCAPHY_MMD31_NUM                                           0x1f
+
 /*MMD register*/
 #define QCAPHY_MMD7_8023AZ_EEE_CTRL                                0x3c
 #define QCAPHY_MMD7_8023AZ_EEE_PARTNER                             0x3d
-#define QCAPHY_MMD7_8023AZ_EEE_PARTNER1                            0x3e
-#define QCAPHY_MMD7_8023AZ_EEE_CTRL1                               0x3f
+#define QCAPHY_MMD7_8023AZ_EEE_CTRL1                               0x3e
+#define QCAPHY_MMD7_8023AZ_EEE_PARTNER1                            0x3f
 #define QCAPHY_MMD7_8023AZ_EEE_STATUS                              0x8000
 #define QCAPHY_MMD3_8023AZ_EEE_CAPABILITY                          0x14
 #define QCAPHY_MMD3_8023AZ_EEE_CAPABILITY1                         0x15

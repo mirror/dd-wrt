@@ -68,6 +68,17 @@ __qca_phy_i2c_write(a_uint32_t dev_id, a_uint32_t phy_addr,
 sw_error_t
 qca_phy_i2c_write(a_uint32_t dev_id, a_uint32_t phy_addr,
                             a_uint32_t reg_addr_c45, a_uint16_t reg_data);
+a_uint32_t
+__qca_phy_i2c_read_soc(a_uint32_t dev_id, a_uint32_t reg);
+a_uint32_t
+qca_phy_i2c_read_soc(a_uint32_t dev_id,      a_uint32_t reg);
+void
+__qca_phy_i2c_write_soc(a_uint32_t dev_id, a_uint32_t reg, a_uint32_t data);
+void
+qca_phy_i2c_write_soc(a_uint32_t dev_id, a_uint32_t reg, a_uint32_t data);
+int
+qca_phy_i2c_modify_soc(a_uint32_t dev_id, a_uint32_t reg, a_uint32_t mask,
+	a_uint32_t val);
 #endif
 #ifdef __cplusplus
 }
