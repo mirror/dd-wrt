@@ -19,9 +19,9 @@
 
 obj ?= .
 
-obj-m +=qca-nss-macsec.o
+obj-m +=qca-nss-macsec-$(SoC).o
 
-qca-nss-macsec-objs +=	nss_macsec_init.o \
+qca-nss-macsec-$(SoC)-objs +=	nss_macsec_init.o \
 			fal/nss_macsec_fal_api.o \
 			fal/nss_macsec_interrupt.o \
 			fal/nss_macsec.o \
