@@ -553,6 +553,7 @@ static void load_nss(int profile, int cores, char *type)
 			loadnss("qca-nss-eip", type);
 			loadnss("qca-nss-eip-crypto", type);
 		}
+		loadnss("qca-nss-macsec", type);
 		loadnss("qca-nss-netlink", type);
 		loadnss("qca-nss-ppe-vp", type);
 		loadnss("qca-nss-ppe-ds", type);
@@ -1115,6 +1116,14 @@ void start_sysinit(void)
 			break;
 		}
 		case ROUTER_XIAOMI_BE7000: {
+			fseek(fp, 6, SEEK_SET);
+			unsigned char newmac2[6];
+			fread(newmac2, 6, 1, fp);
+			static char tempaddr[32];
+			maddr = tempaddr;
+			sprintf(maddr, "%02X:%02X:%02X:%02X:%02X:%02X", newmac2[0] & 0xff, newmac2[1] & 0xff, newmac2[2] & 0xff,
+				newmac2[3] & 0xff, newmac2[4] & 0xff, newmac2[5] & 0xff);
+
 			fseek(fp, 0x65000, SEEK_SET);
 			out = fopen("/tmp/cal-pci-0002:01:00.0.bin", "wb");
 			for (i = 0; i < 184320; i++)
@@ -1143,7 +1152,7 @@ void start_sysinit(void)
                     WKK_FILESIZE=184320
                     mkdir -p ${apdk}/qcn9224
 
-                    #miwifi add for 5G split phy
+	#miwifi add for 5G split phy
                     is_5g_split=$(/usr/sbin/wifi_5g_split get 2>/dev/null)
                     if [ "$is_5g_split" -eq 0 ]; then
                         dd if=${mtdblock} of=${apdk}/qcn9224/caldata_3.bin bs=1 count=$WKK_FILESIZE skip=413696 #0x65000
@@ -1151,7 +1160,6 @@ void start_sysinit(void)
                         dd if=${mtdblock} of=${apdk}/qcn9224/caldata_3.bin bs=1 count=$WKK_FILESIZE skip=208896 #0x33000
                     fi
 #endif
-
 		}
 		case ROUTER_LINKSYS_MX8500: {
 			fseek(fp, 0x26800, SEEK_SET);
@@ -1273,6 +1281,15 @@ void start_sysinit(void)
 		set_hwaddr("10gsfp", ethaddr);
 	}
 	switch (brand) {
+	case ROUTER_XIAOMI_BE7000:
+		MAC_ADD(ethaddr);
+		MAC_ADD(ethaddr);
+		nvram_set("wlan0_hwaddr", ethaddr);
+		patch(ethaddr, 14);
+		MAC_ADD(ethaddr);
+		nvram_set("wlan1_hwaddr", ethaddr);
+		set_envtools(getMTD("appsblenv"), "0x0", "0x10000", "0x20000", 1);
+		break;
 	case ROUTER_LINKSYS_MR7350:
 		MAC_ADD(ethaddr);
 		nvram_set("wlan0_hwaddr", ethaddr);
@@ -1735,13 +1752,14 @@ void start_wifi_drivers(void)
 		load_mac80211_internal(!nvram_match("ath11k_nss", "0") && !nss_disabled(0));
 		switch (brand) {
 		case ROUTER_XIAOMI_BE7000: {
-			load_ath11k_internal(profile, 0, 0, frame_mode,
-					     cert_region, 0);
+			set_gpio(6, 0);
+			set_gpio(7, 1);
+			load_ath11k_internal(profile, 0, 0, frame_mode, cert_region, 0);
 			insmod("qmi_helpers");
 			char overdrive[32];
 			int od = nvram_default_geti("power_overdrive", 0);
 			sprintf(overdrive, "poweroffset=%d", od);
-			eval("insmod","ath12k", overdrive);
+			eval("insmod", "ath12k", overdrive);
 		} break;
 		case ROUTER_8DEVICES_KIWI: {
 			insmod("qmi_helpers");
