@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -48,9 +48,6 @@
 #include <qca808x_phy.h>
 /*qca808x_end*/
 #endif
-#ifdef IN_QCA81XX_PHY
-#include <qca81xx_phy.h>
-#endif
 #include <linux/of_gpio.h>
 /*qca808x_start*/
 #include "sw.h"
@@ -59,7 +56,6 @@
 #include <linux/netdevice.h>
 #include <linux/i2c.h>
 #include "ssdk_phy_i2c.h"
-#include "qcaphy_common.h"
 
 phy_info_t *phy_info[SW_MAX_NR_DEV] = {0};
 a_uint32_t port_bmp[SW_MAX_NR_DEV] = {0};
@@ -111,11 +107,6 @@ phy_driver_instance_t ssdk_phy_driver[] =
 	{QCA808X_PHY_CHIP, {0}, NULL, NULL, NULL},
 	#endif
 /*qca808x_start*/
-	#ifdef IN_QCA81XX_PHY
-	{QCA81XX_PHY_CHIP, {0}, NULL, qca81xx_phy_init, qca81xx_phy_exit},
-	#else
-	{QCA81XX_PHY_CHIP, {0}, NULL, NULL, NULL},
-	#endif
 	{MAX_PHY_CHIP, {0}, NULL, NULL, NULL}
 };
 sw_error_t hsl_phy_api_ops_register(phy_type_t phy_type, hsl_phy_ops_t * phy_api_ops)
@@ -299,9 +290,6 @@ phy_type_t hsl_phytype_get_by_phyid(a_uint32_t dev_id, a_uint32_t phy_id)
 /*qca808x_start*/
 		case QCA8081_PHY_V1_1:
 			phytype = QCA808X_PHY_CHIP;
-			break;
-		case QCA8111_PHY:
-			phytype = QCA81XX_PHY_CHIP;
 			break;
 		default:
 			phytype = MAX_PHY_CHIP;
@@ -732,6 +720,7 @@ void hsl_port_phy_gpio_reset(a_uint32_t dev_id, a_uint32_t port_id)
 		SSDK_ERROR("when reset, gpio set failed, ret:%d\n", ret);
 		return;
 	}
+	gpio_set_value(gpio_num, SSDK_GPIO_RESET);
 	msleep(200);
 	gpio_set_value(gpio_num, SSDK_GPIO_RELEASE);
 	msleep(10);
@@ -983,39 +972,6 @@ hsl_phy_speed_duplex_to_auto_adv(a_uint32_t dev_id,fal_port_speed_t speed,
 
 	return auto_adv;
 }
-
-sw_error_t
-hsl_phydev_suspended_update(a_uint32_t dev_id, a_uint32_t phy_addr,
-	a_bool_t suspend)
-{
-	sw_error_t rv = SW_OK;
-	struct phy_device *phydev = NULL;
-
-	rv = hsl_port_phydev_get(dev_id, qca_ssdk_phy_addr_to_port(dev_id, phy_addr),
-		&phydev);
-	SW_RTN_ON_ERROR(rv);
-
-	phydev->suspended = suspend;
-
-	return SW_OK;
-}
-
-bool
-hsl_phydev_support_10m(a_uint32_t dev_id, a_uint32_t phy_addr)
-{
-	sw_error_t rv = SW_OK;
-	struct phy_device *phydev = NULL;
-
-	rv = hsl_port_phydev_get(dev_id, qca_ssdk_phy_addr_to_port(dev_id, phy_addr),
-		&phydev);
-	SW_RTN_ON_ERROR(rv);
-
-	return (linkmode_test_bit(ETHTOOL_LINK_MODE_10baseT_Half_BIT,
-		phydev->supported) &&
-		linkmode_test_bit(ETHTOOL_LINK_MODE_10baseT_Full_BIT,
-		phydev->supported));
-}
-
 #ifdef IN_LED
 sw_error_t
 hsl_port_phy_led_ctrl_pattern_get(a_uint32_t dev_id, led_pattern_group_t group,
@@ -1419,25 +1375,19 @@ hsl_port_phy_interface_mode_status_get(a_uint32_t dev_id, a_uint32_t port_id,
 	hsl_phy_ops_t *phy_drv;
 
 	phy_drv = hsl_phy_api_ops_get(dev_id, port_id);
-printk(KERN_INFO "%s:%d phy drv %X devid %d portid %d\n", __func__, __LINE__, phy_drv, dev_id, port_id);
 	if(phy_drv && phy_drv->phy_interface_mode_status_get)
 	{
 		rv = hsl_port_prop_get_phyid(dev_id, port_id, &phy_addr);
-		printk(KERN_INFO "%s:%d get phy id %d\n", __func__, __LINE__, rv);
 		SW_RTN_ON_ERROR (rv);
 		rv = phy_drv->phy_interface_mode_status_get(dev_id, phy_addr,
 			interface_mode_status);
-		printk(KERN_INFO "%s:%d status get %d\n", __func__, __LINE__, rv);
 		SW_RTN_ON_ERROR(rv);
-		
 	}
 /*qca808x_end*/
 	else
 	{
-		printk(KERN_INFO "%s:%d \n", __func__,__LINE__);
 		rv = hsl_port_phydev_interface_mode_status_get(dev_id, port_id,
 			interface_mode_status);
-		printk(KERN_INFO "%s:%d ret %d\n", __func__,__LINE__, rv);
 		SW_RTN_ON_ERROR(rv);
 	}
 /*qca808x_start*/
@@ -2070,31 +2020,6 @@ hsl_port_phy_eee_status_get(a_uint32_t dev_id, a_uint32_t port_id,
 	SW_RTN_ON_ERROR (rv);
 
 	return phy_drv->phy_eee_status_get (dev_id, phy_addr, status);
-}
-
-sw_error_t
-hsl_port_phy_adjust_link_post(a_uint32_t dev_id, a_uint32_t port_id)
-{
-	sw_error_t rv = SW_OK;
-	a_uint32_t phy_addr = 0;
-	hsl_phy_ops_t *phy_drv = NULL;
-
-	HSL_DEV_ID_CHECK(dev_id);
-
-	if (A_TRUE != hsl_port_prop_check (dev_id, port_id, HSL_PP_PHY))
-	{
-		return SW_BAD_PARAM;
-	}
-
-	SW_RTN_ON_NULL (phy_drv = hsl_phy_api_ops_get (dev_id, port_id));
-	if (NULL == phy_drv->phy_adjust_link_post)
-		return SW_NOT_SUPPORTED;
-
-	rv = hsl_port_prop_get_phyid (dev_id, port_id, &phy_addr);
-	SW_RTN_ON_ERROR (rv);
-
-	return phy_drv->phy_adjust_link_post (dev_id, phy_addr);
-
 }
 /*qca808x_end*/
 #ifndef IN_PORTCONTROL_MINI
@@ -3081,12 +3006,12 @@ __hsl_phy_mii_reg_read(a_uint32_t dev_id, a_uint32_t phy_addr, a_uint32_t mii_re
 			return PHY_INVALID_DATA;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,6,0))
 		if (mii_reg & SSDK_ADDR_C45)
-			phy_data = __mdiobus_c45_read(miibus, TO_PHY_ADDR(phy_addr),
+			phy_data = __mdiobus_c45_read(miibus, phy_addr,
 					FIELD_GET(SSDK_DEVADDR_C45_MASK, mii_reg),
 					FIELD_GET(SSDK_REGADDR_C45_MASK, mii_reg));
 		else
 #endif
-			phy_data = __mdiobus_read(miibus, TO_PHY_ADDR(phy_addr), mii_reg);
+			phy_data = __mdiobus_read(miibus, phy_addr, mii_reg);
 	}
 
 	return phy_data;
@@ -3119,13 +3044,13 @@ __hsl_phy_mii_reg_write(a_uint32_t dev_id, a_uint32_t phy_addr, a_uint32_t mii_r
 		SW_RTN_ON_NULL(miibus);
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,6,0))
 		if (mii_reg & SSDK_ADDR_C45)
-			ret = __mdiobus_c45_write(miibus, TO_PHY_ADDR(phy_addr),
+			ret = __mdiobus_c45_write(miibus, phy_addr,
 					FIELD_GET(SSDK_DEVADDR_C45_MASK, mii_reg),
 					FIELD_GET(SSDK_REGADDR_C45_MASK, mii_reg),
 					reg_val);
 		else
 #endif
-			ret = __mdiobus_write(miibus, TO_PHY_ADDR(phy_addr), mii_reg, reg_val);
+			ret = __mdiobus_write(miibus, phy_addr, mii_reg, reg_val);
 
 		if (ret)
 			return ret;
@@ -3511,240 +3436,8 @@ hsl_phy_modify_debug(a_uint32_t dev_id, a_uint32_t phy_addr,
 
 	return rv;
 }
-
-/*
- * @brief read debug register without lock
- * @param[in] dev_id device id
- * @param[in] phy_addr phy address
- * @param[in] debug_reg debug register id
- * @return debug register value
- */
-a_uint16_t
-__hsl_phy_c45_debug_reg_read(a_uint32_t dev_id, a_uint32_t phy_addr,
-	a_uint32_t debug_reg)
-{
-	sw_error_t rv = SW_OK;
-
-	rv = __hsl_phy_c45_mmd_reg_write(dev_id, phy_addr, QCAPHY_MMD31_NUM,
-		HSL_PHY_DEBUG_PORT_ADDRESS, debug_reg);
-	if(rv != SW_OK)
-		return PHY_INVALID_DATA;
-	return __hsl_phy_c45_mmd_reg_read(dev_id, phy_addr, QCAPHY_MMD31_NUM,
-		HSL_PHY_DEBUG_PORT_DATA);
-}
-/*
- * @brief write debug register without lock.
- * @param[in] dev_id device id
- * @param[in] phy_addr phy address
- * @param[in] debug_reg debug register id
- * @param[in] reg_val write to debug register
- * @return SW_OK or error code
- */
-sw_error_t
-__hsl_phy_c45_debug_reg_write(a_uint32_t dev_id, a_uint32_t phy_id,
-	a_uint32_t debug_reg, a_uint16_t reg_val)
-{
-	sw_error_t rv = SW_OK;
-
-	rv = __hsl_phy_c45_mmd_reg_write(dev_id, phy_id, QCAPHY_MMD31_NUM,
-		HSL_PHY_DEBUG_PORT_ADDRESS, debug_reg);
-
-	rv |= __hsl_phy_c45_mmd_reg_write(dev_id, phy_id, QCAPHY_MMD31_NUM,
-		HSL_PHY_DEBUG_PORT_DATA, reg_val);
-
-	return rv;
-}
-/*
- * @brief modify debug register without lock
- * @param[in] dev_id device id
- * @param[in] phy_addr phy address
- * @param[in] debug_reg debug register id
- * @param[in] mask mask of bits to clear
- * @param[in] value new value of bits
- * @return SW_OK or error code
- */
-sw_error_t
-__hsl_phy_c45_modify_debug(a_uint32_t dev_id, a_uint32_t phy_addr,
-	a_uint32_t debug_reg, a_uint16_t mask, a_uint16_t value)
-{
-	a_uint16_t phy_data = 0, new_phy_data = 0;
-
-	phy_data = __hsl_phy_c45_debug_reg_read(dev_id, phy_addr, debug_reg);
-	PHY_RTN_ON_READ_ERROR(phy_data);
-	new_phy_data = (phy_data & ~mask) | value;
-	return __hsl_phy_c45_debug_reg_write (dev_id, phy_addr, debug_reg,
-		new_phy_data);
-}
-/*
- * @brief read debug register with lock
- * @param[in] dev_id device id
- * @param[in] phy_addr phy address
- * @param[in] debug_reg debug register id
- * @return debug register value
- */
-a_uint16_t
-hsl_phy_c45_debug_reg_read(a_uint32_t dev_id, a_uint32_t phy_addr,
-	a_uint32_t debug_reg)
-{
-	a_uint16_t phy_data = 0;
-
-	hsl_phy_lock(dev_id, phy_addr, A_TRUE);
-	phy_data = __hsl_phy_c45_debug_reg_read(dev_id, phy_addr, debug_reg);
-	hsl_phy_lock(dev_id, phy_addr, A_FALSE);
-
-	return phy_data;
-}
-/*
- * @brief write debug register with lock.
- * @param[in] dev_id device id
- * @param[in] phy_addr phy address
- * @param[in] debug_reg debug register id
- * @param[in] reg_val write to debug register
- * @return SW_OK or error code
- */
-sw_error_t
-hsl_phy_c45_debug_reg_write(a_uint32_t dev_id, a_uint32_t phy_addr,
-	a_uint32_t debug_reg, a_uint16_t reg_val)
-{
-	sw_error_t rv = SW_OK;
-
-	hsl_phy_lock(dev_id, phy_addr, A_TRUE);
-	rv = __hsl_phy_c45_debug_reg_write(dev_id, phy_addr, debug_reg, reg_val);
-	hsl_phy_lock(dev_id, phy_addr, A_FALSE);
-
-	return rv;
-}
-/*
- * @brief modify debug register with lock
- * @param[in] dev_id device id
- * @param[in] phy_addr phy address
- * @param[in] debug_reg debug register id
- * @param[in] mask mask of bits to clear
- * @param[in] value new value of bits
- * @return SW_OK or error code
- */
-sw_error_t
-hsl_phy_c45_modify_debug(a_uint32_t dev_id, a_uint32_t phy_addr,
-	a_uint32_t debug_reg, a_uint16_t mask, a_uint16_t value)
-{
-	sw_error_t rv = SW_OK;
-
-	hsl_phy_lock(dev_id, phy_addr, A_TRUE);
-	rv = __hsl_phy_c45_modify_debug(dev_id, phy_addr, debug_reg, mask, value);
-	hsl_phy_lock(dev_id, phy_addr, A_FALSE);
-
-	return rv;
-}
-
-a_uint32_t
-hsl_soc_read(a_uint32_t dev_id, a_bool_t is_i2c, a_uint32_t reg)
-{
-	a_uint32_t val = 0;
-
-#if defined(IN_PHY_I2C_MODE)
-	if (is_i2c)
-	{
-		val = qca_phy_i2c_read_soc(dev_id, reg);
-	}
-	else
-#endif
-	{
-		struct mii_bus *bus = NULL;
-		bus = ssdk_miibus_get(dev_id, SSDK_MII_DEFAULT_BUS_ID);
-		if (!bus)
-			return 0xffff;
-		mutex_lock(&bus->mdio_lock);
-		qca_mii_raw_read(bus, reg, &val);
-		mutex_unlock(&bus->mdio_lock);
-	}
-	return val;
-}
-
-void
-hsl_soc_write(a_uint32_t dev_id, a_bool_t is_i2c, a_uint32_t reg,
-	a_uint32_t reg_val)
-{
-#if defined(IN_PHY_I2C_MODE)
-	if (is_i2c)
-	{
-		qca_phy_i2c_write_soc(dev_id, reg, reg_val);
-	}
-	else
-#endif
-	{
-		struct mii_bus *bus = NULL;
-		bus = ssdk_miibus_get(dev_id, SSDK_MII_DEFAULT_BUS_ID);
-		if (!bus)
-			return;
-		mutex_lock(&bus->mdio_lock);
-		qca_mii_raw_write(bus, reg, reg_val);
-		mutex_unlock(&bus->mdio_lock);
-	}
-}
-
-int
-hsl_modify_soc(a_uint32_t dev_id, a_bool_t is_i2c, a_uint32_t reg,
-	a_uint32_t mask, a_uint32_t val)
-{
-	int ret = 0;
-#if defined(IN_PHY_I2C_MODE)
-	if (is_i2c)
-	{
-		ret = qca_phy_i2c_modify_soc(dev_id, reg, mask, val);
-	}
-	else
-#endif
-	{
-		struct mii_bus *bus = NULL;
-		bus = ssdk_miibus_get(dev_id, SSDK_MII_DEFAULT_BUS_ID);
-		if (!bus)
-			return -1;
-		mutex_lock(&bus->mdio_lock);
-		ret = qca_mii_raw_update(bus, reg, mask, val);
-		mutex_unlock(&bus->mdio_lock);
-	}
-	return ret;
-}
-
-a_uint32_t
-hsl_phy_soc_read(a_uint32_t dev_id, a_uint32_t phy_addr,
-	a_uint32_t reg)
-{
-	a_uint32_t soc_reg, phy_addr_val;
-
-	phy_addr_val = (phy_addr & GENMASK(4, 0));
-	soc_reg = (FIELD_PREP(GENMASK(28, 24), phy_addr_val) |
-		(reg & (GENMASK(23, 0) | SSDK_SWITCH_REG_TYPE_MASK)));
-
-	return hsl_soc_read(dev_id, IS_I2C_PHY_ADDR(phy_addr), soc_reg);
-}
-
-void
-hsl_phy_soc_write(a_uint32_t dev_id, a_uint32_t phy_addr,
-	a_uint32_t reg, a_uint32_t val)
-{
-	a_uint32_t soc_reg, phy_addr_val;
-
-	phy_addr_val = (phy_addr & GENMASK(4, 0));
-	soc_reg = (FIELD_PREP(GENMASK(28, 24), phy_addr_val) |
-		(reg & (GENMASK(23, 0) | SSDK_SWITCH_REG_TYPE_MASK)));
-
-	hsl_soc_write(dev_id, IS_I2C_PHY_ADDR(phy_addr), soc_reg, val);
-}
-
-int
-hsl_phy_modify_soc(a_uint32_t dev_id, a_uint32_t phy_addr, a_uint32_t reg,
-	a_uint32_t mask, a_uint32_t val)
-{
-	a_uint32_t soc_reg, phy_addr_val;
-
-	phy_addr_val = (phy_addr & GENMASK(4, 0));
-	soc_reg = (FIELD_PREP(GENMASK(28, 24), phy_addr_val) |
-		(reg & (GENMASK(23, 0) | SSDK_SWITCH_REG_TYPE_MASK)));
-
-	return hsl_modify_soc(dev_id, IS_I2C_PHY_ADDR(phy_addr), soc_reg, mask, val);
-}
 /*qca808x_end*/
+
 struct device_node*
 hsl_port_node_get(a_uint32_t dev_id, a_uint32_t port_id)
 {
@@ -3755,4 +3448,6 @@ void
 hsl_port_node_set(a_uint32_t dev_id, a_uint32_t port_id, struct device_node *port_node)
 {
 	phy_info[dev_id]->port_node[port_id] = port_node;
+
+	return;
 }

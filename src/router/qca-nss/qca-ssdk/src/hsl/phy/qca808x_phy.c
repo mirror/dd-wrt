@@ -28,7 +28,6 @@
 #include "qca808x_ptp.h"
 #endif
 #include "qca808x.h"
-#include "qca808x_lib.h"
 #ifdef IN_LED
 #include "qca808x_led.h"
 #endif

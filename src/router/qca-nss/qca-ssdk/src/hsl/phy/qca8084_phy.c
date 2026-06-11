@@ -81,12 +81,6 @@ qca8084_phy_ipg_config(a_uint32_t dev_id, a_uint32_t phy_addr,
 {
 	a_uint16_t phy_data = 0;
 
-	phy_data = hsl_phy_mmd_reg_read(dev_id, phy_addr, A_TRUE, QCA808X_PHY_MMD7_NUM,
-		QCA8084_PHY_MMD7_IPG_10_11_ENABLE);
-	PHY_RTN_ON_READ_ERROR(phy_data);
-
-	phy_data &= ~QCA8084_PHY_MMD7_IPG_11_EN;
-
 	/*If speed is 1G, enable 11 ipg tuning*/
 	SSDK_DEBUG("if speed is 1G, enable 11 ipg tuning\n");
 	if(speed == FAL_SPEED_1000)
@@ -152,26 +146,19 @@ qca8084_phy_interface_get_mode_by_speed(a_uint32_t dev_id, a_uint32_t phy_addr,
 	}
 	else
 	{
-		/*if uniphy0 is mac mode, then there are two case: 1. uniphy0 is not
-			used(sgmii and mac mode in default), and if uniphy1 is uqxgmii,
-			then port4 interface mode is PORT_UQXGMII, 2. uniphy0 is used as
-			sgmii or sgmii+, means uniphy0 is used for switch mode, the the
-			port4 interface mode is PORT_INTERFACE_MODE_MAX*/
-		if(mht_uniphy_mode_check(dev_id, MHT_UNIPHY_SGMII_0, MHT_UNIPHY_MAC)
-			&& mht_uniphy_mode_check(dev_id, MHT_UNIPHY_SGMII_1,
-			MHT_UNIPHY_UQXGMII))
-		{
-			*interface_mode_status = PORT_UQXGMII;
-		}
-		/*if uniphy0 is phy mode, then uniphy0 connect to port4, so the current
-			interface mode depend on current speed, sgmii+ for 2.5G and sgmii
-			for 1G/100M/10M*/
+		/* if uniphy0 is phy mode, then uniphy0 connect to port4, bypass mode port4
+		 * and sgmii_uqxgmii mode port4 will be this case, the current interface
+		 * mode depend on current speed, sgmii+ for 2.5G and sgmii for 1G/100M/10M,
+		 * or if the uniphy1 is uqxgmii mode, then port4 interfacemode is PORT_UQXGMII,
+		 * otherwise, port4 is switch port and interfacemode is PORT_INTERFACE_MODE_MAX */ 
 		if(mht_uniphy_mode_check(dev_id, MHT_UNIPHY_SGMII_0, MHT_UNIPHY_PHY))
 		{
 			if(speed == FAL_SPEED_2500)
 				*interface_mode_status = PORT_SGMII_PLUS;
 			else
 				*interface_mode_status = PHY_SGMII_BASET;
+		} else if(mht_uniphy_mode_check(dev_id, MHT_UNIPHY_SGMII_1, MHT_UNIPHY_UQXGMII)) {
+			*interface_mode_status = PORT_UQXGMII;
 		}
 	}
 
@@ -197,11 +184,7 @@ qca8084_phy_fifo_reset(a_uint32_t dev_id, a_uint32_t phy_addr, a_bool_t enable)
 {
 	a_uint16_t phy_data = 0;
 
-	phy_data = hsl_phy_mii_reg_read (dev_id, phy_addr, QCA8084_PHY_FIFO_CONTROL);
-
-	if(enable)
-		phy_data &= ~QCA8084_PHY_FIFO_RESET;
-	else
+	if(!enable)
 		phy_data |= QCA8084_PHY_FIFO_RESET;
 
 	return hsl_phy_modify_mii(dev_id, phy_addr, QCA8084_PHY_FIFO_CONTROL,
@@ -346,9 +329,9 @@ qca8084_phy_interface_set_mode(a_uint32_t dev_id, a_uint32_t phy_addr,
 				SSDK_ERROR("MHT uniphy 0 is not enabled on the sku\n");
 				return SW_NOT_SUPPORTED;
 			}
-//			if(interface_mode ==
-//				phy_info->port_mode[qca_ssdk_phy_addr_to_port(dev_id, phy_addr)])
-//				return SW_OK;
+			if(interface_mode ==
+				phy_info->port_mode[qca_ssdk_phy_addr_to_port(dev_id, phy_addr)])
+				return SW_OK;
 			/*need to configure work mode as MHT_PHY_SGMII_USXGMII_MODE*/
 			rv = qca_mht_work_mode_set(dev_id, MHT_PHY_SGMII_UQXGMII_MODE);
 			PHY_RTN_ON_ERROR (rv);
@@ -551,39 +534,39 @@ _qca8084_phy_uqxgmii_speed_fixup(a_uint32_t dev_id, a_uint32_t phy_addr,
 	PHY_RTN_ON_ERROR(rv);
 
 	/*Restart the auto-neg of uniphy*/
-	SSDK_INFO("Restart the auto-neg of uniphy\n");
+	SSDK_DEBUG("Restart the auto-neg of uniphy\n");
 	rv = mht_uniphy_xpcs_autoneg_restart(dev_id, mht_port_id);
 	PHY_RTN_ON_ERROR(rv);
 	/*set gmii+ clock to uniphy1 and ethphy*/
-	SSDK_INFO("set gmii,xgmii clock to uniphy and gmii to ethphy\n");
+	SSDK_DEBUG("set gmii,xgmii clock to uniphy and gmii to ethphy\n");
 	rv = mht_port_speed_clock_set(dev_id, mht_port_id, new_speed);
 	PHY_RTN_ON_ERROR(rv);
-#if 1
+#if 0
 	/*set xpcs speed*/
-	SSDK_INFO("set xpcs speed\n");
+	SSDK_DEBUG("set xpcs speed\n");
 	rv = mht_uniphy_xpcs_speed_set(dev_id, mht_port_id, new_speed);
 	PHY_RTN_ON_ERROR(rv);
 #endif
 	/*GMII/XGMII clock and ETHPHY GMII clock enable/disable*/
-	SSDK_INFO("GMII/XGMII clock and ETHPHY GMII clock enable/disable\n");
+	SSDK_DEBUG("GMII/XGMII clock and ETHPHY GMII clock enable/disable\n");
 	if(link)
 		port_clock_en = A_TRUE;
 	rv = ssdk_mht_port_clk_en_set(dev_id, mht_port_id,
 		MHT_CLK_TYPE_UNIPHY|MHT_CLK_TYPE_EPHY, port_clock_en);
 	PHY_RTN_ON_ERROR(rv);
 	/*delay 100ms after enable/disable clock*/
-	SSDK_INFO("delay 100ms after enable/disable clock\n");
+	SSDK_DEBUG("delay 100ms after enable/disable clock\n");
 	aos_mdelay(100);
 	/*GMII/XGMII interface and ETHPHY GMII interface reset and release*/
-	SSDK_INFO("UNIPHY GMII/XGMII interface and ETHPHY GMII interface reset and release\n");
+	SSDK_DEBUG("UNIPHY GMII/XGMII interface and ETHPHY GMII interface reset and release\n");
 	rv = ssdk_mht_port_clk_reset(dev_id, mht_port_id, MHT_CLK_TYPE_UNIPHY|MHT_CLK_TYPE_EPHY);
 	PHY_RTN_ON_ERROR(rv);
 	/*ipg_tune and xgmii2gmii reset for uniphy and ETHPHY, function reset*/
-	SSDK_INFO("ipg_tune and xgmii2gmii reset for uniphy and ETHPHY, function reset\n");
+	SSDK_DEBUG("ipg_tune and xgmii2gmii reset for uniphy and ETHPHY, function reset\n");
 	rv = mht_uniphy_uqxgmii_function_reset(dev_id, mht_port_id);
 	PHY_RTN_ON_ERROR(rv);
 	/*do ethphy function reset*/
-	SSDK_INFO("do ethphy function reset\n");
+	SSDK_DEBUG("do ethphy function reset\n");
 	if(link)
 	{
 		rv = qca8084_phy_function_reset(dev_id, phy_addr, PHY_FIFO_RESET);
