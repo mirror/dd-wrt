@@ -45,7 +45,7 @@ SSDK_MAKE_FLAGS_IPQ6018+= \
 	KVER=$(KERNEL_VERSION) \
 	ARCH=arm64 \
 	TARGET_SUFFIX= \
-	GCC_VERSION=15.2.0 \
+	GCC_VERSION=16.1.0 \
 	EXTRA_CFLAGS="-fno-stack-protector" \
 	SoC=ipq60xx \
 	SHELL="/usr/bin/bash" \
@@ -62,7 +62,7 @@ SSDK_MAKE_FLAGS_IPQ5018+= \
 	KVER=$(KERNEL_VERSION) \
 	ARCH=arm64 \
 	TARGET_SUFFIX= \
-	GCC_VERSION=15.2.0 \
+	GCC_VERSION=16.1.0 \
 	EXTRA_CFLAGS="-fno-stack-protector" \
 	SoC=ipq50xx \
 	SHELL="/usr/bin/bash" \
@@ -79,7 +79,7 @@ SSDK_MAKE_FLAGS_IPQ807X+= \
 	KVER=$(KERNEL_VERSION) \
 	ARCH=arm64 \
 	TARGET_SUFFIX= \
-	GCC_VERSION=15.2.0 \
+	GCC_VERSION=16.1.0 \
 	EXTRA_CFLAGS="-fno-stack-protector" \
 	SoC=ipq807x \
 	SHELL="/usr/bin/bash" \
@@ -96,19 +96,19 @@ SSDK_MAKE_FLAGS_IPQ95XX+= \
 	KVER=$(KERNEL_VERSION) \
 	ARCH=arm64 \
 	TARGET_SUFFIX= \
-	GCC_VERSION=15.2.0 \
-	EXTRA_CFLAGS="-fno-stack-protector" \
-	SoC=ipq807x \
+	GCC_VERSION=16.1.0 \
+	EXTRA_CFLAGS="-fno-stack-protector -Wno-enum-conversion"\
+	SoC=ipq95xx \
 	SHELL="/usr/bin/bash" \
-	PTP_FEATURE=disable SWCONFIG_FEATURE=enable \
-	ISISC_ENABLE=disable MHT_ENABLE=disable \
-	IN_QCA803X_PHY=FALSE IN_QCA808X_PHY=FALSE \
-	IN_MALIBU_PHY=FALSE
+	PTP_FEATURE=enable SWCONFIG_FEATURE=enable \
+	ISISC_ENABLE=disable MHT_ENABLE=enable \
+	IN_QCA803X_PHY=TRUE IN_QCA808X_PHY=TRUE IN_AQUANTIA_PHY=TRUE \
+	IN_SFP_PHY=TRUE IN_SFP=TRUE IN_MALIBU_PHY=TRUE IN_QCA803X_PHY=TRUE
 
 SSDK_MAKE_FLAGS_IPQ807X+= CHIP_TYPE=HPPE
 SSDK_MAKE_FLAGS_IPQ6018+= CHIP_TYPE=CPPE
 SSDK_MAKE_FLAGS_IPQ5018+= CHIP_TYPE=MP ISISC_ENABLE=enable IN_QCA808X_PHY=TRUE
-SSDK_MAKE_FLAGS_IPQ95XX+= CHIP_TYPE=APPE
+SSDK_MAKE_FLAGS_IPQ95XX+= CHIP_TYPE=APPE IN_QCA808X_PHY=TRUE
 
 IPQ95XX_NSS_FLAGS=NSS_DRV_POINT_OFFLOAD=y \
 	NSS_DRV_BRIDGE_ENABLE=n \
@@ -236,7 +236,8 @@ ifeq ($(CONFIG_IPQ95XX),y)
 
 	ln -sf arch/nss_ipq95xx.h qca-nss-drv/exports/nss_arch.h
 	make -C $(KDIR) M=$(PWD)/qca-nss-drv clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
-	make -C $(KDIR) M=$(PWD)/qca-nss-ppe clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR) PPE_TUN_ENABLE=y ppe-drv=y vlan-mgr=y netlink=y pppoe-mgr=y lag-mgr=y bridge-mgr=y ppe-tun=y vxlanmgr=y l2tp-mgr=y ppe-vp=y ppe-rule=y
+	make -C $(KDIR) M=$(PWD)/qca-nss-macsec clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
+	make -C $(KDIR) M=$(PWD)/qca-nss-ppe clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR) PPE_TUN_ENABLE=y ppe-drv=y vlan-mgr=y netlink=y pppoe-mgr=y lag-mgr=y bridge-mgr=y ppe-tun=y ppe-ds=y vxlanmgr=y l2tp-mgr=y ppe-vp=y ppe-rule=y
 	make -C $(KDIR) M=$(PWD)/qca-nss-mcs clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 CONFIG_SUPPORT_MLD=y EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR)
 	make -C $(KDIR) M=$(PWD)/shortcut-fe clean modules modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
 	make -C $(KDIR) M=$(PWD)/qca-nss-eip clean modules modules_install MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR) NSS_EIP_DIR=eip197 eip_crypto=m
@@ -362,12 +363,12 @@ endif
 	cp ssdk-shell/build/bin/ssdk_sh $(INSTALLDIR)/usr/sbin
 
 	mkdir -p $(INSTALLDIR)/lib/firmware
-	cp firmware-11.4/hawkeye/* $(INSTALLDIR)/lib/firmware
-	cp firmware-11.4/cypress/* $(INSTALLDIR)/lib/firmware
-	cp firmware-11.4/maple/* $(INSTALLDIR)/lib/firmware
 ifeq ($(CONFIG_IPQ95XX),y)
 	cp firmware-11.4/crypto-ipq95xx/* $(INSTALLDIR)/lib/firmware
 else
+	cp firmware-11.4/hawkeye/* $(INSTALLDIR)/lib/firmware
+	cp firmware-11.4/cypress/* $(INSTALLDIR)/lib/firmware
+	cp firmware-11.4/maple/* $(INSTALLDIR)/lib/firmware
 	cp firmware-11.4/crypto/* $(INSTALLDIR)/lib/firmware
 endif
 	mkdir -p $(INSTALLDIR)/usr/sbin
@@ -421,6 +422,7 @@ ifeq ($(CONFIG_IPQ6018),y)
 	make -C $(KDIR) M=$(PWD)/qca-nss-drv clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
 	make -C $(KDIR) M=$(PWD)/qca-nss-drv clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x"
 	make -C $(KDIR) M=$(PWD)/qca-nss-ppe clean MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR) ppe-drv=y vlan-mgr=y netlink=y pppoe-mgr=y lag-mgr=y bridge-mgr=y ppe-tun=y vxlanmgr=y l2tp-mgr=y
+	make -C $(KDIR) M=$(PWD)/qca-nss-macsec clean MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR) ppe-drv=y vlan-mgr=y netlink=y pppoe-mgr=y lag-mgr=y bridge-mgr=y ppe-tun=y vxlanmgr=y l2tp-mgr=y
 	make -C $(KDIR) M=$(PWD)/qca-nss-eip clean MODPROBE=true DEPMOD=/bin/true $(IPQ95XX_NSS_FLAGS) KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq95xx" INSTALL_MOD_PATH=$(INSTALLDIR) NSS_EIP_DIR=eip197 eip_crypto=m
 	make -C $(KDIR) M=$(PWD)/qca-nss-ecm-standard clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 ECM_INTERFACE_PPTP_ENABLE=y ECM_FRONT_END_NSS_ENABLE=y ECM_FRONT_END_SFE_ENABLE=y ECM_IPV6_ENABLE=y ECM_CLASSIFIER_OVS_ENABLE=y ECM_INTERFACE_OVS_BRIDGE_ENABLE=y ECM_CLASSIFIER_OVS_ENABLE=y EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq60xx"
 	make -C $(KDIR) M=$(PWD)/shortcut-fe clean MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" INSTALL_MOD_PATH=$(INSTALLDIR)
