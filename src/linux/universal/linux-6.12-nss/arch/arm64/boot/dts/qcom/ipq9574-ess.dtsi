@@ -9,6 +9,7 @@
 
 	ess_instance: ess-instance {
 		compatible = "qcom,ess-instance";
+
 		switch: ess-switch@3a000000 {
 			compatible = "qcom,ess-switch-ipq95xx";
 			switch_access_mode = "local bus";
@@ -683,7 +684,7 @@
 			   <0 352 4>,			/* Rx desc ring id #21 IRQ info */
 			   <0 353 4>,			/* Rx desc ring id #22 IRQ info */
 			   <0 354 4>,			/* Rx desc ring id #23 IRQ info */
-			   <0 261 4>,			/* Misc error IRQ info */
+			   <0 499 4>,			/* Misc error IRQ info */
 			   <0 364 4>,			/* PPEDS Node #0(TxComp ring id #1) TxComplete IRQ info */
 			   <0 332 4>,			/* PPEDS Node #0(Rx Desc ring id #1) Rx Desc IRQ info */
 			   <0 356 4>,			/* PPEDS Node #0(RxFill Desc ring id #1) Rx Fill IRQ info */

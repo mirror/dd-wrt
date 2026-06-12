@@ -22,6 +22,29 @@
 	#size-cells = <2>;
 
 	clocks {
+		bias_pll_ubi_nc_clk: bias-pll-ubi-nc-clk {
+			compatible = "fixed-clock";
+			clock-frequency = <353000000>;
+			#clock-cells = <0>;
+		};
+
+		bias_pll_cc_clk: bias_pll_cc_clk {
+			compatible = "fixed-clock";
+			clock-frequency = <1200000000>;
+			#clock-cells = <0>;
+		};
+
+		bias_pll_nss_noc_clk: bias_pll_nss_noc_clk {
+			compatible = "fixed-clock";
+			clock-frequency = <461500000>;
+			#clock-cells = <0>;
+		};
+
+		gcc_gpll0_out_aux: gcc_gpll0_out_aux {
+			compatible = "fixed-clock";
+			clock-frequency = <800000000>;
+			#clock-cells = <0>;
+		};
 
 		ref_48mhz_clk: ref-48mhz-clk {
 			compatible = "fixed-factor-clock";
@@ -450,7 +473,9 @@
 
 		mdio: mdio@90000 {
 			compatible =  "qcom,ipq9574-mdio", "qcom,ipq4019-mdio";
-			reg = <0x00090000 0x64>;
+/*			reg = <0x90000 0x64>;*/
+			reg = <0x90000 0x64>, <0x9B000 0x800>;
+			reg-names = "ppe", "cmn_blk";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&gcc GCC_MDIO_AHB_CLK>;
@@ -504,7 +529,7 @@
 			status = "disabled";
 		};
 
-		cmn_pll: clock-controller@9b000 {
+/*		cmn_pll: clock-controller@9b000 {
 			compatible = "qcom,ipq9574-cmn-pll";
 			reg = <0x0009b000 0x800>;
 			clocks = <&ref_48mhz_clk>,
@@ -514,7 +539,7 @@
 			#clock-cells = <1>;
 			assigned-clocks = <&cmn_pll CMN_PLL_CLK>;
 			assigned-clock-rates-u64 = /bits/ 64 <12000000000>;
-		};
+		};*/
 
 		qfprom: efuse@a4000 {
 			compatible = "qcom,ipq9574-qfprom", "qcom,qfprom";
@@ -526,6 +551,26 @@
 				reg = <0x15 0x2>;
 				bits = <7 2>;
 			};
+		};
+
+		reg_update: reg-update@400000 {
+			compatible = "ipq,reg-update";
+			reg = <0x00400000 0x6148>,
+			      <0x39d00020 0x10>;
+			reg-names = "memnoc",
+				    "ubicore";
+			clocks = <&nsscc NSS_CC_NSS_CSR_CLK>,
+				 <&nsscc NSS_CC_NSSNOC_NSS_CSR_CLK>;
+			clock-names = "nss-csr-clk",
+				      "nss-nssnoc-csr-clk";
+			assigned-clocks = <&nsscc NSS_CC_NSS_CSR_CLK>,
+					  <&nsscc NSS_CC_NSSNOC_NSS_CSR_CLK>;
+			assigned-clock-rates = <100000000>,
+					       <100000000>;
+			status = "okay";
+#if defined(__IPQ_PROFILE_MINENT__)
+			ubi_core_enable;
+#endif
 		};
 
 		cryptobam: dma-controller@704000 {
@@ -1579,138 +1624,23 @@
 		};
 
 
-		nsscc: clock-controller@39b00000 {
-			compatible = "qcom,ipq9574-nsscc";
+
+                nsscc: nsscc@39b00000 {
+			compatible = "qcom,nsscc-ipq9574";
 			reg = <0x39b00000 0x80000>;
-			clocks = <&xo_board_clk>,
-				 <&cmn_pll NSS_1200MHZ_CLK>,
-				 <&cmn_pll PPE_353MHZ_CLK>,
-				 <&gcc GPLL0_OUT_AUX>,
-				 <&pcs0 0>,
-				 <&pcs0 1>,
-				 <&pcs1 0>,
-				 <&pcs1 1>,
-				 <&pcs2 0>,
-				 <&pcs2 1>,
-				 <&gcc GCC_NSSCC_CLK>,
-				 <&gcc GCC_NSSNOC_NSSCC_CLK>,
-				 <&gcc GCC_NSSNOC_SNOC_CLK>,
-				 <&gcc GCC_NSSNOC_SNOC_1_CLK>;
-			clock-names = "xo",
-				      "nss_1200",
-				      "ppe_353",
-				      "gpll0_out",
-				      "uniphy0_rx",
-				      "uniphy0_tx",
-				      "uniphy1_rx",
-				      "uniphy1_tx",
-				      "uniphy2_rx",
-				      "uniphy2_tx",
-				      "bus",
-				      "nssnoc",
-				      "snoc",
-				      "snoc_1";
-			#clock-cells = <1>;
-			#reset-cells = <1>;
-			#interconnect-cells = <1>;
-
-
-			interconnects = <&gcc MASTER_NSSNOC_NSSCC &gcc SLAVE_NSSNOC_NSSCC>,
-					<&gcc MASTER_NSSNOC_SNOC_0 &gcc SLAVE_NSSNOC_SNOC_0>,
-					<&gcc MASTER_NSSNOC_SNOC_1 &gcc SLAVE_NSSNOC_SNOC_1>;
-
-			post-init-providers = <&pcs0>,
-					      <&pcs1>,
-					      <&pcs2>;
+			clocks = <&bias_pll_cc_clk>,
+				 <&bias_pll_nss_noc_clk>,
+				 <&bias_pll_ubi_nc_clk>,
+				 <&gcc_gpll0_out_aux>,
+				 <&xo_clk>;
+			clock-names = "bias_pll_cc_clk",
+				      "bias_pll_nss_noc_clk",
+				      "bias_pll_ubi_nc_clk",
+				      "gcc_gpll0_out_aux",
+				      "xo_clk";
+			#clock-cells = <0x1>;
+			#reset-cells = <0x1>;
 		};
-		pcs0: ethernet-pcs@7a00000 {
-			compatible = "qcom,ipq9574-pcs";
-			reg = <0x7a00000 0x10000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&gcc GCC_UNIPHY0_SYS_CLK>,
-				 <&gcc GCC_UNIPHY0_AHB_CLK>;
-			clock-names = "sys",
-				      "ahb";
-			resets = <&gcc GCC_UNIPHY0_XPCS_RESET>;
-			#clock-cells = <1>;
-
-			pcs0_ch0: pcs-mii@0 {
-				reg = <0>;
-				clocks = <&nsscc NSS_CC_UNIPHY_PORT1_RX_CLK>,
-					 <&nsscc NSS_CC_UNIPHY_PORT1_TX_CLK>;
-				clock-names = "rx",
-					      "tx";
-			};
-
-			pcs0_ch1: pcs-mii@1 {
-				reg = <1>;
-				clocks = <&nsscc NSS_CC_UNIPHY_PORT2_RX_CLK>,
-					 <&nsscc NSS_CC_UNIPHY_PORT2_TX_CLK>;
-				clock-names = "rx",
-					      "tx";
-			};
-
-			pcs0_ch2: pcs-mii@2 {
-				reg = <2>;
-				clocks = <&nsscc NSS_CC_UNIPHY_PORT3_RX_CLK>,
-					 <&nsscc NSS_CC_UNIPHY_PORT3_TX_CLK>;
-				clock-names = "rx",
-					      "tx";
-			};
-
-			pcs0_ch3: pcs-mii@3 {
-				reg = <3>;
-				clocks = <&nsscc NSS_CC_UNIPHY_PORT4_RX_CLK>,
-					 <&nsscc NSS_CC_UNIPHY_PORT4_TX_CLK>;
-				clock-names = "rx",
-					      "tx";
-			};
-		};
-
-		pcs1: ethernet-uniphy@7a10000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "qcom,ipq9574-pcs";
-			reg = <0x7a10000 0x10000>;
-			clocks = <&gcc GCC_UNIPHY1_SYS_CLK>,
-				 <&gcc GCC_UNIPHY1_AHB_CLK>;
-			clock-names = "sys",
-				      "ahb";
-			resets = <&gcc GCC_UNIPHY1_XPCS_RESET>;
-			#clock-cells = <1>;
-
-			pcs1_ch0: uniphy-ch@0 {
-				reg = <0>;
-				clocks = <&nsscc NSS_CC_UNIPHY_PORT5_RX_CLK>,
-					 <&nsscc NSS_CC_UNIPHY_PORT5_TX_CLK>;
-				clock-names = "rx",
-					      "tx";
-			};
-		};
-
-		pcs2: ethernet-pcs@7a20000 {
-			compatible = "qcom,ipq9574-pcs";
-			reg = <0x7a20000 0x10000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&gcc GCC_UNIPHY2_SYS_CLK>,
-				 <&gcc GCC_UNIPHY2_AHB_CLK>;
-			clock-names = "sys",
-				      "ahb";
-			resets = <&gcc GCC_UNIPHY2_XPCS_RESET>;
-			#clock-cells = <1>;
-
-			pcs2_ch0: pcs-mii@0 {
-				reg = <0>;
-				clocks = <&nsscc NSS_CC_UNIPHY_PORT6_RX_CLK>,
-					 <&nsscc NSS_CC_UNIPHY_PORT6_TX_CLK>;
-				clock-names = "rx",
-					      "tx";
-			};
-		};
-
-
 	};
 
 	thermal-zones {

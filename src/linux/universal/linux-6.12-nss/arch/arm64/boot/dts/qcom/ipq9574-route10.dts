@@ -400,13 +400,13 @@
 	qca8k_nsscc: clock-controller@18 {
 		compatible = "qcom,qca8084-nsscc";
 			reg = <0x18>;
-			clocks = <&cmn_pll ETH0_50MHZ_CLK>,
+/*			clocks = <&cmn_pll ETH0_50MHZ_CLK>,
 				<0>,
 				<0>,
 				<0>,
 				<0>,
 				<&qca8k_uniphy1_rx312p5m>,
-				<&qca8k_uniphy1_tx312p5m>;
+				<&qca8k_uniphy1_tx312p5m>;*/
 			#clock-cells = <1>;
 			#reset-cells = <1>;
 			#power-domain-cells = <1>;
