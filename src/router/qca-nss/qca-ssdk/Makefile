@@ -29,10 +29,11 @@ all: $(BIN_DIR) kslib
 # 			LNX Modules-Style Makefile
 ####################################################################
 modules: $(BIN_DIR) kslib_c
-	@make -C $(SYS_PATH) M=$(PRJ_PATH) $(LNX_MAKEOPTS) modules
+	$(MAKE) -C $(SYS_PATH) M=$(PRJ_PATH) $(LNX_MAKEOPTS) modules
 	@echo "---Build [SSDK-$(VERSION)] at $(BUILD_DATE) finished."
 
 kslib_c:
+	rm -f $(PRJ_PATH)/src_list.dep
 	$(foreach i, $(SUB_LIB), make MODULE_TYPE=KSLIB -C src/$i src_list_loop || exit 1;)
 
 kslib:kslib_o
