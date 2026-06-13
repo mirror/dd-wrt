@@ -12,8 +12,10 @@ include ./make/$(OS)_opt.mk
 SUB_DIR=$(patsubst %/, %, $(dir $(wildcard src/*/Makefile)))
 SUB_LIB=$(subst src/, , $(SUB_DIR))
 
+
 all: $(BIN_DIR) uslib shell
 	@echo "---Build [SSDK_SH-$(VERSION)] at $(BUILD_DATE) finished."
+
 
 kslib:kslib_o
 	$(AR) -r $(BIN_DIR)/$(KS_MOD)_$(RUNMODE).a $(wildcard $(BLD_DIR)/KSLIB/*.o)
@@ -21,16 +23,23 @@ kslib:kslib_o
 kslib_o:
 	$(foreach i, $(SUB_LIB), make MODULE_TYPE=KSLIB -C src/$i all || exit 1;)
 
-uslib:uslib_o
+$(BIN_DIR)/$(US_MOD)_$(RUNMODE).a: 
 	$(AR) -r $(BIN_DIR)/$(US_MOD)_$(RUNMODE).a $(wildcard $(BLD_DIR)/USLIB/*.o)
+
+$(BIN_DIR)/$(US_MOD).so:
 	$(CC) -fPIC -shared -o $(BIN_DIR)/$(US_MOD).so $(wildcard $(BLD_DIR)/USLIB/*.o)
+
+
+uslib:uslib_o $(BIN_DIR)/$(US_MOD)_$(RUNMODE).a $(BIN_DIR)/$(US_MOD).so
 	$(STRIP) $(BIN_DIR)/$(US_MOD).so
 
 uslib_o:
 	$(foreach i, $(SUB_LIB), make MODULE_TYPE=USLIB -C src/$i all || exit 1;)
 
-shell:uslib shell_o
+$(BLD_DIR)/SHELL/$(SHELLOBJ): shell_o
 	$(CP) $(BLD_DIR)/SHELL/$(SHELLOBJ) $(BIN_DIR)/$(SHELLOBJ)
+
+shell:uslib $(BLD_DIR)/SHELL/$(SHELLOBJ)
 	$(STRIP) $(BIN_DIR)/$(SHELLOBJ)
 
 shell_o:

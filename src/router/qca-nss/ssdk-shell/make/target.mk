@@ -13,9 +13,9 @@ $(OBJ_LIST): %.o : %.c %.d
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -c $< -o $(DST_DIR)/$@
 
 $(DEP_LIST) : %.d : %.c
-	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -MM $< > $(DST_DIR)/$@.tmp
-	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $(DST_DIR)/$@.tmp > $(DST_DIR)/$@
-	$(RM) -f $(DST_DIR)/$@.tmp;
+#	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -MM $< > $(DST_DIR)/$@.tmp
+#	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $(DST_DIR)/$@.tmp > $(DST_DIR)/$@
+#	$(RM) -f $(DST_DIR)/$@.tmp;
 
 build_dir: $(DST_DIR)
 
