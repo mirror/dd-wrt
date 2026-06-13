@@ -20,5 +20,7 @@ else
     PT_LIB=
 endif
 
-lib:
+$(DST_DIR)/$(SHELLOBJ):
 	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) $(OBJ_FILE) $(BIN_DIR)/$(US_MOD)_$(RUNMODE).a -o $(DST_DIR)/$(SHELLOBJ) $(PT_LIB)
+
+lib: $(DST_DIR)/$(SHELLOBJ)
