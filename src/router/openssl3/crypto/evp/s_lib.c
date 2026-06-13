@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2025-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -287,11 +287,15 @@ EVP_SKEY *EVP_SKEY_to_provider(EVP_SKEY *skey, OSSL_LIB_CTX *libctx,
     }
 
     if (prov != NULL) {
-        if (skey->skeymgmt->prov == prov)
+        if (skey->skeymgmt->prov == prov) {
             skeymgmt = skey->skeymgmt;
-        else
+            /* Balance the short-circuit free below */
+            if (!EVP_SKEYMGMT_up_ref(skeymgmt))
+                goto err;
+        } else {
             skeymgmt = evp_skeymgmt_fetch_from_prov(prov, skey->skeymgmt->type_name,
                 propquery);
+        }
     } else {
         /* If no provider, get the default skeymgmt */
         skeymgmt = EVP_SKEYMGMT_fetch(libctx, skey->skeymgmt->type_name,
@@ -325,6 +329,9 @@ EVP_SKEY *EVP_SKEY_to_provider(EVP_SKEY *skey, OSSL_LIB_CTX *libctx,
         goto err;
 
     ret->keydata = ctx.keydata;
+
+    /* Balance the local reference obtained earlier (fetch or alias up_ref) */
+    EVP_SKEYMGMT_free(skeymgmt);
 
     return ret;
 

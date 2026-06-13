@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2008-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -670,10 +670,8 @@ static int multi_split(BIO *bio, int flags, const char *bound, STACK_OF(BIO) **r
             first = 1;
             part++;
         } else if (state == 2) {
-            if (!sk_BIO_push(parts, bpart)) {
-                BIO_free(bpart);
-                return 0;
-            }
+            if (!sk_BIO_push(parts, bpart))
+                goto err;
             return 1;
         } else if (part != 0) {
             /* Strip (possibly CR +) LF from linebuf */
@@ -681,10 +679,8 @@ static int multi_split(BIO *bio, int flags, const char *bound, STACK_OF(BIO) **r
             if (first) {
                 first = 0;
                 if (bpart)
-                    if (!sk_BIO_push(parts, bpart)) {
-                        BIO_free(bpart);
-                        return 0;
-                    }
+                    if (!sk_BIO_push(parts, bpart))
+                        goto err;
                 bpart = BIO_new(BIO_s_mem());
                 if (bpart == NULL)
                     return 0;
@@ -698,17 +694,18 @@ static int multi_split(BIO *bio, int flags, const char *bound, STACK_OF(BIO) **r
 #endif
                     || (flags & SMIME_CRLFEOL) != 0) {
                     if (BIO_puts(bpart, "\r\n") < 0)
-                        return 0;
+                        goto err;
                 } else {
                     if (BIO_puts(bpart, "\n") < 0)
-                        return 0;
+                        goto err;
                 }
             }
             eol = next_eol;
             if (len > 0 && BIO_write(bpart, linebuf, len) != len)
-                return 0;
+                goto err;
         }
     }
+err:
     BIO_free(bpart);
     return 0;
 }

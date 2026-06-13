@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2024-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,6 +110,7 @@ static const OSSL_DISPATCH fake_skeymgmt_funcs[] = {
 
 static const OSSL_ALGORITHM fake_skeymgmt_algs[] = {
     { "fake_cipher", FAKE_CIPHER_FETCH_PROPS, fake_skeymgmt_funcs, "Fake Cipher Key Management" },
+    { OSSL_SKEY_TYPE_GENERIC, FAKE_CIPHER_FETCH_PROPS, fake_skeymgmt_funcs, "Fake Generic Key Management" },
     { NULL, NULL, NULL, NULL }
 };
 static OSSL_FUNC_cipher_newctx_fn fake_newctx;

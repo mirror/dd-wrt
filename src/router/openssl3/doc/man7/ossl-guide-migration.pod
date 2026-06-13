@@ -11,10 +11,11 @@ See the individual manual pages for details.
 
 =head1 DESCRIPTION
 
-This guide details the changes required to migrate to new versions of OpenSSL.
-Currently this covers OpenSSL 3.0 & 3.1. For earlier versions refer to
+This guide details the changes required to migrate to new versions of OpenSSL,
+covering OpenSSL 3.0 and later versions.
+For earlier versions, refer to
 L<https://github.com/openssl/openssl/blob/master/CHANGES.md>.
-For an overview of some of the key concepts introduced in OpenSSL 3.0 see
+For an overview of some of the key concepts introduced since OpenSSL 3.0, see
 L<crypto(7)>.
 
 =head1 OPENSSL 3.6
@@ -2523,7 +2524,7 @@ The migration guide was created for OpenSSL 3.0.
 
 =head1 COPYRIGHT
 
-Copyright 2021-2025 The OpenSSL Project Authors. All Rights Reserved.
+Copyright 2021-2026 The OpenSSL Project Authors. All Rights Reserved.
 
 Licensed under the Apache License 2.0 (the "License").  You may not use
 this file except in compliance with the License.  You can obtain a copy
