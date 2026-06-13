@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -66,6 +66,7 @@ static inline bool ppe_drv_sc_check_and_set(ppe_drv_sc_t *scp, ppe_drv_sc_t sc)
 	return (*scp == PPE_DRV_SC_NONE) ? (*scp = sc) : false;
 }
 
-void ppe_drv_sc_ucast_queue_set(ppe_drv_sc_t sc, uint8_t queue_id, uint8_t profile_id);
+sw_error_t ppe_drv_sc_in_service_tbl_dest_port(ppe_drv_sc_t sc, uint8_t redir_port);
+void ppe_drv_sc_ucast_queue_set(ppe_drv_sc_t sc, uint8_t queue_id, uint8_t src_profile, uint8_t profile_id);
 void ppe_drv_sc_entries_free(struct ppe_drv_sc *sc);
 struct ppe_drv_sc *ppe_drv_sc_entries_alloc(void);

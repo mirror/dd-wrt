@@ -98,7 +98,7 @@ typedef enum ppe_acl_rule_match_type {
 #define PPE_ACL_RULE_CMN_FLAG_ETHERNET			0x00000004	/**< Rule common flag for ACL match for ethernet packet. */
 #define PPE_ACL_RULE_CMN_FLAG_IPV4			0x00000008	/**< Rule common flag for ACL match for IPv4 packets. */
 #define PPE_ACL_RULE_CMN_FLAG_IPV6			0x00000010	/**< Rule common flag for ACL match for IPv6 packets. */
-#define PPE_ACL_RULE_CMN_FLAG_NON_IP			0x00000020	/**< Rule common flag for ACL match for non-IP packets. */
+#define PPE_ACL_RULE_CMN_FLAG_IP			0x00000020	/**< Rule common flag for ACL match for IP packets. */
 #define PPE_ACL_RULE_CMN_FLAG_PRI_EN			0x00000040	/**< Rule common flag to indicate priority configuration. */
 #define PPE_ACL_RULE_CMN_FLAG_POST_RT_EN		0x00000080	/**< Rule common flag to enable match for post routing fields. */
 #define PPE_ACL_RULE_CMN_FLAG_OUTER_HDR_MATCH		0x00000100	/**< Rule common flag to enable match on tunnel outer headers fields. */

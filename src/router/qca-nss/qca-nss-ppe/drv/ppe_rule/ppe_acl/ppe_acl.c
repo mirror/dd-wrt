@@ -1534,6 +1534,8 @@ static bool ppe_acl_rule_cmn_fill(struct ppe_acl *acl, struct ppe_acl_rule *rule
 		info->action.flags |= PPE_DRV_ACL_ACTION_FLAG_METADATA_EN;
 	}
 
+	info->cmn.is_ip = !!(rule->cmn.cmn_flags & PPE_ACL_RULE_CMN_FLAG_IP);
+
 	ppe_acl_info("%p: cmn_flags: 0x%x setting post_routing: %d, pri: %d group: %d\n",
 			acl, rule->cmn.cmn_flags, info->cmn.post_routing_en, acl->pri,
 			info->cmn.res_chain);

@@ -351,6 +351,7 @@ static bool ppe_drv_acl_rule_fill(struct ppe_drv_acl_ctx *ctx, struct ppe_drv_ac
 				fal_rule->dest_ip4_val = slice->rule.dip_v4.ip;
 				fal_rule->dest_ip4_mask = slice->rule.dip_v4.ip_mask;
 				FAL_FIELD_FLG_SET(fal_rule->field_flg, FAL_ACL_FIELD_IP4_DIP);
+
 				ppe_drv_trace("%p: slice dst ipv4 ip: %pI4, mask: %pI4",
 					ctx, &slice->rule.dip_v4.ip, &slice->rule.dip_v4.ip_mask);
 			}
@@ -697,6 +698,11 @@ static bool ppe_drv_acl_rule_fill(struct ppe_drv_acl_ctx *ctx, struct ppe_drv_ac
 	fal_rule->post_routing = info->cmn.post_routing_en;
 	fal_rule->qos_res_prec = info->cmn.qos_res_pre;
 	fal_rule->acl_pool = info->cmn.res_chain;
+	if (info->cmn.is_ip) {
+		fal_rule->is_ip_val = A_TRUE;
+		fal_rule->is_ip_mask = 1;
+		FAL_FIELD_FLG_SET(fal_rule->field_flg, FAL_ACL_FIELD_IP);
+	}
 
 	/*
 	 * Update the rule type based on pre-IPO configuration.

@@ -389,5 +389,16 @@ struct ppe_drv_cc *ppe_drv_cc_entries_alloc(void)
 	pcc = &cc[PPE_DRV_CC_L3_EXP_FLOW_MTU_FAIL];
 	pcc->flush = true;
 
+	/*
+	 * Sometime PPE decelerate the flow but, it doesn't produce the original CPU
+	 * code with the first exceptioned packet that caused the auto-deceleration.
+	 * If we miss that, there is no way to flush an auto-decelerated flow. In such
+	 * cases, PPE still generate a specific CPU code which indicate there is a matching
+	 * flow for the given packet, but in decelerated status. We rely on this and try to
+	 * flush the associated flow with sub-sequent packets.
+	 */
+	pcc = &cc[PPE_DRV_CC_L3_FLOW_DE_ACCELEARTE];
+	pcc->flush = true;
+
 	return cc;
 }

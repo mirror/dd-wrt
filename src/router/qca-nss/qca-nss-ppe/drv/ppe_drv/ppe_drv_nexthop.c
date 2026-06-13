@@ -14,7 +14,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <linux/mm.h>
 #include <linux/etherdevice.h>
 #include <linux/if_vlan.h>
 #include <fal/fal_ip.h>

@@ -453,6 +453,17 @@ struct dentry *ppe_drv_get_dentry(void);
 int16_t ppe_drv_queue_from_core(uint8_t core);
 
 /**
+ * ppe_drv_loopback_base_queue
+ *	Configure loopback base queue
+ *
+ * @param[in] queue_id Loopback queue_id
+ *
+ * @return
+ * none.
+ */
+void ppe_drv_loopback_base_queue(uint8_t queue_id);
+
+/**
  * ppe_drv_core2queue_mapping
  *	Provide core to queue mapping.
  *

@@ -247,13 +247,10 @@ enum ppe_rfs_ret ppe_rfs_ipv4_rule_destroy(struct ppe_rfs_ipv4_rule_destroy_msg 
 		pd4rd.tuple.return_ident = destroy_ipv4->tuple.return_ident;
 		pd4rd.tuple.protocol = destroy_ipv4->tuple.protocol;
 	} else if (ppe_drv_port_check_rfs_support(destroy_ipv4->original_dev)) {
-		/*
-		 * TODO: Fix this with proper xlate ip's later when we support NAT with RFS
-		 */
-		pd4rd.tuple.flow_ip = destroy_ipv4->tuple.return_ip;
-		pd4rd.tuple.flow_ident = destroy_ipv4->tuple.return_ident;
-		pd4rd.tuple.return_ip = destroy_ipv4->tuple.flow_ip;
-		pd4rd.tuple.return_ident = destroy_ipv4->tuple.flow_ident;
+		pd4rd.tuple.flow_ip = destroy_ipv4->conn_rule.return_ip_xlate;
+		pd4rd.tuple.flow_ident = destroy_ipv4->conn_rule.return_ident_xlate;
+		pd4rd.tuple.return_ip = destroy_ipv4->conn_rule.flow_ip_xlate;
+		pd4rd.tuple.return_ident = destroy_ipv4->conn_rule.flow_ident_xlate;
 		pd4rd.tuple.protocol = destroy_ipv4->tuple.protocol;
 	} else {
 		ppe_rfs_warn("%p: RFS not enabled for both TX and RX\n", destroy_ipv4);
@@ -381,9 +378,6 @@ enum ppe_rfs_ret ppe_rfs_ipv4_rule_create(struct ppe_rfs_ipv4_rule_create_msg *c
 		pd4rc.tuple.protocol = create_ipv4->tuple.protocol;
 		pd4rc.conn_rule.flow_mtu = create_ipv4->conn_rule.flow_mtu;
 
-		/*
-		 * TODO: Fix this xlate ip's when RFS + NAT is supported
-		 */
 		pd4rc.conn_rule.flow_ip_xlate = pd4rc.tuple.flow_ip;
 		pd4rc.conn_rule.flow_ident_xlate = pd4rc.tuple.flow_ident;
 		pd4rc.conn_rule.return_ip_xlate = pd4rc.tuple.return_ip;

@@ -672,7 +672,8 @@ ppe_drv_ret_t ppe_drv_qos_queue_limit_set(struct ppe_drv_qos_res *res)
 {
 	struct ppe_drv *p = &ppe_drv_gbl;
 	fal_ac_obj_t obj = {0};
-	fal_ac_static_threshold_t cfg = {0};
+	fal_ac_dynamic_threshold_t dynamic_cfg;
+	fal_ac_static_threshold_t static_cfg;
 	fal_ac_ctrl_t ctrl_cfg = {0};
 
 	/*
@@ -680,13 +681,6 @@ ppe_drv_ret_t ppe_drv_qos_queue_limit_set(struct ppe_drv_qos_res *res)
 	 */
 	spin_lock_bh(&p->lock);
 	obj.obj_id = res->q.ucast_qid;
-
-	ppe_drv_trace("%px:queue buffer set for ucast_qid:%u, qlimit:%u", p, res->q.ucast_qid, res->q.qlimit);
-	if (fal_ac_prealloc_buffer_set(0, &obj, res->q.qlimit) != 0) {
-		spin_unlock_bh(&p->lock);
-		ppe_drv_warn("%px:queue buffer allocation failed for ucast_qid:%u", p, res->q.ucast_qid);
-		return PPE_DRV_RET_QOS_QUEUE_CFG_FAIL;
-	}
 
 	/*
 	 * Enable force drop for PPE qdisc.
@@ -703,14 +697,20 @@ ppe_drv_ret_t ppe_drv_qos_queue_limit_set(struct ppe_drv_qos_res *res)
 		return PPE_DRV_RET_QOS_QUEUE_CFG_FAIL;
 	}
 
-	cfg.wred_enable = res->q.red_en;
-	cfg.green_max = res->q.max_th[PPE_DRV_QOS_QUEUE_COLOR_GREEN];
-	cfg.green_min_off = res->q.min_th[PPE_DRV_QOS_QUEUE_COLOR_GREEN];
-	ppe_drv_trace("%px:queue ac threshold set for ucast_qid:%u, wred_enable:%u, green_max:%u, green_min_off:%u",
-		p, res->q.ucast_qid, cfg.wred_enable, cfg.green_max, cfg.green_min_off);
-	if (fal_ac_static_threshold_set(0, &obj, &cfg) != 0) {
+	if (fal_ac_dynamic_threshold_get(0, res->q.ucast_qid, &dynamic_cfg) != 0) {
 		spin_unlock_bh(&p->lock);
-		ppe_drv_warn("%px:queue static threshold failed for ucast_qid:%u", p, res->q.ucast_qid);
+		ppe_drv_warn("%px:queue dynamic threshold get failed for ucast_qid:%u", p, res->q.ucast_qid);
+		return PPE_DRV_RET_QOS_QUEUE_CFG_FAIL;
+	} else {
+		dynamic_cfg.wred_enable = res->q.red_en;
+		dynamic_cfg.ceiling = res->q.qlimit;
+	}
+
+	ppe_drv_trace("%px:queue ac dynamic threshold set for ucast_qid:%u, wred_enable:%u, celing:%u, green_min_off:%u, ceiling/qlimit:%u",
+		p, res->q.ucast_qid, dynamic_cfg.wred_enable, dynamic_cfg.ceiling, dynamic_cfg.green_min_off, dynamic_cfg.ceiling);
+	if (fal_ac_dynamic_threshold_set(0, res->q.ucast_qid, &dynamic_cfg) != 0) {
+		spin_unlock_bh(&p->lock);
+		ppe_drv_warn("%px:queue dynamic threshold failed for ucast_qid:%u", p, res->q.ucast_qid);
 		return PPE_DRV_RET_QOS_QUEUE_CFG_FAIL;
 	}
 
@@ -718,7 +718,15 @@ ppe_drv_ret_t ppe_drv_qos_queue_limit_set(struct ppe_drv_qos_res *res)
 	 * Multicast queue configuration.
 	 */
 	if (res->q.mcast_qid) {
-		obj.obj_id = res->q.mcast_qid;
+		if (fal_ac_static_threshold_get(0, &obj, &static_cfg) != 0) {
+			spin_unlock_bh(&p->lock);
+			ppe_drv_warn("%px:queue static threshold get failed for mcast_qid:%u", p, res->q.mcast_qid);
+			return PPE_DRV_RET_QOS_QUEUE_CFG_FAIL;
+		} else {
+			obj.obj_id = res->q.mcast_qid;
+			static_cfg.wred_enable = res->q.red_en;
+			static_cfg.green_min_off = res->q.min_th[PPE_DRV_QOS_QUEUE_COLOR_GREEN];
+		}
 
 		ppe_drv_trace("%px:multicast queue buffer set for mcast_qid:%u, qlimit:%u", p, res->q.mcast_qid, res->q.qlimit);
 		if (fal_ac_prealloc_buffer_set(0, &obj, res->q.qlimit) != 0) {
@@ -728,8 +736,8 @@ ppe_drv_ret_t ppe_drv_qos_queue_limit_set(struct ppe_drv_qos_res *res)
 		}
 
 		ppe_drv_trace("%px:multicast queue ac threshold set for mcast_qid:%u, wred_enable:%u, green_max:%u, green_min_off:%u",
-			p, res->q.mcast_qid, cfg.wred_enable, cfg.green_max, cfg.green_min_off);
-		if (fal_ac_static_threshold_set(0, &obj, &cfg) != 0) {
+			p, res->q.mcast_qid, static_cfg.wred_enable, static_cfg.green_max, static_cfg.green_min_off);
+		if (fal_ac_static_threshold_set(0, &obj, &static_cfg) != 0) {
 			spin_unlock_bh(&p->lock);
 			ppe_drv_warn("%px:multicast queue static threshold failed for mcast_qid:%u", p, res->q.mcast_qid);
 			return PPE_DRV_RET_QOS_QUEUE_CFG_FAIL;

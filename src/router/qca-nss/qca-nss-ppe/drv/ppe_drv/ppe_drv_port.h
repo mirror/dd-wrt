@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -93,6 +93,7 @@ struct ppe_drv_port {
 	uint8_t user_type;			/* PPE VP user type */
 	uint8_t next_core;			/* Next core to pick for RFS */
 	uint8_t xmit_port;			/* Physical port attached to virtual port */
+	uint8_t profile_id;			/* Profile id */
 };
 
 void ppe_drv_port_ucast_queue_update(struct ppe_drv_port *pp, uint8_t queue_id);
@@ -145,6 +146,9 @@ void  ppe_drv_port_tun_set(struct ppe_drv_port *pp, struct ppe_drv_tun *ptun);
 struct ppe_drv_tun *ppe_drv_port_tun_get(struct ppe_drv_port *pp);
 bool ppe_drv_port_check_flow_offload_enabled(struct ppe_drv_port *drv_port);
 bool ppe_drv_is_wlan_vp_port_type(uint8_t user_type);
+
+int ppe_drv_port_src_profile_get_byidx(uint8_t port_idx);
+bool ppe_drv_port_l2_vp_sc_config(struct ppe_drv_port *pp, ppe_drv_sc_t sc);
 
 /*
  * ppe_drv_port_flags_check()

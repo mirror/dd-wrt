@@ -37,41 +37,44 @@ struct ppe_drv_nsm_stats;
  *	Service code types
  */
 typedef enum ppe_drv_sc_type {
-	PPE_DRV_SC_NONE,		/* Normal PPE processing */
-	PPE_DRV_SC_BYPASS_ALL,		/* Bypasses all stages in PPE */
-	PPE_DRV_SC_ADV_QOS_BRIDGED,	/* Adv QoS redirection for bridged flow */
-	PPE_DRV_SC_LOOPBACK_QOS,	/* Bridge or IGS QoS redirection */
-	PPE_DRV_SC_BNC_0,		/* QoS bounce */
-	PPE_DRV_SC_BNC_CMPL_0,		/* QoS bounce complete */
-	PPE_DRV_SC_ADV_QOS_ROUTED,	/* Adv QoS redirection for routed flow */
-	PPE_DRV_SC_IPSEC_PPE2EIP,	/* Inline IPsec redirection from PPE TO EIP */
-	PPE_DRV_SC_IPSEC_EIP2PPE,	/* Inline IPsec redirection from EIP to PPE */
-	PPE_DRV_SC_PTP,			/* Service Code for PTP packets */
-	PPE_DRV_SC_VLAN_FILTER_BYPASS,	/* VLAN filter bypass for bridge flows between 2 different VSIs */
-	PPE_DRV_SC_L3_EXCEPT,		/* Indicate exception post tunnel/tap operation */
-	PPE_DRV_SC_SPF_BYPASS,		/* Source port filtering bypass */
-	PPE_DRV_SC_NOEDIT_REDIR_CORE0,	/* Service code to re-direct packets to core 0 without editing the packet */
-	PPE_DRV_SC_NOEDIT_REDIR_CORE1,	/* Service code to re-direct packets to core 1 without editing the packet */
-	PPE_DRV_SC_NOEDIT_REDIR_CORE2,	/* Service code to re-direct packets to core 2 without editing the packet */
-	PPE_DRV_SC_NOEDIT_REDIR_CORE3,	/* Service code to re-direct packets to core 3 without editing the packet */
-	PPE_DRV_SC_EDIT_REDIR_CORE0,	/* Service code to re-direct packets to core 0 with editing required for regular forwarding */
-	PPE_DRV_SC_EDIT_REDIR_CORE1,	/* Service code to re-direct packets to core 1 with editing required for regular forwarding */
-	PPE_DRV_SC_EDIT_REDIR_CORE2,	/* Service code to re-direct packets to core 2 with editing required for regular forwarding */
-	PPE_DRV_SC_EDIT_REDIR_CORE3,	/* Service code to re-direct packets to core 3 with editing required for regular forwarding */
-	PPE_DRV_SC_VP_RPS,		/* Service code to allow RPS for special VP flows when user type is DS and core_mask is 0 */
-	PPE_DRV_SC_NOEDIT_ACL_POLICER,  /* Service code to allow Policing but no packet editing */
-	PPE_DRV_SC_L2_TUNNEL_EXCEPTION,	/* Service code to allow decapsulated VXLAN/GRE tunnel exception. */
-	PPE_DRV_SC_NOEDIT_PRIORITY_SET, /* Service code to prioritize packets without editing and redirection */
-	PPE_DRV_SC_NOEDIT_RULE, 	/* Service code to redirect packets without editing */
+	PPE_DRV_SC_NONE = 0,		/* Normal PPE processing */
+	PPE_DRV_SC_BYPASS_ALL = 1,		/* Bypasses all stages in PPE */
+	PPE_DRV_SC_ADV_QOS_BRIDGED = 2,	/* Adv QoS redirection for bridged flow */
+	PPE_DRV_SC_LOOPBACK_QOS = 3,	/* Bridge or IGS QoS redirection */
+	PPE_DRV_SC_BNC_0 = 4,		/* QoS bounce */
+	PPE_DRV_SC_BNC_CMPL_0 = 5,		/* QoS bounce complete */
+	PPE_DRV_SC_ADV_QOS_ROUTED = 6,	/* Adv QoS redirection for routed flow */
+	PPE_DRV_SC_IPSEC_PPE2EIP = 7,	/* Inline IPsec redirection from PPE TO EIP */
+	PPE_DRV_SC_IPSEC_EIP2PPE = 8,	/* Inline IPsec redirection from EIP to PPE */
+	PPE_DRV_SC_PTP = 9,			/* Service Code for PTP packets */
+	PPE_DRV_SC_VLAN_FILTER_BYPASS = 10,	/* VLAN filter bypass for bridge flows between 2 different VSIs */
+	PPE_DRV_SC_L3_EXCEPT = 11,		/* Indicate exception post tunnel/tap operation */
+	PPE_DRV_SC_SPF_BYPASS = 12,		/* Source port filtering bypass */
+	PPE_DRV_SC_NOEDIT_REDIR_CORE0 = 13,	/* Service code to re-direct packets to core 0 without editing the packet */
+	PPE_DRV_SC_NOEDIT_REDIR_CORE1 = 14,	/* Service code to re-direct packets to core 1 without editing the packet */
+	PPE_DRV_SC_NOEDIT_REDIR_CORE2 = 15,	/* Service code to re-direct packets to core 2 without editing the packet */
+	PPE_DRV_SC_NOEDIT_REDIR_CORE3 = 16,	/* Service code to re-direct packets to core 3 without editing the packet */
+	PPE_DRV_SC_EDIT_REDIR_CORE0 = 17,	/* Service code to re-direct packets to core 0 with editing required for regular forwarding */
+	PPE_DRV_SC_EDIT_REDIR_CORE1 = 18,	/* Service code to re-direct packets to core 1 with editing required for regular forwarding */
+	PPE_DRV_SC_EDIT_REDIR_CORE2 = 19,	/* Service code to re-direct packets to core 2 with editing required for regular forwarding */
+	PPE_DRV_SC_EDIT_REDIR_CORE3 = 20,	/* Service code to re-direct packets to core 3 with editing required for regular forwarding */
+	PPE_DRV_SC_VP_RPS = 21,		/* Service code to allow RPS for special VP flows when user type is DS and core_mask is 0 */
+	PPE_DRV_SC_NOEDIT_ACL_POLICER = 22,  /* Service code to allow Policing but no packet editing */
+	PPE_DRV_SC_L2_TUNNEL_EXCEPTION = 23,	/* Service code to allow decapsulated VXLAN/GRE tunnel exception. */
+	PPE_DRV_SC_NOEDIT_PRIORITY_SET = 24, /* Service code to prioritize packets without editing and redirection */
+	PPE_DRV_SC_NOEDIT_RULE = 25, 	/* Service code to redirect packets without editing */
 
-	PPE_DRV_SC_DS_MLO_LINK_BR_NODE0, /* Service code when bridge flow in DS with PPEDS Node 0 allocated for MLO Link */
-	PPE_DRV_SC_DS_MLO_LINK_BR_NODE1, /* Service code when bridge flow in DS with PPEDS Node 1 allocated for MLO Link */
-	PPE_DRV_SC_DS_MLO_LINK_BR_NODE2, /* Service code when bridge flow in DS with PPEDS Node 2 allocated for MLO Link */
-	PPE_DRV_SC_DS_MLO_LINK_BR_NODE3, /* Service code when bridge flow in DS with PPEDS Node 3 allocated for MLO Link */
-	PPE_DRV_SC_DS_MLO_LINK_RO_NODE0, /* Service code when routed flow in DS with PPEDS Node 0 allocated for MLO Link */
-	PPE_DRV_SC_DS_MLO_LINK_RO_NODE1, /* Service code when routed flow in DS with PPEDS Node 1 allocated for MLO Link */
-	PPE_DRV_SC_DS_MLO_LINK_RO_NODE2, /* Service code when routed flow in DS with PPEDS Node 2 allocated for MLO Link */
-	PPE_DRV_SC_DS_MLO_LINK_RO_NODE3, /* Service code when routed flow in DS with PPEDS Node 3 allocated for MLO Link */
+	PPE_DRV_SC_DS_MLO_LINK_BR_NODE0 = 26, /* Service code when bridge flow in DS with PPEDS Node 0 allocated for MLO Link */
+	PPE_DRV_SC_DS_MLO_LINK_BR_NODE1 = 27, /* Service code when bridge flow in DS with PPEDS Node 1 allocated for MLO Link */
+	PPE_DRV_SC_DS_MLO_LINK_BR_NODE2 = 28, /* Service code when bridge flow in DS with PPEDS Node 2 allocated for MLO Link */
+	PPE_DRV_SC_DS_MLO_LINK_BR_NODE3 = 29, /* Service code when bridge flow in DS with PPEDS Node 3 allocated for MLO Link */
+	PPE_DRV_SC_DS_MLO_LINK_RO_NODE0 = 30, /* Service code when routed flow in DS with PPEDS Node 0 allocated for MLO Link */
+	PPE_DRV_SC_DS_MLO_LINK_RO_NODE1 = 31, /* Service code when routed flow in DS with PPEDS Node 1 allocated for MLO Link */
+	PPE_DRV_SC_DS_MLO_LINK_RO_NODE2 = 32, /* Service code when routed flow in DS with PPEDS Node 2 allocated for MLO Link */
+	PPE_DRV_SC_DS_MLO_LINK_RO_NODE3 = 33, /* Service code when routed flow in DS with PPEDS Node 3 allocated for MLO Link */
+	PPE_DRV_SC_LOOPBACK_RING = 34, 	 /* Service code for EDMA LOOPBACK ring */
+	PPE_DRV_SC_LOOPBACK_RING_NEXT = 35, 	 /* Next Service code for EDMA LOOPBACK ring */
+
 	PPE_DRV_SC_FLOW_ACL_FIRST = PPE_DRV_SC_FLOW_ACL_START,
 					/* First service code for combining flow and ACL rule */
 	PPE_DRV_SC_FLOW_ACL_LAST = PPE_DRV_SC_FLOW_ACL_END,

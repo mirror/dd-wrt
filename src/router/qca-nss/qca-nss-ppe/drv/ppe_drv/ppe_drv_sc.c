@@ -57,15 +57,46 @@ static void ppe_drv_sc_dump(ppe_drv_sc_t sc)
 #endif
 
 /*
+ * ppe_drv_sc_in_service_tbl_dest_port()
+ *	Configure service table for upstream port
+ */
+sw_error_t ppe_drv_sc_in_service_tbl_dest_port(ppe_drv_sc_t sc, uint8_t redir_port)
+{
+	struct ppe_drv *p = &ppe_drv_gbl;
+	fal_servcode_config_t sc_cfg = {0};
+	sw_error_t err;
+
+	err = fal_servcode_config_get(PPE_DRV_SWITCH_ID, sc, &sc_cfg);
+	if (err != SW_OK) {
+		ppe_drv_warn("%p: service code configuration get failed for sc: %u", p, sc);
+		return err;
+	}
+
+	sc_cfg.dest_port_id = redir_port;
+	sc_cfg.dest_port_valid = A_TRUE;
+
+	/*
+	 * Program the service code tables through SSDK.
+	 */
+	err = fal_servcode_config_set(PPE_DRV_SWITCH_ID, sc, &sc_cfg);
+	if (err != SW_OK) {
+		ppe_drv_warn("%p: service code configuration failed for sc: %u", p, sc);
+		return err;
+	}
+
+	return err;
+}
+
+/*
  * ppe_drv_sc_ucast_queue_set()
  *	Set queue ID of a given port in PPE for RFS.
  */
-void ppe_drv_sc_ucast_queue_set(ppe_drv_sc_t sc, uint8_t queue_id, uint8_t profile_id)
+void ppe_drv_sc_ucast_queue_set(ppe_drv_sc_t sc, uint8_t queue_id, uint8_t src_profile, uint8_t profile_id)
 {
 	sw_error_t err;
 	fal_ucast_queue_dest_t q_dst = {0};
 
-	q_dst.src_profile = PPE_DRV_PORT_SRC_PROFILE;
+	q_dst.src_profile = src_profile;
 	q_dst.service_code_en = A_TRUE;
 	q_dst.service_code = sc;
 
@@ -231,6 +262,29 @@ static void ppe_drv_sc_config(ppe_drv_sc_t sc, ppe_drv_sc_t next_sc, uint8_t red
 		 */
 		sc_cfg.field_update_bitmap = (1 << FLD_UPDATE_SERVICE_CODE);
 
+		break;
+
+	case PPE_DRV_SC_LOOPBACK_RING:
+		sc_cfg.dest_port_valid = A_FALSE;
+		break;
+
+	case PPE_DRV_SC_LOOPBACK_RING_NEXT:
+		/*
+		 * Set BYPASS_ALL parameters here to bypass the flow lookup again for
+		 * routing case
+		 */
+		sc_cfg.direction = PPE_DRV_SC_IN_L2_DIR_DST;
+		sc_cfg.dest_port_id = redir_port;
+		sc_cfg.next_service_code = next_sc;
+		sc_cfg.dest_port_valid = A_FALSE;
+
+        	sc_cfg.bypass_bitmap[0] = ~((1 << FAKE_MAC_HEADER_BYP)
+                                        | (1 << SERVICE_CODE_BYP)
+                                        | (1 << FAKE_L2_PROTO_BYP)
+                                        | (1 << MY_MAC_CHECK_BYP));
+       		sc_cfg.bypass_bitmap[0] |= (1 << FLOW_SERVICE_CODE_BYP);
+
+       		sc_cfg.bypass_bitmap[1] = ~(1 << ACL_POST_ROUTING_CHECK_BYP);
 		break;
 
 	case PPE_DRV_SC_VP_RPS:
@@ -609,5 +663,7 @@ struct ppe_drv_sc *ppe_drv_sc_entries_alloc(void)
 	ppe_drv_sc_config(PPE_DRV_SC_DS_MLO_LINK_BR_NODE1, PPE_DRV_SC_DS_MLO_LINK_BR_NODE1, PPE_DRV_PORT_CPU);
 	ppe_drv_sc_config(PPE_DRV_SC_DS_MLO_LINK_BR_NODE2, PPE_DRV_SC_DS_MLO_LINK_BR_NODE2, PPE_DRV_PORT_CPU);
 	ppe_drv_sc_config(PPE_DRV_SC_DS_MLO_LINK_BR_NODE3, PPE_DRV_SC_DS_MLO_LINK_BR_NODE3, PPE_DRV_PORT_CPU);
+	ppe_drv_sc_config(PPE_DRV_SC_LOOPBACK_RING, PPE_DRV_SC_LOOPBACK_RING_NEXT, PPE_DRV_PORT_CPU);
+	ppe_drv_sc_config(PPE_DRV_SC_LOOPBACK_RING_NEXT, PPE_DRV_SC_BYPASS_ALL, PPE_DRV_PORT_CPU);
 	return sc;
 }

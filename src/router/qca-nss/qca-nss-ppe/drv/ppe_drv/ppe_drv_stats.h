@@ -312,6 +312,7 @@ struct ppe_drv_stats_if_map {
 	int port_number;	/* Port Number associated with interface */
 	int vsi_number;		/* Vsi number associated with interface */
 	int l3_if_number;	/* L3_if_number associated with interface */
+	int src_profile;	/* Source profile of a port */
 	int iface_valid_flags[PPE_DRV_IFACE_TYPE_MAX];
 	char netdev_name[32];	/* Name of the interface */
 };

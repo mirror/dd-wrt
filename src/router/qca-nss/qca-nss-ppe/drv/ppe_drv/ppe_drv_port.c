@@ -839,6 +839,33 @@ struct ppe_drv_l3_if *ppe_drv_port_find_pppoe_l3_if(struct ppe_drv_port *pp, uin
 bool ppe_drv_port_check_flow_offload_enabled(struct ppe_drv_port *drv_port)
 {
 	/*
+	 * If the PPE port's device is the VLAN device, then get the VLAN's base
+	 * device and check the PPE offload enablement on it
+	 */
+	if (drv_port->dev && is_vlan_dev(drv_port->dev)) {
+		struct ppe_drv_iface *base_if;
+		struct net_device *base_dev;
+
+		base_dev = vlan_dev_real_dev(drv_port->dev);
+		if (!base_dev) {
+			ppe_drv_warn("Failed to obtain base device for %d port\n", drv_port->port);
+			return true;
+		}
+
+		base_if = ppe_drv_iface_get_by_dev_internal(base_dev);
+		if (!base_if) {
+			ppe_drv_warn("Failed to get the iface of %s base device\n", base_dev->name);
+			return true;
+		}
+
+		drv_port = ppe_drv_iface_port_get(base_if);
+		if (!drv_port) {
+			ppe_drv_warn("Invalid port for %s base device\n", base_dev->name);
+			return true;
+		}
+	}
+
+	/*
 	 * PPE offload disable feature is supported only on physical ports
 	 */
 	if (!PPE_DRV_PHY_PORT_CHK(drv_port->port)) {
@@ -1796,6 +1823,45 @@ bool ppe_drv_port_xcpn_mode_set(uint16_t vp_num, uint8_t action)
 }
 EXPORT_SYMBOL(ppe_drv_port_xcpn_mode_set);
 
+
+/*
+ * ppe_drv_port_src_profile_get_byidx()
+ *	Get source profile for a port
+ */
+int ppe_drv_port_src_profile_get_byidx(uint8_t port_idx)
+{
+	struct ppe_drv_port *pp = ppe_drv_port_from_port_num(port_idx);
+	if (!pp) {
+		ppe_drv_warn("No valid PPE port for this port number: %d\n", port_idx);
+		return 0;
+	}
+
+	return pp->src_profile;
+}
+
+/*
+ * ppe_drv_port_l2_vp_sc_config()
+ *	l2_vp service code config
+ */
+bool ppe_drv_port_l2_vp_sc_config(struct ppe_drv_port *pp, ppe_drv_sc_t sc)
+{
+	fal_enqueue_cfg_t enq_cfg = {0};
+	sw_error_t err;
+
+	enq_cfg.index_entry.enqueue_servcode.service_code = sc;
+	enq_cfg.index_entry.enqueue_en = A_TRUE;
+	enq_cfg.rule_entry.enqueue_type = FAL_ENQUEUE_SERVCODE;
+	enq_cfg.rule_entry.dst_port = pp->port;
+
+	err = fal_qm_enqueue_config_set(PPE_DRV_SWITCH_ID, &enq_cfg);
+	if (err != SW_OK) {
+		printk("Failed to set service code config for port: %d", pp->port);
+		return false;
+	}
+
+	return true;
+}
+
 /*
  * ppe_drv_port_alloc()
  *	Create a new virtual port in PPE.
@@ -1992,6 +2058,8 @@ struct ppe_drv_port *ppe_drv_port_phy_alloc(uint8_t port_num, struct net_device 
 	fal_vport_state_t vp_state = {0};
 	fal_qos_pri_precedence_t pre = {0};
 	fal_vsi_invalidvsi_ctrl_t vsi_ctrl = {0};
+	fal_ucast_queue_dest_t q_dst = {0};
+	uint32_t queue_id;
 
 	if (port_num >= PPE_DRV_PHYSICAL_MAX) {
 		ppe_drv_assert(false, "%p: physical port number out of range: %u dev: %p",
@@ -2089,6 +2157,14 @@ struct ppe_drv_port *ppe_drv_port_phy_alloc(uint8_t port_num, struct net_device 
 		ppe_drv_port_deref(pp);
 		return NULL;
 	}
+
+	q_dst.src_profile = 0;
+	q_dst.dst_port = pp->port;
+	err = fal_ucast_queue_base_profile_get(PPE_DRV_SWITCH_ID, &q_dst, &queue_id, &pp->profile_id);
+        if (err != SW_OK) {
+                ppe_drv_warn("error %d getting profile\n", err);
+                return NULL;
+        }
 
 	/*
 	 * Fill shadow copy of port entry

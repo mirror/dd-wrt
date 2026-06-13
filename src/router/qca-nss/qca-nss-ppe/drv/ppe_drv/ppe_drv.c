@@ -22,15 +22,21 @@
 #include <linux/of_address.h>
 #include <linux/vmalloc.h>
 #include <linux/debugfs.h>
+#include <linux/module.h>
+#include <linux/version.h>
 #include <fal/fal_rss_hash.h>
 #include <fal/fal_ip.h>
 #include <fal/fal_init.h>
 #include <fal/fal_qm.h>
+#include <fal/fal_servcode.h>
 #include <fal/fal_fdb.h>
 #include "ppe_drv.h"
 #include "tun/ppe_drv_tun.h"
 
 #define PPE_DRV_STATIC_DBG_LEVEL_STR_LEN 8
+#define PPE_DRV_UPSTREAM_DEV_LEVEL_STR_LEN 32
+#define PPE_DRV_SRC2UNI_LEVEL_STR_LEN 128
+#define NSS_PPE_DRV_WHITESPACE		" \t\v\f\n,"
 
 /*
  * Module parameter to enable/disable 2-tuple RSS hash for IP fragments.
@@ -45,6 +51,9 @@ uint32_t static_dbg_level = 0;
 static char static_dbg_level_str[PPE_DRV_STATIC_DBG_LEVEL_STR_LEN];
 uint8_t ppe_drv_redir_prio_map[PPE_DRV_MAX_PRIORITY] = {0, 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7};
 static bool eth2eth_offload_if_bitmap;
+static char upstream_dev_str[PPE_DRV_UPSTREAM_DEV_LEVEL_STR_LEN];
+static char src2uni_map[PPE_DRV_SRC2UNI_LEVEL_STR_LEN];
+
 
 /*
  * Define the filename to be used for assertions.
@@ -350,6 +359,20 @@ void ppe_drv_fse_feature_disable()
 EXPORT_SYMBOL(ppe_drv_fse_feature_disable);
 
 /*
+ * ppe_drv_loopback_base_queue()
+ */
+void ppe_drv_loopback_base_queue(uint8_t queue_id)
+{
+	struct ppe_drv *p = &ppe_drv_gbl;
+
+	spin_lock_bh(&p->lock);
+	p->loopback_base_queue = queue_id;
+	p->loopback_enabled = true;
+	spin_unlock_bh(&p->lock);
+}
+EXPORT_SYMBOL(ppe_drv_loopback_base_queue);
+
+/*
  * ppe_drv_core2queue_mapping()
  *	Core to queue mapping
  *
@@ -370,20 +393,20 @@ void ppe_drv_core2queue_mapping(uint8_t core, uint8_t queue_id)
 
 	switch(core) {
 	case 0:
-		ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_NOEDIT_REDIR_CORE0, queue_id, PPE_DRV_REDIR_PROFILE_ID);
-		ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_EDIT_REDIR_CORE0, queue_id, PPE_DRV_REDIR_PROFILE_ID);
+		ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_NOEDIT_REDIR_CORE0, queue_id, PPE_DRV_PORT_SRC_PROFILE, PPE_DRV_REDIR_PROFILE_ID);
+		ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_EDIT_REDIR_CORE0, queue_id, PPE_DRV_PORT_SRC_PROFILE, PPE_DRV_REDIR_PROFILE_ID);
 		break;
 	case 1:
-		ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_NOEDIT_REDIR_CORE1, queue_id, PPE_DRV_REDIR_PROFILE_ID);
-		ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_EDIT_REDIR_CORE1, queue_id, PPE_DRV_REDIR_PROFILE_ID);
+		ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_NOEDIT_REDIR_CORE1, queue_id, PPE_DRV_PORT_SRC_PROFILE, PPE_DRV_REDIR_PROFILE_ID);
+		ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_EDIT_REDIR_CORE1, queue_id, PPE_DRV_PORT_SRC_PROFILE, PPE_DRV_REDIR_PROFILE_ID);
 		break;
 	case 2:
-		ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_NOEDIT_REDIR_CORE2, queue_id, PPE_DRV_REDIR_PROFILE_ID);
-		ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_EDIT_REDIR_CORE2, queue_id, PPE_DRV_REDIR_PROFILE_ID);
+		ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_NOEDIT_REDIR_CORE2, queue_id, PPE_DRV_PORT_SRC_PROFILE, PPE_DRV_REDIR_PROFILE_ID);
+		ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_EDIT_REDIR_CORE2, queue_id, PPE_DRV_PORT_SRC_PROFILE, PPE_DRV_REDIR_PROFILE_ID);
 		break;
 	case 3:
-		ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_NOEDIT_REDIR_CORE3, queue_id, PPE_DRV_REDIR_PROFILE_ID);
-		ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_EDIT_REDIR_CORE3, queue_id, PPE_DRV_REDIR_PROFILE_ID);
+		ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_NOEDIT_REDIR_CORE3, queue_id, PPE_DRV_PORT_SRC_PROFILE, PPE_DRV_REDIR_PROFILE_ID);
+		ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_EDIT_REDIR_CORE3, queue_id, PPE_DRV_PORT_SRC_PROFILE, PPE_DRV_REDIR_PROFILE_ID);
 		break;
 	default:
 		ppe_drv_warn("%d Invalid core(%d)\n", queue_id, core);
@@ -393,6 +416,38 @@ void ppe_drv_core2queue_mapping(uint8_t core, uint8_t queue_id)
 	p->core2queue[core] = queue_id;
 }
 EXPORT_SYMBOL(ppe_drv_core2queue_mapping);
+
+/*
+ * ppe_drv_loopback_sc2queue_mapping()
+ *	Loopback to queue mapping
+ */
+static bool ppe_drv_loopback_sc2queue_mapping(struct ppe_drv *p, uint8_t src_profile)
+{
+	struct net_device *upstream_dev;
+	struct ppe_drv_port *pp = NULL;
+	int next_sc_queue = -1;
+
+	upstream_dev = p->upstream_dev;
+	pp = ppe_drv_port_from_dev(upstream_dev);
+	if (!pp) {
+		ppe_drv_warn("%p: invalid ppe port for given upstream dev: %s", p, upstream_dev->name);
+		return false;
+	}
+
+	next_sc_queue = ppe_drv_port_ucast_queue_get_by_port(pp->port);
+	if (next_sc_queue == -1) {
+                ppe_drv_warn("%p: ucast queue get failed for pp %d", p, pp->port);
+		return false;
+        }
+
+	/*
+	 * Map loopback ring service code to queue mapping
+	 */
+	ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_LOOPBACK_RING, p->loopback_base_queue, src_profile, PPE_DRV_REDIR_PROFILE_ID);
+	ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_LOOPBACK_RING_NEXT, next_sc_queue, src_profile, PPE_DRV_REDIR_PROFILE_ID);
+
+	return true;
+}
 
 /*
  * ppe_drv_queue_from_core()
@@ -424,8 +479,8 @@ void ppe_drv_ds_map_node_to_queue(uint8_t node_id, uint8_t queue_id)
 		return;
 	}
 
-	ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_DS_MLO_LINK_RO_NODE0 + node_id, queue_id, PPE_DRV_REDIR_PROFILE_ID);
-	ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_DS_MLO_LINK_BR_NODE0 + node_id, queue_id, PPE_DRV_REDIR_PROFILE_ID);
+	ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_DS_MLO_LINK_RO_NODE0 + node_id, queue_id, PPE_DRV_PORT_SRC_PROFILE, PPE_DRV_REDIR_PROFILE_ID);
+	ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_DS_MLO_LINK_BR_NODE0 + node_id, queue_id, PPE_DRV_PORT_SRC_PROFILE, PPE_DRV_REDIR_PROFILE_ID);
 }
 EXPORT_SYMBOL(ppe_drv_ds_map_node_to_queue);
 
@@ -605,6 +660,7 @@ static int ppe_drv_probe(struct platform_device *pdev)
 	struct ppe_drv *p = &ppe_drv_gbl;
 	struct device_node *np;
 	fal_ppe_tbl_caps_t cap;
+	int i = 0;
 
 	np = of_node_get(pdev->dev.of_node);
 
@@ -749,6 +805,7 @@ static int ppe_drv_probe(struct platform_device *pdev)
 	p->fse_ops = NULL;
 	p->fse_enable = false;
         p->is_wifi_fse_up = false;
+	p->loopback_enabled = false;
 
 	p->tun_gbl.tun_l2tp.l2tp_dport = PPE_DRV_L2TP_DEFAULT_UDP_PORT;
 	p->tun_gbl.tun_l2tp.l2tp_sport = PPE_DRV_L2TP_DEFAULT_UDP_PORT;
@@ -821,6 +878,10 @@ static int ppe_drv_probe(struct platform_device *pdev)
 		goto fail;
 	}
 #endif
+
+	for (i = 0; i <  PPE_DRV_PORT_SRC_PROFILE_MAX; i++) {
+		p->prof2portmap[i] = -1;
+	}
 
 	/*
 	 * Take a reference
@@ -972,8 +1033,13 @@ fail:
 static void ppe_drv_remove(struct platform_device *pdev)
 {
 	struct ppe_drv *p = platform_get_drvdata(pdev);
+	int i = 0;
 
 	ppe_drv_stats_debugfs_exit();
+
+	for (i = 0; i <  PPE_DRV_PORT_SRC_PROFILE_MAX; i++) {
+		p->prof2portmap[i] = -1;
+	}
 
 	if (p->pub_ip) {
 		ppe_drv_pub_ip_entries_free(p->pub_ip);
@@ -1373,6 +1439,314 @@ static int ppe_drv_static_dbg_level_handler(const struct ctl_table *table,
 }
 
 /*
+ * ppe_drv_upstream_dev_handler()
+ *      Set upstream device.
+ */
+static int ppe_drv_upstream_dev_handler(const struct ctl_table *table,
+		int write, void __user *buffer,
+		size_t *lenp, loff_t *ppos)
+{
+	int ret;
+	char *dev_name;
+	struct ppe_drv *p = &ppe_drv_gbl;
+	struct ppe_drv_port *pp = NULL;
+	struct net_device *dev;
+
+	/*
+	 * Find the string, return an error if not found
+	 */
+	ret = proc_dostring(table, write, buffer, lenp, ppos);
+	if (ret || !write) {
+		return ret;
+	}
+
+	/*
+	 * Check if loopback ring is enabled
+	 */
+	if (!p->loopback_enabled) {
+		ppe_drv_warn("Loopback ring is not enabled\n");
+		return -1;
+	}
+
+	dev_name = upstream_dev_str;
+
+	spin_lock_bh(&p->lock);
+
+	if (p->upstream_dev) {
+		ppe_drv_warn("%p: Upstream port already set\n", p);
+		spin_unlock_bh(&p->lock);
+		return -1;
+	}
+
+	dev = dev_get_by_name(&init_net, dev_name);
+	if (!dev) {
+		spin_unlock_bh(&p->lock);
+		return -1;
+	}
+
+	pp = ppe_drv_port_from_dev(dev);
+	if (!pp) {
+		ppe_drv_warn("%p: No PPE port for given netdevice %s\n", p, dev->name);
+		dev_put(dev);
+		spin_unlock_bh(&p->lock);
+		return -1;
+	}
+
+	/*
+	 * Configure L2_VP port table for upstream port with LOOPBACK service code
+	 */
+	if (!ppe_drv_port_l2_vp_sc_config(pp, PPE_DRV_SC_LOOPBACK_RING)) {
+		ppe_drv_warn("%p: Error in configuring L2 VP table  %s\n", p, dev->name);
+		dev_put(dev);
+		spin_unlock_bh(&p->lock);
+		return -1;
+	}
+
+	/*
+	 * For default source profile, we need to set the corresponding loopback ring to map to upstream port for host originated packet
+	 */
+	ppe_drv_sc_ucast_queue_set(PPE_DRV_SC_LOOPBACK_RING, ppe_drv_port_ucast_queue_get_by_port(pp->port), PPE_DRV_PORT_SRC_PROFILE, PPE_DRV_REDIR_PROFILE_ID);
+
+	/*
+	 * Re-configure L2_SERVICE_TBL for upstream port
+	 */
+	ret = ppe_drv_sc_in_service_tbl_dest_port(PPE_DRV_SC_LOOPBACK_RING_NEXT, pp->port);
+	if (ret != SW_OK) {
+                ppe_drv_warn("%p: service code configuration failed for sc", p);
+		return false;
+        }
+
+	p->upstream_dev = dev;
+	dev_put(dev);
+
+	spin_unlock_bh(&p->lock);
+
+	ppe_drv_trace("%p: upstream_dev configured %s\n", p, dev->name);
+
+	return ret;
+}
+
+/*
+ * ppe_drv_src2uni_handler()
+ *      Set Source Profile to UNI port mapping.
+ */
+static int ppe_drv_src2uni_handler(const struct ctl_table *table,
+		int write, void __user *buffer,
+		size_t *lenp, loff_t *ppos)
+{
+	struct ppe_drv *p = &ppe_drv_gbl;
+	struct ppe_drv_port *pp_local;
+	fal_ucast_queue_dest_t q_dst = {0};
+	struct ppe_drv_port *pp;
+	struct net_device *net_dev;
+	struct ppe_drv_port *up;
+	int ret, profile;
+	char *map_name;
+	fal_port_t src_port;
+	a_uint32_t src_profile;
+	char dev[IFNAMSIZ];
+	char *start_ch_ptr = NULL;
+	char *end_ch_ptr = NULL;
+	sw_error_t sw_err = SW_OK;
+	int len, i, port_id = 0;
+	uint32_t bitmap = 0;
+
+	/*
+	 * Find the string, return an error if not found
+	 */
+	ret = proc_dostring(table, write, buffer, lenp, ppos);
+	if (ret || !write) {
+		return ret;
+	}
+
+	/*
+	 * Check if loopback ring is enabled
+	 */
+	if (!p->loopback_enabled) {
+		ppe_drv_warn("Loopback ring is not enabled\n");
+		return -1;
+	}
+
+	/*
+	 * This call expect upstream device to be set
+	 */
+	if (!p->upstream_dev) {
+		ppe_drv_warn("Unable to find source upstream dev\n");
+		return -1;
+	}
+
+	spin_lock_bh(&p->lock);
+	up = ppe_drv_port_from_dev(p->upstream_dev);
+	if (!up) {
+		ppe_drv_warn("Unable to find source upstream port\n");
+		spin_unlock_bh(&p->lock);
+		return -1;
+	}
+
+	map_name = src2uni_map;
+
+	/*
+	 * Parse the input here; input can be of two types:
+	 *
+	 * Case1: Setup src_profile to device mapping
+	 *        echo '<src_profile> <net_device>' > /proc/sys/ppe/ppe_drv/src2uni_map
+	 *
+	 * Case2: Clear source profile to UNI mapping
+	 *        echo '<src_profile> update' > /proc/sys/ppe/ppe_drv/src2uni_map
+	 */
+	start_ch_ptr = map_name + strspn(map_name, NSS_PPE_DRV_WHITESPACE);
+	for (i = 0; *start_ch_ptr; start_ch_ptr = end_ch_ptr + strspn(end_ch_ptr, NSS_PPE_DRV_WHITESPACE), i++) {
+		if (i == 0) {
+			/*
+			 * Process src profile number
+			 */
+			end_ch_ptr = start_ch_ptr + strcspn(start_ch_ptr, NSS_PPE_DRV_WHITESPACE);
+			if (end_ch_ptr != start_ch_ptr) {
+				len = end_ch_ptr - start_ch_ptr;
+			} else {
+				len = strlen(start_ch_ptr);
+			}
+
+			src_profile = *start_ch_ptr - '0';
+			continue;
+		}
+
+		end_ch_ptr = start_ch_ptr + strcspn(start_ch_ptr, NSS_PPE_DRV_WHITESPACE);
+		if (end_ch_ptr != start_ch_ptr) {
+			len = end_ch_ptr - start_ch_ptr;
+		} else {
+			len = strlen(start_ch_ptr);
+		}
+
+		if (len <= IFNAMSIZ) {
+			memcpy(dev, start_ch_ptr, len);
+		}
+
+		dev[len] = '\0';
+
+		if (!strcmp(dev, "flush")) {
+			for (port_id = 1; port_id <= PPE_DRV_PHY_ETH_PORT_MAX; port_id++) {
+				pp_local = &p->port[port_id];
+				if (pp_local->src_profile == src_profile) {
+					sw_err = fal_qm_port_source_profile_set(PPE_DRV_SWITCH_ID, port_id, PPE_DRV_PORT_SRC_PROFILE);
+					if (sw_err != SW_OK) {
+						ppe_drv_warn("Unable to reset source profile for port\n");
+						spin_unlock_bh(&p->lock);
+						return -1;
+					}
+
+					pp_local->src_profile = PPE_DRV_PORT_SRC_PROFILE;
+				}
+			}
+
+			/*
+			 * Profile 0 is reserved for all default use cases like packet from host/WLAN and downlink traffic.
+			 * Hence, running the below loop from source profile 1
+			 */
+			for (profile = 1; profile <  PPE_DRV_PORT_SRC_PROFILE_MAX; profile++) {
+				uint32_t queue_id;
+				uint8_t profile = 0;
+				uint8_t port_bitmask =  p->prof2portmap[profile];
+				if (!port_bitmask)
+					continue;
+
+				/*
+				 * Run the loop for Physical ports except for port0 and port7
+				 */
+				for (i = 1; i < (PPE_DRV_PHYSICAL_MAX - 1); i++) {
+					pp_local = &p->port[i];
+
+					if (!kref_read(&pp_local->ref_cnt))
+						continue;
+
+					if (pp_local->port == up->port)
+						continue;
+
+					q_dst.src_profile = src_profile;
+					q_dst.dst_port = pp_local->port;
+
+					queue_id = ppe_drv_port_ucast_queue_get_by_port(pp_local->port);
+					sw_err = fal_ucast_queue_base_profile_set(PPE_DRV_SWITCH_ID, &q_dst, queue_id, pp_local->profile_id);
+					if (sw_err != SW_OK) {
+						ppe_drv_warn("%p unable to set port queue base ID", p);
+						continue;
+					}
+
+				}
+
+				p->prof2portmap[profile] = -1;
+			}
+
+			spin_unlock_bh(&p->lock);
+			return ret;
+		}
+
+		net_dev = dev_get_by_name(&init_net, dev);
+		if (!net_dev) {
+			ppe_drv_warn("%p: No valid netdevice found for dev: %s\n", net_dev, dev);
+			spin_unlock_bh(&p->lock);
+			return -1;
+		}
+
+		pp = ppe_drv_port_from_dev(net_dev);
+		if (!pp) {
+			ppe_drv_warn("%p: No PPE port for given netdevice\n", dev);
+			dev_put(net_dev);
+			spin_unlock_bh(&p->lock);
+			return -1;
+		}
+
+		src_port = pp->port;
+		pp->src_profile = src_profile;
+		sw_err = fal_qm_port_source_profile_set(PPE_DRV_SWITCH_ID, src_port, src_profile);
+		if (sw_err != SW_OK) {
+			ppe_drv_warn("Unable to configure source profile\n");
+			dev_put(net_dev);
+			spin_unlock_bh(&p->lock);
+			return -1;
+		}
+
+		/*
+		 * Bitmap of grouped ports
+		 */
+		bitmap |= (1 << pp->port);
+		p->prof2portmap[src_profile] |= (1 << pp->port);
+
+		dev_put(net_dev);
+	}
+
+	ppe_drv_loopback_sc2queue_mapping(p, src_profile);
+
+	/*
+	 * For port isolation, other physical port not mapped to current source profile need to be mapped to upstream port queue
+	 */
+	for (i = 1; i < (PPE_DRV_PHYSICAL_MAX - 1); i++) {
+		pp_local = &p->port[i];
+
+		if (!kref_read(&pp_local->ref_cnt))
+			continue;
+
+		if (bitmap & (1 << pp_local->port))
+			continue;
+
+		if (pp_local->port == up->port)
+			continue;
+
+		q_dst.src_profile = src_profile;
+		q_dst.dst_port = pp_local->port;
+
+		sw_err = fal_ucast_queue_base_profile_set(PPE_DRV_SWITCH_ID, &q_dst, ppe_drv_port_ucast_queue_get_by_port(up->port), pp_local->profile_id);
+		if (sw_err != SW_OK) {
+			ppe_drv_warn("Unable to configure destination source profile\n");
+		}
+	}
+
+	spin_unlock_bh(&p->lock);
+
+	return ret;
+}
+
+/*
  * ppe_drv_sub
  *	PPE DRV sub directory
  */
@@ -1404,6 +1778,21 @@ static struct ctl_table ppe_drv_sub[] = {
 		.maxlen         =       sizeof(int),
 		.mode           =       0644,
 		.proc_handler   =       ppe_drv_eth2eth_offload_if_bitmap_handler
+	},
+	{
+		.procname       =       "upstream_dev",
+		.data           =       &upstream_dev_str,
+		.maxlen         =       sizeof(char) * PPE_DRV_UPSTREAM_DEV_LEVEL_STR_LEN,
+		.mode           =       0644,
+		.proc_handler   =       ppe_drv_upstream_dev_handler
+	},
+	{
+
+		.procname       =       "src2uni_map",
+		.data           =       &src2uni_map,
+		.maxlen         =       sizeof(char) * PPE_DRV_SRC2UNI_LEVEL_STR_LEN,
+		.mode           =       0644,
+		.proc_handler   =       ppe_drv_src2uni_handler
 	},
 };
 
