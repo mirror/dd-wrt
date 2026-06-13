@@ -1890,6 +1890,8 @@ void start_resetbc(void)
 	case ROUTER_XIAOMI_BE7000:
 		if (!nvram_match("nobcreset", "1")) {
 			// we can only support primary firmware now, dual boot will be added later once everything else is working. in theory it works already but its untested
+			eval("fw_setenv", "flag_boot_success", "1");
+			eval("fw_setenv", "flag_last_success", "0");
 			eval("fw_setenv", "flash_try_sys1_failed", "0");
 			eval("fw_setenv", "flash_try_sys2_failed", "0");
 		}
