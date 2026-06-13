@@ -1759,7 +1759,9 @@ void start_wifi_drivers(void)
 			char overdrive[32];
 			int od = nvram_default_geti("power_overdrive", 0);
 			sprintf(overdrive, "poweroffset=%d", od);
-			eval("insmod", "ath12k", overdrive);
+			if (!nvram_match("noath11k", "1")) {
+				eval("insmod", "ath12k", overdrive);
+			}
 		} break;
 		case ROUTER_8DEVICES_KIWI: {
 			insmod("qmi_helpers");
@@ -1885,6 +1887,12 @@ void start_resetbc(void)
 		if (!nvram_match("nobcreset", "1"))
 			eval("mtd", "resetbc", "s_env");
 		break;
+	case ROUTER_XIAOMI_BE7000:
+		if (!nvram_match("nobcreset", "1")) {
+			// we can only support primary firmware now, dual boot will be added later once everything else is working. in theory it works already but its untested
+			eval("fw_setenv", "flash_try_sys1_failed", "0");
+			eval("fw_setenv", "flash_try_sys2_failed", "0");
+		}
 	}
 }
 
