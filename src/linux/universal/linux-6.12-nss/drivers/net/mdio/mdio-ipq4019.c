@@ -13,6 +13,7 @@
 #include <linux/platform_device.h>
 #include <linux/clk.h>
 #include <linux/gpio/consumer.h>
+#include <linux/of_gpio.h>
 
 #define MDIO_MODE_REG				0x40
 #define MDIO_ADDR_REG				0x44
@@ -348,6 +349,7 @@ u32 qca8337_read(struct mii_bus *mii_bus, u32 reg)
 	mii_bus->write(mii_bus, IPQ_HIGH_ADDR_PREFIX, 0, SWITCH_HIGH_ADDR_DFLT);
 	return (hi << 16) | lo;
 }
+EXPORT_SYMBOL(qca8337_read);
 
 void qca8337_write(struct mii_bus *mii_bus, u32 reg, u32 val)
 {
@@ -362,6 +364,7 @@ void qca8337_write(struct mii_bus *mii_bus, u32 reg, u32 val)
 
 	mii_bus->write(mii_bus, IPQ_HIGH_ADDR_PREFIX, 0, SWITCH_HIGH_ADDR_DFLT);
 }
+EXPORT_SYMBOL(qca8337_write);
 
 static inline void split_addr(u32 regaddr, u16 *r1, u16 *r2, u16 *page, u16 *sw_addr)
 {
@@ -395,6 +398,8 @@ u32 qca8386_read(struct mii_bus *bus, unsigned int reg)
 	return hi << 16 | lo;
 };
 
+EXPORT_SYMBOL(qca8386_read);
+
 int qca8386_write(struct mii_bus *bus, unsigned int reg, unsigned int val)
 {
 	u16 r1, r2, page, sw_addr;
@@ -415,6 +420,7 @@ int qca8386_write(struct mii_bus *bus, unsigned int reg, unsigned int val)
 
 	return 0;
 };
+EXPORT_SYMBOL(qca8386_write);
 
 u32 ipq_mii_read(struct mii_bus *mii_bus, u32 reg)
 {
@@ -490,6 +496,65 @@ static void ipq_phy_debug_write(struct mii_bus *mii_bus, u32 phy_addr, u32 reg_i
 	mii_bus->write(mii_bus, phy_addr, PHY_DEBUG_PORT_ADDR, reg_id);
 
 	mii_bus->write(mii_bus, phy_addr, PHY_DEBUG_PORT_DATA, reg_val);
+}
+
+static int qca_phy_gpio_set(struct platform_device *pdev, int number)
+{
+	int ret;
+
+	ret = gpio_request(number, "phy-reset-gpio");
+	if (ret) {
+		dev_err(&pdev->dev, "Can't get phy-reset-gpio %d\n", ret);
+		return ret;
+	}
+
+	ret = gpio_direction_output(number, 0x0);
+	if (ret) {
+		dev_err(&pdev->dev,
+			"Can't set direction for phy-reset-gpio %d\n", ret);
+		goto phy_reset_out;
+	}
+
+	usleep_range(100000, 110000);
+
+	gpio_set_value(number, 0x01);
+
+	usleep_range(100000, 110000);
+
+phy_reset_out:
+	gpio_free(number);
+
+	return ret;
+}
+
+int qca_phy_reset(struct platform_device *pdev)
+{
+	struct device_node *mdio_node = pdev->dev.of_node;
+	int phy_reset_gpio_number;
+	int ret, i, gpio_num;
+        gpio_num = of_count_phandle_with_args(mdio_node, "phy-reset-gpio", "#gpio-cells");
+//	gpio_num = of_gpio_named_count(mdio_node, "phy-reset-gpio");
+	if (gpio_num == 0 || gpio_num == -ENOENT)
+		return 0;
+	else if (gpio_num < 0)
+		return gpio_num;
+
+	for (i = 0; i < gpio_num; i++) {
+		ret = of_get_named_gpio(mdio_node, "phy-reset-gpio", i);
+		if (ret < 0) {
+			dev_err(&pdev->dev, "Could not find phy-reset-gpio\n");
+			return 0;
+		}
+
+		phy_reset_gpio_number = ret;
+
+		dev_info(&pdev->dev, "Reset PHY by GPIO %d\n", phy_reset_gpio_number);
+		ret = qca_phy_gpio_set(pdev, phy_reset_gpio_number);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
 }
 
 
@@ -597,6 +662,7 @@ static void ipq_phy_addr_fixup(struct mii_bus *bus, struct device_node *np)
 		}
 	}
 }
+
 
 static void ipq_qca8386_efuse_loading(struct mii_bus *mii_bus, u8 ethphy)
 {
@@ -734,6 +800,7 @@ static void ipq_cmn_clk_reset(struct mii_bus *bus)
 	struct ipq4019_mdio_data *priv = bus->priv;
 
 	if (priv && priv->membase[1]) {
+		printk(KERN_INFO "cmn clock reset\n");
 		/* Select reference clock source */
 		reg_val = readl(priv->membase[1] + CMN_PLL_REFERENCE_CLOCK);
 		reg_val &= ~(CMN_PLL_REFCLK_EXTERNAL | CMN_PLL_REFCLK_INDEX);
@@ -788,8 +855,8 @@ static void ipq_cmn_clk_reset(struct mii_bus *bus)
 				clk_en |= CMN_PLL_CMN_PLL_CLK50M_62P5M_EN2;
 		}
 
+		reg_val = readl(priv->membase[1] + CMN_PLL_OUTPUT_RELATED_1);
 		if (clk_en) {
-			reg_val = readl(priv->membase[1] + CMN_PLL_OUTPUT_RELATED_1);
 			reg_val &= ~(CMN_PLL_CLK25M_EN | CMN_PLL_CMN_PLL_CLK50M_62P5M_EN |
 					CMN_PLL_CMN_PLL_CLK50M_62P5M_EN1 |
 					CMN_PLL_CMN_PLL_CLK50M_62P5M_EN2);
@@ -929,6 +996,10 @@ static int ipq4019_mdio_probe(struct platform_device *pdev)
 		}
 	}
 
+//	ret = qca_phy_reset(pdev);
+//	if (ret)
+//		dev_err(&pdev->dev, "Could not find reset gpio\n");
+
 	priv->reset_gpios= devm_gpiod_get_array_optional(&pdev->dev, "phy-reset", GPIOD_OUT_LOW);
 	if (IS_ERR(priv->reset_gpios)) {
 		ret = dev_err_probe(&pdev->dev, PTR_ERR(priv->reset_gpios),
@@ -936,7 +1007,6 @@ static int ipq4019_mdio_probe(struct platform_device *pdev)
 				    bus->id);
 		return ret;
 	}
-//	ipq_mdio_reset(bus);
 	/* MDIO default frequency is 6.25MHz */
 	priv->clk_div = 0xf;
 	priv->force_c22 = of_property_read_bool(pdev->dev.of_node, "force_clause22");

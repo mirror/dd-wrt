@@ -186,6 +186,11 @@ int fwnode_mdiobus_register_phy(struct mii_bus *bus,
 		} else {
 			phy = phy_device_create(bus, addr, phy_id, 0, NULL);
 		}
+		if (rc == -ENODEV)
+			printk(KERN_ERR
+				"MDIO device at address %d is missing.\n",
+				addr);
+
 	}
 
 	if (IS_ERR(phy)) {
