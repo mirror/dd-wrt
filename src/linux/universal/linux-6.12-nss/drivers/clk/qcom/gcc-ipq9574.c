@@ -2227,6 +2227,19 @@ static struct clk_rcg2 pcnoc_bfdcd_clk_src = {
 	},
 };
 
+static struct clk_fixed_factor pcnoc_clk_src = {
+	.mult = 1,
+	.div = 1,
+	.hw.init = &(struct clk_init_data){
+		.name = "pcnoc_clk_src",
+		.parent_hws = (const struct clk_hw *[]){
+				&pcnoc_bfdcd_clk_src.clkr.hw },
+		.num_parents = 1,
+		.ops = &clk_fixed_factor_ops,
+		.flags = CLK_SET_RATE_PARENT,
+	},
+};
+
 static struct clk_branch gcc_crypto_axi_clk = {
 	.halt_reg = 0x16010,
 	.halt_check = BRANCH_HALT_VOTED,
@@ -3500,6 +3513,22 @@ static struct clk_branch gcc_qdss_apb2jtag_clk = {
 	},
 };
 
+static struct clk_branch gcc_pcnoc_dcc_clk = {
+	.halt_reg = 0x31080,
+	.clkr = {
+		.enable_reg = 0x31080,
+		.enable_mask = BIT(0),
+		.hw.init = &(struct clk_init_data){
+			.name = "gcc_pcnoc_dcc_clk",
+			.parent_hws = (const struct clk_hw *[]){
+					&qdss_dap_sync_clk_src.hw },
+			.num_parents = 1,
+			.flags = CLK_SET_RATE_PARENT | CLK_IGNORE_UNUSED,
+			.ops = &clk_branch2_ops,
+		},
+	},
+};
+
 static struct clk_fixed_factor qdss_tsctr_div3_clk_src = {
 	.mult = 1,
 	.div = 3,
@@ -4069,6 +4098,7 @@ static struct clk_hw *gcc_ipq9574_hws[] = {
 	&qdss_tsctr_div16_clk_src.hw,
 	&qdss_tsctr_div3_clk_src.hw,
 	&gcc_eud_at_div_clk_src.hw,
+	&pcnoc_clk_src.hw,
 };
 
 static struct clk_regmap *gcc_ipq9574_clks[] = {
@@ -4288,6 +4318,7 @@ static struct clk_regmap *gcc_ipq9574_clks[] = {
 	[GCC_PCIE1_PIPE_CLK] = &gcc_pcie1_pipe_clk.clkr,
 	[GCC_PCIE2_PIPE_CLK] = &gcc_pcie2_pipe_clk.clkr,
 	[GCC_PCIE3_PIPE_CLK] = &gcc_pcie3_pipe_clk.clkr,
+	[GCC_PCNOC_DCC_CLK] = &gcc_pcnoc_dcc_clk.clkr,
 	[GPLL0_OUT_AUX] = &gpll0_out_aux.clkr,
 };
 
