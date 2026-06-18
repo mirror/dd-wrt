@@ -3812,7 +3812,6 @@ void start_overclocking(void)
 	if (!prev || !*prev || *prev == 0xa)
 		nvram_set("prev_overclocking", newsetting);
 	prev = nvram_safe_get("prev_overclocking");
-	fprintf(stderr, "prev %s\nover%s\n", nvram_safe_get("prev_overclocking"), nvram_safe_get("overclocking"));
 	if (*prev && *prev != 0xa && !nvram_match("prev_overclocking", newsetting)) {
 		nvram_unset("cpu_rating");
 		nvram_set("prev_overclocking", newsetting);

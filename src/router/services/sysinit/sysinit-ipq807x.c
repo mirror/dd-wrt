@@ -549,7 +549,7 @@ static void load_nss(int profile, int cores, char *type)
 		if (strcmp(type, "ipq95xx")) {
 			loadnss("qca-nss-crypto", type);
 			loadnss("qca-nss-cfi-cryptoapi", type);
-		} else {
+		} else {	
 			loadnss("qca-nss-eip", type);
 			loadnss("qca-nss-eip-crypto", type);
 		}
@@ -644,6 +644,7 @@ void start_setup_affinity(void)
 	if (!nvram_match("ath11k_affinity", "0")) {
 		switch (brand) {
 		case ROUTER_XIAOMI_BE7000:
+			sysprintf("echo 3 > /proc/sys/net/edma/rps_num_cores");
 			set_named_smp_affinity("reo2host-destination-ring1", 0, 1);
 			set_named_smp_affinity("reo2host-destination-ring2", 1, 1);
 			set_named_smp_affinity("reo2host-destination-ring3", 2, 1);
@@ -657,13 +658,13 @@ void start_setup_affinity(void)
 			set_named_smp_affinity("ppdu-end-interrupts-mac2", 2, 1);
 			set_named_smp_affinity("ppdu-end-interrupts-mac3", 3, 1);
 		case ROUTER_8DEVICES_KIWI:
-			sysprintf("3 > /proc/sys/net/edma/rps_num_cores");
+			sysprintf("echo 3 > /proc/sys/net/edma/rps_num_cores");
 			set_named_smp_affinity("edma_rxdesc", 0, 1);
 			set_named_smp_affinity("edma_rxdesc", 1, 2);
 			set_named_smp_affinity("edma_rxdesc", 2, 3);
 			set_named_smp_affinity("edma_rxdesc", 3, 4);
 			int i;
-			for (i = 0; i < 27; i++) {
+			for (i = 0; i < 28; i++) {
 				set_named_smp_affinity("edma_txcmpl", i % 4, i);
 			}
 			set_named_smp_affinity("DP_EXT_IRQ", 0, 1);
@@ -908,6 +909,7 @@ void start_sysinit(void)
 	int profile = 512;
 	switch (brand) {
 	case ROUTER_XIAOMI_BE7000:
+//		sysprintf("cat /sys/kernel/debug/clk/clk_summary > /tmp/clk_summary");
 		fwlen = 0x20000;
 		load_nss_ipq95xx(1024);
 		break;
@@ -1647,6 +1649,8 @@ void start_sysinit(void)
 			}
 		}
 	}
+//	sysprintf("cat /sys/kernel/debug/clk/clk_summary > /tmp/clk_summary_inited");
+
 	return;
 }
 
