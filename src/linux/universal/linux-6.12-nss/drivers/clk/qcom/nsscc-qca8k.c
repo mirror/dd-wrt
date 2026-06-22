@@ -1581,7 +1581,7 @@ static struct clk_rcg2 nss_cc_ahb_clk_src = {
 
 static struct clk_branch nss_cc_ahb_clk = {
 	.halt_reg = 0x170,
-	.halt_check = BRANCH_HALT,
+	.halt_check = BRANCH_HALT_SKIP,
 	.clkr = {
 		.enable_reg = 0x170,
 		.enable_mask = BIT(0),
@@ -1653,7 +1653,7 @@ static struct clk_branch nss_cc_tlmm_ahb_clk = {
 
 static struct clk_branch nss_cc_cnoc_ahb_clk = {
 	.halt_reg = 0x194,
-	.halt_check = BRANCH_HALT,
+	.halt_check = BRANCH_HALT_SKIP,
 	.clkr = {
 		.enable_reg = 0x194,
 		.enable_mask = BIT(0),
@@ -1671,7 +1671,7 @@ static struct clk_branch nss_cc_cnoc_ahb_clk = {
 
 static struct clk_branch nss_cc_mdio_ahb_clk = {
 	.halt_reg = 0x198,
-	.halt_check = BRANCH_HALT,
+	.halt_check = BRANCH_HALT_SKIP,
 	.clkr = {
 		.enable_reg = 0x198,
 		.enable_mask = BIT(0),
