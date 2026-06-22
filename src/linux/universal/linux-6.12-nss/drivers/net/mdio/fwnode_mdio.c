@@ -145,7 +145,7 @@ int fwnode_mdiobus_register_phy(struct mii_bus *bus,
 	
 
 //	if (of_machine_is_compatible("qcom,ipq6018")) {
-	if (is_aqr) {
+	if (is_c45) {
 		memset(&c45_ids, 0xff, sizeof(c45_ids));
 		c45_ids.devices_in_package = BIT(MDIO_MMD_PMAPMD);
 		c45_ids.mmds_present = BIT(MDIO_MMD_PMAPMD);
@@ -179,6 +179,13 @@ int fwnode_mdiobus_register_phy(struct mii_bus *bus,
 						break;
 				}
 			}
+			if (IS_ERR(phy)) {
+				if (is_c45) {
+					c45_ids.device_ids[MDIO_MMD_PMAPMD] = 0xffffffff;
+					phy = phy_device_create(bus, addr, 0, true, &c45_ids);
+				}
+			}
+
 		}
 	} else {
 		if (is_c45 || fwnode_get_phy_id(child, &phy_id)) {

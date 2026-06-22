@@ -16,6 +16,18 @@
 #include <linux/of_gpio.h>
 
 #define MDIO_MODE_REG				0x40
+#define   MDIO_MODE_DIV_MASK			GENMASK(7, 0)
+#define     MDIO_MODE_DIV(x)			FIELD_PREP(MDIO_MODE_DIV_MASK, (x) - 1)
+#define     MDIO_MODE_DIV_1			0x0
+#define     MDIO_MODE_DIV_2			0x1
+#define     MDIO_MODE_DIV_4			0x3
+#define     MDIO_MODE_DIV_8			0x7
+#define     MDIO_MODE_DIV_16			0xf
+#define     MDIO_MODE_DIV_32			0x1f
+#define     MDIO_MODE_DIV_64			0x3f
+#define     MDIO_MODE_DIV_128			0x7f
+#define     MDIO_MODE_DIV_256			0xff
+
 #define MDIO_ADDR_REG				0x44
 #define MDIO_DATA_WRITE_REG			0x48
 #define MDIO_DATA_READ_REG			0x4c
@@ -109,6 +121,7 @@ enum mdio_clk_id {
 struct ipq4019_mdio_data {
 	void __iomem	*membase[2];
 	void __iomem *eth_ldo_rdy[ETH_LDO_RDY_CNT];
+	unsigned int mdc_rate;
 	int clk_div;
 	bool force_c22;
 	struct gpio_descs *reset_gpios;
@@ -147,6 +160,7 @@ static int _ipq4019_mdio_read_c45(struct mii_bus *bus, int mii_id, int mmd,
 	data = readl(priv->membase[0] + MDIO_MODE_REG);
 
 	data |= MDIO_MODE_C45;
+	data &= ~MDIO_CLK_DIV_MASK;
 	data |= FIELD_PREP(MDIO_CLK_DIV_MASK, priv->clk_div);
 
 	writel(data, priv->membase[0] + MDIO_MODE_REG);
@@ -189,6 +203,7 @@ static int ipq4019_mdio_read_c22(struct mii_bus *bus, int mii_id, int regnum)
 	data = readl(priv->membase[0] + MDIO_MODE_REG);
 
 	data &= ~MDIO_MODE_C45;
+	data &= ~MDIO_CLK_DIV_MASK;
 	data |= FIELD_PREP(MDIO_CLK_DIV_MASK, priv->clk_div);
 
 	writel(data, priv->membase[0] + MDIO_MODE_REG);
@@ -222,6 +237,7 @@ static int _ipq4019_mdio_write_c45(struct mii_bus *bus, int mii_id, int mmd,
 	data = readl(priv->membase[0] + MDIO_MODE_REG);
 
 	data |= MDIO_MODE_C45;
+	data &= ~MDIO_CLK_DIV_MASK;
 	data |= FIELD_PREP(MDIO_CLK_DIV_MASK, priv->clk_div);
 
 	writel(data, priv->membase[0] + MDIO_MODE_REG);
@@ -266,6 +282,7 @@ static int ipq4019_mdio_write_c22(struct mii_bus *bus, int mii_id, int regnum,
 	data = readl(priv->membase[0] + MDIO_MODE_REG);
 
 	data &= ~MDIO_MODE_C45;
+	data &= ~MDIO_CLK_DIV_MASK;
 	data |= FIELD_PREP(MDIO_CLK_DIV_MASK, priv->clk_div);
 
 	writel(data, priv->membase[0] + MDIO_MODE_REG);
@@ -492,7 +509,6 @@ static u16 ipq_phy_debug_read(struct mii_bus *mii_bus, u32 phy_addr, u32 reg_id)
 
 static void ipq_phy_debug_write(struct mii_bus *mii_bus, u32 phy_addr, u32 reg_id, u16 reg_val)
 {
-
 	mii_bus->write(mii_bus, phy_addr, PHY_DEBUG_PORT_ADDR, reg_id);
 
 	mii_bus->write(mii_bus, phy_addr, PHY_DEBUG_PORT_DATA, reg_val);
@@ -856,6 +872,7 @@ static void ipq_cmn_clk_reset(struct mii_bus *bus)
 		}
 
 		reg_val = readl(priv->membase[1] + CMN_PLL_OUTPUT_RELATED_1);
+		printk(KERN_INFO "old related PLL %X\n", reg_val);
 		if (clk_en) {
 			reg_val &= ~(CMN_PLL_CLK25M_EN | CMN_PLL_CMN_PLL_CLK50M_62P5M_EN |
 					CMN_PLL_CMN_PLL_CLK50M_62P5M_EN1 |
@@ -866,6 +883,86 @@ static void ipq_cmn_clk_reset(struct mii_bus *bus)
 
 			dev_info(bus->parent, "CMN output clock select %x\n", clk_en);
 		}
+		printk(KERN_INFO "new related PLL %X\n", reg_val);
+	}
+}
+
+static int ipq4019_mdio_set_div(struct ipq4019_mdio_data *priv)
+{
+	unsigned long ahb_rate;
+	int div;
+	u32 val;
+
+	/* If we don't have a clock for AHB use the fixed value */
+	ahb_rate = IPQ_MDIO_CLK_RATE;
+	if (priv->clk[MDIO_CLK_MDIO_AHB])
+		ahb_rate = clk_get_rate(priv->clk[MDIO_CLK_MDIO_AHB]);
+
+	/* MDC rate is ahb_rate/(MDIO_MODE_DIV + 1)
+	 * While supported, internal documentation doesn't
+	 * assure correct functionality of the MDIO bus
+	 * with divider of 1, 2 or 4.
+	 */
+	for (div = 8; div <= 256; div *= 2) {
+		printk(KERN_INFO "check mdc %d with ahb %d div %d\n", priv->mdc_rate, DIV_ROUND_UP(ahb_rate, div), div);
+		/* The requested rate is supported by the div */
+		if (priv->mdc_rate == DIV_ROUND_UP(ahb_rate, div)) {
+			val = readl(priv->membase + MDIO_MODE_REG);
+			val &= ~MDIO_MODE_DIV_MASK;
+			val |= MDIO_MODE_DIV(div);
+			priv->clk_div = div;
+			printk(KERN_INFO "set div %d\n", div);
+			writel(val, priv->membase + MDIO_MODE_REG);
+
+		}
+	}
+	return 0;
+	/* The requested rate is not supported */
+//	return -EINVAL;
+}
+
+static void ipq4019_mdio_select_mdc_rate(struct platform_device *pdev,
+					 struct ipq4019_mdio_data *priv)
+{
+	unsigned long ahb_rate;
+	int div;
+	u32 val;
+
+	/* MDC rate defined in DT, we don't have to decide a default value */
+	if (!of_property_read_u32(pdev->dev.of_node, "clock-frequency",
+				  &priv->mdc_rate))
+		return;
+
+	/* If we don't have a clock for AHB use the fixed value */
+	ahb_rate = IPQ_MDIO_CLK_RATE;
+	if (priv->clk[MDIO_CLK_MDIO_AHB])
+		ahb_rate = clk_get_rate(priv->clk[MDIO_CLK_MDIO_AHB]);
+
+	/* Check what is the current div set */
+	val = readl(priv->membase + MDIO_MODE_REG);
+	div = FIELD_GET(MDIO_MODE_DIV_MASK, val);
+
+	/* div is not set to the default value of /256
+	 * Probably someone changed that (bootloader, other drivers)
+	 * Keep this and don't overwrite it.
+	 */
+	if (div != MDIO_MODE_DIV_256) {
+		priv->mdc_rate = DIV_ROUND_UP(ahb_rate, div + 1);
+		return;
+	}
+
+	/* If div is /256 assume nobody have set this value and
+	 * try to find one MDC rate that is close the 802.3 spec of
+	 * 2.5MHz
+	 */
+	for (div = 256; div >= 8; div /= 2) {
+		/* Stop as soon as we found a divider that
+		 * reached the closest value to 2.5MHz
+		 */
+		if (DIV_ROUND_UP(ahb_rate, div) > 2500000)
+			break;
+
+		priv->mdc_rate = DIV_ROUND_UP(ahb_rate, div);
 	}
 }
 
@@ -875,6 +972,7 @@ static int ipq_mdio_reset(struct mii_bus *bus)
 	u32 val;
 	int ret, i;
 
+	printk(KERN_INFO "mdio reset\n");
 	ipq_cmn_clk_reset(bus);
 
 	/* For the platform ipq5332, the uniphy clock should be configured for resetting
@@ -934,6 +1032,8 @@ static int ipq_mdio_reset(struct mii_bus *bus)
 		gpiod_set_array_value_cansleep(priv->reset_gpios->ndescs, priv->reset_gpios->desc,
 				priv->reset_gpios->info, values);
 		bitmap_free(values);
+
+		fsleep(IPQ_PHY_SET_DELAY_US);
 	}
 
 	/* Configure MDIO clock source frequency if clock is specified in the device tree */
@@ -942,6 +1042,7 @@ static int ipq_mdio_reset(struct mii_bus *bus)
 		return ret;
 
 	ret = clk_prepare_enable(priv->clk[MDIO_CLK_MDIO_AHB]);
+	ipq4019_mdio_set_div(priv);
 	if (ret == 0) {
 		mdelay(10);
 
@@ -999,6 +1100,8 @@ static int ipq4019_mdio_probe(struct platform_device *pdev)
 //	ret = qca_phy_reset(pdev);
 //	if (ret)
 //		dev_err(&pdev->dev, "Could not find reset gpio\n");
+	ipq4019_mdio_select_mdc_rate(pdev, priv);
+	ipq4019_mdio_set_div(priv);
 
 	priv->reset_gpios= devm_gpiod_get_array_optional(&pdev->dev, "phy-reset", GPIOD_OUT_LOW);
 	if (IS_ERR(priv->reset_gpios)) {
@@ -1008,7 +1111,6 @@ static int ipq4019_mdio_probe(struct platform_device *pdev)
 		return ret;
 	}
 	/* MDIO default frequency is 6.25MHz */
-	priv->clk_div = 0xf;
 	priv->force_c22 = of_property_read_bool(pdev->dev.of_node, "force_clause22");
 
 	priv->preinit = ipq_mii_preinit;
