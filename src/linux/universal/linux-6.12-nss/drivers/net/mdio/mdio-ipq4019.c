@@ -816,7 +816,6 @@ static void ipq_cmn_clk_reset(struct mii_bus *bus)
 	struct ipq4019_mdio_data *priv = bus->priv;
 
 	if (priv && priv->membase[1]) {
-		printk(KERN_INFO "cmn clock reset\n");
 		/* Select reference clock source */
 		reg_val = readl(priv->membase[1] + CMN_PLL_REFERENCE_CLOCK);
 		reg_val &= ~(CMN_PLL_REFCLK_EXTERNAL | CMN_PLL_REFCLK_INDEX);
@@ -872,7 +871,6 @@ static void ipq_cmn_clk_reset(struct mii_bus *bus)
 		}
 
 		reg_val = readl(priv->membase[1] + CMN_PLL_OUTPUT_RELATED_1);
-		printk(KERN_INFO "old related PLL %X\n", reg_val);
 		if (clk_en) {
 			reg_val &= ~(CMN_PLL_CLK25M_EN | CMN_PLL_CMN_PLL_CLK50M_62P5M_EN |
 					CMN_PLL_CMN_PLL_CLK50M_62P5M_EN1 |
@@ -883,7 +881,6 @@ static void ipq_cmn_clk_reset(struct mii_bus *bus)
 
 			dev_info(bus->parent, "CMN output clock select %x\n", clk_en);
 		}
-		printk(KERN_INFO "new related PLL %X\n", reg_val);
 	}
 }
 
@@ -904,18 +901,19 @@ static int ipq4019_mdio_set_div(struct ipq4019_mdio_data *priv)
 	 * with divider of 1, 2 or 4.
 	 */
 	for (div = 8; div <= 256; div *= 2) {
-		printk(KERN_INFO "check mdc %d with ahb %d div %d\n", priv->mdc_rate, DIV_ROUND_UP(ahb_rate, div), div);
 		/* The requested rate is supported by the div */
 		if (priv->mdc_rate == DIV_ROUND_UP(ahb_rate, div)) {
 			val = readl(priv->membase + MDIO_MODE_REG);
 			val &= ~MDIO_MODE_DIV_MASK;
 			val |= MDIO_MODE_DIV(div);
 			priv->clk_div = div;
-			printk(KERN_INFO "set div %d\n", div);
 			writel(val, priv->membase + MDIO_MODE_REG);
+			return;
 
 		}
 	}
+	priv->clk_div = 0xf;
+
 	return 0;
 	/* The requested rate is not supported */
 //	return -EINVAL;
@@ -972,7 +970,6 @@ static int ipq_mdio_reset(struct mii_bus *bus)
 	u32 val;
 	int ret, i;
 
-	printk(KERN_INFO "mdio reset\n");
 	ipq_cmn_clk_reset(bus);
 
 	/* For the platform ipq5332, the uniphy clock should be configured for resetting
@@ -1059,7 +1056,6 @@ static int ipq4019_mdio_probe(struct platform_device *pdev)
 	struct mii_bus *bus;
 	struct resource *res;
 	int ret, i;
-	printk(KERN_INFO "reprobe mdio\n");
 	bus = devm_mdiobus_alloc_size(&pdev->dev, sizeof(*priv));
 	if (!bus)
 		return -ENOMEM;
