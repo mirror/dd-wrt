@@ -308,6 +308,8 @@ static int dp_altmode_vdm(struct typec_altmode *alt,
 			}
 			break;
 		case DP_CMD_STATUS_UPDATE:
+			if (count < 2)
+				break;
 			dp->data.status = *vdo;
 			ret = dp_altmode_status_update(dp);
 			break;

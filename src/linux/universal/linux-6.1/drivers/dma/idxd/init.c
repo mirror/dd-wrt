@@ -813,7 +813,6 @@ static void idxd_remove(struct pci_dev *pdev)
 	if (device_user_pasid_enabled(idxd))
 		iommu_dev_disable_feature(&pdev->dev, IOMMU_DEV_FEAT_SVA);
 	pci_disable_device(pdev);
-	destroy_workqueue(idxd->wq);
 	perfmon_pmu_remove(idxd);
 	put_device(idxd_confdev(idxd));
 }

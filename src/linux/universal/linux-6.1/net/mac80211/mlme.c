@@ -6586,7 +6586,7 @@ static int ieee80211_prep_connection(struct ieee80211_sub_if_data *sdata,
 	struct ieee80211_bss *bss = (void *)cbss->priv;
 	struct sta_info *new_sta = NULL;
 	struct ieee80211_link_data *link;
-	bool have_sta = false;
+	struct sta_info *have_sta = NULL;
 	bool mlo;
 	int err;
 
@@ -6751,6 +6751,8 @@ static int ieee80211_prep_connection(struct ieee80211_sub_if_data *sdata,
 
 out_err:
 	ieee80211_link_release_channel(&sdata->deflink);
+	if (mlo && have_sta)
+		WARN_ON(sta_info_destroy_addr(sdata, ap_mld_addr));
 	ieee80211_vif_set_links(sdata, 0);
 	return err;
 }

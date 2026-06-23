@@ -1227,6 +1227,7 @@ static int amdgpu_cs_submit(struct amdgpu_cs_parser *p,
 {
 	struct amdgpu_fpriv *fpriv = p->filp->driver_priv;
 	struct amdgpu_job *leader = p->gang_leader;
+	struct amdgpu_vm *vm = &fpriv->vm;
 	struct amdgpu_bo_list_entry *e;
 	unsigned int i;
 	uint64_t seq;
@@ -1268,7 +1269,8 @@ static int amdgpu_cs_submit(struct amdgpu_cs_parser *p,
 		r |= !amdgpu_ttm_tt_get_user_pages_done(bo->tbo.ttm, e->range);
 		e->range = NULL;
 	}
-	if (r) {
+
+	if (r || !list_empty(&vm->invalidated)) {
 		r = -EAGAIN;
 		mutex_unlock(&p->adev->notifier_lock);
 		return r;
