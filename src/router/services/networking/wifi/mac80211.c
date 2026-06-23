@@ -1623,7 +1623,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 					}
 					break;
 				case 80:
-					fprintf(fp, "he_oper_chwidth=1\n");
+					fprintf(fp, "eht_oper_chwidth=1\n");
 					if (is_6ghz_freq_prefix(prefix, freq)) {
 						switch (((chan / 4) + 1) % 4) {
 						case 1:
