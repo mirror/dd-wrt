@@ -1986,7 +1986,7 @@ static unsigned long collect_longterm_unpinnable_pages(
 			continue;
 
 		if (folio_test_hugetlb(folio)) {
-			isolate_hugetlb(&folio->page, movable_page_list);
+			folio_isolate_hugetlb(&folio->page, movable_page_list);
 			continue;
 		}
 

@@ -1879,11 +1879,13 @@ out_controller_put:
 	return ret;
 }
 
-static int spi_imx_remove(struct platform_device *pdev)
+static void spi_imx_remove(struct platform_device *pdev)
 {
 	struct spi_controller *controller = platform_get_drvdata(pdev);
 	struct spi_imx_data *spi_imx = spi_controller_get_devdata(controller);
 	int ret;
+
+	spi_controller_get(controller);
 
 	spi_unregister_controller(controller);
 
@@ -1899,7 +1901,7 @@ static int spi_imx_remove(struct platform_device *pdev)
 
 	spi_imx_sdma_exit(spi_imx);
 
-	return 0;
+	spi_controller_put(controller);
 }
 
 static int __maybe_unused spi_imx_runtime_resume(struct device *dev)
@@ -1961,7 +1963,7 @@ static struct platform_driver spi_imx_driver = {
 		   .pm = &imx_spi_pm,
 	},
 	.probe = spi_imx_probe,
-	.remove = spi_imx_remove,
+	.remove_new = spi_imx_remove,
 };
 module_platform_driver(spi_imx_driver);
 

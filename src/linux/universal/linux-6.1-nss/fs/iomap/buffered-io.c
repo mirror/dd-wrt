@@ -821,10 +821,6 @@ again:
 		length -= status;
 	} while (iov_iter_count(i) && length);
 
-	if (status == -EAGAIN) {
-		iov_iter_revert(i, written);
-		return -EAGAIN;
-	}
 	return written ? written : status;
 }
 
