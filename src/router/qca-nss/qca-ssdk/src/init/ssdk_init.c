@@ -1358,7 +1358,6 @@ qm_err_check_work_task_polling(struct work_struct *work)
                                             qm_dwork_polling.work);
 
 	mutex_lock(&priv->qm_lock);
-
 	if(priv->version == QCA_VER_MHT) {
 #if defined(MHT)
 		qca_mht_sw_mac_polling_task(priv);
@@ -1757,7 +1756,7 @@ static int ssdk_switch_register(a_uint32_t dev_id, ssdk_chip_type  chip_type)
 
 	priv->mii_read = qca_mii_read;
 	priv->mii_write = qca_mii_write;
-#if 0
+#if 1
 	if (chip_type == CHIP_DESS || chip_type == CHIP_MHT) {
 		priv->ports = 6;
 	} else if ((chip_type == CHIP_ISIS) || (chip_type == CHIP_ISISC)) {
@@ -1783,6 +1782,7 @@ static int ssdk_switch_register(a_uint32_t dev_id, ssdk_chip_type  chip_type)
 	if(chip_type == CHIP_SCOMPHY)
 	{
 		priv->version = QCA_VER_SCOMPHY;
+		SSDK_INFO("Chip version 0x%02x\n", priv->version);
 	}
 	else
 #endif
@@ -1790,6 +1790,7 @@ static int ssdk_switch_register(a_uint32_t dev_id, ssdk_chip_type  chip_type)
 		if (fal_reg_get(dev_id, 0, (a_uint8_t *)&chip_id, 4) == SW_OK) {
 			priv->version = ((chip_id >> 8) & 0xff);
 			priv->revision = (chip_id & 0xff);
+			SSDK_INFO("Chip version 0x%02x%02x\n", priv->version, priv->revision);
 		}
 	}
 
@@ -1807,6 +1808,7 @@ static int ssdk_switch_register(a_uint32_t dev_id, ssdk_chip_type  chip_type)
 			SSDK_ERROR("qca_phy_mib_work_start failed for chip 0x%02x%02x\n", priv->version, priv->revision);
 			return ret;
 	}
+
 
 	if(priv->link_polling_required)
 	{
@@ -1929,8 +1931,8 @@ ssdk_init(a_uint32_t dev_id, ssdk_init_cfg * cfg)
 	sw_error_t rv;
 
 	rv = fal_init(dev_id, cfg);
-//	if (rv != SW_OK)
-//		SSDK_ERROR("ssdk fal init failed: %d. \r\n", rv);
+	if (rv != SW_OK)
+		SSDK_ERROR("ssdk fal init failed: %d. \r\n", rv);
 
 /*qca808x_end*/
 	if(!ssdk_is_emulation(dev_id))
