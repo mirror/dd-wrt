@@ -895,6 +895,14 @@ struct sk_buff {
 		ktime_t		tstamp;
 		u64		skb_mstamp_ns; /* earliest departure time */
 	};
+
+#ifdef CONFIG_SKB_TIMESTAMP
+	struct {
+		u64		delta_ts0;
+		u64		delta_ts1;
+	};
+#endif
+
 	/*
 	 * This is the control buffer. It is free to use for every
 	 * layer. Please put your private variables there. If you
