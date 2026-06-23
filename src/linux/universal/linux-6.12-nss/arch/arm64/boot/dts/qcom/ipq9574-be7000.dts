@@ -332,9 +332,10 @@
 	qcom,board_id = <0x20>;
 };
 
-/*&qcn9224_pci2 {
+&qcn9224_pci2 {
 	status = "okay";
 };
+/*
 &qcn9224_pci3 {
 	status = "okay";
 };
@@ -357,14 +358,8 @@
 			reg = <0 0 0 0 0>;
 			qcom,board_id = <0x2>;
 /*			qcom,board_id = <0x1008>;*/
-/*			hremote_node = <&qcn9224_pci2>;*/
+			hremote_node = <&qcn9224_pci2>;
 			qcom,num-radios = <1>;
-			qcom,m3-dump-addr = <0x55d00000>;
-			qcom,caldb-addr = <0x55f00000>;
-			qcom,pageable-addr = <0x56700000>;
-			caldb-size = <0x800000>;
-			hremote-size = <0x1c00000>;
-			pageable-size = <0xc00000>;
 		};
 	};
 
