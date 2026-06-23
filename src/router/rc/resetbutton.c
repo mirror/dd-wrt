@@ -249,6 +249,8 @@ static int getbuttonstate()
 		return !get_gpio(61);
 	case ROUTER_GLINET_AX1800:
 		return !get_gpio(18);
+	case ROUTER_XIAOMI_BE7000:
+		return !get_gpio(44);
 	case ROUTER_BUFFALO_WXR5950AX12:
 		return !get_gpio(54);
 	default:
