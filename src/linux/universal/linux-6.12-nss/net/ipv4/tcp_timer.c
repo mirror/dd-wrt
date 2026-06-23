@@ -736,7 +736,7 @@ void tcp_syn_ack_timeout(const struct request_sock *req)
 
 	__NET_INC_STATS(net, LINUX_MIB_TCPTIMEOUTS);
 }
-EXPORT_SYMBOL(tcp_syn_ack_timeout);
+EXPORT_IPV6_MOD(tcp_syn_ack_timeout);
 
 void tcp_set_keepalive(struct sock *sk, int val)
 {
@@ -748,7 +748,7 @@ void tcp_set_keepalive(struct sock *sk, int val)
 	else if (!val)
 		inet_csk_delete_keepalive_timer(sk);
 }
-EXPORT_SYMBOL_GPL(tcp_set_keepalive);
+EXPORT_IPV6_MOD_GPL(tcp_set_keepalive);
 
 
 static void tcp_keepalive_timer (struct timer_list *t)
