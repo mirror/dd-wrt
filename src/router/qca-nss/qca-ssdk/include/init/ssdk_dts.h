@@ -99,6 +99,7 @@ typedef struct
 	a_uint32_t emu_chip_ver; /*only valid when is_emulation is true*/
 	a_uint32_t clk_mode;
 	a_uint32_t pcie_hw_base;
+	a_uint32_t port3_pcs_channel;
 	led_ctrl_pattern_t source_pattern[SSDK_MAX_PORT_NUM][PORT_LED_SOURCE_MAX];
 } ssdk_dt_cfg;
 
@@ -161,6 +162,7 @@ a_uint32_t ssdk_device_id_get(a_uint32_t index);
 struct device_node *ssdk_dts_node_get(a_uint32_t dev_id);
 struct clk *ssdk_dts_essclk_get(a_uint32_t dev_id);
 struct clk *ssdk_dts_cmnclk_get(a_uint32_t dev_id);
+a_uint32_t ssdk_dts_port3_pcs_channel_get(a_uint32_t dev_id);
 
 int ssdk_switch_device_num_init(void);
 void ssdk_switch_device_num_exit(void);

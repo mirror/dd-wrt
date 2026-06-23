@@ -136,7 +136,7 @@ enum ssdk_port_wrapper_cfg {
 	PORT_WRAPPER_SGMII4_RGMII4,
 	PORT_WRAPPER_QSGMII,
 	PORT_WRAPPER_SGMII_PLUS,
-	PORT_WRAPPER_USXGMII,
+	PORT_WRAPPER_USXGMII, /* 0xd */
 	PORT_WRAPPER_10GBASE_R,
 	PORT_WRAPPER_SGMII_CHANNEL0,
 	PORT_WRAPPER_SGMII_CHANNEL1,
@@ -144,7 +144,7 @@ enum ssdk_port_wrapper_cfg {
 	PORT_WRAPPER_RGMII,
 	PORT_WRAPPER_PSGMII_FIBER,
 	PORT_WRAPPER_SGMII_FIBER,
-	PORT_WRAPPER_UQXGMII, /* for four channels manhattan phy mode*/
+	PORT_WRAPPER_UQXGMII, /* for four channels manhattan phy mode (0x15)*/
 	PORT_WRAPPER_UDXGMII,
 	PORT_WRAPPER_UQXGMII_3CHANNELS, /* for three channels manhattan phy mode*/
 	PORT_WRAPPER_MAX = 0xFF
@@ -427,6 +427,9 @@ void qca_fdb_sw_sync_work_stop(struct qca_phy_priv *priv, fal_pbmp_t port_map);
 void qca_phy_mib_work_pause(struct qca_phy_priv *priv);
 int qca_phy_mib_work_resume(struct qca_phy_priv *priv);
 sw_error_t ssdk_ppe_hw_recover(a_uint32_t dev_id);
+struct phylink* ssdk_port_phylink_setup(a_uint32_t dev_id,
+					a_uint32_t port_id, struct net_device *netdev);
+void ssdk_port_phylink_destroy(a_uint32_t dev_id, a_uint32_t port_id);
 
 /*qca808x_start*/
 #ifdef __cplusplus

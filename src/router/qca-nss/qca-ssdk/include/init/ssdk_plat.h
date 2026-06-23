@@ -407,6 +407,7 @@ struct qca_phy_priv {
 struct qca_mdio_data {
 	void __iomem	*membase[2];
 	void __iomem *eth_ldo_rdy[ETH_LDO_RDY_CNT];
+	unsigned int mdc_rate;
 	int clk_div;
 	bool force_c22;
 	struct gpio_descs *reset_gpios;
@@ -532,5 +533,10 @@ void ssdk_plat_exit(a_uint32_t dev_id);
 #define qca_mht_mii_read qca_mii_read
 #define qca_mht_mii_write qca_mii_write
 #define qca_mht_mii_update qca_mii_update
+//a_uint32_t qca_mht_mii_read(a_uint32_t dev_id, a_uint32_t reg);
+//void qca_mht_mii_write(a_uint32_t dev_id, a_uint32_t reg, a_uint32_t val);
+//int qca_mht_mii_update(a_uint32_t dev_id, a_uint32_t reg, a_uint32_t mask, a_uint32_t val);
+
+
 #endif
 /*qca808x_end*/

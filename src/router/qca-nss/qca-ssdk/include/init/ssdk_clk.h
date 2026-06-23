@@ -49,18 +49,39 @@ extern "C" {
 #define UNIPHY_PORT3_RX_RESET_ID	"uniphy_port3_rx_rst"
 #define UNIPHY_PORT3_TX_RESET_ID	"uniphy_port3_tx_rst"
 
+
 #define SSDK_PORT1_RESET_ID	"nss_port1_rst"
 #define SSDK_PORT2_RESET_ID	"nss_port2_rst"
 #define SSDK_PORT3_RESET_ID	"nss_port3_rst"
 #define SSDK_PORT4_RESET_ID	"nss_port4_rst"
 #define SSDK_PORT5_RESET_ID	"nss_port5_rst"
 #define SSDK_PORT6_RESET_ID	"nss_port6_rst"
+
 #define SSDK_PORT1_RX_RESET_ID	"nss_port1_rx_rst"
 #define SSDK_PORT1_TX_RESET_ID	"nss_port1_tx_rst"
 #define SSDK_PORT2_RX_RESET_ID	"nss_port2_rx_rst"
 #define SSDK_PORT2_TX_RESET_ID	"nss_port2_tx_rst"
 #define SSDK_PORT3_RX_RESET_ID	"nss_port3_rx_rst"
 #define SSDK_PORT3_TX_RESET_ID	"nss_port3_tx_rst"
+#define SSDK_PORT4_RX_RESET_ID	"nss_port4_rx_rst"
+#define SSDK_PORT4_TX_RESET_ID	"nss_port4_tx_rst"
+#define SSDK_PORT5_RX_RESET_ID	"nss_port5_rx_rst"
+#define SSDK_PORT5_TX_RESET_ID	"nss_port5_tx_rst"
+#define SSDK_PORT6_RX_RESET_ID	"nss_port6_rx_rst"
+#define SSDK_PORT6_TX_RESET_ID	"nss_port6_tx_rst"
+
+#define SSDK_UNIPHY_PORT1_RX_RESET_ID	"nss_uniphy_port1_rx_rst"
+#define SSDK_UNIPHY_PORT1_TX_RESET_ID	"nss_uniphy_port1_tx_rst"
+#define SSDK_UNIPHY_PORT2_RX_RESET_ID	"nss_uniphy_port2_rx_rst"
+#define SSDK_UNIPHY_PORT2_TX_RESET_ID	"nss_uniphy_port2_tx_rst"
+#define SSDK_UNIPHY_PORT3_RX_RESET_ID	"nss_uniphy_port3_rx_rst"
+#define SSDK_UNIPHY_PORT3_TX_RESET_ID	"nss_uniphy_port3_tx_rst"
+#define SSDK_UNIPHY_PORT4_RX_RESET_ID	"nss_uniphy_port4_rx_rst"
+#define SSDK_UNIPHY_PORT4_TX_RESET_ID	"nss_uniphy_port4_tx_rst"
+#define SSDK_UNIPHY_PORT5_RX_RESET_ID	"nss_uniphy_port5_rx_rst"
+#define SSDK_UNIPHY_PORT5_TX_RESET_ID	"nss_uniphy_port5_tx_rst"
+#define SSDK_UNIPHY_PORT6_RX_RESET_ID	"nss_uniphy_port6_rx_rst"
+#define SSDK_UNIPHY_PORT6_TX_RESET_ID	"nss_uniphy_port6_tx_rst"
 
 #define SSDK_PORT1_MAC_RESET_ID	"nss_port1_mac_rst"
 #define SSDK_PORT2_MAC_RESET_ID	"nss_port2_mac_rst"
@@ -256,6 +277,7 @@ enum mp_bcr_rst_type {
 #define GEPHY_MISC_RESET_ID	"gephy_misc_rst"
 
 #define CMN_BLK_ADDR                0x0009B780
+#define CMN_BLK_ADDR_1              0x0009b79c
 #define CMN_BLK_PLL_SRC_ADDR        0x0009B028
 #define CMN_BLK_SIZE                0x100
 #define PLL_CTRL_SRC_MASK           0xfffffcff
