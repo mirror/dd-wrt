@@ -339,3 +339,4 @@ void _nvram_exit(void)
 {
 	nvram_free();
 }
+MODULE_LICENSE("GPL");

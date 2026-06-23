@@ -212,6 +212,11 @@ config AX88796B_PHY
 	  Currently supports the Asix Electronics PHY found in the X-Surf 100
 	  AX88796B package.
 
+config AT803X_PHY
+	tristate "AT803X PHYs"
+	help
+	  Currently supports the AT8030 and AT8035 model
+
 config AX88796B_RUST_PHY
 	bool "Rust reference driver for Asix PHYs"
 	depends on RUST_PHYLIB_ABSTRACTIONS && AX88796B_PHY

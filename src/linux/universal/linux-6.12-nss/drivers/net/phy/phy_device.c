@@ -907,6 +907,7 @@ static int get_phy_c45_ids(struct mii_bus *bus, int addr, u32 *phy_id,
 	}
 
 	if ((devs_in_pkg & 0x1fffffff) == 0x1fffffff) {
+
 		/* If mostly Fs, there is no device there, then let's probe
 		 * MMD 0, as some 10G PHYs have zero Devices In package,
 		 * e.g. Cortina CS4315/CS4340 PHY.
@@ -958,6 +959,7 @@ static int get_phy_c45_ids(struct mii_bus *bus, int addr, u32 *phy_id,
 
 	return 0;
 }
+
 
 /**
  * get_phy_c22_id - reads the specified addr for its clause 22 ID.
@@ -1056,6 +1058,10 @@ struct phy_device *get_phy_device(struct mii_bus *bus, int addr, bool is_c45)
 
 	if (r)
 		return ERR_PTR(r);
+
+	/* If the phy_id is mostly Fs, there is no device there */
+	if ((phy_id & 0x1fffffff) == 0x1fffffff)
+		return ERR_PTR(-ENODEV);
 
 	/* PHY device such as the Marvell Alaska 88E2110 will return a PHY ID
 	 * of 0 when probed using get_phy_c22_id() with no error. Proceed to

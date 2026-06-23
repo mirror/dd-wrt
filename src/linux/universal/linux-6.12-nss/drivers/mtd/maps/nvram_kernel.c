@@ -744,3 +744,4 @@ err:
 
 late_initcall(dev_nvram_init);
 module_exit(dev_nvram_exit);
+MODULE_LICENSE("GPL");

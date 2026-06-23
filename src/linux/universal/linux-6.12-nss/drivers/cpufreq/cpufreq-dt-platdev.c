@@ -232,6 +232,9 @@ static int __init cpufreq_dt_platdev_init(void)
 	if (cpu0_node_has_opp_v2_prop() && !of_match_node(blocklist, np))
 		goto create_pdev;
 
+	if (!cpu0_node_has_opp_v2_prop() && of_match_node(blocklist, np))
+		goto create_pdev;
+
 	return -ENODEV;
 
 create_pdev:

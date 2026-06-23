@@ -1405,10 +1405,14 @@ EXPORT_SYMBOL_GPL(clk_restore_context);
  */
 int clk_enable(struct clk *clk)
 {
+	int ret;
 	if (!clk)
 		return 0;
-
-	return clk_core_enable_lock(clk->core);
+	ret = clk_core_enable_lock(clk->core);
+	if (ret != 0) {
+		printk(KERN_INFO "clk_enable error\n");
+	}
+	return ret;
 }
 EXPORT_SYMBOL_GPL(clk_enable);
 
@@ -2612,6 +2616,8 @@ int clk_set_rate(struct clk *clk, unsigned long rate)
 		clk_core_rate_protect(clk->core);
 
 	clk_prepare_unlock();
+	if (ret != 0)
+		printk(KERN_INFO "clk_set_rate error (%ld)\n", rate);
 
 	return ret;
 }

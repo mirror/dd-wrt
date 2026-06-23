@@ -52,12 +52,16 @@ struct bam_desc_hw {
 };
 
 #define BAM_DMA_AUTOSUSPEND_DELAY 100
+#define PIPE_TRUST_REG_MASK 0xFFFFFFF8
+#define BAM_TRUST_LOCK_EE_CTRL BIT(13)
 
 #define DESC_FLAG_INT BIT(15)
 #define DESC_FLAG_EOT BIT(14)
 #define DESC_FLAG_EOB BIT(13)
 #define DESC_FLAG_NWD BIT(12)
 #define DESC_FLAG_CMD BIT(11)
+#define DESC_FLAG_LOCK BIT(10)
+#define DESC_FLAG_UNLOCK BIT(9)
 
 struct bam_async_desc {
 	struct virt_dma_desc vd;
@@ -74,7 +78,7 @@ struct bam_async_desc {
 	struct list_head desc_node;
 	enum dma_transfer_direction dir;
 	size_t length;
-	struct bam_desc_hw desc[] __counted_by(num_desc);
+	struct bam_desc_hw desc[];
 };
 
 enum bam_reg {
@@ -104,6 +108,8 @@ enum bam_reg {
 	BAM_P_DESC_FIFO_ADDR,
 	BAM_P_EVNT_GEN_TRSHLD,
 	BAM_P_FIFO_SIZES,
+	BAM_TRUST_REG,
+	BAM_P_TRUST_REG,
 };
 
 struct reg_offset_data {
@@ -138,6 +144,7 @@ static const struct reg_offset_data bam_v1_3_reg_info[] = {
 	[BAM_P_DESC_FIFO_ADDR]	= { 0x101C, 0x00, 0x40, 0x00 },
 	[BAM_P_EVNT_GEN_TRSHLD]	= { 0x1028, 0x00, 0x40, 0x00 },
 	[BAM_P_FIFO_SIZES]	= { 0x1020, 0x00, 0x40, 0x00 },
+	[BAM_P_TRUST_REG]	= { 0x1030, 0x1000, 0x00, 0x00 },
 };
 
 static const struct reg_offset_data bam_v1_4_reg_info[] = {
@@ -167,6 +174,7 @@ static const struct reg_offset_data bam_v1_4_reg_info[] = {
 	[BAM_P_DESC_FIFO_ADDR]	= { 0x181C, 0x00, 0x1000, 0x00 },
 	[BAM_P_EVNT_GEN_TRSHLD]	= { 0x1828, 0x00, 0x1000, 0x00 },
 	[BAM_P_FIFO_SIZES]	= { 0x1820, 0x00, 0x1000, 0x00 },
+	[BAM_P_TRUST_REG]	= { 0x1030, 0x1000, 0x00, 0x00 },
 };
 
 static const struct reg_offset_data bam_v1_7_reg_info[] = {
@@ -196,6 +204,8 @@ static const struct reg_offset_data bam_v1_7_reg_info[] = {
 	[BAM_P_DESC_FIFO_ADDR]	= { 0x1381C, 0x00, 0x1000, 0x00 },
 	[BAM_P_EVNT_GEN_TRSHLD]	= { 0x13828, 0x00, 0x1000, 0x00 },
 	[BAM_P_FIFO_SIZES]	= { 0x13820, 0x00, 0x1000, 0x00 },
+	[BAM_TRUST_REG]		= { 0x02000, 0x04, 0x00, 0x00 },
+	[BAM_P_TRUST_REG]	= { 0x02020, 0x04, 0x00, 0x00 },
 };
 
 /* BAM CTRL */
@@ -390,6 +400,7 @@ struct bam_device {
 	bool controlled_remotely;
 	bool powered_remotely;
 	u32 active_channels;
+	u32 config_pipe_trust_reg;
 
 	const struct reg_offset_data *layout;
 
@@ -398,6 +409,8 @@ struct bam_device {
 
 	/* dma start transaction tasklet */
 	struct tasklet_struct task;
+
+	bool is_bam_lite;
 };
 
 /**
@@ -440,9 +453,10 @@ static void bam_reset(struct bam_device *bdev)
 	val |= BAM_EN;
 	writel_relaxed(val, bam_addr(bdev, 0, BAM_CTRL));
 
-	/* set descriptor threshold, start with 4 bytes */
-	writel_relaxed(DEFAULT_CNT_THRSHLD,
-			bam_addr(bdev, 0, BAM_DESC_CNT_TRSHLD));
+	/* set descriptor threshhold, start with 4 bytes */
+	if (!bdev->is_bam_lite)
+		writel_relaxed(DEFAULT_CNT_THRSHLD,
+			       bam_addr(bdev, 0, BAM_DESC_CNT_TRSHLD));
 
 	/* Enable default set of h/w workarounds, ie all except BAM_FULL_PIPE */
 	writel_relaxed(BAM_CNFG_BITS_DEFAULT, bam_addr(bdev, 0, BAM_CNFG_BITS));
@@ -511,6 +525,16 @@ static void bam_chan_init_hw(struct bam_chan *bchan,
 	val = readl_relaxed(bam_addr(bdev, 0, BAM_IRQ_SRCS_MSK_EE));
 	val |= BIT(bchan->id);
 	writel_relaxed(val, bam_addr(bdev, 0, BAM_IRQ_SRCS_MSK_EE));
+
+	/* BAM Trusted configurations: set the configuration of the
+	 * pipe interrupt to the EE configured in the dts
+	 */
+	if ((bdev->config_pipe_trust_reg == 1) && !bdev->controlled_remotely) {
+		val = readl_relaxed(bam_addr(bdev, bchan->id, BAM_P_TRUST_REG));
+		val &= PIPE_TRUST_REG_MASK;
+		val |= bdev->ee;
+		writel_relaxed(val, bam_addr(bdev, bchan->id, BAM_P_TRUST_REG));
+	}
 
 	/* don't allow cpu to reorder the channel enable done below */
 	wmb();
@@ -667,9 +691,9 @@ static struct dma_async_tx_descriptor *bam_prep_slave_sg(struct dma_chan *chan,
 	for_each_sg(sgl, sg, sg_len, i)
 		num_alloc += DIV_ROUND_UP(sg_dma_len(sg), BAM_FIFO_SIZE);
 
-	/* allocate enough room to accommodate the number of entries */
+	/* allocate enough room to accomodate the number of entries */
 	async_desc = kzalloc(struct_size(async_desc, desc, num_alloc),
-			     GFP_NOWAIT);
+			     GFP_ATOMIC);
 
 	if (!async_desc)
 		return NULL;
@@ -686,6 +710,13 @@ static struct dma_async_tx_descriptor *bam_prep_slave_sg(struct dma_chan *chan,
 
 	/* fill in temporary descriptors */
 	desc = async_desc->desc;
+	if (flags & DMA_PREP_CMD) {
+		if (flags & DMA_PREP_LOCK)
+			desc->flags |= cpu_to_le16(DESC_FLAG_LOCK);
+		if (flags & DMA_PREP_UNLOCK)
+			desc->flags |= cpu_to_le16(DESC_FLAG_UNLOCK);
+	}
+
 	for_each_sg(sgl, sg, sg_len, i) {
 		unsigned int remainder = sg_dma_len(sg);
 		unsigned int curr_offset = 0;
@@ -1189,7 +1220,7 @@ static struct dma_chan *bam_dma_xlate(struct of_phandle_args *dma_spec,
  */
 static int bam_init(struct bam_device *bdev)
 {
-	u32 val;
+	u32 val, i, ee;
 
 	/* read revision and configuration information */
 	if (!bdev->num_ees) {
@@ -1210,6 +1241,27 @@ static int bam_init(struct bam_device *bdev)
 	if (!bdev->controlled_remotely && !bdev->powered_remotely)
 		bam_reset(bdev);
 
+	if (bdev->config_pipe_trust_reg == 2) {
+		ee = bdev->ee;
+		val = readl_relaxed(bam_addr(bdev, 0, BAM_TRUST_REG));
+		val |= BAM_TRUST_LOCK_EE_CTRL;
+		writel_relaxed(val, bam_addr(bdev, 0, BAM_TRUST_REG));
+
+		for (i = 2; i < 8; i+=2) {
+			val = readl_relaxed(bam_addr(bdev, i, BAM_P_TRUST_REG));
+			val &= PIPE_TRUST_REG_MASK;
+			val |= ee;
+			writel_relaxed(val,
+					bam_addr(bdev, i, BAM_P_TRUST_REG));
+
+			val = readl_relaxed(bam_addr(bdev, i+1, BAM_P_TRUST_REG));
+			val &= PIPE_TRUST_REG_MASK;
+			val |= ee;
+			writel_relaxed(val,
+					bam_addr(bdev, i+1, BAM_P_TRUST_REG));
+			++ee;
+		}
+	}
 	return 0;
 }
 
@@ -1275,7 +1327,7 @@ static int bam_dma_probe(struct platform_device *pdev)
 	if (bdev->controlled_remotely || bdev->powered_remotely)
 		bdev->bamclk = devm_clk_get_optional(bdev->dev, "bam_clk");
 	else
-		bdev->bamclk = devm_clk_get(bdev->dev, "bam_clk");
+		bdev->bamclk = devm_clk_get_optional(bdev->dev, "bam_clk");
 
 	if (IS_ERR(bdev->bamclk))
 		return PTR_ERR(bdev->bamclk);
@@ -1301,6 +1353,12 @@ static int bam_dma_probe(struct platform_device *pdev)
 		dev_err(bdev->dev, "failed to prepare/enable clock\n");
 		return ret;
 	}
+
+	bdev->is_bam_lite = of_property_read_bool(pdev->dev.of_node,
+						  "qcom,bam-lite");
+
+	ret = of_property_read_u32(pdev->dev.of_node, "qti,config-pipe-trust-reg",
+				   &bdev->config_pipe_trust_reg);
 
 	ret = bam_init(bdev);
 	if (ret)
@@ -1416,6 +1474,8 @@ static void bam_dma_remove(struct platform_device *pdev)
 	tasklet_kill(&bdev->task);
 
 	clk_disable_unprepare(bdev->bamclk);
+
+	return;
 }
 
 static int __maybe_unused bam_dma_runtime_suspend(struct device *dev)

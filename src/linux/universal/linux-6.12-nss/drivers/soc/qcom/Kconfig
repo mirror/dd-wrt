@@ -295,4 +295,10 @@ config QCOM_PBS
 	  This module provides the APIs to the client drivers that wants to send the
 	  PBS trigger event to the PBS RAM.
 
+config IPQ_REG_UPDATE
+	bool "QTI, Subsystem register update driver"
+	depends on ARCH_QCOM
+	help
+	 Generic driver to configure required registers
+
 endmenu

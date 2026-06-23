@@ -378,4 +378,10 @@ config MTD_PISMO
 
 	  When built as a module, it will be called pismo.ko
 
+config NVRAM_MMC
+	bool "nvram mmc handing"
+	depends on PINCTRL_IPQ9574
+	help
+	    support for nvram mmc driver
+
 endmenu
