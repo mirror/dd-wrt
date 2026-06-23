@@ -6060,9 +6060,9 @@ static int disable_if_6ghz(const char *prefix)
 static int disable_if_be(const char *prefix)
 {
 	if (!has_be(prefix))
-		return 0;
+		return 1;
 	char *netmode = nvram_nget("%s_net_mode", prefix);
-	return (!strcmp(netmode, "mixed") || !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") ||
+	return !(!strcmp(netmode, "mixed") || !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") ||
 		!strcmp(netmode, "be6-only") || !strcmp(netmode, "beax6-only") || !strcmp(netmode, "beax5-only") ||
 		!strcmp(netmode, "mixed5"));
 }
