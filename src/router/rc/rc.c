@@ -108,7 +108,7 @@
 	#include "mmc.c"
 #else
 	#include "mtd.c"
-#enduf
+#endif
 #else
 	#include "mtd.c"
 #endif
