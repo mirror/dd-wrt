@@ -472,6 +472,10 @@ config ALLOC_SKB_PAGE_FRAG_DISABLE
 	help
 	 Disable page fragment based allocations for skbuff payloads.
 
+config SKB_TIMESTAMP
+	bool "Timestamp storage enablement in the packet"
+	default n
+
 menu "Network testing"
 
 config NET_PKTGEN
