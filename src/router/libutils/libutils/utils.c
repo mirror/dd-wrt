@@ -1360,6 +1360,9 @@ char *cpustring(void)
 		{ "ipq8076", "QCA IPQ8076" }, //
 		{ "ipq8078", "QCA IPQ8078" }, //
 		{ "ipq8074", "QCA IPQ8074" }, //
+		{ "ipq9554", "QCA IPQ9554" }, //
+		{ "ipq9550", "QCA IPQ9550" }, //
+		{ "ipq9570", "QCA IPQ9570" }, //
 		{ "ipq9574", "QCA IPQ9574" }, //
 	};
 	FILE *fp = fopen("/sys/firmware/devicetree/base/compatible", "rb");
