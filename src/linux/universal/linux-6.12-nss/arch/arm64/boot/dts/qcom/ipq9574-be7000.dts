@@ -18,7 +18,7 @@
 
 / {
 	model = "Xiaomi BE7000";
-	compatible = "xiaomi,be7000", "qcom,ipq9574";
+	compatible = "xiaomi,be7000", "qcom,ipq9574", "qcom,ipq9554";
 
 	aliases {
 		serial0 = &blsp1_uart2;
@@ -30,8 +30,8 @@
 		ethernet1 = &dp2;
 		ethernet2 = &dp3;
 		ethernet3 = &dp4;
-		ethernet4 = &dp5;
-		ethernet5 = &dp6;
+/*		ethernet4 = &dp5;
+		ethernet5 = &dp6;*/
 	};
 
 	chosen {
@@ -1044,18 +1044,18 @@
 //				switch_mac_mode1 = <0xd>;
 //				switch_mac_mode2 = <0xd>;
 
-				switch_cpu_bmp = <0x1>;  /* cpu port bitmap */
-				switch_inner_bmp = <0x80>;
-				switch_lan_bmp = <0x3e>; /* lan port bitmap */
-				switch_wan_bmp = <0x40>; /* wan port bitmap */
+//				switch_cpu_bmp = <0x1>;  /* cpu port bitmap */
+//				switch_inner_bmp = <0x80>;
+//				switch_lan_bmp = <0x3e>; /* lan port bitmap */
+//				switch_wan_bmp = <0x40>; /* wan port bitmap */
 				switch_mac_mode = <0x15>; /* mac mode for uniphy instance0*/
-				switch_mac_mode1 = <0xd>; /* mac mode for uniphy instance1*/
+				switch_mac_mode1 = <0xff>; /* mac mode for uniphy instance1*/
 				switch_mac_mode2 = <0xd>; /* mac mode for uniphy instance2*/
 
 
-//				switch_cpu_bmp = <ESS_PORT0>;
-//				switch_inner_bmp = <ESS_PORT7>;
-//				switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4 | ESS_PORT5)>;
+				switch_cpu_bmp = <ESS_PORT0>;
+				switch_inner_bmp = <ESS_PORT7>;
+				switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4)>;
 //				switch_wan_bmp = <ESS_PORT6>;
 //				switch_mac_mode = <MAC_MODE_UQXGMII>;
 //				switch_mac_mode1 = <MAC_MODE_USXGMII>;
@@ -1063,7 +1063,7 @@
 //				switch_mac_mode1 = <0xd>;
 //				switch_mac_mode2 = <0xd>;
 				bm_tick_mode = <0x0>;
-				tm_tick_mode = <0x2>;
+				tm_tick_mode = <0x1>;
 
 			mdio-bus = <&mdio>;
 #if 1
