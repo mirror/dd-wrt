@@ -297,7 +297,7 @@ static void qca_mii_reg_convert(a_uint32_t dev_id, a_uint32_t *reg)
 	}
 }
 
-#if IS_ENABLED(CONFIG_MDIO_BITBANG)
+#if 0 //IS_ENABLED(CONFIG_MDIO_BITBANG)
 sw_error_t qca_bitbang_mii_raw_read_try(struct mii_bus *bus,
 				     a_uint32_t reg, a_uint32_t *val)
 {
@@ -357,7 +357,7 @@ sw_error_t qca_mii_raw_read(struct mii_bus *bus, a_uint32_t reg, a_uint32_t *val
 {
 	struct qca_mdio_data *mdio_priv = bus->priv;
 
-#if IS_ENABLED(CONFIG_MDIO_BITBANG)
+#if 0 // IS_ENABLED(CONFIG_MDIO_BITBANG)
 	sw_error_t rv = SW_OK;
 
 	rv = qca_bitbang_mii_raw_read_try(bus, reg, val);
@@ -377,7 +377,7 @@ sw_error_t qca_mii_raw_write(struct mii_bus *bus, a_uint32_t reg, a_uint32_t val
 {
 	struct qca_mdio_data *mdio_priv = bus->priv;
 
-#if IS_ENABLED(CONFIG_MDIO_BITBANG)
+#if 0 //IS_ENABLED(CONFIG_MDIO_BITBANG)
 	sw_error_t rv = SW_OK;
 
 	rv = qca_bitbang_mii_raw_write_try(bus, reg, val);
@@ -398,7 +398,7 @@ sw_error_t qca_mii_raw_update(struct mii_bus *bus, a_uint32_t reg,
 {
 	struct qca_mdio_data *mdio_priv = bus->priv;
 
-#if IS_ENABLED(CONFIG_MDIO_BITBANG)
+#if 0 //IS_ENABLED(CONFIG_MDIO_BITBANG)
 	sw_error_t rv = SW_OK;
 
 	rv = qca_bitbang_mii_raw_update_try(bus, reg, clear, set);
@@ -505,6 +505,74 @@ int qca_mii_update(a_uint32_t dev_id, a_uint32_t reg, a_uint32_t mask, a_uint32_
 
 	return 0;
 }
+u32 qca8386_read(struct mii_bus *bus, unsigned int reg);
+int qca8386_write(struct mii_bus *bus, unsigned int reg, unsigned int val);
+u32 qca8337_read(struct mii_bus *bus, unsigned int reg);
+int qca8337_write(struct mii_bus *bus, unsigned int reg, unsigned int val);
+/*
+a_uint32_t qca_mht_mii_read(a_uint32_t dev_id, a_uint32_t reg) {
+	a_uint32_t val = 0xffffffff;
+	struct mii_bus *bus = NULL;
+
+	bus = ssdk_miibus_get(dev_id, SSDK_MII_DEFAULT_BUS_ID);
+	if (!bus)
+		return val;
+
+	mutex_lock(&bus->mdio_lock);
+	if (dev_id == CHIP_ISISC)
+		val = qca8337_read(bus, reg);
+	else
+		val = qca8386_read(bus, reg);
+	mutex_unlock(&bus->mdio_lock);
+
+	return val;
+
+}
+
+void qca_mht_mii_write(a_uint32_t dev_id, a_uint32_t reg, a_uint32_t val)
+{
+	struct mii_bus *bus = NULL;
+
+	bus = ssdk_miibus_get(dev_id, SSDK_MII_DEFAULT_BUS_ID);
+	if (!bus)
+		return;
+
+	mutex_lock(&bus->mdio_lock);
+	if (dev_id == CHIP_ISISC)
+		qca8337_write(bus, reg, val);
+	else
+		qca8386_write(bus, reg, val);
+	mutex_unlock(&bus->mdio_lock);
+}
+
+
+int qca_mht_mii_update(a_uint32_t dev_id, a_uint32_t reg, a_uint32_t mask, a_uint32_t set)
+{
+	a_uint32_t val = 0xffffffff;
+	struct mii_bus *bus = NULL;
+
+	bus = ssdk_miibus_get(dev_id, SSDK_MII_DEFAULT_BUS_ID);
+	if (!bus)
+		return -1;
+
+	mutex_lock(&bus->mdio_lock);
+	if (dev_id == CHIP_ISISC) {
+		val = qca8337_read(bus, reg);
+		val &= ~mask;
+		val |= set;
+		qca8337_write(bus, reg, val);
+	} else {
+		val = qca8386_read(bus, reg);
+		val &= ~mask;
+		val |= set;
+		qca8386_write(bus, reg, val);
+	}
+	mutex_unlock(&bus->mdio_lock);
+
+	return 0;
+}
+*/
+
 
 #if defined(SSDK_PCIE_BUS)
 extern u32 ppe_mem_read(u32 reg);
