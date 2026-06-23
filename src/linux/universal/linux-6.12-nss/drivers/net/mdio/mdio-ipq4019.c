@@ -908,7 +908,7 @@ static int ipq4019_mdio_set_div(struct ipq4019_mdio_data *priv)
 			val |= MDIO_MODE_DIV(div);
 			priv->clk_div = div;
 			writel(val, priv->membase + MDIO_MODE_REG);
-			return;
+			return 0;
 
 		}
 	}
