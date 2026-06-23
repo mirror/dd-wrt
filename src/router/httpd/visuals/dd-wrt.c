@@ -3162,19 +3162,19 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 			#endif
 	websWrite(wp, "<div class=\"setting\">\n");
 			#ifdef HAVE_ATH9K
-#ifdef HAVE_ANTAIRA
-#ifdef HAVE_FMS2111
+				#ifdef HAVE_ANTAIRA
+					#ifdef HAVE_FMS2111
 	websWrite(
 		wp,
 		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" type=\"number\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" onblur=\"valid_range(this,0,20,wl_basic.TXpower)\"/> dBm (Max %d)\n",
 		power, txpower + wifi_gettxpoweroffset(prefix), mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
-#endif
-#else
+					#endif
+				#else
 	websWrite(
 		wp,
 		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" type=\"number\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" onblur=\"valid_range(this,-10,40,wl_basic.TXpower)\"/> dBm (Max %d)\n",
 		power, txpower + wifi_gettxpoweroffset(prefix), mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
-#endif
+				#endif
 			#else
 	websWrite(
 		wp,
@@ -5275,20 +5275,20 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 
 	websWrite(wp, "<div class=\"setting\">\n");
 				#ifdef HAVE_ATH9K
-#ifdef HAVE_ANTAIRA
-#ifdef HAVE_FMS2111
+					#ifdef HAVE_ANTAIRA
+						#ifdef HAVE_FMS2111
 	websWrite(
 		wp,
 		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" type=\"number\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" onblur=\"valid_range(this,0,20,wl_basic.TXpower)\"/> dBm (Max %d)\n",
 		power, txpower + wifi_gettxpoweroffset(prefix), mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
 
-#endif
-#else
+						#endif
+					#else
 	websWrite(
 		wp,
 		"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" type=\"number\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" onblur=\"valid_range(this,-10,40,wl_basic.TXpower)\"/> dBm (Max %d)\n",
 		power, txpower + wifi_gettxpoweroffset(prefix), mac80211_get_maxpower(prefix) + wifi_gettxpoweroffset(prefix));
-#endif
+					#endif
 				#else
 	websWrite(
 		wp,
@@ -6063,8 +6063,8 @@ static int disable_if_be(const char *prefix)
 		return 0;
 	char *netmode = nvram_nget("%s_net_mode", prefix);
 	return (!strcmp(netmode, "mixed") || !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") ||
-		    !strcmp(netmode, "be6-only") || !strcmp(netmode, "beax6-only") || !strcmp(netmode, "beax5-only") ||
-		    !strcmp(netmode, "mixed5"));
+		!strcmp(netmode, "be6-only") || !strcmp(netmode, "beax6-only") || !strcmp(netmode, "beax5-only") ||
+		!strcmp(netmode, "mixed5"));
 }
 
 static int wpaauth(const char *prefix)
@@ -6150,11 +6150,11 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 		{ "wpa.ccmp_256", "ccmp-256", has_ccmp_256, wpaauth, noad, alwaystrue, alwaystrue, alwaystrue },
 		{ "wpa.tkip", "tkip", noad, wpaauth, no_suiteb_no_wpa3, cantkip, alwaystrue, alwaystrue },
 		{ "wpa.gcmp_128", "gcmp", has_gcmp_128, wpaauth, alwaystrue, alwaystrue, alwaystrue, alwaystrue, suiteb },
-		{ "wpa.gcmp_256", "gcmp-256", has_gcmp_256, wpaauth, noad, alwaystrue, alwaystrue, alwaystrue, suiteb192},
+		{ "wpa.gcmp_256", "gcmp-256", has_gcmp_256, wpaauth, noad, alwaystrue, alwaystrue, alwaystrue, suiteb192 },
 	};
 
 	struct pair s_authpair_wpa[] = {
-		{ "wpa.psk", "psk", noad, alwaystrue, nomesh, alwaystrue, disable_if_6ghz, disable_if_be  },
+		{ "wpa.psk", "psk", noad, alwaystrue, nomesh, alwaystrue, disable_if_6ghz, disable_if_be },
 		{ "wpa.psk2", "psk2", alwaystrue, alwaystrue, nomesh, alwaystrue, disable_if_6ghz, disable_if_be },
 		{ "wpa.psk2_sha256", "psk2-sha256", has_wpa3, is_mac80211, nomesh, noad, disable_if_6ghz, disable_if_be },
 		{ "wpa.psk3", "psk3", has_wpa3, is_mac80211, noad, alwaystrue, alwaystrue, alwaystrue },
