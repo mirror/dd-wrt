@@ -24,17 +24,17 @@ kslib_o:
 	$(foreach i, $(SUB_LIB), make MODULE_TYPE=KSLIB -C src/$i all || exit 1;)
 
 $(BIN_DIR)/$(US_MOD)_$(RUNMODE).a: 
-	$(AR) -r $(BIN_DIR)/$(US_MOD)_$(RUNMODE).a $(wildcard $(BLD_DIR)/USLIB/*.o)
 
 $(BIN_DIR)/$(US_MOD).so:
 	$(CC) -fPIC -shared -o $(BIN_DIR)/$(US_MOD).so $(wildcard $(BLD_DIR)/USLIB/*.o)
 
-
-uslib:uslib_o $(BIN_DIR)/$(US_MOD)_$(RUNMODE).a $(BIN_DIR)/$(US_MOD).so
-	$(STRIP) $(BIN_DIR)/$(US_MOD).so
-
 uslib_o:
 	$(foreach i, $(SUB_LIB), make MODULE_TYPE=USLIB -C src/$i all || exit 1;)
+
+uslib:uslib_o $(BIN_DIR)/$(US_MOD).so
+	$(AR) -r $(BIN_DIR)/$(US_MOD)_$(RUNMODE).a $(wildcard $(BLD_DIR)/USLIB/*.o)
+	$(STRIP) $(BIN_DIR)/$(US_MOD).so
+
 
 $(BLD_DIR)/SHELL/$(SHELLOBJ): shell_o
 	$(CP) $(BLD_DIR)/SHELL/$(SHELLOBJ) $(BIN_DIR)/$(SHELLOBJ)
