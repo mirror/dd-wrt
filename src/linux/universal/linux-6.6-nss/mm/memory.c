@@ -1475,7 +1475,7 @@ static unsigned long zap_pte_range(struct mmu_gather *tlb,
 			 * consider uffd-wp bit when zap. For more information,
 			 * see zap_install_uffd_wp_if_needed().
 			 */
-			WARN_ON_ONCE(!vma_is_anonymous(vma));
+			WARN_ON_ONCE(!PageAnon(page));
 			rss[mm_counter(page)]--;
 			if (is_device_private_entry(entry))
 				page_remove_rmap(page, vma, false);

@@ -247,6 +247,7 @@ static void msp430_ir_deinit(struct budget_ci *budget_ci)
 	tasklet_kill(&budget_ci->ir.msp430_irq_tasklet);
 
 	rc_unregister_device(budget_ci->ir.dev);
+	rc_free_device(budget_ci->ir.dev);
 }
 
 static int ciintf_read_attribute_mem(struct dvb_ca_en50221 *ca, int slot, int address)

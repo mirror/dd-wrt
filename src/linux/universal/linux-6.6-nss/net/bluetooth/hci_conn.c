@@ -1734,9 +1734,13 @@ static int set_cig_params_sync(struct hci_dev *hdev, void *data)
 	struct iso_cig_params pdu;
 	u8 cis_id;
 
+	hci_dev_lock(hdev);
+
 	conn = hci_conn_hash_lookup_cig(hdev, cig_id);
-	if (!conn)
+	if (!conn) {
+		hci_dev_unlock(hdev);
 		return 0;
+	}
 
 	memset(&pdu, 0, sizeof(pdu));
 
@@ -1775,6 +1779,8 @@ static int set_cig_params_sync(struct hci_dev *hdev, void *data)
 		cis->c_rtn  = qos->ucast.out.rtn;
 		cis->p_rtn  = qos->ucast.in.rtn;
 	}
+
+	hci_dev_unlock(hdev);
 
 	if (!pdu.cp.num_cis)
 		return 0;
