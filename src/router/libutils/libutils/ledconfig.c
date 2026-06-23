@@ -1759,6 +1759,14 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->usb_gpio = 0x3; //usb1
 		cfg->usb_power = 25; //usb2
 		break;
+
+	case ROUTER_XIAOMI_BE7000:
+		cfg->power_gpio = 40; // power led / green
+		cfg->diag_gpio = 41; // diag led / red
+		cfg->diag_gpio_disabled = 40;
+		cfg->connected_gpio = 42; // internet white
+		cfg->disconnected_gpio = 43; // internet red
+		break;
 	case ROUTER_DYNALINK_DLWRX36:
 		cfg->power_gpio = 0x1a; // power led / green
 		cfg->diag_gpio = 0x19; // diag led / red
