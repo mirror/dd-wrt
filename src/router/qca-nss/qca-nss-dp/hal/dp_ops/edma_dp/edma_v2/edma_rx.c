@@ -31,6 +31,11 @@ extern nss_dp_vp_rx_cb_t nss_dp_vp_rx_reg_cb;
 extern nss_dp_vp_list_rx_cb_t nss_dp_vp_list_rx_reg_cb;
 extern struct nss_dp_vp_skb_list gvp_skb_list[];
 
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+#define EDMA_MAX_ORDER 10
+#define EDMA_MAX_BULK_PAGE_ALLOC_SZ  (PAGE_SIZE *  (1 << EDMA_MAX_ORDER))
+#endif
+
 /*
  * edma_rx_process_capwap_vp()
  *	Forward capwap packet to VP module for processing.
@@ -158,6 +163,187 @@ static inline void edma_rx_process_vp(struct edma_rxdesc_desc *rxdesc_desc, stru
 	edma_rx_vp_cb(skb, &vprxi);
 	rcu_read_unlock();
 }
+
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+/*
+ * edma_rx_free_buffer_loopback()
+ *	Free list of Rx buffers to the Rx fill ring
+ */
+void edma_rx_free_buffer_loopback(void)
+{
+	struct edma_gbl_ctx *egc = &edma_gbl_ctx;
+	int i = 0;
+
+	for (i = 0; i < EDMA_MAX_LOOPBACK_BUF; i++) {
+		if (egc->buf_info[i].loopback_buf)
+			free_pages(egc->buf_info[i].loopback_buf, egc->buf_info[i].loopback_order);
+	}
+}
+
+/*
+ * edma_rx_alloc_buffer_loopback()
+ *	Write a given list of Rx buffers to the Rx fill ring
+ */
+bool edma_rx_alloc_buffer_loopback(struct edma_rxfill_ring *rxfill_ring, int alloc_count)
+{
+	struct edma_gbl_ctx *egc = &edma_gbl_ctx;
+	struct edma_rxfill_desc *rxfill_desc;
+	uint32_t buf_len = rxfill_ring->buf_len;
+	int i = 0, j = 0, loop_count = 0, alloc_new_count = 0, tot_memory = 0, rem;
+        unsigned int order;
+	unsigned char *data[8];
+	uint16_t prod_idx;
+
+	/*
+	 * Cache align the required buffer len
+	 */
+	if (buf_len % L1_CACHE_BYTES) {
+		buf_len = (buf_len + L1_CACHE_BYTES) & (~(L1_CACHE_BYTES - 1));
+	}
+
+	/*
+	 * Calculate the total memory and order that can be allocated in once; in kernel an max order of 10 is supported
+	 * which indicates 1024 pages i.e 4MB of data
+	 */
+	tot_memory = buf_len * alloc_count;
+	order = get_order(tot_memory);
+
+	/*
+	 * If order is less than equal to 10 then this indicates our allocation needs less than 4MB of data
+	 */
+	if (order <= EDMA_MAX_ORDER) {
+		data[i] = (unsigned char *)__get_free_pages(__GFP_NOWARN, order);
+		if (!data[i]) {
+			edma_warn("Unable to allocate free pages for order: %d and alloc_count:%d\n", order, alloc_count);
+			return false;
+		}
+
+		alloc_new_count = alloc_count;
+
+		/*
+		 * one loop of refill below is enough to satisfy the request
+		 */
+		loop_count = 1;
+
+		/*
+		 * Store the order for free
+		 */
+		egc->buf_info[i].loopback_buf = (unsigned long)data[i];
+		egc->buf_info[i].loopback_order = order;
+	} else {
+		/*
+		 * calculate the total loop of 4MB that will be required to fulfill this request
+		 * The below might leave some delta memory in case total memory is not a multiple of 4MB
+		 */
+		loop_count = tot_memory / EDMA_MAX_BULK_PAGE_ALLOC_SZ;
+
+		for (i = 0; i < loop_count; i++) {
+			data[i] = (unsigned char *)__get_free_pages(__GFP_NOWARN, EDMA_MAX_ORDER);
+			if (!data[i]) {
+				edma_warn("Unable to allocate free pages for order: %d and alloc_count:%d\n", EDMA_MAX_ORDER, alloc_count);
+				return false;
+			}
+
+			/*
+			 * Store the order for free
+			 */
+			egc->buf_info[i].loopback_buf = (unsigned long)data[i];
+			egc->buf_info[i].loopback_order = EDMA_MAX_ORDER;
+		}
+
+		/*
+		 * New allocation count per loop
+		 */
+		alloc_new_count = alloc_count / loop_count;
+
+		/*
+		 * Total memory requirement might not be an exact multiple of 4MB; hence calculate the remaining
+		 * memory required
+		 */
+		rem = alloc_count - (alloc_new_count * loop_count);
+		if (rem) {
+			order = get_order(rem * buf_len);
+			data[i] = (unsigned char *)__get_free_pages(__GFP_NOWARN, order);
+			if (!data[i]) {
+				edma_warn("Unable to allocate free pages for order: %d and alloc_count:%d\n", order, alloc_count);
+				return false;
+			}
+
+			egc->buf_info[i].loopback_buf = (unsigned long)data[i];
+			egc->buf_info[i].loopback_order = get_order(rem * buf_len);
+			loop_count++;
+		}
+	}
+
+
+
+	/*
+	 * Get RXFILL ring producer index
+	 */
+	prod_idx = rxfill_ring->prod_idx;
+
+	/*
+	 * Run the loop to fill buffers
+	 */
+	for (i = 0; i < loop_count; i++) {
+		dma_addr_t buff_addr;
+		buff_addr = (dma_addr_t)virt_to_phys(data[i]);
+		for (j = 0; j < alloc_new_count; j++) {
+			/*
+			 * Last loop_count might not have to fill the entire alloc_new_count buffers; hence relying on
+			 * prod_idx to break from the loop
+			 */
+			if (prod_idx == rxfill_ring->count)
+				break;
+
+			/*
+			 * Get RXFILL descriptor
+			 */
+			rxfill_desc = EDMA_RXFILL_DESC(rxfill_ring, prod_idx);
+
+			/*
+			 * Map Rx buffer for DMA
+			 */
+			EDMA_RXFILL_BUFFER_ADDR_SET(rxfill_desc, buff_addr);
+
+			/*
+			 * Store skb in opaque
+			 */
+			EDMA_RXFILL_OPAQUE_LO_SET(rxfill_desc, data);
+		#ifdef __LP64__
+			EDMA_RXFILL_OPAQUE_HI_SET(rxfill_desc, data);
+		#endif
+
+			/*
+			 * Save buffer size in RXFILL descriptor
+			 */
+			EDMA_RXFILL_PACKET_LEN_SET(rxfill_desc, ((uint32_t)(buf_len) & EDMA_RXFILL_BUF_SIZE_MASK));
+
+			prod_idx = prod_idx + 1;
+
+			/*
+			 * Perform endianness conversion before writing to HW
+			 */
+			EDMA_RXFILL_ENDIAN_SET(rxfill_desc);
+			buff_addr = buff_addr + buf_len;
+		}
+	}
+
+	if (likely(j)) {
+		/*
+		 * Make sure the information written to the descriptors
+		 * is updated before writing to the hardware.
+		 */
+		dsb(st);
+
+		edma_reg_write(EDMA_REG_RXFILL_PROD_IDX(rxfill_ring->ring_id),
+								prod_idx);
+		rxfill_ring->prod_idx = prod_idx;
+	}
+
+	return true;
+}
+#endif
 
 /*
  * edma_rx_alloc_buffer_list()
@@ -497,6 +683,7 @@ static inline bool edma_rx_handle_sc_cc_packets(struct edma_gbl_ctx *egc,
 		}
 
 		cc_info.cpu_code = cpu_code;
+		cc_info.fake_mac = EDMA_RXDESC_FAKE_MAC_GET(rxdesc_head);
 		if (cpu_code && ppe_drv_cc_process_skbuff(&cc_info, skb)) {
 			return true;
 		}
@@ -768,10 +955,15 @@ process_next_scatter:
 	/*
 	 * Send packet up the stack
 	 */
-	if (unlikely(dev->features & NETIF_F_GRO))
+#if defined(NSS_DP_ENABLE_NAPI_GRO)
+	napi_gro_receive(&rxdesc_ring->napi, skb_head);
+#else
+	netif_receive_skb(skb_head);
+#endif
+/*	if (unlikely(dev->features & NETIF_F_GRO))
 		napi_gro_receive(&rxdesc_ring->napi, skb_head);
 	else
-		netif_receive_skb(skb_head);
+		netif_receive_skb(skb_head);*/
 
 	rxdesc_ring->head = NULL;
 	rxdesc_ring->last = NULL;
@@ -1374,7 +1566,6 @@ static uint32_t edma_rx_reap(struct edma_gbl_ctx *egc, int budget,
 	struct sk_buff *cur_skb = NULL, *next_skb = NULL;
 	struct list_head rx_list;
 	INIT_LIST_HEAD(&rx_list);
-
 	/*
 	 * Get Rx ring producer and consumer indices
 	 */

@@ -128,6 +128,12 @@
 #define EDMA_TIMESTAMP_TO_USEC(x, y)	(((uint64_t)(x) * 1000000) + (EDMA_TIMESTAMP_NSEC_TO_USEC(y)))
 
 /*
+ * Indicate the maximum 4MB byte of data which is expected to be used
+ * So array of EDMA_MAX_LOOPBACK_BUF will have pointer to memory of max 4MB
+ */
+#define EDMA_MAX_LOOPBACK_BUF 8
+
+/*
  * edma_port_ucast_queues
  * 	EDMA unicast queue number
  * To-do: read queue start from dtsi
@@ -237,6 +243,19 @@ struct edma_pcpu_stats {
 			/* Per CPU Tx statistics */
 };
 
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+/*
+ * edma_dp_loopback_buf_info
+ *	Loopback buffer info
+ */
+struct edma_dp_loopback_buf_info {
+	unsigned long loopback_buf;
+			/* Array to hold loopback rxfill ring buffer address */
+	int loopback_order;
+			/* Order for loopback rxfill page allocation */
+};
+#endif
+
 /*
  * EDMA private data structure
  */
@@ -274,6 +293,16 @@ struct edma_gbl_ctx {
 	struct edma_txcmpl_ring *txcmpl_rings;
 			/* Tx complete Ring, SW is consumer */
 
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+	struct edma_rxdesc_ring *rxdesc_loopback_rings;
+			/* Rx Descriptor loopback ring */
+	struct edma_rxfill_ring *rxfill_loopback_rings;
+			/* Rx Fill loopback ring */
+	struct edma_txdesc_ring *txdesc_loopback_rings;
+			/* TX descriptor loopback ring */
+	struct edma_txcmpl_ring *txcmpl_loopback_rings;
+			/* TX completion loopback ring */
+#endif
 	uint32_t rxfill_ring_map[EDMA_RXFILL_RING_PER_CORE_MAX][NR_CPUS];
 			/* Rx Fill ring per-core mapping from device tree */
 	uint32_t rxdesc_ring_map[EDMA_RXDESC_RING_PER_CORE_MAX][NR_CPUS];
@@ -362,6 +391,31 @@ struct edma_gbl_ctx {
 	uint16_t point_offload_queue;
 			/* Point offload base queue id */
 #endif
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+	uint32_t loopback_ring_size;
+			/* Loopback ring size */
+	uint32_t loopback_buf_size;
+			/* Loopback buffer size */
+	uint32_t num_loopback_rings;
+			/* Number of loopback rings */
+	uint32_t rxdesc_loopback_ring_to_queue_bm[EDMA_RING_MAPPED_QUEUE_BM_WORD_COUNT];
+			/* PPE queue ids of the Rx descriptor loopback rings */
+	uint8_t *txdesc_loopback_ring_id_arr;
+			/* Array of TX desc Ring IDs */
+	uint8_t *txcmpl_loopback_ring_id_arr;
+			/* Array of TX completion Ring IDs */
+	uint8_t *rxdesc_loopback_ring_id_arr;
+			/* Array of RX desc Ring IDs */
+	uint8_t *rxfill_loopback_ring_id_arr;
+			/* Array of RX fill Ring IDs */
+	uint32_t loopback_queue_base;
+			/* Loopback Base Queue ID */
+	uint32_t loopback_num_queues;
+			/* Number of loopback queues */
+	bool loopback_en;
+			/* Loopback enabled */
+	struct edma_dp_loopback_buf_info buf_info[EDMA_MAX_LOOPBACK_BUF];
+#endif
 	bool edma_initialized;
 			/* Flag to check initialization status */
 	uint32_t rx_ring_queue_map[EDMA_MAX_PRI_PER_CORE][NR_CPUS];
@@ -387,6 +441,7 @@ struct edma_gbl_ctx {
                         /* Creating work struct */
 	uint32_t edma_timer_rate;
 			/* EDMA clock's timer rate in Mhz */
+
 #ifdef CONFIG_SKB_TIMESTAMP
 	void __iomem *tstamp_sec;
 			/* EDMA timestamp value in second */

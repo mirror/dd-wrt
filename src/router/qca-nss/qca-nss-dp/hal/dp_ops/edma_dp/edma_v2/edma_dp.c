@@ -281,12 +281,12 @@ static void edma_dp_set_features(struct nss_dp_data_plane_ctx *dpc)
 	netdev->vlan_features |= EDMA_NETDEV_FEATURES;
 	netdev->wanted_features |= EDMA_NETDEV_FEATURES;
 
-#if defined(NSS_DP_ENABLE_NAPI_GRO)
+/*#if defined(NSS_DP_ENABLE_NAPI_GRO)
 	netdev->features |= NETIF_F_GRO;
 	netdev->hw_features |= NETIF_F_GRO;
 	netdev->vlan_features |= NETIF_F_GRO;
 	netdev->wanted_features |= NETIF_F_GRO;
-#endif
+#endif*/
 }
 
 /* TODO - check if this is needed */
@@ -425,7 +425,7 @@ static int edma_dp_configure(struct net_device *netdev, uint32_t macid)
 		return -EINVAL;
 	}
 
-	edma_debug("nss_dp_edma: Registering netdev %s(qcom-id:%d) with EDMA\n",
+	edma_info("nss_dp_edma: Registering netdev %s(qcom-id:%d) with EDMA\n",
 		netdev->name, macid);
 
 	/*
@@ -442,7 +442,7 @@ static int edma_dp_configure(struct net_device *netdev, uint32_t macid)
 	 */
 	edma_cfg_tx_napi_add(&edma_gbl_ctx, netdev, macid);
 
-	if (edma_gbl_ctx.napi_added) {
+    	if (edma_gbl_ctx.napi_added) {
 		return 0;
 	}
 

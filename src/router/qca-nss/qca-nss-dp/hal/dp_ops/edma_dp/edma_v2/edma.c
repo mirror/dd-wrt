@@ -36,6 +36,10 @@
 #include "edma.h"
 #include "edma_cfg_tx.h"
 #include "edma_cfg_rx.h"
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+#include "edma_cfg_rx_loopback.h"
+#include "edma_cfg_tx_loopback.h"
+#endif
 #include "edma_regs.h"
 #include "edma_debug.h"
 #include "edma_debugfs.h"
@@ -256,6 +260,21 @@ void edma_cleanup(bool is_dp_override)
 	 */
 	edma_cfg_tx_rings_cleanup(&edma_gbl_ctx);
 	edma_cfg_rx_rings_cleanup(&edma_gbl_ctx);
+
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+	if (edma_gbl_ctx.loopback_en) {
+		edma_cfg_tx_loopback_rings_disable(&edma_gbl_ctx);
+		edma_cfg_rx_loopback_rings_disable(&edma_gbl_ctx);
+		edma_cfg_tx_loopback_rings_cleanup(&edma_gbl_ctx);
+		edma_cfg_rx_loopback_rings_cleanup(&edma_gbl_ctx);
+
+		edma_rx_free_buffer_loopback();
+		kfree(edma_gbl_ctx.txdesc_loopback_ring_id_arr);
+		kfree(edma_gbl_ctx.txcmpl_loopback_ring_id_arr);
+		kfree(edma_gbl_ctx.rxdesc_loopback_ring_id_arr);
+		kfree(edma_gbl_ctx.rxfill_loopback_ring_id_arr);
+	}
+#endif
 
 	iounmap(edma_gbl_ctx.reg_base);
 	release_mem_region((edma_gbl_ctx.reg_resource)->start,
@@ -749,13 +768,99 @@ static int edma_of_get_pdata(struct resource *edma_res)
 		edma_err("Unable to read RX desc point offload ring with err: %d\n", ret);
 		return -EINVAL;
 	}
+#elif defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+	/*
+	 * Check if loopback ring is disabled globally
+	 */
+	edma_gbl_ctx.loopback_en = of_property_read_bool(edma_gbl_ctx.device_node, "qcom,edma_loopback_ring");
+	if (dp_global_ctx.edma_disable_loopback || !edma_gbl_ctx.loopback_en) {
+		edma_gbl_ctx.loopback_en = 0;
+		goto skip_loopback;
+	}
+
+	ret = of_property_read_u32(edma_gbl_ctx.device_node, "qcom,num_loopback_rings", &edma_gbl_ctx.num_loopback_rings);
+	if (ret) {
+		edma_err("Unable to read edma loopback buf size with err: %d\n", ret);
+		return -EINVAL;
+	}
+
+	edma_gbl_ctx.txdesc_loopback_ring_id_arr = kmalloc(GFP_KERNEL, sizeof(uint8_t) * edma_gbl_ctx.num_loopback_rings);
+	if (!edma_gbl_ctx.txdesc_loopback_ring_id_arr) {
+		edma_err("Unable to allocate memory for txdesc loopback ring_id\n");
+		return -EINVAL;
+	}
+
+	edma_gbl_ctx.txcmpl_loopback_ring_id_arr = kmalloc(GFP_KERNEL, sizeof(uint8_t) * edma_gbl_ctx.num_loopback_rings);
+	if (!edma_gbl_ctx.txcmpl_loopback_ring_id_arr) {
+		edma_err("Unable to allocate memory for txcmpl loopback ring_id\n");
+		kfree(edma_gbl_ctx.txdesc_loopback_ring_id_arr);
+		return -EINVAL;
+	}
+
+	edma_gbl_ctx.rxdesc_loopback_ring_id_arr = kmalloc(GFP_KERNEL, sizeof(uint8_t) * edma_gbl_ctx.num_loopback_rings);
+	if (!edma_gbl_ctx.rxdesc_loopback_ring_id_arr) {
+		edma_err("Unable to allocate memory for rxdesc loopback ring_id\n");
+		kfree(edma_gbl_ctx.txdesc_loopback_ring_id_arr);
+		kfree(edma_gbl_ctx.txcmpl_loopback_ring_id_arr);
+		return -EINVAL;
+	}
+
+	edma_gbl_ctx.rxfill_loopback_ring_id_arr = kmalloc(GFP_KERNEL, sizeof(uint8_t) * edma_gbl_ctx.num_loopback_rings);
+	if (!edma_gbl_ctx.rxfill_loopback_ring_id_arr) {
+		edma_err("Unable to allocate memory for rxfill loopback ring_id\n");
+		kfree(edma_gbl_ctx.rxdesc_loopback_ring_id_arr);
+		kfree(edma_gbl_ctx.txcmpl_loopback_ring_id_arr);
+		kfree(edma_gbl_ctx.txdesc_loopback_ring_id_arr);
+		return -EINVAL;
+	}
+
+	ret = of_property_read_u32_array(edma_gbl_ctx.device_node, "qcom,txdesc_loopback_ring_id", (int32_t *)edma_gbl_ctx.txdesc_loopback_ring_id_arr, edma_gbl_ctx.num_loopback_rings);
+	if (ret) {
+		edma_err("Unable to read txdesc loopback_ring_id map array. ret: %d\n", ret);
+		goto fail;
+	}
+
+	ret = of_property_read_u32_array(edma_gbl_ctx.device_node, "qcom,txcmpl_loopback_ring_id", (int32_t *)edma_gbl_ctx.txcmpl_loopback_ring_id_arr, edma_gbl_ctx.num_loopback_rings);
+	if (ret) {
+		edma_err("Unable to read txcmpl loopback_ring_id map array. ret: %d\n", ret);
+		goto fail;
+	}
+
+	ret = of_property_read_u32_array(edma_gbl_ctx.device_node, "qcom,rxdesc_loopback_ring_id", (int32_t *)edma_gbl_ctx.rxdesc_loopback_ring_id_arr, edma_gbl_ctx.num_loopback_rings);
+	if (ret) {
+		edma_err("Unable to read rxdesc loopback_ring_id map array. ret: %d\n", ret);
+		goto fail;
+	}
+
+	ret = of_property_read_u32_array(edma_gbl_ctx.device_node, "qcom,rxfill_loopback_ring_id", (int32_t *)edma_gbl_ctx.rxfill_loopback_ring_id_arr, edma_gbl_ctx.num_loopback_rings);
+	if (ret) {
+		edma_err("Unable to read rxfill loopback_ring_id map array. ret: %d\n", ret);
+		goto fail;
+	}
+
+	ret = of_property_read_u32(edma_gbl_ctx.device_node, "qcom,loopback_queue_base", &edma_gbl_ctx.loopback_queue_base);
+	if (ret) {
+		edma_err("Unable to read loopback_queue_base ret: %d\n", ret);
+		goto fail;
+	}
+
+	ret = of_property_read_u32(edma_gbl_ctx.device_node, "qcom,loopback_num_queues", &edma_gbl_ctx.loopback_num_queues);
+	if (ret) {
+		edma_err("Unable to read loopback_queue_num_queues ret: %d\n", ret);
+		goto fail;
+	}
 #endif
 
+#if !defined(NSS_DP_POINT_OFFLOAD)
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+skip_loopback:
+#endif
+#endif
 #ifdef NSS_DP_PPEDS_SUPPORT
 	if (of_property_read_u32(edma_gbl_ctx.device_node, "qcom,ppeds-num",
 					&edma_gbl_ctx.ppeds_drv.num_nodes) != 0) {
 		edma_err("Unable to read number of PPE-DS nodes\n");
-		return -EINVAL;
+		goto fail;
 	}
 
 	if (edma_gbl_ctx.ppeds_drv.num_nodes > EDMA_PPEDS_MAX_NODES) {
@@ -763,7 +868,7 @@ static int edma_of_get_pdata(struct resource *edma_res)
 				" ppeds node count is %u\n",
 				edma_gbl_ctx.ppeds_drv.num_nodes,
 				EDMA_PPEDS_MAX_NODES);
-		return -EINVAL;
+		goto fail;
 	}
 
 #if defined(NSS_DP_POINT_OFFLOAD)
@@ -778,7 +883,14 @@ static int edma_of_get_pdata(struct resource *edma_res)
 		edma_warn("Error: PPE node count is %d when point offload is enabled.",
 				 EDMA_PPEDS_MAX_NODES);
 	}
+#elif defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+	if (edma_gbl_ctx.loopback_en && (edma_gbl_ctx.ppeds_drv.num_nodes == EDMA_PPEDS_MAX_NODES)) {
+		edma_err("Error: PPE node count is %d when loopback is enabled.",
+				 EDMA_PPEDS_MAX_NODES);
+		goto fail;
+	}
 #endif
+
 	edma_debug("PPE-DS num nodes: %d\n", edma_gbl_ctx.ppeds_drv.num_nodes);
 
 	if (edma_gbl_ctx.ppeds_drv.num_nodes > 0) {
@@ -788,12 +900,77 @@ static int edma_of_get_pdata(struct resource *edma_res)
 				(edma_gbl_ctx.ppeds_drv.num_nodes * EDMA_PPEDS_NUM_ENTRY));
 		if (ret) {
 			edma_err("Unable to read PPE-DS map array. ret: %d\n", ret);
-			return -EINVAL;
+			goto fail;
 		}
 	}
 #endif
 	return 0;
+
+fail:
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+	if (edma_gbl_ctx.loopback_en) {
+		kfree(edma_gbl_ctx.rxfill_loopback_ring_id_arr);
+		kfree(edma_gbl_ctx.rxdesc_loopback_ring_id_arr);
+		kfree(edma_gbl_ctx.txcmpl_loopback_ring_id_arr);
+		kfree(edma_gbl_ctx.txdesc_loopback_ring_id_arr);
+	}
+#endif
+
+	return -EINVAL;
 }
+
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+/*
+ * edma_hw_loopback_init()
+ *	Register configuration for loopback ring
+ */
+static void edma_hw_loopback_init(struct edma_gbl_ctx *egc)
+{
+	uint32_t data;
+	int i = 0;
+
+	for (i = 0; i < egc->num_loopback_rings; i++) {
+		int ring_id = egc->rxfill_loopback_ring_id_arr[i];
+		data = edma_reg_read(EDMA_REG_RXFILL_RING_SIZE(ring_id));
+		data |= (egc->loopback_buf_size << 16);
+		edma_reg_write(EDMA_REG_RXFILL_RING_SIZE(ring_id), data);
+
+		/*
+		 * Generate TXdesc and RXfill ring id map
+		 */
+		data = EDMA_REG_LOOPBACK_CMPL(ring_id);
+
+		ring_id = egc->txdesc_loopback_ring_id_arr[i];
+		data |= EDMA_REG_LOOPBACK_DESC(ring_id);
+
+		edma_reg_write(EDMA_REG_TXCMPL_CTRL(ring_id), 0x1);
+		edma_reg_write(EDMA_REG_LOOPBACK_CTRL, data);
+	}
+}
+
+/*
+ * edma_alloc_loopback_ring()
+ *	Allocate and initialize EDMA rings
+ */
+static int edma_alloc_loopback_ring(struct edma_gbl_ctx *egc)
+{
+	if (edma_cfg_tx_loopback_rings_alloc(egc)) {
+		edma_err("Error in allocating tx rings\n");
+		return -ENOMEM;
+	}
+
+	if (edma_cfg_rx_loopback_rings_alloc(egc)) {
+		edma_err("Error in allocating rx rings\n");
+		goto rx_rings_alloc_fail;
+	}
+
+	return 0;
+
+rx_rings_alloc_fail:
+	edma_cfg_tx_loopback_rings_cleanup(egc);
+	return -ENOMEM;
+}
+#endif
 
 /*
  * edma_alloc_rings()
@@ -913,15 +1090,15 @@ static inline void edma_fetch_mitigation_timer_rate(struct edma_gbl_ctx *egc, co
 
 	clk = of_clk_get_by_name(egc->device_node, id);
 	if (IS_ERR(clk)) {
-		edma_err("Error in fetching %s clock reference. Setting the mitigation"
+		printk(KERN_INFO "Error in fetching %s clock reference. Setting the mitigation"
 				" timer rate to zero (means, mitigation will be disabled)\n", id);
 		egc->edma_timer_rate = 353;
-		edma_debug("%s clock's rate: %u\n", id, egc->edma_timer_rate);
+		printk(KERN_INFO "%s clock's rate: %u\n", id, egc->edma_timer_rate);
 		return;
 	}
 
 	egc->edma_timer_rate = clk_get_rate(clk) / MHZ;
-	edma_debug("%s clock's rate: %u\n", id, egc->edma_timer_rate);
+	printk(KERN_INFO "%s clock's rate: %u\n", id, egc->edma_timer_rate);
 }
 
 /*
@@ -1128,6 +1305,35 @@ static int edma_hw_init(struct edma_gbl_ctx *egc)
 	}
 #endif
 
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+	if (edma_gbl_ctx.loopback_en) {
+		egc->loopback_ring_size = dp_global_ctx.edma_loopback_ring_size;
+		egc->loopback_buf_size = dp_global_ctx.edma_loopback_buffer_size;
+
+		ret = edma_alloc_loopback_ring(egc);
+		if (ret) {
+			return ret;
+		}
+
+		edma_cfg_rx_loopback_rings_disable(egc);
+		edma_cfg_tx_loopback_rings_disable(egc);
+
+		edma_cfg_tx_loopback_mapping(egc);
+		edma_cfg_rx_loopback_mapping(egc);
+
+		edma_cfg_tx_loopback_rings(egc);
+		edma_cfg_rx_loopback_rings(egc);
+
+		edma_cfg_rx_loopback_rings_enable(egc);
+		edma_cfg_tx_loopback_rings_enable(egc);
+
+		/*
+		 * Loopback register configuration
+		 */
+		edma_hw_loopback_init(egc);
+	}
+#endif
+
 	egc->edma_initialized = true;
 
 	return 0;
@@ -1323,6 +1529,15 @@ int edma_init(void)
 	}
 
 	/*
+	 * Configure loopback
+	 */
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+	if (edma_gbl_ctx.loopback_en) {
+		ppe_drv_loopback_base_queue(edma_gbl_ctx.loopback_queue_base);
+	}
+#endif
+
+	/*
 	 * Initialize the procf entries for enabling EDMA ring stats
 	 */
 	edma_procfs_init();
@@ -1338,7 +1553,6 @@ int edma_init(void)
 	return 0;
 
 edma_hw_init_fail:
-
 #ifdef NSS_DP_PPEDS_SUPPORT
 	edma_ppeds_deinit(&edma_gbl_ctx.ppeds_drv);
 edma_init_ppeds_init_fail:
@@ -1478,6 +1692,7 @@ int edma_irq_init(void)
 	if (!ppeds_nodes)
 		entry_num += EDMA_PPEDS_IRQS;
 
+	printk(KERN_INFO "get edma_gbl_ctx.num_txcmpl_rings irq %d\n", edma_gbl_ctx.num_txcmpl_rings);
 	for (i = num_txcmpl_rings; i < edma_gbl_ctx.num_txcmpl_rings; i++) {
 		entry_num++;
 		edma_gbl_ctx.txcmpl_intr[i] =
@@ -1644,6 +1859,21 @@ static void edma_recovery_cleanup(bool is_dp_override)
 	 */
 	edma_cfg_tx_rings_cleanup(&edma_gbl_ctx);
 	edma_cfg_rx_rings_cleanup(&edma_gbl_ctx);
+
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+	if (edma_gbl_ctx.loopback_en) {
+		edma_cfg_tx_loopback_rings_disable(&edma_gbl_ctx);
+		edma_cfg_rx_loopback_rings_disable(&edma_gbl_ctx);
+		edma_cfg_tx_loopback_rings_cleanup(&edma_gbl_ctx);
+		edma_cfg_rx_loopback_rings_cleanup(&edma_gbl_ctx);
+
+		edma_rx_free_buffer_loopback();
+		kfree(edma_gbl_ctx.rxfill_loopback_ring_id_arr);
+		kfree(edma_gbl_ctx.rxdesc_loopback_ring_id_arr);
+		kfree(edma_gbl_ctx.txcmpl_loopback_ring_id_arr);
+		kfree(edma_gbl_ctx.txdesc_loopback_ring_id_arr);
+	}
+#endif
 
 	iounmap(edma_gbl_ctx.reg_base);
 	release_mem_region((edma_gbl_ctx.reg_resource)->start,
@@ -1840,7 +2070,7 @@ static int edma_hang_recovery(void)
 int edma_hang_recovery_handler(const struct ctl_table *table, int write,
                 void __user *buffer, size_t *lenp, loff_t *ppos)
 {
-	int ret;
+	int ret = 0;
 
 	ret = proc_dointvec(table, write, buffer, lenp, ppos);
 

@@ -281,6 +281,11 @@ struct nss_dp_global_ctx {
 	uint8_t slowproto_acl_bm;	/* Port bitmap to allow slow protocol packets */
 	uint32_t rx_buf_size;		/* Buffer size to allocate */
 	uint32_t jumbo_mru;		/* Jumbo mru value for Rx processing */
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+	uint32_t edma_loopback_ring_size;	/* Loopback ring size */
+	uint32_t edma_loopback_buffer_size;	/* Loopback ring size */
+	bool edma_disable_loopback;		/* Disable loopback ring configuration */
+#endif
 	bool overwrite_mode;		/* Overwrite mode for Rx processing */
 	bool page_mode;			/* Page mode for Rx processing */
 	bool tx_requeue_stop;		/* Disable queue stop for Tx processing */

@@ -42,7 +42,7 @@ qca-nss-dp-$(SoC)-objs += nss_dp_main_alt.o
 endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq95xx))
-qca-nss-dp-$(SoC)-objs += nss_dp_main_alt.o
+qca-nss-dp-$(SoC)-objs += nss_dp_main.o
 endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq53xx))
@@ -94,6 +94,12 @@ ifeq ($(dp-net-standby),y)
 qca-nss-dp-$(SoC)-objs += nss_dp_netstandby.o
 ccflags-y += -DNSS_DP_NETSTANDBY
 endif
+ifeq ($(dp-loopback),y)
+qca-nss-dp-$(SoC)-objs += hal/dp_ops/edma_dp/edma_v2/edma_cfg_rx_loopback.o \
+		   hal/dp_ops/edma_dp/edma_v2/edma_cfg_tx_loopback.o
+ccflags-y += -DNSS_DP_EDMA_LOOPBACK_SUPPORT
+endif
+
 NSS_DP_INCLUDE += -I$(obj)/hal/dp_ops/edma_dp/edma_v2
 NSS_DP_INCLUDE += -I$(obj)/hal/dp_ops/edma_dp/edma_v2/include
 ccflags-y += -DNSS_DP_ENABLE_NAPI_GRO -DNSS_DP_VP_SUPPORT -DNSS_DP_EDMA_V2 -DNSS_DP_MAC_POLL_SUPPORT -DNSS_DP_SW_BR_OPS -DNSS_DP_ETHTOOL_MRR_OPS

@@ -43,6 +43,7 @@
 #include "nss_dp_hal.h"
 #define JUMBO_MRU_3K 3072
 #define NSS_DP_CAPWAP_VP_RX_CORE_INVALID 0XFFFF
+#include <linux/phylink.h>
 
 /* ipq40xx_mdio_data */
 struct ipq40xx_mdio_data {
@@ -134,6 +135,26 @@ MODULE_PARM_DESC(nss_dp_rx_mitigation_pkt_cnt, "Rx mitigation packet count value
 static int nss_dp_tstamp_port_id = NSS_DP_EDMA_DEF_TSTAMP_PORT;
 module_param(nss_dp_tstamp_port_id, int, S_IRUGO);
 MODULE_PARM_DESC(nss_dp_tstamp_port_id, "Port number for time stamping");
+#endif
+
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+/*
+ * Module parameter for Loopback ring
+ */
+#define EDMA_LOOPBACK_RING_SIZE 16384
+#define EDMA_LOOPBACK_BUFFER_SIZE 1536
+
+int edma_loopback_ring_size = EDMA_LOOPBACK_RING_SIZE;
+module_param(edma_loopback_ring_size, int, S_IRUGO);
+MODULE_PARM_DESC(edma_loopback_ring_size, "Loopback ring size");
+
+int edma_loopback_buffer_size = EDMA_LOOPBACK_BUFFER_SIZE;
+module_param(edma_loopback_buffer_size, int, S_IRUGO);
+MODULE_PARM_DESC(edma_loopback_buffer_size, "Loopback buffer size");
+
+int edma_loopback_disable = 0;
+module_param(edma_loopback_disable, int, S_IRUGO);
+MODULE_PARM_DESC(edma_loopback_disable, "Loopback disable");
 #endif
 
 /*
@@ -327,8 +348,10 @@ static int nss_dp_close(struct net_device *netdev)
 		return -EAGAIN;
 	}
 
+	{
 	if (dp_priv->phydev)
 		phy_stop(dp_priv->phydev);
+	}
 	dp_priv->link_state = __NSS_DP_LINK_DOWN;
 
 #if defined(NSS_DP_PPE_SUPPORT)
@@ -823,7 +846,7 @@ static struct mii_bus *nss_dp_mdio_attach(struct platform_device *pdev)
 	mdio_node = of_find_compatible_node(NULL, NULL, "qcom,qca-mdio");
 	if (!mdio_node) {
 		mdio_node = of_find_compatible_node(NULL, NULL,
-							"qcom,ipq40xx-mdio");
+							"qcom,ipq4019-mdio");
 		if (!mdio_node) {
 			dev_err(&pdev->dev, "cannot find mdio node by phandle\n");
 			return NULL;
@@ -1046,6 +1069,7 @@ static int32_t nss_dp_probe(struct platform_device *pdev)
 		goto phy_setup_fail;
 	}
 
+
 	dp_global_ctx.nss_dp[nss_dp_get_idx_from_macid(dp_priv->macid)] = dp_priv;
 	dp_global_ctx.slowproto_acl_bm = 0;
 
@@ -1063,8 +1087,8 @@ static int32_t nss_dp_probe(struct platform_device *pdev)
 		phys_addr_t sec_addr = NSS_DP_GMAC_TS_ADDR_SEC(netdev->base_addr);
 		phys_addr_t nsec_addr = NSS_DP_GMAC_TS_ADDR_NSEC(netdev->base_addr);
 
-		edma_gbl_ctx.tstamp_sec = ioremap_nocache(sec_addr, sizeof(uint32_t));
-		edma_gbl_ctx.tstamp_nsec = ioremap_nocache(nsec_addr, sizeof(uint32_t));
+		edma_gbl_ctx.tstamp_sec = ioremap(sec_addr, sizeof(uint32_t));
+		edma_gbl_ctx.tstamp_nsec = ioremap(nsec_addr, sizeof(uint32_t));
 
 		if (unlikely(!edma_gbl_ctx.tstamp_sec || !edma_gbl_ctx.tstamp_nsec)) {
 			pr_err("Unable to map the timestamp registers, sec addr:0x%llx,"
@@ -1253,6 +1277,20 @@ static int __init nss_dp_init(void)
 	 * Get the buffer size to allocate
 	 */
 	dp_global_ctx.rx_buf_size = NSS_DP_RX_BUFFER_SIZE;
+
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+	if (edma_loopback_ring_size) {
+		dp_global_ctx.edma_loopback_ring_size = edma_loopback_ring_size;
+	}
+
+	if (edma_loopback_buffer_size) {
+		dp_global_ctx.edma_loopback_buffer_size = edma_loopback_buffer_size;
+	}
+
+	if (edma_loopback_disable) {
+		dp_global_ctx.edma_disable_loopback = edma_loopback_disable;
+	}
+#endif
 
 	/*
 	 * Configure tx requeue functionality based on module param

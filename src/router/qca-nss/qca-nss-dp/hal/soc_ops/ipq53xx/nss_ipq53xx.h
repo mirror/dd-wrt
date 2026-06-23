@@ -95,7 +95,7 @@
 #define NSS_DP_EDMA_CC_NSSNOC_CE_AXI_CLK	"nss-nssnoc-ce-axi-clk"
 #define NSS_DP_EDMA_SNOC_NSSNOC_CLK		"nss-snoc-nssnoc-clk"
 #define NSS_DP_EDMA_SNOC_NSSNOC_1_CLK		"nss-snoc-nssnoc-1-clk"
-#define NSS_DP_EDMA_CLK				"nss-edma-clk"
+#define NSS_DP_EDMA_CLK				"nss_edma_clk"
 
 /*
  * EDMA clock's frequencies

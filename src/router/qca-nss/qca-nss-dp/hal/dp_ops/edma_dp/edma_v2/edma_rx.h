@@ -139,6 +139,7 @@ extern unsigned int EDMA_RX_RING_SIZE;
 #define EDMA_RXDESC_CPU_CODE_GET(desc)		(((le32_to_cpu((desc)->word5)) & 0x03FF0000) >> 16)
 #define EDMA_RXDESC_ACL_IDX_VALID_GET(desc)	(((le32_to_cpu((desc)->word1)) & 0x80000000) >> 31)
 #define EDMA_RXDESC_ACL_IDX_GET(desc)		(((le32_to_cpu((desc)->word1)) & 0x3FFF0000) >> 16)
+#define EDMA_RXDESC_FAKE_MAC_GET(desc)		(((le32_to_cpu((desc)->word1)) & 0x00000400) >> 10)
 
 
 /*
@@ -388,6 +389,8 @@ irqreturn_t edma_rx_handle_irq(int irq, void *ctx);
 #ifdef NSS_DP_PPEDS_SUPPORT
 irqreturn_t edma_rxfill_handle_irq(int irq, void *ctx);
 #endif
+void edma_rx_free_buffer_loopback(void);
+bool edma_rx_alloc_buffer_loopback(struct edma_rxfill_ring *rxfill_ring, int alloc_count);
 int edma_rx_alloc_buffer(struct edma_rxfill_ring *rxfill_ring, int alloc_count);
 int edma_rx_napi_poll(struct napi_struct *napi, int budget);
 bool edma_rx_phy_tstamp_buf(__attribute__((unused))void *app_data, struct sk_buff *skb, void *sc_data);

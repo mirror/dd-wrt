@@ -34,7 +34,6 @@ netdev_tx_t edma_dp_vp_xmit(struct nss_dp_data_plane_ctx *dpc, struct nss_dp_vp_
 	struct sk_buff *segs;
 	enum edma_tx_gso result;
 	int ret;
-
 #ifdef NSS_DP_MHT_SW_PORT_MAP
 #ifndef NSS_DP_EDMA_MHT_SW_WITH_VP_RING
 	/*

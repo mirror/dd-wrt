@@ -478,6 +478,56 @@ static int edma_debugfs_clear_ring_stats(struct seq_file *m, void __attribute__(
 	return 0;
 }
 
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+/*
+ * edma_debugfs_loopback_stats_show()
+ *	EDMA debugfs loopback stats show API
+ */
+static int edma_debugfs_loopback_stats_show(struct seq_file *m, void __attribute__((unused))*p)
+{
+	struct edma_gbl_ctx *egc = &edma_gbl_ctx;
+	int i = 0;
+
+	seq_printf(m, "\n#EDMA loopback configuration stats:\n\n");
+	seq_printf(m, "\t\t Loopback enabled = %d\n", egc->loopback_en);
+	seq_printf(m, "\t\t Loopback ring size = %d\n", egc->loopback_ring_size);
+	seq_printf(m, "\t\t Loopback buffer size = %d\n",egc->loopback_buf_size);
+	seq_printf(m, "\t\t Number of loopback rings = %d\n", egc->num_loopback_rings);
+	seq_printf(m, "\t\t Loopback queue base = %d\n", egc->loopback_queue_base);
+	seq_printf(m, "\t\t Number of loopback queues = %d\n", egc->loopback_num_queues);
+
+	for (i = 0; i < egc->num_loopback_rings; i++) {
+		seq_printf(m, "\t\t#EDMA loopback ring info: %d\n\n", i);
+		seq_printf(m, "\t\t TX descriptor loopback_ring_id = %d\n", egc->txdesc_loopback_ring_id_arr[i]);
+		seq_printf(m, "\t\t TX completion loopback_ring_id = %d\n", egc->txcmpl_loopback_ring_id_arr[i]);
+		seq_printf(m, "\t\t RX descriptor loopback_ring_id = %d\n", egc->rxdesc_loopback_ring_id_arr[i]);
+		seq_printf(m, "\t\t RX fill loopback_ring_id = %d\n", egc->rxfill_loopback_ring_id_arr[i]);
+	}
+
+	return 0;
+}
+
+/*
+ * edma_debugs_loopback_stats_open()
+ *	EDMA debugfs loopback stats open callback API
+ */
+static int edma_debugs_loopback_stats_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, edma_debugfs_loopback_stats_show, inode->i_private);
+}
+
+/*
+ * edma_debugfs_misc_file_ops
+ *	File operations for EDMA miscellaneous stats
+ */
+const struct file_operations edma_debugfs_loopback_file_ops = {
+	.open = edma_debugs_loopback_stats_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = seq_release
+};
+#endif
+
 /*
  * edma_debugs_rx_rings_stats_open()
  *	EDMA debugfs Rx rings open callback API
@@ -606,6 +656,15 @@ int edma_debugfs_init(void)
 		edma_err("Unable to create EDMA miscellaneous statistics file entry in debugfs\n");
 		goto debugfs_dir_failed;
 	}
+
+#if defined(NSS_DP_EDMA_LOOPBACK_SUPPORT)
+	if (!debugfs_create_file("loopback_stats", S_IRUGO, edma_gbl_ctx.stats_dentry,
+			NULL, &edma_debugfs_loopback_file_ops)) {
+		edma_err("Unable to create EDMA loopback statistics file entry in debugfs\n");
+		goto debugfs_dir_failed;
+	}
+
+#endif
 
 	return 0;
 

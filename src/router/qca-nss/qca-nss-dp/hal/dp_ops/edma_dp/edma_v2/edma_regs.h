@@ -282,6 +282,13 @@
 #define EDMA_RXDESC_BA_MASK			0xffffffff
 
 /*
+ * EDMA_LOOPBACK_CTRL register
+ */
+#define EDMA_REG_LOOPBACK_CMPL_SHIFT		24
+#define EDMA_REG_LOOPBACK_DESC(x)		(1 << (x))
+#define EDMA_REG_LOOPBACK_CMPL(x)		((1 << (x)) << EDMA_REG_LOOPBACK_CMPL_SHIFT)
+
+/*
  * EDMA RXDESC pre-header base address mask
  */
 #define EDMA_RXDESC_PREHEADER_BA_MASK		0xffffffff
