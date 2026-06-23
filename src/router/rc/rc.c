@@ -104,7 +104,11 @@
 #elif defined(HAVE_EROUTER)
 	#include "mmc.c"
 #elif defined(HAVE_IPQ95XX)
+#ifdef HAVE_NVRAM_MMC
 	#include "mmc.c"
+#else
+	#include "mtd.c"
+#enduf
 #else
 	#include "mtd.c"
 #endif

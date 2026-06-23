@@ -193,6 +193,9 @@ endif
 ifeq ($(CONFIG_SOLO51),y)
 CFLAGS += -DHAVE_SOLO51
 endif
+ifeq ($(CONFIG_NVRAM_MMC),y)
+CFLAGS += -DHAVE_NVRAM_MMC
+endif
 ifeq ($(CONFIG_KAID),y)
 CFLAGS += -DHAVE_KAID
 endif
