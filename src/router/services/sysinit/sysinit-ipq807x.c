@@ -909,7 +909,6 @@ void start_sysinit(void)
 	int profile = 512;
 	switch (brand) {
 	case ROUTER_XIAOMI_BE7000:
-//		sysprintf("cat /sys/kernel/debug/clk/clk_summary > /tmp/clk_summary");
 		fwlen = 0x20000;
 		load_nss_ipq95xx(1024);
 		break;
@@ -1649,7 +1648,6 @@ void start_sysinit(void)
 			}
 		}
 	}
-//	sysprintf("cat /sys/kernel/debug/clk/clk_summary > /tmp/clk_summary_inited");
 
 	return;
 }
