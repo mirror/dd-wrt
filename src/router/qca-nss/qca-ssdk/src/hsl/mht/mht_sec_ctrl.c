@@ -528,7 +528,7 @@ qca_mht_ethphy_icc_efuse_get(a_uint32_t dev_id, a_uint32_t mht_port_id,
 		else
 			*icc_value |= BIT(4);
 	}
-	SSDK_DEBUG("mht port%d efuse version is %d, icc value is 0x%x\n",
+	SSDK_INFO("mht port%d efuse version is %d, icc value is 0x%x\n",
 		mht_port_id, efuse_ver, *icc_value);
 
 	return SW_OK;

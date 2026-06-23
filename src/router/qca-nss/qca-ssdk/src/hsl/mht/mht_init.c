@@ -41,6 +41,7 @@ _mht_reset(a_uint32_t dev_id)
 	sw_error_t rv;
 	HSL_DEV_ID_CHECK(dev_id);
 
+#if 1
 	ssdk_mht_clk_assert(dev_id, MHT_SWITCH_CORE_CLK);
 	ssdk_mht_clk_assert(dev_id, MHT_MAC0_TX_CLK);
 	ssdk_mht_clk_assert(dev_id, MHT_MAC0_RX_CLK);
@@ -70,7 +71,7 @@ _mht_reset(a_uint32_t dev_id)
 	ssdk_mht_clk_deassert(dev_id, MHT_MAC5_RX_CLK);
 	/* Need to wait 50us to complete switch initialization. */
 	udelay(50);
-
+#endif
 	ISISC_ACL_RESET(rv, dev_id);
 	ISISC_IP_RESET(rv, dev_id);
 	ISISC_NAT_RESET(rv, dev_id);

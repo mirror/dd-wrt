@@ -275,7 +275,7 @@ mht_uniphy_xpcs_soft_reset(a_uint32_t dev_id)
 	return rv;
 }
 
-#if 0
+#if 1
 sw_error_t
 mht_uniphy_xpcs_speed_set(a_uint32_t dev_id, a_uint32_t mht_port_id,
 	fal_port_speed_t speed)

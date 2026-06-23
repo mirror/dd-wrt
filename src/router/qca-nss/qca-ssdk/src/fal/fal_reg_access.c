@@ -33,6 +33,7 @@ _fal_phy_get(a_uint32_t dev_id, a_uint32_t phy_addr,
 	/* for PHY SOC registers, the bit 20~23 of reg only can be 4, 8 and 9 */
 	/* and 0, 1 will be PHY registers*/
 	if ((reg >> 20 & 0xf) > 1) {
+		printk(KERN_INFO "%s: wrong register\n", __func__);
 		*value = hsl_phy_soc_read(dev_id, phy_addr, reg);
 		return SW_OK;
 	}
@@ -49,6 +50,7 @@ _fal_phy_set(a_uint32_t dev_id, a_uint32_t phy_addr,
 	/* for PHY SOC registers, the bit 20~23 of reg only can be 4, 8 and 9 */
 	/* and 0, 1 will be PHY registers*/
 	if ((reg >> 20 & 0xf) > 1) {
+		printk(KERN_INFO "%s: wrong register\n", __func__);
 		hsl_phy_soc_write(dev_id, phy_addr, reg, value);
 		return SW_OK;
 	}

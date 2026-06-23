@@ -272,6 +272,8 @@ qca8084_phy_pll_status_get(a_uint32_t dev_id, a_uint32_t phy_addr)
 		QCA8084_PHY_AFE25_CMN_6_MII);
 	return !!(phy_data & QCA8084_PHY_AFE25_PLL_EN);
 }
+sw_error_t
+qca_hppe_mac_sw_sync_task(struct qca_phy_priv *priv);
 
 sw_error_t
 qca8084_phy_interface_set_mode(a_uint32_t dev_id, a_uint32_t phy_addr,
@@ -280,12 +282,14 @@ qca8084_phy_interface_set_mode(a_uint32_t dev_id, a_uint32_t phy_addr,
 	sw_error_t rv = SW_OK;
 	a_uint32_t mht_port_id = 0, mht_phy_addr = 0;
 	phy_info_t *phy_info = hsl_phy_info_get(dev_id);
+	struct qca_phy_priv *priv = ssdk_phy_priv_data_get(dev_id);
 
 	switch (interface_mode) {
 		case PORT_UQXGMII:
 			/* allow manually configure uqxgmii when initialization or resume from
 			 * asserted low power mode, otherwise the port mode is uqxgmii and do
 			 * not allow to manually configure it */
+			SSDK_INFO("1:configure manhattan phy as PORT_UQXGMII on %d\n", phy_addr);
 			if (!ssdk_mht_clk_is_asserted(dev_id, MHT_SRDS1_SYS_CLK)) {
 				for (mht_port_id = SSDK_PHYSICAL_PORT1;
 					mht_port_id <= SSDK_PHYSICAL_PORT4; mht_port_id ++) {
@@ -293,7 +297,7 @@ qca8084_phy_interface_set_mode(a_uint32_t dev_id, a_uint32_t phy_addr,
 						return SW_OK;
 				}
 			}
-			SSDK_INFO("configure manhattan phy as PORT_UQXGMII\n");
+			SSDK_INFO("2:configure manhattan phy as PORT_UQXGMII on %d\n", phy_addr);
 			if(qca_mht_sku_check(dev_id, MHT_SKU_8082))
 			{
 				/*for qca8082, mht port 1, 2 is disabled, so need power down and
@@ -338,7 +342,7 @@ qca8084_phy_interface_set_mode(a_uint32_t dev_id, a_uint32_t phy_addr,
 			rv = qca8084_phy_sgmii_mode_set(dev_id, phy_addr, interface_mode);
 			PHY_RTN_ON_ERROR (rv);
 			/*port4 software reset*/
-			SSDK_DEBUG(" ethphy3 software reset\n");
+			SSDK_INFO(" ethphy3 software reset %d\n", phy_addr);
 			rv = qca808x_phy_reset(dev_id, phy_addr);
 			SW_RTN_ON_ERROR (rv);
 			break;
@@ -348,6 +352,7 @@ qca8084_phy_interface_set_mode(a_uint32_t dev_id, a_uint32_t phy_addr,
 			break;
 	}
 
+	qca_hppe_mac_sw_sync_task(priv);
 	return rv;
 }
 
@@ -534,9 +539,10 @@ _qca8084_phy_uqxgmii_speed_fixup(a_uint32_t dev_id, a_uint32_t phy_addr,
 	PHY_RTN_ON_ERROR(rv);
 
 	/*Restart the auto-neg of uniphy*/
-	SSDK_DEBUG("Restart the auto-neg of uniphy\n");
+	SSDK_INFO("Restart the auto-neg of uniphy on phyid %d mht_port_id %d\n", phy_addr, mht_port_id);
 	rv = mht_uniphy_xpcs_autoneg_restart(dev_id, mht_port_id);
 	PHY_RTN_ON_ERROR(rv);
+
 	/*set gmii+ clock to uniphy1 and ethphy*/
 	SSDK_DEBUG("set gmii,xgmii clock to uniphy and gmii to ethphy\n");
 	rv = mht_port_speed_clock_set(dev_id, mht_port_id, new_speed);
@@ -579,6 +585,7 @@ _qca8084_phy_uqxgmii_speed_fixup(a_uint32_t dev_id, a_uint32_t phy_addr,
 	}
 	/*change IPG from 10 to 11 for 1G speed*/
 	rv = qca8084_phy_ipg_config(dev_id, phy_addr, new_speed);
+
 
 	return rv;
 }
@@ -660,7 +667,6 @@ qca8084_phy_speed_fixup(a_uint32_t dev_id, a_uint32_t phy_addr,
 {
 	a_uint32_t port_id = 0;
 	phy_info_t *phy_info = hsl_phy_info_get(dev_id);
-
 	/* when link down, do not need switch interface mode */
 	if (phy_status->link_status)
 		_qca8084_phy_interface_mode_fixup(dev_id, phy_addr, phy_status->speed);

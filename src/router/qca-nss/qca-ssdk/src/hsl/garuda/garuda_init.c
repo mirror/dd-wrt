@@ -465,7 +465,7 @@ garuda_dev_init(a_uint32_t dev_id, hsl_init_mode cpu_mode)
     if (pdev == NULL)
         return SW_NOT_INITIALIZED;
 
-    pdev->nr_ports = 7;
+    pdev->nr_ports = 6;
     pdev->nr_phy = 5;
     pdev->cpu_port_nr = 0;
     pdev->nr_vlans = 4096;
