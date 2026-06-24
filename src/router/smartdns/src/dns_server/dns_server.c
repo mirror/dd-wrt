@@ -44,6 +44,7 @@
 #include "server_tls.h"
 #include "server_udp.h"
 #include "server_http2.h"
+#include "server_http.h"
 #include "soa.h"
 #include "speed_check.h"
 
@@ -100,6 +101,8 @@ int _dns_reply_inpacket(struct dns_request *request, unsigned char *inpacket, in
 #ifdef HAVE_OPENSSL
 	} else if (conn->type == DNS_CONN_TYPE_HTTPS_CLIENT) {
 		ret = _dns_server_reply_https(request, (struct dns_server_conn_tcp_client *)conn, inpacket, inpacket_len);
+	} else if (conn->type == DNS_CONN_TYPE_HTTP_CLIENT) {
+		ret = _dns_server_reply_http(request, (struct dns_server_conn_tcp_client *)conn, inpacket, inpacket_len);
 	} else if (conn->type == DNS_CONN_TYPE_HTTP2_STREAM) {
 		ret = _dns_server_reply_http2(request, (struct dns_server_conn_http2_stream *)conn, inpacket, inpacket_len);
 #endif
@@ -565,10 +568,10 @@ static int _dns_server_process(struct dns_server_conn_head *conn, struct epoll_e
 	if (conn->type == DNS_CONN_TYPE_UDP_SERVER) {
 		struct dns_server_conn_udp *udpconn = (struct dns_server_conn_udp *)conn;
 		ret = _dns_server_process_udp(udpconn, event, now);
-	} else if (conn->type == DNS_CONN_TYPE_TCP_SERVER) {
+	} else if (conn->type == DNS_CONN_TYPE_TCP_SERVER || conn->type == DNS_CONN_TYPE_HTTP_SERVER) {
 		struct dns_server_conn_tcp_server *tcpserver = (struct dns_server_conn_tcp_server *)conn;
 		ret = _dns_server_tcp_accept(tcpserver, event, now);
-	} else if (conn->type == DNS_CONN_TYPE_TCP_CLIENT) {
+	} else if (conn->type == DNS_CONN_TYPE_TCP_CLIENT || conn->type == DNS_CONN_TYPE_HTTP_CLIENT) {
 		struct dns_server_conn_tcp_client *tcpclient = (struct dns_server_conn_tcp_client *)conn;
 		ret = _dns_server_process_tcp(tcpclient, event, now);
 		if (ret != 0) {
@@ -580,6 +583,7 @@ static int _dns_server_process(struct dns_server_conn_head *conn, struct epoll_e
 	} else if (conn->type == DNS_CONN_TYPE_TLS_SERVER || conn->type == DNS_CONN_TYPE_HTTPS_SERVER) {
 		struct dns_server_conn_tls_server *tls_server = (struct dns_server_conn_tls_server *)conn;
 		ret = _dns_server_tls_accept(tls_server, event, now);
+
 	} else if (conn->type == DNS_CONN_TYPE_TLS_CLIENT || conn->type == DNS_CONN_TYPE_HTTPS_CLIENT) {
 		struct dns_server_conn_tls_client *tls_client = (struct dns_server_conn_tls_client *)conn;
 		ret = _dns_server_process_tls(tls_client, event, now);
@@ -634,6 +638,11 @@ static int _dns_server_socket(void)
 			}
 			break;
 #endif
+		case DNS_BIND_TYPE_HTTP:
+			if (_dns_server_socket_http(bind_ip) != 0) {
+				goto errout;
+			}
+			break;
 		default:
 			break;
 		}

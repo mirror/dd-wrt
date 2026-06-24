@@ -447,3 +447,8 @@ int _config_bind_ip_https(void *data, int argc, char *argv[])
 	return _config_bind_ip(argc, argv, DNS_BIND_TYPE_HTTPS);
 }
 #endif
+
+int _config_bind_ip_http(void *data, int argc, char *argv[])
+{
+	return _config_bind_ip(argc, argv, DNS_BIND_TYPE_HTTP);
+}

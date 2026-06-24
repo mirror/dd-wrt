@@ -196,8 +196,12 @@ static void _dns_server_http2_process_stream(struct dns_server_conn_tls_client *
 
 		/* Process the packet */
 		/* Note: _dns_server_recv takes conn, inpacket, inpacket_len, local, local_len, from, from_len */
-		_dns_server_recv(&stream_conn->head, buf, len, &tls_client->tcp.localaddr, tls_client->tcp.localaddr_len,
-						 &tls_client->tcp.addr, tls_client->tcp.addr_len);
+		if (_dns_server_recv(&stream_conn->head, buf, len, &tls_client->tcp.localaddr, tls_client->tcp.localaddr_len,
+							 &tls_client->tcp.addr, tls_client->tcp.addr_len) != 0) {
+			_dns_server_http2_send_response(stream, 400, "text/plain", "Bad Request", 11);
+			_dns_server_conn_release(&stream_conn->head);
+			goto close_out;
+		}
 
 		/* Release our reference (request holds one now) */
 		_dns_server_conn_release(&stream_conn->head);
@@ -259,10 +263,10 @@ int _dns_server_process_http2(struct dns_server_conn_tls_client *tls_client, str
 
 	/* Handle EPOLLIN - read and process data */
 	if (event->events & EPOLLIN) {
-		struct http2_poll_item poll_items[10];
+		struct http2_poll_item poll_items[128];
 		int poll_count = 0;
 		int loop_count = 0;
-		const int MAX_LOOP_COUNT = 512;
+		const int MAX_LOOP_COUNT = DNS_SERVER_HTTP2_MAX_CONCURRENT_STREAMS;
 
 		/* Ensure handshake is complete */
 		ret = http2_ctx_handshake(ctx);
@@ -282,7 +286,7 @@ int _dns_server_process_http2(struct dns_server_conn_tls_client *tls_client, str
 		/* Poll and process */
 		while (loop_count++ < MAX_LOOP_COUNT) {
 			poll_count = 0;
-			ret = http2_ctx_poll_readable(ctx, poll_items, 10, &poll_count);
+			ret = http2_ctx_poll_readable(ctx, poll_items, sizeof(poll_items) / sizeof(poll_items[0]), &poll_count);
 			if (ret < 0) {
 				if (ret == HTTP2_ERR_EAGAIN) {
 					break;
@@ -297,17 +301,21 @@ int _dns_server_process_http2(struct dns_server_conn_tls_client *tls_client, str
 			}
 
 			if (poll_count == 0) {
-				continue;
+				break;
 			}
 
 			for (int i = 0; i < poll_count; i++) {
 				if (poll_items[i].stream == NULL) {
 					if (poll_items[i].readable) {
-						struct http2_stream *stream = http2_ctx_accept_stream(ctx);
-						if (stream) {
-							/* Accept and immediately process new HTTP/2 stream */
+						struct http2_stream *stream = NULL;
+						int accepted_count = 0;
+
+						while ((stream = http2_ctx_accept_stream(ctx)) != NULL) {
 							_dns_server_http2_process_stream(tls_client, stream);
 							http2_stream_put(stream);
+							if (++accepted_count >= DNS_SERVER_HTTP2_MAX_CONCURRENT_STREAMS) {
+								break;
+							}
 						}
 					}
 					continue;

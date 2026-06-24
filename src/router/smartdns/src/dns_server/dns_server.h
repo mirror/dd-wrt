@@ -80,6 +80,8 @@ typedef enum {
 	DNS_CONN_TYPE_HTTPS_SERVER,
 	DNS_CONN_TYPE_HTTPS_CLIENT,
 	DNS_CONN_TYPE_HTTP2_STREAM,
+	DNS_CONN_TYPE_HTTP_SERVER,
+	DNS_CONN_TYPE_HTTP_CLIENT,
 } DNS_CONN_TYPE;
 
 typedef enum DNS_CHILD_POST_RESULT {
@@ -278,6 +280,11 @@ struct dns_request_srv {
 	unsigned short port;
 };
 
+struct dns_request_txt {
+	struct list_head list;
+	char text[DNS_MAX_CNAME_LEN];
+};
+
 struct dns_request {
 	atomic_t refcnt;
 
@@ -348,6 +355,7 @@ struct dns_request {
 	int is_cache_reply;
 
 	struct list_head srv_list;
+	struct list_head txt_list;
 
 	atomic_t notified;
 	atomic_t do_callback;

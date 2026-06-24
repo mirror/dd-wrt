@@ -153,6 +153,7 @@ void _dns_server_close_socket_server(void)
 			break;
 		}
 #endif
+		case DNS_CONN_TYPE_HTTP_SERVER:
 		case DNS_CONN_TYPE_UDP_SERVER:
 		case DNS_CONN_TYPE_TCP_SERVER:
 			_dns_server_client_close(conn);
@@ -204,7 +205,8 @@ int _dns_server_update_request_connection_timeout(struct dns_server_conn_head *c
 	}
 
 	switch (conn->type) {
-	case DNS_CONN_TYPE_TCP_CLIENT: {
+	case DNS_CONN_TYPE_TCP_CLIENT:
+	case DNS_CONN_TYPE_HTTP_CLIENT: {
 		struct dns_server_conn_tcp_client *tcpclient = (struct dns_server_conn_tcp_client *)conn;
 		tcpclient->conn_idle_timeout = timeout;
 	} break;

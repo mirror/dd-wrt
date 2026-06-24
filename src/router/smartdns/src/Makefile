@@ -101,4 +101,3 @@ clean:
 lint-files:
 	@echo "Specify FILES variable to lint specific files, e.g., make lint-files FILES='src/dns.c src/proxy.c'"
 	clang-tidy -p=. $(FILES) -- $(CFLAGS)
-

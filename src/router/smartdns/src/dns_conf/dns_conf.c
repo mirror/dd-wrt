@@ -54,6 +54,7 @@
 #include "smartdns_domain.h"
 #include "speed_check_mode.h"
 #include "srv_record.h"
+#include "txt_record.h"
 
 #include <errno.h>
 #include <stdio.h>
@@ -142,6 +143,7 @@ static struct config_item _config_item[] = {
 #ifdef HAVE_OPENSSL
 	CONF_CUSTOM("bind-tls", _config_bind_ip_tls, NULL),
 	CONF_CUSTOM("bind-https", _config_bind_ip_https, NULL),
+	CONF_CUSTOM("bind-http", _config_bind_ip_http, NULL),
 	CONF_CUSTOM("bind-cert-root-key-file", _config_option_parser_filepath, &dns_conf.bind_root_ca_key_file),
 	CONF_INT("bind-cert-validity-days", &dns_conf.bind_ca_validity_days, 0, 9999),
 	CONF_CUSTOM("bind-cert-file", _config_option_parser_filepath, &dns_conf.bind_ca_file),
@@ -167,6 +169,7 @@ static struct config_item _config_item[] = {
 #ifdef HAVE_OPENSSL
 	CONF_CUSTOM("https-record", _config_https_record, NULL),
 #endif
+	CONF_CUSTOM("txt-record", _config_txt_record, NULL),
 	CONF_CUSTOM("proxy-server", _config_proxy_server, NULL),
 	CONF_YESNO_FUNC("ipset-timeout", _dns_conf_group_yesno, group_member(ipset_nftset.ipset_timeout_enable)),
 	CONF_CUSTOM("ipset", _config_ipset, NULL),

@@ -15,25 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-#ifndef _DNS_CONF_BIND_H_
-#define _DNS_CONF_BIND_H_
-
-#include "dns_conf.h"
-#include "smartdns/dns_conf.h"
+#ifndef _DNS_CONF_TXT_RECORD_H_
+#define _DNS_CONF_TXT_RECORD_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus */
 
-int _config_add_default_server_if_needed(void);
-int _config_bind_ip_udp(void *data, int argc, char *argv[]);
-int _config_bind_ip_tcp(void *data, int argc, char *argv[]);
-int _config_bind_ip_tls(void *data, int argc, char *argv[]);
-int _config_bind_ip_https(void *data, int argc, char *argv[]);
-int _config_bind_ip_http(void *data, int argc, char *argv[]);
-
-void dns_server_bind_destroy(void);
+int _config_txt_record(void *data, int argc, char *argv[]);
+int _conf_domain_rule_txt_record(const char *domain, const char *text);
 
 #ifdef __cplusplus
 }
