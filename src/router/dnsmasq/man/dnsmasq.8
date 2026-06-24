@@ -1372,11 +1372,13 @@ described in RFC 3442.
 IPv6 options are specified using the \fBoption6:\fP
 keyword, followed by the option number or option name. The IPv6 option
 name space is disjoint from the IPv4 option name space. IPv6 addresses
-in options must be bracketed with square brackets, eg. 
-\fB --dhcp-option=option6:ntp-server,[1234::56]\fP. 
+in options must be bracketed with square brackets, eg. \fB --dhcp-option=option6:ntp-server,[1234::56]\fP. 
 For IPv6, [::] means "the global address of
 the machine running dnsmasq", whilst [fd00::] is replaced with the
-ULA, if it exists, and [fe80::] with the link-local address.
+ULA, if it exists, and [fe80::] with the link-local address. The vendorclass option
+is special for DHCPv6, since it requires an enterprise number which must appear as a decimal number
+before the class(es). eg. \fB --dhcp-option=option6:vendor-class,343,HTTPClient\fP
+
 
 Be careful: data-type suitability for the option number sent is not checked.
 It is quite possible to persuade dnsmasq to generate illegal DHCP packets with

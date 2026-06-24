@@ -184,7 +184,7 @@ static int get_rdata(struct dns_header *header, size_t plen, struct rdata_state 
 	  if ((state->c = state->end - state->ip) != 0)
 	    {
 	      state->op = state->ip;
-	      state->ip = state->end;;
+	      state->ip = state->end;
 	    }
 	  else
 	    return 0;
@@ -196,24 +196,28 @@ static int get_rdata(struct dns_header *header, size_t plen, struct rdata_state 
 	  if (d == (u16)0)
 	    {
 	      /* domain-name, canonicalise */
-	      int len;
 	      
+	      /* If the name is malformed, or runs beyond the end of the RR, abort.
+		 under no circumstances should state->ip be beyond state->end since
+		 that will cause the run-out code above to turn the negative
+		 calculted length into a very large postive value for state->c
+		 and overrun the buffer. */
 	      if (!extract_name(header, plen, &state->ip, state->buff, EXTR_NAME_EXTRACT, 0) ||
-		  (len = to_wire(state->buff)) == 0)
-		continue;
-	      
-	      state->c = len;
+		  state->ip > state->end)
+		return 0;
+
+	      /* to_wire() always returns length > 0 */
+	      state->c = to_wire(state->buff);
 	      state->op = (unsigned char *)state->buff;
 	    }
 	  else
 	    {
-	      /* plain data preceding a domain-name, don't run off the end of the data */
-	      if ((state->end - state->ip) < d)
-		d = state->end - state->ip;
-	      
-	      if (d == 0)
-		continue;
-		  
+	      /* Plain data preceding a domain-name.
+		 Handle short RR, if there are no bytes left, return finished. */
+	      if ((state->end - state->ip) < d &&
+		  (d = state->end - state->ip) == 0)
+		return 0;
+				  
 	      state->op = state->ip;
 	      state->c = d;
 	      state->ip += d;

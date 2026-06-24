@@ -947,7 +947,7 @@ int kernel_version(void)
 }
 #endif
 
-#define hash_ptr(x) (((unsigned int)(((char *)(x)) - ((char *)NULL))) & 0xffffff)
+#define hash_ptr(x) (((uintptr_t)(x)) & 0xffffff)
 
 void *whine_malloc_real(const char *func, unsigned int line, size_t size)
 {
