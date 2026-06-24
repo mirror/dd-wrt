@@ -57,7 +57,7 @@ SSDK_MAKE_FLAGS_IPQ6018+= \
 	EXTRA_CFLAGS="-fno-stack-protector -Wno-enum-conversion" \
 	SoC=ipq60xx \
 	SHELL="/usr/bin/bash" \
-	PTP_FEATURE=disable SWCONFIG_FEATURE=enable \
+	PTP_FEATURE=enable SWCONFIG_FEATURE=enable \
 	ISISC_ENABLE=disable MHT_ENABLE=disable \
 	IN_QCA803X_PHY=FALSE IN_QCA808X_PHY=FALSE \
 	IN_MALIBU_PHY=FALSE IN_AQUANTIA_PHY=TRUE
@@ -91,7 +91,7 @@ SSDK_MAKE_FLAGS_IPQ807X+= \
 	EXTRA_CFLAGS="-fno-stack-protector -Wno-enum-conversion" \
 	SoC=ipq807x \
 	SHELL="/usr/bin/bash" \
-	PTP_FEATURE=disable SWCONFIG_FEATURE=enable \
+	PTP_FEATURE=enable SWCONFIG_FEATURE=enable \
 	ISISC_ENABLE=disable MHT_ENABLE=disable \
 	IN_QCA803X_PHY=FALSE IN_QCA808X_PHY=FALSE \
 	IN_MALIBU_PHY=FALSE
@@ -320,7 +320,7 @@ else
 	ln -sf arch/nss_ipq807x.h qca-nss-drv/exports/nss_arch.h
 	make -C $(KDIR) M=$(PWD)/ipq807x/qca-nss-dp modules MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS_IPQ807x)" SoC="ipq807x" INSTALL_MOD_PATH=$(INSTALLDIR)
 	mkdir -p $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)
-	cp qca-ssdk/qca-ssdk.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/qca-ssdk-ipq807x.ko
+	cp ipq807x/qca-ssdk/qca-ssdk.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/qca-ssdk-ipq807x.ko
 
 	make -C $(KDIR) M=$(PWD)/ipq807x/qca-nss-cfi modules MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS_IPQ807x)" SoC="ipq807x" \
 		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
@@ -447,7 +447,7 @@ else
 	ln -sf arch/nss_ipq807x.h qca-nss-drv/exports/nss_arch.h
 	make -C $(KDIR) M=$(PWD)/ipq807x/qca-nss-dp modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x" INSTALL_MOD_PATH=$(INSTALLDIR)
 	mkdir -p $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)
-	cp qca-ssdk/qca-ssdk.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/qca-ssdk-ipq807x.ko
+	cp ipq807x/qca-ssdk/qca-ssdk.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/qca-ssdk-ipq807x.ko
 
 	make -C $(KDIR) M=$(PWD)/ipq807x/qca-nss-cfi modules_install MODPROBE=true DEPMOD=/bin/true KBUILD_MODPOST_WARN=1 EXTRA_CFLAGS="$(KERNEL_FLAGS)" SoC="ipq807x" \
 		CFI_CRYPTOAPI_DIR=$(CFI_CRYPTOAPI_DIR) \
