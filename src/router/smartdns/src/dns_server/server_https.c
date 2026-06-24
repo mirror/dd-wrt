@@ -28,7 +28,6 @@
 #include <errno.h>
 #include <string.h>
 
-#ifdef HAVE_OPENSSL
 int _dns_server_reply_http_error(struct dns_server_conn_tcp_client *tcpclient, int code, const char *code_msg,
 								 const char *message)
 {
@@ -58,6 +57,7 @@ int _dns_server_reply_http_error(struct dns_server_conn_tcp_client *tcpclient, i
 
 	return 0;
 }
+#ifdef HAVE_OPENSSL
 
 int _dns_server_reply_https(struct dns_request *request, struct dns_server_conn_tcp_client *tcpclient, void *packet,
 							unsigned short len)
