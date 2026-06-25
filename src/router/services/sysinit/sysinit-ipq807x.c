@@ -1127,7 +1127,10 @@ void start_sysinit(void)
 			sprintf(maddr, "%02X:%02X:%02X:%02X:%02X:%02X", newmac2[0] & 0xff, newmac2[1] & 0xff, newmac2[2] & 0xff,
 				newmac2[3] & 0xff, newmac2[4] & 0xff, newmac2[5] & 0xff);
 
-			fseek(fp, 0x65000, SEEK_SET);
+			if (!nvram_match("5g_split", "1"))
+				fseek(fp, 0x65000, SEEK_SET);
+			else
+				fseek(fp, 0x33000, SEEK_SET);
 			out = fopen("/tmp/cal-pci-0002:01:00.0.bin", "wb");
 			for (i = 0; i < 184320; i++)
 				putc(getc(fp), out);
@@ -1690,7 +1693,10 @@ static void load_ath12k_internal(int profile, int pci, int nss, int frame_mode, 
 		sprintf(driver_regionvariant, "regionvariant=%s", cert_region);
 		sprintf(driver_coldboot, "cold_boot_cal=%d", coldboot);
 		insmod("qmi_helpers");
-		eval("insmod", driver_ath12k, overdrive);
+		if (nvram_match("5g_split", "1"))
+			eval("insmod", driver_ath12k, overdrive, "board_id=0x1008");
+		else
+			eval("insmod", driver_ath12k, overdrive);
 		insmod(driver_ath12k_ahb);
 		if (pci)
 			insmod(driver_ath12k_pci);
@@ -1787,8 +1793,13 @@ void start_wifi_drivers(void)
 		load_mac80211_internal(!nvram_match("ath11k_nss", "0") && !nss_disabled(0));
 		switch (brand) {
 		case ROUTER_XIAOMI_BE7000: {
-			set_gpio(6, 0);
-			set_gpio(7, 1);
+			if (nvram_match("5g_split", "1")) {
+				set_gpio(6, 1);
+				set_gpio(7, 0);
+			} else {
+				set_gpio(6, 0);
+				set_gpio(7, 1);
+			}
 			load_ath12k_internal(profile, 0, 0, frame_mode, cert_region, 1);
 			wait_for_wifi(1);
 			load_ath11k_internal(profile, 0, 0, frame_mode, cert_region, 1);
