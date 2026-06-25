@@ -1087,24 +1087,6 @@ qca8k_setup_mac_pwr_sel(struct qca8k_priv *priv)
 	return ret;
 }
 
-static int qca8k_find_cpu_port(struct dsa_switch *ds)
-{
-	int i;
-
-	if (dsa_is_cpu_port(ds, 0))
-		return 0;
-
-	if (dsa_is_cpu_port(ds, 6))
-		return 6;
-
-	/* PHY-to-PHY link */
-	for (i = 1; i <= 5; i++)
-		if (dsa_is_cpu_port(ds, i))
-			return i;
-
-	return -EINVAL;
-}
-
 static int
 qca8k_setup_of_pws_reg(struct qca8k_priv *priv)
 {
@@ -1540,7 +1522,7 @@ static int qca8k_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 {
 	struct qca8k_priv *priv = pcs_to_qca8k_pcs(pcs)->priv;
 	int cpu_port_index, ret, port;
-	u32 reg, val;
+	u32 mask, reg, val;
 
 	port = pcs_to_qca8k_pcs(pcs)->port;
 	switch (port) {
@@ -1564,7 +1546,9 @@ static int qca8k_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		0 : QCA8K_PWS_SERDES_AEN_DIS;
 
 	ret = qca8k_rmw(priv, QCA8K_REG_PWS, QCA8K_PWS_SERDES_AEN_DIS, val);
- 
+	if (ret)
+		return ret;
+
 	/* Configure the SGMII parameters */
 	ret = qca8k_read(priv, QCA8K_REG_SGMII_CTRL, &val);
 	if (ret)
@@ -1611,15 +1595,21 @@ static int qca8k_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	if (priv->ports_config.sgmii_tx_clk_falling_edge)
 		val |= QCA8K_PORT0_PAD_SGMII_TXCLK_FALLING_EDGE;
 
-	if (neg_mode == PHYLINK_PCS_NEG_OUTBAND)
-		val |= QCA8K_PORT_PAD_SGMII_FORCE_MODE;
+	mask = (val) ? (QCA8K_PORT0_PAD_SGMII_RXCLK_FALLING_EDGE |
+			QCA8K_PORT0_PAD_SGMII_TXCLK_FALLING_EDGE) : 0;
 
-	if (val)
-		ret = qca8k_rmw(priv, reg,
-				QCA8K_PORT0_PAD_SGMII_RXCLK_FALLING_EDGE |
-				QCA8K_PORT0_PAD_SGMII_TXCLK_FALLING_EDGE |
-				QCA8K_PORT_PAD_SGMII_FORCE_MODE,
-				val);
+	/*
+	 * (Un)set force mode on QCA8337 only, don't include it in the mask for
+	 * others. It is written to the PORT0 PAD register for both port 0 and 6.
+	 */
+	if (priv->switch_id == QCA8K_ID_QCA8337) {
+		if (neg_mode == PHYLINK_PCS_NEG_OUTBAND)
+			val |= QCA8K_PORT_PAD_SGMII_FORCE_MODE;
+		mask |= QCA8K_PORT_PAD_SGMII_FORCE_MODE;
+	}
+
+	if (mask)
+		ret = qca8k_rmw(priv, reg, mask, val);
 
 	return 0;
 }
@@ -1752,6 +1742,18 @@ qca8k_get_tag_protocol(struct dsa_switch *ds, int port,
 		       enum dsa_tag_protocol mp)
 {
 	return DSA_TAG_PROTO_QCA;
+}
+
+static struct dsa_port *
+qca8k_preferred_default_local_cpu_port(struct dsa_switch *ds)
+{
+	if (dsa_is_cpu_port(ds, 0))
+		return dsa_to_port(ds, 0);
+
+	if (dsa_is_cpu_port(ds, 6))
+		return dsa_to_port(ds, 6);
+
+	return NULL;
 }
 
 static int qca8k_port_change_master(struct dsa_switch *ds, int port,
@@ -1950,14 +1952,8 @@ qca8k_setup(struct dsa_switch *ds)
 {
 	struct qca8k_priv *priv = ds->priv;
 	struct dsa_port *dp;
-	int cpu_port, ret;
+	int ret;
 	u32 mask;
-
-	cpu_port = qca8k_find_cpu_port(ds);
-	if (cpu_port < 0) {
-		dev_err(priv->dev, "No cpu port configured in both cpu port0 and port6");
-		return cpu_port;
-	}
 
 	/* Parse CPU port config to be later used in phy_link mac_config */
 	ret = qca8k_parse_port_config(priv);
@@ -2043,21 +2039,21 @@ qca8k_setup(struct dsa_switch *ds)
 	if (ret)
 		return ret;
 
-	/* CPU port gets connected to all user ports of the switch */
-	ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(cpu_port),
-			QCA8K_PORT_LOOKUP_MEMBER, dsa_user_ports(ds));
-	if (ret)
-		return ret;
-
 	/* Setup connection between CPU port & user ports
 	 * Individual user ports get connected to CPU port only
 	 */
 	dsa_switch_for_each_user_port(dp, ds) {
 		u8 port = dp->index;
+		u8 cpu_port = dp->cpu_dp->index;
 
 		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(port),
 				QCA8K_PORT_LOOKUP_MEMBER,
 				BIT(cpu_port));
+		if (ret)
+			return ret;
+
+		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(cpu_port),
+				BIT(port), BIT(port));
 		if (ret)
 			return ret;
 
@@ -2160,6 +2156,7 @@ static const struct dsa_switch_ops qca8k_switch_ops = {
 	.get_phy_flags		= qca8k_get_phy_flags,
 	.port_lag_join		= qca8xxx_port_lag_join,
 	.port_lag_leave		= qca8xxx_port_lag_leave,
+	.preferred_default_local_cpu_port = qca8k_preferred_default_local_cpu_port,
 	.port_change_conduit	= qca8k_port_change_master,
 	.conduit_state_change	= qca8k_conduit_change,
 	.connect_tag_protocol	= qca8k_connect_tag_protocol,
