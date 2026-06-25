@@ -59,28 +59,54 @@
 #define RTL9300_SMI_PORT0_15_POLLING_SEL	0xca08
 #define RTL9300_SMI_ACCESS_PHY_CTRL_0		0xcb70
 #define RTL9300_SMI_ACCESS_PHY_CTRL_1		0xcb74
-#define   PHY_CTRL_REG_ADDR			GENMASK(24, 20)
-#define   PHY_CTRL_PARK_PAGE			GENMASK(19, 15)
-#define   PHY_CTRL_MAIN_PAGE			GENMASK(14, 3)
-#define   PHY_CTRL_WRITE			BIT(2)
-#define   PHY_CTRL_READ				0
-#define   PHY_CTRL_TYPE_C45			BIT(1)
-#define   PHY_CTRL_TYPE_C22			0
-#define   PHY_CTRL_CMD				BIT(0)
-#define   PHY_CTRL_FAIL				BIT(25)
+#define   RTL9300_PHY_CTRL_REG_ADDR		GENMASK(24, 20)
+#define   RTL9300_PHY_CTRL_PARK_PAGE		GENMASK(19, 15)
+#define   RTL9300_PHY_CTRL_MAIN_PAGE		GENMASK(14, 3)
+#define   RTL9300_PHY_CTRL_WRITE		BIT(2)
+#define   RTL9300_PHY_CTRL_READ			0
+#define   RTL9300_PHY_CTRL_TYPE_C45		BIT(1)
+#define   RTL9300_PHY_CTRL_TYPE_C22		0
+#define   RTL9300_PHY_CTRL_FAIL			BIT(25)
 #define RTL9300_SMI_ACCESS_PHY_CTRL_2		0xcb78
-#define   PHY_CTRL_INDATA			GENMASK(31, 16)
-#define   PHY_CTRL_DATA				GENMASK(15, 0)
+#define   RTL9300_PHY_CTRL_INDATA		GENMASK(31, 16)
+#define   RTL9300_PHY_CTRL_DATA			GENMASK(15, 0)
 #define RTL9300_SMI_ACCESS_PHY_CTRL_3		0xcb7c
-#define   PHY_CTRL_MMD_DEVAD			GENMASK(20, 16)
-#define   PHY_CTRL_MMD_REG			GENMASK(15, 0)
 #define RTL9300_SMI_PORT0_5_ADDR_CTRL		0xcb80
+
+#define RTL9310_NUM_BUSES			4
+#define RTL9310_NUM_PAGES			8192
+#define RTL9310_NUM_PORTS			56
+#define RTL9310_SMI_GLB_CTRL1			0x0cbc
+#define   RTL9310_SMI_GLB_FMT_SEL_C45(intf)	BIT((intf) * 2 + 1)
+#define RTL9310_SMI_INDRT_ACCESS_CTRL_0		0x0c00
+#define   RTL9310_PHY_CTRL_REG_ADDR		GENMASK(10, 6)
+#define   RTL9310_PHY_CTRL_MAIN_PAGE		GENMASK(23, 11)
+#define   RTL9310_PHY_CTRL_READ			0
+#define   RTL9310_PHY_CTRL_WRITE		BIT(4)
+#define   RTL9310_PHY_CTRL_TYPE_C45		BIT(3)
+#define   RTL9310_PHY_CTRL_TYPE_C22		0
+#define   RTL9310_PHY_CTRL_FAIL			BIT(1)
+#define RTL9310_SMI_INDRT_ACCESS_BC_PHYID_CTRL	0x0c14
+#define   RTL9310_BC_PORT_ID			GENMASK(10, 5)
+#define RTL9310_SMI_INDRT_ACCESS_CTRL_1		0x0c04
+#define RTL9310_SMI_INDRT_ACCESS_CTRL_2_LOW	0x0c08
+#define RTL9310_SMI_INDRT_ACCESS_CTRL_2_HIGH	0x0c0c
+#define RTL9310_SMI_INDRT_ACCESS_CTRL_3		0x0c10 /* I/O fields flipped */
+#define   RTL9310_PHY_CTRL_DATA			GENMASK(31, 16)
+#define   RTL9310_PHY_CTRL_INDATA		GENMASK(15, 0)
+#define RTL9310_SMI_INDRT_ACCESS_MMD_CTRL	0x0c18
+#define RTL9310_SMI_PORT_ADDR_CTRL		0x0c74
+#define RTL9310_SMI_PORT_POLLING_SEL		0x0c9c
+
+#define PHY_CTRL_CMD				BIT(0)
+#define PHY_CTRL_MMD_DEVAD			GENMASK(20, 16)
+#define PHY_CTRL_MMD_REG			GENMASK(15, 0)
 
 #define MAP_ADDRS_PER_REG			6
 #define MAP_BITS_PER_ADDR			5
 #define MAP_BITS_PER_BUS			2
 #define MAP_BUSES_PER_REG			16
-#define MAX_PORTS				28
+#define MAX_PORTS				56
 #define MAX_SMI_BUSSES				4
 #define RAW_PAGE(priv)				((priv)->info->num_pages - 1)
 
@@ -90,6 +116,10 @@ struct otto_emdio_cmd_regs {
 	u32 c45_data;
 	u32 io_data;
 	u32 port_mask_low;
+	/* additional registers for high port count models RTL839x/RTL931x */
+	u32 port_mask_high;
+	u32 broadcast;
+	u32 ext_page;
 };
 
 struct otto_emdio_priv {
@@ -163,6 +193,22 @@ static int otto_emdio_run_cmd(struct mii_bus *bus, u32 cmd,
 		return ret;
 
 	/* Fill all registers. Hardware will read only the needed bits depending on command */
+	if (info->cmd_regs.port_mask_high) {
+		/* Fill extra registers for high port count models */
+		ret = regmap_write(priv->regmap, info->cmd_regs.broadcast, cmd_data->broadcast);
+		if (ret)
+			return ret;
+
+		ret = regmap_write(priv->regmap, info->cmd_regs.ext_page, cmd_data->ext_page);
+		if (ret)
+			return ret;
+
+		ret = regmap_write(priv->regmap,
+				   info->cmd_regs.port_mask_high, cmd_data->port_mask_high);
+		if (ret)
+			return ret;
+	}
+
 	ret = regmap_write(priv->regmap, info->cmd_regs.port_mask_low, cmd_data->port_mask_low);
 	if (ret)
 		return ret;
@@ -190,7 +236,7 @@ static int otto_emdio_run_cmd(struct mii_bus *bus, u32 cmd,
 }
 
 static int otto_emdio_read_cmd(struct mii_bus *bus, u32 cmd,
-			       struct otto_emdio_cmd_regs *cmd_data, u32 *value)
+			       struct otto_emdio_cmd_regs *cmd_data, u32 mask, u32 *value)
 {
 	struct otto_emdio_priv *priv = otto_emdio_bus_to_priv(bus);
 	int ret;
@@ -204,7 +250,7 @@ static int otto_emdio_read_cmd(struct mii_bus *bus, u32 cmd,
 	if (ret)
 		return ret;
 
-	*value = FIELD_GET(PHY_CTRL_DATA, *value);
+	*value = field_get(mask, *value);
 
 	return 0;
 }
@@ -223,27 +269,28 @@ static int otto_emdio_9300_read_c22(struct mii_bus *bus, int port, int regnum, u
 {
 	struct otto_emdio_priv *priv = otto_emdio_bus_to_priv(bus);
 	struct otto_emdio_cmd_regs cmd_data = {
-		.c22_data	= FIELD_PREP(PHY_CTRL_REG_ADDR, regnum) |
-				  FIELD_PREP(PHY_CTRL_PARK_PAGE, 0x1f) |
-				  FIELD_PREP(PHY_CTRL_MAIN_PAGE, RAW_PAGE(priv)),
-		.io_data	= FIELD_PREP(PHY_CTRL_INDATA, port),
+		.c22_data	= FIELD_PREP(RTL9300_PHY_CTRL_REG_ADDR, regnum) |
+				  FIELD_PREP(RTL9300_PHY_CTRL_PARK_PAGE, 0x1f) |
+				  FIELD_PREP(RTL9300_PHY_CTRL_MAIN_PAGE, RAW_PAGE(priv)),
+		.io_data	= FIELD_PREP(RTL9300_PHY_CTRL_INDATA, port),
 	};
 
-	return otto_emdio_read_cmd(bus, PHY_CTRL_TYPE_C22, &cmd_data, value);
+	return otto_emdio_read_cmd(bus, RTL9300_PHY_CTRL_TYPE_C22, &cmd_data,
+				   RTL9300_PHY_CTRL_DATA, value);
 }
 
 static int otto_emdio_9300_write_c22(struct mii_bus *bus, int port, int regnum, u16 value)
 {
 	struct otto_emdio_priv *priv = otto_emdio_bus_to_priv(bus);
 	struct otto_emdio_cmd_regs cmd_data = {
-		.c22_data	= FIELD_PREP(PHY_CTRL_REG_ADDR, regnum) |
-				  FIELD_PREP(PHY_CTRL_PARK_PAGE, 0x1f) |
-				  FIELD_PREP(PHY_CTRL_MAIN_PAGE, RAW_PAGE(priv)),
-		.io_data	= FIELD_PREP(PHY_CTRL_INDATA, value),
+		.c22_data	= FIELD_PREP(RTL9300_PHY_CTRL_REG_ADDR, regnum) |
+				  FIELD_PREP(RTL9300_PHY_CTRL_PARK_PAGE, 0x1f) |
+				  FIELD_PREP(RTL9300_PHY_CTRL_MAIN_PAGE, RAW_PAGE(priv)),
+		.io_data	= FIELD_PREP(RTL9300_PHY_CTRL_INDATA, value),
 		.port_mask_low	= BIT(port),
 	};
 
-	return otto_emdio_write_cmd(bus, PHY_CTRL_TYPE_C22, &cmd_data);
+	return otto_emdio_write_cmd(bus, RTL9300_PHY_CTRL_TYPE_C22, &cmd_data);
 }
 
 static int otto_emdio_9300_read_c45(struct mii_bus *bus, int port,
@@ -252,10 +299,11 @@ static int otto_emdio_9300_read_c45(struct mii_bus *bus, int port,
 	struct otto_emdio_cmd_regs cmd_data = {
 		.c45_data	= FIELD_PREP(PHY_CTRL_MMD_DEVAD, dev_addr) |
 				  FIELD_PREP(PHY_CTRL_MMD_REG, regnum),
-		.io_data	= FIELD_PREP(PHY_CTRL_INDATA, port),
+		.io_data	= FIELD_PREP(RTL9300_PHY_CTRL_INDATA, port),
 	};
 
-	return otto_emdio_read_cmd(bus, PHY_CTRL_TYPE_C45, &cmd_data, value);
+	return otto_emdio_read_cmd(bus, RTL9300_PHY_CTRL_TYPE_C45, &cmd_data,
+				   RTL9300_PHY_CTRL_DATA, value);
 }
 
 static int otto_emdio_9300_write_c45(struct mii_bus *bus, int port,
@@ -264,11 +312,65 @@ static int otto_emdio_9300_write_c45(struct mii_bus *bus, int port,
 	struct otto_emdio_cmd_regs cmd_data = {
 		.c45_data	= FIELD_PREP(PHY_CTRL_MMD_DEVAD, dev_addr) |
 				  FIELD_PREP(PHY_CTRL_MMD_REG, regnum),
-		.io_data	= FIELD_PREP(PHY_CTRL_INDATA, value),
+		.io_data	= FIELD_PREP(RTL9300_PHY_CTRL_INDATA, value),
 		.port_mask_low	= BIT(port),
 	};
 
-	return otto_emdio_write_cmd(bus, PHY_CTRL_TYPE_C45, &cmd_data);
+	return otto_emdio_write_cmd(bus, RTL9300_PHY_CTRL_TYPE_C45, &cmd_data);
+}
+
+static int otto_emdio_9310_read_c22(struct mii_bus *bus, int port, int regnum, u32 *value)
+{
+	struct otto_emdio_priv *priv = otto_emdio_bus_to_priv(bus);
+	struct otto_emdio_cmd_regs cmd_data = {
+		.broadcast	= FIELD_PREP(RTL9310_BC_PORT_ID, port),
+		.c22_data	= FIELD_PREP(RTL9310_PHY_CTRL_REG_ADDR, regnum) |
+				  FIELD_PREP(RTL9310_PHY_CTRL_MAIN_PAGE, RAW_PAGE(priv)),
+	};
+
+	return otto_emdio_read_cmd(bus, RTL9310_PHY_CTRL_TYPE_C22, &cmd_data,
+				   RTL9310_PHY_CTRL_DATA, value);
+}
+
+static int otto_emdio_9310_write_c22(struct mii_bus *bus, int port, int regnum, u16 value)
+{
+	struct otto_emdio_priv *priv = otto_emdio_bus_to_priv(bus);
+	struct otto_emdio_cmd_regs cmd_data = {
+		.c22_data	= FIELD_PREP(RTL9310_PHY_CTRL_REG_ADDR, regnum) |
+				  FIELD_PREP(RTL9310_PHY_CTRL_MAIN_PAGE, RAW_PAGE(priv)),
+		.io_data	= FIELD_PREP(RTL9310_PHY_CTRL_INDATA, value),
+		.port_mask_high	= (u32)(BIT_ULL(port) >> 32),
+		.port_mask_low	= (u32)(BIT_ULL(port)),
+	};
+
+	return otto_emdio_write_cmd(bus, RTL9310_PHY_CTRL_TYPE_C22, &cmd_data);
+}
+
+static int otto_emdio_9310_read_c45(struct mii_bus *bus, int port,
+				    int dev_addr, int regnum, u32 *value)
+{
+	struct otto_emdio_cmd_regs cmd_data = {
+		.broadcast	= FIELD_PREP(RTL9310_BC_PORT_ID, port),
+		.c45_data	= FIELD_PREP(PHY_CTRL_MMD_DEVAD, dev_addr) |
+				  FIELD_PREP(PHY_CTRL_MMD_REG, regnum),
+	};
+
+	return otto_emdio_read_cmd(bus, RTL9310_PHY_CTRL_TYPE_C45, &cmd_data,
+				   RTL9310_PHY_CTRL_DATA, value);
+}
+
+static int otto_emdio_9310_write_c45(struct mii_bus *bus, int port,
+				     int dev_addr, int regnum, u16 value)
+{
+	struct otto_emdio_cmd_regs cmd_data = {
+		.c45_data	= FIELD_PREP(PHY_CTRL_MMD_DEVAD, dev_addr) |
+				  FIELD_PREP(PHY_CTRL_MMD_REG, regnum),
+		.io_data	= FIELD_PREP(RTL9310_PHY_CTRL_INDATA, value),
+		.port_mask_high	= (u32)(BIT_ULL(port) >> 32),
+		.port_mask_low	= (u32)(BIT_ULL(port)),
+	};
+
+	return otto_emdio_write_cmd(bus, RTL9310_PHY_CTRL_TYPE_C45, &cmd_data);
 }
 
 static int otto_emdio_read_c22(struct mii_bus *bus, int phy_id, int regnum)
@@ -386,6 +488,22 @@ static int otto_emdio_9300_setup_controller(struct otto_emdio_priv *priv)
 				 glb_ctrl_mask, glb_ctrl_val);
 	if (err)
 		return err;
+
+	return 0;
+}
+
+static int otto_emdio_9310_setup_controller(struct otto_emdio_priv *priv)
+{
+	int i, err;
+
+	/* Put the interfaces into C45 mode if required */
+	for (i = 0; i < priv->info->num_buses; i++) {
+		err = regmap_assign_bits(priv->regmap, RTL9310_SMI_GLB_CTRL1,
+					 RTL9310_SMI_GLB_FMT_SEL_C45(i),
+					 priv->smi_bus_is_c45[i]);
+		if (err)
+			return err;
+	}
 
 	return 0;
 }
@@ -582,9 +700,9 @@ static int otto_emdio_probe(struct platform_device *pdev)
 static const struct otto_emdio_info otto_emdio_9300_info = {
 	.addr_map_base = RTL9300_SMI_PORT0_5_ADDR_CTRL,
 	.bus_map_base = RTL9300_SMI_PORT0_15_POLLING_SEL,
-	.cmd_fail = PHY_CTRL_FAIL,
-	.cmd_read = PHY_CTRL_READ,
-	.cmd_write = PHY_CTRL_WRITE,
+	.cmd_fail = RTL9300_PHY_CTRL_FAIL,
+	.cmd_read = RTL9300_PHY_CTRL_READ,
+	.cmd_write = RTL9300_PHY_CTRL_WRITE,
 	.cmd_regs = {
 		.c22_data = RTL9300_SMI_ACCESS_PHY_CTRL_1,
 		.c45_data = RTL9300_SMI_ACCESS_PHY_CTRL_3,
@@ -601,8 +719,34 @@ static const struct otto_emdio_info otto_emdio_9300_info = {
 	.write_c45 = otto_emdio_9300_write_c45,
 };
 
+static const struct otto_emdio_info otto_emdio_9310_info = {
+	.addr_map_base = RTL9310_SMI_PORT_ADDR_CTRL,
+	.bus_map_base = RTL9310_SMI_PORT_POLLING_SEL,
+	.cmd_fail = RTL9310_PHY_CTRL_FAIL,
+	.cmd_read = RTL9310_PHY_CTRL_READ,
+	.cmd_write = RTL9310_PHY_CTRL_WRITE,
+	.cmd_regs = {
+		.broadcast = RTL9310_SMI_INDRT_ACCESS_BC_PHYID_CTRL,
+		.c22_data = RTL9310_SMI_INDRT_ACCESS_CTRL_0,
+		.c45_data = RTL9310_SMI_INDRT_ACCESS_MMD_CTRL,
+		.ext_page = RTL9310_SMI_INDRT_ACCESS_CTRL_1,
+		.io_data = RTL9310_SMI_INDRT_ACCESS_CTRL_3,
+		.port_mask_low = RTL9310_SMI_INDRT_ACCESS_CTRL_2_LOW,
+		.port_mask_high = RTL9310_SMI_INDRT_ACCESS_CTRL_2_HIGH,
+	},
+	.num_buses = RTL9310_NUM_BUSES,
+	.num_pages = RTL9310_NUM_PAGES,
+	.num_ports = RTL9310_NUM_PORTS,
+	.setup_controller = otto_emdio_9310_setup_controller,
+	.read_c22 = otto_emdio_9310_read_c22,
+	.read_c45 = otto_emdio_9310_read_c45,
+	.write_c22 = otto_emdio_9310_write_c22,
+	.write_c45 = otto_emdio_9310_write_c45,
+};
+
 static const struct of_device_id otto_emdio_ids[] = {
 	{ .compatible = "realtek,rtl9301-mdio", .data = &otto_emdio_9300_info },
+	{ .compatible = "realtek,rtl9311-mdio", .data = &otto_emdio_9310_info },
 	{}
 };
 MODULE_DEVICE_TABLE(of, otto_emdio_ids);
