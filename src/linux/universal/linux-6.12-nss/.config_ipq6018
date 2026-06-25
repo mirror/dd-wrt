@@ -1557,6 +1557,7 @@ CONFIG_SKB_RECYCLER=y
 CONFIG_SKB_RECYCLER_MULTI_CPU=y
 # CONFIG_SKB_RECYCLER_PREALLOC is not set
 CONFIG_SKB_RECYCLE_SIZE=2304
+# CONFIG_SKB_TIMESTAMP is not set
 
 #
 # Network testing
@@ -4685,6 +4686,7 @@ CONFIG_QCOM_SOCINFO=y
 # CONFIG_QCOM_APR is not set
 # CONFIG_QCOM_ICC_BWMON is not set
 # CONFIG_QCOM_PBS is not set
+# CONFIG_IPQ_REG_UPDATE is not set
 # end of Qualcomm SoC drivers
 
 # CONFIG_SOC_TI is not set

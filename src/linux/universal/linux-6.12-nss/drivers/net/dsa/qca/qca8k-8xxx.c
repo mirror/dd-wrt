@@ -1559,15 +1559,12 @@ static int qca8k_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		return -EINVAL;
 	}
 
-	/* Enable SerDes auto-negotiation always.
-	 * So fixed-link can work.
-	 */
 	/* Enable/disable SerDes auto-negotiation as necessary */
 	val = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ?
 		0 : QCA8K_PWS_SERDES_AEN_DIS;
- 
-	ret = qca8k_rmw(priv, QCA8K_REG_PWS, QCA8K_PWS_SERDES_AEN_DIS, val);
 
+	ret = qca8k_rmw(priv, QCA8K_REG_PWS, QCA8K_PWS_SERDES_AEN_DIS, val);
+ 
 	/* Configure the SGMII parameters */
 	ret = qca8k_read(priv, QCA8K_REG_SGMII_CTRL, &val);
 	if (ret)
@@ -1614,10 +1611,14 @@ static int qca8k_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	if (priv->ports_config.sgmii_tx_clk_falling_edge)
 		val |= QCA8K_PORT0_PAD_SGMII_TXCLK_FALLING_EDGE;
 
+	if (neg_mode == PHYLINK_PCS_NEG_OUTBAND)
+		val |= QCA8K_PORT_PAD_SGMII_FORCE_MODE;
+
 	if (val)
 		ret = qca8k_rmw(priv, reg,
 				QCA8K_PORT0_PAD_SGMII_RXCLK_FALLING_EDGE |
-				QCA8K_PORT0_PAD_SGMII_TXCLK_FALLING_EDGE,
+				QCA8K_PORT0_PAD_SGMII_TXCLK_FALLING_EDGE |
+				QCA8K_PORT_PAD_SGMII_FORCE_MODE,
 				val);
 
 	return 0;

@@ -321,7 +321,6 @@
 };
 
 
-
 &wifi {
 	status = "okay";
 	qcom,ath11k-calibration-variant = "Xiaomi-BE7000";
@@ -332,9 +331,9 @@
 	qcom,board_id = <0x20>;
 };
 
-&qcn9224_pci2 {
-	status = "okay";
-};
+//&qcn9224_pci2 {
+//	status = "okay";
+//};
 &pcie2 {
 	pinctrl-0 = <&pcie2_default>;
 	pinctrl-names = "default";
@@ -353,7 +352,7 @@
 			reg = <0 0 0 0 0>;
 			qcom,board_id = <0x2>;
 /*			qcom,board_id = <0x1008>;*/
-			hremote_node = <&qcn9224_pci2>;
+//			hremote_node = <&qcn9224_pci2>;
 			qcom,num-radios = <1>;
 		};
 	};
@@ -1439,94 +1438,6 @@
 		};
 	};
 
-
-/*		dp1: dp1 {
-			device_type = "network";
-			compatible = "qcom,nss-dp";
-			qcom,id = <1>;
-			reg = <0x3a001000 0x200>;
-			qcom,mactype = <0>;
-			local-mac-address = [000000000000];
-			phy-mode = "qusgmii";
-			qcom,link-poll = <0x1>;
-			qcom,phy-mdio-addr = <1>;
-			phy-handle = <&phy0>;
-			qcom,ppe-offload-disabled = <1>;
-			label = "wan";
-		};
-
-		dp2: dp2 {
-			device_type = "network";
-			compatible = "qcom,nss-dp";
-			qcom,id = <2>;
-			reg = <0x3a001200 0x200>;
-			qcom,mactype = <0>;
-			local-mac-address = [000000000000];
-			phy-mode = "qusgmii";
-			qcom,link-poll = <0x1>;
-			qcom,phy-mdio-addr = <2>;
-			phy-handle = <&phy1>;
-			qcom,ppe-offload-disabled = <1>;
-			label = "lan1";
-		};
-
-		dp3: dp3 {
-			device_type = "network";
-			compatible = "qcom,nss-dp";
-			qcom,id = <3>;
-			reg = <0x3a001400 0x200>;
-			qcom,mactype = <0>;
-			local-mac-address = [000000000000];
-			phy-mode = "qusgmii";
-			qcom,link-poll = <0x1>;
-			qcom,phy-mdio-addr = <3>;
-			phy-handle = <&phy2>;
-			qcom,ppe-offload-disabled = <1>;
-			label = "lan2";
-		};
-
-		dp4: dp4 {
-			device_type = "network";
-			compatible = "qcom,nss-dp";
-			qcom,id = <4>;
-			reg = <0x3a001600 0x200>;
-			qcom,mactype = <0>;
-			local-mac-address = [000000000000];
-			phy-mode = "qusgmii";
-			qcom,link-poll = <1>;
-			qcom,phy-mdio-addr = <4>;
-			phy-handle = <&phy3>;
-			qcom,ppe-offload-disabled = <1>;
-			label = "lan3";
-		};
-
-		dp5: dp5 {
-			device_type = "network";
-			compatible = "qcom,nss-dp";
-			qcom,id = <5>;
-			reg = <0x3a510000 0x4000>;
-			qcom,mactype = <1>;
-			local-mac-address = [000000000000];
-			qcom,link-poll = <0x1>;
-			qcom,phy-mdio-addr = <0x8>;
-			phy-handle = <&phy4>;
-			phy-mode = "usxgmii";
-		};
-
-		dp6: dp6 {
-			device_type = "network";
-			compatible = "qcom,nss-dp";
-			qcom,id = <6>;
-			reg = <0x3a514000 0x4000>;
-			qcom,mactype = <1>;
-			local-mac-address = [000000000000];
-			qcom,link-poll = <0x1>;
-			qcom,phy-mdio-addr = <0x0>;
-			phy-handle = <&phy5>;
-			phy-mode = "usxgmii";
-		};
-
-*/
 		dp1: dp1 {
 			device_type = "network";
 			compatible = "qcom,nss-dp";
@@ -2117,52 +2028,3 @@
 };
 
 
-/*
-&rpm_requests {
-	regulators {
-		compatible = "qcom,rpm-mp5496-regulators";
-
-		ipq9574_s1: s1 {
-			regulator-min-microvolt = <587500>;
-			regulator-max-microvolt = <1075000>;
-		};
-
-		ipq9574_s2: s2 {
-			regulator-min-microvolt = <700000>;
-			regulator-max-microvolt = <1000000>;
-		};
-
-		ipq9574_s4: s4 {
-			regulator-min-microvolt = <1>;
-			regulator-max-microvolt = <9>;
-			regulator-always-on;
-		};
-
-		mp5496_l5: l5 {
-			regulator-min-microvolt = <1800000>;
-			regulator-max-microvolt = <1800000>;
-			regulator-always-on;
-			regulator-boot-on;
-		};
-	};
-};
-
-
-&rpm_requests {
-	regulators {
-		compatible = "qcom,rpm-mp5496-regulators";
-
-		ipq9574_s1: ipq9574-s1 {
-			regulator-min-microvolt = <725000>;
-			regulator-max-microvolt = <1075000>;
-		};
-
-		mp5496_l5: mp5496-l5 {
-			regulator-min-microvolt = <1800000>;
-			regulator-max-microvolt = <1800000>;
-			regulator-always-on;
-			regulator-boot-on;
-		};
-	};
-};
-*/
