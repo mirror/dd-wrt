@@ -1020,9 +1020,9 @@ static int accept_conn__accept(void *this)
 			}
 			loginfail=0;
 		        // failed login mean we already tried 3 times
-			add_blocklist_sock("telnetd", ts->sockfd_read);
+			add_blocklist_sock("telnetd", fd);
 		}
-		if (FD_ISSET(ts->sockfd_read, &rdfdset) && check_blocklist_sock("telnetd",ts->sockfd_read))
+		if (check_blocklist_sock("telnetd",fd))
 		{
 			return 0;
 		}
