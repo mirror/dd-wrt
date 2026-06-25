@@ -25,6 +25,10 @@
 #define RTPCS_SPEED_2500			5
 #define RTPCS_SPEED_5000			6
 
+/* USXGMII-AN opcodes. RTK variant unused but kept for documentation */
+#define RTPCS_USXGMII_AN_OPC_STD		0x03
+#define RTPCS_USXGMII_AN_OPC_RTK		0xaa
+
 #define RTPCS_838X_CPU_PORT			28
 #define RTPCS_838X_SERDES_CNT			6
 #define RTPCS_838X_MAC_LINK_DUP_STS		0xa19c
@@ -197,6 +201,20 @@ struct rtpcs_sds_ops {
 
 	int (*config_polarity)(struct rtpcs_serdes *sds, unsigned int tx_pol,
 			       unsigned int rx_pol);
+
+	/* required: power down before reconfiguration */
+	int (*deactivate)(struct rtpcs_serdes *sds);
+	/* required: power back up */
+	int (*activate)(struct rtpcs_serdes *sds);
+	/* required: configure SerDes for hardware mode */
+	int (*config_hw_mode)(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode);
+	/* required: set hardware mode */
+	int (*set_hw_mode)(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode);
+	/* optional: configure media-specific parameters */
+	int (*config_media)(struct rtpcs_serdes *sds, enum rtpcs_sds_media media,
+			    enum rtpcs_sds_mode hw_mode);
+	/* optional: finalization that must follow power-up, e.g. RX calibration */
+	int (*post_config)(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode);
 };
 
 struct rtpcs_sds_reg_field {
@@ -268,7 +286,6 @@ struct rtpcs_config {
 
 	int (*init)(struct rtpcs_ctrl *ctrl);
 	int (*sds_probe)(struct rtpcs_serdes *sds);
-	int (*setup_serdes)(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode);
 };
 
 struct rtpcs_sds_config {
@@ -380,7 +397,6 @@ static int rtpcs_sds_write_field(struct rtpcs_serdes *sds, const struct rtpcs_sd
 	return sds->ops->write(sds, field->page, field->reg, field->msb, field->lsb, value);
 }
 
-__maybe_unused
 static int rtpcs_sds_xsg_write_bits(struct rtpcs_serdes *sds, int page, int regnum, int bithigh,
 				    int bitlow, u16 value)
 {
@@ -390,7 +406,6 @@ static int rtpcs_sds_xsg_write_bits(struct rtpcs_serdes *sds, int page, int regn
 	return sds->ops->xsg_write(sds, page, regnum, bithigh, bitlow, value);
 }
 
-__maybe_unused
 static int rtpcs_sds_xsg_write(struct rtpcs_serdes *sds, int page, int regnum, u16 value)
 {
 	if (!sds->ops->xsg_write)
@@ -400,16 +415,6 @@ static int rtpcs_sds_xsg_write(struct rtpcs_serdes *sds, int page, int regnum, u
 }
 
 /* Other helpers */
-
-__maybe_unused
-static int rtpcs_sds_modify(struct rtpcs_serdes *sds, int page, int regnum,
-			    u16 mask, u16 set)
-{
-	int mmd_regnum = rtpcs_sds_to_mmd(page, regnum);
-
-	return mdiobus_c45_modify(sds->ctrl->bus, sds->id, MDIO_MMD_VEND1,
-				  mmd_regnum, mask, set);
-}
 
 static struct rtpcs_serdes *rtpcs_sds_get_even(struct rtpcs_serdes *sds)
 {
@@ -447,9 +452,8 @@ static struct rtpcs_link *rtpcs_phylink_pcs_to_link(struct phylink_pcs *pcs)
 	return container_of(pcs, struct rtpcs_link, pcs);
 }
 
-static int rtpcs_sds_determine_hw_mode(struct rtpcs_serdes *sds,
-                                       phy_interface_t if_mode,
-                                       enum rtpcs_sds_mode *hw_mode)
+static int rtpcs_sds_select_hw_mode(struct rtpcs_serdes *sds, phy_interface_t if_mode,
+				    enum rtpcs_sds_mode *hw_mode)
 {
 	u8 n_links = sds->num_of_links;
 
@@ -503,6 +507,26 @@ static int rtpcs_sds_determine_hw_mode(struct rtpcs_serdes *sds,
 	}
 
 	/* TODO: check if the particular SerDes supports the mode */
+
+	return 0;
+}
+
+static int rtpcs_sds_select_media(enum rtpcs_sds_mode hw_mode, enum rtpcs_sds_media *media)
+{
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_OFF:
+		*media = RTPCS_SDS_MEDIA_NONE;
+		break;
+	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_2500BASEX:
+	case RTPCS_SDS_MODE_10GBASER:
+		*media = RTPCS_SDS_MEDIA_FIBER;
+		break;
+	default:
+		*media = RTPCS_SDS_MEDIA_PCB;
+		break;
+	}
 
 	return 0;
 }
@@ -666,129 +690,51 @@ static const s16 rtpcs_838x_sds_hw_mode_vals[RTPCS_SDS_MODE_MAX] = {
 	[RTPCS_SDS_MODE_QSGMII]		= 0x6,
 };
 
-#define SDS(ctrl,n)	(&(ctrl)->serdes[n])
-
-static void rtpcs_838x_sds_patch_01_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
+static void rtpcs_838x_sds_patch_qsgmii(struct rtpcs_serdes *sds)
 {
-	/* CKREFBUF_S0S1 for QSGMII */
-	regmap_write_bits(ctrl->map, RTPCS_838X_PLL_CML_CTRL, 0xf, 0xf);
+	bool is_even = (rtpcs_sds_get_even(sds) == sds);
 
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 3, 0xf46f);
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 2, 0x85fa);
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 2, 0x85fa);
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 6, 0x20d8);
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 6, 0x20d8);
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 17, 0xb7c9);
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 11, 0x482);
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 10, 0x80c7);
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 18, 0xab8e);
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 11, 0x482);
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 19, 0x24ab);
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 17, 0x4208);
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 18, 0xc208);
-	rtpcs_sds_write(SDS(ctrl, 0), 2, 25, 0x303);
-	rtpcs_sds_write(SDS(ctrl, 1), 2, 25, 0x303);
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 14, 0xfcc2);
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 14, 0xfcc2);
+	rtpcs_sds_write(sds, 0x1, 0x3, 0xf46d);
+	rtpcs_sds_write(sds, 0x1, 0x2, 0x85fa);
+	rtpcs_sds_write(sds, 0x1, 0x6, 0x20d8);
 
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 9, 0x8e64);
-	rtpcs_sds_write(SDS(ctrl, 0), 1, 9, 0x8c64);
+	rtpcs_sds_write(sds, 0x1, 10, is_even ? 0x58c7 : 0x80c7);
+	rtpcs_sds_write(sds, 0x1, 17, is_even ? 0xb7c9 : 0x4208);
+	rtpcs_sds_write(sds, 0x1, 18, is_even ? 0xab8e : 0xc208);
+	rtpcs_sds_write(sds, 0x1, 11, 0x482);
+	if (is_even)
+		rtpcs_sds_write(sds, 0x1, 19, 0x24ab);
 
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 9, 0x8e64);
-	rtpcs_sds_write(SDS(ctrl, 1), 1, 9, 0x8c64);
+	rtpcs_sds_write(sds, 0x2, 25, 0x303);
+	rtpcs_sds_write(sds, 0x1, 14, 0xfcc2);
 }
 
-static void rtpcs_838x_sds_patch_23_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
+static void rtpcs_838x_sds_patch_fiber(struct rtpcs_serdes *sds)
 {
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 3, 0xf46d);
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 2, 0x85fa);
-	rtpcs_sds_write(SDS(ctrl, 3), 1, 2, 0x85fa);
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 6, 0x20d8);
-	rtpcs_sds_write(SDS(ctrl, 3), 1, 6, 0x20d8);
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 17, 0xb7c9);
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 18, 0xab8e);
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 11, 0x482);
-	rtpcs_sds_write(SDS(ctrl, 3), 1, 11, 0x482);
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 19, 0x24ab);
-	rtpcs_sds_write(SDS(ctrl, 3), 1, 17, 0x4208);
-	rtpcs_sds_write(SDS(ctrl, 3), 1, 18, 0xc208);
-	rtpcs_sds_write(SDS(ctrl, 2), 2, 25, 0x303);
-	rtpcs_sds_write(SDS(ctrl, 3), 2, 25, 0x303);
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 14, 0xfcc2);
-	rtpcs_sds_write(SDS(ctrl, 3), 1, 14, 0xfcc2);
+	bool is_even = rtpcs_sds_get_even(sds) == sds;
 
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 9, 0x8e64);
-	rtpcs_sds_write(SDS(ctrl, 2), 1, 9, 0x8c64);
-
-	rtpcs_sds_write(SDS(ctrl, 3), 1, 9, 0x8e64);
-	rtpcs_sds_write(SDS(ctrl, 3), 1, 9, 0x8c64);
-}
-
-static void rtpcs_838x_sds_patch_4_fiber_6275b(struct rtpcs_ctrl *ctrl)
-{
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 2, 0x85fa);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 11, 0x1482);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 6, 0x20d8);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 10, 0xc3);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 17, 0xb7c9);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 18, 0xab8e);
-	rtpcs_sds_write(SDS(ctrl, 4), 2, 25, 0x303);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 14, 0xfcc2);
-
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 9, 0x8e64);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 9, 0x8c64);
-}
-
-static void rtpcs_838x_sds_patch_4_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
-{
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 3, 0xf46d);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 2, 0x85fa);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 11, 0x0482);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 6, 0x20d8);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 10, 0x58c7);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 17, 0xb7c9);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 18, 0xab8e);
-	rtpcs_sds_write(SDS(ctrl, 4), 2, 25, 0x303);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 14, 0xfcc2);
-
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 9, 0x8e64);
-	rtpcs_sds_write(SDS(ctrl, 4), 1, 9, 0x8c64);
-}
-
-static void rtpcs_838x_sds_patch_5_fiber_6275b(struct rtpcs_ctrl *ctrl)
-{
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 2, 0x85fa);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 3, 0x00);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 4, 0xdccc);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 5, 0x00);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 6, 0x3600);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 7, 0x03);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 8, 0x79aa);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 9, 0x8c64);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 10, 0xc3);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 11, 0x1482);
-	rtpcs_sds_write(SDS(ctrl, 5), 2, 24, 0x14aa);
-	rtpcs_sds_write(SDS(ctrl, 5), 2, 25, 0x303);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 14, 0xf002);
-	rtpcs_sds_write(SDS(ctrl, 5), 2, 27, 0x4bf);
-
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 9, 0x8e64);
-	rtpcs_sds_write(SDS(ctrl, 5), 1, 9, 0x8c64);
+	rtpcs_sds_write(sds, 1, 2, 0x85fa);
+	rtpcs_sds_write(sds, 1, 3, 0x00);
+	rtpcs_sds_write(sds, 1, 4, 0xdccc);
+	rtpcs_sds_write(sds, 1, 5, 0x00);
+	rtpcs_sds_write(sds, 1, 6, is_even ? 0x20d8 : 0x3600);
+	rtpcs_sds_write(sds, 1, 7, 0x03);
+	rtpcs_sds_write(sds, 1, 8, 0x79aa);
+	rtpcs_sds_write(sds, 1, 9, 0x8c64);
+	rtpcs_sds_write(sds, 1, 10, 0xc3);
+	rtpcs_sds_write(sds, 1, 11, 0x1482);
+	rtpcs_sds_write(sds, 1, 17, 0xb7c9);
+	rtpcs_sds_write(sds, 1, 18, 0xab8e);
+	rtpcs_sds_write(sds, 2, 24, 0x14aa);
+	rtpcs_sds_write(sds, 2, 25, 0x303);
+	rtpcs_sds_write(sds, 1, 14, 0xf002);
+	rtpcs_sds_write(sds, 2, 27, 0x4bf);
 }
 
 static void rtpcs_838x_sds_reset(struct rtpcs_serdes *sds)
 {
-	rtpcs_sds_write_bits(sds, 2, 0, 11, 11, 0x0);	/* FIB_REG0 CFG_FIB_PDOWN */
-
-	/* analog reset */
-	rtpcs_sds_write_bits(sds, 0, 0, 1, 0, 0x0);	/* REG0 EN_RX/EN_TX */
-	rtpcs_sds_write_bits(sds, 0, 0, 1, 0, 0x3);	/* REG0 EN_RX/EN_TX */
-
-	/* digital reset */
 	rtpcs_sds_write_bits(sds, 0, 3, 6, 6, 0x1);	/* REG3 SOFT_RST */
 	rtpcs_sds_write_bits(sds, 0, 3, 6, 6, 0x0);	/* REG3 SOFT_RST */
-
-	dev_info(sds->ctrl->dev, "SerDes %d reset\n", sds->id);
 }
 
 static bool rtpcs_838x_sds_is_hw_mode_supported(struct rtpcs_serdes *sds,
@@ -830,11 +776,37 @@ static int rtpcs_838x_sds_power(struct rtpcs_serdes *sds, bool power_on)
 
 static int rtpcs_838x_sds_deactivate(struct rtpcs_serdes *sds)
 {
-	return rtpcs_838x_sds_power(sds, false);
+	int ret;
+
+	ret = rtpcs_838x_sds_power(sds, false);
+	if (ret)
+		return ret;
+
+	/* EN_RX | EN_TX */
+	ret = rtpcs_sds_write_bits(sds, 0, 0, 1, 0, 0x0);
+	if (ret)
+		return ret;
+
+	/* CFG_FIB_PDOWN / BMCR_PDOWN */
+	return rtpcs_sds_write_bits(sds, 2, MII_BMCR, 11, 11, 0x1);
 }
 
 static int rtpcs_838x_sds_activate(struct rtpcs_serdes *sds)
 {
+	int ret;
+
+	rtpcs_838x_sds_reset(sds);
+
+	/* CFG_FIB_PDOWN / BMCR_PDOWN */
+	ret = rtpcs_sds_write_bits(sds, 2, MII_BMCR, 11, 11, 0x0);
+	if (ret)
+		return ret;
+
+	/* EN_RX | EN_TX */
+	ret = rtpcs_sds_write_bits(sds, 0, 0, 1, 0, 0x3);
+	if (ret)
+		return ret;
+
 	return rtpcs_838x_sds_power(sds, true);
 }
 
@@ -873,8 +845,7 @@ static int rtpcs_838x_sds_set_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode
 				 0x7 << int_mode_shift, int_mode_val << int_mode_shift);
 }
 
-static int rtpcs_838x_sds_patch(struct rtpcs_serdes *sds,
-				enum rtpcs_sds_mode hw_mode)
+static int rtpcs_838x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
 	struct rtpcs_ctrl *ctrl = sds->ctrl;
 	u8 sds_id = sds->id;
@@ -893,24 +864,30 @@ static int rtpcs_838x_sds_patch(struct rtpcs_serdes *sds,
 
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_1000BASEX:
-		if (sds_id == 4)
-			rtpcs_838x_sds_patch_4_fiber_6275b(ctrl);
-		else if (sds_id == 5)
-			rtpcs_838x_sds_patch_5_fiber_6275b(ctrl);
-
+		rtpcs_838x_sds_patch_fiber(sds);
 		break;
 	case RTPCS_SDS_MODE_QSGMII:
-		if (sds_id == 0 || sds_id == 1)
-			rtpcs_838x_sds_patch_01_qsgmii_6275b(ctrl);
-		else if (sds_id == 2 || sds_id == 3)
-			rtpcs_838x_sds_patch_23_qsgmii_6275b(ctrl);
-		else if (sds_id == 4)
-			rtpcs_838x_sds_patch_4_qsgmii_6275b(ctrl);
-
+		rtpcs_838x_sds_patch_qsgmii(sds);
 		break;
 	default:
 		break;
 	}
+
+	if (sds_id < 2) {
+		/*
+		 * These settings have to match to make QSGMII working.
+		 * Testing showed that both variants work:
+		 *   - CKREFBUF_S0S1 = 0xf + REG_CML_SEL = 0x1
+		 *   - CKREFBUF_S0S1 = 0x0 + REG_CML_SEL = 0x0
+		 */
+
+		/* CKREFBUF_S0S1 */
+		regmap_write_bits(ctrl->map, RTPCS_838X_PLL_CML_CTRL, 0xf, 0xf);
+		rtpcs_sds_write_bits(sds, 0x1, 0x3, 1, 1, 0x1); /* REG_CML_SEL */
+	}
+
+	rtpcs_sds_write(sds, 0x1, 0x9, 0x8e64);
+	rtpcs_sds_write(sds, 0x1, 0x9, 0x8c64);
 
 	return 0;
 }
@@ -939,34 +916,8 @@ static int rtpcs_838x_init(struct rtpcs_ctrl *ctrl)
 	return 0;
 }
 
-static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
-				   enum rtpcs_sds_mode hw_mode)
+static int rtpcs_838x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
-	int ret;
-
-	if (!rtpcs_838x_sds_is_hw_mode_supported(sds, hw_mode))
-		return -ENOTSUPP;
-
-	rtpcs_838x_sds_deactivate(sds);
-
-	/* take reset */
-	rtpcs_sds_write(sds, 0x0, 0x0, 0xc00);
-	rtpcs_sds_write(sds, 0x0, 0x3, 0x7146);
-
-	ret = rtpcs_838x_sds_set_mode(sds, hw_mode);
-	if (ret)
-		return ret;
-
-	sds->hw_mode = hw_mode;
-
-	rtpcs_838x_sds_patch(sds, hw_mode);
-	rtpcs_838x_sds_reset(sds);
-
-	/* release reset */
-	rtpcs_sds_write(sds, 0, 3, 0x7106);
-
-	rtpcs_838x_sds_activate(sds);
-
 	/*
 	 * Run a switch queue reset after the first start of a SerDes. This recovers ports that
 	 * were already connected during boot and will not pass traffic. Sometimes the bug can
@@ -1181,25 +1132,27 @@ static int rtpcs_839x_init(struct rtpcs_ctrl *ctrl)
 	return 0;
 }
 
-static int rtpcs_839x_setup_serdes(struct rtpcs_serdes *sds,
-				   enum rtpcs_sds_mode hw_mode)
+/*
+ * These no-op stubs satisfy the mandatory activate/deactivate contract until
+ * real power sequencing is implemented.
+ */
+static int rtpcs_839x_sds_deactivate(struct rtpcs_serdes *sds)
 {
-	int ret;
+	return 0;
+}
 
-	/* Don't touch 5G SerDes, they are already properly configured
-	 * at startup for QSGMII. Thus, connected PHYs should work out
-	 * of the box.
-	 */
-	if (sds->type == RTPCS_SDS_TYPE_5G)
-		return 0;
-
-	ret = rtpcs_sds_set_mac_mode(sds, hw_mode);
-	if (ret < 0)
-		return ret;
-
-	sds->hw_mode = hw_mode;
-
+static int rtpcs_839x_sds_activate(struct rtpcs_serdes *sds)
+{
 	rtpcs_839x_sds_reset(sds);
+	return 0;
+}
+
+/*
+ * Keep this as a no-op stub until RTL839x is extended to do proper configuration
+ * here. E.g., the still missing SGMII, 100BASEX and 1000BASEX setup should go here.
+ */
+static int rtpcs_839x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
+{
 	return 0;
 }
 
@@ -1683,7 +1636,7 @@ static int rtpcs_930x_sds_set_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sd
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	int pbit = (sds == even_sds) ? 4 : 6;
 
-	/* Selecting the PLL a SerDes is done in the even lane register */
+	/* Selecting the PLL a SerDes uses is done in the even lane register */
 
 	/* bit 0 is force-bit, bit 1 is PLL selector */
 	return rtpcs_sds_write_bits(even_sds, 0x20, 0x12, pbit + 1, pbit, (pll << 1) | BIT(0));
@@ -3018,8 +2971,8 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 			return ret;
 
 		if (!is_xsgmii)
-			/* opcode 0x03: standard/generic USXGMII mode */
-			rtpcs_93xx_sds_usxgmii_config(sds, 0x03, 0xa4, 0, 1, 0x1);
+			rtpcs_93xx_sds_usxgmii_config(sds, RTPCS_USXGMII_AN_OPC_STD,
+						      0xa4, 0, 1, 0x1);
 		break;
 
 	default:
@@ -3042,49 +2995,9 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 	return 0;
 }
 
-__always_unused
-static int rtpcs_930x_sds_cmu_band_get(struct rtpcs_serdes *sds)
+static int rtpcs_930x_sds_config_media(struct rtpcs_serdes *sds, enum rtpcs_sds_media media,
+				       enum rtpcs_sds_mode hw_mode)
 {
-	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	struct rtpcs_serdes *odd_sds = rtpcs_sds_get_odd(sds);
-	u32 page;
-	u32 en;
-	u32 cmu_band;
-
-/*	page = rtl9300_sds_cmu_page_get(sds); */
-	page = 0x25; /* 10GR and 1000BX */
-
-	rtpcs_sds_write_bits(even_sds, page, 0x1c, 15, 15, 1);
-	rtpcs_sds_write_bits(odd_sds, page, 0x1c, 15, 15, 1);
-
-	en = rtpcs_sds_read_bits(even_sds, page, 27, 1, 1);
-	if (!en) { /* Auto mode */
-		rtpcs_sds_write(even_sds, 0x1f, 0x02, 31);
-
-		cmu_band = rtpcs_sds_read_bits(even_sds, 0x1f, 0x15, 5, 1);
-	} else {
-		cmu_band = rtpcs_sds_read_bits(even_sds, page, 30, 4, 0);
-	}
-
-	return cmu_band;
-}
-
-static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
-				   enum rtpcs_sds_mode hw_mode)
-{
-	int calib_tries = 0, ret;
-
-	ret = rtpcs_930x_sds_deactivate(sds);
-	if (ret < 0)
-		return ret;
-
-	/* Apply configuration for a hardware mode to SerDes */
-	ret = rtpcs_930x_sds_config_hw_mode(sds, hw_mode);
-	if (ret < 0)
-		return ret;
-
-	/* Maybe use dal_longan_sds_init */
-
 	/*
 	 * dal_longan_construct_mac_default_10gmedia_fiber: set medium to fiber.
 	 * TODO: this is unconditional regardless of hw_mode; needs mode-aware
@@ -3092,17 +3005,16 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 	 */
 	rtpcs_sds_write_bits(sds, 0x1f, 11, 1, 1, 1);
 
-	/* Enable SDS in desired mode */
-	ret = rtpcs_930x_sds_set_mode(sds, hw_mode);
-	if (ret < 0)
-		return ret;
+	rtpcs_930x_sds_tx_config(sds, hw_mode);
+	return 0;
+}
 
-	sds->hw_mode = hw_mode;
-
-	rtpcs_930x_sds_activate(sds);
+static int rtpcs_930x_sds_post_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
+{
+	int calib_tries = 0;
 
 	if (hw_mode == RTPCS_SDS_MODE_QSGMII)
-		goto skip_cali;
+		return 0;
 
 	/* Calibrate SerDes receiver in loopback mode */
 	rtpcs_930x_sds_10g_idle(sds);
@@ -3113,10 +3025,6 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 	} while (rtpcs_930x_sds_check_calibration(sds, hw_mode) && calib_tries < 3);
 	if (calib_tries >= 3)
 		pr_warn("%s: SerDes RX calibration failed\n", __func__);
-
-skip_cali:
-	/* Leave loopback mode */
-	rtpcs_930x_sds_tx_config(sds, hw_mode);
 
 	return 0;
 }
@@ -3207,21 +3115,13 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_HISGMII:
 	case RTPCS_SDS_MODE_XSGMII:
 		for (int i = 0; i < 4; ++i) {
-			rtpcs_sds_write_bits(sds, 0x41, 0x18, 2, 0, i);
-			rtpcs_sds_write_bits(sds, 0x41, 0x3, 15, 8, 0x0);
-			rtpcs_sds_write_bits(sds, 0x41, 0x2, 15, 0, 0x0);
+			rtpcs_sds_xsg_write_bits(sds, 0x1, 0x18, 2, 0, i);
+			rtpcs_sds_xsg_write_bits(sds, 0x1, 0x3, 15, 8, 0x0);
+			rtpcs_sds_xsg_write(sds, 0x1, 0x2, 0x0);
 		}
 
-		for (int i = 0; i < 4; ++i) {
-			rtpcs_sds_write_bits(sds, 0x81, 0x18, 2, 0, i);
-			rtpcs_sds_write_bits(sds, 0x81, 0x3, 15, 8, 0x0);
-			rtpcs_sds_write_bits(sds, 0x81, 0x2, 15, 0, 0x0);
-		}
-
-		rtpcs_sds_write_bits(sds, 0x41, 0x0, 15, 0, 0x0);
-		rtpcs_sds_write_bits(sds, 0x41, 0x1, 15, 8, 0x0);
-		rtpcs_sds_write_bits(sds, 0x81, 0x0, 15, 0, 0x0);
-		rtpcs_sds_write_bits(sds, 0x81, 0x1, 15, 8, 0x0);
+		rtpcs_sds_xsg_write(sds, 0x1, 0x0, 0x0);
+		rtpcs_sds_xsg_write_bits(sds, 0x1, 0x1, 15, 8, 0x0);
 		break;
 	case RTPCS_SDS_MODE_1000BASEX:
 		rtpcs_sds_write_bits(sds, 0x41, 0x18, 2, 0, 0x0);
@@ -3327,6 +3227,7 @@ static int rtpcs_931x_sds_activate(struct rtpcs_serdes *sds)
 	return rtpcs_931x_sds_power(sds, true);
 }
 
+__maybe_unused
 static void rtpcs_931x_sds_reset(struct rtpcs_serdes *sds)
 {
 	u32 o_mode, f_bit;
@@ -3482,46 +3383,6 @@ static int rtpcs_931x_sds_reconfigure_to_pll(struct rtpcs_serdes *sds, enum rtpc
 	return rtpcs_931x_sds_power(sds, true);
 }
 
-static int rtpcs_931x_sds_cmu_band_set(struct rtpcs_serdes *sds,
-				       bool enable, u32 band,
-				       enum rtpcs_sds_mode hw_mode)
-{
-	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int page = rtpcs_931x_sds_cmu_page_get(hw_mode);
-	int en_val;
-
-	if (page < 0)
-		return -EINVAL;
-
-	page += 1;
-	en_val = enable ? 0 : 1;
-
-	rtpcs_sds_write_bits(even_sds, page, 0x7, 13, 13, en_val);
-	rtpcs_sds_write_bits(even_sds, page, 0x7, 11, 11, en_val);
-	rtpcs_sds_write_bits(even_sds, page, 0x7, 4, 0, band);
-
-	rtpcs_931x_sds_reset(even_sds);
-
-	return 0;
-}
-
-__maybe_unused
-static int rtpcs_931x_sds_cmu_band_get(struct rtpcs_serdes *sds,
-				       enum rtpcs_sds_mode hw_mode)
-{
-	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int page = rtpcs_931x_sds_cmu_page_get(hw_mode);
-
-	if (page < 0)
-		return -EINVAL;
-
-	page += 1;
-	rtpcs_sds_write(even_sds, 0x1f, 0x02, 73);
-	rtpcs_sds_write_bits(even_sds, page, 0x5, 15, 15, 0x1);
-
-	return rtpcs_sds_read_bits(even_sds, 0x1f, 0x15, 8, 3);
-}
-
 __always_unused
 static int rtpcs_931x_sds_link_sts_get(struct rtpcs_serdes *sds)
 {
@@ -3571,11 +3432,7 @@ static int rtpcs_931x_sds_config_polarity(struct rtpcs_serdes *sds, unsigned int
 
 	/* xsg_*_inv */
 	val = (rx_val << 1) | tx_val;
-	ret = rtpcs_sds_write_bits(sds, 0x40, 0x0, 9, 8, val);
-	if (ret)
-		return ret;
-
-	return rtpcs_sds_write_bits(sds, 0x80, 0x0, 9, 8, val);
+	return rtpcs_sds_xsg_write_bits(sds, 0x0, 0x0, 9, 8, val);
 }
 
 static const struct rtpcs_sds_tx_config rtpcs_931x_sds_tx_cfg_v1[] = {
@@ -3687,8 +3544,8 @@ static int rtpcs_931x_sds_config_rx(struct rtpcs_serdes *sds,
 	return 0;
 }
 
-static int rtpcs_931x_sds_set_media(struct rtpcs_serdes *sds, enum rtpcs_sds_media sds_media,
-				    enum rtpcs_sds_mode hw_mode)
+static int rtpcs_931x_sds_config_media(struct rtpcs_serdes *sds, enum rtpcs_sds_media sds_media,
+				       enum rtpcs_sds_mode hw_mode)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	bool is_dac, is_10g;
@@ -3830,14 +3687,10 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 
 	case RTPCS_SDS_MODE_SGMII:
 		rtpcs_sds_write_bits(sds, 0x24, 0x9, 15, 15, 0);
-
-		/* TODO: where does this come from? SDK doesn't have this. */
-		rtpcs_931x_sds_cmu_band_set(sds, true, 62, RTPCS_SDS_MODE_SGMII);
 		break;
 
 	case RTPCS_SDS_MODE_XSGMII:
-		rtpcs_sds_write_bits(sds, 0x40, 0xE, 12, 12, 1);
-		rtpcs_sds_write_bits(sds, 0x80, 0xE, 12, 12, 1);
+		rtpcs_sds_xsg_write_bits(sds, 0x0, 0xe, 12, 12, 0x1);
 		break;
 
 	case RTPCS_SDS_MODE_USXGMII_10GSXGMII:
@@ -3849,7 +3702,7 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 		rtpcs_931x_sds_reset_leq_dfe(sds);
 		rtpcs_931x_sds_rx_reset(sds);
 
-		rtpcs_93xx_sds_usxgmii_config(sds, 0x03, 0xa4, 0, 1, 0x1);
+		rtpcs_93xx_sds_usxgmii_config(sds, RTPCS_USXGMII_AN_OPC_STD, 0xa4, 0, 1, 0x1);
 		break;
 
 	case RTPCS_SDS_MODE_QSGMII:
@@ -3857,54 +3710,7 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 		return -ENOTSUPP;
 	}
 
-	return 0;
-}
-
-static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
-				   enum rtpcs_sds_mode hw_mode)
-{
-	struct rtpcs_ctrl *ctrl = sds->ctrl;
-	enum rtpcs_sds_media sds_media;
-	int ret;
-
-	rtpcs_931x_sds_deactivate(sds);
-
-	ret = rtpcs_931x_sds_config_hw_mode(sds, hw_mode);
-	if (ret < 0)
-		return ret;
-
-	ret = rtpcs_93xx_sds_config_cmu(sds, hw_mode);
-	if (ret < 0)
-		return ret;
-
-	switch (hw_mode) {
-	case RTPCS_SDS_MODE_OFF:
-		sds_media = RTPCS_SDS_MEDIA_NONE;
-		break;
-	case RTPCS_SDS_MODE_SGMII:
-	case RTPCS_SDS_MODE_1000BASEX:
-	case RTPCS_SDS_MODE_2500BASEX:
-	case RTPCS_SDS_MODE_10GBASER:
-		sds_media = RTPCS_SDS_MEDIA_FIBER;
-		break;
-	default:
-		sds_media = RTPCS_SDS_MEDIA_PCB;
-		break;
-	}
-	ret = rtpcs_931x_sds_set_media(sds, sds_media, hw_mode);
-	if (ret < 0) {
-		dev_err(ctrl->dev, "failed to config SerDes for media: %d\n", ret);
-		return ret;
-	}
-
-	ret = rtpcs_931x_sds_set_mode(sds, hw_mode);
-	if (ret < 0)
-		return ret;
-
-	sds->hw_mode = hw_mode;
-
-	rtpcs_931x_sds_activate(sds);
-	return 0;
+	return rtpcs_93xx_sds_config_cmu(sds, hw_mode);
 }
 
 /**
@@ -4104,43 +3910,71 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
 	struct rtpcs_ctrl *ctrl = link->ctrl;
 	struct rtpcs_serdes *sds = link->sds;
+	enum rtpcs_sds_media sds_media;
 	enum rtpcs_sds_mode hw_mode;
 	int ret;
 
-	ret = rtpcs_sds_determine_hw_mode(sds, interface, &hw_mode);
+	ret = rtpcs_sds_select_hw_mode(sds, interface, &hw_mode);
 	if (ret < 0) {
 		dev_err(ctrl->dev, "SerDes %u doesn't support %s mode\n", sds->id,
 			phy_modes(interface));
-		return -ENOTSUPP;
+		return -EOPNOTSUPP;
 	}
 
-	mutex_lock(&ctrl->lock);
+	scoped_guard(mutex, &ctrl->lock) {
+		if (sds->hw_mode != hw_mode) {
+			dev_info(ctrl->dev, "configure SerDes %u for mode %s\n", sds->id,
+				 phy_modes(interface));
 
-	if (sds->hw_mode != hw_mode) {
-		dev_info(ctrl->dev, "configure SerDes %u for mode %s\n", sds->id,
-			 phy_modes(interface));
+			ret = rtpcs_sds_config_polarity(sds, interface);
+			if (ret < 0) {
+				dev_err(ctrl->dev, "failed to configure polarity of SerDes %u\n",
+					sds->id);
+				return ret;
+			}
 
-		ret = rtpcs_sds_config_polarity(sds, interface);
-		if (ret < 0) {
-			dev_err(ctrl->dev, "failed to configure polarity of SerDes %u\n",
-				sds->id);
-			goto out;
-		}
+			ret = sds->ops->deactivate(sds);
+			if (ret < 0)
+				return ret;
 
-		ret = ctrl->cfg->setup_serdes(sds, hw_mode);
-		if (ret < 0)
-			goto out;
+			ret = sds->ops->config_hw_mode(sds, hw_mode);
+			if (ret < 0)
+				return ret;
 
-		sds->first_start = false;
-	} else {
-		dev_dbg(ctrl->dev, "SerDes %u already in mode %s, no change\n",
-			 sds->id, phy_modes(interface));
+			if (sds->ops->config_media) {
+				ret = rtpcs_sds_select_media(hw_mode, &sds_media);
+				if (ret < 0)
+					return ret;
+
+				ret = sds->ops->config_media(sds, sds_media, hw_mode);
+				if (ret < 0)
+					return ret;
+			}
+
+			ret = sds->ops->set_hw_mode(sds, hw_mode);
+			if (ret < 0)
+				return ret;
+
+			sds->hw_mode = hw_mode;
+
+			ret = sds->ops->activate(sds);
+			if (ret < 0)
+				return ret;
+
+			if (sds->ops->post_config) {
+				ret = sds->ops->post_config(sds, hw_mode);
+				if (ret < 0)
+					return ret;
+			}
+
+			sds->first_start = false;
+		} else
+			dev_dbg(ctrl->dev, "SerDes %u already in mode %s, no change\n",
+				 sds->id, phy_modes(interface));
+
+		ret = sds->ops->set_autoneg(sds, neg_mode, advertising);
 	}
 
-	ret = sds->ops->set_autoneg(sds, neg_mode, advertising);
-
-out:
-	mutex_unlock(&ctrl->lock);
 	return ret;
 }
 
@@ -4216,51 +4050,62 @@ static struct rtpcs_serdes *rtpcs_find_serdes(struct rtpcs_ctrl *ctrl,
 static int rtpcs_map_links(struct device *dev, struct rtpcs_ctrl *ctrl)
 {
 	struct fwnode_handle *fw_dev = dev_fwnode(dev);
-	struct fwnode_handle *fw_switch __free(fwnode_handle) = fwnode_get_parent(fw_dev);
+	struct fwnode_handle *fw_switch, *fw_ports;
+	int ret = 0;
+
+	fw_switch = fwnode_get_parent(fw_dev);
 	if (!fw_switch)
 		return -ENODEV;
 
-	struct fwnode_handle *fw_ports __free(fwnode_handle) =
-		fwnode_get_named_child_node(fw_switch, "ethernet-ports");
-	if (!fw_ports)
-		return dev_err_probe(dev, -ENODEV, "%pfwP missing ethernet-ports\n", fw_switch);
+	fw_ports = fwnode_get_named_child_node(fw_switch, "ethernet-ports");
+	if (!fw_ports) {
+		ret = dev_err_probe(dev, -ENODEV, "%pfwP missing ethernet-ports\n",
+				    fw_switch);
+		goto put_switch;
+	}
 
 	fwnode_for_each_child_node_scoped(fw_ports, fw_port) {
 		struct fwnode_reference_args args;
 		struct rtpcs_serdes *sds;
-		int link_idx, ret;
+		int link_idx;
 		u32 pn;
 
 		if (fwnode_property_read_u32(fw_port, "reg", &pn))
 			continue;
 
-		ret = fwnode_property_get_reference_args(fw_port, "pcs-handle", "#pcs-cells",
-							 -1, 0, &args);
-		if (ret)
+		if (fwnode_property_get_reference_args(fw_port, "pcs-handle", "#pcs-cells",
+						       -1, 0, &args))
 			continue;
 
-		struct fwnode_handle *fw_pcs __free(fwnode_handle) = args.fwnode;
 		link_idx = args.args[0];
-
-		if (link_idx >= RTPCS_MAX_LINKS_PER_SDS)
-			return dev_err_probe(dev, -ERANGE,
-					     "%pfwP: pcs-handle link %d exceeds max %u\n",
-					     fw_port, link_idx, RTPCS_MAX_LINKS_PER_SDS);
-
-		sds = rtpcs_find_serdes(ctrl, fw_pcs);
+		sds = rtpcs_find_serdes(ctrl, args.fwnode);
+		fwnode_handle_put(args.fwnode);
 		if (!sds)
 			continue;
 
-		if (sds->link_port[link_idx] >= 0)
-			return dev_err_probe(dev, -EEXIST,
-					     "%pfwP: sds%u link %d already assigned to port %d\n",
-					     fw_port, sds->id, link_idx, sds->link_port[link_idx]);
+		if (link_idx >= RTPCS_MAX_LINKS_PER_SDS) {
+			ret = dev_err_probe(dev, -ERANGE,
+					    "%pfwP: pcs-handle link %d exceeds max %u\n",
+					    fw_port, link_idx, RTPCS_MAX_LINKS_PER_SDS);
+			break;
+		}
+
+		if (sds->link_port[link_idx] >= 0) {
+			ret = dev_err_probe(dev, -EEXIST,
+					    "%pfwP: sds%u link %d already assigned to port %d\n",
+					    fw_port, sds->id, link_idx,
+					    sds->link_port[link_idx]);
+			break;
+		}
 
 		sds->link_port[link_idx] = pn;
 		sds->num_of_links++;
 	}
 
-	return 0;
+	fwnode_handle_put(fw_ports);
+put_switch:
+	fwnode_handle_put(fw_switch);
+	return ret;
 }
 
 static struct phylink_pcs *rtpcs_pcs_get(struct fwnode_reference_args *pcsspec, void *data)
@@ -4399,6 +4244,11 @@ static const struct rtpcs_sds_ops rtpcs_838x_sds_ops = {
 	.write			= rtpcs_generic_sds_op_write,
 	.set_autoneg		= rtpcs_generic_sds_set_autoneg,
 	.restart_autoneg	= rtpcs_generic_sds_restart_autoneg,
+	.deactivate		= rtpcs_838x_sds_deactivate,
+	.activate		= rtpcs_838x_sds_activate,
+	.config_hw_mode		= rtpcs_838x_sds_config_hw_mode,
+	.set_hw_mode		= rtpcs_838x_sds_set_mode,
+	.post_config		= rtpcs_838x_sds_post_config,
 };
 
 static const struct rtpcs_sds_regs rtpcs_838x_sds_regs = {
@@ -4422,7 +4272,6 @@ static const struct rtpcs_config rtpcs_838x_cfg = {
 	.sds_hw_mode_vals	= rtpcs_838x_sds_hw_mode_vals,
 	.init			= rtpcs_838x_init,
 	.sds_probe		= rtpcs_838x_sds_probe,
-	.setup_serdes		= rtpcs_838x_setup_serdes,
 };
 
 static const struct phylink_pcs_ops rtpcs_839x_pcs_ops = {
@@ -4436,6 +4285,10 @@ static const struct rtpcs_sds_ops rtpcs_839x_sds_ops = {
 	.write			= rtpcs_generic_sds_op_write,
 	.set_autoneg		= rtpcs_generic_sds_set_autoneg,
 	.restart_autoneg	= rtpcs_generic_sds_restart_autoneg,
+	.deactivate		= rtpcs_839x_sds_deactivate,
+	.activate		= rtpcs_839x_sds_activate,
+	.config_hw_mode		= rtpcs_839x_sds_config_hw_mode,
+	.set_hw_mode		= rtpcs_sds_set_mac_mode,
 };
 
 static const struct rtpcs_sds_regs rtpcs_839x_sds_regs = {
@@ -4459,7 +4312,6 @@ static const struct rtpcs_config rtpcs_839x_cfg = {
 	.sds_hw_mode_vals	= rtpcs_839x_sds_hw_mode_vals,
 	.init			= rtpcs_839x_init,
 	.sds_probe		= rtpcs_839x_sds_probe,
-	.setup_serdes		= rtpcs_839x_setup_serdes,
 };
 
 static const struct phylink_pcs_ops rtpcs_930x_pcs_ops = {
@@ -4479,6 +4331,12 @@ static const struct rtpcs_sds_ops rtpcs_930x_sds_ops = {
 	.reset_cmu		= rtpcs_930x_sds_reset_cmu,
 	.reconfigure_to_pll	= rtpcs_930x_sds_reconfigure_to_pll,
 	.config_polarity	= rtpcs_930x_sds_config_polarity,
+	.deactivate		= rtpcs_930x_sds_deactivate,
+	.activate		= rtpcs_930x_sds_activate,
+	.config_hw_mode		= rtpcs_930x_sds_config_hw_mode,
+	.set_hw_mode		= rtpcs_930x_sds_set_mode,
+	.config_media		= rtpcs_930x_sds_config_media,
+	.post_config		= rtpcs_930x_sds_post_config,
 };
 
 static const struct rtpcs_sds_regs rtpcs_930x_sds_regs = {
@@ -4502,7 +4360,6 @@ static const struct rtpcs_config rtpcs_930x_cfg = {
 	.sds_hw_mode_vals	= rtpcs_93xx_sds_hw_mode_vals,
 	.init			= rtpcs_93xx_init,
 	.sds_probe		= rtpcs_930x_sds_probe,
-	.setup_serdes		= rtpcs_930x_setup_serdes,
 };
 
 static const struct phylink_pcs_ops rtpcs_931x_pcs_ops = {
@@ -4521,6 +4378,11 @@ static const struct rtpcs_sds_ops rtpcs_931x_sds_ops = {
 	.set_pll_select		= rtpcs_931x_sds_set_pll_select,
 	.reconfigure_to_pll	= rtpcs_931x_sds_reconfigure_to_pll,
 	.config_polarity	= rtpcs_931x_sds_config_polarity,
+	.deactivate		= rtpcs_931x_sds_deactivate,
+	.activate		= rtpcs_931x_sds_activate,
+	.config_hw_mode		= rtpcs_931x_sds_config_hw_mode,
+	.set_hw_mode		= rtpcs_931x_sds_set_mode,
+	.config_media		= rtpcs_931x_sds_config_media,
 };
 
 static const struct rtpcs_sds_regs rtpcs_931x_sds_regs = {
@@ -4544,7 +4406,6 @@ static const struct rtpcs_config rtpcs_931x_cfg = {
 	.sds_hw_mode_vals	= rtpcs_93xx_sds_hw_mode_vals,
 	.init			= rtpcs_931x_init,
 	.sds_probe		= rtpcs_931x_sds_probe,
-	.setup_serdes		= rtpcs_931x_setup_serdes,
 };
 
 static const struct of_device_id rtpcs_of_match[] = {
