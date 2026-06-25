@@ -549,7 +549,7 @@ static void load_nss(int profile, int cores, char *type)
 		if (strcmp(type, "ipq95xx")) {
 			loadnss("qca-nss-crypto", type);
 			loadnss("qca-nss-cfi-cryptoapi", type);
-		} else {	
+		} else {
 			loadnss("qca-nss-eip", type);
 			loadnss("qca-nss-eip-crypto", type);
 		}
@@ -1285,6 +1285,7 @@ void start_sysinit(void)
 	}
 	switch (brand) {
 	case ROUTER_XIAOMI_BE7000:
+		disableportlearn();
 		MAC_ADD(ethaddr);
 		MAC_ADD(ethaddr);
 		nvram_set("wlan0_hwaddr", ethaddr);
@@ -1696,7 +1697,6 @@ static void load_ath12k_internal(int profile, int pci, int nss, int frame_mode, 
 	}
 }
 
-
 static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, char *cert_region, int coldboot)
 {
 	char postfix[32] = { 0 };
@@ -1790,14 +1790,8 @@ void start_wifi_drivers(void)
 			set_gpio(6, 0);
 			set_gpio(7, 1);
 			load_ath12k_internal(profile, 0, 0, frame_mode, cert_region, 1);
-			sleep(5);
+			wait_for_wifi(1);
 			load_ath11k_internal(profile, 0, 0, frame_mode, cert_region, 1);
-/*			char overdrive[32];
-			int od = nvram_default_geti("power_overdrive", 0);
-			sprintf(overdrive, "poweroffset=%d", od);
-			if (!nvram_match("noath11k", "1")) {
-				eval("insmod", "ath12k", overdrive);
-			}*/
 		} break;
 		case ROUTER_8DEVICES_KIWI: {
 			insmod("qmi_helpers");
