@@ -1503,6 +1503,27 @@ static int rtpcs_93xx_sds_set_mac_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_
 }
 
 /*
+ * Bring up a MAC-driven mode: release the IP mode force-lock so the MAC
+ * side takes over (deactivate forces IP=OFF; this undoes that), set the
+ * MAC mode, then apply the USXGMII submode if the mode needs one.
+ */
+static int rtpcs_93xx_sds_set_mac_driven_mode(struct rtpcs_serdes *sds,
+					      enum rtpcs_sds_mode hw_mode)
+{
+	int ret;
+
+	ret = rtpcs_sds_write_bits(sds, 0x1f, 0x09, 6, 6, 0);
+	if (ret)
+		return ret;
+
+	ret = rtpcs_93xx_sds_set_mac_mode(sds, hw_mode);
+	if (ret)
+		return ret;
+
+	return rtpcs_93xx_sds_apply_usxgmii_submode(sds, hw_mode);
+}
+
+/*
  * Read/write the SerDes IP mode register: page 0x1f reg 0x09, bits 11:7
  * hold the 5-bit mode value, bit 6 is the "force mode" enable. The same
  * physical field is used on RTL930x and RTL931x.
@@ -1839,8 +1860,6 @@ static int rtpcs_930x_sds_apply_ip_mode(struct rtpcs_serdes *sds,
 
 static int rtpcs_930x_sds_set_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
-	int ret;
-
 	/*
 	 * Several modes can be configured via MAC setup, just by setting
 	 * a register to a specific value and the MAC will configure
@@ -1860,19 +1879,7 @@ static int rtpcs_930x_sds_set_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode
 		break;
 	}
 
-	/*
-	 * MAC-driven modes: release the IP mode force-lock so the MAC side
-	 * takes over. deactivate forces IP=OFF; this undoes that.
-	 */
-	ret = rtpcs_sds_write_bits(sds, 0x1f, 0x09, 6, 6, 0);
-	if (ret)
-		return ret;
-
-	ret = rtpcs_93xx_sds_set_mac_mode(sds, hw_mode);
-	if (ret)
-		return ret;
-
-	return rtpcs_93xx_sds_apply_usxgmii_submode(sds, hw_mode);
+	return rtpcs_93xx_sds_set_mac_driven_mode(sds, hw_mode);
 }
 
 static int rtpcs_930x_sds_deactivate(struct rtpcs_serdes *sds)
@@ -3295,7 +3302,7 @@ static int rtpcs_931x_sds_set_mode(struct rtpcs_serdes *sds,
 	int ret;
 
 	if (hw_mode == RTPCS_SDS_MODE_XSGMII)
-		return rtpcs_93xx_sds_set_mac_mode(sds, hw_mode);
+		return rtpcs_93xx_sds_set_mac_driven_mode(sds, hw_mode);
 
 	ret = rtpcs_931x_sds_apply_ip_mode(sds, hw_mode);
 	if (ret)
@@ -3689,14 +3696,15 @@ static int rtpcs_931x_sds_set_media(struct rtpcs_serdes *sds, enum rtpcs_sds_med
 
 	/*
 	 * SDK identifies this as some kind of gating. It's enabled
-	 * here and later deactivated for non-10G.
+	 * here and later deactivated for non-10G and XSGMII.
 	 * (from DMS1250 SDK)
 	 */
 	rtpcs_sds_write_bits(sds, 0x5f, 0x1, 0, 0, 0x1);
 
 	/* from _phy_rtl9310_sds_init */
 	rtpcs_sds_write_bits(sds, 0x2e, 0xe, 13, 11, 0x0);
-	rtpcs_931x_sds_reset_leq_dfe(sds);
+	if (hw_mode != RTPCS_SDS_MODE_XSGMII)
+		rtpcs_931x_sds_reset_leq_dfe(sds);
 
 	/*
 	 * SDK says: media none behavior
@@ -3775,8 +3783,8 @@ static int rtpcs_931x_sds_set_media(struct rtpcs_serdes *sds, enum rtpcs_sds_med
 	regmap_write_bits(sds->ctrl->map, RTPCS_931X_ISR_SERDES_RXIDLE,
 			  BIT(sds->id - 2), BIT(sds->id - 2));
 
-	/* Gating as mentioned above, deactivated here for non-10G */
-	if (!is_10g)
+	/* Gating as mentioned above, deactivated here for non-10G and XSGMII */
+	if (!is_10g || hw_mode == RTPCS_SDS_MODE_XSGMII)
 		rtpcs_sds_write_bits(sds, 0x5f, 0x1, 0, 0, 0x0);
 
 	return 0;
@@ -3858,13 +3866,6 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	struct rtpcs_ctrl *ctrl = sds->ctrl;
 	enum rtpcs_sds_media sds_media;
 	int ret;
-
-	/*
-	 * TODO: XSGMII (Realtek-proprietary 10G SGMII used by RTL8218D/E)
-	 * bring-up is not implemented yet.
-	 */
-	if (hw_mode == RTPCS_SDS_MODE_XSGMII)
-		return 0;
 
 	rtpcs_931x_sds_deactivate(sds);
 

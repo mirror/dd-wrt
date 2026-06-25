@@ -103,6 +103,7 @@ enum rtl9300_i2c_xfer_type {
 	RTL9300_I2C_XFER_BYTE,
 	RTL9300_I2C_XFER_WORD,
 	RTL9300_I2C_XFER_BLOCK,
+	RTL9300_I2C_XFER_QUICK,
 };
 
 struct rtl9300_i2c_xfer {
@@ -318,7 +319,8 @@ static int rtl9300_i2c_prepare_xfer(struct rtl9300_i2c *i2c, struct rtl9300_i2c_
 			ret = rtl9300_i2c_writel(i2c, get_unaligned((const u16 *)xfer->data));
 			break;
 		default:
-			ret = rtl9300_i2c_write(i2c, xfer->data, xfer->data_len);
+			if (xfer->data_len > 0)
+				ret = rtl9300_i2c_write(i2c, xfer->data, xfer->data_len);
 			break;
 		}
 	}
@@ -362,9 +364,11 @@ static int rtl9300_i2c_do_xfer(struct rtl9300_i2c *i2c, struct rtl9300_i2c_xfer 
 			put_unaligned(val & 0xffff, (u16*)xfer->data);
 			break;
 		default:
-			ret = rtl9300_i2c_read(i2c, xfer->data, xfer->data_len);
-			if (ret)
-				return ret;
+			if (xfer->data_len > 0) {
+				ret = rtl9300_i2c_read(i2c, xfer->data, xfer->data_len);
+				if (ret)
+					return ret;
+			}
 			break;
 		}
 	}
@@ -398,6 +402,13 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
 	xfer.reg_addr_len = drv_data->reg_addr_8bit_len;
 
 	switch (size) {
+	case I2C_SMBUS_QUICK:
+		xfer.dev_addr = addr;
+		xfer.data_len = 0;
+		xfer.reg_addr = 0;
+		xfer.reg_addr_len = 0;
+		break;
+
 	case I2C_SMBUS_BYTE:
 		xfer.data = (read_write == I2C_SMBUS_READ) ? &data->byte : &command;
 		xfer.data_len = 1;
@@ -439,7 +450,7 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
 
 static u32 rtl9300_i2c_func(struct i2c_adapter *a)
 {
-	return I2C_FUNC_SMBUS_BYTE | I2C_FUNC_SMBUS_BYTE_DATA |
+	return I2C_FUNC_SMBUS_BYTE | I2C_FUNC_SMBUS_QUICK |   I2C_FUNC_SMBUS_BYTE_DATA |
 	       I2C_FUNC_SMBUS_WORD_DATA | I2C_FUNC_SMBUS_BLOCK_DATA |
 	       I2C_FUNC_SMBUS_I2C_BLOCK;
 }
@@ -590,6 +601,7 @@ static const struct rtl9300_i2c_drv_data rtl9300_i2c_drv_data = {
 	.max_data_len = RTL9300_I2C_MAX_DATA_LEN,
 	.reg_addr_8bit_len = RTL9300_REG_ADDR_8BIT_LEN,
 };
+
 
 static const struct rtl9300_i2c_drv_data rtl9310_i2c_drv_data = {
 	.field_desc = {
