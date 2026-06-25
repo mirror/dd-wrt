@@ -125,55 +125,57 @@ static const char packed_usage[] ALIGN1 = { PACKED_USAGE };
 
 #ifndef HAVE_NOMESSAGE
 
+#if ENABLE_SHOW_USAGE
 void FAST_FUNC bb_show_usage(void)
 {
-	if (ENABLE_SHOW_USAGE) {
-#ifdef SINGLE_APPLET_STR
-		/* Imagine that this applet is "true". Dont link in printf! */
-		const char *usage_string = unpack_usage_messages();
+	ssize_t FAST_FUNC (*full_write_fn)(const char *) =
+			xfunc_error_retval ? full_write2_str : full_write1_str;
+# ifdef SINGLE_APPLET_STR
+	/* Imagine that this applet is "true". Dont link in printf! */
+	const char *usage_string = unpack_usage_messages();
 
-		if (usage_string) {
-			if (*usage_string == '\b') {
-				full_write2_str("No help available\n");
-			} else {
-				full_write2_str("Usage: "SINGLE_APPLET_STR" ");
-				full_write2_str(usage_string);
-				full_write2_str("\n");
-			}
-			if (ENABLE_FEATURE_CLEAN_UP)
-				dealloc_usage_messages((char*)usage_string);
-		}
-#else
-		const char *p;
-		const char *usage_string = p = unpack_usage_messages();
-		int ap = find_applet_by_name(applet_name);
-
-		if (ap < 0 || usage_string == NULL)
-			xfunc_die();
-		while (ap) {
-			while (*p++) continue;
-			ap--;
-		}
-		full_write2_str(bb_banner);
-		full_write2_str(" multi-call binary.\n"); /* common string */
-		if (*p == '\b')
-			full_write2_str("\nNo help available\n");
-		else {
-			full_write2_str("\nUsage: ");
-			full_write2_str(applet_name);
-			if (p[0]) {
-				if (p[0] != '\n')
-					full_write2_str(" ");
-				full_write2_str(p);
-			}
-			full_write2_str("\n");
+	if (usage_string) {
+		if (*usage_string == '\b') {
+			full_write_fn("No help available\n");
+		} else {
+			full_write_fn("Usage: "SINGLE_APPLET_STR" ");
+			full_write_fn(usage_string);
+			full_write_fn("\n");
 		}
 		if (ENABLE_FEATURE_CLEAN_UP)
 			dealloc_usage_messages((char*)usage_string);
-#endif
 	}
+# else
+	const char *p;
+	const char *usage_string = p = unpack_usage_messages();
+	int ap = find_applet_by_name(applet_name);
+
+	if (ap < 0 || usage_string == NULL)
+		xfunc_die();
+	while (ap) {
+		while (*p++) continue;
+		ap--;
+	}
+	full_write_fn(bb_banner);
+	full_write_fn(" multi-call binary.\n"); /* common string */
+	if (*p == '\b')
+		full_write_fn("\nNo help available\n");
+	else {
+		full_write_fn("\nUsage: ");
+		full_write_fn(applet_name);
+		if (p[0]) {
+			if (p[0] != '\n')
+				full_write_fn(" ");
+			full_write_fn(p);
+		}
+		full_write_fn("\n");
+	}
+	if (ENABLE_FEATURE_CLEAN_UP)
+		dealloc_usage_messages((char*)usage_string);
+# endif
 	xfunc_die();
 }
+#endif
 
 #endif
 int FAST_FUNC find_applet_by_name(const char *name)
@@ -270,8 +272,10 @@ void lbb_prepare(const char *applet
 		 && !(ENABLE_TRUE && strcmp(applet_name, "true") == 0)
 		 && !(ENABLE_FALSE && strcmp(applet_name, "false") == 0)
 		 && !(ENABLE_ECHO && strcmp(applet_name, "echo") == 0)
-		)
+		) {
+			xfunc_error_retval = 0;
 			bb_show_usage();
+		}
 	}
 #endif
 }
@@ -778,11 +782,10 @@ int busybox_main(int argc UNUSED_PARAM, char **argv)
  help:
 		output_width = get_terminal_width(2);
 
-		dup2(1, 2);
 #ifndef HAVE_NOMESSAGE
-		full_write2_str(bb_banner); /* reuse const string */
-		full_write2_str(" multi-call binary.\n"); /* reuse */
-		full_write2_str(
+		full_write1_str(bb_banner); /* reuse const string */
+		full_write1_str(" multi-call binary.\n"); /* reuse */
+		full_write1_str(
 			"BusyBox is copyrighted by many authors between 1998-2015.\n"
 			"Licensed under GPLv2. See source distribution for detailed\n"
 			"copyright notices.\n"
@@ -821,20 +824,20 @@ int busybox_main(int argc UNUSED_PARAM, char **argv)
 		while (*a) {
 			int len2 = strlen(a) + 2;
 			if (col >= (int)output_width - len2) {
-				full_write2_str(",\n");
+				full_write1_str(",\n");
 				col = 0;
 			}
 			if (col == 0) {
 				col = 6;
-				full_write2_str("\t");
+				full_write1_str("\t");
 			} else {
-				full_write2_str(", ");
+				full_write1_str(", ");
 			}
-			full_write2_str(a);
+			full_write1_str(a);
 			col += len2;
 			a += len2 - 1;
 		}
-		full_write2_str("\n");
+		full_write1_str("\n");
 		return 0;
 	}
 
@@ -854,14 +857,13 @@ int busybox_main(int argc UNUSED_PARAM, char **argv)
 	if (is_prefixed_with(argv[1], "--list")) {
 		unsigned i = 0;
 		const char *a = applet_names;
-		dup2(1, 2);
 		while (*a) {
 #  if ENABLE_FEATURE_INSTALLER
 			if (argv[1][6]) /* --list-full? */
-				full_write2_str(install_dir[APPLET_INSTALL_LOC(i)] + 1);
+				full_write1_str(install_dir[APPLET_INSTALL_LOC(i)] + 1);
 #  endif
-			full_write2_str(a);
-			full_write2_str("\n");
+			full_write1_str(a);
+			full_write1_str("\n");
 			i++;
 			while (*a++ != '\0')
 				continue;
@@ -894,14 +896,14 @@ int busybox_main(int argc UNUSED_PARAM, char **argv)
 	}
 
 	if (strcmp(argv[1], "--help") == 0) {
-		/* "busybox --help [<applet>]" */
+		/* "busybox --help [APPLET]" */
 		if (!argv[2]
 #  if ENABLE_FEATURE_SH_STANDALONE && ENABLE_FEATURE_TAB_COMPLETION
 		 || strcmp(argv[2], "busybox") == 0 /* prevent getting "No help available" */
 #  endif
 		)
 			goto help;
-		/* convert to "<applet> --help" */
+		/* convert to "APPLET --help" */
 		applet_name = argv[0] = argv[2];
 		argv[2] = NULL;
 		if (find_applet_by_name(applet_name) >= 0) {
@@ -909,8 +911,16 @@ int busybox_main(int argc UNUSED_PARAM, char **argv)
 			xfunc_error_retval = 0;
 			bb_show_usage();
 		} /* else: unknown applet, fall through (causes "applet not found" later) */
-	} else {
-		/* "busybox <applet> arg1 arg2 ..." */
+	}
+#  if ENABLE_FEATURE_VERSION
+	else if (!argv[2] && strcmp(argv[1], "--version") == 0) {
+		full_write1_str(bb_banner); /* reuse const string */
+		full_write1_str("\n");
+		return 0;
+	}
+#  endif
+	else {
+		/* "busybox APPLET arg1 arg2 ..." */
 		argv++;
 		/* We support "busybox /a/path/to/applet args..." too. Allows for
 		 * "#!/bin/busybox"-style wrappers
@@ -1105,8 +1115,11 @@ int main(int argc UNUSED_PARAM, char **argv)
 
 	lbb_prepare("busybox" IF_FEATURE_INDIVIDUAL(, argv));
 # if !ENABLE_BUSYBOX
-	if (argv[1] && is_prefixed_with(bb_basename(argv[0]), "busybox"))
+	if (argv[1] && argv[1][0] != '-' /* do not match "busybox --OPT" */
+	 && is_prefixed_with(bb_basename(argv[0]), "busybox")
+	) {
 		argv++;
+	}
 # endif
 	applet_name = argv[0];
 	if (applet_name[0] == '-')

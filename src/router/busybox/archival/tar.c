@@ -119,6 +119,7 @@
 #include "libbb.h"
 #include "common_bufsiz.h"
 #include "bb_archive.h"
+#include "unicode.h"
 /* FIXME: Stop using this non-standard feature */
 #ifndef FNM_LEADING_DIR
 # define FNM_LEADING_DIR 0
@@ -475,7 +476,7 @@ static int FAST_FUNC writeFileToTarball(struct recursive_state *state,
 	DBG("writeFileToTarball('%s')", fileName);
 
 	/* Strip leading '/' and such (must be before memorizing hardlink's name) */
-	header_name = strip_unsafe_prefix(fileName);
+	header_name = skip_unsafe_prefix(fileName);
 
 	if (header_name[0] == '\0')
 		return TRUE;
@@ -1133,6 +1134,9 @@ int tar_main(int argc UNUSED_PARAM, char **argv)
 	if (tar_handle->accept || tar_handle->reject)
 		tar_handle->filter = filter_accept_reject_list;
 
+	/* For "tar xvf/tvf" output and Unicode in names */
+	init_unicode();
+
 	/* Open the tar file */
 	{
 		int tar_fd = STDIN_FILENO;
@@ -1164,7 +1168,7 @@ int tar_main(int argc UNUSED_PARAM, char **argv)
 		 * on e.g. tarball with 1st file named "BZh5".
 		 */
 		) {
-			tar_handle->src_fd = open_zipped(tar_filename, /*fail_if_not_compressed:*/ 0);
+			tar_handle->src_fd = open_zipped(tar_filename, /*die_if_not_compressed:*/ 0);
 			if (tar_handle->src_fd < 0)
 				bb_perror_msg_and_die("can't open '%s'", tar_filename);
 		} else {

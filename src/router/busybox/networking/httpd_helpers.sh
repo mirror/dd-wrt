@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PREFIX="i486-linux-uclibc-"
+PREFIX="i686-linux-musl-"
 OPTS="-static -static-libgcc \
 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 \
 -Wall -Wshadow -Wwrite-strings -Wundef -Wstrict-prototypes -Werror \
@@ -13,12 +13,24 @@ OPTS="-static -static-libgcc \
 -march=i386 -mpreferred-stack-boundary=2 \
 -Wl,--warn-common -Wl,--sort-common -Wl,--gc-sections"
 
-${PREFIX}gcc \
-${OPTS} \
+${PREFIX}gcc ${OPTS} \
 -Wl,-Map -Wl,index.cgi.map \
-httpd_indexcgi.c -o index.cgi && strip index.cgi
+httpd_indexcgi.c -o index.cgi \
+	&& \
+${PREFIX}gcc ${OPTS} \
+httpd_indexcgi.c -S -fverbose-asm \
+	&& \
+${PREFIX}gcc ${OPTS} \
+httpd_indexcgi.c -c \
+	&& \
+strip index.cgi \
 
-${PREFIX}gcc \
-${OPTS} \
+${PREFIX}gcc ${OPTS} \
 -Wl,-Map -Wl,httpd_ssi.map \
 httpd_ssi.c -o httpd_ssi && strip httpd_ssi
+
+${PREFIX}gcc ${OPTS} \
+-Wl,-Map -Wl,httpd_ratelimit_cgi.map \
+httpd_ratelimit_cgi.c -o httpd_ratelimit_cgi && strip httpd_ratelimit_cgi
+
+size index.cgi httpd_ssi httpd_ratelimit_cgi

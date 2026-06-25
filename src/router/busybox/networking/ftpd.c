@@ -190,52 +190,37 @@ struct globals {
 } while (0)
 
 
+/* escape_text("pfx:", str, (0xff << 8) + '\r')
+ * Duplicate 0xff, append \r ^^^^^^^^^^^^^^^^^^
+ */
 static char *
 escape_text(const char *prepend, const char *str, unsigned escapee)
 {
-	unsigned retlen, remainlen, chunklen;
-	char *ret, *found;
+	char *ret, *p;
 	char append;
 
 	append = (char)escapee;
 	escapee >>= 8;
 
-	remainlen = strlen(str);
-	retlen = strlen(prepend);
-	ret = xmalloc(retlen + remainlen * 2 + 1 + 1);
-	strcpy(ret, prepend);
+	ret = xmalloc(strlen(prepend) + strlen(str) * 2 + 1 + 1);
+	p = stpcpy(ret, prepend);
 
 	for (;;) {
-		found = strchrnul(str, escapee);
-		chunklen = found - str + 1;
+		char *found = strchrnul(str, escapee);
 
-		/* Copy chunk up to and including escapee (or NUL) to ret */
-		memcpy(ret + retlen, str, chunklen);
-		retlen += chunklen;
+		/* Copy up to and including escapee (or NUL) */
+		p = mempcpy(p, str, found - str + 1);
 
 		if (*found == '\0') {
 			/* It wasn't escapee, it was NUL! */
-			ret[retlen - 1] = append; /* replace NUL */
-			ret[retlen] = '\0'; /* add NUL */
 			break;
 		}
-		ret[retlen++] = escapee; /* duplicate escapee */
 		str = found + 1;
+		*p++ = escapee; /* duplicate escapee */
 	}
+	p[-1] = append; /* replace NUL */
+	*p = '\0'; /* add NUL */
 	return ret;
-}
-
-/* Returns strlen as a bonus */
-static unsigned
-replace_char(char *str, char from, char to)
-{
-	char *p = str;
-	while (*p) {
-		if (*p == from)
-			*p = to;
-		p++;
-	}
-	return p - str;
 }
 
 static void
@@ -506,19 +491,18 @@ static void
 handle_pasv(void)
 {
 	unsigned port;
-	char *addr, *response;
+	char *response;
 
 	port = bind_for_passive_mode();
 
 	if (G.local_addr->u.sa.sa_family == AF_INET)
-		addr = xmalloc_sockaddr2dotted_noport(&G.local_addr->u.sa);
+		response = xmalloc_sockaddr2dotted_noport(&G.local_addr->u.sa);
 	else /* seen this in the wild done by other ftp servers: */
-		addr = xstrdup("0.0.0.0");
-	replace_char(addr, '.', ',');
+		response = xstrdup("0.0.0.0");
+	replace_char(response, '.', ',');
 
-	response = xasprintf(STR(FTP_PASVOK)" PASV ok (%s,%u,%u)\r\n",
-			addr, (int)(port >> 8), (int)(port & 255));
-	free(addr);
+	xasprintf_inplace(response, STR(FTP_PASVOK)" PASV ok (%s,%u,%u)\r\n",
+			response, (int)(port >> 8), (int)(port & 255));
 	cmdio_write_raw(response);
 	free(response);
 }

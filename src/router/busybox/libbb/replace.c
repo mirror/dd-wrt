@@ -28,7 +28,8 @@ unsigned FAST_FUNC count_strstr(const char *str, const char *sub)
 
 char* FAST_FUNC xmalloc_substitute_string(const char *src, int count, const char *sub, const char *repl)
 {
-	char *buf, *dst, *end;
+	char *buf, *dst;
+	const char *end;
 	size_t sub_len = strlen(sub);
 	size_t repl_len = strlen(repl);
 
@@ -46,3 +47,17 @@ char* FAST_FUNC xmalloc_substitute_string(const char *src, int count, const char
 	//dbg_msg("subst9:'%s'", buf);
 	return buf;
 }
+
+#if 0 /* inlined in libbb.h */
+/* Returns strlen as a bonus */
+size_t FAST_FUNC replace_char(char *str, char from, char to)
+{
+	char *p = str;
+	while (*p) {
+		if (*p == from)
+			*p = to;
+		p++;
+	}
+	return p - str;
+}
+#endif

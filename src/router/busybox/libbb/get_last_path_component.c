@@ -24,12 +24,12 @@ const char* FAST_FUNC bb_basename(const char *name)
  */
 char* FAST_FUNC bb_get_last_path_component_nostrip(const char *path)
 {
-	char *slash = strrchr(path, '/');
+	const char *slash = strrchr(path, '/');
 
 	if (!slash || (slash == path && !slash[1]))
 		return (char*)path;
 
-	return slash + 1;
+	return (char*)slash + 1;
 }
 
 /*
