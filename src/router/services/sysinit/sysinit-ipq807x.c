@@ -555,7 +555,9 @@ static void load_nss(int profile, int cores, char *type)
 		}
 		loadnss("qca-nss-macsec", type);
 		loadnss("qca-nss-netlink", type);
-		loadnss("qca-nss-ppe-vp", type);
+	}
+	loadnss("qca-nss-ppe-vp", type);
+	if (!nss_disabled(0)) {
 		loadnss("qca-nss-ppe-ds", type);
 		loadnss("qca-nss-ppe-rule", type);
 		loadnss("qca-nss-ppe-tun", type);
@@ -1664,6 +1666,37 @@ static void load_mac80211_internal(int nss)
 	}
 }
 
+static void load_ath12k_internal(int profile, int pci, int nss, int frame_mode, char *cert_region, int coldboot)
+{
+	char postfix[32] = { 0 };
+	char driver_ath12k[32];
+	char driver_ath12k_ahb[32];
+	char driver_ath12k_pci[32];
+	char driver_frame_mode[32];
+	char driver_regionvariant[32];
+	char driver_coldboot[32];
+
+	if (!nvram_match("noath11k", "1")) {
+		int od = nvram_default_geti("power_overdrive", 0);
+		char overdrive[32];
+		sprintf(overdrive, "poweroffset=%d", od);
+		if (profile == 512)
+			strcpy(postfix, "-512");
+		sprintf(driver_ath12k, "ath12k%s", postfix);
+		sprintf(driver_ath12k_ahb, "ath12k_ahb%s", postfix);
+		sprintf(driver_ath12k_pci, "ath12k_pci%s", postfix);
+		sprintf(driver_frame_mode, "frame_mode=%d", frame_mode);
+		sprintf(driver_regionvariant, "regionvariant=%s", cert_region);
+		sprintf(driver_coldboot, "cold_boot_cal=%d", coldboot);
+		insmod("qmi_helpers");
+		eval("insmod", driver_ath12k, overdrive);
+		insmod(driver_ath12k_ahb);
+		if (pci)
+			insmod(driver_ath12k_pci);
+	}
+}
+
+
 static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, char *cert_region, int coldboot)
 {
 	char postfix[32] = { 0 };
@@ -1756,14 +1789,15 @@ void start_wifi_drivers(void)
 		case ROUTER_XIAOMI_BE7000: {
 			set_gpio(6, 0);
 			set_gpio(7, 1);
-			load_ath11k_internal(profile, 0, 0, frame_mode, cert_region, 0);
-			insmod("qmi_helpers");
-			char overdrive[32];
+			load_ath12k_internal(profile, 0, 0, frame_mode, cert_region, 1);
+			sleep(5);
+			load_ath11k_internal(profile, 0, 0, frame_mode, cert_region, 1);
+/*			char overdrive[32];
 			int od = nvram_default_geti("power_overdrive", 0);
 			sprintf(overdrive, "poweroffset=%d", od);
 			if (!nvram_match("noath11k", "1")) {
 				eval("insmod", "ath12k", overdrive);
-			}
+			}*/
 		} break;
 		case ROUTER_8DEVICES_KIWI: {
 			insmod("qmi_helpers");
