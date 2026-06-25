@@ -4,7 +4,7 @@
  * The development of the EAP/SIM support was funded by Internet Foundation
  * Austria (http://www.nic.at/ipa).
  *
- * Version:     $Id: f57714b6df9164afdccad0b73138c3c0e6f1b141 $
+ * Version:     $Id: 6322115a66975106a8d8a60402f9e28c32fc6c36 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  *
  */
 
-RCSID("$Id: f57714b6df9164afdccad0b73138c3c0e6f1b141 $")
+RCSID("$Id: 6322115a66975106a8d8a60402f9e28c32fc6c36 $")
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,7 +38,7 @@ void eapsim_calculate_keys(struct eapsim_keys *ek)
 {
 	fr_sha1_ctx context;
 	uint8_t fk[160];
-	unsigned char buf[256];
+	unsigned char buf[MAX_STRING_LEN + 3 * EAPSIM_KC_SIZE + EAPSIM_NONCEMT_SIZE + MAX_STRING_LEN + 2];
 	unsigned char *p;
 	unsigned int  blen;
 

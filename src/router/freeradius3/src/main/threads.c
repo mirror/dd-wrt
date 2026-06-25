@@ -1,7 +1,7 @@
 /*
  * threads.c	request threading support
  *
- * Version:	$Id: 8fbb57b816cf4d210f0fc37385446156f8539db0 $
+ * Version:	$Id: 5b94115b22bee41e63b9b6ea27893c175a71b984 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 8fbb57b816cf4d210f0fc37385446156f8539db0 $")
+RCSID("$Id: 5b94115b22bee41e63b9b6ea27893c175a71b984 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -41,14 +41,10 @@ USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 #endif
 
 #ifdef __APPLE__
-#ifdef WITH_GCD
-#include <dispatch/dispatch.h>
-#endif
 #include <mach/task.h>
 #include <mach/mach_init.h>
 #include <mach/semaphore.h>
 
-#ifndef WITH_GCD
 #undef sem_t
 #define sem_t semaphore_t
 #undef sem_init
@@ -57,7 +53,6 @@ USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 #define sem_wait(s) semaphore_wait(*s)
 #undef sem_post
 #define sem_post(s) semaphore_signal(*s)
-#endif	/* WITH_GCD */
 #endif	/* __APPLE__ */
 
 #ifdef HAVE_SYS_WAIT_H
@@ -76,7 +71,6 @@ USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 #include <openssl/evp.h>
 #endif
 
-#ifndef WITH_GCD
 #define SEMAPHORE_LOCKED	(0)
 
 #define THREAD_RUNNING		(1)
@@ -116,8 +110,6 @@ typedef struct THREAD_HANDLE {
 	REQUEST			*request;
 } THREAD_HANDLE;
 
-#endif	/* WITH_GCD */
-
 #ifdef WNOHANG
 typedef struct thread_fork_t {
 	pid_t		pid;
@@ -153,7 +145,6 @@ static int request_fifo_discard(int priority, bool lower, time_t now);
  *	easier.
  */
 typedef struct THREAD_POOL {
-#ifndef WITH_GCD
 	THREAD_HANDLE	*head;
 	THREAD_HANDLE	*tail;
 
@@ -169,17 +160,12 @@ typedef struct THREAD_POOL {
 	time_t		time_last_spawned;
 	uint32_t	cleanup_delay;
 	bool		stop_flag;
-#endif	/* WITH_GCD */
 	bool		spawn_flag;
 
 #ifdef WNOHANG
 	pthread_mutex_t	wait_mutex;
 	fr_hash_table_t *waiters;
 #endif
-
-#ifdef WITH_GCD
-	dispatch_queue_t	queue;
-#else
 
 #ifdef WITH_STATS
 	fr_pps_t	pps_in, pps_out;
@@ -211,19 +197,15 @@ typedef struct THREAD_POOL {
 	atomic_uint32_t	  exited_threads;
 	fr_atomic_queue_t *queue[NUM_FIFOS];
 #endif	/* STDATOMIC */
-#endif	/* WITH_GCD */
 } THREAD_POOL;
 
 static THREAD_POOL thread_pool;
 static bool pool_initialized = false;
 
-#ifndef WITH_GCD
 static time_t last_cleaned = 0;
 
 static void thread_pool_manage(time_t now);
-#endif
 
-#ifndef WITH_GCD
 /*
  *	A mapping of configuration file names to internal integers
  */
@@ -242,7 +224,7 @@ static const CONF_PARSER thread_config[] = {
 #endif
 	CONF_PARSER_TERMINATOR
 };
-#endif
+#endif	/* HAVE_PTHREAD_H */
 
 #if defined(HAVE_OPENSSL_CRYPTO_H) && defined(HAVE_CRYPTO_SET_LOCKING_CALLBACK)
 
@@ -317,7 +299,7 @@ static void tls_mutexes_destroy(void)
 #define tls_mutexes_destroy()
 #endif
 
-#ifdef WNOHANG
+#if defined(WNOHANG) && defined(HAVE_PTHREAD_H)
 /*
  *	We don't want to catch SIGCHLD for a host of reasons.
  *
@@ -358,11 +340,7 @@ static void reap_children(void)
 
 	pthread_mutex_unlock(&thread_pool.wait_mutex);
 }
-#else
-#define reap_children()
-#endif /* WNOHANG */
 
-#ifndef WITH_GCD
 /*
  *	Add a request to the list of waiting requests.
  *	This function gets called ONLY from the main handler thread...
@@ -375,6 +353,8 @@ int request_enqueue(REQUEST *request)
 	time_t now;
 
 	rad_assert(pool_initialized == true);
+	rad_assert(request->master_state == REQUEST_ACTIVE);
+	rad_assert(request->magic == REQUEST_MAGIC);
 
 	/*
 	 *	Proxied packets get requeued when they time out, or
@@ -525,7 +505,7 @@ int request_enqueue(REQUEST *request)
 
 	/*
 	 *	If there are too many packets _overall_, OR the
-	 *	destinatio fifo is full, then try to delete a lower
+	 *	destination fifo is full, then try to delete a lower
 	 *	priority one.
 	 */
 	if (((thread_pool.num_queued >= thread_pool.max_queue_size) &&
@@ -567,109 +547,18 @@ int request_enqueue(REQUEST *request)
 	return 1;
 }
 
-#ifndef HAVE_STDATOMIC_H
 /*
- *	Try to free up requests by discarding requests of lower priority.
+ *	Free a list of requests, WITHOUT holding the thread mutex.
  */
-static int request_fifo_discard(int priority, bool lower, time_t now)
+static void request_list_free(fr_dlist_t *head)
 {
-	int i, rcode;
-	REQUEST *request;
+	fr_dlist_t *entry;
 
-	if (lower) {
-		for (i = NUM_FIFOS - 1; i < priority; i--) {
-			request = fr_fifo_pop(thread_pool.fifo[i]);
-			if (!request) continue;
+	while ((entry = fr_dlist_pop_head(head)) != NULL) {
+		REQUEST *request;
 
-			fr_assert(request->child_state == REQUEST_QUEUED);
-			request->child_state = REQUEST_DONE;
-			request_done(request, FR_ACTION_DONE);
-			return 1;
-		}
-
-		/*
-		 *	We didn't discard a lower priority entry.
-		 *	Maybe we need to discard one of the current
-		 *	priority, which has been in the queue for a
-		 *	while.
-		 */
-	}
-
-	/*
-	 *	The time stamp for proxied requests may be 5-10
-	 *	seconds in the past, because the home server hasn't
-	 *	responded.  We therefore can't discard "old" requests,
-	 *	as they have just received a reply, or they have just
-	 *	timed out.
-	 */
-	if (priority <= RAD_LISTEN_PROXY) return 0;
-
-	/*
-	 *	Peek at the first entry in the fifo.  Note that there
-	 *	is not always a first entry.  This is because we're
-	 *	called if there are too many _total_ requests.
-	 */
-	rcode = 0;
-
-retry:
-	request = fr_fifo_peek(thread_pool.fifo[priority]);
-	if (!request) return rcode;
-
-	/*
-	 *	This request expires in the future.  We can't do anything.
-	 */
-	if ((request->timestamp + main_config.max_request_time) > now) return rcode;
-
-	request = fr_fifo_pop(thread_pool.fifo[priority]);
-	rad_assert(request != NULL);
-	VERIFY_REQUEST(request);
-
-	request->child_state = REQUEST_DONE;
-	if (request->master_state == REQUEST_TO_FREE) {
-		request_free(request);
-	} else {
-		request_done(request, REQUEST_DONE);
-	}
-	thread_pool.num_queued--;
-
-	/*
-	 *	We might as well delete as many old requests as possible.
-	 */
-	rcode = 1;
-	goto retry;
-}
-#endif
-
-/*
- *	Remove a request from the queue.
- */
-static int request_dequeue(REQUEST **prequest)
-{
-	time_t blocked;
-	static time_t last_complained = 0;
-	static time_t total_blocked = 0;
-	int num_blocked = 0;
-#ifndef HAVE_STDATOMIC_H
-	RAD_LISTEN_TYPE start;
-#endif
-	RAD_LISTEN_TYPE i;
-	REQUEST *request = NULL;
-	reap_children();
-
-	rad_assert(pool_initialized == true);
-
-#ifdef HAVE_STDATOMIC_H
-retry:
-	for (i = 0; i < NUM_FIFOS; i++) {
-		if (!fr_atomic_queue_pop(thread_pool.queue[i], (void **) &request)) continue;
-
-		rad_assert(request != NULL);
-
-		VERIFY_REQUEST(request);
-
-		if (request->master_state != REQUEST_STOP_PROCESSING) {
-			break;
-		}
+		request = (REQUEST *) (((uint8_t *) entry) - offsetof(REQUEST, entry));
+		rad_assert(request->magic == REQUEST_MAGIC);
 
 		/*
 		 *	This entry was marked to be stopped.  Acknowledge it.
@@ -700,12 +589,124 @@ retry:
 			request_done(request, REQUEST_DONE);
 		}
 	}
+}
+
+#ifndef HAVE_STDATOMIC_H
+/*
+ *	Try to free up requests by discarding requests of lower priority.
+ */
+static int request_fifo_discard(int priority, bool lower, time_t now)
+{
+	int i, rcode = 0;
+	REQUEST *request;
+	fr_dlist_t free_list;
+
+	fr_dlist_entry_init(&free_list);
+
+	if (lower) {
+		for (i = NUM_FIFOS - 1; i < priority; i--) {
+			request = fr_fifo_pop(thread_pool.fifo[i]);
+			if (!request) continue;
+
+			fr_assert(request->child_state == REQUEST_QUEUED);
+
+			request->master_state = REQUEST_STOP_PROCESSING;
+			fr_dlist_insert_tail(&free_list, &request->entry);
+			rcode = 1;
+			break;
+		}
+
+		/*
+		 *	We didn't discard a lower priority entry.
+		 *	Maybe we need to discard one of the current
+		 *	priority, which has been in the queue for a
+		 *	while.
+		 */
+	}
 
 	/*
-	 *	Popping might fail.  If so, return.
+	 *	We didn't free a lower priority one, try to free one from the current priority.
+	 *
+	 *	We don't free proxied requests based on time, as the time stamp for proxied requests may be
+	 *	5-10 seconds in the past, because the home server hasn't responded.  We therefore can't
+	 *	discard "old" requests, as they have just received a reply, or they have just timed out.
 	 */
-	if (!request) return 0;
+	if (!rcode && (priority > RAD_LISTEN_PROXY)) {
+		while (true) {
+			request = fr_fifo_peek(thread_pool.fifo[priority]);
+			if (!request) break;
 
+
+			/*
+			 *	This request expires in the future.  We can't do anything.
+			 */
+			if ((request->timestamp + main_config.max_request_time) > now) break;
+
+			request = fr_fifo_pop(thread_pool.fifo[priority]);
+			rad_assert(request != NULL);
+			VERIFY_REQUEST(request);
+
+			request->master_state = REQUEST_STOP_PROCESSING;
+			fr_dlist_insert_tail(&free_list, &request->entry);
+			thread_pool.num_queued--;
+
+			/*
+			 *	We might as well delete as many old requests as possible.
+			 */
+			rcode = 1;
+		}
+	}
+
+	/*
+	 *	request_done() grabs a mutex.  So we unlock this one, to avoid nested mutexes.
+	 */
+	if (!fr_dlist_empty(&free_list)) {
+		pthread_mutex_unlock(&thread_pool.queue_mutex);
+		request_list_free(&free_list);
+		pthread_mutex_lock(&thread_pool.queue_mutex);
+	}
+
+	return rcode;
+}
+#endif
+
+/*
+ *	Remove a request from the queue.
+ */
+static int request_dequeue(REQUEST **prequest)
+{
+	time_t blocked;
+	static time_t last_complained = 0;
+	static time_t total_blocked = 0;
+	int num_blocked = 0;
+#ifndef HAVE_STDATOMIC_H
+	RAD_LISTEN_TYPE start;
+#endif
+	RAD_LISTEN_TYPE i;
+	REQUEST *request = NULL;
+	fr_dlist_t	free_list;
+
+	fr_dlist_entry_init(&free_list);
+
+	reap_children();
+
+	rad_assert(pool_initialized == true);
+
+#ifdef HAVE_STDATOMIC_H
+	for (i = 0; i < NUM_FIFOS; i++) {
+		if (!fr_atomic_queue_pop(thread_pool.queue[i], (void **) &request)) continue;
+
+		rad_assert(request != NULL);
+
+		VERIFY_REQUEST(request);
+
+		if (request->master_state != REQUEST_STOP_PROCESSING) {
+			break;
+		}
+
+		fr_dlist_insert_tail(&free_list, &request->entry);
+		request = NULL;
+	}
 #else
 	pthread_mutex_lock(&thread_pool.queue_mutex);
 
@@ -754,58 +755,59 @@ retry:
 		rad_assert(request != NULL);
 		VERIFY_REQUEST(request);
 
-		request->child_state = REQUEST_DONE;
-		if (request->master_state == REQUEST_TO_FREE) {
-			request_free(request);
-		} else {
-			request_done(request, REQUEST_DONE);
-		}
+		fr_dlist_insert_tail(&free_list, &request->entry);
 		thread_pool.num_queued--;
+		request = NULL;
 	}
 
 	start = 0;
- retry:
+
 	/*
-	 *	Pop results from the top of the queue
+	 *	Pop the first request by priority.
 	 */
 	for (i = start; i < NUM_FIFOS; i++) {
 		request = fr_fifo_pop(thread_pool.fifo[i]);
-		if (request) {
-			VERIFY_REQUEST(request);
-			start = i;
-			break;
+		if (!request) continue;
+
+		VERIFY_REQUEST(request);
+
+		rad_assert(thread_pool.num_queued > 0);
+		thread_pool.num_queued--;
+
+		if (request->master_state == REQUEST_STOP_PROCESSING) {
+			fr_dlist_insert_tail(&free_list, &request->entry);
+			request = NULL;
+			continue;
 		}
+
+		start = i;
+		break;
 	}
 
-	if (!request) {
-		pthread_mutex_unlock(&thread_pool.queue_mutex);
-		*prequest = NULL;
-		return 0;
-	}
+	if (request) thread_pool.active_threads++;
 
-	rad_assert(thread_pool.num_queued > 0);
-	thread_pool.num_queued--;
+	pthread_mutex_unlock(&thread_pool.queue_mutex);
 #endif	/* HAVE_STD_ATOMIC_H */
 
 	*prequest = request;
 
-	rad_assert(*prequest != NULL);
-	rad_assert(request->magic == REQUEST_MAGIC);
-
 	/*
-	 *	If the request has sat in the queue for too long,
-	 *	kill it.
-	 *
-	 *	The main clean-up code can't delete the request from
-	 *	the queue, and therefore won't clean it up until we
-	 *	have acknowledged it as "done".
+	 *	Clean up the free list, with all of the mutexes unlocked.  request_done() will grab another
+	 *	mutex to do its work, and we don't want to have nested mutexes.
 	 */
-	if (request->master_state == REQUEST_STOP_PROCESSING) {
-		request->module = "<done>";
-		request->child_state = REQUEST_DONE;
-		goto retry;
+	if (!fr_dlist_empty(&free_list)) {
+		request_list_free(&free_list);
 	}
 
+	/*
+	 *	We didn't find a live request in the list.  Return that.
+	 */
+	if (!request) {
+		return 0;
+	}
+
+	rad_assert(*prequest != NULL);
+	rad_assert(request->magic == REQUEST_MAGIC);
 	rad_assert(request->child_state == REQUEST_QUEUED);
 
 	request->component = "<core>";
@@ -817,8 +819,6 @@ retry:
 	 */
 #ifdef HAVE_STDATOMIC_H
 	CAS_INCR(thread_pool.active_threads);
-#else
-	thread_pool.active_threads++;
 #endif
 
 	blocked = time(NULL);
@@ -835,10 +835,6 @@ retry:
 		total_blocked = 0;
 		blocked = 0;
 	}
-
-#ifndef HAVE_STDATOMIC_H
-	pthread_mutex_unlock(&thread_pool.queue_mutex);
-#endif
 
 	if (blocked) {
 		ERROR("%d requests have been waiting in the processing queue for %d seconds.  Check that all databases are running properly!",
@@ -1126,7 +1122,6 @@ static THREAD_HANDLE *spawn_thread(time_t now, int do_trigger)
 	 */
 	return handle;
 }
-#endif	/* WITH_GCD */
 
 
 #ifdef WNOHANG
@@ -1155,10 +1150,8 @@ static int pid_cmp(void const *one, void const *two)
 DIAG_OFF(deprecated-declarations)
 int thread_pool_init(CONF_SECTION *cs, bool *spawn_flag)
 {
-#ifndef WITH_GCD
 	uint32_t	i;
 	int		rcode;
-#endif
 	CONF_SECTION	*pool_cf;
 	time_t		now;
 #ifdef HAVE_STDATOMIC_H
@@ -1175,24 +1168,18 @@ int thread_pool_init(CONF_SECTION *cs, bool *spawn_flag)
 	rad_assert(pool_initialized == false); /* not called on HUP */
 
 	pool_cf = cf_subsection_find_next(cs, NULL, "thread");
-#ifdef WITH_GCD
-	if (pool_cf) WARN("Built with Grand Central Dispatch.  Ignoring 'thread' subsection");
-#else
 	if (!pool_cf) *spawn_flag = false;
-#endif
 
 	/*
 	 *	Initialize the thread pool to some reasonable values.
 	 */
 	memset(&thread_pool, 0, sizeof(THREAD_POOL));
-#ifndef WITH_GCD
 	thread_pool.head = NULL;
 	thread_pool.tail = NULL;
 	thread_pool.total_threads = 0;
 	thread_pool.max_thread_num = 1;
 	thread_pool.cleanup_delay = 5;
 	thread_pool.stop_flag = false;
-#endif
 	thread_pool.spawn_flag = *spawn_flag;
 
 	/*
@@ -1220,7 +1207,6 @@ int thread_pool_init(CONF_SECTION *cs, bool *spawn_flag)
 	}
 #endif
 
-#ifndef WITH_GCD
 	if (cf_section_parse(pool_cf, NULL, thread_config) < 0) {
 		return -1;
 	}
@@ -1246,7 +1232,6 @@ int thread_pool_init(CONF_SECTION *cs, bool *spawn_flag)
 		      thread_pool.start_threads, thread_pool.max_threads);
 		return -1;
 	}
-#endif	/* WITH_GCD */
 
 	/*
 	 *	The pool has already been initialized.  Don't spawn
@@ -1256,7 +1241,6 @@ int thread_pool_init(CONF_SECTION *cs, bool *spawn_flag)
 		return 0;
 	}
 
-#ifndef WITH_GCD
 	/*
 	 *	Initialize the queue of requests.
 	 */
@@ -1299,9 +1283,7 @@ int thread_pool_init(CONF_SECTION *cs, bool *spawn_flag)
 		}
 #endif
 	}
-#endif
 
-#ifndef WITH_GCD
 	/*
 	 *	Create a number of waiting threads.
 	 *
@@ -1312,13 +1294,6 @@ int thread_pool_init(CONF_SECTION *cs, bool *spawn_flag)
 			return -1;
 		}
 	}
-#else
-	thread_pool.queue = dispatch_queue_create("org.freeradius.threads", NULL);
-	if (!thread_pool.queue) {
-		ERROR("Failed creating dispatch queue: %s", fr_syserror(errno));
-		fr_exit(1);
-	}
-#endif
 
 	DEBUG2("Thread pool initialized");
 	pool_initialized = true;
@@ -1351,7 +1326,6 @@ void thread_pool_stop(void)
  */
 void thread_pool_free(void)
 {
-#ifndef WITH_GCD
 	int i;
 	int total_threads;
 	THREAD_HANDLE *handle;
@@ -1411,26 +1385,9 @@ void thread_pool_free(void)
 	 *	the memory.
 	 */
 	tls_mutexes_destroy();
-#endif
 }
 
 
-#ifdef WITH_GCD
-int request_enqueue(REQUEST *request)
-{
-	dispatch_block_t block;
-
-	block = ^{
-		request->process(request, FR_ACTION_RUN);
-	};
-
-	dispatch_async(thread_pool.queue, block);
-
-	return 1;
-}
-#endif
-
-#ifndef WITH_GCD
 /*
  *	Check the min_spare_threads and max_spare_threads.
  *
@@ -1584,7 +1541,6 @@ static void thread_pool_manage(time_t now)
 	 */
 	return;
 }
-#endif	/* WITH_GCD */
 
 #ifdef WNOHANG
 /*
@@ -1686,7 +1642,6 @@ void thread_pool_queue_stats(int array[RAD_LISTEN_MAX], int pps[2])
 {
 	int i;
 
-#ifndef WITH_GCD
 	if (pool_initialized) {
 		struct timeval now;
 
@@ -1710,7 +1665,6 @@ void thread_pool_queue_stats(int array[RAD_LISTEN_MAX], int pps[2])
 				 &now);
 
 	} else
-#endif	/* WITH_GCD */
 	{
 		for (i = 0; i < RAD_LISTEN_MAX; i++) {
 			array[i] = 0;
@@ -1722,7 +1676,6 @@ void thread_pool_queue_stats(int array[RAD_LISTEN_MAX], int pps[2])
 
 void thread_pool_thread_stats(int stats[3])
 {
-#ifndef WITH_GCD
 	if (pool_initialized) {
 		/*
 		 *	We don't need a mutex lock here as we only want to
@@ -1736,9 +1689,7 @@ void thread_pool_thread_stats(int stats[3])
 #endif
 		stats[1] = thread_pool.total_threads;
 		stats[2] = thread_pool.max_threads;
-	} else
-#endif	/* WITH_GCD */
-	{
+	} else {
 		stats[0] = stats[1] = stats[2] = 0;
 	}
 }

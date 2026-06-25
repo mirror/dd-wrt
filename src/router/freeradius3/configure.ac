@@ -23,7 +23,7 @@ dnl #############################################################
 AC_PREREQ([2.59])
 export CFLAGS LIBS LDFLAGS CPPFLAGS
 
-AC_INIT([freeradius],[$Id: 73e40b84d5f698b459870271c11d9426dd1f1c42 $],[http://bugs.freeradius.org],[],[http://www.freeradius.org])
+AC_INIT([freeradius],[$Id: f560c31c219918bc67ed7fc4063786755688fa85 $],[http://bugs.freeradius.org],[],[http://www.freeradius.org])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/main/radiusd.c])
 AC_CONFIG_HEADER([src/include/autoconf.h])
@@ -178,12 +178,11 @@ AC_ARG_ENABLE(fips-workaround,
 [  --enable-fips-workaround    enables local MD4, MD5, etc. functionality to avoid OpenSSL FIPS issues.],
 [ case "$enableval" in
   no)
-    fips=""
     ;;
   *)
-    fips="-DWITH_FIPS=1"
+    CFLAGS="$CFLAGS -DWITH_FIPS=1"
   esac ],
-[ fips="" ],
+[ ],
 )
 
 dnl #############################################################
@@ -1967,12 +1966,13 @@ if test "x$developer" = "xyes"; then
   dnl #  If we have -Weverything, it really means *everything* unlike -Wall
   dnl #  It's so verbose we need to turn off warnings which aren't useful.
   dnl #
+  dnl #  -Wno-cast-function-type-strict -Wno-format-pedantic -Wno-declaration-after-statement -Wno-vla -Wno-used-but-marked-unused -Wno-c2x-extensions -Wno-assign-enum -Wno-unused-macros -Wno-disabled-macro-expansion -Wno-class-varargs -Wno-incompatible-function-pointer-types-strict -Wno-bad-function-cast -Wcompound-token-split-by-macro
   AX_CC_WEVERYTHING_FLAG
   if test "x$ax_cv_cc_weverything_flag" = "xyes"; then
-    devcflags="$devcflags -W -Weverything -Wformat=2 -Wno-missing-field-initializers -Wno-date-time -Wno-padded -Wno-gnu-zero-variadic-macro-arguments -Wno-shorten-64-to-32 -Wno-sign-conversion -Wno-conversion -Wno-switch-enum -Wno-gnu-statement-expression -Wno-extended-offsetof -Wno-cast-align -Wno-documentation-unknown-command -Wno-covered-switch-default -Wno-packed $verify_ptr $fips"
+    devcflags="$devcflags -W -Weverything -Wformat=2 -Wno-missing-field-initializers -Wno-date-time -Wno-padded -Wno-gnu-zero-variadic-macro-arguments -Wno-shorten-64-to-32 -Wno-sign-conversion -Wno-conversion -Wno-switch-enum -Wno-gnu-statement-expression -Wno-extended-offsetof -Wno-cast-align -Wno-documentation-unknown-command -Wno-covered-switch-default -Wno-packed $verify_ptr"
   else
     if test "x$GCC" = "xyes"; then
-      devcflags="$devcflags -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -W -Wredundant-decls -Wundef -Wformat-y2k -Wno-format-extra-args -Wno-format-zero-length -Wno-cast-align -Wformat-nonliteral -Wformat-security -Wformat=2 $verify_ptr $fips"
+      devcflags="$devcflags -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -W -Wredundant-decls -Wundef -Wformat-y2k -Wno-format-extra-args -Wno-format-zero-length -Wno-cast-align -Wformat-nonliteral -Wformat-security -Wformat=2 $verify_ptr"
       INSTALLSTRIP=""
     fi
   fi
@@ -2277,26 +2277,9 @@ AC_ARG_WITH(regex,
 )
 
 dnl #
-dnl #  First look for PCRE2
+dnl #  First look for PCRE
 dnl #
 if test "x$REGEX" != "xno" && test "x$PCRE" != "xno"; then
-  smart_try_dir=$pcre_include_dir
-  FR_SMART_CHECK_INCLUDE(pcre2.h,[#define PCRE2_CODE_UNIT_WIDTH (8)])
-  if test "x$ac_cv_header_pcre2_h" = "xyes"; then
-    smart_try_dir=$pcre_lib_dir
-    FR_SMART_CHECK_LIB(pcre2-8, pcre2_compile_8)
-    if test "x$ac_cv_lib_pcre2_8_pcre2_compile_8" = "xyes"; then
-      REGEX=yes
-      AC_DEFINE(HAVE_PCRE2, [1], [define this if we have libpcre2])
-      AC_DEFINE(HAVE_BINSAFE_REGEX, 1, [Define if we have a binary safe regular expression library])
-    fi
-  fi
-fi
-
-dnl #
-dnl #  If no PCRE2, look for PCRE
-dnl #
-if test "x$REGEX" = "x" && test "x$PCRE" != "xno"; then
   smart_try_dir=$pcre_include_dir
   FR_SMART_CHECK_INCLUDE(pcre.h)
   if test "x$ac_cv_header_pcre_h" = "xyes"; then
@@ -2305,6 +2288,23 @@ if test "x$REGEX" = "x" && test "x$PCRE" != "xno"; then
     if test "x$ac_cv_lib_pcre_pcre_compile" = "xyes"; then
       REGEX=yes
       AC_DEFINE(HAVE_PCRE, [1], [define this if we have libpcre])
+      AC_DEFINE(HAVE_BINSAFE_REGEX, 1, [Define if we have a binary safe regular expression library])
+    fi
+  fi
+fi
+
+dnl #
+dnl #  If no PCRE, look for PCRE2
+dnl #
+if test "x$REGEX" = "x" && test "x$PCRE" != "xno"; then
+  smart_try_dir=$pcre_include_dir
+  FR_SMART_CHECK_INCLUDE(pcre2.h,[#define PCRE2_CODE_UNIT_WIDTH (8)])
+  if test "x$ac_cv_header_pcre2_h" = "xyes"; then
+    smart_try_dir=$pcre_lib_dir
+    FR_SMART_CHECK_LIB(pcre2-8, pcre2_compile_8)
+    if test "x$ac_cv_lib_pcre2_8_pcre2_compile_8" = "xyes"; then
+      REGEX=yes
+      AC_DEFINE(HAVE_PCRE2, [1], [define this if we have libpcre2])
       AC_DEFINE(HAVE_BINSAFE_REGEX, 1, [Define if we have a binary safe regular expression library])
     fi
   fi

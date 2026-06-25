@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 6d424a8d53faefa42d605cde273eb8a0705a7f79 $
+#  $Id: 8969adf3433a639688137349f26aa7cf479063fb $
 
 #
 #  This module performs rate limiting on proxied packets.
@@ -41,13 +41,29 @@
 #
 
 #
-#  Update the "pre-proxy" section to list the "proxy_rate_limit" module:
+#  Update the "authorize" section to list the "proxy_rate_limit" module:
 #
-#	pre-proxy {
+#	authorize {
 #		...
 #		proxy_rate_limit
 #		...
 #	}
+#
+#  This allows the bad packets to be rejected as quickly as possible.
+#
+#  If you want the bad packets to be discarded instead, you can do:
+#
+#	authorize {
+#		...
+#		proxy_rate_limit {
+#			reject = 1   # don't stop processing on reject
+#		}
+#		if (reject) {
+#			do_not_respond
+#		}
+#		...
+#	}
+#
 #
 #  And update the "post-proxy" section to list the "proxy_rate_limit" module:
 #
@@ -56,6 +72,18 @@
 #		proxy_rate_limit
 #		...
 #	}
+#
+#  When running in the post-proxy section, the module will check if
+#  rate limiting is needed.  When rate limiting starts, it will add an
+#  attribute '&config:Proxy-Rate-Limit = yes'.  This lets you know
+#  when rate limiting starts.  That attribute can be checked in the
+#  "Post-Auth-Type Reject" section.
+#
+#  The module also logs an INFO message when rate limiting starts or
+#  stops for a particular key.  The module will NOT log anything for
+#  packets which are rate limited.  The idea is that if a bad client
+#  is sending 1000 packets per second, you don't want to fill up the
+#  logs with 1000 messages that say all the same thing.
 #
 #  The module can also be listed in the "authorize" section.  Listing
 #  it there as the first module allows the server to reject bad
@@ -92,8 +120,16 @@ proxy_rate_limit {
 	idle_timeout = 10
 
 	#
-	#  The suppression period.  If a client retransmits during this time,
-	#  the rate limiting will start, and the proxy will send a reject.
+	#  The suppression period.  If a client retransmits more than
+	#  "count" packets during this time, rate limiting will start,
+	#  and the proxy will send a reject for subsequent packets.
 	#
 	window = 1
+
+	#
+	#  The suppression count.  If a client retransmits more than
+	#  this many packets during "window", rate limiting will
+	#  start, and the proxy will send a reject for subsequent packets.
+	#
+	count = 1
 }

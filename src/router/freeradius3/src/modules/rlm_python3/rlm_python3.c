@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 6df12086a74ce57993ba62a682ec4a2a963f3098 $
+ * $Id: 7c54db0b4333905f4da113e74d145a993091e803 $
  * @file rlm_python3.c
  * @brief Translates requests between the server an a python interpreter.
  *
@@ -25,7 +25,7 @@
  * @copyright 2002  Miguel A.L. Paraz <mparaz@mparaz.com>
  * @copyright 2002  Imperium Technology, Inc.
  */
-RCSID("$Id: 6df12086a74ce57993ba62a682ec4a2a963f3098 $")
+RCSID("$Id: 7c54db0b4333905f4da113e74d145a993091e803 $")
 
 #define LOG_PREFIX "rlm_python3 - "
 
@@ -33,6 +33,7 @@ RCSID("$Id: 6df12086a74ce57993ba62a682ec4a2a963f3098 $")
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
 #include <freeradius-devel/rad_assert.h>
+#include <freeradius-devel/lsan.h>
 
 #include <Python.h>
 #include <dlfcn.h>
@@ -140,7 +141,7 @@ typedef enum {
 	PYTHON_PATH_MODE_OVERWRITE
 } py_path_mode;
 
-FR_NAME_NUMBER const python_path_mode[] = {
+static FR_NAME_NUMBER const python_path_mode[] = {
 	{ "append",	PYTHON_PATH_MODE_APPEND    },
 	{ "prepend",	PYTHON_PATH_MODE_PREPEND   },
 	{ "overwrite",	PYTHON_PATH_MODE_OVERWRITE },
@@ -264,11 +265,12 @@ static void python_error_log(void)
 static void mod_vptuple(TALLOC_CTX *ctx, REQUEST *request, VALUE_PAIR **vps, PyObject *pValue,
 			char const *funcname, char const *list_name)
 {
-	int	     i;
-	int	     tuplesize;
-	vp_tmpl_t       dst;
-	VALUE_PAIR      *vp;
-	REQUEST         *current = request;
+	int	   i;
+	int	   tuplesize;
+	vp_tmpl_t  dst;
+	VALUE_PAIR *vp;
+	REQUEST    *current = request;
+	const char *quote;
 
 	memset(&dst, 0, sizeof(dst));
 
@@ -291,7 +293,7 @@ static void mod_vptuple(TALLOC_CTX *ctx, REQUEST *request, VALUE_PAIR **vps, PyO
 		PyObject 	*pOp;
 		int		pairsize;
 		char const	*s1;
-		char const	*s2;
+		char const	*s2, *s2p;
 		FR_TOKEN	op = T_OP_EQ;
 
 		if (!PyTuple_CheckExact(pTupleElement)) {
@@ -362,13 +364,16 @@ static void mod_vptuple(TALLOC_CTX *ctx, REQUEST *request, VALUE_PAIR **vps, PyO
 		vp->op = op;
 		vp->tag = dst.tmpl_tag;
 
-		if (fr_pair_value_from_str(vp, s2, -1) < 0) {
-			DEBUG("%s - Failed: '%s:%s' %s '%s'", funcname, list_name, s1,
-			      fr_int2str(fr_tokens, op, "="), s2);
+		if (ATTRIBUTE_IS_SECRET(vp)) {
+			quote = "";
+			s2p = ATTRIBUTE_SECRET_PLACEHOLDER;
 		} else {
-			DEBUG("%s - '%s:%s' %s '%s'", funcname, list_name, s1,
-			      fr_int2str(fr_tokens, op, "="), s2);
+			quote = "'";
+			s2p = s2;
 		}
+		DEBUG("%s - %s'%s:%s' %s %s%s%s", funcname,
+			fr_pair_value_from_str(vp, s2, -1) < 0 ? "Failed: " : "",
+			list_name, s1, fr_int2str(fr_tokens, op, "="), quote, s2p, quote);
 
 		radius_pairmove(current, vps, vp, false);
 	}
@@ -878,7 +883,7 @@ static int python_function_load(char const *name, python_func_def_t *def)
 		return -1;
 	}
 
-	def->module = PyImport_ImportModule(def->module_name);
+	LSAN_DISABLE(def->module = PyImport_ImportModule(def->module_name));
 	if (!def->module) {
 		ERROR("%s - Module '%s' not found", __func__, def->module_name);
 
@@ -1157,7 +1162,7 @@ static int python_interpreter_init(rlm_python_t *inst, CONF_SECTION *conf)
 				return -1;
 			}
 
-			status = Py_InitializeFromConfig(&config);
+			LSAN_DISABLE(status = Py_InitializeFromConfig(&config));
 			if (PyStatus_Exception(status)) {
 				PyConfig_Clear(&config);
 				return -1;
@@ -1343,7 +1348,7 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 	if (!check_config && inst->instantiate.module_name && inst->instantiate.function_name) {
 
 		code = do_python_single(NULL, inst->instantiate.function, "instantiate", inst->pass_all_vps, inst->pass_all_vps_dict);
-		if (code < 0) {
+		if ((code < 0) || (code == RLM_MODULE_FAIL)) {
 		error:
 			python_error_log();	/* Needs valid thread with GIL */
 			PyEval_SaveThread();
@@ -1406,7 +1411,7 @@ static int mod_detach(void *instance)
 
 	if ((--python_instances) == 0) {
 		PyEval_RestoreThread(main_interpreter); /* Swap to the main thread */
-		Py_Finalize();
+		LSAN_DISABLE(Py_Finalize());
 		dlclose(python_dlhandle);
 	}
 

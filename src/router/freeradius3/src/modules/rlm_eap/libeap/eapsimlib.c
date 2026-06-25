@@ -6,7 +6,7 @@
  *
  * code common to EAP-SIM clients and to servers.
  *
- * Version:     $Id: 67e21b2a78c619232090d299b502e83877a61c64 $
+ * Version:     $Id: 2176f3bb1d9f3492bf658972f2f77ea185786783 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@
  *
  */
 
-RCSID("$Id: 67e21b2a78c619232090d299b502e83877a61c64 $")
+RCSID("$Id: 2176f3bb1d9f3492bf658972f2f77ea185786783 $")
 
 #include <freeradius-devel/libradius.h>
 #include "eap_types.h"
@@ -442,6 +442,11 @@ int eapsim_checkmac(TALLOC_CTX *ctx, VALUE_PAIR *rvps, uint8_t key[EAPSIM_AUTH_S
 		 */
 		attr = buffer+8;
 		while(attr < (buffer+elen)) {
+			if (!attr[1]) {
+				ret = 0;
+				goto done;
+			}
+
 			if (attr[0] == (PW_EAP_SIM_MAC - PW_EAP_SIM_BASE)) {
 				/* zero the data portion, after making sure
 				 * the size is >=5. Maybe future versions.

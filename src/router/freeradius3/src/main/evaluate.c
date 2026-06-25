@@ -1,7 +1,7 @@
 /*
  * evaluate.c	Evaluate complex conditions
  *
- * Version:	$Id: 8066c56454e89a676831277b12dd78dc2d53fab7 $
+ * Version:	$Id: 446a9180881302bc9797c5f1efbfd8aa3df1a704 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 8066c56454e89a676831277b12dd78dc2d53fab7 $")
+RCSID("$Id: 446a9180881302bc9797c5f1efbfd8aa3df1a704 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -162,7 +162,7 @@ static int cond_do_regex(REQUEST *request, fr_cond_t const *c,
 
 	regex_t		*preg, *rreg = NULL;
 #ifdef HAVE_PCRE2
-	regmatch_t	*rxmatch;
+	regmatch_t	*rxmatch = NULL;
 	size_t		nmatch = REQUEST_MAX_REGEX + 1;
 #else
 	regmatch_t	rxmatch[REQUEST_MAX_REGEX + 1];	/* +1 for %{0} (whole match) capture group */

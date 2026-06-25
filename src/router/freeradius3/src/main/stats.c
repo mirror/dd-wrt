@@ -1,7 +1,7 @@
 /*
  * stats.c	Internal statistics handling.
  *
- * Version:	$Id: 826771bd1f201f50ace69b7ad72c2a85a8b1bc30 $
+ * Version:	$Id: a9c3c3b837d1a499d50c267c108ef414a00fcfff $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,14 +21,13 @@
  * Copyright 2008  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 826771bd1f201f50ace69b7ad72c2a85a8b1bc30 $")
+RCSID("$Id: a9c3c3b837d1a499d50c267c108ef414a00fcfff $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
 
 #ifdef WITH_STATS
 
-#define USEC (1000000)
 #define EMA_SCALE (100)
 #define F_EMA_SCALE (1000000)
 
@@ -1018,7 +1017,8 @@ void request_stats_reply(REQUEST *request)
 		if (vp) vp->vp_date = home->last_packet_sent;
 
 		if ((flag->vp_integer & 0x01) != 0) {	/* auth */
-			if (home->type == HOME_TYPE_AUTH) {
+			if ((home->type == HOME_TYPE_AUTH) ||
+			    (home->type == HOME_TYPE_AUTH_ACCT)) {
 				request_stats_addvp(request, proxy_authvp,
 						    &home->stats);
 			} else {
@@ -1028,7 +1028,8 @@ void request_stats_reply(REQUEST *request)
 
 #ifdef WITH_ACCOUNTING
 		if ((flag->vp_integer & 0x02) != 0) {	/* accounting */
-			if (home->type == HOME_TYPE_ACCT) {
+			if ((home->type == HOME_TYPE_ACCT) ||
+			    (home->type == HOME_TYPE_AUTH_ACCT)) {
 				request_stats_addvp(request, proxy_acctvp,
 						    &home->stats);
 			} else {

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 8e3d1b71e5faeff5f151c24dbca1848a3f05bb95 $
+ * $Id: 75a2a5c7e9561a08f7c9503626ff4713e5f8195a $
  * @file ldap.c
  * @brief Functions for mapping between LDAP and FreeRADIUS attributes.
  *
@@ -360,6 +360,8 @@ int rlm_ldap_map_do(const rlm_ldap_t *inst, REQUEST *request, LDAP *handle,
 		int		count, i;
 
 		values = ldap_get_values_len(handle, entry, inst->valuepair_attr);
+		if (!values) return applied;
+
 		count = ldap_count_values_len(values);
 
 		for (i = 0; i < count; i++) {

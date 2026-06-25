@@ -1,7 +1,7 @@
 /*
  * realms.c	Realm handling code
  *
- * Version:     $Id: 522287bdd7a3d779cbdc722e892e1c0420252e7b $
+ * Version:     $Id: fa8326052038344d246e53acf907e491e50d039b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 522287bdd7a3d779cbdc722e892e1c0420252e7b $")
+RCSID("$Id: fa8326052038344d246e53acf907e491e50d039b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/realms.h>
@@ -460,6 +460,11 @@ static CONF_PARSER limit_config[] = {
 	{ "max_requests", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.max_requests), "0" },
 	{ "lifetime", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.lifetime), "0" },
 	{ "idle_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.idle_timeout), "0" },
+#ifdef WITH_TLS
+	{ "connect_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.connect_timeout), "30" },
+	{ "connect_fail_interval", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.connect_fail_interval), "300" },
+	{ "certificate_fail_interval", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.certificate_fail_interval), "3600" },
+#endif
 #ifdef SO_RCVTIMEO
 	{ "read_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, home_server_t, limit.read_timeout), NULL },
 #endif
@@ -568,7 +573,7 @@ void realm_home_server_sanitize(home_server_t *home, CONF_SECTION *cs)
 	FR_INTEGER_BOUND_CHECK("ping_interval", home->ping_interval, >=, 6);
 	FR_INTEGER_BOUND_CHECK("ping_interval", home->ping_interval, <=, 120);
 
-	FR_TIMEVAL_BOUND_CHECK("response_window", &home->response_window, >=, 0, 1000);
+	FR_TIMEVAL_BOUND_CHECK("response_window", &home->response_window, >=, 0, USEC / 10);
 	FR_TIMEVAL_BOUND_CHECK("response_window", &home->response_window, <=,
 			       main_config.max_request_time, 0);
 	FR_TIMEVAL_BOUND_CHECK("response_window", &home->response_window, <=, 60, 0);
@@ -618,12 +623,64 @@ void realm_home_server_sanitize(home_server_t *home, CONF_SECTION *cs)
 	if (home->proto != IPPROTO_TCP) home->limit.max_connections = 0;
 #endif
 
-	if ((home->limit.idle_timeout > 0) && (home->limit.idle_timeout < 5))
+	if ((home->limit.idle_timeout > 0) && (home->limit.idle_timeout < 5)) {
 		home->limit.idle_timeout = 5;
-	if ((home->limit.lifetime > 0) && (home->limit.lifetime < 5))
-		home->limit.lifetime = 5;
-	if ((home->limit.lifetime > 0) && (home->limit.idle_timeout > home->limit.lifetime))
-		home->limit.idle_timeout = 0;
+	}
+
+	if (home->limit.lifetime > 0) {
+		if (home->limit.lifetime < 5) {
+			home->limit.lifetime = 5;
+		}
+
+		if (home->limit.idle_timeout > home->limit.lifetime) {
+			home->limit.idle_timeout = 0;
+		}
+
+	} else if (!home->limit.idle_timeout) {
+		home->limit.idle_timeout = 30;
+	}
+
+#ifdef WITH_TLS
+	if (home->limit.connect_timeout > 0) {
+		if (home->limit.idle_timeout &&
+		    (home->limit.connect_timeout > home->limit.idle_timeout)) {
+			home->limit.connect_timeout = home->limit.idle_timeout;
+		}
+
+		if (home->limit.lifetime &&
+		    (home->limit.connect_timeout > home->limit.lifetime)) {
+			home->limit.connect_timeout = (home->limit.lifetime + 1) / 2;
+		}
+
+		if (home->limit.connect_timeout > 30) {
+			home->limit.connect_timeout = 30;
+		}
+
+	} else if (!home->limit.connect_timeout) {
+		home->limit.connect_timeout = 5;
+	}
+
+	if (!home->limit.connect_fail_interval) {
+		home->limit.connect_fail_interval = 300;
+
+	} else if (home->limit.connect_fail_interval < 30) {
+		home->limit.connect_fail_interval = 30;
+
+	} else if (home->limit.connect_fail_interval > 86400) {
+		home->limit.connect_fail_interval = 86400;
+	}
+
+	if (!home->limit.certificate_fail_interval) {
+		home->limit.certificate_fail_interval = 300;
+
+	} else if (home->limit.certificate_fail_interval < 300) {
+		home->limit.certificate_fail_interval = 300;
+
+	} else if (home->limit.certificate_fail_interval > 86400) {
+		home->limit.certificate_fail_interval = 86400;
+	}
+
+#endif
 
 	/*
 	 *	Make sure that this is set.
@@ -664,7 +721,7 @@ static bool home_server_insert(home_server_t *home, CONF_SECTION *cs)
 	if (!rbtree_insert(home_servers_bynumber, home)) {
 		rbtree_deletebydata(home_servers_byname, home);
 		if (home->ipaddr.af != AF_UNSPEC) {
-			rbtree_deletebydata(home_servers_byname, home);
+			rbtree_deletebydata(home_servers_byaddr, home);
 		}
 		cf_log_err_cs(cs, "Internal error %d adding home server %s", __LINE__, home->log_name);
 		return false;
@@ -780,6 +837,63 @@ static int listener_cmp(void const *one, void const *two)
 	return 0;
 }
 #endif
+
+static int home_server_map_verify(vp_map_t *map, UNUSED void *instance)
+{
+	/*
+	 *	Destinations where we can put the VALUE_PAIRs we
+	 *	create using LDAP values.
+	 */
+	switch (map->lhs->type) {
+	case TMPL_TYPE_ATTR:
+		break;
+
+	case TMPL_TYPE_ATTR_UNDEFINED:
+		cf_log_err(map->ci, "Unknown attribute %s", map->lhs->tmpl_unknown_name);
+		return -1;
+
+	default:
+		cf_log_err(map->ci, "Left hand side of map must be an attribute, not a %s",
+			   fr_int2str(tmpl_names, map->lhs->type, "<INVALID>"));
+		return -1;
+	}
+
+	/*
+	 *	Sources we can use to get the name of the attribute
+	 *	we're setting.
+	 */
+	switch (map->rhs->type) {
+	case TMPL_TYPE_LITERAL:
+		break;
+
+	case TMPL_TYPE_ATTR_UNDEFINED:
+		cf_log_err(map->ci, "Unknown attribute %s", map->rhs->tmpl_unknown_name);
+		return -1;
+
+	default:
+		cf_log_err(map->ci, "Right hand side of map must be a literal value, not a %s",
+			   fr_int2str(tmpl_names, map->rhs->type, "<INVALID>"));
+		return -1;
+	}
+
+	/*
+	 *	Only =, :=, and += aoperators are supported for home server mappings.
+	 */
+	switch (map->op) {
+	case T_OP_SET:
+	case T_OP_EQ:
+	case T_OP_ADD:
+		break;
+
+	default:
+		cf_log_err(map->ci, "Operator \"%s\" not allowed for home_server 'update' section",
+			   fr_int2str(fr_tokens, map->op, "<INVALID>"));
+		return -1;
+	}
+
+	return 0;
+}
+
 
 /** Alloc a new home server defined by a CONF_SECTION
  *
@@ -1189,6 +1303,32 @@ home_server_t *home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SE
 #endif
 	} /* end of parse home server */
 
+	/*
+	 *	Allow the admin to specify the contents of status check packets.
+	 */
+	if (home->ping_check != HOME_PING_CHECK_NONE) {
+		CONF_SECTION *update;
+
+		/*
+		 *	Build the attribute map
+		 */
+		update = cf_section_sub_find(cs, "update");
+		if (!update) goto sanitize;
+
+		if (cf_section_name2(update)) {
+			cf_log_err_cs(cs, "Cannot specify a list name for home_server 'update' section");
+			goto error;
+		}
+
+		if (map_afrom_cs(&home->attr_map, update,
+				 PAIR_LIST_PROXY_REQUEST, PAIR_LIST_PROXY_REQUEST, home_server_map_verify, home,
+				 64) < 0) {
+			cf_log_err_cs(cs, "Failed defining attributes for status_check packets");
+			goto error;
+		}
+	}
+
+sanitize:
 	realm_home_server_sanitize(home, cs);
 
 	return home;
@@ -1240,7 +1380,7 @@ CONF_SECTION *home_server_cs_afrom_client(CONF_SECTION *client)
 		if (!cp) cp = cf_pair_find(client, "ipv4addr");
 		if (!cp) cp = cf_pair_find(client, "ipv6addr");
 
-		cf_pair_add(server, cf_pair_dup(server, cp));
+		if (cp) cf_pair_add(server, cf_pair_dup(server, cp));
 	}
 
 	if (!cs || !cf_pair_find(cs, "secret")) {
@@ -1976,7 +2116,7 @@ static int old_server_add(realm_config_t *rc, CONF_SECTION *cs,
 		if (!rbtree_insert(home_servers_bynumber, home)) {
 			rbtree_deletebydata(home_servers_byname, home);
 			if (home->ipaddr.af != AF_UNSPEC) {
-				rbtree_deletebydata(home_servers_byname, home);
+				rbtree_deletebydata(home_servers_byaddr, home);
 			}
 			cf_log_err_cs(cs,
 				   "Internal error %d adding home server %s.",
@@ -3023,11 +3163,11 @@ pick:
 
 		if (!home_server_active(request, home[i])) continue;
 
-		if (found->id <= key[i]) {
-			diff = key[i] - found->id;
+		if (home[i]->id <= key[i]) {
+			diff = key[i] - home[i]->id;
 
 		} else {
-			diff = key[i] + (~((uint32_t) 0) - found->id) + 1;
+			diff = home[i]->id - key[i];
 		}
 
 		if (!found || (diff < found_diff)) {

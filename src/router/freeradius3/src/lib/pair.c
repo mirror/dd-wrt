@@ -1,7 +1,7 @@
 /*
  * pair.c	Functions to handle VALUE_PAIRs
  *
- * Version:	$Id: 31b5c0938c724998b631324dd01af04bed2941bb $
+ * Version:	$Id: e1748a5d858d6c281786e9fb00e69e314a2fe1bf $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 31b5c0938c724998b631324dd01af04bed2941bb $")
+RCSID("$Id: e1748a5d858d6c281786e9fb00e69e314a2fe1bf $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/regex.h>
@@ -416,11 +416,10 @@ int8_t fr_pair_cmp_by_da_tag(void const *a, void const *b)
 {
 	VALUE_PAIR const *my_a = a;
 	VALUE_PAIR const *my_b = b;
+	uint8_t cmp;
 
 	VERIFY_VP(my_a);
 	VERIFY_VP(my_b);
-
-	uint8_t cmp;
 
 	cmp = fr_pointer_cmp(my_a->da, my_b->da);
 	if (cmp != 0) return cmp;

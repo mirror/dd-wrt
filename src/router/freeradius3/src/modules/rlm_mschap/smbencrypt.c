@@ -20,7 +20,7 @@
    Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 9a8a5ab777e919832036100489bc8ba772031878 $")
+RCSID("$Id: 531c40ec260383f85ca5a7a1ee97da0b1bc82f5f $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -43,7 +43,9 @@ static char const hex[] = "0123456789ABCDEF";
 #  include <openssl/provider.h>
 
 static OSSL_PROVIDER *openssl_default_provider = NULL;
+#ifndef WITH_FIPS
 static OSSL_PROVIDER *openssl_legacy_provider = NULL;
+#endif
 
 #define ERROR(_x) fprintf(stderr, _x)
 
@@ -58,6 +60,7 @@ static int openssl3_init(void)
 		return -1;
 	}
 
+#ifndef WITH_FIPS
 	/*
 	 *	Needed for MD4
 	 *
@@ -68,6 +71,7 @@ static int openssl3_init(void)
 		ERROR("(TLS) Failed loading legacy provider");
 		return -1;
 	}
+#endif
 
 	return 0;
 }
@@ -79,10 +83,12 @@ static void openssl3_free(void)
 	}
 	openssl_default_provider = NULL;
 
+#ifndef WITH_FIPS
 	if (openssl_legacy_provider && !OSSL_PROVIDER_unload(openssl_legacy_provider)) {
 		ERROR("Failed unloading legacy provider");
 	}
 	openssl_legacy_provider = NULL;
+#endif
 }
 #else
 #define openssl3_init()

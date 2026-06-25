@@ -1,7 +1,7 @@
 /*
  * radeapclient.c	EAP specific radius packet debug tool.
  *
- * Version:	$Id: 82b17a0b48cdee3bb0fda1d8037e1c69681e0cae $
+ * Version:	$Id: b946a87497e9d1e3ccc4f8c507f354655d5c1388 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 82b17a0b48cdee3bb0fda1d8037e1c69681e0cae $")
+RCSID("$Id: b946a87497e9d1e3ccc4f8c507f354655d5c1388 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -51,8 +51,6 @@ extern int sha1_data_problems;
 #define DEBUG2 if ((fr_debug_lvl >= 2) && fr_log_fp) fr_printf_log
 #define ERROR if (fr_debug_lvl && fr_log_fp) fr_printf_log
 
-#define USEC 1000000
-
 static uint32_t parallel = 1;
 static unsigned int retries = 3;
 static float timeout = 5;
@@ -73,8 +71,6 @@ char const *radiusd_version = "";
 #ifdef WITH_TLS
 #include <freeradius-devel/tls.h>
 #endif
-
-log_lvl_t rad_debug_lvl = 0;
 
 //TODO: move structures to a header file.
 
@@ -1996,7 +1992,7 @@ int main(int argc, char **argv)
 			timeout = atof(optarg);
 			break;
 		case 'v':
-			printf("$Id: 82b17a0b48cdee3bb0fda1d8037e1c69681e0cae $"
+			printf("$Id: b946a87497e9d1e3ccc4f8c507f354655d5c1388 $"
 #ifndef ENABLE_REPRODUCIBLE_BUILDS
 			", built on " __DATE__ " at " __TIME__
 #endif

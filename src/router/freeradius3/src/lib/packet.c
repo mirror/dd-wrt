@@ -1,7 +1,7 @@
 /*
  * packet.c	Generic packet manipulation functions.
  *
- * Version:	$Id: 0f870f514eeb88d5f2ca348ecd9c01c77411abda $
+ * Version:	$Id: 7f9abf534f79bef691616a4475d82f2436dfb504 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000-2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 0f870f514eeb88d5f2ca348ecd9c01c77411abda $")
+RCSID("$Id: 7f9abf534f79bef691616a4475d82f2436dfb504 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -422,6 +422,7 @@ bool fr_packet_list_socket_add(fr_packet_list_t *pl, int sockfd, int proto,
 	}
 
 	memset(ps, 0, sizeof(*ps));
+	ps->sockfd = -1;
 	ps->ctx = ctx;
 #ifdef WITH_TCP
 	ps->proto = proto;

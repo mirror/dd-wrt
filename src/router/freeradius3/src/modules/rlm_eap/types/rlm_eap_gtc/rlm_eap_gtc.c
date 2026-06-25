@@ -1,7 +1,7 @@
 /*
  * rlm_eap_gtc.c    Handles that are called from eap
  *
- * Version:     $Id: 031eba2a0a57adad8070edd869b68e31e00fa524 $
+ * Version:     $Id: 04c25759f941ad2a7a046b82baee52d0d1113968 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2003,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 031eba2a0a57adad8070edd869b68e31e00fa524 $")
+RCSID("$Id: 04c25759f941ad2a7a046b82baee52d0d1113968 $")
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -183,8 +183,8 @@ static int CC_HINT(nonnull) mod_process(void *instance, eap_handler_t *handler)
 			return 0;
 		}
 
-		if (memcmp(eap_ds->response->type.data,
-			   vp->vp_strvalue, vp->vp_length) != 0) {
+		if (rad_digest_cmp(eap_ds->response->type.data,
+				   (uint8_t const *) vp->vp_strvalue, vp->vp_length) != 0) {
 			REDEBUG2("Passwords are different");
 			eap_ds->request->code = PW_EAP_FAILURE;
 			return 0;

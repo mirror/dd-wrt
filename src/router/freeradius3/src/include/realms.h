@@ -5,17 +5,22 @@
  * realms.h	Structures, prototypes and global variables
  *		for realms
  *
- * Version:	$Id: 2d8106263fdf845117a490d9a216c095ab2c68e7 $
+ * Version:	$Id: 828cbc251a39669aaafe45ea84a9439db3598995 $
  *
  */
 
-RCSIDH(realms_h, "$Id: 2d8106263fdf845117a490d9a216c095ab2c68e7 $")
+RCSIDH(realms_h, "$Id: 828cbc251a39669aaafe45ea84a9439db3598995 $")
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 extern bool home_servers_udp;	//!< Whether there are any UDP home servers
+
+#ifndef VP_MAP_T
+#define VP_MAP_T
+typedef struct vp_map vp_map_t;	//! forward definition for home server 'update' sections.
+#endif
 
 typedef enum {
 	HOME_TYPE_INVALID = 0,
@@ -47,9 +52,10 @@ typedef enum {
 	HOME_STATE_UNKNOWN,
 	HOME_STATE_ADMIN_DOWN,
 	HOME_STATE_CONNECTION_FAIL,
+	HOME_STATE_CERTIFICATE_FAIL,
 } home_state_t;
 
-#define HOME_SERVER_IS_DEAD(_x) (((_x)->state == HOME_STATE_IS_DEAD) || ((_x)->state == HOME_STATE_ADMIN_DOWN) || ((_x)->state == HOME_STATE_CONNECTION_FAIL))
+#define HOME_SERVER_IS_DEAD(_x) (((_x)->state == HOME_STATE_IS_DEAD) || ((_x)->state == HOME_STATE_ADMIN_DOWN) || ((_x)->state == HOME_STATE_CONNECTION_FAIL) || ((_x)->state == HOME_STATE_CERTIFICATE_FAIL))
 
 typedef struct fr_socket_limit_t {
 	uint32_t	max_connections;
@@ -60,6 +66,9 @@ typedef struct fr_socket_limit_t {
 	uint32_t	idle_timeout;
 	uint32_t	read_timeout;
 	uint32_t	write_timeout;
+	uint32_t	connect_timeout;
+	uint32_t	connect_fail_interval;
+	uint32_t	certificate_fail_interval;
 } fr_socket_limit_t;
 
 typedef struct home_server {
@@ -124,6 +133,8 @@ typedef struct home_server {
 
 	char const		*ping_user_name;
 	char const		*ping_user_password;
+
+	vp_map_t		*attr_map;		//!< Additional attributes for status check packets
 
 	uint32_t		ping_interval;
 	uint32_t		num_pings_to_alive;

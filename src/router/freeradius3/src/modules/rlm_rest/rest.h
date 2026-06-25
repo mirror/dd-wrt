@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: cc0a0be92a26375dafd63a8b17ace01693820ec0 $
+ * $Id: cd6b1f330d15e57036163d7df4c74ac2ab1f95a7 $
  *
  * @brief Function prototypes and datatypes for the REST (HTTP) transport.
  * @file rest.h
@@ -23,7 +23,7 @@
  * @copyright 2012-2014  Arran Cudbard-Bell <a.cudbard-bell@freeradius.org>
  */
 
-RCSIDH(other_h, "$Id: cc0a0be92a26375dafd63a8b17ace01693820ec0 $")
+RCSIDH(other_h, "$Id: cd6b1f330d15e57036163d7df4c74ac2ab1f95a7 $")
 
 #include <freeradius-devel/connection.h>
 #include "config.h"
@@ -166,6 +166,8 @@ typedef struct rlm_rest_t {
 
 	char const		*connect_uri;	//!< URI we attempt to connect to, to pre-establish
 						//!< TCP connections.
+	char const		*connect_uri_socket;		//!< UNIX socket path we connect to.
+	bool			connect_uri_socket_abstract;	//!< If the UNIX socket is an abstract socket.
 
 	struct timeval		connect_timeout_tv;	//!< Connection timeout timeval.
 	long			connect_timeout;	//!< Connection timeout ms.

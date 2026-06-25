@@ -19,6 +19,7 @@ jobs:
           - { NAME: "ubuntu-20.04", OS: "ubuntu:20.04" }
           - { NAME: "ubuntu-22.04", OS: "ubuntu:22.04" }
           - { NAME: "ubuntu-24.04", OS: "ubuntu:24.04" }
+          - { NAME: "ubuntu-26.04", OS: "ubuntu:26.04" }
           - { NAME: "debian-11",    OS: "debian:bullseye" }
           - { NAME: "debian-12",    OS: "debian:bookworm" }
           - { NAME: "debian-13",    OS: "debian:trixie" }
@@ -53,7 +54,7 @@ jobs:
       run: |
         apt-get install -y --no-install-recommends git-core ca-certificates
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         path: freeradius
 
@@ -67,6 +68,7 @@ jobs:
     - name: Install build dependencies
       run: |
         apt-get install -y --no-install-recommends build-essential devscripts quilt equivs procps fakeroot
+        touch -t 202001010000 debian/control
         debian/rules debian/control
         mk-build-deps -irt"apt-get -y" debian/control
       working-directory: freeradius
@@ -88,7 +90,7 @@ jobs:
         mv *.deb debs/
 
     - name: Restore eapol_test build directory from cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       id: hostapd-cache
       with:
         path: ${{ env.HOSTAPD_BUILD_DIR }}
@@ -109,7 +111,7 @@ jobs:
       working-directory: freeradius
 
     - name: Store DEBs
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: debs-${{ matrix.env.NAME }}
         path: debs
@@ -142,6 +144,7 @@ jobs:
           - { NAME: "ubuntu-20.04", OS: "ubuntu:20.04" }
           - { NAME: "ubuntu-22.04", OS: "ubuntu:22.04" }
           - { NAME: "ubuntu-24.04", OS: "ubuntu:24.04" }
+          - { NAME: "ubuntu-26.04", OS: "ubuntu:26.04" }
           - { NAME: "debian-11", OS: "debian:bullseye" }
           - { NAME: "debian-12", OS: "debian:bookworm" }
           - { NAME: "debian-13", OS: "debian:trixie" }
@@ -158,7 +161,7 @@ jobs:
     steps:
 
     - name: Load DEBs
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: debs-${{ matrix.env.NAME }}
 
@@ -196,7 +199,7 @@ jobs:
         mv eapol_test /usr/local/bin
         chmod +x /usr/local/bin/eapol_test
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         path: freeradius
 
@@ -209,7 +212,7 @@ jobs:
 
     - name: Upload radius logs on failure
       if: ${{ failure() }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: radius-logs-${{ matrix.env.NAME }}.tgz
         path: |

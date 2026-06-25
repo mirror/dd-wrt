@@ -1,7 +1,7 @@
 /*
  * mainconf.c	Handle the server's configuration.
  *
- * Version:	$Id: 3e073b08413439e481a386431e6d17a61591741e $
+ * Version:	$Id: 80fb2bbe0d5d397c8a552f3210b268c3125926ec $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2002  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 3e073b08413439e481a386431e6d17a61591741e $")
+RCSID("$Id: 80fb2bbe0d5d397c8a552f3210b268c3125926ec $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -204,7 +204,7 @@ static const CONF_PARSER log_config[] = {
 	{ "colourise",FR_CONF_POINTER(PW_TYPE_BOOLEAN, &do_colourise), NULL },
 	{ "use_utc", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &log_dates_utc), NULL },
 	{ "msg_denied", FR_CONF_POINTER(PW_TYPE_STRING, &main_config.denied_msg), "You are already logged in - access denied" },
-	{ "suppress_secrets", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.suppress_secrets), NULL },
+	{ "suppress_secrets", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.suppress_secrets), "yes" },
 	{ "timestamp", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &default_log.timestamp), NULL },
 	CONF_PARSER_TERMINATOR
 };
@@ -242,6 +242,8 @@ static const CONF_PARSER unlang_config[] = {
 	 */
 	{ "group_stop_return", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.group_stop_return), "no" },
 	{ "policy_stop_return", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.policy_stop_return), "no" },
+	{ "improved_state_tracking", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.hoist_state), "no" },
+	{ "proxy_null_listener", FR_CONF_POINTER(PW_TYPE_BOOLEAN, &main_config.proxy_null_listener), "no" },
 	CONF_PARSER_TERMINATOR
 };
 
@@ -354,6 +356,8 @@ static size_t config_escape_func(UNUSED REQUEST *request, char *out, size_t outl
 	size_t len = 0;
 	static char const disallowed[] = "%{}\\'\"`";
 
+	if (!outlen) return 0;
+
 	while (in[0]) {
 		/*
 		 *	Non-printable characters get replaced with their
@@ -437,10 +441,6 @@ static ssize_t xlat_config(UNUSED void *instance, REQUEST *request, char const *
 	if (!value) {
 		out[0] = '\0';
 		return 0;
-	}
-
-	if (outlen > strlen(value)) {
-		outlen = strlen(value) + 1;
 	}
 
 	strlcpy(out, value, outlen);
@@ -922,7 +922,7 @@ int main_config_init(void)
 #endif
 
 #if 0 && defined(S_IROTH)
-	if (statbuf.st_mode & S_IROTH != 0) {
+	if ((statbuf.st_mode & S_IROTH) != 0) {
 		ERROR("Configuration directory %s is globally readable.  Refusing to start due to insecure configuration.",
 		       radius_dir);
 		return -1;
@@ -1051,6 +1051,7 @@ do {\
 		     ci = cf_item_find_next(subcs, ci)) {
 
 			if (cf_item_is_data(ci)) continue;
+			if (cf_item_is_comment(ci)) continue;
 
 			if (!cf_item_is_pair(ci)) {
 				cf_log_err(ci, "Unexpected item in ENV section");
@@ -1220,10 +1221,6 @@ do {\
 	FR_INTEGER_COND_CHECK("max_request_time", main_config.max_request_time,
 			      (main_config.max_request_time != 0), 100);
 
-#ifndef USEC
-#define USEC (1000000)
-#endif
-
 	/*
 	 *	reject_delay can be zero.  OR 1 though 10.
 	 */
@@ -1242,12 +1239,12 @@ do {\
 	FR_INTEGER_BOUND_CHECK("resources.talloc_pool_size", main_config.talloc_pool_size, <=, 1024 * 1024);
 
 	/*
-	 * Set default initial request processing delay to 1/3 of a second.
-	 * Will be updated by the lowest response window across all home servers,
-	 * if it is less than this.
+	 *	Set default initial request processing delay to 2/3 of a second.
+	 *	Will be updated by the lowest response window across all home servers,
+	 *	if it is less than this.
 	 */
 	main_config.init_delay.tv_sec = 0;
-	main_config.init_delay.tv_usec = 2* (1000000 / 3);
+	main_config.init_delay.tv_usec = (2 * USEC) / 3;
 
 	{
 		CONF_PAIR *cp = NULL;
@@ -1259,6 +1256,7 @@ do {\
 			return -1;
 		}
 
+		cp = NULL;
 		if (subcs) cp = cf_pair_find(subcs, "limit_proxy_state");
 		if (fr_bool_auto_parse(cp, &main_config.limit_proxy_state, limit_proxy_state) < 0) {
 			cf_file_free(cs);
@@ -1525,6 +1523,7 @@ void main_config_hup(void)
 	cc = talloc_zero(cs_cache, cached_config_t);
 	if (!cc) {
 		ERROR("Out of memory");
+		talloc_free(cs);
 		return;
 	}
 

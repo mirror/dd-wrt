@@ -1,7 +1,7 @@
 /*
  * eap_fast.c  contains the interfaces that are called from the main handler
  *
- * Version:     $Id: 39c2725a352e8dd5c4df048967468ecd06f421bb $
+ * Version:     $Id: 93dea229973c1208c4ff8cb75cb925d65de38e35 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: 39c2725a352e8dd5c4df048967468ecd06f421bb $")
+RCSID("$Id: 93dea229973c1208c4ff8cb75cb925d65de38e35 $")
 
 #include "eap_fast.h"
 #include "eap_fast_crypto.h"
@@ -991,10 +991,12 @@ static PW_CODE eap_fast_eap_payload(REQUEST *request, eap_handler_t *eap_session
 			tvp = fr_pair_afrom_num(fake, PW_MSCHAP_CHALLENGE, VENDORPEC_MICROSOFT);
 			fr_pair_value_memcpy(tvp, t->keyblock->server_challenge, CHAP_VALUE_LENGTH);
 			fr_pair_add(&fake->config, tvp);
+			rdebug_pair(L_DBG_LVL_2, request, tvp, "Create &config:");
 
 			tvp = fr_pair_afrom_num(fake, PW_MS_CHAP_PEER_CHALLENGE, 0);
 			fr_pair_value_memcpy(tvp, t->keyblock->client_challenge, CHAP_VALUE_LENGTH);
 			fr_pair_add(&fake->config, tvp);
+			rdebug_pair(L_DBG_LVL_2, request, tvp, "Create &config:");
 		}
 	}
 

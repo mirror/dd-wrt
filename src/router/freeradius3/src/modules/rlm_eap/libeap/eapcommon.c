@@ -3,7 +3,7 @@
  *
  * code common to clients and to servers.
  *
- * Version:     $Id: 12399696ed3df4cd774099567b45b50b0f3248bf $
+ * Version:     $Id: 97862c84ce773d88e2a734b2c0f7c0e8c41bdc43 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@
  *
  */
 
-RCSID("$Id: 12399696ed3df4cd774099567b45b50b0f3248bf $")
+RCSID("$Id: 97862c84ce773d88e2a734b2c0f7c0e8c41bdc43 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/rad_assert.h>
@@ -72,12 +72,11 @@ RCSID("$Id: 12399696ed3df4cd774099567b45b50b0f3248bf $")
 
 const FR_NAME_NUMBER eap_rcode_table[] = {
 	{ "notfound",		EAP_NOTFOUND		},
-	{ "found",		EAP_OK			},
-	{ "ok",			EAP_FAIL		},
-	{ "fail",		EAP_NOOP		},
-	{ "noop",		EAP_INVALID		},
-	{ "invalid",		EAP_VALID		},
-	{ "valid",		EAP_MAX_RCODES		},
+	{ "ok",			EAP_OK			},
+	{ "fail",		EAP_FAIL		},
+	{ "noop",		EAP_NOOP		},
+	{ "invalid",		EAP_INVALID		},
+	{ "valid",		EAP_VALID		},
 
 	{  NULL , -1 }
 };

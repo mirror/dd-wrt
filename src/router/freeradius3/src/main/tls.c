@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: ba267983b14878f8e5193a410ebccb701e1bd627 $
+ * Version:     $Id: 3018f34cc05604803c4c7233fbd1006337409895 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: ba267983b14878f8e5193a410ebccb701e1bd627 $")
+RCSID("$Id: 3018f34cc05604803c4c7233fbd1006337409895 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -64,7 +64,10 @@ USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 #  include <openssl/provider.h>
 
 static OSSL_PROVIDER *openssl_default_provider = NULL;
+
+#ifndef WITH_FIPS
 static OSSL_PROVIDER *openssl_legacy_provider = NULL;
+#endif
 #endif
 
 #define LOG_PREFIX "tls"
@@ -74,7 +77,6 @@ static OSSL_PROVIDER *openssl_legacy_provider = NULL;
 
 #define FIPS_mode(_x) EVP_default_properties_is_fips_enabled(NULL)
 #define PEM_read_bio_DHparams(_bio, _x, _y, _z) PEM_read_bio_Parameters(_bio, &dh)
-#define SSL_CTX_set0_tmp_dh_pkey(_ctx, _dh) SSL_CTX_set_tmp_dh(_ctx, _dh)
 #define DH EVP_PKEY
 #define DH_free(_dh)
 #endif
@@ -518,15 +520,21 @@ tls_session_t *tls_new_client_session(TALLOC_CTX *ctx, fr_tls_server_conf_t *con
 	SSL_set_info_callback(ssn->ssl, cbtls_info);
 
 	/*
-	 *	Always verify the peer certificate.
+	 *	Always verify the peer, but only require a certificate
+	 *	if we're doing certificate auth, and not PSK.
 	 */
-	DEBUG2("Requiring Server certificate");
 	verify_mode = SSL_VERIFY_PEER;
-	verify_mode |= SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
+	if (!conf->psk_identity) {
+		RDEBUG2("(TLS) Requiring Server certificate");
+		verify_mode |= SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
+	} else {
+		RDEBUG2("(TLS) PSK configured -- verifying Server certificate if presented");
+	}
 	SSL_set_verify(ssn->ssl, verify_mode, cbtls_verify);
 
 	SSL_set_ex_data(ssn->ssl, FR_TLS_EX_INDEX_CONF, (void *)conf);
 	SSL_set_ex_data(ssn->ssl, FR_TLS_EX_INDEX_SSN, (void *)ssn);
+	SSL_set_ex_data(ssn->ssl, FR_TLS_EX_INDEX_TALLOC, (void *)ssn);
 	if (certs) SSL_set_ex_data(ssn->ssl, fr_tls_ex_index_certs, (void *)certs);
 
 	SSL_set_fd(ssn->ssl, fd);
@@ -913,6 +921,7 @@ int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 
 		RDEBUG2("(TLS) %s - Connection Established", ssn->conf->name);
 		ssn->is_init_finished = true;
+		ssn->connected = true;
 
 		vp = fr_pair_afrom_num(request->state_ctx, PW_TLS_SESSION_CIPHER_SUITE, 0);
 		if (vp) {
@@ -1156,16 +1165,20 @@ void tls_session_information(tls_session_t *tls_session)
 	char const *str_details1 = "", *str_details2= "";
 	char const *details = NULL;
 	REQUEST *request;
+	bool certificate_fail = false;
 	VALUE_PAIR *vp;
 	char content_type[16], alert_buf[16];
 	char name_buf[128];
 	char buffer[32];
+	home_server_t *home = SSL_get_ex_data(tls_session->ssl, FR_TLS_EX_INDEX_HOME);
 
 	/*
 	 *	Don't print this out in the normal course of
 	 *	operations.
+	 *
+	 *	But do update the home server if we're connecting to one.
 	 */
-	if (rad_debug_lvl == 0) return;
+	if (!home && !rad_debug_lvl) return;
 
 	/*
 	 *	OpenSSL calls this function with 'pseudo' content
@@ -1296,26 +1309,31 @@ void tls_session_information(tls_session_t *tls_session)
 				case SSL3_AD_BAD_CERTIFICATE:
 					str_details2 = " bad_certificate";
 					details = "it believes the server certificate is invalid or malformed";
+					certificate_fail = true;
 					break;
 
 				case SSL3_AD_UNSUPPORTED_CERTIFICATE:
 					str_details2 = " unsupported_certificate";
 					details = "it does not understand the certificate presented by the server";
+					certificate_fail = true;
 					break;
 
 				case SSL3_AD_CERTIFICATE_REVOKED:
 					str_details2 = " certificate_revoked";
 					details = "it believes that the server certificate has been revoked";
+					certificate_fail = true;
 					break;
 
 				case SSL3_AD_CERTIFICATE_EXPIRED:
 					str_details2 = " certificate_expired";
 					details = "it believes that the server certificate has expired.  Either renew the server certificate, or check the time on the client";
+					certificate_fail = true;
 					break;
 
 				case SSL3_AD_CERTIFICATE_UNKNOWN:
 					str_details2 = " certificate_unknown";
 					details = "it does not recognize the server certificate";
+					certificate_fail = true;
 					break;
 
 				case SSL3_AD_ILLEGAL_PARAMETER:
@@ -1325,11 +1343,13 @@ void tls_session_information(tls_session_t *tls_session)
 						details = "the client and server have different values for the PSK";
 					}
 #endif
+					certificate_fail = true;
 					break;
 
 				case TLS1_AD_UNKNOWN_CA:
 					str_details2 = " unknown_ca";
 					details = "it does not recognize the CA used to issue the server certificate.  Please update the client so that it knows about the CA";
+					certificate_fail = true;
 					break;
 
 				case TLS1_AD_ACCESS_DENIED:
@@ -1362,6 +1382,7 @@ void tls_session_information(tls_session_t *tls_session)
 						WARN("Please set: cipher_list = \"DEFAULT@SECLEVEL=1\" in the tls {...} section.");
 					}
 #endif
+					certificate_fail = true;
 					break;
 
 				case TLS1_AD_INSUFFICIENT_SECURITY:
@@ -1384,6 +1405,7 @@ void tls_session_information(tls_session_t *tls_session)
 				case TLS13_AD_MISSING_EXTENSIONS:
 					str_details2 = " missing_extensions";
 					details = "the server did not present a TLS extension which the client expected to be present.  Please check the TLS libraries on the client and server for compatibility";
+					certificate_fail = true;
 					break;
 #endif
 
@@ -1391,6 +1413,7 @@ void tls_session_information(tls_session_t *tls_session)
 				case TLS13_AD_CERTIFICATE_REQUIRED:
 					str_details2 = " certificate_required";
 					details = "the server did not present a certificate";
+					certificate_fail = true;
 					break;
 #endif
 
@@ -1398,12 +1421,14 @@ void tls_session_information(tls_session_t *tls_session)
 				case TLS1_AD_UNSUPPORTED_EXTENSION:
 					str_details2 = " unsupported_extension";
 					details = "the server has sent a TLS message which the client does not recognize.  Please check the TLS libraries on the client and server for compatibility";
+					certificate_fail = true;
 					break;
 #endif
 
 #ifdef TLS1_AD_CERTIFICATE_UNOBTAINABLE
 				case TLS1_AD_CERTIFICATE_UNOBTAINABLE:
 					str_details2 = " certificate_unobtainable";
+					certificate_fail = true;
 					break;
 #endif
 
@@ -1416,12 +1441,14 @@ void tls_session_information(tls_session_t *tls_session)
 #ifdef TLS1_AD_BAD_CERTIFICATE_STATUS_RESPONSE
 				case TLS1_AD_BAD_CERTIFICATE_STATUS_RESPONSE:
 					str_details2 = " bad_certificate_status_response";
+					certificate_fail = true;
 					break;
 #endif
 
 #ifdef TLS1_AD_BAD_CERTIFICATE_HASH_VALUE
 				case TLS1_AD_BAD_CERTIFICATE_HASH_VALUE:
 					str_details2 = " bad_certificate_hash_value";
+					certificate_fail = true;
 					break;
 #endif
 
@@ -1510,6 +1537,15 @@ void tls_session_information(tls_session_t *tls_session)
 		}
 	}
 
+	/*
+	 *	We have a home server, but its certificate is expired,
+	 *	etc.  Remember that the TLS connection is not appropriate.
+	 */
+	if (home) {
+		if (certificate_fail) home->state = HOME_STATE_CERTIFICATE_FAIL;
+		if (!rad_debug_lvl) return;
+	}
+
 	snprintf(tls_session->info.info_description,
 		 sizeof(tls_session->info.info_description),
 		 "%s %s%s%s%s",
@@ -1592,6 +1628,9 @@ static CONF_PARSER tls_server_config[] = {
 	{ "allow_expired_crl", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, allow_expired_crl), NULL },
 	{ "check_cert_cn", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, check_cert_cn), NULL },
 	{ "cipher_list", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, cipher_list), NULL },
+#ifdef TLS1_3_VERSION
+	{ "cipher_suites", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, cipher_suites), NULL },
+#endif
 	{ "cipher_server_preference", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, cipher_server_preference), NULL },
 	{ "check_cert_issuer", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, check_cert_issuer), NULL },
 	{ "require_client_cert", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, require_client_cert), NULL },
@@ -1670,6 +1709,9 @@ static CONF_PARSER tls_client_config[] = {
 	{ "check_crl", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, check_crl), "no" },
 	{ "check_cert_cn", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, check_cert_cn), NULL },
 	{ "cipher_list", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, cipher_list), NULL },
+#ifdef TLS1_3_VERSION
+	{ "cipher_suites", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, cipher_suites), NULL },
+#endif
 	{ "check_cert_issuer", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, check_cert_issuer), NULL },
 	{ "ca_path_reload_interval", FR_CONF_OFFSET(PW_TYPE_INTEGER, fr_tls_server_conf_t, ca_path_reload_interval), "0" },
 
@@ -3692,6 +3734,7 @@ int tls_global_init(TLS_UNUSED bool spawn_flag, TLS_UNUSED bool check)
 		return -1;
 	}
 
+#ifndef WITH_FIPS
 	/*
 	 *	Needed for MD4
 	 *
@@ -3702,6 +3745,7 @@ int tls_global_init(TLS_UNUSED bool spawn_flag, TLS_UNUSED bool check)
 		ERROR("(TLS) Failed loading legacy provider");
 		return -1;
 	}
+#endif
 #endif
 
 	return 0;
@@ -3776,10 +3820,12 @@ void tls_global_cleanup(void)
 	}
 	openssl_default_provider = NULL;
 
+#ifndef WITH_FIPS
 	if (openssl_legacy_provider && !OSSL_PROVIDER_unload(openssl_legacy_provider)) {
 		ERROR("Failed unloading legacy provider");
 	}
 	openssl_legacy_provider = NULL;
+#endif
 #endif
 
 	CONF_modules_unload(1);
@@ -4349,6 +4395,15 @@ post_ca:
 			return NULL;
 		}
 	}
+
+#ifdef TLS1_3_VERSION
+       if (conf->cipher_suites) {
+               if (!SSL_CTX_set_ciphersuites(ctx, conf->cipher_suites)) {
+                       tls_error_log(NULL, "Failed setting cipher suites");
+                       return NULL;
+               }
+       }
+#endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
 	if (conf->sigalgs_list) {

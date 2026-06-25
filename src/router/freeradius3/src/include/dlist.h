@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: c1bc1d5480c53b4948c8b7e2826890c4ff42cb60 $
+ * $Id: 3d3422c40a4a09d8a3915bce34df09802a79f5cc $
  *
  * @file dlist.h
  * @brief doubly linked lists
@@ -26,7 +26,7 @@
 #ifndef RADIUS_DLIST_H
 #define RADIUS_DLIST_H
 
-RCSIDH(dlist_h, "$Id: c1bc1d5480c53b4948c8b7e2826890c4ff42cb60 $")
+RCSIDH(dlist_h, "$Id: 3d3422c40a4a09d8a3915bce34df09802a79f5cc $")
 
 /*
  *	We have an internal cache, keyed by (mac + ssid).
@@ -45,6 +45,11 @@ static inline void fr_dlist_entry_init(fr_dlist_t *entry)
 	entry->prev = entry->next = entry;
 }
 
+static inline bool fr_dlist_empty(fr_dlist_t *head)
+{
+	return ((head->prev == head) && (head->next == head));
+}
+
 static inline CC_HINT(nonnull) void fr_dlist_entry_unlink(fr_dlist_t *entry)
 {
 	entry->prev->next = entry->next;
@@ -58,6 +63,16 @@ static inline CC_HINT(nonnull) void fr_dlist_insert_tail(fr_dlist_t *head, fr_dl
 	entry->prev = head->prev;
 	head->prev->next = entry;
 	head->prev = entry;
+}
+
+static inline CC_HINT(nonnull) fr_dlist_t *fr_dlist_pop_head(fr_dlist_t *head)
+{
+	fr_dlist_t *entry = head->next;
+
+	if (entry == head) return NULL;
+
+	fr_dlist_entry_unlink(entry);
+	return entry;
 }
 
 #endif	/* RADIUS_DLIST_H */

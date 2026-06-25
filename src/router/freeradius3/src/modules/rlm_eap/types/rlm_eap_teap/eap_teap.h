@@ -1,29 +1,22 @@
 /*
- * eap_teap.h
+ *   This program is is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or (at
+ *   your option) any later version.
  *
- * Version:     $Id: 59f7835a2673b471cd6a8996961c9d7b44b2ec97 $
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
  *
- * Copyright (C) 2022 Network RADIUS SARL <legal@networkradius.com>
- *
- * This software may not be redistributed in any form without the prior
- * written consent of Network RADIUS.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program; if not, write to the Free Software
+ *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 #ifndef _EAP_TEAP_H
 #define _EAP_TEAP_H
 
-RCSIDH(eap_teap_h, "$Id: 59f7835a2673b471cd6a8996961c9d7b44b2ec97 $")
+RCSIDH(eap_teap_h, "$Id: b7ed4a36fe2fa214b8fb22a14ab53c7538ac0e86 $")
 
 #include "eap_tls.h"
 
@@ -117,9 +110,9 @@ typedef struct teap_imck_t {
 } CC_HINT(__packed__) teap_imck_t;
 
 typedef struct {
-	bool		required;
-	bool		sent;
-	uint8_t		received;
+	bool		required;		//!< require (or not) if we send it
+	bool		sent;			//!< did we send it?
+	bool		received;		//!< did we receive it?
 } teap_auth_t;
 
 typedef struct teap_tunnel_t {
@@ -135,10 +128,9 @@ typedef struct teap_tunnel_t {
 	int			mode;
 	eap_teap_stage_t	stage;
 
-	int			num_identities;
-	uint16_t		identity_types[2];
-
-	teap_auth_t		auths[3]; /* so we can index by Identity-Type */
+	int			identities_remaining;	//!< how many rounds have we allow
+	teap_auth_t		identity_types[3];	//!< index is identity type (user=1 or machine=2) - zero is unused
+	int			identity_type;		//!< which identity type is being currently processed
 
 	int			imckc;
 	bool			imck_emsk_available;
@@ -154,6 +146,8 @@ typedef struct teap_tunnel_t {
 	bool			result_final;
 	bool			auto_chain;		//!< do we automatically chain identities
 	bool			sent_basic_password;
+
+	uint8_t			crypto_binding_nonce[32]; //!< nonce sent in last Crypto-Binding request
 
 #ifdef WITH_PROXY
 	bool		proxy_tunneled_request_as_eap;	//!< Proxy tunneled session as EAP, or as de-capsulated

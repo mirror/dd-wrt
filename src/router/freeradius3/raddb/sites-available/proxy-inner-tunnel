@@ -4,7 +4,7 @@
 #	This is a virtual server that handles *only* inner tunnel
 #	requests for EAP-TTLS and PEAP types.
 #
-#	$Id: 938d954592d3824e4d51e3315d0f7e0b5cfde824 $
+#	$Id: 363250893a52fc8b8dd172ff05484a8e9c878a3a $
 #
 ######################################################################
 
@@ -37,11 +37,5 @@ authenticate {
 }
 
 post-proxy {
-	#
-	#  This is necessary for LEAP, or if you set:
-	#
-	#  proxy_tunneled_request_as_eap = no
-	#
-	eap
 }
 }

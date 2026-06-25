@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 0458d774e73fe320ea05907abcbfe23225c77a2d $
+ * $Id: da4344f61e80fb299369c3675246d603411e0987 $
  * @file radsniff.c
  * @brief Capture, filter, and generate statistics for RADIUS traffic
  *
@@ -24,7 +24,7 @@
  * @copyright 2006 Nicolas Baradakis <nicolas.baradakis@cegetel.net>
  */
 
-RCSID("$Id: 0458d774e73fe320ea05907abcbfe23225c77a2d $")
+RCSID("$Id: da4344f61e80fb299369c3675246d603411e0987 $")
 
 #define _LIBRADIUS 1
 #include <time.h>
@@ -164,7 +164,6 @@ static void rs_daemonize(char const *pidfile)
 	}
 }
 
-#define USEC 1000000
 static void rs_tv_sub(struct timeval const *end, struct timeval const *start, struct timeval *elapsed)
 {
 	elapsed->tv_sec = end->tv_sec - start->tv_sec;
@@ -1530,7 +1529,7 @@ static void rs_packet_process(uint64_t count, rs_event_t *event, struct pcap_pkt
 		 *	CoA and Disconnect Messages, as we get the average latency across both
 		 *	response types.
 		 *
-		 *	It also justifies allocating PW_CODE_MAX instances of rs_latency_t.
+		 *	It also justifies allocating FR_MAX_PACKET_CODE instances of rs_latency_t.
 		 */
 		rs_stats_update_latency(&stats->exchange[current->code], &latency);
 		rs_stats_update_latency(&stats->exchange[original->expect->code], &latency);

@@ -16,14 +16,14 @@
 #ifndef LIBRADIUS_H
 #define LIBRADIUS_H
 /*
- * $Id: 9dd22b3361a48629bf5216d8b8246fc04f583d36 $
+ * $Id: 75a821927c05a52337cd7613233c3fa04da022c8 $
  *
  * @file libradius.h
  * @brief Structures and prototypes for the radius library.
  *
  * @copyright 1999-2014 The FreeRADIUS server project
  */
-RCSIDH(libradius_h, "$Id: 9dd22b3361a48629bf5216d8b8246fc04f583d36 $")
+RCSIDH(libradius_h, "$Id: 75a821927c05a52337cd7613233c3fa04da022c8 $")
 
 /*
  *  Compiler hinting macros.  Included here for 3rd party consumers
@@ -207,6 +207,14 @@ typedef struct attr_flags {
 #define FLAG_ENCRYPT_TUNNEL_PASSWORD (2)
 #define FLAG_ENCRYPT_ASCEND_SECRET   (3)
 
+#define ATTRIBUTE_SECRET_PLACEHOLDER "<<< secret >>>"
+#define ATTRIBUTE_IS_SECRET(_vp) (_vp->da->flags.secret && request->root->suppress_secrets)
+#define ATTRIBUTE_SECRET(_vp, _x) (ATTRIBUTE_IS_SECRET(_vp) ? ATTRIBUTE_SECRET_PLACEHOLDER : _x)
+
+#ifndef USEC
+#define USEC (1000000)
+#endif
+
 extern const FR_NAME_NUMBER dict_attr_types[];
 extern const size_t dict_attr_sizes[PW_TYPE_MAX][2];
 extern const int fr_attr_max_tlv;
@@ -264,6 +272,7 @@ typedef union value_data {
 	struct in6_addr		ipv6addr;			//!< IPv6 Address.
 	uint8_t			ipv6prefix[18];			//!< IPv6 prefix (should be struct?).
 
+	bool			boolean;       			//!< boolean
 	uint8_t			byte;				//!< 8bit unsigned integer.
 	uint16_t		ushort;				//!< 16bit unsigned integer.
 
@@ -362,6 +371,7 @@ typedef struct value_pair_raw {
 #define vp_ifid		data.ifid
 #define vp_ipv6addr	data.ipv6addr
 #define vp_ipv6prefix	data.ipv6prefix
+#define vp_boolean	data.boolean
 #define vp_byte		data.byte
 #define vp_short	data.ushort
 #define vp_ether	data.ether
@@ -403,6 +413,7 @@ typedef struct radius_packet {
 	size_t			data_len;
 	VALUE_PAIR		*vps;
 	ssize_t			offset;
+	int			salt_offset;
 #ifdef WITH_TCP
 	size_t			partial;
 	int			proto;
@@ -497,6 +508,7 @@ void		dict_free(void);
 int		dict_read(char const *dir, char const *filename);
 size_t		dict_print_oid(char *buffer, size_t buflen, DICT_ATTR const *da);
 int		dict_walk(fr_hash_table_walk_t callback, void *context);
+int		dict_value_walk(fr_hash_table_walk_t callback, void *context);
 
 void 		dict_attr_free(DICT_ATTR const **da);
 int		dict_unknown_from_fields(DICT_ATTR *da, unsigned int attr, unsigned int vendor);
@@ -560,14 +572,8 @@ void		rad_free(RADIUS_PACKET **);
 #ifndef WITH_RADIUSV11_ONLY
 int		rad_pwencode(char *encpw, size_t *len, char const *secret,
 			     uint8_t const *vector);
-int		rad_pwdecode(char *encpw, size_t len, char const *secret,
-			     uint8_t const *vector);
 
 #define	FR_TUNNEL_PW_ENC_LENGTH(_x) (2 + 1 + _x + PAD(_x + 1, 16))
-ssize_t		rad_tunnel_pwencode(char *encpw, size_t *len, char const *secret,
-				    uint8_t const *vector);
-ssize_t		rad_tunnel_pwdecode(uint8_t *encpw, size_t *len,
-				    char const *secret, uint8_t const *vector);
 int		rad_chap_encode(RADIUS_PACKET *packet, uint8_t *output,
 				int id, VALUE_PAIR *password);
 #endif
@@ -598,25 +604,25 @@ ssize_t rad_data2vp_tlvs(TALLOC_CTX *ctx,
 
 ssize_t		rad_vp2data(uint8_t const **out, VALUE_PAIR const *vp);
 
-int		rad_vp2extended(RADIUS_PACKET const *packet,
+int		rad_vp2extended(RADIUS_PACKET *packet,
 				RADIUS_PACKET const *original,
 				char const *secret, VALUE_PAIR const **pvp,
 				uint8_t *ptr, size_t room);
-int		rad_vp2wimax(RADIUS_PACKET const *packet,
+int		rad_vp2wimax(RADIUS_PACKET *packet,
 			     RADIUS_PACKET const *original,
 			     char const *secret, VALUE_PAIR const **pvp,
 			     uint8_t *ptr, size_t room);
 
-int		rad_vp2vsa(RADIUS_PACKET const *packet, RADIUS_PACKET const *original,
+int		rad_vp2vsa(RADIUS_PACKET *packet, RADIUS_PACKET const *original,
 			   char const *secret, VALUE_PAIR const **pvp, uint8_t *start,
 			   size_t room);
 
-int		rad_vp2rfc(RADIUS_PACKET const *packet,
+int		rad_vp2rfc(RADIUS_PACKET *packet,
 			   RADIUS_PACKET const *original,
 			   char const *secret, VALUE_PAIR const **pvp,
 			   uint8_t *ptr, size_t room);
 
-int		rad_vp2attr(RADIUS_PACKET const *packet,
+int		rad_vp2attr(RADIUS_PACKET *packet,
 			    RADIUS_PACKET const *original, char const *secret,
 			    VALUE_PAIR const **pvp, uint8_t *ptr, size_t room);
 

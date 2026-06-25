@@ -4,6 +4,7 @@ freeradius-config
 freeradius-dbg
 freeradius-freetds
 freeradius-iodbc
+freeradius-kafka
 freeradius-krb5
 freeradius-ldap
 freeradius-mysql

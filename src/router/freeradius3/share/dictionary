@@ -2,7 +2,7 @@
 # Copyright (C) 2019 The FreeRADIUS Server project and contributors
 # This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
 #
-# Version $Id: aeb5c8ffcd20c40971a7bed1a1542b83d7d29d08 $
+# Version $Id: a5cc194f28d614ac1b3f91cb3724393a5ba4d868 $
 #
 #	DO NOT EDIT THE FILES IN THIS DIRECTORY
 #
@@ -291,6 +291,7 @@ $INCLUDE dictionary.redcreek
 $INCLUDE dictionary.riverbed
 $INCLUDE dictionary.riverstone
 $INCLUDE dictionary.roaringpenguin
+$INCLUDE dictionary.rtbrick
 $INCLUDE dictionary.ruckus
 $INCLUDE dictionary.ruggedcom
 $INCLUDE dictionary.sangoma

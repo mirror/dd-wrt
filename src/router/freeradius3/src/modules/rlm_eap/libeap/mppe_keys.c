@@ -1,7 +1,7 @@
 /*
  * mppe_keys.c
  *
- * Version:     $Id: 6ecae94aa42108552f950ad177e003a6e23f51b9 $
+ * Version:     $Id: c5ed724a5a41965770f260b13a5657ce468dbbc2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Authors: Henrik Eriksson <henriken@axis.com> & Lars Viklund <larsv@axis.com>
  */
 
-RCSID("$Id: 6ecae94aa42108552f950ad177e003a6e23f51b9 $")
+RCSID("$Id: c5ed724a5a41965770f260b13a5657ce468dbbc2 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_tls.h"
@@ -101,12 +101,12 @@ static void P_hash(EVP_MD const *evp_md,
 		/* Place digest in output buffer */
 		digest_len = EVP_MAX_MD_SIZE;
 		HMAC_Final(ctx_out, out, &digest_len);
-		HMAC_Init_ex(ctx_out, NULL, 0, NULL, NULL);
+		HMAC_Init_ex(ctx_out, secret, secret_len, evp_md, NULL);
 		out += size;
 		out_len -= size;
 
 		/* Calculate next A(i) */
-		HMAC_Init_ex(ctx_a, NULL, 0, NULL, NULL);
+		HMAC_Init_ex(ctx_a, secret, secret_len, evp_md, NULL);
 		HMAC_Update(ctx_a, a, size);
 		digest_len = EVP_MAX_MD_SIZE;
 		HMAC_Final(ctx_a, a, &digest_len);
@@ -150,13 +150,13 @@ static void PRF(unsigned char const *secret, unsigned int secret_len,
 
 		if (!default_provider) {
 			ERROR("Failed loading OpenSSL default provider.");
-			return;
+			goto cleanup;
 		}
 
 		md5_to_free = EVP_MD_fetch(libctx, "MD5", NULL);
 		if (!md5_to_free) {
 			ERROR("Failed loading OpenSSL MD5 function.");
-			return;
+			goto cleanup;
 		}
 
 		md5 = md5_to_free;
@@ -175,11 +175,10 @@ static void PRF(unsigned char const *secret, unsigned int secret_len,
 	}
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
-	if (libctx) {
-		OSSL_PROVIDER_unload(default_provider);
-		OSSL_LIB_CTX_free(libctx);
-		EVP_MD_free(md5_to_free);
-	}
+cleanup:
+	if (default_provider) OSSL_PROVIDER_unload(default_provider);
+	if (libctx) OSSL_LIB_CTX_free(libctx);
+	if (md5_to_free) EVP_MD_free(md5_to_free);
 #endif
 }
 
@@ -201,16 +200,17 @@ void T_PRF(unsigned char const *secret, unsigned int secret_len,
 {
 	size_t prf_size = strlen(prf_label);
 	size_t pos;
+	uint16_t net_len = htons(out_len);	
 	uint8_t	*buf;
 
 	if (prf_size > 128) prf_size = 128;
 	prf_size++;	/* include trailing zero */
 
-	buf = talloc_size(NULL, SHA1_DIGEST_LENGTH + prf_size + seed_len + 2 + 1);
+	MEM(buf = talloc_size(NULL, SHA1_DIGEST_LENGTH + prf_size + seed_len + 2 + 1));
 
 	memcpy(buf + SHA1_DIGEST_LENGTH, prf_label, prf_size);
 	if (seed) memcpy(buf + SHA1_DIGEST_LENGTH + prf_size, seed, seed_len);
-	*(uint16_t *)&buf[SHA1_DIGEST_LENGTH + prf_size + seed_len] = htons(out_len);
+	memcpy(&buf[SHA1_DIGEST_LENGTH + prf_size + seed_len], &net_len, sizeof(net_len));
 	buf[SHA1_DIGEST_LENGTH + prf_size + seed_len + 2] = 1;
 
 	// T1 is just the seed

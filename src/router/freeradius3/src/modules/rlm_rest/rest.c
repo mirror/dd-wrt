@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 34a2952129afbace2b01a4bac62666fa117d663f $
+ * $Id: 9078315e8152a560c4880b6cb6aff0e6fd6235ae $
  *
  * @brief Functions and datatypes for the REST (HTTP) transport.
  * @file rest.c
@@ -23,7 +23,7 @@
  * @copyright 2012-2014  Arran Cudbard-Bell <a.cudbard-bell@freeradius.org>
  */
 
-RCSID("$Id: 34a2952129afbace2b01a4bac62666fa117d663f $")
+RCSID("$Id: 9078315e8152a560c4880b6cb6aff0e6fd6235ae $")
 
 #include <ctype.h>
 #include <string.h>
@@ -413,6 +413,17 @@ void *mod_conn_create(TALLOC_CTX *ctx, void *instance)
 		SET_OPTION(CURLOPT_SSL_VERIFYHOST, 0);
 		SET_OPTION(CURLOPT_CONNECT_ONLY, 1);
 		SET_OPTION(CURLOPT_URL, inst->connect_uri);
+		/* libcurl ignores this when connect_uri_socket is NULL */
+#ifdef CURLOPT_ABSTRACT_UNIX_SOCKET
+		SET_OPTION(
+			inst->connect_uri_socket_abstract
+				? CURLOPT_ABSTRACT_UNIX_SOCKET
+				: CURLOPT_UNIX_SOCKET_PATH,
+			inst->connect_uri_socket);
+#else
+		SET_OPTION(CURLOPT_UNIX_SOCKET_PATH,
+			   inst->connect_uri_socket);
+#endif
 		SET_OPTION(CURLOPT_NOSIGNAL, 1);
 
 		DEBUG("rlm_rest (%s): Connecting to \"%s\"", inst->xlat_name, inst->connect_uri);
@@ -2062,6 +2073,17 @@ int rest_request_config(rlm_rest_t *instance, rlm_rest_section_t *section,
 	 *	Setup any header options and generic headers.
 	 */
 	SET_OPTION(CURLOPT_URL, uri);
+	/* libcurl ignores this when connect_uri_socket is NULL */
+#ifdef CURLOPT_ABSTRACT_UNIX_SOCKET
+	SET_OPTION(
+		instance->connect_uri_socket_abstract
+			? CURLOPT_ABSTRACT_UNIX_SOCKET
+			: CURLOPT_UNIX_SOCKET_PATH,
+		instance->connect_uri_socket);
+#else
+	SET_OPTION(CURLOPT_UNIX_SOCKET_PATH,
+		   instance->connect_uri_socket);
+#endif
 	SET_OPTION(CURLOPT_NOSIGNAL, 1);
 	SET_OPTION(CURLOPT_USERAGENT, "FreeRADIUS " RADIUSD_VERSION_STRING);
 

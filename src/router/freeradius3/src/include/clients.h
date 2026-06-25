@@ -17,7 +17,7 @@
 #ifndef CLIENTS_H
 #define CLIENTS_H
 /*
- * $Id: 5ebca8a2a69bd639bb49b77dddefdd0fe35021ab $
+ * $Id: 426b96eae3994469de0dd86a8f6626e1a9a20a0c $
  *
  * @file clients.h
  * @brief Function declarations and structures to manage clients.
@@ -46,6 +46,7 @@ typedef struct radclient {
 	fr_bool_auto_t 		require_ma;		//!< Require RADIUS message authenticator in requests.
 
 	bool			dynamic_require_ma;	//!< for dynamic clients
+	bool			protocol_error;		//!< can receive Protocol-Error replies
 
 	fr_bool_auto_t 		limit_proxy_state;     	//!< Limit Proxy-State in requests
 

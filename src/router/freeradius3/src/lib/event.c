@@ -2,7 +2,7 @@
  * event.c	Non-thread-safe event handling, specific to a RADIUS
  *		server.
  *
- * Version:	$Id: 25ec7ddc2dcb3dc4fc05c1ad0538745ad25c9088 $
+ * Version:	$Id: a96f218a40f5a6ea067fd4a742e11df511df4614 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,7 @@
  *  Copyright 2007  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 25ec7ddc2dcb3dc4fc05c1ad0538745ad25c9088 $")
+RCSID("$Id: a96f218a40f5a6ea067fd4a742e11df511df4614 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/heap.h>
@@ -47,12 +47,14 @@ typedef struct fr_event_fd_t {
 	void			*ctx;
 } fr_event_fd_t;
 
-#define FR_EV_MAX_EVENTS (512)
+
+#ifndef HAVE_KQUEUE
+#define FR_EV_MAX_EVENTS (1024)
+#else
+#define FR_EV_MAX_EVENTS (2048)
+#endif
 
 int fr_ev_max_fds = FR_EV_MAX_EVENTS;
-
-#undef USEC
-#define USEC (1000000)
 
 struct fr_event_list_t {
 	fr_heap_t	*times;
@@ -335,6 +337,11 @@ int fr_event_now(fr_event_list_t *el, struct timeval *when)
 }
 
 
+bool fr_event_fd_full(fr_event_list_t *el)
+{
+	return (el->num_readers >= fr_ev_max_fds);
+}
+
 int fr_event_fd_insert(fr_event_list_t *el, int type, int fd,
 		       fr_event_fd_handler_t handler, void *ctx)
 {
@@ -360,6 +367,13 @@ int fr_event_fd_insert(fr_event_list_t *el, int type, int fd,
 		fr_strerror_printf("Invalid arguments (bad FD %i)", fd);
 		return 0;
 	}
+
+#ifndef HAVE_KQUEUE
+	if (fd >= FD_SETSIZE) {
+		fr_strerror_printf("Too many file descriptors! (FD %i >= %u)", fd, FD_SETSIZE);
+		return 0;
+	}
+#endif
 
 	if (type != 0) {
 		fr_strerror_printf("Invalid type %i", type);
@@ -412,11 +426,8 @@ int fr_event_fd_insert(fr_event_list_t *el, int type, int fd,
 
 #else  /* HAVE_KQUEUE */
 
-	/*
-	 *	select() has limits.
-	 */
-	if (fd > FD_SETSIZE) {
-		fprintf(stderr, "FD is larger than FD_SETSIZE");
+	if (fd >= fr_ev_max_fds) {
+		fprintf(stderr, "FD is larger than MAX FDs");
 		return 0;
 	}
 
@@ -457,6 +468,7 @@ int fr_event_fd_insert(fr_event_list_t *el, int type, int fd,
 
 	ef->fd = fd;
 	ef->handler = handler;
+	ef->write_handler = NULL; /* new, so not set */
 	ef->ctx = ctx;
 
 	return 1;
@@ -480,19 +492,19 @@ int fr_event_fd_write_handler(fr_event_list_t *el, int type, int fd,
 
 		if (el->readers[j].fd != fd) continue;
 
-		fr_assert(ctx = el->readers[j].ctx);
+		fr_assert(ctx == el->readers[j].ctx);
 
 		/*
 		 *	Tell us when the socket is ready for writing
 		 */
 		if (write_handler) {
-			fr_assert(!el->readers[j].write_handler);
+			if (el->readers[j].write_handler == write_handler) return 1;
 
 			el->readers[j].write_handler = write_handler;
 
 			EV_SET(&evset, fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, &el->readers[j]);
 		} else {
-			fr_assert(el->readers[j].write_handler);
+			if (!el->readers[j].write_handler) return 1;
 
 			el->readers[j].write_handler = NULL;
 
@@ -500,7 +512,7 @@ int fr_event_fd_write_handler(fr_event_list_t *el, int type, int fd,
 		}
 		if (kevent(el->kq, &evset, 1, NULL, 0, NULL) < 0) {
 			fr_strerror_printf("Failed inserting event for FD %i: %s", fd, fr_syserror(errno));
-			return 0;
+			return -1;
 		}
 
 		return 1;
@@ -511,7 +523,7 @@ int fr_event_fd_write_handler(fr_event_list_t *el, int type, int fd,
 	for (i = 0; i < el->max_readers; i++) {
 		if (el->readers[i].fd != fd) continue;
 
-		fr_assert(ctx = el->readers[i].ctx);
+		fr_assert(ctx == el->readers[i].ctx);
 		el->readers[i].write_handler = write_handler;
 
 		if (write_handler) {
@@ -557,11 +569,26 @@ int fr_event_fd_delete(fr_event_list_t *el, int type, int fd)
 		 *	Delete the write handler if it exits.
 		 */
 		if (el->readers[j].write_handler) {
-			EV_SET(&evset, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+			EV_SET(&evset, fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
 			(void) kevent(el->kq, &evset, 1, NULL, 0, NULL);
 		}
 
 		el->readers[j].fd = -1;
+
+		/*
+		 *	Clear handler/ctx/write_handler too.  Slots get
+		 *	reused via fr_event_fd_insert(), which only resets
+		 *	fd / handler / ctx.  A stale write_handler causes
+		 *	fr_event_fd_write_handler()'s idempotency check at
+		 *	line 490 to wrongly conclude the kqueue write filter
+		 *	is already installed and return 1 without doing the
+		 *	EV_ADD -- the next thaw then issues an EV_DELETE for
+		 *	a filter that doesn't exist and kevent returns
+		 *	ENOENT, which proxy_listener_thaw() treats as fatal.
+		 */
+		el->readers[j].handler = NULL;
+		el->readers[j].write_handler = NULL;
+		el->readers[j].ctx = NULL;
 		el->num_readers--;
 
 		return 1;
@@ -571,6 +598,9 @@ int fr_event_fd_delete(fr_event_list_t *el, int type, int fd)
 	for (i = 0; i < el->max_readers; i++) {
 		if (el->readers[i].fd == fd) {
 			el->readers[i].fd = -1;
+			el->readers[i].handler = NULL;
+			el->readers[i].write_handler = NULL;
+			el->readers[i].ctx = NULL;
 			el->num_readers--;
 
 			if ((i + 1) == el->max_readers) el->max_readers = i;
@@ -729,6 +759,13 @@ int fr_event_loop(fr_event_list_t *el)
 		for (i = 0; i < rcode; i++) {
 			fr_event_fd_t *ef = el->events[i].udata;
 
+			/*
+			 *	Re-check the fd - a write_handler,
+			 *	timer callback, etc. may have closed
+			 *	it.
+			 */
+			if (ef->fd < 0) continue;
+
 			if (el->events[i].flags & EV_EOF) {
 				/*
 				 *	FIXME: delete the handler
@@ -744,6 +781,17 @@ int fr_event_loop(fr_event_list_t *el)
 			}
 
 			if (el->events[i].filter == EVFILT_WRITE) {
+				/*
+				 *	A concurrent proxy_listener_thaw() (or any caller of
+				 *	fr_event_fd_write_handler() with a NULL handler) may have NULL'd this
+				 *	field after kevent() already returned the EVFILT_WRITE entry to us.
+				 *	The matching EV_DELETE only stops future events, so the
+				 *	already-delivered one is still in el->events[].  Calling a NULL
+				 *	function pointer would SIGSEGV the master and (since it was holding
+				 *	sock->mutex / proxy_mutex from earlier in this dispatch batch) hang
+				 *	the rest of the server on those mutexes.
+				 */
+				if (!ef->write_handler) continue;
 				ef->write_handler(el, ef->fd, ef->ctx);
 				continue;
 			}
@@ -830,7 +878,7 @@ int main(int argc, char **argv)
 			array[i].tv_usec -= 1000000;
 			array[i].tv_sec++;
 		}
-		fr_event_insert(el, print_time, &array[i], &array[i]);
+		fr_event_insert(el, print_time, &array[i], &array[i], NULL);
 	}
 
 	while (fr_event_list_num_elements(el)) {

@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: eb83e25c1c508cf9888b740b328b83a068e9ab20 $
+ * $Id: fbee2951577b1ef2e4758c6a3cc37e72d54a4b08 $
  * @file rlm_wimax.c
  * @brief Supports various WiMax functionality.
  *
  * @copyright 2008 Alan DeKok <aland@networkradius.com>
  */
-RCSID("$Id: eb83e25c1c508cf9888b740b328b83a068e9ab20 $")
+RCSID("$Id: fbee2951577b1ef2e4758c6a3cc37e72d54a4b08 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -326,7 +326,7 @@ static int mip_keys_generate(void *instance, REQUEST *request, VALUE_PAIR *msk, 
 	 */
 	HMAC_Init_ex(hmac, mip_rk, rk_len, EVP_sha256(), NULL);
 
-	HMAC_Update(hmac, (uint8_t const *) "SPI CMIP PMIP", 12);
+	HMAC_Update(hmac, (uint8_t const *) "SPI CMIP PMIP", 13);
 	rk1_len = SHA256_DIGEST_LENGTH;
 	HMAC_Final(hmac, &mip_rk_1[0], &rk1_len);
 

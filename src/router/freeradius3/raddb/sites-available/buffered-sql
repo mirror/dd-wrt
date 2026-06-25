@@ -32,7 +32,7 @@
 #	the server will have time to read the detail file, and insert
 #	the data into a long-term SQL database.
 #
-#	$Id: 74574ac5a36d446b2a72dcae64d1c0a1992014c8 $
+#	$Id: 6fbb99ba62fd877e0faf356e78aef3f024556cce $
 #
 ######################################################################
 
@@ -144,6 +144,19 @@ server buffered-sql {
 	#  Accounting.  Log the accounting data.
 	#
 	accounting {
+		#
+		#  If you receive stop packets with zero session length,
+		#  they will NOT be logged in the database.  The SQL module
+		#  will print a message (only in debugging mode), and will
+		#  return "noop".
+		#
+		#  You can ignore these packets by uncommenting the following
+		#  three lines.  Otherwise, the server will not respond to the
+		#  accounting request, and the NAS will retransmit.
+		#
+	#	if (noop) {
+	#		ok
+	#	}
 		#
 		#  Log traffic to an SQL database.
 		#

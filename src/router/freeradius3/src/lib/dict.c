@@ -1,7 +1,7 @@
 /*
  * dict.c	Routines to read the dictionary file.
  *
- * Version:	$Id: d425a67aef48e2934fd1375fd1bae6d087b41cb0 $
+ * Version:	$Id: d97a5eb45d9cf134cfa4dda51ad062e166bbc785 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
  *
  * Copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id: d425a67aef48e2934fd1375fd1bae6d087b41cb0 $")
+RCSID("$Id: d97a5eb45d9cf134cfa4dda51ad062e166bbc785 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -84,6 +84,7 @@ const FR_NAME_NUMBER dict_attr_types[] = {
 	{ "ifid",	PW_TYPE_IFID },
 	{ "ipv6addr",	PW_TYPE_IPV6_ADDR },
 	{ "ipv6prefix", PW_TYPE_IPV6_PREFIX },
+	{ "bool",	PW_TYPE_BOOLEAN },
 	{ "byte",	PW_TYPE_BYTE },
 	{ "short",	PW_TYPE_SHORT },
 	{ "ether",	PW_TYPE_ETHERNET },
@@ -540,6 +541,11 @@ int dict_addvendor(char const *name, unsigned int value)
 {
 	size_t length;
 	DICT_VENDOR *dv;
+
+	if (!value) {
+		fr_strerror_printf("dict_addvendor: Cannot handle vendor ID of all zero");
+		return -1;
+	}
 
 	if (value >= FR_MAX_VENDOR) {
 		fr_strerror_printf("dict_addvendor: Cannot handle vendor ID larger than 2^24");
@@ -1242,6 +1248,13 @@ int dict_addvalue(char const *namestr, char const *attrstr, int value)
 		 *	Don't worry about fixups...
 		 */
 		switch (da->type) {
+		case PW_TYPE_BOOLEAN:
+			if (value > 1) {
+				fr_pool_free(dval);
+				fr_strerror_printf("dict_addvalue: ATTRIBUTEs of type 'bool' cannot have VALUEs larger than 1");
+				return -1;
+			}
+			break;
 		case PW_TYPE_BYTE:
 			if (value > 255) {
 				fr_pool_free(dval);
@@ -1762,6 +1775,12 @@ static int process_attribute(char const* fn, int const line,
 				flags.secret = 1;
 
 			} else if (strncmp(key, "secret", 6) == 0) {
+				if ((type != PW_TYPE_STRING) && (type != PW_TYPE_OCTETS)) {
+					fr_strerror_printf("dict_init: %s[%d] Only \"string\" or \"octet\" types can have the "
+							   "\"secret\" flag set", fn, line);
+					return -1;
+				}
+
 				flags.secret = 1;
 
 			} else if (strncmp(key, "array", 6) == 0) {
@@ -3503,4 +3522,15 @@ size_t dict_print_oid(char *buffer, size_t buflen, DICT_ATTR const *da)
 int dict_walk(fr_hash_table_walk_t callback, void *context)
 {
 	return fr_hash_table_walk(attributes_byname, callback, context);
+}
+
+/** Walk every DICT_VALUE (enum value) defined in the loaded dictionaries.
+ *
+ *  Mirrors dict_walk() above.  Used by tooling that needs to enumerate
+ *  every (attribute, value-name, value-number) tuple.
+ */
+int dict_value_walk(fr_hash_table_walk_t callback, void *context)
+{
+	if (!values_byname) return 0;
+	return fr_hash_table_walk(values_byname, callback, context);
 }

@@ -1,5 +1,5 @@
 #
-# Version:	$Id: 1e789505ec2484ee78781038e35b38f36f49b33a $
+# Version:	$Id: cb68a14776f6b8872bae031c6589e58eef6b7523 $
 #
 
 #
@@ -16,19 +16,25 @@ HEADERS_DY = attributes.h features.h missing.h radpaths.h tls.h
 
 HEADERS	= \
 	autoconf.h \
+	automask.h \
 	build.h \
+	clients.h \
 	conf.h \
 	conffile.h \
+	connection.h \
 	detail.h \
 	event.h \
 	hash.h \
 	heap.h \
+	log.h \
 	libradius.h \
+	listen.h \
 	md4.h \
 	md5.h \
 	modcall.h \
 	modules.h \
 	packet.h \
+	process.h \
 	rad_assert.h \
 	radius.h \
 	radiusd.h \
@@ -40,8 +46,10 @@ HEADERS	= \
 	sysutmp.h \
 	tcp.h \
 	threads.h \
+	tmpl.h \
 	token.h \
 	udpfromto.h \
+	xlat.h \
 	base64.h \
 	map.h \
 	$(HEADERS_DY)
@@ -82,6 +90,9 @@ src/include/%.h: share/dictionary.% share/dictionary.vqp
 	@$(ECHO) HEADER $@
 	@echo "/* AUTO-GENERATED HEADER FILE.  DO NOT EDIT. */" > $@
 	@grep ^ATTRIBUTE $<  | awk '{print "PW_"$$2 " " $$3 } ' | tr '[:lower:]' '[:upper:]' | tr -- - _ | sed 's/^/#define /' >> $@
+	@echo "" >> $@
+	@grep ^VALUE $<  | awk '{print "PW_"$$2 "_" $$3 " " $$4 }' | tr '[:lower:].-' '[:upper:]__' | sed 's/^/#define /' >> $@
+
 
 #
 #  Build features.h by copying over WITH_* and RADIUSD_VERSION_*

@@ -1,7 +1,7 @@
 /*
  * radiusd.c	Main loop of the radius server.
  *
- * Version:	$Id: d91895cc11405b84b855d7fe0733eec2b6de745b $
+ * Version:	$Id: afe32bb676670bafde9f5fd63a9bbabdefb47f3d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * Copyright 2000  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id: d91895cc11405b84b855d7fe0733eec2b6de745b $")
+RCSID("$Id: afe32bb676670bafde9f5fd63a9bbabdefb47f3d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
 				if (strcmp(optarg, "stdout") == 0) {
 					goto do_stdout;
 				}
-				main_config.log_file = strdup(optarg);
+				main_config.log_file = talloc_strdup(autofree, optarg);
 				default_log.dst = L_DST_FILES;
 				default_log.fd = open(main_config.log_file,
 							    O_WRONLY | O_APPEND | O_CREAT, 0640);
@@ -220,9 +220,10 @@ int main(int argc, char *argv[])
 			case 'p':
 			{
 				unsigned long port;
+				char *end;
 
-				port = strtoul(optarg, 0, 10);
-				if ((port == 0) || (port > UINT16_MAX)) {
+				port = strtoul(optarg, &end, 10);
+				if ((port == 0) || (port > UINT16_MAX) || *end) {
 					fprintf(stderr, "%s: Invalid port number \"%s\"\n",
 						main_config.name, optarg);
 					exit(EXIT_FAILURE);
@@ -595,23 +596,41 @@ int main(int argc, char *argv[])
 	 *  Write the PID after we've forked, so that we write the correct one.
 	 */
 	if (main_config.write_pid) {
-		FILE *fp;
+		int fd;
+		size_t len;
+		char buffer[256];
 
-		fp = fopen(main_config.pid_file, "w");
-		if (fp != NULL) {
-			/*
-			 *  @fixme What about following symlinks,
-			 *  and having it over-write a normal file?
-			 */
-			fprintf(fp, "%d\n", (int) radius_pid);
-			fclose(fp);
-		} else {
+		fd = open(main_config.pid_file, O_CREAT | O_EXCL | O_WRONLY | O_NOFOLLOW, 0644);
+		if (fd < 0) {
 			ERROR("Failed creating PID file %s: %s", main_config.pid_file, fr_syserror(errno));
 			exit(EXIT_FAILURE);
 		}
+
+		len = snprintf(buffer, sizeof(buffer), "%d\n", (int) radius_pid);
+		if (write(fd, buffer, len) < 0) {
+			ERROR("Failed writing PID file %s: %s", main_config.pid_file, fr_syserror(errno));
+			exit(EXIT_FAILURE);
+		}
+		close(fd);
 	}
 
 	exec_trigger(NULL, NULL, "server.start", false);
+
+	/*
+	 *	Tell people why secrets are being omitted, in the hope
+	 *	that people will actually read the messages.
+	 */
+	if (main_config.suppress_secrets) {
+		if (rad_debug_lvl && (rad_debug_lvl <= 2)) {
+			INFO("All secret information will be replaced with the string '<<secret>>'");
+			INFO("To see the contents of passwords, set `suppress_secrets=no` in the main configuration file.");
+		} else if (rad_debug_lvl > 2) {
+			/*
+			 *	High debug level: we still print secrets.
+			 */
+			main_config.suppress_secrets = false;
+		}
+	}
 
 	/*
 	 *  Inform the parent (who should still be waiting) that the rest of

@@ -1,7 +1,7 @@
 /*
  * listen.c	Handle socket stuff
  *
- * Version:	$Id: 6d578999ab15ed4be1a1c47e757f12bc15d37161 $
+ * Version:	$Id: 972ba861dce13f0af43d18f3a6d183decc20e04c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2005  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 6d578999ab15ed4be1a1c47e757f12bc15d37161 $")
+RCSID("$Id: 972ba861dce13f0af43d18f3a6d183decc20e04c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -52,6 +52,10 @@ RCSID("$Id: 6d578999ab15ed4be1a1c47e757f12bc15d37161 $")
 #include <sys/stat.h>
 #endif
 
+#ifdef HAVE_KQUEUE
+#include <sys/select.h>
+#endif
+
 #ifdef WITH_TLS
 #include <netinet/tcp.h>
 
@@ -77,6 +81,13 @@ static void print_packet(RADIUS_PACKET *packet)
 }
 #endif
 
+#ifdef HAVE_PTHREAD_H
+#define PTHREAD_MUTEX_LOCK pthread_mutex_lock
+#define PTHREAD_MUTEX_UNLOCK pthread_mutex_unlock
+#else
+#define PTHREAD_MUTEX_LOCK(_x)
+#define PTHREAD_MUTEX_UNLOCK(_x)
+#endif
 
 static rad_listen_t *listen_alloc(TALLOC_CTX *ctx, RAD_LISTEN_TYPE type);
 
@@ -92,7 +103,7 @@ static int command_write_magic(int newfd, listen_socket_t *sock);
 static int listen_coa_init(void);
 #endif
 
-static fr_protocol_t master_listen[];
+extern fr_protocol_t master_listen[];
 
 #ifdef WITH_DYNAMIC_CLIENTS
 static void client_timer_free(void *ctx)
@@ -374,6 +385,14 @@ static int listen_bind(rad_listen_t *this);
 static void listener_coa_update(rad_listen_t *this, VALUE_PAIR *vps);
 #endif
 
+#ifdef WITH_TLS
+#  define TLS_FREE(_x) TALLOC_FREE(_x)
+#else
+#  define TLS_FREE(_x)
+#endif
+
+void tls_socket_close(rad_listen_t *listener);
+
 /*
  *	Process and reply to a server-status request.
  *	Like rad_authenticate and rad_accounting this should
@@ -388,6 +407,7 @@ int rad_status_server(REQUEST *request)
 	if (request->listener->tls) {
 		listen_socket_t *sock = request->listener->data;
 
+		PTHREAD_MUTEX_LOCK(&sock->mutex);
 		if (sock->state == LISTEN_TLS_CHECKING) {
 			int autz_type = PW_AUTZ_TYPE;
 			char const *name = "Autz-Type";
@@ -422,13 +442,14 @@ int rad_status_server(REQUEST *request)
 				RWDEBUG("(TLS) Connection is not authorized - closing TCP socket.");
 				request->reply->code = PW_CODE_ACCESS_REJECT;
 
-				listener->status = RAD_LISTEN_STATUS_EOL;
-				listener->tls = NULL; /* parent owns this! */
+				tls_socket_close(listener);
 			}
 
+			PTHREAD_MUTEX_UNLOCK(&sock->mutex);
 			radius_update_listener(listener);
 			return 0;
 		}
+		PTHREAD_MUTEX_UNLOCK(&sock->mutex);
 	}
 #endif
 
@@ -546,7 +567,7 @@ static void blastradius_checks(RADIUS_PACKET *packet, RADCLIENT *client)
 			ERROR("BlastRADIUS check: Received packet without Message-Authenticator.");
 			ERROR("Setting \"require_message_authenticator = false\" for client %s", client->shortname);
 			ERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-			ERROR("UPGRADE THE CLIENT AS YOUR NETWORK IS VULNERABLE TO THE BLASTRADIUS ATTACK.");
+			ERROR("UPGRADE CLIENT %s AS YOUR NETWORK IS VULNERABLE TO THE BLASTRADIUS ATTACK.", client->shortname);
 			ERROR("Once the client is upgraded, set \"require_message_authenticator = true\" for  client %s", client->shortname);
 			ERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 			client->require_ma = FR_BOOL_FALSE;
@@ -612,7 +633,7 @@ static void blastradius_checks(RADIUS_PACKET *packet, RADCLIENT *client)
 		DEBUG("YOU MUST SET \"limit_proxy_state = true\" for client %s", client->shortname);
 		DEBUG("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 		DEBUG("The packet does not contain Message-Authenticator, which is a security issue");
-		DEBUG("UPGRADE THE CLIENT AS YOUR NETWORK IS VULNERABLE TO THE BLASTRADIUS ATTACK.");
+		DEBUG("UPGRADE CLIENT %s AS YOUR NETWORK IS VULNERABLE TO THE BLASTRADIUS ATTACK.", client->shortname);
 		DEBUG("Once the client is upgraded, set \"require_message_authenticator = true\" for client %s", client->shortname);
 		DEBUG("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 		return;
@@ -634,7 +655,7 @@ static void blastradius_checks(RADIUS_PACKET *packet, RADCLIENT *client)
 		ERROR("the client is a proxy RADIUS server which has not been upgraded.");
 		ERROR("Setting \"limit_proxy_state = false\" for client %s", client->shortname);
 		ERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-		ERROR("UPGRADE THE CLIENT AS YOUR NETWORK IS VULNERABLE TO THE BLASTRADIUS ATTACK.");
+		ERROR("UPGRADE CLIENT %s AS YOUR NETWORK IS VULNERABLE TO THE BLASTRADIUS ATTACK.", client->shortname);
 		ERROR("Once the client is upgraded, set \"require_message_authenticator = true\" for client %s", client->shortname);
 		ERROR("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
@@ -664,7 +685,7 @@ static void blastradius_checks(RADIUS_PACKET *packet, RADCLIENT *client)
 
 		if (!packet->message_authenticator) {
 			ERROR("The packet does not contain Message-Authenticator, which is a security issue.");
-			ERROR("UPGRADE THE CLIENT AS YOUR NETWORK MAY BE VULNERABLE TO THE BLASTRADIUS ATTACK.");
+			ERROR("UPGRADE CLIENT %s AS YOUR NETWORK MAY BE VULNERABLE TO THE BLASTRADIUS ATTACK.", client->shortname);
 			ERROR("Once the client is upgraded, set \"require_message_authenticator = true\" for client %s", client->shortname);
 		} else {
 			ERROR("The packet contains Message-Authenticator.");
@@ -727,6 +748,8 @@ static int dual_tcp_recv(rad_listen_t *listener)
 	}
 
 	if (rcode < 0) {	/* error or connection reset */
+		rad_free(&sock->packet);
+		TLS_FREE(sock->request);
 		listener->status = RAD_LISTEN_STATUS_EOL;
 
 		/*
@@ -952,7 +975,7 @@ static int radiusv11_server_alpn_cb(SSL *ssl,
 		break;
 	}
 
-	for (i = 0; i < inlen; i += in[0] + 1) {
+	for (i = 0; i < inlen; i += in[i] + 1) {
 		RDEBUG("(TLS) ALPN sent by client is \"%.*s\"", in[i], &in[i + 1]);
 	}
 
@@ -1138,6 +1161,16 @@ static int dual_tcp_accept(rad_listen_t *listener)
 		return 0;
 	}
 
+	if (radius_event_fd_full()
+#ifndef HAVE_KQUEUE
+	    || (newfd >= FD_SETSIZE)
+#endif
+		) {
+		RATE_LIMIT(INFO("Ignoring new connection from client %s too many connections are open", client->shortname));
+		close(newfd);
+		return 0;
+	}
+
 #ifdef WITH_TLS
 	/*
 	 *	Enforce security restrictions.
@@ -1230,7 +1263,12 @@ static int dual_tcp_accept(rad_listen_t *listener)
 	memcpy(this->data, listener->data, sizeof(*sock));
 	memcpy(this, listener, sizeof(*this));
 	this->next = NULL;
+	this->children = NULL;
 	this->data = sock;	/* fix it back */
+	this->listen = false;
+#ifdef WITH_TCP
+	this->nonblock = listener->nonblock;
+#endif
 
 	sock->parent = listener->data;
 	sock->other_ipaddr = src_ipaddr;
@@ -1281,6 +1319,7 @@ static int dual_tcp_accept(rad_listen_t *listener)
 		if (this->tls) {
 			this->recv = dual_tls_recv;
 			this->send = dual_tls_send;
+			this->nonblock = true;
 
 			/*
 			 *	Set up SNI callback.  We don't do it
@@ -1353,10 +1392,34 @@ static int dual_tcp_accept(rad_listen_t *listener)
 	}
 #endif
 
+#ifdef WITH_TCP
 	/*
-	 *	FIXME: set O_NONBLOCK on the accept'd fd.
-	 *	See djb's portability rants for details.
+	 *	Configure non-blocking sockets if requested.
 	 */
+	if (this->nonblock) {
+		if (fr_nonblock(this->fd) < 0) {
+			ERROR("Failed setting non-blocking on socket: %s",
+			      fr_syserror(errno));
+			close(this->fd);
+			return 0; /* do NOT close the parent socket! */
+		}
+	}
+
+#ifdef TCP_NODELAY
+	/*
+	 *	Also set TCP_NODELAY, to force the data to be written quickly.
+	 */
+	if (sock->proto == IPPROTO_TCP) {
+		int on = 1;
+
+		if (setsockopt(this->fd, SOL_TCP, TCP_NODELAY, &on, sizeof(on)) < 0) {
+			ERROR("(TLS) Failed to set TCP_NODELAY: %s", fr_syserror(errno));
+			close(this->fd);
+			return 0; /* do NOT close the parent socket! */
+		}
+	}
+#endif
+#endif
 
 	/*
 	 *	Tell the event loop that we have a new FD.
@@ -1538,9 +1601,6 @@ int common_socket_print(rad_listen_t const *this, char *buffer, size_t bufsize)
 static CONF_PARSER performance_config[] = {
 	{ "skip_duplicate_checks", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rad_listen_t, nodup), NULL },
 
-	{ "synchronous", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rad_listen_t, synchronous), NULL },
-
-	{ "workers", FR_CONF_OFFSET(PW_TYPE_INTEGER, rad_listen_t, workers), NULL },
 	CONF_PARSER_TERMINATOR
 };
 
@@ -1590,8 +1650,17 @@ static int listener_cmp(void const *one, void const *two)
 	return 0;
 }
 
-static int listener_unlink(UNUSED void *ctx, UNUSED void *data)
+static int listener_unlink(UNUSED void *ctx, void *data)
 {
+	rad_listen_t *child = data;
+
+	/*
+	 *	The child listener can stay active, even if the parent one is closed.
+	 *
+	 *	Clear the childs parent pointer when the parents destructor unlinks it.
+	 */
+	child->parent = NULL;
+
 	return 2;		/* unlink this node from the tree */
 }
 #endif
@@ -1618,6 +1687,7 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 	 */
 	memset(&ipaddr, 0, sizeof(ipaddr));
 	ipaddr.ipaddr.ip4addr.s_addr = htonl(INADDR_NONE);
+	sock->backlog = 8;
 
 	rcode = cf_item_parse(cs, "ipaddr", FR_ITEM_POINTER(PW_TYPE_COMBO_IP_ADDR, &ipaddr), NULL);
 	if (rcode < 0) return -1;
@@ -1634,6 +1704,9 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 	if (rcode < 0) return -1;
 
 	rcode = cf_item_parse(cs, "recv_buff", PW_TYPE_INTEGER, &sock->recv_buff, NULL);
+	if (rcode < 0) return -1;
+
+	rcode = cf_item_parse(cs, "backlog", FR_ITEM_POINTER(PW_TYPE_INTEGER, &sock->backlog), NULL);
 	if (rcode < 0) return -1;
 
 	sock->proto = IPPROTO_UDP;
@@ -1697,12 +1770,6 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 			if (rcode < 0) return -1;
 
 			/*
-			 *	Allow non-blocking for TLS sockets
-			 */
-			rcode = cf_item_parse(cs, "nonblock", FR_ITEM_POINTER(PW_TYPE_BOOLEAN, &this->nonblock), NULL);
-			if (rcode < 0) return -1;
-
-			/*
 			 *	If unset, set to default.
 			 */
 			if (listen_port == 0) listen_port = PW_RADIUS_TLS_PORT;
@@ -1736,6 +1803,8 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 				this->radiusv11 = this->tls->radiusv11 = rcode;
 			}
 #endif
+
+			this->nonblock = true;
 		}
 #else  /* WITH_TLS */
 		/*
@@ -1747,6 +1816,18 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 			return -1;
 		}
 #endif	/* WITH_TLS */
+
+		/*
+		 *	Allow non-blocking for TCP sockets
+		 *
+		 *	For TLS, we always set nonblock=true, which avoids calling this section The check
+		 *	below just means that we don't have to have more ifdef's around checking for
+		 *	this->tls.
+		 */
+		if (!this->nonblock && (sock->proto == IPPROTO_TCP)) {
+			rcode = cf_item_parse(cs, "nonblock", FR_ITEM_POINTER(PW_TYPE_BOOLEAN, &this->nonblock), NULL);
+			if (rcode < 0) return -1;
+		}
 
 #endif	/* WITH_TCP */
 
@@ -1767,16 +1848,6 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 		rcode = cf_section_parse(subcs, this,
 					 performance_config);
 		if (rcode < 0) return -1;
-
-		if (this->synchronous && sock->max_rate) {
-			WARN("Setting 'max_pps' is incompatible with 'synchronous'.  Disabling 'max_pps'");
-			sock->max_rate = 0;
-		}
-
-		if (!this->synchronous && this->workers) {
-			WARN("Setting 'workers' requires 'synchronous'.  Disabling 'workers'");
-			this->workers = 0;
-		}
 	}
 
 	subcs = cf_section_sub_find(cs, "limit");
@@ -1797,14 +1868,19 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 			sock->limit.idle_timeout = 5;
 		}
 
-		if ((sock->limit.lifetime > 0) && (sock->limit.lifetime < 5)) {
-			WARN("Setting lifetime to 5");
-			sock->limit.lifetime = 5;
-		}
+		if (sock->limit.lifetime) {
+			if (sock->limit.lifetime < 5) {
+				WARN("Setting lifetime to 5");
+				sock->limit.lifetime = 5;
+			}
 
-		if ((sock->limit.lifetime > 0) && (sock->limit.idle_timeout > sock->limit.lifetime)) {
-			WARN("Setting idle_timeout to 0");
-			sock->limit.idle_timeout = 0;
+			if (sock->limit.idle_timeout > sock->limit.lifetime) {
+				WARN("Setting idle_timeout to 0");
+				sock->limit.idle_timeout = 0;
+			}
+
+		} else if (!sock->limit.idle_timeout) {
+			sock->limit.idle_timeout = 30;
 		}
 
 		/*
@@ -1985,7 +2061,7 @@ int common_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 		 *	matters when we're tearing down the server, so
 		 *	perhaps it's less relevant.
 		 */
-		this->children = rbtree_create(this, listener_cmp, NULL, 0);
+		this->children = rbtree_create(this, listener_cmp, NULL, RBTREE_FLAG_LOCK);
 		if (!this->children) {
 			cf_log_err_cs(cs, "Failed to create child list for TCP socket.");
 			return -1;
@@ -2018,6 +2094,9 @@ static int common_socket_send(rad_listen_t *listener, REQUEST *request)
 	}
 #endif
 
+	/*
+	 *	@todo - mutex lock on TCP writes.  We already do this for TLS.
+	 */
 	if (rad_send(request->reply, request->packet,
 		     request->client->secret) < 0) {
 		RERROR("Failed sending reply: %s",
@@ -2633,6 +2712,7 @@ static int proxy_socket_recv(rad_listen_t *listener)
 	case PW_CODE_ACCESS_ACCEPT:
 	case PW_CODE_ACCESS_CHALLENGE:
 	case PW_CODE_ACCESS_REJECT:
+	case PW_CODE_PROTOCOL_ERROR:
 		break;
 
 #ifdef WITH_ACCOUNTING
@@ -2724,8 +2804,6 @@ static int proxy_socket_tcp_recv(rad_listen_t *listener)
 	}
 
 	if (rcode < 0) {	/* error or connection reset */
-		listener->status = RAD_LISTEN_STATUS_EOL;
-
 		/*
 		 *	Tell the event handler that an FD has disappeared.
 		 */
@@ -2733,6 +2811,9 @@ static int proxy_socket_tcp_recv(rad_listen_t *listener)
 		      ip_ntoh(&packet->src_ipaddr, buffer, sizeof(buffer)),
 		      packet->src_port);
 
+		rad_free(&sock->packet);
+		TLS_FREE(sock->request);
+		listener->status = RAD_LISTEN_STATUS_EOL;
 		radius_update_listener(listener);
 
 		/*
@@ -2754,6 +2835,7 @@ static int proxy_socket_tcp_recv(rad_listen_t *listener)
 	case PW_CODE_ACCESS_ACCEPT:
 	case PW_CODE_ACCESS_CHALLENGE:
 	case PW_CODE_ACCESS_REJECT:
+	case PW_CODE_PROTOCOL_ERROR:
 		break;
 
 #ifdef WITH_ACCOUNTING
@@ -2934,10 +3016,10 @@ static int proxy_socket_decode(RADIUSV11_UNUSED rad_listen_t *listener, REQUEST 
 /*
  *	Temporarily NOT const!
  */
-static fr_protocol_t master_listen[RAD_LISTEN_MAX] = {
+fr_protocol_t master_listen[RAD_LISTEN_MAX] = {
 #ifdef WITH_STATS
 	{ RLM_MODULE_INIT, "status", sizeof(listen_socket_t), NULL,
-	  common_socket_parse, NULL,
+	  common_socket_parse, common_socket_free,
 	  stats_socket_recv, common_socket_send,
 	  common_socket_print, client_socket_encode, client_socket_decode },
 #else
@@ -3426,13 +3508,11 @@ static int listen_bind(rad_listen_t *this)
 		 *
 		 *	Otherwise, all input TCP sockets are non-blocking.
 		 */
-		if (!this->workers) {
-			if (fr_nonblock(this->fd) < 0) {
-				close(this->fd);
-				ERROR("Failed setting non-blocking on socket: %s",
-				      fr_syserror(errno));
-				return -1;
-			}
+		if (fr_nonblock(this->fd) < 0) {
+			close(this->fd);
+			ERROR("Failed setting non-blocking on socket: %s",
+			      fr_syserror(errno));
+			return -1;
 		}
 
 		/*
@@ -3441,11 +3521,13 @@ static int listen_bind(rad_listen_t *this)
 #ifdef WITH_PROXY
 		if (this->type != RAD_LISTEN_PROXY)
 #endif
-		if (listen(this->fd, 8) < 0) {
+		if (listen(this->fd, sock->backlog) < 0) {
 			close(this->fd);
 			ERROR("Failed in listen(): %s", fr_syserror(errno));
 			return -1;
 		}
+
+		this->listen = true;
 	}
 #endif
 
@@ -3494,6 +3576,7 @@ static int _listener_free(rad_listen_t *this)
 		 */
 		if (this->parent) {
 			rbtree_deletebydata(this->parent->children, this);
+			this->parent = NULL;
 		}
 
 		/*
@@ -3501,6 +3584,8 @@ static int _listener_free(rad_listen_t *this)
 		 */
 		if (this->children) {
 			rbtree_walk(this->children, RBTREE_DELETE_ORDER, listener_unlink, this);
+			rbtree_free(this->children);
+			this->children = NULL;
 		}
 
 #ifdef WITH_TLS
@@ -3618,28 +3703,45 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 	if (home->proto == IPPROTO_TCP) {
 		this->recv = proxy_socket_tcp_recv;
 
+		/*
+		 *	Our limit is the smaller of the socket config and this home server config.
+		 */
+		if (home->limit.lifetime && (home->limit.lifetime < sock->limit.lifetime)) {
+			sock->limit.lifetime = home->limit.lifetime;
+		}
+
+		if (home->limit.idle_timeout && (home->limit.idle_timeout < sock->limit.idle_timeout)) {
+			sock->limit.idle_timeout = home->limit.idle_timeout;
+
+			if (sock->limit.lifetime && (sock->limit.idle_timeout > sock->limit.lifetime)) {
+				sock->limit.idle_timeout = 0;
+			}
+
+		}
+
+		if (!sock->limit.lifetime && !sock->limit.idle_timeout) sock->limit.idle_timeout = 30;
+
 #ifdef WITH_TLS
 		this->nonblock |= home->nonblock;
+		this->nonblock |= (this->tls != NULL);		// incoming TLS connections are always nonblocking.
+		this->nonblock |= (home->tls != NULL);		// outgoing TLS connections are always nonblocking
 #endif
 
 		/*
-		 *	FIXME: connect() is blocking!
-		 *	We do this with the proxy mutex locked, which may
-		 *	cause large delays!
+		 *	connect() is blocking for TCP.  The administrator has to manually set "nonblock" in
+		 *	the configuration to make it non-blocking.
+		 *
+		 *	Due to the way that TLS works, TLS sockets are always non blocking.
+		 *
+		 *	FIXME: setting nonblock=true for TCP (not TLS) means that any subsequence read() will
+		 *	return ENOTCONN, and the reader has to call connect() again.  But doing this also
+		 *	means that we need to update fr_socket_client_tcp() to return a flag which indicates
+		 *	whether or not the connection attempt was successful.  And then we need to store that
+		 *	somewhere, etc.
 		 */
 		this->fd = fr_socket_client_tcp(&home->src_ipaddr,
 						&home->ipaddr, home->port,
-#ifdef WITH_TLS
-						this->nonblock
-#else
-						false
-#endif
-			);
-
-		/*
-		 *	Set max_requests, lifetime, and idle_timeout from the home server.
-		 */
-		sock->limit = home->limit;
+						this->nonblock);
 	} else
 #endif
 		this->fd = fr_socket(&home->src_ipaddr, src_port);
@@ -3653,6 +3755,16 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 		return NULL;
 	}
 
+#ifndef HAVE_KQUEUE
+	if (this->fd >= FD_SETSIZE) {
+		this->print(this, buffer,sizeof(buffer));
+		ERROR("Failed opening new proxy socket '%s' : FD %d is larger than maximum %u",
+		      buffer, this->fd, FD_SETSIZE);
+		home->last_failed_open = now;
+		listen_free(&this);
+		return NULL;
+	}
+#endif
 
 #ifdef WITH_TCP
 #ifdef SO_KEEPALIVE
@@ -3678,7 +3790,7 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 		/*
 		 *	Also set TCP_NODELAY, to force the data to be written quickly.
 		 */
-		if (sock->proto == IPPROTO_TCP) {
+		{
 			int on = 1;
 
 			if (setsockopt(this->fd, SOL_TCP, TCP_NODELAY, &on, sizeof(on)) < 0) {
@@ -3687,65 +3799,28 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 			}
 		}
 #endif
+		rad_assert(home->listeners != NULL);
 
-		/*
-		 *	Set non-blocking if it's configured.
-		 */
-		if (this->nonblock) {
-			if (fr_nonblock(this->fd) < 0) {
-				ERROR("(TLS) Failed setting nonblocking for proxy socket '%s' - %s", buffer, fr_strerror());
-				goto error;
-			}
-
-			rad_assert(home->listeners != NULL);
-
-			if (!rbtree_insert(home->listeners, this)) {
-				ERROR("(TLS) Failed adding tracking informtion for proxy socket '%s'", buffer);
-				goto error;
-			}
-
-		} else {
-			/*
-			 *	Only set timeouts when the socket is blocking.  This allows blocking
-			 *	sockets to still time out when the underlying socket is dead.
-			 */
-#ifdef SO_RCVTIMEO
-			if (sock->limit.read_timeout) {
-				struct timeval tv;
-
-				tv.tv_sec = sock->limit.read_timeout;
-				tv.tv_usec = 0;
-
-				if (setsockopt(this->fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
-					ERROR("(TLS) Failed to set read_timeout: %s", fr_syserror(errno));
-					goto error;
-				}
-			}
-#endif
-
-#ifdef SO_SNDTIMEO
-			if (sock->limit.write_timeout) {
-				struct timeval tv;
-
-				tv.tv_sec = sock->limit.write_timeout;
-				tv.tv_usec = 0;
-
-				if (setsockopt(this->fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0) {
-					ERROR("(TLS) Failed to set write_timeout: %s", fr_syserror(errno));
-					goto error;
-				}
-			}
-#endif
+		if (!rbtree_insert(home->listeners, this)) {
+			ERROR("(TLS) Failed adding tracking information for proxy socket '%s'", buffer);
+			goto error;
 		}
 
 		/*
-		 *	This is blocking.  :(
+		 *	Start a new client connection.
 		 */
 		sock->ssn = tls_new_client_session(sock, home->tls, this->fd, &sock->certs);
 		if (!sock->ssn) {
 			ERROR("(TLS) Failed opening connection on proxy socket '%s'", buffer);
 			goto error;
 		}
+
+		/*
+		 *	MTU limits don't apply to RadSec - just use 32k so there's plenty of headroom
+		 */
+		sock->ssn->mtu = 1 << 15;
+
+		SSL_set_ex_data(sock->ssn->ssl, FR_TLS_EX_INDEX_HOME, sock->home);
 
 #ifdef WITH_RADIUSV11
 		/*
@@ -3755,7 +3830,6 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 			goto error;
 		}
 #endif
-
 
 		sock->connect_timeout = home->connect_timeout;
 
@@ -3832,7 +3906,7 @@ rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t 
 			close(this->fd);
 			home->last_failed_open = now;
 #ifdef WITH_TLS
-			if (home->listeners && this->nonblock) rbtree_deletebydata(home->listeners, this);
+			if (home->listeners) rbtree_deletebydata(home->listeners, this);
 #endif
 			listen_free(&this);
 			return NULL;
@@ -4097,29 +4171,16 @@ static rad_listen_t *listen_parse(CONF_SECTION *cs, char const *server)
 	return this;
 }
 
-#ifdef HAVE_PTHREAD_H
-/*
- *	A child thread which does NOTHING other than read and process
- *	packets.
- */
-static void *recv_thread(void *arg)
-{
-	rad_listen_t *this = arg;
-
-	while (1) {
-		this->recv(this);
-	}
-
-	return NULL;
-}
-#endif
-
 
 /*
  *	Generate a list of listeners.  Takes an input list of
  *	listeners, too, so we don't close sockets with waiting packets.
  */
-int listen_init(CONF_SECTION *config, rad_listen_t **head, bool spawn_flag)
+int listen_init(CONF_SECTION *config, rad_listen_t **head,
+#ifndef WITH_TLS
+		UNUSED
+#endif
+		bool spawn_flag)
 {
 	bool		override = false;
 	CONF_SECTION	*cs = NULL;
@@ -4264,11 +4325,14 @@ int listen_init(CONF_SECTION *config, rad_listen_t **head, bool spawn_flag)
 	 */
 	if (main_config.myip.af != AF_UNSPEC) {
 		CONF_SECTION *subcs;
-		char const *name2 = cf_section_name2(cs);
+		char const *name2;
 
 		cs = cf_section_sub_find_name2(config, "server",
 					       main_config.name);
 		if (!cs) goto add_sockets;
+
+		name2 = cf_section_name2(cs);
+		if (!name2) goto add_sockets;
 
 		/*
 		 *	Should really abstract this code...
@@ -4354,43 +4418,7 @@ add_sockets:
 		}
 #endif
 		if (!check_config) {
-			if (this->workers && !spawn_flag) {
-				WARN("Setting 'workers' requires 'synchronous'.  Disabling 'workers'");
-				this->workers = 0;
-			}
-
-			if (this->workers) {
-#ifdef HAVE_PTHREAD_H
-				int rcode;
-				uint32_t i;
-				char buffer[256];
-
-				this->print(this, buffer, sizeof(buffer));
-
-				for (i = 0; i < this->workers; i++) {
-					pthread_t id;
-
-					/*
-					 *	FIXME: create detached?
-					 */
-					rcode = pthread_create(&id, 0, recv_thread, this);
-					if (rcode != 0) {
-						ERROR("Thread create failed: %s",
-						      fr_syserror(rcode));
-						fr_exit(1);
-					}
-
-					DEBUG("Thread %d for %s\n", i, buffer);
-				}
-#else
-				WARN("Setting 'workers' requires 'synchronous'.  Disabling 'workers'");
-				this->workers = 0;
-#endif
-
-			} else {
-				radius_update_listener(this);
-			}
-
+			radius_update_listener(this);
 		}
 	}
 
@@ -4562,7 +4590,7 @@ static void coa_entry_free(void *data)
 static int coa_entry_destructor(coa_entry_t *entry)
 {
 	pthread_mutex_lock(&entry->coa_key->mutex);
-	fr_hash_table_delete(entry->coa_key->ht, entry);
+	fr_hash_table_yank(entry->coa_key->ht, entry);
 	pthread_mutex_unlock(&entry->coa_key->mutex);
 
 	return 0;
@@ -4641,8 +4669,8 @@ retry:
 			 *	created the node.  In which case we
 			 *	try again.
 			 */
-			if (tries < 3) goto retry;
 			tries++;
+			if (tries < 3) goto retry;
 			return;
 		}
 
@@ -4682,6 +4710,7 @@ int listen_coa_find(REQUEST *request, char const *key)
 	rad_listen_t *this, *found;
 	listen_socket_t *sock;
 	fr_hash_iter_t iter;
+	coa_entry_t *entry;
 
 	/*
 	 *	Find the key.  If we can't find it, then error out.
@@ -4697,9 +4726,11 @@ int listen_coa_find(REQUEST *request, char const *key)
 	 */
 	found = NULL;
 	pthread_mutex_lock(&coa_key->mutex);
-	for (this = fr_hash_table_iter_init(coa_key->ht, &iter);
-	     this != NULL;
-	     this = fr_hash_table_iter_next(coa_key->ht, &iter)) {
+	for (entry = fr_hash_table_iter_init(coa_key->ht, &iter);
+	     entry != NULL;
+	     entry = fr_hash_table_iter_next(coa_key->ht, &iter)) {
+		this = entry->listener;
+
 		if (this->blocked) continue;
 
 		if (this->dead) continue;

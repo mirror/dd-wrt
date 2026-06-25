@@ -17,7 +17,7 @@
  */
 
 /**
- * $Id: f2aea776d61c3635410d9baaed7df5939adf60cb $
+ * $Id: 2113a1ab4c8282b1d6e0e8ed3cb5784b1972735c $
  *
  * @file threads.h
  * @brief Macros to abstract Thread Local Storage
@@ -82,8 +82,7 @@ static void __fr_thread_local_key_init_##_n(void)\
 static _t __fr_thread_local_init_##_n(pthread_destructor_t func)\
 {\
 	__fr_thread_local_destructor_##_n = func;\
-	if (_n) return _n; \
-	(void) pthread_once(&__fr_thread_local_once_##_n, __fr_thread_local_key_init_##_n);\
+	(void) pthread_once(&__fr_thread_local_once_##_n, __fr_thread_local_key_init_##_n); \
 	(void) pthread_setspecific(__fr_thread_local_key_##_n, &(_n));\
 	return _n;\
 }
@@ -91,29 +90,6 @@ static _t __fr_thread_local_init_##_n(pthread_destructor_t func)\
 #  define fr_thread_local_set(_n, _v) ((int)!((_n = _v) || 1))
 #  define fr_thread_local_get(_n) _n
 #elif defined(HAVE_PTHREAD_H)
-#  include <pthread.h>
-#  define fr_thread_local_setup(_t, _n) static __thread _t _n;\
-static pthread_key_t __fr_thread_local_key_##_n;\
-static pthread_once_t __fr_thread_local_once_##_n = PTHREAD_ONCE_INIT;\
-static pthread_destructor_t __fr_thread_local_destructor_##_n = NULL;\
-static void __fr_thread_local_destroy_##_n(UNUSED void *unused)\
-{\
-	__fr_thread_local_destructor_##_n(_n);\
-}\
-static void __fr_thread_local_key_init_##_n(void)\
-{\
-	(void) pthread_key_create(&__fr_thread_local_key_##_n, __fr_thread_local_destroy_##_n);\
-}\
-static _t __fr_thread_local_init_##_n(pthread_destructor_t func)\
-{\
-	__fr_thread_local_destructor_##_n = func;\
-	if (_n) return _n; \
-	(void) pthread_once(&__fr_thread_local_once_##_n, __fr_thread_local_key_init_##_n);\
-	(void) pthread_setspecific(__fr_thread_local_key_##_n, &(_n));\
-	return _n;\
-}
-#  define fr_thread_local_init(_n, _f)	__fr_thread_local_init_##_n(_f)
-#  define fr_thread_local_set(_n, _v) ((int)!((_n = _v) || 1))
-#  define fr_thread_local_get(_n) _n
+#error unsupported
 #endif
 #endif

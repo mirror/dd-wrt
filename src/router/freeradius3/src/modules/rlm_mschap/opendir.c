@@ -18,7 +18,7 @@
  * Copyright 2007 Apple Inc.
  */
 
-RCSID("$Id: b3fd9fff437f3d39350c3c6986260d0df7ad4e7e $")
+RCSID("$Id: fc5288a8c0252900fe132b2f72f232f9e79cf284 $")
 USES_APPLE_DEPRECATED_API
 
 #include	<freeradius-devel/radiusd.h>
@@ -55,20 +55,28 @@ static rlm_rcode_t getUserNodeRef(REQUEST *request, char* inUserName, char **out
 	char const		*what		= NULL;
 	char			*status_name	= NULL;
 	tContextData	    	context		= 0;
-	uint32_t	   	nodeCount	= 0;
-	uint32_t		attrIndex	= 0;
 	tDataList	       *nodeName	= NULL;
 	tAttributeEntryPtr      pAttrEntry	= NULL;
 	tDataList	       *pRecName	= NULL;
 	tDataList	       *pRecType	= NULL;
 	tDataList	       *pAttrType	= NULL;
-	uint32_t	   	recCount	= 0;
 	tRecordEntry	    	*pRecEntry	= NULL;
 	tAttributeListRef       attrListRef	= 0;
 	char		    	*pUserLocation	= NULL;
 	tAttributeValueListRef  valueRef	= 0;
 	tDataList	       *pUserNode	= NULL;
 	rlm_rcode_t		result		= RLM_MODULE_FAIL;
+
+	/*
+	 *	These variables are passed to OSX APIs, which need
+	 *	UInt32.  And helpfully, the OSX headers define UInt32
+	 *	differently, depending on the platform.  As a result,
+	 *	we can't assume that uint32_t and UInt32 are
+	 *	compatible.  Thanks, Apple.
+	 */
+	UInt32		   	nodeCount	= 0;
+	UInt32		   	recCount	= 0;
+	UInt32			attrIndex	= 0;
 
 	if (!inUserName) {
 		ERROR("rlm_mschap: getUserNodeRef(): no username");
@@ -245,6 +253,8 @@ rlm_rcode_t od_mschap_auth(REQUEST *request, VALUE_PAIR *challenge, VALUE_PAIR *
 #ifndef NDEBUG
 	unsigned int t;
 #endif
+
+	if (!response) return RLM_MODULE_FAIL;
 
 	username_string = talloc_array(request, char, usernamepair->vp_length + 1);
 	if (!username_string)

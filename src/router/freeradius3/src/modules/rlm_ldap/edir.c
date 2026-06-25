@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: ddac7e226a1bac6dc449d84b4dab9f24425255dc $
+ * $Id: dc205ff9eaa24b06e1f06cc8e7525d763c251640 $
  * @file edir.c
  * @brief LDAP extension for reading eDirectory universal password.
  *
@@ -27,7 +27,7 @@
  * @copyright 2002-2004 Novell, Inc.
  */
 
-RCSID("$Id: ddac7e226a1bac6dc449d84b4dab9f24425255dc $")
+RCSID("$Id: dc205ff9eaa24b06e1f06cc8e7525d763c251640 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/rad_assert.h>
@@ -215,7 +215,7 @@ int nmasldap_get_password(LDAP *ld, char const *dn, char *password, size_t *pass
 		goto finish;
 	}
 
-	if (bufsize > *passlen) {
+	if (bufsize >= *passlen) {
 		err = NMAS_E_BUFFER_OVERFLOW;
 		goto finish;
 	}

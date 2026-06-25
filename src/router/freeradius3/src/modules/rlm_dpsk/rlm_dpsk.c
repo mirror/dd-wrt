@@ -1,30 +1,27 @@
 /*
- * Copyright (C) 2023 Network RADIUS SARL (legal@networkradius.com)
+ *   This program is is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or (at
+ *   your option) any later version.
  *
- * This software may not be redistributed in any form without the prior
- * written consent of Network RADIUS.
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program; if not, write to the Free Software
+ *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
 /**
- * $Id: 4b818d08a500716ec7560abfc44a0c4a33290e38 $
+ * $Id: 2cc7cc52ed48789367a852c1c403428bd23e1a6b $
  * @file rlm_dpsk.c
  * @brief Dynamic PSK for WiFi
  *
  * @copyright 2023 Network RADIUS SAS (legal@networkradius.com)
  */
-RCSID("$Id: 4b818d08a500716ec7560abfc44a0c4a33290e38 $")
+RCSID("$Id: 2cc7cc52ed48789367a852c1c403428bd23e1a6b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -138,6 +135,7 @@ struct rlm_dpsk_s {
 	DICT_ATTR const		*ssid;
 	DICT_ATTR const		*anonce;
 	DICT_ATTR const		*frame;
+	CONF_SECTION		*cs;
 };
 
 static const CONF_PARSER module_config[] = {
@@ -146,7 +144,7 @@ static const CONF_PARSER module_config[] = {
 	{ "cache_size", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_dpsk_t, cache_size), "0" },
 	{ "cache_lifetime", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_dpsk_t, cache_lifetime), "0" },
 
-	{ "filename", FR_CONF_OFFSET(PW_TYPE_FILE_INPUT,  rlm_dpsk_t, filename), NULL },
+	{ "filename", FR_CONF_OFFSET(PW_TYPE_STRING,  rlm_dpsk_t, filename), NULL },
 
 	CONF_PARSER_TERMINATOR
 };
@@ -530,6 +528,12 @@ stage2:
 			}
 
 			filename = filename_buffer;
+
+			if (!cf_file_check(inst->cs, filename, true)) {
+				RDEBUG("Cannot open %s", filename);
+				return RLM_MODULE_FAIL;
+			}
+
 		} else {
 			fr_assert(filename == inst->filename);
 		}
@@ -930,6 +934,14 @@ static int mod_bootstrap(CONF_SECTION *conf, void *instance)
 	}
 
 	inst->dynamic = inst->filename && (strchr(inst->filename, '%') != NULL);
+	inst->cs = conf;
+
+	/*
+	 *	If it's a static file, then check it ourselves.
+	 */
+	if (inst->filename && !inst->dynamic && !cf_file_check(conf, inst->filename, true)) {
+		return -1;
+	}
 
 	return 0;
 }

@@ -16,7 +16,7 @@
 #ifndef LISTEN_H
 #define LISTEN_H
 /**
- * $Id: 1c57512caaa42a6c31f2494f0fcb274f86cfd8c9 $
+ * $Id: 2db471325c5cf76e3d5cb57996847bc46a24efa9 $
  *
  * @file listen.h
  * @brief The listener API.
@@ -47,7 +47,7 @@ typedef enum RAD_LISTEN_STATUS {
 	RAD_LISTEN_STATUS_KNOWN,		//!< alive and operating normally
 	RAD_LISTEN_STATUS_PAUSE,		//!< TLS connection checking: don't read normal packets
 	RAD_LISTEN_STATUS_RESUME,		//!< TLS connection checking: resume reading normal packets
-	RAD_LISTEN_STATUS_FROZEN,		//!< alive, but we're not sending any more packets to it
+	RAD_LISTEN_STATUS_DRAINING,		//!< alive, but we're not sending any more packets to it
 	RAD_LISTEN_STATUS_EOL,			//!< we're trying to delete it.
 	RAD_LISTEN_STATUS_REMOVE_NOW		//!< no request is using it, delete the listener.
 } RAD_LISTEN_STATUS;
@@ -62,6 +62,7 @@ typedef int (*rad_listen_decode_t)(rad_listen_t *, REQUEST *);
 
 struct rad_listen {
 	rad_listen_t *next; /* should be rbtree stuff */
+	bool	     fd_updating;
 
 	/*
 	 *	For normal sockets.
@@ -77,17 +78,19 @@ struct rad_listen {
 
 	bool		dual;
 	bool		proxy_protocol;		//!< haproxy protocol
+	bool		listen;			//! just calls listen()
+	bool		nonblock;
 #endif
 	bool		nodup;
-	bool		synchronous;
 	bool		dead;
-	uint32_t	workers;
 
 #ifdef WITH_TLS
 	fr_tls_server_conf_t *tls;
 	bool		check_client_connections;
-	bool		nonblock;
 	bool		blocked;
+
+	fr_dlist_t		entry;		//!< for the home server free list
+
 #ifdef WITH_RADIUSV11
 	fr_radiusv11_t 	radiusv11;
 #endif
@@ -140,6 +143,8 @@ typedef struct listen_socket_t {
 	 */
 	fr_ipaddr_t	my_ipaddr;
 	uint16_t	my_port;
+
+	uint32_t	backlog;
 
 	char const	*interface;
 #ifdef SO_BROADCAST

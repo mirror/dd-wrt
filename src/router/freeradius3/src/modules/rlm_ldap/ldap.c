@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 19ff0b33164b50083ef50c1f671d8f431fa59ea0 $
+ * $Id: 03c7daa5b5561d07813a05a47004bbc54ba220d6 $
  * @file ldap.c
  * @brief LDAP module library functions.
  *
@@ -1098,7 +1098,7 @@ char const *rlm_ldap_find_user(rlm_ldap_t const *inst, REQUEST *request, ldap_ha
 	*result = NULL;
 
 	if (!attrs) {
-		memset(&attrs, 0, sizeof(tmp_attrs));
+		attrs = tmp_attrs;
 	}
 
 	/*

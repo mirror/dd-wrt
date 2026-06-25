@@ -12,7 +12,7 @@
 #
 #       raddb/mods-config/sql/ippool-dhcp/<DB>/schema.sql
 #
-#  $Id: 909b93c7ebcbbeb16b123ca38e696790b5771dda $
+#  $Id: 10413ab139350ea4e20b3e660e2d45fba46b92b7 $
 
 sqlippool dhcp_sqlippool {
 	# SQL instance to use (from mods-available/sql)
@@ -27,6 +27,12 @@ sqlippool dhcp_sqlippool {
 	dialect = "mysql"
 
 	# Name of the check item attribute to be used as a key in the SQL queries
+	#
+	#  define &config:Pool-Name to select which pool will be used for IP address
+	#  allocaton.
+	#
+	#  If there is no &config:Pool-Name defined, the module will not allocate
+	#  any IP addresses.
 	pool_name = "Pool-Name"
 
 	# SQL table to use for ippool range and lease info

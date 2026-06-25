@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 1942749c1c1fe7e129bf0ea26fea034f61bf8461 $
+ * $Id: 5d1e567764e69181d107a2eb0fdc54a472d12e8a $
  * @file rlm_rest.c
  * @brief Integrate FreeRADIUS with RESTfull APIs
  *
  * @copyright 2012-2014  Arran Cudbard-Bell <arran.cudbardb@freeradius.org>
  */
-RCSID("$Id: 1942749c1c1fe7e129bf0ea26fea034f61bf8461 $")
+RCSID("$Id: 5d1e567764e69181d107a2eb0fdc54a472d12e8a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -29,6 +29,7 @@ RCSID("$Id: 1942749c1c1fe7e129bf0ea26fea034f61bf8461 $")
 #include <freeradius-devel/rad_assert.h>
 
 #include <ctype.h>
+#include <sys/un.h>
 #include "rest.h"
 
 /*
@@ -57,7 +58,7 @@ static CONF_PARSER tls_config[] = {
  *	buffer over-flows.
  */
 static const CONF_PARSER section_config[] = {
-	{ "uri", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_XLAT, rlm_rest_section_t, uri), ""   },
+	{ "uri", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_XLAT, rlm_rest_section_t, uri), "" },
 	{ "method", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_rest_section_t, method_str), "GET" },
 	{ "body", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_rest_section_t, body_str), "none" },
 	{ "attr_num", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_rest_section_t, attr_num), "no" },
@@ -85,6 +86,8 @@ static const CONF_PARSER section_config[] = {
 
 static const CONF_PARSER module_config[] = {
 	{ "connect_uri", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_rest_t, connect_uri), NULL },
+	{ "connect_uri_socket", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_rest_t, connect_uri_socket), NULL },
+	{ "connect_uri_socket_abstract", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_rest_t, connect_uri_socket_abstract), "no" },
 	{ "connect_timeout", FR_CONF_OFFSET(PW_TYPE_TIMEVAL, rlm_rest_t, connect_timeout_tv), "4.0" },
 	{ "http_negotiation", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_rest_t, http_negotiation_str), "default" },
 
@@ -893,6 +896,13 @@ static int mod_bootstrap(CONF_SECTION *conf, void *instance)
 	inst->xlat_name = cf_section_name2(conf);
 	if (!inst->xlat_name) inst->xlat_name = cf_section_name1(conf);
 
+#ifdef CURLOPT_ABSTRACT_UNIX_SOCKET
+	if (inst->connect_uri_socket_abstract) {
+		cf_log_err_cs(conf, "connect_uri_socket_abstract is not supported on this platform");
+		return -1;
+	}
+#endif
+
 	/*
 	 *	Register the rest xlat function
 	 */
@@ -938,6 +948,16 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 		(parse_sub_section(conf, &inst->post_auth, section_type_value[MOD_POST_AUTH].section) < 0))
 	{
 		return -1;
+	}
+
+	if (inst->connect_uri_socket) {
+		struct sockaddr_un sa;
+		size_t max_len = sizeof(sa.sun_path) - 1; /* account for trailing NUL */
+
+		if (strlen(inst->connect_uri_socket) > max_len) {
+			cf_log_err_cs(conf, "connect_uri_socket too long, limit is %ld bytes.", max_len);
+			return -1;
+		}
 	}
 
 	inst->http_negotiation = fr_str2int(http_negotiation_table, inst->http_negotiation_str, -1);

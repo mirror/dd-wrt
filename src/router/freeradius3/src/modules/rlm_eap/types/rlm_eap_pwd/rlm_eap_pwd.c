@@ -31,15 +31,51 @@
  * license (including the GNU public license).
  */
 
-RCSID("$Id: 4992a2aeefcede35282a8549a0f148ffa3c2159b $")
+RCSID("$Id: 34d1c30a9a431618475e5be6e13918ec4f5f2c17 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "rlm_eap_pwd.h"
 
 #include "eap_pwd.h"
 
+#include <freeradius-devel/threads.h>
+
 #define MPPE_KEY_LEN    32
 #define MSK_EMSK_LEN    (2*MPPE_KEY_LEN)
+
+/*
+ *	v3.2.x port of v4 commit e912e0364 ("move bnctx to thread instance data").
+ *
+ *	v4 moved BN_CTX from instance to per-thread storage to avoid a
+ *	cross-thread race on the shared instance bnctx.  v3.2.x's
+ *	rlm_eap_module_t has no thread_instantiate hook, so we use thread
+ *	local storage instead.  Effect is the same: one BN_CTX per thread,
+ *	reused across sessions, freed on thread exit.
+ */
+static void _pwd_bnctx_free(void *arg)
+{
+	BN_CTX *bnctx = arg;
+
+	if (bnctx) BN_CTX_free(bnctx);
+}
+
+fr_thread_local_setup(BN_CTX *, pwd_bnctx)	/* macro */
+
+static BN_CTX *pwd_get_bnctx(void)
+{
+	BN_CTX *bnctx;
+
+	bnctx = fr_thread_local_init(pwd_bnctx, _pwd_bnctx_free);
+	if (bnctx) return bnctx;
+
+	bnctx = BN_CTX_new();
+	if (!bnctx) return NULL;
+
+	if (fr_thread_local_set(pwd_bnctx, bnctx) != 0) {
+		return NULL;
+	}
+	return bnctx;
+}
 
 /* EAP-PWD can use different preprocessing (prep) modes to mangle the password
  * before proving to both parties that they both know the same (mangled) password.
@@ -167,7 +203,10 @@ static int _free_pwd_session (pwd_session_t *session)
 	EC_POINT_clear_free(session->pwe);
 	BN_clear_free(session->order);
 	BN_clear_free(session->prime);
-	BN_CTX_free(session->bnctx);
+	/*
+	 *	session->bnctx is owned by the thread (see pwd_get_bnctx)
+	 *	and freed when the thread exits.  Do not free it here.
+	 */
 
 	return 0;
 }
@@ -553,7 +592,7 @@ static int mod_session_init (void *instance, eap_handler_t *handler)
 	session->order = NULL;
 	session->prime = NULL;
 
-	session->bnctx = BN_CTX_new();
+	session->bnctx = pwd_get_bnctx();
 	if (session->bnctx == NULL) {
 		ERROR("rlm_eap_pwd: Failed to get BN context");
 		return 0;
@@ -686,7 +725,7 @@ static int mod_process(void *arg, eap_handler_t *handler)
 			return 0;
 		}
 
-		session->in_len = ntohs(in[0] * 256 | in[1]);
+		session->in_len = in[0] * 256 | in[1];
 		if ((session->in = talloc_zero_array(session, uint8_t, session->in_len)) == NULL) {
 			RDEBUG2("pwd cannot allocate %zd buffer to hold fragments",
 				session->in_len);

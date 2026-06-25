@@ -1,7 +1,7 @@
 /*
  * version.c	Print version number and exit.
  *
- * Version:	$Id: 2334ac491982168ea47bdf6ca4a8cfec78a13c84 $
+ * Version:	$Id: 1bdb562349df68cb3d996dcf40e8534afd1bc06c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Chris Parker <cparker@starnetusa.com>
  */
 
-RCSID("$Id: 2334ac491982168ea47bdf6ca4a8cfec78a13c84 $")
+RCSID("$Id: 1bdb562349df68cb3d996dcf40e8534afd1bc06c $")
 
 #include <freeradius-devel/radiusd.h>
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
@@ -361,14 +361,6 @@ void version_init_features(CONF_SECTION *cs)
 				);
 
 
-	version_add_feature(cs, "recv-coa-from-home-server",
-#ifdef WITH_COA_TUNNEL
-			        true
-#else
-				false
-#endif
-				);
-
 	version_add_feature(cs, "control-socket",
 #ifdef WITH_COMMAND_SOCKET
 				true
@@ -380,6 +372,14 @@ void version_init_features(CONF_SECTION *cs)
 
 	version_add_feature(cs, "detail",
 #ifdef WITH_DETAIL
+				true
+#else
+				false
+#endif
+				);
+
+	version_add_feature(cs, "developer",
+#ifndef NDEBUG
 				true
 #else
 				false
@@ -418,6 +418,14 @@ void version_init_features(CONF_SECTION *cs)
 #endif
 				);
 
+	version_add_feature(cs, "recv-coa-from-home-server",
+#ifdef WITH_COA_TUNNEL
+			        true
+#else
+				false
+#endif
+				);
+
 	version_add_feature(cs, "regex-pcre",
 #ifdef HAVE_PCRE
 				true
@@ -426,7 +434,15 @@ void version_init_features(CONF_SECTION *cs)
 #endif
 				);
 
-#if !defined(HAVE_PCRE) && defined(HAVE_REGEX)
+	version_add_feature(cs, "regex-pcre2",
+#ifdef HAVE_PCRE2
+				true
+#else
+				false
+#endif
+				);
+
+#if !defined(HAVE_PCRE) && !defined(HAVE_PCRE2) && defined(HAVE_REGEX)
 	version_add_feature(cs, "regex-posix", true);
 	version_add_feature(cs, "regex-posix-extended",
 #  ifdef HAVE_REG_EXTENDED
@@ -498,14 +514,6 @@ void version_init_features(CONF_SECTION *cs)
 
 	version_add_feature(cs, "vmps",
 #ifdef WITH_VMPS
-				true
-#else
-				false
-#endif
-				);
-
-	version_add_feature(cs, "developer",
-#ifndef NDEBUG
 				true
 #else
 				false
@@ -629,14 +637,30 @@ void version_print(void)
 #endif
 		DEBUG2("  ");
 	}
+
+#ifdef WITH_VERIFY_PTR
+	WARN(" ");
+	WARN("#######################################################################");
+	WARN("# ");
+	WARN("# The server was built with the 'WITH_VERIFY_PTR' flag set.  This is a");
+	WARN("# developer-only build option that DRASTICALLY slows down the server.");
+	WARN("# If you are using the server in a production environment, you will see");
+	WARN("# significantly improved performance (3x-4x) by re-running 'configure'");
+	WARN("# with the flag '--disable-developer', and then re-building and");
+	WARN("# re-installing the server.");
+	WARN("# ");
+	WARN("#######################################################################");
+	WARN(" ");
+#endif
+
 	INFO("FreeRADIUS Version " RADIUSD_VERSION_STRING);
-	INFO("Copyright (C) 1999-2025 The FreeRADIUS server project and contributors");
+	INFO("Copyright (C) 1999-2026 The FreeRADIUS server project and contributors");
 	INFO("There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A");
 	INFO("PARTICULAR PURPOSE");
 	INFO("You may redistribute copies of FreeRADIUS under the terms of the");
 	INFO("GNU General Public License");
 	INFO("For more information about these matters, see the file named COPYRIGHT");
-	INFO("");
+	INFO(" ");
 	INFO("FreeRADIUS is developed, maintained, and supported by InkBridge Networks.");
 	INFO("For commercial support, please email sales@inkbridgenetworks.com");
 	INFO("https://inkbridgenetworks.com/");

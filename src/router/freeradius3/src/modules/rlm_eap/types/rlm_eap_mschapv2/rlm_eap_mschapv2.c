@@ -1,7 +1,7 @@
 /*
  * rlm_eap_mschapv2.c    Handles that are called from eap
  *
- * Version:     $Id: c1a00450e64785ebb007bbbe3beeec9d9ebf4a45 $
+ * Version:     $Id: 75f0ac8c714b7e5fb92f1b85b547d4a5767a428d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2003,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: c1a00450e64785ebb007bbbe3beeec9d9ebf4a45 $")
+RCSID("$Id: 75f0ac8c714b7e5fb92f1b85b547d4a5767a428d $")
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,6 +44,17 @@ static CONF_PARSER module_config[] = {
 	CONF_PARSER_TERMINATOR
 };
 
+/*
+ *  0                   1                   2                   3
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |     Code      |   Identifier  |            Length             |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |     Type      |   OpCode      |  MS-CHAPv2-ID |  MS-Length...
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |   MS-Length   |     Data...
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ */
 
 static void fix_mppe_keys(eap_handler_t *handler, mschapv2_opaque_t *data)
 {
@@ -304,11 +315,12 @@ static int mod_session_init(void *instance, eap_handler_t *handler)
  *
  *	Called from rlm_eap.c, eap_postproxy().
  */
-static int CC_HINT(nonnull) mschap_postproxy(eap_handler_t *handler, UNUSED void *tunnel_data)
+static int CC_HINT(nonnull) mschap_postproxy(eap_handler_t *handler, void *uctx)
 {
 	VALUE_PAIR *response = NULL;
 	mschapv2_opaque_t *data;
 	REQUEST *request = handler->request;
+	eap_tunnel_data_t *tunnel_data = uctx;
 
 	data = (mschapv2_opaque_t *) handler->opaque;
 	rad_assert(request != NULL);
@@ -347,7 +359,7 @@ static int CC_HINT(nonnull) mschap_postproxy(eap_handler_t *handler, UNUSED void
 	 *	Done doing EAP proxy stuff.
 	 */
 	request->options &= ~RAD_REQUEST_OPTION_PROXY_EAP;
-	eapmschapv2_compose(NULL, handler, response);
+	eapmschapv2_compose(tunnel_data->type_inst, handler, response);
 	data->code = PW_EAP_MSCHAPV2_SUCCESS;
 
 	/*
@@ -419,14 +431,22 @@ static int CC_HINT(nonnull) mod_process(void *arg, eap_handler_t *handler)
 		 */
 		if (ccode == PW_EAP_MSCHAPV2_CHGPASSWD) {
 			VALUE_PAIR *cpw;
-			int mschap_id = eap_ds->response->type.data[1];
+			int mschap_id;
 			int copied = 0 ,seq = 1;
+
+			if (eap_ds->response->type.length < 586) {
+				RDEBUG2("Password change has invalid length %zu < 586",
+					eap_ds->response->type.length);
+				return 0;
+			}
 
 			RDEBUG2("Password change packet received");
 
 			challenge = pair_make_request("MS-CHAP-Challenge", NULL, T_OP_EQ);
 			if (!challenge) return 0;
 			fr_pair_value_memcpy(challenge, data->challenge, MSCHAPV2_CHALLENGE_LEN);
+
+			mschap_id = eap_ds->response->type.data[1];
 
 			cpw = pair_make_request("MS-CHAP2-CPW", NULL, T_OP_EQ);
 			cpw->vp_length = 68;
@@ -483,19 +503,19 @@ failure:
 
 	case PW_EAP_MSCHAPV2_SUCCESS:
 		/*
-		 * we sent a success to the client; some clients send a
+		 * we <sent a success to the client; some clients send a
 		 * success back as-per the RFC, some send an ACK. Permit
 		 * both, I guess...
 		 */
 
 		switch (ccode) {
 		case PW_EAP_MSCHAPV2_SUCCESS:
+		case PW_EAP_MSCHAPV2_ACK:
 			eap_ds->request->code = PW_EAP_SUCCESS;
 
 			fr_pair_list_mcopy_by_num(request->reply, &request->reply->vps, &data->mppe_keys, 0, 0, TAG_ANY);
 			/* FALL-THROUGH */
 
-		case PW_EAP_MSCHAPV2_ACK:
 #ifdef WITH_PROXY
 			/*
 			 *	It's a success.  Don't proxy it.
@@ -562,9 +582,23 @@ failure:
 	 *	The MS-Length field is 5 + value_size + length
 	 *	of name, which is put after the response.
 	 */
+	if (eap_ds->response->type.length < (5 + MSCHAPV2_RESPONSE_LEN + 1)) {
+		REDEBUG("MS-CHAPv2 response packet is too short %zu < %d",
+			eap_ds->response->type.length, 5 + MSCHAPV2_RESPONSE_LEN + 1);
+		return 0;
+	}
+
 	length = (eap_ds->response->type.data[2] << 8) | eap_ds->response->type.data[3];
 	if ((length < (5 + 49)) || (length > (256 + 5 + 49))) {
-		REDEBUG("Response contains contradictory length %zu %d", length, 5 + 49);
+		REDEBUG("Response contains invalid MS-Length %zd", length);
+		return 0;
+	}
+
+	/*
+	 *	type.length is already updated to remove the EAP header.
+	 */
+	if (length != eap_ds->response->type.length) {
+		REDEBUG("Response contains invalid MS-Length %zd vs %zd", length, eap_ds->response->type.length);
 		return 0;
 	}
 
@@ -627,6 +661,7 @@ packet_ready:
 
 		tunnel->tls_session = arg;
 		tunnel->callback = mschap_postproxy;
+		tunnel->type_inst = inst;
 
 		/*
 		 *	Associate the callback with the request.

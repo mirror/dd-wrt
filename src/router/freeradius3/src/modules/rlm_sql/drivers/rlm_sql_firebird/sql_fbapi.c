@@ -19,7 +19,7 @@
  * Copyright 2006  Vitaly Bodzhgua <vitaly@eastera.net>
  */
 
-RCSID("$Id: b217a78ca1023c3b5afa90ededef978fd3e76d53 $")
+RCSID("$Id: 88e3c4bf61174ebe2700825680a603fd0d7d4515 $")
 
 #include "sql_fbapi.h"
 
@@ -72,7 +72,7 @@ static void fb_set_sqlda(XSQLDA *sqlda) {
 		}
 
 		if (sqlda->sqlvar[i].sqltype & 1) {
-			sqlda->sqlvar[i].sqlind = (short*)calloc(sizeof(short), 1);
+			sqlda->sqlvar[i].sqlind = (short*)calloc(1, sizeof(short));
 		} else {
 			sqlda->sqlvar[i].sqlind = 0;
 		}

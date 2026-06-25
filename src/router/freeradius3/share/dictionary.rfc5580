@@ -5,7 +5,7 @@
 #	Attributes and values defined in RFC 5580.
 #	http://www.ietf.org/rfc/rfc5580.txt
 #
-#	$Id: 07de61e865e7a2d0c93592cafdb26eafb407b28b $
+#	$Id: 8ba8305c53c01bc665309416361c6c3d945a7011 $
 #
 
 # One ASCII character of Namespace ID
@@ -41,3 +41,5 @@ VALUE	Requested-Location-Info		Users-Location		4
 VALUE	Requested-Location-Info		NAS-Location		8
 VALUE	Requested-Location-Info		Future-Requests		16
 VALUE	Requested-Location-Info		None			32
+
+VALUE	Error-Cause			Location-Info-Required	509

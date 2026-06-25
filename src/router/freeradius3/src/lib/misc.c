@@ -1,7 +1,7 @@
 /*
  * misc.c	Various miscellaneous functions.
  *
- * Version:	$Id: 780cbfbf589da32781d2247a9261140b165fd38c $
+ * Version:	$Id: 80ed3dcfffb86c53e58e1b33500e231030c90cb5 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 780cbfbf589da32781d2247a9261140b165fd38c $")
+RCSID("$Id: 80ed3dcfffb86c53e58e1b33500e231030c90cb5 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -445,6 +445,7 @@ int fr_pton6(fr_ipaddr_t *out, char const *value, ssize_t inlen, bool resolve, b
 	if (!p) {
 		out->prefix = 128;
 		out->af = AF_INET6;
+		out->scope = 0;
 
 		/*
 		 *	Allow '*' as the wildcard address
@@ -499,6 +500,7 @@ int fr_pton6(fr_ipaddr_t *out, char const *value, ssize_t inlen, bool resolve, b
 
 	out->prefix = (uint8_t) prefix;
 	out->af = AF_INET6;
+	out->scope = 0;
 
 	return 0;
 }
@@ -2171,8 +2173,6 @@ void fr_quick_sort(void const *to_sort[], int min_idx, int max_idx, fr_cmp_t cmp
 	fr_quick_sort(to_sort, min_idx, part - 1, cmp);
 	fr_quick_sort(to_sort, part + 1, max_idx, cmp);
 }
-
-#define USEC 1000000
 
 /** Convert a time specified in milliseconds to a timeval
  *

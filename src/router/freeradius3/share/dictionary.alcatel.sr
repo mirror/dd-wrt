@@ -6,7 +6,7 @@
 #
 #	Alcatel-Lucent Service Router dictionary.
 #
-#	$Id: 0445316a7129d45d851841263db89b2754dc3271 $
+#	$Id: b67401f9e130ed39e801d2d0821644a32a834acd $
 #
 # See "7750 Service Router - RADIUS Attributes Reference Guide".
 #
@@ -391,6 +391,15 @@ ATTRIBUTE	Alc-Onetime-Http-Redirect-Reactivate	185	string
 ATTRIBUTE	Alc-ToServer-Dhcp6-Options		191	octets
 ATTRIBUTE	Alc-ToClient-Dhcp6-Options		192	octets
 
+ATTRIBUTE	Alc-AA-App-Service-Options		193	string
+
+ATTRIBUTE	Alc-IPv6-Acct-Input-Packets		194	uint32
+ATTRIBUTE	Alc-IPv6-Acct-Input-Octets		195	uint32
+ATTRIBUTE	Alc-IPv6-Acct-Input-Gigawords		196	uint32
+ATTRIBUTE	Alc-IPv6-Acct-Output-Packets		197	uint32
+ATTRIBUTE	Alc-IPv6-Acct-Output-Octets		198	uint32
+ATTRIBUTE	Alc-IPv6-Acct-Output-Gigawords		199	uint32
+
 #
 #  MUST have renew time <= rebind time <= preferred lifetime <= valid lifetime
 #
@@ -404,6 +413,9 @@ ATTRIBUTE	Alc-Dhcp6-Rebind-Time			203	integer
 ATTRIBUTE	Alc-Wlan-SSID-VLAN			206	string
 
 ATTRIBUTE	Alc-UPnP-Sub-Override-Policy		217	string
+
+ATTRIBUTE	Alc-Error-Code				226	uint32
+ATTRIBUTE	Alc-Error-Message			227	string
 
 ATTRIBUTE	Alc-Trigger-Acct-Interim		228	string
 

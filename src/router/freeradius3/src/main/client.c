@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 859e0578bdaa787fa9f3e4f519936769bec3f30f $
+ * $Id: 1d50e4f4e0f4eef54b83576d9b138676325faca0 $
  * @file main/client.c
  * @brief Manage clients allowed to communicate with the server.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000 Alan DeKok <aland@ox.org>
  * @copyright 2000 Miquel van Smoorenburg <miquels@cistron.nl>
  */
-RCSID("$Id: 859e0578bdaa787fa9f3e4f519936769bec3f30f $")
+RCSID("$Id: 1d50e4f4e0f4eef54b83576d9b138676325faca0 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -518,6 +518,8 @@ static const CONF_PARSER client_config[] = {
 	{ "require_message_authenticator", FR_CONF_POINTER(PW_TYPE_STRING| PW_TYPE_IGNORE_DEFAULT, &require_message_authenticator), NULL },
 	{ "limit_proxy_state", FR_CONF_POINTER(PW_TYPE_STRING| PW_TYPE_IGNORE_DEFAULT, &limit_proxy_state), NULL },
 
+	{ "protocol_error", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, RADCLIENT, protocol_error), "no" },
+
 	{ "secret", FR_CONF_OFFSET(PW_TYPE_STRING | PW_TYPE_SECRET, RADCLIENT, secret), NULL },
 	{ "shortname", FR_CONF_OFFSET(PW_TYPE_STRING, RADCLIENT, shortname), NULL },
 
@@ -734,6 +736,7 @@ static const CONF_PARSER dynamic_config[] = {
 	{ "FreeRADIUS-Client-Shortname",  FR_CONF_OFFSET(PW_TYPE_STRING, RADCLIENT, shortname), "" },
 	{ "FreeRADIUS-Client-NAS-Type",  FR_CONF_OFFSET(PW_TYPE_STRING, RADCLIENT, nas_type), NULL },
 	{ "FreeRADIUS-Client-Virtual-Server",  FR_CONF_OFFSET(PW_TYPE_STRING, RADCLIENT, server), NULL },
+	{ "FreeRADIUS-Client-Protocol-Error",  FR_CONF_OFFSET(PW_TYPE_BOOLEAN, RADCLIENT, protocol_error), NULL },
 
 	CONF_PARSER_TERMINATOR
 };

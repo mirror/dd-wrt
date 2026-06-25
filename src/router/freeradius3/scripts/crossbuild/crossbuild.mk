@@ -167,7 +167,7 @@ $(DD)/docker.refresh.${1}: $(DD)/stamp-up.${1}
 .PHONY: $(DD)/docker.run.${1}
 $(DD)/docker.run.${1}: $(DD)/docker.refresh.${1}
 	${Q}echo "TEST ${1} > $(DD)/log.${1}"
-	${Q}docker container exec $(CB_CPREFIX)${1} sh -c '(cd /srv/build && make && make test)' > $(DD)/log.${1} 2>&1 || echo FAIL ${1}
+	${Q}docker container exec $(CB_CPREFIX)${1} sh -c '(cd /srv/build && make && make test)' > $(DD)/log.${1} 2>&1 || ( echo FAIL ${1} && false )
 
 #
 #  Stop the docker container

@@ -16,7 +16,7 @@
 #ifndef MAP_H
 #define MAP_H
 /**
- * $Id: 584c76b4d100104087071d843904ab86b42bf7f7 $
+ * $Id: 393d8b61f1aff7cd1fc08ed9012fe6c2c9899925 $
  *
  * @file map.h
  * @brief Structures and prototypes for maps
@@ -25,7 +25,7 @@
  * @copyright 2015 Arran Cudbard-bell <a.cudbardb@freeradius.org>
  */
 
-RCSIDH(map_h, "$Id: 584c76b4d100104087071d843904ab86b42bf7f7 $")
+RCSIDH(map_h, "$Id: 393d8b61f1aff7cd1fc08ed9012fe6c2c9899925 $")
 
 #include <freeradius-devel/conffile.h>
 #include <freeradius-devel/tmpl.h>
@@ -44,7 +44,12 @@ extern "C" {
  *
  * @see vp_tmpl_t
  */
-typedef struct vp_map {
+#ifndef VP_MAP_T
+#define VP_MAP_T
+typedef struct vp_map vp_map_t;
+#endif
+
+struct vp_map {
 	vp_tmpl_t		*lhs;	//!< Typically describes the attribute to add, modify or compare.
 	vp_tmpl_t		*rhs;   //!< Typically describes a literal value or a src attribute to copy or compare.
 
@@ -54,7 +59,7 @@ typedef struct vp_map {
 					//!< logging validation errors.
 
 	struct vp_map		*next;	//!< The next valuepair map.
-} vp_map_t;
+};
 
 #ifndef WITH_VERIFY_PTR
 #  define VERIFY_MAP(_x) rad_assert((_x)->lhs)

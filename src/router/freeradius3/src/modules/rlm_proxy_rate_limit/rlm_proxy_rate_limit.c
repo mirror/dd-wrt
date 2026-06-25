@@ -1,30 +1,27 @@
 /*
- * Copyright (C) 2024 Network RADIUS SAS (legal@networkradius.com)
+ *   This program is is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or (at
+ *   your option) any later version.
  *
- * This software may not be redistributed in any form without the prior
- * written consent of Network RADIUS.
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program; if not, write to the Free Software
+ *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
 /**
- * $Id: 1f8b348dc4802ecc7cde5f95e2cc96ccc0f7302d $
+ * $Id: 3f55a858c444f520987e9fe9bab3227eb8500114 $
  * @file rlm_proxy_rate_limit.c
  * @brief Rate limiting when proxying requests
  *
  * @copyright 2024 Network RADIUS SAS (legal@networkradius.com)
  */
-RCSID("$Id: 1f8b348dc4802ecc7cde5f95e2cc96ccc0f7302d $")
+RCSID("$Id: 3f55a858c444f520987e9fe9bab3227eb8500114 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -58,6 +55,7 @@ typedef struct {
 	int			id;
 	rbtree_t		*tree;
 	fr_dlist_t		expiry_list;
+	time_t			last_checked;
 #ifdef HAVE_PTHREAD_H
 	pthread_mutex_t		mutex;
 #endif
@@ -96,7 +94,7 @@ typedef struct {
 	 *	Rough count of number of times the rate has been
 	 *	exceeded since suppression began.
 	 */
-	int				count;
+	uint32_t       			count;
 
 	/*
 	 *	Table containing this entry so we can lookup relevant
@@ -112,10 +110,9 @@ struct rlm_proxy_rate_limit_s {
 	uint32_t			max_entries;
 	uint32_t			idle_timeout;
 	uint32_t			num_subtables;
+	uint32_t			count;
 	uint32_t			window;
-
 	rlm_proxy_rate_limit_table_t	tables[MAX_NUM_SUBTABLES];
-
 };
 
 static const CONF_PARSER module_config[] = {
@@ -123,6 +120,7 @@ static const CONF_PARSER module_config[] = {
 	{ "idle_timeout", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_proxy_rate_limit_t, idle_timeout), "2" },
 	{ "num_subtables", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_proxy_rate_limit_t, num_subtables), "256" },
 	{ "window", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_proxy_rate_limit_t, window), "1"},
+	{ "count", FR_CONF_OFFSET(PW_TYPE_INTEGER, rlm_proxy_rate_limit_t, count), "2"},
 	CONF_PARSER_TERMINATOR
 };
 
@@ -137,6 +135,7 @@ static rlm_proxy_rate_limit_table_t* derive_key_and_table(rlm_proxy_rate_limit_t
 
 	uint32_t	hash;
 	char		hash_hex[9];
+	char		*p;
 	VALUE_PAIR	*vp1, *vp2;
 
 	fr_assert(*key_len >= 6);	/* Satisfy analyser */
@@ -153,22 +152,37 @@ static rlm_proxy_rate_limit_table_t* derive_key_and_table(rlm_proxy_rate_limit_t
 
 	/*
 	 *	Should not happen since the buffer we are given is sufficient: 512 = 253 + 253 + 6
+	 *	The actual key uses 6 (hash prefix) + 1 (len) + vp1 + 1 (len) + vp2 = 8 + vp1 + vp2
 	 */
-	if (unlikely(6 + vp1->vp_length + vp2->vp_length > *key_len)) {
+	if (unlikely(8 + vp1->vp_length + vp2->vp_length > *key_len)) {
 		RDEBUG("Not rate limiting a request where the key expansion is too large.");
 		return NULL;
 	}
 
 	/*
-	 *	key will be "HHHHHH{User-Name}{Calling-Station-Id}"
+	 *	key will be "HHHHHHL{User-Name}L{Calling-Station-Id}"
+	 *
+	 *	We prefix the key with a hash of the User-Name and
+	 *	Calling-Station-ID, which makes the RB tree generally
+	 *	much more balanced.
+	 *
+	 *	We prefix the User-Name and Calling-Station-ID strings
+	 *	with their lengths, so that we can later print out
+	 *	information about the keys which are limited or not
+	 *	limited.
 	 */
-        memcpy(key + 6, vp1->vp_strvalue, vp1->vp_length);
-	memcpy(key + 6 + vp1->vp_length, vp2->vp_strvalue, vp2->vp_length);
-	*key_len = 6 + vp1->vp_length + vp2->vp_length;
+	p = key + 6;
+	*(p++) = vp1->vp_length;
+	memcpy(p, vp1->vp_strvalue, vp1->vp_length);
+	p += vp1->vp_length;
+
+	*(p++) = vp2->vp_length;
+	memcpy(p, vp2->vp_strvalue, vp2->vp_length);
+	*key_len = 8 + vp1->vp_length + vp2->vp_length;
 
 	/*
 	 *	Stable map of the key to a 4-octet value. Provides
-	 *	good distribution with similar prefixes.
+	 *	a better distribution of keys in the RB tree.
 	 */
 	hash = fr_hash(key + 6, (*key_len) - 6);
 
@@ -180,7 +194,7 @@ static rlm_proxy_rate_limit_table_t* derive_key_and_table(rlm_proxy_rate_limit_t
 	memcpy(key, hash_hex, 6);
 
 	/*
-	 *	Last octet used to pick one of the tables.
+	 *	The last octet used to pick one of the tables.
 	 */
 	return &inst->tables[(hash & 0xff) % inst->num_subtables];
 
@@ -193,37 +207,114 @@ static rlm_proxy_rate_limit_table_t* derive_key_and_table(rlm_proxy_rate_limit_t
 static int CC_HINT(nonnull) mod_common(void * instance, REQUEST *request)
 {
 	rlm_proxy_rate_limit_t		*inst = instance;
-	char				key[512];
+	char				key[512 + 8];
 	size_t				key_len = sizeof(key);
 	rlm_proxy_rate_limit_table_t	*table;
 	rlm_proxy_rate_limit_entry_t	*entry, my_entry;
 
-	if (!(table = derive_key_and_table(inst, request, key, &key_len)))
+	/*
+	 *	Nothing in the packet lets us find the correct table.
+	 */
+	if (!(table = derive_key_and_table(inst, request, key, &key_len))) {
 		return 0;
+	}
 
 	my_entry.key = key;
 	my_entry.key_len = key_len;
+
+	PTHREAD_MUTEX_LOCK(&table->mutex);
+
 	entry = rbtree_finddata(table->tree, &my_entry);
 
-	if (!entry)
-		return 0;
+	/*
+	 *	If nothing is found, then once a second we clean up
+	 *	old entries.
+	 */
+	if (!entry) {
+		time_t now;
+
+		if (rbtree_num_elements(table->tree) == 0) {
+			PTHREAD_MUTEX_UNLOCK(&table->mutex);
+			return 0;
+		}
+
+		/*
+		 *	We've already cleaned up the list this second,
+		 *	don't do it again.
+		 */
+		if (table->last_checked == request->timestamp) {
+			PTHREAD_MUTEX_UNLOCK(&table->mutex);
+			return 0;
+		}
+
+		/*
+		 *	Grab the first entry, and see if it has
+		 *	expired.
+		 */
+		entry = fr_dlist_head(&table->expiry_list);
+
+		table->last_checked = now = time(NULL);
+
+		if (!entry || (entry->expires >= now)) {
+			PTHREAD_MUTEX_UNLOCK(&table->mutex);
+			return 0;
+		}
+
+		/*
+		 *	Delete the entry.
+		 */
+		fr_dlist_entry_unlink(&entry->dlist);
+		goto expires;
+	}
 
 	if (entry->expires <= request->timestamp) {
-		RDEBUG3("Rate limit entry %.*s (%d) has expired", 6, entry->key, entry->table->id);
+		char const *name, *calling_station_id;
+
+		fr_dlist_entry_unlink(&entry->dlist);
+
+	expires:
+		name = entry->key + 6;
+		calling_station_id = name + *name + 1;
+
+		INFO("Proxy-Rate-Limit expired for User-Name = %.*s, Calling-Station-Id = %.*s",
+		     (int) *name, name + 1,
+		     (int) *calling_station_id, calling_station_id + 1);
+
 		rbtree_deletebydata(table->tree, entry);
+		PTHREAD_MUTEX_UNLOCK(&table->mutex);
 		return 0;
-	};
+	}
 
 	/*
-	 *	@todo - add configurable threshold. For now, it's only one packet.
-	 */
-
-	/*
-	 *	Limit only when active and for new requests, not
+	 *	Limit only when active and for new requests, not for
 	 *	retransmissions.
 	 */
-	if (!entry->active || entry->last_id == request->packet->id)
+	if (!entry->active || (entry->last_id == request->packet->id)) {
+		PTHREAD_MUTEX_UNLOCK(&table->mutex);
 		return 0;
+	}
+
+	/*
+	 *	Don't rate limit packets which are outside of the window.
+	 */
+	if ((request->timestamp - entry->last_request) > inst->window) {
+		entry->last_request = request->timestamp;
+		entry->active = false;
+		entry->count = 0;
+		PTHREAD_MUTEX_UNLOCK(&table->mutex);
+		return 0;
+	}
+
+	entry->last_request = request->timestamp;
+
+	/*
+	 *	Don't rate limit until we get enough hits.
+	 */
+	entry->count++;
+	if (entry->count < inst->count) {
+		PTHREAD_MUTEX_UNLOCK(&table->mutex);
+		return 0;
+	}
 
 	RDEBUG("Active rate limit entry %.*s (%d) matched for new request. Cancelling proxy "
 		"and sending Access-Reject. Instance %d.", 6, entry->key, entry->table->id, entry->count);
@@ -238,19 +329,15 @@ static int CC_HINT(nonnull) mod_common(void * instance, REQUEST *request)
 	 *	long as the end stations continues to periodically
 	 *	retry, which is likely not what we want.
 	 */
-	if ((request->timestamp - entry->last_request) < inst->window &&
-	    (entry->expires < request->timestamp + inst->idle_timeout)) {
+	if (entry->expires < (request->timestamp + inst->idle_timeout)) {
 		entry->expires = request->timestamp + inst->idle_timeout;
 
-		PTHREAD_MUTEX_LOCK(&table->mutex);
 		fr_dlist_entry_unlink(&entry->dlist);
 		fr_dlist_insert_tail(&table->expiry_list, &entry->dlist);
-		PTHREAD_MUTEX_UNLOCK(&table->mutex);
 		RDEBUG3("Active rate limit entry %.*s (%d) extended", 6, entry->key, entry->table->id);
 	}
 
-	entry->last_request = request->timestamp;
-	entry->count++;
+	PTHREAD_MUTEX_UNLOCK(&table->mutex);
 	return -1;
 }
 
@@ -301,7 +388,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authorize(void * instance, REQUEST *requ
 static rlm_rcode_t CC_HINT(nonnull) mod_post_proxy(void *instance, REQUEST *request)
 {
 	rlm_proxy_rate_limit_t		*inst = instance;
-	char				key[512];
+	char				key[512 + 8];
 	size_t				key_len = sizeof(key);
 	rlm_proxy_rate_limit_table_t	*table;
 	rlm_proxy_rate_limit_entry_t	*entry, my_entry;
@@ -314,6 +401,9 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_proxy(void *instance, REQUEST *requ
 
 	my_entry.key = (char *)key;
 	my_entry.key_len = key_len;
+
+	PTHREAD_MUTEX_LOCK(&table->mutex);
+
 	entry = rbtree_finddata(table->tree, &my_entry);
 	if (!entry) {
 
@@ -321,11 +411,13 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_proxy(void *instance, REQUEST *requ
 		 *	Too many entries in the table.  Delete the oldest one.
 		 */
 		if (rbtree_num_elements(table->tree) > inst->max_entries) {
-			PTHREAD_MUTEX_LOCK(&table->mutex);
-			entry = fr_dlist_head(&table->expiry_list);
-			PTHREAD_MUTEX_UNLOCK(&table->mutex);
+			rlm_proxy_rate_limit_entry_t *old;
 
-			rbtree_deletebydata(table->tree, entry);
+			old = fr_dlist_head(&table->expiry_list);
+			if (old) {
+				fr_dlist_entry_unlink(&old->dlist);
+				rbtree_deletebydata(table->tree, old);
+			}
 		}
 
 		MEM(entry = talloc_zero(NULL, rlm_proxy_rate_limit_entry_t));
@@ -347,12 +439,13 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_proxy(void *instance, REQUEST *requ
 		 *	maintain list in order of expiry time, without
 		 *	requiring two lists.)
 		 */
-		entry->expires = request->timestamp + 1;
+		entry->expires = request->timestamp + inst->window * inst->count;
 
 		/*
 		 *	Save it.
 		 */
 		if (!rbtree_insert(table->tree, entry)) {
+			PTHREAD_MUTEX_UNLOCK(&table->mutex);
 			talloc_free(entry);
 			return RLM_MODULE_OK;
 		}
@@ -361,15 +454,28 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_proxy(void *instance, REQUEST *requ
 	} else {
 
 		/*
-		 * Trigger suppression after two Access-Rejects from a home server
-		 * for different requests (not retransmissions) are received within
-		 * the same second.
+		 *	Trigger suppression after two Access-Rejects from a home server
+		 *	for different requests (not retransmissions) are received within
+		 *	the same window.
 		 */
-		if (!entry->active && entry->last_id != request->packet->id &&
-		    request->timestamp - entry->last_reject < 1) {
+		if (!entry->active && (entry->last_id != request->packet->id) &&
+		    ((request->timestamp - entry->last_reject) < inst->window)) {
+			char const *name, *calling_station_id;
+
 			entry->active = true;
-			entry->count = 0;
-			RDEBUG("Rate limit entry %.*s (%d) activated", 6, entry->key, entry->table->id);
+			entry->count++;
+
+			if (entry->count >= inst->count) {
+				RDEBUG("Rate limit entry %.*s (%d) activated", 6, entry->key, entry->table->id);
+				(void) pair_make_config("Proxy-Rate-Limit", "yes", T_OP_SET);
+
+				name = entry->key + 6;
+				calling_station_id = name + *name + 1;
+
+				INFO("Proxy-Rate-Limit enabled for User-Name = %.*s, Calling-Station-Id = %.*s",
+				     (int) *name, name + 1,
+				     (int) *calling_station_id, calling_station_id + 1);
+			}
 		} else {
 			RDEBUG3("Rate limit entry %.*s (%d) updated", 6, entry->key, entry->table->id);
 		}
@@ -378,15 +484,14 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_proxy(void *instance, REQUEST *requ
 		entry->last_id = request->packet->id;
 
 		/*
-		 * Ditto comment above ("request->timestamp + inst->idle_timeout") should we later
-		 * decide to proactively free expiry list entries.
+		 *	Ditto comment above ("request->timestamp + inst->idle_timeout") should we later
+		 *	decide to proactively free expiry list entries.
 		 */
 		entry->expires = request->timestamp +
 			(entry->active ? inst->idle_timeout : 1);
 
 	}
 
-	PTHREAD_MUTEX_LOCK(&table->mutex);
 	fr_dlist_entry_unlink(&entry->dlist);
 	fr_dlist_insert_tail(&table->expiry_list, &entry->dlist);
 	PTHREAD_MUTEX_UNLOCK(&table->mutex);
@@ -405,14 +510,20 @@ static int cmp_table_entry(void const *one, void const *two)
 	return memcmp(a->key, b->key, a->key_len);
 }
 
+/*
+ *	Called from rbtree_deletebydata (under table->mutex) or
+ *	rbtree_free during mod_detach (no concurrent access).
+ *
+ *	The caller must have already unlinked the entry from the
+ *	dlist, or be in a context where no mutex is needed (detach).
+ *	The fr_dlist_entry_unlink here handles the detach case and
+ *	is a safe no-op if the entry was already unlinked.
+ */
 static void free_table_entry(void *data)
 {
 	rlm_proxy_rate_limit_entry_t *entry = (rlm_proxy_rate_limit_entry_t *) data;
 
-	PTHREAD_MUTEX_LOCK(&entry->table->mutex);
 	fr_dlist_entry_unlink(&entry->dlist);
-	PTHREAD_MUTEX_UNLOCK(&entry->table->mutex);
-
 	talloc_free(entry);
 }
 
@@ -431,6 +542,12 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 		inst->window = 1;
 	} else {
 		FR_INTEGER_BOUND_CHECK("window", inst->window, <=, 5);
+	}
+
+	if (!inst->count) {
+		inst->count = 1;
+	} else {
+		FR_INTEGER_BOUND_CHECK("count", inst->count, <=, 5);
 	}
 
 	/* Undocumented. Intended to simplify testing. */
@@ -458,7 +575,7 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 
 		table->id = i;
 
-		if (!(table->tree = rbtree_create(inst, cmp_table_entry, free_table_entry, RBTREE_FLAG_LOCK))) {
+		if (!(table->tree = rbtree_create(inst, cmp_table_entry, free_table_entry, 0))) {
 			cf_log_err_cs(conf, "Failed creating internal data structure for tracking table %d", i);
 			goto fail;
 		}
@@ -482,7 +599,7 @@ fail:
 	 *  Release what we allocated prior to failure.
 	 *
 	 */
-	for (i--; i > 0; i--) {
+	for (i--; i >= 0; i--) {
 #ifdef HAVE_PTHREAD_H
 		pthread_mutex_destroy(&inst->tables[i].mutex);
 #endif

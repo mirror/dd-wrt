@@ -1,27 +1,20 @@
 /*
- * rlm_eap_teap.c  contains the interfaces that are called from eap
+ *   This program is is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or (at
+ *   your option) any later version.
  *
- * Version:     $Id: fcf9717257a17b39495fe9a646d4d57724187adf $
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
  *
- * Copyright (C) 2022 Network RADIUS SARL <legal@networkradius.com>
- *
- * This software may not be redistributed in any form without the prior
- * written consent of Network RADIUS.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program; if not, write to the Free Software
+ *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
-RCSID("$Id: fcf9717257a17b39495fe9a646d4d57724187adf $")
+RCSID("$Id: 0a410ea4373f4e2f3db986ee16785d413ad9124a $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include "eap_teap.h"
@@ -72,7 +65,7 @@ typedef struct rlm_eap_teap_t {
 	char const *authority_identity;
 
 	uint16_t	identity_type[2];
-
+	bool		identity_type_required[2];
 	char const	*identity_type_name;
 
 	/*
@@ -205,16 +198,22 @@ static int mod_instantiate(CONF_SECTION *cs, void **instance)
 
 		p = inst->identity_type_name;
 		i = 0;
+		inst->identity_type_required[0] = inst->identity_type_required[1] = true;
 
 		while (*p) {
 			while (isspace((uint8_t) *p)) p++;
 
+			if (*p == '?') {
+				inst->identity_type_required[i] = false;
+				p++;
+			}
+
 			if (strncasecmp(p, "user", 4) == 0) {
-				inst->identity_type[i] = 1;
+				inst->identity_type[i] = EAP_TEAP_IDENTITY_TYPE_USER;
 				p += 4;
 
 			} else if (strncasecmp(p, "machine", 7) == 0) {
-				inst->identity_type[i] = 2;
+				inst->identity_type[i] = EAP_TEAP_IDENTITY_TYPE_MACHINE;
 				p += 7;
 
 			} else {
@@ -244,6 +243,23 @@ static int mod_instantiate(CONF_SECTION *cs, void **instance)
 			if (*p != ',') goto invalid_identity;
 
 			p++;
+		}
+
+		if (i == 0) {
+			cf_log_err_cs(cs, "Invalid value for identity_types - it cannot be empty");
+			return -1;
+		}
+
+		if ((i == 1) && !inst->identity_type_required[0]) {
+			cf_log_err_cs(cs, "Optional value can only be used when two methods are configured in identity_types = '%s'",
+				      inst->identity_type_name);
+			return -1;
+		}
+
+		if ((i == 2) && !inst->identity_type_required[0] && !inst->identity_type_required[1]) {
+			cf_log_err_cs(cs, "Optional value can only be used for one method in identity_types = '%s'",
+				      inst->identity_type_name);
+			return -1;
 		}
 	}
 
@@ -367,22 +383,22 @@ static int mod_session_init(void *type_arg, eap_handler_t *handler)
 
 		vp = fr_pair_make(request->state_ctx, &request->state, "FreeRADIUS-EAP-TEAP-Identity-Type", NULL, T_OP_SET);
 		if (vp) {
+			RDEBUG("Setting %s&session-state:FreeRADIUS-EAP-TEAP-Identity-Type = %s",
+			       inst->identity_type_required[0] ? "" : "(optional) ", (inst->identity_type[0] == EAP_TEAP_IDENTITY_TYPE_USER) ? "User" : "Machine");
 			vp->vp_short = inst->identity_type[0];
-			RDEBUG("Setting &session-state:FreeRADIUS-EAP-TEAP-Identity-Type = %s",
-			       (vp->vp_short == 1) ? "User" : "Machine");
-
-			t->auths[vp->vp_short].required = true;
+			t->identity_types[inst->identity_type[0]].required = inst->identity_type_required[0];
 		}
+		t->identities_remaining++;
 
 		if (inst->identity_type[1]) {
 			vp = fr_pair_make(request->state_ctx, &request->state, "FreeRADIUS-EAP-TEAP-Identity-Type", NULL, T_OP_ADD);
 			if (vp) {
+				RDEBUG("Followed by %s&session-state:FreeRADIUS-EAP-TEAP-Identity-Type += %s",
+				       inst->identity_type_required[1] ? "" : "(optional) ", (inst->identity_type[1] == EAP_TEAP_IDENTITY_TYPE_USER) ? "User" : "Machine");
 				vp->vp_short = inst->identity_type[1];
-				RDEBUG("Followed by &session-state:FreeRADIUS-EAP-TEAP-Identity-Type += %s",
-				       (vp->vp_short == 1) ? "User" : "Machine");
-
-				t->auths[vp->vp_short].required = true;
+				t->identity_types[inst->identity_type[1]].required = inst->identity_type_required[1];
 			}
+			t->identities_remaining++;
 		}
 	}
 
@@ -445,11 +461,6 @@ static int mod_process(void *arg, eap_handler_t *handler)
 	 *	an EAP-TLS-Success packet here.
 	 */
 	case FR_TLS_SUCCESS:
-		if (SSL_session_reused(tls_session->ssl)) {
-			RDEBUG("Skipping Phase2 due to session resumption");
-			goto do_keys;
-		}
-
 		if (t && t->authenticated) {
 			if (t->accept_vps) {
 				RDEBUG2("Using saved attributes from the original Access-Accept");

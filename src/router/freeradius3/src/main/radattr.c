@@ -1,7 +1,7 @@
 /*
  * radattr.c	RADIUS Attribute debugging tool.
  *
- * Version:	$Id: 8accd0dd87e79e942a7dc80ab7fb076dc99b04fd $
+ * Version:	$Id: 58bf24fd58d5f0bc99f3d1dd4dabf778c9e3f49b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2010  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id: 8accd0dd87e79e942a7dc80ab7fb076dc99b04fd $")
+RCSID("$Id: 58bf24fd58d5f0bc99f3d1dd4dabf778c9e3f49b $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -845,6 +845,7 @@ static void process_file(const char *root_dir, char const *filename)
 				continue;
 			}
 
+			fr_pair_list_sort(&head, fr_dhcp_attr_cmp);
 			fr_cursor_init(&cursor, &head);
 
 

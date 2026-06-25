@@ -1,3 +1,104 @@
+FreeRADIUS 3.2.10 Wed 03 Jun 2026 12:00:00 UTC urgency=high
+	Configuration changes
+
+	Feature improvements
+
+	Bug fixes
+	* Correct bug where detail file reader would not read files.
+	  Patch from Bjørn Mork.  Fixes #5870
+
+FreeRADIUS 3.2.9 Mon 01 Jun 2026 12:00:00 UTC urgency=low
+	Configuration changes
+	* Add "protocol_error = yes" configuration to clients.  If set,
+	  the server can return Protocol-Error responses to the client.
+	* radclient can now suppress Message-Authenticator in Access-Request,
+	  when the input packet contains "Message-Authenticator !* ANY"
+	  Don't use this in production!
+	* Set "suppress_secrets = true" by default.
+	* Add "connect_fail_interval" to home_server configuration.  If a
+	  connection fails, the server will wait this time before trying to
+	  connect again.
+	* Add "certificate_fail_interval" to home_server configuration.
+	  If a connection succeeds but the home_server certificate is
+	  invalid, the server will wait this time before trying to connect
+	  again.
+	* Add `update` section to home_server configuration.
+	  Status-Server packets can therefore be customized.
+	* Add "cipher_suites" to tls{} configuration.  See
+	  raddb/sites-available/tls.  This is mainly used to set the
+	  cipher suites for TLS-PSK with TLS 1.3.
+
+	Feature improvements
+	* Initial implementation of Protocol-Failure as per IETF draft.
+	  The functionality is disabled by default, but can be enabled
+	  via new configuration flags.
+	* Always allow Protocol-Error packet as valid response to any
+	  packet.
+	* Add Error-Cause attributes to CoA-NAK and Disconnect-NAK
+	* added filter_username_nai to policy.d/filter, mainly for use in
+	  eduroam.
+	* Updates to VSCode default configuration.
+	* Cleanups and add log messages for rlm_proxy_rate_limit.
+	* allow 389ds legacy PBKDF2_SHA256 to use arbitrary iteration
+	  count.  (#5654)
+	* amend policy insert_acct_class/acct_unique to work in
+	  environments with multiple Class attributes (#5337)
+	* Tweak sqlippool messages to make them clearer.
+	* Print log message if the server receives a correct authenticated
+	  proxy response packet, but which has an unexpected code.
+	  e.g. received Access-Accept in response to an Accounting-Request.
+	* New installations now set "suppress_secrets=true" by default.
+	  The server also prints messages in debug mode which explains why
+	  the secrets are being suppressed.
+	* Allow parallel build for Debian.  Fixes #5774.
+	* Add RTBrick and other dictionaries.
+	* Add documentation for ntlm_auth and spaces in passwords.
+	  Addresses #5654.
+
+	Bug fixes
+	* Many minor bug fixes and cleanups.
+	* Fixes to RadSec.
+	* Many other fixes to socket and event handling, which enable
+	  increased scalability.
+	* Fix issues found with EAP-MSCHAPv2, EAP-PWD, and EAP-MD5.
+	* Fix run_dir (#5637) and MemoryLimit (#5639)
+	* Disable the PCRE JIT at run time if it can't allocate
+	  executable memory.
+	* Set selinux boolean to allow PCRE2 JIT
+	* If you set the clock 25 years in the future, don't spam
+	  systemd.  Fixes #5642
+	* Don't load the OpenSSL legacy provider when built with
+	  --enable-fips-workaround.  Fixes #5644.
+	* Address potential leaks when opening many RADIUS/TLS proxy
+	  sockets.
+	* Encode multiple DHCP Option 82 as one option, instead of as
+	  multiple options.
+	* Update the rlm_cache_redis driver to reconnect on connection
+	  failure.  Fixes #5651.
+	* Tweaks to the processing state machine to handle more corner
+	  cases / race conditions.  Thanks to Paul Dekkers for testing.
+	* Don't close the main listen socket for TCP.  Fixes #5661.
+	* Fix rlm_dspk to properly support dynamic filenames.
+	* Don't crash in corner cases when running Post-Proxy-Type Fail.
+	* Use correct name offsets in proxy_rate_limit.  Fixes #5675.
+	* push fallback virtual server to child thread.  Fixes #5679.
+	* Correct corner case in hash table.  Fixes #5680.
+	* Allow new proxy sockets after reaching "too many sockets", when
+	  we close an existing proxy connection.  Fixes #5964.
+	* fix consistent load balancing.  Fixes #5770.
+	* Address pthread APIs.  Fixes #5772.
+	* install headers needed to build modules.  Fixes #5778.
+	* Initialize scope in IPv6 address lookups.  Fixes #5798.
+	* Don't load legacy provider on  --enable-fips-workaround.
+	  Fixes #5775.
+	* Hoist mutex lock in TLS sockets.  Fixes #5480
+	* Fix occasional EAP-PWD authentication failure.
+	* Fix memcache storing of dates.
+	* Add more debugging information for TEAP.
+	  TEAP has limited utility, due to the incompleteness of the spec,
+	  and the severe limitations of the Windows TEAP supplicant.
+	* Return stats for "auth+acct" home servers.  Fixes #5866.
+
 FreeRADIUS 3.2.8 Wed 20 Aug 2025 12:00:00 UTC urgency=low
 	Configuration changes
 	* Replace dictionary.infinera with the correct one.

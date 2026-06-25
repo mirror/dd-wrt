@@ -3,10 +3,11 @@
 ## Makefile -- Build and run tests for the server.
 ##
 ##	http://www.freeradius.org/
-##	$Id: 3fba18c11c66f084de91b783f8f5a0e660a5b66f $
+##	$Id: 16a8c3bc873bdcc701fd9aa7fd679840e964cd65 $
 ##
 #
 include ../../Make.inc
+include test_record.mk
 
 #
 #  You can watch what it's doing by:
@@ -63,7 +64,7 @@ $(BUILD_PATH)/tests/eapol_test/eapol_test.mk: | $(BUILD_PATH)/tests/eapol_test
 	${Q}echo "EAPOL_TEST=$(EAPOL_TEST_BIN)" > $@
 	${Q}echo "TLS1_3=$(shell openssl ciphers -s -v 'ECDHE:!COMPLEMENTOFDEFAULT'| grep -q 'TLSv1.3' && echo yes)" >> $@
 	${Q}echo "OPENSSL_OK=$(shell openssl version | grep -v ' 1\.0' >/dev/null && echo yes)" >> $@
-	${Q}echo "OPENSSL3_OK=$(shell openssl version | grep -q ' OpenSSL 3\.0' && echo yes)" >> $@
+	${Q}echo "OPENSSL3_OK=$(shell openssl version | grep -q ' OpenSSL 3\.' && echo yes)" >> $@
 else
 #
 #  No OpenSSL means that we don't even try to build eapol_test
@@ -268,9 +269,11 @@ $(BUILD_PATH)/tests/eap/%.ok: $(top_builddir)/src/tests/%.conf | radiusd.kill $(
 		tail -10 $(LOG); \
 		echo "===================="; \
 		$(MAKE) radiusd.kill; \
+		$(call test_record,eap,$(notdir $(patsubst %.conf,%,$<)),FAIL,$(LOG)); \
 		exit 1; \
 	fi
 	@echo
+	${Q}$(call test_record,eap,$(notdir $(patsubst %.conf,%,$<)),PASS,$(LOG))
 	${Q}touch $@
 
 #
@@ -300,21 +303,25 @@ $(BUILD_PATH)/tests/eap/${1}-${2}.ok: $(BUILD_PATH)/tests/eap/${1}-${2}.conf
 		tail -10 $$(LOG); \
 		echo "===================="; \
 		$(MAKE) radiusd.kill; \
+		$$(call test_record,eap,$$(notdir $$(patsubst %.ok,%,$$@)),FAIL,$$(LOG)); \
 		exit 1; \
 	elif ! grep -q '^SSL: Using TLS version TLSv${2}$$$$' $$(patsubst %.ok,%,$$@).log; then \
 		echo " - " FAILED - not using TLS version ${2}; \
 		echo ">>> cmd -" $$(CMD) -r 1; \
 		echo ">>> log -" $$(LOG); \
 		$(MAKE) radiusd.kill; \
+		$$(call test_record,eap,$$(notdir $$(patsubst %.ok,%,$$@)),FAIL,$$(LOG)); \
 		exit 1; \
 	elif ! grep -q '^OpenSSL: Handshake finished - resumed=1$$$$' $$(patsubst %.ok,%,$$@).log; then \
 		echo " - " FAILED - did not use resumption; \
 		echo ">>> cmd -" $$(CMD) -r 1; \
 		echo ">>> log -" $$(LOG); \
 		$(MAKE) radiusd.kill; \
+		$$(call test_record,eap,$$(notdir $$(patsubst %.ok,%,$$@)),FAIL,$$(LOG)); \
 		exit 1; \
 	fi
 	@echo
+	${Q}$$(call test_record,eap,$$(notdir $$(patsubst %.ok,%,$$@)),PASS,$$(LOG))
 	${Q}touch $$@
 
 # EAP-FAST doesn't do TLS 1.3

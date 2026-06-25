@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: a51febaab3af68bdda852c3c8ba01cc188ab4552 $
+ * $Id: c8529b2617bea790c16f7944f6b13e81236ee1b8 $
  * @file rlm_pap.c
  * @brief Hashes plaintext passwords to compare against a prehashed reference.
  *
@@ -23,7 +23,7 @@
  * @copyright 2012       Matthew Newton <matthew@newtoncomputing.co.uk>
  * @copyright 2001       Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id: a51febaab3af68bdda852c3c8ba01cc188ab4552 $")
+RCSID("$Id: c8529b2617bea790c16f7944f6b13e81236ee1b8 $")
 USES_APPLE_DEPRECATED_API
 
 #include <freeradius-devel/radiusd.h>
@@ -1292,8 +1292,8 @@ static inline rlm_rcode_t CC_HINT(nonnull) pap_auth_pbkdf2_sha256_legacy(UNUSED 
 
 	pbkdf2_buf.iterations = ntohl(pbkdf2_buf.iterations);
 
-	if (pbkdf2_buf.iterations != PBKDF2_SHA256_LEGACY_ITERATIONS) {
-		REDEBUG("Password-With-Header {PBKDF2_SHA256} has unexpected number of iterations %d instead of %d.", pbkdf2_buf.iterations, PBKDF2_SHA256_LEGACY_ITERATIONS);
+	if (pbkdf2_buf.iterations < 1) {
+		REDEBUG("Password-With-Header {PBKDF2_SHA256} has invalid number of iterations %d.", pbkdf2_buf.iterations);
 		return RLM_MODULE_INVALID;
 	}
 

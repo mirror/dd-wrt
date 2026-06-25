@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 08929773430883e74b2986aaf228520248758665 $
+ * $Id: ccc53652bc730370b3b359c91978d6651151aa09 $
  * @file rlm_totp.c
  * @brief Execute commands and parse the results.
  *
  * @copyright 2021  The FreeRADIUS server project
  * @copyright 2021  Network RADIUS SARL (legal@networkradius.com)
  */
-RCSID("$Id: 08929773430883e74b2986aaf228520248758665 $")
+RCSID("$Id: ccc53652bc730370b3b359c91978d6651151aa09 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -444,7 +444,7 @@ static bool totp_reused(void *instance, time_t now, uint8_t const *key, size_t k
 		return true;
 	}
 
-	dedup = calloc(sizeof(*dedup), 1);
+	dedup = calloc(1, sizeof(*dedup));
 	if (!dedup) {
 		PTHREAD_MUTEX_UNLOCK(inst);
 		return false;

@@ -7,7 +7,7 @@
 #	This file does not include a TLS listener; see abfab-tls for a simple
 #	example of a RADSEC listener for ABFAB.
 #
-#	$Id: be98568d3b16a163fdcd1803b171450a7b7d42da $
+#	$Id: eb98a5038fc012041ccea7507275d45fd89ea294 $
 #
 
 server abfab-idp {
@@ -181,18 +181,5 @@ post-proxy {
 	#  Uncomment the following line if you want to filter replies from
 	#  remote proxies based on the rules defined in the 'attrs' file.
 #	attr_filter.post-proxy
-
-	#
-	#  If you are proxying LEAP, you MUST configure the EAP
-	#  module, and you MUST list it here, in the post-proxy
-	#  stage.
-	#
-	#  You MUST also use the 'nostrip' option in the 'realm'
-	#  configuration.  Otherwise, the User-Name attribute
-	#  in the proxied request will not match the user name
-	#  hidden inside of the EAP packet, and the end server will
-	#  reject the EAP request.
-	#
-	eap
 }
 }

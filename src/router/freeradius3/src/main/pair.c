@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 3725ba1e10ba5d8c8c58cf2fcc13df000e1cc0d1 $
+ * $Id: 4b8a8f91d7d3a875aed451790b62d0236853980c $
  *
  * @brief Valuepair functions that are radiusd-specific and as such do not
  * 	  belong in the library.
@@ -27,7 +27,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 3725ba1e10ba5d8c8c58cf2fcc13df000e1cc0d1 $")
+RCSID("$Id: 4b8a8f91d7d3a875aed451790b62d0236853980c $")
 
 #include <ctype.h>
 
@@ -73,8 +73,20 @@ int radius_compare_vps(UNUSED REQUEST *request, VALUE_PAIR *check, VALUE_PAIR *v
 	if ((check->op == T_OP_REG_EQ) || (check->op == T_OP_REG_NE)) {
 		ssize_t		slen;
 		regex_t		*preg = NULL;
+#ifdef HAVE_PCRE2
+		/*
+		 *	With PCRE2, regmatch_t holds a pcre2_match_data pointer.
+		 *
+		 *	A stack-allocated array could leave that pointer uninitialized, and regex_exec() would
+		 *	dereference it, and then crash inside pcre2_match() (intermittently.  The solution is
+		 *	to allocate the match below, via regex_match_data_alloc().  That's what evaluate.c does.
+		 */
+		regmatch_t	*rxmatch = NULL;
+		size_t		nmatch = REQUEST_MAX_REGEX + 1;
+#else
 		regmatch_t	rxmatch[REQUEST_MAX_REGEX + 1];	/* +1 for %{0} (whole match) capture group */
 		size_t		nmatch = sizeof(rxmatch) / sizeof(regmatch_t);
+#endif
 
 		char *expr = NULL, *value = NULL;
 		char const *expr_p, *value_p;
@@ -100,6 +112,9 @@ int radius_compare_vps(UNUSED REQUEST *request, VALUE_PAIR *check, VALUE_PAIR *v
 			talloc_free(preg);
 			talloc_free(expr);
 			talloc_free(value);
+#ifdef HAVE_PCRE2
+			talloc_free(rxmatch);
+#endif
 			return -2;
 		}
 
@@ -112,6 +127,10 @@ int radius_compare_vps(UNUSED REQUEST *request, VALUE_PAIR *check, VALUE_PAIR *v
 
 			goto regex_error;
 		}
+
+#ifdef HAVE_PCRE2
+		rxmatch = regex_match_data_alloc(request, REQUEST_MAX_REGEX + 1);
+#endif
 
 		slen = regex_exec(preg, value_p, talloc_array_length(value_p) - 1, rxmatch, &nmatch);
 		if (slen < 0) {
@@ -742,13 +761,8 @@ void rdebug_pair(log_lvl_t level, REQUEST *request, VALUE_PAIR *vp, char const *
 
 	if (!radlog_debug_enabled(L_DBG, level, request)) return;
 
-	if (vp->da->flags.secret && request->root && request->root->suppress_secrets && (rad_debug_lvl < 3)) {
-		RDEBUGX(level, "%s%s = <<< secret >>>", prefix ? prefix : "", vp->da->name);
-		return;
-	}
-
-	vp_prints(buffer, sizeof(buffer), vp);
-	RDEBUGX(level, "%s%s", prefix ? prefix : "",  buffer);
+	vp_prints_value(buffer, sizeof(buffer), vp, '"');
+	RDEBUGX(level, "%s%s = %s", prefix ? prefix : "", vp->da->name, ATTRIBUTE_SECRET(vp, buffer));
 }
 
 /** Print a list of VALUE_PAIRs.
@@ -771,14 +785,8 @@ void rdebug_pair_list(log_lvl_t level, REQUEST *request, VALUE_PAIR *vp, char co
 	     vp;
 	     vp = fr_cursor_next(&cursor)) {
 		VERIFY_VP(vp);
-
-		if (vp->da->flags.secret && request->root && request->root->suppress_secrets && (rad_debug_lvl < 3)) {
-			RDEBUGX(level, "%s%s = <<< secret >>>", prefix ? prefix : "", vp->da->name);
-			continue;
-		}
-
-		vp_prints(buffer, sizeof(buffer), vp);
-		RDEBUGX(level, "%s%s", prefix ? prefix : "",  buffer);
+		vp_prints_value(buffer, sizeof(buffer), vp, '"');
+		RDEBUGX(level, "%s%s = %s", prefix ? prefix : "", vp->da->name, ATTRIBUTE_SECRET(vp, buffer));
 	}
 	REXDENT();
 }
@@ -804,14 +812,8 @@ void rdebug_proto_pair_list(log_lvl_t level, REQUEST *request, VALUE_PAIR *vp)
 		VERIFY_VP(vp);
 		if ((vp->da->vendor == 0) &&
 		    ((vp->da->attr & 0xFFFF) > 0xff)) continue;
-
-		if (vp->da->flags.secret && request->root && request->root->suppress_secrets && (rad_debug_lvl < 3)) {
-			RDEBUGX(level, "%s = <<< secret >>>", vp->da->name);
-			continue;
-		}
-
-		vp_prints(buffer, sizeof(buffer), vp);
-		RDEBUGX(level, "%s", buffer);
+		vp_prints_value(buffer, sizeof(buffer), vp, '"');
+		RDEBUGX(level, "%s = %s", vp->da->name, ATTRIBUTE_SECRET(vp, buffer));
 	}
 	REXDENT();
 }

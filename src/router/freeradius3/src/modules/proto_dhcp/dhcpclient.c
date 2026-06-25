@@ -1,7 +1,7 @@
 /*
  * dhcpclient.c	General radius packet debug tool.
  *
- * Version:	$Id: 7feabbfdb5ce0348054f8f3e55ba8ea4ea313610 $
+ * Version:	$Id: eb014c95c86fbac5147f407327de23c6dcb294a7 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2010  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 7feabbfdb5ce0348054f8f3e55ba8ea4ea313610 $")
+RCSID("$Id: eb014c95c86fbac5147f407327de23c6dcb294a7 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/conf.h>
@@ -490,7 +490,6 @@ int main(int argc, char **argv)
 	if (argc < 2) usage();
 
 	/*	convert timeout to a struct timeval */
-#define USEC 1000000
 	tv_timeout.tv_sec = timeout;
 	tv_timeout.tv_usec = ((timeout - (float) tv_timeout.tv_sec) * USEC);
 

@@ -1,7 +1,7 @@
 /*
  * util.c	Various utility functions.
  *
- * Version:     $Id: e39921e3127d67367179b308a975fb763a7ed0cf $
+ * Version:     $Id: 0aeae1f369f6e478a062d0e3d2d07db8033941a2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: e39921e3127d67367179b308a975fb763a7ed0cf $")
+RCSID("$Id: 0aeae1f369f6e478a062d0e3d2d07db8033941a2 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -611,6 +611,7 @@ REQUEST *request_alloc(TALLOC_CTX *ctx)
 #ifdef WITH_PROXY
 	request->proxy_reply = NULL;
 #endif
+	request->ctx = request;
 	request->config = NULL;
 	request->username = NULL;
 	request->password = NULL;
@@ -864,10 +865,6 @@ int rad_copy_variable(char *to, char const *from)
 
 	return -1;
 }
-
-#ifndef USEC
-#define USEC 1000000
-#endif
 
 uint32_t rad_pps(uint32_t *past, uint32_t *present, time_t *then, struct timeval *now)
 {

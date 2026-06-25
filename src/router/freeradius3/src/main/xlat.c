@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 37cf6ebc8e64e58b5951f1f229c0003532920e94 $
+ * $Id: f765bc9e019b1b68659295225bff0d9ed7a59390 $
  *
  * @file xlat.c
  * @brief String expansion ("translation"). Implements %Attribute -> value
@@ -24,7 +24,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 37cf6ebc8e64e58b5951f1f229c0003532920e94 $")
+RCSID("$Id: f765bc9e019b1b68659295225bff0d9ed7a59390 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -456,13 +456,13 @@ static ssize_t xlat_debug_attr(UNUSED void *instance, REQUEST *request, char con
 				vp->da->name,
 				vp->tag,
 				fr_int2str(fr_tokens, vp->op, "<INVALID>"),
-				value);
+				ATTRIBUTE_SECRET(vp, value));
 		} else {
 			RIDEBUG2("&%s:%s %s %s",
 				fr_int2str(pair_lists, vpt.tmpl_list, "<INVALID>"),
 				vp->da->name,
 				fr_int2str(fr_tokens, vp->op, "<INVALID>"),
-				value);
+				ATTRIBUTE_SECRET(vp, value));
 		}
 		talloc_free(value);
 

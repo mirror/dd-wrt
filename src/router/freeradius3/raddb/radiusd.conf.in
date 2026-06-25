@@ -3,7 +3,7 @@
 ## radiusd.conf	-- FreeRADIUS server configuration file - @RADIUSD_VERSION_STRING@
 ##
 ##	http://www.freeradius.org/
-##	$Id: 3fe562843d95acfd5f8227692ef195379c49ba7b $
+##	$Id: 164b9f7e2cf29766149a3300c9f64ea0262278b4 $
 ##
 
 ######################################################################
@@ -342,6 +342,57 @@ unlang {
 	#  exit the policy but continue processing after that.
 	#
 #	policy_stop_return = no
+
+	#
+	#  improved_state_tracking: use a different method to save /
+	#  restore the State attribute.
+	#
+	#  The original logic in FreeRADIUS did the save / restore in
+	#  one set of situations when processing packets.  However,
+	#  this tracking had some issues in corner cases, where the
+	#  tracking was not saved / restored as one might expect.
+	#
+	#  The "improved_state_tracking" configuration option changes
+	#  how the State tracking is managed.  In the interest of
+	#  compatability, and not breaking existing configurations,
+	#  the default value is set to "no".
+	#
+	#  When set to "yes", tracking is moved to restore State when
+	#  receiving requests, and to save State when sending
+	#  responses.  The "on the wire" behavior is the same.
+	#  However, the difference in the server is that the State
+	#  attribute has the expected value in more situations.
+	#
+	#  If the State tracking is fine for your configuration, then
+	#  this configuration item can remain unchanged.  If you are
+	#  having odd issues with State, then set this option to
+	#  "yes", and that should fix the issue.
+	#
+#	improved_state_tracking = no
+
+	#
+	#  proxy_null_listener: Work around a race condition in corner
+	#  cases in the server.
+	#
+	#  Some sites have reported crashes in the server, which have
+	#  been tracked down to issues with the proxy listener.  The
+	#  "proxy_null_listener" configuration item is an attempt to
+	#  fix the issue.
+	#
+	#  In the interest of compatability, and not breaking existing
+	#  configurations, the default value is set to "no".
+	#
+	#  When set to "yes", the server works around the above issues
+	#  by creating an (invisible) empty or "null" proxy listener.
+	#  Then when a proxy socket is closed, the active proxy
+	#  listener is replaced with the "null" listener.  The result
+	#  is that the rest of the server always sees a valid proxy
+	#  listener, which avoids the above issues.
+	#
+	#  Enable this configuration item if you see crashes that
+	#  dereference request->proxy_listener under load.
+	#
+#	proxy_null_listener = no
 }
 
 #
@@ -450,18 +501,21 @@ log {
 	#  configuration puts secrets into other strings, they will
 	#  still get printed.
 	#
-	#  Setting this to "yes" means that the server prints
+	#  Setting this to "yes" (the default) means that the server prints
 	#
 	#	<<< secret >>>
 	#
-	#  instead of the value, for attriburtes which contain secret
-	#  information.  e.g. User-Name, Tunnel-Password, etc.
+	#  instead of the value, for attributes which contain secret
+	#  information.  e.g. User-Password, Tunnel-Password, etc.
 	#
-	#  This configuration is disabled by default.  It is extremely
-	#  important for administrators to be able to debug user logins
-	#  by seeing what is actually being sent.
+	#  This option exists as it is extremely important for administrators
+	#  to be able to debug user logins by seeing what is actually being
+	#  sent.
 	#
-#	suppress_secrets = no
+	#  NOTE: Note that when running the server at debug level 3 or
+	#  higher, this option is ignored.
+	#
+#	suppress_secrets = yes
 
 	#  Add timestamps to debug logs
 	#
@@ -784,7 +838,7 @@ security {
 	#    this flag to "no", in which case the network will work,
 	#    but will be vulnerable to the attack.
 	#
-	require_message_authenticator = auto
+	require_message_authenticator = yes
 
 	#
 	#  Global configuration for limiting the combination of

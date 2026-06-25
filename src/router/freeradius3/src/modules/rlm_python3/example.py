@@ -3,7 +3,7 @@
 # Python module example file
 # Miguel A.L. Paraz <mparaz@mparaz.com>
 #
-# $Id: bb2d99775ade0a78f7390bfb352904568c0139e4 $
+# $Id: aea23f1508f530c45c3de65a54203cb54e4b181b $
 
 import radiusd
 
@@ -13,7 +13,8 @@ import radiusd
 def instantiate(p):
   print("*** instantiate ***")
   print(p)
-  # return 0 for success or -1 for failure
+  # return 0 (or radiusd.RLM_MODULE_OK) for success or -1 (or radiusd.RLM_MODULE_FAIL) for failure
+  return 0
 
 
 def authorize(p):

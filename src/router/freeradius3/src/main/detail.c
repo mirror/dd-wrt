@@ -1,7 +1,7 @@
 /*
  * detail.c	Process the detail file
  *
- * Version:	$Id: 3b7e38204251c95685ed1ee561507f686bf47098 $
+ * Version:	$Id: e4753334d05fe23abe56f8fe9c49943395cef778 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 3b7e38204251c95685ed1ee561507f686bf47098 $")
+RCSID("$Id: e4753334d05fe23abe56f8fe9c49943395cef778 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -40,8 +40,6 @@ RCSID("$Id: 3b7e38204251c95685ed1ee561507f686bf47098 $")
 #include <fcntl.h>
 
 #ifdef WITH_DETAIL
-
-#define USEC (1000000)
 
 static FR_NAME_NUMBER state_names[] = {
 	{ "unopened", STATE_UNOPENED },
@@ -1172,7 +1170,6 @@ int detail_parse(CONF_SECTION *cs, rad_listen_t *this)
 	 *	We don't do duplicate detection for "detail" sockets.
 	 */
 	this->nodup = true;
-	this->synchronous = false;
 
 	if (!data->filename) {
 		cf_log_err_cs(cs, "No detail file specified in listen section");

@@ -1,7 +1,7 @@
 /*
  * filters.c	Routines to parse Ascend's filter attributes.
  *
- * Version:	$Id: e9d1d0f2e447df0864edbeaa8310b938e4421f1e $
+ * Version:	$Id: 58c45f8bb0cc405b27a080402f6d2ab4cef18ebe $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,12 +20,13 @@
  * Copyright 2003,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: e9d1d0f2e447df0864edbeaa8310b938e4421f1e $")
+RCSID("$Id: 58c45f8bb0cc405b27a080402f6d2ab4cef18ebe $")
 
 #include <freeradius-devel/libradius.h>
 
 #ifdef WITH_ASCEND_BINARY
 #include <ctype.h>
+#include <stdbool.h>
 
 /*
  * Two types of filters are supported, GENERIC and IP.  The identifiers
@@ -48,12 +49,6 @@ RCSID("$Id: e9d1d0f2e447df0864edbeaa8310b938e4421f1e $")
  */
 
 #define IPX_NODE_ADDR_LEN		6
-
-#if ! defined( false )
-# define false		0
-# define true		(! false)
-#endif
-
 
 /*
  *	ascend_ip_filter_t

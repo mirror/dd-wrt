@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 88634cd30fb834f32092844ddfaf7b85d4703bf6 $
+ * $Id: 6e42f8470f655d34a827d9766d76b67b483a0a5b $
  * @file rlm_python.c
  * @brief Translates requests between the server an a python interpreter.
  *
@@ -25,7 +25,7 @@
  * @copyright 2002  Miguel A.L. Paraz <mparaz@mparaz.com>
  * @copyright 2002  Imperium Technology, Inc.
  */
-RCSID("$Id: 88634cd30fb834f32092844ddfaf7b85d4703bf6 $")
+RCSID("$Id: 6e42f8470f655d34a827d9766d76b67b483a0a5b $")
 
 #define LOG_PREFIX "rlm_python - "
 
@@ -255,11 +255,12 @@ failed:
 static void mod_vptuple(TALLOC_CTX *ctx, REQUEST *request, VALUE_PAIR **vps, PyObject *pValue,
 			char const *funcname, char const *list_name)
 {
-	int	     i;
-	int	     tuplesize;
-	vp_tmpl_t       dst;
-	VALUE_PAIR      *vp;
-	REQUEST         *current = request;
+	int	   i;
+	int	   tuplesize;
+	vp_tmpl_t  dst;
+	VALUE_PAIR *vp;
+	REQUEST    *current = request;
+	const char *quote;
 
 	memset(&dst, 0, sizeof(dst));
 
@@ -282,7 +283,7 @@ static void mod_vptuple(TALLOC_CTX *ctx, REQUEST *request, VALUE_PAIR **vps, PyO
 		PyObject 	*pOp;
 		int		pairsize;
 		char const	*s1;
-		char const	*s2;
+		char const	*s2, *s2p;
 		FR_TOKEN	op = T_OP_EQ;
 
 		if (!PyTuple_CheckExact(pTupleElement)) {
@@ -349,13 +350,16 @@ static void mod_vptuple(TALLOC_CTX *ctx, REQUEST *request, VALUE_PAIR **vps, PyO
 		vp->op = op;
 		vp->tag = dst.tmpl_tag;
 
-		if (fr_pair_value_from_str(vp, s2, -1) < 0) {
-			DEBUG("%s - Failed: '%s:%s' %s '%s'", funcname, list_name, s1,
-			      fr_int2str(fr_tokens, op, "="), s2);
+		if (ATTRIBUTE_IS_SECRET(vp)) {
+			quote = "";
+			s2p = ATTRIBUTE_SECRET_PLACEHOLDER;
 		} else {
-			DEBUG("%s - '%s:%s' %s '%s'", funcname, list_name, s1,
-			      fr_int2str(fr_tokens, op, "="), s2);
+			quote = "'";
+			s2p = s2;
 		}
+		DEBUG("%s - %s'%s:%s' %s %s%s%s", funcname,
+			fr_pair_value_from_str(vp, s2, -1) < 0 ? "Failed: " : "",
+			list_name, s1, fr_int2str(fr_tokens, op, "="), quote, s2p, quote);
 
 		radius_pairmove(current, vps, vp, false);
 	}
@@ -1181,7 +1185,7 @@ static int mod_instantiate(CONF_SECTION *conf, void *instance)
 	 */
 	if (inst->instantiate.module_name && inst->instantiate.function_name) {
 		code = do_python_single(NULL, inst->instantiate.function, "instantiate", inst->pass_all_vps, inst->pass_all_vps_dict);
-		if (code == RLM_MODULE_FAIL) {
+		if ((code < 0) || (code == RLM_MODULE_FAIL)) {
 		error:
 			python_error_log();	/* Needs valid thread with GIL */
 			PyEval_SaveThread();

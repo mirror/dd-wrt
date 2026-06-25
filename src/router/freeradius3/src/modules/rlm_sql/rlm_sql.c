@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 762654feb2d5365df8baa20fc9305df9e51f8de6 $
+ * $Id: faf3df60a23d276c10c5ac6383568577d94cf982 $
  * @file rlm_sql.c
  * @brief Implements SQL 'users' file, and SQL accounting.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000  Mike Machado <mike@innercite.com>
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: 762654feb2d5365df8baa20fc9305df9e51f8de6 $")
+RCSID("$Id: faf3df60a23d276c10c5ac6383568577d94cf982 $")
 
 #include <ctype.h>
 
@@ -294,7 +294,14 @@ static int generate_sql_clients(rlm_sql_t *inst)
 	handle = fr_connection_get(inst->pool);
 	if (!handle) return -1;
 
-	if (rlm_sql_select_query(inst, NULL, &handle, inst->config->client_query) != RLM_SQL_OK) return -1;
+	if (rlm_sql_select_query(inst, NULL, &handle, inst->config->client_query) != RLM_SQL_OK) {
+		/*
+		 *	If the handle is still valid (i.e. not set to NULL
+		 *	by a reconnection failure), release it back to the pool.
+		 */
+		if (handle) fr_connection_release(inst->pool, handle);
+		return -1;
+	}
 
 	while ((rlm_sql_fetch_row(inst, NULL, &handle) == RLM_SQL_OK) && (row = handle->row)) {
 		int num_rows;
@@ -407,39 +414,32 @@ static size_t sql_escape_func(UNUSED REQUEST *request, char *out, size_t outlen,
 		 *	we're now responsible for escaping all special
 		 *	chars in an xlat expansion or attribute value.
 		 */
-		switch (in[0]) {
-		case '\n':
+		if (in[0] == '\n' || in[0] == '\r' || in[0] == '\t') {
 			if (outlen <= 2) break;
+
 			out[0] = '\\';
-			out[1] = 'n';
+			switch (in[0]) {
+			case '\n':
+				out[1] = 'n';
+				break;
+
+			case '\r':
+				out[1] = 'r';
+				break;
+
+			case '\t':
+				out[1] = 't';
+				break;
+
+			default:
+				break;
+			}
 
 			in++;
 			out += 2;
 			outlen -= 2;
 			len += 2;
-			break;
-
-		case '\r':
-			if (outlen <= 2) break;
-			out[0] = '\\';
-			out[1] = 'r';
-
-			in++;
-			out += 2;
-			outlen -= 2;
-			len += 2;
-			break;
-
-		case '\t':
-			if (outlen <= 2) break;
-			out[0] = '\\';
-			out[1] = 't';
-
-			in++;
-			out += 2;
-			outlen -= 2;
-			len += 2;
-			break;
+			continue;
 		}
 
 		/*
@@ -1026,12 +1026,12 @@ do { \
 	 */
 	if (!inst->config->groupmemb_query) {
 		if (inst->config->authorize_group_check_query) {
-			WARN("rlm_sql (%s): Ignoring authorize_group_reply_query as group_membership_query "
+			WARN("rlm_sql (%s): Ignoring authorize_group_check_query as group_membership_query "
 			     "is not configured", inst->name);
 		}
 
 		if (inst->config->authorize_group_reply_query) {
-			WARN("rlm_sql (%s): Ignoring authorize_group_check_query as group_membership_query "
+			WARN("rlm_sql (%s): Ignoring authorize_group_reply_query as group_membership_query "
 			     "is not configured", inst->name);
 		}
 
@@ -1672,7 +1672,7 @@ static rlm_rcode_t mod_checksimul(void *instance, REQUEST * request)
 
 	if (request->simul_count < request->simul_max) {
 		rcode = RLM_MODULE_OK;
-		goto finish;
+		goto release;	/* count query already finished, skip finish label */
 	}
 
 	/*
@@ -1682,7 +1682,7 @@ static rlm_rcode_t mod_checksimul(void *instance, REQUEST * request)
 	if (!inst->config->simul_verify_query) {
 		rcode = RLM_MODULE_OK;
 
-		goto finish;
+		goto release;	/* count query already finished, skip finish label */
 	}
 
 	if (radius_axlat(&expanded, request, inst->config->simul_verify_query, inst->sql_escape_func, handle) < 0) {

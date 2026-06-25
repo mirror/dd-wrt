@@ -1,7 +1,7 @@
 /*
  * radclient.c	General radius packet debug tool.
  *
- * Version:	$Id: 0f1cc4c2923f2a3a0d05f65f5e5f588e2f6bbdda $
+ * Version:	$Id: bfacb2e4a5a333ca4ef11c45b382b5d6499acfc0 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 0f1cc4c2923f2a3a0d05f65f5e5f588e2f6bbdda $")
+RCSID("$Id: bfacb2e4a5a333ca4ef11c45b382b5d6499acfc0 $")
 
 #include <freeradius-devel/radclient.h>
 #include <freeradius-devel/radpaths.h>
@@ -168,7 +168,9 @@ static int _rc_request_free(rc_request_t *request)
 #  include <openssl/provider.h>
 
 static OSSL_PROVIDER *openssl_default_provider = NULL;
+#ifndef WITH_FIPS
 static OSSL_PROVIDER *openssl_legacy_provider = NULL;
+#endif
 
 static int openssl3_init(void)
 {
@@ -181,6 +183,7 @@ static int openssl3_init(void)
 		return -1;
 	}
 
+#ifndef WITH_FIPS
 	/*
 	 *	Needed for MD4
 	 *
@@ -191,6 +194,7 @@ static int openssl3_init(void)
 		ERROR("(TLS) Failed loading legacy provider");
 		return -1;
 	}
+#endif
 
 	return 0;
 }
@@ -202,10 +206,12 @@ static void openssl3_free(void)
 	}
 	openssl_default_provider = NULL;
 
+#ifndef WITH_FIPS
 	if (openssl_legacy_provider && !OSSL_PROVIDER_unload(openssl_legacy_provider)) {
 		ERROR("Failed unloading legacy provider");
 	}
 	openssl_legacy_provider = NULL;
+#endif
 }
 #else
 #define openssl3_init()
@@ -884,7 +890,19 @@ static void deallocate_id(rc_request_t *request)
  */
 static int send_one_packet(rc_request_t *request)
 {
+	VALUE_PAIR *vp;
+	bool message_authenticator;
+
 	assert(request->done == false);
+
+	/*
+	 *	Do we print out an extra Message-Authenticator,
+	 *	because rad_encode() will automatically add it.  And
+	 *	we want to make sure that the debug output matches
+	 *	what's in the packet.
+	 */
+	message_authenticator = ((request->packet->code == PW_CODE_ACCESS_REQUEST) ||
+				 (request->packet->code == PW_CODE_STATUS_SERVER));
 
 	/*
 	 *	Remember when we have to wake up, to re-send the
@@ -953,8 +971,6 @@ static int send_one_packet(rc_request_t *request)
 		assert(request->packet->data == NULL);
 
 		if (request->packet->code == PW_CODE_ACCESS_REQUEST) {
-			VALUE_PAIR *vp;
-
 			if (((vp = fr_pair_find_by_num(request->packet->vps, PW_PACKET_AUTHENTICATION_VECTOR, 0, TAG_ANY)) != NULL) &&
 			    (vp->vp_length >= 16)) {
 				memcpy(request->packet->vector, vp->vp_octets, 16);
@@ -971,8 +987,6 @@ static int send_one_packet(rc_request_t *request)
 		 *	new authentication vector.
 		 */
 		if (request->password) {
-			VALUE_PAIR *vp;
-
 			if ((vp = fr_pair_find_by_num(request->packet->vps, PW_USER_PASSWORD, 0, TAG_ANY)) != NULL) {
 				fr_pair_value_strcpy(vp, request->password->vp_strvalue);
 
@@ -1055,10 +1069,39 @@ static int send_one_packet(rc_request_t *request)
 	}
 
 	/*
+	 *	If there's a Message-Authenticator in the packet, AND
+	 *	it has a "don't send operator", then delete it.  We
+	 *	then set the "tls" flag before encoding it, which
+	 *	skips the automatic addition of Message-Authenticator.
+	 *	We then clear the "tls" flag, and sign the packet
+	 *	before sending it.
+	 */
+	vp = fr_pair_find_by_num(request->packet->vps, PW_MESSAGE_AUTHENTICATOR, 0, TAG_ANY);
+	if (vp && (vp->op == T_OP_CMP_FALSE)) {
+		fr_pair_delete(&request->packet->vps, vp);
+
+		request->packet->tls = true;
+		if (rad_encode(request->packet, NULL, secret) < 0) {
+			REDEBUG("Failed to encode packet for ID %d", request->packet->id);
+			goto error;
+		}
+		request->packet->tls = false;
+		fr_assert(request->packet->offset == 0);
+
+		if (rad_sign(request->packet, NULL, secret) < 0) {
+			REDEBUG("Failed to sign packet for ID %d", request->packet->id);
+			goto error;
+		}
+
+		message_authenticator = false;
+	}
+
+	/*
 	 *	Send the packet.
 	 */
 	if (rad_send(request->packet, NULL, secret) < 0) {
 		REDEBUG("Failed to send packet for ID %d", request->packet->id);
+	error:
 		deallocate_id(request);
 		request->done = true;
 		stats.lost++;
@@ -1070,9 +1113,7 @@ static int send_one_packet(rc_request_t *request)
 
 		if (fr_debug_lvl > 2) rad_print_hex(request->packet);
 
-		if ((fr_debug_lvl > 0) &&
-		    ((request->packet->code == PW_CODE_ACCESS_REQUEST) ||
-		     (request->packet->code == PW_CODE_STATUS_SERVER)) &&
+		if ((fr_debug_lvl > 0) && message_authenticator &&
 		    !fr_pair_find_by_num(request->packet->vps, PW_MESSAGE_AUTHENTICATOR, 0, TAG_ANY)) {
 			fprintf(fr_log_fp, "\tMessage-Authenticator = 0x\n");
 		}
@@ -1105,6 +1146,7 @@ static int blast_radius_check(rc_request_t *request, RADIUS_PACKET *reply)
 	case PW_CODE_ACCESS_ACCEPT:
 	case PW_CODE_ACCESS_REJECT:
 	case PW_CODE_ACCESS_CHALLENGE:
+	case PW_CODE_PROTOCOL_ERROR:
 		if (reply->data[1] != request->packet->id) {
 			ERROR("Invalid reply ID %d to Access-Request ID %d", reply->data[1], request->packet->id);
 			return -1;
@@ -1282,6 +1324,21 @@ static int recv_one_packet(int wait_time)
 		REDEBUG("Reply verification failed");
 		stats.lost++;
 		goto packet_done; /* shared secret is incorrect */
+	}
+
+	/*
+	 *	Check Original-Packet-Code.  We don't actually need it, but we check if it's wrong.
+	 */
+	if (reply->code == PW_CODE_PROTOCOL_ERROR) {
+		VALUE_PAIR *vp;
+
+		vp = fr_pair_find_by_num(reply->vps, 4, ((unsigned int) PW_EXTENDED_ATTRIBUTE_1 << 24), TAG_ANY);
+		if (!vp) {
+			RDEBUG("WARNING: Protocol-Error response is missing Original-Packet-Code");
+
+		} else if (vp->vp_integer != request->packet->code) {
+			RDEBUG("WARNING: Protocol-Error contains incorrect Original-Packet-Code %u", vp->vp_integer);
+		}
 	}
 
 	if (print_filename) {

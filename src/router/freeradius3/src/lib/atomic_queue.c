@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: cece3c4160a386a1605a74806bb2d352b0790a4f $
+ * $Id: 6e88cd51dc1735e0b0e90df2ab5e3b9fedd305d6 $
  *
  * @brief Thread-safe queues.
  * @file atomic_queue.c
@@ -23,7 +23,7 @@
  * @copyright 2016 Alan DeKok (aland@freeradius.org)
  * @copyright 2016 Alister Winfield
  */
-RCSID("$Id: cece3c4160a386a1605a74806bb2d352b0790a4f $")
+RCSID("$Id: 6e88cd51dc1735e0b0e90df2ab5e3b9fedd305d6 $")
 
 #ifdef HAVE_STDATOMIC_H
 
@@ -238,6 +238,7 @@ bool fr_atomic_queue_pop(fr_atomic_queue_t *aq, void **p_data)
 		 *	tail is smaller than the current entry, the queue is full.
 		 */
 		if (diff < 0) {
+			*p_data = NULL;
 			return false;
 		}
 

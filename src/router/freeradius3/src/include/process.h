@@ -4,7 +4,7 @@
 /*
  * process.h	State machine for a server to process packets.
  *
- * Version:	$Id: 35a91bfa55ba1c5ae0f79d126c09a6e9594559ab $
+ * Version:	$Id: 38d3aad6f85c01db19679b44807d226520377d48 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * Copyright 2012 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSIDH(process_h, "$Id: 35a91bfa55ba1c5ae0f79d126c09a6e9594559ab $")
+RCSIDH(process_h, "$Id: 38d3aad6f85c01db19679b44807d226520377d48 $")
 
 #include <freeradius-devel/clients.h>
 #include <freeradius-devel/listen.h>
@@ -53,6 +53,7 @@ typedef enum fr_state_action_t {	/* server action */
 	FR_ACTION_CLEANUP_DELAY,
 	FR_ACTION_COA_CANCELLED,
 } fr_state_action_t;
+#define FR_ACTION_MAX (FR_ACTION_COA_CANCELLED + 1)
 
 /*
  *  Function handler for requests.
@@ -72,6 +73,8 @@ int request_enqueue(REQUEST *request);
 int request_receive(TALLOC_CTX *ctx, rad_listen_t *listener, RADIUS_PACKET *packet,
 		    RADCLIENT *client, RAD_REQUEST_FUNP fun);
 void request_inject(REQUEST *request);
+
+bool radius_event_fd_full(void);
 
 #ifdef WITH_PROXY
 int request_proxy_reply(RADIUS_PACKET *packet);

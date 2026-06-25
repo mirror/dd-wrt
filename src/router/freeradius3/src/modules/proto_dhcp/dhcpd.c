@@ -1,7 +1,7 @@
 /*
  * dhcp.c	DHCP processing.
  *
- * Version:	$Id: bc51c36d8468c4c95fc5194f4422fb78761b6001 $
+ * Version:	$Id: 544680249691611ac81c23a41e692ec33c445013 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -503,7 +503,6 @@ static int dhcp_process(REQUEST *request)
 				request->response_delay.tv_usec = 0;
 			}
 		} else {
-#define USEC 1000000
 			vp = fr_pair_find_by_num(request->reply->vps, PW_FREERADIUS_RESPONSE_DELAY_USEC, 0, TAG_ANY);
 			if (vp) {
 				if (vp->vp_integer <= 10 * USEC) {

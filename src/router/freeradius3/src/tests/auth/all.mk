@@ -9,6 +9,10 @@
 #
 AUTH_FILES := $(filter-out %.conf %.md %.attrs %.mk %~ %.rej,$(subst $(DIR)/,,$(wildcard $(DIR)/*)))
 
+ifeq "$(OPENSSL_LIBS)" ""
+AUTH_FILES := $(filter-out dpsk-%,$(AUTH_FILES))
+endif
+
 #
 #  Create the output directory
 #
@@ -63,6 +67,9 @@ $(BUILD_DIR)/tests/auth/%.attrs: $(DIR)/%.attrs | $(BUILD_DIR)/tests/auth
 .PRECIOUS: $(BUILD_DIR)/tests/auth/%.attrs raddb/mods-enabled/wimax
 
 AUTH_MODULES	:= $(shell grep -- mods-enabled src/tests/auth/radiusd.conf  | sed 's,.*/,,')
+ifeq "$(OPENSSL_LIBS)" ""
+AUTH_MODULES	:= $(filter-out dpsk,$(AUTH_MODULES))
+endif
 AUTH_RADDB	:= $(addprefix raddb/mods-enabled/,$(AUTH_MODULES))
 AUTH_LIBS	:= $(addsuffix .la,$(addprefix rlm_,$(AUTH_MODULES)))
 
@@ -89,6 +96,7 @@ $(BUILD_DIR)/tests/auth/%: $(DIR)/% $(BUILD_DIR)/tests/auth/%.attrs $(TESTBINDIR
 			cat $@.log; \
 			echo "# $@.log"; \
 			echo "TESTDIR=$(notdir $@) $(TESTBIN)/unittest -D share -d src/tests/auth/ -i $@.attrs -f $@.attrs -xxx > $@.log 2>&1"; \
+			$(call test_record,auth,$(notdir $@),FAIL,$@.log); \
 			exit 1; \
 		fi; \
 		FOUND=$$(grep ^$< $@.log | head -1 | sed 's/:.*//;s/.*\[//;s/\].*//'); \
@@ -97,9 +105,11 @@ $(BUILD_DIR)/tests/auth/%: $(DIR)/% $(BUILD_DIR)/tests/auth/%.attrs $(TESTBINDIR
 			cat $@.log; \
 			echo "# $@.log"; \
 			echo "TESTDIR=$(notdir $@) $(TESTBIN)/unittest -D share -d src/tests/auth/ -i $@.attrs -f $@.attrs -xxx > $@.log 2>&1"; \
+			$(call test_record,auth,$(notdir $@),FAIL,$@.log); \
 			exit 1; \
 		fi \
 	fi
+	@$(call test_record,auth,$(notdir $@),PASS,$@.log)
 	@touch $@
 
 #
@@ -112,7 +122,9 @@ TESTS.AUTH_FILES := $(addprefix $(BUILD_DIR)/tests/auth/,$(AUTH_FILES))
 #
 tests.auth: $(TESTS.AUTH_FILES)
 
+ifeq "$(RECORDING)" ""
 $(TESTS.AUTH_FILES): $(TESTS.KEYWORDS_FILES)
+endif
 
 .PHONY: clean.tests.auth
 clean.tests.auth:

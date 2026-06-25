@@ -1,3 +1,6 @@
+# Selinux type we're building for
+%global selinuxtype targeted
+
 %bcond_with rlm_yubikey
 %bcond_without ldap
 %bcond_with radlast
@@ -33,7 +36,7 @@
 
 Summary: High-performance and highly configurable free RADIUS server
 Name: freeradius
-Version: 3.2.8
+Version: 3.2.10
 Release: 1%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Daemons
@@ -166,6 +169,24 @@ Requires: perl-Net-IP
 %description perl-util
 This package provides Perl utilities for managing IP pools stored in
 SQL databases.
+
+%package utils-json
+Summary: FreeRADIUS configuration <-> JSON conversion utilities
+Group: System Environment/Daemons
+Requires: %{name} = %{version}-%{release}
+Requires: json-c >= 0.10
+BuildRequires: json-c-devel >= 0.10
+
+%description utils-json
+Utilities that bridge between FreeRADIUS configuration and JSON:
+
+  radconf2json   render a parsed server configuration as JSON
+  radmod2json    dump the CONF_PARSER definitions of installed modules as JSON
+  raddict2json   dump the parsed dictionary tree as JSON
+
+These utilities are intended for tooling that needs to inspect or
+transform FreeRADIUS configuration programmatically (config migration,
+schema documentation, third-party integrations).
 
 %if %{!?_without_ldap:1}%{?_without_ldap:0}
 %package ldap
@@ -552,6 +573,7 @@ exit 0
 
 %post
 if [ $1 = 1 ]; then
+  %selinux_set_booleans -s %{selinuxtype} radius_use_jit=on
 %if %{?_unitdir:1}%{!?_unitdir:0}
   /bin/systemctl enable radiusd.service
 %else
@@ -903,6 +925,12 @@ fi
 /usr/bin/rlm_sqlippool_tool
 #man-pages
 %doc %{_mandir}/man8/rlm_sqlippool_tool.8.gz
+
+%files utils-json
+%defattr(-,root,root)
+/usr/bin/radconf2json
+/usr/bin/radmod2json
+/usr/bin/raddict2json
 
 %if %{?_with_rlm_cache_memcached:1}%{!?_with_rlm_cache_memcached:0}
 %files memcached

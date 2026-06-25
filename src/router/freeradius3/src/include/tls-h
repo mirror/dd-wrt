@@ -18,7 +18,7 @@
 
 #ifdef WITH_TLS
 /**
- * $Id: 2228e80cc9c02b686b018304073e45c9fa24678b $
+ * $Id: 490d3d318fe61977225fff3fe1729a40e749c0c5 $
  *
  * @file tls.h
  * @brief Structures and prototypes for TLS wrappers
@@ -26,7 +26,7 @@
  * @copyright 2010 Network RADIUS SARL <info@networkradius.com>
  */
 
-RCSIDH(tls_h, "$Id: 2228e80cc9c02b686b018304073e45c9fa24678b $")
+RCSIDH(tls_h, "$Id: 490d3d318fe61977225fff3fe1729a40e749c0c5 $")
 
 #include <freeradius-devel/conffile.h>
 
@@ -137,6 +137,7 @@ typedef struct _tls_session_t {
 
 	bool		invalid_hb_used;		//!< Whether heartbleed attack was detected.
 	bool		connected;			//!< whether the outgoing socket is connected
+	bool		connecting;			//!< whether we have a timer waiting for it to be connected
 	bool		is_init_finished;		//!< whether or not init is finished
 	bool		client_cert_ok;			//!< whether or not we validated the client certificate
 	bool		authentication_success;		//!< whether or not the user was authenticated (cert or PW)
@@ -355,6 +356,7 @@ fr_tls_status_t tls_application_data(tls_session_t *ssn, REQUEST *request);
 #define FR_TLS_EX_INDEX_SSN	 (15)
 #define FR_TLS_EX_INDEX_TALLOC	 (16)
 #define FR_TLS_EX_INDEX_FIX_CERT_ORDER (17)
+#define FR_TLS_EX_INDEX_HOME	(18)
 
 extern int fr_tls_ex_index_certs;
 extern int fr_tls_ex_index_vps;
@@ -402,6 +404,7 @@ struct fr_tls_server_conf_t {
 	X509_STORE	*old_x509_store;
 	char const	*check_cert_cn;
 	char const	*cipher_list;
+	char const	*cipher_suites;
 	bool		cipher_server_preference;
 	char const	*check_cert_issuer;
 	char const	*sigalgs_list;

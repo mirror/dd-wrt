@@ -1,7 +1,7 @@
 /*
  * value.c	Functions to handle value_data_t
  *
- * Version:	$Id: dddfbeae03a2ba05ae67f55edb9408520dea9553 $
+ * Version:	$Id: 7ebdbcb59d39b20b92471f864ea17cd2ae8c2b5e $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2014 The FreeRADIUS server project
  */
 
-RCSID("$Id: dddfbeae03a2ba05ae67f55edb9408520dea9553 $")
+RCSID("$Id: 7ebdbcb59d39b20b92471f864ea17cd2ae8c2b5e $")
 
 #include <freeradius-devel/libradius.h>
 #include <ctype.h>
@@ -1655,12 +1655,17 @@ char *value_data_aprints(TALLOC_CTX *ctx,
 	{
 		time_t t;
 		struct tm s_tm;
+		size_t o = 0;
 
 		t = data->date;
 
 		p = talloc_zero_array(ctx, char, 64);
-		strftime(p, 63, "%b %e %Y %H:%M:%S %Z",
-			 localtime_r(&t, &s_tm));
+		if (!p) return NULL;
+
+		if (quote) p[o++] = quote;
+		o += strftime(&p[o], 64 - 1 - (quote ? 2 : 0), "%b %e %Y %H:%M:%S %Z", localtime_r(&t, &s_tm));
+		if (quote) p[o] = quote;
+
 		break;
 	}
 

@@ -16,7 +16,7 @@
 #ifndef RADIUSD_H
 #define RADIUSD_H
 /**
- * $Id: 67ef17e17d6cfacc5dfdfe535078637951f0c372 $
+ * $Id: aa2ae097aceead6eb2ec44aaac2bcb59a02bb1bc $
  *
  * @file radiusd.h
  * @brief Structures, prototypes and global variables for the FreeRADIUS server.
@@ -24,7 +24,7 @@
  * @copyright 1999-2000,2002-2008  The FreeRADIUS server project
  */
 
-RCSIDH(radiusd_h, "$Id: 67ef17e17d6cfacc5dfdfe535078637951f0c372 $")
+RCSIDH(radiusd_h, "$Id: aa2ae097aceead6eb2ec44aaac2bcb59a02bb1bc $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/radpaths.h>
@@ -32,6 +32,7 @@ RCSIDH(radiusd_h, "$Id: 67ef17e17d6cfacc5dfdfe535078637951f0c372 $")
 #include <freeradius-devel/conffile.h>
 #include <freeradius-devel/event.h>
 #include <freeradius-devel/connection.h>
+#include <freeradius-devel/dlist.h>
 
 typedef struct rad_request REQUEST;
 
@@ -114,6 +115,7 @@ typedef struct main_config {
 	fr_ipaddr_t	myip;				//!< IP to bind to. Set on command line.
 	uint16_t	port;				//!< Port to bind to. Set on command line.
 
+	bool		hoist_state;			//!< hoist state handling to IO routines.
 	bool		suppress_secrets;		//!< for debug levels < 3
 	bool		log_auth;			//!< Log all authentication attempts.
 	bool		log_accept;			//!< Log Access-Accept
@@ -187,6 +189,7 @@ typedef struct main_config {
 
 	bool		group_stop_return;		//!< "return" stops at end of group
 	bool		policy_stop_return;		//!< "return" stops at end of policy
+	bool		proxy_null_listener;		//!< use a null proxy listener for thread race conditions
 } main_config_t;
 
 #if defined(WITH_VERIFY_PTR)
@@ -205,7 +208,7 @@ typedef enum {
 	REQUEST_STOP_PROCESSING,
 	REQUEST_TO_FREE,			//!< in the queue, and the queue should free it
 } rad_master_state_t;
-#define REQUEST_MASTER_NUM_STATES (REQUEST_STOP_PROCESSING + 1)
+#define REQUEST_MASTER_NUM_STATES (REQUEST_TO_FREE + )
 
 typedef enum {
 	REQUEST_QUEUED = 1,
@@ -239,6 +242,7 @@ struct rad_request {
 	VALUE_PAIR		*config;	//!< #VALUE_PAIR (s) used to set per request parameters
 						//!< for modules and the server core at runtime.
 
+	TALLOC_CTX		*ctx;		//!< talloc ctx for the request.  Either a pool, or the request itself.
 	TALLOC_CTX		*state_ctx;	//!< for request->state
 	VALUE_PAIR		*state;		//!< #VALUE_PAIR (s) available over the lifetime of the authentication
 						//!< attempt. Useful where the attempt involves a sequence of
@@ -256,16 +260,16 @@ struct rad_request {
 	fr_request_process_t	process;	//!< The function to call to move the request through the state machine.
 
 	struct timeval		response_delay;	//!< How long to wait before sending Access-Rejects.
-	fr_state_action_t	timer_action;	//!< What action to perform when the timer event fires.
 	fr_event_t		*ev;		//!< Event in event loop tied to this request.
 
 	RAD_REQUEST_FUNP	handle;		//!< The function to call to move the request through the
 						//!< various server configuration sections.
+	RAD_REQUEST_FUNP	original_handle; //!< as it says
 	rlm_rcode_t		rcode;		//!< Last rcode returned by a module
 	char const		*module;	//!< Module the request is currently being processed by.
 	char const		*component; 	//!< Section the request is in.
 
-	int			delay;
+	int       		delay;		//!< additional delay in usec.
 
 	rad_master_state_t	master_state;	//!< Set by the master thread to signal the child that's currently
 						//!< working with the request, to do something.
@@ -319,6 +323,7 @@ struct rad_request {
 	uint32_t		num_coa_requests;//!< Counter for number of requests sent including
 						//!< retransmits.
 #endif
+	fr_dlist_t		entry;		//!< for the free list
 };				/* REQUEST typedef */
 
 #define RAD_REQUEST_LVL_NONE	(0)		//!< No debug messages should be printed.
@@ -328,9 +333,8 @@ struct rad_request {
 #define RAD_REQUEST_LVL_DEBUG4	(4)
 
 #define RAD_REQUEST_OPTION_COA		(1 << 0)
-#define RAD_REQUEST_OPTION_CTX 		(1 << 1)
-#define RAD_REQUEST_OPTION_CANCELLED	(1 << 2)
-#define RAD_REQUEST_OPTION_STATS	(1 << 3)
+#define RAD_REQUEST_OPTION_CANCELLED	(1 << 1)
+#define RAD_REQUEST_OPTION_STATS	(1 << 2)
 
 #define SECONDS_PER_DAY		86400
 #define MAX_REQUEST_TIME	30
@@ -584,6 +588,9 @@ int	fr_bool_auto_parse(CONF_PAIR *cp, fr_bool_auto_t *out, char const *str);
 void listen_free(rad_listen_t **head);
 int listen_init(CONF_SECTION *cs, rad_listen_t **head, bool spawn_flag);
 rad_listen_t *proxy_new_listener(TALLOC_CTX *ctx, home_server_t *home, uint16_t src_port);
+#ifdef WITH_TLS
+void proxy_tls_close(rad_listen_t *listener);
+#endif
 RADCLIENT *client_listener_find(rad_listen_t *listener, fr_ipaddr_t const *ipaddr, uint16_t src_port);
 
 #ifdef WITH_STATS

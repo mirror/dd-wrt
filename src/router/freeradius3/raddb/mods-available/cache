@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: cf0054f5b13f1977dc45adfb1cfab9b83f4cd6c4 $
+#  $Id: c534936038619e3b15d261263135e9b30698066f $
 
 #
 #	A module to cache attributes.  The idea is that you can look
@@ -19,6 +19,10 @@
 #	The module returns "updated" if it merged a cached entry.
 #	The module returns "noop" if it did nothing.
 #	The module returns "fail" on error.
+#
+#	NOTE: return codes are statements about the status as well as
+#	      any changes being made to the cache. They are not about
+#	      if any changes were made to the attributes of the request.
 #
 cache {
 	#  The backend datastore used to store the cache entries.
@@ -137,8 +141,8 @@ cache {
 	#  &control:Cache-Read-Only - If present and set to 'yes' will
 	#  prevent a new entry from being created, but will allow existing
 	#  entries to be merged.  It will also alter the module's return codes.
-	#    - The module will return "updated" if a cache entry was found.
-	#    - The module will return "notfound" if no cache was found.
+	#    - The module will return "ok" if a cache entry was found.
+	#    - The module will return "notfound" if no cache entry was found.
 	#
 	#  &control:Cache-Merge - If present and set to 'yes' will merge new
 	#  cache entries into the current request. Useful if results

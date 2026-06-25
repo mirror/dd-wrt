@@ -1,7 +1,7 @@
 # -*- makefile -*-
 # Make.inc.in
 #
-# Version:	$Id: eb15b4e554c3a63decca24cdc8d8f65a02d91e4f $
+# Version:	$Id: a40e6b6543039c8f9c89c49b716056be5b8f3df5 $
 #
 
 # Location of files.
@@ -58,7 +58,12 @@ CFLAGS		= $(INCLUDE) -fno-strict-aliasing @CFLAGS@
 #  To quiet modern compilers.  We're not going to fix warnings in the v3.2.x branch.
 #
 #CFLAGS		+= -Wno-unsafe-buffer-usage -Wno-extra-semi-stmt -Wno-format -Wno-reserved-macro-identifier \
-#		   -Wno-reserved-identifier -Wno-switch-default -Wno-implicit-fallthrough
+#		   -Wno-reserved-identifier -Wno-switch-default -Wno-implicit-fallthrough \
+#		   -Wno-default-const-init-field-unsafe -Wno-cast-function-type-strict -Wno-format-pedantic \
+#		   -Wno-declaration-after-statement -Wno-vla -Wno-used-but-marked-unused -Wno-c2x-extensions \
+#		   -Wno-assign-enum -Wno-unused-macros -Wno-disabled-macro-expansion -Wno-class-varargs \
+#		   -Wno-incompatible-function-pointer-types-strict -Wno-bad-function-cast \
+#		   -Wno-compound-token-split-by-macro -Wno-pre-c2x-compat -Wno-incompatible-function-pointer-types
 
 CPPFLAGS	= @CPPFLAGS@
 LIBPREFIX	= @LIBPREFIX@

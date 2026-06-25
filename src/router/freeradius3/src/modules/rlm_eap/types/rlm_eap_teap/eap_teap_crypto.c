@@ -1,27 +1,19 @@
 /*
- * teap-crypto.c  Cryptographic functions for EAP-TEAP.
+ *   This program is is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or (at
+ *   your option) any later version.
  *
- * Version:     $Id: 17f49f9dfc4df66aa793951b665076005977fdf3 $
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
  *
- * Copyright (C) 2022 Network RADIUS SARL <legal@networkradius.com>
- *
- * This software may not be redistributed in any form without the prior
- * written consent of Network RADIUS.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program; if not, write to the Free Software
+ *   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
-
-RCSID("$Id: 17f49f9dfc4df66aa793951b665076005977fdf3 $")
+RCSID("$Id: bc4bce586f88d596f77a5d2514962d9b00179b69 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <stdio.h>
@@ -66,36 +58,31 @@ int eap_teap_encrypt(uint8_t const *plaintext, size_t plaintext_len,
 
 	/* Initialise the encryption operation. */
 	if (1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, NULL, NULL)) {
-		debug_errors();
-		return -1;
+		goto error;
 	};
 
 	/* Set IV length if default 12 bytes (96 bits) is not appropriate */
 	if (1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, 16, NULL)) {
-		debug_errors();
-		return -1;
+		goto error;
 	};
 
 	/* Initialise key and IV */
 	if (1 != EVP_EncryptInit_ex(ctx, NULL, NULL, key, iv)) {
-		debug_errors();
-		return -1;
+		goto error;
 	};
 
 	/* Provide any AAD data. This can be called zero or more times as
 	 * required
 	 */
 	if (1 != EVP_EncryptUpdate(ctx, NULL, &len, aad, aad_len)) {
-		debug_errors();
-		return -1;
+		goto error;
 	};
 
 	/* Provide the message to be encrypted, and obtain the encrypted output.
 	 * EVP_EncryptUpdate can be called multiple times if necessary
 	 */
 	if (1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len)) {
-		debug_errors();
-		return -1;
+		goto error;
 	};
 	ciphertext_len = len;
 
@@ -103,14 +90,15 @@ int eap_teap_encrypt(uint8_t const *plaintext, size_t plaintext_len,
 	 * this stage, but this does not occur in GCM mode
 	 */
 	if (1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len)) {
-		debug_errors();
-		return -1;
+		goto error;
 	};
 	ciphertext_len += len;
 
 	/* Get the tag */
 	if (1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, 16, tag)) {
+	error:
 		debug_errors();
+		EVP_CIPHER_CTX_free(ctx);
 		return -1;
 	};
 
@@ -137,37 +125,32 @@ int eap_teap_decrypt(uint8_t const *ciphertext, size_t ciphertext_len,
 
 	/* Initialise the decryption operation. */
 	if (!EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, NULL, NULL)) {
-		debug_errors();
-		return -1;
+		goto error;
 	};
 
 	/* Set IV length. Not necessary if this is 12 bytes (96 bits) */
 	if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, 16, NULL)) {
-		debug_errors();
-		return -1;
+		goto error;
 	};
 
 	/* Initialise key and IV */
 	if (!EVP_DecryptInit_ex(ctx, NULL, NULL, key, iv)) {
-		debug_errors();
-		return -1;
+		goto error;
 	};
 
 	/* Provide any AAD data. This can be called zero or more times as
 	 * required
 	 */
 	if (!EVP_DecryptUpdate(ctx, NULL, &len, aad, aad_len)) {
-		debug_errors();
-		return -1;
+		goto error;
 	};
 
 	/* Provide the message to be decrypted, and obtain the plaintext output.
 	 * EVP_DecryptUpdate can be called multiple times if necessary
 	 */
 	if (!EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len)) {
-		debug_errors();
-		return -1;
-	};
+		goto error;
+	}
 	plaintext_len = len;
 
 	{
@@ -177,7 +160,9 @@ int eap_teap_decrypt(uint8_t const *ciphertext, size_t ciphertext_len,
 
 		/* Set expected tag value. Works in OpenSSL 1.0.1d and later */
 		if (!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, 16, tmp)) {
+		error:
 			debug_errors();
+			EVP_CIPHER_CTX_free(ctx);
 			return -1;
 		};
 	}

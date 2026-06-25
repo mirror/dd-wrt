@@ -152,10 +152,20 @@ ssize_t regex_compile(TALLOC_CTX *ctx, regex_t **out, char const *pattern, size_
 		 *	expressions that are going to be
 		 *	evaluated repeatedly.
 		 */
-		if (do_jit) {
+		if (do_jit) do {
 			ret = pcre2_jit_compile(preg->compiled, PCRE2_JIT_COMPLETE);
 			if (ret < 0) {
 				PCRE2_UCHAR errbuff[128];
+
+				/*
+				 *	PCRE can do JIT, but this UID
+				 *	cannot allocate executable
+				 *	memory.  Stop trying to JIT things.
+				 */
+				if (ret == PCRE2_ERROR_NOMEMORY) {
+					do_jit = false;
+					break;
+				}
 
 				pcre2_get_error_message(ret, errbuff, sizeof(errbuff));
 				fr_strerror_printf("Pattern JIT failed: %s", (char *)errbuff);
@@ -164,7 +174,7 @@ ssize_t regex_compile(TALLOC_CTX *ctx, regex_t **out, char const *pattern, size_
 				return 0;
 			}
 			preg->jitd = true;
-		}
+		} while (0);
 #endif
 	}
 
@@ -252,7 +262,7 @@ int regex_exec(regex_t *preg, char const *subject, size_t len, regmatch_t *pmatc
 	 *	If we weren't given match data we need to alloc it else pcre2_match
 	 *	fails when passed NULL match data.
 	 */
-	if (!pmatch) {
+	if (!pmatch || !pmatch->match_data) {
 		match_data = pcre2_match_data_create_from_pattern(preg->compiled, _pcre2_gcontext);
 		if (!match_data) {
 			fr_strerror_printf("Failed allocating temporary match data");
@@ -272,7 +282,7 @@ int regex_exec(regex_t *preg, char const *subject, size_t len, regmatch_t *pmatc
 		ret = pcre2_match(preg->compiled, (PCRE2_SPTR8)subject, len, 0, options,
 				  match_data, NULL);
 	}
-	if (!pmatch) pcre2_match_data_free(match_data);
+	if (!pmatch || !pmatch->match_data) pcre2_match_data_free(match_data);
 	if (ret < 0) {
 		PCRE2_UCHAR	errbuff[128];
 

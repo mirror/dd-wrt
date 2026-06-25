@@ -1,7 +1,7 @@
 /*
  * eap.h    Header file containing the interfaces for all EAP types.
  *
- * Version:     $Id: 0724463d0abc4e34afeea9d84f6eb325b00a13fd $
+ * Version:     $Id: 0abbfc2b63902bf568a542e9f88629e01840ea85 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #ifndef _EAP_H
 #define _EAP_H
 
-RCSIDH(eap_h, "$Id: 0724463d0abc4e34afeea9d84f6eb325b00a13fd $")
+RCSIDH(eap_h, "$Id: 0abbfc2b63902bf568a542e9f88629e01840ea85 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -150,6 +150,7 @@ typedef int (*eap_tunnel_callback_t)(eap_handler_t *handler, void *tls_session);
 typedef struct eap_tunnel_data_t {
   void			*tls_session;
   eap_tunnel_callback_t callback;
+  void			*type_inst;
 } eap_tunnel_data_t;
 
 #endif /*_EAP_H*/
