@@ -945,7 +945,7 @@ typedef struct tls_state {
 	int ofd;
 	int ifd;
 
-#if ENABLE_SSL_SERVER // || ENABLE_FEATURE_HTTPD_SSL
+#if defined(ENABLE_SSL_SERVER) // || ENABLE_FEATURE_HTTPD_SSL
 	smallint expecting_first_packet;
 #endif
 	uint16_t cipher_id;
@@ -991,7 +991,7 @@ typedef struct tls_state {
 	struct tls_aes aes_decrypt;
 	uint8_t H[16]; //used by AES_GCM
 
-#if ENABLE_SSL_SERVER // || ENABLE_FEATURE_HTTPD_SSL
+#if defined(ENABLE_SSL_SERVER) // || ENABLE_FEATURE_HTTPD_SSL
 	/* For ECDHE: server's ephemeral EC private key */
 	//uint8_t ecc_priv_key32[32];
 #endif
