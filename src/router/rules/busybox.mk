@@ -772,6 +772,15 @@ endif
 ifeq ($(CONFIG_REALTEK),y)
 	sed -i 's/\# CONFIG_SWITCH_ROOT is not set/CONFIG_SWITCH_ROOT=y/g' busybox/.config
 endif
+	echo "CONFIG_FEATURE_PATH_TRAVERSAL_PROTECTION=y" >> busybox/.config
+	echo "# CONFIG_SHA384SUM is not set" >> busybox/.config
+	echo "# CONFIG_USE_BB_CRYPT_YES is not set" >> busybox/.config
+	echo "CONFIG_FEATURE_FDISK_BLKSIZE=y" >> busybox/.config
+	echo "# CONFIG_LSBLK is not set" >> busybox/.config
+	echo "# CONFIG_UUIDGEN is not set" >> busybox/.config
+	echo "# CONFIG_SSL_SERVER is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_TELNETD_SELFTEST_DEBUG is not set" >> busybox/.config
+	echo "# CONFIG_VMSTAT is not set" >> busybox/.config
 
 	
 	cd busybox && make oldconfig KCONFIG_NOTIMESTAMP=1
