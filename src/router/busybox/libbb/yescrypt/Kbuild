@@ -1,0 +1,10 @@
+# DO NOT EDIT. This file is generated from Kbuild.src
+# Makefile for busybox
+#
+# Copyright (C) 2025 by Denys Vlasenko <vda.linux@googlemail.com>
+#
+# Licensed under GPLv2, see file LICENSE in this source tree.
+
+lib-y:=
+
+lib-$(CONFIG_USE_BB_CRYPT_YES) += y.o
