@@ -688,7 +688,11 @@ void start_postnetwork(void)
 	case ROUTER_MORSE:
 		set_led_netdev("wlan0", "rgb:led0");
 		set_led_netdev("wlan1", "rgb:led2");
-
+		sysprintf("echo 255 255 255 > /sys/class/leds/rgb:led0/multi_intensity");
+		sysprintf("echo 255 255 255 > /sys/class/leds/rgb:led2/multi_intensity");
+		sysprintf("echo 255 > /sys/class/leds/rgb:led0/brightness");
+		sysprintf("echo 255 > /sys/class/leds/rgb:led2/brightness");
+		sysprintf("echo default-on > /sys/class/leds/rgb:led1/trigger");
 		break;
 	case ROUTER_R6800:
 		writestr("/sys/class/leds/white:wlan2g/trigger", "phy0radio");
