@@ -7,8 +7,8 @@
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "morse,halowlink1", "mediatek,mt7621-soc";
-	model = "MorseMicro HaLowLink 1";
+	compatible = "morse,halowlink2", "mediatek,mt7621-soc";
+	model = "MorseMicro HaLowLink 2";
 
 	aliases {
 		led-halow = &led2;
@@ -167,7 +167,7 @@
 		gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
 	};
 
-/*	mmc_clock: mmc_clock@0 {
+	mmc_clock: mmc_clock@0 {
 		#clock-cells = <0>;
 		compatible = "fixed-clock";
 		clock-frequency = <48000000>;
@@ -190,7 +190,7 @@
 		enable-active-high;
 		regulator-always-on;
 
-	};*/
+	};
 };
 
 &i2c {
@@ -207,22 +207,31 @@
 };
 
 &sdhci {
+	compatible = "mediatek,mt7620-mmc";
 	status = "okay";
 	bus-width = <4>;
 	max-frequency = <48000000>;
 
 	cap-sd-highspeed;
 	cap-mmc-highspeed;
+	vmmc-supply = <&mmc_fixed_3v3>;
+	vqmmc-supply = <&mmc_fixed_3v3>;
 	non-removable;
 	disable-wp;
 	cap-sdio-irq;
 
-	mm6108_sdio: mm6108_sdio@0 {
+	pinctrl-names = "default", "state_uhs";
+	pinctrl-0 = <&sdhci_pins>;
+	pinctrl-1 = <&sdhci_pins>;
+
+	clocks = <&mmc_clock>, <&mmc_clock>;
+	clock-names = "source", "hclk";
+
+	mm8108_sdio: mm8108_sdio@0 {
 		compatible = "morse,mm610x";
 		reset-gpios = <&gpio 6 0>;
 		power-gpios = <&gpio 7 0>,
 		              <&gpio 8 0>;
-		fem-4v3-gpios = <&gpio 27 0>;
 		status = "okay";
 		reg = <2>;
 		bus-width = <4>;
