@@ -607,11 +607,11 @@ static void getledconfig(struct ledconfig *cfg)
 		break;
 	case ROUTER_R6800:
 		cfg->diag_gpio = GPIO_LOW | 0x8;
-		cfg->power_gpio = GPIO_LOW | 0x1f1;
-		cfg->diag_gpio = GPIO_LOW | 0x1f0;
-		cfg->diag_gpio_disabled = GPIO_LOW | 0x1f1;
-		cfg->usb_gpio = GPIO_LOW | 0x1f6;
-		cfg->usb_gpio1 = GPIO_LOW | 0x1f7;
+		cfg->power_gpio = GPIO_LOW | 0x261;
+		cfg->diag_gpio = GPIO_LOW | 0x260;
+		cfg->diag_gpio_disabled = GPIO_LOW | 0x261;
+		cfg->usb_gpio = GPIO_LOW | 0x266;
+		cfg->usb_gpio1 = GPIO_LOW | 0x267;
 		cfg->sec_gpio = 0x11;
 		cfg->wlan_gpio = GPIO_LOW | 0x5;
 		break;
