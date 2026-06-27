@@ -825,6 +825,7 @@ test_circbw_relay(void *arg)
 
   /* "Valid" HS cell in expected state: counted */
   TO_CIRCUIT(circ)->purpose = CIRCUIT_PURPOSE_C_ESTABLISH_REND;
+  circ->hs_ident->sent_establish_rendezvous = 1;
   PACK_CELL(1, RELAY_COMMAND_RENDEZVOUS_ESTABLISHED, "Data1234");
   connection_edge_process_relay_cell(msg, TO_CIRCUIT(circ), NULL,
                                      circ->cpath);

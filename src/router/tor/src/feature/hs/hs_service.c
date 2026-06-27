@@ -2722,9 +2722,11 @@ update_suggested_effort(hs_service_t *service, time_t now)
   switch (aimd_event) {
     case INCREASE:
       if (pow_state->suggested_effort < UINT32_MAX) {
-        pow_state->suggested_effort = MAX(pow_state->suggested_effort + 1,
-                                          (uint32_t)(pow_state->total_effort /
-                                                     pow_state->rend_handled));
+        uint32_t avg =
+          pow_state->rend_handled ? /* check for div by 0 */
+            (uint32_t)(pow_state->total_effort / pow_state->rend_handled) : 0;
+        pow_state->suggested_effort =
+          MAX(pow_state->suggested_effort + 1, avg);
       }
       break;
     case DECREASE:

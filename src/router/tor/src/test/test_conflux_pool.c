@@ -1662,6 +1662,90 @@ test_conflux_ooo_q_teardown_accounting(void *arg)
   test_teardown();
 }
 
+/* Regression test for #41306 (TROVE-2026-026): a recovery leg launched for an
+ * already-linked set must not end up sharing ownership of the conflux object
+ * with a previously-closed (but not yet reaped) last leg. Otherwise both
+ * circuits free the same conflux object on reap, causing a use-after-free and
+ * double free.
+ *
+ * The scenario: (a) link a 2-leg set, (b) launch a recovery leg for the same
+ * nonce, (c) close both linked legs without reaping them -- the second close
+ * empties the linked set and pulls the conflux object out of the pool while
+ * keeping it attached to the closed leg, (d) link the recovery leg, which
+ * revives the very same conflux object and re-adds it to the linked pool, then
+ * (e) close the recovery leg. At this point, pre-fix, two distinct circuits
+ * point at the same conflux object. Reaping them all then frees it twice. */
+static void
+test_conflux_recovery_leg(void *arg)
+{
+  (void) arg;
+  test_setup();
+
+  /* (a) Build and link a 2-leg set. */
+  launch_new_set(2);
+  tt_int_op(smartlist_len(client_circs), OP_EQ, 2);
+  circuit_t *client1 = smartlist_get(client_circs, 0);
+  circuit_t *client2 = smartlist_get(client_circs, 1);
+
+  simulate_circuit_build(client1);
+  simulate_circuit_build(client2);
+  while (smartlist_len(mock_cell_delivery) > 0) {
+    process_mock_cell_delivery();
+  }
+
+  /* Both legs are linked and share the same conflux object. */
+  conflux_t *cfx = client1->conflux;
+  tt_ptr_op(cfx, OP_NE, NULL);
+  tt_ptr_op(client2->conflux, OP_EQ, cfx);
+  tt_int_op(digest256map_size(get_linked_pool(true)), OP_EQ, 1);
+  tt_int_op(digest256map_size(get_unlinked_pool(true)), OP_EQ, 0);
+
+  /* (b) Launch a recovery leg for the same nonce. It shares the same conflux
+   * object and sits in the unlinked pool until it links. */
+  uint8_t nonce[DIGEST256_LEN];
+  memcpy(nonce, cfx->nonce, sizeof(nonce));
+  tt_assert(conflux_launch_leg(nonce));
+  tt_int_op(smartlist_len(client_circs), OP_EQ, 3);
+  circuit_t *recovery = smartlist_get(client_circs, 2);
+  tt_int_op(digest256map_size(get_unlinked_pool(true)), OP_EQ, 1);
+
+  /* (c) Close both linked legs, but do NOT reap them yet. The second close
+   * empties the linked set: the conflux object leaves the linked pool but,
+   * with a recovery leg still around, ownership must be handed over to the
+   * recovery set rather than kept on the closing leg. */
+  conflux_circuit_has_closed(client1);
+  conflux_circuit_has_closed(client2);
+  tt_ptr_op(client2->conflux, OP_EQ, NULL);
+  tt_int_op(digest256map_size(get_linked_pool(true)), OP_EQ, 0);
+  tt_int_op(digest256map_size(get_unlinked_pool(true)), OP_EQ, 1);
+
+  /* (d) Link the recovery leg. It revives the same conflux object and re-adds
+   * it to the linked pool, becoming its owner. */
+  simulate_circuit_build(recovery);
+  while (smartlist_len(mock_cell_delivery) > 0) {
+    process_mock_cell_delivery();
+  }
+  tt_int_op(recovery->purpose, OP_EQ, CIRCUIT_PURPOSE_CONFLUX_LINKED);
+  tt_ptr_op(recovery->conflux, OP_EQ, cfx);
+  tt_int_op(digest256map_size(get_linked_pool(true)), OP_EQ, 1);
+  tt_int_op(digest256map_size(get_unlinked_pool(true)), OP_EQ, 0);
+
+  /* (e) Close the recovery leg as well, without reaping it. */
+  conflux_circuit_has_closed(recovery);
+  tt_int_op(digest256map_size(get_linked_pool(true)), OP_EQ, 0);
+
+  /* Reap everything. Pre-fix, client2 and the recovery leg both point at the
+   * same conflux object and both free it -> use-after-free / double free.
+   * Post-fix, only the recovery leg owns it and frees it exactly once. */
+  test_clear_circs();
+
+  tt_int_op(digest256map_size(get_linked_pool(true)), OP_EQ, 0);
+  tt_int_op(digest256map_size(get_unlinked_pool(true)), OP_EQ, 0);
+
+ done:
+  test_teardown();
+}
+
 struct testcase_t conflux_pool_tests[] = {
   { "link", test_conflux_link, TT_FORK, NULL, NULL },
   { "link_retry", test_conflux_link_retry, TT_FORK, NULL, NULL },
@@ -1681,6 +1765,8 @@ struct testcase_t conflux_pool_tests[] = {
     test_conflux_circuit_get_best_rejects_internal,
     TT_FORK, NULL, NULL },
   { "ooo_q_teardown_accounting", test_conflux_ooo_q_teardown_accounting,
+    TT_FORK, NULL, NULL },
+  { "recovery_leg", test_conflux_recovery_leg,
     TT_FORK, NULL, NULL },
   // XXX: These two currently fail, because they are not finished:
   //{ "link_fail", test_conflux_linkconflux_process_relay_msg_fail,

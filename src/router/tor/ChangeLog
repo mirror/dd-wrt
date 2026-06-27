@@ -1,3 +1,193 @@
+Changes in version 0.4.9.11 - 2026-06-25
+  Security release follows in quick succession after the previous one due to
+  additional high-priority security issues including one concerning onion
+  services (#41297). We strongly recommend upgrading as soon as possible.
+
+  o Major bugfixes (onion services):
+    - Prevent a race condition where in just the right circumstances a
+      rendezvous point could man-in-the-middle (impersonate) the onion
+      service that the client was trying to reach. Fixes bug 41297;
+      bugfix on 0.3.5.3-alpha.
+
+  o Major bugfixes (client):
+    - Clients no longer assert and exit if an onion service encodes an
+      all-zero public key for one of its introduction points. Fixes bug
+      41295; bugfix on 0.3.2.1-alpha.
+
+  o Major bugfixes (directory authorities):
+    - Stop allowing 0 as a port in exit policy lines. We had put in some
+      secondary checks to make sure exit policy ports weren't out of the
+      expected range, but one of those checks accidentally allowed us to
+      parse the port "0" as equivalent to the port range "1-0", which
+      triggered an assert when generating a networkstatus vote (on v3
+      directory authorities) or a networkstatus document (on the bridge
+      authority). Fixes bug 41292; bugfix on 0.1.2.5-alpha.
+
+  o Major bugfixes (security, conflux):
+    - Fix a use-after-free (and potential double free) of a conflux
+      object when a recovery leg revives a conflux set whose last linked
+      leg has already been closed. A malicious exit could use this to
+      crash a client. TROVE-2026-026. Fixes bug 41306; bugfix
+      on 0.4.8.1-alpha.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on June 25, 2026.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2026/06/25.
+
+
+Changes in version 0.4.9.10 - 2026-06-23
+  Another release with an important security fix and major bugfixes. We
+  strongly recommend upgrading as soon as possible.
+
+  o Major bugfixes (conflux, security, TROVE):
+    - Reject a CONFLUX_LINK cell that arrives on a circuit which already
+      has attached streams. A malicious client could send a
+      RELAY_COMMAND_BEGIN before the CONFLUX_LINK on the same circuit,
+      attaching an exit stream that would later end up orphan leaving a
+      dangling circuit back-pointer and a use-after-free (UAF) when the
+      circuit is freed. TROVE-2026-025. Fixes bug 41258; bugfix
+      on 0.4.8.1-alpha.
+
+  o Major bugfixes (client):
+    - Resume warning about unsafe socks protocols (socks4 or
+      socks5-not-hostname) when SafeSocks is not set. Also resume
+      warning every time when TestSocks is set. Fixes bug 41290; bugfix
+      on 0.2.2.18-alpha and 0.2.4.11-alpha.
+
+  o Major bugfixes (clients):
+    - Make clients more consistently expire entry guards 48 to 60 days
+      after they are first used. Previously, we would sometimes expire
+      entry guards after this intended range, but sometimes we would
+      wait up to 120 days. Fixes bug 41280; bugfix on 0.3.0.1-alpha.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on June 23, 2026.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2026/06/23.
+
+  o Minor bugfixes (code security):
+    - Add a defensive check in port_parse_ports_relay() to make it
+      clearer to static analysis tools that there is no security
+      problem. Fixes bug 41278; bugfix on 0.4.3.1-alpha.
+
+  o Minor bugfixes (client-side onion service):
+    - Stop leaking memory in the case where the client fetches a well-
+      formed onion descriptor but it turns out to not match the onion
+      address we intended to fetch. Fixes bug 41264; bugfix
+      on 0.3.2.1-alpha.
+
+  o Minor bugfixes (directory authorities):
+    - Correctly omit "package" lines from the consensus. In proposal 301
+      we tried to make a new consensus method that never generates
+      "package" lines, but we got the logic wrong. Fixes bug 41293;
+      bugfix on 0.4.9.1-alpha.
+
+  o Minor bugfixes (relay):
+    - Avoid a mistaken BUG() warning and backtrace if a client sends an
+      INTRODUCE1 cell using the legacy format from v2 onion services.
+      This error case was already handled correctly, but there's no need
+      to warn and backtrace. Fixes bug 41299; bugfix on 0.4.6.1-alpha.
+
+
+Changes in version 0.4.9.9 - 2026-06-01
+  This is a security release fixing several major bugfixes that were reported
+  in the past weeks. We strongly recommend upgrading as soon as possible.
+
+  o Major bugfixes (compression, security):
+    - Fix a compression bomb bypass where an attacker could concatenate
+      many gzip or zlib sub-streams, each just under the per-stream
+      detection threshold, to avoid the compression bomb check entirely.
+      TROVE-2026-022. Fixes bug 41275; bugfix on 0.3.1.1-alpha.
+    - Fix an infinite loop when decompressing a truncated zlib/gzip
+      stream with done=1. A truncated stream never reaches Z_STREAM_END,
+      causing zlib to return Z_BUF_ERROR with no input remaining, which
+      buf_add_compress() mistook for a full output buffer and retried
+      forever. Fixed by returning TOR_COMPRESS_ERROR in that case so the
+      caller can abort cleanly. TROVE-2026-021. Fixes bug 41274; bugfix
+      on 0.2.6.1-alpha.
+
+  o Major bugfixes (conflux, security):
+    - Fix a NULL write after free when sending a CONFLUX_SWITCH cell
+      fails. The return value of relay_send_command_from_edge() was
+      ignored, so a send failure (which calls circuit_mark_for_close()
+      and removes the leg via cfx_del_leg()) would go undetected,
+      causing the caller to write to the now-freed current leg and
+      resulting in a crash. TROVE-2026-017. Fixes bug 41263; bugfix
+      on 0.4.8.1-alpha.
+
+  o Major bugfixes (security, TROVE-2026-019):
+    - Avoid out-of-bounds read/write when parsing a consensus or
+      detached signature with unexpected signature digest type. Impact
+      is minor for most Tor roles, but potentially major for directory
+      authorities. Fixes bug 41267; bugfix on 0.2.8.2-alpha.
+
+  o Major bugfixes (client stability, TROVE-2026-013, TROVE-2026-015):
+    - Protect against a client-side assert that can happen if a
+      malicious onion service gets the client to load its carefully
+      crafted onion descriptor. Fixes bugs 41259 and 41261; bugfix
+      on 0.3.1.1-alpha.
+
+  o Major bugfixes (code safety):
+    - Avoid a dangerous situation in router_find_exact_exit_enclave()
+      where we could have reached an assert if bridges or relays claim
+      an IP address of 0.0.0.0. Fixes bug 41276; bugfix on 0.4.5.1-alpha.
+
+  o Major bugfixes (conflux, shutdown):
+    - Fix a use-after-free in the shutdown path when freeing conflux
+      circuits. cfx_add_leg() shares stream list pointers across legs
+      without NULLing the old leg, so circuit_free_all() would free the
+      lists via one leg and then access freed memory via another. TROVE-
+      2026-016. Fixes bug 41262; bugfix on 0.4.8.1-alpha.
+
+  o Major bugfixes (DNSPort, TROVE-2026-018):
+    - Fix a client-side crash that would happen if we decide to stop
+      reading on a RESOLVE request that came from the DNSPort or
+      controller. This crash could happen naturally under heavy load and
+      with poor luck, but since 0.4.7.2-alpha it could be induced by the
+      exit relay via a flow control request. Fixes bug 41265; bugfix
+      on 0.2.0.1-alpha.
+
+  o Major bugfixes (memory safety, TROVE-2026-014):
+    - Avoid a heap-use-after-free mistake that can happen in the conflux
+      subsystem, and which can be induced at either the client or the
+      exit relay. Fixes bug 41260; bugfix on 0.4.8.1-alpha.
+
+  o Major bugfixes (onion services, TROVE-2026-020):
+    - Avoid a possible divide by zero crash on onion services that have
+      the proof-of-work (PoW) defense enabled. This bug could be hit by
+      extreme bad luck or maybe by the help of an attacker crafting just
+      the right circumstances. Fixes bug 41270; bugfix on 0.4.8.1-alpha.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on June 01, 2026.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2026/06/01.
+
+  o Minor bugfixes (circuit handshake):
+    - Fix an edge case where relays would allow a CGO-style circuit hop
+      to be established without congestion control parameters, meaning
+      there is no way to refill the sendme windows. Fixes bug 41271;
+      bugfix on 0.4.9.3-alpha.
+
+  o Minor bugfixes (cpuworker threads):
+    - We have a defense-in-depth step to wipe local memory after
+      processing each create cell in a cpuworker thread, but we were
+      accidentally only wiping part of what we wanted to cover. Fixes
+      bug 41269; bugfix on 0.2.4.8-alpha.
+
+  o Minor bugfixes (relay stability):
+    - Make relays survive having the consensus parameter
+      "onion_queue_wait_cutoff" set to a nonsensical 0 seconds. Fixes
+      bug 41266; bugfix on 0.4.7.11.
+
+
 Changes in version 0.4.9.8 - 2026-05-07
   A quick second release because a silent error occurred in our CI build, which
   resulted in all fallback directories being removed from the list. This means
@@ -16,6 +206,50 @@ Changes in version 0.4.9.7 - 2026-05-06
       have no reason in their payload. TROVE-2026-011. Found by Found by
       Brian Carpenter (geeknik). Fixes bug 41254; bugfix
       on 0.1.1.1-alpha.
+
+  o Major bugfixes (conflux):
+    - Do not attempt or accept BEGIN_DIR via conflux legs. TROVE-2026-
+      008. Credit to Anas Cherni from Calif.io in collaboration with
+      Claude and Anthropic Research. Fixes bug 41243; bugfix
+      on 0.4.8.1-alpha.
+
+  o Major bugfixes (conflux, relay):
+    - Adjust conflux out-of-order queue accounting when clearing a
+      queue. TROVE-2026-010. Found by aptupdate. Fixes bug 41251; bugfix
+      on 0.4.8.1-alpha.
+
+  o Major bugfixes (pathbias):
+    - Fix a client-side crash caused by double-close of a circuit while
+      under circuit queue memory pressure. TROVE-2026-009. Found by
+      cypherpunks. Fixes bug 41237; bugfix on 0.3.3.6-rc.
+
+  o Major bugfixes (relay):
+    - Fix null pointer dereference when receiving a CERT cell out of
+      order. TROVE-2026-006. Found by Fwame. Fixes bug 41240; bugfix
+      on 0.2.4.4-alpha.
+
+  o Major bugfixes (relay, onion service):
+    - Fix off-by-one out-of-bounds read if a malformed BEGIN cell is
+      received. TROVE-2026-007. Found by Flanagan. Fixes bug 41245;
+      bugfix on 0.2.4.7-alpha.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on May 06, 2026.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2026/05/06.
+
+
+Changes in version 0.4.8.24 - 2026-05-06
+  This is a security release fixing several major bugfixes that were reported
+  in the past weeks. Huge thanks to everyone that reported these issues! We
+  strongly recommend upgrading as soon as possible.
+
+  o Major bugfixes (cell handling):
+    - Fix out-of-bounds read (OOB) when END, TRUNCATE and TRUNCATED cell
+      have no reason in their payload. TROVE-2026-011. Found by Brian
+      Carpenter (geeknik). Fixes bug 41254; bugfix on 0.1.1.1-alpha.
 
   o Major bugfixes (conflux):
     - Do not attempt or accept BEGIN_DIR via conflux legs. TROVE-2026-

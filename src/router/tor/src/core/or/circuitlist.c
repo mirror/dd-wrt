@@ -1351,6 +1351,12 @@ circuit_free_all(void)
   smartlist_t *lst = circuit_get_global_list();
 
   SMARTLIST_FOREACH_BEGIN(lst, circuit_t *, tmp) {
+    tmp->global_circuitlist_idx = -1;
+    /* Must run before the resolving_streams loop below: for conflux circuits,
+     * this calls linked_circuit_free() -> linked_nullify_streams(), which
+     * NULLs the shared stream pointer on non-last legs so that the loop is
+     * a no-op for them and only the last leg actually frees the streams. */
+    circuit_about_to_free_atexit(tmp);
     if (! CIRCUIT_IS_ORIGIN(tmp)) {
       or_circuit_t *or_circ = TO_OR_CIRCUIT(tmp);
       while (or_circ->resolving_streams) {
@@ -1360,8 +1366,6 @@ circuit_free_all(void)
         or_circ->resolving_streams = next_conn;
       }
     }
-    tmp->global_circuitlist_idx = -1;
-    circuit_about_to_free_atexit(tmp);
     circuit_free(tmp);
     SMARTLIST_DEL_CURRENT(lst, tmp);
   } SMARTLIST_FOREACH_END(tmp);

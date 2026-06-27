@@ -519,7 +519,7 @@ port_parse_ports_relay(or_options_t *options,
   retval = 0;
 
  err:
-  if (*have_low_ports_out < 0)
+  if (have_low_ports_out && *have_low_ports_out < 0)
     *have_low_ports_out = (n_low_ports > 0);
   if (ports) {
     SMARTLIST_FOREACH(ports, port_cfg_t *, p, port_cfg_free(p));

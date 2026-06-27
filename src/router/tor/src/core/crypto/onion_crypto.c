@@ -349,6 +349,7 @@ negotiate_v3_ntor_server_circ_params(const uint8_t *param_request_msg,
       !params_out->cc_enabled) {
     // The V1 cell format is incompatible with pre-CC circuits,
     // since it has no way to encode stream-level SENDME messages.
+    ret = -1;
     goto err;
   }
 

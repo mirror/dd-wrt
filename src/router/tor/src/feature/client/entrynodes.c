@@ -1350,15 +1350,16 @@ sampled_guards_update_consensus_presence(guard_selection_t *gs)
 }
 
 /**
- * Enumerate <b>sampled_entry_guards</b> smartlist in <b>gs</b>.
- * For each <b>entry_guard_t</b> object in smartlist, do the following:
+ * Walk through the <b>sampled_entry_guards</b> smartlist in <b>gs</b>.
+ *
+ * For each <b>entry_guard_t</b> object in the smartlist:
+ *
  * * If <b>currently_listed</b> is false and <b>unlisted_since_date</b>
  *   is earlier than <b>remove_if_unlisted_since</b> - remove it.
- * * Otherwise, check if <b>sampled_on_date</b> is earlier than
- *   <b>maybe_remove_if_sampled_before</b>.
- *   * When above condition is correct, remove the guard if:
- *     * It was never confirmed.
- *     * It was confirmed before <b>remove_if_confirmed_before</b>.
+ * * Otherwise, if it is confirmed and it was confirmed before
+ *   <b>remove_if_confirmed_before</b> - remove it.
+ * * Otherwise, if it is not confirmed and it was sampled before
+ *   <b>maybe_remove_if_sampled_before</b> - remove it.
  *
  * Require <b>gs</b> to be non-null pointer.
  * Return number of entries deleted.
@@ -1383,22 +1384,25 @@ sampled_guards_prune_obsolete_entries(guard_selection_t *gs,
          {FIRST_UNLISTED_AT} is over get_remove_unlisted_guards_after_days()
          days in the past."
       */
+      rmv = 1;
       log_info(LD_GUARD, "Removing sampled guard %s: it has been unlisted "
                "for over %d days", entry_guard_describe(guard),
                get_remove_unlisted_guards_after_days());
-      rmv = 1;
-    } else if (guard->sampled_on_date < maybe_remove_if_sampled_before) {
-      /* We have a live consensus, and {ADDED_ON_DATE} is over
-        {GUARD_LIFETIME} ago, *and* {CONFIRMED_ON_DATE} is either
-        "never", or over {GUARD_CONFIRMED_MIN_LIFETIME} ago.
-      */
-      if (guard->confirmed_on_date == 0) {
+    } else if (guard->confirmed_on_date == 0) {
+      if (guard->sampled_on_date < maybe_remove_if_sampled_before) {
+        /* We have a live consensus, and this guard isn't confirmed, and
+         * {ADDED_ON_DATE} is over {GUARD_LIFETIME} ago. */
         rmv = 1;
         log_info(LD_GUARD, "Removing sampled guard %s: it was sampled "
                  "over %d days ago, but never confirmed.",
                  entry_guard_describe(guard),
                  get_guard_lifetime() / 86400);
-      } else if (guard->confirmed_on_date < remove_if_confirmed_before) {
+      }
+    } else { /* guard is confirmed */
+      if (guard->confirmed_on_date < remove_if_confirmed_before) {
+        /* We have a live consensus, and {CONFIRMED_ON_DATE} is not
+         * "never", and {CONFIRMED_ON_DATE} is over
+         * {GUARD_CONFIRMED_MIN_LIFETIME} ago. */
         rmv = 1;
         log_info(LD_GUARD, "Removing sampled guard %s: it was sampled "
                  "over %d days ago, and confirmed over %d days ago.",

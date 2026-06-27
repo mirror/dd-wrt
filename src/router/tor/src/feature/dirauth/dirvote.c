@@ -1635,7 +1635,7 @@ networkstatus_compute_consensus(smartlist_t *votes,
     client_versions = compute_consensus_versions_list(combined_client_versions,
                                                       n_versioning_clients);
 
-    if (consensus_method < MIN_METHOD_TO_OMIT_PACKAGE_FINGERPRINTS)
+    if (consensus_method >= MIN_METHOD_TO_OMIT_PACKAGE_FINGERPRINTS)
       packages = tor_strdup("");
     else
       packages = compute_consensus_package_lines(votes);

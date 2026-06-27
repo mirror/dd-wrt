@@ -2369,7 +2369,9 @@ router_find_exact_exit_enclave(const char *address, uint16_t port)
   tor_addr_from_in(&ipv4_addr, &in);
 
   SMARTLIST_FOREACH(nodelist_get_list(), const node_t *, node, {
-    if (tor_addr_eq(node_get_prim_addr_ipv4(node), &ipv4_addr) &&
+    const tor_addr_t *prim = node_get_prim_addr_ipv4(node);
+    if (prim &&
+        tor_addr_eq(prim, &ipv4_addr) &&
         node->is_running &&
         compare_tor_addr_to_node_policy(&ipv4_addr, port, node) ==
           ADDR_POLICY_ACCEPTED &&

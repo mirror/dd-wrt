@@ -3,327 +3,317 @@
 /* timestamp=20210412000000 */
 /* source=offer-list */
 //
-// Generated on: Thu, 7 May 2026 14:14:42 +0000
+// Generated on: Thu, 25 Jun 2026 17:35:19 +0000
 
-"45.94.31.244 orport=9500 id=2687D8EFFD87C588956B9AC82781D2E8B1EC8327"
+"64.65.62.122 orport=443 id=4F067C5C488173987B568CD7245F1CA71DEE996B"
+/* nickname=burnaboy */
+/* extrainfo=0 */
+/* ===== */
+,
+"162.19.252.137 orport=9200 id=E0608745ED237A918A73A370538023330F1BF45D"
 /* nickname=prsv */
 /* extrainfo=0 */
 /* ===== */
 ,
-"64.65.62.12 orport=443 id=709627A353CD802906CB64F8E17E137089C6DFE3"
-/* nickname=dbthageneral */
-/* extrainfo=0 */
-/* ===== */
-,
-"23.141.188.93 orport=443 id=B543326CF26B23A344B245809BB489FA30265847"
-/* nickname=loopnetnode03 */
-/* extrainfo=0 */
-/* ===== */
-,
-"185.204.1.84 orport=9001 id=5B754CD36B19FC368B87FD3F1CEB529B05545F09"
-/* nickname=smallting23 */
-/* extrainfo=0 */
-/* ===== */
-,
-"124.198.131.108 orport=9100 id=82848D7B141301AB8A4BF1103829F5021432AAC0"
-" ipv6=[2a12:a800:11:1:124:198:131:108]:9100"
+"185.183.157.214 orport=9100 id=5BDD0633E0AC09763E49641DCD1BA3AB3A21AA83"
+" ipv6=[2a03:4000:1d:b7a:782f:17ff:fef0:a708]:9100"
 /* nickname=Quetzalcoatl */
 /* extrainfo=0 */
 /* ===== */
 ,
-"85.215.46.141 orport=9001 id=81D61DF58DC5EB83B6178CE9474B5CD694A44A48"
+"185.243.218.225 orport=8166 id=3287F79D9C1687BF7F3A9D140369CA64D2FD111B"
+" ipv6=[2a03:94e0:ffff:185:243:218:0:225]:8166"
+/* nickname=terNOicebeer17 */
+/* extrainfo=0 */
+/* ===== */
+,
+"96.9.98.136 orport=443 id=6EADE4A39AB89F1C6BF989668CC046E9C6ADFC5A"
+/* nickname=gigsuk */
+/* extrainfo=0 */
+/* ===== */
+,
+"178.254.18.25 orport=9001 id=1932C6B0B3D15F6CDA47632FB2257A5DF3BC014F"
+/* nickname=animator */
+/* extrainfo=0 */
+/* ===== */
+,
+"8.211.31.18 orport=9002 id=49AD06A955605436C04459E247A724C231234AEA"
 /* nickname=Unnamed */
 /* extrainfo=0 */
 /* ===== */
 ,
-"51.38.112.15 orport=9100 id=89F95502BDA81E44B67BADBFFF00DA80CDD4AFB5"
+"149.172.60.95 orport=443 id=70F35FF59D6F37959A6D9B9089BB31C5D73F3956"
+/* nickname=M4dm4ni4c */
+/* extrainfo=0 */
+/* ===== */
+,
+"195.154.200.146 orport=80 id=60A211F20E74C7D2D884BA49202964F5C94FA015"
+" ipv6=[2001:bc8:32d7:154::]:80"
+/* nickname=Cyprus */
+/* extrainfo=0 */
+/* ===== */
+,
+"15.204.141.95 orport=8080 id=32742AD57C3D243DA0713BB6DFD82118DF573D2E"
+/* nickname=sonrisas */
+/* extrainfo=0 */
+/* ===== */
+,
+"217.154.63.133 orport=9001 id=730C207C0B7A9B48B4991213E1F5BA26A2E721CF"
+" ipv6=[2a00:da00:f447:600::1]:9001"
+/* nickname=outatime */
+/* extrainfo=0 */
+/* ===== */
+,
+"136.243.176.179 orport=9002 id=A208C66E3BAF32B70920EB6AF8081F7CFA5DB1D1"
+" ipv6=[2a01:4f8:171:2594::2]:9002"
+/* nickname=Beanbag */
+/* extrainfo=0 */
+/* ===== */
+,
+"170.117.192.249 orport=420 id=01E8A81D47C488C54064D20FEBC3B9928CADA502"
+/* nickname=MrNiceGuy */
+/* extrainfo=0 */
+/* ===== */
+,
+"162.19.204.163 orport=10000 id=5C426791CB47BDDDD97A71EB2EFC4CCC84DEB299"
+/* nickname=ReacTOR */
+/* extrainfo=0 */
+/* ===== */
+,
+"192.76.153.253 orport=9005 id=6DAD7AF818F4E1CDA7909DF2E4018A998BE21113"
+" ipv6=[2a04:52c0:1000:253::253]:9005"
+/* nickname=mentoreth4 */
+/* extrainfo=0 */
+/* ===== */
+,
+"23.191.200.25 orport=443 id=1938F805DEA65F2F351134465BF5D5F3815E5235"
+/* nickname=UnredactedCapricorn */
+/* extrainfo=0 */
+/* ===== */
+,
+"78.80.158.218 orport=433 id=06165000052A06FF3C6C2B8A7773833622D6AF70"
+/* nickname=ZNK999F */
+/* extrainfo=0 */
+/* ===== */
+,
+"37.221.208.7 orport=9100 id=F795756C04D2458CEECA249613A58BBABFD70143"
+" ipv6=[2a01:270:9807::1]:9100"
 /* nickname=prsv */
 /* extrainfo=0 */
 /* ===== */
 ,
-"171.25.193.235 orport=443 id=FE136459CDE7F442F0E1009BDE3C8A46856B52A2"
-" ipv6=[2001:67c:289c:2::235]:443"
-/* nickname=DFRI25 */
+"80.67.167.86 orport=9001 id=22D2314BC5146890A8E5C19C884D96C0CBFEAA24"
+" ipv6=[2a0b:cbc0:1100:7::1]:9001"
+/* nickname=Pegase */
 /* extrainfo=0 */
 /* ===== */
 ,
-"185.39.207.83 orport=9001 id=9253912D900505F77C8EFE81F7A38FC273E2ECD7"
-/* nickname=vanzetti */
-/* extrainfo=0 */
-/* ===== */
-,
-"124.198.131.190 orport=8430 id=51691C7926B134AB582F3489D23A95E59DC3470C"
-" ipv6=[2a12:a800:11:1:124:198:131:190]:8430"
+"62.72.47.105 orport=8430 id=D4C4D01625AF1473A8AEABB28CDE7EC8D553C428"
+" ipv6=[2407:3640:2259:6302::1]:8430"
 /* nickname=Quetzalcoatl */
 /* extrainfo=0 */
 /* ===== */
 ,
-"89.58.41.156 orport=143 id=F33ECAB340E6117597A3FF5B5F2B6D7475B56187"
-" ipv6=[2a03:4000:66:15:18a0:6bff:fe90:3147]:143"
-/* nickname=Quetzalcoatl */
+"75.145.166.75 orport=9001 id=29711824A49ECE595B9B29594759FD7CDF5B1BA8"
+/* nickname=swisshead */
 /* extrainfo=0 */
 /* ===== */
 ,
-"46.4.74.237 orport=8080 id=4CF204F66452C89712B9CF513A213C1F03D8F706"
-" ipv6=[2a01:4f8:140:522c::2]:8080"
-/* nickname=Indigold */
+"185.112.249.156 orport=443 id=B86F28E63E7972C533D1F20CB94F0F0AAFF3DC5B"
+/* nickname=eclipse08 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"85.195.253.142 orport=9005 id=0CA3F4D95BCF24964FC4623588A3F17E2EE216DE"
-" ipv6=[2a02:168:83d4:7777:44bd:c9ff:fe2e:3165]:443"
-/* nickname=lodrich2 */
+"144.76.26.58 orport=9001 id=26BC5109EE3495F4655D133BBE0A77FE1608D9A7"
+" ipv6=[2a01:4f8:191:120f::2]:9001"
+/* nickname=fabiana */
 /* extrainfo=0 */
 /* ===== */
 ,
-"64.65.1.166 orport=443 id=9F4336CD2F057C6A4A9A1FB676EABB7080B93170"
-/* nickname=koopstaknicca */
+"82.153.138.57 orport=9007 id=7AD80E51B0D3867A8E32785038EA37E41BF4A2B2"
+/* nickname=obzgs5tbmn4q */
 /* extrainfo=0 */
 /* ===== */
 ,
-"109.69.66.221 orport=9001 id=D9906C532A3176AEA9B733BD3542FE8953E3F161"
-/* nickname=torxgatede */
-/* extrainfo=0 */
-/* ===== */
-,
-"64.65.63.80 orport=443 id=4C449C87460C5AF1881660A01D86927EBA7BA8D2"
-/* nickname=tm88 */
-/* extrainfo=0 */
-/* ===== */
-,
-"96.9.98.125 orport=443 id=9C7BBC5D77EB893BFDDBD24DD99CFE627706EA58"
-/* nickname=bigtuckdfw */
-/* extrainfo=0 */
-/* ===== */
-,
-"62.238.237.242 orport=65533 id=1CAC58ED03509FE112CFB780D5B04068644B28E8"
-/* nickname=ididnteditheconfig */
-/* extrainfo=0 */
-/* ===== */
-,
-"130.61.22.245 orport=443 id=75BB2F5A2DD1DE403510648EE960455B0E0A9E82"
-" ipv6=[2603:c020:8015:3900::24]:443"
-/* nickname=GermanCraft20 */
-/* extrainfo=0 */
-/* ===== */
-,
-"5.254.118.189 orport=9001 id=234B06E4DA915D527C897E21FD1E9F08012E2962"
-/* nickname=Pizzahut */
-/* extrainfo=0 */
-/* ===== */
-,
-"57.129.110.54 orport=9200 id=9BB7355684F9F4246306F8D14A149B3FE60D3B7E"
-" ipv6=[2001:41d0:701:1100::9a4e]:9200"
+"147.90.235.228 orport=9000 id=D806EC0E00D5E9E83C661E07A9589C3FE5583FB3"
+" ipv6=[2602:f6f6:2:d3cf::1]:9000"
 /* nickname=prsv */
 /* extrainfo=0 */
 /* ===== */
 ,
-"95.214.53.96 orport=8446 id=C549A2169DAF079B61520C29E567589FE3F8E606"
-" ipv6=[2a03:cfc0:8000:7::5fd6:3560]:8446"
-/* nickname=bauruine */
+"103.152.178.73 orport=9001 id=CD2EAAE3552F0F73B9C69FE3301DF0A2BA57CFD4"
+/* nickname=Misaka */
 /* extrainfo=0 */
 /* ===== */
 ,
-"94.72.104.135 orport=110 id=BAD7C0F12C8DB48616366D2C6CAA2A7D00F929D9"
-" ipv6=[2a02:c204:2263:5153::1]:110"
-/* nickname=Quetzalcoatl */
+"81.245.98.184 orport=4096 id=9B260AFE88F69D6C7C981173E21AD8243CA7C42A"
+/* nickname=yourPrivacyMatter */
 /* extrainfo=0 */
 /* ===== */
 ,
-"94.232.247.113 orport=9001 id=1C494D177B72D1C6D014FF417C222938FCD9DC63"
-/* nickname=Neko */
+"195.58.58.72 orport=443 id=D1A39C70169F2C4B690DC9B6E7B03C3B9ABE907B"
+" ipv6=[2a12:bec0:20c:94bb::1]:443"
+/* nickname=fluffypancakes001us */
 /* extrainfo=0 */
 /* ===== */
 ,
-"124.198.131.29 orport=9000 id=94E32F3A83E249D3BC28954F0A504D940E0F1411"
-" ipv6=[2a12:a800:11:1:124:198:131:29]:9000"
-/* nickname=Quetzalcoatl */
+"64.65.1.6 orport=443 id=61FDC20A73FD35D96C3BE5EE984156210B10A491"
+/* nickname=yungla */
 /* extrainfo=0 */
 /* ===== */
 ,
-"217.154.62.51 orport=9001 id=8BBB1B1EC32649741D117FF1EC65E2E8419B27E3"
-" ipv6=[2a00:da00:f43b:5900::1]:9001"
-/* nickname=waterknight */
+"45.13.225.78 orport=9001 id=301DD621B68D0B7257EA221FD938D34FE3794BEE"
+" ipv6=[2a0e:97c0:3e3:460:1337:b04b:1337:5]:9001"
+/* nickname=TORtelliniExit02 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"185.220.100.252 orport=9100 id=6BCB964AB74E23F8986BDA905697D3A6BE08AF28"
-" ipv6=[2a0b:f4c0:16c:4::1]:9100"
-/* nickname=F3Netze */
+"217.23.8.2 orport=9001 id=B42C797CC8CD63C60FB643E820A11D113DF4F5C8"
+/* nickname=firefly */
 /* extrainfo=0 */
 /* ===== */
 ,
-"46.23.108.166 orport=9001 id=A910E06129C97E7056B010B420DD4DF480C9FCE5"
-" ipv6=[2a0f:ca81:b00b::bc12:d6a3]:9001"
-/* nickname=touchdown2causehell */
+"135.125.103.47 orport=9001 id=C460E8A702592EF52116466BBA2725E11FB82AC9"
+" ipv6=[2001:41d0:404:200::f9f]:9001"
+/* nickname=TORlabproject */
 /* extrainfo=0 */
 /* ===== */
 ,
-"93.99.105.20 orport=9001 id=D934F6243D4EB8232997EC42330B6290B761A599"
-" ipv6=[2a01:5e0:36:c2b2::1]:9001"
-/* nickname=pr0UdHater */
+"80.67.172.162 orport=4443 id=042944E139508E6A8495AA1F6F320D1087D84930"
+/* nickname=algrothendieck3 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"185.241.208.234 orport=9100 id=44FA36A839BA35EB15F3EC5CB5FB355238A32ABC"
-" ipv6=[2a12:a800:2:1:185:241:208:234]:9100"
-/* nickname=Quetzalcoatl */
+"82.141.122.156 orport=442 id=09DD0F811808091DACA286CB50CF85919416ABD4"
+/* nickname=younotfound */
 /* extrainfo=0 */
 /* ===== */
 ,
-"195.170.172.231 orport=443 id=6D76578FC5F7CDB0B3D2E5570FE0E10A20448633"
-" ipv6=[2a0b:8bc0:2:b57e::1]:443"
-/* nickname=tormeaway */
+"171.25.193.39 orport=81 id=9A561CA579F0918D4E0C7A8533801B91C56FD605"
+" ipv6=[2001:67c:289c:2::40]:81"
+/* nickname=DFRI79 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"51.159.59.187 orport=9001 id=24C312C65675E80CFC729E04600D0D9DD27379F4"
-/* nickname=Scrubsss */
+"212.132.97.196 orport=443 id=7E74AEB864E7386E041C5551DD6CE7C0C8B5FE9F"
+" ipv6=[2a01:239:353:8d00::1]:443"
+/* nickname=PommespanzerDE9 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"45.80.158.142 orport=7430 id=8E22D75D49EFBBEA1D719976D5A78750B2C0C227"
-" ipv6=[2a12:a800:2:1:45:80:158:142]:7430"
-/* nickname=Quetzalcoatl */
+"188.213.94.245 orport=9001 id=1D22FDB094132E415174968BC0B52A53B386D29C"
+" ipv6=[2a10:3781:4550:a::131]:9001"
+/* nickname=Peacemaker */
 /* extrainfo=0 */
 /* ===== */
 ,
-"168.119.209.97 orport=9993 id=0F6BF165C5CCE08F82BE66AB2C0C5B6BE9EC5F39"
-/* nickname=frisbeereborn */
+"23.191.200.22 orport=443 id=821921A4F18B2E152153C8138E6989FA48745180"
+/* nickname=UnredactedLille */
 /* extrainfo=0 */
 /* ===== */
 ,
-"146.235.223.137 orport=9050 id=EDEB62E9319D152ABAB42B90E846E11EEA2279B0"
-" ipv6=[2603:c024:c007:8164:5706:b39a:81bd:7e25]:9050"
-/* nickname=richRelay */
+"66.146.193.33 orport=9001 id=2037A6568C5771A5D8FF5C64FC1819247E6FEE7B"
+/* nickname=LunaTor */
 /* extrainfo=0 */
 /* ===== */
 ,
-"212.83.171.89 orport=20 id=9554FC0CF9A5200542E3375C8AE4E939C4594228"
-/* nickname=FiveBoxingWizards */
+"45.137.201.5 orport=9001 id=C4FEABB1C0F7709312B33345040FBC29682877DE"
+/* nickname=dim */
 /* extrainfo=0 */
 /* ===== */
 ,
-"51.89.17.143 orport=8080 id=1FE6D59BC44493017A8CDE25DF300D08BA80CCDD"
-/* nickname=Zwo */
+"193.189.100.198 orport=443 id=FDD9CD7406582E0B56C4A27D44126AE843EAF6DD"
+" ipv6=[2a0f:df00:0:255::198]:443"
+/* nickname=TORKeFFORG5 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"37.46.208.212 orport=993 id=3A56376BB965825539D9BBF2E409F316CE57A22E"
-" ipv6=[2a00:19a0:3:d0:0:252e:d0d4:1]:993"
-/* nickname=TorZoner2 */
+"162.201.194.145 orport=9001 id=345F576F29CA1F2A3B86262A6165E2F9F1AAAD8D"
+" ipv6=[2600:1700:3fc0:cdb0::44]:9001"
+/* nickname=seenoevil */
 /* extrainfo=0 */
 /* ===== */
 ,
-"173.249.215.138 orport=9001 id=CFD6DB3034A2AEFEE07E533D294B1C2E0DC1B897"
-/* nickname=theTorDoor */
+"45.83.104.137 orport=9600 id=CFF9C18036D401579C473177C0D95B463AD371F7"
+" ipv6=[2a03:4000:46:197:b434:d3ff:fe68:d9e1]:9600"
+/* nickname=Aramis */
 /* extrainfo=0 */
 /* ===== */
 ,
-"212.227.52.236 orport=443 id=8BBB78CEFDB03B3A919743F693BEC2A0C81D0417"
-" ipv6=[2a02:2479:44:9000::1]:443"
-/* nickname=Freelay */
+"128.52.132.189 orport=9002 id=CEE465A048F5F53261F418C5257A4285E73C3C66"
+" ipv6=[2603:400a:0:9:f816:3eff:fe73:f862]:9002"
+/* nickname=pdos01 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"194.34.132.51 orport=9001 id=81B8222C107CC0AAB575B83BF98D2492DB1F609D"
-/* nickname=ClankC */
+"128.232.113.47 orport=9001 id=2427E37429BD1E5EE094BDDF417D1D2BE2A2C803"
+" ipv6=[2a05:b400:110:1199:a6bf:1ff:fe25:b961]:9001"
+/* nickname=ephemer5 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"89.47.51.90 orport=443 id=06F3E28948A3C6E2BA8B0C7D109C7BFC12D69DC5"
-" ipv6=[2001:1600:13:101::1fc7]:443"
-/* nickname=Oberwallis */
+"50.7.154.218 orport=443 id=1442F40CA33AC29441F54EF696FCC04A5A16C307"
+/* nickname=wagwan */
 /* extrainfo=0 */
 /* ===== */
 ,
-"176.9.38.121 orport=9100 id=8284C8A45D22F2981C4B6287C7FB4367116E7CCE"
-" ipv6=[2a01:4f8:161:353a::2]:9100"
-/* nickname=Turik */
+"158.69.201.83 orport=9001 id=C25A982DCFE86D647273CD66C478EE0A1193FE4E"
+/* nickname=rotatopotato */
 /* extrainfo=0 */
 /* ===== */
 ,
-"91.179.18.97 orport=9006 id=D03A3EFE3E06660F48011C27109BA7717C42F992"
-" ipv6=[2a02:a03f:d9df:fe00:9657:a5ff:fe64:1d88]:9006"
-/* nickname=Belgique */
+"64.65.1.128 orport=443 id=2F32397F39D58E88B0863621FC58C6D7F59491B3"
+/* nickname=ghostemane */
 /* extrainfo=0 */
 /* ===== */
 ,
-"23.129.64.190 orport=443 id=0082FE19212D9681EEB2320A42ADF0390D231585"
-" ipv6=[2620:18c:0:192::e0:190]:443"
-/* nickname=eo190 */
+"192.42.116.29 orport=443 id=007BE01311B98AEFDFDCB7F4A2F167296E696825"
+" ipv6=[2001:67c:e60:c0c:192:42:116:29]:443"
+/* nickname=NTH29R1 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"45.148.10.111 orport=9100 id=5817BB147AB398A63F7EC8DB5899C5A1B5056AD4"
-/* nickname=prsv */
+"96.9.98.90 orport=443 id=911BE3F16FA3609A056FFF56814CACD6F8669E53"
+/* nickname=thelox */
 /* extrainfo=0 */
 /* ===== */
 ,
-"185.66.71.141 orport=9100 id=27D50CAD554ECC39BB7673DB9C8A16675C36DD71"
-/* nickname=PotaTor */
+"213.144.142.24 orport=9001 id=4B582F3F4BB4DE56D7728DEB22AA255350870F98"
+" ipv6=[2001:1620:ad1::ff24]:9001"
+/* nickname=tubealloys */
 /* extrainfo=0 */
 /* ===== */
 ,
-"64.65.1.22 orport=443 id=484E4F9B4865E1A3D772C01930D59694F4BAEF4D"
-/* nickname=shawtylo */
+"185.220.101.199 orport=8443 id=E1AF5373E3240566B598FA481AD3860549F6168B"
+" ipv6=[2a0b:f4c2:2:1::199]:8443"
+/* nickname=ForPrivacyNET */
 /* extrainfo=0 */
 /* ===== */
 ,
-"45.154.98.19 orport=9700 id=E6B9F9FDA365CE2BA58A2E37235F98148090F335"
-/* nickname=prsv */
+"109.70.100.246 orport=9010 id=E8CCA1C61EBA1614BAB6B5CA792BDC687F397B4F"
+" ipv6=[2a03:e600:100:c3::10]:9010"
+/* nickname=jackson */
 /* extrainfo=0 */
 /* ===== */
 ,
-"185.177.229.228 orport=9001 id=ACBBB426CE1D0641A590BF1FC1CF05416FC0FF6F"
-" ipv6=[2604:86c0:f001:d::3]:9001"
-/* nickname=Planetclaire62 */
+"193.189.100.199 orport=444 id=E3426F15A222DA8788615224722799975943EE63"
+" ipv6=[2a0f:df00:0:255::199]:444"
+/* nickname=TORKeFFORG19 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"193.200.229.243 orport=12443 id=1028D27EAFC35B6B7921BC72CD60A5DD73945AE9"
-" ipv6=[2a03:94e0:ffff:193:200:229:0:243]:12443"
-/* nickname=bauruine */
+"93.237.51.47 orport=30003 id=8AFE4E6F05234B0184327C052B09F10191EAFAF3"
+/* nickname=ProSecureRelay */
 /* extrainfo=0 */
 /* ===== */
 ,
-"212.87.221.114 orport=9001 id=8BC3B7015983ACB618F687A51ADAC5708E71418A"
-/* nickname=LAA */
+"82.221.131.86 orport=8443 id=EEEBDC066C59143A2C614DE6600601EDAB85C2B9"
+/* nickname=apophenia */
 /* extrainfo=0 */
 /* ===== */
 ,
-"151.242.132.107 orport=9001 id=F55FA70145866CE4C091A6716B1E93354F532B82"
-" ipv6=[2a14:7581:9f20:1512::107]:9001"
-/* nickname=TheShadowRoute01 */
-/* extrainfo=0 */
-/* ===== */
-,
-"5.39.81.102 orport=9001 id=5500BAEEDC61A6685F687019196E1765171301D5"
-" ipv6=[2001:41d0:8:9366::1]:9001"
-/* nickname=p1onX01 */
-/* extrainfo=0 */
-/* ===== */
-,
-"45.92.1.136 orport=9400 id=8B9357C83188B53392187ABA63458BB767117D5D"
-" ipv6=[2a12:a800:1:1:45:92:1:136]:9400"
-/* nickname=prsv */
-/* extrainfo=0 */
-/* ===== */
-,
-"57.128.170.236 orport=9300 id=FF247CE490D4DF99CDB82E0B724F784FAC8412E1"
-" ipv6=[2001:41d0:801:2000::3129]:9300"
-/* nickname=prsv */
-/* extrainfo=0 */
-/* ===== */
-,
-"45.132.127.8 orport=9100 id=AC7186573ED187FD9A3975EBAD2EC30745E0F985"
-/* nickname=tp3 */
-/* extrainfo=0 */
-/* ===== */
-,
-"89.58.5.0 orport=587 id=08F90650CE12758841FBB3453EDDD2F9338BE5BC"
-" ipv6=[2a03:4000:5e:c47::1]:587"
-/* nickname=TorRelay2b */
+"102.211.56.112 orport=80 id=EB0EEE7C95D2B4324115C07FE175CB1D1DF18B99"
+/* nickname=BronkJohannesbrg */
 /* extrainfo=0 */
 /* ===== */
 ,
@@ -333,117 +323,264 @@
 /* extrainfo=0 */
 /* ===== */
 ,
-"157.90.183.103 orport=9001 id=CC701FCE86D6AF95FC3D5B71645D3430794910C1"
-/* nickname=sutsuj */
+"171.25.193.25 orport=444 id=97F70D82466B7EC179641753490EFF91A52C790C"
+" ipv6=[2001:67c:289c::25]:444"
+/* nickname=DFRI162 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"124.198.131.173 orport=9100 id=33DEBFF96FD95D7D5084026F6C4A55F9EC4A094C"
-" ipv6=[2a12:a800:11:1:124:198:131:173]:9100"
-/* nickname=Quetzalcoatl */
+"23.129.64.220 orport=443 id=EED7EFB9D49FF1D713F3FA4083A36EB97BA18406"
+" ipv6=[2620:18c:0:192::e0:220]:443"
+/* nickname=eo220 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"213.166.184.113 orport=7355 id=6CD04D67F68F65C3C872DA0C8C367B7DB09EC895"
-" ipv6=[2001:470:dd60:666::113]:7355"
-/* nickname=NXNW */
+"23.191.200.23 orport=443 id=7AC25DC9E4606154DE38305BDC5A40BCBCB6D04A"
+/* nickname=UnredactedBB */
 /* extrainfo=0 */
 /* ===== */
 ,
-"45.138.16.69 orport=9100 id=E0FC2B6033BCC1AD5CAC295A0B19CF6CF53EED11"
-" ipv6=[2a12:a800:2:1:45:138:16:69]:9100"
-/* nickname=Quetzalcoatl */
+"162.216.18.62 orport=443 id=460CB72A11A5948FDDDE032603DDBEB837AF662C"
+" ipv6=[2600:3c03::f03c:95ff:fe5d:562]:443"
+/* nickname=popeye */
 /* extrainfo=0 */
 /* ===== */
 ,
-"141.105.130.172 orport=9001 id=566CC06AA988366345738926106100A8715972DC"
+"194.156.89.6 orport=9003 id=DB9B9D7ED50046DC52D5A09368E1C53E81D40DE5"
 /* nickname=zgato */
 /* extrainfo=0 */
 /* ===== */
 ,
-"96.9.98.205 orport=443 id=FD3731C64E9DD2A93835FC7B824AB9CFA50BE729"
-/* nickname=lilgotit */
+"141.105.130.119 orport=9001 id=249C706F0F360429F367719F01A2246186BC8B17"
+" ipv6=[2a01:f500:5:3e00::a]:9001"
+/* nickname=blueandyellow */
 /* extrainfo=0 */
 /* ===== */
 ,
-"64.65.3.4 orport=443 id=FDA605443265A305F5378FF58904DE6D78A720F7"
-/* nickname=vicmensa */
+"193.142.59.74 orport=9100 id=FD162550A00234ED29E41CE1C78C63741CD1037E"
+" ipv6=[2a13:29c0:7c08:9c12:a883:ab1e:7e4b:1]:9100"
+/* nickname=prsv */
 /* extrainfo=0 */
 /* ===== */
 ,
-"72.5.43.62 orport=9001 id=F2F4F40138ABD15828F552D6BAA0889EB5565A9A"
-/* nickname=NotYourWifi */
+"5.255.101.10 orport=443 id=31EF78B9019D61CF259B223DB9F80940994EDA34"
+" ipv6=[2a04:52c0:106:394:d2c:6372:23ce:da90]:443"
+/* nickname=SieNCoAd */
 /* extrainfo=0 */
 /* ===== */
 ,
-"23.191.200.118 orport=443 id=D115DB2B4D9DF6CCAE6433CB5B967C08B119FEF0"
-/* nickname=UnredactedDonziger */
+"68.67.32.31 orport=9001 id=964B4E8A75263A69769541F2764563DABDD995D2"
+/* nickname=MHcXthX9Eb34WYyEN7H */
 /* extrainfo=0 */
 /* ===== */
 ,
-"203.159.90.15 orport=9001 id=97F35D21D2A8F51FB70DA35C6C3878C2DA5C3B4E"
-" ipv6=[2a12:a800:8:1:203:159:90:15]:9001"
-/* nickname=delay */
+"146.59.15.186 orport=9001 id=FFB4BF2AE896CA8E7B3C419855346415D743E889"
+/* nickname=GreenOnion */
 /* extrainfo=0 */
 /* ===== */
 ,
-"71.244.170.31 orport=8500 id=5D78D7D2A16F6B4D3166FD9D1FD4A715B14A56DF"
-" ipv6=[2001:470:e01f:700::20]:8500"
-/* nickname=nsaciabrb */
+"45.137.199.102 orport=9001 id=DA8C9D509989F8175EC3E487788815F7BAD2DAEC"
+" ipv6=[2a0b:64c0:10:1:be24:11ff:fee7:119f]:9001"
+/* nickname=confidential */
 /* extrainfo=0 */
 /* ===== */
 ,
-"185.181.61.201 orport=9005 id=128C0F0E9D32EBC3BD85AD40F73FD1928EC86693"
-" ipv6=[2a03:94e0:ffff:185:181:61:0:201]:9005"
-/* nickname=RuneByteNET */
+"67.215.234.141 orport=8430 id=ADC35E769B42A3CAB8557E0B5295D3F152595EF8"
+" ipv6=[2607:9d00:2000:ac::a498:9191]:8430"
+/* nickname=Quetzalcoatl */
 /* extrainfo=0 */
 /* ===== */
 ,
-"18.222.193.228 orport=30002 id=6909C78D3928234C4CDC6B9788B3BDC86D0346E6"
-/* nickname=BOB123 */
+"193.108.117.103 orport=9001 id=438F3EA4C9FB0DB63F5377A3271AB5435FAD7E04"
+/* nickname=dolemite */
 /* extrainfo=0 */
 /* ===== */
 ,
-"64.65.2.147 orport=443 id=3C49AE94C3D7EEDD9FB8F46FFCF345B6C702B86F"
-/* nickname=posner */
+"84.238.10.142 orport=19001 id=F12F8DFDDE1969D4E5940781E3DAB326D28C1220"
+/* nickname=tesseract01 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"193.11.114.43 orport=9001 id=12AD30E5D25AA67F519780E2111E611A455FDC89"
-" ipv6=[2001:6b0:30:1000::99]:9050"
-/* nickname=mdfnet1 */
+"185.82.126.57 orport=443 id=FFAF2849EED3BBB66031173551CFD5E39ECEA324"
+/* nickname=wfaegfyFDRTlhdtr */
 /* extrainfo=0 */
 /* ===== */
 ,
-"87.236.195.203 orport=53 id=8C7A9811CC6C1664F42D9C2BD88C1444FCE79D42"
-/* nickname=Intrepid */
+"147.90.234.30 orport=9003 id=5AE8D6148CB3B153AC6303988A4348949A1266F5"
+" ipv6=[2602:f6f6:2:ad5c::1]:9003"
+/* nickname=NeelTorExit1B */
 /* extrainfo=0 */
 /* ===== */
 ,
-"23.191.200.77 orport=443 id=FEA02706D4F2863FA1A93B36DA44B155DFF6F959"
-/* nickname=UnredactedBenArtzi */
+"82.41.132.3 orport=9001 id=579E92A3168011112BE428E28F1DB12B847EE662"
+/* nickname=M4ri0 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"23.191.200.89 orport=443 id=B9E9B7C43A97917826AE4C17498FC8F561095E9E"
-/* nickname=UnredactedCutler */
+"96.9.98.64 orport=443 id=8D69CBCD465028B306080C55E8DF8858D986023D"
+/* nickname=foolio */
 /* extrainfo=0 */
 /* ===== */
 ,
-"95.217.112.245 orport=995 id=54FF87E18CF4B351BB078A640A4DC5265969485E"
-" ipv6=[2a01:4f9:4a:2e4e::2]:995"
-/* nickname=arbitraryTessa3 */
+"64.65.0.120 orport=443 id=A06E4ABE8E49E25BDD1DB618ED262706742A215B"
+/* nickname=2chainz */
 /* extrainfo=0 */
 /* ===== */
 ,
-"23.129.64.177 orport=443 id=0421EBAC3C7DF0EE4659163D1BFCAE6DA6543C9D"
-" ipv6=[2620:18c:0:192::e0:177]:443"
-/* nickname=TorMcTorface */
+"89.58.26.216 orport=7100 id=39CE03A66016B0D69BC6C2A1F362C628436FEF7B"
+" ipv6=[2a03:4000:62:8:c855:23ff:fef6:50ee]:7100"
+/* nickname=Quetzalcoatl */
 /* extrainfo=0 */
 /* ===== */
 ,
-"107.189.29.8 orport=9001 id=1322EE47D35541471D3A00F30FFF2EE7585E5B52"
-/* nickname=TorExitForYou */
+"185.229.90.81 orport=993 id=FEEBABA2B6FAF53AE1DC8DDA8681CE026537DFA4"
+" ipv6=[2001:1680:101:43f::1]:993"
+/* nickname=bauruine */
+/* extrainfo=0 */
+/* ===== */
+,
+"64.188.93.178 orport=9001 id=94351CC9E17E00741D694F0AC3CD57A9C23E1A43"
+" ipv6=[2a01:ecc0:1000:a100::2]:9001"
+/* nickname=finrelay */
+/* extrainfo=0 */
+/* ===== */
+,
+"194.49.71.252 orport=9001 id=527BFB3CE819BE8D74C2A488B83A2F4332B878B5"
+/* nickname=FreeEurope24 */
+/* extrainfo=0 */
+/* ===== */
+,
+"96.9.98.156 orport=443 id=18A65FC409848256101AE4AE90AFCAE2C00E0776"
+/* nickname=mastaace */
+/* extrainfo=0 */
+/* ===== */
+,
+"70.39.234.182 orport=9001 id=AC68C99B4B26E2B4729237B0DBC7065023690940"
+/* nickname=TheMadHackerGoYeet */
+/* extrainfo=0 */
+/* ===== */
+,
+"95.17.81.188 orport=9008 id=E4CABFB603248E0C9741EBA4924F93A0445F142D"
+/* nickname=zgato */
+/* extrainfo=0 */
+/* ===== */
+,
+"91.158.13.188 orport=9001 id=49B1EF7777C56048D30D3DD756BE1EEDFFDF470C"
+/* nickname=trinity */
+/* extrainfo=0 */
+/* ===== */
+,
+"89.47.51.90 orport=443 id=06F3E28948A3C6E2BA8B0C7D109C7BFC12D69DC5"
+" ipv6=[2001:1600:13:101::1fc7]:443"
+/* nickname=Oberwallis */
+/* extrainfo=0 */
+/* ===== */
+,
+"85.215.67.230 orport=8443 id=FA561E534DDDE63830FA0B0A484235ED23BB27A3"
+" ipv6=[2a02:2479:42:f100::1]:8443"
+/* nickname=53c70r */
+/* extrainfo=0 */
+/* ===== */
+,
+"192.42.116.144 orport=443 id=3DEE67992679A782BD81D2801275449C763741E3"
+" ipv6=[2001:67c:e60:c0c:192:42:116:144]:443"
+/* nickname=NTH144R1 */
+/* extrainfo=0 */
+/* ===== */
+,
+"51.75.141.87 orport=9100 id=FC003BAD97BC06BF4B1CECB6423929D66FF34932"
+" ipv6=[2001:41d0:305:2100::4e75]:9100"
+/* nickname=prsv */
+/* extrainfo=0 */
+/* ===== */
+,
+"46.165.252.48 orport=9001 id=9F74A77EB9D76F2FCCE591C89A26E0FDBD110AB8"
+/* nickname=XORJSRFL */
+/* extrainfo=0 */
+/* ===== */
+,
+"185.100.87.141 orport=9002 id=EC5A78D5974701196C93E9D326B8672BC04FAB7C"
+" ipv6=[2a06:1700:0:e::1]:9002"
+/* nickname=tritium1 */
+/* extrainfo=0 */
+/* ===== */
+,
+"89.44.193.42 orport=443 id=675C1CFC6FABBFCBE4CB5BE77CFE2A0A8F575B8D"
+/* nickname=obscuraalm01 */
+/* extrainfo=0 */
+/* ===== */
+,
+"178.254.44.163 orport=5126 id=0501011B32C77C3FFE68DC4B3E40FC5D27F9501B"
+/* nickname=1blu4DEicebeer02 */
+/* extrainfo=0 */
+/* ===== */
+,
+"132.243.162.13 orport=443 id=E339970C7021BB066F033083DC7F402FC95CFCFC"
+" ipv6=[2a0f:5f45:535::d8]:443"
+/* nickname=Raclette */
+/* extrainfo=0 */
+/* ===== */
+,
+"91.226.144.98 orport=80 id=1C75E1F02A0A7CBB70E72D194298B3DA3A622CDF"
+/* nickname=TonyI */
+/* extrainfo=0 */
+/* ===== */
+,
+"78.42.200.34 orport=9601 id=2F51D0746765580A0A48BCAA21B56ECF797B903E"
+" ipv6=[2a02:8071:74e0:2033::8484:1111]:9601"
+/* nickname=BenjaminDover */
+/* extrainfo=0 */
+/* ===== */
+,
+"51.178.136.58 orport=9100 id=58214F460A2EB3EC745DFED36D190316132AE3B1"
+/* nickname=prsv */
+/* extrainfo=0 */
+/* ===== */
+,
+"92.60.37.247 orport=443 id=47186E3631689057A7EF223ECC5D86918A9E679E"
+" ipv6=[2a03:4000:33:c4c:7823:e2ff:fe4d:d4c6]:443"
+/* nickname=Rem */
+/* extrainfo=0 */
+/* ===== */
+,
+"209.58.180.236 orport=9001 id=0371E4EC901C4FC77FEA2AA5BE4218F0BE1F6CE3"
+/* nickname=hong */
+/* extrainfo=0 */
+/* ===== */
+,
+"147.90.235.21 orport=9100 id=5CEA56320C904E731AE827866C71B90D50696F6A"
+/* nickname=prsv */
+/* extrainfo=0 */
+/* ===== */
+,
+"96.9.98.78 orport=443 id=C05783305558432D94B024A1C2EC5CDC5B4817F5"
+/* nickname=skepta */
+/* extrainfo=0 */
+/* ===== */
+,
+"54.36.108.162 orport=443 id=46F9FB943917858F618F2648595DEACD931D4400"
+" ipv6=[2001:41d0:700:10a2::]:443"
+/* nickname=runesandrelics */
+/* extrainfo=0 */
+/* ===== */
+,
+"198.46.168.17 orport=9001 id=B8FA90A8B7DA9B90A09AA04CD2E81E263AA8DA4C"
+/* nickname=FJB6 */
+/* extrainfo=0 */
+/* ===== */
+,
+"77.33.128.196 orport=9001 id=38F14F8F0B30D35C491AAB5EC6770000A6CA794C"
+/* nickname=AnonsRelay */
+/* extrainfo=0 */
+/* ===== */
+,
+"216.197.207.49 orport=9001 id=C366391E67A29CE959A15193D0CF2F9ED94F3578"
+/* nickname=jorcanada */
+/* extrainfo=0 */
+/* ===== */
+,
+"117.53.155.113 orport=9001 id=584E7A714D68266083B873372D766597BDF67939"
+/* nickname=transilvanianrealm */
 /* extrainfo=0 */
 /* ===== */
 ,
@@ -452,201 +589,328 @@
 /* extrainfo=0 */
 /* ===== */
 ,
-"213.108.108.85 orport=5353 id=A6E4B97CA238DE7E8998D410FB6D2DED07B53509"
-/* nickname=everybodywatching */
-/* extrainfo=0 */
-/* ===== */
-,
-"64.65.1.105 orport=443 id=BE1EA8ECE3347FC24FAB596DD32A63824F69EEA5"
-/* nickname=zedzilla */
-/* extrainfo=0 */
-/* ===== */
-,
-"172.232.209.254 orport=443 id=CEC0F371F19640E863E7ACABFF08FCF1753D0D61"
-" ipv6=[2600:3c0b::f03c:95ff:fefa:bdff]:443"
-/* nickname=LocalenbyITExit */
-/* extrainfo=0 */
-/* ===== */
-,
-"51.255.170.195 orport=10443 id=01E388EF92B569074D8FA86CC9D442E829F6E885"
-/* nickname=ThanasRelay0 */
-/* extrainfo=0 */
-/* ===== */
-,
-"192.42.116.176 orport=443 id=9C5803B9596EE56AA793C5F2E1609B06B172ACCF"
-" ipv6=[2001:67c:e60:c0c:192:42:116:176]:443"
-/* nickname=NTH176R1 */
-/* extrainfo=0 */
-/* ===== */
-,
-"94.142.241.153 orport=143 id=FBC5D08F536D7437469B6959D463D5D3AEC0AD37"
-" ipv6=[2a0e:8f02:f017::11]:143"
-/* nickname=as214958tor3 */
-/* extrainfo=0 */
-/* ===== */
-,
-"66.70.211.20 orport=9001 id=1841CB960128806151B61FC6D87AFBE9A98B99D7"
-/* nickname=SchulteTorRelay001 */
-/* extrainfo=0 */
-/* ===== */
-,
-"45.80.171.211 orport=443 id=E872ED423BD9095ECE5A795AF53B9441150E6AE2"
-" ipv6=[2a10:3781:16ea:90:45:80:171:211]:443"
-/* nickname=NTH301R1 */
-/* extrainfo=0 */
-/* ===== */
-,
-"82.165.230.191 orport=8151 id=07895E6DE9B3CBCB74B6CCF1ABB14BF112FF36F7"
-" ipv6=[2a00:da00:f213:6a00::1]:8151"
-/* nickname=hayzycomr */
-/* extrainfo=0 */
-/* ===== */
-,
-"107.208.159.58 orport=9001 id=D04035B3201C2A9005A2B2F7CEE1B791A0B7C7D1"
-/* nickname=405tor1 */
-/* extrainfo=0 */
-/* ===== */
-,
-"79.116.0.2 orport=9001 id=33BD25D2B77723DF2558EE88583BF91980C81992"
-/* nickname=qu0kka */
-/* extrainfo=0 */
-/* ===== */
-,
-"93.99.104.31 orport=9001 id=A5C76EC2D35035138E66AAFFEFAD2E12B4BE4C54"
-" ipv6=[2a01:5e0:36:ca7b::1]:9001"
-/* nickname=jcstamos */
-/* extrainfo=0 */
-/* ===== */
-,
-"121.127.34.19 orport=443 id=A40280634CC497615A93E8F7D8278DA278383BC7"
-" ipv6=[2602:fb95:102::3]:443"
-/* nickname=HotDawgWaterChi */
-/* extrainfo=0 */
-/* ===== */
-,
-"23.191.200.24 orport=443 id=16A8740ECC9785A650876F26A97425C6D8912625"
-/* nickname=UnredactedLibra */
-/* extrainfo=0 */
-/* ===== */
-,
-"193.189.100.200 orport=444 id=625D88758046E31C234C39A5692659F77854C521"
-" ipv6=[2a0f:df00:0:255::200]:444"
-/* nickname=TORKeFFORG20 */
-/* extrainfo=0 */
-/* ===== */
-,
-"107.189.30.236 orport=9000 id=A4F42AE65F11634C42A3F3952E719F47091BD36F"
-" ipv6=[2605:6400:30:f5a3:5bb1:af4e:c969:c73e]:9000"
+"89.58.26.216 orport=9000 id=56D878C942CD38F5287079974950668B18ECC4CD"
+" ipv6=[2a03:4000:62:8:c855:23ff:fef6:50ee]:9000"
 /* nickname=Quetzalcoatl */
 /* extrainfo=0 */
 /* ===== */
 ,
-"94.158.246.117 orport=9002 id=4F270462A8BF960102EBE193BC0DF6432F49832F"
-" ipv6=[2001:67c:2db8:305::193]:9002"
-/* nickname=4718 */
+"188.245.217.208 orport=444 id=B2FB2A441E2AE4CA0420A187F388F8B5137E51F4"
+/* nickname=AvyAndCal */
 /* extrainfo=0 */
 /* ===== */
 ,
-"79.194.242.127 orport=9001 id=8F1D70DE42C72120CE8E49287414DFCF94FFF1F2"
-" ipv6=[2003:e9:d714:1a01:3c3a:92ff:fec1:b4a4]:9001"
-/* nickname=jay */
+"64.65.1.147 orport=443 id=EAAB427C68A509AAE2B246F25423137FC9ED9489"
+/* nickname=slickrick */
 /* extrainfo=0 */
 /* ===== */
 ,
-"64.65.2.45 orport=443 id=3EA0E9CF482C1778DF9FD606D720DAB9CECC0B88"
-/* nickname=pharrellwilliams */
+"185.181.63.124 orport=9001 id=617ABB55C145AB81C6322E1082855F0DACC65F64"
+" ipv6=[2a03:94e0:ffff:185:181:63:0:124]:9001"
+/* nickname=decicus */
 /* extrainfo=0 */
 /* ===== */
 ,
-"45.66.35.26 orport=1984 id=E4B788EAEECFD03F18CFC7EDF63D5F7BF3365D3D"
-" ipv6=[2a09:61c0::26]:443"
-/* nickname=torexitams06 */
+"96.9.98.36 orport=443 id=CA893A2714E62ACAC7A28548F6F69BA5AF22C026"
+/* nickname=trillsammy */
 /* extrainfo=0 */
 /* ===== */
 ,
-"45.138.16.234 orport=143 id=E8336F50EF1EE89B27C688D10CC512FF966CF083"
-" ipv6=[2a12:a800:2:1:45:138:16:234]:143"
+"64.65.62.119 orport=443 id=5983A781B6525C7918CFD9ABAB035BBA16105B32"
+/* nickname=bankrollfresh */
+/* extrainfo=0 */
+/* ===== */
+,
+"147.90.235.40 orport=9100 id=BB5C8B377F9078A13653015B8C4538140CE2DD44"
+" ipv6=[2602:f6f6:2:5c9c::1]:9100"
+/* nickname=prsv */
+/* extrainfo=0 */
+/* ===== */
+,
+"5.255.101.24 orport=9001 id=C89976F41351B3F0CDA25C385B41ED26A276579A"
+/* nickname=Lily */
+/* extrainfo=0 */
+/* ===== */
+,
+"167.114.103.133 orport=443 id=D5E9356A5958E4891A124FB749829B30EB7F8D29"
+" ipv6=[2607:5300:60:6a85::46]:443"
+/* nickname=Osiris */
+/* extrainfo=0 */
+/* ===== */
+,
+"193.31.117.236 orport=443 id=F16FA573E1A9B5B545920972618698235DD78E05"
+/* nickname=TRRelay1 */
+/* extrainfo=0 */
+/* ===== */
+,
+"52.14.1.170 orport=33123 id=400EF1A0A38600641CB845875568828DC1D14C89"
+/* nickname=spongeybob */
+/* extrainfo=0 */
+/* ===== */
+,
+"185.129.62.63 orport=9001 id=07ACFB0801E4F74F5610F870B5FCBB5539DBCBD1"
+" ipv6=[2a06:d380:0:103::63]:9001"
+/* nickname=kramse02 */
+/* extrainfo=0 */
+/* ===== */
+,
+"171.25.193.35 orport=443 id=0F1C2A846C228EF96A623D9E421EF63B3BD32BD5"
+" ipv6=[2001:67c:289c:2::36]:443"
+/* nickname=DFRI46 */
+/* extrainfo=0 */
+/* ===== */
+,
+"109.70.100.246 orport=9000 id=D12FBEA6247B25C0FCD09D5E123DD59BF943D7BB"
+" ipv6=[2a03:e600:100:c3::10]:9000"
+/* nickname=hertlein */
+/* extrainfo=0 */
+/* ===== */
+,
+"64.65.63.66 orport=443 id=1359BB4BF1382722D11895B298053F9A99A7314E"
+/* nickname=robbbanksbroward */
+/* extrainfo=0 */
+/* ===== */
+,
+"193.115.253.174 orport=443 id=C16118AB499F579A4F95EE8CBA30758BA6B2F804"
+/* nickname=GL2udrUdaaug */
+/* extrainfo=0 */
+/* ===== */
+,
+"154.53.58.161 orport=110 id=66FF32B5D2ED28E310E0C368BFD3CED3799988AC"
+" ipv6=[2605:a141:2261:4410::1]:110"
 /* nickname=Quetzalcoatl */
 /* extrainfo=0 */
 /* ===== */
 ,
-"138.197.166.92 orport=443 id=E26635F9ED41CDA8467C2AA992D81074337602EF"
-/* nickname=NvorDarkdrop */
+"87.106.44.40 orport=9001 id=E6007F4B6BF63905470B55807BA996EC48C72D6B"
+/* nickname=RelayUli */
 /* extrainfo=0 */
 /* ===== */
 ,
-"38.54.33.169 orport=6379 id=9298E89B6C49E8F8BD6CEF13F9BD9B30B364F577"
-/* nickname=rx5mjmjv4n7yebhv */
+"94.140.115.114 orport=8443 id=66C102FA5DDF48C9EEEB048C1630933B66C50ECC"
+/* nickname=kbtr7lv */
 /* extrainfo=0 */
 /* ===== */
 ,
-"178.20.55.182 orport=19006 id=B8348F1E967D9A432F2D03E572DEF76FB25F04D3"
-" ipv6=[2a00:1b88:4::4]:19006"
-/* nickname=marcuse14 */
-/* extrainfo=0 */
-/* ===== */
-,
-"82.165.91.48 orport=9001 id=80F0E108E6671E35516F780F5D56CA1CC49FC99B"
-" ipv6=[2a02:2479:58:be00::1]:9001"
-/* nickname=teaServer */
-/* extrainfo=0 */
-/* ===== */
-,
-"91.92.109.126 orport=443 id=41A931D6D4E9331D8297236C4EBC0004CA969A49"
-/* nickname=smasher */
-/* extrainfo=0 */
-/* ===== */
-,
-"45.80.210.20 orport=9001 id=14BE32AAACB9E7F0BCAFADC15986D787B1325BB6"
-/* nickname=bulkypirate5 */
-/* extrainfo=0 */
-/* ===== */
-,
-"64.65.0.133 orport=443 id=F0178C29874D9E3C10FFDE340E577BE3034AFD60"
-/* nickname=kinglouie */
-/* extrainfo=0 */
-/* ===== */
-,
-"179.218.78.125 orport=9001 id=4697C7038A6680783D3EF107557EE18DB11AD444"
+"64.95.10.169 orport=19001 id=579795881A9BEB88E42FDDA8E5A45EE7606CFC01"
 /* nickname=Unnamed */
 /* extrainfo=0 */
 /* ===== */
 ,
-"45.249.101.87 orport=9090 id=007F178ECF496433D38B0D151B70981DF55E2B8A"
-/* nickname=jollyjack */
+"171.25.193.131 orport=9030 id=7860F0AD272C7045A27C67CD215D467D8E679F45"
+" ipv6=[2001:67c:289c:4::132]:9030"
+/* nickname=DFRI130 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"45.141.215.114 orport=7100 id=3B7DA1409CBFB9C66B9F040D52DF6DAA329D71C4"
-" ipv6=[2a12:a800:2:1:45:141:215:114]:7100"
+"173.249.215.107 orport=9001 id=B9591189772AD8D32AE960E9570A49292F3A1E40"
+/* nickname=theTorDoor */
+/* extrainfo=0 */
+/* ===== */
+,
+"45.84.107.84 orport=8443 id=A91B7AC7A53D2E08A45DAF748C250FB535DBDE8F"
+/* nickname=MetaSucks */
+/* extrainfo=0 */
+/* ===== */
+,
+"5.104.84.183 orport=7430 id=2E821477E6CB66014DF2385F7C48BE56E7884F1F"
+" ipv6=[2400:d320:2261:6860::1]:7430"
 /* nickname=Quetzalcoatl */
 /* extrainfo=0 */
 /* ===== */
 ,
-"83.217.9.73 orport=9001 id=15C2FFABEB99D34AEA28EF01DF34D7BF00938D38"
-/* nickname=salsedo */
+"147.135.129.138 orport=9200 id=FC0A83C73D9DA146D3608AE71F54E322890D59C5"
+/* nickname=prsv */
 /* extrainfo=0 */
 /* ===== */
 ,
-"188.68.49.235 orport=9100 id=7BD416652010B7C42202BE40F749A417003ECD2C"
-" ipv6=[2a03:4000:6:d042:5440:88ff:fedd:4ae5]:9100"
+"95.217.112.245 orport=53 id=3F43D0584A2613C9DB631382FF486DC6B95EA1C8"
+" ipv6=[2a01:4f9:4a:2e4e::2]:53"
+/* nickname=arbitraryTessa2 */
+/* extrainfo=0 */
+/* ===== */
+,
+"67.215.234.141 orport=7430 id=B2A4EFD1B3DAD0F5FA127B5C29BBFE625628A6D9"
+" ipv6=[2607:9d00:2000:ac::a498:9191]:7430"
 /* nickname=Quetzalcoatl */
 /* extrainfo=0 */
 /* ===== */
 ,
-"45.138.16.107 orport=9100 id=D88B5B35EF4D5EF11F5B670C364F812D0349B8DB"
-" ipv6=[2a12:a800:2:1:45:138:16:107]:9100"
-/* nickname=Quetzalcoatl */
+"62.210.99.238 orport=39819 id=3E18FEBABD94CDC986416C957DF323FEDE97A2BD"
+/* nickname=Unnamed */
 /* extrainfo=0 */
 /* ===== */
 ,
-"212.159.69.155 orport=443 id=30D922C52EFEEC8AEE6A107E36DCDC6648012DBB"
-/* nickname=FuckYouPutin */
+"45.90.4.235 orport=9001 id=F475E5987E44A2B7B143A2BEE3F8128EEFD7E5A3"
+" ipv6=[2a03:4000:58:7d:de1:ea7:dead:beef]:9090"
+/* nickname=0x1ea7deadbeef */
 /* extrainfo=0 */
 /* ===== */
 ,
-"109.104.155.161 orport=9001 id=B9A1431A055F3E5A77AB123797D616407C5C15EC"
-/* nickname=FreePalestine */
+"190.120.229.2 orport=443 id=1EA7A6645619538D286FDBED7688AFA7F82E0A51"
+" ipv6=[2800:ba0:2:ee01::7583]:443"
+/* nickname=Peru4no */
+/* extrainfo=0 */
+/* ===== */
+,
+"68.185.124.105 orport=42069 id=ACD05B04783AC9B868A07DCF945E49C5792679AA"
+/* nickname=BringMeToLife */
+/* extrainfo=0 */
+/* ===== */
+,
+"193.187.91.79 orport=443 id=3E59280EA67C918F5AD5CBF7978643BB70A0C169"
+/* nickname=Tuco1 */
+/* extrainfo=0 */
+/* ===== */
+,
+"212.24.100.138 orport=9001 id=96070698714DC07AE2B377864625B7EF64E33BF5"
+" ipv6=[2a02:7b40:d418:648a::1]:9001"
+/* nickname=upsuperRelay2 */
+/* extrainfo=0 */
+/* ===== */
+,
+"65.21.94.13 orport=9001 id=509EAB4C5D10C9A9A24B4EA0CE402C047A2D64E6"
+" ipv6=[2a01:4f9:3b:468e::13]:9001"
+/* nickname=fuchs2 */
+/* extrainfo=0 */
+/* ===== */
+,
+"142.132.157.35 orport=8443 id=CA1684516B7FECF3DB76D43FD02F56D8B95E8A69"
+" ipv6=[2a01:4f8:261:2ced::2]:8443"
+/* nickname=D4rkKn1gh7 */
+/* extrainfo=0 */
+/* ===== */
+,
+"45.80.171.18 orport=9001 id=DA71126E1D0B11605533B7AD399DD5A7EC8E2F0E"
+" ipv6=[2a10:3781:1f::5]:9001"
+/* nickname=blackstar */
+/* extrainfo=0 */
+/* ===== */
+,
+"23.88.154.69 orport=9001 id=90AAC6245388A9A9EC7050810775503004FE40BF"
+/* nickname=Haxalicious */
+/* extrainfo=0 */
+/* ===== */
+,
+"46.166.165.116 orport=9051 id=2B1FA70BE95457A0A9DD878D3C05A5FFA45960BF"
+/* nickname=Unnamed */
+/* extrainfo=0 */
+/* ===== */
+,
+"64.65.1.157 orport=443 id=9C0952E6E80F51A2D37F2D3053B7B2D5E186EBB9"
+/* nickname=smino */
+/* extrainfo=0 */
+/* ===== */
+,
+"64.65.63.77 orport=443 id=8C694E170C33A11C91565D9BC1A2F2648E9167C2"
+/* nickname=southside */
+/* extrainfo=0 */
+/* ===== */
+,
+"94.100.6.11 orport=443 id=03E107A3663E912664F4A934DFF451262C218357"
+/* nickname=Wildtwister */
+/* extrainfo=0 */
+/* ===== */
+,
+"142.44.243.133 orport=9001 id=019FEB22CE04CBD0489B7F24BE038518B64FA223"
+" ipv6=[2607:5300:201:3100::3e59]:9002"
+/* nickname=PyotrTorpotkinTwo */
+/* extrainfo=0 */
+/* ===== */
+,
+"96.9.98.88 orport=443 id=E237E9F386F14456E99EED36B1FAC4F9F77B0F80"
+/* nickname=stormyz */
+/* extrainfo=0 */
+/* ===== */
+,
+"23.141.40.7 orport=9001 id=89ECFA01219A76D222EDD68BF3EEB1DCC3A8D2B3"
+" ipv6=[2620:b0:2000:102::7]:9001"
+/* nickname=nitrogen9001 */
+/* extrainfo=0 */
+/* ===== */
+,
+"195.176.3.23 orport=8443 id=9C61FC0A01401EDF71C4048665E53968E81351FC"
+" ipv6=[2001:620:20d0::23]:8443"
+/* nickname=DigiGesTor5e2 */
+/* extrainfo=0 */
+/* ===== */
+,
+"104.248.233.233 orport=9001 id=25317B5C9B83C574351A8F016DFB4B7053893C97"
+/* nickname=reovol */
+/* extrainfo=0 */
+/* ===== */
+,
+"203.55.81.2 orport=19005 id=98697EF93E26DD52CD96D3F998BF20B2A4162291"
+/* nickname=lunar13 */
+/* extrainfo=0 */
+/* ===== */
+,
+"64.65.1.49 orport=443 id=7E338F23CC660D83C0150087473767DAD0FB0556"
+/* nickname=fabolaffytaffy */
+/* extrainfo=0 */
+/* ===== */
+,
+"38.45.67.186 orport=9001 id=9215A08C840208C79235D821C8B57BFB33245945"
+/* nickname=irelayyourtraffic */
+/* extrainfo=0 */
+/* ===== */
+,
+"185.227.70.53 orport=443 id=B792BEE2B51CC5F8F53139638C8F89AE17D71EB1"
+" ipv6=[2a12:bec0:20b:da62::1]:443"
+/* nickname=fluffypancakes007nl */
+/* extrainfo=0 */
+/* ===== */
+,
+"90.90.165.58 orport=443 id=0106DDA8BE86AAACF769D3E1D30867495E9F3E22"
+/* nickname=SFRnotCool */
+/* extrainfo=0 */
+/* ===== */
+,
+"79.237.214.38 orport=9005 id=A4E498C6CC34329E607531002A19C5908FEABFD3"
+" ipv6=[2003:f3:cf46:7001::41c]:9005"
+/* nickname=twofive */
+/* extrainfo=0 */
+/* ===== */
+,
+"217.182.73.157 orport=9001 id=F46854EDACCD16828FEAAFC6C6EDDC07DDF04411"
+/* nickname=origan */
+/* extrainfo=0 */
+/* ===== */
+,
+"178.239.17.187 orport=9001 id=E094C5DFC402CE402DADF2D699EC8641B9D5B76E"
+/* nickname=qwerty12345 */
+/* extrainfo=0 */
+/* ===== */
+,
+"168.138.183.189 orport=9001 id=EBF2AB8FB3B4F70CE57C491A6FF37D7F6659159A"
+" ipv6=[2603:c024:451f:5f01:0:7114:85c7:fbbc]:9001"
+/* nickname=RelayKiritho */
+/* extrainfo=0 */
+/* ===== */
+,
+"185.50.195.27 orport=27016 id=87372BFA3477E25ECC0BC82800338BF92DACFEF9"
+/* nickname=darksource */
+/* extrainfo=0 */
+/* ===== */
+,
+"64.65.63.7 orport=443 id=340976A4CBE4B2D8423A8F98914776A85B9151BD"
+/* nickname=turk */
+/* extrainfo=0 */
+/* ===== */
+,
+"87.98.242.239 orport=8080 id=37A5E87EBD0B99B09650B32C8F3E085CF83A6EA7"
+/* nickname=Unnamed */
+/* extrainfo=0 */
+/* ===== */
+,
+"96.9.98.186 orport=443 id=28A791F9E9CFCAD286D42F83EB676481322E4E99"
+/* nickname=layziebone */
+/* extrainfo=0 */
+/* ===== */
+,
+"185.220.100.244 orport=9000 id=C0E7334A181184ABD07698D04ADC19E15E3EE184"
+" ipv6=[2a0b:f4c0:16c:12::1]:9000"
+/* nickname=relayonbephomet */
 /* extrainfo=0 */
 /* ===== */
 ,
@@ -656,452 +920,179 @@
 /* extrainfo=0 */
 /* ===== */
 ,
-"92.205.129.7 orport=80 id=1DEECD906AFECF496B7DC1E40829F4563517B4CC"
-" ipv6=[2a00:1169:112:5df0::]:80"
-/* nickname=Charybdis2 */
+"185.181.60.39 orport=9001 id=FF39B0037CAF4E9A014DB1CC0E4FDEC19B1E6B3A"
+" ipv6=[2a03:94e0:ffff:185:181:60:0:39]:9001"
+/* nickname=archivalrelay1 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"85.215.129.4 orport=42069 id=D41AFC78224578E5C5B3C26C2E55778037A52C5B"
-" ipv6=[2a01:239:24a:7200::1]:42069"
-/* nickname=LeClassiqueRelay */
+"193.5.87.219 orport=9001 id=46DA79FDCCC1BB8AA2D1A6A10A4E59F5A8FB114C"
+/* nickname=gnunet */
 /* extrainfo=0 */
 /* ===== */
 ,
-"173.249.215.216 orport=9001 id=963E3248A82017BCF4BC67A6982460660D0A1BE4"
-/* nickname=theTorDoor */
+"217.156.67.176 orport=19890 id=7EA8AB9F5695B89D682760DB0CF03C32F22D5872"
+/* nickname=IrishBread */
 /* extrainfo=0 */
 /* ===== */
 ,
-"171.25.193.81 orport=80 id=E29DE34920CE2B0E035996B0031682C7D831F940"
-" ipv6=[2001:67c:289c:4::82]:80"
-/* nickname=DFRI96 */
+"109.70.100.245 orport=9020 id=E5A4F065BA4E4CB193E50FFD310BA09788A27856"
+" ipv6=[2a03:e600:100:c3::11]:9020"
+/* nickname=hopper */
 /* extrainfo=0 */
 /* ===== */
 ,
-"64.65.63.44 orport=443 id=9D33A40719F076DBF552046E60D763F6D78C59EB"
-/* nickname=lunchmoneylewis */
+"107.189.10.86 orport=9001 id=0CADF9650BE6F3CB6A09F29D8B91250D93DD91E6"
+/* nickname=TheSecondRelay */
 /* extrainfo=0 */
 /* ===== */
 ,
-"64.65.62.236 orport=443 id=CB2CCE6ACF50EA5DB6C50B4C5B786329EB9F09A3"
-/* nickname=tylerthecreator */
+"5.45.99.251 orport=8080 id=75C0B7A2650BD317CE0FF4EE37DEA093AAD9019B"
+" ipv6=[2a03:4000:5:b1:14bb:a9ff:fe0f:70c3]:8080"
+/* nickname=northerndownpour */
 /* extrainfo=0 */
 /* ===== */
 ,
-"171.25.193.20 orport=9001 id=940E1CDEF915CC88B524D34089C8F9764CA9822E"
-" ipv6=[2001:67c:289c::20]:9001"
-/* nickname=DFRI33 */
+"64.65.62.160 orport=443 id=54EE54565CBDA3793EDB47EC4E5E8C01E2495A36"
+/* nickname=guiltysimpson */
 /* extrainfo=0 */
 /* ===== */
 ,
-"5.199.162.114 orport=9001 id=1331D4F20F9679FEA9F1AAFA2EA9C992AC6F172E"
-/* nickname=QuakePHOBOS */
+"176.65.134.37 orport=443 id=8ECBA648364559FE79DBC70246C0CAABE083B46D"
+" ipv6=[2602:f915:e:563e::1]:443"
+/* nickname=LTCSI01 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"108.165.233.228 orport=3380 id=CD345E5F484B3323D2595410B2D0C523BB37BB6D"
-/* nickname=EUTOR2 */
-/* extrainfo=0 */
-/* ===== */
-,
-"88.80.26.2 orport=443 id=AF9EF1C19C0390DE82D0D05DC8E4D6064036CA8B"
-" ipv6=[2a00:16b0:1:243::7012:3117]:443"
-/* nickname=PRQseTORexit5 */
-/* extrainfo=0 */
-/* ===== */
-,
-"37.59.175.224 orport=9001 id=FA9F223D83A4573E9CE42C8420FDEEDEFFF21D45"
-/* nickname=formaldehyde */
-/* extrainfo=0 */
-/* ===== */
-,
-"64.65.63.23 orport=443 id=11D8A1EF78336AB7361101E752BFA55532D5B7ED"
-/* nickname=hurricanekris */
-/* extrainfo=0 */
-/* ===== */
-,
-"45.84.107.84 orport=8080 id=04DBCBFDA74F3837D428003A209B767E5A66D240"
-/* nickname=FacebookSucks */
-/* extrainfo=0 */
-/* ===== */
-,
-"81.6.44.226 orport=9001 id=2AB692D3A045C59804FCCE7EB9EFC606DAA7F2B7"
-/* nickname=uelideschwert */
-/* extrainfo=0 */
-/* ===== */
-,
-"37.228.129.186 orport=9001 id=6F3C20EA9DA9693A47DC857022A61CB388B4D31F"
-/* nickname=Baobab */
-/* extrainfo=0 */
-/* ===== */
-,
-"76.235.207.28 orport=443 id=3684B8673A30B73FED280359C5FBA9F954690D4C"
-" ipv6=[2600:1700:9a12:4070::29]:443"
-/* nickname=KZL303 */
-/* extrainfo=0 */
-/* ===== */
-,
-"206.251.40.165 orport=12800 id=4E41B00F930F3E72530F339EF4C911CE97D2AE9E"
-/* nickname=Tessa */
-/* extrainfo=0 */
-/* ===== */
-,
-"109.104.153.187 orport=443 id=CBD05C5E1EC91AD648B2BE16EC909024F2F096B0"
-" ipv6=[2a11:840:51:1b::5b43:19b6]:443"
-/* nickname=outerhaven */
-/* extrainfo=0 */
-/* ===== */
-,
-"88.150.113.174 orport=443 id=A395D60C95A742919574723DC278B1113CCBA6D3"
-/* nickname=1016 */
-/* extrainfo=0 */
-/* ===== */
-,
-"51.195.41.230 orport=443 id=08E431452B893D8D9BBFF8B76866C37CAA93D9A2"
-" ipv6=[2001:41d0:701:1100::8bb2]:9001"
-/* nickname=torionic */
-/* extrainfo=0 */
-/* ===== */
-,
-"123.253.34.36 orport=9001 id=3932F7E6FCFA7D38D85336DB5FD43CACF5EF6C6B"
-/* nickname=ricky2 */
-/* extrainfo=0 */
-/* ===== */
-,
-"51.83.41.117 orport=9200 id=F8467967A2AD1E2C0B879D8E0B5D9D8DC313EF17"
-" ipv6=[2001:41d0:305:2100::8448]:9200"
-/* nickname=prsv */
-/* extrainfo=0 */
-/* ===== */
-,
-"77.20.3.30 orport=443 id=1D53C93C71C6800BF3CAB004AE08DBB77EDFF836"
-/* nickname=DocTor */
-/* extrainfo=0 */
-/* ===== */
-,
-"92.27.11.87 orport=9007 id=8FE95738A97E6F67D7307F4115018D12EF9A3C33"
-" ipv6=[2001:470:1f08:1a3::2]:9007"
-/* nickname=RealityNews10 */
-/* extrainfo=0 */
-/* ===== */
-,
-"130.89.149.57 orport=9001 id=D08660B6D70B6249A57D89BB7A8F2EA2C952BD35"
-" ipv6=[2001:67c:2564:a120::57]:9001"
-/* nickname=SNTor */
-/* extrainfo=0 */
-/* ===== */
-,
-"45.84.107.44 orport=993 id=788B452882986E71A96D0DEFCA76E12A2BF68433"
-/* nickname=NSOGroupSucks */
-/* extrainfo=0 */
-/* ===== */
-,
-"185.220.101.195 orport=443 id=42896CF699A0E9D28B690901925B410EB22D94A6"
-" ipv6=[2a0b:f4c2:2:1::195]:443"
-/* nickname=ForPrivacyNET */
-/* extrainfo=0 */
-/* ===== */
-,
-"64.65.1.111 orport=443 id=47DEDF760BD5E8F285C6EAB2299BEFC9E35AD13B"
-/* nickname=eddolo */
-/* extrainfo=0 */
-/* ===== */
-,
-"194.26.192.177 orport=143 id=4A1595AD2FEF99C0350D30DB36268731393ED437"
-" ipv6=[2a12:a800:1:1:194:26:192:177]:143"
-/* nickname=Quetzalcoatl */
-/* extrainfo=0 */
-/* ===== */
-,
-"47.156.98.56 orport=9001 id=C1376A0AABABACC65185043C0234F69FFA2D1D22"
-/* nickname=tungsten */
-/* extrainfo=0 */
-/* ===== */
-,
-"103.76.129.130 orport=443 id=FD33F21A96E75651719997DF23374D3C81AA6577"
-/* nickname=ps01buh */
-/* extrainfo=0 */
-/* ===== */
-,
-"94.23.148.66 orport=8000 id=8921CB0ECEA669EEF8A2FD20537D58A676F47228"
-/* nickname=shiva */
-/* extrainfo=0 */
-/* ===== */
-,
-"124.198.131.190 orport=110 id=6052B7DC00F4E86B760350151665510BB9AE4C03"
-" ipv6=[2a12:a800:11:1:124:198:131:190]:110"
-/* nickname=Quetzalcoatl */
-/* extrainfo=0 */
-/* ===== */
-,
-"77.90.35.165 orport=443 id=3223191A45494C565F80CD346314FFBA8D202BDB"
-" ipv6=[2406:ef80:3:195e::1]:443"
-/* nickname=7thSin */
-/* extrainfo=0 */
-/* ===== */
-,
-"38.49.217.50 orport=80 id=BBF737F14EA8FB839A5266E3F04C71E27AFAFE3E"
-" ipv6=[2602:ffd5:745:1::2]:80"
-/* nickname=Killix */
-/* extrainfo=0 */
-/* ===== */
-,
-"134.130.172.229 orport=9001 id=76D2EBA82BBCCA3DF9F254A9A8372A10A26F3D14"
-/* nickname=pinselohrkatze00 */
-/* extrainfo=0 */
-/* ===== */
-,
-"98.206.28.99 orport=9001 id=4F52BAD15EE62B5B741FEBBC494771473854991C"
-" ipv6=[2601:246:c200:bb62:8aa2:9eff:fe85:6581]:9001"
-/* nickname=OnionPie */
-/* extrainfo=0 */
-/* ===== */
-,
-"207.154.251.134 orport=9001 id=AC49C385CD829C1A60C09A9B429BD80F0F5025F9"
-/* nickname=Storm85 */
-/* extrainfo=0 */
-/* ===== */
-,
-"145.239.93.202 orport=9001 id=AD82C4AC732B8479562C8207178F03DE7D8F2648"
-" ipv6=[2001:41d0:601:1100::31ac]:9001"
-/* nickname=BehemothLTDPL1 */
-/* extrainfo=0 */
-/* ===== */
-,
-"144.217.81.135 orport=9001 id=44E0EAF0E79ED0104812FBA1F2B880CE7D972CDA"
-/* nickname=Unnamed */
-/* extrainfo=0 */
-/* ===== */
-,
-"38.135.24.31 orport=9003 id=22430B5D04659B5D07959602DDCF4269AD4F3FC7"
-" ipv6=[2602:f6f6:2:2634::1]:9003"
-/* nickname=NeelTorExit2B */
-/* extrainfo=0 */
-/* ===== */
-,
-"194.15.115.92 orport=9001 id=48B1BDAAF9224B1ED993C404E18DA9031B5085EA"
-/* nickname=EarthElementX */
-/* extrainfo=0 */
-/* ===== */
-,
-"96.9.98.202 orport=443 id=63086BDA9E9A0FF3335D68055C46F7B22330343C"
-/* nickname=yungbleu */
-/* extrainfo=0 */
-/* ===== */
-,
-"185.222.160.3 orport=443 id=E128A0349D06835EBFB90115FB38F4A07E672F96"
-/* nickname=lukast */
-/* extrainfo=0 */
-/* ===== */
-,
-"140.83.50.92 orport=443 id=E6C88325203F389D2E76B2428AC748B8D4766036"
-" ipv6=[2603:c023:c:ddef:b12d:ae02:ec36:442e]:443"
-/* nickname=didntsetrelayname */
-/* extrainfo=0 */
-/* ===== */
-,
-"87.106.229.54 orport=443 id=65F39CA1E4CEF4BB5EA5D26F687599205AF61502"
-" ipv6=[2001:ba0:234:8400::1]:443"
-/* nickname=Schnurpselpeter */
-/* extrainfo=0 */
-/* ===== */
-,
-"152.32.236.131 orport=9002 id=8C993307B7713E67772D3BBC09516972330990E9"
-/* nickname=yJcdbddbucvxgja */
-/* extrainfo=0 */
-/* ===== */
-,
-"159.195.94.250 orport=9201 id=51F6015939F70F09BF04F99CE9A5BB3F620E9309"
-" ipv6=[2a0a:4cc0:120:48e:e4d9:f0ff:fe2c:8afc]:9201"
-/* nickname=server4r3 */
-/* extrainfo=0 */
-/* ===== */
-,
-"45.9.60.140 orport=9001 id=B6B842FB52E5C4FD0CAD432ADB6C7F46E8112A55"
-" ipv6=[2a03:4000:45:16::1]:9001"
-/* nickname=catgirl */
-/* extrainfo=0 */
-/* ===== */
-,
-"45.84.107.84 orport=587 id=5F0C90A598CA12F5C189CFB5994EB87195ED888E"
-/* nickname=GoogleSucks */
-/* extrainfo=0 */
-/* ===== */
-,
-"64.65.2.90 orport=443 id=272B6E6276D7AC4D63A9495461B5D7053B046E8E"
-/* nickname=duckworth */
-/* extrainfo=0 */
-/* ===== */
-,
-"51.68.123.207 orport=9001 id=805C7E95F7459D4BB5BA6BFD914458E9F8395E36"
-" ipv6=[2001:41d0:305:2100::c6c0]:9001"
-/* nickname=AbracadabraRelay */
-/* extrainfo=0 */
-/* ===== */
-,
-"217.30.69.178 orport=9049 id=7179981C711791A5686EAC0AAEF5C0C8A93AC09D"
-/* nickname=Unnamed */
-/* extrainfo=0 */
-/* ===== */
-,
-"173.249.215.24 orport=9001 id=E1F6E391A11C22A849F72AFEE8E46D1BC26F6BE7"
-/* nickname=theTorDoor */
-/* extrainfo=0 */
-/* ===== */
-,
-"129.151.222.17 orport=9001 id=1572CB6CEF62A9D836C8252F8BD27AB82A1199BB"
-" ipv6=[2603:c026:301:a910:d068:1776:d571:45b8]:9001"
-/* nickname=MyRelayNode1 */
-/* extrainfo=0 */
-/* ===== */
-,
-"51.159.104.35 orport=9001 id=F836446663F1EB816F13708955F105D0B2F5C8E0"
-" ipv6=[2001:bc8:1201:54:ca1f:66ff:fec9:239]:9001"
-/* nickname=cyberbits */
-/* extrainfo=0 */
-/* ===== */
-,
-"95.211.62.119 orport=9001 id=2D52B9CA7E3FA521C3CA80F57A88C15F541BB915"
-" ipv6=[2001:1af8:5301:10a:1c00:42ff:fe00:8eb]:9001"
-/* nickname=yessirski */
-/* extrainfo=0 */
-/* ===== */
-,
-"185.121.170.54 orport=443 id=533E72743DCCE265F6A1B734A56A2CFC43B47910"
-" ipv6=[2a06:9f80:a000::54:1]:443"
-/* nickname=FEVI25 */
-/* extrainfo=0 */
-/* ===== */
-,
-"195.154.200.78 orport=80 id=FEC76E4A7BA8A6615239A0723A3880EB3D2D83F2"
-" ipv6=[2001:bc8:32d7:209::]:80"
-/* nickname=Planet */
-/* extrainfo=0 */
-/* ===== */
-,
-"137.74.115.48 orport=9001 id=7E8382FE77C7962B98FEA0276413634A4D0D9541"
-/* nickname=ParetoTransit */
-/* extrainfo=0 */
-/* ===== */
-,
-"45.84.107.44 orport=587 id=8937698ED374195B9CC80B912365DE3CBF4BF5B2"
-/* nickname=PinterestSucks */
-/* extrainfo=0 */
-/* ===== */
-,
-"194.14.0.246 orport=443 id=0F4DE55998EB3A301ED7B8F66E6244493F63F727"
-" ipv6=[2001:67c:2a0:202::246]:443"
-/* nickname=SrsTubesRelay */
-/* extrainfo=0 */
-/* ===== */
-,
-"82.221.131.5 orport=443 id=5512557491F87D888FC485FF6484265A754ABF53"
-/* nickname=KiandChi */
-/* extrainfo=0 */
-/* ===== */
-,
-"185.181.61.203 orport=12443 id=8CB12C1DDD2071C6F6CB09D73523689F1D351788"
-" ipv6=[2a03:94e0:ffff:185:181:61:0:203]:12443"
+"185.243.218.231 orport=443 id=3DF62F4EE0A90D59B126EBFA95AB8E79B00A73A3"
+" ipv6=[2a03:94e0:ffff:185:243:218:0:231]:443"
 /* nickname=bauruine */
 /* extrainfo=0 */
 /* ===== */
 ,
-"23.134.88.57 orport=443 id=D224F1A124A54D42E06F5F556F8C5B956E52D63B"
-" ipv6=[2602:fba1:100::57:1]:443"
-/* nickname=FEVI08 */
+"147.90.234.117 orport=9002 id=8885AF6339F9FEB97FEE16C9227582A255A5E89C"
+" ipv6=[2602:f6f6:2:941d::1]:9002"
+/* nickname=NeelTorExit7A */
 /* extrainfo=0 */
 /* ===== */
 ,
-"18.18.82.18 orport=9001 id=BF54EE3193751481579BA7CC7D8E1DF0A01AFB30"
-/* nickname=gesdm */
+"94.16.118.23 orport=8443 id=502774BA0466D3AE9B7A7A0EA2259CC62B8398A9"
+/* nickname=galates */
 /* extrainfo=0 */
 /* ===== */
 ,
-"5.255.118.151 orport=9001 id=FDA4D69BF3036C8DCB04F9A6CBDCD82A659970F7"
-" ipv6=[2a04:52c0:123:5ccf:50ef:cafe:babe:1337]:9001"
-/* nickname=BehemothLTDNL2 */
+"94.23.45.103 orport=9001 id=EFA4C5E7E9215E8A3C7A8F3C74D3139667DA92A5"
+" ipv6=[2001:41d0:2:2e67::1]:9001"
+/* nickname=thicancyborg */
 /* extrainfo=0 */
 /* ===== */
 ,
-"185.241.208.71 orport=110 id=99B6E09CF6084DB3A0D77BC0CFB1C6FC3B65A341"
-" ipv6=[2a12:a800:2:1:185:241:208:71]:110"
-/* nickname=Quetzalcoatl */
+"45.38.20.240 orport=9005 id=1F9A218BF276554927EBEFFE0B86826697CBDDD2"
+" ipv6=[2a0f:85c1:356:1b63::1]:9005"
+/* nickname=obzgs5tbmn4q */
 /* extrainfo=0 */
 /* ===== */
 ,
-"158.69.205.247 orport=443 id=D7316BF7FD633DD7474B18C33E1D5FDEB04D26A7"
-" ipv6=[2607:5300:201:3000::da8]:443"
-/* nickname=NuclearShack */
+"146.190.212.212 orport=9001 id=280F964311BBCC5193C70DDF0C2DA3C38D4578C4"
+/* nickname=Desertmaster7487 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"96.9.98.152 orport=443 id=E8519CA9D931950448788F2B28097277B87A032B"
-/* nickname=mgk */
+"176.125.242.131 orport=443 id=EABB390323F80D4457BAA5CEEE511455700E929D"
+/* nickname=TORB */
 /* extrainfo=0 */
 /* ===== */
 ,
-"89.147.110.118 orport=9001 id=E6A006CA9743820D4FEA212C56F162920612A142"
-/* nickname=syndicateguys */
+"205.185.125.239 orport=443 id=27A3C6E301B9803F0F57856ADA5FD834DB0412FD"
+/* nickname=staysInVegas */
 /* extrainfo=0 */
 /* ===== */
 ,
-"95.217.112.245 orport=80 id=4D70F05DD308A2EA5B671E440879BFADAC92860F"
-" ipv6=[2a01:4f9:4a:2e4e::2]:80"
-/* nickname=arbitraryTessa1 */
+"45.9.168.16 orport=443 id=4BD7D8D384FF76BCB5256DF41304DA84F77C8BFA"
+/* nickname=zgato */
 /* extrainfo=0 */
 /* ===== */
 ,
-"91.214.191.66 orport=443 id=079D0984072F7E288CDF42CA30143BC6C1CD8AB8"
-" ipv6=[2001:1600:13:101::e07]:443"
-/* nickname=BaselLandschaft */
+"107.189.5.249 orport=5061 id=BC7A5E911554477F7346FA9B680250D1D84B14AF"
+" ipv6=[2605:6400:30:f04d:2605:6400:30:30]:5061"
+/* nickname=2mpe4c */
 /* extrainfo=0 */
 /* ===== */
 ,
-"171.25.193.38 orport=9051 id=3FE2BA91305565190D5D442ACDE7E6EF6DF1DD45"
-" ipv6=[2001:67c:289c:2::37]:9051"
-/* nickname=DFRI76 */
+"57.128.223.198 orport=9001 id=EFC6EC2BD9BBDC77DD38AA2D87FD636DFC26AAC0"
+/* nickname=anarchosyndical4 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"94.23.247.42 orport=443 id=06E72526BBE040C51C5ADFBAA07ADD9AEB5E1FA1"
-/* nickname=wien */
+"45.84.107.44 orport=80 id=0B725B5FEBE9F7EE0A7052A3F38CEE8392EFC4AA"
+/* nickname=WeChatSucks */
 /* extrainfo=0 */
 /* ===== */
 ,
-"204.85.191.9 orport=443 id=C59E079437340E3AD14E6785C0A91A5B6F328566"
-/* nickname=ibibUNC1 */
+"57.129.110.6 orport=9200 id=B23434F504DF500096CB5E5895495E89F6CB30FD"
+" ipv6=[2001:41d0:701:1100::490d]:9200"
+/* nickname=prsv */
 /* extrainfo=0 */
 /* ===== */
 ,
-"64.65.0.67 orport=443 id=7BF1792874826F1BF61657E2D2C5B4AB47AA97E7"
-/* nickname=andrenickatina */
+"23.129.64.179 orport=443 id=DAD8815C1AE82B1888F44720C9416B1F891B3639"
+" ipv6=[2620:18c:0:192::e0:179]:443"
+/* nickname=eo179 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"50.103.128.207 orport=9007 id=5484991142396B1BE0FD957A4A868FD20427BEAC"
-/* nickname=watermelon */
+"217.116.95.26 orport=9001 id=F77D84B0E49F567BFC22AB9BB6E28901D4137CBA"
+/* nickname=CopperOri */
 /* extrainfo=0 */
 /* ===== */
 ,
-"192.42.116.123 orport=443 id=A4099E23E67B5E91BF9964BE30C38B675CD09BCD"
-" ipv6=[2001:67c:e60:c0c:192:42:116:123]:443"
-/* nickname=NTH123R1 */
+"185.129.62.64 orport=9001 id=141C317F74D92DA44FAA072F6BFD0C98DEFF9066"
+" ipv6=[2a06:d380:0:103:acab:4c4b:ac4b:1312]:9001"
+/* nickname=kramse03 */
 /* extrainfo=0 */
 /* ===== */
 ,
-"37.59.29.77 orport=9111 id=371C00BF5F71AC45FBD5FE74504A6D2408BAD5E0"
-/* nickname=Unnamed */
+"66.78.40.91 orport=8500 id=6055A518F03989F867DF7C435B61D5776D768B10"
+/* nickname=SkaffaExit */
 /* extrainfo=0 */
 /* ===== */
 ,
-"23.191.200.23 orport=443 id=7AC25DC9E4606154DE38305BDC5A40BCBCB6D04A"
-/* nickname=UnredactedBB */
+"64.65.1.22 orport=443 id=484E4F9B4865E1A3D772C01930D59694F4BAEF4D"
+/* nickname=shawtylo */
 /* extrainfo=0 */
 /* ===== */
 ,
-"38.126.254.138 orport=9001 id=8AEC838D08EDE21BA378BF134FF70069B31CDFD1"
-/* nickname=PiNode */
+"146.19.213.120 orport=443 id=99F78512785F45236A35322A1643AA08DC6399B5"
+" ipv6=[2001:678:6d4:9114::149]:443"
+/* nickname=ThisNodeDontGlow */
+/* extrainfo=0 */
+/* ===== */
+,
+"37.221.208.216 orport=9100 id=43620A053D56582673F74E0325831646E117C009"
+" ipv6=[2a01:270:98d8::1]:9100"
+/* nickname=prsv */
+/* extrainfo=0 */
+/* ===== */
+,
+"176.65.149.96 orport=443 id=26CD29D07FAE2C27EB316EE551EFC7EF96BA5784"
+" ipv6=[2a05:b0c7:6cc4::1]:443"
+/* nickname=xks */
+/* extrainfo=0 */
+/* ===== */
+,
+"57.131.31.124 orport=9100 id=9825D849919114B8E9005C5D093B95F912511A88"
+" ipv6=[2001:41d0:2005:100::1f3f]:9100"
+/* nickname=prsv */
+/* extrainfo=0 */
+/* ===== */
+,
+"64.65.1.152 orport=443 id=143AB48271BB0B2BC7AF8FE94B306E70162FD6C1"
+/* nickname=chamillionaire */
+/* extrainfo=0 */
+/* ===== */
+,
+"85.215.249.184 orport=443 id=64BCBA882D45CE42B56226564435EA0D364A7281"
+/* nickname=arlisRelay */
 /* extrainfo=0 */
 /* ===== */
 ,

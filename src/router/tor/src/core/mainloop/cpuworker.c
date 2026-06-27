@@ -550,7 +550,7 @@ cpuworker_onion_handshake_threadfn(void *state_, void *work_)
   memcpy(&job->u.reply, &rpl, sizeof(rpl));
 
   memwipe(&req, 0, sizeof(req));
-  memwipe(&rpl, 0, sizeof(req));
+  memwipe(&rpl, 0, sizeof(rpl));
   return WQ_RPL_REPLY;
 }
 

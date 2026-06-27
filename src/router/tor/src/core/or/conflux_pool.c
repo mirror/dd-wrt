@@ -682,8 +682,14 @@ conflux_mark_all_for_close(const uint8_t *nonce, bool is_client, int reason)
    * set. This happens if there is a recovery leg launched for an existing
    * linked set. */
 
+  /* Make a local copy of nonce first, since it might be part of a conflux
+   * leg that gets freed by the various calls in this function. */
+  uint8_t nonce_localcopy[DIGEST256_LEN];
+  memcpy(nonce_localcopy, nonce, sizeof(nonce_localcopy));
+
   /* Close the unlinked set. */
-  unlinked_circuits_t *unlinked = unlinked_pool_get(nonce, is_client);
+  unlinked_circuits_t *unlinked =
+    unlinked_pool_get(nonce_localcopy, is_client);
   if (unlinked) {
     unlinked_close_or_free(unlinked);
   }
@@ -692,7 +698,7 @@ conflux_mark_all_for_close(const uint8_t *nonce, bool is_client, int reason)
 
   /* Close the linked set. It will free itself upon the close of
    * the last leg. */
-  conflux_t *linked = linked_pool_get(nonce, is_client);
+  conflux_t *linked = linked_pool_get(nonce_localcopy, is_client);
   if (linked) {
     if (linked->in_full_teardown) {
       return;
@@ -1619,6 +1625,27 @@ linked_circuit_closed(circuit_t *circ)
    * attached to the circuit so it can be freed in conflux_circuit_free(). */
   if (CONFLUX_NUM_LEGS(circ->conflux) > 0) {
     circ->conflux = NULL;
+  } else {
+    /* We are the last leg. We normally keep the conflux object attached to
+     * this circuit so it can be freed later in linked_circuit_free(). However,
+     * if an unlinked set (for instance a recovery leg launched for the same
+     * nonce) still shares this very same conflux object, it can revive it
+     * (conflux_process_linked() -> try_finalize_set()) and become a second
+     * owner. Were we to keep our reference, both this circuit and the revived
+     * linked set would point at the same conflux object and both would try to
+     * free it once reaped, leading to a use-after-free and double free. Hand
+     * ownership over to the unlinked set now -- it becomes responsible for
+     * freeing the conflux object -- and detach it from this circuit. */
+    unlinked_circuits_t *unlinked = unlinked_pool_get(nonce, is_client);
+    if (unlinked && unlinked->cfx == circ->conflux) {
+      /* We expect the unlinked set sharing our conflux object to be flagged as
+       * belonging to a linked set. If not, something is off in our bookkeeping
+       * but we can still recover by handing ownership over, so warn loudly
+       * rather than assert. */
+      BUG(!unlinked->is_for_linked_set);
+      unlinked->is_for_linked_set = false;
+      circ->conflux = NULL;
+    }
   }
 
   /* If this was a teardown condition, we need to mark other circuits,
@@ -1829,6 +1856,16 @@ conflux_process_link(circuit_t *circ, const relay_msg_t *msg)
   if (circ->conflux) {
     log_fn(LOG_PROTOCOL_WARN, LD_CIRC,
            "Got a CONFLUX_LINK on an already linked circuit "
+           "Closing circuit.");
+    circuit_mark_for_close(circ, END_CIRC_REASON_TORPROTOCOL);
+    goto end;
+  }
+
+  /* A LINK must arrive on a fresh circuit that has no attached streams. */
+  if (TO_OR_CIRCUIT(circ)->n_streams ||
+      TO_OR_CIRCUIT(circ)->resolving_streams) {
+    log_fn(LOG_PROTOCOL_WARN, LD_CIRC,
+           "Got a CONFLUX_LINK on a circuit with attached streams. "
            "Closing circuit.");
     circuit_mark_for_close(circ, END_CIRC_REASON_TORPROTOCOL);
     goto end;

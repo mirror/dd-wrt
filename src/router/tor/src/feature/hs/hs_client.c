@@ -958,6 +958,17 @@ client_rendezvous_circ_has_opened(origin_circuit_t *circ)
     }
   }
 
+  /* Check if we've already sent one. That would imply a bug, but I
+   * think there might be such a bug, in
+   * circuit_get_open_circ_or_launch() when it calls
+   * circuit_has_opened(). So don't yell too loudly about it. */
+  if (circ->hs_ident->sent_establish_rendezvous) {
+    log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
+           "We tried to send an ESTABLISH_RENDEZVOUS cell but we had "
+           "already sent one! Not doing it.");
+    return;
+  }
+
   log_info(LD_REND, "Rendezvous circuit has opened to %s.",
            safe_str_client(extend_info_describe(rp_ei)));
 
@@ -975,7 +986,7 @@ client_rendezvous_circ_has_opened(origin_circuit_t *circ)
   }
 }
 
-/** This is an helper function that convert a descriptor intro point object ip
+/** This is a helper function that converts a descriptor intro point object ip
  * to a newly allocated extend_info_t object fully initialized. Return NULL if
  * we can't convert it for which chances are that we are missing or malformed
  * link specifiers. */
@@ -2194,6 +2205,11 @@ hs_client_decode_descriptor(const char *desc_str,
              "doesn't validate with computed blinded key: %s",
              tor_cert_describe_signature_status(cert));
     ret = HS_DESC_DECODE_GENERIC_ERROR;
+
+    /* free it since we won't be using it */
+    hs_descriptor_free(*desc);
+    *desc = NULL;
+
     goto err;
   }
 
@@ -2304,6 +2320,12 @@ hs_client_receive_rendezvous_acked(origin_circuit_t *circ,
   if (TO_CIRCUIT(circ)->purpose != CIRCUIT_PURPOSE_C_ESTABLISH_REND) {
     log_warn(LD_PROTOCOL, "Got a RENDEZVOUS_ESTABLISHED but we were not "
                           "expecting one. Closing circuit.");
+    goto err;
+  }
+
+  if (circ->hs_ident && !circ->hs_ident->sent_establish_rendezvous) {
+    log_warn(LD_PROTOCOL, "Got a RENDEZVOUS_ESTABLISHED but we hadn't "
+                          "requested one! Closing circuit.");
     goto err;
   }
 

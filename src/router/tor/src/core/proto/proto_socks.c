@@ -54,24 +54,29 @@ static int parse_socks_client(const uint8_t *data, size_t datalen,
 
 /** Warn that the user application has made an unsafe socks request using
  * protocol <b>socks_protocol</b> on port <b>port</b>.  Don't warn more than
- * once per SOCKS_WARN_INTERVAL, unless <b>safe_socks</b> is set. */
+ * once per SOCKS_WARN_INTERVAL, unless <b>warn_every_time</b> is set. */
 static void
 log_unsafe_socks_warning(int socks_protocol, const char *address,
-                         uint16_t port, int safe_socks)
+                         uint16_t port, int safe_socks, int warn_every_time)
 {
   static ratelim_t socks_ratelim = RATELIM_INIT(SOCKS_WARN_INTERVAL);
+  char *m = NULL;
 
-  if (safe_socks) {
-    log_fn_ratelim(&socks_ratelim, LOG_WARN, LD_APP,
+  /* note the subtle "||" here: either warn every time, or else
+   * warn in a rate-limited way otherwise. */
+  if (warn_every_time || (m = rate_limit_log(&socks_ratelim, approx_time()))) {
+    log_warn(LD_APP,
              "Your application (using socks%d to port %d) is giving "
              "Tor only an IP address. Applications that do DNS resolves "
              "themselves may leak information. Consider using Socks4A "
              "(e.g. via privoxy or socat) instead. For more information, "
              "please see https://2019.www.torproject.org/docs/faq.html.en"
-             "#WarningsAboutSOCKSandDNSInformationLeaks.%s",
+             "#WarningsAboutSOCKSandDNSInformationLeaks.%s%s",
              socks_protocol,
              (int)port,
-             safe_socks ? " Rejecting." : "");
+             safe_socks ? " Rejecting." : "",
+             m ? m : "");
+    tor_free(m);
   }
   control_event_client_status(LOG_WARN,
                               "DANGEROUS_SOCKS PROTOCOL=SOCKS%d ADDRESS=%s:%d",
@@ -231,7 +236,8 @@ process_socks4_request(const socks_request_t *req, int is_socks4a,
                        int log_sockstype, int safe_socks)
 {
   if (!is_socks4a && !addressmap_have_mapping(req->address, 0)) {
-    log_unsafe_socks_warning(4, req->address, req->port, safe_socks);
+    log_unsafe_socks_warning(4, req->address, req->port, safe_socks,
+                             safe_socks || log_sockstype);
 
     if (safe_socks)
       return SOCKS_RESULT_INVALID;
@@ -667,7 +673,8 @@ process_socks5_client_request(socks_request_t *req,
   if (req->socks5_atyp == 1 || req->socks5_atyp == 4) {
     if (req->command != SOCKS_COMMAND_RESOLVE_PTR &&
         !addressmap_have_mapping(req->address,0)) {
-      log_unsafe_socks_warning(5, req->address, req->port, safe_socks);
+      log_unsafe_socks_warning(5, req->address, req->port, safe_socks,
+                               safe_socks || log_sockstype);
       if (safe_socks) {
         socks_request_set_socks5_error(req, SOCKS5_NOT_ALLOWED);
         res = SOCKS_RESULT_INVALID;
