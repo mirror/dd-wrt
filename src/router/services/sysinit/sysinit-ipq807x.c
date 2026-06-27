@@ -1694,9 +1694,9 @@ static void load_ath12k_internal(int profile, int pci, int nss, int frame_mode, 
 		sprintf(driver_coldboot, "cold_boot_cal=%d", coldboot);
 		insmod("qmi_helpers");
 		if (nvram_match("5g_split", "1"))
-			eval("insmod", driver_ath12k, overdrive, "board_id=0x1008", frame_mode);
+			eval("insmod", driver_ath12k, overdrive, "board_id=0x1008", driver_frame_mode);
 		else
-			eval("insmod", driver_ath12k, overdrive, frame_mode);
+			eval("insmod", driver_ath12k, overdrive, driver_frame_mode);
 		insmod(driver_ath12k_ahb);
 		if (pci)
 			insmod(driver_ath12k_pci);
