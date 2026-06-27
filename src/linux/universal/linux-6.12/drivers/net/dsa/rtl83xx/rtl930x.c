@@ -4,6 +4,7 @@
 #include <linux/etherdevice.h>
 #include <linux/inetdevice.h>
 
+#include "l3.h"
 #include "rtl-otto.h"
 
 #define RTL930X_VLAN_PORT_TAG_STS_INTERNAL			0x0
@@ -23,6 +24,11 @@
 #define RTL930X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(0, 0)
 
 #define RTL930X_LED_GLB_ACTIVE_LOW				BIT(22)
+#define RTL930X_LED_CLK_SEL_MASK				GENMASK(17, 16)
+#define RTL930X_LED_CLK_SEL_800NS				0
+#define RTL930X_LED_CLK_SEL_400NS				1
+#define RTL930X_LED_CLK_SEL_200NS				2
+#define RTL930X_LED_CLK_SEL_100NS				3
 
 #define RTL930X_LED_SETX_0_CTRL(x) (RTL930X_LED_SET0_0_CTRL - (x * 8))
 #define RTL930X_LED_SETX_1_CTRL(x) (RTL930X_LED_SETX_0_CTRL(x) - 4)
@@ -1262,7 +1268,7 @@ static u32 rtl930x_l3_hash4(u32 ip, int algorithm, bool move_dip)
 /* Read a prefix route entry from the L3_PREFIX_ROUTE_IPUC table
  * We currently only support IPv4 and IPv6 unicast route
  */
-static void rtl930x_route_read(int idx, struct rtl83xx_route *rt)
+static void rtl930x_route_read(int idx, struct otto_l3_route *rt)
 {
 	u32 v, ip4_m;
 	bool host_route, default_route;
@@ -1344,7 +1350,7 @@ static void rtl930x_net6_mask(int prefix_len, struct in6_addr *ip6_m)
 /* Read a host route entry from the table using its index
  * We currently only support IPv4 and IPv6 unicast route
  */
-static void rtl930x_host_route_read(int idx, struct rtl83xx_route *rt)
+static void rtl930x_host_route_read(int idx, struct otto_l3_route *rt)
 {
 	u32 v;
 	/* Read L3_HOST_ROUTE_IPUC table (1) via register RTL9300_TBL_1 */
@@ -1396,7 +1402,7 @@ out:
 /* Write a host route entry from the table using its index
  * We currently only support IPv4 and IPv6 unicast route
  */
-static void rtl930x_host_route_write(int idx, struct rtl83xx_route *rt)
+static void rtl930x_host_route_write(int idx, struct otto_l3_route *rt)
 {
 	u32 v;
 	/* Access L3_HOST_ROUTE_IPUC table (1) via register RTL9300_TBL_1 */
@@ -1451,7 +1457,7 @@ out:
 /* Look up the index of a prefix route in the routing table CAM for unicast IPv4/6 routes
  * using hardware offload.
  */
-static int rtl930x_route_lookup_hw(struct rtl83xx_route *rt)
+static int rtl930x_route_lookup_hw(struct otto_l3_route *rt)
 {
 	u32 ip4_m, v;
 	struct in6_addr ip6_m;
@@ -1492,11 +1498,11 @@ static int rtl930x_route_lookup_hw(struct rtl83xx_route *rt)
 	return -1;
 }
 
-static int rtl930x_find_l3_slot(struct rtl83xx_route *rt, bool must_exist)
+static int rtl930x_find_l3_slot(struct otto_l3_route *rt, bool must_exist)
 {
 	int slot_width, algorithm, addr, idx;
 	u32 hash;
-	struct rtl83xx_route route_entry;
+	struct otto_l3_route route_entry;
 
 	/* IPv6 entries take up 3 slots */
 	slot_width = (rt->attr.type == 0) || (rt->attr.type == 2) ? 1 : 3;
@@ -1529,7 +1535,7 @@ static int rtl930x_find_l3_slot(struct rtl83xx_route *rt, bool must_exist)
 /* Write a prefix route into the routing table CAM at position idx
  * Currently only IPv4 and IPv6 unicast routes are supported
  */
-static void rtl930x_route_write(int idx, struct rtl83xx_route *rt)
+static void rtl930x_route_write(int idx, struct otto_l3_route *rt)
 {
 	u32 v, ip4_m;
 	struct in6_addr ip6_m;
@@ -2611,12 +2617,40 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 	struct device *dev = priv->dev;
 	u8 leds_in_set[4] = {};
 	u32 led_mode = 1;
+	u32 clk_freq;
 	u32 pm = 0;
+	int ret;
 
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 	if (!node) {
 		dev_dbg(dev, "No compatible LED node found\n");
 		return;
+	}
+
+	ret = of_property_read_u32(node, "clock-frequency", &clk_freq);
+	if (!ret) {
+		u8 clk_sel;
+
+		switch (clk_freq) {
+		case 10000000:
+			clk_sel = RTL930X_LED_CLK_SEL_100NS;
+			break;
+		case 5000000:
+			clk_sel = RTL930X_LED_CLK_SEL_200NS;
+			break;
+		case 1250000:
+			clk_sel = RTL930X_LED_CLK_SEL_800NS;
+			break;
+		default:
+			dev_warn(dev, "invalid LED clock frequency, falling back to default\n");
+			fallthrough;
+		case 2500000:
+			clk_sel = RTL930X_LED_CLK_SEL_400NS;
+			break;
+		}
+
+		sw_w32_mask(RTL930X_LED_CLK_SEL_MASK,
+			    FIELD_PREP(RTL930X_LED_CLK_SEL_MASK, clk_sel), RTL930X_LED_GLB_CTRL);
 	}
 
 	for (int set = 0; set < 4; set++) {
