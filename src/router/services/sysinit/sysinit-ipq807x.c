@@ -1694,9 +1694,9 @@ static void load_ath12k_internal(int profile, int pci, int nss, int frame_mode, 
 		sprintf(driver_coldboot, "cold_boot_cal=%d", coldboot);
 		insmod("qmi_helpers");
 		if (nvram_match("5g_split", "1"))
-			eval("insmod", driver_ath12k, overdrive, "board_id=0x1008");
+			eval("insmod", driver_ath12k, overdrive, "board_id=0x1008", frame_mode);
 		else
-			eval("insmod", driver_ath12k, overdrive);
+			eval("insmod", driver_ath12k, overdrive, frame_mode);
 		insmod(driver_ath12k_ahb);
 		if (pci)
 			insmod(driver_ath12k_pci);
@@ -1800,7 +1800,7 @@ void start_wifi_drivers(void)
 				set_gpio(6, 0);
 				set_gpio(7, 1);
 			}
-			load_ath12k_internal(profile, 0, 0, frame_mode, cert_region, 1);
+			load_ath12k_internal(profile, 0, 0, 1, cert_region, 1);
 			wait_for_wifi(1);
 			load_ath11k_internal(profile, 0, 0, frame_mode, cert_region, 1);
 		} break;
