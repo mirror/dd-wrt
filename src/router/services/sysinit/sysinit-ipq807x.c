@@ -1804,7 +1804,7 @@ void start_wifi_drivers(void)
 				set_gpio(6, 0);
 				set_gpio(7, 1);
 			}
-			load_ath12k_internal(profile, 0, 0, 2, cert_region, 1);
+			load_ath12k_internal(profile, 0, 0, frame_mode, cert_region, 1);
 			wait_for_wifi(1);
 			load_ath11k_internal(profile, 0, 0, frame_mode, cert_region, 1);
 		} break;
