@@ -11,7 +11,11 @@ CONFIG_RT2800USB=y
 
 REGPATH=crda
 REGBIN=regulatory.bin
+#ifeq ($(CONFIG_MORSE),y)
+#REGTXTORIG=db_s1g.txt
+#else
 REGTXTORIG=db.txt
+#endif
 REGTXT=db-temp.txt
 
 ifeq ($(CONFIG_RAIEXTRA),y)

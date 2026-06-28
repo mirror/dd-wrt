@@ -9,7 +9,12 @@ MODPROBE:= modprobe
 
 REGPATH=crda
 REGBIN=regulatory.bin
+ifeq ($(CONFIG_MORSE),y)
+REGTXTORIG=db_s1g.txt
+else
 REGTXTORIG=db.txt
+endif
+
 REGTXT=db-temp.txt
 
 ifeq ($(CONFIG_RAIEXTRA),y)
@@ -472,6 +477,10 @@ ifneq ($(CONFIG_NOWIFI),y)
 ifeq ($(CONFIG_MAC80211_RT2800USB),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
 	-cp $(TOP)/firmwares/wireless/rt*.bin $(INSTALLDIR)/ath9k/lib/firmware
+endif
+ifeq ($(CONFIG_MORSE),y)
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/morse
+	-cp -vf $(TOP)/firmwares/wireless/morse/*.bin $(INSTALLDIR)/ath9k/lib/firmware/morse
 endif
 ifeq ($(CONFIG_MAC80211_RT2800),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
