@@ -678,7 +678,7 @@ endif
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 ifeq ($(CONFIG_MORSE),y)
 	-mkdir -p $(TARGETDIR)/lib/firmware/morse
-	-cp -vf $(TOP)/firmwares/wireless/morse/* $(TARGETDIR)/lib/firmware/morse
+	-cp -vf $(TOP)/firmwares/wireless/morse/*.bin $(TARGETDIR)/lib/firmware/morse
 endif
 
 #	export STRIP_KMOD="echo" && \
