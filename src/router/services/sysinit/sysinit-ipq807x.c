@@ -871,12 +871,16 @@ static void disableportlearn(void)
 	eval("ssdk_sh", "fdb", "portLearn", "set", "3", "disable");
 	eval("ssdk_sh", "fdb", "portLearn", "set", "4", "disable");
 	eval("ssdk_sh", "fdb", "portLearn", "set", "5", "disable");
+	eval("ssdk_sh", "fdb", "portLearn", "set", "6", "disable");
+	eval("ssdk_sh", "fdb", "portLearn", "set", "7", "disable");
 	eval("ssdk_sh", "stp", "portState", "set", "0", "0", "forward");
 	eval("ssdk_sh", "stp", "portState", "set", "0", "1", "forward");
 	eval("ssdk_sh", "stp", "portState", "set", "0", "2", "forward");
 	eval("ssdk_sh", "stp", "portState", "set", "0", "3", "forward");
 	eval("ssdk_sh", "stp", "portState", "set", "0", "4", "forward");
 	eval("ssdk_sh", "stp", "portState", "set", "0", "5", "forward");
+	eval("ssdk_sh", "stp", "portState", "set", "0", "6", "forward");
+	eval("ssdk_sh", "stp", "portState", "set", "0", "7", "forward");
 	eval("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
 	eval("ssdk_sh", "fdb", "entry", "flush", "1");
 }
