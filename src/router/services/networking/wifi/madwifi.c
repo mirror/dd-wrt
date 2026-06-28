@@ -1016,7 +1016,7 @@ void do_hostapd(char **fstr, const char *prefix)
 
 	_log_evalpid(argv, NULL, 0, NULL);
 }
-
+#if 0
 static void checkhostapd(char *ifname, int force)
 {
 	int pid = 0;
@@ -1154,6 +1154,7 @@ void start_restarthostapd_ifneeded(void)
 {
 	s_checkhostapd(2);
 }
+#endif
 
 #ifdef HAVE_WPS
 //loaned from hostapd
