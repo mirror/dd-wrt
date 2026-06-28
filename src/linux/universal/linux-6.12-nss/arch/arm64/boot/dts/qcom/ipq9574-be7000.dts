@@ -564,14 +564,14 @@
 		      reg = <4>;
 		      fixup;
 	      };
-	phy4: ethernet-phy@4 {
+/*	phy4: ethernet-phy@4 {
 		      compatible ="ethernet-phy-ieee802.3-c45";
 		      reg = <8>;
 	      };
 	phy5: ethernet-phy@5 {
 		      compatible ="ethernet-phy-ieee802.3-c45";
 		      reg = <0>;
-	      };
+	      };*/
 #endif
 
 /*	phy4: ethernet-phy@4 {
@@ -1012,7 +1012,7 @@
 //				switch_wan_bmp = <0x40>; /* wan port bitmap */
 				switch_mac_mode = <0x15>; /* mac mode for uniphy instance0*/
 				switch_mac_mode1 = <0xff>; /* mac mode for uniphy instance1*/
-				switch_mac_mode2 = <0xd>; /* mac mode for uniphy instance2*/
+				switch_mac_mode2 = <0xff>; /* mac mode for uniphy instance2*/
 
 
 				switch_cpu_bmp = <ESS_PORT0>;
@@ -1379,7 +1379,7 @@
 			phy-handle = <&phy3>;
 			phy-mode = "qusgmii";
 		};
-		port@4 {
+/*		port@4 {
 			port_id = <5>;
 			phy_address = <8>;
 			ethernet-phy-ieee802.3-c45;
@@ -1392,7 +1392,7 @@
 			ethernet-phy-ieee802.3-c45;
 			phy-handle = <&phy5>;
 			phy-mode = "usxgmii";
-		};
+		};*/
 	};
 
 				led_source@0 {
@@ -1450,6 +1450,7 @@
 			qcom,link-poll = <0x1>;
 			qcom,phy-mdio-addr = <0x1>;
 			phy-handle = <&phy0>;
+			qcom,ppe-offload-disabled = <1>;
 			label = "wan";
 		};
 
@@ -1465,6 +1466,7 @@
 			qcom,link-poll = <0x1>;
 			qcom,phy-mdio-addr = <0x2>;
 			phy-handle = <&phy1>;
+			qcom,ppe-offload-disabled = <1>;
 			label = "lan1";
 		};
 
@@ -1480,6 +1482,7 @@
 			qcom,link-poll = <0x1>;
 			qcom,phy-mdio-addr = <0x3>;
 			phy-handle = <&phy2>;
+			qcom,ppe-offload-disabled = <1>;
 			label = "lan2";
 		};
 
@@ -1495,10 +1498,11 @@
 			qcom,link-poll = <0x1>;
 			qcom,phy-mdio-addr = <0x4>;
 			phy-handle = <&phy3>;
+			qcom,ppe-offload-disabled = <1>;
 			label = "lan3";
 		};
 
-		dp5: dp5 {
+/*		dp5: dp5 {
 			device_type = "network";
 			compatible = "qcom,nss-dp";
 			qcom,id = <5>;
@@ -1522,7 +1526,7 @@
 			qcom,phy-mdio-addr = <0x0>;
 			phy-handle = <&phy5>;
 			phy-mode = "usxgmii";
-		};
+		};*/
 
 		nss-macsec0 {
 			compatible = "qcom,nss-macsec";
