@@ -867,7 +867,7 @@ struct mac80211_info *mac80211_assoclist(const char *interface)
 		if (intf) {
 			data.mac80211_info->frequency = intf->freq;
 #ifdef HAVE_MORSE
-			if (lastfreq[i] != intf->freq) {
+			if (lastfreq[i] != intf->freq && !strcmp(interface, "wlan1")) {
 				lastfreq[i] = intf->freq;
 				eval("iw", "dev", interface, "scan");
 			}
