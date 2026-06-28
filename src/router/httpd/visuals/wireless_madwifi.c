@@ -539,7 +539,10 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 		int freq = get_wififreq(base,
 					interface->freq); // translation for special frequency devices
 		if (is_morse_micro(base)) {
-			int translate = morse_translate(freq);
+			int morse_freq = interface->freq;
+			if (interface->center1 != -1)
+				morse_freq = interface->center1;
+			int translate = morse_translate(morse_freq);
 			websWrite(wp, "%d (%d.%d MHz", ieee80211_mhz2ieee(prefix, translate), translate / 1000,
 				  (translate % 1000) / 100);
 		} else if (is_mac80211(base)) {
