@@ -1666,9 +1666,9 @@ static void load_mac80211_internal(int nss)
 {
 	if (!nvram_match("noath11k", "1")) {
 		if (nss) {
-			insmod("mac80211");
+			eval("insmod", "mac80211", "ppe_vp_accel=1");
 		} else {
-			eval("insmod", "mac80211", "nss_redirect=0");
+			eval("insmod", "mac80211", "nss_redirect=0", "ppe_vp_accel=1");
 			sysprintf("echo 0 > /proc/sys/dev/nss/general/redirect"); // required if nss_redirect is enabled
 		}
 	}
@@ -1804,7 +1804,7 @@ void start_wifi_drivers(void)
 				set_gpio(6, 0);
 				set_gpio(7, 1);
 			}
-			load_ath12k_internal(profile, 0, 0, 1, cert_region, 1);
+			load_ath12k_internal(profile, 0, 0, 2, cert_region, 1);
 			wait_for_wifi(1);
 			load_ath11k_internal(profile, 0, 0, frame_mode, cert_region, 1);
 		} break;
