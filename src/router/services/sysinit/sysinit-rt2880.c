@@ -66,6 +66,11 @@ void set_led_netdev(const char *dev, const char *led)
 	sysprintf("echo 1 > /sys/class/leds/%s/tx", led);
 }
 
+void set_led_phytpt(const char *dev, const char *led)
+{
+	sysprintf("echo %s > /sys/class/leds/%s/trigger", dev, led);
+}
+
 static int if_set_name(const char *oldname, const char *newname)
 {
 	int skfd;
@@ -686,8 +691,8 @@ void start_postnetwork(void)
 	int brand = getRouterBrand();
 	switch (brand) {
 	case ROUTER_MORSE:
-		set_led_netdev("wlan0", "rgb:led0");
-		set_led_netdev("wlan1", "rgb:led2");
+		set_led_phytpt("phy0tpt", "rgb:led0");
+		set_led_phytpt("phy1tpt", "rgb:led2");
 		sysprintf("echo 0 255 0 > /sys/class/leds/rgb:led0/multi_intensity");
 		sysprintf("echo 255 0 127 > /sys/class/leds/rgb:led2/multi_intensity");
 		sysprintf("echo 255 > /sys/class/leds/rgb:led0/brightness");
