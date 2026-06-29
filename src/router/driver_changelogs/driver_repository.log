@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8793 | brainslayer | 2026-06-29 10:37:33 +0600 (Mon, 29 Jun 2026) | 1 line
+
+ignore external regdomain settings for morse micro driver. it breaks the driver. it works only with initial setting
+------------------------------------------------------------------------
 r8792 | brainslayer | 2026-06-28 19:18:59 +0600 (Sun, 28 Jun 2026) | 1 line
 
 fix reo clear caxche drivers
