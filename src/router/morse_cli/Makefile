@@ -98,19 +98,20 @@ WIN_LDFLAGS += -lws2_32
 	LINUX_SRCS += transport/nl80211.c
 #endif
 
-#ifeq ($(CONFIG_MORSE_TRANS_UART_SLIP),1)
+ifeq ($(CONFIG_MORSE_TRANS_UART_SLIP),1)
 	SRCS += transport/slip.c
 	SRCS += transport/uart_slip.c
 	LINUX_SRCS += transport/uart_linux.c
 	WIN_SRCS += transport/uart_win.c
-#endif
+endif
 
-#ifeq ($(CONFIG_MORSE_TRANS_TCP_SLIP),1)
+ifeq ($(CONFIG_MORSE_TRANS_TCP_SLIP),1)
 	SRCS += transport/slip.c
 	LINUX_SRCS += transport/tcp_slip.c
-#endif
+endif
+	LINUX_CFLAGS += -D_GNU_SOURCE
 
-#ifeq ($(CONFIG_MORSE_TRANS_FTDI_SPI),1)
+ifeq ($(CONFIG_MORSE_TRANS_FTDI_SPI),1)
 	SRCS += transport/ftdi_spi.c
 	SRCS += transport/sdio_over_spi.c
 	LIB_SRCS += transport/libmpsse/source/ftdi_i2c.c
@@ -132,16 +133,15 @@ WIN_LDFLAGS += -lws2_32
 	MORSECTRL_CFLAGS += -Itransport/libmpsse/source
 	MORSECTRL_LDFLAGS += -Wl,--wrap=memcpy
 
-	LINUX_CFLAGS += -D_GNU_SOURCE
 	ifeq ($(CONFIG_ANDROID),1)
 		LINUX_LDFLAGS += -ldl
 	else
 		LINUX_LDFLAGS += -lpthread -lrt -ldl
 	endif
-#endif
+endif
 
 # by default, enable USB. But force it to disable if Windows or Android.
-CONFIG_MORSE_USB ?= 1
+CONFIG_MORSE_USB ?= 0
 ifeq ($(CONFIG_ANDROID),1)
 	CONFIG_MORSE_USB = 0
 endif
