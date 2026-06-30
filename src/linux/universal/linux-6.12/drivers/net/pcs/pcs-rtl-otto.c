@@ -572,7 +572,7 @@ static int rtpcs_sds_select_media(enum rtpcs_sds_mode hw_mode, enum rtpcs_sds_me
 		*media = RTPCS_SDS_MEDIA_NONE;
 		break;
 	case RTPCS_SDS_MODE_SGMII:
-	case RTPCS_SDS_MODE_HSGMII:
+	case RTPCS_SDS_MODE_HISGMII:
 	case RTPCS_SDS_MODE_1000BASEX:
 	case RTPCS_SDS_MODE_2500BASEX:
 	case RTPCS_SDS_MODE_10GBASER:
