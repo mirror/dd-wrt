@@ -579,13 +579,8 @@ void configure_single_mac80211(int count)
 		sprintf(dist, "%d", distance);
 	else
 		sprintf(dist, "auto");
-	if (is_morse_micro(dev) && distance > 0) {
-		char ack[32];
-		sprintf(ack, "%d", distance / 150);
-		eval("morse_cli", "-i", dev, "set", "ack_timeout_adjust", ack);
-	} else {
-		eval("iw", "phy", wif, "set", "distance", dist);
-	}
+
+	eval("iw", "phy", wif, "set", "distance", dist);
 	#ifdef HAVE_ATH10K
 	//      if (is_ath10k(dev) && !is_mvebu(dev)) { // evil hack for QCA
 	//              set_ath10kdistance(dev, distance);
