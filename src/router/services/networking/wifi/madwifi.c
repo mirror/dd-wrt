@@ -3366,7 +3366,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 
 	for (c = 0; c < cnt; c++) {
 		char dev[32];
-		spprintf(dev, "wlan%d", c);
+		sprintf(dev, "wlan%d", c);
 		if (is_morse_micro(dev)) {
 			int distance = nvram_ngeti("%s_distance", dev);
 			char ack[32];
