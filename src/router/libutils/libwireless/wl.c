@@ -4030,6 +4030,8 @@ int getmaxvaps(const char *prefix)
 		return 1;
 	if (is_iwl3945(prefix))
 		return 1;
+	if (is_morse_micro(prefix))
+		return 2;
 	return 8; // default
 }
 
