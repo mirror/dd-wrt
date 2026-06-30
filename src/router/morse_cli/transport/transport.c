@@ -112,11 +112,7 @@ const struct morsectrl_transport_ops *find_transport_ops(const char *transport_n
     {
         const struct morsectrl_transport_ops *tops = *iter;
 
-        if (transport_name && strcmp(transport_name, tops->name) == 0)
-        {
-            return tops;
-        }
-        if (!transport_name && strcmp(tops->name, "nl80211") == 0)
+        if (!transport_name || strcmp(transport_name, tops->name) == 0)
         {
             return tops;
         }
