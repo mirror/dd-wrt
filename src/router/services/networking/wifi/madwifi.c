@@ -3364,7 +3364,7 @@ void configure_wifi(void) // madwifi implementation for atheros based
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy2/ath12k/ext_rx_stats");
 	sync_multicast_to_unicast();
 
-	if (c = 0; c < cnt; c++) {
+	for (c = 0; c < cnt; c++) {
 		char dev[32];
 		spprintf(dev, "wlan%d", c);
 		if (is_morse_micro(dev)) {
