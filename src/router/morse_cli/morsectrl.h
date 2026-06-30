@@ -59,7 +59,7 @@ int morsectrl_config_file_parse(const char *file_opts,
                                 bool debug);
 
 /* Our command line handlers need to be aligned to 8 byte boundaries (for up to 64-bit platforms) */
-#define MM_CLI_HANDLER_ALIGN __attribute__((aligned(8)))
+#define MM_CLI_HANDLER_ALIGN __attribute__((aligned(8))) 
 
 struct MM_CLI_HANDLER_ALIGN command_handler
 {
@@ -77,7 +77,7 @@ struct MM_CLI_HANDLER_ALIGN command_handler
 #define __MM_CLI_HANDLER(\
     command, _is_intf_cmd, _direct_chip_supported_cmd, deprecated, custom_help) \
     int command##_init(struct morsectrl *mors, struct mm_argtable *mmargs); \
-    __attribute__((section("cli_handlers"))) MM_CLI_HANDLER_ALIGN \
+    __attribute__((used)) __attribute__((section("cli_handlers"))) MM_CLI_HANDLER_ALIGN \
     struct command_handler command##_cli_handler = { \
         #command, \
         command##_init, \
