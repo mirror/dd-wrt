@@ -178,6 +178,8 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 			if (is_morse_micro(ifname)) {
 	#define S1G_TXRATE(wc) (bitrate_s1g(wc->vht_mcs, ht, sgi))
 	#define S1G_RXRATE(wc) (bitrate_s1g(wc->rx_vht_mcs, ht, sgi))
+				if (wc->noise == 0)
+				    wc->noise = -103;
 				websWrite(
 					wp,
 					"'%s','%s','%s','%s','%d.%dM','%d.%dM','%s','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'",
