@@ -3197,6 +3197,8 @@ int has_acktiming(const char *prefix)
 {
 	if (!is_mac80211(prefix))
 		return 0;
+	if (is_morse_micro(prefix))
+		return 1;
 	INITVALUECACHE();
 	ret = (long)mac80211_has_worker(prefix, &acktiming_worker, NULL);
 	EXITVALUECACHE();
