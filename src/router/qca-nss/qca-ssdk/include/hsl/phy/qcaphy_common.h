@@ -105,7 +105,7 @@ extern "C" {
 #define QCAPHY_MMD1_NUM                                            0x1
 #define QCAPHY_MMD3_NUM                                            0x3
 #define QCAPHY_MMD7_NUM                                            0x7
-#define QCAPHY_MMD31_NUM                                           0x1f
+#define QCAPHY_MMD31_NUM                                           0x1e
 
 /*MMD register*/
 #define QCAPHY_MMD7_8023AZ_EEE_CTRL                                0x3c

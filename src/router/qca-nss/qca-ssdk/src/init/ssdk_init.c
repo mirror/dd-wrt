@@ -1756,7 +1756,7 @@ static int ssdk_switch_register(a_uint32_t dev_id, ssdk_chip_type  chip_type)
 
 	priv->mii_read = qca_mii_read;
 	priv->mii_write = qca_mii_write;
-#if 1
+#if 0
 	if (chip_type == CHIP_DESS || chip_type == CHIP_MHT) {
 		priv->ports = 6;
 	} else if ((chip_type == CHIP_ISIS) || (chip_type == CHIP_ISISC)) {

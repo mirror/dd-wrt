@@ -4334,12 +4334,12 @@ qca_hppe_mac_sw_sync_task(struct qca_phy_priv *priv)
 
 		rv = adpt_hppe_sfp_interface_mode_switch(priv->device_id, port_id);
 		if(rv) {
-			SSDK_INFO("port %d sfp interface mode change failed\n", port_id);
+			SSDK_DEBUG("port %d sfp interface mode change failed\n", port_id);
 		}
 		rv = adpt_hppe_port_phy_status_get(priv->device_id,
 				port_id, &phy_status);
 		if (rv != SW_OK) {
-			SSDK_INFO("failed to get port %d status return value is %d\n",
+			SSDK_DEBUG("failed to get port %d status return value is %d\n",
 					port_id, rv);
 			continue;
 		}
@@ -4351,7 +4351,7 @@ qca_hppe_mac_sw_sync_task(struct qca_phy_priv *priv)
 			(priv->port_old_link[port_id - 1] == PORT_LINK_UP))
 		{
 			link_changed = A_TRUE;
-			SSDK_INFO("Port %d change to link down status\n", port_id);
+			SSDK_DEBUG("Port %d change to link down status\n", port_id);
 			/* disable ppe port bridge txmac */
 			adpt_hppe_port_bridge_txmac_set(priv->device_id, port_id, A_FALSE);
 			aos_mdelay(10);
@@ -4375,14 +4375,14 @@ qca_hppe_mac_sw_sync_task(struct qca_phy_priv *priv)
 			(priv->port_old_link[port_id - 1] == PORT_LINK_DOWN))
 		{
 			link_changed = A_TRUE;
-			SSDK_INFO("Port %d change to link up status\n", port_id);
+			SSDK_DEBUG("Port %d change to link up status\n", port_id);
 			status = adpt_hppe_port_phy_status_change(priv, port_id, phy_status);
 			/*disable tx mac*/
 			adpt_hppe_port_txmac_status_set(priv->device_id, port_id, A_FALSE);
 			/* switch interface mode if necessary */
 			if (adpt_hppe_phy_interface_mode_switch(priv->device_id,
 					port_id) == SW_OK) {
-				SSDK_INFO("Port %d the interface mode switched\n",
+				SSDK_DEBUG("Port %d the interface mode switched\n",
 						port_id);
 			}
 			/* first check uniphy auto-neg complete interrupt to usxgmii */
@@ -4424,7 +4424,7 @@ qca_hppe_mac_sw_sync_task(struct qca_phy_priv *priv)
 					priv->port_old_speed[port_id - 1] =
 						(a_uint32_t)phy_status.speed;
 
-					SSDK_INFO("Port %d is link up and speed change to %d\n",
+					SSDK_DEBUG("Port %d is link up and speed change to %d\n",
 							port_id, priv->port_old_speed[port_id - 1]);
 				}
 				if ((a_uint32_t)phy_status.duplex !=
@@ -4437,7 +4437,7 @@ qca_hppe_mac_sw_sync_task(struct qca_phy_priv *priv)
 					priv->port_old_duplex[port_id - 1] =
 						(a_uint32_t)phy_status.duplex;
 
-					SSDK_INFO("Port %d is link up and duplex change to %d\n",
+					SSDK_DEBUG("Port %d is link up and duplex change to %d\n",
 							port_id,
 							priv->port_old_duplex[port_id - 1]);
 				}
@@ -4455,7 +4455,7 @@ qca_hppe_mac_sw_sync_task(struct qca_phy_priv *priv)
 						priv->port_old_tx_flowctrl[port_id - 1] =
 							phy_status.tx_flowctrl;
 
-						SSDK_INFO("Port %d is link up and tx flowctrl"
+						SSDK_DEBUG("Port %d is link up and tx flowctrl"
 							" change to %d\n", port_id,
 							priv->port_old_tx_flowctrl[port_id - 1]);
 					}
@@ -4474,7 +4474,7 @@ qca_hppe_mac_sw_sync_task(struct qca_phy_priv *priv)
 						priv->port_old_rx_flowctrl[port_id - 1] =
 							phy_status.rx_flowctrl;
 
-						SSDK_INFO("Port %d is link up and rx flowctrl"
+						SSDK_DEBUG("Port %d is link up and rx flowctrl"
 							" change to %d\n", port_id,
 							priv->port_old_rx_flowctrl[port_id-1]);
 					}
