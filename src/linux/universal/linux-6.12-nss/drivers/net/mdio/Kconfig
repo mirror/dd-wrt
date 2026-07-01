@@ -187,6 +187,15 @@ config MDIO_IPQ4019
 	  This driver supports the MDIO interface found in Qualcomm
 	  IPQ40xx, IPQ60xx, IPQ807x and IPQ50xx series Soc-s.
 
+config MDIO_IPQ95XX
+	tristate "Qualcomm IPQ95XX MDIO interface support"
+	depends on HAS_IOMEM && OF_MDIO
+	depends on COMMON_CLK
+	depends on MDIO_DEVRES
+	help
+	  This driver supports the MDIO interface found in Qualcomm
+	  IPQ40xx, IPQ60xx, IPQ807x and IPQ50xx series Soc-s.
+
 config MDIO_IPQ8064
 	tristate "Qualcomm IPQ8064 MDIO interface support"
 	depends on HAS_IOMEM && OF_MDIO
