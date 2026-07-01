@@ -866,12 +866,10 @@ struct mac80211_info *mac80211_assoclist(const char *interface)
 		lock();
 		if (intf) {
 			data.mac80211_info->frequency = intf->freq;
-#ifdef HAVE_MORSE
-			if (lastfreq[i] != intf->freq && !strcmp(interface, "wlan1")) {
+			if (is_morse_micro(interface) && lastfreq[i] != intf->freq) { // hack to get noise values
 				lastfreq[i] = intf->freq;
 				eval("iw", "dev", interface, "scan");
 			}
-#endif
 		}
 		// get noise for the actual interface
 		getNoise_mac80211_internal(ifname + 1, data.mac80211_info);
