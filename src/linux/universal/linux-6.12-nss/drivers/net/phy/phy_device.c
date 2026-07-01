@@ -871,7 +871,7 @@ static int get_phy_c45_devs_in_pkg(struct mii_bus *bus, int addr, int dev_addr,
  * Returns zero on success, %-EIO on bus access error, or %-ENODEV if
  * the "devices in package" is invalid or no device responds.
  */
-static int get_phy_c45_ids(struct mii_bus *bus, int addr, u32 *phy_id,
+static int get_phy_c45_ids(struct mii_bus *bus, int addr,
 			   struct phy_c45_device_ids *c45_ids)
 {
 	const int num_ids = ARRAY_SIZE(c45_ids->device_ids);
@@ -917,10 +917,8 @@ static int get_phy_c45_ids(struct mii_bus *bus, int addr, u32 *phy_id,
 			return -EIO;
 
 		/* no device there, let's get out of here */
-		if ((devs_in_pkg & 0x1fffffff) == 0x1fffffff) {
-			*phy_id = 0xffffffff;
-			return 0;
-		}
+		if ((devs_in_pkg & 0x1fffffff) == 0x1fffffff)
+			return -ENODEV;
 	}
 
 	/* Now probe Device Identifiers for each device present. */
@@ -955,7 +953,6 @@ static int get_phy_c45_ids(struct mii_bus *bus, int addr, u32 *phy_id,
 	c45_ids->devices_in_package = devs_in_pkg;
 	/* Bit 0 doesn't represent a device, it indicates c22 regs presence */
 	c45_ids->mmds_present = devs_in_pkg & ~BIT(0);
-	*phy_id = 0;
 
 	return 0;
 }
@@ -1052,16 +1049,13 @@ struct phy_device *get_phy_device(struct mii_bus *bus, int addr, bool is_c45)
 	memset(c45_ids.device_ids, 0xff, sizeof(c45_ids.device_ids));
 
 	if (is_c45)
-		r = get_phy_c45_ids(bus, addr, &phy_id, &c45_ids);
+		r = get_phy_c45_ids(bus, addr, &c45_ids);
 	else
 		r = get_phy_c22_id(bus, addr, &phy_id);
 
 	if (r)
 		return ERR_PTR(r);
 
-	/* If the phy_id is mostly Fs, there is no device there */
-	if ((phy_id & 0x1fffffff) == 0x1fffffff)
-		return ERR_PTR(-ENODEV);
 
 	/* PHY device such as the Marvell Alaska 88E2110 will return a PHY ID
 	 * of 0 when probed using get_phy_c22_id() with no error. Proceed to
@@ -1069,7 +1063,7 @@ struct phy_device *get_phy_device(struct mii_bus *bus, int addr, bool is_c45)
 	 * space, if successful, create the C45 PHY device.
 	 */
 	if (!is_c45 && phy_id == 0 && bus->read_c45) {
-		r = get_phy_c45_ids(bus, addr, &phy_id, &c45_ids);
+		r = get_phy_c45_ids(bus, addr, &c45_ids);
 		if (!r)
 			return phy_device_create(bus, addr, phy_id,
 						 true, &c45_ids);
@@ -1149,8 +1143,7 @@ EXPORT_SYMBOL(phy_device_remove);
  */
 int phy_get_c45_ids(struct phy_device *phydev)
 {
-	int phy_id;
-	return get_phy_c45_ids(phydev->mdio.bus, phydev->mdio.addr, &phy_id,
+	return get_phy_c45_ids(phydev->mdio.bus, phydev->mdio.addr,
 			       &phydev->c45_ids);
 }
 EXPORT_SYMBOL(phy_get_c45_ids);
