@@ -32,7 +32,7 @@ struct mdio_gpio_info {
 	struct gpio_desc *mdc, *mdio, *mdo;
 };
 
-#if IS_ENABLED(CONFIG_MDIO_IPQ4019)
+#if IS_ENABLED(CONFIG_MDIO_IPQ4019) || IS_ENABLED(CONFIG_MDIO_IPQ95XX)
 extern void ipq_mii_preinit(struct mii_bus *bus);
 extern u32 ipq_mii_read(struct mii_bus *mii_bus, u32 reg);
 extern void ipq_mii_write(struct mii_bus *mii_bus, u32 reg, u32 val);
