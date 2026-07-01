@@ -441,6 +441,8 @@ _mht_interface_uqxgmii_mode_set(a_uint32_t dev_id, a_uint32_t uniphy_addr)
 		PHY_RTN_ON_ERROR(rv);
 	}
 
+
+#if 0
 	/*ana sw reset and release*/
 	SSDK_DEBUG("ana sw reset and release\n");
 	rv = hsl_phy_modify_mii(dev_id, uniphy_addr,
@@ -450,10 +452,12 @@ _mht_interface_uqxgmii_mode_set(a_uint32_t dev_id, a_uint32_t uniphy_addr)
 	rv = hsl_phy_modify_mii(dev_id, uniphy_addr,
 		MHT_UNIPHY_PLL_POWER_ON_AND_RESET, 0x40, MHT_UNIPHY_ANA_SOFT_RELEASE);
 	PHY_RTN_ON_ERROR (rv);
+	mdelay(10);
 
 	/*Wait calibration done*/
 	SSDK_DEBUG("Wait calibration done\n");
 	mht_uniphy_calibration(dev_id, uniphy_addr);
+#endif
 	/*Enable SSCG(Spread Spectrum Clock Generator)*/
 	SSDK_DEBUG("enable uniphy sscg\n");
 	rv = hsl_phy_modify_mmd(dev_id, uniphy_addr, MHT_UNIPHY_MMD1, A_TRUE,
