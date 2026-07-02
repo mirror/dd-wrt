@@ -1,0 +1,24 @@
+{
+  "Required": [
+    "com.plexapp.plugins.siteconfigurations",
+    "com.plexapp.framework",
+    "com.plexapp.system",
+    "com.plexapp.system.scanners"
+  ],
+  
+  "System": [
+    "com.plexapp.system",
+    "com.plexapp.framework"
+  ],
+  
+  "Hidden": [
+    "com.plexapp.plugins.siteconfigurations",
+    "com.plexapp.framework",
+    "com.plexapp.system.scanners",
+    "com.plexapp.system"
+  ],
+  
+  "IgnoreDevMode": [
+    
+  ]
+}
