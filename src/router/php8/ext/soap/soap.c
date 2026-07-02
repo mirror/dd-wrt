@@ -1393,10 +1393,10 @@ PHP_METHOD(SoapServer, handle)
 						return;
 					}
 				}
-			}
 
-			if ((soap_action_z = zend_hash_str_find(Z_ARRVAL_P(server_vars), ZEND_STRL("HTTP_SOAPACTION"))) != NULL && Z_TYPE_P(soap_action_z) == IS_STRING) {
-				soap_action = Z_STRVAL_P(soap_action_z);
+			    if ((soap_action_z = zend_hash_str_find(Z_ARRVAL_P(server_vars), ZEND_STRL("HTTP_SOAPACTION"))) != NULL && Z_TYPE_P(soap_action_z) == IS_STRING && Z_STRLEN_P(soap_action_z) > 0) {
+				    soap_action = Z_STRVAL_P(soap_action_z);
+			    }
 			}
 
 			doc_request = soap_xmlParseFile("php://input");
@@ -2426,9 +2426,19 @@ static void do_soap_call(zend_execute_data *execute_data,
 				request = NULL;
 
 				if (ret && Z_TYPE(response) == IS_STRING) {
+					bool parse_bailout = false;
+
 					encode_reset_ns();
-					ret = parse_packet_soap(this_ptr, Z_STRVAL(response), Z_STRLEN(response), fn, NULL, return_value, output_headers);
+					zend_try {
+						ret = parse_packet_soap(this_ptr, Z_STRVAL(response), Z_STRLEN(response), fn, NULL, return_value, output_headers);
+					} zend_catch {
+						parse_bailout = true;
+					} zend_end_try();
 					encode_finish();
+					if (parse_bailout) {
+						zval_ptr_dtor(&response);
+						zend_bailout();
+					}
 				}
 
 				zval_ptr_dtor(&response);
@@ -2470,9 +2480,19 @@ static void do_soap_call(zend_execute_data *execute_data,
 				request = NULL;
 
 				if (ret && Z_TYPE(response) == IS_STRING) {
+					bool parse_bailout = false;
+
 					encode_reset_ns();
-					ret = parse_packet_soap(this_ptr, Z_STRVAL(response), Z_STRLEN(response), NULL, NULL, return_value, output_headers);
+					zend_try {
+						ret = parse_packet_soap(this_ptr, Z_STRVAL(response), Z_STRLEN(response), NULL, NULL, return_value, output_headers);
+					} zend_catch {
+						parse_bailout = true;
+					} zend_end_try();
 					encode_finish();
+					if (parse_bailout) {
+						zval_ptr_dtor(&response);
+						zend_bailout();
+					}
 				}
 
 				zval_ptr_dtor(&response);
@@ -3156,6 +3176,10 @@ static sdlFunctionPtr find_function_using_soap_action(const sdl *sdl, const char
 		}
 		soap_action++;
 		soap_action_length -= 2;
+	}
+
+	if (UNEXPECTED(soap_action_length == 0)) {
+		return NULL;
 	}
 
 	/* TODO: This may depend on a particular target namespace, in which case this won't find a match when multiple different

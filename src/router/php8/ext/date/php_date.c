@@ -31,13 +31,7 @@
 #include "win32/time.h"
 #endif
 
-#ifdef PHP_WIN32
-static __inline __int64 php_date_llabs( __int64 i ) { return i >= 0? i: -i; }
-#elif defined(__GNUC__) && __GNUC__ < 3
-static __inline __int64_t php_date_llabs( __int64_t i ) { return i >= 0 ? i : -i; }
-#else
-static inline long long php_date_llabs( long long i ) { return i >= 0 ? i : -i; }
-#endif
+static inline uint64_t php_date_llabs(int64_t i) { return i >= 0 ? (uint64_t)i : -(uint64_t)i; }
 
 #ifdef PHP_WIN32
 #define DATE_I64_BUF_LEN 65
@@ -761,9 +755,9 @@ static zend_string *date_format(const char *format, size_t format_len, const tim
 			/* year */
 			case 'L': length = slprintf(buffer, sizeof(buffer), "%d", timelib_is_leap((int) t->y)); break;
 			case 'y': length = slprintf(buffer, sizeof(buffer), "%02d", (int) (t->y % 100)); break;
-			case 'Y': length = slprintf(buffer, sizeof(buffer), "%s%04lld", t->y < 0 ? "-" : "", php_date_llabs((timelib_sll) t->y)); break;
-			case 'x': length = slprintf(buffer, sizeof(buffer), "%s%04lld", t->y < 0 ? "-" : (t->y >= 10000 ? "+" : ""), php_date_llabs((timelib_sll) t->y)); break;
-			case 'X': length = slprintf(buffer, sizeof(buffer), "%s%04lld", t->y < 0 ? "-" : "+", php_date_llabs((timelib_sll) t->y)); break;
+			case 'Y': length = slprintf(buffer, sizeof(buffer), "%s%04" PRIu64, t->y < 0 ? "-" : "", php_date_llabs((timelib_sll) t->y)); break;
+			case 'x': length = slprintf(buffer, sizeof(buffer), "%s%04" PRIu64, t->y < 0 ? "-" : (t->y >= 10000 ? "+" : ""), php_date_llabs((timelib_sll) t->y)); break;
+			case 'X': length = slprintf(buffer, sizeof(buffer), "%s%04" PRIu64, t->y < 0 ? "-" : "+", php_date_llabs((timelib_sll) t->y)); break;
 
 			/* time */
 			case 'a': length = slprintf(buffer, sizeof(buffer), "%s", t->h >= 12 ? "pm" : "am"); break;
@@ -5087,7 +5081,7 @@ static bool date_period_init_iso8601_string(php_period_obj *dpobj, zend_class_en
 		zend_string_release(func);
 		return false;
 	}
-	if (dpobj->end == NULL && recurrences == 0) {
+	if (dpobj->end == NULL && *recurrences == 0) {
 		zend_string *func = get_active_function_or_method_name();
 		zend_throw_exception_ex(date_ce_date_malformed_period_string_exception, 0, "%s(): ISO interval must contain an end date or a recurrence count, \"%s\" given", ZSTR_VAL(func), isostr);
 		zend_string_release(func);

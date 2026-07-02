@@ -14,7 +14,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: c5467396d4bfe62513fab439a836d384a4652b26 $ */
+/* $Id: 4dc687ea6681ffc42006a5fa64ac97f828c52ce1 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -40,7 +40,7 @@
 /* {{{ inifile_version */
 const char *inifile_version(void)
 {
-	return "1.0, $Id: c5467396d4bfe62513fab439a836d384a4652b26 $";
+	return "1.0, $Id: 4dc687ea6681ffc42006a5fa64ac97f828c52ce1 $";
 }
 /* }}} */
 
@@ -111,7 +111,7 @@ void inifile_free(inifile *dba, int persistent)
 key_type inifile_key_split(const char *group_name)
 {
 	key_type key;
-	char *name;
+	const char *name;
 
 	if (group_name[0] == '[' && (name = strchr(group_name, ']')) != NULL) {
 		key.group = estrndup(group_name+1, name - (group_name + 1));

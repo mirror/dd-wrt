@@ -1,5 +1,119 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+02 Jul 2026, PHP 8.5.8
+
+- Core:
+  . Fixed bug GH-22280 (Incorrect compile error for goto to label preceding
+    try/finally block). (Pratik Bhujel)
+  . Fixed bug GH-22112 (Assertion when error handler throws during NaN to
+    bool/string coercion). (iliaal)
+
+- BCMath:
+  . Fixed issues with oversized allocations and signed overflow in bcround()
+    and BcMath\Number::round(). (edorian)
+
+- Date:
+  . Fix incorrect recurrence check of DatePeriod::createFromISO8601String().
+    (ndossche)
+
+- Exif:
+  . Read correct value for single and double tags. (ndossche)
+
+- GD:
+  . Fixed bug GH-22121 (Double free in gdImageSetStyle() after
+    overflow-triggered early return). (iliaal)
+
+- Intl:
+  . Fix incorrect argument positions for invalid start/end arguments in
+    transliterator_transliterate().
+    (Weilin Du)
+  . Fixed IntlTimeZone::getDisplayName() to synchronize object error state
+    for invalid display types. (Weilin Du)
+
+- Lexbor:
+  . Merge patch c3a6847. (ilutov, timwolla)
+
+- Opcache:
+  . Fixed bug GH-22265 (Another tailcall vm_interrupt bug). (Levi Morrison)
+  . Fixed bug GH-20469 (Unsafe inheritance cache replay with reentrant
+    autoloading). (Levi Morrison)
+  . Fixed bug GH-21972 (Corrupted variable type when a typed by-value return
+    contains a reference wrapper). (Weilin Du)
+
+- Phar:
+  . Fixed a bypass of the magic ".phar" directory protection in
+    Phar::addEmptyDir() for paths starting with "/.phar", while allowing
+    non-magic directory names that merely share the ".phar" prefix. (Weilin Du)
+
+- Reflection:
+  . Preserve class-name case in ReflectionClass::getProperty() error messages
+    and autoloading. (jorgsowa)
+
+- SOAP:
+  . Fixed bug GH-22218 (SoapServer::handle() crash on $_SERVER not being
+    an array). (David Carlier / Rex-Reynolds)
+  . Fixed bug GH-22285 (Soap server requires the raw input to be passed
+    to $server->handle). (David Carlier / ndossche)
+
+- Sqlite:
+  . Fix error checks for column retrieval. (ndossche)
+
+- URI:
+  . Add LEXBOR_STATIC to CFLAGS_URI on Windows so ext/uri does not see
+    LXB_API as __declspec(dllimport) when linked statically into PHP.
+    (Luther Monson)
+  . Clean error logs before each Uri\WhatWg\Url wither call so that errors from
+    previous wither calls are not returned the next time a UrlValidationError
+    is thrown. (kocsismate)
+
+- Zip:
+  . Fixed error-related memory leaks. (ndossche)
+
+- Zlib:
+  . Fixed memory leak if deflate initialization fails and there is a dict.
+    (ndossche)
+  . Fixed memory leak in inflate_add(). (ndossche)
+
+02 Jun 2026, PHP 8.5.7
+
+- CLI:
+  . Fixed bug GH-21901 (Stale getopt() optional value). (onthebed)
+
+- Core:
+  . Fixed bug GH-22071 (JIT assertion on abstract static method call).
+    (David Carlier)
+
+- Date:
+  . Fixed bug GH-18422 (int overflow in php_date_llabs). (iliaal)
+
+- DOM:
+  . Fixed bug GH-22077 (UAF in custom XPath function).
+    (afflerbach/David Carlier)
+
+- Opcache:
+  . Fixed tracing JIT crash when a VM interrupt is handled during an observed
+    user function call. (Levi Morrison)
+  . Fixed bug GH-21746 (Segfault with tracing JIT). (Arnaud)
+  . Fixed bug GH-22004 (Assertion failure at ext/opcache/jit/zend_jit_trace.c).
+    (Arnaud)
+  . Fixed tailcall VM crash when a VM interrupt is handled from a VM helper.
+    (Levi Morrison, Arnaud)
+
+- OpenSSL:
+  . Fix compatibility issues with OpenSSL 4.0. (jordikroon, Remi)
+
+- Standard:
+  . Fixed bug GH-21689 (version_compare() incorrectly handles versions ending
+    with a dot). (timwolla)
+
+- URI:
+  . Fixed CVE-2026-44927 (In uriparser before 1.0.2, there is pointer
+    difference truncation to int in various places). (CVE-2026-44927)
+    (Sebastian Pipping)
+  . Fixed CVE-2026-44928 (In uriparser before 1.0.2, the function family
+    EqualsUri can misclassify two unequal URIs as equal). (CVE-2026-44928)
+    (Sebastian Pipping)
+
 07 May 2026, PHP 8.5.6
 
 - Core:
@@ -182,6 +296,8 @@ PHP                                                                        NEWS
     (ndossche)
   . Fixed bug GH-20627 (Cannot identify some avif images with getimagesize).
     (y-guyon)
+  . Fixed bug GH-22171 (Invalid auth header generation in
+    http(s) stream wrapper). (David Carlier)
 
 - Sysvshm:
   . Fix memory leak in shm_get_var() when variable is corrupted. (ndossche)
@@ -338,6 +454,8 @@ PHP                                                                        NEWS
     when pos.size < 2). (Oblivionsage)
 
 - Intl:
+  . Fixed IntlListFormatter::getErrorCode() and getErrorMessage() not
+    reflecting format() failures. (Weilin Du)
   . Fix leak in umsg_format_helper(). (ndossche)
 
 - LDAP:
