@@ -873,11 +873,8 @@ typedef enum {
 #define N_FIXED_FIELDS 12
 #define N_FIXED_FIELDS_RTL931X 14
 #define MAX_COUNTERS 2048
-#define MAX_ROUTES 512
-#define MAX_HOST_ROUTES 1536
 #define MAX_INTF_MTUS 8
 #define DEFAULT_MTU 1536
-#define MAX_INTERFACES 100
 #define MAX_ROUTER_MACS 64
 #define L3_EGRESS_DMACS 2048
 #define MAX_SMACS 64
@@ -900,8 +897,6 @@ typedef enum {
  * skipped and the counters are simply retrieved a lot more often from the HW.
  */
 #define RTLDSA_COUNTERS_FAST_POLL_INTERVAL	(3 * HZ)
-
-struct otto_l3_route;
 
 enum pbvlan_type {
 	PBVLAN_TYPE_INNER = 0,
@@ -1273,40 +1268,6 @@ struct pie_rule {
 	bool bypass_ibc_sc;	/* Bypass Ingress Bandwidth Control and Storm Control */
 };
 
-struct rtl838x_l3_intf {
-	u16 vid;
-	u8 smac_idx;
-	u8 ip4_mtu_id;
-	u8 ip6_mtu_id;
-	u16 ip4_mtu;
-	u16 ip6_mtu;
-	u8 ttl_scope;
-	u8 hl_scope;
-	u8 ip4_icmp_redirect;
-	u8 ip6_icmp_redirect;
-	u8 ip4_pbr_icmp_redirect;
-	u8 ip6_pbr_icmp_redirect;
-};
-
-/* An entry in the RTL93XX SoC's ROUTER_MAC tables setting up a termination point
- * for the L3 routing system. Packets arriving and matching an entry in this table
- * will be considered for routing.
- * Mask fields state whether the corresponding data fields matter for matching
- */
-struct rtl93xx_rt_mac {
-	bool valid;	/* Valid or not */
-	bool p_type;	/* Individual (0) or trunk (1) port */
-	bool p_mask;	/* Whether the port type is used */
-	u8 p_id;
-	u8 p_id_mask;	/* Mask for the port */
-	u8 action;	/* Routing action performed: 0: FORWARD, 1: DROP, 2: TRAP2CPU */
-			/*   3: COPY2CPU, 4: TRAP2MASTERCPU, 5: COPY2MASTERCPU, 6: HARDDROP */
-	u16 vid;
-	u16 vid_mask;
-	u64 mac;	/* MAC address used as source MAC in the routed packet */
-	u64 mac_mask;
-};
-
 struct rtl838x_switch_priv;
 
 struct rtl83xx_flow {
@@ -1440,19 +1401,6 @@ struct rtldsa_config {
 	void (*l2_learning_setup)(void);
 	u32 (*packet_cntr_read)(int counter);
 	void (*packet_cntr_clear)(int counter);
-	void (*route_read)(int idx, struct otto_l3_route *rt);
-	void (*route_write)(int idx, struct otto_l3_route *rt);
-	void (*host_route_write)(int idx, struct otto_l3_route *rt);
-	int (*l3_setup)(struct rtl838x_switch_priv *priv);
-	void (*set_l3_nexthop)(int idx, u16 dmac_id, u16 interface);
-	void (*get_l3_nexthop)(int idx, u16 *dmac_id, u16 *interface);
-	u64 (*get_l3_egress_mac)(u32 idx);
-	void (*set_l3_egress_mac)(u32 idx, u64 mac);
-	int (*find_l3_slot)(struct otto_l3_route *rt, bool must_exist);
-	int (*route_lookup_hw)(struct otto_l3_route *rt);
-	void (*get_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
-	void (*set_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
-	void (*set_l3_egress_intf)(int idx, struct rtl838x_l3_intf *intf);
 	void (*set_receive_management_action)(int port, rma_ctrl_t type, action_type_t action);
 	void (*led_init)(struct rtl838x_switch_priv *priv);
 	void (*qos_init)(struct rtl838x_switch_priv *priv);
@@ -1513,10 +1461,6 @@ struct rtl838x_switch_priv {
 	unsigned long pie_use_bm[MAX_PIE_ENTRIES >> 5];
 	unsigned long octet_cntr_use_bm[MAX_COUNTERS >> 5];
 	unsigned long packet_cntr_use_bm[MAX_COUNTERS >> 4];
-	struct rhltable routes;
-	unsigned long route_use_bm[MAX_ROUTES >> 5];
-	unsigned long host_route_use_bm[MAX_HOST_ROUTES >> 5];
-	struct rtl838x_l3_intf *interfaces[MAX_INTERFACES];
 	u16 intf_mtus[MAX_INTF_MTUS];
 	int intf_mtu_count[MAX_INTF_MTUS];
 
