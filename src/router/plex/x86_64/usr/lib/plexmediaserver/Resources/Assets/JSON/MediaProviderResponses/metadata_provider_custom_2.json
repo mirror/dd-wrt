@@ -1,0 +1,24 @@
+{
+  "MediaProvider": {
+    "identifier": "tv.plex.provider.metadata.custom.2",
+    "title": "Custom Metadata 2",
+    "Feature": [
+      {
+        "type": "metadata",
+        "key": "/library/metadata"
+      },
+      {
+        "type": "actions",
+        "Action": []
+      },
+      {
+        "type": "collection",
+        "key": "/library/collections"
+      },
+      {
+        "type": "match",
+        "key": "/library/metadata/matches"
+      }
+    ]
+  }
+}

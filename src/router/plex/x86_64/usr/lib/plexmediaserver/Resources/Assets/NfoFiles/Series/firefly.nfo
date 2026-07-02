@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--created on 2026-01-14 16:58:37 by tinyMediaManager 5.2.2 for PLEX-->
+<tvshow>
+  <title>Firefly</title>
+  <originaltitle>Firefly</originaltitle>
+  <showtitle>Firefly</showtitle>
+  <sorttitle/>
+  <year>2002</year>
+  <top250>0</top250>
+  <ratings>
+    <rating default="true" max="10" name="themoviedb">
+      <value>8.3</value>
+      <votes>2274</votes>
+    </rating>
+    <rating default="false" max="10" name="default">
+      <value>9.4</value>
+      <votes>0</votes>
+    </rating>
+  </ratings>
+  <userrating>0</userrating>
+  <outline/>
+  <plot>In the year 2517, after the arrival of humans in a new star system, follow the adventures of the renegade crew of Serenity, a "Firefly-class" spaceship.</plot>
+  <tagline/>
+  <runtime>0</runtime>
+  <thumb aspect="poster">https://image.tmdb.org/t/p/original/qSDuLfiU9mYoGKN3m0UgrAxZzVL.jpg</thumb>
+  <thumb aspect="clearlogo">https://image.tmdb.org/t/p/original/kXvlqYyNBrJShUxFEO9fB1kgowx.png</thumb>
+  <thumb aspect="poster" season="1" type="season">https://image.tmdb.org/t/p/original/qpjgUjjj3gQTzkQgcHXVBaP51Qf.jpg</thumb>
+  <fanart>
+    <thumb>https://image.tmdb.org/t/p/original/iSdAlnTxR6rYgksJ5eAhSNLrV9i.jpg</thumb>
+  </fanart>
+  <mpaa>US:TV-14</mpaa>
+  <certification>US:TV-14</certification>
+  <episodeguide>{"tmdb":"1437","tvrage":"3548","imdb":"tt0303461","wikidata":"Q11622","tvdb":"78874"}</episodeguide>
+  <id>78874</id>
+  <imdbid>tt0303461</imdbid>
+  <tmdbid>1437</tmdbid>
+  <uniqueid default="false" type="tmdb">1437</uniqueid>
+  <uniqueid default="false" type="tvrage">3548</uniqueid>
+  <uniqueid default="false" type="imdb">tt0303461</uniqueid>
+  <uniqueid default="false" type="wikidata">Q11622</uniqueid>
+  <uniqueid default="true" type="tvdb">78874</uniqueid>
+  <premiered>2002-09-20</premiered>
+  <status>Canceled</status>
+  <watched>false</watched>
+  <playcount/>
+  <genre>Drama</genre>
+  <genre>Action</genre>
+  <genre>Science Fiction</genre>
+  <studio>FOX</studio>
+  <studio>Mutant Enemy Productions</studio>
+  <studio>20th Century Fox Television</studio>
+  <country>United States</country>
+  <tag>spacecraft</tag>
+  <tag>future</tag>
+  <tag>outlaw</tag>
+  <tag>space</tag>
+  <tag>heist</tag>
+  <tag>space western</tag>
+  <tag>space opera</tag>
+  <actor>
+    <name>Nathan Fillion</name>
+    <role>Mal Reynolds</role>
+    <thumb>https://image.tmdb.org/t/p/h632/q31mXXgnN5PsuIjEqaaAPvBDvHc.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/51797</profile>
+    <tmdbid>51797</tmdbid>
+  </actor>
+  <actor>
+    <name>Gina Torres</name>
+    <role>Zoë Washburne</role>
+    <thumb>https://image.tmdb.org/t/p/h632/ukDNHgvEgdU95eaw6pngiAPucv4.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/9576</profile>
+    <tmdbid>9576</tmdbid>
+  </actor>
+  <actor>
+    <name>Alan Tudyk</name>
+    <role>Hoban Washburne</role>
+    <thumb>https://image.tmdb.org/t/p/h632/jUuUbPuMGonFT5E2pcs4alfqaCN.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/21088</profile>
+    <tmdbid>21088</tmdbid>
+  </actor>
+  <actor>
+    <name>Morena Baccarin</name>
+    <role>Inara Serra</role>
+    <thumb>https://image.tmdb.org/t/p/h632/kBSKKaOtsqIzZPhtEeHfCBmhWl9.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/54882</profile>
+    <tmdbid>54882</tmdbid>
+  </actor>
+  <actor>
+    <name>Adam Baldwin</name>
+    <role>Jayne Cobb</role>
+    <thumb>https://image.tmdb.org/t/p/h632/rtRCD2rl9k3RVgyv3cHaUJer0Ms.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/2059</profile>
+    <tmdbid>2059</tmdbid>
+  </actor>
+  <actor>
+    <name>Jewel Staite</name>
+    <role>Kaylee Frye</role>
+    <thumb>https://image.tmdb.org/t/p/h632/ztxDIZvuPreUixO6ZPxwkCg2UlO.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/72092</profile>
+    <tmdbid>72092</tmdbid>
+  </actor>
+  <actor>
+    <name>Sean Maher</name>
+    <role>Simon Tam</role>
+    <thumb>https://image.tmdb.org/t/p/h632/o7splcOIVAdbHnwohJOUAvXWVlk.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/55148</profile>
+    <tmdbid>55148</tmdbid>
+  </actor>
+  <actor>
+    <name>Summer Glau</name>
+    <role>River Tam</role>
+    <thumb>https://image.tmdb.org/t/p/h632/17eWfqG9SZeRNx8AQctajX06Ik5.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/54881</profile>
+    <tmdbid>54881</tmdbid>
+  </actor>
+  <actor>
+    <name>Ron Glass</name>
+    <role>Derrial Book</role>
+    <thumb>https://image.tmdb.org/t/p/h632/wXkS9e8VZPWlc7jK3AaMXZ2OTUx.jpg</thumb>
+    <profile>https://www.themoviedb.org/person/74570</profile>
+    <tmdbid>74570</tmdbid>
+  </actor>
+  <trailer>plugin://plugin.video.youtube/play/?video_id=oBZrZij2-g8</trailer>
+  <dateadded>2026-01-14 16:54:23</dateadded>
+  <episodeguideurl>http://www.thetvdb.com/api/9DAF49C96CBF8DAC/series/78874/all/en.zip</episodeguideurl>
+  <namedseason number="1">The Only Season</namedseason>
+  <namedseason number="2">The Season That Never Was</namedseason>
+  <!--tinyMediaManager meta data-->
+  <user_note/>
+  <episode_groups>
+    <group id="AIRED" name=""/>
+    <group active="true" id="DVD" name="DVD Order"/>
+    <group id="ABSOLUTE" name="Intended Order"/>
+  </episode_groups>
+  <english_title>Firefly</english_title>
+</tvshow>

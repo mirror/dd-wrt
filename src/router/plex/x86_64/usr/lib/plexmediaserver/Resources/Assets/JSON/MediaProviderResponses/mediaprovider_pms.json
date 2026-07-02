@@ -1,0 +1,709 @@
+{
+  "MediaContainer": {
+    "size": 1,
+    "allowCameraUpload": true,
+    "allowChannelAccess": true,
+    "allowMediaDeletion": true,
+    "allowSharing": true,
+    "allowSync": true,
+    "allowTuners": true,
+    "apiVersion": "0.2.0",
+    "audiobook": 1,
+    "backgroundProcessing": true,
+    "certificate": true,
+    "companionProxy": true,
+    "countryCode": "zaf",
+    "diagnostics": "logs,databases,streaminglogs",
+    "eventStream": true,
+    "friendlyName": "PMS Tests",
+    "livetv": 7,
+    "machineIdentifier": "f193b5b3d3b4db7608cfa7d22cae68945e3d5bd7",
+    "musicAnalysis": 2,
+    "myPlex": true,
+    "myPlexMappingState": "mapped",
+    "myPlexSigninState": "ok",
+    "myPlexSubscription": true,
+    "myPlexUsername": "tests@plex.tv",
+    "offlineTranscode": 1,
+    "ownerFeatures": "00077925-6031-401b-8679-f6617ed0cec6,0007d618-4377-4951-88a3-f05e81602382,002c9f1a-2fc0-4812-b85b-0e6140f21a0f,007fb90d-2224-4d24-bd42-e87ffde13558,00cc618e-eb08-4e0e-9221-82b4835dd89b,01ba4bb1-0d08-4758-b9f1-7df92631e4c1,02da2909-ddfd-46be-9e42-65008a79fc05,03e62ab8-f50f-4a80-a0b5-bf7d9b0d4c91,044977d9-3928-4979-aef1-e2c8f916cd56,044a1fac-6b55-47d0-9933-25a035709432,04d7d794-b76c-49ef-9184-52f8f1f501ee,05690239-443e-43fb-bc1a-95b5d916ca63,05826f20-284b-4bcb-b45c-2367e5c0ea72,06d14b9e-2af8-4c2b-a4a1-ea9d5c515824,075954ad-56ef-4f5e-9519-9cfb0ed05827,09d6d4f2-6fd1-40f9-90ae-8813f3927e71,0b8bf267-1acf-4f89-99eb-4afbb9d250e5,0bf51797-1d13-4417-935f-d155c3550bf3,0de6151c-e0dd-47c8-a81e-1acb977c7f0f,0e2acda2-d70d-4df6-96e0-f63cf264d217,0eee866d-782b-4dfd-b42b-3bbe8eb0af16,10d475c2-25f0-47f1-9ee8-293340012ffe,1417df52-986e-4e4b-8dcd-3997fbc5c976,1489769d-5ac5-44d2-b077-4fccb76493fe,16abced2-1e64-4f01-b64f-f8ef41b1ea6c,17e6b064-4a7e-46a8-a212-551623eb7d24,1841971c-6be5-40e6-a211-7e189d767a78,1844737f-1a87-45c3-ab20-01435959e63c,1b2bb71e-be2d-4d55-bff1-7b5de80c06ae,1b2cb061-9521-4da1-bd4a-d8341073daaa,1b3a63e4-c2f4-4011-a181-2343d3a97ef7,1b870b8e-f1a7-497c-80b2-857d45f3123f,1c51295e-3e98-4d77-a1f6-763a12594a89,1dc09f74-9e7a-4764-8b1e-4d79b2d4486a,1dd846ed-7cde-4dc5-8ef6-53d3ce8c4e9d,1df3cd16-faf2-4d37-8349-1fcf3713bf1d,1e13bed2-8811-45df-95df-95a09c734dea,1f952ea5-0837-44cb-8539-a69a14a75d4a,215de92a-f2fe-40d3-915c-3f71cdb57af7,222020fb-1504-492d-af33-a0b80a49558a,228a6439-ee2f-4a9b-b0fc-1bfcd48b5095,22b27e12-472e-4383-92ea-2ec3976d8e72,24b4cf36-b296-4002-86b7-f1adb657e76a,2797e341-b062-46ed-862f-0acbba5dd522,298a11d3-9324-4104-8047-0ac10df4a8a6,29bca3b8-e40b-4c69-b71c-f88047240f9b,2cc5e977-a10e-4bdc-ace9-1c474428d3a1,2cd03ae8-4bf0-4607-9ad5-b0aca6cc3521,2cf67df1-5eb4-4485-89c5-a8bee89fd1fd,2ea0e464-ea4f-4be2-97c1-ce6ed4b377dd,300231e0-69aa-4dce-97f4-52d8c00e3e8c,32cc8bf5-b425-4582-a52d-71b4f1cf436b,34ddfac9-3a76-459a-974d-591520b809dd,34e182bd-2f62-4678-a9e9-d13b3e25019d,39dbdd84-8339-4736-96a1-0eb105cc2e08,3a2b0cb6-1519-4431-98e2-823c248c70eb,3ae06d3a-a76b-435e-8cef-2d2008610ba2,3b1a851d-325e-4938-b036-156e20304d6f,3bfd3ccf-8c63-4dbb-8f87-9b21b402c82b,3c17738b-c28f-470e-b45f-0af33255d3cd,3c376154-d47e-4bbf-9428-2ea2592fd20a,3c8bee17-e8a4-46e3-9733-8c9d6058b1b0,3d572099-e243-49bb-9f94-17de7703f9f9,3eb2789b-200c-4a15-91d2-dedfe560953c,3f6baa76-7488-479a-9e4f-49ff2c0d3711,42b81846-b50c-483c-b847-073542fbe4f2,43725019-9122-4a6d-bc50-bca06a411b7a,4633f19a-f6db-4ee8-b446-68a19e541aff,4742780c-af9d-4b44-bf5b-7b27e3369aa8,4866e9e9-ad14-4c2b-bd92-49576f320fd7,4a5ac95a-0d33-4ec3-b207-92791f23cd6e,4b4161e3-ee8a-4b96-bce4-be2b948848a1,4b522f91-ae89-4f62-af9c-76f44d8ef61c,4bdcac7b-f25b-43b3-93d8-2bbcb9605fd7,4c9da060-57ff-4f3a-960b-1743a5d431b7,4ca03b04-54c1-4f9f-aea2-f813ae48f317,4cd4dc0e-6cbe-456c-9988-9f073fadcd73,4d6822d7-0417-4187-af01-c17f8fd38ff9,4ebac94e-efd0-4cda-9628-9099b8ce3494,5050545e-95c6-4a25-b94e-1fe5a5a603d0,52ee04dc-2b82-4142-9e0a-e7ce8087c5b6,53925fa9-efe0-410b-9349-70847656bfd0,547514ab-3284-46e5-af77-bbaff247e3fc,55b9f6ed-5d26-4d2d-a436-68882a9901b5,55e1398c-930f-41c1-bead-f5c2e471bb25,567033ef-ffee-44fb-8f90-f678077445f9,59127bcf-acc8-4e97-ad88-8ba6380880b9,594425ed-887f-48f0-9203-174cadd4489a,5b6190a9-77a4-477e-9fbc-c8118e35a4c1,5c1951bf-ccf1-4821-8ee7-e50f51218ae7,5d819d02-5d04-4116-8eec-f49def4e2d6f,5e2a89ec-fb26-4234-b66e-14d37f35dff2,613098d4-985f-4e31-beaf-d87eaeff3ab9,62b1e357-5450-41d8-9b60-c7705f750849,6380e085-02fe-43b5-8bff-380fa4f2423c,644c4466-05fa-45e0-a478-c594cf81778f,64adaa4e-aa7e-457d-b385-51438216d7fe,65152b75-13a9-408a-bd30-dbd23a259183,652968f4-d474-4e04-a1cf-2dd1eaeb488a,65685ff8-4375-4e4c-a806-ec1f0b4a8b7f,67c80530-eae3-4500-a9fa-9b6947d0f6d1,68747f3a-ce13-46ce-9274-1e0544c9f500,6a18484d-ae47-4bb9-bba5-bc7a0ac8af14,6ab6677b-ad9b-444f-9ca1-b8027d05b3e1,6b85840c-d79d-40c2-8d8f-dfc0b7d26776,6bf93558-6b92-4475-bcf2-b090081643e9,6c4d66d9-729d-49dc-b70d-ab2652abf15a,6d7be725-9a96-42c7-8af4-01e735138822,6f82ca43-6117-4e55-ae0e-5ea3b3e99a96,720ff859-93e3-442e-955f-c66b48456e5b,723f9790-034a-4195-abac-1053cdb6c717,757c05d2-64f6-4ea1-8976-b42f71b7a0fb,75e95ee5-b482-4b02-aeff-a9faf13ead64,78d85e05-4c5e-4671-8ddb-0306ea58a259,7b392594-6949-4736-9894-e57a9dfe4037,7c4200b1-a2ab-4803-adcd-6c36b22a9269,7ee1495c-2798-4288-94e2-9cd98e67d441,7ee6d957-0b69-4662-8fe7-76acb7c60226,7ef84008-9a02-43f9-a22f-86102fd66922,7f203797-c4de-4ba0-810c-7b5e0fa0dc00,7f46bf17-fabf-4f96-99a2-cf374f6eed71,81c8d5fa-8d90-4833-aa10-a31a51310e2f,82999dd3-a2be-482e-9f44-357879b4f603,836066b6-7b8b-4b5d-8829-c98a1b9f320c,849433b0-ef60-4a71-9dd9-939bc01f5362,84a754b0-d1ca-4433-af2d-c949bf4b4936,84c446fa-f807-469a-a5b6-da146aa00305,850f3d1e-3f38-44c1-9c0c-e3c9127b8b5a,8536058d-e1dd-4ae7-b30f-e8b059b7cc17,85410409-ebe4-47f8-9814-034ff05c47d7,85ebfb7b-77fb-4afd-bb1a-2fe2fefdddbe,86134bfb-649d-40d5-b896-44daa07c5835,86da2200-58db-4d78-ba46-f146ba25906b,8827ca18-62ce-40b8-8b36-404f22f5a39b,88aba3a3-bd62-42a5-91bb-0558a4c1db57,8a492256-7e60-484c-8f79-9d9abaa2dbc4,8b46de05-1f96-4278-87b3-010ba5b1e386,8fd37970-6e4e-4f00-a64a-e70b52f18e94,9072bf6e-b219-4729-ab73-56b74c2013ba,91e03dce-04bc-4838-9e94-504b2f9da790,926bc176-58ca-47da-b8e3-080ed14ea6ba,9341d44b-7798-4ad3-bc50-505d2061e3e5,95149521-f64b-46ea-825c-9114e56afd2c,9641e859-d400-4e10-b417-40cdc93b49b8,96cac76e-c5bc-4596-87eb-4fdfef9aaa11,9a67bff2-cb80-4bf9-81c6-9ad2f4c78afd,9adb81de-5e76-4c69-b74a-7c39cd1cb47a,9aea4ca5-2095-4619-9339-88c1e662fde6,9c982beb-c676-4d6f-a777-ff5d37ec3081,9dc1df45-fb45-4be1-9ab2-eb23eb57f082,9e93f8a8-7ccd-4d15-99fa-76a158027660,9eaa5152-320b-48e6-9d47-9492ba5e5b54,a02f5e51-36a3-4f0a-b87f-88b8a37e6100,a19d495a-1cef-4f7c-ab77-5186e63e17f7,a3d2d5c4-46a0-436e-a2d6-80d26f32b369,a5369ada-8521-4a08-98d7-b706fc7324d7,a536a6e1-0ece-498a-bf64-99b53c27de3a,a548af72-b804-4d05-8569-52785952d31d,a6e0a154-4735-4cbb-a6ec-7a0a146c8216,a6f3f9b3-c10c-4b94-ad59-755e30ac6c90,a7f020bf-d5e3-4e0b-97b6-185f977e4adc,a95ccec6-a366-4b9b-9476-8ab14c50dbeb,abd37b14-706c-461f-8255-fa9563882af3,adaptive_bitrate,advanced-playback-settings,af291e9e-813f-4467-8779-5d215abc3b5f,b227c158-e062-4ff1-95d8-8ed11cecafb1,b2403ac6-4885-4971-8b96-59353fd87c72,b25b878c-4f60-4337-9f6b-2d97ef41d036,b3b87f19-5ccd-4b14-bb62-b9d7b982392e,b3b96acd-8f65-404f-93cd-0205b9ac4080,b46d16ae-cbd6-4226-8ee9-ab2b27e5dd42,b5874ecb-6610-47b2-8906-1b5a897acb02,b58d7f28-7b4a-49bb-97a7-152645505f28,b5d7f0da-a5fc-4bbc-8a39-d63dd77b5f2c,b612f571-83c3-431a-88eb-3f05ce08da4a,b77e6744-c18d-415a-8e7c-7aac5d7a7750,b83c8dc9-5a01-4b7a-a7c9-5870c8a6e21b,b8cf9f40-4f8a-4de4-b203-5bbcf8b09f5a,ba8459cd-81fe-4799-93e2-84358717bfb4,bb50c92f-b412-44fe-8d8a-b1684f212a44,bbf73498-4912-4d80-9560-47c4fe212cec,bc8d1fca-deb0-4d0a-a6f4-12cfd681002d,bec2ba97-4b25-472b-9cfc-674f5c68c2ae,c2409baa-d044-45c7-b1f4-e9e7ccd2d128,c36a6985-eee3-4400-a394-c5787fad15b5,c3e06503-00ba-4f23-b8e2-d1b1c9ec44cb,c55d5900-b546-416d-a8c5-45b24a13e9bc,c5adf9dc-af13-4a85-a24b-98de6fa2f595,c5ecfc11-5b04-489c-9c6b-d3eb05aae69a,c6ce2260-a19d-4fea-9f74-a52231f03924,c7ae6f8f-05e6-48bb-9024-c05c1dc3c43e,c92d4903-bc06-4715-8ce4-4a22674abac8,c987122a-a796-432f-af00-953821c127bb,c9d9b7ee-fdd9-474e-b143-5039c04e9b9b,caf98522-c470-486f-b6ba-686cc8e5ac45,camera_upload,cb151c05-1943-408a-b37c-06f7d409d6bb,cbae4949-1643-46f3-a488-71836b025d63,cc9bea3b-11ab-4402-a222-4958bb129cab,cce9af5d-7b44-4119-a6b1-108fd0db725c,ccef9d3a-537a-43d9-8161-4c7113c6e2bb,cd0ef747-af8a-414b-9d3a-dd02b6454db9,cdb369d9-a10e-4063-95ad-a5f91ac33f4f,ce8f644e-87ce-4ba5-b165-fadd69778019,collections,content_filter,d14556be-ae6d-4407-89d0-b83953f4789a,d1477307-4dac-4e57-9258-252e5b908693,d197fb0a-9160-4511-9884-a8a6daa52c6f,d1b1e233-a891-45e5-935c-6114e905dbe8,d1d14249-f1aa-4ad2-a5ae-079184956bb9,d20f9af2-fdb1-4927-99eb-a2eb8fbff799,d29dad71-138c-4c64-8740-83dfefe9a6e2,d29f0ee0-3d3a-46c3-b582-4bc69bc17c29,d413fb56-de7b-40e4-acd0-f3dbb7c9e104,d4b4e08a-9201-4c99-9a52-8f2de8ff25cd,d715fd2e-b295-492b-bdd7-a048e014608b,d85cb60c-0986-4a02-b1e1-36c64c609712,d8810b38-ec9b-494c-8555-3df6e365dfbd,d9528436-ee7c-42e3-ab7b-814f85ef74b4,d9f42aea-bc9d-47db-9814-cd7a577aff48,da3ba5d5-b70c-4f75-943d-39b6ac975923,dab501df-5d99-48ef-afc2-3e839e4ddc9a,db965785-ca5c-46fd-bab6-7b3d29c18492,dbdc0575-9fc7-4706-9e2d-fca98d10ad71,ddad9e68-938e-421e-8fe5-989424b9ca7a,ddba70b2-23a9-4b47-a89e-bfefa3b80936,de65add8-2782-4bb8-b156-e0b57a844479,df44ec6c-239d-4882-9b09-65744c05ed6c,download_certificates,dvr,e4494397-6ed9-405f-90b0-4c9662ac4163,e4532fb1-b2e8-4269-9225-b804657cb3ba,e45bc5ae-1c3a-4729-922b-c69388c571b7,e4a9fd6f-4105-476b-bc57-adccd009323b,e4f02866-841f-4ceb-a30c-0a0e68fb874d,e5fe743c-af51-468a-b7e2-aabf0e79030c,e66aa31c-abdd-483d-93bc-e17485d8837f,e703655b-ee05-4e24-97e3-a138da62c425,e8230c74-0940-4b91-9e20-6571eb068086,e8ab81b8-d153-4755-9308-ba2ccea3960a,e954ef21-08b4-411e-a1f0-7551f1e57b11,ea442c16-044a-4fa7-8461-62643f313c62,ea791163-c28d-4b7c-af88-bcc9553b206d,ec64b6f6-e804-4ef3-b114-9d5c63e1a941,ee352392-2934-4061-ba35-5f3189f19ab4,ee71d1b7-0bb0-424d-bd67-5b966ce513f8,f0f40559-a43a-4b8f-85ef-bdb1de1a912a,f1ac7a53-c524-4311-9a27-713562fc24fa,f30d36d0-2119-4538-8e79-8bd3864fb545,f3235e61-c0eb-4718-ac0a-7d6eb3d8ff75,f3a99481-9671-4274-a0d3-4c06a72ef746,f83450e2-759a-4de4-8b31-e4a163896d43,f8463032-28f1-447b-a76c-8b57a071acad,f8484f94-92a8-4ca4-9f43-e83ab3f586c7,f87f382b-4a41-4951-b4e4-d5822c69e4c6,f8ea4f37-c554-476a-8852-1cbd2912f3f6,fb34e64d-cd89-47b8-8bae-a6d20c542bae,fd2102db-163a-483b-a0a1-9e47094441fd,fd6683b9-1426-4b00-840f-cd5fb0904a6a,fec722a0-a6d4-4fbd-96dc-4ffb02b072c5,federated-auth,fef9b829-af7e-430c-a757-d80de818f211,ff204a84-8ff1-4d9e-bf5e-378c97bceb10,hardware_transcoding,home,hwtranscode,item_clusters,kevin-bacon,livetv,loudness,lyrics,music-analysis,music_videos,pass,photosV6-edit,photosV6-tv-albums,premium_music_metadata,pro_install,radio,roku-dogfood,server-manager,session_bandwidth_restrictions,session_kick,shared-radio,sync,trailers,tuner-sharing,type-first,ump-matching-pref,unsupportedtuners,webhooks",
+    "platform": "Linux",
+    "platformVersion": "6.12.10-76061203-generic (#202412060638~1740154617~22.04~b4b3ebc SMP PREEMPT_DYNAMIC Fri F)",
+    "pluginHost": true,
+    "pushNotifications": false,
+    "readOnlyLibraries": false,
+    "streamingBrainABRVersion": 3,
+    "streamingBrainVersion": 2,
+    "sync": true,
+    "transcoderActiveVideoSessions": 0,
+    "transcoderAudio": true,
+    "transcoderLyrics": true,
+    "transcoderSubtitles": true,
+    "transcoderVideo": true,
+    "transcoderVideoBitrates": "64,96,208,320,720,1500,2000,3000,4000,8000,10000,12000,20000",
+    "transcoderVideoQualities": "0,1,2,3,4,5,6,7,8,9,10,11,12",
+    "transcoderVideoResolutions": "128,128,160,240,320,480,768,720,720,1080,1080,1080,1080",
+    "updatedAt": 1742806736,
+    "updater": true,
+    "version": "1.41.7.0-1ceaeb626",
+    "voiceSearch": true,
+    "MediaProvider": [
+      {
+        "identifier": "com.plexapp.plugins.library",
+        "title": "Library",
+        "types": "video,audio,photo",
+        "protocols": "stream,download",
+        "Feature": [
+          {
+            "key": "/library/sections",
+            "type": "content",
+            "Directory": [
+              {
+                "hubKey": "/hubs",
+                "title": "Home"
+              },
+              {
+                "agent": "tv.plex.agents.movie",
+                "language": "de-DE",
+                "refreshing": false,
+                "scanner": "Plex Movie",
+                "uuid": "44186fb1-8550-4da9-a826-28c6cad0958f",
+                "id": "119",
+                "key": "/library/sections/119",
+                "hubKey": "/hubs/sections/119",
+                "type": "movie",
+                "title": "Films",
+                "updatedAt": 1738769071,
+                "scannedAt": 1738769071,
+                "Preferences": {
+                  "Setting": [
+                    {
+                      "id": "hidden",
+                      "label": "Visibility",
+                      "summary": "Restrict where content from this library should appear.",
+                      "type": "int",
+                      "default": "0",
+                      "value": "0",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": "",
+                      "enumValues": "0:Include in home screen and global search|1:Exclude from home screen|2:Exclude from home screen and global search"
+                    },
+                    {
+                      "id": "enableCinemaTrailers",
+                      "label": "Enable Cinema Trailers",
+                      "summary": "Allow Cinema Trailers to play before items in this library.",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "true",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "country",
+                      "label": "Certification Country",
+                      "summary": "This will influence which content rating system is used. Changing this setting will require refreshing the metadata for the changes to take effect.",
+                      "type": "text",
+                      "default": "US",
+                      "value": "US",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": "",
+                      "enumValues": "AF:Afghanistan|AX:Åland Islands|AL:Albania|DZ:Algeria|AS:American Samoa|AD:Andorra|AO:Angola|AI:Anguilla|AQ:Antarctica|AG:Antigua & Barbuda|AR:Argentina|AM:Armenia|AW:Aruba|AU:Australia|AT:Austria|AZ:Azerbaijan|BS:Bahamas|BH:Bahrain|BD:Bangladesh|BB:Barbados|BY:Belarus|BE:Belgium|BZ:Belize|BJ:Benin|BM:Bermuda|BT:Bhutan|BO:Bolivia|BA:Bosnia & Herzegovina|BW:Botswana|BV:Bouvet Island|BR:Brazil|IO:British Indian Ocean Territory|VG:British Virgin Islands|BN:Brunei|BG:Bulgaria|BF:Burkina Faso|BI:Burundi|KH:Cambodia|CM:Cameroon|CA:Canada|IC:Canary Islands|CV:Cape Verde|BQ:Caribbean Netherlands|KY:Cayman Islands|CF:Central African Republic|EA:Ceuta & Melilla|TD:Chad|CL:Chile|CN:China|CX:Christmas Island|CC:Cocos (Keeling) Islands|CO:Colombia|KM:Comoros|CG:Congo - Brazzaville|CD:Congo - Kinshasa|CK:Cook Islands|CR:Costa Rica|CI:Côte d’Ivoire|HR:Croatia|CU:Cuba|CW:Curaçao|CY:Cyprus|CZ:Czechia|DK:Denmark|DG:Diego Garcia|DJ:Djibouti|DM:Dominica|DO:Dominican Republic|EC:Ecuador|EG:Egypt|SV:El Salvador|GQ:Equatorial Guinea|ER:Eritrea|EE:Estonia|SZ:Eswatini|ET:Ethiopia|FK:Falkland Islands|FO:Faroe Islands|FJ:Fiji|FI:Finland|FR:France|GF:French Guiana|PF:French Polynesia|TF:French Southern Territories|GA:Gabon|GM:Gambia|GE:Georgia|DE:Germany|GH:Ghana|GI:Gibraltar|GR:Greece|GL:Greenland|GD:Grenada|GP:Guadeloupe|GU:Guam|GT:Guatemala|GG:Guernsey|GN:Guinea|GW:Guinea-Bissau|GY:Guyana|HT:Haiti|HM:Heard & McDonald Islands|HN:Honduras|HK:Hong Kong SAR China|HU:Hungary|IS:Iceland|IN:India|ID:Indonesia|IR:Iran|IQ:Iraq|IE:Ireland|IM:Isle of Man|IL:Israel|IT:Italy|JM:Jamaica|JP:Japan|JE:Jersey|JO:Jordan|KZ:Kazakhstan|KE:Kenya|KI:Kiribati|XK:Kosovo|KW:Kuwait|KG:Kyrgyzstan|LA:Laos|LV:Latvia|LB:Lebanon|LS:Lesotho|LR:Liberia|LY:Libya|LI:Liechtenstein|LT:Lithuania|LU:Luxembourg|MO:Macao SAR China|MG:Madagascar|MW:Malawi|MY:Malaysia|MV:Maldives|ML:Mali|MT:Malta|MH:Marshall Islands|MQ:Martinique|MR:Mauritania|MU:Mauritius|YT:Mayotte|MX:Mexico|FM:Micronesia|MD:Moldova|MC:Monaco|MN:Mongolia|ME:Montenegro|MS:Montserrat|MA:Morocco|MZ:Mozambique|MM:Myanmar (Burma)|NA:Namibia|NR:Nauru|NP:Nepal|NL:Netherlands|NC:New Caledonia|NZ:New Zealand|NI:Nicaragua|NE:Niger|NG:Nigeria|NU:Niue|NF:Norfolk Island|KP:North Korea|MK:North Macedonia|MP:Northern Mariana Islands|NO:Norway|OM:Oman|PK:Pakistan|PW:Palau|PS:Palestinian Territories|PA:Panama|PG:Papua New Guinea|PY:Paraguay|PE:Peru|PH:Philippines|PN:Pitcairn Islands|PL:Poland|PT:Portugal|PR:Puerto Rico|QA:Qatar|RE:Réunion|RO:Romania|RU:Russia|RW:Rwanda|WS:Samoa|SM:San Marino|ST:São Tomé & Príncipe|SA:Saudi Arabia|SN:Senegal|RS:Serbia|SC:Seychelles|SL:Sierra Leone|SG:Singapore|SX:Sint Maarten|SK:Slovakia|SI:Slovenia|SB:Solomon Islands|SO:Somalia|ZA:South Africa|GS:South Georgia & South Sandwich Islands|KR:South Korea|SS:South Sudan|ES:Spain|LK:Sri Lanka|BL:St Barthélemy|SH:St Helena|KN:St Kitts & Nevis|LC:St Lucia|MF:St Martin|PM:St Pierre & Miquelon|VC:St Vincent & the Grenadines|SD:Sudan|SR:Suriname|SJ:Svalbard & Jan Mayen|SE:Sweden|CH:Switzerland|SY:Syria|TW:Taiwan|TJ:Tajikistan|TZ:Tanzania|TH:Thailand|TL:Timor-Leste|TG:Togo|TK:Tokelau|TO:Tonga|TT:Trinidad & Tobago|TN:Tunisia|TR:Turkey|TM:Turkmenistan|TC:Turks & Caicos Islands|TV:Tuvalu|UG:Uganda|UA:Ukraine|AE:United Arab Emirates|GB:United Kingdom|US:United States|UY:Uruguay|UM:US Outlying Islands|VI:US Virgin Islands|UZ:Uzbekistan|VU:Vanuatu|VA:Vatican City|VE:Venezuela|VN:Vietnam|WF:Wallis & Futuna|EH:Western Sahara|YE:Yemen|ZM:Zambia|ZW:Zimbabwe"
+                    },
+                    {
+                      "id": "originalTitles",
+                      "label": "Use original titles",
+                      "summary": "Use the original titles for all items regardless of the library language.",
+                      "type": "bool",
+                      "default": "false",
+                      "value": "true",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "localizedArtwork",
+                      "label": "Prefer artwork based on library language",
+                      "summary": "Use localized posters when available. This is determined by the library language setting.",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "true",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "useLocalAssets",
+                      "label": "Use local assets",
+                      "summary": "When scanning this library, use local posters and artwork if present.",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "true",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "respectTags",
+                      "label": "Prefer local metadata",
+                      "summary": "When scanning this library, prefer embedded tags and local files if present.",
+                      "type": "bool",
+                      "default": "false",
+                      "value": "false",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "useExternalExtras",
+                      "label": "Find extras",
+                      "summary": "Find trailers and extras automatically (Plex Pass required)",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "true",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "skipNonTrailerExtras",
+                      "label": "Only show trailers",
+                      "summary": "Skip extras which aren't trailers",
+                      "type": "bool",
+                      "default": "false",
+                      "value": "false",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "useRedbandTrailers",
+                      "label": "Allow red band trailers",
+                      "summary": "Use red band (restricted audiences) trailers when available",
+                      "type": "bool",
+                      "default": "false",
+                      "value": "false",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "includeExtrasWithLocalizedSubtitles",
+                      "label": "Localized subtitles",
+                      "summary": "Include extras with subtitles in Library language",
+                      "type": "bool",
+                      "default": "false",
+                      "value": "false",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "includeAdultContent",
+                      "label": "Allow matching to explicit content",
+                      "summary": "Allow matching to adult/pornographic titles and returning adult titles in fix match results. This may hide the title from some features like your Watchlist.",
+                      "type": "bool",
+                      "default": "false",
+                      "value": "false",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "autoCollectionThreshold",
+                      "label": "Minimum automatic collection size",
+                      "summary": "Automatically create collections when there are at least the selected number of items for an available collection. Changing this value will have no effect on any existing collections.",
+                      "type": "int",
+                      "default": "0",
+                      "value": "0",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": "",
+                      "enumValues": "0:Disabled|1:1|2:2|3:3|4:4"
+                    },
+                    {
+                      "id": "ratingsSource",
+                      "label": "Ratings Source",
+                      "summary": "Select a primary source for ratings.",
+                      "type": "text",
+                      "default": "rottentomatoes",
+                      "value": "rottentomatoes",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": "",
+                      "enumValues": "rottentomatoes:Rotten Tomatoes|imdb:IMDb|themoviedb:The Movie Database"
+                    },
+                    {
+                      "id": "enableBIFGeneration",
+                      "label": "Enable video preview thumbnails",
+                      "summary": "Generate video preview thumbnails for items in this library when enabled in server settings.",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "false",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "collectionMode",
+                      "label": "Collections",
+                      "summary": "How to display collections on the Library tab.",
+                      "type": "int",
+                      "default": "2",
+                      "value": "2",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": "",
+                      "enumValues": "0:Hide collections but show their items|1:Hide items which are in collections|2:Show collections and their items"
+                    },
+                    {
+                      "id": "enableCreditsMarkerGeneration",
+                      "label": "Enable credits detection",
+                      "summary": "Detect credits and allow credits skipping for items in this library when enabled in server settings.",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "false",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "enableAdMarkerGeneration",
+                      "label": "Ad detection",
+                      "summary": "Generate ad markers for items in this library.",
+                      "type": "int",
+                      "default": "1",
+                      "value": "1",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": "",
+                      "enumValues": "0:Disabled|1:For recorded items|2:For all items"
+                    },
+                    {
+                      "id": "enableVoiceActivityGeneration",
+                      "label": "Enable voice activity detection",
+                      "summary": "Detect voice activity for items in this library when enabled in server settings. This is required for subtitle auto-sync functionality.",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "false",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    }
+                  ]
+                },
+                "Pivot": [
+                  {
+                    "id": "recommended",
+                    "key": "/hubs/sections/119",
+                    "type": "hub",
+                    "title": "Recommended",
+                    "context": "content.discover",
+                    "symbol": "star"
+                  },
+                  {
+                    "id": "library",
+                    "key": "/library/sections/119/all?type=1",
+                    "type": "list",
+                    "title": "Library",
+                    "context": "content.library",
+                    "symbol": "library"
+                  },
+                  {
+                    "id": "categories",
+                    "key": "/library/sections/119/categories",
+                    "type": "list",
+                    "title": "Categories",
+                    "context": "content.categories",
+                    "symbol": "stack"
+                  }
+                ]
+              },
+              {
+                "agent": "tv.plex.agents.music",
+                "language": "en-GB",
+                "refreshing": false,
+                "scanner": "Plex Music",
+                "uuid": "02d86bae-bc61-4d8a-ac05-2fe681ef2ea0",
+                "id": "118",
+                "key": "/library/sections/118",
+                "hubKey": "/hubs/sections/118",
+                "type": "artist",
+                "title": "Music",
+                "updatedAt": 1736950941,
+                "scannedAt": 1736950886,
+                "Preferences": {
+                  "Setting": [
+                    {
+                      "id": "hidden",
+                      "label": "Visibility",
+                      "summary": "Restrict where content from this library should appear.",
+                      "type": "int",
+                      "default": "0",
+                      "value": "0",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": "",
+                      "enumValues": "0:Include in home screen and global search|1:Exclude from home screen|2:Exclude from home screen and global search"
+                    },
+                    {
+                      "id": "albumSort",
+                      "label": "Album sorting",
+                      "summary": "How to sort the albums for an artist.",
+                      "type": "text",
+                      "default": "-1",
+                      "value": "-1",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": "",
+                      "enumValues": "-1:Library default|0:Newest first|1:Oldest first|2:By name"
+                    },
+                    {
+                      "id": "musicAnalysis",
+                      "label": "Sonic Analysis",
+                      "summary": "Analyze tracks for sonic features.",
+                      "type": "bool",
+                      "default": "false",
+                      "value": "false",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "respectTags",
+                      "label": "Prefer local metadata",
+                      "summary": "When scanning this library, prefer embedded tags and local files if present.",
+                      "type": "bool",
+                      "default": "false",
+                      "value": "false",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "enableTrackOffsets",
+                      "label": "Store track progress",
+                      "summary": "Remember and resume from your previous listening position. Useful for libraries with long-form audio content.",
+                      "type": "bool",
+                      "default": "false",
+                      "value": "false",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "augmentWithSharedContent",
+                      "label": "Include related content from shared libraries",
+                      "summary": "Show suggestions and additional albums from libraries shared with you, and include shared tracks in Artist Radio.",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "true",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "artistBios",
+                      "label": "Artist Bios",
+                      "summary": "Load artist biography data from the cloud.",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "true",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "albumReviews",
+                      "label": "Album Reviews and Critic Ratings",
+                      "summary": "Load album reviews and critic ratings from the cloud. Might make you reconsider your taste in music.",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "true",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "popularTracks",
+                      "label": "Popular Tracks",
+                      "summary": "Load popular track data, which powers radio stations and the popular tracks area.",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "true",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "useExternalLyrics",
+                      "label": "Find Lyrics",
+                      "summary": "Find lyrics for tracks in this library automatically.",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "true",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "concerts",
+                      "label": "Concerts",
+                      "summary": "Load concert data for artists, in case you leave the house.",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "true",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "genres",
+                      "label": "Genres",
+                      "summary": "Where to automatically obtain genres for artists and albums.",
+                      "type": "int",
+                      "default": "1",
+                      "value": "1",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": "",
+                      "enumValues": "0:None|1:Plex Music|2:Embedded Tags"
+                    },
+                    {
+                      "id": "albumPosters",
+                      "label": "Album Art",
+                      "summary": "Where to automatically obtain album cover art.",
+                      "type": "int",
+                      "default": "1",
+                      "value": "1",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": "",
+                      "enumValues": "2:Plex Music Only|3:Local Files Only|1:Both Plex Music and Local Files"
+                    }
+                  ]
+                },
+                "Pivot": [
+                  {
+                    "id": "recommended",
+                    "key": "/hubs/sections/118",
+                    "type": "hub",
+                    "title": "Recommended",
+                    "context": "content.discover",
+                    "symbol": "star"
+                  },
+                  {
+                    "id": "library",
+                    "key": "/library/sections/118/all?type=8",
+                    "type": "list",
+                    "title": "Library",
+                    "context": "content.library",
+                    "symbol": "library"
+                  }
+                ]
+              },
+              {
+                "agent": "tv.plex.agents.none",
+                "language": "en-GB",
+                "refreshing": false,
+                "scanner": "Plex Video Files",
+                "uuid": "9ebe29a5-f80f-4cf2-944c-92bb8dfe68e5",
+                "id": "144",
+                "key": "/library/sections/144",
+                "hubKey": "/hubs/sections/144",
+                "type": "movie",
+                "subtype": "clip",
+                "title": "Other videos",
+                "updatedAt": 1740997429,
+                "scannedAt": 1740997374,
+                "Preferences": {
+                  "Setting": [
+                    {
+                      "id": "hidden",
+                      "label": "Visibility",
+                      "summary": "Restrict where content from this library should appear.",
+                      "type": "int",
+                      "default": "0",
+                      "value": "0",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": "",
+                      "enumValues": "0:Include in home screen and global search|1:Exclude from home screen|2:Exclude from home screen and global search"
+                    },
+                    {
+                      "id": "enableCinemaTrailers",
+                      "label": "Enable Cinema Trailers",
+                      "summary": "Allow Cinema Trailers to play before items in this library.",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "true",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "enableBIFGeneration",
+                      "label": "Enable video preview thumbnails",
+                      "summary": "Generate video preview thumbnails for items in this library when enabled in server settings.",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "false",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "collectionMode",
+                      "label": "Collections",
+                      "summary": "How to display collections on the Library tab.",
+                      "type": "int",
+                      "default": "2",
+                      "value": "2",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": "",
+                      "enumValues": "0:Hide collections but show their items|1:Hide items which are in collections|2:Show collections and their items"
+                    },
+                    {
+                      "id": "enableCreditsMarkerGeneration",
+                      "label": "Enable credits detection",
+                      "summary": "Detect credits and allow credits skipping for items in this library when enabled in server settings.",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "false",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    },
+                    {
+                      "id": "enableAdMarkerGeneration",
+                      "label": "Ad detection",
+                      "summary": "Generate ad markers for items in this library.",
+                      "type": "int",
+                      "default": "1",
+                      "value": "1",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": "",
+                      "enumValues": "0:Disabled|1:For recorded items|2:For all items"
+                    },
+                    {
+                      "id": "enableVoiceActivityGeneration",
+                      "label": "Enable voice activity detection",
+                      "summary": "Detect voice activity for items in this library when enabled in server settings. This is required for subtitle auto-sync functionality.",
+                      "type": "bool",
+                      "default": "true",
+                      "value": "false",
+                      "hidden": false,
+                      "advanced": false,
+                      "group": ""
+                    }
+                  ]
+                },
+                "Pivot": [
+                  {
+                    "id": "recommended",
+                    "key": "/hubs/sections/144",
+                    "type": "hub",
+                    "title": "Recommended",
+                    "context": "content.discover",
+                    "symbol": "star"
+                  },
+                  {
+                    "id": "library",
+                    "key": "/library/sections/144/all?type=1",
+                    "type": "list",
+                    "title": "Library",
+                    "context": "content.library",
+                    "symbol": "library"
+                  },
+                  {
+                    "id": "categories",
+                    "key": "/library/sections/144/categories",
+                    "type": "list",
+                    "title": "Categories",
+                    "context": "content.categories",
+                    "symbol": "stack"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "key": "/hubs/search",
+            "type": "search"
+          },
+          {
+            "key": "/library/matches",
+            "type": "match"
+          },
+          {
+            "key": "/library/metadata",
+            "type": "metadata"
+          },
+          {
+            "key": "/:/rate",
+            "type": "rate"
+          },
+          {
+            "key": "/photo/:/transcode",
+            "type": "imagetranscoder"
+          },
+          {
+            "key": "/hubs/promoted",
+            "type": "promoted"
+          },
+          {
+            "key": "/hubs/continueWatching",
+            "type": "continuewatching"
+          },
+          {
+            "key": "/actions",
+            "type": "actions",
+            "Action": [
+              {
+                "id": "removeFromContinueWatching",
+                "key": "/actions/removeFromContinueWatching"
+              }
+            ]
+          },
+          {
+            "flavor": "universal",
+            "key": "/playlists",
+            "type": "playlist"
+          },
+          {
+            "flavor": "universal",
+            "key": "/playQueues",
+            "type": "playqueue"
+          },
+          {
+            "key": "/library/collections",
+            "type": "collection"
+          },
+          {
+            "scrobbleKey": "/:/scrobble",
+            "unscrobbleKey": "/:/unscrobble",
+            "key": "/:/timeline",
+            "type": "timeline"
+          },
+          {
+            "type": "manage"
+          },
+          {
+            "type": "queryParser"
+          },
+          {
+            "flavor": "download",
+            "type": "subscribe"
+          },
+          {
+            "key": "/library/search",
+            "type": "universalsearch"
+          }
+        ]
+      }
+    ]
+  }
+}

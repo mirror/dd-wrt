@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<movie>
+  <title>Deadpool 2</title>
+  <originaltitle>Deadpool 2</originaltitle>
+  <sorttitle>deadpool 2</sorttitle>
+  <ratings>
+    <rating name="imdb" max="10" default="true">
+      <value>7.6</value>
+      <votes>733573</votes>
+    </rating>
+    <rating name="themoviedb" max="10">
+      <value>7.489</value>
+      <votes>18840</votes>
+    </rating>
+    <rating name="tomatometerallcritics" max="100">
+      <value>83</value>
+    </rating>
+  </ratings>
+  <rating>7.489</rating>
+  <criticrating>83</criticrating>
+  <userrating />
+  <top250 />
+  <outline />
+  <plot>Wisecracking mercenary Deadpool battles the evil and powerful Cable and other bad guys to save a boy's life.</plot>
+  <tagline />
+  <runtime>120</runtime>
+  <thumb aspect="poster" preview="https://image.tmdb.org/t/p/original/to0spRl1CMDvyUbOnbb4fTk3VAd.jpg">https://image.tmdb.org/t/p/original/to0spRl1CMDvyUbOnbb4fTk3VAd.jpg</thumb>
+  <fanart>
+    <thumb preview="https://image.tmdb.org/t/p/original/3P52oz9HPQWxcwHOwxtyrVV1LKi.jpg">https://image.tmdb.org/t/p/original/3P52oz9HPQWxcwHOwxtyrVV1LKi.jpg</thumb>
+  </fanart>
+  <mpaa>R</mpaa>
+  <playcount />
+  <lastplayed />
+  <id>383498</id>
+  <uniqueid type="tmdb" default="true">383498</uniqueid>
+  <uniqueid type="imdb">tt5463162</uniqueid>
+  <genre>Action</genre>
+  <genre>Comedy</genre>
+  <genre>Adventure</genre>
+  <country />
+  <set tmdbcolid="448150">
+    <name>Deadpool Collection</name>
+    <overview />
+  </set>
+  <status>Released</status>
+  <director>David Leitch</director>
+  <premiered>2018-05-15</premiered>
+  <year>2018</year>
+  <studio>Maximum Effort</studio>
+  <trailer>plugin://plugin.video.youtube/play/?video_id=20bpjtCbCz0</trailer>
+  <watched>false</watched>
+  <fileinfo>
+    <streamdetails>
+      <video>
+        <aspect>1.7777778</aspect>
+        <bitrate>0</bitrate>
+        <codec>AVC</codec>
+        <framerate>23.976023976023976023976023976</framerate>
+        <height>1080</height>
+        <scantype>Progressive</scantype>
+        <width>1920</width>
+        <duration>133.9929</duration>
+        <durationinseconds>8040</durationinseconds>
+        <hdrtype></hdrtype>
+      </video>
+      <audio>
+        <bitrate>0</bitrate>
+        <channels>8</channels>
+        <codec>DTS-HD MA</codec>
+        <language>eng</language>
+      </audio>
+      <subtitle>
+        <language>eng</language>
+      </subtitle>
+      <subtitle>
+        <language>eng</language>
+      </subtitle>
+      <subtitle>
+        <language>fre</language>
+      </subtitle>
+      <subtitle>
+        <language>spa</language>
+      </subtitle>
+    </streamdetails>
+  </fileinfo>
+  <actor>
+    <name>Ryan Reynolds</name>
+    <role>Wade Wilson / Deadpool / Juggernaut (voice)</role>
+    <order>0</order>
+    <thumb>https://image.tmdb.org/t/p/original/trzgptffGvAlAT6MEu01fz47cLW.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Josh Brolin</name>
+    <role>Cable</role>
+    <order>1</order>
+    <thumb>https://image.tmdb.org/t/p/original/sX2etBbIkxRaCsATyw5ZpOVMPTD.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Morena Baccarin</name>
+    <role>Vanessa</role>
+    <order>2</order>
+    <thumb>https://image.tmdb.org/t/p/original/kBSKKaOtsqIzZPhtEeHfCBmhWl9.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Julian Dennison</name>
+    <role>Firefist</role>
+    <order>3</order>
+    <thumb>https://image.tmdb.org/t/p/original/pP9tymIRkOEEQqetcC1Yby5rGbi.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Zazie Beetz</name>
+    <role>Domino</role>
+    <order>4</order>
+    <thumb>https://image.tmdb.org/t/p/original/ijrT4pvALvxU0gphea4YxDnDh6e.jpg</thumb>
+  </actor>
+  <actor>
+    <name>T.J. Miller</name>
+    <role>Weasel</role>
+    <order>5</order>
+    <thumb>https://image.tmdb.org/t/p/original/rRrVvBxOkyYM5XdLXimShHR1Itn.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Leslie Uggams</name>
+    <role>Blind Al</role>
+    <order>6</order>
+    <thumb>https://image.tmdb.org/t/p/original/peLaqLcs3y2WY4TbrLOXQGt9I8S.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Karan Soni</name>
+    <role>Dopinder</role>
+    <order>7</order>
+    <thumb>https://image.tmdb.org/t/p/original/t3eNrzRKy3wTVCUiEp002UXbjxX.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Brianna Hildebrand</name>
+    <role>Negasonic Teenage Warhead</role>
+    <order>8</order>
+    <thumb>https://image.tmdb.org/t/p/original/8lGwV4rMQReWMlsXhLBYMRTYzTA.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Jack Kesy</name>
+    <role>Black Tom</role>
+    <order>9</order>
+    <thumb>https://image.tmdb.org/t/p/original/lQ8nUYK6InbCFk2TWNnXjjvG9IY.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Eddie Marsan</name>
+    <role>Headmaster</role>
+    <order>10</order>
+    <thumb>https://image.tmdb.org/t/p/original/9atfOgIxhfOKvv2be8HEp6SzOct.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Shioli Kutsuna</name>
+    <role>Yukio</role>
+    <order>11</order>
+    <thumb>https://image.tmdb.org/t/p/original/5EdMbcRIemzLszjEr36Ic0Obmdb.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Stefan Kapičić</name>
+    <role>Colossus (voice)</role>
+    <order>12</order>
+    <thumb>https://image.tmdb.org/t/p/original/6qHO7ckiyjLNOmW0v5RZj1MpLBj.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Randal Reeder</name>
+    <role>Buck</role>
+    <order>13</order>
+    <thumb>https://image.tmdb.org/t/p/original/eJfW7w36Vl8dEnN9T2dnlkUReWG.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Nikolai Witschl</name>
+    <role>Head Orderly Frye</role>
+    <order>14</order>
+    <thumb>https://image.tmdb.org/t/p/original/sU6VZJsc2avH6l1AjTTalDEp0Qd.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Thayr Harris</name>
+    <role>Sergei Valishnikov</role>
+    <order>15</order>
+    <thumb>https://image.tmdb.org/t/p/original/1H3Ua3h20oDxnQMLjhKmfs7Tus4.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Rob Delaney</name>
+    <role>Peter</role>
+    <order>16</order>
+    <thumb>https://image.tmdb.org/t/p/original/xirfT1znRkkughLiPemKu3NhkKQ.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Lewis Tan</name>
+    <role>Shatterstar</role>
+    <order>17</order>
+    <thumb>https://image.tmdb.org/t/p/original/xSpvbRqscYnDVPDtlXgniltf7eF.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Bill Skarsgård</name>
+    <role>Zeitgeist</role>
+    <order>18</order>
+    <thumb>https://image.tmdb.org/t/p/original/wGQidITqyDl4Igmq9TCQjRpegsk.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Terry Crews</name>
+    <role>Bedlam</role>
+    <order>19</order>
+    <thumb>https://image.tmdb.org/t/p/original/pxTY4SglLo5hFcMH00MxPeC5u55.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Brad Pitt</name>
+    <role>Vanisher</role>
+    <order>20</order>
+    <thumb>https://image.tmdb.org/t/p/original/ajNaPmXVVMJFg9GWmu6MJzTaXdV.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Paul Wu</name>
+    <role>Hong Kong Boss</role>
+    <order>21</order>
+    <thumb>https://image.tmdb.org/t/p/original/2iauxrpbggkerBg0bnkZKHjEHdH.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Robert Maillet</name>
+    <role>Sluggo</role>
+    <order>22</order>
+    <thumb>https://image.tmdb.org/t/p/original/2P5kMGJm4iIJvocwuwM9IbJqoah.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Alan Tudyk</name>
+    <role>Luke - Redneck #1</role>
+    <order>23</order>
+    <thumb>https://image.tmdb.org/t/p/original/jUuUbPuMGonFT5E2pcs4alfqaCN.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Matt Damon</name>
+    <role>Redneck #2</role>
+    <order>24</order>
+    <thumb>https://image.tmdb.org/t/p/original/At3JgvaNeEN4Z4ESKlhhes85Xo3.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Michasha Armstrong</name>
+    <role>Swat Captain (School)</role>
+    <order>25</order>
+    <thumb>https://image.tmdb.org/t/p/original/1nuX1dAXKer4F4k297yRaRGSw9H.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Joe Doserro</name>
+    <role>Bus Driver</role>
+    <order>26</order>
+    <thumb>https://image.tmdb.org/t/p/original/4zFECiq00EIhXFhqU0mY9JUTVLi.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Hayley Sales</name>
+    <role>Cable's Wife</role>
+    <order>27</order>
+    <thumb>https://image.tmdb.org/t/p/original/uav9kss6K3LsevFS3OcWytskSec.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Islie Hirvonen</name>
+    <role>Cable's Daughter</role>
+    <order>28</order>
+    <thumb>https://image.tmdb.org/t/p/original/r4o9827s077CHKLUEXJYRjlqWVv.jpg</thumb>
+  </actor>
+  <actor>
+    <name>Jagua Arneja</name>
+    <role>Tree Trimmer #1</role>
+    <order>29</order>
+    <thumb>https://image.tmdb.org/t/p/original/bJcPECjdBenuJxxFkoWUOefgMWp.jpg</thumb>
+  </actor>
+</movie>
+https://www.themoviedb.org/movie/383498
+https://www.imdb.com/title/tt5463162

@@ -1,0 +1,782 @@
+{
+  "MediaContainer": {
+    "offset": 0,
+    "totalSize": 14,
+    "librarySectionID": "home",
+    "librarySectionTitle": "Metadata",
+    "identifier": "tv.plex.provider.metadata",
+    "size": 14,
+    "Metadata": [
+      {
+        "duration": 217000,
+        "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e87",
+        "parentTitle": "Trailer",
+        "primaryGuid": "plex://movie/5d776d057a53e9001e74ed5d",
+        "ratingKey": "620427bab0e7db99416e7e87",
+        "skipDetails": true,
+        "title": "Avatar",
+        "type": "clip",
+        "thumb": "https://metadata-static.plex.tv/extras/iva/247434/d8b218eb5c32b6d1be6dca1f1d55606c.jpg",
+        "extraType": 1,
+        "Media": [
+          {
+            "audioCodec": "aac",
+            "container": "mpegts",
+            "extension": "m3u8",
+            "protocol": "hls",
+            "videoCodec": "h264",
+            "duration": 217000,
+            "height": 800,
+            "url": "https://video.internetvideoarchive.net/video.mp4?customerid=112548&cmd=6&e=253370764800&fmt=11&publishedid=247434&h=028667703b6ceac007ea22ef242efbb1",
+            "width": 1904,
+            "optimizedForStreaming": true,
+            "videoResolution": "1080",
+            "Part": [
+              {
+                "container": "mpegts",
+                "duration": 217000,
+                "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e87/parts/hls",
+                "Stream": [
+                  {
+                    "codec": "h264",
+                    "height": 800,
+                    "streamType": 1,
+                    "width": 1904,
+                    "id": "620427bab0e7db99416e7e87-66eab7060a55653ee720bcf7",
+                    "displayTitle": "HD",
+                    "selected": true
+                  },
+                  {
+                    "channels": 2,
+                    "codec": "aac",
+                    "language": "English",
+                    "streamType": 2,
+                    "id": "620427bab0e7db99416e7e87-66eab7060a55653ee720bcf8",
+                    "languageCode": "en",
+                    "displayTitle": "English (Stereo)",
+                    "selected": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "duration": 41000,
+        "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e8d",
+        "parentTitle": "Trailer",
+        "primaryGuid": "plex://movie/5d776d057a53e9001e74ed5d",
+        "ratingKey": "620427bab0e7db99416e7e8d",
+        "skipDetails": true,
+        "title": "Avatar: Tv Spot",
+        "type": "clip",
+        "thumb": "https://metadata-static.plex.tv/extras/iva/511011/742b450ce2162a54cd252709d2a95404.jpg",
+        "extraType": 1,
+        "Media": [
+          {
+            "audioCodec": "aac",
+            "container": "mpegts",
+            "extension": "m3u8",
+            "protocol": "hls",
+            "videoCodec": "h264",
+            "duration": 41000,
+            "height": 528,
+            "url": "https://video.internetvideoarchive.net/video.mp4?customerid=112548&cmd=6&e=253370764800&fmt=11&publishedid=511011&h=059828298060364821025acae01c6df7",
+            "width": 1264,
+            "optimizedForStreaming": true,
+            "videoResolution": "720",
+            "Part": [
+              {
+                "container": "mpegts",
+                "duration": 41000,
+                "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e8d/parts/hls",
+                "Stream": [
+                  {
+                    "codec": "h264",
+                    "height": 528,
+                    "streamType": 1,
+                    "width": 1264,
+                    "id": "620427bab0e7db99416e7e8d-66eab7060a55653ee720bd5e",
+                    "displayTitle": "HD",
+                    "selected": true
+                  },
+                  {
+                    "channels": 2,
+                    "codec": "aac",
+                    "language": "English",
+                    "streamType": 2,
+                    "id": "620427bab0e7db99416e7e8d-66eab7060a55653ee720bd5f",
+                    "languageCode": "en",
+                    "displayTitle": "English (Stereo)",
+                    "selected": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "duration": 132000,
+        "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e90",
+        "parentTitle": "Trailer",
+        "primaryGuid": "plex://movie/5d776d057a53e9001e74ed5d",
+        "ratingKey": "620427bab0e7db99416e7e90",
+        "skipDetails": true,
+        "title": "Avatar (Trailer 1)",
+        "type": "clip",
+        "thumb": "https://metadata-static.plex.tv/extras/iva/653103/a6c3c5e70fac11c21707b870aabbd264.jpg",
+        "extraType": 1,
+        "Media": [
+          {
+            "audioCodec": "aac",
+            "container": "mpegts",
+            "extension": "m3u8",
+            "protocol": "hls",
+            "videoCodec": "h264",
+            "duration": 132000,
+            "height": 816,
+            "url": "https://video.internetvideoarchive.net/video.mp4?customerid=112548&cmd=6&e=253370764800&fmt=11&publishedid=653103&h=5334df2ff2e4d18bd8710563b016b102",
+            "width": 1904,
+            "optimizedForStreaming": true,
+            "videoResolution": "1080",
+            "Part": [
+              {
+                "container": "mpegts",
+                "duration": 132000,
+                "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e90/parts/hls",
+                "Stream": [
+                  {
+                    "codec": "h264",
+                    "height": 816,
+                    "streamType": 1,
+                    "width": 1904,
+                    "id": "620427bab0e7db99416e7e90-66eab7060a55653ee720bd93",
+                    "displayTitle": "HD",
+                    "selected": true
+                  },
+                  {
+                    "channels": 2,
+                    "codec": "aac",
+                    "language": "English",
+                    "streamType": 2,
+                    "id": "620427bab0e7db99416e7e90-66eab7060a55653ee720bd94",
+                    "languageCode": "en",
+                    "displayTitle": "English (Stereo)",
+                    "selected": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "duration": 93000,
+        "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/63059e929416124e2a8f3bbe",
+        "parentTitle": "Trailer",
+        "primaryGuid": "plex://movie/5d776d057a53e9001e74ed5d",
+        "ratingKey": "63059e929416124e2a8f3bbe",
+        "skipDetails": true,
+        "title": "Avatar: Back In Theatres (Trailer)",
+        "type": "clip",
+        "thumb": "https://metadata-static.plex.tv/extras/iva/183198/81d0fcbee83ef4cfc23f73515067353a.jpg",
+        "extraType": 1,
+        "Media": [
+          {
+            "audioCodec": "aac",
+            "container": "mpegts",
+            "extension": "m3u8",
+            "protocol": "hls",
+            "videoCodec": "h264",
+            "duration": 93000,
+            "height": 1080,
+            "url": "https://video.internetvideoarchive.net/video.mp4?customerid=112548&cmd=6&e=253370764800&fmt=11&publishedid=183198&h=72f1ba002a4e144ef7c9b3606335e459",
+            "width": 1920,
+            "optimizedForStreaming": true,
+            "videoResolution": "1080",
+            "Part": [
+              {
+                "container": "mpegts",
+                "duration": 93000,
+                "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/63059e929416124e2a8f3bbe/parts/hls",
+                "Stream": [
+                  {
+                    "codec": "h264",
+                    "height": 1080,
+                    "streamType": 1,
+                    "width": 1920,
+                    "id": "63059e929416124e2a8f3bbe-66eab7060a55653ee720bce4",
+                    "displayTitle": "HD",
+                    "selected": true
+                  },
+                  {
+                    "channels": 2,
+                    "codec": "aac",
+                    "language": "English",
+                    "streamType": 2,
+                    "id": "63059e929416124e2a8f3bbe-66eab7060a55653ee720bce5",
+                    "languageCode": "en",
+                    "displayTitle": "English (Stereo)",
+                    "selected": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "duration": 82000,
+        "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e93",
+        "parentTitle": "Trailer",
+        "primaryGuid": "plex://movie/5d776d057a53e9001e74ed5d",
+        "ratingKey": "620427bab0e7db99416e7e93",
+        "skipDetails": true,
+        "title": "Avatar: Extended Collector's Edition",
+        "type": "clip",
+        "thumb": "https://metadata-static.plex.tv/extras/iva/832558/8eb9a442c5c52eec9058f8152724fe10.jpg",
+        "extraType": 1,
+        "Media": [
+          {
+            "audioCodec": "aac",
+            "container": "mpegts",
+            "extension": "m3u8",
+            "protocol": "hls",
+            "videoCodec": "h264",
+            "duration": 82000,
+            "height": 432,
+            "url": "https://video.internetvideoarchive.net/video.mp4?customerid=112548&cmd=6&e=253370764800&fmt=11&publishedid=832558&h=88da15077eebae47a6efb895f660ee39",
+            "width": 752,
+            "optimizedForStreaming": true,
+            "videoResolution": "sd",
+            "Part": [
+              {
+                "container": "mpegts",
+                "duration": 82000,
+                "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e93/parts/hls",
+                "Stream": [
+                  {
+                    "codec": "h264",
+                    "height": 432,
+                    "streamType": 1,
+                    "width": 752,
+                    "id": "620427bab0e7db99416e7e93-66eab7060a55653ee720bdc1",
+                    "displayTitle": "SD",
+                    "selected": true
+                  },
+                  {
+                    "channels": 2,
+                    "codec": "aac",
+                    "language": "English",
+                    "streamType": 2,
+                    "id": "620427bab0e7db99416e7e93-66eab7060a55653ee720bdc2",
+                    "languageCode": "en",
+                    "displayTitle": "English (Stereo)",
+                    "selected": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "duration": 97000,
+        "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/632a7a8ee2f693ceba25bf17",
+        "parentTitle": "Behind the Scenes",
+        "primaryGuid": "plex://movie/5d776d057a53e9001e74ed5d",
+        "ratingKey": "632a7a8ee2f693ceba25bf17",
+        "skipDetails": true,
+        "title": "Avatar (Featurette)",
+        "type": "clip",
+        "thumb": "https://metadata-static.plex.tv/extras/iva/559562/b6c532caf608442559308051efbed606.jpg",
+        "extraType": 5,
+        "Media": [
+          {
+            "audioCodec": "aac",
+            "container": "mpegts",
+            "extension": "m3u8",
+            "protocol": "hls",
+            "videoCodec": "h264",
+            "duration": 97000,
+            "height": 1080,
+            "url": "https://video.internetvideoarchive.net/video.mp4?customerid=112548&cmd=6&e=253370764800&fmt=11&publishedid=559562&h=88ebe0287ec292cf61e76ec879885836",
+            "width": 1920,
+            "optimizedForStreaming": true,
+            "videoResolution": "1080",
+            "Part": [
+              {
+                "container": "mpegts",
+                "duration": 97000,
+                "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/632a7a8ee2f693ceba25bf17/parts/hls",
+                "Stream": [
+                  {
+                    "codec": "h264",
+                    "height": 1080,
+                    "streamType": 1,
+                    "width": 1920,
+                    "id": "632a7a8ee2f693ceba25bf17-66eab7060a55653ee720bd75",
+                    "displayTitle": "HD",
+                    "selected": true
+                  },
+                  {
+                    "channels": 2,
+                    "codec": "aac",
+                    "language": "English",
+                    "streamType": 2,
+                    "id": "632a7a8ee2f693ceba25bf17-66eab7060a55653ee720bd76",
+                    "languageCode": "en",
+                    "displayTitle": "English (Stereo)",
+                    "selected": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "duration": 276000,
+        "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e84",
+        "parentTitle": "Behind the Scenes",
+        "primaryGuid": "plex://movie/5d776d057a53e9001e74ed5d",
+        "ratingKey": "620427bab0e7db99416e7e84",
+        "skipDetails": true,
+        "title": "Avatar: Performance Capture",
+        "type": "clip",
+        "thumb": "https://metadata-static.plex.tv/extras/iva/145443/7c7871abbf8a50379c614507bae29965.jpg",
+        "extraType": 5,
+        "Media": [
+          {
+            "audioCodec": "aac",
+            "container": "mpegts",
+            "extension": "m3u8",
+            "protocol": "hls",
+            "videoCodec": "h264",
+            "duration": 276000,
+            "height": 704,
+            "url": "https://video.internetvideoarchive.net/video.mp4?customerid=112548&cmd=6&e=253370764800&fmt=11&publishedid=145443&h=d46cdc9522cb5150fd534ad6e9c8c58b",
+            "width": 1264,
+            "optimizedForStreaming": true,
+            "videoResolution": "720",
+            "Part": [
+              {
+                "container": "mpegts",
+                "duration": 276000,
+                "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e84/parts/hls",
+                "Stream": [
+                  {
+                    "codec": "h264",
+                    "height": 704,
+                    "streamType": 1,
+                    "width": 1264,
+                    "id": "620427bab0e7db99416e7e84-66eab7060a55653ee720bcc9",
+                    "displayTitle": "HD",
+                    "selected": true
+                  },
+                  {
+                    "channels": 2,
+                    "codec": "aac",
+                    "language": "English",
+                    "streamType": 2,
+                    "id": "620427bab0e7db99416e7e84-66eab7060a55653ee720bcca",
+                    "languageCode": "en",
+                    "displayTitle": "English (Stereo)",
+                    "selected": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "duration": 46000,
+        "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/633561c854080e6840c83b79",
+        "parentTitle": "Behind the Scenes",
+        "primaryGuid": "plex://movie/5d776d057a53e9001e74ed5d",
+        "ratingKey": "633561c854080e6840c83b79",
+        "skipDetails": true,
+        "title": "Avatar: Back In Theatres (Featurette)",
+        "type": "clip",
+        "thumb": "https://metadata-static.plex.tv/extras/iva/730323/b3ec09d18f9c3a3c671126d37d1ea8dd.jpg",
+        "extraType": 5,
+        "Media": [
+          {
+            "audioCodec": "aac",
+            "container": "mpegts",
+            "extension": "m3u8",
+            "protocol": "hls",
+            "videoCodec": "h264",
+            "duration": 46000,
+            "height": 1080,
+            "url": "https://video.internetvideoarchive.net/video.mp4?customerid=112548&cmd=6&e=253370764800&fmt=11&publishedid=730323&h=35a93e94d4d241623b79eb1a033354a2",
+            "width": 1920,
+            "optimizedForStreaming": true,
+            "videoResolution": "1080",
+            "Part": [
+              {
+                "container": "mpegts",
+                "duration": 46000,
+                "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/633561c854080e6840c83b79/parts/hls",
+                "Stream": [
+                  {
+                    "codec": "h264",
+                    "height": 1080,
+                    "streamType": 1,
+                    "width": 1920,
+                    "id": "633561c854080e6840c83b79-66eab7060a55653ee720bdac",
+                    "displayTitle": "HD",
+                    "selected": true
+                  },
+                  {
+                    "channels": 2,
+                    "codec": "aac",
+                    "language": "English",
+                    "streamType": 2,
+                    "id": "633561c854080e6840c83b79-66eab7060a55653ee720bdad",
+                    "languageCode": "en",
+                    "displayTitle": "English (Stereo)",
+                    "selected": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "duration": 299000,
+        "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e8c",
+        "parentTitle": "Behind the Scenes",
+        "primaryGuid": "plex://movie/5d776d057a53e9001e74ed5d",
+        "ratingKey": "620427bab0e7db99416e7e8c",
+        "skipDetails": true,
+        "title": "Avatar: Creating The World Of Pandora Featurette Part 1",
+        "type": "clip",
+        "thumb": "https://metadata-static.plex.tv/extras/iva/508336/6d3ec23c016610fca03ba4e602189669.jpg",
+        "extraType": 5,
+        "Media": [
+          {
+            "audioCodec": "aac",
+            "container": "mpegts",
+            "extension": "m3u8",
+            "protocol": "hls",
+            "videoCodec": "h264",
+            "duration": 299000,
+            "height": 704,
+            "url": "https://video.internetvideoarchive.net/video.mp4?customerid=112548&cmd=6&e=253370764800&fmt=11&publishedid=508336&h=3f00a86bfd0c6a2b14948d6d25a6573d",
+            "width": 1264,
+            "optimizedForStreaming": true,
+            "videoResolution": "720",
+            "Part": [
+              {
+                "container": "mpegts",
+                "duration": 299000,
+                "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e8c/parts/hls",
+                "Stream": [
+                  {
+                    "codec": "h264",
+                    "height": 704,
+                    "streamType": 1,
+                    "width": 1264,
+                    "id": "620427bab0e7db99416e7e8c-66eab7060a55653ee720bd57",
+                    "displayTitle": "HD",
+                    "selected": true
+                  },
+                  {
+                    "channels": 2,
+                    "codec": "aac",
+                    "language": "English",
+                    "streamType": 2,
+                    "id": "620427bab0e7db99416e7e8c-66eab7060a55653ee720bd58",
+                    "languageCode": "en",
+                    "displayTitle": "English (Stereo)",
+                    "selected": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "duration": 303000,
+        "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e94",
+        "parentTitle": "Behind the Scenes",
+        "primaryGuid": "plex://movie/5d776d057a53e9001e74ed5d",
+        "ratingKey": "620427bab0e7db99416e7e94",
+        "skipDetails": true,
+        "title": "Avatar: Creating The World Of Pandora Featurette Part 2",
+        "type": "clip",
+        "thumb": "https://metadata-static.plex.tv/extras/iva/840598/c5d5b0e420e09c76df2da1692b1b823e.jpg",
+        "extraType": 5,
+        "Media": [
+          {
+            "audioCodec": "aac",
+            "container": "mpegts",
+            "extension": "m3u8",
+            "protocol": "hls",
+            "videoCodec": "h264",
+            "duration": 303000,
+            "height": 704,
+            "url": "https://video.internetvideoarchive.net/video.mp4?customerid=112548&cmd=6&e=253370764800&fmt=11&publishedid=840598&h=186615686c38215fd02d7cd9260ec839",
+            "width": 1264,
+            "optimizedForStreaming": true,
+            "videoResolution": "720",
+            "Part": [
+              {
+                "container": "mpegts",
+                "duration": 303000,
+                "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e94/parts/hls",
+                "Stream": [
+                  {
+                    "codec": "h264",
+                    "height": 704,
+                    "streamType": 1,
+                    "width": 1264,
+                    "id": "620427bab0e7db99416e7e94-66eab7060a55653ee720bdc8",
+                    "displayTitle": "HD",
+                    "selected": true
+                  },
+                  {
+                    "channels": 2,
+                    "codec": "aac",
+                    "language": "English",
+                    "streamType": 2,
+                    "id": "620427bab0e7db99416e7e94-66eab7060a55653ee720bdc9",
+                    "languageCode": "en",
+                    "displayTitle": "English (Stereo)",
+                    "selected": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "duration": 321000,
+        "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e8a",
+        "parentTitle": "Behind the Scenes",
+        "primaryGuid": "plex://movie/5d776d057a53e9001e74ed5d",
+        "ratingKey": "620427bab0e7db99416e7e8a",
+        "skipDetails": true,
+        "title": "Avatar: Creating The World Of Pandora Featurette Part 3",
+        "type": "clip",
+        "thumb": "https://metadata-static.plex.tv/extras/iva/408302/3c05703aab244ba99e58abacdfd39cdf.jpg",
+        "extraType": 5,
+        "Media": [
+          {
+            "audioCodec": "aac",
+            "container": "mpegts",
+            "extension": "m3u8",
+            "protocol": "hls",
+            "videoCodec": "h264",
+            "duration": 321000,
+            "height": 704,
+            "url": "https://video.internetvideoarchive.net/video.mp4?customerid=112548&cmd=6&e=253370764800&fmt=11&publishedid=408302&h=1da2864d4e2f9c7365f6f00fe1f24871",
+            "width": 1264,
+            "optimizedForStreaming": true,
+            "videoResolution": "720",
+            "Part": [
+              {
+                "container": "mpegts",
+                "duration": 321000,
+                "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e8a/parts/hls",
+                "Stream": [
+                  {
+                    "codec": "h264",
+                    "height": 704,
+                    "streamType": 1,
+                    "width": 1264,
+                    "id": "620427bab0e7db99416e7e8a-66eab7060a55653ee720bd2b",
+                    "displayTitle": "HD",
+                    "selected": true
+                  },
+                  {
+                    "channels": 2,
+                    "codec": "aac",
+                    "language": "English",
+                    "streamType": 2,
+                    "id": "620427bab0e7db99416e7e8a-66eab7060a55653ee720bd2c",
+                    "languageCode": "en",
+                    "displayTitle": "English (Stereo)",
+                    "selected": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "duration": 252000,
+        "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e91",
+        "parentTitle": "Behind the Scenes",
+        "primaryGuid": "plex://movie/5d776d057a53e9001e74ed5d",
+        "ratingKey": "620427bab0e7db99416e7e91",
+        "skipDetails": true,
+        "title": "Avatar: Creating The World Of Pandora Featurette Part 4",
+        "type": "clip",
+        "thumb": "https://metadata-static.plex.tv/extras/iva/726990/0109f55ddf7a2404604c81be748300a9.jpg",
+        "extraType": 5,
+        "Media": [
+          {
+            "audioCodec": "aac",
+            "container": "mpegts",
+            "extension": "m3u8",
+            "protocol": "hls",
+            "videoCodec": "h264",
+            "duration": 252000,
+            "height": 704,
+            "url": "https://video.internetvideoarchive.net/video.mp4?customerid=112548&cmd=6&e=253370764800&fmt=11&publishedid=726990&h=f9acd321b76dd917005550ad85d0ea27",
+            "width": 1264,
+            "optimizedForStreaming": true,
+            "videoResolution": "720",
+            "Part": [
+              {
+                "container": "mpegts",
+                "duration": 252000,
+                "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e91/parts/hls",
+                "Stream": [
+                  {
+                    "codec": "h264",
+                    "height": 704,
+                    "streamType": 1,
+                    "width": 1264,
+                    "id": "620427bab0e7db99416e7e91-66eab7060a55653ee720bda3",
+                    "displayTitle": "HD",
+                    "selected": true
+                  },
+                  {
+                    "channels": 2,
+                    "codec": "aac",
+                    "language": "English",
+                    "streamType": 2,
+                    "id": "620427bab0e7db99416e7e91-66eab7060a55653ee720bda4",
+                    "languageCode": "en",
+                    "displayTitle": "English (Stereo)",
+                    "selected": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "duration": 201000,
+        "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e8e",
+        "parentTitle": "Behind the Scenes",
+        "primaryGuid": "plex://movie/5d776d057a53e9001e74ed5d",
+        "ratingKey": "620427bab0e7db99416e7e8e",
+        "skipDetails": true,
+        "title": "Avatar: Creating The World Of Pandora Featurette Part 5",
+        "type": "clip",
+        "thumb": "https://metadata-static.plex.tv/extras/iva/628061/303bdecd40f83fd37ff1b6a149763c1f.jpg",
+        "extraType": 5,
+        "Media": [
+          {
+            "audioCodec": "aac",
+            "container": "mpegts",
+            "extension": "m3u8",
+            "protocol": "hls",
+            "videoCodec": "h264",
+            "duration": 201000,
+            "height": 704,
+            "url": "https://video.internetvideoarchive.net/video.mp4?customerid=112548&cmd=6&e=253370764800&fmt=11&publishedid=628061&h=7fcd693abe24ab454620e7e5b5e68566",
+            "width": 1264,
+            "optimizedForStreaming": true,
+            "videoResolution": "720",
+            "Part": [
+              {
+                "container": "mpegts",
+                "duration": 201000,
+                "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e8e/parts/hls",
+                "Stream": [
+                  {
+                    "codec": "h264",
+                    "height": 704,
+                    "streamType": 1,
+                    "width": 1264,
+                    "id": "620427bab0e7db99416e7e8e-66eab7060a55653ee720bd85",
+                    "displayTitle": "HD",
+                    "selected": true
+                  },
+                  {
+                    "channels": 2,
+                    "codec": "aac",
+                    "language": "English",
+                    "streamType": 2,
+                    "id": "620427bab0e7db99416e7e8e-66eab7060a55653ee720bd86",
+                    "languageCode": "en",
+                    "displayTitle": "English (Stereo)",
+                    "selected": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "duration": 255000,
+        "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e8f",
+        "parentTitle": "Scene",
+        "primaryGuid": "plex://movie/5d776d057a53e9001e74ed5d",
+        "ratingKey": "620427bab0e7db99416e7e8f",
+        "skipDetails": true,
+        "title": "Avatar: James Cameron's Vision Featurette",
+        "type": "clip",
+        "thumb": "https://metadata-static.plex.tv/extras/iva/645413/fd653731fb7510d8c4288635cb37c349.jpg",
+        "extraType": 6,
+        "Media": [
+          {
+            "audioCodec": "aac",
+            "container": "mpegts",
+            "extension": "m3u8",
+            "protocol": "hls",
+            "videoCodec": "h264",
+            "duration": 255000,
+            "height": 352,
+            "url": "https://video.internetvideoarchive.net/video.mp4?customerid=112548&cmd=6&e=253370764800&fmt=11&publishedid=645413&h=652e6cf0b050cdc4e9e0c52229ab8682",
+            "width": 624,
+            "optimizedForStreaming": true,
+            "videoResolution": "sd",
+            "Part": [
+              {
+                "container": "mpegts",
+                "duration": 255000,
+                "key": "/library/metadata/5d776d057a53e9001e74ed5d/extras/620427bab0e7db99416e7e8f/parts/hls",
+                "Stream": [
+                  {
+                    "codec": "h264",
+                    "height": 352,
+                    "streamType": 1,
+                    "width": 624,
+                    "id": "620427bab0e7db99416e7e8f-66eab7060a55653ee720bd8a",
+                    "displayTitle": "SD",
+                    "selected": true
+                  },
+                  {
+                    "channels": 2,
+                    "codec": "aac",
+                    "language": "English",
+                    "streamType": 2,
+                    "id": "620427bab0e7db99416e7e8f-66eab7060a55653ee720bd8b",
+                    "languageCode": "en",
+                    "displayTitle": "English (Stereo)",
+                    "selected": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
