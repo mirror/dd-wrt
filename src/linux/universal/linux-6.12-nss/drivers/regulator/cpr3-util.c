@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -26,6 +27,9 @@
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/types.h>
+#include <linux/io-64-nonatomic-lo-hi.h>
+
+#include <soc/qcom/socinfo.h>
 
 #include "cpr3-regulator.h"
 
@@ -43,18 +47,6 @@
 
 /* This constant has units of uV/mV so 1000 corresponds to 100%. */
 #define CPR3_AGING_DERATE_UNITY		1000
-
-static inline int read_ipq_soc_version_major(void)
-{
-	const int *prop;
-	prop = of_get_property(of_find_node_by_path("/"), "soc_version_major",
-				NULL);
-
-	if (!prop)
-		return -EINVAL;
-
-	return le32_to_cpu(*prop);
-}
 
 /**
  * cpr3_allocate_regulators() - allocate and initialize CPR3 regulators for a
@@ -286,7 +278,7 @@ int cpr3_read_fuse_param(void __iomem *fuse_base_addr,
 			return -EINVAL;
 		}
 
-		fuse_val = readq_relaxed(fuse_base_addr
+		fuse_val = lo_hi_readq_relaxed(fuse_base_addr
 					 + param->row * BYTES_PER_FUSE_ROW);
 		val = (fuse_val >> param->bit_start) & ((1ULL << bits) - 1);
 		*param_value |= val << bits_total;
@@ -1980,9 +1972,23 @@ int cpr3_parse_closed_loop_voltage_adjustments(
 	int i, rc;
 	u32 *ro_all_scale;
 
-	char volt_adj[] = "qcom,cpr-closed-loop-voltage-adjustment";
-	char volt_fuse_adj[] = "qcom,cpr-closed-loop-voltage-fuse-adjustment";
+	char volt_adj[75];
+	char volt_fuse_adj[75];
 	char ro_scaling[] = "qcom,cpr-ro-scaling-factor";
+
+	if (vreg->part_type_supported) {
+		snprintf(volt_adj, sizeof(volt_adj),
+				"qcom,cpr-closed-loop-voltage-adjustment-%d",
+				vreg->part_type);
+		snprintf(volt_fuse_adj, sizeof(volt_fuse_adj),
+				"qcom,cpr-closed-loop-voltage-fuse-adjustment-%d",
+				vreg->part_type);
+	} else {
+		strscpy(volt_adj, "qcom,cpr-closed-loop-voltage-adjustment",
+				sizeof(volt_adj));
+		strscpy(volt_fuse_adj, "qcom,cpr-closed-loop-voltage-fuse-adjustment",
+				sizeof(volt_fuse_adj));
+	}
 
 	if (!of_find_property(vreg->of_node, volt_adj, NULL)
 	    && !of_find_property(vreg->of_node, volt_fuse_adj, NULL)
