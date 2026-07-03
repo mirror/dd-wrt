@@ -495,8 +495,8 @@ static int cpr3_npu_init_regulator(struct cpr3_regulator *vreg)
 			"Get cold temperature threshold failed, rc=%d\n", rc);
 			return rc;
 		}
-		register_low_temp_notif(NPU_TSENS, cold_temp,
-							cpr3_npu_temp_notify);
+//		register_low_temp_notif(NPU_TSENS, cold_temp,
+//							cpr3_npu_temp_notify);
 	}
 
 	return rc;
