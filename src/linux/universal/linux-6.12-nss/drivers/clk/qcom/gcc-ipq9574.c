@@ -77,7 +77,6 @@ static struct clk_alpha_pll gpll0_main = {
 			.parent_data = gcc_xo_data,
 			.num_parents = ARRAY_SIZE(gcc_xo_data),
 			.ops = &clk_alpha_pll_ops,
-			.flags = CLK_IS_CRITICAL,
 		},
 	},
 };
@@ -92,7 +91,6 @@ static struct clk_fixed_factor gpll0_out_main_div2 = {
 		},
 		.num_parents = 1,
 		.ops = &clk_fixed_factor_ops,
-		.flags = CLK_SET_RATE_PARENT,
 	},
 };
 
@@ -107,10 +105,10 @@ static struct clk_alpha_pll_postdiv gpll0 = {
 		},
 		.num_parents = 1,
 		.ops = &clk_alpha_pll_postdiv_ro_ops,
-		.flags = CLK_SET_RATE_PARENT,
 	},
 };
 
+#if 0
 static struct clk_alpha_pll_postdiv gpll0_out_aux = {
 	.offset = 0x20000,
 	.regs = clk_alpha_pll_regs[CLK_ALPHA_PLL_TYPE_DEFAULT_EVO],
@@ -124,7 +122,7 @@ static struct clk_alpha_pll_postdiv gpll0_out_aux = {
 		.ops = &clk_alpha_pll_postdiv_ro_ops,
 	},
 };
-
+#endif
 static struct clk_alpha_pll gpll4_main = {
 	.offset = 0x22000,
 	.regs = clk_alpha_pll_regs[CLK_ALPHA_PLL_TYPE_DEFAULT_EVO],
@@ -136,7 +134,6 @@ static struct clk_alpha_pll gpll4_main = {
 			.parent_data = gcc_xo_data,
 			.num_parents = ARRAY_SIZE(gcc_xo_data),
 			.ops = &clk_alpha_pll_ops,
-			.flags = CLK_IS_CRITICAL,
 		},
 	},
 };
@@ -152,7 +149,6 @@ static struct clk_alpha_pll_postdiv gpll4 = {
 		},
 		.num_parents = 1,
 		.ops = &clk_alpha_pll_postdiv_ro_ops,
-		.flags = CLK_SET_RATE_PARENT,
 	},
 };
 
@@ -167,7 +163,6 @@ static struct clk_alpha_pll gpll2_main = {
 			.parent_data = gcc_xo_data,
 			.num_parents = ARRAY_SIZE(gcc_xo_data),
 			.ops = &clk_alpha_pll_ops,
-			.flags = CLK_IS_CRITICAL,
 		},
 	},
 };
@@ -183,7 +178,6 @@ static struct clk_alpha_pll_postdiv gpll2 = {
 		},
 		.num_parents = 1,
 		.ops = &clk_alpha_pll_postdiv_ro_ops,
-		.flags = CLK_SET_RATE_PARENT,
 	},
 };
 
@@ -2234,19 +2228,6 @@ static struct clk_rcg2 pcnoc_bfdcd_clk_src = {
 	},
 };
 
-static struct clk_fixed_factor pcnoc_clk_src = {
-	.mult = 1,
-	.div = 1,
-	.hw.init = &(struct clk_init_data){
-		.name = "pcnoc_clk_src",
-		.parent_hws = (const struct clk_hw *[]){
-				&pcnoc_bfdcd_clk_src.clkr.hw },
-		.num_parents = 1,
-		.ops = &clk_fixed_factor_ops,
-		.flags = CLK_SET_RATE_PARENT,
-	},
-};
-
 static struct clk_branch gcc_crypto_axi_clk = {
 	.halt_reg = 0x16010,
 	.halt_check = BRANCH_HALT_VOTED,
@@ -3002,7 +2983,7 @@ static struct clk_branch gcc_qdss_at_clk = {
 				&qdss_at_clk_src.clkr.hw
 			},
 			.num_parents = 1,
-			.flags = CLK_SET_RATE_PARENT,
+			.flags = CLK_SET_RATE_PARENT | CLK_IS_CRITICAL,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -3277,7 +3258,6 @@ static struct clk_rcg2 uniphy_sys_clk_src = {
 		.parent_data = gcc_xo_data,
 		.num_parents = ARRAY_SIZE(gcc_xo_data),
 		.ops = &clk_rcg2_ops,
-		.flags = CLK_IS_CRITICAL,
 	},
 };
 
@@ -3498,7 +3478,7 @@ static struct clk_branch gcc_qdss_dap_clk = {
 				&qdss_dap_sync_clk_src.hw
 			},
 			.num_parents = 1,
-			.flags = CLK_SET_RATE_PARENT,
+			.flags = CLK_SET_RATE_PARENT | CLK_IS_CRITICAL,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -3516,22 +3496,6 @@ static struct clk_branch gcc_qdss_apb2jtag_clk = {
 			},
 			.num_parents = 1,
 			.flags = CLK_SET_RATE_PARENT,
-			.ops = &clk_branch2_ops,
-		},
-	},
-};
-
-static struct clk_branch gcc_pcnoc_dcc_clk = {
-	.halt_reg = 0x31080,
-	.clkr = {
-		.enable_reg = 0x31080,
-		.enable_mask = BIT(0),
-		.hw.init = &(struct clk_init_data){
-			.name = "gcc_pcnoc_dcc_clk",
-			.parent_hws = (const struct clk_hw *[]){
-					&qdss_dap_sync_clk_src.hw },
-			.num_parents = 1,
-			.flags = CLK_SET_RATE_PARENT | CLK_IGNORE_UNUSED,
 			.ops = &clk_branch2_ops,
 		},
 	},
@@ -4106,7 +4070,6 @@ static struct clk_hw *gcc_ipq9574_hws[] = {
 	&qdss_tsctr_div16_clk_src.hw,
 	&qdss_tsctr_div3_clk_src.hw,
 	&gcc_eud_at_div_clk_src.hw,
-	&pcnoc_clk_src.hw,
 };
 
 static struct clk_regmap *gcc_ipq9574_clks[] = {
@@ -4326,8 +4289,7 @@ static struct clk_regmap *gcc_ipq9574_clks[] = {
 	[GCC_PCIE1_PIPE_CLK] = &gcc_pcie1_pipe_clk.clkr,
 	[GCC_PCIE2_PIPE_CLK] = &gcc_pcie2_pipe_clk.clkr,
 	[GCC_PCIE3_PIPE_CLK] = &gcc_pcie3_pipe_clk.clkr,
-	[GCC_PCNOC_DCC_CLK] = &gcc_pcnoc_dcc_clk.clkr,
-	[GPLL0_OUT_AUX] = &gpll0_out_aux.clkr,
+/*	[GPLL0_OUT_AUX] = &gpll0_out_aux.clkr,*/
 };
 
 static const struct qcom_reset_map gcc_ipq9574_resets[] = {
