@@ -210,6 +210,72 @@ clk_rcg2_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
 	return __clk_rcg2_recalc_rate(hw, parent_rate, cfg);
 }
 
+static const struct freq_tbl *
+clk_rcg2_find_best_freq(struct clk_hw *hw, const struct freq_tbl *f,
+                        unsigned long rate, enum freq_policy policy)
+{
+        unsigned long req_rate = rate, best = 0, freq;
+        struct clk_rcg2 *rcg = to_clk_rcg2(hw);
+        int index;
+        u64 tmp;
+        const struct freq_tbl *best_ftable = NULL;
+
+        switch (policy) {
+        case FLOOR:
+                f = qcom_find_freq_floor(f, rate);
+                break;
+        case CEIL:
+                f = qcom_find_freq(f, rate);
+                break;
+        default:
+                return best_ftable;
+        };
+
+        /*
+         * Check for duplicate frequencies in frequency table if
+         * CLK_SET_RATE_PARENT flag is not set
+         */
+        if (!f || (clk_hw_get_flags(hw) & CLK_SET_RATE_PARENT) ||
+            ((f->freq && (f + 1)->freq != f->freq)))
+                return f;
+
+        /*
+         * Check for all the duplicate entries in frequency table and
+         * calculate the actual rate from current parent rate with each
+         * entries pre_div, m and n values. The entry, which gives the
+         * minimum difference in requested rate and actual rate, will be
+         * selected as the best one.
+         */
+        for (freq = f->freq; freq == f->freq; f++) {
+                index = qcom_find_src_index(hw, rcg->parent_map, f->src);
+                if (index < 0)
+                        continue;
+
+                rate =  clk_hw_get_rate(clk_hw_get_parent_by_index(hw, index));
+                if (rcg->hid_width && f->pre_div) {
+                        rate *= 2;
+                        rate /= f->pre_div + 1;
+                }
+
+                if (rcg->mnd_width && f->n) {
+                        tmp = rate;
+                        tmp = tmp * f->n;
+                        do_div(tmp, f->m);
+                        rate = tmp;
+                }
+
+                if (abs(req_rate - rate) < abs(best - rate)) {
+                        best_ftable = f;
+                        best = rate;
+
+                        if (req_rate == rate)
+                                break;
+                }
+        }
+
+        return best_ftable;
+}
+
 static int _freq_tbl_determine_rate(struct clk_hw *hw, const struct freq_tbl *f,
 				    struct clk_rate_request *req,
 				    enum freq_policy policy)
@@ -219,16 +285,7 @@ static int _freq_tbl_determine_rate(struct clk_hw *hw, const struct freq_tbl *f,
 	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
 	int index;
 
-	switch (policy) {
-	case FLOOR:
-		f = qcom_find_freq_floor(f, rate);
-		break;
-	case CEIL:
-		f = qcom_find_freq(f, rate);
-		break;
-	default:
-		return -EINVAL;
-	}
+	f = clk_rcg2_find_best_freq(hw, f, rate, policy);
 
 	if (!f)
 		return -EINVAL;
@@ -485,16 +542,7 @@ static int __clk_rcg2_set_rate(struct clk_hw *hw, unsigned long rate,
 	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
 	const struct freq_tbl *f;
 
-	switch (policy) {
-	case FLOOR:
-		f = qcom_find_freq_floor(rcg->freq_tbl, rate);
-		break;
-	case CEIL:
-		f = qcom_find_freq(rcg->freq_tbl, rate);
-		break;
-	default:
-		return -EINVAL;
-	}
+	f = clk_rcg2_find_best_freq(hw, rcg->freq_tbl, rate, policy);
 
 	if (!f)
 		return -EINVAL;
@@ -1206,16 +1254,10 @@ static int __clk_rcg2_shared_set_rate(struct clk_hw *hw, unsigned long rate,
 	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
 	const struct freq_tbl *f;
 
-	switch (policy) {
-	case FLOOR:
-		f = qcom_find_freq_floor(rcg->freq_tbl, rate);
-		break;
-	case CEIL:
-		f = qcom_find_freq(rcg->freq_tbl, rate);
-		break;
-	default:
+	f = clk_rcg2_find_best_freq(hw, rcg->freq_tbl, rate, CEIL);
+
+	if (!f)
 		return -EINVAL;
-	}
 
 	/*
 	 * In case clock is disabled, update the M, N and D registers, cache
