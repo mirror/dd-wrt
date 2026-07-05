@@ -192,12 +192,19 @@ static int qcom_cpufreq_kryo_name_version(struct device *cpu_dev,
 	case QCOM_ID_IPQ5302:
 	case QCOM_ID_IPQ5300:
 	case QCOM_ID_IPQ5321:
+		drv->versions = 1 << (unsigned int)(*speedbin);
+		break;
 	case QCOM_ID_IPQ9514:
 	case QCOM_ID_IPQ9550:
 	case QCOM_ID_IPQ9554:
 	case QCOM_ID_IPQ9570:
 	case QCOM_ID_IPQ9574:
-		drv->versions = 1 << (unsigned int)(*speedbin);
+		if ((unsigned int)(*speedbin) == 2)
+			drv->versions = BIT(1);
+		else if ((unsigned int)(*speedbin) == 1)
+			drv->versions = BIT(2);
+		else
+			drv->versions = 1 << (unsigned int)(*speedbin);
 		break;
 	case QCOM_ID_MSM8996SG:
 	case QCOM_ID_APQ8096SG:
