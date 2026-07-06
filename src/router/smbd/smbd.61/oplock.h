@@ -42,6 +42,7 @@ struct lease_ctx_info {
 
 struct lease_table {
 	char			client_guid[SMB2_CLIENT_GUID_SIZE];
+	struct ksmbd_conn	*conn;
 	struct list_head	lease_list;
 	struct list_head	l_entry;
 	spinlock_t		lb_lock;
@@ -57,7 +58,13 @@ struct lease {
 	int			version;
 	unsigned short		epoch;
 	bool			is_dir;
+	bool			reuse_epoch;
+	struct ksmbd_inode	*ci;
 	struct lease_table	*l_lb;
+	struct list_head	l_entry;
+	struct list_head	open_list;
+	spinlock_t		lock;
+	atomic_t		refcount;
 };
 
 struct oplock_info {
@@ -116,6 +123,7 @@ void opinfo_put(struct oplock_info *opinfo);
 void create_lease_buf(u8 *rbuf, struct lease *lease);
 struct lease_ctx_info *parse_lease_state(void *open_req);
 __u8 smb2_map_lease_to_oplock(__le32 lease_state);
+void lease_update_oplock_levels(struct lease *lease);
 int lease_read_to_write(struct oplock_info *opinfo);
 
 /* Durable related functions */
@@ -127,7 +135,7 @@ void create_posix_rsp_buf(char *cc, struct ksmbd_file *fp);
 struct create_context *smb2_find_context_vals(void *open_req, const char *tag, int tag_len);
 struct oplock_info *lookup_lease_in_table(struct ksmbd_conn *conn,
 					  char *lease_key);
-int find_same_lease_key(struct ksmbd_session *sess, struct ksmbd_inode *ci,
+int find_same_lease_key(struct ksmbd_conn *conn, struct ksmbd_inode *ci,
 			struct lease_ctx_info *lctx);
 void destroy_lease_table(struct ksmbd_conn *conn);
 void smb_send_parent_lease_break_noti(struct ksmbd_file *fp,

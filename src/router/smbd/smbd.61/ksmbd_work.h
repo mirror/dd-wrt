@@ -13,6 +13,8 @@ struct ksmbd_conn;
 struct ksmbd_session;
 struct ksmbd_tree_connect;
 
+#define KSMBD_WORK_INLINE_IOVS	4
+
 enum {
 	KSMBD_WORK_ACTIVE = 0,
 	KSMBD_WORK_CANCELLED,
@@ -42,6 +44,7 @@ struct ksmbd_work {
 	int				iov_alloc_cnt;
 	int				iov_cnt;
 	int				iov_idx;
+	struct kvec			iov_inline[KSMBD_WORK_INLINE_IOVS];
 
 	/* Next cmd hdr in compound req buf*/
 	int                             next_smb2_rcv_hdr_off;
