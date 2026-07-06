@@ -155,6 +155,7 @@ static const struct cmn_pll_fixed_output_clk ipq9574_output_clks[] = {
 	CLK_PLL_OUTPUT(ETH1_50MHZ_CLK, "eth1-50mhz", 50000000UL),
 	CLK_PLL_OUTPUT(ETH2_50MHZ_CLK, "eth2-50mhz", 50000000UL),
 	CLK_PLL_OUTPUT(ETH_25MHZ_CLK, "eth-25mhz", 25000000UL),
+	CLK_PLL_OUTPUT(BIAS_PLL_NSS_NOC_CLK, "bias_pll_nss_noc_clk", 416500000UL),
 	{ /* Sentinel */ }
 };
 

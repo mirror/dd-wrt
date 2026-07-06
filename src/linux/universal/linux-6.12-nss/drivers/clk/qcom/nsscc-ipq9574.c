@@ -13,8 +13,8 @@
 #include <linux/regmap.h>
 #include <linux/platform_device.h>
 
-#include <dt-bindings/clock/qcom,nsscc-ipq9574.h>
-#include <dt-bindings/reset/qcom,nsscc-ipq9574.h>
+#include <dt-bindings/clock/qcom,ipq9574-nsscc.h>
+#include <dt-bindings/reset/qcom,ipq9574-nsscc.h>
 
 #include "clk-alpha-pll.h"
 #include "clk-branch.h"
