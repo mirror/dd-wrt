@@ -1321,10 +1321,7 @@ again:
 
 #ifdef CONFIG_SMB_INSECURE_SERVER
 	if (brk_opinfo->is_smb2)
-		if (brk_opinfo->is_lease)
-			err = smb2_lease_break_noti(brk_opinfo);
-		else
-			err = smb2_oplock_break_noti(brk_opinfo);
+		err = smb2_oplock_break_noti(brk_opinfo);
 	else
 		err = smb1_oplock_break_noti(brk_opinfo);
 #else

@@ -8,6 +8,7 @@
 
 #include <linux/ctype.h>
 #include <linux/workqueue.h>
+#include <linux/uio.h>
 
 struct ksmbd_conn;
 struct ksmbd_session;
