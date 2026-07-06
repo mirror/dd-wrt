@@ -227,7 +227,9 @@ struct dns_ipset_name {
 struct dns_ipset_rule {
 	struct dns_rule head;
 	const char *ipsetname;
+	struct dns_ipset_rule *next;
 };
+
 
 struct dns_ipset_names {
 	char inet_enable;
@@ -264,6 +266,7 @@ struct dns_nftset_rule {
 	const char *familyname;
 	const char *nfttablename;
 	const char *nftsetname;
+	struct dns_nftset_rule *next;
 };
 
 struct dns_nftset_names {
@@ -712,8 +715,10 @@ struct dns_config {
 	char bind_ca_file[DNS_MAX_PATH];
 	char bind_ca_key_file[DNS_MAX_PATH];
 	char bind_root_ca_key_file[DNS_MAX_PATH];
+	char bind_cert_san[DNS_MAX_PATH];
 	char bind_ca_key_pass[DNS_MAX_PATH];
 	int bind_ca_validity_days;
+	int bind_cert_generate;
 	char need_cert;
 	int tcp_idle_time;
 	ssize_t cachesize;
