@@ -4459,7 +4459,7 @@ static const struct qcom_reset_map gcc_ipq9574_resets[] = {
 
 #define IPQ_APPS_ID			9574	/* some unique value */
 
-static const struct qcom_icc_hws_data icc_ipq9574_hws[] = {
+static struct qcom_icc_hws_data icc_ipq9574_hws[] = {
 	{ MASTER_ANOC_PCIE0, SLAVE_ANOC_PCIE0, GCC_ANOC_PCIE0_1LANE_M_CLK },
 	{ MASTER_SNOC_PCIE0, SLAVE_SNOC_PCIE0, GCC_SNOC_PCIE0_1LANE_S_CLK },
 	{ MASTER_ANOC_PCIE1, SLAVE_ANOC_PCIE1, GCC_ANOC_PCIE1_1LANE_M_CLK },
@@ -4473,14 +4473,14 @@ static const struct qcom_icc_hws_data icc_ipq9574_hws[] = {
 	{ MASTER_NSSNOC_NSSCC, SLAVE_NSSNOC_NSSCC, GCC_NSSNOC_NSSCC_CLK },
 	{ MASTER_NSSNOC_SNOC_0, SLAVE_NSSNOC_SNOC_0, GCC_NSSNOC_SNOC_CLK },
 	{ MASTER_NSSNOC_SNOC_1, SLAVE_NSSNOC_SNOC_1, GCC_NSSNOC_SNOC_1_CLK },
-	{ MASTER_NSSNOC_PCNOC_1, SLAVE_NSSNOC_PCNOC_1, GCC_NSSNOC_PCNOC_1_CLK },
+/*	{ MASTER_NSSNOC_PCNOC_1, SLAVE_NSSNOC_PCNOC_1, GCC_NSSNOC_PCNOC_1_CLK },
 	{ MASTER_NSSNOC_QOSGEN_REF, SLAVE_NSSNOC_QOSGEN_REF, GCC_NSSNOC_QOSGEN_REF_CLK },
 	{ MASTER_NSSNOC_TIMEOUT_REF, SLAVE_NSSNOC_TIMEOUT_REF, GCC_NSSNOC_TIMEOUT_REF_CLK },
 	{ MASTER_NSSNOC_XO_DCD, SLAVE_NSSNOC_XO_DCD, GCC_NSSNOC_XO_DCD_CLK },
 	{ MASTER_NSSNOC_ATB, SLAVE_NSSNOC_ATB, GCC_NSSNOC_ATB_CLK },
 	{ MASTER_MEM_NOC_NSSNOC, SLAVE_MEM_NOC_NSSNOC, GCC_MEM_NOC_NSSNOC_CLK },
 	{ MASTER_NSSNOC_MEMNOC, SLAVE_NSSNOC_MEMNOC, GCC_NSSNOC_MEMNOC_CLK },
-	{ MASTER_NSSNOC_MEM_NOC_1, SLAVE_NSSNOC_MEM_NOC_1, GCC_NSSNOC_MEM_NOC_1_CLK },
+	{ MASTER_NSSNOC_MEM_NOC_1, SLAVE_NSSNOC_MEM_NOC_1, GCC_NSSNOC_MEM_NOC_1_CLK },*/
 };
 
 static const struct of_device_id gcc_ipq9574_match_table[] = {
@@ -4520,7 +4520,7 @@ static struct platform_driver gcc_ipq9574_driver = {
 	.driver = {
 		.name   = "qcom,gcc-ipq9574",
 		.of_match_table = gcc_ipq9574_match_table,
-		.sync_state = icc_sync_state,
+//		.sync_state = icc_sync_state,
 	},
 };
 
