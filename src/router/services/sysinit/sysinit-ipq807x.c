@@ -1819,9 +1819,15 @@ void start_wifi_drivers(void)
 				set_gpio(7, 1);
 			}
 			load_ath12k_internal(profile, 0, 0, frame_mode, cert_region, 1);
-			wait_for_wifi(1);
+			if (nvram_match("5g_split", "1"))
+				wait_for_wifi(2);
+			else
+				wait_for_wifi(1);
 			load_ath11k_internal(profile, 0, 0, frame_mode, cert_region, 1);
-			wait_for_wifi(1);
+			if (nvram_match("5g_split", "1"))
+				wait_for_wifi(3);
+			else
+				wait_for_wifi(2);
 			writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		} break;
 		case ROUTER_8DEVICES_KIWI: {
