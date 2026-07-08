@@ -1294,10 +1294,18 @@ void start_sysinit(void)
 	case ROUTER_XIAOMI_BE7000:
 		MAC_ADD(ethaddr);
 		MAC_ADD(ethaddr);
-		nvram_set("wlan0_hwaddr", ethaddr);
-		patch(ethaddr, 14);
-		MAC_ADD(ethaddr);
-		nvram_set("wlan1_hwaddr", ethaddr);
+		if (nvram_match("5g_split", "1")) {
+			nvram_set("wlan0_hwaddr", ethaddr);
+			nvram_set("wlan1_hwaddr", ethaddr);
+			patch(ethaddr, 14);
+			MAC_ADD(ethaddr);
+			nvram_set("wlan2_hwaddr", ethaddr);
+		} else {
+			nvram_set("wlan0_hwaddr", ethaddr);
+			MAC_ADD(ethaddr);
+			patch(ethaddr, 14);
+			nvram_set("wlan1_hwaddr", ethaddr);
+		}
 		set_envtools(getMTD("appsblenv"), "0x0", "0x10000", "0x20000", 1);
 		break;
 	case ROUTER_LINKSYS_MR7350:
@@ -1514,8 +1522,8 @@ void start_sysinit(void)
 		break;
 	case ROUTER_XIAOMI_BE7000:
 		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
-//		setscaling(1488000);
-//		setscaling(1512000);
+		//		setscaling(1488000);
+		//		setscaling(1512000);
 		disableportlearn();
 		break;
 	case ROUTER_GLINET_AX1800: // todo. check real cpu clock on device
