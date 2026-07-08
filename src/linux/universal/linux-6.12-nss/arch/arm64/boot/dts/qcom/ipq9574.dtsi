@@ -375,6 +375,7 @@
 		q6_region: wcnss@4ab00000 {
 			no-map;
 			reg = <0x0 0x4ab00000 0x0 0x02b00000>;
+			status = "disabled";
 		};
 
 		q6_caldb_region: q6_caldb_region@4d800000 {
