@@ -66,7 +66,6 @@ void cli_session(int sock_in, int sock_out, struct dropbear_progress_connection 
 void cli_connected(int result, int sock, void* userdata, const char *errstring);
 void cli_dropbear_exit(int exitcode, const char* format, va_list param) ATTRIB_NORETURN;
 void cli_dropbear_log(int priority, const char* format, va_list param);
-void cleantext(char* dirtytext);
 void kill_proxy_command(void);
 
 /* crypto parameters that are stored individually for transmit and receive */
@@ -206,6 +205,7 @@ struct sshsession {
 	/* a list of queued replies that should be sent after a KEX has
 	   concluded (ie, while dataallowed was unset)*/
 	struct packetlist *reply_queue_head, *reply_queue_tail;
+	size_t reply_queue_len;
 
 	void(*remoteclosed)(void); /* A callback to handle closure of the
 									  remote connection */

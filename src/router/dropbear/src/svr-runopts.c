@@ -38,7 +38,7 @@ static void printhelp(const char * progname);
 static void addportandaddress(const char* spec);
 static void loadhostkey(const char *keyfile, int fatal_duplicate);
 static void addhostkey(const char *keyfile);
-static void load_banner();
+static void load_banner(void);
 
 static void printhelp(const char * progname) {
 
@@ -85,7 +85,9 @@ static void printhelp(const char * progname) {
 					"-s		Disable password logins\n"
 					"-g		Disable password logins for root\n"
 					"-B		Allow blank password logins\n"
+#if DEPRECATED_TWO_FACTOR
 					"-t		Enable two-factor authentication (both password and public key required)\n"
+#endif
 #endif
 					"-T		Maximum authentication tries (default %d)\n"
 #if DROPBEAR_SVR_LOCALANYFWD
@@ -344,9 +346,11 @@ void svr_getopts(int argc, char ** argv) {
 				case 'B':
 					svr_opts.allowblankpass = 1;
 					break;
+#if DEPRECATED_TWO_FACTOR
 				case 't':
 					svr_opts.multiauthmethod = 1;
 					break;
+#endif
 #else
 				case 's':
 				case 'g':
@@ -493,6 +497,9 @@ void svr_getopts(int argc, char ** argv) {
 	if (svr_opts.multiauthmethod && svr_opts.noauthpass) {
 		dropbear_exit("-t and -s are incompatible");
 	}
+	if (svr_opts.multiauthmethod && svr_opts.allowblankpass) {
+		dropbear_exit("-t and -B are incompatible");
+	}
 
 	if (strlen(svr_opts.authorized_keys_dir) == 0) {
 		dropbear_exit("Bad -D");
@@ -500,6 +507,10 @@ void svr_getopts(int argc, char ** argv) {
 
 #if DROPBEAR_PLUGIN
 	if (pubkey_plugin) {
+		if (svr_opts.multiauthmethod) {
+			dropbear_exit("-t and plugins are incompatible");
+		}
+
 		svr_opts.pubkey_plugin = m_strdup(pubkey_plugin);
 		char *args = strchr(svr_opts.pubkey_plugin, ',');
 		if (args) {
@@ -759,7 +770,7 @@ void load_all_hostkeys() {
 	}
 }
 
-static void load_banner() {
+static void load_banner(void) {
 	struct stat buf;
 	if (stat(svr_opts.bannerfile, &buf) != 0) {
 		dropbear_log(LOG_WARNING, "Error opening banner file '%s'",

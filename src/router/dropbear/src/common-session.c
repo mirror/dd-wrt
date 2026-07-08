@@ -117,6 +117,7 @@ void common_session_init(int sock_in, int sock_out) {
 	ses.lastpacket = 0;
 	ses.reply_queue_head = NULL;
 	ses.reply_queue_tail = NULL;
+	ses.reply_queue_len = 0;
 
 	/* set all the algos to none */
 	ses.keys = (struct key_context*)m_malloc(sizeof(struct key_context));
@@ -180,7 +181,7 @@ void session_loop(void(*loophandler)(void)) {
 		if (!fuzz.fuzzing) 
 #endif
 		{
-		FD_SET(ses.signal_pipe[0], &readfd);
+		dropbear_fd_set(ses.signal_pipe[0], &readfd);
 		}
 
 		/* set up for channels which can be read/written */
@@ -198,13 +199,13 @@ void session_loop(void(*loophandler)(void)) {
 		if (ses.sock_in != -1 
 			&& (ses.remoteident || isempty(&ses.writequeue)) 
 			&& writequeue_has_space) {
-			FD_SET(ses.sock_in, &readfd);
+			dropbear_fd_set(ses.sock_in, &readfd);
 		}
 
 		/* Ordering is important, this test must occur after any other function
 		might have queued packets (such as connection handlers) */
 		if (ses.sock_out != -1 && !isempty(&ses.writequeue)) {
-			FD_SET(ses.sock_out, &writefd);
+			dropbear_fd_set(ses.sock_out, &writefd);
 		}
 
 		val = select(ses.maxfd+1, &readfd, &writefd, NULL, &timeout);
@@ -442,7 +443,7 @@ static int ident_readln(int fd, char* buf, int count) {
 	/* leave space to null-terminate */
 	while (pos < count-1) {
 
-		FD_SET(fd, &fds);
+		dropbear_fd_set(fd, &fds);
 
 		timeout.tv_sec = 1;
 		timeout.tv_usec = 0;
@@ -503,7 +504,7 @@ void ignore_recv_response() {
 	TRACE(("Ignored msg_request_response"))
 }
 
-static void send_msg_keepalive() {
+static void send_msg_keepalive(void) {
 	time_t old_time_idle = ses.last_packet_time_idle;
 	struct Channel *chan = get_any_ready_channel();
 

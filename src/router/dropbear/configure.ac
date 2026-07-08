@@ -344,8 +344,9 @@ AC_ARG_ENABLE(shadow,
 	]
 )
 
+# Plugin support will be removed soon. Open a github issue if you're using it.
 AC_ARG_ENABLE(plugin,
-	[AS_HELP_STRING([--enable-plugin], [Enable support for External Public Key Authentication plug-in])],
+	[AS_HELP_STRING([--enable-plugin-deprecated], [Enable support for External Public Key Authentication plug-in])],
 	[
 		AC_DEFINE(DROPBEAR_PLUGIN, 1, External Public Key Authentication)
 		AC_MSG_NOTICE(Enabling support for External Public Key Authentication)
@@ -942,12 +943,13 @@ fi
 
 if test "x$ac_cv_func_getpass" != xyes; then
 AC_MSG_NOTICE()
-AC_MSG_NOTICE([getpass() not available, dbclient will only have public-key authentication])
+AC_MSG_WARN([getpass() not available, dbclient will only have public-key authentication])
 fi
 
 if test "t$found_crypt_func" != there; then
 AC_MSG_NOTICE()
-AC_MSG_NOTICE([crypt() not available, dropbear server will not have password authentication])
+AC_MSG_WARN([crypt() is not available, dropbear server will not have password authentication])
+AC_MSG_NOTICE([Some platforms require libcrypt-dev package or similar])
 fi
 
 AC_MSG_NOTICE()

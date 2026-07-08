@@ -404,4 +404,13 @@ runtime with -M. 0 disables this feature. */
 #define DEFAULT_PATH "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin"
 #define DEFAULT_ROOT_PATH "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin"
 
+/* Features pending deletion. These will be removed in a future release
+   since they don't seem to be used much. Open a github issue if you
+   want to keep them.
+ */
+/* Server "-t" two factor auth */
+#define DEPRECATED_TWO_FACTOR 0
+
+/* Plugins are set with configure --enable-plugin-deprecated */
+
 #endif /* DROPBEAR_DEFAULT_OPTIONS_H_ */
