@@ -748,6 +748,20 @@ int __must_check clk_bulk_enable(int num_clks,
 void clk_disable(struct clk *clk);
 
 /**
+ * clk_force_disable - disable a clock directly without any checks
+ * @clk: clock source
+ *
+ * Disable a clock, that was enabled by a bootloader. This function
+ * bypasses all the clock framework checks and directly disables the
+ * clock by writing into the registers.
+ *
+ * This API should be used with caution and should be used only to disable
+ * a clock that was enabled by the bootloader and clock framework does not
+ * know that this clock is already in enabled state.
+ */
+void clk_force_disable(struct clk *clk);
+
+/**
  * clk_bulk_disable - inform the system when the set of clks is no
  *		      longer required.
  * @num_clks: the number of clk_bulk_data

@@ -1208,6 +1208,20 @@ void pci_sort_breadthfirst(void);
 #define dev_is_pci(d) ((d)->bus == &pci_bus_type)
 #define dev_is_pf(d) ((dev_is_pci(d) ? to_pci_dev(d)->is_physfn : false))
 
+#ifdef CONFIG_PCIE_QCOM
+int pcie_set_link_speed(struct pci_dev *dev, u16 target_link_speed);
+int pcie_set_link_width(struct pci_dev *dev, u16 target_link_width);
+#else
+static inline int pcie_set_link_speed(struct pci_dev *dev, u16 target_link_speed)
+{
+	return -ENODEV;
+}
+static inline int pcie_set_link_width(struct pci_dev *dev, u16 target_link_width)
+{
+	return -ENODEV;
+}
+#endif
+
 /* Generic PCI functions exported to card drivers */
 
 u8 pci_bus_find_capability(struct pci_bus *bus, unsigned int devfn, int cap);

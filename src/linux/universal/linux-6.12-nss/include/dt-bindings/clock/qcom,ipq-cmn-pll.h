@@ -19,4 +19,5 @@
 #define ETH1_50MHZ_CLK			7
 #define ETH2_50MHZ_CLK			8
 #define ETH_25MHZ_CLK			9
+#define BIAS_PLL_NSS_NOC_CLK		10
 #endif
