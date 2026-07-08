@@ -4,6 +4,7 @@
  */
 
 #include <linux/clk.h>
+#include <linux/clk-provider.h>
 #include <linux/device.h>
 #include <linux/interconnect-clk.h>
 #include <linux/interconnect-provider.h>
@@ -24,7 +25,10 @@ struct icc_clk_provider {
 
 static int icc_clk_set(struct icc_node *src, struct icc_node *dst)
 {
+	unsigned long rate = icc_units_to_bps(src->peak_bw);
+	struct icc_provider *provider = src->provider;
 	struct icc_clk_node *qn = src->data;
+	struct icc_node *node;
 	int ret;
 
 	if (!qn || !qn->clk)
@@ -45,7 +49,16 @@ static int icc_clk_set(struct icc_node *src, struct icc_node *dst)
 		qn->enabled = true;
 	}
 
-	return clk_set_rate(qn->clk, icc_units_to_bps(src->peak_bw));
+	/* Aggregate maximum rate across all nodes sharing this clock */
+	list_for_each_entry(node, &provider->nodes, node_list) {
+		struct icc_clk_node *n = node->data;
+
+		if (n && n->clk &&
+		    !strcmp(__clk_get_name(n->clk), __clk_get_name(qn->clk)))
+			rate = max(rate, icc_units_to_bps(node->peak_bw));
+	}
+
+	return clk_set_rate(qn->clk, rate);
 }
 
 static int icc_clk_get_bw(struct icc_node *node, u32 *avg, u32 *peak)
@@ -82,12 +95,17 @@ struct icc_provider *icc_clk_register(struct device *dev,
 	struct icc_provider *provider;
 	struct icc_onecell_data *onecell;
 	struct icc_node *node;
-	int ret, i, j;
+	unsigned int max_id = 0;
+	int ret, i;
 
-	onecell = devm_kzalloc(dev, struct_size(onecell, nodes, 2 * num_clocks), GFP_KERNEL);
+	/* Find the highest node ID to size the xlate lookup table */
+	for (i = 0; i < num_clocks; i++)
+		max_id = max(max_id, max(data[i].master_id, data[i].slave_id));
+
+	onecell = devm_kzalloc(dev, struct_size(onecell, nodes, max_id + 1), GFP_KERNEL);
 	if (!onecell)
 		return ERR_PTR(-ENOMEM);
-	onecell->num_nodes = 2 * num_clocks;
+	onecell->num_nodes = max_id + 1;
 
 	qp = devm_kzalloc(dev, struct_size(qp, clocks, num_clocks), GFP_KERNEL);
 	if (!qp)
@@ -106,7 +124,7 @@ struct icc_provider *icc_clk_register(struct device *dev,
 
 	icc_provider_init(provider);
 
-	for (i = 0, j = 0; i < num_clocks; i++) {
+	for (i = 0; i < num_clocks; i++) {
 		qp->clocks[i].clk = data[i].clk;
 
 		node = icc_node_create(first_id + data[i].master_id);
@@ -118,9 +136,12 @@ struct icc_provider *icc_clk_register(struct device *dev,
 		node->name = devm_kasprintf(dev, GFP_KERNEL, "%s_master", data[i].name);
 		node->data = &qp->clocks[i];
 		icc_node_add(node, provider);
-		/* link to the next node, slave */
 		icc_link_create(node, first_id + data[i].slave_id);
-		onecell->nodes[j++] = node;
+		onecell->nodes[data[i].master_id] = node;
+
+		/* Slave node is shared across masters in N:1 topologies */
+		if (onecell->nodes[data[i].slave_id])
+			continue;
 
 		node = icc_node_create(first_id + data[i].slave_id);
 		if (IS_ERR(node)) {
@@ -129,9 +150,8 @@ struct icc_provider *icc_clk_register(struct device *dev,
 		}
 
 		node->name = devm_kasprintf(dev, GFP_KERNEL, "%s_slave", data[i].name);
-		/* no data for slave node */
 		icc_node_add(node, provider);
-		onecell->nodes[j++] = node;
+		onecell->nodes[data[i].slave_id] = node;
 	}
 
 	ret = icc_provider_register(provider);
