@@ -28,6 +28,30 @@
 			#clock-cells = <0>;
 		};
 
+		pcie30_phy0_pipe_clk: pcie30_phy0_pipe_clk {
+			compatible = "fixed-clock";
+			clock-frequency = <250000000>;
+			#clock-cells = <0>;
+		};
+
+		pcie30_phy1_pipe_clk: pcie30_phy1_pipe_clk {
+			compatible = "fixed-clock";
+			clock-frequency = <250000000>;
+			#clock-cells = <0>;
+		};
+
+		pcie30_phy2_pipe_clk: pcie30_phy2_pipe_clk {
+			compatible = "fixed-clock";
+			clock-frequency = <250000000>;
+			#clock-cells = <0>;
+		};
+
+		pcie30_phy3_pipe_clk: pcie30_phy3_pipe_clk {
+			compatible = "fixed-clock";
+			clock-frequency = <250000000>;
+			#clock-cells = <0>;
+		};
+
 		bias_pll_cc_clk: bias_pll_cc_clk {
 			compatible = "fixed-clock";
 			clock-frequency = <1200000000>;
@@ -54,6 +78,12 @@
 
 		sleep_clk: sleep-clk {
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
+		};
+
+		usb3phy_0_cc_pipe_clk: usb3phy_0_cc_pipe_clk {
+			compatible = "fixed-clock";
+			clock-frequency = <125000000>;
 			#clock-cells = <0>;
 		};
 
@@ -150,6 +180,14 @@
 		nvmem-cells = <&cpu_speed_bin>;
 		nvmem-cell-names = "speed_bin";
 
+
+		opp-799999000 {
+			opp-hz = /bits/ 64 <799999000>;
+			opp-microvolt = <1>;
+			opp-supported-hw = <0xf>;
+			clock-latency-ns = <200000>;
+		};
+
 		opp-936000000 {
 			opp-hz = /bits/ 64 <936000000>;
 			opp-microvolt = <1>;
@@ -181,28 +219,28 @@
 		opp-1488000000 {
 			opp-hz = /bits/ 64 <1488000000>;
 			opp-microvolt = <4>;
-			opp-supported-hw = <0x7>;
+			opp-supported-hw = <0x4>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1512000000 {
 			opp-hz = /bits/ 64 <1512000000>;
 			opp-microvolt = <4>;
-			opp-supported-hw = <0x7>;
+			opp-supported-hw = <0x4>;
 			clock-latency-ns = <200000>;
 		};
 
-/*		opp-1608000000 {
+		opp-1608000000 {
 			opp-hz = /bits/ 64 <1608000000>;
 			opp-microvolt = <4>;
-			opp-supported-hw = <0x0>;
+			opp-supported-hw = <0x3>;
 			clock-latency-ns = <200000>;
-		};*/
+		};
 
 		opp-1800000000 {
 			opp-hz = /bits/ 64 <1800000000>;
 			opp-microvolt = <5>;
-			opp-supported-hw = <0x5>;
+			opp-supported-hw = <0x3>;
 			clock-latency-ns = <200000>;
 		};
 
@@ -427,48 +465,175 @@
 
 		pcie0_phy: phy@84000 {
 			compatible = "qcom,ipq9574-qmp-gen3x1-pcie-phy";
-			reg = <0x00084000 0x1000>;
-
+			reg = <0x00084000 0x1bc>; /* Serdes PLL */
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 			clocks = <&gcc GCC_PCIE0_AUX_CLK>,
 				 <&gcc GCC_PCIE0_AHB_CLK>,
-				 <&gcc GCC_PCIE0_PIPE_CLK>;
-			clock-names = "aux", "cfg_ahb", "pipe";
+				 <&gcc GCC_ANOC_PCIE0_1LANE_M_CLK>,
+				 <&gcc GCC_SNOC_PCIE0_1LANE_S_CLK>;
+			clock-names = "aux", "cfg_ahb", "anoc_lane", "snoc_lane";
 
-			assigned-clocks = <&gcc GCC_PCIE0_AUX_CLK>;
-			assigned-clock-rates = <20000000>;
+			assigned-clocks = <&gcc GCC_PCIE0_AUX_CLK>,
+					  <&gcc GCC_PCIE0_AHB_CLK>,
+					  <&gcc GCC_ANOC_PCIE0_1LANE_M_CLK>,
+					  <&gcc GCC_SNOC_PCIE0_1LANE_S_CLK>;
+			assigned-clock-rates = <20000000>,
+					       <100000000>,
+					       <240000000>,
+					       <240000000>;
 
 			resets = <&gcc GCC_PCIE0_PHY_BCR>,
 				 <&gcc GCC_PCIE0PHY_PHY_BCR>;
 			reset-names = "phy", "common";
 
-			#clock-cells = <0>;
-			clock-output-names = "gcc_pcie0_pipe_clk_src";
-
-			#phy-cells = <0>;
 			status = "disabled";
+
+			pcie0_lane: phy@84200 {
+				reg = <0x00084200 0x16c>, /* Serdes Tx */
+				      <0x00084400 0x200>, /* Serdes Rx */
+				      <0x00084800 0x1f0>, /* PCS: Lane0, COM, PCIE */
+				      <0x00084c00 0xf4>;  /* pcs_misc */
+				#phy-cells = <0>;
+
+				clocks = <&gcc GCC_PCIE0_PIPE_CLK>;
+				clock-names = "pipe0";
+				clock-output-names = "gcc_pcie0_pipe_clk_src";
+				#clock-cells = <0>;
+			};
 		};
 
 		pcie2_phy: phy@8c000 {
 			compatible = "qcom,ipq9574-qmp-gen3x2-pcie-phy";
-			reg = <0x0008c000 0x2000>;
+			reg = <0x0008c000 0x1bc>; /* Serdes PLL */
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 
 			clocks = <&gcc GCC_PCIE2_AUX_CLK>,
 				 <&gcc GCC_PCIE2_AHB_CLK>,
-				 <&gcc GCC_PCIE2_PIPE_CLK>;
-			clock-names = "aux", "cfg_ahb", "pipe";
+				 <&gcc GCC_ANOC_PCIE2_2LANE_M_CLK>,
+				 <&gcc GCC_SNOC_PCIE2_2LANE_S_CLK>;
+			clock-names = "aux", "cfg_ahb", "anoc_lane", "snoc_lane";
 
-			assigned-clocks = <&gcc GCC_PCIE2_AUX_CLK>;
-			assigned-clock-rates = <20000000>;
+			assigned-clocks = <&gcc GCC_PCIE2_AUX_CLK>,
+					  <&gcc GCC_PCIE2_AHB_CLK>,
+					  <&gcc GCC_ANOC_PCIE2_2LANE_M_CLK>,
+					  <&gcc GCC_SNOC_PCIE2_2LANE_S_CLK>;
+			assigned-clock-rates = <20000000>,
+					       <100000000>,
+					       <342857143>,
+					       <240000000>;
 
 			resets = <&gcc GCC_PCIE2_PHY_BCR>,
 				 <&gcc GCC_PCIE2PHY_PHY_BCR>;
 			reset-names = "phy", "common";
 
-			#clock-cells = <0>;
-			clock-output-names = "gcc_pcie2_pipe_clk_src";
-
-			#phy-cells = <0>;
 			status = "disabled";
+
+			pcie2_lanes: phy@8c200 {
+				reg = <0x0008c200 0x16c>, /* Serdes Tx0 */
+				      <0x0008c400 0x200>, /* Serdes Rx0 */
+				      <0x0008d000 0x1f0>, /* PCS: Lane0, COM, PCIE */
+				      <0x0008c600 0x16c>, /* Serdes Tx1 */
+				      <0x0008c800 0x200>, /* Serdes Rx1 */
+				      <0x0008d400 0x0f8>; /* pcs_misc */
+
+				#phy-cells = <0>;
+
+				clocks = <&gcc GCC_PCIE2_PIPE_CLK>;
+				clock-names = "pipe0";
+				clock-output-names = "gcc_pcie2_pipe_clk_src";
+				#clock-cells = <0>;
+			};
+		};
+
+		pcie3_phy: phy@f4000 {
+			compatible = "qcom,ipq9574-qmp-gen3x2-pcie-phy";
+			reg = <0x000f4000 0x1bc>; /* Serdes PLL */
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			clocks = <&gcc GCC_PCIE3_AUX_CLK>,
+				 <&gcc GCC_PCIE3_AHB_CLK>,
+				 <&gcc GCC_ANOC_PCIE3_2LANE_M_CLK>,
+				 <&gcc GCC_SNOC_PCIE3_2LANE_S_CLK>;
+			clock-names = "aux", "cfg_ahb", "anoc_lane", "snoc_lane";
+
+			assigned-clocks = <&gcc GCC_PCIE3_AUX_CLK>,
+					  <&gcc GCC_PCIE3_AHB_CLK>,
+					  <&gcc GCC_ANOC_PCIE3_2LANE_M_CLK>,
+					  <&gcc GCC_SNOC_PCIE3_2LANE_S_CLK>;
+			assigned-clock-rates = <20000000>,
+					       <100000000>,
+					       <342857143>,
+					       <240000000>;
+
+			resets = <&gcc GCC_PCIE3_PHY_BCR>,
+				 <&gcc GCC_PCIE3PHY_PHY_BCR>;
+			reset-names = "phy", "common";
+
+			status = "disabled";
+
+			pcie3_lanes: phy@f4200 {
+				reg = <0x000f4200 0x16c>, /* Serdes Tx0 */
+				      <0x000f4400 0x200>, /* Serdes Rx0 */
+				      <0x000f5000 0x1f0>, /* PCS: Lane0, COM, PCIE */
+				      <0x000f4600 0x16c>, /* Serdes Tx1 */
+				      <0x000f4800 0x200>, /* Serdes Rx1 */
+				      <0x000f5400 0x0f8>; /* pcs_misc */
+
+				#phy-cells = <0>;
+
+				clocks = <&gcc GCC_PCIE3_PIPE_CLK>;
+				clock-names = "pipe0";
+				clock-output-names = "gcc_pcie3_pipe_clk_src";
+				#clock-cells = <0>;
+			};
+		};
+
+		pcie1_phy: phy@fc000 {
+			compatible = "qcom,ipq9574-qmp-gen3x1-pcie-phy";
+			reg = <0x000fc000 0x1bc>; /* Serdes PLL */
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			clocks = <&gcc GCC_PCIE1_AUX_CLK>,
+			 <&gcc GCC_PCIE1_AHB_CLK>,
+			 <&gcc GCC_ANOC_PCIE1_1LANE_M_CLK>,
+				 <&gcc GCC_SNOC_PCIE1_1LANE_S_CLK>;
+			clock-names = "aux", "cfg_ahb", "anoc_lane", "snoc_lane";
+
+			assigned-clocks = <&gcc GCC_PCIE1_AUX_CLK>,
+					  <&gcc GCC_PCIE1_AHB_CLK>,
+					  <&gcc GCC_ANOC_PCIE1_1LANE_M_CLK>,
+					  <&gcc GCC_SNOC_PCIE1_1LANE_S_CLK>;
+			assigned-clock-rates = <20000000>,
+					       <100000000>,
+					       <240000000>,
+					       <240000000>;
+
+			resets = <&gcc GCC_PCIE1_PHY_BCR>,
+				 <&gcc GCC_PCIE1PHY_PHY_BCR>;
+			reset-names = "phy", "common";
+
+			status = "disabled";
+
+			pcie1_lane: phy@fc200 {
+				reg = <0x000fc200 0x16c>, /* Serdes Tx */
+				      <0x000fc400 0x200>, /* Serdes Rx */
+				      <0x000fc800 0x1f0>, /* PCS: Lane0, COM, PCIE */
+				      <0x000fcc00 0xf4>;  /* pcs_misc */
+				#phy-cells = <0>;
+
+				clocks = <&gcc GCC_PCIE1_PIPE_CLK>;
+				clock-names = "pipe0";
+				clock-output-names = "gcc_pcie1_pipe_clk_src";
+				#clock-cells = <0>;
+			};
 		};
 
 		prng: prng@e3000 {
@@ -491,51 +656,6 @@
 			status = "disabled";
 		};
 
-		pcie3_phy: phy@f4000 {
-			compatible = "qcom,ipq9574-qmp-gen3x2-pcie-phy";
-			reg = <0x000f4000 0x2000>;
-
-			clocks = <&gcc GCC_PCIE3_AUX_CLK>,
-				 <&gcc GCC_PCIE3_AHB_CLK>,
-				 <&gcc GCC_PCIE3_PIPE_CLK>;
-			clock-names = "aux", "cfg_ahb", "pipe";
-
-			assigned-clocks = <&gcc GCC_PCIE3_AUX_CLK>;
-			assigned-clock-rates = <20000000>;
-
-			resets = <&gcc GCC_PCIE3_PHY_BCR>,
-				 <&gcc GCC_PCIE3PHY_PHY_BCR>;
-			reset-names = "phy", "common";
-
-			#clock-cells = <0>;
-			clock-output-names = "gcc_pcie3_pipe_clk_src";
-
-			#phy-cells = <0>;
-			status = "disabled";
-		};
-
-		pcie1_phy: phy@fc000 {
-			compatible = "qcom,ipq9574-qmp-gen3x1-pcie-phy";
-			reg = <0x000fc000 0x1000>;
-
-			clocks = <&gcc GCC_PCIE1_AUX_CLK>,
-				 <&gcc GCC_PCIE1_AHB_CLK>,
-				 <&gcc GCC_PCIE1_PIPE_CLK>;
-			clock-names = "aux", "cfg_ahb", "pipe";
-
-			assigned-clocks = <&gcc GCC_PCIE1_AUX_CLK>;
-			assigned-clock-rates = <20000000>;
-
-			resets = <&gcc GCC_PCIE1_PHY_BCR>,
-				 <&gcc GCC_PCIE1PHY_PHY_BCR>;
-			reset-names = "phy", "common";
-
-			#clock-cells = <0>;
-			clock-output-names = "gcc_pcie1_pipe_clk_src";
-
-			#phy-cells = <0>;
-			status = "disabled";
-		};
 
 /*		cmn_pll: clock-controller@9b000 {
 			compatible = "qcom,ipq9574-cmn-pll";
@@ -558,6 +678,26 @@
 			cpu_speed_bin: cpu-speed-bin@15 {
 				reg = <0x15 0x2>;
 				bits = <7 2>;
+			};
+
+			pcie0_disable: pcie0_disable@1c {
+				reg = <0x1c 0x1>;
+				bits = <2 1>;
+			};
+
+			pcie1_disable: pcie1_disable@1c {
+				reg = <0x1c 0x1>;
+				bits = <3 1>;
+			};
+
+			pcie2_disable: pcie2_disable@1c {
+				reg = <0x1c 0x1>;
+				bits = <4 1>;
+			};
+
+			pcie3_disable: pcie3_disable@1c {
+				reg = <0x1c 0x1>;
+				bits = <5 1>;
 			};
 		};
 
@@ -636,19 +776,15 @@
 			reg = <0x01800000 0x80000>;
 			clocks = <&xo_board_clk>,
 				 <&sleep_clk>,
-				 <0>,
-				 <&pcie0_phy>,
-				 <&pcie1_phy>,
-				 <&pcie2_phy>,
-				 <&pcie3_phy>,
-				 <0>;
+				 <&bias_pll_ubi_nc_clk>,
+				 <&pcie30_phy0_pipe_clk>,
+				 <&pcie30_phy1_pipe_clk>,
+				 <&pcie30_phy2_pipe_clk>,
+				 <&pcie30_phy3_pipe_clk>,
+				 <&usb3phy_0_cc_pipe_clk>;
 			#clock-cells = <1>;
 			#reset-cells = <1>;
 			#interconnect-cells = <1>;
-
-			interconnects = <&gcc MASTER_NSSNOC_NSSCC &gcc SLAVE_NSSNOC_NSSCC>,
-					<&gcc MASTER_NSSNOC_SNOC_0 &gcc SLAVE_NSSNOC_SNOC_0>,
-					<&gcc MASTER_NSSNOC_SNOC_1 &gcc SLAVE_NSSNOC_SNOC_1>;
 		};
 
 		tcsr_mutex: hwlock@1905000 {
@@ -1311,60 +1447,66 @@
 			};
 		};
 
-		pcie1: pcie@10000000 {
-			compatible = "qcom,pcie-ipq9574";
+		pcie1_x1: pci@10000000 {
+			compatible = "qti,pcie-ipq9574";
 			reg =  <0x10000000 0xf1d>,
-			       <0x10000f20 0xa8>,
+			       <0x10000F20 0xa8>,
 			       <0x10001000 0x1000>,
-			       <0x000f8000 0x4000>,
-			       <0x10100000 0x1000>;
-			reg-names = "dbi", "elbi", "atu", "parf", "config";
+			       <0x000F8000 0x4000>,
+			       <0x10100000 0x1000>,
+			       <0x00618108 0x4>;
+			reg-names = "dbi", "elbi", "atu", "parf", "config", "aggr_noc";
 			device_type = "pci";
 			linux,pci-domain = <1>;
 			bus-range = <0x00 0xff>;
 			num-lanes = <1>;
 			#address-cells = <3>;
 			#size-cells = <2>;
+			axi-halt-val = <0x1e>; /* increase halt window size to 1GB */
+			cal-status-offset = <0x2400000>;
 
-			ranges = <0x01000000 0x0 0x00000000 0x10200000 0x0 0x100000>,
-				 <0x02000000 0x0 0x10300000 0x10300000 0x0 0x7d00000>;
-
-			interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 27 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 28 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 29 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 30 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 32 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-names = "msi0",
-					  "msi1",
-					  "msi2",
-					  "msi3",
-					  "msi4",
-					  "msi5",
-					  "msi6",
-					  "msi7";
+			ranges = <0x81000000 0 0x10200000 0x10200000
+				  0 0x00100000   /* downstream I/O */
+				  0x82000000 0 0x10300000 0x10300000
+				  0 0x07d00000>; /* non-prefetchable memory */
 
 			#interrupt-cells = <1>;
 			interrupt-map-mask = <0 0 0 0x7>;
-			interrupt-map = <0 0 0 1 &intc 0 0 35 IRQ_TYPE_LEVEL_HIGH>,
-					<0 0 0 2 &intc 0 0 49 IRQ_TYPE_LEVEL_HIGH>,
-					<0 0 0 3 &intc 0 0 84 IRQ_TYPE_LEVEL_HIGH>,
-					<0 0 0 4 &intc 0 0 85 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-map = <0 0 0 1 &intc 0 0 35 IRQ_TYPE_LEVEL_HIGH>, /* int_a */
+					<0 0 0 2 &intc 0 0 49 IRQ_TYPE_LEVEL_HIGH>, /* int_b */
+					<0 0 0 3 &intc 0 0 84 IRQ_TYPE_LEVEL_HIGH>, /* int_c */
+					<0 0 0 4 &intc 0 0 85 IRQ_TYPE_LEVEL_HIGH>; /* int_d */
 
-			clocks = <&gcc GCC_PCIE1_AXI_M_CLK>,
+
+			interrupts = <GIC_SPI 25 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "global_irq";
+
+			/* clocks and clock-names are used to enable the clock in CBCR */
+			clocks = <&gcc GCC_PCIE1_AHB_CLK>,
+				 <&gcc GCC_PCIE1_AUX_CLK>,
+				 <&gcc GCC_PCIE1_AXI_M_CLK>,
 				 <&gcc GCC_PCIE1_AXI_S_CLK>,
 				 <&gcc GCC_PCIE1_AXI_S_BRIDGE_CLK>,
-				 <&gcc GCC_PCIE1_RCHNG_CLK>,
-				 <&gcc GCC_PCIE1_AHB_CLK>,
-				 <&gcc GCC_PCIE1_AUX_CLK>;
-			clock-names = "axi_m",
+				 <&gcc GCC_PCIE1_RCHNG_CLK>;
+			clock-names = "ahb",
+				      "aux",
+				      "axi_m",
 				      "axi_s",
 				      "axi_bridge",
-				      "rchng",
-				      "ahb",
-				      "aux";
+				      "rchng";
+
+			assigned-clocks = <&gcc GCC_PCIE1_AHB_CLK>,
+					  <&gcc GCC_PCIE1_AUX_CLK>,
+				    	  <&gcc GCC_PCIE1_AXI_M_CLK>,
+					  <&gcc GCC_PCIE1_AXI_S_CLK>,
+					  <&gcc GCC_PCIE1_AXI_S_BRIDGE_CLK>,
+					  <&gcc GCC_PCIE1_RCHNG_CLK>;
+			assigned-clock-rates = <100000000>,
+					       <20000000>,
+					       <240000000>,
+					       <240000000>,
+					       <240000000>,
+					       <100000000>;
 
 			resets = <&gcc GCC_PCIE1_PIPE_ARES>,
 				 <&gcc GCC_PCIE1_CORE_STICKY_ARES>,
@@ -1383,20 +1525,19 @@
 				      "aux",
 				      "ahb";
 
-			phys = <&pcie1_phy>;
+			phys = <&pcie1_lane>;
 			phy-names = "pciephy";
-			interconnects = <&gcc MASTER_ANOC_PCIE1 &gcc SLAVE_ANOC_PCIE1>,
-					<&gcc MASTER_SNOC_PCIE1 &gcc SLAVE_SNOC_PCIE1>;
-			interconnect-names = "pcie-mem", "cpu-pcie";
+			msi-parent = <&v2m0>;
+			nvmem-cells = <&pcie1_disable>;
 			status = "disabled";
 		};
 
-		pcie3: pcie@18000000 {
-			compatible = "qcom,pcie-ipq9574";
+		pcie3_x2: pci@18000000 {
+			compatible = "qti,pcie-ipq9574";
 			reg =  <0x18000000 0xf1d>,
-			       <0x18000f20 0xa8>,
+			       <0x18000F20 0xa8>,
 			       <0x18001000 0x1000>,
-			       <0x000f0000 0x4000>,
+			       <0x000F0000 0x4000>,
 			       <0x18100000 0x1000>;
 			reg-names = "dbi", "elbi", "atu", "parf", "config";
 			device_type = "pci";
@@ -1405,46 +1546,54 @@
 			num-lanes = <2>;
 			#address-cells = <3>;
 			#size-cells = <2>;
+			axi-halt-val = <0x1e>; /* increase halt window size to 1GB */
+			cal-status-offset = <0x2400000>;
 
-			ranges = <0x01000000 0x0 0x00000000 0x18200000 0x0 0x100000>,
-				 <0x02000000 0x0 0x18300000 0x18300000 0x0 0x7d00000>;
-
-			interrupts = <GIC_SPI 221 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 222 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 225 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 312 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 326 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 415 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 494 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 495 IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-names = "msi0",
-					  "msi1",
-					  "msi2",
-					  "msi3",
-					  "msi4",
-					  "msi5",
-					  "msi6",
-					  "msi7";
+			ranges = <0x81000000 0 0x18200000 0x18200000
+				  0 0x00100000   /* downstream I/O */
+				  0x82000000 0 0x18300000 0x18300000
+				  0 0x07d00000>; /* non-prefetchable memory */
 
 			#interrupt-cells = <1>;
 			interrupt-map-mask = <0 0 0 0x7>;
-			interrupt-map = <0 0 0 1 &intc 0 0 189 IRQ_TYPE_LEVEL_HIGH>,
-					<0 0 0 2 &intc 0 0 190 IRQ_TYPE_LEVEL_HIGH>,
-					<0 0 0 3 &intc 0 0 191 IRQ_TYPE_LEVEL_HIGH>,
-					<0 0 0 4 &intc 0 0 192 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-map = <0 0 0 1 &intc 0 0 189
+					 IRQ_TYPE_LEVEL_HIGH>, /* int_a */
+					<0 0 0 2 &intc 0 0 190
+					 IRQ_TYPE_LEVEL_HIGH>, /* int_b */
+					<0 0 0 3 &intc 0 0 191
+					 IRQ_TYPE_LEVEL_HIGH>, /* int_c */
+					<0 0 0 4 &intc 0 0 192
+					 IRQ_TYPE_LEVEL_HIGH>; /* int_d */
 
-			clocks = <&gcc GCC_PCIE3_AXI_M_CLK>,
+			interrupts = <GIC_SPI 188 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "global_irq";
+
+			/* clocks and clock-names are used to enable the clock in CBCR */
+			clocks = <&gcc GCC_PCIE3_AHB_CLK>,
+				 <&gcc GCC_PCIE3_AUX_CLK>,
+				 <&gcc GCC_PCIE3_AXI_M_CLK>,
 				 <&gcc GCC_PCIE3_AXI_S_CLK>,
 				 <&gcc GCC_PCIE3_AXI_S_BRIDGE_CLK>,
-				 <&gcc GCC_PCIE3_RCHNG_CLK>,
-				 <&gcc GCC_PCIE3_AHB_CLK>,
-				 <&gcc GCC_PCIE3_AUX_CLK>;
-			clock-names = "axi_m",
+				 <&gcc GCC_PCIE3_RCHNG_CLK>;
+			clock-names = "ahb",
+				      "aux",
+				      "axi_m",
 				      "axi_s",
 				      "axi_bridge",
-				      "rchng",
-				      "ahb",
-				      "aux";
+				      "rchng";
+
+			assigned-clocks = <&gcc GCC_PCIE3_AHB_CLK>,
+					  <&gcc GCC_PCIE3_AUX_CLK>,
+					  <&gcc GCC_PCIE3_AXI_M_CLK>,
+					  <&gcc GCC_PCIE3_AXI_S_CLK>,
+					  <&gcc GCC_PCIE3_AXI_S_BRIDGE_CLK>,
+					  <&gcc GCC_PCIE3_RCHNG_CLK>;
+			assigned-clock-rates = <100000000>,
+					       <20000000>,
+					       <342857143>,
+					       <240000000>,
+					       <240000000>,
+					       <100000000>;
 
 			resets = <&gcc GCC_PCIE3_PIPE_ARES>,
 				 <&gcc GCC_PCIE3_CORE_STICKY_ARES>,
@@ -1463,18 +1612,17 @@
 				      "aux",
 				      "ahb";
 
-			phys = <&pcie3_phy>;
+			phys = <&pcie3_lanes>;
 			phy-names = "pciephy";
-			interconnects = <&gcc MASTER_ANOC_PCIE3 &gcc SLAVE_ANOC_PCIE3>,
-					<&gcc MASTER_SNOC_PCIE3 &gcc SLAVE_SNOC_PCIE3>;
-			interconnect-names = "pcie-mem", "cpu-pcie";
+			msi-parent = <&v2m0>;
+			nvmem-cells = <&pcie3_disable>;
 			status = "disabled";
 		};
 
-		pcie2: pcie@20000000 {
-			compatible = "qcom,pcie-ipq9574";
+		pcie2_x2: pci@20000000 {
+			compatible = "qti,pcie-ipq9574";
 			reg =  <0x20000000 0xf1d>,
-			       <0x20000f20 0xa8>,
+			       <0x20000F20 0xa8>,
 			       <0x20001000 0x1000>,
 			       <0x00088000 0x4000>,
 			       <0x20100000 0x1000>;
@@ -1482,49 +1630,57 @@
 			device_type = "pci";
 			linux,pci-domain = <2>;
 			bus-range = <0x00 0xff>;
-			num-lanes = <2>;
+			num-lanes =<2>;
 			#address-cells = <3>;
 			#size-cells = <2>;
+			axi-halt-val = <0x1e>; /* increase halt window size to 1GB */
+			cal-status-offset = <0x2400000>;
 
-			ranges = <0x01000000 0x0 0x00000000 0x20200000 0x0 0x100000>,
-				 <0x02000000 0x0 0x20300000 0x20300000 0x0 0x7d00000>;
-
-			interrupts = <GIC_SPI 126 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 128 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 129 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 130 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 137 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 141 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 142 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 143 IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-names = "msi0",
-					  "msi1",
-					  "msi2",
-					  "msi3",
-					  "msi4",
-					  "msi5",
-					  "msi6",
-					  "msi7";
+			ranges = <0x81000000 0 0x20200000 0x20200000
+				  0 0x00100000   /* downstream I/O */
+				  0x82000000 0 0x20300000 0x20300000
+				  0 0x07d00000>; /* non-prefetchable memory */
 
 			#interrupt-cells = <1>;
 			interrupt-map-mask = <0 0 0 0x7>;
-			interrupt-map = <0 0 0 1 &intc 0 0 164 IRQ_TYPE_LEVEL_HIGH>,
-					<0 0 0 2 &intc 0 0 165 IRQ_TYPE_LEVEL_HIGH>,
-					<0 0 0 3 &intc 0 0 186 IRQ_TYPE_LEVEL_HIGH>,
-					<0 0 0 4 &intc 0 0 187 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-map = <0 0 0 1 &intc 0 0 164
+					 IRQ_TYPE_LEVEL_HIGH>, /* int_a */
+					<0 0 0 2 &intc 0 0 165
+					 IRQ_TYPE_LEVEL_HIGH>, /* int_b */
+					<0 0 0 3 &intc 0 0 186
+					 IRQ_TYPE_LEVEL_HIGH>, /* int_c */
+					<0 0 0 4 &intc 0 0 187
+					 IRQ_TYPE_LEVEL_HIGH>; /* int_d */
 
-			clocks = <&gcc GCC_PCIE2_AXI_M_CLK>,
+			interrupts = <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "global_irq";
+
+			/* clocks and clock-names are used to enable the clock in CBCR */
+			clocks = <&gcc GCC_PCIE2_AHB_CLK>,
+				 <&gcc GCC_PCIE2_AUX_CLK>,
+				 <&gcc GCC_PCIE2_AXI_M_CLK>,
 				 <&gcc GCC_PCIE2_AXI_S_CLK>,
 				 <&gcc GCC_PCIE2_AXI_S_BRIDGE_CLK>,
-				 <&gcc GCC_PCIE2_RCHNG_CLK>,
-				 <&gcc GCC_PCIE2_AHB_CLK>,
-				 <&gcc GCC_PCIE2_AUX_CLK>;
-			clock-names = "axi_m",
+				 <&gcc GCC_PCIE2_RCHNG_CLK>;
+			clock-names = "ahb",
+				      "aux",
+				      "axi_m",
 				      "axi_s",
 				      "axi_bridge",
-				      "rchng",
-				      "ahb",
-				      "aux";
+				      "rchng";
+
+			assigned-clocks = <&gcc GCC_PCIE2_AHB_CLK>,
+					  <&gcc GCC_PCIE2_AUX_CLK>,
+					  <&gcc GCC_PCIE2_AXI_M_CLK>,
+					  <&gcc GCC_PCIE2_AXI_S_CLK>,
+					  <&gcc GCC_PCIE2_AXI_S_BRIDGE_CLK>,
+					  <&gcc GCC_PCIE2_RCHNG_CLK>;
+			assigned-clock-rates = <100000000>,
+					       <20000000>,
+					       <342857143>,
+					       <240000000>,
+					       <240000000>,
+					       <100000000>;
 
 			resets = <&gcc GCC_PCIE2_PIPE_ARES>,
 				 <&gcc GCC_PCIE2_CORE_STICKY_ARES>,
@@ -1543,67 +1699,76 @@
 				      "aux",
 				      "ahb";
 
-			phys = <&pcie2_phy>;
+			phys = <&pcie2_lanes>;
 			phy-names = "pciephy";
-			interconnects = <&gcc MASTER_ANOC_PCIE2 &gcc SLAVE_ANOC_PCIE2>,
-					<&gcc MASTER_SNOC_PCIE2 &gcc SLAVE_SNOC_PCIE2>;
-			interconnect-names = "pcie-mem", "cpu-pcie";
+			msi-parent = <&v2m0>;
+			nvmem-cells = <&pcie2_disable>;
 			status = "disabled";
 		};
 
-		pcie0: pci@28000000 {
-			compatible = "qcom,pcie-ipq9574";
+		pcie0_x1: pci@28000000 {
+			compatible = "qti,pcie-ipq9574";
 			reg =  <0x28000000 0xf1d>,
-			       <0x28000f20 0xa8>,
+			       <0x28000F20 0xa8>,
 			       <0x28001000 0x1000>,
 			       <0x00080000 0x4000>,
-			       <0x28100000 0x1000>;
-			reg-names = "dbi", "elbi", "atu", "parf", "config";
+			       <0x28100000 0x1000>,
+			       <0x00618088 0x4>;
+			reg-names = "dbi", "elbi", "atu", "parf", "config", "aggr_noc";
 			device_type = "pci";
 			linux,pci-domain = <0>;
 			bus-range = <0x00 0xff>;
 			num-lanes = <1>;
 			#address-cells = <3>;
 			#size-cells = <2>;
+			axi-halt-val = <0x1e>; /* increase halt window size to 1GB */
+			cal-status-offset = <0x2400000>;
 
-			ranges = <0x01000000 0x0 0x00000000 0x28200000 0x0 0x100000>,
-				 <0x02000000 0x0 0x28300000 0x28300000 0x0 0x7d00000>;
-			interrupts = <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-names = "msi0",
-					  "msi1",
-					  "msi2",
-					  "msi3",
-					  "msi4",
-					  "msi5",
-					  "msi6",
-					  "msi7";
+			ranges = <0x81000000 0 0x28200000 0x28200000
+				  0 0x00100000   /* downstream I/O */
+				  0x82000000 0 0x28300000 0x28300000
+				  0 0x07d00000>; /* non-prefetchable memory */
 
 			#interrupt-cells = <1>;
 			interrupt-map-mask = <0 0 0 0x7>;
-			interrupt-map = <0 0 0 1 &intc 0 0 75 IRQ_TYPE_LEVEL_HIGH>,
-					<0 0 0 2 &intc 0 0 78 IRQ_TYPE_LEVEL_HIGH>,
-					<0 0 0 3 &intc 0 0 79 IRQ_TYPE_LEVEL_HIGH>,
-					<0 0 0 4 &intc 0 0 83 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-map = <0 0 0 1 &intc 0 0 75
+					 IRQ_TYPE_LEVEL_HIGH>, /* int_a */
+					<0 0 0 2 &intc 0 0 78
+					 IRQ_TYPE_LEVEL_HIGH>, /* int_b */
+					<0 0 0 3 &intc 0 0 79
+					 IRQ_TYPE_LEVEL_HIGH>, /* int_c */
+					<0 0 0 4 &intc 0 0 83
+					 IRQ_TYPE_LEVEL_HIGH>; /* int_d */
 
-			clocks = <&gcc GCC_PCIE0_AXI_M_CLK>,
+			interrupts = <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "global_irq";
+
+			/* clocks and clock-names are used to enable the clock in CBCR */
+			clocks = <&gcc GCC_PCIE0_AHB_CLK>,
+				 <&gcc GCC_PCIE0_AUX_CLK>,
+				 <&gcc GCC_PCIE0_AXI_M_CLK>,
 				 <&gcc GCC_PCIE0_AXI_S_CLK>,
 				 <&gcc GCC_PCIE0_AXI_S_BRIDGE_CLK>,
-				 <&gcc GCC_PCIE0_RCHNG_CLK>,
-				 <&gcc GCC_PCIE0_AHB_CLK>,
-				 <&gcc GCC_PCIE0_AUX_CLK>;
-			clock-names = "axi_m",
+				 <&gcc GCC_PCIE0_RCHNG_CLK>;
+			clock-names = "ahb",
+				      "aux",
+				      "axi_m",
 				      "axi_s",
 				      "axi_bridge",
-				      "rchng",
-				      "ahb",
-				      "aux";
+				      "rchng";
+
+			assigned-clocks = <&gcc GCC_PCIE0_AHB_CLK>,
+					  <&gcc GCC_PCIE0_AUX_CLK>,
+					  <&gcc GCC_PCIE0_AXI_M_CLK>,
+					  <&gcc GCC_PCIE0_AXI_S_CLK>,
+					  <&gcc GCC_PCIE0_AXI_S_BRIDGE_CLK>,
+					  <&gcc GCC_PCIE0_RCHNG_CLK>;
+			assigned-clock-rates = <100000000>,
+					       <20000000>,
+					       <240000000>,
+					       <240000000>,
+					       <240000000>,
+					       <100000000>;
 
 			resets = <&gcc GCC_PCIE0_PIPE_ARES>,
 				 <&gcc GCC_PCIE0_CORE_STICKY_ARES>,
@@ -1622,11 +1787,10 @@
 				      "aux",
 				      "ahb";
 
-			phys = <&pcie0_phy>;
+			phys = <&pcie0_lane>;
 			phy-names = "pciephy";
-			interconnects = <&gcc MASTER_ANOC_PCIE0 &gcc SLAVE_ANOC_PCIE0>,
-					<&gcc MASTER_SNOC_PCIE0 &gcc SLAVE_SNOC_PCIE0>;
-			interconnect-names = "pcie-mem", "cpu-pcie";
+			msi-parent = <&v2m0>;
+			nvmem-cells = <&pcie0_disable>;
 			status = "disabled";
 		};
 
@@ -1679,14 +1843,29 @@
 				 <&bias_pll_nss_noc_clk>,
 				 <&bias_pll_ubi_nc_clk>,
 				 <&gcc_gpll0_out_aux>,
-				 <&xo_board_clk>;
+				 <&xo_board_clk>,
+				 <&gcc GCC_NSSCC_CLK>,
+				 <&gcc GCC_NSSNOC_NSSCC_CLK>,
+				 <&gcc GCC_NSSNOC_SNOC_CLK>,
+				 <&gcc GCC_NSSNOC_SNOC_1_CLK>;
+
 			clock-names = "bias_pll_cc_clk",
 				      "bias_pll_nss_noc_clk",
 				      "bias_pll_ubi_nc_clk",
 				      "gcc_gpll0_out_aux",
-				      "xo";
+				      "xo",
+				      "bus",
+				      "nssnoc",
+				      "snoc",
+				      "snoc_1";
+
 			#clock-cells = <0x1>;
 			#reset-cells = <0x1>;
+
+			#interconnect-cells = <1>;
+			interconnects = <&gcc MASTER_NSSNOC_NSSCC &gcc SLAVE_NSSNOC_NSSCC>,
+					<&gcc MASTER_NSSNOC_SNOC_0 &gcc SLAVE_NSSNOC_SNOC_0>,
+					<&gcc MASTER_NSSNOC_SNOC_1 &gcc SLAVE_NSSNOC_SNOC_1>;
 		};
 
 

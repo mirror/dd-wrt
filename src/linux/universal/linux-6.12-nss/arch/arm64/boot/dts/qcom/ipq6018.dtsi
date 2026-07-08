@@ -107,6 +107,24 @@
 		};
 	};
 
+
+		/* Listed all supported CPU frequencies and opp-supported-hw
+		 * values to select CPU frequencies based on the limits fused.
+		 * ------------------------------------------------------------
+		 * Frequency     BIT2   BIT1    BIT0    opp-supported-hw
+		 *              1.2GHz 1.5GHz No Limit
+		 * ------------------------------------------------------------
+		 * 864000000	  1      1       1            0x7
+		 * 1056000000     1      1       1            0x7
+		 * 1200000000     1      0       0            0x4
+		 * 1320000000     0      1       1            0x3
+		 * 1440000000     0      1       1            0x3
+		 * 1488000000     0      1       0            0x2
+		 * 1608000000     0      0       1            0x1
+		 * 1800000000     0      0       1            0x1
+		 * ------------------------------------------------------------
+		 */
+
 	cpu_opp_table: opp-table-cpu {
 		compatible = "operating-points-v2-kryo-cpu";
 		nvmem-cells = <&cpu_speed_bin>;
@@ -115,56 +133,63 @@
 		opp-864000000 {
 			opp-hz = /bits/ 64 <864000000>;
 			opp-microvolt = <1>;
-			opp-supported-hw = <0xf>;
+			opp-supported-hw = <0x7>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1056000000 {
 			opp-hz = /bits/ 64 <1056000000>;
 			opp-microvolt = <2>;
-			opp-supported-hw = <0xf>;
+			opp-supported-hw = <0x7>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1200000000 {
 			opp-hz = /bits/ 64 <1200000000>;
 			opp-microvolt = <3>;
-			opp-supported-hw = <0xf>;
+			opp-supported-hw = <0x4>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1320000000 {
 			opp-hz = /bits/ 64 <1320000000>;
 			opp-microvolt = <3>;
-			opp-supported-hw = <0xf>;
+			opp-supported-hw = <0x3>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1440000000 {
 			opp-hz = /bits/ 64 <1440000000>;
 			opp-microvolt = <4>;
-			opp-supported-hw = <0xf>;
+			opp-supported-hw = <0x3>;
+			clock-latency-ns = <200000>;
+		};
+
+		opp-1488000000 {
+			opp-hz = /bits/ 64 <1488000000>;
+			opp-microvolt = <4>;
+			opp-supported-hw = <0x2>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1512000000 {
 			opp-hz = /bits/ 64 <1512000000>;
 			opp-microvolt = <5>;
-			opp-supported-hw = <0xf>;
+			opp-supported-hw = <0x2>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1608000000 {
 			opp-hz = /bits/ 64 <1608000000>;
 			opp-microvolt = <5>;
-			opp-supported-hw = <0xf>;
+			opp-supported-hw = <0x1>;
 			clock-latency-ns = <200000>;
 		};
 
 		opp-1800000000 {
 			opp-hz = /bits/ 64 <1800000000>;
 			opp-microvolt = <6>;
-			opp-supported-hw = <0xf>;
+			opp-supported-hw = <0x1>;
 			clock-latency-ns = <200000>;
 		};
 	};

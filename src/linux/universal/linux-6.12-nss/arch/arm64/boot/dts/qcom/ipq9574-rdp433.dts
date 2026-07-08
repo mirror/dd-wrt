@@ -20,7 +20,7 @@
 	status = "okay";
 };
 
-&pcie1 {
+&pcie1_x1 {
 	pinctrl-0 = <&pcie1_default>;
 	pinctrl-names = "default";
 
@@ -33,7 +33,7 @@
 	status = "okay";
 };
 
-&pcie2 {
+&pcie2_x2 {
 	pinctrl-0 = <&pcie2_default>;
 	pinctrl-names = "default";
 
@@ -46,7 +46,7 @@
 	status = "okay";
 };
 
-&pcie3 {
+&pcie3_x2 {
 	pinctrl-0 = <&pcie3_default>;
 	pinctrl-names = "default";
 

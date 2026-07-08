@@ -6,15 +6,10 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
-#include <dt-bindings/clock/qcom,qce2204-nsscc.h>
-#include <dt-bindings/reset/qcom,qce2204-nsscc.h>
 #include <dt-bindings/net/qcom-ipq-ess.h>
 #include "ipq9574.dtsi"
 //#include "ipq9574-ess.dtsi"
-
-#include <dt-bindings/clock/qcom,qca8k-nsscc.h>
 #include <dt-bindings/net/qcom,qca808x.h>
-#include <dt-bindings/reset/qcom,qca8k-nsscc.h>
 
 / {
 	model = "Xiaomi BE7000";
@@ -36,7 +31,7 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		bootargs-append = " pci=pcie_bus_perf mitigations=off root=/dev/ubiblock0_1";
+		bootargs-append = " pci=pcie_bus_perf mitigations=off clk_ignore_unused root=/dev/ubiblock0_1";
 /*		bootargs-append = " mitigations=off"; */
 	};
 
@@ -334,7 +329,7 @@
 //&qcn9224_pci2 {
 //	status = "okay";
 //};
-&pcie2 {
+&pcie2_x2 {
 	pinctrl-0 = <&pcie2_default>;
 	pinctrl-names = "default";
 
@@ -796,6 +791,31 @@
 			compatible = "qcom,ess-switch-ipq95xx";
 			switch_access_mode = "local bus";
 			reg = <0x3a000000 0x1000000>;
+
+			interconnects = <&nsscc MASTER_NSSNOC_PPE
+					 &nsscc SLAVE_NSSNOC_PPE>,
+					<&nsscc MASTER_NSSNOC_PPE_CFG
+					 &nsscc SLAVE_NSSNOC_PPE_CFG>,
+					<&gcc MASTER_NSSNOC_QOSGEN_REF
+					 &gcc SLAVE_NSSNOC_QOSGEN_REF>,
+					<&gcc MASTER_NSSNOC_TIMEOUT_REF
+					 &gcc SLAVE_NSSNOC_TIMEOUT_REF>,
+					<&gcc MASTER_MEM_NOC_NSSNOC
+					 &gcc SLAVE_MEM_NOC_NSSNOC>,
+					<&gcc MASTER_NSSNOC_MEMNOC
+					 &gcc SLAVE_NSSNOC_MEMNOC>,
+					<&gcc MASTER_NSSNOC_MEM_NOC_1
+					 &gcc SLAVE_NSSNOC_MEM_NOC_1>;
+			interconnect-names = "ppe",
+					     "ppe_cfg",
+					     "qos_gen",
+					     "timeout_ref",
+					     "nssnoc_memnoc",
+					     "memnoc_nssnoc",
+					     "memnoc_nssnoc_1";
+
+
+
 			clocks = <&gcc GCC_CMN_12GPLL_AHB_CLK>,
 				<&gcc GCC_CMN_12GPLL_SYS_CLK>,
 				<&gcc GCC_UNIPHY0_AHB_CLK>,
@@ -1818,6 +1838,8 @@
 			reg-names = "edma-reg-base";
 			resets = <&nsscc EDMA_HW_RESET>;
 			reset-names = "edma_rst";
+
+
 			clocks = <&nsscc NSS_CC_NSS_CSR_CLK>,
 				 <&nsscc NSS_CC_NSSNOC_NSS_CSR_CLK>,
 				 <&nsscc NSS_CC_IMEM_QSB_CLK>,
