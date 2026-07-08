@@ -1296,9 +1296,10 @@ void start_sysinit(void)
 		MAC_ADD(ethaddr);
 		if (nvram_match("5g_split", "1")) {
 			nvram_set("wlan0_hwaddr", ethaddr);
-			nvram_set("wlan1_hwaddr", ethaddr);
-			patch(ethaddr, 14);
 			MAC_ADD(ethaddr);
+			nvram_set("wlan1_hwaddr", ethaddr);
+			MAC_ADD(ethaddr);
+			patch(ethaddr, 14);
 			nvram_set("wlan2_hwaddr", ethaddr);
 		} else {
 			nvram_set("wlan0_hwaddr", ethaddr);
