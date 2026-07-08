@@ -118,8 +118,8 @@ static_assert(offsetof(struct mroute_addr, v6.port) == offsetof(struct mroute_ad
               "Unexpected struct packing of v6");
 static_assert(offsetof(struct mroute_addr, v4mappedv6.addr)
                   == offsetof(struct mroute_addr, v4mappedv6) + 12,
-              "Unexpected struct packing of v4mappedv6");
-*/
+              "Unexpected struct packing of v4mappedv6");*/
+
 /*
  * Number of bits in an address.  Should be raised for IPv6.
  */
