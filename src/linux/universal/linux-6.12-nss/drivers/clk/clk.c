@@ -1247,6 +1247,36 @@ void clk_disable(struct clk *clk)
 }
 EXPORT_SYMBOL_GPL(clk_disable);
 
+/**
+ * clk_force_disable - disable a clock directly without any checks
+ * @clk: clock source
+ *
+ * Disable a clock, that was enabled by a bootloader. This function
+ * bypasses all the clock framework checks and directly disables the
+ * clock by writing into the registers.
+ *
+ * This API should be used with caution and should be used only to disable
+ * a clock that was enabled by the bootloader and clock framework does not
+ * know that this clock is already in enabled state.
+ */
+void clk_force_disable(struct clk *clk)
+{
+	struct clk_core *core;
+
+	if (IS_ERR_OR_NULL(clk))
+		return;
+
+	core = clk->core;
+	if (!core)
+		return;
+
+	pr_debug("%s: Disabling: %s\n", __func__, core->name);
+
+	if (core->ops && core->ops->disable)
+		core->ops->disable(core->hw);
+}
+EXPORT_SYMBOL_GPL(clk_force_disable);
+
 static int clk_core_enable(struct clk_core *core)
 {
 	int ret = 0;
