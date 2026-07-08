@@ -1763,7 +1763,7 @@ void start_wifi_drivers(void)
 {
 	int notloaded = 0;
 	nvram_default_get("5g_split_old", nvram_safe_get("5g_split"));
-	if (!nvram_match("5g_split_old",nvram_safe_get("5g_split"))
+	if (!nvram_match("5g_split_old",nvram_safe_get("5g_split")))
 		sys_reboot();
 	
 	if (!nvram_match("force_old_nss", "1")) {
