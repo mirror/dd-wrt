@@ -375,7 +375,7 @@ int qcom_cc_probe_by_index(struct platform_device *pdev, int index,
 
 	base = devm_platform_ioremap_resource(pdev, index);
 	if (IS_ERR(base))
-		return PTR_ERR(base);
+		return -ENOMEM;
 
 	regmap = devm_regmap_init_mmio(&pdev->dev, base, desc->config);
 	if (IS_ERR(regmap))
@@ -386,4 +386,3 @@ int qcom_cc_probe_by_index(struct platform_device *pdev, int index,
 EXPORT_SYMBOL_GPL(qcom_cc_probe_by_index);
 
 MODULE_LICENSE("GPL v2");
-MODULE_DESCRIPTION("QTI Common Clock module");

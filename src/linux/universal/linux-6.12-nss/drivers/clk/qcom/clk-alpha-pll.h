@@ -77,10 +77,8 @@ struct pll_vco {
 /**
  * struct clk_alpha_pll - phase locked loop (PLL)
  * @offset: base address of registers
- * @regs: alpha pll register map (see @clk_alpha_pll_regs)
  * @vco_table: array of VCO settings
- * @num_vco: number of VCO settings in @vco_table
- * @flags: bitmask to indicate features supported by the hardware
+ * @regs: alpha pll register map (see @clk_alpha_pll_regs)
  * @clkr: regmap clock handle
  */
 struct clk_alpha_pll {
@@ -167,6 +165,8 @@ extern const struct clk_ops clk_alpha_pll_fabia_ops;
 extern const struct clk_ops clk_alpha_pll_fixed_fabia_ops;
 extern const struct clk_ops clk_alpha_pll_postdiv_fabia_ops;
 
+extern const struct clk_ops clk_alpha_pll_regera_ops;
+
 extern const struct clk_ops clk_alpha_pll_trion_ops;
 extern const struct clk_ops clk_alpha_pll_fixed_trion_ops;
 extern const struct clk_ops clk_alpha_pll_postdiv_trion_ops;
@@ -174,6 +174,7 @@ extern const struct clk_ops clk_alpha_pll_postdiv_trion_ops;
 extern const struct clk_ops clk_alpha_pll_lucid_ops;
 #define clk_alpha_pll_fixed_lucid_ops clk_alpha_pll_fixed_trion_ops
 extern const struct clk_ops clk_alpha_pll_postdiv_lucid_ops;
+extern const struct clk_ops clk_lucid_pll_passthrough_ops;
 extern const struct clk_ops clk_alpha_pll_agera_ops;
 
 extern const struct clk_ops clk_alpha_pll_lucid_5lpe_ops;
@@ -194,8 +195,6 @@ extern const struct clk_ops clk_alpha_pll_postdiv_lucid_evo_ops;
 
 extern const struct clk_ops clk_alpha_pll_rivian_evo_ops;
 #define clk_alpha_pll_postdiv_rivian_evo_ops clk_alpha_pll_postdiv_fabia_ops
-
-extern const struct clk_ops clk_alpha_pll_regera_ops;
 
 void clk_alpha_pll_configure(struct clk_alpha_pll *pll, struct regmap *regmap,
 			     const struct alpha_pll_config *config);

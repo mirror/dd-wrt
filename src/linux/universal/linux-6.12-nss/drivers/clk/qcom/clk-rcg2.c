@@ -146,7 +146,9 @@ static int clk_rcg2_set_parent(struct clk_hw *hw, u8 index)
 
 	if ((rcg->flags & CLK_RCG2_HW_CONTROLLED) &&
 	    !clk_hw_is_enabled(clk_hw_get_parent_by_index(hw, index)))
+
 		check_update_clear = false;
+
 	ret = regmap_update_bits(rcg->clkr.regmap, RCG_CFG_OFFSET(rcg),
 				 CFG_SRC_SEL_MASK, cfg);
 	if (ret)
@@ -372,13 +374,53 @@ __clk_rcg2_select_conf(struct clk_hw *hw, const struct freq_multi_tbl *f,
 	 * due to parent not found in every config.
 	 */
 	if (unlikely(!best_conf)) {
-		WARN(1, "%s: can't find a configuration for rate %lu\n",
-		     name, req_rate);
+		/* Only warn on the valid parent clock. */
+		if (parent_rate != 0) {
+			WARN(1, "%s: can't find a configuration for rate %lu\n",
+			     name, req_rate);
+		}
 		return ERR_PTR(-EINVAL);
 	}
 
 exit:
 	return best_conf;
+}
+
+/**
+ * __clk_rcg2_select_conf_no_reparent - select freq conf without changing parent
+ * @hw: RCG clock hw
+ * @f: frequency multi table entry for the requested rate
+ * @req_rate: requested rate
+ *
+ * When CLK_SET_RATE_NO_REPARENT is set, the parent clock must not change.
+ * Find a conf that uses the current parent clock instead of the best-rate
+ * parent. Falls back to normal conf selection if no conf exists for the
+ * current parent.
+ */
+static const struct freq_conf *
+__clk_rcg2_select_conf_no_reparent(struct clk_hw *hw,
+				   const struct freq_multi_tbl *f,
+				   unsigned long req_rate)
+{
+	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
+	const struct freq_conf *conf;
+	int cur_index;
+	u8 cur_src;
+	int i;
+
+	cur_index = clk_hw_get_parent_index(hw);
+	if (cur_index < 0)
+		goto fallback;
+
+	cur_src = rcg->parent_map[cur_index].src;
+
+	for (i = 0, conf = f->confs; i < f->num_confs; i++, conf++) {
+		if (conf->src == cur_src)
+			return conf;
+	}
+
+fallback:
+	return __clk_rcg2_select_conf(hw, f, req_rate);
 }
 
 static int _freq_tbl_fm_determine_rate(struct clk_hw *hw, const struct freq_multi_tbl *f,
@@ -394,14 +436,19 @@ static int _freq_tbl_fm_determine_rate(struct clk_hw *hw, const struct freq_mult
 	if (!f || !f->confs)
 		return -EINVAL;
 
-	conf = __clk_rcg2_select_conf(hw, f, rate);
+	clk_flags = clk_hw_get_flags(hw);
+
+	if (clk_flags & CLK_SET_RATE_NO_REPARENT)
+		conf = __clk_rcg2_select_conf_no_reparent(hw, f, rate);
+	else
+		conf = __clk_rcg2_select_conf(hw, f, rate);
+
 	if (IS_ERR(conf))
 		return PTR_ERR(conf);
 	index = qcom_find_src_index(hw, rcg->parent_map, conf->src);
 	if (index < 0)
 		return index;
 
-	clk_flags = clk_hw_get_flags(hw);
 	p = clk_hw_get_parent_by_index(hw, index);
 	if (!p)
 		return -EINVAL;
@@ -561,7 +608,11 @@ static int __clk_rcg2_fm_set_rate(struct clk_hw *hw, unsigned long rate)
 	if (!f || !f->confs)
 		return -EINVAL;
 
-	conf = __clk_rcg2_select_conf(hw, f, rate);
+	if (clk_hw_get_flags(hw) & CLK_SET_RATE_NO_REPARENT)
+		conf = __clk_rcg2_select_conf_no_reparent(hw, f, rate);
+	else
+		conf = __clk_rcg2_select_conf(hw, f, rate);
+
 	if (IS_ERR(conf))
 		return PTR_ERR(conf);
 
@@ -649,7 +700,7 @@ static int clk_rcg2_get_duty_cycle(struct clk_hw *hw, struct clk_duty *duty)
 static int clk_rcg2_set_duty_cycle(struct clk_hw *hw, struct clk_duty *duty)
 {
 	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
-	u32 notn_m, n, m, d, not2d, mask, cfg;
+	u32 notn_m, n, m, d, not2d, mask, duty_per, cfg;
 	int ret;
 
 	/* Duty-cycle cannot be modified for non-MND RCGs */
@@ -668,8 +719,10 @@ static int clk_rcg2_set_duty_cycle(struct clk_hw *hw, struct clk_duty *duty)
 
 	n = (~(notn_m) + m) & mask;
 
+	duty_per = (duty->num * 100) / duty->den;
+
 	/* Calculate 2d value */
-	d = DIV_ROUND_CLOSEST(n * duty->num * 2, duty->den);
+	d = DIV_ROUND_CLOSEST(n * duty_per * 2, 100);
 
 	/*
 	 * Check bit widths of 2d. If D is too big reduce duty cycle.
@@ -1146,7 +1199,6 @@ static int clk_gfx3d_determine_rate(struct clk_hw *hw,
 	if (req->max_rate < parent_req.max_rate)
 		parent_req.max_rate = req->max_rate;
 
-	parent_req.best_parent_hw = req->best_parent_hw;
 	ret = __clk_determine_rate(req->best_parent_hw, &parent_req);
 	if (ret)
 		return ret;
