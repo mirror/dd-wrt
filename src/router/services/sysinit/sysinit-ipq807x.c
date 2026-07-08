@@ -1130,6 +1130,8 @@ void start_sysinit(void)
 			maddr = tempaddr;
 			sprintf(maddr, "%02X:%02X:%02X:%02X:%02X:%02X", newmac2[0] & 0xff, newmac2[1] & 0xff, newmac2[2] & 0xff,
 				newmac2[3] & 0xff, newmac2[4] & 0xff, newmac2[5] & 0xff);
+			nvram_default_get("5g_split_old", "0");
+			nvram_default_get("5g_split", "0");
 
 			if (!nvram_match("5g_split", "1"))
 				fseek(fp, 0x65000, SEEK_SET);
@@ -1760,6 +1762,10 @@ static void load_ath11k_internal(int profile, int pci, int nss, int frame_mode, 
 void start_wifi_drivers(void)
 {
 	int notloaded = 0;
+	nvram_default_get("5g_split_old", nvram_safe_get("5g_split"));
+	if (!nvram_match("5g_split_old",nvram_safe_get("5g_split"))
+		sys_reboot();
+	
 	if (!nvram_match("force_old_nss", "1")) {
 		if (use_nss_11_4(0) && nvram_match("cur_nss", "12.5"))
 			sys_reboot();
