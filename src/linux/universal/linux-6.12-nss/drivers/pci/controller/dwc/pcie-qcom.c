@@ -118,7 +118,8 @@
 #define PHY_RX0_EQ(x)				FIELD_PREP(GENMASK(26, 24), x)
 
 /* PARF_SLV_ADDR_SPACE_SIZE register value */
-#define SLV_ADDR_SPACE_SZ			0x80000000
+#define SLV_ADDR_SPACE_SZ			0x10000000
+#define SLV_ADDR_SPACE_SZ_1_27_0		0x08000000
 
 /* PARF_MHI_CLOCK_RESET_CTRL register fields */
 #define AHB_CLK_EN				BIT(0)
@@ -247,6 +248,7 @@ struct qcom_pcie_ops {
 	void (*deinit)(struct qcom_pcie *pcie);
 	void (*ltssm_enable)(struct qcom_pcie *pcie);
 	int (*config_sid)(struct qcom_pcie *pcie);
+	void (*reset)(struct qcom_pcie *pcie);
 };
 
  /**
@@ -1137,6 +1139,21 @@ static int qcom_pcie_get_resources_2_9_0(struct qcom_pcie *pcie)
 	return 0;
 }
 
+static void qcom_pcie_reset_2_9_0(struct qcom_pcie *pcie)
+{
+	struct qcom_pcie_resources_2_9_0 *res = &pcie->res.v2_9_0;
+	struct device *dev = pcie->pci->dev;
+	int ret;
+
+	ret = clk_bulk_prepare_enable(res->num_clks, res->clks);
+	if (ret) {
+		dev_err(dev, "%s: Failed to enable clocks: %d\n", __func__, ret);
+		return;
+	}
+
+	clk_bulk_disable_unprepare(res->num_clks, res->clks);
+}
+
 static void qcom_pcie_deinit_2_9_0(struct qcom_pcie *pcie)
 {
 	struct qcom_pcie_resources_2_9_0 *res = &pcie->res.v2_9_0;
@@ -1173,7 +1190,7 @@ static int qcom_pcie_init_2_9_0(struct qcom_pcie *pcie)
 	return clk_bulk_prepare_enable(res->num_clks, res->clks);
 }
 
-static int qcom_pcie_post_init_2_9_0(struct qcom_pcie *pcie)
+static int qcom_pcie_post_init(struct qcom_pcie *pcie)
 {
 	struct dw_pcie *pci = pcie->pci;
 	u16 offset = dw_pcie_find_capability(pci, PCI_CAP_ID_EXP);
@@ -1275,6 +1292,22 @@ err_deinit:
 	return ret;
 }
 
+static int qcom_pcie_post_init_1_27_0(struct qcom_pcie *pcie)
+{
+	writel(SLV_ADDR_SPACE_SZ_1_27_0,
+	       pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
+
+	return qcom_pcie_post_init(pcie);
+}
+
+static int qcom_pcie_post_init_2_9_0(struct qcom_pcie *pcie)
+{
+	writel(SLV_ADDR_SPACE_SZ,
+	       pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
+
+	return qcom_pcie_post_init(pcie);
+}
+
 static void qcom_pcie_host_deinit(struct dw_pcie_rp *pp)
 {
 	struct dw_pcie *pci = to_dw_pcie_from_pp(pp);
@@ -1374,6 +1407,16 @@ static const struct qcom_pcie_ops ops_2_9_0 = {
 	.ltssm_enable = qcom_pcie_2_3_2_ltssm_enable,
 };
 
+/* Qcom IP rev.: 1.27.0  Synopsys IP rev.: 5.80a */
+static const struct qcom_pcie_ops ops_1_27_0 = {
+	.get_resources = qcom_pcie_get_resources_2_9_0,
+	.init = qcom_pcie_init_2_9_0,
+	.post_init = qcom_pcie_post_init_1_27_0,
+	.deinit = qcom_pcie_deinit_2_9_0,
+	.ltssm_enable = qcom_pcie_2_3_2_ltssm_enable,
+	.reset = qcom_pcie_reset_2_9_0,
+};
+
 static const struct qcom_pcie_cfg cfg_1_0_0 = {
 	.ops = &ops_1_0_0,
 };
@@ -1410,6 +1453,10 @@ static const struct qcom_pcie_cfg cfg_2_7_0 = {
 
 static const struct qcom_pcie_cfg cfg_2_9_0 = {
 	.ops = &ops_2_9_0,
+};
+
+static const struct qcom_pcie_cfg cfg_1_27_0 = {
+	.ops = &ops_1_27_0,
 };
 
 static const struct qcom_pcie_cfg cfg_sc8280xp = {
@@ -1582,6 +1629,7 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 	struct dw_pcie *pci;
 	int ret, irq;
 	char *name;
+	bool reset_before_init = false;
 
 	pcie_cfg = of_device_get_match_data(dev);
 	if (!pcie_cfg || !pcie_cfg->ops) {
@@ -1689,6 +1737,19 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 		goto err_pm_runtime_put;
 
 	pp->ops = &qcom_pcie_dw_ops;
+
+	/* reset_before_init is set if host and phy were initialized by
+	 * the bootloader and requires a reset before initialization here.
+	 * This is to avoid causing the clocks to go a bad state.
+	 */
+	if (reset_before_init && pcie->cfg->ops->reset) {
+		pcie->cfg->ops->reset(pcie);
+		ret = phy_reset(pcie->phy);
+		if (ret) {
+			dev_err(pci->dev, "Failed to reset phy: %d\n", ret);
+			goto err_pm_runtime_put;
+		}
+	}
 
 	ret = phy_init(pcie->phy);
 	if (ret)
@@ -1833,7 +1894,8 @@ static const struct of_device_id qcom_pcie_match[] = {
 	{ .compatible = "qcom,pcie-ipq8064-v2", .data = &cfg_2_1_0 },
 	{ .compatible = "qcom,pcie-ipq8074", .data = &cfg_2_3_3 },
 	{ .compatible = "qcom,pcie-ipq8074-gen3", .data = &cfg_2_9_0 },
-	{ .compatible = "qcom,pcie-ipq9574", .data = &cfg_2_9_0 },
+	{ .compatible = "qcom,pcie-ipq9574", .data = &cfg_1_27_0 },
+	{ .compatible = "qti,pcie-ipq9574", .data = &cfg_1_27_0 },
 	{ .compatible = "qcom,pcie-msm8996", .data = &cfg_2_3_2 },
 	{ .compatible = "qcom,pcie-qcs404", .data = &cfg_2_4_0 },
 	{ .compatible = "qcom,pcie-sa8540p", .data = &cfg_sc8280xp },
