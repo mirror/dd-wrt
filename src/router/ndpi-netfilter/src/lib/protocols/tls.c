@@ -129,7 +129,7 @@ static bool str_contains_digit(char *str) {
   u_int i = 0;
 
   for(i=0; (str[i] != '.') && (str[i] != '\0'); i++) {
-    if(isdigit(str[i]))
+    if(isdigit((unsigned char)str[i]))
       return(true);
   }
 
@@ -595,7 +595,7 @@ static void cleanupServerName(char *buffer, u_int buffer_len) {
 
   /* Now all lowecase */
   for(i=0; i<buffer_len; i++)
-    buffer[i] = tolower(buffer[i]);
+    buffer[i] = tolower((unsigned char)buffer[i]);
 }
 
 /* **************************************** */
