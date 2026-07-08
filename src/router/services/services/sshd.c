@@ -46,7 +46,7 @@
 	#include <services.h>
 
 	#define ED25519_HOST_KEY_FILE "/tmp/root/.ssh/ssh_host_ed25519_key"
-	#define ED25519_HOST_KEY_FILE_TMP "/tmp/root/.ssh/ssh_host_ed25519_key.tmp"
+	#define ED25519_HOST_KEY_FILE_TMP ED25519_HOST_KEY_FILE ".tmp"
 	#define ED25519_PUB_KEY_FILE "/tmp/root/.ssh/ssh_host_ed25519_key.pub"
 	#define TMP_HOST_KEY_FILE "/tmp/tmp_host_key"
 	#define AUTHORIZED_KEYS_FILE "/tmp/root/.ssh/authorized_keys"
