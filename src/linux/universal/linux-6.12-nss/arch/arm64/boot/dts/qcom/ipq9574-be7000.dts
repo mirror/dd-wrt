@@ -31,7 +31,8 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		bootargs-append = " pci=pcie_bus_perf mitigations=off clk_ignore_unused root=/dev/ubiblock0_1";
+//		bootargs-append = " pci=pcie_bus_perf mitigations=off clk_ignore_unused root=/dev/ubiblock0_1";
+		bootargs-append = " pci=pcie_bus_perf mitigations=off root=/dev/ubiblock0_1";
 /*		bootargs-append = " mitigations=off"; */
 	};
 
@@ -326,9 +327,10 @@
 	qcom,board_id = <0x20>;
 };
 
-//&qcn9224_pci2 {
-//	status = "okay";
-//};
+&qcn9224_pci2 {
+	status = "okay";
+};
+
 &pcie2_x2 {
 	pinctrl-0 = <&pcie2_default>;
 	pinctrl-names = "default";
@@ -347,7 +349,7 @@
 			reg = <0 0 0 0 0>;
 			qcom,board_id = <0x2>;
 /*			qcom,board_id = <0x1008>;*/
-//			hremote_node = <&qcn9224_pci2>;
+			hremote_node = <&qcn9224_pci2>;
 			qcom,num-radios = <1>;
 		};
 	};
