@@ -1292,7 +1292,6 @@ void start_sysinit(void)
 	}
 	switch (brand) {
 	case ROUTER_XIAOMI_BE7000:
-		disableportlearn();
 		MAC_ADD(ethaddr);
 		MAC_ADD(ethaddr);
 		nvram_set("wlan0_hwaddr", ethaddr);
@@ -1512,6 +1511,12 @@ void start_sysinit(void)
 		setscaling(1512000);
 		disableportlearn();
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
+		break;
+	case ROUTER_XIAOMI_BE7000:
+		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
+//		setscaling(1488000);
+//		setscaling(1512000);
+		disableportlearn();
 		break;
 	case ROUTER_GLINET_AX1800: // todo. check real cpu clock on device
 		setscaling(1512000);
@@ -1807,6 +1812,8 @@ void start_wifi_drivers(void)
 			load_ath12k_internal(profile, 0, 0, frame_mode, cert_region, 1);
 			wait_for_wifi(1);
 			load_ath11k_internal(profile, 0, 0, frame_mode, cert_region, 1);
+			wait_for_wifi(1);
+			writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		} break;
 		case ROUTER_8DEVICES_KIWI: {
 			insmod("qmi_helpers");
@@ -1890,13 +1897,17 @@ int check_pmon_nv(void)
 
 void sys_overclocking(void)
 {
+	int brand = getRouterBrand();
 	char *oclock = nvram_safe_get("overclocking");
 	if (*oclock) {
 		if (nvram_match("freq_fixed", "1")) {
 			writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "userspace");
 			writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", oclock);
 		} else {
-			writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
+			if (brand == ROUTER_XIAOMI_BE7000)
+				writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
+			else
+				writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
 			writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq", oclock);
 		}
 	}
