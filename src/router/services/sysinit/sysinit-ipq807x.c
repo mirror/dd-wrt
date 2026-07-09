@@ -883,6 +883,18 @@ static void disableportlearn(void)
 	eval("ssdk_sh", "stp", "portState", "set", "0", "7", "forward");
 	eval("ssdk_sh", "fdb", "learnCtrl", "set", "disable");
 	eval("ssdk_sh", "fdb", "entry", "flush", "1");
+	eval("ssdk_sh", "port", "flowctrl", "set", "1", "enable");
+	eval("ssdk_sh", "port", "flowctrl", "set", "2", "enable");
+	eval("ssdk_sh", "port", "flowctrl", "set", "3", "enable");
+	eval("ssdk_sh", "port", "flowctrl", "set", "4", "enable");
+	eval("ssdk_sh", "port", "flowctrl", "set", "5", "enable");
+	eval("ssdk_sh", "port", "flowctrl", "set", "6", "enable");
+	eval("ssdk_sh", "port", "autoneg", "restart", "1");
+	eval("ssdk_sh", "port", "autoneg", "restart", "2");
+	eval("ssdk_sh", "port", "autoneg", "restart", "3");
+	eval("ssdk_sh", "port", "autoneg", "restart", "4");
+	eval("ssdk_sh", "port", "autoneg", "restart", "5");
+	eval("ssdk_sh", "port", "autoneg", "restart", "6");
 }
 
 static void wait_for_eth(const char *eth)
@@ -1763,11 +1775,11 @@ void start_wifi_drivers(void)
 {
 	int notloaded = 0;
 	nvram_default_get("5g_split_old", nvram_safe_get("5g_split"));
-	if (!nvram_match("5g_split_old",nvram_safe_get("5g_split"))) {
+	if (!nvram_match("5g_split_old", nvram_safe_get("5g_split"))) {
 		nvram_set("5g_split_old", nvram_safe_get("5g_split"));
 		sys_reboot();
 	}
-	
+
 	if (!nvram_match("force_old_nss", "1")) {
 		if (use_nss_11_4(0) && nvram_match("cur_nss", "12.5"))
 			sys_reboot();
