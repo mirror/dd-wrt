@@ -26,7 +26,8 @@ curl: openssl zlib
 curl-clean:
 	$(MAKE) -C curl/build clean
 
-curl-configure: openssl zlib
+curl-configure: zlib
+	$(MAKE) -C openssl
 	$(MAKE) -C zlib clean
 	$(MAKE) -C zlib
 	$(MAKE) -C bearssl clean
