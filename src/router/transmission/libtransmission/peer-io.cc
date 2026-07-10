@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <functional>
 #include <type_traits> // std::underlying_type_t
+#include <utility> // std::move
 
 #ifdef _WIN32
 #include <ws2tcpip.h>
@@ -108,9 +109,15 @@ std::shared_ptr<tr_peerIo> tr_peerIo::create(
     io->flush_outbuf_trigger_->set_callback(
         [weak = io->weak_from_this()]
         {
+            // https://github.com/transmission/transmission/issues/7307
+            static auto constexpr MinPayloadSize = 128U;
+
             if (auto const ptr = weak.lock())
             {
-                ptr->try_write(SIZE_MAX);
+                if (ptr->outbuf_.size() >= MinPayloadSize)
+                {
+                    ptr->try_write(SIZE_MAX);
+                }
             }
         });
     tr_logAddTraceIo(io, fmt::format("bandwidth is {}; its parent is {}", fmt::ptr(&io->bandwidth()), fmt::ptr(parent)));
@@ -155,7 +162,7 @@ std::shared_ptr<tr_peerIo> tr_peerIo::new_outgoing(
         },
         [&]() -> tr_peer_socket
         {
-            if (auto sock = tr_net_open_peer_socket(session, socket_address, client_is_seed); sock != TR_BAD_SOCKET)
+            if (auto sock = tr_net_open_peer_socket(session, socket_address, client_is_seed); is_valid_socket(sock))
             {
                 return { session, socket_address, sock };
             }
@@ -243,7 +250,7 @@ bool tr_peerIo::reconnect()
     close();
 
     auto const s = tr_net_open_peer_socket(session_, socket_address(), client_is_seed());
-    if (s == TR_BAD_SOCKET)
+    if (!is_valid_socket(s))
     {
         return false;
     }

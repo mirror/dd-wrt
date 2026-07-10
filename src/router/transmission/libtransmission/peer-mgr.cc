@@ -2343,6 +2343,7 @@ void close_bad_peers(tr_swarm* s, time_t const now_sec, bad_peers_t& bad_peers_b
         tr_logAddTraceSwarm(peer->swarm, fmt::format("removing bad peer {}", peer->display_name()));
         close_peer(peer);
     }
+    bad_peers_buf.clear();
 }
 
 void enforceSwarmPeerLimit(tr_swarm* swarm, size_t max)
@@ -2457,12 +2458,15 @@ struct ComparePeerInfo
     }
 
     template<typename T>
+    // Suppress STL-instantiation noise from MSVC xutility noexcept(bool(...)).
+    // NOLINTBEGIN(readability-redundant-casting)
     [[nodiscard]] std::enable_if_t<std::is_same_v<std::decay_t<decltype(*std::declval<T>())>, tr_peer_info>, bool> operator()(
         T const& a,
         T const& b) const noexcept
     {
         return compare(*a, *b) < 0;
     }
+    // NOLINTEND(readability-redundant-casting)
 
     time_t const now_ = tr_time();
 };

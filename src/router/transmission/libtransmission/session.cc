@@ -413,7 +413,7 @@ tr_session::BoundSocket::BoundSocket(
     , socket_{ tr_netBindTCP(addr, port, false) }
     , ev_{ event_new(evbase, socket_, EV_READ | EV_PERSIST, &BoundSocket::onCanRead, this) }
 {
-    if (socket_ == TR_BAD_SOCKET)
+    if (!is_valid_socket(socket_))
     {
         return;
     }
@@ -429,7 +429,7 @@ tr_session::BoundSocket::~BoundSocket()
 {
     ev_.reset();
 
-    if (socket_ != TR_BAD_SOCKET)
+    if (is_valid_socket(socket_))
     {
         tr_net_close_socket(socket_);
         socket_ = TR_BAD_SOCKET;
@@ -474,6 +474,21 @@ tr_variant tr_sessionGetDefaultSettings()
     ret.merge(tr_rpc_server::Settings{}.save());
     ret.merge(tr_session_alt_speeds::Settings{}.save());
     ret.merge(tr_session::Settings{}.save());
+
+    // TODO(5.0.0): remove this if block
+    if (auto* const map = ret.get_if<tr_variant::Map>())
+    {
+        // N.B. Because `tr_session::Settings::load()` calls
+        // `tr_session::Settings::fixup_to_preferred_transports()`,
+        // the defaults of `preferred_transports` essentially
+        // just repeats `utp_enabled` + `tcp_enabled`.
+        //
+        // Erase `preferred_transports` from the defaults to avoid
+        // overwriting `utp_enabled` and `tcp_enabled` that is set
+        // by the user.
+        map->erase(TR_KEY_preferred_transports);
+    }
+
     return ret;
 }
 
@@ -722,7 +737,7 @@ void tr_session::on_save_timer()
         tor->save_resume_file();
     }
 
-    stats().save();
+    stats().save_if_dirty();
     torrent_queue().to_file();
 }
 

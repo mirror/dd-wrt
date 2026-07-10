@@ -176,7 +176,15 @@ namespace
 {
 int constexpr DeflateLevel = 6; // medium / default
 
-// ---
+// Prevent clickjacking on the browser-facing WebUI and RPC responses.
+// https://github.com/transmission/transmission/issues/8726
+// https://cheatsheetseries.owasp.org/cheatsheets/Clickjacking_Defense_Cheat_Sheet.html.
+void add_clickjacking_prevention_headers(struct evkeyvalq* headers)
+{
+    // Send X-Frame-Options for older browsers + CSP frame-ancestors for newer ones
+    evhttp_add_header(headers, "X-Frame-Options", "SAMEORIGIN");
+    evhttp_add_header(headers, "Content-Security-Policy", "frame-ancestors 'self'");
+}
 
 void send_simple_response(struct evhttp_request* req, int code, char const* text = nullptr)
 {
@@ -528,6 +536,7 @@ void handle_request(struct evhttp_request* req, void* arg)
 
     auto* const output_headers = evhttp_request_get_output_headers(req);
     evhttp_add_header(output_headers, "Server", MY_REALM);
+    add_clickjacking_prevention_headers(output_headers);
 
     if (server->is_anti_brute_force_enabled() && server->login_attempts_ >= server->settings().anti_brute_force_limit)
     {
@@ -547,17 +556,9 @@ void handle_request(struct evhttp_request* req, void* arg)
         return;
     }
 
-    evhttp_add_header(output_headers, "Access-Control-Allow-Origin", "*");
-
     auto const* const input_headers = evhttp_request_get_input_headers(req);
     if (auto const cmd = evhttp_request_get_command(req); cmd == EVHTTP_REQ_OPTIONS)
     {
-        if (char const* headers = evhttp_find_header(input_headers, "Access-Control-Request-Headers"); headers != nullptr)
-        {
-            evhttp_add_header(output_headers, "Access-Control-Allow-Headers", headers);
-        }
-
-        evhttp_add_header(output_headers, "Access-Control-Allow-Methods", "GET, POST, OPTIONS");
         send_simple_response(req, HTTP_OK);
         return;
     }
@@ -631,10 +632,6 @@ void handle_request(struct evhttp_request* req, void* arg)
             session_id);
         evhttp_add_header(output_headers, TR_RPC_SESSION_ID_HEADER, session_id.c_str());
         evhttp_add_header(output_headers, TR_RPC_RPC_VERSION_HEADER, std::data(TrRpcVersionSemver));
-        evhttp_add_header(
-            output_headers,
-            "Access-Control-Expose-Headers",
-            TR_RPC_SESSION_ID_HEADER ", " TR_RPC_RPC_VERSION_HEADER);
         send_simple_response(req, 409, body.c_str());
     }
 #endif
@@ -739,8 +736,8 @@ int tr_evhttp_bind_socket(struct evhttp* httpd, char const* address, ev_uint16_t
         return evhttp_bind_socket(httpd, address, port);
     }
 
-    int const fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-    if (fd == INVALID_SOCKET)
+    auto const fd = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    if (!is_valid_socket(fd))
     {
         freeaddrinfo(result);
         return evhttp_bind_socket(httpd, address, port);
@@ -1024,6 +1021,14 @@ void tr_rpc_server::load(Settings&& settings)
         if (this->is_password_enabled())
         {
             tr_logAddInfo(_("Password required"));
+        }
+        else if (!this->is_whitelist_enabled())
+        {
+            tr_logAddWarn(
+                "The RPC server has no password and its IP whitelist is disabled. "
+                "Anyone who can reach it has full control. "
+                "Consider enabling 'rpc_whitelist_enabled' or "
+                "setting 'rpc_authentication_required' and 'rpc_password'.");
         }
     }
 
