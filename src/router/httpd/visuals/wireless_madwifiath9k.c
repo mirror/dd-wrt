@@ -131,8 +131,7 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 				ht = 8;
 			if (ht == 9 && sgi)
 				ht = 0;
-			if (ht == 9
-			 && (vht || he || eht))
+			if (ht == 9 && (vht || he || eht))
 				ht = 0;
 			if (is_morse_micro(ifname)) {
 				strcpy(info, "AH");
@@ -179,7 +178,7 @@ int active_wireless_if_ath9k(webs_t wp, int argc, char_t **argv, char *ifname, i
 	#define S1G_TXRATE(wc) (bitrate_s1g(wc->vht_mcs, ht, sgi))
 	#define S1G_RXRATE(wc) (bitrate_s1g(wc->rx_vht_mcs, ht, sgi))
 				if (wc->noise == 0)
-				    wc->noise = -103;
+					wc->noise = -103;
 				websWrite(
 					wp,
 					"'%s','%s','%s','%s','%d.%dM','%d.%dM','%s','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%d','%s','%s'",
@@ -332,7 +331,8 @@ EJ_VISIBLE void ej_dump_channel_survey(webs_t wp, int argc, char_t **argv)
 	if (nvram_nmatch("n5-only", "%s_net_mode", interface) || nvram_nmatch("acn-mixed", "%s_net_mode", interface) ||
 	    nvram_nmatch("ac-only", "%s_net_mode", interface) || nvram_nmatch("na-only", "%s_net_mode", interface) ||
 	    nvram_nmatch("ax5-only", "%s_net_mode", interface) || nvram_nmatch("a-only", "%s_net_mode", interface) ||
-	    nvram_nmatch("be5-only", "%s_net_mode", interface) || nvram_nmatch("beax5-only", "%s_net_mode", interface) || nvram_nmatch("mixed5", "%s_net_mode", interface))
+	    nvram_nmatch("be5-only", "%s_net_mode", interface) || nvram_nmatch("beax5-only", "%s_net_mode", interface) ||
+	    nvram_nmatch("mixed5", "%s_net_mode", interface))
 		checkband = 5;
 	if (nvram_nmatch("ax6-only", "%s_net_mode", interface))
 		checkband = 6;

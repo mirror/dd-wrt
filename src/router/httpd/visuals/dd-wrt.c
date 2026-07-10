@@ -6063,8 +6063,8 @@ static int disable_if_be(const char *prefix)
 		return 1;
 	char *netmode = nvram_nget("%s_net_mode", prefix);
 	return !(!strcmp(netmode, "mixed") || !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") ||
-		!strcmp(netmode, "be6-only") || !strcmp(netmode, "beax6-only") || !strcmp(netmode, "beax5-only") ||
-		!strcmp(netmode, "mixed5"));
+		 !strcmp(netmode, "be6-only") || !strcmp(netmode, "beax6-only") || !strcmp(netmode, "beax5-only") ||
+		 !strcmp(netmode, "mixed5"));
 }
 
 static int wpaauth(const char *prefix)

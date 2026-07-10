@@ -59,58 +59,70 @@
 typedef struct sensormaps {
 	char *name;
 	char *map;
+	char *boardname;
 } SENSORMAPS;
 
 static SENSORMAPS maps[] = {
-	{ "gpio008", "sfp" },
-	{ "gpio_fan", "fan" },
-	{ "cpu0_thermal", "cpu0" },
-	{ "cpu1_thermal", "cpu1" },
-	{ "cpu2_thermal", "cpu2" },
-	{ "cpu3_thermal", "cpu3" },
-	{ "cluster_thermal", "cpu global" },
-	{ "lpass_thermal", "audio subsystem" },
-	{ "ddrss_thermal", "ddr subsystem" },
-	{ "cpu_thermal", "cpu" },
-	{ "ubi32_thermal", "nsscore" },
-	{ "nss0_thermal", "nsscore0" },
-	{ "nss1_thermal", "nsscore1" },
-	{ "wcss_phya0_thermal", "wireless subsystem phya0" },
-	{ "wcss_phya1_thermal", "wireless subsystem phya1" },
-	{ "wcss_phyb0_thermal", "wireless subsystem phyb0" },
-	{ "wcss_phyb1_thermal", "wireless subsystem phyb1" },
-	{ "nss_top_thermal", "nss system" },
-	{ "top_glue_thermal", "system" },
-	{ "gephy_thermal", "gbit eth phy" },
-	{ "Thermal Zone0", "main" },
-	{ "Thermal Zone1", NULL },
-	{ "Thermal Zone2", NULL },
-	{ "Thermal Zone3", NULL },
-	{ "Thermal Zone4", NULL },
-	{ "Thermal Zone5", NULL },
-	{ "Thermal Zone6", NULL },
-	{ "Thermal Zone7", "cpu0" },
-	{ "Thermal Zone8", "cpu1" },
-	{ "Thermal Zone9", "nss0" },
-	{ "Thermal Zone10", "nss1" },
-	{ "90000mdio100", "Aquantia Phy0" },
-	{ "90000mdio107", "Aquantia Phy1" },
-	{ "90000mdio108", "Aquantia Phy1" },
-#ifdef HAVE_IPQ90XX
-	{ "90000.mdio_1:01", "LAN1 (GPHY211C)" },
-	{ "90000.mdio_1:1c", "LAN2 (RTL8261BE)" },
-#endif
-	{ "TX_power", "TX Power" },
-	{ "RX_power", "RX Power" },
-	{ "bias", "Bias" },
-	{ "ath11k_hwmon", NULL }, // indicates that interface is disabled. so we dont show it
+	{ "gpio008", "sfp", NULL },
+	{ "gpio_fan", "fan", NULL },
+	{ "cpu0_thermal", "cpu0", NULL },
+	{ "cpu1_thermal", "cpu1", NULL },
+	{ "cpu2_thermal", "cpu2", NULL },
+	{ "cpu3_thermal", "cpu3", NULL },
+	{ "cluster_thermal", "cpu global", NULL },
+	{ "lpass_thermal", "audio subsystem", NULL },
+	{ "ddrss_thermal", "ddr subsystem", NULL },
+	{ "cpu_thermal", "cpu", NULL },
+	{ "ubi32_thermal", "nsscore", NULL },
+	{ "nss0_thermal", "nsscore0", NULL },
+	{ "nss1_thermal", "nsscore1", NULL },
+	{ "wcss_phya0_thermal", "wireless subsystem phya0", NULL },
+	{ "wcss_phya1_thermal", "wireless subsystem phya1", NULL },
+	{ "wcss_phyb0_thermal", "wireless subsystem phyb0", NULL },
+	{ "wcss_phyb1_thermal", "wireless subsystem phyb1", NULL },
+	{ "nss_top_thermal", "nss system", NULL },
+	{ "top_glue_thermal", "system", NULL },
+	{ "gephy_thermal", "gbit eth phy", NULL },
+	{ "Thermal Zone0", "main", NULL },
+	{ "Thermal Zone1", NULL, NULL },
+	{ "Thermal Zone2", NULL, NULL },
+	{ "Thermal Zone3", NULL, NULL },
+	{ "Thermal Zone4", NULL, NULL },
+	{ "Thermal Zone5", NULL, NULL },
+	{ "Thermal Zone6", NULL, NULL },
+	{ "Thermal Zone7", "cpu0", NULL },
+	{ "Thermal Zone8", "cpu1", NULL },
+	{ "Thermal Zone9", "nss0", NULL },
+	{ "Thermal Zone10", "nss1", NULL },
+	{ "90000mdio100", "Aquantia Phy0", NULL },
+	{ "90000mdio107", "Aquantia Phy1", NULL },
+	{ "90000mdio108", "Aquantia Phy1", NULL },
+	#ifdef HAVE_IPQ90XX
+	{ "90000.mdio_1:01", "LAN1 (GPHY211C)", NULL },
+	{ "90000.mdio_1:1c", "LAN2 (RTL8261BE)", NULL },
+	#endif
+	{ "TX_power", "TX Power", NULL },
+	{ "RX_power", "RX Power", NULL },
+	{ "bias", "Bias", NULL },
+	{ "ath11k_hwmon", NULL, NULL }, // indicates that interface is disabled. so we dont show it
+	{ "lm75b", "Chassis Temperature", NULL, "Edgecore ECS4125-10P" },
+	{ "adt7470", "Fan", NULL, "Edgecore ECS4125-10P" },
+	{ "realtek_mdio_0:04", "lan1", NULL, "Edgecore ECS4125-10P" },
+	{ "realtek_mdio_0:02", "lan2", NULL, "Edgecore ECS4125-10P" },
+	{ "realtek_mdio_0:06", "lan3", NULL, "Edgecore ECS4125-10P" },
+	{ "realtek_mdio_0:01", "lan4", NULL, "Edgecore ECS4125-10P" },
+	{ "realtek_mdio_1:04", "lan5", NULL, "Edgecore ECS4125-10P" },
+	{ "realtek_mdio_1:02", "lan6", NULL, "Edgecore ECS4125-10P" },
+	{ "realtek_mdio_1:06", "lan7", NULL, "Edgecore ECS4125-10P" },
+	{ "realtek_mdio_1:01", "lan8", NULL, "Edgecore ECS4125-10P" },
+
 };
 
 static const char *getmappedname(const char *name)
 {
 	int i;
 	for (i = 0; i < sizeof(maps) / sizeof(maps[0]); i++) {
-		if (!strcmp(maps[i].name, name))
+		if (!strcmp(maps[i].name, name) && (maps[i].boardname ? nvram_match(maps[i].boardname, nvram_safe_get("DD_BOARD") : 1)))
 			return maps[i].map;
 	}
 	return name;

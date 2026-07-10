@@ -359,7 +359,7 @@ EJ_VISIBLE void ej_show_filterif(webs_t wp, int argc, char_t **argv)
 	int i;
 	for (i = 1; i < argc; i++) {
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", argv[i],
-			   !strcmp(ifs, argv[i]) ? "selected=\"selected\"" : "", argv[i]);
+			  !strcmp(ifs, argv[i]) ? "selected=\"selected\"" : "", argv[i]);
 	}
 	char *wanface = safe_get_wan_face(wan_if_buffer);
 	websWrite(wp, "<option value=\"%s\" %s >LAN</option>\n", nvram_safe_get("lan_ifname"),
