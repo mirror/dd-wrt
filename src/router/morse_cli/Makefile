@@ -101,14 +101,8 @@ MORSECTRL_LDFLAGS := $(MORSECTRL_LDFLAGS_COMMON)
 WIN_LDFLAGS += -lws2_32
 
 #ifeq ($(CONFIG_MORSE_TRANS_NL80211),1)
-	ifeq ($(CFLAGS),)
-		LINUX_CFLAGS += -I${SYSROOT}/usr/include/libnl3
-	endif
-	ifeq ($(CONFIG_ANDROID),1)
-		LINUX_LDFLAGS += -lnl
-	else
-		LINUX_LDFLAGS += -lnl-3 -lnl-genl-3 -lpthread
-	endif
+	LINUX_CFLAGS += -I$(TOP)/libnl-tiny/include -I$(TOP)/shared
+	LINUX_LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 	LINUX_SRCS += transport/nl80211.c
 #endif
 	LINUX_CFLAGS += -D_GNU_SOURCE

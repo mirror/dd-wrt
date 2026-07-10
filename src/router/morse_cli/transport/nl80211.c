@@ -157,10 +157,10 @@ static int morsectrl_nl80211_ack_handler(struct nl_msg *msg, void *arg)
     {
         nl80211_state(transport)->wait_for_ack = false;
 
-        if (transport->debug) {
-            mctrl_print("nla_msg_dump\n");
-            nl_msg_dump(msg, stdout);
-        }
+//        if (transport->debug) {
+//            mctrl_print("nla_msg_dump\n");
+//            nl_msg_dump(msg, stdout);
+//        }
     }
 
     return NL_STOP;
@@ -190,11 +190,11 @@ static int morsectrl_nl80211_receive_handler(struct nl_msg *msg, void *arg)
 
     state = nl80211_state(transport);
 
-    if (transport->debug)
-    {
-        mctrl_print("nla_msg_dump\n");
-        nl_msg_dump(msg, stdout);
-    }
+//    if (transport->debug)
+//    {
+//        mctrl_print("nla_msg_dump\n");
+//        nl_msg_dump(msg, stdout);
+//    }
 
     attr = nla_find(genlmsg_attrdata(gnlh, 0),
                     genlmsg_attrlen(gnlh, 0),

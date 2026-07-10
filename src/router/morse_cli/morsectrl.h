@@ -76,7 +76,7 @@ struct MM_CLI_HANDLER_ALIGN command_handler
 #define __MM_CLI_HANDLER(\
     command, command_func, _is_intf_cmd, _direct_chip_supported_cmd, deprecated, custom_help) \
     int command##_init(struct morsectrl *mors, struct mm_argtable *mmargs); \
-    __attribute__((section("cli_handlers"))) MM_CLI_HANDLER_ALIGN \
+    __attribute__((used)) __attribute__((no_reorder)) __attribute__((section("cli_handlers"))) MM_CLI_HANDLER_ALIGN \
     struct command_handler command##_cli_handler = { \
         #command, \
         command##_init, \

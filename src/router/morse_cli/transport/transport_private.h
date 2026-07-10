@@ -105,7 +105,6 @@ struct morsectrl_transport
     bool debug;
 };
 
-
 #define REGISTER_TRANSPORT(_ops) \
     const struct morsectrl_transport_ops * const \
-    __attribute__((section("transport_ops_table"))) transport_##_ops = &(_ops)
+    __attribute__((used)) __attribute__((no_reorder)) __attribute__((section("transport_ops_table"))) transport_##_ops = &(_ops)
