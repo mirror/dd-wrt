@@ -70,6 +70,22 @@ static void check_fan(int brand)
 			}
 		}
 	}
+	if (nvram_match("DD_BOARD", "Edgecore ECS4125-10P")) {
+		int psu = 0;
+		FILE *tempfp;
+		tempfp = fopen("/sys/class/hwmon/hwmon9/temp1_input", "rb");
+		if (tempfp) {
+			fscanf(tempfp, "%d", &psu);
+			fclose(tempfp);
+			if (psu > 65000)
+			    psu = 65000; // clip at 65 celsius
+			if (psu > 50000) // min temp to turn fan on
+			    psu -= 50000;
+			else
+			    psu = 0;
+			sysprintf("/bin/echo %s > /sys/class/hwmon/hwmon8/pwm1", psu / 59);
+		}
+	}
 	if (nvram_match("DD_BOARD", "Zyxel XGS1250-12 B1")) {
 		int psu = 0;
 		FILE *tempfp;
