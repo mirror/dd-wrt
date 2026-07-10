@@ -2346,11 +2346,55 @@ static MICRO_MAP us_chans[] = {
 	{ 914000, 5530, 80, 70 },
 	{ 918000, 5610, 80, 70 },
 	{ 922000, 5775, 80, 70 },
-	{ 924000, 5855, 80, 70 },
+	{ 926000, 5855, 80, 70 },
 
 	//8 Mhz
 	{ 908000, 5250, 160, 71 },
 	{ 916000, 5570, 160, 71 },
+	{ 924000, 5815, 160, 71 },
+};
+
+
+static MICRO_MAP br_chans[] = {
+	//1 Mhz
+	{ 902500, 5660, 20, 68 },
+	{ 903500, 5680, 20, 68 },
+
+	{ 904500, 5180, 20, 68 },
+	{ 905500, 5200, 20, 68 },
+	{ 906500, 5220, 20, 68 },
+	{ 907500, 5240, 20, 68 },
+	{ 915500, 5560, 20, 68 },
+	{ 916500, 5580, 20, 68 },
+	{ 917500, 5600, 20, 68 },
+	{ 918500, 5620, 20, 68 },
+	{ 919500, 5640, 20, 68 },
+
+	{ 920500, 5745, 20, 68 },
+	{ 921500, 5765, 20, 68 },
+	{ 922500, 5785, 20, 68 },
+	{ 923500, 5805, 20, 68 },
+	{ 924500, 5825, 20, 68 },
+	{ 925500, 5845, 20, 68 },
+	{ 926500, 5865, 20, 68 },
+	{ 927500, 5885, 20, 68 },
+
+	//2 Mhz
+	{ 903000, 5670, 40, 69 },
+	{ 905000, 5190, 40, 69 },
+	{ 917000, 5590, 40, 69 },
+	{ 919000, 5630, 40, 69 },
+	{ 921000, 5755, 40, 69 },
+	{ 923000, 5795, 40, 69 },
+	{ 925000, 5835, 40, 69 },
+	{ 927000, 5875, 40, 69 },
+	//4 Mhz
+
+	{ 918000, 5610, 80, 70 },
+	{ 922000, 5775, 80, 70 },
+	{ 924000, 5855, 80, 70 },
+
+	//8 Mhz
 	{ 924000, 5815, 160, 71 },
 };
 
@@ -2512,7 +2556,7 @@ static MICRO_MAP ca_chans[] = {
 	{ 914000, 5530, 80, 70 },
 	{ 918000, 5610, 80, 70 },
 	{ 922000, 5775, 80, 70 },
-	{ 924000, 5855, 80, 70 },
+	{ 926000, 5855, 80, 70 },
 
 	//8 Mhz
 	{ 908000, 5250, 160, 71 },
@@ -2546,7 +2590,7 @@ static MICRO_MAP au_chans[] = {
 	// 4 MHz
 	{ 918000, 5610, 80, 70 },
 	{ 922000, 5775, 80, 70 },
-	{ 926000, 5240, 80, 70 },
+	{ 926000, 5855, 80, 70 },
 	// 8 Mhz
 	{ 924000, 5815, 160, 71 },
 };
@@ -2573,6 +2617,10 @@ int morse_opclass(int freq)
 		if (!strcmp(country, "EU")) {
 			map = eu_chans;
 			num = ARRAY_SIZE(eu_chans);
+		}
+		if (!strcmp(country, "BR")) {
+			map = br_chans;
+			num = ARRAY_SIZE(br_chans);
 		}
 		if (!strcmp(country, "CA")) {
 			map = ca_chans;
@@ -2627,6 +2675,10 @@ int morse_bwsupport(int bw)
 		if (!strcmp(country, "EU")) {
 			map = eu_chans;
 			num = ARRAY_SIZE(eu_chans);
+		}
+		if (!strcmp(country, "BR")) {
+			map = br_chans;
+			num = ARRAY_SIZE(br_chans);
 		}
 		if (!strcmp(country, "CA")) {
 			map = ca_chans;
@@ -2691,6 +2743,10 @@ int morse_translate(int freq)
 			map = eu_chans;
 			num = ARRAY_SIZE(eu_chans);
 		}
+		if (!strcmp(country, "BR")) {
+			map = br_chans;
+			num = ARRAY_SIZE(br_chans);
+		}
 		if (!strcmp(country, "CA")) {
 			map = ca_chans;
 			num = ARRAY_SIZE(ca_chans);
@@ -2745,6 +2801,10 @@ struct wifi_channels *mac80211_get_channels_simple(const char *interface, const 
 			if (!strcmp(region, "EU")) {
 				map = eu_chans;
 				num = ARRAY_SIZE(eu_chans);
+			}
+			if (!strcmp(region, "BR")) {
+				map = br_chans;
+				num = ARRAY_SIZE(br_chans);
 			}
 			if (!strcmp(region, "CA")) {
 				map = ca_chans;
