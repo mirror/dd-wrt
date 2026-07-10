@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Morse Micro
+ * Copyright 2022-2026 Morse Micro
  * SPDX-License-Identifier: GPL-2.0-or-later OR LicenseRef-MorseMicroCommercial
  */
 
@@ -7,7 +7,6 @@
 #include <inttypes.h>
 #include <string.h>
 #include "offchip_statistics.h"
-#include "command.h"
 
 
 /*
@@ -29,7 +28,7 @@ struct statistics_offchip_data *get_stats_offchip(const struct morsectrl *mors, 
 }
 
 
-int64_t get_signed_value_as_int64(const uint8_t *buf, uint32_t size)
+bool get_signed_value_as_int64(const uint8_t *buf, uint32_t size, int64_t *value)
 {
     int64_t n = 0;
     switch (size)
@@ -63,13 +62,14 @@ int64_t get_signed_value_as_int64(const uint8_t *buf, uint32_t size)
             break;
         }
         default:
-            mctrl_err("get_signed_value_as_int64 can't convert %d-byte quantity\n", size);
-            break;
+            return false;
     }
-    return n;
+
+    *value = n;
+    return true;
 }
 
-uint64_t get_unsigned_value_as_uint64(const uint8_t *buf, uint32_t size)
+bool get_unsigned_value_as_uint64(const uint8_t *buf, uint32_t size, uint64_t *value)
 {
     uint64_t n = 0;
     switch (size)
@@ -101,8 +101,9 @@ uint64_t get_unsigned_value_as_uint64(const uint8_t *buf, uint32_t size)
             break;
         }
         default:
-            mctrl_err("get_unsigned_value_as_uint64 can't convert %d-byte quantity\n", size);
-            break;
+            return false;
     }
-    return n;
+
+    *value = n;
+    return true;
 }

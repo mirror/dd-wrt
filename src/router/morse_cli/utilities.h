@@ -99,6 +99,26 @@ void mctrl_print(const char* format, ...);
 void mctrl_vprint(const char* format, va_list args);
 
 /**
+ * @brief Set file stream used by mctrl_print()
+ *
+ * Sets the file stream to use for mctrl_print() which is
+ * stdout by default.
+ *
+ * stdout itself can be passed as a parameter to restore default output
+ *
+ * @param outfile The open file stream
+ */
+void mctrl_print_set_stream(FILE *outfile);
+
+/**
+ * @brief Get file stream used by mctrl_print()
+ *
+ * Gets the file stream in use by mctrl_print() which is
+ * stdout by default.
+ */
+FILE *mctrl_print_get_stream(void);
+
+/**
  * @brief Print a message to stderr
  *
  * @param format The format of the message
@@ -113,6 +133,26 @@ void mctrl_err(const char* format, ...);
  * @param args Variadic argument list
  */
 void mctrl_verr(const char* format, va_list args);
+
+/**
+ * @brief Set file stream used by mctrl_err()
+ *
+ * Sets the file stream to use for mctrl_err() which is
+ * stderr by default.
+ *
+ * stderr itself can be passed as a parameter to restore default output
+ *
+ * @param outfile The open file stream
+ */
+void mctrl_err_set_stream(FILE *outfile);
+
+/**
+ * @brief Get file stream used by mctrl_err()
+ *
+ * Gets the file stream in use by mctrl_err() which is
+ * stderr by default.
+ */
+FILE *mctrl_err_get_stream(void);
 
 /**
  * @brief Convert str to ipv4_addr_t
@@ -356,10 +396,29 @@ size_t get_file_size(FILE *infile);
 /**
  * @brief Utility function to read a complete file into memory.
  *
+ * The output buffer is allocated from the heap and the caller is responsible
+ * for freeing it.
+ *
+ * On error *buf is set to NULL.
+ *
  * @param infile    File to read into memory.
- * @param buf       Pointer to memory buffer to write the file into.
+ * @param buf       Pointer to the output buffer containing the file
  */
 void load_file(FILE *infile, uint8_t **buf);
+
+/**
+ * @brief Utility function to read a complete file into memory and return its length.
+ *
+ * The output buffer is allocated from the heap and the caller is responsible
+ * for freeing it.
+ *
+ * On error *buf is set to NULL and *len is set to 0.
+ *
+ * @param infile    File to read into memory.
+ * @param buf       Pointer to the output buffer containing the file
+ * @param len       Pointer to the length of the loaded file
+ */
+void load_file_with_size(FILE *infile, uint8_t **buf, size_t *len);
 
 /**
  * @brief Sleep for the given value in ms.

@@ -144,6 +144,7 @@ int dhcpc(struct morsectrl *mors, int argc, char *argv[])
     else if (rsp_dhcp->retcode != MORSE_CMD_DHCP_RETCODE_SUCCESS)
     {
         print_error(le32toh(rsp_dhcp->retcode));
+        ret = rsp_dhcp->retcode;
         goto exit;
     }
     else

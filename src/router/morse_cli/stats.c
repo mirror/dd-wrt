@@ -1,23 +1,12 @@
 /*
- * Copyright 2020 Morse Micro
+ * Copyright 2020-2026 Morse Micro
  * SPDX-License-Identifier: GPL-2.0-or-later OR LicenseRef-MorseMicroCommercial
  */
 
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <inttypes.h>
-#ifndef MORSE_WIN_BUILD
-#include <regex.h>
-#endif
+#include <errno.h>
 
-#include "portable_endian.h"
+#include "stats_decode.h"
 #include "command.h"
-#include "elf_file.h"
-#include "offchip_statistics.h"
-#include "stats_format.h"
-#include "utilities.h"
 #include "transport/transport.h"
 #include "mm_argtable3.h"
 
@@ -35,6 +24,8 @@ static struct
     struct arg_lit *pprint_format;
     struct arg_str *filter_str;
     struct arg_str *firmware_path;
+    struct arg_str *statsdump_path;
+    struct arg_str *stats_decode_path;
 } args;
 
 /* Read and return a single word from a file.
@@ -52,18 +43,16 @@ static char *get_word_from_file(const char *path, char *word, size_t n)
     return NULL;
 }
 
-/* Get the firmware path from the driver debugfs file
- * ...using phy name from sysfs file
- * ...using wlan name from morsectrl struct
- * The append it to the firmware path.
+/* Get the firmware path from the driver sysfs file
  *
- * If any of these steps fail, nothing is written to the firmware path.
+ * If the file doesn't exist, attempt to find the file in its old location, in debugfs
  */
 static void get_override_firmware_path(struct morsectrl *mors, char *firmware_full_path, size_t n)
 {
     char path_buf[MAX_PATH];
     char content_buf[MAX_PATH];
-    const char *sysfs_path_fmt = "/sys/class/net/%s/phy80211/name";
+    const char *phy_name_path_fmt = "/sys/class/net/%s/phy80211/name";
+    const char *sysfs_path_fmt = "/sys/class/ieee80211/%s/device/firmware_path";
     const char *debugfs_path_fmt = "/sys/kernel/debug/ieee80211/%s/morse/firmware_path";
 #ifndef CONFIG_ANDROID
     const char *firmware_path_fmt = "/lib/firmware/%s";
@@ -73,147 +62,46 @@ static void get_override_firmware_path(struct morsectrl *mors, char *firmware_fu
 
     const char *interface_name;
     char *phy_name;
+    char phy_name_buf[64];
     char *firmware_path;
 
+    /* Get wlan interface name*/
     interface_name = morsectrl_transport_get_ifname(mors->transport);
     if (!interface_name)
     {
         interface_name = DEFAULT_INTERFACE_NAME;
     }
-    snprintf(path_buf, sizeof(path_buf), sysfs_path_fmt, interface_name);
 
-    phy_name = get_word_from_file(path_buf, content_buf, sizeof(content_buf));
-    if (phy_name)
-    {
+    /* Find phy interface name */
+    snprintf(path_buf, sizeof(path_buf), phy_name_path_fmt, interface_name);
+    phy_name = get_word_from_file(path_buf, phy_name_buf, sizeof(phy_name_buf));
+    if (!phy_name)
+        return;
+
+    /* Substitute phy name into format and find firmware_path in sysfs */
+    snprintf(path_buf, sizeof(path_buf), sysfs_path_fmt, phy_name);
+    firmware_path = get_word_from_file(path_buf, content_buf, sizeof(content_buf));
+
+    /* If the firmware_path doesn't exist in sysfs, attempt to find it in debugfs (old
+     * behaviour)
+     */
+    if (!firmware_path) {
+        /* Substitute phy name into format and find firmware_path in debugfs */
         snprintf(path_buf, sizeof(path_buf), debugfs_path_fmt, phy_name);
         firmware_path = get_word_from_file(path_buf, content_buf, sizeof(content_buf));
-        if (firmware_path)
-        {
-            snprintf(firmware_full_path, n, firmware_path_fmt, firmware_path);
-        }
-    }
-}
-
-static int load_offchip_statistics(struct morsectrl *mors, const char *filename)
-{
-    FILE *infile;
-#ifndef CONFIG_ANDROID
-    char firmware_path[MAX_PATH] = "/lib/firmware/morse/mm6108.bin";
-#else
-    char firmware_path[MAX_PATH] = "/vendor/firmware/morse/mm6108.bin";
-#endif
-
-    if (!filename)
-    {
-        filename = firmware_path;
-        get_override_firmware_path(mors, firmware_path, sizeof(firmware_path));
+        if (!firmware_path)
+            return;
     }
 
-    infile = fopen(filename, "rb");
-    if (infile)
-    {
-        uint8_t *buf = NULL;
-
-        load_file(infile, &buf);
-        if (buf)
-        {
-            morse_stats_load(&mors->stats, &mors->n_stats, buf);
-            free(buf);
-        }
-        fclose(infile);
-    }
-    else
-    {
-        mctrl_err("Error - could not open %s to read stats metadata\n", filename);
-        return -1;
-    }
-    return 0;
+    /* Copy full firmware path to output */
+    snprintf(firmware_full_path, n, firmware_path_fmt, firmware_path);
 }
 
 
-#ifndef MORSE_WIN_BUILD
-static regex_t *filter_re = NULL;
-
-static int filter_init(const char *filter_string)
-{
-    int ret = 0;
-
-#ifdef CONFIG_ANDROID
-    /* In android, regcomp returns an error "empty (sub)expression" as empty string is
-     * not considered as valid regex.
-     */
-    if (filter_string[0] == '\0')
-    filter_string = "\\(\\)";
-#endif
-
-    filter_re = malloc(sizeof(*filter_re));
-    ret = regcomp(filter_re, filter_string, 0);
-
-    if (ret)
-    {
-        size_t len = regerror(ret, filter_re, NULL, 0);
-        char *re_err_buf = malloc(len);
-        regerror(ret, filter_re, re_err_buf, len);
-        mctrl_err("Invalid filter string: %s\n", re_err_buf);
-        free(re_err_buf);
-        free(filter_re);
-        filter_re = NULL;
-    }
-
-    return ret;
-}
-
-static int filter_stat(const char *key)
-{
-    return regexec(filter_re, key, 0, NULL, 0);
-}
-
-static void filter_deinit(void)
-{
-    if (filter_re)
-    {
-        regfree(filter_re);
-        free(filter_re);
-    }
-    filter_re = NULL;
-}
-
-static const char *filter_help(void)
-{
-    return "uses a regular expression";
-}
-#else
-static const char *filter_str = NULL;
-
-static int filter_init(const char *filter_string)
-{
-    filter_str = filter_string;
-
-    return 0;
-}
-
-static int filter_stat(const char *key)
-{
-    return strcmp(key, filter_str);
-}
-
-static void filter_deinit(void)
-{
-    filter_str = NULL;
-}
-
-static const char *filter_help(void)
-{
-    return "case sensitive, match from start of key";
-}
-#endif
-
-int morsectrl_stats_cmd(struct morsectrl *mors, int cmd, int reset,
-                            const char *filter_string, enum format_type format_val)
+int morsectrl_stats_cmd(struct morsectrl *mors, int cmd, int reset, enum format_type format_val)
 {
     int ret = -1;
     int resp_sz;
-    const struct format_table *table;
     struct stats_response *resp;
     struct morsectrl_transport_buff *cmd_tbuff =
         morsectrl_transport_cmd_alloc(mors->transport, 0);
@@ -222,14 +110,6 @@ int morsectrl_stats_cmd(struct morsectrl *mors, int cmd, int reset,
 
     if (!cmd_tbuff || !rsp_tbuff)
         goto exit;
-
-    if (filter_string)
-    {
-        ret = filter_init(filter_string);
-
-        if (ret)
-            goto exit;
-    }
 
     resp = TBUFF_TO_RSP(rsp_tbuff, struct stats_response);
 
@@ -254,116 +134,49 @@ int morsectrl_stats_cmd(struct morsectrl *mors, int cmd, int reset,
 
     if (!reset && !ret)
     {
-        uint8_t *buf = (uint8_t *)resp->stats;
-
-        switch (format_val)
+        ret = statistics_data_decode(mors, format_val, (uint8_t *)resp->stats, (size_t) resp_sz);
+        if (ret)
         {
-            case FORMAT_REGULAR:
-            {
-                table = stats_format_regular_get_formatter_table();
-                break;
-            }
-            case FORMAT_JSON_PPRINT:
-            {
-                stats_format_json_set_pprint(true);
-                /* fall through */
-            }
-            case FORMAT_JSON:
-            {
-                table = stats_format_json_get_formatter_table();
-                break;
-            }
-            default:
-                ret = -1;
-                goto exit;
-        }
-
-        while (resp_sz > STATS_TLV_OVERHEAD )
-        {
-            stats_tlv_tag_t tag =  *((stats_tlv_tag_t *)buf);
-            buf += sizeof(stats_tlv_tag_t);
-
-            stats_tlv_len_t len =  le16toh(*((__force __le16 *)buf));
-            buf += sizeof(stats_tlv_len_t);
-
-            if ((len > resp_sz) || (len == 0))
-            {
-                mctrl_err("error: malformed TLV (tag %d/0x%x, len %u/0x%x, size %u)\n",
-                        tag, tag, len, len, resp_sz);
-                break;
-            }
-
-            struct statistics_offchip_data *offchip = get_stats_offchip(mors, tag);
-            if (offchip)
-            {
-                uint32_t format = le32toh((__force __le32)offchip->format);
-                if ((format == MORSE_STATS_FMT_DEC) &&
-                        !strncmp(offchip->type_str, "uint", 4))
-                {
-                    format = MORSE_STATS_FMT_U_DEC;
-                }
-
-                if (!filter_string || !filter_stat(offchip->key))
-                {
-                    if (format_val == FORMAT_JSON || format_val == FORMAT_JSON_PPRINT)
-                    {
-                        stats_format_json_init();
-                    }
-
-                    if (format > MORSE_STATS_FMT_LAST)
-                    {
-                        format = MORSE_STATS_FMT_LAST;
-                    }
-                    table->format_func[format]((const char *) offchip->key,
-                                                                (const uint8_t *)buf, len);
-                }
-            }
-            else
-            {
-                mctrl_err("UNKNOWN KEY for tag %d: ", tag);
-                hexdump(buf, len);
-                mctrl_err("\n");
-            }
-            buf += len;
-
-            resp_sz -= (STATS_TLV_OVERHEAD + len);
+            mctrl_err("%d decode errors\n", ret);
         }
     }
 exit:
-    filter_deinit();
     morsectrl_transport_buff_free(cmd_tbuff);
     morsectrl_transport_buff_free(rsp_tbuff);
     return ret;
 }
 
-static void dump_stats_types(struct morsectrl *mors)
-{
-    int ii;
-
-    mctrl_print("Stats types\n");
-    for (ii = 0; ii < mors->n_stats; ii++)
-    {
-        mctrl_print("Type: %s\n", mors->stats[ii].type_str);
-        mctrl_print("Name: %s\n", mors->stats[ii].name);
-        mctrl_print("Key: %s\n\n", mors->stats[ii].key);
-    }
-}
+#define ARGUMENTS_COMMON \
+     args.json_format = arg_lit0("j", "json", "Format the statistics as JSON"), \
+     args.pprint_format = arg_lit0("p", "pretty", "Format the statistics as human-readable JSON"), \
+     args.filter_str = arg_str0("f", "filter", "<filter>", stats_filter_help()), \
+     args.firmware_path = arg_str0("s", "firmware", "<firmware file>", \
+                  "Path to the firmware to use to decode the statistics"), \
+     args.statsdump_path = arg_str0("x", "statsdump", "<statistics file>", \
+                  "Read statistics from a file of hex strings"), \
+     args.stats_decode_path = arg_str0("o", "output", "<statistics decode output file>", \
+                  "Path to file where statistics decode should be written " \
+                  "(default is to console)")
 
 int stats_init(struct morsectrl *mors, struct mm_argtable *mm_args)
 {
-    MM_INIT_ARGTABLE(mm_args, "Read statistics from the chip",
-                     args.apps_core = arg_lit0("a", NULL, "read statistics from the Apps core"),
-                     args.mac_core = arg_lit0("m", NULL, "read statistics from the MAC core"),
-                     args.phy_core = arg_lit0("u", NULL, "read statistics from the PHY core"),
-                     args.reset = arg_lit0("r", NULL, "reset the statistics"),
-                     args.json_format = arg_lit0("j", "json", "Format the statistics in JSON"),
-                     args.pprint_format = arg_lit0("p", NULL,
-                         "Format the statistics in human-readable JSON"),
-                     args.filter_str = arg_str0("f", "filter", "<filter>", filter_help()),
-                     args.firmware_path =
-                         arg_str0("s", "firmware",
-                                  "<firmware>",
-                                  "Path to the firmware used to process the statistics"));
+    if (strcmp(morsectrl_transport_name(mors->transport), "offline") == 0)
+    {
+        MM_INIT_ARGTABLE(mm_args, "Decode statistics from file",
+                         ARGUMENTS_COMMON);
+        /* Force some stats decode options to be mandatory if not talking to a chip */
+        args.firmware_path->hdr.mincount = 1;
+        args.statsdump_path->hdr.mincount = 1;
+    }
+    else
+    {
+        MM_INIT_ARGTABLE(mm_args, "Read statistics from the chip",
+                         args.apps_core = arg_lit0("a", NULL, "read statistics from the Apps core"),
+                         args.mac_core  = arg_lit0("m", NULL, "read statistics from the MAC core"),
+                         args.phy_core  = arg_lit0("u", NULL, "read statistics from the PHY core"),
+                         args.reset     = arg_lit0("r", NULL, "reset the statistics"),
+                         ARGUMENTS_COMMON);
+    }
     return 0;
 }
 
@@ -371,76 +184,200 @@ int stats(struct morsectrl *mors, int argc, char *argv[])
 {
     int ret = 0;
     bool reset = false, app_c = false, mac_c = false, uph_c = false;
-    enum format_type format = FORMAT_REGULAR;
+    enum format_type format;
+    bool offline = false;
+    FILE *decode_output_file = NULL;
 
-    ret = load_offchip_statistics(mors, args.firmware_path->count >
-                                  0 ? args.firmware_path->sval[0] : NULL);
+#ifndef CONFIG_ANDROID
+    char firmware_default_path[MAX_PATH] = "/lib/firmware/morse/mm6108.bin";
+#else
+    char firmware_default_path[MAX_PATH] = "/vendor/firmware/morse/mm6108.bin";
+#endif
+    const char *statistics_definitions_path;
+
+    if (args.firmware_path->count == 0)
+    {
+        get_override_firmware_path(mors, firmware_default_path, sizeof(firmware_default_path));
+        statistics_definitions_path = firmware_default_path;
+    }
+    else
+    {
+        statistics_definitions_path = args.firmware_path->sval[0];
+    }
+
+    ret = load_offchip_statistics_definitions(mors, statistics_definitions_path);
 
     if (ret)
     {
+        if (args.firmware_path->count == 0)
+        {
+            mm_print_missing_argument(&args.firmware_path->hdr);
+        }
         goto exit_stats;
     }
 
     if (mors->debug)
-        dump_stats_types(mors);
-
-    app_c = (bool)(args.apps_core->count > 0);
-    mac_c = (bool)(args.mac_core->count > 0);
-    uph_c = (bool)(args.phy_core->count > 0);
-
-    /* If no core selected then enable all. */
-    if ((!app_c) && (!mac_c) && (!uph_c))
     {
-        app_c = true;
-        mac_c = true;
-        uph_c = true;
+        statistics_types_dump(mors);
     }
 
-    if (args.json_format->count > 0)
-        format = FORMAT_JSON;
-    else if (args.pprint_format->count > 0)
+    if (strcmp(morsectrl_transport_name(mors->transport), "offline") == 0)
+    {
+        offline = true;
+    }
+
+    if (!offline)
+    {
+        reset = !!(args.reset->count);
+        app_c = (bool)(args.apps_core->count > 0);
+        mac_c = (bool)(args.mac_core->count > 0);
+        uph_c = (bool)(args.phy_core->count > 0);
+
+        /* If no core selected then enable all. */
+        if ((!app_c) && (!mac_c) && (!uph_c))
+        {
+            app_c = true;
+            mac_c = true;
+            uph_c = true;
+        }
+    }
+
+    if (args.pprint_format->count > 0)
+    {
         format = FORMAT_JSON_PPRINT;
-
-    if (format == FORMAT_JSON)
-    {
-        mctrl_print("{");
     }
-    else if (format == FORMAT_JSON_PPRINT)
+    else if (args.json_format->count > 0)
     {
-        mctrl_print("{\n");
+        format = FORMAT_JSON;
     }
-
-    reset = !!(args.reset->count);
-
-    if (app_c)
+    else
     {
-        ret = morsectrl_stats_cmd(mors, MORSE_CMD_ID_HOST_STATS_LOG, reset,
-            args.filter_str->sval[0], format);
-        if (ret) goto exit_stats;
-    }
-    if (mac_c)
-    {
-        ret = morsectrl_stats_cmd(mors, MORSE_CMD_ID_MAC_STATS_LOG, reset,
-            args.filter_str->sval[0], format);
-        if (ret) goto exit_stats;
-    }
-    if (uph_c)
-    {
-        ret = morsectrl_stats_cmd(mors, MORSE_CMD_ID_UPHY_STATS_LOG, reset,
-            args.filter_str->sval[0], format);
-        if (ret) goto exit_stats;
+        format = FORMAT_REGULAR;
     }
 
-    if (format == FORMAT_JSON)
+    if (args.filter_str->count > 0)
     {
-        mctrl_print("}\n");
+        /* Initialise the filter */
+        ret = stats_filter_init(args.filter_str->sval[0]);
+
+        if (ret)
+        {
+            goto exit_stats;
+        }
     }
-    else if (format == FORMAT_JSON_PPRINT)
+
+    if (args.stats_decode_path->count > 0)
     {
-        mctrl_print("\n}\n");
+        /* Output to file */
+        decode_output_file = fopen(args.stats_decode_path->sval[0], "w");
+        if (decode_output_file != NULL)
+        {
+            mctrl_print("Output to '%s'\n", args.stats_decode_path->sval[0]);
+            mctrl_print_set_stream(decode_output_file);
+        }
+        else
+        {
+            mctrl_print("Failed to output to '%s': %s\n",
+                        args.stats_decode_path->sval[0], strerror(errno));
+            goto exit_stats;
+        }
     }
+
+    /* Start the stats output formatting */
+    stats_format_start(format);
+
+    if (!offline && (args.statsdump_path->count == 0))
+    {
+        if (app_c)
+        {
+            ret = morsectrl_stats_cmd(mors, MORSE_CMD_ID_HOST_STATS_LOG, reset, format);
+            if (ret) goto exit_stats;
+        }
+        if (mac_c)
+        {
+            ret = morsectrl_stats_cmd(mors, MORSE_CMD_ID_MAC_STATS_LOG, reset, format);
+            if (ret) goto exit_stats;
+        }
+        if (uph_c)
+        {
+            ret = morsectrl_stats_cmd(mors, MORSE_CMD_ID_UPHY_STATS_LOG, reset, format);
+            if (ret) goto exit_stats;
+        }
+    }
+    else
+    {
+        uint8_t *external_stats = NULL;
+        size_t external_stats_size = 0;
+
+        if (args.statsdump_path->count == 0)
+        {
+            mctrl_err("Offline mode requires a file containing a statistics dump.\n");
+            mm_print_missing_argument(&args.statsdump_path->hdr);
+            ret = -1;
+            goto exit_stats;
+        }
+
+        if (format == FORMAT_REGULAR)
+        {
+            mctrl_print("Decode '%s' using '%s'\n",
+                        args.statsdump_path->sval[0], statistics_definitions_path);
+        }
+
+        ret = load_offchip_statistics_data(args.statsdump_path->sval[0],
+                                  &external_stats, &external_stats_size);
+        if (ret == 0)
+        {
+            if (format == FORMAT_REGULAR)
+            {
+                mctrl_print("Decoding %zu bytes of statistics data\n",
+                    external_stats_size);
+            }
+
+            ret = statistics_data_decode(mors, format, external_stats, external_stats_size);
+        }
+        else
+        {
+            if (args.stats_decode_path->count > 0)
+            {
+                mctrl_err("Failed to decode '%s' - see '%s' for detail\n",
+                          args.statsdump_path->sval[0],
+                          args.stats_decode_path->sval[0]);
+            }
+        }
+
+        if (external_stats != NULL)
+        {
+            free(external_stats);
+        }
+    }
+
+    stats_format_finish(format);
 
 exit_stats:
+
+    if ((args.stats_decode_path->count > 0) && (decode_output_file != NULL))
+    {
+        /* Close the output file */
+        if (decode_output_file != NULL)
+        {
+            mctrl_print_set_stream(stdout);
+            fclose(decode_output_file);
+        }
+    }
+    else
+    {
+        /* Make a bit of space on the console following the output */
+        mctrl_print("\n");
+    }
+
+    /* Free the filter */
+    if (stats_filter_is_set())
+    {
+        stats_filter_deinit();
+    }
+
+    free_offchip_statistics_definitions(mors);
+
     return ret;
 }
 

@@ -1,7 +1,8 @@
 /*
- * Copyright 2022 Morse Micro
+ * Copyright 2022-2026 Morse Micro
  * SPDX-License-Identifier: GPL-2.0-or-later OR LicenseRef-MorseMicroCommercial
  *
+ * This file contains declarations related to formatting the decoded statistics output
  */
 
 #pragma once
@@ -80,7 +81,7 @@ struct __attribute__((packed)) txop_statistics {
 /**
  * RAW (Restricted Access Window) statistics
  */
-typedef struct PACKED {
+typedef struct __attribute__((packed)) {
     /** Currently only supporting up to 8 assignments */
     __le32 assignments[8];
     /** A counter of assignments that get truncated due to the next tbtt */
@@ -127,11 +128,11 @@ typedef struct
 } duty_cycle_stats_t;
 
 /** Histogram of how long each packet spent being handled inside the umac code. */
-typedef struct PACKED {
+typedef struct __attribute__((packed)) {
     __le32 buckets[9];
 } umac_latency_histogram_t;
 
-struct PACKED stats_response
+struct __attribute__((packed)) stats_response
 {
     /** The contents of the response */
     uint8_t stats[2048];
@@ -159,20 +160,26 @@ enum format_type
 };
 
 
-typedef void (*format_func_t)(const char *key, const uint8_t *buf, uint32_t len);
+typedef bool (*format_func_t)(const char *key, const uint8_t *buf, uint32_t len);
 
 struct format_table {
     format_func_t format_func[MORSE_STATS_FMT_LAST + 1];
 };
 
-/** Regular format function  */
-const struct format_table* stats_format_regular_get_formatter_table();
-void hexdump(const uint8_t *buf, uint32_t len);
+/** Start formatting output for the given format */
+void stats_format_start(enum format_type format);
 
-/** JSON format functions  */
-const struct format_table* stats_format_json_get_formatter_table();
-void stats_format_json_init();
-void stats_format_json_set_pprint(bool pprint);
+/** Output separator between output for the given format */
+void stats_format_separate(enum format_type format);
+
+/** Finish formatting output for the given format */
+void stats_format_finish(enum format_type format);
+
+/** Get item format function table  */
+const struct format_table* stats_format_get_formatter_table(enum format_type format);
+
+
+void hexdump(const uint8_t *buf, uint32_t len);
 
 /** Generic formatted print funtions */
 void stats_print_signed(const char *key, int64_t value, int indent_level);

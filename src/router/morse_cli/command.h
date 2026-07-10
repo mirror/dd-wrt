@@ -16,6 +16,7 @@
 #include "portable_endian.h"
 #include "morsectrl.h"
 #include "morse_commands.h"
+#include "transport/transport.h"
 
 /** The maximum size of a confirm packet. */
 #define MORSE_CMD_CFM_LEN 1584
@@ -47,9 +48,13 @@ struct PACKED response
 enum morse_cmd_return_code {
     MORSE_RET_SUCCESS     = 0,
     MORSE_RET_EPERM       = -1,
+    MORSE_RET_ENOENT      = -2,
     MORSE_RET_ENXIO       = -6,
     MORSE_RET_ENOMEM      = -12,
+    MORSE_RET_EBUSY       = -16,
     MORSE_RET_EINVAL      = -22,
+    MORSE_RET_ENOSYS      = -38,
+    MORSE_RET_ENOBUFS     = -105,
     MORSE_RET_SET_INVALID_CHAN_CONFIG = -(0x7FF3)
 };
 

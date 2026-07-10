@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Morse Micro
+ * Copyright 2022-2026 Morse Micro
  * SPDX-License-Identifier: GPL-2.0-or-later OR LicenseRef-MorseMicroCommercial
  */
 
@@ -13,74 +13,173 @@
 #include <stdarg.h>
 
 #include "portable_endian.h"
-#include "command.h"
 #include "offchip_statistics.h"
 #include "stats_format.h"
+#include "stats_format_json.h"
 #include "utilities.h"
 
 #define SPACES_PER_INDENT 4
 #define INDENT_FIRST_LEVEL 1
 
 static int indent_level;
-static bool pretty;
+static enum format_type format_json = FORMAT_JSON;
+static bool format_first_stat = true;
+
+
+void stats_format_start_json(enum format_type format)
+{
+    if (format == FORMAT_JSON)
+    {
+        mctrl_print("{");
+    }
+    else if (format == FORMAT_JSON_PPRINT)
+    {
+        mctrl_print("{\n");
+        indent_level = INDENT_FIRST_LEVEL;
+    }
+
+    format_first_stat = true;
+    format_json = format;
+}
+
+
+void stats_format_separate_json(enum format_type format)
+{
+    if (format_first_stat)
+    {
+        format_first_stat = false;
+        return;
+    }
+
+    if (format == FORMAT_JSON_PPRINT)
+    {
+        if (indent_level < INDENT_FIRST_LEVEL)
+        {
+            /* This warns against programmer errors */
+            mctrl_err("Indent level %d: reset to %d\n",
+                      indent_level, INDENT_FIRST_LEVEL);
+        }
+        mctrl_print(",\n");
+    }
+    else
+    {
+        mctrl_print(",");
+    }
+}
+
+
+void stats_format_finish_json(enum format_type format)
+{
+    if (format == FORMAT_JSON)
+    {
+        mctrl_print("}");
+    }
+    else if (format == FORMAT_JSON_PPRINT)
+    {
+        mctrl_print("\n}");
+    }
+    format_first_stat = true;
+}
+
 
 /** Print wrapper function to prepend additional indentation*/
 static void printf_indent(char* format, ...)
 {
-    if (pretty)
+    if (format_json == FORMAT_JSON_PPRINT)
     {
         mctrl_print("%*s", indent_level * SPACES_PER_INDENT, "");
     }
 
     va_list args;
     va_start(args, format);
-    vprintf(format, args);
+    mctrl_vprint(format, args);
     va_end(args);
 };
 
 
+static bool print_default(const char *key, const uint8_t *buf, uint32_t len)
+{
+    printf_indent("\"%s\": ", key);
+    mctrl_print("\"");
+    for (int i = 0; i < len; i++)
+    {
+        mctrl_print("%s%02X", (i > 0) ? " " : "", buf[i]);
+    }
+    mctrl_print("\"");
+    return true;
+}
+
+
 /** JSON formatting functions for morsectrl statistics */
-static void print_dec(const char *key, const uint8_t *buf, uint32_t len)
+static bool print_dec(const char *key, const uint8_t *buf, uint32_t len)
 {
-    int64_t n = get_signed_value_as_int64(buf, len);
-    printf_indent("\"%s\": %lld", key, n);
+    int64_t n = 0;
+
+    bool result = get_signed_value_as_int64(buf, len, &n);
+    if (result)
+    {
+        printf_indent("\"%s\": %lld", key, n);
+    }
+    else
+    {
+        mctrl_err("%s: can't convert %d-byte quantity\n", key, len);
+        print_default(key, buf, len);
+    }
+
+    return result;
 }
 
 
-static void print_udec(const char *key, const uint8_t *buf, uint32_t len)
+static bool print_udec(const char *key, const uint8_t *buf, uint32_t len)
 {
-    uint64_t n = get_unsigned_value_as_uint64(buf, len);
-    printf_indent("\"%s\": %llu", key, n);
+    uint64_t n = 0;
+
+    bool result = get_unsigned_value_as_uint64(buf, len, &n);
+    if (result)
+    {
+        printf_indent("\"%s\": %llu", key, n);
+    }
+    else
+    {
+        mctrl_err("%s: can't convert %d-byte quantity\n", key, len);
+        print_default(key, buf, len);
+    }
+
+    return result;
 }
 
 
-static void print_ampdu_aggregates(const char *key, const uint8_t *buf, uint32_t len)
+static bool print_ampdu_aggregates(const char *key, const uint8_t *buf, uint32_t len)
 {
     ampdu_count_t *count = (ampdu_count_t *)buf;
     printf_indent("\"%s\": ", key);
     mctrl_print("\"");
     for (int i = 0; i < MORSE_ARRAY_SIZE(count->count); i++)
     {
-        mctrl_print("%d ", count->count[i]);
+        mctrl_print("%s%d", (i > 0) ? " ": "", count->count[i]);
     }
     mctrl_print("\"");
+
+    return true;
 }
 
 
-static void print_ampdu_bitmap(const char *key, const uint8_t *buf, uint32_t len)
+static bool print_ampdu_bitmap(const char *key, const uint8_t *buf, uint32_t len)
 {
     ampdu_bitmap_t *bitmap = (ampdu_bitmap_t *)buf;
     printf_indent("\"%s\": ", key);
     mctrl_print("\"");
     for (int i = 0; i < MORSE_ARRAY_SIZE(bitmap->bitmap); i++)
     {
-        mctrl_print("%u ", bitmap->bitmap[i]);
+        mctrl_print("%s%u", (i > 0) ? " ": "", bitmap->bitmap[i]);
     }
     mctrl_print("\"");
+
+    return true;
 }
 
 
-static void print_txop(const char *key, const uint8_t *buf, uint32_t len)
+static bool print_txop(const char *key, const uint8_t *buf, uint32_t len)
 {
     struct txop_statistics *txop_stats = (struct txop_statistics *)buf;
     uint32_t duration_avg = 0, packets_avg = 0;
@@ -94,7 +193,7 @@ static void print_txop(const char *key, const uint8_t *buf, uint32_t len)
         packets_avg = (uint32_t)(pkts / count);
         duration_avg = (uint32_t)(duration / count);
     }
-    char* terminator = pretty ? "\n" : "";
+    char* terminator = (format_json == FORMAT_JSON_PPRINT) ? "\n" : "";
 
     printf_indent("\"%s\": ", key);
     mctrl_print("%s", terminator);
@@ -110,13 +209,15 @@ static void print_txop(const char *key, const uint8_t *buf, uint32_t len)
     mctrl_print("%s", terminator);
     indent_level--;
     printf_indent("}");
+
+    return true;
 }
 
 
-static void print_pageset(const char *key, const uint8_t *buf, uint32_t len)
+static bool print_pageset(const char *key, const uint8_t *buf, uint32_t len)
 {
     struct pageset_stats *pageset = (struct pageset_stats *)buf;
-    char* terminator = pretty ? "\n" : "";
+    char* terminator = (format_json == FORMAT_JSON_PPRINT) ? "\n" : "";
 
     printf_indent("\"%s\": ", key);
     mctrl_print("%s", terminator);
@@ -141,13 +242,15 @@ static void print_pageset(const char *key, const uint8_t *buf, uint32_t len)
     indent_level--;
     mctrl_print("%s", terminator);
     printf_indent("]");
+
+    return true;
 }
 
 
-static void print_retries(const char *key, const uint8_t *buf, uint32_t len)
+static bool print_retries(const char *key, const uint8_t *buf, uint32_t len)
 {
     struct retry_stats *retries = (struct retry_stats *)buf;
-    char *terminator = pretty ? "\n" : "";
+    char *terminator = (format_json == FORMAT_JSON_PPRINT) ? "\n" : "";
 
     printf_indent("\"%s\": ", key);
     mctrl_print("%s", terminator);
@@ -172,13 +275,15 @@ static void print_retries(const char *key, const uint8_t *buf, uint32_t len)
     indent_level--;
     mctrl_print("%s", terminator);
     printf_indent("]");
+
+    return true;
 }
 
 
-static void print_raw(const char *key, const uint8_t *buf, uint32_t len)
+static bool print_raw(const char *key, const uint8_t *buf, uint32_t len)
 {
     raw_stats_t *raw_stats = (raw_stats_t *)buf;
-    char* terminator = pretty ? "\n" : "";
+    char* terminator = (format_json == FORMAT_JSON_PPRINT) ? "\n" : "";
 
     printf_indent("\"%s\": ", key);
     mctrl_print("%s", terminator);
@@ -222,13 +327,15 @@ static void print_raw(const char *key, const uint8_t *buf, uint32_t len)
 
     indent_level--;
     printf_indent("}");
+
+    return true;
 }
 
 
-static void print_calibration(const char *key, const uint8_t *buf, uint32_t len)
+static bool print_calibration(const char *key, const uint8_t *buf, uint32_t len)
 {
     managed_calibration_stats_t *calib_stats = (managed_calibration_stats_t *)buf;
-    char* terminator = pretty ? "\n" : "";
+    char* terminator = (format_json == FORMAT_JSON_PPRINT) ? "\n" : "";
 
     printf_indent("\"%s\": ", key);
     mctrl_print("%s", terminator);
@@ -237,6 +344,7 @@ static void print_calibration(const char *key, const uint8_t *buf, uint32_t len)
 
     printf_indent("\"Managed calibration\": %s", terminator);
     printf_indent("{%s", terminator);
+    indent_level++;
 
     printf_indent("\"Quiet calibration granted\": %u,%s",
             le32toh(calib_stats->quiet_calibration_granted), terminator);
@@ -253,13 +361,15 @@ static void print_calibration(const char *key, const uint8_t *buf, uint32_t len)
     printf_indent("}%s", terminator);
     indent_level--;
     printf_indent("}");
+
+    return true;
 }
 
 
-static void print_duty_cycle(const char *key, const uint8_t *buf, uint32_t len)
+static bool print_duty_cycle(const char *key, const uint8_t *buf, uint32_t len)
 {
     duty_cycle_stats_t *duty_cycle_stats = (duty_cycle_stats_t*)buf;
-    char* terminator = pretty ? "\n" : "";
+    char* terminator = (format_json == FORMAT_JSON_PPRINT) ? "\n" : "";
 
     printf_indent("\"%s\": ", key);
     mctrl_print("%s", terminator);
@@ -287,13 +397,15 @@ static void print_duty_cycle(const char *key, const uint8_t *buf, uint32_t len)
 
     indent_level--;
     printf_indent("}");
+
+    return true;
 }
 
 
-static void print_mac_state(const char *key, const uint8_t *buf, uint32_t len)
+static bool print_mac_state(const char *key, const uint8_t *buf, uint32_t len)
 {
     uint64_t mac_state = le64toh(*(__force __le64*) buf);
-    char* terminator = pretty ? "\n" : "";
+    char* terminator = (format_json == FORMAT_JSON_PPRINT) ? "\n" : "";
 
     printf_indent("\"%s\": ", key);
     mctrl_print("%s", terminator);
@@ -325,9 +437,11 @@ static void print_mac_state(const char *key, const uint8_t *buf, uint32_t len)
 
     indent_level--;
     printf_indent("}");
+
+    return true;
 }
 
-static void print_umac_latency_histogram(const char *key, const uint8_t *buf, uint32_t len)
+static bool print_umac_latency_histogram(const char *key, const uint8_t *buf, uint32_t len)
 {
     umac_latency_histogram_t *histogram = (umac_latency_histogram_t *)buf;
 
@@ -335,44 +449,39 @@ static void print_umac_latency_histogram(const char *key, const uint8_t *buf, ui
     mctrl_print("\"");
     for (size_t i = 0; i < MORSE_ARRAY_SIZE(histogram->buckets); i++)
     {
-        mctrl_print("%d ", le32toh(histogram->buckets[i]));
+        mctrl_print("%s%d", (i > 0) ? " ": "", le32toh(histogram->buckets[i]));
     }
     mctrl_print("\"");
+
+    return true;
 }
 
-static void print_array_s16(const char *key, const uint8_t *buf, uint32_t len)
+static bool print_array_s16(const char *key, const uint8_t *buf, uint32_t len)
 {
     s16_array_t *array = (s16_array_t *)buf;
     printf_indent("\"%s\": ", key);
     mctrl_print("\"");
     for (int i = 0; i < le16toh(array->count); i++)
     {
-        mctrl_print("%d ", (int16_t)le16toh(array->array[i]));
+        mctrl_print("%s%d", (i > 0) ? " ": "", (int16_t)le16toh(array->array[i]));
     }
     mctrl_print("\"");
+
+    return true;
 }
 
-static void print_array_u16(const char *key, const uint8_t *buf, uint32_t len)
+static bool print_array_u16(const char *key, const uint8_t *buf, uint32_t len)
 {
     u16_array_t *array = (u16_array_t *)buf;
     printf_indent("\"%s\": ", key);
     mctrl_print("\"");
     for (int i = 0; i < le16toh(array->count); i++)
     {
-        mctrl_print("%u ", le16toh(array->array[i]));
+        mctrl_print("%s%u", (i > 0) ? " ": "", le16toh(array->array[i]));
     }
     mctrl_print("\"");
-}
 
-static void print_default(const char *key, const uint8_t *buf, uint32_t len)
-{
-    printf_indent("\"%s\": ", key);
-    mctrl_print("\"");
-    for (int i = 0; i < len; i++)
-    {
-        mctrl_print("%02X ", buf[i]);
-    }
-    mctrl_print("\"");
+    return true;
 }
 
 
@@ -398,39 +507,18 @@ static const struct format_table table = {
         [MORSE_STATS_FMT_DUTY_CYCLE] = print_duty_cycle,
         [MORSE_STATS_FMT_MAC_STATE] = print_mac_state,
         [MORSE_STATS_FMT_UMAC_LATENCY_HISTOGRAM] = print_umac_latency_histogram,
-        /* Add new function pointers here */
-        /* [MORSE_STATS_NEW_TLV_FORMAT] = print_new_format */
         [MORSE_STATS_FMT_ARRAY_S16] = print_array_s16,
         [MORSE_STATS_FMT_ARRAY_U16] = print_array_u16,
 
+        /* Add new function pointers above here */
+        /* [MORSE_STATS_NEW_TLV_FORMAT] = print_new_format */
         [MORSE_STATS_FMT_LAST] = print_default,
     }
 };
 
 
-const struct format_table* stats_format_json_get_formatter_table(void)
+const struct format_table* stats_format_get_formatter_table_json(enum format_type format)
 {
+    /* There is currently no difference in item output between standard JSON and pretty JSON */
     return &table;
-}
-
-
-void stats_format_json_init(void)
-{
-    indent_level = INDENT_FIRST_LEVEL;
-
-    static bool first = true;
-    if (first)
-    {
-        first = false;
-    }
-    else
-    {
-        pretty ? mctrl_print(",\n") : mctrl_print(",");
-    }
-}
-
-
-void stats_format_json_set_pprint(bool pprint)
-{
-    pretty = pprint;
 }

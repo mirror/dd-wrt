@@ -415,6 +415,9 @@ transport_exit:
         handler->is_intf_cmd == MM_INTF_REQUIRED)
         morsectrl_transport_deinit(mors.transport);
 exit:
+    mm_free_argtable(&main_args);
+    free(transport_regex);
+
     /**
      * Remap return code to between 0 and 255 (i.e. the UNIX return code error range)
      * The return code 255 is avoided as ssh uses this to indicate an ssh error.

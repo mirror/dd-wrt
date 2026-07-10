@@ -446,6 +446,17 @@ const char *morsectrl_transport_get_ifname(struct morsectrl_transport *transport
     return transport->tops->get_ifname(transport);
 }
 
+int morsectrl_transport_connect(struct morsectrl_transport *transport,
+                                const char *ssid, size_t ssid_len,
+                                const char *pwd, size_t pwd_len,
+                                bool secure)
+{
+    if (!transport->tops || !transport->tops->connect)
+        return ETRANSNOTSUP;
+
+    return transport->tops->connect(transport, ssid, ssid_len, pwd, pwd_len, secure);
+}
+
 bool morsectrl_transport_has_reset(struct morsectrl_transport *transport)
 {
     if (transport != NULL && transport->tops != NULL)

@@ -429,6 +429,7 @@ static const struct morsectrl_transport_ops tcp_slip_ops = {
     .raw_read_write = NULL,
     .reset_device = NULL,
     .get_ifname = NULL,
+    .connect = NULL,
 };
 
 REGISTER_TRANSPORT(tcp_slip_ops);

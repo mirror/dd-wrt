@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Morse Micro
+ * Copyright 2022-2026 Morse Micro
  * SPDX-License-Identifier: GPL-2.0-or-later OR LicenseRef-MorseMicroCommercial
  *
  */
@@ -55,5 +55,5 @@ struct __attribute__((packed)) statistics_offchip_data {
 
 struct statistics_offchip_data *get_stats_offchip(const struct morsectrl *mors,
                                                     stats_tlv_tag_t tag);
-int64_t get_signed_value_as_int64(const uint8_t *buf, uint32_t size);
-uint64_t get_unsigned_value_as_uint64(const uint8_t *buf, uint32_t size);
+bool get_signed_value_as_int64(const uint8_t *buf, uint32_t size, int64_t *value);
+bool get_unsigned_value_as_uint64(const uint8_t *buf, uint32_t size, uint64_t *value);

@@ -10,6 +10,7 @@
 #include <windows.h>
 
 #include "uart.h"
+#include "transport.h"
 #include "../utilities.h"
 
 #define TX_BUF_SIZE (512)

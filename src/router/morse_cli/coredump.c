@@ -7,10 +7,10 @@
 
 #include "command.h"
 
-
 int coredump_init(struct morsectrl *mors, struct mm_argtable *mm_args)
 {
-    MM_INIT_ARGTABLE(mm_args, "Generate a FW coredump at /var/log/mmcd_<hostname>_<ip>_<date>/)");
+    MM_INIT_ARGTABLE(mm_args,
+                     "Generate a firmware coredump at /var/log/mmcd_<hostname>_<ip>_<date>/");
     return 0;
 }
 

@@ -14,6 +14,7 @@
 #include <ctype.h>
 
 #include "command.h"
+#include "morse_commands.h"
 #include "utilities.h"
 #include "transport/transport.h"
 #include "channel.h"
@@ -73,7 +74,7 @@ static int standby_get_cmd(const char str[])
 {
     if (strcmp("enter", str) == 0) return MORSE_CMD_STANDBY_MODE_ENTER;
     else if (strcmp("exit", str) == 0) return MORSE_CMD_STANDBY_MODE_EXIT;
-    else if (strcmp("config", str) == 0) return MORSE_CMD_STANDBY_MODE_SET_CONFIG_V3;
+    else if (strcmp("config", str) == 0) return MORSE_CMD_STANDBY_MODE_SET_CONFIG_V4;
     else if (strcmp("payload", str) == 0) return MORSE_CMD_STANDBY_MODE_SET_STATUS_PAYLOAD;
     else
     {
@@ -143,12 +144,45 @@ int standby_help(void)
     return 0;
 }
 
+static int configure_host_control(struct morsectrl *mors, int param_id, int32_t val)
+{
+    int ret;
+    struct morse_cmd_req_get_set_generic_param *req;
+    struct morse_cmd_resp_get_set_generic_param *rsp;
+    struct morsectrl_transport_buff *req_tbuff =
+        morsectrl_transport_cmd_alloc(mors->transport, sizeof(*req));
+    struct morsectrl_transport_buff *rsp_tbuff =
+        morsectrl_transport_resp_alloc(mors->transport, sizeof(*rsp));
+    MCTRL_ASSERT(req_tbuff != NULL, "morsectrl_transport_cmd_alloc returned NULL");
+    MCTRL_ASSERT(rsp_tbuff != NULL, "morsectrl_transport_resp_alloc returned NULL");
+
+    req = TBUFF_TO_REQ(req_tbuff, struct morse_cmd_req_get_set_generic_param);
+    rsp = TBUFF_TO_RSP(rsp_tbuff, struct morse_cmd_resp_get_set_generic_param);
+
+    req->action = MORSE_CMD_PARAM_ACTION_SET;
+    req->flags = 0;
+    req->param_id = param_id;
+    req->value = val;
+
+    ret = morsectrl_send_command(mors->transport,
+        MORSE_CMD_ID_GET_SET_GENERIC_PARAM, req_tbuff, rsp_tbuff);
+    if (ret)
+    {
+        mctrl_err("Error %i while sending get-set command (param-id %i)\n", ret, param_id);
+    }
+
+    morsectrl_transport_buff_free(req_tbuff);
+    morsectrl_transport_buff_free(rsp_tbuff);
+    return ret;
+}
+
 static int parse_standby_config_keyval(struct morsectrl *mors, void *context, const char *key,
                                     const char *val)
 {
     struct standby_config_parse_context *config = context;
     uint32_t temp;
     ipv4_addr_t temp_ip;
+    int32_t temp_i32;
 
     if (mors->debug)
     {
@@ -251,6 +285,77 @@ static int parse_standby_config_keyval(struct morsectrl *mors, void *context, co
         }
         config->filter_cfg->offset = htole32(temp);
         return 0;
+    }
+    else if (strcmp("disassoc_on_wake", key) == 0)
+    {
+        if (str_to_uint32_range(val, &temp, 0, 1) < 0)
+        {
+            goto error;
+        }
+        config->set_cfg->disassoc_on_wake = htole32(temp);
+        return 0;
+    }
+    else if (strcmp("host_power_off_pin", key) == 0)
+    {
+        if (str_to_int32(val, &temp_i32) < 0)
+        {
+            goto error;
+        }
+        if (mors->debug)
+        {
+            mctrl_print("Host power off GPIO: %i%s\n",
+                temp_i32, temp_i32 >= 0 ? "" : " (disabled)");
+        }
+        int ret = configure_host_control(mors,
+            MORSE_CMD_PARAM_ID_HOST_PWR_OFF_GPIO,
+            temp_i32);
+        return ret;
+    }
+    else if (strcmp("host_power_off_pulse_ms", key) == 0)
+    {
+        if (str_to_int32(val, &temp_i32) < 0)
+        {
+            goto error;
+        }
+        if (mors->debug)
+        {
+            mctrl_print("Host power off pulse duration: %i ms\n", temp_i32);
+        }
+        int ret = configure_host_control(mors,
+            MORSE_CMD_PARAM_ID_HOST_PWR_OFF_GPIO_PULSE_MS,
+            temp_i32);
+        return ret;
+    }
+    else if (strcmp("host_power_on_pin", key) == 0)
+    {
+        if (str_to_int32(val, &temp_i32) < 0)
+        {
+            goto error;
+        }
+        if (mors->debug)
+        {
+            mctrl_print("Host power on GPIO: %i%s\n",
+                temp_i32, temp_i32 >= 0 ? "" : " (disabled)");
+        }
+        int ret = configure_host_control(mors,
+            MORSE_CMD_PARAM_ID_WAKE_ACTION_GPIO,
+            temp_i32);
+        return ret;
+    }
+    else if (strcmp("host_power_on_pulse_ms", key) == 0)
+    {
+        if (str_to_int32(val, &temp_i32) < 0)
+        {
+            goto error;
+        }
+        if (mors->debug)
+        {
+            mctrl_print("Host power on pulse duration: %i ms\n", temp_i32);
+        }
+        int ret = configure_host_control(mors,
+            MORSE_CMD_PARAM_ID_WAKE_ACTION_GPIO_PULSE_MS,
+            temp_i32);
+        return ret;
     }
     mctrl_err("Key is not a recognised parameter: %s\n", key);
     return 0;
@@ -663,19 +768,20 @@ exit:
 static int process_set_config_cmd(struct morsectrl *mors,
                 struct morse_cmd_req_standby_mode* req, int argc, char *argv[])
 {
+    int ret;
     struct morse_cmd_standby_set_wake_filter wake_filter = {0};
     static struct morse_cmd_standby_set_config config_default = {
         .src_ip = 0,
         .dst_ip = 0,
         .deep_sleep_increment_s = 0, /* Default no increment */
+        .disassoc_on_wake = 0,
     };
+
     config_default.bss_inactivity_before_deep_sleep_s = htole32(60);
     config_default.deep_sleep_period_s = htole32(120);
     config_default.notify_period_s = htole32(15);
     config_default.dst_port = htole16(22000);
     config_default.deep_sleep_max_s = htole32(UINT32_MAX); /* Default max int / no max */
-
-    int ret;
 
     ret = mm_parse_argtable("standby config", &config, argc, argv);
     if (ret != 0)
@@ -801,7 +907,7 @@ int standby(struct morsectrl *mors, int argc, char *argv[])
 
     switch (le32toh(req->cmd))
     {
-        case MORSE_CMD_STANDBY_MODE_SET_CONFIG_V3:
+        case MORSE_CMD_STANDBY_MODE_SET_CONFIG_V4:
         {
             ret = process_set_config_cmd(mors, req, argc, argv);
             if (ret)
@@ -825,6 +931,8 @@ int standby(struct morsectrl *mors, int argc, char *argv[])
 
                 mctrl_print("  Dst ip: " IPSTR "\n", IP2STR(dst_ip.octet));
                 mctrl_print("  Src ip: " IPSTR "\n", IP2STR(src_ip.octet));
+                mctrl_print("  TX disassoc on host wake: %d\n",
+                            req->config.disassoc_on_wake);
             }
 
             break;
@@ -867,10 +975,20 @@ int standby(struct morsectrl *mors, int argc, char *argv[])
     {
         if (json)
         {
-            mctrl_print("[");
-            mctrl_print("{\"Standby mode exited with reason\": %u - %s}",
-                    rsp->info.reason, standby_exit_reason_to_str(rsp->info.reason));
-            mctrl_print("]\n");
+            mctrl_print("{");
+            mctrl_print("\"reason\":%u", rsp->info.reason);
+            mctrl_print(",");
+            mctrl_print("\"reason_string\":\"%s\"", standby_exit_reason_to_str(rsp->info.reason));
+            mctrl_print(",");
+            mctrl_print("\"sta_state\":%u", rsp->info.sta_state);
+
+            if (rsp->info.reason == MORSE_CMD_STANDBY_MODE_EXIT_REASON_EXT_INPUT)
+            {
+                mctrl_print(",");
+                mctrl_print("\"gpio_num\":%u", rsp->info.gpio_num);
+            }
+
+            mctrl_print("}\n");
         }
         else
         {

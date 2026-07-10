@@ -403,6 +403,7 @@ static const struct morsectrl_transport_ops uart_slip_ops = {
     .raw_read_write = NULL,
     .reset_device = NULL,
     .get_ifname = NULL,
+    .connect = NULL,
 };
 
 REGISTER_TRANSPORT(uart_slip_ops);

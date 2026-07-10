@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #include "uart.h"
+#include "transport.h"
 #include "../utilities.h"
 
 struct uart_ctx

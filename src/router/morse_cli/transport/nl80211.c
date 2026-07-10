@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: GPL-2.0-or-later OR LicenseRef-MorseMicroCommercial
  */
 
-#include <nl80211.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,6 +15,7 @@
 #include <fcntl.h>
 
 #include "../utilities.h"
+#include "nl80211_copy.h"
 #include "transport.h"
 #include "transport_private.h"
 
@@ -157,10 +157,10 @@ static int morsectrl_nl80211_ack_handler(struct nl_msg *msg, void *arg)
     {
         nl80211_state(transport)->wait_for_ack = false;
 
-/*        if (transport->debug) {
+        if (transport->debug) {
             mctrl_print("nla_msg_dump\n");
             nl_msg_dump(msg, stdout);
-        }*/
+        }
     }
 
     return NL_STOP;
@@ -190,11 +190,11 @@ static int morsectrl_nl80211_receive_handler(struct nl_msg *msg, void *arg)
 
     state = nl80211_state(transport);
 
-/*    if (transport->debug)
+    if (transport->debug)
     {
         mctrl_print("nla_msg_dump\n");
         nl_msg_dump(msg, stdout);
-    }*/
+    }
 
     attr = nla_find(genlmsg_attrdata(gnlh, 0),
                     genlmsg_attrlen(gnlh, 0),
@@ -493,6 +493,95 @@ const char *morsectrl_nl80211_get_ifname(struct morsectrl_transport *transport)
     return nl80211_cfg(transport)->interface_name;
 }
 
+static int morsectrl_nl80211_cmd_connect(struct morsectrl_transport *transport,
+                              const char *ssid, size_t ssid_len,
+                              const char *pwd, size_t pwd_len,
+                              bool secure)
+{
+    struct morsectrl_nl80211_state *state;
+    int ret = ETRANSSUCC;
+    struct nl_msg *msg;
+    void *header;
+
+    if (!transport)
+    {
+        return -ETRANSNL80211ERR;
+    }
+
+    state = nl80211_state(transport);
+
+    msg = nlmsg_alloc();
+    if (msg == NULL)
+    {
+        ret = -ENOMEM;
+        morsectrl_nl80211_error(ret, "Failed to allocate netlink message");
+        goto exit;
+    }
+
+    header = genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, state->nl80211_id,
+                         0, 0, NL80211_CMD_CONNECT, 0);
+    if (header == NULL)
+    {
+        ret = -ENOMEM;
+        morsectrl_nl80211_error(ret, "Unable to put msg");
+        goto exit;
+    }
+
+    if (state->interface_index)
+    {
+        NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, state->interface_index);
+    }
+    else
+    {
+        ret = -ETRANSNOTSUP;
+        goto exit;
+    }
+
+    NLA_PUT(msg, NL80211_ATTR_SSID, ssid_len, ssid);
+
+    NLA_PUT_U32(msg, NL80211_ATTR_AUTH_TYPE, NL80211_AUTHTYPE_OPEN_SYSTEM);
+    if (secure)
+    {
+        NLA_PUT_U32(msg, NL80211_ATTR_WPA_VERSIONS, NL80211_WPA_VERSION_3);
+        if (pwd_len)
+        {
+            NLA_PUT_U32(msg, NL80211_ATTR_AUTH_TYPE, NL80211_AUTHTYPE_SAE);
+            NLA_PUT(msg, NL80211_ATTR_SAE_PASSWORD, pwd_len, pwd);
+        }
+    }
+
+    state->wait_for_ack = true;
+    ret = nl_send_auto_complete(state->nl_socket, msg);
+    if (ret < ETRANSSUCC)
+    {
+        morsectrl_nl80211_error(ret, "Failed to send_auto_complete");
+        goto exit;
+    }
+
+    ret = nl_recvmsgs(state->nl_socket, state->cb);
+
+    if (ret < ETRANSSUCC)
+    {
+        morsectrl_nl80211_error(ret, "Failed to rcvmsgs");
+        goto exit;
+    }
+
+    if (state->wait_for_ack)
+    {
+        ret = nl_wait_for_ack(state->nl_socket);
+        if (ret < 0)
+        {
+            morsectrl_nl80211_error(ret, "Failed to wait for ACK");
+        }
+    }
+
+nla_put_failure:
+exit:
+    state->wait_for_ack = false;
+    nlmsg_free(msg);
+
+    return ret;
+}
 
 static const struct morsectrl_transport_ops nl80211_ops = {
     .name = "nl80211",
@@ -514,6 +603,7 @@ static const struct morsectrl_transport_ops nl80211_ops = {
     .raw_read_write = NULL,
     .reset_device = NULL,
     .get_ifname = morsectrl_nl80211_get_ifname,
+    .connect = morsectrl_nl80211_cmd_connect,
 };
 
 REGISTER_TRANSPORT(nl80211_ops);

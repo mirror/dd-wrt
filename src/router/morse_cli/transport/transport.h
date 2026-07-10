@@ -262,6 +262,22 @@ int morsectrl_transport_reset_device(struct morsectrl_transport *transport);
 const char *morsectrl_transport_get_ifname(struct morsectrl_transport *transport);
 
 /**
+ * @brief Send NL80211_CMD_CONNECT to the Linux driver.
+ *
+ * @param transport The transport structure.
+ * @param ssid      SSID.
+ * @param ssid_len  Length of the SSID.
+ * @param pwd       Password, NULL if connecting to open network.
+ * @param pwd_len   Length of the password.
+ * @param secure    Connect using secure method (SAE/OWE).
+ * @return          0 on success otherwise relevant error.
+ */
+int morsectrl_transport_connect(struct morsectrl_transport *transport,
+                                const char *ssid, size_t ssid_len,
+                                const char *pwd, size_t pwd_len,
+                                bool secure);
+
+/**
  * @brief Set the length of the data actually used in a command
  *
  * @param tbuff Command transport buffer

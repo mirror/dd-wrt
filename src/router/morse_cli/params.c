@@ -264,6 +264,15 @@ struct param_entry params[] = {
         .set_fn = NULL,
         .get_fn = param_get_uint32,
     },
+    {
+        .id = MORSE_CMD_PARAM_ID_AUTOCONNECT,
+        .name = "autoconnect",
+        .help = "Enable autoconnect mode in FullMAC firmware",
+        .min_val = 0,
+        .max_val = 1,
+        .set_fn = param_set_uint32,
+        .get_fn = param_get_uint32,
+    },
 };
 
 static int get_line(const char **start, const char *end)

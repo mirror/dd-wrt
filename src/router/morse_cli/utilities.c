@@ -405,11 +405,18 @@ size_t get_file_size(FILE *infile)
 
 void load_file(FILE *infile, uint8_t **buf)
 {
+    size_t len;
+    load_file_with_size(infile, buf, &len);
+}
+
+void load_file_with_size(FILE *infile, uint8_t **buf, size_t *len)
+{
     struct stat file_stats;
     uint8_t *ptr = NULL;
     size_t bytes_read = 0;
 
     *buf = NULL;
+    *len = 0;
 
     errno = 0;
     if (fstat(fileno(infile), &file_stats) != 0)
@@ -435,13 +442,14 @@ void load_file(FILE *infile, uint8_t **buf)
         bytes_read += fread(ptr + bytes_read, 1, file_stats.st_size - bytes_read, infile);
         if (ferror(infile))
         {
-            mctrl_err("error reading file\n");
+            mctrl_err("Read error: %s\n", strerror(errno));
             free(ptr);
             return;
         }
     }
 
     *buf = ptr;
+    *len = bytes_read;
 }
 
 static inline int _mkdir(const char *dir)
@@ -507,9 +515,41 @@ bool is_dir(const char *path)
     return false;
 }
 
+
+static void mctrl_set_stream(FILE **old_stream, FILE *new_stream)
+{
+    if (new_stream == NULL)
+    {
+        mctrl_err("NULL file stream'\n");
+        return;
+    }
+
+    if ((new_stream != stdout) && (new_stream != stderr))
+    {
+        if (ftell(new_stream) < 0)
+        {
+            mctrl_err("ftell failed: %s\n", strerror(errno));
+            return;
+        }
+    }
+
+    *old_stream = new_stream;
+}
+
+static FILE *mctrl_stdout = NULL;
+void mctrl_print_set_stream(FILE *outfile)
+{
+    mctrl_set_stream(&mctrl_stdout, outfile);
+}
+
+FILE *mctrl_print_get_stream(void)
+{
+    return mctrl_stdout == NULL ? stdout : mctrl_stdout;
+}
+
 void mctrl_vprint(const char* format, va_list args)
 {
-    vfprintf(stdout, format, args);
+    vfprintf(mctrl_print_get_stream(), format, args);
 }
 
 void mctrl_print(const char* format, ...)
@@ -520,9 +560,20 @@ void mctrl_print(const char* format, ...)
     va_end(args);
 }
 
+static FILE *mctrl_stderr = NULL;
+void mctrl_err_set_stream(FILE *outfile)
+{
+    mctrl_set_stream(&mctrl_stderr, outfile);
+}
+
+FILE *mctrl_err_get_stream(void)
+{
+    return mctrl_stderr == NULL ? stderr : mctrl_stderr;
+}
+
 void mctrl_verr(const char* format, va_list args)
 {
-    vfprintf(stderr, format, args);
+    vfprintf(mctrl_err_get_stream(), format, args);
 }
 
 void mctrl_err(const char* format, ...)

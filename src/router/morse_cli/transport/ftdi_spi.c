@@ -1207,6 +1207,7 @@ static const struct morsectrl_transport_ops ftdi_spi_ops = {
     .raw_read_write = ftdi_spi_raw_read_write,
     .reset_device = ftdi_spi_reset,
     .get_ifname = NULL,
+    .connect = NULL,
 };
 
 REGISTER_TRANSPORT(ftdi_spi_ops);
