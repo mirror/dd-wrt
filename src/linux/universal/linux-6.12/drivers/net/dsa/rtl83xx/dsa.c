@@ -359,6 +359,7 @@ static void rtldsa_93xx_phylink_get_caps(struct dsa_switch *ds, int port,
 		__set_bit(PHY_INTERFACE_MODE_QSGMII, config->pcs_interfaces);
 		__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->pcs_interfaces);
 		__set_bit(PHY_INTERFACE_MODE_2500BASEX, config->pcs_interfaces);
+		__set_bit(PHY_INTERFACE_MODE_HSGMII, config->pcs_interfaces);
 		__set_bit(PHY_INTERFACE_MODE_USXGMII, config->pcs_interfaces);
 		__set_bit(PHY_INTERFACE_MODE_10GBASER, config->pcs_interfaces);
 		__set_bit(PHY_INTERFACE_MODE_10G_QXGMII, config->pcs_interfaces);
