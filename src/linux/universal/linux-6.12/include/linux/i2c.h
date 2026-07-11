@@ -925,7 +925,6 @@ static inline u32 i2c_get_functionality(struct i2c_adapter *adap)
 /* Return 1 if adapter supports everything we need, 0 if not. */
 static inline int i2c_check_functionality(struct i2c_adapter *adap, u32 func)
 {
-	printk(KERN_INFO "funcs are  %X, request %X\n", i2c_get_functionality(adap), func);
 	return (func & i2c_get_functionality(adap)) == func;
 }
 
