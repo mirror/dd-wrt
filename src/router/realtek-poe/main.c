@@ -77,15 +77,15 @@ static void load_port_config(struct config *cfg, int id)
 	enable = nvram_nget("%s_poe_enable", name);
 	priority = nvram_nget("%s_poe_priority", name);
 	poe_plus = nvram_nget("1", "%s_poe_plus", name); // 802.3at
-	if (nvram_default_nmatch("Off", "802.11at", "%s_poe_mode", name)) {
+	if (nvram_default_nmatch("Off", "802.3at", "%s_poe_mode", name)) {
 	    enable = "0";
 	    poe_plus = "0";
 	}
-	if (nvram_default_nmatch("802.11af", "802.11at", "%s_poe_mode", name)) {
+	if (nvram_default_nmatch("802.3af", "802.3at", "%s_poe_mode", name)) {
 	    enable = "1";
 	    poe_plus = "0";
 	}
-	if (nvram_default_nmatch("802.11at", "802.11at", "%s_poe_mode", name)) {
+	if (nvram_default_nmatch("802.3at", "802.3at", "%s_poe_mode", name)) {
 	    enable = "1";
 	    poe_plus = "1";
 	}
@@ -519,7 +519,6 @@ static int poe_reply_status(struct mcu_state *state, uint8_t *reply)
 		"Global Disable Pin is asserted:System reseted:Configuration saved",
 		"Global Disable Pin is asserted:System reseted:Configuration Dirty"
 	};
-
 	state->sys_mode = GET_STR(reply[2], mode);
 	if (!reply[3] || reply[3] > MAX_PORT)
 		ULOG_ERR("num_detected_ports=%d is invalid\n", reply[3]);
@@ -1360,7 +1359,7 @@ int main(int argc, char **argv)
 	ulog_open(ULOG_STDIO | ULOG_SYSLOG, LOG_DAEMON, "realtek-poe");
 	ulog_threshold(LOG_INFO);
 
-	while ((ch = getopt(argc, argv, "ds")) != -1) {
+	while ((ch = getopt(argc, argv, "df")) != -1) {
 		switch (ch) {
 		case 'd':
 			ulog_threshold(LOG_DEBUG);
