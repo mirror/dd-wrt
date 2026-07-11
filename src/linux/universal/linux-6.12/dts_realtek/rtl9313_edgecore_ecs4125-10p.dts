@@ -56,43 +56,39 @@
 		#size-cells = <0>;
 		i2c-parent = <&i2c0>;
 
-		i2c01: i2c-rtl9310-1 {
-			reg = <1>;
+
+		i2c04: i2c-rtl9310-0-4 {
+			reg = <4>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			sda-pin = <4>;
 			scl-pin = <13>;
 		};
 
-		i2c02: i2c-rtl9310-2 {
-			reg = <2>;
+		i2c05: i2c-rtl9310-0-5 {
+			reg = <5>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			sda-pin = <5>;
 			scl-pin = <13>;
 		};
 
-		i2c03: i2c-rtl9310-3 {
-			reg = <3>;
+		i2c10: i2c-rtl9310-1-0 {
+			reg = <8>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			sda-pin = <0>;
 			scl-pin = <14>;
 
-		lm75: sensorlm75@4f {
-			compatible = "national,lm75b";
-			reg = <0x4f>;
-		};
+			lm75: sensorlm75@4f {
+				compatible = "national,lm75b";
+				reg = <0x4f>;
+			};
 
-		adt7470@2f {
-			compatible = "adt7470";
-			reg = <0x2f>;
-		};
-
-		eeprom@57 {
-			compatible = "atmel,24c32";
-			reg = <0x57>;
-		};
+			adt7470@2f {
+				compatible = "adt7470";
+				reg = <0x2f>;
+			};
 
 		};
 	};
@@ -100,7 +96,7 @@
 
 	sfp0: sfp-p0 {
 		compatible = "sff,sfp";
-		i2c-bus = <&i2c01>;
+		i2c-bus = <&i2c04>;
 		los-gpio = <&gpio0 29 GPIO_ACTIVE_HIGH>;
 		tx-fault-gpio = <&gpio0 30 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio0 28 GPIO_ACTIVE_LOW>;
@@ -109,7 +105,7 @@
 
 	sfp1: sfp-p1 {
 		compatible = "sff,sfp";
-		i2c-bus = <&i2c02>;
+		i2c-bus = <&i2c05>;
 		los-gpio = <&gpio0 25 GPIO_ACTIVE_HIGH>;
 		tx-fault-gpio = <&gpio0 26 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio0 24 GPIO_ACTIVE_LOW>;
@@ -121,6 +117,7 @@
 	};
 */
 };
+
 
 #if 0
 &i2c_mst1 {
