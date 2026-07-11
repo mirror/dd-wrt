@@ -195,7 +195,7 @@ static void show_portif_row(webs_t wp, struct portcontext *ctx, char ifname[MAXC
 				sprintf(poe_mode, "%s_poe_mode", ifname[i]);
 				websWrite(wp, "<td style=\"vertical-align:top\">");
 				char *mode = nvram_default_get(poe_mode, "802.3at");
-				showOptions_ext(wp, poe_mode, "Off 802.3af 802.3at 802.3bt-45W 802.3bt-75W", mode, "min-width=\"0\"");
+				showOptions_ext(wp, poe_mode, "Off 802.3af 802.3at 802.3bt3 802.3bt4", mode, "min-width=\"0\"");
 				websWrite(wp, "</td>\n");
 			} else {
 				websWrite(wp, "<td>&nbsp;</td>\n");
