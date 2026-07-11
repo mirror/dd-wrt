@@ -445,6 +445,9 @@ int internal_getRouterBrand()
 	}
 	if (!strcmp(modelstr, "ECS4125-10P")) {
 		setRouter("Edgecore ECS4125-10P");
+		nvram_set("poe","1");
+		nvram_set("force_baudrate","115200");
+		nvram_set("poe_maxports","8");
 		return ROUTER_EDGECORE_ECS4125;
 	}
 	if (!strcmp(modelstr, "EWS2910P") && !strcmp(version,"v1")) {
