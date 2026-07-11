@@ -69,25 +69,35 @@ extern int ifexists(const char *ifname);
 
 static void load_port_config(struct config *cfg, int id)
 {
-	const char *id_str, *enable, *priority, *poe_plus;
+	const char *id_str, *priority;
+	int poe_plus = 0;
+	int enable = 0;
+	int poe_bt_type3 = 0;
+	int poe_bt_type4 = 0;
 	char name[32];
 	sprintf(name, "lan%02d",id);
 	if (!ifexists(name) || id > nvram_default_geti("poe_maxports", 48))
 	    return;
-	enable = nvram_nget("%s_poe_enable", name);
+	enable = nvram_ngeti("%s_poe_enable", name);
 	priority = nvram_nget("%s_poe_priority", name);
-	poe_plus = nvram_nget("1", "%s_poe_plus", name); // 802.3at
+	poe_plus = nvram_ngeti("1", "%s_poe_plus", name); // 802.3at
 	if (nvram_default_nmatch("Off", "802.3at", "%s_poe_mode", name)) {
-	    enable = "0";
-	    poe_plus = "0";
+	    enable = 0;
 	}
 	if (nvram_default_nmatch("802.3af", "802.3at", "%s_poe_mode", name)) {
-	    enable = "1";
-	    poe_plus = "0";
+	    enable = 1;
 	}
 	if (nvram_default_nmatch("802.3at", "802.3at", "%s_poe_mode", name)) {
-	    enable = "1";
-	    poe_plus = "1";
+	    enable = 1;
+	    poe_plus = 1;
+	}
+	if (nvram_default_nmatch("802.3bt-45w", "802.3at", "%s_poe_mode", name)) {
+	    enable = 1;
+	    poe_bt_type3 = 1;
+	}
+	if (nvram_default_nmatch("802.3bt-75w", "802.3at", "%s_poe_mode", name)) {
+	    enable = 1;
+	    poe_bt_type4 = 1;
 	}
 
 	cfg->port_count = MAX(cfg->port_count, id);
@@ -95,13 +105,17 @@ static void load_port_config(struct config *cfg, int id)
 
 	strncpy(cfg->ports[id].name, name, sizeof(cfg->ports[id].name));
 	cfg->ports[id].valid = 1;
-	cfg->ports[id].enable = enable ? !strcmp(enable, "1") : 0;
+	cfg->ports[id].enable = enable;
 	cfg->ports[id].priority = priority ? strtoul(priority, NULL, 0) : 0;
 	if (cfg->ports[id].priority > 3)
 		cfg->ports[id].priority = 3;
 
-	if (poe_plus && !strcmp(poe_plus, "1"))
+	if (poe_plus)
 		cfg->ports[id].power_up_mode = 3;
+	if (poe_bt_type3)
+		cfg->ports[id].power_up_mode = 5;
+	if (poe_bt_type4)
+		cfg->ports[id].power_up_mode = 6;
 }
 
 static void warn_unsupported_config(const char *cfg_name)
