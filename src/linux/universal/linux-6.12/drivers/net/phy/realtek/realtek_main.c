@@ -1611,6 +1611,15 @@ static int rtl822x_set_serdes_option_mode(struct phy_device *phydev, bool gen1)
 	if (!has_2500 && !has_sgmii && !has_hsgmii)
 		return 0;
 
+	if (has_2500 && (!has_sgmii || !phydev->is_c45)) {
+		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX;
+		phydev->rate_matching = RATE_MATCH_PAUSE;
+	} else {
+		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII_HSGMII;
+		phydev->rate_matching = RATE_MATCH_NONE;
+	}
+
+#if 0
 	/* determine SerDes option mode */
 	if (has_2500 && !has_sgmii && !has_hsgmii) {
 		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX;
@@ -1625,15 +1634,16 @@ static int rtl822x_set_serdes_option_mode(struct phy_device *phydev, bool gen1)
 		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_HSGMII;
 		phydev->rate_matching = RATE_MATCH_PAUSE;
 	} else if (has_2500) {
-		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX;
+		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII_HSGMII;
 		phydev->rate_matching = RATE_MATCH_PAUSE;
 	} else if (has_sgmii) {
-		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII_HSGMII;
+		mode = RTL822X_VND1_SERDES_OPTION_MODE_SGMII;
 		phydev->rate_matching = RATE_MATCH_PAUSE;
 	} else {
 		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII_HSGMII;
 		phydev->rate_matching = RATE_MATCH_NONE;
 	}
+#endif
 	/* the following sequence with magic numbers sets up the SerDes
 	 * option mode
 	 */
@@ -1719,6 +1729,8 @@ static unsigned int rtl822x_inband_caps(struct phy_device *phydev,
 	case PHY_INTERFACE_MODE_2500BASEX:
 		return LINK_INBAND_DISABLE;
 	case PHY_INTERFACE_MODE_SGMII:
+		return LINK_INBAND_DISABLE | LINK_INBAND_ENABLE;
+	case PHY_INTERFACE_MODE_HSGMII:
 		return LINK_INBAND_DISABLE | LINK_INBAND_ENABLE;
 	default:
 		return 0;
