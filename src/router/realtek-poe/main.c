@@ -76,34 +76,34 @@ static void load_port_config(struct config *cfg, int id)
 	int poe_bt_type4 = 0;
 	char name[32];
 	char name2[32];
-	sprintf(name, "lan%02d",id);
-	sprintf(name2, "lan%d",id);
-	int e1=ifexists(name);
-	int e2=ifexists(name2);
+	sprintf(name, "lan%02d", id);
+	sprintf(name2, "lan%d", id);
+	int e1 = ifexists(name);
+	int e2 = ifexists(name2);
 	if ((!e1 && !e2) || id > nvram_default_geti("poe_maxports", 48))
-	    return;
+		return;
 	if (!e1 && e2)
-	    strcpy(name, name2);
+		strcpy(name, name2);
 	enable = nvram_ngeti("%s_poe_enable", name);
 	priority = nvram_nget("%s_poe_priority", name);
 	poe_plus = nvram_ngeti("1", "%s_poe_plus", name); // 802.3at
 	if (nvram_default_nmatch("Off", "802.3at", "%s_poe_mode", name)) {
-	    enable = 0;
+		enable = 0;
 	}
 	if (nvram_default_nmatch("802.3af", "802.3at", "%s_poe_mode", name)) {
-	    enable = 1;
+		enable = 1;
 	}
 	if (nvram_default_nmatch("802.3at", "802.3at", "%s_poe_mode", name)) {
-	    enable = 1;
-	    poe_plus = 1;
+		enable = 1;
+		poe_plus = 1;
 	}
 	if (nvram_default_nmatch("802.3bt3", "802.3at", "%s_poe_mode", name)) {
-	    enable = 1;
-	    poe_bt_type3 = 1;
+		enable = 1;
+		poe_bt_type3 = 1;
 	}
 	if (nvram_default_nmatch("802.3bt4", "802.3at", "%s_poe_mode", name)) {
-	    enable = 1;
-	    poe_bt_type4 = 1;
+		enable = 1;
+		poe_bt_type4 = 1;
 	}
 
 	cfg->port_count = MAX(cfg->port_count, id);
