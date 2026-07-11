@@ -118,6 +118,15 @@
 */
 };
 
+&gpio0 {
+	poe_enable_hog {
+		gpio-hog;
+		gpios = <9 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "poe-enable";
+	};
+};
+
 
 #if 0
 &i2c_mst1 {
@@ -310,14 +319,14 @@
 		};
 
 
-/*		SWITCH_PORT_SDS(0, 2, 2, 0, hsgmii)
-		SWITCH_PORT_SDS(8, 1, 3, 1, hsgmii)
-		SWITCH_PORT_SDS(16, 4, 4, 2, hsgmii)
-		SWITCH_PORT_SDS(24, 3, 5, 3, hsgmii)
-		SWITCH_PORT_SDS(32, 5, 6, 0, hsgmii)
-		SWITCH_PORT_SDS(40, 6, 7, 1, hsgmii)
-		SWITCH_PORT_SDS(48, 7, 8, 2, hsgmii)
-		SWITCH_PORT_SDS(50, 8, 9, 3, hsgmii)*/
+/*		SWITCH_PORT_SDS(0, 2, 2, 0, 2500base-x)
+		SWITCH_PORT_SDS(8, 1, 3, 1, 2500base-x)
+		SWITCH_PORT_SDS(16, 4, 4, 2, 2500base-x)
+		SWITCH_PORT_SDS(24, 3, 5, 3, 2500base-x)
+		SWITCH_PORT_SDS(32, 5, 6, 0, 2500base-x)
+		SWITCH_PORT_SDS(40, 6, 7, 1, 2500base-x)
+		SWITCH_PORT_SDS(48, 7, 8, 2, 2500base-x)
+		SWITCH_PORT_SDS(50, 8, 9, 3, 2500base-x)*/
 
 		SWITCH_PORT_SFP(54, 9, 12, 0, 0)
 		SWITCH_PORT_SFP(55, 10, 13, 0, 1)
