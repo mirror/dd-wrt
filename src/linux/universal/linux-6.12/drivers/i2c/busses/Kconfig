@@ -1081,6 +1081,16 @@ config I2C_RTL9300
 	  This driver can also be built as a module. If so, the module will
 	  be called i2c-rtl9300.
 
+config I2C_RTL9310
+	tristate "Realtek RTL9310 I2C controller"
+	depends on MACH_REALTEK_RTL || COMPILE_TEST
+	help
+	  Say Y here to include support for the I2C controller in Realtek
+	  RTL9300 SoCs.
+
+	  This driver can also be built as a module. If so, the module will
+	  be called i2c-rtl9300.
+
 config I2C_RALINK
 	tristate "Ralink I2C Controller"
 	depends on RALINK && !SOC_MT7621
