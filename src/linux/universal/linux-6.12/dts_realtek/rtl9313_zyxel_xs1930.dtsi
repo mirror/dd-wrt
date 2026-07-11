@@ -187,3 +187,6 @@
 	nvmem-cells = <&factory_macaddr 0>;
 	nvmem-cell-names = "mac-address";
 };
+&i2cmux {
+	status = "okay";
+};

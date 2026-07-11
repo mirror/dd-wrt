@@ -40,10 +40,67 @@
 		};
 	};
 
+	i2c0: i2c-rtl9310 {
+		compatible = "realtek,rtl931x-i2c";
+		reg = <0x1b001004 0x3c>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		sda-pin = <4>;
+		scl-pin = <13>;
+		clock-frequency = <100000>;
+	};
+
+	i2cmux {
+		compatible = "realtek,i2c-mux-rtl9310";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c-parent = <&i2c0>;
+
+		i2c01: i2c-rtl9310-1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <4>;
+			scl-pin = <13>;
+		};
+
+		i2c02: i2c-rtl9310-2 {
+			reg = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <5>;
+			scl-pin = <13>;
+		};
+
+		i2c03: i2c-rtl9310-3 {
+			reg = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <0>;
+			scl-pin = <14>;
+
+		lm75: sensorlm75@4f {
+			compatible = "national,lm75b";
+			reg = <0x4f>;
+		};
+
+		adt7470@2f {
+			compatible = "adt7470";
+			reg = <0x2f>;
+		};
+
+		eeprom@57 {
+			compatible = "atmel,24c32";
+			reg = <0x57>;
+		};
+
+		};
+	};
+
 
 	sfp0: sfp-p0 {
 		compatible = "sff,sfp";
-		i2c-bus = <&i2c4>;
+		i2c-bus = <&i2c01>;
 		los-gpio = <&gpio0 29 GPIO_ACTIVE_HIGH>;
 		tx-fault-gpio = <&gpio0 30 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio0 28 GPIO_ACTIVE_LOW>;
@@ -52,7 +109,7 @@
 
 	sfp1: sfp-p1 {
 		compatible = "sff,sfp";
-		i2c-bus = <&i2c5>;
+		i2c-bus = <&i2c02>;
 		los-gpio = <&gpio0 25 GPIO_ACTIVE_HIGH>;
 		tx-fault-gpio = <&gpio0 26 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio0 24 GPIO_ACTIVE_LOW>;
@@ -65,75 +122,32 @@
 */
 };
 
+#if 0
 &i2c_mst1 {
 	status = "okay";
-/*	realtek,scl = <13>; */
 
-/*	i2c0: i2c@0 {
-		reg = <0>;
-	};
-
-	i2c1: i2c@1 {
-		reg = <1>;
-	};
-
-	i2c2: i2c@2 { 
-	reg = <2>; };
-
-	i2c3: i2c@3 { 
-	reg = <3>; };
-
-*/
 	/* i2c of the left SFP+ cage seen from the front; port 11 */
-	i2c4: i2c@4 {
-		reg = <4>;
-
+	i2c4: i2c@4 { 
+	reg = <4>; 
 	};
 
 	/* i2c of the right SFP+ cage seen from the front; port 12 */
-	i2c5: i2c@5 { 
-	reg = <5>; };
+	i2c5: i2c@5 {  
+	reg = <5>; 
+	};
 
-/*	i2c6: i2c@6 { 
-	reg = <6>; };
-
-	i2c7: i2c@7 { 
-	reg = <7>; };
-
-	i2c8: i2c@8 { 
-	reg = <8>; };
-
-	i2c9: i2c@9 { 
-	reg = <9>; };
-
-	i2c10: i2c@10 { 
-	reg = <10>; };
-
-	i2c11: i2c@11 { 
-	reg = <11>; };*/
 
 };
 &i2c_mst2 {
 	status = "okay";
-/*	realtek,scl = <14>; */
 
 	i2c12: i2c@12 {
 		reg = <0>;
-
 		lm75: sensorlm75@4f {
 			compatible = "national,lm75b";
 			reg = <0x4f>;
 		};
 
-		lm92: sensorlm92@4f {
-			compatible = "lm92";
-			reg = <0x4f>;
-		};
-
-/*		adt7476@2f {
-			compatible = "adi,adt7475";
-			reg = <0x2f>;
-		};*/
 		adt7470@2f {
 			compatible = "adt7470";
 			reg = <0x2f>;
@@ -145,41 +159,8 @@
 		};
 	};
 
-/*	i2c13: i2c@13 {
-		reg = <1>;
-	};
-
-	i2c14: i2c@14 { 
-	reg = <2>; };
-
-	i2c15: i2c@15 { 
-	reg = <3>; };
-
-	i2c16: i2c@16 { 
-	reg = <4>; };
-
-	i2c17: i2c@17 { 
-	reg = <5>; 
-	};
-	i2c18: i2c@18 { 
-	reg = <6>; 
-	};
-	i2c19: i2c@19 { 
-	reg = <7>; 
-	};
-	i2c20: i2c@20 { 
-	reg = <8>; 
-	};
-	i2c21: i2c@21 { 
-	reg = <9>; 
-	};
-	i2c22: i2c@22 { 
-	reg = <10>; 
-	};
-	i2c23: i2c@23 { 
-	reg = <11>; 
-	};*/
 };
+#endif
 
 &spi0 {
 	status = "okay";
@@ -251,14 +232,95 @@
 		#size-cells = <0>;
 
 
-		SWITCH_PORT_SDS(0, 2, 2, 0, 2500base-x)
-		SWITCH_PORT_SDS(8, 1, 3, 1, 2500base-x)
-		SWITCH_PORT_SDS(16, 4, 4, 2, 2500base-x)
-		SWITCH_PORT_SDS(24, 3, 5, 3, 2500base-x)
-		SWITCH_PORT_SDS(32, 5, 6, 0, 2500base-x)
-		SWITCH_PORT_SDS(40, 6, 7, 1, 2500base-x)
-		SWITCH_PORT_SDS(48, 7, 8, 2, 2500base-x)
-		SWITCH_PORT_SDS(50, 8, 9, 3, 2500base-x)
+		port@0 {
+			reg = <0>;
+			label = "lan2";
+			pcs-handle = <&serdes2 0>;
+			phy-handle = <&phy0>;
+			phy-mode = "hsgmii";
+			managed = "in-band-status";
+			led-set = <0>;
+		};
+
+		port@8 {
+			reg = <8>;
+			label = "lan1";
+			pcs-handle = <&serdes3 0>;
+			phy-handle = <&phy8>;
+			phy-mode = "hsgmii";
+			managed = "in-band-status";
+			led-set = <0>;
+		};
+
+		port@16 {
+			reg = <16>;
+			label = "lan3";
+			pcs-handle = <&serdes4 0>;
+			phy-handle = <&phy16>;
+			phy-mode = "hsgmii";
+			managed = "in-band-status";
+			led-set = <0>;
+		};
+
+		port@24 {
+			reg = <24>;
+			label = "lan4";
+			pcs-handle = <&serdes5 0>;
+			phy-handle = <&phy24>;
+			phy-mode = "hsgmii";
+			managed = "in-band-status";
+			led-set = <0>;
+		};
+
+		port@32 {
+			reg = <32>;
+			label = "lan5";
+			pcs-handle = <&serdes6 0>;
+			phy-handle = <&phy32>;
+			phy-mode = "hsgmii";
+			managed = "in-band-status";
+			led-set = <0>;
+		};
+
+		port@40 {
+			reg = <40>;
+			label = "lan6";
+			pcs-handle = <&serdes7 0>;
+			phy-handle = <&phy40>;
+			phy-mode = "hsgmii";
+			managed = "in-band-status";
+			led-set = <0>;
+		};
+
+		port@48 {
+			reg = <48>;
+			label = "lan7";
+			pcs-handle = <&serdes8 0>;
+			phy-handle = <&phy48>;
+			phy-mode = "hsgmii";
+			managed = "in-band-status";
+			led-set = <0>;
+		};
+
+		port@50 {
+			reg = <50>;
+			label = "lan8";
+			pcs-handle = <&serdes9 0>;
+			phy-handle = <&phy50>;
+			phy-mode = "hsgmii";
+			managed = "in-band-status";
+			led-set = <0>;
+		};
+
+
+/*		SWITCH_PORT_SDS(0, 2, 2, 0, hsgmii)
+		SWITCH_PORT_SDS(8, 1, 3, 1, hsgmii)
+		SWITCH_PORT_SDS(16, 4, 4, 2, hsgmii)
+		SWITCH_PORT_SDS(24, 3, 5, 3, hsgmii)
+		SWITCH_PORT_SDS(32, 5, 6, 0, hsgmii)
+		SWITCH_PORT_SDS(40, 6, 7, 1, hsgmii)
+		SWITCH_PORT_SDS(48, 7, 8, 2, hsgmii)
+		SWITCH_PORT_SDS(50, 8, 9, 3, hsgmii)*/
 
 		SWITCH_PORT_SFP(54, 9, 12, 0, 0)
 		SWITCH_PORT_SFP(55, 10, 13, 0, 1)
@@ -274,4 +336,8 @@
 			};
 		};
 	};
+};
+
+&uart1 {
+	status = "okay";
 };

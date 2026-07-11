@@ -289,3 +289,6 @@
 	};
 };
 
+&i2cmux {
+	status = "okay";
+};

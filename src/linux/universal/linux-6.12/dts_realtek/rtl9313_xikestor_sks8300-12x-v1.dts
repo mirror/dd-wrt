@@ -417,3 +417,6 @@
 	tx-polarity = <PHY_POL_INVERT>;
 };
 
+&i2cmux {
+	status = "okay";
+};

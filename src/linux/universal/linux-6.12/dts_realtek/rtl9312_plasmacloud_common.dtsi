@@ -484,3 +484,6 @@
 &serdes9 { tx-polarity = <PHY_POL_INVERT>; };
 &serdes10 { tx-polarity = <PHY_POL_INVERT>; };
 &serdes11 { tx-polarity = <PHY_POL_INVERT>; };
+&i2cmux {
+	status = "okay";
+};
