@@ -117,6 +117,10 @@ void start_jffs2(void)
 	#ifdef HAVE_REALTEK
 	rwpart = "rootfs_data";
 	mtd = getMTD("rootfs_data");
+	if (mtd == -1) {
+		mtd = getMTD("ddwrt");
+		rwpart = "ddwrt";
+	}
 	#endif
 	nvram_seti("jffs_mounted", 0);
 	umount2("/jffs", MNT_DETACH);
