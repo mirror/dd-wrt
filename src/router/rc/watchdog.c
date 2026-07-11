@@ -84,7 +84,7 @@ static void check_fan(int brand)
 			else
 			    psu = 0;
 			if ((psu / 59) < 30)
-			    psu = 30;
+			    psu = 30 * 59;
 			sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon8/pwm1", psu / 59);
 			sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon8/pwm1_auto_point1_pwm", psu / 59);
 			sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon8/pwm1_auto_point2_pwm", psu / 59);
