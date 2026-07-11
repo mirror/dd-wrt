@@ -91,11 +91,11 @@ static void load_port_config(struct config *cfg, int id)
 	    enable = 1;
 	    poe_plus = 1;
 	}
-	if (nvram_default_nmatch("802.3bt-45W", "802.3at", "%s_poe_mode", name)) {
+	if (nvram_default_nmatch("802.3bt3", "802.3at", "%s_poe_mode", name)) {
 	    enable = 1;
 	    poe_bt_type3 = 1;
 	}
-	if (nvram_default_nmatch("802.3bt-75W", "802.3at", "%s_poe_mode", name)) {
+	if (nvram_default_nmatch("802.3bt4", "802.3at", "%s_poe_mode", name)) {
 	    enable = 1;
 	    poe_bt_type4 = 1;
 	}
