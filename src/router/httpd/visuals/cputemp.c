@@ -98,14 +98,14 @@ static SENSORMAPS maps[] = {
 	{ "90000mdio107", "Aquantia Phy1", NULL },
 	{ "90000mdio108", "Aquantia Phy1", NULL },
 	#ifdef HAVE_IPQ90XX
-	{ "90000.mdio_1:01", "LAN1 (GPHY211C)", NULL },
-	{ "90000.mdio_1:1c", "LAN2 (RTL8261BE)", NULL },
+	{ "90000.mdio_1:01", "lan1 (GPHY211C)", NULL, "8devices Kiwi-DVK" },
+	{ "90000.mdio_1:1c", "lan2 (RTL8261BE)", NULL, "8devices Kiwi-DVK" },
 	#endif
-	{ "TX_power", "TX Power", NULL },
-	{ "RX_power", "RX Power", NULL },
+	{ "TX_power", "TX power", NULL },
+	{ "RX_power", "RX power", NULL },
 	{ "bias", "Bias", NULL },
 	{ "ath11k_hwmon", NULL, NULL }, // indicates that interface is disabled. so we dont show it
-	{ "lm75b", "Chassis Temperature", NULL, "Edgecore ECS4125-10P" },
+	{ "lm75b", "Chassis", NULL, "Edgecore ECS4125-10P" },
 	{ "adt7470", "Fan", NULL, "Edgecore ECS4125-10P" },
 	{ "realtek_mdio_0:04", "lan1", NULL, "Edgecore ECS4125-10P" },
 	{ "realtek_mdio_0:02", "lan2", NULL, "Edgecore ECS4125-10P" },
@@ -122,7 +122,8 @@ static const char *getmappedname(const char *name)
 {
 	int i;
 	for (i = 0; i < sizeof(maps) / sizeof(maps[0]); i++) {
-		if (!strcmp(maps[i].name, name) && (maps[i].boardname ? nvram_match(maps[i].boardname, nvram_safe_get("DD_BOARD") : 1)))
+		if (!strcmp(maps[i].name, name) &&
+		    (maps[i].boardname ? nvram_match(maps[i].boardname, nvram_safe_get("DD_BOARD")) : 1))
 			return maps[i].map;
 	}
 	return name;
