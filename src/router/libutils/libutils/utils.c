@@ -1090,13 +1090,15 @@ int getIfListNoPorts(char *buffer, size_t len, const char *ifprefix)
 
 static int ifcompare(const void *a, const void *b)
 {
-	const char *src = (const char *)a;
-	const char *dst = (const char *)b;
+	const char *src = *(const char **)a;
+	const char *dst = *(const char **)b;
 	if (!strncmp(src, "lan", 3) && !strncmp(dst, "lan", 3)) {
-		if (strlen(src) == 4 && strlen(dst) > 4)
+		if (strlen(src) == 4 && strlen(dst) > 4) {
 			return -1;
-		if (strlen(dst) == 4 && strlen(src) > 4)
+		}
+		if (strlen(dst) == 4 && strlen(src) > 4) {
 			return 1;
+		}
 	}
 	return strcmp(*(const char **)a, *(const char **)b);
 }
