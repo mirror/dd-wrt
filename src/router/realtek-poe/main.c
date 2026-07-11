@@ -75,9 +75,15 @@ static void load_port_config(struct config *cfg, int id)
 	int poe_bt_type3 = 0;
 	int poe_bt_type4 = 0;
 	char name[32];
+	char name2[32];
 	sprintf(name, "lan%02d",id);
-	if (!ifexists(name) || id > nvram_default_geti("poe_maxports", 48))
+	sprintf(name2, "lan%d",id);
+	int e1=ifexists(name);
+	int e2=ifexists(name2);
+	if ((!e1 && !e2) || id > nvram_default_geti("poe_maxports", 48))
 	    return;
+	if (!e1 && e2)
+	    strcpy(name, name2);
 	enable = nvram_ngeti("%s_poe_enable", name);
 	priority = nvram_nget("%s_poe_priority", name);
 	poe_plus = nvram_ngeti("1", "%s_poe_plus", name); // 802.3at
