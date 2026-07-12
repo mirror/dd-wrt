@@ -505,13 +505,13 @@ static int poe_cmd_status(struct mcu *mcu)
 
 static int poe_reply_status(struct mcu_state *state, uint8_t *reply)
 {
-	const char *mode[] = {
+	static const char *mode[] = {
 		"Semi-auto I2C",
 		"Semi-auto UART",
 		"Auto I2C",
 		"Auto UART"
 	};
-	const char *mcu_names[] = {
+	static const char *mcu_names[] = {
 		"ST Micro ST32F100 Microcontroller",
 		"Nuvoton M05xx LAN Microcontroller",
 		"ST Micro STF030C8 Microcontroller",
@@ -529,7 +529,7 @@ static int poe_reply_status(struct mcu_state *state, uint8_t *reply)
 		"0x14",
 		"0x15"
 	};
-	const char *status[] = {
+	static const char *status[] = {
 		"Global Disable pin is de-asserted:No system reset from the previous query cmd:Configuration saved",
 		"Global Disable pin is de-asserted:No system reset from the previous query cmd:Configuration Dirty",
 		"Global Disable pin is de-asserted:System reseted:Configuration saved",
@@ -638,7 +638,7 @@ static int poe_reply_port_ext_config(struct mcu_state *state, uint8_t *reply)
 	unsigned int idx = reply[2];
 	struct port_state *port = &state->ports[idx];
 
-	const char *mode[] = {
+	static const char *mode[] = {
 		"PoE",
 		"Legacy",
 		"pre-PoE+",
@@ -676,7 +676,7 @@ static int poe_cmd_4_port_status(struct mcu *mcu, uint8_t p1, uint8_t p2,
 
 const char *port_short_status_to_str(uint8_t short_status)
 {
-	const char *status[] = {
+	static const char *status[] = {
 		[0] = "Disabled",
 		[1] = "Searching",
 		[2] = "Delivering power",
@@ -684,7 +684,6 @@ const char *port_short_status_to_str(uint8_t short_status)
 		[5] = "Other fault",
 		[6] = "Requesting power",
 	};
-
 	return GET_STR(short_status & 0xf, status);
 }
 
@@ -702,7 +701,6 @@ static int poe_reply_4_port_status(struct mcu_state *state, uint8_t *reply)
 			ULOG_DBG("Invalid port status packet (port=%d)\n", port);
 			return -1;
 		}
-
 		state->ports[port].status = port_short_status_to_str(pstate);
 	}
 
@@ -802,7 +800,7 @@ static void handle_f0_reply(struct mcu *mcu, struct cmd *cmd, uint8_t *reply)
 {
 	const char *reason;
 
-	const char *reasons[] = {
+	static const char *reasons[] = {
 		[0xd] = "request-incomplete",
 		[0xe] = "request-bad-checksum",
 		[0xf] = "not-ready",
