@@ -101,6 +101,7 @@ config I2C_MUX_REG
 
 config I2C_MUX_RTL9300
 	tristate "RTL9300 based I2C multiplexer"
+	depends on MACH_REALTEK_RTL
 	help
 	  If you say yes to this option, support will be included for a
 	  RTL9300 based I2C multiplexer.
