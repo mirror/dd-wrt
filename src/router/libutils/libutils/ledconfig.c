@@ -64,6 +64,10 @@ static void getledconfig(struct ledconfig *cfg)
 	case ROUTER_HASIVO_S1100W8XGT:
 		cfg->diag_gpio = GPIO_LOW | 21;
 		break;
+	case ROUTER_EDGECORE_ECS4125:
+		cfg->power_gpio = 0;
+		cfg->diag_gpio = 0 | GPIO_LOW;
+		break;
 	case ROUTER_EWS2910P:
 		cfg->power_gpio = GPIO_LOW | 27;
 		cfg->diag_gpio = GPIO_LOW | 26;
