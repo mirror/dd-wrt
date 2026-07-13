@@ -957,6 +957,7 @@ exit_error:;
 				char sname[64];
 				fscanf(fp, "%s", sname);
 				my_fclose(fp);
+				sprintf(sname, "%s %s", driver, sname);
 				cpufound |= showsensor(wp, p, NULL, sname, 0, CELSIUS, NULL);
 				continue;
 			}
