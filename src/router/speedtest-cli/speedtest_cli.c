@@ -28,12 +28,12 @@
 #define STATIC_SERVER "https://www.speedtest.net/api/js/servers"
 
 #define DL_FILE_NUM 20
-#define DL_FILE_TIMES 10
+#define DL_FILE_TIMES 20
 #define MAX_FILE_LEN 20
 #define UL_FILE_NUM 20
-#define UL_FILE_TIMES 10
-#define DOWNLOADSIZE 5000000
-#define UPLOADSIZE 5000000
+#define UL_FILE_TIMES 20
+#define DOWNLOADSIZE 15000000
+#define UPLOADSIZE 15000000
 static const char *search = NULL;
 static int maxsearch = 10;
 #define CLOSEST_SERVERS_NUM maxsearch
@@ -77,7 +77,7 @@ size_t download(char *url, char *filename, int connecttimeout, int maxtimeout)
 	curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 0L);
 	curl_easy_setopt(hnd, CURLOPT_VERBOSE, 0L);
 	curl_easy_setopt(hnd, CURLOPT_NOPROGRESS, 1L);
-	curl_easy_setopt(hnd, CURLOPT_BUFFERSIZE, 64000L);
+	curl_easy_setopt(hnd, CURLOPT_BUFFERSIZE, 512000L);
 	curl_easy_setopt(hnd, CURLOPT_USERAGENT, "dd-wrt speedtest");
 	if (maxtimeout)
 		curl_easy_setopt(hnd, CURLOPT_TIMEOUT_MS, (long)(maxtimeout * 1000));
@@ -107,7 +107,7 @@ size_t upload(char *url, char *filedata, int size, int connecttimeout, int maxti
 	curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYPEER, 0L);
 	curl_easy_setopt(hnd, CURLOPT_SSL_VERIFYHOST, 0L);
 	curl_easy_setopt(hnd, CURLOPT_NOPROGRESS, 1L);
-	curl_easy_setopt(hnd, CURLOPT_BUFFERSIZE, 64000L);
+	curl_easy_setopt(hnd, CURLOPT_BUFFERSIZE, 256000L);
 	curl_easy_setopt(hnd, CURLOPT_USERAGENT, "dd-wrt speedtest");
 	curl_easy_setopt(hnd, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
 	//	SPEEDTEST_INFO("upload %ld bytes to %s\n", len, url);
@@ -634,7 +634,7 @@ static void *download_thread(void *ptr)
 		return NULL;
 	}
 	time_diff = (time_thread - time_dl_start);
-	if (time_diff > 10) {
+	if (time_diff > 15) {
 		return NULL;
 	}
 
@@ -708,7 +708,7 @@ static int test_download_speed(server_config_t *best_server)
 				return -1;
 			}
 			duration = time_dl_end - time_dl_start;
-			if (duration > 10.0) { // limit upload
+			if (duration > 15.0) { // limit upload
 				for (j = 0; j < dl_thread_num; j++) {
 					if (!q[dl_thread_num - 1 - j].joined)
 						pthread_join(q[dl_thread_num - 1 - j].q, NULL);
@@ -751,7 +751,7 @@ static void *upload_thread(void *ptr)
 		return NULL;
 	}
 	time_diff = time_thread - time_ul_start;
-	if (time_diff > 10)
+	if (time_diff > 15)
 		return NULL;
 
 	in = (ul_thread_arg_t *)ptr;
@@ -827,7 +827,7 @@ static int test_upload_speed(server_config_t *best_server)
 				return -1;
 			}
 			duration = time_ul_end - time_ul_start;
-			if (duration > 10.0) { // limit upload
+			if (duration > 15.0) { // limit upload
 				for (j = 0; j < ul_thread_num; j++) {
 					if (!q[ul_thread_num - 1 - j].joined) {
 						pthread_join(q[ul_thread_num - 1 - j].q, NULL);
