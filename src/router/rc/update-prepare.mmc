@@ -47,7 +47,8 @@ done
 
 #for httpd:
 # for big mem routers ok, this is mostly 2.xMB
-cp /etc/www $R/etc
+cp -a /etc/www $R/etc
+cp -a /etc/fw_env.config $R/etc 
 cat /etc/passwd >$R/etc/passwd
 mount -t proc proc ${R}proc 
 mount -t sysfs sys ${R}sys 
