@@ -926,9 +926,9 @@ int eip_dma_hy_init(struct eip_dma *dma, struct platform_device *pdev, struct de
 	 */
 	init_dummy_netdev(&dma->in.ndev);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
-	netif_napi_add(&dma->in.ndev, &dma->in.napi, eip_dma_hy_napi_tx_poll, eip_dma_tx_compl_napi_weight);
+	netif_threaded_napi_add(&dma->in.ndev, &dma->in.napi, eip_dma_hy_napi_tx_poll, eip_dma_tx_compl_napi_weight);
 #else
-	netif_napi_add_weight(&dma->in.ndev, &dma->in.napi, eip_dma_hy_napi_tx_poll,
+	netif_threaded_napi_add_weight(&dma->in.ndev, &dma->in.napi, eip_dma_hy_napi_tx_poll,
 			eip_dma_tx_compl_napi_weight);
 #endif
 	napi_enable(&dma->in.napi);
@@ -938,9 +938,9 @@ int eip_dma_hy_init(struct eip_dma *dma, struct platform_device *pdev, struct de
 	 */
 	init_dummy_netdev(&dma->out.ndev);
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
-	netif_napi_add(&dma->out.ndev, &dma->out.napi, eip_dma_hy_napi_rx_poll, eip_dma_rx_napi_weight);
+	netif_threaded_napi_add(&dma->out.ndev, &dma->out.napi, eip_dma_hy_napi_rx_poll, eip_dma_rx_napi_weight);
 #else
-	netif_napi_add_weight(&dma->out.ndev, &dma->out.napi, eip_dma_hy_napi_rx_poll,
+	netif_threaded_napi_add_weight(&dma->out.ndev, &dma->out.napi, eip_dma_hy_napi_rx_poll,
 			eip_dma_rx_napi_weight);
 #endif
 	napi_enable(&dma->out.napi);
