@@ -670,7 +670,7 @@ static int test_download_speed(server_config_t *best_server)
 	double time_dl_end;
 	FILE *fp_result;
 	memset(q, 0, sizeof(q));
-	SPEEDTEST_INFO("%s\n", best_server->url);
+	SPEEDTEST_INFO("%s\n", best_server->host);
 	best_server->url[strlen(best_server->url) - strlen("speedtest/upload.php")] = '\0';
 
 	for (i = 0; i < DL_FILE_NUM; i++) {
@@ -785,7 +785,7 @@ static int test_upload_speed(server_config_t *best_server)
 	THREAD_T q[ul_thread_num];
 	FILE *fp_result;
 
-	SPEEDTEST_INFO("%s\n", best_server->url);
+	SPEEDTEST_INFO("%s\n", best_server->host);
 	char *mem;
 	size_t datalen = UPLOADSIZE + strlen(head) + strlen(tail);
 	char *databuf = mem = malloc(datalen);
@@ -796,7 +796,7 @@ static int test_upload_speed(server_config_t *best_server)
 	}
 	snprintf(databuf, datalen - ((size_t)databuf - (size_t)mem), "%s", tail);
 	for (i = 0; i < (UL_FILE_NUM * UL_FILE_TIMES); i++) {
-		asprintf(&upload_arg[i].url, "%supload", best_server->url);
+		asprintf(&upload_arg[i].url, "http://%s/upload", best_server->host);
 		upload_arg[i].size = (int)round(UPLOADSIZE / strlen(databuf)) * strlen(databuf);
 		upload_arg[i].ul_file = mem;
 	}
