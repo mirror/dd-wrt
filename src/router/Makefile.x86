@@ -414,10 +414,10 @@ endif
 	qemu-img convert -f raw -O vhdx $(ARCH)-uclibc/dd-wrt_vga_2GB.image $(ARCH)-uclibc/dd-wrt_vga_2GB.vhdx
 	qemu-img convert -f raw -O vhdx $(ARCH)-uclibc/dd-wrt_serial_2GB.image $(ARCH)-uclibc/dd-wrt_serial_2GB.vhdx
 
-	libdeflate-gzip -12 -k $(ARCH)-uclibc/*.image
-	libdeflate-gzip -12 $(ARCH)-uclibc/*.vhdx
-	libdeflate-gzip -12 $(ARCH)-uclibc/*.vdi
-	libdeflate-gzip -12 $(ARCH)-uclibc/*.vmdk
+	libdeflate-gzip -6 -k $(ARCH)-uclibc/*.image
+	libdeflate-gzip -6 $(ARCH)-uclibc/*.vhdx
+	libdeflate-gzip -6 $(ARCH)-uclibc/*.vdi
+	libdeflate-gzip -6 $(ARCH)-uclibc/*.vmdk
 
 	-./tools/trx_n -m 2500000000 -o $(ARCH)-uclibc/dd-wrt-vga-webupgrade.bin $(ARCH)-uclibc/dd-wrt_vga.image.src.trx
 	-./tools/trx_n -m 2500000000 -o $(ARCH)-uclibc/dd-wrt-serial-webupgrade.bin $(ARCH)-uclibc/dd-wrt_serial.image.src.trx
