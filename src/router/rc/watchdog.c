@@ -34,7 +34,7 @@ int isregistered_real(void);
 int isregistered(void);
 #if !defined(HAVE_MICRO) || defined(HAVE_ADM5120) || defined(HAVE_WRK54G)
 
-static void writemon(const char *mon, const char *sensor, int val)
+static int writemon(const char *mon, const char *sensor, int val)
 {
 	char *path;
 	asprintf(&path, "%s/%s", mon, sensor);
@@ -45,7 +45,9 @@ static void writemon(const char *mon, const char *sensor, int val)
 			fclose(fp);
 		}
 		free(path);
+		return 1;
 	}
+	return 0;
 }
 static void setpwm(int mon, int val)
 {
@@ -59,6 +61,19 @@ static void setpwm(int mon, int val)
 		writemon(path, "pwm1", val);
 		writemon(path, "pwm1_auto_point1_pwm", val);
 		writemon(path, "pwm2_auto_point1_pwm", val);
+		free(path);
+	}
+}
+
+static void setfantarget(int mon, int val)
+{
+	char *path;
+	static int lasttarget = -1;
+	if (lasttarget == val)
+		return;
+	lasttarget = val;
+	asprintf(&path, "/sys/class/hwmon/hwmon%d", mon);
+	if (path) {
 		writemon(path, "fan1_target", val);
 		free(path);
 	}
@@ -79,10 +94,22 @@ static int getsensor(int mon)
 	}
 	return val;
 }
+static int calcprm(int psu)
+{
+		if (psu > 65000)
+			psu = 65000; // clip at 65 celsius
+		if (psu > 50000) // min temp to turn fan on
+			psu -= 50000;
+		else
+			psu = 0;
+		if (psu > 0 && (psu / 59) < 30)
+			psu = 30 * 59;
+return psu / 59;
+}
 static void check_fan(int brand)
 {
-	#ifdef HAVE_MVEBU
-	if (brand == ROUTER_WRT_1900AC) {
+	switch (brand) {
+	case ROUTER_WRT_1900AC: {
 		int cpu = getsensor(0);
 		int target = cpu - (nvram_geti("hwmon_temp_max") * 1000);
 		if (target < 0)
@@ -92,18 +119,28 @@ static void check_fan(int brand)
 		target *= 255;
 		target /= 10000;
 		setpwm(6, target);
-	}
-	#endif
-	#ifdef HAVE_REALTEK
-	if (nvram_match("DD_BOARD", "Zyxel XGS1250-12") || nvram_match("DD_BOARD", "Zyxel XGS1250-12 A1")) {
-		int psu = getsensor(1);
-		if (psu >= 51000) {
-			setpwm(0, 250);
+	} break;
+	case ROUTER_ZYXEL_XGS1250: {
+		if (nvram_match("DD_BOARD", "Zyxel XGS1250-12 B1")) {
+			int i;
+			int input;
+			for (i = 0; i < 3; i++) {
+			int input = getsensor(i);
+			if (input > psu)
+				psu = input;
+			}
+			input = getsensor(4);
+			if (input > psu)
+			    input = psu;
+			psu = calrpm(psu)
+			setpwm(3, psu);
 		} else {
-			setpwm(0, 0);
+			int psu = getsensor(1);
+			psu = calrpm(psu)
+			setpwm(0, psu);
 		}
-	}
-	if (nvram_match("DD_BOARD", "Edgecore ECS4125-10P")) {
+	} break;
+	case ROUTER_EDGECORE_ECS4125: {
 		int psu = 0;
 		int input = 0;
 		int i;
@@ -116,78 +153,58 @@ static void check_fan(int brand)
 		input = getsensor(9);
 		if (input > psu)
 			psu = input;
-		if (psu > 65000)
-			psu = 65000; // clip at 65 celsius
-		if (psu > 50000) // min temp to turn fan on
-			psu -= 50000;
-		else
-			psu = 0;
-		if (psu > 0 && (psu / 59) < 30)
-			psu = 30 * 59;
+		psu = calcrpm(psu);
 		setpwm(8, psu / 59);
-	}
-	if (nvram_match("DD_BOARD", "Zyxel XGS1250-12 B1")) {
-		int psu = getsensor(4);
-		if (psu >= 51000) {
-			setpwm(0, 250);
-		} else {
-			setpwm(0, 0);
-		}
-	}
-	if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F")) {
-		int psu = getsensor(1);
-		if (psu >= 51000) {
-			setpwm(0, 250);
-		} else {
-			setpwm(0, 0);
-		}
-	}
-	#endif
-	#ifdef HAVE_R9000
-	int cpu = 0, wifi1 = 0, wifi2 = 0, wifi3_mac = 0, wifi3_phy = 0;
-	cpu = getsensor(1);
-	cpu *= 1000;
-	wifi1 = getsensor(2);
-	wifi2 = getsensor(3);
-	int dummy;
-	if (!nvram_match("wlan2_net_mode", "disabled")) {
-		FILE *check = fopen("/sys/kernel/debug/ieee80211/phy2/wil6210/temp", "rb");
-		if (check) {
-			fclose(check);
 
-			tempfp = popen("cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_mac\" |cut -d = -f 2", "rb");
-			if (tempfp) {
-				fscanf(tempfp, "%d.%d", &wifi3_mac, &dummy);
-				pclose(tempfp);
-				wifi3_mac *= 1000;
-			}
-			tempfp = popen("cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_radio\" |cut -d = -f 2", "rb");
-			if (tempfp) {
-				fscanf(tempfp, "%d.%d", &wifi3_phy, &dummy);
-				pclose(tempfp);
-				wifi3_phy *= 1000;
+	} break;
+	case ROUTER_NETGEAR_R9000: {
+		int cpu = 0, wifi1 = 0, wifi2 = 0, wifi3_mac = 0, wifi3_phy = 0;
+		cpu = getsensor(1);
+		cpu *= 1000;
+		wifi1 = getsensor(2);
+		wifi2 = getsensor(3);
+		int dummy;
+		if (!nvram_match("wlan2_net_mode", "disabled")) {
+			FILE *check = fopen("/sys/kernel/debug/ieee80211/phy2/wil6210/temp", "rb");
+			if (check) {
+				fclose(check);
+
+				tempfp = popen("cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_mac\" |cut -d = -f 2",
+					       "rb");
+				if (tempfp) {
+					fscanf(tempfp, "%d.%d", &wifi3_mac, &dummy);
+					pclose(tempfp);
+					wifi3_mac *= 1000;
+				}
+				tempfp =
+					popen("cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_radio\" |cut -d = -f 2",
+					      "rb");
+				if (tempfp) {
+					fscanf(tempfp, "%d.%d", &wifi3_phy, &dummy);
+					pclose(tempfp);
+					wifi3_phy *= 1000;
+				}
 			}
 		}
-	}
-	if (wifi1 > cpu)
-		cpu = wifi1;
-	if (wifi2 > cpu)
-		cpu = wifi2;
-	if (wifi3_mac > cpu)
-		cpu = wifi3_mac;
-	if (wifi3_phy > cpu)
-		cpu = wifi3_phy;
+		if (wifi1 > cpu)
+			cpu = wifi1;
+		if (wifi2 > cpu)
+			cpu = wifi2;
+		if (wifi3_mac > cpu)
+			cpu = wifi3_mac;
+		if (wifi3_phy > cpu)
+			cpu = wifi3_phy;
 
-	int target = cpu - (nvram_geti("hwmon_temp_max") * 1000);
-	if (target < 0)
-		target = 0;
-	if (target > 10000)
-		target = 10000;
-	//	fprintf(stderr, "%d %d %d %d %d target=%d lasttarget %d\n", cpu, wifi1, wifi2, wifi3_mac, wifi3_phy, target, lasttarget);
-	target *= 4000;
-	target /= 10000;
-	setpwm(0, target);
-	#endif
+		int target = cpu - (nvram_geti("hwmon_temp_max") * 1000);
+		if (target < 0)
+			target = 0;
+		if (target > 10000)
+			target = 10000;
+		target *= 4000;
+		target /= 10000;
+		setfantarget(0, target);
+	} break;
+	}
 }
 
 	#ifdef HAVE_ATH11K
