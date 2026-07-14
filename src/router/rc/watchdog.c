@@ -94,7 +94,7 @@ static int getsensor(int mon)
 	}
 	return val;
 }
-static int calcprm(int psu)
+static int calcrpm(int psu)
 {
 	if (psu > 65000)
 		psu = 65000; // clip at 65 celsius
@@ -108,10 +108,11 @@ static int calcprm(int psu)
 }
 static void check_fan(int brand)
 {
+	int cpu = 0, psu = 0, input = 0, target = 0, i;
 	switch (brand) {
-	case ROUTER_WRT_1900AC: {
-		int cpu = getsensor(0);
-		int target = cpu - (nvram_geti("hwmon_temp_max") * 1000);
+	case ROUTER_WRT_1900AC:
+		cpu = getsensor(0);
+		target = cpu - (nvram_geti("hwmon_temp_max") * 1000);
 		if (target < 0)
 			target = 0;
 		if (target > 10000)
@@ -119,11 +120,9 @@ static void check_fan(int brand)
 		target *= 255;
 		target /= 10000;
 		setpwm(6, target);
-	} break;
-	case ROUTER_ZYXEL_XGS1250: {
+		break;
+	case ROUTER_ZYXEL_XGS1250:
 		if (nvram_match("DD_BOARD", "Zyxel XGS1250-12 B1")) {
-			int i;
-			int input;
 			for (i = 0; i < 3; i++) {
 				int input = getsensor(i);
 				if (input > psu)
@@ -132,22 +131,22 @@ static void check_fan(int brand)
 			input = getsensor(4);
 			if (input > psu)
 				input = psu;
-			psu = calrpm(psu) setpwm(3, psu);
+			psu = calcrpm(psu);
+			setpwm(3, psu);
 		} else {
 			int psu = getsensor(1);
-			psu = calrpm(psu) setpwm(0, psu);
-		}
-	} break;
-	case ROUTER_DGS_1210:
-		if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F")) {
-			int psu = getsensor(1);
-			psu = calrpm(psu) setpwm(0, psu);
+			psu = calcrpm(psu);
+			setpwm(0, psu);
 		}
 		break;
-	case ROUTER_EDGECORE_ECS4125: {
-		int psu = 0;
-		int input = 0;
-		int i;
+	case ROUTER_DGS_1210:
+		if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F")) {
+			psu = getsensor(1);
+			psu = calcrpm(psu);
+			setpwm(0, psu);
+		}
+		break;
+	case ROUTER_EDGECORE_ECS4125:
 		char sens[64];
 		for (i = 0; i < 8; i++) {
 			int input = getsensor(i);
@@ -160,9 +159,9 @@ static void check_fan(int brand)
 		psu = calcrpm(psu);
 		setpwm(8, psu / 59);
 
-	} break;
-	case ROUTER_NETGEAR_R9000: {
-		int cpu = 0, wifi1 = 0, wifi2 = 0, wifi3_mac = 0, wifi3_phy = 0;
+		break;
+	case ROUTER_NETGEAR_R9000:
+		int wifi1 = 0, wifi2 = 0, wifi3_mac = 0, wifi3_phy = 0;
 		cpu = getsensor(1);
 		cpu *= 1000;
 		wifi1 = getsensor(2);
@@ -173,8 +172,8 @@ static void check_fan(int brand)
 			if (check) {
 				fclose(check);
 
-				tempfp = popen("cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_mac\" |cut -d = -f 2",
-					       "rb");
+				FILE *tempfp = popen(
+					"cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_mac\" |cut -d = -f 2", "rb");
 				if (tempfp) {
 					fscanf(tempfp, "%d.%d", &wifi3_mac, &dummy);
 					pclose(tempfp);
@@ -207,11 +206,11 @@ static void check_fan(int brand)
 		target *= 4000;
 		target /= 10000;
 		setfantarget(0, target);
-	} break;
+		break;
 	}
 }
 
-	#ifdef HAVE_ATH11K
+/* check signal code, its unused now, we keep it if we need it later again */
 static unsigned char zerocount[8][17];
 static void check_signal(const char *var, int interface, int vap)
 {
@@ -252,10 +251,8 @@ static void check_signal(const char *var, int interface, int vap)
 	if (mac80211_info)
 		free(mac80211_info);
 }
-	#endif
 static void check_wifi(void)
 {
-	#ifdef HAVE_ATH11K
 	int ifcount = getdevicecount();
 	int c = 0;
 	int vap = 0;
@@ -284,7 +281,6 @@ static void check_wifi(void)
 			}
 		}
 	}
-	#endif
 }
 
 static void watchdog(void)
@@ -384,14 +380,7 @@ static void watchdog(void)
 
 	#endif
 		}
-		//#ifdef HAVE_USB
-		//#ifndef HAVE_3G_ONLY
-		//      if ((dropcounter++) % 4 == 0)
-		//              writeprocsys("vm/drop_caches", "3");    // flush fs cache
-		//#endif
-		//#endif
 		check_fan(brand);
-		//		check_wifi();
 		static int blockcounter = 0;
 		sleep(5);
 		if (!((blockcounter++) % 60)) // check every 5 minutes
