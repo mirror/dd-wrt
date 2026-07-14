@@ -569,9 +569,7 @@ static int get_lowest_latency_server(server_config_t *servers, server_config_t *
 	for (i = 0; i < CLOSEST_SERVERS_NUM; i++) {
 		if (!servers[i].url)
 			break;
-		len = strlen(servers[i].host);
-		url = malloc(len + strlen("latency.txt") + 16);
-		sprintf(url, "http://%s/speedtest/latency.txt", servers[i].host);
+		asprintf(&url, "http://%s/speedtest/latency.txt", servers[i].host);
 
 		SPEEDTEST_INFO("%s\n", url);
 		for (j = 0; j < 3; j++) {
