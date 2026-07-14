@@ -96,15 +96,15 @@ static int getsensor(int mon)
 }
 static int calcprm(int psu)
 {
-		if (psu > 65000)
-			psu = 65000; // clip at 65 celsius
-		if (psu > 50000) // min temp to turn fan on
-			psu -= 50000;
-		else
-			psu = 0;
-		if (psu > 0 && (psu / 59) < 30)
-			psu = 30 * 59;
-return psu / 59;
+	if (psu > 65000)
+		psu = 65000; // clip at 65 celsius
+	if (psu > 50000) // min temp to turn fan on
+		psu -= 50000;
+	else
+		psu = 0;
+	if (psu > 0 && (psu / 59) < 30)
+		psu = 30 * 59;
+	return psu / 59;
 }
 static void check_fan(int brand)
 {
@@ -125,21 +125,25 @@ static void check_fan(int brand)
 			int i;
 			int input;
 			for (i = 0; i < 3; i++) {
-			int input = getsensor(i);
-			if (input > psu)
-				psu = input;
+				int input = getsensor(i);
+				if (input > psu)
+					psu = input;
 			}
 			input = getsensor(4);
 			if (input > psu)
-			    input = psu;
-			psu = calrpm(psu)
-			setpwm(3, psu);
+				input = psu;
+			psu = calrpm(psu) setpwm(3, psu);
 		} else {
 			int psu = getsensor(1);
-			psu = calrpm(psu)
-			setpwm(0, psu);
+			psu = calrpm(psu) setpwm(0, psu);
 		}
 	} break;
+	case ROUTER_DGS_1210:
+		if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F")) {
+			int psu = getsensor(1);
+			psu = calrpm(psu) setpwm(0, psu);
+		}
+		break;
 	case ROUTER_EDGECORE_ECS4125: {
 		int psu = 0;
 		int input = 0;
