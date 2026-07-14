@@ -60,7 +60,7 @@ static void setpwm(int mon, int val)
 	if (path) {
 		writemon(path, "pwm1", val);
 		writemon(path, "pwm1_auto_point1_pwm", val);
-		writemon(path, "pwm2_auto_point1_pwm", val);
+		writemon(path, "pwm1_auto_point2_pwm", val);
 		free(path);
 	}
 }
