@@ -34,6 +34,35 @@ int isregistered_real(void);
 int isregistered(void);
 #if !defined(HAVE_MICRO) || defined(HAVE_ADM5120) || defined(HAVE_WRK54G)
 
+static void writemon(const char *mon, const char *sensor, int val)
+{
+	char *path;
+	asprintf(&path, "%s/%s", mon, sensor);
+	if (path) {
+		FILE *fp = fopen(path, "wb");
+		if (fp) {
+			fprintf(fp, "%d", val);
+			fclose(fp);
+		}
+		free(path);
+	}
+}
+static void setpwm(int mon, int val)
+{
+	char *path;
+	static int lasttarget = -1;
+	if (lasttarget == val)
+		return;
+	lasttarget = val;
+	asprintf(&path, "/sys/class/hwmon/hwmon%d", mon);
+	if (path) {
+		writemon(path, "pwm1", val);
+		writemon(path, "pwm1_auto_point1_pwm", val);
+		writemon(path, "pwm2_auto_point1_pwm", val);
+		writemon(path, "fan1_target", val);
+		free(path);
+	}
+}
 static void check_fan(int brand)
 {
 	#ifdef HAVE_MVEBU
@@ -51,7 +80,7 @@ static void check_fan(int brand)
 				target = 10000;
 			target *= 255;
 			target /= 10000;
-			sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon6/pwm1", target);
+			setpwm(6, target);
 		}
 	}
 	#endif
@@ -64,9 +93,9 @@ static void check_fan(int brand)
 			fscanf(tempfp, "%d", &psu);
 			fclose(tempfp);
 			if (psu >= 51000) {
-				sysprintf("/bin/echo 250 > /sys/class/hwmon/hwmon0/pwm1");
+				setpwm(0, 250);
 			} else {
-				sysprintf("/bin/echo 0 > /sys/class/hwmon/hwmon0/pwm1");
+				setpwm(0, 0);
 			}
 		}
 	}
@@ -101,9 +130,7 @@ static void check_fan(int brand)
 				psu = 0;
 			if (psu > 0 && (psu / 59) < 30)
 				psu = 30 * 59;
-			sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon8/pwm1", psu / 59);
-			sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon8/pwm1_auto_point1_pwm", psu / 59);
-			sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon8/pwm1_auto_point2_pwm", psu / 59);
+			setpwm(8, psu / 59);
 		}
 	}
 	if (nvram_match("DD_BOARD", "Zyxel XGS1250-12 B1")) {
@@ -114,9 +141,9 @@ static void check_fan(int brand)
 			fscanf(tempfp, "%d", &psu);
 			fclose(tempfp);
 			if (psu >= 51000) {
-				sysprintf("/bin/echo 250 > /sys/class/hwmon/hwmon3/pwm1");
+				setpwm(0, 250);
 			} else {
-				sysprintf("/bin/echo 0 > /sys/class/hwmon/hwmon3/pwm1");
+				setpwm(0, 0);
 			}
 		}
 	}
@@ -128,15 +155,14 @@ static void check_fan(int brand)
 			fscanf(tempfp, "%d", &psu);
 			fclose(tempfp);
 			if (psu >= 51000) {
-				sysprintf("/bin/echo 250 > /sys/class/hwmon/hwmon0/pwm1");
+				setpwm(0, 250);
 			} else {
-				sysprintf("/bin/echo 156 > /sys/class/hwmon/hwmon0/pwm1");
+				setpwm(0, 0);
 			}
 		}
 	}
 	#endif
 	#ifdef HAVE_R9000
-	static int lasttarget = 0;
 	int cpu = 0, wifi1 = 0, wifi2 = 0, wifi3_mac = 0, wifi3_phy = 0;
 	FILE *tempfp;
 	tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
@@ -192,11 +218,7 @@ static void check_fan(int brand)
 	//	fprintf(stderr, "%d %d %d %d %d target=%d lasttarget %d\n", cpu, wifi1, wifi2, wifi3_mac, wifi3_phy, target, lasttarget);
 	target *= 4000;
 	target /= 10000;
-	if (target != lasttarget) {
-		//		fprintf(stderr, "set fan to %d\n", target);
-		sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon0/fan1_target", target);
-		lasttarget = target;
-	}
+	setpwm(0, target);
 	#endif
 }
 
