@@ -199,6 +199,10 @@ static void config_apply_quirks(struct config *config)
 		/* Send budget command to first 8 PSE IDs */
 		config->pse_id_set_budget_mask = 0xff;
 	}
+	if (nvram_match("DD_BOARD","Zyxel GS1900-48HP A1")) {
+		/* Send budget command to first 8 PSE IDs */
+		config->pse_id_set_budget_mask = 0x80;
+	}
 }
 
 static void config_load(struct config *cfg, int init)
