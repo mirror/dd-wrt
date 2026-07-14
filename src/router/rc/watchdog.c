@@ -72,19 +72,35 @@ static void check_fan(int brand)
 	}
 	if (nvram_match("DD_BOARD", "Edgecore ECS4125-10P")) {
 		int psu = 0;
+		int input = 0;
 		FILE *tempfp;
+		int i;
+		char sens[64];
+		for (i = 0; i < 8; i++) {
+			sprintf(sens, "/sys/class/hwmon/hwmon%d/temp1_input", i);
+			tempfp = fopen(sens, "rb");
+			int input;
+			if (tempfp) {
+				fscanf(tempfp, "%d", &input);
+				if (input > psu)
+					psu = input;
+				fclose(tempfp);
+			}
+		}
 		tempfp = fopen("/sys/class/hwmon/hwmon9/temp1_input", "rb");
 		if (tempfp) {
-			fscanf(tempfp, "%d", &psu);
+			fscanf(tempfp, "%d", &input);
 			fclose(tempfp);
+			if (input > psu)
+				psu = input;
 			if (psu > 65000)
-			    psu = 65000; // clip at 65 celsius
+				psu = 65000; // clip at 65 celsius
 			if (psu > 50000) // min temp to turn fan on
-			    psu -= 50000;
+				psu -= 50000;
 			else
-			    psu = 0;
+				psu = 0;
 			if (psu > 0 && (psu / 59) < 30)
-			    psu = 30 * 59;
+				psu = 30 * 59;
 			sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon8/pwm1", psu / 59);
 			sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon8/pwm1_auto_point1_pwm", psu / 59);
 			sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon8/pwm1_auto_point2_pwm", psu / 59);
