@@ -78,10 +78,10 @@ size_t download(char *url, char *filename, int connecttimeout, int maxtimeout, i
 	curl_easy_setopt(hnd, CURLOPT_VERBOSE, 0L);
 	curl_easy_setopt(hnd, CURLOPT_NOPROGRESS, 1L);
 	curl_easy_setopt(hnd, CURLOPT_BUFFERSIZE, 512000L);
-	if (followlocation) {
-		curl_easy_setopt(hnd, CURLOPT_FOLLOWLOCATION, 1L);
-		curl_easy_setopt(hnd, CURLOPT_MAXREDIRS, 10L);
-	}
+//	if (followlocation) {
+//		curl_easy_setopt(hnd, CURLOPT_FOLLOWLOCATION, 1L);
+//		curl_easy_setopt(hnd, CURLOPT_MAXREDIRS, 10L);
+//	}
 	
 	curl_easy_setopt(hnd, CURLOPT_USERAGENT, "dd-wrt speedtest");
 	if (maxtimeout)
@@ -608,11 +608,11 @@ static int get_lowest_latency_server(server_config_t *servers, server_config_t *
 			break;
 		if (i == 0) {
 			best = i;
-			lat = servers[i].latency;
+			lat = servers[i].ping;
 		} else {
-			if (servers[i].latency < lat) {
+			if (servers[i].ping < lat) {
 				best = i;
-				lat = servers[i].latency;
+				lat = servers[i].ping;
 			}
 		}
 	}
@@ -628,6 +628,7 @@ static int get_lowest_latency_server(server_config_t *servers, server_config_t *
 	best_server->dist = servers[best].dist;
 	best_server->latency = servers[best].latency;
 	best_server->ping =  servers[best].ping;
+	best_server->host =  servers[best].host;
 	return 0;
 }
 
@@ -674,7 +675,7 @@ static int test_download_speed(server_config_t *best_server)
 
 	for (i = 0; i < DL_FILE_NUM; i++) {
 		for (j = 0; j < DL_FILE_TIMES; j++) {
-			asprintf(&download_url[k].url, "%sdownload?size=%d", best_server->url, DOWNLOADSIZE);
+			asprintf(&download_url[k].url, "http://%s/download?size=%d", best_server->host, DOWNLOADSIZE);
 			k++;
 		}
 	}
