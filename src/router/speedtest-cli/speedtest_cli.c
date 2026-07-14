@@ -58,7 +58,7 @@ static size_t countonly(void *mem, size_t num, size_t n, void *data)
 	return n * num;
 }
 
-size_t download(char *url, char *filename, int connecttimeout, int maxtimeout)
+size_t download(char *url, char *filename, int connecttimeout, int maxtimeout, int followlocation)
 {
 	CURL *hnd;
 	hnd = curl_easy_init();
@@ -78,6 +78,11 @@ size_t download(char *url, char *filename, int connecttimeout, int maxtimeout)
 	curl_easy_setopt(hnd, CURLOPT_VERBOSE, 0L);
 	curl_easy_setopt(hnd, CURLOPT_NOPROGRESS, 1L);
 	curl_easy_setopt(hnd, CURLOPT_BUFFERSIZE, 512000L);
+	if (followlocation) {
+		curl_easy_setopt(hnd, CURLOPT_FOLLOWLOCATION, 1L);
+		curl_easy_setopt(hnd, CURLOPT_MAXREDIRS, 10L);
+	}
+	
 	curl_easy_setopt(hnd, CURLOPT_USERAGENT, "dd-wrt speedtest");
 	if (maxtimeout)
 		curl_easy_setopt(hnd, CURLOPT_TIMEOUT_MS, (long)(maxtimeout * 1000));
@@ -292,7 +297,7 @@ static int get_speedtest_config(client_config_t *client)
 	char line[256];
 
 	SPEEDTEST_INFO(CONF_SERVER "\n");
-	download(CONF_SERVER, "/tmp/speedtest-config.php", 0, 0);
+	download(CONF_SERVER, "/tmp/speedtest-config.php", 0, 0, 1);
 
 	if (!(fp1 = fopen("/tmp/speedtest-config.php", "r"))) {
 		perror("fopen /tmp/speedtest-config.php");
@@ -416,7 +421,7 @@ static int get_nearest_servers(client_config_t *client, server_config_t *servers
 		snprintf(url, sizeof(url), "%s?limit=%d", STATIC_SERVER, maxsearch);
 	SPEEDTEST_INFO("%s\n", url);
 
-	download(url, "/tmp/speedtest-servers.php", 0, 0);
+	download(url, "/tmp/speedtest-servers.php", 0, 0, 1);
 	if (!(fp1 = fopen("/tmp/speedtest-servers.php", "r"))) {
 		perror("fopen /tmp/speedtest-servers.php");
 		return errno;
@@ -489,9 +494,8 @@ static int get_nearest_servers(client_config_t *client, server_config_t *servers
 			break;
 		}
 		if ((server.force_ping_select = get_str_json("force_ping_select", &buf)) == NULL) {
-			// ignore
+			//
 		}
-
 		/* calculate distance between client and server */
 		server.dist = get_distance(client, &server);
 
@@ -506,6 +510,7 @@ static int get_nearest_servers(client_config_t *client, server_config_t *servers
 				servers[j].sponsor = server.sponsor;
 				servers[j].id = server.id;
 				servers[j].dist = server.dist;
+				servers[j].host = server.host;
 				init_server(&server);
 				break;
 			} else {
@@ -522,6 +527,7 @@ static int get_nearest_servers(client_config_t *client, server_config_t *servers
 						servers[k].sponsor = servers[k - 1].sponsor;
 						servers[k].id = servers[k - 1].id;
 						servers[k].dist = servers[k - 1].dist;
+						servers[k].host = servers[k - 1].host;
 					}
 					servers[j].url = server.url;
 					servers[j].lat = server.lat;
@@ -532,6 +538,7 @@ static int get_nearest_servers(client_config_t *client, server_config_t *servers
 					servers[j].sponsor = server.sponsor;
 					servers[j].id = server.id;
 					servers[j].dist = server.dist;
+					servers[j].host = server.host;
 					init_server(&server);
 					break;
 				} else {
@@ -562,16 +569,14 @@ static int get_lowest_latency_server(server_config_t *servers, server_config_t *
 	for (i = 0; i < CLOSEST_SERVERS_NUM; i++) {
 		if (!servers[i].url)
 			break;
-		len = strlen(servers[i].url);
-		url = malloc(len - strlen("upload.php") + strlen("latency.txt") + 1);
-		strncpy(url, servers[i].url, len - strlen("upload.php"));
-		url[len - strlen("upload.php")] = '\0';
-		strcat(url, "latency.txt");
+		len = strlen(servers[i].host);
+		url = malloc(len + strlen("latency.txt") + 16);
+		sprintf(url, "http://%s/speedtest/latency.txt", servers[i].host);
 
 		SPEEDTEST_INFO("%s\n", url);
 		for (j = 0; j < 3; j++) {
 			gettimeofday(&tv1, NULL);
-			download(url, "/tmp/latency.txt", 5, 5);
+			download(url, "/tmp/latency.txt", 5, 5, 1);
 			gettimeofday(&tv2, NULL);
 
 			if (!(fp1 = fopen("/tmp/latency.txt", "r"))) {
@@ -591,6 +596,9 @@ static int get_lowest_latency_server(server_config_t *servers, server_config_t *
 			memset(line, 0, sizeof(line));
 		}
 		servers[i].latency = (latency[0] + latency[1] + latency[2]) / 3;
+		servers[i].ping = ping(url);
+		if (servers[i].ping == -1.0)
+		    servers[i].ping = servers[i].latency / 1000.0f;
 		free(url);
 		url = NULL;
 	}
@@ -619,7 +627,7 @@ static int get_lowest_latency_server(server_config_t *servers, server_config_t *
 	best_server->id = servers[best].id;
 	best_server->dist = servers[best].dist;
 	best_server->latency = servers[best].latency;
-	best_server->ping = ping(best_server->url);
+	best_server->ping =  servers[best].ping;
 	return 0;
 }
 
@@ -639,7 +647,7 @@ static void *download_thread(void *ptr)
 	}
 
 	in = (dl_thread_arg_t *)ptr;
-	size_t cnt = download(in->url, NULL, 0, 0);
+	size_t cnt = download(in->url, NULL, 0, 0, 0);
 	pthread_mutex_lock(&finished_mutex);
 	finished += (double)cnt;
 	pthread_mutex_unlock(&finished_mutex);
