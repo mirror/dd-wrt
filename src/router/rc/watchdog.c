@@ -63,124 +63,92 @@ static void setpwm(int mon, int val)
 		free(path);
 	}
 }
+
+static int getsensor(int mon)
+{
+	char *path;
+	int val = 0;
+	asprintf(&path, "/sys/class/hwmon/hwmon%d/temp1_input", mon);
+	if (path) {
+		FILE *fp = fopen(path, "rb");
+		if (fp) {
+			fscanf(fp, "%d", &val);
+			fclose(fp);
+		}
+		free(path);
+	}
+	return val;
+}
 static void check_fan(int brand)
 {
 	#ifdef HAVE_MVEBU
 	if (brand == ROUTER_WRT_1900AC) {
-		int cpu;
-		FILE *tempfp;
-		tempfp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
-		if (tempfp) {
-			fscanf(tempfp, "%d", &cpu);
-			fclose(tempfp);
-			int target = cpu - (nvram_geti("hwmon_temp_max") * 1000);
-			if (target < 0)
-				target = 0;
-			if (target > 10000)
-				target = 10000;
-			target *= 255;
-			target /= 10000;
-			setpwm(6, target);
-		}
+		int cpu = getsensor(0);
+		int target = cpu - (nvram_geti("hwmon_temp_max") * 1000);
+		if (target < 0)
+			target = 0;
+		if (target > 10000)
+			target = 10000;
+		target *= 255;
+		target /= 10000;
+		setpwm(6, target);
 	}
 	#endif
 	#ifdef HAVE_REALTEK
 	if (nvram_match("DD_BOARD", "Zyxel XGS1250-12") || nvram_match("DD_BOARD", "Zyxel XGS1250-12 A1")) {
-		int psu = 0;
-		FILE *tempfp;
-		tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
-		if (tempfp) {
-			fscanf(tempfp, "%d", &psu);
-			fclose(tempfp);
-			if (psu >= 51000) {
-				setpwm(0, 250);
-			} else {
-				setpwm(0, 0);
-			}
+		int psu = getsensor(1);
+		if (psu >= 51000) {
+			setpwm(0, 250);
+		} else {
+			setpwm(0, 0);
 		}
 	}
 	if (nvram_match("DD_BOARD", "Edgecore ECS4125-10P")) {
 		int psu = 0;
 		int input = 0;
-		FILE *tempfp;
 		int i;
 		char sens[64];
 		for (i = 0; i < 8; i++) {
-			sprintf(sens, "/sys/class/hwmon/hwmon%d/temp1_input", i);
-			tempfp = fopen(sens, "rb");
-			int input;
-			if (tempfp) {
-				fscanf(tempfp, "%d", &input);
-				if (input > psu)
-					psu = input;
-				fclose(tempfp);
-			}
-		}
-		tempfp = fopen("/sys/class/hwmon/hwmon9/temp1_input", "rb");
-		if (tempfp) {
-			fscanf(tempfp, "%d", &input);
-			fclose(tempfp);
+			int input = getsensor(i);
 			if (input > psu)
 				psu = input;
-			if (psu > 65000)
-				psu = 65000; // clip at 65 celsius
-			if (psu > 50000) // min temp to turn fan on
-				psu -= 50000;
-			else
-				psu = 0;
-			if (psu > 0 && (psu / 59) < 30)
-				psu = 30 * 59;
-			setpwm(8, psu / 59);
 		}
+		input = getsensor(9);
+		if (input > psu)
+			psu = input;
+		if (psu > 65000)
+			psu = 65000; // clip at 65 celsius
+		if (psu > 50000) // min temp to turn fan on
+			psu -= 50000;
+		else
+			psu = 0;
+		if (psu > 0 && (psu / 59) < 30)
+			psu = 30 * 59;
+		setpwm(8, psu / 59);
 	}
 	if (nvram_match("DD_BOARD", "Zyxel XGS1250-12 B1")) {
-		int psu = 0;
-		FILE *tempfp;
-		tempfp = fopen("/sys/class/hwmon/hwmon4/temp1_input", "rb");
-		if (tempfp) {
-			fscanf(tempfp, "%d", &psu);
-			fclose(tempfp);
-			if (psu >= 51000) {
-				setpwm(0, 250);
-			} else {
-				setpwm(0, 0);
-			}
+		int psu = getsensor(4);
+		if (psu >= 51000) {
+			setpwm(0, 250);
+		} else {
+			setpwm(0, 0);
 		}
 	}
 	if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F")) {
-		int psu = 0;
-		FILE *tempfp;
-		tempfp = fopen("/sys/class/hwmon/hwmon1/temp0_input", "rb");
-		if (tempfp) {
-			fscanf(tempfp, "%d", &psu);
-			fclose(tempfp);
-			if (psu >= 51000) {
-				setpwm(0, 250);
-			} else {
-				setpwm(0, 0);
-			}
+		int psu = getsensor(1);
+		if (psu >= 51000) {
+			setpwm(0, 250);
+		} else {
+			setpwm(0, 0);
 		}
 	}
 	#endif
 	#ifdef HAVE_R9000
 	int cpu = 0, wifi1 = 0, wifi2 = 0, wifi3_mac = 0, wifi3_phy = 0;
-	FILE *tempfp;
-	tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
-	if (tempfp) {
-		fscanf(tempfp, "%d", &cpu);
-		fclose(tempfp);
-	}
+	cpu = getsensor(1);
 	cpu *= 1000;
-	tempfp = fopen("/sys/class/hwmon/hwmon2/temp1_input", "rb");
-	if (tempfp) {
-		fscanf(tempfp, "%d", &wifi1);
-		fclose(tempfp);
-	}
-	tempfp = fopen("/sys/class/hwmon/hwmon3/temp1_input", "rb");
-	if (tempfp) {
-		fscanf(tempfp, "%d", &wifi2);
-		fclose(tempfp);
-	}
+	wifi1 = getsensor(2);
+	wifi2 = getsensor(3);
 	int dummy;
 	if (!nvram_match("wlan2_net_mode", "disabled")) {
 		FILE *check = fopen("/sys/kernel/debug/ieee80211/phy2/wil6210/temp", "rb");
