@@ -1472,7 +1472,7 @@
 			qcom,link-poll = <0x1>;
 			qcom,phy-mdio-addr = <0x1>;
 			phy-handle = <&phy0>;
-/*			qcom,ppe-offload-disabled = <1>;*/
+			qcom,ppe-offload-disabled = <1>;
 			label = "wan";
 		};
 
@@ -1488,7 +1488,7 @@
 			qcom,link-poll = <0x1>;
 			qcom,phy-mdio-addr = <0x2>;
 			phy-handle = <&phy1>;
-/*			qcom,ppe-offload-disabled = <1>; */
+			qcom,ppe-offload-disabled = <1>;
 			label = "lan1";
 		};
 
@@ -1504,7 +1504,7 @@
 			qcom,link-poll = <0x1>;
 			qcom,phy-mdio-addr = <0x3>;
 			phy-handle = <&phy2>;
-/*			qcom,ppe-offload-disabled = <1>; */
+			qcom,ppe-offload-disabled = <1>; 
 			label = "lan2";
 		};
 
@@ -1520,7 +1520,7 @@
 			qcom,link-poll = <0x1>;
 			qcom,phy-mdio-addr = <0x4>;
 			phy-handle = <&phy3>;
-/*			qcom,ppe-offload-disabled = <1>; */
+			qcom,ppe-offload-disabled = <1>;
 			label = "lan3";
 		};
 
