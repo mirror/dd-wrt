@@ -185,11 +185,8 @@ install package: clean_target $(filter-out lib.i386-install,$(obj-install)) $(LI
 #	gunzip -c base.img.gz>image.img
 #	../tools/write $(ARCH)-uclibc/vmlinux image.img 16384
 	#dd if=$(LINUXDIR)/vmlinux of=/dev/loop0 bs=512 seek=32
-#	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
-#	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
-#	done
 	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
-	    (cd $${dir} && cp -ar * $(TARGETDIR)) \
+	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
 	done
 
 	mkdir -p $(ARCH)-uclibc/target/etc/config
