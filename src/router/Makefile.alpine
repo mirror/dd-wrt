@@ -143,8 +143,11 @@ endif
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
 	install -d $(TARGETDIR)
+#	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
+#	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+#	done
 	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
-	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+	    (cd $${dir} && cp -ar * $(TARGETDIR)) \
 	done
 	mkdir -p $(ARCH)-uclibc/target/etc/config
 	mkdir -p $(ARCH)-uclibc/target/etc/kaid

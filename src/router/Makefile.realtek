@@ -312,8 +312,11 @@ test:
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
 	install -d $(TARGETDIR)
 	install -d $(ARCH)-uclibc/modules
+#	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
+#	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+#	done
 	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
-	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+	    (cd $${dir} && cp -ar * $(TARGETDIR)) \
 	done
 	for dir in $(wildcard $(patsubst %,%,$(obj-m))) ; do \
 	    (cd $(INSTALLDIR)/$${dir} && tar -cvvzf $(TOP)/$(ARCH)-uclibc/modules/$${dir}.tar.gz .) \
