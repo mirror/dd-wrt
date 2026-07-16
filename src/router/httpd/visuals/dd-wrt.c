@@ -6050,17 +6050,18 @@ static int suiteb192(const char *prefix)
 
 static int disable_if_6ghz(const char *prefix)
 {
-	if (has_6ghz(prefix) && !has_5ghz(prefix))
+	if ((has_6ghz(prefix) && !has_5ghz(prefix) && !has_2ghz(prefox)) || is_morse_micro(prefix))
 		return 0;
 	return !has_6ghz(prefix) ||
 	       (!nvram_nmatch("ax6-only", "%s_net_mode", prefix) && !nvram_nmatch("be6-only", "%s_net_mode", prefix) &&
 		!nvram_nmatch("beax6-only", "%s_net_mode", prefix));
 }
 
-static int disable_if_be(const char *prefix)
+static int disable_if_be_or_ah(const char *prefix)
 {
 	if (!has_be(prefix) || has_5ghz(prefix) || has_2ghz(prefix))
 		return 1;
+	
 	char *netmode = nvram_nget("%s_net_mode", prefix);
 	return !(!strcmp(netmode, "mixed") || !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") ||
 		 !strcmp(netmode, "be6-only") || !strcmp(netmode, "beax6-only") || !strcmp(netmode, "beax5-only") ||
