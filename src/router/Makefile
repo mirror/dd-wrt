@@ -376,8 +376,11 @@ endif
 
 install package: clean_target $(filter-out lib.mipsel.brcm24-install,$(obj-install)) $(LINUXDIR)/.config
 	install -d $(TARGETDIR)
+#	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
+#	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+#	done
 	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
-	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+	    (cd $${dir} && cp -ar * $(TARGETDIR)) \
 	done
 	# optimize the crypto library by removing unneeded symbols
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
