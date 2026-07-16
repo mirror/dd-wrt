@@ -995,11 +995,11 @@ static int alpha_pll_huayra_set_rate(struct clk_hw *hw, unsigned long rate,
 	 * without having to go through the power on sequence.
 	 */
 	if (clk_alpha_pll_is_enabled(hw)) {
-		if (cur_alpha != a) {
-			pr_err("%s: clock needs to be gated\n",
-			       clk_hw_get_name(hw));
-			return -EBUSY;
-		}
+//		if (cur_alpha != a) {
+//			pr_err("%s: clock needs to be gated %d/%d\n",
+//			       clk_hw_get_name(hw), cur_alpha, a);
+//			return -EBUSY;
+//		}
 
 		regmap_write(pll->clkr.regmap, PLL_L_VAL(pll), l);
 		/* Ensure that the write above goes to detect L val change. */

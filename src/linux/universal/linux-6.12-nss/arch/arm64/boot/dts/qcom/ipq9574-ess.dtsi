@@ -9,7 +9,6 @@
 
 	ess_instance: ess-instance {
 		compatible = "qcom,ess-instance";
-
 		switch: ess-switch@3a000000 {
 			compatible = "qcom,ess-switch-ipq95xx";
 			switch_access_mode = "local bus";
@@ -139,7 +138,31 @@
 				<&nsscc PORT3_MAC_ARES>,
 				<&nsscc PORT4_MAC_ARES>,
 				<&nsscc PORT5_MAC_ARES>,
-				<&nsscc PORT6_MAC_ARES>;
+				<&nsscc PORT6_MAC_ARES>,
+				<&nsscc PORT1_RX_ARES>,
+				<&nsscc PORT1_TX_ARES>,
+				<&nsscc PORT2_RX_ARES>,
+				<&nsscc PORT2_TX_ARES>,
+				<&nsscc PORT3_RX_ARES>,
+				<&nsscc PORT3_TX_ARES>,
+				<&nsscc PORT4_RX_ARES>,
+				<&nsscc PORT4_TX_ARES>,
+				<&nsscc PORT5_RX_ARES>,
+				<&nsscc PORT5_TX_ARES>,
+				<&nsscc PORT6_RX_ARES>,
+				<&nsscc PORT6_TX_ARES>,
+				<&nsscc UNIPHY_PORT1_RX_ARES>,
+				<&nsscc UNIPHY_PORT1_TX_ARES>,
+				<&nsscc UNIPHY_PORT2_RX_ARES>,
+				<&nsscc UNIPHY_PORT2_TX_ARES>,
+				<&nsscc UNIPHY_PORT3_RX_ARES>,
+				<&nsscc UNIPHY_PORT3_TX_ARES>,
+				<&nsscc UNIPHY_PORT4_RX_ARES>,
+				<&nsscc UNIPHY_PORT4_TX_ARES>,
+				<&nsscc UNIPHY_PORT5_RX_ARES>,
+				<&nsscc UNIPHY_PORT5_TX_ARES>,
+				<&nsscc UNIPHY_PORT6_RX_ARES>,
+				<&nsscc UNIPHY_PORT6_TX_ARES>;
 
 			reset-names = "ppe_rst",
 				"uniphy0_soft_rst",
@@ -166,7 +189,31 @@
 				"nss_port3_mac_rst",
 				"nss_port4_mac_rst",
 				"nss_port5_mac_rst",
-				"nss_port6_mac_rst";
+				"nss_port6_mac_rst",
+				"nss_port1_tx_rst",
+				"nss_port1_rx_rst",
+				"nss_port2_tx_rst",
+				"nss_port2_rx_rst",
+				"nss_port3_tx_rst",
+				"nss_port3_rx_rst",
+				"nss_port4_tx_rst",
+				"nss_port4_rx_rst",
+				"nss_port5_tx_rst",
+				"nss_port5_rx_rst",
+				"nss_port6_tx_rst",
+				"nss_port6_rx_rst",
+				"nss_uniphy_port1_tx_rst",
+				"nss_uniphy_port1_rx_rst",
+				"nss_uniphy_port2_tx_rst",
+				"nss_uniphy_port2_rx_rst",
+				"nss_uniphy_port3_tx_rst",
+				"nss_uniphy_port3_rx_rst",
+				"nss_uniphy_port4_tx_rst",
+				"nss_uniphy_port4_rx_rst",
+				"nss_uniphy_port5_tx_rst",
+				"nss_uniphy_port5_rx_rst",
+				"nss_uniphy_port6_tx_rst",
+				"nss_uniphy_port6_rx_rst";
 
 			bm_tick_mode = <0>; /* bm tick mode */
 			tm_tick_mode = <0>; /* tm tick mode */
@@ -179,378 +226,321 @@
 
 			mdio-bus = <&mdio>;
 
-				port_scheduler_resource {
-
-					port@0 {
-						port_id = <0x0>;
-						ucast_queue = <0x0 0x3f>;
-						mcast_queue = <0x100 0x107>;
-						l0sp = <0x0 0x0>;
-						l0cdrr = <0x0 0x7>;
-						l0edrr = <0x0 0x7>;
-						l1cdrr = <0x0 0x0>;
-						l1edrr = <0x0 0x0>;
-					};
-
-					port@1 {
-						port_id = <0x1>;
-						ucast_queue = <0xcc 0xd3>;
-						mcast_queue = <0x110 0x113>;
-						l0sp = <0x33 0x34>;
-						l0cdrr = <0x6c 0x73>;
-						l0edrr = <0x6c 0x73>;
-						l1cdrr = <0x17 0x18>;
-						l1edrr = <0x17 0x18>;
-					};
-
-					port@2 {
-						port_id = <0x2>;
-						ucast_queue = <0xd4 0xdb>;
-						mcast_queue = <0x114 0x117>;
-						l0sp = <0x35 0x36>;
-						l0cdrr = <0x74 0x7b>;
-						l0edrr = <0x74 0x7b>;
-						l1cdrr = <0x19 0x1a>;
-						l1edrr = <0x19 0x1a>;
-					};
-
-					port@3 {
-						port_id = <0x3>;
-						ucast_queue = <0xdc 0xe3>;
-						mcast_queue = <0x118 0x11b>;
-						l0sp = <0x37 0x38>;
-						l0cdrr = <0x7c 0x83>;
-						l0edrr = <0x7c 0x83>;
-						l1cdrr = <0x1b 0x1c>;
-						l1edrr = <0x1b 0x1c>;
-					};
-
-					port@4 {
-						port_id = <0x4>;
-						ucast_queue = <0xe4 0xeb>;
-						mcast_queue = <0x11c 0x11f>;
-						l0sp = <0x39 0x3a>;
-						l0cdrr = <0x84 0x8b>;
-						l0edrr = <0x84 0x8b>;
-						l1cdrr = <0x1d 0x1e>;
-						l1edrr = <0x1d 0x1e>;
-					};
-
-					port@5 {
-						port_id = <0x5>;
-						ucast_queue = <0xec 0xf3>;
-						mcast_queue = <0x120 0x123>;
-						l0sp = <0x3b 0x3c>;
-						l0cdrr = <0x8c 0x93>;
-						l0edrr = <0x8c 0x93>;
-						l1cdrr = <0x1f 0x20>;
-						l1edrr = <0x1f 0x20>;
-					};
-
-					port@6 {
-						port_id = <0x6>;
-						ucast_queue = <0xf4 0xfb>;
-						mcast_queue = <0x124 0x127>;
-						l0sp = <0x3d 0x3e>;
-						l0cdrr = <0x94 0x9b>;
-						l0edrr = <0x94 0x9b>;
-						l1cdrr = <0x21 0x22>;
-						l1edrr = <0x21 0x22>;
-					};
-
-					port@7 {
-						port_id = <0x7>;
-						ucast_queue = <0xfc 0xff>;
-						mcast_queue = <0x128 0x12b>;
-						l0sp = <0x3f 0x3f>;
-						l0cdrr = <0x9c 0x9f>;
-						l0edrr = <0x9c 0x9f>;
-						l1cdrr = <0x23 0x23>;
-						l1edrr = <0x23 0x23>;
-					};
-
-					reserved {
-						ucast_queue = <0x40 0xcb>;
-						mcast_queue = <0x108 0x10f>;
-						l0sp = <0x1 0x32>;
-						l0cdrr = <0x8 0x6b>;
-						l0edrr = <0x8 0x6b>;
-						l1cdrr = <0x1 0x16>;
-						l1edrr = <0x1 0x16>;
-					};
+			port_scheduler_resource {
+				port@0 {
+					port_id = <0>;
+					ucast_queue = <0 63>;
+					mcast_queue = <256 263>;
+					l0sp = <0 0>;
+					l0cdrr = <0 7>;
+					l0edrr = <0 7>;
+					l1cdrr = <0 0>;
+					l1edrr = <0 0>;
 				};
-
-				port_scheduler_config {
-
-					port@0 {
-						port_id = <0x0>;
-
-						l1scheduler {
-
-							group@0 {
-								sp = <0x0>;
-								cfg = <0x0 0x0 0x0 0x0>;
-							};
-						};
-
-						l0scheduler {
-
-							group@0 {
-								ucast_queue = <0x0>;
-								ucast_loop_pri = <0x8>;
-								mcast_queue = <0x100>;
-								cfg = <0x0 0x0 0x0 0x0 0x0>;
-							};
-
-							group@1 {
-								ucast_queue = <0x8>;
-								ucast_loop_pri = <0x8>;
-								mcast_queue = <0x101>;
-								cfg = <0x0 0x0 0x0 0x0 0x0>;
-							};
-
-							group@2 {
-								ucast_queue = <0x10>;
-								ucast_loop_pri = <0x8>;
-								mcast_queue = <0x102>;
-								cfg = <0x0 0x0 0x0 0x0 0x0>;
-							};
-
-							group@3 {
-								ucast_queue = <0x18>;
-								ucast_loop_pri = <0x8>;
-								mcast_queue = <0x103>;
-								cfg = <0x0 0x0 0x0 0x0 0x0>;
-							};
-
-							group@4 {
-								ucast_queue = <0x20>;
-								ucast_loop_pri = <0x8>;
-								mcast_queue = <0x104>;
-								cfg = <0x0 0x0 0x0 0x0 0x0>;
-							};
-
-							group@5 {
-								ucast_queue = <0x28>;
-								ucast_loop_pri = <0x8>;
-								mcast_queue = <0x105>;
-								cfg = <0x0 0x0 0x0 0x0 0x0>;
-							};
-
-							group@6 {
-								ucast_queue = <0x30>;
-								ucast_loop_pri = <0x8>;
-								mcast_queue = <0x106>;
-								cfg = <0x0 0x0 0x0 0x0 0x0>;
-							};
-
-							group@7 {
-								ucast_queue = <0x38>;
-								ucast_loop_pri = <0x8>;
-								mcast_queue = <0x107>;
-								cfg = <0x0 0x0 0x0 0x0 0x0>;
-							};
-						};
-					};
-
-					port@1 {
-						port_id = <0x1>;
-
-						l1scheduler {
-
-							group@0 {
-								sp = <0x33>;
-								cfg = <0x0 0x17 0x0 0x17>;
-							};
-
-							group@1 {
-								sp = <0x34>;
-								cfg = <0x1 0x18 0x1 0x18>;
-							};
-						};
-
-						l0scheduler {
-
-							group@0 {
-								ucast_queue = <0xcc>;
-								ucast_loop_pri = <0x8>;
-								ucast_max_pri = <0x4>;
-								mcast_queue = <0x110>;
-								mcast_loop_pri = <0x4>;
-								cfg = <0x33 0x0 0x6c 0x0 0x6c>;
-							};
+				port@1 {
+					port_id = <1>;
+					ucast_queue = <204 211>;
+					mcast_queue = <272 275>;
+					l0sp = <51 52>;
+					l0cdrr = <108 115>;
+					l0edrr = <108 115>;
+					l1cdrr = <23 24>;
+					l1edrr = <23 24>;
+				};
+				port@2 {
+					port_id = <2>;
+					ucast_queue = <212 219>;
+					mcast_queue = <276 279>;
+					l0sp = <53 54>;
+					l0cdrr = <116 123>;
+					l0edrr = <116 123>;
+					l1cdrr = <25 26>;
+					l1edrr = <25 26>;
+				};
+				port@3 {
+					port_id = <3>;
+					ucast_queue = <220 227>;
+					mcast_queue = <280 283>;
+					l0sp = <55 56>;
+					l0cdrr = <124 131>;
+					l0edrr = <124 131>;
+					l1cdrr = <27 28>;
+					l1edrr = <27 28>;
+				};
+				port@4 {
+					port_id = <4>;
+					ucast_queue = <228 235>;
+					mcast_queue = <284 287>;
+					l0sp = <57 58>;
+					l0cdrr = <132 139>;
+					l0edrr = <132 139>;
+					l1cdrr = <29 30>;
+					l1edrr = <29 30>;
+				};
+				port@5 {
+					port_id = <5>;
+					ucast_queue = <236 243>;
+					mcast_queue = <288 291>;
+					l0sp = <59 60>;
+					l0cdrr = <140 147>;
+					l0edrr = <140 147>;
+					l1cdrr = <31 32>;
+					l1edrr = <31 32>;
+				};
+				port@6 {
+					port_id = <6>;
+					ucast_queue = <244 251>;
+					mcast_queue = <292 295>;
+					l0sp = <61 62>;
+					l0cdrr = <148 155>;
+					l0edrr = <148 155>;
+					l1cdrr = <33 34>;
+					l1edrr = <33 34>;
+				};
+				port@7 {
+					port_id = <7>;
+					ucast_queue = <252 255>;
+					mcast_queue = <296 299>;
+					l0sp = <63 63>;
+					l0cdrr = <156 159>;
+					l0edrr = <156 159>;
+					l1cdrr = <35 35>;
+					l1edrr = <35 35>;
+				};
+				reserved {
+					ucast_queue = <64 203>;
+					mcast_queue = <264 271>;
+					l0sp = <1 50>;
+					l0cdrr = <8 107>;
+					l0edrr = <8 107>;
+					l1cdrr = <1 22>;
+					l1edrr = <1 22>;
+				};
+			};
+			port_scheduler_config {
+				port@0 {
+					port_id = <0>;
+					l1scheduler {
+						group@0 {
+							/* L0 SP */
+							sp = <0>;
+							/* cpri cdrr epri edrr */
+							cfg = <0 0 0 0>;
 						};
 					};
-
-					port@2 {
-						port_id = <0x2>;
-
-						l1scheduler {
-
-							group@0 {
-								sp = <0x35>;
-								cfg = <0x0 0x19 0x0 0x19>;
-							};
-
-							group@1 {
-								sp = <0x36>;
-								cfg = <0x1 0x1a 0x1 0x1a>;
-							};
+					l0scheduler {
+						group@0 {
+							/* unicast queue */
+							ucast_queue = <0>;
+							ucast_loop_pri = <8>;
+							/* multicast queue */
+							mcast_queue = <256>;
+							/* sp cpri cdrr epri edrr */
+							cfg = <0 0 0 0 0>;
 						};
-
-						l0scheduler {
-
-							group@0 {
-								ucast_queue = <0xd4>;
-								ucast_loop_pri = <0x8>;
-								ucast_max_pri = <0x4>;
-								mcast_queue = <0x114>;
-								mcast_loop_pri = <0x4>;
-								cfg = <0x35 0x0 0x74 0x0 0x74>;
-							};
+						group@1 {
+							ucast_queue = <8>;
+							ucast_loop_pri = <8>;
+							mcast_queue = <257>;
+							cfg = <0 0 0 0 0>;
 						};
-					};
-
-					port@3 {
-						port_id = <0x3>;
-
-						l1scheduler {
-
-							group@0 {
-								sp = <0x37>;
-								cfg = <0x0 0x1b 0x0 0x1b>;
-							};
-
-							group@1 {
-								sp = <0x38>;
-								cfg = <0x1 0x1c 0x1 0x1c>;
-							};
+						group@2 {
+							ucast_queue = <16>;
+							ucast_loop_pri = <8>;
+							mcast_queue = <258>;
+							cfg = <0 0 0 0 0>;
 						};
-
-						l0scheduler {
-
-							group@0 {
-								ucast_queue = <0xdc>;
-								ucast_loop_pri = <0x8>;
-								ucast_max_pri = <0x4>;
-								mcast_queue = <0x118>;
-								mcast_loop_pri = <0x4>;
-								cfg = <0x37 0x0 0x7c 0x0 0x7c>;
-							};
+						group@3 {
+							ucast_queue = <24>;
+							ucast_loop_pri = <8>;
+							mcast_queue = <259>;
+							cfg = <0 0 0 0 0>;
 						};
-					};
-
-					port@4 {
-						port_id = <0x4>;
-
-						l1scheduler {
-
-							group@0 {
-								sp = <0x39>;
-								cfg = <0x0 0x1d 0x0 0x1d>;
-							};
-
-							group@1 {
-								sp = <0x3a>;
-								cfg = <0x1 0x1e 0x1 0x1e>;
-							};
+						group@4 {
+							ucast_queue = <32>;
+							ucast_loop_pri = <8>;
+							mcast_queue = <260>;
+							cfg = <0 0 0 0 0>;
 						};
-
-						l0scheduler {
-
-							group@0 {
-								ucast_queue = <0xe4>;
-								ucast_loop_pri = <0x8>;
-								ucast_max_pri = <0x4>;
-								mcast_queue = <0x11c>;
-								mcast_loop_pri = <0x4>;
-								cfg = <0x39 0x0 0x84 0x0 0x84>;
-							};
+						group@5 {
+							ucast_queue = <40>;
+							ucast_loop_pri = <8>;
+							mcast_queue = <261>;
+							cfg = <0 0 0 0 0>;
 						};
-					};
-
-					port@5 {
-						port_id = <0x5>;
-
-						l1scheduler {
-
-							group@0 {
-								sp = <0x3b>;
-								cfg = <0x0 0x1f 0x0 0x1f>;
-							};
-
-							group@1 {
-								sp = <0x3c>;
-								cfg = <0x1 0x20 0x1 0x20>;
-							};
+						group@6 {
+							ucast_queue = <48>;
+							ucast_loop_pri = <8>;
+							mcast_queue = <262>;
+							cfg = <0 0 0 0 0>;
 						};
-
-						l0scheduler {
-
-							group@0 {
-								ucast_queue = <0xec>;
-								ucast_loop_pri = <0x8>;
-								ucast_max_pri = <0x4>;
-								mcast_queue = <0x120>;
-								mcast_loop_pri = <0x4>;
-								cfg = <0x3b 0x0 0x8c 0x0 0x8c>;
-							};
-						};
-					};
-
-					port@6 {
-						port_id = <0x6>;
-
-						l1scheduler {
-
-							group@0 {
-								sp = <0x3d>;
-								cfg = <0x0 0x21 0x0 0x21>;
-							};
-
-							group@1 {
-								sp = <0x3e>;
-								cfg = <0x1 0x22 0x1 0x22>;
-							};
-						};
-
-						l0scheduler {
-
-							group@0 {
-								ucast_queue = <0xf4>;
-								ucast_loop_pri = <0x8>;
-								ucast_max_pri = <0x4>;
-								mcast_queue = <0x124>;
-								mcast_loop_pri = <0x4>;
-								cfg = <0x3d 0x0 0x94 0x0 0x94>;
-							};
-						};
-					};
-
-					port@7 {
-						port_id = <0x7>;
-
-						l1scheduler {
-
-							group@0 {
-								sp = <0x3f>;
-								cfg = <0x0 0x23 0x0 0x23>;
-							};
-						};
-
-						l0scheduler {
-
-							group@0 {
-								ucast_queue = <0xfc>;
-								ucast_loop_pri = <0x4>;
-								ucast_max_pri = <0x4>;
-								mcast_queue = <0x128>;
-								mcast_loop_pri = <0x4>;
-								cfg = <0x3f 0x0 0x9c 0x0 0x9c>;
-							};
+						group@7 {
+							ucast_queue = <56>;
+							ucast_loop_pri = <8>;
+							mcast_queue = <263>;
+							cfg = <0 0 0 0 0>;
 						};
 					};
 				};
+				port@1 {
+					port_id = <1>;
+					l1scheduler {
+						group@0 {
+							sp = <51>;
+							cfg = <0 23 0 23>;
+						};
+						group@1 {
+							sp = <52>;
+							cfg = <1 24 1 24>;
+						};
+					};
+					l0scheduler {
+						group@0 {
+							ucast_queue = <204>;
+							ucast_loop_pri = <8>;
+							/* max priority per SP */
+							ucast_max_pri = <4>;
+							mcast_queue = <272>;
+							mcast_loop_pri = <4>;
+							cfg = <51 0 108 0 108>;
+						};
+					};
+				};
+				port@2 {
+					port_id = <2>;
+					l1scheduler {
+						group@0 {
+							sp = <53>;
+							cfg = <0 25 0 25>;
+						};
+						group@1 {
+							sp = <54>;
+							cfg = <1 26 1 26>;
+						};
+					};
+					l0scheduler {
+						group@0 {
+							ucast_queue = <212>;
+							ucast_loop_pri = <8>;
+							ucast_max_pri = <4>;
+							mcast_queue = <276>;
+							mcast_loop_pri = <4>;
+							cfg = <53 0 116 0 116>;
+						};
+					};
+				};
+				port@3 {
+					port_id = <3>;
+					l1scheduler {
+						group@0 {
+							sp = <55>;
+							cfg = <0 27 0 27>;
+						};
+						group@1 {
+							sp = <56>;
+							cfg = <1 28 1 28>;
+						};
+					};
+					l0scheduler {
+						group@0 {
+							ucast_queue = <220>;
+							ucast_loop_pri = <8>;
+							ucast_max_pri = <4>;
+							mcast_queue = <280>;
+							mcast_loop_pri = <4>;
+							cfg = <55 0 124 0 124>;
+						};
+					};
+				};
+				port@4 {
+					port_id = <4>;
+					l1scheduler {
+						group@0 {
+							sp = <57>;
+							cfg = <0 29 0 29>;
+						};
+						group@1 {
+							sp = <58>;
+							cfg = <1 30 1 30>;
+						};
+					};
+					l0scheduler {
+						group@0 {
+							ucast_queue = <228>;
+							ucast_loop_pri = <8>;
+							ucast_max_pri = <4>;
+							mcast_queue = <284>;
+							mcast_loop_pri = <4>;
+							cfg = <57 0 132 0 132>;
+						};
+					};
+				};
+				port@5 {
+					port_id = <5>;
+					l1scheduler {
+						group@0 {
+							sp = <59>;
+							cfg = <0 31 0 31>;
+						};
+						group@1 {
+							sp = <60>;
+							cfg = <1 32 1 32>;
+						};
+					};
+					l0scheduler {
+						group@0 {
+							ucast_queue = <236>;
+							ucast_loop_pri = <8>;
+							ucast_max_pri = <4>;
+							mcast_queue = <288>;
+							mcast_loop_pri = <4>;
+							cfg = <59 0 140 0 140>;
+						};
+					};
+				};
+				port@6 {
+					port_id = <6>;
+					l1scheduler {
+						group@0 {
+							sp = <61>;
+							cfg = <0 33 0 33>;
+						};
+						group@1 {
+							sp = <62>;
+							cfg = <1 34 1 34>;
+						};
+					};
+					l0scheduler {
+						group@0 {
+							ucast_queue = <244>;
+							ucast_loop_pri = <8>;
+							ucast_max_pri = <4>;
+							mcast_queue = <292>;
+							mcast_loop_pri = <4>;
+							cfg = <61 0 148 0 148>;
+						};
+					};
+				};
+				port@7 {
+					port_id = <7>;
+					l1scheduler {
+						group@0 {
+							sp = <63>;
+							cfg = <0 35 0 35>;
+						};
+					};
+					l0scheduler {
+						group@0 {
+							ucast_queue = <252>;
+							ucast_loop_pri = <4>;
+							ucast_max_pri = <4>;
+							mcast_queue = <296>;
+							mcast_loop_pri = <4>;
+							cfg = <63 0 156 0 156>;
+						};
+					};
+				};
+			};
 		};
 	};
 
@@ -670,28 +660,21 @@
 
 		qcom,txdesc-ring-start = <4>;		/* Tx desc ring start ID */
 		qcom,txdesc-rings = <28>;		/* Total number of Tx desc rings to be provisioned */
-
 		qcom,txcmpl-ring-start = <4>;		/* Tx complete ring start ID */
 		qcom,txcmpl-rings = <28>;		/* Total number of Tx complete rings to be provisioned */
-
 		qcom,rxfill-ring-start = <4>;		/* Rx fill ring start ID */
 		qcom,rxfill-rings = <4>;		/* Total number of Rx fill rings to be provisioned */
-
 		qcom,rxdesc-ring-start = <20>;		/* Rx desc ring start ID */
 		qcom,rxdesc-rings = <4>;		/* Total number of Rx desc rings to be provisioned */
 		qcom,rx-page-mode = <0>;		/* Rx fill ring page mode */
-
 		qcom,tx-map-priority-level = <1>;	/* Tx priority level per port */
 		qcom,rx-map-priority-level = <1>;	/* Rx priority level per core */
 		qcom,ppeds-num = <4>;			/* Number of PPEDS nodes */
 		/* PPE-DS node format: <Rx-fill Tx-cmpl Rx Tx Queue-base Queue-count> */
-		qcom,ppeds-map = <0x1 0x1 0x1 0x1 0x4 0x4>,
-				 <0x2 0x2 0x2 0x2 0x8 0x4>,
-				 <0x3 0x3 0x3 0x3 0xc 0x4>;
-//		qcom,ppeds-map = <1 1 1 1 32 8>,	/* PPEDS Node#0 ring and queue map */
-//				<2 2 2 2 40 8>,		/* PPEDS Node#1 ring and queue map */
-//				<3 3 3 3 48 8>,		/* PPEDS Node#2 ring and queue map */
-//				<0 0 0 0 56 8>;		/* PPEDS Node#3 ring and queue map */
+		qcom,ppeds-map = <1 1 1 1 32 8>,	/* PPEDS Node#0 ring and queue map */
+				<2 2 2 2 40 8>,		/* PPEDS Node#1 ring and queue map */
+				<3 3 3 3 48 8>,		/* PPEDS Node#2 ring and queue map */
+				<0 0 0 0 56 8>;		/* PPEDS Node#3 ring and queue map */
 		qcom,txdesc-map = <8 9 10 11>,		/* Port0 per-core Tx ring map */
 				<12 13 14 15>,		/* Port1 per-core Tx ring map */
 				<16 17 18 19>,		/* Port2 per-core Tx ring map */
@@ -703,7 +686,6 @@
 		qcom,rxfill-map = <4 5 6 7>;		/* Per-core Rx fill ring map */
 		qcom,rxdesc-map = <20 21 22 23>;	/* Per-core Rx desc ring map */
 		qcom,rx-queue-start = <0>;		/* Rx queue start */
-
 		qcom,rx-ring-queue-map = <0 8 16 24>,	/* Priority 0 queues per-core Rx ring map */
 				<1 9 17 25>,		/* Priority 1 queues per-core Rx ring map */
 				<2 10 18 26>,		/* Priority 2 queues per-core Rx ring map */
@@ -745,14 +727,11 @@
 			   <0 502 4>,			/* Tx complete ring id #29 IRQ info */
 			   <0 501 4>,			/* Tx complete ring id #30 IRQ info */
 			   <0 500 4>,			/* Tx complete ring id #31 IRQ info */
-
 			   <0 351 4>,			/* Rx desc ring id #20 IRQ info */
 			   <0 352 4>,			/* Rx desc ring id #21 IRQ info */
 			   <0 353 4>,			/* Rx desc ring id #22 IRQ info */
 			   <0 354 4>,			/* Rx desc ring id #23 IRQ info */
-
 			   <0 499 4>,			/* Misc error IRQ info */
-
 			   <0 364 4>,			/* PPEDS Node #0(TxComp ring id #1) TxComplete IRQ info */
 			   <0 332 4>,			/* PPEDS Node #0(Rx Desc ring id #1) Rx Desc IRQ info */
 			   <0 356 4>,			/* PPEDS Node #0(RxFill Desc ring id #1) Rx Fill IRQ info */
