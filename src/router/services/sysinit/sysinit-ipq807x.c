@@ -1653,6 +1653,9 @@ void start_sysinit(void)
 		sysprintf("echo 1 > /proc/sys/dev/nss/clock/auto_scale");
 
 		break;
+	case ROUTER_8DEVICES_KIWI:
+		writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
+		break;
 	case ROUTER_BUFFALO_WXR5950AX12:
 		setscaling(0);
 		disableportlearn();
