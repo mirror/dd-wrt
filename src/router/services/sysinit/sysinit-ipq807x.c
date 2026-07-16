@@ -1854,11 +1854,7 @@ void start_wifi_drivers(void)
 			writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		} break;
 		case ROUTER_8DEVICES_KIWI: {
-			insmod("qmi_helpers");
-			char overdrive[32];
-			int od = nvram_default_geti("power_overdrive", 0);
-			sprintf(overdrive, "poweroffset=%d", od);
-			eval("insmod", "ath12k", overdrive);
+			load_ath12k_internal(profile, 0, 0, frame_mode, cert_region, 1);
 		} break;
 		case ROUTER_LINKSYS_MR5500:
 		case ROUTER_LINKSYS_MX5500:
