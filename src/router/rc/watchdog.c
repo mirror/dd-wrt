@@ -54,7 +54,8 @@ static void setpwm(int mon, int val)
 	static int avg = 255;
 	char *path;
 	static int lasttarget = -1;
-	avg += val;
+	
+	avg += (val + 1); // round up
 	avg /= 2;
 	if (lasttarget == avg)
 		return;
@@ -111,7 +112,7 @@ static int calcrpm_max(int psu, int maxtemp)
 		psu = 0;
 	if (psu > 0 && (psu / 59) < 30)
 		psu = 30 * 59;
-	return psu / 59;
+	return (psu / 59) + 1;
 }
 
 static int calcrpm(int psu)
@@ -145,7 +146,7 @@ static void check_fan(int brand)
 	#ifdef HAVE_REALTEK
 	case ROUTER_ZYXEL_XGS1250:
 		if (nvram_match("DD_BOARD", "Zyxel XGS1250-12 B1")) {
-			setpwm(3, getmaxtemp(getsensor(4), 0, 2));
+			setpwm(3, calcrpm(getmaxtemp(getsensor(4), 0, 2)));
 		} else {
 			setpwm(0, calcrpm(getsensor(1)));
 		}
@@ -156,7 +157,7 @@ static void check_fan(int brand)
 		}
 		break;
 	case ROUTER_EDGECORE_ECS4125:
-		setpwm(8, getmaxtemp(getsensor(9), 0, 7));
+		setpwm(8, calcrpm(getmaxtemp(getsensor(9), 0, 7)));
 		break;
 	#endif
 	#ifdef HAVE_ALPINE
