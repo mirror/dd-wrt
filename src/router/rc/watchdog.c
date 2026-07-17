@@ -51,22 +51,32 @@ static int writemon(const char *mon, const char *sensor, int val)
 }
 static void setpwm(int mon, int val)
 {
+	static int avg = 255;
 	char *path;
 	static int lasttarget = -1;
+	static int cnt = 0;
 	if (lasttarget == val)
 		return;
+	cnt++;
 	lasttarget = val;
 	asprintf(&path, "/sys/class/hwmon/hwmon%d", mon);
 	if (path) {
-		writemon(path, "pwm1", val);
-		writemon(path, "pwm1_auto_point1_pwm", val);
-		writemon(path, "pwm1_auto_point2_pwm", val);
+		avg += val;
+		avg /= 2;
+		if ((cnt % 3) == 0) {
+			writemon(path, "pwm1", avg);
+			writemon(path, "pwm1_auto_point1_pwm", avg);
+			writemon(path, "pwm1_auto_point2_pwm", avg);
+		}
 		free(path);
 	}
 }
 
 static void setfantarget(int mon, int val)
 {
+	static int avg = 255;
+	static int cnt = 0;
+	cnt++;
 	char *path;
 	static int lasttarget = -1;
 	if (lasttarget == val)
@@ -74,7 +84,10 @@ static void setfantarget(int mon, int val)
 	lasttarget = val;
 	asprintf(&path, "/sys/class/hwmon/hwmon%d", mon);
 	if (path) {
-		writemon(path, "fan1_target", val);
+		avg += val;
+		avg /= 2;
+		if ((cnt % 3) == 0)
+			writemon(path, "fan1_target", avg);
 		free(path);
 	}
 }
