@@ -112,6 +112,9 @@ static void check_fan(int brand)
 	int wifi1 = 0, wifi2 = 0, wifi3_mac = 0, wifi3_phy = 0;
 	char sens[64];
 	switch (brand) {
+	default:
+		break;
+	#ifdef HAVE_MVEBU
 	case ROUTER_WRT_1900AC:
 		cpu = getsensor(0);
 		target = cpu - (nvram_geti("hwmon_temp_max") * 1000);
@@ -123,6 +126,8 @@ static void check_fan(int brand)
 		target /= 10000;
 		setpwm(6, target);
 		break;
+	#endif
+	#ifdef HAVE_REALTEK
 	case ROUTER_ZYXEL_XGS1250:
 		if (nvram_match("DD_BOARD", "Zyxel XGS1250-12 B1")) {
 			for (i = 0; i < 3; i++) {
@@ -161,6 +166,8 @@ static void check_fan(int brand)
 		setpwm(8, psu / 59);
 
 		break;
+	#endif
+	#ifdef HAVE_ALPINE
 	case ROUTER_NETGEAR_R9000:
 		cpu = getsensor(1);
 		cpu *= 1000;
@@ -207,6 +214,7 @@ static void check_fan(int brand)
 		target /= 10000;
 		setfantarget(0, target);
 		break;
+	#endif
 	}
 }
 
