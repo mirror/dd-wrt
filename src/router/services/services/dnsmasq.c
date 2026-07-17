@@ -472,6 +472,7 @@ static void add_ms_telemetry(FILE *fp)
 		"presence.teams.live.com",
 		"preview.msn.com",
 		"pricelist.skype.com",
+		"prod.nexusrules.live.com.akadns.net",
 		"rad.live.com",
 		"rad.msn.com",
 		"redir.metaservices.microsoft.com",
@@ -545,6 +546,7 @@ static void add_ms_telemetry(FILE *fp)
 		"vortex-win.data.microsoft.com",
 		"vortex.data.glbdns2.microsoft.com",
 		"vortex.data.microsoft.com",
+		"vortex.data.microsoft.com.akadns.net",
 		"watson.live.com",
 		"watson.microsoft.com",
 		"watson.ppe.telemetry.microsoft.com",
@@ -564,6 +566,7 @@ static void add_ms_telemetry(FILE *fp)
 		"www.msftncsi.com",
 		"xblgdvrassets3010.blob.core.windows.net",
 		"ztd.dds.microsoft.com",
+
 	};
 	int i;
 	for (i = 0; i < sizeof(servers) / sizeof(char *); i++)
