@@ -109,6 +109,8 @@ static int calcrpm(int psu)
 static void check_fan(int brand)
 {
 	int cpu = 0, psu = 0, input = 0, target = 0, i;
+	int wifi1 = 0, wifi2 = 0, wifi3_mac = 0, wifi3_phy = 0;
+	char sens[64];
 	switch (brand) {
 	case ROUTER_WRT_1900AC:
 		cpu = getsensor(0);
@@ -147,7 +149,6 @@ static void check_fan(int brand)
 		}
 		break;
 	case ROUTER_EDGECORE_ECS4125:
-		char sens[64];
 		for (i = 0; i < 8; i++) {
 			int input = getsensor(i);
 			if (input > psu)
@@ -161,7 +162,6 @@ static void check_fan(int brand)
 
 		break;
 	case ROUTER_NETGEAR_R9000:
-		int wifi1 = 0, wifi2 = 0, wifi3_mac = 0, wifi3_phy = 0;
 		cpu = getsensor(1);
 		cpu *= 1000;
 		wifi1 = getsensor(2);
