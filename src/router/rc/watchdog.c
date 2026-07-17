@@ -55,14 +55,14 @@ static void setpwm(int mon, int val)
 	char *path;
 	static int lasttarget = -1;
 	static int cnt = 0;
-	if (lasttarget == val)
+	avg += val;
+	avg /= 2;
+	if (lasttarget == avg)
 		return;
 	cnt++;
 	lasttarget = val;
 	asprintf(&path, "/sys/class/hwmon/hwmon%d", mon);
 	if (path) {
-		avg += val;
-		avg /= 2;
 		if ((cnt % 3) == 0) {
 			writemon(path, "pwm1", avg);
 			writemon(path, "pwm1_auto_point1_pwm", avg);
@@ -76,16 +76,16 @@ static void setfantarget(int mon, int val)
 {
 	static int avg = 255;
 	static int cnt = 0;
-	cnt++;
 	char *path;
 	static int lasttarget = -1;
-	if (lasttarget == val)
+	avg += val;
+	avg /= 2;
+	if (lasttarget == avg)
 		return;
+	cnt++;
 	lasttarget = val;
 	asprintf(&path, "/sys/class/hwmon/hwmon%d", mon);
 	if (path) {
-		avg += val;
-		avg /= 2;
 		if ((cnt % 3) == 0)
 			writemon(path, "fan1_target", avg);
 		free(path);
