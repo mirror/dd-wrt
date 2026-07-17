@@ -60,7 +60,7 @@ static void setpwm(int mon, int val)
 	if (lasttarget == avg)
 		return;
 	cnt++;
-	lasttarget = val;
+	lasttarget = avg;
 	asprintf(&path, "/sys/class/hwmon/hwmon%d", mon);
 	if (path) {
 		if ((cnt % 3) == 0) {
@@ -83,7 +83,7 @@ static void setfantarget(int mon, int val)
 	if (lasttarget == avg)
 		return;
 	cnt++;
-	lasttarget = val;
+	lasttarget = avg;
 	asprintf(&path, "/sys/class/hwmon/hwmon%d", mon);
 	if (path) {
 		if ((cnt % 3) == 0)
