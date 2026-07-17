@@ -94,77 +94,63 @@ static int getsensor(int mon)
 	}
 	return val;
 }
-static int calcrpm(int psu)
+
+static int calcrpm_max(int psu, int maxtemp)
 {
 	if (psu > 65000)
 		psu = 65000; // clip at 65 celsius
 	if (psu > 50000) // min temp to turn fan on
-		psu -= 50000;
+		psu -= maxtemp * 1000;
 	else
 		psu = 0;
 	if (psu > 0 && (psu / 59) < 30)
 		psu = 30 * 59;
 	return psu / 59;
 }
+
+static int calcrpm(int psu)
+{
+	return calcrpm_max(psu, 50);
+}
+
+static int getmaxtemp(int psu, int start, int end)
+{
+	int i;
+	for (i = start; i < end + 1; i++) {
+		int input = getsensor(i);
+		if (input > psu)
+			psu = input;
+	}
+
+	return psu;
+}
 static void check_fan(int brand)
 {
-	int cpu = 0, psu = 0, input = 0, target = 0, i;
+	int cpu = 0, target = 0;
 	int wifi1 = 0, wifi2 = 0, wifi3_mac = 0, wifi3_phy = 0;
-	char sens[64];
 	switch (brand) {
 	default:
 		break;
 	#ifdef HAVE_MVEBU
 	case ROUTER_WRT_1900AC:
-		cpu = getsensor(0);
-		target = cpu - (nvram_geti("hwmon_temp_max") * 1000);
-		if (target < 0)
-			target = 0;
-		if (target > 10000)
-			target = 10000;
-		target *= 255;
-		target /= 10000;
-		setpwm(6, target);
+		setpwm(6, calcrpm_max(getsensor(0), nvram_geti("hwmon_temp_max")));
 		break;
 	#endif
 	#ifdef HAVE_REALTEK
 	case ROUTER_ZYXEL_XGS1250:
 		if (nvram_match("DD_BOARD", "Zyxel XGS1250-12 B1")) {
-			for (i = 0; i < 3; i++) {
-				int input = getsensor(i);
-				if (input > psu)
-					psu = input;
-			}
-			input = getsensor(4);
-			if (input > psu)
-				input = psu;
-			psu = calcrpm(psu);
-			setpwm(3, psu);
+			setpwm(3, getmaxtemp(getsensor(4), 0, 2));
 		} else {
-			int psu = getsensor(1);
-			psu = calcrpm(psu);
-			setpwm(0, psu);
+			setpwm(0, calcrpm(getsensor(1)));
 		}
 		break;
 	case ROUTER_DGS_1210:
 		if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F")) {
-			psu = getsensor(1);
-			psu = calcrpm(psu);
-			setpwm(0, psu);
+			setpwm(0, calcrpm(getsensor(1)));
 		}
 		break;
 	case ROUTER_EDGECORE_ECS4125:
-		for (i = 0; i < 8; i++) {
-			int input = getsensor(i);
-			if (input > psu)
-				psu = input;
-		}
-		input = getsensor(9);
-		if (input > psu)
-			psu = input;
-		psu = calcrpm(psu);
-		setpwm(8, psu / 59);
-
+		setpwm(8, getmaxtemp(getsensor(9), 0, 7));
 		break;
 	#endif
 	#ifdef HAVE_ALPINE
