@@ -399,9 +399,8 @@ static void gs_usb_receive_bulk_callback(struct urb *urb)
 	}
 }
 
-static int gs_usb_set_bittiming(struct net_device *netdev)
+static int gs_usb_set_bittiming(struct gs_can *dev)
 {
-	struct gs_can *dev = netdev_priv(netdev);
 	struct can_bittiming *bt = &dev->can.bittiming;
 	struct usb_interface *intf = dev->iface;
 	int rc;
@@ -431,7 +430,7 @@ static int gs_usb_set_bittiming(struct net_device *netdev)
 	kfree(dbt);
 
 	if (rc < 0)
-		dev_err(netdev->dev.parent, "Couldn't set bittimings (err=%d)",
+		dev_err(dev->netdev->dev.parent, "Couldn't set bittimings (err=%d)",
 			rc);
 
 	return (rc > 0) ? 0 : rc;
@@ -666,6 +665,13 @@ static int gs_can_open(struct net_device *netdev)
 	if (ctrlmode & CAN_CTRLMODE_3_SAMPLES)
 		dm->flags |= GS_CAN_MODE_TRIPLE_SAMPLE;
 
+	rc = gs_usb_set_bittiming(dev);
+	if (rc) {
+		netdev_err(netdev, "failed to set bittiming: %pe\n", ERR_PTR(rc));
+		kfree(dm);
+		return rc;
+	}
+
 	/* finally start device */
 	dev->can.state = CAN_STATE_ERROR_ACTIVE;
 	dm->mode = GS_CAN_MODE_START;
@@ -817,7 +823,6 @@ static struct gs_can *gs_make_candev(unsigned int channel, struct usb_interface 
 	dev->can.state = CAN_STATE_STOPPED;
 	dev->can.clock.freq = bt_const->fclk_can;
 	dev->can.bittiming_const = &dev->bt_const;
-	dev->can.do_set_bittiming = gs_usb_set_bittiming;
 
 	dev->can.ctrlmode_supported = 0;
 

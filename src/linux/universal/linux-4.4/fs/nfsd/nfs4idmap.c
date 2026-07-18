@@ -634,6 +634,8 @@ nfsd_map_name_to_uid(struct svc_rqst *rqstp, const char *name, size_t namelen,
 	__be32 status;
 	u32 id = -1;
 	status = do_name_to_id(rqstp, IDMAP_TYPE_USER, name, namelen, &id);
+	if (status)
+		return status;
 	*uid = make_kuid(&init_user_ns, id);
 	if (!uid_valid(*uid))
 		status = nfserr_badowner;
@@ -647,6 +649,8 @@ nfsd_map_name_to_gid(struct svc_rqst *rqstp, const char *name, size_t namelen,
 	__be32 status;
 	u32 id = -1;
 	status = do_name_to_id(rqstp, IDMAP_TYPE_GROUP, name, namelen, &id);
+	if (status)
+		return status;
 	*gid = make_kgid(&init_user_ns, id);
 	if (!gid_valid(*gid))
 		status = nfserr_badowner;

@@ -3078,7 +3078,6 @@ static sector_t sync_request(struct mddev *mddev, sector_t sector_nr,
 				    !test_bit(In_sync, &conf->mirrors[d].rdev->flags))
 					continue;
 				/* This is where we read from */
-				any_working = 1;
 				rdev = conf->mirrors[d].rdev;
 				sector = r10_bio->devs[j].addr;
 
@@ -3094,6 +3093,7 @@ static sector_t sync_request(struct mddev *mddev, sector_t sector_nr,
 						continue;
 					}
 				}
+				any_working = 1;
 				bio = r10_bio->devs[0].bio;
 				bio_reset(bio);
 				bio->bi_next = biolist;

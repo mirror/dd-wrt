@@ -1514,6 +1514,9 @@ struct task_struct {
 	unsigned sched_migrated:1;
 	unsigned :0; /* force alignment to the next boundary */
 
+	/* Save user-dumpable when mm goes away */
+	unsigned user_dumpable:1;
+
 	/* unserialized, strictly 'current' */
 	unsigned in_execve:1; /* bit to tell LSMs we're in execve */
 	unsigned in_iowait:1;

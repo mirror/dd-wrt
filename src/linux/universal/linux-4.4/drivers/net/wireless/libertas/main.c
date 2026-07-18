@@ -933,8 +933,8 @@ static void lbs_free_adapter(struct lbs_private *priv)
 
 	lbs_free_cmd_buffer(priv);
 	kfifo_free(&priv->event_fifo);
-	del_timer(&priv->command_timer);
-	del_timer(&priv->tx_lockup_timer);
+	del_timer_sync(&priv->command_timer);
+	del_timer_sync(&priv->tx_lockup_timer);
 	del_timer(&priv->auto_deepsleep_timer);
 
 	lbs_deb_leave(LBS_DEB_MAIN);

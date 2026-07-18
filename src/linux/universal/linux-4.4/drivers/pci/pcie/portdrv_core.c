@@ -532,8 +532,9 @@ static int pcie_port_remove_service(struct device *dev)
 		dev_printk(KERN_DEBUG, dev, "unloading service driver %s\n",
 			driver->name);
 		driver->remove(pciedev);
-		put_device(dev);
 	}
+
+	put_device(dev);
 	return 0;
 }
 

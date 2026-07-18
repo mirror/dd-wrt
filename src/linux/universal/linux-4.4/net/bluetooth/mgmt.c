@@ -5621,6 +5621,9 @@ static bool ltk_is_valid(struct mgmt_ltk_info *key)
 	if (key->master != 0x00 && key->master != 0x01)
 		return false;
 
+	if (key->enc_size > sizeof(key->val))
+		return false;
+
 	switch (key->addr.type) {
 	case BDADDR_LE_PUBLIC:
 		return true;

@@ -768,10 +768,11 @@ static void connect(struct backend_info *be)
 			   "%u", &requested_num_queues);
 	if (err < 0) {
 		requested_num_queues = 1; /* Fall back to single queue */
-	} else if (requested_num_queues > xenvif_max_queues) {
+	} else if (requested_num_queues > xenvif_max_queues ||
+		   requested_num_queues == 0) {
 		/* buggy or malicious guest */
 		xenbus_dev_fatal(dev, err,
-				 "guest requested %u queues, exceeding the maximum of %u.",
+				 "guest requested %u queues, but valid range is 1 - %u.",
 				 requested_num_queues, xenvif_max_queues);
 		return;
 	}

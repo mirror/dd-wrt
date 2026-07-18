@@ -123,6 +123,12 @@ static inline struct page *migration_entry_to_page(swp_entry_t entry)
 {
 	struct page *p = pfn_to_page(swp_offset(entry));
 	/*
+	 * Ensure we do not race with split, which might alter tail pages
+	 * into new folios and thus result in observing an unlocked page.
+	 * This matches the write barrier in __split_huge_page_tail().
+	 */
+	smp_rmb();
+	/*
 	 * Any use of migration entries may only occur while the
 	 * corresponding page is locked
 	 */

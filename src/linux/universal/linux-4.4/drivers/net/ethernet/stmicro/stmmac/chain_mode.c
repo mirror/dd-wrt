@@ -35,7 +35,7 @@ static int stmmac_jumbo_frm(void *p, struct sk_buff *skb, int csum)
 	unsigned int entry = priv->cur_tx % txsize;
 	struct dma_desc *desc = priv->dma_tx + entry;
 	unsigned int nopaged_len = skb_headlen(skb);
-	unsigned int bmax;
+	unsigned int bmax, buf_len;
 	unsigned int i = 1, len;
 
 	if (priv->plat->enh_desc)
@@ -43,14 +43,15 @@ static int stmmac_jumbo_frm(void *p, struct sk_buff *skb, int csum)
 	else
 		bmax = BUF_SIZE_2KiB;
 
-	len = nopaged_len - bmax;
+	buf_len = min_t(unsigned int, nopaged_len, bmax);
+	len = nopaged_len - buf_len;
 
 	desc->des2 = dma_map_single(priv->device, skb->data,
-				    bmax, DMA_TO_DEVICE);
+				    buf_len, DMA_TO_DEVICE);
 	if (dma_mapping_error(priv->device, desc->des2))
 		return -1;
 	priv->tx_skbuff_dma[entry].buf = desc->des2;
-	priv->hw->desc->prepare_tx_desc(desc, 1, bmax, csum, STMMAC_CHAIN_MODE);
+	priv->hw->desc->prepare_tx_desc(desc, 1, buf_len, csum, STMMAC_CHAIN_MODE);
 
 	while (len != 0) {
 		priv->tx_skbuff[entry] = NULL;

@@ -46,7 +46,6 @@ struct sh_tmu_channel {
 	void __iomem *base;
 	int irq;
 
-	unsigned long rate;
 	unsigned long periodic;
 	struct clock_event_device ced;
 	struct clocksource cs;
@@ -59,6 +58,7 @@ struct sh_tmu_device {
 
 	void __iomem *mapbase;
 	struct clk *clk;
+	unsigned long rate;
 
 	enum sh_tmu_model model;
 
@@ -147,16 +147,6 @@ static void sh_tmu_start_stop_ch(struct sh_tmu_channel *ch, int start)
 
 static int __sh_tmu_enable(struct sh_tmu_channel *ch)
 {
-	int ret;
-
-	/* enable clock */
-	ret = clk_enable(ch->tmu->clk);
-	if (ret) {
-		dev_err(&ch->tmu->pdev->dev, "ch%u: cannot enable clock\n",
-			ch->index);
-		return ret;
-	}
-
 	/* make sure channel is disabled */
 	sh_tmu_start_stop_ch(ch, 0);
 
@@ -165,7 +155,6 @@ static int __sh_tmu_enable(struct sh_tmu_channel *ch)
 	sh_tmu_write(ch, TCNT, 0xffffffff);
 
 	/* configure channel to parent clock / 4, irq off */
-	ch->rate = clk_get_rate(ch->tmu->clk) / 4;
 	sh_tmu_write(ch, TCR, TCR_TPSC_CLK4);
 
 	/* enable channel */
@@ -179,7 +168,6 @@ static int sh_tmu_enable(struct sh_tmu_channel *ch)
 	if (ch->enable_count++ > 0)
 		return 0;
 
-	pm_runtime_get_sync(&ch->tmu->pdev->dev);
 	dev_pm_syscore_device(&ch->tmu->pdev->dev, true);
 
 	return __sh_tmu_enable(ch);
@@ -192,9 +180,6 @@ static void __sh_tmu_disable(struct sh_tmu_channel *ch)
 
 	/* disable interrupts in TMU block */
 	sh_tmu_write(ch, TCR, TCR_TPSC_CLK4);
-
-	/* stop clock */
-	clk_disable(ch->tmu->clk);
 }
 
 static void sh_tmu_disable(struct sh_tmu_channel *ch)
@@ -208,7 +193,6 @@ static void sh_tmu_disable(struct sh_tmu_channel *ch)
 	__sh_tmu_disable(ch);
 
 	dev_pm_syscore_device(&ch->tmu->pdev->dev, false);
-	pm_runtime_put(&ch->tmu->pdev->dev);
 }
 
 static void sh_tmu_set_next(struct sh_tmu_channel *ch, unsigned long delta,
@@ -271,10 +255,8 @@ static int sh_tmu_clocksource_enable(struct clocksource *cs)
 		return 0;
 
 	ret = sh_tmu_enable(ch);
-	if (!ret) {
-		__clocksource_update_freq_hz(cs, ch->rate);
+	if (!ret)
 		ch->cs_enabled = true;
-	}
 
 	return ret;
 }
@@ -334,8 +316,7 @@ static int sh_tmu_register_clocksource(struct sh_tmu_channel *ch,
 	dev_info(&ch->tmu->pdev->dev, "ch%u: used as clock source\n",
 		 ch->index);
 
-	/* Register with dummy 1 Hz value, gets updated in ->enable() */
-	clocksource_register_hz(cs, 1);
+	clocksource_register_hz(cs, ch->tmu->rate);
 	return 0;
 }
 
@@ -346,14 +327,10 @@ static struct sh_tmu_channel *ced_to_sh_tmu(struct clock_event_device *ced)
 
 static void sh_tmu_clock_event_start(struct sh_tmu_channel *ch, int periodic)
 {
-	struct clock_event_device *ced = &ch->ced;
-
 	sh_tmu_enable(ch);
 
-	clockevents_config(ced, ch->rate);
-
 	if (periodic) {
-		ch->periodic = (ch->rate + HZ/2) / HZ;
+		ch->periodic = (ch->tmu->rate + HZ/2) / HZ;
 		sh_tmu_set_next(ch, ch->periodic, 1);
 	}
 }
@@ -435,7 +412,7 @@ static void sh_tmu_register_clockevent(struct sh_tmu_channel *ch,
 	dev_info(&ch->tmu->pdev->dev, "ch%u: used for clock events\n",
 		 ch->index);
 
-	clockevents_config_and_register(ced, 1, 0x300, 0xffffffff);
+	clockevents_config_and_register(ced, ch->tmu->rate, 0x300, 0xffffffff);
 
 	ret = request_irq(ch->irq, sh_tmu_interrupt,
 			  IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
@@ -561,6 +538,13 @@ static int sh_tmu_setup(struct sh_tmu_device *tmu, struct platform_device *pdev)
 	if (ret < 0)
 		goto err_clk_put;
 
+	/* Determine clock rate. */
+	ret = clk_enable(tmu->clk);
+	if (ret < 0)
+		goto err_clk_unprepare;
+
+	tmu->rate = clk_get_rate(tmu->clk) / 4;
+
 	/* Map the memory resource. */
 	ret = sh_tmu_map_memory(tmu);
 	if (ret < 0) {
@@ -632,8 +616,6 @@ static int sh_tmu_probe(struct platform_device *pdev)
  out:
 	if (tmu->has_clockevent || tmu->has_clocksource)
 		pm_runtime_irq_safe(&pdev->dev);
-	else
-		pm_runtime_idle(&pdev->dev);
 
 	return 0;
 }
