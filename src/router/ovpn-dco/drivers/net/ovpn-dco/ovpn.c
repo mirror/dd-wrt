@@ -66,6 +66,7 @@ int ovpn_struct_init(struct net_device *dev)
 
 	spin_lock_init(&ovpn->lock);
 	spin_lock_init(&ovpn->peers.lock);
+	mutex_init(&ovpn->napi_lock);
 
 	ovpn->crypto_wq = alloc_workqueue("ovpn-crypto-wq-%s",
 					  WQ_CPU_INTENSIVE | WQ_MEM_RECLAIM, 0,

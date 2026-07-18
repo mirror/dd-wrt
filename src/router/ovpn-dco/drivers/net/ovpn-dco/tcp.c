@@ -199,7 +199,11 @@ static int ovpn_tcp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 16, 0)
 			    int noblock,
 #endif
-			    int flags, int *addr_len)
+			    int flags
+#if LINUX_VERSION_CODE < KERNEL_VERSION(7, 1, 0)
+			    , int *addr_len
+#endif
+			    )
 {
 	bool tmp = flags & MSG_DONTWAIT;
 	DEFINE_WAIT_FUNC(wait, woken_wake_function);

@@ -36,6 +36,23 @@ static void ovpn_peer_expire(struct timer_list *t)
 	ovpn_peer_del(peer, OVPN_DEL_PEER_REASON_EXPIRED);
 }
 
+static void ovpn_peer_napi_add(struct ovpn_peer *peer)
+{
+	mutex_lock(&peer->ovpn->napi_lock);
+	netif_napi_add_tx_weight(peer->ovpn->dev, &peer->napi, ovpn_napi_poll,
+				 NAPI_POLL_WEIGHT);
+	napi_enable(&peer->napi);
+	mutex_unlock(&peer->ovpn->napi_lock);
+}
+
+static void ovpn_peer_napi_del(struct ovpn_peer *peer)
+{
+	mutex_lock(&peer->ovpn->napi_lock);
+	napi_disable(&peer->napi);
+	netif_napi_del(&peer->napi);
+	mutex_unlock(&peer->ovpn->napi_lock);
+}
+
 /* Construct a new peer */
 static struct ovpn_peer *ovpn_peer_create(struct ovpn_struct *ovpn, u32 id)
 {
@@ -89,9 +106,7 @@ static struct ovpn_peer *ovpn_peer_create(struct ovpn_struct *ovpn, u32 id)
 	}
 
 	/* configure and start NAPI */
-	netif_napi_add_tx_weight(ovpn->dev, &peer->napi, ovpn_napi_poll,
-				 NAPI_POLL_WEIGHT);
-	napi_enable(&peer->napi);
+	ovpn_peer_napi_add(peer);
 
 	dev_hold(ovpn->dev);
 
@@ -224,8 +239,7 @@ static void ovpn_peer_release_rcu(struct rcu_head *head)
 
 void ovpn_peer_release(struct ovpn_peer *peer)
 {
-	napi_disable(&peer->napi);
-	netif_napi_del(&peer->napi);
+	ovpn_peer_napi_del(peer);
 
 	if (peer->sock)
 		ovpn_socket_put(peer->sock);
@@ -237,8 +251,8 @@ static void ovpn_peer_delete_work(struct work_struct *work)
 {
 	struct ovpn_peer *peer = container_of(work, struct ovpn_peer,
 					      delete_work);
-	ovpn_peer_release(peer);
 	ovpn_netlink_notify_del_peer(peer);
+	ovpn_peer_release(peer);
 }
 
 /* Use with kref_put calls, when releasing refcount
@@ -416,8 +430,8 @@ static struct in6_addr ovpn_nexthop6(struct ovpn_struct *ovpn, struct in6_addr d
 		.daddr = dst,
 	};
 
-	rt = (struct rt6_info *)ipv6_stub->ipv6_dst_lookup_flow(dev_net(ovpn->dev), NULL, &fl,
-								NULL);
+	rt = (struct rt6_info *)ip6_dst_lookup_flow(dev_net(ovpn->dev), NULL,
+						    &fl, NULL);
 	if (IS_ERR(rt)) {
 		net_dbg_ratelimited("%s: no route to host %pI6\n", __func__, &dst);
 		/* if we end up here this packet is probably going to be thrown away later */

@@ -13,6 +13,7 @@
 #include "peer.h"
 
 #include <uapi/linux/ovpn_dco.h>
+#include <linux/mutex.h>
 #include <linux/spinlock.h>
 #include <linux/workqueue.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
@@ -29,6 +30,9 @@ struct ovpn_struct {
 
 	/* protect writing to the ovpn_struct object */
 	spinlock_t lock;
+
+	/* protect NAPI add/delete operations */
+	struct mutex napi_lock;
 
 	/* workqueue used to schedule crypto work that may sleep */
 	struct workqueue_struct *crypto_wq;

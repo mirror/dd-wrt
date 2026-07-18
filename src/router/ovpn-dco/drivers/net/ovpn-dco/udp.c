@@ -22,7 +22,7 @@
 #include <net/dst_cache.h>
 #include <net/route.h>
 #if LINUX_VERSION_CODE > KERNEL_VERSION(4, 20, 0)
-#include <net/ipv6_stubs.h>
+#include <net/ipv6.h>
 #endif
 #include <net/udp_tunnel.h>
 
@@ -219,7 +219,7 @@ static int ovpn_udp6_output(struct ovpn_struct *ovpn, struct ovpn_bind *bind,
 		dst_cache_reset(cache);
 	}
 
-	dst = ipv6_stub->ipv6_dst_lookup_flow(sock_net(sk), sk, &fl, NULL);
+	dst = ip6_dst_lookup_flow(sock_net(sk), sk, &fl, NULL);
 	if (IS_ERR(dst)) {
 		ret = PTR_ERR(dst);
 		net_dbg_ratelimited("%s: no route to host %pISpc: %d\n", ovpn->dev->name,
