@@ -724,6 +724,7 @@ uint32_t bond_xmit_hash_without_skb(uint8_t *src_mac, uint8_t *dst_mac,
 /* QCA NSS ECM bonding support - End */
 
 void bond_work_init_all(struct bonding *bond);
+void bond_work_cancel_all(struct bonding *bond);
 
 #ifdef CONFIG_PROC_FS
 void bond_create_proc_entry(struct bonding *bond);
