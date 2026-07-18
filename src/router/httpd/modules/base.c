@@ -3184,7 +3184,7 @@ static struct mime_handler mime_handlers[] = {
 	{ "nvrambak**.bin*", "application/octet-stream", no_cache, NULL, nv_file_out, do_auth, NO_HEADER, IGNORE_OPTIONS, LOCKED },
 	{ "nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, do_auth, SEND_HEADER, IGNORE_OPTIONS, LOCKED },
 #endif
-	{ "alarmserver.cgi*", "text/html", no_cache, alarmserver_in, NULL, NULL, SEND_HEADER, IGNORE_OPTIONS, NOLOCK },
+	{ "alarmserver.cgi*", "text/html", no_cache, alarmserver_in, alarmserver_out, NULL, SEND_HEADER, IGNORE_OPTIONS, NOLOCK },
 
 #ifdef HAVE_SSHD
 	{ "id_ed25519.ssh*", "application/octet-stream", no_cache, NULL, download_ssh_key, do_auth, NO_HEADER, IGNORE_OPTIONS,

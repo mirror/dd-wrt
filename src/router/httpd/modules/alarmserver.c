@@ -219,4 +219,19 @@ out:;
 	return 0;
 }
 
+size_t websWrite(webs_t wp, char *fmt, ...);
+
+static int alarmserver_out(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
+{
+	websWrite(wp, "HikVision/Abus compatible Alarmserver\n");
+	websDone(wp, 200);
+	dd_loginfo("alarmserver", "Alarmserver: received event from %s", addr);
+	char *addr = wp->http_client_ip;
+	struct tm tm;
+	localtime_r(timep, &tm);
+	char date[200];
+	strftime(date, 200, "%FT%T%z", &tm);
+	sysprintf("%s \\\"unspecified\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"), date,
+		  addr, "generic", "alarm");
+}
 int do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
