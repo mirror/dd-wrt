@@ -54,7 +54,7 @@ static void setpwm(int mon, int val)
 	static int avg = 255;
 	char *path;
 	static int lasttarget = -1;
-
+	
 	avg += (val + 1); // round up
 	avg /= 2;
 	if (lasttarget == avg)
@@ -153,11 +153,11 @@ static void check_fan(int brand)
 		break;
 	case ROUTER_DGS_1210:
 		if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F")) {
-			setpwm(0, calcrpm_max(getsensor(1), nvram_default_geti("hwmon_temp_max", 51)));
+			setpwm(0, calcrpm_max(getsensor(1),nvram_default_geti("hwmon_temp_max", 51)));
 		}
 		break;
 	case ROUTER_EDGECORE_ECS4125:
-		setpwm(8, calcrpm_max(getmaxtemp(getsensor(9), 0, 7), nvram_default_geti("hwmon_temp_max", 51)));
+		setpwm(8, calcrpm_max(getmaxtemp(getmaxtemp(9, 11), 0, 7),nvram_default_geti("hwmon_temp_max", 51)));
 		break;
 	#endif
 	#ifdef HAVE_ALPINE
