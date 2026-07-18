@@ -54,7 +54,7 @@ static void setpwm(int mon, int val)
 	static int avg = 255;
 	char *path;
 	static int lasttarget = -1;
-	
+
 	avg += (val + 1); // round up
 	avg /= 2;
 	if (lasttarget == avg)
@@ -140,24 +140,24 @@ static void check_fan(int brand)
 		break;
 	#ifdef HAVE_MVEBU
 	case ROUTER_WRT_1900AC:
-		setpwm(6, calcrpm_max(getsensor(0), nvram_default_geti("hwmon_temp_max", 51000)));
+		setpwm(6, calcrpm_max(getsensor(0), nvram_default_geti("hwmon_temp_max", 51)));
 		break;
 	#endif
 	#ifdef HAVE_REALTEK
 	case ROUTER_ZYXEL_XGS1250:
 		if (nvram_match("DD_BOARD", "Zyxel XGS1250-12 B1")) {
-			setpwm(3, calcrpm(getmaxtemp(getsensor(4), 0, 2)), nvram_default_geti("hwmon_temp_max", 51000));
+			setpwm(3, calcrpm_max(getmaxtemp(getsensor(4), 0, 2), nvram_default_geti("hwmon_temp_max", 51)));
 		} else {
-			setpwm(0, calcrpm_max(getsensor(1)));
+			setpwm(0, calcrpm_max(getsensor(1), nvram_default_geti("hwmon_temp_max", 51)));
 		}
 		break;
 	case ROUTER_DGS_1210:
 		if (nvram_match("DD_BOARD", "D-Link DGS-1210-28P F") || nvram_match("DD_BOARD", "D-Link DGS-1210-28MP F")) {
-			setpwm(0, calcrpm_max(getsensor(1)),nvram_default_geti("hwmon_temp_max", 51000));
+			setpwm(0, calcrpm_max(getsensor(1), nvram_default_geti("hwmon_temp_max", 51)));
 		}
 		break;
 	case ROUTER_EDGECORE_ECS4125:
-		setpwm(8, calcrpm_max(getmaxtemp(getsensor(9), 0, 7)),nvram_default_geti("hwmon_temp_max", 51000));
+		setpwm(8, calcrpm_max(getmaxtemp(getsensor(9), 0, 7), nvram_default_geti("hwmon_temp_max", 51)));
 		break;
 	#endif
 	#ifdef HAVE_ALPINE
