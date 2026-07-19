@@ -228,6 +228,9 @@ static int alarmserver_out(unsigned char method, struct mime_handler *handler, c
 	websDone(wp, 200);
 	dd_logdebug("httpd", "alarm: path %s\n",path);
 	char *addr = wp->http_client_ip;
+	char check[INET6_ADDRSTRLEN + 1];
+	getipv4fromipv6(check, ip);
+	addr = check;
 	dd_loginfo("alarmserver", "Alarmserver: received event from %s", addr);
 	struct tm tm;
 	time_t t;
