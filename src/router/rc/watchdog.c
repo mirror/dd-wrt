@@ -392,7 +392,7 @@ static void watchdog(void)
 
 int main(int argc, char *argv[])
 {
-	#ifdef HAVE_ATH11K
+	#if 0
 	memset(zerocount, 0, sizeof(zerocount));
 	#endif
 	dd_daemon();
