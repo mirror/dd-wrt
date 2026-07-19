@@ -147,16 +147,16 @@ static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 	char buf[1024];
 	wp->restore_ret = EINVAL;
 	int i;
-
 	if (nvram_match("alarmserver", "1")) {
 		/*
 	 * Look for our part 
 	 */
+		dd_logdebug("httpd","enter %s\n", __func__);
 		int v2 = 0;
 		while (len > 0) {
 			if (!wfgets(buf, MIN(len + 1, sizeof(buf)), wp, NULL))
 				return -1;
-			dd_logdebug("httpd", "%s",buf););
+			dd_logdebug("httpd", "%s\n",buf);
 			len -= strlen(buf);
 			/* there are 2 different protocol versions out there */
 			if (!strncasecmp(buf, "Content-Disposition:", 20)) {
@@ -226,11 +226,13 @@ static int alarmserver_out(unsigned char method, struct mime_handler *handler, c
 {
 	websWrite(wp, "HikVision/Abus compatible Alarmserver\n");
 	websDone(wp, 200);
-	dd_logdebug("httpd", "alarm: path %s",path);
+	dd_logdebug("httpd", "alarm: path %s\n",path);
 	char *addr = wp->http_client_ip;
 	dd_loginfo("alarmserver", "Alarmserver: received event from %s", addr);
 	struct tm tm;
-	localtime_r(timep, &tm);
+	time_t t;
+	time(&t);
+	localtime_r(&t, &tm);
 	char date[200];
 	strftime(date, 200, "%FT%T%z", &tm);
 	sysprintf("%s \\\"unspecified\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"), date,

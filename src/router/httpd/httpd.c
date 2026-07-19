@@ -933,8 +933,9 @@ static void *handle_request(void *arg)
 	/* Parse the first line of the request. */
 	int cnt = 0;
 	int eof = 0;
-	dd_logdebug("httpd", "parse line");
+	dd_logdebug("httpd", "get line\n");
 	wfgets(line, LINE_LEN, conn_fp, &eof);
+	dd_logdebug("httpd", "parse line %s", line);
 	if (eof) {
 		send_error(conn_fp, 0, 408, live_translate(conn_fp, "share.tcp_error"), NULL,
 			   live_translate(conn_fp, "share.unexpected_connection_close"));
