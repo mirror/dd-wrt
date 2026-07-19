@@ -225,8 +225,8 @@ static int alarmserver_out(unsigned char method, struct mime_handler *handler, c
 {
 	websWrite(wp, "HikVision/Abus compatible Alarmserver\n");
 	websDone(wp, 200);
-	dd_loginfo("alarmserver", "Alarmserver: received event from %s", addr);
 	char *addr = wp->http_client_ip;
+	dd_loginfo("alarmserver", "Alarmserver: received event from %s", addr);
 	struct tm tm;
 	localtime_r(timep, &tm);
 	char date[200];
