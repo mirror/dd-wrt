@@ -156,6 +156,7 @@ static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 		while (len > 0) {
 			if (!wfgets(buf, MIN(len + 1, sizeof(buf)), wp, NULL))
 				return -1;
+			dd_logdebug("httpd", "%s",buf););
 			len -= strlen(buf);
 			/* there are 2 different protocol versions out there */
 			if (!strncasecmp(buf, "Content-Disposition:", 20)) {
@@ -225,6 +226,7 @@ static int alarmserver_out(unsigned char method, struct mime_handler *handler, c
 {
 	websWrite(wp, "HikVision/Abus compatible Alarmserver\n");
 	websDone(wp, 200);
+	dd_logdebug("httpd", "alarm: path %s",path);
 	char *addr = wp->http_client_ip;
 	dd_loginfo("alarmserver", "Alarmserver: received event from %s", addr);
 	struct tm tm;
