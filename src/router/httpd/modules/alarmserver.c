@@ -87,7 +87,7 @@ static int hik_generic(const char *filename, const char *mem, size_t len)
 	char *desc = getXMLTag(mem, "eventDescription", s_desc, sizeof(s_desc));
 	char *addr = getXMLTag(mem, "ipAddress", s_addr, sizeof(s_addr));
 
-	static int lastevent = -(5 * 60);
+/*	static int lastevent = -(5 * 60);
 	int new = time(NULL);
 	if (new < lastevent)
 		lastevent = new;
@@ -95,7 +95,7 @@ static int hik_generic(const char *filename, const char *mem, size_t len)
 		dd_loginfo("alarmserver", "ignore event from %s (time delta %d)", addr ? addr : "N/A", new - lastevent);
 		return 0;
 	}
-	lastevent = new;
+	lastevent = new;*/
 
 	if (filename && date && name && desc && addr) {
 		dd_loginfo("alarmserver", "Alarmserver: received event from %s", addr);
