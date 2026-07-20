@@ -56,7 +56,7 @@ int32_t nss_dp_hal_clock_set_and_enable(struct device *dev, const char *id, unsi
 	}
 
 	if (rate) {
-		printk(KERN_INFO "set rate %s:%ld\n", id, rate);
+//		printk(KERN_INFO "set rate %s:%ld\n", id, rate);
 		err = clk_set_rate(clk, rate);
 		if (err) {
 			printk(KERN_INFO "error set rate %s:%ld\n", id, rate);
