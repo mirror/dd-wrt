@@ -1824,6 +1824,7 @@ void start_wifi_drivers(void)
 		case ROUTER_BUFFALO_WXR5950AX12:
 		case ROUTER_XIAOMI_BE7000:
 		case ROUTER_ASUS_AX89X:
+		case ROUTER_8DEVICES_KIWI:
 			//		case ROUTER_GLINET_AX1800:
 			profile = 1024;
 			nvram_set("mem_profile", "1024");
