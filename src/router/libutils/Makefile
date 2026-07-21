@@ -630,7 +630,24 @@ ifeq ($(CONFIG_WILLY),y)
 CFLAGS += -DHAVE_WILLY
 endif
 ifeq ($(CONFIG_MSTP),y)
+ifeq ($(KERNELVERSION),6.1)
 CFLAGS += -DHAVE_MSTP
+endif
+ifeq ($(KERNELVERSION),6.1-nss)
+CFLAGS += -DHAVE_MSTP
+endif
+ifeq ($(KERNELVERSION),6.6-nss)
+CFLAGS += -DHAVE_MSTP
+endif
+ifeq ($(KERNELVERSION),6.6)
+CFLAGS += -DHAVE_MSTP
+endif
+ifeq ($(KERNELVERSION),6.12)
+CFLAGS += -DHAVE_MSTP
+endif
+ifeq ($(KERNELVERSION),6.12-nss)
+CFLAGS += -DHAVE_MSTP
+endif
 endif
 ifeq ($(CONFIG_E380AC),y)
 CFLAGS += -DHAVE_E380AC
