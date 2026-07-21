@@ -1,9 +1,8 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * Based on Bill Evans's getmale.c
  *
  * Copyright (C) 2012 by Vladimir Cotfas <unix_router@yahoo.com>
- *
- * Released under GPLv2
  */
 #include <sys/select.h>
 #include <sys/types.h>

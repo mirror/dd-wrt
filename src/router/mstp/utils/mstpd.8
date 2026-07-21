@@ -1,0 +1,159 @@
+.\" SPDX-License-Identifier: GPL-2.0-or-later
+.Dd April 28, 2026
+.Dt MSTPD 8
+.Os
+.Sh NAME
+.Nm mstpd
+.Nd Multiple Spanning Tree Protocol daemon
+.Sh SYNOPSIS
+.Nm
+.Op Fl d
+.Op Fl s
+.Op Fl v Ar level
+.Nm
+.Fl V
+.Sh DESCRIPTION
+.Nm
+is a user-space daemon that implements the IEEE 802.1D-2004 STP, the IEEE
+802.1D-2004 RSTP and the IEEE 802.1Q-2005 MSTP variants of the Spanning
+Tree Protocol for Linux bridges.
+It replaces the in-kernel STP implementation by running the bridge in
+.Em user_stp
+mode and translates the resulting CIST port states back to the kernel
+bridge.
+.Pp
+.Nm
+relies on the
+.Xr bridge-stp 8
+helper script, which the kernel invokes whenever STP is enabled or
+disabled on a bridge (via
+.Ic brctl stp Ar bridge Ic on No / Ic off
+or
+.Ic ip link set Ar bridge Ic type bridge stp_state Ar 0|1 ) ,
+to start, stop and attach bridges to the running daemon.
+Once started,
+.Nm
+is configured at runtime through
+.Xr mstpctl 8 .
+.Pp
+The MSTP code path is largely untested and is not recommended for
+production use; the STP and RSTP code paths are well exercised and pass
+the IXIA ANVL RSTP test suite (with the exception of looped-back BPDUs).
+.Pp
+By default,
+.Nm
+forks into the background, writes its PID to
+.Pa /var/run/mstpd.pid ,
+and logs through
+.Xr syslog 3
+under the
+.Cm daemon
+facility.
+.Sh OPTIONS
+.Bl -tag -width Ds
+.It Fl d
+Do not daemonize.
+.Nm
+stays in the foreground and logs to standard output instead of
+.Xr syslog 3 ,
+unless
+.Fl s
+is also given.
+Useful for debugging and for running under a service supervisor.
+.It Fl s
+Log to
+.Xr syslog 3
+even when running in the foreground.
+Implied when daemonizing.
+.It Fl v Ar level
+Set the log verbosity.
+.Ar level
+is an integer:
+.Cm 0
+silences all output,
+.Cm 1
+prints errors only,
+.Cm 2
+.Pq the default
+adds informational messages, and
+.Cm 3
+adds debug traces.
+Higher values up to
+.Cm 100
+are accepted but produce no additional detail.
+.It Fl V
+Print the
+.Nm
+version and exit.
+.El
+.Sh SIGNALS
+.Bl -tag -width Ds
+.It Dv SIGTERM , SIGINT , SIGHUP , SIGUSR2
+Shut down cleanly.
+.It Dv SIGUSR1
+Raise the log level to
+.Cm debug
+at runtime.
+.It Dv SIGPIPE
+Ignored.
+.El
+.Sh FILES
+.Bl -tag -width Ds
+.It Pa /var/run/mstpd.pid
+PID file written when running as a daemon.
+.It Pa /etc/bridge-stp.conf
+Configuration file read by
+.Xr bridge-stp 8 ;
+controls whether
+.Nm
+is started automatically and which arguments are passed to it.
+.El
+.Pp
+.Xr mstpctl 8
+talks to the daemon over a Linux abstract Unix-domain socket
+.Pq Dv AF_UNIX No name Li \e0.mstp_server ,
+not over a socket file in the filesystem.
+.Sh EXIT STATUS
+.Nm
+exits
+.Cm 0
+on a clean shutdown and non-zero on a fatal error (failure to daemonize,
+to create the PID file, to open the control socket, or to attach to
+.Xr netlink 7 ) .
+.Sh EXAMPLES
+Run in the foreground with debug logging, for troubleshooting:
+.Dl # mstpd -d -v 4
+.Pp
+Enable user-space STP on a bridge so that the kernel hands control to
+.Nm
+through
+.Xr bridge-stp 8 :
+.Dl # ip link set br0 type bridge stp_state 1
+.Pp
+Inspect the running daemon's view of a bridge:
+.Dl # mstpctl showbridge br0
+.Sh SEE ALSO
+.Xr mstpctl-utils-interfaces 5 ,
+.Xr brctl 8 ,
+.Xr bridge-stp 8 ,
+.Xr ip 8 ,
+.Xr mstp_restart 8 ,
+.Xr mstpctl 8
+.Sh STANDARDS
+.Rs
+.%T IEEE Std 802.1D-2004, Media Access Control (MAC) Bridges
+.Re
+.Rs
+.%T IEEE Std 802.1Q-2005, Virtual Bridged Local Area Networks
+.Re
+.Sh AUTHORS
+.An -nosplit
+.Nm
+was written by
+.An Srinivas Aji Aq Mt Aji_Srinivas@emc.com
+and
+.An Vitalii Demianets Aq Mt dvitasgs@gmail.com ,
+with contributions from many others.
+.Pp
+This manual page was written by
+.An Nadzeya Hutsko Aq Mt nadzya.info@gmail.com

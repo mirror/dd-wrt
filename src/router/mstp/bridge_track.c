@@ -1,23 +1,7 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*****************************************************************************
   Copyright (c) 2006 EMC Corporation.
   Copyright (c) 2011 Factor-SPE
-
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published by the Free
-  Software Foundation; either version 2 of the License, or (at your option)
-  any later version.
-
-  This program is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
-
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc., 59
-  Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-  The full GNU General Public License is included in this distribution in the
-  file called LICENSE.
 
   Authors: Srinivas Aji <Aji_Srinivas@emc.com>
   Authors: Vitalii Demianets <dvitasgs@gmail.com>
@@ -46,7 +30,6 @@
 #endif
 
 static LIST_HEAD(bridges);
-static LIST_HEAD(ports);
 
 static bridge_t * create_br(int if_index)
 {
@@ -58,6 +41,9 @@ static bridge_t * create_br(int if_index)
     if (!index_to_name(if_index, br->sysdeps.name))
         goto err;
     if (get_hwaddr(br->sysdeps.name, br->sysdeps.macaddr))
+        goto err;
+
+    if (!driver_create_bridge(br, br->sysdeps.macaddr))
         goto err;
 
     INFO("Add bridge %s", br->sysdeps.name);
@@ -109,10 +95,10 @@ static port_t * create_if(bridge_t * br, int if_index)
     INFO("Add iface %s as port#%d to bridge %s", prt->sysdeps.name,
          portno, br->sysdeps.name);
     prt->bridge = br;
+    if (!driver_create_port(prt, portno))
+        goto err;
     if(!MSTP_IN_port_create_and_add_tail(prt, portno))
         goto err;
-
-    list_add_tail(&prt->list, &ports);
 
     return prt;
 err:
@@ -123,28 +109,18 @@ err:
 static port_t * find_if(bridge_t * br, int if_index)
 {
     port_t *prt;
-
-    if (br) {
-        list_for_each_entry(prt, &br->ports, br_list)
-        {
-            if(prt->sysdeps.if_index == if_index)
-                return prt;
-        }
-    }
-    else
+    list_for_each_entry(prt, &br->ports, br_list)
     {
-        list_for_each_entry(prt, &ports, list)
-        {
-            if(prt->sysdeps.if_index == if_index)
-                return prt;
-        }
+        if(prt->sysdeps.if_index == if_index)
+            return prt;
     }
     return NULL;
 }
 
 static inline void delete_if(port_t *prt)
 {
-    list_del(&prt->list);
+    INFO("Del iface %s", prt->sysdeps.name);
+    driver_delete_port(prt);
     MSTP_IN_delete_port(prt);
     free(prt);
 }
@@ -167,6 +143,7 @@ static bool delete_br_byindex(int if_index)
     INFO("Delete bridge %s (%d)", br->sysdeps.name, if_index);
 
     list_del(&br->list);
+    driver_delete_bridge(br);
     MSTP_IN_delete_bridge(br);
     free(br);
     return true;
@@ -176,7 +153,10 @@ void bridge_one_second(void)
 {
     bridge_t *br;
     list_for_each_entry(br, &bridges, list)
-        MSTP_IN_one_second(br);
+    {
+        if(br->stp_enabled)
+            MSTP_IN_one_second(br);
+    }
 }
 
 /* New MAC address is stored in addr, which also holds the old value on entry.
@@ -218,7 +198,7 @@ static void set_br_up(bridge_t * br, bool up)
         MSTP_IN_set_bridge_address(br, br->sysdeps.macaddr);
     }
 
-    if(changed)
+    if(changed && br->stp_enabled)
         MSTP_IN_set_bridge_enable(br, br->sysdeps.up);
 }
 
@@ -273,7 +253,7 @@ static void set_if_up(port_t *prt, bool up)
             changed = true;
         }
     }
-    if(changed)
+    if(changed && prt->bridge->stp_enabled)
         MSTP_IN_set_port_enable(prt, prt->sysdeps.up, prt->sysdeps.speed,
                                 prt->sysdeps.duplex);
 }
@@ -292,7 +272,15 @@ int bridge_notify(int br_index, int if_index, bool newlink, unsigned flags)
     if((br_index >= 0) && (br_index != if_index))
     {
         if(!(br = find_br(br_index)))
-            return -2; /* bridge not in list */
+        {
+            /* Auto-create bridge in monitoring mode */
+            if(!(br = create_br(br_index)))
+            {
+                ERROR("Couldn't create data for bridge interface %d", br_index);
+                return -2;
+            }
+            INFO("Auto-monitor bridge %s", br->sysdeps.name);
+        }
         int br_flags = get_flags(br->sysdeps.name);
         if(br_flags >= 0)
             set_br_up(br, !!(br_flags & IFF_UP));
@@ -354,215 +342,20 @@ int bridge_notify(int br_index, int if_index, bool newlink, unsigned flags)
             if(br_index == if_index)
             {
                 if(!(br = find_br(br_index)))
-                    return -2; /* bridge not in list */
+                {
+                    /* Auto-create bridge in monitoring mode */
+                    if(!(br = create_br(br_index)))
+                    {
+                        ERROR("Couldn't create data for bridge interface %d", br_index);
+                        return -2;
+                    }
+                    INFO("Auto-monitor bridge %s", br->sysdeps.name);
+                }
                 set_br_up(br, up);
             }
         }
     }
     return 0;
-}
-
-int bridge_mst_notify(int br_index, bool mst_en)
-{
-    bridge_t *br = NULL;
-
-    LOG("br_index %d, mst_en %d", br_index, mst_en);
-
-    if(br_index >= 0)
-    {
-        if(!(br = find_br(br_index)))
-            return -2; /* bridge not in list */
-    }
-
-    br->sysdeps.mst_en = mst_en;
-
-    return 0;
-}
-
-static inline void set_vlan(__u32 *vlans, __u16 vid)
-{
-    int offset = vid / 32;
-    int bit = vid % 32;
-
-    vlans[offset] |= (1u << bit);
-}
-
-static inline void clear_vlan(__u32 *vlans, __u16 vid)
-{
-    int offset = vid / 32;
-    int bit = vid % 32;
-
-    vlans[offset] &= ~(1u << bit);
-}
-
-static inline bool get_vlan(__u32 *vlans, __u16 vid)
-{
-    int offset = vid / 32;
-    int bit = vid % 32;
-
-    return !!(vlans[offset] & (1u << bit));
-}
-
-static bool bridge_has_vlan(bridge_t *br, __u16 vid)
-{
-    port_t *prt = NULL;
-
-    if(get_vlan(br->sysdeps.vlans, vid))
-        return true;
-
-    list_for_each_entry(prt, &br->ports, br_list)
-       if(get_vlan(prt->sysdeps.vlans, vid))
-           return true;
-
-    return false;
-}
-
-static bool port_has_tree_vlan(per_tree_port_t *ptp)
-{
-    port_t *prt = ptp->port;
-    bridge_t *br = prt->bridge;
-    __u16 vid;
-
-    for(vid = 1; vid <= MAX_VID; ++vid)
-    {
-      if (br->fid2mstid[br->vid2fid[vid]] != ptp->MSTID)
-          continue;
-
-      if (get_vlan(prt->sysdeps.vlans, vid))
-          return true;
-    }
-    return false;
-}
-
-static int br_set_vlan_msti(struct rtnl_handle *rth, unsigned ifindex,
-                            __u16 vid, __u16 msti)
-{
-    struct
-    {
-        struct nlmsghdr n;
-        struct br_vlan_msg bvm;
-        char buf[256];
-    } req;
-    struct rtattr *gopts;
-
-    memset(&req, 0, sizeof(req));
-
-    req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct br_vlan_msg));
-    req.n.nlmsg_flags = NLM_F_REQUEST;
-    req.n.nlmsg_type = RTM_NEWVLAN;
-    req.bvm.family = PF_BRIDGE;
-    req.bvm.ifindex = ifindex;
-
-    gopts = addattr_nest(&req.n, sizeof(req), BRIDGE_VLANDB_GLOBAL_OPTIONS | NLA_F_NESTED);
-
-    addattr16(&req.n, sizeof(req), BRIDGE_VLANDB_GOPTS_ID, vid);
-    addattr16(&req.n, sizeof(req), BRIDGE_VLANDB_GOPTS_MSTI, msti);
-
-    addattr_nest_end(&req.n, gopts);
-
-    return rtnl_talk(rth, &req.n, 0, 0, NULL, NULL, NULL);
-}
-
-static int br_set_msti_state(struct rtnl_handle *rth, unsigned ifindex,
-                             __u16 msti, __u8 state)
-{
-    struct
-    {
-        struct nlmsghdr n;
-        struct ifinfomsg ifi;
-        char buf[256];
-    } req;
-    struct rtattr *af_spec, *mst, *entry;
-
-    memset(&req, 0, sizeof(req));
-
-    req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifinfomsg));
-    req.n.nlmsg_flags = NLM_F_REQUEST;
-    req.n.nlmsg_type = RTM_SETLINK;
-    req.ifi.ifi_family = PF_BRIDGE;
-    req.ifi.ifi_index = ifindex;
-
-    af_spec = addattr_nest(&req.n, sizeof(req), IFLA_AF_SPEC);
-    mst = addattr_nest(&req.n, sizeof(req), IFLA_BRIDGE_MST);
-
-    entry = addattr_nest(&req.n, sizeof(req), IFLA_BRIDGE_MST_ENTRY | NLA_F_NESTED);
-
-    addattr16(&req.n, sizeof(req), IFLA_BRIDGE_MST_ENTRY_MSTI, msti);
-    addattr8(&req.n, sizeof(req), IFLA_BRIDGE_MST_ENTRY_STATE, state);
-
-    addattr_nest_end(&req.n, entry);
-    addattr_nest_end(&req.n, mst);
-    addattr_nest_end(&req.n, af_spec);
-
-    return rtnl_talk(rth, &req.n, 0, 0, NULL, NULL, NULL);
-}
-
-int bridge_vlan_notify(int if_index, bool newvlan, __u16 vid)
-{
-  bridge_t *br = NULL;
-  port_t *prt = NULL;
-  __u32 *vlans = NULL;
-
-  LOG("if_index %d, newvlan %d, vid %d", if_index, newvlan, vid);
-
-  br = find_br(if_index);
-  if(br)
-  {
-       vlans = br->sysdeps.vlans;
-  }
-  else
-  {
-      prt = find_if(NULL, if_index);
-      if(!prt)
-          return -2; /* unknown device */
-
-      br = prt->bridge;
-      vlans = prt->sysdeps.vlans;
-  }
-
-  if(newvlan)
-  {
-      if(br->sysdeps.mst_en)
-      {
-          __be16 MSTID = br->fid2mstid[br->vid2fid[vid]];
-          __u16 mstid = __be16_to_cpu(MSTID);
-
-          if(!bridge_has_vlan(br, vid))
-          {
-             LOG_BRNAME(br, "Bridge did not have vid %i yet, updating msti", vid);
-             if(0 > br_set_vlan_msti(&rth_state, br->sysdeps.if_index,
-                                     vid, mstid))
-                 ERROR_BRNAME(br, "Couldn't set kernel vlan %i to msti %i", vid, mstid);
-          }
-
-          if(0 != MSTID && prt && !get_vlan(vlans, vid))
-          {
-              per_tree_port_t *ptp;
-
-              list_for_each_entry(ptp, &prt->trees, port_list)
-              {
-                  if(ptp->MSTID == MSTID)
-                  {
-                      LOG_PRTNAME(br, prt, "Port did not have msti %i yet, setting msti STP state %s",
-                                  mstid, stp_state_name(ptp->state));
-                      if(0 > br_set_msti_state(&rth_state,
-                                               prt->sysdeps.if_index, mstid,
-                                               ptp->state))
-                          ERROR_MSTINAME(br, prt, ptp, "Couldn't set kernel bridge state %s",
-                                         stp_state_name(ptp->state));
-                      break;
-                  }
-              }
-          }
-      }
-      set_vlan(vlans, vid);
-  }
-  else
-  {
-      clear_vlan(vlans, vid);
-  }
-
-  return 0;
 }
 
 struct llc_header
@@ -604,7 +397,12 @@ void bridge_bpdu_rcv(int if_index, const unsigned char *data, int len)
     /* sanity checks */
     TSTM(br == prt->bridge,, "Bridge mismatch. This bridge is '%s' but port "
         "'%s' belongs to bridge '%s'", br->sysdeps.name, prt->sysdeps.name, prt->bridge->sysdeps.name);
-    TSTM(prt->sysdeps.up,, "Port '%s' should be up", prt->sysdeps.name);
+
+    if(!prt->sysdeps.up)
+    {
+        LOG_PRTNAME(prt, "BPDU received but port is down");
+        return;
+    }
 
     /* Validate Ethernet and LLC header,
      * maybe we can skip this check thanks to Berkeley filter in packet socket?
@@ -647,34 +445,7 @@ static int br_set_state(struct rtnl_handle *rth, unsigned ifindex, __u8 state)
 
     addattr8(&req.n, sizeof(req.buf), IFLA_PROTINFO, state);
 
-    return rtnl_talk(rth, &req.n, 0, 0, NULL, NULL, NULL);
-}
-
-static int br_flush_port_vlan(struct rtnl_handle *rth, unsigned ifindex, __u16 vid)
-{
-    struct
-    {
-        struct nlmsghdr n;
-        struct ndmsg ndm;
-        char buf[256];
-    } req;
-
-    memset(&req, 0, sizeof(req));
-
-    req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ndmsg));
-    req.n.nlmsg_flags = NLM_F_REQUEST | NLM_F_BULK;
-    req.n.nlmsg_type = RTM_DELNEIGH;
-    req.ndm.ndm_family = PF_BRIDGE;
-    req.ndm.ndm_ifindex = ifindex;
-
-    req.ndm.ndm_flags = NTF_MASTER;
-    /* only flush dynamic entries */
-    req.ndm.ndm_state = 0;
-    addattr16(&req.n, sizeof(req.buf), NDA_NDM_STATE_MASK,
-              NUD_NOARP | NUD_PERMANENT);
-    addattr16(&req.n, sizeof(req.buf), NDA_VLAN, vid);
-
-    return rtnl_talk(rth, &req.n, 0, 0, NULL, NULL, NULL);
+    return rtnl_talk(rth, &req.n, NULL);
 }
 
 static int br_flush_port(char *ifname)
@@ -707,94 +478,54 @@ static int br_set_ageing_time(char *brname, unsigned int ageing_time)
 
 void MSTP_OUT_set_state(per_tree_port_t *ptp, int new_state)
 {
-    const char * state_name;
+    char * state_name;
     port_t *prt = ptp->port;
-    bridge_t *br = prt->bridge;
 
     if(ptp->state == new_state)
         return;
     ptp->state = driver_set_new_state(ptp, new_state);
-    state_name = stp_state_name(ptp->state);
 
     switch(ptp->state)
     {
+        case BR_STATE_LISTENING:
+            state_name = "listening";
+            break;
+        case BR_STATE_LEARNING:
+            state_name = "learning";
+            break;
         case BR_STATE_FORWARDING:
+            state_name = "forwarding";
             ++(prt->num_trans_fwd);
             break;
         case BR_STATE_BLOCKING:
+            state_name = "blocking";
             ++(prt->num_trans_blk);
             break;
         default:
+        case BR_STATE_DISABLED:
+            state_name = "disabled";
             break;
     }
-    INFO_MSTINAME(br, prt, ptp, "entering %s state", state_name);
+
+    if(!prt->sysdeps.up && (ptp->state != BR_STATE_DISABLED)
+       && (ptp->state != BR_STATE_BLOCKING))
+    {
+       ERROR_MSTINAME(ptp, "trying to set a down port to %s", state_name);
+       return;
+    }
+
+    INFO_MSTINAME(ptp, "entering %s state", state_name);
 
     /* Translate new CIST state to the kernel bridge code */
     if(0 == ptp->MSTID)
     { /* CIST */
-        if(0 > br_set_state(&rth_state, prt->sysdeps.if_index, ptp->state))
-            ERROR_PRTNAME(br, prt, "Couldn't set kernel bridge state %s",
-                          state_name);
-    }
-    else
-    {
-        if(br->sysdeps.mst_en && port_has_tree_vlan(ptp))
+        /* we can only modify STP states of up ports */
+        if(prt->sysdeps.up)
         {
-            if(0 > br_set_msti_state(&rth_state, prt->sysdeps.if_index,
-                                     __be16_to_cpu(ptp->MSTID), ptp->state))
-                ERROR_MSTINAME(br, prt, ptp, "Couldn't set kernel bridge state %s",
-                               state_name);
+            if(0 > br_set_state(&rth_state, prt->sysdeps.if_index, ptp->state))
+                ERROR_PRTNAME(prt, "Couldn't set kernel bridge state %s",
+                              state_name);
         }
-    }
-}
-
-void MSTP_OUT_set_vid2mstid(bridge_t *br, __u16 vid, __u16 mstid)
-{
-    if(!br->sysdeps.mst_en)
-        return;
-
-    if(bridge_has_vlan(br, vid))
-    {
-        __be16 MSTID = __cpu_to_be16(mstid);
-        tree_t *tree;
-        per_tree_port_t *ptp;
-        bool found = false;
-
-        if (0 > br_set_vlan_msti(&rth_state, br->sysdeps.if_index, vid, mstid))
-        {
-            ERROR_BRNAME(br, "Couldn't set kernel vlan %i to msti %i", vid, mstid);
-            return;
-        }
-
-        list_for_each_entry(tree, &br->trees, bridge_list)
-            if(tree->MSTID == MSTID)
-            {
-                found = true;
-                break;
-            }
-
-        if(!found)
-        {
-            ERROR_BRNAME(br, "Couldn't find MSTI with ID %hu", mstid);
-            return;
-        }
-
-        list_for_each_entry(ptp, &tree->ports, tree_list)
-        {
-            port_t *prt = ptp->port;
-
-            if(get_vlan(prt->sysdeps.vlans, vid))
-            {
-                if(0 > br_set_msti_state(&rth_state, prt->sysdeps.if_index, mstid,
-                                         ptp->state))
-                    ERROR_MSTINAME(br, prt, ptp, "Couldn't set kernel bridge state %s",
-                                   stp_state_name(ptp->state));
-            }
-        }
-    }
-    else
-    {
-        LOG_BRNAME(br, "Bridge does not have vid %i yet, deferring", vid);
     }
 }
 
@@ -807,37 +538,16 @@ void MSTP_OUT_set_vid2mstid(bridge_t *br, __u16 vid, __u16 mstid)
 void MSTP_OUT_flush_all_fids(per_tree_port_t * ptp)
 {
     port_t *prt = ptp->port;
-    bridge_t *br = prt->bridge;
-    int vid;
 
-    if (br->sysdeps.mst_en)
-    {
-        for(vid = 1; vid <= MAX_VID; ++vid)
-        {
-            if(br->fid2mstid[br->vid2fid[vid]] != ptp->MSTID)
-                continue;
-
-            if(!get_vlan(prt->sysdeps.vlans, vid))
-                continue;
-    
-            if(0 > br_flush_port_vlan(&rth_state, prt->sysdeps.if_index, vid))
-                ERROR_PRTNAME(br, prt,
-                              "Couldn't flush kernel bridge forwarding database for vid %i", vid);
-        }
+    /* Translate CIST flushing to the kernel bridge code */
+    if(0 == ptp->MSTID)
+    { /* CIST */
+        if(0 > br_flush_port(prt->sysdeps.name))
+            ERROR_PRTNAME(prt,
+                          "Couldn't flush kernel bridge forwarding database");
     }
-    else
-    {
-        /* Translate CIST flushing to the kernel bridge code */
-        if(0 == ptp->MSTID)
-        { /* CIST */
-            if(0 > br_flush_port(prt->sysdeps.name))
-                ERROR_PRTNAME(br, prt,
-                              "Couldn't flush kernel bridge forwarding database");
-        }
-    }
-
     /* Completion signal MSTP_IN_all_fids_flushed will be called by driver */
-    INFO_MSTINAME(br, prt, ptp, "Flushing forwarding database");
+    INFO_MSTINAME(ptp, "Flushing forwarding database");
     driver_flush_all_fids(ptp);
 }
 
@@ -847,7 +557,7 @@ void MSTP_OUT_set_ageing_time(port_t *prt, unsigned int ageingTime)
     bridge_t *br = prt->bridge;
 
     actual_ageing_time = driver_set_ageing_time(prt, ageingTime);
-    INFO_PRTNAME(br, prt, "Setting new ageing time to %u", actual_ageing_time);
+    INFO_PRTNAME(prt, "Setting new ageing time to %u", actual_ageing_time);
 
     /*
      * Translate new ageing time to the kernel bridge code.
@@ -861,7 +571,6 @@ void MSTP_OUT_set_ageing_time(port_t *prt, unsigned int ageingTime)
 void MSTP_OUT_tx_bpdu(port_t *prt, bpdu_t * bpdu, int size)
 {
     char *bpdu_type, *tcflag;
-    bridge_t *br = prt->bridge;
 
     switch(bpdu->protocolVersion)
     {
@@ -892,7 +601,7 @@ void MSTP_OUT_tx_bpdu(port_t *prt, bpdu_t * bpdu, int size)
     if((protoSTP == bpdu->protocolVersion) && (bpduTypeTCN == bpdu->bpduType))
     {
         ++(prt->num_tx_tcn);
-        LOG_PRTNAME(br, prt, "sending %s BPDU", bpdu_type);
+        LOG_PRTNAME(prt, "sending %s BPDU", bpdu_type);
     }
     else
     {
@@ -902,7 +611,7 @@ void MSTP_OUT_tx_bpdu(port_t *prt, bpdu_t * bpdu, int size)
             ++(prt->num_tx_tcn);
             tcflag = ", tcFlag";
         }
-        LOG_PRTNAME(br, prt, "sending %s BPDU%s", bpdu_type, tcflag);
+        LOG_PRTNAME(prt, "sending %s BPDU%s", bpdu_type, tcflag);
     }
 
     struct llc_header h;
@@ -924,7 +633,7 @@ void MSTP_OUT_tx_bpdu(port_t *prt, bpdu_t * bpdu, int size)
 void MSTP_OUT_shutdown_port(port_t *prt)
 {
     if(0 > if_shutdown(prt->sysdeps.name))
-        ERROR_PRTNAME(prt->bridge, prt, "Couldn't shutdown port");
+        ERROR_PRTNAME(prt, "Couldn't shutdown port");
 }
 
 /* User interface commands */
@@ -976,7 +685,7 @@ void MSTP_OUT_shutdown_port(port_t *prt)
         }                                                                \
     if(!found)                                                           \
     {                                                                    \
-        ERROR_PRTNAME(br, prt, "Couldn't find MSTI with ID %hu", mstid); \
+        ERROR_PRTNAME(prt, "Couldn't find MSTI with ID %hu", mstid);     \
         return -1;                                                       \
     }
 
@@ -1151,14 +860,11 @@ int CTL_set_fids2mstids(int br_index, __u16 *fids2mstids)
     return MSTP_IN_set_all_fids2mstids(br, fids2mstids) ? 0 : -1;
 }
 
-int CTL_add_bridges(int *br_array, int* *ifaces_lists)
+int CTL_add_bridges(int *br_array)
 {
-    int i, j, ifcount, brcount = br_array[0];
-    bridge_t *br, *other_br;
-    port_t *prt, *nxt;
-    int br_flags, if_flags;
-    int *if_array;
-    bool found;
+    int i, brcount = br_array[0];
+    bridge_t *br;
+    port_t *prt;
 
     for(i = 1; i <= brcount; ++i)
     {
@@ -1170,54 +876,23 @@ int CTL_add_bridges(int *br_array, int* *ifaces_lists)
                       br_array[i]);
                 return -1;
             }
-            if(0 <= (br_flags = get_flags(br->sysdeps.name)))
-                set_br_up(br, !!(br_flags & IFF_UP));
         }
-        if_array = ifaces_lists[i - 1];
-        ifcount = if_array[0];
-        /* delete all interfaces which are not in list */
-        list_for_each_entry_safe(prt, nxt, &br->ports, br_list)
+
+        if(br->stp_enabled)
+            continue; /* already managed */
+
+        br->stp_enabled = true;
+        INFO("Enable STP on bridge %s", br->sysdeps.name);
+
+        /* Enable the bridge directly - sysdeps.up may already be set
+         * from monitoring, so set_br_up would not detect a change */
+        MSTP_IN_set_bridge_enable(br, br->sysdeps.up);
+
+        /* Enable all existing ports */
+        list_for_each_entry(prt, &br->ports, br_list)
         {
-            found = false;
-            for(j = 1; j <= ifcount; ++j)
-            {
-                if(prt->sysdeps.if_index == if_array[j])
-                {
-                    found = true;
-                    break;
-                }
-            }
-            if(!found)
-                delete_if(prt);
-        }
-        /* add all new interfaces from the list */
-        for(j = 1; j <= ifcount; ++j)
-        {
-            if(NULL != find_if(br, if_array[j]))
-                continue;
-            /* Check if this interface is slave of another bridge */
-            list_for_each_entry(other_br, &bridges, list)
-            {
-                if(other_br != br)
-                    if(delete_if_byindex(other_br, if_array[j]))
-                    {
-                        INFO("Device %d has come to bridge %s. "
-                             "Missed notify for deletion from bridge %s",
-                             if_array[j], br->sysdeps.name,
-                             other_br->sysdeps.name);
-                        break;
-                    }
-            }
-            if(NULL == (prt = create_if(br, if_array[j])))
-            {
-                INFO("Couldn't create data for interface %d (master %s)",
-                     if_array[j], br->sysdeps.name);
-                continue;
-            }
-            if(0 <= (if_flags = get_flags(prt->sysdeps.name)))
-                set_if_up(prt, (IFF_UP | IFF_RUNNING) ==
-                               (if_flags & (IFF_UP | IFF_RUNNING))
-                         );
+            MSTP_IN_set_port_enable(prt, prt->sysdeps.up, prt->sysdeps.speed,
+                                    prt->sysdeps.duplex);
         }
     }
 
@@ -1227,9 +902,24 @@ int CTL_add_bridges(int *br_array, int* *ifaces_lists)
 int CTL_del_bridges(int *br_array)
 {
     int i, brcount = br_array[0];
+    bridge_t *br;
+    port_t *prt;
 
     for(i = 1; i <= brcount; ++i)
-        delete_br_byindex(br_array[i]);
+    {
+        if(!(br = find_br(br_array[i])))
+            continue;
+        if(br->stp_enabled)
+        {
+            INFO("Disable STP on bridge %s", br->sysdeps.name);
+            /* Disable all ports */
+            list_for_each_entry(prt, &br->ports, br_list)
+                MSTP_IN_set_port_enable(prt, false, 0, 0);
+            /* Disable the bridge */
+            MSTP_IN_set_bridge_enable(br, false);
+            br->stp_enabled = false;
+        }
+    }
 
     return 0;
 }

@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
 # This is a NetworkManager dispatcher script for the mstpd daemon
 # to apply any configuration to bridges based on the values in
 # /etc/sysconfig/network-scripts/bridge-stp

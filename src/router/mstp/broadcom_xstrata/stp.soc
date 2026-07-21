@@ -1,5 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2012 by Phybridge Inc
-# Released under GPLv2
 
 port ge3 stp=block
 port ge4 stp=block

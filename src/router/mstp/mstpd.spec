@@ -1,10 +1,10 @@
 Name:          mstpd
-Summary:       STP/RSTP/PVST+/MSTP Spanning Tree Protocol Daemon
+Summary:       STP/RSTP/MSTP Spanning Tree Protocol Daemon
 URL:           https://github.com/mstpd/mstpd
-Version:       0.1.0
+Version:       0.2.0
 Release:       1%{?dist}
 
-License:       GPLv2+
+License:       GPL-2.0-or-later AND GPL-2.0 AND RSA-MD
 Group:         System Environment/Daemons
 
 Source0:       https://github.com/mstpd/mstpd/archive/%{version}/%{name}-%{version}.tar.gz
@@ -16,8 +16,7 @@ Requires: python3
 
 %description
 This package provides a user-space daemon which replaces the STP handling that
-is built into the Linux kernel Ethernet bridge and adds support for RSTP and
-PVST+.
+is built into the Linux kernel Ethernet bridge and adds support for RSTP.
 
 This daemon also supports participating in MSTP.  However, due to the way the
 Linux kernel implements its FIBs, it is not currently possible to map MSTP
@@ -127,8 +126,11 @@ END
 %{_libexecdir}/mstpctl-utils/ifquery
 %{_libexecdir}/mstpctl-utils/ifupdown.sh
 %{_libexecdir}/mstpctl-utils/mstpctl-utils-functions.sh
-%doc %{_mandir}/man8/mstpctl.8.gz
+%doc %{_mandir}/man5/bridge-stp.8
 %doc %{_mandir}/man5/mstpctl-utils-interfaces.5.gz
+%doc %{_mandir}/man8/mstp_restart.8
+%doc %{_mandir}/man8/mstpctl.8.gz
+%doc %{_mandir}/man8/mstpd.8.gz
 %doc %{_docdir}/mstpd/README.VLANs
 %doc %{_docdir}/mstpd/README
 %license %{_docdir}/mstpd/LICENSE

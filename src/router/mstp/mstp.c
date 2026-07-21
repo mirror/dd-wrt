@@ -1,10 +1,6 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * mstp.c      State machines from IEEE 802.1Q-2005
- *
- *  This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public License
- *  as published by the Free Software Foundation; either version
- *  2 of the License, or (at your option) any later version.
  *
  * Authors: Vitalii Demianets <dvitasgs@gmail.com>
  */
@@ -37,6 +33,7 @@
 
 #include <config.h>
 
+#include <stdint.h>
 #include <string.h>
 #include <netinet/in.h>
 #include <linux/if_bridge.h>
@@ -44,7 +41,6 @@
 
 #include "mstp.h"
 #include "log.h"
-#include "driver.h"
 #include "clock_gettime.h"
 
 static void PTSM_tick(port_t *prt);
@@ -207,7 +203,7 @@ static per_tree_port_t * create_ptp(tree_t *tree, port_t *prt)
     per_tree_port_t *ptp = calloc(1, sizeof(*ptp));
     if(!ptp)
     {
-        ERROR_PRTNAME(prt->bridge, prt, "Out of memory");
+        ERROR_PRTNAME(prt, "Out of memory");
         return NULL;
     }
     ptp->port = prt;
@@ -235,9 +231,6 @@ static per_tree_port_t * create_ptp(tree_t *tree, port_t *prt)
 bool MSTP_IN_bridge_create(bridge_t *br, __u8 *macaddr)
 {
     tree_t *cist;
-
-    if (!driver_create_bridge(br, macaddr))
-        return false;
 
     /* Initialize all fields except sysdeps and anchor */
     INIT_LIST_HEAD(&br->ports);
@@ -276,9 +269,6 @@ bool MSTP_IN_port_create_and_add_tail(port_t *prt, __u16 portno)
     tree_t *tree;
     per_tree_port_t *ptp, *nxt;
     bridge_t *br = prt->bridge;
-
-    if (!driver_create_port(prt, portno))
-        return false;
 
     /* Initialize all fields except sysdeps and bridge */
     INIT_LIST_HEAD(&prt->trees);
@@ -340,8 +330,6 @@ void MSTP_IN_delete_port(port_t *prt)
     per_tree_port_t *ptp, *nxt;
     bridge_t *br = prt->bridge;
 
-    driver_delete_port(prt);
-
     prt->deleted = true;
     if(prt->portEnabled)
     {
@@ -364,8 +352,6 @@ void MSTP_IN_delete_bridge(bridge_t *br)
 {
     tree_t *tree, *nxt_tree;
     port_t *prt, *nxt_prt;
-
-    driver_delete_bridge(br);
 
     br->bridgeEnabled = false;
 
@@ -585,7 +571,7 @@ void MSTP_IN_rx_bpdu(port_t *prt, bpdu_t *bpdu, int size)
     if(prt->BpduGuardPort)
     {
         prt->BpduGuardError = true;
-        ERROR_PRTNAME(br, prt,
+        ERROR_PRTNAME(prt,
                       "Received BPDU on BPDU Guarded Port - Port Down");
         MSTP_OUT_shutdown_port(prt);
         return;
@@ -593,7 +579,7 @@ void MSTP_IN_rx_bpdu(port_t *prt, bpdu_t *bpdu, int size)
 
     if(prt->bpduFilterPort)
     {
-        LOG_PRTNAME(br, prt,
+        LOG_PRTNAME(prt,
                    "Received BPDU on BPDU Filtered Port - discarded");
         ++(prt->num_rx_bpdu_filtered);
         return;
@@ -601,13 +587,13 @@ void MSTP_IN_rx_bpdu(port_t *prt, bpdu_t *bpdu, int size)
 
     if(!br->bridgeEnabled)
     {
-        INFO_PRTNAME(br, prt, "Received BPDU while bridge is disabled");
+        INFO_PRTNAME(prt, "Received BPDU while bridge is disabled");
         return;
     }
 
     if(prt->rcvdBpdu)
     {
-        ERROR_PRTNAME(br, prt, "Port hasn't processed previous BPDU");
+        ERROR_PRTNAME(prt, "Port hasn't processed previous BPDU");
         return;
     }
 
@@ -615,7 +601,7 @@ void MSTP_IN_rx_bpdu(port_t *prt, bpdu_t *bpdu, int size)
     if((TCN_BPDU_SIZE > size) || (0 != bpdu->protocolIdentifier))
     {
 bpdu_validation_failed:
-        INFO_PRTNAME(br, prt, "BPDU validation failed");
+        INFO_PRTNAME(prt, "BPDU validation failed");
         return;
     }
     switch(bpdu->bpduType)
@@ -624,7 +610,7 @@ bpdu_validation_failed:
             /* 14.4.b) */
             /* Valid TCN BPDU */
             bpdu->protocolVersion = protoSTP;
-            LOG_PRTNAME(br, prt, "received TCN BPDU");
+            LOG_PRTNAME(prt, "received TCN BPDU");
             break;
         case bpduTypeConfig:
             /* 14.4.a) */
@@ -632,7 +618,7 @@ bpdu_validation_failed:
                 goto bpdu_validation_failed;
             /* Valid Config BPDU */
             bpdu->protocolVersion = protoSTP;
-            LOG_PRTNAME(br, prt, "received Config BPDU%s",
+            LOG_PRTNAME(prt, "received Config BPDU%s",
                         (bpdu->flags & (1 << offsetTc)) ? ", tcFlag" : ""
                        );
             break;
@@ -643,7 +629,7 @@ bpdu_validation_failed:
                     goto bpdu_validation_failed;
                 /* Valid RST BPDU */
                 /* bpdu->protocolVersion = protoRSTP; */
-                LOG_PRTNAME(br, prt, "received RST BPDU%s",
+                LOG_PRTNAME(prt, "received RST BPDU%s",
                             (bpdu->flags & (1 << offsetTc)) ? ", tcFlag" : ""
                            );
                 break;
@@ -668,7 +654,7 @@ bpdu_validation_failed:
             { /* 14.4.d) */
                 /* Valid RST BPDU */
                 bpdu->protocolVersion = protoRSTP;
-                LOG_PRTNAME(br, prt, "received RST BPDU");
+                LOG_PRTNAME(prt, "received RST BPDU");
                 break;
             }
             /* 14.4.e) */
@@ -676,7 +662,7 @@ bpdu_validation_failed:
             bpdu->protocolVersion = protoMSTP;
             prt->rcvdBpduNumOfMstis = mstis_size
                                       / sizeof(msti_configuration_message_t);
-            LOG_PRTNAME(br, prt, "received MST BPDU%s with %d MSTIs",
+            LOG_PRTNAME(prt, "received MST BPDU%s with %d MSTIs",
                         (bpdu->flags & (1 << offsetTc)) ? ", tcFlag" : "",
                         prt->rcvdBpduNumOfMstis
                        );
@@ -702,7 +688,7 @@ bpdu_validation_failed:
     if(prt->BaInconsistent)
     {
         prt->BaInconsistent = false;
-        INFO_PRTNAME(br, prt, "Clear Bridge assurance inconsistency");
+        INFO_PRTNAME(prt, "Clear Bridge assurance inconsistency");
     }
     updtbrAssuRcvdInfoWhile(prt);
 
@@ -737,6 +723,7 @@ void MSTP_IN_get_cist_bridge_status(bridge_t *br, CIST_BridgeStatus *status)
     assign(status->tx_hold_count, br->Transmit_Hold_Count);
     status->protocol_version = br->ForceProtocolVersion;
     status->enabled = br->bridgeEnabled;
+    status->stp_enabled = br->stp_enabled;
     assign(status->bridge_hello_time, br->Hello_Time);
     assign(status->Ageing_Time, br->Ageing_Time);
 }
@@ -801,7 +788,7 @@ int MSTP_IN_set_cist_bridge_config(bridge_t *br, CIST_BridgeConfig *cfg)
         if((2 * (new_forward_delay - 1)) < new_max_age)
         {
             ERROR_BRNAME(br, "Configured Bridge Times don't meet "
-                "2 * (Bridge Foward Delay - 1 second) >= Bridge Max Age");
+                "2 * (Bridge Forward Delay - 1 second) >= Bridge Max Age");
             r = -1;
         }
     }
@@ -833,18 +820,18 @@ int MSTP_IN_set_cist_bridge_config(bridge_t *br, CIST_BridgeConfig *cfg)
 
     if(cfg->set_max_hops)
     {
-        if((6 > cfg->max_hops) || (40 < cfg->max_hops))
+        if((6 > cfg->max_hops) || (100 < cfg->max_hops))
         {
-            ERROR_BRNAME(br, "Bridge Max Hops must be between 6 and 40");
+            ERROR_BRNAME(br, "Bridge Max Hops must be between 6 and 100");
             r = -1;
         }
     }
 
     if(cfg->set_bridge_hello_time)
     {
-        if((1 > cfg->bridge_hello_time) || (10 < cfg->bridge_hello_time))
+        if((2 != cfg->bridge_hello_time))
         {
-            ERROR_BRNAME(br, "Bridge Hello Time must be between 1 and 10");
+            ERROR_BRNAME(br, "Bridge Hello Time must be 2");
             r = -1;
         }
     }
@@ -901,17 +888,6 @@ int MSTP_IN_set_cist_bridge_config(bridge_t *br, CIST_BridgeConfig *cfg)
         if(cfg->max_hops != br->MaxHops)
         {
             assign(br->MaxHops, cfg->max_hops);
-            changed = changedBridgeTimes = true;
-        }
-    }
-
-    if(cfg->set_bridge_hello_time)
-    {
-        if(cfg->bridge_hello_time != br->Hello_Time)
-        {
-            INFO_BRNAME(br, "bridge hello_time new=%hhu, old=%hhu",
-                        cfg->bridge_hello_time, br->Hello_Time);
-            assign(br->Hello_Time, cfg->bridge_hello_time);
             changed = changedBridgeTimes = true;
         }
     }
@@ -1077,7 +1053,6 @@ int MSTP_IN_set_cist_port_config(port_t *prt, CIST_PortConfig *cfg)
     __u32 new_ExternalPathCost;
     bool new_p2p;
     per_tree_port_t *cist;
-    bridge_t *br = prt->bridge;
 
     /* Firstly, validation */
     if(cfg->set_admin_p2p)
@@ -1090,6 +1065,16 @@ int MSTP_IN_set_cist_port_config(port_t *prt, CIST_PortConfig *cfg)
                 break;
             default:
                 cfg->admin_p2p = p2pAuto;
+        }
+    }
+
+    if(cfg->set_admin_external_port_path_cost)
+    {
+        if(MAX_PATH_COST < cfg->admin_external_port_path_cost)
+        {
+            ERROR_PRTNAME(prt,
+                          "Port Path Cost must be between 0 and 200000000");
+            return -1;
         }
     }
 
@@ -1178,7 +1163,7 @@ int MSTP_IN_set_cist_port_config(port_t *prt, CIST_PortConfig *cfg)
         if(prt->BpduGuardPort != cfg->bpdu_guard_port)
         {
             prt->BpduGuardPort = cfg->bpdu_guard_port;
-            INFO_PRTNAME(br, prt,"BpduGuardPort new=%d", prt->BpduGuardPort);
+            INFO_PRTNAME(prt,"BpduGuardPort new=%d", prt->BpduGuardPort);
         }
     }
 
@@ -1187,14 +1172,14 @@ int MSTP_IN_set_cist_port_config(port_t *prt, CIST_PortConfig *cfg)
         if(prt->NetworkPort != cfg->network_port)
         {
             prt->NetworkPort = cfg->network_port;
-            INFO_PRTNAME(br, prt, "NetworkPort new=%d", prt->NetworkPort);
+            INFO_PRTNAME(prt, "NetworkPort new=%d", prt->NetworkPort);
             /* When Network port config is removed and bridge assurance
              * inconsistency is set, clear the inconsistency.
              */
             if(!prt->NetworkPort && prt->BaInconsistent)
             {
                 prt->BaInconsistent = false;
-                INFO_PRTNAME(br, prt, "Clear Bridge assurance inconsistency");
+                INFO_PRTNAME(prt, "Clear Bridge assurance inconsistency");
             }
             changed = true;
         }
@@ -1205,7 +1190,7 @@ int MSTP_IN_set_cist_port_config(port_t *prt, CIST_PortConfig *cfg)
         if(prt->dontTxmtBpdu != cfg->dont_txmt)
         {
             prt->dontTxmtBpdu = cfg->dont_txmt;
-            INFO_PRTNAME(br, prt, "donttxmt new=%d", prt->dontTxmtBpdu);
+            INFO_PRTNAME(prt, "donttxmt new=%d", prt->dontTxmtBpdu);
         }
     }
 
@@ -1215,7 +1200,7 @@ int MSTP_IN_set_cist_port_config(port_t *prt, CIST_PortConfig *cfg)
         {
             prt->bpduFilterPort = cfg->bpdu_filter_port;
             prt->num_rx_bpdu_filtered = 0;
-            INFO_PRTNAME(br, prt,"bpduFilterPort new=%d", prt->bpduFilterPort);
+            INFO_PRTNAME(prt,"bpduFilterPort new=%d", prt->bpduFilterPort);
         }
     }
 
@@ -1238,10 +1223,24 @@ int MSTP_IN_set_msti_port_config(per_tree_port_t *ptp, MSTI_PortConfig *cfg)
     {
         if(15 < cfg->port_priority)
         {
-            ERROR_MSTINAME(br, prt, ptp,
+            ERROR_MSTINAME(ptp,
                            "Port Priority must be between 0 and 15");
             return -1;
         }
+    }
+
+    if(cfg->set_admin_internal_port_path_cost)
+    {
+        if (MAX_PATH_COST < cfg->admin_internal_port_path_cost)
+        {
+            ERROR_MSTINAME(ptp,
+                           "Port Path Cost must be between 0 and 200000000");
+            return -1;
+        }
+    }
+
+    if(cfg->set_port_priority)
+    {
         valuePri = cfg->port_priority << 4;
         if(GET_PRIORITY_FROM_IDENTIFIER(ptp->portId) != valuePri)
         {
@@ -1307,7 +1306,6 @@ bool MSTP_IN_set_vid2fid(bridge_t *br, __u16 vid, __u16 fid)
     br->vid2fid[vid] = fid;
     if(vid2mstid_changed)
     {
-        MSTP_OUT_set_vid2mstid(br, vid, __be16_to_cpu(br->fid2mstid[fid]));
         RecalcConfigDigest(br);
         br_state_machines_begin(br);
     }
@@ -1330,10 +1328,7 @@ bool MSTP_IN_set_all_vids2fids(bridge_t *br, __u16 *vids2fids)
             continue;
         }
         if(br->fid2mstid[vids2fids[vid]] != br->fid2mstid[br->vid2fid[vid]])
-        {
-            MSTP_OUT_set_vid2mstid(br, vid, __be16_to_cpu(br->fid2mstid[vids2fids[vid]]));
             vid2mstid_changed = true;
-        }
     }
     memcpy(br->vid2fid, vids2fids, sizeof(br->vid2fid));
     if(vid2mstid_changed)
@@ -1352,7 +1347,6 @@ bool MSTP_IN_set_fid2mstid(bridge_t *br, __u16 fid, __u16 mstid)
     __be16 MSTID;
     bool found;
     int vid;
-    bool vid2mstid_changed;
 
     if(fid > MAX_FID)
     {
@@ -1376,7 +1370,6 @@ bool MSTP_IN_set_fid2mstid(bridge_t *br, __u16 fid, __u16 mstid)
         return false;
     }
 
-    vid2mstid_changed = false;
     if(br->fid2mstid[fid] != MSTID)
     {
         br->fid2mstid[fid] = MSTID;
@@ -1385,15 +1378,10 @@ bool MSTP_IN_set_fid2mstid(bridge_t *br, __u16 fid, __u16 mstid)
         {
             if(br->vid2fid[vid] == fid)
             {
-                vid2mstid_changed = true;
-                MSTP_OUT_set_vid2mstid(br, vid, MSTID);
+                RecalcConfigDigest(br);
+                br_state_machines_begin(br);
+                break;
             }
-        }
-
-        if(vid2mstid_changed)
-        {
-            RecalcConfigDigest(br);
-            br_state_machines_begin(br);
         }
     }
 
@@ -1444,7 +1432,7 @@ bool MSTP_IN_set_all_fids2mstids(bridge_t *br, __u16 *fids2mstids)
         if(prev_vid2mstid[vid] != br->fid2mstid[br->vid2fid[vid]])
         {
             vid2mstid_changed = true;
-            MSTP_OUT_set_vid2mstid(br, vid, br->fid2mstid[br->vid2fid[vid]]);
+            break;
         }
     }
     if(vid2mstid_changed)
@@ -1625,8 +1613,13 @@ void MSTP_IN_set_mst_config_id(bridge_t *br, __u16 revision, __u8 *name)
         assign(br->MstConfigId.s.revision_level, valueRevision);
         memset(br->MstConfigId.s.configuration_name, 0,
                sizeof(br->MstConfigId.s.configuration_name));
+        /* configuration_name can be non NUL terminated cf 802.1Q-2022 section 13.8
+         * copy everything and ignore GCC warning */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
         strncpy((char *)br->MstConfigId.s.configuration_name, (char *)name,
-                sizeof(br->MstConfigId.s.configuration_name) - 1);
+                sizeof(br->MstConfigId.s.configuration_name));
+#pragma GCC diagnostic pop
         br_state_machines_begin(br);
     }
 }
@@ -2401,7 +2394,7 @@ static inline __u8 message_role_from_port_role(per_tree_port_t *ptp)
         case roleMaster:
             return encodedRoleMaster;
         default:
-            ERROR_PRTNAME(ptp->port->bridge, ptp->port,
+            ERROR_PRTNAME(ptp->port,
                           "Attempt to send from port with Disabled role");
             return encodedRoleAlternateBackup;
     }
@@ -2612,6 +2605,7 @@ static void updtRolesTree(tree_t *tree)
     port_priority_vector_t root_path_priority;
     bridge_identifier_t prevRRootID = tree->rootPriority.RRootID;
     __be32 prevExtRootPathCost = tree->rootPriority.ExtRootPathCost;
+    __u32 newRootPathCost;
     bool cist = (0 == tree->MSTID);
 
     /* a), b) Select new root priority vector = {rootPriority, rootPortId} */
@@ -2635,18 +2629,28 @@ static void updtRolesTree(tree_t *tree)
             root_path_priority = ptp->portPriority;
             if(prt->rcvdInternal)
             {
+                newRootPathCost = __be32_to_cpu(root_path_priority.IntRootPathCost);
+
+                if(newRootPathCost > (UINT32_MAX - ptp->InternalPortPathCost))
+                    newRootPathCost = UINT32_MAX;
+                else
+                    newRootPathCost += ptp->InternalPortPathCost;
+
                 assign(root_path_priority.IntRootPathCost,
-                       __cpu_to_be32(__be32_to_cpu(root_path_priority.IntRootPathCost)
-                                     + ptp->InternalPortPathCost)
-                      );
+                       __cpu_to_be32(newRootPathCost));
             }
             else if(cist) /* Yes, this check might be superfluous,
                            * but I want to be on the safe side */
             {
+                newRootPathCost = __be32_to_cpu(root_path_priority.ExtRootPathCost);
+
+                if(newRootPathCost > (UINT32_MAX - prt->ExternalPortPathCost))
+                    newRootPathCost = UINT32_MAX;
+                else
+                    newRootPathCost += prt->ExternalPortPathCost;
+
                 assign(root_path_priority.ExtRootPathCost,
-                       __cpu_to_be32(__be32_to_cpu(root_path_priority.ExtRootPathCost)
-                                     + prt->ExternalPortPathCost)
-                      );
+                       __be32_to_cpu(newRootPathCost));
                 assign(root_path_priority.RRootID, tree->BridgeIdentifier);
                 assign(root_path_priority.IntRootPathCost,
                        __constant_cpu_to_be32(0));
@@ -4825,7 +4829,8 @@ static bool TCSM_run(per_tree_port_t *ptp, bool dry_run)
                 TCSM_to_DETECTED(ptp);
                 return false;
             }
-            if(ptp->rcvdTc || prt->rcvdTcn || prt->rcvdTcAck || ptp->tcProp)
+            if(ptp->rcvdTc || ptp->tcProp
+               || ((0 == ptp->MSTID) && (prt->rcvdTcn || prt->rcvdTcAck)))
             {
                 return TCSM_to_LEARNING(ptp, dry_run);
             }
@@ -4863,7 +4868,7 @@ static bool TCSM_run(per_tree_port_t *ptp, bool dry_run)
                 TCSM_to_LEARNING(ptp, false /* actual run */);
                 return false;
             }
-            if(prt->rcvdTcn)
+            if((0 == ptp->MSTID) && prt->rcvdTcn)
             {
                 if(dry_run) /* state change */
                     return true;
@@ -4884,7 +4889,7 @@ static bool TCSM_run(per_tree_port_t *ptp, bool dry_run)
                 TCSM_to_PROPAGATING(ptp);
                 return false;
             }
-            if(prt->rcvdTcAck)
+            if((0 == ptp->MSTID) && prt->rcvdTcAck)
             {
                 if(dry_run) /* state change */
                     return true;
@@ -5053,7 +5058,7 @@ static bool __br_state_machines_run(bridge_t *br, bool dry_run)
             if(dry_run) /* state change */
                 return true;
             prt->BaInconsistent = true;
-            ERROR_PRTNAME(prt->bridge, prt, "Bridge assurance inconsistent");
+            ERROR_PRTNAME(prt, "Bridge assurance inconsistent");
         }
     }
 

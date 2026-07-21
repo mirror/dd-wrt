@@ -1,6 +1,7 @@
 #!/bin/sh
 #
 # Copyright (C) 2012 by Phybridge Inc
+# SPDX-License-Identifier: GPL-2.0
 #
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 # source our service control routines

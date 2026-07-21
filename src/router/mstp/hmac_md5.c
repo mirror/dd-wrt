@@ -1,24 +1,4 @@
-/* Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
-rights reserved.
-
-License to copy and use this software is granted provided that it
-is identified as the "RSA Data Security, Inc. MD5 Message-Digest
-Algorithm" in all material mentioning or referencing this software
-or this function.
-
-License is also granted to make and use derivative works provided
-that such works are identified as "derived from the RSA Data
-Security, Inc. MD5 Message-Digest Algorithm" in all material
-mentioning or referencing the derived work.
-
-RSA Data Security, Inc. makes no representations concerning either
-the merchantability of this software or the suitability of this
-software for any particular purpose. It is provided "as is"
-without express or implied warranty of any kind.
-
-These notices must be retained in any copies of any part of this
-documentation and/or software.
- */
+/* SPDX-License-Identifier: RSA-MD */
 
 #include <string.h>
 #include <sys/types.h>
@@ -109,10 +89,7 @@ Rotation is separate from addition to prevent recomputation.
 /* Encodes input (UINT4) into output (unsigned char). Assumes len is
   a multiple of 4.
  */
-static void Encode(output, input, len)
-unsigned char *output;
-UINT4 *input;
-unsigned int len;
+static void Encode(unsigned char *output, const UINT4 *input, unsigned int len)
 {
     unsigned int i, j;
 
@@ -128,10 +105,7 @@ unsigned int len;
 /* Decodes input (unsigned char) into output (UINT4). Assumes len is
   a multiple of 4.
  */
-static void Decode(output, input, len)
-UINT4 *output;
-unsigned char *input;
-unsigned int len;
+static void Decode(UINT4 *output, const unsigned char *input, unsigned int len)
 {
     unsigned int i, j;
 
@@ -142,9 +116,7 @@ unsigned int len;
 
 /* MD5 basic transformation. Transforms state based on block.
  */
-static void MD5Transform(state, block)
-UINT4 state[4];
-unsigned char block[64];
+static void MD5Transform(UINT4 state[4], const unsigned char block[64])
 {
     UINT4 a = state[0], b = state[1], c = state[2], d = state[3], x[16];
 
@@ -234,8 +206,7 @@ unsigned char block[64];
 
 /* MD5 initialization. Begins an MD5 operation, writing a new context.
  */
-static void MD5Init(context)
-MD5_CTX *context;                                        /* context */
+static void MD5Init(MD5_CTX *context)
 {
     context->count[0] = context->count[1] = 0;
   /* Load magic initialization constants. */
@@ -249,10 +220,8 @@ MD5_CTX *context;                                        /* context */
   operation, processing another message block, and updating the
   context.
  */
-static void MD5Update(context, input, inputLen)
-MD5_CTX *context;                                        /* context */
-unsigned char *input;                                /* input block */
-unsigned int inputLen;                     /* length of input block */
+static void MD5Update(MD5_CTX *context, const unsigned char *input,
+                      unsigned int inputLen)
 {
     unsigned int i, index, partLen;
 
@@ -286,9 +255,7 @@ unsigned int inputLen;                     /* length of input block */
 /* MD5 finalization. Ends an MD5 message-digest operation, writing the
   the message digest and zeroizing the context.
  */
-static void MD5Final(digest, context)
-unsigned char digest[16];                         /* message digest */
-MD5_CTX *context;                                        /* context */
+static void MD5Final(unsigned char digest[16], MD5_CTX *context)
 {
     unsigned char bits[8];
     unsigned int index, padLen;
@@ -315,12 +282,8 @@ MD5_CTX *context;                                        /* context */
 /*
 ** Function: hmac_md5 from RFC-2104
 */
-void hmac_md5(text, text_len, key, key_len, digest)
-unsigned char*  text;       /* pointer to data stream */
-int             text_len;   /* length of data stream */
-unsigned char*  key;        /* pointer to authentication key */
-int             key_len;    /* length of authentication key */
-caddr_t         digest;     /* caller digest to be filled in */
+void hmac_md5(const unsigned char* text, int text_len, const unsigned char* key,
+              int key_len, void* digest)
 {
     MD5_CTX context;
     unsigned char k_ipad[65];    /* inner padding -
@@ -388,15 +351,13 @@ caddr_t         digest;     /* caller digest to be filled in */
 
 #ifdef HMAC_MDS_TEST_FUNCTIONS
 /* Digests a string */
-static void MD5String(string, digest)
-char *string;
-caddr_t digest;     /* caller digest to be filled in */
+static void MD5String(const char *string, void *digest)
 {
     MD5_CTX context;
     unsigned int len = strlen(string);
 
     MD5Init(&context);
-    MD5Update(&context, string, len);
+    MD5Update(&context, (const unsigned char *)string, len);
     MD5Final(digest, &context);
 }
 
@@ -471,7 +432,7 @@ bool MD5TestSuite(void)
 
     /* Tests from RFC-2104 */
     memset(key, 0x0B, 16);
-    hmac_md5((unsigned char *)"Hi There", 8, key, 16, (caddr_t)digest);
+    hmac_md5((unsigned char *)"Hi There", 8, key, 16, (void *)digest);
     {
         unsigned char expected_result[16] = {
             0x92, 0x94, 0x72, 0x7a, 0x36, 0x38, 0xbb, 0x1c,
@@ -479,7 +440,7 @@ bool MD5TestSuite(void)
         if(memcmp(expected_result, digest, 16))
             return false;
     }
-    hmac_md5((unsigned char *)"what do ya want for nothing?", 28, (unsigned char *)"Jefe", 4, (caddr_t)digest);
+    hmac_md5((unsigned char *)"what do ya want for nothing?", 28, (unsigned char *)"Jefe", 4, (void *)digest);
     {
         unsigned char expected_result[16] = {
             0x75, 0x0c, 0x78, 0x3e, 0x6a, 0xb0, 0xb5, 0x03,
@@ -489,7 +450,7 @@ bool MD5TestSuite(void)
     }
     memset(key, 0xAA, 16);
     memset(data, 0xDD, 50);
-    hmac_md5(data, 50, key, 16, (caddr_t)digest);
+    hmac_md5(data, 50, key, 16, (void*)digest);
     {
         unsigned char expected_result[16] = {
             0x56, 0xbe, 0x34, 0x52, 0x1d, 0x14, 0x4c, 0x88,
@@ -500,7 +461,7 @@ bool MD5TestSuite(void)
 
     /* Tests from IEEE 802.1Q-2005 13.7 Table 13-2 */
     memset(data, 0, 4096 * 2);
-    hmac_md5(data, 4096 * 2, mstp_key, 16, (caddr_t)digest);
+    hmac_md5(data, 4096 * 2, mstp_key, 16, (void *)digest);
     {
         unsigned char expected_result[16] = {
             0xac, 0x36, 0x17, 0x7f, 0x50, 0x28, 0x3c, 0xd4,
@@ -510,7 +471,7 @@ bool MD5TestSuite(void)
     }
     for(i = 3; i < 4095 * 2; i+= 2)
         data[i] = 1;
-    hmac_md5(data, 4096 * 2, mstp_key, 16, (caddr_t)digest);
+    hmac_md5(data, 4096 * 2, mstp_key, 16, (void *)digest);
     {
         unsigned char expected_result[16] = {
             0xe1, 0x3a, 0x80, 0xf1, 0x1e, 0xd0, 0x85, 0x6a,
@@ -520,7 +481,7 @@ bool MD5TestSuite(void)
     }
     for(i = 3; i < 4095 * 2; i+= 2)
         data[i] = (i / 2) % 32 + 1;
-    hmac_md5(data, 4096 * 2, mstp_key, 16, (caddr_t)digest);
+    hmac_md5(data, 4096 * 2, mstp_key, 16, (void *)digest);
     {
         unsigned char expected_result[16] = {
             0x9d, 0x14, 0x5c, 0x26, 0x7d, 0xbe, 0x9f, 0xb5,

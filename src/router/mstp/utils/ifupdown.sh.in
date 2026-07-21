@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # This script should be symlinked into /etc/network/ip-pre-up.d/ and
 # /etc/network/ip-post-down.d/ on Debian/Ubuntu systems so that it will be run

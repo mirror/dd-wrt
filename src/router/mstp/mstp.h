@@ -1,10 +1,6 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
  * mstp.h      State machines from IEEE 802.1Q-2005
- *
- *  This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public License
- *  as published by the Free Software Foundation; either version
- *  2 of the License, or (at your option) any later version.
  *
  * Authors: Vitalii Demianets <dvitasgs@gmail.com>
  */
@@ -44,8 +40,8 @@
 /* 13.7, Table 13-1 */
 #define HMAC_KEY    {0x13, 0xAC, 0x06, 0xA6, 0x2E, 0x47, 0xFD, 0x51, \
                      0xF9, 0x5D, 0x2B, 0xA2, 0x43, 0xCD, 0x03, 0x46}
-extern void hmac_md5(unsigned char * text, int text_len, unsigned char * key,
-                     int key_len, caddr_t digest);
+extern void hmac_md5(const unsigned char * text, int text_len,
+                     const unsigned char * key, int key_len, void * digest);
 #ifdef HMAC_MDS_TEST_FUNCTIONS
 extern bool MD5TestSuite(void);
 #endif /* HMAC_MDS_TEST_FUNCTIONS */
@@ -402,6 +398,7 @@ typedef struct
 
     /* not in standard */
     unsigned int uptime;
+    bool stp_enabled;
 
     sysdep_br_data_t sysdeps;
 } bridge_t;
@@ -442,7 +439,6 @@ typedef struct
 
 typedef struct
 {
-    struct list_head list; /* anchor in global list of ports */
     struct list_head br_list; /* anchor in bridge's list of ports */
     bridge_t * bridge;
     __be16 port_number;
@@ -585,7 +581,6 @@ void MSTP_IN_set_mst_config_id(bridge_t *br, __u16 revision, __u8 *name);
 
 /* External actions (outputs) */
 void MSTP_OUT_set_state(per_tree_port_t *ptp, int new_state);
-void MSTP_OUT_set_vid2mstid(bridge_t *br, __u16 vid, __u16 mstid);
 void MSTP_OUT_flush_all_fids(per_tree_port_t *ptp);
 void MSTP_OUT_set_ageing_time(port_t *prt, unsigned int ageingTime);
 void MSTP_OUT_tx_bpdu(port_t *prt, bpdu_t *bpdu, int size);
@@ -613,6 +608,7 @@ typedef struct
     bridge_identifier_t regional_root;
     unsigned int internal_path_cost;
     bool enabled; /* not in standard */
+    bool stp_enabled; /* not in standard */
     unsigned int Ageing_Time;
     __u8 max_hops;
     __u8 bridge_hello_time;

@@ -1,26 +1,50 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
 ACLOCAL_AMFLAGS = -I m4
 
 sbin_PROGRAMS = mstpd mstpctl
 
 mstpd_SOURCES = \
-	main.c epoll_loop.c epoll_loop.h clock_gettime.h nlmon.c \
+	main.c epoll_loop.c epoll_loop.h clock_gettime.h brmon.c \
 	bridge_track.c bridge_track.h driver.h bridge_ctl.h libnetlink.c \
 	libnetlink.h mstp.c mstp.h packet.c packet.h netif_utils.c \
 	netif_utils.h ctl_socket_server.c ctl_socket_server.h hmac_md5.c \
-	list.h log.h driver_deps.c \
-	include/uapi/linux/if_bridge.h include/uapi/linux/rtnetlink.h
+	list.h log.h driver_deps.c
 
 mstpctl_SOURCES = \
 	ctl_main.c ctl_socket_client.c ctl_socket_client.h ctl_functions.h
 
 mstpd_CFLAGS = \
 	-Os -Wall -D_REENTRANT -D__LINUX__ -I. \
-	-I$(top_srcdir)/include/uapi \
 	-D_GNU_SOURCE
 if ENABLE_DEVEL
   mstpd_CFLAGS += -g3 -O0 -Werror
 endif
 mstpctl_CFLAGS = $(mstpd_CFLAGS)
+
+# unit testing
+LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/tap-driver.sh
+AM_TESTS_ENVIRONMENT = CMOCKA_MESSAGE_OUTPUT=TAP
+
+check_PROGRAMS = \
+	tests/test_digest \
+	tests/test_portcost \
+	tests/test_mst_tcn_discarding \
+	$(NULL)
+TESTS = $(check_PROGRAMS)
+
+TEST_COMMON = tests/common.c tests/common.h hmac_md5.c mstp.c mstp.h
+
+tests_test_digest_SOURCES = $(TEST_COMMON) tests/test_digest.c
+tests_test_digest_CFLAGS = $(CMOCKA_CFLAGS) $(mstpd_CFLAGS)
+tests_test_digest_LDADD = $(CMOCKA_LIBS)
+
+tests_test_portcost_SOURCES = $(TEST_COMMON) tests/test_portcost.c
+tests_test_portcost_CFLAGS = $(CMOCKA_CFLAGS) $(mstpd_CFLAGS)
+tests_test_portcost_LDADD = $(CMOCKA_LIBS)
+
+tests_test_mst_tcn_discarding_SOURCES = $(TEST_COMMON) tests/test_mst_tcn_discarding.c
+tests_test_mst_tcn_discarding_CFLAGS = $(CMOCKA_CFLAGS) $(mstpd_CFLAGS)
+tests_test_mst_tcn_discarding_LDADD = $(CMOCKA_LIBS)
 
 EXTRA_DIST = bridge-stp.in utils/ifupdown.sh.in utils/mstp_config_bridge.in \
 	utils/mstpd.service.in utils/bash_completion utils/nm-dispatcher.in \
@@ -34,7 +58,7 @@ utilsexec_SCRIPTS = utils/ifupdown.sh utils/mstp_config_bridge
 dist_utilsexec_DATA = utils/mstpctl-utils-functions.sh
 sbin_SCRIPTS = bridge-stp
 dist_sysconf_DATA = bridge-stp.conf
-dist_man_MANS = utils/mstpctl.8 utils/mstpctl-utils-interfaces.5
+dist_man_MANS = utils/bridge-stp.8 utils/mstp_restart.8 utils/mstpctl-utils-interfaces.5 utils/mstpctl.8 utils/mstpd.8
 
 AM_DISTCHECK_CONFIGURE_FLAGS = --exec_prefix=$$dc_install_base \
 	--libexecdir=$$dc_install_base/lib \

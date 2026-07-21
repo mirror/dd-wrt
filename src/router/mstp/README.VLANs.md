@@ -5,7 +5,7 @@ There are currently two different ways to implement spanning tree on
 trunk ports using Linux bridging and mstpd:
 
 1. Single Spanning Tree (RSTP/STP)
-2. Per-VLAN Spanning Tree (PVST+)
+2. Per-VLAN Spanning Tree
 
 Single Spanning Tree (RSTP/STP)
 -------------------------------
@@ -28,19 +28,26 @@ with Cisco switches, you must put the Cisco switches in 'mst' mode
 (`spanning-tree mode mst`).  Cisco switches in 'mst' mode will fall back
 to PVST+ on ports connected to other switches that speak PVST+.
 
-Per-VLAN Spanning Tree (PVST+)
+Per-VLAN Spanning Tree
 ------------------------------
+
+**Note** this is not PVST+, which is a proprietary Cisco protocol.
 
 * Create Linux VLAN interfaces on top of each trunk interface.
 * For each VLAN, create a Linux bridge and attach the relevant VLAN
   interfaces to it.
 * If the native VLAN is used (if the trunk may carry untagged packets),
-  create another Linux bridge and attach the trunk interfaces to it.
-  Then create `ebtables` rules to prevent this bridge from processing
-  tagged packets, as described at
-  http://blog.rackspace.com/vms-vlans-and-bridges-oh-my-part-2
+  then create another Linux bridge, attach the trunk interfaces to it,
+  and run
+  `ebtables -t broute -A BROUTING -i <trunk iface> -p 802_1Q -j DROP`
+  for each trunk interface to prevent this bridge from processing
+  tagged packets.
 * Enable STP on each bridge.
 * Force mstpd to use RSTP on each bridge
   (`mstpctl setforcevers <bridge> rstp`).
 
-This is only compatible with other switches that speak PVST+.
+This is only compatible with other switches that run (R)STP in a similar
+manner, but is not compatible with switches running (rapid) PVST+.
+
+This is also not compatible with switchdev and by extension DSA backed
+switches, which do not support per-VLAN STP states.

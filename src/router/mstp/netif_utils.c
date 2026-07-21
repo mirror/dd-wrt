@@ -1,23 +1,7 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*****************************************************************************
   Copyright (c) 2006 EMC Corporation.
   Copyright (c) 2011 Factor-SPE
-
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published by the Free
-  Software Foundation; either version 2 of the License, or (at your option)
-  any later version.
-
-  This program is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
-
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc., 59
-  Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-  The full GNU General Public License is included in this distribution in the
-  file called LICENSE.
 
   Authors: Srinivas Aji <Aji_Srinivas@emc.com>
   Authors: Vitalii Demianets <dvitasgs@gmail.com>
@@ -33,7 +17,6 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <net/if.h>
-#include <linux/if_bridge.h>
 #include <linux/if_ether.h>
 #include <linux/ethtool.h>
 #include <linux/sockios.h>
@@ -51,7 +34,7 @@ int netsock_init(void)
     netsock = socket(AF_INET, SOCK_DGRAM, 0);
     if(0 > netsock)
     {
-        ERROR("Couldn't open inet socket for ioctls: %m\n");
+        ERROR("Couldn't open inet socket for ioctls: %m");
         return -1;
     }
     return 0;
@@ -115,7 +98,7 @@ int ethtool_get_speed_duplex(char *ifname, int *speed, int *duplex)
     ifr.ifr_data = (caddr_t)&ecmd;
     if(0 > ioctl(netsock, SIOCETHTOOL, &ifr))
     {
-        ERROR("Cannot get speed/duplex for %s: %m\n", ifname);
+        ERROR("Cannot get speed/duplex for %s: %m", ifname);
         return -1;
     }
     *speed = ethtool_cmd_speed(&ecmd); /* Ethtool speed is in Mbps */
@@ -177,21 +160,4 @@ int get_bridge_portno(char *if_name)
 out:
     close(fd);
     return res;
-}
-
-static const char *port_states[] =
-{
-    [BR_STATE_DISABLED] = "disabled",
-    [BR_STATE_LISTENING] = "listening",
-    [BR_STATE_LEARNING] = "learning",
-    [BR_STATE_FORWARDING] = "forwarding",
-    [BR_STATE_BLOCKING] = "blocking",
-};
-
-const char *stp_state_name(__u8 state)
-{
-    if (state <= BR_STATE_BLOCKING)
-	    return port_states[state];
-    else
-	    return port_states[BR_STATE_DISABLED];
 }

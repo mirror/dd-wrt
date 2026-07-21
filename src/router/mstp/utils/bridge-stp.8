@@ -1,0 +1,240 @@
+.\" SPDX-License-Identifier: GPL-2.0-or-later
+.Dd April 28, 2026
+.Dt BRIDGE-STP 8
+.Os
+.Sh NAME
+.Nm bridge-stp
+.Nd kernel helper script that drives mstpd for Linux bridges
+.Sh SYNOPSIS
+.Nm
+.Ar bridge
+.Cm start | stop
+.Nm
+.Cm restart | restart_config
+.Sh DESCRIPTION
+.Nm
+is the kernel STP helper script for
+.Xr mstpd 8 .
+The Linux kernel invokes
+.Pa /sbin/bridge-stp
+.Ar bridge Cm start
+when STP is enabled on a bridge (via
+.Ic brctl stp Ar bridge Cm on
+or
+.Ic ip link set Ar bridge Ic type bridge stp_state 1 ) ,
+and
+.Pa /sbin/bridge-stp
+.Ar bridge Cm stop
+when STP is disabled.
+On most distributions
+.Pa /sbin
+is a symbolic link to
+.Pa /usr/sbin ,
+so the kernel resolves
+.Pa /sbin/bridge-stp
+to the script installed under
+.Pa /usr/sbin .
+If the script exits
+.Cm 0 ,
+the kernel switches the bridge into
+.Em user_stp
+mode and lets
+.Xr mstpd 8
+drive port states; if it exits non-zero, the kernel falls back to its
+built-in STP implementation.
+.Pp
+On
+.Cm start ,
+.Nm
+verifies that the bridge is listed in
+.Va MSTP_BRIDGES ,
+spawns
+.Xr mstpd 8
+if it is not already running, and asynchronously calls
+.Ic mstpctl addbridge Ar bridge .
+On
+.Cm stop ,
+it removes the bridge from the daemon and terminates
+.Xr mstpd 8
+if no other bridges are still using it.
+.Pp
+.Nm
+must not be invoked directly with the
+.Cm start
+or
+.Cm stop
+arguments
+.Pq the kernel does that ;
+calling them by hand can deadlock the bridge code, because this script
+is forbidden from making bridge configuration changes
+.Pq via Ic brctl , Ic ifconfig , Ic ip , Pa /sys/...
+on the kernel-driven code paths.
+.Pp
+The
+.Cm restart
+and
+.Cm restart_config
+forms are intended for direct use by the administrator and are also
+exposed under shorter names:
+.Bl -tag -width Ds -compact
+.It Xr mstp_restart 8
+equivalent to
+.Nm Cm restart .
+.It Pa /usr/lib/mstpctl-utils/mstpctl_restart_config
+equivalent to
+.Nm Cm restart_config .
+.El
+.Sh COMMANDS
+.Bl -tag -width Ds
+.It Ar bridge Cm start
+Called by the kernel when user-space STP is enabled on
+.Ar bridge .
+Starts
+.Xr mstpd 8
+if necessary and attaches
+.Ar bridge
+to it.
+.It Ar bridge Cm stop
+Called by the kernel when user-space STP is disabled on
+.Ar bridge .
+Detaches
+.Ar bridge
+from
+.Xr mstpd 8
+and stops the daemon if it is no longer needed.
+.It Cm restart
+Stop
+.Xr mstpd 8
+if it is running, start a fresh instance, then re-add and reconfigure
+every bridge that is currently in user_stp mode and listed in
+.Va MSTP_BRIDGES .
+.It Cm restart_config
+Re-add and reconfigure every bridge that is currently in user_stp mode
+and listed in
+.Va MSTP_BRIDGES ,
+without restarting
+.Xr mstpd 8 .
+Use after editing per-bridge configuration.
+.El
+.Sh CONFIGURATION
+.Nm
+sources
+.Pa /etc/bridge-stp.conf
+on every invocation.
+The following shell variables are recognised:
+.Bl -tag -width Ds
+.It Va MANAGE_MSTPD
+.Cm y
+.Pq the default
+to let
+.Nm
+start and stop
+.Xr mstpd 8
+on demand;
+.Cm n
+to require that
+.Xr mstpd 8
+already be running.
+.It Va MSTPD_ARGS
+Extra arguments passed to
+.Xr mstpd 8
+when it is started, e.g.
+.Cm "-v 2" .
+.It Va MSTP_BRIDGES
+Space-separated list of bridges for which MSTP should replace the
+kernel's built-in STP.
+If empty
+.Pq the default ,
+every bridge is eligible.
+.It Va LOGGER
+Command used to log error messages.
+Default:
+.Ic logger -t bridge-stp -s .
+Set to the empty string to log only to standard error.
+.It Va config_cmd
+Per-bridge configuration command invoked by
+.Cm restart
+and
+.Cm restart_config
+as
+.Ic $config_cmd Ar bridge .
+Defaults to
+.Pa /usr/lib/mstpctl-utils/mstp_config_bridge .
+.El
+.Sh FILES
+.Bl -tag -width Ds
+.It Pa /usr/sbin/bridge-stp
+The script itself (exact path depends on
+.Cm --sbindir
+passed to
+.Ic configure ) .
+The kernel invokes it as
+.Pa /sbin/bridge-stp ,
+which on most distributions resolves to this path via the
+.Pa /sbin No \(-> Pa /usr/sbin
+compatibility symlink.
+.It Pa /etc/bridge-stp.conf
+Configuration file.
+.It Pa /sys/class/net/ Ns Ar bridge Ns Pa /bridge/stp_state
+Per-bridge STP state used to decide whether a bridge is currently in
+user_stp mode
+.Pq value Cm 2 .
+.It Pa /var/run/mstpd.pid
+PID file written by
+.Xr mstpd 8 .
+.El
+.Sh EXIT STATUS
+.Bl -tag -width Ds -compact
+.It Cm 0
+Success.
+.It Cm 1
+Bad usage, missing root privileges, or
+.Ar bridge
+is not a bridge.
+.It Cm 2
+.Xr mstpctl 8
+or
+.Xr mstpd 8
+binaries are missing or not executable.
+.It Cm 3
+.Xr mstpd 8
+or
+.Xr mstpctl 8
+failed.
+.It Cm 10
+.Ar bridge
+is not listed in
+.Va MSTP_BRIDGES
+and was therefore ignored
+.Pq returned only on Cm start .
+.El
+.Sh EXAMPLES
+Hand a specific bridge over to
+.Xr mstpd 8 :
+.Dl # ip link set br0 type bridge stp_state 1
+.Pp
+Reload per-bridge configuration without restarting the daemon:
+.Dl # bridge-stp restart_config
+.Pp
+Restart
+.Xr mstpd 8
+and reconfigure every bridge using it:
+.Dl # mstp_restart
+.Sh SEE ALSO
+.Xr mstpctl-utils-interfaces 5 ,
+.Xr brctl 8 ,
+.Xr ip 8 ,
+.Xr mstp_restart 8 ,
+.Xr mstpctl 8 ,
+.Xr mstpd 8
+.Sh AUTHORS
+.An -nosplit
+.Nm
+ships as part of
+.Xr mstpd 8 ,
+written by
+.An Vitalii Demianets Aq Mt dvitasgs@gmail.com
+and others.
+.Pp
+This manual page was written by
+.An Nadzeya Hutsko Aq Mt nadzya.info@gmail.com

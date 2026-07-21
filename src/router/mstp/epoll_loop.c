@@ -1,23 +1,7 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*****************************************************************************
   Copyright (c) 2006 EMC Corporation.
   Copyright (c) 2011 Factor-SPE
-
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published by the Free
-  Software Foundation; either version 2 of the License, or (at your option)
-  any later version.
-
-  This program is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
-
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc., 59
-  Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-  The full GNU General Public License is included in this distribution in the
-  file called LICENSE.
 
   Authors: Srinivas Aji <Aji_Srinivas@emc.com>
   Authors: Vitalii Demianets <dvitasgs@gmail.com>
@@ -44,7 +28,7 @@ int init_epoll(void)
     int r = epoll_create(128);
     if(r < 0)
     {
-        ERROR("epoll_create failed: %m\n");
+        ERROR("epoll_create failed: %m");
         return -1;
     }
     epoll_fd = r;
@@ -62,7 +46,7 @@ int add_epoll(struct epoll_event_handler *h)
     int r = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, h->fd, &ev);
     if(r < 0)
     {
-        ERROR("epoll_ctl_add: %m\n");
+        ERROR("epoll_ctl_add: %m");
         return -1;
     }
     return 0;
@@ -73,7 +57,7 @@ int remove_epoll(struct epoll_event_handler *h)
     int r = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, h->fd, NULL);
     if(r < 0)
     {
-        ERROR("epoll_ctl_del: %m\n");
+        ERROR("epoll_ctl_del: %m");
         return -1;
     }
     if(h->ref_ev && h->ref_ev->data.ptr == h)
@@ -135,7 +119,7 @@ int epoll_main_loop(volatile bool *quit)
         r = epoll_wait(epoll_fd, ev, EV_SIZE, timeout);
         if(r < 0 && errno != EINTR)
         {
-            ERROR("epoll_wait: %m\n");
+            ERROR("epoll_wait: %m");
             return -1;
         }
         for(i = 0; i < r; ++i)

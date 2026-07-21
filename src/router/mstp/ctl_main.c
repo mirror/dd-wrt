@@ -1,22 +1,6 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*****************************************************************************
   Copyright (c) 2011 Factor-SPE
-
-  This program is free software; you can redistribute it and/or modify it
-  under the terms of the GNU General Public License as published by the Free
-  Software Foundation; either version 2 of the License, or (at your option)
-  any later version.
-
-  This program is distributed in the hope that it will be useful, but WITHOUT
-  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-  more details.
-
-  You should have received a copy of the GNU General Public License along with
-  this program; if not, write to the Free Software Foundation, Inc., 59
-  Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
-  The full GNU General Public License is included in this distribution in the
-  file called LICENSE.
 
   Authors: Vitalii Demianets <dvitasgs@gmail.com>
 
@@ -173,6 +157,8 @@ typedef enum {
     PARAM_SENDRSTP,
     PARAM_RCVDTCACK,
     PARAM_RCVDTCN,
+    /* Not standard */
+    PARAM_STPENABLED,
 } param_id_t;
 
 typedef struct {
@@ -181,6 +167,7 @@ typedef struct {
 } cmd_param_t;
 
 static const cmd_param_t cist_bridge_params[] = {
+    { PARAM_STPENABLED,     "stp enabled" },
     { PARAM_ENABLED,      "enabled" },
     { PARAM_BRID,         "bridge-id" },
     { PARAM_DSGNROOT,     "designated-root" },
@@ -213,6 +200,7 @@ static int do_showbridge_fmt_plain(const CIST_BridgeStatus *s,
     {
         case PARAM_NULL:
             printf("%s CIST info\n", br_name);
+            printf("  stp enabled     %s\n", BOOL_STR(s->stp_enabled));
             printf("  enabled         %s\n", BOOL_STR(s->enabled));
             printf("  bridge id       "BR_ID_FMT"\n",
                    BR_ID_ARGS(s->bridge_id));
@@ -247,6 +235,9 @@ static int do_showbridge_fmt_plain(const CIST_BridgeStatus *s,
                    s->topology_change_port);
             printf("  last topology change port  %s\n",
                    s->last_topology_change_port);
+            break;
+        case PARAM_STPENABLED:
+            printf("%s\n", BOOL_STR(s->stp_enabled));
             break;
         case PARAM_ENABLED:
             printf("%s\n", BOOL_STR(s->enabled));
@@ -327,6 +318,7 @@ static int do_showbridge_fmt_json(const CIST_BridgeStatus *s,
         case PARAM_NULL:
             printf("{");
             printf("\"bridge\":\"%s\",", br_name);
+            printf("\"stp-enabled\":\"%s\",", BOOL_STR(s->stp_enabled));
             printf("\"enabled\":\"%s\",", BOOL_STR(s->enabled));
             printf("\"bridge-id\":\""BR_ID_FMT"\",",
                    BR_ID_ARGS(s->bridge_id));
@@ -368,6 +360,7 @@ static int do_showbridge_fmt_json(const CIST_BridgeStatus *s,
                    s->last_topology_change_port);
             printf("}");
             break;
+        case PARAM_STPENABLED:
         case PARAM_ENABLED:
         case PARAM_BRID:
         case PARAM_DSGNROOT:
@@ -1381,64 +1374,21 @@ static int cmd_showtreeport(int argc, char *const *argv)
 
 static int cmd_addbridge(int argc, char *const *argv)
 {
-    int i, j, res, ifcount, brcount = argc - 1;
+    int i, res, brcount = argc - 1;
     int *br_array;
-    int* *ifaces_lists;
 
     if(NULL == (br_array = malloc((brcount + 1) * sizeof(int))))
     {
-out_of_memory_exit:
         fprintf(stderr, "out of memory, brcount = %d\n", brcount);
         return -1;
-    }
-    if(NULL == (ifaces_lists = malloc(brcount * sizeof(int*))))
-    {
-        free(br_array);
-        goto out_of_memory_exit;
     }
 
     br_array[0] = brcount;
     for(i = 1; i <= brcount; ++i)
-    {
-        struct dirent **namelist;
-
         br_array[i] = get_index(argv[i], "bridge");
 
-        if(0 > (ifcount = get_port_list(argv[i], &namelist)))
-        {
-ifaces_error_exit:
-            for(i -= 2; i >= 0; --i)
-                free(ifaces_lists[i]);
-            free(ifaces_lists);
-            free(br_array);
-            return ifcount;
-        }
+    res = CTL_add_bridges(br_array);
 
-        if(NULL == (ifaces_lists[i - 1] = malloc((ifcount + 1) * sizeof(int))))
-        {
-            fprintf(stderr, "out of memory, bridge %s, ifcount = %d\n",
-                    argv[i], ifcount);
-            for(j = 0; j < ifcount; ++j)
-                free(namelist[j]);
-            free(namelist);
-            ifcount = -1;
-            goto ifaces_error_exit;
-        }
-
-        ifaces_lists[i - 1][0] = ifcount;
-        for(j = 1; j <= ifcount; ++j)
-        {
-            ifaces_lists[i - 1][j] = get_index(namelist[j - 1]->d_name, "port");
-            free(namelist[j - 1]);
-        }
-        free(namelist);
-    }
-
-    res = CTL_add_bridges(br_array, ifaces_lists);
-
-    for(i = 0; i < brcount; ++i)
-        free(ifaces_lists[i]);
-    free(ifaces_lists);
     free(br_array);
     return res;
 }
@@ -2624,31 +2574,9 @@ CTL_DECLARE(add_bridges)
 {
     int res = 0;
     LogString log = { .buf = "" };
-    int i, chunk_count, brcount, serialized_data_count;
-    int *serialized_data, *ptr;
-
-    chunk_count = serialized_data_count = (brcount = br_array[0]) + 1;
-    for(i = 0; i < brcount; ++i)
-        serialized_data_count += ifaces_lists[i][0] + 1;
-    if(NULL == (serialized_data = malloc(serialized_data_count * sizeof(int))))
-    {
-        LOG("out of memory, serialized_data_count = %d",
-            serialized_data_count);
-        return -1;
-    }
-    memcpy(serialized_data, br_array, chunk_count * sizeof(int));
-    ptr = serialized_data + chunk_count;
-    for(i = 0; i < brcount; ++i)
-    {
-        chunk_count = ifaces_lists[i][0] + 1;
-        memcpy(ptr, ifaces_lists[i], chunk_count * sizeof(int));
-        ptr += chunk_count;
-    }
-
-    int r = send_ctl_message(CMD_CODE_add_bridges, serialized_data,
-                             serialized_data_count * sizeof(int),
+    int r = send_ctl_message(CMD_CODE_add_bridges, br_array,
+                             (br_array[0] + 1) * sizeof(int),
                              NULL, 0, &log, &res);
-    free(serialized_data);
     if(r || res)
         LOG("Got return code %d, %d\n%s", r, res, log.buf);
     if(r)

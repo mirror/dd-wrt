@@ -1,0 +1,85 @@
+.\" SPDX-License-Identifier: GPL-2.0-or-later
+.Dd April 28, 2026
+.Dt MSTP_RESTART 8
+.Os
+.Sh NAME
+.Nm mstp_restart
+.Nd restart mstpd and reconfigure all attached bridges
+.Sh SYNOPSIS
+.Nm
+.Sh DESCRIPTION
+.Nm
+is a convenience wrapper around
+.Xr bridge-stp 8 .
+It is installed as a symbolic link to
+.Pa /usr/sbin/bridge-stp ;
+when invoked under this name, the helper script takes the
+.Cm restart
+action.
+.Pp
+Calling
+.Nm
+is equivalent to running:
+.Dl # bridge-stp restart
+.Pp
+The script:
+.Bl -bullet -compact
+.It
+sends
+.Dv SIGTERM
+to the running
+.Xr mstpd 8 ,
+if any;
+.It
+starts a fresh
+.Xr mstpd 8
+with the arguments listed in
+.Va MSTPD_ARGS
+in
+.Pa /etc/bridge-stp.conf ;
+.It
+re-adds every bridge that is currently in user_stp mode and is listed
+in
+.Va MSTP_BRIDGES ,
+running the per-bridge configuration command
+.Pq usually Pa /usr/lib/mstpctl-utils/mstp_config_bridge
+on each.
+.El
+.Pp
+Bridges that are not in user_stp mode
+.Pq Pa /sys/class/net/ Ns Ar bridge Ns Pa /bridge/stp_state No != Cm 2
+are skipped, with a hint on how to re-enable user-space STP for them.
+.Pp
+.Nm
+must be run as root.
+To reconfigure existing bridges without restarting the daemon, use
+.Ic bridge-stp restart_config
+instead.
+.Sh FILES
+.Bl -tag -width Ds
+.It Pa /usr/sbin/mstp_restart
+Symbolic link to
+.Pa /usr/sbin/bridge-stp .
+.It Pa /etc/bridge-stp.conf
+Configuration file read by the underlying
+.Xr bridge-stp 8
+script.
+.El
+.Sh EXIT STATUS
+Inherits the exit status of
+.Xr bridge-stp 8 .
+.Sh SEE ALSO
+.Xr bridge-stp 8 ,
+.Xr mstpctl 8 ,
+.Xr mstpd 8
+.Sh AUTHORS
+.An -nosplit
+.Nm
+ships as part of
+.Xr mstpd 8 ,
+written by
+.An Vitalii Demianets Aq Mt dvitasgs@gmail.com
+and others.
+.Pp
+This manual page was written by
+.An Nadzeya Hutsko Aq Mt nadzya.info@gmail.com

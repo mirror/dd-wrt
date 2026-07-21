@@ -1,5 +1,5 @@
 AC_PREREQ([2.61])
-AC_INIT([mstpd], [0.1.0], [https://github.com/mstpd/mstpd])
+AC_INIT([mstpd], [0.2.0], [https://github.com/mstpd/mstpd])
 
 # bridge-stp must be installed in /sbin/, and the associated scripts and
 # executables should be installed outside of /usr/ by default.  If `./configure`
@@ -33,7 +33,7 @@ test "x$exec_prefix" = x && test "x$localstatedir" = 'x${prefix}/var' && localst
 # manually.
 test "x$exec_prefix" = x && test "x$libexecdir" = 'x${exec_prefix}/libexec' && libexecdir='/lib'
 
-AM_INIT_AUTOMAKE([foreign -Wall])
+AM_INIT_AUTOMAKE([foreign -Wall subdir-objects])
 
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -64,7 +64,7 @@ AS_IF([test "x$with_bashcompletiondir" != "xdefault"],
       [AC_SUBST([bashcompletiondir], [$with_bashcompletiondir])])
 
 AC_ARG_WITH([systemdunitdir],
-     [AS_HELP_STRING([--with-systemunitdir=DIR], [Directory for systemd unit files.])],,
+     [AS_HELP_STRING([--with-systemdunitdir=DIR], [Directory for systemd unit files.])],,
      [with_systemdunitdir=default])
 AS_IF([test "x$with_systemdunitdir" = "xdefault"],
      [AC_SUBST([systemdunitdir], [$($PKG_CONFIG --variable=systemdsystemunitdir systemd 2> /dev/null)])])
@@ -85,6 +85,12 @@ AC_SEARCH_LIBS([clock_gettime], [rt])
 
 AC_CHECK_TYPES(struct timespec)
 AC_CHECK_FUNCS(clock_gettime)
+
+PKG_CHECK_MODULES([CMOCKA], [cmocka], [has_cmocka="yes"], [has_cmocka="no"])
+AM_CONDITIONAL(WITH_CMOCKA, [test "$has_cmocka" = 'yes'])
+
+AC_REQUIRE_AUX_FILE([tap-driver.sh])
+AC_PROG_AWK
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile])

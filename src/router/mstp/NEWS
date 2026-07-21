@@ -1,6 +1,52 @@
 mstpd: Multiple Spanning Tree Protocol Daemon
 =============================================
 
+Version: 0.2.0
+---------------------------------------------
+- README.md: update IRC channel location
+  - Jonas Gorski <jonas.gorski@gmail.com>
+- ctl_socket_server: require root for changing configuration
+  - Jonas Gorski <jonas.gorski@gmail.com>
+- mstp: validate admin port path costs
+  - Jonas Gorski <jonas.gorski@gmail.com>
+- mstp: do not allow changing Bridge Hello Time
+  - Jonas Gorski <jonas.gorski@gmail.com>
+- mstp: do not overflow calculated root path costs
+  - Jonas Gorski <jonas.gorski@gmail.com>
+- mstp: increase maxHops limit to 100
+  - Jonas Gorski <jonas.gorski@gmail.com>
+- README.md: add packaging status
+  - Jonas Gorski <jonas.gorski@gmail.com>
+- README.md: update FID/MSTI limits
+  - Jonas Gorski <jonas.gorski@gmail.com>
+- README.md: clarify IVL/SVL and MSTI support in linux
+  - Jonas Gorski <jonas.gorski@gmail.com>
+- packet: set socket priority to TC_PRIO_CONTROL
+  - Jonas Gorski <jonas.gorski@gmail.com>
+- TCSM: fix infinite recursion for MSTI per-tree ports
+  - Thibaut Collet <thbt.cllt@gmail.com>
+
+Version: 0.1.1
+---------------------------------------------
+- add showportparams command to show only specific params of a port
+  - Ali Forouzan <forouzan_a@office.zharfpoyan.net>
+- bridge-stp.in: support different versions of pidof
+  - Alexandru Ardelean <ardeleanalex@gmail.com>
+- mstpctl-utils-functions.sh: fix shellcheck warnings
+  - Jonas Gorski <jonas.gorski@bisdn.de>
+- fix printing error message in bridge_bpdu_rcv()
+  - QAQguowang <39701514+QAQguowang@users.noreply.github.com>
+- fix calculating costs for speeds > 65G
+  - Jonas Gorski <jonas.gorski@bisdn.de>
+- ifupdown.sh.in: fix new shellcheck warnings
+  - Jonas Gorski <jonas.gorski@gmail.com>
+- libnetlink: fix socket file descriptor leak on error paths
+  - Vincent Jardin <vjardin@free.fr>
+- Fix compilation with GCC 15 / gnu23
+  - Jonas Gorski <jonas.gorski@gmail.com>
+- Fix a stack memory information leak to client
+  - Jonas Gorski <jonas.gorski@gmail.com>
+
 Version: 0.1.0
 ---------------------------------------------
 - libnetlink changes to start supporting Linux per-VLAN STP

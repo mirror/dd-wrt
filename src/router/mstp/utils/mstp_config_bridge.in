@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 # This script uses `ifquery` to read the config in
 # /etc/network/interfaces and then runs the mstpctl-utils

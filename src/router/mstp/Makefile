@@ -1,8 +1,8 @@
 MODE = devel
-version := 0.03
+version := 0.2.0
 
-DSOURCES = main.c epoll_loop.c nlmon.c bridge_track.c libnetlink.c mstp.c \
-           packet.c netif_utils.c ctl_socket_server.c hmac_md5.c driver_deps.c
+DSOURCES = main.c epoll_loop.c bridge_track.c libnetlink.c mstp.c \
+           packet.c netif_utils.c ctl_socket_server.c hmac_md5.c driver_deps.c brmon.c
 
 DOBJECTS = $(DSOURCES:.c=.o)
 
@@ -10,7 +10,7 @@ CTLSOURCES = ctl_main.c ctl_socket_client.c
 
 CTLOBJECTS = $(CTLSOURCES:.c=.o)
 
-CFLAGS += $(COPTS) $(MIPS16_OPT) $(LTO) $(THUMB) -I./include -ffunction-sections -fdata-sections -Wl,--gc-sections -D_REENTRANT -D__LINUX__ -DVERSION=$(version) -I. \
+CFLAGS += $(COPTS) $(MIPS16_OPT) $(LTO) $(THUMB) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I./include -ffunction-sections -fdata-sections -Wl,--gc-sections -D_REENTRANT -D__LINUX__ -DVERSION=$(version) -I. \
           -D_GNU_SOURCE -DNEED_PRINTF -DMSTPD_PID_FILE='"/var/run/mstpd.pid"'
 
 
