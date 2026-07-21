@@ -224,6 +224,9 @@ endif
 ifeq ($(KERNELVERSION),6.12)
 CFLAGS += -DHAVE_8021AD
 endif
+ifeq ($(KERNELVERSION),6.12-nss)
+CFLAGS += -DHAVE_8021AD
+endif
 ifeq ($(KERNELVERSION),3.10)
 CFLAGS += -DHAVE_8021AD
 endif
@@ -381,7 +384,24 @@ ifeq ($(CONFIG_VF803),y)
   CFLAGS += -DHAVE_VF803
 endif
 ifeq ($(CONFIG_MSTP),y)
-  CFLAGS += -DHAVE_MSTP
+ifeq ($(KERNELVERSION),6.1)
+CFLAGS += -DHAVE_8021AD
+endif
+ifeq ($(KERNELVERSION),6.1-nss)
+CFLAGS += -DHAVE_MSTP
+endif
+ifeq ($(KERNELVERSION),6.6-nss)
+CFLAGS += -DHAVE_MSTP
+endif
+ifeq ($(KERNELVERSION),6.6)
+CFLAGS += -DHAVE_MSTP
+endif
+ifeq ($(KERNELVERSION),6.12)
+CFLAGS += -DHAVE_MSTP
+endif
+ifeq ($(KERNELVERSION),6.12-nss)
+CFLAGS += -DHAVE_MSTP
+endif
 endif
 ifeq ($(CONFIG_TOR),y)
   CFLAGS += -DHAVE_TOR
