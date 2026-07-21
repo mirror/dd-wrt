@@ -385,7 +385,7 @@ ifeq ($(CONFIG_VF803),y)
 endif
 ifeq ($(CONFIG_MSTP),y)
 ifeq ($(KERNELVERSION),6.1)
-CFLAGS += -DHAVE_8021AD
+CFLAGS += -DHAVE_MSTP
 endif
 ifeq ($(KERNELVERSION),6.1-nss)
 CFLAGS += -DHAVE_MSTP
