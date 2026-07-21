@@ -585,7 +585,24 @@ obj-$(CONFIG_VENTANA) += gsp_updater
 obj-$(CONFIG_NEWPORT) += gsp_updater
 obj-$(CONFIG_POLARSSL) += polarssl
 #obj-$(CONFIG_UHTTPD) += cyassl uhttpd pcre lighttpd
+ifeq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_MSTP) += mstp
+endif
+ifeq ($(KERNELVERSION),6.1-nss)
+obj-$(CONFIG_MSTP) += mstp
+endif
+ifeq ($(KERNELVERSION),6.6-nss)
+obj-$(CONFIG_MSTP) += mstp
+endif
+ifeq ($(KERNELVERSION),6.6)
+obj-$(CONFIG_MSTP) += mstp
+endif
+ifeq ($(KERNELVERSION),6.12)
+obj-$(CONFIG_MSTP) += mstp
+endif
+ifeq ($(KERNELVERSION),6.12-nss)
+obj-$(CONFIG_MSTP) += mstp
+endif
 obj-$(CONFIG_PYTHON) += zlib libffi python
 obj-$(CONFIG_NMAP) += libpcap nmap
 obj-$(CONFIG_ARPALERT) += arpalert
