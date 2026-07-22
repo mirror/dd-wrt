@@ -51,7 +51,6 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <netdb.h>
-#include <ctype.h>
 #include <stdarg.h>
 #include <dirent.h>
 #include <time.h>
