@@ -482,6 +482,15 @@ static int use_nss_11_4(int setcur)
 		nvram_set("cur_nss", "12.5");
 	return 0;
 }
+int is_wdssta(int count)
+{
+	char base[32];
+	sprintf(base, "wlan%d", count);
+	if ((nvram_nmatch("wdssta", "wlan%d_mode", count) || nvram_nmatch("wdssta_mtik", "wlan%d_mode", count)) &&
+	    !nvram_nmatch("disabled", "wlan%d_net_mode", count))
+		return 1;
+	return 0;
+}
 
 int nss_disabled(int setcur)
 {
@@ -496,23 +505,8 @@ int nss_disabled(int setcur)
 		return 1;
 	}
 	for (count = 0; count < 3; count++) {
-		char wifivifs[32];
-		char base[32];
-		sprintf(base, "wlan%d", count);
-		sprintf(wifivifs, "wlan%d_vifs", count);
-		if ((nvram_nmatch("wdssta", "wlan%d_mode", count) || nvram_nmatch("wdssta_mtik", "wlan%d_mode", count)) &&
-		    !nvram_nmatch("disabled", "wlan%d_net_mode", count))
+		if (is_wdssta(count))
 			return 1;
-#if 0
-		vifs = nvram_safe_get(wifivifs);
-		if (vifs != NULL && *vifs) {
-			foreach(var, vifs, next) {
-				if ((nvram_nmatch("wdsap", "%s_mode", var) || nvram_nmatch("wdsap_mtik", "%s_mode", var) || nvram_nmatch("apup", "%s_mode", var)) &&
-				    !nvram_nmatch("disabled", "%s_net_mode", var))
-					return 1;
-			}
-		}
-#endif
 	}
 	nvram_set("nonss", "0");
 	return 0;
@@ -1842,20 +1836,28 @@ void start_wifi_drivers(void)
 				set_gpio(6, 0);
 				set_gpio(7, 1);
 			}
-			load_ath12k_internal(profile, 0, 0, frame_mode, cert_region, 1);
-			if (nvram_match("5g_split", "1"))
+					     1);
+					     if (nvram_match("5g_split", "1")) {
+				load_ath12k_internal(profile, 0, 0, is_wdssta(0) || is_wdssta(1) ? 1 : nvram_default_geti("ath12k_frame_mode", 2), cert_region,
 				wait_for_wifi(2);
-			else
+					     } else {
+				load_ath12k_internal(profile, 0, 0, is_wdssta(0) ? 1 : nvram_default_geti("ath12k_frame_mode", 2), cert_region,
 				wait_for_wifi(1);
-			load_ath11k_internal(profile, 0, 0, frame_mode, cert_region, 1);
-			if (nvram_match("5g_split", "1"))
+					     }
+					     1);
+					     if (nvram_match("5g_split", "1")) {
+			load_ath11k_internal(profile, 0, 0, is_wdssta(2) ? 1 : nvram_default_geti("ath11k_frame_mode", 2), cert_region,
 				wait_for_wifi(3);
-			else
+					     } else {
+			load_ath11k_internal(profile, 0, 0, is_wdssta(1) ? 1 : nvram_default_geti("ath11k_frame_mode", 2), cert_region,
 				wait_for_wifi(2);
-			writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
+					     }
+					     writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "performance");
 		} break;
 		case ROUTER_8DEVICES_KIWI: {
-			load_ath12k_internal(profile, 0, 0, frame_mode, cert_region, 1);
+			load_ath12k_internal(profile, 0, 0,
+					     (is_wdssta(0) || is_wdssta(1)) ? 1 : nvram_default_geti("ath12k_frame_mode", 2),
+					     cert_region, 1);
 		} break;
 		case ROUTER_LINKSYS_MR5500:
 		case ROUTER_LINKSYS_MX5500:
