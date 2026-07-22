@@ -212,6 +212,10 @@
 				label = "runtime2";
 				reg = <0x2200000 0x1e00000>;
 			};
+			partition@full {
+				label = "fullflash";
+				reg = <0x0 0x4000000>;
+			};
 		};
 	};
 };
