@@ -1081,7 +1081,7 @@ static void state_timeout_cb(struct uloop_timeout *t)
 
 	/* skip this iteration if we're still busy processing the queue */
 	if (!list_empty(&mcu->pending_cmds)) {
-		uloop_timeout_set(t, 1 * 1000);
+		uloop_timeout_set(t, 1 * 10000);
 		return;
 	}
 
@@ -1105,7 +1105,7 @@ static void state_timeout_cb(struct uloop_timeout *t)
 		poe_cmd_port_power_stats(mcu, i);
 	}
 
-	uloop_timeout_set(t, 2 * 1000);
+	uloop_timeout_set(t, 2 * 10000);
 }
 
 static int ubus_poe_info_cb(struct ubus_context *ctx, struct ubus_object *obj,
@@ -1437,7 +1437,7 @@ int main(int argc, char **argv)
 	}
 
 	poe_initial_setup(&poe.mcu, &poe.config);
-	uloop_timeout_set(&poe.state_timeout, 1000);
+	uloop_timeout_set(&poe.state_timeout, 10000);
 	uloop_run();
 	uloop_done();
 
