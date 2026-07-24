@@ -537,14 +537,18 @@ static int fq_codel_init(struct Qdisc *sch, struct nlattr *opt,
 	int err;
 
 	sch->limit = 10*1024;
-#if defined(CONFIG_X86) || defined(CONFIG_ALPINE)
-	q->memory_limit = 32 << 20; /* 32 MBytes */
-#elif defined(CONFIG_ARCH_QCOM) || defined(CONFIG_ARCH_CNS3XXX) || defined(CONFIG_SOC_IMX6)
-	q->memory_limit = 16 << 20; /* 16 MBytes */
-#elif (defined(CONFIG_MIPS) && !defined(CONFIG_64BIT)) || defined(CONFIG_ARCH_IXP4XX)
-	q->memory_limit = 4 << 20; /* 4 MBytes */
+#if defined(CONFIG_X86) || defined(CONFIG_ALPINE) || defined(CONFIG_ARCH_QCOM) || defined(CONFIG_SOC_IMX6) || defined(CONFIG_ARM64)
+	fq->memory_limit = 32 << 20; /* 32 MBytes */
+#elif defined(CONFIG_UBNTXW)
+	fq->memory_limit = 4 << 20; /* 16 MBytes */
+#elif defined(CONFIG_ARCH_CNS3XXX)
+	fq->memory_limit = 16 << 20; /* 16 MBytes */
+#elif defined(CONFIG_ARCH_IXP4XX)
+	fq->memory_limit = 4 << 20; /* 4 MBytes */
+#elif (defined(CONFIG_MIPS) && !defined(CONFIG_64BIT))
+	fq->memory_limit = 1 << 18; /* 256kb */
 #else
-	q->memory_limit = 4 << 20; /* 4 MBytes */
+	fq->memory_limit = 4 << 20; /* 4 MBytes */
 #endif
 	q->drop_batch_size = 64;
 	q->quantum = psched_mtu(qdisc_dev(sch));
