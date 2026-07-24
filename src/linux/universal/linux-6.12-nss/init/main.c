@@ -1583,6 +1583,8 @@ static int __ref kernel_init(void *unused)
 	    !try_to_run_init_process("/bin/sh"))
 		return 0;
 #endif
+//	if (!run_init_process("/bin/sh"))
+// 		return 0;
 	if (!run_init_process("/sbin/init"))
  		return 0;
 
