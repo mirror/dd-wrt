@@ -65,18 +65,24 @@
 
 static int rpcrdma_sendctxs_create(struct rpcrdma_xprt *r_xprt);
 static void rpcrdma_sendctxs_destroy(struct rpcrdma_xprt *r_xprt);
+static unsigned long rpcrdma_sendctx_next(struct rpcrdma_buffer *buf,
+					  unsigned long item);
 static void rpcrdma_sendctx_put_locked(struct rpcrdma_xprt *r_xprt,
 				       struct rpcrdma_sendctx *sc);
 static int rpcrdma_reqs_setup(struct rpcrdma_xprt *r_xprt);
 static void rpcrdma_reqs_reset(struct rpcrdma_xprt *r_xprt);
-static void rpcrdma_rep_destroy(struct rpcrdma_rep *rep);
 static void rpcrdma_reps_unmap(struct rpcrdma_xprt *r_xprt);
 static void rpcrdma_mrs_create(struct rpcrdma_xprt *r_xprt);
 static void rpcrdma_mrs_destroy(struct rpcrdma_xprt *r_xprt);
 static void rpcrdma_ep_get(struct rpcrdma_ep *ep);
 static int rpcrdma_ep_put(struct rpcrdma_ep *ep);
 static struct rpcrdma_regbuf *
+rpcrdma_regbuf_alloc_node(size_t size, enum dma_data_direction direction,
+			  int node);
+static struct rpcrdma_regbuf *
 rpcrdma_regbuf_alloc(size_t size, enum dma_data_direction direction);
+static bool rpcrdma_regbuf_realloc_node(struct rpcrdma_regbuf *rb,
+					size_t size, gfp_t flags, int node);
 static void rpcrdma_regbuf_dma_unmap(struct rpcrdma_regbuf *rb);
 static void rpcrdma_regbuf_free(struct rpcrdma_regbuf *rb);
 
@@ -505,7 +511,7 @@ int rpcrdma_xprt_connect(struct rpcrdma_xprt *r_xprt)
 	 * outstanding Receives.
 	 */
 	rpcrdma_ep_get(ep);
-	rpcrdma_post_recvs(r_xprt, 1, true);
+	rpcrdma_post_recvs(r_xprt, 1);
 
 	rc = rdma_connect(ep->re_id, &ep->re_remote_cma);
 	if (rc)
@@ -532,7 +538,17 @@ int rpcrdma_xprt_connect(struct rpcrdma_xprt *r_xprt)
 		goto out;
 	}
 	rpcrdma_mrs_create(r_xprt);
-	frwr_wp_create(r_xprt);
+
+	/*
+	 * rpcrdma_encode_write_list() dereferences the write-pad
+	 * MR with no NULL check, so fail the connect rather than
+	 * publish a transport whose write-pad MR is NULL.
+	 */
+	rc = frwr_wp_create(r_xprt);
+	if (rc) {
+		rc = -ENOTCONN;
+		goto out;
+	}
 
 out:
 	trace_xprtrdma_connect(r_xprt, rc);
@@ -564,9 +580,9 @@ void rpcrdma_xprt_disconnect(struct rpcrdma_xprt *r_xprt)
 
 	rpcrdma_xprt_drain(r_xprt);
 	rpcrdma_reps_unmap(r_xprt);
+	rpcrdma_sendctxs_destroy(r_xprt);
 	rpcrdma_reqs_reset(r_xprt);
 	rpcrdma_mrs_destroy(r_xprt);
-	rpcrdma_sendctxs_destroy(r_xprt);
 
 	if (rpcrdma_ep_put(ep))
 		rdma_destroy_id(id);
@@ -598,6 +614,25 @@ static void rpcrdma_sendctxs_destroy(struct rpcrdma_xprt *r_xprt)
 
 	if (!buf->rb_sc_ctxs)
 		return;
+
+	/* The QP is drained, but the final unsignaled Sends might not
+	 * have been walked by a signaled Send completion. Release those
+	 * Send owners before request buffers are reset.
+	 *
+	 * Unlike the completion sweep, this walk can visit slots with
+	 * no Send posted: after a partial rpcrdma_sendctxs_create()
+	 * failure on reconnect, rb_sc_head and rb_sc_tail are stale,
+	 * and slots between them can be NULL or have sc_req clear.
+	 */
+	for (i = rpcrdma_sendctx_next(buf, buf->rb_sc_tail);
+	     i != rpcrdma_sendctx_next(buf, buf->rb_sc_head);
+	     i = rpcrdma_sendctx_next(buf, i)) {
+		struct rpcrdma_sendctx *sc = buf->rb_sc_ctxs[i];
+
+		if (sc && sc->sc_req)
+			rpcrdma_sendctx_unmap(sc);
+	}
+
 	for (i = 0; i <= buf->rb_sc_last; i++)
 		kfree(buf->rb_sc_ctxs[i]);
 	kfree(buf->rb_sc_ctxs);
@@ -660,6 +695,12 @@ static unsigned long rpcrdma_sendctx_next(struct rpcrdma_buffer *buf,
 	return likely(item < buf->rb_sc_last) ? item + 1 : 0;
 }
 
+static unsigned long rpcrdma_sendctx_prev(struct rpcrdma_buffer *buf,
+					  unsigned long item)
+{
+	return item > 0 ? item - 1 : buf->rb_sc_last;
+}
+
 /**
  * rpcrdma_sendctx_get_locked - Acquire a send context
  * @r_xprt: controlling transport instance
@@ -705,6 +746,29 @@ out_emptyq:
 }
 
 /**
+ * rpcrdma_sendctx_unget_locked - Release an unposted send context
+ * @r_xprt: controlling transport instance
+ * @sc: send context to release
+ *
+ * Usage: Called when no Send is posted for the sendctx most
+ * recently returned by rpcrdma_sendctx_get_locked().
+ *
+ * The caller serializes calls to this function and to
+ * rpcrdma_sendctx_get_locked() (per transport).
+ */
+void rpcrdma_sendctx_unget_locked(struct rpcrdma_xprt *r_xprt,
+				  struct rpcrdma_sendctx *sc)
+{
+	struct rpcrdma_buffer *buf = &r_xprt->rx_buf;
+
+	if (WARN_ON_ONCE(buf->rb_sc_ctxs[buf->rb_sc_head] != sc))
+		return;
+
+	buf->rb_sc_head = rpcrdma_sendctx_prev(buf, buf->rb_sc_head);
+	xprt_write_space(&r_xprt->rx_xprt);
+}
+
+/**
  * rpcrdma_sendctx_put_locked - Release a send context
  * @r_xprt: controlling transport instance
  * @sc: send context to release
@@ -720,15 +784,18 @@ static void rpcrdma_sendctx_put_locked(struct rpcrdma_xprt *r_xprt,
 	struct rpcrdma_buffer *buf = &r_xprt->rx_buf;
 	unsigned long next_tail;
 
-	/* Unmap SGEs of previously completed but unsignaled
-	 * Sends by walking up the queue until @sc is found.
+	/* Release previously completed but unsignaled Sends by walking
+	 * up the queue until @sc is found.
 	 */
 	next_tail = buf->rb_sc_tail;
 	do {
+		struct rpcrdma_sendctx *cur;
+
 		next_tail = rpcrdma_sendctx_next(buf, next_tail);
 
 		/* ORDER: item must be accessed _before_ tail is updated */
-		rpcrdma_sendctx_unmap(buf->rb_sc_ctxs[next_tail]);
+		cur = buf->rb_sc_ctxs[next_tail];
+		rpcrdma_sendctx_unmap(cur);
 
 	} while (buf->rb_sc_ctxs[next_tail] != sc);
 
@@ -938,18 +1005,20 @@ static void rpcrdma_reqs_reset(struct rpcrdma_xprt *r_xprt)
 }
 
 static noinline
-struct rpcrdma_rep *rpcrdma_rep_create(struct rpcrdma_xprt *r_xprt,
-				       bool temp)
+struct rpcrdma_rep *rpcrdma_rep_create(struct rpcrdma_xprt *r_xprt)
 {
 	struct rpcrdma_buffer *buf = &r_xprt->rx_buf;
+	struct rpcrdma_ep *ep = r_xprt->rx_ep;
+	struct ib_device *device = ep->re_id->device;
 	struct rpcrdma_rep *rep;
 
 	rep = kzalloc(sizeof(*rep), XPRTRDMA_GFP_FLAGS);
 	if (rep == NULL)
 		goto out;
 
-	rep->rr_rdmabuf = rpcrdma_regbuf_alloc(r_xprt->rx_ep->re_inline_recv,
-					       DMA_FROM_DEVICE);
+	rep->rr_rdmabuf = rpcrdma_regbuf_alloc_node(ep->re_inline_recv,
+						    DMA_FROM_DEVICE,
+						    ibdev_to_node(device));
 	if (!rep->rr_rdmabuf)
 		goto out_free;
 
@@ -964,7 +1033,6 @@ struct rpcrdma_rep *rpcrdma_rep_create(struct rpcrdma_xprt *r_xprt,
 	rep->rr_recv_wr.wr_cqe = &rep->rr_cqe;
 	rep->rr_recv_wr.sg_list = &rep->rr_rdmabuf->rg_iov;
 	rep->rr_recv_wr.num_sge = 1;
-	rep->rr_temp = temp;
 
 	spin_lock(&buf->rb_lock);
 	list_add(&rep->rr_all, &buf->rb_all_reps);
@@ -981,17 +1049,6 @@ static void rpcrdma_rep_free(struct rpcrdma_rep *rep)
 {
 	rpcrdma_regbuf_free(rep->rr_rdmabuf);
 	kfree(rep);
-}
-
-static void rpcrdma_rep_destroy(struct rpcrdma_rep *rep)
-{
-	struct rpcrdma_buffer *buf = &rep->rr_rxprt->rx_buf;
-
-	spin_lock(&buf->rb_lock);
-	list_del(&rep->rr_all);
-	spin_unlock(&buf->rb_lock);
-
-	rpcrdma_rep_free(rep);
 }
 
 static struct rpcrdma_rep *rpcrdma_rep_get_locked(struct rpcrdma_buffer *buf)
@@ -1025,10 +1082,8 @@ static void rpcrdma_reps_unmap(struct rpcrdma_xprt *r_xprt)
 	struct rpcrdma_buffer *buf = &r_xprt->rx_buf;
 	struct rpcrdma_rep *rep;
 
-	list_for_each_entry(rep, &buf->rb_all_reps, rr_all) {
+	list_for_each_entry(rep, &buf->rb_all_reps, rr_all)
 		rpcrdma_regbuf_dma_unmap(rep->rr_rdmabuf);
-		rep->rr_temp = true;	/* Mark this rep for destruction */
-	}
 }
 
 static void rpcrdma_reps_destroy(struct rpcrdma_buffer *buf)
@@ -1201,6 +1256,10 @@ void rpcrdma_reply_put(struct rpcrdma_buffer *buffers, struct rpcrdma_req *req)
 		rpcrdma_rep_put(buffers, req->rl_reply);
 		req->rl_reply = NULL;
 	}
+	/* I2: rl_reply NULL after the put closes the
+	 * 'rep on rb_free_reps still referenced by req' window.
+	 */
+	WARN_ON_ONCE(req->rl_reply);
 }
 
 /**
@@ -1245,14 +1304,15 @@ void rpcrdma_buffer_put(struct rpcrdma_buffer *buffers, struct rpcrdma_req *req)
  * or Replies they may be registered externally via frwr_map.
  */
 static struct rpcrdma_regbuf *
-rpcrdma_regbuf_alloc(size_t size, enum dma_data_direction direction)
+rpcrdma_regbuf_alloc_node(size_t size, enum dma_data_direction direction,
+			  int node)
 {
 	struct rpcrdma_regbuf *rb;
 
-	rb = kmalloc(sizeof(*rb), XPRTRDMA_GFP_FLAGS);
+	rb = kmalloc_node(sizeof(*rb), XPRTRDMA_GFP_FLAGS, node);
 	if (!rb)
 		return NULL;
-	rb->rg_data = kmalloc(size, XPRTRDMA_GFP_FLAGS);
+	rb->rg_data = kmalloc_node(size, XPRTRDMA_GFP_FLAGS, node);
 	if (!rb->rg_data) {
 		kfree(rb);
 		return NULL;
@@ -1262,6 +1322,12 @@ rpcrdma_regbuf_alloc(size_t size, enum dma_data_direction direction)
 	rb->rg_direction = direction;
 	rb->rg_iov.length = size;
 	return rb;
+}
+
+static struct rpcrdma_regbuf *
+rpcrdma_regbuf_alloc(size_t size, enum dma_data_direction direction)
+{
+	return rpcrdma_regbuf_alloc_node(size, direction, NUMA_NO_NODE);
 }
 
 /**
@@ -1275,9 +1341,15 @@ rpcrdma_regbuf_alloc(size_t size, enum dma_data_direction direction)
  */
 bool rpcrdma_regbuf_realloc(struct rpcrdma_regbuf *rb, size_t size, gfp_t flags)
 {
+	return rpcrdma_regbuf_realloc_node(rb, size, flags, NUMA_NO_NODE);
+}
+
+static bool rpcrdma_regbuf_realloc_node(struct rpcrdma_regbuf *rb,
+					size_t size, gfp_t flags, int node)
+{
 	void *buf;
 
-	buf = kmalloc(size, flags);
+	buf = kmalloc_node(size, flags, node);
 	if (!buf)
 		return false;
 
@@ -1286,6 +1358,23 @@ bool rpcrdma_regbuf_realloc(struct rpcrdma_regbuf *rb, size_t size, gfp_t flags)
 
 	rb->rg_data = buf;
 	rb->rg_iov.length = size;
+	return true;
+}
+
+static bool rpcrdma_rep_resize(struct rpcrdma_xprt *r_xprt,
+			       struct rpcrdma_rep *rep)
+{
+	struct rpcrdma_regbuf *rb = rep->rr_rdmabuf;
+	struct rpcrdma_ep *ep = r_xprt->rx_ep;
+	size_t size = ep->re_inline_recv;
+
+	if (likely(rdmab_length(rb) >= size))
+		return true;
+	if (!rpcrdma_regbuf_realloc_node(rb, size, XPRTRDMA_GFP_FLAGS,
+					 ibdev_to_node(ep->re_id->device)))
+		return false;
+
+	xdr_buf_init(&rep->rr_hdrbuf, rdmab_data(rb), rdmab_length(rb));
 	return true;
 }
 
@@ -1341,10 +1430,9 @@ static void rpcrdma_regbuf_free(struct rpcrdma_regbuf *rb)
  * rpcrdma_post_recvs - Refill the Receive Queue
  * @r_xprt: controlling transport instance
  * @needed: current credit grant
- * @temp: mark Receive buffers to be deleted after one use
  *
  */
-void rpcrdma_post_recvs(struct rpcrdma_xprt *r_xprt, int needed, bool temp)
+void rpcrdma_post_recvs(struct rpcrdma_xprt *r_xprt, int needed)
 {
 	struct rpcrdma_buffer *buf = &r_xprt->rx_buf;
 	struct rpcrdma_ep *ep = r_xprt->rx_ep;
@@ -1358,8 +1446,7 @@ void rpcrdma_post_recvs(struct rpcrdma_xprt *r_xprt, int needed, bool temp)
 	if (likely(ep->re_receive_count > needed))
 		goto out;
 	needed -= ep->re_receive_count;
-	if (!temp)
-		needed += RPCRDMA_MAX_RECV_BATCH;
+	needed += RPCRDMA_MAX_RECV_BATCH;
 
 	if (atomic_inc_return(&ep->re_receiving) > 1)
 		goto out_dec;
@@ -1368,14 +1455,16 @@ void rpcrdma_post_recvs(struct rpcrdma_xprt *r_xprt, int needed, bool temp)
 	wr = NULL;
 	while (needed) {
 		rep = rpcrdma_rep_get_locked(buf);
-		if (rep && rep->rr_temp) {
-			rpcrdma_rep_destroy(rep);
-			continue;
-		}
 		if (!rep)
-			rep = rpcrdma_rep_create(r_xprt, temp);
+			rep = rpcrdma_rep_create(r_xprt);
 		if (!rep)
 			break;
+		/* I1: a rep on rb_free_reps must carry no rqst pointer. */
+		WARN_ON_ONCE(rep->rr_rqst);
+		if (!rpcrdma_rep_resize(r_xprt, rep)) {
+			rpcrdma_rep_put(buf, rep);
+			break;
+		}
 		if (!rpcrdma_regbuf_dma_map(r_xprt, rep->rr_rdmabuf)) {
 			rpcrdma_rep_put(buf, rep);
 			break;
