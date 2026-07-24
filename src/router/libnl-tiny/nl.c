@@ -494,7 +494,7 @@ do { \
 
 static int recvmsgs(struct nl_sock *sk, struct nl_cb *cb)
 {
-	int n, err = 0, multipart = 0;
+	int n, err = 0, multipart = 0, interrupted = 0;
 	unsigned char *buf = NULL;
 	struct nlmsghdr *hdr;
 	struct sockaddr_nl nla = {0};
@@ -565,7 +565,21 @@ continue_reading:
 
 		if (hdr->nlmsg_flags & NLM_F_MULTI)
 			multipart = 1;
-	
+
+#ifdef NLM_F_DUMP_INTR
+		if (hdr->nlmsg_flags & NLM_F_DUMP_INTR) {
+			if (cb->cb_set[NL_CB_DUMP_INTR])
+				NL_CB_CALL(cb, NL_CB_DUMP_INTR, msg);
+			else {
+				/*
+				 * We have to continue reading to clear
+				 * all messages until a NLMSG_DONE is
+				 * received and report the inconsistency.
+				 */
+				interrupted = 1;
+			}
+		}
+#endif	
 		/* Other side wishes to see an ack for this message */
 		if (hdr->nlmsg_flags & NLM_F_ACK) {
 			if (cb->cb_set[NL_CB_SEND_ACK])
@@ -660,16 +674,21 @@ skip:
 	msg = NULL;
 	creds = NULL;
 
+
 	if (multipart) {
 		/* Multipart message not yet complete, continue reading */
 		goto continue_reading;
 	}
+
 stop:
 	err = 0;
 out:
 	nlmsg_free(msg);
 	free(buf);
 	free(creds);
+
+	if (interrupted)
+		err = -NLE_DUMP_INTR;
 
 	return err;
 }

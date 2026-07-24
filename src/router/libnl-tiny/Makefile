@@ -1,7 +1,7 @@
 #CC=gcc
 WFLAGS=-Wall
 #CFLAGS=$(COPTS)
-INCLUDES=-Iinclude
+INCLUDES=-I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -Iinclude
 
 LIBNAME=libnl-tiny.so
 #LIBNAME=libnl-tiny.a

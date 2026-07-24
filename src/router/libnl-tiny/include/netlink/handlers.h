@@ -108,6 +108,8 @@ enum nl_cb_type {
 	NL_CB_SEQ_CHECK,
 	/** Sending of an acknowledge message has been requested */
 	NL_CB_SEND_ACK,
+	/** Flag NLM_F_DUMP_INTR is set in message */
+	NL_CB_DUMP_INTR,
 	__NL_CB_TYPE_MAX,
 };
 
