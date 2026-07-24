@@ -217,13 +217,13 @@ static int _netlink_neighbor_dump_once(int family,
 				/* stale message left over from a previous dump */
 				continue;
 			}
-
+#ifdef NLM_F_DUMP_INTR
 			if (nlh->nlmsg_flags & NLM_F_DUMP_INTR) {
 				/* neighbor table changed during the dump, entries may be
 				 * missing from this snapshot */
 				*dump_intr = 1;
 			}
-
+#endif
 			if (nlh->nlmsg_type == NLMSG_DONE) {
 				dump_done = 1;
 				break;
