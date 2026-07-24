@@ -23,6 +23,7 @@ jobs:
         include:
           - name: plain linux
             upload_sizes: 1
+            make_target: all scp SCPPROGRESS=1
 
           - name: multi binary
             multi: 1
@@ -51,6 +52,7 @@ jobs:
 
           - name: linux clang
             cc: clang
+            make_target: all scp
 
           # Some platforms only have old compilers, we try to keep
           # compatibilty. For some reason -std=c89 doesn't enforce
@@ -100,7 +102,7 @@ jobs:
           # Check that debug code doesn't bitrot
           - name: DEBUG_TRACE
             nondefault: 1
-            configure_flags: --enable-pam
+            configure_flags: --enable-pam --enable-werror
             localoptions: |
               #define DEBUG_TRACE 5
 
@@ -229,7 +231,7 @@ jobs:
         if: ${{ matrix.nondefault }}
         run: |
           # Turn on anything that's off by default. Rough but seems sufficient
-          grep ' 0$' src/default_options.h | sed 's/0$/1/' >> localoptions.h
+          grep ' 0$' src/default_options.h | grep -v DEBUG_TRACE | sed 's/0$/1/' >> localoptions.h
           # PAM clashes with password
           echo "#define DROPBEAR_SVR_PASSWORD_AUTH 0" >> localoptions.h
           # 1 second timeout is too short

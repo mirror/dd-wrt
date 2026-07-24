@@ -1,3 +1,17 @@
+2026.94 - 23 July 2026
+
+- Fix scp build failure regression from 2026.93
+  The new ascii_isdigit() etc wasn't linked.
+
+- Print square brackets around ipv6 addresses with ports, eg
+  [2a00:f10:400:2:1c00:bcff:fe00:1c6]:22
+  Patch from Seo Suchan
+
+- Support longer paths in scp.
+
+- Avoid some build warnings, add increase github action coverage of
+  config options.
+
 2026.93 - 21 July 2026
 
 Note >> for compatibility/configuration changes
@@ -12,7 +26,7 @@ Note >> for compatibility/configuration changes
   https://github.com/mkj/dropbear/commit/882f83806d5e133037cd28e954a878984ef7b9c4
 
 - >> "permitlisten" authorized_keys lines will now be ignored if
-  the port is invalid (>65536). From Basavaraj S Maneppagol.
+  the port is invalid (>65535). From Basavaraj S Maneppagol.
 
 - >> In 2026.92, the configure option --enable-plugin-deprecated
   wasn't correctly renamed. This is now implemented.
