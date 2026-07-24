@@ -324,12 +324,8 @@ static void fq_codel_dequeue_drop(struct Qdisc *sch)
 	struct fq_codel_sched_data *q = qdisc_priv(sch);
 
 	if (q->cstats.drop_count) {
-		if (skb)
-			sch->q.qlen++;
 		qdisc_tree_reduce_backlog(sch, q->cstats.drop_count,
 					  q->cstats.drop_len);
-		if (skb)
-			sch->q.qlen--;
 		q->cstats.drop_count = 0;
 		q->cstats.drop_len = 0;
 	}
