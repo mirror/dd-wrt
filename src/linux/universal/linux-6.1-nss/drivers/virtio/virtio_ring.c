@@ -172,6 +172,9 @@ struct vring_virtqueue {
 	/* Host publishes avail event idx */
 	bool event;
 
+	/* Do DMA mapping by driver */
+	bool premapped;
+
 	/* Head of free buffer list. */
 	unsigned int free_head;
 	/* Number we've added since last sync. */
@@ -2031,6 +2034,7 @@ static struct virtqueue *vring_create_virtqueue_packed(
 #endif
 	vq->packed_ring = true;
 	vq->use_dma_api = vring_use_dma_api(vdev);
+	vq->premapped = false;
 
 	vq->indirect = virtio_has_feature(vdev, VIRTIO_RING_F_INDIRECT_DESC) &&
 		!context;
@@ -2518,6 +2522,7 @@ static struct virtqueue *__vring_new_virtqueue(unsigned int index,
 	vq->broken = false;
 #endif
 	vq->use_dma_api = vring_use_dma_api(vdev);
+	vq->premapped = false;
 
 	vq->indirect = virtio_has_feature(vdev, VIRTIO_RING_F_INDIRECT_DESC) &&
 		!context;
@@ -2635,6 +2640,54 @@ int virtqueue_resize(struct virtqueue *_vq, u32 num,
 	return err;
 }
 EXPORT_SYMBOL_GPL(virtqueue_resize);
+
+/**
+ * virtqueue_set_dma_premapped - set the vring premapped mode
+ * @_vq: the struct virtqueue we're talking about.
+ *
+ * Enable the premapped mode of the vq.
+ *
+ * The vring in premapped mode does not do dma internally, so the driver must
+ * do dma mapping in advance. The driver must pass the dma_address through
+ * dma_address of scatterlist. When the driver got a used buffer from
+ * the vring, it has to unmap the dma address.
+ *
+ * This function must be called immediately after creating the vq, or after vq
+ * reset, and before adding any buffers to it.
+ *
+ * Caller must ensure we don't call this with other virtqueue operations
+ * at the same time (except where noted).
+ *
+ * Returns zero or a negative error.
+ * 0: success.
+ * -EINVAL: vring does not use the dma api, so we can not enable premapped mode.
+ */
+int virtqueue_set_dma_premapped(struct virtqueue *_vq)
+{
+	struct vring_virtqueue *vq = to_vvq(_vq);
+	u32 num;
+
+	START_USE(vq);
+
+	num = vq->packed_ring ? vq->packed.vring.num : vq->split.vring.num;
+
+	if (num != vq->vq.num_free) {
+		END_USE(vq);
+		return -EINVAL;
+	}
+
+	if (!vq->use_dma_api) {
+		END_USE(vq);
+		return -EINVAL;
+	}
+
+	vq->premapped = true;
+
+	END_USE(vq);
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(virtqueue_set_dma_premapped);
 
 /* Only available for split ring */
 struct virtqueue *vring_new_virtqueue(unsigned int index,
@@ -2872,5 +2925,148 @@ const struct vring *virtqueue_get_vring(struct virtqueue *vq)
 	return &to_vvq(vq)->split.vring;
 }
 EXPORT_SYMBOL_GPL(virtqueue_get_vring);
+
+/**
+ * virtqueue_dma_map_single_attrs - map DMA for _vq
+ * @_vq: the struct virtqueue we're talking about.
+ * @ptr: the pointer of the buffer to do dma
+ * @size: the size of the buffer to do dma
+ * @dir: DMA direction
+ * @attrs: DMA Attrs
+ *
+ * The caller calls this to do dma mapping in advance. The DMA address can be
+ * passed to this _vq when it is in pre-mapped mode.
+ *
+ * return DMA address. Caller should check that by virtqueue_dma_mapping_error().
+ */
+dma_addr_t virtqueue_dma_map_single_attrs(struct virtqueue *_vq, void *ptr,
+					  size_t size,
+					  enum dma_data_direction dir,
+					  unsigned long attrs)
+{
+	struct vring_virtqueue *vq = to_vvq(_vq);
+
+	if (!vq->use_dma_api)
+		return (dma_addr_t)virt_to_phys(ptr);
+
+	return dma_map_single_attrs(vring_dma_dev(vq), ptr, size, dir, attrs);
+}
+EXPORT_SYMBOL_GPL(virtqueue_dma_map_single_attrs);
+
+/**
+ * virtqueue_dma_unmap_single_attrs - unmap DMA for _vq
+ * @_vq: the struct virtqueue we're talking about.
+ * @addr: the dma address to unmap
+ * @size: the size of the buffer
+ * @dir: DMA direction
+ * @attrs: DMA Attrs
+ *
+ * Unmap the address that is mapped by the virtqueue_dma_map_* APIs.
+ *
+ */
+void virtqueue_dma_unmap_single_attrs(struct virtqueue *_vq, dma_addr_t addr,
+				      size_t size, enum dma_data_direction dir,
+				      unsigned long attrs)
+{
+	struct vring_virtqueue *vq = to_vvq(_vq);
+
+	if (!vq->use_dma_api)
+		return;
+
+	dma_unmap_single_attrs(vring_dma_dev(vq), addr, size, dir, attrs);
+}
+EXPORT_SYMBOL_GPL(virtqueue_dma_unmap_single_attrs);
+
+/**
+ * virtqueue_dma_mapping_error - check dma address
+ * @_vq: the struct virtqueue we're talking about.
+ * @addr: DMA address
+ *
+ * Returns 0 means dma valid. Other means invalid dma address.
+ */
+int virtqueue_dma_mapping_error(struct virtqueue *_vq, dma_addr_t addr)
+{
+	struct vring_virtqueue *vq = to_vvq(_vq);
+
+	if (!vq->use_dma_api)
+		return 0;
+
+	return dma_mapping_error(vring_dma_dev(vq), addr);
+}
+EXPORT_SYMBOL_GPL(virtqueue_dma_mapping_error);
+
+/**
+ * virtqueue_dma_need_sync - check a dma address needs sync
+ * @_vq: the struct virtqueue we're talking about.
+ * @addr: DMA address
+ *
+ * Check if the dma address mapped by the virtqueue_dma_map_* APIs needs to be
+ * synchronized
+ *
+ * return bool
+ */
+bool virtqueue_dma_need_sync(struct virtqueue *_vq, dma_addr_t addr)
+{
+	struct vring_virtqueue *vq = to_vvq(_vq);
+
+	if (!vq->use_dma_api)
+		return false;
+
+	return dma_need_sync(vring_dma_dev(vq), addr);
+}
+EXPORT_SYMBOL_GPL(virtqueue_dma_need_sync);
+
+/**
+ * virtqueue_dma_sync_single_range_for_cpu - dma sync for cpu
+ * @_vq: the struct virtqueue we're talking about.
+ * @addr: DMA address
+ * @offset: DMA address offset
+ * @size: buf size for sync
+ * @dir: DMA direction
+ *
+ * Before calling this function, use virtqueue_dma_need_sync() to confirm that
+ * the DMA address really needs to be synchronized
+ *
+ */
+void virtqueue_dma_sync_single_range_for_cpu(struct virtqueue *_vq,
+					     dma_addr_t addr,
+					     unsigned long offset, size_t size,
+					     enum dma_data_direction dir)
+{
+	struct vring_virtqueue *vq = to_vvq(_vq);
+	struct device *dev = vring_dma_dev(vq);
+
+	if (!vq->use_dma_api)
+		return;
+
+	dma_sync_single_range_for_cpu(dev, addr, offset, size, dir);
+}
+EXPORT_SYMBOL_GPL(virtqueue_dma_sync_single_range_for_cpu);
+
+/**
+ * virtqueue_dma_sync_single_range_for_device - dma sync for device
+ * @_vq: the struct virtqueue we're talking about.
+ * @addr: DMA address
+ * @offset: DMA address offset
+ * @size: buf size for sync
+ * @dir: DMA direction
+ *
+ * Before calling this function, use virtqueue_dma_need_sync() to confirm that
+ * the DMA address really needs to be synchronized
+ */
+void virtqueue_dma_sync_single_range_for_device(struct virtqueue *_vq,
+						dma_addr_t addr,
+						unsigned long offset, size_t size,
+						enum dma_data_direction dir)
+{
+	struct vring_virtqueue *vq = to_vvq(_vq);
+	struct device *dev = vring_dma_dev(vq);
+
+	if (!vq->use_dma_api)
+		return;
+
+	dma_sync_single_range_for_device(dev, addr, offset, size, dir);
+}
+EXPORT_SYMBOL_GPL(virtqueue_dma_sync_single_range_for_device);
 
 MODULE_LICENSE("GPL");

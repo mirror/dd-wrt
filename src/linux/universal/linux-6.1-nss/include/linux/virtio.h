@@ -9,6 +9,7 @@
 #include <linux/device.h>
 #include <linux/mod_devicetable.h>
 #include <linux/gfp.h>
+#include <linux/dma-mapping.h>
 
 /**
  * struct virtqueue - a queue to register buffers for sending or receiving.
@@ -77,6 +78,8 @@ void virtqueue_disable_cb(struct virtqueue *vq);
 bool virtqueue_enable_cb(struct virtqueue *vq);
 
 unsigned virtqueue_enable_cb_prepare(struct virtqueue *vq);
+
+int virtqueue_set_dma_premapped(struct virtqueue *_vq);
 
 bool virtqueue_poll(struct virtqueue *vq, unsigned);
 
@@ -206,4 +209,19 @@ void unregister_virtio_driver(struct virtio_driver *drv);
 #define module_virtio_driver(__virtio_driver) \
 	module_driver(__virtio_driver, register_virtio_driver, \
 			unregister_virtio_driver)
+
+dma_addr_t virtqueue_dma_map_single_attrs(struct virtqueue *_vq, void *ptr, size_t size,
+					  enum dma_data_direction dir, unsigned long attrs);
+void virtqueue_dma_unmap_single_attrs(struct virtqueue *_vq, dma_addr_t addr,
+				      size_t size, enum dma_data_direction dir,
+				      unsigned long attrs);
+int virtqueue_dma_mapping_error(struct virtqueue *_vq, dma_addr_t addr);
+
+bool virtqueue_dma_need_sync(struct virtqueue *_vq, dma_addr_t addr);
+void virtqueue_dma_sync_single_range_for_cpu(struct virtqueue *_vq, dma_addr_t addr,
+					     unsigned long offset, size_t size,
+					     enum dma_data_direction dir);
+void virtqueue_dma_sync_single_range_for_device(struct virtqueue *_vq, dma_addr_t addr,
+						unsigned long offset, size_t size,
+						enum dma_data_direction dir);
 #endif /* _LINUX_VIRTIO_H */
