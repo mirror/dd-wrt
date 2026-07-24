@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8828 | brainslayer | 2026-07-25 02:10:01 +0600 (Sat, 25 Jul 2026) | 1 line
+
+merge froom upstream
+------------------------------------------------------------------------
 r8827 | brainslayer | 2026-07-25 01:39:11 +0600 (Sat, 25 Jul 2026) | 1 line
 
 enable coverage class flag, so ath12k cards will show this option in gui
