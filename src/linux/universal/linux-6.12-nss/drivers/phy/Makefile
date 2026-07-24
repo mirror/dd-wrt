@@ -30,7 +30,6 @@ obj-y					+= allwinner/	\
 					   motorola/	\
 					   mscc/	\
 					   nuvoton/	\
-					   qualcomm/	\
 					   ralink/	\
 					   realtek/	\
 					   renesas/	\
@@ -43,3 +42,9 @@ obj-y					+= allwinner/	\
 					   tegra/	\
 					   ti/		\
 					   xilinx/
+
+ifeq ($(CONFIG_MDIO_IPQ95XX),y)
+obj-y					+= qualcomm_ipq9574/
+else
+obj-y					+= qualcomm/
+endif
