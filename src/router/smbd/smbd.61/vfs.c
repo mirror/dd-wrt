@@ -105,7 +105,10 @@ static int ksmbd_vfs_path_lookup(struct ksmbd_share_config *share_conf,
 	struct filename *filename = NULL;
 #endif
 	const struct path *root_share_path = &share_conf->vfs_path;
-	int err, type;
+	int err;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0)
+	int type;
+#endif
 	struct dentry *d;
 
 	if (pathname[0] == '\0') {
@@ -119,9 +122,15 @@ static int ksmbd_vfs_path_lookup(struct ksmbd_share_config *share_conf,
 	if (IS_ERR(filename))
 		return PTR_ERR(filename);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0)
 	err = vfs_path_parent_lookup(filename, flags,
 				     path, &last, &type,
 				     root_share_path);
+#else
+	err = vfs_path_parent_lookup(filename, flags,
+				     path, &last,
+				     root_share_path);
+#endif
 	if (err) {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0)
 		putname(filename);
@@ -129,6 +138,7 @@ static int ksmbd_vfs_path_lookup(struct ksmbd_share_config *share_conf,
 		return err;
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0)
 	if (unlikely(type != LAST_NORM)) {
 		path_put(path);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0)
@@ -136,6 +146,7 @@ static int ksmbd_vfs_path_lookup(struct ksmbd_share_config *share_conf,
 #endif
 		return -EINVAL;
 	}
+#endif
 
 	if (do_lock) {
 		err = mnt_want_write(path->mnt);
@@ -1480,7 +1491,9 @@ int ksmbd_vfs_rename(struct ksmbd_work *work, const struct path *old_path,
 	struct filename *to;
 	struct ksmbd_share_config *share_conf = work->tcon->share_conf;
 	struct ksmbd_file *parent_fp;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0)
 	int new_type;
+#endif
 	int err, lookup_flags = LOOKUP_NO_SYMLINKS;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
 	int target_lookup_flags = LOOKUP_RENAME_TARGET | LOOKUP_CREATE;
@@ -1506,9 +1519,15 @@ int ksmbd_vfs_rename(struct ksmbd_work *work, const struct path *old_path,
 #endif
 
 retry:
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0)
 	err = vfs_path_parent_lookup(to, lookup_flags | LOOKUP_BENEATH,
 				     &new_path, &new_last, &new_type,
 				     &share_conf->vfs_path);
+#else
+	err = vfs_path_parent_lookup(to, lookup_flags | LOOKUP_BENEATH,
+				     &new_path, &new_last,
+				     &share_conf->vfs_path);
+#endif
 	if (err)
 		goto out1;
 
