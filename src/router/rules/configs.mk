@@ -603,7 +603,8 @@ endif
 ifeq ($(KERNELVERSION),6.12-nss)
 obj-$(CONFIG_MSTP) += mstp
 endif
-obj-$(CONFIG_PYTHON) += zlib libffi python
+#obj-$(CONFIG_PYTHON) += zlib libffi python
+obj-$(CONFIG_PYTHON) += python_bin
 obj-$(CONFIG_NMAP) += libpcap nmap
 obj-$(CONFIG_ARPALERT) += arpalert
 obj-$(CONFIG_IPETH) += ipeth
