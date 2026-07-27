@@ -559,7 +559,7 @@ static int __init ima_calc_boot_aggregate_tfm(char *digest,
 			return rc;
 	}
 	if (!rc)
-		crypto_shash_final(shash, digest);
+		rc = crypto_shash_final(shash, digest);
 	return rc;
 }
 

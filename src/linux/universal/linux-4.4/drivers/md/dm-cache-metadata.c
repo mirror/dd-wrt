@@ -896,6 +896,12 @@ static bool cmd_write_lock(struct dm_cache_metadata *cmd)
 			return;			\
 	} while(0)
 
+#define WRITE_LOCK_OR_GOTO(cmd, label)		\
+	do {					\
+		if (!cmd_write_lock((cmd)))	\
+			goto label;		\
+	} while (0)
+
 #define WRITE_UNLOCK(cmd) \
 	up_write(&(cmd)->root_lock)
 
@@ -1539,11 +1545,8 @@ int dm_cache_metadata_abort(struct dm_cache_metadata *cmd)
 					 CACHE_METADATA_CACHE_SIZE,
 					 CACHE_MAX_CONCURRENT_LOCKS);
 
-	WRITE_LOCK(cmd);
-	if (cmd->fail_io) {
-		WRITE_UNLOCK(cmd);
-		goto out;
-	}
+	/* cmd_write_lock() already checks fail_io with cmd->root_lock held */
+	WRITE_LOCK_OR_GOTO(cmd, out);
 
 	__destroy_persistent_data_objects(cmd, false);
 	old_bm = cmd->bm;

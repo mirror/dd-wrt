@@ -56,5 +56,6 @@ extern void can_rx_unregister(struct net_device *dev, canid_t can_id,
 
 extern int can_send(struct sk_buff *skb, int loop);
 extern int can_ioctl(struct socket *sock, unsigned int cmd, unsigned long arg);
+void can_sock_destruct(struct sock *sk);
 
 #endif /* !_CAN_CORE_H */

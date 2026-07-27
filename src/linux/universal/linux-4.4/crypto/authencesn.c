@@ -431,6 +431,11 @@ static int crypto_authenc_esn_create(struct crypto_template *tmpl,
 
 	auth_base = &auth->base;
 
+	if (auth->digestsize > 0 && auth->digestsize < 4) {
+		err = -EINVAL;
+		goto out_put_auth;
+	}
+
 	enc_name = crypto_attr_alg_name(tb[2]);
 	err = PTR_ERR(enc_name);
 	if (IS_ERR(enc_name))

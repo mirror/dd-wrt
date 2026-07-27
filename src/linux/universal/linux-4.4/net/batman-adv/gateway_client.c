@@ -566,10 +566,16 @@ void batadv_gw_node_delete(struct batadv_priv *bat_priv,
 
 void batadv_gw_node_free(struct batadv_priv *bat_priv)
 {
+	struct batadv_gw_node *curr_gw;
 	struct batadv_gw_node *gw_node;
 	struct hlist_node *node_tmp;
 
 	spin_lock_bh(&bat_priv->gw.list_lock);
+	curr_gw = rcu_dereference_protected(bat_priv->gw.curr_gw, 1);
+	rcu_assign_pointer(bat_priv->gw.curr_gw, NULL);
+	if (curr_gw)
+		batadv_gw_node_free_ref(curr_gw);
+
 	hlist_for_each_entry_safe(gw_node, node_tmp,
 				  &bat_priv->gw.list, list) {
 		hlist_del_init_rcu(&gw_node->list);

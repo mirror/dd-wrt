@@ -1044,6 +1044,9 @@ static int dlfb_ops_check_var(struct fb_var_screeninfo *var,
 	if ((var->xres * var->yres * 2) > info->fix.smem_len)
 		return -EINVAL;
 
+	if (!var->pixclock)
+		return -EINVAL;
+
 	/* set device-specific elements of var unrelated to mode */
 	dlfb_var_color_format(var);
 

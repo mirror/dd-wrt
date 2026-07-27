@@ -262,8 +262,8 @@ batadv_bla_del_backbone_claims(struct batadv_bla_backbone_gw *backbone_gw)
 			if (claim->backbone_gw != backbone_gw)
 				continue;
 
-			batadv_claim_free_ref(claim);
 			hlist_del_rcu(&claim->hash_entry);
+			batadv_claim_free_ref(claim);
 		}
 		spin_unlock_bh(list_lock);
 	}
@@ -629,6 +629,7 @@ static void batadv_bla_add_claim(struct batadv_priv *bat_priv,
 
 		if (unlikely(hash_added != 0)) {
 			/* only local changes happened. */
+			batadv_backbone_gw_free_ref(backbone_gw);
 			kfree(claim);
 			return;
 		}
@@ -1146,6 +1147,13 @@ static void batadv_bla_purge_claims(struct batadv_priv *bat_priv,
 
 		rcu_read_lock();
 		hlist_for_each_entry_rcu(claim, head, hash_entry) {
+			/* only purge claims not currently in the process of being released.
+			 * Such claims could otherwise have a NULL-ptr backbone_gw set because
+			 * they already went through batadv_claim_release()
+			 */
+			if (!atomic_inc_not_zero(&claim->refcount))
+				continue;
+
 			backbone_gw = batadv_bla_claim_get_backbone_gw(claim);
 			if (now)
 				goto purge_now;
@@ -1168,6 +1176,7 @@ purge_now:
 					      claim->addr, claim->vid);
 skip:
 			batadv_backbone_gw_free_ref(backbone_gw);
+			batadv_claim_free_ref(claim);
 		}
 		rcu_read_unlock();
 	}

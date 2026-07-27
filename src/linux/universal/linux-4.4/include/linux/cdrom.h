@@ -104,6 +104,7 @@ extern unsigned int cdrom_check_events(struct cdrom_device_info *cdi,
 extern int cdrom_media_changed(struct cdrom_device_info *);
 
 extern int register_cdrom(struct cdrom_device_info *cdi);
+extern void cdrom_probe_write_features(struct cdrom_device_info *cdi);
 extern void unregister_cdrom(struct cdrom_device_info *cdi);
 
 typedef struct {

@@ -896,8 +896,8 @@ static int ocfs2_xattr_list_entry(char *buffer, size_t size,
 
 	*result += total_len;
 
-	/* we are just looking for how big our buffer needs to be */
-	if (!size)
+	/* No buffer means we are only looking for the required size. */
+	if (!buffer)
 		return 0;
 
 	if (*result > size)

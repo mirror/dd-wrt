@@ -867,7 +867,12 @@ static int rxkad_decrypt_ticket(struct rxrpc_connection *conn,
 	desc.flags = 0;
 
 	sg_init_one(&sg[0], ticket, ticket_len);
-	crypto_blkcipher_decrypt_iv(&desc, sg, sg, ticket_len);
+	ret = crypto_blkcipher_decrypt_iv(&desc, sg, sg, ticket_len);
+	if (ret < 0) {
+		*_abort_code = RXKADBADTICKET;
+		ret = -EPROTO;
+		goto error;
+	}
 
 	p = ticket;
 	end = p + ticket_len;

@@ -155,7 +155,7 @@ struct batadv_frag_table_entry {
 	spinlock_t lock; /* protects head */
 	unsigned long timestamp;
 	u16 seqno;
-	u16 size;
+	size_t size;
 	u16 total_size;
 };
 
@@ -282,7 +282,7 @@ struct batadv_orig_node {
 	unsigned long capa_initialized;
 	atomic_t last_ttvn;
 	unsigned char *tt_buff;
-	s16 tt_buff_len;
+	u16 tt_buff_len;
 	spinlock_t tt_buff_lock; /* protects tt_buff & tt_buff_len */
 	/* prevents from changing the table while reading it */
 	spinlock_t tt_lock;
@@ -545,7 +545,7 @@ struct batadv_priv_tt {
 	spinlock_t req_list_lock; /* protects req_list */
 	spinlock_t roam_list_lock; /* protects roam_list */
 	unsigned char *last_changeset;
-	s16 last_changeset_len;
+	u16 last_changeset_len;
 	/* protects last_changeset & last_changeset_len */
 	spinlock_t last_changeset_lock;
 	/* prevents from executing a commit while reading the table */
