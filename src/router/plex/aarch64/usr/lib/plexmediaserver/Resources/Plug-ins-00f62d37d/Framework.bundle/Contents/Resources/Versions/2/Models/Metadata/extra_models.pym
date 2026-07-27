@@ -1,0 +1,100 @@
+#
+#  Plex Extension Framework
+#  Copyright (C) 2008-2012 Plex, Inc. (James Clarke, Elan Feingold). All Rights Reserved.
+#
+from common_models import MetadataModel
+from common_records import Person
+
+class VideoExtra(MetadataModel):
+  xml_tag = 'Video'
+  xml_attributes = dict(type='clip')
+  suppress_source_icon = True
+  require_key_and_rating_key = False
+
+  title                     = Template.String()
+  year                      = Template.Integer()
+  originally_available_at   = Template.Date()
+  studio                    = Template.String()
+  tagline                   = Template.String()
+  summary                   = Template.String()
+  writers                   = Template.Set(Person())
+  directors                 = Template.Set(Person())
+  producers                 = Template.Set(Person())
+  roles                     = Template.Set(Person())
+  countries                 = Template.Set(Template.String())
+  index                     = Template.Integer()
+
+  # Interface settings
+  writers.xml_tag           = 'Writer'
+  directors.xml_tag         = 'Director'
+  producers.xml_tag         = 'Producer'
+  roles.xml_tag             = 'Role'
+  countries.xml_tag         = 'Country'
+
+  thumb                     = Template.String()
+  thumb.is_synthetic
+
+  art_url                   = Template.String()
+  art_url.is_synthetic
+  art_url.synthetic_name    = 'art'
+
+
+class Trailer(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='trailer')
+
+class DeletedScene(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='deletedScene')
+
+class BehindTheScenes(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='behindTheScenes')
+
+class Interview(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='interview')
+
+class SceneOrSample(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='sceneOrSample')
+
+class Featurette(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='featurette')
+
+class Short(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='short')
+
+class Other(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='other')
+
+class MusicVideo(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='musicVideo')
+
+    album = Template.String()
+    album.xml_attr_name = 'parentTitle'
+
+class LiveMusicVideo(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='liveMusicVideo')
+
+    album = Template.String()
+    album.xml_attr_name = 'parentTitle'
+
+class LyricMusicVideo(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='lyricMusicVideo')
+
+    album = Template.String()
+    album.xml_attr_name = 'parentTitle'
+    
+class ConcertVideo(VideoExtra):
+    xml_attributes = dict(type='clip',
+                          relation_type='concert')
+
+    album = Template.String()
+    album.xml_attr_name = 'parentTitle'

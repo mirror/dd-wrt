@@ -1,0 +1,14 @@
+[
+  {
+    "id":"extras",
+    "label":"Find trailers and extras automatically (Plex Pass required)",
+    "type":"bool",
+    "default":"true"
+  },
+  {
+    "id": "native_subs",
+    "label": "Include extras with subtitles in Library language",
+    "type": "bool",
+    "default": "false"
+  }
+]

@@ -1,0 +1,10 @@
+{
+  ".jpg"  : "image/jpeg",
+  ".jpeg" : "image/jpeg",
+  ".png"  : "image/png",
+  ".xml"  : "application/xml",
+  ".tif"  : "image/tiff",
+  ".tiff" : "image/tiff",
+  ".gif"  : "image/gif",
+  ".js"   : "application/javascript"
+}
