@@ -1,7 +1,0 @@
-/*!
- * Includes BabySitter
- * https://github.com/marionettejs/backbone.babysitter/
- *
- * Includes Wreqr
- * https://github.com/marionettejs/backbone.wreqr/
- */
