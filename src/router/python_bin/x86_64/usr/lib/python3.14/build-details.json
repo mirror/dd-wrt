@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0",
+  "base_prefix": "/usr",
+  "base_interpreter": "/usr/bin/python3.14",
+  "platform": "linux-x86_64",
+  "language": {
+    "version": "3.14",
+    "version_info": {
+      "major": 3,
+      "minor": 14,
+      "micro": 5,
+      "releaselevel": "final",
+      "serial": 0
+    }
+  },
+  "implementation": {
+    "name": "cpython",
+    "cache_tag": "cpython-314",
+    "version": {
+      "major": 3,
+      "minor": 14,
+      "micro": 5,
+      "releaselevel": "final",
+      "serial": 0
+    },
+    "hexversion": 51250672,
+    "_multiarch": "x86_64-linux-musl",
+    "supports_isolated_interpreters": true
+  },
+  "abi": {
+    "flags": [],
+    "extension_suffix": ".cpython-314-x86_64-linux-musl.so",
+    "stable_abi_suffix": ".abi3.so"
+  },
+  "suffixes": {
+    "source": [
+      ".py"
+    ],
+    "bytecode": [
+      ".pyc"
+    ],
+    "extensions": [
+      ".cpython-314-x86_64-linux-gnu.so",
+      ".abi3.so",
+      ".so"
+    ]
+  },
+  "libpython": {
+    "dynamic": "/usr/lib/libpython3.14.so",
+    "dynamic_stableabi": "/usr/lib/libpython3.so",
+    "link_extensions": false,
+    "static": "/usr/lib/libpython3.14.a"
+  },
+  "c_api": {
+    "headers": "/usr/include/python3.14",
+    "pkgconfig_path": "/usr/lib/pkgconfig"
+  }
+}
