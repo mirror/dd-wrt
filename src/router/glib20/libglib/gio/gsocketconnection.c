@@ -276,7 +276,7 @@ g_socket_connection_connect_finish (GSocketConnection  *connection,
  * This can be useful if you want to do something unusual on it
  * not supported by the #GSocketConnection APIs.
  *
- * Returns: (transfer none): a #GSocket or %NULL on error.
+ * Returns: (transfer none) (not nullable): the underlying socket
  *
  * Since: 2.22
  */
@@ -332,8 +332,16 @@ g_socket_connection_get_remote_address (GSocketConnection  *connection,
 {
   if (!g_socket_is_connected (connection->priv->socket))
     {
-      return connection->priv->cached_remote_address ?
-        g_object_ref (connection->priv->cached_remote_address) : NULL;
+      if (connection->priv->cached_remote_address)
+        {
+          return g_object_ref (connection->priv->cached_remote_address);
+        }
+      else
+        {
+          g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_CONNECTED,
+                       _("Socket connection not connected"));
+          return NULL;
+        }
     }
   return g_socket_get_remote_address (connection->priv->socket, error);
 }

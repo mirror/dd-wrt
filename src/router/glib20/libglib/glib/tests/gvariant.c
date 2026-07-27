@@ -4877,6 +4877,23 @@ test_fixed_array (void)
   for (i = 0; i < 5; i++)
     g_assert_cmpint (elts[i], ==, i + 1);
   g_variant_unref (a);
+
+  if (g_test_undefined ())
+    {
+      do_failed_test ("/gvariant/fixed-array/subprocess/overflow",
+                      "*n_elements <= G_MAXSIZE / element_size*");
+    }
+}
+
+static void
+test_fixed_array_overflow_subprocess (void)
+{
+  gint32 value = 0;
+
+  g_variant_new_fixed_array (G_VARIANT_TYPE_INT32, &value,
+                             G_MAXSIZE, sizeof (gint32));
+
+  g_assert_not_reached ();
 }
 
 static void
@@ -5779,6 +5796,53 @@ test_normal_checking_tuple_offsets5 (void)
   g_variant_unref (variant);
 }
 
+/* This is a regression test that looping over the padding bytes in a short
+ * (non-normal) tuple doesn’t overflow the input data.
+ *
+ * See https://gitlab.gnome.org/GNOME/glib/-/issues/3915 */
+static void
+test_normal_checking_tuple_offsets6 (void)
+{
+  /*
+   * Type: (ynqiuxthdsog) — 12 members, first member 'y' (byte) has
+   * alignment 0, second 'n' (int16) has alignment 1.
+   * With 1 byte of data (0x28), after reading the first byte member,
+   * offset=1, alignment check for 'n' requires offset to be even,
+   * so the while loop checks value.data[1] — but size is only 1.
+   *
+   * Use heap allocation via GBytes so ASan reports heap-buffer-overflow.
+   */
+  uint8_t *heap_data = NULL;
+  GBytes *bytes = NULL;
+  const GVariantType *data_type = G_VARIANT_TYPE ("(ynqiuxthdsog)");
+  GVariant *variant = NULL;
+  GVariant *normal_variant = NULL;
+  GVariant *expected = NULL;
+
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/-/issues/3915");
+
+  heap_data = g_malloc (1);
+  heap_data[0] = 0x28;
+  bytes = g_bytes_new_take (g_steal_pointer (&heap_data), 1);
+
+  variant = g_variant_new_from_bytes (data_type, bytes, FALSE);
+  g_assert_nonnull (variant);
+  g_clear_pointer (&bytes, g_bytes_unref);
+
+  g_assert_false (g_variant_is_normal_form (variant));
+
+  normal_variant = g_variant_get_normal_form (variant);
+  g_assert_nonnull (normal_variant);
+
+  expected = g_variant_new_parsed ("(byte 0x28, int16 0, uint16 0, 0, uint32 0, int64 0, uint64 0, handle 0, 0.0, '', objectpath '/', signature '')");
+  g_assert_cmpvariant (expected, variant);
+  g_assert_cmpvariant (expected, normal_variant);
+
+  g_variant_unref (expected);
+  g_variant_unref (normal_variant);
+  g_variant_unref (variant);
+}
+
 /* Test that an otherwise-valid serialised GVariant is considered non-normal if
  * its offset table entries are too wide.
  *
@@ -6023,6 +6087,7 @@ main (int argc, char **argv)
   g_test_add_func ("/gvariant/compare", test_compare);
   g_test_add_func ("/gvariant/equal", test_equal);
   g_test_add_func ("/gvariant/fixed-array", test_fixed_array);
+  g_test_add_func ("/gvariant/fixed-array/subprocess/overflow", test_fixed_array_overflow_subprocess);
   g_test_add_func ("/gvariant/check-format-string", test_check_format_string);
 
   g_test_add_func ("/gvariant/checksum-basic", test_checksum_basic);
@@ -6057,6 +6122,8 @@ main (int argc, char **argv)
                    test_normal_checking_tuple_offsets4);
   g_test_add_func ("/gvariant/normal-checking/tuple-offsets5",
                    test_normal_checking_tuple_offsets5);
+  g_test_add_func ("/gvariant/normal-checking/tuple-offsets6",
+                   test_normal_checking_tuple_offsets6);
   g_test_add_func ("/gvariant/normal-checking/tuple-offsets/minimal-sized",
                    test_normal_checking_tuple_offsets_minimal_sized);
   g_test_add_func ("/gvariant/normal-checking/empty-object-path",

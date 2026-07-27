@@ -2309,6 +2309,8 @@ g_desktop_app_info_get_display_name (GAppInfo *appinfo)
 gboolean
 g_desktop_app_info_get_is_hidden (GDesktopAppInfo *info)
 {
+  g_return_val_if_fail (G_IS_DESKTOP_APP_INFO (info), FALSE);
+
   return info->hidden;
 }
 
@@ -2329,6 +2331,8 @@ g_desktop_app_info_get_is_hidden (GDesktopAppInfo *info)
 const char *
 g_desktop_app_info_get_filename (GDesktopAppInfo *info)
 {
+  g_return_val_if_fail (G_IS_DESKTOP_APP_INFO (info), NULL);
+
   return info->filename;
 }
 
@@ -2378,6 +2382,8 @@ g_desktop_app_info_get_icon (GAppInfo *appinfo)
 const char *
 g_desktop_app_info_get_categories (GDesktopAppInfo *info)
 {
+  g_return_val_if_fail (G_IS_DESKTOP_APP_INFO (info), NULL);
+
   return info->categories;
 }
 
@@ -2395,6 +2401,8 @@ g_desktop_app_info_get_categories (GDesktopAppInfo *info)
 const char * const *
 g_desktop_app_info_get_keywords (GDesktopAppInfo *info)
 {
+  g_return_val_if_fail (G_IS_DESKTOP_APP_INFO (info), NULL);
+
   return (const char * const *)info->keywords;
 }
 
@@ -2410,6 +2418,8 @@ g_desktop_app_info_get_keywords (GDesktopAppInfo *info)
 const char *
 g_desktop_app_info_get_generic_name (GDesktopAppInfo *info)
 {
+  g_return_val_if_fail (G_IS_DESKTOP_APP_INFO (info), NULL);
+
   return info->generic_name;
 }
 
@@ -2429,6 +2439,8 @@ g_desktop_app_info_get_generic_name (GDesktopAppInfo *info)
 gboolean
 g_desktop_app_info_get_nodisplay (GDesktopAppInfo *info)
 {
+  g_return_val_if_fail (G_IS_DESKTOP_APP_INFO (info), FALSE);
+
   return info->nodisplay;
 }
 
@@ -3055,7 +3067,7 @@ g_desktop_app_info_launch_uris_with_spawn (GDesktopAppInfo            *info,
           !g_file_test (argv[0], G_FILE_TEST_IS_EXECUTABLE) ||
           g_file_test (argv[0], G_FILE_TEST_IS_DIR))
         {
-          char *program = g_steal_pointer (&argv[0]);
+          char *program = g_strdup (argv[0]);
           char *program_path = NULL;
 
           if (!g_path_is_absolute (program))
@@ -3069,6 +3081,7 @@ g_desktop_app_info_launch_uris_with_spawn (GDesktopAppInfo            *info,
 
           if (program_path)
             {
+              g_free (argv[0]);
               argv[0] = g_steal_pointer (&program_path);
             }
           else

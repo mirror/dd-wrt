@@ -1654,6 +1654,11 @@ g_file_info_get_is_hidden (GFileInfo *info)
  *
  * Checks if a file is a backup file.
  *
+ * The exact semantics of what constitutes a backup file are
+ * backend-specific. For local files, a file is considered a backup
+ * if its name ends with `~` and it is a regular file. This follows
+ * the POSIX convention used by text editors such as Emacs.
+ *
  * It is an error to call this if the #GFileInfo does not contain
  * %G_FILE_ATTRIBUTE_STANDARD_IS_BACKUP.
  *
@@ -2704,16 +2709,16 @@ matcher_optimize (GFileAttributeMatcher *matcher)
  * @attributes: an attribute string to match.
  *
  * Creates a new file attribute matcher, which matches attributes
- * against a given string. #GFileAttributeMatchers are reference
+ * against a given string. [GFileAttributeMatchers][struct@FileAttributeMatcher] are reference
  * counted structures, and are created with a reference count of 1. If
- * the number of references falls to 0, the #GFileAttributeMatcher is
+ * the number of references falls to 0, the [struct@FileAttributeMatcher] is
  * automatically destroyed.
  *
  * The @attributes string should be formatted with specific keys separated
- * from namespaces with a double colon. Several "namespace::key" strings may be
- * concatenated with a single comma (e.g. "standard::type,standard::is-hidden").
- * The wildcard "*" may be used to match all keys and namespaces, or
- * "namespace::*" will match all keys in a given namespace.
+ * from namespaces with a double colon. Several `"namespace::key"` strings may be
+ * concatenated with a single comma (e.g. `"standard::type,standard::is-hidden"`).
+ * The wildcard `"*"` may be used to match all keys and namespaces, or
+ * `"namespace::*"` will match all keys in a given namespace.
  *
  * ## Examples of file attribute matcher strings and results
  *
@@ -2997,7 +3002,7 @@ g_file_attribute_matcher_matches (GFileAttributeMatcher *matcher,
  *
  * Checks if the matcher will match all of the keys in a given namespace.
  * This will always return %TRUE if a wildcard character is in use (e.g. if
- * matcher was created with "standard::*" and @ns is "standard", or if matcher was created
+ * matcher was created with "standard::\*" and @ns is "standard", or if matcher was created
  * using "*" and namespace is anything.)
  *
  * TODO: this is awkwardly worded.

@@ -100,7 +100,7 @@ struct _GDateTime
   gint interval;
 
   /* 1 is 0001-01-01 in Proleptic Gregorian */
-  gint32 days;
+  gint32 days;  /* in range [MIN_DAYS, MAX_DAYS] */
 
   gint ref_count;  /* (atomic) */
 };
@@ -141,6 +141,9 @@ struct _GDateTime
 #define GREGORIAN_LEAP(y)    ((((y) % 4) == 0) && (!((((y) % 100) == 0) && (((y) % 400) != 0))))
 #define JULIAN_YEAR(d)       ((d)->julian / 365.25)
 #define DAYS_PER_PERIOD      (G_GINT64_CONSTANT (2914695))
+
+#define MIN_DAYS 1  /* the days count for 0001-01-01 in Proleptic Gregorian */
+#define MAX_DAYS 3652059  /* the days count for 9999-12-31 in Proleptic Gregorian */
 
 static const guint16 days_in_months[2][13] =
 {
@@ -776,7 +779,7 @@ g_date_time_from_instant (GTimeZone *tz,
   datetime->days = instant / USEC_PER_DAY;
   datetime->usec = instant % USEC_PER_DAY;
 
-  if (datetime->days < 1 || 3652059 < datetime->days)
+  if (datetime->days < MIN_DAYS || datetime->days > MAX_DAYS)
     {
       g_date_time_unref (datetime);
       datetime = NULL;
@@ -812,7 +815,7 @@ g_date_time_deal_with_date_change (GDateTime *datetime)
   gint64 full_time;
   gint64 usec;
 
-  if (datetime->days < 1 || datetime->days > 3652059)
+  if (datetime->days < MIN_DAYS || datetime->days > MAX_DAYS)
     return FALSE;
 
   was_dst = g_time_zone_is_dst (datetime->tz, datetime->interval);
@@ -2076,7 +2079,9 @@ g_date_time_add_full (GDateTime *datetime,
   new->days = full_time / USEC_PER_DAY;
   new->usec = full_time % USEC_PER_DAY;
 
-  /* XXX validate */
+  /* Validate it’s still in the range 0001-01-01 to 9999-12-31 */
+  if (new->days < MIN_DAYS || new->days > MAX_DAYS)
+    g_clear_pointer (&new, g_date_time_unref);
 
   return new;
 }
@@ -2084,15 +2089,19 @@ g_date_time_add_full (GDateTime *datetime,
 /* Compare, difference, hash, equal {{{1 */
 /**
  * g_date_time_compare:
- * @dt1: (type GDateTime) (not nullable): first #GDateTime to compare
- * @dt2: (type GDateTime) (not nullable): second #GDateTime to compare
+ * @dt1: (type GDateTime) (not nullable): first date-time to compare
+ * @dt2: (type GDateTime) (not nullable): second date-time to compare
  *
- * A comparison function for #GDateTimes that is suitable
- * as a #GCompareFunc. Both #GDateTimes must be non-%NULL.
+ * A comparison function for date-times that is suitable
+ * as a [type@GLib.CompareFunc].
  *
- * Returns: -1, 0 or 1 if @dt1 is less than, equal to or greater
- *   than @dt2.
+ * This effectively converts both date-times to the same time zone before
+ * comparing, so date-times in different time zones can compare equal if they
+ * refer to the same instant. See [method@GLib.DateTime.difference].
  *
+ * Both date-times must be non-`NULL`.
+ *
+ * Returns: `-1`, `0` or `1` if @dt1 is less than, equal to or greater than @dt2
  * Since: 2.26
  */
 gint
@@ -2115,16 +2124,19 @@ g_date_time_compare (gconstpointer dt1,
 
 /**
  * g_date_time_difference:
- * @end: a #GDateTime
- * @begin: a #GDateTime
+ * @end: a date-time
+ * @begin: another date-time
  *
- * Calculates the difference in time between @end and @begin.  The
- * #GTimeSpan that is returned is effectively @end - @begin (ie:
- * positive if the first parameter is larger).
+ * Calculates the difference in time between @end and @begin.
  *
- * Returns: the difference between the two #GDateTime, as a time
- *   span expressed in microseconds.
+ * The time span that is returned is effectively @end - @begin (positive if the
+ * first parameter is larger).
  *
+ * This effectively converts both date-times to the same time zone before
+ * calculating the difference.
+ *
+ * Returns: the difference between the two date-times, as a time
+ *   span expressed in microseconds
  * Since: 2.26
  */
 GTimeSpan
@@ -2165,6 +2177,11 @@ g_date_time_hash (gconstpointer datetime)
  *
  * Equal here means that they represent the same moment after converting
  * them to the same time zone.
+ *
+ * If you need to check that the date-times are in the same time zone as well
+ * as referring to the same instant in time, additionally compare the values
+ * returned by [method@GLib.TimeZone.get_offset] for the time zones for the two
+ * date-times.
  *
  * Returns: %TRUE if @dt1 and @dt2 are equal
  *

@@ -101,7 +101,10 @@ gio_tests = {
   'file-enumerator' : {},
   'inet-address' : {},
   'io-stream' : {},
-  'iptosmessage' : {},
+  'iptosmessage' : {
+    # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/3906
+    'can_fail' : host_system in ['freebsd'],
+  },
   'max-version' : {'install' : false},
   'memory-input-stream' : {},
   'memory-monitor' : {},
@@ -159,6 +162,7 @@ gio_tests = {
 if host_system == 'linux'
   gio_tests += {
     'memory-monitor-psi' : {},
+    'memory-monitor-psi-env-set' :{},
   }
 endif
 
@@ -332,8 +336,6 @@ if host_machine.system() != 'windows'
     'g-file-info-filesystem-readonly' : {},
     'gschema-compile' : {'install' : false},
     'trash' : {
-      # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/3069
-      'can_fail' : host_system == 'darwin',
     },
   }
 
@@ -471,6 +473,7 @@ if host_machine.system() != 'windows'
       },
       'fdo-notification-backend': {},
       'gdbus-auth' : {'extra_sources' : extra_sources},
+      'gdbus-auth-mechanism-sha1': {'extra_sources' : extra_sources},
       'gdbus-bz627724' : {'extra_sources' : extra_sources},
       'gdbus-close-pending' : {'extra_sources' : extra_sources},
       'gdbus-connection' : {

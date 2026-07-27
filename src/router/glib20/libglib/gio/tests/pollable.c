@@ -28,6 +28,9 @@
 #ifdef HAVE_OPENPTY
 #include <pty.h>
 #endif
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
 #include <gio/gunixinputstream.h>
 #include <gio/gunixoutputstream.h>
 #endif
@@ -185,6 +188,21 @@ test_streams (GPollableInputStream *in,
     g_clear_object (&out);                                              \
   } G_STMT_END
 
+#define g_assert_pollable(fd) \
+  G_STMT_START {                                                        \
+    GPollableInputStream *in = NULL;                                    \
+    GOutputStream *out = NULL;                                          \
+                                                                        \
+    in = G_POLLABLE_INPUT_STREAM (g_unix_input_stream_new (fd, FALSE)); \
+    out = g_unix_output_stream_new (fd, FALSE);                         \
+                                                                        \
+    g_assert_true (g_pollable_input_stream_can_poll (in));              \
+    g_assert_true (g_pollable_output_stream_can_poll (G_POLLABLE_OUTPUT_STREAM (out))); \
+                                                                        \
+    g_clear_object (&in);                                               \
+    g_clear_object (&out);                                              \
+  } G_STMT_END
+
 static void
 test_pollable_unix_pipe (void)
 {
@@ -271,7 +289,12 @@ test_pollable_unix_nulldev (void)
   int fd = g_open ("/dev/null", O_RDWR, 0);
   g_assert_cmpint (fd, !=, -1);
 
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1400000
+  /* /dev/null is actually pollable on FreeBSD 14+ with both poll(2) and kevent(2) */
+  g_assert_pollable (fd);
+#else
   g_assert_not_pollable (fd);
+#endif
 
   close (fd);
 #else

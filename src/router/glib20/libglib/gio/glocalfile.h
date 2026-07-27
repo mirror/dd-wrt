@@ -42,7 +42,7 @@ struct _GLocalFileClass
   GObjectClass parent_class;
 };
 
-GType   _g_local_file_get_type (void) G_GNUC_CONST;
+GType   _g_local_file_get_type (void);
 
 GFile * _g_local_file_new      (const char *filename);
 
@@ -54,6 +54,10 @@ GFile * g_local_file_new_from_dirname_and_basename (const char *dirname,
                                                     const char *basename);
 
 gchar *_g_local_file_find_topdir_for (const char *file_path);
+
+gboolean _g_local_file_trash_macos (const char    *path,
+                                    GCancellable  *cancellable,
+                                    GError       **error);
 
 G_END_DECLS
 

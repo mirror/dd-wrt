@@ -257,6 +257,9 @@ if host_machine.system() == 'windows'
     'win32-private' : {
       'dependencies' : [winsock2],
     },
+    'win32-helper-path-private' : {
+      'source' : 'win32-helper-path.c',
+    },
   }
 else
   glib_tests += {
@@ -325,11 +328,6 @@ if installed_tests_enabled
   install_subdir('time-zones',
     install_dir : installed_tests_execdir,
     install_tag : 'tests',
-  )
-  install_subdir('localtime',
-    install_dir : installed_tests_execdir,
-    install_tag : 'tests',
-    follow_symlinks : false,
   )
 endif
 

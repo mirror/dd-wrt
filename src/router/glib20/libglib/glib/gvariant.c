@@ -1010,11 +1010,11 @@ g_variant_lookup (GVariant    *dictionary,
  *
  * Looks up a value in a dictionary #GVariant.
  *
- * This function works with dictionaries of the type a{s*} (and equally
- * well with type a{o*}, but we only further discuss the string case
+ * This function works with dictionaries of the type `a{s*}` (and equally
+ * well with type `a{o*}`), but we only further discuss the string case
  * for sake of clarity).
  *
- * In the event that @dictionary has the type a{sv}, the @expected_type
+ * In the event that @dictionary has the type `a{sv}`, the @expected_type
  * string specifies what type of value is expected to be inside of the
  * variant. If the value inside the variant has a different type then
  * %NULL is returned. In the event that @dictionary has a value type other
@@ -1028,7 +1028,7 @@ g_variant_lookup (GVariant    *dictionary,
  * value will have this type.
  *
  * This function is currently implemented with a linear scan.  If you
- * plan to do many lookups then #GVariantDict may be more efficient.
+ * plan to do many lookups then [struct@VariantDict] may be more efficient.
  *
  * Returns: (transfer full): the value of the dictionary key, or %NULL
  *
@@ -1113,6 +1113,7 @@ g_variant_lookup_value (GVariant           *dictionary,
  * In particular, arrays of these fixed-sized types can be interpreted
  * as an array of the given C type, with @element_size set to the size
  * the appropriate type:
+ *
  * - %G_VARIANT_TYPE_INT16 (etc.): #gint16 (etc.)
  * - %G_VARIANT_TYPE_BOOLEAN: #guchar (not #gboolean!)
  * - %G_VARIANT_TYPE_BYTE: #guint8
@@ -1216,9 +1217,13 @@ g_variant_new_fixed_array (const GVariantType  *element_type,
   GVariantTypeInfo *array_info;
   GVariant *value;
   gpointer data;
+  gsize total_size;
 
   g_return_val_if_fail (g_variant_type_is_definite (element_type), NULL);
   g_return_val_if_fail (element_size > 0, NULL);
+  g_return_val_if_fail (n_elements <= G_MAXSIZE / element_size, NULL);
+
+  total_size = n_elements * element_size;
 
   array_type = g_variant_type_new_array (element_type);
   array_info = g_variant_type_info_get (array_type);
@@ -1234,9 +1239,9 @@ g_variant_new_fixed_array (const GVariantType  *element_type,
       return NULL;
     }
 
-  data = g_memdup2 (elements, n_elements * element_size);
+  data = g_memdup2 (elements, total_size);
   value = g_variant_new_from_data (array_type, data,
-                                   n_elements * element_size,
+                                   total_size,
                                    FALSE, g_free, data);
 
   g_variant_type_free (array_type);
@@ -2989,7 +2994,7 @@ g_variant_iter_new (GVariant *value)
 {
   GVariantIter *iter;
 
-  iter = (GVariantIter *) g_slice_new (struct heap_iter);
+  iter = g_slice_new (GVariantIter);
   GVHI(iter)->value_ref = g_variant_ref (value);
   GVHI(iter)->magic = GVHI_MAGIC;
 
@@ -3099,7 +3104,7 @@ g_variant_iter_free (GVariantIter *iter)
   g_variant_unref (GVHI(iter)->value_ref);
   GVHI(iter)->magic = 0;
 
-  g_slice_free (struct heap_iter, GVHI(iter));
+  g_slice_free (GVariantIter, iter);
 }
 
 /**

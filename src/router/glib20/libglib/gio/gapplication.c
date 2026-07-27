@@ -723,6 +723,7 @@ add_packed_option (GApplication *application,
  *
  * It is important to use the proper GVariant format when retrieving
  * the options with g_variant_dict_lookup():
+ *
  * - for %G_OPTION_ARG_NONE, use `b`
  * - for %G_OPTION_ARG_STRING, use `&s`
  * - for %G_OPTION_ARG_INT, use `i`
@@ -2571,7 +2572,7 @@ g_application_open (GApplication  *application,
  * and override local_command_line(). In this case, you most likely want
  * to return %TRUE from your local_command_line() implementation to
  * suppress the default handling. See
- * [gapplication-example-cmdline2.c][https://gitlab.gnome.org/GNOME/glib/-/blob/HEAD/gio/tests/gapplication-example-cmdline2.c]
+ * [gapplication-example-cmdline2.c](https://gitlab.gnome.org/GNOME/glib/-/blob/HEAD/gio/tests/gapplication-example-cmdline2.c)
  * for an example.
  *
  * If, after the above is done, the use count of the application is zero

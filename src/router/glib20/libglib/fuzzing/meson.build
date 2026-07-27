@@ -25,6 +25,7 @@ fuzz_targets = [
   'fuzz_date_parse',
   'fuzz_date_time_new_from_iso8601',
   'fuzz_dbus_message',
+  'fuzz_dbus_node_info_new_for_xml',
   'fuzz_filename_from_uri',
   'fuzz_filename_to_uri',
   'fuzz_get_locale_variants',
@@ -32,6 +33,7 @@ fuzz_targets = [
   'fuzz_inet_address_new_from_string',
   'fuzz_inet_socket_address_new_from_string',
   'fuzz_key',
+  'fuzz_markup_escape_text',
   'fuzz_network_address_parse',
   'fuzz_network_address_parse_uri',
   'fuzz_paths',
@@ -67,19 +69,22 @@ else
   extra_sources += 'driver.c'
 endif
 
-foreach target_name : fuzz_targets
-  exe = executable(target_name, [extra_sources, target_name + '.c'],
-    c_args : extra_c_args,
-    dependencies : deps,
-  )
-
-  # If the FuzzingEngine isn’t available, build some unit tests to check that
-  # the fuzzing files do basically work. This doesn’t do any actual fuzzing though.
-  # Pass in the README as an arbitrary fuzzing input, just so we have something.
-  if build_tests and not have_fuzzing_engine
-    test(target_name, exe,
-      args : files('README.md'),
-      suite : 'fuzzing',
+if have_fuzzing_engine or build_tests
+  foreach target_name : fuzz_targets
+    exe = executable(target_name, [extra_sources, target_name + '.c'],
+      c_args : extra_c_args,
+      dependencies : deps,
     )
-  endif
-endforeach
+
+    # If the FuzzingEngine isn’t available, build some unit tests to check
+    # that the fuzzing files do basically work.  This doesn’t do any actual
+    # fuzzing though.  Pass in the README as an arbitrary fuzzing input,
+    # just so we have something.
+    if not have_fuzzing_engine
+      test(target_name, exe,
+        args : files('README.md'),
+        suite : 'fuzzing',
+      )
+    endif
+  endforeach
+endif

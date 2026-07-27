@@ -41,12 +41,12 @@ cache:
     - _ccache/
 
 variables:
-  FEDORA_IMAGE: "registry.gitlab.gnome.org/gnome/glib/fedora:v41.2"
+  FEDORA_IMAGE: "registry.gitlab.gnome.org/gnome/glib/fedora:v41.3"
   COVERITY_IMAGE: "registry.gitlab.gnome.org/gnome/glib/coverity:v7"
   DEBIAN_IMAGE: "registry.gitlab.gnome.org/gnome/glib/debian-stable:v25"
   DEBIAN_I386_IMAGE: "registry.gitlab.gnome.org/gnome/glib/debian-stable-i386:v5"
   ALPINE_IMAGE: "registry.gitlab.gnome.org/gnome/glib/alpine:v8"
-  MINGW_IMAGE: "registry.gitlab.gnome.org/gnome/glib/mingw:v41.2"
+  MINGW_IMAGE: "registry.gitlab.gnome.org/gnome/glib/mingw:v41.3"
   GOBJECT_INTROSPECTION_TAG: "1.80.1"
   MESON_TEST_TIMEOUT_MULTIPLIER: 4
   G_MESSAGES_DEBUG: all
@@ -177,14 +177,15 @@ variables:
     - bash .gitlab-ci/show-execution-environment.sh
     - cp -r "${HOME}"/subprojects/* subprojects/
 
-# FIXME: Work around https://gitlab.com/gitlab-org/gitlab/-/issues/391756
+# Fix "detected dubious ownership in repository" errors caused by GitLab using
+# different users to check out the repository vs the user running the CI job
 .with-git:
   before_script:
-   - rm -rf subprojects/gvdb
    - git config --global --add safe.directory "${PWD}"
-   - git submodule update --init --depth 1
+   - git config --global --add safe.directory "${PWD}/subprojects/gvdb"
   variables:
-    GIT_SUBMODULE_STRATEGY: "none"
+    # Ensure submodules, like gvdb, are checked out
+    GIT_SUBMODULE_STRATEGY: "normal"
     GIT_SUBMODULE_DEPTH: 1
 
 style-check-advisory:
@@ -617,7 +618,7 @@ cross-mingw64:
 # This policy doesn’t apply to intermittent flaky test failures, only to
 # consistent build failures caused by changed dependencies or build environment.
 msys2-mingw32:
-  extends: .only-default-and-merges
+  extends: .only-schedules-or-manual
   stage: build
   tags:
     - win32-ps
@@ -627,7 +628,38 @@ msys2-mingw32:
     GIT_SUBMODULE_DEPTH: 1
     MSYSTEM: "MINGW32"
     CHERE_INVOKING: "yes"
+    PYTHONUTF8: "1"
+  script:
+    - C:\msys64\usr\bin\pacman --noconfirm -Syyuu
+    - C:\msys64\usr\bin\bash .gitlab-ci/show-execution-environment.sh
+    - C:\msys64\usr\bin\bash -lc "bash -x ./.gitlab-ci/test-msys2.sh"
+  artifacts:
+    reports:
+      junit:
+        - _build/meson-logs/testlog.junit.xml
+        - _build/meson-logs/testlog-*.junit.xml
+    name: "glib-${env:CI_JOB_NAME}-${env:CI_COMMIT_REF_NAME}"
+    when: always
+    expire_in: 1 week
+    paths:
+      - _build/meson-logs
+      - _build/gdb.txt
+
+# See the note about msys2 CI job failure policy above.
+msys2-clang64:
+  extends: .only-default-and-merges
+  stage: build
+  tags:
+    - win32-ps
+  needs: []
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+    GIT_SUBMODULE_DEPTH: 1
+    MSYSTEM: "CLANG64"
+    CHERE_INVOKING: "yes"
     COVERAGE: "1"
+    INTROSPECTION: "1"
+    DOCUMENTATION: "1"
     PYTHONUTF8: "1"
     G_DEBUGGER: 'gdb.exe -batch -ex "set logging enabled on" -ex "attach %p" -ex "signal-event %e" -ex "c" -ex "thread apply all bt full" -ex "k"'
   script:
@@ -648,32 +680,6 @@ msys2-mingw32:
       - _coverage/
       - _reference/
       - "${GIR_ARTIFACTS_PATH}/*.gir"
-
-# See the note about msys2 CI job failure policy above.
-msys2-clang64:
-  extends: .only-schedules-or-manual
-  stage: build
-  tags:
-    - win32-ps
-  needs: []
-  variables:
-    GIT_SUBMODULE_STRATEGY: recursive
-    GIT_SUBMODULE_DEPTH: 1
-    MSYSTEM: "CLANG64"
-    CHERE_INVOKING: "yes"
-    PYTHONUTF8: "1"
-  script:
-    - C:\msys64\usr\bin\pacman --noconfirm -Syyuu
-    - C:\msys64\usr\bin\bash .gitlab-ci/show-execution-environment.sh
-    - C:\msys64\usr\bin\bash -lc "bash -x ./.gitlab-ci/test-msys2.sh"
-  artifacts:
-    reports:
-      junit: "_build/meson-logs/testlog.junit.xml"
-    name: "glib-${env:CI_JOB_NAME}-${env:CI_COMMIT_REF_NAME}"
-    when: always
-    expire_in: 1 week
-    paths:
-      - _build/meson-logs
 
 vs2019-x64:
   extends: .only-default
@@ -830,7 +836,6 @@ freebsd-13-x86_64:
   script:
     - meson setup ${MESON_COMMON_OPTIONS}
             --localstatedir=/var
-            -Db_lundef=false
             -Dxattr=false
             -Dsystemtap=disabled
             -Ddtrace=disabled
@@ -914,7 +919,7 @@ coverage:
   extends: .only-default
   image: "${FEDORA_IMAGE}"
   stage: coverage
-  needs: ['fedora-x86_64', 'msys2-mingw32']
+  needs: ['fedora-x86_64', 'msys2-clang64']
   artifacts:
     name: "glib-${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}"
     expire_in: 1 week
@@ -999,9 +1004,9 @@ check-introspection-fedora-x86_64:
     JOB_NAME: fedora-x86_64
   extends: .check-introspection
 
-check-introspection-msys2-mingw32:
+check-introspection-msys2-clang64:
   variables:
-    JOB_NAME: msys2-mingw32
+    JOB_NAME: msys2-clang64
   extends: .check-introspection
 
 scan-build:
@@ -1112,6 +1117,8 @@ dist-job:
   image: "${FEDORA_IMAGE}"
   stage: build
   needs: []
+  variables:
+    GIT_STRATEGY: "clone"
   before_script:
     - !reference [".build-linux", "before_script"]
     - !reference [".with-git", "before_script"]
@@ -1129,6 +1136,20 @@ dist-job:
             -Dintrospection=enabled
             -Dman-pages=enabled
             _build
+    # FIXME: This workaround can be dropped once we depend on Meson 1.6.0.
+    # dist-job has a history of failing with a 'dirty tree' error for occult reasons.
+    # This might be related to Meson commits c9aa4aff66 and e9037e7b9f, which
+    # indicate that Meson’s dirty tree check can be fooled by an updated timestamp
+    # on a file in the working tree, even if its content hasn’t changed. Perhaps
+    # sometime recently, GitLab has started changing the stat of files in the
+    # git tree when it didn’t previously (as the same Meson implementation
+    # previously worked fine).
+    - git update-index -q --refresh
+    # Potentially helpful debug output related to the above workaround
+    - git diff-index HEAD
+    - git status
+    - git submodule status
+    # Actually run the dist
     - meson dist -C _build
     # Compile again to build the docs
     - meson compile -C _build
