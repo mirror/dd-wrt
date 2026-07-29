@@ -1222,8 +1222,7 @@ static struct ctl_table ecm_front_end_sysctl_tbl[] = {
 		.maxlen		= sizeof(int) * ECM_FRONT_END_DENIED_PORTS_HTABLE_SIZE,
 		.mode		= 0644,
 		.proc_handler	= &ecm_front_end_tcp_denied_ports_handler,
-	},
-	{}
+	}
 };
 
 /*

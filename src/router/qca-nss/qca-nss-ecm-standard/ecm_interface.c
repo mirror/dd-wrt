@@ -8384,9 +8384,8 @@ static struct ctl_table ecm_interface_table[] = {
 		.maxlen			= sizeof(int),
 		.mode			= 0644,
 		.proc_handler		= &ecm_interface_igs_enabled_handler,
-	},
+	}
 #endif
-	{}
 };
 
 #ifdef ECM_INTERFACE_IPSEC_GLUE_LAYER_SUPPORT_ENABLE

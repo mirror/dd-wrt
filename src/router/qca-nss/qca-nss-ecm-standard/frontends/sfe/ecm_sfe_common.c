@@ -475,7 +475,6 @@ static struct ctl_table ecm_sfe_sysctl_tbl[] = {
 		.proc_handler   = &ecm_sfe_mht_enable_handler,
 	},
 #endif
-	{}
 };
 
 /*
