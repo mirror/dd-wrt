@@ -363,6 +363,7 @@ int nvram_used(int *space)
 		while (!feof(fp)) {
 			int cnt = fread(check, 1, 16, fp);
 			if (cnt < 16) {
+				fclose(fp);
 				break;
 			}
 			used += 16;
@@ -372,8 +373,8 @@ int nvram_used(int *space)
 				return used;
 			}
 		}
+		fclose(fp);
 	}
-	fclose(fp);
 skip:;
 	buf = malloc(NVRAMSPACE);
 	nvram_getall(buf, NVRAMSPACE);
