@@ -20,6 +20,11 @@
  * $Id:
  */
 
+/*
+receiver for hikvision (and other brands with compatible feature) alarm server function which allows to trigger events by running commands. 
+i use it for running a command on a external linux server which analyses current video captures for human presence.
+most of the event types are reverse engineered. some might be still missing
+*/
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
