@@ -341,7 +341,8 @@ int nvram_used(int *space)
 	if (_nvram_init())
 		return -1;
 
-	*space = NVRAMSPACE;
+	if (space)
+		*space = NVRAMSPACE;
 
 	int mtd = getMTD("nvram");
 	if (mtd >= 0) {
