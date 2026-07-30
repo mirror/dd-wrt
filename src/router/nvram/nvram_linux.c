@@ -352,6 +352,7 @@ int nvram_used(int *space)
 			goto skip;
 		char check[16];
 		fread(check, 1, 16, fp);
+		/* check if first sector is empty or has a known signature for uncompressed nvram */
 		if (!memcmp(check, "FLSH", 4) || !memcmp(check, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 16) ||
 		    !memcmp(check, "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff", 16)) {
 			fclose(fp);
@@ -364,6 +365,7 @@ int nvram_used(int *space)
 				break;
 			}
 			used += 16;
+			/* rest of unused compressed sectors always starts with zeros, so we know we reached the end */
 			if (!memcmp(check, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 16)) {
 				fclose(fp);
 				return used;
