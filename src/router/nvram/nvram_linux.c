@@ -354,7 +354,7 @@ int nvram_used(int *space)
 		char check[16];
 		fread(check, 1, 16, fp);
 		/* check if first sector is empty or has a known signature for uncompressed nvram */
-		if (!memcmp(check, "FLSH", 4) ||
+		if (!memcmp(check, "FLSH", 4) || !memcmp(check, "HSLF", 4) ||
 		    !memcmp(check, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 16) ||
 		    !memcmp(check, "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff", 16)) {
 			fclose(fp);
