@@ -303,14 +303,75 @@ int nvram_size(void)
 	return NVRAMSPACE;
 }
 
+static int getMTD(char *name)
+{
+	char buf[32];
+	int device = -1;
+	char dev[32];
+	char size[32];
+	char esize[32];
+	char n[32];
+	char line[128];
+	sprintf(buf, "\"%s\"", name);
+	FILE *fp = fopen("/proc/mtd", "rb");
+	if (!fp)
+		return -1;
+	while (!feof(fp)) {
+		fgets(line, 127, fp);
+		if (sscanf(line, "%s %s %s %s", dev, size, esize, n) < 4)
+			break;
+		if (!strcmp(n, buf)) {
+			if (dev[4] == ':') {
+				device = dev[3] - '0';
+			} else {
+				device = ((dev[3] - '0') * 10) + (dev[4] - '0');
+			}
+
+			break;
+		}
+	}
+	fclose(fp);
+	return device;
+}
+
 int nvram_used(int *space)
 {
 	char *name, *buf;
+	FILE *fp;
 	if (_nvram_init())
 		return -1;
 
 	*space = NVRAMSPACE;
 
+	int mtd = getMTD("nvram");
+	if (mtd >= 0) {
+		char fname[32];
+		sprintf(fname, "/dev/mtdblock%d", mtd);
+		fp = fopen(fname, "rb");
+		if (!fp)
+			goto skip;
+		char check[16];
+		fread(check, 1, 16, fp);
+		if (!memcmp(check, "FLSH", 4) || !memcmp(check, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 16) ||
+		    !memcmp(check, "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff", 16)) {
+			fclose(fp);
+			goto skip;
+		}
+		int used = 16;
+		while (!feof(fp)) {
+			int cnt = fread(check, 1, 16, fp);
+			if (cnt < 16) {
+				break;
+			}
+			used += 16;
+			if (!memcmp(check, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 16)) {
+				fclose(fp);
+				return used;
+			}
+		}
+	}
+	fclose(fp);
+skip:;
 	buf = malloc(NVRAMSPACE);
 	nvram_getall(buf, NVRAMSPACE);
 
