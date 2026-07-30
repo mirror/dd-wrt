@@ -240,5 +240,6 @@ static int alarmserver_out(unsigned char method, struct mime_handler *handler, c
 	strftime(date, 200, "%FT%T%z", &tm);
 	sysprintf("%s \\\"unspecified\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\" \\\"%s\\\"", nvram_safe_get("alarmserver_cmd"), date,
 		  addr, "generic", "alarm");
+	return 0;
 }
 int do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
