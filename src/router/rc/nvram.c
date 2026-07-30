@@ -112,8 +112,12 @@ static int nvram_main(int argc, char **argv)
 			nvram_clear();
 			nvram_commit();
 		} else if (!strncmp(*argv, "show", 4) || !strncmp(*argv, "getall", 6)) {
-			size = nvram_used();
-			fprintf(stderr, "size: %d bytes (%d left)\n", size, NVRAMSPACE - size);
+			nvram_getall(buf, NVRAMSPACE);
+			for (name = buf; *name; name += strlen(name) + 1)
+				puts(name);
+			int space;
+			size = nvram_used(&space);
+			fprintf(stdout, "size: %d bytes (%d left)\n", size, space);
 		} else if (!strncmp(*argv, "backup", 6)) {
 			if (*++argv) {
 				int ret = nvram_backup(*argv);
