@@ -1078,7 +1078,7 @@ static void state_timeout_cb(struct uloop_timeout *t)
 	const struct config *cfg = &poe->config;
 	struct mcu *mcu = &poe->mcu;
 	size_t i;
-
+	return;
 	/* skip this iteration if we're still busy processing the queue */
 	if (!list_empty(&mcu->pending_cmds)) {
 		uloop_timeout_set(t, 1 * 10000);
