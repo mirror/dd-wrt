@@ -6683,7 +6683,7 @@ add_option(struct options *options, char *p[], bool is_inline, const char *file,
 	{
 	    options->ce.xormethod = 1;
 	    options->ce.xormask = p[2];
-	    options->ce.xormasklen = strlen(options->ce.xormask);
+	    options->ce.xormasklen = (int)strlen(options->ce.xormask);
 	}
         else if (streq (p[1], "xorptrpos"))
 	{
@@ -6697,13 +6697,13 @@ add_option(struct options *options, char *p[], bool is_inline, const char *file,
 	{
 	    options->ce.xormethod = 4;
 	    options->ce.xormask = p[2];
-	    options->ce.xormasklen = strlen(options->ce.xormask);
+	    options->ce.xormasklen = (int)strlen(options->ce.xormask);
 	}
         else
 	{
 	    options->ce.xormethod = 1;
 	    options->ce.xormask = p[1];
-	    options->ce.xormasklen = strlen(options->ce.xormask);
+	    options->ce.xormasklen = (int)strlen(options->ce.xormask);
 	}
     }
     else if (streq(p[0], "http-proxy") && p[1] && !p[5])
