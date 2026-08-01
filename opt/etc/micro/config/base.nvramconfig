@@ -61,6 +61,7 @@
  "dhcpd_usejffs" "DHCP leases on jffs" "NULL" "FALSE" "0"
  "dhcpd_options"  "DHCP"  "NULL"  "TRUE" "0"  
  "dnsmasq_enable"  "DNS Masq"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
+ "dns_norandom"  "DNS No Random"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "dnssec_proxy"  "DNS Masq"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "dnsmasq_rc"  "DNS Rapid Commit"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "dnsmasq_cachesize"  "DNS Cache Size"  "RANGE"  "0" "99999999" "FALSE" "0"
