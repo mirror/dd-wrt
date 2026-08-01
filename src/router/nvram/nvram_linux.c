@@ -371,6 +371,7 @@ int nvram_used(int *space)
 			/* rest of unused compressed sectors always starts with zeros, so we know we reached the end */
 			if (!memcmp(check, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 16)) {
 				fclose(fp);
+				*space = *space / 2;
 				return used;
 			}
 		}
