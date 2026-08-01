@@ -1899,6 +1899,7 @@ service.dhcp_option="Additional Options";
 service.dnsmasq_legend="Dnsmasq Infrastructure";
 service.dnsmasq_srv="Enable dnsmasq";
 service.dns_crypt="Encrypt DNS";
+service.dns_norandom="Filter Random MACs";
 service.dnsmasq_ipv6="Dnsmasq IPv6 Settings";
 service.dnsmasq_ipv6_enabled="IPv6 Router Advertisement (RA)";
 service.dnsmasq_ipv6_rastate="DHCP6 RA mode";
