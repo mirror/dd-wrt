@@ -181,6 +181,7 @@ share.pintrface="Physische Schnittstelle";
 share.vintrface="Virtuelle Schnittstellen";
 share.router="Router";
 share.static_lease="Statische Leases";
+share.no_dhcp="Kein DHCP";
 share.srvip="Server-IP";
 share.srvipname="Server-IP/Name";
 share.localdns="Lokaler DNS";
