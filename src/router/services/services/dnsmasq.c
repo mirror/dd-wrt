@@ -1052,10 +1052,6 @@ void start_dnsmasq(void)
 				char *ip = strsep(&leasebuf, "=");
 				char *time = strsep(&leasebuf, "=");
 				char *nodhcp = strsep(&leasebuf, " ");
-				if (!time) {
-					time = nodhcp;
-					nodhcp = NULL;
-				}
 				if (mac == NULL || host == NULL || ip == NULL)
 					continue;
 				if (nodhcp && !strcmp(nodhcp, "1")) {
