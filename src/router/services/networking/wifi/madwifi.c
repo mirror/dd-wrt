@@ -1570,8 +1570,13 @@ void setupHostAPPSK(FILE *fp, const char *prefix, int isfirst)
 			nvram_default_nget(hash_string(nvram_nget("%s_ssid", prefix), temp, sizeof(temp)), "%s_domain", prefix));
 		sprintf(dl, "%s_ft_over_ds", prefix);
 		fprintf(fp, "ft_over_ds=%d\n", nvram_default_geti(dl, 0));
-		fprintf(fp, "ft_psk_generate_local=1\n");
-		fprintf(fp, "pmk_r1_push=1\n");
+		if (!ispsk3 && !iswpa3 && !iswpa3_128 && !iswpa3_192) {
+			fprintf(fp, "pmk_r1_push=1\n");
+			fprintf(fp, "ft_psk_generate_local=1\n");
+		} else {
+			fprintf(fp, "pmk_r1_push=0\n");
+			fprintf(fp, "ft_psk_generate_local=0\n");
+		}
 		sprintf(dl, "%s_deadline", prefix);
 		fprintf(fp, "reassociation_deadline=%d\n", nvram_default_geti(dl, 1000));
 		char *wpa_key;
