@@ -3742,6 +3742,43 @@ void start_nvram(void)
 	if (nvram_geti("nvram_ver") < 13) {
 		nvram_seti("nvram_ver", 13);
 	}
+	if (nvram_geti("nvram_ver") < 14) {
+		nvram_seti("nvram_ver", 14);
+		int leasenum = nvram_geti("static_leasenum");
+
+		if (leasenum > 0) {
+			char *lease = nvram_safe_get("static_leases");
+			char *leasebuf = (char *)malloc(strlen(lease) + 1);
+			char *target = (char *)malloc(strlen(lease) + 1 + leasenum * 2);
+			memset(target, 0, strlen(lease) + 1 + leasenum * 2);
+			char *cp = leasebuf;
+			int first = 0;
+			strcpy(leasebuf, lease);
+			int i;
+			for (i = 0; i < leasenum; i++) {
+				if (i)
+					strcat(target, " ");
+				char *mac = strsep(&leasebuf, "=");
+				char *host = strsep(&leasebuf, "=");
+				char *ip = strsep(&leasebuf, "=");
+				char *time = strsep(&leasebuf, " ");
+				strcat(target, mac);
+				strcat(target, "=");
+				strcat(target, host);
+				strcat(target, "=");
+				strcat(target, ip);
+				strcat(target, "=");
+				if (!time || *time == 0)
+					strcat(target, "infinite");
+				else
+					strcat(target, time);
+				strcat(target, "=");
+				strcat(target, "0");
+			}
+			nvram_set("static_leases", target);
+			nvram_commit();
+		}
+	}
 
 	return;
 }
