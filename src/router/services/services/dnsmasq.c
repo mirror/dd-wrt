@@ -1050,22 +1050,30 @@ void start_dnsmasq(void)
 				char *mac = strsep(&leasebuf, "=");
 				char *host = strsep(&leasebuf, "=");
 				char *ip = strsep(&leasebuf, "=");
-				char *time = strsep(&leasebuf, " ");
-
+				char *time = strsep(&leasebuf, "=");
+				char *nodhcp = strsep(&leasebuf, " ");
+				if (!time) {
+					time = nodhcp;
+					nodhcp = NULL;
+				}
 				if (mac == NULL || host == NULL || ip == NULL)
 					continue;
-				fprintf(fp, "dhcp-host=%s,%s,%s,", mac, host, ip);
-				char nv[64];
-				sprintf(nv, "dnsmasq_lease_%s", ip);
-				if (leasechange && nvram_exists(nv)) {
-					nvram_unset(nv);
+				if (nodhcp && !strcmp(nodhcp, "1")) {
+					fprintf(fp, "dhcp-host=%s,ignore\n", mac);
+				} else {
+					fprintf(fp, "dhcp-host=%s,%s,%s,", mac, host, ip);
+					char nv[64];
+					sprintf(nv, "dnsmasq_lease_%s", ip);
+					if (leasechange && nvram_exists(nv)) {
+						nvram_unset(nv);
+					}
+					if (!time || !*time)
+						fprintf(fp, "infinite\n");
+					else if (!strcmp(time, "infinite") || !strcmp(time, "static") || !strcmp(time, "0"))
+						fprintf(fp, "infinite\n");
+					else
+						fprintf(fp, "%sm\n", time);
 				}
-				if (!time || !*time)
-					fprintf(fp, "infinite\n");
-				else if (!strcmp(time, "infinite") || !strcmp(time, "static") || !strcmp(time, "0"))
-					fprintf(fp, "infinite\n");
-				else
-					fprintf(fp, "%sm\n", time);
 
 	#ifdef HAVE_UNBOUND
 				if (!nvram_matchi("recursive_dns", 1))
