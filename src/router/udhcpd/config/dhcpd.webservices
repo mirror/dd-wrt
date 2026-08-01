@@ -141,6 +141,12 @@
 			<input class="spaceradio" type="radio" name="dnsmasq_enable" value="0" <% nvc("dnsmasq_enable", "0"); %> onclick="show_layer_ext(this, 'iddnsmasq', false)" /><% tran("share.disable"); %>
 		</div>
 		<div id="iddnsmasq">
+			<div class="setting">
+				<div class="label"><% tran("service.dns_norandom"); %></div>
+				<input class="spaceradio" type="radio" name="dns_norandom" value="1" <% nvc("dns_norandom", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="dns_norandom" value="0" <% nvc("dns_norandom", "0"); %> /><% tran("share.disable"); %>
+			</div>
+
 			<% ifndef("DNSCRYPT", "<!--"); %>
 			<div class="setting">
 				<div class="label"><% tran("service.dns_crypt"); %></div>
