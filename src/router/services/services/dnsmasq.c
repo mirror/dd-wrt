@@ -1084,72 +1084,14 @@ void start_dnsmasq(void)
 			}
 			free(cp);
 		}
-	}
-	if (nvram_match("dns_norandom", "1")) {
-		fprintf(fp, "dhcp-host=02:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=12:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=22:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=32:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=42:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=52:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=62:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=72:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=82:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=92:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=A2:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=B2:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=C2:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=D2:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=E2:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=F2:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=06:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=16:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=26:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=36:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=46:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=56:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=66:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=76:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=86:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=96:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=A6:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=B6:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=C6:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=D6:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=E6:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=F6:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=0A:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=1A:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=2A:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=3A:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=4A:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=5A:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=6A:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=7A:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=8A:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=9A:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=AA:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=BA:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=CA:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=DA:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=EA:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=FA:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=0E:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=1E:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=2E:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=3E:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=4E:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=5E:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=6E:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=7E:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=8E:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=9E:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=AE:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=BE:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=CE:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=DE:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=EE:*:*:*:*:*,ignore\n");
-		fprintf(fp, "dhcp-host=FE:*:*:*:*:*,ignore\n");
+		if (nvram_match("dns_norandom", "1")) {
+			int a;
+			for (a = 2; a < 0xf; a += 4) {
+				for (i = 0; i < 0xff; i += 0x10) {
+					fprintf(fp, "dhcp-host=%02X:*:*:*:*:*,ignore\n", i + a);
+				}
+			}
+		}
 	}
 	fprintf(fp, "bogus-priv\n");
 	fprintf(fp, "conf-file=/etc/rfc6761.conf\n");
