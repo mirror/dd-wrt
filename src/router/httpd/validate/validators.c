@@ -2422,6 +2422,7 @@ EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v
 	char lease_hostname[32] = "leasexxx_hostname";
 	char lease_ip[32] = "leasexxx_ip";
 	char lease_time[32] = "leasexxx_time";
+	char lease_nodhcp[32] = "leasexxx_nodhcp";
 	char *sln = nvram_safe_get("static_leasenum");
 	char *hwaddr;
 
@@ -2460,13 +2461,16 @@ EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v
 		snprintf(lease_time, sizeof(lease_time), "lease%d_time", i);
 		char *time = websGetVar(wp, lease_time, "");
 
-		if (hostname == NULL || *(hostname) == 0 || ip == NULL || *(ip) == 0)
+		snprintf(lease_nodhcp, sizeof(lease_nodhcp), "lease%d_nodhcp", i);
+		char *nodhcp = websGetVar(wp, lease_nodhcp, "0");
+
+		if (hostname == NULL || *(hostname) == 0 || ip == NULL || *(ip) == 0 || *(nodhcp) == 0)
 			break;
 		if (leases == NULL)
-			leases = calloc(1, strlen(mac) + 1 + strlen(hostname) + 1 + strlen(ip) + 1 + strlen(time) + 2);
+			leases = calloc(1, strlen(mac) + 1 + strlen(hostname) + 1 + strlen(ip) + 1 + strlen(time) + 1 + strlen(nodhcp) + 2);
 		else
 			leases = realloc(leases, strlen(leases) + strlen(mac) + 1 + strlen(hostname) + 1 + strlen(ip) + 1 +
-							 strlen(time) + 2);
+							 strlen(time) + 1 + strlen(nodhcp) + 2);
 		if (!leases)
 			return;
 		strcat(leases, mac);
@@ -2477,6 +2481,8 @@ EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v
 		strcat(leases, ip);
 		strcat(leases, "=");
 		strcat(leases, time);
+		strcat(leases, "=");
+		strcat(leases, nodhcp);
 	}
 	nvram_set("static_leases", leases);
 	nvram_async_commit();
