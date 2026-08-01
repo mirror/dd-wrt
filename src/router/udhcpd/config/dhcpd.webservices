@@ -57,6 +57,7 @@
 			<th sortdir="up" width="22%"><% tran("share.hostname"); %></th>
 			<th sortdir="up" width="22%"><% tran("share.ip"); %></th>
 			<th sortdir="up" width="22%"><% tran("idx.dhcp_lease"); %></th>
+			<th sortdir="up" width="10%"><% tran("share.no_dhcp"); %></th>
 			<th sortdir="up" width="12%" class="center"><% tran("share.actiontbl"); %></th>
 		</tr>
 		<% show_staticleases(); %>
