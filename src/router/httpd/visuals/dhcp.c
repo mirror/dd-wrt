@@ -262,8 +262,8 @@ EJ_VISIBLE void ej_show_staticleases(webs_t wp, int argc, char_t **argv)
 			"<td><input name=\"lease%d_time\" value=\"%s\" size=\"10\" maxlength=\"10\" class=\"num\" onblur=\"valid_name(this,share.time,SPACE_NO)\" />&nbsp;<script type=\"text/javascript\">Capture(share.minutes)</script></td>\n",
 			i, sep != NULL ? sep : "3600");
 		sep = strsep(&leases, " ");
-		websWrite(wp, "<td><input type=\"checkbox\" name=\"lease%d_nodhcp\" value=\"1\" %s></td>\n",
-			  i sep ? !strcmp(sep, "1") ? "checked=\"checked\"" : "" : "");
+		websWrite(wp, "<td><input type=\"checkbox\" name=\"lease%d_nodhcp\" value=\"1\" %s></td>\n", i,
+			  sep ? !strcmp(sep, "1") ? "checked=\"checked\"" : "" : "");
 		websWrite(
 			wp,
 			"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<td class=\\\"center\\\" title=\\\"\" + sbutton.del + \"\\\"><input class=\\\"remove\\\" aria-label=\\\"\" + sbutton.del + \"\\\" type=\\\"button\\\" onclick=\\\"lease_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n</td></tr>",
