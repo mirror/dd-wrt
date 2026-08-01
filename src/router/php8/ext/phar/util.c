@@ -62,40 +62,59 @@ static char *phar_get_link_location(phar_entry_info *entry) /* {{{ */
 }
 /* }}} */
 
-phar_entry_info *phar_get_link_source(phar_entry_info *entry) /* {{{ */
+static phar_entry_info *phar_follow_one_link(phar_entry_info *entry)
 {
 	phar_entry_info *link_entry;
 	char *link;
-	uint32_t depth = 0, max_depth;
+
+	link = phar_get_link_location(entry);
+	if (NULL != (link_entry = zend_hash_str_find_ptr(&(entry->phar->manifest), entry->link, strlen(entry->link))) ||
+		NULL != (link_entry = zend_hash_str_find_ptr(&(entry->phar->manifest), link, strlen(link)))) {
+		if (link != entry->link) {
+			efree(link);
+		}
+		return link_entry;
+	}
+
+	if (link != entry->link) {
+		efree(link);
+	}
+	return NULL;
+}
+
+phar_entry_info *phar_get_link_source(phar_entry_info *entry)
+{
+	phar_entry_info *slow, *fast;
 
 	if (!entry->link) {
 		return entry;
 	}
 
-	max_depth = zend_hash_num_elements(&(entry->phar->manifest));
-
-	while (entry->link) {
-		if (UNEXPECTED(++depth > max_depth)) {
-			return NULL;
+	/*
+	 * Use Floyd's cycle detection algorithm to follow the symlink chain without unbounded
+	 * recursion. Each entry has at most one outgoing link, so if a cycle exists the fast pointer
+	 * will eventually meet the slow one. Otherwise the fast pointer reaches the end first.
+	 */
+	slow = fast = entry;
+	while (1) {
+		fast = phar_follow_one_link(fast);
+		if (!fast || !fast->link) {
+			return fast;
 		}
-		link = phar_get_link_location(entry);
+		fast = phar_follow_one_link(fast);
+		if (!fast || !fast->link) {
+			return fast;
+		}
 
-		if (NULL != (link_entry = zend_hash_str_find_ptr(&(entry->phar->manifest), entry->link, strlen(entry->link))) ||
-			NULL != (link_entry = zend_hash_str_find_ptr(&(entry->phar->manifest), link, strlen(link)))) {
-			if (link != entry->link) {
-				efree(link);
-			}
-			entry = link_entry;
-		} else {
-			if (link != entry->link) {
-				efree(link);
-			}
+		/* no need to check slow as it's always behind */
+		slow = phar_follow_one_link(slow);
+
+		if (slow == fast) {
+			/* circular symlink chain */
 			return NULL;
 		}
 	}
-	return entry;
 }
-/* }}} */
 
 static php_stream *phar_get_entrypufp(const phar_entry_info *entry)
 {
@@ -210,7 +229,7 @@ zend_result phar_mount_entry(phar_archive_data *phar, char *filename, size_t fil
 		return FAILURE;
 	}
 
-	if (path_len >= sizeof(".phar")-1 && !memcmp(path, ".phar", sizeof(".phar")-1)) {
+	if (phar_path_is_magic_phar_ex(path, path_len)) {
 		/* no creating magic phar files by mounting them */
 		return FAILURE;
 	}
@@ -1271,7 +1290,7 @@ phar_entry_info *phar_get_entry_info_dir(phar_archive_data *phar, char *path, si
 		*error = NULL;
 	}
 
-	if (security && path_len >= sizeof(".phar")-1 && !memcmp(path, ".phar", sizeof(".phar")-1)) {
+	if (security && phar_path_is_magic_phar_ex(path, path_len)) {
 		if (error) {
 			spprintf(error, 4096, "phar error: cannot directly access magic \".phar\" directory or files within it");
 		}

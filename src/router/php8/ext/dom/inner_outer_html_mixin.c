@@ -10,7 +10,7 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Authors: Niels Dossche <nielsdos@php.net>                            |
+   | Authors: Nora Dossche  <ndossche@php.net>                            |
    +----------------------------------------------------------------------+
 */
 
@@ -100,7 +100,9 @@ static zend_string *dom_element_html_fragment_serialize(dom_object *obj, xmlNode
 		}
 		if (UNEXPECTED(status < 0)) {
 			smart_str_free_ex(&str, false);
-			php_dom_throw_error_with_message(SYNTAX_ERR, "The resulting XML serialization is not well-formed", true);
+			if (!EG(exception)) {
+				php_dom_throw_error_with_message(SYNTAX_ERR, "The resulting XML serialization is not well-formed", true);
+			}
 			return NULL;
 		}
 		return smart_str_extract(&str);

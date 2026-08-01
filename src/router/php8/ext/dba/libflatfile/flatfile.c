@@ -17,7 +17,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: bd76ecfdd0aefe633c7f7cbdcce7aaf0e0263575 $ */
+/* $Id: a68fed7e38c4318d938b19f5644d9962fe0beb49 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -36,6 +36,18 @@
 #include "flatfile.h"
 
 #define FLATFILE_BLOCK_SIZE 1024
+
+/* Parse the length prefix in `buf` into `num` and grow `buf` to hold it.
+ * atoi() narrows a malformed (e.g. negative) length to a huge size_t whose
+ * `+ FLATFILE_BLOCK_SIZE` would overflow erealloc(); the macro yields true in
+ * that case so the caller stops reading and the read stays within `buf_size`. */
+#define FLATFILE_GROW_BUF(num, buf, buf_size) ( \
+	(num) = atoi(buf), \
+	(num) >= (buf_size) && ( \
+		(num) > SIZE_MAX - FLATFILE_BLOCK_SIZE \
+		|| ((buf) = erealloc((buf), (buf_size) = (num) + FLATFILE_BLOCK_SIZE), 0) \
+	) \
+)
 
 /*
  * ret = -1 means that database was opened for read-only
@@ -112,10 +124,8 @@ int flatfile_delete(flatfile *dba, datum key_datum) {
 		if (!php_stream_gets(dba->fp, buf, 15)) {
 			break;
 		}
-		num = atoi(buf);
-		if (num >= buf_size) {
-			buf_size = num + FLATFILE_BLOCK_SIZE;
-			buf = erealloc(buf, buf_size);
+		if (FLATFILE_GROW_BUF(num, buf, buf_size)) {
+			break;
 		}
 		pos = php_stream_tell(dba->fp);
 
@@ -135,10 +145,8 @@ int flatfile_delete(flatfile *dba, datum key_datum) {
 		if (!php_stream_gets(dba->fp, buf, 15)) {
 			break;
 		}
-		num = atoi(buf);
-		if (num >= buf_size) {
-			buf_size = num + FLATFILE_BLOCK_SIZE;
-			buf = erealloc(buf, buf_size);
+		if (FLATFILE_GROW_BUF(num, buf, buf_size)) {
+			break;
 		}
 		/* read in the value */
 		num = php_stream_read(dba->fp, buf, num);
@@ -162,10 +170,8 @@ int flatfile_findkey(flatfile *dba, datum key_datum) {
 		if (!php_stream_gets(dba->fp, buf, 15)) {
 			break;
 		}
-		num = atoi(buf);
-		if (num >= buf_size) {
-			buf_size = num + FLATFILE_BLOCK_SIZE;
-			buf = erealloc(buf, buf_size);
+		if (FLATFILE_GROW_BUF(num, buf, buf_size)) {
+			break;
 		}
 		num = php_stream_read(dba->fp, buf, num);
 
@@ -178,10 +184,8 @@ int flatfile_findkey(flatfile *dba, datum key_datum) {
 		if (!php_stream_gets(dba->fp, buf, 15)) {
 			break;
 		}
-		num = atoi(buf);
-		if (num >= buf_size) {
-			buf_size = num + FLATFILE_BLOCK_SIZE;
-			buf = erealloc(buf, buf_size);
+		if (FLATFILE_GROW_BUF(num, buf, buf_size)) {
+			break;
 		}
 		num = php_stream_read(dba->fp, buf, num);
 	}
@@ -202,10 +206,8 @@ datum flatfile_firstkey(flatfile *dba) {
 		if (!php_stream_gets(dba->fp, buf, 15)) {
 			break;
 		}
-		num = atoi(buf);
-		if (num >= buf_size) {
-			buf_size = num + FLATFILE_BLOCK_SIZE;
-			buf = erealloc(buf, buf_size);
+		if (FLATFILE_GROW_BUF(num, buf, buf_size)) {
+			break;
 		}
 		num = php_stream_read(dba->fp, buf, num);
 
@@ -218,10 +220,8 @@ datum flatfile_firstkey(flatfile *dba) {
 		if (!php_stream_gets(dba->fp, buf, 15)) {
 			break;
 		}
-		num = atoi(buf);
-		if (num >= buf_size) {
-			buf_size = num + FLATFILE_BLOCK_SIZE;
-			buf = erealloc(buf, buf_size);
+		if (FLATFILE_GROW_BUF(num, buf, buf_size)) {
+			break;
 		}
 		num = php_stream_read(dba->fp, buf, num);
 	}
@@ -244,20 +244,16 @@ datum flatfile_nextkey(flatfile *dba) {
 		if (!php_stream_gets(dba->fp, buf, 15)) {
 			break;
 		}
-		num = atoi(buf);
-		if (num >= buf_size) {
-			buf_size = num + FLATFILE_BLOCK_SIZE;
-			buf = erealloc(buf, buf_size);
+		if (FLATFILE_GROW_BUF(num, buf, buf_size)) {
+			break;
 		}
 		num = php_stream_read(dba->fp, buf, num);
 
 		if (!php_stream_gets(dba->fp, buf, 15)) {
 			break;
 		}
-		num = atoi(buf);
-		if (num >= buf_size) {
-			buf_size = num + FLATFILE_BLOCK_SIZE;
-			buf = erealloc(buf, buf_size);
+		if (FLATFILE_GROW_BUF(num, buf, buf_size)) {
+			break;
 		}
 		num = php_stream_read(dba->fp, buf, num);
 
@@ -278,6 +274,6 @@ datum flatfile_nextkey(flatfile *dba) {
 /* {{{ flatfile_version */
 const char *flatfile_version(void)
 {
-	return "1.0, $Id: bd76ecfdd0aefe633c7f7cbdcce7aaf0e0263575 $";
+	return "1.0, $Id: a68fed7e38c4318d938b19f5644d9962fe0beb49 $";
 }
 /* }}} */
