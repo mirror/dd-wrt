@@ -1063,27 +1063,15 @@ static int
 qca8k_setup_mac_pwr_sel(struct qca8k_priv *priv)
 {
 	u32 mask = 0;
-	int ret = 0;
-
-	/* SoC specific settings for ipq8064.
-	 * If more device require this consider adding
-	 * a dedicated binding.
-	 */
-	if (of_machine_is_compatible("qcom,ipq8064"))
+	if (device_property_read_bool(priv->dev, "qca,mac-pwr-sel-rgmii0-1_8v"))
 		mask |= QCA8K_MAC_PWR_RGMII0_1_8V;
 
-	/* SoC specific settings for ipq8065 */
-	if (of_machine_is_compatible("qcom,ipq8065"))
+	if (device_property_read_bool(priv->dev, "qca,mac-pwr-sel-rgmii1-1_8v"))
 		mask |= QCA8K_MAC_PWR_RGMII1_1_8V;
 
-	if (mask) {
-		ret = qca8k_rmw(priv, QCA8K_REG_MAC_PWR_SEL,
-				QCA8K_MAC_PWR_RGMII0_1_8V |
-				QCA8K_MAC_PWR_RGMII1_1_8V,
-				mask);
-	}
-
-	return ret;
+	return qca8k_rmw(priv, QCA8K_REG_MAC_PWR_SEL,
+			QCA8K_MAC_PWR_RGMII0_1_8V | QCA8K_MAC_PWR_RGMII1_1_8V,
+			mask);
 }
 
 static int qca8k_find_cpu_port(struct dsa_switch *ds)
