@@ -50,6 +50,7 @@ ifneq ($(CONFIG_WOLFSSLMIN),y)
 	rm -rf $(INSTALLDIR)/wolfssl/usr/bin
 	rm -rf $(INSTALLDIR)/wolfssl/usr/include
 	rm -rf $(INSTALLDIR)/wolfssl/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/wolfssl/usr/lib/cmake
 	rm -f $(INSTALLDIR)/wolfssl/usr/lib/*.la
 	rm -rf $(INSTALLDIR)/wolfssl/usr/share
 else

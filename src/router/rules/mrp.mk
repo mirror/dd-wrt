@@ -3,7 +3,7 @@ PKG_INSTALL:=1
 MAKE_FLAGS+=VERBOSE=0
 
 MRP_PKG_BUILD_DIR=$(TOP)/mrp
-MRP_CMAKE_OPTIONS=-DCMAKE_BUILD_TYPE=release -DLibNL_INCLUDE_DIR="$(TOP)/libnl-tiny/include" -DLibNL_LIBRARY="$(TOP)/libnl-tiny/libnl-tiny.so" -DLibEV_LIBRARY="$(TOP)/mrp/ev/.libs/libev.a"
+MRP_CMAKE_OPTIONS=-DCMAKE_BUILD_TYPE=release -DLibNL_INCLUDE_DIR="-I$(TOP)/kernel_headers/$(KERNELRELEASE)/include $(TOP)/libnl-tiny/include" -DLibNL_LIBRARY="$(TOP)/libnl-tiny/libnl-tiny.so" -DLibEV_LIBRARY="$(TOP)/mrp/ev/.libs/libev.a"
 
 MRP_STAGING_DIR=$(TOP)/_staging/usr
 MRP_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE $(LTO)

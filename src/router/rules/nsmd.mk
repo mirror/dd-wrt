@@ -1,5 +1,5 @@
 NSMD_PKG_BUILD_DIR=$(TOP)/nsmd
-NSMD_CMAKE_OPTIONS=-DNL_CFLAGS="-D_GNU_SOURCE -I$(TOP)/libnl-tiny/include" -DNL_LIBS="-L$(TOP)/libnl-tiny/ -lnl-tiny"
+NSMD_CMAKE_OPTIONS=-DNL_CFLAGS="-D_GNU_SOURCE -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include" -DNL_LIBS="-L$(TOP)/libnl-tiny/ -lnl-tiny"
 STAGING_DIR=$(TOP)/_staging
 #NSMD_EXTRA_CFLAGS=-v -DNEED_PRINTF -DHAVE_NL80211 -g -I$(TOP)/libnl-tiny/include -I$(TOP)/_staging/include -I$(TOP) -I$(TOP)/compat-wireless/include
 #NSMD_EXTRA_LDFLAGS=-L$(TOP)/libubox -L$(TOP)/_staging/usr/lib -L$(TOP)/libnl-tiny -ljson -lubox -lblobmsg_json -lnl-tiny

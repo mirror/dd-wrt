@@ -1,10 +1,10 @@
 batman-adv:
 	$(MAKE) -C batman-adv KERNELPATH="$(LINUXDIR)" CFLAGS= all
-	$(MAKE) -C batctl all CC="$(CC)" CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) -I$(TOP)/libnl-tiny/include -D_GNU_SOURCE -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(LDLTO) -L$(TOP)/libnl-tiny -lnl-tiny -ffunction-sections -fdata-sections -Wl,--gc-sections -lm"
+	$(MAKE) -C batctl all CC="$(CC)" CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -D_GNU_SOURCE -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(LDLTO) -L$(TOP)/libnl-tiny -lnl-tiny -ffunction-sections -fdata-sections -Wl,--gc-sections -lm"
 
 batman-adv-clean:
 	$(MAKE) -C batman-adv KERNELPATH="$(LINUXDIR)" clean
-	$(MAKE) -C batctl CC="$(CC)" CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) -I$(TOP)/libnl-tiny/include -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(LDLTO) -L$(TOP)/libnl-tiny -lnl-tiny -ffunction-sections -fdata-sections -Wl,--gc-sections -lm" clean
+	$(MAKE) -C batctl CC="$(CC)" CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(THUMB) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(LDLTO) -L$(TOP)/libnl-tiny -lnl-tiny -ffunction-sections -fdata-sections -Wl,--gc-sections -lm" clean
 	@true
 
 batman-adv-install:

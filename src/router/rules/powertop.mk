@@ -8,7 +8,7 @@ powertop-configure:
 	cd powertop && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux \
 	NCURSES_CFLAGS="-I$(TOP)/ncurses/include" \
 	NCURSES_LIBS="-L$(TOP)/ncurses/lib -lncurses" \
-	LIBNL_CFLAGS="-I$(TOP)/libnl-tiny/include" \
+	LIBNL_CFLAGS="-I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include" \
 	LIBNL_LIBS="-L$(TOP)/libnl-tiny -lnl-tiny" \
 	PCIUTILS_CFLAGS="-I$(TOP)/pciutils/lib" \
 	PCIUTILS_LIBS="-L$(TOP)/pciutils/lib -lpci" \
