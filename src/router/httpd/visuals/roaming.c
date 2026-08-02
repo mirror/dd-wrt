@@ -58,8 +58,12 @@ void show_roaming(webs_t wp, char *var)
 	int v_show_preshared = 0;
 	int v_show_owe = 0;
 	int v_show_wparadius = 0;
+	int v_no_wpa1 = 0;
+	
 	if (strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk2-sha256") || strstr(akm, "psk3"))
 		v_show_preshared = 1;
+	if (strstr(akm, "psk") || strstr(akm, "wpa"))
+		v_no_wpa1 = 1;
 	if (strstr(akm, "owe"))
 		v_show_owe = 1;
 	if (strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256") || strstr(akm, "wpa2-sha384") ||
@@ -73,7 +77,7 @@ void show_roaming(webs_t wp, char *var)
 	char mbo[64];
 	sprintf(mbo, "%s_mbo", var);
 
-	if ((v_show_preshared || v_show_owe || v_show_wparadius) && !is_brcmfmac(var)) {
+	if ((v_show_preshared || v_show_owe || v_show_wparadius) && !is_brcmfmac(var) && !v_no_wpa1) {
 		char bssft[64];
 		char temp[64];
 		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(roaming.ft)</script></legend>");
