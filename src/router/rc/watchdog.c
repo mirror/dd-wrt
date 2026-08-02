@@ -211,7 +211,7 @@ static void check_fan(int brand)
 	#endif
 	}
 }
-#if 0
+#ifdef HAVE_ATH11K
 /* check signal code, its unused now, we keep it if we need it later again */
 static unsigned char zerocount[8][17];
 static void check_signal(const char *var, int interface, int vap)
@@ -383,6 +383,10 @@ static void watchdog(void)
 	#endif
 		}
 		check_fan(brand);
+		#ifdef HAVE_ATH11K
+		check_wifi();
+		#endif
+		
 		static int blockcounter = 0;
 		sleep(5);
 		if (!((blockcounter++) % 60)) // check every 5 minutes
@@ -392,7 +396,7 @@ static void watchdog(void)
 
 int main(int argc, char *argv[])
 {
-	#if 0
+	#if HAVE_ATH11K
 	memset(zerocount, 0, sizeof(zerocount));
 	#endif
 	dd_daemon();
