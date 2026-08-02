@@ -1570,27 +1570,27 @@ void setupHostAPPSK(FILE *fp, const char *prefix, int isfirst)
 			nvram_default_nget(hash_string(nvram_nget("%s_ssid", prefix), temp, sizeof(temp)), "%s_domain", prefix));
 		sprintf(dl, "%s_ft_over_ds", prefix);
 		fprintf(fp, "ft_over_ds=%d\n", nvram_default_geti(dl, 0));
-		if (!ispsk3 && !iswpa3 && !iswpa3_128 && !iswpa3_192) {
+		if (!ispsk3 && !iswpa3 && !iswpa3_128 && !iswpa3_192 && !iswpa2 && !iswpa2sha256 && !iswpa2sha384 &&
+		    (ispsk || ispsk2)) {
 			fprintf(fp, "pmk_r1_push=1\n");
 			fprintf(fp, "ft_psk_generate_local=1\n");
 		} else {
 			fprintf(fp, "pmk_r1_push=0\n");
 			fprintf(fp, "ft_psk_generate_local=0\n");
+			char *wpa_key;
+			if (ispsk3 && !ispsk && !ispsk2 && !ispsk2sha256) {
+				wpa_key = nvram_nget("%s_sae_key", prefix);
+			} else {
+				wpa_key = nvram_nget("%s_wpa_psk", prefix);
+			}
+			char input[128];
+			sprintf(input, "%s/%s", nvram_nget("%s_domain", prefix), wpa_key);
+			sha256_string(input, temp, sizeof(temp));
+			fprintf(fp, "r0kh=ff:ff:ff:ff:ff:ff * %s\n", temp);
+			fprintf(fp, "r1kh=00:00:00:00:00:00 00:00:00:00:00:00 %s\n", temp);
 		}
 		sprintf(dl, "%s_deadline", prefix);
 		fprintf(fp, "reassociation_deadline=%d\n", nvram_default_geti(dl, 1000));
-		char *wpa_key;
-		if (ispsk3 && !ispsk && !ispsk2 && !ispsk2sha256) {
-			wpa_key = nvram_nget("%s_sae_key", prefix);
-		} else {
-			wpa_key = nvram_nget("%s_wpa_psk", prefix);
-		}
-		char input[128];
-		sprintf(input, "%s/%s", nvram_nget("%s_domain", prefix), wpa_key);
-		sha256_string(input, temp, sizeof(temp));
-		fprintf(fp, "r0kh=ff:ff:ff:ff:ff:ff * %s\n", temp);
-		fprintf(fp, "r1kh=00:00:00:00:00:00 00:00:00:00:00:00 %s\n", temp);
-		// todo. add key holders
 	}
 #endif
 	if (iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || iswpa2sha384) {
