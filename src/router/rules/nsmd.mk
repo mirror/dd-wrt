@@ -8,11 +8,11 @@ NSMD_EXTRA_LDFLAGS=-L$(TOP)/libubox -L$(TOP)/libnl-tiny -L$(TOP)/_staging/usr/li
 
 MAKE_FLAGS+=VERBOSE=1
 
-nsmd-configure: 
+nsmd-configure: nvram
 	$(call CMakeConfigure,$(NSMD_PKG_BUILD_DIR),$(STAGING_DIR),$(NSMD_CMAKE_OPTIONS),$(NSMD_EXTRA_CFLAGS),$(NSMD_EXTRA_LDFLAGS),.)
 
 #nsmd-configure
-nsmd: 
+nsmd: nvram
 #	if [ ! -e "$(PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C libubox clean ; fi
 	$(MAKE) -C nsmd
 
