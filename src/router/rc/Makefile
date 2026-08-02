@@ -169,7 +169,7 @@ ifeq ($(CONFIG_UQMI),y)
 CFLAGS += -DHAVE_UQMI
 endif
 ifeq ($(CONFIG_PERU),y)
-CFLAGS += -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox  -I$(TOP)/libnl-tiny/include
+CFLAGS += -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include  -I$(TOP)/libnl-tiny/include
 CFLAGS += -DHAVE_PERU
 endif
 ifeq ($(CONFIG_LIMA),y)
@@ -238,7 +238,7 @@ endif
 ifeq ($(CONFIG_CARAMBOLA),y)
 CFLAGS += -DHAVE_CARAMBOLA
 ifeq ($(CONFIG_FMS2111),y)
-CFLAGS += -DHAVE_FMS2111 -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox  -I$(TOP)/libnl-tiny/include
+CFLAGS += -DHAVE_FMS2111 -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include
 endif
 endif
 ifeq ($(CONFIG_REALTEK),y)
@@ -329,7 +329,7 @@ ifeq ($(CONFIG_QCA4019),y)
 CFLAGS += -DHAVE_QCA4019
 endif
 ifeq ($(CONFIG_HABANERO),y)
-CFLAGS += -DHAVE_HABANERO -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox  -I$(TOP)/libnl-tiny/include
+CFLAGS += -DHAVE_HABANERO -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include
 endif
 ifeq ($(CONFIG_ALPINE),y)
 CFLAGS += -DHAVE_ALPINE
@@ -640,10 +640,10 @@ ifeq ($(CONFIG_SR3200),y)
 CFLAGS += -DHAVE_SR3200
 endif
 ifeq ($(CONFIG_CPE890),y)
-CFLAGS += -DHAVE_CPE890 -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox  -I$(TOP)/libnl-tiny/include
+CFLAGS += -DHAVE_CPE890 -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include  -I$(TOP)/libnl-tiny/include
 endif
 ifeq ($(CONFIG_CPE880),y)
-CFLAGS += -DHAVE_CPE880 -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox  -I$(TOP)/libnl-tiny/include
+CFLAGS += -DHAVE_CPE880 -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include
 endif
 
 
@@ -797,10 +797,10 @@ ifeq ($(CONFIG_TEW632BRP),y)
 CFLAGS += -DHAVE_TEW632BRP
 endif
 ifeq ($(CONFIG_UBNTM),y)
-CFLAGS += -DHAVE_UBNTM -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/libnl-tiny/include
+CFLAGS += -DHAVE_UBNTM -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include
 endif
 ifeq ($(CONFIG_WA850RE),y)
-CFLAGS += -DHAVE_WA850RE -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/libnl-tiny/include
+CFLAGS += -DHAVE_WA850RE -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include
 endif
 ifeq ($(CONFIG_DAP3410),y)
 CFLAGS += -DHAVE_DAP3410
