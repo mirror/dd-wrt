@@ -239,7 +239,7 @@ ifeq ($(ARCHITECTURE),ap83)
   MAKE_OPTS += CONFIG_ATHEROS_AR71XX=y
 endif
 
-IW_CFLAGS=-I$(TOP)/libnl-tiny/include \
+IW_CFLAGS=-I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include \
 	-DCONFIG_LIBNL20 \
 	-D_GNU_SOURCE
 IW_LDFLAGS=-L$(TOP)/libnl-tiny/

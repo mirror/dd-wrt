@@ -149,6 +149,12 @@ endif
 endif
 ifeq ($(CONFIG_IPQ95XX),y)
   CPTCFG_ATH12K=y
+  CPTCFG_ATH11K_DEBUGFS=y
+  CPTCFG_ATH11K_THERMAL=y
+  CPTCFG_ATH11K_SPECTRAL=y
+  CPTCFG_ATH11K_SMART_ANT_ALG=y
+  CPTCFG_ATH11K_PCI=y
+  CPTCFG_ATH11K_AHB=y
   CPTCFG_ATH12K_DEBUGFS=y
 endif
 ifeq ($(CONFIG_ATH12K),y)
@@ -204,7 +210,8 @@ ifeq ($(ARCHITECTURE),ap83)
   MAKE_OPTS += CONFIG_ATHEROS_AR71XX=y
 endif
 
-IW_CFLAGS=-I$(TOP)/libnl-tiny/include \
+
+IW_CFLAGS=-I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include \
 	-DCONFIG_LIBNL20 \
 	-DCONFIG_TDMA \
 	-I$(TOP)/shared \
@@ -305,6 +312,9 @@ ifneq ($(CONFIG_IPQ95XX),y)
 	echo "CPTCFG_ATH11K_NSS_MESH_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
 endif
 ifeq ($(CONFIG_IPQ95XX),y)
+#	echo "# CPTCFG_MAC80211_SFE_SUPPORT is not set" >>$(MAC80211_PATH)/.config_temp
+#	echo "# CPTCFG_MAC80211_PPE_SUPPORT is not set" >>$(MAC80211_PATH)/.config_temp
+#	echo "# CPTCFG_MAC80211_DS_SUPPORT is not set" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MAC80211_SFE_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MAC80211_PPE_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
 	echo "CPTCFG_MAC80211_DS_SUPPORT=y" >>$(MAC80211_PATH)/.config_temp
@@ -556,6 +566,11 @@ ifeq ($(CONFIG_IPQ95XX),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/WCN7850
 endif
 ifeq ($(CONFIG_IPQ6018),y)
+ifeq ($(CONFIG_IPQ95XX),y)
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ9574
+	-cp -av $(TOP)/firmwares/wireless/ath11k/IPQ9574/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ9574/
+endif
+ifneq ($(CONFIG_IPQ95XX),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018
 	-cp -av $(TOP)/firmwares/wireless/ath11k/IPQ6018/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018/
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ8074
@@ -581,12 +596,19 @@ ifeq ($(CONFIG_IPQ6018),y)
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074/hw1.0 && rm -f caldata2.bin && ln -s /tmp/caldata2.bin caldata.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/QCN9074/hw1.0 && rm -f board2.bin && ln -s /tmp/board2.bin board.bin 
 else
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ9574/hw1.0 && rm -f cal-ahb-c000000.wifi.bin && ln -s /tmp/board.bin cal-ahb-c000000.wifi.bin 
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ9574/hw1.0 && rm -f caldata.bin && ln -s /tmp/caldata.bin caldata.bin 
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ9574/hw1.0 && rm -f board.bin && ln -s /tmp/board.bin board.bin 
+
+endif
+else
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ6018
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ8074
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath11k/IPQ5018
 endif
 
 ifeq ($(CONFIG_ATH10K),y)
+ifneq ($(CONFIG_IPQ95XX),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/ath10k
 	-cp -av $(TOP)/firmwares/wireless/ath10k $(INSTALLDIR)/ath9k/lib/firmware/
@@ -639,11 +661,13 @@ endif
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0001:01:00.0.bin && ln -s /tmp/board2.bin pre-cal-pci-0001:01:00.0.bin 
 endif
 endif
+endif
 ifeq ($(CONFIG_QCA9887),y)
 	rm -f $(INSTALLDIR)/ath9k/lib/ath10k/board.bin
 ifeq ($(CONFIG_ARCHERC25),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X
 endif
+ifneq ($(CONFIG_IPQ95XX),y)
 ifneq ($(CONFIG_IPQ6018),y)
 	mv $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9887/hw1.0/board.bin $(INSTALLDIR)/ath9k/lib/ath10k
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9887/hw1.0 && ln -s /tmp/ath10k-board.bin board.bin 
@@ -652,6 +676,9 @@ else
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9887/hw1.0 && ln -s /tmp/ath10k_board1.bin board.bin 
 	mv $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984/hw1.0/board.bin $(INSTALLDIR)/ath9k/lib/ath10k
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9984/hw1.0 && ln -s /tmp/ath10k_board1.bin board.bin 
+endif
+else
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCN9274/hw2.0 && rm -f cal-pci-0002:01:00.0.bin && ln -s /tmp/cal-pci-0002:01:00.0.bin cal-pci-0002:01:00.0.bin
 endif
 
 endif
