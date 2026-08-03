@@ -52,7 +52,7 @@ static const struct mips_fdt_fixup realtek_fdt_fixups[] __initconst = {
 
 static __init const void *realtek_fixup_fdt(const void *fdt, const void *match_data)
 {
-	static unsigned char fdt_buf[16 << 10] __initdata;
+	static unsigned char fdt_buf[32 << 10] __initdata;
 	int err;
 
 	if (fdt_check_header(fdt))
