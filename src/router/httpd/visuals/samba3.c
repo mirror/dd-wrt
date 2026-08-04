@@ -247,7 +247,7 @@ EJ_VISIBLE void ej_samba3_users(webs_t wp, int argc, char_t **argv)
 		websWrite(
 			wp,
 			"<input type=\"checkbox\" name=\"smbuser_password_unmask%s\" value=\"0\" onclick=\"setElementMask('smbuser_password' + this.name.substr(23, this.name.length - 23), this.checked);\" />",
-			number, number);
+			number);
 		show_caption_simple(wp, "share.unmask");
 		//websWrite(wp, "                               </div>\n");
 		websWrite(wp, "</td>\n");

@@ -4574,7 +4574,7 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(
 			wp,
 			"<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" onchange=\"to_submit(this.form);\">\n",
-			wl_width, prefix);
+			wl_width);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		if (is_morse_micro(prefix)) {
 			if (morse_bwsupport(1))
