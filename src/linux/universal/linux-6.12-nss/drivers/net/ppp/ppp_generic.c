@@ -3731,6 +3731,7 @@ void ppp_update_stats(struct net_device *dev, unsigned long rx_packets,
 		      unsigned long tx_dropped)
 {
 	struct ppp *ppp;
+	struct pcpu_sw_netstats *tstats;
 
 	if (!dev)
 		return;
@@ -3741,17 +3742,25 @@ void ppp_update_stats(struct net_device *dev, unsigned long rx_packets,
 	ppp = netdev_priv(dev);
 
 	ppp_xmit_lock(ppp);
-	ppp->stats64.tx_packets += tx_packets;
-	ppp->stats64.tx_bytes += tx_bytes;
+	tstats = this_cpu_ptr(dev->tstats);
+	if (tstats) {
+		u64_stats_update_begin(&tstats->syncp);
+		u64_stats_add(&tstats->tx_bytes, tx_bytes);
+		u64_stats_add(&tstats->tx_packets, tx_packets);
+		u64_stats_update_end(&tstats->syncp);
+	}
 	ppp->dev->stats.tx_errors += tx_errors;
 	ppp->dev->stats.tx_dropped += tx_dropped;
 	if (tx_packets)
 		ppp->last_xmit = jiffies;
 	ppp_xmit_unlock(ppp);
-
 	ppp_recv_lock(ppp);
-	ppp->stats64.rx_packets += rx_packets;
-	ppp->stats64.rx_bytes += rx_bytes;
+	if (tstats) {
+		u64_stats_update_begin(&tstats->syncp);
+		u64_stats_add(&tstats->rx_bytes, rx_bytes);
+		u64_stats_add(&tstats->rx_packets, rx_packets);
+		u64_stats_update_end(&tstats->syncp);
+	}
 	ppp->dev->stats.rx_errors += rx_errors;
 	ppp->dev->stats.rx_dropped += rx_dropped;
 	if (rx_packets)
