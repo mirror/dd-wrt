@@ -4822,7 +4822,7 @@ int wlconf_down(char *name)
 
 void radio_off(int idx)
 {
-	if (pidof("nas") > 0 || pidof("wrt-radauth") > 0) {
+	while (pidof("nas") > 0 || pidof("wrt-radauth") > 0) {
 		eval("stopservice", "nas", "-f");
 	}
 	if (idx != -1) {
@@ -4852,8 +4852,9 @@ void radio_off(int idx)
 
 void radio_on(int idx)
 {
-	if (pidof("nas") > 0 || pidof("wrt-radauth") > 0) {
-		eval("stopservice", "nas", "-f");
+	// wait until stopped, since some other process might still in control
+	while (pidof("nas") > 0 || pidof("wrt-radauth") > 0) {
+		eval("stopservice", "nas", "-f"); 
 	}
 	if (idx != -1) {
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", idx)) {
