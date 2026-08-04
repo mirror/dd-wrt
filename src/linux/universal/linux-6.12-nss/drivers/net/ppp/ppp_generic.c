@@ -3743,12 +3743,6 @@ void ppp_update_stats(struct net_device *dev, unsigned long rx_packets,
 
 	ppp_xmit_lock(ppp);
 	tstats = this_cpu_ptr(dev->tstats);
-	if (tstats) {
-		u64_stats_update_begin(&tstats->syncp);
-		u64_stats_add(&tstats->tx_bytes, tx_bytes);
-		u64_stats_add(&tstats->tx_packets, tx_packets);
-		u64_stats_update_end(&tstats->syncp);
-	}
 	ppp->dev->stats.tx_errors += tx_errors;
 	ppp->dev->stats.tx_dropped += tx_dropped;
 	if (tx_packets)
@@ -3759,6 +3753,8 @@ void ppp_update_stats(struct net_device *dev, unsigned long rx_packets,
 		u64_stats_update_begin(&tstats->syncp);
 		u64_stats_add(&tstats->rx_bytes, rx_bytes);
 		u64_stats_add(&tstats->rx_packets, rx_packets);
+		u64_stats_add(&tstats->tx_bytes, tx_bytes);
+		u64_stats_add(&tstats->tx_packets, tx_packets);
 		u64_stats_update_end(&tstats->syncp);
 	}
 	ppp->dev->stats.rx_errors += rx_errors;
