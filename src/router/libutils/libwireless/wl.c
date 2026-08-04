@@ -3631,9 +3631,9 @@ static int flagcheck(const char *prefix, int flag, int nullvalid)
 FLAGCHECK(channelsurvey, CHANNELSURVEY, 1);
 FLAGCHECK(nolivesurvey, SURVEY_NOPERIOD, 1);
 FLAGCHECK(qboost, QBOOST, 0);
-#ifdef HAVE_MORSE
+	#ifdef HAVE_MORSE
 FLAGCHECK(ah, AH, 0);
-#endif
+	#endif
 FLAGCHECK(qboost_tdma, TDMA, 0);
 FLAGCHECK(wave2, WAVE2, 0);
 FLAGCHECK(vht160_2by2, VHT160_2BY2, 0);
@@ -4822,8 +4822,12 @@ int wlconf_down(char *name)
 
 void radio_off(int idx)
 {
+	int cnt = 0;
 	while (pidof("nas") > 0 || pidof("wrt-radauth") > 0) {
 		eval("stopservice", "nas", "-f");
+		if (cnt)
+			sleep(1);
+		cnt++;
 	}
 	if (idx != -1) {
 		fprintf(stderr, "radio_off(%d) interface: %s\n", idx, get_wl_instance_name(idx));
@@ -4853,8 +4857,12 @@ void radio_off(int idx)
 void radio_on(int idx)
 {
 	// wait until stopped, since some other process might still in control
+	int cnt = 0;
 	while (pidof("nas") > 0 || pidof("wrt-radauth") > 0) {
-		eval("stopservice", "nas", "-f"); 
+		eval("stopservice", "nas", "-f");
+		if (cnt)
+			sleep(1);
+		cnt++;
 	}
 	if (idx != -1) {
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", idx)) {
