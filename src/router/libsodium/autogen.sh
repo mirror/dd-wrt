@@ -35,19 +35,5 @@ else
     autoconf
 fi
 
-[ -z "$DO_NOT_UPDATE_CONFIG_SCRIPTS" ] &&
-  command -v curl >/dev/null 2>&1 && {
-  echo "Downloading config.guess and config.sub..."
-
-  curl -m 120 -sL -o config.guess \
-    'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD' --location &&
-    mv -f config.guess build-aux/config.guess
-
-  curl -m 120 -sL -o config.sub \
-    'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD' --location &&
-    mv -f config.sub build-aux/config.sub
-
-  echo "Done."
-}
 
 rm -f config.guess config.sub
