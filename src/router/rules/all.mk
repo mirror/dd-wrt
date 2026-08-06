@@ -135,6 +135,10 @@ ifeq ($(CONFIG_ALPINE),y)
 export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
+ifeq ($(CONFIG_MT7621),y)
+export SSLPATH=$(TOP)/openssl3
+include rules/openssl3.mk
+endif
 #ifeq ($(CONFIG_REALTEK),y)
 #export SSLPATH=$(TOP)/openssl3
 #include rules/openssl3.mk
