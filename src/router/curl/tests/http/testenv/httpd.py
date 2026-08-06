@@ -24,17 +24,17 @@
 #
 ###########################################################################
 #
+import copy
 import inspect
 import logging
 import os
 import shutil
 import socket
 import subprocess
-from datetime import timedelta, datetime
-from json import JSONEncoder
 import time
-from typing import List, Union, Optional, Dict
-import copy
+from datetime import datetime, timedelta
+from json import JSONEncoder
+from typing import Dict, List, Optional, Union
 
 from .curl import CurlClient, ExecResult
 from .env import Env
@@ -100,9 +100,9 @@ class Httpd:
             raise Exception(f'{env.apxs} failed to query libexecdir: {p}')
         self._mods_dir = p.stdout.strip()
         if self._mods_dir is None:
-            raise Exception('apache modules dir cannot be found')
+            raise Exception('apache modules directory cannot be found')
         if not os.path.exists(self._mods_dir):
-            raise Exception(f'apache modules dir does not exist: {self._mods_dir}')
+            raise Exception(f'apache modules directory does not exist: {self._mods_dir}')
         self._maybe_running = False
         self.ports = {}
         self._rmf(self._error_log)
@@ -250,27 +250,27 @@ class Httpd:
 
     def _rmf(self, path):
         if os.path.exists(path):
-            return os.remove(path)
+            os.remove(path)
 
     def _mkpath(self, path):
         if not os.path.exists(path):
-            return os.makedirs(path)
+            os.makedirs(path)
 
     def _write_config(self):
         domain1 = self.env.domain1
         domain1brotli = self.env.domain1brotli
         creds1 = self.env.get_credentials(self._domain1_cred_name)
-        assert creds1  # convince pytype this isn't None
+        assert creds1  # convince pytype this is not None
         self._loaded_domain1_cred_name = self._domain1_cred_name
         domain2 = self.env.domain2
         creds2 = self.env.get_credentials(domain2)
-        assert creds2  # convince pytype this isn't None
+        assert creds2  # convince pytype this is not None
         exp_domain = self.env.expired_domain
         exp_creds = self.env.get_credentials(exp_domain)
-        assert exp_creds  # convince pytype this isn't None
+        assert exp_creds  # convince pytype this is not None
         proxy_domain = self.env.proxy_domain
         proxy_creds = self.env.get_credentials(proxy_domain)
-        assert proxy_creds  # convince pytype this isn't None
+        assert proxy_creds  # convince pytype this is not None
         self._mkpath(self._conf_dir)
         self._mkpath(self._docs_dir)
         self._mkpath(self._logs_dir)
@@ -310,6 +310,7 @@ class Httpd:
                 f'LogLevel {self._get_log_level()}',
                 'StartServers 4',
                 'ReadBufferSize 16000',
+                'KeepAliveTimeout 30',  # CI may exceed the default of 5 sec
                 'H2MinWorkers 16',
                 'H2MaxWorkers 256',
                 f'TypesConfig "{self._conf_dir}/mime.types',
@@ -502,12 +503,12 @@ class Httpd:
                 '      Require user proxy',
                 '    </Proxy>',
             ]
-        else:
-            return [
-                '    <Proxy "*">',
-                '      Require ip 127.0.0.1',
-                '    </Proxy>',
-            ]
+        return [
+            '    <Proxy "*">',
+            '      Require ip 127.0.0.1',
+            '      Require ip ::1',
+            '    </Proxy>',
+        ]
 
     def _get_log_level(self):
         if self.env.verbose > 3:
@@ -534,6 +535,9 @@ class Httpd:
                 '    <Location /curltest/echo>',
                 '      SetHandler curltest-echo',
                 '    </Location>',
+                '    <Location /curltest/limit>',
+                '      SetHandler curltest-limit',
+                '    </Location>',
                 '    <Location /curltest/put>',
                 '      SetHandler curltest-put',
                 '    </Location>',
@@ -549,6 +553,11 @@ class Httpd:
                 '      SetEnv force-response-1.0 1',
                 '    </Location>',
                 '    SetEnvIf Request_URI "/shutdown_unclean" ssl-unclean=1',
+                '    RewriteEngine on',
+                '    RewriteRule    "^/curltest/put-redir-301$"  "/curltest/put"  [R=301]',
+                '    RewriteRule    "^/curltest/put-redir-302$"  "/curltest/put"  [R=302]',
+                '    RewriteRule    "^/curltest/put-redir-307$"  "/curltest/put"  [R=307]',
+                '    RewriteRule    "^/curltest/put-redir-308$"  "/curltest/put"  [R=308]',
             ])
         if self._auth_digest:
             lines.extend([
@@ -569,11 +578,13 @@ class Httpd:
             return
         local_dir = os.path.dirname(inspect.getfile(Httpd))
         out_dir = os.path.join(self.env.gen_dir, 'mod_curltest')
+        in_source = os.path.join(local_dir, 'mod_curltest/mod_curltest.c')
         out_source = os.path.join(out_dir, 'mod_curltest.c')
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
-        if not os.path.exists(out_source):
-            shutil.copy(os.path.join(local_dir, 'mod_curltest/mod_curltest.c'), out_source)
+        if not os.path.exists(out_source) or \
+                os.stat(in_source).st_mtime > os.stat(out_source).st_mtime:
+            shutil.copy(in_source, out_source)
         p = subprocess.run([
             self.env.apxs, '-c', out_source
         ], capture_output=True, cwd=out_dir)

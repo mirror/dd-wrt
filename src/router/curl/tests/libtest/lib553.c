@@ -26,9 +26,7 @@
  * bug report #1871269, fixed on Jan 14 2008 before the 7.18.0 release.
  */
 
-#include "test.h"
-
-#include "memdebug.h"
+#include "first.h"
 
 #define POSTLEN 40960
 
@@ -52,15 +50,15 @@ static size_t myreadfunc(char *ptr, size_t size, size_t nmemb, void *stream)
   return size;
 }
 
-#define NUM_HEADERS 8
+#define NUM_HEADERS  8
 #define SIZE_HEADERS 5000
 
-static char testbuf[SIZE_HEADERS + 100];
-
-CURLcode test(char *URL)
+static CURLcode test_lib553(const char *URL)
 {
+  static char testbuf[SIZE_HEADERS + 100];
+
   CURL *curl;
-  CURLcode res = CURLE_FAILED_INIT;
+  CURLcode result = CURLE_FAILED_INIT;
   int i;
   struct curl_slist *headerlist = NULL, *hl;
 
@@ -91,15 +89,15 @@ CURLcode test(char *URL)
     goto test_cleanup;
   headerlist = hl;
 
-  test_setopt(curl, CURLOPT_URL, URL);
-  test_setopt(curl, CURLOPT_HTTPHEADER, headerlist);
-  test_setopt(curl, CURLOPT_POST, 1L);
-  test_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)POSTLEN);
-  test_setopt(curl, CURLOPT_VERBOSE, 1L);
-  test_setopt(curl, CURLOPT_HEADER, 1L);
-  test_setopt(curl, CURLOPT_READFUNCTION, myreadfunc);
+  easy_setopt(curl, CURLOPT_URL, URL);
+  easy_setopt(curl, CURLOPT_HTTPHEADER, headerlist);
+  easy_setopt(curl, CURLOPT_POST, 1L);
+  easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)POSTLEN);
+  easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+  easy_setopt(curl, CURLOPT_HEADER, 1L);
+  easy_setopt(curl, CURLOPT_READFUNCTION, myreadfunc);
 
-  res = curl_easy_perform(curl);
+  result = curl_easy_perform(curl);
 
 test_cleanup:
 
@@ -109,5 +107,5 @@ test_cleanup:
 
   curl_global_cleanup();
 
-  return res;
+  return result;
 }

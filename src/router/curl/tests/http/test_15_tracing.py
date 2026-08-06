@@ -27,13 +27,13 @@
 import logging
 import re
 
-from testenv import Env
-from testenv import CurlClient
-
+import pytest
+from testenv import CurlClient, Env
 
 log = logging.getLogger(__name__)
 
 
+@pytest.mark.skipif(condition=not Env.curl_is_debug(), reason="needs curl debug")
 class TestTracing:
 
     # default verbose output
@@ -75,6 +75,8 @@ class TestTracing:
 
     # trace all
     def test_15_04_trace_all(self, env: Env, httpd):
+        if not env.curl_is_verbose():
+            pytest.skip('only works for curl with verbose strings')
         curl = CurlClient(env=env)
         url = f'http://{env.domain1}:{env.http_port}/data.json'
         r = curl.http_get(url=url, def_tracing=False, extra_args=[

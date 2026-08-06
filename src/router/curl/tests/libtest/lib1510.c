@@ -21,26 +21,20 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "test.h"
+#include "first.h"
 
-#include "testutil.h"
-#include "warnless.h"
-#include "memdebug.h"
-
-#define TEST_HANG_TIMEOUT 60 * 1000
-
-#define NUM_URLS 4
-
-CURLcode test(char *URL)
+static CURLcode test_lib1510(const char *URL)
 {
-  CURLcode res = CURLE_OK;
+  static const int NUM_URLS = 4;
+
+  CURLcode result = CURLE_OK;
   CURL *curl = NULL;
   int i;
   char target_url[256];
   char dnsentry[256];
   struct curl_slist *slist = NULL, *slist2;
-  char *port = libtest_arg3;
-  char *address = libtest_arg2;
+  const char *port = libtest_arg3;
+  const char *address = libtest_arg2;
 
   (void)URL;
 
@@ -73,7 +67,7 @@ CURLcode test(char *URL)
 
   easy_setopt(curl, CURLOPT_MAXCONNECTS, 3L);
 
-  /* get NUM_HANDLES easy handles */
+  /* get NUM_URLS easy handles */
   for(i = 0; i < NUM_URLS; i++) {
     /* specify target */
     curl_msnprintf(target_url, sizeof(target_url),
@@ -82,8 +76,8 @@ CURLcode test(char *URL)
     target_url[sizeof(target_url) - 1] = '\0';
     easy_setopt(curl, CURLOPT_URL, target_url);
 
-    res = curl_easy_perform(curl);
-    if(res)
+    result = curl_easy_perform(curl);
+    if(result)
       goto test_cleanup;
 
     abort_on_test_timeout();
@@ -99,5 +93,5 @@ test_cleanup:
 
   curl_global_cleanup();
 
-  return res;
+  return result;
 }

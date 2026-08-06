@@ -115,7 +115,7 @@ host_triplet = @host@
 subdir = scripts
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/curl-amissl.m4 \
-	$(top_srcdir)/m4/curl-bearssl.m4 \
+	$(top_srcdir)/m4/curl-apple-sectrust.m4 \
 	$(top_srcdir)/m4/curl-compilers.m4 \
 	$(top_srcdir)/m4/curl-confopts.m4 \
 	$(top_srcdir)/m4/curl-functions.m4 \
@@ -126,7 +126,6 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/curl-amissl.m4 \
 	$(top_srcdir)/m4/curl-reentrant.m4 \
 	$(top_srcdir)/m4/curl-rustls.m4 \
 	$(top_srcdir)/m4/curl-schannel.m4 \
-	$(top_srcdir)/m4/curl-sectransp.m4 \
 	$(top_srcdir)/m4/curl-sysconfig.m4 \
 	$(top_srcdir)/m4/curl-wolfssl.m4 $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
@@ -136,8 +135,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/curl-amissl.m4 \
 	$(top_srcdir)/m4/xc-lt-iface.m4 \
 	$(top_srcdir)/m4/xc-val-flgs.m4 \
 	$(top_srcdir)/m4/zz40-xc-ovr.m4 \
-	$(top_srcdir)/m4/zz50-xc-ovr.m4 \
-	$(top_srcdir)/m4/zz60-xc-ovr.m4 $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/m4/zz50-xc-ovr.m4 $(top_srcdir)/acinclude.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -215,6 +213,7 @@ CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CFLAG_CURL_SYMBOL_HIDING = @CFLAG_CURL_SYMBOL_HIDING@
+CLANG_TIDY = @CLANG_TIDY@
 CONFIGURE_OPTIONS = @CONFIGURE_OPTIONS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
@@ -229,6 +228,7 @@ CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX = @CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX@
 CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME = @CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME@
 CURL_NETWORK_AND_TIME_LIBS = @CURL_NETWORK_AND_TIME_LIBS@
 CYGPATH_W = @CYGPATH_W@
+DANTED = @DANTED@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
@@ -247,6 +247,7 @@ FILECMD = @FILECMD@
 FISH_FUNCTIONS_DIR = @FISH_FUNCTIONS_DIR@
 GCOV = @GCOV@
 GREP = @GREP@
+H2O = @H2O@
 HAVE_LIBZ = @HAVE_LIBZ@
 HTTPD = @HTTPD@
 HTTPD_NGHTTPX = @HTTPD_NGHTTPX@
@@ -296,7 +297,9 @@ RANLIB = @RANLIB@
 RC = @RC@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
+SFTPD = @SFTPD@
 SHELL = @SHELL@
+SSHD = @SSHD@
 SSL_BACKENDS = @SSL_BACKENDS@
 STRIP = @STRIP@
 SUPPORT_FEATURES = @SUPPORT_FEATURES@
@@ -361,10 +364,12 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-EXTRA_DIST = coverage.sh completion.pl firefox-db2pem.sh checksrc.pl checksrc-all.sh \
-  mk-ca-bundle.pl mk-unity.pl schemetable.c cd2nroff nroff2cd cdall cd2cd managen    \
-  dmaketgz maketgz release-tools.sh verify-release cmakelint.sh mdlinkcheck          \
-  CMakeLists.txt pythonlint.sh randdisable wcurl top-complexity
+EXTRA_DIST = coverage.sh completion.pl firefox-db2pem.sh checksrc.pl          \
+  checksrc-all.pl mk-ca-bundle.pl mk-unity.pl schemetable.c cd2nroff nroff2cd \
+  cdall cd2cd managen dmaketgz maketgz release-tools.sh verify-release        \
+  cmakelint.sh mdlinkcheck CMakeLists.txt perlcheck.sh pythonlint.sh          \
+  spacecheck.pl randdisable wcurl top-complexity extract-unit-protos          \
+  .checksrc badwords badwords-all badwords.txt top-length
 
 dist_bin_SCRIPTS = wcurl
 @USE_ZSH_COMPLETION_TRUE@ZSH_COMPLETION_FUNCTION_FILENAME = _curl
@@ -606,22 +611,16 @@ uninstall-am: uninstall-dist_binSCRIPTS
 all-local: $(ZSH_COMPLETION_FUNCTION_FILENAME) $(FISH_COMPLETION_FUNCTION_FILENAME)
 
 @USE_ZSH_COMPLETION_TRUE@$(ZSH_COMPLETION_FUNCTION_FILENAME): completion.pl
-@USE_ZSH_COMPLETION_TRUE@	if test -z "$(PERL)"; then echo 'No perl: cannot generate completion script'; else \
-@USE_ZSH_COMPLETION_TRUE@	$(PERL) $(srcdir)/completion.pl --opts-dir $(top_srcdir)/docs/cmdline-opts --shell zsh > $@; fi
+@USE_ZSH_COMPLETION_TRUE@	@PERL@ $(srcdir)/completion.pl --opts-dir $(top_srcdir)/docs/cmdline-opts --shell zsh > $@
 
 @USE_FISH_COMPLETION_TRUE@$(FISH_COMPLETION_FUNCTION_FILENAME): completion.pl
-@USE_FISH_COMPLETION_TRUE@	if test -z "$(PERL)"; then echo 'No perl: cannot generate completion script'; else \
-@USE_FISH_COMPLETION_TRUE@	$(PERL) $(srcdir)/completion.pl --opts-dir $(top_srcdir)/docs/cmdline-opts --shell fish > $@; fi
+@USE_FISH_COMPLETION_TRUE@	@PERL@ $(srcdir)/completion.pl --opts-dir $(top_srcdir)/docs/cmdline-opts --shell fish > $@
 
 install-data-local:
-@USE_ZSH_COMPLETION_TRUE@	if test -n "$(PERL)"; then \
-@USE_ZSH_COMPLETION_TRUE@	  $(MKDIR_P) $(DESTDIR)$(ZSH_FUNCTIONS_DIR); \
-@USE_ZSH_COMPLETION_TRUE@	  $(INSTALL_DATA) $(ZSH_COMPLETION_FUNCTION_FILENAME) $(DESTDIR)$(ZSH_FUNCTIONS_DIR)/$(ZSH_COMPLETION_FUNCTION_FILENAME); \
-@USE_ZSH_COMPLETION_TRUE@	fi
-@USE_FISH_COMPLETION_TRUE@	if test -n "$(PERL)"; then \
-@USE_FISH_COMPLETION_TRUE@	  $(MKDIR_P) $(DESTDIR)$(FISH_FUNCTIONS_DIR); \
-@USE_FISH_COMPLETION_TRUE@	  $(INSTALL_DATA) $(FISH_COMPLETION_FUNCTION_FILENAME) $(DESTDIR)$(FISH_FUNCTIONS_DIR)/$(FISH_COMPLETION_FUNCTION_FILENAME); \
-@USE_FISH_COMPLETION_TRUE@	fi
+@USE_ZSH_COMPLETION_TRUE@	$(MKDIR_P) $(DESTDIR)@ZSH_FUNCTIONS_DIR@
+@USE_ZSH_COMPLETION_TRUE@	$(INSTALL_DATA) $(ZSH_COMPLETION_FUNCTION_FILENAME) $(DESTDIR)@ZSH_FUNCTIONS_DIR@/$(ZSH_COMPLETION_FUNCTION_FILENAME)
+@USE_FISH_COMPLETION_TRUE@	$(MKDIR_P) $(DESTDIR)@FISH_FUNCTIONS_DIR@
+@USE_FISH_COMPLETION_TRUE@	$(INSTALL_DATA) $(FISH_COMPLETION_FUNCTION_FILENAME) $(DESTDIR)@FISH_FUNCTIONS_DIR@/$(FISH_COMPLETION_FUNCTION_FILENAME)
 
 distclean:
 	rm -f $(CLEANFILES)

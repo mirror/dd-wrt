@@ -54,11 +54,8 @@ regular old-fashioned Basic method.
 
 ## CURLAUTH_DIGEST_IE
 
-HTTP Digest authentication with an IE flavor. Digest authentication is defined
-in RFC 2617 and is a more secure way to do authentication over public networks
-than the regular old-fashioned Basic method. The IE flavor is simply that
-libcurl uses a special "quirk" that IE is known to have used before version 7
-and that some servers require the client to use.
+The IE-specific Digest authentication behavior is no longer supported.
+This bit is kept for compatibility and is treated as CURLAUTH_DIGEST.
 
 ## CURLAUTH_BEARER
 
@@ -134,12 +131,12 @@ int main(void)
 {
   CURL *curl = curl_easy_init();
   if(curl) {
-    CURLcode ret;
+    CURLcode result;
     curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/");
     /* allow whatever auth the server speaks */
-    curl_easy_setopt(curl, CURLOPT_HTTPAUTH, (long)CURLAUTH_ANY);
+    curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
     curl_easy_setopt(curl, CURLOPT_USERPWD, "james:bond");
-    ret = curl_easy_perform(curl);
+    result = curl_easy_perform(curl);
   }
 }
 ~~~
@@ -152,9 +149,14 @@ CURLAUTH_ONLY was added in 7.21.3
 
 CURLAUTH_NTLM_WB was added in 7.22.0
 
+**CURLAUTH_*** macros became `long` types in 7.26.0, prior to this version
+a `long` cast was necessary when passed to curl_easy_setopt(3).
+
 CURLAUTH_BEARER was added in 7.61.0
 
 CURLAUTH_AWS_SIGV4 was added in 7.74.0
+
+CURLAUTH_DIGEST_IE does nothing since 8.21.0
 
 # %AVAILABILITY%
 

@@ -21,7 +21,7 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "test.h"
+#include "first.h"
 
 /*
   Based on a bug report recipe by Rene Bernhardt in
@@ -29,18 +29,17 @@
 
   It is reproducible by the following steps:
 
-  - Use a proxy that offers NTLM and Negotiate ( CURLOPT_PROXY and
-  CURLOPT_PROXYPORT)
-  - Tell libcurl NOT to use Negotiate  CURL_EASY_SETOPT(CURLOPT_PROXYAUTH,
-  CURLAUTH_BASIC | CURLAUTH_DIGEST | CURLAUTH_NTLM)
+  - Use a proxy that offers NTLM and Negotiate
+    (CURLOPT_PROXY and CURLOPT_PROXYPORT)
+  - Tell libcurl NOT to use Negotiate
+    curl_easy_setopt(CURLOPT_PROXYAUTH,
+                     CURLAUTH_BASIC | CURLAUTH_DIGEST | CURLAUTH_NTLM)
   - Start the request
 */
 
-#include "memdebug.h"
-
-CURLcode test(char *URL)
+static CURLcode test_lib590(const char *URL)
 {
-  CURLcode res;
+  CURLcode result;
   CURL *curl;
   long usedauth = 0;
 
@@ -56,22 +55,22 @@ CURLcode test(char *URL)
     return TEST_ERR_MAJOR_BAD;
   }
 
-  test_setopt(curl, CURLOPT_URL, URL);
-  test_setopt(curl, CURLOPT_HEADER, 1L);
-  test_setopt(curl, CURLOPT_PROXYAUTH,
-              (long) (CURLAUTH_BASIC | CURLAUTH_DIGEST | CURLAUTH_NTLM));
-  test_setopt(curl, CURLOPT_PROXY, libtest_arg2); /* set in first.c */
+  easy_setopt(curl, CURLOPT_URL, URL);
+  easy_setopt(curl, CURLOPT_HEADER, 1L);
+  easy_setopt(curl, CURLOPT_PROXYAUTH,
+              CURLAUTH_BASIC | CURLAUTH_DIGEST | CURLAUTH_NTLM);
+  easy_setopt(curl, CURLOPT_PROXY, libtest_arg2); /* set in first.c */
 
   /* set the name + password twice to test that the API is fine with it */
-  test_setopt(curl, CURLOPT_PROXYUSERNAME, "me");
-  test_setopt(curl, CURLOPT_PROXYPASSWORD, "password");
-  test_setopt(curl, CURLOPT_PROXYUSERPWD, "me:password");
+  easy_setopt(curl, CURLOPT_PROXYUSERNAME, "me");
+  easy_setopt(curl, CURLOPT_PROXYPASSWORD, "password");
+  easy_setopt(curl, CURLOPT_PROXYUSERPWD, "me:password");
 
-  res = curl_easy_perform(curl);
-  if(res)
+  result = curl_easy_perform(curl);
+  if(result)
     goto test_cleanup;
 
-  res = curl_easy_getinfo(curl, CURLINFO_PROXYAUTH_USED, &usedauth);
+  result = curl_easy_getinfo(curl, CURLINFO_PROXYAUTH_USED, &usedauth);
   if(CURLAUTH_NTLM != usedauth) {
     curl_mprintf("CURLINFO_PROXYAUTH_USED did not say NTLM\n");
   }
@@ -81,5 +80,5 @@ test_cleanup:
   curl_easy_cleanup(curl);
   curl_global_cleanup();
 
-  return res;
+  return result;
 }

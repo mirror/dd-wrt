@@ -21,25 +21,21 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "test.h"
-
-#include "testutil.h"
-#include "warnless.h"
-#include "memdebug.h"
+#include "first.h"
 
 /*
  * Get a single URL without select().
  */
 
-CURLcode test(char *URL)
+static CURLcode test_lib658(const char *URL)
 {
-  CURL *handle = NULL;
-  CURLcode res = CURLE_OK;
+  CURL *curl = NULL;
+  CURLcode result = CURLE_OK;
   CURLU *urlp = NULL;
   CURLUcode uc = CURLUE_OK;
 
   global_init(CURL_GLOBAL_ALL);
-  easy_init(handle);
+  easy_init(curl);
 
   urlp = curl_url();
 
@@ -51,30 +47,30 @@ CURLcode test(char *URL)
   uc = curl_url_set(urlp, CURLUPART_URL, URL, 0);
   if(uc) {
     curl_mfprintf(stderr, "problem setting CURLUPART_URL: %s.",
-            curl_url_strerror(uc));
+                  curl_url_strerror(uc));
     goto test_cleanup;
   }
 
   /* demonstrate override behavior */
-  easy_setopt(handle, CURLOPT_URL, "http://www.example.com");
+  easy_setopt(curl, CURLOPT_URL, "http://www.example.com");
 
-  easy_setopt(handle, CURLOPT_CURLU, urlp);
-  easy_setopt(handle, CURLOPT_VERBOSE, 1L);
+  easy_setopt(curl, CURLOPT_CURLU, urlp);
+  easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
-  res = curl_easy_perform(handle);
+  result = curl_easy_perform(curl);
 
-  if(res) {
+  if(result) {
     curl_mfprintf(stderr, "%s:%d curl_easy_perform() failed "
-                  "with code %d (%s)\n",
-                  __FILE__, __LINE__, res, curl_easy_strerror(res));
+                  "with code %d (%s)\n", __FILE__, __LINE__,
+                  (int)result, curl_easy_strerror(result));
     goto test_cleanup;
   }
 
 test_cleanup:
 
   curl_url_cleanup(urlp);
-  curl_easy_cleanup(handle);
+  curl_easy_cleanup(curl);
   curl_global_cleanup();
 
-  return res;
+  return result;
 }

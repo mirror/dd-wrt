@@ -21,21 +21,19 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "test.h"
+#include "first.h"
 
-#include "memdebug.h"
-
-CURLcode test(char *URL)
+static CURLcode test_lib1537(const char *URL)
 {
-  const unsigned char a[] = {0x2f, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
-                             0x91, 0xa2, 0xb3, 0xc4, 0xd5, 0xe6, 0xf7};
-  CURLcode res = CURLE_OK;
+  const unsigned char a[] = { 0x2f, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
+                              0x91, 0xa2, 0xb3, 0xc4, 0xd5, 0xe6, 0xf7 };
+  CURLcode result = CURLE_OK;
   char *ptr = NULL;
   int asize;
   int outlen = 0;
   char *raw;
 
-  (void)URL; /* we don't use this */
+  (void)URL;
 
   if(curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
     curl_mfprintf(stderr, "curl_global_init() failed\n");
@@ -50,7 +48,7 @@ CURLcode test(char *URL)
   /* deprecated API */
   ptr = curl_escape((const char *)a, asize);
   if(!ptr) {
-    res = TEST_ERR_MAJOR_BAD;
+    result = TEST_ERR_MAJOR_BAD;
     goto test_cleanup;
   }
   curl_mprintf("%s\n", ptr);
@@ -64,7 +62,7 @@ CURLcode test(char *URL)
   /* deprecated API */
   raw = curl_unescape(ptr, (int)strlen(ptr));
   if(!raw) {
-    res = TEST_ERR_MAJOR_BAD;
+    result = TEST_ERR_MAJOR_BAD;
     goto test_cleanup;
   }
   outlen = (int)strlen(raw);
@@ -79,7 +77,7 @@ CURLcode test(char *URL)
   curl_mprintf("escape -1 length: %s\n", ptr);
 
   /* weird input length */
-  outlen = 2017; /* just a value */
+  outlen = 2017; /* an arbitrary value */
   ptr = curl_easy_unescape(NULL, "moahahaha", -1, &outlen);
   curl_mprintf("unescape -1 length: %s %d\n", ptr, outlen);
 
@@ -87,5 +85,5 @@ test_cleanup:
   curl_free(ptr);
   curl_global_cleanup();
 
-  return res;
+  return result;
 }

@@ -43,6 +43,7 @@ allocated string with the contents.
 The *flags* argument is a bitmask with individual features.
 
 The returned content pointer must be freed with curl_free(3) after use.
+Although not constrained by its type, the pointed string may not be altered.
 
 # FLAGS
 
@@ -71,7 +72,7 @@ does not decode the scheme, the port number or the full URL.
 The query component also gets plus-to-space conversion as a bonus when this
 bit is set.
 
-Note that this URL decoding is charset unaware and you get a zero terminated
+Note that this URL decoding is charset unaware and you get a null-terminated
 string back with data that could be intended for a particular encoding.
 
 If there are byte values lower than 32 in the decoded string, the get
@@ -186,8 +187,8 @@ If the hostname is a numeric IPv6 address, this field might also be set.
 
 ## CURLUPART_PORT
 
-A port cannot be URL decoded on get. This number is returned in a string just
-like all other parts. That string is guaranteed to hold a valid port number in
+A port cannot be URL decoded on get. This number is returned in a string like
+all other parts. That string is guaranteed to hold a valid port number in
 ASCII using base 10.
 
 ## CURLUPART_PATH

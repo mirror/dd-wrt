@@ -25,17 +25,20 @@
 ###########################################################################
 #
 # Check that the deprecated statuses of functions and enum values in header
-# files, manpages and symbols-in-versions are in sync.
+# files, man pages and symbols-in-versions are in sync.
 
 use strict;
 use warnings;
 
 use File::Basename;
 
-my $root=$ARGV[0] || ".";
+my $root = $ARGV[0] || ".";
+my $bldroot = $ARGV[1] || ".";
+
 my $incdir = "$root/include/curl";
-my $docdir = "$root/docs";
+my $docdir = "$bldroot/docs";
 my $libdocdir = "$docdir/libcurl";
+
 my $errcode = 0;
 
 # Symbol-indexed hashes.
@@ -45,19 +48,18 @@ my $errcode = 0;
 #     x.yy.z  Deprecated in version x.yy.z
 my %syminver;       # Symbols-in-versions deprecations.
 my %hdr;            # Public header files deprecations.
-my %funcman;        # Function manpages deprecations.
-my %optman;         # Option manpages deprecations.
-
+my %funcman;        # Function man pages deprecations.
+my %optman;         # Option man pages deprecations.
 
 # Scan header file for public function and enum values. Flag them with
 # the version they are deprecated in, if some.
 sub scan_header {
-    my ($f)=@_;
+    my ($f) = @_;
     my $line = "";
     my $incomment = 0;
     my $inenum = 0;
 
-    open(my $h, "<", "$f");
+    open(my $h, "<", $f);
     while(<$h>) {
         s/^\s*(.*?)\s*$/$1/;      # Trim.
         # Remove multi-line comment trail.
@@ -141,15 +143,15 @@ sub scan_header {
     close $h;
 }
 
-# Scan function manpage for options.
+# Scan function man page for options.
 # Each option has to be declared as ".IP <option>" where <option> starts with
 # the prefix. Flag each option with its deprecation version, if some.
 sub scan_man_for_opts {
-    my ($f, $prefix)=@_;
+    my ($f, $prefix) = @_;
     my $opt = "";
     my $line = "";
 
-    open(my $m, "<", "$f");
+    open(my $m, "<", $f);
     while(<$m>) {
         if($_ =~ /^\./) {
             # roff directive found: end current option paragraph.
@@ -180,18 +182,18 @@ sub scan_man_for_opts {
     close $m;
 }
 
-# Scan manpage for deprecation in DESCRIPTION and/or AVAILABILITY sections.
+# Scan man page for deprecation in DESCRIPTION and/or AVAILABILITY sections.
 sub scan_man_page {
-    my ($path, $sym, $table)=@_;
+    my ($path, $sym, $table) = @_;
     my $version = "X";
 
-    if(open(my $fh, "<", "$path")) {
+    if(open(my $fh, "<", $path)) {
         my $section = "";
         my $line = "";
 
         while(<$fh>) {
             if($_ =~ /\.so\s+man3\/(.*\.3\b)/) {
-                # Handle manpage inclusion.
+                # Handle man page inclusion.
                 scan_man_page(dirname($path) . "/$1", $sym, $table);
                 $version = exists($$table{$sym})? $$table{$sym}: $version;
             }
@@ -213,7 +215,7 @@ sub scan_man_page {
                             # Flag deprecation status.
                             if($version ne "X" && $version ne "?") {
                                 if($1 && $1 ne $version) {
-                                    print "error: $sym manpage lists unmatching deprecation versions $version and $1\n";
+                                    print "error: $sym man page lists unmatching deprecation versions $version and $1\n";
                                     $errcode++;
                                 }
                             }
@@ -235,10 +237,9 @@ sub scan_man_page {
     }
 }
 
-
 # Read symbols-in-versions.
-open(my $fh, "<", "$libdocdir/symbols-in-versions") ||
-  die "$libdocdir/symbols-in-versions";
+open(my $fh, "<", "$root/docs/libcurl/symbols-in-versions") or
+    die "$root/docs/libcurl/symbols-in-versions";
 while(<$fh>) {
     if($_ =~ /^((?:CURL|LIBCURL)\S+)\s+\S+\s*(\S*)\s*(\S*)$/) {
         if($3 eq "") {
@@ -251,8 +252,13 @@ while(<$fh>) {
 }
 close($fh);
 
-# Get header file names,
-opendir(my $dh, $incdir) || die "Can't opendir $incdir";
+if(!glob("$libdocdir/*.3")) {
+    print "curl built without the libcurl manual. Skipping test 1222.\n";
+    exit 0;
+}
+
+# Get header filenames,
+opendir(my $dh, $incdir) or die "Cannot opendir $incdir";
 my @hfiles = grep { /\.h$/ } readdir($dh);
 closedir $dh;
 
@@ -261,18 +267,18 @@ for(@hfiles) {
     scan_header("$incdir/$_");
 }
 
-# Get function statuses from manpages.
+# Get function statuses from man pages.
 foreach my $sym (keys %hdr) {
-    if($sym =~/^(?:curl|curlx)_\w/) {
+    if($sym =~ /^(?:curl|curlx)_\w/) {
         scan_man_page("$libdocdir/$sym.3", $sym, \%funcman);
     }
 }
 
-# Get options from function manpages.
+# Get options from function man pages.
 scan_man_for_opts("$libdocdir/curl_easy_setopt.3", "CURLOPT");
 scan_man_for_opts("$libdocdir/curl_easy_getinfo.3", "CURLINFO");
 
-# Get deprecation status from option manpages.
+# Get deprecation status from option man pages.
 foreach my $sym (keys %syminver) {
     if($sym =~ /^(?:CURLOPT|CURLINFO)_\w+$/) {
         scan_man_page("$libdocdir/opts/$sym.3", $sym, \%optman);

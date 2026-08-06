@@ -33,8 +33,8 @@
 # at a regular interval. The output is suitable to be mailed to
 # curl-autocompile@haxx.se to be dealt with automatically (make sure the
 # subject includes the word "autobuild" as the mail gets silently discarded
-# otherwise).  The most current build status (with a reasonable backlog) will
-# be published on the curl site, at https://curl.se/auto/
+# otherwise).  The most current build status (with a reasonable backlog) is
+# published on the curl site, at https://curl.se/auto/
 
 # USAGE:
 # testcurl.pl [options] [curl-daily-name] > output
@@ -49,23 +49,25 @@
 # --mktarball=[command]    Command to run after completed test
 # --name=[name]            Set name to report as
 # --notes=[notes]          More human-readable information about this configuration
-# --nocvsup                Don't pull from git even though it is a git tree
-# --nogitpull              Don't pull from git even though it is a git tree
-# --nobuildconf            Don't run autoreconf -fi
-# --noconfigure            Don't run configure
+# --nocvsup                Do not pull from git even though it is a git tree
+# --nogitpull              Do not pull from git even though it is a git tree
+# --nobuildconf            Do not run autoreconf -fi
+# --noconfigure            Do not run configure
 # --runtestopts=[options]  Options to pass to runtests.pl
-# --setup=[file name]      File name to read setup from (deprecated)
+# --setup=[filename]       Filename to read setup from (deprecated)
 # --target=[your os]       Specify your target environment.
 #
 # if [curl-daily-name] is omitted, a 'curl' git directory is assumed.
 #
 
 use strict;
+use warnings;
 
 use Cwd;
+use File::Path;
 use File::Spec;
 
-# Turn on warnings (equivalent to -w, which can't be used with /usr/bin/env)
+# Turn on warnings (equivalent to -w, which cannot be used with /usr/bin/env)
 #BEGIN { $^W = 1; }
 
 use vars qw($version $fixed $infixed $CURLDIR $git $pwd $build $buildlog
@@ -76,18 +78,21 @@ use vars qw($name $email $desc $confopts $runtestopts $setupfile $mktarball
             $extvercmd $nogitpull $nobuildconf $crosscompile
             $timestamp $notes);
 
-# version of this script
-$version='2024-11-28';
-$fixed=0;
+$notes = '';
+$runtestopts = '';
 
-# Determine if we're running from git or a canned copy of curl,
+# version of this script
+$version = '2024-11-28';
+$fixed = 0;
+
+# Determine if we are running from git or a canned copy of curl,
 # or if we got a specific target option or setup file option.
-$CURLDIR="curl";
+$CURLDIR = "curl";
 if(-f ".git/config") {
     $CURLDIR = "./";
 }
 
-$git=1;
+$git = 1;
 $setupfile = 'setup';
 $configurebuild = 1;
 while($ARGV[0]) {
@@ -120,27 +125,27 @@ while($ARGV[0]) {
         shift @ARGV;
     }
     elsif(($ARGV[0] eq "--nocvsup") || ($ARGV[0] eq "--nogitpull")) {
-        $nogitpull=1;
+        $nogitpull = 1;
         shift @ARGV;
     }
     elsif($ARGV[0] =~ /--nobuildconf/) {
-        $nobuildconf=1;
+        $nobuildconf = 1;
         shift @ARGV;
     }
     elsif($ARGV[0] =~ /--noconfigure/) {
-        $configurebuild=0;
+        $configurebuild = 0;
         shift @ARGV;
     }
     elsif($ARGV[0] =~ /--crosscompile/) {
-        $crosscompile=1;
+        $crosscompile = 1;
         shift @ARGV;
     }
     elsif($ARGV[0] =~ /--runtestopts=/) {
         $runtestopts = (split(/=/, shift @ARGV, 2))[1];
     }
     else {
-        $CURLDIR=shift @ARGV;
-        $git=0; # a given dir, assume not using git
+        $CURLDIR = shift @ARGV;
+        $git = 0; # a given dir, assume not using git
     }
 }
 
@@ -177,21 +182,9 @@ if(($^O eq 'MSWin32' || $^O eq 'cygwin' || $^O eq 'msys') &&
   $confheader = 'config-win32.h';
 }
 
-$ENV{LC_ALL}="C" if (($ENV{LC_ALL}) && ($ENV{LC_ALL} !~ /^C$/));
-$ENV{LC_CTYPE}="C" if (($ENV{LC_CTYPE}) && ($ENV{LC_CTYPE} !~ /^C$/));
-$ENV{LANG}="C";
-
-sub rmtree($) {
-    my $target = $_[0];
-    if($^O eq 'MSWin32') {
-        foreach (glob($target)) {
-            s:/:\\:g;
-            system("rd /s /q $_");
-        }
-    } else {
-        system("rm -rf $target");
-    }
-}
+$ENV{LC_ALL} = "C" if(($ENV{LC_ALL}) && ($ENV{LC_ALL} !~ /^C$/));
+$ENV{LC_CTYPE} = "C" if(($ENV{LC_CTYPE}) && ($ENV{LC_CTYPE} !~ /^C$/));
+$ENV{LANG} = "C";
 
 sub grepfile($$) {
     my ($target, $fn) = @_;
@@ -207,22 +200,22 @@ sub grepfile($$) {
 }
 
 sub logit($) {
-    my $text=$_[0];
+    my $text = $_[0];
     if($text) {
         print "testcurl: $text\n";
     }
 }
 
 sub logit_spaced($) {
-    my $text=$_[0];
+    my $text = $_[0];
     if($text) {
         print "\ntestcurl: $text\n\n";
     }
 }
 
 sub mydie($){
-    my $text=$_[0];
-    logit "$text";
+    my $text = $_[0];
+    logit $text;
     chdir $pwd; # cd back to the original root dir
 
     if($pwd && $build) {
@@ -233,7 +226,7 @@ sub mydie($){
     if(-r $buildlog) {
         # we have a build log output file left, remove it
         logit "removing the $buildlogname file";
-        unlink "$buildlog";
+        unlink $buildlog;
     }
     logit "ENDING HERE"; # last line logged!
     exit 1;
@@ -243,7 +236,7 @@ sub get_host_triplet {
   my $triplet;
   my $configfile = "$pwd/$build/lib/curl_config.h";
 
-  if(-f $configfile && -s $configfile && open(my $libconfigh, "<", "$configfile")) {
+  if(-f $configfile && -s $configfile && open(my $libconfigh, "<", $configfile)) {
       while(<$libconfigh>) {
           if($_ =~ /^\#define\s+CURL_OS\s+"*([^"][^"]*)"*\s*/) {
               $triplet = $1;
@@ -258,45 +251,45 @@ sub get_host_triplet {
 if($name && $email && $desc) {
     # having these fields set are enough to continue, skip reading the setup
     # file
-    $infixed=4;
-    $fixed=4;
+    $infixed = 4;
+    $fixed = 4;
 }
-elsif (open(my $f, "<", "$setupfile")) {
-    while (<$f>) {
-        if (/(\w+)=(.*)/) {
+elsif(open(my $f, "<", $setupfile)) {
+    while(<$f>) {
+        if(/(\w+)=(.*)/) {
             eval "\$$1=$2;";
         }
     }
     close($f);
-    $infixed=$fixed;
+    $infixed = $fixed;
 }
 else {
-    $infixed=0;    # so that "additional args to configure" works properly first time...
+    $infixed = 0;    # so that "additional args to configure" works properly first time...
 }
 
 if(!$name) {
     print "please enter your name\n";
     $name = <>;
     chomp $name;
-    $fixed=1;
+    $fixed = 1;
 }
 
 if(!$email) {
     print "please enter your contact email address\n";
     $email = <>;
     chomp $email;
-    $fixed=2;
+    $fixed = 2;
 }
 
 if(!$desc) {
     print "please enter a one line system description\n";
     $desc = <>;
     chomp $desc;
-    $fixed=3;
+    $fixed = 3;
 }
 
 if(!$confopts) {
-    if ($infixed < 4) {
+    if($infixed < 4) {
         print "please enter your additional arguments to configure\n";
         print "examples: --with-openssl --enable-debug --enable-ipv6\n";
         $confopts = <>;
@@ -304,10 +297,9 @@ if(!$confopts) {
     }
 }
 
-
 if($fixed < 4) {
-    $fixed=4;
-    open(my $f, ">", "$setupfile") or die;
+    $fixed = 4;
+    open(my $f, ">", $setupfile) or die;
     print $f "name='$name'\n";
     print $f "email='$email'\n";
     print $f "desc='$desc'\n";
@@ -338,27 +330,27 @@ logit "DESC = $desc";
 logit "NOTES = $notes";
 logit "CONFOPTS = $confopts";
 logit "RUNTESTOPTS = ".$runtestopts;
-logit "CPPFLAGS = ".$ENV{CPPFLAGS};
-logit "CFLAGS = ".$ENV{CFLAGS};
-logit "LDFLAGS = ".$ENV{LDFLAGS};
-logit "LIBS = ".$ENV{LIBS};
-logit "CC = ".$ENV{CC};
-logit "TMPDIR = ".$ENV{TMPDIR};
-logit "MAKEFLAGS = ".$ENV{MAKEFLAGS};
-logit "ACLOCAL_FLAGS = ".$ENV{ACLOCAL_FLAGS};
-logit "PKG_CONFIG_PATH = ".$ENV{PKG_CONFIG_PATH};
-logit "DYLD_LIBRARY_PATH = ".$ENV{DYLD_LIBRARY_PATH};
-logit "LD_LIBRARY_PATH = ".$ENV{LD_LIBRARY_PATH};
-logit "LIBRARY_PATH = ".$ENV{LIBRARY_PATH};
-logit "SHLIB_PATH = ".$ENV{SHLIB_PATH};
-logit "LIBPATH = ".$ENV{LIBPATH};
+logit "CPPFLAGS = ".($ENV{CPPFLAGS} || '');
+logit "CFLAGS = ".($ENV{CFLAGS} || '');
+logit "LDFLAGS = ".($ENV{LDFLAGS} || '');
+logit "LIBS = ".($ENV{LIBS} || '');
+logit "CC = ".($ENV{CC} || '');
+logit "TMPDIR = ".($ENV{TMPDIR} || '');
+logit "MAKEFLAGS = ".($ENV{MAKEFLAGS} || '');
+logit "ACLOCAL_FLAGS = ".($ENV{ACLOCAL_FLAGS} || '');
+logit "PKG_CONFIG_PATH = ".($ENV{PKG_CONFIG_PATH} || '');
+logit "DYLD_LIBRARY_PATH = ".($ENV{DYLD_LIBRARY_PATH} || '');
+logit "LD_LIBRARY_PATH = ".($ENV{LD_LIBRARY_PATH} || '');
+logit "LIBRARY_PATH = ".($ENV{LIBRARY_PATH} || '');
+logit "SHLIB_PATH = ".($ENV{SHLIB_PATH} || '');
+logit "LIBPATH = ".($ENV{LIBPATH} || '');
 logit "target = ".$targetos;
 logit "version = $version"; # script version
 logit "date = $timestamp";  # When the test build starts
 
 $str1066os = undef;
 
-# Make $pwd to become the path without newline. We'll use that in order to cut
+# Make $pwd to become the path without newline. We use that in order to cut
 # off that path from all possible logs and error messages etc.
 $pwd = getcwd();
 
@@ -370,38 +362,38 @@ if(-d $CURLDIR) {
         # remove the generated sources to force them to be re-generated each
         # time we run this test
         unlink "$CURLDIR/src/tool_hugehelp.c";
-        # find out if curl source dir has an in-tree c-ares repo
-        $have_embedded_ares = 1 if (-f "$CURLDIR/ares/GIT-INFO");
-    } elsif (!$git && -f "$CURLDIR/tests/testcurl.pl") {
+        # find out if curl source directory has an in-tree c-ares repo
+        $have_embedded_ares = 1 if(-f "$CURLDIR/ares/GIT-INFO");
+    } elsif(!$git && -f "$CURLDIR/tests/testcurl.pl") {
         logit "$CURLDIR is verified to be a fine daily source dir";
-        # find out if curl source dir has an in-tree c-ares extracted tarball
-        $have_embedded_ares = 1 if (-f "$CURLDIR/ares/ares_build.h");
+        # find out if curl source directory has an in-tree c-ares extracted tarball
+        $have_embedded_ares = 1 if(-f "$CURLDIR/ares/ares_build.h");
     } else {
-        mydie "$CURLDIR is not a daily source dir or checked out from git!"
+        mydie "$CURLDIR is not a daily source directory or checked out from git!"
     }
 }
 
 # make the path absolute so we can use it everywhere
-$CURLDIR = File::Spec->rel2abs("$CURLDIR");
+$CURLDIR = File::Spec->rel2abs($CURLDIR);
 
-$build="build-$$";
-$buildlogname="buildlog-$$";
-$buildlog="$pwd/$buildlogname";
+$build = "build-$$";
+$buildlogname = "buildlog-$$";
+$buildlog = "$pwd/$buildlogname";
 
 # remove any previous left-overs
-rmtree "build-*";
-rmtree "buildlog-*";
+foreach(glob("build-*")) { rmtree $_; }
+foreach(glob("buildlog-*")) { rmtree $_; }
 
 # this is to remove old build logs that ended up in the wrong dir
 foreach(glob("$CURLDIR/buildlog-*")) { unlink $_; }
 
-# create a dir to build in
+# create a directory to build in
 mkdir $build, 0777;
 
 if(-d $build) {
-    logit "build dir $build was created fine";
+    logit "build directory $build was created fine";
 } else {
-    mydie "failed to create dir $build";
+    mydie "failed to create directory $build";
 }
 
 # get in the curl source tree root
@@ -419,14 +411,14 @@ if($git) {
         logit "run git pull in curl";
         system("git pull 2>&1");
         $gitstat += $?;
-        logit "failed to update from curl git ($?), continue anyway" if ($?);
+        logit "failed to update from curl git ($?), continue anyway" if($?);
 
         # Set timestamp to the UTC the git update took place.
-        $timestamp = scalar(gmtime)." UTC" if (!$gitstat);
+        $timestamp = scalar(gmtime)." UTC" if(!$gitstat);
     }
 
     # get the last 5 commits for show (even if no pull was made)
-    @commits=`git log --pretty=oneline --abbrev-commit -5`;
+    @commits = qx(git log --pretty=oneline --abbrev-commit -5);
     logit "The most recent curl git commits:";
     for(@commits) {
         chomp ($_);
@@ -442,21 +434,21 @@ if($git) {
             logit "run git pull in ares";
             system("git pull 2>&1");
             $gitstat += $?;
-            logit "failed to update from ares git ($?), continue anyway" if ($?);
+            logit "failed to update from ares git ($?), continue anyway" if($?);
 
             # Set timestamp to the UTC the git update took place.
-            $timestamp = scalar(gmtime)." UTC" if (!$gitstat);
+            $timestamp = scalar(gmtime)." UTC" if(!$gitstat);
         }
 
         # get the last 5 commits for show (even if no pull was made)
-        @commits=`git log --pretty=oneline --abbrev-commit -5`;
+        @commits = qx(git log --pretty=oneline --abbrev-commit -5);
         logit "The most recent ares git commits:";
         for (@commits) {
             chomp ($_);
             logit "  $_";
         }
 
-        chdir "$CURLDIR";
+        chdir $CURLDIR;
     }
 
     if($nobuildconf) {
@@ -470,7 +462,7 @@ if($git) {
         # generate the build files
         logit "invoke autoreconf";
         open(my $f, "-|", "autoreconf -fi 2>&1") or die;
-        open(my $log, ">", "$buildlog") or die;
+        open(my $log, ">", $buildlog) or die;
         while(<$f>) {
             my $ll = $_;
             print $ll;
@@ -496,10 +488,10 @@ if($git) {
     }
 }
 
-# Set timestamp to the one in curlver.h if this isn't a git test build.
+# Set timestamp to the one in curlver.h if this is not a git test build.
 if((-f "include/curl/curlver.h") &&
     (open(my $f, "<", "include/curl/curlver.h"))) {
-    while (<$f>) {
+    while(<$f>) {
         chomp;
         if($_ =~ /^\#define\s+LIBCURL_TIMESTAMP\s+\"(.+)\".*$/) {
             my $stampstring = $1;
@@ -516,8 +508,8 @@ if((-f "include/curl/curlver.h") &&
 # Show timestamp we are using for this test build.
 logit "timestamp = $timestamp";
 
-if ($configurebuild) {
-    if (-f "configure") {
+if($configurebuild) {
+    if(-f "configure") {
         logit "configure created (at least it exists)";
     } else {
         mydie "no configure created/found";
@@ -531,11 +523,11 @@ sub findinpath {
     my $e;
     my $x = ($^O eq 'MSWin32') ? '.exe' : '';
     my $s = ($^O eq 'MSWin32') ? ';' : ':';
-    my $p=$ENV{'PATH'};
+    my $p = $ENV{'PATH'};
     my @pa = split($s, $p);
     for $c (@_) {
         for $e (@pa) {
-            if( -x "$e/$c$x") {
+            if(-x "$e/$c$x") {
                 return $c;
             }
         }
@@ -544,10 +536,10 @@ sub findinpath {
 
 my $make = findinpath("gmake", "make", "nmake");
 if(!$make) {
-    mydie "Couldn't find make in the PATH";
+    mydie "Could not find make in the PATH";
 }
 # force to 'nmake' for VC builds
-$make = "nmake" if ($targetos =~ /vc/);
+$make = "nmake" if($targetos =~ /vc/);
 logit "going with $make as make";
 
 # change to build dir
@@ -555,17 +547,17 @@ chdir "$pwd/$build";
 
 if($configurebuild) {
     # run configure script
-    print `$CURLDIR/configure $confopts 2>&1`;
+    print qx($CURLDIR/configure $confopts 2>&1);
 
     if(-f "lib/Makefile") {
         logit "configure seems to have finished fine";
     } else {
-        mydie "configure didn't work";
+        mydie "configure did not work";
     }
 } else {
-    logit "copying files to build dir ...";
+    logit "copying files to build directory ...";
     if($^O eq 'MSWin32') {
-        system("xcopy /s /q \"$CURLDIR\" .");
+        system('xcopy', ('/s', '/q', $CURLDIR, '.'));
     }
 }
 
@@ -580,8 +572,10 @@ if(-f "./libcurl.pc") {
     }
 }
 
+my $f;
+
 logit_spaced "display lib/$confheader";
-open(my $f, "<", "lib/$confheader") or die "lib/$confheader: $!";
+open($f, "<", "lib/$confheader") or die "lib/$confheader: $!";
 while(<$f>) {
     print if /^ *#/;
 }
@@ -620,7 +614,7 @@ if(($have_embedded_ares) &&
     $confheader =~ s/curl/ares/;
     logit_spaced "display ares/$confheader";
     if(open($f, "<", "ares/$confheader")) {
-        while (<$f>) {
+        while(<$f>) {
             print if /^ *#/;
         }
         close($f);
@@ -635,7 +629,7 @@ if(($have_embedded_ares) &&
         open($f, "-|", "$make -f Makefile.$targetos 2>&1") or die;
     }
     else {
-        logit "$make";
+        logit $make;
         open($f, "-|", "$make 2>&1") or die;
     }
     while(<$f>) {
@@ -655,35 +649,35 @@ if(($have_embedded_ares) &&
 }
 
 my $mkcmd = "$make -i" . ($targetos && !$configurebuild ? " $targetos" : "");
-logit "$mkcmd";
-open(my $f, "-|", "$mkcmd 2>&1") or die;
-while (<$f>) {
+logit $mkcmd;
+open($f, "-|", "$mkcmd 2>&1") or die;
+while(<$f>) {
     s/$pwd//g;
     print;
 }
 close($f);
 
-if (-f "lib/libcurl$libext") {
+if(-f "lib/libcurl$libext") {
     logit "libcurl was created fine (libcurl$libext)";
 }
 else {
     mydie "libcurl was not created (libcurl$libext)";
 }
 
-if (-f "src/curl$binext") {
+if(-f "src/curl$binext") {
     logit "curl was created fine (curl$binext)";
 }
 else {
     mydie "curl was not created (curl$binext)";
 }
 
-if (!$crosscompile || (($extvercmd ne '') && (-x $extvercmd))) {
+if(!$crosscompile || (($extvercmd ne '') && (-x $extvercmd))) {
     logit "display curl${binext} --version output";
     my $cmd = ($extvercmd ne '' ? $extvercmd.' ' : '')."./src/curl${binext} --version|";
     open($f, "<", $cmd);
     while(<$f>) {
         # strip CR from output on non-Windows platforms (WINE on Linux)
-        s/\r// if ($^O ne 'MSWin32');
+        s/\r// if($^O ne 'MSWin32');
         print;
     }
     close($f);
@@ -699,8 +693,8 @@ if($configurebuild && !$crosscompile) {
         chdir "$pwd/$build/docs/examples";
         logit_spaced "build examples";
         open($f, "-|", "$make -i 2>&1") or die;
-        open(my $log, ">", "$buildlog") or die;
-        while (<$f>) {
+        open(my $log, ">", $buildlog) or die;
+        while(<$f>) {
             s/$pwd//g;
             print;
             print $log $_;
@@ -716,7 +710,7 @@ if($configurebuild && !$crosscompile) {
     }
     logit "$make -k ${o}test-full";
     open($f, "-|", "$make -k ${o}test-full 2>&1") or die;
-    open(my $log, ">", "$buildlog") or die;
+    open(my $log, ">", $buildlog) or die;
     while(<$f>) {
         s/$pwd//g;
         print;
@@ -746,8 +740,8 @@ else {
             chdir "$pwd/$build/docs/examples";
             logit_spaced "build examples";
             open($f, "-|", "$make -i 2>&1") or die;
-            open(my $log, ">", "$buildlog") or die;
-            while (<$f>) {
+            open(my $log, ">", $buildlog) or die;
+            while(<$f>) {
                 s/$pwd//g;
                 print;
                 print $log $_;
@@ -761,8 +755,8 @@ else {
             chdir "$pwd/$build/tests";
             logit_spaced "build test harness";
             open(my $f, "-|", "$make -i 2>&1") or die;
-            open(my $log, ">", "$buildlog") or die;
-            while (<$f>) {
+            open(my $log, ">", $buildlog) or die;
+            while(<$f>) {
                 s/$pwd//g;
                 print;
                 print $log $_;
@@ -771,7 +765,7 @@ else {
             close($log);
             chdir "$pwd/$build";
         }
-        logit_spaced "cross-compiling, can't run tests";
+        logit_spaced "cross-compiling, cannot run tests";
     }
     # dummy message to feign success
     print "TESTDONE: 1 tests out of 0 (dummy message)\n";

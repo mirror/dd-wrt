@@ -21,16 +21,7 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "test.h"
-
-#include "memdebug.h"
-
-
-static char testdata[] =
-  "this is what we post to the silly web server";
-
-static const char testname[] = "fieldname";
-
+#include "first.h"
 
 /* This test attempts to use all form API features that are not
  * used elsewhere.
@@ -39,18 +30,17 @@ static const char testname[] = "fieldname";
 /* curl_formget callback to count characters. */
 static size_t count_chars(void *userp, const char *buf, size_t len)
 {
-  size_t *pcounter = (size_t *) userp;
+  size_t *pcounter = (size_t *)userp;
 
-  (void) buf;
+  (void)buf;
   *pcounter += len;
   return len;
 }
 
-
-CURLcode test(char *URL)
+static CURLcode test_lib650(const char *URL)
 {
   CURL *curl = NULL;
-  CURLcode res = TEST_ERR_MAJOR_BAD;
+  CURLcode result = TEST_ERR_MAJOR_BAD;
   CURLFORMcode formrc;
   struct curl_slist *headers, *headers2 = NULL;
   struct curl_httppost *formpost = NULL;
@@ -58,7 +48,9 @@ CURLcode test(char *URL)
   struct curl_forms formarray[3];
   size_t formlength = 0;
   char flbuf[32];
-  long contentlength = 0;
+
+  static const char testname[] = "fieldname";
+  static char testdata[] = "this is what we post to the silly web server";
 
   if(curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
     curl_mfprintf(stderr, "curl_global_init() failed\n");
@@ -86,29 +78,27 @@ CURLcode test(char *URL)
                         CURLFORM_CONTENTHEADER, headers,
                         CURLFORM_END);
   if(formrc) {
-    curl_mprintf("curl_formadd(1) = %d\n", (int) formrc);
+    curl_mprintf("curl_formadd(1) = %d\n", (int)formrc);
     goto test_cleanup;
   }
-
-  contentlength = (long)(strlen(testdata) - 1);
 
   /* Use a form array for the non-copy test. */
   formarray[0].option = CURLFORM_PTRCONTENTS;
   formarray[0].value = testdata;
   formarray[1].option = CURLFORM_CONTENTSLENGTH;
-  formarray[1].value = (char *)(size_t)contentlength;
+  formarray[1].value = (char *)(strlen(testdata) - 1);
   formarray[2].option = CURLFORM_END;
   formarray[2].value = NULL;
   formrc = curl_formadd(&formpost,
                         &lastptr,
                         CURLFORM_PTRNAME, testname,
-                        CURLFORM_NAMELENGTH, strlen(testname) - 1,
+                        CURLFORM_NAMELENGTH, (long)(sizeof(testname) - 2),
                         CURLFORM_ARRAY, formarray,
                         CURLFORM_FILENAME, "remotefile.txt",
                         CURLFORM_END);
 
   if(formrc) {
-    curl_mprintf("curl_formadd(2) = %d\n", (int) formrc);
+    curl_mprintf("curl_formadd(2) = %d\n", (int)formrc);
     goto test_cleanup;
   }
 
@@ -128,7 +118,7 @@ CURLcode test(char *URL)
                         CURLFORM_END);
 
   if(formrc) {
-    curl_mprintf("curl_formadd(3) = %d\n", (int) formrc);
+    curl_mprintf("curl_formadd(3) = %d\n", (int)formrc);
     goto test_cleanup;
   }
 
@@ -139,7 +129,7 @@ CURLcode test(char *URL)
                         CURLFORM_FILECONTENT, libtest_arg2,
                         CURLFORM_END);
   if(formrc) {
-    curl_mprintf("curl_formadd(4) = %d\n", (int) formrc);
+    curl_mprintf("curl_formadd(4) = %d\n", (int)formrc);
     goto test_cleanup;
   }
 
@@ -147,10 +137,10 @@ CURLcode test(char *URL)
    * This is done before including stdin data because we want to reuse it
    * and stdin cannot be rewound.
    */
-  curl_formget(formpost, (void *) &formlength, count_chars);
+  curl_formget(formpost, (void *)&formlength, count_chars);
 
   /* Include length in data for external check. */
-  curl_msnprintf(flbuf, sizeof(flbuf), "%lu", (unsigned long) formlength);
+  curl_msnprintf(flbuf, sizeof(flbuf), "%zu", formlength);
 
   formrc = curl_formadd(&formpost,
                         &lastptr,
@@ -159,7 +149,7 @@ CURLcode test(char *URL)
                         CURLFORM_END);
 
   if(formrc) {
-    curl_mprintf("curl_formadd(5) = %d\n", (int) formrc);
+    curl_mprintf("curl_formadd(5) = %d\n", (int)formrc);
     goto test_cleanup;
   }
 
@@ -171,7 +161,7 @@ CURLcode test(char *URL)
                         CURLFORM_END);
 
   if(formrc) {
-    curl_mprintf("curl_formadd(6) = %d\n", (int) formrc);
+    curl_mprintf("curl_formadd(6) = %d\n", (int)formrc);
     goto test_cleanup;
   }
 
@@ -182,22 +172,22 @@ CURLcode test(char *URL)
   }
 
   /* First set the URL that is about to receive our POST. */
-  test_setopt(curl, CURLOPT_URL, URL);
+  easy_setopt(curl, CURLOPT_URL, URL);
 
   /* send a multi-part formpost */
-  test_setopt(curl, CURLOPT_HTTPPOST, formpost);
+  easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
 
   /* get verbose debug output please */
-  test_setopt(curl, CURLOPT_VERBOSE, 1L);
+  easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
-  test_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-  test_setopt(curl, CURLOPT_POSTREDIR, (long)CURL_REDIR_POST_301);
+  easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+  easy_setopt(curl, CURLOPT_POSTREDIR, CURL_REDIR_POST_301);
 
   /* include headers in the output */
-  test_setopt(curl, CURLOPT_HEADER, 1L);
+  easy_setopt(curl, CURLOPT_HEADER, 1L);
 
-  /* Perform the request, res will get the return code */
-  res = curl_easy_perform(curl);
+  /* Perform the request, result gets the return code */
+  result = curl_easy_perform(curl);
 
 test_cleanup:
 
@@ -210,5 +200,5 @@ test_cleanup:
 
   curl_global_cleanup();
 
-  return res;
+  return result;
 }

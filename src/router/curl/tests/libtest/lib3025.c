@@ -21,13 +21,11 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "test.h"
+#include "first.h"
 
-#include "memdebug.h"
-
-CURLcode test(char *URL)
+static CURLcode test_lib3025(const char *URL)
 {
-  CURLcode res;
+  CURLcode result;
   CURL *curl;
   struct curl_slist *icy = NULL;
 
@@ -44,12 +42,12 @@ CURLcode test(char *URL)
   }
 
   icy = curl_slist_append(icy, "ICY 200 OK");
-  test_setopt(curl, CURLOPT_HTTP200ALIASES, icy);
-  test_setopt(curl, CURLOPT_VERBOSE, 1L);
-  test_setopt(curl, CURLOPT_HEADER, 1L);
-  test_setopt(curl, CURLOPT_URL, URL);
+  easy_setopt(curl, CURLOPT_HTTP200ALIASES, icy);
+  easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+  easy_setopt(curl, CURLOPT_HEADER, 1L);
+  easy_setopt(curl, CURLOPT_URL, URL);
 
-  res = curl_easy_perform(curl);
+  result = curl_easy_perform(curl);
 
 test_cleanup:
 
@@ -57,5 +55,5 @@ test_cleanup:
   curl_slist_free_all(icy);
   curl_global_cleanup();
 
-  return res;
+  return result;
 }

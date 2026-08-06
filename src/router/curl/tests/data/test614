@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -7,17 +8,16 @@ directory
 </keywords>
 </info>
 
-#
 # Server-side
 <reply>
 <datacheck>
 d?????????    N U         U               N ???  N NN:NN asubdir
+-rw???????    1 U         U               0 Jan  1  2000 emptyfile.txt
 -r-???????    1 U         U              37 Jan  1  2000 plainfile.txt
 -r-???????    1 U         U              47 Dec 31  2000 rofile.txt
 </datacheck>
 </reply>
 
-#
 # Client-side
 <client>
 <server>
@@ -34,7 +34,6 @@ SFTP pre-quote chmod
 </command>
 </client>
 
-#
 # Verify data after the test has been "shot"
 <verify>
 <postcheck>

@@ -21,57 +21,55 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "test.h"
+#include "first.h"
 
-#include "memdebug.h"
-
-static char testdata[]=
-  "this is what we post to the silly web server\n";
-
-struct WriteThis {
-  char *readptr;
+struct t554_WriteThis {
+  const char *readptr;
   size_t sizeleft;
 };
 
-static size_t read_callback(char *ptr, size_t size, size_t nmemb, void *userp)
+static size_t t554_read_cb(char *ptr, size_t size, size_t nmemb, void *userp)
 {
-#ifdef LIB587
+  struct t554_WriteThis *pooh = (struct t554_WriteThis *)userp;
+
+  if(size * nmemb < 1)
+    return 0;
+
+  if(pooh->sizeleft) {
+    *ptr = pooh->readptr[0];  /* copy one single byte */
+    pooh->readptr++;          /* advance pointer */
+    pooh->sizeleft--;         /* less data left */
+    return 1;                 /* we return 1 byte at a time! */
+  }
+
+  return 0;                   /* no more data left to deliver */
+}
+
+static size_t t587_read_cb(char *ptr, size_t size, size_t nmemb, void *userp)
+{
   (void)ptr;
   (void)size;
   (void)nmemb;
   (void)userp;
   return CURL_READFUNC_ABORT;
-#else
-
-  struct WriteThis *pooh = (struct WriteThis *)userp;
-
-  if(size*nmemb < 1)
-    return 0;
-
-  if(pooh->sizeleft) {
-    *ptr = pooh->readptr[0]; /* copy one single byte */
-    pooh->readptr++;                 /* advance pointer */
-    pooh->sizeleft--;                /* less data left */
-    return 1;                        /* we return 1 byte at a time! */
-  }
-
-  return 0;                         /* no more data left to deliver */
-#endif
 }
 
-static CURLcode test_once(char *URL, bool oldstyle)
+static CURLcode t554_test_once(const char *URL, bool oldstyle)
 {
+  static const char testdata[] =
+    "this is what we post to the silly web server\n";
+
   CURL *curl;
-  CURLcode res = CURLE_OK;
+  CURLcode result = CURLE_OK;
   CURLFORMcode formrc;
 
   struct curl_httppost *formpost = NULL;
   struct curl_httppost *lastptr = NULL;
-  struct WriteThis pooh;
-  struct WriteThis pooh2;
+  struct t554_WriteThis pooh;
+  struct t554_WriteThis pooh2;
 
   pooh.readptr = testdata;
-  pooh.sizeleft = strlen(testdata);
+  pooh.sizeleft = sizeof(testdata) - 1;
 
   /* Fill in the file upload field */
   if(oldstyle) {
@@ -90,7 +88,7 @@ static CURLcode test_once(char *URL, bool oldstyle)
                           CURLFORM_COPYNAME, "sendfile alternative",
                           CURLFORM_STREAM, &pooh,
                           CURLFORM_CONTENTLEN, (curl_off_t)pooh.sizeleft,
-                          CURLFORM_FILENAME, "file name 2",
+                          CURLFORM_FILENAME, "filename 2 ",
                           CURLFORM_END);
   }
 
@@ -101,7 +99,7 @@ static CURLcode test_once(char *URL, bool oldstyle)
      a file upload but still using the callback */
 
   pooh2.readptr = testdata;
-  pooh2.sizeleft = strlen(testdata);
+  pooh2.sizeleft = sizeof(testdata) - 1;
 
   /* Fill in the file upload field */
   formrc = curl_formadd(&formpost,
@@ -138,7 +136,7 @@ static CURLcode test_once(char *URL, bool oldstyle)
                         CURLFORM_COPYNAME, "somename",
                         CURLFORM_BUFFER, "somefile.txt",
                         CURLFORM_BUFFERPTR, "blah blah",
-                        CURLFORM_BUFFERLENGTH, (long)9,
+                        CURLFORM_BUFFERLENGTH, 9L,
                         CURLFORM_END);
 
   if(formrc)
@@ -153,28 +151,33 @@ static CURLcode test_once(char *URL, bool oldstyle)
   }
 
   /* First set the URL that is about to receive our POST. */
-  test_setopt(curl, CURLOPT_URL, URL);
+  easy_setopt(curl, CURLOPT_URL, URL);
 
   /* Now specify we want to POST data */
-  test_setopt(curl, CURLOPT_POST, 1L);
+  easy_setopt(curl, CURLOPT_POST, 1L);
 
   /* Set the expected POST size */
-  test_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)pooh.sizeleft);
+  easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)pooh.sizeleft);
 
   /* we want to use our own read function */
-  test_setopt(curl, CURLOPT_READFUNCTION, read_callback);
+  if(testnum == 587) {
+    easy_setopt(curl, CURLOPT_READFUNCTION, t587_read_cb);
+  }
+  else {
+    easy_setopt(curl, CURLOPT_READFUNCTION, t554_read_cb);
+  }
 
   /* send a multi-part formpost */
-  test_setopt(curl, CURLOPT_HTTPPOST, formpost);
+  easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
 
   /* get verbose debug output please */
-  test_setopt(curl, CURLOPT_VERBOSE, 1L);
+  easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
   /* include headers in the output */
-  test_setopt(curl, CURLOPT_HEADER, 1L);
+  easy_setopt(curl, CURLOPT_HEADER, 1L);
 
-  /* Perform the request, res will get the return code */
-  res = curl_easy_perform(curl);
+  /* Perform the request, result gets the return code */
+  result = curl_easy_perform(curl);
 
 test_cleanup:
 
@@ -184,23 +187,23 @@ test_cleanup:
   /* now cleanup the formpost chain */
   curl_formfree(formpost);
 
-  return res;
+  return result;
 }
 
-CURLcode test(char *URL)
+static CURLcode test_lib554(const char *URL)
 {
-  CURLcode res;
+  CURLcode result;
 
   if(curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
     curl_mfprintf(stderr, "curl_global_init() failed\n");
     return TEST_ERR_MAJOR_BAD;
   }
 
-  res = test_once(URL, TRUE); /* old */
-  if(!res)
-    res = test_once(URL, FALSE); /* new */
+  result = t554_test_once(URL, TRUE); /* old */
+  if(!result)
+    result = t554_test_once(URL, FALSE); /* new */
 
   curl_global_cleanup();
 
-  return res;
+  return result;
 }

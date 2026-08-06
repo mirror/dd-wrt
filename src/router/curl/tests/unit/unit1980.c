@@ -21,22 +21,13 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "curlcheck.h"
-
+#include "unitcheck.h"
 #include "http_aws_sigv4.h"
-#include "dynbuf.h"
 
-static CURLcode unit_setup(void)
+static CURLcode test_unit1980(const char *arg)
 {
-  return CURLE_OK;
-}
+  UNITTEST_BEGIN_SIMPLE
 
-static void unit_stop(void)
-{
-}
-
-UNITTEST_START
-{
 #if !defined(CURL_DISABLE_HTTP) && !defined(CURL_DISABLE_AWS)
   struct testcase {
     const char *testname;
@@ -82,6 +73,16 @@ UNITTEST_START
       "Param-3=Value3&Param=Value2&%E1%88%B4=Value1",
       "%E1%88%B4=Value1&Param=Value2&Param-3=Value3"
     },
+    {
+      "space-plus",
+      "p3= &p1=+&p2=%20",
+      "p1=%20&p2=%20&p3=%20"
+    },
+    {
+      "2b-incoming",
+      "p3=%2b&p1=+",
+      "p1=%20&p3=%2B"
+    },
   };
 
   size_t i;
@@ -90,7 +91,7 @@ UNITTEST_START
     struct dynbuf canonical_query;
 
     char buffer[1024];
-    char *canonical_query_ptr;
+    const char *canonical_query_ptr;
     int result;
     int msnprintf_result;
 
@@ -106,10 +107,11 @@ UNITTEST_START
                                       testcases[i].canonical_query);
     fail_unless(msnprintf_result >= 0, "curl_msnprintf fails");
     fail_unless(!result && canonical_query_ptr &&
-                !strcmp(canonical_query_ptr, testcases[i].canonical_query),
+                  !strcmp(canonical_query_ptr, testcases[i].canonical_query),
                 buffer);
     curlx_dyn_free(&canonical_query);
   }
-#endif /* !defined(CURL_DISABLE_HTTP) && !defined(CURL_DISABLE_AWS) */
+#endif /* !CURL_DISABLE_HTTP && !CURL_DISABLE_AWS */
+
+  UNITTEST_END_SIMPLE
 }
-UNITTEST_STOP

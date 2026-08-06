@@ -21,12 +21,9 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "test.h"
+#include "first.h"
 
 #include "testtrace.h"
-#include "memdebug.h"
-
-#ifdef LIB585
 
 static int testcounter;
 
@@ -37,7 +34,7 @@ static curl_socket_t tst_opensocket(void *clientp,
   (void)clientp;
   (void)purpose;
   curl_mprintf("[OPEN] counter: %d\n", ++testcounter);
-  return socket(addr->family, addr->socktype, addr->protocol);
+  return CURL_SOCKET(addr->family, addr->socktype, addr->protocol);
 }
 
 static int tst_closesocket(void *clientp, curl_socket_t sock)
@@ -54,16 +51,11 @@ static void setupcallbacks(CURL *curl)
   testcounter = 0;
 }
 
-#else
-#define setupcallbacks(x) Curl_nop_stmt
-#endif
-
-
-CURLcode test(char *URL)
+static CURLcode test_lib500(const char *URL)
 {
-  CURLcode res;
+  CURLcode result;
   CURL *curl;
-  char *ipstr = NULL;
+  const char *ipstr = NULL;
 
   if(curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
     curl_mfprintf(stderr, "curl_global_init() failed\n");
@@ -77,26 +69,27 @@ CURLcode test(char *URL)
     return TEST_ERR_MAJOR_BAD;
   }
 
-  test_setopt(curl, CURLOPT_URL, URL);
-  test_setopt(curl, CURLOPT_HEADER, 1L);
+  easy_setopt(curl, CURLOPT_URL, URL);
+  easy_setopt(curl, CURLOPT_HEADER, 1L);
 
-  libtest_debug_config.nohex = 1;
-  libtest_debug_config.tracetime = 1;
-  test_setopt(curl, CURLOPT_DEBUGDATA, &libtest_debug_config);
-  test_setopt(curl, CURLOPT_DEBUGFUNCTION, libtest_debug_cb);
-  test_setopt(curl, CURLOPT_VERBOSE, 1L);
+  debug_config.nohex = TRUE;
+  debug_config.tracetime = TRUE;
+  easy_setopt(curl, CURLOPT_DEBUGDATA, &debug_config);
+  easy_setopt(curl, CURLOPT_DEBUGFUNCTION, libtest_debug_cb);
+  easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
   if(libtest_arg3 && !strcmp(libtest_arg3, "activeftp"))
-    test_setopt(curl, CURLOPT_FTPPORT, "-");
+    easy_setopt(curl, CURLOPT_FTPPORT, "-");
 
-  setupcallbacks(curl);
+  if(testnum == 585 || testnum == 586 || testnum == 595 || testnum == 596)
+    setupcallbacks(curl);
 
-  res = curl_easy_perform(curl);
+  result = curl_easy_perform(curl);
 
-  if(!res) {
-    res = curl_easy_getinfo(curl, CURLINFO_PRIMARY_IP, &ipstr);
+  if(!result) {
+    result = curl_easy_getinfo(curl, CURLINFO_PRIMARY_IP, &ipstr);
     if(libtest_arg2) {
-      FILE *moo = fopen(libtest_arg2, "wb");
+      FILE *moo = curlx_fopen(libtest_arg2, "wb");
       if(moo) {
         curl_off_t time_namelookup;
         curl_off_t time_connect;
@@ -115,7 +108,7 @@ CURLcode test(char *URL)
                           &time_starttransfer);
         curl_easy_getinfo(curl, CURLINFO_TOTAL_TIME_T, &time_total);
 
-        /* since the timing will always vary we only compare relative
+        /* since the timing always varies we only compare relative
            differences between these 5 times */
         if(time_namelookup > time_connect) {
           curl_mfprintf(moo, "namelookup vs connect: %" CURL_FORMAT_CURL_OFF_T
@@ -169,7 +162,7 @@ CURLcode test(char *URL)
                         (long)(time_total % 1000000));
         }
 
-        fclose(moo);
+        curlx_fclose(moo);
       }
     }
   }
@@ -179,7 +172,5 @@ test_cleanup:
   curl_easy_cleanup(curl);
   curl_global_cleanup();
 
-  return res;
+  return result;
 }
-
-#undef setupcallbacks

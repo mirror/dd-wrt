@@ -22,21 +22,18 @@
 # SPDX-License-Identifier: curl
 #
 ###########################################################################
-#
-#
 
 use strict;
 use warnings;
 
-# we may get the dir root pointed out
-my $root=$ARGV[0] || ".";
+# we may get the directory root pointed out
+my $root = $ARGV[0] || ".";
 
 my %typecheck; # from the include file
 my %enum; # from libcurl-errors.3
 
 sub gettypecheck {
-    open(my $f, "<", "$root/include/curl/typecheck-gcc.h")
-        || die "no typecheck file";
+    open(my $f, "<", "$root/include/curl/typecheck-gcc.h") or die "no typecheck file";
     while(<$f>) {
         chomp;
         if($_ =~ /\(option\) == (CURL[^ \)]*)/) {
@@ -47,8 +44,8 @@ sub gettypecheck {
 }
 
 sub getinclude {
-    open(my $f, "<", "$root/include/curl/curl.h")
-        || die "no curl.h";
+    my $f;
+    open($f, "<", "$root/include/curl/curl.h") or die "no curl.h";
     while(<$f>) {
         if($_ =~ /\((CURLOPT[^,]*), (CURLOPTTYPE_[^,]*)/) {
             my ($opt, $type) = ($1, $2);
@@ -61,6 +58,17 @@ sub getinclude {
     $enum{"CURLOPT_CONV_FROM_NETWORK_FUNCTION"}++;
     $enum{"CURLOPT_CONV_FROM_UTF8_FUNCTION"}++;
     $enum{"CURLOPT_CONV_TO_NETWORK_FUNCTION"}++;
+    close($f);
+
+    open($f, "<", "$root/include/curl/multi.h") or die "no curl.h";
+    while(<$f>) {
+        if($_ =~ /\((CURLMOPT[^,]*), (CURLOPTTYPE_[^,]*)/) {
+            my ($opt, $type) = ($1, $2);
+            if($type !~ /LONG|OFF_T/) {
+                $enum{$opt}++;
+            }
+        }
+    }
     close($f);
 }
 

@@ -23,8 +23,11 @@
 #
 ###########################################################################
 
+use strict;
+use warnings;
+
 my $varname = "var";
-if($ARGV[0] eq "--var") {
+if(@ARGV && $ARGV[0] eq "--var") {
     shift;
     $varname = shift @ARGV;
 }
@@ -36,15 +39,13 @@ print <<HEAD
  * NEVER EVER edit this manually, fix the mk-file-embed.pl script instead!
  */
 /* !checksrc! disable COPYRIGHT all */
-#ifndef CURL_DECLARED_${varname_upper}
-#define CURL_DECLARED_${varname_upper}
-extern const unsigned char ${varname}[];
-#endif
+#include "tool_setup.h"
+
 const unsigned char ${varname}[] = {
 HEAD
     ;
 
-while (<STDIN>) {
+while(<STDIN>) {
     my $line = $_;
     foreach my $n (split //, $line) {
         my $ord = ord($n);

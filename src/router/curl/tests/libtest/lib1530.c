@@ -21,10 +21,7 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-
-#include "test.h"
-
-#include "memdebug.h"
+#include "first.h"
 
 static curl_socket_t opensocket(void *clientp,
                                 curlsocktype purpose,
@@ -37,10 +34,10 @@ static curl_socket_t opensocket(void *clientp,
   return CURL_SOCKET_BAD;
 }
 
-CURLcode test(char *URL)
+static CURLcode test_lib1530(const char *URL)
 {
   CURL *curl = NULL;
-  CURLcode res = CURLE_FAILED_INIT;
+  CURLcode result = CURLE_FAILED_INIT;
   (void)URL;
 
   if(curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
@@ -55,16 +52,16 @@ CURLcode test(char *URL)
     return TEST_ERR_MAJOR_BAD;
   }
 
-  test_setopt(curl, CURLOPT_URL, "http://99.99.99.99:9999");
-  test_setopt(curl, CURLOPT_VERBOSE, 1L);
-  test_setopt(curl, CURLOPT_OPENSOCKETFUNCTION, opensocket);
+  easy_setopt(curl, CURLOPT_URL, "http://99.99.99.99:9999");
+  easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+  easy_setopt(curl, CURLOPT_OPENSOCKETFUNCTION, opensocket);
 
-  res = curl_easy_perform(curl);
+  result = curl_easy_perform(curl);
 
 test_cleanup:
 
   curl_easy_cleanup(curl);
   curl_global_cleanup();
 
-  return res;
+  return result;
 }
