@@ -330,6 +330,7 @@ include rules/privoxy.mk
 include rules/kobs-ng.mk
 include rules/lighttpd.mk
 include rules/curl.mk
+include rules/curl-bearssl.mk
 include rules/transmission.mk
 include rules/libevent.mk
 include rules/tor.mk
