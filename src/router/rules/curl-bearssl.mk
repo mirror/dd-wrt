@@ -1,13 +1,5 @@
 curl-bearssl-install:
-	$(MAKE) -C bearssl/curl/build_static install DESTDIR=$(INSTALLDIR)/curl-bearssl
-	rm -f $(INSTALLDIR)/curl-bearssl/usr/bin/curl-config
-	rm -rf $(INSTALLDIR)/curl-bearssl/usr/include
-	rm -rf $(INSTALLDIR)/curl-bearssl/usr/lib/pkgconfig
-	rm -f $(INSTALLDIR)/curl-bearssl/usr/lib/*.a
-	rm -f $(INSTALLDIR)/curl-bearssl/usr/lib/*.la
-	rm -rf $(INSTALLDIR)/curl-bearssl/usr/share
-	mkdir -p $(INSTALLDIR)/curl-bearssl/etc/ssl/certs
-	cp $(TOP)/bearssl/curl/build_static/lib/ca-bundle.crt $(INSTALLDIR)/curl/etc/ssl/certs/ca-certificates.crt
+	@true
 
 curl-bearssl:
 	$(MAKE) -C bearssl/curl/build_static
@@ -96,4 +88,3 @@ curl-bearssl-configure:
 	lt_cv_sys_global_symbol_to_cdecl="sed -n -e 's/^T .* \\(.*\\)\$$/extern int \\1();/p' -e 's/^[ABCDGIRSTW][ABCDGIRSTW]* .* \\(.*\\)\$$/extern char \\1;/p'"
 
 	$(MAKE) -C bearssl/curl/build_static
-	$(MAKE) -C bearssl/curl/build_static ca-bundle
