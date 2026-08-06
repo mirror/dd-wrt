@@ -9,6 +9,7 @@ zfs-configure: libtirpc libudev openssl zlib curl ncurses util-linux
 		--libdir=/usr/lib \
 		--host=$(ARCH)-linux \
 		--disable-pyzfs \
+		--without-libunwind \
 		LIBTIRPC_CFLAGS="-I$(TOP)/libtirpc" \
 		LIBTIRPC_LIBS="-L$(TOP)/libtirpc/src/.libs -ltirpc" \
 		LIBUDEV_CFLAGS="-I$(TOP)/libudev/src/libudev" \
