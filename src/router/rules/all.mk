@@ -131,6 +131,10 @@ ifeq ($(CONFIG_NEWPORT),y)
 export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
+ifeq ($(CONFIG_NORTHSTAR),y)
+export SSLPATH=$(TOP)/openssl3
+include rules/openssl3.mk
+endif
 ifeq ($(CONFIG_ALPINE),y)
 export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
