@@ -107,39 +107,58 @@ include rules/libgd.mk
 include rules/libmcrypt.mk
 include rules/php8.mk
 include rules/openssl.mk
+CURLPATH=$(TOP)/curl-legacy
 ifeq ($(CONFIG_IPQ6018),y)
+CONFIG_OPENSSL3=y
+export CURLPATH=$(TOP)/curl
 export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
 ifeq ($(CONFIG_MVEBU),y)
+CONFIG_OPENSSL3=y
+export CURLPATH=$(TOP)/curl
 export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
 ifeq ($(CONFIG_X86),y)
+CONFIG_OPENSSL3=y
+export CURLPATH=$(TOP)/curl
 export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
 ifeq ($(CONFIG_IPQ806X),y)
+CONFIG_OPENSSL3=y
+export CURLPATH=$(TOP)/curl
 export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
 ifeq ($(CONFIG_OCTEON),y)
+CONFIG_OPENSSL3=y
+export CURLPATH=$(TOP)/curl
 export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
 ifeq ($(CONFIG_NEWPORT),y)
+CONFIG_OPENSSL3=y
+export CURLPATH=$(TOP)/curl
 export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
 ifeq ($(CONFIG_NORTHSTAR),y)
+CONFIG_OPENSSL3=y
+export CURLPATH=$(TOP)/curl
 export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
 ifeq ($(CONFIG_ALPINE),y)
+CONFIG_OPENSSL3=y
+export CURLPATH=$(TOP)/curl
 export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
 ifeq ($(CONFIG_MT7621),y)
+CONFIG_OPENSSL3=y
+export CURLPATH=$(TOP)/curl
 export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
@@ -148,6 +167,8 @@ endif
 #include rules/openssl3.mk
 #endif
 ifeq ($(CONFIG_VENTANA),y)
+CONFIG_OPENSSL3=y
+export CURLPATH=$(TOP)/curl
 export SSLPATH=$(TOP)/openssl3
 include rules/openssl3.mk
 endif
@@ -337,7 +358,11 @@ include rules/sqlite.mk
 include rules/privoxy.mk
 include rules/kobs-ng.mk
 include rules/lighttpd.mk
+ifeq ($(CONFIG_OPENSSL3),y)
 include rules/curl.mk
+else
+include rules/curl-legacy.mk
+endif
 include rules/curl-bearssl.mk
 include rules/transmission.mk
 include rules/libevent.mk
