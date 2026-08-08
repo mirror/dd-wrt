@@ -59,17 +59,20 @@ void show_roaming(webs_t wp, char *var)
 	int v_show_owe = 0;
 	int v_show_wparadius = 0;
 	int v_no_wpa1 = 0;
-	
-	if (strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk2-sha256") || strstr(akm, "psk3"))
-		v_show_preshared = 1;
-	if (strstr(akm, "psk") || strstr(akm, "wpa"))
-		v_no_wpa1 = 1;
-	if (strstr(akm, "owe"))
-		v_show_owe = 1;
-	if (strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256") || strstr(akm, "wpa2-sha384") ||
-	    strstr(akm, "wpa3") || strstr(akm, "wpa3-192") || strstr(akm, "wpa3-128"))
-		v_show_wparadius = 1;
+	char word[64];
+	const char *next;
 
+	foreach(word, akm, next) {
+		if (!strcmp(akm, "psk") || !strcmp(akm, "psk2") || !strcmp(akm, "psk2-sha256") || !strcmp(akm, "psk3"))
+			v_show_preshared = 1;
+		if (!strcmp(akm, "psk") || !strcmp(akm, "wpa"))
+			v_no_wpa1 = 1;
+		if (!strcmp(akm, "owe"))
+			v_show_owe = 1;
+		if (!strcmp(akm, "wpa") || !strcmp(akm, "wpa2") || !strcmp(akm, "wpa2-sha256") || !strcmp(akm, "wpa2-sha384") ||
+		    !strcmp(akm, "wpa3") || !strcmp(akm, "wpa3-192") || !strcmp(akm, "wpa3-128"))
+			v_show_wparadius = 1;
+	}
 	char vvar[32];
 	strcpy(vvar, var);
 	rep(vvar, '.', 'X');
