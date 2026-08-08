@@ -1,23 +1,31 @@
 /* chunkset_avx2.c -- AVX2 inline functions to copy small data chunks.
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
-#include "zbuild.h"
-#include "zmemory.h"
 
 #ifdef X86_AVX2
-#include "arch/generic/chunk_256bit_perm_idx_lut.h"
+
+#include "zbuild.h"
+#include "zsanitizer.h"
+#include "zmemory.h"
+
+#include "arch/shared/chunk_256bit_perm_idx_lut.h"
 #include <immintrin.h>
 #include "x86_intrins.h"
 
 typedef __m256i chunk_t;
 typedef __m128i halfchunk_t;
 
+#define HAVE_CHUNKMEMSET_1
 #define HAVE_CHUNKMEMSET_2
 #define HAVE_CHUNKMEMSET_4
 #define HAVE_CHUNKMEMSET_8
 #define HAVE_CHUNKMEMSET_16
 #define HAVE_CHUNK_MAG
 #define HAVE_HALF_CHUNK
+
+static inline void chunkmemset_1(uint8_t *from, chunk_t *chunk) {
+    *chunk = _mm256_set1_epi8(*from);
+}
 
 static inline void chunkmemset_2(uint8_t *from, chunk_t *chunk) {
     *chunk = _mm256_set1_epi16(zng_memread_2(from));
@@ -33,7 +41,7 @@ static inline void chunkmemset_8(uint8_t *from, chunk_t *chunk) {
 
 static inline void chunkmemset_16(uint8_t *from, chunk_t *chunk) {
     /* See explanation in chunkset_avx512.c */
-#if defined(_MSC_VER) && _MSC_VER <= 1900
+#if defined(_MSC_VER) && _MSC_VER < 1920
     halfchunk_t half = _mm_loadu_si128((__m128i*)from);
     *chunk = _mm256_inserti128_si256(_mm256_castsi128_si256(half), half, 1);
 #else
@@ -49,7 +57,7 @@ static inline void storechunk(uint8_t *out, chunk_t *chunk) {
     _mm256_storeu_si256((__m256i *)out, *chunk);
 }
 
-static inline chunk_t GET_CHUNK_MAG(uint8_t *buf, uint32_t *chunk_rem, uint32_t dist) {
+static inline chunk_t GET_CHUNK_MAG(uint8_t *buf, size_t *chunk_rem, size_t dist) {
     lut_rem_pair lut_rem = perm_idx_lut[dist - 3];
     __m256i ret_vec;
     /* While technically we only need to read 4 or 8 bytes into this vector register for a lot of cases, GCC is
@@ -98,7 +106,7 @@ static inline chunk_t halfchunk2whole(halfchunk_t *chunk) {
     return _mm256_zextsi128_si256(*chunk);
 }
 
-static inline halfchunk_t GET_HALFCHUNK_MAG(uint8_t *buf, uint32_t *chunk_rem, uint32_t dist) {
+static inline halfchunk_t GET_HALFCHUNK_MAG(uint8_t *buf, size_t *chunk_rem, size_t dist) {
     lut_rem_pair lut_rem = perm_idx_lut[dist - 3];
     __m128i perm_vec, ret_vec;
     __msan_unpoison(buf + dist, 16 - dist);

@@ -45,10 +45,10 @@ public:
                 misalign = 0;
             else
                 misalign += (DO_ALIGNED) ? 16 : 1;
-        }
 
-        // Prevent the result from being optimized away
-        benchmark::DoNotOptimize(hash);
+            // Prevent the result from being optimized away
+            benchmark::DoNotOptimize(hash);
+        }
     }
 
     void TearDown(const ::benchmark::State&) {
@@ -62,6 +62,7 @@ public:
     BENCHMARK_DEFINE_F(adler32_copy, name)(benchmark::State& state) { \
         if (!(support_flag)) { \
             state.SkipWithError("CPU does not support " #name); \
+            return; \
         } \
         Bench(state, copyfunc, 0); \
     } \
@@ -73,6 +74,7 @@ public:
     BENCHMARK_DEFINE_F(adler32_copy, ALIGNED_NAME(name))(benchmark::State& state) { \
         if (!(support_flag)) { \
             state.SkipWithError("CPU does not support " #name); \
+            return; \
         } \
         Bench(state, copyfunc, 1); \
     } \
@@ -86,6 +88,7 @@ public:
     BENCHMARK_DEFINE_F(adler32_copy, MEMCPY_NAME(name))(benchmark::State& state) { \
         if (!(support_flag)) { \
             state.SkipWithError("CPU does not support " #name); \
+            return; \
         } \
         Bench(state, [](uint32_t init_sum, unsigned char *dst, \
                         const uint8_t *buf, size_t len) -> uint32_t { \
@@ -100,6 +103,7 @@ public:
     BENCHMARK_DEFINE_F(adler32_copy, MEMCPY_ALIGNED_NAME(name))(benchmark::State& state) { \
         if (!(support_flag)) { \
             state.SkipWithError("CPU does not support " #name); \
+            return; \
         } \
         Bench(state, [](uint32_t init_sum, unsigned char *dst, \
                         const uint8_t *buf, size_t len) -> uint32_t { \
@@ -128,7 +132,9 @@ public:
     BENCHMARK_ADLER32_COPY_ONLY(name, copyfunc, support_flag)
 #endif
 
+#ifdef ADLER32_FALLBACK
 BENCHMARK_ADLER32_COPY(c, adler32_c, adler32_copy_c, 1);
+#endif
 
 #ifdef DISABLE_RUNTIME_CPU_DETECTION
 BENCHMARK_ADLER32_COPY(native, native_adler32, native_adler32_copy, 1);
@@ -136,6 +142,9 @@ BENCHMARK_ADLER32_COPY(native, native_adler32, native_adler32_copy, 1);
 
 #ifdef ARM_NEON
 BENCHMARK_ADLER32_COPY(neon, adler32_neon, adler32_copy_neon, test_cpu_features.arm.has_neon);
+#endif
+#ifdef ARM_NEON_DOTPROD
+BENCHMARK_ADLER32_COPY(neon_dotprod, adler32_neon_dotprod, adler32_copy_neon_dotprod, test_cpu_features.arm.has_neon && test_cpu_features.arm.has_dotprod);
 #endif
 
 #ifdef PPC_VMX
@@ -159,6 +168,11 @@ BENCHMARK_ADLER32_COPY_ONLY(sse42, adler32_copy_sse42, test_cpu_features.x86.has
 #ifdef X86_AVX2
 BENCHMARK_ADLER32_COPY(avx2, adler32_avx, adler32_copy_avx2, test_cpu_features.x86.has_avx2);
 #endif
+/*
+#ifdef X86_AVX2VNNI
+BENCHMARK_ADLER32_COPY(avx2vnni, adler32_avx2_vnni, adler32_copy_avx2_vnni, test_cpu_features.x86.has_avx2vnni);
+#endif
+*/
 #ifdef X86_AVX512
 BENCHMARK_ADLER32_COPY(avx512, adler32_avx512, adler32_copy_avx512, test_cpu_features.x86.has_avx512_common);
 #endif

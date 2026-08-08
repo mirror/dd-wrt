@@ -92,6 +92,7 @@ void Z_INTERNAL zng_tr_init(deflate_state *s) {
 
     s->bi_buf = 0;
     s->bi_valid = 0;
+    s->bi_used = 0;
 #ifdef ZLIB_DEBUG
     s->compressed_len = 0L;
     s->bits_sent = 0L;
@@ -117,7 +118,7 @@ static void init_block(deflate_state *s) {
 
     s->dyn_ltree[END_BLOCK].Freq = 1;
     s->opt_len = s->static_len = 0;
-    s->sym_next = s->matches = 0;
+    s->sym_next = 0;
 }
 
 #define SMALLEST 1
@@ -592,7 +593,7 @@ static void send_all_trees(deflate_state *s, int lcodes, int dcodes, int blcodes
 /* ===========================================================================
  * Send a stored block
  */
-void Z_INTERNAL zng_tr_stored_block(deflate_state *s, char *buf, uint32_t stored_len, int last) {
+void Z_INTERNAL zng_tr_stored_block(deflate_state *s, unsigned char *buf, uint32_t stored_len, int last) {
     /* buf: input block */
     /* stored_len: length of input block */
     /* last: one if this is the last block for a file */
@@ -604,7 +605,7 @@ void Z_INTERNAL zng_tr_stored_block(deflate_state *s, char *buf, uint32_t stored
     cmpr_bits_add(s, 32);
     sent_bits_add(s, 32);
     if (stored_len) {
-        memcpy(s->pending_buf + s->pending, (unsigned char *)buf, stored_len);
+        memcpy(s->pending_buf + s->pending, buf, stored_len);
         s->pending += stored_len;
         cmpr_bits_add(s, stored_len << 3);
         sent_bits_add(s, stored_len << 3);
@@ -625,7 +626,7 @@ void Z_INTERNAL zng_tr_align(deflate_state *s) {
  * Determine the best encoding for the current block: dynamic trees, static
  * trees or store, and write out the encoded block.
  */
-void Z_INTERNAL zng_tr_flush_block(deflate_state *s, char *buf, uint32_t stored_len, int last) {
+void Z_INTERNAL zng_tr_flush_block(deflate_state *s, unsigned char *buf, uint32_t stored_len, int last) {
     /* buf: input block, or NULL if too old */
     /* stored_len: length of input block */
     /* last: one if this is the last block for a file */
@@ -708,6 +709,23 @@ void Z_INTERNAL zng_tr_flush_block(deflate_state *s, char *buf, uint32_t stored_
 /* ===========================================================================
  * Send the block data compressed using the given Huffman trees
  */
+#if !defined(LIT_MEM) && OPTIMAL_CMP >= 64
+/* One 64-bit little-endian load at sx spans the next three symbols' dist fields
+ * (bits 0..15, 24..39, 48..63) and two of their literals (bits 16..23, 40..47). */
+#define LIT3_DIST_MASK 0xFFFF00FFFF00FFFFULL
+
+/* The second symbol's dist field alone, which separates a one-literal run from a two-literal
+ * one once the all-three case has been ruled out. */
+#define LIT3_DIST1_MASK 0x000000FFFF000000ULL
+
+/* Prepend one literal below whatever tail already holds, so entering the switch at case k
+ * emits exactly the first k symbols in order. */
+Z_FORCEINLINE static void lit_prepend(const ct_data *ltree, unsigned lc, uint64_t *tail, uint32_t *tbits) {
+    *tail = (uint64_t)ltree[lc].Code | (*tail << ltree[lc].Len);
+    *tbits += ltree[lc].Len;
+}
+#endif
+
 static void compress_block(deflate_state *s, const ct_data *ltree, const ct_data *dtree) {
     /* ltree: literal tree */
     /* dtree: distance tree */
@@ -724,20 +742,66 @@ static void compress_block(deflate_state *s, const ct_data *ltree, const ct_data
     unsigned char *sym_buf = s->sym_buf;
 #endif
 
+    /* Keep bi_buf and bi_valid in registers across the entire loop */
+    uint64_t bi_buf = s->bi_buf;
+    uint32_t bi_valid = s->bi_valid;
+
     if (sym_next != 0) {
         do {
 #ifdef LIT_MEM
             dist = d_buf[sx];
             lc = l_buf[sx++];
 #else
-            dist = sym_buf[sx++] & 0xff;
-            dist += (unsigned)(sym_buf[sx++] & 0xff) << 8;
-            lc = sym_buf[sx++];
+#  if OPTIMAL_CMP >= 32
+            uint32_t dist_lc = Z_U32_FROM_LE(zng_memread_4(&sym_buf[sx]));
+            dist = dist_lc & 0xffff;
+            lc = (dist_lc >> 16) & 0xff;
+#  else
+            dist = sym_buf[sx] + ((unsigned)sym_buf[sx + 1] << 8);
+            lc = sym_buf[sx + 2];
+#  endif
+            sx += 3;
 #endif
             if (dist == 0) {
-                zng_emit_lit(s, ltree, lc);
+#if !defined(LIT_MEM) && OPTIMAL_CMP >= 64
+                /* Pack up to 4 consecutive literals into a single send_bits. Their codes are
+                 * at most 15 bits each, so 4 fit inside the 64-bit bit buffer. */
+                uint64_t bits = ltree[lc].Code;
+                uint32_t nbits = ltree[lc].Len;
+
+                if (sx + 9 <= sym_next) {
+                    uint64_t v = Z_U64_FROM_LE(zng_memread_8(&sym_buf[sx]));
+                    uint64_t dist_bits = v & LIT3_DIST_MASK;
+
+                    /* A dist field is zero exactly when that symbol is a literal, so the first
+                     * nonzero one ends the run. There are only three fields, so three tests
+                     * locate it and no bit scan is needed. */
+                    if (dist_bits == 0 || (uint16_t)v == 0) {
+                        unsigned nextra = dist_bits == 0 ? 3 : (v & LIT3_DIST1_MASK) ? 1 : 2;
+                        uint64_t tail = 0;
+                        uint32_t tbits = 0;
+
+                        switch (nextra) {
+                        case 3:
+                            lit_prepend(ltree, sym_buf[sx + 8], &tail, &tbits);
+                            Z_FALLTHROUGH;
+                        case 2:
+                            lit_prepend(ltree, (v >> 40) & 0xff, &tail, &tbits);
+                            Z_FALLTHROUGH;
+                        default:
+                            lit_prepend(ltree, (v >> 16) & 0xff, &tail, &tbits);
+                        }
+                        bits |= tail << nbits;
+                        nbits += tbits;
+                        sx += 3 * nextra;
+                    }
+                }
+                send_bits(s, bits, nbits, bi_buf, bi_valid);
+#else
+                zng_emit_lit(s, ltree, lc, &bi_buf, &bi_valid);
+#endif
             } else {
-                zng_emit_dist(s, ltree, dtree, lc, dist);
+                zng_emit_dist(s, ltree, dtree, lc, dist, &bi_buf, &bi_valid);
             } /* literal or match pair ? */
 
             /* Check for no overlay of pending_buf on needed symbols */
@@ -749,7 +813,11 @@ static void compress_block(deflate_state *s, const ct_data *ltree, const ct_data
         } while (sx < sym_next);
     }
 
-    zng_emit_end_block(s, ltree, 0);
+    zng_emit_end_block(s, ltree, 0, &bi_buf, &bi_valid);
+
+    /* Write back to state */
+    s->bi_buf = bi_buf;
+    s->bi_valid = bi_valid;
 }
 
 /* ===========================================================================

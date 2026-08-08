@@ -1,11 +1,17 @@
 #ifndef ARM_NEON_INTRINS_H
 #define ARM_NEON_INTRINS_H
 
-#if defined(_MSC_VER) && defined(ARCH_ARM) && defined(ARCH_64BIT)
+#if defined(_MSC_VER) && !defined(__clang__) && defined(ARCH_ARM) && defined(ARCH_64BIT)
 /* arm64_neon.h is MSVC specific */
 #  include <arm64_neon.h>
 #else
 #  include <arm_neon.h>
+#endif
+
+#ifdef ARM_NEON_DOTPROD
+#  define Z_TARGET_DOTPROD Z_TARGET("+dotprod")
+#else
+#  define Z_TARGET_DOTPROD
 #endif
 
 #if defined(ARM_NEON) && defined(ARCH_ARM) && defined(ARCH_32BIT)
@@ -14,6 +20,14 @@
 #define vmlal_high_u8(a, b, c) vmlal_u8(a, vget_high_u8(b), vget_high_u8(c))
 #define vmlal_high_u16(a, b, c) vmlal_u16(a, vget_high_u16(b), vget_high_u16(c))
 #define vaddw_high_u8(a, b) vaddw_u8(a, vget_high_u8(b))
+
+/* Emulate vaddvq_u32 as a horizontal add without widening */
+static inline uint32_t vaddvq_u32(uint32x4_t a) {
+    /* Add high and low halves {t0=a0+a2, t1=a1+a3} */
+    uint32x2_t t = vadd_u32(vget_low_u32(a), vget_high_u32(a));
+    /* Pairwise add to scalar (t0+t1) */
+    return vget_lane_u32(vpadd_u32(t, t), 0);
+}
 #endif
 
 #ifdef ARM_NEON
@@ -62,6 +76,18 @@ static inline void vst1q_u16_x4(uint16_t *p, uint16x8x4_t a) {
     vst1q_u16(p + 24, a.val[3]);
 }
 #  endif // HASLD4 check
+
+#  if !defined(_MSC_VER) || defined(__clang__)
+#    define vld1_u8_ex(p, align) vld1_u8(HINT_ALIGNED((p), (align)/8))
+#    define vld1q_u8_ex(p, align) vld1q_u8(HINT_ALIGNED((p), (align)/8))
+#    define vld1q_u64_ex(p, align) vld1q_u64(HINT_ALIGNED((p), (align)/8))
+#  endif
+#  if !defined(_MSC_VER) || !defined(ARM_NEON_HASLD4) || defined(__clang__)
+#    define vld1q_u8_x4_ex(p, align) vld1q_u8_x4(HINT_ALIGNED((p), (align)/8))
+#    define vld1q_u16_x4_ex(p, align) vld1q_u16_x4(HINT_ALIGNED((p), (align)/8))
+#    define vst1q_u16_x4_ex(p, a, align) vst1q_u16_x4(HINT_ALIGNED((p), (align)/8), a)
+#  endif
+
 #endif
 
 #endif // include guard ARM_NEON_INTRINS_H

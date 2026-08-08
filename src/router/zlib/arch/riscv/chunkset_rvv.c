@@ -3,23 +3,26 @@
  * Contributed by Alex Chiang <alex.chiang@sifive.com>
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
-#include <riscv_vector.h>
+
+#ifdef RISCV_RVV
+
 #include "zbuild.h"
+#include "zmemory.h"
+
+#include <riscv_vector.h>
 
 /*
  * RISC-V glibc would enable RVV optimized memcpy at runtime by IFUNC,
  * so we prefer using large size chunk and copy memory as much as possible.
  */
-#define CHUNK_SIZE 32
-
 #define HAVE_CHUNKMEMSET_2
 #define HAVE_CHUNKMEMSET_4
 #define HAVE_CHUNKMEMSET_8
 
-#define CHUNK_MEMSET_RVV_IMPL(elen)                                     \
+#define CHUNK_MEMSET_RVV_IMPL(v, chunk, elen)                           \
 do {                                                                    \
-    size_t vl, len = CHUNK_SIZE / sizeof(uint##elen##_t);               \
-    uint##elen##_t val = *(uint##elen##_t*)from;                        \
+    size_t vl, len = sizeof(*chunk) / sizeof(uint##elen##_t);           \
+    uint##elen##_t val = (v);                                           \
     uint##elen##_t* chunk_p = (uint##elen##_t*)chunk;                   \
     do {                                                                \
         vl = __riscv_vsetvl_e##elen##m4(len);                           \
@@ -35,23 +38,23 @@ typedef struct chunk_s {
 } chunk_t;
 
 static inline void chunkmemset_2(uint8_t *from, chunk_t *chunk) {
-    CHUNK_MEMSET_RVV_IMPL(16);
+    CHUNK_MEMSET_RVV_IMPL(zng_memread_2(from), chunk, 16);
 }
 
 static inline void chunkmemset_4(uint8_t *from, chunk_t *chunk) {
-    CHUNK_MEMSET_RVV_IMPL(32);
+    CHUNK_MEMSET_RVV_IMPL(zng_memread_4(from), chunk, 32);
 }
 
 static inline void chunkmemset_8(uint8_t *from, chunk_t *chunk) {
-    CHUNK_MEMSET_RVV_IMPL(64);
+    CHUNK_MEMSET_RVV_IMPL(zng_memread_8(from), chunk, 64);
 }
 
 static inline void loadchunk(uint8_t const *s, chunk_t *chunk) {
-    memcpy(chunk->data, (uint8_t *)s, CHUNK_SIZE);
+    memcpy(chunk->data, (uint8_t *)s, sizeof(*chunk));
 }
 
 static inline void storechunk(uint8_t *out, chunk_t *chunk) {
-    memcpy(out, chunk->data, CHUNK_SIZE);
+    memcpy(out, chunk->data, sizeof(*chunk));
 }
 
 #define CHUNKSIZE        chunksize_rvv
@@ -69,32 +72,32 @@ static inline void storechunk(uint8_t *out, chunk_t *chunk) {
  * We load/store a single chunk once in the `CHUNKCOPY`.
  * However, RISC-V glibc would enable RVV optimized memcpy at runtime by IFUNC,
  * such that, we prefer copy large memory size once to make good use of the the RVV advance.
- * 
+ *
  * To be aligned to the other platforms, we didn't modify `CHUNKCOPY` method a lot,
  * but we still copy as much memory as possible for some conditions.
- * 
+ *
  * case 1: out - from >= len (no overlap)
  *         We can use memcpy to copy `len` size once
  *         because the memory layout would be the same.
  *
  * case 2: overlap
- *         We copy N chunks using memcpy at once, aiming to achieve our goal: 
+ *         We copy N chunks using memcpy at once, aiming to achieve our goal:
  *         to copy as much memory as possible.
- * 
+ *
  *         After using a single memcpy to copy N chunks, we have to use series of
  *         loadchunk and storechunk to ensure the result is correct.
  */
-static inline uint8_t* CHUNKCOPY(uint8_t *out, uint8_t const *from, unsigned len) {
+static inline uint8_t* CHUNKCOPY(uint8_t *out, uint8_t const *from, size_t len) {
     Assert(len > 0, "chunkcopy should never have a length 0");
-    ptrdiff_t dist = out - from;
-    if (dist < 0 || dist >= len) {
+    size_t dist = out - from;
+    if (out < from || dist >= len) {
         memcpy(out, from, len);
         out += len;
         from += len;
         return out;
     }
 
-    int32_t align = ((len - 1) % sizeof(chunk_t)) + 1;
+    size_t align = ((len - 1) % sizeof(chunk_t)) + 1;
     memcpy(out, from, sizeof(chunk_t));
     out += align;
     from += align;
@@ -120,3 +123,5 @@ static inline uint8_t* CHUNKCOPY(uint8_t *out, uint8_t const *from, unsigned len
 #define INFLATE_FAST     inflate_fast_rvv
 
 #include "inffast_tpl.h"
+
+#endif

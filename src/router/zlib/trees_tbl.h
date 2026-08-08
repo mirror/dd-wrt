@@ -73,7 +73,7 @@ Z_INTERNAL const ct_data static_dtree[D_CODES] = {
 {{19},{5}}, {{11},{5}}, {{27},{5}}, {{ 7},{5}}, {{23},{5}}
 };
 
-const unsigned char Z_INTERNAL zng_dist_code[DIST_CODE_LEN] = {
+Z_INTERNAL const unsigned char zng_dist_code[DIST_CODE_LEN] = {
  0,  1,  2,  3,  4,  4,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  8,
  8,  8,  8,  8,  9,  9,  9,  9,  9,  9,  9,  9, 10, 10, 10, 10, 10, 10, 10, 10,
 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11,
@@ -102,7 +102,7 @@ const unsigned char Z_INTERNAL zng_dist_code[DIST_CODE_LEN] = {
 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29, 29
 };
 
-const unsigned char Z_INTERNAL zng_length_code[STD_MAX_MATCH-STD_MIN_MATCH+1] = {
+Z_INTERNAL const unsigned char zng_length_code[STD_MAX_MATCH-STD_MIN_MATCH+1] = {
  0,  1,  2,  3,  4,  5,  6,  7,  8,  8,  9,  9, 10, 10, 11, 11, 12, 12, 12, 12,
 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 16, 16, 16, 16,
 17, 17, 17, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 19, 19, 19, 19,
@@ -118,15 +118,33 @@ const unsigned char Z_INTERNAL zng_length_code[STD_MAX_MATCH-STD_MIN_MATCH+1] = 
 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 28
 };
 
-Z_INTERNAL const int base_length[LENGTH_CODES] = {
-0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20, 24, 28, 32, 40, 48, 56,
-64, 80, 96, 112, 128, 160, 192, 224, 0
+/* Combined mask + extra_bits tables for single-lookup optimization.
+ * Length table: bits 0-7 = mask, bits 8-11 = extra_lbits
+ * Distance table: bits 0-15 = mask, bits 16-19 = extra_dbits
+ */
+#define LMASK_EXTRA(mask, extra) ((extra) << 8 | (mask))
+#define DMASK_EXTRA(mask, extra) ((extra) << 16 | (mask))
+
+Z_INTERNAL const uint16_t lmask_extra[LENGTH_CODES] = {
+LMASK_EXTRA(  0, 0), LMASK_EXTRA(  0, 0), LMASK_EXTRA(  0, 0), LMASK_EXTRA(  0, 0),
+LMASK_EXTRA(  0, 0), LMASK_EXTRA(  0, 0), LMASK_EXTRA(  0, 0), LMASK_EXTRA(  0, 0),
+LMASK_EXTRA(  1, 1), LMASK_EXTRA(  1, 1), LMASK_EXTRA(  1, 1), LMASK_EXTRA(  1, 1),
+LMASK_EXTRA(  3, 2), LMASK_EXTRA(  3, 2), LMASK_EXTRA(  3, 2), LMASK_EXTRA(  3, 2),
+LMASK_EXTRA(  7, 3), LMASK_EXTRA(  7, 3), LMASK_EXTRA(  7, 3), LMASK_EXTRA(  7, 3),
+LMASK_EXTRA( 15, 4), LMASK_EXTRA( 15, 4), LMASK_EXTRA( 15, 4), LMASK_EXTRA( 15, 4),
+LMASK_EXTRA( 31, 5), LMASK_EXTRA( 31, 5), LMASK_EXTRA( 31, 5), LMASK_EXTRA( 31, 5),
+LMASK_EXTRA(  0, 0)
 };
 
-Z_INTERNAL const int base_dist[D_CODES] = {
-    0,     1,     2,     3,     4,     6,     8,    12,    16,    24,
-   32,    48,    64,    96,   128,   192,   256,   384,   512,   768,
- 1024,  1536,  2048,  3072,  4096,  6144,  8192, 12288, 16384, 24576
+Z_INTERNAL const uint32_t dmask_extra[D_CODES] = {
+DMASK_EXTRA(    0,  0), DMASK_EXTRA(    0,  0), DMASK_EXTRA(    0,  0), DMASK_EXTRA(    0,  0),
+DMASK_EXTRA(    1,  1), DMASK_EXTRA(    1,  1), DMASK_EXTRA(    3,  2), DMASK_EXTRA(    3,  2),
+DMASK_EXTRA(    7,  3), DMASK_EXTRA(    7,  3), DMASK_EXTRA(   15,  4), DMASK_EXTRA(   15,  4),
+DMASK_EXTRA(   31,  5), DMASK_EXTRA(   31,  5), DMASK_EXTRA(   63,  6), DMASK_EXTRA(   63,  6),
+DMASK_EXTRA(  127,  7), DMASK_EXTRA(  127,  7), DMASK_EXTRA(  255,  8), DMASK_EXTRA(  255,  8),
+DMASK_EXTRA(  511,  9), DMASK_EXTRA(  511,  9), DMASK_EXTRA( 1023, 10), DMASK_EXTRA( 1023, 10),
+DMASK_EXTRA( 2047, 11), DMASK_EXTRA( 2047, 11), DMASK_EXTRA( 4095, 12), DMASK_EXTRA( 4095, 12),
+DMASK_EXTRA( 8191, 13), DMASK_EXTRA( 8191, 13)
 };
 
 #endif /* TREES_TBL_H_ */

@@ -208,7 +208,7 @@ int32_t Z_EXPORT PREFIX(inflateBack)(PREFIX3(stream) *strm, in_func in, void *in
                 Tracev((stderr, "inflate:     dynamic codes block%s\n", state->last ? " (last)" : ""));
                 state->mode = TABLE;
                 break;
-            case 3:
+            default:
                 SET_BAD("invalid block type");
             }
             DROPBITS(2);
@@ -337,11 +337,13 @@ int32_t Z_EXPORT PREFIX(inflateBack)(PREFIX3(stream) *strm, in_func in, void *in
             }
 
             /* build code tables -- note: do not change the lenbits or distbits
-               values here (10 and 9) without reading the comments in inftrees.h
-               concerning the ENOUGH constants, which depend on those values */
+               values here (MAX_LEN_ROOT_BITS and 9) without reading the comments
+               in inftrees.h concerning the ENOUGH constants, which depend on
+               those values, and the refill comments in inffast_tpl.h, which
+               depend on lenbits never exceeding MAX_LEN_ROOT_BITS */
             state->next = state->codes;
             state->lencode = (const code *)(state->next);
-            state->lenbits = 10;
+            state->lenbits = MAX_LEN_ROOT_BITS;
             ret = zng_inflate_table(LENS, state->lens, state->nlen, &(state->next), &(state->lenbits), state->work);
             if (ret) {
                 SET_BAD("invalid literal/lengths set");
@@ -361,12 +363,14 @@ int32_t Z_EXPORT PREFIX(inflateBack)(PREFIX3(stream) *strm, in_func in, void *in
 
         case LEN:
             /* use inflate_fast() if we have enough input and output */
-            if (have >= INFLATE_FAST_MIN_HAVE &&
-                left >= INFLATE_FAST_MIN_LEFT) {
+            if (have >= INFLATE_FAST_MIN_HAVE && left >= INFLATE_FAST_MIN_SAFE) {
                 RESTORE();
                 if (state->whave < state->wsize)
                     state->whave = state->wsize - left;
-                FUNCTABLE_CALL(inflate_fast)(strm, state->wsize);
+                /* inflateBack() writes directly into the window, so out and window
+                   always overlap. Pass safe_mode=1 to use safe chunk copy functions
+                   that prevent overwriting window data needed by future back-references. */
+                FUNCTABLE_CALL(inflate_fast)(strm, state->wsize, 1);
                 LOAD();
                 break;
             }
@@ -374,28 +378,28 @@ int32_t Z_EXPORT PREFIX(inflateBack)(PREFIX3(stream) *strm, in_func in, void *in
             /* get a literal, length, or end-of-block code */
             for (;;) {
                 here = state->lencode[BITS(state->lenbits)];
-                if (here.bits <= bits)
+                if (CODE_BITS(here) <= bits)
                     break;
                 PULLBYTE();
             }
             if (here.op && (here.op & 0xf0) == 0) {
+                unsigned last_bits;
                 last = here;
+                last_bits = CODE_BITS(last);
                 for (;;) {
-                    here = state->lencode[last.val + (BITS(last.bits + last.op) >> last.bits)];
-                    if ((unsigned)last.bits + (unsigned)here.bits <= bits)
+                    here = state->lencode[last.val + (BITS(last_bits + (last.op & 15)) >> last_bits)];
+                    if (last_bits + CODE_BITS(here) <= bits)
                         break;
                     PULLBYTE();
                 }
-                DROPBITS(last.bits);
+                DROPBITS(last_bits);
             }
-            DROPBITS(here.bits);
+            DROPBITS(CODE_BITS(here));
             state->length = here.val;
 
             /* process literal */
             if ((int)(here.op) == 0) {
-                Tracevv((stderr, here.val >= 0x20 && here.val < 0x7f ?
-                        "inflate:         literal '%c'\n" :
-                        "inflate:         literal 0x%02x\n", here.val));
+                TRACE_LITERAL(here.val);
                 ROOM();
                 *put++ = (unsigned char)(state->length);
                 left--;
@@ -405,7 +409,7 @@ int32_t Z_EXPORT PREFIX(inflateBack)(PREFIX3(stream) *strm, in_func in, void *in
 
             /* process end of block */
             if (here.op & 32) {
-                Tracevv((stderr, "inflate:         end of block\n"));
+                TRACE_END_OF_BLOCK();
                 state->mode = TYPE;
                 break;
             }
@@ -417,38 +421,40 @@ int32_t Z_EXPORT PREFIX(inflateBack)(PREFIX3(stream) *strm, in_func in, void *in
             }
 
             /* length code -- get extra bits, if any */
-            state->extra = (here.op & MAX_BITS);
+            state->extra = CODE_EXTRA(here);
             if (state->extra) {
                 NEEDBITS(state->extra);
                 state->length += BITS(state->extra);
                 DROPBITS(state->extra);
             }
-            Tracevv((stderr, "inflate:         length %u\n", state->length));
+            TRACE_LENGTH(state->length);
 
             /* get distance code */
             for (;;) {
                 here = state->distcode[BITS(state->distbits)];
-                if (here.bits <= bits)
+                if (CODE_BITS(here) <= bits)
                     break;
                 PULLBYTE();
             }
             if ((here.op & 0xf0) == 0) {
+                unsigned last_bits;
                 last = here;
+                last_bits = CODE_BITS(last);
                 for (;;) {
-                    here = state->distcode[last.val + (BITS(last.bits + last.op) >> last.bits)];
-                    if ((unsigned)last.bits + (unsigned)here.bits <= bits)
+                    here = state->distcode[last.val + (BITS(last_bits + (last.op & 15)) >> last_bits)];
+                    if (last_bits + CODE_BITS(here) <= bits)
                         break;
                     PULLBYTE();
                 }
-                DROPBITS(last.bits);
+                DROPBITS(last_bits);
             }
-            DROPBITS(here.bits);
+            DROPBITS(CODE_BITS(here));
             if (here.op & 64) {
                 SET_BAD("invalid distance code");
                 break;
             }
             state->offset = here.val;
-            state->extra = (here.op & MAX_BITS);
+            state->extra = CODE_EXTRA(here);
 
             /* get distance extra bits, if any */
             if (state->extra) {
@@ -456,13 +462,11 @@ int32_t Z_EXPORT PREFIX(inflateBack)(PREFIX3(stream) *strm, in_func in, void *in
                 state->offset += BITS(state->extra);
                 DROPBITS(state->extra);
             }
-#ifdef INFLATE_STRICT
             if (state->offset > state->wsize - (state->whave < state->wsize ? left : 0)) {
                 SET_BAD("invalid distance too far back");
                 break;
             }
-#endif
-            Tracevv((stderr, "inflate:         distance %u\n", state->offset));
+            TRACE_DISTANCE(state->offset);
 
             /* copy match from window to output */
             do {
@@ -482,6 +486,33 @@ int32_t Z_EXPORT PREFIX(inflateBack)(PREFIX3(stream) *strm, in_func in, void *in
                     *put++ = *from++;
                 } while (--copy);
             } while (state->length != 0);
+            break;
+
+        case MATCH:
+            /* Copy back-reference that inflate_fast() could not complete due to
+               insufficient output space. state->length and state->offset were set
+               by the safe_mode MATCH bailout in inflate_fast(), which bails out
+               before validating the distance, so check it here. */
+            if (state->offset > state->wsize - (state->whave < state->wsize ? left : 0)) {
+                SET_BAD("invalid distance too far back");
+                break;
+            }
+            do {
+                ROOM();
+                copy = state->wsize - state->offset;
+                if (copy < left) {
+                    from = put + copy;
+                    copy = left - copy;
+                    copy = MIN(copy, state->length);
+                    put = chunkcopy_safe(put, from, copy, put + left);
+                } else {
+                    copy = MIN(state->length, left);
+                    put = FUNCTABLE_CALL(chunkmemset_safe)(put, put - state->offset, copy, left);
+                }
+                state->length -= copy;
+                left -= copy;
+            } while (state->length != 0);
+            state->mode = LEN;
             break;
 
         case DONE:

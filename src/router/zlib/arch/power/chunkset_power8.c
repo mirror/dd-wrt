@@ -3,13 +3,13 @@
  */
 
 #ifdef POWER8_VSX
-#include <altivec.h>
+
 #include "zbuild.h"
 #include "zmemory.h"
 
-typedef vector unsigned char chunk_t;
+#include <altivec.h>
 
-#define CHUNK_SIZE 16
+typedef vector unsigned char chunk_t;
 
 #define HAVE_CHUNKMEMSET_2
 #define HAVE_CHUNKMEMSET_4

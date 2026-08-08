@@ -5,6 +5,8 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
+#ifdef LOONGARCH_FEATURES
+
 #include "zbuild.h"
 #include "loongarch_features.h"
 
@@ -25,3 +27,5 @@ void Z_INTERNAL loongarch_check_features(struct loongarch_cpu_features *features
     features->has_lsx = w1 & 0x40;
     features->has_lasx = w1 & 0x80;
 }
+
+#endif

@@ -9,8 +9,9 @@
  */
 
 #ifdef ARM_NEON
-#include "neon_intrins.h"
+
 #include "zbuild.h"
+#include "neon_intrins.h"
 #include "deflate.h"
 
 /* SIMD version of hash_chain rebase */
@@ -27,12 +28,12 @@ static inline void slide_hash_chain(Pos *table, uint32_t entries, uint16_t wsize
 
     n = size / (sizeof(uint16x8_t) * 8);
     do {
-        p0 = vld1q_u16_x4(table);
-        p1 = vld1q_u16_x4(table+32);
+        p0 = vld1q_u16_x4_ex(table, 256);
+        p1 = vld1q_u16_x4_ex(table+32, 256);
         vqsubq_u16_x4_x1(p0, p0, v);
         vqsubq_u16_x4_x1(p1, p1, v);
-        vst1q_u16_x4(table, p0);
-        vst1q_u16_x4(table+32, p1);
+        vst1q_u16_x4_ex(table, p0, 256);
+        vst1q_u16_x4_ex(table+32, p1, 256);
         table += 64;
     } while (--n);
 }
@@ -43,5 +44,12 @@ Z_INTERNAL void slide_hash_neon(deflate_state *s) {
 
     slide_hash_chain(s->head, HASH_SIZE, wsize);
     slide_hash_chain(s->prev, wsize, wsize);
+}
+
+Z_INTERNAL void slide_hash_head_neon(deflate_state *s) {
+    Assert(s->w_size <= UINT16_MAX, "w_size should fit in uint16_t");
+    uint16_t wsize = (uint16_t)s->w_size;
+
+    slide_hash_chain(s->head, HASH_SIZE, wsize);
 }
 #endif

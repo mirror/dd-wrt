@@ -2,8 +2,12 @@ macro(configure_test_executable target)
     target_include_directories(${target} PRIVATE ${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR})
     set_target_properties(${target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
     if(NOT WITH_GZFILEOP)
+        set(GZFILE_PRIVATE_HDRS ${ZLIB_GZFILE_PRIVATE_HDRS})
+        set(GZFILE_SRCS ${ZLIB_GZFILE_SRCS})
+        list(TRANSFORM GZFILE_PRIVATE_HDRS PREPEND "${PROJECT_SOURCE_DIR}/")
+        list(TRANSFORM GZFILE_SRCS PREPEND "${PROJECT_SOURCE_DIR}/")
         target_compile_definitions(${target} PRIVATE -DWITH_GZFILEOP)
-        target_sources(${target} PRIVATE ${ZLIB_GZFILE_PRIVATE_HDRS} ${ZLIB_GZFILE_SRCS})
+        target_sources(${target} PRIVATE ${GZFILE_PRIVATE_HDRS} ${GZFILE_SRCS})
     endif()
 endmacro()
 
@@ -16,32 +20,6 @@ configure_test_executable(example)
 target_link_libraries(example zlib-ng)
 add_test(NAME example COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:example>)
 
-add_executable(minigzip minigzip.c)
-configure_test_executable(minigzip)
-if(NOT DEFINED BUILD_SHARED_LIBS)
-    target_link_libraries(minigzip zlib-ng-static)
-else()
-    target_link_libraries(minigzip zlib-ng)
-endif()
-if(BASEARCH_S360_FOUND)
-    if(WITH_DFLTCC_DEFLATE OR WITH_DFLTCC_INFLATE)
-        set_source_files_properties(minigzip.c PROPERTIES COMPILE_DEFINITIONS BUFLEN=262144)
-    endif()
-endif()
-set(MINIGZIP_COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:minigzip>)
-
-add_executable(minideflate minideflate.c)
-configure_test_executable(minideflate)
-target_link_libraries(minideflate zlib-ng)
-set(MINIDEFLATE_COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:minideflate>)
-
-if(INSTALL_UTILS)
-    install(TARGETS minigzip minideflate
-        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}")
-endif()
-
 add_executable(switchlevels switchlevels.c)
 configure_test_executable(switchlevels)
 target_link_libraries(switchlevels zlib-ng)
@@ -51,21 +29,9 @@ add_executable(infcover infcover.c)
 configure_test_executable(infcover)
 target_link_libraries(infcover zlib-ng)
 if(NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
-    target_sources(infcover PRIVATE ${PROJECT_SOURCE_DIR}/inftrees.c)
+    target_sources(infcover PRIVATE ${PROJECT_SOURCE_DIR}/inftrees.c ${PROJECT_SOURCE_DIR}/zutil.c)
 endif()
 add_test(NAME infcover COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:infcover>)
-
-add_executable(makefixed ${PROJECT_SOURCE_DIR}/tools/makefixed.c ${PROJECT_SOURCE_DIR}/inftrees.c)
-configure_test_executable(makefixed)
-set(MAKEFIXED_COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:makefixed>)
-
-add_executable(maketrees ${PROJECT_SOURCE_DIR}/tools/maketrees.c ${PROJECT_SOURCE_DIR}/trees.c ${PROJECT_SOURCE_DIR}/zutil.c)
-configure_test_executable(maketrees)
-set(MAKETREES_COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:maketrees>)
-
-add_executable(makecrct ${PROJECT_SOURCE_DIR}/tools/makecrct.c)
-configure_test_executable(makecrct)
-set(MAKECRCT_COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:makecrct>)
 
 # Emscripten does not support large amounts of data via stdin/out
 # https://github.com/emscripten-core/emscripten/issues/16755#issuecomment-1102732849
@@ -103,7 +69,7 @@ if(WITH_GTEST)
     endif()
 
     # Google test requires MSAN instrumented LLVM C++ libraries
-    if(WITH_SANITIZER STREQUAL "Memory")
+    if(WITH_SANITIZER STREQUAL "memory")
         if(NOT DEFINED ENV{LLVM_BUILD_DIR})
             message(FATAL_ERROR "MSAN instrumented C++ libraries required!")
         endif()
@@ -149,6 +115,7 @@ if(WITH_GTEST)
 
     if(TARGET GTest::GTest)
         set(TEST_SRCS
+            test_chunked.cc
             test_compress.cc
             test_compress_bound.cc
             test_cve-2003-0107.cc
@@ -157,6 +124,7 @@ if(WITH_GTEST)
             test_deflate_dict.cc
             test_deflate_hash_head_0.cc
             test_deflate_header.cc
+            test_deflate.cc
             test_deflate_params.cc
             test_deflate_pending.cc
             test_deflate_prime.cc
@@ -165,10 +133,9 @@ if(WITH_GTEST)
             test_deflate_tune.cc
             test_dict.cc
             test_inflate_adler32.cc
+            test_inflate_back.cc
             test_inflate_copy.cc
-            test_large_buffers.cc
             test_raw.cc
-            test_small_buffers.cc
             test_small_window.cc
             )
 
@@ -202,7 +169,7 @@ if(WITH_GTEST)
             target_compile_options(gtest_zlib PRIVATE -D_XOPEN_SOURCE=700)
         endif()
 
-        if(WITH_SANITIZER STREQUAL "Memory")
+        if(WITH_SANITIZER STREQUAL "memory")
             target_link_directories(gtest_zlib PRIVATE $ENV{LLVM_BUILD_DIR}/lib)
             target_link_options(gtest_zlib PRIVATE
                 -stdlib=libc++

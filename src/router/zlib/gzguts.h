@@ -5,14 +5,6 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
-#ifdef _LARGEFILE64_SOURCE
-#  ifndef _LARGEFILE_SOURCE
-#    define _LARGEFILE_SOURCE 1
-#  endif
-#  undef _FILE_OFFSET_BITS
-#  undef _TIME_BITS
-#endif
-
 #if defined(HAVE_VISIBILITY_INTERNAL)
 #  define Z_INTERNAL __attribute__((visibility ("internal")))
 #elif defined(HAVE_VISIBILITY_HIDDEN)
@@ -21,11 +13,26 @@
 #  define Z_INTERNAL
 #endif
 
+#if defined(_WIN32)
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  ifndef _CRT_SECURE_NO_WARNINGS
+#    define _CRT_SECURE_NO_WARNINGS
+#  endif
+#  ifndef _CRT_NONSTDC_NO_DEPRECATE
+#    define _CRT_NONSTDC_NO_DEPRECATE
+#  endif
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <fcntl.h>
+#ifndef _WIN32
+#  include <unistd.h>
+#endif
 
 #if defined(ZLIB_COMPAT)
 #  include "zlib.h"
@@ -39,7 +46,10 @@
 
 #if defined(_WIN32)
 #  include <io.h>
-#  define WIDECHAR
+#  include <sys/stat.h>
+#  ifndef WIDECHAR
+#    define WIDECHAR
+#  endif
 #endif
 
 #ifdef WINAPI_FAMILY
@@ -86,6 +96,13 @@
 #  define GZBUFSIZE 131072
 #endif
 
+/* upper limit on the requested buffer size; the allocation is three times this,
+   so the cap keeps that total well inside an unsigned and far above any size
+   that is useful in practice */
+#ifndef GZBUFSIZE_MAX
+#  define GZBUFSIZE_MAX (1u << 30) /* 1 GiB */
+#endif
+
 /* gzip modes, also provide a little integrity check on the passed structure */
 #define GZ_NONE 0
 #define GZ_READ 7247
@@ -125,7 +142,6 @@ typedef struct {
     int reset;              /* true if a reset is pending after a Z_FINISH */
         /* seek request */
     z_off64_t skip;         /* amount to skip (already rewound if backwards) */
-    int seek;               /* true if seek request pending */
         /* error information */
     int err;                /* error code */
     char *msg;              /* error message */

@@ -28,7 +28,10 @@ macro(check_armv8_compiler_flag)
     # Check whether compiler supports ARMv8 inline asm
     set(CMAKE_REQUIRED_FLAGS "${ARMV8FLAG} ${NATIVEFLAG} ${ZNOLTOFLAG}")
     check_c_source_compiles(
-        "unsigned int f(unsigned int a, unsigned int b) {
+        "#ifdef __clang__
+        __attribute__((target(\"crc\")))
+        #endif
+        unsigned int f(unsigned int a, unsigned int b) {
             unsigned int c;
         #ifdef __aarch64__
             __asm__( \"crc32w %w0, %w1, %w2\" : \"=r\" (c) : \"r\" (a), \"r\" (b));
@@ -42,10 +45,13 @@ macro(check_armv8_compiler_flag)
     )
     # Check whether compiler supports ARMv8 intrinsics
     check_c_source_compiles(
-        "#if defined(_MSC_VER)
+        "#if defined(_MSC_VER) && !defined(__clang__)
         #include <intrin.h>
         #else
         #include <arm_acle.h>
+        #endif
+        #ifdef __clang__
+        __attribute__((target(\"crc\")))
         #endif
         unsigned int f(unsigned int a, unsigned int b) {
             return __crc32w(a, b);
@@ -73,14 +79,24 @@ macro(check_armv8_pmull_eor3_compiler_flag)
     # Check whether compiler supports ARMv8 PMULL + EOR3 intrinsics
     set(CMAKE_REQUIRED_FLAGS "${PMULLEOR3FLAG} ${NATIVEFLAG} ${ZNOLTOFLAG}")
     check_c_source_compiles(
-        "#if defined(_MSC_VER) && (defined(_M_ARM64) || defined(_M_ARM64EC))
+        "#if defined(_MSC_VER) && !defined(__clang__) && (defined(_M_ARM64) || defined(_M_ARM64EC))
         #  include <arm64_neon.h>
         #else
         #  include <arm_neon.h>
         #endif
+        #if defined(_MSC_VER) && !defined(__clang__)
+        __n128 f(__n64 a, __n64 b) {
+        #else
+        #ifdef __clang__
+        __attribute__((target(\"aes\")))
+        #endif
         poly128_t f(poly64_t a, poly64_t b) {
+        #endif
             return vmull_p64(a, b);
         }
+        #ifdef __clang__
+        __attribute__((target(\"sha3\")))
+        #endif
         uint64x2_t g(uint64x2_t a, uint64x2_t b, uint64x2_t c) {
             return veor3q_u64(a, b, c);
         }
@@ -139,14 +155,14 @@ macro(check_avx512_intrinsics)
     if(NOT NATIVEFLAG)
         if(CMAKE_C_COMPILER_ID MATCHES "Intel")
             if(CMAKE_HOST_UNIX OR APPLE)
-                set(AVX512FLAG "-mavx512f -mavx512dq -mavx512bw -mavx512vl -mbmi2")
+                set(AVX512FLAG "-mavx512f -mavx512dq -mavx512bw -mavx512vl -mbmi -mbmi2")
             else()
                 set(AVX512FLAG "/arch:AVX512")
             endif()
         elseif(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
             # For CPUs that can benefit from AVX512, it seems GCC generates suboptimal
             # instruction scheduling unless you specify a reasonable -mtune= target
-            set(AVX512FLAG "-mavx512f -mavx512dq -mavx512bw -mavx512vl -mbmi2")
+            set(AVX512FLAG "-mavx512f -mavx512dq -mavx512bw -mavx512vl -mbmi -mbmi2")
             if(NOT MSVC)
                 check_c_compiler_flag("-mtune=cascadelake" HAVE_CASCADE_LAKE)
                 if(HAVE_CASCADE_LAKE)
@@ -174,16 +190,57 @@ macro(check_avx512_intrinsics)
     set(CMAKE_REQUIRED_FLAGS)
 endmacro()
 
+macro(check_avx2vnni_intrinsics)
+    if(NOT NATIVEFLAG)
+        if(CMAKE_C_COMPILER_ID MATCHES "Intel")
+            if(CMAKE_HOST_UNIX OR APPLE OR CMAKE_C_COMPILER_ID MATCHES "IntelLLVM")
+                set(AVX2VNNIFLAG "-mavx2 -mavxvnni -mbmi -mbmi2")
+            else()
+            # AVXVNNI support is currently half baked on MSVC. Unknown how ICC handles this
+                set(AVX2VNNIFLAG "")
+                #set(AVX2VNNIFLAG "/arch:AVX2")
+            endif()
+        elseif(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+            set(AVX2VNNIFLAG "-mavx2 -mavxvnni -mbmi -mbmi2")
+            if(NOT MSVC)
+                check_c_compiler_flag("-mtune=raptorlake" HAVE_RAPTOR_LAKE)
+                if(HAVE_RAPTOR_LAKE)
+                    set(AVX2VNNIFLAG "${AVX2VNNIFLAG} -mtune=raptorlake")
+                endif()
+                unset(HAVE_RAPTOR_LAKE)
+            endif()
+        # When AVX2VNNI support is fully baked into MSVC we should uncomment this
+        # See: https://developercommunity.visualstudio.com/t/MSVC-emits-AVX512-code-for-AVX-VNNI-inst/10804143
+        elseif(MSVC)
+            set(AVX2VNNIFLAG "")
+        #    set(AVX2VNNIFLAG "/arch:AVX2")
+        endif()
+    endif()
+    # Check whether compiler supports AVX2vnni intrinsics
+    set(CMAKE_REQUIRED_FLAGS "${AVX2VNNIFLAG} ${NATIVEFLAG} ${ZNOLTOFLAG}")
+    check_c_source_compiles(
+        "#include <immintrin.h>
+        int main(void) {
+            const __m256i z256 = _mm256_setzero_si256();
+            volatile __m256i r256 = _mm256_dpbusd_epi32(z256, z256, z256);
+            (void)r256;
+            return 0;
+        }"
+        HAVE_AVX2VNNI_INTRIN
+    )
+    set(CMAKE_REQUIRED_FLAGS)
+endmacro()
+
 macro(check_avx512vnni_intrinsics)
     if(NOT NATIVEFLAG)
         if(CMAKE_C_COMPILER_ID MATCHES "Intel")
             if(CMAKE_HOST_UNIX OR APPLE OR CMAKE_C_COMPILER_ID MATCHES "IntelLLVM")
-                set(AVX512VNNIFLAG "-mavx512f -mavx512dq -mavx512bw -mavx512vl -mavx512vnni -mbmi2")
+                set(AVX512VNNIFLAG "-mavx512f -mavx512dq -mavx512bw -mavx512vl -mavx512vnni -mbmi -mbmi2")
             else()
                 set(AVX512VNNIFLAG "/arch:AVX512")
             endif()
         elseif(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
-            set(AVX512VNNIFLAG "-mavx512f -mavx512dq -mavx512bw -mavx512vl -mavx512vnni -mbmi2")
+            set(AVX512VNNIFLAG "-mavx512f -mavx512dq -mavx512bw -mavx512vl -mavx512vnni -mbmi -mbmi2")
             if(NOT MSVC)
                 check_c_compiler_flag("-mtune=cascadelake" HAVE_CASCADE_LAKE)
                 if(HAVE_CASCADE_LAKE)
@@ -219,12 +276,12 @@ macro(check_avx2_intrinsics)
     if(NOT NATIVEFLAG)
         if(CMAKE_C_COMPILER_ID MATCHES "Intel")
             if(CMAKE_HOST_UNIX OR APPLE)
-                set(AVX2FLAG "-mavx2 -mbmi2")
+                set(AVX2FLAG "-mavx2 -mbmi -mbmi2")
             else()
                 set(AVX2FLAG "/arch:AVX2")
             endif()
         elseif(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
-            set(AVX2FLAG "-mavx2 -mbmi2")
+            set(AVX2FLAG "-mavx2 -mbmi -mbmi2")
         elseif(MSVC)
             set(AVX2FLAG "/arch:AVX2")
         endif()
@@ -256,7 +313,7 @@ macro(check_neon_compiler_flag)
     # Check whether compiler supports NEON flag
     set(CMAKE_REQUIRED_FLAGS "${NEONFLAG} ${NATIVEFLAG} ${ZNOLTOFLAG}")
     check_c_source_compiles(
-        "#if defined(_M_ARM64) || defined(_M_ARM64EC)
+        "#if defined(_MSC_VER) && !defined(__clang__) && (defined(_M_ARM64) || defined(_M_ARM64EC))
         #  include <arm64_neon.h>
         #else
         #  include <arm_neon.h>
@@ -319,7 +376,7 @@ macro(check_neon_ld4_intrinsics)
     # Check whether compiler supports loading 4 neon vecs into a register range
     set(CMAKE_REQUIRED_FLAGS "${NEONFLAG} ${NATIVEFLAG} ${ZNOLTOFLAG}")
     check_c_source_compiles(
-        "#if defined(_MSC_VER) && (defined(_M_ARM64) || defined(_M_ARM64EC))
+        "#if defined(_MSC_VER) && !defined(__clang__) && (defined(_M_ARM64) || defined(_M_ARM64EC))
         #  include <arm64_neon.h>
         #else
         #  include <arm_neon.h>
@@ -327,6 +384,33 @@ macro(check_neon_ld4_intrinsics)
         int32x4x4_t f(int var[16]) { return vld1q_s32_x4(var); }
         int main(void) { return 0; }"
         NEON_HAS_LD4)
+    set(CMAKE_REQUIRED_FLAGS)
+endmacro()
+
+macro(check_neon_dotprod_compiler_flag)
+    if(NOT NATIVEFLAG)
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+            set(NEONDOTPRODFLAG "-march=armv8.2-a+dotprod")
+        endif()
+    endif()
+    set(CMAKE_REQUIRED_FLAGS "${NEONDOTPRODFLAG} ${NATIVEFLAG} ${ZNOLTOFLAG}")
+    check_c_source_compiles(
+        "#if defined(_MSC_VER) && !defined(__clang__) && (defined(_M_ARM64) || defined(_M_ARM64EC))
+        #  include <arm64_neon.h>
+        #else
+        #  include <arm_neon.h>
+        #endif
+        #ifdef __clang__
+        __attribute__((target(\"dotprod\")))
+        #endif
+        int main(void) {
+            uint8x16_t a = vdupq_n_u8(1);
+            uint8x16_t b = vdupq_n_u8(2);
+            uint32x4_t c = vdupq_n_u32(0);
+            c = vdotq_u32(c, a, b);
+            return vgetq_lane_u32(c, 0);
+        }"
+        NEON_HAS_DOTPROD)
     set(CMAKE_REQUIRED_FLAGS)
 endmacro()
 
@@ -355,19 +439,19 @@ endmacro()
 
 macro(check_vpclmulqdq_intrinsics)
     if(NOT NATIVEFLAG)
-        if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang" OR CMAKE_C_COMPILER_ID MATCHES "IntelLLVM" OR CMAKE_C_COMPILER_ID MATCHES "NVHPC")
-            set(VPCLMULFLAG "-mvpclmulqdq -mavx512f")
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|IntelLLVM|NVHPC")
+            set(VPCLMULFLAG "-mvpclmulqdq")
         endif()
     endif()
     # Check whether compiler supports VPCLMULQDQ intrinsics
     if(NOT (APPLE AND ARCH_32BIT))
-        set(CMAKE_REQUIRED_FLAGS "${VPCLMULFLAG} ${NATIVEFLAG} ${ZNOLTOFLAG}")
+        set(CMAKE_REQUIRED_FLAGS "${VPCLMULFLAG} ${AVX2FLAG} ${NATIVEFLAG} ${ZNOLTOFLAG}")
         check_c_source_compiles(
             "#include <immintrin.h>
             #include <wmmintrin.h>
-            __m512i f(__m512i a) {
-                __m512i b = _mm512_setzero_si512();
-                return _mm512_clmulepi64_epi128(a, b, 0x10);
+            __m256i f(__m256i a) {
+                __m256i b = _mm256_setzero_si256();
+                return _mm256_clmulepi64_epi128(a, b, 0x10);
             }
             int main(void) { return 0; }"
             HAVE_VPCLMULQDQ_INTRIN
@@ -673,28 +757,28 @@ macro(check_sse42_intrinsics)
     set(CMAKE_REQUIRED_FLAGS)
 endmacro()
 
-macro(check_vgfma_intrinsics)
+macro(check_s390_vx_intrinsics)
     if(NOT NATIVEFLAG)
-        set(VGFMAFLAG "-march=z13")
+        set(S390VXFLAG "-march=z13")
         if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-            set(VGFMAFLAG "${VGFMAFLAG} -mzarch")
+            set(S390VXFLAG "${S390VXFLAG} -mzarch")
         endif()
         if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-            set(VGFMAFLAG "${VGFMAFLAG} -fzvector")
+            set(S390VXFLAG "${S390VXFLAG} -fzvector")
         endif()
     endif()
-    # Check whether compiler supports "VECTOR GALOIS FIELD MULTIPLY SUM AND ACCUMULATE" intrinsic
-    set(CMAKE_REQUIRED_FLAGS "${VGFMAFLAG} ${NATIVEFLAG} ${ZNOLTOFLAG}")
+    # Check whether compiler supports S390 VX intrinsics
+    set(CMAKE_REQUIRED_FLAGS "${S390VXFLAG} ${NATIVEFLAG} ${ZNOLTOFLAG}")
     check_c_source_compiles(
         "#include <vecintrin.h>
         int main(void) {
-            unsigned long long a __attribute__((vector_size(16))) = { 0 };
-            unsigned long long b __attribute__((vector_size(16))) = { 0 };
-            unsigned char c __attribute__((vector_size(16))) = { 0 };
-            c = vec_gfmsum_accum_128(a, b, c);
-            return c[0];
+            unsigned char a __attribute__((vector_size(16))) = { 0 };
+            unsigned char b __attribute__((vector_size(16))) = { 0 };
+            a = vec_min(a, b);
+            a = vec_xl(0, (unsigned char *)0);
+            return a[0];
         }"
-        HAVE_VGFMA_INTRIN FAIL_REGEX "not supported")
+        HAVE_S390_VX_INTRIN FAIL_REGEX "not supported")
     set(CMAKE_REQUIRED_FLAGS)
 endmacro()
 

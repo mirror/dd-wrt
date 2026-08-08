@@ -14,13 +14,20 @@
  * (It will be regenerated if this run of deflate switches away from Huffman.)
  */
 Z_INTERNAL block_state deflate_huff(deflate_state *s, int flush) {
+    unsigned char *window = s->window;
     int bflush = 0;         /* set if current block must be flushed */
+    unsigned int lookahead = s->lookahead;
+    unsigned int strstart = s->strstart;
 
     for (;;) {
         /* Make sure that we have a literal to write. */
-        if (s->lookahead == 0) {
+        if (UNLIKELY(lookahead == 0)) {
+            s->lookahead = lookahead;
+            s->strstart = strstart;
             PREFIX(fill_window)(s);
-            if (s->lookahead == 0) {
+            lookahead = s->lookahead;
+            strstart = s->strstart;
+            if (UNLIKELY(lookahead == 0)) {
                 if (flush == Z_NO_FLUSH)
                     return need_more;
                 break;      /* flush the current block */
@@ -28,18 +35,23 @@ Z_INTERNAL block_state deflate_huff(deflate_state *s, int flush) {
         }
 
         /* Output a literal byte */
-        bflush = zng_tr_tally_lit(s, s->window[s->strstart]);
-        s->lookahead--;
-        s->strstart++;
-        if (bflush)
-            FLUSH_BLOCK(s, 0);
+        bflush = zng_tr_tally_lit(s, window[strstart]);
+        lookahead--;
+        strstart++;
+        if (bflush) {
+            s->lookahead = lookahead;
+            s->strstart = strstart;
+            FLUSH_BLOCK(s, window, 0);
+        }
     }
+    s->lookahead = lookahead;
+    s->strstart = strstart;
     s->insert = 0;
     if (flush == Z_FINISH) {
-        FLUSH_BLOCK(s, 1);
+        FLUSH_BLOCK(s, window, 1);
         return finish_done;
     }
     if (s->sym_next)
-        FLUSH_BLOCK(s, 0);
+        FLUSH_BLOCK(s, window, 0);
     return block_done;
 }

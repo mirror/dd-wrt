@@ -45,10 +45,10 @@ public:
                 misalign = 0;
             else
                 misalign += (DO_ALIGNED) ? 16 : 1;
-        }
 
-        // Prevent the result from being optimized away
-        benchmark::DoNotOptimize(hash);
+            // Prevent the result from being optimized away
+            benchmark::DoNotOptimize(hash);
+        }
     }
 
     void TearDown(const ::benchmark::State&) {
@@ -62,6 +62,7 @@ public:
     BENCHMARK_DEFINE_F(crc32_copy, name)(benchmark::State& state) { \
         if (!(support_flag)) { \
             state.SkipWithError("CPU does not support " #name); \
+            return; \
         } \
         Bench(state, copyfunc, 0); \
     } \
@@ -73,6 +74,7 @@ public:
     BENCHMARK_DEFINE_F(crc32_copy, ALIGNED_NAME(name))(benchmark::State& state) { \
         if (!(support_flag)) { \
             state.SkipWithError("CPU does not support " #name); \
+            return; \
         } \
         Bench(state, copyfunc, 1); \
     } \
@@ -85,6 +87,7 @@ public:
     BENCHMARK_DEFINE_F(crc32_copy, MEMCPY_NAME(name))(benchmark::State& state) { \
         if (!(support_flag)) { \
             state.SkipWithError("CPU does not support " #name); \
+            return; \
         } \
 	Bench(state, [](uint32_t init_sum, unsigned char *dst, \
                         const uint8_t *buf, size_t len) -> uint32_t { \
@@ -99,6 +102,7 @@ public:
     BENCHMARK_DEFINE_F(crc32_copy, MEMCPY_ALIGNED_NAME(name))(benchmark::State& state) { \
         if (!(support_flag)) { \
             state.SkipWithError("CPU does not support " #name); \
+            return; \
         } \
 	Bench(state, [](uint32_t init_sum, unsigned char *dst, \
                         const uint8_t *buf, size_t len) -> uint32_t { \
@@ -128,17 +132,19 @@ public:
 #endif
 
 // Base test
+#ifdef CRC32_BRAID_FALLBACK
 BENCHMARK_CRC32_COPY(braid, crc32_braid, crc32_copy_braid, 1);
+#endif
+#ifdef CRC32_CHORBA_FALLBACK
+BENCHMARK_CRC32_COPY(chorba, crc32_chorba, crc32_copy_chorba, 1)
+#endif
 
 #ifdef DISABLE_RUNTIME_CPU_DETECTION
     // Native
     BENCHMARK_CRC32_COPY(native, native_crc32, native_crc32_copy, 1)
 #else
     // Optimized functions
-#  ifndef WITHOUT_CHORBA
-    BENCHMARK_CRC32_COPY(chorba, crc32_chorba, crc32_copy_chorba, 1)
-#  endif
-#  ifndef WITHOUT_CHORBA_SSE
+#  ifdef CRC32_CHORBA_SSE_FALLBACK
 #    ifdef X86_SSE2
     BENCHMARK_CRC32_COPY(chorba_sse2, crc32_chorba_sse2, crc32_copy_chorba_sse2, test_cpu_features.x86.has_sse2);
 #    endif
@@ -153,7 +159,7 @@ BENCHMARK_CRC32_COPY(braid, crc32_braid, crc32_copy_braid, 1);
     BENCHMARK_CRC32_COPY(armv8_pmull_eor3, crc32_armv8_pmull_eor3, crc32_copy_armv8_pmull_eor3, test_cpu_features.arm.has_crc32 && test_cpu_features.arm.has_pmull && test_cpu_features.arm.has_eor3)
 #  endif
 #  ifdef LOONGARCH_CRC
-    BENCHMARK_CRC32_COPY(loongarch, crc32_loongarch64, crc32_copy_loongarch64, test_cpu_features.loongarch.has_crc)
+    BENCHMARK_CRC32_COPY(loongarch64, crc32_loongarch64, crc32_copy_loongarch64, test_cpu_features.loongarch.has_crc)
 #  endif
 #  ifdef POWER8_VSX_CRC32
     BENCHMARK_CRC32_COPY(power8, crc32_power8, crc32_copy_power8, test_cpu_features.power.has_arch_2_07)
@@ -161,14 +167,17 @@ BENCHMARK_CRC32_COPY(braid, crc32_braid, crc32_copy_braid, 1);
 #  ifdef RISCV_CRC32_ZBC
     BENCHMARK_CRC32_COPY(riscv, crc32_riscv, crc32_copy_riscv64_zbc, test_cpu_features.riscv.has_zbc)
 #  endif
-#  ifdef S390_CRC32_VX
+#  ifdef S390_VX
     BENCHMARK_CRC32_COPY(vx, crc32_s390_vx, crc32_copy_s390_vx, test_cpu_features.s390.has_vx)
 #  endif
 #  ifdef X86_PCLMULQDQ_CRC
     BENCHMARK_CRC32_COPY(pclmulqdq, crc32_pclmulqdq, crc32_copy_pclmulqdq, test_cpu_features.x86.has_pclmulqdq)
 #  endif
-#  ifdef X86_VPCLMULQDQ_CRC
-    BENCHMARK_CRC32_COPY(vpclmulqdq, crc32_vpclmulqdq, crc32_copy_vpclmulqdq, (test_cpu_features.x86.has_pclmulqdq && test_cpu_features.x86.has_avx512_common && test_cpu_features.x86.has_vpclmulqdq))
+#  ifdef X86_VPCLMULQDQ_AVX2
+    BENCHMARK_CRC32_COPY(vpclmulqdq_avx2, crc32_vpclmulqdq_avx2, crc32_copy_vpclmulqdq_avx2, (test_cpu_features.x86.has_pclmulqdq && test_cpu_features.x86.has_avx2 && test_cpu_features.x86.has_vpclmulqdq))
+#  endif
+#  ifdef X86_VPCLMULQDQ_AVX512
+    BENCHMARK_CRC32_COPY(vpclmulqdq_avx512, crc32_vpclmulqdq_avx512, crc32_copy_vpclmulqdq_avx512, (test_cpu_features.x86.has_pclmulqdq && test_cpu_features.x86.has_avx512_common && test_cpu_features.x86.has_vpclmulqdq))
 #  endif
 
 #endif

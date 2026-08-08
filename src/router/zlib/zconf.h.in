@@ -19,10 +19,12 @@
 #  define __has_declspec_attribute(x) 0
 #endif
 
-#if defined(ZLIB_CONST) && !defined(z_const)
-#  define z_const const
-#else
-#  define z_const
+#ifndef z_const
+#  ifdef ZLIB_CONST
+#    define z_const const
+#  else
+#    define z_const
+#  endif
 #endif
 
 /* Maximum value for memLevel in deflateInit2 */
@@ -142,10 +144,6 @@ typedef unsigned int z_crc_t;
 #  define Z_HAVE_UNISTD_H
 #endif
 
-#ifdef NEED_PTRDIFF_T    /* may be set to #if 1 by configure/cmake/etc */
-typedef PTRDIFF_TYPE ptrdiff_t;
-#endif
-
 #include <sys/types.h>      /* for off_t */
 
 #include <stddef.h>         /* for wchar_t and NULL */
@@ -160,7 +158,7 @@ typedef PTRDIFF_TYPE ptrdiff_t;
 #  undef _LARGEFILE64_SOURCE
 #endif
 
-#if defined(Z_HAVE_UNISTD_H) || defined(_LARGEFILE64_SOURCE)
+#if defined(Z_HAVE_UNISTD_H)
 #  include <unistd.h>         /* for SEEK_*, off_t, and _LFS64_LARGEFILE */
 #  ifndef z_off_t
 #    define z_off_t off_t

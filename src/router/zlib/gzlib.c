@@ -44,6 +44,10 @@ static gzFile gz_state_init(void) {
     state->level = Z_DEFAULT_COMPRESSION;
     state->strategy = Z_DEFAULT_STRATEGY;
     state->msg = NULL;
+
+    state->past = 0;
+    state->skip = 0;
+
     return (gzFile)state;
 }
 
@@ -61,7 +65,7 @@ static void gz_reset(gz_state *state) {
     }
     else                            /* for writing ... */
         state->reset = 0;           /* no deflateReset pending */
-    state->seek = 0;                /* no seek request pending */
+    state->skip = 0;                /* no seek request pending */
     PREFIX(gz_error)(state, Z_OK, NULL);    /* clear error */
     state->x.pos = 0;               /* no uncompressed data yet */
     state->strm.avail_in = 0;       /* no input data yet */
@@ -69,8 +73,8 @@ static void gz_reset(gz_state *state) {
 
 /* Allocate in/out buffers for gzFile */
 int Z_INTERNAL gz_buffer_alloc(gz_state *state) {
-    int want = state->want;
-    int in_size = want, out_size = want;
+    unsigned want = state->want;
+    unsigned in_size = want, out_size = want;
 
     if (state->mode == GZ_WRITE) {
         in_size = want * 2; // double input buffer for compression (ref: gzprintf)
@@ -170,6 +174,9 @@ static gzFile gz_open(const void *path, int fd, const char *mode) {
             case 'F':
                 state->strategy = Z_FIXED;
                 break;
+            case 'G':
+                state->direct = -1;
+                break;
             case 'T':
                 state->direct = 1;
                 break;
@@ -186,14 +193,25 @@ static gzFile gz_open(const void *path, int fd, const char *mode) {
         return NULL;
     }
 
-    /* can't force transparent read */
+    /* direct is 0, 1 if "T", or -1 if "G" (last "G" or "T" wins) */
     if (state->mode == GZ_READ) {
-        if (state->direct) {
+        if (state->direct == 1) {
+            /* can't force a transparent read */
             gz_state_free(state);
             return NULL;
         }
-        state->direct = 1;      /* for empty file */
+        if (state->direct == 0)
+            /* default when reading is auto-detect of gzip vs. transparent --
+               start with a transparent assumption in case of an empty file */
+            state->direct = 1;
     }
+    else if (state->direct == -1) {
+        /* "G" has no meaning when writing -- disallow it */
+        gz_state_free(state);
+        return NULL;
+    }
+    /* if reading, direct == 1 for auto-detect, -1 for gzip only; if writing or
+       appending, direct == 0 for gzip, 1 for transparent (copy in to out) */
 
     /* save the path name for error messages */
 #ifdef WIDECHAR
@@ -204,7 +222,7 @@ static gzFile gz_open(const void *path, int fd, const char *mode) {
     } else
 #endif
         len = strlen((const char *)path);
-    state->path = (char *)malloc(len + 1);
+    state->path = malloc(len + 1);
     if (state->path == NULL) {
         gz_state_free(state);
         return NULL;
@@ -245,7 +263,7 @@ static gzFile gz_open(const void *path, int fd, const char *mode) {
     state->fd = fd > -1 ? fd : (
 #if defined(_WIN32)
         fd == -2 ? _wopen((const wchar_t *)path, oflag, 0666) :
-#elif __CYGWIN__
+#elif defined(__CYGWIN__)
         fd == -2 ? open(state->path, oflag, 0666) :
 #endif
         open((const char *)path, oflag, 0666));
@@ -332,8 +350,14 @@ z_int32_t Z_EXPORT PREFIX(gzbuffer)(gzFile file, z_uint32_t size) {
         return -1;
 
     /* check and set requested size */
-    if ((size << 1) < size)
-        return -1;              /* need to be able to double it */
+    if (size > GZBUFSIZE_MAX) {
+#ifdef ZLIB_COMPAT
+        size = GZBUFSIZE_MAX;   /* silently clamp to stay compatible with zlib */
+#else
+        PREFIX(gz_error)(state, Z_MEM_ERROR, "out of memory");
+        return -1;              /* too large */
+#endif
+    }
     if (size < 8)
         size = 8;               /* needed to behave well with flushing */
     state->want = size;
@@ -384,9 +408,10 @@ z_off64_t Z_EXPORT PREFIX4(gzseek)(gzFile file, z_off64_t offset, int whence) {
     /* normalize offset to a SEEK_CUR specification */
     if (whence == SEEK_SET)
         offset -= state->x.pos;
-    else if (state->seek)
-        offset += state->skip;
-    state->seek = 0;
+    else {
+        offset += state->past ? 0 : state->skip;
+        state->skip = 0;
+    }
 
     /* if within raw area while reading, just go there */
     if (state->mode == GZ_READ && state->how == COPY && state->x.pos + offset >= 0) {
@@ -396,7 +421,7 @@ z_off64_t Z_EXPORT PREFIX4(gzseek)(gzFile file, z_off64_t offset, int whence) {
         state->x.have = 0;
         state->eof = 0;
         state->past = 0;
-        state->seek = 0;
+        state->skip = 0;
         PREFIX(gz_error)(state, Z_OK, NULL);
         state->strm.avail_in = 0;
         state->x.pos += offset;
@@ -424,10 +449,7 @@ z_off64_t Z_EXPORT PREFIX4(gzseek)(gzFile file, z_off64_t offset, int whence) {
     }
 
     /* request skip (if not zero) */
-    if (offset) {
-        state->seek = 1;
-        state->skip = offset;
-    }
+    state->skip = offset;
     return state->x.pos + offset;
 }
 
@@ -453,7 +475,7 @@ z_off64_t Z_EXPORT PREFIX4(gztell)(gzFile file) {
         return -1;
 
     /* return position */
-    return state->x.pos + (state->seek ? state->skip : 0);
+    return state->x.pos + (state->past ? 0 : state->skip);
 }
 
 /* -- see zlib.h -- */
@@ -577,7 +599,7 @@ void Z_INTERNAL PREFIX(gz_error)(gz_state *state, int err, const char *msg) {
         return;
 
     /* construct error message with path */
-    if ((state->msg = (char *)malloc(strlen(state->path) + strlen(msg) + 3)) == NULL) {
+    if ((state->msg = malloc(strlen(state->path) + strlen(msg) + 3)) == NULL) {
         state->err = Z_MEM_ERROR;
         return;
     }

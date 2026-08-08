@@ -17,17 +17,17 @@
  */
 Z_INTERNAL block_state deflate_slow(deflate_state *s, int flush) {
     match_func longest_match;
-    insert_string_cb insert_string_func;
+    insert_batch_func insert_batch;
     unsigned char *window = s->window;
     int bflush;              /* set if current block must be flushed */
     int level = s->level;
 
     if (level >= 9) {
-        longest_match = FUNCTABLE_FPTR(longest_match_slow);
-        insert_string_func = insert_string_roll;
+        longest_match = FUNCTABLE_FPTR(longest_match_roll);
+        insert_batch = insert_roll_batch;
     } else {
         longest_match = FUNCTABLE_FPTR(longest_match);
-        insert_string_func = insert_string;
+        insert_batch = insert_knuth_batch;
     }
 
     /* Process the input block. */
@@ -37,7 +37,7 @@ Z_INTERNAL block_state deflate_slow(deflate_state *s, int flush) {
          * for the next match, plus WANT_MIN_MATCH bytes to insert the
          * string following the next match.
          */
-        if (s->lookahead < MIN_LOOKAHEAD) {
+        if (UNLIKELY(s->lookahead < MIN_LOOKAHEAD)) {
             PREFIX(fill_window)(s);
             if (UNLIKELY(s->lookahead < MIN_LOOKAHEAD && flush == Z_NO_FLUSH)) {
                 return need_more;
@@ -52,9 +52,9 @@ Z_INTERNAL block_state deflate_slow(deflate_state *s, int flush) {
         uint32_t hash_head = 0;
         if (LIKELY(s->lookahead >= WANT_MIN_MATCH)) {
             if (level >= 9)
-                hash_head = quick_insert_string_roll(s, s->strstart);
+                hash_head = insert_roll(s, window, s->strstart);
             else
-                hash_head = quick_insert_string(s, s->strstart);
+                hash_head = insert_knuth(s, window, s->strstart);
         }
 
         /* Find the longest match, discarding those <= prev_length.
@@ -103,14 +103,14 @@ Z_INTERNAL block_state deflate_slow(deflate_state *s, int flush) {
                 unsigned int insert_cnt = mov_fwd;
                 if (UNLIKELY(insert_cnt > max_insert - s->strstart))
                     insert_cnt = max_insert - s->strstart;
-                insert_string_func(s, s->strstart + 1, insert_cnt);
+                insert_batch(s, window, s->strstart + 1, insert_cnt);
             }
             s->prev_length = 0;
             s->match_available = 0;
             s->strstart += mov_fwd + 1;
 
             if (UNLIKELY(bflush))
-                FLUSH_BLOCK(s, 0);
+                FLUSH_BLOCK(s, window, 0);
 
         } else if (s->match_available) {
             /* If there was no match at the previous position, output a
@@ -119,7 +119,7 @@ Z_INTERNAL block_state deflate_slow(deflate_state *s, int flush) {
              */
             bflush = zng_tr_tally_lit(s, window[s->strstart-1]);
             if (UNLIKELY(bflush))
-                FLUSH_BLOCK_ONLY(s, 0);
+                FLUSH_BLOCK_ONLY(s, window, 0);
             s->prev_length = match_len;
             s->strstart++;
             s->lookahead--;
@@ -142,10 +142,10 @@ Z_INTERNAL block_state deflate_slow(deflate_state *s, int flush) {
     }
     s->insert = s->strstart < (STD_MIN_MATCH - 1) ? s->strstart : (STD_MIN_MATCH - 1);
     if (UNLIKELY(flush == Z_FINISH)) {
-        FLUSH_BLOCK(s, 1);
+        FLUSH_BLOCK(s, window, 1);
         return finish_done;
     }
     if (UNLIKELY(s->sym_next))
-        FLUSH_BLOCK(s, 0);
+        FLUSH_BLOCK(s, window, 0);
     return block_done;
 }

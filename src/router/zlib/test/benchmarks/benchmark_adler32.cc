@@ -41,10 +41,10 @@ public:
                 misalign = 0;
             else
                 misalign += (DO_ALIGNED) ? 16 : 1;
-        }
 
-        // Prevent the result from being optimized away
-        benchmark::DoNotOptimize(hash);
+            // Prevent the result from being optimized away
+            benchmark::DoNotOptimize(hash);
+        }
     }
 
     void TearDown(const ::benchmark::State&) {
@@ -56,6 +56,7 @@ public:
     BENCHMARK_DEFINE_F(adler32, name)(benchmark::State& state) { \
         if (!(support_flag)) { \
             state.SkipWithError("CPU does not support " #name); \
+            return; \
         } \
         Bench(state, hashfunc, 0); \
     } \
@@ -67,6 +68,7 @@ public:
     BENCHMARK_DEFINE_F(adler32, ALIGNED_NAME(name))(benchmark::State& state) { \
         if (!(support_flag)) { \
             state.SkipWithError("CPU does not support " #name); \
+            return; \
         } \
         Bench(state, hashfunc, 1); \
     } \
@@ -77,7 +79,9 @@ public:
     BENCHMARK_ADLER32_MISALIGNED(name, hashfunc, support_flag); \
     BENCHMARK_ADLER32_ALIGNED(name, hashfunc, support_flag);
 
+#ifdef ADLER32_FALLBACK
 BENCHMARK_ADLER32(c, adler32_c, 1);
+#endif
 
 #ifdef DISABLE_RUNTIME_CPU_DETECTION
 BENCHMARK_ADLER32(native, native_adler32, 1);
@@ -85,6 +89,9 @@ BENCHMARK_ADLER32(native, native_adler32, 1);
 
 #ifdef ARM_NEON
 BENCHMARK_ADLER32(neon, adler32_neon, test_cpu_features.arm.has_neon);
+#endif
+#ifdef ARM_NEON_DOTPROD
+BENCHMARK_ADLER32(neon_dotprod, adler32_neon_dotprod, test_cpu_features.arm.has_neon && test_cpu_features.arm.has_dotprod);
 #endif
 
 #ifdef PPC_VMX
@@ -103,6 +110,9 @@ BENCHMARK_ADLER32(ssse3, adler32_ssse3, test_cpu_features.x86.has_ssse3);
 #endif
 #ifdef X86_AVX2
 BENCHMARK_ADLER32(avx2, adler32_avx2, test_cpu_features.x86.has_avx2);
+#endif
+#ifdef X86_AVX2VNNI
+BENCHMARK_ADLER32(avx2vnni, adler32_avx2_vnni, test_cpu_features.x86.has_avx2vnni);
 #endif
 #ifdef X86_AVX512
 BENCHMARK_ADLER32(avx512, adler32_avx512, test_cpu_features.x86.has_avx512_common);

@@ -11,6 +11,9 @@ extern "C" {
 #  include <png.h>
 }
 
+#define MAX(a, b) std::max(a, b)
+#define MIN(a, b) std::min(a, b)
+
 typedef struct _png_dat {
     uint8_t *buf;
     int64_t len;
@@ -45,34 +48,6 @@ static void png_write_cb(png_structp pngp, png_bytep data, png_size_t len) {
     dat->buf_rem -= len;
 }
 
-static void init_compressible(png_bytep buf, size_t num_pix) {
-    /* It doesn't actually matter what we make this, but for
-     * the sake of a reasonable test image, let's make this
-     * be a stripe of R, G, & B, with no alpha channel */
-    int32_t i = 0;
-    int32_t red_stop = num_pix / 3;
-    int32_t blue_stop = 2 * num_pix / 3;
-    int32_t green_stop = num_pix;
-
-    for (int32_t x = 0; i < red_stop; x += 3, ++i) {
-       buf[x] = 255;
-       buf[x + 1] = 0;
-       buf[x + 2] = 0;
-    }
-
-    for (int32_t x = 3 * i; i < blue_stop; x+= 3, ++i) {
-       buf[x] = 0;
-       buf[x + 1] = 255;
-       buf[x + 2] = 0;
-    }
-
-    for (int32_t x = 3 * i; i < green_stop; x += 3, ++i) {
-       buf[x] = 0;
-       buf[x + 1] = 0;
-       buf[x + 2] = 255;
-    }
-}
-
 static inline void encode_png(png_bytep buf, png_dat *outpng, int32_t comp_level, uint32_t width, uint32_t height) {
     png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
@@ -86,17 +61,17 @@ static inline void encode_png(png_bytep buf, png_dat *outpng, int32_t comp_level
 
     png_set_write_fn(png, outpng, png_write_cb, NULL);
     png_bytep *png_row_ptrs = new png_bytep[height];
-    for (int i = 0; i < IMHEIGHT; ++i) {
+    for (uint32_t i = 0; i < height; ++i) {
         png_row_ptrs[i] = (png_bytep)&buf[3*i*width];
     }
 
-    png_set_IHDR(png, info, IMWIDTH, IMHEIGHT, 8, PNG_COLOR_TYPE_RGB,
+    png_set_IHDR(png, info, width, height, 8, PNG_COLOR_TYPE_RGB,
                  PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT,
                  PNG_FILTER_TYPE_DEFAULT);
-
-    png_write_info(png, info);
     png_set_compression_level(png, comp_level);
     png_set_filter(png, 0, PNG_FILTER_NONE);
+
+    png_write_info(png, info);
     png_write_image(png, (png_bytepp)png_row_ptrs);
     png_write_end(png, NULL);
     png_destroy_write_struct(&png, &info);

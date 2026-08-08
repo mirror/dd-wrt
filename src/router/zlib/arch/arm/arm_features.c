@@ -1,3 +1,5 @@
+#ifdef ARM_FEATURES
+
 #include "zbuild.h"
 #include "arm_features.h"
 
@@ -6,12 +8,12 @@
 #  ifdef ARM_ASM_HWCAP
 #    include <asm/hwcap.h>
 #  endif
-#elif defined(__FreeBSD__) && defined(__aarch64__)
+#elif defined(__FreeBSD__) && defined(ARCH_64BIT)
 #  include <machine/armreg.h>
 #  ifndef ID_AA64ISAR0_CRC32_VAL
 #    define ID_AA64ISAR0_CRC32_VAL ID_AA64ISAR0_CRC32
 #  endif
-#elif defined(__OpenBSD__) && defined(__aarch64__)
+#elif defined(__OpenBSD__) && defined(ARCH_64BIT)
 #  include <machine/armreg.h>
 #  include <machine/cpu.h>
 #  include <sys/sysctl.h>
@@ -26,209 +28,246 @@
 #endif
 
 static int arm_has_crc32(void) {
-#if defined(ARM_AUXV_HAS_CRC32)
-#  if defined(__FreeBSD__) || defined(__OpenBSD__)
-#    ifdef HWCAP_CRC32
-       unsigned long hwcap = 0;
-       elf_aux_info(AT_HWCAP, &hwcap, sizeof(hwcap));
-       return (hwcap & HWCAP_CRC32) != 0 ? 1 : 0;
-#    else
-       unsigned long hwcap2 = 0;
-       elf_aux_info(AT_HWCAP2, &hwcap2, sizeof(hwcap2));
-       return (hwcap2 & HWCAP2_CRC32) != 0 ? 1 : 0;
-#    endif
-#  else
-#    ifdef HWCAP_CRC32
-       return (getauxval(AT_HWCAP) & HWCAP_CRC32) != 0 ? 1 : 0;
-#    else
-       return (getauxval(AT_HWCAP2) & HWCAP2_CRC32) != 0 ? 1 : 0;
-#    endif
+    int has_crc32 = 0;
+#if defined(__ARM_FEATURE_CRC32)
+    /* Compile-time check */
+    has_crc32 = 1;
+#elif defined(__linux__) && defined(HAVE_SYS_AUXV_H)
+#  ifdef HWCAP_CRC32
+    has_crc32 = (getauxval(AT_HWCAP) & HWCAP_CRC32) != 0;
+#  elif defined(HWCAP2_CRC32)
+    has_crc32 = (getauxval(AT_HWCAP2) & HWCAP2_CRC32) != 0;
 #  endif
-#elif defined(__FreeBSD__) && defined(__aarch64__)
-    return getenv("QEMU_EMULATING") == NULL
+#elif (defined(__FreeBSD__) || defined(__OpenBSD__)) && defined(HAVE_SYS_AUXV_H)
+#  ifdef HWCAP_CRC32
+    unsigned long hwcap = 0;
+    elf_aux_info(AT_HWCAP, &hwcap, sizeof(hwcap));
+    has_crc32 = (hwcap & HWCAP_CRC32) != 0;
+#  elif defined(HWCAP2_CRC32)
+    unsigned long hwcap2 = 0;
+    elf_aux_info(AT_HWCAP2, &hwcap2, sizeof(hwcap2));
+    has_crc32 = (hwcap2 & HWCAP2_CRC32) != 0;
+#  endif
+#elif defined(__FreeBSD__) && defined(ARCH_64BIT)
+    has_crc32 = getenv("QEMU_EMULATING") == NULL
       && ID_AA64ISAR0_CRC32_VAL(READ_SPECIALREG(id_aa64isar0_el1)) >= ID_AA64ISAR0_CRC32_BASE;
-#elif defined(__OpenBSD__) && defined(__aarch64__)
-    int hascrc32 = 0;
+#elif defined(__OpenBSD__) && defined(ARCH_64BIT)
     int isar0_mib[] = { CTL_MACHDEP, CPU_ID_AA64ISAR0 };
     uint64_t isar0 = 0;
     size_t len = sizeof(isar0);
     if (sysctl(isar0_mib, 2, &isar0, &len, NULL, 0) != -1) {
-      if (ID_AA64ISAR0_CRC32(isar0) >= ID_AA64ISAR0_CRC32_BASE)
-          hascrc32 = 1;
+      has_crc32 = ID_AA64ISAR0_CRC32(isar0) >= ID_AA64ISAR0_CRC32_BASE;
     }
-    return hascrc32;
 #elif defined(__APPLE__)
-    int hascrc32;
-    size_t size = sizeof(hascrc32);
-    return sysctlbyname("hw.optional.armv8_crc32", &hascrc32, &size, NULL, 0) == 0
-      && hascrc32 == 1;
+    int has_feat = 0;
+    size_t size = sizeof(has_feat);
+    has_crc32 = sysctlbyname("hw.optional.armv8_crc32", &has_feat, &size, NULL, 0) == 0
+        && has_feat == 1;
 #elif defined(_WIN32)
-    return IsProcessorFeaturePresent(PF_ARM_V8_CRC32_INSTRUCTIONS_AVAILABLE);
-#elif defined(ARM_NOCHECK_CRC32)
-    return 1;
-#else
-    return 0;
+    has_crc32 = IsProcessorFeaturePresent(PF_ARM_V8_CRC32_INSTRUCTIONS_AVAILABLE);
 #endif
+    return has_crc32;
 }
 
 static int arm_has_pmull(void) {
-#if defined(__linux__) && defined(HAVE_SYS_AUXV_H)
+    int has_pmull = 0;
+#if defined(__ARM_FEATURE_CRYPTO) || defined(__ARM_FEATURE_AES)
+    /* Compile-time check */
+    has_pmull = 1;
+#elif defined(__linux__) && defined(HAVE_SYS_AUXV_H)
 #  ifdef HWCAP_PMULL
-    return (getauxval(AT_HWCAP) & HWCAP_PMULL) != 0 ? 1 : 0;
-#  else
+    has_pmull = (getauxval(AT_HWCAP) & HWCAP_PMULL) != 0;
+#  elif defined(HWCAP_AES)
     /* PMULL is part of crypto extension, check for AES as proxy */
-#    ifdef HWCAP_AES
-    return (getauxval(AT_HWCAP) & HWCAP_AES) != 0 ? 1 : 0;
-#    else
-    return 0;
-#    endif
+    has_pmull = (getauxval(AT_HWCAP) & HWCAP_AES) != 0;
 #  endif
-#elif defined(__FreeBSD__) && defined(__aarch64__)
+#elif (defined(__FreeBSD__) || defined(__OpenBSD__)) && defined(HAVE_SYS_AUXV_H)
+#  ifdef HWCAP_PMULL
+    unsigned long hwcap = 0;
+    elf_aux_info(AT_HWCAP, &hwcap, sizeof(hwcap));
+    has_pmull = (hwcap & HWCAP_PMULL) != 0;
+#  elif defined(HWCAP_AES)
+    /* PMULL is part of crypto extension, check for AES as proxy */
+    unsigned long hwcap = 0;
+    elf_aux_info(AT_HWCAP, &hwcap, sizeof(hwcap));
+    has_pmull = (hwcap & HWCAP_AES) != 0;
+#  endif
+#elif defined(__FreeBSD__) && defined(ARCH_64BIT)
     /* Check for AES feature as PMULL is part of crypto extension */
-    return getenv("QEMU_EMULATING") == NULL
+    has_pmull = getenv("QEMU_EMULATING") == NULL
       && ID_AA64ISAR0_AES_VAL(READ_SPECIALREG(id_aa64isar0_el1)) >= ID_AA64ISAR0_AES_BASE;
-#elif defined(__OpenBSD__) && defined(__aarch64__)
-    int haspmull = 0;
+#elif defined(__OpenBSD__) && defined(ARCH_64BIT)
     int isar0_mib[] = { CTL_MACHDEP, CPU_ID_AA64ISAR0 };
     uint64_t isar0 = 0;
     size_t len = sizeof(isar0);
     if (sysctl(isar0_mib, 2, &isar0, &len, NULL, 0) != -1) {
-      if (ID_AA64ISAR0_AES(isar0) >= ID_AA64ISAR0_AES_BASE)
-          haspmull = 1;
+      has_pmull = ID_AA64ISAR0_AES(isar0) >= ID_AA64ISAR0_AES_BASE;
     }
-    return haspmull;
 #elif defined(__APPLE__)
-#  if defined(__aarch64__) || defined(_M_ARM64)
-    int haspmull;
-    size_t size = sizeof(haspmull);
-    return sysctlbyname("hw.optional.arm.FEAT_PMULL", &haspmull, &size, NULL, 0) == 0
-      && haspmull == 1;
-#  else
-    return 0;
-#  endif
+    int has_feat = 0;
+    size_t size = sizeof(has_feat);
+    has_pmull = sysctlbyname("hw.optional.arm.FEAT_PMULL", &has_feat, &size, NULL, 0) == 0
+        && has_feat == 1;
 #elif defined(_WIN32)
     /* Windows checks for crypto/AES support */
 #  ifdef PF_ARM_V8_CRYPTO_INSTRUCTIONS_AVAILABLE
-    return IsProcessorFeaturePresent(PF_ARM_V8_CRYPTO_INSTRUCTIONS_AVAILABLE);
-#  else
-    return 0;
+    has_pmull = IsProcessorFeaturePresent(PF_ARM_V8_CRYPTO_INSTRUCTIONS_AVAILABLE);
 #  endif
-#elif defined(__ARM_FEATURE_CRYPTO) || defined(__ARM_FEATURE_AES)
-    /* Compile-time check */
-    return 1;
-#else
-    return 0;
 #endif
+    return has_pmull;
 }
 
 static int arm_has_eor3(void) {
-#if defined(__linux__) && defined(HAVE_SYS_AUXV_H)
+    int has_eor3 = 0;
+#if defined(__ARM_FEATURE_SHA3)
+    /* Compile-time check */
+    has_eor3 = 1;
+#elif defined(__linux__) && defined(HAVE_SYS_AUXV_H)
     /* EOR3 is part of SHA3 extension, check HWCAP2_SHA3 */
 #  ifdef HWCAP2_SHA3
-    return (getauxval(AT_HWCAP2) & HWCAP2_SHA3) != 0 ? 1 : 0;
+    has_eor3 = (getauxval(AT_HWCAP2) & HWCAP2_SHA3) != 0;
 #  elif defined(HWCAP_SHA3)
-    return (getauxval(AT_HWCAP) & HWCAP_SHA3) != 0 ? 1 : 0;
-#  else
-    return 0;
+    has_eor3 = (getauxval(AT_HWCAP) & HWCAP_SHA3) != 0;
 #  endif
-#elif defined(__FreeBSD__) && defined(__aarch64__)
+#elif (defined(__FreeBSD__) || defined(__OpenBSD__)) && defined(HAVE_SYS_AUXV_H)
+#  ifdef HWCAP2_SHA3
+    unsigned long hwcap2 = 0;
+    elf_aux_info(AT_HWCAP2, &hwcap2, sizeof(hwcap2));
+    has_eor3 = (hwcap2 & HWCAP2_SHA3) != 0;
+#  elif defined(HWCAP_SHA3)
+    unsigned long hwcap = 0;
+    elf_aux_info(AT_HWCAP, &hwcap, sizeof(hwcap));
+    has_eor3 = (hwcap & HWCAP_SHA3) != 0;
+#  endif
+#elif defined(__FreeBSD__) && defined(ARCH_64BIT)
     /* FreeBSD: check for SHA3 in id_aa64isar0_el1 */
 #  ifdef ID_AA64ISAR0_SHA3_VAL
-    return getenv("QEMU_EMULATING") == NULL
+    has_eor3 = getenv("QEMU_EMULATING") == NULL
       && ID_AA64ISAR0_SHA3_VAL(READ_SPECIALREG(id_aa64isar0_el1)) >= ID_AA64ISAR0_SHA3_BASE;
-#  else
-    return 0;
 #  endif
-#elif defined(__OpenBSD__) && defined(__aarch64__)
+#elif defined(__OpenBSD__) && defined(ARCH_64BIT)
 #  ifdef ID_AA64ISAR0_SHA3
-    int haseor3 = 0;
     int isar0_mib[] = { CTL_MACHDEP, CPU_ID_AA64ISAR0 };
     uint64_t isar0 = 0;
     size_t len = sizeof(isar0);
     if (sysctl(isar0_mib, 2, &isar0, &len, NULL, 0) != -1) {
-      if (ID_AA64ISAR0_SHA3(isar0) >= ID_AA64ISAR0_SHA3_IMPL)
-          haseor3 = 1;
+      has_eor3 = ID_AA64ISAR0_SHA3(isar0) >= ID_AA64ISAR0_SHA3_IMPL;
     }
-    return haseor3;
-#  else
-    return 0;
 #  endif
 #elif defined(__APPLE__)
     /* All Apple Silicon (M1+) has SHA3/EOR3 support */
-#  if defined(__aarch64__) || defined(_M_ARM64)
-    int hassha3;
-    size_t size = sizeof(hassha3);
-    if (sysctlbyname("hw.optional.arm.FEAT_SHA3", &hassha3, &size, NULL, 0) == 0 && hassha3 == 1)
-        return 1;
+    int has_feat = 0;
+    size_t size = sizeof(has_feat);
+    has_eor3 = sysctlbyname("hw.optional.arm.FEAT_SHA3", &has_feat, &size, NULL, 0) == 0
+        && has_feat == 1;
     /* Fallback to legacy name for older macOS versions */
-    size = sizeof(hassha3);
-    return sysctlbyname("hw.optional.armv8_2_sha3", &hassha3, &size, NULL, 0) == 0
-      && hassha3 == 1;
-#  else
-    return 0;
-#  endif
+    if (!has_eor3) {
+        size = sizeof(has_feat);
+        has_eor3 = sysctlbyname("hw.optional.armv8_2_sha3", &has_feat, &size, NULL, 0) == 0
+            && has_feat == 1;
+    }
 #elif defined(_WIN32)
-    /* Windows: No direct API for SHA3, return 0 for now */
-    return 0;
-#elif defined(__ARM_FEATURE_SHA3)
-    /* Compile-time check */
-    return 1;
-#else
-    return 0;
+#  ifdef PF_ARM_SHA3_INSTRUCTIONS_AVAILABLE
+    has_eor3 = IsProcessorFeaturePresent(PF_ARM_SHA3_INSTRUCTIONS_AVAILABLE);
+#  endif
 #endif
+    return has_eor3;
+}
+
+static int arm_has_dotprod(void) {
+    int has_dotprod = 0;
+#if defined(__ARM_FEATURE_DOTPROD)
+    /* Compile-time check */
+    has_dotprod = 1;
+#elif defined(__linux__) && defined(HAVE_SYS_AUXV_H)
+#  ifdef HWCAP_ASIMDDP
+    has_dotprod = (getauxval(AT_HWCAP) & HWCAP_ASIMDDP) != 0;
+#  endif
+#elif (defined(__FreeBSD__) || defined(__OpenBSD__)) && defined(HAVE_SYS_AUXV_H)
+#  ifdef HWCAP_ASIMDDP
+    unsigned long hwcap = 0;
+    elf_aux_info(AT_HWCAP, &hwcap, sizeof(hwcap));
+    has_dotprod = (hwcap & HWCAP_ASIMDDP) != 0;
+#  endif
+#elif defined(__FreeBSD__) && defined(ARCH_64BIT)
+#  ifdef ID_AA64ISAR0_DP_VAL
+    has_dotprod = getenv("QEMU_EMULATING") == NULL
+      && ID_AA64ISAR0_DP_VAL(READ_SPECIALREG(id_aa64isar0_el1)) >= ID_AA64ISAR0_DP_IMPL;
+#  endif
+#elif defined(__OpenBSD__) && defined(ARCH_64BIT)
+#  ifdef ID_AA64ISAR0_DP
+    int isar0_mib[] = { CTL_MACHDEP, CPU_ID_AA64ISAR0 };
+    uint64_t isar0 = 0;
+    size_t len = sizeof(isar0);
+    if (sysctl(isar0_mib, 2, &isar0, &len, NULL, 0) != -1) {
+      has_dotprod = ID_AA64ISAR0_DP(isar0) >= ID_AA64ISAR0_DP_IMPL;
+    }
+#  endif
+#elif defined(__APPLE__)
+    int has_feat = 0;
+    size_t size = sizeof(has_feat);
+    has_dotprod = sysctlbyname("hw.optional.arm.FEAT_DotProd", &has_feat, &size, NULL, 0) == 0
+        && has_feat == 1;
+#elif defined(_WIN32)
+#  ifdef PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE
+    has_dotprod = IsProcessorFeaturePresent(PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE);
+#  endif
+#endif
+    return has_dotprod;
 }
 
 /* AArch64 has neon. */
-#if defined(ARCH_ARM) && defined(ARCH_32BIT)
+#ifdef ARCH_32BIT
 static inline int arm_has_neon(void) {
-#if defined(ARM_AUXV_HAS_NEON)
-#  if defined(__FreeBSD__) || defined(__OpenBSD__)
-     unsigned long hwcap = 0;
-     elf_aux_info(AT_HWCAP, &hwcap, sizeof(hwcap));
-     return (hwcap & HWCAP_NEON) != 0 ? 1 : 0;
-#  else
-#    ifdef HWCAP_ARM_NEON
-       return (getauxval(AT_HWCAP) & HWCAP_ARM_NEON) != 0 ? 1 : 0;
-#    else
-       return (getauxval(AT_HWCAP) & HWCAP_NEON) != 0 ? 1 : 0;
-#    endif
+    int has_neon = 0;
+#if defined(__ARM_NEON__) || defined(__ARM_NEON)
+    /* Compile-time check */
+    has_neon = 1;
+#elif defined(__linux__) && defined(HAVE_SYS_AUXV_H)
+#  ifdef HWCAP_ARM_NEON
+    has_neon = (getauxval(AT_HWCAP) & HWCAP_ARM_NEON) != 0;
+#  elif defined(HWCAP_NEON)
+    has_neon = (getauxval(AT_HWCAP) & HWCAP_NEON) != 0;
+#  endif
+#elif (defined(__FreeBSD__) || defined(__OpenBSD__)) && defined(HAVE_SYS_AUXV_H)
+#  ifdef HWCAP_NEON
+    unsigned long hwcap = 0;
+    elf_aux_info(AT_HWCAP, &hwcap, sizeof(hwcap));
+    has_neon = (hwcap & HWCAP_NEON) != 0;
 #  endif
 #elif defined(__APPLE__)
-    int hasneon;
-    size_t size = sizeof(hasneon);
-    return sysctlbyname("hw.optional.neon", &hasneon, &size, NULL, 0) == 0
-      && hasneon == 1;
+    int has_feat = 0;
+    size_t size = sizeof(has_feat);
+    has_neon = sysctlbyname("hw.optional.neon", &has_feat, &size, NULL, 0) == 0
+        && has_feat == 1;
 #elif defined(_M_ARM) && defined(WINAPI_FAMILY_PARTITION)
 #  if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_PHONE_APP)
-    return 1; /* Always supported */
+    has_neon = 1; /* Always supported */
 #  endif
 #endif
-
-#if defined(ARM_NOCHECK_NEON)
-    return 1;
-#else
-    return 0;
-#endif
+    return has_neon;
 }
 #endif
 
 /* AArch64 does not have ARMv6 SIMD. */
-#if defined(ARCH_ARM) && defined(ARCH_32BIT)
+#ifdef ARCH_32BIT
 static inline int arm_has_simd(void) {
-#if defined(__linux__) && defined(HAVE_SYS_AUXV_H)
+    int has_simd = 0;
+#if defined(__ARM_FEATURE_SIMD32)
+    /* Compile-time check for ARMv6 SIMD */
+    has_simd = 1;
+#elif defined(__linux__) && defined(HAVE_SYS_AUXV_H)
     const char *platform = (const char *)getauxval(AT_PLATFORM);
-    return strncmp(platform, "v6l", 3) == 0
+    has_simd = platform
+       && (strncmp(platform, "v6l", 3) == 0
         || strncmp(platform, "v7l", 3) == 0
-        || strncmp(platform, "v8l", 3) == 0;
-#elif defined(ARM_NOCHECK_SIMD)
-    return 1;
-#else
-    return 0;
+        || strncmp(platform, "v8l", 3) == 0);
 #endif
+    return has_simd;
 }
 #endif
 
-#if defined(__aarch64__) && !defined(__APPLE__)
+#if defined(ARCH_64BIT) && !defined(__APPLE__) && !defined(_WIN32)
 /* MIDR_EL1 bit field definitions */
 #define MIDR_IMPLEMENTOR(midr)  (((midr) & (0xffU << 24)) >> 24)
 #define MIDR_PARTNUM(midr)      (((midr) & (0xfffU << 4)) >> 4)
@@ -256,26 +295,37 @@ static inline int arm_has_simd(void) {
 
 /* Snapdragon X Elite/Plus - Custom core */
 #define QUALCOMM_PART_ORYON 0x001
+
+static inline int arm_has_cpuid(void) {
+    int has_cpuid = 0;
+#if defined(__linux__) && defined(HAVE_SYS_AUXV_H)
+#  ifdef HWCAP_CPUID
+    has_cpuid = (getauxval(AT_HWCAP) & HWCAP_CPUID) != 0;
+#  elif defined(HWCAP2_CPUID)
+    has_cpuid = (getauxval(AT_HWCAP2) & HWCAP2_CPUID) != 0;
+#  endif
+#elif (defined(__FreeBSD__) || defined(__OpenBSD__)) && defined(HAVE_SYS_AUXV_H)
+#  ifdef HWCAP_CPUID
+    unsigned long hwcap = 0;
+    elf_aux_info(AT_HWCAP, &hwcap, sizeof(hwcap));
+    has_cpuid = (hwcap & HWCAP_CPUID) != 0;
+#  endif
+#endif
+    return has_cpuid;
+}
 #endif
 
 /* Determine if CPU has fast PMULL (multiple execution units) */
 static inline int arm_cpu_has_fast_pmull(void) {
+    int has_fast_pmull = 0;
 #if defined(__APPLE__)
     /* On macOS, all Apple Silicon has fast PMULL */
-    return 1;
-#elif defined(__aarch64__)
-#  if defined(__linux__)
-    /* We have to support the CPUID feature in HWCAP */
-    if (!(getauxval(AT_HWCAP) & HWCAP_CPUID))
-        return 0;
-#  elif defined(__FreeBSD__) || defined(__OpenBSD__)
-    unsigned long hwcap = 0;
-    elf_aux_info(AT_HWCAP, &hwcap, sizeof(hwcap));
-    if (!(hwcap & HWCAP_CPUID))
-        return 0;
-#  else
-    return 0;
-#  endif
+    has_fast_pmull = 1;
+#elif defined(ARCH_64BIT) && !defined(_WIN32)
+    /* We need CPUID feature to read MIDR register */
+    if (!arm_has_cpuid())
+        return has_fast_pmull;
+
     uint64_t midr;
     __asm__ ("mrs %0, midr_el1" : "=r" (midr));
 
@@ -284,7 +334,7 @@ static inline int arm_cpu_has_fast_pmull(void) {
 
     if (implementer == ARM_IMPLEMENTER_APPLE) {
         /* All Apple Silicon (M1+) have fast PMULL */
-        return 1;
+        has_fast_pmull = 1;
     } else if (implementer == ARM_IMPLEMENTER_ARM) {
         /* ARM Cortex-X and Neoverse V/N2 series have multi-lane PMULL */
         switch (part) {
@@ -298,19 +348,19 @@ static inline int arm_cpu_has_fast_pmull(void) {
             case ARM_PART_NEOVERSE_V1:
             case ARM_PART_NEOVERSE_V2:
             case ARM_PART_NEOVERSE_V3:
-                return 1;
+                has_fast_pmull = 1;
         }
     } else if (implementer == ARM_IMPLEMENTER_QUALCOMM) {
         /* Qualcomm Oryon (Snapdragon X Elite/Plus) has fast PMULL */
         if (part == QUALCOMM_PART_ORYON)
-            return 1;
+            has_fast_pmull = 1;
     }
 #endif
-    return 0;
+    return has_fast_pmull;
 }
 
 void Z_INTERNAL arm_check_features(struct arm_cpu_features *features) {
-#if defined(ARCH_ARM) && defined(ARCH_64BIT)
+#ifdef ARCH_64BIT
     features->has_simd = 0; /* never available */
     features->has_neon = 1; /* always available */
 #else
@@ -321,4 +371,7 @@ void Z_INTERNAL arm_check_features(struct arm_cpu_features *features) {
     features->has_pmull = arm_has_pmull();
     features->has_eor3 = arm_has_eor3();
     features->has_fast_pmull = features->has_pmull && arm_cpu_has_fast_pmull();
+    features->has_dotprod = arm_has_dotprod();
 }
+
+#endif

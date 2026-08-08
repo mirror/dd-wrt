@@ -17,6 +17,9 @@ set(VALID_C_STANDARDS "99" "11")
 if(CMAKE_VERSION VERSION_GREATER 3.20)
     list(APPEND VALID_C_STANDARDS "17" "23")
 endif()
+if(POLICY CMP0129)
+    cmake_policy(SET CMP0129 NEW)
+endif()
 if(NOT CMAKE_C_STANDARD IN_LIST VALID_C_STANDARDS)
     MESSAGE(FATAL_ERROR "CMAKE_C_STANDARD:STRING=${CMAKE_C_STANDARD} not in known standards list\n ${VALID_C_STANDARDS}")
 endif()
@@ -39,6 +42,7 @@ include(CheckIncludeFile)
 include(CheckCSourceCompiles)
 include(CheckCSourceRuns)
 include(CheckCCompilerFlag)
+include(CheckLinkerFlag)
 include(CMakeDependentOption)
 include(CMakePackageConfigHelpers)
 include(CTest)
@@ -58,7 +62,9 @@ cmake_dependent_option(WITH_BENCHMARKS "Build test/benchmarks" OFF "BUILD_TESTIN
 cmake_dependent_option(WITH_BENCHMARK_APPS "Build application benchmarks" OFF "BUILD_TESTING" OFF)
 
 if(WITH_GTEST OR WITH_FUZZERS OR WITH_BENCHMARKS)
-  enable_language(CXX)
+    enable_language(CXX)
+    include(cmake/check-compiler-flags.cmake)
+    check_machine_flag_symmetry()
 endif()
 
 include(cmake/detect-arch.cmake)
@@ -110,8 +116,8 @@ Useful when embedding into a larger library.
 Default is no prefix (empty prefix).")
 
 # Add multi-choice option
-set(WITH_SANITIZER AUTO CACHE STRING "Enable sanitizer support")
-set_property(CACHE WITH_SANITIZER PROPERTY STRINGS "Memory" "Address" "Undefined" "Thread")
+set(WITH_SANITIZER OFF CACHE STRING "Enable sanitizer support")
+set_property(CACHE WITH_SANITIZER PROPERTY STRINGS "OFF" "memory" "address" "undefined" "thread")
 
 if(BASEARCH_ARM_FOUND)
     cmake_dependent_option(WITH_ARMV6 "Build with ARMv6 SIMD" ON ARCH_32BIT OFF)
@@ -132,11 +138,41 @@ elseif(BASEARCH_RISCV_FOUND)
 elseif(BASEARCH_S360_FOUND)
     option(WITH_DFLTCC_DEFLATE "Build with DFLTCC intrinsics for compression on IBM Z" OFF)
     option(WITH_DFLTCC_INFLATE "Build with DFLTCC intrinsics for decompression on IBM Z" OFF)
-    option(WITH_CRC32_VX "Build with vectorized CRC32 on IBM Z" ON)
+    option(WITH_S390_VX "Build with S390 VX intrinsics on IBM Z" ON)
+
+    # Provided for backward compatibility
+    if(DEFINED WITH_CRC32_VX)
+        set(WITH_S390_VX ${WITH_CRC32_VX})
+    endif()
 elseif(BASEARCH_LOONGARCH_FOUND)
     option(WITH_CRC32_LA "Build with vectorized CRC32 on LoongArch" ON)
     option(WITH_LSX "Build with vectorized LSX on LoongArch" ON)
     cmake_dependent_option(WITH_LASX "Build with vectorized LASX on LoongArch" ON "WITH_LSX" OFF)
+elseif(BASEARCH_E2K_FOUND)
+    # Elbrus (e2k) is a VLIW architecture where performance is highly dependent on the compiler.
+    # The e2k architecture versions are backward compatible: v4, v5 will work on v6 but with
+    # less efficiency. It makes no sense to implement dynamic dispatching of functions - this will
+    # lead to a decrease performance, not an increase.
+    # Therefore the native build is used.
+
+    set(WITH_NATIVE_INSTRUCTIONS ON)
+    set(WITH_SSE2 ON)
+    set(WITH_SSSE3 ON)
+    set(WITH_SSE41 ON)
+    set(WITH_SSE42 ON)
+
+    if(ARCHVERSION LESS_EQUAL 5)
+        set(NATIVEFLAG "-mno-avx -mno-pclmul")
+        set(WITH_PCLMULQDQ OFF)
+    else()
+        set(NATIVEFLAG "-mno-avx")
+        set(WITH_PCLMULQDQ ON)
+    endif()
+
+    set(WITH_AVX2 OFF)
+    set(WITH_AVX512 OFF)
+    set(WITH_AVX512VNNI OFF)
+    set(WITH_VPCLMULQDQ OFF)
 elseif(BASEARCH_X86_FOUND)
     option(WITH_SSE2 "Build with SSE2" ON)
     cmake_dependent_option(WITH_SSSE3 "Build with SSSE3" ON "WITH_SSE2" OFF)
@@ -144,9 +180,10 @@ elseif(BASEARCH_X86_FOUND)
     cmake_dependent_option(WITH_SSE42 "Build with SSE42" ON "WITH_SSE41" OFF)
     cmake_dependent_option(WITH_PCLMULQDQ "Build with PCLMULQDQ" ON "WITH_SSE42" OFF)
     cmake_dependent_option(WITH_AVX2 "Build with AVX2" ON "WITH_SSE42" OFF)
+    cmake_dependent_option(WITH_AVX2VNNI "Build with AVX VNNI extensions" ON "WITH_AVX2" OFF)
     cmake_dependent_option(WITH_AVX512 "Build with AVX512" ON "WITH_AVX2" OFF)
     cmake_dependent_option(WITH_AVX512VNNI "Build with AVX512 VNNI extensions" ON "WITH_AVX512" OFF)
-    cmake_dependent_option(WITH_VPCLMULQDQ "Build with VPCLMULQDQ" ON "WITH_PCLMULQDQ;WITH_AVX512" OFF)
+    cmake_dependent_option(WITH_VPCLMULQDQ "Build with VPCLMULQDQ" ON "WITH_PCLMULQDQ;WITH_AVX2" OFF)
 endif()
 
 option(INSTALL_UTILS "Copy minigzip and minideflate during install" OFF)
@@ -160,7 +197,7 @@ mark_as_advanced(FORCE
     WITH_ARMV6
     WITH_DFLTCC_DEFLATE
     WITH_DFLTCC_INFLATE
-    WITH_CRC32_VX
+    WITH_S390_VX
     WITH_AVX2 WITH_SSE2
     WITH_SSSE3 WITH_SSE41 WITH_SSE42
     WITH_PCLMULQDQ
@@ -219,10 +256,6 @@ elseif(MSVC)
     if(MSVC_VERSION VERSION_LESS 1800)
         message(SEND_ERROR "Unsupported Visual Studio compiler version (requires 2013 or later).")
     endif()
-    if(MSVC_VERSION VERSION_LESS 1930)
-        message(STATUS "Old Visual Studio compiler version, disabling SSE2/SSE4.1 Chorba variants (requires 2022 or later).")
-        add_definitions(-DWITHOUT_CHORBA_SSE)
-    endif()
     # TODO. ICC can be used through MSVC. I'm not sure if we'd ever see that combination
     # (who'd use cmake from an IDE...) but checking for ICC before checking for MSVC should
     # avoid mistakes.
@@ -250,6 +283,9 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang" 
     # Enable warnings in GCC and Clang
     set(WARNFLAGS -Wall)
     set(WARNFLAGS_MAINTAINER -Wextra)
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+        set(WARNFLAGS_MAINTAINER ${WARNFLAGS_MAINTAINER} -Werror)
+    endif()
     set(WARNFLAGS_DISABLE)
     # Check whether -fno-lto is available
     set(CMAKE_REQUIRED_FLAGS "-fno-lto")
@@ -308,6 +344,10 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang" 
             list(APPEND WARNFLAGS_DISABLE -Wno-pedantic-ms-format)
         endif()
     endif()
+elseif(CMAKE_C_COMPILER_ID MATCHES "LCC")
+    set(WARNFLAGS -Wall -Werror=bad-macro-redef)
+    set(WARNFLAGS_MAINTAINER -Wextra)
+    set(WARNFLAGS_DISABLE)
 endif()
 
 # Set native march/mcpu
@@ -315,7 +355,7 @@ if(WITH_NATIVE_INSTRUCTIONS)
     if(NATIVE_ARCH_OVERRIDE)
         message(STATUS "WARNING: WITH_NATIVE_INSTRUCTIONS enabled, but running with NATIVE_ARCH_OVERRIDE: ${NATIVE_ARCH_OVERRIDE}")
         set(NATIVEFLAG "${NATIVE_ARCH_OVERRIDE}")
-    else()
+    elseif(NOT BASEARCH_E2K_FOUND)
         if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
             check_c_compiler_flag(-march=native HAVE_MARCH_NATIVE)
             if(HAVE_MARCH_NATIVE)
@@ -458,34 +498,14 @@ check_include_file(linux/auxvec.h HAVE_LINUX_AUXVEC_H)
 if(HAVE_LINUX_AUXVEC_H)
     add_definitions(-DHAVE_LINUX_AUXVEC_H)
 endif()
-
-#
-# Check to see if we have large file support
-#
-set(CMAKE_REQUIRED_DEFINITIONS -D_LARGEFILE64_SOURCE=1 -D__USE_LARGEFILE64)
-check_type_size(off64_t OFF64_T)
-if(HAVE_OFF64_T)
-    add_definitions(-D_LARGEFILE64_SOURCE=1 -D__USE_LARGEFILE64)
-else()
-    check_type_size(_off64_t _OFF64_T)
-    if(HAVE__OFF64_T)
-        add_definitions(-D_LARGEFILE64_SOURCE=1 -D__USE_LARGEFILE64)
-    else()
-        check_type_size(__off64_t __OFF64_T)
-    endif()
+check_include_file(asm/hwprobe.h  HAVE_ASM_HWPROBE_H)
+if(HAVE_ASM_HWPROBE_H)
+    add_definitions(-DHAVE_ASM_HWPROBE_H)
 endif()
-set(CMAKE_REQUIRED_DEFINITIONS) # clear variable
 
 #
-# Check for fseeko and other optional functions
+# Check for strerror
 #
-set(CMAKE_REQUIRED_FLAGS "${ADDITIONAL_CHECK_FLAGS}")
-check_function_exists(fseeko HAVE_FSEEKO)
-if(NOT HAVE_FSEEKO)
-    add_definitions(-DNO_FSEEKO)
-endif()
-set(CMAKE_REQUIRED_FLAGS)
-
 set(CMAKE_REQUIRED_FLAGS "${ADDITIONAL_CHECK_FLAGS}")
 check_function_exists(strerror HAVE_STRERROR)
 if(NOT HAVE_STRERROR)
@@ -534,14 +554,22 @@ set(CMAKE_REQUIRED_DEFINITIONS)
 #
 # Check whether a sanitizer was requested
 #
-if(WITH_SANITIZER STREQUAL "Address")
+message(STATUS "Checking for sanitizer option")
+
+string(TOLOWER "${WITH_SANITIZER}" WITH_SANITIZER)
+if(NOT WITH_SANITIZER)
+    message(STATUS " sanitizer not enabled")
+elseif(WITH_SANITIZER STREQUAL "address")
     add_address_sanitizer()
-elseif(WITH_SANITIZER STREQUAL "Memory")
+elseif(WITH_SANITIZER STREQUAL "memory")
     add_memory_sanitizer()
-elseif(WITH_SANITIZER STREQUAL "Thread")
+elseif(WITH_SANITIZER STREQUAL "thread")
     add_thread_sanitizer()
-elseif(WITH_SANITIZER STREQUAL "Undefined")
+elseif(WITH_SANITIZER STREQUAL "undefined")
     add_undefined_sanitizer()
+else()
+    message(FATAL_ERROR "Unknown WITH_SANITIZER option: '${WITH_SANITIZER}'\n"
+                    "WITH_SANITIZER must be one of: 'memory', 'address', 'undefined', 'thread'")
 endif()
 
 #
@@ -611,68 +639,6 @@ if(HAVE_BUILTIN_ASSUME_ALIGNED)
 endif()
 set(CMAKE_REQUIRED_FLAGS)
 
-#
-# check for __builtin_ctz() support in the compiler
-#
-set(CMAKE_REQUIRED_FLAGS ${ZNOLTOFLAG})
-check_c_source_compiles(
-    "int main(void) {
-        unsigned int zero = 0;
-        long test = __builtin_ctz(zero);
-        (void)test;
-        return 0;
-    }"
-    HAVE_BUILTIN_CTZ
-)
-if(HAVE_BUILTIN_CTZ)
-    add_definitions(-DHAVE_BUILTIN_CTZ)
-endif()
-set(CMAKE_REQUIRED_FLAGS)
-
-#
-# check for __builtin_ctzll() support in the compiler
-#
-set(CMAKE_REQUIRED_FLAGS ${ZNOLTOFLAG})
-check_c_source_compiles(
-    "int main(void) {
-        unsigned int zero = 0;
-        long test = __builtin_ctzll(zero);
-        (void)test;
-        return 0;
-    }"
-    HAVE_BUILTIN_CTZLL
-)
-if(HAVE_BUILTIN_CTZLL)
-    add_definitions(-DHAVE_BUILTIN_CTZLL)
-endif()
-set(CMAKE_REQUIRED_FLAGS)
-
-#
-# check for ptrdiff_t support
-#
-check_c_source_compiles(
-    "#include <stddef.h>
-     int main() {
-         ptrdiff_t *a;
-         (void)a;
-         return 0;
-    }"
-    HAVE_PTRDIFF_T
-)
-if(NOT HAVE_PTRDIFF_T)
-    set(NEED_PTRDIFF_T 1)
-
-    check_type_size("void *" SIZEOF_DATA_PTR)
-    message(STATUS "sizeof(void *) is ${SIZEOF_DATA_PTR} bytes")
-
-    if(${SIZEOF_DATA_PTR} MATCHES "4")
-        set(PTRDIFF_TYPE "uint32_t")
-    elseif(${SIZEOF_DATA_PTR} MATCHES "8")
-        set(PTRDIFF_TYPE "uint64_t")
-    else()
-        message(FATAL_ERROR "sizeof(void *) is neither 32 nor 64 bit")
-    endif()
-endif()
 
 add_compile_options($<$<CONFIG:Debug>:-DZLIB_DEBUG>)
 
@@ -728,6 +694,8 @@ elseif(BASEARCH_S360_FOUND)
     set(ARCHDIR "arch/s390")
 elseif(BASEARCH_LOONGARCH_FOUND)
     set(ARCHDIR "arch/loongarch")
+elseif(BASEARCH_E2K_FOUND)
+    set(ARCHDIR "arch/x86")
 elseif(BASEARCH_X86_FOUND)
     set(ARCHDIR "arch/x86")
     if(ARCH_32BIT)
@@ -742,118 +710,6 @@ if(WITH_OPTIM)
     add_definitions(-DWITH_OPTIM)
     if(BASEARCH_ARM_FOUND)
         add_definitions(-DARM_FEATURES)
-        if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-            if(ARCH_64BIT)
-                check_c_source_compiles(
-                    "#include <sys/auxv.h>
-                    int main() {
-                        return (getauxval(AT_HWCAP) & HWCAP_CRC32);
-                    }"
-                    ARM_AUXV_HAS_CRC32
-                )
-                if(ARM_AUXV_HAS_CRC32)
-                    add_definitions(-DARM_AUXV_HAS_CRC32)
-                else()
-                   message(STATUS "HWCAP_CRC32 not present in sys/auxv.h; cannot detect support at runtime.")
-                endif()
-            else()
-                check_c_source_compiles(
-                    "#include <sys/auxv.h>
-                    int main() {
-                        return (getauxval(AT_HWCAP2) & HWCAP2_CRC32);
-                    }"
-                    ARM_AUXV_HAS_CRC32
-                )
-                if(ARM_AUXV_HAS_CRC32)
-                    add_definitions(-DARM_AUXV_HAS_CRC32)
-                else()
-                    check_c_source_compiles(
-                        "#include <sys/auxv.h>
-                        #include <asm/hwcap.h>
-                        int main() {
-                            return (getauxval(AT_HWCAP2) & HWCAP2_CRC32);
-                        }"
-                        ARM_HWCAP_HAS_CRC32
-                    )
-                    if (ARM_HWCAP_HAS_CRC32)
-                        add_definitions(-DARM_AUXV_HAS_CRC32 -DARM_ASM_HWCAP)
-                    else()
-                        message(STATUS "HWCAP2_CRC32 not present in sys/auxv.h; cannot detect support at runtime.")
-                    endif()
-                endif()
-                check_c_source_compiles(
-                    "#include <sys/auxv.h>
-                    int main() {
-                      return (getauxval(AT_HWCAP) & HWCAP_ARM_NEON);
-                    }"
-                    ARM_AUXV_HAS_NEON
-                )
-                if(ARM_AUXV_HAS_NEON)
-                    add_definitions(-DARM_AUXV_HAS_NEON)
-                else()
-                    check_c_source_compiles(
-                        "#include <sys/auxv.h>
-                        int main() {
-                          return (getauxval(AT_HWCAP) & HWCAP_NEON);
-                        }"
-                        ARM_AUXV_HAS_NEON
-                    )
-                    if (ARM_AUXV_HAS_NEON)
-                        add_definitions(-DARM_AUXV_HAS_NEON)
-                    else()
-                        message(STATUS "Neither HWCAP_ARM_NEON or HWCAP_NEON present in sys/auxv.h; cannot detect support at runtime.")
-                    endif()
-                endif()
-            endif()
-        endif()
-        if(${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD" OR
-           ${CMAKE_SYSTEM_NAME} STREQUAL "OpenBSD")
-            if(ARCH_64BIT)
-                check_c_source_compiles(
-                    "#include <sys/auxv.h>
-                    int main() {
-                        unsigned long hwcap;
-                        elf_aux_info(AT_HWCAP, &hwcap, sizeof(hwcap));
-                        return (hwcap & HWCAP_CRC32);
-                    }"
-                    ARM_AUXV_HAS_CRC32
-                )
-                if(ARM_AUXV_HAS_CRC32)
-                    add_definitions(-DARM_AUXV_HAS_CRC32)
-                else()
-                    message(STATUS "HWCAP_CRC32 not present in sys/auxv.h; cannot detect support at runtime.")
-                endif()
-            else()
-                check_c_source_compiles(
-                    "#include <sys/auxv.h>
-                    int main() {
-                        unsigned long hwcap2;
-                        elf_aux_info(AT_HWCAP2, &hwcap2, sizeof(hwcap2));
-                        return (hwcap2 & HWCAP2_CRC32);
-                    }"
-                    ARM_AUXV_HAS_CRC32
-                )
-                if(ARM_AUXV_HAS_CRC32)
-                    add_definitions(-DARM_AUXV_HAS_CRC32)
-                else()
-                    message(STATUS "HWCAP2_CRC32 not present in sys/auxv.h; cannot detect support at runtime.")
-                endif()
-                check_c_source_compiles(
-                    "#include <sys/auxv.h>
-                    int main() {
-                      unsigned long hwcap;
-                      elf_aux_info(AT_HWCAP, &hwcap, sizeof(hwcap));
-                      return (hwcap & HWCAP_NEON);
-                    }"
-                    ARM_AUXV_HAS_NEON
-                )
-                if(ARM_AUXV_HAS_NEON)
-                    add_definitions(-DARM_AUXV_HAS_NEON)
-                else()
-                    message(STATUS "HWCAP_NEON not present in sys/auxv.h; cannot detect support at runtime.")
-                endif()
-            endif()
-        endif()
         list(APPEND ZLIB_ARCH_HDRS ${ARCHDIR}/arm_functions.h)
         if(WITH_RUNTIME_CPU_DETECTION)
             list(APPEND ZLIB_ARCH_HDRS ${ARCHDIR}/arm_features.h)
@@ -876,6 +732,15 @@ if(WITH_OPTIM)
                 check_neon_ld4_intrinsics()
                 if(NEON_HAS_LD4)
                     add_definitions(-DARM_NEON_HASLD4)
+                endif()
+
+                check_neon_dotprod_compiler_flag()
+                if(NEON_HAS_DOTPROD AND ARCH_64BIT)
+                    add_definitions(-DARM_NEON_DOTPROD)
+                    set(NEON_DOTPROD_SRCS ${ARCHDIR}/adler32_neon_dotprod.c)
+                    list(APPEND ZLIB_ARCH_SRCS ${NEON_DOTPROD_SRCS})
+                    set_property(SOURCE ${NEON_DOTPROD_SRCS} PROPERTY COMPILE_FLAGS "${NEONDOTPRODFLAG} ${NOLTOFLAG}")
+                    add_feature_info(NEON_DOTPROD_ADLER32 1 "Support NEON DotProd instructions in adler32, using \"${NEONDOTPRODFLAG}\"")
                 endif()
             else()
                 set(WITH_NEON OFF)
@@ -993,18 +858,18 @@ if(WITH_OPTIM)
             endif()
         endif()
     elseif(BASEARCH_RISCV_FOUND)
+        if(WITH_RVV OR WITH_RISCV_ZBC)
+            add_definitions(-DRISCV_FEATURES)
+            list(APPEND ZLIB_ARCH_HDRS ${ARCHDIR}/riscv_functions.h)
+            if(WITH_RUNTIME_CPU_DETECTION)
+                list(APPEND ZLIB_ARCH_HDRS ${ARCHDIR}/riscv_features.h)
+                list(APPEND ZLIB_ARCH_SRCS ${ARCHDIR}/riscv_features.c)
+            endif()
+        endif()
         if(WITH_RVV)
             check_rvv_intrinsics()
             if(HAVE_RVV_INTRIN)
-                add_definitions(-DRISCV_FEATURES)
                 add_definitions(-DRISCV_RVV)
-                list(APPEND ZLIB_ARCH_HDRS ${ARCHDIR}/riscv_functions.h)
-                if(WITH_RUNTIME_CPU_DETECTION)
-                    list(APPEND ZLIB_ARCH_HDRS ${ARCHDIR}/riscv_features.h)
-                    list(APPEND ZLIB_ARCH_SRCS ${ARCHDIR}/riscv_features.c)
-                endif()
-                # FIXME: we will not set compile flags for riscv_features.c when
-                # the kernels update hwcap or hwprobe for riscv
                 set(RVV_SRCS ${ARCHDIR}/adler32_rvv.c ${ARCHDIR}/chunkset_rvv.c ${ARCHDIR}/compare256_rvv.c ${ARCHDIR}/slide_hash_rvv.c)
                 list(APPEND ZLIB_ARCH_SRCS ${RVV_SRCS})
                 set_property(SOURCE ${RVV_SRCS} PROPERTY COMPILE_FLAGS "${RISCVFLAG} ${NOLTOFLAG}")
@@ -1025,7 +890,9 @@ if(WITH_OPTIM)
             endif()
         endif()
 
-        if(WITH_RUNTIME_CPU_DETECTION AND BASEARCH_RISCV_FOUND)
+        # FIXME: we will not set compile flags for riscv_features.c when
+        # the kernels update hwcap or hwprobe for riscv
+        if(WITH_RUNTIME_CPU_DETECTION)
             if(WITH_RVV AND WITH_RISCV_ZBC AND HAVE_RVV_INTRIN AND HAVE_RISCV_ZBC)
                 set_property(SOURCE ${ARCHDIR}/riscv_features.c PROPERTY COMPILE_FLAGS "${RISCVFLAG}_zbc ${NOLTOFLAG}")
             elseif(WITH_RVV AND HAVE_RVV_INTRIN)
@@ -1052,15 +919,24 @@ if(WITH_OPTIM)
             add_definitions(-DS390_DFLTCC_INFLATE)
             list(APPEND ZLIB_ARCH_SRCS ${ARCHDIR}/dfltcc_inflate.c)
         endif()
-        if(WITH_CRC32_VX)
-            check_vgfma_intrinsics()
-            if(HAVE_VGFMA_INTRIN)
-                add_definitions(-DS390_CRC32_VX)
-                set(CRC32_VX_SRCS ${ARCHDIR}/crc32-vx.c)
-                list(APPEND ZLIB_ARCH_SRCS ${CRC32_VX_SRCS})
-                set_property(SOURCE ${CRC32_VX_SRCS} PROPERTY COMPILE_FLAGS "${VGFMAFLAG} ${NOLTOFLAG}")
+        if(WITH_S390_VX)
+            check_s390_vx_intrinsics()
+            if(HAVE_S390_VX_INTRIN)
+                add_definitions(-DS390_VX)
+                if(NOT HAVE_S390_INTRIN)
+                    add_definitions(-DS390_FEATURES)
+                    list(APPEND ZLIB_ARCH_HDRS ${ARCHDIR}/s390_functions.h)
+                    if(WITH_RUNTIME_CPU_DETECTION)
+                        list(APPEND ZLIB_ARCH_HDRS ${ARCHDIR}/s390_features.h)
+                        list(APPEND ZLIB_ARCH_SRCS ${ARCHDIR}/s390_features.c)
+                    endif()
+                endif()
+                set(S390_VX_SRCS ${ARCHDIR}/crc32_vx.c ${ARCHDIR}/slide_hash_vx.c)
+                list(APPEND ZLIB_ARCH_SRCS ${S390_VX_SRCS})
+                set_property(SOURCE ${S390_VX_SRCS} PROPERTY COMPILE_FLAGS "${S390VXFLAG} ${NOLTOFLAG}")
+                add_feature_info(S390_VX 1 "S390 Vector Extension optimizations using \"${S390VXFLAG}\"")
             else()
-                set(WITH_CRC32_VX OFF)
+                set(WITH_S390_VX OFF)
             endif()
         endif()
     elseif(BASEARCH_LOONGARCH_FOUND)
@@ -1107,7 +983,7 @@ if(WITH_OPTIM)
             endif()
         endif()
 
-    elseif(BASEARCH_X86_FOUND)
+    elseif(BASEARCH_X86_FOUND OR BASEARCH_E2K_FOUND)
         add_definitions(-DX86_FEATURES)
         list(APPEND ZLIB_ARCH_HDRS ${ARCHDIR}/x86_functions.h)
         if(WITH_RUNTIME_CPU_DETECTION)
@@ -1131,7 +1007,7 @@ if(WITH_OPTIM)
             check_sse2_intrinsics()
             if(HAVE_SSE2_INTRIN)
                 add_definitions(-DX86_SSE2)
-                set(SSE2_SRCS ${ARCHDIR}/chunkset_sse2.c ${ARCHDIR}/chorba_sse2.c ${ARCHDIR}/compare256_sse2.c ${ARCHDIR}/slide_hash_sse2.c)
+                set(SSE2_SRCS ${ARCHDIR}/chunkset_sse2.c ${ARCHDIR}/compare256_sse2.c ${ARCHDIR}/crc32_chorba_sse2.c ${ARCHDIR}/slide_hash_sse2.c)
                 list(APPEND ZLIB_ARCH_SRCS ${SSE2_SRCS})
                 if(ARCH_32BIT)
                     set_property(SOURCE ${SSE2_SRCS} PROPERTY COMPILE_FLAGS "${SSE2FLAG} ${NOLTOFLAG}")
@@ -1156,7 +1032,7 @@ if(WITH_OPTIM)
             check_sse41_intrinsics()
             if(HAVE_SSE41_INTRIN AND WITH_SSSE3)
                 add_definitions(-DX86_SSE41)
-                set(SSE41_SRCS ${ARCHDIR}/chorba_sse41.c)
+                set(SSE41_SRCS ${ARCHDIR}/crc32_chorba_sse41.c)
                 list(APPEND ZLIB_ARCH_SRCS ${SSE41_SRCS})
                 set_property(SOURCE ${SSE41_SRCS} PROPERTY COMPILE_FLAGS "${SSE41FLAG} ${NOLTOFLAG}")
             else()
@@ -1205,6 +1081,18 @@ if(WITH_OPTIM)
                 set(WITH_AVX2 OFF)
             endif()
         endif()
+        if(WITH_AVX2VNNI)
+            check_avx2vnni_intrinsics()
+            if(HAVE_AVX2VNNI_INTRIN AND WITH_AVX2)
+                add_definitions(-DX86_AVX2VNNI)
+                add_feature_info(AVX2VNNI_ADLER32 1 "Support AVX2VNNI adler32, using \"${AVX2VNNIFLAG}\"")
+                list(APPEND AVX2VNNI_SRCS ${ARCHDIR}/adler32_avx2_vnni.c)
+                list(APPEND ZLIB_ARCH_SRCS ${AVX2VNNI_SRCS})
+                set_property(SOURCE ${AVX2VNNI_SRCS} PROPERTY COMPILE_FLAGS "${AVX2VNNIFLAG} ${NOLTOFLAG}")
+            else()
+                set(WITH_AVX2VNNI OFF)
+            endif()
+        endif()
         if(WITH_AVX512)
             check_avx512_intrinsics()
             if(HAVE_AVX512_INTRIN AND WITH_AVX2)
@@ -1236,12 +1124,22 @@ if(WITH_OPTIM)
         endif()
         if(WITH_VPCLMULQDQ)
             check_vpclmulqdq_intrinsics()
-            if(HAVE_VPCLMULQDQ_INTRIN AND WITH_PCLMULQDQ AND WITH_AVX512)
-                add_definitions(-DX86_VPCLMULQDQ_CRC)
-                set(VPCLMULQDQ_SRCS ${ARCHDIR}/crc32_vpclmulqdq.c)
-                add_feature_info(VPCLMUL_CRC 1 "Support CRC hash generation using VPCLMULQDQ, using \"${PCLMULFLAG} ${VPCLMULFLAG} ${AVX512FLAG}\"")
-                list(APPEND ZLIB_ARCH_SRCS ${VPCLMULQDQ_SRCS})
-                set_property(SOURCE ${VPCLMULQDQ_SRCS} PROPERTY COMPILE_FLAGS "${PCLMULFLAG} ${VPCLMULFLAG} ${AVX512FLAG} ${NOLTOFLAG}")
+            if(HAVE_VPCLMULQDQ_INTRIN AND WITH_PCLMULQDQ AND WITH_AVX2)
+                add_definitions(-DX86_VPCLMULQDQ_AVX2)
+                set(VPCLMULQDQ_AVX2_SRCS ${ARCHDIR}/crc32_vpclmulqdq_avx2.c)
+                set(VPCLMULQDQ_AVX2_FLAGS "${PCLMULFLAG} ${VPCLMULFLAG} ${AVX2FLAG}")
+                list(APPEND ZLIB_ARCH_SRCS ${VPCLMULQDQ_AVX2_SRCS})
+                set_property(SOURCE ${VPCLMULQDQ_AVX2_SRCS} PROPERTY COMPILE_FLAGS "${VPCLMULQDQ_AVX2_FLAGS} ${NOLTOFLAG}")
+                add_feature_info(VPCLMULQDQ_AVX2 1 "Support CRC using VPCLMULQDQ (AVX2), using \"${VPCLMULQDQ_AVX2_FLAGS}\"")
+
+                if(WITH_AVX512)
+                    add_definitions(-DX86_VPCLMULQDQ_AVX512)
+                    set(VPCLMULQDQ_AVX512_SRCS ${ARCHDIR}/crc32_vpclmulqdq_avx512.c)
+                    set(VPCLMULQDQ_AVX512_FLAGS "${PCLMULFLAG} ${VPCLMULFLAG} ${AVX512FLAG}")
+                    list(APPEND ZLIB_ARCH_SRCS ${VPCLMULQDQ_AVX512_SRCS})
+                    set_property(SOURCE ${VPCLMULQDQ_AVX512_SRCS} PROPERTY COMPILE_FLAGS "${VPCLMULQDQ_AVX512_FLAGS} ${NOLTOFLAG}")
+                    add_feature_info(VPCLMULQDQ_AVX512 1 "Support CRC using VPCLMULQDQ (AVX-512), using \"${VPCLMULQDQ_AVX512_FLAGS}\"")
+                endif()
             else()
                 set(WITH_VPCLMULQDQ OFF)
             endif()
@@ -1263,10 +1161,6 @@ macro(generate_cmakein input output)
     file(STRINGS ${input} _lines)
     foreach(_line IN LISTS _lines)
         string(REGEX REPLACE "#ifdef HAVE_UNISTD_H.*" "@ZCONF_UNISTD_LINE@" _line "${_line}")
-        string(REGEX REPLACE "#ifdef NEED_PTRDIFF_T.*" "@ZCONF_PTRDIFF_LINE@" _line "${_line}")
-        if(NEED_PTRDIFF_T)
-            string(REGEX REPLACE "typedef PTRDIFF_TYPE" "typedef @PTRDIFF_TYPE@" _line "${_line}")
-        endif()
         file(APPEND ${output} "${_line}\n")
     endforeach()
 endmacro(generate_cmakein)
@@ -1325,17 +1219,16 @@ set(ZLIB_PUBLIC_HDRS
     ${CMAKE_CURRENT_BINARY_DIR}/zlib${SUFFIX}.h
 )
 set(ZLIB_PRIVATE_HDRS
-    arch/generic/chunk_permute_table.h
-    arch/generic/compare256_p.h
+    arch/shared/chunk_permute_table.h
     arch/generic/generic_functions.h
     adler32_p.h
     arch_functions.h
     chunkset_tpl.h
     compare256_rle.h
-    crc32.h
     crc32_braid_p.h
     crc32_braid_comb_p.h
     crc32_braid_tbl.h
+    crc32_chorba_p.h
     deflate.h
     deflate_p.h
     fallback_builtins.h
@@ -1346,7 +1239,6 @@ set(ZLIB_PRIVATE_HDRS
     inflate_p.h
     inftrees.h
     insert_string_p.h
-    insert_string_tpl.h
     match_tpl.h
     trees.h
     trees_emit.h
@@ -1380,35 +1272,17 @@ set(ZLIB_SRCS
     zutil.c
 )
 
-set(ZLIB_ALL_FALLBACK_SRCS
+set(ZLIB_GENERIC_SRCS
     arch/generic/adler32_c.c
     arch/generic/chunkset_c.c
     arch/generic/compare256_c.c
     arch/generic/crc32_braid_c.c
+    arch/generic/crc32_chorba_c.c
     arch/generic/slide_hash_c.c
 )
 
 if(WITH_ALL_FALLBACKS)
-    list(APPEND ZLIB_GENERIC_SRCS ${ZLIB_ALL_FALLBACK_SRCS})
     add_definitions(-DWITH_ALL_FALLBACKS)
-elseif(BASEARCH_X86_FOUND AND ARCH_64BIT AND WITH_SSE2)
-    # x86_64 always has SSE2, so let the SSE2 functions act as fallbacks.
-    list(APPEND ZLIB_GENERIC_SRCS
-        arch/generic/adler32_c.c
-        arch/generic/crc32_braid_c.c
-    )
-
-    # x86_64 does not need compare256 fallback if we have BUILTIN_CTZ
-    if(NOT HAVE_BUILTIN_CTZ)
-        list(APPEND ZLIB_GENERIC_SRCS arch/generic/compare256_c.c)
-    endif()
-else()
-    list(APPEND ZLIB_GENERIC_SRCS ${ZLIB_ALL_FALLBACK_SRCS})
-    add_definitions(-DWITH_ALL_FALLBACKS)
-endif()
-
-if(WITH_CRC32_CHORBA)
-    list(APPEND ZLIB_SRCS arch/generic/crc32_chorba_c.c)
 endif()
 
 if(WITH_RUNTIME_CPU_DETECTION)
@@ -1564,11 +1438,6 @@ if(HAVE_UNISTD_H)
 else()
   SET(ZCONF_UNISTD_LINE "#if 0    /* was set to #if 0 by configure/cmake/etc */")
 endif()
-if(NEED_PTRDIFF_T)
-    SET(ZCONF_PTRDIFF_LINE "#if 1    /* was set to #if 1 by configure/cmake/etc */")
-else()
-    SET(ZCONF_PTRDIFF_LINE "#ifdef NEED_PTRDIFF_T    /* may be set to #if 1 by configure/cmake/etc */")
-endif()
 
 set(ZLIB_PC ${CMAKE_CURRENT_BINARY_DIR}/zlib${SUFFIX}.pc)
 if(WITH_GZFILEOP)
@@ -1639,9 +1508,13 @@ if(NOT SKIP_INSTALL_FILES AND NOT SKIP_INSTALL_ALL)
 endif()
 
 #============================================================================
-# Example binaries
+# Utils
 #============================================================================
+add_subdirectory(utils)
 
+#============================================================================
+# Tests
+#============================================================================
 if(BUILD_TESTING)
     enable_testing()
 
@@ -1704,14 +1577,18 @@ elseif(BASEARCH_RISCV_FOUND)
     add_feature_info(WITH_RVV WITH_RVV "Build with RVV intrinsics")
     add_feature_info(WITH_RISCV_ZBC WITH_RISCV_ZBC "Build with RISCV ZBC")
 elseif(BASEARCH_S360_FOUND)
-    add_feature_info(WITH_CRC32_VX WITH_CRC32_VX "Build with vectorized CRC32 on IBM Z")
     add_feature_info(WITH_DFLTCC_DEFLATE WITH_DFLTCC_DEFLATE "Build with DFLTCC intrinsics for compression on IBM Z")
     add_feature_info(WITH_DFLTCC_INFLATE WITH_DFLTCC_INFLATE "Build with DFLTCC intrinsics for decompression on IBM Z")
+    add_feature_info(WITH_S390_VX WITH_S390_VX "Build with S390 VX intrinsics on IBM Z")
 elseif(BASEARCH_LOONGARCH_FOUND)
     add_feature_info(WITH_CRC32_LA WITH_CRC32_LA "Build with vectorized CRC32 on LoongArch")
     add_feature_info(WITH_LSX WITH_LSX "Build with vectorized LSX on LoongArch")
     add_feature_info(WITH_LASX WITH_LASX "Build with vectorized LASX on LoongArch")
-elseif(BASEARCH_X86_FOUND)
+elseif(BASEARCH_X86_FOUND OR BASEARCH_E2K_FOUND)
+    add_feature_info(WITH_AVX2 WITH_AVX2 "Build with AVX2")
+    add_feature_info(WITH_AVX2VNNI WITH_AVX2VNNI "Build with AVX2VNNI")
+    add_feature_info(WITH_AVX512 WITH_AVX512 "Build with AVX512")
+    add_feature_info(WITH_AVX512VNNI WITH_AVX512VNNI "Build with AVX512 VNNI")
     add_feature_info(WITH_SSE2 WITH_SSE2 "Build with SSE2")
     add_feature_info(WITH_SSSE3 WITH_SSSE3 "Build with SSSE3")
     add_feature_info(WITH_SSE41 WITH_SSE41 "Build with SSE41")

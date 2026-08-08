@@ -6,10 +6,10 @@
 
 #ifdef RISCV_RVV
 
-#include <riscv_vector.h>
-
 #include "zbuild.h"
 #include "deflate.h"
+
+#include <riscv_vector.h>
 
 static inline void slide_hash_chain(Pos *table, uint32_t entries, uint16_t wsize) {
     size_t vl;
@@ -28,6 +28,13 @@ Z_INTERNAL void slide_hash_rvv(deflate_state *s) {
 
     slide_hash_chain(s->head, HASH_SIZE, wsize);
     slide_hash_chain(s->prev, wsize, wsize);
+}
+
+Z_INTERNAL void slide_hash_head_rvv(deflate_state *s) {
+    Assert(s->w_size <= UINT16_MAX, "w_size should fit in uint16_t");
+    uint16_t wsize = (uint16_t)s->w_size;
+
+    slide_hash_chain(s->head, HASH_SIZE, wsize);
 }
 
 #endif // RISCV_RVV

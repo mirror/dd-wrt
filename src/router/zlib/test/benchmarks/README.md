@@ -5,7 +5,7 @@ These benchmarks are written using [Google Benchmark](https://github.com/google/
 
 To increase the number of times each benchmark iteration is run use:
 
-```
+```sh
 --benchmark_repetitions=20
 ```
 
@@ -13,9 +13,22 @@ To increase the number of times each benchmark iteration is run use:
 
 To filter out which benchmarks are performed use:
 
-```
+```sh
 --benchmark_filter="adler32*"
 ```
+
+*Custom arguments*
+
+In addition to the standard Google Benchmark flags, the suite adds the following arguments.
+The CPU scheduling controls are only available on Windows and are ignored elsewhere.
+
+| Argument | Platform | Description |
+|----------|----------|-------------|
+| `--benchmark_cooldown=<seconds>` | All | Sleep between benchmark families to mitigate thermal throttling. Not applied between repetitions of the same benchmark. |
+| `--benchmark_cpu_affinity=<cpulist>` | Windows | Pin the process to the listed CPUs, `taskset`-style (`3`, `0,2,4`, or `0-3`). |
+| `--benchmark_data_types=<type,...\|all>` | All | Register deflate/inflate variants for the given input data types: `text` (default), `short_match`, `dna`, `random`, `literals`, `mixed`, `realistic_rgb`, `striped_rgb`. Non-`text` types use reduced size/level ladders. |
+| `--benchmark_no_power_throttling` | Windows | Opt out of EcoQoS so the process runs at full clock on performance cores. |
+| `--benchmark_priority=<normal\|high\|realtime>` | Windows | Set the process priority class for more deterministic scheduling. |
 
 There are two different benchmarks, micro and macro.
 
@@ -30,6 +43,22 @@ Benchmarks include implementations of:
 
 By default these benchmarks report things on the nanosecond scale and are small enough
 to measure very minute differences.
+
+*Alternative zlib library*
+
+To benchmark against an alternative zlib-compatible library, use the `ZLIB_LIBRARY`
+CMake argument. When set, only the public API benchmarks are built:
+
+```sh
+cmake -S . -B build-alt \
+    -DZLIB_COMPAT=ON \
+    -DBUILD_SHARED_LIBS=OFF \
+    -DBUILD_TESTING=ON \
+    -DWITH_BENCHMARKS=ON \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DWITH_RUNTIME_CPU_DETECTION=OFF \
+    -DZLIB_LIBRARY=/path/to/libz.a
+```
 
 ### Benchmark benchmark_zlib_apps
 These benchmarks measure applications of zlib as a whole.  Currently the only examples

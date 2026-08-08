@@ -11,8 +11,6 @@
 #ifndef INFLATE_H_
 #define INFLATE_H_
 
-#include "crc32.h"
-
 #ifdef S390_DFLTCC_INFLATE
 #  include "arch/s390/dfltcc_common.h"
 #  define HAVE_ARCH_INFLATE_STATE
@@ -121,7 +119,7 @@ struct ALIGNED_(64) inflate_state {
 
         /* bit accumulator */
     uint64_t hold;              /* input bit accumulator */
-    unsigned bits;              /* number of bits in "in" */
+    unsigned bits;              /* number of bits in hold */
         /* fixed and dynamic code tables */
     unsigned lenbits;           /* index bits for lencode */
     code const *lencode;        /* starting table for length/literal codes */
@@ -138,11 +136,6 @@ struct ALIGNED_(64) inflate_state {
     unsigned ndist;             /* number of distance code lengths */
     uint32_t have;              /* number of code lengths in lens[] */
     code *next;                 /* next available space in codes[] */
-
-#ifdef ARCH_32BIT
-    uint32_t padding[1];
-#endif
-    uint8_t ALIGNED_(16) padding4[68];
 
     uint16_t lens[320];         /* temporary storage for code lengths */
     uint16_t work[288];         /* work area for code table building */

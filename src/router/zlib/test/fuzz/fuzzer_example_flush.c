@@ -1,7 +1,5 @@
-#include <stdio.h>
-#include <assert.h>
-
 #include "zbuild.h"
+#include <assert.h>
 #ifdef ZLIB_COMPAT
 #  include "zlib.h"
 #else
@@ -42,7 +40,7 @@ void test_flush(unsigned char *compr, z_size_t *comprLen) {
     err = PREFIX(deflate)(&c_stream, Z_FULL_FLUSH);
     CHECK_ERR(err, "deflate flush 1");
 
-    compr[3]++; /* force an error in first compressed block */
+    compr[3] = (unsigned char)(compr[3] + 1); /* force an error in first compressed block */
     c_stream.avail_in = len - 3;
 
     err = PREFIX(deflate)(&c_stream, Z_FINISH);
@@ -92,7 +90,7 @@ void test_sync(unsigned char *compr, size_t comprLen, unsigned char *uncompr, si
 }
 
 int LLVMFuzzerTestOneInput(const uint8_t *d, size_t size) {
-    z_size_t comprLen = 100 + 2 * PREFIX(compressBound)(size);
+    z_size_t comprLen = 100 + 2 * PREFIX(compressBound)((z_uintmax_t)size);
     z_size_t uncomprLen = (z_size_t)size;
     uint8_t *compr, *uncompr;
 

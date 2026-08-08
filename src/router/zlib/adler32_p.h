@@ -8,9 +8,13 @@
 #ifndef ADLER32_P_H
 #define ADLER32_P_H
 
+#include "zendian.h"
+
 #define BASE 65521U     /* largest prime smaller than 65536 */
 #define NMAX 5552
 /* NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1 */
+#define NMAX_ALIGNED32 (NMAX & ~31)
+/* NMAX rounded down to a multiple of 32 is 5536 */
 
 #define ADLER_DO1(sum1, sum2, buf, i)  {(sum1) += buf[(i)]; (sum2) += (sum1);}
 #define ADLER_DO2(sum1, sum2, buf, i)  {ADLER_DO1(sum1, sum2, buf, i); ADLER_DO1(sum1, sum2, buf, i+1);}
@@ -18,54 +22,157 @@
 #define ADLER_DO8(sum1, sum2, buf, i)  {ADLER_DO4(sum1, sum2, buf, i); ADLER_DO4(sum1, sum2, buf, i+4);}
 #define ADLER_DO16(sum1, sum2, buf)    {ADLER_DO8(sum1, sum2, buf, 0); ADLER_DO8(sum1, sum2, buf, 8);}
 
-static inline uint32_t adler32_copy_len_1(uint32_t adler, uint8_t *dst, const uint8_t *buf, uint32_t sum2, const int COPY) {
-    uint8_t c = *buf;
-    if (COPY) {
-        *dst = c;
-    }
-    adler += c;
-    adler %= BASE;
-    sum2 += adler;
-    sum2 %= BASE;
-    return adler | (sum2 << 16);
-}
-
-static inline uint32_t adler32_copy_len_16(uint32_t adler, uint8_t *dst, const uint8_t *buf, size_t len, uint32_t sum2, const int COPY) {
-    while (len--) {
-        uint8_t c = *buf++;
+Z_FORCEINLINE static void adler32_copy_align(uint32_t *Z_RESTRICT adler, uint8_t *dst, const uint8_t *buf, size_t len,
+                                             uint32_t *Z_RESTRICT sum2, const int MAX_LEN, const int COPY) {
+    Z_UNUSED(MAX_LEN);
+    if (len & 1) {
         if (COPY) {
-            *dst++ = c;
+            *dst = *buf;
+            dst += 1;
         }
-        adler += c;
-        sum2 += adler;
+        ADLER_DO1(*adler, *sum2, buf, 0);
+        buf += 1;
     }
-    adler %= BASE;
-    sum2 %= BASE;            /* only added so many BASE's */
-    /* return recombined sums */
-    return adler | (sum2 << 16);
+    if (len & 2) {
+        if (COPY) {
+            memcpy(dst, buf, 2);
+            dst += 2;
+        }
+        ADLER_DO2(*adler, *sum2, buf, 0);
+        buf += 2;
+    }
+    while (len >= 4) {
+        if (COPY) {
+            memcpy(dst, buf, 4);
+            dst += 4;
+        }
+        len -= 4;
+        ADLER_DO4(*adler, *sum2, buf, 0);
+        buf += 4;
+    }
 }
 
-static inline uint32_t adler32_copy_len_64(uint32_t adler, uint8_t *dst, const uint8_t *buf, size_t len, uint32_t sum2, const int COPY) {
-    const uint8_t *src = buf;
-    const size_t src_len = len;
-#ifdef UNROLL_MORE
+/* SIMD Within A Register (SWAR) scalar adler32. Splits bytes into
+ * even/odd lanes packed as 4x16-bit in uint64_t, with prefix sums for s2.
+ * Reduction uses multiply-and-shift with positional weight constants.
+ *
+ * Technique pioneered by Michael Niedermayer <michaelni@gmx.at>.
+ * Max chunk: 23 iterations * 8 bytes = 184 (255*23 = 5865 < 65535). */
+#define ADLER32_SWAR_MAX_BYTES   (23 * 8)
+#define ADLER32_SWAR_EVEN_MASK   0x00FF00FF00FF00FFULL
+#define ADLER32_SWAR_HSUM        0x1000100010001ULL
+
+Z_FORCEINLINE static void adler32_swar(uint32_t *adler, uint8_t *dst, const uint8_t *buf, size_t len,
+                                       uint32_t *sum2, const int COPY) {
+    uint64_t sum_even = 0, sum_odd = 0, prefix_even = 0, prefix_odd = 0;
+
+    *sum2 += *adler * (uint32_t)len;
+
+    const uint64_t *src64 = (const uint64_t *)buf;
+
     while (len >= 16) {
+        uint64_t v0 = src64[0];
+        uint64_t v1 = src64[1];
+        if (COPY) {
+            memcpy(dst, &v0, sizeof(v0));
+            memcpy(dst + 8, &v1, sizeof(v1));
+            dst += 16;
+        }
+
+        prefix_even += sum_even;
+        prefix_odd += sum_odd;
+        sum_even +=  v0       & ADLER32_SWAR_EVEN_MASK;
+        sum_odd  += (v0 >> 8) & ADLER32_SWAR_EVEN_MASK;
+
+        prefix_even += sum_even;
+        prefix_odd += sum_odd;
+        sum_even +=  v1       & ADLER32_SWAR_EVEN_MASK;
+        sum_odd  += (v1 >> 8) & ADLER32_SWAR_EVEN_MASK;
+
+        src64 += 2;
         len -= 16;
-        ADLER_DO16(adler, sum2, buf);
-        buf += 16;
+    }
+
+    /* Handle remaining 8 bytes if present */
+    if (len >= 8) {
+        uint64_t v = *src64;
+        if (COPY)
+            memcpy(dst, &v, sizeof(v));
+
+        prefix_even += sum_even;
+        prefix_odd += sum_odd;
+        sum_even +=  v       & ADLER32_SWAR_EVEN_MASK;
+        sum_odd  += (v >> 8) & ADLER32_SWAR_EVEN_MASK;
+    }
+
+    /* Horizontal sum of 4x16-bit lanes for s1 */
+    *adler += (uint32_t)(((sum_even + sum_odd) * ADLER32_SWAR_HSUM) >> 48);
+
+    /* Widen prefix sums to 32-bit pairs and horizontal sum for s2 */
+    uint64_t pe_lo = prefix_even & 0xFFFF0000FFFFULL;
+    uint64_t pe_hi = (prefix_even >> 16) & 0xFFFF0000FFFFULL;
+    uint64_t po_lo = prefix_odd & 0xFFFF0000FFFFULL;
+    uint64_t po_hi = (prefix_odd >> 16) & 0xFFFF0000FFFFULL;
+
+    *sum2 += (uint32_t)(((pe_lo + po_lo + pe_hi + po_hi) * 0x800000008ULL) >> 32);
+
+    /* Positional weights [8,7,6,5,4,3,2,1] per 8-byte group for s2.
+     * On big-endian the even mask captures odd-index memory bytes (b1,b3,b5,b7)
+     * so HSUM (+1 per odd-index byte) must be applied to sum_even, not sum_odd. */
+#if BYTE_ORDER == LITTLE_ENDIAN
+    *sum2 += 2 * (uint32_t)((sum_even * 0x4000300020001ULL) >> 48)
+           +     (uint32_t)((sum_odd  * ADLER32_SWAR_HSUM) >> 48)
+           + 2 * (uint32_t)((sum_odd  * 0x3000200010000ULL) >> 48);
 #else
-    while (len >= 8) {
-        len -= 8;
-        ADLER_DO8(adler, sum2, buf, 0);
-        buf += 8;
+    *sum2 += 2 * (uint32_t)((sum_even * 0x0000100020003ULL) >> 48)
+           +     (uint32_t)((sum_even * ADLER32_SWAR_HSUM) >> 48)
+           + 2 * (uint32_t)((sum_odd  * 0x1000200030004ULL) >> 48);
 #endif
+}
+
+Z_FORCEINLINE static uint32_t adler32_copy_tail(uint32_t adler, uint8_t *dst, const uint8_t *buf, size_t len,
+                                                uint32_t sum2, const int REBASE, const int MAX_LEN, const int COPY) {
+    if (len) {
+        Z_UNUSED(MAX_LEN);
+        /* Process using packed 64-bit arithmetic when source is aligned */
+        while (len >= 8 && ((uintptr_t)buf & 7) == 0) {
+            size_t chunk = MIN(ALIGN_DOWN(len, (size_t)8), (size_t)ADLER32_SWAR_MAX_BYTES);
+            adler32_swar(&adler, dst, buf, chunk, &sum2, COPY);
+            buf += chunk;
+            if (COPY)
+                dst += chunk;
+            len -= chunk;
+        }
+        /* DO4 loop avoids GCC x86 register pressure from hoisted DO8/DO16 loads. */
+        while (len >= 4) {
+            if (COPY) {
+                memcpy(dst, buf, 4);
+                dst += 4;
+            }
+            len -= 4;
+            ADLER_DO4(adler, sum2, buf, 0);
+            buf += 4;
+        }
+        if (len & 2) {
+            if (COPY) {
+                memcpy(dst, buf, 2);
+                dst += 2;
+            }
+            ADLER_DO2(adler, sum2, buf, 0);
+            buf += 2;
+        }
+        if (len & 1) {
+            if (COPY)
+                *dst = *buf;
+            ADLER_DO1(adler, sum2, buf, 0);
+        }
     }
-    /* Process tail (len < 16).  */
-    adler = adler32_copy_len_16(adler, NULL, buf, len, sum2, 0);
-    if (COPY) {
-        memcpy(dst, src, src_len);
+    if (REBASE) {
+        adler %= BASE;
+        sum2 %= BASE;
     }
-    return adler;
+    /* D = B * 65536 + A, see: https://en.wikipedia.org/wiki/Adler-32. */
+    return adler | (sum2 << 16);
 }
 
 #endif /* ADLER32_P_H */

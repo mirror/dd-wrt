@@ -4,11 +4,14 @@
  */
 
 #ifdef POWER9
-#include <altivec.h>
+
 #include "zbuild.h"
+#include "zendian.h"
 #include "zmemory.h"
 #include "deflate.h"
-#include "zendian.h"
+#include "fallback_builtins.h"
+
+#include <altivec.h>
 
 /* Older versions of GCC misimplemented semantics for these bit counting builtins.
  * https://gcc.gnu.org/git/gitweb.cgi?p=gcc.git;h=3f30f2d1dbb3228b8468b26239fe60c2974ce2ac */
@@ -22,7 +25,7 @@
 #  define zng_vec_vctzlsbb(vc, len) len = vec_cntlz_lsbb(vc)
 #endif
 
-static inline uint32_t compare256_power9_static(const uint8_t *src0, const uint8_t *src1) {
+Z_FORCEINLINE static uint32_t compare256_power9_static(const uint8_t *src0, const uint8_t *src1) {
     uint32_t len = 0, cmplen;
 
     do {
@@ -57,8 +60,8 @@ Z_INTERNAL uint32_t compare256_power9(const uint8_t *src0, const uint8_t *src1) 
 
 #include "match_tpl.h"
 
-#define LONGEST_MATCH_SLOW
-#define LONGEST_MATCH       longest_match_slow_power9
+#define LONGEST_MATCH_ROLL
+#define LONGEST_MATCH       longest_match_roll_power9
 #define COMPARE256          compare256_power9_static
 
 #include "match_tpl.h"

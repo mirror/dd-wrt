@@ -1,12 +1,13 @@
 /* chunkset_avx512.c -- AVX512 inline functions to copy small data chunks.
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
-#include "zbuild.h"
-#include "zmemory.h"
 
 #ifdef X86_AVX512
 
-#include "arch/generic/chunk_256bit_perm_idx_lut.h"
+#include "zbuild.h"
+#include "zmemory.h"
+
+#include "arch/shared/chunk_256bit_perm_idx_lut.h"
 #include <immintrin.h>
 #include "x86_intrins.h"
 
@@ -15,6 +16,7 @@ typedef __m128i halfchunk_t;
 typedef __mmask32 mask_t;
 typedef __mmask16 halfmask_t;
 
+#define HAVE_CHUNKMEMSET_1
 #define HAVE_CHUNKMEMSET_2
 #define HAVE_CHUNKMEMSET_4
 #define HAVE_CHUNKMEMSET_8
@@ -25,12 +27,16 @@ typedef __mmask16 halfmask_t;
 #define HAVE_CHUNKCOPY
 #define HAVE_HALFCHUNKCOPY
 
-static inline halfmask_t gen_half_mask(unsigned len) {
-   return (halfmask_t)_bzhi_u32(0xFFFF, len);
+static inline halfmask_t gen_half_mask(size_t len) {
+   return (halfmask_t)_bzhi_u32(0xFFFF, (unsigned)len);
 }
 
-static inline mask_t gen_mask(unsigned len) {
-   return (mask_t)_bzhi_u32(0xFFFFFFFF, len);
+static inline mask_t gen_mask(size_t len) {
+   return (mask_t)_bzhi_u32(0xFFFFFFFF, (unsigned)len);
+}
+
+static inline void chunkmemset_1(uint8_t *from, chunk_t *chunk) {
+    *chunk = _mm256_set1_epi8(*from);
 }
 
 static inline void chunkmemset_2(uint8_t *from, chunk_t *chunk) {
@@ -46,12 +52,13 @@ static inline void chunkmemset_8(uint8_t *from, chunk_t *chunk) {
 }
 
 static inline void chunkmemset_16(uint8_t *from, chunk_t *chunk) {
-    /* Unfortunately there seems to be a compiler bug in Visual Studio 2015 where
+    /* Unfortunately there seems to be a compiler bug in Visual Studio 2015/2017 where
      * the load is dumped to the stack with an aligned move for this memory-register
-     * broadcast. The vbroadcasti128 instruction is 2 fewer cycles and this dump to
-     * stack doesn't exist if compiled with optimizations. For the sake of working
+     * broadcast, and the stack isn't 16-byte aligned on i386 in debug builds.
+     * The vbroadcasti128 instruction is 2 fewer cycles and this dump to stack
+     * doesn't exist if compiled with optimizations. For the sake of working
      * properly in a debugger, let's take the 2 cycle penalty */
-#if defined(_MSC_VER) && _MSC_VER <= 1900
+#if defined(_MSC_VER) && _MSC_VER < 1920
     halfchunk_t half = _mm_loadu_si128((__m128i*)from);
     *chunk = _mm256_inserti128_si256(_mm256_castsi128_si256(half), half, 1);
 #else
@@ -67,11 +74,19 @@ static inline void storechunk(uint8_t *out, chunk_t *chunk) {
     _mm256_storeu_si256((__m256i *)out, *chunk);
 }
 
-static inline uint8_t* CHUNKCOPY(uint8_t *out, uint8_t const *from, unsigned len) {
+static inline void loadchunk_masked(uint8_t const *s, chunk_t *chunk, size_t len) {
+    *chunk = _mm256_maskz_loadu_epi8(gen_mask(len), s);
+}
+
+static inline void storechunk_masked(uint8_t *out, chunk_t *chunk, size_t len) {
+    _mm256_mask_storeu_epi8(out, gen_mask(len), *chunk);
+}
+
+static inline uint8_t* CHUNKCOPY(uint8_t *out, uint8_t const *from, size_t len) {
     Assert(len > 0, "chunkcopy should never have a length 0");
 
     chunk_t chunk;
-    uint32_t rem = len % sizeof(chunk_t);
+    size_t rem = len % sizeof(chunk_t);
 
     if (len < sizeof(chunk_t)) {
         mask_t rem_mask = gen_mask(rem);
@@ -102,7 +117,7 @@ static inline uint8_t* CHUNKCOPY(uint8_t *out, uint8_t const *from, unsigned len
 #if defined(_MSC_VER) && _MSC_VER < 1943
 #  pragma optimize("", off)
 #endif
-static inline chunk_t GET_CHUNK_MAG(uint8_t *buf, uint32_t *chunk_rem, uint32_t dist) {
+static inline chunk_t GET_CHUNK_MAG(uint8_t *buf, size_t *chunk_rem, size_t dist) {
     lut_rem_pair lut_rem = perm_idx_lut[dist - 3];
     __m256i ret_vec;
     *chunk_rem = lut_rem.remval;
@@ -142,7 +157,7 @@ static inline chunk_t halfchunk2whole(halfchunk_t *chunk) {
     return _mm256_zextsi128_si256(*chunk);
 }
 
-static inline halfchunk_t GET_HALFCHUNK_MAG(uint8_t *buf, uint32_t *chunk_rem, uint32_t dist) {
+static inline halfchunk_t GET_HALFCHUNK_MAG(uint8_t *buf, size_t *chunk_rem, size_t dist) {
     lut_rem_pair lut_rem = perm_idx_lut[dist - 3];
     __m128i perm_vec, ret_vec;
     halfmask_t load_mask = gen_half_mask(dist);
@@ -155,11 +170,11 @@ static inline halfchunk_t GET_HALFCHUNK_MAG(uint8_t *buf, uint32_t *chunk_rem, u
     return ret_vec;
 }
 
-static inline uint8_t* HALFCHUNKCOPY(uint8_t *out, uint8_t const *from, unsigned len) {
+static inline uint8_t* HALFCHUNKCOPY(uint8_t *out, uint8_t const *from, size_t len) {
     Assert(len > 0, "chunkcopy should never have a length 0");
     halfchunk_t chunk;
 
-    uint32_t rem = len % sizeof(halfchunk_t);
+    size_t rem = len % sizeof(halfchunk_t);
     if (rem == 0) {
         rem = sizeof(halfchunk_t);
     }

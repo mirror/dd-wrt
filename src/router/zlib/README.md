@@ -3,7 +3,7 @@
 | GitHub Actions | [![Stable CMake](https://github.com/zlib-ng/zlib-ng/actions/workflows/cmake.yml/badge.svg?branch=stable)](https://github.com/zlib-ng/zlib-ng/actions/workflows/cmake.yml?query=branch%3Astable) <br> [![Stable Configure](https://github.com/zlib-ng/zlib-ng/actions/workflows/configure.yml/badge.svg?branch=stable)](https://github.com/zlib-ng/zlib-ng/actions/workflows/configure.yml?query=branch%3Astable) | [![Develop CMake](https://github.com/zlib-ng/zlib-ng/actions/workflows/cmake.yml/badge.svg?branch=develop)](https://github.com/zlib-ng/zlib-ng/actions/workflows/cmake.yml?query=branch%3Adevelop) <br> [![Develop Configure](https://github.com/zlib-ng/zlib-ng/actions/workflows/configure.yml/badge.svg?branch=develop)](https://github.com/zlib-ng/zlib-ng/actions/workflows/configure.yml?query=branch%3Adevelop) |
 | CodeFactor     | [![CodeFactor](https://www.codefactor.io/repository/github/zlib-ng/zlib-ng/badge/stable)](https://www.codefactor.io/repository/github/zlib-ng/zlib-ng/overview/stable) | [![CodeFactor](https://www.codefactor.io/repository/github/zlib-ng/zlib-ng/badge/develop)](https://www.codefactor.io/repository/github/zlib-ng/zlib-ng/overview/develop) |
 | OSS-Fuzz       | [![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/zlib-ng.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:zlib-ng) | [![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/zlib-ng.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:zlib-ng) |
-| Codecov        | [![codecov](https://codecov.io/github/zlib-ng/zlib-ng/branch/stable/graph/badge.svg?token=uKsgK9LIuC)](https://codecov.io/github/zlib-ng/zlib-ng/tree/stable) | [![codecov](https://codecov.io/github/zlib-ng/zlib-ng/branch/develop/graph/badge.svg?token=uKsgK9LIuC)](https://codecov.io/github/zlib-ng/zlib-ng/tree/develop) |
+| Coveralls      | [![Coverage Status](https://coveralls.io/repos/github/zlib-ng/zlib-ng/badge.svg?branch=stable)](https://coveralls.io/github/zlib-ng/zlib-ng?branch=stable) | [![Coverage Status](https://coveralls.io/repos/github/zlib-ng/zlib-ng/badge.svg?branch=develop)](https://coveralls.io/github/zlib-ng/zlib-ng?branch=develop) |
 
 ## zlib-ng
 *zlib data compression library for the next generation systems*
@@ -16,10 +16,11 @@ Features
 
 * Zlib compatible API with support for dual-linking
 * Modernized native API based on zlib API for ease of porting
+* Major speed improvements, x86-64 can be about 4x faster than stock zlib for example.
 * Modern C11 syntax and a clean code layout
 * Deflate medium and quick algorithms based on Intel’s zlib fork
 * Support for CPU intrinsics when available
-  * Adler32 implementation using SSSE3, SSE4.2, AVX2, AVX512, AVX512-VNNI, Neon, VMX & VSX, LSX, LASX, RVV
+  * Adler32 implementation using SSSE3, SSE4.2, AVX2, AVX512, AVX512-VNNI, Neon, Neon(DotProd), VMX & VSX, LSX, LASX, RVV
   * CRC32-B implementation using SSE2, SSE4.1, (V)PCLMULQDQ, ARMv8, ARMv8.2 PMULL+EOR3, Power8, IBM Z, LoongArch, ZBC
   * Slide hash implementations using SSE2, AVX2, ARMv6, Neon, Power8, VMX & VSX, LSX, LASX
   * Compare256 implementations using SSE2, AVX2, AVX512, Neon, Power9, LSX, LASX, RVV
@@ -31,7 +32,8 @@ Features
 * Comprehensive set of CMake unit tests
 * Code sanitizers, fuzzing, and coverage
 * GitHub Actions continuous integration on Windows, macOS, and Linux
-  * Emulated CI for ARM, AARCH64, LoongArch, PPC, PPC64, RISCV, SPARC64, S390x using qemu
+  * Native CI for Aarch64, S390x, x86, x86-64
+  * Emulated CI for ARM, LoongArch, PPC, PPC64, RISCV, SPARC64, S390x using qemu
 
 
 History
@@ -212,7 +214,7 @@ Advanced Build Options
 | WITH_POWER9                     | --without-power9      | ppc: Build with POWER9 intrinsics                                                   | ON       |
 | WITH_RVV                        | --without-rvv         | riscv: Build with RVV intrinsics                                                    | ON       |
 | WITH_RISCV_ZBC                  | --without-zbc         | riscv: Build with RiscV ZBC intrinsics                                              | ON       |
-| WITH_CRC32_VX                   | --without-crc32-vx    | s390x: Build with vectorized CRC32 on IBM Z                                         | ON       |
+| WITH_S390_VX                    | --without-s390-vx     | s390x: Build with S390 VX intrinsics on IBM Z                                       | ON       |
 | WITH_DFLTCC_DEFLATE             | --with-dfltcc-deflate | s390x: Build with DFLTCC intrinsics for compression on IBM Z                        | OFF      |
 | WITH_DFLTCC_INFLATE             | --with-dfltcc-inflate | s390x: Build with DFLTCC intrinsics for decompression on IBM Z                      | OFF      |
 | WITH_LSX                        |                       | loongarch: Build with LSX intrinsics                                                | ON       |

@@ -37,7 +37,7 @@
  *  REFERENCES
  *
  *      Deutsch, L.P.,"DEFLATE Compressed Data Format Specification".
- *      Available in https://tools.ietf.org/html/rfc1951
+ *      Available at https://datatracker.ietf.org/doc/html/rfc1951
  *
  *      A description of the Rabin and Karp algorithm is given in the book
  *         "Algorithms" by R. Sedgewick, Addison-Wesley, p252.
@@ -52,6 +52,7 @@
 #include "deflate.h"
 #include "deflate_p.h"
 #include "insert_string_p.h"
+#include "arch_functions.h"
 
 /* Avoid conflicts with zlib.h macros */
 #ifdef ZLIB_COMPAT
@@ -70,6 +71,7 @@ const char PREFIX(deflate_copyright)[] = " deflate 1.3.1 Copyright 1995-2024 Jea
 /* ===========================================================================
  *  Function prototypes.
  */
+static int deflateHeaders(deflate_state *s, PREFIX3(stream) *strm);
 static int deflateStateCheck      (PREFIX3(stream) *strm);
 Z_INTERNAL block_state deflate_stored(deflate_state *s, int flush);
 Z_INTERNAL block_state deflate_fast  (deflate_state *s, int flush);
@@ -133,6 +135,15 @@ static const config configuration_table[10] = {
  * meaning.
  */
 
+/* Level 1 uses deflate_quick, which only reads the hash chain head, so it can
+ * skip prev maintenance. When quick is compiled out level 1 falls back to
+ * deflate_fast, which walks the chains like every other level. */
+#ifdef NO_QUICK_STRATEGY
+#  define HAVE_QUICK_STRATEGY 0
+#else
+#  define HAVE_QUICK_STRATEGY 1
+#endif
+
 /* rank Z_BLOCK between Z_NO_FLUSH and Z_PARTIAL_FLUSH */
 #define RANK(f) (((f) * 2) - ((f) > 4 ? 9 : 0))
 
@@ -167,7 +178,7 @@ Z_INTERNAL deflate_allocs* alloc_deflate(PREFIX3(stream) *strm, int windowBits, 
     int window_size = DEFLATE_ADJUST_WINDOW_SIZE((1 << windowBits) * 2);
     int prev_size = (1 << windowBits) * (int)sizeof(Pos);
     int head_size = HASH_SIZE * sizeof(Pos);
-    int pending_size = lit_bufsize * LIT_BUFS;
+    int pending_size = (lit_bufsize * LIT_BUFS) + 1;
     int state_size = sizeof(deflate_state);
     int alloc_size = sizeof(deflate_allocs);
 
@@ -219,7 +230,7 @@ Z_INTERNAL deflate_allocs* alloc_deflate(PREFIX3(stream) *strm, int windowBits, 
     alloc_bufs->pending_buf = (unsigned char *)HINT_ALIGNED_64(buff + pending_pos);
     alloc_bufs->state = (deflate_state *)HINT_ALIGNED_16(buff + state_pos);
 
-    memset((char *)alloc_bufs->prev, 0, prev_size);
+    memset(alloc_bufs->prev, 0, prev_size);
 
     return alloc_bufs;
 }
@@ -407,7 +418,7 @@ static int deflateStateCheck(PREFIX3(stream) *strm) {
 /* ========================================================================= */
 int32_t Z_EXPORT PREFIX(deflateSetDictionary)(PREFIX3(stream) *strm, const uint8_t *dictionary, uint32_t dictLength) {
     deflate_state *s;
-    insert_string_cb insert_string_func;
+    insert_batch_func insert_batch;
     unsigned int str, n;
     int wrap;
     uint32_t avail;
@@ -421,9 +432,9 @@ int32_t Z_EXPORT PREFIX(deflateSetDictionary)(PREFIX3(stream) *strm, const uint8
         return Z_STREAM_ERROR;
 
     if (s->level >= 9)
-        insert_string_func = insert_string_roll;
+        insert_batch = insert_roll_batch;
     else
-        insert_string_func = insert_string;
+        insert_batch = insert_knuth_batch;
 
     /* when using zlib wrappers, compute Adler-32 for provided dictionary */
     if (wrap == 1)
@@ -452,7 +463,7 @@ int32_t Z_EXPORT PREFIX(deflateSetDictionary)(PREFIX3(stream) *strm, const uint8
     while (s->lookahead >= STD_MIN_MATCH) {
         str = s->strstart;
         n = s->lookahead - (STD_MIN_MATCH - 1);
-        insert_string_func(s, str, n);
+        insert_batch(s, s->window, str, n);
         s->strstart = str + n;
         s->lookahead = STD_MIN_MATCH - 1;
         PREFIX(fill_window)(s);
@@ -555,6 +566,15 @@ int32_t Z_EXPORT PREFIX(deflatePending)(PREFIX3(stream) *strm, uint32_t *pending
 }
 
 /* ========================================================================= */
+int32_t Z_EXPORT PREFIX(deflateUsed)(PREFIX3(stream) *strm, int32_t *bits) {
+    if (deflateStateCheck(strm))
+        return Z_STREAM_ERROR;
+    if (bits != NULL)
+        *bits = strm->state->bi_used;
+    return Z_OK;
+}
+
+/* ========================================================================= */
 int32_t Z_EXPORT PREFIX(deflatePrime)(PREFIX3(stream) *strm, int32_t bits, int32_t value) {
     deflate_state *s;
     uint64_t value64 = (uint64_t)value;
@@ -617,18 +637,24 @@ int32_t Z_EXPORT PREFIX(deflateParams)(PREFIX3(stream) *strm, int32_t level, int
         if (strm->avail_in || ((int)s->strstart - s->block_start) + s->lookahead || !DEFLATE_DONE(strm, flush))
             return Z_BUF_ERROR;
     }
-    if (s->level != level) {
-        if (s->level == 0 && s->matches != 0) {
-            if (s->matches == 1) {
-                FUNCTABLE_CALL(slide_hash)(s);
-            } else {
-                CLEAR_HASH(s);
-            }
-            s->matches = 0;
-        }
 
-        lm_set_level(s, level);
+    int hashless = level == 0 || strategy == Z_HUFFMAN_ONLY || strategy == Z_RLE;
+    int was_hashless = s->level == 0 || s->strategy == Z_HUFFMAN_ONLY || s->strategy == Z_RLE;
+
+    /* Stale if the hash usage flipped (to/from huffman/rle/stored), the hash
+     * function changed at level 9, or quick at level 1 left prev unmaintained. */
+    int stale_chain = (hashless != was_hashless) || (level >= 9) != (s->level >= 9) ||
+                      (HAVE_QUICK_STRATEGY && s->level == 1 && level != 1);
+
+    /* Rebuild the hash chains when fill_window is called. */
+    if (stale_chain && !hashless) {
+        CLEAR_HASH(s);
+        s->ins_h = 0;
+        s->insert = MIN(s->strstart, s->w_size);
     }
+
+    if (s->level != level)
+        lm_set_level(s, level);
     s->strategy = strategy;
     return Z_OK;
 }
@@ -672,13 +698,13 @@ unsigned long Z_EXPORT PREFIX(deflateBound)(PREFIX3(stream) *strm, unsigned long
     complen = sourceLen + ((sourceLen + 7) >> 3) + ((sourceLen + 63) >> 6) + 5;
     DEFLATE_BOUND_ADJUST_COMPLEN(strm, complen, sourceLen);  /* hook for IBM Z DFLTCC */
 
-    /* if can't get parameters, return conservative bound plus zlib wrapper */
+    /* if can't get parameters, return conservative bound plus a wrapper */
     if (deflateStateCheck(strm))
-        return complen + 6;
+        return complen + GZIP_WRAPLEN;
 
     /* compute wrapper length */
     s = strm->state;
-    switch (s->wrap) {
+    switch (ABS(s->wrap)) {
     case 0:                                 /* raw deflate */
         wraplen = 0;
         break;
@@ -712,7 +738,9 @@ unsigned long Z_EXPORT PREFIX(deflateBound)(PREFIX3(stream) *strm, unsigned long
 #endif
     default:                                /* for compiler happiness */
         Z_UNREACHABLE();
+#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 202311L
         wraplen = ZLIB_WRAPLEN;
+#endif
     }
 
     /* if not default parameters, return conservative bound */
@@ -752,59 +780,13 @@ Z_INTERNAL void PREFIX(flush_pending)(PREFIX3(stream) *strm) {
 #define HCRC_UPDATE(beg) \
     do { \
         if (s->gzhead->hcrc && s->pending > (beg)) \
-            strm->adler = PREFIX(crc32)(strm->adler, s->pending_buf + (beg), s->pending - (beg)); \
+            strm->adler = crc32_small((uint32_t)strm->adler, s->pending_buf + (beg), s->pending - (beg)); \
     } while (0)
 
-/* ========================================================================= */
-int32_t Z_EXPORT PREFIX(deflate)(PREFIX3(stream) *strm, int32_t flush) {
-    int32_t old_flush; /* value of flush param for previous deflate call */
-    deflate_state *s;
-
-    if (deflateStateCheck(strm) || flush > Z_BLOCK || flush < 0)
-        return Z_STREAM_ERROR;
-    s = strm->state;
-
-    if (strm->next_out == NULL || (strm->avail_in != 0 && strm->next_in == NULL)
-        || (s->status == FINISH_STATE && flush != Z_FINISH)) {
-        ERR_RETURN(strm, Z_STREAM_ERROR);
-    }
-    if (strm->avail_out == 0) {
-        ERR_RETURN(strm, Z_BUF_ERROR);
-    }
-
-    old_flush = s->last_flush;
-    s->last_flush = flush;
-
-    /* Flush as much pending output as possible */
-    if (s->pending != 0) {
-        flush_pending_inline(strm);
-        if (strm->avail_out == 0) {
-            /* Since avail_out is 0, deflate will be called again with
-             * more output space, but possibly with both pending and
-             * avail_in equal to zero. There won't be anything to do,
-             * but this is not an error situation so make sure we
-             * return OK instead of BUF_ERROR at next call of deflate:
-             */
-            s->last_flush = -1;
-            return Z_OK;
-        }
-
-        /* Make sure there is something to do and avoid duplicate consecutive
-         * flushes. For repeated and useless calls with Z_FINISH, we keep
-         * returning Z_STREAM_END instead of Z_BUF_ERROR.
-         */
-    } else if (strm->avail_in == 0 && RANK(flush) <= RANK(old_flush) && flush != Z_FINISH) {
-        ERR_RETURN(strm, Z_BUF_ERROR);
-    }
-
-    /* User must not provide more input after the first FINISH: */
-    if (s->status == FINISH_STATE && strm->avail_in != 0)   {
-        ERR_RETURN(strm, Z_BUF_ERROR);
-    }
-
-    /* Write the header */
-    if (s->status == INIT_STATE && s->wrap == 0)
-        s->status = BUSY_STATE;
+/* =========================================================================
+ * Write zlib/gzip header
+ */
+static int deflateHeaders(deflate_state *s, PREFIX3(stream) *strm) {
     if (s->status == INIT_STATE) {
         /* zlib header */
         unsigned int header = (Z_DEFLATED + ((W_BITS(s)-8)<<4)) << 8;
@@ -872,7 +854,7 @@ int32_t Z_EXPORT PREFIX(deflate)(PREFIX3(stream) *strm, int32_t flush) {
             if (s->gzhead->extra != NULL)
                 put_short(s, (uint16_t)s->gzhead->extra_len);
             if (s->gzhead->hcrc)
-                strm->adler = PREFIX(crc32)(strm->adler, s->pending_buf, s->pending);
+                strm->adler = crc32_small((uint32_t)strm->adler, s->pending_buf, s->pending);
             s->gzindex = 0;
             s->status = EXTRA_STATE;
         }
@@ -970,14 +952,76 @@ int32_t Z_EXPORT PREFIX(deflate)(PREFIX3(stream) *strm, int32_t flush) {
         }
     }
 #endif
+    return -1;
+}
 
-    /* Start a new block or continue the current one.
-     */
+/* ========================================================================= */
+int32_t Z_EXPORT PREFIX(deflate)(PREFIX3(stream) *strm, int32_t flush) {
+    int32_t old_flush; /* value of flush param for previous deflate call */
+    deflate_state *s;
+
+    if (deflateStateCheck(strm) || flush > Z_BLOCK || flush < 0)
+        return Z_STREAM_ERROR;
+    s = strm->state;
+
+    if (strm->next_out == NULL || (strm->avail_in != 0 && strm->next_in == NULL)
+        || (s->status == FINISH_STATE && flush != Z_FINISH)) {
+        ERR_RETURN(strm, Z_STREAM_ERROR);
+    }
+    if (strm->avail_out == 0) {
+        ERR_RETURN(strm, Z_BUF_ERROR);
+    }
+
+    old_flush = s->last_flush;
+    s->last_flush = flush;
+
+    /* Flush as much pending output as possible */
+    if (s->pending != 0) {
+        flush_pending_inline(strm);
+        if (strm->avail_out == 0) {
+            /* Since avail_out is 0, deflate will be called again with
+             * more output space, but possibly with both pending and
+             * avail_in equal to zero. There won't be anything to do,
+             * but this is not an error situation so make sure we
+             * return OK instead of BUF_ERROR at next call of deflate:
+             */
+            s->last_flush = -1;
+            return Z_OK;
+        }
+
+        /* Make sure there is something to do and avoid duplicate consecutive
+         * flushes. For repeated and useless calls with Z_FINISH, we keep
+         * returning Z_STREAM_END instead of Z_BUF_ERROR.
+         */
+    } else if (strm->avail_in == 0 && RANK(flush) <= RANK(old_flush) && flush != Z_FINISH) {
+        ERR_RETURN(strm, Z_BUF_ERROR);
+    }
+
+    /* User must not provide more input after the first FINISH: */
+    if (s->status == FINISH_STATE && strm->avail_in != 0)   {
+        ERR_RETURN(strm, Z_BUF_ERROR);
+    }
+
+    /* Skip headers if raw deflate stream was requested */
+    if (s->status == INIT_STATE && s->wrap == 0) {
+        s->status = BUSY_STATE;
+    }
+
+    if (s->status != BUSY_STATE && s->status != FINISH_STATE && s->wrap != 0) {
+        /* Write the header */
+        if (deflateHeaders(s, strm) == Z_OK) {
+            return Z_OK;
+        }
+    }
+
+    /* Start a new block or continue the current one. */
     if (strm->avail_in != 0 || s->lookahead != 0 || (flush != Z_NO_FLUSH && s->status != FINISH_STATE)) {
         block_state bstate;
 
-        bstate = DEFLATE_HOOK(strm, flush, &bstate) ? bstate :  /* hook for IBM Z DFLTCC */
-                 s->level == 0 ? deflate_stored(s, flush) :
+#ifndef _MSC_VER
+        if (DEFLATE_HOOK(strm, flush, &bstate) == 0) /* hook for IBM Z DFLTCC */
+#endif
+            bstate = s->level == 0 ? deflate_stored(s, flush) :
                  s->strategy == Z_HUFFMAN_ONLY ? deflate_huff(s, flush) :
                  s->strategy == Z_RLE ? deflate_rle(s, flush) :
                  (*(configuration_table[s->level].func))(s, flush);
@@ -1002,7 +1046,7 @@ int32_t Z_EXPORT PREFIX(deflate)(PREFIX3(stream) *strm, int32_t flush) {
             if (flush == Z_PARTIAL_FLUSH) {
                 zng_tr_align(s);
             } else if (flush != Z_BLOCK) { /* FULL_FLUSH or SYNC_FLUSH */
-                zng_tr_stored_block(s, (char*)0, 0L, 0);
+                zng_tr_stored_block(s, NULL, 0L, 0);
                 /* For a full flush, this empty block will be recognized
                  * as a special marker by inflate_sync().
                  */
@@ -1075,7 +1119,7 @@ int32_t Z_EXPORT PREFIX(deflateCopy)(PREFIX3(stream) *dest, PREFIX3(stream) *sou
 
     ss = source->state;
 
-    memcpy((void *)dest, (void *)source, sizeof(PREFIX3(stream)));
+    memcpy(dest, source, sizeof(PREFIX3(stream)));
 
     deflate_allocs *alloc_bufs = alloc_deflate(dest, W_BITS(ss), ss->lit_bufsize);
     if (alloc_bufs == NULL)
@@ -1099,8 +1143,8 @@ int32_t Z_EXPORT PREFIX(deflateCopy)(PREFIX3(stream) *dest, PREFIX3(stream) *sou
     }
 
     memcpy(ds->window, ss->window, DEFLATE_ADJUST_WINDOW_SIZE(ds->w_size * 2 * sizeof(unsigned char)));
-    memcpy((void *)ds->prev, (void *)ss->prev, ds->w_size * sizeof(Pos));
-    memcpy((void *)ds->head, (void *)ss->head, HASH_SIZE * sizeof(Pos));
+    memcpy(ds->prev, ss->prev, ds->w_size * sizeof(Pos));
+    memcpy(ds->head, ss->head, HASH_SIZE * sizeof(Pos));
     memcpy(ds->pending_buf, ss->pending_buf, ds->lit_bufsize * LIT_BUFS);
 
     ds->pending_out = ds->pending_buf + (ss->pending_out - ss->pending_buf);
@@ -1164,7 +1208,7 @@ static void lm_init(deflate_state *s) {
 
 void Z_INTERNAL PREFIX(fill_window)(deflate_state *s) {
     PREFIX3(stream) *strm = s->strm;
-    insert_string_cb insert_string_func;
+    insert_batch_func insert_batch;
     unsigned char *window = s->window;
     unsigned n;
     unsigned int more;    /* Amount of free space at the end of the window. */
@@ -1174,9 +1218,11 @@ void Z_INTERNAL PREFIX(fill_window)(deflate_state *s) {
     Assert(s->lookahead < MIN_LOOKAHEAD, "already enough lookahead");
 
     if (level >= 9)
-        insert_string_func = insert_string_roll;
+        insert_batch = insert_roll_batch;
+    else if (HAVE_QUICK_STRATEGY && level == 1)
+        insert_batch = insert_knuth_batch_head;
     else
-        insert_string_func = insert_string;
+        insert_batch = insert_knuth_batch;
 
     do {
         more = s->window_size - s->lookahead - s->strstart;
@@ -1196,7 +1242,14 @@ void Z_INTERNAL PREFIX(fill_window)(deflate_state *s) {
             s->block_start -= (int)wsize;
             if (s->insert > s->strstart)
                 s->insert = s->strstart;
-            FUNCTABLE_CALL(slide_hash)(s);
+            if (s->strategy != Z_HUFFMAN_ONLY && s->strategy != Z_RLE) {
+                /* Z_HUFFMAN_ONLY and Z_RLE never read the hash chain. deflate_quick
+                 * reads the chain head but never walks prev, so it slides head only. */
+                if (HAVE_QUICK_STRATEGY && level == 1)
+                    FUNCTABLE_CALL(slide_hash_head)(s);
+                else
+                    FUNCTABLE_CALL(slide_hash)(s);
+            }
             more += wsize;
         }
         if (strm->avail_in == 0)
@@ -1224,14 +1277,17 @@ void Z_INTERNAL PREFIX(fill_window)(deflate_state *s) {
             if (UNLIKELY(level >= 9)) {
                 s->ins_h = update_hash_roll(window[str], window[str+1]);
             } else if (str >= 1) {
-                quick_insert_string(s, str + 2 - STD_MIN_MATCH);
+                if (HAVE_QUICK_STRATEGY && level == 1)
+                    insert_knuth_head(s, window, str + 2 - STD_MIN_MATCH);
+                else
+                    insert_knuth(s, window, str + 2 - STD_MIN_MATCH);
             }
             unsigned int count = s->insert;
             if (UNLIKELY(s->lookahead == 1)) {
                 count -= 1;
             }
             if (count > 0) {
-                insert_string_func(s, str, count);
+                insert_batch(s, window, str, count);
                 s->insert -= count;
             }
         }

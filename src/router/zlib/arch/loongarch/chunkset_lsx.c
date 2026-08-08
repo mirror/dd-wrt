@@ -3,13 +3,15 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
+#ifdef LOONGARCH_LSX
+
 #include "zbuild.h"
+#include "zsanitizer.h"
 #include "zmemory.h"
 
-#if defined(LOONGARCH_LSX)
 #include <lsxintrin.h>
 #include "lsxintrin_ext.h"
-#include "arch/generic/chunk_128bit_perm_idx_lut.h"
+#include "arch/shared/chunk_128bit_perm_idx_lut.h"
 
 typedef __m128i chunk_t;
 
@@ -39,7 +41,7 @@ static inline void storechunk(uint8_t *out, chunk_t *chunk) {
     __lsx_vst(*chunk, out, 0);
 }
 
-static inline chunk_t GET_CHUNK_MAG(uint8_t *buf, uint32_t *chunk_rem, uint32_t dist) {
+static inline chunk_t GET_CHUNK_MAG(uint8_t *buf, size_t *chunk_rem, size_t dist) {
     lut_rem_pair lut_rem = perm_idx_lut[dist - 3];
     __m128i perm_vec, ret_vec;
     /* Important to note:

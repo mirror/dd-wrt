@@ -1,26 +1,77 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#ifdef RISCV_FEATURES
+
+#define _DEFAULT_SOURCE 1 /* For syscall() */
+
+#include "zbuild.h"
+#include "riscv_features.h"
+
 #include <sys/utsname.h>
 
 #if defined(__linux__) && defined(HAVE_SYS_AUXV_H)
 #  include <sys/auxv.h>
 #endif
 
-#include "zbuild.h"
-#include "riscv_features.h"
+#if defined(__linux__) && defined(HAVE_ASM_HWPROBE_H)
+#  include <asm/hwprobe.h>
+#  include <sys/syscall.h> /* For __NR_riscv_hwprobe */
+#  include <unistd.h> /* For syscall() */
+#endif
 
 #define ISA_V_HWCAP (1 << ('v' - 'a'))
 #define ISA_ZBC_HWCAP (1 << 29)
 
-void Z_INTERNAL riscv_check_features_runtime(struct riscv_cpu_features *features) {
+static int riscv_check_features_runtime_hwprobe(struct riscv_cpu_features *features) {
+#if defined(__NR_riscv_hwprobe) && defined(RISCV_HWPROBE_KEY_IMA_EXT_0)
+    struct riscv_hwprobe probes[] = {
+        {RISCV_HWPROBE_KEY_IMA_EXT_0, 0},
+    };
+    int ret;
+    unsigned i;
+
+    ret = syscall(__NR_riscv_hwprobe, probes, sizeof(probes) / sizeof(probes[0]), 0, NULL, 0);
+
+    if (ret != 0) {
+        /* Kernel does not support hwprobe */
+        return 0;
+    }
+
+    for (i = 0; i < sizeof(probes) / sizeof(probes[0]); i++) {
+        switch (probes[i].key) {
+        case RISCV_HWPROBE_KEY_IMA_EXT_0:
+#  ifdef RISCV_HWPROBE_IMA_V
+            features->has_rvv = !!(probes[i].value & RISCV_HWPROBE_IMA_V);
+#  endif
+#  ifdef RISCV_HWPROBE_EXT_ZBC
+            features->has_zbc = !!(probes[i].value & RISCV_HWPROBE_EXT_ZBC);
+#  endif
+            break;
+        }
+    }
+
+    return 1;
+#else
+    return 0;
+#endif
+}
+
+static int riscv_check_features_runtime_hwcap(struct riscv_cpu_features *features) {
 #if defined(__linux__) && defined(HAVE_SYS_AUXV_H)
     unsigned long hw_cap = getauxval(AT_HWCAP);
-#else
-    unsigned long hw_cap = 0;
-#endif
+
     features->has_rvv = hw_cap & ISA_V_HWCAP;
     features->has_zbc = hw_cap & ISA_ZBC_HWCAP;
+
+    return 1;
+#else
+    return 0;
+#endif
+}
+
+static void riscv_check_features_runtime(struct riscv_cpu_features *features) {
+    if (riscv_check_features_runtime_hwprobe(features))
+        return;
+
+    riscv_check_features_runtime_hwcap(features);
 }
 
 void Z_INTERNAL riscv_check_features(struct riscv_cpu_features *features) {
@@ -44,3 +95,5 @@ void Z_INTERNAL riscv_check_features(struct riscv_cpu_features *features) {
     }
 #endif
 }
+
+#endif

@@ -7,9 +7,10 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
+#ifdef X86_FEATURES
+
 #include "zbuild.h"
 #include "x86_features.h"
-
 
 #if defined(HAVE_CPUID_MS)
 #   include <intrin.h>
@@ -24,8 +25,6 @@
 #    endif
 #  endif
 #endif
-
-#include <string.h>
 
 static inline void cpuid(int info, unsigned* eax, unsigned* ebx, unsigned* ecx, unsigned* edx) {
 #if defined(HAVE_CPUID_MS)
@@ -106,6 +105,7 @@ void Z_INTERNAL x86_check_features(struct x86_cpu_features *features) {
         // check AVX2 bit if the OS supports saving YMM registers
         if (features->has_os_save_ymm) {
             features->has_avx2 = ebx & 0x20;
+            features->has_vpclmulqdq = ecx & 0x400;
         }
 
         // check AVX512 bits if the OS supports saving ZMM registers
@@ -121,7 +121,14 @@ void Z_INTERNAL x86_check_features(struct x86_cpu_features *features) {
             features->has_avx512_common = features->has_avx512f && features->has_avx512dq && features->has_avx512bw \
               && features->has_avx512vl && features->has_bmi2;
             features->has_avx512vnni = ecx & 0x800;
-            features->has_vpclmulqdq = ecx & 0x400;
         }
+
+        if (features->has_os_save_ymm) {
+            cpuidex(7, 1, &eax, &ebx, &ecx, &edx);
+            features->has_avx2vnni = eax & 0x10;
+        }
+
     }
 }
+
+#endif

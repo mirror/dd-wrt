@@ -31,12 +31,15 @@ INSTANTIATE_TEST_SUITE_P(adler32, adler32_variant, testing::ValuesIn(hash_tests)
     TEST_P(adler32_variant, name) { \
         if (!(support_flag)) { \
             GTEST_SKIP(); \
+            Z_UNREACHABLE(); \
             return; \
         } \
         hash(GetParam(), func); \
     }
 
+#ifdef ADLER32_FALLBACK
 TEST_ADLER32(c, adler32_c, 1)
+#endif
 
 #ifdef DISABLE_RUNTIME_CPU_DETECTION
 TEST_ADLER32(native, native_adler32, 1)
@@ -44,7 +47,11 @@ TEST_ADLER32(native, native_adler32, 1)
 
 #ifdef ARM_NEON
 TEST_ADLER32(neon, adler32_neon, test_cpu_features.arm.has_neon)
-#elif defined(POWER8_VSX)
+#endif
+#ifdef ARM_NEON_DOTPROD
+TEST_ADLER32(neon_dotprod, adler32_neon_dotprod, test_cpu_features.arm.has_neon && test_cpu_features.arm.has_dotprod)
+#endif
+#if defined(POWER8_VSX)
 TEST_ADLER32(power8, adler32_power8, test_cpu_features.power.has_arch_2_07)
 #elif defined(PPC_VMX)
 TEST_ADLER32(vmx, adler32_vmx, test_cpu_features.power.has_altivec)
@@ -57,6 +64,9 @@ TEST_ADLER32(ssse3, adler32_ssse3, test_cpu_features.x86.has_ssse3)
 #endif
 #ifdef X86_AVX2
 TEST_ADLER32(avx2, adler32_avx2, test_cpu_features.x86.has_avx2)
+#endif
+#ifdef X86_AVX2VNNI
+TEST_ADLER32(avx2_vnni, adler32_avx2_vnni, test_cpu_features.x86.has_avx2vnni)
 #endif
 #ifdef X86_AVX512
 TEST_ADLER32(avx512, adler32_avx512, test_cpu_features.x86.has_avx512_common)

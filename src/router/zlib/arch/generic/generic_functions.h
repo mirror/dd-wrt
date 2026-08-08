@@ -5,10 +5,6 @@
 #ifndef GENERIC_FUNCTIONS_H_
 #define GENERIC_FUNCTIONS_H_
 
-#include "zendian.h"
-#include "deflate.h"
-#include "crc32_braid_p.h"
-
 typedef uint32_t (*adler32_func)(uint32_t adler, const uint8_t *buf, size_t len);
 typedef uint32_t (*adler32_copy_func)(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len);
 typedef uint32_t (*compare256_func)(const uint8_t *src0, const uint8_t *src1);
@@ -16,51 +12,99 @@ typedef uint32_t (*crc32_func)(uint32_t crc, const uint8_t *buf, size_t len);
 typedef uint32_t (*crc32_copy_func)(uint32_t crc, uint8_t *dst, const uint8_t *src, size_t len);
 typedef void     (*slide_hash_func)(deflate_state *s);
 
+uint32_t crc32_small(uint32_t crc, const uint8_t *buf, size_t len);
 
+#ifdef ADLER32_FALLBACK
 uint32_t adler32_c(uint32_t adler, const uint8_t *buf, size_t len);
 uint32_t adler32_copy_c(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len);
-
-uint8_t* chunkmemset_safe_c(uint8_t *out, uint8_t *from, unsigned len, unsigned left);
-
+#endif
+#ifdef CHUNKSET_FALLBACK
+uint8_t* chunkmemset_safe_c(uint8_t *out, uint8_t *from, size_t len, size_t left);
+#endif
+#ifdef COMPARE256_FALLBACK
+uint32_t compare256_8(const uint8_t *src0, const uint8_t *src1);
+uint32_t compare256_64(const uint8_t *src0, const uint8_t *src1);
 uint32_t compare256_c(const uint8_t *src0, const uint8_t *src1);
+#endif
 
+#ifdef CRC32_BRAID_FALLBACK
 uint32_t crc32_braid(uint32_t crc, const uint8_t *buf, size_t len);
-uint32_t crc32_braid_internal(uint32_t c, const uint8_t *buf, size_t len);
 uint32_t crc32_copy_braid(uint32_t crc, uint8_t *dst, const uint8_t *src, size_t len);
+#endif
 
-#ifndef WITHOUT_CHORBA
+/* Chorba is available whenever braid is needed as a fallback and hasn't been disabled. */
+#if defined(CRC32_BRAID_FALLBACK) && !defined(WITHOUT_CHORBA)
+#  define CRC32_CHORBA_FALLBACK
+#endif
+
+#ifdef CRC32_CHORBA_FALLBACK
   uint32_t crc32_chorba(uint32_t crc, const uint8_t *buf, size_t len);
-  uint32_t crc32_chorba_118960_nondestructive (uint32_t crc, const z_word_t* input, size_t len);
-  uint32_t crc32_chorba_32768_nondestructive (uint32_t crc, const uint64_t* input, size_t len);
-  uint32_t crc32_chorba_small_nondestructive (uint32_t crc, const uint64_t* input, size_t len);
-  uint32_t crc32_chorba_small_nondestructive_32bit (uint32_t crc, const uint32_t* input, size_t len);
   uint32_t crc32_copy_chorba(uint32_t crc, uint8_t *dst, const uint8_t *src, size_t len);
 #endif
-
-void     inflate_fast_c(PREFIX3(stream) *strm, uint32_t start);
-
+#ifdef CHUNKSET_FALLBACK
+void     inflate_fast_c(PREFIX3(stream) *strm, uint32_t start, int safe_mode);
+#endif
+#ifdef COMPARE256_FALLBACK
 uint32_t longest_match_c(deflate_state *const s, uint32_t cur_match);
-uint32_t longest_match_slow_c(deflate_state *const s, uint32_t cur_match);
-
+uint32_t longest_match_roll_c(deflate_state *const s, uint32_t cur_match);
+#endif
+#ifdef SLIDE_HASH_FALLBACK
 void     slide_hash_c(deflate_state *s);
+void     slide_hash_head_c(deflate_state *s);
+#endif
 
 #ifdef DISABLE_RUNTIME_CPU_DETECTION
-// Generic code
-#  define native_adler32 adler32_c
-#  define native_adler32_copy adler32_copy_c
-#  define native_chunkmemset_safe chunkmemset_safe_c
-#ifndef WITHOUT_CHORBA
-#  define native_crc32 crc32_chorba
-#  define native_crc32_copy crc32_copy_chorba
-#else
-#  define native_crc32 crc32_braid
-#  define native_crc32_copy crc32_copy_braid
-#endif
-#  define native_inflate_fast inflate_fast_c
-#  define native_slide_hash slide_hash_c
-#  define native_longest_match longest_match_c
-#  define native_longest_match_slow longest_match_slow_c
-#  define native_compare256 compare256_c
+// Generic fallbacks when no native implementation exists
+#  ifdef ADLER32_FALLBACK
+#    ifndef native_adler32
+#      define native_adler32 adler32_c
+#    endif
+#    ifndef native_adler32_copy
+#      define native_adler32_copy adler32_copy_c
+#    endif
+#  endif
+#  ifdef CHUNKSET_FALLBACK
+#    ifndef native_chunkmemset_safe
+#      define native_chunkmemset_safe chunkmemset_safe_c
+#    endif
+#    ifndef native_inflate_fast
+#      define native_inflate_fast inflate_fast_c
+#    endif
+#  endif
+#  ifdef COMPARE256_FALLBACK
+#    ifndef native_compare256
+#      define native_compare256 compare256_c
+#    endif
+#    ifndef native_longest_match
+#      define native_longest_match longest_match_c
+#    endif
+#    ifndef native_longest_match_roll
+#      define native_longest_match_roll longest_match_roll_c
+#    endif
+#  endif
+#  ifdef CRC32_CHORBA_FALLBACK
+#    ifndef native_crc32
+#      define native_crc32 crc32_chorba
+#    endif
+#    ifndef native_crc32_copy
+#      define native_crc32_copy crc32_copy_chorba
+#    endif
+#  elif defined(CRC32_BRAID_FALLBACK)
+#    ifndef native_crc32
+#      define native_crc32 crc32_braid
+#    endif
+#    ifndef native_crc32_copy
+#      define native_crc32_copy crc32_copy_braid
+#    endif
+#  endif
+#  ifdef SLIDE_HASH_FALLBACK
+#    ifndef native_slide_hash
+#      define native_slide_hash slide_hash_c
+#    endif
+#    ifndef native_slide_hash_head
+#      define native_slide_hash_head slide_hash_head_c
+#    endif
+#  endif
 #endif
 
 #endif

@@ -30,6 +30,7 @@ class crc32_align : public ::testing::TestWithParam<int> {
 public:
     void hash(int param, crc32_func crc32) {
         uint8_t *buf = (uint8_t*)zng_alloc(sizeof(uint8_t) * (128 + param));
+        memset(buf + param, 0, 128);
         (void)crc32(0, buf + param, 128);
         zng_free(buf);
     }
@@ -64,6 +65,7 @@ INSTANTIATE_TEST_SUITE_P(crc32, crc32_variant, testing::ValuesIn(hash_tests));
     TEST_P(crc32_variant, name) { \
         if (!(support_flag)) { \
             GTEST_SKIP(); \
+            Z_UNREACHABLE(); \
             return; \
         } \
         hash(GetParam(), func); \
@@ -71,12 +73,18 @@ INSTANTIATE_TEST_SUITE_P(crc32, crc32_variant, testing::ValuesIn(hash_tests));
     TEST_F(crc32_large_buf, name) { \
         if (!(support_flag)) { \
             GTEST_SKIP(); \
+            Z_UNREACHABLE(); \
             return; \
         } \
         hash(func); \
     }
 
+#ifdef CRC32_BRAID_FALLBACK
 TEST_CRC32(braid, crc32_braid, 1)
+#endif
+#ifdef CRC32_CHORBA_FALLBACK
+TEST_CRC32(chorba_c, crc32_chorba, 1)
+#endif
 
 #ifdef DISABLE_RUNTIME_CPU_DETECTION
 TEST_CRC32(native, native_crc32, 1)
@@ -98,9 +106,6 @@ static const int align_offsets[] = {
     }
 #endif
 
-#ifndef WITHOUT_CHORBA
-TEST_CRC32(chorba_c, crc32_chorba, 1)
-#endif
 #ifdef ARM_CRC32
 INSTANTIATE_TEST_SUITE_P(crc32_alignment, crc32_align, testing::ValuesIn(align_offsets));
 TEST_CRC32(armv8, crc32_armv8, test_cpu_features.arm.has_crc32)
@@ -116,16 +121,19 @@ TEST_CRC32(riscv, crc32_riscv64_zbc, test_cpu_features.riscv.has_zbc)
 #ifdef POWER8_VSX_CRC32
 TEST_CRC32(power8, crc32_power8, test_cpu_features.power.has_arch_2_07)
 #endif
-#ifdef S390_CRC32_VX
+#ifdef S390_VX
 TEST_CRC32(vx, crc32_s390_vx, test_cpu_features.s390.has_vx)
 #endif
 #ifdef X86_PCLMULQDQ_CRC
 TEST_CRC32(pclmulqdq, crc32_pclmulqdq, test_cpu_features.x86.has_pclmulqdq)
 #endif
-#ifdef X86_VPCLMULQDQ_CRC
-TEST_CRC32(vpclmulqdq, crc32_vpclmulqdq, (test_cpu_features.x86.has_pclmulqdq && test_cpu_features.x86.has_avx512_common && test_cpu_features.x86.has_vpclmulqdq))
+#ifdef X86_VPCLMULQDQ_AVX2
+TEST_CRC32(vpclmulqdq_avx2, crc32_vpclmulqdq_avx2, (test_cpu_features.x86.has_pclmulqdq && test_cpu_features.x86.has_avx2 && test_cpu_features.x86.has_vpclmulqdq))
 #endif
-#ifndef WITHOUT_CHORBA_SSE
+#ifdef X86_VPCLMULQDQ_AVX512
+TEST_CRC32(vpclmulqdq_avx512, crc32_vpclmulqdq_avx512, (test_cpu_features.x86.has_pclmulqdq && test_cpu_features.x86.has_avx512_common && test_cpu_features.x86.has_vpclmulqdq))
+#endif
+#ifdef CRC32_CHORBA_SSE_FALLBACK
 #   ifdef X86_SSE2
     TEST_CRC32(chorba_sse2, crc32_chorba_sse2, test_cpu_features.x86.has_sse2)
 #   endif

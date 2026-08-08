@@ -15,7 +15,7 @@ static int gz_avail(gz_state *);
 static int gz_look(gz_state *);
 static int gz_decomp(gz_state *);
 static int gz_fetch(gz_state *);
-static int gz_skip(gz_state *, z_off64_t);
+static int gz_skip(gz_state *);
 static size_t gz_read(gz_state *, void *, size_t);
 
 static int gz_read_init(gz_state *state) {
@@ -79,10 +79,12 @@ static int gz_avail(gz_state *state) {
         if (strm->avail_in) {       /* copy what's there to the start */
             unsigned char *p = state->in;
             unsigned const char *q = strm->next_in;
-            unsigned n = strm->avail_in;
-            do {
-                *p++ = *q++;
-            } while (--n);
+            if (q != p) {
+                unsigned n = strm->avail_in;
+                do {
+                    *p++ = *q++;
+                } while (--n);
+            }
         }
         if (gz_load(state, state->in + strm->avail_in, state->size - strm->avail_in, &got) == -1)
             return -1;
@@ -107,6 +109,16 @@ static int gz_look(gz_state *state) {
     /* allocate memory if this is the first time through */
     if (state->size == 0 && gz_read_init(state) == -1)
         return -1;
+
+    /* if transparent reading is disabled, which would only be at the start, or
+       if we're looking for a gzip member after the first one, which is not at
+       the start, then proceed directly to look for a gzip member next */
+    if (state->direct == -1) {
+        PREFIX(inflateReset)(strm);
+        state->how = GZIP;
+        state->direct = 0;
+        return 0;
+    }
 
     /* get at least the magic bytes in the input buffer */
     if (strm->avail_in < 2) {
@@ -233,26 +245,31 @@ static int gz_fetch(gz_state *state) {
             continue;
         default:    // Can't happen
             Z_UNREACHABLE();
+#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 202311L
             return -1;
+#endif
         }
     } while (state->x.have == 0 && (!state->eof || strm->avail_in));
     return 0;
 }
 
 /* Skip len uncompressed bytes of output.  Return -1 on error, 0 on success. */
-static int gz_skip(gz_state *state, z_off64_t len) {
+/* Skip state->skip (> 0) uncompressed bytes of output.  Return -1 on error, 0
+   on success. */
+static int gz_skip(gz_state *state) {
     unsigned n;
 
-    /* skip over len bytes or reach end-of-file, whichever comes first */
-    while (len)
+    /* skip over state->skip bytes or reach end-of-file, whichever comes first */
+    do {
         /* skip over whatever is in output buffer */
         if (state->x.have) {
-            n = GT_OFF(state->x.have) || (z_off64_t)state->x.have > len ?
-                (unsigned)len : state->x.have;
+            n = GT_OFF(state->x.have) ||
+                (z_off64_t)state->x.have > state->skip ?
+                (unsigned)state->skip : state->x.have;
             state->x.have -= n;
             state->x.next += n;
             state->x.pos += n;
-            len -= n;
+            state->skip -= n;
         } else if (state->eof && state->strm.avail_in == 0) {
             /* output buffer empty -- return if we're at the end of the input */
             break;
@@ -262,6 +279,7 @@ static int gz_skip(gz_state *state, z_off64_t len) {
             if (gz_fetch(state) == -1)
                 return -1;
         }
+    } while (state->skip);
     return 0;
 }
 
@@ -278,11 +296,8 @@ static size_t gz_read(gz_state *state, void *buf, size_t len) {
         return 0;
 
     /* process a skip request */
-    if (state->seek) {
-        state->seek = 0;
-        if (gz_skip(state, state->skip) == -1)
-            return 0;
-    }
+    if (state->skip && gz_skip(state) == -1)
+        return 0;
 
     /* get len bytes to buf, or less than len if at the end */
     got = 0;
@@ -456,11 +471,8 @@ z_int32_t Z_EXPORT PREFIX(gzungetc)(z_int32_t c, gzFile file) {
         return -1;
 
     /* process a skip request */
-    if (state->seek) {
-        state->seek = 0;
-        if (gz_skip(state, state->skip) == -1)
-            return -1;
-    }
+    if (state->skip && gz_skip(state) == -1)
+        return -1;
 
     /* can't push EOF */
     if (c < 0)
@@ -515,11 +527,8 @@ char * Z_EXPORT PREFIX(gzgets)(gzFile file, char *buf, z_int32_t len) {
         return NULL;
 
     /* process a skip request */
-    if (state->seek) {
-        state->seek = 0;
-        if (gz_skip(state, state->skip) == -1)
-            return NULL;
-    }
+    if (state->skip && gz_skip(state) == -1)
+        return NULL;
 
     /* copy output bytes up to new line or len - 1, whichever comes first --
        append a terminating zero to the string (we don't check for a zero in
@@ -537,7 +546,7 @@ char * Z_EXPORT PREFIX(gzgets)(gzFile file, char *buf, z_int32_t len) {
             }
 
             /* look for end-of-line in current output buffer */
-            n = state->x.have > left ? left : state->x.have;
+            n = MIN(state->x.have, left);
             eol = (unsigned char *)memchr(state->x.next, '\n', n);
             if (eol != NULL)
                 n = (unsigned)(eol - state->x.next) + 1;
@@ -575,7 +584,7 @@ z_int32_t Z_EXPORT PREFIX(gzdirect)(gzFile file) {
         (void)gz_look(state);
 
     /* return 1 if transparent, 0 if processing a gzip stream */
-    return state->direct;
+    return state->direct == 1;
 }
 
 /* -- see zlib.h -- */

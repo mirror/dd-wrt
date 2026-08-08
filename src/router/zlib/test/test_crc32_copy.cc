@@ -34,23 +34,26 @@ INSTANTIATE_TEST_SUITE_P(crc32_copy, crc32_copy_variant, testing::ValuesIn(hash_
     TEST_P(crc32_copy_variant, name) { \
         if (!(support_flag)) { \
             GTEST_SKIP(); \
+            Z_UNREACHABLE(); \
             return; \
         } \
         crc32_copy_test(copyfunc, GetParam()); \
     }
 
 // Base test
+#ifdef CRC32_BRAID_FALLBACK
 TEST_CRC32_COPY(braid, crc32_copy_braid, 1)
+#endif
+#ifdef CRC32_CHORBA_FALLBACK
+TEST_CRC32_COPY(chorba, crc32_copy_chorba, 1)
+#endif
 
 #ifdef DISABLE_RUNTIME_CPU_DETECTION
     // Native test
     TEST_CRC32_COPY(native, native_crc32_copy, 1)
 #else
     // Optimized functions
-#  ifndef WITHOUT_CHORBA
-    TEST_CRC32_COPY(chorba, crc32_copy_chorba, 1)
-#  endif
-#  ifndef WITHOUT_CHORBA_SSE
+#  ifdef CRC32_CHORBA_SSE_FALLBACK
 #    ifdef X86_SSE2
     TEST_CRC32_COPY(chorba_sse2, crc32_copy_chorba_sse2, test_cpu_features.x86.has_sse2)
 #    endif
@@ -70,11 +73,20 @@ TEST_CRC32_COPY(braid, crc32_copy_braid, 1)
 #  ifdef RISCV_CRC32_ZBC
     TEST_CRC32_COPY(riscv, crc32_copy_riscv64_zbc, test_cpu_features.riscv.has_zbc)
 #  endif
+#  ifdef POWER8_VSX_CRC32
+    TEST_CRC32_COPY(power8, crc32_copy_power8, test_cpu_features.power.has_arch_2_07)
+#  endif
+#  ifdef S390_VX
+    TEST_CRC32_COPY(vx, crc32_copy_s390_vx, test_cpu_features.s390.has_vx)
+#  endif
 #  ifdef X86_PCLMULQDQ_CRC
     TEST_CRC32_COPY(pclmulqdq, crc32_copy_pclmulqdq, test_cpu_features.x86.has_pclmulqdq)
 #  endif
-#  ifdef X86_VPCLMULQDQ_CRC
-    TEST_CRC32_COPY(vpclmulqdq, crc32_copy_vpclmulqdq, (test_cpu_features.x86.has_pclmulqdq && test_cpu_features.x86.has_avx512_common && test_cpu_features.x86.has_vpclmulqdq))
+#  ifdef X86_VPCLMULQDQ_AVX2
+    TEST_CRC32_COPY(vpclmulqdq_avx2, crc32_copy_vpclmulqdq_avx2, (test_cpu_features.x86.has_pclmulqdq && test_cpu_features.x86.has_avx2 && test_cpu_features.x86.has_vpclmulqdq))
+#  endif
+#  ifdef X86_VPCLMULQDQ_AVX512
+    TEST_CRC32_COPY(vpclmulqdq_avx512, crc32_copy_vpclmulqdq_avx512, (test_cpu_features.x86.has_pclmulqdq && test_cpu_features.x86.has_avx512_common && test_cpu_features.x86.has_vpclmulqdq))
 #  endif
 
 #endif

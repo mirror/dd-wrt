@@ -8,31 +8,27 @@
 
 /* Define BRAID_W and the associated z_word_t type. If BRAID_W is not defined, then a braided
    calculation is not used, and the associated tables and code are not compiled.
+
+   TODO: According to crc32_braid_c.c, BRAID_N=5, BRAID_W=4 is fastest with Sparc64-VII,
+   PowerPC POWER9, and MIPS64 Octeon II processors.
  */
 #ifdef ARCH_64BIT
 #  define BRAID_W 8
     typedef uint64_t z_word_t;
+#  define Z_WORD_FROM_LE(word) Z_U64_FROM_LE(word)
 #else
 #  define BRAID_W 4
     typedef uint32_t z_word_t;
+#  define Z_WORD_FROM_LE(word) Z_U32_FROM_LE(word)
 #endif
 
 #if BYTE_ORDER == LITTLE_ENDIAN
-#  define ZSWAPWORD(word) (word)
 #  define BRAID_TABLE crc_braid_table
 #elif BYTE_ORDER == BIG_ENDIAN
-#  if BRAID_W == 8
-#    define ZSWAPWORD(word) ZSWAP64(word)
-#  elif BRAID_W == 4
-#    define ZSWAPWORD(word) ZSWAP32(word)
-#  endif
 #  define BRAID_TABLE crc_braid_big_table
 #else
 #  error "No endian defined"
 #endif
-
-#define CRC_DO1 c = crc_table[(c ^ *buf++) & 0xff] ^ (c >> 8)
-#define CRC_DO8 CRC_DO1; CRC_DO1; CRC_DO1; CRC_DO1; CRC_DO1; CRC_DO1; CRC_DO1; CRC_DO1
 
 /* CRC polynomial. */
 #define POLY 0xedb88320         /* p(x) reflected, with x^32 implied */

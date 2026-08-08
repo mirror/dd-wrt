@@ -6,7 +6,10 @@
 #define INFLATE_P_H
 
 #include <stdlib.h>
+
+#include "zendian.h"
 #include "zmemory.h"
+#include "crc32_braid_tbl.h"
 
 /* Architecture-specific hooks. */
 #ifdef S390_DFLTCC_INFLATE
@@ -45,30 +48,26 @@
  *   Macros shared by inflate() and inflateBack()
  */
 
-/* check function to use adler32() for zlib or crc32() for gzip */
-#ifdef GUNZIP
-#  define UPDATE(check, buf, len) \
-    (state->flags ? PREFIX(crc32)(check, buf, len) : FUNCTABLE_CALL(adler32)(check, buf, len))
-#else
-#  define UPDATE(check, buf, len) FUNCTABLE_CALL(adler32)(check, buf, len)
-#endif
-
 /* check macros for header crc */
 #ifdef GUNZIP
+#  define CRC_DO1_B(c, b)    c = crc_table[(c ^ (b)) & 0xff] ^ (c >> 8)
+
 #  define CRC2(check, word) \
     do { \
-        hbuf[0] = (unsigned char)(word); \
-        hbuf[1] = (unsigned char)((word) >> 8); \
-        check = PREFIX(crc32)(check, hbuf, 2); \
+        uint32_t crc = ~(uint32_t)(check); \
+        CRC_DO1_B(crc, (word)     ); \
+        CRC_DO1_B(crc, (word) >> 8); \
+        (check) = ~crc; \
     } while (0)
 
 #  define CRC4(check, word) \
     do { \
-        hbuf[0] = (unsigned char)(word); \
-        hbuf[1] = (unsigned char)((word) >> 8); \
-        hbuf[2] = (unsigned char)((word) >> 16); \
-        hbuf[3] = (unsigned char)((word) >> 24); \
-        check = PREFIX(crc32)(check, hbuf, 4); \
+        uint32_t crc = ~(uint32_t)(check); \
+        CRC_DO1_B(crc, (word)      ); \
+        CRC_DO1_B(crc, (word) >>  8); \
+        CRC_DO1_B(crc, (word) >> 16); \
+        CRC_DO1_B(crc, (word) >> 24); \
+        (check) = ~crc; \
     } while (0)
 #endif
 
@@ -101,6 +100,13 @@ typedef unsigned bits_t;
         state->bits = bits; \
     } while (0)
 
+/* Refill to have at least 56 bits in the bit accumulator */
+#define REFILL() do { \
+        hold |= load_64_bits(in, bits); \
+        in += (63 ^ bits) >> 3; \
+        bits |= 56; \
+    } while (0)
+
 /* Clear the input bit accumulator */
 #define INITBITS() \
     do { \
@@ -112,7 +118,8 @@ typedef unsigned bits_t;
    not enough available input to do that, then return from inflate()/inflateBack(). */
 #define NEEDBITS(n) \
     do { \
-        while (bits < (bits_t)(n)) \
+        unsigned u = (unsigned)(n); \
+        while (bits < (bits_t)u) \
             PULLBYTE(); \
     } while (0)
 
@@ -123,8 +130,9 @@ typedef unsigned bits_t;
 /* Remove n bits from the bit accumulator */
 #define DROPBITS(n) \
     do { \
-        hold >>= (n); \
-        bits -= (bits_t)(n); \
+        unsigned u = (unsigned)(n); \
+        hold >>= u; \
+        bits -= (bits_t)u; \
     } while (0)
 
 /* Remove zero to seven bits as needed to go to a byte boundary */
@@ -138,34 +146,79 @@ typedef unsigned bits_t;
 #define SET_BAD(errmsg) \
     do { \
         state->mode = BAD; \
-        strm->msg = (char *)errmsg; \
+        strm->msg = (z_const char *)errmsg; \
     } while (0)
 
+/* Huffman code table entry format for length/distance codes (op & 16 set):
+ *   bits = code_bits + extra_bits (combined for single-shift decode)
+ *   op   = 16 | code_bits
+ *   val  = base value
+ *
+ * For literals (op == 0): bits = code_bits, val = literal byte
+ */
+
+/* Extract code size from a Huffman table entry */
+#define CODE_BITS(here) \
+    ((unsigned)((here.op & 16) ? (here.op & 15) : here.bits))
+
+/* Extract extra bits count from a length/distance code entry */
+#define CODE_EXTRA(here) \
+    ((unsigned)((here.op & 16) ? (here.bits - (here.op & 15)) : 0))
+
+/* Extract extra bits value from saved bit accumulator */
+#define EXTRA_BITS(old, here, op) \
+    ((old & (((uint64_t)1 << here.bits) - 1)) >> (op & MAX_BITS))
+
+/* Build combined op field: preserves extra if not len/dist, else combines with code_bits */
+#define COMBINE_OP(extra, code_bits) \
+    ((unsigned char)((extra) & 16 ? (code_bits) | 16 : (extra)))
+
+/* Build combined bits field: code_bits + extra_bits from extra's low nibble */
+#define COMBINE_BITS(code_bits, extra) \
+    ((unsigned char)((code_bits) + ((extra) & 15)))
+
+/* Trace macros for debugging */
+#define TRACE_LITERAL(val) \
+    Tracevv((stderr, val >= 0x20 && val < 0x7f ? \
+            "inflate:         literal '%c'\n" : \
+            "inflate:         literal 0x%02x\n", val))
+
+#define TRACE_LENGTH(len) \
+    Tracevv((stderr, "inflate:         length %u\n", len))
+
+#define TRACE_DISTANCE(dist) \
+    Tracevv((stderr, "inflate:         distance %u\n", dist))
+
+#define TRACE_END_OF_BLOCK() \
+    Tracevv((stderr, "inflate:         end of block\n"))
+
+/* inflate_fast() executes at most two 8-byte refill reads per iteration: the
+   first at the input position validated by the loop bound (advancing at most
+   7 bytes), the second therefore ending at most 15 bytes past that position.
+   The refill before the loop reads at the entry position and advances exactly
+   7 bytes (entry guarantees bits < 8), so the first iteration stays within
+   the same bound. */
 #define INFLATE_FAST_MIN_HAVE 15
-#define INFLATE_FAST_MIN_LEFT 260
+#define INFLATE_FAST_MIN_LEFT 260  /* max output per token (258) + 2 */
+#define INFLATE_FAST_MIN_SAFE 3    /* max unchecked literal writes per iteration */
 
 /* Load 64 bits from IN and place the bytes at offset BITS in the result. */
 static inline uint64_t load_64_bits(const unsigned char *in, unsigned bits) {
     uint64_t chunk = zng_memread_8(in);
-
-#if BYTE_ORDER == LITTLE_ENDIAN
-    return chunk << bits;
-#else
-    return ZSWAP64(chunk) << bits;
-#endif
+    return Z_U64_FROM_LE(chunk) << bits;
 }
 
 /* Behave like chunkcopy, but avoid writing beyond of legal output. */
-static inline uint8_t* chunkcopy_safe(uint8_t *out, uint8_t *from, uint64_t len, uint8_t *safe) {
-    uint64_t safelen = safe - out;
+static inline uint8_t* chunkcopy_safe(uint8_t *out, uint8_t *from, size_t len, uint8_t *safe) {
+    size_t safelen = safe - out;
     len = MIN(len, safelen);
     int32_t olap_src = from >= out && from < out + len;
     int32_t olap_dst = out >= from && out < from + len;
-    uint64_t tocopy;
+    size_t tocopy;
 
     /* For all cases without overlap, memcpy is ideal */
     if (!(olap_src || olap_dst)) {
-        memcpy(out, from, (size_t)len);
+        memcpy(out, from, len);
         return out + len;
     }
 
@@ -179,7 +232,7 @@ static inline uint8_t* chunkcopy_safe(uint8_t *out, uint8_t *from, uint64_t len,
      * initial bulk memcpy of the nonoverlapping region. Then, we can leverage the size of this to determine the safest
      * atomic memcpy size we can pick such that we have non-overlapping regions. This effectively becomes a safe look
      * behind or lookahead distance. */
-    uint64_t non_olap_size = llabs(from - out); // llabs vs labs for compatibility with windows
+    size_t non_olap_size = (size_t)ABS(from - out);
 
     /* So this doesn't give use a worst case scenario of function calls in a loop,
      * we want to instead break this down into copy blocks of fixed lengths

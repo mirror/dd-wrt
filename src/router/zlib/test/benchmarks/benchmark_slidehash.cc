@@ -72,12 +72,13 @@ public:
     BENCHMARK_DEFINE_F(slide_hash, name)(benchmark::State& state) { \
         if (!(support_flag)) { \
             state.SkipWithError("CPU does not support " #name); \
+            return; \
         } \
         Bench(state, fptr); \
     } \
     BENCHMARK_REGISTER_F(slide_hash, name)->RangeMultiplier(2)->Range(512, MAX_RANDOM_INTS);
 
-#if defined(WITH_ALL_FALLBACKS) || !(defined(__x86_64__) || defined(_M_X64))
+#ifdef SLIDE_HASH_FALLBACK
 BENCHMARK_SLIDEHASH(c, slide_hash_c, 1);
 #endif
 
@@ -96,6 +97,9 @@ BENCHMARK_SLIDEHASH(power8, slide_hash_power8, test_cpu_features.power.has_arch_
 #endif
 #ifdef PPC_VMX
 BENCHMARK_SLIDEHASH(vmx, slide_hash_vmx, test_cpu_features.power.has_altivec);
+#endif
+#ifdef S390_VX
+BENCHMARK_SLIDEHASH(vx, slide_hash_vx, test_cpu_features.s390.has_vx);
 #endif
 #ifdef RISCV_RVV
 BENCHMARK_SLIDEHASH(rvv, slide_hash_rvv, test_cpu_features.riscv.has_rvv);

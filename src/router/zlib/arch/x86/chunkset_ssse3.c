@@ -2,12 +2,14 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
+#ifdef X86_SSSE3
+
 #include "zbuild.h"
+#include "zsanitizer.h"
 #include "zmemory.h"
 
-#if defined(X86_SSSE3)
 #include <immintrin.h>
-#include "arch/generic/chunk_128bit_perm_idx_lut.h"
+#include "arch/shared/chunk_128bit_perm_idx_lut.h"
 
 typedef __m128i chunk_t;
 
@@ -37,7 +39,7 @@ static inline void storechunk(uint8_t *out, chunk_t *chunk) {
     _mm_storeu_si128((__m128i *)out, *chunk);
 }
 
-static inline chunk_t GET_CHUNK_MAG(uint8_t *buf, uint32_t *chunk_rem, uint32_t dist) {
+static inline chunk_t GET_CHUNK_MAG(uint8_t *buf, size_t *chunk_rem, size_t dist) {
     lut_rem_pair lut_rem = perm_idx_lut[dist - 3];
     __m128i perm_vec, ret_vec;
     /* Important to note:

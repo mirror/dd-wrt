@@ -11,6 +11,7 @@
 
 #include "functable.h"
 #include "fallback_builtins.h"
+#include "zmemory.h"
 
 /* Forward declare common non-inlined functions declared in deflate.c */
 
@@ -18,21 +19,21 @@
 /* ===========================================================================
  * Check that the match at match_start is indeed a match.
  */
-static inline void check_match(deflate_state *s, uint32_t start, uint32_t match, int length) {
+static inline void check_match(deflate_state *s, uint32_t start, uint32_t match, uint32_t length) {
     /* check that the match length is valid*/
     if (length < STD_MIN_MATCH || length > STD_MAX_MATCH) {
-        fprintf(stderr, " start %u, match %u, length %d\n", start, match, length);
+        fprintf(stderr, " start %u, match %u, length %u\n", start, match, length);
         z_error("invalid match length");
     }
     /* check that the match isn't at the same position as the start string */
     if (match == start) {
-        fprintf(stderr, " start %u, match %u, length %d\n", start, match, length);
+        fprintf(stderr, " start %u, match %u, length %u\n", start, match, length);
         z_error("invalid match position");
     }
     /* check that the match is indeed a match */
     if (memcmp(s->window + match, s->window + start, length) != 0) {
         int32_t i = 0;
-        fprintf(stderr, " start %u, match %u, length %d\n", start, match, length);
+        fprintf(stderr, " start %u, match %u, length %u\n", start, match, length);
         do {
             fprintf(stderr, "  %03d: match [%02x] start [%02x]\n", i++,
                 s->window[match++], s->window[start++]);
@@ -40,7 +41,7 @@ static inline void check_match(deflate_state *s, uint32_t start, uint32_t match,
         z_error("invalid match");
     }
     if (z_verbose > 1) {
-        fprintf(stderr, "\\[%u,%d]", start-match, length);
+        fprintf(stderr, "\\[%u,%u]", start-match, length);
         do {
             putc(s->window[start++], stderr);
         } while (--length != 0);
@@ -57,18 +58,25 @@ Z_INTERNAL void PREFIX(flush_pending)(PREFIX3(stream) *strm);
  * the current block must be flushed.
  */
 
-extern const unsigned char Z_INTERNAL zng_length_code[];
-extern const unsigned char Z_INTERNAL zng_dist_code[];
+extern Z_INTERNAL const unsigned char zng_length_code[];
+extern Z_INTERNAL const unsigned char zng_dist_code[];
 
 static inline int zng_tr_tally_lit(deflate_state *s, unsigned char c) {
     /* c is the unmatched char */
+    unsigned int sym_next = s->sym_next;
 #ifdef LIT_MEM
-    s->d_buf[s->sym_next] = 0;
-    s->l_buf[s->sym_next++] = c;
+    s->d_buf[sym_next] = 0;
+    s->l_buf[sym_next] = c;
+    s->sym_next = sym_next + 1;
 #else
-    s->sym_buf[s->sym_next++] = 0;
-    s->sym_buf[s->sym_next++] = 0;
-    s->sym_buf[s->sym_next++] = c;
+#  if OPTIMAL_CMP >= 32
+    zng_memwrite_4(&s->sym_buf[sym_next], Z_U32_TO_LE((uint32_t)c << 16));
+#  else
+    s->sym_buf[sym_next] = 0;
+    s->sym_buf[sym_next+1] = 0;
+    s->sym_buf[sym_next+2] = c;
+#  endif
+    s->sym_next = sym_next + 3;
 #endif
     s->dyn_ltree[c].Freq++;
     Tracevv((stderr, "%c", c));
@@ -79,17 +87,23 @@ static inline int zng_tr_tally_lit(deflate_state *s, unsigned char c) {
 static inline int zng_tr_tally_dist(deflate_state* s, uint32_t dist, uint32_t len) {
     /* dist: distance of matched string */
     /* len: match length-STD_MIN_MATCH */
+    unsigned int sym_next = s->sym_next;
 #ifdef LIT_MEM
     Assert(dist <= UINT16_MAX, "dist should fit in uint16_t");
     Assert(len <= UINT8_MAX, "len should fit in uint8_t");
-    s->d_buf[s->sym_next] = (uint16_t)dist;
-    s->l_buf[s->sym_next++] = (uint8_t)len;
+    s->d_buf[sym_next] = (uint16_t)dist;
+    s->l_buf[sym_next] = (uint8_t)len;
+    s->sym_next = sym_next + 1;
 #else
-    s->sym_buf[s->sym_next++] = (uint8_t)(dist);
-    s->sym_buf[s->sym_next++] = (uint8_t)(dist >> 8);
-    s->sym_buf[s->sym_next++] = (uint8_t)len;
+#  if OPTIMAL_CMP >= 32
+    zng_memwrite_4(&s->sym_buf[sym_next], Z_U32_TO_LE(dist | ((uint32_t)len << 16)));
+#  else
+    s->sym_buf[sym_next] = (uint8_t)(dist);
+    s->sym_buf[sym_next+1] = (uint8_t)(dist >> 8);
+    s->sym_buf[sym_next+2] = (uint8_t)len;
+#  endif
+    s->sym_next = sym_next + 3;
 #endif
-    s->matches++;
     dist--;
     Assert(dist < MAX_DIST(s) && (uint16_t)d_code(dist) < (uint16_t)D_CODES,
         "zng_tr_tally: bad match");
@@ -132,7 +146,7 @@ Z_FORCEINLINE static uint16_t bi_reverse(uint16_t code, int len) {
     /* code: the value to invert */
     /* len: its bit length */
     Assert(len >= 1 && len <= 15, "code length must be 1-15");
-    return __builtin_bitreverse16(code) >> (16 - len);
+    return zng_bitreverse16(code) >> (16 - len);
 }
 
 /* ===========================================================================
@@ -170,19 +184,20 @@ Z_FORCEINLINE static unsigned read_buf(PREFIX3(stream) *strm, unsigned char *buf
  * Flush the current block, with given end-of-file flag.
  * IN assertion: strstart is set to the end of the current match.
  */
-#define FLUSH_BLOCK_ONLY(s, last) { \
-    zng_tr_flush_block(s, (s->block_start >= 0 ? \
-                   (char *)&s->window[(unsigned)s->block_start] : \
+#define FLUSH_BLOCK_ONLY(s, window, last) { \
+    int block_start = s->block_start; \
+    zng_tr_flush_block(s, (block_start >= 0 ? \
+                   &window[(unsigned)block_start] : \
                    NULL), \
-                   (uint32_t)((int)s->strstart - s->block_start), \
+                   (uint32_t)((int)s->strstart - block_start), \
                    (last)); \
     s->block_start = (int)s->strstart; \
     PREFIX(flush_pending)(s->strm); \
 }
 
 /* Same but force premature exit if necessary. */
-#define FLUSH_BLOCK(s, last) { \
-    FLUSH_BLOCK_ONLY(s, last); \
+#define FLUSH_BLOCK(s, window, last) { \
+    FLUSH_BLOCK_ONLY(s, window, last); \
     if (s->strm->avail_out == 0) return (last) ? finish_started : need_more; \
 }
 

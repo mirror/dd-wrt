@@ -5,16 +5,17 @@
  */
 
 #include "zbuild.h"
+#include "zendian.h"
 #include "zmemory.h"
 #include "deflate.h"
 #include "fallback_builtins.h"
 
-#if defined(LOONGARCH_LASX) && defined(HAVE_BUILTIN_CTZ)
+#ifdef LOONGARCH_LASX
 
 #include <lasxintrin.h>
 #include "lasxintrin_ext.h"
 
-static inline uint32_t compare256_lasx_static(const uint8_t *src0, const uint8_t *src1) {
+Z_FORCEINLINE static uint32_t compare256_lasx_static(const uint8_t *src0, const uint8_t *src1) {
     uint32_t len = 0;
 
     do {
@@ -23,10 +24,8 @@ static inline uint32_t compare256_lasx_static(const uint8_t *src0, const uint8_t
         ymm_src1 = __lasx_xvld(src1, 0);
         ymm_cmp = __lasx_xvseq_b(ymm_src0, ymm_src1); /* non-identical bytes = 00, identical bytes = FF */
         unsigned mask = (unsigned)lasx_movemask_b(ymm_cmp);
-        if (mask != 0xFFFFFFFF) {
-            uint32_t match_byte = (uint32_t)__builtin_ctz(~mask); /* Invert bits so identical = 0 */
-            return len + match_byte;
-        }
+        if (mask != 0xFFFFFFFF)
+            return len + zng_ctz32(~mask); /* Invert bits so identical = 0 */
 
         src0 += 32, src1 += 32, len += 32;
 
@@ -34,10 +33,8 @@ static inline uint32_t compare256_lasx_static(const uint8_t *src0, const uint8_t
         ymm_src1 = __lasx_xvld(src1, 0);
         ymm_cmp = __lasx_xvseq_b(ymm_src0, ymm_src1);
         mask = (unsigned)lasx_movemask_b(ymm_cmp);
-        if (mask != 0xFFFFFFFF) {
-            uint32_t match_byte = (uint32_t)__builtin_ctz(~mask);
-            return len + match_byte;
-        }
+        if (mask != 0xFFFFFFFF)
+            return len + zng_ctz32(~mask);
 
         src0 += 32, src1 += 32, len += 32;
     } while (len < 256);
@@ -54,8 +51,8 @@ Z_INTERNAL uint32_t compare256_lasx(const uint8_t *src0, const uint8_t *src1) {
 
 #include "match_tpl.h"
 
-#define LONGEST_MATCH_SLOW
-#define LONGEST_MATCH       longest_match_slow_lasx
+#define LONGEST_MATCH_ROLL
+#define LONGEST_MATCH       longest_match_roll_lasx
 #define COMPARE256          compare256_lasx_static
 
 #include "match_tpl.h"

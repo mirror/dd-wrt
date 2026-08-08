@@ -1,7 +1,5 @@
-#include <stdio.h>
-#include <assert.h>
-
 #include "zbuild.h"
+#include <assert.h>
 #ifdef ZLIB_COMPAT
 #  include "zlib.h"
 #else
@@ -92,7 +90,7 @@ void test_inflate(unsigned char *compr, size_t comprLen, unsigned char *uncompr,
 }
 
 int LLVMFuzzerTestOneInput(const uint8_t *d, size_t size) {
-    size_t comprLen = PREFIX(compressBound)(size);
+    size_t comprLen = PREFIX(compressBound)((z_uintmax_t)size);
     size_t uncomprLen = size;
     uint8_t *compr, *uncompr;
 

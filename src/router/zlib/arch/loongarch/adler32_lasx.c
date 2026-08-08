@@ -41,7 +41,7 @@ Z_FORCEINLINE static uint32_t adler32_copy_impl(uint32_t adler, uint8_t *dst, co
 
 rem_peel:
     if (len < 16) {
-        return adler32_copy_len_16(adler0, dst, src, len, adler1, COPY);
+        return adler32_copy_tail(adler0, dst, src, len, adler1, 1, 15, COPY);
     } else if (len < 32) {
         if (COPY) {
             return adler32_copy_lsx(adler, dst, src, len);
@@ -67,8 +67,7 @@ rem_peel:
         __m256i vs3 = __lasx_xvldi(0);
         vs2_0 = vs3;
 
-        size_t k = MIN(len, NMAX);
-        k -= k % 32;
+        size_t k = ALIGN_DOWN(MIN(len, NMAX), 32);
         len -= k;
 
         while (k >= 64) {

@@ -30,7 +30,9 @@ extern z_const char * const PREFIX(z_errmsg)[10]; /* indexed by 2-zlib_error */
 /* To be used only when the state is known to be valid */
 
         /* common constants */
-
+#if MAX_WBITS < 9 || MAX_WBITS > 15
+#  error MAX_WBITS must be in 9..15
+#endif
 #ifndef DEF_WBITS
 #  define DEF_WBITS MAX_WBITS
 #endif
@@ -40,6 +42,9 @@ extern z_const char * const PREFIX(z_errmsg)[10]; /* indexed by 2-zlib_error */
 /* all codes must not exceed MAX_BITS bits */
 #define MAX_DIST_EXTRA_BITS 13
 /* maximum number of extra distance bits */
+#define MAX_LEN_ROOT_BITS 10
+/* maximum number of index bits for the first-level length code table
+   (the largest value assigned to state->lenbits) */
 
 #if MAX_MEM_LEVEL >= 8
 #  define DEF_MEM_LEVEL 8
@@ -107,7 +112,7 @@ extern z_const char * const PREFIX(z_errmsg)[10]; /* indexed by 2-zlib_error */
 #  define OS_CODE  7
 #endif
 
-#ifdef __acorn
+#if defined(__acorn) || defined(__riscos)
 #  define OS_CODE 13
 #endif
 

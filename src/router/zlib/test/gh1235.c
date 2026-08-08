@@ -1,6 +1,5 @@
+#include "zbuild.h"
 #include <assert.h>
-#include <stdio.h>
-#include <string.h>
 #include "zutil.h"
 
 int main(void) {
@@ -8,7 +7,7 @@ int main(void) {
     unsigned char compressed[130];
     PREFIX3(stream) strm;
     z_size_t bound;
-    z_size_t bytes;
+    z_uintmax_t bytes;
 
     for (int i = 0; i <= 32; i++) {
         memset(plain, 6, i);

@@ -6,20 +6,14 @@
  */
 
 #ifdef PPC_VMX
-#include <altivec.h>
+
 #include "zbuild.h"
 #include "zendian.h"
 #include "adler32_p.h"
 
-#define vmx_zero()  (vec_splat_u32(0))
+#include <altivec.h>
 
-static inline void vmx_handle_head_or_tail(uint32_t *pair, const uint8_t *buf, size_t len) {
-    unsigned int i;
-    for (i = 0; i < len; ++i) {
-        pair[0] += buf[i];
-        pair[1] += pair[0];
-    }
-}
+#define vmx_zero()  (vec_splat_u32(0))
 
 static void vmx_accum32(uint32_t *s, const uint8_t *buf, size_t len) {
     /* Different taps for the separable components of sums */
@@ -118,69 +112,56 @@ static void vmx_accum32(uint32_t *s, const uint8_t *buf, size_t len) {
     vec_ste(s2acc, 0, s+1);
 }
 
-Z_FORCEINLINE static uint32_t adler32_impl(uint32_t adler, const uint8_t *buf, size_t len) {
-    uint32_t sum2;
-    uint32_t pair[16] ALIGNED_(16);
-    memset(&pair[2], 0, 14);
-    int n = NMAX;
-    unsigned int done = 0;
-
-    /* Split Adler-32 into component sums, it can be supplied by
-     * the caller sites (e.g. in a PNG file).
-     */
-    sum2 = (adler >> 16) & 0xffff;
+Z_INTERNAL uint32_t adler32_vmx(uint32_t adler, const uint8_t *buf, size_t len) {
+    /* Split Adler-32 into component sums */
+    uint32_t sum2 = (adler >> 16) & 0xffff;
     adler &= 0xffff;
-    pair[0] = adler;
-    pair[1] = sum2;
 
     /* in case user likes doing a byte at a time, keep it fast */
     if (UNLIKELY(len == 1))
-        return adler32_copy_len_1(adler, NULL, buf, sum2, 0);
+        return adler32_copy_tail(adler, NULL, buf, 1, sum2, 1, 1, 0);
 
     /* in case short lengths are provided, keep it somewhat fast */
     if (UNLIKELY(len < 16))
-        return adler32_copy_len_16(adler, NULL, buf, len, sum2, 0);
+        return adler32_copy_tail(adler, NULL, buf, len, sum2, 1, 15, 0);
+
+    uint32_t pair[4] ALIGNED_(16);
+    pair[0] = adler;
+    pair[1] = sum2;
+    pair[2] = 0;
+    pair[3] = 0;
 
     // Align buffer
-    size_t align_len = (size_t)MIN(ALIGN_DIFF(buf, 16), len);
-    if (align_len) {
-        vmx_handle_head_or_tail(pair, buf, align_len);
-        done += align_len;
-        /* Rather than rebasing, we can reduce the max sums for the
-         * first round only */
-        n -= align_len;
-    }
-    for (size_t i = align_len; i < len; i += n) {
-        int remaining = (int)(len-i);
-        n = MIN(remaining, (i == align_len) ? n : NMAX);
-        if (n < 16)
-            break;
+    size_t align_diff = MIN(ALIGN_DIFF(buf, 16), len);
+    size_t n = NMAX;
+    if (align_diff) {
+        adler32_copy_align(&pair[0], NULL, buf, align_diff, &pair[1], 15, 0);
 
-        vmx_accum32(pair, buf + i, n / 16);
+        buf += align_diff;
+        len -= align_diff;
+        n -= align_diff;
+    }
+
+    while (len >= 16) {
+        n = MIN(len, n);
+
+        vmx_accum32(pair, buf, n / 16);
         pair[0] %= BASE;
         pair[1] %= BASE;
 
-        done += (n / 16) * 16;
+        size_t k = (n / 16) * 16;
+        buf += k;
+        len -= k;
+        n = NMAX;
     }
 
-    /* Handle the tail elements. */
-    if (done < len) {
-        vmx_handle_head_or_tail(pair, (buf + done), len - done);
-        pair[0] %= BASE;
-        pair[1] %= BASE;
-    }
-
-    /* D = B * 65536 + A, see: https://en.wikipedia.org/wiki/Adler-32. */
-    return (pair[1] << 16) | pair[0];
-}
-
-Z_INTERNAL uint32_t adler32_vmx(uint32_t adler, const uint8_t *buf, size_t len) {
-    return adler32_impl(adler, buf, len);
+    /* Process tail (len < 16).  */
+    return adler32_copy_tail(pair[0], NULL, buf, len, pair[1], len != 0 || align_diff, 15, 0);
 }
 
 /* VMX stores can have higher latency than optimized memcpy */
 Z_INTERNAL uint32_t adler32_copy_vmx(uint32_t adler, uint8_t *dst, const uint8_t *src, size_t len) {
-    adler = adler32_impl(adler, src, len);
+    adler = adler32_vmx(adler, src, len);
     memcpy(dst, src, len);
     return adler;
 }
