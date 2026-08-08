@@ -358,11 +358,6 @@ include rules/sqlite.mk
 include rules/privoxy.mk
 include rules/kobs-ng.mk
 include rules/lighttpd.mk
-ifeq ($(CONFIG_OPENSSL3),y)
-include rules/curl.mk
-else
-include rules/curl-legacy.mk
-endif
 include rules/curl-bearssl.mk
 include rules/transmission.mk
 include rules/libevent.mk
