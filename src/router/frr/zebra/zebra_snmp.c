@@ -412,7 +412,7 @@ static void get_fwtable_route_node(struct variable *v, oid objid[],
 	*objid_len = v->namelen + 10;
 	pnt = (uint8_t *)&(*np)->p.u.prefix;
 	for (i = 0; i < 4; i++)
-		objid[v->namelen + i] = *pnt++;
+		objid[v->namelen + i] = pnt[i];
 
 	objid[v->namelen + 4] = proto;
 	objid[v->namelen + 5] = policy;
@@ -424,7 +424,7 @@ static void get_fwtable_route_node(struct variable *v, oid objid[],
 		if (nh) {
 			pnt = (uint8_t *)&nh->gate.ipv4;
 			for (i = 0; i < 4; i++)
-				objid[i + v->namelen + 6] = *pnt++;
+				objid[i + v->namelen + 6] = pnt[i];
 		}
 	}
 
@@ -546,9 +546,16 @@ static int zebra_snmp_init(struct event_loop *tm)
 	return 0;
 }
 
+static int zebra_snmp_terminate(void)
+{
+	smux_terminate();
+	return 0;
+}
+
 static int zebra_snmp_module_init(void)
 {
 	hook_register(frr_late_init, zebra_snmp_init);
+	hook_register(frr_fini, zebra_snmp_terminate);
 	return 0;
 }
 

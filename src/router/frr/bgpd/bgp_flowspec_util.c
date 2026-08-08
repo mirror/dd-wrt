@@ -33,13 +33,13 @@ static void hex2bin(uint8_t *hex, int *bin)
 		bin[7-i] = 0;
 }
 
-static int hexstr2num(uint8_t *hexstr, int len)
+static uint64_t hexstr2num(uint8_t *hexstr, int len)
 {
 	int i = 0;
-	int num = 0;
+	uint64_t num = 0;
 
 	for (i = 0; i < len; i++)
-		num = hexstr[i] + 16*16*num;
+		num = hexstr[i] + 256 * num;
 	return num;
 }
 
@@ -78,7 +78,7 @@ bool bgp_flowspec_contains_prefix(const struct prefix *pfs,
 	struct prefix compare;
 
 	error = 0;
-	while (offset < len-1 && error >= 0) {
+	while (offset + 1 < len && error >= 0) {
 		type = nlri_content[offset];
 		offset++;
 		switch (type) {
@@ -257,7 +257,8 @@ int bgp_flowspec_op_decode(enum bgp_flowspec_util_nlri_t type,
 			   void *result, int *error)
 {
 	int op[8];
-	int len, value, value_size;
+	int len, value_size;
+	uint64_t value;
 	int loop = 0;
 	char *ptr = (char *)result; /* for return_string */
 	uint32_t offset = 0;
@@ -274,8 +275,10 @@ int bgp_flowspec_op_decode(enum bgp_flowspec_util_nlri_t type,
 	}
 
 	do {
-		if (loop > BGP_PBR_MATCH_VAL_MAX)
+		if (loop >= BGP_PBR_MATCH_VAL_MAX) {
 			*error = -2;
+			return offset;
+		}
 
 		if (offset >= max_len) {
 			*error = -1;
@@ -302,38 +305,47 @@ int bgp_flowspec_op_decode(enum bgp_flowspec_util_nlri_t type,
 		switch (type) {
 		case BGP_FLOWSPEC_RETURN_STRING:
 			if (loop) {
-				len_written = snprintf(ptr, len_string,
-						      ", ");
-				len_string -= len_written;
-				ptr += len_written;
+				len_written = snprintfrr(ptr, len_string, ", ");
+				if (len_written > 0 && len_written < len_string) {
+					len_string -= len_written;
+					ptr += len_written;
+				}
 			}
 			if (op[5] == 1) {
-				len_written = snprintf(ptr, len_string,
-						       "<");
-				len_string -= len_written;
-				ptr += len_written;
+				len_written = snprintfrr(ptr, len_string, "<");
+				if (len_written > 0 && len_written < len_string) {
+					len_string -= len_written;
+					ptr += len_written;
+				}
 			}
 			if (op[6] == 1) {
-				len_written = snprintf(ptr, len_string,
-						      ">");
-				len_string -= len_written;
-				ptr += len_written;
+				len_written = snprintfrr(ptr, len_string, ">");
+				if (len_written > 0 && len_written < len_string) {
+					len_string -= len_written;
+					ptr += len_written;
+				}
 			}
 			if (op[7] == 1) {
-				len_written = snprintf(ptr, len_string,
-						       "=");
+				len_written = snprintfrr(ptr, len_string, "=");
+				if (len_written > 0 && len_written < len_string) {
+					len_string -= len_written;
+					ptr += len_written;
+				}
+			}
+			len_written = snprintfrr(ptr, len_string, " %" PRIu64 " ", value);
+			if (len_written > 0 && len_written < len_string) {
 				len_string -= len_written;
 				ptr += len_written;
 			}
-			len_written = snprintf(ptr, len_string,
-					       " %d ", value);
-			len_string -= len_written;
-			ptr += len_written;
 			break;
 		case BGP_FLOWSPEC_CONVERT_TO_NON_OPAQUE:
 			/* limitation: stop converting */
 			if (*error == -2)
 				break;
+			if (value > UINT16_MAX) {
+				*error = -1;
+				break;
+			}
 			mval->value = value;
 			if (op[5] == 1)
 				SET_FLAG(mval->compare_operator,
@@ -381,12 +393,13 @@ int bgp_flowspec_bitmask_decode(enum bgp_flowspec_util_nlri_t type,
 				 void *result, int *error)
 {
 	int op[8];
-	int len, value_size, loop = 0, value;
+	int len, value_size, loop = 0;
 	char *ptr = (char *)result; /* for return_string */
 	struct bgp_pbr_match_val *mval = (struct bgp_pbr_match_val *)result;
 	uint32_t offset = 0;
 	int len_string = BGP_FLOWSPEC_STRING_DISPLAY_MAX;
 	int len_written;
+	uint64_t value;
 
 	*error = 0;
 
@@ -397,7 +410,7 @@ int bgp_flowspec_bitmask_decode(enum bgp_flowspec_util_nlri_t type,
 	}
 
 	do {
-		if (loop > BGP_PBR_MATCH_VAL_MAX) {
+		if (loop >= BGP_PBR_MATCH_VAL_MAX) {
 			*error = -2;
 			return offset;
 		}
@@ -419,42 +432,52 @@ int bgp_flowspec_bitmask_decode(enum bgp_flowspec_util_nlri_t type,
 		switch (type) {
 		case BGP_FLOWSPEC_RETURN_STRING:
 			if (op[1] == 1 && loop != 0) {
-				len_written = snprintf(ptr, len_string,
-						       ",&");
-				len_string -= len_written;
-				ptr += len_written;
+				len_written = snprintfrr(ptr, len_string, ",&");
+				if (len_written > 0 && len_written < len_string) {
+					len_string -= len_written;
+					ptr += len_written;
+				}
 			} else if (op[1] == 0 && loop != 0) {
-				len_written = snprintf(ptr, len_string,
-						      ",|");
-				len_string -= len_written;
-				ptr += len_written;
+				len_written = snprintfrr(ptr, len_string, ",|");
+				if (len_written > 0 && len_written < len_string) {
+					len_string -= len_written;
+					ptr += len_written;
+				}
 			}
 			if (op[7] == 1) {
-				len_written = snprintf(ptr, len_string,
-					       "= ");
-				len_string -= len_written;
-				ptr += len_written;
+				len_written = snprintfrr(ptr, len_string, "= ");
+				if (len_written > 0 && len_written < len_string) {
+					len_string -= len_written;
+					ptr += len_written;
+				}
 			} else {
-				len_written = snprintf(ptr, len_string,
-						       "∋ ");
-				len_string -= len_written;
-				ptr += len_written;
+				len_written = snprintfrr(ptr, len_string, "∋ ");
+				if (len_written > 0 && len_written < len_string) {
+					len_string -= len_written;
+					ptr += len_written;
+				}
 			}
 			if (op[6] == 1) {
-				len_written = snprintf(ptr, len_string,
-					       "! ");
+				len_written = snprintfrr(ptr, len_string, "! ");
+				if (len_written > 0 && len_written < len_string) {
+					len_string -= len_written;
+					ptr += len_written;
+				}
+			}
+			len_written = snprintfrr(ptr, len_string, "%" PRIu64, value);
+			if (len_written > 0 && len_written < len_string) {
 				len_string -= len_written;
 				ptr += len_written;
 			}
-			len_written = snprintf(ptr, len_string,
-				       "%d", value);
-			len_string -= len_written;
-			ptr += len_written;
 			break;
 		case BGP_FLOWSPEC_CONVERT_TO_NON_OPAQUE:
 			/* limitation: stop converting */
 			if (*error == -2)
 				break;
+			if (value > UINT16_MAX) {
+				*error = -1;
+				break;
+			}
 			mval->value = value;
 			if (op[6] == 1) {
 				/* different from */
@@ -678,6 +701,8 @@ int bgp_flowspec_match_rules_fill(uint8_t *nlri_content, int len,
 		default:
 			flog_err(EC_LIB_DEVELOPMENT, "%s: unknown type %d",
 				 __func__, type);
+			error = -1;
+			break;
 		}
 	}
 	if (bpem->match_packet_length_num || bpem->match_fragment_num

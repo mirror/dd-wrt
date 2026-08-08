@@ -31,7 +31,7 @@ enum ospf_gr_restart_reason {
 	OSPF_GR_UNKNOWN_RESTART = 0,
 	OSPF_GR_SW_RESTART = 1,
 	OSPF_GR_SW_UPGRADE = 2,
-	OSPF_GR_SWITCH_REDUNDANT_CARD = 3,
+	OSPF_GR_SWITCH_CONTROL_PROCESSOR = 3,
 	OSPF_GR_INVALID_REASON_CODE = 4
 };
 
@@ -166,7 +166,7 @@ extern void ospf_gr_helper_supported_gracetime_set(struct ospf *ospf,
 						   uint32_t interval);
 extern void ospf_gr_helper_set_supported_planned_only_restart(struct ospf *ospf,
 							     bool planned_only);
-extern void ospf_gr_iface_send_grace_lsa(struct event *thread);
+extern void ospf_gr_iface_send_grace_lsa(struct event *event);
 extern void ospf_gr_restart_enter(struct ospf *ospf,
 				  enum ospf_gr_restart_reason reason,
 				  time_t timestamp);

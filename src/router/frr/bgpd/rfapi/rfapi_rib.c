@@ -285,7 +285,7 @@ static void rfapi_info_free(struct rfapi_info *goner)
 			rfapiFreeRfapiVnOptionChain(goner->vn_options);
 			goner->vn_options = NULL;
 		}
-		if (goner->timer) {
+		if (event_is_scheduled(goner->timer)) {
 			struct rfapi_rib_tcb *tcb;
 
 			tcb = EVENT_ARG(goner->timer);
@@ -355,7 +355,7 @@ static void rfapiRibStartTimer(struct rfapi_descriptor *rfd,
 {
 	struct rfapi_rib_tcb *tcb = NULL;
 
-	if (ri->timer) {
+	if (event_is_scheduled(ri->timer)) {
 		tcb = EVENT_ARG(ri->timer);
 		event_cancel(&ri->timer);
 	} else {
@@ -436,7 +436,7 @@ int rfapi_rib_key_cmp(const void *k1, const void *k2)
  * that are not strictly needed.
  *
  * This function could be modified to compare option chains more
- * thoroughly, but it's not clear that the extra compuation would
+ * thoroughly, but it's not clear that the extra computaion would
  * be worth it.
  */
 static int bgp_tea_options_cmp(struct bgp_tea_options *a,
@@ -548,7 +548,7 @@ void rfapiRibClear(struct rfapi_descriptor *rfd)
 							    NULL,
 							    (void **)&ri)) {
 
-						if (ri->timer) {
+						if (event_is_scheduled(ri->timer)) {
 							struct rfapi_rib_tcb
 								*tcb;
 
@@ -668,11 +668,20 @@ static void rfapiRibBi2Ri(struct bgp_path_info *bpi, struct rfapi_info *ri,
 			break;
 
 		case BGP_VNC_SUBTLV_TYPE_RFPOPTION:
+			/* Check for short subtlv: drop */
+			if (pEncap->length < 3)
+				break;
+
+			/* Length of zero not valid */
+			if (pEncap->value[1] == 0)
+				break;
+
 			hop = XCALLOC(MTYPE_BGP_TEA_OPTIONS,
 				      sizeof(struct bgp_tea_options));
 			assert(hop);
 			hop->type = pEncap->value[0];
 			hop->length = pEncap->value[1];
+
 			hop->value = XCALLOC(MTYPE_BGP_TEA_OPTIONS_VALUE,
 					     pEncap->length - 2);
 			assert(hop->value);
@@ -934,7 +943,7 @@ static void process_pending_node(struct bgp *bgp, struct rfapi_descriptor *rfd,
 				rfapiFreeBgpTeaOptionChain(ri->tea_options);
 				ri->tea_options = NULL;
 
-				if (ri->timer) {
+				if (event_is_scheduled(ri->timer)) {
 					struct rfapi_rib_tcb *tcb;
 
 					tcb = EVENT_ARG(ri->timer);
@@ -1020,7 +1029,7 @@ static void process_pending_node(struct bgp *bgp, struct rfapi_descriptor *rfd,
 				listnode_add(delete_list, ori);
 				rfapiFreeBgpTeaOptionChain(ori->tea_options);
 				ori->tea_options = NULL;
-				if (ori->timer) {
+				if (event_is_scheduled(ori->timer)) {
 					struct rfapi_rib_tcb *tcb;
 
 					tcb = EVENT_ARG(ori->timer);
@@ -1356,7 +1365,7 @@ callback:
 
 				RFAPI_RIB_CHECK_COUNTS(0, delete_list->count);
 				/* cancel normal expire timer */
-				if (ri->timer) {
+				if (event_is_scheduled(ri->timer)) {
 					struct rfapi_rib_tcb *tcb;
 
 					tcb = EVENT_ARG(ri->timer);

@@ -20,8 +20,8 @@
 #include "log.h"
 #include "frrevent.h"
 #include "hash.h"
-#include "sockunion.h" /* for inet_aton() */
 #include "buffer.h"
+#include "lib/sockopt.h"
 
 #include <sys/types.h>
 
@@ -62,7 +62,7 @@ DEFINE_MTYPE_STATIC(OSPFD, APISERVER_MSGFILTER, "API Server Message Filter");
 /* List of all active connections. */
 struct list *apiserver_list;
 
-/* Indicates that API the server socket local addresss has been
+/* Indicates that API the server socket local address has been
  * specified.
  */
 struct in_addr ospf_apiserver_addr;
@@ -238,9 +238,9 @@ static struct ospf_apiserver *lookup_apiserver_by_lsa(struct ospf_lsa *lsa)
 struct ospf_apiserver *ospf_apiserver_new(int fd_sync, int fd_async)
 {
 	struct ospf_apiserver *new =
-		XMALLOC(MTYPE_APISERVER, sizeof(struct ospf_apiserver));
+		XCALLOC(MTYPE_APISERVER, sizeof(struct ospf_apiserver));
 
-	new->filter = XMALLOC(MTYPE_APISERVER_MSGFILTER,
+	new->filter = XCALLOC(MTYPE_APISERVER_MSGFILTER,
 			      sizeof(struct lsa_filter_type));
 
 	new->fd_sync = fd_sync;
@@ -249,24 +249,15 @@ struct ospf_apiserver *ospf_apiserver_new(int fd_sync, int fd_async)
 	/* list of registered opaque types that application uses */
 	new->opaque_types = list_new();
 
-	/* Initialize temporary strage for LSA instances to be refreshed. */
+	/* Initialize temporary storage for LSA instances to be refreshed. */
 	if (IS_DEBUG_OSPF_CLIENT_API)
 		zlog_debug("API: Initiallize the reserve LSDB");
-	memset(&new->reserve, 0, sizeof(struct ospf_lsdb));
 	ospf_lsdb_init(&new->reserve);
 
 	new->out_sync_fifo = msg_fifo_new();
 	new->out_async_fifo = msg_fifo_new();
-	new->t_sync_read = NULL;
-#ifdef USE_ASYNC_READ
-	new->t_async_read = NULL;
-#endif /* USE_ASYNC_READ */
-	new->t_sync_write = NULL;
-	new->t_async_write = NULL;
 
-	new->filter->typemask = 0; /* filter all LSAs */
 	new->filter->origin = ANY_ORIGIN;
-	new->filter->num_areas = 0;
 
 	return new;
 }
@@ -280,13 +271,11 @@ void ospf_apiserver_event(enum ospf_apiserver_event event, int fd,
 				     NULL);
 		break;
 	case OSPF_APISERVER_SYNC_READ:
-		apiserv->t_sync_read = NULL;
 		event_add_read(master, ospf_apiserver_read, apiserv, fd,
 			       &apiserv->t_sync_read);
 		break;
 #ifdef USE_ASYNC_READ
 	case OSPF_APISERVER_ASYNC_READ:
-		apiserv->t_async_read = NULL;
 		event_add_read(master, ospf_apiserver_read, apiserv, fd,
 			       &apiserv->t_async_read);
 		break;
@@ -309,14 +298,6 @@ void ospf_apiserver_free(struct ospf_apiserver *apiserv)
 {
 	struct listnode *node;
 
-	/* Cancel read and write threads. */
-	event_cancel(&apiserv->t_sync_read);
-#ifdef USE_ASYNC_READ
-	event_cancel(&apiserv->t_async_read);
-#endif /* USE_ASYNC_READ */
-	event_cancel(&apiserv->t_sync_write);
-	event_cancel(&apiserv->t_async_write);
-
 	/* Unregister all opaque types that application registered
 	   and flush opaque LSAs if still in LSDB. */
 
@@ -327,6 +308,14 @@ void ospf_apiserver_free(struct ospf_apiserver *apiserv)
 			apiserv, regtype->lsa_type, regtype->opaque_type);
 	}
 	list_delete(&apiserv->opaque_types);
+
+	/* Cancel read and write threads. */
+	event_cancel(&apiserv->t_sync_read);
+#ifdef USE_ASYNC_READ
+	event_cancel(&apiserv->t_async_read);
+#endif /* USE_ASYNC_READ */
+	event_cancel(&apiserv->t_sync_write);
+	event_cancel(&apiserv->t_async_write);
 
 	/* Close connections to OSPFd. */
 	if (apiserv->fd_sync > 0) {
@@ -341,7 +330,7 @@ void ospf_apiserver_free(struct ospf_apiserver *apiserv)
 	msg_fifo_free(apiserv->out_sync_fifo);
 	msg_fifo_free(apiserv->out_async_fifo);
 
-	/* Clear temporary strage for LSA instances to be refreshed. */
+	/* Clear temporary storage for LSA instances to be refreshed. */
 	if (IS_DEBUG_OSPF_CLIENT_API)
 		zlog_debug("API: Delete all LSAs from reserve LSDB, total=%ld",
 			   apiserv->reserve.total);
@@ -361,19 +350,18 @@ void ospf_apiserver_free(struct ospf_apiserver *apiserv)
 	XFREE(MTYPE_APISERVER, apiserv);
 }
 
-void ospf_apiserver_read(struct event *thread)
+void ospf_apiserver_read(struct event *e)
 {
 	struct ospf_apiserver *apiserv;
 	struct msg *msg;
 	int fd;
 	enum ospf_apiserver_event event;
 
-	apiserv = EVENT_ARG(thread);
-	fd = EVENT_FD(thread);
+	apiserv = EVENT_ARG(e);
+	fd = EVENT_FD(e);
 
 	if (fd == apiserv->fd_sync) {
 		event = OSPF_APISERVER_SYNC_READ;
-		apiserv->t_sync_read = NULL;
 
 		if (IS_DEBUG_OSPF_CLIENT_API)
 			zlog_debug("API: %s: Peer: %pI4/%u", __func__,
@@ -383,7 +371,6 @@ void ospf_apiserver_read(struct event *thread)
 #ifdef USE_ASYNC_READ
 	else if (fd == apiserv->fd_async) {
 		event = OSPF_APISERVER_ASYNC_READ;
-		apiserv->t_async_read = NULL;
 
 		if (IS_DEBUG_OSPF_CLIENT_API)
 			zlog_debug("API: %s: Peer: %pI4/%u", __func__,
@@ -414,24 +401,22 @@ void ospf_apiserver_read(struct event *thread)
 	/* Dispatch to corresponding message handler. */
 	ospf_apiserver_handle_msg(apiserv, msg);
 
-	/* Prepare for next message, add read thread. */
+	/* Prepare for next message, add read event. */
 	ospf_apiserver_event(event, fd, apiserv);
 
 	msg_free(msg);
 }
 
-void ospf_apiserver_sync_write(struct event *thread)
+void ospf_apiserver_sync_write(struct event *event)
 {
 	struct ospf_apiserver *apiserv;
 	struct msg *msg;
 	int fd;
 	int rc = -1;
 
-	apiserv = EVENT_ARG(thread);
+	apiserv = EVENT_ARG(event);
 	assert(apiserv);
-	fd = EVENT_FD(thread);
-
-	apiserv->t_sync_write = NULL;
+	fd = EVENT_FD(event);
 
 	/* Sanity check */
 	if (fd != apiserv->fd_sync) {
@@ -465,7 +450,7 @@ void ospf_apiserver_sync_write(struct event *thread)
 	}
 
 
-	/* If more messages are in sync message fifo, schedule write thread. */
+	/* If more messages are in sync message fifo, schedule write event. */
 	if (msg_fifo_head(apiserv->out_sync_fifo)) {
 		ospf_apiserver_event(OSPF_APISERVER_SYNC_WRITE,
 				     apiserv->fd_sync, apiserv);
@@ -480,18 +465,16 @@ out:
 }
 
 
-void ospf_apiserver_async_write(struct event *thread)
+void ospf_apiserver_async_write(struct event *event)
 {
 	struct ospf_apiserver *apiserv;
 	struct msg *msg;
 	int fd;
 	int rc = -1;
 
-	apiserv = EVENT_ARG(thread);
+	apiserv = EVENT_ARG(event);
 	assert(apiserv);
-	fd = EVENT_FD(thread);
-
-	apiserv->t_async_write = NULL;
+	fd = EVENT_FD(event);
 
 	/* Sanity check */
 	if (fd != apiserv->fd_async) {
@@ -525,7 +508,7 @@ void ospf_apiserver_async_write(struct event *thread)
 	}
 
 
-	/* If more messages are in async message fifo, schedule write thread. */
+	/* If more messages are in async message fifo, schedule write event. */
 	if (msg_fifo_head(apiserv->out_async_fifo)) {
 		ospf_apiserver_event(OSPF_APISERVER_ASYNC_WRITE,
 				     apiserv->fd_async, apiserv);
@@ -558,7 +541,7 @@ int ospf_apiserver_serv_sock_family(unsigned short port, int family)
 	sockopt_reuseaddr(accept_sock);
 	sockopt_reuseport(accept_sock);
 
-	/* Bind socket to optional lcoal address and port. */
+	/* Bind socket to optional local address and port. */
 	if (ospf_apiserver_addr.s_addr)
 		sockunion2ip(&su) = ospf_apiserver_addr.s_addr;
 	rc = sockunion_bind(accept_sock, &su, port, &su);
@@ -580,7 +563,7 @@ int ospf_apiserver_serv_sock_family(unsigned short port, int family)
 
 /* Accept connection request from external applications. For each
    accepted connection allocate own connection instance. */
-void ospf_apiserver_accept(struct event *thread)
+void ospf_apiserver_accept(struct event *event)
 {
 	int accept_sock;
 	int new_sync_sock;
@@ -592,8 +575,8 @@ void ospf_apiserver_accept(struct event *thread)
 	unsigned int peerlen;
 	int ret;
 
-	/* EVENT_ARG (thread) is NULL */
-	accept_sock = EVENT_FD(thread);
+	/* EVENT_ARG (event) is NULL */
+	accept_sock = EVENT_FD(event);
 
 	/* Keep hearing on socket for further connections. */
 	ospf_apiserver_event(OSPF_APISERVER_ACCEPT, accept_sock, NULL);
@@ -1356,7 +1339,7 @@ out:
 
 /*
  * -----------------------------------------------------------
- * Followings are functions for synchronization.
+ * Following are functions for synchronization.
  * -----------------------------------------------------------
  */
 
@@ -1548,11 +1531,16 @@ struct ospf_lsa *ospf_apiserver_opaque_lsa_new(struct ospf_area *area,
 	if (!ospf)
 		return NULL;
 
-	/* Create a stream for internal opaque LSA */
-	if ((s = stream_new(OSPF_MAX_LSA_SIZE)) == NULL) {
-		zlog_warn("%s: stream_new failed", __func__);
+	if (!VALID_OPAQUE_INFO_LEN(protolsa)) {
+		if (IS_DEBUG_OSPF_CLIENT_API) {
+			zlog_debug("%s: invalid LSA input length %d, type %d", __func__,
+				   ntohs(protolsa->length), protolsa->type);
+		}
 		return NULL;
 	}
+
+	/* Create a stream for internal opaque LSA */
+	s = stream_new(OSPF_MAX_LSA_SIZE);
 
 	newlsa = (struct lsa_header *)STREAM_DATA(s);
 
@@ -1637,9 +1625,32 @@ int ospf_apiserver_handle_originate_request(struct ospf_apiserver *apiserv,
 	if (!ospf)
 		goto out;
 
+	/* Validate size */
+	if (STREAM_READABLE(msg->s) < sizeof(struct msg_originate_request)) {
+		rc = OSPF_API_ERROR;
+		goto out;
+	}
+
 	/* Extract opaque LSA data from message */
 	omsg = (struct msg_originate_request *)STREAM_DATA(msg->s);
 	data = &omsg->data;
+
+	if (!VALID_OPAQUE_INFO_LEN(data)) {
+		zlog_warn("%s: invalid opaque LSA len %d", __func__, ntohs(data->length));
+		rc = OSPF_API_ERROR;
+		goto out;
+	}
+
+	/* Verify stream contains the full LSA body, not just the header */
+	if (STREAM_READABLE(msg->s) <
+	    offsetof(struct msg_originate_request, data) + ntohs(data->length)) {
+		zlog_warn("%s: message truncated, stream %zu < needed %zu", __func__,
+			  STREAM_READABLE(msg->s),
+			  (size_t){ (offsetof(struct msg_originate_request, data) +
+				     (size_t)ntohs(data->length)) });
+		rc = OSPF_API_ERROR;
+		goto out;
+	}
 
 	/* Determine interface for type9 or area for type10 LSAs. */
 	switch (data->type) {
@@ -1909,8 +1920,7 @@ struct ospf_lsa *ospf_apiserver_lsa_refresher(struct ospf_lsa *lsa)
 	if (!apiserv) {
 		zlog_warn("%s: LSA[%s]: No apiserver?", __func__,
 			  dump_lsa_key(lsa));
-		lsa->data->ls_age =
-			htons(OSPF_LSA_MAXAGE); /* Flush it anyway. */
+		LS_AGE_SET(lsa, OSPF_LSA_MAXAGE); /* Flush it anyway. */
 		goto out;
 	}
 

@@ -151,6 +151,8 @@ int main(int argc, char **argv, char **envp)
 	pim_router_init();
 
 	access_list_init();
+	access_list_add_hook(pim_access_list_update);
+	access_list_delete_hook(pim_access_list_update);
 	prefix_list_init();
 
 	/*
@@ -196,6 +198,7 @@ static void pim6_terminate(void)
 
 	prefix_list_reset();
 	access_list_reset();
+	pim_route_map_terminate();
 
 	zclient = pim_zebra_zclient_get();
 	if (zclient) {

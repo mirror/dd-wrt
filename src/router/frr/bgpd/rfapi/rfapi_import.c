@@ -233,6 +233,7 @@ void rfapiCheckRefcount(struct agg_node *rn, safi_t safi, int lockoffset)
 			}
 			break;
 
+		case SAFI_BGP_LS:
 		case SAFI_UNSPEC:
 		case SAFI_UNICAST:
 		case SAFI_MULTICAST:
@@ -282,41 +283,33 @@ int rfapiGetL2o(struct attr *attr, struct rfapi_l2address_option *l2o)
 		for (pEncap = bgp_attr_get_vnc_subtlvs(attr); pEncap;
 		     pEncap = pEncap->next) {
 
-			if (pEncap->type == BGP_VNC_SUBTLV_TYPE_RFPOPTION) {
-				if (pEncap->value[0]
-				    == RFAPI_VN_OPTION_TYPE_L2ADDR) {
+			if (pEncap->type != BGP_VNC_SUBTLV_TYPE_RFPOPTION)
+				continue;
 
-					if (pEncap->value[1] == 14) {
-						memcpy(l2o->macaddr.octet,
-						       pEncap->value + 2,
-						       ETH_ALEN);
-						l2o->label =
-							((pEncap->value[10]
-							  >> 4)
-							 & 0x0f)
-							+ ((pEncap->value[9]
-							    << 4)
-							   & 0xff0)
-							+ ((pEncap->value[8]
-							    << 12)
-							   & 0xff000);
+			/* Validate length before accessing first two octets */
+			if (pEncap->length < 2)
+				continue;
 
-						l2o->local_nve_id =
-							pEncap->value[12];
+			if (pEncap->value[0] == RFAPI_VN_OPTION_TYPE_L2ADDR) {
+				if (pEncap->value[1] == 14) {
+					/* Validate subtlv length before accessing */
+					if (pEncap->length < 16)
+						continue;
 
-						l2o->logical_net_id =
-							(pEncap->value[15]
-							 & 0xff)
-							+ ((pEncap->value[14]
-							    << 8)
-							   & 0xff00)
-							+ ((pEncap->value[13]
-							    << 16)
-							   & 0xff0000);
-					}
+					memcpy(l2o->macaddr.octet, pEncap->value + 2, ETH_ALEN);
+					l2o->label = (((pEncap->value[10] >> 4) & 0x0f) +
+						      ((pEncap->value[9] << 4) & 0xff0) +
+						      ((pEncap->value[8] << 12) & 0xff000));
 
-					return 0;
+					l2o->local_nve_id = pEncap->value[12];
+
+					l2o->logical_net_id =
+						((pEncap->value[15] & 0xff) +
+						 ((pEncap->value[14] << 8) & 0xff00) +
+						 ((pEncap->value[13] << 16) & 0xff0000));
 				}
+
+				return 0;
 			}
 		}
 	}
@@ -2795,7 +2788,7 @@ rfapiBiStartWithdrawTimer(struct rfapi_import_table *import_table,
 	assert(bpi->extra);
 	if (lifetime > UINT32_MAX / 1001) {
 		/* sub-optimal case, but will probably never happen */
-		bpi->extra->vnc->vnc.import.timer = NULL;
+		event_cancel(&bpi->extra->vnc->vnc.import.timer);
 		event_add_timer(bm->master, timer_service_func, wcb, lifetime,
 				&bpi->extra->vnc->vnc.import.timer);
 	} else {
@@ -2811,7 +2804,7 @@ rfapiBiStartWithdrawTimer(struct rfapi_import_table *import_table,
 
 		lifetime_msec = (lifetime * 1000) + jitter;
 
-		bpi->extra->vnc->vnc.import.timer = NULL;
+		event_cancel(&bpi->extra->vnc->vnc.import.timer);
 		event_add_timer_msec(bm->master, timer_service_func, wcb,
 				     lifetime_msec,
 				     &bpi->extra->vnc->vnc.import.timer);
@@ -2981,6 +2974,7 @@ static void rfapiBgpInfoFilteredImportEncap(
 		rt = import_table->imported_encap[afi];
 		break;
 
+	case AFI_BGP_LS:
 	case AFI_UNSPEC:
 	case AFI_L2VPN:
 	case AFI_MAX:
@@ -3435,6 +3429,7 @@ void rfapiBgpInfoFilteredImportVPN(
 		rt = import_table->imported_vpn[afi];
 		break;
 
+	case AFI_BGP_LS:
 	case AFI_UNSPEC:
 	case AFI_MAX:
 		flog_err(EC_LIB_DEVELOPMENT, "%s: bad afi %d", __func__, afi);
@@ -3831,6 +3826,7 @@ rfapiBgpInfoFilteredImportFunction(safi_t safi)
 	case SAFI_ENCAP:
 		return rfapiBgpInfoFilteredImportEncap;
 
+	case SAFI_BGP_LS:
 	case SAFI_UNSPEC:
 	case SAFI_UNICAST:
 	case SAFI_MULTICAST:
@@ -4076,6 +4072,7 @@ static void rfapiProcessPeerDownRt(struct peer *peer,
 		rt = import_table->imported_encap[afi];
 		timer_service_func = rfapiWithdrawTimerEncap;
 		break;
+	case SAFI_BGP_LS:
 	case SAFI_UNSPEC:
 	case SAFI_UNICAST:
 	case SAFI_MULTICAST:
@@ -4133,7 +4130,7 @@ void rfapiProcessPeerDown(struct peer *peer)
 	struct rfapi_import_table *it;
 
 	/*
-	 * If this peer is a "dummy" peer structure atached to a RFAPI
+	 * If this peer is a "dummy" peer structure attached to a RFAPI
 	 * nve_descriptor, we don't need to walk the import tables
 	 * because the routes are already withdrawn by rfapi_close()
 	 */

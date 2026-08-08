@@ -4,6 +4,7 @@
       {
         "name": "default",
         "frr-zebra:zebra": {
+          "router-id": "1.1.1.1",
           "ribs": {
             "rib": [
               {

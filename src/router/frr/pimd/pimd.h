@@ -13,6 +13,7 @@
 #include "prefix.h"
 #include "vty.h"
 #include "plist.h"
+#include "filter.h"
 
 #include "pim_addr.h"
 #include "pim_str.h"
@@ -36,8 +37,27 @@
 #define PIM_PIM_MIN_LEN               PIM_MSG_HEADER_LEN
 
 #define PIM_ENCODED_IPV4_UCAST_SIZE    (6)
+#define PIM_ENCODED_IPV6_UCAST_SIZE    (18) /* RFC 7761 encoded unicast, native IPv6 */
 #define PIM_ENCODED_IPV4_GROUP_SIZE    (8)
 #define PIM_ENCODED_IPV4_SOURCE_SIZE   (8)
+
+#if PIM_IPV == 4
+#define PIM_ENCODED_UCAST_MIN_SIZE PIM_ENCODED_IPV4_UCAST_SIZE
+#else
+#define PIM_ENCODED_UCAST_MIN_SIZE PIM_ENCODED_IPV6_UCAST_SIZE
+#endif
+
+/*
+ * Secondary address list on PIM Hellos is attacker-controlled length; bound
+ * stored entries (see pim_tlv_parse_addr_list).
+ */
+#define PIM_HELLO_SECONDARY_ADDR_MAX (512)
+
+/*
+ * Upper bound on PIM neighbors per interface (limits memory use and DR election
+ * work if bogus Hellos inject many source addresses).
+ */
+#define PIM_NEIGHBOR_LIST_MAX (4096)
 
 /*
  * J/P Message Format, Group Header
@@ -283,5 +303,6 @@ void pim_terminate(void);
 extern void pim_route_map_init(void);
 extern void pim_route_map_terminate(void);
 void pim_prefix_list_update(struct prefix_list *plist);
+extern void pim_access_list_update(struct access_list *access);
 
 #endif /* PIMD_H */

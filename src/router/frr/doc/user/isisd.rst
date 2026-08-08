@@ -40,6 +40,7 @@ writing, *isisd* does not support multiple ISIS processes.
    for interface (see command :clicmd:`ip router isis WORD`).
 
 .. clicmd:: net XX.XXXX. ... .XXX.XX
+   :daemon: isisd
 
    Set/Unset network entity title (NET) provided in ISO format.
 
@@ -50,11 +51,13 @@ writing, *isisd* does not support multiple ISIS processes.
 .. clicmd:: area-password [clear | md5] <password>
 
 .. clicmd:: domain-password [clear | md5] <password>
+   :daemon: isisd
 
    Configure the authentication password for an area, respectively a domain, as
    clear text or md5 one.
 
 .. clicmd:: attached-bit [receive ignore | send]
+   :daemon: isisd
 
    Set attached bit for inter-area traffic:
 
@@ -64,6 +67,7 @@ writing, *isisd* does not support multiple ISIS processes.
      If L1|L2 router, set attached bit in LSP sent to L1 router
 
 .. clicmd:: log-adjacency-changes
+   :daemon: isisd
 
    Log changes in adjacency state.
 
@@ -89,6 +93,7 @@ writing, *isisd* does not support multiple ISIS processes.
    For narrow metrics, the high metric value is 63; for wide metrics, 16777215; for transition metrics, 62.
 
 .. clicmd:: set-overload-bit
+   :daemon: isisd
 
    Set overload bit to avoid any transit traffic.
 
@@ -97,6 +102,7 @@ writing, *isisd* does not support multiple ISIS processes.
    Set overload bit on startup for the specified duration, in seconds. Reference: :rfc:`3277`
 
 .. clicmd:: purge-originator
+   :daemon: isisd
 
    Enable or disable :rfc:`6232` purge originator identification.
 
@@ -173,7 +179,7 @@ flavors (local LFA, Remote LFA and TI-LFA).
 
 .. clicmd:: default-information originate <ipv4 | ipv6> <level-1 | level-2> [always] [metric (0-16777214)|route-map WORD]
 
-   Originate a default route into the given ISIS level datbase.
+   Originate a default route into the given ISIS level database.
    The `always` command will turn it on by default even if there
    is no default route in the system.
 
@@ -241,7 +247,7 @@ ISIS interface
    Set multiplier for Hello holding time globally, for an area (level-1) or a
    domain (level-2).
 
-.. clicmd:: isis metric [level-1 | level-2] [(0-255) | (0-16777215)]
+.. clicmd:: isis metric [level-1 | level-2] [(0-63) | (0-16777215)]
 
    Set default metric value globally, for an area (level-1) or a domain
    (level-2).  Max value depend if metric support narrow or wide value (see
@@ -353,7 +359,7 @@ Traffic Engineering
    IS-IS-TE supports RFC 5305 (base TE), RFC 6119 (IPv6) and RFC 7810 / 8570
    (Extended Metric) with or without Multi-Topology. All Traffic Engineering
    information are stored in a database formally named TED. However, best
-   acccuracy is provided without Multi-Topology due to inconsistency of Traffic
+   accuracy is provided without Multi-Topology due to inconsistency of Traffic
    Engineering Advertisement of 3rd party commercial routers when MT is enabled.
    At this time, FRR offers partial support for some of the routing protocol
    extensions that can be used with MPLS-TE. FRR does not currently support a
@@ -614,10 +620,12 @@ This feature enables extensions in IS-IS to support Segment Routing over IPv6
 data plane (SRv6) as per RFC 9352.
 
 .. clicmd:: segment-routing srv6
+   :daemon: isisd
 
    Enable Segment Routing over IPv6 data plane (SRv6).
 
 .. clicmd:: locator NAME
+   :daemon: isisd
 
    Specify the SRv6 locator to use for SRv6. The locator must be configured in
    Zebra. Once the locator is configured, IS-IS automatically allocates prefix
@@ -684,6 +692,14 @@ Debugging ISIS
 
 
    IS-IS LFA events.
+
+.. clicmd:: debug isis flooding
+
+.. clicmd:: debug isis bfd
+
+.. clicmd:: debug isis ldp-sync
+
+.. clicmd:: debug isis tx-queue
 
 .. clicmd:: show debugging isis
 

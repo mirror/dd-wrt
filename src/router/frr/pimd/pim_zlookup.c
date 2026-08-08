@@ -30,7 +30,7 @@ static struct zclient *pim_zlookup = NULL;
 struct event *zlookup_read;
 
 static void zclient_lookup_sched(struct zclient *zlookup, int delay);
-static void zclient_lookup_read_pipe(struct event *thread);
+static void zclient_lookup_read_pipe(struct event *event);
 
 /* Connect to zebra for nexthop lookup. */
 static void zclient_lookup_connect(struct event *t)
@@ -92,7 +92,7 @@ static void zclient_lookup_sched_now(struct zclient *zlookup)
 /* Schedule reconnection, if needed. */
 static void zclient_lookup_reconnect(struct zclient *zlookup)
 {
-	if (zlookup->t_connect) {
+	if (event_is_scheduled(zlookup->t_connect)) {
 		return;
 	}
 
@@ -130,7 +130,6 @@ void zclient_lookup_new(void)
 	}
 
 	pim_zlookup->sock = -1;
-	pim_zlookup->t_connect = NULL;
 	pim_zlookup->privs = &pimd_privs;
 
 	zclient_lookup_sched_now(pim_zlookup);
@@ -473,11 +472,11 @@ static int zclient_lookup_nexthop_once(struct zclient_next_hop_args *args)
 	return mrib_num;
 }
 
-void zclient_lookup_read_pipe(struct event *thread)
+void zclient_lookup_read_pipe(struct event *event)
 {
 	struct zclient_next_hop_args args = {
 		.pim = pim_get_pim_instance(VRF_DEFAULT),
-		.zlookup = EVENT_ARG(thread),
+		.zlookup = EVENT_ARG(event),
 	};
 
 	if (!args.pim) {

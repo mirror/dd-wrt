@@ -253,7 +253,7 @@ Configuration Example
 
    image
 
-IPSec configurration example
+IPSec configuration example
 ----------------------------
 
 This changes required on all nodes as HUB and Spokes.
@@ -386,7 +386,7 @@ Creating gre interface
 .. code-block:: console
 
    ip tunnel add gre1 mode gre key 42 ttl 64
-   ip addr add 10.0.0.1/32 dev gre1
+   ip addr add 10.0.0.2/32 dev gre1
    ip link set gre1 up
 
 FRR config on Spoke2

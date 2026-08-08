@@ -20,12 +20,12 @@
 #include "sockopt.h"
 
 static struct iface *disc_find_iface(unsigned int, int, union ldpd_addr *);
-static void session_read(struct event *thread);
-static void session_write(struct event *thread);
+static void session_read(struct event *event);
+static void session_write(struct event *event);
 static ssize_t session_get_pdu(struct ibuf_read *, char **);
 static void tcp_close(struct tcp_conn *);
 static struct pending_conn *pending_conn_new(int, int, union ldpd_addr *);
-static void pending_conn_timeout(struct event *thread);
+static void pending_conn_timeout(struct event *event);
 
 int
 gen_ldp_hdr(struct ibuf *buf, uint16_t size)
@@ -98,10 +98,10 @@ send_packet(int fd, int af, union ldpd_addr *dst, struct iface_af *ia,
 }
 
 /* Discovery functions */
-void disc_recv_packet(struct event *thread)
+void disc_recv_packet(struct event *event)
 {
-	int fd = EVENT_FD(thread);
-	struct event **threadp = EVENT_ARG(thread);
+	int fd = EVENT_FD(event);
+	struct event **threadp = EVENT_ARG(event);
 
 	union {
 		struct	cmsghdr hdr;
@@ -292,9 +292,9 @@ disc_find_iface(unsigned int ifindex, int af, union ldpd_addr *src)
 	return (iface);
 }
 
-void session_accept(struct event *thread)
+void session_accept(struct event *event)
 {
-	int fd = EVENT_FD(thread);
+	int fd = EVENT_FD(event);
 	struct sockaddr_storage	 src;
 	socklen_t		 len = sizeof(src);
 	int			 newfd;
@@ -394,10 +394,10 @@ session_accept_nbr(struct nbr *nbr, int fd)
 	nbr_fsm(nbr, NBR_EVT_MATCH_ADJ);
 }
 
-static void session_read(struct event *thread)
+static void session_read(struct event *event)
 {
-	int fd = EVENT_FD(thread);
-	struct nbr *nbr = EVENT_ARG(thread);
+	int fd = EVENT_FD(event);
+	struct nbr *nbr = EVENT_ARG(event);
 	struct tcp_conn	*tcp = nbr->tcp;
 	struct ldp_hdr	*ldp_hdr;
 	struct ldp_msg	*msg;
@@ -601,12 +601,10 @@ static void session_read(struct event *thread)
 	free(buf);
 }
 
-static void session_write(struct event *thread)
+static void session_write(struct event *event)
 {
-	struct tcp_conn *tcp = EVENT_ARG(thread);
+	struct tcp_conn *tcp = EVENT_ARG(event);
 	struct nbr	*nbr = tcp->nbr;
-
-	tcp->wbuf.ev = NULL;
 
 	if (msgbuf_write(&tcp->wbuf.wbuf) <= 0)
 		if (errno != EAGAIN && nbr)
@@ -757,7 +755,6 @@ pending_conn_new(int fd, int af, union ldpd_addr *addr)
 	pconn->af = af;
 	pconn->addr = *addr;
 	TAILQ_INSERT_TAIL(&global.pending_conns, pconn, entry);
-	pconn->ev_timeout = NULL;
 	event_add_timer(master, pending_conn_timeout, pconn,
 			PENDING_CONN_TIMEOUT, &pconn->ev_timeout);
 
@@ -784,12 +781,10 @@ pending_conn_find(int af, union ldpd_addr *addr)
 	return (NULL);
 }
 
-static void pending_conn_timeout(struct event *thread)
+static void pending_conn_timeout(struct event *event)
 {
-	struct pending_conn *pconn = EVENT_ARG(thread);
+	struct pending_conn *pconn = EVENT_ARG(event);
 	struct tcp_conn		*tcp;
-
-	pconn->ev_timeout = NULL;
 
 	log_debug("%s: no adjacency with remote end: %s", __func__,
 	    log_addr(pconn->af, &pconn->addr));

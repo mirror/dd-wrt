@@ -25,11 +25,12 @@
 static struct ls_ted *path_ted_create_ted(void);
 static void path_ted_register_vty(void);
 static void path_ted_unregister_vty(void);
-static uint32_t path_ted_start_importing_igp(const char *daemon_str);
+static uint32_t path_ted_start_importing_igp(enum igp_import daemon);
 static uint32_t path_ted_stop_importing_igp(void);
 static enum zclient_send_status path_ted_link_state_sync(void);
-static void path_ted_timer_handler_sync(struct event *thread);
-static void path_ted_timer_handler_refresh(struct event *thread);
+static void path_ted_timer_handler_sync(struct event *event);
+static void path_ted_timer_handler_refresh(struct event *event);
+static enum igp_import str2igp_import(const char *str);
 
 extern struct zclient *pathd_zclient;
 
@@ -66,18 +67,18 @@ uint32_t path_ted_teardown(void)
  * @return		true if ok
  *
  */
-uint32_t path_ted_start_importing_igp(const char *daemon_str)
+uint32_t path_ted_start_importing_igp(enum igp_import daemon)
 {
 	uint32_t status = 0;
 
-	if (strcmp(daemon_str, "ospfv2") == 0)
-		ted_state_g.import = IMPORT_OSPFv2;
-	else if (strcmp(daemon_str, "ospfv3") == 0) {
-		ted_state_g.import = IMPORT_UNKNOWN;
-		return 1;
-	} else if (strcmp(daemon_str, "isis") == 0)
-		ted_state_g.import = IMPORT_ISIS;
-	else {
+	switch (daemon) {
+	case IMPORT_OSPFv2:
+	case IMPORT_ISIS:
+		ted_state_g.import = daemon;
+		break;
+	case IMPORT_OSPFv3:
+	case IMPORT_UNKNOWN:
+	default:
 		ted_state_g.import = IMPORT_UNKNOWN;
 		return 1;
 	}
@@ -325,6 +326,29 @@ uint32_t path_ted_query_type_e(struct prefix *prefix, uint32_t iface_id)
 	return sid;
 }
 
+bool path_is_ted_enabled(void)
+{
+	return ted_state_g.enabled;
+}
+
+uint32_t path_ted_mpls_te_off(void)
+{
+	if (!ted_state_g.enabled) {
+		PATH_TED_DEBUG("%s: PATHD-TED: OFF -> OFF", __func__);
+		return 0;
+	}
+
+	/* Remove TED */
+	ls_ted_del_all(&ted_state_g.ted);
+	ted_state_g.enabled = false;
+	PATH_TED_DEBUG("%s: PATHD-TED: ON -> OFF", __func__);
+	ted_state_g.import = IMPORT_UNKNOWN;
+	if (ls_unregister(pathd_zclient, false /*client*/) != 0)
+		return 1;
+
+	return 0;
+}
+
 DEFPY (debug_path_ted,
        debug_path_ted_cmd,
        "[no] debug pathd mpls-te",
@@ -372,17 +396,7 @@ DEFUN (no_path_ted,
        "Disable the TE Database functionality\n")
 /* clang-format on */
 {
-	if (!ted_state_g.enabled) {
-		PATH_TED_DEBUG("%s: PATHD-TED: OFF -> OFF", __func__);
-		return CMD_SUCCESS;
-	}
-
-	/* Remove TED */
-	ls_ted_del_all(&ted_state_g.ted);
-	ted_state_g.enabled = false;
-	PATH_TED_DEBUG("%s: PATHD-TED: ON -> OFF", __func__);
-	ted_state_g.import = IMPORT_UNKNOWN;
-	if (ls_unregister(pathd_zclient, false /*client*/) != 0) {
+	if (path_ted_mpls_te_off() == 1) {
 		vty_out(vty, "Unable to unregister Link State\n");
 		return CMD_WARNING;
 	}
@@ -393,7 +407,8 @@ DEFUN (no_path_ted,
 /* clang-format off */
 DEFPY(path_ted_import,
        path_ted_import_cmd,
-       "mpls-te import <ospfv2|ospfv3|isis>$import_daemon",
+       "[no] mpls-te import ![ospfv2|ospfv3|isis]$import_daemon",
+       NO_STR
        "Enable the TE database (TED) fill with remote igp data\n"
        "import\n"
        "Origin ospfv2\n"
@@ -401,34 +416,32 @@ DEFPY(path_ted_import,
        "Origin isis\n")
 /* clang-format on */
 {
+	enum igp_import daemon;
 
-	if (ted_state_g.enabled)
-		if (path_ted_start_importing_igp(import_daemon)) {
-			vty_out(vty, "Unable to start importing\n");
-			return CMD_WARNING;
-		}
-	return CMD_SUCCESS;
-}
-
-/* clang-format off */
-DEFUN (no_path_ted_import,
-       no_path_ted_import_cmd,
-       "no mpls-te import",
-       NO_STR
-       NO_STR
-       "Disable the TE Database fill with remote igp data\n")
-/* clang-format on */
-{
-
-	if (ted_state_g.import) {
-		if (path_ted_stop_importing_igp()) {
-			vty_out(vty, "Unable to stop importing\n");
-			return CMD_WARNING;
+	if (no) {
+		if (ted_state_g.import) {
+			/* If no import_daemon given - disable current, otherwise check */
+			if (import_daemon != NULL) {
+				daemon = str2igp_import(import_daemon);
+				if (daemon != ted_state_g.import) {
+					PATH_TED_DEBUG("%s: PATHD-TED: Requested to disable import for %s, but import is active for another daemon. Ignoring.",
+						       __func__, import_daemon);
+					return CMD_SUCCESS;
+				}
+			}
+			if (path_ted_stop_importing_igp()) {
+				vty_out(vty, "Unable to stop importing\n");
+				return CMD_WARNING;
+			}
 		} else {
-			PATH_TED_DEBUG(
-				"%s: PATHD-TED: Importing igp data already OFF",
-				__func__);
+			PATH_TED_DEBUG("%s: PATHD-TED: Importing igp data already OFF", __func__);
 		}
+	} else {
+		if (ted_state_g.enabled)
+			if (path_ted_start_importing_igp(str2igp_import(import_daemon))) {
+				vty_out(vty, "Unable to start importing\n");
+				return CMD_WARNING;
+			}
 	}
 	return CMD_SUCCESS;
 }
@@ -493,6 +506,22 @@ uint32_t path_ted_config_write(struct vty *vty)
 }
 
 /**
+ * Convert string to igp_import
+ */
+static enum igp_import str2igp_import(const char *str)
+{
+	if (!str)
+		return IMPORT_UNKNOWN;
+	if (strcmp(str, "isis") == 0)
+		return IMPORT_ISIS;
+	else if (strcmp(str, "ospfv2") == 0)
+		return IMPORT_OSPFv2;
+	else if (strcmp(str, "ospfv3") == 0)
+		return IMPORT_OSPFv3;
+	return IMPORT_UNKNOWN;
+}
+
+/**
  * Register the fn's for CLI and hook for config show
  *
  * @param void
@@ -504,7 +533,6 @@ static void path_ted_register_vty(void)
 	install_element(SR_TRAFFIC_ENG_NODE, &path_ted_on_cmd);
 	install_element(SR_TRAFFIC_ENG_NODE, &no_path_ted_cmd);
 	install_element(SR_TRAFFIC_ENG_NODE, &path_ted_import_cmd);
-	install_element(SR_TRAFFIC_ENG_NODE, &no_path_ted_import_cmd);
 
 	install_element(CONFIG_NODE, &debug_path_ted_cmd);
 	install_element(ENABLE_NODE, &debug_path_ted_cmd);
@@ -524,7 +552,6 @@ static void path_ted_unregister_vty(void)
 	uninstall_element(SR_TRAFFIC_ENG_NODE, &path_ted_on_cmd);
 	uninstall_element(SR_TRAFFIC_ENG_NODE, &no_path_ted_cmd);
 	uninstall_element(SR_TRAFFIC_ENG_NODE, &path_ted_import_cmd);
-	uninstall_element(SR_TRAFFIC_ENG_NODE, &no_path_ted_import_cmd);
 }
 
 /**
@@ -562,10 +589,10 @@ enum zclient_send_status path_ted_link_state_sync(void)
  *
  * @return		status
  */
-void path_ted_timer_handler_sync(struct event *thread)
+void path_ted_timer_handler_sync(struct event *event)
 {
 	/* data unpacking */
-	struct ted_state *data = EVENT_ARG(thread);
+	struct ted_state *data = EVENT_ARG(event);
 
 	assert(data != NULL);
 	/* Retry the sync */
@@ -598,14 +625,14 @@ int path_ted_segment_list_refresh(void)
  *
  * @return		status
  */
-void path_ted_timer_handler_refresh(struct event *thread)
+void path_ted_timer_handler_refresh(struct event *event)
 {
 	if (!path_ted_is_initialized())
 		return;
 
 	PATH_TED_DEBUG("%s: PATHD-TED: Refresh sid from current TED", __func__);
 	/* data unpacking */
-	struct ted_state *data = EVENT_ARG(thread);
+	struct ted_state *data = EVENT_ARG(event);
 
 	assert(data != NULL);
 
@@ -621,10 +648,7 @@ void path_ted_timer_handler_refresh(struct event *thread)
  */
 void path_ted_timer_sync_cancel(void)
 {
-	if (ted_state_g.t_link_state_sync != NULL) {
-		event_cancel(&ted_state_g.t_link_state_sync);
-		ted_state_g.t_link_state_sync = NULL;
-	}
+	event_cancel(&ted_state_g.t_link_state_sync);
 }
 
 /**
@@ -636,10 +660,7 @@ void path_ted_timer_sync_cancel(void)
  */
 void path_ted_timer_refresh_cancel(void)
 {
-	if (ted_state_g.t_segment_list_refresh != NULL) {
-		event_cancel(&ted_state_g.t_segment_list_refresh);
-		ted_state_g.t_segment_list_refresh = NULL;
-	}
+	event_cancel(&ted_state_g.t_segment_list_refresh);
 }
 
 /**

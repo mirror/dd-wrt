@@ -27,10 +27,9 @@ struct zclient *ripd_zclient = NULL;
 static void rip_zebra_ipv4_send(struct rip *rip, struct route_node *rp,
 				uint8_t cmd)
 {
-	struct list *list = (struct list *)rp->info;
+	struct rip_info_list_head *list = rp->info;
 	struct zapi_route api;
 	struct zapi_nexthop *api_nh;
-	struct listnode *listnode = NULL;
 	struct rip_info *rinfo = NULL;
 	uint32_t count = 0;
 
@@ -40,7 +39,7 @@ static void rip_zebra_ipv4_send(struct rip *rip, struct route_node *rp,
 	api.safi = SAFI_UNICAST;
 
 	SET_FLAG(api.message, ZAPI_MESSAGE_NEXTHOP);
-	for (ALL_LIST_ELEMENTS_RO(list, listnode, rinfo)) {
+	frr_each (rip_info_list, list, rinfo) {
 		if (count >= zebra_ecmp_count)
 			break;
 		api_nh = &api.nexthops[count];
@@ -59,7 +58,7 @@ static void rip_zebra_ipv4_send(struct rip *rip, struct route_node *rp,
 	api.prefix = rp->p;
 	api.nexthop_num = count;
 
-	rinfo = listgetdata(listhead(list));
+	rinfo = rip_info_list_first(list);
 
 	SET_FLAG(api.message, ZAPI_MESSAGE_METRIC);
 	api.metric = rinfo->metric;
@@ -120,9 +119,12 @@ static int rip_zebra_read_route(ZAPI_CALLBACK_ARGS)
 		return -1;
 
 	memset(&nh, 0, sizeof(nh));
-	nh.type = api.nexthops[0].type;
-	nh.gate.ipv4 = api.nexthops[0].gate.ipv4;
-	nh.ifindex = api.nexthops[0].ifindex;
+
+	if (api.nexthop_num > 0) {
+		nh.type = api.nexthops[0].type;
+		nh.gate.ipv4 = api.nexthops[0].gate.ipv4;
+		nh.ifindex = api.nexthops[0].ifindex;
+	}
 
 	/* Then fetch IPv4 prefixes. */
 	if (cmd == ZEBRA_REDISTRIBUTE_ROUTE_ADD)

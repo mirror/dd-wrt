@@ -26,10 +26,10 @@
 #include "zlog_live.h"
 
 static FRR_NORETURN void ldpe_shutdown(void);
-static void ldpe_dispatch_main(struct event *thread);
-static void ldpe_dispatch_lde(struct event *thread);
+static void ldpe_dispatch_main(struct event *event);
+static void ldpe_dispatch_lde(struct event *event);
 #ifdef __OpenBSD__
-static void ldpe_dispatch_pfkey(struct event *thread);
+static void ldpe_dispatch_pfkey(struct event *event);
 #endif
 static void	 ldpe_setup_sockets(int, int, int, int);
 static void	 ldpe_close_sockets(int);
@@ -152,6 +152,16 @@ ldpe_init(struct ldpd_init *init)
 	zprivs_preinit(&ldpe_privs);
 	zprivs_init(&ldpe_privs);
 
+	/*
+	 * Initialise the accept_queue before any caller of accept_add() so we
+	 * don't LIST_INIT-clobber entries that have already been registered
+	 * (the control socket registers one in control_listen() below). When
+	 * the orphaned entry is later left on a dangling list head, accept_del()
+	 * at shutdown can't find the fd and the struct accept_ev allocation
+	 * leaks.
+	 */
+	accept_init();
+
 	/* listen on ldpd control socket */
 	strlcpy(ctl_sock_path, init->ctl_sock_path, sizeof(ctl_sock_path));
 	if (control_init(ctl_sock_path) == -1)
@@ -177,8 +187,6 @@ ldpe_init(struct ldpd_init *init)
 
 	if ((pkt_ptr = calloc(1, IBUF_READ_SIZE)) == NULL)
 		fatal(__func__);
-
-	accept_init();
 }
 
 static FRR_NORETURN void ldpe_shutdown(void)
@@ -231,7 +239,8 @@ static FRR_NORETURN void ldpe_shutdown(void)
 
 	log_info("ldp engine exiting");
 
-	zlog_fini();
+	frr_early_fini();
+	frr_fini();
 
 	exit(0);
 }
@@ -264,7 +273,7 @@ ldpe_imsg_compose_lde(int type, uint32_t peerid, pid_t pid, void *data,
 }
 
 /* ARGSUSED */
-static void ldpe_dispatch_main(struct event *thread)
+static void ldpe_dispatch_main(struct event *event)
 {
 	static struct ldpd_conf	*nconf;
 	struct iface		*niface;
@@ -275,7 +284,7 @@ static void ldpe_dispatch_main(struct event *thread)
 	struct l2vpn_pw		*pw, *npw;
 	struct imsg		 imsg;
 	int			 fd;
-	struct imsgev *iev = EVENT_ARG(thread);
+	struct imsgev *iev = EVENT_ARG(event);
 	struct imsgbuf		*ibuf = &iev->ibuf;
 	struct iface		*iface = NULL;
 	struct kif		*kif;
@@ -295,8 +304,6 @@ static void ldpe_dispatch_main(struct event *thread)
 	struct ldp_rlfa_client	 *rclient;
 	struct zapi_rlfa_request *rlfa_req;
 	struct zapi_rlfa_igp	 *rlfa_igp;
-
-	iev->ev_read = NULL;
 
 	if ((n = imsg_read(ibuf)) == -1 && errno != EAGAIN)
 		fatal("imsg_read error");
@@ -358,14 +365,13 @@ static void ldpe_dispatch_main(struct event *thread)
 				break;
 			}
 
-			if ((iev_lde = malloc(sizeof(struct imsgev))) == NULL)
+			if ((iev_lde = calloc(1, sizeof(struct imsgev))) == NULL)
 				fatal(NULL);
 			imsg_init(&iev_lde->ibuf, fd);
 			iev_lde->handler_read = ldpe_dispatch_lde;
 			event_add_read(master, iev_lde->handler_read, iev_lde,
 				       iev_lde->ibuf.fd, &iev_lde->ev_read);
 			iev_lde->handler_write = ldp_write_handler;
-			iev_lde->ev_write = NULL;
 			break;
 		case IMSG_INIT:
 			if (imsg.hdr.len != IMSG_HEADER_SIZE + sizeof(struct ldpd_init))
@@ -611,17 +617,15 @@ static void ldpe_dispatch_main(struct event *thread)
 }
 
 /* ARGSUSED */
-static void ldpe_dispatch_lde(struct event *thread)
+static void ldpe_dispatch_lde(struct event *event)
 {
-	struct imsgev *iev = EVENT_ARG(thread);
+	struct imsgev *iev = EVENT_ARG(event);
 	struct imsgbuf		*ibuf = &iev->ibuf;
 	struct imsg		 imsg;
 	struct map		*map;
 	struct notify_msg	*nm;
 	struct nbr		*nbr;
 	int			 n, shut = 0;
-
-	iev->ev_read = NULL;
 
 	if ((n = imsg_read(ibuf)) == -1 && errno != EAGAIN)
 		fatal("imsg_read error");
@@ -745,9 +749,9 @@ static void ldpe_dispatch_lde(struct event *thread)
 
 #ifdef __OpenBSD__
 /* ARGSUSED */
-static void ldpe_dispatch_pfkey(struct event *thread)
+static void ldpe_dispatch_pfkey(struct event *event)
 {
-	int fd = EVENT_FD(thread);
+	int fd = EVENT_FD(event);
 
 	event_add_read(master, ldpe_dispatch_pfkey, NULL, global.pfkeysock,
 		       &pfkey_ev);

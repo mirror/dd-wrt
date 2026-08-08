@@ -20,6 +20,18 @@
 extern "C" {
 #endif
 
+#include <libyang/version.h>
+#if (LY_VERSION_MAJOR >= 4)
+#define LYD_PRINT_WITHSIBLINGS LYD_PRINT_SIBLINGS
+#endif
+
+#if (LY_VERSION_MAJOR >= 5)
+#define LYD_PARSE_LYB_SKIP_CTX_CHECK LYD_PARSE_LYB_SKIP_MODULE_CHECK
+#define LYD_API_PARENT_TYPE(p)	     (p)
+#else
+#define LYD_API_PARENT_TYPE(p) ((struct lyd_node_inner *)(p))
+#endif
+
 struct frr_yang_module_info;
 
 /* Maximum XPath length. */
@@ -736,6 +748,8 @@ extern LY_ERR yang_parse_notification(const char *xpath, LYD_FORMAT format,
  */
 LY_ERR yang_parse_rpc(const char *xpath, LYD_FORMAT format, const char *data,
 		      bool reply, struct lyd_node **rpc);
+LY_ERR yang_parse_restconf_rpc(const char *xpath, LYD_FORMAT format, const char *data, bool reply,
+			       struct lyd_node **rpc);
 
 /*
  * "Print" the yang tree in `root` into dynamic sized array.
@@ -748,8 +762,7 @@ LY_ERR yang_parse_rpc(const char *xpath, LYD_FORMAT format, const char *data,
  * Return:
  *	A darr dynamic array with the "printed" output or NULL on failure.
  */
-extern uint8_t *yang_print_tree(const struct lyd_node *root, LYD_FORMAT format,
-				uint32_t options);
+extern uint8_t *yang_print_tree(const struct lyd_node *root, LYD_FORMAT format, uint32_t options);
 
 
 /**
@@ -925,16 +938,44 @@ extern LY_ERR yang_resolve_snode_xpath(struct ly_ctx *ly_ctx, const char *xpath,
  */
 extern const char *yang_ly_strerrcode(LY_ERR err);
 extern const char *yang_ly_strvecode(LY_VECODE vecode);
-extern LY_ERR yang_lyd_new_list(struct lyd_node_inner *parent,
-				const struct lysc_node *snode,
-				const struct yang_list_keys *keys,
-				struct lyd_node **nodes);
+extern LY_ERR yang_lyd_new_list(struct lyd_node *parent, const struct lysc_node *snode,
+				const struct yang_list_keys *keys, struct lyd_node **nodes);
 extern LY_ERR yang_lyd_trim_xpath(struct lyd_node **rootp, const char *xpath);
 extern LY_ERR yang_lyd_parse_data(const struct ly_ctx *ctx,
 				  struct lyd_node *parent, struct ly_in *in,
 				  LYD_FORMAT format, uint32_t parse_options,
 				  uint32_t validate_options,
 				  struct lyd_node **tree);
+
+
+/*
+ * Handle NBC API changes between versions of Libyang
+ */
+
+/* Use this helper function to deal with change in value_size units */
+extern LY_ERR yang_new_term_bin(struct lyd_node *parent, const struct lys_module *module,
+				const char *name, const void *value, uint32_t value_size,
+				uint32_t options, struct lyd_node **node);
+#define lyd_new_term_bin(...)                                                                     \
+	_Pragma("GCC error \"Use yang_new_term_bin() instead of lyd_new_term_bin()\"")
+
+LY_ERR yang_change_term_bin(struct lyd_node *term, const void *value, uint32_t value_size_bits);
+#define lyd_change_term_bin(...)                                                                  \
+	_Pragma("GCC error \"Use yang_change_term_bin() instead of lyd_new_change_term_bin()\"")
+
+extern LY_ERR yang_new_path2(struct lyd_node *parent, const struct ly_ctx *ctx, const char *path,
+			     const void *value, uint32_t value_size_bits,
+			     LYD_ANYDATA_VALUETYPE value_type, uint32_t options,
+			     struct lyd_node **new_parent, struct lyd_node **new_node);
+#define lyd_new_path2(...) _Pragma("GCC error \"Use yang_new_path2() instead of lyd_new_path2()\"")
+
+#if (LY_VERSION_MAJOR >= 3) && (LY_VERSION_MAJOR < 5)
+extern LY_ERR yang_new_ext_term(const struct lysc_ext_instance *ext, const char *name,
+				const void *value, uint32_t value_size_bits, uint32_t options,
+				struct lyd_node **node);
+#define lyd_new_ext_term(...)                                                                     \
+	_Pragma("GCC error \"Use yang_new_ext_term() instead of lyd_new_ext_term()\"")
+#endif
 
 #ifdef __cplusplus
 }

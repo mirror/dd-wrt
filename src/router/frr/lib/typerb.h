@@ -31,6 +31,7 @@ struct typed_rb_entry {
 struct typed_rb_root {
 	struct typed_rb_entry *rbt_root;
 	size_t count;
+	bool final_p;
 };
 
 struct typed_rb_entry *typed_rb_insert(struct typed_rb_root *rbt,
@@ -62,6 +63,8 @@ struct typed_rb_entry *typed_rb_next(const struct typed_rb_entry *rbe);
 bool typed_rb_member(const struct typed_rb_root *rbt,
 		     const struct typed_rb_entry *rbe);
 
+/* clang-format off */
+
 #define _PREDECL_RBTREE(prefix)                                                \
 struct prefix ## _head { struct typed_rb_root rr; };                           \
 struct prefix ## _item { struct typed_rb_entry re; };                          \
@@ -84,6 +87,8 @@ macro_inline type *prefix ## _add(struct prefix##_head *h, type *item)         \
 {                                                                              \
 	struct typed_rb_entry *re;                                             \
 	re = typed_rb_insert(&h->rr, &item->field.re, cmpfn_uq);               \
+	if (!re)                                                               \
+		_sa_dummy_store(item);                                         \
 	return container_of_null(re, type, field.re);                          \
 }                                                                              \
 macro_inline const type *prefix ## _const_find_gteq(                           \
@@ -166,6 +171,18 @@ macro_pure bool prefix ## _member(const struct prefix##_head *h,               \
 {                                                                              \
 	return typed_rb_member(&h->rr, &item->field.re);                       \
 }                                                                              \
+macro_inline type *prefix ## _pop_final(struct prefix##_head *h)               \
+{                                                                              \
+	struct typed_rb_entry *re;                                             \
+	re = typed_rb_min(&h->rr);                                             \
+	if (!re) {                                                             \
+		h->rr.final_p = false;                                         \
+		return NULL;                                                   \
+	}                                                                      \
+	h->rr.final_p = true;                                                  \
+	typed_rb_remove(&h->rr, re);                                           \
+	return container_of(re, type, field.re);                               \
+}                                                                              \
 MACRO_REQUIRE_SEMICOLON() /* end */
 
 #define PREDECL_RBTREE_UNIQ(prefix)                                            \
@@ -216,6 +233,8 @@ macro_inline int prefix ## __cmp_uq(const struct typed_rb_entry *a,            \
                                                                                \
 _DECLARE_RBTREE(prefix, type, field, prefix ## __cmp, prefix ## __cmp_uq);     \
 MACRO_REQUIRE_SEMICOLON() /* end */
+
+/* clang-format on */
 
 #ifdef __cplusplus
 }

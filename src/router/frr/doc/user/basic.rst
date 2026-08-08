@@ -313,14 +313,18 @@ Basic Config Commands
 
 .. clicmd:: allow-reserved-ranges
 
-   Allow using reserved ranges (e.g. 127.0.0.0/8, 0.0.0.0/8, 240.0.0.0/4).
+   Allow using reserved ranges (e.g. 127.0.0.0/8, 0.0.0.0/8).
 
    For example, this is necessary in case of multiple FRR instances
    (or FRR + any other daemon) peering via loopback interfaces
    running on the same router.
 
-   Another example is when you need to annouce a reserved range via
+   Another example is when you need to announce a reserved range via
    RIP protocol.
+
+   ``240.0.0.0/4`` is a reserved range too, but it's allowed by default,
+   because it's already widely used in private networks
+   (especially in data centers).
 
    Default: off.
 
@@ -568,7 +572,7 @@ Terminal Mode Commands
 
    Shows the current log filters applied to each daemon.
 
-.. clicmd:: show memory [DAEMON]
+.. clicmd:: show memory [DAEMON] [json]
 
    Show information on how much memory is used for which specific things in
    |PACKAGE_NAME|.  Output may vary depending on system capabilities but will
@@ -629,6 +633,18 @@ Terminal Mode Commands
    usage is printed sequentially. You can specify the daemon's name to print
    only its memory usage.
 
+   If ``json`` is specified, the output is formatted as JSON data for easier
+   parsing by external tools.
+
+.. clicmd:: show rcu [json]
+
+   Shows statistics on RCU (read-copy-update) operation.
+
+   Since RCU is not widely in use yet in FRR, it is not unexpected for these
+   counters to read zero.  If the numbers for ``RCU sequence lag`` or
+   ``Queue length`` become excessively large (more than thousands), that may
+   indicate either a heavily loaded system or an FRR bug.
+
 .. clicmd:: show motd
 
    Show current motd banner.
@@ -678,6 +694,9 @@ Terminal Mode Commands
 
    POSIX Extended Regular Expressions are supported.
 
+.. clicmd:: clear
+
+   Clear the terminal display.
 
 .. _common-show-commands:
 
@@ -874,6 +893,22 @@ The module expects its argument to be either ``Netlink`` or ``protobuf``,
 specifying the encapsulation to use. ``Netlink`` is the default, and
 ``protobuf`` may not be available if the module was built without protobuf
 support. Refer to :ref:`zebra-fib-push-interface` for more information.
+
+
+tcmalloc CLI Options
+====================
+
+If tcmalloc support is enabled (see the build instructions),
+additional CLI commands are available.
+
+.. clicmd:: show tcmalloc stats
+
+   Display memory utilization and stats from the tcmalloc library.
+
+.. clicmd:: memory release rate (0-100)
+
+   Configure the rate at which each FRR daemon will release free
+   memory back to the host OS, in MB/sec.
 
 
 .. _virtual-terminal-interfaces:

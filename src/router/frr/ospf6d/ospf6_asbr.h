@@ -100,6 +100,7 @@ extern void ospf6_asbr_lsentry_add(struct ospf6_route *asbr_entry,
 				   struct ospf6 *ospf6);
 extern void ospf6_asbr_lsentry_remove(struct ospf6_route *asbr_entry,
 				      struct ospf6 *ospf6);
+extern void ospf6_asbr_recalculate_external_routes(struct ospf6 *ospf6);
 
 extern int ospf6_asbr_is_asbr(struct ospf6 *o);
 extern void ospf6_asbr_redistribute_add(int type, ifindex_t ifindex,
@@ -119,7 +120,7 @@ extern void ospf6_asbr_init(void);
 extern void ospf6_asbr_redistribute_disable(struct ospf6 *ospf6);
 extern void ospf6_asbr_redistribute_reset(struct ospf6 *ospf6);
 extern void ospf6_asbr_terminate(void);
-extern void ospf6_asbr_send_externals_to_area(struct ospf6_area *);
+extern void ospf6_asbr_send_externals_to_area(struct ospf6_area *oa);
 extern void ospf6_asbr_remove_externals_from_area(struct ospf6_area *oa);
 
 extern int config_write_ospf6_debug_asbr(struct vty *vty);

@@ -66,7 +66,7 @@ struct ls_node *ls_node_new(struct ls_node_id adv, struct in_addr rid,
 
 	new = XCALLOC(MTYPE_LS_DB, sizeof(struct ls_node));
 	new->adv = adv;
-	if (!IPV4_NET0(rid.s_addr)) {
+	if (!IPV4_NET0(ntohl(rid.s_addr))) {
 		new->router_id = rid;
 		SET_FLAG(new->flags, LS_NODE_ROUTER_ID);
 	} else {
@@ -146,6 +146,18 @@ int ls_node_same(struct ls_node *n1, struct ls_node *n2)
 		if (memcmp(&n1->srv6_msd, &n2->srv6_msd, sizeof(n1->srv6_msd)))
 			return 0;
 	}
+	if (CHECK_FLAG(n1->flags, LS_NODE_ISIS_AREA_ID)) {
+		if (n1->isis_area_id_len != n2->isis_area_id_len)
+			return 0;
+		if (memcmp(n1->isis_area_id, n2->isis_area_id, n1->isis_area_id_len))
+			return 0;
+	}
+	if (CHECK_FLAG(n1->flags, LS_NODE_MT_IDS)) {
+		if (n1->mt_id_count != n2->mt_id_count)
+			return 0;
+		if (memcmp(n1->mt_ids, n2->mt_ids, n1->mt_id_count * sizeof(uint16_t)))
+			return 0;
+	}
 
 	/* OK, n1 & n2 are equal */
 	return 1;
@@ -166,7 +178,7 @@ struct ls_attributes *ls_attributes_new(struct ls_node_id adv,
 
 	new = XCALLOC(MTYPE_LS_DB, sizeof(struct ls_attributes));
 	new->adv = adv;
-	if (!IPV4_NET0(local.s_addr)) {
+	if (!IPV4_NET0(ntohl(local.s_addr))) {
 		new->standard.local = local;
 		SET_FLAG(new->flags, LS_ATTR_LOCAL_ADDR);
 	}
@@ -334,7 +346,13 @@ int ls_attributes_same(struct ls_attributes *l1, struct ls_attributes *l2)
 		    (l1->adj_srv6_sid[i].flags != l2->adj_srv6_sid[i].flags) ||
 		    (l1->adj_srv6_sid[i].weight != l2->adj_srv6_sid[i].weight) ||
 		    (l1->adj_srv6_sid[i].endpoint_behavior !=
-		     l2->adj_srv6_sid[i].endpoint_behavior))
+		     l2->adj_srv6_sid[i].endpoint_behavior) ||
+		    (l1->adj_srv6_sid[i].has_structure != l2->adj_srv6_sid[i].has_structure) ||
+		    (l1->adj_srv6_sid[i].has_structure &&
+		     (l1->adj_srv6_sid[i].lb_len != l2->adj_srv6_sid[i].lb_len ||
+		      l1->adj_srv6_sid[i].ln_len != l2->adj_srv6_sid[i].ln_len ||
+		      l1->adj_srv6_sid[i].fn_len != l2->adj_srv6_sid[i].fn_len ||
+		      l1->adj_srv6_sid[i].arg_len != l2->adj_srv6_sid[i].arg_len)))
 			return 0;
 		if (((l1->adv.origin == ISIS_L1) ||
 		     (l1->adv.origin == ISIS_L2)) &&
@@ -348,6 +366,8 @@ int ls_attributes_same(struct ls_attributes *l1, struct ls_attributes *l2)
 		|| memcmp(l1->srlgs, l2->srlgs,
 			  l1->srlg_len * sizeof(uint32_t))
 			   != 0))
+		return 0;
+	if (CHECK_FLAG(l1->flags, LS_ATTR_MT_ID) && (l1->mt_id != l2->mt_id))
 		return 0;
 
 	/* OK, l1 & l2 are equal */
@@ -415,12 +435,17 @@ int ls_prefix_same(struct ls_prefix *p1, struct ls_prefix *p2)
 			return 0;
 	}
 	if (CHECK_FLAG(p1->flags, LS_PREF_SRV6)) {
-		if (memcmp(&p1->srv6.sid, &p2->srv6.sid,
-			   sizeof(struct in6_addr)) ||
+		if (memcmp(&p1->srv6.sid, &p2->srv6.sid, sizeof(struct in6_addr)) ||
 		    (p1->srv6.flags != p2->srv6.flags) ||
-		    (p1->srv6.behavior != p2->srv6.behavior))
+		    (p1->srv6.behavior != p2->srv6.behavior) ||
+		    (p1->srv6.has_structure != p2->srv6.has_structure) ||
+		    (p1->srv6.has_structure &&
+		     (p1->srv6.lb_len != p2->srv6.lb_len || p1->srv6.ln_len != p2->srv6.ln_len ||
+		      p1->srv6.fn_len != p2->srv6.fn_len || p1->srv6.arg_len != p2->srv6.arg_len)))
 			return 0;
 	}
+	if (CHECK_FLAG(p1->flags, LS_PREF_MT_ID) && (p1->mt_id != p2->mt_id))
+		return 0;
 
 	/* OK, p1 & p2 are equal */
 	return 1;
@@ -479,8 +504,6 @@ struct ls_vertex *ls_vertex_add(struct ls_ted *ted, struct ls_node *node)
 
 	/* Create Vertex and add it to the TED */
 	new = XCALLOC(MTYPE_LS_DB, sizeof(struct ls_vertex));
-	if (!new)
-		return NULL;
 
 	new->key = key;
 	new->node = node;
@@ -1218,6 +1241,25 @@ static struct ls_node *ls_parse_node(struct stream *s)
 	}
 	if (CHECK_FLAG(node->flags, LS_NODE_MSD))
 		STREAM_GETC(s, node->msd);
+	if (CHECK_FLAG(node->flags, LS_NODE_ISIS_AREA_ID)) {
+		STREAM_GETC(s, node->isis_area_id_len);
+		if (node->isis_area_id_len > ISO_ADDR_SIZE) {
+			zlog_err("LS(%s): IS-IS Area ID length exceeds maximum size (%d)",
+				 __func__, node->isis_area_id_len);
+			goto stream_failure;
+		}
+		STREAM_GET(node->isis_area_id, s, node->isis_area_id_len);
+	}
+	if (CHECK_FLAG(node->flags, LS_NODE_MT_IDS)) {
+		STREAM_GETC(s, node->mt_id_count);
+		if (node->mt_id_count > LS_NODE_MT_IDS_MAX) {
+			zlog_err("LS(%s): MT-ID count %u exceeds maximum (%d)", __func__,
+				 node->mt_id_count, LS_NODE_MT_IDS_MAX);
+			goto stream_failure;
+		}
+		for (len = 0; len < node->mt_id_count; len++)
+			STREAM_GETW(s, node->mt_ids[len]);
+	}
 
 	return node;
 
@@ -1337,6 +1379,18 @@ static struct ls_attributes *ls_parse_attributes(struct stream *s)
 				       .endpoint_behavior);
 		STREAM_GET(attr->adj_srv6_sid[ADJ_SRV6_PRI_IPV6].neighbor.sysid,
 			   s, ISO_SYS_ID_LEN);
+		{
+			uint8_t has_struct;
+
+			STREAM_GETC(s, has_struct);
+			attr->adj_srv6_sid[ADJ_SRV6_PRI_IPV6].has_structure = (has_struct != 0);
+			if (attr->adj_srv6_sid[ADJ_SRV6_PRI_IPV6].has_structure) {
+				STREAM_GETC(s, attr->adj_srv6_sid[ADJ_SRV6_PRI_IPV6].lb_len);
+				STREAM_GETC(s, attr->adj_srv6_sid[ADJ_SRV6_PRI_IPV6].ln_len);
+				STREAM_GETC(s, attr->adj_srv6_sid[ADJ_SRV6_PRI_IPV6].fn_len);
+				STREAM_GETC(s, attr->adj_srv6_sid[ADJ_SRV6_PRI_IPV6].arg_len);
+			}
+		}
 	}
 	if (CHECK_FLAG(attr->flags, LS_ATTR_BCK_ADJ_SRV6SID)) {
 		STREAM_GET(&attr->adj_srv6_sid[ADJ_SRV6_BCK_IPV6].sid, s,
@@ -1347,6 +1401,18 @@ static struct ls_attributes *ls_parse_attributes(struct stream *s)
 				       .endpoint_behavior);
 		STREAM_GET(attr->adj_srv6_sid[ADJ_SRV6_BCK_IPV6].neighbor.sysid,
 			   s, ISO_SYS_ID_LEN);
+		{
+			uint8_t has_struct;
+
+			STREAM_GETC(s, has_struct);
+			attr->adj_srv6_sid[ADJ_SRV6_BCK_IPV6].has_structure = (has_struct != 0);
+			if (attr->adj_srv6_sid[ADJ_SRV6_BCK_IPV6].has_structure) {
+				STREAM_GETC(s, attr->adj_srv6_sid[ADJ_SRV6_BCK_IPV6].lb_len);
+				STREAM_GETC(s, attr->adj_srv6_sid[ADJ_SRV6_BCK_IPV6].ln_len);
+				STREAM_GETC(s, attr->adj_srv6_sid[ADJ_SRV6_BCK_IPV6].fn_len);
+				STREAM_GETC(s, attr->adj_srv6_sid[ADJ_SRV6_BCK_IPV6].arg_len);
+			}
+		}
 	}
 	if (CHECK_FLAG(attr->flags, LS_ATTR_SRLG)) {
 		STREAM_GETC(s, len);
@@ -1355,6 +1421,8 @@ static struct ls_attributes *ls_parse_attributes(struct stream *s)
 		for (len = 0; len < attr->srlg_len; len++)
 			STREAM_GETL(s, attr->srlgs[len]);
 	}
+	if (CHECK_FLAG(attr->flags, LS_ATTR_MT_ID))
+		STREAM_GETW(s, attr->mt_id);
 
 	return attr;
 
@@ -1396,10 +1464,22 @@ static struct ls_prefix *ls_parse_prefix(struct stream *s)
 		STREAM_GETC(s, ls_pref->sr.algo);
 	}
 	if (CHECK_FLAG(ls_pref->flags, LS_PREF_SRV6)) {
+		uint8_t has_struct;
+
 		STREAM_GET(&ls_pref->srv6.sid, s, sizeof(struct in6_addr));
 		STREAM_GETW(s, ls_pref->srv6.behavior);
 		STREAM_GETC(s, ls_pref->srv6.flags);
+		STREAM_GETC(s, has_struct);
+		ls_pref->srv6.has_structure = (has_struct != 0);
+		if (ls_pref->srv6.has_structure) {
+			STREAM_GETC(s, ls_pref->srv6.lb_len);
+			STREAM_GETC(s, ls_pref->srv6.ln_len);
+			STREAM_GETC(s, ls_pref->srv6.fn_len);
+			STREAM_GETC(s, ls_pref->srv6.arg_len);
+		}
 	}
+	if (CHECK_FLAG(ls_pref->flags, LS_PREF_MT_ID))
+		STREAM_GETW(s, ls_pref->mt_id);
 
 	return ls_pref;
 
@@ -1485,6 +1565,15 @@ static int ls_format_node(struct stream *s, struct ls_node *node)
 	}
 	if (CHECK_FLAG(node->flags, LS_NODE_MSD))
 		stream_putc(s, node->msd);
+	if (CHECK_FLAG(node->flags, LS_NODE_ISIS_AREA_ID)) {
+		stream_putc(s, node->isis_area_id_len);
+		stream_put(s, node->isis_area_id, node->isis_area_id_len);
+	}
+	if (CHECK_FLAG(node->flags, LS_NODE_MT_IDS)) {
+		stream_putc(s, node->mt_id_count);
+		for (len = 0; len < node->mt_id_count; len++)
+			stream_putw(s, node->mt_ids[len]);
+	}
 
 	return 0;
 }
@@ -1597,6 +1686,13 @@ static int ls_format_attributes(struct stream *s, struct ls_attributes *attr)
 		stream_put(s,
 			   attr->adj_srv6_sid[ADJ_SRV6_PRI_IPV6].neighbor.sysid,
 			   ISO_SYS_ID_LEN);
+		stream_putc(s, attr->adj_srv6_sid[ADJ_SRV6_PRI_IPV6].has_structure ? 1 : 0);
+		if (attr->adj_srv6_sid[ADJ_SRV6_PRI_IPV6].has_structure) {
+			stream_putc(s, attr->adj_srv6_sid[ADJ_SRV6_PRI_IPV6].lb_len);
+			stream_putc(s, attr->adj_srv6_sid[ADJ_SRV6_PRI_IPV6].ln_len);
+			stream_putc(s, attr->adj_srv6_sid[ADJ_SRV6_PRI_IPV6].fn_len);
+			stream_putc(s, attr->adj_srv6_sid[ADJ_SRV6_PRI_IPV6].arg_len);
+		}
 	}
 	if (CHECK_FLAG(attr->flags, LS_ATTR_BCK_ADJ_SRV6SID)) {
 		stream_put(s, &attr->adj_srv6_sid[ADJ_SRV6_BCK_IPV6].sid,
@@ -1608,12 +1704,21 @@ static int ls_format_attributes(struct stream *s, struct ls_attributes *attr)
 		stream_put(s,
 			   attr->adj_srv6_sid[ADJ_SRV6_BCK_IPV6].neighbor.sysid,
 			   ISO_SYS_ID_LEN);
+		stream_putc(s, attr->adj_srv6_sid[ADJ_SRV6_BCK_IPV6].has_structure ? 1 : 0);
+		if (attr->adj_srv6_sid[ADJ_SRV6_BCK_IPV6].has_structure) {
+			stream_putc(s, attr->adj_srv6_sid[ADJ_SRV6_BCK_IPV6].lb_len);
+			stream_putc(s, attr->adj_srv6_sid[ADJ_SRV6_BCK_IPV6].ln_len);
+			stream_putc(s, attr->adj_srv6_sid[ADJ_SRV6_BCK_IPV6].fn_len);
+			stream_putc(s, attr->adj_srv6_sid[ADJ_SRV6_BCK_IPV6].arg_len);
+		}
 	}
 	if (CHECK_FLAG(attr->flags, LS_ATTR_SRLG)) {
 		stream_putc(s, attr->srlg_len);
 		for (len = 0; len < attr->srlg_len; len++)
 			stream_putl(s, attr->srlgs[len]);
 	}
+	if (CHECK_FLAG(attr->flags, LS_ATTR_MT_ID))
+		stream_putw(s, attr->mt_id);
 
 	return 0;
 }
@@ -1648,7 +1753,16 @@ static int ls_format_prefix(struct stream *s, struct ls_prefix *ls_pref)
 		stream_put(s, &ls_pref->srv6.sid, sizeof(struct in6_addr));
 		stream_putw(s, ls_pref->srv6.behavior);
 		stream_putc(s, ls_pref->srv6.flags);
+		stream_putc(s, ls_pref->srv6.has_structure ? 1 : 0);
+		if (ls_pref->srv6.has_structure) {
+			stream_putc(s, ls_pref->srv6.lb_len);
+			stream_putc(s, ls_pref->srv6.ln_len);
+			stream_putc(s, ls_pref->srv6.fn_len);
+			stream_putc(s, ls_pref->srv6.arg_len);
+		}
 	}
+	if (CHECK_FLAG(ls_pref->flags, LS_PREF_MT_ID))
+		stream_putw(s, ls_pref->mt_id);
 
 	return 0;
 }
@@ -2114,6 +2228,14 @@ static void ls_show_vertex_vty(struct ls_vertex *vertex, struct vty *vty,
 		sbuf_push(&sbuf, 4, "Type: %s\n", type2txt[lsn->type]);
 	if (CHECK_FLAG(lsn->flags, LS_NODE_AS_NUMBER))
 		sbuf_push(&sbuf, 4, "AS number: %u\n", lsn->as_number);
+	if (CHECK_FLAG(lsn->flags, LS_NODE_ISIS_AREA_ID)) {
+		struct iso_address area_addr;
+
+		area_addr.addr_len = lsn->isis_area_id_len;
+		memcpy(area_addr.area_addr, lsn->isis_area_id, lsn->isis_area_id_len);
+
+		sbuf_push(&sbuf, 4, "IS-IS Area ID: %pIS\n", &area_addr);
+	}
 	if (CHECK_FLAG(lsn->flags, LS_NODE_SR)) {
 		sbuf_push(&sbuf, 4, "Segment Routing Capabilities:\n");
 		upper = lsn->srgb.lower_bound + lsn->srgb.range_size - 1;
@@ -2245,6 +2367,13 @@ static void ls_show_vertex_json(struct ls_vertex *vertex,
 		}
 		if (CHECK_FLAG(lsn->flags, LS_NODE_MSD))
 			json_object_int_add(jsr, "msd", lsn->msd);
+	}
+	if (CHECK_FLAG(lsn->flags, LS_NODE_ISIS_AREA_ID)) {
+		struct iso_address area_addr;
+
+		area_addr.addr_len = lsn->isis_area_id_len;
+		memcpy(area_addr.area_addr, lsn->isis_area_id, lsn->isis_area_id_len);
+		json_object_string_addf(json, "isis-area-id", "%pIS", &area_addr);
 	}
 }
 

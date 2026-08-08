@@ -30,6 +30,10 @@ struct sharp_routes {
 	/* ZAPI_ROUTE's flag */
 	uint32_t flags;
 
+	bool tableid_set;
+	uint32_t tableid;
+	bool stop_loop;
+
 	uint8_t inst;
 	vrf_id_t vrf_id;
 
@@ -59,6 +63,8 @@ struct sharp_global {
 
 	/* list of sharp_srv6_locator */
 	struct list *srv6_locators;
+
+	bool use_underlying_nexthop_group_weight;
 };
 
 extern struct sharp_global sg;

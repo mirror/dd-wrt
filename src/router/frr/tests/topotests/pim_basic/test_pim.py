@@ -18,7 +18,7 @@ import pytest
 import json
 from functools import partial
 
-pytestmark = [pytest.mark.pimd]
+pytestmark = [pytest.mark.bgpd, pytest.mark.pimd]
 
 CWD = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(CWD, "../"))
@@ -131,13 +131,13 @@ def test_pim_send_mcast_stream():
     # Let's establish a S,G stream from r2 -> r1
     CWD = os.path.dirname(os.path.realpath(__file__))
     r2.run(
-        "{}/mcast-tx.py --ttl 5 --count 40 --interval 2 229.1.1.1 r2-eth0 > {}/r2/mcast_tx_output".format(
+        "{}/mcast-tx.py --ttl 5 --count 1000 --interval 100 229.1.1.1 r2-eth0 > {}/r2/mcast_tx_output".format(
             CWD, tgen.logdir
         )
     )
     # And from r3 -> r1
     r3.run(
-        "{}/mcast-tx.py --ttl 5 --count 40 --interval 2 229.1.1.1 r3-eth0 > {}/r3/mcast_tx_output".format(
+        "{}/mcast-tx.py --ttl 5 --count 1000 --interval 100 229.1.1.1 r3-eth0 > {}/r3/mcast_tx_output".format(
             CWD, tgen.logdir
         )
     )
@@ -217,6 +217,58 @@ def test_pim_igmp_report():
             p.wait()
 
 
+def test_pim_igmp_group_watermark():
+    "Configure and verify IGMP watermark warning using retry checks"
+    logger.info("Verify ip igmp watermark-warn configuration on r1")
+
+    tgen = get_topogen()
+
+    if tgen.routers_have_failure():
+        pytest.skip(tgen.errors)
+
+    r1 = tgen.gears["r1"]
+    r2 = tgen.gears["r2"]
+
+    # Ensure a clean baseline before testing.
+    r1.vtysh_cmd("conf t\nno ip igmp watermark-warn")
+
+    # Send an IGMP report to ensure the groups output has active state while
+    # checking the watermark value.
+    cmd = [os.path.join(CWD, "mcast-rx.py"), "229.1.1.9", "r2-eth0"]
+    p = r2.popen(cmd)
+    try:
+        expected = {"watermarkLimit": 0}
+        test_func = partial(
+            topotest.router_json_cmp, r1, "show ip igmp groups json", expected
+        )
+        _, result = topotest.run_and_expect(test_func, None, count=40, wait=1)
+        assertmsg = '"{}" default watermark JSON output mismatches'.format(r1.name)
+        assert result is None, assertmsg
+
+        r1.vtysh_cmd("conf t\nip igmp watermark-warn 11")
+        expected = {"watermarkLimit": 11}
+        test_func = partial(
+            topotest.router_json_cmp, r1, "show ip igmp groups json", expected
+        )
+        _, result = topotest.run_and_expect(test_func, None, count=40, wait=1)
+        assertmsg = '"{}" configured watermark JSON output mismatches'.format(r1.name)
+        assert result is None, assertmsg
+
+        r1.vtysh_cmd("conf t\nno ip igmp watermark-warn")
+        expected = {"watermarkLimit": 0}
+        test_func = partial(
+            topotest.router_json_cmp, r1, "show ip igmp groups json", expected
+        )
+        _, result = topotest.run_and_expect(test_func, None, count=40, wait=1)
+        assertmsg = '"{}" cleared watermark JSON output mismatches'.format(r1.name)
+        assert result is None, assertmsg
+    finally:
+        if p:
+            p.terminate()
+            p.wait()
+        r1.vtysh_cmd("conf t\nno ip igmp watermark-warn")
+
+
 def test_pim_ssm_ping():
     "Test SSM ping functionality between r1 and r2"
     logger.info("Testing SSM ping from r1 to r2")
@@ -231,11 +283,12 @@ def test_pim_ssm_ping():
 
     r2.vtysh_cmd("conf\nip ssmpingd 10.0.20.2")
 
-    # Run ssmping from r1 to r2
-    output = r1.run("ssmping -I r1-eth0 10.0.20.2 -c 5")
+    def _check_ssmping():
+        output = r1.run("ssmping -I r1-eth0 10.0.20.2 -c 5")
+        return "5 packets received" in output
 
-    # Check if we got successful responses
-    assert "5 packets received" in output, "SSM ping failed"
+    _, result = topotest.run_and_expect(_check_ssmping, True, count=20, wait=1)
+    assert result is True, "SSM ping failed"
 
 
 def test_memory_leak():
@@ -245,6 +298,119 @@ def test_memory_leak():
         pytest.skip("Memory leak test/report is disabled")
 
     tgen.report_memory_leaks()
+
+
+def test_pim_static_mroute():
+    "Test Static routes add/remove cycle"
+    logger.info("Testing static routes")
+
+    tgen = get_topogen()
+
+    if tgen.routers_have_failure():
+        pytest.skip(tgen.errors)
+
+    r1 = tgen.gears["r1"]
+
+    expected = {"239.1.1.1": None}
+    test_func = partial(topotest.router_json_cmp, r1, "show ip mroute json", expected)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=1)
+    assert result is None, "failed to converge initial mroute state"
+
+    # Add ip mroute with iif=r1-eth0 oil=r1-eth1
+    r1.vtysh_cmd("conf t\ninterface r1-eth0\nip mroute r1-eth1 239.1.1.1 10.0.0.1")
+
+    # Expect to find oil=[r1-eth1] in ip mroute command
+    expected = {"239.1.1.1": {"10.0.0.1": {"oil": {"r1-eth1": "*", "r1-eth2": None}}}}
+    test_func = partial(topotest.router_json_cmp, r1, "show ip mroute json", expected)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=1)
+    assert result is None, "failed to converge mroute state after adding r1-eth1"
+
+    # Add ip mroute with iif=r1-eth0 oil=r1-eth2
+    r1.vtysh_cmd("conf t\ninterface r1-eth0\nip mroute r1-eth2 239.1.1.1 10.0.0.1")
+
+    # Expect to find oil=[r1-eth1,r1-eth2] in ip mroute command
+    expected = {"239.1.1.1": {"10.0.0.1": {"oil": {"r1-eth1": "*", "r1-eth2": "*"}}}}
+    test_func = partial(topotest.router_json_cmp, r1, "show ip mroute json", expected)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=1)
+    assert result is None, "failed to converge mroute state after adding r1-eth2"
+
+    # Remove ip mroute with oil=r1-eth1
+    r1.vtysh_cmd("conf t\ninterface r1-eth0\nno ip mroute r1-eth1 239.1.1.1 10.0.0.1")
+    # This assert right here would break back in the day because only one oif was handled by the datamodel
+    expected = {"239.1.1.1": {"10.0.0.1": {"oil": {"r1-eth1": None, "r1-eth2": "*"}}}}
+    test_func = partial(topotest.router_json_cmp, r1, "show ip mroute json", expected)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=1)
+    assert result is None, "failed to converge mroute state after removing r1-eth1"
+
+    r1.vtysh_cmd("conf t\ninterface r1-eth0\nno ip mroute r1-eth2 239.1.1.1 10.0.0.1")
+    # Expect a clean state
+    expected = {"239.1.1.1": None}
+    test_func = partial(topotest.router_json_cmp, r1, "show ip mroute json", expected)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=1)
+    assert result is None, "failed to converge final mroute state"
+
+
+def test_pim_static_mroute_deferred():
+    "Static mroutes install once output-interface VIF is ready (#4636)"
+    logger.info("Testing deferred static routes at boot")
+
+    tgen = get_topogen()
+
+    if tgen.routers_have_failure():
+        pytest.skip(tgen.errors)
+
+    r1 = tgen.gears["r1"]
+
+    r1.vtysh_cmd(
+        """
+        conf t
+           interface r1-eth1
+              no ip pim
+    """
+    )
+    r1.vtysh_cmd(
+        """
+        conf t
+           interface r1-eth0
+              ip mroute r1-eth1 239.9.9.9 10.0.0.9
+    """
+    )
+
+    expected = {"239.9.9.9": None}
+    test_func = partial(topotest.router_json_cmp, r1, "show ip mroute json", expected)
+    _, result = topotest.run_and_expect(test_func, None, count=10, wait=1)
+    assert result is None, "mroute installed before output VIF was ready"
+
+    r1.vtysh_cmd(
+        """
+        conf t
+           interface r1-eth1
+              ip pim
+    """
+    )
+
+    expected = {"239.9.9.9": {"10.0.0.9": {"oil": {"r1-eth1": "*", "r1-eth2": None}}}}
+    test_func = partial(topotest.router_json_cmp, r1, "show ip mroute json", expected)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=1)
+    assert result is None, "deferred static mroute was not installed"
+
+    output = r1.vtysh_cmd("show running-config")
+    assert "ip mroute r1-eth1 239.9.9.9 10.0.0.9" in output
+
+    r1.vtysh_cmd(
+        """
+        conf t
+           interface r1-eth0
+              no ip mroute r1-eth1 239.9.9.9 10.0.0.9
+    """
+    )
+    expected = {"239.9.9.9": None}
+    test_func = partial(topotest.router_json_cmp, r1, "show ip mroute json", expected)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=1)
+    assert result is None, "failed to remove deferred static mroute"
+
+    output = r1.vtysh_cmd("show running-config")
+    assert "ip mroute r1-eth1 239.9.9.9 10.0.0.9" not in output
 
 
 if __name__ == "__main__":

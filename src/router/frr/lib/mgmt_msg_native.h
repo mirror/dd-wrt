@@ -57,7 +57,7 @@ extern "C" {
  * "the wire", easily, using common programming languages (e.g., C, rust, go,
  * python, ...)
  *
- * (*) Natrual aligned boundaries, i.e., uint16_t on 2-byte boundary, uint64_t
+ * (*) Natural aligned boundaries, i.e., uint16_t on 2-byte boundary, uint64_t
  * on 8-byte boundaries, ...)
  *
  * ------------------------------
@@ -214,6 +214,8 @@ DECLARE_MTYPE(MSG_NATIVE_COMMIT_REPLY);
 #define MGMT_MSG_DATASTORE_RUNNING     1
 #define MGMT_MSG_DATASTORE_CANDIDATE   2
 #define MGMT_MSG_DATASTORE_OPERATIONAL 3
+
+const char *mgmt_msg_code_name(uint code);
 
 /*
  * Formats
@@ -375,7 +377,13 @@ struct mgmt_msg_notify_data {
 _Static_assert(sizeof(struct mgmt_msg_notify_data) == offsetof(struct mgmt_msg_notify_data, data),
 	       "Size mismatch");
 
-#define EDIT_FLAG_IMPLICIT_LOCK	  0x01
+/*
+ * deprecated -- can simply do the locks as needed, if the session holds the
+ * locks then they aren't needed, otherwise an attempt to acquire them is made
+ * and if that fails the edit fails.
+ */
+#define EDIT_FLAG_IMPLICIT_LOCK 0x01
+/* also deprecated -- unneeded, if DS is candidate, then no "commit", if running then "commit" */
 #define EDIT_FLAG_IMPLICIT_COMMIT 0x02
 
 #define EDIT_OP_CREATE	0
@@ -440,30 +448,34 @@ _Static_assert(sizeof(struct mgmt_msg_edit_reply) ==
  * struct mgmt_msg_rpc - RPC/action request.
  *
  * @request_type: ``LYD_FORMAT`` for the @data.
+ * @restconf: If true the and tree data is present it is in RESTCONF format
+ * (i.e., the topmost node is `input`)
  * @data: the xpath followed by the tree data for the operation.
  */
 struct mgmt_msg_rpc {
 	struct mgmt_msg_header;
 	uint8_t request_type;
-	uint8_t resv2[7];
+	uint8_t restconf;
+	uint8_t resv2[6];
 
 	alignas(8) char data[];
 };
 
-_Static_assert(sizeof(struct mgmt_msg_rpc) ==
-		       offsetof(struct mgmt_msg_rpc, data),
-	       "Size mismatch");
+_Static_assert(sizeof(struct mgmt_msg_rpc) == offsetof(struct mgmt_msg_rpc, data), "Size mismatch");
 
 /**
  * struct mgmt_msg_rpc_reply - RPC/action reply.
  *
  * @result_type: ``LYD_FORMAT`` for the @data.
+ * @restconf: If true the and tree data is present it is in RESTCONF format
+ * (i.e., the topmost node is `output`)
  * @data: the tree data for the reply.
  */
 struct mgmt_msg_rpc_reply {
 	struct mgmt_msg_header;
 	uint8_t result_type;
-	uint8_t resv2[7];
+	uint8_t restconf;
+	uint8_t resv2[6];
 
 	alignas(8) char data[];
 };
@@ -471,6 +483,10 @@ struct mgmt_msg_rpc_reply {
 _Static_assert(sizeof(struct mgmt_msg_rpc_reply) ==
 		       offsetof(struct mgmt_msg_rpc_reply, data),
 	       "Size mismatch");
+
+/* notify-select mode values */
+#define NOTIFY_MODE_ON_CHANGE 0
+#define NOTIFY_MODE_PERIODIC  1
 
 /**
  * struct mgmt_msg_notify_select - Add notification selectors for FE client.
@@ -489,12 +505,18 @@ _Static_assert(sizeof(struct mgmt_msg_rpc_reply) ==
  * @selectors: the xpath prefixes to selectors notifications through.
  * @replace: if true replace existing selectors with `selectors`.
  * @get_only: [backend-only]: if true do get op, don't change selectors.
+ * @mode: on-change or periodic mode.
+ * @mode_data: mode-specific data.
+ *            - NOTIFY_MODE_ON_CHANGE: must be 0.
+ *            - NOTIFY_MODE_PERIODIC: interval in msec, must be non-zero.
  */
 struct mgmt_msg_notify_select {
 	struct mgmt_msg_header;
 	uint8_t replace;
 	uint8_t get_only;
-	uint8_t resv2[6];
+	uint8_t subscribing;
+	uint8_t mode;
+	uint32_t mode_data;
 
 	alignas(8) char selectors[];
 };
@@ -698,6 +720,9 @@ struct mgmt_msg_cfg_apply_req {
  * struct mgmt_msg_cfg_apply_reply - Signal the config has been applied.
  *
  * @refer_id: The transaction ID which was applied.
+ *
+ * Optional variable data after the header contains a NUL-terminated
+ * informational message string from the backend's northbound callbacks.
  */
 struct mgmt_msg_cfg_apply_reply {
 	struct mgmt_msg_header;
@@ -777,7 +802,7 @@ extern int vmgmt_msg_native_send_error(struct msg_conn *conn,
  * mgmt_msg_free_native_msg() - Free a native msg.
  * @msg: pointer to message allocated by mgmt_msg_create_native_msg().
  */
-#define mgmt_msg_native_free_msg(msg) darr_free(msg)
+#define mgmt_msg_native_free_msg darr_free
 
 /**
  * mgmt_msg_native_get_msg_len() - Get the total length of the msg.
@@ -964,13 +989,13 @@ extern int vmgmt_msg_native_send_error(struct msg_conn *conn,
  *	The secondary data or NULL if there was an error decoding (i.e., the
  *	message is corrupt).
  */
-#define mgmt_msg_native_data_decode(msg, msglen)                                                   \
-	({                                                                                         \
-		size_t _m__len = (msglen) - sizeof(*msg);                                          \
-		const char *_m__data = msg->data + msg->vsplit;                                    \
-		if (!msg->vsplit || msg->vsplit > _m__len || _m__data[-1] != 0)                    \
-			_m__data = NULL;                                                           \
-		_m__data;                                                                          \
+#define mgmt_msg_native_data_decode(msg, msglen)                                                  \
+	({                                                                                        \
+		size_t _m__len = (msglen) - sizeof(*msg);                                         \
+		const char *_m__data = msg->data + msg->vsplit;                                   \
+		if (!msg->vsplit || msg->vsplit >= _m__len || _m__data[-1] != 0)                  \
+			_m__data = NULL;                                                          \
+		_m__data;                                                                         \
 	})
 
 /**
@@ -1008,8 +1033,7 @@ extern int vmgmt_msg_native_send_error(struct msg_conn *conn,
 	_mgmt_msg_native_strings_decode(sdata,                                 \
 					(msg_len) - ((sdata) - (char *)(msg)))
 
-extern const char **_mgmt_msg_native_strings_decode(const void *sdata,
-						    int sdlen);
+extern const char **_mgmt_msg_native_strings_decode(const void *sdata, int sdlen);
 
 #ifdef __cplusplus
 }

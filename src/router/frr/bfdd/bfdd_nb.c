@@ -292,6 +292,12 @@ const struct frr_yang_module_info frr_bfdd_info = {
 			}
 		},
 		{
+			.xpath = "/frr-bfdd:bfdd/bfd/sessions/single-hop/stats/control-packet-input-count-bad",
+			.cbs = {
+				.get_elem = bfdd_bfd_sessions_single_hop_stats_control_packet_input_count_bad_get_elem,
+			}
+		},
+		{
 			.xpath = "/frr-bfdd:bfdd/bfd/sessions/single-hop/stats/control-packet-output-count",
 			.cbs = {
 				.get_elem = bfdd_bfd_sessions_single_hop_stats_control_packet_output_count_get_elem,
@@ -478,6 +484,12 @@ const struct frr_yang_module_info frr_bfdd_info = {
 			.xpath = "/frr-bfdd:bfdd/bfd/sessions/multi-hop/stats/control-packet-input-count",
 			.cbs = {
 				.get_elem = bfdd_bfd_sessions_single_hop_stats_control_packet_input_count_get_elem,
+			}
+		},
+		{
+			.xpath = "/frr-bfdd:bfdd/bfd/sessions/multi-hop/stats/control-packet-input-count-bad",
+			.cbs = {
+				.get_elem = bfdd_bfd_sessions_single_hop_stats_control_packet_input_count_bad_get_elem,
 			}
 		},
 		{
@@ -725,6 +737,12 @@ const struct frr_yang_module_info frr_bfdd_info = {
 			}
 		},
 		{
+			.xpath = "/frr-bfdd:bfdd/bfd/sessions/sbfd-echo/stats/control-packet-input-count-bad",
+			.cbs = {
+				.get_elem = bfdd_bfd_sessions_single_hop_stats_control_packet_input_count_bad_get_elem,
+			}
+		},
+		{
 			.xpath = "/frr-bfdd:bfdd/bfd/sessions/sbfd-echo/stats/control-packet-output-count",
 			.cbs = {
 				.get_elem = bfdd_bfd_sessions_single_hop_stats_control_packet_output_count_get_elem,
@@ -948,6 +966,12 @@ const struct frr_yang_module_info frr_bfdd_info = {
 			}
 		},
 		{
+			.xpath = "/frr-bfdd:bfdd/bfd/sessions/sbfd-init/stats/control-packet-input-count-bad",
+			.cbs = {
+				.get_elem = bfdd_bfd_sessions_single_hop_stats_control_packet_input_count_bad_get_elem,
+			}
+		},
+		{
 			.xpath = "/frr-bfdd:bfdd/bfd/sessions/sbfd-init/stats/control-packet-output-count",
 			.cbs = {
 				.get_elem = bfdd_bfd_sessions_single_hop_stats_control_packet_output_count_get_elem,
@@ -969,6 +993,86 @@ const struct frr_yang_module_info frr_bfdd_info = {
 			.xpath = "/frr-bfdd:bfdd/bfd/sessions/sbfd-init/stats/echo-packet-output-count",
 			.cbs = {
 				.get_elem = bfdd_bfd_sessions_single_hop_stats_echo_packet_output_count_get_elem,
+			}
+		},
+		{
+			.xpath = "/frr-bfdd:bfdd/bfd/profile/profile-authentication/authentication-key-chain",
+			.cbs = {
+				.modify = bfdd_bfd_profile_authentication_key_chain_modify,
+				.destroy = bfdd_bfd_profile_authentication_key_chain_destroy,
+				.cli_show = bfd_cli_show_profile_authentication_key_chain,
+			}
+		},
+		{
+			.xpath = "/frr-bfdd:bfdd/bfd/profile/profile-authentication/authentication-algorithm-meticulous",
+			.cbs = {
+				.modify = bfdd_bfd_profile_authentication_algorithm_meticulous_modify,
+				.destroy = bfdd_bfd_profile_authentication_algorithm_meticulous_destroy,
+				.cli_show = bfd_cli_show_profile_authentication_algorithm_meticulous,
+			}
+		},
+		{
+			.xpath = "/frr-bfdd:bfdd/bfd/sessions/single-hop/authentication-key-chain",
+			.cbs = {
+				.modify = bfdd_bfd_sessions_common_authentication_key_chain_modify,
+				.destroy = bfdd_bfd_sessions_common_authentication_key_chain_destroy,
+				.cli_show = bfd_cli_show_auth,
+			}
+		},
+		{
+			.xpath = "/frr-bfdd:bfdd/bfd/sessions/single-hop/authentication-algorithm-meticulous",
+			.cbs = {
+				.modify = bfdd_bfd_sessions_common_authentication_algorithm_meticulous_modify,
+				.destroy = bfdd_bfd_sessions_common_authentication_algorithm_meticulous_destroy,
+				.cli_show = bfd_cli_show_auth_algorithm_meticulous,
+			}
+		},
+		{
+			.xpath = "/frr-bfdd:bfdd/bfd/sessions/multi-hop/authentication-key-chain",
+			.cbs = {
+				.modify = bfdd_bfd_sessions_common_authentication_key_chain_modify,
+				.destroy = bfdd_bfd_sessions_common_authentication_key_chain_destroy,
+				.cli_show = bfd_cli_show_auth,
+			}
+		},
+		{
+			.xpath = "/frr-bfdd:bfdd/bfd/sessions/multi-hop/authentication-algorithm-meticulous",
+			.cbs = {
+				.modify = bfdd_bfd_sessions_common_authentication_algorithm_meticulous_modify,
+				.destroy = bfdd_bfd_sessions_common_authentication_algorithm_meticulous_destroy,
+				.cli_show = bfd_cli_show_auth_algorithm_meticulous,
+			}
+		},
+		{
+			.xpath = "/frr-bfdd:bfdd/bfd/sessions/sbfd-echo/authentication-key-chain",
+			.cbs = {
+				.modify = bfdd_bfd_sessions_common_authentication_key_chain_modify,
+				.destroy = bfdd_bfd_sessions_common_authentication_key_chain_destroy,
+				.cli_show = bfd_cli_show_auth,
+			}
+		},
+		{
+			.xpath = "/frr-bfdd:bfdd/bfd/sessions/sbfd-echo/authentication-algorithm-meticulous",
+			.cbs = {
+				.modify = bfdd_bfd_sessions_common_authentication_algorithm_meticulous_modify,
+				.destroy = bfdd_bfd_sessions_common_authentication_algorithm_meticulous_destroy,
+				.cli_show = bfd_cli_show_auth_algorithm_meticulous,
+			}
+		},
+		{
+			.xpath = "/frr-bfdd:bfdd/bfd/sessions/sbfd-init/authentication-key-chain",
+			.cbs = {
+				.modify = bfdd_bfd_sessions_common_authentication_key_chain_modify,
+				.destroy = bfdd_bfd_sessions_common_authentication_key_chain_destroy,
+				.cli_show = bfd_cli_show_auth,
+			}
+		},
+		{
+			.xpath = "/frr-bfdd:bfdd/bfd/sessions/sbfd-init/authentication-algorithm-meticulous",
+			.cbs = {
+				.modify = bfdd_bfd_sessions_common_authentication_algorithm_meticulous_modify,
+				.destroy = bfdd_bfd_sessions_common_authentication_algorithm_meticulous_destroy,
+				.cli_show = bfd_cli_show_auth_algorithm_meticulous,
 			}
 		},
 		{

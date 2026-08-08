@@ -35,6 +35,7 @@ static void pim_instance_terminate(struct pim_instance *pim)
 
 	if (pim->static_routes)
 		list_delete(&pim->static_routes);
+	pim_static_route_configs_fini(pim);
 
 	pim_instance_mlag_terminate(pim);
 
@@ -70,6 +71,8 @@ static void pim_instance_terminate(struct pim_instance *pim)
 
 	XFREE(MTYPE_PIM_PLIST_NAME, pim->spt.plist);
 	XFREE(MTYPE_PIM_PLIST_NAME, pim->register_plist);
+
+	pim_filter_ref_fini(&pim->join_filter);
 
 	pim->vrf = NULL;
 	XFREE(MTYPE_PIM_PIM_INSTANCE, pim);
@@ -108,6 +111,7 @@ static struct pim_instance *pim_instance_init(struct vrf *vrf)
 
 	pim->static_routes = list_new();
 	pim->static_routes->del = (void (*)(void *))pim_static_route_free;
+	pim_static_route_cfgs_init(&pim->static_route_configs);
 
 	pim->send_v6_secondary = 1;
 
@@ -132,6 +136,8 @@ static struct pim_instance *pim_instance_init(struct vrf *vrf)
 #if PIM_IPV == 4
 	pim_autorp_init(pim);
 #endif
+
+	pim_filter_ref_init(&pim->join_filter);
 
 	return pim;
 }

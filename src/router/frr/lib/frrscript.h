@@ -205,7 +205,7 @@ void frrscript_fini(void);
 /*
  * Noop function. Used below where we need a noop decoder for any type.
  */
-void _lua_decode_noop(lua_State *, ...);
+void _lua_decode_noop(lua_State *L, ...);
 
 /*
  * Maps the type of value to its encoder/decoder.
@@ -279,7 +279,7 @@ int _frrscript_call_lua(struct lua_function_state *lfs, int nargs);
  * This wrapper can be called multiple times (after one frrscript_load).
  *
  * fs
- *    The struct frrscript in which the Lua fuction was loaded into
+ *    The struct frrscript in which the Lua function was loaded into
  * f
  *    Name of the Lua function.
  *

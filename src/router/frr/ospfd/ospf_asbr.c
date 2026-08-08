@@ -335,15 +335,50 @@ void ospf_asbr_status_update(struct ospf *ospf, uint8_t status)
 	ospf_router_lsa_update(ospf);
 }
 
+static void ospf_nssa_lsa_refresh_type(struct ospf *ospf, uint8_t type, unsigned short instance)
+{
+	struct route_node *rn;
+	struct ospf_external *ext;
+
+	ext = ospf_external_lookup(ospf, type, instance);
+	if (ext && EXTERNAL_INFO(ext)) {
+		/* Refresh each redistributed NSSA-LSAs. */
+		for (rn = route_top(EXTERNAL_INFO(ext)); rn; rn = route_next(rn)) {
+			struct ospf_area *area;
+			struct listnode *node;
+			struct external_info *ei;
+
+			ei = rn->info;
+			if (!ei)
+				continue;
+
+			for (ALL_LIST_ELEMENTS_RO(ospf->areas, node, area)) {
+				struct ospf_lsa *lsa;
+
+				if (area->external_routing != OSPF_AREA_NSSA)
+					continue;
+
+				lsa = ospf_lsa_lookup_by_prefix(area->lsdb, OSPF_AS_NSSA_LSA,
+								&ei->p, ospf->router_id);
+				if (lsa)
+					ospf_nssa_lsa_refresh(lsa->area, lsa, ei);
+				else {
+					if (!ospf_redistribute_check(ospf, ei, NULL))
+						continue;
+					ospf_nssa_lsa_originate(area, ei, true);
+				}
+			}
+		}
+	}
+}
+
 /* If there's redistribution configured, we need to refresh external
  * LSAs (e.g. when default-metric changes or NSSA settings change).
  */
-static void ospf_asbr_redist_update_timer(struct event *thread)
+static void ospf_asbr_redist_update_timer(struct event *event)
 {
-	struct ospf *ospf = EVENT_ARG(thread);
+	struct ospf *ospf = EVENT_ARG(event);
 	int type;
-
-	ospf->t_asbr_redist_update = NULL;
 
 	if (IS_DEBUG_OSPF_EVENT)
 		zlog_debug("Running ASBR redistribution update on timer");
@@ -357,10 +392,11 @@ static void ospf_asbr_redist_update_timer(struct event *thread)
 		if (!red_list)
 			continue;
 
-		for (ALL_LIST_ELEMENTS_RO(red_list, node, red))
-			ospf_external_lsa_refresh_type(ospf, type,
-						       red->instance,
+		for (ALL_LIST_ELEMENTS_RO(red_list, node, red)) {
+			ospf_external_lsa_refresh_type(ospf, type, red->instance,
 						       LSA_REFRESH_FORCE);
+			ospf_nssa_lsa_refresh_type(ospf, type, red->instance);
+		}
 	}
 
 	ospf_external_lsa_refresh_default(ospf);
@@ -425,7 +461,7 @@ bool is_valid_summary_addr(struct prefix_ipv4 *p)
 	if (p->prefix.s_addr == INADDR_ANY)
 		return false;
 
-	/*Host route shouldn't be configured as summary addres*/
+	/*Host route shouldn't be configured as summary address*/
 	if (p->prefixlen == IPV4_MAX_BITLEN)
 		return false;
 
@@ -434,8 +470,6 @@ bool is_valid_summary_addr(struct prefix_ipv4 *p)
 void ospf_asbr_external_aggregator_init(struct ospf *instance)
 {
 	instance->rt_aggr_tbl = route_table_init();
-
-	instance->t_external_aggr = NULL;
 
 	instance->aggr_action = 0;
 
@@ -670,7 +704,7 @@ struct ospf_lsa *ospf_originate_summary_lsa(struct ospf *ospf,
 			   __func__, &aggr->p.prefix, aggr->p.prefixlen);
 
 	/* This case to handle when the overlapping aggregator address
-	 * is availbe.Best match will be considered.So need to delink
+	 * is available. Best match will be considered. So need to unlink
 	 * from old aggregator and link to the new aggr.
 	 */
 	if (ei->aggr_route) {
@@ -1115,12 +1149,11 @@ static void ospf_handle_external_aggr_update(struct ospf *ospf)
 	}
 }
 
-static void ospf_asbr_external_aggr_process(struct event *thread)
+static void ospf_asbr_external_aggr_process(struct event *event)
 {
-	struct ospf *ospf = EVENT_ARG(thread);
+	struct ospf *ospf = EVENT_ARG(event);
 	int operation = 0;
 
-	ospf->t_external_aggr = NULL;
 	operation = ospf->aggr_action;
 
 	if (IS_DEBUG_OSPF(lsa, EXTNL_LSA_AGGR))
@@ -1144,7 +1177,7 @@ static void ospf_external_aggr_timer(struct ospf *ospf,
 {
 	aggr->action = operation;
 
-	if (ospf->t_external_aggr) {
+	if (event_is_scheduled(ospf->t_external_aggr)) {
 		if (ospf->aggr_action == OSPF_ROUTE_AGGR_ADD || operation != OSPF_ROUTE_AGGR_ADD) {
 			if (IS_DEBUG_OSPF(lsa, EXTNL_LSA_AGGR))
 				zlog_debug("%s: Not required to restart timer,set is already added.",
@@ -1290,4 +1323,39 @@ int ospf_external_aggregator_timer_set(struct ospf *ospf, uint16_t interval)
 {
 	ospf->aggr_delay_interval = interval;
 	return OSPF_SUCCESS;
+}
+
+/* Reoriginate AS-External/NSSA LSAs. */
+void ospf_asbr_reoriginate(struct ospf *ospf)
+{
+	struct route_node *rn;
+	struct external_info *ei;
+	struct ospf_external *ext;
+	struct list *ext_list;
+	struct listnode *node;
+
+	for (int type = 0; type <= ZEBRA_ROUTE_MAX; type++) {
+		ext_list = ospf->external[type];
+		if (!ext_list)
+			continue;
+
+		for (ALL_LIST_ELEMENTS_RO(ext_list, node, ext)) {
+			if (!ospf_is_type_redistributed(ospf, type, ext->instance))
+				continue;
+
+			if (EXTERNAL_INFO(ext) == NULL)
+				continue;
+
+			for (rn = route_top(EXTERNAL_INFO(ext)); rn; rn = route_next(rn)) {
+				ei = rn->info;
+				if (ei == NULL)
+					continue;
+
+				if (!ospf_distribute_check_connected(ospf, ei))
+					continue;
+
+				ospf_external_lsa_originate(ospf, ei);
+			}
+		}
+	}
 }

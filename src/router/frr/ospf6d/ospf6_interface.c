@@ -261,6 +261,22 @@ struct ospf6_interface *ospf6_interface_create(struct interface *ifp)
 	return oi;
 }
 
+void ospf6_interface_reset(struct interface *ifp)
+{
+	struct ospf6_interface *oi;
+
+	oi = (struct ospf6_interface *)ifp->info;
+	if (oi == NULL)
+		return;
+
+	if (IS_OSPF6_DEBUG_INTERFACE)
+		zlog_debug("Interface %s: Resetting", ifp->name);
+
+	/* Reset the interface (simulate down/up). */
+	event_execute(master, interface_down, oi, 0, NULL);
+	event_execute(master, interface_up, oi, 0, NULL);
+}
+
 void ospf6_interface_delete(struct ospf6_interface *oi)
 {
 	struct listnode *node, *nnode;
@@ -377,21 +393,37 @@ void ospf6_interface_state_update(struct interface *ifp)
 	/* Adjust the mtu values if the kernel told us something new */
 	if (ifp->mtu6 != oi->ifmtu) {
 		/* If nothing configured, accept it and check for buffer size */
+		uint32_t new_ifmtu;
+
 		if (!oi->c_ifmtu) {
-			oi->ifmtu = ifp->mtu6;
+			new_ifmtu = ifp->mtu6;
 			iobuflen = ospf6_iobuf_size(ifp->mtu6);
-			if (oi->ifmtu > iobuflen) {
+			if (new_ifmtu > iobuflen) {
 				if (IS_OSPF6_DEBUG_INTERFACE)
 					zlog_debug("Interface %s: IfMtu is adjusted to I/O buffer size: %d.",
 						   ifp->name, iobuflen);
-				oi->ifmtu = iobuflen;
+				new_ifmtu = iobuflen;
 			}
 		} else if (oi->c_ifmtu > ifp->mtu6) {
-			oi->ifmtu = ifp->mtu6;
+			/* Configured MTU exceeds kernel - use kernel */
+			new_ifmtu = ifp->mtu6;
 			zlog_warn("Configured mtu %u on %s overridden by kernel %u",
 				  oi->c_ifmtu, ifp->name, ifp->mtu6);
 		} else
-			oi->ifmtu = oi->c_ifmtu;
+			new_ifmtu = oi->c_ifmtu;
+
+		/* Check if effective MTU actually changed */
+		if (new_ifmtu != oi->ifmtu) {
+			if (IS_OSPF6_DEBUG_INTERFACE)
+				zlog_debug("Interface %s: Effective OSPF MTU change %u -> %u, resetting interface",
+					   ifp->name, oi->ifmtu, new_ifmtu);
+
+			oi->ifmtu = new_ifmtu;
+
+			/* MTU changed reset interface */
+			ospf6_interface_reset(ifp);
+			return;
+		}
 	}
 
 	if (if_is_operative(ifp) &&
@@ -764,12 +796,12 @@ static bool ifmaddr_check(ifindex_t ifindex, struct in6_addr *addr)
 #endif /* __FreeBSD__ */
 
 /* Interface State Machine */
-void interface_up(struct event *thread)
+void interface_up(struct event *event)
 {
 	struct ospf6_interface *oi;
 	struct ospf6 *ospf6;
 
-	oi = (struct ospf6_interface *)EVENT_ARG(thread);
+	oi = (struct ospf6_interface *)EVENT_ARG(event);
 	assert(oi && oi->interface);
 
 	if (!oi->type_cfg)
@@ -886,11 +918,11 @@ void interface_up(struct event *thread)
 	}
 }
 
-void wait_timer(struct event *thread)
+void wait_timer(struct event *event)
 {
 	struct ospf6_interface *oi;
 
-	oi = (struct ospf6_interface *)EVENT_ARG(thread);
+	oi = (struct ospf6_interface *)EVENT_ARG(event);
 	assert(oi && oi->interface);
 
 	if (IS_OSPF6_DEBUG_INTERFACE)
@@ -901,11 +933,11 @@ void wait_timer(struct event *thread)
 		ospf6_interface_state_change(dr_election(oi), oi);
 }
 
-void backup_seen(struct event *thread)
+void backup_seen(struct event *event)
 {
 	struct ospf6_interface *oi;
 
-	oi = (struct ospf6_interface *)EVENT_ARG(thread);
+	oi = (struct ospf6_interface *)EVENT_ARG(event);
 	assert(oi && oi->interface);
 
 	if (IS_OSPF6_DEBUG_INTERFACE)
@@ -916,11 +948,11 @@ void backup_seen(struct event *thread)
 		ospf6_interface_state_change(dr_election(oi), oi);
 }
 
-void neighbor_change(struct event *thread)
+void neighbor_change(struct event *event)
 {
 	struct ospf6_interface *oi;
 
-	oi = (struct ospf6_interface *)EVENT_ARG(thread);
+	oi = (struct ospf6_interface *)EVENT_ARG(event);
 	assert(oi && oi->interface);
 
 	if (IS_OSPF6_DEBUG_INTERFACE)
@@ -932,14 +964,14 @@ void neighbor_change(struct event *thread)
 		ospf6_interface_state_change(dr_election(oi), oi);
 }
 
-void interface_down(struct event *thread)
+void interface_down(struct event *event)
 {
 	struct ospf6_interface *oi;
-	struct listnode *node, *nnode;
+	struct listnode *node;
 	struct ospf6_neighbor *on;
 	struct ospf6 *ospf6;
 
-	oi = (struct ospf6_interface *)EVENT_ARG(thread);
+	oi = (struct ospf6_interface *)EVENT_ARG(event);
 	assert(oi && oi->interface);
 
 	if (IS_OSPF6_DEBUG_INTERFACE)
@@ -963,10 +995,10 @@ void interface_down(struct event *thread)
 			ospf6_gr_helper_exit(nbr, OSPF6_GR_HELPER_TOPO_CHG);
 	}
 
-	for (ALL_LIST_ELEMENTS(oi->neighbor_list, node, nnode, on))
-		ospf6_neighbor_delete(on);
-
-	list_delete_all_node(oi->neighbor_list);
+	while ((node = listhead(oi->neighbor_list)) != NULL) {
+		on = listgetdata(node);
+		ospf6_neighbor_kill(on);
+	}
 
 	/* When interface state is reset, also reset information about
 	 * DR election, as it is no longer valid. */

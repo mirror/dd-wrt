@@ -256,15 +256,15 @@ static void on_neighbor_jp_timer(struct event *t)
 	rpf.rpf_addr = neigh->source_addr;
 	pim_joinprune_send(&rpf, neigh->upstream_jp_agg);
 
-	event_add_timer(router->master, on_neighbor_jp_timer, neigh,
-			router->t_periodic, &neigh->jp_timer);
+	event_add_timer(router->master, on_neighbor_jp_timer, neigh, pim_neigh_jp_period(neigh),
+			&neigh->jp_timer);
 }
 
 static void pim_neighbor_start_jp_timer(struct pim_neighbor *neigh)
 {
 	event_cancel(&neigh->jp_timer);
-	event_add_timer(router->master, on_neighbor_jp_timer, neigh,
-			router->t_periodic, &neigh->jp_timer);
+	event_add_timer(router->master, on_neighbor_jp_timer, neigh, pim_neigh_jp_period(neigh),
+			&neigh->jp_timer);
 }
 
 static struct pim_neighbor *
@@ -292,7 +292,6 @@ pim_neighbor_new(struct interface *ifp, pim_addr source_addr,
 	neigh->dr_priority = dr_priority;
 	neigh->generation_id = generation_id;
 	neigh->prefix_list = addr_list;
-	neigh->t_expire_timer = NULL;
 	neigh->interface = ifp;
 
 	neigh->upstream_jp_agg = list_new();
@@ -344,7 +343,7 @@ pim_neighbor_new(struct interface *ifp, pim_addr source_addr,
 	// Register PIM Neighbor with BFD
 	pim_bfd_info_nbr_create(pim_ifp, neigh);
 
-	/* flood to the new neighor if needed */
+	/* flood to the new neighbor if needed */
 	if (HAVE_DENSE_MODE(pim_ifp->pim_mode)) {
 		frr_each (rb_pim_oil, &pim_ifp->pim->channel_oil_head, c_oil) {
 			if (pim_is_grp_dm(pim_ifp->pim, *oil_mcastgrp(c_oil)) && c_oil->installed &&
@@ -474,15 +473,25 @@ pim_neighbor_add(struct interface *ifp, pim_addr source_addr,
 	struct pim_interface *pim_ifp;
 	struct pim_neighbor *neigh;
 
-	neigh = pim_neighbor_new(ifp, source_addr, hello_options, holdtime,
-				 propagation_delay, override_interval,
-				 dr_priority, generation_id, addr_list);
+	if (!ifp)
+		return NULL;
+	pim_ifp = ifp->info;
+	if (!pim_ifp)
+		return NULL;
+
+	if (!pim_neighbor_find(ifp, source_addr, false) &&
+	    listcount(pim_ifp->pim_neighbor_list) >= PIM_NEIGHBOR_LIST_MAX) {
+		if (PIM_DEBUG_PIM_EVENTS)
+			zlog_debug("%s: neighbor list limit (%u) reached on %s, ignoring new neighbor %pPA",
+				   __func__, PIM_NEIGHBOR_LIST_MAX, ifp->name, &source_addr);
+		return NULL;
+	}
+
+	neigh = pim_neighbor_new(ifp, source_addr, hello_options, holdtime, propagation_delay,
+				 override_interval, dr_priority, generation_id, addr_list);
 	if (!neigh) {
 		return 0;
 	}
-
-	pim_ifp = ifp->info;
-	assert(pim_ifp);
 
 	listnode_add(pim_ifp->pim_neighbor_list, neigh);
 

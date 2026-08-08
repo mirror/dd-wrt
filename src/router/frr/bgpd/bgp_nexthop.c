@@ -133,12 +133,12 @@ static void bgp_nexthop_cache_reset(struct bgp_nexthop_cache_head *tree)
 
 static void *bgp_tip_hash_alloc(void *p)
 {
-	const struct in_addr *val = (const struct in_addr *)p;
+	const struct ipaddr *val = (const struct ipaddr *)p;
 	struct tip_addr *addr;
 
 	addr = XMALLOC(MTYPE_TIP_ADDR, sizeof(struct tip_addr));
 	addr->refcnt = 0;
-	addr->addr.s_addr = val->s_addr;
+	addr->addr = *val;
 
 	return addr;
 }
@@ -152,7 +152,12 @@ static unsigned int bgp_tip_hash_key_make(const void *p)
 {
 	const struct tip_addr *addr = p;
 
-	return jhash_1word(addr->addr.s_addr, 0);
+	if (IS_IPADDR_V4(&addr->addr)) {
+		return jhash_1word(addr->addr.ipaddr_v4.s_addr, 0);
+	} else {
+		return jhash2(addr->addr.ipaddr_v6.s6_addr32,
+				array_size(addr->addr.ipaddr_v6.s6_addr32), 0);
+	}
 }
 
 static bool bgp_tip_hash_cmp(const void *p1, const void *p2)
@@ -160,7 +165,7 @@ static bool bgp_tip_hash_cmp(const void *p1, const void *p2)
 	const struct tip_addr *addr1 = p1;
 	const struct tip_addr *addr2 = p2;
 
-	return addr1->addr.s_addr == addr2->addr.s_addr;
+	return ipaddr_is_same(&addr1->addr, &addr2->addr);
 }
 
 void bgp_tip_hash_init(struct bgp *bgp)
@@ -181,7 +186,7 @@ void bgp_tip_hash_destroy(struct bgp *bgp)
  * only need to update the refcnt, since the collection of known TIPs
  * has not changed.
  */
-bool bgp_tip_add(struct bgp *bgp, struct in_addr *tip)
+bool bgp_tip_add(struct bgp *bgp, struct ipaddr *tip)
 {
 	struct tip_addr tmp;
 	struct tip_addr *addr;
@@ -200,7 +205,7 @@ bool bgp_tip_add(struct bgp *bgp, struct in_addr *tip)
 	return tip_added;
 }
 
-void bgp_tip_del(struct bgp *bgp, struct in_addr *tip)
+void bgp_tip_del(struct bgp *bgp, struct ipaddr *tip)
 {
 	struct tip_addr tmp;
 	struct tip_addr *addr;
@@ -534,7 +539,7 @@ bool bgp_nexthop_self(struct bgp *bgp, afi_t afi, uint8_t type,
 			tmp_addr.p.prefixlen = p->prefixlen;
 		} else {
 			/* Here we need to find out which nexthop to be used*/
-			if (CHECK_FLAG(attr->flag, ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP))) {
+			if (bgp_attr_exists(attr, BGP_ATTR_NEXT_HOP)) {
 				tmp_addr.p.u.prefix4 = attr->nexthop;
 				tmp_addr.p.prefixlen = IPV4_MAX_BITLEN;
 			} else if ((attr->mp_nexthop_len) &&
@@ -566,14 +571,21 @@ bool bgp_nexthop_self(struct bgp *bgp, afi_t afi, uint8_t type,
 
 	if (new_afi == AF_INET && hashcount(bgp->tip_hash)) {
 		memset(&tmp_tip, 0, sizeof(tmp_tip));
-		tmp_tip.addr = attr->nexthop;
+		SET_IPADDR_V4(&tmp_tip.addr);
+		IPV4_ADDR_COPY(&tmp_tip.addr.ipaddr_v4, &attr->nexthop);
 
-		if (CHECK_FLAG(attr->flag, ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP))) {
-			tmp_tip.addr = attr->nexthop;
+		if (bgp_attr_exists(attr, BGP_ATTR_NEXT_HOP)) {
+			IPV4_ADDR_COPY(&tmp_tip.addr.ipaddr_v4, &attr->nexthop);
 		} else if ((attr->mp_nexthop_len) &&
 			   ((attr->mp_nexthop_len == BGP_ATTR_NHLEN_IPV4) ||
 			    (attr->mp_nexthop_len == BGP_ATTR_NHLEN_VPNV4))) {
-			tmp_tip.addr = attr->mp_nexthop_global_in;
+			IPV4_ADDR_COPY(&tmp_tip.addr.ipaddr_v4, &attr->mp_nexthop_global_in);
+		} else if ((attr->mp_nexthop_len == BGP_ATTR_NHLEN_IPV6_GLOBAL) ||
+			   (attr->mp_nexthop_len == BGP_ATTR_NHLEN_IPV6_GLOBAL_AND_LL) ||
+			   (attr->mp_nexthop_len == BGP_ATTR_NHLEN_VPNV6_GLOBAL) ||
+			   (attr->mp_nexthop_len == BGP_ATTR_NHLEN_VPNV6_GLOBAL_AND_LL)) {
+			SET_IPADDR_V6(&tmp_tip.addr);
+			IPV6_ADDR_COPY(&tmp_tip.addr.ipaddr_v6, &attr->mp_nexthop_global);
 		}
 
 		tip = hash_lookup(bgp->tip_hash, &tmp_tip);
@@ -996,6 +1008,7 @@ static void bgp_show_nexthop(struct vty *vty, struct bgp *bgp, struct bgp_nextho
 	struct peer *peer;
 	json_object *json_last_update = NULL;
 	json_object *json_nexthop = NULL;
+	char time_buf[64];
 
 	peer = (struct peer *)bnc->nht_info;
 
@@ -1101,6 +1114,11 @@ static void bgp_show_nexthop(struct vty *vty, struct bgp *bgp, struct bgp_nextho
 		} else {
 			json_object_int_add(json_nexthop, "lastUpdate", tbuf);
 		}
+		/* Calculate last-update time and convert it into dd:hh:mm:ss
+		 * display format
+		 */
+		time_to_date_string(bnc->last_update, time_buf, sizeof(time_buf));
+		json_object_string_add(json_nexthop, "lastUpdateStr", time_buf);
 	} else {
 		vty_out(vty, "  Last update: %s", time_to_string(bnc->last_update, timebuf));
 	}

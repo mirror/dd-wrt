@@ -196,6 +196,28 @@ void cli_show_rip_default_metric(struct vty *vty, const struct lyd_node *dnode,
 }
 
 /*
+ * XPath: /frr-ripd:ripd/instance/log-neighbor-changes
+ */
+DEFPY_YANG(rip_log_neighbor_changes, rip_log_neighbor_changes_cmd,
+	"[no] log-neighbor-changes",
+	NO_STR
+	"Log neighbor discovery and disappearances\n")
+{
+	nb_cli_enqueue_change(vty, "./log-neighbor-changes", NB_OP_MODIFY, no ? "false" : "true");
+
+	return nb_cli_apply_changes(vty, NULL);
+}
+
+static void cli_show_rip_log_neighbor_changes(struct vty *vty, const struct lyd_node *dnode,
+					      bool show_defaults)
+{
+	if (yang_dnode_get_bool(dnode, NULL))
+		vty_out(vty, " log-neighbor-changes\n");
+	else if (show_defaults)
+		vty_out(vty, " no log-neighbor-changes\n");
+}
+
+/*
  * XPath: /frr-ripd:ripd/instance/distance/default
  */
 DEFPY_YANG (rip_distance,
@@ -744,18 +766,20 @@ void cli_show_ip_rip_v2_broadcast(struct vty *vty, const struct lyd_node *dnode,
  */
 DEFPY_YANG (ip_rip_receive_version,
        ip_rip_receive_version_cmd,
-       "ip rip receive version <{1$v1|2$v2}|none>",
+       "ip rip receive version <1$v1|2$v2|1 2$v3|none>",
        IP_STR
        "Routing Information Protocol\n"
        "Advertisement reception\n"
        "Version control\n"
        "RIP version 1\n"
        "RIP version 2\n"
+       "RIP version 1&2\n"
+       "RIP version 1&2\n"
        "None\n")
 {
 	const char *value;
 
-	if (v1 && v2)
+	if (v3)
 		value = "both";
 	else if (v1)
 		value = "1";
@@ -814,18 +838,20 @@ void cli_show_ip_rip_receive_version(struct vty *vty,
  */
 DEFPY_YANG (ip_rip_send_version,
        ip_rip_send_version_cmd,
-       "ip rip send version <{1$v1|2$v2}|none>",
+       "ip rip send version <1$v1|2$v2|1 2$v3|none>",
        IP_STR
        "Routing Information Protocol\n"
        "Advertisement transmission\n"
        "Version control\n"
        "RIP version 1\n"
        "RIP version 2\n"
+       "RIP version 1&2\n"
+       "RIP version 1&2\n"
        "None\n")
 {
 	const char *value;
 
-	if (v1 && v2)
+	if (v3)
 		value = "both";
 	else if (v1)
 		value = "1";
@@ -1279,6 +1305,7 @@ void rip_cli_init(void)
 	install_element(RIP_NODE, &rip_distance_cmd);
 	install_element(RIP_NODE, &no_rip_distance_cmd);
 	install_element(RIP_NODE, &rip_distance_source_cmd);
+	install_element(RIP_NODE, &rip_log_neighbor_changes_cmd);
 	install_element(RIP_NODE, &rip_neighbor_cmd);
 	install_element(RIP_NODE, &rip_network_prefix_cmd);
 	install_element(RIP_NODE, &rip_network_if_cmd);
@@ -1337,6 +1364,10 @@ const struct frr_yang_module_info frr_ripd_cli_info = {
 		{
 			.xpath = "/frr-ripd:ripd/instance/default-metric",
 			.cbs.cli_show = cli_show_rip_default_metric,
+		},
+		{
+			.xpath = "/frr-ripd:ripd/instance/log-neighbor-changes",
+			.cbs.cli_show = cli_show_rip_log_neighbor_changes,
 		},
 		{
 			.xpath = "/frr-ripd:ripd/instance/distance/default",

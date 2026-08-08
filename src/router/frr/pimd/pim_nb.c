@@ -21,6 +21,9 @@ const struct frr_yang_module_info frr_pim_info = {
 			.cbs = {
 				.create = routing_control_plane_protocols_control_plane_protocol_pim_address_family_create,
 				.destroy = routing_control_plane_protocols_control_plane_protocol_pim_address_family_destroy,
+#if PIM_IPV == 4
+				.apply_finish = routing_control_plane_protocols_control_plane_protocol_pim_address_family_apply_finish,
+#endif
 			}
 		},
 		{
@@ -51,6 +54,13 @@ const struct frr_yang_module_info frr_pim_info = {
 			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/rp-keep-alive-timer",
 			.cbs = {
 				.modify = routing_control_plane_protocols_control_plane_protocol_pim_address_family_rp_keep_alive_timer_modify,
+			}
+		},
+		{
+			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/gm-watermark-limit",
+			.cbs = {
+				.modify = routing_control_plane_protocols_control_plane_protocol_pim_address_family_gm_watermark_limit_modify,
+				.destroy = routing_control_plane_protocols_control_plane_protocol_pim_address_family_gm_watermark_limit_destroy,
 			}
 		},
 		{
@@ -279,6 +289,13 @@ const struct frr_yang_module_info frr_pim_info = {
 			}
 		},
 		{
+			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/pim-join-route-map",
+			.cbs = {
+				.modify = pim_join_route_map_modify,
+				.destroy = pim_join_route_map_detroy,
+			}
+		},
+		{
 			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/mcast-rpf-lookup",
 			.cbs = {
 				.create = routing_control_plane_protocols_control_plane_protocol_pim_address_family_mcast_rpf_lookup_create,
@@ -343,6 +360,32 @@ const struct frr_yang_module_info frr_pim_info = {
 			}
 		},
 		{
+			.xpath = "/frr-interface:lib/interface/frr-pim:pim/address-family/join-prune-interval",
+			.cbs = {
+				.modify = lib_interface_pim_address_family_join_prune_interval_modify,
+				.destroy = lib_interface_pim_address_family_join_prune_interval_destroy,
+			}
+		},
+		{
+			.xpath = "/frr-interface:lib/interface/frr-pim:pim/address-family/assert-interval",
+			.cbs = {
+				.modify = lib_interface_pim_assert_interval_modify,
+			}
+		},
+		{
+			.xpath = "/frr-interface:lib/interface/frr-pim:pim/address-family/assert-override-interval",
+			.cbs = {
+				.modify = lib_interface_pim_assert_override_interval_modify,
+				.destroy = lib_interface_pim_assert_override_interval_destroy,
+			}
+		},
+		{
+			.xpath = "/frr-interface:lib/interface/frr-pim:pim/address-family/override-interval",
+			.cbs = {
+				.modify = lib_interface_pim_override_interval_modify,
+			}
+		},
+		{
 			.xpath = "/frr-interface:lib/interface/frr-pim:pim/address-family/bfd",
 			.cbs = {
 				.create = lib_interface_pim_address_family_bfd_create,
@@ -394,6 +437,19 @@ const struct frr_yang_module_info frr_pim_info = {
 			}
 		},
 		{
+			.xpath = "/frr-interface:lib/interface/frr-pim:pim/address-family/allow-rp",
+			.cbs = {
+				.modify = lib_interface_pim_address_family_allow_rp_modify,
+			}
+		},
+		{
+			.xpath = "/frr-interface:lib/interface/frr-pim:pim/address-family/allow-rp-rp-list",
+			.cbs = {
+				.modify = lib_interface_pim_address_family_allow_rp_rp_list_modify,
+				.destroy = lib_interface_pim_address_family_allow_rp_rp_list_destroy,
+			}
+		},
+		{
 			.xpath = "/frr-interface:lib/interface/frr-pim:pim/address-family/use-source",
 			.cbs = {
 				.modify = lib_interface_pim_address_family_use_source_modify,
@@ -424,7 +480,7 @@ const struct frr_yang_module_info frr_pim_info = {
 		{
 			.xpath = "/frr-interface:lib/interface/frr-pim:pim/address-family/mroute/oif",
 			.cbs = {
-				.modify = lib_interface_pim_address_family_mroute_oif_modify,
+				.create = lib_interface_pim_address_family_mroute_oif_create,
 				.destroy = lib_interface_pim_address_family_mroute_oif_destroy,
 			}
 		},
@@ -470,6 +526,13 @@ const struct frr_yang_module_info frr_pim_route_map_info = {
 			.xpath = "/frr-route-map:lib/route-map/entry/match-condition/rmap-match-condition/frr-pim-route-map:multicast-interface",
 			.cbs = {
 				.modify = pim_route_map_match_interface_modify,
+				.destroy = lib_route_map_entry_match_destroy,
+			}
+		},
+		{
+			.xpath = "/frr-route-map:lib/route-map/entry/match-condition/rmap-match-condition/frr-pim-route-map:multicast-source-interface",
+			.cbs = {
+				.modify = pim_route_map_match_source_interface_modify,
 				.destroy = lib_route_map_entry_match_destroy,
 			}
 		},
@@ -531,6 +594,14 @@ const struct frr_yang_module_info frr_pim_rp_info = {
 				.modify = pim_embedded_rp_maximum_rps_modify,
 			}
 		},
+#if PIM_IPV == 4
+		{
+			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/frr-pim-rp:rp/auto-rp",
+			.cbs = {
+				.apply_finish = routing_control_plane_protocols_control_plane_protocol_pim_address_family_rp_auto_rp_apply_finish,
+			}
+		},
+#endif
 		{
 			.xpath = "/frr-routing:routing/control-plane-protocols/control-plane-protocol/frr-pim:pim/address-family/frr-pim-rp:rp/auto-rp/discovery-enabled",
 			.cbs = {
@@ -794,6 +865,13 @@ const struct frr_yang_module_info frr_gmp_info = {
 			}
 		},
 		{
+			.xpath = "/frr-interface:lib/interface/frr-gmp:gmp/address-family/last-member-query-count",
+			.cbs = {
+				.modify = lib_interface_gmp_address_family_last_member_query_count_modify,
+				.destroy = lib_interface_gmp_address_family_last_member_query_count_destroy,
+			}
+		},
+		{
 			.xpath = "/frr-interface:lib/interface/frr-gmp:gmp/address-family/robustness-variable",
 			.cbs = {
 				.modify = lib_interface_gmp_address_family_robustness_variable_modify,
@@ -825,6 +903,13 @@ const struct frr_yang_module_info frr_gmp_info = {
 			}
 		},
 		{
+			.xpath = "/frr-interface:lib/interface/frr-gmp:gmp/address-family/proxy-route-map",
+			.cbs = {
+				.modify  = lib_interface_gm_proxy_rmap_modify,
+				.destroy = lib_interface_gm_proxy_rmap_destroy,
+			}
+		},
+		{
 			.xpath = "/frr-interface:lib/interface/frr-gmp:gmp/address-family/immediate-leave",
 			.cbs = {
 				.modify = lib_interface_gmp_immediate_leave_modify,
@@ -841,6 +926,13 @@ const struct frr_yang_module_info frr_gmp_info = {
 			.cbs = {
 				.modify = lib_interface_gm_rmap_modify,
 				.destroy = lib_interface_gm_rmap_destroy,
+			}
+		},
+		{
+			.xpath = "/frr-interface:lib/interface/frr-gmp:gmp/address-family/access-list",
+			.cbs = {
+				.modify = lib_interface_gm_alist_modify,
+				.destroy = lib_interface_gm_alist_destroy,
 			}
 		},
 		{

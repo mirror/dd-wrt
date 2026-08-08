@@ -39,6 +39,11 @@ static void ospf6_set_pktinfo(int ospf6_sock)
 	setsockopt_ipv6_pktinfo(ospf6_sock, 1);
 }
 
+static void ospf6_set_hoplimit(int ospf6_sock)
+{
+	setsockopt_ipv6_hoplimit(ospf6_sock, 1);
+}
+
 static void ospf6_set_transport_class(int ospf6_sock)
 {
 #ifdef IPTOS_PREC_INTERNETCONTROL
@@ -59,6 +64,7 @@ void ospf6_serv_close(int *ospf6_sock)
 int ospf6_serv_sock(struct ospf6 *ospf6)
 {
 	int ospf6_sock;
+	int error;
 
 	if (ospf6->fd != -1)
 		return -1;
@@ -66,14 +72,17 @@ int ospf6_serv_sock(struct ospf6 *ospf6)
 	if (ospf6->vrf_id == VRF_UNKNOWN)
 		return -1;
 
-	frr_with_privs(&ospf6d_privs) {
-
+	frr_with_privs (&ospf6d_privs) {
 		ospf6_sock = vrf_socket(AF_INET6, SOCK_RAW, IPPROTO_OSPFIGP,
 					ospf6->vrf_id, ospf6->name);
-		if (ospf6_sock < 0) {
-			zlog_warn("Network: can't create OSPF6 socket.");
-			return -1;
-		}
+		/* Preserve errno in case it's changed by privs apis */
+		error = errno;
+	}
+
+	if (ospf6_sock < 0) {
+		zlog_warn("Network: can't create OSPF6 socket: %s(%u)",
+			  safe_strerror(error), error);
+		return -1;
 	}
 
 /* set socket options */
@@ -82,9 +91,11 @@ int ospf6_serv_sock(struct ospf6 *ospf6)
 #else
 	ospf6_set_reuseaddr();
 #endif /*1*/
+
 	ospf6_reset_mcastloop(ospf6_sock);
 	ospf6_set_pktinfo(ospf6_sock);
 	ospf6_set_transport_class(ospf6_sock);
+	ospf6_set_hoplimit(ospf6_sock);
 
 	ospf6->fd = ospf6_sock;
 	/* setup global in6_addr, allspf6 and alldr6 for later use */
@@ -199,25 +210,18 @@ int ospf6_sendmsg(struct in6_addr *src, struct in6_addr *dst,
 	return retval;
 }
 
-int ospf6_recvmsg(struct in6_addr *src, struct in6_addr *dst,
-		  ifindex_t *ifindex, struct iovec *message, int ospf6_sock)
+int ospf6_recvmsg(struct in6_addr *src, struct in6_addr *dst, ifindex_t *ifindex,
+		  int *hoplimp, struct iovec *message, int ospf6_sock)
 {
 	int retval;
 	struct msghdr rmsghdr;
 	struct cmsghdr *rcmsgp;
-	uint8_t cmsgbuf[CMSG_SPACE(sizeof(struct in6_pktinfo))];
-	struct in6_pktinfo *pktinfo;
+	uint8_t cmsgbuf[CMSG_SPACE(sizeof(struct in6_pktinfo) + CMSG_SPACE(sizeof(int)))];
+	const struct in6_pktinfo *pktinfo;
 	struct sockaddr_in6 src_sin6;
+	int hoplim = 0;
 
-	rcmsgp = (struct cmsghdr *)cmsgbuf;
-	pktinfo = (struct in6_pktinfo *)(CMSG_DATA(rcmsgp));
 	memset(&src_sin6, 0, sizeof(src_sin6));
-
-	/* receive control msg */
-	rcmsgp->cmsg_level = IPPROTO_IPV6;
-	rcmsgp->cmsg_type = IPV6_PKTINFO;
-	rcmsgp->cmsg_len = CMSG_LEN(sizeof(struct in6_pktinfo));
-	/* rcmsgp = CMSG_NXTHDR (&rmsghdr, rcmsgp); */
 
 	/* receive msg hdr */
 	memset(&rmsghdr, 0, sizeof(rmsghdr));
@@ -241,11 +245,30 @@ int ospf6_recvmsg(struct in6_addr *src, struct in6_addr *dst,
 	assert(src);
 	memcpy(src, &src_sin6.sin6_addr, sizeof(struct in6_addr));
 
-	/* destination address */
-	if (ifindex)
-		*ifindex = pktinfo->ipi6_ifindex;
-	if (dst)
-		memcpy(dst, &pktinfo->ipi6_addr, sizeof(struct in6_addr));
+	/* Interface, destination address, hop limit from control data */
+	if (rmsghdr.msg_controllen > 0) {
+		for (rcmsgp = CMSG_FIRSTHDR(&rmsghdr); rcmsgp != NULL;
+		     rcmsgp = CMSG_NXTHDR(&rmsghdr, rcmsgp)) {
+			if (rcmsgp->cmsg_level != IPPROTO_IPV6)
+				continue;
+
+			if (rcmsgp->cmsg_type == IPV6_PKTINFO) {
+				pktinfo = (void *)CMSG_DATA(rcmsgp);
+				if (pktinfo) {
+					if (ifindex)
+						*ifindex = pktinfo->ipi6_ifindex;
+					if (dst)
+						memcpy(dst, &pktinfo->ipi6_addr,
+						       sizeof(struct in6_addr));
+				}
+			} else if (rcmsgp->cmsg_type == IPV6_HOPLIMIT) {
+				hoplim = *(int *)CMSG_DATA(rcmsgp);
+			}
+		}
+	}
+
+	if (hoplimp)
+		*hoplimp = hoplim;
 
 	return retval;
 }

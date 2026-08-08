@@ -85,7 +85,7 @@ static ptm_lib_handle_t *ptm_hdl;
 struct zebra_ptm_cb ptm_cb;
 
 static int zebra_ptm_socket_init(void);
-void zebra_ptm_sock_read(struct event *thread);
+void zebra_ptm_sock_read(struct event *event);
 static int zebra_ptm_handle_msg_cb(void *arg, void *in_ctxt);
 void zebra_bfd_peer_replay_req(void);
 void zebra_ptm_send_status_req(void);
@@ -151,10 +151,8 @@ void zebra_ptm_finish(void)
 		close(ptm_cb.ptm_sock);
 }
 
-static void zebra_ptm_flush_messages(struct event *thread)
+static void zebra_ptm_flush_messages(struct event *event)
 {
-	ptm_cb.t_write = NULL;
-
 	if (ptm_cb.ptm_sock == -1)
 		return;
 
@@ -167,12 +165,11 @@ static void zebra_ptm_flush_messages(struct event *thread)
 		close(ptm_cb.ptm_sock);
 		ptm_cb.ptm_sock = -1;
 		zebra_ptm_reset_status(0);
-		ptm_cb.t_timer = NULL;
+		event_cancel(&ptm_cb.t_timer);
 		event_add_timer(zrouter.master, zebra_ptm_connect, NULL,
 				ptm_cb.reconnect_time, &ptm_cb.t_timer);
 		return;
 	case BUFFER_PENDING:
-		ptm_cb.t_write = NULL;
 		event_add_write(zrouter.master, zebra_ptm_flush_messages, NULL,
 				ptm_cb.ptm_sock, &ptm_cb.t_write);
 		break;
@@ -191,7 +188,7 @@ static int zebra_ptm_send_message(char *data, int size)
 		close(ptm_cb.ptm_sock);
 		ptm_cb.ptm_sock = -1;
 		zebra_ptm_reset_status(0);
-		ptm_cb.t_timer = NULL;
+		event_cancel(&ptm_cb.t_timer);
 		event_add_timer(zrouter.master, zebra_ptm_connect, NULL,
 				ptm_cb.reconnect_time, &ptm_cb.t_timer);
 		return -1;
@@ -218,7 +215,7 @@ void zebra_ptm_connect(struct event *t)
 
 	if (ptm_cb.ptm_sock != -1) {
 		if (init) {
-			ptm_cb.t_read = NULL;
+			event_cancel(&ptm_cb.t_read);
 			event_add_read(zrouter.master, zebra_ptm_sock_read,
 				       NULL, ptm_cb.ptm_sock, &ptm_cb.t_read);
 			zebra_bfd_peer_replay_req();
@@ -230,7 +227,6 @@ void zebra_ptm_connect(struct event *t)
 		if (ptm_cb.reconnect_time > ZEBRA_PTM_RECONNECT_TIME_MAX)
 			ptm_cb.reconnect_time = ZEBRA_PTM_RECONNECT_TIME_MAX;
 
-		ptm_cb.t_timer = NULL;
 		event_add_timer(zrouter.master, zebra_ptm_connect, NULL,
 				ptm_cb.reconnect_time, &ptm_cb.t_timer);
 	} else if (ptm_cb.reconnect_time >= ZEBRA_PTM_RECONNECT_TIME_MAX) {
@@ -588,13 +584,13 @@ static int zebra_ptm_handle_msg_cb(void *arg, void *in_ctxt)
 	}
 }
 
-void zebra_ptm_sock_read(struct event *thread)
+void zebra_ptm_sock_read(struct event *event)
 {
 	int sock;
 	int rc;
 
 	errno = 0;
-	sock = EVENT_FD(thread);
+	sock = EVENT_FD(event);
 
 	if (sock == -1)
 		return;
@@ -614,13 +610,12 @@ void zebra_ptm_sock_read(struct event *thread)
 		close(ptm_cb.ptm_sock);
 		ptm_cb.ptm_sock = -1;
 		zebra_ptm_reset_status(0);
-		ptm_cb.t_timer = NULL;
+		event_cancel(&ptm_cb.t_timer);
 		event_add_timer(zrouter.master, zebra_ptm_connect, NULL,
 				ptm_cb.reconnect_time, &ptm_cb.t_timer);
 		return;
 	}
 
-	ptm_cb.t_read = NULL;
 	event_add_read(zrouter.master, zebra_ptm_sock_read, NULL,
 		       ptm_cb.ptm_sock, &ptm_cb.t_read);
 }
@@ -637,7 +632,7 @@ void zebra_ptm_bfd_dst_register(ZAPI_HANDLER_ARGS)
 	unsigned int min_rx_timer;
 	unsigned int min_tx_timer;
 	char if_name[IFNAMSIZ];
-	uint8_t len;
+	uint8_t len = 0;
 	void *out_ctxt;
 	char buf[INET6_ADDRSTRLEN];
 	char tmp_buf[64];
@@ -655,7 +650,7 @@ void zebra_ptm_bfd_dst_register(ZAPI_HANDLER_ARGS)
 			   zebra_route_string(client->proto), hdr->length);
 
 	if (ptm_cb.ptm_sock == -1) {
-		ptm_cb.t_timer = NULL;
+		event_cancel(&ptm_cb.t_timer);
 		event_add_timer(zrouter.master, zebra_ptm_connect, NULL,
 				ptm_cb.reconnect_time, &ptm_cb.t_timer);
 		return;
@@ -814,7 +809,7 @@ void zebra_ptm_bfd_dst_deregister(ZAPI_HANDLER_ARGS)
 			   zebra_route_string(client->proto), hdr->length);
 
 	if (ptm_cb.ptm_sock == -1) {
-		ptm_cb.t_timer = NULL;
+		event_cancel(&ptm_cb.t_timer);
 		event_add_timer(zrouter.master, zebra_ptm_connect, NULL,
 				ptm_cb.reconnect_time, &ptm_cb.t_timer);
 		return;
@@ -942,7 +937,7 @@ void zebra_ptm_bfd_client_register(ZAPI_HANDLER_ARGS)
 	STREAM_GETL(s, pid);
 
 	if (ptm_cb.ptm_sock == -1) {
-		ptm_cb.t_timer = NULL;
+		event_cancel(&ptm_cb.t_timer);
 		event_add_timer(zrouter.master, zebra_ptm_connect, NULL,
 				ptm_cb.reconnect_time, &ptm_cb.t_timer);
 		return;
@@ -1001,7 +996,7 @@ int zebra_ptm_bfd_client_deregister(struct zserv *client)
 			   zebra_route_string(proto));
 
 	if (ptm_cb.ptm_sock == -1) {
-		ptm_cb.t_timer = NULL;
+		event_cancel(&ptm_cb.t_timer);
 		event_add_timer(zrouter.master, zebra_ptm_connect, NULL,
 				ptm_cb.reconnect_time, &ptm_cb.t_timer);
 		return 0;
@@ -1279,8 +1274,8 @@ static int _zebra_ptm_bfd_client_deregister(struct zserv *zs)
 	/* Find daemon pid by zebra connection pointer. */
 	pp = pp_lookup_byzs(zs);
 	if (pp == NULL) {
-		zlog_err("%s:%d failed to find process pid registration",
-			 __FILE__, __LINE__);
+		flog_err(EC_ZEBRA_PTM_BFD_PID_TRACKING_FAILED,
+			 "%s:%d failed to find process pid registration", __FILE__, __LINE__);
 		return -1;
 	}
 
@@ -1372,7 +1367,8 @@ static void _zebra_ptm_reroute(struct zserv *zs, struct zebra_vrf *zvrf,
 stream_failure:
 	if (msgc)
 		stream_free(msgc);
-	zlog_err("%s:%d failed to registrate client pid", __FILE__, __LINE__);
+	flog_err(EC_ZEBRA_PTM_BFD_PID_TRACKING_FAILED, "%s:%d failed to registrate client pid",
+		 __FILE__, __LINE__);
 }
 
 void zebra_ptm_bfd_dst_register(ZAPI_HANDLER_ARGS)

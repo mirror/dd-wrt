@@ -7,6 +7,7 @@
 #include <zebra.h>
 
 #include "darr.h"
+#include "debug.h"
 #include "log.h"
 #include "lib_errors.h"
 #include "yang.h"
@@ -129,8 +130,13 @@ struct yang_module *yang_module_load(const char *module_name,
 	struct yang_module *module;
 	const struct lys_module *module_info;
 
-	module_info = ly_ctx_load_module(ly_native_ctx, module_name, NULL,
-					 features);
+	if (features)
+		DEBUGD(&nb_dbg_events, "yang: loading module %s features: %pSA", module_name,
+		       features);
+	else
+		DEBUGD(&nb_dbg_events, "yang: loading module %s", module_name);
+
+	module_info = ly_ctx_load_module(ly_native_ctx, module_name, NULL, features);
 	if (!module_info) {
 		flog_err(EC_LIB_YANG_MODULE_LOAD,
 			 "%s: failed to load data model: %s", __func__,
@@ -300,8 +306,8 @@ void yang_snode_get_path(const struct lysc_node *snode,
 LY_ERR yang_resolve_snode_xpath(struct ly_ctx *ly_ctx, const char *xpath,
 				const struct lysc_node ***snodes, bool *simple)
 {
-	struct lysc_node *snode;
-	struct ly_set *set;
+	struct lysc_node *snode = NULL;
+	struct ly_set *set = NULL;
 	LY_ERR err;
 
 	/* lys_find_path will not resolve complex xpaths */
@@ -401,9 +407,13 @@ const char *yang_snode_get_default(const struct lysc_node *snode)
 	switch (snode->nodetype) {
 	case LYS_LEAF:
 		sleaf = (const struct lysc_node_leaf *)snode;
-		return sleaf->dflt ? lyd_value_get_canonical(sleaf->module->ctx,
-							     sleaf->dflt)
+#if (LY_VERSION_MAJOR < 4)
+		return sleaf->dflt ? lyd_value_get_canonical(sleaf->module->ctx, sleaf->dflt)
 				   : NULL;
+#else
+		/* NOTE: this is value in the schema, not necessarily the canonical form */
+		return sleaf->dflt.str;
+#endif
 	case LYS_LEAFLIST:
 		/* TODO: check leaf-list default values */
 		return NULL;
@@ -559,7 +569,7 @@ uint32_t yang_dnode_count(const struct lyd_node *dnode, const char *xpath_fmt,
 {
 	va_list ap;
 	char xpath[XPATH_MAXLEN];
-	struct ly_set *set;
+	struct ly_set *set = NULL;
 	uint32_t count;
 
 	va_start(ap, xpath_fmt);
@@ -697,8 +707,8 @@ struct lyd_node *yang_state_new(struct lyd_node *tree, const char *path, const c
 	struct lyd_node *dnode, *parent;
 	LY_ERR err;
 
-	err = lyd_new_path2(tree, ly_native_ctx, path, value, 0, 0, LYD_NEW_PATH_UPDATE, &parent,
-			    &dnode);
+	err = yang_new_path2(tree, ly_native_ctx, path, value, 0, 0, LYD_NEW_PATH_UPDATE, &parent,
+			     &dnode);
 	assert(err == LY_SUCCESS);
 
 	/*
@@ -809,15 +819,14 @@ struct yang_data *yang_data_new(const char *xpath, const char *value)
 	data = XCALLOC(MTYPE_YANG_DATA, sizeof(*data));
 	strlcpy(data->xpath, xpath, sizeof(data->xpath));
 	if (value)
-		data->value = strdup(value);
+		data->value = XSTRDUP(MTYPE_YANG_DATA, value);
 
 	return data;
 }
 
 void yang_data_free(struct yang_data *data)
 {
-	if (data->value)
-		free(data->value);
+	XFREE(MTYPE_YANG_DATA, data->value);
 	XFREE(MTYPE_YANG_DATA, data);
 }
 
@@ -852,7 +861,7 @@ struct yang_data *yang_data_list_find(const struct list *list,
 
 /* Make libyang log its errors using FRR logging infrastructure. */
 static void ly_zlog_cb(LY_LOG_LEVEL level, const char *msg, const char *data_path
-#if !(LY_VERSION_MAJOR < 3)
+#if (LY_VERSION_MAJOR >= 3)
 		       ,
 		       const char *schema_path, uint64_t line
 #endif
@@ -875,7 +884,7 @@ static void ly_zlog_cb(LY_LOG_LEVEL level, const char *msg, const char *data_pat
 
 	if (data_path)
 		zlog(priority, "libyang: %s (%s)", msg, data_path);
-#if !(LY_VERSION_MAJOR < 3)
+#if (LY_VERSION_MAJOR >= 3)
 	else if (schema_path)
 		zlog(priority, "libyang %s (%s)\n", msg, schema_path);
 	else if (line)
@@ -907,7 +916,7 @@ LY_ERR yang_parse_data(const char *xpath, LYD_FORMAT format, bool as_subtree, bo
 		 * a common YANG JSON technique (vs XML which starts all
 		 * data trees from the root).
 		 */
-		err = lyd_new_path2(NULL, ly_native_ctx, xpath, NULL, 0, 0, 0, &parent, &subtree);
+		err = yang_new_path2(NULL, ly_native_ctx, xpath, NULL, 0, 0, 0, &parent, &subtree);
 		if (err != LY_SUCCESS)
 			goto done;
 		err = lyd_find_path(parent, xpath, false, &subtree);
@@ -939,10 +948,21 @@ done:
 	return err;
 }
 
+static LY_ERR yang_parse_op(const struct ly_ctx *ctx, struct lyd_node *parent, struct ly_in *in,
+			    LYD_FORMAT format, enum lyd_type data_type, struct lyd_node **tree,
+			    struct lyd_node **op)
+{
+	return lyd_parse_op(ctx, parent, in, format, data_type,
+#if (LY_VERSION_MAJOR >= 4)
+			    format == LYD_LYB ? LYD_PARSE_LYB_SKIP_CTX_CHECK : 0,
+#endif
+			    tree, op);
+}
+
 LY_ERR yang_parse_notification(const char *xpath, LYD_FORMAT format,
 			       const char *data, struct lyd_node **notif)
 {
-	struct lyd_node *tree;
+	struct lyd_node *tree = NULL;
 	struct ly_set *set = NULL;
 	struct ly_in *in = NULL;
 	LY_ERR err;
@@ -953,8 +973,7 @@ LY_ERR yang_parse_notification(const char *xpath, LYD_FORMAT format,
 		return err;
 	}
 
-	err = lyd_parse_op(ly_native_ctx, NULL, in, format, LYD_TYPE_NOTIF_YANG,
-			   &tree, NULL);
+	err = yang_parse_op(ly_native_ctx, NULL, in, format, LYD_TYPE_NOTIF_YANG, &tree, NULL);
 	ly_in_free(in, 0);
 	if (err) {
 		zlog_err("Failed to parse notification: %s", ly_last_errmsg());
@@ -979,8 +998,56 @@ LY_ERR yang_parse_notification(const char *xpath, LYD_FORMAT format,
 	return LY_SUCCESS;
 }
 
-LY_ERR yang_parse_rpc(const char *xpath, LYD_FORMAT format, const char *data,
-		      bool reply, struct lyd_node **rpc)
+LY_ERR yang_parse_restconf_rpc(const char *xpath, LYD_FORMAT format, const char *data, bool reply,
+			       struct lyd_node **rpc)
+{
+	const struct lysc_node *snode;
+	struct lyd_node *dnode = NULL;
+	struct ly_in *in = NULL;
+	LY_ERR err;
+
+	snode = lys_find_path(ly_native_ctx, NULL, xpath, 0);
+	if (!snode) {
+		zlog_err("Failed to find RPC/action schema node: %s", xpath);
+		return LY_ENOTFOUND;
+	}
+	if (snode->nodetype != LYS_RPC && snode->nodetype != LYS_ACTION) {
+		zlog_err("Node '%s' is not an RPC/action", xpath);
+		return LY_ENOTFOUND;
+	}
+	/* Get the tree for the RPC/Action */
+	err = yang_new_path2(NULL, ly_native_ctx, xpath, NULL, 0, 0, 0, NULL, &dnode);
+	if (err) {
+		zlog_err("Failed to create parent node for action: %s", ly_last_errmsg());
+		goto done;
+	}
+
+	if (!data)
+		goto done;
+
+	err = ly_in_new_memory(data, &in);
+	if (err) {
+		zlog_err("Failed to initialize ly_in: %s", ly_last_errmsg());
+		goto done;
+	}
+
+	err = yang_parse_op(ly_native_ctx, dnode, in, format,
+			    reply ? LYD_TYPE_REPLY_RESTCONF : LYD_TYPE_RPC_RESTCONF, NULL, NULL);
+	ly_in_free(in, 0);
+	if (err) {
+		zlog_err("Failed to parse RPC/action: %s", ly_last_errmsg());
+		goto done;
+	}
+done:
+	if (err)
+		lyd_free_all(dnode);
+	else
+		*rpc = dnode;
+	return err;
+}
+
+LY_ERR yang_parse_rpc(const char *xpath, LYD_FORMAT format, const char *data, bool reply,
+		      struct lyd_node **rpc)
 {
 	const struct lysc_node *snode;
 	struct lyd_node *parent = NULL;
@@ -1003,8 +1070,8 @@ LY_ERR yang_parse_rpc(const char *xpath, LYD_FORMAT format, const char *data,
 			return LY_EINVAL;
 		}
 
-		err = lyd_new_path2(NULL, ly_native_ctx, parent_xpath, NULL, 0,
-				    0, 0, NULL, &parent);
+		err = yang_new_path2(NULL, ly_native_ctx, parent_xpath, NULL, 0, 0, 0, NULL,
+				     &parent);
 		XFREE(MTYPE_TMP, parent_xpath);
 		if (err) {
 			zlog_err("Failed to create parent node for action: %s",
@@ -1023,9 +1090,8 @@ LY_ERR yang_parse_rpc(const char *xpath, LYD_FORMAT format, const char *data,
 		return err;
 	}
 
-	err = lyd_parse_op(ly_native_ctx, parent, in, format,
-			   reply ? LYD_TYPE_REPLY_YANG : LYD_TYPE_RPC_YANG,
-			   NULL, rpc);
+	err = yang_parse_op(ly_native_ctx, parent, in, format,
+			    reply ? LYD_TYPE_REPLY_YANG : LYD_TYPE_RPC_YANG, NULL, rpc);
 	ly_in_free(in, 0);
 	if (err) {
 		lyd_free_all(parent);
@@ -1048,6 +1114,10 @@ LY_ERR yang_print_tree_append(uint8_t **darr, const struct lyd_node *root,
 			      LYD_FORMAT format, uint32_t options)
 {
 	LY_ERR err;
+
+	/* Can't use binary+shrink due to required restrictions */
+	if (format == LYD_LYB)
+		options &= ~LYD_PRINT_SHRINK;
 
 	err = lyd_print_clb(yang_print_darr, darr, root, format, options);
 	if (err)
@@ -1072,6 +1142,7 @@ char *yang_convert_lyd_format(const char *data, size_t data_len,
 			      bool shrink)
 {
 	struct lyd_node *tree = NULL;
+	uint32_t parse_options = LYD_PARSE_ONLY;
 	uint32_t options = LYD_PRINT_WD_EXPLICIT | LYD_PRINT_WITHSIBLINGS;
 	uint8_t *result = NULL;
 	LY_ERR err;
@@ -1086,8 +1157,12 @@ char *yang_convert_lyd_format(const char *data, size_t data_len,
 	if (in_format == out_format)
 		return darr_strdup((const char *)data);
 
-	err = lyd_parse_data_mem(ly_native_ctx, (const char *)data, in_format,
-				 LYD_PARSE_ONLY, 0, &tree);
+#ifdef LYD_PARSE_LYB_SKIP_CTX_CHECK
+	if (in_format == LYD_LYB)
+		parse_options |= LYD_PARSE_LYB_SKIP_CTX_CHECK;
+#endif
+	err = lyd_parse_data_mem(ly_native_ctx, (const char *)data, in_format, parse_options, 0,
+				 &tree);
 
 	if (err) {
 		flog_err_sys(EC_LIB_LIBYANG,
@@ -1171,6 +1246,9 @@ struct ly_ctx *yang_ctx_new_setup(bool embedded_modules, bool explicit_compile, 
 	}
 
 	options = LY_CTX_DISABLE_SEARCHDIR_CWD;
+#if (LY_VERSION_MAJOR >= 4)
+	options |= LY_CTX_LYB_HASHES;
+#endif
 	if (!load_library)
 		options |= LY_CTX_NO_YANGLIBRARY;
 	if (explicit_compile)
@@ -1459,10 +1537,8 @@ int yang_xpath_pop_node(char *xpath)
  * Safe to remove after libyang v2.1.xxx is required (.144 has a bug so
  * something > .144) https://github.com/CESNET/libyang/issues/2149
  */
-LY_ERR yang_lyd_new_list(struct lyd_node_inner *parent,
-			 const struct lysc_node *snode,
-			 const struct yang_list_keys *list_keys,
-			 struct lyd_node **node)
+LY_ERR yang_lyd_new_list(struct lyd_node *parent, const struct lysc_node *snode,
+			 const struct yang_list_keys *list_keys, struct lyd_node **node)
 {
 #if defined(HAVE_LYD_NEW_LIST3) && 0
 	LY_ERR err;
@@ -1472,11 +1548,10 @@ LY_ERR yang_lyd_new_list(struct lyd_node_inner *parent,
 	for (int i = 0; i < list_keys->num; i++)
 		keys[i] = list_keys->key[i];
 
-	err = lyd_new_list3(&parent->node, snode->module, snode->name, keys,
-			    NULL, 0, node);
+	err = lyd_new_list3(parent, snode->module, snode->name, keys, NULL, 0, node);
 	return err;
 #else
-	struct lyd_node *pnode = &parent->node;
+	struct lyd_node *pnode = parent;
 	const char(*keys)[LIST_MAXKEYLEN] = list_keys->key;
 
 	assert(list_keys->num <= 8);
@@ -1560,7 +1635,7 @@ LY_ERR yang_lyd_trim_xpath(struct lyd_node **root, const char *xpath)
 
 	/* Mark */
 	for (i = 0; i < set->count; i++) {
-		for (node = set->dnodes[i]; node; node = &node->parent->node) {
+		for (node = set->dnodes[i]; node; node = lyd_parent(node)) {
 			if (node->priv)
 				break;
 			if (node == set->dnodes[i])
@@ -1637,6 +1712,51 @@ LY_ERR yang_lyd_parse_data(const struct ly_ctx *ctx, struct lyd_node *parent,
 
 	return LY_SUCCESS;
 }
+
+
+/*
+ * Handle NBC API changes between versions of Libyang
+ */
+
+#undef lyd_new_term_bin
+#undef lyd_change_term_bin
+#undef lyd_new_path2
+#undef lyd_new_ext_term
+
+#if (LY_VERSION_MAJOR >= 4)
+#define LY_SZ(x) ((x)*8)
+#else
+#define LY_SZ(x) (x)
+#endif
+
+LY_ERR yang_new_term_bin(struct lyd_node *parent, const struct lys_module *module,
+			 const char *name, const void *value, uint32_t size, uint32_t options,
+			 struct lyd_node **node)
+{
+	return lyd_new_term_bin(parent, module, name, value, LY_SZ(size), options, node);
+}
+
+LY_ERR yang_change_term_bin(struct lyd_node *term, const void *value, uint32_t size)
+{
+	return lyd_change_term_bin(term, value, LY_SZ(size));
+}
+
+LY_ERR yang_new_path2(struct lyd_node *parent, const struct ly_ctx *ctx, const char *path,
+		      const void *value, uint32_t size, LYD_ANYDATA_VALUETYPE value_type,
+		      uint32_t options, struct lyd_node **new_parent, struct lyd_node **new_node)
+{
+	return lyd_new_path2(parent, ctx, path, value, LY_SZ(size), value_type, options,
+			     new_parent, new_node);
+}
+
+#if (LY_VERSION_MAJOR >= 3) && (LY_VERSION_MAJOR < 5)
+LY_ERR yang_new_ext_term(const struct lysc_ext_instance *ext, const char *name, const void *value,
+			 uint32_t size, uint32_t options, struct lyd_node **node)
+{
+	return lyd_new_ext_term(ext, name, value, LY_SZ(size), options, node);
+}
+#endif
+#undef LY_SZ
 
 /*
  * Safe to remove after libyang v2.1.128 is required

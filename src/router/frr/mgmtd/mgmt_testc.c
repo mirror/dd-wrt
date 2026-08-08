@@ -21,6 +21,8 @@
 
 static void async_notification(struct nb_cb_notify_args *args);
 static int rpc_callback(struct nb_cb_rpc_args *args);
+static int test_config_modify(struct nb_cb_modify_args *args);
+static int test_config_destroy(struct nb_cb_destroy_args *args);
 
 static void sigusr1(void);
 static void sigint(void);
@@ -81,6 +83,16 @@ struct frr_signal_t _signals[] = {
 #define MGMTD_TESTC_VTY_PORT 2624
 
 /* clang-format off */
+static const struct frr_yang_module_info frr_routing_info = {
+	.name = "frr-routing",
+	.ignore_cfg_cbs = true,
+	.nodes = {
+		{
+			.xpath = NULL,
+		}
+	}
+};
+
 static const struct frr_yang_module_info frr_if_info = {
 	.name = "frr-interface",
 	.ignore_cfg_cbs = true,
@@ -127,11 +139,42 @@ static const struct frr_yang_module_info frr_vrf_info = {
 	}
 };
 
+static const struct frr_yang_module_info frr_zebra_info = {
+	.name = "frr-zebra",
+	.ignore_cfg_cbs = true,
+	.nodes = {
+		{
+			.xpath = "/frr-zebra:zebra",
+			.cbs.notify = async_notification,
+		},
+		{
+			.xpath = NULL,
+		}
+	}
+};
+
+static const struct frr_yang_module_info frr_test_config_info = {
+	.name = "frr-test-config",
+	.nodes = {
+		{
+			.xpath = "/frr-test-config:frr-test-config/test-value",
+			.cbs.modify = test_config_modify,
+			.cbs.destroy = test_config_destroy,
+		},
+		{
+			.xpath = NULL,
+		}
+	}
+};
+
 static const struct frr_yang_module_info *const mgmt_yang_modules[] = {
 	&frr_backend_info,
 	&frr_if_info,
 	&frr_ripd_info,
+	&frr_routing_info,
+	&frr_test_config_info,
 	&frr_vrf_info,
+	&frr_zebra_info,
 };
 
 FRR_DAEMON_INFO(mgmtd_testc, MGMTD_TESTC,
@@ -150,8 +193,10 @@ FRR_DAEMON_INFO(mgmtd_testc, MGMTD_TESTC,
 	);
 /* clang-format on */
 
+const char **_config_xpaths;
 const char **_notif_xpaths;
 const char **_rpc_xpaths;
+const char **_oper_xpaths;
 
 struct mgmt_be_client_cbs _client_cbs = {};
 struct event *event_timeout;
@@ -172,8 +217,10 @@ static void sigusr1(void)
 
 static FRR_NORETURN void quit(int exit_code)
 {
+	mgmt_be_client_destroy(mgmt_be_client);
+
 	event_cancel(&event_timeout);
-	darr_free(_client_cbs.config_xpaths);
+	darr_free(_config_xpaths);
 	darr_free(_client_cbs.oper_xpaths);
 	darr_free(_client_cbs.notify_xpaths);
 	darr_free(_client_cbs.rpc_xpaths);
@@ -201,14 +248,40 @@ static FRR_NORETURN void success(struct event *event)
 	quit(0);
 }
 
+static const char *notify_op_name(uint8_t op)
+{
+	static char val[10];
+
+	switch (op) {
+	case NOTIFY_OP_DS_REPLACE:
+		return "replace";
+	case NOTIFY_OP_DS_DELETE:
+		return "delete";
+	case NOTIFY_OP_DS_PATCH:
+		return "patch";
+	case NOTIFY_OP_DS_GET_SYNC:
+		return "sync";
+	case NOTIFY_OP_NOTIFICATION:
+		return "notification";
+	};
+	snprintf(val, sizeof(val), "UNK(%d)", op);
+	return val;
+}
+
+
 static void _ds_notification(struct nb_cb_notify_args *args)
 {
-	uint8_t *output = NULL;
+	char *output = NULL;
 
-	zlog_notice("Received YANG datastore notification: op %u", args->op);
+	if (args->dnode)
+		output = (char *)yang_print_tree(args->dnode, LYD_JSON, LYD_PRINT_SHRINK);
+
+	zlog_notice("Received YANG notification: op %s: xpath: %s%s%s", notify_op_name(args->op),
+		    args->xpath, output ? ":\n" : "", output ?: "");
 
 	if (args->op == NOTIFY_OP_NOTIFICATION) {
-		zlog_warn("ignoring non-datastore op notification: %s", args->xpath);
+		zlog_warn("ignoring non-datastore op notification");
+		darr_free(output);
 		return;
 	}
 
@@ -231,13 +304,10 @@ static void _ds_notification(struct nb_cb_notify_args *args)
 		quit(1);
 	}
 
-	if (args->dnode && args->op != NOTIFY_OP_DS_DELETE) {
-		output = yang_print_tree(args->dnode, LYD_JSON, LYD_PRINT_SHRINK);
-		if (output) {
-			printfrr("%s\n", output);
-			darr_free(output);
-		}
-	}
+	if (output && args->op != NOTIFY_OP_DS_DELETE)
+		printfrr("%s\n", output);
+	darr_free(output);
+
 	fflush(stdout);
 
 	if (o_notif_count && !--o_notif_count)
@@ -246,10 +316,11 @@ static void _ds_notification(struct nb_cb_notify_args *args)
 
 static void _notification(struct nb_cb_notify_args *args)
 {
-	zlog_notice("Received YANG notification: op: %u", args->op);
+	zlog_notice("Received YANG notification: %s: xpath: %s", notify_op_name(args->op),
+		    args->xpath);
 
 	if (args->op != NOTIFY_OP_NOTIFICATION) {
-		zlog_warn("ignoring datastore notification: op: %u: path %s", args->op, args->xpath);
+		zlog_warn("ignoring datastore notification");
 		return;
 	}
 
@@ -267,6 +338,28 @@ static void async_notification(struct nb_cb_notify_args *args)
 		_ds_notification(args);
 	else
 		_notification(args);
+}
+
+static int test_config_modify(struct nb_cb_modify_args *args)
+{
+	const char *value;
+
+	if (args->event != NB_EV_APPLY)
+		return NB_OK;
+
+	value = yang_dnode_get_string(args->dnode, NULL);
+	snprintf(args->errmsg, args->errmsg_len, "test-value set to '%s'", value);
+
+	return NB_OK;
+}
+
+static int test_config_destroy(struct nb_cb_destroy_args *args)
+{
+	if (args->event != NB_EV_APPLY)
+		return NB_OK;
+
+	snprintf(args->errmsg, args->errmsg_len, "test-value deleted");
+	return NB_OK;
 }
 
 static int rpc_callback(struct nb_cb_rpc_args *args)
@@ -345,6 +438,14 @@ int main(int argc, char **argv)
 		_client_cbs.notify_xpaths = _notif_xpaths;
 		_client_cbs.nnotify_xpaths = darr_len(_notif_xpaths);
 	}
+
+	darr_push(_config_xpaths, "/frr-test-config:frr-test-config");
+	_client_cbs.config_xpaths = _config_xpaths;
+	_client_cbs.nconfig_xpaths = darr_len(_config_xpaths);
+
+	darr_push(_oper_xpaths, "/frr-backend:clients");
+	_client_cbs.oper_xpaths = _oper_xpaths;
+	_client_cbs.noper_xpaths = darr_len(_oper_xpaths);
 
 	darr_push(_rpc_xpaths, "/frr-ripd:clear-rip-route");
 	_client_cbs.rpc_xpaths = _rpc_xpaths;

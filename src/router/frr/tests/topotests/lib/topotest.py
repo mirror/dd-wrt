@@ -1288,7 +1288,7 @@ def _sysctl_assure(commander, variable, value):
         else:
             valstr = str(value)
         logger.debug("Changing sysctl %s from %s to %s", variable, cur_val, valstr)
-        commander.cmd_raises('sysctl -w {}="{}"\n'.format(variable, valstr))
+        commander.cmd_raises('sysctl -w {}="{}"'.format(variable, valstr))
 
 
 def sysctl_atleast(commander, variable, min_value, raises=False):
@@ -1451,6 +1451,42 @@ class Router(Node):
 
     gdb_emacs_router = None
 
+    # Daemon stop order, mirroring the production init scripts
+    # (tools/frrcommon.sh.in). all_stop() there signals daemons in the reverse
+    # of the $DAEMONS start order, so this is that reversed list. Daemons not
+    # present here (e.g. fpm_listener, snmpd) sort before everything else.
+    # Keep this in sync with $DAEMONS in tools/frrcommon.sh.in.
+    FRR_DAEMON_STOP_ORDER = {
+        name: index
+        for index, name in enumerate(
+            reversed(
+                [
+                    "mgmtd",
+                    "zebra",
+                    "bfdd",
+                    "bgpd",
+                    "ripd",
+                    "ripngd",
+                    "ospfd",
+                    "ospf6d",
+                    "isisd",
+                    "babeld",
+                    "pimd",
+                    "pim6d",
+                    "ldpd",
+                    "nhrpd",
+                    "eigrpd",
+                    "sharpd",
+                    "pbrd",
+                    "staticd",
+                    "fabricd",
+                    "vrrpd",
+                    "pathd",
+                ]
+            )
+        )
+    }
+
     def __init__(self, name, *posargs, **params):
         # Backward compatibility:
         #   Load configuration defaults like topogen.
@@ -1489,6 +1525,17 @@ class Router(Node):
         self.hasmpls = False
         self.routertype = "frr"
         self.unified_config = False
+        # Control how unified configs are initially rendered. By default we
+        # render /etc/frr/frr.conf via "vtysh -f" after daemons are up.
+        # Individual tests can override this flag (e.g., to drive config via
+        # tools/frr-reload.py instead).
+        self.skip_unified_vtysh = False
+        # Control whether startRouter() flushes all IP addresses from kernel
+        # interfaces before daemons are started. Some tests intentionally
+        # manage all interface addresses via Linux iproute2 (not via FRR
+        # interface config); they can set this to True to prevent those
+        # addresses from being removed.
+        self.skip_remove_ips = False
         self.daemons = {
             "zebra": 0,
             "ripd": 0,
@@ -1612,13 +1659,47 @@ class Router(Node):
         return ret
 
     def stopRouter(self, assertOnError=True):
+        # fpm_listener writes its PID file to the gear log directory (next to
+        # its data dump), not to /var/run/frr/, so listDaemons() can't see it.
+        # Send it SIGTERM first and give it a brief moment to run its atexit
+        # handlers (in particular gcov flush under --enable-gcov) before the
+        # namespace teardown SIGKILLs it. This must happen before listDaemons()
+        # below sends SIGTERM to the FRR daemons because once zebra exits the
+        # FPM client side closes the socket and we want fpm_listener's last
+        # accept loop iteration to be reflected in coverage.
+        fpm_pidfile = "{}/{}/fpm_listener.pid".format(self.logdir, self.name)
+        try:
+            with open(fpm_pidfile) as f:
+                fpm_pid = int(f.read().strip())
+            try:
+                os.kill(fpm_pid, signal.SIGTERM)
+                logger.debug(
+                    "%s: sent SIGTERM to fpm_listener pid %d", self.name, fpm_pid
+                )
+            except OSError:
+                pass
+            time.sleep(0.1)
+        except (FileNotFoundError, ValueError):
+            pass
+
         # Stop Running FRR Daemons
         running = self.listDaemons()
         if not running:
             return ""
 
-        logger.info("%s: stopping %s", self.name, ", ".join([x[0] for x in running]))
-        for name, pid in running:
+        # Shut the daemons down in the same order that the production init
+        # scripts use (tools/frrcommon.sh.in, all_stop()): the daemons are
+        # signalled in the reverse of the $DAEMONS start order and then waited
+        # on together, rather than being stopped one strict group at a time.
+        # FRR_DAEMON_STOP_ORDER below is the reverse of frrcommon.sh.in's
+        # $DAEMONS; keep the two in sync.
+        ordered = sorted(
+            running, key=lambda nv: Router.FRR_DAEMON_STOP_ORDER.get(nv[0], -1)
+        )
+
+        names = ", ".join([x[0] for x in ordered])
+        logger.info("%s: stopping %s", self.name, names)
+        for name, pid in ordered:
             logger.debug("{}: sending SIGTERM to {}".format(self.name, name))
             try:
                 os.kill(pid, signal.SIGTERM)
@@ -1811,8 +1892,16 @@ class Router(Node):
         # TODO remove the following lines after all tests are migrated to Topogen.
         # Try to find relevant old logfiles in /tmp and delete them
         map(os.remove, glob.glob("{}/{}/*.log".format(self.logdir, self.name)))
-        # Remove IP addresses from OS first - we have them in zebra.conf
-        self.removeIPs()
+        # Remove IP addresses from OS first - we have them in zebra.conf, unless
+        # this router is explicitly configured to manage addresses purely via
+        # Linux iproute2.
+        if not self.skip_remove_ips:
+            self.removeIPs()
+        else:
+            logger.info(
+                "%s: skipping initial IP address flush; addresses managed externally",
+                self.name,
+            )
         # If ldp is used, check for LDP to be compiled and Linux Kernel to be 4.5 or higher
         # No error - but return message and skip all the tests
         if self.daemons["ldpd"] == 1:
@@ -1872,7 +1961,6 @@ class Router(Node):
             self.run_in_window("vtysh", title="vt-%s" % self.name)
 
         if self.unified_config:
-
             # Check that none of the datastores are locked before proceeding
             def check_datastores_unlocked():
                 """Check that all datastores are unlocked"""
@@ -1902,7 +1990,18 @@ class Router(Node):
                 )
                 return "Datastores are locked, cannot proceed with config load"
 
-            self.cmd("vtysh -f /etc/frr/frr.conf")
+            # By default, render frr.conf into the running config via vtysh.
+            # Tests that want to drive config via frr-reload.py (or other
+            # mechanisms) can set skip_unified_vtysh = True on the router
+            # instance before calling start_router().
+            if not self.skip_unified_vtysh:
+                self.cmd("vtysh -f /etc/frr/frr.conf")
+            else:
+                logger.info(
+                    "%s: skipping initial 'vtysh -f /etc/frr/frr.conf'; "
+                    "config will be applied externally (e.g., via frr-reload.py)",
+                    self.name,
+                )
 
         return status
 
@@ -1940,7 +2039,8 @@ class Router(Node):
         # Get global bundle data
         if not self.path_exists("/etc/frr/support_bundle_commands.conf"):
             logger.info(
-                "No support bundle commands.conf found in %s namespace, copying them over", self.name
+                "No support bundle commands.conf found in %s namespace, copying them over",
+                self.name,
             )
             # Copy global value if was covered by namespace mount
             bundle_data = ""
@@ -1948,7 +2048,9 @@ class Router(Node):
                 with open("/etc/frr/support_bundle_commands.conf", "r") as rf:
                     bundle_data = rf.read()
             else:
-                logger.warning("No support bundle commands.conf found, please install them on this system")
+                logger.warning(
+                    "No support bundle commands.conf found, please install them on this system"
+                )
             self.cmd_raises(
                 "cat > /etc/frr/support_bundle_commands.conf",
                 stdin=bundle_data,
@@ -2093,6 +2195,15 @@ class Router(Node):
                     cmdenv = "strace -f -D -o {1}/{2}.strace.{0} ".format(
                         daemon, self.logdir, self.name
                     )
+
+                # Optional LTTng: liblttng-ust-fork must be preloaded when starting FRR
+                # daemons (same idea as frrcommon.sh for bgpd/zebra/bfdd). Tests set
+                # TOPOTEST_FRR_LTTNG_FORK_PRELOAD to that .so path.
+                # Put LD_PRELOAD only on this daemon command line — do not export it for
+                # the whole pytest process, or munet/nsenter can fail (e.g. on WSL2).
+                lttng_fork_pre = os.environ.get("TOPOTEST_FRR_LTTNG_FORK_PRELOAD", "")
+                if lttng_fork_pre:
+                    cmdenv = "LD_PRELOAD={} {}".format(lttng_fork_pre, cmdenv)
 
                 cmdopt = "{} --command-log-always ".format(daemon_opts)
                 if instance != None:
@@ -2624,11 +2735,11 @@ class Router(Node):
                 dname,
             )
             reportMade = True
-        return reportMade
+        return reportMade, traces
 
     def checkRouterCores(self, reportLeaks=True, reportOnce=False):
         if reportOnce and not self.reportCores:
-            return
+            return ""
         reportMade = False
         traces = ""
         for daemon in self.daemons:
@@ -2638,9 +2749,15 @@ class Router(Node):
                     and len(self.daemon_instances[daemon]) > 0
                 ):
                     for inst in self.daemon_instances[daemon]:
-                        self.check_daemon(daemon, reportLeaks, traces, inst)
+                        daemon_reported, traces = self.check_daemon(
+                            daemon, reportLeaks, traces, inst
+                        )
+                        reportMade = reportMade or daemon_reported
                 else:
-                    self.check_daemon(daemon, reportLeaks, traces)
+                    daemon_reported, traces = self.check_daemon(
+                        daemon, reportLeaks, traces
+                    )
+                    reportMade = reportMade or daemon_reported
 
         if reportMade:
             self.reportCores = False

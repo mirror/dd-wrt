@@ -656,12 +656,12 @@ int pim_parse_addr_source(pim_sgaddr *sg, uint8_t *flags, const uint8_t *buf,
 	}
 
 int pim_tlv_parse_addr_list(const char *ifname, pim_addr src_addr,
-			    pim_hello_options *hello_options,
-			    struct list **hello_option_addr_list,
-			    uint16_t option_len, const uint8_t *tlv_curr)
+			    pim_hello_options *hello_options, struct list **hello_option_addr_list,
+			    uint16_t option_len, const uint8_t *tlv_curr, unsigned int max_addrs)
 {
 	const uint8_t *addr;
 	const uint8_t *pastend;
+	unsigned int stored_count = 0;
 
 	assert(hello_option_addr_list);
 
@@ -694,17 +694,12 @@ int pim_tlv_parse_addr_list(const char *ifname, pim_addr src_addr,
 		if (PIM_DEBUG_PIM_TRACE) {
 			switch (tmp.family) {
 			case AF_INET: {
-				char addr_str[INET_ADDRSTRLEN];
-				pim_inet4_dump("<addr?>", tmp.u.prefix4,
-					       addr_str, sizeof(addr_str));
-				zlog_debug(
-					"%s: PIM hello TLV option: list_old_size=%d IPv4 address %s from %pPAs on %s",
-					__func__,
-					*hello_option_addr_list
-						? ((int)listcount(
-							  *hello_option_addr_list))
-						: -1,
-					addr_str, &src_addr, ifname);
+				zlog_debug("%s: PIM hello TLV option: list_old_size=%d IPv4 address %pI4s from %pPAs on %s",
+					   __func__,
+					   *hello_option_addr_list
+						   ? ((int)listcount(*hello_option_addr_list))
+						   : -1,
+					   &tmp.u.prefix4, &src_addr, ifname);
 			} break;
 			case AF_INET6:
 				break;
@@ -731,6 +726,16 @@ int pim_tlv_parse_addr_list(const char *ifname, pim_addr src_addr,
 				__func__, &src_addr, ifname);
 			continue;
 		}
+
+		if (stored_count >= max_addrs) {
+			if (PIM_DEBUG_PIM_HELLO)
+				zlog_debug("%s: secondary address list exceeds max=%u (option_len=%u): from %pPAs on %s",
+					   __func__, max_addrs, option_len, &src_addr, ifname);
+			FREE_ADDR_LIST(*hello_option_addr_list);
+			return -2;
+		}
+
+		stored_count++;
 
 		/*
 		  Allocate list if needed

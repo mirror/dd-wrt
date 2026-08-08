@@ -196,8 +196,9 @@ static void zebra_vrf_disable_update_vrfid(struct zebra_vrf *zvrf, afi_t afi, sa
 		 */
 		rn_delete = true;
 		RNODE_FOREACH_RE_SAFE (rn, re, nre) {
-			if (re->type == ZEBRA_ROUTE_KERNEL ||
-			    CHECK_FLAG(re->flags, ZEBRA_FLAG_TABLEID)) {
+			if (!zebra_router_in_shutdown() &&
+			    (re->type == ZEBRA_ROUTE_KERNEL ||
+			     CHECK_FLAG(re->flags, ZEBRA_FLAG_TABLEID))) {
 				nexthop_vrf_update(rn, re, VRF_DEFAULT);
 				if (CHECK_FLAG(re->flags, ZEBRA_FLAG_TABLEID))
 					/* reinstall routes */
@@ -416,7 +417,7 @@ static void zebra_rnhtable_node_cleanup(struct route_table *table,
 					struct route_node *node)
 {
 	if (node->info)
-		zebra_free_rnh(node->info);
+		zebra_rnh_node_cleanup(node);
 }
 
 /*

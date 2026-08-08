@@ -98,7 +98,7 @@ static void encap_attr_export_ce(struct attr *new, struct attr *orig,
 	if (!CHECK_FLAG(new->flag, ATTR_FLAG_BIT(BGP_ATTR_MULTI_EXIT_DISC))) {
 		uint32_t med = 255;
 
-		if (CHECK_FLAG(new->flag, ATTR_FLAG_BIT(BGP_ATTR_LOCAL_PREF))) {
+		if (bgp_attr_exists(new, BGP_ATTR_LOCAL_PREF)) {
 			if (new->local_pref > 255)
 				med = 0;
 			else
@@ -645,7 +645,7 @@ encap_attr_export(struct attr *new, struct attr *orig,
 	if (!CHECK_FLAG(new->flag, ATTR_FLAG_BIT(BGP_ATTR_MULTI_EXIT_DISC))) {
 		uint32_t med = 255;
 
-		if (CHECK_FLAG(new->flag, ATTR_FLAG_BIT(BGP_ATTR_LOCAL_PREF))) {
+		if (bgp_attr_exists(new, BGP_ATTR_LOCAL_PREF)) {
 			if (new->local_pref > 255)
 				med = 0;
 			else
@@ -1759,7 +1759,7 @@ void vnc_direct_bgp_rh_del_route(struct bgp *bgp, afi_t afi,
 	eti = vnc_eti_get(bgp, EXPORT_TYPE_BGP, prefix, peer,
 			  ZEBRA_ROUTE_VNC_DIRECT_RH, BGP_ROUTE_REDISTRIBUTE);
 
-	if (!eti->timer && eti->lifetime <= INT32_MAX) {
+	if (!event_is_scheduled(eti->timer) && eti->lifetime <= INT32_MAX) {
 		eti->timer = NULL;
 		event_add_timer(bm->master, vncExportWithdrawTimer, eti,
 				eti->lifetime, &eti->timer);

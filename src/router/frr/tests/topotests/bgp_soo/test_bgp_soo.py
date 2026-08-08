@@ -10,6 +10,16 @@
 Test if BGP SoO per neighbor works correctly. Routes having SoO
 extended community MUST be rejected if the neighbor is configured
 with soo (neighbor soo).
+
+test_bgp_soo() validates the core SoO functionality:
+- PE1 attaches SoO 65000:1 to routes received from CPE1
+- PE2 imports these routes via VPN
+- When PE2 has "neighbor soo 65000:1" configured for CPE2, routes
+  with matching SoO are filtered (not advertised to CPE2)
+
+The remaining tests use this SoO/VPN topology to validate the JSON
+output format for neighbor routes and advertised-routes commands.
+They verify JSON structure and path counts, not SoO behavior.
 """
 
 import os
@@ -26,7 +36,7 @@ from lib import topotest
 from lib.topogen import Topogen, TopoRouter, get_topogen
 from lib.common_config import step
 
-pytestmark = [pytest.mark.bgpd]
+pytestmark = [pytest.mark.bgpd, pytest.mark.ldpd, pytest.mark.ospfd]
 
 
 def build_topo(tgen):
@@ -88,6 +98,9 @@ def setup_module(mod):
         )
 
     tgen.start_router()
+
+    for _, (_, router) in enumerate(router_list.items(), 1):
+        router.run("sysctl -w net.ipv6.conf.all.forwarding=1")
 
 
 def teardown_module(mod):
@@ -166,6 +179,313 @@ def test_bgp_soo():
     test_func = functools.partial(_bgp_soo_unconfigured)
     _, result = topotest.run_and_expect(test_func, None, count=30, wait=0.5)
     assert result is None, "SoO filtering does not work from pe2"
+
+
+def test_bgp_soo_pe1_neighbor_routes_json():
+    """
+    PE1 (VRF RED): routes learned from CPE1 (192.168.1.1) as full JSON — four
+    VPN prefixes with path arrays; totals match RIB size for this view.
+    """
+    tgen = get_topogen()
+
+    pe1 = tgen.gears["pe1"]
+
+    if tgen.routers_have_failure():
+        pytest.skip(tgen.errors)
+
+    def _pe1_routes_json():
+        output = json.loads(
+            pe1.vtysh_cmd(
+                "show bgp vrf RED ipv4 unicast neighbors 192.168.1.1 routes json"
+            )
+        )
+        expected = {
+            "routes": {
+                "10.0.0.0/24": [
+                    {
+                        "valid": True,
+                        "bestpath": True,
+                        "network": "10.0.0.0/24",
+                        "peerId": "192.168.1.1",
+                    }
+                ],
+                "172.16.255.1/32": [
+                    {
+                        "valid": True,
+                        "bestpath": True,
+                        "network": "172.16.255.1/32",
+                        "peerId": "192.168.1.1",
+                    }
+                ],
+                "192.168.1.0/24": [
+                    {
+                        "valid": True,
+                        "bestpath": True,
+                        "network": "192.168.1.0/24",
+                        "peerId": "192.168.1.1",
+                    }
+                ],
+                "192.168.2.0/24": [
+                    {
+                        "valid": True,
+                        "bestpath": True,
+                        "network": "192.168.2.0/24",
+                        "peerId": "192.168.1.1",
+                    }
+                ],
+            },
+            "totalRoutes": 4,
+            "totalPaths": 8,
+            "numRoutes": 4,
+        }
+        return topotest.json_cmp(output, expected)
+
+    test_func = functools.partial(_pe1_routes_json)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=0.5)
+    assert (
+        result is None
+    ), "PE1 vrf RED neighbor 192.168.1.1 routes json missing expected prefixes or totals"
+
+
+def test_bgp_soo_pe1_neighbor_routes_brief_json():
+    """
+    PE1 (VRF RED): neighbor routes json brief — per-prefix pathCount, multipath
+    aggregate, and bestPathExists under routes{}.
+    """
+    tgen = get_topogen()
+
+    pe1 = tgen.gears["pe1"]
+
+    if tgen.routers_have_failure():
+        pytest.skip(tgen.errors)
+
+    def _pe1_routes_brief_json():
+        output = json.loads(
+            pe1.vtysh_cmd(
+                "show bgp vrf RED ipv4 unicast neighbors 192.168.1.1 "
+                "routes json brief"
+            )
+        )
+        expected = {
+            "routes": {
+                "10.0.0.0/24": {
+                    "flags": {"bestPathExists": True},
+                    "pathCount": 1,
+                    "multiPathCount": 1,
+                },
+                "172.16.255.1/32": {
+                    "flags": {"bestPathExists": True},
+                    "pathCount": 1,
+                    "multiPathCount": 1,
+                },
+                "192.168.1.0/24": {
+                    "flags": {"bestPathExists": True},
+                    "pathCount": 1,
+                    "multiPathCount": 1,
+                },
+                "192.168.2.0/24": {
+                    "flags": {"bestPathExists": True},
+                    "pathCount": 1,
+                    "multiPathCount": 1,
+                },
+            },
+            "totalRoutes": 4,
+            "totalPaths": 8,
+            "numRoutes": 4,
+        }
+        return topotest.json_cmp(output, expected)
+
+    test_func = functools.partial(_pe1_routes_brief_json)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=0.5)
+    assert (
+        result is None
+    ), "PE1 vrf RED neighbor routes json brief does not match expected shape"
+
+
+def test_bgp_soo_cpe1_neighbor_ipv6_routes_json():
+    """
+    CPE1 (default vrf): IPv6 neighbor routes JSON from iBGP peer cpe2
+    (2001:db8:10::2). PE vrf RED may have no IPv6 CE session; this topology
+    still exercises neighbor routes json on CPE. Remote 2001:db8:2::/64 is
+    best; peering 2001:db8:10::/64 is valid from peer but has no best path in
+    this neighbor view (local connected / duplicate resolution).
+    """
+    tgen = get_topogen()
+
+    cpe1 = tgen.gears["cpe1"]
+
+    if tgen.routers_have_failure():
+        pytest.skip(tgen.errors)
+
+    def _cpe1_routes_v6_json():
+        output = json.loads(
+            cpe1.vtysh_cmd(
+                "show bgp vrf default ipv6 unicast neighbors 2001:db8:10::2 "
+                "routes json"
+            )
+        )
+        expected = {
+            "routes": {
+                "2001:db8:2::/64": [
+                    {
+                        "valid": True,
+                        "bestpath": True,
+                        "network": "2001:db8:2::/64",
+                        "peerId": "2001:db8:10::2",
+                    }
+                ],
+                "2001:db8:10::/64": [
+                    {
+                        "valid": True,
+                        "bestpath": None,
+                        "network": "2001:db8:10::/64",
+                        "peerId": "2001:db8:10::2",
+                    }
+                ],
+            },
+            "totalRoutes": 2,
+            "totalPaths": 5,
+            "numRoutes": 2,
+        }
+        return topotest.json_cmp(output, expected)
+
+    test_func = functools.partial(_cpe1_routes_v6_json)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=0.5)
+    assert result is None, (
+        "CPE1 default ipv6 neighbor 2001:db8:10::2 routes json does not match "
+        "expected prefixes or totals"
+    )
+
+
+def test_bgp_soo_cpe1_neighbor_ipv6_routes_json_brief():
+    """CPE1 (default): neighbor IPv6 routes json brief — two-prefix iBGP view."""
+    tgen = get_topogen()
+
+    cpe1 = tgen.gears["cpe1"]
+
+    if tgen.routers_have_failure():
+        pytest.skip(tgen.errors)
+
+    def _cpe1_routes_v6_brief():
+        output = json.loads(
+            cpe1.vtysh_cmd(
+                "show bgp vrf default ipv6 unicast neighbors 2001:db8:10::2 "
+                "routes json brief"
+            )
+        )
+        expected = {
+            "routes": {
+                "2001:db8:2::/64": {
+                    "flags": {"bestPathExists": True},
+                    "pathCount": 1,
+                    "multiPathCount": 1,
+                },
+                "2001:db8:10::/64": {
+                    "flags": {"bestPathExists": False},
+                    "pathCount": 1,
+                    "multiPathCount": 0,
+                },
+            },
+            "totalRoutes": 2,
+            "totalPaths": 5,
+            "numRoutes": 2,
+        }
+        return topotest.json_cmp(output, expected)
+
+    test_func = functools.partial(_cpe1_routes_v6_brief)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=0.5)
+    assert (
+        result is None
+    ), "CPE1 default ipv6 neighbor routes json brief does not match expected shape"
+
+
+def test_bgp_soo_ipv4_advertised_routes_brief_json():
+    """
+    CPE1 (vrf default): neighbor advertised-routes json brief lists redistributed
+    and learned prefixes with flags and path counts.
+    """
+    tgen = get_topogen()
+
+    cpe1 = tgen.gears["cpe1"]
+
+    if tgen.routers_have_failure():
+        pytest.skip(tgen.errors)
+
+    def _ipv4_adv_brief():
+        output = json.loads(
+            cpe1.vtysh_cmd(
+                "show bgp vrf default ipv4 unicast neighbors 192.168.1.2 "
+                "advertised-routes json brief"
+            )
+        )
+        expected = {
+            "advertisedRoutes": {
+                "10.0.0.0/24": {
+                    "flags": {"bestPathExists": True},
+                    "pathCount": 2,
+                    "multiPathCount": 1,
+                },
+                "172.16.255.1/32": {
+                    "flags": {"bestPathExists": True},
+                    "pathCount": 1,
+                    "multiPathCount": 1,
+                },
+                "192.168.1.0/24": {
+                    "flags": {"bestPathExists": True},
+                    "pathCount": 1,
+                    "multiPathCount": 1,
+                },
+                "192.168.2.0/24": {
+                    "flags": {"bestPathExists": True},
+                    "pathCount": 1,
+                    "multiPathCount": 1,
+                },
+            }
+        }
+        return topotest.json_cmp(output, expected)
+
+    test_func = functools.partial(_ipv4_adv_brief)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=0.5)
+    assert (
+        result is None
+    ), "IPv4 advertised-routes json brief on cpe1 does not match expected prefixes/shape"
+
+
+def test_bgp_soo_ipv6_advertised_routes_brief_json():
+    """
+    CPE2 runs BGP in vrf default; IPv6 eBGP to PE2 (2001:db8:2::2). Redistributed
+    connected 2001:db8:2::/64 appears in neighbor advertised-routes json brief.
+    """
+    tgen = get_topogen()
+
+    cpe2 = tgen.gears["cpe2"]
+
+    if tgen.routers_have_failure():
+        pytest.skip(tgen.errors)
+
+    def _ipv6_adv_brief():
+        output = json.loads(
+            cpe2.vtysh_cmd(
+                "show bgp vrf default ipv6 unicast neighbors 2001:db8:2::2 "
+                "advertised-routes json brief"
+            )
+        )
+        expected = {
+            "advertisedRoutes": {
+                "2001:db8:2::/64": {
+                    "flags": {"bestPathExists": "*"},
+                    "pathCount": "*",
+                    "multiPathCount": "*",
+                }
+            }
+        }
+        return topotest.json_cmp(output, expected)
+
+    test_func = functools.partial(_ipv6_adv_brief)
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=0.5)
+    assert (
+        result is None
+    ), "IPv6 advertised-routes json brief missing 2001:db8:2::/64 or expected shape on cpe2"
 
 
 if __name__ == "__main__":

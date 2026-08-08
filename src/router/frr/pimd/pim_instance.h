@@ -15,10 +15,12 @@
 #include "pim_bsm.h"
 #include "pim_vxlan_instance.h"
 #include "pim_oil.h"
+#include "pim_routemap.h"
 #include "pim_upstream.h"
 #include "pim_mroute.h"
 #include "pim_autorp.h"
 #include "pim_nht.h"
+#include "pim_static.h"
 
 enum pim_spt_switchover {
 	PIM_SPT_IMMEDIATE,
@@ -127,7 +129,7 @@ struct pim_instance {
 
 	int send_v6_secondary;
 
-	struct event *thread;
+	struct event *event;
 	int mroute_socket;
 	int reg_sock; /* Socket to send register msg */
 	int64_t mroute_socket_creation;
@@ -140,6 +142,8 @@ struct pim_instance {
 
 	// List of static routes;
 	struct list *static_routes;
+	/* Static mroutes waiting for interface/VIF readiness at boot. */
+	struct pim_static_route_cfgs_head static_route_configs;
 
 	// Upstream vrf specific information
 	struct rb_pim_upstream_head upstream_head;
@@ -210,6 +214,9 @@ struct pim_instance {
 #define PIM_MSDP_LOG_NEIGHBOR_EVENTS 0x01
 /** Log SA event messages. */
 #define PIM_MSDP_LOG_SA_EVENTS 0x02
+
+	/* Filter on received PIM joins */
+	struct pim_filter_ref join_filter;
 
 	bool stopping;
 

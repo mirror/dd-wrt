@@ -181,6 +181,21 @@ struct pim_jp {
 	struct pim_jp_groups groups[1];
 } __attribute__((packed));
 
+static inline bool pim_sgaddr_enough_space(int buf_size)
+{
+	if (buf_size < 0)
+		return false;
+
+#if PIM_IPV == 4
+	if ((size_t)buf_size < sizeof(struct ip))
+		return false;
+#else
+	if ((size_t)buf_size < sizeof(struct ip6_hdr))
+		return false;
+#endif
+	return true;
+}
+
 #if PIM_IPV == 4
 static inline pim_sgaddr pim_sgaddr_from_iphdr(const void *iphdr)
 {
@@ -226,7 +241,4 @@ uint8_t *pim_msg_addr_encode_ucast(uint8_t *buf, pim_addr addr);
 uint8_t *pim_msg_addr_encode_group(uint8_t *buf, pim_addr addr);
 uint8_t *pim_msg_addr_encode_source(uint8_t *buf, pim_addr addr, uint8_t bits);
 
-size_t pim_msg_get_jp_group_size(struct list *sources);
-size_t pim_msg_build_jp_groups(struct pim_jp_groups *grp,
-			       struct pim_jp_agg_group *sgs, size_t size);
 #endif /* PIM_MSG_H */

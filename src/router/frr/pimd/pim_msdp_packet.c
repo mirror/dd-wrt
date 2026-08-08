@@ -89,11 +89,8 @@ static void pim_msdp_pkt_sa_dump(struct stream *s)
 	entry_cnt = stream_getc(s);
 	rp.s_addr = stream_get_ipv4(s);
 
-	if (PIM_DEBUG_MSDP_PACKETS) {
-		char rp_str[INET_ADDRSTRLEN];
-		pim_inet4_dump("<rp?>", rp, rp_str, sizeof(rp_str));
-		zlog_debug("  entry_cnt %d rp %s", entry_cnt, rp_str);
-	}
+	if (PIM_DEBUG_MSDP_PACKETS)
+		zlog_debug("  entry_cnt %d rp %pI4s", entry_cnt, &rp);
 
 	payload_length = (size_t)entry_cnt * PIM_MSDP_SA_ONE_ENTRY_SIZE;
 	if (payload_length > STREAM_READABLE(s)) {
@@ -194,7 +191,7 @@ static void pim_msdp_write_proceed_actions(struct pim_msdp_peer *mp)
 	}
 }
 
-void pim_msdp_write(struct event *thread)
+void pim_msdp_write(struct event *event)
 {
 	struct pim_msdp_peer *mp;
 	struct stream *s;
@@ -204,8 +201,7 @@ void pim_msdp_write(struct event *thread)
 	int work_cnt = 0;
 	int work_max_cnt = 100;
 
-	mp = EVENT_ARG(thread);
-	mp->t_write = NULL;
+	mp = EVENT_ARG(event);
 
 	if (PIM_DEBUG_MSDP_INTERNAL) {
 		zlog_debug("MSDP peer %s pim_msdp_write", mp->key_str);
@@ -610,8 +606,9 @@ static void pim_msdp_pkt_sa_rx_one(struct pim_msdp_peer *mp, struct in_addr rp)
 		if (pim_msdp_peer_rpf_check(peer, rp))
 			continue;
 		/* Don't forward inside the meshed group. */
-		if ((mp->flags & PIM_MSDP_PEERF_IN_GROUP)
-		    && strcmp(mp->mesh_group_name, peer->mesh_group_name) == 0)
+		if ((mp->flags & PIM_MSDP_PEERF_IN_GROUP) &&
+		    (peer->flags & PIM_MSDP_PEERF_IN_GROUP) &&
+		    strcmp(mp->mesh_group_name, peer->mesh_group_name) == 0)
 			continue;
 
 		pim_msdp_pkt_sa_tx_one_to_one_peer(peer, rp, sg);
@@ -657,11 +654,8 @@ static void pim_msdp_pkt_sa_rx(struct pim_msdp_peer *mp, int len)
 	}
 	rp.s_addr = stream_get_ipv4(mp->ibuf);
 
-	if (PIM_DEBUG_MSDP_PACKETS) {
-		char rp_str[INET_ADDRSTRLEN];
-		pim_inet4_dump("<rp?>", rp, rp_str, sizeof(rp_str));
-		zlog_debug("  entry_cnt %d rp %s", entry_cnt, rp_str);
-	}
+	if (PIM_DEBUG_MSDP_PACKETS)
+		zlog_debug("  entry_cnt %d rp %pI4s", entry_cnt, &rp);
 
 	pim_msdp_peer_pkt_rxed(mp);
 
@@ -778,14 +772,13 @@ static int pim_msdp_read_packet(struct pim_msdp_peer *mp)
 	return 0;
 }
 
-void pim_msdp_read(struct event *thread)
+void pim_msdp_read(struct event *event)
 {
 	struct pim_msdp_peer *mp;
 	int rc;
 	uint32_t len;
 
-	mp = EVENT_ARG(thread);
-	mp->t_read = NULL;
+	mp = EVENT_ARG(event);
 
 	if (PIM_DEBUG_MSDP_INTERNAL) {
 		zlog_debug("MSDP peer %s pim_msdp_read", mp->key_str);

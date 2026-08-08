@@ -254,10 +254,12 @@ static void ospf6_top_route_hook_add(struct ospf6_route *route)
 {
 	struct ospf6 *ospf6 = NULL;
 	struct ospf6_area *oa = NULL;
+	bool global_scope = false;
 
-	if (route->table->scope_type == OSPF6_SCOPE_TYPE_GLOBAL)
+	if (route->table->scope_type == OSPF6_SCOPE_TYPE_GLOBAL) {
 		ospf6 = route->table->scope;
-	else if (route->table->scope_type == OSPF6_SCOPE_TYPE_AREA) {
+		global_scope = true;
+	} else if (route->table->scope_type == OSPF6_SCOPE_TYPE_AREA) {
 		oa = (struct ospf6_area *)route->table->scope;
 		ospf6 = oa->ospf6;
 	} else {
@@ -271,16 +273,21 @@ static void ospf6_top_route_hook_add(struct ospf6_route *route)
 
 	ospf6_schedule_abr_task(ospf6);
 	ospf6_zebra_route_update_add(route, ospf6);
+	if (global_scope && route->path.type != OSPF6_PATH_TYPE_EXTERNAL1 &&
+	    route->path.type != OSPF6_PATH_TYPE_EXTERNAL2)
+		ospf6_asbr_recalculate_external_routes(ospf6);
 }
 
 static void ospf6_top_route_hook_remove(struct ospf6_route *route)
 {
 	struct ospf6 *ospf6 = NULL;
 	struct ospf6_area *oa = NULL;
+	bool global_scope = false;
 
-	if (route->table->scope_type == OSPF6_SCOPE_TYPE_GLOBAL)
+	if (route->table->scope_type == OSPF6_SCOPE_TYPE_GLOBAL) {
 		ospf6 = route->table->scope;
-	else if (route->table->scope_type == OSPF6_SCOPE_TYPE_AREA) {
+		global_scope = true;
+	} else if (route->table->scope_type == OSPF6_SCOPE_TYPE_AREA) {
 		oa = (struct ospf6_area *)route->table->scope;
 		ospf6 = oa->ospf6;
 	} else {
@@ -295,6 +302,9 @@ static void ospf6_top_route_hook_remove(struct ospf6_route *route)
 	route->flag |= OSPF6_ROUTE_REMOVE;
 	ospf6_schedule_abr_task(ospf6);
 	ospf6_zebra_route_update_remove(route, ospf6);
+	if (global_scope && route->path.type != OSPF6_PATH_TYPE_EXTERNAL1 &&
+	    route->path.type != OSPF6_PATH_TYPE_EXTERNAL2)
+		ospf6_asbr_recalculate_external_routes(ospf6);
 }
 
 static void ospf6_top_brouter_hook_add(struct ospf6_route *route)
@@ -469,8 +479,9 @@ struct ospf6 *ospf6_instance_create(const char *name)
 	return ospf6;
 }
 
-void ospf6_delete(struct ospf6 *o)
+void ospf6_delete(struct ospf6 **po)
 {
+	struct ospf6 *o;
 	struct listnode *node, *nnode;
 	struct route_node *rn = NULL;
 	struct ospf6_area *oa;
@@ -478,6 +489,7 @@ void ospf6_delete(struct ospf6 *o)
 	struct ospf6_external_aggr_rt *aggr;
 	uint32_t i;
 
+	o = *po;
 	QOBJ_UNREG(o);
 
 	ospf6_gr_helper_deinit(o);
@@ -532,6 +544,8 @@ void ospf6_delete(struct ospf6 *o)
 
 	XFREE(MTYPE_OSPF6_TOP, o->name);
 	XFREE(MTYPE_OSPF6_TOP, o);
+
+	*po = NULL;
 }
 
 static void ospf6_disable(struct ospf6 *o)
@@ -579,9 +593,9 @@ void ospf6_master_delete(void)
 	list_delete(&om6->ospf6);
 }
 
-static void ospf6_maxage_remover(struct event *thread)
+static void ospf6_maxage_remover(struct event *event)
 {
-	struct ospf6 *o = (struct ospf6 *)EVENT_ARG(thread);
+	struct ospf6 *o = (struct ospf6 *)EVENT_ARG(event);
 	struct ospf6_area *oa;
 	struct ospf6_interface *oi;
 	struct ospf6_neighbor *on;
@@ -702,8 +716,7 @@ DEFUN(no_router_ospf6, no_router_ospf6_cmd, "no router ospf6 [vrf NAME]",
 		if (ospf6->gr_info.restart_support)
 			ospf6_gr_nvm_delete(ospf6);
 
-		ospf6_delete(ospf6);
-		ospf6 = NULL;
+		ospf6_delete(&ospf6);
 	}
 
 	/* return to config node . */
@@ -891,7 +904,7 @@ DEFUN (no_ospf6_log_adjacency_changes_detail,
 	return CMD_SUCCESS;
 }
 
-static void ospf6_reinstall_routes(struct ospf6 *ospf6)
+void ospf6_reinstall_routes(struct ospf6 *ospf6)
 {
 	struct ospf6_route *route;
 

@@ -42,7 +42,7 @@ RB_GENERATE(vrf_name_head, vrf, name_entry, vrf_name_compare);
 struct vrf_id_head vrfs_by_id = RB_INITIALIZER(&vrfs_by_id);
 struct vrf_name_head vrfs_by_name = RB_INITIALIZER(&vrfs_by_name);
 
-static int vrf_backend = VRF_BACKEND_VRF_LITE;
+static enum vrf_backend_type vrf_backend = VRF_BACKEND_VRF_LITE;
 static char vrf_default_name[VRF_NAMSIZ] = VRF_DEFAULT_NAME_INTERNAL;
 
 /*
@@ -63,7 +63,7 @@ static struct vrf_master {
 
 static int vrf_is_enabled(struct vrf *vrf);
 
-/* VRF list existance check by name. */
+/* VRF list existence check by name. */
 struct vrf *vrf_lookup_by_name(const char *name)
 {
 	struct vrf vrf;
@@ -474,6 +474,8 @@ void vrf_bitmap_set(vrf_bitmap_t *pbmap, vrf_id_t vrf_id)
 		vrf_hash = *pbmap;
 
 	bit = hash_get(vrf_hash, &lookup, vrf_hash_bitmap_alloc);
+	if (!bit)
+		return;
 	bit->set = true;
 }
 
@@ -624,30 +626,19 @@ int vrf_socket(int domain, int type, int protocol, vrf_id_t vrf_id,
 	return ret;
 }
 
-int vrf_is_backend_netns(void)
+bool vrf_is_backend_netns(void)
 {
 	return (vrf_backend == VRF_BACKEND_NETNS);
 }
 
-int vrf_get_backend(void)
+enum vrf_backend_type vrf_get_backend(void)
 {
 	return vrf_backend;
 }
 
-int vrf_configure_backend(enum vrf_backend_type backend)
+void vrf_configure_backend(enum vrf_backend_type backend)
 {
-	/* Work around issue in old gcc */
-	switch (backend) {
-	case VRF_BACKEND_NETNS:
-	case VRF_BACKEND_VRF_LITE:
-		break;
-	case VRF_BACKEND_MAX:
-		return -1;
-	}
-
 	vrf_backend = backend;
-
-	return 0;
 }
 
 /* vrf CLI commands */
@@ -1025,6 +1016,8 @@ static const void *lib_vrf_lookup_next(struct nb_cb_lookup_entry_args *args)
 
 	strlcpy(vrfkey.name, vrfname, sizeof(vrfkey.name));
 	vrf = RB_FIND(vrf_name_head, &vrfs_by_name, &vrfkey);
+	if (!vrf)
+		return NULL;
 	if (!strcmp(vrf->name, vrfname))
 		vrf = RB_NEXT(vrf_name_head, vrf);
 

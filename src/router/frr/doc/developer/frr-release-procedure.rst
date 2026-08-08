@@ -178,7 +178,7 @@ Stage 2 - Staging
          TAG=X.Y.Z
          git fetch --all
          git checkout frr-$TAG
-         docker buildx build --platform linux/amd64,linux/arm64,linux/ppc64le,linux/s390x,linux/arm/v7,linux/arm/v6 -f docker/alpine/Dockerfile -t quay.io/frrouting/frr:$TAG --push .
+         docker buildx build --platform linux/amd64,linux/arm64,linux/ppc64le,linux/s390x,linux/arm/v7,linux/arm/v6,linux/riscv64 -f docker/alpine/Dockerfile -t quay.io/frrouting/frr:$TAG --push .
          git tag docker/$TAG
          git push origin docker/$TAG
 
@@ -265,14 +265,14 @@ Stage 3 - Publish
    This is very important otherwise the announcement will be unreadable on the
    website.
 
-   To get the number of commiters and commits, here is a couple of handy commands:
+   To get the number of committers and commits, here is a couple of handy commands:
 
    .. code-block:: console
 
       # The number of commits
       % git log --oneline --no-merges frr-10.4.0...frr-10.3.0 | wc -l
 
-      # The number of commiters
+      # The number of committers
       % git shortlog --summary --no-merges frr-10.4.0...frr-10.3.0 | wc -l
 
    Make sure to add a link to the GitHub releases page at the top.

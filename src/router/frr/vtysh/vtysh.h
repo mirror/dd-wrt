@@ -52,12 +52,12 @@ extern struct event_loop *master;
 		VTYSH_SHARPD | VTYSH_PBRD | VTYSH_STATICD | VTYSH_BFDD |       \
 		VTYSH_FABRICD | VTYSH_VRRPD | VTYSH_PATHD | VTYSH_MGMTD
 #define VTYSH_ACL_CONFIG                                                       \
-	VTYSH_BFDD | VTYSH_BABELD | VTYSH_BGPD | VTYSH_EIGRPD | VTYSH_ISISD |  \
+	VTYSH_BABELD | VTYSH_BGPD | VTYSH_EIGRPD | VTYSH_ISISD |               \
 		VTYSH_FABRICD | VTYSH_LDPD | VTYSH_NHRPD | VTYSH_OSPF6D |      \
 		VTYSH_OSPFD | VTYSH_PBRD | VTYSH_PIMD | VTYSH_PIM6D |          \
 		VTYSH_VRRPD | VTYSH_MGMTD
 #define VTYSH_ACL_SHOW                                                         \
-	VTYSH_BFDD | VTYSH_BABELD | VTYSH_BGPD | VTYSH_EIGRPD | VTYSH_ISISD |  \
+	VTYSH_BABELD | VTYSH_BGPD | VTYSH_EIGRPD | VTYSH_ISISD |  \
 		VTYSH_FABRICD | VTYSH_LDPD | VTYSH_NHRPD | VTYSH_OSPF6D |      \
 		VTYSH_OSPFD | VTYSH_PBRD | VTYSH_PIMD | VTYSH_PIM6D |          \
 		VTYSH_RIPD | VTYSH_RIPNGD | VTYSH_VRRPD | VTYSH_ZEBRA
@@ -85,7 +85,7 @@ extern struct event_loop *master;
 		VTYSH_VRRPD | VTYSH_MGMTD
 #define VTYSH_INTERFACE VTYSH_INTERFACE_SUBSET | VTYSH_BGPD
 #define VTYSH_VRF	VTYSH_INTERFACE_SUBSET | VTYSH_BGPD
-#define VTYSH_KEYS VTYSH_MGMTD | VTYSH_EIGRPD | VTYSH_OSPF6D | VTYSH_OSPFD
+#define VTYSH_KEYS	VTYSH_MGMTD | VTYSH_EIGRPD | VTYSH_OSPF6D | VTYSH_OSPFD | VTYSH_BFDD
 /* Daemons who can process nexthop-group configs */
 #define VTYSH_NH_GROUP    VTYSH_PBRD|VTYSH_SHARPD
 #define VTYSH_SR          VTYSH_ZEBRA|VTYSH_PATHD
@@ -125,24 +125,24 @@ extern int vtysh_connect_all(const char *optional_daemon_name);
 void vtysh_readline_init(void);
 void vtysh_user_init(void);
 
-int vtysh_execute(const char *);
-int vtysh_execute_no_pager(const char *);
+int vtysh_execute(const char *line);
+int vtysh_execute_no_pager(const char *line);
 int vtysh_execute_command_questionmark(char *input);
 
 char *vtysh_prompt(void);
 
 void vtysh_config_write(void);
 
-int vtysh_config_from_file(struct vty *, FILE *);
+int vtysh_config_from_file(struct vty *vty, FILE *fp);
 
-void config_add_line(struct list *, const char *);
+void config_add_line(struct list *config, const char *line);
 
 int vtysh_mark_file(const char *filename);
 
 int vtysh_apply_config(const char *config_file_path, bool dry_run, bool fork);
 int vtysh_write_config_integrated(void);
 
-void vtysh_config_parse_line(void *, const char *);
+void vtysh_config_parse_line(void *arg, const char *line);
 
 void vtysh_config_dump(void);
 

@@ -254,7 +254,7 @@ static int if_getaddrs(void)
 }
 
 /* Fetch interface information via ioctl(). */
-static void interface_info_ioctl()
+static void interface_info_ioctl(void)
 {
 	struct vrf *vrf = vrf_lookup_by_id(VRF_DEFAULT);
 	struct interface *ifp;
@@ -295,7 +295,7 @@ void interface_list(struct zebra_ns *zns)
 	ifaddr_proc_ipv6();
 #endif /* HAVE_PROC_NET_IF_INET6 */
 
-	zebra_dplane_startup_stage(zns, ZEBRA_DPLANE_INTERFACES_READ);
+	zebra_dplane_startup_stage(zns->ns_id, ZEBRA_DPLANE_INTERFACES_READ);
 }
 
 #endif /* OPEN_BSD */

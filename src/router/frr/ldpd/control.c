@@ -91,7 +91,7 @@ control_cleanup(char *path)
 }
 
 /* ARGSUSED */
-static void control_accept(struct event *thread)
+static void control_accept(struct event *event)
 {
 	int			 connfd;
 	socklen_t		 len;
@@ -99,7 +99,7 @@ static void control_accept(struct event *thread)
 	struct ctl_conn		*c;
 
 	len = sizeof(s_un);
-	if ((connfd = accept(EVENT_FD(thread), (struct sockaddr *)&s_un,
+	if ((connfd = accept(EVENT_FD(event), (struct sockaddr *)&s_un,
 			     &len)) == -1) {
 		/*
 		 * Pause accept if we are out of file descriptors, or
@@ -121,11 +121,9 @@ static void control_accept(struct event *thread)
 
 	imsg_init(&c->iev.ibuf, connfd);
 	c->iev.handler_read = control_dispatch_imsg;
-	c->iev.ev_read = NULL;
 	event_add_read(master, c->iev.handler_read, &c->iev, c->iev.ibuf.fd,
 		       &c->iev.ev_read);
 	c->iev.handler_write = ldp_write_handler;
-	c->iev.ev_write = NULL;
 
 	TAILQ_INSERT_TAIL(&ctl_conns, c, entry);
 }
@@ -177,9 +175,9 @@ control_close(int fd)
 }
 
 /* ARGSUSED */
-static void control_dispatch_imsg(struct event *thread)
+static void control_dispatch_imsg(struct event *event)
 {
-	int fd = EVENT_FD(thread);
+	int fd = EVENT_FD(event);
 	struct ctl_conn	*c;
 	struct imsg	 imsg;
 	ssize_t		 n;
@@ -189,8 +187,6 @@ static void control_dispatch_imsg(struct event *thread)
 		log_warnx("%s: fd %d: not found", __func__, fd);
 		return;
 	}
-
-	c->iev.ev_read = NULL;
 
 	if (((n = imsg_read(&c->iev.ibuf)) == -1 && errno != EAGAIN) || n == 0) {
 		control_close(fd);

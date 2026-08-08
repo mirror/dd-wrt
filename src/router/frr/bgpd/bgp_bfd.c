@@ -43,7 +43,7 @@ static void bgp_bfd_strict_holdtime_expire(struct event *event)
 
 	if (bgp_debug_neighbor_events(peer))
 		zlog_debug("%pBP BFD Strict mode Hold timer expire for %s", peer,
-			   bgp_peer_get_connection_direction(connection));
+			   bgp_peer_get_connection_direction_string(connection));
 
 	peer_set_last_reset(peer, PEER_DOWN_BFD_DOWN);
 	SET_FLAG(peer->sflags, PEER_STATUS_BFD_STRICT_HOLD_TIME_EXPIRED);
@@ -67,6 +67,20 @@ static void bfd_session_status_update(struct bfd_session_params *bsp,
 			   bfd_get_status_str(bss->previous_state),
 			   bfd_get_status_str(bss->state));
 
+	/*
+	 * Handle Admin Down from peer separately.
+	 * When BFD receives Admin Down from peer, we should NOT tear down
+	 * the BGP session. The peer is administratively shutting down BFD,
+	 * but the BGP session should remain up.
+	 */
+	if (bss->state == BSS_ADMIN_DOWN && bss->previous_state == BSS_UP) {
+		if (BGP_DEBUG(bfd, BFD_LIB))
+			zlog_debug("%s: BFD received Admin Down from peer %s - BGP session maintained",
+				   __func__, peer->host);
+		/* Don't tear down BGP session, just log the event */
+		return;
+	}
+
 	if (bss->state == BSS_DOWN && bss->previous_state == BSS_UP) {
 		if (CHECK_FLAG(peer->sflags, PEER_STATUS_NSF_MODE)
 		    && bfd_sess_cbit(bsp) && !bss->remote_cbit) {
@@ -85,7 +99,8 @@ static void bfd_session_status_update(struct bfd_session_params *bsp,
 		 * when the source address is changed, e.g. 0.0.0.0 -> 10.0.0.1.
 		 */
 		if (bss->last_event > peer->uptime) {
-			if (!peer->holdtime) {
+			if ((CHECK_FLAG(peer->flags, PEER_FLAG_TIMER) && !peer->holdtime) ||
+			    !peer->bgp->default_holdtime) {
 				event_add_timer(bm->master, bgp_bfd_strict_holdtime_expire, peer,
 						peer->bfd_config->hold_time,
 						&peer->bfd_config->t_hold_timer);
@@ -118,8 +133,13 @@ void bgp_peer_config_apply(struct peer *p, struct peer_group *pg)
 
 	/* When called on a group, apply to all peers. */
 	if (CHECK_FLAG(p->sflags, PEER_STATUS_GROUP)) {
-		for (ALL_LIST_ELEMENTS_RO(p->group->peer, n, pn))
+		for (ALL_LIST_ELEMENTS_RO(p->group->peer, n, pn)) {
+			if (peergroup_flag_check(pn, PEER_FLAG_BFD_STRICT))
+				peer_flag_set(pn, PEER_FLAG_BFD_STRICT);
+			else
+				peer_flag_unset(pn, PEER_FLAG_BFD_STRICT);
 			bgp_peer_config_apply(pn, pg);
+		}
 		return;
 	}
 
@@ -373,6 +393,11 @@ static void bgp_peer_remove_bfd(struct peer *p)
 {
 	/* Groups should not call this. */
 	assert(!CHECK_FLAG(p->sflags, PEER_STATUS_GROUP));
+
+	if (!p->bfd_config)
+		return;
+
+	event_cancel(&p->bfd_config->t_hold_timer);
 
 	/*
 	 * Peer configuration was removed, however we must check if there
@@ -644,10 +669,13 @@ DEFPY (neighbor_bfd_strict_hold_time,
 
 	event_cancel(&peer->bfd_config->t_hold_timer);
 
-	if (no)
+	if (no) {
 		peer->bfd_config->hold_time = BFD_DEF_STRICT_HOLD_TIME;
-	else
+		peer_flag_unset(peer, PEER_FLAG_BFD_STRICT);
+	} else {
 		peer->bfd_config->hold_time = hold_time;
+		peer_flag_set(peer, PEER_FLAG_BFD_STRICT);
+	}
 
 	bgp_peer_config_apply(peer, peer->group);
 

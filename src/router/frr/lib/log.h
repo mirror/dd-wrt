@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Zebra logging funcions.
+ * Zebra logging functions.
  * Copyright (C) 1997, 1998, 1999 Kunihiro Ishiguro
  */
 
@@ -176,6 +176,7 @@ struct timestamp_control {
 extern struct frr_yang_module_info frr_logging_nb_info;
 extern void frr_logging_merge_cli_to_nb_info(void);
 
+extern uint32_t frr_time_t_to_uint32_t(time_t value);
 #ifdef __cplusplus
 }
 #endif

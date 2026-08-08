@@ -43,9 +43,9 @@ struct debug path_policy_debug = {
 
 
 static void trigger_pathd_candidate_created(struct srte_candidate *candidate);
-static void trigger_pathd_candidate_created_timer(struct event *thread);
+static void trigger_pathd_candidate_created_timer(struct event *event);
 static void trigger_pathd_candidate_updated(struct srte_candidate *candidate);
-static void trigger_pathd_candidate_updated_timer(struct event *thread);
+static void trigger_pathd_candidate_updated_timer(struct event *event);
 static void trigger_pathd_candidate_removed(struct srte_candidate *candidate);
 static const char *
 srte_candidate_metric_name(enum srte_candidate_metric_type type);
@@ -1161,7 +1161,7 @@ void srte_candidate_status_update(struct srte_candidate *candidate, int status)
 	switch (status) {
 	case ZEBRA_SR_POLICY_DOWN:
 		switch (policy->status) {
-		/* If the policy is GOING_UP, and zebra faild
+		/* If the policy is GOING_UP, and zebra failed
 		   to install it, we wait for zebra to retry */
 		/* TODO: Add some timeout after which we would
 				 get is back to DOWN and remove the
@@ -1309,15 +1309,15 @@ void trigger_pathd_candidate_created(struct srte_candidate *candidate)
 	pathd. In addition, a minimum amount of time need to pass before
 	the hook is called to prevent the hook to be called multiple times
 	from changing the candidate by hand with the console */
-	if (candidate->hook_timer != NULL)
+	if (event_is_scheduled(candidate->hook_timer))
 		return;
 	event_add_timer(master, trigger_pathd_candidate_created_timer,
 			(void *)candidate, HOOK_DELAY, &candidate->hook_timer);
 }
 
-void trigger_pathd_candidate_created_timer(struct event *thread)
+void trigger_pathd_candidate_created_timer(struct event *event)
 {
-	struct srte_candidate *candidate = EVENT_ARG(thread);
+	struct srte_candidate *candidate = EVENT_ARG(event);
 	candidate->hook_timer = NULL;
 	hook_call(pathd_candidate_created, candidate);
 }
@@ -1329,15 +1329,15 @@ void trigger_pathd_candidate_updated(struct srte_candidate *candidate)
 	pathd. In addition, a minimum amount of time need to pass before
 	the hook is called to prevent the hook to be called multiple times
 	from changing the candidate by hand with the console */
-	if (candidate->hook_timer != NULL)
+	if (event_is_scheduled(candidate->hook_timer))
 		return;
 	event_add_timer(master, trigger_pathd_candidate_updated_timer,
 			(void *)candidate, HOOK_DELAY, &candidate->hook_timer);
 }
 
-void trigger_pathd_candidate_updated_timer(struct event *thread)
+void trigger_pathd_candidate_updated_timer(struct event *event)
 {
-	struct srte_candidate *candidate = EVENT_ARG(thread);
+	struct srte_candidate *candidate = EVENT_ARG(event);
 	candidate->hook_timer = NULL;
 	hook_call(pathd_candidate_updated, candidate);
 }
@@ -1346,10 +1346,7 @@ void trigger_pathd_candidate_removed(struct srte_candidate *candidate)
 {
 	/* The hook needs to be call synchronously, otherwise the candidate
 	path will be already deleted when the handler is called */
-	if (candidate->hook_timer != NULL) {
-		event_cancel(&candidate->hook_timer);
-		candidate->hook_timer = NULL;
-	}
+	event_cancel(&candidate->hook_timer);
 	hook_call(pathd_candidate_removed, candidate);
 }
 

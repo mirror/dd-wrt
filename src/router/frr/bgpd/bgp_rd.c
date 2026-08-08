@@ -42,7 +42,10 @@ uint16_t decode_rd_type(const uint8_t *pnt)
 
 void encode_rd_type(uint16_t v, uint8_t *pnt)
 {
-	*((uint16_t *)pnt) = htons(v);
+	uint16_t val = htons(v);
+
+	pnt[0] = (val >> 8) & 0xff;
+	pnt[1] = val & 0xff;
 }
 
 /* type == RD_TYPE_AS */
@@ -84,11 +87,11 @@ void decode_rd_vnc_eth(const uint8_t *pnt, struct rd_vnc_eth *rd_vnc_eth)
 int str2prefix_rd(const char *str, struct prefix_rd *prd)
 {
 	int ret = 0, type = RD_TYPE_UNDEFINED;
-	char *p, *p2;
+	const char *p, *p2;
 	struct stream *s = NULL;
 	char *half = NULL;
 	struct in_addr addr;
-	as_t as_val;
+	as_t as_val = 0;
 
 	prd->family = AF_UNSPEC;
 	prd->prefixlen = 64;

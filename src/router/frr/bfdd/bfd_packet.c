@@ -26,6 +26,11 @@
 #include <linux/ipv6.h>
 #endif /* BFD_LINUX */
 
+#ifdef CRYPTO_OPENSSL
+#include <openssl/hmac.h>
+#include <openssl/evp.h>
+#endif
+
 #include <netinet/if_ether.h>
 #include <netinet/udp.h>
 #include <netinet/ip6.h>
@@ -35,7 +40,9 @@
 #include "lib/checksum.h"
 #include "lib/network.h"
 
+#include "lib/keychain.h"
 #include "bfd.h"
+#include "bfd_trace.h"
 #define BUF_SIZ		   1024
 #define SOCK_OPT_PRIO_HIGH 6
 
@@ -82,7 +89,6 @@ static void bp_set_ipopts(int sd);
 static void bp_bind_ip(int sd, uint16_t port);
 static void bp_set_ipv6opts(int sd);
 static void bp_bind_ipv6(int sd, uint16_t port);
-
 
 /*
  * Functions
@@ -136,12 +142,14 @@ int _ptm_bfd_send(struct bfd_session *bs, uint16_t *port, const void *data,
 		if (bglobal.debug_network)
 			zlog_debug("packet-send: send failure: %s",
 				   strerror(errno));
+		frrtrace(6, frr_bfd, packet_send_error, 1, bs, sd, rv, datalen, errno);
 		return -1;
 	}
 	if (rv < (ssize_t)datalen) {
 		if (bglobal.debug_network)
 			zlog_debug("packet-send: send partial: %s",
 				   strerror(errno));
+		frrtrace(6, frr_bfd, packet_send_error, 2, bs, sd, rv, datalen, errno);
 	}
 
 	return 0;
@@ -415,12 +423,19 @@ static int ptm_bfd_process_echo_pkt(struct bfd_vrf_global *bvrf, int s)
 
 void ptm_bfd_snd(struct bfd_session *bfd, int fbit)
 {
+	unsigned char send_buffer[256];
+	struct bfd_pkt cp = {};
+	size_t packet_len = BFD_PKT_LEN;
+	struct key *key = NULL;
+	enum bfd_auth_type pkt_auth_type = BFD_AUTH_TYPE_RESERVED;
+	unsigned char *auth_payload_ptr;
+	uint8_t auth_section_len;
+
 	/* Check for passive mode with zero discriminator */
-	if (bfd->discrs.remote_discr == 0 && 
-		CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_PASSIVE))
+	if (bfd->discrs.remote_discr == 0 && CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_PASSIVE))
 		return;
 
-	struct bfd_pkt cp = {};
+	memset(send_buffer, 0, sizeof(send_buffer));
 
 	/* Set fields according to section 6.5.7 */
 	cp.diag = bfd->local_diag;
@@ -433,8 +448,7 @@ void ptm_bfd_snd(struct bfd_session *bfd, int fbit)
 
 	BFD_SETDEMANDBIT(cp.flags, BFD_DEF_DEMAND);
 
-	/*
-	 * Polling and Final can't be set at the same time.
+	/* Polling and Final can't be set at the same time.
 	 *
 	 * RFC 5880, Section 6.5.
 	 */
@@ -443,29 +457,94 @@ void ptm_bfd_snd(struct bfd_session *bfd, int fbit)
 		BFD_SETPBIT(cp.flags, bfd->polling);
 
 	cp.detect_mult = bfd->detect_mult;
-	cp.len = BFD_PKT_LEN;
+
 	cp.discrs.my_discr = htonl(bfd->discrs.my_discr);
 	cp.discrs.remote_discr = htonl(bfd->discrs.remote_discr);
-	if (bfd->polling) {
-		cp.timers.desired_min_tx =
-			htonl(bfd->timers.desired_min_tx);
-		cp.timers.required_min_rx =
-			htonl(bfd->timers.required_min_rx);
+	if (bfd->ses_state == PTM_BFD_UP) {
+		cp.timers.desired_min_tx = htonl(bfd->timers.desired_min_tx);
+		cp.timers.required_min_rx = htonl(bfd->timers.required_min_rx);
 	} else {
 		/*
-		 * We can only announce current setting on poll, this
-		 * avoids timing mismatch with our peer and give it
-		 * the oportunity to learn. See `bs_final_handler` for
-		 * more information.
+		 * RFC 5880 6.8.1
+		 * When state is not Up, we must use 1 second to avoid
+		 * packet storms.
 		 */
-		cp.timers.desired_min_tx =
-			htonl(bfd->cur_timers.desired_min_tx);
-		cp.timers.required_min_rx =
-			htonl(bfd->cur_timers.required_min_rx);
+		cp.timers.desired_min_tx = htonl(MAX(bfd->timers.desired_min_tx, 1000000));
+		cp.timers.required_min_rx = htonl(MAX(bfd->timers.required_min_rx, 1000000));
 	}
 	cp.timers.required_min_echo = htonl(bfd->timers.required_min_echo_rx);
 
-	if (_ptm_bfd_send(bfd, NULL, &cp, BFD_PKT_LEN) != 0)
+	/* Authentication Handling */
+	if (bfd->kc) {
+		key = bfd_keychain_key_find_active(bfd->kc, bfd->auth_meticulous);
+		if (key)
+			pkt_auth_type = map_keychain_algo_to_bfd_auth_type(key->hash_algo,
+									   bfd->auth_meticulous);
+	}
+	if (pkt_auth_type == BFD_AUTH_TYPE_SIMPLE_PASSWORD) {
+		auth_section_len = 3 + strlen(key->string);
+		packet_len = BFD_PKT_LEN + auth_section_len;
+
+		cp.len = packet_len;
+		SET_FLAG(cp.flags, BFD_ABIT);
+
+		/* Copy base header into buffer NOW, before appending auth payload */
+		memcpy(send_buffer, &cp, BFD_PKT_LEN);
+
+		auth_payload_ptr = send_buffer + BFD_PKT_LEN;
+		*auth_payload_ptr++ = BFD_AUTH_TYPE_SIMPLE_PASSWORD;
+		*auth_payload_ptr++ = auth_section_len;
+		*auth_payload_ptr++ = key->index;
+		memcpy(auth_payload_ptr, key->string, strlen(key->string));
+
+#ifdef CRYPTO_OPENSSL
+	} else if ((pkt_auth_type == BFD_AUTH_TYPE_KEYED_SHA1) ||
+		   (pkt_auth_type == BFD_AUTH_TYPE_METICULOUS_KEYED_SHA1)) {
+		const EVP_MD *md_alg = EVP_sha1();
+		unsigned int digest_len = 0;
+		unsigned char digest[20]; // SHA1 is always 20 bytes
+		uint32_t seq_num_n;
+
+		if (md_alg) {
+			/* RFC 5880: Keyed SHA1 Auth section is exactly 28 bytes */
+			auth_section_len = 28;
+			packet_len = BFD_PKT_LEN + auth_section_len;
+			cp.len = packet_len;
+
+			SET_FLAG(cp.flags, BFD_ABIT);
+
+			memcpy(send_buffer, &cp, BFD_PKT_LEN);
+			auth_payload_ptr = send_buffer + BFD_PKT_LEN;
+
+			*auth_payload_ptr++ = pkt_auth_type;
+			*auth_payload_ptr++ = auth_section_len;
+			*auth_payload_ptr++ = key->index;
+			*auth_payload_ptr++ = 0; /* Reserved */
+
+			bfd->auth_seq_num++;
+			seq_num_n = htonl(bfd->auth_seq_num);
+			memcpy(auth_payload_ptr, &seq_num_n, sizeof(seq_num_n));
+			auth_payload_ptr += sizeof(seq_num_n);
+
+			/* SHA1 Auth Data is 20 bytes.
+			 * Ensure we only HMAC the packet with the 20-byte digest area zeroed.
+			 */
+			memset(auth_payload_ptr, 0, 20);
+
+			/* Note: HMAC-SHA1 results in 20 bytes */
+			HMAC(md_alg, key->string, strlen(key->string), send_buffer, packet_len,
+			     digest, &digest_len);
+
+			memcpy(auth_payload_ptr, digest, 20);
+		}
+#endif /* CRYPTO_OPENSSL */
+	} else {
+		cp.len = packet_len;
+		/* No Auth: Ensure we still copy the header to the send buffer! */
+		memcpy(send_buffer, &cp, BFD_PKT_LEN);
+	}
+
+	if (_ptm_bfd_send(bfd, NULL, send_buffer, cp.len) != 0)
 		return;
 
 	bfd->stats.tx_ctrl_pkt++;
@@ -500,9 +579,11 @@ static ssize_t bfd_recv_ipv4_fp(int sd, uint8_t *msgbuf, size_t msgbuflen, uint8
 
 	mlen = recvmsg(sd, &msghdr, MSG_DONTWAIT);
 	if (mlen == -1) {
-		if (errno != EAGAIN || errno != EWOULDBLOCK || errno != EINTR)
+		if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {
+			frrtrace(3, frr_bfd, socket_error, 4, 0, errno);
 			zlog_err("%s: recv failed: %s", __func__,
 				 strerror(errno));
+		}
 
 		return -1;
 	}
@@ -578,8 +659,10 @@ ssize_t bfd_recv_ipv4(int sd, uint8_t *msgbuf, size_t msgbuflen, uint8_t *ttl,
 
 	mlen = recvmsg(sd, &msghdr, MSG_DONTWAIT);
 	if (mlen == -1) {
-		if (errno != EAGAIN)
+		if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {
+			frrtrace(3, frr_bfd, socket_error, 4, 2, errno);
 			zlog_err("ipv4-recv: recv failed: %s", strerror(errno));
+		}
 
 		return -1;
 	}
@@ -690,8 +773,10 @@ ssize_t bfd_recv_ipv6(int sd, uint8_t *msgbuf, size_t msgbuflen, uint8_t *ttl,
 
 	mlen = recvmsg(sd, &msghdr6, MSG_DONTWAIT);
 	if (mlen == -1) {
-		if (errno != EAGAIN)
+		if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {
+			frrtrace(3, frr_bfd, socket_error, 4, 4, errno);
 			zlog_err("ipv6-recv: recv failed: %s", strerror(errno));
+		}
 
 		return -1;
 	}
@@ -813,34 +898,236 @@ static void cp_debug(bool mhop, struct sockaddr_any *peer,
 		   mhop ? "yes" : "no", peerstr, localstr, portstr, vrfstr);
 }
 
-static bool bfd_check_auth(const struct bfd_session *bfd,
-			   const struct bfd_pkt *cp)
+static bool bfd_check_auth(struct bfd_session *bfd, const struct bfd_pkt *cp)
 {
-	if (CHECK_FLAG(cp->flags, BFD_ABIT)) {
-		/* RFC5880 4.1: Authentication Section is present. */
-		struct bfd_auth *auth = (struct bfd_auth *)(cp + 1);
-		uint16_t pkt_auth_type = ntohs(auth->type);
+	struct sockaddr_any peer_sa, local_sa;
+	const uint8_t *auth_section;
+	uint8_t received_auth_type;
+	uint8_t auth_len;
+	const char *local_pwd = NULL;
+	const char *remote_pwd;
+	size_t remote_pwd_len;
+	uint8_t expected_auth_type = BFD_AUTH_TYPE_RESERVED;
+	struct key *active_key = NULL;
+	uint8_t received_key_id;
+	struct key *key;
 
-		if (cp->len < BFD_PKT_LEN + sizeof(struct bfd_auth))
-			return false;
+	(void)bfd;
 
-		if (cp->len < BFD_PKT_LEN + auth->length)
-			return false;
+	/* Prepare sockaddr_any structures for cp_debug */
+	memset(&peer_sa, 0, sizeof(peer_sa));
+	memset(&local_sa, 0, sizeof(local_sa));
 
-		switch (pkt_auth_type) {
-		case BFD_AUTH_NULL:
-			return false;
-		case BFD_AUTH_SIMPLE:
-			/* RFC5880 6.7: To be finshed. */
-			return false;
-		case BFD_AUTH_CRYPTOGRAPHIC:
-			/* RFC5880 6.7: To be finshed. */
-			return false;
-		default:
-			/* RFC5880 6.7: To be finshed. */
+	if (bfd->key.family == AF_INET) {
+		peer_sa.sa_sin.sin_family = AF_INET;
+		memcpy(&peer_sa.sa_sin.sin_addr, &bfd->key.peer, sizeof(struct in_addr));
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+		peer_sa.sa_sin.sin_len = sizeof(struct sockaddr_in);
+#endif
+		local_sa.sa_sin.sin_family = AF_INET;
+		memcpy(&local_sa.sa_sin.sin_addr, &bfd->key.local, sizeof(struct in_addr));
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+		local_sa.sa_sin.sin_len = sizeof(struct sockaddr_in);
+#endif
+	} else if (bfd->key.family == AF_INET6) {
+		peer_sa.sa_sin6.sin6_family = AF_INET6;
+		memcpy(&peer_sa.sa_sin6.sin6_addr, &bfd->key.peer, sizeof(struct in6_addr));
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+		peer_sa.sa_sin6.sin6_len = sizeof(struct sockaddr_in6);
+#endif
+		local_sa.sa_sin6.sin6_family = AF_INET6;
+		memcpy(&local_sa.sa_sin6.sin6_addr, &bfd->key.local, sizeof(struct in6_addr));
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+		local_sa.sa_sin6.sin6_len = sizeof(struct sockaddr_in6);
+#endif
+	}
+
+	/* Check current expected auth type to prevent stale cache drops */
+	if (bfd->kc)
+		active_key = bfd_keychain_key_find_active(bfd->kc, bfd->auth_meticulous);
+	if (bfd->kc && active_key)
+		expected_auth_type = map_keychain_algo_to_bfd_auth_type(active_key->hash_algo,
+									bfd->auth_meticulous);
+	if (!CHECK_FLAG(cp->flags, BFD_ABIT)) {
+		if (expected_auth_type != BFD_AUTH_TYPE_RESERVED) {
+			cp_debug(CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_MH), &peer_sa, &local_sa,
+				 bfd->ifp ? bfd->ifp->ifindex : 0, bfd->vrf ? bfd->vrf->vrf_id : 0,
+				 "Auth: enabled on session, but peer sent no auth");
 			return false;
 		}
+		return true;
 	}
+
+	if (expected_auth_type == BFD_AUTH_TYPE_RESERVED) {
+		cp_debug(CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_MH), &peer_sa, &local_sa,
+			 bfd->ifp ? bfd->ifp->ifindex : 0, bfd->vrf ? bfd->vrf->vrf_id : 0,
+			 "Auth: not enabled on session but peer sent auth");
+		return false;
+	}
+
+	if (cp->len < BFD_PKT_LEN + 2) {
+		cp_debug(CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_MH), &peer_sa, &local_sa,
+			 bfd->ifp ? bfd->ifp->ifindex : 0, bfd->vrf ? bfd->vrf->vrf_id : 0,
+			 "Auth: packet too short to contain auth type/length");
+		return false;
+	}
+
+	auth_section = (const uint8_t *)cp + BFD_PKT_LEN;
+	received_auth_type = auth_section[0];
+	auth_len = auth_section[1];
+
+	if (cp->len < (BFD_PKT_LEN + auth_len)) {
+		cp_debug(CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_MH), &peer_sa, &local_sa,
+			 bfd->ifp ? bfd->ifp->ifindex : 0, bfd->vrf ? bfd->vrf->vrf_id : 0,
+			 "Auth: packet length too short for auth data");
+		return false;
+	}
+
+	if (expected_auth_type == BFD_AUTH_TYPE_RESERVED) {
+		cp_debug(CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_MH), &peer_sa, &local_sa,
+			 bfd->ifp ? bfd->ifp->ifindex : 0, bfd->vrf ? bfd->vrf->vrf_id : 0,
+			 "Auth: local type not available");
+		return false;
+	}
+
+	if (received_auth_type != expected_auth_type) {
+		cp_debug(CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_MH), &peer_sa, &local_sa,
+			 bfd->ifp ? bfd->ifp->ifindex : 0, bfd->vrf ? bfd->vrf->vrf_id : 0,
+			 "Auth: type mismatch (remote %s)",
+			 bfd_auth_type_get_description(received_auth_type));
+		bfd->stats.rx_pkt_authentication_type_mismatch++;
+		return false;
+	}
+
+	switch (received_auth_type) {
+	case BFD_AUTH_TYPE_SIMPLE_PASSWORD: {
+		if (auth_len < 3) {
+			cp_debug(CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_MH), &peer_sa, &local_sa,
+				 bfd->ifp ? bfd->ifp->ifindex : 0, bfd->vrf ? bfd->vrf->vrf_id : 0,
+				 "Auth: authentication length header too short");
+			return false;
+		}
+
+		if (bfd->kc) {
+			received_key_id = auth_section[2];
+			key = key_lookup_for_accept(bfd->kc, received_key_id, false);
+			if (!key || !key->string) {
+				cp_debug(CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_MH), &peer_sa,
+					 &local_sa, bfd->ifp ? bfd->ifp->ifindex : 0,
+					 bfd->vrf ? bfd->vrf->vrf_id : 0,
+					 "Auth: key ID %u not found for simple password",
+					 received_key_id);
+				return false;
+			}
+			local_pwd = key->string;
+		}
+
+		remote_pwd = (const char *)&auth_section[3];
+		remote_pwd_len = auth_len - 3;
+
+		if (!local_pwd || strlen(local_pwd) != remote_pwd_len ||
+		    memcmp(local_pwd, remote_pwd, remote_pwd_len) != 0) {
+			cp_debug(CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_MH), &peer_sa, &local_sa,
+				 bfd->ifp ? bfd->ifp->ifindex : 0, bfd->vrf ? bfd->vrf->vrf_id : 0,
+				 "Auth: simple password mismatch");
+			bfd->stats.rx_pkt_authentication_simple_password_mismatch++;
+			return false;
+		}
+		break;
+	}
+#ifdef CRYPTO_OPENSSL
+	case BFD_AUTH_TYPE_KEYED_SHA1:
+	case BFD_AUTH_TYPE_METICULOUS_KEYED_SHA1: {
+		uint32_t received_seq_num;
+		unsigned int digest_len;
+		unsigned char computed_digest[KEYCHAIN_MAX_HASH_SIZE];
+		const unsigned char *received_digest;
+		unsigned char msgbuf[BFD_PACKET_SIZE];
+		const EVP_MD *md_alg = EVP_sha1();
+
+		if (auth_len < 28) {
+			cp_debug(CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_MH), &peer_sa, &local_sa,
+				 bfd->ifp ? bfd->ifp->ifindex : 0, bfd->vrf ? bfd->vrf->vrf_id : 0,
+				 "Auth SHA1 length too short");
+			return false;
+		}
+		if (!bfd->kc) {
+			cp_debug(CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_MH), &peer_sa, &local_sa,
+				 bfd->ifp ? bfd->ifp->ifindex : 0, bfd->vrf ? bfd->vrf->vrf_id : 0,
+				 "Auth: keychain configured but no keychain found");
+			return false;
+		}
+		received_key_id = auth_section[2];
+		key = key_lookup_for_accept(bfd->kc, received_key_id, true);
+		if (!key || !key->string) {
+			cp_debug(CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_MH), &peer_sa, &local_sa,
+				 bfd->ifp ? bfd->ifp->ifindex : 0, bfd->vrf ? bfd->vrf->vrf_id : 0,
+				 "Auth: key ID %u not found or invalid in keychain %s",
+				 received_key_id, bfd->kc->name);
+			return false;
+		}
+
+		/* RFC 5880 6.8.1: Sequence Number Validation for ALL Cryptographic Auth */
+		memcpy(&received_seq_num, auth_section + 4, sizeof(received_seq_num));
+		received_seq_num = ntohl(received_seq_num);
+
+		if (bfd->auth_last_rx_seq_num != 0) {
+			if (received_auth_type == BFD_AUTH_TYPE_METICULOUS_KEYED_SHA1) {
+				if (received_seq_num <= bfd->auth_last_rx_seq_num) {
+					cp_debug(CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_MH), &peer_sa,
+						 &local_sa, bfd->ifp ? bfd->ifp->ifindex : 0,
+						 bfd->vrf ? bfd->vrf->vrf_id : 0,
+						 "Auth: meticulous sequence number error");
+					bfd->stats.rx_pkt_authentication_keyed_sha1_sequence_meticulous_error++;
+					return false;
+				}
+			} else {
+				/* Non-meticulous allows equal sequence numbers on stable state */
+				if (received_seq_num < bfd->auth_last_rx_seq_num) {
+					cp_debug(CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_MH), &peer_sa,
+						 &local_sa, bfd->ifp ? bfd->ifp->ifindex : 0,
+						 bfd->vrf ? bfd->vrf->vrf_id : 0,
+						 "Auth: sequence number error (replay)");
+					bfd->stats.rx_pkt_authentication_keyed_sha1_sequence_error++;
+					return false;
+				}
+			}
+			if ((received_seq_num % bfd->auth_seq_num_update_modulo) == 0)
+				bfd->auth_last_rx_seq_num = received_seq_num;
+		}
+
+		/* Validate Digest */
+		digest_len = keychain_get_hash_len(key->hash_algo);
+		if (digest_len > KEYCHAIN_MAX_HASH_SIZE || digest_len == 0)
+			return false;
+
+		received_digest = auth_section + 8;
+
+		memcpy(msgbuf, cp, cp->len);
+		/* Zero out the 20-byte digest field in the temp packet before hashing */
+		memset(msgbuf + BFD_PKT_LEN + 8, 0, digest_len);
+
+		HMAC(md_alg, key->string, strlen(key->string), msgbuf, cp->len, computed_digest,
+		     &digest_len);
+
+		if (memcmp(received_digest, computed_digest, digest_len) != 0) {
+			cp_debug(CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_MH), &peer_sa, &local_sa,
+				 bfd->ifp ? bfd->ifp->ifindex : 0, bfd->vrf ? bfd->vrf->vrf_id : 0,
+				 "BFD: Auth digest mismatch for key ID %u", received_key_id);
+			bfd->stats.rx_pkt_authentication_keyed_sha1_mismatch++;
+			return false;
+		}
+
+		break;
+	}
+#endif /* CRYPTO_OPENSSL */
+	default:
+		cp_debug(CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_MH), &peer_sa, &local_sa,
+			 bfd->ifp ? bfd->ifp->ifindex : 0, bfd->vrf ? bfd->vrf->vrf_id : 0,
+			 "Auth: unsupported authentication type %u", received_auth_type);
+		return false;
+	}
+
 	return true;
 }
 
@@ -855,7 +1142,7 @@ void bfd_recv_cb(struct event *t)
 	vrf_id_t vrfid;
 	ifindex_t ifindex = IFINDEX_INTERNAL;
 	struct sockaddr_any local, peer;
-	uint8_t msgbuf[1516];
+	uint8_t msgbuf[BFD_PACKET_SIZE];
 	struct interface *ifp = NULL;
 	struct bfd_vrf_global *bvrf = EVENT_ARG(t);
 
@@ -889,6 +1176,11 @@ void bfd_recv_cb(struct event *t)
 				     &local, &peer);
 	}
 
+	if (mlen < 0) {
+		/* bfd_recv_ipv4/v6 already logged the receive error. */
+		return;
+	}
+
 	/*
 	 * With netns backend, we have a separate socket in each VRF. It means
 	 * that bvrf here is correct and we believe the bvrf->vrf->vrf_id.
@@ -904,17 +1196,32 @@ void bfd_recv_cb(struct event *t)
 			vrfid = ifp->vrf->vrf_id;
 	}
 
-	/* Implement RFC 5880 6.8.6 */
+	/* Require a full fixed BFD control header before parsing/session lookup. */
 	if (mlen < BFD_PKT_LEN) {
-		cp_debug(is_mhop, &peer, &local, ifindex, vrfid,
-			 "too small (%zd bytes)", mlen);
+		/* No resolved session at this point to charge rx_bad_ctrl_pkt. */
+		frrtrace(8, frr_bfd, packet_validation_error, 1, is_mhop, &peer, &local, ifindex,
+			 vrfid, (uint32_t)mlen, BFD_PKT_LEN);
+		cp_debug(is_mhop, &peer, &local, ifindex, vrfid, "too small (%zd bytes)", mlen);
+		return;
+	}
+
+	/* Find the session that this packet belongs. */
+	cp = (struct bfd_pkt *)(msgbuf);
+	bfd = ptm_bfd_sess_find(cp, &peer, &local, ifp, vrfid, is_mhop);
+	if (bfd == NULL) {
+		frrtrace(6, frr_bfd, packet_session_not_found, is_mhop, &peer, &local, ifindex,
+			 vrfid, ntohl(cp->discrs.my_discr));
+		cp_debug(is_mhop, &peer, &local, ifindex, vrfid, "no session found");
 		return;
 	}
 
 	/* Validate single hop packet TTL. */
 	if ((!is_mhop) && (ttl != BFD_TTL_VAL)) {
+		frrtrace(8, frr_bfd, packet_validation_error, 2, is_mhop, &peer, &local, ifindex,
+			 vrfid, ttl, BFD_TTL_VAL);
 		cp_debug(is_mhop, &peer, &local, ifindex, vrfid,
 			 "invalid TTL: %d expected %d", ttl, BFD_TTL_VAL);
+		bfd->stats.rx_bad_ctrl_pkt++;
 		return;
 	}
 
@@ -925,57 +1232,71 @@ void bfd_recv_cb(struct event *t)
 	 * - Short packets;
 	 * - Invalid discriminator;
 	 */
-	cp = (struct bfd_pkt *)(msgbuf);
 	if (BFD_GETVER(cp->diag) != BFD_VERSION) {
+		frrtrace(8, frr_bfd, packet_validation_error, 3, is_mhop, &peer, &local, ifindex,
+			 vrfid, BFD_GETVER(cp->diag), BFD_VERSION);
 		cp_debug(is_mhop, &peer, &local, ifindex, vrfid,
 			 "bad version %d", BFD_GETVER(cp->diag));
+		bfd->stats.rx_bad_ctrl_pkt++;
 		return;
 	}
 
 	if (cp->detect_mult == 0) {
+		frrtrace(8, frr_bfd, packet_validation_error, 4, is_mhop, &peer, &local, ifindex,
+			 vrfid, 0, 1); /* actual=0, expected>=1 */
 		cp_debug(is_mhop, &peer, &local, ifindex, vrfid,
 			 "detect multiplier set to zero");
+		bfd->stats.rx_bad_ctrl_pkt++;
 		return;
 	}
 
 	if ((cp->len < BFD_PKT_LEN) || (cp->len > mlen)) {
+		frrtrace(8, frr_bfd, packet_validation_error, 5, is_mhop, &peer, &local, ifindex,
+			 vrfid, cp->len, (uint32_t)mlen);
 		cp_debug(is_mhop, &peer, &local, ifindex, vrfid, "too small");
+		bfd->stats.rx_bad_ctrl_pkt++;
 		return;
 	}
 
 	if (BFD_GETMBIT(cp->flags)) {
+		frrtrace(8, frr_bfd, packet_validation_error, 6, is_mhop, &peer, &local, ifindex,
+			 vrfid, 1, 0); /* actual=1 (M bit set), expected=0 */
 		cp_debug(is_mhop, &peer, &local, ifindex, vrfid,
 			 "detect non-zero Multipoint (M) flag");
+		bfd->stats.rx_bad_ctrl_pkt++;
 		return;
 	}
 
 	if (cp->discrs.my_discr == 0) {
+		frrtrace(8, frr_bfd, packet_validation_error, 7, is_mhop, &peer, &local, ifindex,
+			 vrfid, ntohl(cp->discrs.my_discr),
+			 1); /* actual discriminator from packet, expected!=0 */
 		cp_debug(is_mhop, &peer, &local, ifindex, vrfid,
 			 "'my discriminator' is zero");
+		bfd->stats.rx_bad_ctrl_pkt++;
 		return;
 	}
 
-	/* Find the session that this packet belongs. */
-	bfd = ptm_bfd_sess_find(cp, &peer, &local, ifp, vrfid, is_mhop);
-	if (bfd == NULL) {
-		cp_debug(is_mhop, &peer, &local, ifindex, vrfid,
-			 "no session found");
-		return;
-	}
 	/*
 	 * We may have a situation where received packet is on wrong vrf
 	 */
-	if (bfd && bfd->vrf && bfd->vrf->vrf_id != vrfid) {
+	if (bfd->vrf && bfd->vrf->vrf_id != vrfid) {
+		frrtrace(8, frr_bfd, packet_validation_error, 8, is_mhop, &peer, &local, ifindex,
+			 vrfid, vrfid, bfd->vrf->vrf_id); /* actual pkt vrf, expected session vrf */
 		cp_debug(is_mhop, &peer, &local, ifindex, vrfid,
 			 "wrong vrfid.");
+		bfd->stats.rx_bad_ctrl_pkt++;
 		return;
 	}
 
 	/* Ensure that existing good sessions are not overridden. */
 	if (!cp->discrs.remote_discr && bfd->ses_state != PTM_BFD_DOWN &&
 	    bfd->ses_state != PTM_BFD_ADM_DOWN) {
+		frrtrace(6, frr_bfd, packet_remote_discr_zero, is_mhop, &peer, &local, ifindex,
+			 vrfid, bfd->ses_state);
 		cp_debug(is_mhop, &peer, &local, ifindex, vrfid,
 			 "'remote discriminator' is zero, not overridden");
+		bfd->stats.rx_bad_ctrl_pkt++;
 		return;
 	}
 
@@ -986,9 +1307,12 @@ void bfd_recv_cb(struct event *t)
 	 */
 	if (is_mhop) {
 		if (ttl < bfd->mh_ttl) {
+			frrtrace(7, frr_bfd, packet_ttl_exceeded, is_mhop, &peer, &local, ifindex,
+				 vrfid, ttl, bfd->mh_ttl);
 			cp_debug(is_mhop, &peer, &local, ifindex, vrfid,
 				 "exceeded max hop count (expected %d, got %d)",
 				 bfd->mh_ttl, ttl);
+			bfd->stats.rx_bad_ctrl_pkt++;
 			return;
 		}
 	} else {
@@ -1011,18 +1335,35 @@ void bfd_recv_cb(struct event *t)
 		bfd->ifp = ifp;
 
 	/* Log remote discriminator changes. */
-	if ((bfd->discrs.remote_discr != 0)
-	    && (bfd->discrs.remote_discr != ntohl(cp->discrs.my_discr)))
+	if ((bfd->discrs.remote_discr != 0) &&
+	    (bfd->discrs.remote_discr != ntohl(cp->discrs.my_discr))) {
+		frrtrace(8, frr_bfd, remote_discriminator_change, bfd, bfd->discrs.remote_discr,
+			 ntohl(cp->discrs.my_discr), is_mhop, &peer, &local, ifindex, vrfid);
 		cp_debug(is_mhop, &peer, &local, ifindex, vrfid,
 			 "remote discriminator mismatch (expected %u, got %u)",
 			 bfd->discrs.remote_discr, ntohl(cp->discrs.my_discr));
+	}
 
 	bfd->discrs.remote_discr = ntohl(cp->discrs.my_discr);
 
 	/* Check authentication. */
 	if (!bfd_check_auth(bfd, cp)) {
+		/* Extract auth type from packet for tracing */
+		uint8_t auth_type __attribute__((unused)) = BFD_AUTH_TYPE_RESERVED;
+
+		if (CHECK_FLAG(cp->flags, BFD_ABIT)) {
+			if (cp->len >= BFD_PKT_LEN + sizeof(struct bfd_auth)) {
+				struct bfd_auth *auth = (struct bfd_auth *)(cp + 1);
+
+				auth_type = auth->type;
+			}
+		}
+
+		frrtrace(8, frr_bfd, auth_event, false, bfd, auth_type, is_mhop, &peer, &local,
+			 ifindex, vrfid);
 		cp_debug(is_mhop, &peer, &local, ifindex, vrfid,
 			 "Authentication failed");
+		bfd->stats.rx_pkt_authentication_failure++;
 		return;
 	}
 
@@ -1079,7 +1420,7 @@ void bfd_recv_cb(struct event *t)
 	/*
 	 * Detection timeout calculation:
 	 * The minimum detection timeout is the remote detection
-	 * multipler (number of packets to be missed) times the agreed
+	 * multiplier (number of packets to be missed) times the agreed
 	 * transmission interval.
 	 *
 	 * RFC 5880, Section 6.8.4.
@@ -1113,7 +1454,7 @@ void bfd_recv_cb(struct event *t)
 }
 
 /*
- * bp_bfd_echo_in: proccesses an BFD echo packet. On TTL == BFD_TTL_VAL
+ * bp_bfd_echo_in: processes an BFD echo packet. On TTL == BFD_TTL_VAL
  * the packet is looped back or returns the my discriminator ID along
  * with the TTL.
  *
@@ -1127,7 +1468,7 @@ int bp_bfd_echo_in(struct bfd_vrf_global *bvrf, int sd, uint8_t *ttl,
 	struct sockaddr_any local, peer;
 	ifindex_t ifindex = IFINDEX_INTERNAL;
 	vrf_id_t vrfid = VRF_DEFAULT;
-	uint8_t msgbuf[1516];
+	uint8_t msgbuf[BFD_PACKET_SIZE];
 	size_t bfd_offset = 0;
 
 	if (sd == bvrf->bg_echo) {
@@ -1153,26 +1494,63 @@ int bp_bfd_echo_in(struct bfd_vrf_global *bvrf, int sd, uint8_t *ttl,
 		bfd_offset = 0;
 	}
 
-	/* Short packet, better not risk reading it. */
-	if (rlen < (ssize_t)sizeof(*bep)) {
+	if (rlen < 0) {
+		/* bfd_recv_ipv4/v6 already logged the receive error. */
+		return -1;
+	}
+
+	/* Short packet, better not risk reading it at selected offset. */
+	if (rlen < (ssize_t)(bfd_offset + sizeof(*bep))) {
+		frrtrace(6, frr_bfd, echo_packet_error, 1, &peer, &local, ifindex, vrfid, rlen);
 		cp_debug(false, &peer, &local, ifindex, vrfid,
 			 "small echo packet");
 		return -1;
 	}
 
+	bep = (struct bfd_echo_pkt *)(msgbuf + bfd_offset);
+
 	/* Test for loopback for ipv6, ipv4 is looped in forwarding plane */
 	if ((*ttl == BFD_TTL_VAL) && (sd == bvrf->bg_echov6)) {
-		bp_udp_send(sd, *ttl - 1, msgbuf, rlen,
-			    (struct sockaddr *)&peer,
-			    (sd == bvrf->bg_echo) ? sizeof(peer.sa_sin)
-						    : sizeof(peer.sa_sin6));
+		struct bfd_key key;
+		struct vrf *vrf;
+		struct interface *ifp = NULL;
+
+		/*
+		 * Reflect only for known sessions to avoid turning the echo
+		 * socket into an unauthenticated packet reflector.
+		 */
+		vrfid = bvrf->vrf->vrf_id;
+		if (ifindex) {
+			ifp = if_lookup_by_index(ifindex, vrfid);
+			if (ifp)
+				vrfid = ifp->vrf->vrf_id;
+		}
+		vrf = vrf_lookup_by_id(vrfid);
+		gen_bfd_key(&key, &peer, &local, false, ifp ? ifp->name : NULL,
+			    vrf ? vrf->name : VRF_DEFAULT_NAME, NULL);
+		if (!bfd_key_lookup(&key)) {
+			frrtrace(6, frr_bfd, echo_packet_error, 3, &peer, &local, ifindex, vrfid,
+				 0);
+			cp_debug(false, &peer, &local, ifindex, vrfid,
+				 "unknown IPv6 echo source, dropping");
+			return -1;
+		}
+
+		if (bep->len < sizeof(*bep) || (ssize_t)bep->len > rlen - (ssize_t)bfd_offset) {
+			cp_debug(false, &peer, &local, ifindex, vrfid,
+				 "invalid echo length %u (rx %zd), dropping", bep->len, rlen);
+			return -1;
+		}
+
+		bp_udp_send(sd, *ttl - 1, msgbuf, bep->len, (struct sockaddr *)&peer,
+			    (sd == bvrf->bg_echo) ? sizeof(peer.sa_sin) : sizeof(peer.sa_sin6));
 		return -1;
 	}
 
 	/* Read my discriminator from BFD Echo packet. */
-	bep = (struct bfd_echo_pkt *)(msgbuf + bfd_offset);
 	*my_discr = ntohl(bep->my_discr);
 	if (*my_discr == 0) {
+		frrtrace(6, frr_bfd, echo_packet_error, 2, &peer, &local, ifindex, vrfid, rlen);
 		cp_debug(false, &peer, &local, ifindex, vrfid,
 			 "invalid echo packet discriminator (zero)");
 		return -1;
@@ -1371,18 +1749,17 @@ static void bp_set_ipopts(int sd)
 	int rcvttl = BFD_RCV_TTL_VAL;
 
 	if (!bp_set_reuse_addr(sd))
-		zlog_fatal("set-reuse-addr: failed");
+		zlog_err("set-reuse-addr: failed");
 
 	if (!bp_set_reuse_port(sd))
-		zlog_fatal("set-reuse-port: failed");
+		zlog_err("set-reuse-port: failed");
 
 	if (bp_set_ttl(sd, BFD_TTL_VAL) != 0)
-		zlog_fatal("set-ipopts: TTL configuration failed");
+		zlog_err("set-ipopts: TTL configuration failed");
 
 	if (setsockopt(sd, IPPROTO_IP, IP_RECVTTL, &rcvttl, sizeof(rcvttl))
 	    == -1)
-		zlog_fatal("set-ipopts: setsockopt(IP_RECVTTL, %d): %s", rcvttl,
-			   strerror(errno));
+		zlog_err("set-ipopts: setsockopt(IP_RECVTTL, %d): %s", rcvttl, strerror(errno));
 
 #ifdef BFD_LINUX
 	int pktinfo = BFD_PKT_INFO_VAL;
@@ -1390,21 +1767,18 @@ static void bp_set_ipopts(int sd)
 	/* Figure out address and interface to do the peer matching. */
 	if (setsockopt(sd, IPPROTO_IP, IP_PKTINFO, &pktinfo, sizeof(pktinfo))
 	    == -1)
-		zlog_fatal("set-ipopts: setsockopt(IP_PKTINFO, %d): %s",
-			   pktinfo, strerror(errno));
+		zlog_err("set-ipopts: setsockopt(IP_PKTINFO, %d): %s", pktinfo, strerror(errno));
 #endif /* BFD_LINUX */
 #ifdef BFD_BSD
 	int yes = 1;
 
 	/* Find out our address for peer matching. */
 	if (setsockopt(sd, IPPROTO_IP, IP_RECVDSTADDR, &yes, sizeof(yes)) == -1)
-		zlog_fatal("set-ipopts: setsockopt(IP_RECVDSTADDR, %d): %s",
-			   yes, strerror(errno));
+		zlog_err("set-ipopts: setsockopt(IP_RECVDSTADDR, %d): %s", yes, strerror(errno));
 
 	/* Find out interface where the packet came in. */
 	if (setsockopt_ifindex(AF_INET, sd, yes) == -1)
-		zlog_fatal("set-ipopts: setsockopt_ipv4_ifindex(%d): %s", yes,
-			   strerror(errno));
+		zlog_err("set-ipopts: setsockopt_ipv4_ifindex(%d): %s", yes, strerror(errno));
 #endif /* BFD_BSD */
 }
 
@@ -1417,7 +1791,7 @@ static void bp_bind_ip(int sd, uint16_t port)
 	sin.sin_addr.s_addr = htonl(INADDR_ANY);
 	sin.sin_port = htons(port);
 	if (bind(sd, (struct sockaddr *)&sin, sizeof(sin)) == -1)
-		zlog_fatal("bind-ip: bind: %s", strerror(errno));
+		zlog_err("bind-ip: bind: %s", strerror(errno));
 }
 
 void bp_set_prio(int sd, int value)
@@ -1438,8 +1812,10 @@ int bp_udp_shop(const struct vrf *vrf)
 		sd = vrf_socket(AF_INET, SOCK_DGRAM, PF_UNSPEC, vrf->vrf_id,
 				vrf->name);
 	}
-	if (sd == -1)
-		zlog_fatal("udp-shop: socket: %s", strerror(errno));
+	if (sd < 0) {
+		zlog_err("udp-shop: socket: %s", strerror(errno));
+		return sd;
+	}
 
 	bp_set_ipopts(sd);
 	bp_bind_ip(sd, BFD_DEFDESTPORT);
@@ -1454,8 +1830,10 @@ int bp_udp_mhop(const struct vrf *vrf)
 		sd = vrf_socket(AF_INET, SOCK_DGRAM, PF_UNSPEC, vrf->vrf_id,
 				vrf->name);
 	}
-	if (sd == -1)
-		zlog_fatal("udp-mhop: socket: %s", strerror(errno));
+	if (sd < 0) {
+		zlog_err("udp-mhop: socket: %s", strerror(errno));
+		return sd;
+	}
 
 	bp_set_ipopts(sd);
 	bp_bind_ip(sd, BFD_DEF_MHOP_DEST_PORT);
@@ -1482,6 +1860,7 @@ int bp_peer_socket(const struct bfd_session *bs)
 				bs->vrf->vrf_id, device_to_bind);
 	}
 	if (sd == -1) {
+		frrtrace(3, frr_bfd, socket_error, 1, 2, errno);
 		zlog_err("ipv4-new: failed to create socket: %s",
 			 strerror(errno));
 		return -1;
@@ -1513,6 +1892,7 @@ int bp_peer_socket(const struct bfd_session *bs)
 	do {
 		if ((++pcount) > (BFD_SRCPORTMAX - BFD_SRCPORTINIT)) {
 			/* Searched all ports, none available */
+			frrtrace(3, frr_bfd, socket_error, 2, 2, errno);
 			zlog_err("ipv4-new: failed to bind port: %s",
 				 strerror(errno));
 			close(sd);
@@ -1550,6 +1930,7 @@ int bp_peer_socketv6(const struct bfd_session *bs)
 				bs->vrf->vrf_id, device_to_bind);
 	}
 	if (sd == -1) {
+		frrtrace(3, frr_bfd, socket_error, 1, 4, errno);
 		zlog_err("ipv6-new: failed to create socket: %s",
 			 strerror(errno));
 		return -1;
@@ -1583,6 +1964,7 @@ int bp_peer_socketv6(const struct bfd_session *bs)
 	do {
 		if ((++pcount) > (BFD_SRCPORTMAX - BFD_SRCPORTINIT)) {
 			/* Searched all ports, none available */
+			frrtrace(3, frr_bfd, socket_error, 2, 4, errno);
 			zlog_err("ipv6-new: failed to bind port: %s",
 				 strerror(errno));
 			close(sd);
@@ -1630,29 +2012,28 @@ static void bp_set_ipv6opts(int sd)
 	int ipv6_only = BFD_IPV6_ONLY_VAL;
 
 	if (!bp_set_reuse_addr(sd))
-		zlog_fatal("set-reuse-addr: failed");
+		zlog_err("set-reuse-addr: failed");
 
 	if (!bp_set_reuse_port(sd))
-		zlog_fatal("set-reuse-port: failed");
+		zlog_err("set-reuse-port: failed");
 
 	if (bp_set_ttlv6(sd, BFD_TTL_VAL) == -1)
-		zlog_fatal(
-			"set-ipv6opts: setsockopt(IPV6_UNICAST_HOPS, %d): %s",
-			BFD_TTL_VAL, strerror(errno));
+		zlog_err("set-ipv6opts: setsockopt(IPV6_UNICAST_HOPS, %d): %s", BFD_TTL_VAL,
+			 strerror(errno));
 
 	if (setsockopt_ipv6_hoplimit(sd, BFD_RCV_TTL_VAL) == -1)
-		zlog_fatal("set-ipv6opts: setsockopt(IPV6_HOPLIMIT, %d): %s",
-			   BFD_RCV_TTL_VAL, strerror(errno));
+		zlog_err("set-ipv6opts: setsockopt(IPV6_HOPLIMIT, %d): %s", BFD_RCV_TTL_VAL,
+			 strerror(errno));
 
 	if (setsockopt_ipv6_pktinfo(sd, ipv6_pktinfo) == -1)
-		zlog_fatal("set-ipv6opts: setsockopt(IPV6_PKTINFO, %d): %s",
-			   ipv6_pktinfo, strerror(errno));
+		zlog_err("set-ipv6opts: setsockopt(IPV6_PKTINFO, %d): %s", ipv6_pktinfo,
+			 strerror(errno));
 
 	if (setsockopt(sd, IPPROTO_IPV6, IPV6_V6ONLY, &ipv6_only,
 		       sizeof(ipv6_only))
 	    == -1)
-		zlog_fatal("set-ipv6opts: setsockopt(IPV6_V6ONLY, %d): %s",
-			   ipv6_only, strerror(errno));
+		zlog_err("set-ipv6opts: setsockopt(IPV6_V6ONLY, %d): %s", ipv6_only,
+			 strerror(errno));
 }
 
 static void bp_bind_ipv6(int sd, uint16_t port)
@@ -1667,7 +2048,7 @@ static void bp_bind_ipv6(int sd, uint16_t port)
 	sin6.sin6_len = sizeof(sin6);
 #endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
 	if (bind(sd, (struct sockaddr *)&sin6, sizeof(sin6)) == -1)
-		zlog_fatal("bind-ipv6: bind: %s", strerror(errno));
+		zlog_err("bind-ipv6: bind: %s", strerror(errno));
 }
 
 int bp_udp6_shop(const struct vrf *vrf)
@@ -1680,7 +2061,7 @@ int bp_udp6_shop(const struct vrf *vrf)
 	}
 	if (sd == -1) {
 		if (errno != EAFNOSUPPORT)
-			zlog_fatal("udp6-shop: socket: %s", strerror(errno));
+			zlog_err("udp6-shop: socket: %s", strerror(errno));
 		else
 			zlog_warn("udp6-shop: V6 is not supported, continuing");
 
@@ -1703,7 +2084,7 @@ int bp_udp6_mhop(const struct vrf *vrf)
 	}
 	if (sd == -1) {
 		if (errno != EAFNOSUPPORT)
-			zlog_fatal("udp6-mhop: socket: %s", strerror(errno));
+			zlog_err("udp6-mhop: socket: %s", strerror(errno));
 		else
 			zlog_warn("udp6-mhop: V6 is not supported, continuing");
 
@@ -1738,8 +2119,10 @@ int bp_echo_socket(const struct vrf *vrf)
 			       vrf->name);
 	}
 
-	if (s == -1)
-		zlog_fatal("echo-socket: socket: %s", strerror(errno));
+	if (s == -1) {
+		zlog_err("echo-socket: socket: %s", strerror(errno));
+		return -1;
+	}
 
 	struct sock_fprog pf;
 	struct sockaddr_ll sll = {0};
@@ -1776,8 +2159,10 @@ int bp_echo_socket(const struct vrf *vrf)
 	frr_with_privs(&bglobal.bfdd_privs) {
 		s = vrf_socket(AF_INET, SOCK_DGRAM, 0, vrf->vrf_id, vrf->name);
 	}
-	if (s == -1)
-		zlog_fatal("echo-socket: socket: %s", strerror(errno));
+	if (s == -1) {
+		zlog_err("echo-socket: socket: %s", strerror(errno));
+		return -1;
+	}
 
 	bp_set_ipopts(s);
 	bp_bind_ip(s, BFD_DEF_ECHO_PORT);
@@ -1795,8 +2180,7 @@ int bp_echov6_socket(const struct vrf *vrf)
 	}
 	if (s == -1) {
 		if (errno != EAFNOSUPPORT)
-			zlog_fatal("echov6-socket: socket: %s",
-				   strerror(errno));
+			zlog_err("echov6-socket: socket: %s", strerror(errno));
 		else
 			zlog_warn("echov6-socket: V6 is not supported, continuing");
 
@@ -1995,7 +2379,7 @@ void ptm_sbfd_initiator_snd(struct bfd_session *bfd, int fbit)
 		/*
 		 * We can only announce current setting on poll, this
 		 * avoids timing mismatch with our peer and give it
-		 * the oportunity to learn. See `bs_final_handler` for
+		 * the opportunity to learn. See `bs_final_handler` for
 		 * more information.
 		 */
 		cp.timers.desired_min_tx = htonl(bfd->cur_timers.desired_min_tx);
@@ -2037,15 +2421,27 @@ static int ptm_bfd_reflector_process_init_packet(struct bfd_vrf_global *bvrf, in
 	struct sockaddr_any local, peer;
 	ifindex_t ifindex = IFINDEX_INTERNAL;
 	//vrf_id_t vrfid = VRF_DEFAULT;
-	uint8_t msgbuf[1516];
+	uint8_t msgbuf[BFD_PACKET_SIZE];
 
 	rlen = bfd_recv_ipv6(sd, msgbuf, sizeof(msgbuf), &ttl, &ifindex, &local, &peer);
+	if (rlen < 0) {
+		/* bfd_recv_ipv6 already logged the receive error. */
+		return 0;
+	}
 	/* Short packet, better not risk reading it. */
 	if (rlen < (ssize_t)sizeof(*cp)) {
 		zlog_debug("small bfd packet");
 		return 0;
 	}
 	cp = (struct bfd_pkt *)(msgbuf);
+	if (BFD_GETVER(cp->diag) != BFD_VERSION) {
+		zlog_debug("drop sbfd init packet: bad version %u", BFD_GETVER(cp->diag));
+		return 0;
+	}
+	if ((cp->len < BFD_PKT_LEN) || (cp->len > rlen)) {
+		zlog_debug("drop sbfd init packet: bad len %u (rx %zd)", cp->len, rlen);
+		return 0;
+	}
 	if (!CHECK_FLAG(cp->flags, BFD_DEMANDBIT)) {
 		/*Control Packet from SBFDInitiator should have Demand bit set to 1 according to RFC7880*/
 		return 0;
@@ -2066,7 +2462,7 @@ static int ptm_bfd_reflector_process_init_packet(struct bfd_vrf_global *bvrf, in
 
 		sa = (struct sockaddr *)&peer.sa_sin6;
 
-		if (sendto(sd, msgbuf, rlen, 0, sa, sizeof(peer.sa_sin6)) <= 0) {
+		if (sendto(sd, msgbuf, cp->len, 0, sa, sizeof(peer.sa_sin6)) <= 0) {
 			zlog_debug("packet-send: send failure: %s", strerror(errno));
 			return -1;
 		}
@@ -2137,7 +2533,7 @@ int bp_initv6_socket(const struct vrf *vrf)
 	}
 	if (sd == -1) {
 		if (errno != EAFNOSUPPORT)
-			zlog_fatal("echov6-socket: socket: %s", strerror(errno));
+			zlog_err("echov6-socket: socket: %s", strerror(errno));
 		else
 			zlog_warn("echov6-socket: V6 is not supported, continuing");
 
@@ -2341,7 +2737,7 @@ int bp_sbfd_socket(const struct vrf *vrf)
 	}
 	if (s == -1) {
 		if (errno != EAFNOSUPPORT)
-			zlog_fatal("sbfdv6-socket: socket: %s", strerror(errno));
+			zlog_err("sbfdv6-socket: socket: %s", strerror(errno));
 		else
 			zlog_warn("sbfdv6-socket: V6 is not supported, continuing");
 

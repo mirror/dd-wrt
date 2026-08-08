@@ -36,8 +36,9 @@
 #define BGP_MAX_SUBGROUP_COALESCE_TIME 10000
 #define BGP_PEER_ADJUST_SUBGROUP_COALESCE_TIME 50
 
-#define PEER_UPDGRP_FLAGS                                                      \
-	(PEER_FLAG_LOCAL_AS_NO_PREPEND | PEER_FLAG_LOCAL_AS_REPLACE_AS)
+#define PEER_UPDGRP_FLAGS                                                                         \
+	(PEER_FLAG_LOCAL_AS_NO_PREPEND | PEER_FLAG_LOCAL_AS_REPLACE_AS |                          \
+	 PEER_FLAG_AS_LOOP_DETECTION | PEER_FLAG_SEND_NHC_ATTRIBUTE)
 
 #define PEER_UPDGRP_AF_FLAGS                                                                      \
 	(PEER_FLAG_SEND_COMMUNITY | PEER_FLAG_SEND_EXT_COMMUNITY |                                \
@@ -48,9 +49,17 @@
 	 PEER_FLAG_NEXTHOP_LOCAL_UNCHANGED | PEER_FLAG_REMOVE_PRIVATE_AS |                        \
 	 PEER_FLAG_REMOVE_PRIVATE_AS_ALL | PEER_FLAG_REMOVE_PRIVATE_AS_REPLACE |                  \
 	 PEER_FLAG_REMOVE_PRIVATE_AS_ALL_REPLACE | PEER_FLAG_AS_OVERRIDE |                        \
-	 PEER_FLAG_CONFIG_ENCAPSULATION_SRV6 | PEER_FLAG_CONFIG_ENCAPSULATION_MPLS)
+	 PEER_FLAG_CONFIG_ENCAPSULATION_SRV6 | PEER_FLAG_CONFIG_ENCAPSULATION_SRV6_RELAX |        \
+	 PEER_FLAG_CONFIG_ENCAPSULATION_MPLS)
 
-#define PEER_UPDGRP_CAP_FLAGS (PEER_CAP_AS4_RCV)
+/*
+ * PEER_CAP_LLGR_RCV is included so peers that differ in the received Long-Lived
+ * Graceful Restart capability land in separate update groups: an LLGR_STALE-tagged
+ * route is advertised only to peers from which LLGR was received (RFC 9494 Section
+ * 4.3), and that per-subgroup decision must not merge an LLGR and a non-LLGR peer.
+ * Folding it into this mask covers both the hash key and the cmp function.
+ */
+#define PEER_UPDGRP_CAP_FLAGS (PEER_CAP_AS4_RCV | PEER_CAP_LLGR_RCV)
 
 #define PEER_UPDGRP_AF_CAP_FLAGS                                               \
 	(PEER_CAP_ORF_PREFIX_SM_RCV | PEER_CAP_ADDPATH_AF_TX_ADV |             \
@@ -344,8 +353,7 @@ struct updwalk_context {
 
 /* Prototypes.  */
 /* bgp_updgrp.c */
-extern void update_bgp_group_init(struct bgp *);
-extern void udpate_bgp_group_free(struct bgp *);
+extern void update_bgp_group_init(struct bgp *bgp);
 
 extern void update_group_show(struct bgp *bgp, afi_t afi, safi_t safi,
 			      struct vty *vty, uint64_t subgrp_id, bool uj);
@@ -353,13 +361,11 @@ extern void update_group_show_stats(struct bgp *bgp, struct vty *vty);
 extern void update_group_adjust_peer(struct peer_af *paf);
 extern int update_group_adjust_soloness(struct peer *peer, int set);
 
-extern void update_subgroup_remove_peer(struct update_subgroup *,
-					struct peer_af *);
+extern void update_subgroup_remove_peer(struct update_subgroup *subgrp, struct peer_af *paf);
 extern struct bgp_table *update_subgroup_rib(struct update_subgroup *);
-extern void update_subgroup_split_peer(struct peer_af *, struct update_group *);
-extern bool update_subgroup_check_merge(struct update_subgroup *, const char *);
-extern bool update_subgroup_trigger_merge_check(struct update_subgroup *,
-						int force);
+extern void update_subgroup_split_peer(struct peer_af *paf, struct update_group *updgrp);
+extern bool update_subgroup_check_merge(struct update_subgroup *subgrp, const char *reason);
+extern bool update_subgroup_trigger_merge_check(struct update_subgroup *subgrp, int force);
 extern void update_group_policy_update(struct bgp *bgp,
 				       enum bgp_policy_type ptype,
 				       const char *pname, bool route_update,
@@ -368,7 +374,7 @@ extern void update_group_af_walk(struct bgp *bgp, afi_t afi, safi_t safi,
 				 updgrp_walkcb cb, void *ctx);
 extern void update_group_walk(struct bgp *bgp, updgrp_walkcb cb, void *ctx);
 extern void
-update_group_refresh_default_originate_route_map(struct event *thread);
+update_group_refresh_default_originate_route_map(struct event *event);
 extern void update_group_start_advtimer(struct bgp *bgp);
 
 extern void update_subgroup_inherit_info(struct update_subgroup *to,
@@ -444,7 +450,7 @@ extern bool bgp_adj_out_set_subgroup(struct bgp_dest *dest,
 				     struct bgp_path_info *path);
 extern void bgp_adj_out_unset_subgroup(struct bgp_dest *dest,
 				       struct update_subgroup *subgrp,
-				       char withdraw, uint32_t addpath_tx_id);
+				       uint32_t addpath_tx_id);
 void subgroup_announce_table(struct update_subgroup *subgrp,
 			     struct bgp_table *table);
 extern void subgroup_trigger_write(struct update_subgroup *subgrp);
@@ -518,8 +524,10 @@ static inline void update_group_remove_peer_afs(struct peer *peer)
 
 	for (afidx = BGP_AF_START; afidx < BGP_AF_MAX; afidx++) {
 		paf = peer->peer_af_array[afidx];
-		if (paf != NULL)
+		if (paf != NULL) {
+			bgp_stop_announce_route_timer(paf);
 			update_subgroup_remove_peer(PAF_SUBGRP(paf), paf);
+		}
 	}
 }
 
@@ -587,4 +595,21 @@ static inline int advertise_list_is_empty(struct update_subgroup *subgrp)
 	return 1;
 }
 
+/*
+ * Immediate announce or coalesce multiple peers?
+ */
+static inline bool peer_immediate_announce(struct peer *peer, afi_t afi, safi_t safi)
+{
+	/*
+	 * Immediate announce:
+	 *  a) We are restarting router - here, immediate means *after*
+	 *     we get all needed EORs
+	 *  b) Peering comes up and we're acting as a Helper router for
+	 *     the peer
+	 */
+	if (CHECK_FLAG(peer->af_sflags[afi][safi], PEER_STATUS_GR_WAIT_EOR) ||
+	    (peer->nsf[afi][safi] && peer->connection->t_gr_stale))
+		return true;
+	return false;
+}
 #endif /* _QUAGGA_BGP_UPDGRP_H */

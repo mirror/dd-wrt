@@ -22,6 +22,8 @@
 #include "lib/spf_backoff.h"
 #include "isisd/isis_mt.h"
 
+DEFINE_MTYPE_STATIC(ISISD, ISIS_TMP_SPF_BACKOFF_BUF_VTY, "ISIS VTY SPF backoff temporary buffer");
+
 static struct isis_circuit *isis_circuit_lookup(struct vty *vty)
 {
 	struct interface *ifp = VTY_GET_CONTEXT(interface);
@@ -156,7 +158,6 @@ DEFUN (show_lsp_flooding,
 	if (argc == 4)
 		lspid = argv[3]->arg;
 
-	struct listnode *node;
 	struct isis_area *area;
 	struct isis *isis = NULL;
 
@@ -167,7 +168,7 @@ DEFUN (show_lsp_flooding,
 		return CMD_SUCCESS;
 	}
 
-	for (ALL_LIST_ELEMENTS_RO(isis->area_list, node, area)) {
+	frr_each (isis_area_list, &isis->area_list, area) {
 		struct lspdb_head *head = &area->lspdb[ISIS_LEVEL2 - 1];
 		struct isis_lsp *lsp;
 
@@ -614,10 +615,9 @@ DEFUN (no_spf_interval,
 static int isis_vty_lsp_mtu_set(struct vty *vty, unsigned int lsp_mtu)
 {
 	VTY_DECLVAR_CONTEXT(isis_area, area);
-	struct listnode *node;
 	struct isis_circuit *circuit;
 
-	for (ALL_LIST_ELEMENTS_RO(area->circuit_list, node, circuit)) {
+	frr_each (isis_circuit_list, &area->circuit_list, circuit) {
 		if (circuit->state != C_STATE_INIT
 		    && circuit->state != C_STATE_UP)
 			continue;
@@ -698,7 +698,7 @@ DEFUN (spf_delay_ietf,
 	long timetolearn = atol(argv[10]->arg);
 
 	size_t bufsiz = strlen(area->area_tag) + sizeof("IS-IS  Lx");
-	char *buf = XCALLOC(MTYPE_TMP, bufsiz);
+	char *buf = XCALLOC(MTYPE_ISIS_TMP_SPF_BACKOFF_BUF_VTY, bufsiz);
 
 	snprintf(buf, bufsiz, "IS-IS %s L1", area->area_tag);
 	spf_backoff_free(area->spf_delay_ietf[0]);
@@ -712,7 +712,7 @@ DEFUN (spf_delay_ietf,
 		spf_backoff_new(master, buf, init_delay, short_delay,
 				long_delay, holddown, timetolearn);
 
-	XFREE(MTYPE_TMP, buf);
+	XFREE(MTYPE_ISIS_TMP_SPF_BACKOFF_BUF_VTY, buf);
 	return CMD_SUCCESS;
 }
 

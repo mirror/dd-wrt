@@ -7,6 +7,8 @@
 #ifndef __WHEEL_H__
 #define __WHEEL_H__
 
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,9 +26,9 @@ struct timer_wheel {
 	/*
 	 * Key to determine what slot the item belongs in
 	 */
-	unsigned int (*slot_key)(const void *);
+	unsigned int (*slot_key)(const void *destroy);
 
-	void (*slot_run)(void *);
+	void (*slot_run)(void *data);
 };
 
 /*
@@ -73,7 +75,7 @@ struct timer_wheel *wheel_init(struct event_loop *master, int period,
 /*
  * Delete the specified timer wheel created
  */
-void wheel_delete(struct timer_wheel *);
+void wheel_delete(struct timer_wheel *wheel);
 
 /*
  * wheel - The Timer wheel being modified

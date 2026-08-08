@@ -105,7 +105,7 @@ static inline struct json_object *json_object_new_stringf(const char *fmt, ...)
  *   json_object_object_add(parent, key, child)
  *   json_object_object_addv(parent, child, key, va)
  *   json_object_object_addf(parent, child, key, ...)
- * (would be weird to have the child inbetween the format string and args)
+ * (would be weird to have the child in between the format string and args)
  */
 PRINTFRR(3, 0)
 extern void json_object_object_addv(struct json_object *parent,
@@ -144,6 +144,25 @@ static inline void json_object_object_addf(struct json_object *parent,
 #ifndef json_object_object_get
 #define json_object_object_get THIS IS DEPRECATED
 #endif
+
+/* FRR print/string-output function for vty output */
+void frr_json_vty_out(struct vty *vty, struct json_object *jobj);
+void frr_json_vty_out_bare(struct vty *vty, struct json_object *jobj);
+
+/* Dump an outline of the json hierarchy to vty */
+void frr_vty_json_dump(struct vty *vty, struct json_object *jobj);
+
+/*
+ * Flag that an object (a collection) is not yet complete; don't emit end-of-collection
+ * text yet, as more children may be added.
+ */
+void frr_json_set_open(struct json_object *jobj);
+
+/*
+ * Indicate that an object is complete; during the next output function call,
+ * emit end-of-collection text, and free the object and its children.
+ */
+void frr_json_set_complete(struct json_object *jobj);
 
 #ifdef __cplusplus
 }

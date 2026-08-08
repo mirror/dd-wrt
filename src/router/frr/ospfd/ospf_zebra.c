@@ -263,6 +263,10 @@ void ospf_zebra_add(struct ospf *ospf, struct prefix_ipv4 *p,
 	struct ospf_path *path;
 	struct listnode *node;
 
+	/* Do not install connected routes. */
+	if (or->connected)
+		return;
+
 	if (ospf->gr_info.restart_in_progress) {
 		if (IS_DEBUG_OSPF_GR)
 			zlog_debug("Zebra: Graceful Restart in progress -- not installing %pFX(%s)",
@@ -512,10 +516,10 @@ bool ospf_external_default_routemap_apply_walk(struct ospf *ospf,
  * Function to originate or flush default after applying
  * route-map on all ei.
  */
-static void ospf_external_lsa_default_routemap_timer(struct event *thread)
+static void ospf_external_lsa_default_routemap_timer(struct event *event)
 {
 	struct list *ext_list;
-	struct ospf *ospf = EVENT_ARG(thread);
+	struct ospf *ospf = EVENT_ARG(event);
 	struct prefix_ipv4 p;
 	int type;
 	int ret = 0;
@@ -526,7 +530,7 @@ static void ospf_external_lsa_default_routemap_timer(struct event *thread)
 	p.prefixlen = 0;
 	p.prefix.s_addr = INADDR_ANY;
 
-	/* Get the default extenal info. */
+	/* Get the default external info. */
 	default_ei = ospf_external_info_lookup(ospf, DEFAULT_ROUTE,
 					       ospf->instance, &p);
 	if (!default_ei) {
@@ -910,6 +914,7 @@ int ospf_redistribute_default_set(struct ospf *ospf, int originate, int mtype,
 	struct in_addr nexthop;
 	int cur_originate = ospf->default_originate;
 	const char *type_str = NULL;
+	struct external_info *ei;
 
 	nexthop.s_addr = INADDR_ANY;
 	p.family = AF_INET;
@@ -931,18 +936,44 @@ int ospf_redistribute_default_set(struct ospf *ospf, int originate, int mtype,
 		return CMD_SUCCESS;
 	}
 
-	switch (cur_originate) {
-	case DEFAULT_ORIGINATE_NONE:
-		break;
-	case DEFAULT_ORIGINATE_ZEBRA:
+	/* Update zebra default route redistribution. */
+	if (cur_originate == DEFAULT_ORIGINATE_NONE) {
+		zclient_redistribute_default(ZEBRA_REDISTRIBUTE_DEFAULT_ADD, ospf_zclient, AFI_IP,
+					     ospf->vrf_id);
+		ospf->redistribute++;
+	}
+	if (originate == DEFAULT_ORIGINATE_NONE) {
 		zclient_redistribute_default(ZEBRA_REDISTRIBUTE_DEFAULT_DELETE,
 					     ospf_zclient, AFI_IP, ospf->vrf_id);
 		ospf->redistribute--;
-		break;
+	}
+
+	/*
+	 * Check if a new default route needs to be originated, or an existing
+	 * one removed.
+	 */
+	ei = ospf_external_info_lookup(ospf, DEFAULT_ROUTE, 0, &p);
+	switch (originate) {
 	case DEFAULT_ORIGINATE_ALWAYS:
-		ospf_external_info_delete(ospf, DEFAULT_ROUTE, 0, p);
-		ospf_external_del(ospf, DEFAULT_ROUTE, 0);
-		ospf->redistribute--;
+		if (!ei) {
+			ospf_external_add(ospf, DEFAULT_ROUTE, 0);
+			ei = ospf_external_info_add(ospf, DEFAULT_ROUTE, 0, p, 0, nexthop, 0,
+						    mvalue);
+		}
+		if (ei)
+			ei->default_always = true;
+		break;
+	case DEFAULT_ORIGINATE_ZEBRA:
+		if (ei && ei->default_always) {
+			ospf_external_info_delete(ospf, DEFAULT_ROUTE, 0, p);
+			ospf_external_del(ospf, DEFAULT_ROUTE, 0);
+		}
+		break;
+	case DEFAULT_ORIGINATE_NONE:
+		if (ei) {
+			ospf_external_info_delete(ospf, DEFAULT_ROUTE, 0, p);
+			ospf_external_del(ospf, DEFAULT_ROUTE, 0);
+		}
 		break;
 	}
 
@@ -952,16 +983,9 @@ int ospf_redistribute_default_set(struct ospf *ospf, int originate, int mtype,
 		break;
 	case DEFAULT_ORIGINATE_ZEBRA:
 		type_str = "normal";
-		ospf->redistribute++;
-		zclient_redistribute_default(ZEBRA_REDISTRIBUTE_DEFAULT_ADD,
-					     ospf_zclient, AFI_IP, ospf->vrf_id);
 		break;
 	case DEFAULT_ORIGINATE_ALWAYS:
 		type_str = "always";
-		ospf->redistribute++;
-		ospf_external_add(ospf, DEFAULT_ROUTE, 0);
-		ospf_external_info_add(ospf, DEFAULT_ROUTE, 0, p, 0, nexthop, 0,
-				       DEFAULT_DEFAULT_METRIC);
 		break;
 	}
 
@@ -1004,10 +1028,17 @@ int ospf_distribute_check_connected(struct ospf *ospf, struct external_info *ei)
 	struct listnode *node;
 	struct ospf_interface *oi;
 
+	for (ALL_LIST_ELEMENTS_RO(ospf->oiflist, node, oi)) {
+		struct prefix address;
 
-	for (ALL_LIST_ELEMENTS_RO(ospf->oiflist, node, oi))
-		if (prefix_match(oi->address, (struct prefix *)&ei->p))
+		/* Clean up the address by removing the mask part */
+		prefix_copy(&address, oi->address);
+		apply_mask(&address);
+
+		if (prefix_same(&address, (struct prefix *)&ei->p))
 			return 0;
+	}
+
 	return 1;
 }
 
@@ -1065,7 +1096,7 @@ static bool ospf_external_lsa_default_routemap_apply(struct ospf *ospf,
 	p.prefix.s_addr = INADDR_ANY;
 
 
-	/* Get the default extenal info. */
+	/* Get the default external info. */
 	default_ei = ospf_external_info_lookup(ospf, DEFAULT_ROUTE,
 					       ospf->instance, &p);
 	if (!default_ei) {
@@ -1284,8 +1315,8 @@ static int ospf_zebra_read_route(ZAPI_CALLBACK_ARGS)
 	struct zapi_route api;
 	struct prefix_ipv4 p;
 	struct prefix pgen = {};
-	unsigned long ifindex;
-	struct in_addr nexthop;
+	unsigned long ifindex = 0;
+	struct in_addr nexthop = {};
 	struct external_info *ei;
 	struct ospf *ospf;
 	int i;
@@ -1298,8 +1329,10 @@ static int ospf_zebra_read_route(ZAPI_CALLBACK_ARGS)
 	if (zapi_route_decode(zclient->ibuf, &api) < 0)
 		return -1;
 
-	ifindex = api.nexthops[0].ifindex;
-	nexthop = api.nexthops[0].gate.ipv4;
+	if (api.nexthop_num > 0) {
+		ifindex = api.nexthops[0].ifindex;
+		nexthop = api.nexthops[0].gate.ipv4;
+	}
 	rt_type = api.type;
 
 	memcpy(&p, &api.prefix, sizeof(p));
@@ -1357,10 +1390,13 @@ static int ospf_zebra_read_route(ZAPI_CALLBACK_ARGS)
 			/* Nothing has changed, so nothing to do; return */
 			return 0;
 		}
-		if (ospf->router_id.s_addr != INADDR_ANY) {
-			if (is_default_prefix4(&p))
+		if (ospf->router_id.s_addr != INADDR_ANY &&
+		    !CHECK_FLAG(ospf->config, OSPF_SHUTDOWN)) {
+			if (is_default_prefix4(&p)) {
+				if (ei)
+					ei->default_always = false;
 				ospf_external_lsa_refresh_default(ospf);
-			else {
+			} else {
 				struct ospf_external_aggr_rt *aggr;
 				struct as_external_lsa *al;
 				struct ospf_lsa *lsa = NULL;
@@ -1389,7 +1425,7 @@ static int ospf_zebra_read_route(ZAPI_CALLBACK_ARGS)
 
 					/* Handling the case where the
 					 * external route prefix
-					 * and aggegate prefix is same
+					 * and aggregate prefix is same
 					 * If same don't flush the
 					 * originated
 					 * external LSA.
@@ -1464,6 +1500,10 @@ static int ospf_zebra_read_route(ZAPI_CALLBACK_ARGS)
 		if (ei == NULL)
 			return 0;
 
+		/* Do not remove persistent default route. */
+		if (rt_type == DEFAULT_ROUTE && ei->default_always)
+			return 0;
+
 		/*
 		 * Check if default-information originate i
 		 * with some routemap prefix/access list match.
@@ -1487,6 +1527,17 @@ static int ospf_zebra_read_route(ZAPI_CALLBACK_ARGS)
 			else
 				ospf_external_lsa_flush(ospf, rt_type, &p,
 							ifindex /*, nexthop */);
+		}
+
+		/* Check if a new default route needs to be originated. */
+		if (rt_type == DEFAULT_ROUTE &&
+		    ospf->default_originate == DEFAULT_ORIGINATE_ALWAYS) {
+			nexthop.s_addr = INADDR_ANY;
+			ospf_external_add(ospf, DEFAULT_ROUTE, 0);
+			ei = ospf_external_info_add(ospf, DEFAULT_ROUTE, 0, p, 0, nexthop, 0,
+						    metric_value(ospf, DEFAULT_ROUTE, 0));
+			if (ei)
+				ei->default_always = true;
 		}
 	}
 
@@ -1579,19 +1630,17 @@ int ospf_distribute_list_out_unset(struct ospf *ospf, int type,
 }
 
 /* distribute-list update timer. */
-static void ospf_distribute_list_update_timer(struct event *thread)
+static void ospf_distribute_list_update_timer(struct event *event)
 {
 	struct route_node *rn;
 	struct external_info *ei;
 	struct route_table *rt;
 	struct ospf_lsa *lsa;
 	int type, default_refresh = 0;
-	struct ospf *ospf = EVENT_ARG(thread);
+	struct ospf *ospf = EVENT_ARG(event);
 
 	if (ospf == NULL)
 		return;
-
-	ospf->t_distribute_update = NULL;
 
 	zlog_info("Zebra[Redistribute]: vrf: %s distribute-list update timer fired!",
 		  ospf_vrf_id_to_name(ospf->vrf_id));

@@ -296,7 +296,8 @@ enum zebra_dplane_result kernel_route_update(struct zebra_dplane_ctx *ctx)
 	uint32_t type, old_type;
 
 	if (dplane_ctx_get_src(ctx) != NULL) {
-		zlog_err("route add: IPv6 sourcedest routes unsupported!");
+		flog_err(EC_ZEBRA_UNSUPPORTED_V6_SRCDEST,
+			 "route add: IPv6 sourcedest routes unsupported!");
 		return ZEBRA_DPLANE_REQUEST_FAILURE;
 	}
 
@@ -329,9 +330,9 @@ enum zebra_dplane_result kernel_route_update(struct zebra_dplane_ctx *ctx)
 					   dplane_ctx_get_ng(ctx),
 					   dplane_ctx_get_metric(ctx));
 		} else {
-			zlog_err("Invalid routing socket update op %s (%u)",
-				 dplane_op2str(dplane_ctx_get_op(ctx)),
-				 dplane_ctx_get_op(ctx));
+			flog_err(EC_ZEBRA_RT_SOCKET_INVALID_OP,
+				 "Invalid routing socket update op %s (%u)",
+				 dplane_op2str(dplane_ctx_get_op(ctx)), dplane_ctx_get_op(ctx));
 			res = ZEBRA_DPLANE_REQUEST_FAILURE;
 		}
 	} /* Elevated privs */
@@ -382,12 +383,13 @@ extern int kernel_interface_set_master(struct interface *master,
 	return 0;
 }
 
-uint32_t kernel_get_speed(struct interface *ifp, int *error)
+void kernel_read_intf_speed(struct zebra_dplane_ctx *ctx)
 {
-	return ifp->speed;
+	dplane_ctx_set_status(ctx, ZEBRA_DPLANE_REQUEST_FAILURE);
+	dplane_ctx_set_ifp_speed_set(ctx, false);
 }
 
-int kernel_upd_mac_nh(uint32_t nh_id, struct in_addr vtep_ip)
+int kernel_upd_mac_nh(uint32_t nh_id, struct ipaddr *vtep_ip)
 {
 	return 0;
 }

@@ -394,6 +394,24 @@ bgpd
 
    Print BGP peer's IP and hostname together.
 
+
+mgmtd
+"""""
+
+.. frrfmt:: %pMBI (mgmt_be_client_id_t *)
+
+   Print the client name for the given client ID. If the client is unknown
+   ``unknown-cliend-id-%d`` is substituted.
+
+.. frrfmt:: %pMBM (uint64_t *)
+
+   Print all the clients indicated by the given bit-mask value. Each bit
+   represents it's client ID (i.e., 0x06 == client id's 1 and 2). If a client
+   is unknown ``unknown-cliend-id-%d`` is substituted.
+
+   :frrfmtout:`zebra|ripd|staticd`
+
+
 pimd/pim6d
 """"""""""
 
@@ -425,6 +443,18 @@ General utility formats
 
    (This is a GNU extension not specific to FRR.  FRR guarantees it is
    available on all systems in printfrr, though BSDs support it in printf too.)
+
+.. frrfmt:: %pSA (const char **)
+
+   ([S]tring [A]rray.)  Like ``%s``, but prints an array of strings (char *)
+   until a NULL pointer is seen. Options:
+
+      ``d`` - arg is a dynamic array (darr) so use its length rather than
+      expecting a terminating NULL value (can still be overridden by passing
+      explicit len).
+
+   If a length is specified (``%*pSA`` or ``%.*pSA``), it is the number of
+   strings in the array to print.
 
 .. frrfmt:: %pSQ (char *)
 
@@ -516,7 +546,7 @@ General utility formats
 
    ``%pIS``: :frrfmtout:`01.0203.04O5`
    ISO Network address is printed as separated byte. The number of byte of the
-   address is embeded in the `iso_net` structure.
+   address is embedded in the `iso_net` structure.
 
    ``%pISl``: :frrfmtout:`01.0203.04O5.0607.0809.1011.1213.14` - long format to
    print the long version of the ISO Network address which include the System

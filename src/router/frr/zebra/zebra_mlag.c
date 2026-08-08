@@ -37,7 +37,7 @@ static bool test_mlag_in_progress;
 
 static int zebra_mlag_signal_write_thread(void);
 static void zebra_mlag_terminate_pthread(struct event *event);
-static void zebra_mlag_post_data_from_main_thread(struct event *thread);
+static void zebra_mlag_post_data_from_main_thread(struct event *event);
 static void zebra_mlag_publish_process_state(struct zserv *client,
 					     zebra_message_types_t msg_type);
 
@@ -105,8 +105,8 @@ void zebra_mlag_process_mlag_data(uint8_t *data, uint32_t len)
 	if (msg_type <= 0) {
 		/* Something went wrong in decoding */
 		stream_free(s);
-		zlog_err("%s: failed to process mlag data-%d, %u", __func__,
-			 msg_type, len);
+		flog_err(EC_ZEBRA_MLAG_DATA_PROCESS_FAIL, "%s: failed to process mlag data-%d, %u",
+			 __func__, msg_type, len);
 		return;
 	}
 
@@ -274,7 +274,7 @@ static void zebra_mlag_publish_process_state(struct zserv *client,
 
 
 	/*
-	 * additional four bytes are for mesasge type
+	 * additional four bytes are for message type
 	 */
 	s = stream_new(ZEBRA_HEADER_SIZE + ZEBRA_MLAG_METADATA_LEN);
 	stream_putl(s, ZEBRA_MLAG_MSG_BCAST);
@@ -292,9 +292,9 @@ static void zebra_mlag_publish_process_state(struct zserv *client,
  * main thread, because for that access was needed for clients list.
  * so instead of forcing the locks, messages will be posted from main thread.
  */
-static void zebra_mlag_post_data_from_main_thread(struct event *thread)
+static void zebra_mlag_post_data_from_main_thread(struct event *event)
 {
-	struct stream *s = EVENT_ARG(thread);
+	struct stream *s = EVENT_ARG(event);
 	struct stream *zebra_s = NULL;
 	struct zserv *client;
 	uint32_t msg_type = 0;
@@ -526,7 +526,7 @@ void zebra_mlag_client_unregister(ZAPI_HANDLER_ARGS)
  * Does following things.
  * 1) allocated new local stream, and copies the client data and enqueue
  *    to MLAG Thread
- *  2) MLAG Thread after dequeing, encode the client data using protobuf
+ *  2) MLAG Thread after dequeuing, encode the client data using protobuf
  *     and write on to MLAG
  */
 void zebra_mlag_forward_client_msg(ZAPI_HANDLER_ARGS)
@@ -618,8 +618,6 @@ void zebra_mlag_init(void)
 	zrouter.mlag_info.mlag_fifo = stream_fifo_new();
 	zrouter.mlag_info.zebra_pth_mlag = NULL;
 	zrouter.mlag_info.th_master = NULL;
-	zrouter.mlag_info.t_read = NULL;
-	zrouter.mlag_info.t_write = NULL;
 	test_mlag_in_progress = false;
 	zebra_mlag_reset_read_buffer();
 }
@@ -896,7 +894,7 @@ int zebra_mlag_protobuf_encode_client_data(struct stream *s, uint32_t *msg_type)
 	}
 
 	/*
-	 * ProtoBuf Infra will not support to demarc the pointers whem multiple
+	 * ProtoBuf Infra will not support to demarc the pointers when multiple
 	 * messages are posted inside a single Buffer.
 	 * 2 -solutions exist to solve this
 	 * 1. add Unenoced length at the beginning of every message, this will

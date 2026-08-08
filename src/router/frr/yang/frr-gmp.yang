@@ -5,6 +5,10 @@ module frr-gmp {
 
   prefix frr-gmp;
 
+  import frr-filter {
+    prefix filter;
+  }
+
   import frr-routing {
     prefix "frr-rt";
   }
@@ -141,6 +145,15 @@ module frr-gmp {
          the leave latency of the network.";
     }
 
+    leaf last-member-query-count {
+      type uint8 {
+        range "1..max";
+      }
+      description
+        "Last Member Query Count allows tuning for the expected
+	 packet loss on a network when leaving a group/group-source.";
+    }
+
     leaf robustness-variable {
       type uint8 {
         range "1..max";
@@ -156,6 +169,12 @@ module frr-gmp {
       default "false";
       description
         "Enable IGMP proxy on the interface.";
+    }
+
+    leaf proxy-route-map {
+      type frr-route-map:route-map-ref;
+      description
+        "Filter proxied multicast (S,G) groups with referenced route-map.";
     }
 
     leaf max-groups {
@@ -209,6 +228,12 @@ module frr-gmp {
       type frr-route-map:route-map-ref;
       description
         "Filter multicast with referenced route-map.";
+    }
+
+    leaf access-list {
+      type filter:access-list-ref;
+      description
+        "Filter multicast with referenced access-list.";
     }
 
     list static-group {

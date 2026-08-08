@@ -70,9 +70,9 @@ static int ospf6_vertex_cmp(const struct ospf6_vertex *va,
 {
 	/* ascending order */
 	if (va->cost != vb->cost)
-		return (va->cost - vb->cost);
+		return (va->cost > vb->cost) ? 1 : -1;
 	if (va->hops != vb->hops)
-		return (va->hops - vb->hops);
+		return (va->hops > vb->hops) ? 1 : -1;
 	return 0;
 }
 DECLARE_SKIPLIST_NONUNIQ(vertex_pqueue, struct ospf6_vertex, pqi,
@@ -379,6 +379,8 @@ static int ospf6_spf_install(struct ospf6_vertex *v,
 	route->path.options[0] = v->options[0];
 	route->path.options[1] = v->options[1];
 	route->path.options[2] = v->options[2];
+	if (v->hops == 0)
+		route->connected = true;
 
 	ospf6_spf_copy_nexthops_to_route(route, v);
 

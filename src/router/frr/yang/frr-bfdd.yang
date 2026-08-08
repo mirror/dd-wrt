@@ -16,6 +16,9 @@ module frr-bfdd {
   import frr-vrf {
     prefix frr-vrf;
   }
+  import ietf-key-chain {
+    prefix kc;
+  }
 
   organization "FRRouting";
   contact
@@ -161,6 +164,18 @@ module frr-bfdd {
       require-instance false;
     }
     description "Reference to a BFD profile";
+  }
+
+  grouping auth-config {
+    leaf authentication-key-chain {
+      type kc:key-chain-ref;
+      description "Reference to the key chain for authentication";
+    }
+
+    leaf authentication-algorithm-meticulous {
+      type boolean;
+      description "Use meticulous algorithm with SHA-1";
+    }
   }
 
   /*
@@ -328,7 +343,7 @@ module frr-bfdd {
 
     leaf remote-diagnostic {
       type diagnostic;
-      description "Local session diagnostic";
+      description "Remote session diagnostic";
     }
 
     leaf remote-multiplier {
@@ -401,6 +416,11 @@ module frr-bfdd {
       description "Number of control packets received";
     }
 
+    leaf control-packet-input-count-bad {
+      type uint64;
+      description "Number of control packets received that were not correct";
+    }
+
     leaf control-packet-output-count {
       type uint64;
       description "Number of control packets sent";
@@ -451,6 +471,18 @@ module frr-bfdd {
         uses session-common;
         uses session-echo;
         uses session-multi-hop;
+
+        container profile-authentication {
+          leaf authentication-key-chain {
+            type string;
+            description "Reference to the key chain for authentication";
+          }
+
+          leaf authentication-algorithm-meticulous {
+            type boolean;
+            description "Use meticulous algorithm with SHA-1";
+          }
+        }
       }
 
       container sessions {
@@ -488,6 +520,8 @@ module frr-bfdd {
 
           uses session-common;
           uses session-echo;
+          uses auth-config;
+
 
           container stats {
             uses session-states;
@@ -523,6 +557,7 @@ module frr-bfdd {
 
           uses session-common;
           uses session-multi-hop;
+          uses auth-config;
 
           container stats {
             uses session-states;
@@ -586,6 +621,7 @@ module frr-bfdd {
           uses session-common;
           uses session-multi-hop;
           uses session-echo;
+          uses auth-config;
 
           container stats {
             uses session-states;
@@ -632,7 +668,7 @@ module frr-bfdd {
           }
 
           leaf srv6-source-ipv6 {
-            type inet:ip-address;
+            type inet:ipv6-address;
             description "source ipv6 address for srv6 encapsulation";
           }
 
@@ -655,6 +691,7 @@ module frr-bfdd {
 
           uses session-common;
           uses session-multi-hop;
+          uses auth-config;
 
           container stats {
             uses session-states;

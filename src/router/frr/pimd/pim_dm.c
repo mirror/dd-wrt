@@ -23,6 +23,10 @@
 #include "pim_igmp.h"
 #include "pim_join.h"
 #include "pim_util.h"
+#include "pim_ifchannel.h"
+#include "pim_assert.h"
+#include "pim_macro.h"
+#include "if.h"
 
 static void pim_dm_range_reevaluate(struct pim_instance *pim)
 {
@@ -43,6 +47,7 @@ static void pim_dm_range_reevaluate(struct pim_instance *pim)
 	 * will
 	 * disappear in time for SSM groups.
 	 */
+	pim_upstream_dense_reevaluate(pim);
 	pim_upstream_register_reevaluate(pim);
 	igmp_source_forward_reevaluate_all(pim);
 #endif
@@ -73,8 +78,7 @@ void pim_dm_change_iif_mode(struct interface *ifp, enum pim_iface_mode mode)
 					if (pim_upstream_up_connected(c_oil->up) &&
 					    PIM_UPSTREAM_DM_TEST_PRUNE(c_oil->up->flags)) {
 						PIM_UPSTREAM_DM_UNSET_PRUNE(c_oil->up->flags);
-						if (c_oil->up->t_prune_timer)
-							event_cancel(&c_oil->up->t_prune_timer);
+						event_cancel(&c_oil->up->t_prune_timer);
 						pim_dm_graft_send(c_oil->up->rpf, c_oil->up);
 						graft_timer_start(c_oil->up);
 					}
@@ -87,8 +91,7 @@ void pim_dm_change_iif_mode(struct interface *ifp, enum pim_iface_mode mode)
 				oil_if_set(c_oil, pim_ifp->mroute_vif_index, 0);
 				pim_upstream_mroute_update(c_oil, __func__);
 				if (!pim_upstream_up_connected(c_oil->up)) {
-					if (c_oil->up->t_graft_timer)
-						event_cancel(&c_oil->up->t_graft_timer);
+					event_cancel(&c_oil->up->t_graft_timer);
 					PIM_UPSTREAM_DM_SET_PRUNE(c_oil->up->flags);
 					pim_dm_prune_send(c_oil->up->rpf, c_oil->up, 0);
 					prune_timer_start(c_oil->up);
@@ -128,8 +131,68 @@ void pim_dm_graft_send(struct pim_rpf rpf, struct pim_upstream *up)
 	list_delete_all_node(&groups);
 }
 
-/* Send a prune immediately to all neighbors on a interface.
- * Used when a packet is received on the wrong interface.
+static void pim_dm_assert_wrongif(struct interface *ifp, pim_sgaddr sg, struct pim_upstream *up)
+{
+	struct pim_ifchannel *ch, *throwaway;
+
+	pim_ifchannel_find(ifp, &sg, &ch, &throwaway);
+	if (!ch)
+		ch = pim_ifchannel_add(ifp, &sg, 0, 0);
+
+	if (ch->upstream != up) {
+		if (PIM_DEBUG_PIM_J_P)
+			zlog_debug("%s: (S,G)=%pSG ifchannel upstream mismatch on %s", __func__,
+				   &sg, ifp->name);
+		return;
+	}
+
+	pim_ifchannel_update_could_assert(ch);
+
+	/* CouldAssert(S,G,I) must be true to initiate Assert (RFC 3973 4.6.4) */
+	if (!PIM_IF_FLAG_TEST_COULD_ASSERT(ch->flags)) {
+		if (PIM_DEBUG_MROUTE)
+			zlog_debug("%s: (S,G)=%s CouldAssert false on %s, skipping assert",
+				   __func__, ch->sg_str, ifp->name);
+		return;
+	}
+
+	if (ch->ifassert_state != PIM_IFASSERT_NOINFO) {
+		if (PIM_DEBUG_MROUTE)
+			zlog_debug("%s: (S,G)=%s assert state %d on %s, skipping assert_action_a1",
+				   __func__, ch->sg_str, ch->ifassert_state, ifp->name);
+		return;
+	}
+
+	if (assert_action_a1(ch)) {
+		if (PIM_DEBUG_MROUTE)
+			zlog_debug("%s: (S,G)=%s assert_action_a1 failure on %s", __func__,
+				   ch->sg_str, ifp->name);
+	}
+}
+
+void pim_dm_wrongif(struct interface *ifp, pim_sgaddr sg, struct pim_upstream *up)
+{
+	if (!up || !up->rpf.source_nexthop.interface)
+		return;
+
+	if (up->rpf.source_nexthop.interface->ifindex == ifp->ifindex)
+		return;
+
+	if (if_is_pointopoint(ifp)) {
+		if (PIM_DEBUG_PIM_J_P)
+			zlog_debug("%s: Dense Mode WRONGVIF on P2P %s, immediate prune (S,G)=%pSG",
+				   __func__, ifp->name, &sg);
+		pim_dm_prune_wrongif(ifp, sg, up);
+	} else {
+		if (PIM_DEBUG_PIM_J_P)
+			zlog_debug("%s: Dense Mode WRONGVIF on LAN %s, starting Assert (S,G)=%pSG",
+				   __func__, ifp->name, &sg);
+		pim_dm_assert_wrongif(ifp, sg, up);
+	}
+}
+
+/* Send a prune immediately to all neighbors on an interface.
+ * Used for wrong-interface traffic on P2P links and at the FHR.
  */
 void pim_dm_prune_wrongif(struct interface *ifp, pim_sgaddr sg, struct pim_upstream *up)
 {
@@ -161,6 +224,73 @@ void pim_dm_prune_wrongif(struct interface *ifp, pim_sgaddr sg, struct pim_upstr
 			pim_dm_prune_send(rpf, up, 0);
 		}
 		prune_limit_timer_start(up);
+	}
+}
+
+/* React to an Assert state change on a dense-mode (S,G) interface.
+ *
+ * RFC 3973 4.6: the Assert loser must stop forwarding the duplicate onto the
+ * shared LAN. If it also has no downstream receivers on that interface, it
+ * prunes toward the Assert winner so the winner can drop the OIF and the tree
+ * can converge. When the Assert is cancelled (back to NoInfo) the interface is
+ * re-added so normal dense flooding resumes.
+ */
+void pim_dm_assert_state_changed(struct pim_ifchannel *ch, enum pim_ifassert_state new_state)
+{
+	struct interface *ifp = ch->interface;
+	struct pim_interface *pim_ifp = ifp->info;
+	struct pim_upstream *up = ch->upstream;
+
+	if (!pim_ifp || !up || !up->channel_oil)
+		return;
+
+	if (!pim_iface_grp_dm(pim_ifp, ch->sg.grp))
+		return;
+
+	/* Only downstream (non-RPF) interfaces are forwarding OIFs here. While
+	 * RPF is unresolved (transiently NULL during reconvergence) we cannot
+	 * tell whether ifp is the RPF interface, so skip the OIL update.
+	 */
+	if (!up->rpf.source_nexthop.interface || up->rpf.source_nexthop.interface == ifp)
+		return;
+
+	if (new_state == PIM_IFASSERT_I_AM_LOSER) {
+		/* Defer to the Assert winner: stop forwarding the duplicate
+		 * back onto this LAN.
+		 */
+		if (oil_if_has(up->channel_oil, pim_ifp->mroute_vif_index)) {
+			oil_if_set(up->channel_oil, pim_ifp->mroute_vif_index, 0);
+			pim_upstream_mroute_update(up->channel_oil, __func__);
+		}
+
+		/* With no local receivers on this interface, ask the winner to
+		 * stop forwarding the duplicate to us so its OIF clears too.
+		 */
+		if (!pim_gm_has_igmp_join(ifp, ch->sg.grp)) {
+			struct pim_rpf rpf;
+
+			rpf.source_nexthop.interface = ifp;
+			rpf.source_nexthop.mrib_nexthop_addr = ch->ifassert_winner;
+			if (PIM_DEBUG_PIM_J_P)
+				zlog_debug("%s: (S,G)=%s Assert loser on %s, pruning winner %pPA",
+					   __func__, ch->sg_str, ifp->name, &ch->ifassert_winner);
+			pim_dm_prune_send(rpf, up, 0);
+		}
+	} else if (new_state == PIM_IFASSERT_NOINFO) {
+		/* Assert cancelled: resume dense flooding on this interface if
+		 * it still has neighbors or local receivers and is not pruned,
+		 * either on this interface (ch->flags) or for the whole (S,G)
+		 * upstream (up->flags). Re-adding an OIF while the upstream is
+		 * globally pruned would install an OIF that never sees traffic;
+		 * mirror the up->flags guard used in pim_dm_prune_iff_on_timer().
+		 */
+		if ((pim_ifp->pim_neighbor_list->count || pim_gm_has_igmp_join(ifp, ch->sg.grp)) &&
+		    !PIM_UPSTREAM_DM_TEST_PRUNE(ch->flags) &&
+		    !PIM_UPSTREAM_DM_TEST_PRUNE(up->flags) &&
+		    !oil_if_has(up->channel_oil, pim_ifp->mroute_vif_index)) {
+			oil_if_set(up->channel_oil, pim_ifp->mroute_vif_index, 1);
+			pim_upstream_mroute_update(up->channel_oil, __func__);
+		}
 	}
 }
 
@@ -236,7 +366,7 @@ void pim_dm_recv_graft(struct interface *ifp, pim_sgaddr *sg)
 	struct pim_upstream *up;
 	struct pim_interface *pim_ifp = ifp->info;
 	pim_addr group_addr = sg->grp;
-	struct pim_ifchannel *ch;
+	struct pim_ifchannel *ch, *throwaway;
 
 	if (!pim_ifp || !pim_ifp->pim_enable)
 		return;
@@ -256,20 +386,18 @@ void pim_dm_recv_graft(struct interface *ifp, pim_sgaddr *sg)
 		oil_if_set(up->channel_oil, pim_ifp->mroute_vif_index, 1);
 		pim_upstream_mroute_update(up->channel_oil, __func__);
 
-		ch = pim_ifchannel_find(ifp, sg);
+		pim_ifchannel_find(ifp, sg, &ch, &throwaway);
 
 		if (ch) {
 			PIM_UPSTREAM_DM_UNSET_PRUNE(ch->flags);
-			if (ch->t_ifjoin_expiry_timer)
-				event_cancel(&ch->t_ifjoin_expiry_timer);
+			event_cancel(&ch->t_ifjoin_expiry_timer);
 			pim_ifchannel_delete(ch);
 		}
 
 		/* dm: forward graft message */
 		if (PIM_UPSTREAM_DM_TEST_PRUNE(up->flags)) {
 			PIM_UPSTREAM_DM_UNSET_PRUNE(up->flags);
-			if (up->t_prune_timer)
-				event_cancel(&up->t_prune_timer);
+			event_cancel(&up->t_prune_timer);
 			pim_dm_graft_send(up->rpf, up);
 			graft_timer_start(up);
 		}
@@ -283,7 +411,7 @@ void pim_dm_recv_prune(struct interface *ifp, struct pim_neighbor *neigh, uint16
 	struct pim_upstream *up;
 	struct pim_interface *pim_ifp;
 	pim_addr group_addr = sg->grp;
-	struct pim_ifchannel *ch;
+	struct pim_ifchannel *ch, *throwaway;
 
 	struct interface *ifp2 = NULL;
 	struct pim_interface *pim_ifp2;
@@ -326,20 +454,20 @@ void pim_dm_recv_prune(struct interface *ifp, struct pim_neighbor *neigh, uint16
 				break;
 			}
 		}
+
 		if (!sg_connected) {
 			PIM_UPSTREAM_DM_SET_PRUNE(up->flags);
 			pim_dm_prune_send(up->rpf, up, 0);
 			prune_timer_start(up);
 		}
 
-		ch = pim_ifchannel_find(ifp, sg);
+		pim_ifchannel_find(ifp, sg, &ch, &throwaway);
 		if (!ch)
 			ch = pim_ifchannel_add(ifp, sg, source_flags,
 					       PIM_UPSTREAM_DM_FLAG_MASK_PRUNE);
 		PIM_UPSTREAM_DM_SET_PRUNE(ch->flags);
 		ch->prune_holdtime = holdtime;
-		if (ch->t_ifjoin_expiry_timer)
-			event_cancel(&ch->t_ifjoin_expiry_timer);
+		event_cancel(&ch->t_ifjoin_expiry_timer);
 		event_add_timer(router->master, pim_dm_prune_iff_on_timer, ch, holdtime,
 				&ch->t_ifjoin_expiry_timer);
 	}
@@ -351,12 +479,16 @@ void pim_dm_prune_iff_on_timer(struct event *t)
 	struct pim_upstream *up;
 	struct interface *ifp;
 	struct pim_interface *pim_ifp;
+	bool lost_assert;
 
 	ch = EVENT_ARG(t);
 
 	ifp = ch->interface;
 	pim_ifp = ifp->info;
 	up = pim_upstream_find(pim_ifp->pim, &ch->sg);
+
+	/* Save assert state before pim_ifchannel_delete() may free ch. */
+	lost_assert = pim_macro_ch_lost_assert(ch);
 
 	PIM_UPSTREAM_DM_UNSET_PRUNE(ch->flags);
 	if (ch->flags == 0)
@@ -365,7 +497,8 @@ void pim_dm_prune_iff_on_timer(struct event *t)
 	if (!up)
 		return;
 	pim_upstream_keep_alive_timer_start(up, pim_ifp->pim->keep_alive_time);
-	if (up->channel_oil->installed) {
+	if (up->channel_oil && up->channel_oil->installed &&
+	    !PIM_UPSTREAM_DM_TEST_PRUNE(up->flags) && !lost_assert) {
 		oil_if_set(up->channel_oil, pim_ifp->mroute_vif_index, 1);
 		pim_upstream_mroute_update(up->channel_oil, __func__);
 	}
@@ -431,7 +564,14 @@ bool pim_is_grp_dm(struct pim_instance *pim, pim_addr group_addr)
 	return pim_is_dm_prefix_filter(pim, group_addr);
 }
 
-
+/* Determine if a group should be considered as a dense mode group for a specific interface.
+ * A group is dense mode if it matches the following criteria:
+ *   1. Is NOT in the reserved groups range (224.0.0.0/24)
+ *   2. Is NOT in the SSM group range (default 232.0.0.0/8, or configured)
+ *   3. If interface is in sparse-dense mode, group is NOT covered by an RP (even if unreachable)
+ *   4. If a dense group filter list is configured, group is within the configured prefix list, if
+ *      no filter list is configured, then group is dense mode.
+ */
 bool pim_iface_grp_dm(struct pim_interface *pim_ifp, pim_addr group_addr)
 {
 	struct pim_rpf *rpg;
@@ -453,13 +593,12 @@ bool pim_iface_grp_dm(struct pim_interface *pim_ifp, pim_addr group_addr)
 		return false;
 
 	if (pim_ifp->pim_mode == PIM_MODE_SPARSE_DENSE) {
-		/*
-		 * check if it is an SM group
-		 * if we have an rp,
-		 * and the rp is reachable (I.e, we have source_nexthop.interface)
+		/* If the interface is configured in sparse-dense mode, then the group is sparse if it has
+		 * an RP discovered/configured, even if the RP is unreachable. Otherwise the group is a
+		 * dense group.
 		 */
 		rpg = RP(pim, group_addr);
-		if (rpg && rpg->source_nexthop.interface)
+		if (rpg && !pim_rpf_addr_is_inaddr_any(rpg))
 			return false;
 	}
 

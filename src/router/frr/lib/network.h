@@ -7,6 +7,9 @@
 #ifndef _ZEBRA_NETWORK_H
 #define _ZEBRA_NETWORK_H
 
+#include <stdint.h>
+#include <stdlib.h>
+
 #ifdef HAVE_SYS_ENDIAN_H
 #include <sys/endian.h>
 #endif
@@ -19,8 +22,8 @@ extern "C" {
 /* Both readn and writen are deprecated and will be removed.  They are not
    suitable for use with non-blocking file descriptors.
  */
-extern int readn(int, uint8_t *, int);
-extern int writen(int, const uint8_t *, int);
+extern int readn(int fd, uint8_t *ptr, int nbytes);
+extern int writen(int fd, const uint8_t *ptr, int nbytes);
 
 /* Set the file descriptor to use non-blocking I/O.  Returns 0 for success,
    -1 on error. */
@@ -32,8 +35,8 @@ extern int set_cloexec(int fd);
 #define ERRNO_IO_RETRY(EN)                                                     \
 	(((EN) == EAGAIN) || ((EN) == EWOULDBLOCK) || ((EN) == EINTR))
 
-extern float htonf(float);
-extern float ntohf(float);
+extern float htonf(float host);
+extern float ntohf(float net);
 
 /* force type for be64toh/htobe64 to be uint64_t, *without* a direct cast
  *

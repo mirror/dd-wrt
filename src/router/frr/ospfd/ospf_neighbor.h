@@ -33,10 +33,10 @@ struct ospf_neighbor {
 
 	/* Last sent Database Description packet. */
 	struct ospf_packet *last_send;
-	/* Timestemp when last Database Description packet was sent */
+	/* Timestamp when last Database Description packet was sent */
 	struct timeval last_send_ts;
 
-	/* Last received Databse Description packet. */
+	/* Last received Database Description packet. */
 	struct {
 		uint8_t options;
 		uint8_t flags;
@@ -73,7 +73,8 @@ struct ospf_neighbor {
 	struct timeval ts_last_regress;  /* last regressive NSM change     */
 	const char *last_regress_str;    /* Event which last regressed NSM */
 	uint32_t state_change;		 /* NSM state change counter       */
-	uint32_t ls_rxmt_lsa;		 /* Number of LSAs retransmited.   */
+	uint32_t ls_rxmt_lsa;		 /* Number of LSAs retransmitted.  */
+	uint64_t dead_timer_resets;	 /* Number of times dead-timer was reset RFC4222 rec 2*/
 
 	/* BFD information */
 	struct bfd_session_params *bfd_session;
@@ -87,22 +88,23 @@ struct ospf_neighbor {
 #define NBR_IS_BDR(n)   IPV4_ADDR_SAME (&n->address.u.prefix4, &n->bd_router)
 
 /* Prototypes. */
-extern struct ospf_neighbor *ospf_nbr_new(struct ospf_interface *);
-extern void ospf_nbr_free(struct ospf_neighbor *);
-extern void ospf_nbr_delete(struct ospf_neighbor *);
-extern int ospf_nbr_bidirectional(struct in_addr *, struct in_addr *, int);
-extern void ospf_nbr_self_reset(struct ospf_interface *, struct in_addr);
-extern void ospf_nbr_add_self(struct ospf_interface *, struct in_addr);
-extern int ospf_nbr_count(struct ospf_interface *, int);
-extern int ospf_nbr_count_opaque_capable(struct ospf_interface *);
-extern struct ospf_neighbor *ospf_nbr_get(struct ospf_interface *,
-					  struct ospf_header *, struct ip *,
-					  struct prefix *);
-extern struct ospf_neighbor *ospf_nbr_lookup(struct ospf_interface *,
-					     struct ip *, struct ospf_header *);
-extern struct ospf_neighbor *ospf_nbr_lookup_by_addr(struct route_table *,
-						     struct in_addr *);
-extern struct ospf_neighbor *ospf_nbr_lookup_by_routerid(struct route_table *,
-							 struct in_addr *);
+extern struct ospf_neighbor *ospf_nbr_new(struct ospf_interface *oi);
+extern void ospf_nbr_free(struct ospf_neighbor *nbr);
+extern void ospf_nbr_delete(struct ospf_neighbor *nbr);
+extern void ospf_nbr_bring_down(struct ospf_neighbor *nbr);
+extern int ospf_nbr_bidirectional(struct in_addr *router_id, struct in_addr *dr, int idx);
+extern void ospf_nbr_self_reset(struct ospf_interface *oi, struct in_addr router_id);
+extern void ospf_nbr_add_self(struct ospf_interface *oi, struct in_addr router_id);
+extern int ospf_nbr_count(struct ospf_interface *oi, int state);
+extern int ospf_nbr_count_opaque_capable(struct ospf_interface *oi);
+extern struct ospf_neighbor *ospf_nbr_get(struct ospf_interface *oi, struct ospf_header *ospfh,
+					  struct ip *iph, struct prefix *p);
+extern struct ospf_neighbor *ospf_qnbr_get(struct ospf_interface *oi, struct in_addr *src);
+extern struct ospf_neighbor *ospf_nbr_lookup(struct ospf_interface *oi, struct ip *iph,
+					     struct ospf_header *ospfh);
+extern struct ospf_neighbor *ospf_nbr_lookup_by_addr(struct route_table *nbrs,
+						     struct in_addr *addr);
+extern struct ospf_neighbor *ospf_nbr_lookup_by_routerid(struct route_table *nbrs,
+							 struct in_addr *id);
 extern void ospf_renegotiate_optional_capabilities(struct ospf *top);
 #endif /* _ZEBRA_OSPF_NEIGHBOR_H */

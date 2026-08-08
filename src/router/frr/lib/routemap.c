@@ -801,7 +801,7 @@ struct route_map *route_map_lookup_warn_noexist(struct vty *vty, const char *nam
 	struct route_map *route_map = route_map_lookup_by_name(name);
 
 	if (!route_map)
-		if (vty_shell_serv(vty))
+		if (vty_is_shell_serv(vty))
 			vty_out(vty, "The route-map '%s' does not exist.\n", name);
 
 	return route_map;
@@ -1130,11 +1130,15 @@ static int vty_show_route_map(struct vty *vty, const char *name, bool use_json)
 }
 
 /* Unused route map details */
-static int vty_show_unused_route_map(struct vty *vty)
+static int vty_show_unused_route_map(struct vty *vty, bool uj)
 {
 	struct list *maplist = list_new();
 	struct listnode *ln;
 	struct route_map *map;
+	json_object *json = NULL;
+
+	if (uj)
+		json = json_object_new_object();
 
 	for (map = route_map_master.head; map; map = map->next) {
 		/* If use_count is zero, No protocol is using this routemap.
@@ -1145,16 +1149,22 @@ static int vty_show_unused_route_map(struct vty *vty)
 	}
 
 	if (maplist->count > 0) {
-		vty_out(vty, "\n%s:\n", frr_protonameinst);
+		if (!uj)
+			vty_out(vty, "\n%s:\n", frr_protonameinst);
 		list_sort(maplist, sort_route_map);
 
 		for (ALL_LIST_ELEMENTS_RO(maplist, ln, map))
-			vty_show_route_map_entry(vty, map, NULL);
+			vty_show_route_map_entry(vty, map, json);
 	} else {
-		vty_out(vty, "\n%s: None\n", frr_protonameinst);
+		if (!uj)
+			vty_out(vty, "\n%s: None\n", frr_protonameinst);
 	}
 
 	list_delete(&maplist);
+
+	if (uj)
+		vty_json(vty, json);
+
 	return CMD_SUCCESS;
 }
 
@@ -2498,8 +2508,7 @@ void route_map_notify_pentry_dependencies(const char *affected_name,
 	if (!upd8_hash)
 		return;
 
-	dep = (struct route_map_dep *)hash_get(upd8_hash, (void *)affected_name,
-					       NULL);
+	dep = hash_lookup(upd8_hash, (void *)affected_name);
 	if (dep) {
 		if (!dep->this_hash)
 			dep->this_hash = upd8_hash;
@@ -2602,7 +2611,11 @@ route_map_result_t route_map_apply_ext(struct route_map *map,
 	GETRUSAGE(&mbefore);
 	ibefore = mbefore;
 
-	if (prefix->family == AF_EVPN) {
+	if (prefix->family != AF_INET && prefix->family != AF_INET6) {
+		/* LPM tries are IPv4/IPv6-only; non-IP families (AF_EVPN,
+		 * AF_FLOWSPEC, AF_UNSPEC) must walk all clauses or
+		 * IPv4-restricted matches get silently bypassed.
+		 */
 		index = map->head;
 	} else {
 		skip_match_clause = true;
@@ -2841,7 +2854,7 @@ static void route_map_clear_reference(struct hash_bucket *bucket, void *arg)
 	}
 	if (!dep->dep_rmap_hash->count) {
 		dep = hash_release(dep->this_hash, (void *)dep->dep_name);
-		hash_free(dep->dep_rmap_hash);
+		hash_clean_and_free(&dep->dep_rmap_hash, NULL);
 		XFREE(MTYPE_ROUTE_MAP_NAME, dep->dep_name);
 		XFREE(MTYPE_ROUTE_MAP_DEP, dep);
 	}
@@ -2993,7 +3006,7 @@ static int route_map_dep_update(struct hash *dephash, const char *dep_name,
 
 		if (!dep->dep_rmap_hash->count) {
 			dep = hash_release(dephash, dname);
-			hash_free(dep->dep_rmap_hash);
+			hash_clean_and_free(&dep->dep_rmap_hash, NULL);
 			XFREE(MTYPE_ROUTE_MAP_NAME, dep->dep_name);
 			XFREE(MTYPE_ROUTE_MAP_DEP, dep);
 		}
@@ -3125,7 +3138,7 @@ void route_map_notify_dependencies(const char *affected_name,
 		return;
 	}
 
-	dep = (struct route_map_dep *)hash_get(upd8_hash, name, NULL);
+	dep = hash_lookup(upd8_hash, name);
 	if (dep) {
 		if (!dep->this_hash)
 			dep->this_hash = upd8_hash;
@@ -3199,13 +3212,16 @@ DEFUN_NOSH (rmap_show_name,
 	return vty_show_route_map(vty, name, uj);
 }
 
-DEFUN (rmap_show_unused,
+DEFPY_NOSH (rmap_show_unused,
        rmap_show_unused_cmd,
-       "show route-map-unused",
+       "show route-map-unused [json$json]",
        SHOW_STR
-       "unused route-map information\n")
+       "unused route-map information\n"
+       JSON_STR)
 {
-	return vty_show_unused_route_map(vty);
+	bool uj = use_json(argc, argv);
+
+	return vty_show_unused_route_map(vty, uj);
 }
 
 DEFPY (debug_rmap,
@@ -3326,13 +3342,10 @@ void route_map_finish(void)
 		route_map_delete(map);
 	}
 
-	for (i = 1; i < ROUTE_MAP_DEP_MAX; i++) {
-		hash_free(route_map_dep_hash[i]);
-		route_map_dep_hash[i] = NULL;
-	}
+	for (i = 1; i < ROUTE_MAP_DEP_MAX; i++)
+		hash_clean_and_free(&route_map_dep_hash[i], NULL);
 
-	hash_free(route_map_master_hash);
-	route_map_master_hash = NULL;
+	hash_clean_and_free(&route_map_master_hash, NULL);
 }
 
 /* Increment the use_count counter while attaching the route map */

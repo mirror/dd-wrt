@@ -154,6 +154,7 @@ class Topogen(object):
         self.peern = 1
         self.cfg_gen = 0
         self.exabgp_cmd = None
+        self.topology_stopped = False
         self._init_topo(topodef)
 
         logger.info("loading topology: {}".format(self.modname))
@@ -480,21 +481,25 @@ class Topogen(object):
             except KeyboardInterrupt:
                 print("^C...continuing")
             except Exception as error:
-                self.logger.error("\n...continuing after error: %s", error)
+                logger.error("\n...continuing after error: %s", error)
 
         logger.info("stopping topology: {}".format(self.modname))
+        self.topology_stopped = True
 
         errors = ""
         for gear in self.gears.values():
             errors += gear.stop()
-        if len(errors) > 0:
-            logger.error(
-                "Errors found post shutdown - details follow: {}".format(errors)
-            )
 
+        # Always tear down the underlying munet topology before reporting any
+        # gear-level errors back to pytest.  gear.stop() only kills the FRR
+        # daemons inside each router; self.net.stop() (Mininet.delete()) is
+        # what actually reaps the per-gear mutini.py namespace processes,
+        # removes the bridge(s), and unmounts the per-router tmpfs/cgroup
+        # binds.  If we assert before this runs (e.g. on a memory-leak
+        # report from gear.stop()), those mutini.py PID-1 processes - and
+        # the namespaces / mounts they anchor - are leaked across runs.
         try:
             self.net.stop()
-
         except OSError as error:
             # OSError exception is raised when mininet tries to stop switch
             # though switch is stopped once but mininet tries to stop same
@@ -502,6 +507,24 @@ class Topogen(object):
 
             logger.info(error)
             logger.info("Exception ignored: switch is already stopped")
+
+        # Reap any mutini/nsenter children left as zombies under this process.
+        while True:
+            try:
+                wpid, status = os.waitpid(-1, os.WNOHANG)
+            except ChildProcessError:
+                break
+            if wpid == 0:
+                break
+            logger.debug("stop_topology: reaped child pid %s status %s", wpid, status)
+
+        if len(errors) > 0:
+            logger.error(
+                "Errors found post shutdown - details follow: {}".format(errors)
+            )
+            assert False, "Errors found post shutdown - details follow:\n{}".format(
+                errors
+            )
 
     def get_exabgp_cmd(self):
         if not self.exabgp_cmd:
@@ -575,6 +598,36 @@ class Topogen(object):
             assert False, errors
             return True
         return False
+
+    def log_test_start(self, test_path):
+        "Log the start of a test"
+        for router in self.routers().values():
+            try:
+                router.net.cmd_nostatus(
+                    f"vtysh -c 'send log level info === TEST-START: {shlex.quote(test_path)}'"
+                )
+            except Exception:
+                pass
+
+    def log_test_result(self, test_path, result):
+        "Log the result of a test"
+        for router in self.routers().values():
+            try:
+                router.net.cmd_nostatus(
+                    f"vtysh -c 'send log level info === TEST-RESULT: {result}: {shlex.quote(test_path)}'"
+                )
+            except Exception:
+                pass
+
+    def log_test_end(self, test_path):
+        "Log the end of a test"
+        for router in self.routers().values():
+            try:
+                router.net.cmd_nostatus(
+                    f"vtysh -c 'send log level info === TEST-END: {shlex.quote(test_path)}'"
+                )
+            except Exception:
+                pass
 
 
 #
@@ -802,6 +855,7 @@ class TopoRouter(TopoGear):
         logfile = self._setup_tmpdir()
         params["logdir"] = self.logdir
 
+        self.daemondir = params.get("frrdir")
         self.logger = topolog.get_logger(name, log_level="debug", target=logfile)
         params["logger"] = self.logger
         tgen.net.add_host(self.name, cls=cls, **params)
@@ -834,21 +888,33 @@ class TopoRouter(TopoGear):
         self.logger.info('check capability {} for "{}"'.format(param, daemonstr))
         return self.net.checkCapability(daemonstr, param)
 
-    def load_frr_config(self, source, daemons=None):
+    def load_frr_config(self, source="frr.conf", daemons=None, extra_daemons=None):
         """
-        Loads the unified configuration file source
-        Start the daemons in the list
-        If daemons is None, try to infer daemons from the config file
-        `daemons` is a tuple (daemon, param) of daemons to start, e.g.:
-        (TopoRouter.RD_ZEBRA, "-s 90000000").
+        Load unified FRR configuration and start daemons.
+
+        Loads configuration from `source` (default: ``frr.conf``).  When
+        `daemons` is None, daemons are inferred from the config file (zebra is
+        always included).
+
+        * `source`: unified config file path or name (default: ``frr.conf``)
+        * `daemons`: daemon(s) to start.  Each entry is either a daemon name
+          string or a ``(daemon, param)`` tuple, e.g.
+          ``(TopoRouter.RD_ZEBRA, "-s 90000000")``.  If None, infer from the
+          config file.
+        * `extra_daemons`: additional daemons to start when inferring from the
+          config file.  Same format as `daemons`.
         """
         source_path = self.load_config(self.RD_FRR, source)
         if not daemons:
             # Always add zebra
             self.load_config(self.RD_ZEBRA, "")
             for daemon in self.RD:
-                # This will not work for all daemons
-                daemonstr = self.RD.get(daemon).rstrip("d")
+                # Special case for bfdd - search for 'bfd' in config files, not 'bf' which is too generic
+                if daemon == self.RD_BFD:
+                    daemonstr = "bfd"
+                else:
+                    daemonstr = self.RD.get(daemon).rstrip("d")
+
                 if daemonstr == "path":
                     grep_cmd = "grep 'candidate-path' {}".format(source_path)
                 else:
@@ -866,10 +932,19 @@ class TopoRouter(TopoGear):
                             for inst in instances:
                                 if inst != "":
                                     self.load_config(daemon, "", None, inst)
-
+            if extra_daemons is not None:
+                for item in extra_daemons:
+                    if isinstance(item, str):
+                        daemon, param = item, None
+                    else:
+                        daemon, param = item
+                    self.load_config(daemon, "", param)
         else:
             for item in daemons:
-                daemon, param = item
+                if isinstance(item, str):
+                    daemon, param = item, None
+                else:
+                    daemon, param = item
                 self.load_config(daemon, "", param)
 
     def load_config(self, daemon, source=None, param=None, instance=None):
@@ -889,7 +964,9 @@ class TopoRouter(TopoGear):
         all routers.
         """
         daemonstr = self.RD.get(daemon)
-        self.logger.debug('loading "{}" configuration: {}'.format(daemonstr, source))
+        if daemonstr is None:
+            daemonstr = daemon
+        self.logger.info('loading "{}" configuration: {}'.format(daemonstr, source))
         return self.net.loadConf(daemonstr, source, param, instance)
 
     def check_router_running(self):
@@ -956,6 +1033,31 @@ class TopoRouter(TopoGear):
         self.logger.debug("stopping (no assert)")
         return self.net.stopRouter(False)
 
+    def enableDaemons(self, daemons):
+        """
+        Mark daemons to be started on router start().
+
+        Use this to explicitly enable daemons that load_frr_config() /
+        load_config() auto-detection did not select, or to re-enable daemons
+        previously excluded with disableDaemons().
+        """
+        for daemon in daemons:
+            if daemon not in self.net.daemons:
+                raise ValueError('Unknown daemon "{}"'.format(daemon))
+            self.net.daemons[daemon] = 1
+
+    def disableDaemons(self, daemons):
+        """
+        Prevent daemons from being started on router start().
+
+        Typical use: load config that references a daemon, but start it manually
+        later via startDaemons() to control timing.
+        """
+        for daemon in daemons:
+            if daemon not in self.net.daemons:
+                raise ValueError('Unknown daemon "{}"'.format(daemon))
+            self.net.daemons[daemon] = 0
+
     def startDaemons(self, daemons):
         """
         Start Daemons: to start specific daemon(user defined daemon only)
@@ -1006,7 +1108,7 @@ class TopoRouter(TopoGear):
         self.logger.debug("Killing daemons using SIGKILL..")
         return self.net.killRouterDaemons(daemons, wait, assertOnError)
 
-    def vtysh_cmd(self, command, isjson=False, daemon=None):
+    def vtysh_cmd(self, command, isjson=False, daemon=None, raises=False):
         """
         Runs the provided command string in the vty shell and returns a string
         with the response.
@@ -1016,7 +1118,7 @@ class TopoRouter(TopoGear):
         """
         # Detect multi line commands
         if command.find("\n") != -1:
-            return self.vtysh_multicmd(command, daemon=daemon)
+            return self.vtysh_multicmd(command, daemon=daemon, raises=raises)
 
         dparam = ""
         if daemon is not None:
@@ -1027,7 +1129,10 @@ class TopoRouter(TopoGear):
         )
 
         self.logger.debug("vtysh command => {}".format(shlex.quote(command)))
-        output = self.run(vtysh_command)
+        if raises:
+            output = self.cmd_raises(vtysh_command)
+        else:
+            output = self.run(vtysh_command)
 
         dbgout = output.strip()
         if dbgout:
@@ -1051,7 +1156,7 @@ class TopoRouter(TopoGear):
             )
             return {}
 
-    def vtysh_multicmd(self, commands, pretty_output=True, daemon=None):
+    def vtysh_multicmd(self, commands, pretty_output=True, daemon=None, raises=False):
         """
         Runs the provided commands in the vty shell and return the result of
         execution.
@@ -1077,7 +1182,11 @@ class TopoRouter(TopoGear):
         dbgcmds = "\t" + dbgcmds.replace("\n", "\n\t")
         self.logger.debug("vtysh command => FILE:\n{}".format(dbgcmds))
 
-        res = self.run(vtysh_command)
+        if raises:
+            res = self.cmd_raises(vtysh_command)
+        else:
+            res = self.run(vtysh_command)
+
         os.unlink(fname)
 
         dbgres = res.strip()
@@ -1148,6 +1257,13 @@ class TopoRouter(TopoGear):
     def has_mpls(self):
         return self.net.hasmpls
 
+    def has_crypto_openssl(self):
+        "Get Build option to know if openssl is used."
+        output = self.vtysh_cmd("show version")
+        if "with-crypto=openssl" in output:
+            return True
+        return False
+
 
 class TopoSwitch(TopoGear):
     """
@@ -1171,6 +1287,7 @@ class TopoSwitch(TopoGear):
 
 class TopoHost(TopoGear):
     "Host abstraction."
+
     # pylint: disable=too-few-public-methods
 
     def __init__(self, tgen, name, **params):
@@ -1209,6 +1326,7 @@ class TopoHost(TopoGear):
 
 class TopoExaBGP(TopoHost):
     "ExaBGP peer abstraction."
+
     # pylint: disable=too-few-public-methods
 
     PRIVATE_DIRS = [

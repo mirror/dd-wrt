@@ -35,7 +35,7 @@
 #include "ospf6d/ospf6_gr.h"
 #include "ospf6d/ospf6_gr_clippy.c"
 
-static void ospf6_gr_grace_period_expired(struct event *thread);
+static void ospf6_gr_grace_period_expired(struct event *event);
 
 /* Originate and install Grace-LSA for a given interface. */
 static int ospf6_gr_lsa_originate(struct ospf6_interface *oi,
@@ -528,17 +528,17 @@ static bool ospf6_gr_check_adjs(struct ospf6 *ospf6)
 }
 
 /* Handling of grace period expiry. */
-static void ospf6_gr_grace_period_expired(struct event *thread)
+static void ospf6_gr_grace_period_expired(struct event *event)
 {
-	struct ospf6 *ospf6 = EVENT_ARG(thread);
+	struct ospf6 *ospf6 = EVENT_ARG(event);
 
 	ospf6_gr_restart_exit(ospf6, "grace period has expired");
 }
 
 /* Send extra Grace-LSA out the interface (unplanned outages only). */
-void ospf6_gr_iface_send_grace_lsa(struct event *thread)
+void ospf6_gr_iface_send_grace_lsa(struct event *event)
 {
-	struct ospf6_interface *oi = EVENT_ARG(thread);
+	struct ospf6_interface *oi = EVENT_ARG(event);
 
 	ospf6_gr_lsa_originate(oi, oi->area->ospf6->gr_info.reason);
 
@@ -627,10 +627,10 @@ void ospf6_gr_nvm_read(struct ospf6 *ospf6)
 {
 	const char *inst_name;
 	json_object *json;
-	json_object *json_instances;
-	json_object *json_instance;
-	json_object *json_timestamp;
-	json_object *json_grace_period;
+	json_object *json_instances = NULL;
+	json_object *json_instance = NULL;
+	json_object *json_timestamp = NULL;
+	json_object *json_grace_period = NULL;
 	time_t timestamp = 0;
 
 	inst_name = ospf6->name ? ospf6->name : VRF_DEFAULT_NAME;

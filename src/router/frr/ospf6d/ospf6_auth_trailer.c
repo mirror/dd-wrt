@@ -83,13 +83,18 @@ void ospf6_auth_hdr_dump_send(struct ospf6_header *ospfh, uint16_t length)
 
 	oh_len = htons(ospfh->length);
 	at_len = length - oh_len;
-	if (at_len > 0) {
-		ospf6_at_hdr = (struct ospf6_auth_hdr *)
-					((uint8_t *)ospfh + oh_len);
+	if (at_len >= OSPF6_AUTH_HDR_MIN_SIZE) {
+		ospf6_at_hdr = (struct ospf6_auth_hdr *)((uint8_t *)ospfh + oh_len);
 		at_hdr_len = htons(ospf6_at_hdr->length);
-		hash_len = at_hdr_len - OSPF6_AUTH_HDR_MIN_SIZE;
-		memcpy(temp, ospf6_at_hdr->data, hash_len);
-		temp[hash_len] = '\0';
+		temp[0] = '\0';
+		if (at_hdr_len > OSPF6_AUTH_HDR_MIN_SIZE) {
+			hash_len = at_hdr_len - OSPF6_AUTH_HDR_MIN_SIZE;
+			if (hash_len > 0 && hash_len <= KEYCHAIN_MAX_HASH_SIZE) {
+				memcpy(temp, ospf6_at_hdr->data, hash_len);
+				temp[hash_len] = '\0';
+			}
+		}
+
 		zlog_debug("OSPF6 Authentication Trailer");
 		zlog_debug("  Type %d", htons(ospf6_at_hdr->type));
 		zlog_debug("  Length %d", at_hdr_len);
@@ -100,7 +105,8 @@ void ospf6_auth_hdr_dump_send(struct ospf6_header *ospfh, uint16_t length)
 		zlog_debug("  seqnum high 0x%08x",
 			   htonl(ospf6_at_hdr->seqnum_l));
 		zlog_debug("  Data %s", temp);
-	}
+	} else
+		zlog_debug("OSPF6 Auth trailer too short");
 }
 
 void ospf6_auth_hdr_dump_recv(struct ospf6_header *ospfh, uint16_t length,
@@ -112,19 +118,24 @@ void ospf6_auth_hdr_dump_recv(struct ospf6_header *ospfh, uint16_t length,
 
 	oh_len = ntohs(ospfh->length);
 	at_len = length - (oh_len + lls_len);
-	if (at_len > 0) {
+	if (at_len >= OSPF6_AUTH_HDR_MIN_SIZE) {
 		ospf6_at_hdr =
 			(struct ospf6_auth_hdr *)((uint8_t *)ospfh + oh_len);
 		at_hdr_len = ntohs(ospf6_at_hdr->length);
-		hash_len = at_hdr_len - (uint16_t)OSPF6_AUTH_HDR_MIN_SIZE;
-		if (hash_len > KEYCHAIN_MAX_HASH_SIZE) {
-			zlog_debug(
-				"Specified value for hash_len %u is greater than expected %u",
-				hash_len, KEYCHAIN_MAX_HASH_SIZE);
-			return;
+		temp[0] = '\0';
+		if (at_hdr_len > OSPF6_AUTH_HDR_MIN_SIZE) {
+			hash_len = at_hdr_len - (uint16_t)OSPF6_AUTH_HDR_MIN_SIZE;
+			if (hash_len > KEYCHAIN_MAX_HASH_SIZE) {
+				zlog_debug("Specified value for hash_len %u is greater than expected %u",
+					   hash_len, KEYCHAIN_MAX_HASH_SIZE);
+				return;
+			}
+			if (hash_len > 0) {
+				memcpy(temp, ospf6_at_hdr->data, hash_len);
+				temp[hash_len] = '\0';
+			}
 		}
-		memcpy(temp, ospf6_at_hdr->data, hash_len);
-		temp[hash_len] = '\0';
+
 		zlog_debug("OSPF6 Authentication Trailer");
 		zlog_debug("  Type %d", ntohs(ospf6_at_hdr->type));
 		zlog_debug("  Length %d", at_hdr_len);
@@ -271,6 +282,7 @@ static void ospf6_hash_hmac_sha_digest(enum keychain_hash_algo key,
 		sha512_digest(mes, len, digest);
 #endif
 		break;
+	case KEYCHAIN_ALGO_CLEARTEXT:
 	case KEYCHAIN_ALGO_NULL:
 	case KEYCHAIN_ALGO_MAX:
 	default:
@@ -396,7 +408,14 @@ int ospf6_auth_validate_pkt(struct ospf6_interface *oi, unsigned int *pkt_len,
 	}
 
 	if (lls_present) {
-		lls_hdr = (struct ospf6_lls_hdr *)(oh + hdr_len);
+		if ((*pkt_len - hdr_len) < 4) {
+			if (IS_OSPF6_DEBUG_AUTH_RX)
+				zlog_err("RECV[%s] : Invalid lls data in %s packet",
+					 oi->interface->name,
+					 ospf6_message_type(oh->type));
+			return OSPF6_AUTH_VALIDATE_FAILURE;
+		}
+		lls_hdr = (struct ospf6_lls_hdr *)((uint8_t *)oh + hdr_len);
 		*lls_block_len = ntohs(lls_hdr->length) * 4;
 	}
 
@@ -434,14 +453,12 @@ int ospf6_auth_validate_pkt(struct ospf6_interface *oi, unsigned int *pkt_len,
 	*pkt_len = (*pkt_len) - (*at_len) - (*lls_block_len);
 
 	if (on) {
+		/* Check sequence number */
 		oh_seqnum_h = ntohl(ospf6_auth_info.seqnum_h);
 		oh_seqnum_l = ntohl(ospf6_auth_info.seqnum_l);
-		if ((oh_seqnum_h >= on->seqnum_h[oh->type])
-		    && (oh_seqnum_l > on->seqnum_l[oh->type])) {
-			/* valid sequence number received */
-			on->seqnum_h[oh->type] = oh_seqnum_h;
-			on->seqnum_l[oh->type] = oh_seqnum_l;
-		} else {
+		if ((oh_seqnum_h < on->seqnum_h[oh->type]) ||
+		    (oh_seqnum_h == on->seqnum_h[oh->type] &&
+		     oh_seqnum_l <= on->seqnum_l[oh->type])) {
 			if (IS_OSPF6_DEBUG_AUTH_RX) {
 				zlog_err(
 					"RECV[%s] : Nbr(%s) Auth Sequence number mismatch in %s ",
@@ -469,6 +486,7 @@ int ospf6_auth_check_digest(struct ospf6_header *oh, struct ospf6_interface *oi,
 	unsigned char apad[hash_len];
 	unsigned char temp_hash[hash_len];
 	struct ospf6_auth_hdr *ospf6_auth;
+	struct ospf6_neighbor *on = NULL;
 	uint32_t ipv6_addr_size = sizeof(struct in6_addr);
 	struct keychain *keychain = NULL;
 	struct key *key = NULL;
@@ -476,6 +494,8 @@ int ospf6_auth_check_digest(struct ospf6_header *oh, struct ospf6_interface *oi,
 	uint16_t auth_len = 0;
 	uint8_t hash_algo = 0;
 	uint16_t oh_len = ntohs(oh->length);
+	uint32_t oh_seqnum_h = 0;
+	uint32_t oh_seqnum_l = 0;
 	int ret = 0;
 
 	if (oi->at_data.flags == 0)
@@ -494,7 +514,7 @@ int ospf6_auth_check_digest(struct ospf6_header *oh, struct ospf6_interface *oi,
 			return OSPF6_AUTH_VALIDATE_FAILURE;
 		}
 
-		key = key_lookup_for_accept(keychain, ntohs(ospf6_auth->id));
+		key = key_lookup_for_accept(keychain, ntohs(ospf6_auth->id), false);
 		if (!key) {
 			if (IS_OSPF6_DEBUG_AUTH_RX)
 				zlog_err("RECV[%s]: Auth, Invalid SA for %s",
@@ -534,6 +554,17 @@ int ospf6_auth_check_digest(struct ospf6_header *oh, struct ospf6_interface *oi,
 		return OSPF6_AUTH_VALIDATE_FAILURE;
 
 	hash_len = keychain_get_hash_len(hash_algo);
+	auth_len = ntohs(ospf6_auth->length);
+
+	/* Validate auth length before using data */
+	if (auth_len != OSPF6_AUTH_HDR_MIN_SIZE + hash_len) {
+		if (IS_OSPF6_DEBUG_AUTH_RX)
+			zlog_err("RECV[%s]: Auth len mismatch for %s: received %u",
+				 oi->interface->name, ospf6_message_type(oh->type),
+				 auth_len);
+		return OSPF6_AUTH_VALIDATE_FAILURE;
+	}
+
 	memset(apad, 0, sizeof(apad));
 	memset(temp_hash, 0, sizeof(temp_hash));
 
@@ -541,8 +572,6 @@ int ospf6_auth_check_digest(struct ospf6_header *oh, struct ospf6_interface *oi,
 	memcpy(apad, src, ipv6_addr_size);
 	memcpy(apad + ipv6_addr_size, ospf6_hash_apad_max,
 	       (hash_len - ipv6_addr_size));
-
-	auth_len = ntohs(ospf6_auth->length);
 
 	memcpy(temp_hash, ospf6_auth->data, hash_len);
 	memcpy(ospf6_auth->data, apad, hash_len);
@@ -556,8 +585,18 @@ int ospf6_auth_check_digest(struct ospf6_header *oh, struct ospf6_interface *oi,
 #else
 	ret = memcmp(temp_hash, ospf6_auth->data, hash_len);
 #endif
-	if (ret == 0)
+	if (ret == 0) {
+		on = ospf6_neighbor_lookup(oh->router_id, oi);
+		if (on) {
+			/* Update valid sequence number received */
+			oh_seqnum_h = ntohl(ospf6_auth->seqnum_h);
+			oh_seqnum_l = ntohl(ospf6_auth->seqnum_l);
+			on->seqnum_h[oh->type] = oh_seqnum_h;
+			on->seqnum_l[oh->type] = oh_seqnum_l;
+		}
+
 		return OSPF6_AUTH_VALIDATE_SUCCESS;
+	}
 
 	return OSPF6_AUTH_VALIDATE_FAILURE;
 }
@@ -922,9 +961,9 @@ __attribute__((unused)) static void
 ospf6_auth_seqno_nvm_delete(struct ospf6 *ospf6)
 {
 	const char *inst_name;
-	json_object *json;
-	json_object *json_instances;
-	json_object *json_instance;
+	json_object *json = NULL;
+	json_object *json_instances = NULL;
+	json_object *json_instance = NULL;
 
 	zlog_err("Higher order sequence number delete for %s process",
 		 ospf6->name);

@@ -66,11 +66,11 @@ static const struct message eigrp_general_tlv_type_str[] = {
  * Sends hello packet via multicast for all interfaces eigrp
  * is configured for
  */
-void eigrp_hello_timer(struct event *thread)
+void eigrp_hello_timer(struct event *event)
 {
 	struct eigrp_interface *ei;
 
-	ei = EVENT_ARG(thread);
+	ei = EVENT_ARG(event);
 
 	if (IS_DEBUG_EIGRP(0, TIMERS))
 		zlog_debug("Start Hello Timer (%s) Expire [%u]", IF_NAME(ei),
@@ -107,7 +107,7 @@ eigrp_hello_parameter_decode(struct eigrp_neighbor *nbr,
 	struct TLV_Parameter_Type *param = (struct TLV_Parameter_Type *)tlv;
 
 	/* First validate TLV length */
-	if (tlv->length < sizeof(struct TLV_Parameter_Type))
+	if (ntohs(tlv->length) < sizeof(struct TLV_Parameter_Type))
 		return NULL;
 
 	/* copy over the values passed in by the neighbor */
@@ -179,16 +179,16 @@ eigrp_hello_authentication_decode(struct stream *s,
 
 	md5 = (struct TLV_MD5_Authentication_Type *)tlv_header;
 
-	if (md5->auth_type == EIGRP_AUTH_TYPE_MD5) {
+	if (ntohs(md5->auth_type) == EIGRP_AUTH_TYPE_MD5) {
 		/* Validate tlv length */
-		if (md5->length < sizeof(struct TLV_MD5_Authentication_Type))
+		if (ntohs(md5->length) < sizeof(struct TLV_MD5_Authentication_Type))
 			return 0;
 
 		return eigrp_check_md5_digest(s, md5, nbr,
 					      EIGRP_AUTH_BASIC_HELLO_FLAG);
-	} else if (md5->auth_type == EIGRP_AUTH_TYPE_SHA256) {
+	} else if (ntohs(md5->auth_type) == EIGRP_AUTH_TYPE_SHA256) {
 		/* Validate tlv length */
-		if (md5->length < sizeof(struct TLV_SHA256_Authentication_Type))
+		if (ntohs(md5->length) < sizeof(struct TLV_SHA256_Authentication_Type))
 			return 0;
 
 		return eigrp_check_sha256_digest(
@@ -202,7 +202,7 @@ eigrp_hello_authentication_decode(struct stream *s,
 /**
  * @fn eigrp_sw_version_decode
  *
- * @param[in]		nbr	neighbor the ACK shoudl be sent to
+ * @param[in]		nbr	neighbor the ACK should be sent to
  * @param[in]		param	pointer to TLV software version information
  *
  * @return void
@@ -218,7 +218,7 @@ static void eigrp_sw_version_decode(struct eigrp_neighbor *nbr,
 	struct TLV_Software_Type *version = (struct TLV_Software_Type *)tlv;
 
 	/* Validate TLV length */
-	if (tlv->length < sizeof(struct TLV_Software_Type))
+	if (ntohs(tlv->length) < sizeof(struct TLV_Software_Type))
 		return;
 
 	nbr->os_rel_major = version->vender_major;
@@ -231,7 +231,7 @@ static void eigrp_sw_version_decode(struct eigrp_neighbor *nbr,
 /**
  * @fn eigrp_peer_termination_decode
  *
- * @param[in]		nbr	neighbor the ACK shoudl be sent to
+ * @param[in]		nbr	neighbor the ACK should be sent to
  * @param[in]		tlv	pointer to TLV software version information
  *
  * @return void
@@ -249,7 +249,7 @@ static void eigrp_peer_termination_decode(struct eigrp_neighbor *nbr,
 		(struct TLV_Peer_Termination_type *)tlv;
 
 	/* Validate TLV length */
-	if (tlv->length < sizeof(struct TLV_Peer_Termination_type))
+	if (ntohs(tlv->length) < sizeof(struct TLV_Peer_Termination_type))
 		return;
 
 	uint32_t my_ip = nbr->ei->address.u.prefix4.s_addr;
@@ -348,8 +348,8 @@ void eigrp_hello_receive(struct eigrp *eigrp, struct ip *iph,
 		type = ntohs(tlv_header->type);
 		length = ntohs(tlv_header->length);
 
-		/* Validate tlv length */
-		if ((length > 0) && (length <= size)) {
+		/* Validate tlv length: must be at least header size (4 bytes) */
+		if ((length >= EIGRP_TLV_HDR_LENGTH) && (length <= size)) {
 			if (IS_DEBUG_EIGRP_PACKET(0, RECV))
 				zlog_debug(
 					"  General TLV(%s)",
@@ -606,7 +606,7 @@ static uint16_t eigrp_hello_parameter_encode(struct eigrp_interface *ei,
  *
  * @param[in]		ei	pointer to interface hello packet came in on
  * @param[in]		s	packet stream TLV is stored to
- * @param[in]		ack	 if non-zero, neigbors sequence packet to ack
+ * @param[in]		ack	 if non-zero, neighbors sequence packet to ack
  * @param[in]		flags  type of hello packet
  * @param[in]		nbr_addr  pointer to neighbor address for Peer
  * Termination TLV
@@ -629,7 +629,7 @@ static struct eigrp_packet *eigrp_hello_encode(struct eigrp_interface *ei,
 	ep = eigrp_packet_new(EIGRP_PACKET_MTU(ei->ifp->mtu), NULL);
 
 	if (ep) {
-		// encode common header feilds
+		// encode common header fields
 		eigrp_packet_header_init(EIGRP_OPC_HELLO, ei->eigrp, ep->s, 0,
 					 0, ack);
 
@@ -698,7 +698,7 @@ static struct eigrp_packet *eigrp_hello_encode(struct eigrp_interface *ei,
  *
  * @par
  *  Send (unicast) a hello packet with the destination address
- *  associated with the neighbor.  The eigrp header ACK feild will be
+ *  associated with the neighbor.  The eigrp header ACK field will be
  *  updated to the neighbor's sequence number to acknolodge any
  *  outstanding packets
  */
@@ -706,7 +706,7 @@ void eigrp_hello_send_ack(struct eigrp_neighbor *nbr)
 {
 	struct eigrp_packet *ep;
 
-	/* if packet succesfully created, add it to the interface queue */
+	/* if packet successfully created, add it to the interface queue */
 	ep = eigrp_hello_encode(nbr->ei, nbr->src.s_addr,
 				nbr->recv_sequence_number, EIGRP_HELLO_NORMAL,
 				NULL);
@@ -742,7 +742,7 @@ void eigrp_hello_send_ack(struct eigrp_neighbor *nbr)
  * @par
  * Build and enqueue a generic (multicast) periodic hello packet for
  * sending.  If no packets are currently queues, the packet will be
- * sent immadiatly
+ * sent immediately
  */
 void eigrp_hello_send(struct eigrp_interface *ei, uint8_t flags,
 		      struct in_addr *nbr_addr)
@@ -752,7 +752,7 @@ void eigrp_hello_send(struct eigrp_interface *ei, uint8_t flags,
 	if (IS_DEBUG_EIGRP_PACKET(0, SEND))
 		zlog_debug("Queueing [Hello] Interface(%s)", IF_NAME(ei));
 
-	/* if packet was succesfully created, then add it to the interface queue
+	/* if packet was successfully created, then add it to the interface queue
 	 */
 	ep = eigrp_hello_encode(ei, htonl(EIGRP_MULTICAST_ADDRESS), 0, flags,
 				nbr_addr);
@@ -767,7 +767,7 @@ void eigrp_hello_send(struct eigrp_interface *ei, uint8_t flags,
 			ei->on_write_q = 1;
 		}
 
-		if (ei->eigrp->t_write == NULL) {
+		if (!event_is_scheduled(ei->eigrp->t_write)) {
 			if (flags & EIGRP_HELLO_GRACEFUL_SHUTDOWN) {
 				event_execute(master, eigrp_write, ei->eigrp,
 					      ei->eigrp->fd, NULL);

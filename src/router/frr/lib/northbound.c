@@ -22,8 +22,9 @@
 #include "frrstr.h"
 
 DEFINE_MTYPE_STATIC(LIB, NB_NODE, "Northbound Node");
-DEFINE_MTYPE_STATIC(LIB, NB_CONFIG, "Northbound Configuration");
-DEFINE_MTYPE_STATIC(LIB, NB_CONFIG_ENTRY, "Northbound Configuration Entry");
+DEFINE_MTYPE_STATIC(LIB, NB_CONFIG, "Northbound Config");
+DEFINE_MTYPE_STATIC(LIB, NB_CONFIG_ENTRY, "Northbound Config Entry");
+DEFINE_MTYPE_STATIC(LIB, NB_TRANS, "NB transaction");
 
 /* Running configuration - shouldn't be modified directly. */
 struct nb_config *running_config;
@@ -73,18 +74,6 @@ static int nb_transaction_process(enum nb_event event,
 static void nb_transaction_apply_finish(struct nb_transaction *transaction,
 					char *errmsg, size_t errmsg_len);
 
-static int nb_node_check_config_only(const struct lysc_node *snode, void *arg)
-{
-	bool *config_only = arg;
-
-	if (CHECK_FLAG(snode->flags, LYS_CONFIG_R)) {
-		*config_only = false;
-		return YANG_ITER_STOP;
-	}
-
-	return YANG_ITER_CONTINUE;
-}
-
 static int nb_node_new_cb(const struct lysc_node *snode, void *arg)
 {
 	struct nb_node *nb_node;
@@ -104,15 +93,6 @@ static int nb_node_new_cb(const struct lysc_node *snode, void *arg)
 		nb_node->parent_list = sparent_list->priv;
 
 	/* Set flags. */
-	if (CHECK_FLAG(snode->nodetype, LYS_CONTAINER | LYS_LIST)) {
-		bool config_only = true;
-
-		(void)yang_snodes_iterate_subtree(snode, NULL,
-						  nb_node_check_config_only, 0,
-						  &config_only);
-		if (config_only)
-			SET_FLAG(nb_node->flags, F_NB_NODE_CONFIG_ONLY);
-	}
 	if (CHECK_FLAG(snode->nodetype, LYS_LIST)) {
 		if (yang_snode_num_keys(snode) == 0)
 			SET_FLAG(nb_node->flags, F_NB_NODE_KEYLESS_LIST);
@@ -132,6 +112,48 @@ static int nb_node_new_cb(const struct lysc_node *snode, void *arg)
 		SET_FLAG(nb_node->flags, F_NB_NODE_HAS_GET_TREE);
 
 	return YANG_ITER_CONTINUE;
+}
+
+/* Set the config only flags field accordingly */
+static int nb_node_set_config_only(const struct lysc_node *snode)
+{
+	const struct lysc_node *child;
+	struct nb_node *nb_node = snode->priv;
+	bool have_oper_state = (CHECK_FLAG(snode->flags, LYS_CONFIG_R) || nb_node->cbs.get ||
+				nb_node->cbs.get_elem || nb_node->cbs.get_next ||
+				nb_node->cbs.lookup_entry);
+
+	/* post-order walk of tree (i.e., children first) */
+	if (!CHECK_FLAG(snode->nodetype, LYS_LEAF | LYS_LEAFLIST)) {
+		LY_LIST_FOR (lysc_node_child(snode), child)
+			if (nb_node_set_config_only(child))
+				have_oper_state = true;
+	}
+
+	if (!have_oper_state)
+		SET_FLAG(nb_node->flags, F_NB_NODE_CONFIG_ONLY);
+
+	DEBUGD(&nb_dbg_events, "%s: have-oper: %d xpath: %s", __func__, have_oper_state,
+	       nb_node->xpath);
+
+	return have_oper_state;
+}
+
+static void nb_module_set_config_only(const struct lys_module *module)
+{
+	struct lysc_node *snode;
+
+	if (!module->implemented)
+		return;
+	/* Walk all root level nodes */
+	LY_LIST_FOR (module->compiled->data, snode)
+		nb_node_set_config_only(snode);
+	if (module->compiled->rpcs)
+		LY_LIST_FOR (&module->compiled->rpcs->node, snode)
+			nb_node_set_config_only(snode);
+	if (module->compiled->notifs)
+		LY_LIST_FOR (&module->compiled->notifs->node, snode)
+			nb_node_set_config_only(snode);
 }
 
 static int nb_node_del_cb(const struct lysc_node *snode, void *arg)
@@ -227,20 +249,13 @@ static int nb_node_validate_cb(const struct nb_node *nb_node,
 	valid = nb_cb_operation_is_valid(operation, nb_node->snode);
 
 	/*
-	 * Add an exception for operational data callbacks. A rw list usually
-	 * doesn't need any associated operational data callbacks. But if this
-	 * rw list is augmented by another module which adds state nodes under
-	 * it, then this list will need to have the 'get_next()', 'get_keys()'
-	 * and 'lookup_entry()' callbacks. As such, never log a warning when
-	 * these callbacks are implemented when they are not needed, since this
-	 * depends on context (e.g. some daemons might augment "frr-interface"
-	 * while others don't).
+	 * We allow oper-state callbacks for config true nodes, so only warn if
+	 * we have config callbacks for config false nodes.
 	 */
-	if (!valid && callback_implemented && operation != NB_CB_GET_NEXT &&
-	    operation != NB_CB_GET_KEYS && operation != NB_CB_LIST_ENTRY_DONE &&
-	    operation != NB_CB_LOOKUP_ENTRY)
-		flog_warn(EC_LIB_NB_CB_UNNEEDED,
-			  "unneeded '%s' callback for '%s'",
+	if (!valid && callback_implemented &&
+	    (operation == NB_CB_CREATE || operation == NB_CB_MODIFY ||
+	     operation == NB_CB_DESTROY || operation == NB_CB_MOVE))
+		flog_warn(EC_LIB_NB_CB_UNNEEDED, "unneeded '%s' callback for '%s'",
 			  nb_cb_operation_name(operation), nb_node->xpath);
 
 	if (!optional && valid && !callback_implemented) {
@@ -452,7 +467,7 @@ void nb_config_diff_add_change(struct nb_config_cbs *changes,
 	if (!dnode->schema->priv)
 		return;
 
-	change = XCALLOC(MTYPE_TMP, sizeof(*change));
+	change = XCALLOC(MTYPE_NB_CONFIG, sizeof(*change));
 	change->cb.operation = operation;
 	change->cb.seq = *seq;
 	*seq = *seq + 1;
@@ -470,7 +485,7 @@ void nb_config_diff_del_changes(struct nb_config_cbs *changes)
 		change = (struct nb_config_change *)RB_ROOT(nb_config_cbs,
 							    changes);
 		RB_REMOVE(nb_config_cbs, changes, &change->cb);
-		XFREE(MTYPE_TMP, change);
+		XFREE(MTYPE_NB_CONFIG, change);
 	}
 }
 
@@ -720,11 +735,11 @@ void nb_config_diff(const struct nb_config *config1,
 static LY_ERR dnode_create(struct nb_config *candidate, const char *xpath, const char *value,
 			   uint32_t options, struct lyd_node **new_dnode)
 {
-	struct lyd_node *dnode;
+	struct lyd_node *dnode = NULL;
 	LY_ERR err;
 
-	err = lyd_new_path2(candidate->dnode, ly_native_ctx, xpath, value, 0, 0, options, NULL,
-			    &dnode);
+	err = yang_new_path2(candidate->dnode, ly_native_ctx, xpath, value, 0, 0, options, NULL,
+			     &dnode);
 	if (err) {
 		flog_warn(EC_LIB_LIBYANG, "%s: lyd_new_path(%s) failed: %d",
 			  __func__, xpath, err);
@@ -860,7 +875,11 @@ static int nb_candidate_edit_tree_add(struct nb_config *candidate,
 	bool root;
 	int ret;
 
-	ly_in_new_memory(data, &in);
+	err = ly_in_new_memory(data, &in);
+	if (err) {
+		yang_print_errors(ly_native_ctx, errmsg, errmsg_len);
+		return NB_ERR;
+	}
 
 	root = xpath[0] == 0 || (xpath[0] == '/' && xpath[1] == 0);
 
@@ -888,8 +907,8 @@ static int nb_candidate_edit_tree_add(struct nb_config *candidate,
 	 * merged later with candidate.
 	 */
 	if (parent_xpath) {
-		err = lyd_new_path2(NULL, ly_native_ctx, parent_xpath, NULL, 0,
-				    0, 0, &tree, &parent);
+		err = yang_new_path2(NULL, ly_native_ctx, parent_xpath, NULL, 0, 0, 0, &tree,
+				     &parent);
 		if (err) {
 			yang_print_errors(ly_native_ctx, errmsg, errmsg_len);
 			ret = NB_ERR;
@@ -919,8 +938,27 @@ static int nb_candidate_edit_tree_add(struct nb_config *candidate,
 	/* verify that list keys are the same in the xpath and the data tree */
 	if (!root && (operation == NB_OP_REPLACE || operation == NB_OP_MODIFY)) {
 		if (lyd_find_path(tree, xpath, 0, NULL)) {
-			snprintf(errmsg, errmsg_len,
-				 "List keys in xpath and data tree are different");
+			/*
+			 * lyd_find_path fails for two distinct reasons: the
+			 * xpath names a schema node that does not exist (typo),
+			 * or the xpath resolves but its key predicates diverge
+			 * from the keys carried in the payload. Distinguish
+			 * them via a schema-only lookup so the operator sees
+			 * which case happened.
+			 *
+			 * lys_find_path (not yang_resolve_snode_xpath) is
+			 * intentional: edit-config xpaths are canonical
+			 * instance-identifiers (vtysh, NETCONF, RESTCONF,
+			 * gNMI), not arbitrary XPath expressions, so the
+			 * two-step fallback in yang_resolve_snode_xpath is
+			 * unnecessary here.
+			 */
+			if (!lys_find_path(ly_native_ctx, NULL, xpath, 0))
+				snprintf(errmsg, errmsg_len, "Unknown schema node in xpath: %s",
+					 xpath);
+			else
+				snprintf(errmsg, errmsg_len,
+					 "List keys in xpath and data tree are different");
 			ret = NB_ERR;
 			goto done;
 		}
@@ -1187,10 +1225,8 @@ void nb_candidate_edit_config_changes(struct nb_config *candidate_config,
 
 		result = nb_candidate_edit_config_change(candidate_config, change->operation, xpath,
 							 change->value, in_backend);
-		if (result != NB_CHANGE_OK) {
-			if (error)
-				*error = true;
-		}
+		if (result != NB_CHANGE_OK)
+			*error = true;
 		if (result == NB_CHANGE_ERR)
 			break;
 	}
@@ -1422,8 +1458,8 @@ void nb_candidate_commit_apply(struct nb_transaction *transaction,
 	}
 
 	/* Record transaction. */
-	if (save_transaction && nb_db_enabled
-	    && nb_db_transaction_save(transaction, transaction_id) != NB_OK)
+	if (save_transaction && nb_db_enabled && transaction->config &&
+	    nb_db_transaction_save(transaction, transaction_id) != NB_OK)
 		flog_warn(EC_LIB_NB_TRANSACTION_RECORD_FAILED,
 			  "%s: failed to record transaction", __func__);
 
@@ -1785,9 +1821,12 @@ struct yang_data *nb_callback_get_elem(const struct nb_node *nb_node,
 	       "northbound callback (get_elem): xpath [%s] list_entry [%p]",
 	       xpath, list_entry);
 
-	args.xpath = xpath;
-	args.list_entry = list_entry;
-	return nb_node->cbs.get_elem(&args);
+	if (nb_node->cbs.get_elem) {
+		args.xpath = xpath;
+		args.list_entry = list_entry;
+		return nb_node->cbs.get_elem(&args);
+	}
+	return NULL;
 }
 
 const void *nb_callback_get_next(const struct nb_node *nb_node,
@@ -1803,9 +1842,12 @@ const void *nb_callback_get_next(const struct nb_node *nb_node,
 	       "northbound callback (get_next): node [%s] parent_list_entry [%p] list_entry [%p]",
 	       nb_node->xpath, parent_list_entry, list_entry);
 
-	args.parent_list_entry = parent_list_entry;
-	args.list_entry = list_entry;
-	return nb_node->cbs.get_next(&args);
+	if (nb_node->cbs.get_next) {
+		args.parent_list_entry = parent_list_entry;
+		args.list_entry = list_entry;
+		return nb_node->cbs.get_next(&args);
+	}
+	return NULL;
 }
 
 int nb_callback_get_keys(const struct nb_node *nb_node, const void *list_entry,
@@ -2051,7 +2093,7 @@ nb_transaction_new(struct nb_context context, struct nb_config *config,
 	}
 	transaction_in_progress = true;
 
-	transaction = XCALLOC(MTYPE_TMP, sizeof(*transaction));
+	transaction = XCALLOC(MTYPE_NB_TRANS, sizeof(*transaction));
 	transaction->context = context;
 	if (comment)
 		strlcpy(transaction->comment, comment,
@@ -2065,7 +2107,7 @@ nb_transaction_new(struct nb_context context, struct nb_config *config,
 static void nb_transaction_free(struct nb_transaction *transaction)
 {
 	nb_config_diff_del_changes(&transaction->changes);
-	XFREE(MTYPE_TMP, transaction);
+	XFREE(MTYPE_NB_TRANS, transaction);
 	transaction_in_progress = false;
 }
 
@@ -2121,7 +2163,7 @@ nb_apply_finish_cb_new(struct nb_config_cbs *cbs, const struct nb_node *nb_node,
 {
 	struct nb_config_cb *cb;
 
-	cb = XCALLOC(MTYPE_TMP, sizeof(*cb));
+	cb = XCALLOC(MTYPE_NB_CONFIG, sizeof(*cb));
 	cb->operation = NB_CB_APPLY_FINISH;
 	cb->nb_node = nb_node;
 	cb->dnode = dnode;
@@ -2189,7 +2231,11 @@ static void nb_transaction_apply_finish(struct nb_transaction *transaction,
 			 * The dnode from 'delete' callbacks point to elements
 			 * from the running configuration. Use yang_dnode_get()
 			 * to get the corresponding dnode from the candidate
-			 * configuration that is being committed.
+			 * configuration that is being committed. If it doesn't
+			 * exist we fall through the below loop; however, there
+			 * will then exist a destroy change for the deleted
+			 * parent, and so we will repeat the process looking for
+			 * the parent's parent here, and so on.
 			 */
 			yang_dnode_get_path(dnode, xpath, sizeof(xpath));
 			dnode = yang_dnode_get(candidate_config->dnode, xpath);
@@ -2224,7 +2270,7 @@ static void nb_transaction_apply_finish(struct nb_transaction *transaction,
 	while (!RB_EMPTY(nb_config_cbs, &cbs)) {
 		cb = RB_ROOT(nb_config_cbs, &cbs);
 		RB_REMOVE(nb_config_cbs, &cbs, cb);
-		XFREE(MTYPE_TMP, cb);
+		XFREE(MTYPE_NB_CONFIG, cb);
 	}
 }
 
@@ -2294,12 +2340,17 @@ bool nb_cb_operation_is_valid(enum nb_cb_operation operation,
 			 * Only optional leafs can be deleted, or leafs whose
 			 * parent is a case statement.
 			 */
-			if (snode->parent->nodetype == LYS_CASE)
+			if (snode->parent && snode->parent->nodetype == LYS_CASE)
 				return true;
 			if (sleaf->when)
 				return true;
 			if (CHECK_FLAG(sleaf->flags, LYS_MAND_TRUE)
-			    || sleaf->dflt)
+#if (LY_VERSION_MAJOR < 4)
+			    || sleaf->dflt
+#else
+			    || sleaf->dflt.str
+#endif
+			)
 				return false;
 			break;
 		case LYS_CONTAINER:
@@ -2407,9 +2458,9 @@ DEFINE_HOOK(nb_notification_send, (const char *xpath, struct list *arguments),
 int nb_notification_send(const char *xpath, struct list *arguments)
 {
 	struct lyd_node *root = NULL;
-	struct lyd_node *dnode;
-	struct yang_data *data;
-	struct listnode *ln;
+	struct lyd_node *dnode = NULL;
+	struct yang_data *data = NULL;
+	struct listnode *ln = NULL;
 	LY_ERR err;
 	int ret;
 
@@ -2780,7 +2831,6 @@ void nb_validate_callbacks(void)
 	}
 }
 
-
 void nb_init(struct event_loop *tm,
 	     const struct frr_yang_module_info *const modules[],
 	     size_t nmodules, bool db_enabled, bool load_library)
@@ -2804,7 +2854,7 @@ void nb_init(struct event_loop *tm,
 	/* needed for frr-logging */
 	assert(yang_module_load("ietf-syslog-types", NULL));
 
-	/* Load YANG modules and their corresponding northbound callbacks. */
+	/* Load YANG modules into libyang */
 	for (size_t i = 0; i < nmodules; i++) {
 		DEBUGD(&nb_dbg_events, "northbound: loading %s.yang",
 		       modules[i]->name);
@@ -2819,7 +2869,7 @@ void nb_init(struct event_loop *tm,
 		nmodules++;
 	}
 
-	/* Load the host module if it is not already. */
+	/* Load the logging module if it is not already. */
 	if (!yang_module_find("frr-logging")) {
 		loaded[nmodules] = yang_module_load("frr-logging", NULL);
 		loaded[nmodules]->frr_info = &frr_logging_nb_info;
@@ -2829,12 +2879,18 @@ void nb_init(struct event_loop *tm,
 	if (explicit_compile)
 		yang_init_loading_complete();
 
-	/* Initialize the compiled nodes with northbound data */
-	for (size_t i = 0; i < nmodules; i++) {
+	/* Create nb_node schema tree */
+	for (size_t i = 0; i < nmodules; i++)
 		yang_snodes_iterate(loaded[i]->info, nb_node_new_cb, 0,
 				    (void *)loaded[i]->frr_info);
+
+	/* Load callbacks into nb_node's */
+	for (size_t i = 0; i < nmodules; i++)
 		nb_load_callbacks(loaded[i]->frr_info);
-	}
+
+	/* Set config / oper-state flag in nb_nodes based on type and callbacks */
+	for (size_t i = 0; i < nmodules; i++)
+		nb_module_set_config_only(loaded[i]->info);
 
 	/* Validate northbound callbacks. */
 	nb_validate_callbacks();

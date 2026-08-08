@@ -6,6 +6,7 @@
 # Copyright (c) 2023, LabN Consulting, L.L.C.
 #
 
+import copy
 import datetime
 import ipaddress
 import json
@@ -42,7 +43,7 @@ def json_cmp(got, expect, exact_match):
             if (new_items := json_diff.get("iterable_item_added")) is not None:
                 new_item_paths = list(new_items.keys())
                 for path in new_item_paths:
-                    if type(new_items[path]) is dict:
+                    if isinstance(new_items[path], dict):
                         del new_items[path]
                 if len(new_items) == 0:
                     del json_diff["iterable_item_added"]
@@ -62,19 +63,41 @@ def disable_debug(router):
     router.vtysh_cmd("no debug northbound callbacks configuration")
 
 
+def clean_json(j):
+    if (
+        j is None
+        or not isinstance(j.get("frr-interface:lib"), dict)
+        or j["frr-interface:lib"].get("interface") is None
+    ):
+        return j
+    rm_if_re = r"span|gre|sit|tnl|tun|vti"
+    j = copy.deepcopy(j)
+    try:
+        iflist = j["frr-interface:lib"]["interface"]
+    except KeyError:
+        pass
+    except Exception as e:
+        logging.error("Error cleaning json: %s", e)
+    else:
+        nl = sorted(iflist, key=lambda x: x["name"])
+        nl = [x for x in nl if re.search(rm_if_re, x["name"]) is None]
+        j["frr-interface:lib"]["interface"] = nl
+    return j
+
+
 @retry(retry_timeout=30, initial_wait=0.1)
 def _do_oper_test(tgen, qr, exact, seconds_left=None):
     r1 = tgen.gears["r1"].net
 
     qcmd = (
         r"vtysh -c 'show mgmt get-data {} {}' "
-        r"""| sed -e 's/"\(phy-address\|revision\|uptime\)": ".*"/"\1": "rubout"/'"""
-        r"""| sed -e 's/"\(candidate\|running\)-config-version": ".*"/"\1-config-version": "rubout"/'"""
-        r"""| sed -e 's/"\(id\|if-index\|mtu\|mtu6\|speed\)": [0-9][0-9]*/"\1": "rubout"/'"""
-        r"""| sed -e 's/"vrf": "[0-9]*"/"vrf": "rubout"/'"""
-        r"""| sed -e 's/"module-set-id": "[0-9]*"/"module-set-id": "rubout"/'"""
-        r"""| sed -e 's/"\(apply\|edit\|prep\)-count": "[0-9]*"/"\1-count": "rubout"/'"""
-        r"""| sed -e 's/"avg-\(apply\|edit\|prep\)-time": "[0-9]*"/"avg-\1-time": "rubout"/'"""
+        r"""| sed -e 's/"\(phy-address\|revision\|uptime\)": \?"[^"]*"/"\1":"rubout"/g'"""
+        r"""| sed -e 's/"\(candidate\|running\)-config-version": \?"[^"]*"/"\1-config-version":"rubout"/g'"""
+        r"""| sed -e 's/"\(id\|if-index\|mtu\|mtu6\|speed\)": \?[0-9][0-9]*/"\1":"rubout"/g'"""
+        r"""| sed -e 's/"vrf": \?"[0-9]*"/"vrf":"rubout"/g'"""
+        r"""| sed -e 's/"module-set-id": \?"[0-9]*"/"module-set-id":"rubout"/g'"""
+        r"""| sed -e 's/"\(apply\|edit\|prep\)-count": \?"[0-9]*"/"\1-count":"rubout"/g'"""
+        r"""| sed -e 's/"avg-\(apply\|edit\|prep\)-time": \?"[0-9]*"/"avg-\1-time":"rubout"/g'"""
     )
     # Don't use this for now.
     dd_json_cmp = None
@@ -105,6 +128,11 @@ def _do_oper_test(tgen, qr, exact, seconds_left=None):
         )
         diag("FILE: {}".format(qr[1]))
         raise
+
+    # Remove values that are inconsistent between machines
+    ojson = clean_json(ojson)
+    ejson = clean_json(ejson)
+    ejson_alt = clean_json(ejson_alt) if ejson_alt is not None else None
 
     if dd_json_cmp:
         cmpout = json_cmp(ojson, ejson, exact_match=exact)
@@ -286,7 +314,7 @@ def do_config(
     else:
         load_command = 'vtysh -f "{}"'.format(config_file)
     tstamp = datetime.datetime.now()
-    output = r1.cmd_raises(load_command)
+    r1.cmd_raises(load_command)
     delta = (datetime.datetime.now() - tstamp).total_seconds()
 
     #

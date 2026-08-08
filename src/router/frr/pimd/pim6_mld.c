@@ -282,7 +282,7 @@ static bool gm_sg_filter_match(const struct gm_if *gm_if, const pim_addr source,
 		.grp.ipaddr_v6 = group,
 	};
 
-	if (!pim_filter_match(&pim_interface->gmp_filter, &sg, gm_if->ifp)) {
+	if (!pim_filter_match(&pim_interface->gmp_filter, &sg, gm_if->ifp, gm_if->ifp)) {
 		if (PIM_DEBUG_GM_TRACE)
 			zlog_debug("%s: SG%pPSG on interface %s filtered due to route-map",
 				   __func__, &sg, gm_if->ifp->name);
@@ -691,7 +691,7 @@ static void gm_packet_sg_remove_sources(struct gm_if *gm_ifp,
 
 static void gm_sg_expiry_cancel(struct gm_sg *sg)
 {
-	if (sg->t_sg_expire && PIM_DEBUG_GM_TRACE)
+	if (event_is_scheduled(sg->t_sg_expire) && PIM_DEBUG_GM_TRACE)
 		zlog_debug(log_sg(sg, "alive, cancelling expiry timer"));
 	event_cancel(&sg->t_sg_expire);
 	sg->query_sbit = true;
@@ -777,7 +777,7 @@ static void gm_handle_v2_pass1(struct gm_packet_state *pkt,
 			return;
 		}
 		/* in INCLUDE mode => ALLOW_NEW_SOURCES is functionally
-		 * idential to IS_INCLUDE (because the list of sources in
+		 * identical to IS_INCLUDE (because the list of sources in
 		 * IS_INCLUDE is not exhaustive)
 		 */
 		break;
@@ -1371,7 +1371,7 @@ static void gm_sg_timer_start(struct gm_if *gm_ifp, struct gm_sg *sg,
 	if (PIM_DEBUG_GM_TRACE)
 		zlog_debug(log_sg(sg, "expiring in %pTVI"), &expire_wait);
 
-	if (sg->t_sg_expire) {
+	if (event_is_scheduled(sg->t_sg_expire)) {
 		struct timeval remain;
 
 		remain = event_timer_remain(sg->t_sg_expire);
@@ -1531,6 +1531,9 @@ static void gm_t_other_querier(struct event *t)
 
 	zlog_info(log_ifp("other querier timer expired"));
 
+	/* Other querier is gone, apply our setting to QRV */
+	gm_ifp->cur_qrv = pim_ifp->gm_default_robustness_variable;
+
 	gm_ifp->querier = pim_ifp->ll_lowest;
 	gm_ifp->n_startup = gm_ifp->cur_qrv;
 
@@ -1636,6 +1639,9 @@ static void gm_handle_query(struct gm_if *gm_ifp,
 
 	if (IPV6_ADDR_CMP(&pkt_src->sin6_addr, &pim_ifp->ll_lowest) < 0) {
 		unsigned int other_ms;
+
+		/* Use the other querier robustness value */
+		gm_ifp->cur_qrv = (hdr->flags & 0x7) ?: 2;
 
 		event_cancel(&gm_ifp->t_query);
 		event_cancel(&gm_ifp->t_other_querier);
@@ -2282,7 +2288,7 @@ static void gm_start(struct interface *ifp)
 	gm_ifp->cur_query_intv_trig =
 		pim_ifp->gm_specific_query_max_response_time_dsec * 100;
 	gm_ifp->cur_max_resp = pim_ifp->gm_query_max_response_time_dsec * 100;
-	gm_ifp->cur_lmqc = pim_ifp->gm_last_member_query_count;
+	gm_ifp->cur_lmqc = if_gm_last_member_query_count(pim_ifp);
 
 	gm_ifp->cfg_timing_fuzz.tv_sec = 0;
 	gm_ifp->cfg_timing_fuzz.tv_usec = 10 * 1000;
@@ -2381,6 +2387,7 @@ void gm_ifp_teardown(struct interface *ifp)
 
 	gm_group_delete(gm_ifp);
 
+	gm_gsq_pends_fini(gm_ifp->gsq_pends);
 	gm_grp_pends_fini(gm_ifp->grp_pends);
 	gm_packet_expires_fini(gm_ifp->expires);
 	gm_subscribers_fini(gm_ifp->subscribers);
@@ -2442,7 +2449,7 @@ void gm_ifp_update(struct interface *ifp)
 	}
 
 	/*
-	 * If ipv6 mld is not enabled on interface, do not start mld activites.
+	 * If ipv6 mld is not enabled on interface, do not start mld activities.
 	 */
 	if (!pim_ifp->gm_enable)
 		return;
@@ -2478,8 +2485,11 @@ void gm_ifp_update(struct interface *ifp)
 	if (gm_ifp->cur_max_resp != cfg_max_response)
 		gm_ifp->cur_max_resp = cfg_max_response;
 
-	if (gm_ifp->cur_lmqc != pim_ifp->gm_last_member_query_count)
-		gm_ifp->cur_lmqc = pim_ifp->gm_last_member_query_count;
+	/* Only adjust the QRV if no other querier is available */
+	if (!event_is_scheduled(gm_ifp->t_other_querier))
+		gm_ifp->cur_qrv = pim_ifp->gm_default_robustness_variable;
+
+	gm_ifp->cur_lmqc = if_gm_last_member_query_count(pim_ifp);
 
 	enum gm_version cfg_version;
 

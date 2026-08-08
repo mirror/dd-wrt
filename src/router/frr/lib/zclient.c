@@ -346,11 +346,10 @@ static enum zclient_send_status zclient_failed(struct zclient *zclient)
 	return ZCLIENT_SEND_FAILURE;
 }
 
-static void zclient_flush_data(struct event *thread)
+static void zclient_flush_data(struct event *event)
 {
-	struct zclient *zclient = EVENT_ARG(thread);
+	struct zclient *zclient = EVENT_ARG(event);
 
-	zclient->t_write = NULL;
 	if (zclient->sock < 0)
 		return;
 	switch (buffer_flush_available(zclient->wb, zclient->sock)) {
@@ -362,7 +361,6 @@ static void zclient_flush_data(struct event *thread)
 		zclient_failed(zclient);
 		return;
 	case BUFFER_PENDING:
-		zclient->t_write = NULL;
 		event_add_write(zclient->master, zclient_flush_data, zclient,
 				zclient->sock, &zclient->t_write);
 		break;
@@ -834,7 +832,7 @@ int zclient_start(struct zclient *zclient)
 		return 0;
 
 	/* Check connect thread. */
-	if (zclient->t_connect)
+	if (event_is_scheduled(zclient->t_connect))
 		return 0;
 
 	if (zclient_socket_connect(zclient) < 0) {
@@ -911,7 +909,6 @@ static void zclient_connect(struct event *t)
 	struct zclient *zclient;
 
 	zclient = EVENT_ARG(t);
-	zclient->t_connect = NULL;
 
 	if (zclient_debug)
 		zlog_debug("zclient_connect is called");
@@ -1237,8 +1234,7 @@ done:
 int zapi_srv6_locator_chunk_encode(struct stream *s,
 				   const struct srv6_locator_chunk *c)
 {
-	stream_putw(s, strlen(c->locator_name));
-	stream_put(s, c->locator_name, strlen(c->locator_name));
+	zapi_srv6_locname_encode(s, c->locator_name, __func__);
 	stream_putw(s, c->prefix.prefixlen);
 	stream_put(s, &c->prefix.prefix, sizeof(c->prefix.prefix));
 	stream_putc(s, c->block_bits_length);
@@ -1249,18 +1245,42 @@ int zapi_srv6_locator_chunk_encode(struct stream *s,
 	return 0;
 }
 
-int zapi_srv6_locator_chunk_decode(struct stream *s,
-				   struct srv6_locator_chunk *c)
+void zapi_srv6_locname_encode(struct stream *s, const char *name, const char *caller)
+{
+	size_t len = 0;
+
+	if (name) {
+		len = strnlen(name, SRV6_LOCNAME_SIZE);
+		if (len == SRV6_LOCNAME_SIZE) {
+			zlog_warn("%s: Truncating SRv6 locator name as length exceeds maximum %d",
+				  caller, SRV6_LOCNAME_SIZE - 1);
+			len = SRV6_LOCNAME_SIZE - 1;
+		}
+	}
+	stream_putw(s, (uint16_t)len);
+	if (len)
+		stream_put(s, name, len);
+}
+
+bool zapi_srv6_locname_decode(struct stream *s, char *buf, size_t bufsize, const char *caller)
 {
 	uint16_t len = 0;
 
+	if (!stream_getw2(s, &len))
+		return false;
+	if (len >= bufsize) {
+		zlog_warn("%s: SRv6 locator name length %u exceeds maximum %zu", caller, len,
+			  bufsize - 1);
+		return false;
+	}
+	return stream_get2(buf, s, len);
+}
+
+int zapi_srv6_locator_chunk_decode(struct stream *s, struct srv6_locator_chunk *c)
+{
 	c->prefix.family = AF_INET6;
 
-	STREAM_GETW(s, len);
-	if (len > SRV6_LOCNAME_SIZE)
-		goto stream_failure;
-
-	STREAM_GET(c->locator_name, s, len);
+	ZAPI_GET_SRV6_LOCNAME(c->locator_name, s);
 	STREAM_GETW(s, c->prefix.prefixlen);
 	STREAM_GET(&c->prefix.prefix, s, sizeof(c->prefix.prefix));
 	STREAM_GETC(s, c->block_bits_length);
@@ -1276,8 +1296,7 @@ stream_failure:
 
 int zapi_srv6_locator_encode(struct stream *s, const struct srv6_locator *l)
 {
-	stream_putw(s, strlen(l->name));
-	stream_put(s, l->name, strlen(l->name));
+	zapi_srv6_locname_encode(s, l->name, __func__);
 	stream_putw(s, l->prefix.prefixlen);
 	stream_put(s, &l->prefix.prefix, sizeof(l->prefix.prefix));
 	stream_putc(s, l->block_bits_length);
@@ -1290,13 +1309,7 @@ int zapi_srv6_locator_encode(struct stream *s, const struct srv6_locator *l)
 
 int zapi_srv6_locator_decode(struct stream *s, struct srv6_locator *l)
 {
-	uint16_t len = 0;
-
-	STREAM_GETW(s, len);
-	if (len > SRV6_LOCNAME_SIZE)
-		goto stream_failure;
-
-	STREAM_GET(l->name, s, len);
+	ZAPI_GET_SRV6_LOCNAME(l->name, s);
 	STREAM_GETW(s, l->prefix.prefixlen);
 	STREAM_GET(&l->prefix.prefix, s, sizeof(l->prefix.prefix));
 	l->prefix.family = AF_INET6;
@@ -2341,13 +2354,11 @@ stream_failure:
 
 bool zapi_srv6_sid_notify_decode(struct stream *s, struct srv6_sid_ctx *ctx,
 				 struct in6_addr *sid_value, uint32_t *func,
-				 uint32_t *wide_func,
-				 enum zapi_srv6_sid_notify *note,
-				 char **p_locator_name)
+				 uint32_t *wide_func, enum zapi_srv6_sid_notify *note,
+				 char *locator_name, size_t loc_size)
 {
 	uint32_t f, wf;
-	uint16_t len;
-	static char locator_name[SRV6_LOCNAME_SIZE] = {};
+	uint16_t len = 0;
 
 	STREAM_GET(note, s, sizeof(*note));
 	STREAM_GET(ctx, s, sizeof(struct srv6_sid_ctx));
@@ -2355,24 +2366,30 @@ bool zapi_srv6_sid_notify_decode(struct stream *s, struct srv6_sid_ctx *ctx,
 	STREAM_GETL(s, f);
 	STREAM_GETL(s, wf);
 
+	STREAM_GETW(s, len);
+	if (len >= loc_size && locator_name != NULL)
+		return false;
+
 	if (func)
 		*func = f;
 	if (wide_func)
 		*wide_func = wf;
 
-	STREAM_GETW(s, len);
-	if (len > SRV6_LOCNAME_SIZE) {
-		*p_locator_name = NULL;
-		return false;
-	}
-	if (p_locator_name) {
-		if (len == 0)
-			*p_locator_name = NULL;
-		else {
+	if (locator_name != NULL) {
+		/* This is a cstring, and it looks like it's normally sent without
+		 * its terminal NULL...
+		 */
+		if (len == 0) {
+			locator_name[0] = 0;
+		} else {
 			STREAM_GET(locator_name, s, len);
-			*p_locator_name = locator_name;
+			locator_name[len] = 0;
 		}
+	} else if (len > 0) {
+		/* Advance the stream */
+		stream_forward_getp(s, len);
 	}
+
 	return true;
 
 stream_failure:
@@ -2751,7 +2768,7 @@ stream_failure:
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |  Link Layer Type                                              |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |  Harware Address Length                                       |
+ * |  Hardware Address Length                                      |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |  Hardware Address      if HW length different from 0          |
  * |   ...                  max INTERFACE_HWADDR_MAX               |
@@ -3068,6 +3085,7 @@ static void zebra_interface_if_set_value(struct stream *s,
 	STREAM_GETL(s, ifp->mtu6);
 	STREAM_GETL(s, ifp->bandwidth);
 	STREAM_GETL(s, ifp->link_ifindex);
+	STREAM_GETL(s, ifp->zif_type);
 	STREAM_GETL(s, ifp->ll_type);
 	STREAM_GETL(s, ifp->hw_addr_len);
 	if (ifp->hw_addr_len)
@@ -3349,7 +3367,7 @@ static int zclient_read_sync_response(struct zclient *zclient,
 	uint8_t version;
 	vrf_id_t vrf_id;
 	uint16_t cmd;
-	fd_set readfds;
+	struct pollfd pfd;
 	int ret;
 
 	ret = 0;
@@ -3358,11 +3376,26 @@ static int zclient_read_sync_response(struct zclient *zclient,
 		s = zclient->ibuf;
 		stream_reset(s);
 
-		/* wait until response arrives */
-		FD_ZERO(&readfds);
-		FD_SET(zclient->sock, &readfds);
-		select(zclient->sock + 1, &readfds, NULL, NULL, NULL);
-		if (!FD_ISSET(zclient->sock, &readfds))
+		/* wait until response arrives (poll avoids FD_SETSIZE limit) */
+		pfd.fd = zclient->sock;
+		pfd.events = POLLIN | POLLHUP | POLLERR;
+		if (poll(&pfd, 1, -1) < 0) {
+			if (errno == EINTR)
+				continue;
+			flog_err(EC_LIB_ZAPI_SOCKET, "%s: poll failed: %s",
+				 __func__, safe_strerror(errno));
+			return -1;
+		}
+		if (pfd.revents & POLLNVAL) {
+			flog_err(EC_LIB_ZAPI_SOCKET, "%s: invalid zclient socket",
+				 __func__);
+			return -1;
+		}
+		/*
+		 * Treat POLLHUP/POLLERR as readable so read can surface the error
+		 * (matches lib/event.c pattern, avoids busy-spin on socket error)
+		 */
+		if (!(pfd.revents & (POLLIN | POLLHUP | POLLERR)))
 			continue;
 		/* read response */
 		ret = zclient_read_header(s, zclient->sock, &size, &marker,
@@ -3485,7 +3518,6 @@ int srv6_manager_get_locator_chunk(struct zclient *zclient,
 				   const char *locator_name)
 {
 	struct stream *s;
-	const size_t len = strlen(locator_name);
 
 	if (zclient_debug)
 		zlog_debug("Getting SRv6-Locator Chunk %s", locator_name);
@@ -3500,8 +3532,7 @@ int srv6_manager_get_locator_chunk(struct zclient *zclient,
 			      VRF_DEFAULT);
 
 	/* locator_name */
-	stream_putw(s, len);
-	stream_put(s, locator_name, len);
+	zapi_srv6_locname_encode(s, locator_name, __func__);
 
 	/* Put length at the first point of the stream. */
 	stream_putw_at(s, 0, stream_get_endp(s));
@@ -3520,7 +3551,6 @@ int srv6_manager_release_locator_chunk(struct zclient *zclient,
 				       const char *locator_name)
 {
 	struct stream *s;
-	const size_t len = strlen(locator_name);
 
 	if (zclient_debug)
 		zlog_debug("Releasing SRv6-Locator Chunk %s", locator_name);
@@ -3535,8 +3565,7 @@ int srv6_manager_release_locator_chunk(struct zclient *zclient,
 			      VRF_DEFAULT);
 
 	/* locator_name */
-	stream_putw(s, len);
-	stream_put(s, locator_name, len);
+	zapi_srv6_locname_encode(s, locator_name, __func__);
 
 	/* Put length at the first point of the stream. */
 	stream_putw_at(s, 0, stream_get_endp(s));
@@ -3548,16 +3577,12 @@ int srv6_manager_release_locator_chunk(struct zclient *zclient,
  * Function to request a SRv6 locator in an asynchronous way
  *
  * @param zclient The zclient used to connect to SRv6 Manager (zebra)
- * @param locator_name Name of SRv6 locator
+ * @param locator_name Name of SRv6 locator, or NULL to request all locators
  * @return 0 on success, -1 otherwise
  */
 int srv6_manager_get_locator(struct zclient *zclient, const char *locator_name)
 {
 	struct stream *s;
-	size_t len;
-
-	if (!locator_name)
-		return -1;
 
 	if (zclient->sock < 0) {
 		flog_err(EC_LIB_ZAPI_SOCKET, "%s: invalid zclient socket",
@@ -3566,9 +3591,7 @@ int srv6_manager_get_locator(struct zclient *zclient, const char *locator_name)
 	}
 
 	if (zclient_debug)
-		zlog_debug("Getting SRv6 Locator %s", locator_name);
-
-	len = strlen(locator_name);
+		zlog_debug("Getting SRv6 Locator %s", locator_name ? locator_name : "<all>");
 
 	/* Send request */
 	s = zclient->obuf;
@@ -3576,8 +3599,7 @@ int srv6_manager_get_locator(struct zclient *zclient, const char *locator_name)
 	zclient_create_header(s, ZEBRA_SRV6_MANAGER_GET_LOCATOR, VRF_DEFAULT);
 
 	/* Locator name */
-	stream_putw(s, len);
-	stream_put(s, locator_name, len);
+	zapi_srv6_locname_encode(s, locator_name, __func__);
 
 	/* Put length at the first point of the stream. */
 	stream_putw_at(s, 0, stream_get_endp(s));
@@ -3602,7 +3624,6 @@ int srv6_manager_get_sid(struct zclient *zclient, const struct srv6_sid_ctx *ctx
 {
 	struct stream *s;
 	uint8_t flags = 0;
-	size_t len;
 	char buf[256];
 
 	if (zclient->sock < 0) {
@@ -3638,11 +3659,8 @@ int srv6_manager_get_sid(struct zclient *zclient, const struct srv6_sid_ctx *ctx
 		stream_put(s, sid_value, sizeof(struct in6_addr));
 
 	/* SRv6 locator */
-	if (CHECK_FLAG(flags, ZAPI_SRV6_MANAGER_SID_FLAG_HAS_LOCATOR)) {
-		len = strlen(locator_name);
-		stream_putw(s, len);
-		stream_put(s, locator_name, len);
-	}
+	if (CHECK_FLAG(flags, ZAPI_SRV6_MANAGER_SID_FLAG_HAS_LOCATOR))
+		zapi_srv6_locname_encode(s, locator_name, __func__);
 
 	/* Put length at the first point of the stream. */
 	stream_putw_at(s, 0, stream_get_endp(s));
@@ -3665,7 +3683,6 @@ int srv6_manager_release_sid(struct zclient *zclient, const struct srv6_sid_ctx 
 {
 	struct stream *s;
 	uint8_t flags = 0;
-	size_t len;
 	char buf[256];
 
 	if (zclient->sock < 0) {
@@ -3696,11 +3713,8 @@ int srv6_manager_release_sid(struct zclient *zclient, const struct srv6_sid_ctx 
 	stream_putc(s, flags);
 
 	/* SRv6 locator */
-	if (CHECK_FLAG(flags, ZAPI_SRV6_MANAGER_SID_FLAG_HAS_LOCATOR)) {
-		len = strlen(locator_name);
-		stream_putw(s, len);
-		stream_put(s, locator_name, len);
-	}
+	if (CHECK_FLAG(flags, ZAPI_SRV6_MANAGER_SID_FLAG_HAS_LOCATOR))
+		zapi_srv6_locname_encode(s, locator_name, __func__);
 
 	/* Put length at the first point of the stream. */
 	stream_putw_at(s, 0, stream_get_endp(s));
@@ -4429,18 +4443,12 @@ static int zclient_capability_decode(ZAPI_CALLBACK_ARGS)
 {
 	struct zclient_capabilities cap;
 	struct stream *s = zclient->ibuf;
-	int vrf_backend;
+	enum vrf_backend_type vrf_backend;
 	uint8_t mpls_enabled;
 
-	STREAM_GETL(s, vrf_backend);
+	STREAM_GETC(s, vrf_backend);
 
-	if (vrf_backend < 0 || vrf_configure_backend(vrf_backend)) {
-		flog_err(EC_LIB_ZAPI_ENCODE,
-			 "%s: Garbage VRF backend type: %d", __func__,
-			 vrf_backend);
-		goto stream_failure;
-	}
-
+	vrf_configure_backend(vrf_backend);
 
 	memset(&cap, 0, sizeof(cap));
 	STREAM_GETC(s, mpls_enabled);
@@ -4765,7 +4773,7 @@ static zclient_handler *const lib_handlers[] = {
 };
 
 /* Zebra client message read function. */
-static void zclient_read(struct event *thread)
+static void zclient_read(struct event *event)
 {
 	size_t already;
 	uint16_t length, command;
@@ -4774,8 +4782,7 @@ static void zclient_read(struct event *thread)
 	struct zclient *zclient;
 
 	/* Get socket to zebra. */
-	zclient = EVENT_ARG(thread);
-	zclient->t_read = NULL;
+	zclient = EVENT_ARG(event);
 
 	/* Read zebra header (if we don't have it already). */
 	already = stream_get_endp(zclient->ibuf);
@@ -4877,7 +4884,7 @@ static void zclient_read(struct event *thread)
 		/* Connection was closed during packet processing. */
 		return;
 
-	/* Register read thread. */
+	/* Register read event. */
 	stream_reset(zclient->ibuf);
 	zclient_event(ZCLIENT_READ, zclient);
 }
@@ -5419,6 +5426,26 @@ void zclient_register_neigh(struct zclient *zclient, vrf_id_t vrf_id, afi_t afi,
 				  : ZEBRA_NEIGH_UNREGISTER,
 			      vrf_id);
 	stream_putw(s, afi);
+	stream_putw_at(s, 0, stream_get_endp(s));
+	zclient_send_message(zclient);
+}
+
+void zclient_neigh_get(struct zclient *zclient, struct interface *ifp, afi_t afi)
+{
+	struct stream *s;
+
+	if (!zclient || zclient->sock < 0) {
+		zlog_err("%s : zclient not connected", __func__);
+		return;
+	}
+
+	s = zclient->obuf;
+	stream_reset(s);
+
+	zclient_create_header(s, ZEBRA_NEIGH_GET, VRF_DEFAULT);
+	stream_putl(s, ifp->ifindex);
+	stream_putw(s, afi);
+
 	stream_putw_at(s, 0, stream_get_endp(s));
 	zclient_send_message(zclient);
 }

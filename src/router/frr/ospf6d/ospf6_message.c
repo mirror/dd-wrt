@@ -131,8 +131,6 @@ void ospf6_hello_print(struct ospf6_header *oh, int action)
 		     p + sizeof(uint32_t) <= OSPF6_MESSAGE_END(oh);
 		     p += sizeof(uint32_t))
 			zlog_debug("    Neighbor: %pI4", (in_addr_t *)p);
-
-		assert(p == OSPF6_MESSAGE_END(oh));
 	}
 }
 
@@ -168,10 +166,7 @@ void ospf6_dbdesc_print(struct ospf6_header *oh, int action)
 		     p + sizeof(struct ospf6_lsa_header)
 		     <= OSPF6_MESSAGE_END(oh);
 		     p += sizeof(struct ospf6_lsa_header))
-			ospf6_lsa_header_print_raw(
-				(struct ospf6_lsa_header *)p);
-
-		assert(p == OSPF6_MESSAGE_END(oh));
+			ospf6_lsa_header_print_raw((struct ospf6_lsa_header *)p);
 	}
 }
 
@@ -198,8 +193,6 @@ void ospf6_lsreq_print(struct ospf6_header *oh, int action)
 				   ospf6_lstype_name(e->type), &e->id,
 				   &e->adv_router);
 		}
-
-		assert(p == OSPF6_MESSAGE_END(oh));
 	}
 }
 
@@ -231,8 +224,6 @@ void ospf6_lsupdate_print(struct ospf6_header *oh, int action)
 			ospf6_lsa_header_print_raw(
 				(struct ospf6_lsa_header *)p);
 		}
-
-		assert(p == OSPF6_MESSAGE_END(oh));
 	}
 }
 
@@ -252,10 +243,7 @@ void ospf6_lsack_print(struct ospf6_header *oh, int action)
 		     p + sizeof(struct ospf6_lsa_header)
 		     <= OSPF6_MESSAGE_END(oh);
 		     p += sizeof(struct ospf6_lsa_header))
-			ospf6_lsa_header_print_raw(
-				(struct ospf6_lsa_header *)p);
-
-		assert(p == OSPF6_MESSAGE_END(oh));
+			ospf6_lsa_header_print_raw((struct ospf6_lsa_header *)p);
 	}
 }
 
@@ -529,7 +517,11 @@ static void ospf6_hello_recv(struct in6_addr *src, struct in6_addr *dst,
 			twoway++;
 	}
 
-	assert(p == OSPF6_MESSAGE_END(oh));
+	if (p != OSPF6_MESSAGE_END(oh)) {
+		if (IS_OSPF6_DEBUG_MESSAGE(oh->type, RECV_HDR))
+			zlog_warn("VRF %s: IF %s length too long in hello packet",
+				  oi->interface->vrf->name, oi->interface->name);
+	}
 
 	/* RouterPriority check */
 	if (on->priority != hello->priority) {
@@ -582,7 +574,7 @@ static void ospf6_hello_recv(struct in6_addr *src, struct in6_addr *dst,
 			 * from DR and BDR.
 			 * So, helper might receives ONE_WAY hello from
 			 * RESTARTER. So not allowing to change the state if it
-			 * receives one_way hellow when it acts as HELPER for
+			 * receives one_way hello when it acts as HELPER for
 			 * that specific neighbor.
 			 */
 			event_execute(master, oneway_received, on, 0, NULL);
@@ -750,8 +742,10 @@ static void ospf6_dbdesc_recv_master(struct ospf6_header *oh,
 		return;
 
 	default:
-		assert(0);
-		break;
+		if (IS_OSPF6_DEBUG_MESSAGE(oh->type, RECV_HDR))
+			zlog_debug("DbDesc recv: Invalid/unknown state %s Nbr %s",
+				   ospf6_neighbor_state_str[on->state], on->name);
+		return;
 	}
 
 	/* Process LSA headers */
@@ -812,7 +806,10 @@ static void ospf6_dbdesc_recv_master(struct ospf6_header *oh,
 		ospf6_lsa_delete(his);
 	}
 
-	assert(p == OSPF6_MESSAGE_END(oh));
+	if (p != OSPF6_MESSAGE_END(oh)) {
+		if (IS_OSPF6_DEBUG_MESSAGE(oh->type, RECV_HDR))
+			zlog_debug("Message length mismatch");
+	}
 
 	/* Increment sequence number */
 	on->dbdesc_seqnum++;
@@ -973,8 +970,10 @@ static void ospf6_dbdesc_recv_slave(struct ospf6_header *oh,
 		return;
 
 	default:
-		assert(0);
-		break;
+		if (IS_OSPF6_DEBUG_MESSAGE(oh->type, RECV_HDR))
+			zlog_debug("DbDesc slave recv: Invalid state %s Nbr %s",
+				   ospf6_neighbor_state_str[on->state], on->name);
+		return;
 	}
 
 	/* Process LSA headers */
@@ -1024,7 +1023,10 @@ static void ospf6_dbdesc_recv_slave(struct ospf6_header *oh,
 		ospf6_lsa_delete(his);
 	}
 
-	assert(p == OSPF6_MESSAGE_END(oh));
+	if (p != OSPF6_MESSAGE_END(oh)) {
+		if (IS_OSPF6_DEBUG_MESSAGE(oh->type, RECV))
+			zlog_debug("Message too long");
+	}
 
 	/* Set sequence number to Master's */
 	on->dbdesc_seqnum = ntohl(dbdesc->seqnum);
@@ -1165,7 +1167,10 @@ static void ospf6_lsreq_recv(struct in6_addr *src, struct in6_addr *dst,
 		ospf6_lsdb_add(ospf6_lsa_copy(lsa), on->lsupdate_list);
 	}
 
-	assert(p == OSPF6_MESSAGE_END(oh));
+	if (p != OSPF6_MESSAGE_END(oh)) {
+		if (IS_OSPF6_DEBUG_MESSAGE(oh->type, RECV_HDR))
+			zlog_debug("Message too long");
+	}
 
 	/* schedule send lsupdate */
 	event_cancel(&on->thread_send_lsupdate);
@@ -1649,7 +1654,10 @@ static void ospf6_lsupdate_recv(struct in6_addr *src, struct in6_addr *dst,
 		ospf6_receive_lsa(on, (struct ospf6_lsa_header *)p);
 	}
 
-	assert(p == OSPF6_MESSAGE_END(oh));
+	if (p != OSPF6_MESSAGE_END(oh)) {
+		if (IS_OSPF6_DEBUG_MESSAGE(oh->type, RECV_HDR))
+			zlog_debug("Message too long");
+	}
 }
 
 static void ospf6_lsack_recv(struct in6_addr *src, struct in6_addr *dst,
@@ -1749,7 +1757,10 @@ static void ospf6_lsack_recv(struct in6_addr *src, struct in6_addr *dst,
 		ospf6_lsa_delete(his);
 	}
 
-	assert(p == OSPF6_MESSAGE_END(oh));
+	if (p != OSPF6_MESSAGE_END(oh)) {
+		if (IS_OSPF6_DEBUG_MESSAGE(oh->type, RECV))
+			zlog_debug("Message too long");
+	}
 }
 
 static uint8_t *recvbuf = NULL;
@@ -1802,6 +1813,7 @@ static int ospf6_read_helper(int sockfd, struct ospf6 *ospf6)
 	enum ospf6_auth_err ret = OSPF6_AUTH_PROCESS_NORMAL;
 	uint32_t at_len = 0;
 	uint32_t lls_len = 0;
+	int hoplim = 0;
 
 	/* initialize */
 	memset(&src, 0, sizeof(src));
@@ -1813,7 +1825,7 @@ static int ospf6_read_helper(int sockfd, struct ospf6 *ospf6)
 	iovector[1].iov_len = 0;
 
 	/* receive message */
-	len = ospf6_recvmsg(&src, &dst, &ifindex, iovector, sockfd);
+	len = ospf6_recvmsg(&src, &dst, &ifindex, &hoplim, iovector, sockfd);
 	if (len < 0)
 		return OSPF6_READ_ERROR;
 
@@ -1821,6 +1833,10 @@ static int ospf6_read_helper(int sockfd, struct ospf6 *ospf6)
 		flog_err(EC_LIB_DEVELOPMENT, "Excess message read");
 		return OSPF6_READ_ERROR;
 	}
+
+	/* RFC5340:A.1 Ignore multicast with invalid hop limit */
+	if (IN6_IS_ADDR_MULTICAST(&dst) && hoplim != 1)
+		return OSPF6_READ_CONTINUE;
 
 	/* ensure some zeroes past the end, just as a security precaution */
 	memset(recvbuf + len, 0, MIN(128, iobuflen - len));
@@ -1899,7 +1915,8 @@ static int ospf6_read_helper(int sockfd, struct ospf6 *ospf6)
 			ospf6_lsack_print(oh, OSPF6_ACTION_RECV);
 			break;
 		default:
-			assert(0);
+			/* Should not reach - packet_examine should check this */
+			return OSPF6_READ_CONTINUE;
 		}
 
 		if ((at_len != 0) && IS_OSPF6_DEBUG_AUTH_RX)
@@ -1929,21 +1946,21 @@ static int ospf6_read_helper(int sockfd, struct ospf6 *ospf6)
 		break;
 
 	default:
-		assert(0);
+		break;
 	}
 
 	return OSPF6_READ_CONTINUE;
 }
 
-void ospf6_receive(struct event *thread)
+void ospf6_receive(struct event *event)
 {
 	int sockfd;
 	struct ospf6 *ospf6;
 	int count = 0;
 
-	/* add next read thread */
-	ospf6 = EVENT_ARG(thread);
-	sockfd = EVENT_FD(thread);
+	/* add next read event */
+	ospf6 = EVENT_ARG(event);
+	sockfd = EVENT_FD(event);
 
 	event_add_read(master, ospf6_receive, ospf6, ospf6->fd,
 		       &ospf6->t_ospf6_receive);
@@ -2110,9 +2127,9 @@ static uint16_t ospf6_make_hello(struct ospf6_interface *oi, struct stream *s)
 	return length;
 }
 
-static void ospf6_write(struct event *thread)
+static void ospf6_write(struct event *event)
 {
-	struct ospf6 *ospf6 = EVENT_ARG(thread);
+	struct ospf6 *ospf6 = EVENT_ARG(event);
 	struct ospf6_interface *oi;
 	struct ospf6_header *oh;
 	struct ospf6_packet *op;
@@ -2192,7 +2209,6 @@ static void ospf6_write(struct event *thread)
 				break;
 			default:
 				zlog_debug("Unknown message");
-				assert(0);
 				break;
 			}
 		}
@@ -2226,7 +2242,6 @@ static void ospf6_write(struct event *thread)
 			break;
 		default:
 			zlog_debug("Unknown message");
-			assert(0);
 			break;
 		}
 
@@ -2258,17 +2273,17 @@ static void ospf6_write(struct event *thread)
 		}
 	}
 
-	/* If packets still remain in queue, call write thread. */
+	/* If packets still remain in queue, call write event. */
 	if (!list_isempty(ospf6->oi_write_q))
 		event_add_write(master, ospf6_write, ospf6, ospf6->fd,
 				&ospf6->t_write);
 }
 
-void ospf6_hello_send(struct event *thread)
+void ospf6_hello_send(struct event *event)
 {
 	struct ospf6_interface *oi;
 
-	oi = (struct ospf6_interface *)EVENT_ARG(thread);
+	oi = (struct ospf6_interface *)EVENT_ARG(event);
 
 	/* Check if the GR hello-delay is active. */
 	if (oi->gr.hello_delay.t_grace_send)
@@ -2408,13 +2423,13 @@ static uint16_t ospf6_make_dbdesc(struct ospf6_neighbor *on, struct stream *s)
 	return length;
 }
 
-void ospf6_dbdesc_send(struct event *thread)
+void ospf6_dbdesc_send(struct event *event)
 {
 	struct ospf6_neighbor *on;
 	uint16_t length = OSPF6_HEADER_SIZE;
 	struct ospf6_packet *op;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)EVENT_ARG(event);
 
 	if (on->state < OSPF6_NEIGHBOR_EXSTART) {
 		if (IS_OSPF6_DEBUG_MESSAGE(OSPF6_MESSAGE_TYPE_DBDESC, SEND))
@@ -2424,7 +2439,7 @@ void ospf6_dbdesc_send(struct event *thread)
 		return;
 	}
 
-	/* set next thread if master */
+	/* set next event if master */
 	if (CHECK_FLAG(on->dbdesc_bits, OSPF6_DBDESC_MSBIT))
 		event_add_timer(master, ospf6_dbdesc_send, on,
 				on->ospf6_if->rxmt_interval,
@@ -2451,13 +2466,13 @@ void ospf6_dbdesc_send(struct event *thread)
 	OSPF6_MESSAGE_WRITE_ON(on->ospf6_if);
 }
 
-void ospf6_dbdesc_send_newone(struct event *thread)
+void ospf6_dbdesc_send_newone(struct event *event)
 {
 	struct ospf6_neighbor *on;
 	struct ospf6_lsa *lsa, *lsanext;
 	unsigned int size = 0;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)EVENT_ARG(event);
 	ospf6_lsdb_remove_all(on->dbdesc_list);
 
 	/* move LSAs from summary_list to dbdesc_list (within neighbor
@@ -2573,13 +2588,13 @@ static uint16_t ospf6_make_lsack_neighbor(struct ospf6_neighbor *on,
 	return length;
 }
 
-void ospf6_lsreq_send(struct event *thread)
+void ospf6_lsreq_send(struct event *event)
 {
 	struct ospf6_neighbor *on;
 	struct ospf6_packet *op;
 	uint16_t length = OSPF6_HEADER_SIZE;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)EVENT_ARG(event);
 
 	/* LSReq will be sent only in ExStart or Loading */
 	if (on->state != OSPF6_NEIGHBOR_EXCHANGE
@@ -2625,7 +2640,7 @@ void ospf6_lsreq_send(struct event *thread)
 
 	OSPF6_MESSAGE_WRITE_ON(on->ospf6_if);
 
-	/* set next thread */
+	/* set next event */
 	if (on->request_list->count != 0) {
 		event_add_timer(master, ospf6_lsreq_send, on,
 				on->ospf6_if->rxmt_interval,
@@ -2767,14 +2782,14 @@ static uint16_t ospf6_make_ls_retrans_list(struct ospf6_neighbor *on,
 	return length;
 }
 
-void ospf6_lsupdate_send_neighbor(struct event *thread)
+void ospf6_lsupdate_send_neighbor(struct event *event)
 {
 	struct ospf6_neighbor *on;
 	struct ospf6_packet *op;
 	uint16_t length = OSPF6_HEADER_SIZE;
 	int lsa_cnt = 0;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)EVENT_ARG(event);
 
 	if (IS_OSPF6_DEBUG_MESSAGE(OSPF6_MESSAGE_TYPE_LSUPDATE, SEND_HDR))
 		zlog_debug("LSUpdate to neighbor %s", on->name);
@@ -2902,14 +2917,14 @@ static uint16_t ospf6_make_lsupdate_interface(struct ospf6_interface *oi,
 	return length;
 }
 
-void ospf6_lsupdate_send_interface(struct event *thread)
+void ospf6_lsupdate_send_interface(struct event *event)
 {
 	struct ospf6_interface *oi;
 	struct ospf6_packet *op;
 	uint16_t length = OSPF6_HEADER_SIZE;
 	int lsa_cnt = 0;
 
-	oi = (struct ospf6_interface *)EVENT_ARG(thread);
+	oi = (struct ospf6_interface *)EVENT_ARG(event);
 
 	if (oi->state <= OSPF6_INTERFACE_WAITING) {
 		if (IS_OSPF6_DEBUG_MESSAGE(OSPF6_MESSAGE_TYPE_LSUPDATE,
@@ -2943,13 +2958,13 @@ void ospf6_lsupdate_send_interface(struct event *thread)
 	}
 }
 
-void ospf6_lsack_send_neighbor(struct event *thread)
+void ospf6_lsack_send_neighbor(struct event *event)
 {
 	struct ospf6_neighbor *on;
 	struct ospf6_packet *op;
 	uint16_t length = OSPF6_HEADER_SIZE;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)EVENT_ARG(event);
 
 	if (on->state < OSPF6_NEIGHBOR_EXCHANGE) {
 		if (IS_OSPF6_DEBUG_MESSAGE(OSPF6_MESSAGE_TYPE_LSACK, SEND_HDR))
@@ -3019,13 +3034,13 @@ static uint16_t ospf6_make_lsack_interface(struct ospf6_interface *oi,
 	return length;
 }
 
-void ospf6_lsack_send_interface(struct event *thread)
+void ospf6_lsack_send_interface(struct event *event)
 {
 	struct ospf6_interface *oi;
 	struct ospf6_packet *op;
 	uint16_t length = OSPF6_HEADER_SIZE;
 
-	oi = (struct ospf6_interface *)EVENT_ARG(thread);
+	oi = (struct ospf6_interface *)EVENT_ARG(event);
 
 	if (oi->state <= OSPF6_INTERFACE_WAITING) {
 		if (IS_OSPF6_DEBUG_MESSAGE(OSPF6_MESSAGE_TYPE_LSACK, SEND_HDR))

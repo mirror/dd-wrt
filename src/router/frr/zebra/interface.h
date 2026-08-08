@@ -33,20 +33,6 @@ extern "C" {
 
 #define IF_VLAN_BITMAP_MAX 4096
 
-/* Zebra interface type - ones of interest. */
-enum zebra_iftype {
-	ZEBRA_IF_OTHER = 0, /* Anything else */
-	ZEBRA_IF_VXLAN,     /* VxLAN interface */
-	ZEBRA_IF_VRF,       /* VRF device */
-	ZEBRA_IF_BRIDGE,    /* bridge device */
-	ZEBRA_IF_VLAN,      /* VLAN sub-interface */
-	ZEBRA_IF_MACVLAN,   /* MAC VLAN interface*/
-	ZEBRA_IF_VETH,      /* VETH interface*/
-	ZEBRA_IF_BOND,	    /* Bond */
-	ZEBRA_IF_GRE,       /* GRE interface */
-	ZEBRA_IF_DUMMY,     /* Dummy interface */
-};
-
 /* Zebra "slave" interface type */
 enum zebra_slave_iftype {
 	ZEBRA_IF_SLAVE_NONE,   /* Not a slave */
@@ -90,7 +76,12 @@ enum zebra_if_flags {
 	 * and inherited by the bond (if one or more bond members are in
 	 * a bypass state the bond is placed in a bypass state)
 	 */
-	ZIF_FLAG_LACP_BYPASS = (1 << 5)
+	ZIF_FLAG_LACP_BYPASS = (1 << 5),
+
+	/* Kernel protodown state from RTM_NEWLINK - used to detect kernel
+	 * protodown transitions independently from ZIF_FLAG_PROTODOWN
+	 */
+	ZIF_FLAG_KERNEL_PROTODOWN_SET = (1 << 6)
 };
 
 #define ZEBRA_IF_IS_PROTODOWN(zif) ((zif)->flags & ZIF_FLAG_PROTODOWN)
@@ -145,9 +136,11 @@ struct zebra_if {
 	char up_last[FRR_TIMESTAMP_LEN];
 	unsigned int down_count;
 	char down_last[FRR_TIMESTAMP_LEN];
+	uint32_t carrier_changes;
 
 	struct rtadvconf rtadv;
 	unsigned int ra_sent, ra_rcvd;
+	unsigned int rs_rcvd;
 
 #ifdef HAVE_STRUCT_SOCKADDR_DL
 	union {
@@ -207,6 +200,7 @@ struct zebra_if {
 
 	uint8_t speed_update_count;
 	struct event *speed_update;
+	uint32_t speed_checked;
 
 	/*
 	 * Does this interface have a v6 to v4 ll neighbor entry
@@ -250,8 +244,14 @@ DECLARE_HOOK(zebra_if_extra_info, (struct vty * vty, json_object *json_if, struc
 #define IS_ZEBRA_IF_GRE(ifp)                                               \
 	(((struct zebra_if *)(ifp->info))->zif_type == ZEBRA_IF_GRE)
 
-#define IS_ZEBRA_IF_DUMMY(ifp)                                               \
-	(((struct zebra_if *)(ifp->info))->zif_type == ZEBRA_IF_DUMMY)
+#define IS_ZEBRA_IF_IP6GRE(ifp) (((struct zebra_if *)(ifp->info))->zif_type == ZEBRA_IF_IP6GRE)
+
+#define IS_ZEBRA_IF_GRETAP(ifp) (((struct zebra_if *)(ifp->info))->zif_type == ZEBRA_IF_GRETAP)
+
+#define IS_ZEBRA_IF_IP6GRETAP(ifp)                                                                \
+	(((struct zebra_if *)(ifp->info))->zif_type == ZEBRA_IF_IP6GRETAP)
+
+#define IS_ZEBRA_IF_DUMMY(ifp) (((struct zebra_if *)(ifp->info))->zif_type == ZEBRA_IF_DUMMY)
 
 #define IS_ZEBRA_IF_BRIDGE_SLAVE(ifp)					\
 	(((struct zebra_if *)(ifp->info))->zif_slave_type                      \
@@ -266,12 +266,11 @@ DECLARE_HOOK(zebra_if_extra_info, (struct vty * vty, json_object *json_if, struc
 
 extern void zebra_if_init(void);
 
-extern struct interface *if_lookup_by_index_per_ns(struct zebra_ns *, uint32_t);
-extern struct interface *if_lookup_by_name_per_ns(struct zebra_ns *,
-						  const char *);
+extern struct interface *if_lookup_by_index_per_ns(struct zebra_ns *ns, uint32_t ifindex);
+extern struct interface *if_lookup_by_name_per_ns(struct zebra_ns *ns, const char *ifname);
 extern struct interface *if_lookup_by_index_per_nsid(ns_id_t nsid,
 						     uint32_t ifindex);
-extern const char *ifindex2ifname_per_ns(struct zebra_ns *, unsigned int);
+extern const char *ifindex2ifname_per_ns(struct zebra_ns *zns, unsigned int ifindex);
 
 extern void if_nbr_mac_to_ipv4ll_neigh_update(struct interface *fip,
 					      char mac[6],
@@ -284,11 +283,11 @@ extern void if_nbr_ipv6ll_to_ipv4ll_neigh_del_all(struct interface *ifp);
 extern void if_delete_update(struct interface **ifp);
 extern void if_add_update(struct interface *ifp);
 extern void if_up(struct interface *ifp, bool install_connected);
-extern void if_down(struct interface *);
-extern void if_refresh(struct interface *);
-extern void if_flags_update(struct interface *, uint64_t);
-extern int if_subnet_add(struct interface *, struct connected *);
-extern int if_subnet_delete(struct interface *, struct connected *);
+extern void if_down(struct interface *ifp);
+extern void if_refresh(struct interface *ifp);
+extern void if_flags_update(struct interface *ifp, uint64_t newflags);
+extern int if_subnet_add(struct interface *ifp, struct connected *ifc);
+extern int if_subnet_delete(struct interface *ifp, struct connected *ifc);
 extern void if_handle_vrf_change(struct interface *ifp, vrf_id_t vrf_id);
 extern void zebra_if_update_link(struct interface *ifp, ifindex_t link_ifindex,
 				 ns_id_t ns_id);
@@ -326,7 +325,7 @@ extern int if_no_shutdown(struct interface *ifp);
 extern void if_arp(struct interface *ifp, bool enable);
 extern int if_multicast_set(struct interface *ifp);
 extern int if_multicast_unset(struct interface *ifp);
-extern int if_linkdetect(struct interface *ifp, bool detect);
+extern void if_linkdetect(struct interface *ifp, bool detect);
 extern void if_addr_wakeup(struct interface *ifp);
 
 void link_param_cmd_set_uint32(struct interface *ifp, uint32_t *field,

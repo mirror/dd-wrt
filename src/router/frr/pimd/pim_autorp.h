@@ -26,6 +26,12 @@
 #define DEFAULT_AUTORP_DISCOVERY_INTERVAL 60
 #define DEFAULT_AUTORP_DISCOVERY_SCOPE	  31
 #define DEFAULT_AUTORP_DISCOVERY_HOLDTIME 180
+/*
+ * Upper bounds for learned Auto-RP state to limit memory growth from malformed
+ * or malicious announcement/discovery traffic.
+ */
+#define PIM_AUTORP_MAX_LEARNED_RPS   1024
+#define PIM_AUTORP_MAX_GROUPS_PER_RP 128
 
 PREDECL_SORTLIST_UNIQ(pim_autorp_rp);
 PREDECL_SORTLIST_UNIQ(pim_autorp_grppfix);
@@ -114,6 +120,9 @@ struct pim_autorp {
 	/* Flag enabling reading discovery packets */
 	bool do_discovery;
 
+	/* True once northbound has explicitly set discovery-enabled. */
+	bool discovery_cfg_set;
+
 	/* Flag enabling mapping agent (reading announcements and sending discovery)*/
 	bool send_rp_discovery;
 
@@ -172,6 +181,8 @@ void pim_autorp_add_ifp(struct interface *ifp);
 void pim_autorp_rm_ifp(struct interface *ifp);
 void pim_autorp_start_discovery(struct pim_instance *pim);
 void pim_autorp_stop_discovery(struct pim_instance *pim);
+void pim_autorp_discovery_cfg_destroy(struct pim_instance *pim);
+void pim_autorp_discovery_apply_finish(struct pim_instance *pim);
 void pim_autorp_init(struct pim_instance *pim);
 void pim_autorp_enable(struct pim_instance *pim);
 void pim_autorp_finish(struct pim_instance *pim);

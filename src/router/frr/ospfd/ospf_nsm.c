@@ -36,6 +36,7 @@
 #include "ospfd/ospf_bfd.h"
 #include "ospfd/ospf_gr.h"
 #include "ospfd/ospf_errors.h"
+#include "ospfd/ospf_quicknbr.h"
 
 DEFINE_HOOK(ospf_nsm_change,
 	    (struct ospf_neighbor * on, int state, int oldstate),
@@ -44,12 +45,11 @@ DEFINE_HOOK(ospf_nsm_change,
 static void nsm_clear_adj(struct ospf_neighbor *);
 
 /* OSPF NSM Timer functions. */
-static void ospf_inactivity_timer(struct event *thread)
+static void ospf_inactivity_timer(struct event *event)
 {
 	struct ospf_neighbor *nbr;
 
-	nbr = EVENT_ARG(thread);
-	nbr->t_inactivity = NULL;
+	nbr = EVENT_ARG(event);
 
 	if (IS_DEBUG_OSPF(nsm, NSM_TIMERS))
 		zlog_debug("NSM[%s:%pI4:%s]: Timer (Inactivity timer expire)",
@@ -70,13 +70,23 @@ static void ospf_inactivity_timer(struct event *thread)
 				  nbr->v_inactivity);
 	}
 }
+/* RFC4222 */
+void ospf_nsm_restart_inactivity_timer(struct ospf_neighbor *nbr)
+{
+	if (!nbr)
+		return;
 
-static void ospf_db_desc_timer(struct event *thread)
+	/* Start or Restart Inactivity Timer. */
+	event_cancel(&nbr->t_inactivity);
+
+	OSPF_NSM_TIMER_ON(nbr->t_inactivity, ospf_inactivity_timer, nbr->v_inactivity);
+}
+
+static void ospf_db_desc_timer(struct event *event)
 {
 	struct ospf_neighbor *nbr;
 
-	nbr = EVENT_ARG(thread);
-	nbr->t_db_desc = NULL;
+	nbr = EVENT_ARG(event);
 
 	if (IS_DEBUG_OSPF(nsm, NSM_TIMERS))
 		zlog_debug("NSM[%s:%pI4:%s]: Timer (DD Retransmit timer expire)",
@@ -319,7 +329,7 @@ static int nsm_exchange_done(struct ospf_neighbor *nbr)
 		return NSM_Full;
 
 	/* Send Link State Request. */
-	if (nbr->t_ls_req == NULL)
+	if (!event_is_scheduled(nbr->t_ls_req))
 		ospf_ls_req_send(nbr);
 
 	return NSM_Loading;
@@ -337,6 +347,12 @@ static int nsm_adj_ok(struct ospf_neighbor *nbr)
 		ospf_proactively_arp(nbr);
 	} else if (nbr->state >= NSM_ExStart && adj == 0)
 		next_state = NSM_TwoWay;
+	else if (nbr->state == NSM_TwoWay && IS_QUICKNBR(nbr) && adj == 1)
+		/*
+		 * Quick neighbor placeholder; only form adjacency when appropriate
+		 * per RFC2328 10.4.
+		 */
+		next_state = NSM_ExStart;
 
 	return next_state;
 }
@@ -789,14 +805,14 @@ static void nsm_change_state(struct ospf_neighbor *nbr, int state)
 }
 
 /* Execute NSM event process. */
-void ospf_nsm_event(struct event *thread)
+void ospf_nsm_event(struct event *e)
 {
 	int event;
 	int next_state;
 	struct ospf_neighbor *nbr;
 
-	nbr = EVENT_ARG(thread);
-	event = EVENT_VAL(thread);
+	nbr = EVENT_ARG(e);
+	event = EVENT_VAL(e);
 
 	if (IS_DEBUG_OSPF(nsm, NSM_EVENTS))
 		zlog_debug("NSM[%s:%pI4:%s]: %s (%s)", IF_NAME(nbr->oi),

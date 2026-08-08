@@ -12,6 +12,7 @@
 
 import os
 import sys
+import time
 import json
 import pytest
 from functools import partial
@@ -225,11 +226,13 @@ def test_local_vs_non_local():
 
     r2 = tgen.gears["r2"]
 
-    output = json.loads(r2.vtysh_cmd("show bgp ipv4 uni 60.0.0.0/24 json"))
-    paths = output["paths"]
-    for i in range(len(paths)):
-        if "fibPending" in paths[i]:
-            assert False, "Route 60.0.0.0/24 should not have fibPending"
+    def check_no_fib_pending():
+        output = json.loads(r2.vtysh_cmd("show bgp ipv4 uni 60.0.0.0/24 json"))
+        paths = output.get("paths", [])
+        return all("fibPending" not in path for path in paths)
+
+    _, result = topotest.run_and_expect(check_no_fib_pending, True, count=20, wait=1)
+    assert result is True, "Route 60.0.0.0/24 should not have fibPending"
 
 
 def test_ip_protocol_any_fib_filter():
@@ -244,6 +247,169 @@ def test_ip_protocol_any_fib_filter():
     r2.vtysh_cmd("conf\nno ip protocol bgp")
     r2.vtysh_cmd("conf\nip protocol any route-map LIMIT")
     test_bgp_route()
+
+
+def test_bgp_suppress_fib_adv_delay():
+    """Test configurable advertisement delay for suppress-fib-pending"""
+
+    tgen = get_topogen()
+
+    if tgen.routers_have_failure():
+        pytest.skip(tgen.errors)
+
+    r2 = tgen.gears["r2"]
+
+    # Verify default: suppress-fib-pending is already configured without
+    # explicit delay, so running-config should show bare command
+    output = r2.vtysh_cmd("show running-config")
+    assert "bgp suppress-fib-pending" in output
+    assert (
+        "bgp suppress-fib-pending 1000" not in output
+    ), "Default delay should not appear in running-config"
+
+    # Wait for peers to be established before testing delay changes
+    def _check_peers_established():
+        output = json.loads(r2.vtysh_cmd("show bgp summary json"))
+        peers = output.get("ipv4Unicast", {}).get("peers", {})
+        for peer_info in peers.values():
+            if peer_info.get("state") != "Established":
+                return False
+        return True
+
+    _, result = topotest.run_and_expect(
+        _check_peers_established, True, count=30, wait=1
+    )
+    assert result is True, "Peers should be established before delay test"
+
+    # Wait for BGP to be fully converged before sampling pfxRcd, by
+    # ensuring that the table version hasn't changed for 10 seconds
+    tv_state = {"version": None, "first_seen": None}
+
+    def _table_version_stable_10s():
+        output = json.loads(r2.vtysh_cmd("show bgp summary json"))
+        tv = output.get("ipv4Unicast", {}).get("tableVersion")
+        now = time.monotonic()
+        if tv != tv_state["version"]:
+            tv_state["version"] = tv
+            tv_state["first_seen"] = now
+            return False
+        return (now - tv_state["first_seen"]) >= 10
+
+    _, result = topotest.run_and_expect(
+        _table_version_stable_10s, True, count=60, wait=1
+    )
+    assert result is True, "BGP tableVersion should be stable for 10s before delay test"
+
+    # Record peer uptime before delay change
+    output = json.loads(r2.vtysh_cmd("show bgp summary json"))
+    peers_before = output.get("ipv4Unicast", {}).get("peers", {})
+    pfx_rcvd_before = {
+        peer: info.get("pfxRcd", 0) for peer, info in peers_before.items()
+    }
+
+    # Change delay while suppress-fib is already enabled (delay-only change)
+    r2.vtysh_cmd("conf\nrouter bgp 2\nbgp suppress-fib-pending 50")
+    output = r2.vtysh_cmd("show running-config")
+    assert (
+        "bgp suppress-fib-pending 50" in output
+    ), "Custom delay should appear in running-config"
+
+    # Verify peers were NOT reset — they should still be Established
+    # with the same prefix count (no session flap)
+    output = json.loads(r2.vtysh_cmd("show bgp summary json"))
+    peers_after = output.get("ipv4Unicast", {}).get("peers", {})
+    for peer, info in peers_after.items():
+        assert (
+            info.get("state") == "Established"
+        ), "Peer {} should remain Established after delay-only change".format(peer)
+        assert info.get("pfxRcd", 0) == pfx_rcvd_before.get(
+            peer, 0
+        ), "Peer {} prefix count should not change on delay-only update".format(peer)
+
+    # Change delay to 0 (no batching) — still delay-only, no reset
+    r2.vtysh_cmd("conf\nrouter bgp 2\nbgp suppress-fib-pending 0")
+    output = r2.vtysh_cmd("show running-config")
+    assert (
+        "bgp suppress-fib-pending 0" in output
+    ), "Zero delay should appear in running-config"
+
+    output = json.loads(r2.vtysh_cmd("show bgp summary json"))
+    peers_after = output.get("ipv4Unicast", {}).get("peers", {})
+    for peer, info in peers_after.items():
+        assert (
+            info.get("state") == "Established"
+        ), "Peer {} should remain Established after delay change to 0".format(peer)
+
+    # Change delay to >1000ms — validates extended range up to 10000
+    r2.vtysh_cmd("conf\nrouter bgp 2\nbgp suppress-fib-pending 5000")
+    output = r2.vtysh_cmd("show running-config")
+    assert (
+        "bgp suppress-fib-pending 5000" in output
+    ), "Extended delay (5000ms) should appear in running-config"
+
+    output = json.loads(r2.vtysh_cmd("show bgp summary json"))
+    peers_after = output.get("ipv4Unicast", {}).get("peers", {})
+    for peer, info in peers_after.items():
+        assert (
+            info.get("state") == "Established"
+        ), "Peer {} should remain Established after delay change to 5000".format(peer)
+
+    # Restore default delay (no explicit value)
+    r2.vtysh_cmd("conf\nrouter bgp 2\nbgp suppress-fib-pending")
+    output = r2.vtysh_cmd("show running-config")
+    assert "bgp suppress-fib-pending" in output
+    assert (
+        "bgp suppress-fib-pending 1000" not in output
+    ), "Default delay should not appear after restore"
+
+    # Verify routes still work after delay changes
+    r3 = tgen.gears["r3"]
+    json_file = "{}/r3/v4_route.json".format(CWD)
+    expected = json.loads(open(json_file).read())
+
+    test_func = partial(
+        topotest.router_json_cmp,
+        r3,
+        "show ip route 40.0.0.0 json",
+        expected,
+    )
+    _, result = topotest.run_and_expect(test_func, None, count=30, wait=1)
+    assert result is None, "Routes should still be present after delay changes"
+
+
+def test_bgp_suppress_fib_adv_delay_global():
+    """Test configurable advertisement delay at global (CONFIG_NODE) level"""
+
+    tgen = get_topogen()
+
+    if tgen.routers_have_failure():
+        pytest.skip(tgen.errors)
+
+    r1 = tgen.gears["r1"]
+
+    # Enable global suppress-fib-pending with custom delay
+    r1.vtysh_cmd("conf\nbgp suppress-fib-pending 100")
+    output = r1.vtysh_cmd("show running-config")
+    assert (
+        "bgp suppress-fib-pending 100" in output
+    ), "Global custom delay should appear in running-config"
+
+    # Disable global suppress-fib-pending
+    r1.vtysh_cmd("conf\nno bgp suppress-fib-pending")
+    output = r1.vtysh_cmd("show running-config")
+    # After 'no', the command should not appear at global level
+    lines = output.split("\n")
+    global_lines = [
+        l
+        for l in lines
+        if l.strip() == "bgp suppress-fib-pending"
+        or "bgp suppress-fib-pending" in l
+        and not l.startswith(" ")
+    ]
+    # Filter out per-instance lines (indented with space)
+    assert not any(
+        not l.startswith(" ") and "bgp suppress-fib-pending" in l for l in lines
+    ), "Global suppress-fib-pending should be removed after 'no'"
 
 
 if __name__ == "__main__":

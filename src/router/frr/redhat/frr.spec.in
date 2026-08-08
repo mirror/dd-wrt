@@ -849,40 +849,30 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 
 %changelog
 
-* Tue Feb 17 2026 Jafar Al-Gharaibeh <jafar@atcorp.com> - %{version}
+* Tue Jul 14 2026 Jafar Al-Gharaibeh <jafar@atcorp.com> - %{version}
 
-* Tue Feb 17 2026 Jafar Al-Gharaibeh <jafar@atcorp.com> - 10.5.2
-- New upstream release FRR 10.5.2
+* Tue Jul 14 2026 Jafar Al-Gharaibeh <jafar@atcorp.com> 10.7.0
+- New upstream release FRR 10.7.0
+- Major highlights:
+-   BFD authentication with keychain support (cleartext, SHA-1, meticulous)
+-   BGP-LS SRv6 extensions (Capabilities, Locator, SID NLRI, Endpoint Behavior TLVs)
+-   BGP route-map based allowas-in for flexible AS-path loop control
+-   OSPFv2 RFC 4222 control-plane DSCP marking and BFD quick neighbor
+-   PIM IGMP proxy route-map and multicast-source-interface join filtering
+-   PIM dense-mode Assert on multi-access LAN and Auto-RP allow-rp support
+-   Static route per-route metric and nexthop ECMP weight support
 
-* Mon Jan 05 2026 Donatas Abraitis <donatas@opensourcerouting.org> 10.5.1
-- bgpd:
--    Allow proper shutdown of bgp dynamic peers in rare case
--    Check length for dynamic capability (software version new encoding)
--    Correction in json output structure for no data case
--    Fix labeled unicast inbound policy lookup
--    Fix labeled-unicast output
--    Fix maximum-prefix session recovery for peers and peer-groups
--    Fix memory leak in bgp nhc tlv processing
--    Fix route node lock leak in nht resolved prefix marking
--    Fix srv6-only command defaulted when 'no segment-routing ipv6'
--    Send route-refresh and/or trigger soft reconfig on enforce-first-as
--    Try to handle software version capability with the new encoding format
-- isisd:
--   Use ipv6 mtid for srv6 locator tlvs when ipv6 mt is enabled
-- pimd:
--    Add pim_debug_pim_reg protection for pim register stop debug message
--    Crash while trying mroute_read when fd=-1
--    Df election on zebra peer down synced to the mlag peer
--    Fix for mc frame loss in a sequential traffic test
--    Fix pim mlag update peer zebra status upon local mlag connection restoration
--    Fix warnings for pimd
--    Crash when pimreg interface not present
--    Crashed because of indexing invalid index in an array
--    Prevent crash on interface removal
-- vrrpd:
--    vrrp interface delete fails to free connected route
-- zebrad:
--    Fix crash due to lack of control of received number of srv6 sid from netlink
+* Wed Mar 25 2026 Jafar Al-Gharaibeh <jafar@atcorp.com> 10.6.0
+- New upstream release FRR 10.6.0
+- Major highlights:
+-   EVPN Graceful Restart support and EVPNv6/IPv6 VTEP improvements
+-   BGP labeled-unicast multiple MPLS labels support
+-   BGP software-version capability latest-encoding option
+-   BGP underlay-weight and nexthop-characteristic based ECMP weighting
+-   OSPFv2 forwarding-address-self command
+-   PIM/PIMv6 IGMP/MLD join filtering support
+-   16-bit nexthop weight support and BFD LTTng tracing
+-   Packaging/build defaults moved to libyang3
 
 * Sun Nov 09 2025 Jafar Al-Gharaibeh <jafar@atcorp.com> 10.5.0
 - New upstream release FRR 10.5.0
@@ -951,7 +941,7 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 - Major highlights:
 -   Introduce local host routes
 -   Require libyang 2.1.128
--   Add suport to configire a log file per daemon
+-   Add support to configure a log file per daemon
 -   BGP BMP Loc-RIB (RFC9069) support
 -   eBGP-OAD (One Administrative Domain) support
 -   BGP RPKI VRF support
@@ -1033,7 +1023,7 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 
 * Wed Jul 13 2022 Jafar Al-Gharaibeh <jafar@atcorp.com> - 8.3
 - General:
--    Add camelcase json keys in addition to pascalcase (Wrong JSON keys will be depracated)
+-    Add camelcase json keys in addition to pascalcase (Wrong JSON keys will be deprecated)
 -    Fix corruption when route-map delete/add sequence happens (fast re-add)
 -    Reworked gRPC
 -    RFC5424 & journald extended syslog target
@@ -1121,7 +1111,7 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 -    Add support for end.dt4
 -    Add to `show zebra` the type of vrf devices being used
 -    Allow *BSD to specify a receive buffer size
--    Allow multiple connected routes to be choosen for kernel routes
+-    Allow multiple connected routes to be chosen for kernel routes
 -    Allow system routes to recurse through themselves
 -    Do not send RAs w/o link-local v6 or on bridge-ports
 -    Evpn disable remove l2vni from l3vni list
@@ -1237,7 +1227,7 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 
 * Tue Nov  2 2021 Jafar Al-Gharaibeh <jafar@atcorp.com> - 8.1
 -    FRR 8.1 brings a long list of enhancements and fixes with 1200 commits from
--    75 developers. Thanks to all contributers.
+-    75 developers. Thanks to all contributors.
 - New Features:
 -    Lua hooks are now feature complete, with one hook available for use (http://docs.frrouting.org/en/latest/scripting.html)
 -    Improvements to SRv6 (Segment Routing over IPv6) (http://docs.frrouting.org/en/latest/zebra.html#segment-routing-ipv6)
@@ -1347,7 +1337,7 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 -    Simplify msdp peer handling
 - zebra :
 -    Add "json" option to "show interface"
--    Various improvment to dataplane interface
+-    Various improvement to dataplane interface
 -    Add message counts for `show zebra client`
 -    Add nhg id to show ip route json
 -    Add show command for ra interface lists
@@ -1365,7 +1355,7 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 -    TI-LFA has been implemented in IS-IS and OSPF
 -    Ability for Zebra to dump netlink messages in a human-friendly format
 -    LDP gained SNMP support
--    libyang minimun version is now 2.0
+-    libyang minimum version is now 2.0
 - BABEL:
 -    Add `distribute-list` commands
 -    Fix memory leak in connected route handling
@@ -1516,7 +1506,7 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 -    In some situations handle vrf appropriately when receiving packets
 - BGP:
 -    Peer Group Inheritance Fixes
--    Dissallow attempt to peer peers reachable via blackholes
+-    Disallow attempt to peer peers reachable via blackholes
 -    Send BMP down message when reachability fails
 -    Cleanup handling of aggregator data when the AGG AS is 0
 -    Handle `neighbor <peer-group allowas-in` config changes properly
@@ -1574,11 +1564,11 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 - ZEBRA:
 -    Always install blackhole routes using kernel routes instead of nexthops
 -    Various memory leaks and using uninited data fixes
--    Dissallow resolution to duplicate nexthops that created infinite nexthops
+-    Disallow resolution to duplicate nexthops that created infinite nexthops
 -    Apply the route-map delay-timer globally
 -    Some routes were stuck in Queued state when using the FPM
 -    Better handle vrf creation when using namespaces
--    Set NUD_NOARP on sticky mac entries in addtion to NTF_STICKY
+-    Set NUD_NOARP on sticky mac entries in addition to NTF_STICKY
 -    Allow `set src X` to work on startup
 - FRR Library:
 -    Fix a variety of memory leaks
@@ -1604,7 +1594,7 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 -   Add `bgp shutdown message MSG...` command
 -   Add v6 Flowspec support
 -   Add `neighbor <neigh> shutdown rtt` command
--   Allow update-delay to be applied globaly
+-   Allow update-delay to be applied globally
 - EVPN
 -   Beginning of MultiHoming Support
 - ISIS
@@ -1766,7 +1756,7 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 -   Rework BGP dampening to be per AFI/SAFI
 -   Do not send next-hop as :: in MP_REACH_NLRI if no link-local exists
 -   Override peer's TTL only if peer-group is configured with TTL
--   Remove error message for unkown afi/safi combination
+-   Remove error message for unknown afi/safi combination
 -   Keep the session down if maximum-prefix is reached
 - OSPFd
 -   Fix BFD down not tearing down OSPF adjacency for point-to-point net
@@ -1798,7 +1788,7 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 - ALL Daemons
 -   -N <namespace> to allow for config file locating when running FRR inside
      of a namespace
--   Impoved Testing across all daemons
+-   Improved Testing across all daemons
 - BFD
 -   VRF Support
 -   Conversion to Northbound interface
@@ -1911,7 +1901,7 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 * Sun Oct  7 2018 Martin Winter <mwinter@opensourcerouting.org> - 6.0
 - Staticd: New daemon responsible for management of static routes
 - ISISd: Implement dst-src routing as per draft-ietf-isis-ipv6-dst-src-routing
-- BFDd: new daemon for BFD (Bidrectional Forwarding Detection). Responsible
+- BFDd: new daemon for BFD (Bidirectional Forwarding Detection). Responsible
   for notifying link changes to make routing protocols converge faster.
 - various bug fixes
 
@@ -1974,7 +1964,7 @@ sed -i 's/ -M rpki//' %{_sysconfdir}/frr/daemons
 - Cleanup configure: remove --enable-ipv6 (default now), --enable-nssa,
     --enable-netlink
 - Remove support for old fedora 4/5
-- Fix for package nameing
+- Fix for package naming
 - Fix Weekdays of previous changelogs (bogus dates)
 - Add conditional logic to only build tex footnotes with supported texi2html
 - Added pimd to files section and fix double listing of /var/lib*/quagga

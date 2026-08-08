@@ -33,7 +33,7 @@
 #include "ospfd/ospf_dump.h"
 #include "ospfd/ospf_gr_clippy.c"
 
-static void ospf_gr_grace_period_expired(struct event *thread);
+static void ospf_gr_grace_period_expired(struct event *event);
 
 /* Lookup self-originated Grace-LSA in the LSDB. */
 static struct ospf_lsa *ospf_gr_lsa_lookup(struct ospf *ospf,
@@ -143,7 +143,7 @@ static void ospf_gr_lsa_originate(struct ospf_interface *oi,
 
 	/* Skip originating a Grace-LSA when not necessary. */
 	if (!if_is_operative(oi->ifp) || if_is_loopback(oi->ifp) ||
-	    (reason != OSPF_GR_UNKNOWN_RESTART &&
+	    (reason != OSPF_GR_UNKNOWN_RESTART && reason != OSPF_GR_SWITCH_CONTROL_PROCESSOR &&
 	     ospf_interface_neighbor_count(oi) == 0))
 		return;
 
@@ -162,7 +162,8 @@ static void ospf_gr_lsa_originate(struct ospf_interface *oi,
 	if (old)
 		lsa->data->ls_seqnum = lsa_seqnum_increment(old);
 
-	if (!maxage && reason == OSPF_GR_UNKNOWN_RESTART) {
+	if (!maxage &&
+	    (reason == OSPF_GR_UNKNOWN_RESTART || reason == OSPF_GR_SWITCH_CONTROL_PROCESSOR)) {
 		struct list *update;
 		struct in_addr addr;
 
@@ -547,18 +548,17 @@ void ospf_gr_check_adjs(struct ospf *ospf)
 }
 
 /* Handling of grace period expiry. */
-static void ospf_gr_grace_period_expired(struct event *thread)
+static void ospf_gr_grace_period_expired(struct event *event)
 {
-	struct ospf *ospf = EVENT_ARG(thread);
+	struct ospf *ospf = EVENT_ARG(event);
 
-	ospf->gr_info.t_grace_period = NULL;
 	ospf_gr_restart_exit(ospf, "grace period has expired");
 }
 
 /* Send extra Grace-LSA out the interface (unplanned outages only). */
-void ospf_gr_iface_send_grace_lsa(struct event *thread)
+void ospf_gr_iface_send_grace_lsa(struct event *event)
 {
-	struct ospf_interface *oi = EVENT_ARG(thread);
+	struct ospf_interface *oi = EVENT_ARG(event);
 	struct ospf_if_params *params = IF_DEF_PARAMS(oi->ifp);
 
 	ospf_gr_lsa_originate(oi, oi->ospf->gr_info.reason, false);
@@ -646,11 +646,11 @@ void ospf_gr_nvm_delete(struct ospf *ospf)
 void ospf_gr_nvm_read(struct ospf *ospf)
 {
 	const char *inst_name;
-	json_object *json;
-	json_object *json_instances;
-	json_object *json_instance;
-	json_object *json_timestamp;
-	json_object *json_grace_period;
+	json_object *json = NULL;
+	json_object *json_instances = NULL;
+	json_object *json_instance = NULL;
+	json_object *json_timestamp = NULL;
+	json_object *json_grace_period = NULL;
 	time_t timestamp = 0;
 
 	inst_name = ospf_get_name(ospf);

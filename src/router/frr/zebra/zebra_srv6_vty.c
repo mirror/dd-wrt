@@ -464,7 +464,7 @@ static void do_show_srv6_sid_json(struct vty *vty, json_object **json, struct sr
 				json_object_string_add(json_sid_ctx, "vrfName", vrf->name);
 
 			zvrf = vrf_info_lookup(sid_ctx->ctx.vrf_id);
-			if (vrf)
+			if (zvrf)
 				json_object_int_add(json_sid_ctx, "table", zvrf->table_id);
 		}
 		if (sid_ctx->ctx.ifindex) {
@@ -738,6 +738,13 @@ DEFUN_NOSH (srv6,
 	return CMD_SUCCESS;
 }
 
+/* Unset SRv6 encapsulation source address */
+static void unset_srv6_encap_source_address(void)
+{
+	zebra_srv6_encap_src_addr_unset();
+	dplane_srv6_encap_srcaddr_set(&in6addr_any, NS_DEFAULT);
+}
+
 DEFUN (no_srv6,
        no_srv6_cmd,
        "no srv6",
@@ -772,9 +779,7 @@ DEFUN (no_srv6,
 		zebra_srv6_locator_delete(locator);
 	}
 
-	/* Unset SRv6 encapsulation source address */
-	zebra_srv6_encap_src_addr_unset();
-	dplane_srv6_encap_srcaddr_set(&in6addr_any, NS_DEFAULT);
+	unset_srv6_encap_source_address();
 
 	return CMD_SUCCESS;
 }
@@ -943,21 +948,9 @@ DEFPY (locator_prefix,
 
 	if (prefix->prefixlen + func_bit_len + 0 > 128) {
 		vty_out(vty,
-			"%% prefix-len + function-len + arg-len (%ld) cannot be greater than 128\n",
+			"%% prefix-len + function-len + arg-len (%" PRId64
+			") cannot be greater than 128\n",
 			prefix->prefixlen + func_bit_len + 0);
-		return CMD_WARNING_CONFIG_FAILED;
-	}
-
-	/*
-	 * Currently, the SID transposition algorithm implemented in bgpd
-	 * handles incorrectly the SRv6 locators with function length greater
-	 * than 20 bits. To prevent issues, we currently limit the function
-	 * length to 20 bits.
-	 * This limit will be removed when the bgpd SID transposition is fixed.
-	 */
-	if (func_bit_len > 20) {
-		vty_out(vty,
-			"%% currently func_bit_len > 20 is not supported\n");
 		return CMD_WARNING_CONFIG_FAILED;
 	}
 
@@ -965,6 +958,8 @@ DEFPY (locator_prefix,
 	locator->node_bits_length = node_bit_len;
 	locator->function_bits_length = func_bit_len;
 	locator->argument_bits_length = 0;
+
+	locator->status_up = true;
 
 	if (list_isempty(locator->chunks)) {
 		chunk = srv6_locator_chunk_alloc();
@@ -994,6 +989,45 @@ DEFPY (locator_prefix,
 	}
 
 	zebra_srv6_locator_format_set(locator, locator->sid_format);
+
+	return CMD_SUCCESS;
+}
+
+DEFPY (no_locator_prefix,
+       no_locator_prefix_cmd,
+       "no prefix [X:X::X:X/M$prefix [block-len (16-64)$block_bit_len] \
+	        [node-len (0-64)$node_bit_len] [func-bits (0-64)$func_bit_len]]",
+       NO_STR
+       "Configure SRv6 locator prefix\n"
+       "Specify SRv6 locator prefix\n"
+       "Configure SRv6 locator block length in bits\n"
+       "Specify SRv6 locator block length in bits\n"
+       "Configure SRv6 locator node length in bits\n"
+       "Specify SRv6 locator node length in bits\n"
+       "Configure SRv6 locator function length in bits\n"
+       "Specify SRv6 locator function length in bits\n")
+{
+	VTY_DECLVAR_CONTEXT(srv6_locator, locator);
+
+	if (IPV6_ADDR_SAME(&locator->prefix.prefix, &in6addr_any))
+		/* Prefix not configured, nothing to do */
+		return CMD_SUCCESS;
+
+	locator->status_up = false;
+
+	zebra_notify_srv6_locator_delete(locator);
+	zebra_srv6_sid_entry_del_by_locator_all_sids(locator);
+	zebra_srv6_sid_locator_block_release(locator);
+
+	list_delete_all_node(locator->chunks);
+
+	memset(&locator->prefix, 0, sizeof(locator->prefix));
+	locator->prefix.family = AF_INET6;
+
+	locator->block_bits_length = 0;
+	locator->node_bits_length = 0;
+	locator->function_bits_length = 0;
+	locator->argument_bits_length = 0;
 
 	return CMD_SUCCESS;
 }
@@ -1143,6 +1177,17 @@ DEFUN_NOSH (srv6_encap,
 	return CMD_SUCCESS;
 }
 
+DEFUN (no_srv6_encap,
+       no_srv6_encap_cmd,
+       "no encapsulation",
+       NO_STR
+       "Segment Routing SRv6 encapsulation\n")
+{
+	unset_srv6_encap_source_address();
+
+	return CMD_SUCCESS;
+}
+
 DEFPY (srv6_src_addr,
        srv6_src_addr_cmd,
        "source-address X:X::X:X$encap_src_addr",
@@ -1161,8 +1206,7 @@ DEFPY (no_srv6_src_addr,
        "Segment Routing SRv6 source address\n"
        "Specify source address for SRv6 encapsulation\n")
 {
-	zebra_srv6_encap_src_addr_unset();
-	dplane_srv6_encap_srcaddr_set(&in6addr_any, NS_DEFAULT);
+	unset_srv6_encap_source_address();
 	return CMD_SUCCESS;
 }
 
@@ -1755,6 +1799,7 @@ void zebra_srv6_vty_init(void)
 	install_element(SEGMENT_ROUTING_NODE, &no_srv6_cmd);
 	install_element(SRV6_NODE, &srv6_locators_cmd);
 	install_element(SRV6_NODE, &srv6_encap_cmd);
+	install_element(SRV6_NODE, &no_srv6_encap_cmd);
 	install_element(SRV6_NODE, &srv6_sid_formats_cmd);
 	install_element(SRV6_LOCS_NODE, &srv6_locator_cmd);
 	install_element(SRV6_LOCS_NODE, &no_srv6_locator_cmd);
@@ -1770,6 +1815,7 @@ void zebra_srv6_vty_init(void)
 
 	/* Command for configuration */
 	install_element(SRV6_LOC_NODE, &locator_prefix_cmd);
+	install_element(SRV6_LOC_NODE, &no_locator_prefix_cmd);
 	install_element(SRV6_LOC_NODE, &locator_behavior_cmd);
 	install_element(SRV6_LOC_NODE, &locator_flavor_psp_cmd);
 	install_element(SRV6_LOC_NODE, &locator_sid_format_cmd);

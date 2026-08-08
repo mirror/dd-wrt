@@ -49,6 +49,7 @@
 #include "network.h"
 #include "routemap.h"
 #include "frregex_real.h"
+#include "json.h"
 
 #include "frrscript.h"
 
@@ -524,6 +525,9 @@ static int config_write_host(struct vty *vty)
 			vty_out(vty, "banner motd line %s\n", host.motd);
 		else if (!host.motd)
 			vty_out(vty, "no banner motd\n");
+
+		if (frr_mem_release_rate_get() != FRR_MEM_RELEASE_MB_DEFAULT)
+			vty_out(vty, "memory release rate %u\n", frr_mem_release_rate_get());
 	}
 
 	if (debug_memstats_at_exit)
@@ -1160,7 +1164,7 @@ static int handle_pipe_action(struct vty *vty, const char *cmd_in,
 {
 	/* look for `|` */
 	char *orig, *working, *token, *u;
-	char *pipe = strstr(cmd_in, "| ");
+	const char *pipe = strstr(cmd_in, "| ");
 	int ret = 0;
 
 	if (!pipe)
@@ -1393,7 +1397,7 @@ DEFUN_YANG (config_exit,
 
 static int root_on_exit(struct vty *vty)
 {
-	if (vty_shell(vty))
+	if (vty_is_shell(vty))
 		exit(0);
 	else
 		vty->status = VTY_CLOSE;
@@ -1440,17 +1444,44 @@ DEFUN (config_end,
 /* Show version. */
 DEFUN (show_version,
        show_version_cmd,
-       "show version",
+       "show version [json]",
        SHOW_STR
-       "Displays zebra version\n")
+       "Displays zebra version\n"
+       JSON_STR)
 {
-	vty_out(vty, "%s %s (%s) on %s(%s).\n", FRR_FULL_NAME, FRR_VERSION,
-		cmd_hostname_get() ? cmd_hostname_get() : "", cmd_system_get(),
-		cmd_release_get());
-	vty_out(vty, "%s%s\n", FRR_COPYRIGHT, GIT_INFO);
+	int uj = use_json(argc, argv);
+	json_object *json = NULL;
+
+	if (uj) {
+		json = json_object_new_object();
+		json_object_string_add(json,
+				       "hostName",
+				       host.name ? host.name : "");
+		json_object_string_add(json,
+				       "version", FRR_VERSION);
+		json_object_string_add(json,
+				       "name", FRR_FULL_NAME);
+		json_object_string_add(json,
+				       "copyright", FRR_COPYRIGHT);
+		json_object_string_add(json,
+				       "gitInformation", GIT_INFO);
 #ifdef ENABLE_VERSION_BUILD_CONFIG
-	vty_out(vty, "configured with:\n    %s\n", FRR_CONFIG_ARGS);
+		json_object_string_add(json,
+				       "configureLine", FRR_CONFIG_ARGS);
 #endif
+		vty_out(vty, "%s\n",
+			json_object_to_json_string_ext(json, JSON_C_TO_STRING_PRETTY));
+		json_object_free(json);
+	} else {
+		vty_out(vty, "%s %s (%s) on %s(%s).\n", FRR_FULL_NAME, FRR_VERSION,
+			cmd_hostname_get() ? cmd_hostname_get() : "", cmd_system_get(),
+			cmd_release_get());
+		vty_out(vty, "%s%s\n", FRR_COPYRIGHT, GIT_INFO);
+#ifdef ENABLE_VERSION_BUILD_CONFIG
+		vty_out(vty, "configured with:\n    %s\n", FRR_CONFIG_ARGS);
+#endif
+	}
+
 	return CMD_SUCCESS;
 }
 
@@ -1982,7 +2013,7 @@ DEFUN (no_config_password,
 	bool warned = false;
 
 	if (host.password) {
-		if (!vty_shell_serv(vty)) {
+		if (!vty_is_shell_serv(vty)) {
 			vty_out(vty, NO_PASSWD_CMD_WARNING);
 			warned = true;
 		}
@@ -1991,7 +2022,7 @@ DEFUN (no_config_password,
 	host.password = NULL;
 
 	if (host.password_encrypt) {
-		if (!warned && !vty_shell_serv(vty))
+		if (!warned && !vty_is_shell_serv(vty))
 			vty_out(vty, NO_PASSWD_CMD_WARNING);
 		XFREE(MTYPE_HOST, host.password_encrypt);
 	}
@@ -2064,7 +2095,7 @@ DEFUN (no_config_enable_password,
 	bool warned = false;
 
 	if (host.enable) {
-		if (!vty_shell_serv(vty)) {
+		if (!vty_is_shell_serv(vty)) {
 			vty_out(vty, NO_PASSWD_CMD_WARNING);
 			warned = true;
 		}
@@ -2073,7 +2104,7 @@ DEFUN (no_config_enable_password,
 	host.enable = NULL;
 
 	if (host.enable_encrypt) {
-		if (!warned && !vty_shell_serv(vty))
+		if (!warned && !vty_is_shell_serv(vty))
 			vty_out(vty, NO_PASSWD_CMD_WARNING);
 		XFREE(MTYPE_HOST, host.enable_encrypt);
 	}

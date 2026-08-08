@@ -55,14 +55,13 @@
 /* AS segment octet length. */
 #define ASSEGMENT_LEN(X,S) ASSEGMENT_SIZE((X)->length,S)
 
-/* AS_SEQUENCE segments can be packed together */
-/* Can the types of X and Y be considered for packing? */
-#define ASSEGMENT_TYPES_PACKABLE(X, Y)                                         \
-	(((X)->type == (Y)->type) && ((X)->type == AS_SEQUENCE))
-/* Types and length of X,Y suitable for packing? */
-#define ASSEGMENTS_PACKABLE(X, Y)                                              \
-	(ASSEGMENT_TYPES_PACKABLE((X), (Y))                                    \
-	 && (((X)->length + (Y)->length) <= AS_SEGMENT_MAX))
+/* Are the types and combined length of X,Y suitable for packing?
+ * Only AS_SEQUENCE segments pack, and only while the result still fits within
+ * the on-wire AS_SEGMENT_MAX (255) ASN limit.
+ */
+#define ASSEGMENTS_PACKABLE(X, Y)                                                                 \
+	(((X)->type == (Y)->type) && ((X)->type == AS_SEQUENCE) &&                                \
+	 (((X)->length + (Y)->length) <= AS_SEGMENT_MAX))
 
 /* As segment header - the on-wire representation
  * NOT the internal representation!
@@ -226,10 +225,16 @@ static int int_cmp(const void *p1, const void *p2)
 }
 
 /* normalise the segment.
- * In particular, merge runs of AS_SEQUENCEs into one segment
- * Internally, we do not care about the wire segment length limit, and
- * we want each distinct AS_PATHs to have the exact same internal
- * representation - eg, so that our hashing actually works..
+ * In particular, merge runs of AS_SEQUENCEs into one segment.
+ * We want each distinct AS_PATH to have the same internal representation -
+ * eg, so that our hashing actually works.
+ *
+ * Merging is capped at the on-wire AS_SEGMENT_MAX (255) ASN limit
+ * (ASSEGMENTS_PACKABLE).  If an over-length AS_SEQUENCE - e.g. one received as
+ * several 255-ASN wire segments over an RFC 8654 Extended-Message session -
+ * were merged into a single oversized internal segment, aspath_put() would
+ * trip its outer-loop length guard and silently emit an empty AS_PATH when
+ * re-encoding the route for a peer that did not negotiate Extended-Message.
  */
 static struct assegment *assegment_normalise(struct assegment *head)
 {
@@ -273,7 +278,7 @@ static struct assegment *assegment_normalise(struct assegment *head)
 		 * to the segment we have pinned and remove these appended
 		 * segments.
 		 */
-		while (pin->next && ASSEGMENT_TYPES_PACKABLE(pin, pin->next)) {
+		while (pin->next && ASSEGMENTS_PACKABLE(pin, pin->next)) {
 			tmp = pin->next;
 			seg = pin->next;
 
@@ -891,10 +896,50 @@ struct aspath *aspath_parse(struct stream *s, size_t length, int use32bit,
 	return find;
 }
 
+/* Add specified AS to the rightmost of aspath. */
+static struct aspath *aspath_add_asns_rightmost(struct aspath *aspath, as_t asno, uint8_t type,
+						unsigned int num)
+{
+	struct assegment *seg = aspath->segments;
+	struct assegment *last = NULL;
+
+	if (!seg) {
+		struct assegment *newseg = assegment_new(type, num);
+		unsigned int i;
+
+		for (i = 0; i < num; i++)
+			newseg->as[i] = asno;
+
+		aspath->segments = newseg;
+	} else {
+		while (seg) {
+			last = seg;
+			seg = seg->next;
+		}
+
+		if (last->type == type && (last->length + num) <= AS_SEGMENT_MAX) {
+			assegment_append_asns(last, &asno, num);
+		} else {
+			struct assegment *newseg = assegment_new(type, num);
+			unsigned int i;
+
+			for (i = 0; i < num; i++)
+				newseg->as[i] = asno;
+
+			last->next = newseg;
+		}
+	}
+
+	aspath_str_update(aspath, false);
+	aspath->count = aspath_count_hops_internal(aspath);
+	return aspath;
+}
+
 static void assegment_data_put(struct stream *s, as_t *as, int num,
 			       int use32bit)
 {
 	int i;
+
 	assert(num <= AS_SEGMENT_MAX);
 
 	for (i = 0; i < num; i++)
@@ -1018,40 +1063,6 @@ uint8_t *aspath_snmp_pathseg(struct aspath *as, size_t *varlen)
 	return stream_pnt(snmp_stream);
 }
 
-static struct assegment *aspath_aggregate_as_set_add(struct aspath *aspath,
-						     struct assegment *asset,
-						     as_t as)
-{
-	int i;
-
-	/* If this is first AS set member, create new as-set segment. */
-	if (asset == NULL) {
-		asset = assegment_new(AS_SET, 1);
-		if (!aspath->segments)
-			aspath->segments = asset;
-		else {
-			struct assegment *seg = aspath->segments;
-			while (seg->next)
-				seg = seg->next;
-			seg->next = asset;
-		}
-		asset->as[0] = as;
-	} else {
-		/* Check this AS value already exists or not. */
-		for (i = 0; i < asset->length; i++)
-			if (asset->as[i] == as)
-				return asset;
-
-		asset->length++;
-		asset->as = XREALLOC(MTYPE_AS_SEG_DATA, asset->as,
-				     asset->length * AS_VALUE_SIZE);
-		asset->as[asset->length - 1] = as;
-	}
-
-	aspath->count = aspath_count_hops_internal(aspath);
-	return asset;
-}
-
 /* Modify as1 using as2 for aggregation. */
 struct aspath *aspath_aggregate(struct aspath *as1, struct aspath *as2)
 {
@@ -1062,7 +1073,6 @@ struct aspath *aspath_aggregate(struct aspath *as1, struct aspath *as2)
 	struct assegment *seg1 = as1->segments;
 	struct assegment *seg2 = as2->segments;
 	struct aspath *aspath = NULL;
-	struct assegment *asset = NULL;
 	struct assegment *prevseg = NULL;
 
 	/* First of all check common leading sequence. */
@@ -1109,9 +1119,13 @@ struct aspath *aspath_aggregate(struct aspath *as1, struct aspath *as2)
 	/* Make as-set using rest of all information. */
 	from = match;
 	while (seg1) {
-		for (i = from; i < seg1->length; i++)
-			asset = aspath_aggregate_as_set_add(aspath, asset,
-							    seg1->as[i]);
+		for (i = from; i < seg1->length; i++) {
+			if (seg1->type == AS_CONFED_SEQUENCE || seg1->type == AS_CONFED_SET) {
+				aspath_add_asns_rightmost(aspath, seg1->as[i], AS_CONFED_SET, 1);
+				continue;
+			}
+			aspath_add_asns_rightmost(aspath, seg1->as[i], AS_SET, 1);
+		}
 
 		from = 0;
 		seg1 = seg1->next;
@@ -1119,9 +1133,13 @@ struct aspath *aspath_aggregate(struct aspath *as1, struct aspath *as2)
 
 	from = match;
 	while (seg2) {
-		for (i = from; i < seg2->length; i++)
-			asset = aspath_aggregate_as_set_add(aspath, asset,
-							    seg2->as[i]);
+		for (i = from; i < seg2->length; i++) {
+			if (seg2->type == AS_CONFED_SEQUENCE || seg2->type == AS_CONFED_SET) {
+				aspath_add_asns_rightmost(aspath, seg2->as[i], AS_CONFED_SET, 1);
+				continue;
+			}
+			aspath_add_asns_rightmost(aspath, seg2->as[i], AS_SET, 1);
+		}
 
 		from = 0;
 		seg2 = seg2->next;
@@ -1575,7 +1593,7 @@ struct aspath *aspath_prepend(struct aspath *as1, struct aspath *as2)
 		assegment_free(as2seghead);
 
 		/* we've now prepended as1's segment chain to as2, merging
-		 * the inbetween AS_SEQUENCE of seg2 in the process
+		 * the in between AS_SEQUENCE of seg2 in the process
 		 */
 		aspath_str_update(as2, false);
 		as2->count = aspath_count_hops_internal(as2);
@@ -1808,18 +1826,16 @@ struct aspath *aspath_filter_exclude_acl(struct aspath *source,
 	return source;
 }
 
-
 /* Add specified AS to the leftmost of aspath. */
-static struct aspath *aspath_add_asns(struct aspath *aspath, as_t asno,
-				      uint8_t type, unsigned num)
+static struct aspath *aspath_add_asns(struct aspath *aspath, as_t asno, uint8_t type,
+				      unsigned int num)
 {
 	struct assegment *assegment = aspath->segments;
-	unsigned i;
+	unsigned int i;
 
 	if (assegment && assegment->type == type) {
 		/* extend existing segment */
-		aspath->segments =
-			assegment_prepend_asns(aspath->segments, asno, num);
+		aspath->segments = assegment_prepend_asns(aspath->segments, asno, num);
 	} else {
 		/* prepend with new segment */
 		struct assegment *newsegment = assegment_new(type, num);
@@ -1909,20 +1925,17 @@ struct aspath *aspath_reconcile_as4(struct aspath *aspath,
 	seg = aspath->segments;
 
 	/* CONFEDs should get reconciled too.. */
-	hops = (aspath_count_hops(aspath) + aspath_count_confeds(aspath))
-	       - aspath_count_hops(as4path);
+	hops = (aspath_count_hops(aspath) + aspath_count_confeds(aspath)) -
+	       (aspath_count_hops(as4path) + aspath_count_confeds(as4path));
 
 	if (hops < 0) {
-		if (BGP_DEBUG(as4, AS4))
-			flog_warn(
-				EC_BGP_ASPATH_FEWER_HOPS,
-				"[AS4] Fewer hops in AS_PATH than NEW_AS_PATH");
-		/* Something's gone wrong. The RFC says we should now ignore
-		 * AS4_PATH,
-		 * which is daft behaviour - it contains vital loop-detection
-		 * information which must have been removed from AS_PATH.
+		flog_warn(EC_BGP_ASPATH_FEWER_HOPS,
+			  "[AS4] Fewer hops in AS_PATH than AS4_PATH, ignoring AS4_PATH (RFC 6793)");
+		/* RFC 6793 4.1.3:
+		 * if AS_PATH < AS4_PATH, AS4_PATH SHALL be ignored and
+		 * AS_PATH SHALL be taken as-is.
 		 */
-		hops = aspath_count_hops(aspath);
+		return aspath_dup(aspath);
 	}
 
 	if (!hops) {

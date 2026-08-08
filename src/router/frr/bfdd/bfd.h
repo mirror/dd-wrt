@@ -20,6 +20,7 @@
 #include "lib/qobj.h"
 #include "lib/queue.h"
 #include "lib/vrf.h"
+#include "lib/keychain.h"
 #include "lib/bfd.h"
 
 #ifdef BFD_DEBUG
@@ -32,11 +33,18 @@
 #define MAXNAMELEN 32
 #endif
 
+#define BFD_PACKET_SIZE 1516
+
 #define BPC_DEF_DETECTMULTIPLIER     3
 #define BPC_DEF_RECEIVEINTERVAL	     300 /* milliseconds */
 #define BPC_DEF_TRANSMITINTERVAL     300 /* milliseconds */
 #define BPC_DEF_ECHORECEIVEINTERVAL  50	 /* milliseconds */
 #define BPC_DEF_ECHOTRANSMITINTERVAL 50	 /* milliseconds */
+
+#define MAXKEYCHAINNAMELEN 32
+
+#define BFD_AUTH_SIMPLE_PASSWD_MIN_LEN 1
+#define BFD_AUTH_SIMPLE_PASSWD_MAX_LEN 16
 
 DECLARE_MGROUP(BFDD);
 DECLARE_MTYPE(BFDD_CLIENT);
@@ -93,12 +101,23 @@ struct bfd_peer_cfg {
 	vrf_id_t vrf_id;
 	char bfd_name[BFD_NAME_SIZE + 1];
 	uint8_t bfd_name_len;
+
+	struct {
+		/* Keychain name for authentication */
+		char key_chain_name[MAXKEYCHAINNAMELEN + 1];
+		bool meticulous;
+	} auth_config;
 };
 
-/* bfd Authentication Type. */
-#define BFD_AUTH_NULL 0
-#define BFD_AUTH_SIMPLE 1
-#define BFD_AUTH_CRYPTOGRAPHIC 2
+/* BFD Authentication Types from RFC 5880 */
+enum bfd_auth_type {
+	BFD_AUTH_TYPE_RESERVED = 0, /* Reserved */
+	BFD_AUTH_TYPE_SIMPLE_PASSWORD = 1,
+	BFD_AUTH_TYPE_KEYED_MD5 = 2,
+	BFD_AUTH_TYPE_METICULOUS_KEYED_MD5 = 3,
+	BFD_AUTH_TYPE_KEYED_SHA1 = 4,
+	BFD_AUTH_TYPE_METICULOUS_KEYED_SHA1 = 5,
+};
 
 struct bfd_timers {
 	uint32_t desired_min_tx;
@@ -129,11 +148,20 @@ struct bfd_pkt {
 };
 
 /*
- * Format of authentification.
+ * Format of authentication.
  */
 struct bfd_auth {
 	uint8_t type;
 	uint8_t length;
+};
+
+/*
+ * Format of payload of bfd authenticated packets - follows bfd_auth
+ */
+struct bfd_auth_sub {
+	uint8_t key_id;
+	uint8_t password[16];
+	uint8_t reserved;
 };
 
 
@@ -168,6 +196,7 @@ struct bfd_echo_pkt {
 #define BFD_DEMANDBIT 0x02
 #define BFD_MBIT	      0x01
 #define BFD_GETMBIT(flags)    (CHECK_FLAG(flags, BFD_MBIT))
+#define BFD_GETDEMANDBIT(flags) (CHECK_FLAG(flags, BFD_DEMANDBIT))
 #define BFD_SETDEMANDBIT(flags, val)                                           \
 	{                                                                      \
 		if ((val))                                                     \
@@ -273,6 +302,7 @@ struct bfd_key {
 } __attribute__((packed));
 
 struct bfd_session_stats {
+	uint64_t rx_bad_ctrl_pkt;
 	uint64_t rx_ctrl_pkt;
 	uint64_t tx_ctrl_pkt;
 	uint64_t rx_echo_pkt;
@@ -281,6 +311,12 @@ struct bfd_session_stats {
 	uint64_t session_down;
 	uint64_t znotification;
 	uint64_t tx_fail_pkt;
+	uint64_t rx_pkt_authentication_failure;
+	uint64_t rx_pkt_authentication_type_mismatch;
+	uint64_t rx_pkt_authentication_simple_password_mismatch;
+	uint64_t rx_pkt_authentication_keyed_sha1_mismatch;
+	uint64_t rx_pkt_authentication_keyed_sha1_sequence_error;
+	uint64_t rx_pkt_authentication_keyed_sha1_sequence_meticulous_error;
 };
 
 /**
@@ -312,6 +348,13 @@ struct bfd_profile {
 	/** Minimum required echo receive interval (in microseconds). */
 	uint32_t min_echo_rx;
 
+	struct keychain *kc; /* Currently active keychain for this session */
+	struct {
+		/* Keychain name for authentication */
+		char key_chain_name[MAXKEYCHAINNAMELEN + 1];
+		bool meticulous;
+	} auth_config;
+
 	/** Profile list entry. */
 	TAILQ_ENTRY(bfd_profile) entry;
 };
@@ -325,6 +368,9 @@ struct bfd_config_timers {
 	uint32_t desired_min_echo_tx;
 	uint32_t required_min_echo_rx;
 };
+
+/** BFD profiles list. */
+extern struct bfdproflist bplist;
 
 #define BFD_RTT_SAMPLE 8
 
@@ -357,7 +403,9 @@ struct bfd_session {
 	struct event *echo_recvtimer_ev;
 	struct event *recvtimer_ev;
 	uint64_t xmt_TO;
+	uint64_t xmt_TO_actual; /* Actual transmit timeout with jitter applied */
 	uint64_t echo_xmt_TO;
+	uint64_t echo_xmt_TO_actual; /* Actual echo transmit timeout with jitter applied */
 	struct event *xmttimer_ev;
 	struct event *echo_xmttimer_ev;
 	uint64_t echo_detect_TO;
@@ -400,6 +448,17 @@ struct bfd_session {
 	uint8_t segnum;
 	struct in6_addr out_sip6;
 	struct in6_addr seg_list[SRV6_MAX_SEGS];
+	struct keychain *kc; /* Currently active keychain for this session */
+	uint32_t auth_seq_num;
+	uint32_t auth_last_rx_seq_num;
+/* the last sequence number will be updated:
+ * - on non meticulous mode: every 5 packets
+ * - on meticulous mode: every packet
+ */
+#define AUTH_SEQ_NUM_MODULO	       5
+#define AUTH_SEQ_NUM_MODULO_METICULOUS 1
+	uint32_t auth_seq_num_update_modulo;
+	bool auth_meticulous;
 };
 
 struct bfd_diag_str_list {
@@ -478,6 +537,12 @@ struct bfd_vrf_global {
 	struct vrf *vrf;
 
 	struct event *bg_ev[7];
+
+	/** Number of active BFD sessions using this VRF's sockets. */
+	int bg_session_count;
+
+	/** Number of SBFD reflectors using this VRF's sockets. */
+	int bg_reflector_count;
 };
 
 /* Forward declaration of data plane context struct. */
@@ -533,20 +598,9 @@ void socket_close(int *s);
 
 
 /*
- * logging - alias to zebra log
- */
-#define zlog_fatal(msg, ...)                                                   \
-	do {                                                                   \
-		zlog_err(msg, ##__VA_ARGS__);                                  \
-		assert(!msg);                                                  \
-		abort();                                                       \
-	} while (0)
-
-
-/*
  * bfd_packet.c
  *
- * Contains the code related with receiving/seding, packing/unpacking BFD data.
+ * Contains the code related with receiving/sending, packing/unpacking BFD data.
  */
 int bp_set_ttlv6(int sd, uint8_t value);
 int bp_set_ttl(int sd, uint8_t value);
@@ -616,7 +670,7 @@ int bfd_session_enable(struct bfd_session *bs);
 void bfd_session_disable(struct bfd_session *bs);
 struct bfd_session *ptm_bfd_sess_new(struct bfd_peer_cfg *bpc);
 int ptm_bfd_sess_del(struct bfd_peer_cfg *bpc);
-void ptm_bfd_sess_dn(struct bfd_session *bfd, uint8_t diag);
+void ptm_bfd_sess_dn(struct bfd_session *bfd, uint8_t diag, bool notify_admin_down);
 void ptm_bfd_sess_up(struct bfd_session *bfd);
 void ptm_bfd_echo_stop(struct bfd_session *bfd);
 void ptm_bfd_echo_start(struct bfd_session *bfd);
@@ -658,8 +712,13 @@ const struct bfd_session *bfd_session_next(const struct bfd_session *bs, bool mh
 					   uint32_t bfd_mode);
 void bfd_sessions_remove_manual(void);
 void bfd_profiles_remove(void);
+extern enum bfd_auth_type map_keychain_algo_to_bfd_auth_type(enum keychain_hash_algo kc_algo,
+							     bool meticulous);
+extern const char *bfd_auth_type_get_description(enum bfd_auth_type auth_type);
+extern struct key *bfd_keychain_key_find_active(const struct keychain *keychain, bool meticulous);
 void bs_sbfd_echo_timer_handler(struct bfd_session *bs);
 void bfd_rtt_init(struct bfd_session *bfd);
+int bfd_session_update(struct bfd_session *bs, struct bfd_peer_cfg *bpc);
 
 extern void bfd_vrf_toggle_echo(struct bfd_vrf_global *bfd_vrf);
 
@@ -703,12 +762,15 @@ void bfd_set_log_session_changes(struct bfd_session *bs, bool log_session);
  * \param bs the BFD session.
  */
 void bfd_session_apply(struct bfd_session *bs);
+bool bfd_session_auth_config_takes_precedence_over_profile(struct bfd_session *bs);
 
 /* BFD hash data structures interface */
 void bfd_initialize(void);
 void bfd_shutdown(void);
 void bfd_vrf_init(const char *context);
 void bfd_vrf_terminate(void);
+int bfd_vrf_start_sockets(struct bfd_vrf_global *bvrf);
+void bfd_vrf_stop_sockets(struct bfd_vrf_global *bvrf);
 struct bfd_vrf_global *bfd_vrf_look_by_session(struct bfd_session *bfd);
 struct bfd_session *bfd_id_lookup(uint32_t id);
 struct bfd_session *bfd_key_lookup(struct bfd_key *key);
@@ -767,7 +829,7 @@ struct bfd_profile *bfd_profile_lookup(const char *name);
  *
  * \param bp the BFD profile.
  */
-void bfd_profile_free(struct bfd_profile *bp);
+void bfd_profile_free(struct bfd_profile *bp, bool suppress_profile);
 
 /**
  * Apply a profile configuration to an existing BFD session. The non default

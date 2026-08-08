@@ -25,6 +25,8 @@ import json
 import functools
 import pytest
 
+pytestmark = [pytest.mark.bgpd]
+
 CWD = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(CWD, "../"))
 
@@ -437,6 +439,33 @@ def test_sid_per_vrf_manual():
     check_ping("ce1", "192.168.2.2", False, 10, 0.5)
 
 
+def test_sid_move_to_locator3_vrf20():
+    "Moving vrf20 from locator loc2 to locator loc3"
+    get_topogen().gears["r1"].vtysh_cmd(
+        """
+        configure terminal
+         router bgp 1 vrf vrf20
+          segment-routing srv6
+           no locator loc2
+           locator loc3
+        """
+    )
+    check_rib("r1", "show bgp ipv6 vpn 2001:5::/64 json", "r1/vrf20_2001_5.json")
+
+
+def test_sid_move_back_to_locator2_vrf20():
+    "Moving vrf20 from locator loc3 to locator loc2"
+    get_topogen().gears["r1"].vtysh_cmd(
+        """
+        configure terminal
+         router bgp 1 vrf vrf20
+          segment-routing srv6
+           no locator loc3
+           locator loc2
+        """
+    )
+
+
 def test_sid_suppress_locator_vrf20():
     check_rib("r2", "show ipv6 route vrf vrf20 json", "r2/vrf20_rib.json")
     get_topogen().gears["r1"].vtysh_cmd(
@@ -761,6 +790,48 @@ def test_sid_reenable_both_srv6_and_mpls():
 
 
 @retry(retry_timeout=10)
+def _check_show_bgp_vrf_ipv6_prefix(router, vrf, prefix, mpls, srv6):
+    output = json.loads(router.vtysh_cmd(f"show bgp vrf {vrf} ipv6 {prefix} json"))
+    found_srv6 = False
+    found_mpls = False
+    if "paths" not in output.keys():
+        if not mpls and not srv6:
+            return True
+        return "paths key not found"
+    paths = output["paths"]
+    for path in paths:
+        if "remoteSid" in path.keys() and not srv6:
+            return f"SRv6 path found for {prefix} unexpected"
+        if "remoteSid" in path.keys():
+            if not srv6:
+                return f"SRv6 path found for {prefix} unexpected"
+            valid = path.get("valid", False)
+            if valid:
+                found_srv6 = True
+            else:
+                return (
+                    f"SRv6 path 'valid' value for {prefix} unexpected, expected {srv6}"
+                )
+        else:
+            if not mpls:
+                return f"MPLS path found for {prefix} unexpected"
+            valid = path.get("valid", False)
+            if valid:
+                found_mpls = True
+            else:
+                return (
+                    f"MPLS path 'valid' value for {prefix} unexpected, expected {mpls}"
+                )
+    if not found_srv6 and not srv6:
+        found_srv6 = True
+    if not found_mpls and not mpls:
+        found_mpls = True
+    if found_mpls and found_srv6:
+        return True
+    return f"only one path has been found : MPLS {found_mpls}, SRv6 {found_srv6}"
+
+
+@retry(retry_timeout=10)
 def _check_show_bgp_ipv6_vpn_selected(router, prefix, mpls, srv6):
     output = json.loads(router.vtysh_cmd(f"show bgp ipv6 vpn {prefix} json"))
     found_srv6 = False
@@ -792,6 +863,57 @@ def _check_show_bgp_ipv6_vpn_selected(router, prefix, mpls, srv6):
     if found_mpls and found_srv6:
         return True
     return f"only one path has been found : MPLS {found_mpls}, SRv6 {found_srv6}"
+
+
+@retry(retry_timeout=10)
+def _check_show_bgp_ipv6_vpn_not_present(router, prefix):
+    output = json.loads(router.vtysh_cmd(f"show bgp ipv6 vpn {prefix} json"))
+    if "1:30" in output.keys():
+        return f"show bgp ipv6 vpn {prefix} not empty"
+    return True
+
+
+def test_sid_disable_redistribute_on_r1_vrf30():
+    """
+    Disable redistribute connected on r1/vrf30
+    Test that none of those prefixes are present on r2
+    """
+    tgen = get_topogen()
+    tgen.gears["r1"].vtysh_cmd(
+        """
+        configure terminal
+         router bgp 1 vrf vrf30
+          address-family ipv6 unicast
+           no redistribute connected
+          exit-address-family
+        """
+    )
+
+    success = _check_show_bgp_ipv6_vpn_not_present(
+        tgen.gears["r2"],
+        "2001:8::/64",
+    )
+    assert success is True, "network 2001:8::/64 not present on r2: still present"
+
+
+def test_sid_reenable_redistribute_on_r1_vrf30():
+    """
+    Disable redistribute connected on r1/vrf30
+    Test that none of those prefixes are present on r2
+    """
+    tgen = get_topogen()
+    tgen.gears["r1"].vtysh_cmd(
+        """
+        configure terminal
+         router bgp 1 vrf vrf30
+          address-family ipv6 unicast
+           redistribute connected
+          exit-address-family
+        """
+    )
+    check_rib(
+        "r2", "show bgp ipv6 vpn 2001:8::/64 json", "r2/vpnv6_rib_2001_8_mpls_srv6.json"
+    )
 
 
 def test_sid_configure_r2_listener_as_srv6():
@@ -864,6 +986,131 @@ def test_sid_configure_r2_listener_as_mpls():
     assert (
         success is True
     ), "network 2001:8::/64 selected for MPLS, unselected for SRv6: not found on r2"
+
+
+def test_sid_configure_r2_listener_as_srv6_and_mpls_again():
+    """
+    Enable R2 as both MPLS and SRv6 receiver
+    Test that SRv6 and MPLS prefixes are received, and that r2 selects both SRv6 and MPLS
+    - vrf20 is being added a RT to import the 2001:8:: entries
+    - label vpn export auto is added to ensure nexthop validity
+    """
+    tgen = get_topogen()
+    tgen.gears["r2"].vtysh_cmd(
+        """
+        configure terminal
+         router bgp 2 vrf vrf20
+          address-family ipv6 unicast
+           label vpn export auto
+           rt vpn both 55:55 88:88
+          exit-address-family
+         exit
+         router bgp 2
+          address-family ipv6 vpn
+           neighbor 2001::1 encapsulation-srv6
+          exit-address-family
+        """
+    )
+
+    logger.info(
+        "On r2, check that 2 VPN prefixes MPLS and SRv6 for 2001:8::/64 are received"
+    )
+    success = _check_show_bgp_ipv6_vpn_selected(
+        tgen.gears["r2"], "2001:8::/64", mpls=True, srv6=True
+    )
+    assert (
+        success is True
+    ), "VPN path 2001:8::/64 present for MPLS, selected for SRv6: not found on r2"
+
+    logger.info(
+        "On r2, check that 2 prefixes MPLS and SRv6 for 2001:8::/64 are imported on vrf20"
+    )
+    success = _check_show_bgp_vrf_ipv6_prefix(
+        tgen.gears["r2"], "vrf20", "2001:8::/64", mpls=True, srv6=True
+    )
+    assert (
+        success is True
+    ), "path 2001:8::/64 on vrf20 present for MPLS, present for SRv6: not found on r2"
+
+
+def test_sid_configure_r2_listener_with_route_map_import_drop_mpls():
+    """
+    Add a route-map at vrf20 importation with the 'match vpn-dataplane srv6' command
+    Test that when VPN prefixes are imported, one can import only the SRv6 prefix
+    """
+    tgen = get_topogen()
+    tgen.gears["r2"].vtysh_cmd(
+        """
+        configure terminal
+         router bgp 2 vrf vrf20
+          address-family ipv6 unicast
+           route-map vpn import rmap
+          exit-address-family
+         exit
+         route-map rmap permit 1
+           match vpn dataplane srv6
+         exit
+        """
+    )
+    logger.info(
+        "On r2, check that with a route-map match vpn dataplane srv6, only SRv6 prefix is imported on vrf20"
+    )
+    success = _check_show_bgp_vrf_ipv6_prefix(
+        tgen.gears["r2"], "vrf20", "2001:8::/64", mpls=False, srv6=True
+    )
+    assert (
+        success is True
+    ), "path 2001:8::/64 on vrf20 present for srv6, not present for MPLS: not found on r2"
+
+
+def test_sid_configure_r2_listener_with_route_map_import_drop_srv6():
+    """
+    Use previous route-map at vrf20 importation with the 'match vpn-dataplane mpls' command
+    Test that when VPN prefixes are imported, one can import only the MPLS prefix
+    """
+    tgen = get_topogen()
+    tgen.gears["r2"].vtysh_cmd(
+        """
+        configure terminal
+         route-map rmap permit 1
+           match vpn dataplane mpls
+         exit
+        """
+    )
+    logger.info(
+        "On r2, check that with a route-map match vpn dataplane mpls, only MPLS prefix is imported on vrf20"
+    )
+    success = _check_show_bgp_vrf_ipv6_prefix(
+        tgen.gears["r2"], "vrf20", "2001:8::/64", mpls=True, srv6=False
+    )
+    assert (
+        success is True
+    ), "path 2001:8::/64 on vrf20 present for srv6, not present for MPLS: not found on r2"
+
+
+def test_sid_configure_r2_listener_with_route_map_import_drop_srv6_and_mpls():
+    """
+    Use previous route-map at vrf20 importation with the 'match vpn-dataplane vxlan' command
+    Test that when VPN prefixes are imported, one can import none of the prefixes
+    """
+    tgen = get_topogen()
+    tgen.gears["r2"].vtysh_cmd(
+        """
+        configure terminal
+         route-map rmap permit 1
+           match vpn dataplane vxlan
+         exit
+        """
+    )
+    logger.info(
+        "On r2, check that with a route-map match vpn dataplane vxlan, no prefix is imported on vrf20"
+    )
+    success = _check_show_bgp_vrf_ipv6_prefix(
+        tgen.gears["r2"], "vrf20", "2001:8::/64", mpls=False, srv6=False
+    )
+    assert (
+        success is True
+    ), "path 2001:8::/64 on vrf20 present for srv6, not present for MPLS: not found on r2"
 
 
 if __name__ == "__main__":

@@ -150,16 +150,32 @@ static bool pim_cisco_match(const struct filter *filter, const struct in_addr *s
 	uint32_t source_addr;
 	uint32_t group_addr;
 
-	group_addr = group->s_addr & ~cfilter->mask_mask.s_addr;
-
 	if (cfilter->extended) {
-		source_addr = source->s_addr & ~cfilter->addr_mask.s_addr;
-		if (group_addr == cfilter->mask.s_addr && source_addr == cfilter->addr.s_addr)
+		source_addr = source->s_addr & ~cfilter->wtf.addr_mask.s_addr;
+		group_addr = group->s_addr & ~cfilter->wtf.mask_mask.s_addr;
+		if (group_addr == cfilter->wtf.mask.s_addr &&
+		    source_addr == cfilter->wtf.addr.s_addr)
 			return true;
-	} else if (group_addr == cfilter->addr.s_addr)
-		return true;
+	} else {
+		group_addr = group->s_addr & ~cfilter->addr_mask.s_addr;
+		if (group_addr == cfilter->addr.s_addr)
+			return true;
+	}
 
 	return false;
+}
+
+static bool pim_acl_prefix_match(const struct filter *filter, const struct prefix *p)
+{
+	const struct filter_zebra *zfilter = &filter->u.zfilter;
+
+	if (zfilter->prefix.family != p->family)
+		return false;
+
+	if (zfilter->exact && zfilter->prefix.prefixlen != p->prefixlen)
+		return false;
+
+	return prefix_match(&zfilter->prefix, p);
 }
 
 enum filter_type pim_access_list_apply(struct access_list *access, const struct in_addr *source,
@@ -171,17 +187,20 @@ enum filter_type pim_access_list_apply(struct access_list *access, const struct 
 	if (access == NULL)
 		return FILTER_DENY;
 
+	group_prefix.family = AF_INET;
+	group_prefix.prefixlen = IPV4_MAX_BITLEN;
+	group_prefix.u.prefix4.s_addr = group->s_addr;
+
 	for (filter = access->head; filter; filter = filter->next) {
 		if (filter->cisco) {
 			if (pim_cisco_match(filter, source, group))
 				return filter->type;
+		} else if (pim_acl_prefix_match(filter, &group_prefix)) {
+			return filter->type;
 		}
 	}
 
-	group_prefix.family = AF_INET;
-	group_prefix.prefixlen = IPV4_MAX_BITLEN;
-	group_prefix.u.prefix4.s_addr = group->s_addr;
-	return access_list_apply(access, &group_prefix);
+	return FILTER_DENY;
 }
 
 bool pim_is_group_filtered(struct pim_interface *pim_ifp, pim_addr *grp, pim_addr *src)
@@ -197,27 +216,28 @@ bool pim_is_group_filtered(struct pim_interface *pim_ifp, pim_addr *grp, pim_add
 	pim_addr_to_prefix(&grp_pfx, *grp);
 
 	/* Filter if either group or (S,G) are denied */
-	if (pim_ifp->boundary_oil_plist) {
-		is_filtered = prefix_list_apply_ext(pim_ifp->boundary_oil_plist, NULL, &grp_pfx,
+	if (pim_ifp->boundary_oil_plist_p) {
+		is_filtered = prefix_list_apply_ext(pim_ifp->boundary_oil_plist_p, NULL, &grp_pfx,
 						    true) == PREFIX_DENY;
 		if (is_filtered && PIM_DEBUG_EVENTS) {
 			zlog_debug("Filtering group %pI4 per prefix-list %s", grp,
-				   pim_ifp->boundary_oil_plist->name);
+				   pim_ifp->boundary_oil_plist);
 		}
 	}
-	if (!is_filtered && pim_ifp->boundary_acl) {
+	if (!is_filtered && pim_ifp->boundary_acl_p) {
 		/* If src not provided, set to "any" (*)? */
 		if (!src)
 			src = &any_src;
 		/* S,G filtering using extended access-list syntax */
-		is_filtered = pim_access_list_apply(pim_ifp->boundary_acl, src, grp) == FILTER_DENY;
+		is_filtered = pim_access_list_apply(pim_ifp->boundary_acl_p, src, grp) ==
+			      FILTER_DENY;
 		if (is_filtered && PIM_DEBUG_EVENTS) {
 			if (pim_addr_is_any(*src)) {
 				zlog_debug("Filtering (S,G)=(*, %pI4) per access-list %s", grp,
-					   pim_ifp->boundary_acl->name);
+					   pim_ifp->boundary_acl);
 			} else {
 				zlog_debug("Filtering (S,G)=(%pI4, %pI4) per access-list %s", src,
-					   grp, pim_ifp->boundary_acl->name);
+					   grp, pim_ifp->boundary_acl);
 			}
 		}
 	}
@@ -254,4 +274,31 @@ bool pim_addr_is_multicast(pim_addr addr)
 		return true;
 #endif
 	return false;
+}
+
+bool pim_is_rp_allowed(struct pim_interface *pim_ifp, pim_addr *rp)
+{
+	struct prefix rp_pfx;
+	struct prefix_list *pl;
+
+	/* If allow-rp is not enabled, don't allow mismatched RPs */
+	if (!pim_ifp->allow_rp)
+		return false;
+
+	/* allow-rp enabled with no prefix-list means allow all RPs */
+	if (!pim_ifp->allow_rp_plist)
+		return true;
+
+#if PIM_IPV == 4
+	rp_pfx.family = AF_INET;
+	rp_pfx.prefixlen = 32;
+	rp_pfx.u.prefix4 = *rp;
+#else
+	rp_pfx.family = AF_INET6;
+	rp_pfx.prefixlen = 128;
+	rp_pfx.u.prefix6 = *rp;
+#endif
+
+	pl = prefix_list_lookup(PIM_AFI, pim_ifp->allow_rp_plist);
+	return pl ? prefix_list_apply(pl, &rp_pfx) == PREFIX_PERMIT : false;
 }

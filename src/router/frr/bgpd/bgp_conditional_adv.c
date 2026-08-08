@@ -18,7 +18,7 @@ bgp_check_rmap_prefixes_in_bgp_table(struct bgp_table *table,
 	struct bgp_dest *dest;
 	struct bgp_path_info *pi;
 	struct bgp_path_info path = {0};
-	struct bgp_path_info_extra path_extra = {0};
+	struct bgp_path_info_extra path_extra;
 	const struct prefix *dest_p;
 	route_map_result_t ret = RMAP_DENYMATCH;
 
@@ -27,7 +27,7 @@ bgp_check_rmap_prefixes_in_bgp_table(struct bgp_table *table,
 		assert(dest_p);
 
 		for (pi = bgp_dest_get_bgp_path_info(dest); pi; pi = pi->next) {
-			dummy_attr = *pi->attr;
+			bgp_attr_dup_into(&dummy_attr, pi->attr);
 
 			/* Fill temp path_info */
 			prep_for_rmap_apply(&path, &path_extra, dest, pi, pi->peer, NULL,
@@ -68,7 +68,7 @@ static void bgp_conditional_adv_routes(struct peer *peer, afi_t afi,
 	const struct prefix *dest_p;
 	struct update_subgroup *subgrp;
 	struct attr advmap_attr = {0}, attr = {0};
-	struct bgp_path_info_extra path_extra = {0};
+	struct bgp_path_info_extra path_extra;
 	route_map_result_t ret;
 
 	paf = peer_af_find(peer, afi, safi);
@@ -96,7 +96,7 @@ static void bgp_conditional_adv_routes(struct peer *peer, afi_t afi,
 		assert(dest_p);
 
 		for (pi = bgp_dest_get_bgp_path_info(dest); pi; pi = pi->next) {
-			advmap_attr = *pi->attr;
+			bgp_attr_dup_into(&advmap_attr, pi->attr);
 
 			/* Fill temp path_info */
 			prep_for_rmap_apply(&path, &path_extra, dest, pi, pi->peer, NULL,
@@ -125,6 +125,7 @@ static void bgp_conditional_adv_routes(struct peer *peer, afi_t afi,
 				if (!bgp_adj_out_set_subgroup(dest, subgrp,
 							      &attr, pi))
 					bgp_attr_flush(&attr);
+				bgp_attr_extra_discard(&advmap_attr);
 			} else {
 				/* If default originate is enabled for
 				 * the peer, do not send explicit
@@ -134,11 +135,12 @@ static void bgp_conditional_adv_routes(struct peer *peer, afi_t afi,
 				 */
 				if (CHECK_FLAG(peer->af_flags[afi][safi],
 					       PEER_FLAG_DEFAULT_ORIGINATE) &&
-				    is_default_prefix(dest_p))
+				    is_default_prefix(dest_p)) {
+					bgp_attr_flush(&advmap_attr);
 					break;
+				}
 
-				bgp_adj_out_unset_subgroup(
-					dest, subgrp, 1,
+				bgp_adj_out_unset_subgroup(dest, subgrp,
 					bgp_addpath_id_for_peer(
 						peer, afi, safi,
 						&pi->tx_addpath));
@@ -194,7 +196,7 @@ static void bgp_conditional_adv_timer(struct event *t)
 	 * based on condition(exist-map or non-exist map)
 	 */
 	for (ALL_LIST_ELEMENTS(bgp->peer, node, nnode, peer)) {
-		if (!CHECK_FLAG(peer->flags, PEER_FLAG_CONFIG_NODE))
+		if (!peer_is_config_node(peer))
 			continue;
 
 		if (!peer_established(peer->connection))
@@ -221,6 +223,8 @@ static void bgp_conditional_adv_timer(struct event *t)
 			if (!filter->advmap.aname || !filter->advmap.cname
 			    || !filter->advmap.amap || !filter->advmap.cmap)
 				continue;
+
+			SET_FLAG(peer->sflags, PEER_STATUS_COND_ADV_PENDING);
 
 			if (!peer->advmap_config_change[afi][safi] &&
 			    !advmap_table_changed)

@@ -761,3 +761,117 @@ void sockopt_ip_transparent(int sock)
 			     __func__, sock, safe_strerror(errno));
 	}
 }
+
+int sockopt_reuseaddr(int sock)
+{
+	int ret;
+	int on = 1;
+
+	ret = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void *)&on, sizeof(on));
+	if (ret < 0) {
+		flog_err(EC_LIB_SOCKET,
+			 "can't set sockopt SO_REUSEADDR to socket %d errno=%d: %s",
+			 sock, errno, safe_strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
+#ifdef SO_REUSEPORT
+int sockopt_reuseport(int sock)
+{
+	int ret;
+	int on = 1;
+
+	ret = setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, (void *)&on, sizeof(on));
+	if (ret < 0) {
+		flog_err(EC_LIB_SOCKET,
+			 "can't set sockopt SO_REUSEPORT to socket %d", sock);
+		return -1;
+	}
+	return 0;
+}
+#else
+int sockopt_reuseport(int sock)
+{
+	return 0;
+}
+#endif /* SO_REUSEPORT */
+
+int sockopt_ttl(int family, int sock, int ttl)
+{
+	int ret;
+
+#ifdef IP_TTL
+	if (family == AF_INET) {
+		ret = setsockopt(sock, IPPROTO_IP, IP_TTL, (void *)&ttl, sizeof(int));
+		if (ret < 0) {
+			flog_err(EC_LIB_SOCKET, "can't set sockopt IP_TTL %d to socket %d",
+				 ttl, sock);
+			return -1;
+		}
+		return 0;
+	}
+#endif /* IP_TTL */
+	if (family == AF_INET6) {
+		ret = setsockopt(sock, IPPROTO_IPV6, IPV6_UNICAST_HOPS, (void *)&ttl,
+				 sizeof(int));
+		if (ret < 0) {
+			flog_err(EC_LIB_SOCKET,
+				 "can't set sockopt IPV6_UNICAST_HOPS %d to socket %d",
+				 ttl, sock);
+			return -1;
+		}
+		return 0;
+	}
+	return 0;
+}
+
+int sockopt_minttl(int family, int sock, int minttl)
+{
+	int ret;
+
+#ifdef IP_MINTTL
+	if (family == AF_INET) {
+		ret = setsockopt(sock, IPPROTO_IP, IP_MINTTL, &minttl, sizeof(minttl));
+
+		if (ret < 0)
+			flog_err(EC_LIB_SOCKET,
+				 "can't set sockopt IP_MINTTL to %d on socket %d: %s",
+				 minttl, sock, safe_strerror(errno));
+		return ret;
+	}
+#endif /* IP_MINTTL */
+#ifdef IPV6_MINHOPCOUNT
+	if (family == AF_INET6) {
+		ret = setsockopt(sock, IPPROTO_IPV6, IPV6_MINHOPCOUNT, &minttl, sizeof(minttl));
+		if (ret < 0)
+			flog_err(EC_LIB_SOCKET,
+				 "can't set sockopt IPV6_MINHOPCOUNT to %d on socket %d: %s",
+				 minttl, sock, safe_strerror(errno));
+		return ret;
+	}
+#endif
+
+	errno = EOPNOTSUPP;
+	return -1;
+}
+
+int sockopt_v6only(int family, int sock)
+{
+	int ret, on = 1;
+
+#ifdef IPV6_V6ONLY
+	if (family == AF_INET6) {
+		ret = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&on, sizeof(int));
+		if (ret < 0) {
+			flog_err(EC_LIB_SOCKET,
+				 "can't set sockopt IPV6_V6ONLY to socket %d",
+				 sock);
+			return -1;
+		}
+		return 0;
+	}
+#endif /* IPV6_V6ONLY */
+	return 0;
+}

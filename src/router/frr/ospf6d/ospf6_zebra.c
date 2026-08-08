@@ -250,7 +250,7 @@ int ospf6_zebra_gr_disable(struct ospf6 *ospf6)
 static int ospf6_zebra_read_route(ZAPI_CALLBACK_ARGS)
 {
 	struct zapi_route api;
-	unsigned long ifindex;
+	unsigned long ifindex = 0;
 	const struct in6_addr *nexthop = &in6addr_any;
 	struct ospf6 *ospf6;
 	struct prefix_ipv6 p;
@@ -270,10 +270,12 @@ static int ospf6_zebra_read_route(ZAPI_CALLBACK_ARGS)
 	if (IN6_IS_ADDR_LINKLOCAL(&api.prefix.u.prefix6))
 		return 0;
 
-	ifindex = api.nexthops[0].ifindex;
-	if (api.nexthops[0].type == NEXTHOP_TYPE_IPV6
-	    || api.nexthops[0].type == NEXTHOP_TYPE_IPV6_IFINDEX)
-		nexthop = &api.nexthops[0].gate.ipv6;
+	if (api.nexthop_num > 0) {
+		ifindex = api.nexthops[0].ifindex;
+		if (api.nexthops[0].type == NEXTHOP_TYPE_IPV6 ||
+		    api.nexthops[0].type == NEXTHOP_TYPE_IPV6_IFINDEX)
+			nexthop = &api.nexthops[0].gate.ipv6;
+	}
 
 	if (IS_OSPF6_DEBUG_ZEBRA(RECV))
 		zlog_debug(
@@ -399,6 +401,10 @@ static void ospf6_zebra_route_update(int type, struct ospf6_route *request,
 	int ret = 0;
 	struct prefix *dest;
 
+	/* Do not install connected routes. */
+	if (type == ADD && request->connected)
+		return;
+
 	if (IS_OSPF6_DEBUG_ZEBRA(SEND))
 		zlog_debug("Zebra Send %s route: %pFX",
 			   (type == REM ? "remove" : "add"), &request->prefix);
@@ -429,6 +435,9 @@ static void ospf6_zebra_route_update(int type, struct ospf6_route *request,
 				"  Best-path removal resulted Secondary addition");
 		type = ADD;
 		request = request->next;
+		/* Do not install if the promoted secondary is also connected. */
+		if (request->connected)
+			return;
 	}
 
 	/* Only the best path will be sent to zebra. */
@@ -528,6 +537,27 @@ void ospf6_zebra_route_update_remove(struct ospf6_route *request,
 	}
 
 	ospf6_zebra_route_update(REM, request, ospf6);
+}
+
+void ospf6_zebra_route_delete_prefix(struct ospf6_route *route, struct ospf6 *ospf6)
+{
+	struct zapi_route api;
+	int ret;
+
+	if (IS_OSPF6_DEBUG_ZEBRA(SEND))
+		zlog_debug("Send delete for route: %pFX a connected in Zebra now wins",
+			   &route->prefix);
+
+	zapi_route_init(&api);
+	api.vrf_id = ospf6->vrf_id;
+	api.type = ZEBRA_ROUTE_OSPF6;
+	api.safi = SAFI_UNICAST;
+	api.prefix = route->prefix;
+	ret = zclient_route_send(ZEBRA_ROUTE_DELETE, ospf6_zclient, &api);
+
+	if (ret == ZCLIENT_SEND_FAILURE)
+		flog_err(EC_LIB_ZAPI_SOCKET, "zclient_route_send() failed for prefix: %pFX",
+			 &route->prefix);
 }
 
 void ospf6_zebra_add_discard(struct ospf6_route *request, struct ospf6 *ospf6)
@@ -667,6 +697,12 @@ static void ospf6_zebra_connected(struct zclient *zclient)
 			continue;
 		(void)ospf6_zebra_gr_enable(ospf6, ospf6->gr_info.grace_period);
 	}
+
+	/* Zebra reconnect can happen after OSPFv3 already computed best-paths.
+	 * Re-send existing routes so kernel FIB and OSPF RIB stay consistent.
+	 */
+	for (ALL_LIST_ELEMENTS_RO(om6->ospf6, node, ospf6))
+		ospf6_reinstall_routes(ospf6);
 }
 
 static zclient_handler *const ospf6_handlers[] = {

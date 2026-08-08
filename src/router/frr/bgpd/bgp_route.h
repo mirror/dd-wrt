@@ -11,6 +11,7 @@
 #include "hook.h"
 #include "queue.h"
 #include "nexthop.h"
+#include "typesafe.h"
 #include "bgp_table.h"
 #include "bgp_addpath_types.h"
 #include "bgp_rpki.h"
@@ -34,6 +35,8 @@ enum bgp_show_type {
 	bgp_show_type_community_exact,
 	bgp_show_type_community_list,
 	bgp_show_type_community_list_exact,
+	bgp_show_type_extcommunity,
+	bgp_show_type_extcommunity_exact,
 	bgp_show_type_lcommunity_all,
 	bgp_show_type_lcommunity,
 	bgp_show_type_lcommunity_exact,
@@ -68,6 +71,16 @@ enum bgp_show_adj_route_type {
 	"RPKI validation codes: V valid, I invalid, N Not found\n\n"
 #define BGP_SHOW_HEADER "     Network          Next Hop            Metric LocPrf Weight Path\n"
 #define BGP_SHOW_HEADER_WIDE "     Network                                      Next Hop                                  Metric LocPrf Weight Path\n"
+#define BGP_SHOW_BGP_LS_PREFIX_CODES_HEADER                                                                                \
+	"Prefix codes: E link, V node, T IP reachable route, S SRv6 SID, SP SRTE Policy, u/U unknown\n"                    \
+	"              I Identifier, N local node, R remote node, L link, P prefix, S SID, C candidate path\n"             \
+	"              L1/L2 ISIS level-1/level-2, O OSPF, O3 OSPFv3, D direct, ST static/peer-node, SR Segment Routing\n" \
+	"              a area-ID, l link-ID, t topology-ID, s ISO-ID,\n"                                                   \
+	"              c confed-ID/ASN, b bgp-identifier, r router-ID, te te-router-ID, sd SID\n"                          \
+	"              i if-address, n nbr-address, o OSPF Route-type, p IP-prefix\n"                                      \
+	"              d designated router address, po protocol-origin, f flag\n"                                          \
+	"              e endpoint-ip, cl color, as originator-asn oa originator-address\n"                                 \
+	"              di discriminator, q bgp-router-ID\n"
 
 /* Maximum number of sids we can process or send with a prefix. */
 #define BGP_MAX_SIDS 6
@@ -150,6 +163,8 @@ struct bgp_path_info_extra_evpn {
 	} vni_info;
 	/* Destination Ethernet Segment links for EVPN MH */
 	struct bgp_path_mh_info *mh_info;
+
+	struct bgp_path_info *type5_originator;
 };
 
 /* new structure for flowspec*/
@@ -248,6 +263,11 @@ struct bgp_path_info_extra {
 
 	/* For vrf leaking*/
 	struct bgp_path_info_extra_vrfleak *vrfleak;
+
+	/* SR-TE Color (set by route-map 'set sr-te color' or derived from
+	 * the Color Extended Community via bgp_path_info_get_srte_color()).
+	 */
+	uint32_t srte_color;
 };
 
 struct bgp_mplsvpn_label_nh {
@@ -271,6 +291,9 @@ struct bgp_path_info {
 	struct bgp_path_info *next;
 	struct bgp_path_info *prev;
 
+	/* Hash linkage for pi_hash in bgp_table */
+	struct bgp_pi_hash_item pi_hash_link;
+
 	/* For nexthop linked list */
 	LIST_ENTRY(bgp_path_info) nh_thread;
 
@@ -291,10 +314,6 @@ struct bgp_path_info {
 
 	/* Extra information */
 	struct bgp_path_info_extra *extra;
-
-
-	/* Multipath information */
-	struct bgp_path_info_mpath *mpath;
 
 	/* Uptime.  */
 	time_t uptime;
@@ -450,7 +469,9 @@ struct bgp_aggregate {
 		struct route_map *map;
 	} rmap;
 
-	/* Suppress-count. */
+	/* More-specific active routes contributing to this aggregate,
+	 * excluding aggregate routes (sub_type == BGP_ROUTE_AGGREGATE).
+	 */
 	unsigned long count;
 
 	/* Count of routes of origin type incomplete under this aggregate. */
@@ -528,7 +549,7 @@ struct bgp_aggregate {
 	(!CHECK_FLAG((BI)->flags, BGP_PATH_HISTORY)                            \
 	 && !CHECK_FLAG((BI)->flags, BGP_PATH_REMOVED))
 
-/* Flags which indicate a route is unuseable in some form */
+/* Flags which indicate a route is unusable in some form */
 #define BGP_PATH_UNUSEABLE                                                     \
 	(BGP_PATH_HISTORY | BGP_PATH_DAMPED | BGP_PATH_REMOVED)
 /* Macro to check BGP information is alive or not.  Sadly,
@@ -652,25 +673,49 @@ static inline bool is_pi_family_matching(struct bgp_path_info *pi,
 	return false;
 }
 
+extern struct bgp_path_info_extra *bgp_path_info_extra_get(struct bgp_path_info *path);
+
 static inline void prep_for_rmap_apply(struct bgp_path_info *dst_pi,
 				       struct bgp_path_info_extra *dst_pie, struct bgp_dest *dest,
 				       struct bgp_path_info *src_pi, struct peer *peer,
 				       struct peer *from, struct attr *attr)
 {
 	memset(dst_pi, 0, sizeof(struct bgp_path_info));
+	memset(dst_pie, 0, sizeof(struct bgp_path_info_extra));
 	dst_pi->peer = peer;
 	dst_pi->from = from;
 	dst_pi->attr = attr;
 	dst_pi->net = dest;
-	dst_pi->flags = src_pi->flags;
-	dst_pi->type = src_pi->type;
-	dst_pi->sub_type = src_pi->sub_type;
-	dst_pi->mpath = src_pi->mpath;
-	if (src_pi->extra) {
-		memcpy(dst_pie, src_pi->extra,
-		       sizeof(struct bgp_path_info_extra));
-		dst_pi->extra = dst_pie;
+	dst_pi->extra = dst_pie;
+	if (src_pi) {
+		dst_pi->flags = src_pi->flags;
+		dst_pi->type = src_pi->type;
+		dst_pi->sub_type = src_pi->sub_type;
+		if (src_pi->extra)
+			memcpy(dst_pie, src_pi->extra, sizeof(struct bgp_path_info_extra));
 	}
+}
+
+static inline void bgp_path_info_extra_propagate(struct bgp_path_info *dst_bpi,
+						 const struct bgp_path_info *src_bpi)
+{
+	uint32_t src_srte_color;
+
+	if (!src_bpi || !dst_bpi)
+		return;
+
+	src_srte_color = src_bpi->extra ? src_bpi->extra->srte_color : 0;
+	if (src_srte_color || (dst_bpi->extra && dst_bpi->extra->srte_color))
+		bgp_path_info_extra_get(dst_bpi)->srte_color = src_srte_color;
+}
+
+static inline bool bgp_path_info_extra_same(const struct bgp_path_info *old_bpi,
+					    const struct bgp_path_info *new_bpi)
+{
+	uint32_t old_srte_color = old_bpi && old_bpi->extra ? old_bpi->extra->srte_color : 0;
+	uint32_t new_srte_color = new_bpi && new_bpi->extra ? new_bpi->extra->srte_color : 0;
+
+	return old_srte_color == new_srte_color;
 }
 
 static inline bool bgp_check_advertise(struct bgp *bgp, struct bgp_dest *dest,
@@ -740,6 +785,11 @@ DECLARE_HOOK(bgp_route_update,
 	      struct bgp_path_info *old_route, struct bgp_path_info *new_route),
 	     (bgp, afi, safi, bn, old_route, new_route));
 
+extern int bgp_pi_hash_cmp(const struct bgp_path_info *p1, const struct bgp_path_info *p2);
+extern uint32_t bgp_pi_hash_hashfn(const struct bgp_path_info *pi);
+
+DECLARE_HASH(bgp_pi_hash, struct bgp_path_info, pi_hash_link, bgp_pi_hash_cmp, bgp_pi_hash_hashfn);
+
 /* BGP show options */
 #define BGP_SHOW_OPT_JSON (1 << 0)
 #define BGP_SHOW_OPT_WIDE (1 << 1)
@@ -759,12 +809,12 @@ extern void bgp_rib_remove(struct bgp_dest *dest, struct bgp_path_info *pi,
 extern void bgp_process_queue_init(struct bgp *bgp);
 extern void bgp_route_init(void);
 extern void bgp_route_finish(void);
-extern void bgp_cleanup_routes(struct bgp *);
+extern void bgp_cleanup_routes(struct bgp *bgp);
 extern void bgp_free_aggregate_info(struct bgp_aggregate *aggregate);
 extern void bgp_announce_route(struct peer *peer, afi_t afi, safi_t safi,
 			       bool force);
 extern void bgp_stop_announce_route_timer(struct peer_af *paf);
-extern void bgp_announce_route_all(struct peer *);
+extern void bgp_announce_route_all(struct peer *peer);
 extern void bgp_default_originate(struct peer *peer, afi_t afi, safi_t safi,
 				  bool withdraw);
 extern void bgp_soft_reconfig_table_task_cancel(const struct bgp *bgp,
@@ -776,16 +826,17 @@ extern void bgp_soft_reconfig_table_task_cancel(const struct bgp *bgp,
  * and return true.  If it is not return false; and do nothing
  */
 extern bool bgp_soft_reconfig_in(struct peer *peer, afi_t afi, safi_t safi);
-extern void bgp_clear_route(struct peer *, afi_t, safi_t);
-extern void bgp_clear_route_all(struct peer *);
+extern void bgp_clear_route(struct peer *peer, afi_t afi, safi_t safi);
+extern void bgp_clear_route_all(struct peer *peer);
+extern bool bgp_clear_node_queue_drain(struct peer *peer);
 /* Clear routes for a batch of peers */
 void bgp_clear_route_batch(struct bgp_clearing_info *cinfo);
 
-extern void bgp_clear_adj_in(struct peer *, afi_t, safi_t);
-extern void bgp_clear_stale_route(struct peer *, afi_t, safi_t);
+extern void bgp_clear_adj_in(struct peer *peer, afi_t afi, safi_t safi);
+extern void bgp_clear_stale_route(struct peer *peer, afi_t afi, safi_t safi);
 extern void bgp_set_stale_route(struct peer *peer, afi_t afi, safi_t safi);
-extern bool bgp_outbound_policy_exists(struct peer *, struct bgp_filter *);
-extern bool bgp_inbound_policy_exists(struct peer *, struct bgp_filter *);
+extern bool bgp_outbound_policy_exists(struct peer *peer, struct bgp_filter *filter);
+extern bool bgp_inbound_policy_exists(struct peer *peer, struct bgp_filter *filter);
 
 extern struct bgp_dest *bgp_afi_node_get(struct bgp_table *table, afi_t afi,
 					 safi_t safi, const struct prefix *p,
@@ -814,24 +865,25 @@ extern void bgp_path_info_path_with_addpath_rx_str(struct bgp_path_info *pi,
 extern bool bgp_path_info_labels_same(const struct bgp_path_info *bpi,
 				      const mpls_label_t *label, uint32_t n);
 
-extern int bgp_nlri_parse_ip(struct peer *, struct attr *, struct bgp_nlri *);
+extern int bgp_nlri_parse_ip(struct peer *peer, struct attr *attr, struct bgp_nlri *packet);
 
-extern bool bgp_maximum_prefix_overflow(struct peer *, afi_t, safi_t, int);
+extern bool bgp_maximum_prefix_overflow(struct peer *peer, afi_t afi, safi_t safi, int always);
 
-extern void bgp_redistribute_add(struct bgp *bgp, struct prefix *p,
-				 const union g_addr *nexthop, ifindex_t ifindex,
-				 enum nexthop_types_t nhtype, uint8_t distance,
-				 enum blackhole_type bhtype, uint32_t metric,
-				 uint8_t type, unsigned short instance,
-				 route_tag_t tag);
-extern void bgp_redistribute_delete(struct bgp *, struct prefix *, uint8_t,
-				    unsigned short);
-extern void bgp_redistribute_withdraw(struct bgp *, afi_t, int, unsigned short);
+extern void bgp_redistribute_add(struct bgp *bgp, struct prefix *p, const union g_addr *nexthop,
+				 ifindex_t ifindex, enum nexthop_types_t nhtype, uint8_t distance,
+				 enum blackhole_type bhtype, uint32_t metric, uint8_t type,
+				 unsigned short instance, route_tag_t tag,
+				 uint32_t seg6local_action,
+				 const struct seg6local_context *seg6local_ctx);
+extern void bgp_redistribute_delete(struct bgp *bgp, struct prefix *p, uint8_t type,
+				    unsigned short instance);
+extern void bgp_redistribute_withdraw(struct bgp *bgp, afi_t afi, int type,
+				      unsigned short instance);
 
-extern void bgp_static_add(struct bgp *);
-extern void bgp_static_delete(struct bgp *);
+extern void bgp_static_add(struct bgp *bgp);
+extern void bgp_static_delete(struct bgp *bgp);
 extern void bgp_address_family_distance_delete(void);
-extern void bgp_static_redo_import_check(struct bgp *);
+extern void bgp_static_redo_import_check(struct bgp *bgp);
 extern void bgp_purge_static_redist_routes(struct bgp *bgp);
 extern void bgp_static_update(struct bgp *bgp, const struct prefix *p,
 			      struct bgp_static *s, afi_t afi, safi_t safi);
@@ -880,12 +932,10 @@ extern void bgp_process_early(struct bgp *bgp, struct bgp_dest *dest,
  * Add an end-of-initial-update marker to the process queue. This is just a
  * queue element with NULL bgp node.
  */
-extern void bgp_add_eoiu_mark(struct bgp *);
-extern void bgp_config_write_table_map(struct vty *, struct bgp *, afi_t,
-				       safi_t);
-extern void bgp_config_write_network(struct vty *, struct bgp *, afi_t, safi_t);
-extern void bgp_config_write_distance(struct vty *, struct bgp *, afi_t,
-				      safi_t);
+extern void bgp_add_eoiu_mark(struct bgp *bgp);
+extern void bgp_config_write_table_map(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t safi);
+extern void bgp_config_write_network(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t safi);
+extern void bgp_config_write_distance(struct vty *vty, struct bgp *bgp, afi_t afi, safi_t safi);
 
 extern void bgp_aggregate_delete(struct bgp *bgp, const struct prefix *p,
 				 afi_t afi, safi_t safi,
@@ -904,18 +954,17 @@ extern uint8_t bgp_distance_apply(const struct prefix *p,
 				  struct bgp_path_info *path, afi_t afi,
 				  safi_t safi, struct bgp *bgp);
 
-extern afi_t bgp_node_afi(struct vty *);
-extern safi_t bgp_node_safi(struct vty *);
+extern afi_t bgp_node_afi(struct vty *vty);
+extern safi_t bgp_node_safi(struct vty *vty);
 
 extern struct bgp_path_info *info_make(int type, int sub_type,
 				       unsigned short instance,
 				       struct peer *peer, struct attr *attr,
 				       struct bgp_dest *dest);
 
-extern void route_vty_out(struct vty *vty, const struct prefix *p,
-			  struct bgp_path_info *path, int display,
-			  struct attr *attr, safi_t safi,
-			  json_object *json_paths, bool wide);
+extern void route_vty_out(struct vty *vty, const struct prefix *p, struct bgp_path_info *path,
+			  int display, struct attr *attr, safi_t safi, json_object *json_paths,
+			  bool wide, char *rd_str);
 extern void route_vty_out_tag(struct vty *vty, const struct prefix *p,
 			      struct bgp_path_info *path, int display,
 			      safi_t safi, json_object *json);
@@ -1019,4 +1068,8 @@ extern int early_route_process(struct bgp *bgp, struct bgp_dest *dest);
 extern int other_route_process(struct bgp *bgp, struct bgp_dest *dest);
 extern int eoiu_marker_process(struct bgp *bgp, struct bgp_dest *dest);
 extern uint32_t bgp_med_value(struct attr *attr, struct bgp *bgp);
+extern int bgp_dest_set_defer_flag(struct bgp_dest *dest, bool delete);
+extern void bgp_process_main_one(struct bgp *bgp, struct bgp_dest *dest, afi_t afi, safi_t safi);
+extern uint32_t bgp_path_info_get_srte_color(struct bgp_path_info *bpi);
+extern uint64_t bgp_path_info_get_link_bw(struct bgp_path_info *bpi);
 #endif /* _QUAGGA_BGP_ROUTE_H */

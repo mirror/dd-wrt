@@ -10,8 +10,13 @@
 #include "table.h"
 #include "queue.h"
 #include "linklist.h"
+#include "typesafe.h"
 #include "bgpd.h"
 #include "bgp_advertise.h"
+#include "bgp_attr_srv6.h"
+
+/* Typesafe hash for bgp_path_info lookup */
+PREDECL_HASH(bgp_pi_hash);
 
 struct bgp_table {
 	/* table belongs to this instance */
@@ -22,6 +27,9 @@ struct bgp_table {
 	safi_t safi;
 
 	int lock;
+
+	/* Hash for bgp_path_info lookups across all prefixes in this table */
+	struct bgp_pi_hash_head pi_hash;
 
 	/* soft_reconfig_table in progress */
 	bool soft_reconfig_init;
@@ -42,6 +50,7 @@ enum bgp_path_selection_reason {
 	bgp_path_selection_evpn_local_path,
 	bgp_path_selection_evpn_non_proxy,
 	bgp_path_selection_evpn_lower_ip,
+	bgp_path_selection_admin_distance,
 	bgp_path_selection_weight,
 	bgp_path_selection_local_pref,
 	bgp_path_selection_accept_own,
@@ -76,7 +85,7 @@ struct bgp_dest {
 
 	STAILQ_ENTRY(bgp_dest) pq;
 
-	struct zebra_announce_item zai;
+	struct bgp_bp_install_node *za_inode;
 	struct bgp_path_info *za_bgp_pi;
 	struct bgpevpn *za_vpn;
 	bool za_is_sync;
@@ -84,6 +93,10 @@ struct bgp_dest {
 	uint64_t version;
 
 	mpls_label_t local_label;
+
+	struct bgp_ls_nlri *ls_nlri;
+
+	struct bgp_attr_srv6_l3service *srv6_unicast;
 
 	uint16_t flags;
 #define BGP_NODE_PROCESS_SCHEDULED	(1 << 0)
@@ -99,13 +112,17 @@ struct bgp_dest {
 #define BGP_NODE_SCHEDULE_FOR_INSTALL	(1 << 10)
 #define BGP_NODE_SCHEDULE_FOR_DELETE	(1 << 11)
 #define BGP_NODE_NHT_RESOLVED_NODE	(1 << 12)
+#define BGP_NODE_ZEBRA_ANNOUNCE_EARLY	(1 << 13)
 
 	struct bgp_addpath_node_data tx_addpath;
 
 	enum bgp_path_selection_reason reason;
+
+	/* Multipath information */
+	struct bgp_path_info_mpath *mpath;
 };
 
-DECLARE_LIST(zebra_announce, struct bgp_dest, zai);
+DECLARE_LIST(zebra_announce, struct bgp_bp_install_node, zai);
 
 extern void bgp_delete_listnode(struct bgp_dest *dest);
 /*
@@ -118,10 +135,10 @@ typedef struct bgp_table_iter_t_ {
 	route_table_iter_t rt_iter;
 } bgp_table_iter_t;
 
-extern struct bgp_table *bgp_table_init(struct bgp *bgp, afi_t, safi_t);
-extern void bgp_table_lock(struct bgp_table *);
-extern void bgp_table_unlock(struct bgp_table *);
-extern void bgp_table_finish(struct bgp_table **);
+extern struct bgp_table *bgp_table_init(struct bgp *bgp, afi_t afi, safi_t safi);
+extern void bgp_table_lock(struct bgp_table *rt);
+extern void bgp_table_unlock(struct bgp_table *rt);
+extern void bgp_table_finish(struct bgp_table **table);
 extern struct bgp_dest *bgp_dest_unlock_node(struct bgp_dest *dest);
 extern struct bgp_dest *bgp_dest_lock_node(struct bgp_dest *dest);
 extern const char *bgp_dest_get_prefix_str(struct bgp_dest *dest);
@@ -250,7 +267,7 @@ static inline struct bgp_dest *bgp_node_get(struct bgp_table *const table,
 						sizeof(struct bgp_dest));
 
 		RB_INIT(bgp_adj_out_rb, &dest->adj_out);
-		rn->info = dest;
+		route_node_set_info(rn, dest);
 		dest->rn = rn;
 	}
 	return rn->info;
@@ -280,7 +297,7 @@ static inline struct bgp_dest *bgp_node_match(const struct bgp_table *table,
 
 static inline unsigned long bgp_table_count(const struct bgp_table *const table)
 {
-	return route_table_count(table->route_table);
+	return route_table_info_count(table->route_table);
 }
 
 /*

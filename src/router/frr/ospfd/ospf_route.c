@@ -141,6 +141,7 @@ static int ospf_route_exist_new_table(struct route_table *rt,
 				      struct prefix_ipv4 *prefix)
 {
 	struct route_node *rn;
+	struct ospf_route *or;
 
 	assert(rt);
 	assert(prefix);
@@ -151,7 +152,8 @@ static int ospf_route_exist_new_table(struct route_table *rt,
 	}
 	route_unlock_node(rn);
 
-	if (!rn->info) {
+	or = rn->info;
+	if (!or || or->connected) {
 		return 0;
 	}
 
@@ -282,8 +284,9 @@ static void ospf_route_delete_uniq(struct ospf *ospf, struct route_table *rt,
 
 	for (rn = route_top(rt); rn; rn = route_next(rn))
 		if ((or = rn->info) != NULL)
-			if (or->path_type == OSPF_PATH_INTRA_AREA ||
-			    or->path_type == OSPF_PATH_INTER_AREA) {
+			if (!or->connected &&
+			    (or->path_type == OSPF_PATH_INTRA_AREA ||
+			    or->path_type == OSPF_PATH_INTER_AREA)) {
 				if (or->type == OSPF_DESTINATION_NETWORK) {
 					if (!ospf_route_exist_new_table(
 						    cmprt,
@@ -509,6 +512,20 @@ void ospf_intra_add_transit(struct route_table *rt, struct vertex *v,
 	or->u.std.origin = (struct lsa_header *)lsa;
 	or->u.std.transit = true;
 
+	if (list_isempty(v->parents))
+		or->connected = true;
+	else {
+		struct listnode *node;
+		struct vertex_parent *vp;
+
+		for (ALL_LIST_ELEMENTS_RO(v->parents, node, vp)) {
+			if (vp->nexthop->router.s_addr == INADDR_ANY) {
+				or->connected = true;
+				break;
+			}
+		}
+	}
+
 	ospf_route_copy_nexthops_from_vertex(area, or, v);
 
 	rn->info = or ;
@@ -552,7 +569,7 @@ void ospf_intra_add_stub(struct route_table *rt, struct router_lsa_link *link,
 
 	/* PtP links with /32 masks adds host routes to remote, directly
 	 * connected hosts, see RFC 2328, 12.4.1.1, Option 1.
-	 * Such routes can just be ignored for the sake of tidyness.
+	 * Such routes can just be ignored for the sake of tidiness.
 	 */
 	if (parent_is_root && link->link_data.s_addr == 0xffffffff
 	    && ospf_if_lookup_by_local_addr(area->ospf, NULL, link->link_id)) {
@@ -629,6 +646,7 @@ void ospf_intra_add_stub(struct route_table *rt, struct router_lsa_link *link,
 					   __func__);
 
 			cur_or->cost = cost;
+			cur_or->connected = list_isempty(v->parents);
 
 			list_delete_all_node(cur_or->paths);
 
@@ -651,6 +669,8 @@ void ospf_intra_add_stub(struct route_table *rt, struct router_lsa_link *link,
 	or->cost = cost;
 	or->type = OSPF_DESTINATION_NETWORK;
 	or->u.std.origin = (struct lsa_header *)lsa;
+	if (list_isempty(v->parents))
+		or->connected = true;
 
 	/* Nexthop is depend on connection type. */
 	if (v != area->spf) {
@@ -994,11 +1014,8 @@ void ospf_prune_unreachable_routers(struct route_table *rtrs)
 				 * which generated this lsa is no longer
 				 * reachabele.
 				 */
-				(CHECK_FLAG(or->u.std.origin->ls_age,
-					    DO_NOT_AGE))
-					? UNSET_FLAG(or->u.std.origin->ls_age,
-						     DO_NOT_AGE)
-					: 0;
+				if (CHECK_FLAG(or->u.std.origin->ls_age, htons(DO_NOT_AGE)))
+					UNSET_FLAG(or->u.std.origin->ls_age, htons(DO_NOT_AGE));
 
 				listnode_delete(paths, or);
 				ospf_route_free(or);
@@ -1022,7 +1039,7 @@ int ospf_add_discard_route(struct ospf *ospf, struct route_table *rt,
 			   bool nssa)
 {
 	struct route_node *rn;
-	struct ospf_route * or, *new_or;
+	struct ospf_route *new_or;
 
 	rn = route_node_get(rt, (struct prefix *)p);
 
@@ -1034,9 +1051,9 @@ int ospf_add_discard_route(struct ospf *ospf, struct route_table *rt,
 
 	if (rn->info) /* If the route to the same destination is found */
 	{
-		route_unlock_node(rn);
+		struct ospf_route *or = rn->info;
 
-		or = rn->info;
+		route_unlock_node(rn);
 
 		if (!nssa && or->path_type == OSPF_PATH_INTRA_AREA) {
 			if (IS_DEBUG_OSPF_EVENT)
@@ -1047,9 +1064,7 @@ int ospf_add_discard_route(struct ospf *ospf, struct route_table *rt,
 
 		if (or->type == OSPF_DESTINATION_DISCARD) {
 			if (IS_DEBUG_OSPF_EVENT)
-				zlog_debug(
-					"%s: discard entry already installed",
-					__func__);
+				zlog_debug("%s: discard entry already installed", __func__);
 			return 0;
 		}
 
@@ -1080,7 +1095,7 @@ void ospf_delete_discard_route(struct ospf *ospf, struct route_table *rt,
 			       struct prefix_ipv4 *p, bool nssa)
 {
 	struct route_node *rn;
-	struct ospf_route * or ;
+	struct ospf_route *or;
 
 	if (IS_DEBUG_OSPF_EVENT)
 		zlog_debug("%s: deleting %pFX", __func__, p);
@@ -1094,12 +1109,6 @@ void ospf_delete_discard_route(struct ospf *ospf, struct route_table *rt,
 	}
 
 	or = rn->info;
-
-	if (!nssa && or->path_type == OSPF_PATH_INTRA_AREA) {
-		if (IS_DEBUG_OSPF_EVENT)
-			zlog_debug("%s: an intra-area route exists", __func__);
-		return;
-	}
 
 	if (or->type != OSPF_DESTINATION_DISCARD) {
 		if (IS_DEBUG_OSPF_EVENT)

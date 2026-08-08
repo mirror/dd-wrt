@@ -9,17 +9,26 @@
 #ifndef _ZEBRA_NEIGH_H
 #define _ZEBRA_NEIGH_H
 
-#include <zebra.h>
+#include "lib/typesafe.h"
+#include "lib/ipaddr.h"
+#include "lib/prefix.h"
+#include "lib/ns.h"
+#include "lib/if.h"
 
-#include "if.h"
+struct zebra_pbr_rule;
+struct zebra_dplane_ctx;
 
 #define zneigh_info zrouter.neigh_info
 
 struct zebra_neigh_ent {
+	ns_id_t ns_id;
 	ifindex_t ifindex;
 	struct ipaddr ip;
 
 	struct ethaddr mac;
+
+	/* State as received from the kernel */
+	uint16_t neigh_state;
 
 	uint32_t flags;
 #define ZEBRA_NEIGH_ENT_ACTIVE (1 << 0) /* can be used for traffic */
@@ -40,15 +49,15 @@ struct zebra_neigh_info {
 
 
 /****************************************************************************/
-extern void zebra_neigh_add(struct interface *ifp, struct ipaddr *ip,
-			    struct ethaddr *mac);
-extern void zebra_neigh_del(struct interface *ifp, struct ipaddr *ip);
+extern void zebra_neigh_add(ns_id_t ns_id, struct interface *ifp, struct ipaddr *ip,
+			    struct ethaddr *mac, uint16_t ndm_state);
+extern void zebra_neigh_del(ns_id_t ns_id, struct interface *ifp, struct ipaddr *ip);
 extern void zebra_neigh_del_all(struct interface *ifp);
-extern void zebra_neigh_show(struct vty *vty);
+extern void zebra_neigh_show(struct vty *vty, enum ipaddr_type_t afi, bool use_json);
 extern void zebra_neigh_init(void);
 extern void zebra_neigh_terminate(void);
 extern void zebra_neigh_deref(struct zebra_pbr_rule *rule);
-extern void zebra_neigh_ref(int ifindex, struct ipaddr *ip,
+extern void zebra_neigh_ref(ns_id_t ns_id, int ifindex, struct ipaddr *ip,
 			    struct zebra_pbr_rule *rule);
 void zebra_neigh_dplane_update(struct zebra_dplane_ctx *ctx);
 #endif /* _ZEBRA_NEIGH_H */

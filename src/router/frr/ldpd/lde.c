@@ -31,8 +31,8 @@
 #include "zlog_live.h"
 
 static void		 lde_shutdown(void);
-static void lde_dispatch_imsg(struct event *thread);
-static void lde_dispatch_parent(struct event *thread);
+static void lde_dispatch_imsg(struct event *event);
+static void lde_dispatch_parent(struct event *event);
 static __inline	int	 lde_nbr_compare(const struct lde_nbr *,
 			    const struct lde_nbr *);
 static struct lde_nbr	*lde_nbr_new(uint32_t, struct lde_nbr *);
@@ -48,7 +48,9 @@ static int		 lde_address_add(struct lde_nbr *, struct lde_addr *);
 static int		 lde_address_del(struct lde_nbr *, struct lde_addr *);
 static void		 lde_address_list_free(struct lde_nbr *);
 static void              zclient_sync_init(void);
+static void		 zclient_sync_cleanup(void);
 static void		 lde_label_list_init(void);
+static void		 lde_label_list_cleanup(void);
 static int		 lde_get_label_chunk(void);
 static void		 on_get_label_chunk_response(uint32_t start, uint32_t end);
 static uint32_t		 lde_get_next_label(void);
@@ -194,6 +196,8 @@ static FRR_NORETURN void lde_shutdown(void)
 	lde_gc_stop_timer();
 	lde_nbr_clear();
 	fec_tree_clear();
+	lde_label_list_cleanup();
+	zclient_sync_cleanup();
 
 	config_clear(ldeconf);
 
@@ -203,7 +207,8 @@ static FRR_NORETURN void lde_shutdown(void)
 
 	log_info("label decision engine exiting");
 
-	zlog_fini();
+	frr_early_fini();
+	frr_fini();
 	exit(0);
 }
 
@@ -236,9 +241,9 @@ lde_imsg_compose_ldpe(int type, uint32_t peerid, pid_t pid, void *data,
 }
 
 /* ARGSUSED */
-static void lde_dispatch_imsg(struct event *thread)
+static void lde_dispatch_imsg(struct event *event)
 {
-	struct imsgev *iev = EVENT_ARG(thread);
+	struct imsgev *iev = EVENT_ARG(event);
 	struct imsgbuf		*ibuf = &iev->ibuf;
 	struct imsg		 imsg;
 	struct lde_nbr		*ln;
@@ -247,8 +252,6 @@ static void lde_dispatch_imsg(struct event *thread)
 	struct notify_msg	*nm;
 	ssize_t			 n;
 	int			 shut = 0;
-
-	iev->ev_read = NULL;
 
 	if ((n = imsg_read(ibuf)) == -1 && errno != EAGAIN)
 		fatal("imsg_read error");
@@ -449,7 +452,7 @@ static void lde_send_all_klabel(struct iface *iface)
 }
 
 /* ARGSUSED */
-static void lde_dispatch_parent(struct event *thread)
+static void lde_dispatch_parent(struct event *event)
 {
 	static struct ldpd_conf	*nconf;
 	struct iface		*iface, *niface;
@@ -462,7 +465,7 @@ static void lde_dispatch_parent(struct event *thread)
 	struct kif		*kif;
 	struct kroute		*kr;
 	int			 fd;
-	struct imsgev *iev = EVENT_ARG(thread);
+	struct imsgev *iev = EVENT_ARG(event);
 	struct imsgbuf		*ibuf = &iev->ibuf;
 	ssize_t			 n;
 	int			 shut = 0;
@@ -472,8 +475,6 @@ static void lde_dispatch_parent(struct event *thread)
 	struct ldp_rlfa_client	 *rclient;
 	struct zapi_rlfa_request *rlfa_req;
 	struct zapi_rlfa_igp	 *rlfa_igp;
-
-	iev->ev_read = NULL;
 
 	if ((n = imsg_read(ibuf)) == -1 && errno != EAGAIN)
 		fatal("imsg_read error");
@@ -569,14 +570,13 @@ static void lde_dispatch_parent(struct event *thread)
 				break;
 			}
 
-			if ((iev_ldpe = malloc(sizeof(struct imsgev))) == NULL)
+			if ((iev_ldpe = calloc(1, sizeof(struct imsgev))) == NULL)
 				fatal(NULL);
 			imsg_init(&iev_ldpe->ibuf, fd);
 			iev_ldpe->handler_read = lde_dispatch_imsg;
 			event_add_read(master, iev_ldpe->handler_read, iev_ldpe,
 				       iev_ldpe->ibuf.fd, &iev_ldpe->ev_read);
 			iev_ldpe->handler_write = ldp_write_handler;
-			iev_ldpe->ev_write = NULL;
 			break;
 		case IMSG_INIT:
 			if (imsg.hdr.len != IMSG_HEADER_SIZE +
@@ -1366,7 +1366,7 @@ lde_send_labelrequest(struct lde_nbr *ln, struct fec_node *fn,
 			lde_req_add(ln, &fn->fec, 1);
 		}
 	} else {
-		/* if Wilcard just send label request */
+		/* if Wildcard just send label request */
 		/* SLRq.3: send label request */
 		lde_imsg_compose_ldpe(IMSG_REQUEST_ADD,
 		    ln->peerid, 0, &map, sizeof(map));
@@ -2173,7 +2173,7 @@ lde_address_list_free(struct lde_nbr *ln)
 /*
  * Event callback used to retry the label-manager sync zapi session.
  */
-static void zclient_sync_retry(struct event *thread)
+static void zclient_sync_retry(struct event *event)
 {
 	zclient_sync_init();
 }
@@ -2219,12 +2219,20 @@ static void zclient_sync_init(void)
 retry:
 
 	/* Discard failed zclient object */
-	zclient_stop(zclient_sync);
-	zclient_free(zclient_sync);
-	zclient_sync = NULL;
+	zclient_sync_cleanup();
 
 	/* Retry using a timer */
 	event_add_timer(master, zclient_sync_retry, NULL, 1, NULL);
+}
+
+static void zclient_sync_cleanup(void)
+{
+	if (!zclient_sync)
+		return;
+
+	zclient_stop(zclient_sync);
+	zclient_free(zclient_sync);
+	zclient_sync = NULL;
 }
 
 static void
@@ -2276,6 +2284,25 @@ lde_label_list_init(void)
 		log_warnx("Error getting first label chunk!");
 		sleep(1);
 	}
+}
+
+static void
+lde_label_list_cleanup(void)
+{
+	struct listnode *node, *nnode;
+	struct label_chunk *label_chunk;
+
+	if (!label_chunk_list)
+		return;
+
+	for (ALL_LIST_ELEMENTS(label_chunk_list, node, nnode, label_chunk)) {
+		if (zclient_sync &&
+		    lde_release_label_chunk(label_chunk->start, label_chunk->end) != 0)
+			log_warnx("%s: Error releasing label chunk!", __func__);
+	}
+
+	current_label_chunk = NULL;
+	list_delete(&label_chunk_list);
 }
 
 static void

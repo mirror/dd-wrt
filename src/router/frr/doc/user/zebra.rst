@@ -52,15 +52,17 @@ Besides the common invocation options (:ref:`common-invocation-options`), the
 
 .. option:: -n, --vrfwnetns
 
+   .. deprecated:: 10.3
+      Use the global :ref:`-w / --vrfwnetns <common-invocation-options>`
+      option instead, which applies to all daemons uniformly.
+
    When *Zebra* starts with this option, the VRF backend is based on Linux
    network namespaces. That implies that all network namespaces discovered by
    ZEBRA will create an associated VRF. The other daemons will operate on the VRF
-   VRF defined by *Zebra*, as usual. If this option is specified when running
+   defined by *Zebra*, as usual. If this option is specified when running
    *Zebra*, one must also specify the same option for *mgmtd*.
 
-   This options is deprecated. Please use the global -w option instead.
-
-   .. seealso:: :ref:`zebra-vrf`
+   .. seealso:: :ref:`zebra-vrf`, :ref:`common-invocation-options`
 
 .. option:: -z <path_to_socket>, --socket <path_to_socket>
 
@@ -156,9 +158,15 @@ Standard Commands
 
 .. clicmd:: interface IFNAME vrf VRF
 
+   Configure interface in a specific VRF. Depending on the VRF backend,
+   specifying the VRF explicitly is optional. In those cases, interface VRF
+   information will also be omitted from ``show running-config`` even when
+   it was given when configuring the interface. In any case, specifying a
+   VRF does not configure the VRF used by the kernel interface. It merely
+   helps identifying the right kernel interface.
 
 .. clicmd:: shutdown
-
+   :daemon: zebra
 
    Up or down the current interface.
 
@@ -372,7 +380,7 @@ the default route.
 
    This command displays route-map attach point to nexthop tracking and
    displays list of protocol with its applied route-map.
-   When zebra considers sending NHT resoultion, the nofification only
+   When zebra considers sending NHT resolution, the notification only
    sent to appropriate client protocol only after applying route-map filter.
    User can get that information as JSON format when ``json`` keyword
    at the end of cli is presented.
@@ -436,7 +444,12 @@ the same distances that other routing suites have chosen.
 
 An admin distance of 255 indicates to Zebra that the route should not be
 installed into the Data Plane. Additionally routes with an admin distance
-of 255 will not be redistributed.
+of 255 will not be redistributed as that these routes are typically not installed.
+The exception here is that Kernel routes may have an admin distance of 255
+and they will be redistributed.  This is because Zebra has no control over
+Kernel routes and if the kernel route has an admin distance of 255 clearly
+it is being used.  As such as part of redistribution, kernel routes are a
+special case.
 
 Zebra does treat Kernel routes as special case for the purposes of Admin
 Distance. Upon learning about a route that is not originated by FRR
@@ -468,7 +481,7 @@ Route Replace Semantics
 
 When using the Linux Kernel as a forwarding plane, routes are installed
 with a metric of 20 to the kernel.  Please note that the kernel's metric
-value bears no resemblence to FRR's RIB metric or admin distance.  It
+value bears no resemblance to FRR's RIB metric or admin distance.  It
 merely is a way for the Linux Kernel to decide which route to use if it
 has multiple routes for the same prefix from multiple sources.  An example
 here would be if someone else was running another routing suite besides
@@ -509,7 +522,9 @@ The easiest way to pass the same option to all daemons is to use the
 
 Configuring VRF networking contexts can be done in various ways on FRR. The VRF
 interfaces can be configured by entering in interface configuration mode
-:clicmd:`interface IFNAME vrf VRF`.
+:clicmd:`interface IFNAME vrf VRF`. Note that FRR neither creates VRFs nor
+configures the VRF an interface belongs to. FRR simply uses whatever is
+provided by the OS.
 
 A VRF backend mode is chosen when running *Zebra*.
 
@@ -526,7 +541,7 @@ to find the next route table to use to look for a route match.  As such if
 your VRF table does not have a default blackhole route with a high metric
 VRF route lookup will leave the table specified by the VRF, which is undesirable.
 
-If the :option:`-n` option is chosen, then the *Linux network namespace* will
+If the :ref:`-w <common-invocation-options>` option is chosen, then the *Linux network namespace* will
 be mapped over the *Zebra* VRF. That implies that *Zebra* is able to configure
 several *Linux network namespaces*.  The routing table associated to that VRF
 is the whole routing tables located in that namespace. For instance, this mode
@@ -551,12 +566,12 @@ commands in relationship to VRF. Here is an extract of some of those commands:
    *Zebra* is launched with default settings, this will be the ``TABLENO`` of
    the VRF configured on the kernel, thanks to information provided in
    https://www.kernel.org/doc/Documentation/networking/vrf.txt. If *Zebra* is
-   launched with :option:`-n` option, this will be the default routing table of
+   launched with :ref:`-w <common-invocation-options>` option, this will be the default routing table of
    the *Linux network namespace* ``VRF``.
 
 .. clicmd:: show ip route vrf VRF table TABLENO
 
-   The show command is only available with :option:`-n` option. This command
+   The show command is only available with :ref:`-w <common-invocation-options>` option. This command
    will dump the routing table ``TABLENO`` of the *Linux network namespace*
    ``VRF``.
 
@@ -1000,10 +1015,12 @@ and this section also helps that case.
    }
 
 .. clicmd:: segment-routing
+   :daemon: zebra
 
    Move from configure mode to segment-routing node.
 
 .. clicmd:: srv6
+   :daemon: zebra
 
    Move from segment-routing node to srv6 node.
 
@@ -1013,6 +1030,7 @@ and this section also helps that case.
    configure detailed settings such as the actual srv6 locator.
 
 .. clicmd:: locator NAME
+   :daemon: zebra
 
    Create a new locator. If the name of an existing locator is specified,
    move to specified locator's configuration node to change the settings it.
@@ -1151,11 +1169,8 @@ and this section also helps that case.
 
 .. clicmd:: formats
 
-   Configure SRv6 SID formats.
-
-.. clicmd:: format NAME
-
-   Configure SRv6 SID format.
+   Configure SRv6 SID formats. Use ``format NAME`` to enter configuration mode
+   for a specific SRv6 SID format.
 
 .. clicmd:: compressed usid
 
@@ -1291,12 +1306,13 @@ zebra Table Import
 ==================
 
 Zebra supports importing an alternate routing table into the main unicast RIB (URIB).
-An imported table will continously sync all changes to the main URIB as routes are
+An imported table will continuously sync all changes to the main URIB as routes are
 added or deleted from the alternate table.
 Zebra also supports importing into the main multicast RIB (MRIB) which can be used
 to affect how multicast RPF lookups are performed as described in :ref: `_pim-multicast-rib`.
 
 .. clicmd:: ip import-table (1-252) [mrib] [distance (1-255)] [route-map RMAP_NAME]
+.. clicmd:: ipv6 import-table (1-252) [mrib] [distance (1-255)] [route-map RMAP_NAME]
 
    Import table, by given table id, into the main URIB (or MRIB). Optional distance can override
    the default distance when importing routes from the alternate table. An optional route map
@@ -1589,7 +1605,7 @@ zebra Terminal Mode Commands
    Display detailed information about a route. If [nexthop-group] is
    included, it will display the nexthop group ID the route is using as well.
 
-.. clicmd:: show [ip|ipv6] route [vrf NAME|all|table TABLENO] [A.B.C.D|A.B.C.D/M|X:X::X:X|X:X::X:X/M] [json] [nexthop-group]
+.. clicmd:: show [ip|ipv6] route [vrf NAME|all|table TABLENO] [A.B.C.D|A.B.C.D/M|X:X::X:X|X:X::X:X/M] [nexthop-group [summary [ecmp-count <gt|lt|eq> (1-256)]]] [failed] [json [brief]]
 
    Display detailed information about routes in the routing table. This command provides comprehensive information about specific routes, including their attributes, nexthops, and other routing details.
 
@@ -1599,8 +1615,15 @@ zebra Terminal Mode Commands
    - ``table TABLENO``: Display routes from a specific routing table (1-4294967295)
    - ``A.B.C.D|A.B.C.D/M``: Display detailed information for a specific IPv4 address or prefix
    - ``X:X::X:X|X:X::X:X/M``: Display detailed information for a specific IPv6 address or prefix
-   - ``json``: Display output in JSON format
    - ``nexthop-group``: Include nexthop group information in the output
+   - ``nexthop-group summary``: Display a concise summary view with ECMP counts and nexthop group IDs instead of full nexthop details
+   - ``ecmp-count <gt|lt|eq> N``: Filter routes by ECMP count (requires summary option)
+     - ``gt``: Show routes with ECMP count greater than N
+     - ``lt``: Show routes with ECMP count less than N
+     - ``eq``: Show routes with ECMP count equal to N
+   - ``failed``: Show only routes that failed to install in the FIB (kernel). This is useful for troubleshooting route installation issues.
+   - ``json``: Display output in JSON format
+   - ``brief``: When combined with ``json``, output a minimal set of fields per route (see **Brief JSON view** below).
 
    The detailed output includes:
 
@@ -1632,6 +1655,94 @@ zebra Terminal Mode Commands
             Backup nexthop: 10.0.0.2 via eth1
 
    When using the JSON output format, the information is structured in a hierarchical JSON object containing all the route details in a machine-readable format.
+
+   **Brief JSON view**
+
+   With ``show [ip|ipv6] route ... json brief`` (and the same with ``vrf NAME``, ``vrf default``, or ``vrf all``), zebra outputs a minimal JSON structure per route instead of the full route object. Each route object in the brief view includes at least:
+
+   - ``protocol``, ``selected``, ``destSelected``, ``distance``, ``metric``, ``installed``, ``nexthopGroupId``, ``uptime``, ``offloaded``
+
+   With ``vrf all json brief``, the top-level structure is an object whose keys are VRF names (e.g. ``"default"``), each containing the same array of brief route objects.
+
+   **Nexthop Group Summary View**
+
+   When using the ``nexthop-group summary`` option, instead of showing all individual nexthops for each route, this displays a concise view showing ECMP counts, nexthop group IDs, and status flags.
+
+   The summary output includes:
+
+   - Route prefix and protocol
+   - Received/Installed NHG ID: The nexthop group IDs (received from protocol / installed in kernel)
+   - ECMP/FIB count: Number of ECMP paths / Number of paths installed in FIB
+   - Status: Route installation status (Installed, Queued, Failed)
+   - Flags: Nexthop group flags (Valid, Installed, Recursive, etc.)
+
+   Example showing routes with exactly 2 ECMP paths:
+
+   ::
+
+      Router# show ip route bgp nexthop-group summary ecmp-count eq 2
+      B>  192.168.1.0/24 [20/0] Rcv/Ins NHG ID: 100/100 ECMP/FIB count: 2/2 Status: Installed Flags: Valid, Installed
+      B>* 192.168.2.0/24 [20/0] Rcv/Ins NHG ID: 101/101 ECMP/FIB count: 2/2 Status: Installed Flags: Valid, Installed
+      B>  192.168.3.0/24 [20/0] Rcv/Ins NHG ID: 102/102 ECMP/FIB count: 2/2 Status: Installed Flags: Valid, Installed
+      B>  192.168.4.0/24 [20/0] Rcv/Ins NHG ID: 103/103 ECMP/FIB count: 2/2 Status: Installed Flags: Valid, Installed
+
+   Example showing routes with less than 2 ECMP paths:
+
+   ::
+
+      Router# show ip route ospf nexthop-group summary ecmp-count lt 2
+      O>  192.168.10.0/24 [110/20] Rcv/Ins NHG ID: 150/151 ECMP/FIB count: 1/1 Status: Installed Flags: Valid, Recursive
+
+   JSON output example:
+
+   ::
+
+      Router# show ip route bgp nexthop-group summary ecmp-count eq 1 json
+      {"192.168.10.0/24":[{
+        "prefix":"192.168.10.0/24",
+        "prefixLen":24,
+        "protocol":"bgp",
+        "vrfId":0,
+        "vrfName":"default",
+        "selected":true,
+        "destSelected":true,
+        "distance":20,
+        "metric":0,
+        "installed":true,
+        "table":254,
+        "nexthopGroupId":200,
+        "ecmpCount":1,
+        "fibInstalledCount":1,
+        "installedNexthopGroupId":200,
+        "receivedNexthopGroupId":200,
+        "nexthopGroupFlags":9,
+        "nexthopGroupValid":"true"
+      }]}
+
+   The summary view is particularly useful for:
+
+   - Quickly identifying routes with specific ECMP configurations
+   - Troubleshooting nexthop group installation issues
+   - Monitoring ECMP load-balancing configurations
+   - Verifying routes have the expected number of paths
+
+   **Viewing Failed Routes**
+
+   The ``failed`` option filters the output to show only routes that have failed
+   to install in the FIB. This is useful for troubleshooting route installation
+   issues.
+
+   ::
+
+      Router# show ip route failed
+      Codes: K - kernel route, C - connected, L - local, S - static,
+             R - RIP, O - OSPF, I - IS-IS, B - BGP, E - EIGRP, N - NHRP,
+             T - Table, v - VNC, V - VNC-Direct, A - Babel, F - PBR,
+             f - OpenFabric, t - Table-Direct,
+             > - selected route, * - FIB route, q - queued, r - rejected, b - backup
+             t - trapped, o - offload failure
+
+      r>* 0.0.0.0/0 [20/0] via 10.0.0.1, Ethernet120, rejected
 
 .. clicmd:: show [ip|ipv6] route summary
 
@@ -1671,9 +1782,17 @@ zebra Terminal Mode Commands
 
    Display whether the host's IP v6 forwarding is enabled or not.
 
-.. clicmd:: show ip neigh
+.. clicmd:: show ip neighbor [json]
 
    Display the ip neighbor table
+
+.. clicmd:: show ipv6 neighbor [json]
+
+   Display the ipv6 neighbor table
+
+.. clicmd:: show neighbor [json]
+
+   Display the v4 and v6 neighbor table.
 
 .. clicmd:: show pbr rule
 
@@ -1686,12 +1805,13 @@ zebra Terminal Mode Commands
    show various zebra state that is useful when debugging an operator's
    setup.
 
-.. clicmd:: show zebra client [summary]
+.. clicmd:: show zebra client [summary|json]
 
    Display statistics about clients that are connected to zebra.  This is
    useful for debugging and seeing how much data is being passed between
    zebra and it's clients.  If the summary form of the command is chosen
-   a table is displayed with shortened information.
+   a table is displayed with shortened information.  The json form of
+   the command dumps the client information in json.
 
 .. clicmd:: show zebra router table summary
 
@@ -1700,7 +1820,7 @@ zebra Terminal Mode Commands
    total number of route nodes in the table.  Which will be higher than
    the actual number of routes that are held.
 
-.. clicmd:: show nexthop-group rib [ID] [vrf NAME] [singleton [ip|ip6]] [type] [json]
+.. clicmd:: show nexthop-group rib [ID] [vrf NAME] [singleton [ip|ip6]] [type] [json [brief]]
 
    Display nexthop groups created by zebra.  The [vrf NAME] option
    is only meaningful if you have started zebra with the --vrfwnetns
@@ -1712,6 +1832,12 @@ zebra Terminal Mode Commands
    was not installed because no-one was using it at that point and
    Zebra can delay installing this route until it is used by something
    else.
+
+   With **json**, the output is in JSON format.  **brief** may only be
+   given together with **json** (after it); it omits the full-detail
+   fields (type, refCount, timeToDeletion) and shows a condensed nexthop
+   list; groups with dependencies list only ``depends`` and not
+   per-nexthop detail.
 
 .. clicmd:: show <ip|ipv6> zebra route dump [<vrf> VRFNAME]
 
@@ -1840,7 +1966,7 @@ Optional sysctl settings
 
 .. option:: net.ipv4.conf.{all,default,<interface>}.arp_notify = 1
 
-   This per interface option allows the linux kernel to decide whether to send a Gratuitious ARP
+   This per interface option allows the linux kernel to decide whether to send a Gratuitous ARP
    (GARP) frame when the Layer 3 interface comes UP.
    When arp_notify is set to 0, no GARP is sent.
    When arp_notify is set to 1, a GARP is sent when the interface comes UP.
@@ -1927,6 +2053,10 @@ Debugging
 .. clicmd:: debug zebra srv6
 
    Segment Routing for IPv6 dataplane debugging.
+
+.. clicmd:: debug zebra tc
+
+   Traffic Control debugging.
 
 Scripting
 =========

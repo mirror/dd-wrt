@@ -86,7 +86,7 @@ static struct resolver_fd *resolver_fd_get(int fd,
 
 static void resolver_fd_drop_maybe(struct resolver_fd *resfd)
 {
-	if (resfd->t_read || resfd->t_write)
+	if (event_is_scheduled(resfd->t_read) || event_is_scheduled(resfd->t_write))
 		return;
 
 	if (resolver_debug)
@@ -166,13 +166,13 @@ static void ares_socket_cb(void *data, ares_socket_t fd, int readable,
 
 	if (!readable)
 		event_cancel(&resfd->t_read);
-	else if (!resfd->t_read)
+	else if (!event_is_scheduled(resfd->t_read))
 		event_add_read(r->master, resolver_cb_socket_readable, resfd,
 			       fd, &resfd->t_read);
 
 	if (!writable)
 		event_cancel(&resfd->t_write);
-	else if (!resfd->t_write)
+	else if (!event_is_scheduled(resfd->t_write))
 		event_add_write(r->master, resolver_cb_socket_writable, resfd,
 				fd, &resfd->t_write);
 
@@ -324,8 +324,19 @@ void resolver_resolve(struct resolver_query *query, int af, vrf_id_t vrf_id,
 
 	ret = vrf_switch_to_netns(vrf_id);
 	if (ret < 0) {
+		void (*cb)(struct resolver_query *query, const char *errstr,
+			   int numaddrs, union sockunion *addr);
+		const char *errstr;
+
+		errstr = safe_strerror(errno);
 		flog_err_sys(EC_LIB_SOCKET, "%s: Can't switch to VRF %u (%s)",
-			     __func__, vrf_id, safe_strerror(errno));
+			     __func__, vrf_id, errstr);
+
+		/* Call callback with error to prevent blocking retries */
+		cb = query->callback;
+		query->callback = NULL;
+		if (cb)
+			cb(query, errstr, -1, NULL);
 		return;
 	}
 

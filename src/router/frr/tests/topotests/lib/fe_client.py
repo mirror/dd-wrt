@@ -9,6 +9,7 @@
 # noqa: E501
 #
 """A MGMTD front-end client."""
+
 import argparse
 import logging
 import os
@@ -18,6 +19,9 @@ import sys
 import time
 from pathlib import Path
 
+# We need to add to the path to import munet (when the user doesn't have it installed
+# themselves) so we can get it from `tests/topotests/munet` since this script is run
+# standalone `tests/topotests` is has not been added to sys.path by pytest.
 CWD = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.dirname(CWD))
 
@@ -43,31 +47,31 @@ MGMT_MSG_MARKER_NATIVE = b"\001###"
 #
 # Native message formats
 #
-MSG_HDR_FMT = "=H2xIQQ"
+MSG_FMT_HDR = "=H2xIQQ"
 HDR_FIELD_CODE = 0
 HDR_FIELD_VSPLIT = 1
 HDR_FIELD_SESS_ID = 2
 HDR_FIELD_REQ_ID = 3
 
-MSG_ERROR_FMT = "=h6x"
+MSG_FMT_ERROR = "=h6x"
 ERROR_FIELD_ERROR = 0
 
-# MSG_GET_TREE_FMT = "=B7x"
+# MSG_FMT_GET_TREE = "=B7x"
 # GET_TREE_FIELD_RESULT_TYPE = 0
 
-MSG_TREE_DATA_FMT = "=bBB5x"
+MSG_FMT_TREE_DATA = "=bBB5x"
 TREE_DATA_FIELD_PARTIAL_ERROR = 0
 TREE_DATA_FIELD_RESULT_TYPE = 1
 TREE_DATA_FIELD_MORE = 2
 
-MSG_GET_DATA_FMT = "=BB6x"
+MSG_FMT_GET_DATA = "=BB6x"
 GET_DATA_FIELD_RESULT_TYPE = 0
 GET_DATA_FIELD_FLAGS = 1
 GET_DATA_FLAG_STATE = 0x1
 GET_DATA_FLAG_CONFIG = 0x2
 GET_DATA_FLAG_EXACT = 0x4
 
-MSG_NOTIFY_FMT = "=BB6x"
+MSG_FMT_NOTIFY = "=BB6x"
 NOTIFY_FIELD_RESULT_TYPE = 0
 NOTIFY_FIELD_OP = 1
 NOTIFY_OP_NOTIFICATION = 0
@@ -76,22 +80,29 @@ NOTIFY_OP_DELETE = 2
 NOTIFY_OP_PATCH = 3
 NOTIFY_OP_GET_SYNC = 4
 
-MSG_NOTIFY_SELECT_FMT = "=B7x"
+MSG_FMT_NOTIFY_SELECT = "=BBBBI"
+NOTIFY_SELECT_FIELD_REPLACE = 0
+NOTIFY_SELECT_FIELD_GET_ONLY = 1
+NOTIFY_SELECT_FIELD_SUBSCRIBING = 2
+NOTIFY_SELECT_FIELD_MODE = 3
+NOTIFY_SELECT_MODE_ON_CHANGE = 0
+NOTIFY_SELECT_MODE_PERIODIC = 1
+NOTIFY_SELECT_FIELD_MODE_DATA = 4
 
-MSG_SESSION_REQ_FMT = "=B7x"
+MSG_FMT_SESSION_REQ = "=B7x"
 
-MSG_SESSION_REPLY_FMT = "=B7x"
+MSG_FMT_SESSION_REPLY = "=B7x"
 SESSION_REPLY_FIELD_CREATED = 0
 
-MSG_LOCK_FMT = "=BB6x"
+MSG_FMT_LOCK = "=BB6x"
 LOCK_FIELD_DATASTORE = 0
 LOCK_FIELD_LOCK = 1
 
-MSG_LOCK_REPLY_FMT = "=BB6x"
+MSG_FMT_LOCK_REPLY = "=BB6x"
 LOCK_REPLY_FIELD_DATASTORE = 0
 LOCK_REPLY_FIELD_LOCK = 1
 
-MSG_COMMIT_FMT = "=BBBB4x"
+MSG_FMT_COMMIT = "=BBBB4x"
 COMMIT_FIELD_SOURCE = 0
 COMMIT_FIELD_TARGET = 1
 COMMIT_FIELD_ACTION = 2
@@ -100,7 +111,7 @@ COMMIT_ACTION_ABORT = 1
 COMMIT_ACTION_VALIDATE = 2
 COMMIT_FIELD_UNLOCK = 3
 
-MSG_COMMIT_REPLY_FMT = "=BBBB4x"
+MSG_FMT_COMMIT_REPLY = "=BBBB4x"
 COMMIT_REPLY_FIELD_SOURCE = 0
 COMMIT_REPLY_FIELD_TARGET = 1
 COMMIT_REPLY_FIELD_ACTION = 2
@@ -126,18 +137,18 @@ MSG_CODE_COMMIT = 21
 MSG_CODE_COMMIT_REPLY = 22
 
 msg_native_formats = {
-    MSG_CODE_ERROR: MSG_ERROR_FMT,
-    # MSG_CODE_GET_TREE: MSG_GET_TREE_FMT,
-    MSG_CODE_TREE_DATA: MSG_TREE_DATA_FMT,
-    MSG_CODE_GET_DATA: MSG_GET_DATA_FMT,
-    MSG_CODE_NOTIFY: MSG_NOTIFY_FMT,
-    MSG_CODE_NOTIFY_SELECT: MSG_NOTIFY_SELECT_FMT,
-    MSG_CODE_SESSION_REQ: MSG_SESSION_REQ_FMT,
-    MSG_CODE_SESSION_REPLY: MSG_SESSION_REPLY_FMT,
-    MSG_CODE_LOCK: MSG_LOCK_FMT,
-    MSG_CODE_LOCK_REPLY: MSG_LOCK_REPLY_FMT,
-    MSG_CODE_COMMIT: MSG_COMMIT_FMT,
-    MSG_CODE_COMMIT_REPLY: MSG_COMMIT_REPLY_FMT,
+    MSG_CODE_ERROR: MSG_FMT_ERROR,
+    # MSG_CODE_GET_TREE: MSG_FMT_GET_TREE,
+    MSG_CODE_TREE_DATA: MSG_FMT_TREE_DATA,
+    MSG_CODE_GET_DATA: MSG_FMT_GET_DATA,
+    MSG_CODE_NOTIFY: MSG_FMT_NOTIFY,
+    MSG_CODE_NOTIFY_SELECT: MSG_FMT_NOTIFY_SELECT,
+    MSG_CODE_SESSION_REQ: MSG_FMT_SESSION_REQ,
+    MSG_CODE_SESSION_REPLY: MSG_FMT_SESSION_REPLY,
+    MSG_CODE_LOCK: MSG_FMT_LOCK,
+    MSG_CODE_LOCK_REPLY: MSG_FMT_LOCK_REPLY,
+    MSG_CODE_COMMIT: MSG_FMT_COMMIT,
+    MSG_CODE_COMMIT_REPLY: MSG_FMT_COMMIT_REPLY,
 }
 
 
@@ -145,6 +156,30 @@ msg_native_formats = {
 MSG_FORMAT_XML = 1
 MSG_FORMAT_JSON = 2
 MSG_FORMAT_LYB = 3
+
+
+def resstr(result_type):
+    if result_type == MSG_FORMAT_XML:
+        return "XML"
+    if result_type == MSG_FORMAT_JSON:
+        return "JSON"
+    if result_type == MSG_FORMAT_LYB:
+        return "LYB"
+    return f"unknown({result_type})"
+
+
+def opstr(op):
+    if op == NOTIFY_OP_NOTIFICATION:
+        return "YANG-NOTIFICAITON"
+    if op == NOTIFY_OP_PATCH:
+        return "PATCH"
+    if op == NOTIFY_OP_REPLACE:
+        return "REPLACE"
+    if op == NOTIFY_OP_DELETE:
+        return "DELETE"
+    if op == NOTIFY_OP_GET_SYNC:
+        return "SYNC"
+    return f"unknown({op})"
 
 
 def cstr(mdata):
@@ -157,19 +192,6 @@ class FEClientError(Exception):
     """Base class for frontend client errors."""
 
     pass
-
-
-class PBMessageError(FEClientError):
-    """Exception for errors related to protobuf messages."""
-
-    def __init__(self, msg, errstr):
-        """Initialize PBMessageError with message and error string."""
-        self.msg = msg
-        # self.sess_id = mhdr[HDR_FIELD_SESS_ID]
-        # self.req_id = mhdr[HDR_FIELD_REQ_ID]
-        self.error = -1
-        self.errstr = errstr
-        super().__init__(f"PBMessageError: {self.errstr}: {msg}")
 
 
 class NativeMessageError(FEClientError):
@@ -238,7 +260,7 @@ class Session:
         # Establish a native session
         self.sess_id = 0
         mdata, _ = self.get_native_msg_header(MSG_CODE_SESSION_REQ)
-        mdata += struct.pack(MSG_SESSION_REQ_FMT, MSG_FORMAT_JSON)
+        mdata += struct.pack(MSG_FMT_SESSION_REQ, MSG_FORMAT_JSON)
         mdata += "test-client".encode("utf-8") + b"\x00"
         self.send_native_msg(mdata)
         logging.debug("Sent native SESSION-REQ")
@@ -261,7 +283,7 @@ class Session:
         if clean:
             # sending session_req with a non-zero session ID destroys the session.
             mdata, _ = self.get_native_msg_header(MSG_CODE_SESSION_REQ)
-            mdata += struct.pack(MSG_SESSION_REQ_FMT, MSG_FORMAT_JSON)
+            mdata += struct.pack(MSG_FMT_SESSION_REQ, MSG_FORMAT_JSON)
             self.send_native_msg(mdata)
             logging.debug("Sent native SESSION-REQ (destroy)")
         self.sock.close()
@@ -282,9 +304,9 @@ class Session:
         mdata, native = recv_msg(self.sock)
         assert native
 
-        hlen = struct.calcsize(MSG_HDR_FMT)
+        hlen = struct.calcsize(MSG_FMT_HDR)
         hdata = mdata[:hlen]
-        mhdr = struct.unpack(MSG_HDR_FMT, hdata)
+        mhdr = struct.unpack(MSG_FMT_HDR, hdata)
         code = mhdr[0]
 
         if code not in msg_native_formats:
@@ -296,7 +318,7 @@ class Session:
         mfixed = struct.unpack(mfmt, fdata)
         mdata = mdata[hlen + flen :]
 
-        if code == MSG_ERROR_FMT:
+        if code == MSG_FMT_ERROR:
             raise NativeMessageError(mhdr, mfixed, mdata)
 
         return mhdr, mfixed, mdata
@@ -308,7 +330,7 @@ class Session:
     def get_native_msg_header(self, msg_code):
         """Generate a native message header for a given message code."""
         req_id = self.get_next_req_id()
-        hdata = struct.pack(MSG_HDR_FMT, msg_code, 0, self.sess_id, req_id)
+        hdata = struct.pack(MSG_FMT_HDR, msg_code, 0, self.sess_id, req_id)
         return hdata, req_id
 
     # -----------------------
@@ -330,7 +352,7 @@ class Session:
             AssertionError: If the lock request fails.
         """
         mdata, _ = self.get_native_msg_header(MSG_CODE_LOCK)
-        mdata += struct.pack(MSG_LOCK_FMT, ds_id, lock)
+        mdata += struct.pack(MSG_FMT_LOCK, ds_id, lock)
         self.send_native_msg(mdata)
         if lock:
             logging.debug("Sent LOCK %s message", datastore_name[ds_id])
@@ -366,7 +388,7 @@ class Session:
         mdata, _ = self.get_native_msg_header(MSG_CODE_GET_DATA)
         flags = GET_DATA_FLAG_STATE if data else 0
         flags |= GET_DATA_FLAG_CONFIG if config else 0
-        mdata += struct.pack(MSG_GET_DATA_FMT, MSG_FORMAT_JSON, flags)
+        mdata += struct.pack(MSG_FMT_GET_DATA, MSG_FORMAT_JSON, flags)
         mdata += query.encode("utf-8") + b"\x00"
 
         self.send_native_msg(mdata)
@@ -379,21 +401,29 @@ class Session:
         logging.debug("Received GET: %s: %s", mfixed, mdata)
         return result
 
-    def add_notify_select(self, replace, notif_xpaths):
+    def add_notify_select(
+        self,
+        replace,
+        notif_xpaths,
+        mode=NOTIFY_SELECT_MODE_ON_CHANGE,
+        mode_data=0,
+    ):
         """Send a request to add notification subscriptions to the given XPaths.
 
         Args:
             replace (bool): Whether to replace existing notification subscriptions.
             notif_xpaths (list of str): List of XPaths to subscribe to notifications on.
+            mode (int): Notification mode, e.g. ON_CHANGE or PERIODIC.
+            mode_data (int): Mode-specific data. For periodic mode, interval in msec.
         """
         mdata, _ = self.get_native_msg_header(MSG_CODE_NOTIFY_SELECT)
-        mdata += struct.pack(MSG_NOTIFY_SELECT_FMT, replace)
+        mdata += struct.pack(MSG_FMT_NOTIFY_SELECT, int(replace), 0, 0, mode, mode_data)
 
         for xpath in notif_xpaths:
             mdata += xpath.encode("utf-8") + b"\x00"
 
         self.send_native_msg(mdata)
-        logging.debug("Sent NOTIFY_SELECT")
+        logging.debug("Sent NOTIFY_SELECT mode=%s mode_data=%s", mode, mode_data)
 
     def recv_notify(self, xpaths=None):
         """Receive a notification message, optionally setting up XPath filters first.
@@ -444,6 +474,23 @@ def __parse_args():
         help="Number of notifications to listen for 0 for infinite",
     )
     parser.add_argument(
+        "--notify-mode",
+        choices=["on-change", "periodic"],
+        default="on-change",
+        help="Notification mode for --listen subscriptions",
+    )
+    parser.add_argument(
+        "--notify-mode-data",
+        type=int,
+        default=0,
+        help="Mode-specific data (msec for periodic mode)",
+    )
+    parser.add_argument(
+        "--allow-invalid-mode-data",
+        action="store_true",
+        help="Allow sending invalid mode/mode_data combinations for negative tests",
+    )
+    parser.add_argument(
         "-b", "--both", action="store_true", help="return both config and data"
     )
     parser.add_argument(
@@ -453,14 +500,29 @@ def __parse_args():
         "--datastore", action="store_true", help="listen for datastore notifications"
     )
     parser.add_argument(
+        "--log",
+        help="file to log to instead of stderr",
+    )
+    parser.add_argument(
         "-q", "--query", nargs="+", metavar="XPATH", help="xpath[s] to query"
     )
     parser.add_argument("-s", "--server", default=MPATH, help="path to server socket")
     parser.add_argument("-v", "--verbose", action="store_true", help="Be verbose")
     args = parser.parse_args()
 
+    if not args.allow_invalid_mode_data:
+        if args.notify_mode == "on-change" and args.notify_mode_data != 0:
+            parser.error("--notify-mode-data must be 0 for --notify-mode on-change")
+        if args.notify_mode == "periodic" and args.notify_mode_data <= 0:
+            parser.error("--notify-mode-data must be > 0 for --notify-mode periodic")
+
     level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(level=level, format="%(asctime)s %(levelname)s: %(message)s")
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s %(levelname)s: %(message)s",
+        filename=args.log,
+        filemode="w" if args.log is not None else None,
+    )
 
     return args
 
@@ -503,10 +565,27 @@ def __main():
 
     if args.listen is not None:
         i = args.notify_count
+        notify_mode = (
+            NOTIFY_SELECT_MODE_PERIODIC
+            if args.notify_mode == "periodic"
+            else NOTIFY_SELECT_MODE_ON_CHANGE
+        )
         if args.listen:
-            sess.add_notify_select(True, args.listen)
+            sess.add_notify_select(
+                True,
+                args.listen,
+                mode=notify_mode,
+                mode_data=args.notify_mode_data,
+            )
         while i > 0 or args.notify_count == 0:
             result_type, op, xpath, notif = sess.recv_notify()
+            logging.debug(
+                "Notified: op: %s xpath: %s data(%s): %s",
+                opstr(op),
+                xpath,
+                resstr(result_type),
+                notif,
+            )
             if op == NOTIFY_OP_NOTIFICATION:
                 if args.datastore:
                     logging.warning("ignoring non-datastore notification: %s", notif)
@@ -534,6 +613,7 @@ def __main():
             else:
                 logging.error("Unknown notification OP: %s", op)
                 sys.exit(1)
+            sys.stdout.flush()
             i -= 1
 
 

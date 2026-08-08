@@ -193,7 +193,7 @@ DEFINE_MTYPE_STATIC(OSPFD, SNMP, "OSPF SNMP");
 #define IPADDRESS   ASN_IPADDRESS
 #define STRING      ASN_OCTET_STR
 
-/* Because DR/DROther values are exhanged wrt RFC */
+/* Because DR/DROther values are exchanged wrt RFC */
 #define ISM_SNMP(x)                                                            \
 	(((x) == ISM_DROther) ? ISM_DR : ((x) == ISM_DR) ? ISM_DROther : (x))
 
@@ -497,7 +497,7 @@ static struct variable ospf_variables[] = {
 	 3,
 	 {14, 1, 6}}};
 
-/* The administrative status of OSPF.  When OSPF is enbled on at least
+/* The administrative status of OSPF.  When OSPF is enabled on at least
    one interface return 1. */
 static int ospf_admin_stat(struct ospf *ospf)
 {
@@ -854,8 +854,8 @@ static struct ospf_lsa *lsdb_lookup_next(struct ospf_area *area, uint8_t *type,
 	else
 		i = *type;
 
-	/* Sanity check, if LSA type unknwon
-	   merley skip any LSA */
+	/* Sanity check, if LSA type unknown
+	   merely skip any LSA */
 	if ((i < OSPF_MIN_LSA) || (i >= OSPF_MAX_LSA)) {
 		zlog_debug("Strange request with LSA type %d", i);
 		return NULL;
@@ -1093,7 +1093,7 @@ static struct ospf_area_range *ospfAreaRangeLookup(struct variable *v,
 
 	if (exact) {
 		/* Area ID + Range Network. */
-		if (v->namelen + IN_ADDR_SIZE + IN_ADDR_SIZE != *length)
+		if ((size_t)(v->namelen + IN_ADDR_SIZE + IN_ADDR_SIZE) != *length)
 			return NULL;
 
 		/* Set OID offset for Area ID. */
@@ -1231,7 +1231,7 @@ static struct ospf_nbr_nbma *ospfHostLookup(struct variable *v, oid *name,
 
 	if (exact) {
 		/* INDEX { ospfHostIpAddress, ospfHostTOS } */
-		if (*length != v->namelen + IN_ADDR_SIZE + 1)
+		if (*length != (size_t)(v->namelen + IN_ADDR_SIZE + 1))
 			return NULL;
 
 		/* Check ospfHostTOS. */
@@ -1528,7 +1528,7 @@ static struct ospf_interface *ospfIfLookup(struct variable *v, oid *name,
 	oid *offset;
 
 	if (exact) {
-		if (*length != v->namelen + IN_ADDR_SIZE + 1)
+		if (*length != (size_t)(v->namelen + IN_ADDR_SIZE + 1))
 			return NULL;
 
 		oid2in_addr(name + v->namelen, IN_ADDR_SIZE, ifaddr);
@@ -1668,7 +1668,7 @@ static struct ospf_interface *ospfIfMetricLookup(struct variable *v, oid *name,
 	int metric;
 
 	if (exact) {
-		if (*length != v->namelen + IN_ADDR_SIZE + 1 + 1)
+		if (*length != (size_t)(v->namelen + IN_ADDR_SIZE + 1 + 1))
 			return NULL;
 
 		oid2in_addr(name + v->namelen, IN_ADDR_SIZE, ifaddr);
@@ -1864,7 +1864,7 @@ ospfVirtIfLookup(struct variable *v, oid *name, size_t *length,
 	struct ospf_vl_data *vl_data;
 
 	if (exact) {
-		if (*length != v->namelen + IN_ADDR_SIZE + IN_ADDR_SIZE)
+		if (*length != (size_t)(v->namelen + IN_ADDR_SIZE + IN_ADDR_SIZE))
 			return NULL;
 
 		oid2in_addr(name + v->namelen, IN_ADDR_SIZE, area_id);
@@ -2041,7 +2041,7 @@ static struct ospf_neighbor *ospfNbrLookup(struct variable *v, oid *name,
 		return NULL;
 
 	if (exact) {
-		if (*length != v->namelen + IN_ADDR_SIZE + 1)
+		if (*length != (size_t)(v->namelen + IN_ADDR_SIZE + 1))
 			return NULL;
 
 		oid2in_addr(name + v->namelen, IN_ADDR_SIZE, nbr_addr);
@@ -2227,7 +2227,7 @@ static struct ospf_lsa *ospfExtLsdbLookup(struct variable *v, oid *name,
 
 	ospf = ospf_lookup_by_vrf_id(VRF_DEFAULT);
 	if (exact) {
-		if (*length != v->namelen + 1 + IN_ADDR_SIZE + IN_ADDR_SIZE)
+		if (*length != (size_t)(v->namelen + 1 + IN_ADDR_SIZE + IN_ADDR_SIZE))
 			return NULL;
 
 		offset = name + v->namelen;
@@ -2533,6 +2533,22 @@ static int ospf_snmp_init(struct event_loop *tm)
 	return 0;
 }
 
+static int ospf_snmp_terminate(void)
+{
+	if (ospf_snmp_iflist) {
+		ospf_snmp_iflist->del = (void (*)(void *))ospf_snmp_if_free;
+		list_delete(&ospf_snmp_iflist);
+	}
+
+	if (ospf_snmp_vl_table) {
+		route_table_finish(ospf_snmp_vl_table);
+		ospf_snmp_vl_table = NULL;
+	}
+
+	smux_terminate();
+	return 0;
+}
+
 static int ospf_snmp_module_init(void)
 {
 	hook_register(ospf_if_update, ospf_snmp_if_update);
@@ -2543,6 +2559,7 @@ static int ospf_snmp_module_init(void)
 	hook_register(ospf_nsm_change, ospf_snmp_nsm_change);
 
 	hook_register(frr_late_init, ospf_snmp_init);
+	hook_register(frr_fini, ospf_snmp_terminate);
 	return 0;
 }
 

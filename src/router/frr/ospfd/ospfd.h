@@ -117,7 +117,7 @@ struct ospf_area_fr_info {
 				      * (excluding self)
 				      */
 	bool area_ind_lsa_recvd;     /* Indication lsa received in this area */
-	bool area_dc_clear;	  /* Area has atleast one lsa with dc bit 0(
+	bool area_dc_clear;	     /* Area has at least one lsa with dc bit 0(
 				      * excluding indication lsa)
 				      */
 	struct ospf_lsa *indication_lsa_self; /* Indication LSA generated
@@ -127,11 +127,12 @@ struct ospf_area_fr_info {
 
 /* ospf->config */
 enum {
-	OSPF_RFC1583_COMPATIBLE =	(1 << 0),
-	OSPF_OPAQUE_CAPABLE =		(1 << 2),
-	OSPF_LOG_ADJACENCY_CHANGES =	(1 << 3),
-	OSPF_LOG_ADJACENCY_DETAIL =	(1 << 4),
-	OSPF_SEND_EXTRA_DATA_TO_ZEBRA =	(1 << 5),
+	OSPF_RFC1583_COMPATIBLE = (1 << 0),
+	OSPF_OPAQUE_CAPABLE = (1 << 2),
+	OSPF_LOG_ADJACENCY_CHANGES = (1 << 3),
+	OSPF_LOG_ADJACENCY_DETAIL = (1 << 4),
+	OSPF_SEND_EXTRA_DATA_TO_ZEBRA = (1 << 5),
+	OSPF_SHUTDOWN = (1 << 6),
 };
 
 /* TI-LFA */
@@ -267,7 +268,7 @@ struct ospf {
 	struct event *t_asbr_check;		 /* ASBR check timer. */
 	struct event *t_asbr_redist_update; /* ASBR redistribution update
 					       timer. */
-	struct event *t_distribute_update; /* Distirbute list update timer. */
+	struct event *t_distribute_update;  /* Distribute list update timer. */
 	struct event *t_spf_calc;	   /* SPF calculation timer. */
 	struct event *t_ase_calc;	   /* ASE calculation timer. */
 	struct event *t_opaque_lsa_self; /* Type-11 Opaque-LSAs origin event. */
@@ -350,7 +351,7 @@ struct ospf {
 	struct route_table *distance_table;
 
 	/* Used during ospf instance going down send LSDB
-	 * update to neighbors immediatly */
+	 * update to neighbors immediately */
 	uint8_t inst_shutdown;
 
 	/* Enable or disable sending proactive ARP requests. */
@@ -435,6 +436,9 @@ struct ospf {
 
 	/* Per-interface write socket */
 	bool intf_socket_enabled;
+
+	/* Force forwarding address to self for external LSAs. */
+	bool forwarding_address_self;
 
 	QOBJ_FIELDS;
 };
@@ -814,5 +818,7 @@ extern int p_spaces_compare_func(const struct p_space *a,
 				 const struct p_space *b);
 extern int q_spaces_compare_func(const struct q_space *a,
 				 const struct q_space *b);
+
+extern void ospf_shutdown(struct ospf *ospf, bool shutdown);
 
 #endif /* _ZEBRA_OSPFD_H */

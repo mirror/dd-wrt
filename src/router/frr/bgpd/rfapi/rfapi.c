@@ -443,16 +443,18 @@ void del_vnc_route(struct rfapi_descriptor *rfd,
 			__func__, safi, p);
 
 		if (safi == SAFI_MPLS_VPN) {
-			struct bgp_dest *pdest = NULL;
-			struct bgp_table *table = NULL;
+			struct bgp_dest *pdest;
+			struct bgp_table *table;
 
-			pdest = bgp_node_get(bgp->rib[afi][safi],
-					     (struct prefix *)prd);
-			table = bgp_dest_get_bgp_table_info(pdest);
-			if (table)
-				vnc_import_bgp_del_vnc_host_route_mode_resolve_nve(
-					bgp, prd, table, p, bpi);
-			bgp_dest_unlock_node(pdest);
+			pdest = bgp_node_lookup(bgp->rib[afi][safi],
+						(struct prefix *)prd);
+			if (pdest) {
+				table = bgp_dest_get_bgp_table_info(pdest);
+				if (table)
+					vnc_import_bgp_del_vnc_host_route_mode_resolve_nve(
+						bgp, prd, table, p, bpi);
+				bgp_dest_unlock_node(pdest);
+			}
 		}
 
 		/*
@@ -960,16 +962,18 @@ void add_vnc_route(struct rfapi_descriptor *rfd, /* cookie, VPN UN addr, peer */
 			bgp_path_info_set_flag(bn, bpi, BGP_PATH_ATTR_CHANGED);
 
 			if (safi == SAFI_MPLS_VPN) {
-				struct bgp_dest *pdest = NULL;
-				struct bgp_table *table = NULL;
+				struct bgp_dest *pdest;
+				struct bgp_table *table;
 
-				pdest = bgp_node_get(bgp->rib[afi][safi],
-						     (struct prefix *)prd);
-				table = bgp_dest_get_bgp_table_info(pdest);
-				if (table)
-					vnc_import_bgp_del_vnc_host_route_mode_resolve_nve(
-						bgp, prd, table, p, bpi);
-				bgp_dest_unlock_node(pdest);
+				pdest = bgp_node_lookup(bgp->rib[afi][safi],
+							(struct prefix *)prd);
+				if (pdest) {
+					table = bgp_dest_get_bgp_table_info(pdest);
+					if (table)
+						vnc_import_bgp_del_vnc_host_route_mode_resolve_nve(
+							bgp, prd, table, p, bpi);
+					bgp_dest_unlock_node(pdest);
+				}
 			}
 
 			/* Rewrite BGP route information. */
@@ -983,16 +987,18 @@ void add_vnc_route(struct rfapi_descriptor *rfd, /* cookie, VPN UN addr, peer */
 
 
 			if (safi == SAFI_MPLS_VPN) {
-				struct bgp_dest *pdest = NULL;
-				struct bgp_table *table = NULL;
+				struct bgp_dest *pdest;
+				struct bgp_table *table;
 
-				pdest = bgp_node_get(bgp->rib[afi][safi],
-						     (struct prefix *)prd);
-				table = bgp_dest_get_bgp_table_info(pdest);
-				if (table)
-					vnc_import_bgp_add_vnc_host_route_mode_resolve_nve(
-						bgp, prd, table, p, bpi);
-				bgp_dest_unlock_node(pdest);
+				pdest = bgp_node_lookup(bgp->rib[afi][safi],
+							(struct prefix *)prd);
+				if (pdest) {
+					table = bgp_dest_get_bgp_table_info(pdest);
+					if (table)
+						vnc_import_bgp_add_vnc_host_route_mode_resolve_nve(
+							bgp, prd, table, p, bpi);
+					bgp_dest_unlock_node(pdest);
+				}
 			}
 
 			/* Process change. */
@@ -1008,7 +1014,7 @@ void add_vnc_route(struct rfapi_descriptor *rfd, /* cookie, VPN UN addr, peer */
 		}
 	}
 
-	new = info_make(type, sub_type, 0, rfd->peer, new_attr, NULL);
+	new = info_make(type, sub_type, 0, rfd->peer, new_attr, bn);
 	SET_FLAG(new->flags, BGP_PATH_VALID);
 
 	/* save backref to rfapi handle */
@@ -1032,15 +1038,18 @@ void add_vnc_route(struct rfapi_descriptor *rfd, /* cookie, VPN UN addr, peer */
 	bgp_aggregate_increment(bgp, p, new, afi, safi);
 
 	if (safi == SAFI_MPLS_VPN) {
-		struct bgp_dest *pdest = NULL;
-		struct bgp_table *table = NULL;
+		struct bgp_dest *pdest;
+		struct bgp_table *table;
 
-		pdest = bgp_node_get(bgp->rib[afi][safi], (struct prefix *)prd);
-		table = bgp_dest_get_bgp_table_info(pdest);
-		if (table)
-			vnc_import_bgp_add_vnc_host_route_mode_resolve_nve(
-				bgp, prd, table, p, new);
-		bgp_dest_unlock_node(pdest);
+		pdest = bgp_node_lookup(bgp->rib[afi][safi],
+					(struct prefix *)prd);
+		if (pdest) {
+			table = bgp_dest_get_bgp_table_info(pdest);
+			if (table)
+				vnc_import_bgp_add_vnc_host_route_mode_resolve_nve(
+					bgp, prd, table, p, new);
+			bgp_dest_unlock_node(pdest);
+		}
 		encode_label(label_val, &bn->local_label);
 	}
 
@@ -1119,7 +1128,7 @@ static void rfapiTunnelRouteAnnounce(struct bgp *bgp,
  *
  * return value:
  *	0		Success
- *	ENXIO		Unabled to locate configured BGP/VNC
+ *	ENXIO		Unable to locate configured BGP/VNC
 --------------------------------------------*/
 int rfapi_rfp_set_configuration(void *rfp_start_val, struct rfapi_rfp_cfg *new)
 {
@@ -1228,7 +1237,7 @@ static int rfapi_open_inner(struct rfapi_descriptor *rfd, struct bgp *bgp,
 	/*
 	 * Fill in BGP peer structure
 	 */
-	rfd->peer = peer_new(bgp);
+	rfd->peer = peer_new(bgp, NULL, UNKNOWN);
 	rfd->peer->connection->status = Established; /* keep bgp core happy */
 
 	bgp_peer_connection_buffers_free(rfd->peer->connection);
@@ -1467,7 +1476,7 @@ rfapi_query_inner(void *handle, struct rfapi_ip_addr *target,
 	}
 	if (bgp->rfapi->flags & RFAPI_INCALLBACK) {
 		vnc_zlog_debug_verbose(
-			"%s: Called during calback, returning EDEADLK",
+			"%s: Called during callback, returning EDEADLK",
 			__func__);
 		return EDEADLK;
 	}

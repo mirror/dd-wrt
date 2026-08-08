@@ -18,6 +18,7 @@
 #include "debug.h"
 #include "zebra_netns_notify.h"
 #include "zebra_netns_id.h"
+#include "zebra/interface.h"
 #include "zebra_pbr.h"
 #include "zebra_tc.h"
 #include "rib.h"
@@ -296,7 +297,7 @@ void zebra_ns_startup_continue(struct zebra_dplane_ctx *ctx)
 	enum zebra_dplane_startup_notifications spot;
 
 	if (!zns) {
-		zlog_err("%s: No Namespace associated with %u", __func__,
+		flog_err(EC_ZEBRA_NS_NO_DEFAULT, "%s: No Namespace associated with %u", __func__,
 			 dplane_ctx_get_ns_id(ctx));
 		return;
 	}
@@ -311,22 +312,30 @@ void zebra_ns_startup_continue(struct zebra_dplane_ctx *ctx)
 		interface_list_second(zns);
 		break;
 	case ZEBRA_DPLANE_ADDRESSES_READ:
+		dplane_neigh_read(zns);
 		route_read(zns);
 
 		vlan_read(zns);
 		kernel_read_pbr_rules(zns);
-		kernel_read_tc_qdisc(zns);
-
+		dplane_tc_qdisc_read(zns);
+		break;
+		/*
+		 * IF we add additional dplane reads here make sure
+		 * that the ZEBRA_DPLANE_FINISHED_READING signal
+		 * is moved as well.
+		 */
+	case ZEBRA_DPLANE_FINISHED_READING:
 		/*
 		 * At this point FRR has requested and read a bunch
 		 * of data from the dplane about initial state of
 		 * the system.  Zebra now needs to initialize
 		 * the gr subsystem ( or the route sweeping
 		 * subsystem ) to allow that to properly work.
-		 * This must be done *immediately* after the
-		 * load of all data from the underlying dplane.
+		 * This must be done after all previously queued
+		 * route/nhg/etc. items from the dataplane have
+		 * been processed by the metaQ.
 		 */
-		zebra_main_router_started();
+		rib_add_finished_startup();
 		break;
 	}
 }

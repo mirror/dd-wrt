@@ -227,12 +227,7 @@ def run_frr_cmd(rnode, cmd, isjson=False):
     """
 
     if cmd:
-        ret_data = rnode.vtysh_cmd(cmd, isjson=isjson)
-
-        if isjson:
-            rnode.vtysh_cmd(cmd.rstrip("json"), isjson=False)
-
-        return ret_data
+        return rnode.vtysh_cmd(cmd, isjson=isjson)
 
     else:
         raise InvalidCLIError("No actual cmd passed")
@@ -943,6 +938,12 @@ def generate_support_bundle():
         )
         return True
 
+    if getattr(tgen, "topology_stopped", False):
+        logger.warning(
+            "Support bundle skipped: topology %s already torn down", tgen.modname
+        )
+        return True
+
     router_list = tgen.routers()
     test_name = os.environ.get("PYTEST_CURRENT_TEST").split(":")[-1].split(" ")[0]
 
@@ -1103,20 +1104,24 @@ def start_topology(tgen):
     tgen.start_router()
 
 
-def stop_router(tgen, router):
+def stop_router(tgen, router, save_config=True):
     """
-    Router"s current config would be saved to /tmp/topotest/<suite>/<router> for each daemon
-    and router and its daemons would be stopped.
+    Stop all FRR daemons on a router.
+
+    Despite the name, this does not tear down the mininet namespace — only the
+    FRR processes configured for that router (see ``restart_frr()``).
 
     * `tgen`  : topogen object
-    * `router`: Device under test
+    * `router`: router name (e.g. ``"r1"``)
+    * `save_config`: when True (default), run ``write memory`` before stopping
     """
 
     router_list = tgen.routers()
 
-    # Saving router config to /etc/frr, which will be loaded to router
-    # when it starts
-    router_list[router].vtysh_cmd("write memory")
+    if save_config:
+        # Saving router config to /etc/frr, which will be loaded to router
+        # when it starts
+        router_list[router].vtysh_cmd("write memory")
 
     # Stop router
     router_list[router].stop()
@@ -1124,11 +1129,13 @@ def stop_router(tgen, router):
 
 def start_router(tgen, router):
     """
-    Router will be started and config would be loaded from /tmp/topotest/<suite>/<router> for each
-    daemon
+    Start all FRR daemons on a router.
+
+    Loads configuration from the test log directory for each daemon.  Does not
+    create or destroy the mininet namespace (see ``stop_router()``).
 
     * `tgen`  : topogen object
-    * `router`: Device under test
+    * `router`: router name (e.g. ``"r1"``)
     """
 
     logger.debug("Entering lib API: start_router")
@@ -1150,6 +1157,22 @@ def start_router(tgen, router):
 
     logger.debug("Exiting lib API: start_router()")
     return True
+
+
+def restart_frr(tgen, router, save_config=True):
+    """
+    Stop and start all FRR daemons on a router.
+
+    Equivalent to ``stop_router()`` followed by ``start_router()``.  Only FRR
+    processes are affected; the namespace, interfaces, and non-FRR host
+    processes keep running.
+
+    * `tgen`  : topogen object
+    * `router`: router name (e.g. ``"r1"``)
+    * `save_config`: when True (default), run ``write memory`` before stopping
+    """
+    stop_router(tgen, router, save_config=save_config)
+    return start_router(tgen, router)
 
 
 def number_to_row(routerName):
@@ -1321,20 +1344,20 @@ def create_debug_log_config(tgen, input_dict, build=False):
                     _log_file = os.path.join(tgen.logdir, log_file)
                     debug_config.append("log file {} \n".format(_log_file))
 
-                if type(enable_logs) is list:
+                if isinstance(enable_logs, list):
                     for daemon in enable_logs:
                         for debug_log in DEBUG_LOGS[daemon]:
                             debug_config.append("{}".format(debug_log))
-                elif type(enable_logs) is dict:
+                elif isinstance(enable_logs, dict):
                     for daemon, debug_logs in enable_logs.items():
                         for debug_log in debug_logs:
                             debug_config.append("{}".format(debug_log))
 
-                if type(disable_logs) is list:
+                if isinstance(disable_logs, list):
                     for daemon in disable_logs:
                         for debug_log in DEBUG_LOGS[daemon]:
                             debug_config.append("no {}".format(debug_log))
-                elif type(disable_logs) is dict:
+                elif isinstance(disable_logs, dict):
                     for daemon, debug_logs in disable_logs.items():
                         for debug_log in debug_logs:
                             debug_config.append("no {}".format(debug_log))
@@ -1483,7 +1506,7 @@ def create_vrf_cfg(tgen, topo, input_dict=None, build=False):
                             if "vrf" in data:
                                 vrf_list = data["vrf"]
 
-                                if type(vrf_list) is not list:
+                                if not isinstance(vrf_list, list):
                                     vrf_list = [vrf_list]
 
                                 for _vrf in vrf_list:
@@ -1672,7 +1695,7 @@ def generate_ips(network, no_of_ips):
     * `no_of_ips` : these many IPs will be generated
     """
     ipaddress_list = []
-    if type(network) is not list:
+    if not isinstance(network, list):
         network = [network]
 
     for start_ipaddr in network:
@@ -1696,8 +1719,6 @@ def generate_ips(network, no_of_ips):
                 return ipaddress_list
             start_ip = ipaddress.IPv6Address(frr_unicode(start_ip))
             step = 2 ** (128 - mask)
-        else:
-            return []
 
         next_ip = start_ip
         count = 0
@@ -2147,7 +2168,7 @@ def create_static_routes(tgen, input_dict, build=False):
                 del_action = static_route.setdefault("delete", False)
                 no_of_ip = static_route.setdefault("no_of_ip", 1)
                 network = static_route.setdefault("network", [])
-                if type(network) is not list:
+                if not isinstance(network, list):
                     network = [network]
 
                 admin_distance = static_route.setdefault("admin_distance", None)
@@ -2876,7 +2897,7 @@ def addKernelRoute(
 
     rnode = tgen.gears[router]
 
-    if type(group_addr_range) is not list:
+    if not isinstance(group_addr_range, list):
         group_addr_range = [group_addr_range]
 
     for grp_addr in group_addr_range:
@@ -3338,7 +3359,7 @@ def verify_rib(
                                     continue
 
                             if fib and next_hop:
-                                if type(next_hop) is not list:
+                                if not isinstance(next_hop, list):
                                     next_hop = [next_hop]
 
                                 # Check if any route entry has FIB next hops
@@ -3401,7 +3422,7 @@ def verify_rib(
                                     continue
 
                             elif next_hop and fib is None:
-                                if type(next_hop) is not list:
+                                if not isinstance(next_hop, list):
                                     next_hop = [next_hop]
 
                                 # Check if any route entry has the expected next hops
@@ -3647,7 +3668,7 @@ def verify_rib(
                                 continue
 
                         if next_hop:
-                            if type(next_hop) is not list:
+                            if not isinstance(next_hop, list):
                                 next_hop = [next_hop]
 
                             # Check if any route entry has the expected next hops
@@ -3827,7 +3848,7 @@ def verify_fib_routes(tgen, addr_type, dut, input_dict, next_hop=None, protocol=
                             found_routes.append(st_rt)
 
                             if next_hop:
-                                if type(next_hop) is not list:
+                                if not isinstance(next_hop, list):
                                     next_hop = [next_hop]
 
                                 count = 0
@@ -3932,7 +3953,7 @@ def verify_fib_routes(tgen, addr_type, dut, input_dict, next_hop=None, protocol=
                         found_routes.append(st_rt)
 
                         if next_hop:
-                            if type(next_hop) is not list:
+                            if not isinstance(next_hop, list):
                                 next_hop = [next_hop]
 
                             count = 0
@@ -3978,6 +3999,7 @@ def verify_fib_routes(tgen, addr_type, dut, input_dict, next_hop=None, protocol=
     return True
 
 
+@retry(retry_timeout=30)
 def verify_admin_distance_for_static_routes(tgen, input_dict):
     """
     API to verify admin distance for static routes as defined in input_dict/

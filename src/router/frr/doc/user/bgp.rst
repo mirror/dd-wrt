@@ -152,6 +152,12 @@ The route selection process used by FRR's BGP implementation uses the following
 decision criterion, starting at the top of the list and going towards the
 bottom until one of the factors can be used.
 
+0. **Admin distance check**
+
+   When one route is locally redistributed and another route is either locally
+   aggregated or received from another BGP speaker, prefer the route with a
+   lower admin distance.
+
 1. **Weight check**
 
    Prefer higher local weight routes to lower routes.
@@ -431,6 +437,15 @@ Route Selection
 
    When bgp bestpath aigp is disabled, BGP does not use AIGP tie-breaking
    rules unless paths have the AIGP attribute.
+
+   Disabled by default.
+
+.. clicmd:: bgp bestpath use-imported-attributes
+
+   When routes are leaked between VRFs using ``import vrf``, the bestpath
+   selection process by default uses the source VRF's path attributes (AS path
+   length, Origin, MED, Originator-ID) for comparison. This command changes
+   the behavior to use the imported path's attributes instead.
 
    Disabled by default.
 
@@ -1098,68 +1113,6 @@ Default global mode is helper and default peer per mode is inherit from global.
 If per peer mode is configured, the GR mode of this particular peer will
 override the global mode.
 
-.. _bgp-GR-config-mode-cmd:
-
-BGP GR Config Mode Commands
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. clicmd:: bgp graceful-restart
-
-   This command will enable BGP graceful restart functionality for all BGP instances.
-
-.. clicmd:: bgp graceful-restart-disable
-
-   This command will disable both the functionality graceful restart and helper
-   mode for all BGP instances
-
-.. clicmd:: bgp graceful-restart select-defer-time (0-3600)
-
-   This is command, will set deferral time to value specified.
-
-.. clicmd:: bgp graceful-restart rib-stale-time (1-3600)
-
-   This is command, will set the time for which stale routes are kept in RIB.
-
-.. clicmd:: bgp graceful-restart restart-time (0-4095)
-
-   Set the time to wait to delete stale routes before a BGP open message
-   is received.
-
-   Using with Long-lived Graceful Restart capability, this is recommended
-   setting this timer to 0 and control stale routes with
-   ``bgp long-lived-graceful-restart stale-time``.
-
-   Default value is 120.
-
-.. clicmd:: bgp graceful-restart stalepath-time (1-4095)
-
-   This is command, will set the max time (in seconds) to hold onto
-   restarting peer's stale paths.
-
-   It also controls Enhanced Route-Refresh timer.
-
-   If this command is configured and the router does not receive a Route-Refresh EoRR
-   message, the router removes the stale routes from the BGP table after the timer
-   expires. The stale path timer is started when the router receives a Route-Refresh
-   BoRR message
-
-
-.. _bgp-GR-global-mode-cmd:
-
-BGP GR Global Mode Commands
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. clicmd:: bgp graceful-restart
-
-   This command will enable BGP graceful restart functionality at the global
-   level.
-
-.. clicmd:: bgp graceful-restart-disable
-
-   This command will disable both the functionality graceful restart and helper
-   mode.
-
-
 .. _bgp-GR-peer-mode-cmd:
 
 BGP GR Peer Mode Commands
@@ -1180,6 +1133,28 @@ BGP GR Peer Mode Commands
    This command will disable the entire BGP graceful restart functionality
    at the peer level.
 
+BGP GR Support For L2VPN EVPN
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+To support GR for L2VPN EVPN AFI SAFI in BGP, following changes were made:
+
+1. If GR is enabled for a BGP instance, then GR select
+   deferral timer will be started for all GR supported AFI-SAFIs after
+   BGP is finished reading configs.This way, BGP will not have to wait
+   for the 1st peer to comeup to start the select-deferral-timer for
+   that VRF, AFI-SAFI
+2. All L2VPN route will be marked as deferred in default VRF,
+   imported into destination VRF/VNI table and then marked as deferred in
+   destination VRF/VNI as well
+3. Deferred bestpath selection will be skipped for IPv4 and IPv6 unicast in
+   non-default VRFs until L2VPN EVPN AFI-SAFI in default VRF completes GR.
+   This ensures that deferred bestpaths calculation in non-default VRF
+   is done only after paths are imported from default to non-default VRF
+4. On GR helper, when the peer that has GR enabled goes down,
+   BGP will mark all the L2VPN EVPN routes in default VRF as stale.
+   If the peer doesn't comeup before GR restart timer expires, then
+   the L2VPN EVPN routes in default VRF that were previously marked
+   stale needs to be unimported from all the VRFs and VNIs (IP and MAC
+   table) before deleting it in L2VPN EVPN table in default VRF
 
 BGP GR Show Commands
 ^^^^^^^^^^^^^^^^^^^^
@@ -1188,6 +1163,27 @@ BGP GR Show Commands
 
    This command will display information about the neighbors graceful-restart status
 
+BGP Show Neighbors Brief Command
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. clicmd:: show [ip] bgp [<view|vrf> VIEWVRFNAME] [<ipv4|ipv6>] neighbors [<A.B.C.D|X:X::X:X|WORD>] [graceful-restart] [json [brief [established|failed]]]
+
+   Display BGP neighbor information. Without ``json``, output is the usual
+   detailed text. With ``json``, output is full neighbor detail in JSON.
+
+   The ``brief`` keyword is only valid together with ``json``. Use ``json brief``
+   for a reduced JSON object per neighbor (hostname, remoteAs, localAs,
+   lastResetDueTo, status, lastResetTimerMsecs, messageStats with
+   totalSent/totalRecv, and addressFamilyInfo with acceptedPrefixCounter and
+   sentPrefixCounter per AFI/SAFI).
+
+   After ``json brief``, you may add ``established`` to include only neighbors in
+   Established state, or ``failed`` for neighbors not in Established (for
+   example Idle, Active, Connect).
+
+   ``graceful-restart`` shows graceful-restart-related neighbor information; it
+   may be combined with ``json`` as in the command grammar above. See also
+   :clicmd:`show bgp [<ipv4|ipv6>] [<view|vrf> VRF] neighbors [<A.B.C.D|X:X::X:X|WORD>] graceful-restart [json]`.
 
 Long-lived Graceful Restart
 ---------------------------
@@ -1301,6 +1297,40 @@ IPv6 Support
    Using the ``bgp default ipv6-unicast`` configuration, IPv6 unicast
    address family is enabled by default for all new neighbors.
 
+.. clicmd:: nexthop prefer-global
+
+   This command is used within an IPv6 address family configuration (IPv6
+   unicast, IPv6 multicast, or IPv6 labeled-unicast) to control which nexthop
+   is installed to Zebra and the kernel routing table.
+
+   When a BGP UPDATE is received with both a global IPv6 address and a
+   link-local IPv6 address as nexthops, the BGP RIB stores both nexthops.
+   However, only one nexthop can be installed to Zebra for packet forwarding.
+   This command causes BGP to install the global IPv6 address to Zebra instead
+   of the link-local address. By default, FRR installs link-local addresses
+   when both are available.
+
+   **Important:** This command does not change the BGP RIB contents - the RIB
+   always contains both global and link-local nexthops when both are received.
+   It only affects which nexthop is selected for installation to Zebra and
+   subsequently to the kernel routing table.
+
+   This is similar to using ``set ipv6 next-hop prefer-global`` in a route-map,
+   but applies globally to all routes received for the configured address family,
+   rather than being applied on a per-route basis. When both configurations are
+   present, they work cooperatively (both set the same flag).
+
+   The ``no`` form of this command restores the default behavior of installing
+   link-local addresses to Zebra.
+
+   .. code-block:: frr
+
+      router bgp 65000
+       address-family ipv6 unicast
+        nexthop prefer-global
+       exit-address-family
+
+   Default: disabled (link-local addresses are installed to Zebra).
 
 .. clicmd:: bgp ipv6-auto-ra
 
@@ -1441,12 +1471,11 @@ OSPFv3 into ``address-family ipv4 unicast`` as OSPFv3 supports IPv6.
 
    Redistribute routes from other protocols into BGP.
 
-   Note - When redistributing a static route, or any better Admin Distance route,
-   into BGP for which the same path is learned dynamically from another BGP
-   speaker, if the redistribute path is more preferred from a BGP Best Path
-   standpoint than the dynamically learned path, then BGP will not export
-   the best path to Zebra(RIB) for installation into the routing table,
-   unless BGP receives the path before the static route is created.
+   Note - When redistributing a static route, or any other route, into BGP,
+   the Admin Distance is carried into BGP, and is used in BGP's Best Path
+   calculation. When comparing a redistributed route with a local aggregate,
+   or a route learned dynamically from another BGP speaker, the one with a
+   lower Admin Distance is more preferred.
 
 .. clicmd:: redistribute <table|table-direct> (1-65535)] [metric (0-4294967295)] [route-map WORD]
 
@@ -1472,6 +1501,12 @@ Redistribute routes from a routing table number into BGP.
 .. clicmd:: redistribute vnc-direct
 
    Redistribute VNC direct (not via zebra) routes to BGP process.
+
+.. clicmd:: show bgp [<view|vrf> VRFNAME] <ipv4|ipv6> unicast redistribute [json]
+
+   Display the current redistribution configuration for the specified BGP
+   instance. Shows which protocols are being redistributed into BGP along with
+   their associated metrics, instances, and route-maps if configured.
 
 .. clicmd:: bgp update-delay MAX-DELAY
 
@@ -1535,6 +1570,104 @@ Redistribute routes from a routing table number into BGP.
 
    On hitting any of the above two conditions, BGP resumes the decision process
    and generates updates to its peers.
+
+   Default max-delay is 0, i.e. the feature is off by default.
+
+
+.. clicmd:: bgp advertisement-delay (1-3600)
+
+   With ``update-delay``, both FIB programming and advertisements are deferred,
+   meaning the restarting router cannot forward local traffic until the delay
+   completes.  ``advertisement-delay`` takes a different approach: it allows
+   best-path selection and FIB programming to proceed normally so local
+   forwarding works immediately, while holding only the advertisements to
+   prevent the router from attracting remote traffic before it has a complete
+   routing state.
+
+   After a non-graceful restart, peers detect the session loss and withdraw
+   routes to this router, so the receiver has no routes to this router at all.
+   ``advertisement-delay`` controls when this router re-announces itself,
+   ensuring it only attracts traffic once it has fully converged.  When
+   graceful-restart is active, ``advertisement-delay`` is not started -- the
+   GR restarter path handles route retention separately.
+
+   This feature holds route advertisements to peers for a configured number of
+   seconds after the first peer reaches Established status.  The delay applies
+   to all address families (AFI/SAFI).  Note that this command is configured at
+   the global level and applies to all bgp instances/vrfs.  It cannot be used
+   at the same time as the per-vrf ``advertisement-delay`` command described
+   below.  The global and per-vrf approaches are mutually exclusive.
+
+   When the first peer reaches Established, a timer for the configured delay is
+   started.  During this period, best-path selection and FIB programming proceed
+   normally, but route advertisements to peers are held.  When the timer
+   expires, advertisements are released to all established peers.
+
+   When both ``update-delay`` and ``advertisement-delay`` are configured, both
+   timers start when the first peer reaches Established.  Route advertisements
+   are released at ``max(update-delay, advertisement-delay)``; whichever
+   finishes last triggers the release.
+
+   This feature runs after startup and also re-triggers on
+   ``clear bgp *``, similar to ``update-delay``.
+   It does not re-trigger if peers flap after the delay has completed.
+
+   Changing or removing this configuration while the timer is running takes
+   effect from the next startup or next ``clear bgp *``.
+
+   This parameter is unrelated to the per-neighbor or per-peer-group
+   ``advertisement-interval``, which controls the minimum time between
+   individual route advertisements to a specific peer.
+
+   Default max-delay is 0, i.e. the feature is off by default.
+
+
+.. clicmd:: advertisement-delay (1-3600)
+
+   With ``update-delay``, both FIB programming and advertisements are deferred,
+   meaning the restarting router cannot forward local traffic until the delay
+   completes.  ``advertisement-delay`` takes a different approach: it allows
+   best-path selection and FIB programming to proceed normally so local
+   forwarding works immediately, while holding only the advertisements to
+   prevent the router from attracting remote traffic before it has a complete
+   routing state.
+
+   After a non-graceful restart, peers detect the session loss and withdraw
+   routes to this router, so the receiver has no routes to this router at all.
+   ``advertisement-delay`` controls when this router re-announces itself,
+   ensuring it only attracts traffic once it has fully converged.  When
+   graceful-restart is active, ``advertisement-delay`` is not started -- the
+   GR restarter path handles route retention separately.
+
+   This feature holds route advertisements to peers for a configured number of
+   seconds after the first peer reaches Established status.  Note that this
+   command is configured under the specific bgp instance/vrf that the feature
+   is enabled for.  It cannot be used at the same time as the global
+   ``bgp advertisement-delay`` described above.  The global and per-vrf
+   approaches are mutually exclusive.
+
+   When the first peer reaches Established, a timer for the configured delay is
+   started.  During this period, best-path selection and FIB programming proceed
+   normally, but route advertisements to peers are held.  When the timer
+   expires, advertisements are released to all established peers.
+
+   When both ``update-delay`` and ``advertisement-delay`` are configured, both
+   timers start when the first peer reaches Established.  Route advertisements
+   are released at ``max(update-delay, advertisement-delay)``; whichever
+   finishes last triggers the release.
+
+   The delay applies to all address families (AFI/SAFI).
+
+   This feature runs after startup and also re-triggers on
+   ``clear bgp *``, similar to ``update-delay``.
+   It does not re-trigger if peers flap after the delay has completed.
+
+   Changing or removing this configuration while the timer is running takes
+   effect from the next startup or next ``clear bgp *``.
+
+   This parameter is unrelated to the per-neighbor or per-peer-group
+   ``advertisement-interval``, which controls the minimum time between
+   individual route advertisements to a specific peer.
 
    Default max-delay is 0, i.e. the feature is off by default.
 
@@ -1723,21 +1856,24 @@ Configuring Peers
 
    Set description of the peer.
 
-.. clicmd:: neighbor PEER interface IFNAME
+.. clicmd:: neighbor PEER interface [v6only] [peer-group NAME]
 
-   When you connect to a BGP peer over an IPv6 link-local address, you have to
-   specify the IFNAME of the interface used for the connection. To specify
-   IPv4 session addresses, see the ``neighbor PEER update-source`` command
-   below.
+   Configure an interface-based (unnumbered) BGP peer; ``PEER`` is the interface
+   name. By default, *bgpd* tries to derive the neighbor IPv4 address from a /30
+   or /31 on the interface and establish the session over IPv4; if that is not
+   possible, it uses the peer's IPv6 link-local address. If ``v6only`` is
+   specified, *bgpd* skips trying IPv4 and establishes the session directly via
+   IPv6 link-local. For the local TCP source address, see
+   ``neighbor PEER update-source`` below.
 
-.. clicmd:: neighbor PEER interface remote-as <internal|external|auto|ASN>
+.. clicmd:: neighbor PEER interface [v6only] remote-as <internal|external|auto|ASN>
 
-   Configure an unnumbered BGP peer. ``PEER`` should be an interface name. The
-   session will be established via IPv6 link locals. Use ``internal`` for iBGP
-   and ``external`` for eBGP sessions, or specify an ASN if you wish.  Finally
-   this connection type is meant for point to point connections.  If you are
-   on an ethernet segment and attempt to use this with more than one bgp
-   neighbor, only one neighbor will come up, due to how this feature works.
+   Configure an interface-based BGP peer and set ``remote-as`` in one command.
+   Session address selection follows ``neighbor PEER interface`` above. Use
+   ``internal`` for iBGP and ``external`` for eBGP sessions, or specify an ASN
+   if you wish. This connection type is meant for point to point connections.
+   If you are on an ethernet segment and attempt to use this with more than one
+   bgp neighbor, only one neighbor will come up, due to how this feature works.
 
 .. clicmd:: neighbor PEER next-hop-self [force]
 
@@ -1760,7 +1896,7 @@ Configuring Peers
    neighbour, may be specified as either an IP address directly or as an
    interface name (in which case the *zebra* daemon MUST be running in order
    for *bgpd* to be able to retrieve interface state).  When there are multiple
-   addresses on the choosen IFNAME then BGP will use the address that matches
+   addresses on the chosen IFNAME then BGP will use the address that matches
    the most number of bits in comparison to the destination peer address.
 
    .. code-block:: frr
@@ -1817,6 +1953,12 @@ Configuring Peers
 
    Send the BGP Next Hop Dependent Characteristics Attribute (NHC) to the peer.
 
+   If the route is learned and NHC attribute is present with Next-Next Hop Nodes
+   (NNHN) TLV set, then the number of NNHN can be used for weighted ECMP.
+
+   In order to use weighted ECMP with NNHN, ``bgp bestpath bandwidth ignore``
+   must be configured (do not use Link Bandwidth extended community).
+
    Default: disabled.
 
 .. clicmd:: neighbor PEER send-community <both|all|extended|standard|large>
@@ -1851,7 +1993,30 @@ Configuring Peers
    If ``force`` is set, then ALL prefixes are counted for maximum instead of
    accepted only. This is useful for cases where an inbound filter is applied,
    but you want maximum-prefix to act on ALL (including filtered) prefixes. This
-   option requires `soft-reconfiguration inbound` to be enabled for the peer.
+   option requires :clicmd:`neighbor PEER soft-reconfiguration inbound` to be enabled for the peer.
+
+.. clicmd:: neighbor PEER soft-reconfiguration inbound
+
+   Allow inbound soft reconfiguration for this peer. Normally, route changes
+   from a peer require a full BGP session reset (hard reset) to take effect
+   when inbound policy is changed. This command stores all received route
+   updates (including those that are rejected by inbound policy) in an
+   unmodified form, allowing the routes to be re-evaluated when inbound policy
+   changes without tearing down the BGP session.
+
+   When this option is enabled, the router maintains a separate Adj-RIB-In
+   table for the peer, which uses additional memory. With this table, the
+   ``clear bgp PEER soft in`` command can be used to apply new inbound policies
+   without resetting the session.
+
+   .. note::
+
+      If both peers support the route-refresh capability, a soft
+      reconfiguration can be performed without this option by using
+      ``clear bgp PEER in``. However, ``soft-reconfiguration inbound``
+      is still needed if you want to use features such as
+      ``maximum-prefix ... force`` that need to count all received prefixes
+      (including filtered ones).
 
 .. clicmd:: neighbor PEER maximum-prefix-out NUMBER
 
@@ -1912,6 +2077,50 @@ Configuring Peers
 
    The parameter `origin` configures BGP to only accept routes originated with
    the same AS number as the system.
+
+   This command is only allowed for eBGP peers.
+
+.. clicmd:: neighbor <A.B.C.D|X:X::X:X|WORD> allowas-in route-map WORD [<(1-10)|origin>]
+
+   Accept incoming routes with AS path containing the system AS number, but only
+   for routes that match the specified route-map. This provides maximum flexibility
+   for selective AS-path loop prevention based on any BGP attributes.
+
+   Route-maps can match on prefixes, AS-path patterns, communities, extended communities, and
+   any other BGP attributes, allowing complex filtering logic.
+
+   The parameter ``WORD`` specifies the name of the route-map to use for matching.
+   Only routes that result in a ``permit`` action from the route-map will have
+   allowas-in applied. The route-map performs matching only; it does not modify
+   route attributes.
+
+   The parameter ``(1-10)`` configures the amount of accepted occurrences of the
+   system AS number in AS path for matching routes (default: 3).
+
+   The parameter ``origin`` configures BGP to only accept routes originated with
+   the same AS number as the system, for matching routes.
+
+   Example configuration to allow AS-path loops for routes with a specific SoO community:
+
+   .. code-block:: frr
+
+      ip extcommunity-list standard MGMT_SOO permit soo 1.1.1.1:0
+      !
+      route-map RM_ALLOW_AS permit 10
+       match extcommunity MGMT_SOO
+      !
+      router bgp 65201
+       neighbor 10.0.0.1 remote-as external
+       !
+       address-family ipv4 unicast
+        neighbor 10.0.0.1 allowas-in route-map RM_ALLOW_AS 1
+       exit-address-family
+
+   Behavior:
+
+   - Routes matching the route-map (permit): allowas-in is applied
+   - Routes NOT matching the route-map (deny): strict AS-path loop detection
+   - If route-map is not found: strict AS-path loop detection
 
    This command is only allowed for eBGP peers.
 
@@ -2021,7 +2230,11 @@ Configuring Peers
 .. clicmd:: neighbor <A.B.C.D|X:X::X:X|WORD> path-attribute treat-as-withdraw (1-255)...
 
    Received BGP UPDATES that contain specified path attributes are treat-as-withdraw. If
-   there is an existing prefix in the BGP routing table, it will be removed.
+   there is an existing prefix in the BGP routing table, it will be removed.  These
+   attributes: ORIGIN AS_PATH NEXT_HOP MULTI_EXIT_DISC MP_REACH_NLRI MP_UNREACH_NLRI
+   and EXT_COMMUNITIES cannot be ignored.  Additionally if the peer is ebgp then
+   LOCAL_PREF ORIGINATOR_ID and CLUSTER_LIST cannot be ignored.  If you choose
+   any of these then the whole command will be ignored.
 
 .. clicmd:: neighbor <A.B.C.D|X:X::X:X|WORD> graceful-shutdown
 
@@ -2124,12 +2337,16 @@ Configuring Peers
 
    For ``datacenter`` profile, this is enabled by default.
 
-.. clicmd:: bgp default software-version-capability
+.. clicmd:: bgp default software-version-capability [latest-encoding]
 
    This command enables software version capability advertisement by default
    for all the neighbors.
 
    For ``datacenter`` profile, this is enabled by default.
+
+   If ``latest-encoding`` is specified, then the latest version of encoding is used.
+
+   It's based on https://datatracker.ietf.org/doc/html/draft-abraitis-bgp-version-capability-18.
 
    .. code-block:: frr
 
@@ -2148,9 +2365,17 @@ Configuring Peers
 
 .. clicmd:: neighbor PEER advertisement-interval (0-600)
 
-   Setup the minimum route advertisement interval(mrai) for the
-   peer in question.  This number is between 0 and 600 seconds,
+   Setup the minimum route advertisement interval(MRAI) for the
+   peer in question. This number is between 0 and 600 seconds,
    with the default advertisement interval being 0.
+
+.. note::
+
+   If the conditional advertisement feature is enabled, the advertisement-interval
+   value (MRAI) will be ignored during the conditional advertisement phase.
+
+   This is because the conditional advertisement feature has its own timers to
+   trigger the advertisement/scanning of desired routes.
 
 .. clicmd:: neighbor PEER timers (0-65535) (0-65535)
 
@@ -2425,6 +2650,12 @@ Using AS Path in Route Map
    For a given as-path, WORD, match it on the BGP as-path given for the prefix
    and if it matches do normal route-map actions.  The no form of the command
    removes this match from the route-map.
+
+
+.. clicmd:: match as-path-count MAX_COUNT
+
+   This command allows filtering routes based on the number of AS entries in
+   their AS path.
 
 .. clicmd:: set as-path prepend AS-PATH
 
@@ -3007,7 +3238,7 @@ BGP Extended Communities in Route Map
      of the route(Default Setting).
    - ``01`` Can match on a specific endpoint or a null endpoint.
    - ``10`` Can match on a specific endpoint, null endpoint or any endpoint.
-   - ``11`` Reserved for future use and shuould not be used.
+   - ``11`` Reserved for future use and should not be used.
 
 
 .. clicmd:: set extcommunity bandwidth <(1-25600) | cumulative | num-multipaths> [non-transitive]
@@ -3221,14 +3452,15 @@ that check when the path chosen by the next-hop uses a GRE interface, and
 there is a route-map configured at inbound side of ipv4-vpn or ipv6-vpn
 address family with following syntax:
 
-.. clicmd:: set l3vpn next-hop encapsulation gre
+.. clicmd:: set l3vpn next-hop encapsulation <gre|gretap>
+   :daemon: bgp
 
 The incoming BGP L3VPN entry is accepted, provided that the next hop of the
-L3VPN entry uses a path that takes the GRE tunnel as outgoing interface. The
-remote endpoint should be configured just behind the GRE tunnel; remote
-device configuration may vary depending whether it acts at edge endpoint or
-not: in any case, the expectation is that incoming MPLS traffic received at
-this endpoint should be considered as a valid path for L3VPN.
+L3VPN entry uses a path that takes chosen tunnel kind. The remote endpoint
+should be configured just behind the tunnel; remote device configuration may
+vary depending whether it acts at edge endpoint or not: in any case, the
+expectation is that incoming MPLS traffic received at this endpoint should
+be considered as a valid path for L3VPN.
 
 .. _bgp-vrf-route-leaking:
 
@@ -3238,7 +3470,7 @@ VRF Route Leaking
 BGP routes may be leaked (i.e. copied) between a unicast VRF RIB and the VPN
 SAFI RIB of the default VRF for use in MPLS-based L3VPNs. Unicast routes may
 also be leaked between any VRFs (including the unicast RIB of the default BGP
-instanced). A shortcut syntax is also available for specifying leaking from one
+instance). A shortcut syntax is also available for specifying leaking from one
 VRF to another VRF using the default instance's VPN RIB as the intermediary. A
 common application of the VRF-VRF feature is to connect a customer's private
 routing domain to a provider's VPN service. Leaking is configured from the
@@ -3366,9 +3598,14 @@ address-family:
    source or destination VRF's.
 
    This shortcut syntax mode is not compatible with the explicit
-   `import vpn` and `export vpn` statements for the two VRF's involved.
+   ``import vpn`` and ``export vpn`` statements for the two VRF's involved.
    The CLI will disallow attempts to configure incompatible leaking
    modes.
+
+.. clicmd:: import vrf route-map NAME
+
+   Specifies an optional route-map to be applied to routes imported using the
+   ``import vrf VRFNAME`` shortcut syntax.
 
 .. clicmd:: bgp retain route-target all
 
@@ -3406,24 +3643,29 @@ the next-hop attribute). The labeled L3VPN routes received on this interface are
 re-advertised with local labels and an MPLS table swap entry is set to bind
 the local label to the received label.
 
-.. _bgp-l3vpn-srv6:
+.. _bgp-l3-service-over-srv6:
 
-L3VPN SRv6
-----------
+BGP-Based L3 Service over SRv6
+------------------------------
+
+This https://www.ietf.org/rfc/rfc9252#name-bgp-based-l3-service-over-s explains
+the use SRv6 backend for BGP VPNs and Global tables.
+
+Note: A VRF can have at most one L3 service enabled simultaneously.
 
 .. clicmd:: segment-routing srv6
 
-   Use SRv6 backend with BGP L3VPN, and go to its configuration node.
+   Use SRv6 backend with BGP Global IPv4/6 or IPv4/6 VPN, go to its configuration node.
 
 .. clicmd:: locator NAME
 
-   Specify the SRv6 locator to be used for SRv6 L3VPN. The Locator name must
+   Specify the SRv6 locator to be used for SRv6 L3 service. The Locator name must
    be set in zebra, but user can set it in any order.
 
 .. clicmd:: encap-behavior <H_Encaps|H_Encaps_Red>
 
-   Specify the encapsulation instruction to use for incoming BGP L3VPN SRv6 routes
-   to install to RIB. By default, a segment-routing-header is added, in addition to
+   Specify the encapsulation instruction to use for incoming BGP SRv6 routes to
+   install to RIB. By default, a segment-routing-header is added, in addition to
    the IPv6 header. With `H_Encaps_Red`, if the number of segments is only 1, and
    there are no other specific options, then the segment-routing-header is removed,
    and only the IPv6 header is appended to the original packet.
@@ -3437,15 +3679,13 @@ L3VPN SRv6
    this command will also consider BGP updates with no srv6 options, thus making possible
    to have both MPLS and SRv6 updates.
 
-L3VPN SRv6 SID reachability
----------------------------
+SRv6 SID reachability for L3 service
+------------------------------------
 
-In the context of IPv4 L3VPN over SRv6 specific usecase, 2001:db8:12::2
-is the peer IPv6 address of r2, and 2001:db8:2:2:: is the SRv6 SID
-advertised by router r2 for prefix P. On r1, the SID reachability is
-checked in order to install the prefix P. The below output indicates
-that the 2001:db8:2:2:: prefix is valid.
-
+In the context of IPv4 over SRv6 specific usecase, 2001:db8:12::2 is the peer
+IPv6 address of r2, and 2001:db8:2:2:: is the SRv6 SID advertised by router r2
+for prefix P. On r1, the SID reachability is checked in order to install the
+prefix P. The below output indicates that the 2001:db8:2:2:: prefix is valid.
 
 .. code-block:: frr
 
@@ -3462,8 +3702,8 @@ that the 2001:db8:2:2:: prefix is valid.
      Last update: Tue Nov 14 10:36:26 2023
      Paths:
 
-General configuration
-^^^^^^^^^^^^^^^^^^^^^
+L3VPN SRv6 configuration
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Configuration of the SRv6 SID used to advertise a L3VPN for both IPv4 and IPv6
 is accomplished via the following command in the context of a VRF:
@@ -3509,13 +3749,70 @@ Filtering SRv6/MPLS per neighbor
    Reversely, the ``encapsulation-mpls`` command can be used to invalidate
    incoming SRv6 BGP updates from a given peer.
 
+Global IPv4/6 SRv6 configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Configuration of the SRv6 SID used to advertise the Global IPv4/v6 Table is
+accomplished via the following command, which lives under ``address-family ipv4
+unicast``/``address-family ipv6 unicast`` only in the default VRF:
+
+.. clicmd:: sid export <(1..1048575)|auto|explicit X:X::X:X> [behavior dt46] [route-map RNAME]
+
+   Enables a SRv6 SID to be attached to routes in the current unicast
+   address-family, received routes that already have a SID attached are ignored.
+   If the value is ``auto``, the SID value is automatically assigned
+   from a pool maintained by the zebra daemon. If the value specified is
+   ``explicit X:X::X:X``, SID allocation with the explicit value is requested
+   from the zebra daemon. If zebra is not running, or if this command is not
+   configured or if SID allocation is failed, automatic or explicit SID
+   assignment will not complete, which will block corresponding routes SID
+   assignment.
+
+   If the ``route-map RNAME`` is configured, routes are filtered according to
+   its rules.
+
+   By default, the SID behavior is determined by the address-family:
+   **End.DT4** under ``address-family ipv4 unicast`` and **End.DT6** under
+   ``address-family ipv6 unicast``.  For uSID locators, ``uDT4`` and
+   ``uDT6`` are used respectively.
+
+   The optional ``behavior dt46`` keyword overrides this default and requests
+   an **End.DT46** SID (or ``uDT46`` for uSID locators).
+
+   Example — configure both the IPv4 and IPv6 address-families to use a
+   shared End.DT46 SID:
+
+   .. code-block:: frr
+
+      router bgp 65001
+       address-family ipv4 unicast
+        sid export auto behavior dt46
+       exit-address-family
+       address-family ipv6 unicast
+        sid export auto behavior dt46
+       exit-address-family
+      !
+
+   When both address-families specify ``behavior dt46``, the SID Manager
+   allocates a single SID that handles both IPv4 and IPv6 traffic.
+
+
+.. clicmd:: neighbor <X:X::X:X|WORD> <encapsulation-srv6|encapsulation-srv6-relax>
+
+   Enables SRv6 for neighbor in the current unicast address family, this allows
+   sending BGP prefix-sid attribute to this neighbor.
+   If ``encapsulation-srv6`` is enabled, only BGP prefix-sid is sent to this
+   neighbor.
+   If ``encapsulation-srv6-relax`` is enabled, BGP prefix and prefix-sid both are
+   sent to this neighbor.
+
 .. _bgp-evpn:
 
 Ethernet Virtual Network - EVPN
 -------------------------------
 
 Note: When using EVPN features and if you have a large number of hosts, make
-sure to adjust the size of the arp  neighbor cache to avoid neighbor table
+sure to adjust the size of the arp neighbor cache to avoid neighbor table
 overflow and/or excessive garbage collection. On Linux, the size of the table
 and garbage collection frequency can be controlled via the following
 sysctl configurations:
@@ -3537,17 +3834,42 @@ For more information, see ``man 7 arp``.
 Enabling EVPN
 ^^^^^^^^^^^^^
 
-EVPN should be enabled on the BGP instance corresponding to the VRF acting as
-the underlay for the VXLAN tunneling. In most circumstances this will be the
-default VRF. The command to enable EVPN for a BGP instance is
-``advertise-all-vni`` which lives under ``address-family l2vpn evpn``:
+EVPN is a technology for network virtualization. Virtualization is
+fundamentally the act of dividing a physical resource into multiple
+virtual resources, e.g. for the purpose of isolation or sharing a
+single physical resource among tenants.
 
-.. code-block:: frr
+For networking and EVPN, the physical resource is the network fabric
+that actually transports the traffic. This is called the *underlay*.
+The virtual network resources, like a "virtual VLAN", that are provided
+running layered on top of the underlay are called *overlay*.
 
-   router bgp 65001
-    !
-    address-family l2vpn evpn
-     advertise-all-vni
+EVPN works by encapsulating overlay traffic, e.g. in VXLAN, MPLS, or
+GENEVE, when it is transported over the underlay. All encapsulations
+attach some kind of label to overlay traffic, which allows underlay
+devices to identify into which virtual network resource a packet belongs.
+
+In order to activate EVPN in FRR, you must tell FRR which (IP-)VRF
+should be used for the underlay. This will typically be the default VRF.
+There can only be a single underlay VRF.
+
+Specifying ``advertise-all-vni``, which lives under
+``address-family l2vpn evpn``, marks this VRF as underlay and enables EVPN.
+
+.. clicmd:: advertise-all-vni
+
+   This command defines the VRF to be used as the underlay for EVPN-VXLAN and enables EVPN. In most
+   cases, this will be the default VRF. It is mandatory for EVPN-VXLAN to work.
+
+   This command can only be configured in a single VRF. Any attempt to configure it in multiple VRFs
+   will be rejected (e.g. ``% Please unconfigure EVPN in VRF default``)
+
+   .. code-block:: frr
+
+      router bgp 65001
+       !
+       address-family l2vpn evpn
+        advertise-all-vni
 
 A more comprehensive configuration example can be found in the :ref:`evpn` page.
 
@@ -3558,27 +3880,123 @@ EVPN BUM Handling
 
 .. clicmd:: flooding <disable|head-end-replication>
 
-This command controls the handling of BUM (Broadcast, Unknown Unicast, and
-Multicast) traffic in EVPN. The default behavior is to flood BUM traffic
-across all VTEPs in the EVPN instance. BUM traffic can also be handled
-per VNI by entering ``vni`` context first.
+   This command controls the handling of BUM (Broadcast, Unknown Unicast, and
+   Multicast) traffic in EVPN. The default behavior is to flood BUM traffic
+   across all VTEPs in the EVPN instance. BUM traffic can also be handled
+   per VNI by entering ``vni`` context first.
 
-When ``disable`` is configured, BUM traffic will not be flooded for an arbitrary
-VNI or globally.
+   When ``disable`` is configured, BUM traffic will not be flooded for an arbitrary
+   VNI or globally.
 
-.. _bgp-evpn-l3-route-targets:
 
-EVPN L3 Route-Targets
-^^^^^^^^^^^^^^^^^^^^^
+.. _bgp-evpn-downstream-vni:
+
+EVPN Downstream VNI
+^^^^^^^^^^^^^^^^^^^
+
+EVPN Downstream VNI is a feature that allows the destination (egress) VTEP to
+dictate which VNI the source (ingress) VTEP should use when sending traffic to it
+destined to a certain IP-VRF. This allows easy building of flexible VPN topologies.
+
+Without EVPN Downstream VNI, you must painstakingly configure the same VNI for all
+relevant VRFs across all devices.
+
+With Downstream VNI, the "destination" VNI is simply extracted from the advertised routes
+(MPLS Label 2 Route Type 2, MPLS Label for Route Type 5).
+
+Imagine a scenario where you have hundreds of VRFs and want to leak routes between them.
+
+Without Downstream VNI, you would have to configure all VRFs that you might want to leak from
+on all devices, and you would have to make sure to use the same VNI per VRF across all devices.
+This is a recipe for misconfiguration and operational complexity.
+
+With Downstream VNI, you can simply configure import Route Targets on the VRFs you want to leak to
+(and of course the export Route Targets on the VRFs you want to leak from),
+and the destination VNI will be automatically extracted from the imported routes
+and used as the source VNI for sending traffic to the destination IP-VRF.
+
+Note that in FRR, Downstream VNI requires the use of single VXLAN devices (SVD)
+for the dataplane and will not work with traditional VXLAN devices.
+
+.. _bgp-evpn-ip-vrf-route-targets:
+
+EVPN IP-VRF Route Targets
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. clicmd:: route-target <import|export|both> <RTLIST|auto>
 
-Modify the route-target set for EVPN advertised type-2/type-5 routes.
-RTLIST is a list of any of matching
-``(A.B.C.D:MN|EF:OPQR|GHJK:MN|*:OPQR|*:MN)`` where ``*`` indicates wildcard
-matching for the AS number. It will be set to match any AS number. This is
-useful in datacenter deployments with Downstream VNI. ``auto`` is used to
-retain the autoconfigure that is default behavior for L3 RTs.
+   Configure the route-target set for EVPN for a specific IP-VRF.
+   RTLIST is a list of any of matching ``(A.B.C.D:MN|EF:OPQR|GHJK:MN|*:OPQR|*:MN)``
+   where ``*`` indicates wildcard matching for the AS number
+   (match any AS number). Note that wildcards are only applicable to ``import``.
+   Wildcards are particularly useful in eBGP-datacenter deployments, where each leaf
+   has a unique AS number and thus uses a unique export-RT, but you want to import all routes
+   from all leaves.
+   ``auto`` is used to retain the autoconfigure that is default behavior for L3 RTs.
+
+   Route Targets allow building flexible VPN topologies by controlling the leaking of
+   routes between different IP-VRFs. For EVPN, the Downstream VNI feature makes this easy.
+
+   When using ``import``, the configured RTs are used to select which
+   EVPN VPN routes are imported into the local VRF. When using
+   ``export``, the configured RTs are attached to advertised EVPN VPN routes. Note that
+   the ``export`` Route Target only applies to routes that are originated in the local VRF.
+   An export Route Target will not be attached to routes that are learned from other peers
+   that are re-advertised. ``both`` applies the list to import and export.
+
+   EVPN attaches the IP-VRF Route Targets to Route Type 2 (MAC/IP Advertisement, :rfc:`9135`)
+   and Route Type 5 (IP Prefix Route, :rfc:`9136`).
+
+   Example:
+
+   .. code-block:: frr
+
+      router bgp 64496 vrf myvrf
+       !
+       address-family l2vpn evpn
+        route-target import 64496:12344
+        route-target import 64496:17000000
+        route-target export 64496:12344
+       exit-address-family
+      exit
+
+.. _bgp-evpn-mac-vrf-l2vni-route-targets:
+
+EVPN MAC-VRF / L2VNI Route Targets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. clicmd:: route-target <import|export|both> <RTLIST>
+
+   Configure the route-target set for EVPN for a specific MAC-VRF / L2VNI (the
+   terms are equivalent for FRR, because FRR uses the "VLAN-Based Service Interface" model,
+   as defined in :rfc:`9135`)
+
+   RTLIST is a list of any of matching ``(A.B.C.D:MN|EF:OPQR|GHJK:MN)``. Note that it is currently
+   not possible to manually define wildcard imports like for IP-VRFs, and there is also no explicit
+   ``auto`` option like for IP-VRFs.
+
+   This command can only be executed in the BGP underlay (IP-)VRF
+   (i.e. the VRF that has ``advertise-all-vni`` configured).
+   Any attempt to configure this command in a different (IP-)VRF will be rejected
+   (``This command is only supported under EVPN VRF``).
+
+   EVPN attaches the MAC-VRF Route Targets to Route Type 2 (MAC/IP Advertisement, :rfc:`9135`).
+
+   Example:
+
+   .. code-block:: frr
+
+      router bgp 64496
+       !
+       address-family l2vpn evpn
+        advertise-all-vni
+        vni 1234
+         route-target import 555:666
+         route-target export 1234:1234
+        exit-vni
+       exit-address-family
+      exit
+
 
 .. _bgp-evpn-advertise-pip:
 
@@ -3626,21 +4044,22 @@ the same behavior of using same next-hop and RMAC values.
 
 .. clicmd:: advertise-pip [ip <addr> [mac <addr>]]
 
-Enables or disables advertise-pip feature, specify system-IP and/or system-MAC
-parameters.
+   Enables or disables advertise-pip feature, specify system-IP and/or system-MAC
+   parameters.
 
 EVPN advertise-svi-ip
 ^^^^^^^^^^^^^^^^^^^^^
 Typically, the SVI IP address is reused on VTEPs across multiple racks. However,
 if you have unique SVI IP addresses that you want to be reachable you can use the
-advertise-svi-ip option. This option advertises the SVI IP/MAC address as a type-2
-route and eliminates the need for any flooding over VXLAN to reach the IP from a
-remote VTEP.
+advertise-svi-ip option.
 
 .. clicmd:: advertise-svi-ip
 
-Note that you should not enable both the advertise-svi-ip and the advertise-default-gw
-at the same time.
+   This option advertises the SVI IP/MAC address as a type-2
+   route and eliminates the need for any flooding over VXLAN to reach the IP from a
+   remote VTEP.
+   Note that you should not enable both the advertise-svi-ip and the advertise-default-gw
+   at the same time.
 
 .. _bgp-evpn-overlay-index-gateway-ip:
 
@@ -3834,7 +4253,8 @@ EVPN Multihoming
 
 All-Active Multihoming is used for redundancy and load sharing. Servers
 are attached to two or more PEs and the links are bonded (link-aggregation).
-This group of server links is referred to as an Ethernet Segment.
+This group of server links is referred to as an Ethernet Segment. Currently,
+IPv6 VTEP addresses are not supported with EVPN Multihoming.
 
 Ethernet Segments
 """""""""""""""""
@@ -4239,11 +4659,14 @@ Debugging
 
    Enable or disable debugging of BGP conditional advertisement.
 
-.. clicmd:: debug bgp neighbor-events
+.. clicmd:: debug bgp neighbor-events [detail]
 
    Enable or disable debugging for neighbor events. This provides general
    information on BGP events such as peer connection / disconnection, session
    establishment / teardown, and capability negotiation.
+
+   If ``detail`` is specified, the output will include extra context about state
+   transitions and related activity useful for deep troubleshooting of peer sessions.
 
 .. clicmd:: debug bgp updates [detail]
 
@@ -4264,6 +4687,10 @@ Debugging
    Enable or disable debugging for BGP keepalives. This provides information on
    BGP KEEPALIVE messages transmitted and received between local and remote
    instances.
+
+.. clicmd:: debug bgp keepalives <A.B.C.D|X:X::X:X|WORD>
+
+   Enable or disable debugging for BGP keepalives for a specific neighbor.
 
 .. clicmd:: debug bgp bestpath <A.B.C.D/M|X:X::X:X/M>
 
@@ -4405,6 +4832,19 @@ The following are available in the ``router bgp`` mode:
    at a time in a loop. This setting controls how many iterations the loop runs
    for. As with write-quanta, it is best to leave this setting on the default.
 
+.. clicmd:: use-underlays-nexthop-weight
+
+   BGP when it installs routes has a feature that allows it to use weights
+   that are based upon community values.  This allows the nexthops using
+   those weights to be used in accordance to the operators configuration.
+   If BGP is using itself as a underlay and the underlay has weights associated
+   with them, turn on this command to tell BGP to signal to zebra when
+   installing the route that the underlays weights should be used for the
+   recursively resolved nexthops.  If this command is turned on and the
+   route already has weights associated with it, then BGP will not signal
+   to zebra that it should use the recursively resolved underlay routes
+   nexthop weights.
+
 The following command is available in ``config`` mode as well as in the
 ``router bgp`` mode:
 
@@ -4452,11 +4892,11 @@ daemon project, while :clicmd:`show bgp` command is the new format. The choice
 has been done to keep old format with IPv4 routing table, while new format
 displays IPv6 routing table.
 
-.. clicmd:: show ip bgp [all] [wide|json [detail]]
+.. clicmd:: show ip bgp [all] [wide|json [detail|brief]]
 
 .. clicmd:: show ip bgp A.B.C.D [json]
 
-.. clicmd:: show bgp [all] [wide|json [detail]]
+.. clicmd:: show bgp [all] [wide|json [detail|brief]]
 
 .. clicmd:: show bgp X:X::X:X [json]
 
@@ -4488,9 +4928,21 @@ displays IPv6 routing table.
    If ``detail`` option is specified after ``json``, more verbose JSON output
    will be displayed.
 
+   If ``brief`` option is specified after ``json``, a brief JSON output is
+   displayed: only the loc-rib structure with prefix keys (no per-path
+   details). This is intended for large routing tables and automation. The
+   same ``json brief`` form applies to the VRF/address-family commands, e.g.
+   :clicmd:`show bgp vrf NAME ipv4 unicast json brief` and
+   :clicmd:`show bgp vrf NAME ipv6 unicast json brief`.
+
 .. clicmd:: show bgp router [json]
 
    This command displays information related BGP router and Graceful Restart.
+
+.. clicmd:: show bgp [<view|vrf> VIEWVRFNAME] bestpath [json]
+
+   This command displays the BGP best path selection criteria configured
+   for the specified VRF or view.
 
 Some other commands provide additional options for filtering the output.
 
@@ -4567,9 +5019,12 @@ incoming/outgoing directions.
 
    EVPN prefixes can also be filtered by EVPN route type.
 
-.. clicmd:: show bgp l2vpn evpn route [detail] [type <ead|1|macip|2|multicast|3|es|4|prefix|5>] self-originate [json]
+.. clicmd:: show bgp l2vpn evpn route [detail] [type <ead|1|macip|2|multicast|3|es|4|prefix|5>] [self-originate] [brief] [json]
 
-   Display self-originated EVPN prefixes which can also be filtered by EVPN route type.
+   Display the global EVPN routing table. With ``detail``, show per-path
+   information. With ``brief`` and ``json``, output a minimal loc-rib in JSON
+   format (prefix keys per RD only, no paths or detail). Route type and
+   self-originate filters apply to both normal and brief output.
 
 .. clicmd:: show bgp vni <all|VNI> [vtep VTEP] [type <ead|1|macip|2|multicast|3>] [<detail|json>]
 
@@ -4743,7 +5198,7 @@ incoming/outgoing directions.
 
    If the ``json`` option is specified, output is displayed in JSON format.
 
-.. clicmd:: show [ip] bgp [afi] [safi] [all] neighbors A.B.C.D [advertised-routes|received-routes|filtered-routes] [<A.B.C.D/M|X:X::X:X/M> | detail] [json|wide]
+.. clicmd:: show [ip] bgp [afi] [safi] [all] neighbors A.B.C.D [advertised-routes|received-routes|filtered-routes] [<A.B.C.D/M|X:X::X:X/M> | detail] [json [brief] | wide]
 
    Display the routes advertised to a BGP neighbor or received routes
    from neighbor or filtered routes received from neighbor based on the
@@ -4758,7 +5213,7 @@ incoming/outgoing directions.
    If ``all`` option is specified, ``ip`` keyword is ignored and,
    routes displayed for all AFIs and SAFIs.
    if afi is specified, with ``all`` option, routes will be displayed for
-   each SAFI in the selcted AFI
+   each SAFI in the selected AFI
 
    If a specific prefix is specified, the detailed version of that prefix will
    be displayed.
@@ -4769,6 +5224,26 @@ incoming/outgoing directions.
    prefixes.
 
    If ``json`` option is specified, output is displayed in JSON format.
+   ``brief`` is only valid immediately after ``json`` (e.g.
+   ``... advertised-routes json brief``); it selects compact per-prefix JSON
+   without per-path detail, like other ``show bgp`` ``json brief`` forms.
+
+.. clicmd:: show [ip] bgp [<view|vrf> VIEWVRFNAME] [<ipv4|ipv6> [unicast|...]] neighbors <A.B.C.D|X:X::X:X|WORD> <flap-statistics|dampened-routes|routes> [json [brief]]
+
+   Display routes learned from a BGP neighbor, flap statistics for that
+   neighbor, or dampened routes received from that neighbor, for the given
+   address family.
+
+   The ``routes`` keyword shows routes in the BGP table that were received
+   from this peer and accepted by inbound policy. The ``flap-statistics``
+   keyword shows flap statistics for routes learned from this neighbor. The
+   ``dampened-routes`` keyword shows dampened paths received from this
+   neighbor.
+
+   If ``json`` is specified, output is in JSON format. The ``brief``
+   keyword may only be used with ``json``; it produces a brief JSON view
+   (prefix-level path and multipath counts and flags, without per-path
+   details) for unicast neighbor routes.
 
 .. clicmd:: show [ip] bgp [afi] [safi] [all] detail-routes [internal]
 
@@ -4936,7 +5411,7 @@ attribute.
    If ``all`` option is specified, ``ip`` keyword is ignored and,
    routes displayed for all AFIs and SAFIs.
    if afi is specified, with ``all`` option, routes will be displayed for
-   each SAFI in the selcted AFI
+   each SAFI in the selected AFI
 
    If ``json`` option is specified, output is displayed in JSON format.
 
@@ -5021,6 +5496,18 @@ Displaying Routes by AS Path
 
    Print a summary of neighbor connections for the specified AFI/SAFI combination.
 
+Displaying Routes by Route Target
+----------------------------------------
+
+.. clicmd:: show bgp l2vpn evpn rt <RT> [exact-match] [json]
+
+   This command displays BGP routes for the EVPN address family matching 
+   the specified route target. When `exact-match` is specified, it
+   displays only routes that have an exact match with no other extended
+   communities. 
+
+   If ``json`` option is specified, output is displayed in JSON format.
+
 Displaying Routes by Route Distinguisher
 ----------------------------------------
 
@@ -5039,6 +5526,44 @@ Displaying Routes by Route Distinguisher
    For EVPN Type 2 (macip) routes, a MAC address (and optionally an IP address)
    can be supplied to the command to only display matching prefixes in the
    specified RD.
+
+.. clicmd:: show bgp l2vpn evpn route rd <all|RD> prefix <A.B.C.D/M|X:X::X:X/M> [json]
+
+.. clicmd:: show bgp evpn route rd <all|RD> prefix <A.B.C.D/M|X:X::X:X/M> [json]
+
+   For EVPN Type 5 (prefix) routes, an IPv4 or IPv6 prefix can be supplied to
+   only display matching prefixes in the specified RD, or across all RDs with
+   ``all``.
+
+   Example output:
+
+   .. code-block:: frr
+
+      bordertor-11# show bgp l2vpn evpn route rd all prefix 2001:db8:1:1::/64
+      Route Distinguisher: 192.0.2.2:8
+      BGP routing table entry for 192.0.2.2:8:[5]:[0]:[64]:[2001:db8:1:1::]
+      Paths: (1 available, best #1)
+        Advertised to peers:
+        leaf-11(swp1) leaf-12(swp2)
+        Route [5]:[0]:[64]:[2001:db8:1:1::] VNI 104001
+        655000
+          192.0.2.1 (bordertor-11) from 0.0.0.0 (192.0.2.1)
+            Origin incomplete, metric 0, valid, sourced, local, bestpath-from-AS 655000, best (First path received)
+            Extended Community: ET:8 RT:60176:104001 Rmac:00:01:00:00:01:08
+            Last update: Thu Apr 30 17:46:31 2026
+      Route Distinguisher: 192.0.2.6:9
+      BGP routing table entry for 192.0.2.6:9:[5]:[0]:[64]:[2001:db8:1:1::]
+      Paths: (1 available, best #1)
+        Advertised to peers:
+        leaf-11(swp1) leaf-12(swp2)
+        Route [5]:[0]:[64]:[2001:db8:1:1::] VNI 104002
+        655000
+          192.0.2.1 (bordertor-11) from 0.0.0.0 (192.0.2.1)
+            Origin incomplete, metric 0, valid, sourced, local, bestpath-from-AS 655000, best (First path received)
+            Extended Community: ET:8 RT:60176:104002 Rmac:00:01:00:00:01:08
+            Last update: Thu Apr 30 17:46:31 2026
+
+      Displayed 2 prefixes (2 paths)
 
 Displaying Update Group Information
 -----------------------------------
@@ -5259,12 +5784,34 @@ status in FIB:
 7. If the route which is already installed in dataplane is removed for some
    reason, sending withdraw message to peers is not currently supported.
 
-.. clicmd:: bgp suppress-fib-pending
+.. clicmd:: bgp suppress-fib-pending [(0-10000)]
 
    This command is applicable at the global level and at an individual
    bgp level.  If applied at the global level all bgp instances will
    wait for fib installation before announcing routes and there is no
    way to turn it off for a particular bgp vrf.
+
+   An optional advertisement delay in milliseconds can be specified to control
+   how long BGP waits after FIB installation before advertising routes to
+   peers. This provides a batching window that groups multiple route
+   advertisements into fewer BGP UPDATE messages.
+
+   The default delay is 1000 milliseconds. Setting the delay to ``0``
+   disables the batching window and advertises routes immediately after FIB
+   confirmation, which reduces convergence latency at the cost of more frequent
+   UPDATE messages. During bulk convergence, zebra already batch-processes FIB
+   confirmations, providing natural batching even with a low delay value.
+
+   Examples::
+
+      ! Enable with default 1000ms delay
+      bgp suppress-fib-pending
+
+      ! Enable with custom 50ms delay for low-latency environments
+      bgp suppress-fib-pending 50
+
+      ! Enable with no post-FIB batching delay
+      bgp suppress-fib-pending 0
 
 .. _routing-policy:
 
@@ -5750,6 +6297,8 @@ Show command json output:
 .. include:: wecmp_linkbw.rst
 
 .. include:: flowspec.rst
+
+.. include:: bgp-linkstate.rst
 
 .. [bgp-route-osci-cond] McPherson, D. and Gill, V. and Walton, D., "Border Gateway Protocol (BGP) Persistent Route Oscillation Condition", IETF RFC3345
 .. [stable-flexible-ibgp] Flavel, A. and M. Roughan, "Stable and flexible iBGP", ACM SIGCOMM 2009

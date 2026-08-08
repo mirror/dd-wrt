@@ -41,8 +41,8 @@
 
 static void		 ldpd_shutdown(void);
 static pid_t		 start_child(enum ldpd_process, char *, int, int, int);
-static void main_dispatch_ldpe(struct event *thread);
-static void main_dispatch_lde(struct event *thread);
+static void main_dispatch_ldpe(struct event *event);
+static void main_dispatch_lde(struct event *event);
 static int		 main_imsg_send_ipc_sockets(struct imsgbuf *,
 			    struct imsgbuf *);
 static void		 main_imsg_send_net_sockets(int);
@@ -154,7 +154,7 @@ sighup(void)
 
 	/*
 	 * Do a full configuration reload. In other words, reset vty_conf
-	 * and build a new configuartion from scratch.
+	 * and build a new configuration from scratch.
 	 */
 	ldp_config_reset(vty_conf);
 	vty_read_config(NULL, ldpd_di.config_file, config_default);
@@ -572,16 +572,14 @@ start_child(enum ldpd_process p, char *argv0, int fd_async, int fd_sync,
 
 /* imsg handling */
 /* ARGSUSED */
-static void main_dispatch_ldpe(struct event *thread)
+static void main_dispatch_ldpe(struct event *event)
 {
-	struct imsgev *iev = EVENT_ARG(thread);
+	struct imsgev *iev = EVENT_ARG(event);
 	struct imsgbuf		*ibuf = &iev->ibuf;
 	struct imsg		 imsg;
 	int			 af;
 	ssize_t			 n;
 	int			 shut = 0;
-
-	iev->ev_read = NULL;
 
 	if ((n = imsg_read(ibuf)) == -1 && errno != EAGAIN)
 		fatal("imsg_read error");
@@ -637,16 +635,14 @@ static void main_dispatch_ldpe(struct event *thread)
 }
 
 /* ARGSUSED */
-static void main_dispatch_lde(struct event *thread)
+static void main_dispatch_lde(struct event *event)
 {
-	struct imsgev *iev = EVENT_ARG(thread);
+	struct imsgev *iev = EVENT_ARG(event);
 	struct imsgbuf	*ibuf = &iev->ibuf;
 	struct imsg	 imsg;
 	ssize_t		 n;
 	int		 shut = 0;
 	struct zapi_rlfa_response *rlfa_labels;
-
-	iev->ev_read = NULL;
 
 	if ((n = imsg_read(ibuf)) == -1 && errno != EAGAIN)
 		fatal("imsg_read error");
@@ -742,13 +738,11 @@ static void main_dispatch_lde(struct event *thread)
 }
 
 /* ARGSUSED */
-void ldp_write_handler(struct event *thread)
+void ldp_write_handler(struct event *event)
 {
-	struct imsgev *iev = EVENT_ARG(thread);
+	struct imsgev *iev = EVENT_ARG(event);
 	struct imsgbuf	*ibuf = &iev->ibuf;
 	ssize_t		 n;
-
-	iev->ev_write = NULL;
 
 	if ((n = msgbuf_write(&ibuf->w)) == -1 && errno != EAGAIN)
 		fatal("msgbuf_write");
@@ -903,6 +897,7 @@ ldp_acl_request(struct imsgev *iev, char *acl_name, int af,
 {
 	struct imsg	 imsg;
 	struct acl_check acl_check;
+	int result;
 
 	if (acl_name[0] == '\0')
 		return FILTER_PERMIT;
@@ -929,7 +924,9 @@ ldp_acl_request(struct imsgev *iev, char *acl_name, int af,
 	    imsg.hdr.len != IMSG_HEADER_SIZE + sizeof(int))
 		fatalx("ldp_acl_request: invalid response");
 
-	return (*((int *)imsg.data));
+	result = (*((int *)imsg.data));
+	imsg_free(&imsg);
+	return result;
 }
 
 void
@@ -2026,6 +2023,7 @@ void
 config_clear(struct ldpd_conf *conf)
 {
 	struct ldpd_conf	*xconf;
+	struct tnbr		*tnbr;
 
 	/*
 	 * Merge current config with an empty config, this will deactivate
@@ -2041,5 +2039,21 @@ config_clear(struct ldpd_conf *conf)
 	xconf->flags = conf->flags;
 	merge_config(conf, xconf);
 	free(xconf);
+
+	/*
+	 * merge_tnbrs() only walks tnbrs that have F_TNBR_CONFIGURED set;
+	 * dynamic targeted neighbours learned from received hello packets
+	 * (F_TNBR_DYNAMIC, recv_hello() in hello.c) and rlfa tnbrs created
+	 * by ldpe_rlfa_init() in rlfa.c are skipped, so they remain in the
+	 * tree and would leak when conf is freed below. Drain the tree
+	 * explicitly before letting the container go.
+	 */
+	while (!RB_EMPTY(tnbr_head, &conf->tnbr_tree)) {
+		tnbr = RB_ROOT(tnbr_head, &conf->tnbr_tree);
+		event_cancel(&tnbr->hello_timer);
+		RB_REMOVE(tnbr_head, &conf->tnbr_tree, tnbr);
+		free(tnbr);
+	}
+
 	free(conf);
 }

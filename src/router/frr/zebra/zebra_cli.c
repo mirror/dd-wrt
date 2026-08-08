@@ -6,6 +6,7 @@
 
 #include "command.h"
 #include "defaults.h"
+#include "frrdistance.h"
 #include "northbound_cli.h"
 #include "vrf.h"
 
@@ -118,6 +119,227 @@ static void zebra_route_map_delay_cli_write(struct vty *vty,
 	uint32_t delay = yang_dnode_get_uint32(dnode, NULL);
 
 	vty_out(vty, "zebra route-map delay-timer %u\n", delay);
+}
+
+static void zebra_allow_external_route_update_cli_write(struct vty *vty,
+							const struct lyd_node *dnode,
+							bool show_defaults)
+{
+	vty_out(vty, "allow-external-route-update\n");
+}
+
+static void zebra_dplane_queue_limit_cli_write(struct vty *vty, const struct lyd_node *dnode,
+					       bool show_defaults)
+{
+	uint32_t limit = yang_dnode_get_uint32(dnode, NULL);
+
+	vty_out(vty, "zebra dplane limit %u\n", limit);
+}
+
+static void zebra_zapi_packets_cli_write(struct vty *vty, const struct lyd_node *dnode,
+					 bool show_defaults)
+{
+	uint32_t packets = yang_dnode_get_uint32(dnode, NULL);
+
+	vty_out(vty, "zebra zapi-packets %u\n", packets);
+}
+
+static void zebra_workqueue_hold_timer_cli_write(struct vty *vty, const struct lyd_node *dnode,
+						 bool show_defaults)
+{
+	uint32_t timer = yang_dnode_get_uint32(dnode, NULL);
+
+	vty_out(vty, "zebra work-queue %u\n", timer);
+}
+
+static void zebra_import_kernel_table_xpath(char *xpath, size_t xpath_len, afi_t afi, safi_t safi,
+					    const char *table_id)
+{
+	snprintfrr(xpath, xpath_len,
+		   "/frr-zebra:zebra/import-kernel-table[afi-safi='%s'][table-id='%s']",
+		   yang_afi_safi_value2identity(afi, safi), table_id);
+}
+
+static void zebra_import_kernel_table_cli_write(struct vty *vty, const struct lyd_node *dnode,
+						bool show_defaults)
+{
+	const char *afi_safi = yang_dnode_get_string(dnode, "afi-safi");
+	uint32_t table_id = yang_dnode_get_uint32(dnode, "table-id");
+	uint32_t distance = yang_dnode_get_uint32(dnode, "distance");
+	const char *rmap = NULL;
+	afi_t afi;
+	safi_t safi;
+
+	if (yang_dnode_exists(dnode, "route-map"))
+		rmap = yang_dnode_get_string(dnode, "route-map");
+
+	yang_afi_safi_identity2value(afi_safi, &afi, &safi);
+
+	if (afi == AFI_IP)
+		vty_out(vty, "ip import-table %u", table_id);
+	else if (afi == AFI_IP6)
+		vty_out(vty, "ipv6 import-table %u", table_id);
+	else
+		return;
+
+	if (safi == SAFI_MULTICAST)
+		vty_out(vty, " mrib");
+
+	if (distance != ZEBRA_TABLE_DISTANCE_DEFAULT)
+		vty_out(vty, " distance %u", distance);
+
+	if (rmap)
+		vty_out(vty, " route-map %s", rmap);
+
+	vty_out(vty, "\n");
+}
+
+DEFPY_YANG (allow_external_route_update,
+	    allow_external_route_update_cmd,
+	    "[no] allow-external-route-update",
+	    NO_STR
+	    "Allow FRR routes to be overwritten by external processes\n")
+{
+	nb_cli_enqueue_change(vty, "/frr-zebra:zebra/allow-external-route-update",
+			      no ? NB_OP_DESTROY : NB_OP_CREATE, NULL);
+
+	return nb_cli_apply_changes(vty, NULL);
+}
+
+DEFPY_YANG (zebra_dplane_queue_limit,
+	    zebra_dplane_queue_limit_cmd,
+	    "[no] zebra dplane limit ![(0-10000)$limit]",
+	    NO_STR
+	    ZEBRA_STR
+	    "Zebra dataplane\n"
+	    "Limit incoming queued updates\n"
+	    "Number of queued updates\n")
+{
+	if (!no)
+		nb_cli_enqueue_change(vty, "/frr-zebra:zebra/dplane-queue-limit", NB_OP_MODIFY,
+				      limit_str);
+	else
+		nb_cli_enqueue_change(vty, "/frr-zebra:zebra/dplane-queue-limit", NB_OP_DESTROY,
+				      NULL);
+
+	return nb_cli_apply_changes(vty, NULL);
+}
+
+DEFPY_YANG_HIDDEN (zebra_zapi_packets,
+		   zebra_zapi_packets_cmd,
+		   "[no] zebra zapi-packets ![(1-10000)$packets]",
+		   NO_STR
+		   ZEBRA_STR
+		   "Zapi Protocol\n"
+		   "Number of packets to process before relinquishing thread\n")
+{
+	if (!no)
+		nb_cli_enqueue_change(vty, "/frr-zebra:zebra/zapi-packets", NB_OP_MODIFY,
+				      packets_str);
+	else
+		nb_cli_enqueue_change(vty, "/frr-zebra:zebra/zapi-packets", NB_OP_DESTROY, NULL);
+
+	return nb_cli_apply_changes(vty, NULL);
+}
+
+DEFPY_YANG_HIDDEN (zebra_workqueue_timer,
+		   zebra_workqueue_timer_cmd,
+		   "[no] zebra work-queue ![(0-10000)$timer]",
+		   NO_STR
+		   ZEBRA_STR
+		   "Work Queue\n"
+		   "Time in milliseconds\n")
+{
+	if (!no)
+		nb_cli_enqueue_change(vty, "/frr-zebra:zebra/workqueue-hold-timer", NB_OP_MODIFY,
+				      timer_str);
+	else
+		nb_cli_enqueue_change(vty, "/frr-zebra:zebra/workqueue-hold-timer", NB_OP_DESTROY,
+				      NULL);
+
+	return nb_cli_apply_changes(vty, NULL);
+}
+
+DEFPY_YANG (ip_zebra_import_table_distance,
+	    ip_zebra_import_table_distance_cmd,
+	    "ip import-table (1-252)$table_id [mrib]$mrib [distance (1-255)$distance] [route-map RMAP_NAME$rmap]",
+	    IP_STR
+	    "import routes from non-main kernel table\n"
+	    "kernel routing table id\n"
+	    "Import into the MRIB instead of the URIB\n"
+	    "Distance for imported routes\n"
+	    "Default distance value\n"
+	    "route-map for filtering\n"
+	    "route-map name\n")
+{
+	char xpath[XPATH_MAXLEN];
+	char xpath_child[XPATH_MAXLEN];
+	safi_t safi = mrib ? SAFI_MULTICAST : SAFI_UNICAST;
+
+	zebra_import_kernel_table_xpath(xpath, sizeof(xpath), AFI_IP, safi, table_id_str);
+	nb_cli_enqueue_change(vty, xpath, NB_OP_CREATE, NULL);
+
+	snprintfrr(xpath_child, sizeof(xpath_child), "%s/distance", xpath);
+	nb_cli_enqueue_change(vty, xpath_child, NB_OP_MODIFY, distance_str ? distance_str : "15");
+
+	snprintfrr(xpath_child, sizeof(xpath_child), "%s/route-map", xpath);
+	nb_cli_enqueue_change(vty, xpath_child, rmap ? NB_OP_MODIFY : NB_OP_DESTROY, rmap);
+
+	return nb_cli_apply_changes(vty, NULL);
+}
+
+DEFPY_YANG (no_ip_zebra_import_table,
+	    no_ip_zebra_import_table_cmd,
+	    "no ip import-table (1-252)$table_id [mrib]$mrib [distance (1-255)] [route-map NAME]",
+	    NO_STR
+	    IP_STR
+	    "import routes from non-main kernel table\n"
+	    "kernel routing table id\n"
+	    "Import into the MRIB instead of the URIB\n"
+	    "Distance for imported routes\n"
+	    "Default distance value\n"
+	    "route-map for filtering\n"
+	    "route-map name\n")
+{
+	char xpath[XPATH_MAXLEN];
+	safi_t safi = mrib ? SAFI_MULTICAST : SAFI_UNICAST;
+
+	zebra_import_kernel_table_xpath(xpath, sizeof(xpath), AFI_IP, safi, table_id_str);
+	nb_cli_enqueue_change(vty, xpath, NB_OP_DESTROY, NULL);
+
+	return nb_cli_apply_changes(vty, NULL);
+}
+
+DEFPY_YANG (ipv6_zebra_import_table_distance,
+	    ipv6_zebra_import_table_distance_cmd,
+	    "[no] ipv6 import-table (1-252)$table_id [mrib]$mrib [distance (1-255)$distance] [route-map RMAP_NAME$rmap]",
+	    NO_STR
+	    IPV6_STR
+	    "import routes from non-main kernel table\n"
+	    "kernel routing table id\n"
+	    "Import into the MRIB instead of the URIB\n"
+	    "Distance for imported routes\n"
+	    "Default distance value\n"
+	    "route-map for filtering\n"
+	    "route-map name\n")
+{
+	char xpath[XPATH_MAXLEN];
+	char xpath_child[XPATH_MAXLEN];
+	safi_t safi = mrib ? SAFI_MULTICAST : SAFI_UNICAST;
+
+	zebra_import_kernel_table_xpath(xpath, sizeof(xpath), AFI_IP6, safi, table_id_str);
+	nb_cli_enqueue_change(vty, xpath, no ? NB_OP_DESTROY : NB_OP_CREATE, NULL);
+
+	if (no)
+		return nb_cli_apply_changes(vty, NULL);
+
+	snprintfrr(xpath_child, sizeof(xpath_child), "%s/distance", xpath);
+	nb_cli_enqueue_change(vty, xpath_child, NB_OP_MODIFY, distance_str ? distance_str : "15");
+
+	snprintfrr(xpath_child, sizeof(xpath_child), "%s/route-map", xpath);
+	nb_cli_enqueue_change(vty, xpath_child, rmap ? NB_OP_MODIFY : NB_OP_DESTROY, rmap);
+
+	return nb_cli_apply_changes(vty, NULL);
 }
 
 DEFPY_YANG (multicast_new,
@@ -379,21 +601,25 @@ static void lib_interface_zebra_link_params_metric_cli_write(
 
 DEFPY_YANG (link_params_maxbw,
 	link_params_maxbw_cmd,
-	"max-bw BANDWIDTH",
+	"[no] max-bw BANDWIDTH",
+	NO_STR
 	"Maximum bandwidth that can be used\n"
 	"Bytes/second (IEEE floating point format)\n")
 {
 	char value[YANG_VALUE_MAXLEN];
 	float bw;
 
-	if (sscanf(bandwidth, "%g", &bw) != 1) {
-		vty_out(vty, "Invalid bandwidth value\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
+	if (!no) {
+		if (sscanf(bandwidth, "%g", &bw) != 1) {
+			vty_out(vty, "Invalid bandwidth value\n");
+			return CMD_WARNING_CONFIG_FAILED;
+		}
 
-	snprintf(value, sizeof(value), "%a", bw);
+		snprintf(value, sizeof(value), "%a", bw);
 
-	nb_cli_enqueue_change(vty, "./max-bandwidth", NB_OP_MODIFY, value);
+		nb_cli_enqueue_change(vty, "./max-bandwidth", NB_OP_MODIFY, value);
+	} else
+		nb_cli_enqueue_change(vty, "./max-bandwidth", NB_OP_DESTROY, NULL);
 
 	return nb_cli_apply_changes(vty, NULL);
 }
@@ -408,22 +634,25 @@ static void lib_interface_zebra_link_params_max_bandwidth_cli_write(
 
 DEFPY_YANG (link_params_max_rsv_bw,
 	link_params_max_rsv_bw_cmd,
-	"max-rsv-bw BANDWIDTH",
+	"[no] max-rsv-bw BANDWIDTH",
+	NO_STR
 	"Maximum bandwidth that may be reserved\n"
 	"Bytes/second (IEEE floating point format)\n")
 {
 	char value[YANG_VALUE_MAXLEN];
 	float bw;
 
-	if (sscanf(bandwidth, "%g", &bw) != 1) {
-		vty_out(vty, "Invalid bandwidth value\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
+	if (!no) {
+		if (sscanf(bandwidth, "%g", &bw) != 1) {
+			vty_out(vty, "Invalid bandwidth value\n");
+			return CMD_WARNING_CONFIG_FAILED;
+		}
 
-	snprintf(value, sizeof(value), "%a", bw);
+		snprintf(value, sizeof(value), "%a", bw);
 
-	nb_cli_enqueue_change(vty, "./max-reservable-bandwidth", NB_OP_MODIFY,
-			      value);
+		nb_cli_enqueue_change(vty, "./max-reservable-bandwidth", NB_OP_MODIFY, value);
+	} else
+		nb_cli_enqueue_change(vty, "./max-reservable-bandwidth", NB_OP_DESTROY, NULL);
 
 	return nb_cli_apply_changes(vty, NULL);
 }
@@ -439,7 +668,8 @@ static void lib_interface_zebra_link_params_max_reservable_bandwidth_cli_write(
 
 DEFPY_YANG (link_params_unrsv_bw,
 	link_params_unrsv_bw_cmd,
-	"unrsv-bw (0-7)$priority BANDWIDTH",
+	"[no] unrsv-bw (0-7)$priority BANDWIDTH",
+	NO_STR
 	"Unreserved bandwidth at each priority level\n"
 	"Priority\n"
 	"Bytes/second (IEEE floating point format)\n")
@@ -448,17 +678,25 @@ DEFPY_YANG (link_params_unrsv_bw,
 	char value[YANG_VALUE_MAXLEN];
 	float bw;
 
-	if (sscanf(bandwidth, "%g", &bw) != 1) {
-		vty_out(vty, "Invalid bandwidth value\n");
-		return CMD_WARNING_CONFIG_FAILED;
+	if (!no) {
+		if (sscanf(bandwidth, "%g", &bw) != 1) {
+			vty_out(vty, "Invalid bandwidth value\n");
+			return CMD_WARNING_CONFIG_FAILED;
+		}
+
+		snprintf(xpath, sizeof(xpath),
+			 "./unreserved-bandwidths/unreserved-bandwidth[priority='%s']/unreserved-bandwidth",
+			 priority_str);
+		snprintf(value, sizeof(value), "%a", bw);
+
+		nb_cli_enqueue_change(vty, xpath, NB_OP_MODIFY, value);
+	} else {
+		snprintf(xpath, sizeof(xpath),
+			 "./unreserved-bandwidths/unreserved-bandwidth[priority='%s']",
+			 priority_str);
+
+		nb_cli_enqueue_change(vty, xpath, NB_OP_DESTROY, NULL);
 	}
-
-	snprintf(xpath, sizeof(xpath),
-		 "./unreserved-bandwidths/unreserved-bandwidth[priority='%s']/unreserved-bandwidth",
-		 priority_str);
-	snprintf(value, sizeof(value), "%a", bw);
-
-	nb_cli_enqueue_change(vty, xpath, NB_OP_MODIFY, value);
 
 	return nb_cli_apply_changes(vty, NULL);
 }
@@ -1098,7 +1336,7 @@ static void lib_interface_zebra_evpn_mh_type_3_system_mac_cli_write(
 	struct vty *vty, const struct lyd_node *dnode, bool show_defaults)
 {
 	char buf[ETHER_ADDR_STRLEN];
-	struct ethaddr mac;
+	struct ethaddr mac = { 0 };
 
 	yang_dnode_get_mac(&mac, dnode, NULL);
 
@@ -1118,7 +1356,7 @@ DEFPY_YANG (zebra_evpn_es_id,
 	"10-byte ID - 00:AA:BB:CC:DD:EE:FF:GG:HH:II\n")
 {
 	if (no) {
-		/* We don't know which one is configured, so detroy both types. */
+		/* We don't know which one is configured, so destroy both types. */
 		nb_cli_enqueue_change(vty,
 				      "./frr-zebra:zebra/evpn-mh/type-0/esi",
 				      NB_OP_DESTROY, NULL);
@@ -1318,9 +1556,9 @@ DEFPY_YANG (ipv6_nd_ra_interval,
 
 	if (!no) {
 		if (sec)
-			snprintf(value, sizeof(value), "%lu", sec * 1000);
+			snprintfrr(value, sizeof(value), "%" PRIu64, sec * 1000);
 		else
-			snprintf(value, sizeof(value), "%lu", msec);
+			snprintfrr(value, sizeof(value), "%" PRIu64, msec);
 
 		nb_cli_enqueue_change(vty,
 				      "./frr-zebra:zebra/ipv6-router-advertisements/max-rtr-adv-interval",
@@ -1562,7 +1800,7 @@ DEFPY_YANG (ipv6_nd_other_config_flag,
 	NO_STR
 	"Interface IPv6 config commands\n"
 	"Neighbor discovery\n"
-	"Other statefull configuration flag\n")
+	"Other stateful configuration flag\n")
 {
 	if (!no)
 		nb_cli_enqueue_change(vty,
@@ -1908,6 +2146,24 @@ DEFPY_YANG(
 				    prefix_str);
 }
 
+#if CONFDATE > 20270601
+CPP_NOTICE("remove this compatibility block");
+#endif
+
+/* config write didn't match the CLI command (missing the token "lifetime")...
+ * so we wrote br0ken configs.  let's silently accept those "broken" configs
+ * for a bit.  (Luckily there is no ambiguity.)
+ */
+ALIAS_HIDDEN(
+      ipv6_nd_pref64,
+      ipv6_nd_pref64_compat_cmd,
+      "ipv6 nd nat64 [X:X::X:X/M]$prefix (0-65535)$lifetime",
+      "Interface IPv6 config commands\n"
+      "Neighbor discovery\n"
+      "NAT64 prefix advertisement (RFC8781)\n"
+      "NAT64 prefix to advertise (default: 64:ff9b::/96)\n"
+      "Valid lifetime in seconds\n")
+
 static void lib_interface_zebra_ipv6_router_advertisements_pref64_pref64_prefix_cli_write(
 	struct vty *vty, const struct lyd_node *dnode, bool show_defaults)
 {
@@ -1918,7 +2174,7 @@ static void lib_interface_zebra_ipv6_router_advertisements_pref64_pref64_prefix_
 	if (yang_dnode_exists(dnode, "lifetime")) {
 		uint16_t lifetime = yang_dnode_get_uint16(dnode, "lifetime");
 
-		vty_out(vty, " %u", lifetime);
+		vty_out(vty, " lifetime %u", lifetime);
 	}
 
 	vty_out(vty, "\n");
@@ -2355,22 +2611,6 @@ static void lib_vrf_mpls_fec_nexthop_resolution_cli_write(
 	}
 }
 
-#if CONFDATE > 20251207
-CPP_NOTICE("Remove no-op netns command")
-#endif
-DEFPY_YANG (vrf_netns,
-       vrf_netns_cmd,
-       "[no] netns ![NAME$netns_name]",
-       NO_STR
-       "Attach VRF to a Namespace\n"
-       "The file name in " NS_RUN_DIR ", or a full pathname\n")
-{
-	vty_out(vty, "%% This command doesn't do anything.\n");
-	vty_out(vty,
-		"%% VRF is linked to a netns automatically based on its name.\n");
-	return CMD_WARNING;
-}
-
 DEFPY_YANG (ip_table_range, ip_table_range_cmd,
       "[no] ip table range ![(1-4294967295)$start (1-4294967295)$end]",
       NO_STR IP_STR
@@ -2463,7 +2703,8 @@ DEFPY_YANG (vni_mapping,
 	} else {
 		if (vty->node == CONFIG_NODE) {
 			if (yang_dnode_existsf(vty->candidate_config->dnode,
-					       "/frr-vrf:lib/vrf[name='%s']/frr-zebra:zebra[l3vni-id='%lu']",
+					       "/frr-vrf:lib/vrf[name='%s']/frr-zebra:zebra[l3vni-id='%" PRIu64
+					       "']",
 					       VRF_DEFAULT_NAME, vni))
 				nb_cli_enqueue_change(vty, "./frr-zebra:zebra/l3vni-id",
 						      NB_OP_DESTROY, NULL);
@@ -2473,7 +2714,8 @@ DEFPY_YANG (vni_mapping,
 				vrf = yang_dnode_get_string(dnode, "name");
 
 				if (yang_dnode_existsf(vty->candidate_config->dnode,
-						       "/frr-vrf:lib/vrf[name='%s']/frr-zebra:zebra[l3vni-id='%lu']",
+						       "/frr-vrf:lib/vrf[name='%s']/frr-zebra:zebra[l3vni-id='%" PRIu64
+						       "']",
 						       vrf, vni))
 					nb_cli_enqueue_change(vty, "./frr-zebra:zebra/l3vni-id",
 							      NB_OP_DESTROY, NULL);
@@ -2790,6 +3032,26 @@ const struct frr_yang_module_info frr_zebra_cli_info = {
 			.cbs.cli_show = zebra_route_map_delay_cli_write,
 		},
 		{
+			.xpath = "/frr-zebra:zebra/allow-external-route-update",
+			.cbs.cli_show = zebra_allow_external_route_update_cli_write,
+		},
+		{
+			.xpath = "/frr-zebra:zebra/dplane-queue-limit",
+			.cbs.cli_show = zebra_dplane_queue_limit_cli_write,
+		},
+		{
+			.xpath = "/frr-zebra:zebra/zapi-packets",
+			.cbs.cli_show = zebra_zapi_packets_cli_write,
+		},
+		{
+			.xpath = "/frr-zebra:zebra/workqueue-hold-timer",
+			.cbs.cli_show = zebra_workqueue_hold_timer_cli_write,
+		},
+		{
+			.xpath = "/frr-zebra:zebra/import-kernel-table",
+			.cbs.cli_show = zebra_import_kernel_table_cli_write,
+		},
+		{
 			.xpath = "/frr-interface:lib/interface/frr-zebra:zebra/ipv4-addrs",
 			.cbs.cli_show = lib_interface_zebra_ipv4_addrs_cli_write,
 		},
@@ -3096,6 +3358,7 @@ void zebra_cli_init(void)
 	install_element(INTERFACE_NODE, &ipv6_nd_rdnss_cmd);
 	install_element(INTERFACE_NODE, &ipv6_nd_dnssl_cmd);
 	install_element(INTERFACE_NODE, &ipv6_nd_pref64_cmd);
+	install_element(INTERFACE_NODE, &ipv6_nd_pref64_compat_cmd);
 #if HAVE_BFDD == 0
 	install_element(INTERFACE_NODE, &zebra_ptm_enable_if_cmd);
 #endif
@@ -3122,6 +3385,13 @@ void zebra_cli_init(void)
 	install_element(CONFIG_NODE, &ipv6_protocol_nht_rmap_cmd);
 	install_element(VRF_NODE, &ipv6_protocol_nht_rmap_cmd);
 	install_element(CONFIG_NODE, &zebra_route_map_timer_cmd);
+	install_element(CONFIG_NODE, &allow_external_route_update_cmd);
+	install_element(CONFIG_NODE, &zebra_dplane_queue_limit_cmd);
+	install_element(CONFIG_NODE, &zebra_zapi_packets_cmd);
+	install_element(CONFIG_NODE, &zebra_workqueue_timer_cmd);
+	install_element(CONFIG_NODE, &ip_zebra_import_table_distance_cmd);
+	install_element(CONFIG_NODE, &ipv6_zebra_import_table_distance_cmd);
+	install_element(CONFIG_NODE, &no_ip_zebra_import_table_cmd);
 
 	install_element(CONFIG_NODE, &ip_nht_default_route_cmd);
 	install_element(CONFIG_NODE, &ipv6_nht_default_route_cmd);
@@ -3133,9 +3403,6 @@ void zebra_cli_init(void)
 
 	install_element(CONFIG_NODE, &vni_mapping_cmd);
 	install_element(VRF_NODE, &vni_mapping_cmd);
-
-	if (vrf_is_backend_netns())
-		install_element(VRF_NODE, &vrf_netns_cmd);
 
 	install_element(CONFIG_NODE, &ip_table_range_cmd);
 	install_element(VRF_NODE, &ip_table_range_cmd);

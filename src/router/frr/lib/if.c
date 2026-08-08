@@ -234,7 +234,7 @@ void if_update_state_mtu6(struct interface *ifp, uint mtu)
 		return;
 	ifp->mtu6 = mtu;
 	if (ifp->state && if_notify_oper_changes)
-		nb_op_updatef(ifp->state, "mtu6", "%u", ifp->mtu);
+		nb_op_updatef(ifp->state, "mtu6", "%u", ifp->mtu6);
 }
 
 void if_update_state_hw_addr(struct interface *ifp, const uint8_t *hw_addr, uint len)
@@ -680,7 +680,7 @@ struct interface *if_get_by_name(const char *name, vrf_id_t vrf_id,
 				 const char *vrf_name)
 {
 	struct interface *ifp = NULL;
-	struct vrf *vrf;
+	struct vrf *vrf = NULL;
 
 	switch (vrf_get_backend()) {
 	case VRF_BACKEND_NETNS:
@@ -715,8 +715,6 @@ struct interface *if_get_by_name(const char *name, vrf_id_t vrf_id,
 		assert(vrf);
 
 		break;
-	default:
-		return NULL;
 	}
 
 	return if_create_name(name, vrf);
@@ -974,6 +972,18 @@ struct nbr_connected *nbr_connected_check(struct interface *ifp,
 	return NULL;
 }
 
+/* Return true if there is at least one connected address in the given family  */
+bool if_has_connected_with_family(struct interface *ifp, int family)
+{
+	struct connected *connected;
+
+	frr_each (if_connected, ifp->connected, connected)
+		if (connected->address->family == family)
+			return true;
+
+	return false;
+}
+
 /* count the number of connected addresses that are in the given family */
 unsigned int connected_count_by_family(struct interface *ifp, int family)
 {
@@ -1077,6 +1087,8 @@ void if_terminate(struct vrf *vrf)
 
 	while (!RB_EMPTY(if_name_head, &vrf->ifaces_by_name)) {
 		ifp = RB_ROOT(if_name_head, &vrf->ifaces_by_name);
+		if (!ifp)
+			break;
 		if_delete(&ifp);
 	}
 }
@@ -1363,7 +1375,7 @@ DEFPY_YANG (no_interface,
 
 static void netns_ifname_split(const char *xpath, char *ifname, char *vrfname)
 {
-	char *delim;
+	const char *delim;
 	int len;
 
 	assert(vrf_is_backend_netns());
@@ -1591,6 +1603,12 @@ static int lib_interface_create(struct nb_cb_create_args *args)
 					     VRF_DEFAULT_NAME);
 		}
 
+		if (!ifp) {
+			snprintf(args->errmsg, args->errmsg_len, "failed to create interface '%s'",
+				 ifname);
+			return NB_ERR_RESOURCE;
+		}
+
 		ifp->configured = true;
 		nb_running_set_entry(args->dnode, ifp);
 		break;
@@ -1739,8 +1757,7 @@ static enum nb_error lib_interface_vrf_get(const struct nb_node *nb_node, const 
 	const struct lysc_node *snode = nb_node->snode;
 	const struct interface *ifp = list_entry;
 
-	if (lyd_new_term(parent, snode->module, snode->name, ifp->vrf->name, LYD_NEW_PATH_UPDATE,
-			 NULL))
+	if (lyd_new_term(parent, snode->module, snode->name, ifp->vrf->name, false, NULL))
 		return NB_ERR_RESOURCE;
 	return NB_OK;
 }
@@ -1756,8 +1773,8 @@ static enum nb_error lib_interface_state_if_index_get(const struct nb_node *nb_n
 	const struct interface *ifp = list_entry;
 	int32_t value = ifp->ifindex;
 
-	if (lyd_new_term_bin(parent, snode->module, snode->name, &value, sizeof(value),
-			     LYD_NEW_PATH_UPDATE, NULL))
+	if (yang_new_term_bin(parent, snode->module, snode->name, &value, sizeof(value),
+			      LYD_NEW_PATH_UPDATE, NULL))
 		return NB_ERR_RESOURCE;
 	return NB_OK;
 }
@@ -1772,8 +1789,8 @@ static enum nb_error lib_interface_state_mtu_get(const struct nb_node *nb_node,
 	const struct interface *ifp = list_entry;
 	uint32_t value = ifp->mtu;
 
-	if (lyd_new_term_bin(parent, snode->module, snode->name, &value, sizeof(value),
-			     LYD_NEW_PATH_UPDATE, NULL))
+	if (yang_new_term_bin(parent, snode->module, snode->name, &value, sizeof(value),
+			      LYD_NEW_PATH_UPDATE, NULL))
 		return NB_ERR_RESOURCE;
 	return NB_OK;
 }
@@ -1788,8 +1805,8 @@ static enum nb_error lib_interface_state_speed_get(const struct nb_node *nb_node
 	const struct interface *ifp = list_entry;
 	uint32_t value = ifp->speed;
 
-	if (lyd_new_term_bin(parent, snode->module, snode->name, &value, sizeof(value),
-			     LYD_NEW_PATH_UPDATE, NULL))
+	if (yang_new_term_bin(parent, snode->module, snode->name, &value, sizeof(value),
+			      LYD_NEW_PATH_UPDATE, NULL))
 		return NB_ERR_RESOURCE;
 	return NB_OK;
 }
@@ -1804,8 +1821,8 @@ static enum nb_error lib_interface_state_metric_get(const struct nb_node *nb_nod
 	const struct interface *ifp = list_entry;
 	uint32_t value = ifp->metric;
 
-	if (lyd_new_term_bin(parent, snode->module, snode->name, &value, sizeof(value),
-			     LYD_NEW_PATH_UPDATE, NULL))
+	if (yang_new_term_bin(parent, snode->module, snode->name, &value, sizeof(value),
+			      LYD_NEW_PATH_UPDATE, NULL))
 		return NB_ERR_RESOURCE;
 	return NB_OK;
 }

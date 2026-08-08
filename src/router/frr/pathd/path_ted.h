@@ -103,7 +103,7 @@ uint32_t path_ted_config_write(struct vty *vty);
 /* clang-format on */
 
 
-uint32_t path_ted_get_current_igp(uint32_t);
+uint32_t path_ted_get_current_igp(uint32_t igp);
 /* TED Query functions */
 
 /*
@@ -150,6 +150,18 @@ uint32_t path_ted_query_type_f(struct ipaddr *local, struct ipaddr *remote);
  * @return		sid of attribute
  */
 uint32_t path_ted_rcvd_message(struct ls_message *msg);
+
+/**
+ * @return		is ted enabled
+ */
+bool path_is_ted_enabled(void);
+
+/**
+ * Turn mpls_te off
+ *
+ * @return		0 on success, 1 if could not unregister Link state
+ */
+uint32_t path_ted_mpls_te_off(void);
 
 #ifdef __cplusplus
 }

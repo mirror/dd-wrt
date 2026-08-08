@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * IS-IS Rout(e)ing protocol - isis_misc.h
- *                             Miscellanous routines
+ *                             Miscellaneous routines
  *
  * Copyright (C) 2001,2002   Sampo Saaristo
  *                           Tampere University of Technology
@@ -31,7 +31,10 @@
 #include "isisd/isis_adjacency.h"
 #include "isisd/isis_dynhn.h"
 
-/* staticly assigned vars for printing purposes */
+DEFINE_MTYPE_STATIC(ISISD, ISIS_TMP_LOG_MULTILINE, "ISIS log multiline temporary");
+DEFINE_MTYPE_STATIC(ISISD, ISIS_TMP_VTY_MULTILINE, "ISIS vty multiline temporary");
+
+/* statically assigned vars for printing purposes */
 static char sys_hostname[ISO_SYSID_STRLEN];
 struct in_addr new_prefix;
 /* len of xxYxxMxWxdxxhxxmxxs + place for #0 termination */
@@ -320,7 +323,6 @@ const char *print_sys_hostname(const uint8_t *sysid)
 {
 	struct isis_dynhn *dyn;
 	struct isis *isis = NULL;
-	struct listnode *node;
 	struct isis_area *area = NULL;
 
 	if (!sysid)
@@ -331,7 +333,7 @@ const char *print_sys_hostname(const uint8_t *sysid)
 	if (area && area->dynhostname && !CHECK_FLAG(im->options, F_ISIS_UNIT_TEST))
 		return cmd_hostname_get();
 
-	for (ALL_LIST_ELEMENTS_RO(im->isis, node, isis)) {
+	frr_each (isis_instance_list, &im->isis, isis) {
 		area = isis_area_lookup_by_sysid(isis->sysid);
 		dyn = dynhn_find_by_id(isis, sysid);
 		if (area && area->dynhostname && dyn)
@@ -409,7 +411,7 @@ void log_multiline(int priority, const char *prefix, const char *format, ...)
 	char *p;
 
 	va_start(ap, format);
-	p = vasnprintfrr(MTYPE_TMP, shortbuf, sizeof(shortbuf), format, ap);
+	p = vasnprintfrr(MTYPE_ISIS_TMP_LOG_MULTILINE, shortbuf, sizeof(shortbuf), format, ap);
 	va_end(ap);
 
 	if (!p)
@@ -422,7 +424,7 @@ void log_multiline(int priority, const char *prefix, const char *format, ...)
 	}
 
 	if (p != shortbuf)
-		XFREE(MTYPE_TMP, p);
+		XFREE(MTYPE_ISIS_TMP_LOG_MULTILINE, p);
 }
 
 void vty_multiline(struct vty *vty, const char *prefix, const char *format, ...)
@@ -432,7 +434,7 @@ void vty_multiline(struct vty *vty, const char *prefix, const char *format, ...)
 	char *p;
 
 	va_start(ap, format);
-	p = vasnprintfrr(MTYPE_TMP, shortbuf, sizeof(shortbuf), format, ap);
+	p = vasnprintfrr(MTYPE_ISIS_TMP_VTY_MULTILINE, shortbuf, sizeof(shortbuf), format, ap);
 	va_end(ap);
 
 	if (!p)
@@ -445,7 +447,7 @@ void vty_multiline(struct vty *vty, const char *prefix, const char *format, ...)
 	}
 
 	if (p != shortbuf)
-		XFREE(MTYPE_TMP, p);
+		XFREE(MTYPE_ISIS_TMP_VTY_MULTILINE, p);
 }
 
 void vty_out_timestr(struct vty *vty, time_t uptime)

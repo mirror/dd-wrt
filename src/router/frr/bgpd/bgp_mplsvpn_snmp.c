@@ -595,7 +595,7 @@ static int bgp_vrf_check_update_active(struct bgp *bgp, struct interface *ifp)
 			return 0;
 		}
 
-		/* send relevent trap */
+		/* send relevant trap */
 		if (bgp->snmp_stats->active)
 			trap = MPLSL3VPNVRFUP;
 		else
@@ -938,7 +938,7 @@ static uint8_t *mplsL3vpnVrfTable(struct variable *v, oid name[],
 		return (uint8_t *)l3vpn_bgp->name;
 	case MPLSL3VPNVRFRD:
 		/*
-		 * this is a horror show but the MIB dicates one RD per vrf
+		 * this is a horror show but the MIB dictates one RD per vrf
 		 * and not one RD per AFI as we (FRR) have. So this little gem
 		 * returns the V4 one if it's set OR the v6 one if it's set or
 		 * zero-length string id neither are set
@@ -958,8 +958,8 @@ static uint8_t *mplsL3vpnVrfTable(struct variable *v, oid name[],
 		*var_len = strnlen(rd_buf, RD_ADDRSTRLEN);
 		return (uint8_t *)rd_buf;
 	case MPLSL3VPNVRFCREATIONTIME:
-		return SNMP_INTEGER(
-			(uint32_t)l3vpn_bgp->snmp_stats->creation_time);
+		return SNMP_INTEGER(frr_time_t_to_uint32_t(
+			l3vpn_bgp->snmp_stats->creation_time));
 	case MPLSL3VPNVRFOPERSTATUS:
 		if (l3vpn_bgp->snmp_stats->active)
 			return SNMP_INTEGER(1);
@@ -1079,7 +1079,7 @@ static struct bgp *bgpL3vpnVrfRt_lookup(struct variable *v, oid name[],
 				if (*rt_type == MPLSVPNVRFRTTYPEEXPORT
 				    && !export)
 					continue;
-				/* ckeck for both */
+				/* check for both */
 				if (*rt_type == MPLSVPNVRFRTTYPEIMPORT && import
 				    && export
 				    && ecommunity_cmp(
@@ -1370,7 +1370,7 @@ static struct bgp_path_info *bgpL3vpnRte_lookup(struct variable *v, oid name[],
 						struct bgp_dest **dest,
 						uint16_t *policy, int exact)
 {
-	uint8_t i;
+	size_t i;
 	uint8_t vrf_name_len = 0;
 	struct bgp_path_info *pi = NULL;
 	size_t namelen = v ? v->namelen : IFCONFTAB_NAMELEN;
@@ -1378,6 +1378,9 @@ static struct bgp_path_info *bgpL3vpnRte_lookup(struct variable *v, oid name[],
 	struct ipaddr nexthop = {0};
 	uint8_t prefix_type;
 	uint8_t nexthop_type;
+
+	if (*length < namelen)
+		return NULL;
 
 	if ((uint32_t)(*length - namelen) > (VRF_NAMSIZ + 37))
 		return NULL;
@@ -1389,7 +1392,11 @@ static struct bgp_path_info *bgpL3vpnRte_lookup(struct variable *v, oid name[],
 				break;
 			vrf_name_len++;
 		}
+
 		if (vrf_name_len > VRF_NAMSIZ)
+			return NULL;
+
+		if (i >= (*length))
 			return NULL;
 
 		oid2string(name + namelen, vrf_name_len, vrf_name);
@@ -1400,16 +1407,28 @@ static struct bgp_path_info *bgpL3vpnRte_lookup(struct variable *v, oid name[],
 			break;
 		case INETADDRESSTYPEIPV4:
 			prefix.family = AF_INET;
+
+			if ((*length) - i < sizeof(struct in_addr))
+				return NULL;
+
 			oid2in_addr(&name[i], sizeof(struct in_addr),
 				    &prefix.u.prefix4);
 			i += sizeof(struct in_addr);
 			break;
 		case INETADDRESSTYPEIPV6:
 			prefix.family = AF_INET6;
+
+			if ((*length) - i < sizeof(struct in6_addr))
+				return NULL;
+
 			oid2in6_addr(&name[i], &prefix.u.prefix6);
 			i += sizeof(struct in6_addr);
 			break;
 		}
+
+		if ((*length) - i < 4)
+			return NULL;
+
 		prefix.prefixlen = (uint8_t)name[i++];
 		*policy |= name[i++] << 8;
 		*policy |= name[i++];
@@ -1421,12 +1440,20 @@ static struct bgp_path_info *bgpL3vpnRte_lookup(struct variable *v, oid name[],
 						   : IPADDR_V6;
 			break;
 		case INETADDRESSTYPEIPV4:
+
+			if ((*length) - i < sizeof(struct in_addr))
+				return NULL;
+
 			nexthop.ipa_type = IPADDR_V4;
 			oid2in_addr(&name[i], sizeof(struct in_addr),
 				    &nexthop.ip._v4_addr);
 			/* i += sizeof(struct in_addr); */
 			break;
 		case INETADDRESSTYPEIPV6:
+
+			if ((*length) - i < sizeof(struct in6_addr))
+				return NULL;
+
 			nexthop.ipa_type = IPADDR_V6;
 			oid2in6_addr(&name[i], &nexthop.ip._v6_addr);
 			/* i += sizeof(struct in6_addr); */

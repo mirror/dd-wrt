@@ -14,6 +14,7 @@
 #include "if.h"
 #include "linklist.h"
 #include "bitfield.h"
+#include "typesafe.h"
 #include "zebra_vxlan.h"
 #include "zebra_vxlan_private.h"
 #include "zebra_nhg.h"
@@ -26,7 +27,7 @@
  *   access port is associated with an ES-ID
  * - Remotes ESs are added by BGP based on received/remote EAD/Type-1 routes
  *   (ZEBRA_EVPNES_REMOTE)
- * - An ES can be simultaneously LOCAL and REMOTE; infact all LOCAL ESs are
+ * - An ES can be simultaneously LOCAL and REMOTE; in fact all LOCAL ESs are
  *   expected to have REMOTE ES peers.
  */
 struct zebra_evpn_es {
@@ -94,7 +95,7 @@ RB_PROTOTYPE(zebra_es_rb_head, zebra_evpn_es, rb_node, zebra_es_rb_cmp);
 /* ES per-EVI info
  * - ES-EVIs are maintained per-EVPN (vni->es_evi_rb_tree)
  * - Local ES-EVIs are linked to per-EVPN list for quick access
- * - Although some infrastucture is present for remote ES-EVIs, currently
+ * - Although some infrastructure is present for remote ES-EVIs, currently
  *   BGP does NOT send remote ES-EVIs to zebra. This may change in the
  *   future (but must be changed thoughtfully and only if needed as ES-EVI
  *   can get prolific and come in the way of rapid failovers)
@@ -127,7 +128,7 @@ struct zebra_evpn_es_evi {
  * nexthop
  */
 struct zebra_evpn_l2_nh {
-	struct in_addr vtep_ip;
+	struct ipaddr vtep_ip;
 
 	/* MAC nexthop id */
 	uint32_t nh_id;
@@ -136,21 +137,46 @@ struct zebra_evpn_l2_nh {
 	uint32_t ref_cnt;
 };
 
+PREDECL_SORTLIST_UNIQ(mh_vtep_list);
+PREDECL_DLIST(mh_vtep_es_list);
+
+/* Global ES peer VTEP - one per unique peer VTEP on local ESs.
+ * Used for "show evpn es-peer" (SPH VTEP list) with real SPH offset.
+ */
+struct zebra_evpn_mh_vtep {
+	struct ipaddr vtep_ip;
+
+	/* List of zebra_evpn_es_vtep entries (ES-VTEPs using this peer VTEP) */
+	struct mh_vtep_es_list_head es_vtep_list;
+
+	/* Link in zmh_info->mh_vtep_list */
+	struct mh_vtep_list_item listnode;
+
+	/* SPH offset (index) for display / future dataplane use */
+	uint32_t sph_offset;
+};
+
 /* PE attached to an ES */
 struct zebra_evpn_es_vtep {
 	struct zebra_evpn_es *es; /* parent ES */
-	struct in_addr vtep_ip;
+	struct ipaddr vtep_ip;
 
 	uint32_t flags;
 	/* Rxed Type-4 route from this VTEP */
 #define ZEBRA_EVPNES_VTEP_RXED_ESR (1 << 0)
 #define ZEBRA_EVPNES_VTEP_DEL_IN_PROG (1 << 1)
+	/* ES VTEP is associated with a local ES (on mh_vtep_list) */
+#define ZEBRA_EVPNES_VTEP_LOCAL (1 << 2)
 
 	/* MAC nexthop info */
 	struct zebra_evpn_l2_nh *nh;
 
 	/* memory used for adding the entry to es->es_vtep_list */
 	struct listnode es_listnode;
+
+	/* [LOCAL ES only] backpointer to global MH VTEP; link in mh_vtep->es_vtep_list */
+	struct zebra_evpn_mh_vtep *mh_vtep;
+	struct mh_vtep_es_list_item vtep_listnode;
 
 	/* Parameters for DF election */
 	uint8_t df_alg;
@@ -178,6 +204,8 @@ struct zebra_evpn_access_bd {
 	struct zebra_evpn *zevpn;
 	/* SVI associated with the VLAN */
 	struct zebra_if *vlan_zif;
+	/* VNI count */
+	uint8_t vni_refcnt;
 };
 
 /* multihoming information stored in zrouter */
@@ -217,7 +245,7 @@ struct zebra_evpn_mh_info {
 	 * not be necessary
 	 */
 	struct zebra_evpn *es_base_evpn;
-	struct in_addr es_originator_ip;
+	struct ipaddr es_originator_ip;
 
 	/* L2 NH and NHG ids -
 	 * Most significant 4 bits is type. Lower 28 bits is the value
@@ -235,6 +263,13 @@ struct zebra_evpn_mh_info {
 	struct hash *nhg_table;
 	/* L2-NH table - key: vtep_up, data: zebra_evpn_nh */
 	struct hash *nh_ip_table;
+
+	/* SPH offset bitmap for ES peer VTEPs (show evpn es-peer) */
+	bitfield_t sph_id_bitmap;
+#define EVPN_SPH_ID_MAX (16)
+
+	/* List of ES peer VTEPs (zebra_evpn_mh_vtep) - peers on local ESs */
+	struct mh_vtep_list_head mh_vtep_list;
 
 	/* XXX - re-visit the default hold timer value */
 	int mac_hold_time;
@@ -302,6 +337,8 @@ static inline bool zebra_evpn_mh_do_adv_svi_mac(void)
 extern esi_t *zero_esi;
 extern void zebra_evpn_mh_init(void);
 extern void zebra_evpn_mh_terminate(void);
+extern void zebra_evpn_mh_reserve_stale_nhid(uint32_t nh_id);
+extern void zebra_evpn_mh_release_stale_nhid(uint32_t nh_id);
 extern bool zebra_evpn_is_if_es_capable(struct zebra_if *zif);
 extern void zebra_evpn_if_init(struct zebra_if *zif);
 extern void zebra_evpn_if_cleanup(struct zebra_if *zif);
@@ -322,11 +359,12 @@ extern void zebra_evpn_es_if_oper_state_change(struct zebra_if *zif, bool up);
 extern void zebra_evpn_es_show(struct vty *vty, bool uj);
 extern void zebra_evpn_es_show_detail(struct vty *vty, bool uj);
 extern void zebra_evpn_es_show_esi(struct vty *vty, bool uj, esi_t *esi);
+extern void zebra_evpn_mh_vtep_show(struct vty *vty, bool uj);
 extern void zebra_evpn_update_all_es(struct zebra_evpn *zevpn);
 extern void zebra_evpn_proc_remote_es(ZAPI_HANDLER_ARGS);
-int zebra_evpn_remote_es_add(const esi_t *esi, struct in_addr vtep_ip,
-			     bool esr_rxed, uint8_t df_alg, uint16_t df_pref);
-int zebra_evpn_remote_es_del(const esi_t *esi, struct in_addr vtep_ip);
+int zebra_evpn_remote_es_add(const esi_t *esi, struct ipaddr *vtep_ip, bool esr_rxed,
+			     uint8_t df_alg, uint16_t df_pref);
+int zebra_evpn_remote_es_del(const esi_t *esi, struct ipaddr *vtep_ip);
 extern void zebra_evpn_es_evi_show(struct vty *vty, bool uj, int detail);
 extern void zebra_evpn_es_evi_show_vni(struct vty *vty, bool uj,
 		vni_t vni, int detail);

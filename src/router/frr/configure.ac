@@ -7,7 +7,7 @@
 ##
 AC_PREREQ([2.69])
 
-AC_INIT([frr], [10.5.2], [https://github.com/frrouting/frr/issues])
+AC_INIT([frr], [10.7.0], [https://github.com/frrouting/frr/issues])
 PACKAGE_URL="https://frrouting.org/"
 AC_SUBST([PACKAGE_URL])
 PACKAGE_FULLNAME="FRRouting"
@@ -364,6 +364,7 @@ dnl if the user has specified any CFLAGS, override our settings
 if test "$enable_gcov" = "yes"; then
    if test "$orig_cflags" = ""; then
       AC_C_FLAG([--coverage])
+      AC_C_FLAG([-fprofile-update=atomic])
       AC_C_FLAG([-O0])
    fi
 
@@ -476,6 +477,7 @@ AC_C_FLAG([-Wundef])
 AC_C_FLAG([-Wimplicit-fallthrough])
 AC_C_FLAG([-Wshadow])
 AC_C_FLAG([-Wmissing-noreturn])
+AC_C_FLAG([-Wformat-extra-args])
 if test "$enable_gcc_ultra_verbose" = "yes" ; then
   AC_C_FLAG([-Wcast-qual])
   AC_C_FLAG([-Wmissing-format-attribute])
@@ -489,6 +491,7 @@ AC_C_FLAG([-Wno-unused-parameter])
 AC_C_FLAG([-Wno-missing-field-initializers])
 AC_C_FLAG([-Wno-microsoft-anon-tag])
 AC_C_FLAG([-Wno-error=deprecated-declarations])
+AC_C_FLAG([-Waddress-of-packed-member])
 
 AC_C_FLAG([-Wc++-compat], [], [CXX_COMPAT_CFLAGS="-Wc++-compat"])
 AC_SUBST([CXX_COMPAT_CFLAGS])
@@ -899,6 +902,24 @@ AC_ARG_ENABLE([version_build_config],
 AC_ARG_ENABLE([python_runtime],
   AS_HELP_STRING([--disable-python-runtime], [do not install python scripts or have python runtime dependency]))
 
+##
+## gperftools tcmalloc version, more complete than "minimal"
+##
+AC_ARG_ENABLE(gperf-tcmalloc,
+	AS_HELP_STRING([--enable-gperf-tcmalloc], [Use gperftools tcmalloc]),
+[case "${enableval}" in
+  yes)
+  AC_MSG_CHECKING([for gperftools tcmalloc])
+  AC_CHECK_LIB([tcmalloc], [MallocExtension_ReleaseToSystem], [
+gperf_tcmalloc_enabled=true
+LIBS="$LIBS -ltcmalloc"
+AC_DEFINE([HAVE_TCMALLOC], [1], [Enable tcmalloc])
+  ], [AC_MSG_ERROR([tcmalloc specified but libtcmalloc not found, or missing apis])])
+ ;;
+  no)  gperf_tcmalloc_enabled=false ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-gperf-tcmalloc]) ;;
+esac],[gperf_tcmalloc_enabled=false])
+
 #if openssl, else use the internal
 AS_IF([test "$with_crypto" = "openssl"], [
 AC_CHECK_LIB([crypto], [EVP_DigestInit], [LIBS="$LIBS -lcrypto"], [], [])
@@ -1115,6 +1136,10 @@ if test "$EXTRAVERSION" != "" ; then
 fi
 AC_SUBST([EXTRAVERSION])
 
+dnl pkg-config version must be numeric only (pkgconf on Alpine rejects non-numeric versions)
+FRR_PACKAGE_VERSION="`echo ${PACKAGE_VERSION} | tr -c -d '[[.0-9]]'`"
+AC_SUBST([FRR_PACKAGE_VERSION])
+
 if test "$with_pkg_git_version" = "yes"; then
 	if test -e "${srcdir}/.git"; then
 		AC_DEFINE([GIT_VERSION], [1], [include git version info])
@@ -1228,12 +1253,14 @@ AS_IF([$needsync], [
   dnl https://marc.info/?l=openbsd-tech&m=147299508409549&w=2
   AC_MSG_CHECKING([for OpenBSD futex() support])
   AC_LINK_IFELSE([AC_LANG_PROGRAM([
+#include <stddef.h>
+#include <stdint.h>
 #include <sys/futex.h>
 int main(void);
 ],
 [
 {
-  return futex(NULL, FUTEX_WAIT, 0, NULL, NULL, 0);
+  return futex(NULL, FUTEX_WAIT, 0, NULL, NULL);
 }
 ])], [
     AC_MSG_RESULT([yes])
@@ -1385,21 +1412,33 @@ dnl yes this might include stddef.h 3 times but who cares
 AH_VERBATIM(HAVE_STRLCAT_, [
 #ifndef HAVE_STRLCAT
 #include <stddef.h>
+#ifndef __cplusplus
 size_t strlcat(char *__restrict dest,
 	       const char *__restrict src, size_t destsize);
+#else
+extern "C" size_t strlcat(char *dest, const char *src, size_t destsize);
+#endif
 #endif
 ])
 AH_VERBATIM(HAVE_STRLCPY_, [
 #ifndef HAVE_STRLCPY
 #include <stddef.h>
+#ifndef __cplusplus
 size_t strlcpy(char *__restrict dest,
 	       const char *__restrict src, size_t destsize);
+#else
+extern "C" size_t strlcpy(char *dest, const char *src, size_t destsize);
+#endif
 #endif
 ])
 AH_VERBATIM(HAVE_EXPLICIT_BZERO_, [
 #ifndef HAVE_EXPLICIT_BZERO
 #include <stddef.h>
+#ifndef __cplusplus
 void explicit_bzero(void *buf, size_t len);
+#else
+extern "C" void explicit_bzero(void *buf, size_t len);
+#endif
 #endif
 ])
 
@@ -1577,6 +1616,17 @@ AC_CHECK_FUNCS([ppoll], [
 AC_CHECK_FUNCS([pollts], [
   AC_DEFINE([HAVE_POLLTS], [1], [have NetBSD pollts()])
 ])
+
+AC_CHECK_FUNC([epoll_pwait], [AC_DEFINE([HAVE_EPOLL_PWAIT], [1],
+			     [Define if you have epoll_pwait])])
+# Define USE_EPOLL if any of the above is found
+AC_MSG_CHECKING([for epoll API support])
+if test "x$ac_cv_func_epoll_pwait" = "xyes" ; then
+    AC_DEFINE([USE_EPOLL], [1], [Define if any epoll API is supported])
+    AC_MSG_RESULT([yes])
+else
+    AC_MSG_RESULT([no])
+fi
 
 AC_CHECK_HEADER([asm-generic/unistd.h],
                 [AC_CHECK_DECL(__NR_setns,
@@ -2042,6 +2092,21 @@ dnl ---------------
 PKG_CHECK_MODULES([LIBYANG], [libyang >= 2.1.128], , [
 AC_MSG_ERROR([m4_normalize([libyang >= 2.1.128 is required, and was not found on your system.
 Please consult doc/developer/building-libyang.rst for instructions on installing or building libyang.])])])
+
+LIBYANG_MAJOR=$(pkg-config --modversion libyang | cut -f1 -d.)
+if test "$LIBYANG_MAJOR" -ge 4 && test "$LIBYANG_MAJOR" -lt 5; then
+  dnl NOTE: binary encoding (LYD_LYB) is no longer supported in v4,
+  dnl so v3 may be more efficient for certain use cases
+  AC_MSG_WARN([m4_normalize([
+    Libyang v4 is supported; however libyang v3 or v5+ is suggested. Libyang
+    v4 changed its binary encoding (LYD_LYB) format to a very restricted
+    subset of users which does not include FRR. This mean FRR will always use
+    JSON or XML even when passing intermediate results internally. This restriction
+    was reverted in v5.
+    ])
+  ])
+fi
+
 ac_cflags_save="$CFLAGS"
 CFLAGS="$CFLAGS $LIBYANG_CFLAGS"
 #AC_CHECK_MEMBER([struct lyd_node.priv], [], [
@@ -2555,6 +2620,30 @@ if test "$enable_backtrace" != "no" ; then
           AC_DEFINE([HAVE_LIBUNWIND], [1], [libunwind])
           backtrace_ok=true
         ])
+      ], [
+        # OpenBSD. no idea why the header file is under C++, but it is
+        ac_cflags_save="$CFLAGS"
+        CFLAGS="$CFLAGS -I/usr/include/c++/v1"
+        $as_unset ac_cv_header_libunwind_h
+        AC_CHECK_HEADER([libunwind.h], [
+          # and the actual functions are in libexecinfo, but not public...
+	  # except in execinfo_p, but that's a static library...
+	  # but another copy is in libc++abi...
+          # but that one needs -pthread...
+	  ac_libs_save="$LIBS"
+	  ac_ldflags_save="$LDFLAGS"
+	  LDFLAGS="-pthread $LDFLAGS"
+          $as_unset ac_cv_search_unw_getcontext
+          AC_SEARCH_LIBS([unw_getcontext], [execinfo c++abi execinfo_p], [
+            AC_DEFINE([HAVE_LIBUNWIND], [1], [libunwind])
+            UNWIND_CFLAGS="-I/usr/include/c++/v1"
+            UNWIND_LIBS="-pthread ${ac_cv_search_unw_getcontext}"
+            backtrace_ok=true
+          ])
+	  LDFLAGS="$ac_ldflags_save"
+	  LIBS="$ac_libs_save"
+        ])
+        CFLAGS="$ac_cflags_save"
       ])
     ])
     if test "$enable_backtrace" = "libunwind" -a "$backtrace_ok" = "false"; then

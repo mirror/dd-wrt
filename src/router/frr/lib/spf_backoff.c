@@ -104,18 +104,18 @@ void spf_backoff_free(struct spf_backoff *backoff)
 	XFREE(MTYPE_SPF_BACKOFF, backoff);
 }
 
-static void spf_backoff_timetolearn_elapsed(struct event *thread)
+static void spf_backoff_timetolearn_elapsed(struct event *event)
 {
-	struct spf_backoff *backoff = EVENT_ARG(thread);
+	struct spf_backoff *backoff = EVENT_ARG(event);
 
 	backoff->state = SPF_BACKOFF_LONG_WAIT;
 	backoff_debug("SPF Back-off(%s) TIMETOLEARN elapsed, move to state %s",
 		      backoff->name, spf_backoff_state2str(backoff->state));
 }
 
-static void spf_backoff_holddown_elapsed(struct event *thread)
+static void spf_backoff_holddown_elapsed(struct event *event)
 {
-	struct spf_backoff *backoff = EVENT_ARG(thread);
+	struct spf_backoff *backoff = EVENT_ARG(event);
 
 	event_cancel(&backoff->t_timetolearn);
 	timerclear(&backoff->first_event_time);
@@ -203,7 +203,7 @@ void spf_backoff_show(struct spf_backoff *backoff, struct vty *vty,
 		backoff->long_delay);
 	vty_out(vty, "%sHolddown timer:    %ld msec\n", prefix,
 		backoff->holddown);
-	if (backoff->t_holddown) {
+	if (event_is_scheduled(backoff->t_holddown)) {
 		struct timeval remain = event_timer_remain(backoff->t_holddown);
 
 		vty_out(vty, "%s                   Still runs for %lld msec\n",
@@ -216,7 +216,7 @@ void spf_backoff_show(struct spf_backoff *backoff, struct vty *vty,
 
 	vty_out(vty, "%sTimeToLearn timer: %ld msec\n", prefix,
 		backoff->timetolearn);
-	if (backoff->t_timetolearn) {
+	if (event_is_scheduled(backoff->t_timetolearn)) {
 		struct timeval remain =
 			event_timer_remain(backoff->t_timetolearn);
 		vty_out(vty, "%s                   Still runs for %lld msec\n",

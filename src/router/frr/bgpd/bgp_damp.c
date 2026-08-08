@@ -164,7 +164,6 @@ static void bgp_reuse_timer(struct event *t)
 	time_t t_now, t_diff;
 	struct bgp_damp_config *bdc = EVENT_ARG(t);
 
-	bdc->t_reuse = NULL;
 	event_add_timer(bm->master, bgp_reuse_timer, bdc, DELTA_REUSE,
 			&bdc->t_reuse);
 
@@ -375,14 +374,12 @@ void bgp_damp_info_free(struct bgp_damp_info *bdi, struct reuselist *list,
 	struct bgp_path_info *bpi = bdi->path;
 	struct bgp_dest *dest = bdi->dest;
 	struct bgp *bgp = bpi->peer->bgp;
-	const struct prefix *p = bgp_dest_get_prefix(bdi->dest);
 
 	bgp_damp_info_unclaim(bdi, list);
 
 	bpi->extra->damp_info = NULL;
 	bgp_path_info_unset_flag(dest, bpi, BGP_PATH_HISTORY | BGP_PATH_DAMPED);
 	if (bdi->lastrecord == BGP_RECORD_WITHDRAW && withdraw) {
-		bgp_aggregate_decrement(bgp, p, bpi, afi, SAFI_UNICAST);
 		bgp_path_info_mark_for_delete(dest, bpi);
 		bgp_process(bgp, dest, bpi, afi, safi);
 	}
@@ -493,6 +490,8 @@ void bgp_damp_info_clean(struct bgp *bgp, struct bgp_damp_config *bdc,
 		list = &bdc->reuse_list[i];
 		while ((bdi = SLIST_FIRST(list)) != NULL) {
 			if (bdi->lastrecord == BGP_RECORD_UPDATE) {
+				bgp_path_info_unset_flag(bdi->dest, bdi->path,
+							 BGP_PATH_HISTORY | BGP_PATH_DAMPED);
 				bgp_aggregate_increment(bgp,
 							bgp_dest_get_prefix(
 								bdi->dest),

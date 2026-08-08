@@ -171,8 +171,9 @@ struct ospf6_neighbor {
 #define OSPF6_NEIGHBOR_EVENT_SEQNUMBER_MISMATCH   7
 #define OSPF6_NEIGHBOR_EVENT_BAD_LSREQ            8
 #define OSPF6_NEIGHBOR_EVENT_ONEWAY_RCVD          9
-#define OSPF6_NEIGHBOR_EVENT_INACTIVITY_TIMER    10
-#define OSPF6_NEIGHBOR_EVENT_MAX_EVENT           11
+#define OSPF6_NEIGHBOR_EVENT_KILL_NBR            10
+#define OSPF6_NEIGHBOR_EVENT_INACTIVITY_TIMER    11
+#define OSPF6_NEIGHBOR_EVENT_MAX_EVENT           12
 
 extern const char *const ospf6_neighbor_event_str[];
 
@@ -199,6 +200,7 @@ struct ospf6_neighbor *ospf6_area_neighbor_lookup(struct ospf6_area *area,
 struct ospf6_neighbor *ospf6_neighbor_create(uint32_t router_id,
 					     struct ospf6_interface *oi);
 void ospf6_neighbor_delete(struct ospf6_neighbor *on);
+void ospf6_neighbor_kill(struct ospf6_neighbor *on);
 
 void ospf6_neighbor_lladdr_set(struct ospf6_neighbor *on,
 			       const struct in6_addr *addr);
@@ -209,16 +211,16 @@ void ospf6_if_p2xp_up(struct ospf6_interface *oi);
 uint32_t ospf6_neighbor_cost(struct ospf6_neighbor *on);
 
 /* Neighbor event */
-extern void hello_received(struct event *thread);
-extern void twoway_received(struct event *thread);
-extern void negotiation_done(struct event *thread);
-extern void exchange_done(struct event *thread);
-extern void loading_done(struct event *thread);
-extern void adj_ok(struct event *thread);
-extern void seqnumber_mismatch(struct event *thread);
-extern void bad_lsreq(struct event *thread);
-extern void oneway_received(struct event *thread);
-extern void inactivity_timer(struct event *thread);
+extern void hello_received(struct event *event);
+extern void twoway_received(struct event *event);
+extern void negotiation_done(struct event *event);
+extern void exchange_done(struct event *event);
+extern void loading_done(struct event *event);
+extern void adj_ok(struct event *event);
+extern void seqnumber_mismatch(struct event *event);
+extern void bad_lsreq(struct event *event);
+extern void oneway_received(struct event *event);
+extern void inactivity_timer(struct event *event);
 extern void ospf6_check_nbr_loading(struct ospf6_neighbor *on);
 
 extern void ospf6_neighbor_init(void);

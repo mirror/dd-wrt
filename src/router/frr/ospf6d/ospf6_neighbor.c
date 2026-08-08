@@ -60,7 +60,7 @@ const char *const ospf6_neighbor_state_str[] = {
 const char *const ospf6_neighbor_event_str[] = {
 	"NoEvent",	"HelloReceived", "2-WayReceived",   "NegotiationDone",
 	"ExchangeDone", "LoadingDone",	 "AdjOK?",	    "SeqNumberMismatch",
-	"BadLSReq",	"1-WayReceived", "InactivityTimer",
+	"BadLSReq",	"1-WayReceived", "KillNbr",	    "InactivityTimer",
 };
 
 int ospf6_neighbor_cmp(void *va, void *vb)
@@ -301,11 +301,11 @@ static int need_adjacency(struct ospf6_neighbor *on)
 	return 0;
 }
 
-void hello_received(struct event *thread)
+void hello_received(struct event *event)
 {
 	struct ospf6_neighbor *on;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)EVENT_ARG(event);
 	assert(on);
 
 	if (IS_OSPF6_DEBUG_NEIGHBOR(EVENT))
@@ -321,11 +321,11 @@ void hello_received(struct event *thread)
 					    OSPF6_NEIGHBOR_EVENT_HELLO_RCVD);
 }
 
-void twoway_received(struct event *thread)
+void twoway_received(struct event *event)
 {
 	struct ospf6_neighbor *on;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)EVENT_ARG(event);
 	assert(on);
 
 	if (on->state > OSPF6_NEIGHBOR_INIT)
@@ -353,12 +353,12 @@ void twoway_received(struct event *thread)
 			&on->thread_send_dbdesc);
 }
 
-void negotiation_done(struct event *thread)
+void negotiation_done(struct event *event)
 {
 	struct ospf6_neighbor *on;
 	struct ospf6_lsa *lsa, *lsanext;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)EVENT_ARG(event);
 	assert(on);
 
 	if (on->state != OSPF6_NEIGHBOR_EXSTART)
@@ -402,19 +402,19 @@ void negotiation_done(struct event *thread)
 				    OSPF6_NEIGHBOR_EVENT_NEGOTIATION_DONE);
 }
 
-static void ospf6_neighbor_last_dbdesc_release(struct event *thread)
+static void ospf6_neighbor_last_dbdesc_release(struct event *event)
 {
-	struct ospf6_neighbor *on = EVENT_ARG(thread);
+	struct ospf6_neighbor *on = EVENT_ARG(event);
 
 	assert(on);
 	memset(&on->dbdesc_last, 0, sizeof(struct ospf6_dbdesc));
 }
 
-void exchange_done(struct event *thread)
+void exchange_done(struct event *event)
 {
 	struct ospf6_neighbor *on;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)EVENT_ARG(event);
 	assert(on);
 
 	if (on->state != OSPF6_NEIGHBOR_EXCHANGE)
@@ -466,11 +466,11 @@ void ospf6_check_nbr_loading(struct ospf6_neighbor *on)
 	}
 }
 
-void loading_done(struct event *thread)
+void loading_done(struct event *event)
 {
 	struct ospf6_neighbor *on;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)EVENT_ARG(event);
 	assert(on);
 
 	if (on->state != OSPF6_NEIGHBOR_LOADING)
@@ -485,11 +485,11 @@ void loading_done(struct event *thread)
 				    OSPF6_NEIGHBOR_EVENT_LOADING_DONE);
 }
 
-void adj_ok(struct event *thread)
+void adj_ok(struct event *event)
 {
 	struct ospf6_neighbor *on;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)EVENT_ARG(event);
 	assert(on);
 
 	if (IS_OSPF6_DEBUG_NEIGHBOR(EVENT))
@@ -513,11 +513,11 @@ void adj_ok(struct event *thread)
 	}
 }
 
-void seqnumber_mismatch(struct event *thread)
+void seqnumber_mismatch(struct event *event)
 {
 	struct ospf6_neighbor *on;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)EVENT_ARG(event);
 	assert(on);
 
 	if (on->state < OSPF6_NEIGHBOR_EXCHANGE)
@@ -541,11 +541,11 @@ void seqnumber_mismatch(struct event *thread)
 			&on->thread_send_dbdesc);
 }
 
-void bad_lsreq(struct event *thread)
+void bad_lsreq(struct event *event)
 {
 	struct ospf6_neighbor *on;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)EVENT_ARG(event);
 	assert(on);
 
 	if (on->state < OSPF6_NEIGHBOR_EXCHANGE)
@@ -569,11 +569,11 @@ void bad_lsreq(struct event *thread)
 			&on->thread_send_dbdesc);
 }
 
-void oneway_received(struct event *thread)
+void oneway_received(struct event *event)
 {
 	struct ospf6_neighbor *on;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)EVENT_ARG(event);
 	assert(on);
 
 	if (on->state < OSPF6_NEIGHBOR_TWOWAY)
@@ -596,31 +596,39 @@ void oneway_received(struct event *thread)
 	event_cancel(&on->thread_adj_ok);
 }
 
-void inactivity_timer(struct event *thread)
+static void ospf6_neighbor_remove(struct ospf6_neighbor *on, int event)
+{
+	on->drouter = on->prev_drouter = 0;
+	on->bdrouter = on->prev_bdrouter = 0;
+
+	ospf6_neighbor_state_change(OSPF6_NEIGHBOR_DOWN, on, event);
+	event_add_event(master, neighbor_change, on->ospf6_if, 0, NULL);
+
+	listnode_delete(on->ospf6_if->neighbor_list, on);
+	ospf6_neighbor_delete(on);
+}
+
+void ospf6_neighbor_kill(struct ospf6_neighbor *on)
+{
+	if (IS_OSPF6_DEBUG_NEIGHBOR(EVENT))
+		zlog_debug("Neighbor Event %s: *KillNbr*", on->name);
+
+	ospf6_neighbor_remove(on, OSPF6_NEIGHBOR_EVENT_KILL_NBR);
+}
+
+void inactivity_timer(struct event *event)
 {
 	struct ospf6_neighbor *on;
 
-	on = (struct ospf6_neighbor *)EVENT_ARG(thread);
+	on = (struct ospf6_neighbor *)EVENT_ARG(event);
 	assert(on);
 
 	if (IS_OSPF6_DEBUG_NEIGHBOR(EVENT))
 		zlog_debug("Neighbor Event %s: *InactivityTimer*", on->name);
 
-	on->drouter = on->prev_drouter = 0;
-	on->bdrouter = on->prev_bdrouter = 0;
-
-	if (!OSPF6_GR_IS_ACTIVE_HELPER(on)) {
-		on->drouter = on->prev_drouter = 0;
-		on->bdrouter = on->prev_bdrouter = 0;
-
-		ospf6_neighbor_state_change(OSPF6_NEIGHBOR_DOWN, on,
-					    OSPF6_NEIGHBOR_EVENT_INACTIVITY_TIMER);
-		event_add_event(master, neighbor_change, on->ospf6_if, 0, NULL);
-
-		listnode_delete(on->ospf6_if->neighbor_list, on);
-		ospf6_neighbor_delete(on);
-
-	} else {
+	if (!OSPF6_GR_IS_ACTIVE_HELPER(on))
+		ospf6_neighbor_remove(on, OSPF6_NEIGHBOR_EVENT_INACTIVITY_TIMER);
+	else {
 		if (IS_DEBUG_OSPF6_GR)
 			zlog_debug("%s, Acting as HELPER for this neighbour, So restart the dead timer.",
 				   __PRETTY_FUNCTION__);
@@ -881,7 +889,7 @@ static void ospf6_neighbor_show(struct vty *vty, struct ospf6_neighbor *on,
 
 	/* Dead time */
 	h = m = s = 0;
-	if (on->inactivity_timer) {
+	if (event_is_scheduled(on->inactivity_timer)) {
 		s = monotime_until(&on->inactivity_timer->u.sands, NULL) /
 		    1000000LL;
 		h = s / 3600;
@@ -1041,7 +1049,7 @@ static void ospf6_neighbor_show_detail(struct vty *vty,
 				       db_desc_str);
 
 		json_object_int_add(json_neighbor, "dbDescSeqNumber",
-				    (unsigned long)ntohl(on->dbdesc_seqnum));
+				    (unsigned long)on->dbdesc_seqnum);
 
 		json_array = json_object_new_array();
 		json_object_int_add(json_neighbor, "summaryListCount",
@@ -1210,7 +1218,7 @@ static void ospf6_neighbor_show_detail(struct vty *vty,
 			(CHECK_FLAG(on->dbdesc_bits, OSPF6_DBDESC_MSBIT)
 				 ? "Master"
 				 : "Slave"),
-			(unsigned long)ntohl(on->dbdesc_seqnum));
+			(unsigned long)on->dbdesc_seqnum);
 
 		vty_out(vty, "    Summary-List: %d LSAs\n",
 			on->summary_list->count);

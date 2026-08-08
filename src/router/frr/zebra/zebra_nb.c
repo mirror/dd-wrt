@@ -74,10 +74,11 @@ const struct frr_yang_module_info frr_zebra_info = {
 			}
 		},
 		{
-			.xpath = "/frr-zebra:zebra/import-kernel-table/table-id",
+			.xpath = "/frr-zebra:zebra/import-kernel-table",
 			.cbs = {
-				.modify = zebra_import_kernel_table_table_id_modify,
-				.destroy = zebra_import_kernel_table_table_id_destroy,
+				.create = zebra_import_kernel_table_create,
+				.destroy = zebra_import_kernel_table_destroy,
+				.apply_finish = zebra_import_kernel_table_apply_finish,
 			}
 		},
 		{
@@ -841,6 +842,7 @@ const struct frr_yang_module_info frr_zebra_info = {
 			.cbs = {
 				.modify = lib_vrf_zebra_router_id_modify,
 				.destroy = lib_vrf_zebra_router_id_destroy,
+				.get = lib_vrf_zebra_router_id_get,
 			}
 		},
 		{
@@ -848,6 +850,7 @@ const struct frr_yang_module_info frr_zebra_info = {
 			.cbs = {
 				.modify = lib_vrf_zebra_ipv6_router_id_modify,
 				.destroy = lib_vrf_zebra_ipv6_router_id_destroy,
+				.get = lib_vrf_zebra_ipv6_router_id_get,
 			}
 		},
 		{

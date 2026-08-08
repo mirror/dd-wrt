@@ -16,12 +16,14 @@
 #include "libyang/libyang.h"
 
 #define _dbg(fmt, ...)	   DEBUGD(&mgmt_debug_ds, "DS: %s: " fmt, __func__, ##__VA_ARGS__)
+#define _log_warn(fmt, ...) zlog_warn("%s: ERROR: " fmt, __func__, ##__VA_ARGS__)
 #define _log_err(fmt, ...) zlog_err("%s: ERROR: " fmt, __func__, ##__VA_ARGS__)
 
 struct mgmt_ds_ctx {
 	enum mgmt_ds_id ds_id;
 
 	bool locked;
+	uint64_t txn_locked;	 /* lock held by txn */
 	uint64_t vty_session_id; /* Owner of the lock or 0 */
 
 	bool config_ds;
@@ -222,14 +224,17 @@ bool mgmt_ds_is_config(struct mgmt_ds_ctx *ds_ctx)
 	return ds_ctx->config_ds;
 }
 
-bool mgmt_ds_is_locked(struct mgmt_ds_ctx *ds_ctx, uint64_t *session_id)
+bool mgmt_ds_is_locked(struct mgmt_ds_ctx *ds_ctx, uint64_t *session_id, uint64_t *txn_id)
 {
-	if (!ds_ctx || !ds_ctx->locked)
+	if (!ds_ctx)
 		return false;
 
-	if (session_id)
+	if (ds_ctx->locked && session_id)
 		*session_id = ds_ctx->vty_session_id;
-	return true;
+	if (ds_ctx->txn_locked && txn_id)
+		*txn_id = ds_ctx->txn_locked;
+
+	return ds_ctx->locked || ds_ctx->txn_locked;
 }
 
 int mgmt_ds_lock(struct mgmt_ds_ctx *ds_ctx, uint64_t session_id)
@@ -237,31 +242,93 @@ int mgmt_ds_lock(struct mgmt_ds_ctx *ds_ctx, uint64_t session_id)
 	assert(ds_ctx);
 
 	if (ds_ctx->locked) {
-		_log_err("lock already taken on DS:%s by session-id %Lu",
-			 mgmt_ds_id2name(ds_ctx->ds_id), ds_ctx->vty_session_id);
-		return EBUSY;
+		_log_err("LOCK already taken on DS:%s by session-id %Lu (requesting session-id %Lu)",
+			 mgmt_ds_id2name(ds_ctx->ds_id), ds_ctx->vty_session_id, session_id);
+		return -EBUSY;
 	}
-
-	_dbg("obtaining lock on DS:%s for session-id %Lu", mgmt_ds_id2name(ds_ctx->ds_id),
-	     session_id);
+	if (ds_ctx->txn_locked) {
+		_log_err("LOCK already taken on DS:%s by session-less txn-id %Lu (requesting session-id %Lu)",
+			 mgmt_ds_id2name(ds_ctx->ds_id), ds_ctx->txn_locked, session_id);
+		return -EBUSY;
+	}
+	_dbg("LOCK on DS:%s for session-id %Lu", mgmt_ds_id2name(ds_ctx->ds_id), session_id);
 
 	ds_ctx->locked = true;
 	ds_ctx->vty_session_id = session_id;
 	return 0;
 }
 
-void mgmt_ds_unlock(struct mgmt_ds_ctx *ds_ctx)
+void mgmt_ds_unlock(struct mgmt_ds_ctx *ds_ctx, uint64_t session_id)
 {
 	assert(ds_ctx);
 	if (!ds_ctx->locked)
 		_log_err("unlock on unlocked in DS:%s last session-id %Lu",
 			 mgmt_ds_id2name(ds_ctx->ds_id), ds_ctx->vty_session_id);
-	else
+	else {
+		assert(ds_ctx->vty_session_id == session_id);
 		_dbg("releasing lock on DS:%s for session-id %Lu", mgmt_ds_id2name(ds_ctx->ds_id),
 		     ds_ctx->vty_session_id);
+	}
 
 	ds_ctx->locked = 0;
 	ds_ctx->vty_session_id = MGMTD_SESSION_ID_NONE;
+
+	if (ds_ctx->txn_locked)
+		_dbg("TXN-LOCK remains on DS:%s for txn-id %Lu", mgmt_ds_id2name(ds_ctx->ds_id),
+		     ds_ctx->txn_locked);
+}
+
+bool mgmt_ds_is_txn_locked(struct mgmt_ds_ctx *ds_ctx, uint64_t *txn_id)
+{
+	if (ds_ctx && ds_ctx->txn_locked) {
+		*txn_id = ds_ctx->txn_locked;
+		return true;
+	}
+	return false;
+}
+
+uint64_t mgmt_ds_txn_lock(struct mgmt_ds_ctx *ds_ctx, uint64_t txn_id)
+{
+	assert(ds_ctx);
+
+	if (ds_ctx->txn_locked && ds_ctx->txn_locked != txn_id) {
+		_log_err("TXN-LOCK txn lock held on DS:%s by txn-id: %Lu not txn-id: %Lu",
+			 mgmt_ds_id2name(ds_ctx->ds_id), ds_ctx->txn_locked, txn_id);
+		return ds_ctx->txn_locked;
+	}
+	if (ds_ctx->txn_locked == txn_id) {
+		_log_warn("TXN-LOCK double lock on DS:%s txn-id: %Lu",
+			  mgmt_ds_id2name(ds_ctx->ds_id), ds_ctx->txn_locked);
+		return 0;
+	}
+	_dbg("TXN-LOCK on DS:%s session-id: %Lu txn-id: %Lu", mgmt_ds_id2name(ds_ctx->ds_id),
+	     ds_ctx->vty_session_id, txn_id);
+	ds_ctx->txn_locked = txn_id;
+	return 0;
+}
+
+void mgmt_ds_txn_unlock(struct mgmt_ds_ctx *ds_ctx, uint64_t txn_id)
+{
+	assert(ds_ctx);
+	if (ds_ctx->txn_locked && ds_ctx->txn_locked != txn_id) {
+		_log_err("TXN-UNLOCK: txn lock held on DS:%s by session-id: %Lu txn-id: %Lu not txn-id: %Lu",
+			 mgmt_ds_id2name(ds_ctx->ds_id), ds_ctx->vty_session_id,
+			 ds_ctx->txn_locked, txn_id);
+		return;
+	}
+	if (!ds_ctx->txn_locked)
+		_log_warn("TXN-UNLOCK of unlocked on DS:%s session-id: %Lu txn-id: %Lu",
+			  mgmt_ds_id2name(ds_ctx->ds_id), ds_ctx->vty_session_id, txn_id);
+	else
+		_dbg("TXN-UNLOCK on DS:%s session-id: %Lu txn-id: %Lu",
+		     mgmt_ds_id2name(ds_ctx->ds_id), ds_ctx->vty_session_id, txn_id);
+	ds_ctx->txn_locked = 0;
+}
+
+void mgmt_ds_restore_nb_config(struct mgmt_ds_ctx *ds_ctx, struct nb_config *backup)
+{
+	assert(ds_ctx->config_ds);
+	nb_config_replace(ds_ctx->root.cfg_root, backup, false);
 }
 
 int mgmt_ds_copy_dss(struct mgmt_ds_ctx *dst, struct mgmt_ds_ctx *src, bool updt_cmt_rec)
@@ -277,7 +344,7 @@ int mgmt_ds_copy_dss(struct mgmt_ds_ctx *dst, struct mgmt_ds_ctx *src, bool updt
 
 int mgmt_ds_dump_ds_to_file(char *file_name, struct mgmt_ds_ctx *ds_ctx)
 {
-	struct ly_out *out;
+	struct ly_out *out = NULL;
 	int ret = 0;
 
 	if (ly_out_new_filepath(file_name, &out) == LY_SUCCESS) {
@@ -322,6 +389,7 @@ static int mgmt_walk_ds_nodes(
 	if (!base_dnode)
 		return -1;
 
+	xpath[0] = '\0';
 	_dbg("           search base schema: '%s'",
 	     lysc_path(base_dnode->schema, LYSC_PATH_LOG, xpath, sizeof(xpath)));
 
@@ -394,6 +462,7 @@ int mgmt_ds_delete_data_nodes(struct mgmt_ds_ctx *ds_ctx, const char *xpath)
 		return NB_ERR_NOT_FOUND;
 	/* destroy dependant */
 	if (nb_node && nb_node->dep_cbs.get_dependant_xpath) {
+		dep_xpath[0] = '\0';
 		nb_node->dep_cbs.get_dependant_xpath(dnode, dep_xpath);
 
 		dep_dnode = yang_dnode_get(
@@ -449,6 +518,7 @@ int mgmt_ds_iter_data(enum mgmt_ds_id ds_id, struct nb_config *root, const char 
 	if (!root)
 		return -1;
 
+	xpath[0] = '\0';
 	strlcpy(xpath, base_xpath, sizeof(xpath));
 	mgmt_remove_trailing_separator(xpath, '/');
 
@@ -485,15 +555,16 @@ int mgmt_ds_iter_data(enum mgmt_ds_id ds_id, struct nb_config *root, const char 
 void mgmt_ds_dump_tree(struct vty *vty, struct mgmt_ds_ctx *ds_ctx,
 		       const char *xpath, FILE *f, LYD_FORMAT format)
 {
-	struct ly_out *out;
-	char *str;
-	char base_xpath[MGMTD_MAX_XPATH_LEN] = {0};
+	struct ly_out *out = NULL;
+	char *str = NULL;
+	char base_xpath[MGMTD_MAX_XPATH_LEN];
 
 	if (!ds_ctx) {
 		vty_out(vty, "    >>>>> Datastore Not Initialized!\n");
 		return;
 	}
 
+	base_xpath[0] = '\0';
 	if (xpath) {
 		strlcpy(base_xpath, xpath, MGMTD_MAX_XPATH_LEN);
 		mgmt_remove_trailing_separator(base_xpath, '/');
@@ -514,7 +585,8 @@ void mgmt_ds_dump_tree(struct vty *vty, struct mgmt_ds_ctx *ds_ctx,
 
 void mgmt_ds_status_write_one(struct vty *vty, struct mgmt_ds_ctx *ds_ctx)
 {
-	uint64_t session_id;
+	uint64_t session_id = 0;
+	uint64_t txn_id = 0;
 	bool locked;
 
 	if (!ds_ctx) {
@@ -522,13 +594,13 @@ void mgmt_ds_status_write_one(struct vty *vty, struct mgmt_ds_ctx *ds_ctx)
 		return;
 	}
 
-	locked = mgmt_ds_is_locked(ds_ctx, &session_id);
+	locked = mgmt_ds_is_locked(ds_ctx, &session_id, &txn_id);
 	vty_out(vty, "  DS: %s\n", mgmt_ds_id2name(ds_ctx->ds_id));
 	vty_out(vty, "    DS-Hndl: \t\t\t%p\n", ds_ctx);
 	vty_out(vty, "    Config: \t\t\t%s\n",
 		ds_ctx->config_ds ? "True" : "False");
-	vty_out(vty, "    Locked: \t\t\t%s Session-ID: %Lu\n", locked ? "True" : "False",
-		locked ? session_id : 0);
+	vty_out(vty, "    Locked: \t\t\t%s Session-ID: %Lu Txn-ID: %Lu\n",
+		locked ? "True" : "False", session_id, txn_id);
 }
 
 void mgmt_ds_status_write(struct vty *vty)

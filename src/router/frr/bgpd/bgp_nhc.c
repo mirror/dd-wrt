@@ -27,7 +27,7 @@ struct bgp_nhc_tlv *bgp_nhc_tlv_new(uint16_t code, uint16_t length, const void *
 {
 	struct bgp_nhc_tlv *tlv;
 
-	tlv = XCALLOC(MTYPE_BGP_NHC_TLV, sizeof(struct bgp_nhc_tlv) + IPV4_MAX_BYTELEN);
+	tlv = XCALLOC(MTYPE_BGP_NHC_TLV, sizeof(struct bgp_nhc_tlv));
 	tlv->code = code;
 	tlv->length = length;
 	tlv->value = XCALLOC(MTYPE_BGP_NHC_TLV_VAL, length);
@@ -81,4 +81,43 @@ void bgp_nhc_free(struct bgp_nhc *nhc)
 
 	bgp_nhc_tlvs_free(nhc->tlvs);
 	XFREE(MTYPE_BGP_NHC, nhc);
+}
+
+uint64_t bgp_nhc_nnhn_count(struct bgp_nhc *nhc)
+{
+	uint64_t count = 0;
+	struct bgp_nhc_tlv *tlv;
+
+	for (tlv = nhc->tlvs; tlv; tlv = tlv->next) {
+		if (tlv->code == BGP_ATTR_NHC_TLV_NNHN) {
+			/* BGP Identifier is always 4-bytes (yet...) */
+			count = tlv->length / IPV4_MAX_BYTELEN;
+			if (count <= 1)
+				return 0;
+
+			/* -1 is to exclude the next-hop BGP ID.
+			 * We care only about Next-next hops here.
+			 */
+			return count - 1;
+		}
+	}
+
+	return 0;
+}
+
+void bgp_nhc_add_bgpid_tlv(struct bgp *bgp, struct attr *attr, afi_t afi, safi_t safi,
+			   uint8_t nh_length)
+{
+	struct bgp_nhc *nhc;
+	struct bgp_nhc_tlv *tlv;
+
+	nhc = XCALLOC(MTYPE_BGP_NHC, sizeof(struct bgp_nhc));
+	nhc->afi = afi;
+	nhc->safi = safi;
+	nhc->nh_length = nh_length;
+	nhc->tlvs_length = IPV4_MAX_BYTELEN;
+
+	tlv = bgp_nhc_tlv_new(BGP_ATTR_NHC_TLV_BGPID, IPV4_MAX_BYTELEN, &bgp->router_id);
+	bgp_nhc_tlv_add(nhc, tlv);
+	bgp_attr_set_nhc(attr, nhc);
 }

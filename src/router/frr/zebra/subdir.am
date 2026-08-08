@@ -127,6 +127,7 @@ clippy_scan += \
 	zebra/zebra_vty.c \
 	zebra/zebra_srv6_vty.c \
 	zebra/zebra_vrf.c \
+	zebra/zserv.c \
 	zebra/dpdk/zebra_dplane_dpdk_vty.c \
 	zebra/label_manager.c \
 	zebra/zebra_cli.c \
@@ -158,6 +159,7 @@ nobase_pkginclude_HEADERS += \
 	zebra/zebra_dplane.h \
 	zebra/zebra_errors.h \
 	zebra/zebra_evpn.h \
+	zebra/zebra_evpn_base.h \
 	zebra/zebra_evpn_mac.h \
 	zebra/zebra_evpn_neigh.h \
 	zebra/zebra_evpn_vxlan.h \

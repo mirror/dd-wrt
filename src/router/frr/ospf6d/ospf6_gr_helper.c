@@ -145,7 +145,8 @@ static int ospf6_extract_grace_lsa_fields(struct ospf6_lsa *lsa,
 
 	length = ntohs(lsah->length) - OSPF6_LSA_HEADER_SIZE;
 
-	for (tlvh = lsdesc_start(lsah); sum < length && tlvh;
+	/* Iterate as long as we have at least a TLV header available */
+	for (tlvh = lsdesc_start(lsah); sum + TLV_HDR_SIZE <= length && tlvh;
 	     tlvh = TLV_HDR_NEXT(tlvh)) {
 		/* Check TLV len against overall LSA */
 		if (sum + TLV_SIZE(tlvh) > length) {
@@ -196,9 +197,9 @@ static int ospf6_extract_grace_lsa_fields(struct ospf6_lsa *lsa,
  * Returns:
  *    Nothing
  */
-static void ospf6_handle_grace_timer_expiry(struct event *thread)
+static void ospf6_handle_grace_timer_expiry(struct event *event)
 {
-	struct ospf6_neighbor *nbr = EVENT_ARG(thread);
+	struct ospf6_neighbor *nbr = EVENT_ARG(event);
 
 	ospf6_gr_helper_exit(nbr, OSPF6_GR_HELPER_GRACE_TIMEOUT);
 }

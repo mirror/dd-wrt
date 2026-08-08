@@ -18,6 +18,7 @@
 #include "link_state.h"
 #include "cspf.h"
 #include "tc.h"
+#include "lib/json.h"
 
 #include "sharpd/sharp_globals.h"
 #include "sharpd/sharp_zebra.h"
@@ -199,6 +200,16 @@ DEFPY (install_routes_data_dump,
 	return CMD_SUCCESS;
 }
 
+DEFPY(sharp_install_stop_vty, sharp_install_stop_cmd, "sharp install stop",
+      "Sharp routing Protocol\n"
+      "install some routes\n"
+      "Stop any repeating install/remove loops\n")
+{
+	sharp_install_stop();
+
+	return CMD_SUCCESS;
+}
+
 DEFPY (install_routes,
        install_routes_cmd,
        "sharp install routes [vrf NAME$vrf_name]\
@@ -206,7 +217,7 @@ DEFPY (install_routes,
 	  <nexthop <A.B.C.D$nexthop4|X:X::X:X$nexthop6>|\
 	   nexthop-group NHGNAME$nexthop_group>\
 	  [backup$backup <A.B.C.D$backup_nexthop4|X:X::X:X$backup_nexthop6>] \
-	  (1-1000000)$routes [instance (0-255)$instance] [repeat (2-1000)$rpt] [opaque WORD] [no-recurse$norecurse]",
+	  (1-1000000)$routes [instance (0-255)$instance] [table (0-4294967295)$table_id] [repeat (2-1000)$rpt] [opaque WORD] [no-recurse$norecurse]",
        "Sharp routing Protocol\n"
        "install some routes\n"
        "Routes to install\n"
@@ -225,6 +236,8 @@ DEFPY (install_routes,
        "How many to create\n"
        "Instance to use\n"
        "Instance\n"
+       "Table to install into\n"
+       "Table id\n"
        "Should we repeat this command\n"
        "How many times to repeat this command\n"
        "What opaque data to send down\n"
@@ -239,6 +252,9 @@ DEFPY (install_routes,
 	sg.r.total_routes = routes;
 	sg.r.installed_routes = 0;
 	sg.r.flags = 0;
+	sg.r.tableid = 0;
+	sg.r.tableid_set = false;
+	sg.r.stop_loop = false;
 
 	if (rpt >= 2)
 		sg.r.repeat = rpt * 2;
@@ -346,6 +362,11 @@ DEFPY (install_routes,
 	else
 		sg.r.opaque[0] = '\0';
 
+	if (table_id_str) {
+		sg.r.tableid = (uint32_t)table_id;
+		sg.r.tableid_set = true;
+	}
+
 	/* Default is to ask for recursive nexthop resolution */
 	if (norecurse == NULL)
 		SET_FLAG(sg.r.flags, ZEBRA_FLAG_ALLOW_RECURSION);
@@ -353,9 +374,9 @@ DEFPY (install_routes,
 	sg.r.inst = instance;
 	sg.r.vrf_id = vrf->vrf_id;
 	rts = routes;
-	sharp_install_routes_helper(&prefix, sg.r.vrf_id, sg.r.inst, nhgid,
-				    &sg.r.nhop_group, &sg.r.backup_nhop_group,
-				    rts, sg.r.flags, sg.r.opaque);
+	sharp_install_routes_helper(&prefix, sg.r.vrf_id, sg.r.inst, nhgid, &sg.r.nhop_group,
+				    &sg.r.backup_nhop_group, rts, sg.r.flags, sg.r.opaque,
+				    sg.r.tableid, sg.r.tableid_set);
 
 	return CMD_SUCCESS;
 }
@@ -387,6 +408,7 @@ DEFPY (install_seg6_routes,
 
 	sg.r.total_routes = routes;
 	sg.r.installed_routes = 0;
+	sg.r.stop_loop = false;
 
 	if (rpt >= 2)
 		sg.r.repeat = rpt * 2;
@@ -432,9 +454,9 @@ DEFPY (install_seg6_routes,
 	nexthop_add_srv6_seg6(&sg.r.nhop, &seg6_seg, 1, SRV6_HEADEND_BEHAVIOR_H_ENCAPS);
 
 	sg.r.vrf_id = vrf->vrf_id;
-	sharp_install_routes_helper(&prefix, sg.r.vrf_id, sg.r.inst, 0,
-				    &sg.r.nhop_group, &sg.r.backup_nhop_group,
-				    routes, route_flags, sg.r.opaque);
+	sharp_install_routes_helper(&prefix, sg.r.vrf_id, sg.r.inst, 0, &sg.r.nhop_group,
+				    &sg.r.backup_nhop_group, routes, route_flags, sg.r.opaque, 0,
+				    false);
 
 	return CMD_SUCCESS;
 }
@@ -480,6 +502,7 @@ DEFPY(install_seg6local_segs_routes, install_seg6local_segs_routes_cmd,
 
 	sg.r.total_routes = routes;
 	sg.r.installed_routes = 0;
+	sg.r.stop_loop = false;
 
 	if (rpt >= 2)
 		sg.r.repeat = rpt * 2;
@@ -531,7 +554,8 @@ DEFPY(install_seg6local_segs_routes, install_seg6local_segs_routes_cmd,
 
 	sg.r.vrf_id = vrf->vrf_id;
 	sharp_install_routes_helper(&sg.r.orig_prefix, sg.r.vrf_id, sg.r.inst, 0, &sg.r.nhop_group,
-				    &sg.r.backup_nhop_group, routes, route_flags, sg.r.opaque);
+				    &sg.r.backup_nhop_group, routes, route_flags, sg.r.opaque, 0,
+				    false);
 
 	return CMD_SUCCESS;
 }
@@ -614,6 +638,7 @@ DEFPY (install_seg6local_routes,
 
 	sg.r.total_routes = routes;
 	sg.r.installed_routes = 0;
+	sg.r.stop_loop = false;
 
 	if (rpt >= 2)
 		sg.r.repeat = rpt * 2;
@@ -716,10 +741,9 @@ DEFPY (install_seg6local_routes,
 	nexthop_add_srv6_seg6local(&sg.r.nhop, action, &ctx);
 
 	sg.r.vrf_id = vrf->vrf_id;
-	sharp_install_routes_helper(&sg.r.orig_prefix, sg.r.vrf_id, sg.r.inst,
-				    0, &sg.r.nhop_group,
-				    &sg.r.backup_nhop_group, routes,
-				    route_flags, sg.r.opaque);
+	sharp_install_routes_helper(&sg.r.orig_prefix, sg.r.vrf_id, sg.r.inst, 0, &sg.r.nhop_group,
+				    &sg.r.backup_nhop_group, routes, route_flags, sg.r.opaque, 0,
+				    false);
 
 	return CMD_SUCCESS;
 }
@@ -756,7 +780,7 @@ DEFPY(vrf_label, vrf_label_cmd,
 
 DEFPY (remove_routes,
        remove_routes_cmd,
-       "sharp remove routes [vrf NAME$vrf_name] <A.B.C.D$start4|X:X::X:X$start6> (1-1000000)$routes [instance (0-255)$instance]",
+       "sharp remove routes [vrf NAME$vrf_name] <A.B.C.D$start4|X:X::X:X$start6> (1-1000000)$routes [instance (0-255)$instance] [table (0-4294967295)$table_id]",
        "Sharp Routing Protocol\n"
        "Remove some routes\n"
        "Routes to remove\n"
@@ -766,13 +790,16 @@ DEFPY (remove_routes,
        "v6 Starting spot\n"
        "Routes to uninstall\n"
        "instance to use\n"
-       "Value of instance\n")
+       "Value of instance\n"
+       "Table to remove from\n"
+       "Table id\n")
 {
 	struct vrf *vrf;
 	struct prefix prefix;
 
 	sg.r.total_routes = routes;
 	sg.r.removed_routes = 0;
+	sg.r.stop_loop = false;
 	uint32_t rts;
 
 	memset(&prefix, 0, sizeof(prefix));
@@ -796,9 +823,15 @@ DEFPY (remove_routes,
 
 	sg.r.inst = instance;
 	sg.r.vrf_id = vrf->vrf_id;
+	sg.r.tableid = 0;
+	sg.r.tableid_set = false;
+	if (table_id_str) {
+		sg.r.tableid = (uint32_t)table_id;
+		sg.r.tableid_set = true;
+	}
 	rts = routes;
-	sharp_remove_routes_helper(&prefix, sg.r.vrf_id,
-				   sg.r.inst, rts);
+	sharp_remove_routes_helper(&prefix, sg.r.vrf_id, sg.r.inst, rts, sg.r.tableid,
+				   sg.r.tableid_set);
 
 	return CMD_SUCCESS;
 }
@@ -1236,7 +1269,7 @@ DEFUN (show_sharp_ted,
 				return CMD_WARNING_CONFIG_FAILED;
 			}
 			/* Get the Vertex from the Link State Database */
-			key = ((uint64_t)ip_addr.s_addr) & 0xffffffff;
+			key = ((uint64_t)ntohl(ip_addr.s_addr)) & 0xffffffff;
 			vertex = ls_find_vertex_by_key(sg.ted, key);
 			if (!vertex) {
 				vty_out(vty, "No vertex found for ID %pI4\n",
@@ -1652,10 +1685,25 @@ DEFPY(crashme_uaf,
 	return CMD_SUCCESS;
 }
 
+DEFPY(sharp_use_resolved_nexthop_weight,
+      sharp_use_resolved_nexthop_weight_cmd,
+      "[no] sharp use-underlays-nexthop-weight",
+      NO_STR
+      SHARP_STR
+      "Tell zebra when resolving a route to use the underlays nexthop weight for when nexthops are resolved\n")
+{
+	if (no)
+		sg.use_underlying_nexthop_group_weight = false;
+	else
+		sg.use_underlying_nexthop_group_weight = true;
+
+	return CMD_SUCCESS;
+}
 
 void sharp_vty_init(void)
 {
 	install_element(ENABLE_NODE, &install_routes_data_dump_cmd);
+	install_element(ENABLE_NODE, &sharp_install_stop_cmd);
 	install_element(ENABLE_NODE, &install_routes_cmd);
 	install_element(ENABLE_NODE, &install_seg6_routes_cmd);
 	install_element(ENABLE_NODE, &install_seg6local_routes_cmd);
@@ -1695,5 +1743,7 @@ void sharp_vty_init(void)
 
 	install_element(ENABLE_NODE, &crashme_segv_cmd);
 	install_element(ENABLE_NODE, &crashme_uaf_cmd);
+
+	install_element(ENABLE_NODE, &sharp_use_resolved_nexthop_weight_cmd);
 	return;
 }

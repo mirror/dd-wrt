@@ -44,13 +44,11 @@ void ospf_refresh_dna_type5_and_type7_lsas(struct ospf *ospf)
 	struct ospf_lsa *lsa = NULL;
 
 	LSDB_LOOP (EXTERNAL_LSDB(ospf), rn, lsa)
-		if (IS_LSA_SELF(lsa) &&
-		    CHECK_FLAG(lsa->data->ls_age, DO_NOT_AGE))
+		if (IS_LSA_SELF(lsa) && IS_LSA_AGE_DNA(lsa))
 			ospf_lsa_refresh(ospf, lsa);
 
 	LSDB_LOOP (NSSA_LSDB(ospf), rn, lsa)
-		if (IS_LSA_SELF(lsa) &&
-		    CHECK_FLAG(lsa->data->ls_age, DO_NOT_AGE))
+		if (IS_LSA_SELF(lsa) && IS_LSA_AGE_DNA(lsa))
 			ospf_lsa_refresh(ospf, lsa);
 }
 
@@ -119,7 +117,7 @@ static void ospf_flood_delayed_lsa_ack(struct ospf_neighbor *inbr,
 	   RFC 2328 Section 13.5 */
 
 	/* Whether LSA is more recent or not, and whether this is in
-	   response to the LSA being sent out recieving interface has been
+	   response to the LSA being sent out receiving interface has been
 	   worked out previously */
 
 	/* Deal with router as BDR */
@@ -140,7 +138,7 @@ static void ospf_flood_delayed_lsa_ack(struct ospf_neighbor *inbr,
 	ospf_lsa_list_add_tail(&oi->ls_ack_delayed, ls_ack_list_entry);
 
 	/* Set LS Ack timer if it is not already scheduled. */
-	if (!oi->t_ls_ack_delayed)
+	if (!event_is_scheduled(oi->t_ls_ack_delayed))
 		OSPF_ISM_TIMER_ON(oi->t_ls_ack_delayed,
 				  ospf_ls_ack_delayed_timer,
 				  oi->v_ls_ack_delayed);
@@ -319,8 +317,10 @@ static void ospf_process_self_originated_lsa(struct ospf *ospf,
 				return;
 			}
 
-			ospf_external_lsa_refresh(ospf, new, ei,
-						  LSA_REFRESH_FORCE, false);
+			if (new->data->type == OSPF_AS_EXTERNAL_LSA)
+				ospf_external_lsa_refresh(ospf, new, ei, LSA_REFRESH_FORCE, false);
+			else
+				ospf_nssa_lsa_refresh(area, new, ei);
 		} else {
 			aggr = (struct ospf_external_aggr_rt *)
 				ospf_external_aggregator_lookup(ospf, &p);
@@ -335,10 +335,14 @@ static void ospf_process_self_originated_lsa(struct ospf *ospf,
 				ei_aggr.route_map_set.metric = -1;
 				ei_aggr.route_map_set.metric_type = -1;
 
-				ospf_external_lsa_refresh(ospf, new, &ei_aggr,
-						  LSA_REFRESH_FORCE, true);
-				SET_FLAG(aggr->flags,
-					 OSPF_EXTERNAL_AGGRT_ORIGINATED);
+				if (new->data->type == OSPF_AS_EXTERNAL_LSA) {
+					ospf_external_lsa_refresh(ospf, new, &ei_aggr,
+								  LSA_REFRESH_FORCE, true);
+					SET_FLAG(aggr->flags, OSPF_EXTERNAL_AGGRT_ORIGINATED);
+				} else {
+					ospf_nssa_lsa_refresh(area, new, &ei_aggr);
+					SET_FLAG(aggr->flags, OSPF_EXTERNAL_AGGRT_ORIGINATED);
+				}
 			} else
 				ospf_lsa_flush_as(ospf, new);
 		}
@@ -404,9 +408,9 @@ int ospf_flood(struct ospf *ospf, struct ospf_neighbor *nbr,
 	if (current != NULL) /* -- endo. */
 	{
 		if (IS_LSA_SELF(current)
-		    && (ntohs(current->data->ls_age) == 0
-			&& ntohl(current->data->ls_seqnum)
-				   == OSPF_INITIAL_SEQUENCE_NUMBER)) {
+		    && LS_AGE_RAW(current) == OSPF_LSA_INITIAL_AGE
+		    && ntohl(current->data->ls_seqnum)
+					== OSPF_INITIAL_SEQUENCE_NUMBER) {
 			if (IS_DEBUG_OSPF_EVENT)
 				zlog_debug(
 					"%s:LSA[Flooding]: Got a self-originated LSA, while local one is initial instance.",
@@ -515,7 +519,7 @@ int ospf_flood(struct ospf *ospf, struct ospf_neighbor *nbr,
 		ospf_refresh_dna_type5_and_type7_lsas(ospf);
 	}
 
-	/* Check if we recived an indication LSA flush on backbone
+	/* Check if we received an indication LSA flush on backbone
 	 * network.
 	 */
 	ospf_recv_indication_lsa_flush(new);
@@ -617,7 +621,7 @@ int ospf_flood_through_interface(struct ospf_interface *oi,
 		 * self lsas.
 		 */
 		if (oi->area->fr_info.enabled)
-			SET_FLAG(lsa->data->ls_age, DO_NOT_AGE);
+			SET_FLAG(lsa->data->ls_age, htons(DO_NOT_AGE));
 	}
 
 	/* Remember if new LSA is added to a retransmit list. */
@@ -809,7 +813,7 @@ int ospf_flood_through_interface(struct ospf_interface *oi,
 		   if back out on the interface. The LSA will be  retransmitted
 		   upon expiration of each neighbor's retransmission timer. This
 		   will allow time to receive a multicast multicast link state
-		   acknoweldgement and remove the LSA from each neighbor's link
+		   acknowledgement and remove the LSA from each neighbor's link
 		   state retransmission list. */
 		if (oi->p2mp_delay_reflood &&
 		    (oi->type == OSPF_IFTYPE_POINTOMULTIPOINT) &&
@@ -1160,7 +1164,7 @@ void ospf_ls_retransmit_add(struct ospf_neighbor *nbr, struct ospf_lsa *lsa)
 		 * Reset the neighbor LSA retransmission timer if isn't currently
 		 * running or the LSA at the head of the list was updated.
 		 */
-		if (!nbr->t_ls_rxmt || rxmt_head_replaced)
+		if (!event_is_scheduled(nbr->t_ls_rxmt) || rxmt_head_replaced)
 			ospf_ls_retransmit_set_timer(nbr);
 	}
 }
@@ -1244,8 +1248,7 @@ void ospf_ls_retransmit_set_timer(struct ospf_neighbor *nbr)
 {
 	struct ospf_lsa_list_entry *ls_rxmt_list_entry;
 
-	if (nbr->t_ls_rxmt)
-		event_cancel(&nbr->t_ls_rxmt);
+	event_cancel(&nbr->t_ls_rxmt);
 
 	ls_rxmt_list_entry = ospf_lsa_list_first(&nbr->ls_rxmt_list);
 	if (ls_rxmt_list_entry) {
@@ -1345,7 +1348,7 @@ void ospf_lsa_flush_area(struct ospf_lsa *lsa, struct ospf_area *area)
 	/* Reset the lsa origination time such that it gives
 	   more time for the ACK to be received and avoid
 	   retransmissions */
-	lsa->data->ls_age = htons(OSPF_LSA_MAXAGE);
+	LS_AGE_SET(lsa, OSPF_LSA_MAXAGE);
 	if (IS_DEBUG_OSPF_EVENT)
 		zlog_debug("%s: MaxAge set to LSA[%s]", __func__,
 			   dump_lsa_key(lsa));
@@ -1353,6 +1356,53 @@ void ospf_lsa_flush_area(struct ospf_lsa *lsa, struct ospf_area *area)
 	lsa->tv_orig = lsa->tv_recv;
 	ospf_flood_through_area(area, NULL, lsa);
 	ospf_lsa_maxage(ospf, lsa);
+
+	/* Flush corresponding translated Type-5 LSA as well. */
+	if (lsa->data->type == OSPF_AS_NSSA_LSA) {
+		struct prefix_ipv4 p;
+		struct as_external_lsa *ext7;
+		struct ospf_lsa *type5;
+
+		ext7 = (struct as_external_lsa *)(lsa->data);
+		p.prefix = lsa->data->id;
+		p.prefixlen = ip_masklen(ext7->mask);
+		type5 = ospf_external_info_find_lsa(area->ospf, &p);
+
+		/*
+		 * Only flush a Type-5 that is actually our translation of a
+		 * Type-7 (LOCAL_XLT), and only if no other non-maxaged Type-7
+		 * for the same prefix exists that would still justify it.
+		 */
+		if (type5 && CHECK_FLAG(type5->flags, OSPF_LSA_LOCAL_XLT) &&
+		    !CHECK_FLAG(type5->flags, OSPF_LSA_IN_MAXAGE)) {
+			struct route_node *rn;
+			struct ospf_lsa *other;
+			struct ospf_area *search_area;
+			struct listnode *anode;
+			bool other_type7_exists = false;
+
+			for (ALL_LIST_ELEMENTS_RO(area->ospf->areas, anode, search_area)) {
+				if (search_area->external_routing != OSPF_AREA_NSSA)
+					continue;
+				LSDB_LOOP (NSSA_LSDB(search_area), rn, other) {
+					struct as_external_lsa *oext;
+
+					if (other == lsa || IS_LSA_MAXAGE(other))
+						continue;
+					oext = (struct as_external_lsa *)other->data;
+					if (IPV4_ADDR_SAME(&other->data->id, &lsa->data->id) &&
+					    oext->mask.s_addr == ext7->mask.s_addr) {
+						other_type7_exists = true;
+						break;
+					}
+				}
+				if (other_type7_exists)
+					break;
+			}
+			if (!other_type7_exists)
+				ospf_lsa_flush_as(ospf, type5);
+		}
+	}
 }
 
 void ospf_lsa_flush_as(struct ospf *ospf, struct ospf_lsa *lsa)
@@ -1370,7 +1420,7 @@ void ospf_lsa_flush_as(struct ospf *ospf, struct ospf_lsa *lsa)
 	/* Reset the lsa origination time such that it gives
 	   more time for the ACK to be received and avoid
 	   retransmissions */
-	lsa->data->ls_age = htons(OSPF_LSA_MAXAGE);
+	LS_AGE_SET(lsa, OSPF_LSA_MAXAGE);
 	if (IS_DEBUG_OSPF_EVENT)
 		zlog_debug("%s: MaxAge set to LSA[%s]", __func__,
 			   dump_lsa_key(lsa));
@@ -1382,7 +1432,7 @@ void ospf_lsa_flush_as(struct ospf *ospf, struct ospf_lsa *lsa)
 
 void ospf_lsa_flush(struct ospf *ospf, struct ospf_lsa *lsa)
 {
-	lsa->data->ls_age = htons(OSPF_LSA_MAXAGE);
+	LS_AGE_SET(lsa, OSPF_LSA_MAXAGE);
 
 	switch (lsa->data->type) {
 	case OSPF_ROUTER_LSA:

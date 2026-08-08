@@ -17,6 +17,7 @@
 #include "lib/route_types.h"
 #include "vrf.h"
 #include "frrstr.h"
+#include "lib/json.h"
 
 #include "zebra/zebra_router.h"
 #include "zebra/redistribute.h"
@@ -754,7 +755,7 @@ static void *route_match_address_prefix_len_compile(const char *arg)
 	char *endptr = NULL;
 	unsigned long tmpval;
 
-	/* prefix len value shoud be integer. */
+	/* prefix len value should be integer. */
 	if (!all_digit(arg))
 		return NULL;
 
@@ -1163,7 +1164,7 @@ static void zebra_route_map_process_update_cb(char *rmap_name)
 	zebra_nht_rm_update(rmap_name);
 }
 
-static void zebra_route_map_update_timer(struct event *thread)
+static void zebra_route_map_update_timer(struct event *event)
 {
 	if (IS_ZEBRA_DEBUG_EVENT)
 		zlog_debug("Event driven route-map update triggered");
@@ -1195,10 +1196,32 @@ void zebra_route_map_set_delay_timer(uint32_t value)
 
 void zebra_routemap_finish(void)
 {
+	afi_t afi;
+	safi_t safi;
+	uint32_t table;
+
 	/* Set zebra_rmap_update_timer to 0 so that it wont schedule again */
 	zebra_rmap_update_timer = 0;
 	/* Thread off if any scheduled already */
 	event_cancel(&zebra_t_rmap_update);
+
+	/*
+	 * Release any per-import-table route-map name strings that were
+	 * never explicitly removed via "no ip import-table ...".  The import
+	 * table machinery only frees the string when the import is torn down
+	 * at runtime, so on a clean SIGTERM shutdown the configured names
+	 * leak.
+	 */
+	for (afi = AFI_IP; afi < AFI_MAX; afi++) {
+		for (safi = SAFI_UNICAST; safi < SAFI_MAX; safi++) {
+			for (table = 0; table < ZEBRA_KERNEL_TABLE_MAX; table++) {
+				if (zebra_import_table_routemap[afi][safi][table])
+					XFREE(MTYPE_ROUTE_MAP_NAME,
+					      zebra_import_table_routemap[afi][safi][table]);
+			}
+		}
+	}
+
 	route_map_finish();
 }
 
@@ -1243,6 +1266,8 @@ char *zebra_get_import_table_route_map(afi_t afi, safi_t safi, uint32_t table)
 
 void zebra_add_import_table_route_map(afi_t afi, safi_t safi, const char *rmap_name, uint32_t table)
 {
+	if (zebra_import_table_routemap[afi][safi][table])
+		XFREE(MTYPE_ROUTE_MAP_NAME, zebra_import_table_routemap[afi][safi][table]);
 	zebra_import_table_routemap[afi][safi][table] = XSTRDUP(MTYPE_ROUTE_MAP_NAME, rmap_name);
 }
 

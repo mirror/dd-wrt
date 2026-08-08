@@ -97,7 +97,7 @@ def setup_module(mod):
     # ... and here it calls Mininet initialization functions.
 
     # Starting topology, create tmp files which are loaded to routers
-    #  to start deamons and then start routers
+    #  to start daemons and then start routers
     start_topology(tgen)
 
     # Creating configuration from JSON
@@ -180,7 +180,7 @@ def test_mgmt_commit_check(request):
     raw_config = {
         "r1": {
             "raw_config": [
-                "mgmt set-config /frr-routing:routing/control-plane-protocols/control-plane-protocol[type='frr-staticd:staticd'][name='staticd'][vrf='default']/frr-staticd:staticd/route-list[prefix='192.1.1.2/32'][src-prefix='::/0'][afi-safi='frr-routing:ipv4-unicast']/path-list[table-id='0'][distance='1']/frr-nexthops/nexthop[nh-type='blackhole'][vrf='default'][gateway=''][interface='(null)']/bh-type unspec",
+                "mgmt set-config /frr-routing:routing/control-plane-protocols/control-plane-protocol[type='frr-staticd:staticd'][name='staticd'][vrf='default']/frr-staticd:staticd/route-list[prefix='192.1.1.2/32'][src-prefix='::/0'][afi-safi='frr-routing:ipv4-unicast']/path-list[table-id='0'][nh-type='blackhole'][vrf='default'][gateway=''][interface='(null)']/bh-type unspec",
                 "mgmt commit check",
             ]
         }
@@ -193,7 +193,7 @@ def test_mgmt_commit_check(request):
     raw_config = {
         "r1": {
             "raw_config": [
-                "mgmt set-config /frr-routing:routing/control-plane-protocols/control-plane-protocol[type='frr-staticd:staticd'][name='staticd'][vrf='default']/frr-staticd:staticd/route-list[prefix='192.1.1.2/32'][src-prefix='::/0'][afi-safi='frr-routing:ipv4-unicast']/path-list[table-id='0'][distance='1']/frr-nexthops/nexthop[nh-type='blackhole'][vrf='default'][gateway=''][interface='(null)']/bh-type unspec",
+                "mgmt set-config /frr-routing:routing/control-plane-protocols/control-plane-protocol[type='frr-staticd:staticd'][name='staticd'][vrf='default']/frr-staticd:staticd/route-list[prefix='192.1.1.2/32'][src-prefix='::/0'][afi-safi='frr-routing:ipv4-unicast']/path-list[table-id='0'][nh-type='blackhole'][vrf='default'][gateway=''][interface='(null)']/bh-type unspec",
                 "mgmt commit check",
             ]
         }
@@ -250,7 +250,7 @@ def test_mgmt_commit_apply(request):
     raw_config = {
         "r1": {
             "raw_config": [
-                "mgmt set-config /frr-routing:routing/control-plane-protocols/control-plane-protocol[type='frr-staticd:staticd'][name='staticd'][vrf='default']/frr-staticd:staticd/route-list[prefix='192.1.1.20/32'][src-prefix='::/0'][afi-safi='frr-routing:ipv4-unicast']/path-list[table-id='0'][distance='1']/frr-nexthops/nexthop[nh-type='blackhole'][vrf='default'][gateway=''][interface='(null)']/bh-type unspec",
+                "mgmt set-config /frr-routing:routing/control-plane-protocols/control-plane-protocol[type='frr-staticd:staticd'][name='staticd'][vrf='default']/frr-staticd:staticd/route-list[prefix='192.1.1.20/32'][src-prefix='::/0'][afi-safi='frr-routing:ipv4-unicast']/path-list[table-id='0'][nh-type='blackhole'][vrf='default'][gateway=''][interface='(null)']/bh-type unspec",
                 "mgmt commit apply",
             ]
         }
@@ -263,7 +263,7 @@ def test_mgmt_commit_apply(request):
     raw_config = {
         "r1": {
             "raw_config": [
-                "mgmt set-config /frr-routing:routing/control-plane-protocols/control-plane-protocol[type='frr-staticd:staticd'][name='staticd'][vrf='default']/frr-staticd:staticd/route-list[prefix='192.1.1.20/32'][src-prefix='::/0'][afi-safi='frr-routing:ipv4-unicast']/path-list[table-id='0'][distance='1']/frr-nexthops/nexthop[nh-type='blackhole'][vrf='default'][gateway=''][interface='(null)']/vrf default",
+                "mgmt set-config /frr-routing:routing/control-plane-protocols/control-plane-protocol[type='frr-staticd:staticd'][name='staticd'][vrf='default']/frr-staticd:staticd/route-list[prefix='192.1.1.20/32'][src-prefix='::/0'][afi-safi='frr-routing:ipv4-unicast']/path-list[table-id='0'][nh-type='blackhole'][vrf='default'][gateway=''][interface='(null)']/vrf default",
                 "mgmt commit apply",
             ]
         }
@@ -303,7 +303,7 @@ def test_mgmt_commit_abort(request):
     raw_config = {
         "r1": {
             "raw_config": [
-                "mgmt set-config /frr-routing:routing/control-plane-protocols/control-plane-protocol[type='frr-staticd:staticd'][name='staticd'][vrf='default']/frr-staticd:staticd/route-list[prefix='192.1.1.3/32'][src-prefix='::/0'][afi-safi='frr-routing:ipv4-unicast']/path-list[table-id='0'][distance='1']/frr-nexthops/nexthop[nh-type='blackhole'][vrf='default'][gateway=''][interface='(null)']/bh-type unspec",
+                "mgmt set-config /frr-routing:routing/control-plane-protocols/control-plane-protocol[type='frr-staticd:staticd'][name='staticd'][vrf='default']/frr-staticd:staticd/route-list[prefix='192.1.1.3/32'][src-prefix='::/0'][afi-safi='frr-routing:ipv4-unicast']/path-list[table-id='0'][nh-type='blackhole'][vrf='default'][gateway=''][interface='(null)']/bh-type unspec",
                 "mgmt commit abort",
             ]
         }
@@ -355,7 +355,7 @@ def test_mgmt_delete_config(request):
     raw_config = {
         "r1": {
             "raw_config": [
-                "mgmt set-config /frr-routing:routing/control-plane-protocols/control-plane-protocol[type='frr-staticd:staticd'][name='staticd'][vrf='default']/frr-staticd:staticd/route-list[prefix='192.168.1.3/32'][src-prefix='::/0'][afi-safi='frr-routing:ipv4-unicast']/path-list[table-id='0'][distance='1']/frr-nexthops/nexthop[nh-type='blackhole'][vrf='default'][gateway=''][interface='(null)']/bh-type unspec",
+                "mgmt set-config /frr-routing:routing/control-plane-protocols/control-plane-protocol[type='frr-staticd:staticd'][name='staticd'][vrf='default']/frr-staticd:staticd/route-list[prefix='192.168.1.3/32'][src-prefix='::/0'][afi-safi='frr-routing:ipv4-unicast']/path-list[table-id='0'][nh-type='blackhole'][vrf='default'][gateway=''][interface='(null)']/bh-type unspec",
                 "mgmt commit apply",
             ]
         }
@@ -498,6 +498,15 @@ def test_mgmt_edit_config(request):
         f"conf\nmgmt edit replace /frr-interface:lib/interface[name='eth0'] lock commit {json.dumps(data, separators=(',', ':'))}"
     )
     assert "List keys in xpath and data tree are different" in ret
+
+    # check error on replace when xpath names a schema node that does not exist
+    data = {"frr-interface:interface": [{"name": "eth0", "description": "d"}]}
+    payload = json.dumps(data, separators=(",", ":"))
+    ret = r1.vtysh_cmd(
+        "conf\nmgmt edit replace /frr-interface:lib/interfac[name='eth0'] lock commit "
+        + payload
+    )
+    assert "Unknown schema node in xpath" in ret
 
     # check deleting an existing object using "delete"
     r1.vtysh_cmd(
@@ -642,6 +651,55 @@ def test_mgmt_edit_config(request):
     )
 
 
+def test_mgmt_edit_config_with_lock(request):
+    """
+    Verify mgmt edit config with lock across multiple edits followed by commit apply.
+    """
+    tc_name = request.node.name
+    write_test_header(tc_name)
+    tgen = get_topogen()
+    # Don't run this test if we have any failure.
+    if tgen.routers_have_failure():
+        pytest.skip(tgen.errors)
+
+    reset_config_on_routers(tgen)
+
+    r1 = tgen.gears["r1"]
+
+    data1 = {"frr-interface:interface": [{"name": "eth1", "description": "eth1-desc"}]}
+    data2 = {
+        "frr-interface:interface": [
+            {"name": "eth1", "frr-zebra:zebra": {"bandwidth": 120}}
+        ]
+    }
+    r1.vtysh_cmd(
+        f"""
+conf term file-lock
+mgmt edit create /frr-interface:lib {json.dumps(data1, separators=(',', ':'))}
+mgmt edit merge /frr-interface:lib/interface[name='eth1'] {json.dumps(data2, separators=(',', ':'))}
+mgmt commit apply
+        """
+    )
+    data_out = {
+        "frr-interface:interface": [
+            {
+                "name": "eth1",
+                "description": "eth1-desc",
+                "frr-zebra:zebra": {"bandwidth": 120},
+            }
+        ]
+    }
+    assert (
+        router_json_cmp(
+            r1,
+            "show mgmt get-data /frr-interface:lib/interface[name='eth1'] only-config exact",
+            data_out,
+            exact=True,
+        )
+        == None
+    )
+
+
 def test_mgmt_chaos_stop_start_frr(request):
     """
     Kill mgmtd - verify that watch frr restarts.
@@ -662,7 +720,7 @@ def test_mgmt_chaos_stop_start_frr(request):
     raw_config = {
         "r1": {
             "raw_config": [
-                "mgmt set-config /frr-routing:routing/control-plane-protocols/control-plane-protocol[type='frr-staticd:staticd'][name='staticd'][vrf='default']/frr-staticd:staticd/route-list[prefix='192.1.11.200/32'][src-prefix='::/0'][afi-safi='frr-routing:ipv4-unicast']/path-list[table-id='0'][distance='1']/frr-nexthops/nexthop[nh-type='blackhole'][vrf='default'][gateway=''][interface='(null)']/bh-type unspec",
+                "mgmt set-config /frr-routing:routing/control-plane-protocols/control-plane-protocol[type='frr-staticd:staticd'][name='staticd'][vrf='default']/frr-staticd:staticd/route-list[prefix='192.1.11.200/32'][src-prefix='::/0'][afi-safi='frr-routing:ipv4-unicast']/path-list[table-id='0'][nh-type='blackhole'][vrf='default'][gateway=''][interface='(null)']/bh-type unspec",
                 "mgmt commit apply",
             ]
         }
@@ -738,7 +796,7 @@ def test_mgmt_chaos_kill_daemon(request):
     raw_config = {
         "r1": {
             "raw_config": [
-                "mgmt set-config /frr-routing:routing/control-plane-protocols/control-plane-protocol[type='frr-staticd:staticd'][name='staticd'][vrf='default']/frr-staticd:staticd/route-list[prefix='192.1.11.200/32'][src-prefix='::/0'][afi-safi='frr-routing:ipv4-unicast']/path-list[table-id='0'][distance='1']/frr-nexthops/nexthop[nh-type='blackhole'][vrf='default'][gateway=''][interface='(null)']/bh-type unspec",
+                "mgmt set-config /frr-routing:routing/control-plane-protocols/control-plane-protocol[type='frr-staticd:staticd'][name='staticd'][vrf='default']/frr-staticd:staticd/route-list[prefix='192.1.11.200/32'][src-prefix='::/0'][afi-safi='frr-routing:ipv4-unicast']/path-list[table-id='0'][nh-type='blackhole'][vrf='default'][gateway=''][interface='(null)']/bh-type unspec",
                 "mgmt commit apply",
             ]
         }

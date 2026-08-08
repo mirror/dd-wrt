@@ -64,6 +64,8 @@ extern void vzlogx(const struct xref_logmsg *xref, int prio, const char *fmt,
 		   va_list ap) PRINTFRR(3, 0);
 #define vzlog(prio, ...) vzlogx(NULL, prio, __VA_ARGS__)
 
+extern void ezlog(int prio, const char *fmt, ...) PRINTFRR(2, 3);
+
 PRINTFRR(2, 3)
 static inline void zlog(int prio, const char *fmt, ...)
 {
@@ -240,7 +242,7 @@ extern struct zlog_target *zlog_target_clone(struct memtype *mt,
  * NULL.
  *
  * Returns oldzt so you can zlog_target_free(zlog_target_replace(old, new));
- * (Some log targets may need extra cleanup inbetween, but remember the old
+ * (Some log targets may need extra cleanup in between, but remember the old
  * target MUST remain functional until the end of the current RCU cycle.)
  */
 extern struct zlog_target *zlog_target_replace(struct zlog_target *oldzt,

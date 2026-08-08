@@ -244,6 +244,7 @@ extern struct ospf6_interface *
 ospf6_interface_lookup_by_ifindex(ifindex_t, vrf_id_t vrf_id);
 extern struct ospf6_interface *ospf6_interface_create(struct interface *ifp);
 extern void ospf6_interface_delete(struct ospf6_interface *oi);
+extern void ospf6_interface_reset(struct interface *ifp);
 
 extern void ospf6_interface_enable(struct ospf6_interface *oi);
 extern void ospf6_interface_disable(struct ospf6_interface *oi);
@@ -254,11 +255,11 @@ extern struct in6_addr *
 ospf6_interface_get_global_address(struct interface *ifp);
 
 /* interface event */
-extern void interface_up(struct event *thread);
-extern void interface_down(struct event *thread);
-extern void wait_timer(struct event *thread);
-extern void backup_seen(struct event *thread);
-extern void neighbor_change(struct event *thread);
+extern void interface_up(struct event *event);
+extern void interface_down(struct event *event);
+extern void wait_timer(struct event *event);
+extern void backup_seen(struct event *event);
+extern void neighbor_change(struct event *event);
 
 extern void ospf6_interface_init(void);
 extern void ospf6_interface_clear(struct interface *ifp);

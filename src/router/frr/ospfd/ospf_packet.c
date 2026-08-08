@@ -275,12 +275,11 @@ static unsigned int ospf_packet_max(struct ospf_interface *oi)
 	return max;
 }
 
-static void ospf_ls_req_timer(struct event *thread)
+static void ospf_ls_req_timer(struct event *event)
 {
 	struct ospf_neighbor *nbr;
 
-	nbr = EVENT_ARG(thread);
-	nbr->t_ls_req = NULL;
+	nbr = EVENT_ARG(event);
 
 	/* Send Link State Request. */
 	if (ospf_ls_request_count(nbr))
@@ -296,17 +295,47 @@ void ospf_ls_req_event(struct ospf_neighbor *nbr)
 	event_add_event(master, ospf_ls_req_timer, nbr, 0, &nbr->t_ls_req);
 }
 
+static void ospf_maybe_restart_inactivity(struct ospf_interface *oi, struct ospf_neighbor *nbr,
+					  const struct ip *iph)
+{
+	in_addr_t dst;
+
+	if (!nbr)
+		return;
+
+	/* Only apply when configured */
+	if (!OSPF_IF_PARAM(oi, dead_timer_any))
+		return;
+
+	/* Only once the neighbor is at or beyond 2-Way */
+	if (nbr->state < NSM_TwoWay)
+		return;
+
+	dst = ntohl(iph->ip_dst.s_addr);
+
+	/* Any unicast OSPF packet */
+	bool is_unicast = !IN_MULTICAST(dst);
+
+	/* Any OSPF packet to AllSPFRouters over a point-to-point link */
+	bool is_p2p_allspf = (oi->type == OSPF_IFTYPE_POINTOPOINT &&
+			      dst == OSPF_ALLSPFROUTERS); /* 224.0.0.5 in host order */
+
+	if (is_unicast || is_p2p_allspf) {
+		ospf_nsm_restart_inactivity_timer(nbr);
+		nbr->dead_timer_resets++;
+	}
+}
+
 /*
  * OSPF neighbor link state retransmission timer handler. Unicast
- * unacknowledged LSAs to the neigbhors.
+ * unacknowledged LSAs to the neighbors.
  */
-void ospf_ls_rxmt_timer(struct event *thread)
+void ospf_ls_rxmt_timer(struct event *event)
 {
 	struct ospf_neighbor *nbr;
 	int retransmit_interval, retransmit_window, rxmt_lsa_count = 0;
 
-	nbr = EVENT_ARG(thread);
-	nbr->t_ls_rxmt = NULL;
+	nbr = EVENT_ARG(event);
 	retransmit_interval = nbr->v_ls_rxmt;
 	retransmit_window = OSPF_IF_PARAM(nbr->oi, retransmit_window);
 
@@ -326,7 +355,7 @@ void ospf_ls_rxmt_timer(struct event *thread)
 		rxmt_window.tv_usec = (retransmit_window % 1000) * 1000;
 
 		/*
-		 * Calculate the latest retransmit time for LSAs transmited in
+		 * Calculate the latest retransmit time for LSAs transmitted in
 		 * this timer pass by adding the retransmission window to the
 		 * current time. Calculate the next retransmission time by adding
 		 * the retransmit interval to the current time.
@@ -373,17 +402,47 @@ void ospf_ls_rxmt_timer(struct event *thread)
 	ospf_ls_retransmit_set_timer(nbr);
 }
 
-void ospf_ls_ack_delayed_timer(struct event *thread)
+void ospf_ls_ack_delayed_timer(struct event *event)
 {
 	struct ospf_interface *oi;
 
-	oi = EVENT_ARG(thread);
-	oi->t_ls_ack_delayed = NULL;
+	oi = EVENT_ARG(event);
 
 	/* Send Link State Acknowledgment. */
 	if (ospf_lsa_list_count(&oi->ls_ack_delayed))
 		ospf_ls_ack_send_delayed(oi);
 }
+
+static inline uint8_t ospf_tos_for_type(struct ospf_interface *oi, uint8_t type)
+{
+	uint8_t dscp;
+
+	switch (type) {
+	case OSPF_MSG_HELLO:
+	case OSPF_MSG_LS_ACK:
+		/* Always highest priority */
+		dscp = OSPF_IF_PARAM(oi, dscp_ospf_all);
+		break;
+
+	case OSPF_MSG_DB_DESC:
+	case OSPF_MSG_LS_REQ:
+	case OSPF_MSG_LS_UPD:
+	default:
+		/*
+		 * Other control traffic: use low-control only if explicitly configured;
+		 * otherwise inherit "all".
+		 */
+		if (OSPF_IF_PARAM_CONFIGURED(IF_DEF_PARAMS(oi->ifp), dscp_low_control))
+			dscp = OSPF_IF_PARAM(oi, dscp_low_control);
+		else
+			dscp = OSPF_IF_PARAM(oi, dscp_ospf_all);
+		break;
+	}
+
+	dscp &= 0x3f;		     /* clamp to 6 bits */
+	return (uint8_t)(dscp << 2); /* DSCP in bits 7..2, ECN = 0 */
+}
+
 
 #ifdef WANT_OSPF_WRITE_FRAGMENT
 static void ospf_write_frags(int fd, struct ospf_packet *op, struct ip *iph,
@@ -458,9 +517,9 @@ static void ospf_write_frags(int fd, struct ospf_packet *op, struct ip *iph,
 }
 #endif /* WANT_OSPF_WRITE_FRAGMENT */
 
-static void ospf_write(struct event *thread)
+static void ospf_write(struct event *event)
 {
-	struct ospf *ospf = EVENT_ARG(thread);
+	struct ospf *ospf = EVENT_ARG(event);
 	struct ospf_interface *oi;
 	struct ospf_packet *op;
 	struct sockaddr_in sa_dst;
@@ -503,6 +562,8 @@ static void ospf_write(struct event *thread)
 #endif /* WANT_OSPF_WRITE_FRAGMENT */
 
 	while ((pkt_count < ospf->write_oi_count) && oi) {
+		struct in_addr dstaddr;
+
 		pkt_count++;
 #ifdef WANT_OSPF_WRITE_FRAGMENT
 		/* convenience - max OSPF data per packet */
@@ -560,7 +621,8 @@ static void ospf_write(struct event *thread)
 					overflow ip_hl.. */
 
 		iph.ip_v = IPVERSION;
-		iph.ip_tos = IPTOS_PREC_INTERNETCONTROL;
+		/* RFC4222: differentiate DSCP per OSPF packet type */
+		iph.ip_tos = ospf_tos_for_type(oi, type);
 		iph.ip_len = (iph.ip_hl << OSPF_WRITE_IPHL_SHIFT) + op->length;
 
 #if defined(__DragonFly__)
@@ -572,7 +634,7 @@ static void ospf_write(struct event *thread)
 #endif
 
 #ifdef WANT_OSPF_WRITE_FRAGMENT
-		/* XXX-MT: not thread-safe at all..
+		/* XXX-MT: not event-safe at all..
 		 * XXX: this presumes this is only programme sending OSPF
 		 * packets
 		 * otherwise, no guarantee ipid will be unique
@@ -588,7 +650,7 @@ static void ospf_write(struct event *thread)
 		iph.ip_p = IPPROTO_OSPFIGP;
 		iph.ip_sum = 0;
 		iph.ip_src.s_addr = oi->address->u.prefix4.s_addr;
-		iph.ip_dst.s_addr = op->dst.s_addr;
+		dstaddr.s_addr = iph.ip_dst.s_addr = op->dst.s_addr;
 
 		memset(&msg, 0, sizeof(msg));
 		msg.msg_name = (caddr_t)&sa_dst;
@@ -628,10 +690,9 @@ static void ospf_write(struct event *thread)
 		ret = sendmsg(fd, &msg, flags);
 		sockopt_iphdrincl_swab_systoh(&iph);
 		if (IS_DEBUG_OSPF_EVENT)
-			zlog_debug(
-				"%s to %pI4, id %d, off %d, len %d, interface %s, mtu %u:",
-				__func__, &iph.ip_dst, iph.ip_id, iph.ip_off,
-				iph.ip_len, oi->ifp->name, oi->ifp->mtu);
+			zlog_debug("%s to %pI4, id %d, off %d, len %d, interface %s, mtu %u:",
+				   __func__, &dstaddr, iph.ip_id, iph.ip_off, iph.ip_len,
+				   oi->ifp->name, oi->ifp->mtu);
 
 		/* sendmsg will return EPERM if firewall is blocking sending.
 		 * This is a normal situation when 'ip nhrp map multicast xxx'
@@ -640,12 +701,10 @@ static void ospf_write(struct event *thread)
 		 * causing the EPERM result
 		 */
 		if (ret < 0 && errno != EPERM)
-			flog_err(
-				EC_LIB_SOCKET,
-				"*** sendmsg in %s failed to %pI4, id %d, off %d, len %d, interface %s, mtu %u: %s",
-				__func__, &iph.ip_dst, iph.ip_id, iph.ip_off,
-				iph.ip_len, oi->ifp->name, oi->ifp->mtu,
-				safe_strerror(errno));
+			flog_err(EC_LIB_SOCKET,
+				 "*** sendmsg in %s failed to %pI4, id %d, off %d, len %d, interface %s, mtu %u: %s",
+				 __func__, &dstaddr, iph.ip_id, iph.ip_off, iph.ip_len,
+				 oi->ifp->name, oi->ifp->mtu, safe_strerror(errno));
 
 		/* Show debug sending packet. */
 		if (IS_DEBUG_OSPF_PACKET(type - 1, SEND)) {
@@ -704,7 +763,7 @@ static void ospf_write(struct event *thread)
 		}
 	}
 
-	/* If packets still remain in queue, call write thread. */
+	/* If packets still remain in queue, call write event. */
 	if (!list_isempty(ospf->oi_write_q))
 		event_add_write(master, ospf_write, ospf, ospf->fd,
 				&ospf->t_write);
@@ -718,6 +777,7 @@ static void ospf_hello(struct ip *iph, struct ospf_header *ospfh,
 	struct ospf_neighbor *nbr;
 	int old_state;
 	struct prefix p;
+	struct in_addr srcaddr = iph->ip_src;
 
 	/* increment statistics. */
 	oi->hello_in++;
@@ -727,11 +787,8 @@ static void ospf_hello(struct ip *iph, struct ospf_header *ospfh,
 	/* If Hello is myself, silently discard. */
 	if (IPV4_ADDR_SAME(&ospfh->router_id, &oi->ospf->router_id)) {
 		if (IS_DEBUG_OSPF_PACKET(ospfh->type - 1, RECV)) {
-			zlog_debug(
-				"ospf_header[%s/%pI4]: selforiginated, dropping.",
-				lookup_msg(ospf_packet_type_str, ospfh->type,
-					   NULL),
-				&iph->ip_src);
+			zlog_debug("ospf_header[%s/%pI4]: selforiginated, dropping.",
+				   lookup_msg(ospf_packet_type_str, ospfh->type, NULL), &srcaddr);
 		}
 		return;
 	}
@@ -900,7 +957,7 @@ static void ospf_hello(struct ip *iph, struct ospf_header *ospfh,
 		 * from DR and BDR.
 		 * So, helper might receives ONW_WAY hello from
 		 * RESTARTER. So not allowing to change the state if it
-		 * receives one_way hellow when it acts as HELPER for
+		 * receives one_way hello when it acts as HELPER for
 		 * that specific neighbor.
 		 */
 		if (!OSPF_GR_IS_ACTIVE_HELPER(nbr))
@@ -1128,7 +1185,7 @@ static void ospf_db_desc_proc(struct stream *s, struct ospf_interface *oi,
 	/* Save received neighbor values from DD. */
 	ospf_db_desc_save_current(nbr, dd);
 
-	if (!nbr->t_ls_req)
+	if (!event_is_scheduled(nbr->t_ls_req))
 		ospf_ls_req_send(nbr);
 }
 
@@ -1179,7 +1236,7 @@ static void ospf_db_desc(struct ip *iph, struct ospf_header *ospfh,
 	 * XXX HACK by Hasso Tepper. Setting N/P bit in NSSA area DD packets is
 	 * not
 	 * required. In fact at least JunOS sends DD packets with P bit clear.
-	 * Until proper solution is developped, this hack should help.
+	 * Until proper solution is developed, this hack should help.
 	 *
 	 * Update: According to the RFCs, N bit is specified /only/ for Hello
 	 * options, unfortunately its use in DD options is not specified. Hence
@@ -1231,6 +1288,11 @@ static void ospf_db_desc(struct ip *iph, struct ospf_header *ospfh,
 			lookup_msg(ospf_nsm_state_msg, nbr->state, NULL),
 			ntohl(dd->dd_seqnum), nbr->dd_seqnum);
 
+	/*
+	 * RFC4222: reset inactivity timer on any OSPF unicast packet
+	 * or any AllSPFRouters packet over a point-to-point link.
+	 */
+	ospf_maybe_restart_inactivity(oi, nbr, iph);
 	/* Process DD packet by neighbor status. */
 	switch (nbr->state) {
 	case NSM_Down:
@@ -1477,6 +1539,11 @@ static void ospf_ls_req(struct ip *iph, struct ospf_header *ospfh,
 		return;
 	}
 
+	/*
+	 * RFC4222: reset inactivity timer on any OSPF unicast packet
+	 * or any AllSPFRouters packet over a point-to-point link.
+	 */
+	ospf_maybe_restart_inactivity(oi, nbr, iph);
 	/* Send Link State Update for ALL requested LSAs. */
 	ls_upd = list_new();
 	length = OSPF_HEADER_SIZE + OSPF_LS_UPD_MIN_SIZE;
@@ -1536,7 +1603,8 @@ static struct list *ospf_ls_upd_list_lsa(struct ospf_neighbor *nbr,
 					 struct stream *s,
 					 struct ospf_interface *oi, size_t size)
 {
-	uint16_t count, sum;
+	uint32_t count;
+	uint16_t sum;
 	uint32_t length;
 	struct lsa_header *lsah;
 	struct ospf_lsa *lsa;
@@ -1595,8 +1663,10 @@ static struct list *ospf_ls_upd_list_lsa(struct ospf_neighbor *nbr,
 		 * What if the received LSA's age is greater than MaxAge?
 		 * Treat it as a MaxAge case -- endo.
 		 */
-		if (ntohs(lsah->ls_age) > OSPF_LSA_MAXAGE)
-			lsah->ls_age = htons(OSPF_LSA_MAXAGE);
+		uint16_t ls_age = ntohs(lsah->ls_age);
+
+		if ((ls_age & ~DO_NOT_AGE) > OSPF_LSA_MAXAGE)
+			lsah->ls_age = htons(OSPF_LSA_MAXAGE | (ls_age & DO_NOT_AGE));
 
 		if (CHECK_FLAG(nbr->options, OSPF_OPTION_O)) {
 #ifdef STRICT_OBIT_USAGE_CHECK
@@ -1718,6 +1788,11 @@ static void ospf_ls_upd(struct ospf *ospf, struct ip *iph,
 					   NULL));
 		return;
 	}
+	/*
+	 * RFC4222: reset inactivity timer on any OSPF unicast packet
+	 * or any AllSPFRouters packet over a point-to-point link.
+	 */
+	ospf_maybe_restart_inactivity(oi, nbr, iph);
 
 	/* Get list of LSAs from Link State Update packet. - Also performs
 	 * Stages 1 (validate LSA checksum) and 2 (check for LSA consistent
@@ -1934,6 +2009,61 @@ static void ospf_ls_upd(struct ospf *ospf, struct ip *iph,
 			if (Flag)
 				continue;
 		}
+		/* Make sure that this is not a stale LSA (after a reboot) that originated from this
+		 * router. If that is the case, refresh the local LSA.
+		 * RFC 2328 Section 13.4:
+		 * https://datatracker.ietf.org/doc/html/rfc2328#page-151
+		 *
+		 * Opaque LSAs are handled above and via ospf_process_self_originated_lsa().
+		 */
+		if (IPV4_ADDR_SAME(&lsa->data->adv_router, &oi->ospf->router_id) &&
+		    !IS_OPAQUE_LSA(lsa->data->type)) {
+			if (current == NULL) {
+				/* RFC 2328 Section 13.4:
+				 * It may be the case the router no longer wishes to originate the
+				 * received LSA. ... Instead of updating the LSA, the LSA should be
+				 * flushed from the routing domain by incrementing the received
+				 * LSA's LS age to MaxAge and reflooding.
+				 */
+				struct ospf_lsa *ls_req;
+
+				if (IS_DEBUG_OSPF(lsa, LSA))
+					zlog_debug("%s: Link State Update[%s]: router-id is local, but no current LSA - setting to MaxAge",
+						   __func__, dump_lsa_key(lsa));
+
+				/* Immediately Ack to stop retransmitting the LSA */
+				ospf_ls_ack_send_direct(nbr, lsa);
+				/* Remove from request list, we are overriding */
+				ls_req = ospf_ls_request_lookup(nbr, lsa);
+				if (ls_req != NULL) {
+					ospf_ls_request_delete(nbr, ls_req);
+					ospf_check_nbr_loading(nbr);
+				}
+
+				/* Set LSA age to MaxAge to flush this stale instance. */
+				LS_AGE_SET(lsa, OSPF_LSA_MAXAGE);
+
+			} else if (ospf_lsa_more_recent(lsa, current) > 0) {
+				/* RFC 2328 Section 13.4:
+				 * If the received self-originated LSA is newer than the
+				 * last instance that the router actually originated, the router
+				 * must take special action. ... the router must then advance the LSA's LS
+				 * sequence number one past the received LS sequence number, and
+				 * originate a new instance of the LSA.
+				 */
+				if (IS_DEBUG_OSPF(lsa, LSA))
+					zlog_debug("%s: Link State Update[%s]: router-id is local, but has higher seq num",
+						   __func__, dump_lsa_key(lsa));
+				current->data->ls_seqnum = lsa->data->ls_seqnum;
+				ospf_lsa_refresh(oi->ospf, current);
+				/* Discarding without ACK may cause neighbor to retransmit the stale LSA
+				 * until the refreshed LSA arrives, make sure that doesn't happen.
+				 */
+				ospf_ls_ack_send_direct(nbr, lsa);
+				DISCARD_LSA(lsa, 10);
+				continue;
+			}
+		}
 
 		/* (5) Find the instance of this LSA that is currently contained
 		   in the router's link state database.  If there is no
@@ -2107,6 +2237,12 @@ static void ospf_ls_ack(struct ip *iph, struct ospf_header *ospfh,
 					   NULL));
 		return;
 	}
+	/*
+	 * RFC4222: reset inactivity timer on any OSPF unicast packet
+	 * or any AllSPFRouters packet over a point-to-point link.
+	 */
+	ospf_maybe_restart_inactivity(oi, nbr, iph);
+
 
 	while (size >= OSPF_LSA_HEADER_SIZE) {
 		struct ospf_lsa *lsa, *lsr;
@@ -2634,10 +2770,78 @@ static unsigned ospf_packet_examin(struct ospf_header *oh,
 	return ret;
 }
 
+/*
+ * On PtP/VLinks, neighbor structures are indexed by router-ID. Quick neighbors
+ * are created under the source address until the router ID is known.
+ */
+static void ospf_qnbr_rekey_ptp_vlink(struct ospf_interface *oi, const struct in_addr *src,
+				      struct ospf_neighbor *qnbr)
+{
+	struct prefix oldk, newk;
+	struct route_node *oldrn, *newrn;
+	struct ospf_neighbor *existing;
+
+	memset(&oldk, 0, sizeof(oldk));
+	oldk.family = AF_INET;
+	oldk.prefixlen = IPV4_MAX_BITLEN;
+	oldk.u.prefix4 = *src;
+
+	memset(&newk, 0, sizeof(newk));
+	newk.family = AF_INET;
+	newk.prefixlen = IPV4_MAX_BITLEN;
+	newk.u.prefix4 = qnbr->router_id;
+
+	/* First check if the router-id slot is already occupied. */
+	existing = NULL;
+	newrn = route_node_lookup(oi->nbrs, &newk);
+	if (newrn) {
+		existing = newrn->info;
+		route_unlock_node(newrn);
+	}
+
+	/*
+	 * If another neighbor already exists under the router-id key, prefer it
+	 * and delete the quick placeholder to avoid orphaning it.
+	 */
+	if (existing && existing != qnbr) {
+		if (IS_DEBUG_OSPF_QNBR)
+			zlog_debug("%s: router-id keyed neighbor already exists for %pI4 on %s",
+				   __func__, &qnbr->router_id, IF_NAME(oi));
+
+		oldrn = route_node_lookup(oi->nbrs, &oldk);
+		if (oldrn) {
+			if (oldrn->info == qnbr) {
+				oldrn->info = NULL;
+				route_unlock_node(oldrn);
+			}
+			route_unlock_node(oldrn);
+		}
+
+		ospf_nbr_free(qnbr);
+	} else {
+		newrn = route_node_get(oi->nbrs, &newk);
+		if (!newrn->info)
+			newrn->info = qnbr;
+		else
+			route_unlock_node(newrn);
+
+		oldrn = route_node_lookup(oi->nbrs, &oldk);
+		if (oldrn) {
+			if (oldrn->info == qnbr) {
+				oldrn->info = NULL;
+				route_unlock_node(oldrn);
+			}
+			route_unlock_node(oldrn);
+		}
+	}
+}
+
 /* OSPF Header verification. */
 static int ospf_verify_header(struct stream *ibuf, struct ospf_interface *oi,
 			      struct ip *iph, struct ospf_header *ospfh)
 {
+	struct in_addr srcaddr = iph->ip_src;
+
 	/* Check Area ID. */
 	if (!ospf_check_area_id(oi, ospfh)) {
 		flog_warn(EC_OSPF_PACKET,
@@ -2648,10 +2852,9 @@ static int ospf_verify_header(struct stream *ibuf, struct ospf_interface *oi,
 
 	/* Check network mask, Silently discarded. */
 	if (!ospf_check_network_mask(oi, iph->ip_src)) {
-		flog_warn(
-			EC_OSPF_PACKET,
-			"interface %s: ospf_read network address is not same [%pI4]",
-			IF_NAME(oi), &iph->ip_src);
+		flog_warn(EC_OSPF_PACKET,
+			  "interface %s: ospf_read network address is not same [%pI4]",
+			  IF_NAME(oi), &srcaddr);
 		return -1;
 	}
 
@@ -2659,6 +2862,38 @@ static int ospf_verify_header(struct stream *ibuf, struct ospf_interface *oi,
 	 * required. */
 	if (!ospf_auth_check(oi, iph, ospfh))
 		return -1;
+
+	/* Check for quick neighbors. Update router-id and send immediate hellos if needed */
+	if (oi->num_q_nbrs) {
+		struct ospf_neighbor *qnbr;
+		struct in_addr src;
+
+		src.s_addr = iph->ip_src.s_addr;
+		qnbr = ospf_nbr_lookup_by_addr(oi->nbrs, &src);
+		if (qnbr && qnbr->router_id.s_addr == 0) {
+			if (IS_DEBUG_OSPF_QNBR)
+				zlog_debug("%s: Quick neighbor learned router-id, qnbr=%pI4, router-id=%pI4",
+					   __func__, &src, &ospfh->router_id);
+			/* Fix the router-id and trigger a new hello to be sent */
+			qnbr->router_id = ospfh->router_id;
+			/* This is no longer a "quick" neighbor now that we know the router-id */
+			if (oi->num_q_nbrs)
+				oi->num_q_nbrs--;
+
+			/*
+			 * On Point-to-Point and Virtual-Link interfaces, the neighbor
+			 * table is indexed by router-id. Quick neighbors are created
+			 * (temporarily) under their source address; once the router-id
+			 * is known, re-key the entry to avoid duplicate neighbors.
+			 */
+			if (oi->type == OSPF_IFTYPE_VIRTUALLINK ||
+			    oi->type == OSPF_IFTYPE_POINTOPOINT)
+				ospf_qnbr_rekey_ptp_vlink(oi, &src, qnbr);
+
+			OSPF_ISM_EVENT_EXECUTE(oi, ISM_NeighborChange);
+			ospf_hello_send(oi);
+		}
+	}
 
 	return 0;
 }
@@ -2678,6 +2913,7 @@ static enum ospf_read_return_enum ospf_read_helper(struct ospf *ospf)
 	uint16_t length;
 	struct connected *c;
 	struct interface *ifp = NULL;
+	struct in_addr srcaddr, dstaddr;
 
 	stream_reset(ospf->ibuf);
 	ibuf = ospf_recv_packet(ospf, ospf->fd, &ifp, ospf->ibuf);
@@ -2691,6 +2927,9 @@ static enum ospf_read_return_enum ospf_read_helper(struct ospf *ospf)
 	 * stream data buffer.
 	 */
 	iph = (struct ip *)STREAM_DATA(ibuf);
+	srcaddr = iph->ip_src;
+	dstaddr = iph->ip_dst;
+
 	/*
 	 * Note that sockopt_iphdrincl_swab_systoh was called in
 	 * ospf_recv_packet.
@@ -2702,16 +2941,13 @@ static enum ospf_read_return_enum ospf_read_helper(struct ospf *ospf)
 		 * Solaris 8) that claim to support ifindex retrieval but do
 		 * not.
 		 */
-		c = if_lookup_address((void *)&iph->ip_src, AF_INET,
-				      ospf->vrf_id);
+		c = if_lookup_address((void *)&srcaddr, AF_INET, ospf->vrf_id);
 		if (c)
 			ifp = c->ifp;
 		if (ifp == NULL) {
 			if (IS_DEBUG_OSPF_PACKET(0, RECV))
-				zlog_debug(
-					"%s: Unable to determine incoming interface from: %pI4(%s)",
-					__func__, &iph->ip_src,
-					ospf_get_name(ospf));
+				zlog_debug("%s: Unable to determine incoming interface from: %pI4(%s)",
+					   __func__, &srcaddr, ospf_get_name(ospf));
 			return OSPF_READ_CONTINUE;
 		}
 	}
@@ -2727,12 +2963,9 @@ static enum ospf_read_return_enum ospf_read_helper(struct ospf *ospf)
 	}
 
 	/* Self-originated packet should be discarded silently. */
-	if (ospf_if_lookup_by_local_addr(ospf, NULL, iph->ip_src)) {
-		if (IS_DEBUG_OSPF_PACKET(0, RECV)) {
-			zlog_debug(
-				"ospf_read[%pI4]: Dropping self-originated packet",
-				&iph->ip_src);
-		}
+	if (ospf_if_lookup_by_local_addr(ospf, NULL, srcaddr)) {
+		if (IS_DEBUG_OSPF_PACKET(0, RECV))
+			zlog_debug("ospf_read[%pI4]: Dropping self-originated packet", &srcaddr);
 		return OSPF_READ_CONTINUE;
 	}
 
@@ -2762,7 +2995,7 @@ static enum ospf_read_return_enum ospf_read_helper(struct ospf *ospf)
 	/* Now it is safe to access all fields of OSPF packet header. */
 
 	/* associate packet with ospf interface */
-	oi = ospf_if_lookup_recv_if(ospf, iph->ip_src, ifp);
+	oi = ospf_if_lookup_recv_if(ospf, srcaddr, ifp);
 
 	/*
 	 * If a neighbor filter prefix-list is configured, apply it to the IP
@@ -2789,10 +3022,8 @@ static enum ospf_read_return_enum ospf_read_helper(struct ospf *ospf)
 	/* If incoming interface is passive one, ignore it. */
 	if (oi && OSPF_IF_PASSIVE_STATUS(oi) == OSPF_IF_PASSIVE) {
 		if (IS_DEBUG_OSPF_EVENT)
-			zlog_debug(
-				"ignoring packet from router %pI4 sent to %pI4, received on a passive interface, %pI4",
-				&ospfh->router_id, &iph->ip_dst,
-				&oi->address->u.prefix4);
+			zlog_debug("ignoring packet from router %pI4 sent to %pI4, received on a passive interface, %pI4",
+				   &ospfh->router_id, &dstaddr, &oi->address->u.prefix4);
 
 		if (iph->ip_dst.s_addr == htonl(OSPF_ALLSPFROUTERS)) {
 			/* Try to fix multicast membership.
@@ -2814,9 +3045,8 @@ static enum ospf_read_return_enum ospf_read_helper(struct ospf *ospf)
 		if ((oi = ospf_associate_packet_vl(ospf, ifp, iph, ospfh))
 		    == NULL) {
 			if (!ospf->instance && IS_DEBUG_OSPF_EVENT)
-				zlog_debug(
-					"Packet from [%pI4] received on link %s but no ospf_interface",
-					&iph->ip_src, ifp->name);
+				zlog_debug("Packet from [%pI4] received on link %s but no ospf_interface",
+					   &srcaddr, ifp->name);
 			return OSPF_READ_CONTINUE;
 		}
 	} else if (OSPF_IS_AREA_ID_BACKBONE(ospfh->area_id) &&
@@ -2836,16 +3066,13 @@ static enum ospf_read_return_enum ospf_read_helper(struct ospf *ospf)
 	 */
 	else if (oi->ifp != ifp) {
 		if (IS_DEBUG_OSPF_EVENT)
-			flog_warn(EC_OSPF_PACKET,
-				  "Packet from [%pI4] received on wrong link %s",
-				  &iph->ip_src, ifp->name);
+			flog_warn(EC_OSPF_PACKET, "Packet from [%pI4] received on wrong link %s",
+				  &srcaddr, ifp->name);
 		return OSPF_READ_CONTINUE;
 	} else if (oi->state == ISM_Down) {
-		flog_warn(
-			EC_OSPF_PACKET,
-			"Ignoring packet from %pI4 to %pI4 received on interface that is down [%s]; interface flags are %s",
-			&iph->ip_src, &iph->ip_dst, ifp->name,
-			if_flag_dump(ifp->flags));
+		flog_warn(EC_OSPF_PACKET,
+			  "Ignoring packet from %pI4 to %pI4 received on interface that is down [%s]; interface flags are %s",
+			  &srcaddr, &dstaddr, ifp->name, if_flag_dump(ifp->flags));
 		/* Fix multicast memberships? */
 		if (iph->ip_dst.s_addr == htonl(OSPF_ALLSPFROUTERS))
 			OI_MEMBER_JOINED(oi, MEMBER_ALLROUTERS);
@@ -2865,11 +3092,9 @@ static enum ospf_read_return_enum ospf_read_helper(struct ospf *ospf)
 	 */
 	if (iph->ip_dst.s_addr == htonl(OSPF_ALLDROUTERS)
 	    && (oi->state != ISM_DR && oi->state != ISM_Backup)) {
-		flog_warn(
-			EC_OSPF_PACKET,
-			"Dropping packet for AllDRouters from [%pI4] via [%s] (ISM: %s)",
-			&iph->ip_src, IF_NAME(oi),
-			lookup_msg(ospf_ism_state_msg, oi->state, NULL));
+		flog_warn(EC_OSPF_PACKET,
+			  "Dropping packet for AllDRouters from [%pI4] via [%s] (ISM: %s)",
+			  &srcaddr, IF_NAME(oi), lookup_msg(ospf_ism_state_msg, oi->state, NULL));
 		/* Try to fix multicast membership. */
 		SET_FLAG(oi->multicast_memberships, MEMBER_DROUTERS);
 		ospf_if_set_multicast(oi);
@@ -2880,9 +3105,7 @@ static enum ospf_read_return_enum ospf_read_helper(struct ospf *ospf)
 	ret = ospf_verify_header(ibuf, oi, iph, ospfh);
 	if (ret < 0) {
 		if (IS_DEBUG_OSPF_PACKET(0, RECV))
-			zlog_debug(
-				"ospf_read[%pI4]: Header check failed, dropping.",
-				&iph->ip_src);
+			zlog_debug("ospf_read[%pI4]: Header check failed, dropping.", &srcaddr);
 		return OSPF_READ_CONTINUE;
 	}
 
@@ -2897,8 +3120,8 @@ static enum ospf_read_return_enum ospf_read_helper(struct ospf *ospf)
 		zlog_debug("%s received from [%pI4] via [%s]",
 			   lookup_msg(ospf_packet_type_str, ospfh->type, NULL),
 			   &ospfh->router_id, IF_NAME(oi));
-		zlog_debug(" src [%pI4],", &iph->ip_src);
-		zlog_debug(" dst [%pI4]", &iph->ip_dst);
+		zlog_debug(" src [%pI4],", &srcaddr);
+		zlog_debug(" dst [%pI4]", &dstaddr);
 
 		if (IS_DEBUG_OSPF_PACKET(ospfh->type - 1, DETAIL))
 			zlog_debug(
@@ -2940,14 +3163,14 @@ static enum ospf_read_return_enum ospf_read_helper(struct ospf *ospf)
 }
 
 /* Starting point of packet process function. */
-void ospf_read(struct event *thread)
+void ospf_read(struct event *event)
 {
 	struct ospf *ospf;
 	int32_t count = 0;
 	enum ospf_read_return_enum ret;
 
 	/* first of all get interface pointer. */
-	ospf = EVENT_ARG(thread);
+	ospf = EVENT_ARG(event);
 
 	/* prepare for next packet. */
 	event_add_read(master, ospf_read, ospf, ospf->fd, &ospf->t_read);
@@ -3185,6 +3408,8 @@ static int ospf_make_db_desc(struct ospf_interface *oi,
 
 					/* Set LS age. */
 					ls_age = LS_AGE(lsa);
+					if (IS_LSA_AGE_DNA(lsa))
+						SET_FLAG(ls_age, DO_NOT_AGE);
 					lsah->ls_age = htons(ls_age);
 				}
 
@@ -3267,9 +3492,16 @@ static int ls_age_increment(struct ospf_lsa *lsa, int delay)
 {
 	int age;
 
-	age = IS_LSA_MAXAGE(lsa) ? OSPF_LSA_MAXAGE : LS_AGE(lsa) + delay;
+	age = LS_AGE(lsa) + delay;
 
-	return (age > OSPF_LSA_MAXAGE ? OSPF_LSA_MAXAGE : age);
+	if (age > OSPF_LSA_MAXAGE)
+		age = OSPF_LSA_MAXAGE;
+
+	/* Preserve DNA bit on age increment */
+	if (IS_LSA_AGE_DNA(lsa))
+		SET_FLAG(age, DO_NOT_AGE);
+
+	return age;
 }
 
 static int ospf_make_ls_upd(struct ospf_interface *oi, struct list *update,
@@ -3497,12 +3729,11 @@ static void ospf_poll_send(struct ospf_nbr_nbma *nbr_nbma)
 	ospf_hello_send_sub(oi, nbr_nbma->addr.s_addr);
 }
 
-void ospf_poll_timer(struct event *thread)
+void ospf_poll_timer(struct event *event)
 {
 	struct ospf_nbr_nbma *nbr_nbma;
 
-	nbr_nbma = EVENT_ARG(thread);
-	nbr_nbma->t_poll = NULL;
+	nbr_nbma = EVENT_ARG(event);
 
 	if (IS_DEBUG_OSPF(nsm, NSM_TIMERS))
 		zlog_debug("NSM[%s:%pI4]: Timer (Poll timer expire)",
@@ -3516,12 +3747,11 @@ void ospf_poll_timer(struct event *thread)
 }
 
 
-void ospf_hello_reply_timer(struct event *thread)
+void ospf_hello_reply_timer(struct event *event)
 {
 	struct ospf_neighbor *nbr;
 
-	nbr = EVENT_ARG(thread);
-	nbr->t_hello_reply = NULL;
+	nbr = EVENT_ARG(event);
 
 	if (IS_DEBUG_OSPF(nsm, NSM_TIMERS))
 		zlog_debug("NSM[%s:%pI4]: Timer (hello-reply timer expire)",
@@ -3874,15 +4104,13 @@ void ospf_ls_upd_queue_send(struct ospf_interface *oi, struct list *update,
 	}
 }
 
-static void ospf_ls_upd_send_queue_event(struct event *thread)
+static void ospf_ls_upd_send_queue_event(struct event *event)
 {
-	struct ospf_interface *oi = EVENT_ARG(thread);
+	struct ospf_interface *oi = EVENT_ARG(event);
 	struct route_node *rn;
 	struct route_node *rnext;
 	struct list *update;
 	char again = 0;
-
-	oi->t_ls_upd_event = NULL;
 
 	if (IS_DEBUG_OSPF_EVENT)
 		zlog_debug("%s start", __func__);
@@ -3910,7 +4138,6 @@ static void ospf_ls_upd_send_queue_event(struct event *thread)
 			zlog_debug(
 				"%s: update lists not cleared, %d nodes to try again, raising new event",
 				__func__, again);
-		oi->t_ls_upd_event = NULL;
 		event_add_event(master, ospf_ls_upd_send_queue_event, oi, 0,
 				&oi->t_ls_upd_event);
 	}
@@ -4001,7 +4228,7 @@ static void ospf_ls_ack_send_list(struct ospf_interface *oi,
 	ospf_make_header(OSPF_MSG_LS_ACK, oi, op->s);
 
 	/* Determine the destination address - for direct acks,
-	 * the list entries always include the distination address.
+	 * the list entries always include the destination address.
 	 */
 	if (direct_ack) {
 		ls_ack_list_first = ospf_lsa_list_first(ls_ack_list);
@@ -4026,12 +4253,10 @@ static void ospf_ls_ack_send_list(struct ospf_interface *oi,
 	OSPF_ISM_WRITE_ON(oi->ospf);
 }
 
-static void ospf_ls_ack_send_direct_event(struct event *thread)
+static void ospf_ls_ack_send_direct_event(struct event *event)
 {
-	struct ospf_interface *oi = EVENT_ARG(thread);
+	struct ospf_interface *oi = EVENT_ARG(event);
 	struct in_addr dst = { INADDR_ANY };
-
-	oi->t_ls_ack_direct = NULL;
 
 	while (ospf_lsa_list_count(&oi->ls_ack_direct))
 		ospf_ls_ack_send_list(oi, &(oi->ls_ack_direct), true, true, dst);
@@ -4113,7 +4338,7 @@ void ospf_ls_ack_send_direct(struct ospf_neighbor *nbr, struct ospf_lsa *lsa)
 	ls_ack_list_entry->lsa = ospf_lsa_lock(lsa);
 	ospf_lsa_list_add_tail(&nbr->oi->ls_ack_direct, ls_ack_list_entry);
 
-	if (oi->t_ls_ack_direct == NULL)
+	if (!event_is_scheduled(oi->t_ls_ack_direct))
 		event_add_event(master, ospf_ls_ack_send_direct_event, oi, 0,
 				&oi->t_ls_ack_direct);
 }

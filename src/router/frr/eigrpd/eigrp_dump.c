@@ -97,6 +97,9 @@ static int eigrp_neighbor_packet_queue_sum(struct eigrp_interface *ei)
  */
 void eigrp_ip_header_dump(struct ip *iph)
 {
+	struct in_addr srcaddr = iph->ip_src;
+	struct in_addr dstaddr = iph->ip_dst;
+
 	/* IP Header dump. */
 	zlog_debug("ip_v %u", iph->ip_v);
 	zlog_debug("ip_hl %u", iph->ip_hl);
@@ -107,8 +110,8 @@ void eigrp_ip_header_dump(struct ip *iph)
 	zlog_debug("ip_ttl %u", iph->ip_ttl);
 	zlog_debug("ip_p %u", iph->ip_p);
 	zlog_debug("ip_sum 0x%x", (uint32_t)iph->ip_sum);
-	zlog_debug("ip_src %pI4", &iph->ip_src);
-	zlog_debug("ip_dst %pI4", &iph->ip_dst);
+	zlog_debug("ip_src %pI4", &srcaddr);
+	zlog_debug("ip_dst %pI4", &dstaddr);
 }
 
 /*
@@ -190,7 +193,7 @@ void show_ip_eigrp_neighbor_sub(struct vty *vty, struct eigrp_neighbor *nbr,
 {
 
 	vty_out(vty, "%-3u %-17pI4 %-21s", 0, &nbr->src, IF_NAME(nbr->ei));
-	if (nbr->t_holddown)
+	if (event_is_scheduled(nbr->t_holddown))
 		vty_out(vty, "%-7lu",
 			event_timer_remain_second(nbr->t_holddown));
 	else

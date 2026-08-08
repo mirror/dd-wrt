@@ -80,6 +80,7 @@ DEFINE_MTYPE_STATIC(ISISD, ISIS_AREA, "ISIS area");
 DEFINE_MTYPE(ISISD, ISIS_AREA_ADDR,   "ISIS area address");
 DEFINE_MTYPE(ISISD, ISIS_ACL_NAME,    "ISIS access-list name");
 DEFINE_MTYPE(ISISD, ISIS_PLIST_NAME, "ISIS prefix-list name");
+DEFINE_MTYPE(ISISD, ISIS_BFD_PROFILE, "ISIS BFD profile");
 
 DEFINE_QOBJ_TYPE(isis_area);
 
@@ -154,9 +155,8 @@ void isis_vrf_unlink(struct isis *isis, struct vrf *vrf)
 struct isis *isis_lookup_by_vrfid(vrf_id_t vrf_id)
 {
 	struct isis *isis;
-	struct listnode *node;
 
-	for (ALL_LIST_ELEMENTS_RO(im->isis, node, isis))
+	frr_each (isis_instance_list, &im->isis, isis)
 		if (isis->vrf_id == vrf_id)
 			return isis;
 
@@ -166,9 +166,8 @@ struct isis *isis_lookup_by_vrfid(vrf_id_t vrf_id)
 struct isis *isis_lookup_by_vrfname(const char *vrfname)
 {
 	struct isis *isis;
-	struct listnode *node;
 
-	for (ALL_LIST_ELEMENTS_RO(im->isis, node, isis))
+	frr_each (isis_instance_list, &im->isis, isis)
 		if (isis->name && vrfname && strcmp(isis->name, vrfname) == 0)
 			return isis;
 
@@ -178,9 +177,8 @@ struct isis *isis_lookup_by_vrfname(const char *vrfname)
 struct isis *isis_lookup_by_sysid(const uint8_t *sysid)
 {
 	struct isis *isis;
-	struct listnode *node;
 
-	for (ALL_LIST_ELEMENTS_RO(im->isis, node, isis))
+	frr_each (isis_instance_list, &im->isis, isis)
 		if (!memcmp(isis->sysid, sysid, ISIS_SYS_ID_LEN))
 			return isis;
 
@@ -191,13 +189,13 @@ void isis_master_init(struct event_loop *mst)
 {
 	memset(&isis_master, 0, sizeof(isis_master));
 	im = &isis_master;
-	im->isis = list_new();
+	isis_instance_list_init(&im->isis);
 	im->master = mst;
 }
 
 void isis_master_terminate(void)
 {
-	list_delete(&im->isis);
+	isis_instance_list_fini(&im->isis);
 }
 
 struct isis *isis_new(const char *vrf_name)
@@ -229,12 +227,12 @@ struct isis *isis_new(const char *vrf_name)
 	isis->max_area_addrs = ISIS_DEFAULT_MAX_AREA_ADDRESSES;
 	isis->process_id = getpid();
 	isis->router_id = 0;
-	isis->area_list = list_new();
+	isis_area_list_init(&isis->area_list);
 	isis->uptime = time(NULL);
 	isis->snmp_notifications = 1;
 	dyn_cache_init(isis);
 
-	listnode_add(im->isis, isis);
+	isis_instance_list_add_tail(&im->isis, isis);
 
 	return isis;
 }
@@ -242,14 +240,12 @@ struct isis *isis_new(const char *vrf_name)
 void isis_finish(struct isis *isis)
 {
 	struct isis_area *area;
-	struct listnode *node, *nnode;
-
-	for (ALL_LIST_ELEMENTS(isis->area_list, node, nnode, area))
-		isis_area_destroy(area);
-
 	struct vrf *vrf = NULL;
 
-	listnode_delete(im->isis, isis);
+	frr_each_safe (isis_area_list, &isis->area_list, area)
+		isis_area_destroy(area);
+
+	isis_instance_list_del(&im->isis, isis);
 
 	isis_zebra_vrf_deregister(isis);
 
@@ -259,7 +255,7 @@ void isis_finish(struct isis *isis)
 	XFREE(MTYPE_ISIS_NAME, isis->name);
 
 	isis_redist_free(isis);
-	list_delete(&isis->area_list);
+	isis_area_list_fini(&isis->area_list);
 	dyn_cache_finish(isis);
 	XFREE(MTYPE_ISIS, isis);
 }
@@ -322,7 +318,7 @@ struct isis_area *isis_area_create(const char *area_tag, const char *vrf_name)
 	if (isis == NULL)
 		isis = isis_new(vrf_name);
 
-	listnode_add(isis->area_list, area);
+	isis_area_list_add_tail(&isis->area_list, area);
 	area->isis = isis;
 
 	/*
@@ -336,7 +332,7 @@ struct isis_area *isis_area_create(const char *area_tag, const char *vrf_name)
 			"/frr-isisd:isis/instance/is-type");
 
 	/*
-	 * intialize the databases
+	 * initialize the databases
 	 */
 	if (area->is_type & IS_LEVEL_1)
 		lsp_db_init(&area->lspdb[0]);
@@ -351,10 +347,9 @@ struct isis_area *isis_area_create(const char *area_tag, const char *vrf_name)
 
 	spftree_area_init(area);
 
-	area->circuit_list = list_new();
-	area->adjacency_list = list_new();
-	area->area_addrs = list_new();
-	area->area_addrs->del = isis_area_address_delete;
+	isis_circuit_list_init(&area->circuit_list);
+	isis_area_adj_list_init(&area->adjacency_list);
+	iso_address_list_init(&area->area_addrs);
 
 	if (!CHECK_FLAG(im->options, F_ISIS_UNIT_TEST))
 		event_add_timer(master, lsp_tick, area, 1, &area->t_tick);
@@ -462,14 +457,13 @@ struct isis_area *isis_area_lookup_by_vrf(const char *area_tag,
 					  const char *vrf_name)
 {
 	struct isis_area *area;
-	struct listnode *node;
 	struct isis *isis = NULL;
 
 	isis = isis_lookup_by_vrfname(vrf_name);
 	if (isis == NULL)
 		return NULL;
 
-	for (ALL_LIST_ELEMENTS_RO(isis->area_list, node, area))
+	frr_each (isis_area_list, &isis->area_list, area)
 		if (strcmp(area->area_tag, area_tag) == 0)
 			return area;
 
@@ -479,14 +473,13 @@ struct isis_area *isis_area_lookup_by_vrf(const char *area_tag,
 struct isis_area *isis_area_lookup(const char *area_tag, vrf_id_t vrf_id)
 {
 	struct isis_area *area;
-	struct listnode *node;
 	struct isis *isis;
 
 	isis = isis_lookup_by_vrfid(vrf_id);
 	if (isis == NULL)
 		return NULL;
 
-	for (ALL_LIST_ELEMENTS_RO(isis->area_list, node, area))
+	frr_each (isis_area_list, &isis->area_list, area)
 		if ((area->area_tag == NULL && area_tag == NULL)
 		    || (area->area_tag && area_tag
 			&& strcmp(area->area_tag, area_tag) == 0))
@@ -498,7 +491,6 @@ struct isis_area *isis_area_lookup(const char *area_tag, vrf_id_t vrf_id)
 struct isis_area *isis_area_lookup_by_sysid(const uint8_t *sysid)
 {
 	struct isis_area *area;
-	struct listnode *node;
 	struct isis *isis;
 	struct iso_address *addr = NULL;
 
@@ -506,14 +498,14 @@ struct isis_area *isis_area_lookup_by_sysid(const uint8_t *sysid)
 	if (isis == NULL)
 		return NULL;
 
-	for (ALL_LIST_ELEMENTS_RO(isis->area_list, node, area)) {
-		if (listcount(area->area_addrs) > 0) {
-			addr = listgetdata(listhead(area->area_addrs));
+	frr_each (isis_area_list, &isis->area_list, area) {
+		addr = iso_address_list_first(&area->area_addrs);
+		if (addr != NULL) {
 			if (!memcmp(addr->area_addr + addr->addr_len, sysid,
 				    ISIS_SYS_ID_LEN))
 				return area;
-			}
 		}
+	}
 
 	return NULL;
 }
@@ -541,7 +533,6 @@ int isis_area_get(struct vty *vty, const char *area_tag)
 
 void isis_area_destroy(struct isis_area *area)
 {
-	struct listnode *node, *nnode;
 	struct isis_circuit *circuit;
 	struct iso_address *addr;
 
@@ -550,20 +541,33 @@ void isis_area_destroy(struct isis_area *area)
 	if (fabricd)
 		fabricd_finish(area->fabricd);
 
-	if (area->circuit_list) {
-		for (ALL_LIST_ELEMENTS(area->circuit_list, node, nnode,
-				       circuit))
-			isis_area_del_circuit(area, circuit);
+	/*
+	 * Must destroy LSP database before circuit list, because lsp_destroy
+	 * iterates over circuit_list to remove LSPs from tx queues.
+	 */
+	lsp_db_fini(&area->lspdb[0]);
+	lsp_db_fini(&area->lspdb[1]);
 
-		list_delete(&area->circuit_list);
-	}
+	/*
+	 * Must terminate SR before MPLS-TE, because SR adj_sids reference
+	 * structures inside circuit->ext which isis_mpls_te_term frees.
+	 * isis_sr_area_term also disables SR, so adj state change hooks
+	 * during circuit cleanup won't try to access freed memory.
+	 */
+	isis_sr_area_term(area);
+	isis_srv6_area_term(area);
+
+	isis_mpls_te_term(area);
+
+	frr_each_safe (isis_circuit_list, &area->circuit_list, circuit)
+		isis_area_del_circuit(area, circuit);
+
+	isis_circuit_list_fini(&area->circuit_list);
+
 	if (area->flags.free_idcs)
 		list_delete(&area->flags.free_idcs);
 
-	list_delete(&area->adjacency_list);
-
-	lsp_db_fini(&area->lspdb[0]);
-	lsp_db_fini(&area->lspdb[1]);
+	isis_area_adj_list_fini(&area->adjacency_list);
 
 	/* invalidate and verify to delete all routes from zebra */
 	isis_area_invalidate_routes(area, area->is_type);
@@ -573,17 +577,12 @@ void isis_area_destroy(struct isis_area *area)
 	flex_algos_free(area->flex_algos);
 #endif /* ifndef FABRICD */
 
-	isis_sr_area_term(area);
-	isis_srv6_area_term(area);
-
-	isis_mpls_te_term(area);
-
 	spftree_area_del(area);
 
-	if (area->spf_timer[0])
+	if (event_is_scheduled(area->spf_timer[0]))
 		isis_spf_timer_free(EVENT_ARG(area->spf_timer[0]));
 	event_cancel(&area->spf_timer[0]);
-	if (area->spf_timer[1])
+	if (event_is_scheduled(area->spf_timer[1]))
 		isis_spf_timer_free(EVENT_ARG(area->spf_timer[1]));
 	event_cancel(&area->spf_timer[1]);
 
@@ -593,8 +592,8 @@ void isis_area_destroy(struct isis_area *area)
 	if (!CHECK_FLAG(im->options, F_ISIS_UNIT_TEST))
 		isis_redist_area_finish(area);
 
-	if (listcount(area->area_addrs) > 0) {
-		addr = listgetdata(listhead(area->area_addrs));
+	addr = iso_address_list_first(&area->area_addrs);
+	if (addr != NULL) {
 		if (!memcmp(addr->area_addr + addr->addr_len, area->isis->sysid,
 			    ISIS_SYS_ID_LEN)) {
 			memset(area->isis->sysid, 0, ISIS_SYS_ID_LEN);
@@ -602,7 +601,9 @@ void isis_area_destroy(struct isis_area *area)
 		}
 	}
 
-	list_delete(&area->area_addrs);
+	while ((addr = iso_address_list_pop(&area->area_addrs)))
+		XFREE(MTYPE_ISIS_AREA_ADDR, addr);
+	iso_address_list_fini(&area->area_addrs);
 
 	for (int i = SPF_PREFIX_PRIO_CRITICAL; i <= SPF_PREFIX_PRIO_MEDIUM;
 	     i++) {
@@ -621,7 +622,7 @@ void isis_area_destroy(struct isis_area *area)
 
 	event_cancel_event(master, area);
 
-	listnode_delete(area->isis->area_list, area);
+	isis_area_list_del(&area->isis->area_list, area);
 
 	free(area->area_tag);
 
@@ -658,14 +659,14 @@ static int isis_vrf_delete(struct vrf *vrf)
 
 static void isis_set_redist_vrf_bitmaps(struct isis *isis, bool set)
 {
-	struct listnode *node, *lnode;
+	struct listnode *lnode;
 	struct isis_area *area;
 	int type;
 	int level;
 	int protocol;
 	struct isis_redist *redist;
 
-	for (ALL_LIST_ELEMENTS_RO(isis->area_list, node, area))
+	frr_each (isis_area_list, &isis->area_list, area)
 		for (protocol = 0; protocol < REDIST_PROTOCOL_COUNT; protocol++)
 			for (type = 0; type < ZEBRA_ROUTE_MAX + 1; type++)
 				for (level = 0; level < ISIS_LEVELS; level++) {
@@ -789,14 +790,13 @@ void isis_vrf_init(void)
 void isis_terminate(void)
 {
 	struct isis *isis;
-	struct listnode *node, *nnode;
 
 	bfd_protocol_integration_set_shutdown(true);
 
-	if (listcount(im->isis) == 0)
+	if (isis_instance_list_count(&im->isis) == 0)
 		return;
 
-	for (ALL_LIST_ELEMENTS(im->isis, node, nnode, isis))
+	frr_each_safe (isis_instance_list, &im->isis, isis)
 		isis_finish(isis);
 }
 
@@ -804,10 +804,9 @@ void isis_filter_update(struct access_list *access)
 {
 	struct isis *isis;
 	struct isis_area *area;
-	struct listnode *node, *anode;
 
-	for (ALL_LIST_ELEMENTS_RO(im->isis, node, isis)) {
-		for (ALL_LIST_ELEMENTS_RO(isis->area_list, anode, area)) {
+	frr_each (isis_instance_list, &im->isis, isis) {
+		frr_each (isis_area_list, &isis->area_list, area) {
 			for (int i = SPF_PREFIX_PRIO_CRITICAL;
 			     i <= SPF_PREFIX_PRIO_MEDIUM; i++) {
 				struct spf_prefix_priority_acl *ppa;
@@ -827,10 +826,9 @@ void isis_prefix_list_update(struct prefix_list *plist)
 {
 	struct isis *isis;
 	struct isis_area *area;
-	struct listnode *node, *anode;
 
-	for (ALL_LIST_ELEMENTS_RO(im->isis, node, isis)) {
-		for (ALL_LIST_ELEMENTS_RO(isis->area_list, anode, area)) {
+	frr_each (isis_instance_list, &im->isis, isis) {
+		frr_each (isis_area_list, &isis->area_list, area) {
 			for (int level = ISIS_LEVEL1; level <= ISIS_LEVELS;
 			     level++) {
 				const char *plist_name =
@@ -884,12 +882,11 @@ int area_net_title(struct vty *vty, const char *net_title)
 	VTY_DECLVAR_CONTEXT(isis_area, area);
 	struct iso_address *addr;
 	struct iso_address *addrp;
-	struct listnode *node;
 
 	uint8_t buff[255];
 
 	/* We check that we are not over the maximal number of addresses */
-	if (listcount(area->area_addrs) >= area->isis->max_area_addrs) {
+	if (iso_address_list_count(&area->area_addrs) >= area->isis->max_area_addrs) {
 		vty_out(vty,
 			"Maximum of area addresses (%d) already reached \n",
 			area->isis->max_area_addrs);
@@ -940,7 +937,7 @@ int area_net_title(struct vty *vty, const char *net_title)
 		}
 
 		/* now we see that we don't already have this address */
-		for (ALL_LIST_ELEMENTS_RO(area->area_addrs, node, addrp)) {
+		frr_each (iso_address_list, &area->area_addrs, addrp) {
 			if ((addrp->addr_len + ISIS_SYS_ID_LEN + ISIS_NSEL_LEN)
 			    != (addr->addr_len))
 				continue;
@@ -956,10 +953,10 @@ int area_net_title(struct vty *vty, const char *net_title)
 	 * Forget the systemID part of the address
 	 */
 	addr->addr_len -= (ISIS_SYS_ID_LEN + ISIS_NSEL_LEN);
-	listnode_add(area->area_addrs, addr);
+	iso_address_list_add_tail(&area->area_addrs, addr);
 
 	/* only now we can safely generate our LSPs for this area */
-	if (listcount(area->area_addrs) > 0) {
+	if (iso_address_list_count(&area->area_addrs) > 0) {
 		if (area->is_type & IS_LEVEL_1)
 			lsp_generate(area, IS_LEVEL_1);
 		if (area->is_type & IS_LEVEL_2)
@@ -973,7 +970,6 @@ int area_clear_net_title(struct vty *vty, const char *net_title)
 {
 	VTY_DECLVAR_CONTEXT(isis_area, area);
 	struct iso_address addr, *addrp = NULL;
-	struct listnode *node;
 	uint8_t buff[255];
 
 	addr.addr_len = dotformat2buff(buff, net_title);
@@ -986,7 +982,7 @@ int area_clear_net_title(struct vty *vty, const char *net_title)
 
 	memcpy(addr.area_addr, buff, (int)addr.addr_len);
 
-	for (ALL_LIST_ELEMENTS_RO(area->area_addrs, node, addrp))
+	frr_each (iso_address_list, &area->area_addrs, addrp)
 		if ((addrp->addr_len + ISIS_SYS_ID_LEN + 1) == addr.addr_len
 		    && !memcmp(addrp->area_addr, addr.area_addr, addr.addr_len))
 			break;
@@ -997,13 +993,13 @@ int area_clear_net_title(struct vty *vty, const char *net_title)
 		return CMD_ERR_NO_MATCH;
 	}
 
-	listnode_delete(area->area_addrs, addrp);
+	iso_address_list_del(&area->area_addrs, addrp);
 	XFREE(MTYPE_ISIS_AREA_ADDR, addrp);
 
 	/*
 	 * Last area address - reset the SystemID for this router
 	 */
-	if (listcount(area->area_addrs) == 0) {
+	if (iso_address_list_count(&area->area_addrs) == 0) {
 		memset(area->isis->sysid, 0, ISIS_SYS_ID_LEN);
 		area->isis->sysid_set = 0;
 		if (IS_DEBUG_EVENTS)
@@ -1033,7 +1029,6 @@ int show_isis_interface_common_json(struct json_object *json,
 				    const char *ifname, char detail,
 				    const char *vrf_name, bool all_vrf)
 {
-	struct listnode *anode, *cnode, *inode;
 	struct isis_area *area;
 	struct isis_circuit *circuit;
 	struct isis *isis;
@@ -1047,10 +1042,10 @@ int show_isis_interface_common_json(struct json_object *json,
 	}
 
 	if (all_vrf) {
-		for (ALL_LIST_ELEMENTS_RO(im->isis, inode, isis)) {
+		frr_each (isis_instance_list, &im->isis, isis) {
 			areas_json = json_object_new_array();
 			json_object_object_add(json, "areas", areas_json);
-			for (ALL_LIST_ELEMENTS_RO(isis->area_list, anode, area)) {
+			frr_each (isis_area_list, &isis->area_list, area) {
 				area_json = json_object_new_object();
 				json_object_string_add(area_json, "area",
 						       area->area_tag
@@ -1059,8 +1054,7 @@ int show_isis_interface_common_json(struct json_object *json,
 				circuits_json = json_object_new_array();
 				json_object_object_add(area_json, "circuits",
 						       circuits_json);
-				for (ALL_LIST_ELEMENTS_RO(area->circuit_list,
-							  cnode, circuit)) {
+				frr_each (isis_circuit_list, &area->circuit_list, circuit) {
 					circuit_json = json_object_new_object();
 					json_object_int_add(
 						circuit_json, "circuit",
@@ -1086,7 +1080,7 @@ int show_isis_interface_common_json(struct json_object *json,
 	if (isis != NULL) {
 		areas_json = json_object_new_array();
 		json_object_object_add(json, "areas", areas_json);
-		for (ALL_LIST_ELEMENTS_RO(isis->area_list, anode, area)) {
+		frr_each (isis_area_list, &isis->area_list, area) {
 			area_json = json_object_new_object();
 			json_object_string_add(area_json, "area",
 					       area->area_tag ? area->area_tag
@@ -1095,8 +1089,7 @@ int show_isis_interface_common_json(struct json_object *json,
 			circuits_json = json_object_new_array();
 			json_object_object_add(area_json, "circuits",
 					       circuits_json);
-			for (ALL_LIST_ELEMENTS_RO(area->circuit_list, cnode,
-						  circuit)) {
+			frr_each (isis_circuit_list, &area->circuit_list, circuit) {
 				circuit_json = json_object_new_object();
 				json_object_int_add(circuit_json, "circuit",
 						    circuit->circuit_id);
@@ -1123,7 +1116,6 @@ int show_isis_interface_common_vty(struct vty *vty, const char *ifname,
 				   char detail, const char *vrf_name,
 				   bool all_vrf)
 {
-	struct listnode *anode, *cnode, *inode;
 	struct isis_area *area;
 	struct isis_circuit *circuit;
 	struct isis *isis;
@@ -1134,16 +1126,15 @@ int show_isis_interface_common_vty(struct vty *vty, const char *ifname,
 	}
 
 	if (all_vrf) {
-		for (ALL_LIST_ELEMENTS_RO(im->isis, inode, isis)) {
-			for (ALL_LIST_ELEMENTS_RO(isis->area_list, anode, area)) {
+		frr_each (isis_instance_list, &im->isis, isis) {
+			frr_each (isis_area_list, &isis->area_list, area) {
 				vty_out(vty, "Area %s:\n", area->area_tag);
 
 				if (detail == ISIS_UI_LEVEL_BRIEF)
 					vty_out(vty,
 						"  Interface   CircId   State    Type     Level\n");
 
-				for (ALL_LIST_ELEMENTS_RO(area->circuit_list,
-							  cnode, circuit))
+				frr_each (isis_circuit_list, &area->circuit_list, circuit)
 					if (!ifname)
 						isis_circuit_print_vty(circuit,
 								       vty,
@@ -1159,15 +1150,14 @@ int show_isis_interface_common_vty(struct vty *vty, const char *ifname,
 	}
 	isis = isis_lookup_by_vrfname(vrf_name);
 	if (isis != NULL) {
-		for (ALL_LIST_ELEMENTS_RO(isis->area_list, anode, area)) {
+		frr_each (isis_area_list, &isis->area_list, area) {
 			vty_out(vty, "Area %s:\n", area->area_tag);
 
 			if (detail == ISIS_UI_LEVEL_BRIEF)
 				vty_out(vty,
 					"  Interface   CircId   State    Type     Level\n");
 
-			for (ALL_LIST_ELEMENTS_RO(area->circuit_list, cnode,
-						  circuit))
+			frr_each (isis_circuit_list, &area->circuit_list, circuit)
 				if (!ifname)
 					isis_circuit_print_vty(circuit, vty,
 							       detail);
@@ -1290,7 +1280,7 @@ static void isis_neighbor_common_json(struct json_object *json, const char *id,
 				      char detail, struct isis *isis,
 				      uint8_t *sysid)
 {
-	struct listnode *anode, *cnode, *node;
+	struct listnode *node;
 	struct isis_area *area;
 	struct isis_circuit *circuit;
 	struct list *adjdb;
@@ -1301,14 +1291,14 @@ static void isis_neighbor_common_json(struct json_object *json, const char *id,
 
 	areas_json = json_object_new_array();
 	json_object_object_add(json, "areas", areas_json);
-	for (ALL_LIST_ELEMENTS_RO(isis->area_list, anode, area)) {
+	frr_each (isis_area_list, &isis->area_list, area) {
 		area_json = json_object_new_object();
 		json_object_string_add(area_json, "area",
 				       area->area_tag ? area->area_tag
 						      : "null");
 		circuits_json = json_object_new_array();
 		json_object_object_add(area_json, "circuits", circuits_json);
-		for (ALL_LIST_ELEMENTS_RO(area->circuit_list, cnode, circuit)) {
+		frr_each (isis_circuit_list, &area->circuit_list, circuit) {
 			circuit_json = json_object_new_object();
 			json_object_int_add(circuit_json, "circuit",
 					    circuit->circuit_id);
@@ -1346,21 +1336,21 @@ static void isis_neighbor_common_vty(struct vty *vty, const char *id,
 				     char detail, struct isis *isis,
 				     uint8_t *sysid)
 {
-	struct listnode *anode, *cnode, *node;
+	struct listnode *node;
 	struct isis_area *area;
 	struct isis_circuit *circuit;
 	struct list *adjdb;
 	struct isis_adjacency *adj;
 	int i;
 
-	for (ALL_LIST_ELEMENTS_RO(isis->area_list, anode, area)) {
+	frr_each (isis_area_list, &isis->area_list, area) {
 		vty_out(vty, "Area %s:\n", area->area_tag);
 
 		if (detail == ISIS_UI_LEVEL_BRIEF)
 			vty_out(vty,
 				" System Id           Interface   L  State         Holdtime SNPA\n");
 
-		for (ALL_LIST_ELEMENTS_RO(area->circuit_list, cnode, circuit)) {
+		frr_each (isis_circuit_list, &area->circuit_list, circuit) {
 			if (circuit->circ_type == CIRCUIT_T_BROADCAST) {
 				for (i = 0; i < 2; i++) {
 					adjdb = circuit->u.bc.adjdb[i];
@@ -1407,7 +1397,6 @@ int show_isis_neighbor_common(struct vty *vty, struct json_object *json,
 			      const char *id, char detail, const char *vrf_name,
 			      bool all_vrf)
 {
-	struct listnode *node;
 	uint8_t sysid[ISIS_SYS_ID_LEN];
 	struct isis *isis;
 
@@ -1417,7 +1406,7 @@ int show_isis_neighbor_common(struct vty *vty, struct json_object *json,
 	}
 
 	if (all_vrf) {
-		for (ALL_LIST_ELEMENTS_RO(im->isis, node, isis)) {
+		frr_each (isis_instance_list, &im->isis, isis) {
 			if (id_to_sysid(isis, id, sysid)) {
 				vty_out(vty, "Invalid system id %s\n", id);
 				return CMD_SUCCESS;
@@ -1441,15 +1430,15 @@ int show_isis_neighbor_common(struct vty *vty, struct json_object *json,
 static void isis_neighbor_common_clear(struct vty *vty, const char *id,
 				       uint8_t *sysid, struct isis *isis)
 {
-	struct listnode *anode, *cnode, *node, *nnode;
+	struct listnode *node, *nnode;
 	struct isis_area *area;
 	struct isis_circuit *circuit;
 	struct list *adjdb;
 	struct isis_adjacency *adj;
 	int i;
 
-	for (ALL_LIST_ELEMENTS_RO(isis->area_list, anode, area)) {
-		for (ALL_LIST_ELEMENTS_RO(area->circuit_list, cnode, circuit)) {
+	frr_each (isis_area_list, &isis->area_list, area) {
+		frr_each (isis_circuit_list, &area->circuit_list, circuit) {
 			if (circuit->circ_type == CIRCUIT_T_BROADCAST) {
 				for (i = 0; i < 2; i++) {
 					adjdb = circuit->u.bc.adjdb[i];
@@ -1487,7 +1476,6 @@ static void isis_neighbor_common_clear(struct vty *vty, const char *id,
 int clear_isis_neighbor_common(struct vty *vty, const char *id, const char *vrf_name,
 			       bool all_vrf)
 {
-	struct listnode *node;
 	uint8_t sysid[ISIS_SYS_ID_LEN];
 	struct isis *isis;
 
@@ -1497,7 +1485,7 @@ int clear_isis_neighbor_common(struct vty *vty, const char *id, const char *vrf_
 	}
 
 	if (all_vrf) {
-		for (ALL_LIST_ELEMENTS_RO(im->isis, node, isis)) {
+		frr_each (isis_instance_list, &im->isis, isis) {
 			if (id_to_sysid(isis, id, sysid)) {
 				vty_out(vty, "Invalid system id %s\n", id);
 				return CMD_SUCCESS;
@@ -1646,53 +1634,61 @@ DEFUN(clear_isis_neighbor_arg,
 	return clear_isis_neighbor_common(vty, id, vrf_name, all_vrf);
 }
 
-/*
- * 'isis debug', 'show debugging'
- */
-void print_debug(struct vty *vty, int flags, int onoff)
+void print_debug_line(struct vty *vty, const char *config, int onoff, bool indent)
 {
 	const char *onoffs = onoff ? "on" : "off";
 
+	if (indent)
+		vty_out(vty, "  %s %s debugging is %s\n", PROTO_NICE_NAME, config, onoffs);
+	else
+		vty_out(vty, "%s %s debugging is %s\n", PROTO_NICE_NAME, config, onoffs);
+}
+
+/*
+ * 'show debugging'
+ */
+void print_debug_with_indentation(struct vty *vty, int flags, int onoff, bool indent)
+{
 	if (flags & DEBUG_ADJ_PACKETS)
-		vty_out(vty,
-			"IS-IS Adjacency related packets debugging is %s\n",
-			onoffs);
+		print_debug_line(vty, "Adjacency related packets", onoff, indent);
 	if (flags & DEBUG_TX_QUEUE)
-		vty_out(vty, "IS-IS TX queue debugging is %s\n",
-			onoffs);
+		print_debug_line(vty, "TX queue", onoff, indent);
 	if (flags & DEBUG_SNP_PACKETS)
-		vty_out(vty, "IS-IS CSNP/PSNP packets debugging is %s\n",
-			onoffs);
+		print_debug_line(vty, "CSNP/PSNP packets", onoff, indent);
 	if (flags & DEBUG_SPF_EVENTS)
-		vty_out(vty, "IS-IS SPF events debugging is %s\n", onoffs);
+		print_debug_line(vty, "SPF events", onoff, indent);
 	if (flags & DEBUG_SR)
-		vty_out(vty, "IS-IS Segment Routing events debugging is %s\n",
-			onoffs);
+		print_debug_line(vty, "Segment Routing events", onoff, indent);
 	if (flags & DEBUG_TE)
-		vty_out(vty,
-			"IS-IS Traffic Engineering events debugging is %s\n",
-			onoffs);
+		print_debug_line(vty, "Traffic Engineering events", onoff, indent);
 	if (flags & DEBUG_LFA)
-		vty_out(vty, "IS-IS LFA events debugging is %s\n", onoffs);
+		print_debug_line(vty, "LFA events", onoff, indent);
 	if (flags & DEBUG_UPDATE_PACKETS)
-		vty_out(vty, "IS-IS Update related packet debugging is %s\n",
-			onoffs);
+		print_debug_line(vty, "Update related packet", onoff, indent);
 	if (flags & DEBUG_RTE_EVENTS)
-		vty_out(vty, "IS-IS Route related debugging is %s\n", onoffs);
+		print_debug_line(vty, "Route related", onoff, indent);
 	if (flags & DEBUG_EVENTS)
-		vty_out(vty, "IS-IS Event debugging is %s\n", onoffs);
+		print_debug_line(vty, "Event", onoff, indent);
 	if (flags & DEBUG_PACKET_DUMP)
-		vty_out(vty, "IS-IS Packet dump debugging is %s\n", onoffs);
+		print_debug_line(vty, "Packet dump", onoff, indent);
 	if (flags & DEBUG_LSP_GEN)
-		vty_out(vty, "IS-IS LSP generation debugging is %s\n", onoffs);
+		print_debug_line(vty, "LSP generation", onoff, indent);
 	if (flags & DEBUG_LSP_SCHED)
-		vty_out(vty, "IS-IS LSP scheduling debugging is %s\n", onoffs);
+		print_debug_line(vty, "LSP scheduling", onoff, indent);
 	if (flags & DEBUG_FLOODING)
-		vty_out(vty, "IS-IS Flooding debugging is %s\n", onoffs);
+		print_debug_line(vty, "Flooding", onoff, indent);
 	if (flags & DEBUG_BFD)
-		vty_out(vty, "IS-IS BFD debugging is %s\n", onoffs);
+		print_debug_line(vty, "BFD", onoff, indent);
 	if (flags & DEBUG_LDP_SYNC)
-		vty_out(vty, "IS-IS ldp-sync debugging is %s\n", onoffs);
+		print_debug_line(vty, "ldp-sync", onoff, indent);
+}
+
+/*
+ * 'isis debug'
+ */
+void print_debug(struct vty *vty, int flags, int onoff)
+{
+	print_debug_with_indentation(vty, flags, onoff, false);
 }
 
 DEFUN_NOSH (show_debugging,
@@ -1702,40 +1698,40 @@ DEFUN_NOSH (show_debugging,
 	    "State of each debugging option\n"
 	    PROTO_HELP)
 {
-	vty_out(vty, PROTO_NAME " debugging status:\n");
+	vty_out(vty, PROTO_NICE_NAME " debugging status:\n");
 
 	if (IS_DEBUG_ADJ_PACKETS)
-		print_debug(vty, DEBUG_ADJ_PACKETS, 1);
+		print_debug_with_indentation(vty, DEBUG_ADJ_PACKETS, 1, true);
 	if (IS_DEBUG_TX_QUEUE)
-		print_debug(vty, DEBUG_TX_QUEUE, 1);
+		print_debug_with_indentation(vty, DEBUG_TX_QUEUE, 1, true);
 	if (IS_DEBUG_SNP_PACKETS)
-		print_debug(vty, DEBUG_SNP_PACKETS, 1);
+		print_debug_with_indentation(vty, DEBUG_SNP_PACKETS, 1, true);
 	if (IS_DEBUG_SPF_EVENTS)
-		print_debug(vty, DEBUG_SPF_EVENTS, 1);
+		print_debug_with_indentation(vty, DEBUG_SPF_EVENTS, 1, true);
 	if (IS_DEBUG_SR)
-		print_debug(vty, DEBUG_SR, 1);
+		print_debug_with_indentation(vty, DEBUG_SR, 1, true);
 	if (IS_DEBUG_TE)
-		print_debug(vty, DEBUG_TE, 1);
+		print_debug_with_indentation(vty, DEBUG_TE, 1, true);
 	if (IS_DEBUG_UPDATE_PACKETS)
-		print_debug(vty, DEBUG_UPDATE_PACKETS, 1);
+		print_debug_with_indentation(vty, DEBUG_UPDATE_PACKETS, 1, true);
 	if (IS_DEBUG_RTE_EVENTS)
-		print_debug(vty, DEBUG_RTE_EVENTS, 1);
+		print_debug_with_indentation(vty, DEBUG_RTE_EVENTS, 1, true);
 	if (IS_DEBUG_EVENTS)
-		print_debug(vty, DEBUG_EVENTS, 1);
+		print_debug_with_indentation(vty, DEBUG_EVENTS, 1, true);
 	if (IS_DEBUG_PACKET_DUMP)
-		print_debug(vty, DEBUG_PACKET_DUMP, 1);
+		print_debug_with_indentation(vty, DEBUG_PACKET_DUMP, 1, true);
 	if (IS_DEBUG_LSP_GEN)
-		print_debug(vty, DEBUG_LSP_GEN, 1);
+		print_debug_with_indentation(vty, DEBUG_LSP_GEN, 1, true);
 	if (IS_DEBUG_LSP_SCHED)
-		print_debug(vty, DEBUG_LSP_SCHED, 1);
+		print_debug_with_indentation(vty, DEBUG_LSP_SCHED, 1, true);
 	if (IS_DEBUG_FLOODING)
-		print_debug(vty, DEBUG_FLOODING, 1);
+		print_debug_with_indentation(vty, DEBUG_FLOODING, 1, true);
 	if (IS_DEBUG_BFD)
-		print_debug(vty, DEBUG_BFD, 1);
+		print_debug_with_indentation(vty, DEBUG_BFD, 1, true);
 	if (IS_DEBUG_LDP_SYNC)
-		print_debug(vty, DEBUG_LDP_SYNC, 1);
+		print_debug_with_indentation(vty, DEBUG_LDP_SYNC, 1, true);
 	if (IS_DEBUG_LFA)
-		print_debug(vty, DEBUG_LFA, 1);
+		print_debug_with_indentation(vty, DEBUG_LFA, 1, true);
 
 	cmd_show_lib_debugs(vty);
 
@@ -2258,7 +2254,6 @@ DEFUN (show_hostname,
        "All VRFs\n"
        "IS-IS Dynamic hostname mapping\n")
 {
-	struct listnode *node;
 	const char *vrf_name = VRF_DEFAULT_NAME;
 	bool all_vrf = false;
 	int idx_vrf = 0;
@@ -2267,7 +2262,7 @@ DEFUN (show_hostname,
 	ISIS_FIND_VRF_ARGS(argv, argc, idx_vrf, vrf_name, all_vrf);
 
 	if (all_vrf) {
-		for (ALL_LIST_ELEMENTS_RO(im->isis, node, isis))
+		frr_each (isis_instance_list, &im->isis, isis)
 			dynhn_print_all(vty, isis);
 
 		return CMD_SUCCESS;
@@ -2281,10 +2276,9 @@ DEFUN (show_hostname,
 
 static void isis_spf_ietf_common(struct vty *vty, struct isis *isis)
 {
-	struct listnode *node;
 	struct isis_area *area;
-	for (ALL_LIST_ELEMENTS_RO(isis->area_list, node, area)) {
 
+	frr_each (isis_area_list, &isis->area_list, area) {
 		vty_out(vty, "vrf    : %s\n", isis->name);
 		vty_out(vty, "Area %s:\n",
 			area->area_tag ? area->area_tag : "null");
@@ -2295,7 +2289,7 @@ static void isis_spf_ietf_common(struct vty *vty, struct isis *isis)
 
 			vty_out(vty, "  Level-%d:\n", level);
 			vty_out(vty, "    SPF delay status: ");
-			if (area->spf_timer[level - 1]) {
+			if (event_is_scheduled(area->spf_timer[level - 1])) {
 				struct timeval remain = event_timer_remain(
 					area->spf_timer[level - 1]);
 				vty_out(vty, "Pending, due in %lld msec\n",
@@ -2324,7 +2318,6 @@ DEFUN(show_isis_spf_ietf, show_isis_spf_ietf_cmd,
       "All VRFs\n"
       "SPF delay IETF information\n")
 {
-	struct listnode *node;
 	struct isis *isis;
 	int idx_vrf = 0;
 	const char *vrf_name = VRF_DEFAULT_NAME;
@@ -2338,7 +2331,7 @@ DEFUN(show_isis_spf_ietf, show_isis_spf_ietf_cmd,
 	}
 
 	if (all_vrf) {
-		for (ALL_LIST_ELEMENTS_RO(im->isis, node, isis))
+		frr_each (isis_instance_list, &im->isis, isis)
 			isis_spf_ietf_common(vty, isis);
 
 		return CMD_SUCCESS;
@@ -2388,7 +2381,6 @@ static void common_isis_summary_json(struct json_object *json,
 	int level;
 	json_object *vrf_json, *areas_json, *area_json, *tx_pdu_json, *rx_pdu_json, *levels_json,
 		*level_json;
-	struct listnode *node, *node2;
 	struct isis_area *area;
 	time_t cur;
 	char uptime[MONOTIME_STRLEN];
@@ -2404,11 +2396,10 @@ static void common_isis_summary_json(struct json_object *json,
 	cur -= isis->uptime;
 	frrtime_to_interval(cur, uptime, sizeof(uptime));
 	json_object_string_add(vrf_json, "up-time", uptime);
-	if (isis->area_list)
-		json_object_int_add(vrf_json, "number-areas", isis->area_list->count);
+	json_object_int_add(vrf_json, "number-areas", isis_area_list_count(&isis->area_list));
 	areas_json = json_object_new_array();
 	json_object_object_add(vrf_json, "areas", areas_json);
-	for (ALL_LIST_ELEMENTS_RO(isis->area_list, node, area)) {
+	frr_each (isis_area_list, &isis->area_list, area) {
 		area_json = json_object_new_object();
 		json_object_string_add(area_json, "area",
 				       area->area_tag ? area->area_tag
@@ -2423,10 +2414,9 @@ static void common_isis_summary_json(struct json_object *json,
 						       : stier);
 		}
 
-		if (listcount(area->area_addrs) > 0) {
+		{
 			struct iso_address *area_addr;
-			for (ALL_LIST_ELEMENTS_RO(area->area_addrs, node2,
-						  area_addr))
+			frr_each (iso_address_list, &area->area_addrs, area_addr)
 				json_object_string_addf(area_json, "net",
 							"%pISl", area_addr);
 		}
@@ -2464,7 +2454,7 @@ static void common_isis_summary_json(struct json_object *json,
 					    area->lsp_gen_count[level - 1]);
 			json_object_int_add(level_json, "lsp-purged",
 					    area->lsp_purge_count[level - 1]);
-			if (area->spf_timer[level - 1])
+			if (event_is_scheduled(area->spf_timer[level - 1]))
 				json_object_string_add(level_json, "spf",
 						       "pending");
 			else
@@ -2495,7 +2485,6 @@ static void common_isis_summary_json(struct json_object *json,
 
 static void common_isis_summary_vty(struct vty *vty, struct isis *isis)
 {
-	struct listnode *node, *node2;
 	struct isis_area *area;
 	int level;
 
@@ -2508,10 +2497,9 @@ static void common_isis_summary_vty(struct vty *vty, struct isis *isis)
 	vty_out_timestr(vty, isis->uptime);
 	vty_out(vty, "\n");
 
-	if (isis->area_list)
-		vty_out(vty, "Number of areas : %d\n", isis->area_list->count);
+	vty_out(vty, "Number of areas : %zu\n", isis_area_list_count(&isis->area_list));
 
-	for (ALL_LIST_ELEMENTS_RO(isis->area_list, node, area)) {
+	frr_each (isis_area_list, &isis->area_list, area) {
 		vty_out(vty, "Area %s:\n",
 			area->area_tag ? area->area_tag : "null");
 
@@ -2523,10 +2511,9 @@ static void common_isis_summary_vty(struct vty *vty, struct isis *isis)
 				vty_out(vty, "  Tier: %hhu\n", tier);
 		}
 
-		if (listcount(area->area_addrs) > 0) {
+		if (iso_address_list_count(&area->area_addrs) > 0) {
 			struct iso_address *area_addr;
-			for (ALL_LIST_ELEMENTS_RO(area->area_addrs, node2,
-						  area_addr))
+			frr_each (iso_address_list, &area->area_addrs, area_addr)
 				vty_out(vty, "  Net: %pISl\n", area_addr);
 		}
 
@@ -2555,7 +2542,7 @@ static void common_isis_summary_vty(struct vty *vty, struct isis *isis)
 			vty_out(vty, "         LSPs purged: %" PRIu64 "\n",
 				area->lsp_purge_count[level - 1]);
 
-			if (area->spf_timer[level - 1])
+			if (event_is_scheduled(area->spf_timer[level - 1]))
 				vty_out(vty, "    SPF: (pending)\n");
 			else
 				vty_out(vty, "    SPF:\n");
@@ -2596,11 +2583,10 @@ static void common_isis_summary_vty(struct vty *vty, struct isis *isis)
 static void common_isis_summary(struct vty *vty, struct json_object *json, const char *vrf_name,
 				bool all_vrf)
 {
-	struct listnode *node;
 	struct isis *isis;
 
 	if (all_vrf) {
-		for (ALL_LIST_ELEMENTS_RO(im->isis, node, isis)) {
+		frr_each (isis_instance_list, &im->isis, isis) {
 			if (json)
 				common_isis_summary_json(json, isis);
 			else
@@ -2792,17 +2778,16 @@ void show_isis_database_lspdb_vty(struct vty *vty, struct isis_area *area,
 static void show_isis_database_json(struct json_object *json, const char *sysid_str,
 				      int ui_level, struct isis *isis)
 {
-	struct listnode *node;
 	struct isis_area *area;
 	int level;
 	struct json_object *tag_area_json,*area_json, *lsp_json, *area_arr_json, *arr_json;
 
-	if (isis->area_list->count == 0)
+	if (isis_area_list_count(&isis->area_list) == 0)
 		return;
 
 	area_arr_json = json_object_new_array();
 	json_object_object_add(json, "areas", area_arr_json);
-	for (ALL_LIST_ELEMENTS_RO(isis->area_list, node, area)) {
+	frr_each (isis_area_list, &isis->area_list, area) {
 		area_json = json_object_new_object();
 		tag_area_json = json_object_new_object();
 		json_object_string_add(tag_area_json, "name",
@@ -2828,14 +2813,13 @@ static void show_isis_database_json(struct json_object *json, const char *sysid_
 static void show_isis_database_vty(struct vty *vty, const char *sysid_str,
 				      int ui_level, struct isis *isis)
 {
-	struct listnode *node;
 	struct isis_area *area;
 	int level;
 
-	if (isis->area_list->count == 0)
+	if (isis_area_list_count(&isis->area_list) == 0)
 		return;
 
-	for (ALL_LIST_ELEMENTS_RO(isis->area_list, node, area)) {
+	frr_each (isis_area_list, &isis->area_list, area) {
 		vty_out(vty, "Area %s:\n",
 			area->area_tag ? area->area_tag : "null");
 
@@ -2875,11 +2859,10 @@ static void show_isis_database_common(struct vty *vty, struct json_object *json,
 static int show_isis_database(struct vty *vty, struct json_object *json, const char *sysid_str,
 			      int ui_level, const char *vrf_name, bool all_vrf)
 {
-	struct listnode *node;
 	struct isis *isis;
 
 	if (all_vrf) {
-		for (ALL_LIST_ELEMENTS_RO(im->isis, node, isis))
+		frr_each (isis_instance_list, &im->isis, isis)
 			show_isis_database_common(vty, json, sysid_str,
 						  ui_level, isis);
 
@@ -3208,7 +3191,7 @@ static void area_resign_level(struct isis_area *area, int level)
 	}
 #endif /* ifndef FABRICD */
 
-	if (area->spf_timer[level - 1])
+	if (event_is_scheduled(area->spf_timer[level - 1]))
 		isis_spf_timer_free(EVENT_ARG(area->spf_timer[level - 1]));
 
 	event_cancel(&area->spf_timer[level - 1]);
@@ -3222,7 +3205,6 @@ static void area_resign_level(struct isis_area *area, int level)
 
 void isis_area_is_type_set(struct isis_area *area, int is_type)
 {
-	struct listnode *node;
 	struct isis_circuit *circuit;
 
 	if (IS_DEBUG_EVENTS)
@@ -3266,16 +3248,16 @@ void isis_area_is_type_set(struct isis_area *area, int is_type)
 	 * IS type. Otherwise use circuit's configured IS type.
 	 */
 	if (area->is_type != IS_LEVEL_1_AND_2) {
-		for (ALL_LIST_ELEMENTS_RO(area->circuit_list, node, circuit))
+		frr_each (isis_circuit_list, &area->circuit_list, circuit)
 			isis_circuit_is_type_set(circuit, is_type);
 	} else {
-		for (ALL_LIST_ELEMENTS_RO(area->circuit_list, node, circuit))
+		frr_each (isis_circuit_list, &area->circuit_list, circuit)
 			isis_circuit_is_type_set(circuit, circuit->is_type_config);
 	}
 
 	spftree_area_init(area);
 
-	if (listcount(area->area_addrs) > 0) {
+	if (iso_address_list_count(&area->area_addrs) > 0) {
 		if (is_type & IS_LEVEL_1)
 			lsp_generate(area, IS_LEVEL_1);
 		if (is_type & IS_LEVEL_2)
@@ -3304,10 +3286,7 @@ void isis_area_overload_bit_set(struct isis_area *area, bool overload_bit)
 			area->overload_counter++;
 		} else {
 			/* Cancel overload on startup timer if it's running */
-			if (area->t_overload_on_startup_timer) {
-				event_cancel(&area->t_overload_on_startup_timer);
-				area->t_overload_on_startup_timer = NULL;
-			}
+			event_cancel(&area->t_overload_on_startup_timer);
 		}
 
 #ifndef FABRICD
@@ -3332,7 +3311,7 @@ void isis_area_overload_on_startup_set(struct isis_area *area,
 
 void config_end_lsp_generate(struct isis_area *area)
 {
-	if (listcount(area->area_addrs) > 0) {
+	if (iso_address_list_count(&area->area_addrs) > 0) {
 		if (CHECK_FLAG(area->is_type, IS_LEVEL_1))
 			lsp_generate(area, IS_LEVEL_1);
 		if (CHECK_FLAG(area->is_type, IS_LEVEL_2))
@@ -3343,7 +3322,6 @@ void config_end_lsp_generate(struct isis_area *area)
 void isis_area_advertise_high_metrics_set(struct isis_area *area,
 					  bool advertise_high_metrics)
 {
-	struct listnode *node;
 	struct isis_circuit *circuit;
 	int max_metric;
 	char xpath[XPATH_MAXLEN];
@@ -3362,7 +3340,7 @@ void isis_area_advertise_high_metrics_set(struct isis_area *area,
 		else
 			max_metric = MAX_NARROW_LINK_METRIC;
 
-		for (ALL_LIST_ELEMENTS_RO(area->circuit_list, node, circuit)) {
+		frr_each (isis_circuit_list, &area->circuit_list, circuit) {
 			isis_circuit_metric_set(circuit, IS_LEVEL_1,
 						max_metric);
 			isis_circuit_metric_set(circuit, IS_LEVEL_2,
@@ -3372,7 +3350,7 @@ void isis_area_advertise_high_metrics_set(struct isis_area *area,
 		area->advertise_high_metrics = true;
 	} else {
 		area->advertise_high_metrics = false;
-		for (ALL_LIST_ELEMENTS_RO(area->circuit_list, node, circuit)) {
+		frr_each (isis_circuit_list, &area->circuit_list, circuit) {
 			/* Get configured metric */
 			snprintf(xpath, XPATH_MAXLEN,
 				 "/frr-interface:lib/interface[name='%s']",
@@ -3399,9 +3377,9 @@ void isis_restart_write_overload_time(struct isis_area *isis_area,
 				      uint32_t overload_time)
 {
 	const char *area_name;
-	json_object *json;
-	json_object *json_areas;
-	json_object *json_area;
+	json_object *json = NULL;
+	json_object *json_areas = NULL;
+	json_object *json_area = NULL;
 
 	json = frr_daemon_state_load();
 	area_name = isis_area->area_tag;
@@ -3431,9 +3409,9 @@ uint32_t isis_restart_read_overload_time(struct isis_area *isis_area)
 {
 	const char *area_name;
 	json_object *json;
-	json_object *json_areas;
-	json_object *json_area;
-	json_object *json_overload_time;
+	json_object *json_areas = NULL;
+	json_object *json_area = NULL;
+	json_object *json_overload_time = NULL;
 	uint32_t overload_time = 0;
 
 	area_name = isis_area->area_tag;
@@ -3548,7 +3526,6 @@ static int isis_config_write(struct vty *vty)
 {
 	int write = 0;
 	struct isis_area *area;
-	struct listnode *node, *node2, *inode;
 	struct isis *isis;
 
 	if (!im) {
@@ -3556,16 +3533,15 @@ static int isis_config_write(struct vty *vty)
 		return CMD_SUCCESS;
 	}
 
-	for (ALL_LIST_ELEMENTS_RO(im->isis, inode, isis)) {
-		for (ALL_LIST_ELEMENTS_RO(isis->area_list, node, area)) {
+	frr_each (isis_instance_list, &im->isis, isis) {
+		frr_each (isis_area_list, &isis->area_list, area) {
 			/* ISIS - Area name */
 			vty_out(vty, "router " PROTO_NAME " %s\n", area->area_tag);
 			write++;
 			/* ISIS - Net */
-			if (listcount(area->area_addrs) > 0) {
+			if (iso_address_list_count(&area->area_addrs) > 0) {
 				struct iso_address *area_addr;
-				for (ALL_LIST_ELEMENTS_RO(area->area_addrs,
-							  node2, area_addr)) {
+				frr_each (iso_address_list, &area->area_addrs, area_addr) {
 					vty_out(vty, " net %pISl\n", area_addr);
 					write++;
 				}

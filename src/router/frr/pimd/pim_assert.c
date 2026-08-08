@@ -24,6 +24,7 @@
 #include "pim_assert.h"
 #include "pim_zebra.h"
 #include "pim_ifchannel.h"
+#include "pim_dm.h"
 
 static int assert_action_a3(struct pim_ifchannel *ch);
 static void assert_action_a2(struct pim_ifchannel *ch,
@@ -36,6 +37,7 @@ void pim_ifassert_winner_set(struct pim_ifchannel *ch,
 			     struct pim_assert_metric winner_metric)
 {
 	struct pim_interface *pim_ifp = ch->interface->info;
+	enum pim_ifassert_state old_state = ch->ifassert_state;
 	int winner_changed = !!pim_addr_cmp(ch->ifassert_winner, winner);
 	int metric_changed = !pim_assert_metric_match(
 		&ch->ifassert_winner_metric, &winner_metric);
@@ -68,8 +70,8 @@ void pim_ifassert_winner_set(struct pim_ifchannel *ch,
 		if (winner_changed) {
 			old_rpf.source_nexthop.interface =
 				ch->upstream->rpf.source_nexthop.interface;
-			rpf_result = pim_rpf_update(pim_ifp->pim, ch->upstream,
-						    &old_rpf, __func__);
+			rpf_result = pim_rpf_update(pim_ifp->pim, ch->upstream, &old_rpf, NULL,
+						    __func__);
 			if (rpf_result == PIM_RPF_CHANGED ||
 			    (rpf_result == PIM_RPF_FAILURE &&
 			     old_rpf.source_nexthop.interface))
@@ -85,6 +87,12 @@ void pim_ifassert_winner_set(struct pim_ifchannel *ch,
 		pim_ifchannel_update_could_assert(ch);
 		pim_ifchannel_update_assert_tracking_desired(ch);
 	}
+
+	/* Dense mode manages its OIL directly (not via the SM olist), so the
+	 * Assert loser/winner OIF transitions have to be applied here.
+	 */
+	if (old_state != new_state)
+		pim_dm_assert_state_changed(ch, new_state);
 }
 
 static void on_trace(const char *label, struct interface *ifp, pim_addr src)
@@ -289,7 +297,6 @@ int pim_assert_recv(struct interface *ifp, struct pim_neighbor *neigh,
 	msg_metric.ip_address = src_addr;
 
 	pim_ifp = ifp->info;
-	assert(pim_ifp);
 
 	if (pim_ifp->pim_passive_enable) {
 		if (PIM_DEBUG_PIM_PACKETS)
@@ -507,8 +514,6 @@ static void on_assert_timer(struct event *t)
 			   __func__, ch->sg_str, ifp->name);
 	}
 
-	ch->t_ifassert_timer = NULL;
-
 	switch (ch->ifassert_state) {
 	case PIM_IFASSERT_I_AM_WINNER:
 		assert_action_a3(ch);
@@ -529,7 +534,7 @@ static void on_assert_timer(struct event *t)
 static void assert_timer_off(struct pim_ifchannel *ch)
 {
 	if (PIM_DEBUG_PIM_TRACE) {
-		if (ch->t_ifassert_timer) {
+		if (event_is_scheduled(ch->t_ifassert_timer)) {
 			zlog_debug(
 				"%s: (S,G)=%s cancelling timer on interface %s",
 				__func__, ch->sg_str, ch->interface->name);
@@ -543,8 +548,8 @@ static void pim_assert_timer_set(struct pim_ifchannel *ch, int interval)
 	assert_timer_off(ch);
 
 	if (PIM_DEBUG_PIM_TRACE) {
-		zlog_debug("%s: (S,G)=%s starting %u sec timer on interface %s",
-			   __func__, ch->sg_str, interval, ch->interface->name);
+		zlog_debug("%s: (S,G)=%s starting %ums timer on interface %s", __func__,
+			   ch->sg_str, interval, ch->interface->name);
 	}
 
 	event_add_timer(router->master, on_assert_timer, ch, interval,
@@ -553,8 +558,14 @@ static void pim_assert_timer_set(struct pim_ifchannel *ch, int interval)
 
 static void pim_assert_timer_reset(struct pim_ifchannel *ch)
 {
-	pim_assert_timer_set(ch,
-			     PIM_ASSERT_TIME - PIM_ASSERT_OVERRIDE_INTERVAL);
+	struct pim_interface *pim_ifp = ch->interface->info;
+	int override = pim_ifp->assert_override_msec;
+
+	if (override == -1)
+		override = pim_ifp->assert_msec / 75 + 600;
+
+	/* limit to at least 0.1s to avoid excessive CPU usage */
+	pim_assert_timer_set(ch, MAX(pim_ifp->assert_msec - override, 100));
 }
 
 /*
@@ -614,10 +625,12 @@ int assert_action_a1(struct pim_ifchannel *ch)
 static void assert_action_a2(struct pim_ifchannel *ch,
 			     struct pim_assert_metric winner_metric)
 {
+	struct pim_interface *pim_ifp = ch->interface->info;
+
 	pim_ifassert_winner_set(ch, PIM_IFASSERT_I_AM_LOSER,
 				winner_metric.ip_address, winner_metric);
 
-	pim_assert_timer_set(ch, PIM_ASSERT_TIME);
+	pim_assert_timer_set(ch, pim_ifp->assert_msec);
 
 	if (ch->ifassert_state != PIM_IFASSERT_I_AM_LOSER) {
 		if (PIM_DEBUG_PIM_EVENTS)

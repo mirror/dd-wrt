@@ -18,6 +18,9 @@
 #include "pim_igmp.h"
 #include "pim_upstream.h"
 #include "pim_ifchannel.h"
+
+struct prefix_list;
+struct access_list;
 #include "bfd.h"
 #include "pim_str.h"
 #include "pim_routemap.h"
@@ -76,6 +79,7 @@ struct pim_interface {
 
 	bool gm_enable : 1;
 	bool gm_proxy : 1; /* proxy IGMP joins/prunes */
+	struct pim_filter_ref gm_proxy_filter; /* route-map filter for proxied (S,G) */
 
 	ifindex_t mroute_vif_index;
 	struct pim_instance *pim;
@@ -143,6 +147,11 @@ struct pim_interface {
 	struct list *upstream_switch_list;
 	struct pim_ifchannel_rb ifchannel_rb;
 
+	/* Periodic join prune interval (-1 means `router->t_periodic`). */
+	int periodic_jp_sec;
+	int assert_msec;
+	int assert_override_msec;
+
 	/* neighbors without lan_delay */
 	int pim_number_of_nonlandelay_neighbors;
 	uint16_t pim_neighbors_highest_propagation_delay_msec;
@@ -157,13 +166,19 @@ struct pim_interface {
 	int pim_dr_num_nondrpri_neighbors; /* neighbors without dr_pri */
 
 	/* boundary prefix-list (group) */
-	struct prefix_list *boundary_oil_plist;
+	char *boundary_oil_plist;
+	struct prefix_list *boundary_oil_plist_p;
 	/* boundary access-list (source and group) */
-	struct access_list *boundary_acl;
+	char *boundary_acl;
+	struct access_list *boundary_acl_p;
 
 	/* Turn on Active-Active for this interface */
 	bool activeactive;
 	bool am_i_dr;
+
+	/* Turn on allow-rp for this interface */
+	bool allow_rp;
+	char *allow_rp_plist;
 
 	int64_t pim_ifstat_start; /* start timestamp for stats */
 	uint64_t pim_ifstat_bsm_rx;
@@ -194,6 +209,9 @@ struct pim_interface {
 	uint32_t igmp_ifstat_joins_failed;
 	uint32_t igmp_peak_group_count;
 
+	bool autorp_joined_discovery;
+	bool autorp_joined_announce;
+
 	struct {
 		bool enabled;
 		uint32_t min_rx;
@@ -202,6 +220,14 @@ struct pim_interface {
 		char *profile;
 	} bfd_config;
 };
+
+/* Last member query count is robustness variable unless overridden */
+static inline int if_gm_last_member_query_count(const struct pim_interface *pim_interface)
+{
+	return (pim_interface->gm_last_member_query_count != 0)
+		       ? pim_interface->gm_last_member_query_count
+		       : pim_interface->gm_default_robustness_variable;
+}
 
 /*
  * if default_holdtime is set (>= 0), use it;
@@ -238,6 +264,8 @@ int pim_if_lan_delay_enabled(struct interface *ifp);
 uint16_t pim_if_effective_propagation_delay_msec(struct interface *ifp);
 uint16_t pim_if_effective_override_interval_msec(struct interface *ifp);
 uint16_t pim_if_jp_override_interval_msec(struct interface *ifp);
+int pim_if_jp_period(const struct pim_interface *pim_interface);
+int pim_if_jp_hold(const struct pim_interface *pim_interface);
 struct pim_neighbor *pim_if_find_neighbor(struct interface *ifp, pim_addr addr);
 
 long pim_if_t_suppressed_msec(struct interface *ifp);
@@ -280,6 +308,11 @@ int pim_if_ifchannel_count(struct pim_interface *pim_ifp);
 void pim_iface_init(void);
 void pim_pim_interface_delete(struct interface *ifp);
 void pim_gm_interface_delete(struct interface *ifp);
+
+void pim_boundary_oil_plist_set(struct pim_interface *pim_ifp, const char *name);
+void pim_boundary_acl_set(struct pim_interface *pim_ifp, const char *name);
+void pim_boundary_prefix_list_update(struct prefix_list *plist);
+void pim_boundary_access_list_update(struct access_list *access);
 
 const char *pim_mod_str(enum pim_iface_mode mode);
 

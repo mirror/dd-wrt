@@ -93,6 +93,17 @@ int bgp_nlri_parse_vpn(struct peer *peer, struct attr *attr,
 
 	addpath_capable = bgp_addpath_encode_rx(peer, afi, safi);
 
+	/* cache the incoming attr to avoid repeated intern, and to
+	 * prevent bgp_attr_owns_extra() from treating the parsed parent
+	 * attr as transient. Without this, the multi-NLRI loop can lose
+	 * srv6_l3service (and other attr->extra members) for prefixes
+	 * after the first one in the same UPDATE.
+	 */
+	if (attr) {
+		memset(&attr->attr_intern_reuse, 0, sizeof(attr->attr_intern_reuse));
+		attr->attr_intern_reuse.parsed_attr = attr;
+	}
+
 #define VPN_PREFIXLEN_MIN_BYTES (3 + 8) /* label + RD */
 	while (STREAM_READABLE(data) > 0) {
 		/* Clear prefix structure. */
@@ -230,7 +241,7 @@ int bgp_nlri_parse_vpn(struct peer *peer, struct attr *attr,
 			EC_BGP_UPDATE_RCV,
 			"%s [Error] Update packet error / VPN (%zu data remaining after parsing)",
 			peer->host, STREAM_READABLE(data));
-		return BGP_NLRI_PARSE_ERROR_PACKET_LENGTH;
+		ret = BGP_NLRI_PARSE_ERROR_PACKET_LENGTH;
 	}
 
 	goto done;
@@ -243,6 +254,10 @@ stream_failure:
 	ret = BGP_NLRI_PARSE_ERROR_PACKET_LENGTH;
 
 done:
+	/* Reset the attr_intern_reuse cache */
+	if (attr)
+		memset(&attr->attr_intern_reuse, 0, sizeof(attr->attr_intern_reuse));
+
 	stream_free(data);
 	return ret;
 
@@ -371,9 +386,11 @@ void vpn_leak_zebra_vrf_sid_update_per_af(struct bgp *bgp, afi_t afi)
 			bgp->vpn_policy[afi].tovpn_sid_locator->block_bits_length;
 		ctx.node_len =
 			bgp->vpn_policy[afi].tovpn_sid_locator->node_bits_length;
-		ctx.function_len =
-			bgp->vpn_policy[afi]
-				.tovpn_sid_locator->function_bits_length;
+		if (CHECK_FLAG(bgp->vpn_policy[afi].flags, BGP_VPN_POLICY_TOVPN_SID_FUNC_WIDE))
+			ctx.function_len = BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH_FOR_BGP;
+		else
+			ctx.function_len =
+				bgp->vpn_policy[afi].tovpn_sid_locator->function_bits_length;
 		ctx.argument_len =
 			bgp->vpn_policy[afi]
 				.tovpn_sid_locator->argument_bits_length;
@@ -440,7 +457,10 @@ void vpn_leak_zebra_vrf_sid_update_per_vrf(struct bgp *bgp)
 	if (bgp->tovpn_sid_locator) {
 		ctx.block_len = bgp->tovpn_sid_locator->block_bits_length;
 		ctx.node_len = bgp->tovpn_sid_locator->node_bits_length;
-		ctx.function_len = bgp->tovpn_sid_locator->function_bits_length;
+		if (CHECK_FLAG(bgp->vrf_flags, BGP_VRF_TOVPN_SID_FUNC_WIDE))
+			ctx.function_len = BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH_FOR_BGP;
+		else
+			ctx.function_len = bgp->tovpn_sid_locator->function_bits_length;
 		ctx.argument_len = bgp->tovpn_sid_locator->argument_bits_length;
 		if (CHECK_FLAG(bgp->tovpn_sid_locator->flags, SRV6_LOCATOR_USID))
 			SET_SRV6_FLV_OP(ctx.flv.flv_ops, ZEBRA_SEG6_LOCAL_FLV_OP_NEXT_CSID);
@@ -496,8 +516,8 @@ void vpn_leak_zebra_vrf_sid_withdraw_per_af(struct bgp *bgp, afi_t afi)
 	}
 
 	if (debug)
-		zlog_debug("%s: deleting sid for vrf %s afi (id=%d)", __func__,
-			   bgp->name_pretty, bgp->vrf_id);
+		zlog_debug("%s: deleting sid for vrf %s afi %s (id=%d)", __func__,
+			   bgp->name_pretty, afi2str(afi), bgp->vrf_id);
 
 	ifp = if_get_vrf_loopback(bgp->vrf_id);
 	if (!ifp)
@@ -508,9 +528,11 @@ void vpn_leak_zebra_vrf_sid_withdraw_per_af(struct bgp *bgp, afi_t afi)
 			bgp->vpn_policy[afi].tovpn_sid_locator->block_bits_length;
 		seg6localctx.node_len =
 			bgp->vpn_policy[afi].tovpn_sid_locator->node_bits_length;
-		seg6localctx.function_len =
-			bgp->vpn_policy[afi]
-				.tovpn_sid_locator->function_bits_length;
+		if (CHECK_FLAG(bgp->vpn_policy[afi].flags, BGP_VPN_POLICY_TOVPN_SID_FUNC_WIDE))
+			seg6localctx.function_len = BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH_FOR_BGP;
+		else
+			seg6localctx.function_len =
+				bgp->vpn_policy[afi].tovpn_sid_locator->function_bits_length;
 		seg6localctx.argument_len =
 			bgp->vpn_policy[afi]
 				.tovpn_sid_locator->argument_bits_length;
@@ -526,6 +548,7 @@ void vpn_leak_zebra_vrf_sid_withdraw_per_af(struct bgp *bgp, afi_t afi)
 	ctx.behavior = afi == AFI_IP ? ZEBRA_SEG6_LOCAL_ACTION_END_DT4
 				     : ZEBRA_SEG6_LOCAL_ACTION_END_DT6;
 	bgp_zebra_release_srv6_sid(&ctx, bgp->vpn_policy[afi].tovpn_sid_locator->name);
+	UNSET_FLAG(bgp->vpn_policy[afi].flags, BGP_VPN_POLICY_TOVPN_SID_FUNC_WIDE);
 }
 
 /*
@@ -559,8 +582,10 @@ void vpn_leak_zebra_vrf_sid_withdraw_per_vrf(struct bgp *bgp)
 		seg6localctx.block_len =
 			bgp->tovpn_sid_locator->block_bits_length;
 		seg6localctx.node_len = bgp->tovpn_sid_locator->node_bits_length;
-		seg6localctx.function_len =
-			bgp->tovpn_sid_locator->function_bits_length;
+		if (CHECK_FLAG(bgp->vrf_flags, BGP_VRF_TOVPN_SID_FUNC_WIDE))
+			seg6localctx.function_len = BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH_FOR_BGP;
+		else
+			seg6localctx.function_len = bgp->tovpn_sid_locator->function_bits_length;
 		seg6localctx.argument_len =
 			bgp->tovpn_sid_locator->argument_bits_length;
 	}
@@ -573,6 +598,7 @@ void vpn_leak_zebra_vrf_sid_withdraw_per_vrf(struct bgp *bgp)
 	ctx.vrf_id = bgp->vrf_id;
 	ctx.behavior = ZEBRA_SEG6_LOCAL_ACTION_END_DT46;
 	bgp_zebra_release_srv6_sid(&ctx, bgp->tovpn_sid_locator->name);
+	UNSET_FLAG(bgp->vrf_flags, BGP_VRF_TOVPN_SID_FUNC_WIDE);
 }
 
 /*
@@ -697,34 +723,44 @@ static bool sid_exist(struct bgp *bgp, const struct in6_addr *sid)
  * @param sid_func Function part of the SID
  * @return True if success, False otherwise
  */
-static bool srv6_sid_compose(struct in6_addr *sid_value,
-			     struct srv6_locator *locator, uint32_t sid_func)
+bool srv6_sid_compose(struct in6_addr *sid_value, struct srv6_locator *locator, uint32_t sid_func)
 {
 	int debug = BGP_DEBUG(vpn, VPN_LEAK_LABEL);
 	int label = 0;
 	uint8_t offset = 0;
 	uint8_t func_len = 0, shift_len = 0;
 	uint32_t sid_func_max = 0;
+	bool store_in_label = true;
 
 	if (!locator || !sid_value)
 		return false;
 
-	if (locator->function_bits_length >
-	    BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH) {
+	if (locator->function_bits_length > BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH_FOR_BGP) {
 		if (debug)
 			zlog_debug("%s: invalid SRv6 Locator (%pFX): Function Length must be less or equal to %d",
 				   __func__, &locator->prefix,
-				   BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH);
+				   BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH_FOR_LABEL);
 		return false;
 	}
 
 	/* Max value that can be encoded in the Function part of the SID */
-	sid_func_max = (1 << locator->function_bits_length) - 1;
+	if ((CHECK_FLAG(locator->flags, SRV6_LOCATOR_F3216) ||
+	     CHECK_FLAG(locator->flags, SRV6_LOCATOR_F4816)) &&
+	    sid_func > 0xFFFF) {
+		/* f3216 and f4816 supports ewlib. increase sid_func_max */
+		sid_func_max = 0xffffffff;
+		store_in_label = false;
+	} else if (locator->function_bits_length == BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH_FOR_BGP)
+		/* shifting 32 bits over a 32 bit is not possible. directly encode func_max */
+		sid_func_max = 0xffffffff;
+	else
+		sid_func_max = (1 << locator->function_bits_length) - 1;
+
 
 	if (sid_func > sid_func_max) {
 		if (debug)
-			zlog_debug("%s: invalid SRv6 Locator (%pFX): Function Length is too short to support specified function (%u)",
-				   __func__, &locator->prefix, sid_func);
+			zlog_debug("%s: invalid SRv6 Locator (%pFX): Function Length is too short (%u) to support specified function (%u)",
+				   __func__, &locator->prefix, sid_func_max, sid_func);
 		return false;
 	}
 
@@ -736,37 +772,45 @@ static bool srv6_sid_compose(struct in6_addr *sid_value,
 	/* First, we put the locator (LOC) in the most significant bits of sid_value */
 	*sid_value = locator->prefix.prefix;
 
-	/*
-	 * Then, we compute the offset at which we have to place the function (FUNC).
-	 * FUNC will be placed immediately after LOC, i.e. at block_bits_length + node_bits_length
-	 */
-	offset = locator->block_bits_length + locator->node_bits_length;
-
-	/*
-	 * The FUNC part of the SID is advertised in the label field of SRv6 Service TLV.
-	 * (see SID Transposition Scheme, RFC 9252 section #4).
-	 * Therefore, we need to encode the FUNC in the most significant bits of the
-	 * 20-bit label.
-	 */
-	func_len = locator->function_bits_length;
-	shift_len = BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH - func_len;
-
-	label = sid_func << shift_len;
-	if (label < MPLS_LABEL_UNRESERVED_MIN) {
-		if (debug)
-			zlog_debug("%s: skipped to allocate SRv6 SID (%pFX): Label (%u) is too small to use",
-				   __func__, &locator->prefix, label);
-		return false;
-	}
-
 	if (sid_exist(bgp_get_default(), sid_value)) {
 		zlog_warn("%s: skipped to allocate SRv6 SID (%pFX): SID %pI6 already in use",
 			  __func__, &locator->prefix, sid_value);
 		return false;
 	}
 
-	/* Finally, we put the FUNC in sid_value at the computed offset */
-	transpose_sid(sid_value, label, offset, func_len);
+	/*
+	 * Then, we compute the offset at which we have to place the function (FUNC).
+	 * FUNC will be placed immediately after LOC, i.e. at block_bits_length + node_bits_length
+	 */
+	offset = locator->block_bits_length + locator->node_bits_length;
+
+	if (store_in_label)
+		func_len = locator->function_bits_length;
+	else
+		func_len = BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH_FOR_BGP;
+	if (store_in_label && func_len <= BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH_FOR_LABEL) {
+		/*
+		 * The FUNC part of the SID is advertised in the label field of SRv6 Service TLV.
+		 * (see SID Transposition Scheme, RFC 9252 section #4).
+		 * Therefore, we need to encode the FUNC in the most significant bits of the
+		 * 20-bit label.
+		 */
+		shift_len = BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH_FOR_LABEL - func_len;
+		label = sid_func << shift_len;
+		if (label < MPLS_LABEL_UNRESERVED_MIN) {
+			if (debug)
+				zlog_debug("%s: skipped to allocate SRv6 SID (%pFX): Label (%u) is too small to use",
+					   __func__, &locator->prefix, label);
+			return false;
+		}
+		/* Finally, we put the FUNC in sid_value at the computed offset */
+		transpose_sid(sid_value, label, offset, func_len,
+			      BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH_FOR_LABEL);
+	} else {
+		label = sid_func;
+		transpose_sid(sid_value, label, offset, func_len,
+			      BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH_FOR_BGP);
+	}
 
 	return true;
 }
@@ -792,7 +836,7 @@ void ensure_vrf_tovpn_sid_per_af(struct bgp *bgp_vpn, struct bgp *bgp_vrf,
 		return;
 
 	/*
-	 * skip when bgp vpn instance ins't allocated
+	 * skip when bgp vpn instance isn't allocated
 	 * or srv6 locator isn't allocated
 	 */
 	if (!bgp_vpn)
@@ -828,7 +872,8 @@ void ensure_vrf_tovpn_sid_per_af(struct bgp *bgp_vpn, struct bgp *bgp_vrf,
 	if ((tovpn_sid_index != 0 && tovpn_sid_auto) ||
 	    (tovpn_sid_index != 0 && is_tovpn_sid_explicit) ||
 	    (tovpn_sid_auto && is_tovpn_sid_explicit)) {
-		zlog_err("%s: more than one mode selected among index-mode, auto-mode and explicit-mode. ignored.",
+		flog_err(EC_BGP_SRV6_SID_MODE_CONFLICT,
+			 "%s: more than one mode selected among index-mode, auto-mode and explicit-mode. ignored.",
 			 __func__);
 		return;
 	}
@@ -881,7 +926,7 @@ void ensure_vrf_tovpn_sid_per_vrf(struct bgp *bgp_vpn, struct bgp *bgp_vrf)
 		return;
 
 	/*
-	 * skip when bgp vpn instance ins't allocated
+	 * skip when bgp vpn instance isn't allocated
 	 * or srv6 locator isn't allocated
 	 */
 	if (!bgp_vpn)
@@ -916,7 +961,8 @@ void ensure_vrf_tovpn_sid_per_vrf(struct bgp *bgp_vpn, struct bgp *bgp_vrf)
 	if ((tovpn_sid_index != 0 && tovpn_sid_auto) ||
 	    (tovpn_sid_index != 0 && is_tovpn_sid_explicit) ||
 	    (tovpn_sid_auto && is_tovpn_sid_explicit)) {
-		zlog_err("%s: more than one mode selected among index-mode, auto-mode and explicit-mode. ignored.",
+		flog_err(EC_BGP_SRV6_SID_MODE_CONFLICT,
+			 "%s: more than one mode selected among index-mode, auto-mode and explicit-mode. ignored.",
 			 __func__);
 		return;
 	}
@@ -952,15 +998,11 @@ void ensure_vrf_tovpn_sid_per_vrf(struct bgp *bgp_vpn, struct bgp *bgp_vrf)
 void ensure_vrf_tovpn_sid(struct bgp *bgp_vpn, struct bgp *bgp_vrf, afi_t afi)
 {
 	/* per-af sid */
-	if (bgp_vrf->vpn_policy[afi].tovpn_sid_index != 0 ||
-	    CHECK_FLAG(bgp_vrf->vpn_policy[afi].flags, BGP_VPN_POLICY_TOVPN_SID_AUTO) ||
-	    CHECK_FLAG(bgp_vrf->vpn_policy[afi].flags, BGP_VPN_POLICY_TOVPN_SID_EXPLICIT))
+	if (is_srv6_vpn_afi_enabled(bgp_vrf, afi))
 		return ensure_vrf_tovpn_sid_per_af(bgp_vpn, bgp_vrf, afi);
 
 	/* per-vrf sid */
-	if (bgp_vrf->tovpn_sid_index != 0 ||
-	    CHECK_FLAG(bgp_vrf->vrf_flags, BGP_VRF_TOVPN_SID_AUTO) ||
-	    CHECK_FLAG(bgp_vrf->vrf_flags, BGP_VRF_TOVPN_SID_EXPLICIT))
+	if (is_srv6_vpn_vrf_enabled(bgp_vrf))
 		return ensure_vrf_tovpn_sid_per_vrf(bgp_vpn, bgp_vrf);
 }
 
@@ -988,8 +1030,8 @@ void delete_vrf_tovpn_sid_per_af(struct bgp *bgp_vpn, struct bgp *bgp_vrf,
 
 	if (bgp_vrf->vrf_id == VRF_UNKNOWN) {
 		if (debug)
-			zlog_debug("%s: vrf %s: vrf_id not set, can't set zebra vrf label",
-				   __func__, bgp_vrf->name_pretty);
+			zlog_debug("%s: vrf %s: vrf_id not set, can't set zebra vrf sid", __func__,
+				   bgp_vrf->name_pretty);
 		return;
 	}
 
@@ -998,6 +1040,7 @@ void delete_vrf_tovpn_sid_per_af(struct bgp *bgp_vpn, struct bgp *bgp_vrf,
 		ctx.behavior = afi == AFI_IP ? ZEBRA_SEG6_LOCAL_ACTION_END_DT4
 					     : ZEBRA_SEG6_LOCAL_ACTION_END_DT6;
 		bgp_zebra_release_srv6_sid(&ctx, bgp_vrf->vpn_policy[afi].tovpn_sid_locator->name);
+		UNSET_FLAG(bgp_vrf->vpn_policy[afi].flags, BGP_VPN_POLICY_TOVPN_SID_FUNC_WIDE);
 
 		sid_unregister(bgp_vpn, bgp_vrf->vpn_policy[afi].tovpn_sid);
 		XFREE(MTYPE_BGP_SRV6_SID, bgp_vrf->vpn_policy[afi].tovpn_sid);
@@ -1044,6 +1087,7 @@ void delete_vrf_tovpn_sid_per_vrf(struct bgp *bgp_vpn, struct bgp *bgp_vrf)
 		ctx.vrf_id = bgp_vrf->vrf_id;
 		ctx.behavior = ZEBRA_SEG6_LOCAL_ACTION_END_DT46;
 		bgp_zebra_release_srv6_sid(&ctx, bgp_vrf->tovpn_sid_locator->name);
+		UNSET_FLAG(bgp_vrf->vrf_flags, BGP_VRF_TOVPN_SID_FUNC_WIDE);
 
 		sid_unregister(bgp_vpn, bgp_vrf->tovpn_sid);
 		XFREE(MTYPE_BGP_SRV6_SID, bgp_vrf->tovpn_sid);
@@ -1089,13 +1133,13 @@ void delete_vrf_tovpn_sid(struct bgp *bgp_vpn, struct bgp *bgp_vrf, afi_t afi)
  *                    |
  *                 offset from MSB
  */
-void transpose_sid(struct in6_addr *sid, uint32_t label, uint8_t offset,
-		   uint8_t len)
+void transpose_sid(struct in6_addr *sid, uint32_t label, uint8_t offset, uint8_t len,
+		   uint8_t len_max)
 {
 	for (uint8_t idx = 0; idx < len; idx++) {
 		uint8_t tidx = offset + idx;
 		sid->s6_addr[tidx / 8] &= ~(0x1 << (7 - tidx % 8));
-		if (label >> (19 - idx) & 0x1)
+		if (label >> (len_max - 1 - idx) & 0x1)
 			sid->s6_addr[tidx / 8] |= 0x1 << (7 - tidx % 8);
 	}
 }
@@ -1191,17 +1235,19 @@ static bool leak_update_nexthop_valid(struct bgp *to_bgp, struct bgp_dest *bn,
 /*
  * returns pointer to new bgp_path_info upon success
  */
-static struct bgp_path_info *
-leak_update(struct bgp *to_bgp, struct bgp_dest *bn,
-	    struct attr *new_attr, /* already interned */
-	    afi_t afi, safi_t safi, struct bgp_path_info *source_bpi,
-	    mpls_label_t *label, uint8_t num_labels, struct bgp *bgp_orig,
-	    struct prefix *nexthop_orig, int nexthop_self_flag, int debug)
+static struct bgp_path_info *leak_update(struct bgp *to_bgp, struct bgp_dest *bn,
+					 struct attr *static_attr, /* not already interned */
+					 afi_t afi, safi_t safi, struct bgp_path_info *source_bpi,
+					 mpls_label_t *label, uint8_t num_labels,
+					 struct bgp *bgp_orig, struct prefix *nexthop_orig,
+					 int nexthop_self_flag, int debug,
+					 const struct bgp_path_info *rmap_bpi)
 {
 	const struct prefix *p = bgp_dest_get_prefix(bn);
 	struct bgp_path_info *bpi;
 	struct bgp_path_info *new;
 	struct bgp_path_info_extra *extra;
+	struct attr *new_attr;
 	struct bgp_labels bgp_labels = {};
 	struct bgp *bgp_nexthop;
 	bool labelssame;
@@ -1238,13 +1284,13 @@ leak_update(struct bgp *to_bgp, struct bgp_dest *bn,
 		if (!bpi->extra || !bpi->extra->vrfleak ||
 		    bpi->extra->vrfleak->parent != source_bpi)
 			continue;
-		if (new_attr->srv6_l3vpn && !bpi->attr->srv6_l3vpn &&
-		    !bgp_labels_is_implicit_null(bpi))
+		if (bgp_attr_get_srv6_l3service(static_attr) &&
+		    !bgp_attr_get_srv6_l3service(bpi->attr) && !bgp_labels_is_implicit_null(bpi))
 			/* SRv6 path can not overwrite MPLS path */
 			continue;
-		if ((!new_attr->srv6_l3vpn && num_labels == 1 &&
+		if ((!bgp_attr_get_srv6_l3service(static_attr) && num_labels == 1 &&
 		     decode_label(&label[0]) != MPLS_LABEL_NONE) &&
-		    bpi->attr->srv6_l3vpn)
+		    bgp_attr_get_srv6_l3service(bpi->attr))
 			/* MPLS path can not overwrite Srv6 path */
 			continue;
 		/* MPLS or SRv6 path found or path with LABEL_NONE*/
@@ -1283,15 +1329,14 @@ leak_update(struct bgp *to_bgp, struct bgp_dest *bn,
 		}
 
 		if (labelssame && !CHECK_FLAG(bpi->flags, BGP_PATH_REMOVED) &&
-		    attrhash_cmp(bpi->attr, new_attr) &&
-		    leak_update_nexthop_valid(to_bgp, bn, new_attr, afi, safi, source_bpi, bpi,
+		    attrhash_cmp(bpi->attr, static_attr) &&
+		    bgp_path_info_extra_same(bpi, rmap_bpi ? rmap_bpi : source_bpi) &&
+		    leak_update_nexthop_valid(to_bgp, bn, static_attr, afi, safi, source_bpi, bpi,
 					      bgp_orig, p,
 					      debug) == !!CHECK_FLAG(bpi->flags, BGP_PATH_VALID)) {
-			bgp_attr_unintern(&new_attr);
 			if (debug)
-				zlog_debug(
-					"%s: ->%s: %pBD: Found route, no change",
-					__func__, to_bgp->name_pretty, bn);
+				zlog_debug("%s: ->%s: %pBD: Found route, no change", __func__,
+					   to_bgp->name_pretty, bn);
 			return NULL;
 		}
 
@@ -1302,13 +1347,10 @@ leak_update(struct bgp *to_bgp, struct bgp_dest *bn,
 		 * route-map test permit 10
 		 *   set extcommunity rt none
 		 */
-		if (CHECK_FLAG(bpi->attr->flag,
-			       ATTR_FLAG_BIT(BGP_ATTR_EXT_COMMUNITIES)) &&
-		    CHECK_FLAG(new_attr->flag,
-			       ATTR_FLAG_BIT(BGP_ATTR_EXT_COMMUNITIES))) {
-			if (!ecommunity_cmp(
-				    bgp_attr_get_ecommunity(bpi->attr),
-				    bgp_attr_get_ecommunity(new_attr))) {
+		if (bgp_attr_exists(bpi->attr, BGP_ATTR_EXT_COMMUNITIES) &&
+		    bgp_attr_exists(static_attr, BGP_ATTR_EXT_COMMUNITIES)) {
+			if (!ecommunity_cmp(bgp_attr_get_ecommunity(bpi->attr),
+					    bgp_attr_get_ecommunity(static_attr))) {
 				vpn_leak_to_vrf_withdraw(bpi);
 				bgp_aggregate_decrement(to_bgp, p, bpi, afi,
 							safi);
@@ -1325,6 +1367,7 @@ leak_update(struct bgp *to_bgp, struct bgp_dest *bn,
 		else
 			bgp_aggregate_decrement(to_bgp, p, bpi, afi, safi);
 		bgp_attr_unintern(&bpi->attr);
+		new_attr = bgp_attr_intern(static_attr);
 		bpi->attr = new_attr;
 		bpi->uptime = monotime(NULL);
 
@@ -1349,6 +1392,11 @@ leak_update(struct bgp *to_bgp, struct bgp_dest *bn,
 			bgp_path_info_set_flag(bn, bpi, BGP_PATH_VALID);
 		else
 			bgp_path_info_unset_flag(bn, bpi, BGP_PATH_VALID);
+
+		/* Carry srte_color from the leaked source path (or the
+		 * rmap-modified copy when a vpn-policy route-map ran).
+		 */
+		bgp_path_info_extra_propagate(bpi, rmap_bpi ? rmap_bpi : source_bpi);
 
 		/* Process change. */
 		bgp_aggregate_increment(to_bgp, p, bpi, afi, safi);
@@ -1381,8 +1429,7 @@ leak_update(struct bgp *to_bgp, struct bgp_dest *bn,
 		return NULL;
 	}
 
-	new = info_make(ZEBRA_ROUTE_BGP, BGP_ROUTE_IMPORTED, 0,
-			to_bgp->peer_self, new_attr, bn);
+	new = info_make(ZEBRA_ROUTE_BGP, BGP_ROUTE_IMPORTED, 0, to_bgp->peer_self, static_attr, bn);
 
 	bgp_path_info_extra_get(new);
 	if (!new->extra->vrfleak)
@@ -1412,11 +1459,18 @@ leak_update(struct bgp *to_bgp, struct bgp_dest *bn,
 	if (nexthop_orig)
 		new->extra->vrfleak->nexthop_orig = *nexthop_orig;
 
-	if (leak_update_nexthop_valid(to_bgp, bn, new_attr, afi, safi,
-				      source_bpi, new, bgp_orig, p, debug))
+	if (leak_update_nexthop_valid(to_bgp, bn, static_attr, afi, safi, source_bpi, new,
+				      bgp_orig, p, debug)) {
 		bgp_path_info_set_flag(bn, new, BGP_PATH_VALID);
-	else
+		SET_FLAG(new->attr->nh_flags, BGP_ATTR_NH_VALID);
+	} else
 		bgp_path_info_unset_flag(bn, new, BGP_PATH_VALID);
+	new->attr = bgp_attr_intern(static_attr);
+
+	/* Carry srte_color from the leaked source path (or the
+	 * rmap-modified copy when a vpn-policy route-map ran).
+	 */
+	bgp_path_info_extra_propagate(new, rmap_bpi ? rmap_bpi : source_bpi);
 
 	bgp_path_info_add(bn, new);
 	bgp_aggregate_increment(to_bgp, p, new, afi, safi);
@@ -1540,7 +1594,7 @@ _vpn_leak_from_vrf_get_per_nexthop_label(struct bgp_path_info *pi,
 		nh_pfx = &nh_gate;
 		break;
 	case NEXTHOP_TYPE_IFINDEX:
-		/* the nexthop is direcly connected */
+		/* the nexthop is directly connected */
 		nh_pfx = &bnc->prefix;
 		break;
 	case NEXTHOP_TYPE_BLACKHOLE:
@@ -1623,9 +1677,8 @@ vpn_leak_from_vrf_get_per_nexthop_label(afi_t afi, struct bgp_path_info *pi,
 			      bpi_ultimate->type == ZEBRA_ROUTE_BGP;
 
 	if (is_bgp_static_route == false && afi == AFI_IP &&
-	    CHECK_FLAG(pi->attr->flag, ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP)) &&
-	    (pi->attr->nexthop.s_addr == INADDR_ANY ||
-	     !ipv4_unicast_valid(&pi->attr->nexthop))) {
+	    bgp_attr_exists(pi->attr, BGP_ATTR_NEXT_HOP) &&
+	    (pi->attr->nexthop.s_addr == INADDR_ANY || !ipv4_unicast_valid(&pi->attr->nexthop))) {
 		/* IPv4 nexthop in standard BGP encoding format.
 		 * Format of address is not valid (not any, not unicast).
 		 * Fallback to the per VRF label.
@@ -1722,60 +1775,80 @@ static bool vpn_leak_from_vrf_fill_srv6(struct attr *attr, struct bgp *from_bgp,
 					mpls_label_t *label)
 {
 	/* Set SID for SRv6 VPN */
-	if (from_bgp->vpn_policy[afi].tovpn_sid_locator) {
+	if (from_bgp->vpn_policy[afi].tovpn_sid_locator && from_bgp->vpn_policy[afi].tovpn_sid) {
 		struct srv6_locator *locator = from_bgp->vpn_policy[afi].tovpn_sid_locator;
 
+		struct bgp_attr_srv6_l3service *srv6_l3service =
+			XCALLOC(MTYPE_BGP_SRV6_L3SERVICE, sizeof(struct bgp_attr_srv6_l3service));
+
 		encode_label(from_bgp->vpn_policy[afi].tovpn_sid_transpose_label, label);
-		attr->srv6_l3vpn = XCALLOC(MTYPE_BGP_SRV6_L3VPN,
-					   sizeof(struct bgp_attr_srv6_l3vpn));
-		attr->srv6_l3vpn->sid_flags = 0x00;
-		attr->srv6_l3vpn->endpoint_behavior =
+		srv6_l3service->sid_flags = 0x00;
+		srv6_l3service->endpoint_behavior =
 			afi == AFI_IP ? (CHECK_FLAG(locator->flags, SRV6_LOCATOR_USID)
 						 ? SRV6_ENDPOINT_BEHAVIOR_END_DT4_USID
 						 : SRV6_ENDPOINT_BEHAVIOR_END_DT4)
 				      : (CHECK_FLAG(locator->flags, SRV6_LOCATOR_USID)
 						 ? SRV6_ENDPOINT_BEHAVIOR_END_DT6_USID
 						 : SRV6_ENDPOINT_BEHAVIOR_END_DT6);
-		attr->srv6_l3vpn->loc_block_len =
+		srv6_l3service->loc_block_len =
 			from_bgp->vpn_policy[afi].tovpn_sid_locator->block_bits_length;
-		attr->srv6_l3vpn->loc_node_len =
+		srv6_l3service->loc_node_len =
 			from_bgp->vpn_policy[afi].tovpn_sid_locator->node_bits_length;
-		attr->srv6_l3vpn->func_len =
-			from_bgp->vpn_policy[afi].tovpn_sid_locator->function_bits_length;
-		attr->srv6_l3vpn->arg_len =
+		if (CHECK_FLAG(from_bgp->vpn_policy[afi].flags, BGP_VPN_POLICY_TOVPN_SID_FUNC_WIDE))
+			srv6_l3service->func_len = BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH_FOR_BGP;
+		else
+			srv6_l3service->func_len =
+				from_bgp->vpn_policy[afi].tovpn_sid_locator->function_bits_length;
+		srv6_l3service->arg_len =
 			from_bgp->vpn_policy[afi].tovpn_sid_locator->argument_bits_length;
-		attr->srv6_l3vpn->transposition_len =
-			from_bgp->vpn_policy[afi].tovpn_sid_locator->function_bits_length;
-		attr->srv6_l3vpn->transposition_offset =
-			from_bgp->vpn_policy[afi].tovpn_sid_locator->block_bits_length +
-			from_bgp->vpn_policy[afi].tovpn_sid_locator->node_bits_length;
-		;
-		memcpy(&attr->srv6_l3vpn->sid,
-		       &from_bgp->vpn_policy[afi].tovpn_sid_locator->prefix.prefix,
-		       sizeof(struct in6_addr));
+		if (srv6_l3service->func_len > BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH_FOR_LABEL) {
+			srv6_l3service->transposition_len = 0;
+			srv6_l3service->transposition_offset = 0;
+			IPV6_ADDR_COPY(&srv6_l3service->sid, from_bgp->vpn_policy[afi].tovpn_sid);
+		} else {
+			srv6_l3service->transposition_len =
+				from_bgp->vpn_policy[afi].tovpn_sid_locator->function_bits_length;
+			srv6_l3service->transposition_offset =
+				from_bgp->vpn_policy[afi].tovpn_sid_locator->block_bits_length +
+				from_bgp->vpn_policy[afi].tovpn_sid_locator->node_bits_length;
+			IPV6_ADDR_COPY(&srv6_l3service->sid,
+				       &from_bgp->vpn_policy[afi].tovpn_sid_locator->prefix.prefix);
+		}
+		bgp_attr_set_srv6_l3service(attr, srv6_l3service);
 		return true;
 	}
-	if (from_bgp->tovpn_sid_locator) {
+	if (from_bgp->tovpn_sid_locator && from_bgp->tovpn_sid) {
 		struct srv6_locator *locator = from_bgp->tovpn_sid_locator;
+		struct bgp_attr_srv6_l3service *srv6_l3service =
+			XCALLOC(MTYPE_BGP_SRV6_L3SERVICE, sizeof(struct bgp_attr_srv6_l3service));
 
 		encode_label(from_bgp->tovpn_sid_transpose_label, label);
-		attr->srv6_l3vpn = XCALLOC(MTYPE_BGP_SRV6_L3VPN,
-					   sizeof(struct bgp_attr_srv6_l3vpn));
-		attr->srv6_l3vpn->sid_flags = 0x00;
-		attr->srv6_l3vpn->endpoint_behavior = CHECK_FLAG(locator->flags, SRV6_LOCATOR_USID)
-							      ? SRV6_ENDPOINT_BEHAVIOR_END_DT46_USID
-							      : SRV6_ENDPOINT_BEHAVIOR_END_DT46;
-		attr->srv6_l3vpn->loc_block_len = from_bgp->tovpn_sid_locator->block_bits_length;
-		attr->srv6_l3vpn->loc_node_len = from_bgp->tovpn_sid_locator->node_bits_length;
-		attr->srv6_l3vpn->func_len = from_bgp->tovpn_sid_locator->function_bits_length;
-		attr->srv6_l3vpn->arg_len = from_bgp->tovpn_sid_locator->argument_bits_length;
-		attr->srv6_l3vpn->transposition_len =
-			from_bgp->tovpn_sid_locator->function_bits_length;
-		attr->srv6_l3vpn->transposition_offset =
-			from_bgp->tovpn_sid_locator->block_bits_length +
-			from_bgp->tovpn_sid_locator->node_bits_length;
-		memcpy(&attr->srv6_l3vpn->sid, &from_bgp->tovpn_sid_locator->prefix.prefix,
-		       sizeof(struct in6_addr));
+		srv6_l3service->sid_flags = 0x00;
+		srv6_l3service->endpoint_behavior = CHECK_FLAG(locator->flags, SRV6_LOCATOR_USID)
+							    ? SRV6_ENDPOINT_BEHAVIOR_END_DT46_USID
+							    : SRV6_ENDPOINT_BEHAVIOR_END_DT46;
+		srv6_l3service->loc_block_len = from_bgp->tovpn_sid_locator->block_bits_length;
+		srv6_l3service->loc_node_len = from_bgp->tovpn_sid_locator->node_bits_length;
+		if (CHECK_FLAG(from_bgp->vrf_flags, BGP_VRF_TOVPN_SID_FUNC_WIDE))
+			srv6_l3service->func_len = BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH_FOR_BGP;
+		else
+			srv6_l3service->func_len =
+				from_bgp->tovpn_sid_locator->function_bits_length;
+		srv6_l3service->arg_len = from_bgp->tovpn_sid_locator->argument_bits_length;
+		if (srv6_l3service->func_len > BGP_PREFIX_SID_SRV6_MAX_FUNCTION_LENGTH_FOR_LABEL) {
+			srv6_l3service->transposition_len = 0;
+			srv6_l3service->transposition_offset = 0;
+			IPV6_ADDR_COPY(&srv6_l3service->sid, from_bgp->tovpn_sid);
+		} else {
+			srv6_l3service->transposition_len =
+				from_bgp->tovpn_sid_locator->function_bits_length;
+			srv6_l3service->transposition_offset =
+				from_bgp->tovpn_sid_locator->block_bits_length +
+				from_bgp->tovpn_sid_locator->node_bits_length;
+			IPV6_ADDR_COPY(&srv6_l3service->sid,
+				       &from_bgp->tovpn_sid_locator->prefix.prefix);
+		}
+		bgp_attr_set_srv6_l3service(attr, srv6_l3service);
 		return true;
 	}
 	return false;
@@ -1785,18 +1858,17 @@ static void _vpn_leak_from_vrf_update_leak_attr(struct attr *static_attr, struct
 						struct bgp *from_bgp, afi_t afi, safi_t safi,
 						struct bgp_path_info *path_vrf,
 						int nexthop_self_flag, int debug,
-						mpls_label_t *label)
+						mpls_label_t *label,
+						const struct bgp_path_info *rmap_bpi)
 {
-	struct attr *new_attr;
 	struct bgp_dest *bn;
 	const struct prefix *p = bgp_dest_get_prefix(path_vrf->net);
 	struct bgp_path_info *new_info;
 
-	new_attr = bgp_attr_intern(static_attr); /* hashed refcounted everything */
 	bn = bgp_afi_node_get(to_bgp->rib[afi][safi], afi, safi, p,
 			      &(from_bgp->vpn_policy[afi].tovpn_rd));
-	new_info = leak_update(to_bgp, bn, new_attr, afi, safi, path_vrf, label, 1, from_bgp, NULL,
-			       nexthop_self_flag, debug);
+	new_info = leak_update(to_bgp, bn, static_attr, afi, safi, path_vrf, label, 1, from_bgp,
+			       NULL, nexthop_self_flag, debug, rmap_bpi);
 	/*
 	 * Routes actually installed in the vpn RIB must also be
 	 * offered to all vrfs (because now they originate from
@@ -1829,6 +1901,9 @@ void vpn_leak_from_vrf_update(struct bgp *to_bgp,	     /* to */
 	struct ecommunity *old_ecom;
 	struct ecommunity *new_ecom = NULL;
 	struct ecommunity *rtlist_ecom;
+	struct bgp_path_info_extra rmap_extra = {};
+	struct bgp_path_info rmap_bpi = { .extra = &rmap_extra };
+	route_map_result_t ret = RMAP_DENYMATCH;
 
 	if (debug)
 		zlog_debug("%s: from vrf %s", __func__, from_bgp->name_pretty);
@@ -1871,8 +1946,7 @@ void vpn_leak_from_vrf_update(struct bgp *to_bgp,	     /* to */
 		return;
 	}
 
-	/* shallow copy */
-	static_attr = *path_vrf->attr;
+	bgp_attr_dup_into(&static_attr, path_vrf->attr);
 
 	if (debug && bgp_attr_get_ecommunity(&static_attr)) {
 		char *s = ecommunity_ecom2str(
@@ -1914,11 +1988,10 @@ void vpn_leak_from_vrf_update(struct bgp *to_bgp,	     /* to */
 	 */
 	if (from_bgp->vpn_policy[afi].rmap[BGP_VPN_POLICY_DIR_TOVPN]) {
 		struct bgp_path_info info;
-		route_map_result_t ret;
+		struct peer *peer = path_vrf->peer ? path_vrf->peer : to_bgp->peer_self;
 
-		memset(&info, 0, sizeof(info));
-		info.peer = to_bgp->peer_self;
-		info.attr = &static_attr;
+		prep_for_rmap_apply(&info, &rmap_extra, path_vrf->net, path_vrf, peer, NULL,
+				    &static_attr);
 		ret = route_map_apply(from_bgp->vpn_policy[afi]
 					      .rmap[BGP_VPN_POLICY_DIR_TOVPN],
 				      p, &info);
@@ -1940,6 +2013,7 @@ void vpn_leak_from_vrf_update(struct bgp *to_bgp,	     /* to */
 		if (debug)
 			zlog_debug("%s: %s skipping: waiting for a valid export rt list.",
 				   __func__, from_bgp->name_pretty);
+		bgp_attr_flush(&static_attr);
 		return;
 	}
 
@@ -2061,16 +2135,20 @@ void vpn_leak_from_vrf_update(struct bgp *to_bgp,	     /* to */
 	if (label_val != MPLS_LABEL_NONE)
 		/* MPLS */
 		_vpn_leak_from_vrf_update_leak_attr(&static_attr, to_bgp, from_bgp, afi, safi,
-						    path_vrf, nexthop_self_flag, debug, &label);
+						    path_vrf, nexthop_self_flag, debug, &label,
+						    ret == RMAP_PERMITMATCH ? &rmap_bpi : NULL);
 
 	if (vpn_leak_from_vrf_fill_srv6(&static_attr, from_bgp, afi, &label))
+
 		/* SRv6 */
 		_vpn_leak_from_vrf_update_leak_attr(&static_attr, to_bgp, from_bgp, afi, safi,
-						    path_vrf, nexthop_self_flag, debug, &label);
+						    path_vrf, nexthop_self_flag, debug, &label,
+						    ret == RMAP_PERMITMATCH ? &rmap_bpi : NULL);
 	else if (label_val == MPLS_LABEL_NONE)
 		/* import-vrf */
 		_vpn_leak_from_vrf_update_leak_attr(&static_attr, to_bgp, from_bgp, afi, safi,
-						    path_vrf, nexthop_self_flag, debug, &label);
+						    path_vrf, nexthop_self_flag, debug, &label,
+						    ret == RMAP_PERMITMATCH ? &rmap_bpi : NULL);
 	bgp_attr_flush(&static_attr); /* free locally-allocated parts */
 }
 
@@ -2082,7 +2160,7 @@ void vpn_leak_from_vrf_withdraw(struct bgp *to_bgp,		/* to */
 	const struct prefix *p = bgp_dest_get_prefix(path_vrf->net);
 	afi_t afi = family2afi(p->family);
 	safi_t safi = SAFI_MPLS_VPN;
-	struct bgp_path_info *bpi;
+	struct bgp_path_info *bpi, *bpi_next;
 	struct bgp_dest *bn;
 	const char *debugmsg;
 
@@ -2124,23 +2202,23 @@ void vpn_leak_from_vrf_withdraw(struct bgp *to_bgp,		/* to */
 	 * vrf -> vpn
 	 * match original bpi imported from
 	 */
-	for (bpi = bgp_dest_get_bgp_path_info(bn); bpi; bpi = bpi->next) {
+	bpi_next = bgp_dest_get_bgp_path_info(bn);
+	while (bpi_next) {
+		bpi = bpi_next;
+		bpi_next = bpi->next;
 		if (!bpi->extra || !bpi->extra->vrfleak || bpi->extra->vrfleak->parent != path_vrf)
 			continue;
-		if (path_vrf->attr->srv6_l3vpn && !bpi->attr->srv6_l3vpn &&
-		    !bgp_labels_is_implicit_null(bpi))
+		if (bgp_attr_get_srv6_l3service(path_vrf->attr) &&
+		    !bgp_attr_get_srv6_l3service(bpi->attr) && !bgp_labels_is_implicit_null(bpi))
 			/* SRv6 path can not overwrite MPLS path */
 			continue;
-		if ((!path_vrf->attr->srv6_l3vpn && BGP_PATH_INFO_NUM_LABELS(path_vrf) == 1 &&
+		if ((!bgp_attr_get_srv6_l3service(path_vrf->attr) &&
+		     BGP_PATH_INFO_NUM_LABELS(path_vrf) == 1 &&
 		     decode_label(&path_vrf->extra->labels->label[0]) != MPLS_LABEL_NONE) &&
-		    bpi->attr->srv6_l3vpn)
+		    bgp_attr_get_srv6_l3service(bpi->attr))
 			/* MPLS path can not overwrite Srv6 path */
 			continue;
 		/* MPLS or SRv6 path found or path with LABEL_NONE*/
-		break;
-	}
-
-	if (bpi) {
 		/* withdraw from looped vrfs as well */
 		vpn_leak_to_vrf_withdraw(bpi);
 
@@ -2279,7 +2357,6 @@ static void vpn_leak_to_vrf_update_onevrf(struct bgp *to_bgp,	/* to */
 	afi_t afi = family2afi(p->family);
 
 	struct attr static_attr = {0};
-	struct attr *new_attr = NULL;
 	struct bgp_dest *bn;
 	safi_t safi = SAFI_UNICAST;
 	const char *debugmsg;
@@ -2296,6 +2373,9 @@ static void vpn_leak_to_vrf_update_onevrf(struct bgp *to_bgp,	/* to */
 	struct aspath *new_aspath;
 	int32_t aspath_loop_count = 0;
 	struct peer *peer = path_vpn->peer;
+	struct bgp_path_info_extra rmap_extra = {};
+	struct bgp_path_info rmap_bpi = { .extra = &rmap_extra };
+	route_map_result_t ret = RMAP_DENYMATCH;
 
 	int debug = BGP_DEBUG(vpn, VPN_LEAK_TO_VRF);
 
@@ -2370,14 +2450,15 @@ static void vpn_leak_to_vrf_update_onevrf(struct bgp *to_bgp,	/* to */
 			if (!bpi->extra || !bpi->extra->vrfleak ||
 			    bpi->extra->vrfleak->parent != path_vpn)
 				continue;
-			if (path_vpn->attr->srv6_l3vpn && !bpi->attr->srv6_l3vpn &&
+			if (bgp_attr_get_srv6_l3service(path_vpn->attr) &&
+			    !bgp_attr_get_srv6_l3service(bpi->attr) &&
 			    !bgp_labels_is_implicit_null(bpi))
 				/* SRv6 path can not overwrite MPLS path */
 				continue;
-			if ((!path_vpn->attr->srv6_l3vpn &&
+			if ((!bgp_attr_get_srv6_l3service(path_vpn->attr) &&
 			     BGP_PATH_INFO_NUM_LABELS(path_vpn) == 1 &&
 			     decode_label(&path_vpn->extra->labels->label[0]) != MPLS_LABEL_NONE) &&
-			    bpi->attr->srv6_l3vpn)
+			    bgp_attr_get_srv6_l3service(bpi->attr))
 				/* MPLS path can not overwrite Srv6 path */
 				continue;
 			/* MPLS or SRv6 path found or path with LABEL_NONE*/
@@ -2397,8 +2478,7 @@ static void vpn_leak_to_vrf_update_onevrf(struct bgp *to_bgp,	/* to */
 		zlog_debug("%s: updating RD %s, %pFX to %s", __func__, rd_buf,
 			   p, to_bgp->name_pretty);
 
-	/* shallow copy */
-	static_attr = *path_vpn->attr;
+	bgp_attr_dup_into(&static_attr, path_vpn->attr);
 
 	struct ecommunity *old_ecom;
 	struct ecommunity *new_ecom;
@@ -2516,16 +2596,13 @@ static void vpn_leak_to_vrf_update_onevrf(struct bgp *to_bgp,	/* to */
 	 * route map handling
 	 */
 	if (to_bgp->vpn_policy[afi].rmap[BGP_VPN_POLICY_DIR_FROMVPN]) {
-		struct bgp_path_info info;
-		route_map_result_t ret;
+		struct peer *fpeer = from ? from : to_bgp->peer_self;
 
-		memset(&info, 0, sizeof(info));
-		info.peer = to_bgp->peer_self;
-		info.attr = &static_attr;
-		info.extra = path_vpn->extra; /* Used for source-vrf filter */
+		prep_for_rmap_apply(&rmap_bpi, &rmap_extra, path_vpn->net, path_vpn, fpeer, NULL,
+				    &static_attr);
 		ret = route_map_apply(to_bgp->vpn_policy[afi]
 					      .rmap[BGP_VPN_POLICY_DIR_FROMVPN],
-				      p, &info);
+				      p, &rmap_bpi);
 		if (RMAP_DENYMATCH == ret) {
 			bgp_attr_flush(&static_attr); /* free any added parts */
 			if (debug)
@@ -2559,9 +2636,6 @@ static void vpn_leak_to_vrf_update_onevrf(struct bgp *to_bgp,	/* to */
 				       path_vpn->extra->vrfleak->bgp_orig->as);
 		static_attr.aspath = new_aspath;
 	}
-
-	new_attr = bgp_attr_intern(&static_attr);
-	bgp_attr_flush(&static_attr);
 
 	/*
 	 * ensure labels are copied
@@ -2598,10 +2672,11 @@ static void vpn_leak_to_vrf_update_onevrf(struct bgp *to_bgp,	/* to */
 		zlog_debug("%s: pfx %pBD: num_labels %d", __func__,
 			   path_vpn->net, num_labels);
 
-	if (!leak_update(to_bgp, bn, new_attr, afi, safi, path_vpn, label_pnt,
-			 num_labels, src_vrf, &nexthop_orig, nexthop_self_flag,
-			 debug))
+	if (!leak_update(to_bgp, bn, &static_attr, afi, safi, path_vpn, label_pnt, num_labels,
+			 src_vrf, &nexthop_orig, nexthop_self_flag, debug,
+			 ret == RMAP_PERMITMATCH ? &rmap_bpi : NULL))
 		bgp_dest_unlock_node(bn);
+	bgp_attr_flush(&static_attr);
 }
 
 bool vpn_leak_to_vrf_no_retain_filter_check(struct bgp *from_bgp,
@@ -2850,6 +2925,7 @@ void vpn_leak_to_vrf_update_all(struct bgp *to_bgp, struct bgp *vpn_from,
 		struct bgp_table *table;
 		struct bgp_dest *bn;
 		struct bgp_path_info *bpi;
+		struct peer *orig_peer;
 
 		/* This is the per-RD table of prefixes */
 		table = bgp_dest_get_bgp_table_info(pdest);
@@ -2861,12 +2937,18 @@ void vpn_leak_to_vrf_update_all(struct bgp *to_bgp, struct bgp *vpn_from,
 
 			for (bpi = bgp_dest_get_bgp_path_info(bn); bpi;
 			     bpi = bpi->next) {
-				if (bpi->extra && bpi->extra->vrfleak &&
-				    bpi->extra->vrfleak->bgp_orig == to_bgp)
-					continue;
+				orig_peer = bpi->peer;
+
+				if (bpi->extra && bpi->extra->vrfleak) {
+					if (bpi->extra->vrfleak->bgp_orig == to_bgp)
+						continue;
+
+					if (bpi->extra->vrfleak->peer_orig)
+						orig_peer = bpi->extra->vrfleak->peer_orig;
+				}
 
 				vpn_leak_to_vrf_update_onevrf(to_bgp, vpn_from, bpi, NULL,
-							      bpi->peer);
+							      orig_peer);
 			}
 		}
 	}
@@ -3076,7 +3158,7 @@ void vpn_policy_routemap_event(const char *rmap_name)
 		vpn_policy_routemap_update(bgp, rmap_name);
 }
 
-void vrf_import_from_vrf(struct bgp *to_bgp, struct bgp *from_bgp,
+void vrf_import_from_vrf(struct bgp *to_bgp, struct bgp *from_bgp, const char *import_name,
 			 afi_t afi, safi_t safi)
 {
 	const char *export_name;
@@ -3100,8 +3182,8 @@ void vrf_import_from_vrf(struct bgp *to_bgp, struct bgp *from_bgp,
 	 * Cross-ref both VRFs. Also, note if this is the first time
 	 * any VRF is importing from "import_vrf".
 	 */
-	vname = (from_bgp->name ? XSTRDUP(MTYPE_TMP, from_bgp->name)
-			       : XSTRDUP(MTYPE_TMP, VRF_DEFAULT_NAME));
+	vname = (import_name ? XSTRDUP(MTYPE_TMP, import_name)
+			     : XSTRDUP(MTYPE_TMP, VRF_DEFAULT_NAME));
 
 	/* Check the import_vrf list of destination vrf for the source vrf name,
 	 * insert otherwise.
@@ -3118,6 +3200,12 @@ void vrf_import_from_vrf(struct bgp *to_bgp, struct bgp *from_bgp,
 				     vname);
 	else
 		XFREE(MTYPE_TMP, vname);
+
+	SET_FLAG(to_bgp->af_flags[afi][safi], BGP_CONFIG_VRF_TO_VRF_IMPORT);
+
+	if (!from_bgp)
+		/* import vrf VRF context does not exist yet. */
+		return;
 
 	/* Check if the source vrf already exports to any vrf,
 	 * first time export requires to setup auto derived RD/RT values.
@@ -3173,7 +3261,6 @@ void vrf_import_from_vrf(struct bgp *to_bgp, struct bgp *from_bgp,
 					 .rtlist[idir], ecom);
 	else
 		to_bgp->vpn_policy[afi].rtlist[idir] = ecommunity_dup(ecom);
-	SET_FLAG(to_bgp->af_flags[afi][safi], BGP_CONFIG_VRF_TO_VRF_IMPORT);
 
 	if (debug) {
 		const char *from_name;
@@ -3209,10 +3296,10 @@ void vrf_import_from_vrf(struct bgp *to_bgp, struct bgp *from_bgp,
 		vpn_leak_postchange(idir, afi, bgp_get_default(), to_bgp);
 }
 
-void vrf_unimport_from_vrf(struct bgp *to_bgp, struct bgp *from_bgp,
+void vrf_unimport_from_vrf(struct bgp *to_bgp, struct bgp *from_bgp, const char *import_name,
 			   afi_t afi, safi_t safi)
 {
-	const char *export_name, *tmp_name;
+	const char *export_name;
 	enum vpn_policy_direction idir, edir;
 	char *vname;
 	struct ecommunity *ecom = NULL;
@@ -3220,7 +3307,6 @@ void vrf_unimport_from_vrf(struct bgp *to_bgp, struct bgp *from_bgp,
 	int debug;
 
 	export_name = to_bgp->name ? to_bgp->name : VRF_DEFAULT_NAME;
-	tmp_name = from_bgp->name ? from_bgp->name : VRF_DEFAULT_NAME;
 	idir = BGP_VPN_POLICY_DIR_FROMVPN;
 	edir = BGP_VPN_POLICY_DIR_TOVPN;
 
@@ -3230,7 +3316,7 @@ void vrf_unimport_from_vrf(struct bgp *to_bgp, struct bgp *from_bgp,
 	/* Were we importing from "import_vrf"? */
 	for (ALL_LIST_ELEMENTS_RO(to_bgp->vpn_policy[afi].import_vrf, node,
 				  vname)) {
-		if (strcmp(vname, tmp_name) == 0)
+		if (strcmp(vname, import_name) == 0)
 			break;
 	}
 
@@ -3245,7 +3331,7 @@ void vrf_unimport_from_vrf(struct bgp *to_bgp, struct bgp *from_bgp,
 		return;
 
 	if (debug)
-		zlog_debug("%s from %s to %s", __func__, tmp_name, export_name);
+		zlog_debug("%s from %s to %s", __func__, import_name, export_name);
 
 	/* Remove "import_vrf" from our import list. */
 	listnode_delete(to_bgp->vpn_policy[afi].import_vrf, vname);
@@ -3258,18 +3344,22 @@ void vrf_unimport_from_vrf(struct bgp *to_bgp, struct bgp *from_bgp,
 	vpn_leak_prechange(idir, afi, bgp_get_default(), to_bgp);
 
 	if (to_bgp->vpn_policy[afi].import_vrf->count == 0) {
-		if (!to_bgp->vpn_policy[afi].rmap[idir])
+		if (!to_bgp->vpn_policy[afi].rmap[idir] && !to_bgp->vpn_policy[afi].rmap_name[idir])
 			UNSET_FLAG(to_bgp->af_flags[afi][safi],
 				   BGP_CONFIG_VRF_TO_VRF_IMPORT);
 		if (to_bgp->vpn_policy[afi].rtlist[idir])
 			ecommunity_free(&to_bgp->vpn_policy[afi].rtlist[idir]);
-	} else {
+	} else if (from_bgp) {
 		ecom = from_bgp->vpn_policy[afi].rtlist[edir];
 		if (ecom)
 			ecommunity_del_val(to_bgp->vpn_policy[afi].rtlist[idir],
 				   (struct ecommunity_val *)ecom->val);
 		vpn_leak_postchange(idir, afi, bgp_get_default(), to_bgp);
 	}
+
+	if (!from_bgp)
+		/* import vrf VRF context not (or no more) existing */
+		return;
 
 	/*
 	 * What?
@@ -3300,7 +3390,7 @@ void vrf_unimport_from_vrf(struct bgp *to_bgp, struct bgp *from_bgp,
 	 * import_vrf and export_vrf must match in having
 	 * the in/out names as appropriate.
 	 * export_vrf list could have been cleaned up
-	 * as part of no router bgp source instnace.
+	 * as part of no router bgp source instance.
 	 */
 	if (!vname)
 		return;
@@ -4048,7 +4138,7 @@ void vpn_leak_postchange_all(void)
 
 /* When a bgp vrf instance is unconfigured, remove its routes
  * from the VPN table and this vrf could be importing routes from other
- * bgp vrf instnaces, unimport them.
+ * bgp vrf instances, unimport them.
  * VRF X and VRF Y are exporting routes to each other.
  * When VRF X is deleted, unimport its routes from all target vrfs,
  * also VRF Y should unimport its routes from VRF X table.
@@ -4110,7 +4200,7 @@ void bgp_vpn_leak_unimport(struct bgp *from_bgp)
 					   to_bgp->name_pretty, afi2str(afi),
 					   to_vpolicy->import_vrf->count);
 
-			vrf_unimport_from_vrf(to_bgp, from_bgp, afi, safi);
+			vrf_unimport_from_vrf(to_bgp, from_bgp, tmp_name, afi, safi);
 
 			/* readd vrf name as unimport removes import vrf name
 			 * from the destination vrf's import list where the
@@ -4130,8 +4220,8 @@ void bgp_vpn_leak_unimport(struct bgp *from_bgp)
 						  .export_vrf, node,
 						  vname)) {
 				if (strcmp(vname, tmp_name) == 0) {
-					vrf_unimport_from_vrf(from_bgp, to_bgp,
-						      afi, safi);
+					vrf_unimport_from_vrf(from_bgp, to_bgp, tmp_name, afi,
+							      safi);
 					break;
 				}
 			}
@@ -4213,8 +4303,7 @@ void bgp_vpn_leak_export(struct bgp *from_bgp)
 						to_vpolicy->rtlist[idir],
 						(struct ecommunity_val *)
 							ecom->val);
-				vrf_import_from_vrf(to_bgp, from_bgp,
-						    afi, safi);
+				vrf_import_from_vrf(to_bgp, from_bgp, export_name, afi, safi);
 				break;
 
 			}
@@ -4395,12 +4484,11 @@ struct bgp_mplsvpn_nh_label_bind_cache *bgp_mplsvpn_nh_label_bind_find(
  */
 bool bgp_mplsvpn_path_uses_valid_mpls_label(struct bgp_path_info *pi)
 {
-	if (pi->attr && pi->attr->srv6_l3vpn)
+	if (pi->attr && bgp_attr_get_srv6_l3service(pi->attr))
 		/* srv6 sid */
 		return false;
 
-	if (pi->attr &&
-	    CHECK_FLAG(pi->attr->flag, ATTR_FLAG_BIT(BGP_ATTR_PREFIX_SID)) &&
+	if (pi->attr && bgp_attr_exists(pi->attr, BGP_ATTR_PREFIX_SID) &&
 	    pi->attr->label_index != BGP_INVALID_LABEL_INDEX)
 		/* prefix_sid attribute */
 		return false;

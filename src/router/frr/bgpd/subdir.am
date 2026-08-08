@@ -51,6 +51,9 @@ bgpd_libbgp_a_SOURCES = \
 	bgpd/bgp_label.c \
 	bgpd/bgp_labelpool.c \
 	bgpd/bgp_lcommunity.c \
+	bgpd/bgp_ls.c \
+	bgpd/bgp_ls_nlri.c \
+	bgpd/bgp_ls_ted.c \
 	bgpd/bgp_mac.c \
 	bgpd/bgp_memory.c \
 	bgpd/bgp_mpath.c \
@@ -79,6 +82,7 @@ bgpd_libbgp_a_SOURCES = \
 	bgpd/bgp_trace.c \
 	bgpd/bgp_nhg.c \
 	bgpd/bgp_nhc.c \
+	bgpd/bgp_srv6.c \
 	# end
 
 if ENABLE_BGP_VNC
@@ -135,6 +139,9 @@ noinst_HEADERS += \
 	bgpd/bgp_label.h \
 	bgpd/bgp_labelpool.h \
 	bgpd/bgp_lcommunity.h \
+	bgpd/bgp_ls.h \
+	bgpd/bgp_ls_nlri.h \
+	bgpd/bgp_ls_ted.h \
 	bgpd/bgp_mac.h \
 	bgpd/bgp_memory.h \
 	bgpd/bgp_mpath.h \
@@ -163,6 +170,8 @@ noinst_HEADERS += \
 	bgpd/bgpd.h \
 	bgpd/bgp_trace.h \
 	bgpd/bgp_nhg.h \
+	bgpd/bgp_attr_srv6.h \
+	bgpd/bgp_srv6.h \
 	\
 	bgpd/rfapi/bgp_rfapi_cfg.h \
 	bgpd/rfapi/rfapi_import.h \

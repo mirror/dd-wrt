@@ -21,7 +21,8 @@ extern "C" {
 
 #define MGMTD_BE_MAX_NUM_MSG_PROC  500
 #define MGMTD_BE_MAX_NUM_MSG_WRITE 1000
-#define MGMTD_BE_MAX_MSG_LEN	   (64 * 1024)
+/* Messages can be any size, this is just the preallocated buffer size */
+#define MGMTD_BE_MAX_MSG_LEN (4 * 1024)
 
 #define MGMTD_BE_CONTAINER_NODE_VAL "<<container>>"
 
@@ -54,19 +55,15 @@ struct mgmt_be_client_txn_ctx {
  *
  */
 struct mgmt_be_client_cbs {
-	void (*client_connect_notify)(struct mgmt_be_client *client,
-				      uintptr_t usr_data, bool connected);
-	void (*txn_notify)(struct mgmt_be_client *client, uintptr_t usr_data,
-			   struct mgmt_be_client_txn_ctx *txn_ctx,
-			   bool destroyed);
-
-	const char **config_xpaths;
+	void (*client_connect_notify)(struct mgmt_be_client *client, uintptr_t usr_data,
+				      bool connected);
+	const char *const *config_xpaths;
 	uint nconfig_xpaths;
-	const char **oper_xpaths;
+	const char *const *oper_xpaths;
 	uint noper_xpaths;
-	const char **notify_xpaths;
+	const char *const *notify_xpaths;
 	uint nnotify_xpaths;
-	const char **rpc_xpaths;
+	const char *const *rpc_xpaths;
 	uint nrpc_xpaths;
 };
 

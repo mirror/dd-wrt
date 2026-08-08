@@ -41,7 +41,6 @@ from lib.common_config import (
     step,
     check_address_types,
     check_router_status,
-    create_static_routes,
     create_prefix_lists,
     create_route_maps,
     kill_router_daemons,
@@ -213,7 +212,7 @@ def initial_configuration(tgen, tc_name):
                                     "prefix_lists": "pf_ls_r2_{}".format(addr_type)
                                 }
                             },
-                            "set": {"med": 300},
+                            "set": {"metric": 300},
                         }
                     ]
                 }
@@ -228,7 +227,7 @@ def initial_configuration(tgen, tc_name):
                                     "prefix_lists": "pf_ls_r3_{}".format(addr_type)
                                 }
                             },
-                            "set": {"med": 200},
+                            "set": {"metric": 200},
                         }
                     ]
                 }
@@ -503,7 +502,7 @@ def test_verify_bgp_always_compare_med_functionality_bw_eBGP_peers_by_changing_A
         input_static_r1 = {
             "r1": {"static_routes": [{"network": NETWORK1_1[addr_type]}]}
         }
-        nh = topo["routers"]["r2"]["links"]["r1"][addr_type].split("/")[0]
+        nh = topo["routers"]["r3"]["links"]["r1"][addr_type].split("/")[0]
 
         result = verify_bgp_rib(tgen, addr_type, "r1", input_static_r1)
         assert result is True, "Testcase {} : Failed \n Error: {}".format(
@@ -564,7 +563,7 @@ def test_verify_bgp_always_compare_med_functionality_bw_eBGP_peers_by_changing_A
         input_static_r1 = {
             "r1": {"static_routes": [{"network": NETWORK1_1[addr_type]}]}
         }
-        nh = topo["routers"]["r2"]["links"]["r1"][addr_type].split("/")[0]
+        nh = topo["routers"]["r3"]["links"]["r1"][addr_type].split("/")[0]
 
         result = verify_bgp_rib(tgen, addr_type, "r1", input_static_r1)
         assert result is True, "Testcase {} : Failed \n Error: {}".format(
@@ -690,7 +689,7 @@ def test_verify_bgp_always_compare_med_functionality_bw_eBGP_peers_by_changing_M
                                     "prefix_lists": "pf_ls_r2_{}".format(addr_type)
                                 }
                             },
-                            "set": {"med": 150},
+                            "set": {"metric": 150},
                         }
                     ]
                 }
@@ -735,7 +734,7 @@ def test_verify_bgp_always_compare_med_functionality_bw_eBGP_peers_by_changing_M
                                     "prefix_lists": "pf_ls_r3_{}".format(addr_type)
                                 }
                             },
-                            "set": {"med": 100},
+                            "set": {"metric": 100},
                         }
                     ]
                 }

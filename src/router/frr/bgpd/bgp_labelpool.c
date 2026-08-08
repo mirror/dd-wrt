@@ -124,6 +124,14 @@ static wq_item_status lp_cbq_docallback(struct work_queue *wq, void *data)
 		return WQ_SUCCESS;
 	}
 
+	/*
+	 * Drained item: bgp_lp_release_pending_lu_locks() has already
+	 * dropped the dest reference and zeroed labelid as a marker.
+	 * Don't run the callback - it would deref a stale or NULL labelid.
+	 */
+	if (!lcbq->labelid)
+		return WQ_SUCCESS;
+
 	if (!bgp) {
 		/*
 		 * If we can't find the BGP instance, we should still release
@@ -201,7 +209,13 @@ void bgp_lp_init(struct event_loop *master, struct labelpool *pool)
 /* check if a label callback was for a BGP LU node, and if so, unlock it */
 static void check_bgp_lu_cb_unlock(struct lp_lcb *lcb)
 {
-	if (lcb->type == LP_TYPE_BGP_LU)
+	/*
+	 * NULL labelid is the marker left by bgp_lp_release_pending_lu_locks()
+	 * for entries whose dest reference has already been dropped early
+	 * (before bgp_delete() force-frees the underlying dests at shutdown).
+	 * Skip those so we don't double-unlock or read freed memory.
+	 */
+	if (lcb->type == LP_TYPE_BGP_LU && lcb->labelid)
 		bgp_dest_unlock_node(lcb->labelid);
 }
 
@@ -212,10 +226,68 @@ static void check_bgp_lu_cb_lock(struct lp_lcb *lcb)
 		bgp_dest_lock_node(lcb->labelid);
 }
 
+/*
+ * Release any bgp_dest locks held by pending BGP-LU label requests.
+ *
+ * Pending LU requests live in the labelpool's slow-path FIFO
+ * (lp->requests) and on its callback workqueue (lp->callback_q); each one
+ * bumps the underlying bgp_dest's lock count via check_bgp_lu_cb_lock()
+ * so the dest stays alive until the request is satisfied or cancelled.
+ *
+ * At daemon shutdown bgp_exit() runs bgp_delete() for every bgp instance
+ * before bgp_lp_finish().  bgp_delete() / bgp_free() calls
+ * bgp_table_finish() which calls route_table_finish() which calls
+ * bgp_node_destroy() for every node, force-freeing the dest regardless
+ * of its lock count.  Anything still held by the labelpool then becomes
+ * a dangling pointer; the unlock attempts in bgp_lp_finish() are a
+ * use-after-free, observable as an occasional
+ * assert(node->lock > 0) in route_unlock_node().
+ *
+ * This function must be called BEFORE bgp_delete() so the labelpool
+ * drops its dest references while the dests are still valid.  Each
+ * neutralized entry is marked by zeroing its labelid; both the
+ * subsequent bgp_lp_finish() walk and lp_cbq_docallback() (in case the
+ * workqueue ever does run after this) treat NULL labelid as a no-op.
+ *
+ * The labelpool itself is left fully functional so bgp_delete() and its
+ * callees (e.g. bgp_label_per_nexthop_free() -> bgp_lp_release()) keep
+ * working.  The earlier "just move bgp_lp_finish() up" patch
+ * (PR #15583) failed precisely because it made bgp_delete()-time
+ * label releases dereference an already-freed labelpool.
+ */
+void bgp_lp_release_pending_lu_locks(void)
+{
+	struct lp_fifo *lf;
+	struct work_queue_item *item;
+	struct lp_cbq_item *q;
+
+	if (!lp)
+		return;
+
+	frr_each (lp_fifo, &lp->requests, lf) {
+		if (lf->lcb.type == LP_TYPE_BGP_LU && lf->lcb.labelid) {
+			bgp_dest_unlock_node(lf->lcb.labelid);
+			lf->lcb.labelid = NULL;
+		}
+	}
+
+	if (!lp->callback_q)
+		return;
+
+	STAILQ_FOREACH (item, &lp->callback_q->items, wq) {
+		q = item->data;
+		if (q && q->type == LP_TYPE_BGP_LU && q->labelid) {
+			bgp_dest_unlock_node(q->labelid);
+			q->labelid = NULL;
+		}
+	}
+}
+
 void bgp_lp_finish(void)
 {
 	struct lp_fifo *lf;
 	struct work_queue_item *item, *titem;
+	struct lp_cbq_item *q;
 	struct listnode *node;
 	struct lp_chunk *chunk;
 
@@ -247,11 +319,22 @@ void bgp_lp_finish(void)
 	 * to remove an element from the queue after it has been run, resulting
 	 * in a double unlock. Hence we need to iterate over our queues and
 	 * lists and manually perform the unlocking (ugh)
+	 *
+	 * NB: callback workqueue items are struct lp_cbq_item, NOT struct
+	 * lp_lcb - the two have different layouts so a cast is wrong.
+	 * Read the type/labelid fields directly off lp_cbq_item.  Entries
+	 * already drained by bgp_lp_release_pending_lu_locks() carry a NULL
+	 * labelid and are skipped.
 	 */
-	STAILQ_FOREACH_SAFE (item, &lp->callback_q->items, wq, titem)
-		check_bgp_lu_cb_unlock(item->data);
+	if (lp->callback_q) {
+		STAILQ_FOREACH_SAFE (item, &lp->callback_q->items, wq, titem) {
+			q = item->data;
+			if (q && q->type == LP_TYPE_BGP_LU && q->labelid)
+				bgp_dest_unlock_node(q->labelid);
+		}
 
-	work_queue_free_and_null(&lp->callback_q);
+		work_queue_free_and_null(&lp->callback_q);
+	}
 
 	lp = NULL;
 }
@@ -296,8 +379,9 @@ static mpls_label_t get_label_from_pool(void *labelid)
 		lbl = chunk->first + index;
 		if (skiplist_insert(lp->inuse, (void *)lbl, labelid)) {
 			/* something is very wrong */
-			zlog_err("%s: unable to insert inuse label %u (id %p)",
-				 __func__, (uint32_t)lbl, labelid);
+			flog_err(EC_BGP_LABEL_POOL_INSERT_FAIL,
+				 "%s: unable to insert inuse label %u (id %p)", __func__,
+				 (uint32_t)lbl, labelid);
 			return MPLS_LABEL_NONE;
 		}
 
@@ -568,7 +652,7 @@ static void bgp_sync_label_manager(struct event *e)
 	struct lp_fifo *lf;
 
 	while ((lf = lp_fifo_pop(&lp->requests))) {
-		struct lp_lcb *lcb;
+		struct lp_lcb *lcb = NULL;
 		void *labelid = lf->lcb.labelid;
 
 		if (skiplist_search(lp->ledger, labelid, (void **)&lcb)) {
@@ -1350,7 +1434,7 @@ static int test_cb(mpls_label_t label, void *labelid, bool allocated)
 	return 0;
 }
 
-static void labelpool_test_event_handler(struct event *thread)
+static void labelpool_test_event_handler(struct event *event)
 {
 	struct lp_test *tcb;
 
@@ -1401,8 +1485,7 @@ static void lptest_stop(void)
 		return;
 	}
 
-	if (tcb->event_thread)
-		event_cancel(&tcb->event_thread);
+	event_cancel(&tcb->event_thread);
 
 	lpt_inprogress = false;
 }
@@ -1690,8 +1773,7 @@ static void lptest_delete(void *val)
 		tcb->timestamps_dealloc = NULL;
 	}
 
-	if (tcb->event_thread)
-		event_cancel(&tcb->event_thread);
+	event_cancel(&tcb->event_thread);
 
 	memset(tcb, 0, sizeof(*tcb));
 

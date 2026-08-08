@@ -4,10 +4,6 @@ module frr-isisd {
   namespace "http://frrouting.org/yang/isisd";
   prefix frr-isisd;
 
-  import ietf-yang-types {
-    prefix yang;
-  }
-
   import ietf-inet-types {
     prefix inet;
   }
@@ -26,6 +22,10 @@ module frr-isisd {
 
   import frr-route-types {
     prefix frr-route-types;
+  }
+
+  import frr-routing {
+    prefix frr-rt;
   }
 
   organization
@@ -1733,6 +1733,18 @@ module frr-isisd {
           "Log any dropped PDUs in this area.";
       }
 
+      leaf distribute-link-state {
+        type boolean;
+        default "false";
+        must ". = 'false' or (not(../mpls-te) and not(../mpls-te/export = 'true'))" {
+          error-message
+            "distribute-link-state is mutually exclusive with mpls-te and mpls-te export";
+        }
+        description
+          "Enable distribution of IS-IS link-state information to external
+           consumers (for example, BGP-LS).";
+      }
+
       container mpls-te {
         presence "Present if MPLS-TE is enabled.";
         description
@@ -2550,7 +2562,7 @@ module frr-isisd {
     }
 
     leaf received-timestamp {
-      type yang:timestamp;
+      type frr-rt:unix-timestamp;
       description
         "Timestamp when the LSP was received.";
     }
@@ -2582,7 +2594,7 @@ module frr-isisd {
     }
 
     leaf send-timestamp {
-      type yang:timestamp;
+      type frr-rt:unix-timestamp;
       description
         "Timestamp when our LSP was regenerated.";
     }

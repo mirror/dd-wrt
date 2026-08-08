@@ -28,6 +28,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
+
+#include "lib/memory.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,7 +74,7 @@ DECLARE_MTYPE(BITFIELD);
 	} while (0)
 
 /*
- * allocate and assign 0th bit in the bitfiled.
+ * allocate and assign 0th bit in the bitfield.
  */
 #define bf_assign_zero_index(v)                                                \
 	do {                                                                   \

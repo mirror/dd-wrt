@@ -66,7 +66,7 @@ static void sock_close(struct interface *ifp)
 	struct pim_interface *pim_ifp = ifp->info;
 
 	if (PIM_DEBUG_PIM_TRACE) {
-		if (pim_ifp->t_pim_sock_read) {
+		if (event_is_scheduled(pim_ifp->t_pim_sock_read)) {
 			zlog_debug(
 				"Cancelling READ event for PIM socket fd=%d on interface %s",
 				pim_ifp->pim_sock_fd, ifp->name);
@@ -75,7 +75,7 @@ static void sock_close(struct interface *ifp)
 	event_cancel(&pim_ifp->t_pim_sock_read);
 
 	if (PIM_DEBUG_PIM_TRACE) {
-		if (pim_ifp->t_pim_hello_timer) {
+		if (event_is_scheduled(pim_ifp->t_pim_hello_timer)) {
 			zlog_debug(
 				"Cancelling PIM hello timer for interface %s",
 				ifp->name);
@@ -170,6 +170,13 @@ int pim_pim_packet(struct interface *ifp, uint8_t *buf, size_t len,
 	}
 
 	ip_hlen = ip_hdr->ip_hl << 2; /* ip_hl gives length in 4-byte words */
+	if (ip_hlen < sizeof(*ip_hdr) || ip_hlen > len) {
+		if (PIM_DEBUG_PIM_PACKETS)
+			zlog_debug("Ignoring malformed PIM packet with IPv4 header length %zu and packet length %zu",
+				   ip_hlen, len);
+		return -1;
+	}
+
 	sg = pim_sgaddr_from_iphdr(ip_hdr);
 
 	pim_msg = buf + ip_hlen;
@@ -216,7 +223,15 @@ int pim_pim_packet(struct interface *ifp, uint8_t *buf, size_t len,
 	case PIM_MSG_TYPE_HELLO:
 	case PIM_MSG_TYPE_JOIN_PRUNE:
 	case PIM_MSG_TYPE_ASSERT:
-		if (pim_ifp == NULL || pim_ifp->nbr_plist == NULL)
+		if (!pim_ifp) {
+			if (PIM_DEBUG_PIM_PACKETS)
+				zlog_debug("%s: reject PIM %s from %pPA on %s: PIM not enabled on interface",
+					   __func__, pim_pim_msgtype2str(header->type), &sg.src,
+					   ifp->name);
+			return -1;
+		}
+
+		if (pim_ifp->nbr_plist == NULL)
 			break;
 
 		nbr_plist = prefix_list_lookup(PIM_AFI, pim_ifp->nbr_plist);
@@ -236,9 +251,13 @@ int pim_pim_packet(struct interface *ifp, uint8_t *buf, size_t len,
 			break;
 
 #if PIM_IPV == 4
-		if (PIM_DEBUG_PIM_PACKETS)
-			zlog_debug("neighbor filter rejects packet %pI4 -> %pI4 on %s",
-				   &ip_hdr->ip_src, &ip_hdr->ip_dst, ifp->name);
+		if (PIM_DEBUG_PIM_PACKETS) {
+			struct in_addr srcaddr = ip_hdr->ip_src;
+			struct in_addr dstaddr = ip_hdr->ip_dst;
+
+			zlog_debug("neighbor filter rejects packet %pI4 -> %pI4 on %s", &srcaddr,
+				   &dstaddr, ifp->name);
+		}
 #else
 		if (PIM_DEBUG_PIM_PACKETS)
 			zlog_debug("neighbor filter rejects packet %pI6 -> %pI6 on %s", &sg.src,
@@ -342,7 +361,7 @@ int pim_pim_packet(struct interface *ifp, uint8_t *buf, size_t len,
 					 pim_msg_len - PIM_MSG_HEADER_LEN);
 		break;
 	case PIM_MSG_TYPE_REG_STOP:
-		return pim_register_stop_recv(ifp, pim_msg + PIM_MSG_HEADER_LEN,
+		return pim_register_stop_recv(ifp, sg.src, pim_msg + PIM_MSG_HEADER_LEN,
 					      pim_msg_len - PIM_MSG_HEADER_LEN);
 		break;
 	case PIM_MSG_TYPE_GRAFT_ACK:
@@ -365,13 +384,13 @@ int pim_pim_packet(struct interface *ifp, uint8_t *buf, size_t len,
 		rv = pim_graft_recv(ifp, neigh, sg.src, pim_msg + PIM_MSG_HEADER_LEN,
 				    pim_msg_len - PIM_MSG_HEADER_LEN, PIM_MSG_TYPE_GRAFT);
 
-		/* dm: send ack */
+		/* dm: send ack (RFC 3973: Graft-Ack is unicast to Graft sender) */
 		pim_ifp = ifp->info;
 		if (!pim_ifp->pim_passive_enable) {
-			pim_msg_build_header(sg.src, qpim_all_pim_routers_addr, pim_msg,
+			pim_msg_build_header(pim_ifp->primary_address, sg.src, pim_msg,
 					     pim_msg_len, PIM_MSG_TYPE_GRAFT_ACK, false);
-			pim_msg_send(pim_ifp->pim_sock_fd, pim_ifp->primary_address,
-				     qpim_all_pim_routers_addr, pim_msg, pim_msg_len, ifp);
+			pim_msg_send(pim_ifp->pim_sock_fd, pim_ifp->primary_address, sg.src,
+				     pim_msg, pim_msg_len, ifp);
 		}
 		return rv;
 		break;
@@ -509,7 +528,7 @@ static void pim_sock_read(struct event *t)
 
 	pim_ifp = ifp->info;
 
-	if (pim_sock_read_helper(fd, pim_ifp->pim, true) == 0)
+	if (pim_sock_read_helper(fd, pim_ifp->pim, true) != 0)
 		++pim_ifp->pim_ifstat_hello_recvfail;
 
 	pim_sock_read_on(ifp);
@@ -518,9 +537,6 @@ static void pim_sock_read(struct event *t)
 static void pim_sock_read_on(struct interface *ifp)
 {
 	struct pim_interface *pim_ifp;
-
-	assert(ifp);
-	assert(ifp->info);
 
 	pim_ifp = ifp->info;
 
@@ -601,9 +617,7 @@ void pim_sock_reset(struct interface *ifp)
 
 	pim_ifp->pim_sock_fd = -1;
 	pim_ifp->pim_sock_creation = 0;
-	pim_ifp->t_pim_sock_read = NULL;
 
-	pim_ifp->t_pim_hello_timer = NULL;
 	pim_ifp->pim_hello_period = PIM_DEFAULT_HELLO_PERIOD;
 	pim_ifp->pim_default_holdtime =
 		-1; /* unset: means 3.5 * pim_hello_period */
@@ -768,10 +782,24 @@ int pim_msg_send(int fd, pim_addr src, pim_addr dst, uint8_t *pim_msg,
 	case PIM_MSG_TYPE_BOOTSTRAP:
 	case PIM_MSG_TYPE_ASSERT:
 	case PIM_MSG_TYPE_GRAFT:
-	case PIM_MSG_TYPE_STATE_REFRESH:
-	case PIM_MSG_TYPE_GRAFT_ACK:
 		ttl = 1;
 		break;
+	case PIM_MSG_TYPE_STATE_REFRESH: {
+		struct pim_staterefresh_header *srh;
+
+		/*
+		 * IP TTL normally comes from the SR header body (RFC 3973).
+		 * If the message is truncated, use the default originator TTL.
+		 */
+		if (pim_msg_size < (int)(PIM_MSG_HEADER_LEN + sizeof(*srh))) {
+			ttl = PIM_STATEREFRESH_DEFAULT_TTL;
+			break;
+		}
+		srh = (struct pim_staterefresh_header *)(pim_msg + pim_msg_size - sizeof(*srh));
+		ttl = srh->ttl;
+		break;
+	}
+	case PIM_MSG_TYPE_GRAFT_ACK:
 	case PIM_MSG_TYPE_REGISTER:
 	case PIM_MSG_TYPE_REG_STOP:
 	case PIM_MSG_TYPE_CANDIDATE:
@@ -787,6 +815,12 @@ int pim_msg_send(int fd, pim_addr src, pim_addr dst, uint8_t *pim_msg,
 	int sendlen = sizeof(*ip) + pim_msg_size;
 	socklen_t tolen;
 	unsigned char *msg_start;
+
+	if (pim_msg_size < 0 || sendlen > (int)sizeof(buffer)) {
+		zlog_warn("Oversized PIM msg dropped: msg_size=%d exceeds send buffer",
+			  pim_msg_size);
+		return -1;
+	}
 
 	ip->ip_id = htons(++ip_id);
 	ip->ip_hl = 5;
@@ -814,9 +848,9 @@ int pim_msg_send(int fd, pim_addr src, pim_addr dst, uint8_t *pim_msg,
 		pim_pkt_dump(__func__, pim_msg, pim_msg_size);
 	}
 
-	pim_msg_send_frame(fd, (char *)buffer, sendlen, (struct sockaddr *)&to,
-			   tolen, ifp ? ifp->name : "*");
-	return 0;
+	return pim_msg_send_frame(fd, (char *)buffer, sendlen,
+				  (struct sockaddr *)&to, tolen,
+				  ifp ? ifp->name : "*");
 
 #else
 	struct iovec iovector[2];
@@ -824,9 +858,8 @@ int pim_msg_send(int fd, pim_addr src, pim_addr dst, uint8_t *pim_msg,
 	iovector[0].iov_base = pim_msg;
 	iovector[0].iov_len = pim_msg_size;
 
-	pim_msg_send_frame(src, dst, ifp ? ifp->ifindex : 0, &iovector[0], fd);
-
-	return 0;
+	return pim_msg_send_frame(src, dst, ifp ? ifp->ifindex : 0,
+				  &iovector[0], fd);
 #endif
 }
 
@@ -1009,7 +1042,7 @@ void pim_hello_restart_triggered(struct interface *ifp)
 	// triggered_hello_delay_msec = 1000 *
 	// pim_ifp->pim_triggered_hello_delay;
 
-	if (pim_ifp->t_pim_hello_timer) {
+	if (event_is_scheduled(pim_ifp->t_pim_hello_timer)) {
 		long remain_msec =
 			pim_time_timer_remain_msec(pim_ifp->t_pim_hello_timer);
 		if (remain_msec <= triggered_hello_delay_msec) {
@@ -1060,7 +1093,7 @@ int pim_sock_add(struct interface *ifp)
 
 	pim_socket_ip_hdr(pim_ifp->pim_sock_fd);
 
-	pim_ifp->t_pim_sock_read = NULL;
+	event_cancel(&pim_ifp->t_pim_sock_read);
 	pim_ifp->pim_sock_creation = pim_time_monotonic_sec();
 
 	/*

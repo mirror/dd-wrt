@@ -148,7 +148,7 @@ To start OSPF process you have to specify the OSPF router.
    This command should NOT be set normally.
 
 .. clicmd:: log-adjacency-changes [detail]
-
+   :daemon: ospfd
 
    Configures ospfd to log changes in adjacency. With the optional
    detail argument, all changes in adjacency status are shown. Without detail,
@@ -161,6 +161,7 @@ To start OSPF process you have to specify the OSPF router.
    Per-interface configuration takes precedence over the default value.
 
 .. clicmd:: timers throttle spf (0-600000) (0-600000) (0-600000)
+   :daemon: ospfd
 
    This command sets the initial `delay`, the `initial-holdtime`
    and the `maximum-holdtime` between when SPF is calculated and the
@@ -202,10 +203,10 @@ To start OSPF process you have to specify the OSPF router.
 
 .. clicmd:: timers throttle lsa all (0-5000)
 
-   This command sets the minumum interval between originations of the
+   This command sets the minimum interval between originations of the
    same LSA or the `minimum LSA refresh interval`. The time is specified
    in milliseconds and the default is 5 seconds (5000 milliseconds) consistent
-   with the architectual constant MinLSInterval specified in Appendix D of
+   with the architectural constant MinLSInterval specified in Appendix D of
    RFC 2328. When a self-originated LSA needs to be reoriginated, it may be
    delayed for up to this interval.
 
@@ -215,16 +216,16 @@ To start OSPF process you have to specify the OSPF router.
        timers throttle lsa all 1000
 
 
-   In this example, the `mininum LSA refresh interval` is set to 1000ms. This
+   In this example, the `minimum LSA refresh interval` is set to 1000ms. This
    command reduces the delay between successive originations of a self-originated
    LSA from 5000 milliseconds to 1000 milliseconds.
 
 .. clicmd:: timers lsa min-arrival (0-5000)
 
-   This command sets the minumum interval between receptions of instances of
+   This command sets the minimum interval between receptions of instances of
    the same LSA or the `minimum LSA arrival interval`. The time is specified in
    milliseconds and the default is 1 second (1000 milliseconds) consistent with
-   the architectual constant MinLSArrival specified in Appendix D of RFC 2328. If a
+   the architectural constant MinLSArrival specified in Appendix D of RFC 2328. If a
    newer instance of the same LSA is received in less than this interval, it is
    ignored.
 
@@ -352,16 +353,18 @@ To start OSPF process you have to specify the OSPF router.
    this can be used to recover it from that state.
 
 .. clicmd:: maximum-paths (1-64)
+   :daemon: ospfd
 
    Use this command to control the maximum number of equal cost paths to reach
    a specific destination. The upper limit may differ if you change the value
    of MULTIPATH_NUM during compilation. The default is MULTIPATH_NUM (64).
 
 .. clicmd:: write-multiplier (1-100)
+   :daemon: ospfd
 
    Use this command to tune the amount of work done in the packet read and
    write threads before relinquishing control. The parameter is the number
-   of packets to process before returning. The defult value of this parameter
+   of packets to process before returning. The default value of this parameter
    is 20.
 
 .. clicmd:: socket buffer <send | recv | all> (1-4000000000)
@@ -375,6 +378,19 @@ To start OSPF process you have to specify the OSPF router.
    packets. This command disables those per-interface sockets, and
    causes ospfd to use a single socket per ospf instance for sending
    and receiving packets.
+
+.. clicmd:: forwarding-address-self
+
+   By default, when an OSPF router redistributes routes into OSPF, it
+   sets the forwarding address field of the resulting next-hop.
+
+   When this command is configured, the router sets the forwarding address
+   field to its own address, causing other routers to send traffic for the
+   redistributed routes to ASBR directly.
+
+   This command is useful in scenarios where the ASBR is multi-homed (ECMP) 
+   and the administrator wants to ensure that traffic for redistributed 
+   routes is sent to the correct next-hop.
 
 .. _ospf-area:
 
@@ -527,10 +543,10 @@ Areas
    Set the cost of default-summary LSAs announced to stubby areas.
 
 .. clicmd:: area A.B.C.D export-list NAME
+   :daemon: ospfd
 
 .. clicmd:: area (0-4294967295) export-list NAME
-
-
+   :daemon: ospfd
 
    Filter Type-3 summary-LSAs announced to other areas originated from intra-
    area paths from specified area.
@@ -554,21 +570,25 @@ Areas
    area.
 
 .. clicmd:: area A.B.C.D import-list NAME
+   :daemon: ospfd
 
 .. clicmd:: area (0-4294967295) import-list NAME
-
-
+   :daemon: ospfd
 
    Same as export-list, but it applies to paths announced into specified area
    as Type-3 summary-LSAs.
 
 .. clicmd:: area A.B.C.D filter-list prefix NAME in
+   :daemon: ospfd
 
 .. clicmd:: area A.B.C.D filter-list prefix NAME out
+   :daemon: ospfd
 
 .. clicmd:: area (0-4294967295) filter-list prefix NAME in
+   :daemon: ospfd
 
 .. clicmd:: area (0-4294967295) filter-list prefix NAME out
+   :daemon: ospfd
 
 
 
@@ -721,6 +741,27 @@ Interfaces
    :clicmd:`ip ospf dead-interval minimal hello-multiplier (2-20)` is also
    specified for the interface.
 
+.. clicmd:: ip ospf dead-timer-reset any-control
+
+   Enable resetting the OSPF neighbor inactivity timer upon receipt of any
+   valid OSPF control packet, not only Hello packets. This implements
+   Recommendation 2 from RFC 4222 to improve adjacency robustness under
+   congestion.
+
+.. clicmd:: ip ospf dscp (all|low-control) (0-63)
+
+   Set the DSCP value applied to OSPF control packets. The ``all`` option
+   marks all OSPF packets with the specified DSCP value. The ``low-control``
+   option marks only low‑priority OSPF control packets.
+
+   Example:
+
+   .. code-block:: frr
+
+      ! mark only low‑priority OSPF control packets with DSCP 40:
+      interface eth0
+        ip ospf dscp low-control 40
+
 .. clicmd:: ip ospf graceful-restart hello-delay (1-1800)
 
    Set the length of time during which Grace-LSAs are sent at 1-second intervals
@@ -818,7 +859,7 @@ Interfaces
    to permit or deny OSPF neighbors by IP source address. This is useful for
    multi-access interfaces where adjacencies with only a subset of the
    reachable neighbors are desired. Applications include testing partially
-   meshed topologies, OSPF Denial of Sevice (DoS) mitigation, and avoidance
+   meshed topologies, OSPF Denial of Service (DoS) mitigation, and avoidance
    of adjacencies with OSPF neighbors not meeting traffic engineering criteria.
 
       Example:
@@ -848,10 +889,11 @@ OSPF route-map
 Usage of *ospfd*'s route-map support.
 
 .. clicmd:: set metric [+|-](0-4294967295)
+   :daemon: ospfd
 
    Set a metric for matched route when sending announcement. Use plus (+) sign
    to add a metric value to an existing metric. Use minus (-) sign to
-   substract a metric value from an existing metric.
+   subtract a metric value from an existing metric.
 
 .. _redistribute-routes-to-ospf:
 
@@ -910,6 +952,7 @@ Redistribution
 
 
 .. clicmd:: distance (1-255)
+   :daemon: ospfd
 
 
 .. clicmd:: distance ospf (intra-area|inter-area|external) (1-255)
@@ -920,7 +963,7 @@ Graceful Restart
 ================
 
 .. clicmd:: graceful-restart [grace-period (1-1800)]
-
+   :daemon: ospfd
 
    Configure Graceful Restart (RFC 3623) restarting support.
    When enabled, the default grace period is 120 seconds.
@@ -933,7 +976,7 @@ Graceful Restart
    it restarts.
 
 .. clicmd:: graceful-restart helper enable [A.B.C.D]
-
+   :daemon: ospfd
 
    Configure Graceful Restart (RFC 3623) helper support.
    By default, helper support is disabled for all neighbors.
@@ -943,7 +986,7 @@ Graceful Restart
    neighbor, the router-id (A.B.C.D) has to be specified.
 
 .. clicmd:: graceful-restart helper strict-lsa-checking
-
+   :daemon: ospfd
 
    If 'strict-lsa-checking' is configured then the helper will
    abort the Graceful Restart when a LSA change occurs which
@@ -951,12 +994,12 @@ Graceful Restart
    By default 'strict-lsa-checking' is enabled"
 
 .. clicmd:: graceful-restart helper supported-grace-time (10-1800)
-
+   :daemon: ospfd
 
    Supports as HELPER for configured grace period.
 
 .. clicmd:: graceful-restart helper planned-only
-
+   :daemon: ospfd
 
    It helps to support as HELPER only for planned
    restarts. By default, it supports both planned and
@@ -1103,11 +1146,12 @@ Traffic Engineering
    support a complete RSVP-TE solution currently.
 
 .. clicmd:: mpls-te on
-
+   :daemon: ospfd
 
    Enable Traffic Engineering LSA flooding.
 
 .. clicmd:: mpls-te router-address <A.B.C.D>
+   :daemon: ospfd
 
    Configure stable IP address for MPLS-TE. This IP address is then advertise
    in Opaque LSA Type-10 TLV=1 (TE) option 1 (Router-Address).
@@ -1121,6 +1165,7 @@ Traffic Engineering
    Type-11. In all case, Opaque-LSA TLV=6.
 
 .. clicmd:: mpls-te export
+   :daemon: ospfd
 
    Export Traffic Engineering Data Base to other daemons through the ZAPI
    Opaque Link State messages.
@@ -1197,12 +1242,14 @@ This is an EXPERIMENTAL support of Segment Routing as per `RFC 8665` for MPLS
 dataplane.
 
 .. clicmd:: segment-routing on
+   :daemon: ospfd
 
    Enable Segment Routing. Even if this also activate routing information
    support, it is preferable to also activate routing information, and set
    accordingly the Area or AS flooding.
 
 .. clicmd:: segment-routing global-block (16-1048575) (16-1048575) [local-block (16-1048575) (16-1048575)]
+   :daemon: ospfd
 
    Set the Segment Routing Global Block i.e. the label range used by MPLS to
    store label in the MPLS FIB for Prefix SID. Optionally also set the Local
@@ -1210,6 +1257,7 @@ dataplane.
    of the command always unsets both ranges.
 
 .. clicmd:: segment-routing node-msd (1-16)
+   :daemon: ospfd
 
    Fix the Maximum Stack Depth supported by the router. The value depend of the
    MPLS dataplane. E.g. for Linux kernel, since version 4.13 it is 32.
@@ -1245,6 +1293,7 @@ Summary Route will be originated on-behalf of all matched external LSAs.
    external LSAs.
 
 .. clicmd:: aggregation timer (5-1800)
+   :daemon: ospfd
 
    Configure aggregation delay timer interval. Summarisation starts only after
    this delay timer expiry. By default, delay interval is 5 seconds.
@@ -1316,7 +1365,7 @@ Debugging OSPF
 
 .. clicmd:: debug ospf [(1-65535)] lsa [aggregate|flooding|generate|install|refresh]
 
-   Enable or disable detail debuggin of Link State Advertisements (LSAs)
+   Enable or disable detail debugging of Link State Advertisements (LSAs)
 
 .. clicmd:: debug ospf [(1-65535)] sr
 
@@ -1335,12 +1384,9 @@ Debugging OSPF
    Enable or disable debugging of ZEBRA API
 
 .. clicmd:: debug ospf [(1-65535)] graceful-restart
+   :daemon: ospfd
 
-   Enable or disable debugying for OSPF Graceful Restart Helper
-
-.. clicmd:: debug ospf [(1-65535)] graceful-restart
-
-   Enable or disable debugging for OSPF Opaque LSA processing
+   Enable or disable debugging for OSPF Graceful Restart Helper
 
 .. clicmd:: show debugging ospf
 

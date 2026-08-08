@@ -145,7 +145,7 @@ static int fe_client_push_sent_msg(struct mgmt_fe_client *client, struct mgmt_ms
 }
 
 /**
- * fe_client_pop_sent_msg() - retreive the sent message for reference and freeing
+ * fe_client_pop_sent_msg() - retrieve the sent message for reference and freeing
  */
 static struct mgmt_msg_header *fe_client_pop_sent_msg(struct mgmt_fe_client *client,
 						      uint64_t session_id, uint64_t req_id,
@@ -266,9 +266,9 @@ int mgmt_fe_send_lockds_req(struct mgmt_fe_client *client, uint64_t session_id, 
 	return ret;
 }
 
-int mgmt_fe_send_commitcfg_req(struct mgmt_fe_client *client, uint64_t session_id, uint64_t req_id,
-			       enum mgmt_ds_id src_ds_id, enum mgmt_ds_id dest_ds_id,
-			       bool validate_only, bool abort, bool unlock)
+int mgmt_fe_send_commit_req(struct mgmt_fe_client *client, uint64_t session_id, uint64_t req_id,
+			    enum mgmt_ds_id src_ds_id, enum mgmt_ds_id dest_ds_id,
+			    bool validate_only, bool abort, bool unlock)
 {
 	struct mgmt_msg_commit *msg;
 	int ret;
@@ -287,8 +287,44 @@ int mgmt_fe_send_commitcfg_req(struct mgmt_fe_client *client, uint64_t session_i
 		msg->action = MGMT_MSG_COMMIT_APPLY;
 	msg->unlock = unlock;
 
-	debug_fe_client("Sending COMMIT message for Src-DS:%s, Dst-DS:%s session-id %Lu",
-			dsid2name(src_ds_id), dsid2name(dest_ds_id), session_id);
+	debug_fe_client("Sending COMMIT message for src: %s dst: %s session-id %Lu action: %s unlock: %d",
+			dsid2name(src_ds_id), dsid2name(dest_ds_id), session_id,
+			msg->action == MGMT_MSG_COMMIT_VALIDATE ? "validate"
+			: msg->action == MGMT_MSG_COMMIT_ABORT	? "abort"
+								: "apply",
+			unlock);
+
+	ret = mgmt_msg_native_send_msg(&client->client.conn, msg, false);
+	ret = fe_client_push_sent_msg(client, (struct mgmt_msg_header *)msg, ret);
+	return ret;
+}
+
+int mgmt_fe_send_notify_select_req(struct mgmt_fe_client *client, uint64_t session_id,
+				   uint64_t req_id, bool replace, uint8_t mode,
+				   uint32_t mode_data, const char **selectors)
+{
+	struct mgmt_msg_notify_select *msg;
+	uint i;
+	int ret;
+
+	msg = mgmt_msg_native_alloc_msg(struct mgmt_msg_notify_select, 0,
+					MTYPE_MSG_NATIVE_NOTIFY_SELECT);
+	msg->refer_id = session_id;
+	msg->req_id = req_id;
+	msg->code = MGMT_MSG_CODE_NOTIFY_SELECT;
+	msg->replace = replace;
+	msg->get_only = 0;
+	msg->subscribing = 0;
+	msg->mode = mode;
+	msg->mode_data = mode_data;
+
+	darr_foreach_i (selectors, i)
+		mgmt_msg_native_add_str(msg, selectors[i]);
+
+	debug_fe_client("Sending NOTIFY_SELECT session-id %" PRIu64 " req-id %" PRIu64
+			" mode=%u mode-data=%u selectors=%u",
+			session_id, req_id, msg->mode, msg->mode_data,
+			darr_len(selectors));
 
 	ret = mgmt_msg_native_send_msg(&client->client.conn, msg, false);
 	ret = fe_client_push_sent_msg(client, (struct mgmt_msg_header *)msg, ret);
@@ -409,6 +445,7 @@ static void fe_client_handle_native_msg(struct mgmt_fe_client *client,
 	struct mgmt_msg_header *orig_msg = NULL;
 	const char *xpath = NULL;
 	const char *data = NULL;
+	const char *info = NULL;
 	uint16_t orig_code;
 	size_t dlen;
 
@@ -525,9 +562,20 @@ static void fe_client_handle_native_msg(struct mgmt_fe_client *client,
 								  commit_msg->unlock,
 								  err_msg->errstr);
 			break;
+		case MGMT_MSG_CODE_EDIT:
+			if (!session->client->cbs.edit_notify)
+				goto generic_error_handler;
+			edit_msg = (typeof(edit_msg))orig_msg;
+			xpath = mgmt_msg_native_xpath_decode(edit_msg,
+							     mgmt_msg_native_get_msg_len(edit_msg));
+			session->client->cbs.edit_notify(client, client->user_data,
+							 session->client_id, msg->refer_id,
+							 session->user_ctx, msg->req_id, xpath,
+							 err_msg->error ?: -EINVAL,
+							 err_msg->errstr);
+			break;
 		case MGMT_MSG_CODE_GET_DATA:
 		case MGMT_MSG_CODE_ERROR:
-		case MGMT_MSG_CODE_EDIT:
 		case MGMT_MSG_CODE_NOTIFY:
 		case MGMT_MSG_CODE_RPC:
 generic_error_handler:
@@ -552,13 +600,20 @@ generic_error_handler:
 		if (!session->client->cbs.commit_config_notify)
 			break;
 		commit_msg = (typeof(commit_msg))msg;
+		if (msg_len > sizeof(*commit_msg)) {
+			if (!MGMT_MSG_VALIDATE_NUL_TERM(commit_msg, msg_len)) {
+				log_err_fe_client("Corrupt commit-reply msg recv");
+				break;
+			}
+			info = (const char *)(commit_msg + 1);
+		}
 		session->client->cbs.commit_config_notify(client, client->user_data,
 							  session->client_id, session->session_id,
 							  session->user_ctx, msg->req_id, true,
 							  commit_msg->source, commit_msg->target,
 							  commit_msg->action ==
 								  MGMT_MSG_COMMIT_VALIDATE,
-							  commit_msg->unlock, NULL);
+							  commit_msg->unlock, info);
 
 		break;
 	case MGMT_MSG_CODE_LOCK_REPLY:
@@ -596,21 +651,25 @@ generic_error_handler:
 
 		edit_msg = (typeof(edit_msg))msg;
 		if (msg_len < sizeof(*edit_msg)) {
-			log_err_fe_client("Corrupt edit-reply msg recv");
+			log_err_fe_client("Corrupt edit-reply msg recv: short len");
 			break;
 		}
 
 		xpath = mgmt_msg_native_xpath_decode(edit_msg, msg_len);
 		if (!xpath) {
-			log_err_fe_client("Corrupt edit-reply msg recv");
+			log_err_fe_client("Corrupt edit-reply msg recv: no xpath");
 			break;
 		}
 
-		session->client->cbs.edit_notify(client, client->user_data,
-						 session->client_id,
-						 msg->refer_id,
-						 session->user_ctx, msg->req_id,
-						 xpath);
+		info = mgmt_msg_native_data_decode(edit_msg, msg_len);
+		if (info && !MGMT_MSG_VALIDATE_NUL_TERM(edit_msg, msg_len)) {
+			log_err_fe_client("Corrupt edit-reply msg recv: bad info");
+			break;
+		}
+
+		session->client->cbs.edit_notify(client, client->user_data, session->client_id,
+						 msg->refer_id, session->user_ctx, msg->req_id,
+						 xpath, 0, info);
 		break;
 	case MGMT_MSG_CODE_RPC_REPLY:
 		if (!session->client->cbs.rpc_notify)
@@ -695,7 +754,7 @@ static void mgmt_fe_client_process_msg(uint8_t version, uint8_t *data,
 		return;
 	}
 
-	log_err_fe_client("Protobuf no longer used in backend API");
+	log_err_fe_client("Protobuf no longer used in frontend API");
 	msg_conn_disconnect(&client->client.conn, true);
 }
 
@@ -774,9 +833,8 @@ DEFPY(debug_mgmt_client_fe, debug_mgmt_client_fe_cmd,
  * Initialize library and try connecting with MGMTD.
  */
 struct mgmt_fe_client *mgmt_fe_client_create(const char *client_name,
-					     struct mgmt_fe_client_cbs *cbs,
-					     uintptr_t user_data,
-					     struct event_loop *event_loop)
+					     struct mgmt_fe_client_cbs *cbs, uintptr_t user_data,
+					     bool is_mgmtd, struct event_loop *event_loop)
 {
 	struct mgmt_fe_client *client;
 	char server_path[MAXPATHLEN];
@@ -796,12 +854,10 @@ struct mgmt_fe_client *mgmt_fe_client_create(const char *client_name,
 
 	snprintf(server_path, sizeof(server_path), MGMTD_FE_SOCK_NAME);
 
-	msg_client_init(&client->client, event_loop, server_path,
-			mgmt_fe_client_notify_connect,
-			mgmt_fe_client_notify_disconnect,
-			mgmt_fe_client_process_msg, MGMTD_FE_MAX_NUM_MSG_PROC,
-			MGMTD_FE_MAX_NUM_MSG_WRITE, MGMTD_FE_MAX_MSG_LEN, true,
-			"FE-client", debug_check_fe_client());
+	msg_client_init(&client->client, event_loop, server_path, mgmt_fe_client_notify_connect,
+			mgmt_fe_client_notify_disconnect, mgmt_fe_client_process_msg,
+			MGMTD_FE_MAX_NUM_MSG_PROC, MGMTD_FE_MAX_NUM_MSG_WRITE,
+			MGMTD_FE_MAX_MSG_LEN, is_mgmtd, "FE-client", debug_check_fe_client());
 
 	debug_fe_client("Initialized client '%s'", client_name);
 

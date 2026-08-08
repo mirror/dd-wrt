@@ -256,7 +256,7 @@ struct community_list *community_list_lookup(struct community_list_handler *ch,
 
 	lookup.name = (char *)name;
 	lookup.name_hash = name_hash;
-	return hash_get(cm->hash, &lookup, NULL);
+	return hash_lookup(cm->hash, &lookup);
 }
 
 static struct community_list *
@@ -1420,7 +1420,7 @@ void extcommunity_list_unset(struct community_list_handler *ch,
 	route_map_notify_dependencies(name, RMAP_EVENT_ECLIST_DELETED);
 }
 
-/* Initializa community-list.  Return community-list handler.  */
+/* Initialize community-list.  Return community-list handler.  */
 struct community_list_handler *community_list_init(void)
 {
 	struct community_list_handler *ch;
@@ -1456,21 +1456,21 @@ void community_list_terminate(struct community_list_handler *ch)
 		community_list_delete(cm, list);
 	while ((list = cm->str.head) != NULL)
 		community_list_delete(cm, list);
-	hash_free(cm->hash);
+	hash_clean_and_free(&cm->hash, NULL);
 
 	cm = &ch->lcommunity_list;
 	while ((list = cm->num.head) != NULL)
 		community_list_delete(cm, list);
 	while ((list = cm->str.head) != NULL)
 		community_list_delete(cm, list);
-	hash_free(cm->hash);
+	hash_clean_and_free(&cm->hash, NULL);
 
 	cm = &ch->extcommunity_list;
 	while ((list = cm->num.head) != NULL)
 		community_list_delete(cm, list);
 	while ((list = cm->str.head) != NULL)
 		community_list_delete(cm, list);
-	hash_free(cm->hash);
+	hash_clean_and_free(&cm->hash, NULL);
 
 	XFREE(MTYPE_COMMUNITY_LIST_HANDLER, ch);
 }

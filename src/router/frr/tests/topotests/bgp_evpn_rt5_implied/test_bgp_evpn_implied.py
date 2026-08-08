@@ -43,7 +43,7 @@ from lib.topolog import logger
 
 # Required to instantiate the topology builder class.
 
-pytestmark = [pytest.mark.bgpd]
+pytestmark = [pytest.mark.bgpd, pytest.mark.evpn]
 
 
 def build_topo(tgen):
@@ -141,6 +141,7 @@ def teardown_module(_mod):
     tgen.net["r1"].delete_netns("vrf-102")
     tgen.stop_topology()
 
+
 def _create_rmac(router, vrf):
     """
     Creates RMAC for a given router and vrf
@@ -192,32 +193,36 @@ def test_protocols_check_implied_is_working():
         "defaultLocPrf": 100,
         "localAS": 65000,
         "routes": {
-            "10.0.101.1/32": [{
-                "valid": True,
-                "bestpath": True,
-                "pathFrom": "internal",
-                "prefix": "10.0.101.1",
-                "prefixLen": 32,
-                "network": "10.0.101.1/32",
-                "metric": 0,
-                "locPrf": 100,
-                "weight": 0,
-                "peerId": "192.168.2.101",
-                "path": "",
-                "origin": "IGP",
-                "announceNexthopSelf": True,
-                "nexthops": [{
-                    "ip": "192.168.1.1",
-                    "hostname": "rr",
-                    "afi": "ipv4",
-                    "used": True
-                }]
-            }]
+            "10.0.101.1/32": [
+                {
+                    "valid": True,
+                    "bestpath": True,
+                    "pathFrom": "internal",
+                    "prefix": "10.0.101.1",
+                    "prefixLen": 32,
+                    "network": "10.0.101.1/32",
+                    "metric": 0,
+                    "locPrf": 100,
+                    "weight": 0,
+                    "peerId": "192.168.2.101",
+                    "path": "",
+                    "origin": "IGP",
+                    "announceNexthopSelf": True,
+                    "nexthops": [
+                        {
+                            "ip": "192.168.1.1",
+                            "hostname": "rr",
+                            "afi": "ipv4",
+                            "used": True,
+                        }
+                    ],
+                }
+            ]
         },
         "totalRoutes": 1,
-        "totalPaths": 1
+        "totalPaths": 1,
     }
-    
+
     test_func = partial(
         topotest.router_json_cmp,
         r2,
@@ -235,32 +240,36 @@ def test_protocols_check_implied_is_working():
         "defaultLocPrf": 100,
         "localAS": 65000,
         "routes": {
-            "10.0.102.1/32": [{
-                "valid": True,
-                "bestpath": True,
-                "pathFrom": "internal",
-                "prefix": "10.0.102.1",
-                "prefixLen": 32,
-                "network": "10.0.102.1/32",
-                "metric": 0,
-                "locPrf": 100,
-                "weight": 0,
-                "peerId": "192.168.2.101",
-                "path": "",
-                "origin": "IGP",
-                "announceNexthopSelf": True,
-                "nexthops": [{
-                    "ip": "192.168.1.1",
-                    "hostname": "rr",
-                    "afi": "ipv4",
-                    "used": True
-                }]
-            }]
+            "10.0.102.1/32": [
+                {
+                    "valid": True,
+                    "bestpath": True,
+                    "pathFrom": "internal",
+                    "prefix": "10.0.102.1",
+                    "prefixLen": 32,
+                    "network": "10.0.102.1/32",
+                    "metric": 0,
+                    "locPrf": 100,
+                    "weight": 0,
+                    "peerId": "192.168.2.101",
+                    "path": "",
+                    "origin": "IGP",
+                    "announceNexthopSelf": True,
+                    "nexthops": [
+                        {
+                            "ip": "192.168.1.1",
+                            "hostname": "rr",
+                            "afi": "ipv4",
+                            "used": True,
+                        }
+                    ],
+                }
+            ]
         },
         "totalRoutes": 1,
-        "totalPaths": 1
+        "totalPaths": 1,
     }
-    
+
     test_func_vrf102 = partial(
         topotest.router_json_cmp,
         r2,
@@ -273,71 +282,83 @@ def test_protocols_check_implied_is_working():
 
     # Check that routes are properly added to VRF routing table
     expected_ip_route_vrf101 = {
-        "10.0.101.1/32": [{
-            "prefix": "10.0.101.1/32",
-            "prefixLen": 32,
-            "protocol": "bgp",
-            "vrfName": "vrf-101",
-            "selected": True,
-            "destSelected": True,
-            "distance": 200,
-            "metric": 0,
-            "installed": True,
-            "nexthops": [{
-                "flags": 267,
-                "fib": True,
-                "ip": "192.168.1.1",
-                "afi": "ipv4",
-                "interfaceName": "bridge-101",
-                "active": True,
-                "onLink": True,
-                "weight": 1
-            }]
-        }],
+        "10.0.101.1/32": [
+            {
+                "prefix": "10.0.101.1/32",
+                "prefixLen": 32,
+                "protocol": "bgp",
+                "vrfName": "vrf-101",
+                "selected": True,
+                "destSelected": True,
+                "distance": 200,
+                "metric": 0,
+                "installed": True,
+                "nexthops": [
+                    {
+                        "flags": 267,
+                        "fib": True,
+                        "ip": "192.168.1.1",
+                        "afi": "ipv4",
+                        "interfaceName": "bridge-101",
+                        "active": True,
+                        "onLink": True,
+                        "weight": 1,
+                    }
+                ],
+            }
+        ],
     }
-    
+
     test_func_ip_route = partial(
         topotest.router_json_cmp,
         r2,
         "show ip route vrf vrf-101 json",
         expected_ip_route_vrf101,
     )
-    _, result_ip_route = topotest.run_and_expect(test_func_ip_route, None, count=20, wait=1)
+    _, result_ip_route = topotest.run_and_expect(
+        test_func_ip_route, None, count=20, wait=1
+    )
     assertmsg_ip_route = '"r2" IP route VRF vrf-101 JSON output mismatches'
     assert result_ip_route is None, assertmsg_ip_route
 
     # Check that routes are properly added to VRF-102 routing table
     expected_ip_route_vrf102 = {
-        "10.0.102.1/32": [{
-            "prefix": "10.0.102.1/32",
-            "prefixLen": 32,
-            "protocol": "bgp",
-            "vrfName": "vrf-102",
-            "selected": True,
-            "destSelected": True,
-            "distance": 200,
-            "metric": 0,
-            "installed": True,
-            "nexthops": [{
-                "flags": 267,
-                "fib": True,
-                "ip": "192.168.1.1",
-                "afi": "ipv4",
-                "interfaceName": "bridge-102",
-                "active": True,
-                "onLink": True,
-                "weight": 1
-            }]
-        }],
+        "10.0.102.1/32": [
+            {
+                "prefix": "10.0.102.1/32",
+                "prefixLen": 32,
+                "protocol": "bgp",
+                "vrfName": "vrf-102",
+                "selected": True,
+                "destSelected": True,
+                "distance": 200,
+                "metric": 0,
+                "installed": True,
+                "nexthops": [
+                    {
+                        "flags": 267,
+                        "fib": True,
+                        "ip": "192.168.1.1",
+                        "afi": "ipv4",
+                        "interfaceName": "bridge-102",
+                        "active": True,
+                        "onLink": True,
+                        "weight": 1,
+                    }
+                ],
+            }
+        ],
     }
-    
+
     test_func_ip_route_vrf102 = partial(
         topotest.router_json_cmp,
         r2,
         "show ip route vrf vrf-102 json",
         expected_ip_route_vrf102,
     )
-    _, result_ip_route_vrf102 = topotest.run_and_expect(test_func_ip_route_vrf102, None, count=20, wait=1)
+    _, result_ip_route_vrf102 = topotest.run_and_expect(
+        test_func_ip_route_vrf102, None, count=20, wait=1
+    )
     assertmsg_ip_route_vrf102 = '"r2" IP route VRF vrf-102 JSON output mismatches'
     assert result_ip_route_vrf102 is None, assertmsg_ip_route_vrf102
 

@@ -17,6 +17,9 @@
 #include "bgpd/bgp_table.h"
 #include "bgp_addpath.h"
 #include "bgp_trace.h"
+#include "bgp_mpath.h"
+#include "bgp_ls.h"
+#include "bgp_srv6.h"
 
 void bgp_table_lock(struct bgp_table *rt)
 {
@@ -31,6 +34,9 @@ void bgp_table_unlock(struct bgp_table *rt)
 	if (rt->lock != 0) {
 		return;
 	}
+
+	/* Cleanup pi_hash in bgp_table */
+	bgp_pi_hash_fini(&rt->pi_hash);
 
 	route_table_finish(rt->route_table);
 	rt->route_table = NULL;
@@ -83,14 +89,38 @@ inline struct bgp_dest *bgp_dest_unlock_node(struct bgp_dest *dest)
 
 	if (rn->lock == 1) {
 		struct bgp_table *rt = bgp_dest_table(dest);
+
+
 		if (rt->bgp) {
 			bgp_addpath_free_node_data(&rt->bgp->tx_addpath,
 						   &dest->tx_addpath, rt->afi,
 						   rt->safi);
 		}
+
+		/* Free mpath if exists */
+		if (dest->mpath)
+			bgp_path_info_mpath_free(&dest->mpath);
+
+		if (dest->ls_nlri) {
+			if (rt->bgp && rt->bgp->ls_info)
+				bgp_ls_nlri_hash_del(&rt->bgp->ls_info->nlri_hash, dest->ls_nlri);
+			bgp_ls_nlri_free(dest->ls_nlri);
+		}
+
+		/*
+		 * Release any SRv6 unicast prefix-sid descriptor still
+		 * attached to this dest before the dest itself is freed.
+		 * Normally bgp_cleanup_table() reaps these at instance
+		 * teardown, but a dest can also be freed mid-run when its
+		 * last path is reaped (e.g. peer flap, route withdrawal),
+		 * which bypasses the cleanup walk and leaks the descriptor.
+		 */
+		if (dest->srv6_unicast)
+			bgp_srv6_unicast_unregister_route(dest);
+
 		XFREE(MTYPE_BGP_NODE, dest);
 		dest = NULL;
-		rn->info = NULL;
+		route_node_set_info(rn, NULL);
 	}
 	route_unlock_node(rn);
 
@@ -113,8 +143,25 @@ static void bgp_node_destroy(route_table_delegate_t *delegate,
 						   &dest->tx_addpath,
 						   rt->afi, rt->safi);
 		}
+
+		/* Free mpath if exists */
+		if (dest->mpath)
+			bgp_path_info_mpath_free(&dest->mpath);
+
+		/*
+		 * As in bgp_dest_unlock_node_debug(), make sure any
+		 * lingering SRv6 unicast descriptor is released before
+		 * the dest itself goes away.  This path is hit when a
+		 * route_table is force-finished (e.g. via
+		 * bgp_table_finish() during instance teardown) while
+		 * one or more dests still carry their dest->srv6_unicast
+		 * pointer.
+		 */
+		if (dest->srv6_unicast)
+			bgp_srv6_unicast_unregister_route(dest);
+
 		XFREE(MTYPE_BGP_NODE, dest);
-		node->info = NULL;
+		route_node_set_info(node, NULL);
 	}
 
 	if (node->p.family == AF_FLOWSPEC)
@@ -141,6 +188,10 @@ struct bgp_table *bgp_table_init(struct bgp *bgp, afi_t afi, safi_t safi)
 
 	rt->route_table = route_table_init_with_delegate(&bgp_table_delegate);
 
+	/* For EVPN, use a direct-lookup table mode, not an IP-oriented trie */
+	if (safi == SAFI_EVPN)
+		route_table_set_unique_mode(rt->route_table);
+
 	/*
 	 * Set up back pointer to bgp_table.
 	 */
@@ -154,6 +205,7 @@ struct bgp_table *bgp_table_init(struct bgp *bgp, afi_t afi, safi_t safi)
 	bgp_table_lock(rt);
 	rt->afi = afi;
 	rt->safi = safi;
+	bgp_pi_hash_init(&rt->pi_hash);
 
 	return rt;
 }
@@ -193,12 +245,19 @@ void bgp_delete_listnode(struct bgp_dest *dest)
 struct bgp_dest *bgp_table_subtree_lookup(const struct bgp_table *table,
 					  const struct prefix *p)
 {
-	struct bgp_dest *dest = bgp_dest_from_rnode(table->route_table->top);
+	struct bgp_dest *dest;
 	struct bgp_dest *matched = NULL;
 
+	/* Unique-mode case is special; no iteration or prefix search */
+	if (route_table_is_unique_mode(table->route_table)) {
+		dest = bgp_node_lookup(table, p);
+		return dest;
+	}
+
+	/* Search in LPM table */
+	dest = bgp_dest_from_rnode(table->route_table->top);
 	if (dest == NULL)
 		return NULL;
-
 
 	while (dest) {
 		const struct prefix *dest_p = bgp_dest_get_prefix(dest);

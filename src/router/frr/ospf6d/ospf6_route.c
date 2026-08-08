@@ -249,7 +249,7 @@ bool ospf6_route_cmp_nexthops(struct ospf6_route *a, struct ospf6_route *b)
 					if (ospf6_nexthop_is_same(anh, bnh))
 						identical = true;
 				}
-				/* Currnet List A element not found List B
+				/* Current List A element not found List B
 				 * Non-Identical lists return */
 				if (identical == false)
 					return false;
@@ -484,6 +484,7 @@ struct ospf6_route *ospf6_route_copy(struct ospf6_route *route)
 	new->route_option = route->route_option;
 	new->linkstate_id = route->linkstate_id;
 	new->path = route->path;
+	new->connected = route->connected;
 	ospf6_copy_nexthops(new->nh_list, route->nh_list);
 	ospf6_copy_paths(new->paths, route->paths);
 	new->rnode = NULL;
@@ -796,6 +797,18 @@ struct ospf6_route *ospf6_route_add(struct ospf6_route *route,
 					(void *)table, (void *)route,
 					route->path.cost, (void *)next,
 					next->path.cost);
+
+			/*
+			 * When a connected route from zebra is seen, it `wins`
+			 * and we need to remove the ospf6 route that was
+			 * already installed that would shadow this connected
+			 * route in the zebra rib.  So let's just send an
+			 * explicit delete to cover this special case.
+			 */
+			if (route->connected && !next->connected &&
+			    table->scope_type == OSPF6_SCOPE_TYPE_GLOBAL)
+				ospf6_zebra_route_delete_prefix(route,
+								(struct ospf6 *)table->scope);
 		}
 
 		route->installed = now;

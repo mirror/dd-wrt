@@ -26,44 +26,13 @@
 #include "zebra/zebra_vrf.h"
 #include "zebra/zebra_vxlan.h"
 #include "zebra/zebra_vxlan_if.h"
+#include "zebra/zebra_dplane.h"
 #include "zebra/zebra_evpn.h"
 #include "zebra/zebra_evpn_mh.h"
 #include "zebra/zebra_evpn_neigh.h"
 #include "zebra/zebra_evpn_mac.h"
 
 DEFINE_MTYPE_STATIC(ZEBRA, NEIGH, "EVI Neighbor");
-
-/*
- * Make hash key for neighbors.
- */
-static unsigned int neigh_hash_keymake(const void *p)
-{
-	const struct zebra_neigh *n = p;
-	const struct ipaddr *ip = &n->ip;
-
-	if (IS_IPADDR_V4(ip))
-		return jhash_1word(ip->ipaddr_v4.s_addr, 0);
-
-	return jhash2(ip->ipaddr_v6.s6_addr32,
-		      array_size(ip->ipaddr_v6.s6_addr32), 0);
-}
-
-/*
- * Compare two neighbor hash structures.
- */
-static bool neigh_cmp(const void *p1, const void *p2)
-{
-	const struct zebra_neigh *n1 = p1;
-	const struct zebra_neigh *n2 = p2;
-
-	if (n1 == NULL && n2 == NULL)
-		return true;
-
-	if (n1 == NULL || n2 == NULL)
-		return false;
-
-	return ipaddr_cmp(&n1->ip, &n2->ip) == 0;
-}
 
 int neigh_list_cmp(void *p1, void *p2)
 {
@@ -73,51 +42,35 @@ int neigh_list_cmp(void *p1, void *p2)
 	return ipaddr_cmp(&n1->ip, &n2->ip);
 }
 
-struct hash *zebra_neigh_db_create(const char *desc)
-{
-	return hash_create_size(8, neigh_hash_keymake, neigh_cmp, desc);
-}
-
 uint32_t num_dup_detected_neighs(struct zebra_evpn *zevpn)
 {
-	unsigned int i;
 	uint32_t num_neighs = 0;
-	struct hash *hash;
-	struct hash_bucket *hb;
 	struct zebra_neigh *nbr;
 
-	hash = zevpn->neigh_table;
-	if (!hash)
-		return num_neighs;
-	for (i = 0; i < hash->size; i++) {
-		for (hb = hash->index[i]; hb; hb = hb->next) {
-			nbr = (struct zebra_neigh *)hb->data;
-			if (CHECK_FLAG(nbr->flags, ZEBRA_NEIGH_DUPLICATE))
-				num_neighs++;
-		}
-	}
+	frr_each (zebra_neigh_db, zevpn->neigh_table, nbr)
+		if (CHECK_FLAG(nbr->flags, ZEBRA_NEIGH_DUPLICATE))
+			num_neighs++;
 
 	return num_neighs;
 }
 
-/*
- * Helper function to determine maximum width of neighbor IP address for
- * display - just because we're dealing with IPv6 addresses that can
- * widely vary.
- */
-void zebra_evpn_find_neigh_addr_width(struct hash_bucket *bucket, void *ctxt)
+void zebra_evpn_find_neigh_addr_width(const struct zebra_neigh_db_head *table,
+				      int *restrict addr_width, int *restrict r_vtep_width)
 {
-	struct zebra_neigh *n;
-	char buf[INET6_ADDRSTRLEN];
-	struct neigh_walk_ctx *wctx = ctxt;
-	int width;
+	const struct zebra_neigh *n;
 
-	n = (struct zebra_neigh *)bucket->data;
+	frr_each (zebra_neigh_db_const, table, n) {
+		char buf[INET6_ADDRSTRLEN];
+		int width;
 
-	ipaddr2str(&n->ip, buf, sizeof(buf));
-	width = strlen(buf);
-	if (width > wctx->addr_width)
-		wctx->addr_width = width;
+		width = strlen(ipaddr2str(&n->ip, buf, sizeof(buf)));
+		if (width > *addr_width)
+			*addr_width = width;
+
+		width = strlen(ipaddr2str(&n->r_vtep_ip, buf, sizeof(buf)));
+		if (width > *r_vtep_width)
+			*r_vtep_width = width;
+	}
 }
 
 /*
@@ -150,7 +103,7 @@ int zebra_evpn_rem_neigh_install(struct zebra_evpn *zevpn,
 	if (!(n->flags & ZEBRA_NEIGH_REMOTE))
 		return 0;
 
-	vlan_if = zevpn_map_to_svi(zevpn);
+	vlan_if = zevpn_map_to_svi(zevpn, true);
 	if (!vlan_if)
 		return -1;
 
@@ -167,16 +120,10 @@ int zebra_evpn_rem_neigh_install(struct zebra_evpn *zevpn,
 /*
  * Install neighbor hash entry - called upon access VLAN change.
  */
-void zebra_evpn_install_neigh_hash(struct hash_bucket *bucket, void *ctxt)
+void zebra_evpn_install_neigh_hash(struct zebra_evpn *zevpn, struct zebra_neigh *n)
 {
-	struct zebra_neigh *n;
-	struct neigh_walk_ctx *wctx = ctxt;
-
-	n = (struct zebra_neigh *)bucket->data;
-
 	if (CHECK_FLAG(n->flags, ZEBRA_NEIGH_REMOTE))
-		zebra_evpn_rem_neigh_install(wctx->zevpn, n,
-					     false /*was_static*/);
+		zebra_evpn_rem_neigh_install(zevpn, n, false /*was_static*/);
 }
 
 /*
@@ -324,7 +271,7 @@ int zebra_evpn_neigh_send_del_to_client(vni_t vni, struct ipaddr *ip,
 	}
 
 	return zebra_evpn_macip_send_msg_to_client(
-		vni, macaddr, ip, flags, 0, state, NULL, ZEBRA_MACIP_DEL);
+		vni, macaddr, ip, 0, 0, state, NULL, ZEBRA_MACIP_DEL);
 }
 
 static void zebra_evpn_neigh_send_add_del_to_client(struct zebra_neigh *n,
@@ -442,7 +389,7 @@ static void zebra_evpn_neigh_hold_exp_cb(struct event *t)
 
 static inline void zebra_evpn_neigh_start_hold_timer(struct zebra_neigh *n)
 {
-	if (n->hold_timer)
+	if (event_is_scheduled(n->hold_timer))
 		return;
 
 	if (IS_ZEBRA_DEBUG_EVPN_MH_NEIGH && n->zevpn)
@@ -553,13 +500,18 @@ static struct zebra_neigh *zebra_evpn_neigh_add(struct zebra_evpn *zevpn,
 
 	memset(&tmp_n, 0, sizeof(tmp_n));
 	memcpy(&tmp_n.ip, ip, sizeof(struct ipaddr));
-	n = hash_get(zevpn->neigh_table, &tmp_n, zebra_evpn_neigh_alloc);
+	n = zebra_neigh_db_find(zevpn->neigh_table, &tmp_n);
+	if (!n) {
+		n = zebra_evpn_neigh_alloc(&tmp_n);
+		zebra_neigh_db_add(zevpn->neigh_table, n);
+	}
 
 	n->state = ZEBRA_NEIGH_INACTIVE;
 	n->zevpn = zevpn;
-	n->dad_ip_auto_recovery_timer = NULL;
+	event_cancel(&n->dad_ip_auto_recovery_timer);
 	n->flags = n_flags;
 	n->uptime = monotime(NULL);
+	n->gr_refresh_time = monotime(NULL);
 
 	if (!zmac)
 		zmac = zebra_evpn_mac_lookup(zevpn, mac);
@@ -574,8 +526,6 @@ static struct zebra_neigh *zebra_evpn_neigh_add(struct zebra_evpn *zevpn,
  */
 int zebra_evpn_neigh_del(struct zebra_evpn *zevpn, struct zebra_neigh *n)
 {
-	struct zebra_neigh *tmp_n;
-
 	if (n->mac)
 		listnode_delete(n->mac->neigh_list, n);
 
@@ -586,8 +536,8 @@ int zebra_evpn_neigh_del(struct zebra_evpn *zevpn, struct zebra_neigh *n)
 	zebra_evpn_neigh_stop_hold_timer(n);
 
 	/* Free the VNI hash entry and allocated memory. */
-	tmp_n = hash_release(zevpn->neigh_table, n);
-	XFREE(MTYPE_NEIGH, tmp_n);
+	zebra_neigh_db_del(zevpn->neigh_table, n);
+	XFREE(MTYPE_NEIGH, n);
 
 	return 0;
 }
@@ -671,7 +621,7 @@ struct zebra_neigh *zebra_evpn_proc_sync_neigh_update(
 	ifindex_t ifindex = 0;
 
 	/* locate l3-svi */
-	ifp = zevpn_map_to_svi(zevpn);
+	ifp = zevpn_map_to_svi(zevpn, true);
 	if (ifp)
 		ifindex = ifp->ifindex;
 
@@ -724,7 +674,7 @@ struct zebra_neigh *zebra_evpn_proc_sync_neigh_update(
 		}
 		/* clear old fwd info */
 		n->rem_seq = 0;
-		n->r_vtep_ip.s_addr = 0;
+		memset(&n->r_vtep_ip.ip.addr, 0, sizeof(n->r_vtep_ip.ip));
 
 		/* setup new flags */
 		n->flags = 0;
@@ -793,6 +743,7 @@ struct zebra_neigh *zebra_evpn_proc_sync_neigh_update(
 		}
 
 		n->uptime = monotime(NULL);
+		n->gr_refresh_time = monotime(NULL);
 	}
 
 	/* update the neigh seq. we don't bother with the mac seq as
@@ -855,7 +806,7 @@ static int zebra_evpn_neigh_uninstall(struct zebra_evpn *zevpn,
 	if (!(n->flags & ZEBRA_NEIGH_REMOTE))
 		return 0;
 
-	vlan_if = zevpn_map_to_svi(zevpn);
+	vlan_if = zevpn_map_to_svi(zevpn, false);
 	if (!vlan_if)
 		return -1;
 
@@ -868,60 +819,45 @@ static int zebra_evpn_neigh_uninstall(struct zebra_evpn *zevpn,
 }
 
 /*
- * Free neighbor hash entry (callback)
+ * Delete all neighbor entries for this EVPN.
  */
-static void zebra_evpn_neigh_del_hash_entry(struct hash_bucket *bucket,
-					    void *arg)
+void zebra_evpn_neigh_del_all(struct zebra_evpn *zevpn, int uninstall, int upd_client,
+			      uint32_t flags, struct l2vni_walk_ctx *l2_wctx)
 {
-	struct neigh_walk_ctx *wctx = arg;
-	struct zebra_neigh *n = bucket->data;
+	struct zebra_neigh *n;
 
-	if (((wctx->flags & DEL_LOCAL_NEIGH) && (n->flags & ZEBRA_NEIGH_LOCAL))
-	    || ((wctx->flags & DEL_REMOTE_NEIGH)
-		&& (n->flags & ZEBRA_NEIGH_REMOTE))
-	    || ((wctx->flags & DEL_REMOTE_NEIGH_FROM_VTEP)
-		&& (n->flags & ZEBRA_NEIGH_REMOTE)
-		&& IPV4_ADDR_SAME(&n->r_vtep_ip, &wctx->r_vtep_ip))) {
-		if (wctx->upd_client && (n->flags & ZEBRA_NEIGH_LOCAL))
-			zebra_evpn_neigh_send_del_to_client(
-				wctx->zevpn->vni, &n->ip, &n->emac, n->flags,
-				n->state, false /*force*/);
+	frr_each_safe (zebra_neigh_db, zevpn->neigh_table, n) {
+		bool hit_local = (flags & DEL_LOCAL_NEIGH) && (n->flags & ZEBRA_NEIGH_LOCAL);
+		bool hit_remote = (flags & DEL_REMOTE_NEIGH) && (n->flags & ZEBRA_NEIGH_REMOTE);
 
-		if (wctx->uninstall) {
+		if (!hit_local && !hit_remote)
+			continue;
+
+		/*
+		 * If we are doing stale cleanup of remote neighs
+		 * and if this neigh is not marked stale, then don't delete it.
+		 */
+		if (l2_wctx && l2_wctx->gr_stale_cleanup &&
+		    CHECK_FLAG(n->flags, ZEBRA_NEIGH_REMOTE) &&
+		    (n->gr_refresh_time > l2_wctx->gr_cleanup_time))
+			continue;
+
+		if (upd_client && (n->flags & ZEBRA_NEIGH_LOCAL))
+			zebra_evpn_neigh_send_del_to_client(zevpn->vni, &n->ip, &n->emac, n->flags,
+							    n->state, false /*force*/);
+
+		if (uninstall) {
 			if (zebra_evpn_neigh_is_static(n))
 				zebra_evpn_sync_neigh_dp_install(
 					n, false /* set_inactive */,
 					true /* force_clear_static */,
 					__func__);
 			if ((n->flags & ZEBRA_NEIGH_REMOTE))
-				zebra_evpn_neigh_uninstall(wctx->zevpn, n);
+				zebra_evpn_neigh_uninstall(zevpn, n);
 		}
 
-		zebra_evpn_neigh_del(wctx->zevpn, n);
+		zebra_evpn_neigh_del(zevpn, n);
 	}
-
-	return;
-}
-
-/*
- * Delete all neighbor entries for this EVPN.
- */
-void zebra_evpn_neigh_del_all(struct zebra_evpn *zevpn, int uninstall,
-			      int upd_client, uint32_t flags)
-{
-	struct neigh_walk_ctx wctx;
-
-	if (!zevpn->neigh_table)
-		return;
-
-	memset(&wctx, 0, sizeof(wctx));
-	wctx.zevpn = zevpn;
-	wctx.uninstall = uninstall;
-	wctx.upd_client = upd_client;
-	wctx.flags = flags;
-
-	hash_iterate(zevpn->neigh_table, zebra_evpn_neigh_del_hash_entry,
-		     &wctx);
 }
 
 /*
@@ -935,7 +871,7 @@ struct zebra_neigh *zebra_evpn_neigh_lookup(struct zebra_evpn *zevpn,
 
 	memset(&tmp, 0, sizeof(tmp));
 	memcpy(&tmp.ip, ip, sizeof(struct ipaddr));
-	n = hash_lookup(zevpn->neigh_table, &tmp);
+	n = zebra_neigh_db_find(zevpn->neigh_table, &tmp);
 
 	return n;
 }
@@ -1163,9 +1099,9 @@ static void zebra_evpn_dad_ip_auto_recovery_exp(struct event *t)
 	}
 }
 
-static void zebra_evpn_dup_addr_detect_for_neigh(
-	struct zebra_vrf *zvrf, struct zebra_neigh *nbr, struct in_addr vtep_ip,
-	bool do_dad, bool *is_dup_detect, bool is_local)
+static void zebra_evpn_dup_addr_detect_for_neigh(struct zebra_vrf *zvrf, struct zebra_neigh *nbr,
+						 struct ipaddr *vtep_ip, bool do_dad,
+						 bool *is_dup_detect, bool is_local)
 {
 
 	struct timeval elapsed = {0, 0};
@@ -1190,7 +1126,7 @@ static void zebra_evpn_dup_addr_detect_for_neigh(
 			*is_dup_detect = true;
 
 		/* warn-only action, neigh will be installed.
-		 * freeze action, it wil not be installed.
+		 * freeze action, it will not be installed.
 		 */
 		return;
 	}
@@ -1248,12 +1184,10 @@ static void zebra_evpn_dup_addr_detect_for_neigh(
 		nbr->dad_count++;
 
 	if (nbr->dad_count >= zvrf->dad_max_moves) {
-		flog_warn(
-			EC_ZEBRA_DUP_IP_DETECTED,
-			"VNI %u: MAC %pEA IP %pIA detected as duplicate during %s VTEP %pI4",
-			nbr->zevpn->vni, &nbr->emac, &nbr->ip,
-			is_local ? "local update, last" : "remote update, from",
-			&vtep_ip);
+		flog_warn(EC_ZEBRA_DUP_IP_DETECTED,
+			  "VNI %u: MAC %pEA IP %pIA detected as duplicate during %s VTEP %pIA",
+			  nbr->zevpn->vni, &nbr->emac, &nbr->ip,
+			  is_local ? "local update, last" : "remote update, from", vtep_ip);
 
 		SET_FLAG(nbr->flags, ZEBRA_NEIGH_DUPLICATE);
 
@@ -1294,7 +1228,7 @@ int zebra_evpn_local_neigh_update(struct zebra_evpn *zevpn,
 	bool neigh_on_hold = false;
 	bool neigh_was_remote = false;
 	bool do_dad = false;
-	struct in_addr vtep_ip = {.s_addr = 0};
+	struct ipaddr vtep_ip = { .ipa_type = IPADDR_NONE };
 	bool inform_dataplane = false;
 	bool created = false;
 	bool new_static = false;
@@ -1348,6 +1282,8 @@ int zebra_evpn_local_neigh_update(struct zebra_evpn *zevpn,
 		n->ifindex = ifp->ifindex;
 		created = true;
 	} else {
+		n->gr_refresh_time = monotime(NULL);
+
 		if (CHECK_FLAG(n->flags, ZEBRA_NEIGH_LOCAL)) {
 			bool mac_different;
 			bool cur_is_router;
@@ -1500,7 +1436,7 @@ int zebra_evpn_local_neigh_update(struct zebra_evpn *zevpn,
 			vtep_ip = n->r_vtep_ip;
 			/* Mark appropriately */
 			UNSET_FLAG(n->flags, ZEBRA_NEIGH_REMOTE);
-			n->r_vtep_ip.s_addr = INADDR_ANY;
+			memset(&n->r_vtep_ip.ip.addr, 0, sizeof(n->r_vtep_ip.ip));
 			SET_FLAG(n->flags, ZEBRA_NEIGH_LOCAL);
 			n->ifindex = ifp->ifindex;
 		}
@@ -1555,8 +1491,7 @@ int zebra_evpn_local_neigh_update(struct zebra_evpn *zevpn,
 	if (neigh_mac_change && neigh_was_remote)
 		do_dad = true;
 
-	zebra_evpn_dup_addr_detect_for_neigh(zvrf, n, vtep_ip, do_dad,
-					     &neigh_on_hold, true);
+	zebra_evpn_dup_addr_detect_for_neigh(zvrf, n, &vtep_ip, do_dad, &neigh_on_hold, true);
 
 	if (inform_dataplane)
 		zebra_evpn_sync_neigh_dp_install(n, false /* set_inactive */,
@@ -1614,19 +1549,63 @@ int zebra_evpn_local_neigh_update(struct zebra_evpn *zevpn,
 	return 0;
 }
 
-int zebra_evpn_remote_neigh_update(struct zebra_evpn *zevpn,
-				   struct interface *ifp,
-				   const struct ipaddr *ip,
-				   const struct ethaddr *macaddr,
-				   uint16_t state)
+static void zebra_evpn_stale_remote_neigh_add(struct zebra_evpn *zevpn, const struct ipaddr *ip,
+					      const struct ethaddr *macaddr, bool is_router)
+{
+	struct zebra_neigh *n = NULL;
+	struct zebra_mac *zmac = NULL;
+
+	/* Nothing to do if the entry already exists */
+	if (zebra_evpn_neigh_lookup(zevpn, ip))
+		return;
+
+	/* Check if the MAC exists. */
+	zmac = zebra_evpn_mac_lookup(zevpn, macaddr);
+	if (!zmac) {
+		if (IS_ZEBRA_DEBUG_VXLAN)
+			zlog_debug("EVPN-GR: zmac for MAC %pEA not found. L2VNI %u", macaddr,
+				   zevpn->vni);
+		return;
+	}
+
+	/* New neighbor - create */
+	n = zebra_evpn_neigh_add(zevpn, ip, macaddr, zmac, 0);
+	if (!n) {
+		if (IS_ZEBRA_DEBUG_VXLAN)
+			zlog_debug("EVPN-GR: Can't create neigh entry for IP %pIA MAC %pEA, L2VNI %u",
+				   ip, macaddr, zevpn->vni);
+		return;
+	}
+
+	/* Set "remote" forwarding info. */
+	SET_FLAG(n->flags, ZEBRA_NEIGH_REMOTE);
+	ZEBRA_NEIGH_SET_ACTIVE(n);
+	n->r_vtep_ip = zmac->fwd_info.r_vtep_ip;
+
+	if (is_router)
+		SET_FLAG(n->flags, ZEBRA_NEIGH_ROUTER_FLAG);
+	else
+		UNSET_FLAG(n->flags, ZEBRA_NEIGH_ROUTER_FLAG);
+
+	if (IS_ZEBRA_DEBUG_VXLAN)
+		zlog_debug("EVPN-GR: Added stale remote %sneigh entry IP %pIA MAC %pEA, L2VNI %u",
+			   is_router ? "router " : "", ip, macaddr, zevpn->vni);
+}
+
+int zebra_evpn_remote_neigh_update(struct zebra_evpn *zevpn, struct interface *ifp,
+				   const struct ipaddr *ip, const struct ethaddr *macaddr,
+				   uint16_t state, bool is_router)
 {
 	struct zebra_neigh *n = NULL;
 	struct zebra_mac *zmac = NULL;
 
 	/* If the neighbor is unknown, there is no further action. */
 	n = zebra_evpn_neigh_lookup(zevpn, ip);
-	if (!n)
+	if (!n) {
+		if (zrouter.graceful_restart)
+			zebra_evpn_stale_remote_neigh_add(zevpn, ip, macaddr, is_router);
 		return 0;
+	}
 
 	/* If a remote entry, see if it needs to be refreshed */
 	if (CHECK_FLAG(n->flags, ZEBRA_NEIGH_REMOTE)) {
@@ -1659,12 +1638,9 @@ int zebra_evpn_remote_neigh_update(struct zebra_evpn *zevpn,
 }
 
 /* Notify Neighbor entries to the Client, skips the GW entry */
-static void
-zebra_evpn_send_neigh_hash_entry_to_client(struct hash_bucket *bucket,
-					   void *arg)
+static void zebra_evpn_send_neigh_hash_entry_to_client(struct mac_walk_ctx *wctx,
+						       struct zebra_neigh *zn)
 {
-	struct mac_walk_ctx *wctx = arg;
-	struct zebra_neigh *zn = bucket->data;
 	struct zebra_mac *zmac = NULL;
 
 	if (CHECK_FLAG(zn->flags, ZEBRA_NEIGH_DEF_GW))
@@ -1685,27 +1661,22 @@ zebra_evpn_send_neigh_hash_entry_to_client(struct hash_bucket *bucket,
 /* Iterator of a specific EVPN */
 void zebra_evpn_send_neigh_to_client(struct zebra_evpn *zevpn)
 {
-	struct neigh_walk_ctx wctx;
+	struct mac_walk_ctx wctx;
+	struct zebra_neigh *n;
 
 	memset(&wctx, 0, sizeof(wctx));
 	wctx.zevpn = zevpn;
 
-	hash_iterate(zevpn->neigh_table,
-		     zebra_evpn_send_neigh_hash_entry_to_client, &wctx);
+	frr_each (zebra_neigh_db, zevpn->neigh_table, n)
+		zebra_evpn_send_neigh_hash_entry_to_client(&wctx, n);
 }
 
-void zebra_evpn_clear_dup_neigh_hash(struct hash_bucket *bucket, void *ctxt)
+void zebra_evpn_clear_dup_neigh_hash(struct zebra_evpn *zevpn, struct zebra_neigh *nbr)
 {
-	struct neigh_walk_ctx *wctx = ctxt;
-	struct zebra_neigh *nbr;
-	struct zebra_evpn *zevpn;
 	char buf[INET6_ADDRSTRLEN];
 
-	nbr = (struct zebra_neigh *)bucket->data;
 	if (!nbr)
 		return;
-
-	zevpn = wctx->zevpn;
 
 	if (!CHECK_FLAG(nbr->flags, ZEBRA_NEIGH_DUPLICATE))
 		return;
@@ -1735,8 +1706,7 @@ void zebra_evpn_clear_dup_neigh_hash(struct hash_bucket *bucket, void *ctxt)
 /*
  * Print a specific neighbor entry.
  */
-void zebra_evpn_print_neigh(struct zebra_neigh *n, void *ctxt,
-			    json_object *json)
+void zebra_evpn_print_neigh(const struct zebra_neigh *n, void *ctxt, json_object *json)
 {
 	struct vty *vty;
 	char buf1[ETHER_ADDR_STRLEN];
@@ -1775,6 +1745,7 @@ void zebra_evpn_print_neigh(struct zebra_neigh *n, void *ctxt,
 		vty_out(vty, " Uptime: %s\n", up_str);
 		vty_out(vty, " MAC: %s\n",
 			prefix_mac2str(&n->emac, buf1, sizeof(buf1)));
+		vty_out(vty, " VLAN: %d\n", n->zevpn->vid);
 		vty_out(vty, " Sync-info:");
 		if (CHECK_FLAG(n->flags, ZEBRA_NEIGH_LOCAL_INACTIVE)) {
 			vty_out(vty, " local-inactive");
@@ -1788,7 +1759,7 @@ void zebra_evpn_print_neigh(struct zebra_neigh *n, void *ctxt,
 			vty_out(vty, " peer-active");
 			sync_info = true;
 		}
-		if (n->hold_timer) {
+		if (event_is_scheduled(n->hold_timer)) {
 			vty_out(vty, " (ht: %s)",
 				event_timer_to_hhmmss(thread_buf,
 						      sizeof(thread_buf),
@@ -1804,13 +1775,14 @@ void zebra_evpn_print_neigh(struct zebra_neigh *n, void *ctxt,
 		json_object_string_add(json, "type", type_str);
 		json_object_string_add(json, "state", state_str);
 		json_object_string_add(json, "mac", buf1);
+		json_object_int_add(json, "vlan", n->zevpn->vid);
 		if (CHECK_FLAG(n->flags, ZEBRA_NEIGH_LOCAL_INACTIVE))
 			json_object_boolean_true_add(json, "localInactive");
 		if (CHECK_FLAG(n->flags, ZEBRA_NEIGH_ES_PEER_PROXY))
 			json_object_boolean_true_add(json, "peerProxy");
 		if (CHECK_FLAG(n->flags, ZEBRA_NEIGH_ES_PEER_ACTIVE))
 			json_object_boolean_true_add(json, "peerActive");
-		if (n->hold_timer)
+		if (event_is_scheduled(n->hold_timer))
 			json_object_string_add(
 				json, "peerActiveHold",
 				event_timer_to_hhmmss(thread_buf,
@@ -1827,11 +1799,9 @@ void zebra_evpn_print_neigh(struct zebra_neigh *n, void *ctxt,
 					n->mac->es->esi_str);
 		} else {
 			if (json)
-				json_object_string_addf(json, "remoteVtep",
-							"%pI4", &n->r_vtep_ip);
+				json_object_string_addf(json, "remoteVtep", "%pIA", &n->r_vtep_ip);
 			else
-				vty_out(vty, " Remote VTEP: %pI4\n",
-					&n->r_vtep_ip);
+				vty_out(vty, " Remote VTEP: %pIA\n", &n->r_vtep_ip);
 		}
 	}
 	if (CHECK_FLAG(n->flags, ZEBRA_NEIGH_DEF_GW)) {
@@ -1880,16 +1850,14 @@ void zebra_evpn_print_neigh(struct zebra_neigh *n, void *ctxt,
 	}
 }
 
-void zebra_evpn_print_neigh_hdr(struct vty *vty, struct neigh_walk_ctx *wctx)
+void zebra_evpn_print_neigh_hdr(struct vty *vty, int addr_width, int r_vtep_width)
 {
 	vty_out(vty, "Flags: I=local-inactive, P=peer-active, X=peer-proxy\n");
-	vty_out(vty, "%*s %-6s %-5s %-8s %-17s %-30s %s\n", -wctx->addr_width,
-		"Neighbor", "Type", "Flags", "State", "MAC", "Remote ES/VTEP",
-		"Seq #'s");
+	vty_out(vty, "%*s %-6s %-5s %-8s %-17s %*s %s\n", -addr_width, "Neighbor", "Type", "Flags",
+		"State", "MAC", -r_vtep_width, "Remote ES/VTEP", "Seq #'s");
 }
 
-static char *zebra_evpn_print_neigh_flags(struct zebra_neigh *n,
-					  char *flags_buf,
+static char *zebra_evpn_print_neigh_flags(const struct zebra_neigh *n, char *flags_buf,
 					  uint32_t flags_buf_sz)
 {
 	snprintf(flags_buf, flags_buf_sz, "%s%s%s",
@@ -1906,21 +1874,19 @@ static char *zebra_evpn_print_neigh_flags(struct zebra_neigh *n,
 /*
  * Print neighbor hash entry - called for display of all neighbors.
  */
-void zebra_evpn_print_neigh_hash(struct hash_bucket *bucket, void *ctxt)
+void zebra_evpn_print_neigh_hash(struct neigh_walk_ctx *wctx, const struct zebra_neigh *n,
+				 int addr_width, int r_vtep_width)
 {
 	struct vty *vty;
 	json_object *json_evpn = NULL, *json_row = NULL;
-	struct zebra_neigh *n;
 	char buf1[ETHER_ADDR_STRLEN];
 	char buf2[INET6_ADDRSTRLEN];
-	char addr_buf[PREFIX_STRLEN];
-	struct neigh_walk_ctx *wctx = ctxt;
+	char addr_buf[INET6_ADDRSTRLEN];
 	const char *state_str;
 	char flags_buf[6];
 
 	vty = wctx->vty;
 	json_evpn = wctx->json;
-	n = (struct zebra_neigh *)bucket->data;
 
 	prefix_mac2str(&n->emac, buf1, sizeof(buf1));
 	ipaddr2str(&n->ip, buf2, sizeof(buf2));
@@ -1930,11 +1896,10 @@ void zebra_evpn_print_neigh_hash(struct hash_bucket *bucket, void *ctxt)
 			return;
 
 		if (json_evpn == NULL) {
-			vty_out(vty, "%*s %-6s %-5s %-8s %-17s %-30s %u/%u\n",
-				-wctx->addr_width, buf2, "local",
-				zebra_evpn_print_neigh_flags(n, flags_buf,
-                    sizeof(flags_buf)), state_str, buf1,
-                    "", n->loc_seq, n->rem_seq);
+			vty_out(vty, "%*s %-6s %-5s %-8s %-17s %*s %u/%u\n", -addr_width, buf2,
+				"local",
+				zebra_evpn_print_neigh_flags(n, flags_buf, sizeof(flags_buf)),
+				state_str, buf1, -r_vtep_width, "", n->loc_seq, n->rem_seq);
 		} else {
 			json_row = json_object_new_object();
 
@@ -1959,25 +1924,24 @@ void zebra_evpn_print_neigh_hash(struct hash_bucket *bucket, void *ctxt)
 		}
 		wctx->count++;
 	} else if (CHECK_FLAG(n->flags, ZEBRA_NEIGH_REMOTE)) {
-		if ((wctx->flags & SHOW_REMOTE_NEIGH_FROM_VTEP)
-		    && !IPV4_ADDR_SAME(&n->r_vtep_ip, &wctx->r_vtep_ip))
+		if ((wctx->flags & SHOW_REMOTE_NEIGH_FROM_VTEP) &&
+		    !ipaddr_is_same(&n->r_vtep_ip, &wctx->r_vtep_ip))
 			return;
 
 		if (json_evpn == NULL) {
 			if ((wctx->flags & SHOW_REMOTE_NEIGH_FROM_VTEP)
 			    && (wctx->count == 0))
-				zebra_evpn_print_neigh_hdr(vty, wctx);
+				zebra_evpn_print_neigh_hdr(vty, addr_width, r_vtep_width);
 
 			if (n->mac->es == NULL)
-				inet_ntop(AF_INET, &n->r_vtep_ip,
-					  addr_buf, sizeof(addr_buf));
+				ipaddr2str(&n->r_vtep_ip, addr_buf, sizeof(addr_buf));
 
-			vty_out(vty, "%*s %-6s %-5s %-8s %-17s %-30s %u/%u\n",
-				-wctx->addr_width, buf2, "remote",
-				zebra_evpn_print_neigh_flags(n, flags_buf,
-				sizeof(flags_buf)), state_str, buf1,
-				n->mac->es ? n->mac->es->esi_str : addr_buf,
-				n->loc_seq, n->rem_seq);
+			vty_out(vty, "%*s %-6s %-5s %-8s %-17s %*s %u/%u\n", -addr_width, buf2,
+				"remote",
+				zebra_evpn_print_neigh_flags(n, flags_buf, sizeof(flags_buf)),
+				state_str, buf1, -r_vtep_width,
+				n->mac->es ? n->mac->es->esi_str : addr_buf, n->loc_seq,
+				n->rem_seq);
 		} else {
 			json_row = json_object_new_object();
 
@@ -1988,8 +1952,8 @@ void zebra_evpn_print_neigh_hash(struct hash_bucket *bucket, void *ctxt)
 				json_object_string_add(json_row, "remoteEs",
 						       n->mac->es->esi_str);
 			else
-				json_object_string_addf(json_row, "remoteVtep",
-							"%pI4", &n->r_vtep_ip);
+				json_object_string_addf(json_row, "remoteVtep", "%pIA",
+							&n->r_vtep_ip);
 			if (CHECK_FLAG(n->flags, ZEBRA_NEIGH_DEF_GW))
 				json_object_boolean_true_add(json_row,
 							     "defaultGateway");
@@ -2016,17 +1980,14 @@ void zebra_evpn_print_neigh_hash(struct hash_bucket *bucket, void *ctxt)
 /*
  * Print neighbor hash entry in detail - called for display of all neighbors.
  */
-void zebra_evpn_print_neigh_hash_detail(struct hash_bucket *bucket, void *ctxt)
+void zebra_evpn_print_neigh_hash_detail(struct neigh_walk_ctx *wctx, const struct zebra_neigh *n)
 {
 	struct vty *vty;
 	json_object *json_evpn = NULL, *json_row = NULL;
-	struct zebra_neigh *n;
 	char buf[INET6_ADDRSTRLEN];
-	struct neigh_walk_ctx *wctx = ctxt;
 
 	vty = wctx->vty;
 	json_evpn = wctx->json;
-	n = (struct zebra_neigh *)bucket->data;
 	if (!n)
 		return;
 
@@ -2040,37 +2001,29 @@ void zebra_evpn_print_neigh_hash_detail(struct hash_bucket *bucket, void *ctxt)
 		json_object_object_add(json_evpn, buf, json_row);
 }
 
-void zebra_evpn_print_dad_neigh_hash(struct hash_bucket *bucket, void *ctxt)
+void zebra_evpn_print_dad_neigh_hash(struct neigh_walk_ctx *ctxt, const struct zebra_neigh *nbr,
+				     int addr_width, int r_vtep_width)
 {
-	struct zebra_neigh *nbr;
-
-	nbr = (struct zebra_neigh *)bucket->data;
 	if (!nbr)
 		return;
 
 	if (CHECK_FLAG(nbr->flags, ZEBRA_NEIGH_DUPLICATE))
-		zebra_evpn_print_neigh_hash(bucket, ctxt);
+		zebra_evpn_print_neigh_hash(ctxt, nbr, addr_width, r_vtep_width);
 }
 
-void zebra_evpn_print_dad_neigh_hash_detail(struct hash_bucket *bucket,
-					    void *ctxt)
+void zebra_evpn_print_dad_neigh_hash_detail(struct neigh_walk_ctx *ctxt,
+					    const struct zebra_neigh *nbr)
 {
-	struct zebra_neigh *nbr;
-
-	nbr = (struct zebra_neigh *)bucket->data;
 	if (!nbr)
 		return;
 
 	if (CHECK_FLAG(nbr->flags, ZEBRA_NEIGH_DUPLICATE))
-		zebra_evpn_print_neigh_hash_detail(bucket, ctxt);
+		zebra_evpn_print_neigh_hash_detail(ctxt, nbr);
 }
 
-void zebra_evpn_neigh_remote_macip_add(struct zebra_evpn *zevpn,
-				       struct zebra_vrf *zvrf,
-				       const struct ipaddr *ipaddr,
-				       struct zebra_mac *mac,
-				       struct in_addr vtep_ip, uint8_t flags,
-				       uint32_t seq)
+void zebra_evpn_neigh_remote_macip_add(struct zebra_evpn *zevpn, struct zebra_vrf *zvrf,
+				       const struct ipaddr *ipaddr, struct zebra_mac *mac,
+				       struct ipaddr *vtep_ip, uint8_t flags, uint32_t seq)
 {
 	struct zebra_neigh *n;
 	int update_neigh = 0;
@@ -2088,10 +2041,15 @@ void zebra_evpn_neigh_remote_macip_add(struct zebra_evpn *zevpn,
 	 * change. If so, create or update and then install the entry.
 	 */
 	n = zebra_evpn_neigh_lookup(zevpn, ipaddr);
-	if (!n || !CHECK_FLAG(n->flags, ZEBRA_NEIGH_REMOTE)
-	    || is_router != !!CHECK_FLAG(n->flags, ZEBRA_NEIGH_ROUTER_FLAG)
-	    || (memcmp(&n->emac, &mac->macaddr, sizeof(struct ethaddr)) != 0)
-	    || !IPV4_ADDR_SAME(&n->r_vtep_ip, &vtep_ip) || seq != n->rem_seq)
+	if (n) {
+		/* Refresh entry */
+		n->gr_refresh_time = monotime(NULL);
+	}
+
+	if (!n || !CHECK_FLAG(n->flags, ZEBRA_NEIGH_REMOTE) ||
+	    is_router != !!CHECK_FLAG(n->flags, ZEBRA_NEIGH_ROUTER_FLAG) ||
+	    (memcmp(&n->emac, &mac->macaddr, sizeof(struct ethaddr)) != 0) ||
+	    !ipaddr_is_same(&n->r_vtep_ip, vtep_ip) || seq != n->rem_seq)
 		update_neigh = 1;
 
 	if (update_neigh) {
@@ -2141,9 +2099,9 @@ void zebra_evpn_neigh_remote_macip_add(struct zebra_evpn *zevpn,
 				listnode_add_sort(mac->neigh_list, n);
 				memcpy(&n->emac, &mac->macaddr, ETH_ALEN);
 
-				/* Check Neigh's curent state is local
+				/* Check Neigh's current state is local
 				 * (this is the case where neigh/host has  moved
-				 * from L->R) and check previous detction
+				 * from L->R) and check previous detection
 				 * started via local learning.
 				 *
 				 * RFC-7432: A PE/VTEP that detects a MAC
@@ -2163,7 +2121,7 @@ void zebra_evpn_neigh_remote_macip_add(struct zebra_evpn *zevpn,
 
 		/* Set "remote" forwarding info. */
 		UNSET_FLAG(n->flags, ZEBRA_NEIGH_ALL_LOCAL_FLAGS);
-		n->r_vtep_ip = vtep_ip;
+		n->r_vtep_ip = *vtep_ip;
 		SET_FLAG(n->flags, ZEBRA_NEIGH_REMOTE);
 
 		/* Set router flag (R-bit) to this Neighbor entry */
@@ -2183,8 +2141,8 @@ void zebra_evpn_neigh_remote_macip_add(struct zebra_evpn *zevpn,
 		}
 
 		/* Check duplicate address detection for IP */
-		zebra_evpn_dup_addr_detect_for_neigh(
-			zvrf, n, n->r_vtep_ip, do_dad, &is_dup_detect, false);
+		zebra_evpn_dup_addr_detect_for_neigh(zvrf, n, &n->r_vtep_ip, do_dad, &is_dup_detect,
+						     false);
 		/* Install the entry. */
 		if (!is_dup_detect)
 			zebra_evpn_rem_neigh_install(zevpn, n, old_static);
@@ -2205,6 +2163,8 @@ int zebra_evpn_neigh_gw_macip_add(struct interface *ifp,
 	n = zebra_evpn_neigh_lookup(zevpn, ip);
 	if (!n)
 		n = zebra_evpn_neigh_add(zevpn, ip, &mac->macaddr, mac, 0);
+	else
+		n->gr_refresh_time = monotime(NULL);
 
 	/* Set "local" forwarding info. */
 	SET_FLAG(n->flags, ZEBRA_NEIGH_LOCAL);
@@ -2255,14 +2215,14 @@ void zebra_evpn_neigh_remote_uninstall(struct zebra_evpn *zevpn,
 	    && (memcmp(n->emac.octet, mac->macaddr.octet, ETH_ALEN) == 0)) {
 		struct interface *vlan_if;
 
-		vlan_if = zevpn_map_to_svi(zevpn);
+		vlan_if = zevpn_map_to_svi(zevpn, true);
 		if (IS_ZEBRA_DEBUG_VXLAN)
 			zlog_debug(
 				"%s: IP %pIA (flags 0x%x intf %s) is remote and duplicate, read kernel for local entry",
 				__func__, ipaddr, n->flags,
 				vlan_if ? vlan_if->name : "Unknown");
 		if (vlan_if)
-			neigh_read_specific_ip(ipaddr, vlan_if);
+			dplane_neigh_read_specific_ip(zvrf->zns, ipaddr, vlan_if);
 	}
 
 	/* When the MAC changes for an IP, it is possible the

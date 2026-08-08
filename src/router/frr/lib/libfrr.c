@@ -36,6 +36,7 @@
 #include "defaults.h"
 #include "frrscript.h"
 #include "systemd.h"
+#include "json.h"
 
 #include "lib/config_paths.h"
 
@@ -73,6 +74,9 @@ static char comb_optstr[256];
 static struct option comb_lo[64];
 static struct option *comb_next_lo = &comb_lo[0];
 static char comb_helpstr[4096];
+
+static void frr_memory_init(struct event_loop *loop);
+static void frr_memory_fini(void);
 
 struct optspec {
 	const char *optstr;
@@ -684,7 +688,7 @@ static void frr_mkdir(const char *path, bool strip)
 	struct zprivs_ids_t ids;
 
 	if (strip) {
-		char *slash = strrchr(path, '/');
+		const char *slash = strrchr(path, '/');
 		size_t plen;
 		if (!slash)
 			return;
@@ -846,6 +850,8 @@ struct event_loop *frr_init(void)
 		flog_warn(EC_LIB_NB_DATABASE,
 			  "%s: failed to initialize northbound database",
 			  __func__);
+
+	frr_memory_init(master);
 
 	return master;
 }
@@ -1261,6 +1267,8 @@ void frr_fini(void)
 {
 	hook_call(frr_fini);
 
+	frr_memory_fini();
+
 	vty_terminate();
 	cmd_terminate();
 	nb_terminate();
@@ -1341,7 +1349,7 @@ void frr_daemon_state_save(struct json_object **statep)
 	json_len = strlen(json_str);
 
 	/* To correctly fsync() and ensure we have either consistent old state
-	 * or consistent new state but no fs-damage garbage inbetween, we need
+	 * or consistent new state but no fs-damage garbage in between, we need
 	 * to work with a directory fd.  If we need that anyway we might as
 	 * well use the dirfd with openat() & co in fd-relative operations.
 	 */
@@ -1458,6 +1466,14 @@ out_closedir_free:
 	*statep = NULL;
 }
 
+#ifdef __has_attribute
+#if __has_attribute(force_align_arg_pointer)
+#define entry_extra_attr __attribute__((force_align_arg_pointer))
+#endif
+#endif
+#ifndef entry_extra_attr
+#define entry_extra_attr /* empty */
+#endif
 #ifdef INTERP
 static const char interp[]
 	__attribute__((section(".interp"), used)) = INTERP;
@@ -1468,8 +1484,7 @@ static const char interp[]
  * note that libc initialization is skipped for this so the set of functions
  * that can be called is rather limited
  */
-extern void _libfrr_version(void)
-	__attribute__((visibility("hidden"), noreturn));
+extern void _libfrr_version(void) __attribute__((visibility("hidden"), noreturn)) entry_extra_attr;
 void _libfrr_version(void)
 {
 	const char banner[] =
@@ -1506,3 +1521,102 @@ FRR_NORETURN void frr_exit_with_buffer_flush(int status)
 	exit(status);
 }
 
+/*
+ * Special code for tcmalloc mem lib, releasing free mem back to the OS.
+ */
+static struct event *t_mem_release_event;
+
+#ifdef HAVE_TCMALLOC
+
+#define FRR_MEM_RELEASE_THRESHOLD  20 * 1024 * 1024
+#define FRR_MEM_RELEASE_TIMEOUT    10 /* Seconds */
+
+static uint32_t mem_release_mb = FRR_MEM_RELEASE_MB_DEFAULT;
+static uint32_t mem_release_timeout = FRR_MEM_RELEASE_TIMEOUT;
+
+#include "gperftools/tcmalloc.h"
+#include "gperftools/malloc_extension_c.h"
+
+/* Timer handler to release free mem */
+static void tcmalloc_timer(struct event *event)
+{
+	size_t release, sval;
+
+	if (mem_release_timeout == 0)
+		return;
+
+	/* Schedule again */
+	event_add_timer(master, tcmalloc_timer, NULL, mem_release_timeout,
+				&t_mem_release_event);
+
+	MallocExtension_GetNumericProperty("tcmalloc.pageheap_free_bytes", &sval);
+
+	/* Check mem stats, release mem if we're over the threshold */
+	if (sval > FRR_MEM_RELEASE_THRESHOLD) {
+		release = mem_release_mb * 1024 * 1024 * mem_release_timeout;
+		MallocExtension_ReleaseToSystem(release);
+	}
+}
+
+/* Handle config changes */
+void frr_mem_release_config(uint32_t rate)
+{
+	if (rate != mem_release_mb)
+		event_cancel(&t_mem_release_event);
+
+	mem_release_mb = rate;
+	if (mem_release_mb > 0)
+		/* Schedule */
+		event_add_timer(master, tcmalloc_timer, NULL, mem_release_timeout,
+				&t_mem_release_event);
+}
+
+uint32_t frr_mem_release_rate_get(void)
+{
+	return mem_release_mb;
+}
+
+static int frr_tcmalloc_lib_init(struct event_loop *loop)
+{
+	/* Using tcmalloc memory-release functions: configure periodic
+	 * task to release free memory back to the OS.
+	 */
+
+	/* Disabled (via config?) */
+	if (mem_release_mb == 0)
+		return 0;
+
+	event_add_timer(master, tcmalloc_timer, NULL, mem_release_timeout,
+			&t_mem_release_event);
+
+	return 0;
+}
+
+#else
+/* No-op */
+void frr_mem_release_config(uint32_t rate)
+{
+	/* No-op */
+}
+
+uint32_t frr_mem_release_rate_get(void)
+{
+	return FRR_MEM_RELEASE_MB_DEFAULT;
+}
+
+#endif /* HAVE_TCMALLOC */
+
+/* Init memory-related functions for some platforms */
+static void frr_memory_init(struct event_loop *loop)
+{
+#ifdef HAVE_TCMALLOC
+	/* Register for post-config callback */
+	hook_register(frr_config_post, frr_tcmalloc_lib_init);
+#endif
+}
+
+/* De-init memory-related functions for some platforms */
+static void frr_memory_fini(void)
+{
+	event_cancel(&t_mem_release_event);
+}

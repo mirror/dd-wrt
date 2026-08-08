@@ -264,128 +264,6 @@ int sockunion_bind(int sock, union sockunion *su, unsigned short port,
 	return ret;
 }
 
-int sockopt_reuseaddr(int sock)
-{
-	int ret;
-	int on = 1;
-
-	ret = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void *)&on,
-			 sizeof(on));
-	if (ret < 0) {
-		flog_err(
-			EC_LIB_SOCKET,
-			"can't set sockopt SO_REUSEADDR to socket %d errno=%d: %s",
-			sock, errno, safe_strerror(errno));
-		return -1;
-	}
-	return 0;
-}
-
-#ifdef SO_REUSEPORT
-int sockopt_reuseport(int sock)
-{
-	int ret;
-	int on = 1;
-
-	ret = setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, (void *)&on,
-			 sizeof(on));
-	if (ret < 0) {
-		flog_err(EC_LIB_SOCKET,
-			 "can't set sockopt SO_REUSEPORT to socket %d", sock);
-		return -1;
-	}
-	return 0;
-}
-#else
-int sockopt_reuseport(int sock)
-{
-	return 0;
-}
-#endif /* 0 */
-
-int sockopt_ttl(int family, int sock, int ttl)
-{
-	int ret;
-
-#ifdef IP_TTL
-	if (family == AF_INET) {
-		ret = setsockopt(sock, IPPROTO_IP, IP_TTL, (void *)&ttl,
-				 sizeof(int));
-		if (ret < 0) {
-			flog_err(EC_LIB_SOCKET,
-				 "can't set sockopt IP_TTL %d to socket %d",
-				 ttl, sock);
-			return -1;
-		}
-		return 0;
-	}
-#endif /* IP_TTL */
-	if (family == AF_INET6) {
-		ret = setsockopt(sock, IPPROTO_IPV6, IPV6_UNICAST_HOPS,
-				 (void *)&ttl, sizeof(int));
-		if (ret < 0) {
-			flog_err(
-				EC_LIB_SOCKET,
-				"can't set sockopt IPV6_UNICAST_HOPS %d to socket %d",
-				ttl, sock);
-			return -1;
-		}
-		return 0;
-	}
-	return 0;
-}
-
-int sockopt_minttl(int family, int sock, int minttl)
-{
-#ifdef IP_MINTTL
-	if (family == AF_INET) {
-		int ret = setsockopt(sock, IPPROTO_IP, IP_MINTTL, &minttl,
-				     sizeof(minttl));
-		if (ret < 0)
-			flog_err(
-				EC_LIB_SOCKET,
-				"can't set sockopt IP_MINTTL to %d on socket %d: %s",
-				minttl, sock, safe_strerror(errno));
-		return ret;
-	}
-#endif /* IP_MINTTL */
-#ifdef IPV6_MINHOPCOUNT
-	if (family == AF_INET6) {
-		int ret = setsockopt(sock, IPPROTO_IPV6, IPV6_MINHOPCOUNT,
-				     &minttl, sizeof(minttl));
-		if (ret < 0)
-			flog_err(
-				EC_LIB_SOCKET,
-				"can't set sockopt IPV6_MINHOPCOUNT to %d on socket %d: %s",
-				minttl, sock, safe_strerror(errno));
-		return ret;
-	}
-#endif
-
-	errno = EOPNOTSUPP;
-	return -1;
-}
-
-int sockopt_v6only(int family, int sock)
-{
-	int ret, on = 1;
-
-#ifdef IPV6_V6ONLY
-	if (family == AF_INET6) {
-		ret = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (void *)&on,
-				 sizeof(int));
-		if (ret < 0) {
-			flog_err(EC_LIB_SOCKET,
-				 "can't set sockopt IPV6_V6ONLY to socket %d",
-				 sock);
-			return -1;
-		}
-		return 0;
-	}
-#endif /* IPV6_V6ONLY */
-	return 0;
-}
-
 /* If same family and same prefix return 1. */
 int sockunion_same(const union sockunion *su1, const union sockunion *su2)
 {
@@ -599,8 +477,17 @@ int sockunion_cmp(const union sockunion *su1, const union sockunion *su2)
 		else
 			return -1;
 	}
-	if (su1->sa.sa_family == AF_INET6)
-		return IPV6_ADDR_CMP(&su1->sin6.sin6_addr, &su2->sin6.sin6_addr);
+	if (su1->sa.sa_family == AF_INET6) {
+		int ret = IPV6_ADDR_CMP(&su1->sin6.sin6_addr, &su2->sin6.sin6_addr);
+
+		if (ret != 0)
+			return ret;
+
+		if (su1->sin6.sin6_scope_id > su2->sin6.sin6_scope_id)
+			return 1;
+		if (su1->sin6.sin6_scope_id < su2->sin6.sin6_scope_id)
+			return -1;
+	}
 
 	return 0;
 }

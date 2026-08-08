@@ -149,6 +149,7 @@ struct prefix_list;
 #define PIM_UPSTREAM_FLAG_SET_MLAG_INTERFACE(flags) ((flags) |= PIM_UPSTREAM_FLAG_MASK_MLAG_INTERFACE)
 
 #define PIM_UPSTREAM_DM_UNSET_PRUNE(flags) ((flags) &= ~PIM_UPSTREAM_DM_FLAG_MASK_PRUNE)
+#define PIM_UPSTREAM_DM_UNSET_INTERFACE(flags) ((flags) &= ~PIM_UPSTREAM_DM_FLAG_MASK_INTERFACE)
 
 #define PIM_UPSTREAM_FLAG_UNSET_DR_JOIN_DESIRED(flags) ((flags) &= ~PIM_UPSTREAM_FLAG_MASK_DR_JOIN_DESIRED)
 #define PIM_UPSTREAM_FLAG_UNSET_DR_JOIN_DESIRED_UPDATED(flags) ((flags) &= ~PIM_UPSTREAM_FLAG_MASK_DR_JOIN_DESIRED_UPDATED)
@@ -318,12 +319,11 @@ struct pim_upstream *pim_upstream_del(struct pim_instance *pim,
 
 bool pim_upstream_evaluate_join_desired(struct pim_instance *pim,
 					struct pim_upstream *up);
-int pim_upstream_evaluate_join_desired_interface(struct pim_upstream *up,
-						 struct pim_ifchannel *ch,
+int pim_upstream_evaluate_join_desired_interface(struct pim_upstream *up, struct pim_ifchannel *ch,
+						 struct pim_ifchannel *chrpt,
 						 struct pim_ifchannel *starch);
-int pim_upstream_eval_inherit_if(struct pim_upstream *up,
-						 struct pim_ifchannel *ch,
-						 struct pim_ifchannel *starch);
+int pim_upstream_eval_inherit_if(struct pim_upstream *up, struct pim_ifchannel *ch,
+				 struct pim_ifchannel *chrpt, struct pim_ifchannel *starch);
 void pim_upstream_update_join_desired(struct pim_instance *pim,
 				      struct pim_upstream *up);
 
@@ -373,6 +373,8 @@ int pim_upstream_inherited_olist(struct pim_instance *pim,
 				 struct pim_upstream *up);
 int pim_upstream_empty_inherited_olist(struct pim_upstream *up);
 
+bool pim_upstream_kat_start_ok(struct pim_upstream *up);
+
 void pim_upstream_find_new_rpf(struct pim_instance *pim);
 
 void pim_upstream_init(struct pim_instance *pim);
@@ -390,6 +392,7 @@ DECLARE_RBTREE_UNIQ(rb_pim_upstream, struct pim_upstream, upstream_rb,
 		    pim_upstream_compare);
 
 void pim_upstream_register_reevaluate(struct pim_instance *pim);
+void pim_upstream_dense_reevaluate(struct pim_instance *pim);
 
 void pim_upstream_add_lhr_star_pimreg(struct pim_instance *pim);
 void pim_upstream_remove_lhr_star_pimreg(struct pim_instance *pim,

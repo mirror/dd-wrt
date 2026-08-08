@@ -18,6 +18,7 @@
 #include "printfrr.h"
 #include "vrf.h"
 #include "nexthop_group.h"
+#include "lib/json.h"
 
 DEFINE_MTYPE_STATIC(LIB, NEXTHOP, "Nexthop");
 DEFINE_MTYPE_STATIC(LIB, NH_LABEL, "Nexthop label");
@@ -144,6 +145,12 @@ static int _nexthop_source_cmp(const struct nexthop *nh1,
 	return nexthop_g_addr_cmp(nh1->type, &nh1->src, &nh2->src);
 }
 
+static int _nexthop_rmap_source_cmp(const struct nexthop *nh1,
+			       const struct nexthop *nh2)
+{
+	return nexthop_g_addr_cmp(nh1->type, &nh1->rmap_src, &nh2->rmap_src);
+}
+
 static int _nexthop_cmp_no_labels(const struct nexthop *next1,
 				  const struct nexthop *next2, bool use_weight, bool use_ifindex)
 {
@@ -155,11 +162,35 @@ static int _nexthop_cmp_no_labels(const struct nexthop *next1,
 	if (next1->vrf_id > next2->vrf_id)
 		return 1;
 
-	if (next1->type < next2->type)
-		return -1;
+	/*
+	 * When not using ifindex, ignore the type difference
+	 * between resolved and unresolved nexthops.
+	 */
+	if (use_ifindex) {
+		if (next1->type < next2->type)
+			return -1;
 
-	if (next1->type > next2->type)
-		return 1;
+		if (next1->type > next2->type)
+			return 1;
+	} else {
+		enum nexthop_types_t t1 = next1->type;
+		enum nexthop_types_t t2 = next2->type;
+
+		if (t1 == NEXTHOP_TYPE_IPV4_IFINDEX)
+			t1 = NEXTHOP_TYPE_IPV4;
+		if (t2 == NEXTHOP_TYPE_IPV4_IFINDEX)
+			t2 = NEXTHOP_TYPE_IPV4;
+		if (t1 == NEXTHOP_TYPE_IPV6_IFINDEX)
+			t1 = NEXTHOP_TYPE_IPV6;
+		if (t2 == NEXTHOP_TYPE_IPV6_IFINDEX)
+			t2 = NEXTHOP_TYPE_IPV6;
+
+		if (t1 < t2)
+			return -1;
+
+		if (t1 > t2)
+			return 1;
+	}
 
 	if (use_weight) {
 		if (next1->weight < next2->weight)
@@ -204,6 +235,10 @@ static int _nexthop_cmp_no_labels(const struct nexthop *next1,
 		return -1;
 	if (next1->srte_color > next2->srte_color)
 		return 1;
+
+	ret = _nexthop_rmap_source_cmp(next1, next2);
+	if (ret != 0)
+		goto done;
 
 	ret = _nexthop_source_cmp(next1, next2);
 	if (ret != 0)
@@ -334,6 +369,11 @@ int nexthop_cmp_basic(const struct nexthop *nh1,
 		break;
 	}
 
+	/* Compare rmap source addr */
+	ret = nexthop_g_addr_cmp(nh1->type, &nh1->rmap_src, &nh2->rmap_src);
+	if (ret != 0)
+		goto done;
+
 	/* Compare source addr */
 	ret = nexthop_g_addr_cmp(nh1->type, &nh1->src, &nh2->src);
 	if (ret != 0)
@@ -445,7 +485,7 @@ bool nexthop_same_no_ifindex(const struct nexthop *nh1, const struct nexthop *nh
 	if (nh1 == nh2)
 		return true;
 
-	return nexthop_cmp_internal(nh1, nh2, true, false);
+	return (nexthop_cmp_internal(nh1, nh2, true, false) == 0);
 }
 
 bool nexthop_same(const struct nexthop *nh1, const struct nexthop *nh2)
@@ -622,7 +662,6 @@ void nexthop_del_labels(struct nexthop *nexthop)
 
 void nexthop_change_labels(struct nexthop *nexthop, struct mpls_label_stack *new_stack)
 {
-	struct mpls_label_stack *nh_label_tmp;
 	uint32_t i;
 
 	/* Enforce limit on label stack size */
@@ -631,14 +670,10 @@ void nexthop_change_labels(struct nexthop *nexthop, struct mpls_label_stack *new
 
 	/* Resize the array to accommodate the new label stack */
 	if (new_stack->num_labels > nexthop->nh_label->num_labels) {
-		nh_label_tmp = XREALLOC(MTYPE_NH_LABEL, nexthop->nh_label,
-					sizeof(struct mpls_label_stack) +
-						new_stack->num_labels * sizeof(mpls_label_t));
-		if (nh_label_tmp) {
-			nexthop->nh_label = nh_label_tmp;
-			nexthop->nh_label->num_labels = new_stack->num_labels;
-		} else
-			new_stack->num_labels = nexthop->nh_label->num_labels;
+		nexthop->nh_label = XREALLOC(MTYPE_NH_LABEL, nexthop->nh_label,
+					     sizeof(struct mpls_label_stack) +
+						     new_stack->num_labels * sizeof(mpls_label_t));
+		nexthop->nh_label->num_labels = new_stack->num_labels;
 	}
 
 	/* Copy the label stack into the array */
@@ -730,17 +765,18 @@ const char *nexthop2str(const struct nexthop *nexthop, char *str, int size)
 {
 	switch (nexthop->type) {
 	case NEXTHOP_TYPE_IFINDEX:
-		snprintf(str, size, "if %u", nexthop->ifindex);
+		snprintf(str, size, "if %u (%s)", nexthop->ifindex,
+			 CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_ACTIVE) ? "A" : "I");
 		break;
 	case NEXTHOP_TYPE_IPV4:
 	case NEXTHOP_TYPE_IPV4_IFINDEX:
-		snprintfrr(str, size, "%pI4 if %u", &nexthop->gate.ipv4,
-			   nexthop->ifindex);
+		snprintfrr(str, size, "%pI4 if %u (%s)", &nexthop->gate.ipv4, nexthop->ifindex,
+			   CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_ACTIVE) ? "A" : "I");
 		break;
 	case NEXTHOP_TYPE_IPV6:
 	case NEXTHOP_TYPE_IPV6_IFINDEX:
-		snprintfrr(str, size, "%pI6 if %u", &nexthop->gate.ipv6,
-			   nexthop->ifindex);
+		snprintfrr(str, size, "%pI6 if %u (%s)", &nexthop->gate.ipv6, nexthop->ifindex,
+			   CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_ACTIVE) ? "A" : "I");
 		break;
 	case NEXTHOP_TYPE_BLACKHOLE:
 		snprintf(str, size, "blackhole");
@@ -789,14 +825,17 @@ struct nexthop *nexthop_next_resolution(const struct nexthop *nexthop,
 	return nexthop->next;
 }
 
-/* Return the next nexthop in the tree that is resolved and active */
+/* Return the next nexthop in the tree that is resolved, active, and not a
+ * duplicate-expanded copy (NEXTHOP_FLAG_DUPLICATE). The latter keeps sequential
+ * walks aligned with RIB iterations that skip duplicate nh.
+ */
 struct nexthop *nexthop_next_active_resolved(const struct nexthop *nexthop)
 {
 	struct nexthop *next = nexthop_next(nexthop);
 
-	while (next
-	       && (CHECK_FLAG(next->flags, NEXTHOP_FLAG_RECURSIVE)
-		   || !CHECK_FLAG(next->flags, NEXTHOP_FLAG_ACTIVE)))
+	while (next && (CHECK_FLAG(next->flags, NEXTHOP_FLAG_RECURSIVE) ||
+			!CHECK_FLAG(next->flags, NEXTHOP_FLAG_ACTIVE) ||
+			CHECK_FLAG(next->flags, NEXTHOP_FLAG_DUPLICATE)))
 		next = nexthop_next(next);
 
 	return next;
@@ -1186,9 +1225,8 @@ bool nexthop_is_blackhole(const struct nexthop *nh)
  * Render a nexthop into a json object; the caller allocates and owns
  * the json object memory.
  */
-void nexthop_json_helper(json_object *json_nexthop,
-			 const struct nexthop *nexthop, bool display_vrfid,
-			 uint8_t rn_family)
+void nexthop_json_helper(json_object *json_nexthop, const struct nexthop *nexthop,
+			 bool display_vrfid, uint8_t rn_family, bool brief)
 {
 	json_object *json_labels = NULL;
 	json_object *json_backups = NULL;
@@ -1199,20 +1237,23 @@ void nexthop_json_helper(json_object *json_nexthop,
 	json_object *json_segs = NULL;
 	int i;
 
-	json_object_int_add(json_nexthop, "flags", nexthop->flags);
+	if (!brief) {
+		json_object_int_add(json_nexthop, "flags", nexthop->flags);
 
-	if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_DUPLICATE))
-		json_object_boolean_true_add(json_nexthop, "duplicate");
+		if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_DUPLICATE))
+			json_object_boolean_true_add(json_nexthop, "duplicate");
 
-	if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_FIB))
-		json_object_boolean_true_add(json_nexthop, "fib");
+		if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_FIB))
+			json_object_boolean_true_add(json_nexthop, "fib");
+	}
 
 	switch (nexthop->type) {
 	case NEXTHOP_TYPE_IPV4:
 	case NEXTHOP_TYPE_IPV4_IFINDEX:
 		json_object_string_addf(json_nexthop, "ip", "%pI4",
 					&nexthop->gate.ipv4);
-		json_object_string_add(json_nexthop, "afi", "ipv4");
+		if (!brief)
+			json_object_string_add(json_nexthop, "afi", "ipv4");
 
 		if (nexthop->ifindex) {
 			json_object_int_add(json_nexthop, "interfaceIndex",
@@ -1226,7 +1267,8 @@ void nexthop_json_helper(json_object *json_nexthop,
 	case NEXTHOP_TYPE_IPV6_IFINDEX:
 		json_object_string_addf(json_nexthop, "ip", "%pI6",
 					&nexthop->gate.ipv6);
-		json_object_string_add(json_nexthop, "afi", "ipv6");
+		if (!brief)
+			json_object_string_add(json_nexthop, "afi", "ipv6");
 
 		if (nexthop->ifindex) {
 			json_object_int_add(json_nexthop, "interfaceIndex",
@@ -1238,7 +1280,8 @@ void nexthop_json_helper(json_object *json_nexthop,
 		break;
 
 	case NEXTHOP_TYPE_IFINDEX:
-		json_object_boolean_true_add(json_nexthop, "directlyConnected");
+		if (!brief)
+			json_object_boolean_true_add(json_nexthop, "directlyConnected");
 		json_object_int_add(json_nexthop, "interfaceIndex",
 				    nexthop->ifindex);
 		json_object_string_add(json_nexthop, "interfaceName",
@@ -1246,23 +1289,30 @@ void nexthop_json_helper(json_object *json_nexthop,
 						      nexthop->vrf_id));
 		break;
 	case NEXTHOP_TYPE_BLACKHOLE:
-		json_object_boolean_true_add(json_nexthop, "unreachable");
-		switch (nexthop->bh_type) {
-		case BLACKHOLE_REJECT:
-			json_object_boolean_true_add(json_nexthop, "reject");
-			break;
-		case BLACKHOLE_ADMINPROHIB:
-			json_object_boolean_true_add(json_nexthop,
-						     "adminProhibited");
-			break;
-		case BLACKHOLE_NULL:
-			json_object_boolean_true_add(json_nexthop, "blackhole");
-			break;
-		case BLACKHOLE_UNSPEC:
-			break;
+		if (!brief) {
+			json_object_boolean_true_add(json_nexthop, "unreachable");
+			switch (nexthop->bh_type) {
+			case BLACKHOLE_REJECT:
+				json_object_boolean_true_add(json_nexthop, "reject");
+				break;
+			case BLACKHOLE_ADMINPROHIB:
+				json_object_boolean_true_add(json_nexthop, "adminProhibited");
+				break;
+			case BLACKHOLE_NULL:
+				json_object_boolean_true_add(json_nexthop, "blackhole");
+				break;
+			case BLACKHOLE_UNSPEC:
+				break;
+			}
 		}
 		break;
 	}
+
+	if (display_vrfid)
+		json_object_string_add(json_nexthop, "vrf", vrf_id_to_name(nexthop->vrf_id));
+
+	if (brief)
+		return;
 
 	/* This nexthop is a resolver for the parent nexthop.
 	 * Set resolver flag for better clarity and delimiter
@@ -1271,9 +1321,6 @@ void nexthop_json_helper(json_object *json_nexthop,
 	if (nexthop->rparent)
 		json_object_boolean_true_add(json_nexthop, "resolver");
 
-	if (display_vrfid)
-		json_object_string_add(json_nexthop, "vrf",
-				       vrf_id_to_name(nexthop->vrf_id));
 	if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_DUPLICATE))
 		json_object_boolean_true_add(json_nexthop, "duplicate");
 

@@ -15,6 +15,8 @@
 #ifndef _LIBZEBRA_MD5_H_
 #define _LIBZEBRA_MD5_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,14 +42,14 @@ typedef struct {
 #define md5_n	md5_count.md5_count64
 #define md5_n8	md5_count.md5_count8
 
-	uint md5_i;
+	unsigned int md5_i;
 	uint8_t md5_buf[MD5_BUFLEN];
 } md5_ctxt;
 
-extern void md5_init(md5_ctxt *);
-extern void md5_loop(md5_ctxt *, const void *, unsigned int);
-extern void md5_pad(md5_ctxt *);
-extern void md5_result(uint8_t *, md5_ctxt *);
+extern void md5_init(md5_ctxt *ctxt);
+extern void md5_loop(md5_ctxt *ctxt, const void *vinput, unsigned int len);
+extern void md5_pad(md5_ctxt *ctxt);
+extern void md5_result(uint8_t *digest, md5_ctxt *ctxt);
 
 /* compatibility */
 #define MD5_CTX		md5_ctxt

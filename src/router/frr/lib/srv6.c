@@ -8,6 +8,7 @@
 
 #include "srv6.h"
 #include "log.h"
+#include "lib/json.h"
 
 DEFINE_QOBJ_TYPE(srv6_locator);
 DEFINE_QOBJ_TYPE(srv6_sid_format);
@@ -107,6 +108,11 @@ void seg6local_context2json(const struct seg6local_context *ctx,
 	case ZEBRA_SEG6_LOCAL_ACTION_END:
 		return;
 	case ZEBRA_SEG6_LOCAL_ACTION_END_X:
+		json_object_string_addf(json, "nh6", "%pI6", &ctx->nh6);
+		json_object_string_add(json, "interfaceName",
+				       ifindex2ifname(ctx->ifindex, VRF_DEFAULT));
+		json_object_int_add(json, "interfaceIndex", ctx->ifindex);
+		return;
 	case ZEBRA_SEG6_LOCAL_ACTION_END_DX6:
 		json_object_string_addf(json, "nh6", "%pI6", &ctx->nh6);
 		return;
@@ -173,6 +179,7 @@ const char *seg6local_context2str(char *str, size_t size,
 				  uint32_t action)
 {
 	char flavor[SRV6_FLAVORS_STRLEN], *p_flavor;
+	struct interface *ifp;
 
 	flavor[0] = '\0';
 	p_flavor = seg6local_flavors2str(flavor, sizeof(flavor), &ctx->flv);
@@ -182,6 +189,10 @@ const char *seg6local_context2str(char *str, size_t size,
 		return str;
 
 	case ZEBRA_SEG6_LOCAL_ACTION_END_X:
+		snprintfrr(str, size, "nh6 %pI6%s, %s", &ctx->nh6, p_flavor,
+			   ifindex2ifname(ctx->ifindex, VRF_DEFAULT));
+		return str;
+
 	case ZEBRA_SEG6_LOCAL_ACTION_END_DX6:
 		snprintfrr(str, size, "nh6 %pI6%s", &ctx->nh6, p_flavor);
 		return str;
@@ -202,6 +213,9 @@ const char *seg6local_context2str(char *str, size_t size,
 		snprintfrr(str, size, "nh6 %pI6%s", &ctx->nh6, p_flavor);
 		return str;
 	case ZEBRA_SEG6_LOCAL_ACTION_END_DX2:
+		ifp = if_lookup_by_index(ctx->ifindex, VRF_DEFAULT);
+		snprintfrr(str, size, "oif %s", ifp ? ifp->name : "<unknown>");
+		return str;
 	case ZEBRA_SEG6_LOCAL_ACTION_END_BM:
 	case ZEBRA_SEG6_LOCAL_ACTION_END_S:
 	case ZEBRA_SEG6_LOCAL_ACTION_END_AS:

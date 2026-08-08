@@ -91,7 +91,7 @@ static bool zlog_default_immediate;
  *
  * Note: you MUST NOT pass the format string + va_list to non-FRR format
  * string functions (e.g. vsyslog, sd_journal_printv, ...) since FRR uses an
- * extended prinf() with additional formats (%pI4 and the like).
+ * extended printf() with additional formats (%pI4 and the like).
  *
  * Also remember to use va_copy() on args.
  */
@@ -679,14 +679,23 @@ static void zlog_backtrace_msg(const struct xref_logmsg *xref, int prio)
 	}
 	free(names);
 #endif
-	if (!found_thread && tc)
+	if (!found_thread && event_is_scheduled(tc))
 		zlog(prio, "| (%s) scheduled from %s(), %s:%u", uid,
 		     tc->xref->xref.func, tc->xref->xref.file,
 		     tc->xref->xref.line);
 }
 
-void vzlogx(const struct xref_logmsg *xref, int prio,
-	    const char *fmt, va_list ap)
+PRINTFRR(2, 3)
+void ezlog(int prio, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	vzlog(prio, fmt, ap);
+	va_end(ap);
+}
+
+void vzlogx(const struct xref_logmsg *xref, int prio, const char *fmt, va_list ap)
 {
 	return;
 	struct zlog_tls *zlog_tls = zlog_tls_get();
@@ -696,6 +705,8 @@ void vzlogx(const struct xref_logmsg *xref, int prio,
 	va_copy(copy, ap);
 	char *msg = vasprintfrr(MTYPE_LOG_MESSAGE, fmt, copy);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-security"
 	switch (prio) {
 	case LOG_ERR:
 		frrtracelog(TRACE_ERR, msg);
@@ -717,6 +728,7 @@ void vzlogx(const struct xref_logmsg *xref, int prio,
 
 	va_end(copy);
 	XFREE(MTYPE_LOG_MESSAGE, msg);
+#pragma GCC diagnostic pop
 #endif
 
 	if (zlog_tls)

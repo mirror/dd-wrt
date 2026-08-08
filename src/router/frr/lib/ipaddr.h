@@ -9,11 +9,17 @@
 
 #include <zebra.h>
 
+#include "lib/jhash.h"
 #include "lib/log.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* glibc defines s6_addr32 to __in6_u.__u6_addr32 if __USE_{MISC || GNU} */
+#ifndef s6_addr32
+#define s6_addr32 __u6_addr.__u6_addr32
+#endif /* s6_addr32 */
 
 /*
  * Generic IP address - union of IPv4 and IPv6 address.
@@ -86,14 +92,6 @@ static inline int str2ipaddr(const char *str, struct ipaddr *ip)
 	return -1;
 }
 
-static inline char *ipaddr2str(const struct ipaddr *ip, char *buf, int size)
-{
-	buf[0] = '\0';
-	if (ip)
-		inet_ntop(ip->ipa_type, &ip->ip.addr, buf, size);
-	return buf;
-}
-
 #define IS_MAPPED_IPV6(A)                                                      \
 	((A)->s6_addr32[0] == 0x00000000                                       \
 		 ? ((A)->s6_addr32[1] == 0x00000000                            \
@@ -127,6 +125,41 @@ static inline void ipv4_mapped_ipv6_to_ipv4(const struct in6_addr *in6,
 	memcpy(in, (char *)in6 + 12, sizeof(struct in_addr));
 }
 
+static inline char *ipaddr2str(const struct ipaddr *ip, char *buf, int size)
+{
+	buf[0] = '\0';
+	if (ip) {
+		if (IS_IPADDR_V6(ip) && IN6_IS_ADDR_V4MAPPED(&ip->ipaddr_v6)) {
+			/* Handle IPv4-mapped IPv6 addresses specially */
+			struct in_addr ipv4;
+			char ipv4str[INET_ADDRSTRLEN];
+
+			/*
+			 * Extract the IPv4 address from the mapped IPv6 address.
+			 * Per RFC 5952 section 5, it is RECOMMENDED to represent
+			 * IPv4-mapped IPv6 addresses using "mixed notation" with the
+			 * IPv4 part in dot-decimal format: ::ffff:192.0.2.1
+			 * instead of ::ffff:c000:0201
+			 */
+			ipv4_mapped_ipv6_to_ipv4(&ip->ipaddr_v6, &ipv4);
+
+			/* Format as IPv4-mapped IPv6 address (::ffff:a.b.c.d) */
+			inet_ntop(AF_INET, &ipv4, ipv4str, sizeof(ipv4str));
+
+			/*
+			 * 1. Copy prefix (7 chars for "::ffff:")
+			 * 2. Append IPv4 address safely with strlcat
+			 */
+			snprintf(buf, size, "::ffff:");
+			strlcat(buf, ipv4str, size);
+		} else {
+			/* Regular IP address formatting */
+			inet_ntop(ipaddr_family(ip), &ip->ip.addr, buf, size);
+		}
+	}
+	return buf;
+}
+
 /*
  * generic ordering comparison between IP addresses
  */
@@ -155,6 +188,24 @@ static inline int ipaddr_cmp(const struct ipaddr *a, const struct ipaddr *b)
 	return -1;
 }
 
+static inline uint32_t ipaddr_hash(const struct ipaddr *ip)
+{
+	uint32_t hashval = 0xb544f7c0;
+
+	switch (ip->ipa_type) {
+	case IPADDR_V4:
+		hashval = jhash_1word(ip->ipaddr_v4.s_addr, hashval);
+		break;
+	case IPADDR_V6:
+		hashval = jhash2(ip->ipaddr_v6.s6_addr32, array_size(ip->ipaddr_v6.s6_addr32),
+				 hashval);
+		break;
+	case IPADDR_NONE:
+		(void)0;
+	}
+	return hashval;
+}
+
 static inline bool ipaddr_is_zero(const struct ipaddr *ip)
 {
 	switch (ip->ipa_type) {
@@ -172,6 +223,20 @@ static inline bool ipaddr_is_same(const struct ipaddr *ip1,
 				  const struct ipaddr *ip2)
 {
 	return ipaddr_cmp(ip1, ip2) == 0;
+}
+
+static inline bool ipaddr_is_mcast(const struct ipaddr *ip)
+{
+	switch (ip->ipa_type) {
+	case IPADDR_NONE:
+		return false;
+	case IPADDR_V4:
+		return IN_MULTICAST(ntohl(ip->ipaddr_v4.s_addr));
+	case IPADDR_V6:
+		return IN6_IS_ADDR_MULTICAST(&(ip->ipaddr_v6));
+	}
+
+	return false;
 }
 
 /* clang-format off */

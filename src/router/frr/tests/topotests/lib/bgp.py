@@ -1162,9 +1162,28 @@ def __create_bgp_unicast_address_family(
 
             if allowas_in:
                 number_occurences = allowas_in.setdefault("number_occurences", {})
+                route_map = allowas_in.setdefault("route_map", None)
+                origin = allowas_in.setdefault("origin", False)
                 del_action = allowas_in.setdefault("delete", False)
 
-                cmd = "{} allowas-in {}".format(neigh_cxt, number_occurences)
+                if route_map:
+                    # allowas-in route-map NAME [<1-10>|origin]
+                    if origin:
+                        cmd = "{} allowas-in route-map {} origin".format(
+                            neigh_cxt, route_map
+                        )
+                    else:
+                        cmd = "{} allowas-in route-map {} {}".format(
+                            neigh_cxt,
+                            route_map,
+                            number_occurences if number_occurences else "",
+                        ).strip()
+                else:
+                    # Standard allowas-in [<1-10>|origin]
+                    if origin:
+                        cmd = "{} allowas-in origin".format(neigh_cxt)
+                    else:
+                        cmd = "{} allowas-in {}".format(neigh_cxt, number_occurences)
 
                 if del_action:
                     cmd = "no {}".format(cmd)
@@ -4127,8 +4146,6 @@ def verify_gr_address_family(
         )
         return errormsg
 
-    logger.debug("Exiting lib API: {}".format(sys._getframe().f_code.co_name))
-
 
 @retry(retry_timeout=12)
 def verify_attributes_for_evpn_routes(
@@ -4803,8 +4820,6 @@ def verify_tcp_mss(tgen, dut, neighbour, configured_tcp_mss, vrf=None):
                 )
             )
             return "TCP-MSS Mismatch"
-    logger.debug("Exiting lib API: {}".format(sys._getframe().f_code.co_name))
-    return False
 
 
 def get_dut_as_number(tgen, dut):
@@ -5711,7 +5726,13 @@ def bgp_vpn_router_json_cmp_exact_filter(router, cmd, expected):
         json_output.pop("totalRoutes")
     if "totalPaths" in json_output:
         json_output.pop("totalPaths")
+    if "numRoutes" in json_output:
+        json_output.pop("numRoutes")
+    if "routes" in json_output:
+        json_output["routes"].pop("numRoutes", None)
     for rd, data in json_output["routes"]["routeDistinguishers"].items():
+        if isinstance(data, dict) and "numRoutes" in data:
+            data.pop("numRoutes")
         for _, attrs in data.items():
             for attr in attrs:
                 if "nhVrfId" in attr:

@@ -46,7 +46,7 @@ import sys
 import pytest
 from typing import Optional
 
-pytestmark = [pytest.mark.bgpd]
+pytestmark = [pytest.mark.bgpd, pytest.mark.evpn]
 
 CWD = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(CWD, "../"))
@@ -64,15 +64,18 @@ def setup_module(mod):
     tgen.start_topology()
 
     # L3 SVI only
-    tgen.net["r1"].cmd("""
+    tgen.net["r1"].cmd(
+        """
         ip link add vrf100 up type vrf table 100
         ip link add br100 up master vrf100 type bridge
         ip link add vxlan100 up master br100 type vxlan id 100 dstport 4789 local 10.0.0.10 nolearning
         ip link set r1-eth0 master vrf100
         ip link set r1-eth1 master vrf100
-    """)
+    """
+    )
     # L3 + L2 SVIs
-    tgen.net["r2"].cmd("""
+    tgen.net["r2"].cmd(
+        """
         ip link add vrf100 up type vrf table 100
         ip link add br100 up master vrf100 type bridge
         ip link add vxlan100 up master br100 type vxlan id 100 dstport 4789 local 10.0.0.11 nolearning
@@ -80,9 +83,11 @@ def setup_module(mod):
         ip link add vxlan10 up master br10 type vxlan id 10 dstport 4789 local 10.0.0.11 nolearning
         ip addr add 10.0.0.1/31 dev br10
         ip addr add 10.0.0.3/31 dev br10
-    """)
+    """
+    )
     # L2 SVI only
-    tgen.net["r3"].cmd("""
+    tgen.net["r3"].cmd(
+        """
         ip link add vrf100 up type vrf table 100
         ip link add br10 up master vrf100 type bridge
         ip link add vxlan10 up master br10 type vxlan id 10 dstport 4789 local 10.0.0.12 nolearning
@@ -94,9 +99,10 @@ def setup_module(mod):
         bridge fdb add 00:00:00:00:00:c2 dev dummy-c2 master static
         ip neigh add 10.0.0.0 dev br10 lladdr 00:00:00:00:00:c1
         ip neigh add 10.0.0.2 dev br10 lladdr 00:00:00:00:00:c2
-    """)
-        # ip link add br100 up master vrf100 type bridge
-        # ip link add vxlan100 up master br100 type vxlan id 100 dstport 4789 local 10.0.0.12 nolearning
+    """
+    )
+    # ip link add br100 up master vrf100 type bridge
+    # ip link add vxlan100 up master br100 type vxlan id 100 dstport 4789 local 10.0.0.12 nolearning
 
     for name, router in tgen.routers().items():
         router.load_frr_config(os.path.join(CWD, f"{name}/frr.conf"))
@@ -107,12 +113,17 @@ def teardown_module(mod):
     get_topogen().stop_topology()
 
 
-def _converge_fn(router: TopoRouter, command: str, expected: dict, not_vtep: bool = False):
+def _converge_fn(
+    router: TopoRouter, command: str, expected: dict, not_vtep: bool = False
+):
     def _converge() -> Optional[json_cmp_result]:
         output: str = router.vtysh_cmd(command)
         if not_vtep:
-            assert output is not "", "Could not access the EVPN RIB on non-VTEP speaker."
+            assert (
+                output is not ""
+            ), "Could not access the EVPN RIB on non-VTEP speaker."
         return topotest.json_cmp(json.loads(output), expected)
+
     return functools.partial(_converge)
 
 
@@ -162,7 +173,9 @@ EXPECTED_R2_IPV4_BASELINE = {
 def _ensure_baseline(tgen: Topogen):
     logger.info("Check IPv4 routes on R2")
     expected = EXPECTED_R2_IPV4_BASELINE
-    f = _converge_fn(tgen.gears["r2"], "show bgp vrf vrf100 ipv4 unicast detail json", expected)
+    f = _converge_fn(
+        tgen.gears["r2"], "show bgp vrf vrf100 ipv4 unicast detail json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Multipath routes should be in overlay VRF"
 
@@ -178,7 +191,9 @@ def test_bgp_evpn_rt5_addpath_basic():
 
     logger.info("Check IPv4 routes on R1")
     expected = EXPECTED_R1_IPV4_BASELINE
-    f = _converge_fn(tgen.gears["r1"], "show bgp vrf vrf100 ipv4 unicast detail json", expected)
+    f = _converge_fn(
+        tgen.gears["r1"], "show bgp vrf vrf100 ipv4 unicast detail json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Multipath routes should be in overlay VRF"
 
@@ -215,7 +230,9 @@ def test_bgp_evpn_rt5_addpath_basic():
         "numPrefix": 1,
         "numPaths": 2,
     }
-    f = _converge_fn(tgen.gears["r1"], "show bgp l2vpn evpn route detail type prefix json", expected)
+    f = _converge_fn(
+        tgen.gears["r1"], "show bgp l2vpn evpn route detail type prefix json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Multipath routes should be exported to EVPN"
 
@@ -250,7 +267,12 @@ def test_bgp_evpn_rt5_addpath_basic():
         "numPrefix": 1,
         "numPaths": 2,
     }
-    f = _converge_fn(tgen.gears["rr"], "show bgp l2vpn evpn route detail type prefix json", expected, not_vtep=True)
+    f = _converge_fn(
+        tgen.gears["rr"],
+        "show bgp l2vpn evpn route detail type prefix json",
+        expected,
+        not_vtep=True,
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "All EVPN paths should be present in RR"
 
@@ -285,7 +307,9 @@ def test_bgp_evpn_rt5_addpath_basic():
         "numPrefix": 1,
         "numPaths": 2,
     }
-    f = _converge_fn(tgen.gears["r2"], "show bgp l2vpn evpn route detail type prefix json", expected)
+    f = _converge_fn(
+        tgen.gears["r2"], "show bgp l2vpn evpn route detail type prefix json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "All EVPN paths should be present in R2"
 
@@ -311,24 +335,38 @@ def test_bgp_evpn_rt5_addpath_basic():
         "totalRoutes": 1,
         "totalPaths": 2,
     }
-    f = _converge_fn(tgen.gears["r2"], "show bgp vrf vrf100 ipv4 unicast detail json", expected)
+    f = _converge_fn(
+        tgen.gears["r2"], "show bgp vrf vrf100 ipv4 unicast detail json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Multipath routes should be imported in overlay VRF"
 
     logger.info("Check FIB on R2")
     expected = {
-        "10.0.0.0/24":[
+        "10.0.0.0/24": [
             {
                 "selected": True,
                 "installed": True,
-                "nexthops":[
-                    {"fib": True, "ip": "10.0.0.0", "interfaceName": "br10", "active":True},
-                    {"fib": True, "ip": "10.0.0.2", "interfaceName": "br10", "active":True},
+                "nexthops": [
+                    {
+                        "fib": True,
+                        "ip": "10.0.0.0",
+                        "interfaceName": "br10",
+                        "active": True,
+                    },
+                    {
+                        "fib": True,
+                        "ip": "10.0.0.2",
+                        "interfaceName": "br10",
+                        "active": True,
+                    },
                 ],
             },
         ],
     }
-    f = _converge_fn(tgen.gears["r2"], "show ip route vrf vrf100 10.0.0.0/24 json", expected)
+    f = _converge_fn(
+        tgen.gears["r2"], "show ip route vrf vrf100 10.0.0.0/24 json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Multipath routes should be installed in FIB"
 
@@ -347,12 +385,14 @@ def test_bgp_evpn_rt5_addpath_withdraw():
 
     logger.info("Withdrawing path through C1")
     c1: TopoRouter = tgen.gears["c1"]
-    c1.vtysh_cmd("""
+    c1.vtysh_cmd(
+        """
         conf
         router bgp 64000
          address-family ipv4 unicast
           no network 10.0.0.0/24
-    """)
+    """
+    )
 
     expected = {
         "routes": {
@@ -367,7 +407,9 @@ def test_bgp_evpn_rt5_addpath_withdraw():
         "totalRoutes": 1,
         "totalPaths": 1,
     }
-    f = _converge_fn(tgen.gears["r1"], "show bgp vrf vrf100 ipv4 unicast detail json", expected)
+    f = _converge_fn(
+        tgen.gears["r1"], "show bgp vrf vrf100 ipv4 unicast detail json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Route through C1 should be absent from overlay VRF"
 
@@ -392,7 +434,9 @@ def test_bgp_evpn_rt5_addpath_withdraw():
         "numPrefix": 1,
         "numPaths": 1,
     }
-    f = _converge_fn(tgen.gears["r1"], "show bgp l2vpn evpn route detail type prefix json", expected)
+    f = _converge_fn(
+        tgen.gears["r1"], "show bgp l2vpn evpn route detail type prefix json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Path through C1 should be withdrawn from EVPN"
 
@@ -416,7 +460,12 @@ def test_bgp_evpn_rt5_addpath_withdraw():
         "numPrefix": 1,
         "numPaths": 1,
     }
-    f = _converge_fn(tgen.gears["rr"], "show bgp l2vpn evpn route detail type prefix json", expected, not_vtep=True)
+    f = _converge_fn(
+        tgen.gears["rr"],
+        "show bgp l2vpn evpn route detail type prefix json",
+        expected,
+        not_vtep=True,
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Path through C1 should be absent from EVPN on the RR"
 
@@ -440,7 +489,9 @@ def test_bgp_evpn_rt5_addpath_withdraw():
         "numPrefix": 1,
         "numPaths": 1,
     }
-    f = _converge_fn(tgen.gears["r2"], "show bgp l2vpn evpn route detail type prefix json", expected)
+    f = _converge_fn(
+        tgen.gears["r2"], "show bgp l2vpn evpn route detail type prefix json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Path through C1 should be absent from R2"
 
@@ -458,17 +509,21 @@ def test_bgp_evpn_rt5_addpath_withdraw():
         "totalRoutes": 1,
         "totalPaths": 1,
     }
-    f = _converge_fn(tgen.gears["r2"], "show bgp vrf vrf100 ipv4 unicast detail json", expected)
+    f = _converge_fn(
+        tgen.gears["r2"], "show bgp vrf vrf100 ipv4 unicast detail json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Path through C1 should be un-imported in R2"
 
     logger.info("Adding back path through C1")
-    c1.vtysh_cmd("""
+    c1.vtysh_cmd(
+        """
         conf
         router bgp 64000
          address-family ipv4 unicast
           network 10.0.0.0/24
-    """)
+    """
+    )
 
     # ensure it is propagated back
     test_bgp_evpn_rt5_addpath_basic()
@@ -489,16 +544,20 @@ def test_bgp_evpn_rt5_addpath_transitions():
 
     logger.info("Switching to bestpath advertisement")
     r1: TopoRouter = tgen.gears["r1"]
-    r1.vtysh_cmd("""
+    r1.vtysh_cmd(
+        """
         conf
         router bgp 64001 vrf vrf100
          address-family l2vpn evpn
           advertise ipv4 unicast
-    """)
+    """
+    )
 
     logger.info("Check IPv4 routes on R1")
     expected = EXPECTED_R1_IPV4_BASELINE
-    f = _converge_fn(tgen.gears["r1"], "show bgp vrf vrf100 ipv4 unicast detail json", expected)
+    f = _converge_fn(
+        tgen.gears["r1"], "show bgp vrf vrf100 ipv4 unicast detail json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Multipath routes should be in overlay VRF"
 
@@ -522,7 +581,9 @@ def test_bgp_evpn_rt5_addpath_transitions():
         "numPrefix": 1,
         "numPaths": 1,
     }
-    f = _converge_fn(tgen.gears["r1"], "show bgp l2vpn evpn route detail type prefix json", expected)
+    f = _converge_fn(
+        tgen.gears["r1"], "show bgp l2vpn evpn route detail type prefix json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Only the best path should be kept in R1"
 
@@ -545,7 +606,9 @@ def test_bgp_evpn_rt5_addpath_transitions():
         "numPrefix": 1,
         "numPaths": 1,
     }
-    f = _converge_fn(tgen.gears["r1"], "show bgp l2vpn evpn route detail type prefix json", expected)
+    f = _converge_fn(
+        tgen.gears["r1"], "show bgp l2vpn evpn route detail type prefix json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Only the best path should be kept in R2"
 
@@ -563,17 +626,21 @@ def test_bgp_evpn_rt5_addpath_transitions():
         "totalRoutes": 1,
         "totalPaths": 1,
     }
-    f = _converge_fn(tgen.gears["r2"], "show bgp vrf vrf100 ipv4 unicast detail json", expected)
+    f = _converge_fn(
+        tgen.gears["r2"], "show bgp vrf vrf100 ipv4 unicast detail json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Route should go through R1 now"
 
     logger.info("Switching back to gateway-ip")
-    r1.vtysh_cmd("""
+    r1.vtysh_cmd(
+        """
         conf
         router bg 64001 vrf vrf100
          address-family l2vpn evpn
           advertise ipv4 unicast gateway-ip
-    """)
+    """
+    )
 
     # ensure we go back to the original state
     test_bgp_evpn_rt5_addpath_basic()
@@ -592,7 +659,8 @@ def test_bgp_evpn_rt5_addpath_route_map():
 
     logger.info("Adding drop route-map")
     r1: TopoRouter = tgen.gears["r1"]
-    r1.vtysh_cmd("""
+    r1.vtysh_cmd(
+        """
         conf
         route-map drop-c2 deny 10
          match ip next-hop address 10.0.0.2
@@ -600,11 +668,14 @@ def test_bgp_evpn_rt5_addpath_route_map():
         router bgp 64001 vrf vrf100
          address-family l2vpn evpn
           advertise ipv4 unicast gateway-ip route-map drop-c2
-    """)
+    """
+    )
 
     logger.info("Check IPv4 routes on R1")
     expected = EXPECTED_R1_IPV4_BASELINE
-    f = _converge_fn(tgen.gears["r1"], "show bgp vrf vrf100 ipv4 unicast detail json", expected)
+    f = _converge_fn(
+        tgen.gears["r1"], "show bgp vrf vrf100 ipv4 unicast detail json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "R1 overlay shoud still have both paths"
 
@@ -629,7 +700,9 @@ def test_bgp_evpn_rt5_addpath_route_map():
         "numPrefix": 1,
         "numPaths": 1,
     }
-    f = _converge_fn(tgen.gears["r1"], "show bgp l2vpn evpn route detail type prefix json", expected)
+    f = _converge_fn(
+        tgen.gears["r1"], "show bgp l2vpn evpn route detail type prefix json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Path through C2 should be withdrawn from EVPN"
 
@@ -647,12 +720,15 @@ def test_bgp_evpn_rt5_addpath_route_map():
         "totalRoutes": 1,
         "totalPaths": 1,
     }
-    f = _converge_fn(tgen.gears["r2"], "show bgp vrf vrf100 ipv4 unicast detail json", expected)
+    f = _converge_fn(
+        tgen.gears["r2"], "show bgp vrf vrf100 ipv4 unicast detail json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Path through C2 should be un-imported in R2"
 
     logger.info("Changing for a preference update route-map")
-    r1.vtysh_cmd("""
+    r1.vtysh_cmd(
+        """
         conf
         no route-map drop-c2
         route-map set-pref permit 10
@@ -662,11 +738,14 @@ def test_bgp_evpn_rt5_addpath_route_map():
         router bgp 64001 vrf vrf100
          address-family l2vpn evpn
           advertise ipv4 unicast gateway-ip route-map set-pref
-    """)
+    """
+    )
 
     logger.info("Check IPv4 routes on R1")
     expected = EXPECTED_R1_IPV4_BASELINE
-    f = _converge_fn(tgen.gears["r1"], "show bgp vrf vrf100 ipv4 unicast detail json", expected)
+    f = _converge_fn(
+        tgen.gears["r1"], "show bgp vrf vrf100 ipv4 unicast detail json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "R1 overlay shoud still have both paths"
 
@@ -681,7 +760,10 @@ def test_bgp_evpn_rt5_addpath_route_map():
                             "valid": True,
                             "local": True,
                             "nexthops": [{"ip": "10.0.0.10"}],
-                            "bestpath": {"overall": True, "selectionReason": "Local Pref"},
+                            "bestpath": {
+                                "overall": True,
+                                "selectionReason": "Local Pref",
+                            },
                         },
                     ],
                     [
@@ -698,7 +780,9 @@ def test_bgp_evpn_rt5_addpath_route_map():
         "numPrefix": 1,
         "numPaths": 2,
     }
-    f = _converge_fn(tgen.gears["r1"], "show bgp l2vpn evpn route detail type prefix json", expected)
+    f = _converge_fn(
+        tgen.gears["r1"], "show bgp l2vpn evpn route detail type prefix json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "All paths, including non-best should be in EVPN"
 
@@ -712,7 +796,10 @@ def test_bgp_evpn_rt5_addpath_route_map():
                             "gatewayIP": "10.0.0.2",
                             "valid": True,
                             "nexthops": [{"ip": "10.0.0.10"}],
-                            "bestpath": {"overall": True, "selectionReason": "Local Pref"},
+                            "bestpath": {
+                                "overall": True,
+                                "selectionReason": "Local Pref",
+                            },
                         },
                     ],
                     [
@@ -728,7 +815,12 @@ def test_bgp_evpn_rt5_addpath_route_map():
         "numPrefix": 1,
         "numPaths": 2,
     }
-    f = _converge_fn(tgen.gears["rr"], "show bgp l2vpn evpn route detail type prefix json", expected, not_vtep=True)
+    f = _converge_fn(
+        tgen.gears["rr"],
+        "show bgp l2vpn evpn route detail type prefix json",
+        expected,
+        not_vtep=True,
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "All paths, including non-best should be transmitted in EVPN"
 
@@ -742,7 +834,10 @@ def test_bgp_evpn_rt5_addpath_route_map():
                             "gatewayIP": "10.0.0.2",
                             "valid": True,
                             "nexthops": [{"ip": "10.0.0.10"}],
-                            "bestpath": {"overall": True, "selectionReason": "Local Pref"},
+                            "bestpath": {
+                                "overall": True,
+                                "selectionReason": "Local Pref",
+                            },
                         },
                     ],
                     [
@@ -758,7 +853,9 @@ def test_bgp_evpn_rt5_addpath_route_map():
         "numPrefix": 1,
         "numPaths": 2,
     }
-    f = _converge_fn(tgen.gears["r2"], "show bgp l2vpn evpn route detail type prefix json", expected)
+    f = _converge_fn(
+        tgen.gears["r2"], "show bgp l2vpn evpn route detail type prefix json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "All paths, including non-best should be transmitted in EVPN"
 
@@ -783,18 +880,24 @@ def test_bgp_evpn_rt5_addpath_route_map():
         "totalRoutes": 1,
         "totalPaths": 2,
     }
-    f = _converge_fn(tgen.gears["r2"], "show bgp vrf vrf100 ipv4 unicast detail json", expected)
+    f = _converge_fn(
+        tgen.gears["r2"], "show bgp vrf vrf100 ipv4 unicast detail json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
-    assert result is None, "All paths, including non-best, should be imported in overlay VRF"
+    assert (
+        result is None
+    ), "All paths, including non-best, should be imported in overlay VRF"
 
     logger.info("Cleaning up")
-    r1.vtysh_cmd("""
+    r1.vtysh_cmd(
+        """
         conf
         no route-map set-pref
         router bgp 64001 vrf vrf100
          address-family l2vpn evpn
           advertise ipv4 unicast gateway-ip
-    """)
+    """
+    )
     _ensure_baseline(tgen)
 
 
@@ -810,11 +913,13 @@ def test_bgp_evpn_rt5_addpath_session_down():
 
     logger.info("Admin shutdown of the session with C1")
     r1: TopoRouter = tgen.gears["r1"]
-    r1.vtysh_cmd("""
+    r1.vtysh_cmd(
+        """
         conf
         router bgp 64001 vrf vrf100
          neighbor 10.0.0.0 shutdown
-    """)
+    """
+    )
 
     expected = {
         "routes": {
@@ -829,7 +934,9 @@ def test_bgp_evpn_rt5_addpath_session_down():
         "totalRoutes": 1,
         "totalPaths": 1,
     }
-    f = _converge_fn(tgen.gears["r1"], "show bgp vrf vrf100 ipv4 unicast detail json", expected)
+    f = _converge_fn(
+        tgen.gears["r1"], "show bgp vrf vrf100 ipv4 unicast detail json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Route through C1 should be absent from overlay VRF"
 
@@ -854,7 +961,9 @@ def test_bgp_evpn_rt5_addpath_session_down():
         "numPrefix": 1,
         "numPaths": 1,
     }
-    f = _converge_fn(tgen.gears["r1"], "show bgp l2vpn evpn route detail type prefix json", expected)
+    f = _converge_fn(
+        tgen.gears["r1"], "show bgp l2vpn evpn route detail type prefix json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Path through C1 should be withdrawn from EVPN"
 
@@ -872,25 +981,31 @@ def test_bgp_evpn_rt5_addpath_session_down():
         "totalRoutes": 1,
         "totalPaths": 1,
     }
-    f = _converge_fn(tgen.gears["r2"], "show bgp vrf vrf100 ipv4 unicast detail json", expected)
+    f = _converge_fn(
+        tgen.gears["r2"], "show bgp vrf vrf100 ipv4 unicast detail json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Path through C1 should be un-imported in R2"
 
     logger.info("Restore session to C1")
-    r1.vtysh_cmd("""
+    r1.vtysh_cmd(
+        """
         conf
         router bgp 64001 vrf vrf100
          no neighbor 10.0.0.0 shutdown
-    """)
+    """
+    )
     _ensure_baseline(tgen)
 
     logger.info("Break session with C1")
     c1: TopoRouter = tgen.gears["c1"]
-    c1.vtysh_cmd("""
+    c1.vtysh_cmd(
+        """
         conf
         router bgp 64000
          neighbor 10.0.0.1 shutdown
-    """)
+    """
+    )
 
     expected = {
         "routes": {
@@ -905,7 +1020,9 @@ def test_bgp_evpn_rt5_addpath_session_down():
         "totalRoutes": 1,
         "totalPaths": 1,
     }
-    f = _converge_fn(tgen.gears["r1"], "show bgp vrf vrf100 ipv4 unicast detail json", expected)
+    f = _converge_fn(
+        tgen.gears["r1"], "show bgp vrf vrf100 ipv4 unicast detail json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Route through C1 should be absent from overlay VRF"
 
@@ -930,7 +1047,9 @@ def test_bgp_evpn_rt5_addpath_session_down():
         "numPrefix": 1,
         "numPaths": 1,
     }
-    f = _converge_fn(tgen.gears["r1"], "show bgp l2vpn evpn route detail type prefix json", expected)
+    f = _converge_fn(
+        tgen.gears["r1"], "show bgp l2vpn evpn route detail type prefix json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Path through C1 should be withdrawn from EVPN"
 
@@ -948,16 +1067,20 @@ def test_bgp_evpn_rt5_addpath_session_down():
         "totalRoutes": 1,
         "totalPaths": 1,
     }
-    f = _converge_fn(tgen.gears["r2"], "show bgp vrf vrf100 ipv4 unicast detail json", expected)
+    f = _converge_fn(
+        tgen.gears["r2"], "show bgp vrf vrf100 ipv4 unicast detail json", expected
+    )
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
     assert result is None, "Path through C1 should be un-imported in R2"
 
     logger.info("Restore session with C1")
-    c1.vtysh_cmd("""
+    c1.vtysh_cmd(
+        """
         conf
         router bgp 64000
          no neighbor 10.0.0.1 shutdown
-    """)
+    """
+    )
     _ensure_baseline(tgen)
 
 
@@ -973,12 +1096,14 @@ def test_bgp_evpn_rt5_addpath_disable_addpath_rx():
 
     logger.info("Disable RX AddPath on R2")
     r2: TopoRouter = tgen.gears["r2"]
-    r2.vtysh_cmd("""
+    r2.vtysh_cmd(
+        """
         conf
         router bgp 64001
          address-family l2vpn evpn
           neighbor 10.0.0.9 disable-addpath-rx
-    """)
+    """
+    )
 
     # 1. ensure that path through C1 wins due to a lower IP
     logger.info("Check EVPN routes on R2")
@@ -1022,14 +1147,16 @@ def test_bgp_evpn_rt5_addpath_disable_addpath_rx():
     # 2. ensure an actually bestpath wins
     logger.info("Make path through C2 the preferred one")
     r1: TopoRouter = tgen.gears["r1"]
-    r1.vtysh_cmd("""
+    r1.vtysh_cmd(
+        """
         conf
         route-map set-pref permit 10
          set local-pref 200
         router bgp 64001 vrf vrf100
          address-family ipv4 unicast
           neighbor 10.0.0.2 route-map set-pref in
-    """)
+    """
+    )
 
     logger.info("Check IPv4 routes on R1")
     expected = {
@@ -1056,7 +1183,12 @@ def test_bgp_evpn_rt5_addpath_disable_addpath_rx():
 
     logger.info("Check EVPN routes on RR")
     expected = {"numPrefix": 1, "numPaths": 2}
-    f = _converge_fn(tgen.gears["rr"], "show bgp l2vpn evpn route detail type prefix json", expected, not_vtep=True)
+    f = _converge_fn(
+        tgen.gears["rr"],
+        "show bgp l2vpn evpn route detail type prefix json",
+        expected,
+        not_vtep=True,
+    )
     assert result is None, "All should still be sent by R1"
 
     logger.info("Check EVPN routes on R2")
@@ -1084,19 +1216,23 @@ def test_bgp_evpn_rt5_addpath_disable_addpath_rx():
     assert result is None, "Path through C2 should be the only one left"
 
     logger.info("Cleaning up...")
-    r1.vtysh_cmd("""
+    r1.vtysh_cmd(
+        """
         conf
         no route-map set-pref
         router bgp 64001 vrf vrf100
          address-family ipv4 unicast
           no neighbor 10.0.0.2 route-map set-pref in
-    """)
-    r2.vtysh_cmd("""
+    """
+    )
+    r2.vtysh_cmd(
+        """
         conf
         router bgp 64001
          address-family l2vpn evpn
           no neighbor 10.0.0.9 disable-addpath-rx
-    """)
+    """
+    )
     _ensure_baseline(tgen)
 
 
@@ -1112,12 +1248,14 @@ def test_bgp_evpn_rt5_addpath_tx_bestpath():
 
     logger.info("Limiting paths sent by R1")
     r1: TopoRouter = tgen.gears["r1"]
-    r1.vtysh_cmd("""
+    r1.vtysh_cmd(
+        """
         conf
         router bgp 64001
          address-family l2vpn evpn
           neighbor 10.0.0.9 addpath-tx-bestpath-per-AS
-    """)
+    """
+    )
 
     logger.info("Checking EVPN routes on R2")
     r2: TopoRouter = tgen.gears["r2"]
@@ -1143,7 +1281,8 @@ def test_bgp_evpn_rt5_addpath_tx_bestpath():
     assert result is None, "Only one path should be transmitted"
 
     logger.info("Prepending fake AS, and skewing paths")
-    r1.vtysh_cmd("""
+    r1.vtysh_cmd(
+        """
         conf
         route-map prepend-as-65001 permit 10
          set as-path prepend 65001
@@ -1158,7 +1297,8 @@ def test_bgp_evpn_rt5_addpath_tx_bestpath():
          address-family ipv4 unicast
           neighbor 10.0.0.0 route-map prepend-as-65001 in
           neighbor 10.0.0.2 route-map prepend-as-65002 in
-    """)
+    """
+    )
 
     logger.info("Check IPv4 routes on R1")
     expected = {
@@ -1211,10 +1351,13 @@ def test_bgp_evpn_rt5_addpath_tx_bestpath():
     }
     f = _converge_fn(r2, "show bgp l2vpn evpn route detail type prefix json", expected)
     _, result = topotest.run_and_expect(f, None, count=60, wait=1)
-    assert result is None, "Both paths have different neighboring AS, both should be sent"
+    assert (
+        result is None
+    ), "Both paths have different neighboring AS, both should be sent"
 
     logger.info("Cleaning up")
-    r1.vtysh_cmd("""
+    r1.vtysh_cmd(
+        """
         conf
         router bgp 64001 vrf vrf100
          address-family ipv4 unicast
@@ -1225,5 +1368,6 @@ def test_bgp_evpn_rt5_addpath_tx_bestpath():
         router bgp 64001
          address-family l2vpn evpn
           neighbor 10.0.0.9 addpath-tx-all-paths
-    """)
+    """
+    )
     _ensure_baseline(tgen)

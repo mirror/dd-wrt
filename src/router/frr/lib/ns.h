@@ -92,7 +92,7 @@ extern void ns_add_hook(int type, int (*)(struct ns *));
 
 extern void ns_terminate(void);
 
-/* API to initialize NETNS managerment
+/* API to initialize NETNS management
  * parameter is the default ns_id
  */
 extern void ns_init_management(ns_id_t ns_id, ns_id_t internal_ns_idx);
@@ -113,9 +113,9 @@ extern char *ns_netns_pathname(struct vty *vty, const char *name);
 #define NS_WALK_CONTINUE 0
 #define NS_WALK_STOP 1
 
-extern void ns_walk_func(int (*func)(struct ns *,
-				     void *,
-				     void **),
+extern void ns_walk_func(int (*func)(struct ns *ns,
+				     void *param_in,
+				     void **param_out),
 			 void *param_in,
 			 void **param_out);
 

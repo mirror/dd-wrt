@@ -229,20 +229,27 @@ int ospf_dr_election(struct ospf_interface *oi)
 	list_delete(&el_list);
 
 	/* if DR or BDR changes, cause AdjOK? neighbor event. */
-	if (!IPV4_ADDR_SAME(&old_dr, &DR(oi))
-	    || !IPV4_ADDR_SAME(&old_bdr, &BDR(oi)))
+	if (!IPV4_ADDR_SAME(&old_dr, &DR(oi)) || !IPV4_ADDR_SAME(&old_bdr, &BDR(oi)) ||
+	    oi->ospf->gr_info.restart_in_progress) {
+		struct ospf_if_params *oip = IF_DEF_PARAMS(oi->ifp);
+
 		ospf_dr_change(oi->ospf, oi->nbrs);
+		/* Trigger an extra hello on DR/BDR changes when using quick neighbors to speed up
+		 * correct DR/BDR election.
+		 */
+		if (oip->bfd_config && oip->bfd_config->quick)
+			ospf_hello_send(oi);
+	}
 
 	return new_state;
 }
 
 
-void ospf_hello_timer(struct event *thread)
+void ospf_hello_timer(struct event *event)
 {
 	struct ospf_interface *oi;
 
-	oi = EVENT_ARG(thread);
-	oi->t_hello = NULL;
+	oi = EVENT_ARG(event);
 
 	/* Check if the GR hello-delay is active. */
 	if (oi->gr.hello_delay.t_grace_send)
@@ -258,12 +265,11 @@ void ospf_hello_timer(struct event *thread)
 	OSPF_HELLO_TIMER_ON(oi);
 }
 
-static void ospf_wait_timer(struct event *thread)
+static void ospf_wait_timer(struct event *event)
 {
 	struct ospf_interface *oi;
 
-	oi = EVENT_ARG(thread);
-	oi->t_wait = NULL;
+	oi = EVENT_ARG(event);
 
 	if (IS_DEBUG_OSPF(ism, ISM_TIMERS))
 		zlog_debug("ISM[%s]: Timer (Wait timer expire)", IF_NAME(oi));
@@ -285,6 +291,7 @@ static void ism_timer_set(struct ospf_interface *oi)
 		   reset also. */
 		event_cancel(&oi->t_hello);
 		event_cancel(&oi->t_wait);
+		event_cancel(&oi->t_qn_wait);
 		event_cancel(&oi->t_ls_ack_delayed);
 		event_cancel(&oi->gr.hello_delay.t_grace_send);
 		break;
@@ -293,6 +300,7 @@ static void ism_timer_set(struct ospf_interface *oi)
 		   unavailable for regular data traffic. */
 		event_cancel(&oi->t_hello);
 		event_cancel(&oi->t_wait);
+		event_cancel(&oi->t_qn_wait);
 		event_cancel(&oi->t_ls_ack_delayed);
 		event_cancel(&oi->gr.hello_delay.t_grace_send);
 		break;
@@ -314,6 +322,7 @@ static void ism_timer_set(struct ospf_interface *oi)
 		/* send first hello immediately */
 		OSPF_ISM_TIMER_MSEC_ON(oi->t_hello, ospf_hello_timer, 1);
 		event_cancel(&oi->t_wait);
+		event_cancel(&oi->t_qn_wait);
 		break;
 	case ISM_DROther:
 		/* The network type of the interface is broadcast or NBMA
@@ -322,6 +331,7 @@ static void ism_timer_set(struct ospf_interface *oi)
 		   Backup Designated Router. */
 		OSPF_HELLO_TIMER_ON(oi);
 		event_cancel(&oi->t_wait);
+		event_cancel(&oi->t_qn_wait);
 		break;
 	case ISM_Backup:
 		/* The network type of the interface is broadcast os NBMA
@@ -329,6 +339,7 @@ static void ism_timer_set(struct ospf_interface *oi)
 		   and the router is Backup Designated Router. */
 		OSPF_HELLO_TIMER_ON(oi);
 		event_cancel(&oi->t_wait);
+		event_cancel(&oi->t_qn_wait);
 		break;
 	case ISM_DR:
 		/* The network type of the interface is broadcast or NBMA
@@ -336,6 +347,7 @@ static void ism_timer_set(struct ospf_interface *oi)
 		   and the router is Designated Router. */
 		OSPF_HELLO_TIMER_ON(oi);
 		event_cancel(&oi->t_wait);
+		event_cancel(&oi->t_qn_wait);
 		break;
 	}
 }
@@ -558,14 +570,14 @@ static void ism_change_state(struct ospf_interface *oi, int state)
 }
 
 /* Execute ISM event process. */
-void ospf_ism_event(struct event *thread)
+void ospf_ism_event(struct event *e)
 {
 	int event;
 	int next_state;
 	struct ospf_interface *oi;
 
-	oi = EVENT_ARG(thread);
-	event = EVENT_VAL(thread);
+	oi = EVENT_ARG(e);
+	event = EVENT_VAL(e);
 
 	/* Call function. */
 	next_state = (*(ISM[oi->state][event].func))(oi);

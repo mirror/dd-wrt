@@ -167,7 +167,8 @@ typedef enum {
 	AFI_IP = 1,
 	AFI_IP6 = 2,
 	AFI_L2VPN = 3,
-	AFI_MAX = 4
+	AFI_BGP_LS = 4, /* BGP-LS (RFC 9552) */
+	AFI_MAX = 5
 } afi_t;
 
 #define IS_VALID_AFI(a) ((a) > AFI_UNSPEC && (a) < AFI_MAX)
@@ -182,16 +183,17 @@ typedef enum {
 	SAFI_EVPN = 5,
 	SAFI_LABELED_UNICAST = 6,
 	SAFI_FLOWSPEC = 7,
-	SAFI_MAX = 8
+	SAFI_BGP_LS = 8, /* BGP-LS (RFC 9552) */
+	SAFI_MAX = 9
 } safi_t;
 
 #define FOREACH_AFI_SAFI(afi, safi)                                            \
 	for (afi = AFI_IP; afi < AFI_MAX; afi++)                               \
 		for (safi = SAFI_UNICAST; safi < SAFI_MAX; safi++)
 
-#define FOREACH_AFI_SAFI_NSF(afi, safi)                                        \
-	for (afi = AFI_IP; afi < AFI_MAX; afi++)                               \
-		for (safi = SAFI_UNICAST; safi <= SAFI_MPLS_VPN; safi++)
+#define FOREACH_AFI_SAFI_NSF(afi, safi)                                                           \
+	for (afi = AFI_IP; afi < AFI_MAX; afi++)                                                  \
+		for (safi = SAFI_UNICAST; safi <= SAFI_EVPN; safi++)
 
 /* Flag manipulation macros. */
 #define CHECK_FLAG(V,F)      ((V) & (F))

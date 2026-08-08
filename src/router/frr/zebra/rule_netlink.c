@@ -30,6 +30,7 @@
 #include "zebra/zebra_errors.h"
 #include "zebra/zebra_dplane.h"
 #include "zebra/zebra_trace.h"
+#include "lib/netlink_parser.h"
 
 /* definitions */
 
@@ -244,7 +245,7 @@ netlink_put_rule_update_msg(struct nl_batch *bth, struct zebra_dplane_ctx *ctx)
  * from a previous instance and should have been removed on shutdown.
  *
  */
-int netlink_rule_change(struct nlmsghdr *h, ns_id_t ns_id, int startup)
+int netlink_rule_change(struct nlmsghdr *h, ns_id_t ns_id, int startup, void *arg)
 {
 	struct zebra_ns *zns;
 	struct fib_rule_hdr *frh;
@@ -263,10 +264,9 @@ int netlink_rule_change(struct nlmsghdr *h, ns_id_t ns_id, int startup)
 
 	len = h->nlmsg_len - NLMSG_LENGTH(sizeof(struct fib_rule_hdr));
 	if (len < 0) {
-		zlog_err(
-			"%s: Message received from netlink is of a broken size: %d %zu",
-			__func__, h->nlmsg_len,
-			(size_t)NLMSG_LENGTH(sizeof(struct fib_rule_hdr)));
+		flog_err(EC_ZEBRA_NETLINK_LENGTH_ERROR,
+			 "%s: Message received from netlink is of a broken size: %d %zu", __func__,
+			 h->nlmsg_len, (size_t)NLMSG_LENGTH(sizeof(struct fib_rule_hdr)));
 		return -1;
 	}
 
@@ -416,8 +416,7 @@ int netlink_rules_read(struct zebra_ns *zns)
 	if (ret < 0)
 		return ret;
 
-	ret = netlink_parse_info(netlink_rule_change, &zns->netlink_cmd,
-				 &dp_info, 0, true);
+	ret = netlink_parse_info(netlink_rule_change, &zns->netlink_cmd, &dp_info, 0, true, NULL, NULL);
 	if (ret < 0)
 		return ret;
 
@@ -425,8 +424,7 @@ int netlink_rules_read(struct zebra_ns *zns)
 	if (ret < 0)
 		return ret;
 
-	ret = netlink_parse_info(netlink_rule_change, &zns->netlink_cmd,
-				 &dp_info, 0, true);
+	ret = netlink_parse_info(netlink_rule_change, &zns->netlink_cmd, &dp_info, 0, true, NULL, NULL);
 
 	return ret;
 }

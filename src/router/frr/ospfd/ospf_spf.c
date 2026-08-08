@@ -58,13 +58,13 @@ static void ospf_spf_set_reason(ospf_spf_reason_t reason)
 }
 
 /*
- * Heap related functions, for the managment of the candidates, to
+ * Heap related functions, for the management of the candidates, to
  * be used with pqueue.
  */
 static int vertex_cmp(const struct vertex *v1, const struct vertex *v2)
 {
 	if (v1->distance != v2->distance)
-		return v1->distance - v2->distance;
+		return (v1->distance > v2->distance) ? 1 : -1;
 
 	if (v1->type != v2->type) {
 		switch (v1->type) {
@@ -1841,9 +1841,9 @@ void ospf_spf_calculate_areas(struct ospf *ospf, struct route_table *new_table,
 }
 
 /* Worker for SPF calculation scheduler. */
-static void ospf_spf_calculate_schedule_worker(struct event *thread)
+static void ospf_spf_calculate_schedule_worker(struct event *event)
 {
-	struct ospf *ospf = EVENT_ARG(thread);
+	struct ospf *ospf = EVENT_ARG(event);
 	struct route_table *new_table, *new_rtrs;
 	struct route_table *all_rtrs = NULL;
 	struct timeval start_time, spf_start_time;
@@ -1853,8 +1853,6 @@ static void ospf_spf_calculate_schedule_worker(struct event *thread)
 
 	if (IS_DEBUG_OSPF_EVENT)
 		zlog_debug("SPF: Timer (SPF calculation expire)");
-
-	ospf->t_spf_calc = NULL;
 
 	ospf_vl_unapprove(ospf);
 
@@ -2003,7 +2001,7 @@ void ospf_spf_calculate_schedule(struct ospf *ospf, ospf_spf_reason_t reason)
 	ospf_spf_set_reason(reason);
 
 	/* SPF calculation timer is already scheduled. */
-	if (ospf->t_spf_calc) {
+	if (event_is_scheduled(ospf->t_spf_calc)) {
 		if (IS_DEBUG_OSPF_EVENT)
 			zlog_debug(
 				"SPF: calculation timer is already scheduled: %p",
@@ -2042,7 +2040,6 @@ void ospf_spf_calculate_schedule(struct ospf *ospf, ospf_spf_reason_t reason)
 	if (IS_DEBUG_OSPF_EVENT)
 		zlog_debug("SPF: calculation timer delay = %ld msec", delay);
 
-	ospf->t_spf_calc = NULL;
 	event_add_timer_msec(master, ospf_spf_calculate_schedule_worker, ospf,
 			     delay, &ospf->t_spf_calc);
 }

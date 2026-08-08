@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-/* zebra connection and redistribute fucntions.
+/* zebra connection and redistribute functions.
  * Copyright (C) 1999 Kunihiro Ishiguro
  */
 
@@ -23,7 +23,7 @@ extern struct zclient *bgp_zclient;
 #define BGP_ZEBRA_DEFAULT_NHOP_WEIGHT 1
 
 /*
- * Check if the path is eligible for annoucing to zebra.
+ * Check if the path is eligible for announcing to zebra.
  */
 static inline bool bgp_zebra_announce_eligible(struct bgp_path_info *pi)
 {
@@ -129,7 +129,7 @@ extern void bgp_zebra_announce_default(struct bgp *bgp, struct nexthop *nh,
 				afi_t afi, uint32_t table_id, bool announce);
 extern int bgp_zebra_send_capabilities(struct bgp *bgp, bool disable);
 extern int bgp_zebra_update(struct bgp *bgp, afi_t afi, safi_t safi,
-			    enum zserv_client_capabilities);
+			    enum zserv_client_capabilities type);
 extern int bgp_zebra_stale_timer_update(struct bgp *bgp);
 extern int bgp_zebra_srv6_manager_get_locator_chunk(const char *name);
 extern int bgp_zebra_srv6_manager_release_locator_chunk(const char *name);
@@ -152,4 +152,9 @@ extern enum zclient_send_status
 bgp_zebra_withdraw_actual(struct bgp_dest *dest, struct bgp_path_info *info,
 			  struct bgp *bgp);
 extern void bgp_zebra_process_remote_routes_for_l2vni(struct event *e);
+extern int if_get_ipv6_global(struct interface *ifp, struct in6_addr *addr);
+extern enum zclient_send_status
+bgp_zebra_announce_actual(struct bgp_dest *dest, struct bgp_path_info *info, struct bgp *bgp);
+extern void bgp_zebra_update_fib_install_pending(struct bgp_dest *dest, struct bgp *bgp,
+						 bool install);
 #endif /* _QUAGGA_BGP_ZEBRA_H */

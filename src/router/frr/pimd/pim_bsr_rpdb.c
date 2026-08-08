@@ -221,7 +221,7 @@ static void pim_bsm_generate_sched(struct bsm_scope *scope)
 {
 	assertf(scope->state == BSR_ELECTED, "state=%d", scope->state);
 
-	if (scope->t_ebsr_regen_bsm)
+	if (event_is_scheduled(scope->t_ebsr_regen_bsm))
 		return;
 
 	event_add_timer(router->master, pim_bsm_generate_timer, scope, 1,
@@ -290,7 +290,11 @@ static void bsr_crp_reselect(struct bsm_scope *scope,
 	group->deleted_selected = false;
 	group->n_selected = n_selected;
 
-	if (changed)
+	/* Only schedule BSM regeneration when we're the elected BSR.
+	 * This function may be called when processing C-RP messages before
+	 * we become elected, and pim_bsm_generate_sched asserts BSR_ELECTED.
+	 */
+	if (changed && scope->state == BSR_ELECTED)
 		pim_bsm_generate_sched(scope);
 
 	scope->elec_rp_data_changed |= changed;
@@ -466,15 +470,15 @@ int pim_crp_process(struct interface *ifp, pim_sgaddr *src_dst, uint8_t *buf,
 		return -1;
 	}
 
-	//pim_ifp->pim_ifstat_bsm_rx++;
+	pim_ifp->pim_ifstat_bsm_rx++;
 	pim = pim_ifp->pim;
-	//pim->bsm_rcvd++;
+	pim->bsm_rcvd++;
 
 	if (!pim_ifp->bsm_enable) {
 		zlog_warn("%s: BSM not enabled on interface %s", __func__,
 			  ifp->name);
-		//pim_ifp->pim_ifstat_bsm_cfg_miss++;
-		//pim->bsm_dropped++;
+		pim_ifp->pim_ifstat_bsm_cfg_miss++;
+		pim->bsm_dropped++;
 		return -1;
 	}
 
@@ -510,7 +514,7 @@ int pim_crp_process(struct interface *ifp, pim_sgaddr *src_dst, uint8_t *buf,
 	ngroups = crp_hdr->prefix_cnt;
 	rpaddr = crp_hdr->rp_addr.addr;
 
-	if (remain < ngroups * sizeof(struct pim_encoded_group_ipv4)) {
+	if (remain < ngroups * sizeof(pim_encoded_group)) {
 		if (PIM_DEBUG_BSM)
 			zlog_debug("truncated Candidate-RP advertisement for RP %pPA from %pPA (too short for %zu groups)",
 				   &rpaddr, &src_dst->src, ngroups);

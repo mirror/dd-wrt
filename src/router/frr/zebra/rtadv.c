@@ -150,6 +150,7 @@ static struct zebra_vrf *rtadv_interface_get_zvrf(const struct interface *ifp)
 	if (!vrf_is_backend_netns())
 		return vrf_info_lookup(VRF_DEFAULT);
 
+	assert(ifp->vrf->info);
 	return ifp->vrf->info;
 }
 
@@ -548,9 +549,9 @@ no_more_opts:
 		zif->ra_sent++;
 }
 
-static void start_icmpv6_join_timer(struct event *thread)
+static void start_icmpv6_join_timer(struct event *event)
 {
-	struct interface *ifp = EVENT_ARG(thread);
+	struct interface *ifp = EVENT_ARG(event);
 	struct zebra_if *zif = ifp->info;
 	struct zebra_vrf *zvrf = rtadv_interface_get_zvrf(ifp);
 
@@ -583,12 +584,12 @@ void process_rtadv(void *arg)
 		rtadv_send_packet(zvrf->rtadv.sock, ifp, RA_ENABLE);
 	} else {
 		zif->rtadv.AdvIntervalTimer -= RTADV_TIMER_WHEEL_PERIOD_MS;
-		/* Wait atleast AdvIntervalTimer time before sending next RA
+		/* Wait at least AdvIntervalTimer time before sending next RA
 		 * AdvIntervalTimer can go negative, when ra_wheel timer expiry
 		 * interval is not a multiple of AdvIntervalTimer. Say ra_wheel
 		 * expiry time is 10 ms and, AdvIntervalTimer == 1005 ms. Allowing 
-		 * AdvIntervalTimer to go negative and checking, gurantees that
-		 * we have waited Wait atleast AdvIntervalTimer, so RA can be 
+		 * AdvIntervalTimer to go negative and checking, guarantees that
+		 * we have waited Wait at least AdvIntervalTimer, so RA can be
 		 * sent now.
 		*/
 		if (zif->rtadv.AdvIntervalTimer <= 0) {
@@ -602,9 +603,9 @@ void process_rtadv(void *arg)
 	}
 }
 
-static void rtadv_timer(struct event *thread)
+static void rtadv_timer(struct event *event)
 {
-	struct zebra_vrf *zvrf = EVENT_ARG(thread);
+	struct zebra_vrf *zvrf = EVENT_ARG(event);
 	struct vrf *vrf;
 	struct interface *ifp;
 	struct zebra_if *zif;
@@ -669,6 +670,12 @@ static void rtadv_timer(struct event *thread)
 		}
 }
 
+static void rtsolicit_increment_received(struct zebra_if *zif)
+{
+	if (zif)
+		zif->rs_rcvd++;
+}
+
 static void rtadv_process_solicit(struct interface *ifp)
 {
 	struct zebra_vrf *zvrf;
@@ -678,6 +685,7 @@ static void rtadv_process_solicit(struct interface *ifp)
 	assert(zvrf);
 	zif = ifp->info;
 
+	rtsolicit_increment_received(zif);
 	/*
 	 * If FastRetransmit is enabled, send the RA immediately.
 	 * If not enabled but it has been more than MIN_DELAY_BETWEEN_RAS
@@ -944,7 +952,7 @@ static void rtadv_process_packet(uint8_t *buf, unsigned int len,
 	return;
 }
 
-static void rtadv_read(struct event *thread)
+static void rtadv_read(struct event *event)
 {
 	int sock;
 	int len;
@@ -952,9 +960,9 @@ static void rtadv_read(struct event *thread)
 	struct sockaddr_in6 from;
 	ifindex_t ifindex = 0;
 	int hoplimit = -1;
-	struct zebra_vrf *zvrf = EVENT_ARG(thread);
+	struct zebra_vrf *zvrf = EVENT_ARG(event);
 
-	sock = EVENT_FD(thread);
+	sock = EVENT_FD(event);
 	zvrf->rtadv.ra_read = NULL;
 
 	/* Register myself. */
@@ -980,6 +988,10 @@ static int rtadv_make_socket(ns_id_t ns_id)
 	struct icmp6_filter filter;
 	int error;
 
+/* Limit receive buffer size to avoid unbounded growth under abnormal load */
+/* 20MB provides enough headroom for RS/RA bursts while capping memory usage */
+#define RTADV_RCVBUF_SIZE (20 * 1024 * 1024)
+
 	frr_with_privs(&zserv_privs) {
 
 		sock = ns_socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6, ns_id);
@@ -995,6 +1007,9 @@ static int rtadv_make_socket(ns_id_t ns_id)
 			  ns_id, safe_strerror(error), error);
 		return -1;
 	}
+
+	/* Limit RTADV socket receive buffer */
+	setsockopt_so_recvbuf(sock, RTADV_RCVBUF_SIZE);
 
 	ret = setsockopt_ipv6_pktinfo(sock, 1);
 	if (ret < 0) {
@@ -1292,7 +1307,7 @@ static struct rtadv_prefix *rtadv_prefix_set(struct zebra_if *zif,
 	if (rp->AdvPrefixCreate == PREFIX_SRC_MANUAL) {
 		if (rprefix->AdvPrefixCreate == PREFIX_SRC_AUTO)
 			rprefix->AdvPrefixCreate = PREFIX_SRC_BOTH;
-		else
+		else if (rprefix->AdvPrefixCreate != PREFIX_SRC_BOTH)
 			rprefix->AdvPrefixCreate = PREFIX_SRC_MANUAL;
 
 		rprefix->AdvAutonomousFlag = rp->AdvAutonomousFlag;
@@ -1303,7 +1318,7 @@ static struct rtadv_prefix *rtadv_prefix_set(struct zebra_if *zif,
 	} else if (rp->AdvPrefixCreate == PREFIX_SRC_AUTO) {
 		if (rprefix->AdvPrefixCreate == PREFIX_SRC_MANUAL)
 			rprefix->AdvPrefixCreate = PREFIX_SRC_BOTH;
-		else {
+		else if (rprefix->AdvPrefixCreate != PREFIX_SRC_BOTH) {
 			rprefix->AdvPrefixCreate = PREFIX_SRC_AUTO;
 			rtadv_prefix_set_defaults(rprefix);
 		}
@@ -1332,7 +1347,8 @@ static void rtadv_prefix_reset(struct zebra_if *zif, struct rtadv_prefix *rp,
 				rprefix->AdvPrefixCreate = PREFIX_SRC_AUTO;
 				rtadv_prefix_set_defaults(rprefix);
 				return;
-			}
+			} else if (rprefix->AdvPrefixCreate == PREFIX_SRC_AUTO)
+				return;
 		} else if (rp->AdvPrefixCreate == PREFIX_SRC_AUTO) {
 			if (rprefix->AdvPrefixCreate == PREFIX_SRC_BOTH) {
 				rprefix->AdvPrefixCreate = PREFIX_SRC_MANUAL;
@@ -1587,7 +1603,7 @@ stream_failure:
 /*
  * send router lifetime value of zero in RAs on this interface since we're
  * ceasing to advertise and want to let our neighbors know.
- * RFC 4861 secion 6.2.5
+ * RFC 4861 section 6.2.5
  */
 void rtadv_stop_ra(struct interface *ifp, bool if_down_event)
 {
@@ -1619,7 +1635,7 @@ void rtadv_stop_ra(struct interface *ifp, bool if_down_event)
 /*
  * Send router lifetime value of zero in RAs on all interfaces since we're
  * ceasing to advertise globally and want to let all of our neighbors know
- * RFC 4861 secion 6.2.5
+ * RFC 4861 section 6.2.5
  *
  * Delete all ipv6 global prefixes added to the router advertisement prefix
  * lists prior to ceasing.
@@ -1869,6 +1885,7 @@ static int nd_dump_vty(struct vty *vty, json_object *json_if, struct interface *
 			rtadv->AdvRetransTimer);
 		vty_out(vty, "  ND advertised hop-count limit is %d hops\n",
 			rtadv->AdvCurHopLimit);
+		vty_out(vty, "  ND router solicit rcvd: %d\n", zif->rs_rcvd);
 		vty_out(vty, "  ND router advertisements sent: %d rcvd: %d\n",
 			zif->ra_sent, zif->ra_rcvd);
 		interval = rtadv->MaxRtrAdvInterval;
@@ -1924,6 +1941,7 @@ static int nd_dump_vty(struct vty *vty, json_object *json_if, struct interface *
 		json_object_int_add(json_if, "ndAdvertisedRetransmitIntervalMsecs",
 				    rtadv->AdvRetransTimer);
 		json_object_int_add(json_if, "ndAdvertisedHopCountLimitHops", rtadv->AdvCurHopLimit);
+		json_object_int_add(json_if, "ndRouterSolicitsRcvd", zif->rs_rcvd);
 		json_object_int_add(json_if, "ndRouterAdvertisementsSent", zif->ra_sent);
 		json_object_int_add(json_if, "ndRouterAdvertisementsRcvd", zif->ra_rcvd);
 
@@ -2177,7 +2195,12 @@ static bool is_interface_in_group(const char *ifname_in, const char *mcast_addr_
 
 	/* Convert binary to hex format */
 	while (fgets(line, sizeof(line), fp)) {
-		sscanf(line, "%d %s %s", &if_index, ifname_found, mcast_addr_found_hex_str);
+		if (sscanf(line, "%d %s %s", &if_index, ifname_found, mcast_addr_found_hex_str) !=
+		    3) {
+			flog_err_sys(EC_LIB_SYSTEM_CALL, "sscanf failed to properly scan: %s",
+				     line);
+			continue;
+		}
 
 		ifname_in_len = strlen(ifname_in);
 		ifname_found_len = strlen(ifname_found);
@@ -2218,7 +2241,7 @@ static int if_join_all_router(int sock, struct interface *ifp)
 	struct ipv6_mreq mreq;
 
 	if (is_interface_in_group(ifp->name, ALLROUTER))
-		/* Interface is already part of the group, so return sucess */
+		/* Interface is already part of the group, so return success */
 		return 0;
 
 	memset(&mreq, 0, sizeof(mreq));

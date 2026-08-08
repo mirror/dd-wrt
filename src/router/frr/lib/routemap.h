@@ -49,9 +49,9 @@ typedef enum {
  * Route-map match or set result "Eg: match evpn vni xx"
  * route-map match cmd always returns match/nomatch/noop
  *    match--> found a match
- *    nomatch--> didnt find a match
+ *    nomatch--> didn't find a match
  *    noop--> not applicable
- * route-map set retuns okay/error
+ * route-map set returns okay/error
  *    okay --> set was successful
  *    error --> set was not successful
  */
@@ -277,6 +277,7 @@ DECLARE_QOBJ_TYPE(route_map);
 #define IS_MATCH_SRC_INSTANCE(C)                                               \
 	(strmatch(C, "frr-zebra-route-map:source-instance"))
 /* BGP route-map match conditions */
+#define IS_MATCH_VPN_DATAPLANE(C) (strmatch(C, "frr-bgp-route-map:match-vpn-dataplane"))
 #define IS_MATCH_LOCAL_PREF(C)                                                 \
 	(strmatch(C, "frr-bgp-route-map:match-local-preference"))
 #define IS_MATCH_ALIAS(C) (strmatch(C, "frr-bgp-route-map:match-alias"))
@@ -294,6 +295,7 @@ DECLARE_QOBJ_TYPE(route_map);
 #define IS_MATCH_SRC_PEER(C) (strmatch(C, "frr-bgp-route-map:src-peer"))
 #define IS_MATCH_AS_LIST(C)                                                    \
 	(strmatch(C, "frr-bgp-route-map:as-path-list"))
+#define IS_MATCH_ASPATH_COUNT(C) (strmatch(C, "frr-bgp-route-map:match-as-path-count"))
 #define IS_MATCH_MAC_LIST(C)                                                   \
 	(strmatch(C, "frr-bgp-route-map:mac-address-list"))
 #define IS_MATCH_EVPN_ROUTE_TYPE(C)                                            \
@@ -338,6 +340,8 @@ DECLARE_QOBJ_TYPE(route_map);
 	(strmatch(C, "frr-pim-route-map:ipv6-multicast-group-prefix-list"))
 #define IS_MATCH_MULTICAST_INTERFACE(C) \
 	(strmatch(C, "frr-pim-route-map:multicast-interface"))
+#define IS_MATCH_MULTICAST_SOURCE_INTERFACE(C) \
+	(strmatch(C, "frr-pim-route-map:multicast-source-interface"))
 
 /* Route-map set actions */
 #define IS_SET_IPv4_NH(A)                                                      \

@@ -115,14 +115,12 @@ int zebra_ipv6_forwarding_destroy(struct nb_cb_destroy_args *args)
  */
 int zebra_workqueue_hold_timer_modify(struct nb_cb_modify_args *args)
 {
-	switch (args->event) {
-	case NB_EV_VALIDATE:
-	case NB_EV_PREPARE:
-	case NB_EV_ABORT:
-	case NB_EV_APPLY:
-		/* TODO: implement me. */
-		break;
-	}
+	uint32_t timer = yang_dnode_get_uint32(args->dnode, NULL);
+
+	if (args->event != NB_EV_APPLY)
+		return NB_OK;
+
+	zrouter.ribq->spec.hold = timer;
 
 	return NB_OK;
 }
@@ -132,47 +130,73 @@ int zebra_workqueue_hold_timer_modify(struct nb_cb_modify_args *args)
  */
 int zebra_zapi_packets_modify(struct nb_cb_modify_args *args)
 {
-	switch (args->event) {
-	case NB_EV_VALIDATE:
-	case NB_EV_PREPARE:
-	case NB_EV_ABORT:
-	case NB_EV_APPLY:
-		/* TODO: implement me. */
-		break;
-	}
+	uint32_t packets = yang_dnode_get_uint32(args->dnode, NULL);
+
+	if (args->event != NB_EV_APPLY)
+		return NB_OK;
+
+	atomic_store_explicit(&zrouter.packets_to_process, packets, memory_order_relaxed);
 
 	return NB_OK;
+}
+
+static int zebra_import_kernel_table_apply(const struct lyd_node *dnode, bool add)
+{
+	const char *afi_safi = yang_dnode_get_string(dnode, "afi-safi");
+	uint32_t table_id = yang_dnode_get_uint32(dnode, "table-id");
+	uint32_t distance = 0;
+	const char *rmap = NULL;
+	afi_t afi;
+	safi_t safi;
+
+	yang_afi_safi_identity2value(afi_safi, &afi, &safi);
+
+	if (add) {
+		distance = yang_dnode_get_uint32(dnode, "distance");
+		if (yang_dnode_exists(dnode, "route-map"))
+			rmap = yang_dnode_get_string(dnode, "route-map");
+	}
+
+	return zebra_import_table(afi, safi, VRF_DEFAULT, table_id, distance, rmap, add);
 }
 
 /*
- * XPath: /frr-zebra:zebra/import-kernel-table/table-id
+ * XPath: /frr-zebra:zebra/import-kernel-table
  */
-int zebra_import_kernel_table_table_id_modify(struct nb_cb_modify_args *args)
+int zebra_import_kernel_table_create(struct nb_cb_create_args *args)
 {
-	switch (args->event) {
-	case NB_EV_VALIDATE:
-	case NB_EV_PREPARE:
-	case NB_EV_ABORT:
-	case NB_EV_APPLY:
-		/* TODO: implement me. */
-		break;
+	uint32_t table_id;
+
+	/* apply_finish handles creation */
+	if (args->event != NB_EV_VALIDATE)
+		return NB_OK;
+
+	table_id = yang_dnode_get_uint32(args->dnode, "table-id");
+
+	if (!is_zebra_valid_kernel_table(table_id) || is_zebra_main_routing_table(table_id)) {
+		snprintfrr(args->errmsg, args->errmsg_len,
+			   "invalid routing table ID %u: must be a valid non-main table", table_id);
+		return NB_ERR_VALIDATION;
 	}
 
 	return NB_OK;
 }
 
-int zebra_import_kernel_table_table_id_destroy(struct nb_cb_destroy_args *args)
+int zebra_import_kernel_table_destroy(struct nb_cb_destroy_args *args)
 {
-	switch (args->event) {
-	case NB_EV_VALIDATE:
-	case NB_EV_PREPARE:
-	case NB_EV_ABORT:
-	case NB_EV_APPLY:
-		/* TODO: implement me. */
-		break;
-	}
+	if (args->event != NB_EV_APPLY)
+		return NB_OK;
+
+	if (zebra_import_kernel_table_apply(args->dnode, false) < 0)
+		return NB_ERR;
 
 	return NB_OK;
+}
+
+void zebra_import_kernel_table_apply_finish(struct nb_cb_apply_finish_args *args)
+{
+	if (zebra_import_kernel_table_apply(args->dnode, true) < 0)
+		zlog_err("Failed to import kernel table");
 }
 
 /*
@@ -180,15 +204,7 @@ int zebra_import_kernel_table_table_id_destroy(struct nb_cb_destroy_args *args)
  */
 int zebra_import_kernel_table_distance_modify(struct nb_cb_modify_args *args)
 {
-	switch (args->event) {
-	case NB_EV_VALIDATE:
-	case NB_EV_PREPARE:
-	case NB_EV_ABORT:
-	case NB_EV_APPLY:
-		/* TODO: implement me. */
-		break;
-	}
-
+	/* handled in apply_finish callback of the parent node */
 	return NB_OK;
 }
 
@@ -197,29 +213,13 @@ int zebra_import_kernel_table_distance_modify(struct nb_cb_modify_args *args)
  */
 int zebra_import_kernel_table_route_map_modify(struct nb_cb_modify_args *args)
 {
-	switch (args->event) {
-	case NB_EV_VALIDATE:
-	case NB_EV_PREPARE:
-	case NB_EV_ABORT:
-	case NB_EV_APPLY:
-		/* TODO: implement me. */
-		break;
-	}
-
+	/* handled in apply_finish callback of the parent node */
 	return NB_OK;
 }
 
 int zebra_import_kernel_table_route_map_destroy(struct nb_cb_destroy_args *args)
 {
-	switch (args->event) {
-	case NB_EV_VALIDATE:
-	case NB_EV_PREPARE:
-	case NB_EV_ABORT:
-	case NB_EV_APPLY:
-		/* TODO: implement me. */
-		break;
-	}
-
+	/* handled in apply_finish callback of the parent node */
 	return NB_OK;
 }
 
@@ -232,8 +232,9 @@ int zebra_allow_external_route_update_create(struct nb_cb_create_args *args)
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
+		break;
 	case NB_EV_APPLY:
-		/* TODO: implement me. */
+		zrouter.allow_delete = true;
 		break;
 	}
 
@@ -246,8 +247,9 @@ int zebra_allow_external_route_update_destroy(struct nb_cb_destroy_args *args)
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
+		break;
 	case NB_EV_APPLY:
-		/* TODO: implement me. */
+		zrouter.allow_delete = false;
 		break;
 	}
 
@@ -259,14 +261,12 @@ int zebra_allow_external_route_update_destroy(struct nb_cb_destroy_args *args)
  */
 int zebra_dplane_queue_limit_modify(struct nb_cb_modify_args *args)
 {
-	switch (args->event) {
-	case NB_EV_VALIDATE:
-	case NB_EV_PREPARE:
-	case NB_EV_ABORT:
-	case NB_EV_APPLY:
-		/* TODO: implement me. */
-		break;
-	}
+	uint32_t limit = yang_dnode_get_uint32(args->dnode, NULL);
+
+	if (args->event != NB_EV_APPLY)
+		return NB_OK;
+
+	dplane_set_in_queue_limit(limit, true);
 
 	return NB_OK;
 }
@@ -1459,11 +1459,16 @@ int lib_interface_zebra_link_params_max_bandwidth_modify(
 int lib_interface_zebra_link_params_max_bandwidth_destroy(
 	struct nb_cb_destroy_args *args)
 {
-	if (args->event == NB_EV_VALIDATE) {
-		snprintfrr(args->errmsg, args->errmsg_len,
-			   "Removing max-bandwidth is not allowed");
-		return NB_ERR_VALIDATION;
-	}
+	struct interface *ifp;
+	struct if_link_params *iflp;
+
+	if (args->event != NB_EV_APPLY)
+		return NB_OK;
+
+	ifp = nb_running_get_entry(args->dnode, NULL, true);
+	iflp = if_link_params_get(ifp);
+	if (iflp)
+		link_param_cmd_set_float(ifp, &iflp->max_bw, LP_MAX_BW, iflp->default_bw);
 
 	return NB_OK;
 }
@@ -1494,11 +1499,16 @@ int lib_interface_zebra_link_params_max_reservable_bandwidth_modify(
 int lib_interface_zebra_link_params_max_reservable_bandwidth_destroy(
 	struct nb_cb_destroy_args *args)
 {
-	if (args->event == NB_EV_VALIDATE) {
-		snprintfrr(args->errmsg, args->errmsg_len,
-			   "Removing max-reservable-bandwidth is not allowed");
-		return NB_ERR_VALIDATION;
-	}
+	struct interface *ifp;
+	struct if_link_params *iflp;
+
+	if (args->event != NB_EV_APPLY)
+		return NB_OK;
+
+	ifp = nb_running_get_entry(args->dnode, NULL, true);
+	iflp = if_link_params_get(ifp);
+	if (iflp)
+		link_param_cmd_set_float(ifp, &iflp->max_rsv_bw, LP_MAX_RSV_BW, iflp->default_bw);
 
 	return NB_OK;
 }
@@ -1532,11 +1542,20 @@ int lib_interface_zebra_link_params_unreserved_bandwidths_unreserved_bandwidth_c
 int lib_interface_zebra_link_params_unreserved_bandwidths_unreserved_bandwidth_destroy(
 	struct nb_cb_destroy_args *args)
 {
-	if (args->event == NB_EV_VALIDATE) {
-		snprintfrr(args->errmsg, args->errmsg_len,
-			   "Removing unreserved-bandwidth is not allowed");
-		return NB_ERR_VALIDATION;
-	}
+	struct interface *ifp;
+	struct if_link_params *iflp;
+	uint8_t priority;
+
+	if (args->event != NB_EV_APPLY)
+		return NB_OK;
+
+	priority = yang_dnode_get_uint8(args->dnode, "priority");
+
+	ifp = nb_running_get_entry(args->dnode, NULL, true);
+	iflp = if_link_params_get(ifp);
+	if (iflp)
+		link_param_cmd_set_float(ifp, &iflp->unrsv_bw[priority], LP_UNRSV_BW,
+					 iflp->default_bw);
 
 	return NB_OK;
 }
@@ -2253,7 +2272,7 @@ static bool evpn_mh_dnode_to_esi(const struct lyd_node *dnode, esi_t *esi)
 			assert(false);
 	} else if (yang_dnode_exists(dnode, "type-3/system-mac") &&
 		   yang_dnode_exists(dnode, "type-3/local-discriminator")) {
-		struct ethaddr mac;
+		struct ethaddr mac = { 0 };
 		uint32_t lid;
 
 		yang_dnode_get_mac(&mac, dnode, "type-3/system-mac");
@@ -2403,7 +2422,7 @@ int lib_interface_zebra_evpn_mh_type_3_system_mac_modify(
 	struct nb_cb_modify_args *args)
 {
 	struct interface *ifp;
-	struct ethaddr mac;
+	struct ethaddr mac = { 0 };
 
 	yang_dnode_get_mac(&mac, args->dnode, NULL);
 
@@ -2583,12 +2602,21 @@ int lib_interface_zebra_ipv6_router_advertisements_max_rtr_adv_interval_modify(
 {
 	struct interface *ifp;
 	uint32_t interval;
+	struct zebra_if *zif;
 
 	if (args->event != NB_EV_APPLY)
 		return NB_OK;
 
 	ifp = nb_running_get_entry(args->dnode, NULL, true);
 	interval = yang_dnode_get_uint32(args->dnode, NULL);
+	zif = ifp->info;
+
+	if (zif->rtadv.AdvDefaultLifetime > 0 &&
+	    interval > (unsigned int)zif->rtadv.AdvDefaultLifetime * 1000) {
+		snprintfrr(args->errmsg, args->errmsg_len,
+			   "This ra-interval would conflict with configured ra-lifetime");
+		return NB_ERR;
+	}
 
 	ipv6_nd_interval_set(ifp, interval);
 
@@ -3910,6 +3938,7 @@ int lib_vrf_zebra_mpls_fec_nexthop_resolution_destroy(
 int lib_vrf_zebra_l3vni_id_modify(struct nb_cb_modify_args *args)
 {
 	struct vrf *vrf;
+	struct zebra_vrf *zvrf;
 	vni_t vni = 0;
 	bool pfx_only = false;
 	uint32_t count;
@@ -3935,8 +3964,11 @@ int lib_vrf_zebra_l3vni_id_modify(struct nb_cb_modify_args *args)
 		vrf = nb_running_get_entry(args->dnode, NULL, true);
 		pfx_only = yang_dnode_get_bool(args->dnode, "../prefix-only");
 
-		zebra_vxlan_process_vrf_vni_cmd(vrf->info, vni,
-						pfx_only ? 1 : 0, 1);
+		zvrf = vrf->info;
+		if (zvrf->l3vni && zvrf->l3vni != vni && zl3vni_lookup(zvrf->l3vni))
+			zebra_vxlan_process_vrf_vni_cmd(zvrf, zvrf->l3vni, 0, 0);
+
+		zebra_vxlan_process_vrf_vni_cmd(zvrf, vni, pfx_only ? 1 : 0, 1);
 		break;
 	}
 

@@ -563,8 +563,7 @@ our $Iterators	= qr{
 			SUBGRP_FOREACH_PEER|SUBGRP_FOREACH_PEER_SAFE|
 			SUBGRP_FOREACH_ADJ|SUBGRP_FOREACH_ADJ_SAFE|
 			AF_FOREACH|FOREACH_AFI_SAFI|FOREACH_SAFI|
-                        FOREACH_BE_CLIENT_BITS|FOREACH_MGMTD_BE_CLIENT_ID|
-                        FOREACH_SESSION_IN_LIST|
+                        FOREACH_BE_CLIENT_BITS|FOREACH_BE_ADAPTER_BITS|FOREACH_SESSION_IN_LIST|
 			LSDB_LOOP
 		  }x;
 
@@ -2611,18 +2610,21 @@ sub exclude_global_initialisers {
 }
 
 sub remove_defuns {
-    my @breakfast = ();
-    my $milktoast;
-    for my $tasty (@rawlines) {
-        $milktoast = $tasty;
-        if (($tasty =~ /^\+DEFPY/ ||
-             $tasty =~ /^\+DEFUN/ ||
-             $tasty =~ /^\+ALIAS/) .. ($tasty =~ /^\+\{/)) {
-            $milktoast = "\n";
-        }
-        push(@breakfast, $milktoast);
-    }
-    @rawlines = @breakfast;
+	my $zap_it = 0;
+
+	for (my $i = 0; $i < scalar @rawlines; $i++) {
+		my $rawline = $rawlines[$i];
+
+		$zap_it = 1 if ($rawline =~ /^\+DEFPY/ ||
+				$rawline =~ /^\+DEFUN/ ||
+				$rawline =~ /^\+ALIAS/);
+		$zap_it = 0 if ($rawline =~ /^\+\{/ ||
+				$rawline =~ /^\+\+\+/ ||
+				$rawline =~ /^\+\s*$/);
+		if ($zap_it) {
+			$rawlines[$i] = "\n";
+		}
+	}
 }
 
 sub process {
@@ -3248,7 +3250,7 @@ sub process {
 # A correctly formed commit description is:
 #    commit <SHA-1 hash length 12+ chars> ("Complete commit subject")
 # with the commit subject '("' prefix and '")' suffix
-# This is a fairly compilicated block as it tests for what appears to be
+# This is a fairly complicated block as it tests for what appears to be
 # bare SHA-1 hash with  minimum length of 5.  It also avoids several types of
 # possible SHA-1 matches.
 # A commit match can span multiple lines so this block attempts to find a
@@ -4674,6 +4676,7 @@ sub process {
 # check for new typedefs, only function parameters and sparse annotations
 # make sense.
 		if ($line =~ /\btypedef\s/ &&
+		    $line !~ /\btypedef.*\s(json_object|ns_id_t|vrf_id_t|vrf_bitmap_t|vlanid_t|ifindex_t|route_tag_t|as_t|atomptr_t|atomic_atomptr_t)\s*;/ &&
 		    $line !~ /\btypedef.*\s(pim_[^\s]+|[^\s]+_pim)\s*;/ &&
 		    $line !~ /\btypedef\s+$Type\s*\(\s*\*?$Ident\s*\)\s*\(/ &&
 		    $line !~ /\btypedef\s+$Type\s+$Ident\s*\(/ &&
@@ -5542,7 +5545,7 @@ sub process {
 			my $to = $4;
 			my $newcomp = $comp;
 			if ($lead !~ /(?:$Operators|\.)\s*$/ &&
-			    $to !~ /^(?:Constant|[A-Z_][A-Z0-9_]*)$/ &&
+			    $to !~ /^(?:Constant|[A-Z_][A-Z0-9_]*)\s*$/ &&
 			    WARN("CONSTANT_COMPARISON",
 				 "Comparisons should place the constant on the right side of the test\n" . $herecurr) &&
 			    $fix) {

@@ -26,6 +26,7 @@
 #include "stream.h"
 #include "qobj.h"
 #include "lib/northbound_cli.h"
+#include "lib/json.h"
 
 #include "isisd/isis_constants.h"
 #include "isisd/isis_common.h"
@@ -210,7 +211,7 @@ void isis_circuit_del(struct isis_circuit *circuit)
 		circuit->ext = NULL;
 	}
 
-	XFREE(MTYPE_TMP, circuit->bfd_config.profile);
+	XFREE(MTYPE_ISIS_BFD_PROFILE, circuit->bfd_config.profile);
 	XFREE(MTYPE_ISIS_CIRCUIT, circuit->tag);
 
 	/* and lastly the circuit itself */
@@ -239,7 +240,7 @@ void isis_circuit_configure(struct isis_circuit *circuit,
 	/*
 	 * Add the circuit into area
 	 */
-	listnode_add(area->circuit_list, circuit);
+	isis_circuit_list_add_tail(&area->circuit_list, circuit);
 
 	circuit->idx = flags_get_index(&area->flags);
 
@@ -262,7 +263,7 @@ void isis_circuit_deconfigure(struct isis_circuit *circuit,
 
 	/* Remove circuit from area */
 	assert(circuit->area == area);
-	listnode_delete(area->circuit_list, circuit);
+	isis_circuit_list_del(&area->circuit_list, circuit);
 	circuit->area = NULL;
 	circuit->isis = NULL;
 
@@ -300,9 +301,9 @@ void isis_circuit_add_addr(struct isis_circuit *circuit,
 		ipv4->prefix = connected->address->u.prefix4;
 		listnode_add(circuit->ip_addrs, ipv4);
 
-		/* Update Local IP address parameter if MPLS TE is enable */
-		if (circuit->ext && circuit->area
-		    && IS_MPLS_TE(circuit->area->mta)) {
+		/* Update local IP address parameter if MPLS TE or SRv6 is enabled. */
+		if (circuit->ext && circuit->area &&
+		    (IS_MPLS_TE(circuit->area->mta) || IS_SRV6_ENABLED(circuit->area))) {
 			circuit->ext->local_addr.s_addr = ipv4->prefix.s_addr;
 			SET_SUBTLV(circuit->ext, EXT_LOCAL_ADDR);
 		}
@@ -339,9 +340,9 @@ void isis_circuit_add_addr(struct isis_circuit *circuit,
 			listnode_add(circuit->ipv6_link, ipv6);
 		else {
 			listnode_add(circuit->ipv6_non_link, ipv6);
-			/* Update Local IPv6 address param. if MPLS TE is on */
-			if (circuit->ext && circuit->area
-			    && IS_MPLS_TE(circuit->area->mta)) {
+			/* Update local IPv6 address parameter if MPLS TE or SRv6 is enabled. */
+			if (circuit->ext && circuit->area &&
+			    (IS_MPLS_TE(circuit->area->mta) || IS_SRV6_ENABLED(circuit->area))) {
 				IPV6_ADDR_COPY(&circuit->ext->local_addr6,
 					       &ipv6->prefix);
 				SET_SUBTLV(circuit->ext, EXT_LOCAL_ADDR6);
@@ -629,7 +630,7 @@ void isis_circuit_prepare(struct isis_circuit *circuit)
 		       &circuit->t_read);
 #else
 	event_add_timer_msec(master, isis_receive, circuit,
-			     listcount(circuit->area->circuit_list) * 100,
+			     isis_circuit_list_count(&circuit->area->circuit_list) * 100,
 			     &circuit->t_read);
 #endif
 }
@@ -706,7 +707,7 @@ int isis_circuit_up(struct isis_circuit *circuit)
 		 * ISO 10589 - 8.4.1 Enabling of broadcast circuits
 		 */
 
-		/* initilizing the hello sending threads
+		/* initializing the hello sending threads
 		 * for a broadcast IF
 		 */
 
@@ -899,7 +900,7 @@ void isis_circuit_down(struct isis_circuit *circuit)
 		circuit->tx_queue = NULL;
 	}
 
-	/* send one gratuitous hello to spead up convergence */
+	/* send one gratuitous hello to speed up convergence */
 	if (circuit->state == C_STATE_UP) {
 		if (circuit->is_type & IS_LEVEL_1)
 			send_hello(circuit, IS_LEVEL_1);

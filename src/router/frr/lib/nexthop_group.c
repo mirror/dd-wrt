@@ -14,6 +14,7 @@
 #include <vty.h>
 #include <command.h>
 #include <jhash.h>
+#include "lib/json.h"
 
 #include "lib/nexthop_group_clippy.c"
 
@@ -99,6 +100,19 @@ uint16_t nexthop_group_active_nexthop_num(const struct nexthop_group *nhg)
 
 	for (ALL_NEXTHOPS_PTR(nhg, nhop)) {
 		if (CHECK_FLAG(nhop->flags, NEXTHOP_FLAG_ACTIVE))
+			num++;
+	}
+
+	return num;
+}
+
+uint16_t nexthop_group_fib_nexthop_num(const struct nexthop_group *nhg)
+{
+	struct nexthop *nhop;
+	uint16_t num = 0;
+
+	for (ALL_NEXTHOPS_PTR(nhg, nhop)) {
+		if (CHECK_FLAG(nhop->flags, NEXTHOP_FLAG_FIB))
 			num++;
 	}
 
@@ -1102,7 +1116,8 @@ void nexthop_group_json_nexthop(json_object *j, const struct nexthop *nh)
 
 	if (nh->vrf_id != VRF_DEFAULT) {
 		vrf = vrf_lookup_by_id(nh->vrf_id);
-		json_object_string_add(j, "targetVrf", vrf->name);
+		/* When VRF is not initialized or unknown, show the target VRF as none */
+		json_object_string_add(j, "targetVrf", vrf ? vrf->name : "-");
 	}
 
 	if (nh->nh_label && nh->nh_label->num_labels > 0) {
@@ -1232,9 +1247,9 @@ void nexthop_group_disable_vrf(struct vrf *vrf)
 	struct nexthop_hold *nhh;
 
 	RB_FOREACH (nhgc, nhgc_entry_head, &nhgc_entries) {
-		struct listnode *node, *nnode;
+		struct listnode *node;
 
-		for (ALL_LIST_ELEMENTS(nhgc->nhg_list, node, nnode, nhh)) {
+		for (ALL_LIST_ELEMENTS_RO(nhgc->nhg_list, node, nhh)) {
 			struct nexthop nhop;
 			struct nexthop *nh;
 
@@ -1255,10 +1270,6 @@ void nexthop_group_disable_vrf(struct vrf *vrf)
 				nhg_hooks.del_nexthop(nhgc, nh);
 
 			nexthop_free(nh);
-
-			list_delete_node(nhgc->nhg_list, node);
-
-			nhgl_delete(nhh);
 		}
 	}
 }
@@ -1385,4 +1396,14 @@ void nexthop_group_init(void (*new)(const char *name),
 		nhg_hooks.del_nexthop = del_nexthop;
 	if (delete)
 		nhg_hooks.delete = delete;
+}
+
+void nexthop_group_terminate(void)
+{
+	struct nexthop_group_cmd *nhgc;
+
+	while ((nhgc = RB_ROOT(nhgc_entry_head, &nhgc_entries)))
+		nhgc_delete(nhgc);
+
+	memset(&nhg_hooks, 0, sizeof(nhg_hooks));
 }

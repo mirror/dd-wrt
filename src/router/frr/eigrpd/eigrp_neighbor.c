@@ -60,7 +60,7 @@ struct eigrp_neighbor *eigrp_nbr_new(struct eigrp_interface *ei)
 {
 	struct eigrp_neighbor *nbr;
 
-	/* Allcate new neighbor. */
+	/* Allocate new neighbor. */
 	nbr = XCALLOC(MTYPE_EIGRP_NEIGHBOR, sizeof(struct eigrp_neighbor));
 
 	/* Relate neighbor to the interface. */
@@ -77,7 +77,7 @@ struct eigrp_neighbor *eigrp_nbr_new(struct eigrp_interface *ei)
  *                                   proto_item *ti)
  *
  * @par
- * Create a new neighbor structure and initalize it.
+ * Create a new neighbor structure and initialize it.
  */
 static struct eigrp_neighbor *eigrp_nbr_add(struct eigrp_interface *ei,
 					    struct eigrp_header *eigrph,
@@ -184,9 +184,9 @@ void eigrp_nbr_delete(struct eigrp_neighbor *nbr)
 	XFREE(MTYPE_EIGRP_NEIGHBOR, nbr);
 }
 
-void holddown_timer_expired(struct event *thread)
+void holddown_timer_expired(struct event *event)
 {
-	struct eigrp_neighbor *nbr = EVENT_ARG(thread);
+	struct eigrp_neighbor *nbr = EVENT_ARG(event);
 	struct eigrp *eigrp = nbr->ei->eigrp;
 
 	zlog_info("Neighbor %pI4 (%s) is down: holding time expired", &nbr->src,

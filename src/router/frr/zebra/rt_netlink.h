@@ -61,7 +61,7 @@ extern ssize_t netlink_route_multipath_msg_encode(int cmd,
 extern ssize_t netlink_macfdb_update_ctx(struct zebra_dplane_ctx *ctx,
 					 void *data, size_t datalen);
 
-extern int netlink_route_change(struct nlmsghdr *h, ns_id_t ns_id, int startup);
+extern int netlink_route_change(struct nlmsghdr *h, ns_id_t ns_id, int startup, void *arg);
 extern int netlink_route_read(struct zebra_ns *zns);
 
 /*
@@ -73,8 +73,7 @@ extern int netlink_route_read(struct zebra_ns *zns);
 int netlink_route_notify_read_ctx(struct nlmsghdr *h, ns_id_t ns_id,
 				  struct zebra_dplane_ctx *ctx);
 
-extern int netlink_nexthop_change(struct nlmsghdr *h, ns_id_t ns_id,
-				  int startup);
+extern int netlink_nexthop_change(struct nlmsghdr *h, ns_id_t ns_id, int startup, void *arg);
 extern int netlink_nexthop_read(struct zebra_ns *zns);
 extern ssize_t netlink_nexthop_msg_encode(uint16_t cmd,
 					  const struct zebra_dplane_ctx *ctx,
@@ -84,22 +83,6 @@ extern ssize_t netlink_lsp_msg_encoder(struct zebra_dplane_ctx *ctx, void *buf,
 				       size_t buflen);
 
 extern int netlink_neigh_change(struct nlmsghdr *h, ns_id_t ns_id);
-extern int netlink_macfdb_read(struct zebra_ns *zns);
-extern int netlink_macfdb_read_for_bridge(struct zebra_ns *zns,
-					  struct interface *ifp,
-					  struct interface *br_if,
-					  vlanid_t vid);
-extern int netlink_macfdb_read_mcast_for_vni(struct zebra_ns *zns,
-					     struct interface *ifp, vni_t vni);
-extern int netlink_neigh_read(struct zebra_ns *zns);
-extern int netlink_neigh_read_for_vlan(struct zebra_ns *zns,
-				       struct interface *vlan_if);
-extern int netlink_macfdb_read_specific_mac(struct zebra_ns *zns,
-					    struct interface *br_if,
-					    const struct ethaddr *mac,
-					    uint16_t vid);
-extern int netlink_neigh_read_specific_ip(const struct ipaddr *ip,
-					  struct interface *vlan_if);
 
 struct nl_batch;
 extern enum netlink_msg_status

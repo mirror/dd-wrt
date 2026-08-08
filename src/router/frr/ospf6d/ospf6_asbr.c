@@ -180,13 +180,13 @@ struct ospf6_lsa *ospf6_as_external_lsa_originate(struct ospf6_route *route,
 	return lsa;
 }
 
-void ospf6_orig_as_external_lsa(struct event *thread)
+void ospf6_orig_as_external_lsa(struct event *event)
 {
 	struct ospf6_interface *oi;
 	struct ospf6_lsa *lsa;
 	uint32_t type, adv_router;
 
-	oi = (struct ospf6_interface *)EVENT_ARG(thread);
+	oi = (struct ospf6_interface *)EVENT_ARG(event);
 
 	if (oi->state == OSPF6_INTERFACE_DOWN)
 		return;
@@ -828,7 +828,7 @@ void ospf6_asbr_lsa_remove(struct ospf6_lsa *lsa,
 			struct ospf6_path *o_path;
 			bool nh_updated = false;
 
-			/* Iterate all paths of route to find maching with LSA
+			/* Iterate all paths of route to find matching with LSA
 			 * remove from route path list. If route->path is same,
 			 * replace from paths list.
 			 */
@@ -1036,6 +1036,25 @@ void ospf6_asbr_lsentry_remove(struct ospf6_route *asbr_entry,
 		ospf6_asbr_lsa_remove(lsa, asbr_entry);
 }
 
+void ospf6_asbr_recalculate_external_routes(struct ospf6 *ospf6)
+{
+	struct ospf6_lsa *lsa, *lsanext;
+
+	for (ALL_LSDB(ospf6->lsdb, lsa, lsanext)) {
+		if (ntohs(lsa->header->type) != OSPF6_LSTYPE_AS_EXTERNAL ||
+		    OSPF6_LSA_IS_MAXAGE(lsa))
+			continue;
+
+		/*
+		 * Forwarding-address reachability may change when non-external
+		 * routes are updated. Re-run remove/add to keep external route
+		 * installation in sync with current topology.
+		 */
+		ospf6_asbr_lsa_remove(lsa, NULL);
+		ospf6_asbr_lsa_add(lsa);
+	}
+}
+
 
 /* redistribute function */
 static void ospf6_asbr_routemap_set(struct ospf6_redist *red,
@@ -1062,13 +1081,13 @@ static void ospf6_asbr_routemap_unset(struct ospf6_redist *red)
 	ROUTEMAP(red) = NULL;
 }
 
-static void ospf6_asbr_routemap_update_timer(struct event *thread)
+static void ospf6_asbr_routemap_update_timer(struct event *event)
 {
-	struct ospf6 *ospf6 = EVENT_ARG(thread);
+	struct ospf6 *ospf6 = EVENT_ARG(event);
 	struct ospf6_redist *red;
 	int type;
 
-	for (type = 0; type < ZEBRA_ROUTE_MAX; type++) {
+	for (type = 0; type <= ZEBRA_ROUTE_MAX; type++) {
 		red = ospf6_redist_lookup(ospf6, type, 0);
 
 		if (!red)
@@ -1122,7 +1141,7 @@ void ospf6_asbr_routemap_update(const char *mapname)
 		return;
 
 	for (ALL_LIST_ELEMENTS(om6->ospf6, node, nnode, ospf6)) {
-		for (type = 0; type < ZEBRA_ROUTE_MAX; type++) {
+		for (type = 0; type <= ZEBRA_ROUTE_MAX; type++) {
 			red = ospf6_redist_lookup(ospf6, type, 0);
 			if (!red || (ROUTEMAP_NAME(red) == NULL))
 				continue;
@@ -1176,7 +1195,7 @@ static void ospf6_asbr_routemap_event(const char *name)
 	if (om6 == NULL)
 		return;
 	for (ALL_LIST_ELEMENTS(om6->ospf6, node, nnode, ospf6)) {
-		for (type = 0; type < ZEBRA_ROUTE_MAX; type++) {
+		for (type = 0; type <= ZEBRA_ROUTE_MAX; type++) {
 			red = ospf6_redist_lookup(ospf6, type, 0);
 			if (red && ROUTEMAP_NAME(red)
 			    && (strcmp(ROUTEMAP_NAME(red), name) == 0))
@@ -1516,8 +1535,9 @@ void ospf6_asbr_redistribute_add(int type, ifindex_t ifindex,
 
 		if (nexthop_num && nexthop) {
 			ospf6_route_add_nexthop(match, ifindex, nexthop);
-			ospf6_external_lsa_fwd_addr_set(ospf6, nexthop,
-							&info->forwarding);
+			/* Only set the forwarding address if not explicitly configured */
+			if (IN6_IS_ADDR_UNSPECIFIED(&tinfo.forwarding))
+				ospf6_external_lsa_fwd_addr_set(ospf6, nexthop, &info->forwarding);
 		} else
 			ospf6_route_add_nexthop(match, ifindex, NULL);
 
@@ -1564,8 +1584,9 @@ void ospf6_asbr_redistribute_add(int type, ifindex_t ifindex,
 	info->type = type;
 	if (nexthop_num && nexthop) {
 		ospf6_route_add_nexthop(route, ifindex, nexthop);
-		ospf6_external_lsa_fwd_addr_set(ospf6, nexthop,
-						&info->forwarding);
+		/* Only set the forwarding address if not explicitly configured */
+		if (IN6_IS_ADDR_UNSPECIFIED(&tinfo.forwarding))
+			ospf6_external_lsa_fwd_addr_set(ospf6, nexthop, &info->forwarding);
 	} else
 		ospf6_route_add_nexthop(route, ifindex, NULL);
 
@@ -1788,6 +1809,12 @@ int ospf6_redistribute_config_write(struct vty *vty, struct ospf6 *ospf6)
 	int type;
 	struct ospf6_redist *red;
 
+	/*
+	 * type < ZEBRA_ROUTE_MAX is intentional here: otherwise
+	 * for default routes invalid command
+	 *		redistribute unknown metric-type 1 route-map foo-bar-3
+	 * will be output
+	 */
 	for (type = 0; type < ZEBRA_ROUTE_MAX; type++) {
 		red = ospf6_redist_lookup(ospf6, type, 0);
 		if (!red)
@@ -1813,7 +1840,7 @@ static void ospf6_redistribute_show_config(struct vty *vty, struct ospf6 *ospf6,
 					   json_object *json, bool use_json)
 {
 	int type;
-	int nroute[ZEBRA_ROUTE_MAX];
+	int nroute[ZEBRA_ROUTE_MAX + 1];
 	int total;
 	struct ospf6_route *route;
 	struct ospf6_external_info *info;
@@ -1832,7 +1859,7 @@ static void ospf6_redistribute_show_config(struct vty *vty, struct ospf6 *ospf6,
 	if (!use_json)
 		vty_out(vty, "Redistributing External Routes from:\n");
 
-	for (type = 0; type < ZEBRA_ROUTE_MAX; type++) {
+	for (type = 0; type <= ZEBRA_ROUTE_MAX; type++) {
 
 		red = ospf6_redist_lookup(ospf6, type, 0);
 
@@ -2542,7 +2569,7 @@ static void ospf6_asbr_external_route_show(struct vty *vty,
 	char route_type[2];
 
 	prefix2str(&route->prefix, prefix, sizeof(prefix));
-	tmp_id = ntohl(info->id);
+	tmp_id = htonl(info->id);
 	inet_ntop(AF_INET, &tmp_id, id, sizeof(id));
 	if (!IN6_IS_ADDR_UNSPECIFIED(&info->forwarding))
 		inet_ntop(AF_INET6, &info->forwarding, forwarding,
@@ -2949,7 +2976,7 @@ ospf6_originate_summary_lsa(struct ospf6 *ospf6,
 			   __func__, &aggr->p);
 
 	/* This case to handle when the overlapping aggregator address
-	 * is available. Best match will be considered.So need to delink
+	 * is available. Best match will be considered.So need to unlink
 	 * from old aggregator and link to the new aggr.
 	 */
 	if (rt->aggr_route) {
@@ -3341,7 +3368,7 @@ static void ospf6_handle_aggregated_exnl_rt(struct ospf6 *ospf6,
 	struct ospf6_external_info *info;
 
 	/* Handling the case where the external route prefix
-	 * and aggegate prefix is same
+	 * and aggregate prefix is same
 	 * If same don't flush the originated external LSA.
 	 */
 	if (prefix_same(&aggr->p, &rt->prefix)) {
@@ -3423,9 +3450,9 @@ ospf6_handle_external_aggr_add(struct ospf6 *ospf6)
 	}
 }
 
-static void ospf6_asbr_summary_process(struct event *thread)
+static void ospf6_asbr_summary_process(struct event *event)
 {
-	struct ospf6 *ospf6 = EVENT_ARG(thread);
+	struct ospf6 *ospf6 = EVENT_ARG(event);
 	int operation = 0;
 
 	operation = ospf6->aggr_action;
@@ -3711,7 +3738,7 @@ void ospf6_handle_external_lsa_origination(struct ospf6 *ospf6,
 
 			/* Handling the case where the
 			 * external route prefix
-			 * and aggegate prefix is same
+			 * and aggregate prefix is same
 			 * If same don't flush the
 			 * originated
 			 * external LSA.

@@ -54,6 +54,7 @@ int pim_process_ip_pim_hello_cmd(struct vty *vty, const char *hello_str,
 				 const char *hold_str);
 int pim_process_no_ip_pim_hello_cmd(struct vty *vty);
 int pim_process_ip_pim_activeactive_cmd(struct vty *vty, const char *no);
+int pim_process_ip_pim_allowrp_cmd(struct vty *vty, const char *no, const char *plist);
 int pim_process_ip_pim_boundary_oil_cmd(struct vty *vty, const char *oil);
 int pim_process_no_ip_pim_boundary_oil_cmd(struct vty *vty);
 int pim_process_ip_gmp_proxy_cmd(struct vty *vty, bool enable);
@@ -130,6 +131,8 @@ int pim_show_bsm_db_helper(const char *vrf, struct vty *vty, bool uj);
 int gm_process_query_max_response_time_cmd(struct vty *vty,
 					   const char *qmrt_str);
 int gm_process_no_query_max_response_time_cmd(struct vty *vty);
+int gm_process_robustness_cmd(struct vty *vty, const char *robustness);
+int gm_process_no_robustness_cmd(struct vty *vty);
 int gm_process_last_member_query_count_cmd(struct vty *vty,
 					   const char *lmqc_str);
 int gm_process_no_last_member_query_count_cmd(struct vty *vty);

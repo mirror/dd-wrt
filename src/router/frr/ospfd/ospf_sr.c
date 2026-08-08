@@ -238,7 +238,7 @@ static struct sr_node *get_sr_node_by_nexthop(struct ospf *ospf,
  *    needed to manage the SRLB range and allocates this number.
  *  - ospf_sr_local_block_request_label() pick up the first available label and
  *    set corresponding bit
- *  - ospf_sr_local_block_release_label() release label by reseting the
+ *  - ospf_sr_local_block_release_label() release label by resetting the
  *    corresponding bit and set the next label to the first free position
  */
 
@@ -266,7 +266,7 @@ static int sr_local_block_init(uint32_t lower_bound, uint32_t upper_bound)
 	 */
 	size = upper_bound - lower_bound + 1;
 	if (ospf_zebra_request_label_range(lower_bound, size)) {
-		zlog_err("SR: Error reserving SRLB [%u/%u] %u labels",
+		flog_err(EC_OSPF_SR_SID_OVERFLOW, "SR: Error reserving SRLB [%u/%u] %u labels",
 			 lower_bound, upper_bound, size);
 		return -1;
 	}
@@ -301,8 +301,8 @@ static int sr_global_block_init(uint32_t start, uint32_t size)
 	/* request chunk */
 	uint32_t end = start + size - 1;
 	if (ospf_zebra_request_label_range(start, size) < 0) {
-		zlog_err("SR: Error reserving SRGB [%u/%u], %u labels", start,
-			 end, size);
+		flog_err(EC_OSPF_SR_SID_OVERFLOW, "SR: Error reserving SRGB [%u/%u], %u labels",
+			 start, end, size);
 		return -1;
 	}
 
@@ -371,7 +371,7 @@ mpls_label_t ospf_sr_local_block_request_label(void)
 	struct sr_local_block *srlb = &OspfSR.srlb;
 	mpls_label_t label;
 	uint32_t index;
-	uint32_t pos;
+	uint64_t pos;
 	uint32_t size = srlb->end - srlb->start + 1;
 
 	/* Check if we ran out of available labels */
@@ -416,7 +416,7 @@ int ospf_sr_local_block_release_label(mpls_label_t label)
 {
 	struct sr_local_block *srlb = &OspfSR.srlb;
 	uint32_t index;
-	uint32_t pos;
+	uint64_t pos;
 
 	/* Check that label falls inside the SRLB */
 	if ((label < srlb->start) || (label > srlb->end)) {
@@ -763,6 +763,10 @@ static struct ospf_route *get_nexthop_by_addr(struct ospf *top,
 	if (top == NULL)
 		return NULL;
 
+	/* Check if routing table is initialized (SPF may not have run yet) */
+	if (top->new_table == NULL)
+		return NULL;
+
 	osr_debug("      |-  Search Nexthop for prefix %pFX",
 		  (struct prefix *)&p);
 
@@ -985,7 +989,9 @@ static struct sr_link *get_ext_link_sid(struct tlv_header *tlvh, size_t size)
 	struct ext_subtlv_rmt_itf_addr *rmt_itf;
 
 	struct tlv_header *sub_tlvh;
-	uint16_t length = 0, sum = 0, i = 0;
+	uint32_t length = 0, sum = 0;
+	uint16_t i = 0;
+	bool error_p = false;
 
 	/* Check TLV size */
 	if ((ntohs(tlvh->length) > size)
@@ -1000,9 +1006,23 @@ static struct sr_link *get_ext_link_sid(struct tlv_header *tlvh, size_t size)
 	length = ntohs(tlvh->length) - EXT_TLV_LINK_SIZE;
 	sub_tlvh = (struct tlv_header *)((char *)(tlvh) + TLV_HDR_SIZE
 					 + EXT_TLV_LINK_SIZE);
-	for (; sum < length && sub_tlvh; sub_tlvh = TLV_HDR_NEXT(sub_tlvh)) {
+	for (; sum < length && sub_tlvh;) {
+		uint32_t tlv_size = TLV_SIZE(sub_tlvh);
+
+		if (tlv_size > length - sum) {
+			zlog_warn("Malformed Extended Link sub-TLV size %u (remaining %u)",
+				  tlv_size, length - sum);
+			break;
+		}
+
 		switch (ntohs(sub_tlvh->type)) {
 		case EXT_SUBTLV_ADJ_SID:
+			/* Validate sub-TLV length */
+			if (TLV_BODY_SIZE(sub_tlvh) != EXT_SUBTLV_ADJ_SID_SIZE) {
+				error_p = true;
+				break;
+			}
+
 			adj_sid = (struct ext_subtlv_adj_sid *)sub_tlvh;
 			srl->type = ADJ_SID;
 			i = CHECK_FLAG(adj_sid->flags,
@@ -1018,6 +1038,12 @@ static struct sr_link *get_ext_link_sid(struct tlv_header *tlvh, size_t size)
 			IPV4_ADDR_COPY(&srl->nhlfe[i].nexthop, &link->link_id);
 			break;
 		case EXT_SUBTLV_LAN_ADJ_SID:
+			/* Validate sub-TLV length */
+			if (TLV_BODY_SIZE(sub_tlvh) != EXT_SUBTLV_LAN_ADJ_SID_SIZE) {
+				error_p = true;
+				break;
+			}
+
 			lan_sid = (struct ext_subtlv_lan_adj_sid *)sub_tlvh;
 			srl->type = LAN_ADJ_SID;
 			i = CHECK_FLAG(lan_sid->flags,
@@ -1034,6 +1060,12 @@ static struct sr_link *get_ext_link_sid(struct tlv_header *tlvh, size_t size)
 				       &lan_sid->neighbor_id);
 			break;
 		case EXT_SUBTLV_RMT_ITF_ADDR:
+			/* Validate sub-TLV length */
+			if (TLV_BODY_SIZE(sub_tlvh) != EXT_SUBTLV_RMT_ITF_ADDR_SIZE) {
+				error_p = true;
+				break;
+			}
+
 			rmt_itf = (struct ext_subtlv_rmt_itf_addr *)sub_tlvh;
 			IPV4_ADDR_COPY(&srl->nhlfe[0].nexthop, &rmt_itf->value);
 			IPV4_ADDR_COPY(&srl->nhlfe[1].nexthop, &rmt_itf->value);
@@ -1041,8 +1073,23 @@ static struct sr_link *get_ext_link_sid(struct tlv_header *tlvh, size_t size)
 		default:
 			break;
 		}
-		sum += TLV_SIZE(sub_tlvh);
+
+		if (error_p)
+			break;
+
+		sum += tlv_size;
+		if (sum >= length || ((length - sum) < TLV_HDR_SIZE))
+			break;
+
+		sub_tlvh = TLV_HDR_NEXT(sub_tlvh);
 	}
+
+	if (error_p) {
+		zlog_warn("Invalid Extended Link sub-TLV!");
+		XFREE(MTYPE_OSPF_SR_PARAMS, srl);
+		return NULL;
+	}
+
 
 	IPV4_ADDR_COPY(&srl->itf_addr, &link->link_data);
 
@@ -1062,7 +1109,7 @@ static struct sr_prefix *get_ext_prefix_sid(struct tlv_header *tlvh,
 	struct ext_subtlv_prefix_sid *psid;
 
 	struct tlv_header *sub_tlvh;
-	uint16_t length = 0, sum = 0;
+	uint32_t length = 0, sum = 0;
 
 	/* Check TLV size */
 	if ((ntohs(tlvh->length) > size)
@@ -1077,9 +1124,23 @@ static struct sr_prefix *get_ext_prefix_sid(struct tlv_header *tlvh,
 	length = ntohs(tlvh->length) - EXT_TLV_PREFIX_SIZE;
 	sub_tlvh = (struct tlv_header *)((char *)(tlvh) + TLV_HDR_SIZE
 					 + EXT_TLV_PREFIX_SIZE);
-	for (; sum < length && sub_tlvh; sub_tlvh = TLV_HDR_NEXT(sub_tlvh)) {
+	for (; sum < length && sub_tlvh;) {
+		uint32_t tlv_size = TLV_SIZE(sub_tlvh);
+
+		if (tlv_size > length - sum) {
+			zlog_warn("Malformed Extended Prefix sub-TLV size %u (remaining %u)",
+				  tlv_size, length - sum);
+			break;
+		}
+
 		switch (ntohs(sub_tlvh->type)) {
 		case EXT_SUBTLV_PREFIX_SID:
+			if (ntohs(sub_tlvh->length) < EXT_SUBTLV_PREFIX_SID_SIZE) {
+				zlog_warn("SR : Invalid PREFIX_SID subtlv size");
+				XFREE(MTYPE_OSPF_SR_PARAMS, srp);
+				return NULL;
+			}
+
 			psid = (struct ext_subtlv_prefix_sid *)sub_tlvh;
 			if (psid->algorithm != SR_ALGORITHM_SPF) {
 				flog_err(EC_OSPF_INVALID_ALGORITHM,
@@ -1102,7 +1163,9 @@ static struct sr_prefix *get_ext_prefix_sid(struct tlv_header *tlvh,
 		default:
 			break;
 		}
-		sum += TLV_SIZE(sub_tlvh);
+		sum += tlv_size;
+		if (sum < length)
+			sub_tlvh = TLV_HDR_NEXT(sub_tlvh);
 	}
 
 	osr_debug("  |-  Found SID %u for prefix %pFX", srp->sid,
@@ -1368,10 +1431,22 @@ void ospf_sr_ri_lsa_update(struct ospf_lsa *lsa)
 	struct lsa_header *lsah = lsa->data;
 	struct ri_sr_tlv_sid_label_range *ri_srgb = NULL;
 	struct ri_sr_tlv_sid_label_range *ri_srlb = NULL;
-	struct ri_sr_tlv_sr_algorithm *algo = NULL;
 	struct sr_block srgb;
-	uint16_t length = 0, sum = 0;
+	uint32_t length = 0, sum = 0;
 	uint8_t msd = 0;
+	bool error_p = false;
+	int i;
+	uint8_t *p;
+	/* Temp struct to copy flex-algo values from a TLV */
+	struct algo_s {
+		uint16_t length;
+		uint8_t value[ALGORITHM_COUNT];
+	} algo = {};
+
+	if (lsa->size <= OSPF_LSA_HEADER_SIZE) {
+		zlog_warn("Invalid SR Router-Information LSA");
+		return;
+	}
 
 	osr_debug("SR (%s): Process Router Information LSA 4.0.0.%u from %pI4",
 		  __func__, GET_OPAQUE_ID(ntohl(lsah->id.s_addr)),
@@ -1395,28 +1470,94 @@ void ospf_sr_ri_lsa_update(struct ospf_lsa *lsa)
 	/* Collect Router Information Sub TLVs */
 	/* Initialize TLV browsing */
 	length = lsa->size - OSPF_LSA_HEADER_SIZE;
+	if (length <= TLV_HDR_SIZE) {
+		zlog_warn("Malformed Router-Information TLV");
+		return;
+	}
+
 	srgb.range_size = 0;
 	srgb.lower_bound = 0;
 
-	for (tlvh = TLV_HDR_TOP(lsah); (sum < length) && (tlvh != NULL);
-	     tlvh = TLV_HDR_NEXT(tlvh)) {
+	for (tlvh = TLV_HDR_TOP(lsah); (sum < length) && (tlvh != NULL);) {
+		uint32_t tlv_size = TLV_SIZE(tlvh);
+
+		if (tlv_size > length - sum) {
+			zlog_warn("Malformed RI TLV size %u (remaining %u)", tlv_size,
+				  length - sum);
+			error_p = true;
+			break;
+		}
+
 		switch (ntohs(tlvh->type)) {
 		case RI_SR_TLV_SR_ALGORITHM:
-			algo = (struct ri_sr_tlv_sr_algorithm *)tlvh;
+			/* Validate sub-TLV length: variable-length, in octets */
+			i = ntohs(tlvh->length);
+			if (i < 1 || i > ALGORITHM_COUNT) {
+				error_p = true;
+				break;
+			}
+
+			/* Must only use first TLV, if multiple are present */
+			if (algo.length > 0)
+				break;
+
+			/* Init algo octets */
+			for (i = 0; i < ALGORITHM_COUNT; i++)
+				algo.value[i] = SR_ALGORITHM_UNSET;
+
+			/* Copy octets from TLV to local buffer. Note that length is
+			 * in host-order.
+			 */
+			p = TLV_DATA(tlvh);
+			algo.length = ntohs(tlvh->length);
+			for (i = 0; i < algo.length; i++)
+				algo.value[i] = *(p + i);
+
 			break;
 		case RI_SR_TLV_SRGB_LABEL_RANGE:
+			/* Validate sub-TLV length */
+			if (TLV_BODY_SIZE(tlvh) < RI_SR_TLV_LABEL_RANGE_SIZE) {
+				error_p = true;
+				break;
+			}
+
 			ri_srgb = (struct ri_sr_tlv_sid_label_range *)tlvh;
 			break;
 		case RI_SR_TLV_SRLB_LABEL_RANGE:
+			/* Validate sub-TLV length */
+			if (TLV_BODY_SIZE(tlvh) < RI_SR_TLV_LABEL_RANGE_SIZE) {
+				error_p = true;
+				break;
+			}
+
 			ri_srlb = (struct ri_sr_tlv_sid_label_range *)tlvh;
 			break;
 		case RI_SR_TLV_NODE_MSD:
+			/* Validate sub-TLV length */
+			if (TLV_BODY_SIZE(tlvh) < RI_SR_TLV_NODE_MSD_SIZE) {
+				error_p = true;
+				break;
+			}
+
 			msd = ((struct ri_sr_tlv_node_msd *)(tlvh))->value;
 			break;
 		default:
 			break;
 		}
-		sum += TLV_SIZE(tlvh);
+
+		if (error_p)
+			break;
+
+		sum += tlv_size;
+		if (sum >= length || ((length - sum) < TLV_HDR_SIZE))
+			break;
+
+		tlvh = TLV_HDR_NEXT(tlvh);
+	}
+
+	if (error_p) {
+		zlog_warn("Invalid RI sub-TLV");
+		return;
 	}
 
 	/* Check if Segment Routing Capabilities has been found */
@@ -1463,16 +1604,15 @@ void ospf_sr_ri_lsa_update(struct ospf_lsa *lsa)
 	}
 
 	/* Update Algorithm, SRLB and MSD if present */
-	if (algo != NULL) {
-		int i;
-		for (i = 0;
-		     i < ntohs(algo->header.length) && i < ALGORITHM_COUNT; i++)
-			srn->algo[i] = algo->value[0];
+	if (algo.length > 0) {
+		for (i = 0; i < algo.length && i < ALGORITHM_COUNT; i++)
+			srn->algo[i] = algo.value[i];
 		for (; i < ALGORITHM_COUNT; i++)
 			srn->algo[i] = SR_ALGORITHM_UNSET;
 	} else {
 		srn->algo[0] = SR_ALGORITHM_SPF;
 	}
+
 	srn->msd = msd;
 	if (ri_srlb != NULL) {
 		srn->srlb.range_size = GET_RANGE_SIZE(ntohl(ri_srlb->size));
@@ -2194,7 +2334,7 @@ static int update_sr_blocks(uint32_t gb_lower, uint32_t gb_upper,
 	}
 
 	/*
-	 * Try to reserve the new SRGB from the Label Manger. If the
+	 * Try to reserve the new SRGB from the Label Manager. If the
 	 * allocation fails, disable SR until new blocks are successfully
 	 * allocated.
 	 */

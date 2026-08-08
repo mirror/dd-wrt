@@ -129,13 +129,13 @@ struct vtysh_client vtysh_client[] = {
 	{.name = "babeld", .flag = VTYSH_BABELD},
 	{.name = "sharpd", .flag = VTYSH_SHARPD},
 	{.name = "fabricd", .flag = VTYSH_FABRICD},
-	{.name = "watchfrr", .flag = VTYSH_WATCHFRR},
 	{.name = "pbrd", .flag = VTYSH_PBRD},
 	{.name = "staticd", .flag = VTYSH_STATICD},
 	{.name = "bfdd", .flag = VTYSH_BFDD},
 	{.name = "vrrpd", .flag = VTYSH_VRRPD},
 	{.name = "pathd", .flag = VTYSH_PATHD},
 	{.name = "pim6d", .flag = VTYSH_PIM6D},
+	{.name = "watchfrr", .flag = VTYSH_WATCHFRR},
 };
 
 /* Searches for client by name, returns index */
@@ -1517,6 +1517,13 @@ static struct cmd_node bgp_srv6_node = {
 	.prompt = "%s(config-router-srv6)# ",
 };
 
+static struct cmd_node bgp_ls_node = {
+	.name = "bgp link-state",
+	.node = BGP_LS_NODE,
+	.parent_node = BGP_NODE,
+	.prompt = "%s(config-router-af)# ",
+};
+
 static struct cmd_node ospf_node = {
 	.name = "ospf",
 	.node = OSPF_NODE,
@@ -1992,6 +1999,16 @@ DEFUNSH(VTYSH_BGPD, bgp_evpn_vni, bgp_evpn_vni_cmd, "vni " CMD_VNI_RANGE,
 	"VNI number\n")
 {
 	vty->node = BGP_EVPN_VNI_NODE;
+	return CMD_SUCCESS;
+}
+
+DEFUNSH(VTYSH_BGPD, address_family_link_state, address_family_link_state_cmd,
+	"address-family link-state [link-state]",
+	"Enter Address Family command mode\n"
+	"Link-State Address Family\n"
+	"Link-State Subsequent Address Family\n")
+{
+	vty->node = BGP_LS_NODE;
 	return CMD_SUCCESS;
 }
 
@@ -2598,7 +2615,8 @@ DEFUNSH(VTYSH_BGPD, exit_address_family, exit_address_family_cmd,
 	    || vty->node == BGP_IPV6L_NODE || vty->node == BGP_IPV6M_NODE
 	    || vty->node == BGP_EVPN_NODE
 	    || vty->node == BGP_FLOWSPECV4_NODE
-	    || vty->node == BGP_FLOWSPECV6_NODE)
+	    || vty->node == BGP_FLOWSPECV6_NODE
+	    || vty->node == BGP_LS_NODE)
 		vty->node = BGP_NODE;
 	return CMD_SUCCESS;
 }
@@ -3417,20 +3435,130 @@ DEFUN (vtysh_show_history,
 	return CMD_SUCCESS;
 }
 
+/* A helper function that is needed because we need to send
+ * the "show memory json" command to multiple daemons and
+ * collate the results, especially in JSON format.
+ * Without this helper, each daemon would print its own
+ * JSON object, leading to invalid JSON output.
+ */
+static void show_collate_json_send(const char *daemon, const char *command_line)
+{
+	unsigned int i;
+	bool first = true;
+
+	vty_out(gvty, "{");
+
+	for (i = 0; i < array_size(vtysh_client); i++) {
+		const struct vtysh_client *client = &vtysh_client[i];
+		bool is_connected = true;
+
+		if (daemon && !strmatch(daemon, vtysh_client[i].name))
+			continue;
+
+		for (; client; client = client->next)
+			if (client->fd < 0)
+				is_connected = false;
+
+		if (!is_connected)
+			continue;
+
+		if (!first)
+			vty_out(gvty, ",");
+		else
+			first = false;
+
+		vty_out(gvty, "\"%s\":", vtysh_client[i].name);
+
+		vtysh_client_execute_name(vtysh_client[i].name, command_line);
+	}
+
+	vty_out(gvty, "}\n");
+}
+
 /* Memory */
 DEFUN (vtysh_show_memory,
        vtysh_show_memory_cmd,
-       "show memory [" DAEMONS_LIST "]",
+       "show <memory|rcu> [" DAEMONS_LIST "] [json]",
        SHOW_STR
        "Memory statistics\n"
+       "RCU (read-copy-update) statistics\n"
+       DAEMONS_STR
+       JSON_STR)
+{
+	int json_idx = 0;
+	bool rcu = !strcmp(argv[1]->text, "rcu");
+
+	/* Non JSON commands - no functional change. */
+	if (!argv_find(argv, argc, "json", &json_idx)) {
+		char text_buf[128];
+
+		if (argc == 3)
+			return show_one_daemon(vty, argv, argc - 1, argv[argc - 1]->text);
+
+		snprintfrr(text_buf, sizeof(text_buf), "%s statistics for %%s:\n",
+			   rcu ? "RCU" : "Memory");
+		return show_per_daemon(vty, argv, argc, text_buf);
+	}
+
+	const char *cmd = rcu ? "do show rcu json" : "do show memory json";
+
+	/* E.g., `show memory bgpd json` */
+	if (argc == 4) {
+		argc--;
+		show_collate_json_send(argv[argc - 1]->text, cmd);
+	} else {
+		/* E.g., `show memory json` */
+		show_collate_json_send(NULL, cmd);
+	}
+
+	return CMD_SUCCESS;
+}
+
+/*
+ * Support clis when using the tcmalloc lib
+ */
+#ifdef HAVE_TCMALLOC
+
+DEFUN (vtysh_show_tcmalloc_stats,
+       vtysh_show_tcmalloc_stats_cmd,
+       "show tcmalloc stats [" DAEMONS_LIST "]",
+       SHOW_STR
+       "tcmalloc library info\n"
+       "Show tcmalloc stats\n"
        DAEMONS_STR)
 {
-	if (argc == 3)
-		return show_one_daemon(vty, argv, argc - 1,
-				       argv[argc - 1]->text);
+	if (argc == 4)
+		return show_one_daemon(vty, argv, argc - 1, argv[argc - 1]->text);
 
-	return show_per_daemon(vty, argv, argc, "Memory statistics for %s:\n");
+	return show_per_daemon(vty, argv, argc, "tcmalloc statistics for %s:\n");
 }
+
+DEFUN (vtysh_tcmalloc_config,
+       vtysh_tcmalloc_config_cmd,
+       "memory release rate (0-100)",
+       "memory library config\n"
+       "Release free memory to OS\n"
+       "Set mem release rate (zero to disable)\n"
+       "Set release rate (MB/sec)\n")
+{
+	unsigned int i;
+	int cmd_stat;
+	char *line;
+
+	line = argv_concat(argv, argc, 0);
+
+	for (i = 0; i < array_size(vtysh_client); i++) {
+		cmd_stat = vtysh_client_execute(&vtysh_client[i], line);
+		if (cmd_stat == CMD_WARNING)
+			break;
+	}
+
+	XFREE(MTYPE_TMP, line);
+
+	return CMD_SUCCESS;
+}
+
+#endif /* HAVE_TCMALLOC */
 
 DEFUN (vtysh_show_modules,
        vtysh_show_modules_cmd,
@@ -3615,13 +3743,17 @@ DEFUN (vtysh_show_running_config,
 	return vtysh_write_terminal(self, vty, argc, argv);
 }
 
-static void show_route_map_send(const char *route_map, bool json)
+static void show_route_map_send(const char *route_map, bool unused, bool json)
 {
 	unsigned int i;
 	bool first = true;
 	char command_line[128];
 
-	snprintf(command_line, sizeof(command_line), "do show route-map ");
+	if (unused)
+		snprintf(command_line, sizeof(command_line), "do show route-map-unused ");
+	else
+		snprintf(command_line, sizeof(command_line), "do show route-map ");
+
 	if (route_map)
 		strlcat(command_line, route_map, sizeof(command_line));
 	if (json)
@@ -3667,7 +3799,19 @@ DEFPY (show_route_map,
        "route-map name\n"
        JSON_STR)
 {
-	show_route_map_send(route_map, !!json);
+	show_route_map_send(route_map, false, !!json);
+
+	return CMD_SUCCESS;
+}
+
+DEFPY (show_route_map_unused,
+       show_route_map_unused_cmd,
+       "show route-map-unused [json]$json",
+       SHOW_STR
+       "unused route-map information\n"
+       JSON_STR)
+{
+	show_route_map_send(NULL, true, !!json);
 
 	return CMD_SUCCESS;
 }
@@ -4390,9 +4534,9 @@ static void vtysh_log_print(struct vtysh_client *vclient,
 		text + textpos);
 }
 
-static void vtysh_log_read(struct event *thread)
+static void vtysh_log_read(struct event *event)
 {
-	struct vtysh_client *vclient = EVENT_ARG(thread);
+	struct vtysh_client *vclient = EVENT_ARG(event);
 	struct {
 		struct zlog_live_hdr hdr;
 		char text[4096];
@@ -4572,8 +4716,7 @@ DEFPY (no_vtysh_terminal_monitor,
 
 
 /* Execute command in child process. */
-static void execute_command(const char *command, int argc, const char *arg1,
-			    const char *arg2)
+static void execute_command(const char *command, char *argv[])
 {
 	pid_t pid;
 	int status;
@@ -4587,18 +4730,7 @@ static void execute_command(const char *command, int argc, const char *arg1,
 		exit(1);
 	} else if (pid == 0) {
 		/* This is child process. */
-		switch (argc) {
-		case 0:
-			execlp(command, command, (const char *)NULL);
-			break;
-		case 1:
-			execlp(command, command, arg1, (const char *)NULL);
-			break;
-		case 2:
-			execlp(command, command, arg1, arg2,
-			       (const char *)NULL);
-			break;
-		}
+		execvp(command, (char *const *)argv);
 
 		/* When execlp suceed, this part is not executed. */
 		fprintf(stderr, "Can't execute %s: %s\n", command,
@@ -4612,16 +4744,54 @@ static void execute_command(const char *command, int argc, const char *arg1,
 	}
 }
 
-DEFUN (vtysh_ping,
-       vtysh_ping_cmd,
-       "ping WORD",
-       "Send echo messages\n"
-       "Ping destination address or hostname\n")
+/* Helper function to add don't fragment arguments based on platform */
+static int add_dontfragment_args(const char **args, int arg_count)
 {
-	int idx = 1;
+	/* BSD uses -D, Linux/others use -M do for DF bit */
+#if defined __OpenBSD__ || defined __FreeBSD__ || defined __NetBSD__
+	args[arg_count++] = "-D";
+#else
+	args[arg_count++] = "-M";
+	args[arg_count++] = "do";
+#endif
+	return arg_count;
+}
 
-	argv_find(argv, argc, "WORD", &idx);
-	execute_command("ping", 1, argv[idx]->arg, NULL);
+DEFPY (vtysh_ping,
+       vtysh_ping_cmd,
+       "ping WORD$dst [source <A.B.C.D|X:X::X:X|WORD>$source] [count (1-1000)$count] [dontfragment]$dontfragment",
+       "Send echo messages\n"
+       "Ping destination address or hostname\n"
+       "Source interface or address\n"
+       "Source interface or address ip value\n"
+       "Source interface or address ipv6 value\n"
+       "Source interface or address hostname value\n"
+       "Count of the packets send\n"
+       "Count of the packets send value\n"
+       "Don't fragment the packets\n")
+{
+	const char *args[9];
+	int arg_count = 0;
+
+	args[arg_count++] = "ping";
+	args[arg_count++] = dst;
+
+	if (source) {
+		args[arg_count++] = "-I";
+		args[arg_count++] = source;
+	}
+
+	if (count) {
+		args[arg_count++] = "-c";
+		args[arg_count++] = count_str;
+	}
+
+	if (dontfragment)
+		arg_count = add_dontfragment_args(args, arg_count);
+
+	args[arg_count] = NULL;
+
+	execute_command("ping", (char **)args);
 	return CMD_SUCCESS;
 }
 
@@ -4631,62 +4801,103 @@ DEFUN(vtysh_motd, vtysh_motd_cmd, "show motd", SHOW_STR "Show motd\n")
 	return CMD_SUCCESS;
 }
 
-ALIAS(vtysh_ping, vtysh_ping_ip_cmd, "ping ip WORD",
+ALIAS(vtysh_ping, vtysh_ping_ip_cmd, "ping ip WORD$dst [source <A.B.C.D|X:X::X:X|WORD>$source] [count (1-1000)$count] [dontfragment]$dontfragment",
       "Send echo messages\n"
       "IP echo\n"
-      "Ping destination address or hostname\n")
+      "Ping destination address or hostname\n"
+      "Source interface or address\n"
+      "Source interface or address ip value\n"
+      "Source interface or address ipv6 value\n"
+      "Source interface or address hostname value\n"
+      "Count of the packets send\n"
+      "Count of the packets send value\n"
+      "Don't fragment the packets\n")
 
-DEFUN (vtysh_traceroute,
+DEFPY (vtysh_traceroute,
        vtysh_traceroute_cmd,
-       "traceroute WORD",
+       "traceroute WORD$dst",
        "Trace route to destination\n"
        "Trace route to destination address or hostname\n")
 {
-	int idx = 1;
+	const char *args[3] = { "traceroute", dst, NULL };
 
-	argv_find(argv, argc, "WORD", &idx);
-	execute_command("traceroute", 1, argv[idx]->arg, NULL);
+	execute_command("traceroute", (char **)args);
 	return CMD_SUCCESS;
 }
 
-ALIAS(vtysh_traceroute, vtysh_traceroute_ip_cmd, "traceroute ip WORD",
+ALIAS(vtysh_traceroute, vtysh_traceroute_ip_cmd, "traceroute ip WORD$dst",
       "Trace route to destination\n"
       "IP trace\n"
       "Trace route to destination address or hostname\n")
 
-DEFUN (vtysh_mtrace,
+DEFPY (vtysh_mtrace,
        vtysh_mtrace_cmd,
-       "mtrace WORD [WORD]",
+       "mtrace WORD$source [WORD]$group",
        "Multicast trace route to multicast source\n"
        "Multicast trace route to multicast source address\n"
        "Multicast trace route for multicast group address\n")
 {
-	if (argc == 2)
-		execute_command("mtracebis", 1, argv[1]->arg, NULL);
-	else
-		execute_command("mtracebis", 2, argv[1]->arg, argv[2]->arg);
+	if (group) {
+		const char *args[4] = { "mtracebis", source, group, NULL };
+
+		execute_command("mtracebis", (char **)args);
+	} else {
+		const char *args[3] = { "mtracebis", source, NULL };
+
+		execute_command("mtracebis", (char **)args);
+	}
 	return CMD_SUCCESS;
 }
 
-DEFUN (vtysh_ping6,
+DEFPY (vtysh_ping6,
        vtysh_ping6_cmd,
-       "ping ipv6 WORD",
+       "ping ipv6 WORD$dst [source <A.B.C.D|X:X::X:X|WORD>$source] [count (1-1000)$count] [dontfragment]$dontfragment",
        "Send echo messages\n"
        "IPv6 echo\n"
-       "Ping destination address or hostname\n")
+       "Ping destination address or hostname\n"
+       "Source interface or address\n"
+       "Source interface or address ip value\n"
+       "Source interface or address ipv6 value\n"
+       "Source interface or address hostname value\n"
+       "Count of the packets send\n"
+       "Count of the packets send value\n"
+       "Don't fragment the packets\n")
 {
-	execute_command("ping6", 1, argv[2]->arg, NULL);
+	const char *args[9];
+	int arg_count = 0;
+
+	args[arg_count++] = "ping6";
+	args[arg_count++] = dst;
+
+	if (source) {
+		args[arg_count++] = "-I";
+		args[arg_count++] = source;
+	}
+
+	if (count) {
+		args[arg_count++] = "-c";
+		args[arg_count++] = count_str;
+	}
+
+	if (dontfragment)
+		arg_count = add_dontfragment_args(args, arg_count);
+
+	args[arg_count] = NULL;
+
+	execute_command("ping6", (char **)args);
 	return CMD_SUCCESS;
 }
 
-DEFUN (vtysh_traceroute6,
+DEFPY (vtysh_traceroute6,
        vtysh_traceroute6_cmd,
-       "traceroute ipv6 WORD",
+       "traceroute ipv6 WORD$dst",
        "Trace route to destination\n"
        "IPv6 trace\n"
        "Trace route to destination address or hostname\n")
 {
-	execute_command("traceroute6", 1, argv[2]->arg, NULL);
+	const char *args[3] = { "traceroute6", dst, NULL };
+
+	execute_command("traceroute6", (char **)args);
 	return CMD_SUCCESS;
 }
 
@@ -4740,6 +4951,20 @@ DEFUN(find,
 	return cmd_find_cmds(vty, argv, argc);
 }
 
+DEFUN(clear,
+      clear_cmd,
+      "clear",
+      "Clear the terminal\n")
+{
+	rl_clear_screen(0, 0);
+#ifdef __OpenBSD__
+	rl_refresh_line(0, 0);
+#else
+	rl_clear_visible_line();
+#endif
+	return CMD_SUCCESS;
+}
+
 DEFUN_HIDDEN(show_cli_graph_vtysh,
 	     show_cli_graph_vtysh_cmd,
 	     "show cli graph",
@@ -4759,6 +4984,7 @@ static void vtysh_install_default(enum node_type node)
 {
 	_install_element(node, &config_list_cmd);
 	_install_element(node, &find_cmd);
+	_install_element(node, &clear_cmd);
 	_install_element(node, &show_cli_graph_vtysh_cmd);
 	_install_element(node, &vtysh_output_file_cmd);
 	_install_element(node, &no_vtysh_output_file_cmd);
@@ -5091,6 +5317,7 @@ void vtysh_init_vty(void)
 	install_node(&rpki_node);
 	install_node(&bmp_node);
 	install_node(&bgp_srv6_node);
+	install_node(&bgp_ls_node);
 	install_node(&rip_node);
 	install_node(&ripng_node);
 	install_node(&ospf_node);
@@ -5271,6 +5498,12 @@ void vtysh_init_vty(void)
 	install_element(BGP_SRV6_NODE, &exit_bgp_srv6_cmd);
 	install_element(BGP_SRV6_NODE, &quit_bgp_srv6_cmd);
 	install_element(BGP_SRV6_NODE, &vtysh_end_all_cmd);
+
+	install_element(BGP_NODE, &address_family_link_state_cmd);
+	install_element(BGP_LS_NODE, &vtysh_quit_bgpd_cmd);
+	install_element(BGP_LS_NODE, &vtysh_exit_bgpd_cmd);
+	install_element(BGP_LS_NODE, &vtysh_end_all_cmd);
+	install_element(BGP_LS_NODE, &exit_address_family_cmd);
 #endif /* HAVE_BGPD */
 
 	/* ripd */
@@ -5623,6 +5856,7 @@ void vtysh_init_vty(void)
 	install_element(ENABLE_NODE, &vtysh_copy_to_running_cmd);
 
 	install_element(ENABLE_NODE, &show_route_map_cmd);
+	install_element(ENABLE_NODE, &show_route_map_unused_cmd);
 	install_element(ENABLE_NODE, &show_ip_prefix_list_cmd);
 	install_element(ENABLE_NODE, &show_ip_prefix_list_summary_cmd);
 	install_element(ENABLE_NODE, &show_ip_prefix_list_detail_cmd);
@@ -5692,6 +5926,12 @@ void vtysh_init_vty(void)
 	install_element(VIEW_NODE, &vtysh_show_event_cpu_cmd);
 	install_element(VIEW_NODE, &vtysh_show_event_poll_cmd);
 	install_element(VIEW_NODE, &vtysh_show_event_timer_cmd);
+
+	/* tcmalloc-specific commands */
+#ifdef HAVE_TCMALLOC
+	install_element(VIEW_NODE, &vtysh_show_tcmalloc_stats_cmd);
+	install_element(CONFIG_NODE, &vtysh_tcmalloc_config_cmd);
+#endif /* HAVE_TCMALLOC */
 
 	/* Logging */
 	install_element(VIEW_NODE, &vtysh_show_logging_cmd);

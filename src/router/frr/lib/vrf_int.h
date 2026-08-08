@@ -21,7 +21,7 @@ extern "C" {
  * Why you ask?  Well because these are the turn on/off
  * functions and the only place we can really turn a
  * vrf on properly is in the call up from the os -> zebra
- * and the pass through of this informatoin from zebra -> protocols
+ * and the pass through of this information from zebra -> protocols
  */
 
 /*
@@ -30,7 +30,7 @@ extern "C" {
  * Given a newly running vrf enable it to be used
  * by interested routing protocols
  */
-extern int vrf_enable(struct vrf *);
+extern int vrf_enable(struct vrf *vrf);
 
 /*
  * vrf_delete
@@ -38,7 +38,7 @@ extern int vrf_enable(struct vrf *);
  * Given a vrf that is being deleted, delete it
  * from interested parties
  */
-extern void vrf_delete(struct vrf *);
+extern void vrf_delete(struct vrf *vrf);
 
 #ifdef __cplusplus
 }

@@ -97,15 +97,27 @@ static void ospf_free_refresh_queue(struct ospf *ospf)
 
 int p_spaces_compare_func(const struct p_space *a, const struct p_space *b)
 {
-	if (a->protected_resource->type == OSPF_TI_LFA_LINK_PROTECTION
-	    && b->protected_resource->type == OSPF_TI_LFA_LINK_PROTECTION)
-		return (a->protected_resource->link->link_id.s_addr
-			- b->protected_resource->link->link_id.s_addr);
+	if (a->protected_resource->type == OSPF_TI_LFA_LINK_PROTECTION &&
+	    b->protected_resource->type == OSPF_TI_LFA_LINK_PROTECTION) {
+		if (a->protected_resource->link->link_id.s_addr >
+		    b->protected_resource->link->link_id.s_addr)
+			return 1;
+		if (a->protected_resource->link->link_id.s_addr <
+		    b->protected_resource->link->link_id.s_addr)
+			return -1;
+		return 0;
+	}
 
-	if (a->protected_resource->type == OSPF_TI_LFA_NODE_PROTECTION
-	    && b->protected_resource->type == OSPF_TI_LFA_NODE_PROTECTION)
-		return (a->protected_resource->router_id.s_addr
-			- b->protected_resource->router_id.s_addr);
+	if (a->protected_resource->type == OSPF_TI_LFA_NODE_PROTECTION &&
+	    b->protected_resource->type == OSPF_TI_LFA_NODE_PROTECTION) {
+		if (a->protected_resource->router_id.s_addr >
+		    b->protected_resource->router_id.s_addr)
+			return 1;
+		if (a->protected_resource->router_id.s_addr <
+		    b->protected_resource->router_id.s_addr)
+			return -1;
+		return 0;
+	}
 
 	/* This should not happen */
 	return 0;
@@ -113,7 +125,11 @@ int p_spaces_compare_func(const struct p_space *a, const struct p_space *b)
 
 int q_spaces_compare_func(const struct q_space *a, const struct q_space *b)
 {
-	return (a->root->id.s_addr - b->root->id.s_addr);
+	if (a->root->id.s_addr > b->root->id.s_addr)
+		return 1;
+	if (a->root->id.s_addr < b->root->id.s_addr)
+		return -1;
+	return 0;
 }
 
 DECLARE_RBTREE_UNIQ(p_spaces, struct p_space, p_spaces_item,
@@ -379,7 +395,6 @@ struct ospf *ospf_new_alloc(unsigned short instance, const char *name)
 	/* MaxAge init. */
 	new->maxage_delay = OSPF_LSA_MAXAGE_REMOVE_DELAY_DEFAULT;
 	new->maxage_lsa = route_table_init();
-	new->t_maxage_walker = NULL;
 	event_add_timer(master, ospf_lsa_maxage_walker, new,
 			OSPF_LSA_MAXAGE_CHECK_INTERVAL, &new->t_maxage_walker);
 
@@ -392,14 +407,12 @@ struct ospf *ospf_new_alloc(unsigned short instance, const char *name)
 	new->lsa_refresh_queue.index = 0;
 	new->lsa_refresh_interval = OSPF_LSA_REFRESH_INTERVAL_DEFAULT;
 	new->lsa_refresh_timer = OSPF_LS_REFRESH_TIME;
-	new->t_lsa_refresher = NULL;
 	event_add_timer(master, ospf_lsa_refresh_walker, new,
 			new->lsa_refresh_interval, &new->t_lsa_refresher);
 	new->lsa_refresher_started = monotime(NULL);
 
 	new->ibuf = stream_new(OSPF_MAX_PACKET_SIZE + 1);
 
-	new->t_read = NULL;
 	new->oi_write_q = list_new();
 	new->write_oi_count = OSPF_WRITE_INTERFACE_COUNT_DEFAULT;
 
@@ -585,7 +598,7 @@ static void ospf_deferred_shutdown_check(struct ospf *ospf)
 	struct ospf_area *area;
 
 	/* deferred shutdown already running? */
-	if (ospf->t_deferred_shutdown)
+	if (event_is_scheduled(ospf->t_deferred_shutdown))
 		return;
 
 	/* Should we try push out max-metric LSAs? */
@@ -880,7 +893,7 @@ static void ospf_finish_final(struct ospf *ospf)
 	list_delete(&ospf->areas);
 	list_delete(&ospf->oi_write_q);
 
-	/* Reset GR helper data structers */
+	/* Reset GR helper data structures */
 	ospf_gr_helper_instance_stop(ospf);
 
 	close(ospf->fd);
@@ -1922,7 +1935,6 @@ int ospf_timers_refresh_unset(struct ospf *ospf)
 
 	if (time_left > OSPF_LSA_REFRESH_INTERVAL_DEFAULT) {
 		event_cancel(&ospf->t_lsa_refresher);
-		ospf->t_lsa_refresher = NULL;
 		event_add_timer(master, ospf_lsa_refresh_walker, ospf,
 				OSPF_LSA_REFRESH_INTERVAL_DEFAULT,
 				&ospf->t_lsa_refresher);
@@ -2390,4 +2402,46 @@ const char *ospf_get_name(const struct ospf *ospf)
 		return ospf->name;
 	else
 		return VRF_DEFAULT_NAME;
+}
+
+void ospf_shutdown(struct ospf *ospf, bool shutdown)
+{
+	struct ospf_interface *oi;
+	struct route_node *rnode;
+	struct ospf_area *area;
+	struct listnode *node;
+	struct ospf_lsa *lsa;
+
+	/* Avoid shutting down / spinning up if already in that state */
+	if ((CHECK_FLAG(ospf->config, OSPF_SHUTDOWN) && shutdown) ||
+	    (!CHECK_FLAG(ospf->config, OSPF_SHUTDOWN) && !shutdown))
+		return;
+
+	if (shutdown) {
+		SET_FLAG(ospf->config, OSPF_SHUTDOWN);
+
+		/* Shutdown all interfaces */
+		for (ALL_LIST_ELEMENTS_RO(ospf->oiflist, node, oi))
+			ospf_if_down(oi);
+
+		/* Clear all link state databases */
+		for (ALL_LIST_ELEMENTS_RO(ospf->areas, node, area)) {
+			ospf_area_lsdb_discard_delete(area);
+			ospf_lsa_unlock(&area->router_lsa_self);
+		}
+		LSDB_LOOP (OPAQUE_AS_LSDB(ospf), rnode, lsa)
+			ospf_discard_from_db(ospf, ospf->lsdb, lsa);
+		LSDB_LOOP (EXTERNAL_LSDB(ospf), rnode, lsa)
+			ospf_discard_from_db(ospf, ospf->lsdb, lsa);
+
+		ospf_lsdb_delete_all(ospf->lsdb);
+	} else {
+		UNSET_FLAG(ospf->config, OSPF_SHUTDOWN);
+
+		/* Spin up all interfaces */
+		for (ALL_LIST_ELEMENTS_RO(ospf->oiflist, node, oi))
+			ospf_if_up(oi);
+
+		ospf_asbr_reoriginate(ospf);
+	}
 }

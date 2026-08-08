@@ -173,7 +173,7 @@ struct ospf6 {
 	struct event *t_spf_calc; /* SPF calculation timer. */
 	struct event *t_ase_calc; /* ASE calculation timer. */
 	struct event *maxage_remover;
-	struct event *t_distribute_update; /* Distirbute update timer. */
+	struct event *t_distribute_update; /* Distribute update timer. */
 	struct event *t_ospf6_receive;	   /* OSPF6 receive timer */
 	struct event *t_external_aggr;	   /* OSPF6 aggregation timer */
 #define OSPF6_WRITE_INTERFACE_COUNT_DEFAULT 20
@@ -191,7 +191,7 @@ struct ospf6 {
 	struct route_table *distance_table;
 
 	/* Used during ospf instance going down send LSDB
-	 * update to neighbors immediatly */
+	 * update to neighbors immediately */
 	uint8_t inst_shutdown;
 
 	/* Max number of multiple paths
@@ -239,7 +239,7 @@ extern void ospf6_master_delete(void);
 
 extern void install_element_ospf6_clear_process(void);
 extern void ospf6_top_init(void);
-extern void ospf6_delete(struct ospf6 *o);
+extern void ospf6_delete(struct ospf6 **o);
 extern bool ospf6_router_id_update(struct ospf6 *ospf6, bool init);
 void ospf6_restart_spf(struct ospf6 *ospf6);
 
@@ -249,6 +249,7 @@ void ospf6_vrf_link(struct ospf6 *ospf6, struct vrf *vrf);
 void ospf6_vrf_unlink(struct ospf6 *ospf6, struct vrf *vrf);
 struct ospf6 *ospf6_lookup_by_vrf_id(vrf_id_t vrf_id);
 struct ospf6 *ospf6_lookup_by_vrf_name(const char *name);
+void ospf6_reinstall_routes(struct ospf6 *ospf6);
 const char *ospf6_vrf_id_to_name(vrf_id_t vrf_id);
 void ospf6_vrf_init(void);
 bool ospf6_is_valid_summary_addr(struct vty *vty, struct prefix *p);

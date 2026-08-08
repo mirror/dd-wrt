@@ -31,6 +31,10 @@ int bfdd_bfd_profile_desired_echo_transmission_interval_modify(
 	struct nb_cb_modify_args *args);
 int bfdd_bfd_profile_required_echo_receive_interval_modify(
 	struct nb_cb_modify_args *args);
+int bfdd_bfd_profile_authentication_key_chain_modify(struct nb_cb_modify_args *args);
+int bfdd_bfd_profile_authentication_algorithm_meticulous_modify(struct nb_cb_modify_args *args);
+int bfdd_bfd_profile_authentication_algorithm_meticulous_destroy(struct nb_cb_destroy_args *args);
+int bfdd_bfd_profile_authentication_key_chain_destroy(struct nb_cb_destroy_args *args);
 int bfdd_bfd_sessions_single_hop_create(struct nb_cb_create_args *args);
 int bfdd_bfd_sessions_single_hop_destroy(struct nb_cb_destroy_args *args);
 const void *
@@ -43,6 +47,12 @@ int bfdd_bfd_sessions_single_hop_source_addr_modify(
 int bfdd_bfd_sessions_single_hop_source_addr_destroy(
 	struct nb_cb_destroy_args *args);
 int bfdd_bfd_sessions_single_hop_profile_modify(struct nb_cb_modify_args *args);
+int bfdd_bfd_sessions_common_authentication_key_chain_modify(struct nb_cb_modify_args *args);
+int bfdd_bfd_sessions_common_authentication_key_chain_destroy(struct nb_cb_destroy_args *args);
+int bfdd_bfd_sessions_common_authentication_algorithm_meticulous_modify(
+	struct nb_cb_modify_args *args);
+int bfdd_bfd_sessions_common_authentication_algorithm_meticulous_destroy(
+	struct nb_cb_destroy_args *args);
 int bfdd_bfd_sessions_single_hop_profile_destroy(
 	struct nb_cb_destroy_args *args);
 int bfdd_bfd_sessions_single_hop_detection_multiplier_modify(
@@ -100,8 +110,9 @@ struct yang_data *bfdd_bfd_sessions_single_hop_stats_session_up_count_get_elem(
 struct yang_data *
 bfdd_bfd_sessions_single_hop_stats_control_packet_input_count_get_elem(
 	struct nb_cb_get_elem_args *args);
-struct yang_data *
-bfdd_bfd_sessions_single_hop_stats_control_packet_output_count_get_elem(
+struct yang_data *bfdd_bfd_sessions_single_hop_stats_control_packet_input_count_bad_get_elem(
+	struct nb_cb_get_elem_args *args);
+struct yang_data *bfdd_bfd_sessions_single_hop_stats_control_packet_output_count_get_elem(
 	struct nb_cb_get_elem_args *args);
 struct yang_data *
 bfdd_bfd_sessions_single_hop_stats_negotiated_echo_transmission_interval_get_elem(
@@ -227,6 +238,9 @@ void bfd_cli_show_required_echo_receive_interval(struct vty *vty,
 						 bool show_defaults);
 void bfd_cli_show_profile(struct vty *vty, const struct lyd_node *dnode,
 			  bool show_defaults);
+void bfd_cli_show_auth(struct vty *vty, const struct lyd_node *dnode, bool show_defaults);
+void bfd_cli_show_auth_algorithm_meticulous(struct vty *vty, const struct lyd_node *dnode,
+					    bool show_defaults);
 void bfd_cli_peer_profile_show(struct vty *vty, const struct lyd_node *dnode,
 			       bool show_defaults);
 void bfd_cli_show_passive(struct vty *vty, const struct lyd_node *dnode,
@@ -235,7 +249,11 @@ void bfd_cli_show_log_session_changes(struct vty *vty, const struct lyd_node *dn
 				      bool show_defaults);
 void bfd_cli_show_minimum_ttl(struct vty *vty, const struct lyd_node *dnode,
 			      bool show_defaults);
-
+void bfd_cli_show_profile_authentication_key_chain(struct vty *vty, const struct lyd_node *dnode,
+						   bool show_defaults);
+void bfd_cli_show_profile_authentication_algorithm_meticulous(struct vty *vty,
+							      const struct lyd_node *dnode,
+							      bool show_defaults);
 int bfdd_bfd_sessions_bfd_mode_modify(struct nb_cb_modify_args *args);
 int bfdd_bfd_sessions_bfd_mode_destroy(struct nb_cb_destroy_args *args);
 

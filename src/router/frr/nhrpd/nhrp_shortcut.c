@@ -162,7 +162,7 @@ static void nhrp_shortcut_delete(struct nhrp_shortcut *s,
 static void nhrp_shortcut_do_purge(struct event *t)
 {
 	struct nhrp_shortcut *s = EVENT_ARG(t);
-	s->t_shortcut_purge = NULL;
+
 	event_cancel(&s->t_retry_resolution);
 	nhrp_shortcut_delete(s, NULL);
 }
@@ -218,7 +218,7 @@ static void nhrp_shortcut_recv_resolution_rep(struct nhrp_reqid *reqid,
 	if (pp->hdr->type != NHRP_PACKET_RESOLUTION_REPLY) {
 		if (pp->hdr->type == NHRP_PACKET_ERROR_INDICATION
 		    && pp->hdr->u.error.code
-			       == NHRP_ERROR_PROTOCOL_ADDRESS_UNREACHABLE) {
+			       == htons(NHRP_ERROR_PROTOCOL_ADDRESS_UNREACHABLE)) {
 			debugf(NHRP_DEBUG_COMMON,
 			       "Shortcut: Resolution: Protocol address unreachable");
 			nhrp_shortcut_update_binding(s, NHRP_CACHE_NEGATIVE,

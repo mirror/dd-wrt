@@ -8,6 +8,7 @@
           "active": true
         },
         "frr-zebra:zebra": {
+          "router-id": "3.3.3.1",
           "ribs": {
             "rib": [
               {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
  * This is an implementation of RFC4970 Router Information
- * with support of RFC5088 PCE Capabilites announcement
+ * with support of RFC5088 PCE Capabilities announcement
  *
  * Module name: Router Information
  * Author: Olivier Dugeon <olivier.dugeon@orange.com>
@@ -603,10 +603,9 @@ void ospf_router_info_update_sr(bool enable, struct sr_node *srn)
 
 	/* Verify that scope is AREA */
 	if (OspfRI.scope != OSPF_OPAQUE_AREA_LSA) {
-		zlog_err(
-			"RI (%s): Router Info is %s flooding: Change scope to Area flooding for Segment Routing",
-			__func__,
-			OspfRI.scope == OSPF_OPAQUE_AREA_LSA ? "Area" : "AS");
+		flog_err(EC_OSPF_SR_RI_SCOPE,
+			 "RI (%s): Router Info is %s flooding: Change scope to Area flooding for Segment Routing",
+			 __func__, OspfRI.scope == OSPF_OPAQUE_AREA_LSA ? "Area" : "AS");
 		return;
 	}
 
@@ -1002,8 +1001,7 @@ static struct ospf_lsa *ospf_router_info_lsa_refresh(struct ospf_lsa *lsa)
 		 */
 		zlog_info("RI (%s): ROUTER INFORMATION is disabled now.",
 			  __func__);
-		lsa->data->ls_age =
-			htons(OSPF_LSA_MAXAGE); /* Flush it anyway. */
+		LS_AGE_SET(lsa, OSPF_LSA_MAXAGE); /* Flush it anyway. */
 	}
 
 	/* Verify that the Router Information ID is supported */
@@ -1204,17 +1202,18 @@ static int ospf_router_info_lsa_update(struct ospf_lsa *lsa)
  * Following are vty session control functions.
  *------------------------------------------------------------------------*/
 
-#define check_tlv_size(size, msg)                                              \
-	do {                                                                   \
-		if (ntohs(tlvh->length) > size) {                              \
-			if (vty != NULL)                                       \
-				vty_out(vty, "  Wrong %s TLV size: %d(%d)\n",  \
-					msg, ntohs(tlvh->length), size);       \
-			else                                                   \
-				zlog_debug("    Wrong %s TLV size: %d(%d)",    \
-					   msg, ntohs(tlvh->length), size);    \
-			return size + TLV_HDR_SIZE;                            \
-		}                                                              \
+#define check_tlv_size(size, msg)                                                                           \
+	do {                                                                                                \
+		if (ntohs(tlvh->length) > size) {                                                           \
+			if (vty != NULL)                                                                    \
+				vty_out(vty,                                                                \
+					"  Wrong %s TLV size: %d(expected %d). Skip subsequent TLVs!\n",    \
+					msg, ntohs(tlvh->length), size);                                    \
+			else                                                                                \
+				zlog_debug("    Wrong %s TLV size: %d(expected %d). Skip subsequent TLVs!", \
+					   msg, ntohs(tlvh->length), size);                                 \
+			return OSPF_MAX_LSA_SIZE + 1;                                                       \
+		}                                                                                           \
 	} while (0)
 
 static uint16_t show_vty_router_cap(struct vty *vty, struct tlv_header *tlvh,
@@ -1945,8 +1944,8 @@ DEFUN (pce_path_scope,
 		return CMD_WARNING_CONFIG_FAILED;
 	}
 
-	if (ntohl(pi->pce_scope.header.type) == 0
-	    || scope != pi->pce_scope.value) {
+	if (pi->pce_scope.header.type == 0
+	    || scope != ntohl(pi->pce_scope.value)) {
 		set_pce_path_scope(scope, pi);
 
 		/* Refresh RI LSA if already engaged */
@@ -1998,7 +1997,8 @@ DEFUN (pce_domain,
 
 	/* Check if the domain is not already in the domain list */
 	for (ALL_LIST_ELEMENTS_RO(pce->pce_domain, node, domain)) {
-		if (ntohl(domain->header.type) == 0 && as == domain->value)
+		if (domain->type == htons(PCE_DOMAIN_TYPE_AS) &&
+		    domain->value == htonl(as))
 			return CMD_SUCCESS;
 	}
 
@@ -2066,7 +2066,8 @@ DEFUN (pce_neigbhor,
 
 	/* Check if the domain is not already in the domain list */
 	for (ALL_LIST_ELEMENTS_RO(pce->pce_neighbor, node, neighbor)) {
-		if (ntohl(neighbor->header.type) == 0 && as == neighbor->value)
+		if (neighbor->type == htons(PCE_DOMAIN_TYPE_AS) &&
+		    neighbor->value == htonl(as))
 			return CMD_SUCCESS;
 	}
 
@@ -2129,8 +2130,8 @@ DEFUN (pce_cap_flag,
 		return CMD_WARNING_CONFIG_FAILED;
 	}
 
-	if (ntohl(pce->pce_cap_flag.header.type) == 0
-	    || cap != pce->pce_cap_flag.value) {
+	if (pce->pce_cap_flag.header.type == 0
+	    || cap != ntohl(pce->pce_cap_flag.value)) {
 		set_pce_cap_flag(cap, pce);
 
 		/* Refresh RI LSA if already engaged */

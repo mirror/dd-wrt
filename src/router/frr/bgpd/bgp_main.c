@@ -124,27 +124,6 @@ static struct frr_daemon_info bgpd_di;
 void sighup(void)
 {
 	zlog_info("SIGHUP received, ignoring");
-
-	return;
-
-	/*
-	 * This is turned off for the moment.  There is all
-	 * sorts of config turned off by bgp_terminate
-	 * that is not setup properly again in bgp_reset.
-	 * I see no easy way to do this nor do I see that
-	 * this is a desirable way to reload config
-	 * given the yang work.
-	 */
-	/* Terminate all thread. */
-	/*
-	 * bgp_terminate();
-	 * bgp_reset();
-	 * zlog_info("bgpd restarting!");
-
-	 * Reload config file.
-	 * vty_read_config(NULL, bgpd_di.config_file, config_default);
-	 */
-	/* Try to return to normal operation. */
 }
 
 /* SIGINT handler. */
@@ -200,6 +179,25 @@ static FRR_NORETURN void bgp_exit(int status)
 	bgp_default = bgp_get_default();
 	bgp_evpn = bgp_get_evpn();
 
+	/*
+	 * Drop any bgp_dest references the labelpool is still holding for
+	 * pending BGP-LU label requests BEFORE bgp_delete() runs.
+	 *
+	 * bgp_delete() -> bgp_free() -> bgp_table_finish() force-frees every
+	 * dest in the instance's tables regardless of lock count; if the
+	 * labelpool's slow-path FIFO or callback workqueue still pin any of
+	 * those dests, the unlock attempts later in bgp_lp_finish() become
+	 * a use-after-free (occasional assert(node->lock > 0) crash in
+	 * route_unlock_node()).
+	 *
+	 * This only releases the dest locks - the labelpool itself stays
+	 * functional so bgp_delete()-time callers (e.g.
+	 * bgp_label_per_nexthop_free() -> bgp_lp_release()) keep working.
+	 * The remainder of the labelpool is torn down by bgp_lp_finish()
+	 * below.
+	 */
+	bgp_lp_release_pending_lu_locks();
+
 	/* reverse bgp_master_init */
 	for (ALL_LIST_ELEMENTS(bm->bgp, node, nnode, bgp)) {
 		if (bgp_default == bgp || bgp_evpn == bgp)
@@ -215,6 +213,7 @@ static FRR_NORETURN void bgp_exit(int status)
 	bgp_nhg_finish();
 
 	zebra_announce_fini(&bm->zebra_announce_head);
+	zebra_announce_fini(&bm->zebra_announce_early_head);
 	zebra_l2_vni_fini(&bm->zebra_l2_vni_head);
 
 	/* reverse bgp_dump_init */
@@ -261,6 +260,8 @@ static FRR_NORETURN void bgp_exit(int status)
 	vnc_zebra_destroy();
 #endif
 	bgp_zebra_destroy();
+
+	bgp_debug_destroy();
 
 	bf_free(bm->rd_idspace);
 	list_delete(&bm->bgp);
@@ -505,8 +506,9 @@ int main(int argc, char **argv)
 		case 'I':
 			instance = atoi(optarg);
 			if (instance > (unsigned short)-1)
-				zlog_err("Instance %i out of range (0..%u)",
-					 instance, (unsigned short)-1);
+				flog_err(EC_BGP_INVALID_BGP_INSTANCE_ID,
+					 "Instance %i out of range (0..%u)", instance,
+					 (unsigned short)-1);
 			break;
 		case 's':
 			buffer_size = atoi(optarg);

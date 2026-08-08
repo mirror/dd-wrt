@@ -158,8 +158,17 @@ static inline int pim_setsockopt(int protocol, int fd, struct interface *ifp)
 	int ttl = 1;
 	struct ipv6_mreq mreq = {};
 
-	setsockopt_ipv6_pktinfo(fd, 1);
-	setsockopt_ipv6_multicast_hops(fd, ttl);
+	if (setsockopt_ipv6_pktinfo(fd, 1)) {
+		zlog_warn("Could not set IPV6_PKTINFO on socket fd=%d: %m", fd);
+		close(fd);
+		return PIM_SOCK_ERR_PKTINFO;
+	}
+
+	if (setsockopt_ipv6_multicast_hops(fd, ttl)) {
+		zlog_warn("Could not set multicast hops=%d on socket fd=%d: %m", ttl, fd);
+		close(fd);
+		return PIM_SOCK_ERR_MCAST_HOPS;
+	}
 
 	mreq.ipv6mr_interface = ifp->ifindex;
 	if (setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_IF, &mreq,
@@ -320,6 +329,7 @@ int pim_socket_leave(int fd, pim_addr group, pim_addr ifaddr, ifindex_t ifindex,
 		flog_err(EC_LIB_SOCKET,
 			 "Failure socket leaving fd=%d group %pPAs on interface address %pPAs: %m",
 			 fd, &group, &ifaddr);
+		/* We don't track socket leave errors; reuse joins_failed. */
 		pim_ifp->igmp_ifstat_joins_failed++;
 		return ret;
 	}
@@ -434,6 +444,16 @@ int pim_socket_recvfromto(int fd, uint8_t *buf, size_t len,
 	err = recvmsg(fd, &msgh, 0);
 	if (err < 0)
 		return err;
+
+	/*
+	 * Datagram was larger than the supplied buffer; ip_hdr->ip_len can
+	 * still describe the full wire size. Drop so callers never trust
+	 * length fields against a truncated buffer.
+	 */
+	if (msgh.msg_flags & MSG_TRUNC) {
+		errno = EMSGSIZE;
+		return -1;
+	}
 
 	if (fromlen)
 		*fromlen = msgh.msg_namelen;

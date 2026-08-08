@@ -26,6 +26,7 @@
 #include "bgpd/bgp_aspath.h"
 #include "bgpd/bgp_vty.h"
 #include "bgpd/bgp_memory.h"
+#include "bgpd/bgp_trace.h"
 
 const struct message capcode_str[] = {
 	{ CAPABILITY_CODE_MP, "MultiProtocol Extensions" },
@@ -84,21 +85,21 @@ const size_t cap_modsizes[] = {
 	[CAPABILITY_CODE_FQDN] = 1,
 	[CAPABILITY_CODE_ENHANCED_RR] = 1,
 	[CAPABILITY_CODE_EXT_MESSAGE] = 1,
-	[CAPABILITY_CODE_LLGR] = 1,
+	[CAPABILITY_CODE_LLGR] = 7,
 	[CAPABILITY_CODE_ROLE] = 1,
 	[CAPABILITY_CODE_SOFT_VERSION] = 1,
 	[CAPABILITY_CODE_PATHS_LIMIT] = 5,
 };
 
-/* BGP-4 Multiprotocol Extentions lead us to the complex world. We can
-   negotiate remote peer supports extentions or not. But if
+/* BGP-4 Multiprotocol Extensions lead us to the complex world. We can
+   negotiate remote peer supports extensions or not. But if
    remote-peer doesn't supports negotiation process itself.  We would
    like to do manual configuration.
 
    So there is many configurable point.  First of all we want set each
    peer whether we send capability negotiation to the peer or not.
    Next, if we send capability to the peer we want to set my capability
-   inforation at each peer. */
+   information at each peer. */
 
 void bgp_capability_vty_out(struct vty *vty, struct peer *peer, bool use_json,
 			    json_object *json_neigh)
@@ -157,6 +158,11 @@ void bgp_capability_vty_out(struct vty *vty, struct peer *peer, bool use_json,
 						"capabilityErrorMultiProtocolAfi",
 						"L2VPN");
 					break;
+				case AFI_BGP_LS:
+					json_object_string_add(json_cap,
+							       "capabilityErrorMultiProtocolAfi",
+							       "BGP-LS");
+					break;
 				case AFI_UNSPEC:
 				case AFI_MAX:
 					json_object_int_add(
@@ -208,6 +214,11 @@ void bgp_capability_vty_out(struct vty *vty, struct peer *peer, bool use_json,
 						"capabilityErrorMultiProtocolSafi",
 						"flowspec");
 					break;
+				case SAFI_BGP_LS:
+					json_object_string_add(json_cap,
+							       "capabilityErrorMultiProtocolSafi",
+							       "BGP-LS");
+					break;
 				case SAFI_UNSPEC:
 				case SAFI_MAX:
 					json_object_int_add(
@@ -228,6 +239,9 @@ void bgp_capability_vty_out(struct vty *vty, struct peer *peer, bool use_json,
 					break;
 				case AFI_L2VPN:
 					vty_out(vty, "AFI L2VPN, ");
+					break;
+				case AFI_BGP_LS:
+					vty_out(vty, "AFI BGP-LS, ");
 					break;
 				case AFI_UNSPEC:
 				case AFI_MAX:
@@ -256,6 +270,9 @@ void bgp_capability_vty_out(struct vty *vty, struct peer *peer, bool use_json,
 					break;
 				case SAFI_EVPN:
 					vty_out(vty, "SAFI EVPN");
+					break;
+				case SAFI_BGP_LS:
+					vty_out(vty, "SAFI BGP-LS");
 					break;
 				case SAFI_UNSPEC:
 				case SAFI_MAX:
@@ -298,8 +315,7 @@ void bgp_capability_vty_out(struct vty *vty, struct peer *peer, bool use_json,
 	}
 }
 
-static void bgp_capability_mp_data(struct stream *s,
-				   struct capability_mp_data *mpc)
+static void bgp_capability_mp_data(struct stream *s, struct capability_mp_data *mpc)
 {
 	mpc->afi = stream_getw(s);
 	mpc->reserved = stream_getc(s);
@@ -307,10 +323,11 @@ static void bgp_capability_mp_data(struct stream *s,
 }
 
 /* Set negotiated capability value. */
-static int bgp_capability_mp(struct peer *peer, struct capability_header *hdr)
+static int bgp_capability_mp(struct peer_connection *connection, struct capability_header *hdr)
 {
+	struct peer *peer = connection->peer;
 	struct capability_mp_data mpc;
-	struct stream *s = BGP_INPUT(peer);
+	struct stream *s = BGP_INPUT(connection);
 	afi_t afi;
 	safi_t safi;
 
@@ -364,10 +381,11 @@ const struct message orf_mode_str[] = { { ORF_MODE_RECEIVE, "Receive" },
 					{ ORF_MODE_BOTH, "Both" },
 					{ 0 } };
 
-static int bgp_capability_orf_entry(struct peer *peer,
+static int bgp_capability_orf_entry(struct peer_connection *connection,
 				    struct capability_header *hdr)
 {
-	struct stream *s = BGP_INPUT(peer);
+	struct peer *peer = connection->peer;
+	struct stream *s = BGP_INPUT(connection);
 	struct capability_mp_data mpc;
 	uint8_t num;
 	iana_afi_t pkt_afi;
@@ -406,8 +424,7 @@ static int bgp_capability_orf_entry(struct peer *peer,
 		zlog_info(
 			"%s ORF Capability entry length error, Cap length %u, num %u",
 			peer->host, hdr->length, num);
-		bgp_notify_send(peer->connection, BGP_NOTIFY_OPEN_ERR,
-				BGP_NOTIFY_OPEN_MALFORMED_ATTR);
+		bgp_notify_send(connection, BGP_NOTIFY_OPEN_ERR, BGP_NOTIFY_OPEN_MALFORMED_ATTR);
 		return -1;
 	}
 
@@ -493,10 +510,11 @@ static int bgp_capability_orf_entry(struct peer *peer,
 	return 0;
 }
 
-static int bgp_capability_restart(struct peer *peer,
+static int bgp_capability_restart(struct peer_connection *connection,
 				  struct capability_header *caphdr)
 {
-	struct stream *s = BGP_INPUT(peer);
+	struct peer *peer = connection->peer;
+	struct stream *s = BGP_INPUT(connection);
 	uint16_t restart_flag_time;
 	size_t end = stream_get_getp(s) + caphdr->length;
 
@@ -580,10 +598,10 @@ static int bgp_capability_restart(struct peer *peer,
 	return 0;
 }
 
-static int bgp_capability_llgr(struct peer *peer,
-			       struct capability_header *caphdr)
+static int bgp_capability_llgr(struct peer_connection *connection, struct capability_header *caphdr)
 {
-	struct stream *s = BGP_INPUT(peer);
+	struct peer *peer = connection->peer;
+	struct stream *s = BGP_INPUT(connection);
 	size_t end = stream_get_getp(s) + caphdr->length;
 
 	SET_FLAG(peer->cap, PEER_CAP_LLGR_RCV);
@@ -628,16 +646,18 @@ static int bgp_capability_llgr(struct peer *peer,
 }
 
 /* Unlike other capability parsing routines, this one returns 0 on error */
-static as_t bgp_capability_as4(struct peer *peer, struct capability_header *hdr)
+static as_t bgp_capability_as4(struct peer_connection *connection, struct capability_header *hdr)
 {
+	struct peer *peer = connection->peer;
+
 	if (hdr->length != CAPABILITY_CODE_AS4_LEN) {
 		flog_err(EC_BGP_PKT_OPEN,
 			 "%s AS4 capability has incorrect data length %d",
 			 peer->host, hdr->length);
-		return -1;
+		return 0;
 	}
 
-	as_t as4 = stream_getl(BGP_INPUT(peer));
+	as_t as4 = stream_getl(BGP_INPUT(connection));
 
 	SET_FLAG(peer->cap, PEER_CAP_AS4_RCV);
 
@@ -648,9 +668,11 @@ static as_t bgp_capability_as4(struct peer *peer, struct capability_header *hdr)
 	return as4;
 }
 
-static int bgp_capability_ext_message(struct peer *peer,
+static int bgp_capability_ext_message(struct peer_connection *connection,
 				      struct capability_header *hdr)
 {
+	struct peer *peer = connection->peer;
+
 	if (hdr->length != CAPABILITY_CODE_EXT_MESSAGE_LEN) {
 		flog_err(
 			EC_BGP_PKT_OPEN,
@@ -664,10 +686,10 @@ static int bgp_capability_ext_message(struct peer *peer,
 	return 0;
 }
 
-static int bgp_capability_addpath(struct peer *peer,
-				  struct capability_header *hdr)
+static int bgp_capability_addpath(struct peer_connection *connection, struct capability_header *hdr)
 {
-	struct stream *s = BGP_INPUT(peer);
+	struct peer *peer = connection->peer;
+	struct stream *s = BGP_INPUT(connection);
 	size_t end = stream_get_getp(s) + hdr->length;
 
 	/* Verify length is a multiple of 4 */
@@ -747,10 +769,11 @@ static int bgp_capability_addpath(struct peer *peer,
 	return 0;
 }
 
-static int bgp_capability_paths_limit(struct peer *peer,
+static int bgp_capability_paths_limit(struct peer_connection *connection,
 				      struct capability_header *hdr)
 {
-	struct stream *s = BGP_INPUT(peer);
+	struct peer *peer = connection->peer;
+	struct stream *s = BGP_INPUT(connection);
 	size_t end = stream_get_getp(s) + hdr->length;
 
 	if (hdr->length % CAPABILITY_CODE_PATHS_LIMIT_LEN) {
@@ -803,9 +826,10 @@ static int bgp_capability_paths_limit(struct peer *peer,
 	return 0;
 }
 
-static int bgp_capability_enhe(struct peer *peer, struct capability_header *hdr)
+static int bgp_capability_enhe(struct peer_connection *connection, struct capability_header *hdr)
 {
-	struct stream *s = BGP_INPUT(peer);
+	struct peer *peer = connection->peer;
+	struct stream *s = BGP_INPUT(connection);
 	size_t end = stream_get_getp(s) + hdr->length;
 
 	/* Verify length is a multiple of 4 */
@@ -874,15 +898,29 @@ static int bgp_capability_enhe(struct peer *peer, struct capability_header *hdr)
 	return 0;
 }
 
-static int bgp_capability_hostname(struct peer *peer,
+static int bgp_capability_hostname(struct peer_connection *connection,
 				   struct capability_header *hdr)
 {
-	struct stream *s = BGP_INPUT(peer);
+	struct peer *peer = connection->peer;
+	struct stream *s = BGP_INPUT(connection);
 	char str[BGP_MAX_HOSTNAME + 1];
 	size_t end = stream_get_getp(s) + hdr->length;
 	uint8_t len;
 
+	if (stream_get_getp(s) + 1 > end) {
+		flog_warn(EC_BGP_CAPABILITY_INVALID_DATA,
+			  "%s: Received invalid hostname len (hostname capability) from peer %s",
+			  __func__, peer->host);
+		return -1;
+	}
+
 	len = stream_getc(s);
+	if (!len) {
+		flog_warn(EC_BGP_CAPABILITY_INVALID_DATA,
+			  "%s: Received empty hostname from peer %s", __func__, peer->host);
+		return -1;
+	}
+
 	if (stream_get_getp(s) + len > end) {
 		flog_warn(
 			EC_BGP_CAPABILITY_INVALID_DATA,
@@ -895,23 +933,23 @@ static int bgp_capability_hostname(struct peer *peer,
 		stream_get(str, s, BGP_MAX_HOSTNAME);
 		stream_forward_getp(s, len - BGP_MAX_HOSTNAME);
 		len = BGP_MAX_HOSTNAME; /* to set the '\0' below */
-	} else if (len)
+	} else {
 		stream_get(str, s, len);
-
-	if (len) {
-		str[len] = '\0';
-
-		XFREE(MTYPE_BGP_PEER_HOST, peer->hostname);
-		XFREE(MTYPE_BGP_PEER_HOST, peer->domainname);
-
-		peer->hostname = XSTRDUP(MTYPE_BGP_PEER_HOST, str);
 	}
+
+	str[len] = '\0';
+
+	XFREE(MTYPE_BGP_PEER_HOST, peer->hostname);
+	XFREE(MTYPE_BGP_PEER_HOST, peer->domainname);
+
+	peer->hostname = XSTRDUP(MTYPE_BGP_PEER_HOST, str);
 
 	if (stream_get_getp(s) + 1 > end) {
 		flog_warn(
 			EC_BGP_CAPABILITY_INVALID_DATA,
 			"%s: Received invalid domain name len (hostname capability) from peer %s",
 			__func__, peer->host);
+		XFREE(MTYPE_BGP_PEER_HOST, peer->hostname);
 		return -1;
 	}
 
@@ -921,6 +959,7 @@ static int bgp_capability_hostname(struct peer *peer,
 			EC_BGP_CAPABILITY_INVALID_DATA,
 			"%s: Received runt domain name (hostname capability) from peer %s",
 			__func__, peer->host);
+		XFREE(MTYPE_BGP_PEER_HOST, peer->hostname);
 		return -1;
 	}
 
@@ -949,15 +988,17 @@ static int bgp_capability_hostname(struct peer *peer,
 	return 0;
 }
 
-static int bgp_capability_role(struct peer *peer, struct capability_header *hdr)
+static int bgp_capability_role(struct peer_connection *connection, struct capability_header *hdr)
 {
+	struct peer *peer = connection->peer;
+
 	if (hdr->length != CAPABILITY_CODE_ROLE_LEN) {
 		flog_warn(EC_BGP_CAPABILITY_INVALID_LENGTH,
 			  "Role: Received invalid length %d", hdr->length);
 		return -1;
 	}
 
-	uint8_t role = stream_getc(BGP_INPUT(peer));
+	uint8_t role = stream_getc(BGP_INPUT(connection));
 
 	SET_FLAG(peer->cap, PEER_CAP_ROLE_RCV);
 
@@ -965,10 +1006,11 @@ static int bgp_capability_role(struct peer *peer, struct capability_header *hdr)
 	return 0;
 }
 
-static int bgp_capability_software_version(struct peer *peer,
+static int bgp_capability_software_version(struct peer_connection *connection,
 					   struct capability_header *hdr)
 {
-	struct stream *s = BGP_INPUT(peer);
+	struct peer *peer = connection->peer;
+	struct stream *s = BGP_INPUT(connection);
 	struct stream *dup = stream_dup(s);
 	char str[BGP_MAX_SOFT_VERSION + 1];
 	size_t end = stream_get_getp(s) + hdr->length;
@@ -1028,11 +1070,12 @@ static int bgp_capability_software_version(struct peer *peer,
  * @param[out] mp_capability Set to 1 on return iff one or more Multiprotocol
  *                           capabilities were encountered.
  */
-static int bgp_capability_parse(struct peer *peer, size_t length,
-				int *mp_capability, uint8_t **error)
+static int bgp_capability_parse(struct peer_connection *connection, size_t length,
+				int *mp_capability, uint8_t **error, uint8_t *error_end)
 {
+	struct peer *peer = connection->peer;
 	int ret;
-	struct stream *s = BGP_INPUT(peer);
+	struct stream *s = BGP_INPUT(connection);
 	size_t end = stream_get_getp(s) + length;
 	uint16_t restart_flag_time = 0;
 
@@ -1048,7 +1091,7 @@ static int bgp_capability_parse(struct peer *peer, size_t length,
 		if (stream_get_getp(s) + 2 > end) {
 			zlog_info("%s Capability length error (< header)",
 				  peer->host);
-			bgp_notify_send(peer->connection, BGP_NOTIFY_OPEN_ERR,
+			bgp_notify_send(connection, BGP_NOTIFY_OPEN_ERR,
 					BGP_NOTIFY_OPEN_MALFORMED_ATTR);
 			return -1;
 		}
@@ -1061,7 +1104,7 @@ static int bgp_capability_parse(struct peer *peer, size_t length,
 		if (start + caphdr.length > end) {
 			zlog_info("%s Capability length error (< length)",
 				  peer->host);
-			bgp_notify_send(peer->connection, BGP_NOTIFY_OPEN_ERR,
+			bgp_notify_send(connection, BGP_NOTIFY_OPEN_ERR,
 					BGP_NOTIFY_OPEN_MALFORMED_ATTR);
 			return -1;
 		}
@@ -1088,6 +1131,7 @@ static int bgp_capability_parse(struct peer *peer, size_t length,
 		case CAPABILITY_CODE_ROLE:
 		case CAPABILITY_CODE_SOFT_VERSION:
 		case CAPABILITY_CODE_PATHS_LIMIT:
+		case CAPABILITY_CODE_LLGR:
 			/* Check length. */
 			if (caphdr.length < cap_minsizes[caphdr.code]) {
 				zlog_info(
@@ -1097,8 +1141,7 @@ static int bgp_capability_parse(struct peer *peer, size_t length,
 						   NULL),
 					caphdr.length,
 					(unsigned)cap_minsizes[caphdr.code]);
-				bgp_notify_send(peer->connection,
-						BGP_NOTIFY_OPEN_ERR,
+				bgp_notify_send(connection, BGP_NOTIFY_OPEN_ERR,
 						BGP_NOTIFY_OPEN_MALFORMED_ATTR);
 				return -1;
 			}
@@ -1111,8 +1154,7 @@ static int bgp_capability_parse(struct peer *peer, size_t length,
 						   NULL),
 					caphdr.length,
 					(unsigned)cap_modsizes[caphdr.code]);
-				bgp_notify_send(peer->connection,
-						BGP_NOTIFY_OPEN_ERR,
+				bgp_notify_send(connection, BGP_NOTIFY_OPEN_ERR,
 						BGP_NOTIFY_OPEN_MALFORMED_ATTR);
 				return -1;
 			}
@@ -1130,13 +1172,15 @@ static int bgp_capability_parse(struct peer *peer, size_t length,
 			if (!CHECK_FLAG(peer->flags,
 					PEER_FLAG_OVERRIDE_CAPABILITY)) {
 				/* Set negotiated value. */
-				ret = bgp_capability_mp(peer, &caphdr);
+				ret = bgp_capability_mp(connection, &caphdr);
 
 				/* Unsupported Capability. */
 				if (ret < 0) {
 					/* Store return data. */
-					memcpy(*error, sp, caphdr.length + 2);
-					*error += caphdr.length + 2;
+					if (*error + caphdr.length + 2 <= error_end) {
+						memcpy(*error, sp, caphdr.length + 2);
+						*error += caphdr.length + 2;
+					}
 				}
 				ret = 0; /* Don't return error for this */
 			}
@@ -1150,13 +1194,13 @@ static int bgp_capability_parse(struct peer *peer, size_t length,
 				SET_FLAG(peer->cap, PEER_CAP_REFRESH_RCV);
 		} break;
 		case CAPABILITY_CODE_ORF:
-			ret = bgp_capability_orf_entry(peer, &caphdr);
+			ret = bgp_capability_orf_entry(connection, &caphdr);
 			break;
 		case CAPABILITY_CODE_RESTART:
-			ret = bgp_capability_restart(peer, &caphdr);
+			ret = bgp_capability_restart(connection, &caphdr);
 			break;
 		case CAPABILITY_CODE_LLGR:
-			ret = bgp_capability_llgr(peer, &caphdr);
+			ret = bgp_capability_llgr(connection, &caphdr);
 			break;
 		case CAPABILITY_CODE_DYNAMIC:
 			SET_FLAG(peer->cap, PEER_CAP_DYNAMIC_RCV);
@@ -1168,32 +1212,32 @@ static int bgp_capability_parse(struct peer *peer, size_t length,
 			 * jot
 			 * for the value really, only error case.
 			 */
-			if (!bgp_capability_as4(peer, &caphdr))
+			if (!bgp_capability_as4(connection, &caphdr))
 				ret = -1;
 			break;
 		case CAPABILITY_CODE_ADDPATH:
-			ret = bgp_capability_addpath(peer, &caphdr);
+			ret = bgp_capability_addpath(connection, &caphdr);
 			break;
 		case CAPABILITY_CODE_ENHE:
-			ret = bgp_capability_enhe(peer, &caphdr);
+			ret = bgp_capability_enhe(connection, &caphdr);
 			break;
 		case CAPABILITY_CODE_EXT_MESSAGE:
-			ret = bgp_capability_ext_message(peer, &caphdr);
+			ret = bgp_capability_ext_message(connection, &caphdr);
 			break;
 		case CAPABILITY_CODE_FQDN:
-			ret = bgp_capability_hostname(peer, &caphdr);
+			ret = bgp_capability_hostname(connection, &caphdr);
 			break;
 		case CAPABILITY_CODE_ROLE:
-			ret = bgp_capability_role(peer, &caphdr);
+			ret = bgp_capability_role(connection, &caphdr);
 			break;
 		case CAPABILITY_CODE_SOFT_VERSION:
-			ret = bgp_capability_software_version(peer, &caphdr);
+			ret = bgp_capability_software_version(connection, &caphdr);
 			break;
 		case CAPABILITY_CODE_LINK_LOCAL:
 			SET_FLAG(peer->cap, PEER_CAP_LINK_LOCAL_RCV);
 			break;
 		case CAPABILITY_CODE_PATHS_LIMIT:
-			ret = bgp_capability_paths_limit(peer, &caphdr);
+			ret = bgp_capability_paths_limit(connection, &caphdr);
 			break;
 		default:
 			if (caphdr.code > 128) {
@@ -1209,13 +1253,15 @@ static int bgp_capability_parse(struct peer *peer, size_t length,
 					EC_BGP_CAPABILITY_UNKNOWN,
 					"%s unrecognized capability code: %d - ignored",
 					peer->host, caphdr.code);
-				memcpy(*error, sp, caphdr.length + 2);
-				*error += caphdr.length + 2;
+				if (*error + caphdr.length + 2 <= error_end) {
+					memcpy(*error, sp, caphdr.length + 2);
+					*error += caphdr.length + 2;
+				}
 			}
 		}
 
 		if (ret < 0) {
-			bgp_notify_send(peer->connection, BGP_NOTIFY_OPEN_ERR,
+			bgp_notify_send(connection, BGP_NOTIFY_OPEN_ERR,
 					BGP_NOTIFY_OPEN_MALFORMED_ATTR);
 			return -1;
 		}
@@ -1251,8 +1297,9 @@ static bool strict_capability_same(struct peer *peer)
 }
 
 
-static bool bgp_role_violation(struct peer *peer)
+static bool bgp_role_violation(struct peer_connection *connection)
 {
+	struct peer *peer = connection->peer;
 	uint8_t local_role = peer->local_role;
 	uint8_t remote_role = peer->remote_role;
 
@@ -1263,17 +1310,16 @@ static bool bgp_role_violation(struct peer *peer)
 	      (local_role == ROLE_RS_SERVER && remote_role == ROLE_RS_CLIENT) ||
 	      (local_role == ROLE_RS_CLIENT &&
 	       remote_role == ROLE_RS_SERVER))) {
-		bgp_notify_send(peer->connection, BGP_NOTIFY_OPEN_ERR,
-				BGP_NOTIFY_OPEN_ROLE_MISMATCH);
+		bgp_notify_send(connection, BGP_NOTIFY_OPEN_ERR, BGP_NOTIFY_OPEN_ROLE_MISMATCH);
 		return true;
 	}
 	if (remote_role == ROLE_UNDEFINED &&
 	    CHECK_FLAG(peer->flags, PEER_FLAG_ROLE_STRICT_MODE)) {
 		const char *err_msg =
 			"Strict mode. Please set the role on your side.";
-		bgp_notify_send_with_data(peer->connection, BGP_NOTIFY_OPEN_ERR,
-					  BGP_NOTIFY_OPEN_ROLE_MISMATCH,
-					  (uint8_t *)err_msg, strlen(err_msg));
+		bgp_notify_send_with_data(connection, BGP_NOTIFY_OPEN_ERR,
+					  BGP_NOTIFY_OPEN_ROLE_MISMATCH, (uint8_t *)err_msg,
+					  strlen(err_msg));
 		return true;
 	}
 	return false;
@@ -1283,9 +1329,10 @@ static bool bgp_role_violation(struct peer *peer)
 /* peek into option, stores ASN to *as4 if the AS4 capability was found.
  * Returns  0 if no as4 found, as4cap value otherwise.
  */
-as_t peek_for_as4_capability(struct peer *peer, uint16_t length)
+as_t peek_for_as4_capability(struct peer_connection *connection, uint16_t length)
 {
-	struct stream *s = BGP_INPUT(peer);
+	struct peer *peer = connection->peer;
+	struct stream *s = BGP_INPUT(connection);
 	size_t orig_getp = stream_get_getp(s);
 	size_t end = orig_getp + length;
 	as_t as4 = 0;
@@ -1334,7 +1381,8 @@ as_t peek_for_as4_capability(struct peer *peer, uint16_t length)
 			unsigned long capd_start = stream_get_getp(s);
 			unsigned long capd_end = capd_start + opt_length;
 
-			assert(capd_end <= end);
+			if (capd_end > end)
+				goto end;
 
 			while (stream_get_getp(s) < capd_end) {
 				struct capability_header hdr;
@@ -1353,7 +1401,7 @@ as_t peek_for_as4_capability(struct peer *peer, uint16_t length)
 					if (BGP_DEBUG(as4, AS4))
 						zlog_debug(
 							"[AS4] found AS4 capability, about to parse");
-					as4 = bgp_capability_as4(peer, &hdr);
+					as4 = bgp_capability_as4(connection, &hdr);
 
 					goto end;
 				}
@@ -1367,18 +1415,42 @@ end:
 	return as4;
 }
 
+/*
+ * (Re)compute the maximum BGP message size for this peer from the negotiated
+ * Extended Message capability (RFC 8654).  The extended size (65535) is used
+ * only when we have advertised the capability *and* received it from the peer;
+ * otherwise the standard size (4096) applies.
+ *
+ * This must be recomputed whenever either half of that condition can change:
+ * when we parse the peer's OPEN (sets the RCV flag) and when we build our own
+ * OPEN (sets the ADV flag).  On a passively accepted connection our OPEN is
+ * sent only after the peer's OPEN has already been parsed, so computing this
+ * solely at OPEN-parse time would leave it at the standard size -- and the
+ * stale value is then carried across connection-collision resolution by
+ * peer_xfer_conn() -- even though both speakers support the capability.  It is
+ * reset to the standard size when the peer's capabilities are cleared on
+ * connection reset.
+ */
+void bgp_peer_set_max_packet_size(struct peer *peer)
+{
+	peer->max_packet_size = (CHECK_FLAG(peer->cap, PEER_CAP_EXTENDED_MESSAGE_RCV) &&
+				 CHECK_FLAG(peer->cap, PEER_CAP_EXTENDED_MESSAGE_ADV))
+					? BGP_EXTENDED_MESSAGE_MAX_PACKET_SIZE
+					: BGP_STANDARD_MESSAGE_MAX_PACKET_SIZE;
+}
+
 /**
  * Parse open option.
  *
  * @param[out] mp_capability @see bgp_capability_parse() for semantics.
  */
-int bgp_open_option_parse(struct peer *peer, uint16_t length,
-			  int *mp_capability)
+int bgp_open_option_parse(struct peer_connection *connection, uint16_t length, int *mp_capability)
 {
+	struct peer *peer = connection->peer;
 	int ret = 0;
 	uint8_t *error;
 	uint8_t error_data[BGP_STANDARD_MESSAGE_MAX_PACKET_SIZE];
-	struct stream *s = BGP_INPUT(peer);
+	struct stream *s = BGP_INPUT(connection);
 	size_t end = stream_get_getp(s) + length;
 
 	error = error_data;
@@ -1399,7 +1471,7 @@ int bgp_open_option_parse(struct peer *peer, uint16_t length,
 		 */
 		if (STREAM_READABLE(s) < 1) {
 			zlog_err("%s Option length error", peer->host);
-			bgp_notify_send(peer->connection, BGP_NOTIFY_OPEN_ERR,
+			bgp_notify_send(connection, BGP_NOTIFY_OPEN_ERR,
 					BGP_NOTIFY_OPEN_MALFORMED_ATTR);
 			return -1;
 		}
@@ -1412,8 +1484,7 @@ int bgp_open_option_parse(struct peer *peer, uint16_t length,
 		if (BGP_OPEN_EXT_OPT_PARAMS_CAPABLE(peer)) {
 			if (STREAM_READABLE(s) < 2) {
 				zlog_err("%s Option length error", peer->host);
-				bgp_notify_send(peer->connection,
-						BGP_NOTIFY_OPEN_ERR,
+				bgp_notify_send(connection, BGP_NOTIFY_OPEN_ERR,
 						BGP_NOTIFY_OPEN_MALFORMED_ATTR);
 				return -1;
 			}
@@ -1422,8 +1493,7 @@ int bgp_open_option_parse(struct peer *peer, uint16_t length,
 		} else {
 			if (STREAM_READABLE(s) < 1) {
 				zlog_err("%s Option length error", peer->host);
-				bgp_notify_send(peer->connection,
-						BGP_NOTIFY_OPEN_ERR,
+				bgp_notify_send(connection, BGP_NOTIFY_OPEN_ERR,
 						BGP_NOTIFY_OPEN_MALFORMED_ATTR);
 				return -1;
 			}
@@ -1435,7 +1505,7 @@ int bgp_open_option_parse(struct peer *peer, uint16_t length,
 		if (STREAM_READABLE(s) < opt_length) {
 			zlog_err("%s Option length error (%d)", peer->host,
 				 opt_length);
-			bgp_notify_send(peer->connection, BGP_NOTIFY_OPEN_ERR,
+			bgp_notify_send(connection, BGP_NOTIFY_OPEN_ERR,
 					BGP_NOTIFY_OPEN_MALFORMED_ATTR);
 			return -1;
 		}
@@ -1450,11 +1520,12 @@ int bgp_open_option_parse(struct peer *peer, uint16_t length,
 
 		switch (opt_type) {
 		case BGP_OPEN_OPT_CAP:
-			ret = bgp_capability_parse(peer, opt_length,
-						   mp_capability, &error);
+			ret = bgp_capability_parse(connection, opt_length, mp_capability, &error,
+						   error_data +
+							   BGP_STANDARD_MESSAGE_MAX_PACKET_SIZE);
 			break;
 		default:
-			bgp_notify_send(peer->connection, BGP_NOTIFY_OPEN_ERR,
+			bgp_notify_send(connection, BGP_NOTIFY_OPEN_ERR,
 					BGP_NOTIFY_OPEN_UNSUP_PARAM);
 			ret = -1;
 			break;
@@ -1475,24 +1546,18 @@ int bgp_open_option_parse(struct peer *peer, uint16_t length,
 		 * not negotiated with remote peer
 		 */
 		if (error != error_data || !strict_capability_same(peer)) {
-			bgp_notify_send_with_data(peer->connection,
-						  BGP_NOTIFY_OPEN_ERR,
-						  BGP_NOTIFY_OPEN_UNSUP_CAPBL,
-						  error_data,
+			bgp_notify_send_with_data(connection, BGP_NOTIFY_OPEN_ERR,
+						  BGP_NOTIFY_OPEN_UNSUP_CAPBL, error_data,
 						  error - error_data);
 			return -1;
 		}
 	}
 
 	/* Extended Message Support */
-	peer->max_packet_size =
-		(CHECK_FLAG(peer->cap, PEER_CAP_EXTENDED_MESSAGE_RCV)
-		 && CHECK_FLAG(peer->cap, PEER_CAP_EXTENDED_MESSAGE_ADV))
-			? BGP_EXTENDED_MESSAGE_MAX_PACKET_SIZE
-			: BGP_STANDARD_MESSAGE_MAX_PACKET_SIZE;
+	bgp_peer_set_max_packet_size(peer);
 
 	/* Check that roles are corresponding to each other */
-	if (bgp_role_violation(peer))
+	if (bgp_role_violation(connection))
 		return -1;
 
 	/* Check there are no common AFI/SAFIs and send Unsupported Capability
@@ -1511,25 +1576,24 @@ int bgp_open_option_parse(struct peer *peer, uint16_t length,
 		    && !peer->afc_nego[AFI_IP6][SAFI_MPLS_VPN]
 		    && !peer->afc_nego[AFI_IP6][SAFI_ENCAP]
 		    && !peer->afc_nego[AFI_IP6][SAFI_FLOWSPEC]
-		    && !peer->afc_nego[AFI_L2VPN][SAFI_EVPN]) {
+		    && !peer->afc_nego[AFI_L2VPN][SAFI_EVPN]
+		    && !peer->afc_nego[AFI_BGP_LS][SAFI_BGP_LS]) {
 			flog_err(EC_BGP_PKT_OPEN,
 				 "%s [Error] Configured AFI/SAFIs do not overlap with received MP capabilities",
 				 peer->host);
 
-			bgp_notify_send_with_data(peer->connection,
-						  BGP_NOTIFY_OPEN_ERR,
-						  BGP_NOTIFY_OPEN_UNSUP_CAPBL,
-						  error_data,
+			bgp_notify_send_with_data(connection, BGP_NOTIFY_OPEN_ERR,
+						  BGP_NOTIFY_OPEN_UNSUP_CAPBL, error_data,
 						  error - error_data);
 		}
 	}
 	return 0;
 }
 
-static void bgp_open_capability_orf(struct stream *s, struct peer *peer,
-				    afi_t afi, safi_t safi, uint8_t code,
-				    bool ext_opt_params)
+static void bgp_open_capability_orf(struct stream *s, struct peer_connection *connection,
+				    afi_t afi, safi_t safi, uint8_t code, bool ext_opt_params)
 {
+	struct peer *peer = connection->peer;
 	uint16_t cap_len;
 	uint8_t orf_len;
 	unsigned long capp;
@@ -1595,9 +1659,10 @@ static void bgp_open_capability_orf(struct stream *s, struct peer *peer,
 		       : stream_putc_at(s, capp, cap_len);
 }
 
-static void bgp_peer_send_gr_capability(struct stream *s, struct peer *peer,
+static void bgp_peer_send_gr_capability(struct stream *s, struct peer_connection *connection,
 					bool ext_opt_params)
 {
+	struct peer *peer = connection->peer;
 	int len;
 	iana_afi_t pkt_afi = IANA_AFI_IPV4;
 	afi_t afi;
@@ -1622,7 +1687,7 @@ static void bgp_peer_send_gr_capability(struct stream *s, struct peer *peer,
 	rcapp = stream_get_endp(s);
 	stream_putc(s, 0);
 	restart_time = bgp->restart_time;
-	if (peer->bgp->t_startup || bgp_in_graceful_restart()) {
+	if (event_is_scheduled(peer->bgp->t_startup) || bgp_in_graceful_restart()) {
 		SET_FLAG(restart_time, GRACEFUL_RESTART_R_BIT);
 		SET_FLAG(peer->cap, PEER_CAP_GRACEFUL_RESTART_R_BIT_ADV);
 	}
@@ -1645,6 +1710,8 @@ static void bgp_peer_send_gr_capability(struct stream *s, struct peer *peer,
 				      PEER_CAP_GRACEFUL_RESTART_N_BIT_ADV)
 				   ? "SET"
 				   : "NOT-SET");
+	frrtrace(4, frr_bgp, gr_send_rbit_capability, bgp->name_pretty, peer->host,
+		 bgp->restart_time, CHECK_FLAG(peer->cap, PEER_CAP_GRACEFUL_RESTART_R_BIT_ADV));
 
 	/* Send address-family specific graceful-restart capability
 	 * only when GR config is present
@@ -1673,6 +1740,8 @@ static void bgp_peer_send_gr_capability(struct stream *s, struct peer *peer,
 					   f_bit ? "SET" : "NOT-SET",
 					   get_afi_safi_str(afi, safi, false));
 
+			frrtrace(5, frr_bgp, gr_send_fbit_capability, bgp->name_pretty, peer->host,
+				 afi, safi, f_bit);
 			stream_putc(s, f_bit ? GRACEFUL_RESTART_F_BIT : 0);
 		}
 	}
@@ -1687,9 +1756,10 @@ static void bgp_peer_send_gr_capability(struct stream *s, struct peer *peer,
 		       : stream_putc_at(s, capp, len);
 }
 
-static void bgp_peer_send_llgr_capability(struct stream *s, struct peer *peer,
+static void bgp_peer_send_llgr_capability(struct stream *s, struct peer_connection *connection,
 					  bool ext_opt_params)
 {
+	struct peer *peer = connection->peer;
 	int len;
 	iana_afi_t pkt_afi = IANA_AFI_IPV4;
 	afi_t afi;
@@ -1737,9 +1807,10 @@ static void bgp_peer_send_llgr_capability(struct stream *s, struct peer *peer,
 }
 
 /* Fill in capability open option to the packet. */
-uint16_t bgp_open_capability(struct stream *s, struct peer *peer,
+uint16_t bgp_open_capability(struct stream *s, struct peer_connection *connection,
 			     bool ext_opt_params)
 {
+	struct peer *peer = connection->peer;
 	uint16_t len;
 	unsigned long cp, capp, rcapp, eopl = 0;
 	iana_afi_t pkt_afi = IANA_AFI_IPV4;
@@ -1794,8 +1865,7 @@ uint16_t bgp_open_capability(struct stream *s, struct peer *peer,
 			 * Link-Local peering only
 			 */
 			if (CHECK_FLAG(peer->flags, PEER_FLAG_CAPABILITY_ENHE) &&
-			    peer->connection->su.sa.sa_family == AF_INET6 &&
-			    afi == AFI_IP &&
+			    connection->su.sa.sa_family == AF_INET6 && afi == AFI_IP &&
 			    (safi == SAFI_UNICAST || safi == SAFI_MPLS_VPN ||
 			     safi == SAFI_LABELED_UNICAST)) {
 				/* RFC 5549 Extended Next Hop Encoding
@@ -1857,6 +1927,12 @@ uint16_t bgp_open_capability(struct stream *s, struct peer *peer,
 
 	/* Extended Message Support */
 	SET_FLAG(peer->cap, PEER_CAP_EXTENDED_MESSAGE_ADV);
+	/*
+	 * We have now advertised the capability; refresh the receive/send size
+	 * limit so a passively accepted connection (whose OPEN is built only
+	 * after the peer's OPEN was parsed) is not left at the standard size.
+	 */
+	bgp_peer_set_max_packet_size(peer);
 	stream_putc(s, BGP_OPEN_OPT_CAP);
 	ext_opt_params ? stream_putw(s, CAPABILITY_CODE_EXT_MESSAGE_LEN + 2)
 		       : stream_putc(s, CAPABILITY_CODE_EXT_MESSAGE_LEN + 2);
@@ -1977,8 +2053,7 @@ uint16_t bgp_open_capability(struct stream *s, struct peer *peer,
 			       PEER_FLAG_ORF_PREFIX_SM)
 		    || CHECK_FLAG(peer->af_flags[afi][safi],
 				  PEER_FLAG_ORF_PREFIX_RM)) {
-			bgp_open_capability_orf(s, peer, afi, safi,
-						CAPABILITY_CODE_ORF,
+			bgp_open_capability_orf(s, connection, afi, safi, CAPABILITY_CODE_ORF,
 						ext_opt_params);
 		}
 	}
@@ -2046,8 +2121,8 @@ uint16_t bgp_open_capability(struct stream *s, struct peer *peer,
 				cmd_domainname_get());
 	}
 
-	bgp_peer_send_gr_capability(s, peer, ext_opt_params);
-	bgp_peer_send_llgr_capability(s, peer, ext_opt_params);
+	bgp_peer_send_gr_capability(s, connection, ext_opt_params);
+	bgp_peer_send_llgr_capability(s, connection, ext_opt_params);
 
 	/* Software Version capability
 	 * An implementation is REQUIRED Extended Optional Parameters
@@ -2057,8 +2132,8 @@ uint16_t bgp_open_capability(struct stream *s, struct peer *peer,
 	 * the implementation MUST include a configuration switch to enable
 	 * or disable its use, and that switch MUST be off by default.
 	 */
-	if (peergroup_flag_check(peer, PEER_FLAG_CAPABILITY_SOFT_VERSION) ||
-	    peer->sort == BGP_PEER_IBGP || peer->sub_sort == BGP_PEER_EBGP_OAD) {
+	if (peergroup_flag_check(peer, PEER_FLAG_CAPABILITY_SOFT_VERSION_OLD) ||
+	    peergroup_flag_check(peer, PEER_FLAG_CAPABILITY_SOFT_VERSION_NEW)) {
 		SET_FLAG(peer->cap, PEER_CAP_SOFT_VERSION_ADV);
 		stream_putc(s, BGP_OPEN_OPT_CAP);
 		rcapp = stream_get_endp(s);
@@ -2076,7 +2151,9 @@ uint16_t bgp_open_capability(struct stream *s, struct peer *peer,
 		if (len > BGP_MAX_SOFT_VERSION)
 			len = BGP_MAX_SOFT_VERSION;
 
-		stream_putc(s, len);
+		if (peergroup_flag_check(peer, PEER_FLAG_CAPABILITY_SOFT_VERSION_OLD))
+			/* For old software version capability, prepend the length byte. */
+			stream_putc(s, len);
 		stream_put(s, cmd_software_version_get(), len);
 
 		/* Software Version capability Len. */

@@ -266,7 +266,7 @@ static struct test_peer_attr test_peer_attrs[] = {
 	},
 	{
 		.cmd = "capability software-version",
-		.u.flag = PEER_FLAG_CAPABILITY_SOFT_VERSION,
+		.u.flag = PEER_FLAG_CAPABILITY_SOFT_VERSION_OLD,
 		.type = PEER_AT_GLOBAL_FLAG,
 	},
 	{
@@ -663,6 +663,8 @@ static const char *str_from_afi(afi_t afi)
 		return "ipv6";
 	case AFI_L2VPN:
 		return "l2vpn";
+	case AFI_BGP_LS:
+		return "bgp-ls";
 	case AFI_MAX:
 	case AFI_UNSPEC:
 		return "bad-value";

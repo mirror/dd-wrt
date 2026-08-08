@@ -348,7 +348,7 @@ void ospf6_flood_interface(struct ospf6_neighbor *from, struct ospf6_lsa *lsa,
 		if (is_debug)
 			zlog_debug("To neighbor %s", on->name);
 
-		/* (a) if neighbor state < Exchange, examin next */
+		/* (a) if neighbor state < Exchange, examine next */
 		if (on->state < OSPF6_NEIGHBOR_EXCHANGE) {
 			if (is_debug)
 				zlog_debug(
@@ -370,7 +370,7 @@ void ospf6_flood_interface(struct ospf6_neighbor *from, struct ospf6_lsa *lsa,
 						"Not on request-list for this neighbor");
 				/* fall through */
 			} else {
-				/* If new LSA less recent, examin next neighbor
+				/* If new LSA less recent, examine next neighbor
 				 */
 				if (ospf6_lsa_compare(lsa, req) > 0) {
 					if (is_debug)
@@ -381,7 +381,7 @@ void ospf6_flood_interface(struct ospf6_neighbor *from, struct ospf6_lsa *lsa,
 
 				/* If the same instance, delete from
 				   request-list and
-				   examin next neighbor */
+				   examine next neighbor */
 				if (ospf6_lsa_compare(lsa, req) == 0) {
 					if (is_debug)
 						zlog_debug(
@@ -419,7 +419,7 @@ void ospf6_flood_interface(struct ospf6_neighbor *from, struct ospf6_lsa *lsa,
 		}
 
 		/* (c) If the new LSA was received from this neighbor,
-		   examin next neighbor */
+		   examine next neighbor */
 		if (from == on) {
 			if (is_debug)
 				zlog_debug(
@@ -482,7 +482,7 @@ void ospf6_flood_interface(struct ospf6_neighbor *from, struct ospf6_lsa *lsa,
 		}
 	}
 
-	/* (2) examin next interface if not added to retrans-list */
+	/* (2) examine next interface if not added to retrans-list */
 	if (retrans_added == 0) {
 		if (is_debug)
 			zlog_debug(
@@ -492,7 +492,7 @@ void ospf6_flood_interface(struct ospf6_neighbor *from, struct ospf6_lsa *lsa,
 	}
 
 	/* (3) If the new LSA was received on this interface,
-	   and it was from DR or BDR, examin next interface */
+	   and it was from DR or BDR, examine next interface */
 	if (from && from->ospf6_if == oi
 	    && (from->router_id == oi->drouter
 		|| from->router_id == oi->bdrouter)) {
@@ -503,7 +503,7 @@ void ospf6_flood_interface(struct ospf6_neighbor *from, struct ospf6_lsa *lsa,
 	}
 
 	/* (4) If the new LSA was received on this interface,
-	   and the interface state is BDR, examin next interface */
+	   and the interface state is BDR, examine next interface */
 	if (from && from->ospf6_if == oi) {
 		if (oi->state == OSPF6_INTERFACE_BDR) {
 			if (is_debug)
@@ -558,10 +558,10 @@ static void ospf6_flood_process(struct ospf6_neighbor *from,
 		/* If unknown LSA and U-bit clear, treat as link local
 		 * flooding scope
 		 */
-		if (!OSPF6_LSA_IS_KNOWN(lsa->header->type)
-		    && !(ntohs(lsa->header->type) & OSPF6_LSTYPE_UBIT_MASK)
-		    && (oa != OSPF6_INTERFACE(lsa->lsdb->data)->area)) {
-
+		if (!OSPF6_LSA_IS_KNOWN(lsa->header->type) &&
+		    !(ntohs(lsa->header->type) & OSPF6_LSTYPE_UBIT_MASK) &&
+		    OSPF6_LSA_SCOPE(lsa->header->type) == OSPF6_SCOPE_LINKLOCAL &&
+		    (oa != OSPF6_INTERFACE(lsa->lsdb->data)->area)) {
 			if (IS_OSPF6_DEBUG_FLOODING)
 				zlog_debug("Unknown LSA, do not flood");
 			continue;
@@ -689,7 +689,7 @@ static void ospf6_acknowledge_lsa_bdrouter(struct ospf6_lsa *lsa,
 	/* LSA is more recent than database copy, but was not flooded
 	   back out receiving interface. Delayed acknowledgement sent
 	   if advertisement received from Designated Router,
-	   otherwide do nothing. */
+	   otherwise do nothing. */
 	if (ismore_recent < 0) {
 		if (oi->drouter == from->router_id) {
 			if (is_debug)
@@ -1001,11 +1001,26 @@ void ospf6_receive_lsa(struct ospf6_neighbor *from,
 		/* in case we have no database copy */
 		ismore_recent = -1;
 
-		/* (a) MinLSArrival check */
-		if (old) {
+		self_originated = (new->header->adv_router ==
+				   from->ospf6_if->area->ospf6->router_id);
+
+		/* After any restart of DUT node, receiving self-originated
+		 * LSAs with MaxAge from peers within 1 second (MinLSArrival,
+		 * default 1000 ms) can make ospf6_lsa_check_min_arrival()
+		 * return true, which prevents ospf6_install_lsa() from being
+		 * called and results in a sequence-number race.  So hardened
+		 * the check accordingly to bypass MinLSArrival only for
+		 * self-originated MaxAge LSAs.  This is in compliance with
+		 * RFC 2328 §13.4.
+		 */
+		if (old && self_originated && OSPF6_LSA_IS_MAXAGE(new)) {
+			if (IS_OSPF6_DEBUG_FLOODING || IS_OSPF6_DEBUG_FLOOD_TYPE(new->header->type))
+				zlog_debug("Bypassing MinLSArrival for self-originated MaxAge LSA %s (RFC 2328 13.4)",
+					   new->name);
+		} else if (old) {
 			if (ospf6_lsa_check_min_arrival(old, from)) {
 				ospf6_lsa_delete(new);
-				return; /* examin next lsa */
+				return; /* examine next lsa */
 			}
 		}
 
@@ -1018,9 +1033,6 @@ void ospf6_receive_lsa(struct ospf6_neighbor *from,
 		/* Remove older copies of this LSA from retx lists */
 		if (old)
 			ospf6_flood_clear(old);
-
-		self_originated = (new->header->adv_router
-				   == from->ospf6_if->area->ospf6->router_id);
 
 		/* Received non-self-originated Grace LSA. */
 		if (IS_GRACE_LSA(new) && !self_originated) {
@@ -1228,7 +1240,7 @@ void ospf6_receive_lsa(struct ospf6_neighbor *from,
 			/* MinLSArrival check as per RFC 2328 13 (8) */
 			if (ospf6_lsa_check_min_arrival(old, from)) {
 				ospf6_lsa_delete(new);
-				return; /* examin next lsa */
+				return; /* examine next lsa */
 			}
 
 			ospf6_lsdb_add(ospf6_lsa_copy(old),

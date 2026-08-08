@@ -26,6 +26,8 @@
 extern "C" {
 #endif
 
+struct zebra_vxlan_if_update_ctx;
+
 extern void *zebra_vxlan_vni_alloc(void *p);
 extern void zebra_vxlan_vni_free(void *arg);
 extern struct hash *zebra_vxlan_vni_table_create(void);
@@ -60,6 +62,7 @@ extern int zebra_vxlan_if_down(struct interface *ifp);
 extern int zebra_vxlan_if_vni_up(struct interface *ifp,
 				 struct zebra_vxlan_vni *vni);
 extern int zebra_vxlan_if_up(struct interface *ifp);
+extern int zebra_vxlan_if_vni_deref(struct zebra_if *zif, vni_t vni);
 extern int zebra_vxlan_if_vni_del(struct interface *ifp, vni_t vni);
 extern int zebra_vxlan_if_del(struct interface *ifp);
 extern int zebra_vxlan_if_vni_table_add_update(struct interface *ifp,

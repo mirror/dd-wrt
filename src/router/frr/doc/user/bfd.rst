@@ -150,14 +150,15 @@ BFD peers and profiles share the same BFD session configuration commands.
 .. clicmd:: detect-multiplier (1-255)
 
    Configures the detection multiplier to determine packet loss. The
-   remote transmission interval will be multiplied by this value to
-   determine the connection loss detection timer. The default value is
-   3.
+   larger value of a comparison between the local system's `transmit-interval`
+   and the remote system's `receive-interval` will be multiplied by this value
+   to determine the connection loss detection timer on the remote system. The
+   default value is 3.
 
-   Example: when the local system has `detect-multiplier 3` and  the
-   remote system has `transmission interval 300`, the local system will
-   detect failures only after 900 milliseconds without receiving
-   packets.
+   Example: when the local system has `detect-multiplier 3` with
+   `transmit-interval 300`, and the remote system has `receive-interval 200`
+   the remote system will detect failures only after 900 milliseconds without
+   receiving packets.
 
 .. clicmd:: receive-interval (10-4294967)
 
@@ -228,6 +229,17 @@ BFD peers and profiles share the same BFD session configuration commands.
    Enables or disables logging of session state transitions into Up
    state or when the session transitions from Up state to Down state.
 
+.. clicmd:: authentication key-chain NAME
+
+   Configure peer or profile to use a key-chain. That key-chain refers
+   to a list of available key tuple made up of a crypto algorithm and
+   a key-string. Those values are used in BFD packets. Clear text and
+   hmac-sha1 algorithm is currently supported.
+
+.. clicmd:: authentication algorithm meticulous
+
+   Configure peer or profile to use meticulous mode when the key-chain
+   is configured with a hmac-sha1 crypto algorithm.
 
 BFD Peer Specific Commands
 --------------------------
@@ -323,16 +335,20 @@ OSPF BFD Configuration
 
 The following commands are available inside the interface configuration node.
 
-.. clicmd:: ip ospf bfd
+.. clicmd:: ip ospf bfd [multiplier min-rx-int min-tx-int] [quick]
 
    Listen for BFD events on peers created on the interface. Every time
    a new neighbor is found a BFD peer is created to monitor the link
    status for fast convergence.
+   If the quick option is enabled, the BFD session is kept active even after the
+   OSPF neighbor is removed. When BFD detects the peer again, OSPF can re-add the
+   neighbor immediately (before learning the router ID) and drive a faster
+   adjacency bring-up.
 
 .. clicmd:: ip ospf bfd profile BFDPROF
 
-   Same as command ``ip ospf bfd``, but applies the BFD profile to the sessions
-   it creates or that already exist.
+   Applies the BFD profile to the sessions it creates or that already exist.
+   Only takes effect if ``ip ospf bfd`` command is also present.
 
 
 .. _bfd-ospf6-peer-config:
@@ -540,70 +556,119 @@ You can inspect the current BFD peer status with the following commands:
 
    frr# show bfd peers
    BFD Peers:
-           peer 192.168.0.1
-                   ID: 1
-                   Remote ID: 1
-                   Status: up
-                   Uptime: 1 minute(s), 51 second(s)
-                   Diagnostics: ok
-                   Remote diagnostics: ok
-                   Peer Type: dynamic
-                   Local timers:
-                           Detect-multiplier: 3
-                           Receive interval: 300ms
-                           Transmission interval: 300ms
-                           Echo receive interval: 50ms
-                           Echo transmission interval: disabled
-                   Remote timers:
-                           Detect-multiplier: 3
-                           Receive interval: 300ms
-                           Transmission interval: 300ms
-                           Echo receive interval: 50ms
+        peer 192.168.0.1 local-address 192.168.0.2 vrf default interface veth1
+                ID: 1
+                Remote ID: 0
+                Active mode
+                Status: down
+                Downtime: 5 second(s)
+                Diagnostics: ok
+                Remote diagnostics: ok
+                Peer Type: configured
+                RTT min/avg/max: 0/0/0 usec
+                Profile: myprofile
+                Local timers:
+                        Detect-multiplier: 3
+                        Receive interval: 300ms
+                        Transmission interval: 300ms
+                        Transmission interval (actual with jitter): 970ms
+                        Detection timeout: 3000ms
+                        Echo receive interval: 50ms
+                        Echo transmission interval: disabled
+                Remote timers:
+                        Detect-multiplier: 3
+                        Receive interval: 1000ms
+                        Transmission interval: 1000ms
+                        Echo receive interval: disabled
 
-           peer 192.168.1.1
-                   ID: 2
-                   Remote ID: 2
-                   Status: up
-                   Uptime: 1 minute(s), 53 second(s)
-                   Diagnostics: ok
-                   Remote diagnostics: ok
-                   Peer Type: configured
-                   Local timers:
-                           Detect-multiplier: 3
-                           Receive interval: 300ms
-                           Transmission interval: 300ms
-                           Echo receive interval: 50ms
-                           Echo transmission interval: disabled
-                   Remote timers:
-                           Detect-multiplier: 3
-                           Receive interval: 300ms
-                           Transmission interval: 300ms
-                           Echo receive interval: 50ms
+        peer 192.168.0.2 local-address 192.168.0.1 vrf default interface veth0
+                ID: 2
+                Remote ID: 0
+                Active mode
+                Status: down
+                Downtime: 5 second(s)
+                Diagnostics: ok
+                Remote diagnostics: ok
+                Peer Type: configured
+                RTT min/avg/max: 0/0/0 usec
+                Profile: myprofile
+                Local timers:
+                        Detect-multiplier: 3
+                        Receive interval: 300ms
+                        Transmission interval: 300ms
+                        Transmission interval (actual with jitter): 790ms
+                        Detection timeout: 3000ms
+                        Echo receive interval: 50ms
+                        Echo transmission interval: disabled
+                Remote timers:
+                        Detect-multiplier: 3
+                        Receive interval: 1000ms
+                        Transmission interval: 1000ms
+                        Echo receive interval: disabled
 
-   frr# show bfd peer 192.168.1.1
+   frr# show bfd peer 192.168.0.2
    BFD Peer:
-               peer 192.168.1.1
-                   ID: 2
-                   Remote ID: 2
-                   Status: up
-                   Uptime: 3 minute(s), 4 second(s)
-                   Diagnostics: ok
-                   Remote diagnostics: ok
-                   Peer Type: dynamic
-                   Local timers:
-                           Detect-multiplier: 3
-                           Receive interval: 300ms
-                           Transmission interval: 300ms
-                           Echo receive interval: 50ms
-                           Echo transmission interval: disabled
-                   Remote timers:
-                           Detect-multiplier: 3
-                           Receive interval: 300ms
-                           Transmission interval: 300ms
-                           Echo receive interval: 50ms
+        peer 192.168.0.2 local-address 192.168.0.1 vrf default interface veth0
+                ID: 2
+                Remote ID: 0
+                Active mode
+                Status: down
+                Downtime: 5 second(s)
+                Diagnostics: ok
+                Remote diagnostics: ok
+                Peer Type: configured
+                RTT min/avg/max: 0/0/0 usec
+                Profile: myprofile
+                Local timers:
+                        Detect-multiplier: 3
+                        Receive interval: 300ms
+                        Transmission interval: 300ms
+                        Transmission interval (actual with jitter): 790ms
+                        Detection timeout: 3000ms
+                        Echo receive interval: 50ms
+                        Echo transmission interval: disabled
+                Remote timers:
+                        Detect-multiplier: 3
+                        Receive interval: 1000ms
+                        Transmission interval: 1000ms
+                        Echo receive interval: disabled
 
-   frr# show bfd peer 192.168.0.1 json
-   {"multihop":false,"peer":"192.168.0.1","id":1,"remote-id":1,"status":"up","uptime":161,"diagnostic":"ok","remote-diagnostic":"ok","receive-interval":300,"transmit-interval":300,"echo-receive-interval":50,"echo-transmit-interval":0,"detect-multiplier":3,"remote-receive-interval":300,"remote-transmit-interval":300,"remote-echo-receive-interval":50,"remote-detect-multiplier":3,"peer-type":"dynamic"}
+   frr# show bfd peer 192.168.0.2 json
+   {
+     "multihop":false,
+     "peer":"192.168.0.2",
+     "local":"192.168.0.1",
+     "vrf":"default",
+     "interface":"veth0",
+     "authentication":{
+       "enabled":false,
+       "configured":false
+     },
+     "id":2,
+     "remote-id":0,
+     "passive-mode":false,
+     "log-session-changes":false,
+     "status":"down",
+     "downtime":5,
+     "diagnostic":"ok",
+     "remote-diagnostic":"ok",
+     "type":"configured",
+     "profile":"myprofile",
+     "receive-interval":300,
+     "transmit-interval":300,
+     "transmit-interval-actual":790,
+     "detection-timeout":3000,
+     "echo-receive-interval":50,
+     "echo-transmit-interval":0,
+     "detect-multiplier":3,
+     "remote-receive-interval":1000,
+     "remote-transmit-interval":1000,
+     "remote-echo-receive-interval":0,
+     "remote-detect-multiplier":3,
+     "rtt-min":0,
+     "rtt-avg":0,
+     "rtt-max":0
+   }
 
 If you are running IPV4 BFD Echo, on a Linux platform, we also
 calculate round trip time for the packets.  We display minimum,
@@ -615,10 +680,29 @@ You can inspect the current BFD peer status in brief with the following commands
 ::
 
    frr# show bfd peers brief
-   Session count: 1
-   SessionId  LocalAddress         PeerAddress      Status
-   =========  ============         ===========      ======
-   1          192.168.0.1          192.168.0.2      up
+   Session count: 2
+   SessionId  LocalAddress                             PeerAddress                             Status          Profile
+   =========  ============                             ===========                             ======          =======
+   1          192.168.0.2                              192.168.0.1                             down            myprofile
+   2          192.168.0.1                              192.168.0.2                             down            myprofile
+
+   frr# show bfd peers brief json
+   [
+     {
+       "id":1,
+       "local":"192.168.0.2",
+       "peer":"192.168.0.1",
+       "status":"down",
+       "profile":"myprofile"
+     },
+     {
+       "id":2,
+       "local":"192.168.0.1",
+       "peer":"192.168.0.2",
+       "status":"down",
+       "profile":"myprofile"
+     }
+   ]
 
 
 You can also inspect peer session counters with the following commands:
@@ -635,6 +719,7 @@ You can also inspect peer session counters with the following commands:
                 Session up events: 1
                 Session down events: 0
                 Zebra notifications: 2
+                Rx fail packet: 0
 
         peer 192.168.0.1
                 Control packet input: 54 packets
@@ -644,6 +729,7 @@ You can also inspect peer session counters with the following commands:
                 Session up events: 1
                 Session down events: 0
                 Zebra notifications: 4
+                Rx fail packet: 0
 
    frr# show bfd peer 192.168.0.1 counters
         peer 192.168.0.1
@@ -654,6 +740,7 @@ You can also inspect peer session counters with the following commands:
                 Session up events: 1
                 Session down events: 0
                 Zebra notifications: 4
+                Rx fail packet: 0
 
    frr# show bfd peer 192.168.0.1 counters json
    {"multihop":false,"peer":"192.168.0.1","control-packet-input":348,"control-packet-output":685,"echo-packet-input":6815,"echo-packet-output":6816,"session-up":1,"session-down":0,"zebra-notifications":4}
@@ -674,6 +761,7 @@ You can also clear packet counters per session with the following commands, only
                 Session up events: 1
                 Session down events: 0
                 Zebra notifications: 2
+                Rx fail packet: 0
 
         peer 192.168.0.1
                 Control packet input: 0 packets
@@ -683,6 +771,7 @@ You can also clear packet counters per session with the following commands, only
                 Session up events: 1
                 Session down events: 0
                 Zebra notifications: 4
+                Rx fail packet: 0
 
 
 .. _bfd-distributed:
@@ -745,6 +834,95 @@ Sample output:
 
 
 .. _bfd-debugging:
+
+BFD authentication overview
+===========================
+
+Bidirectional Forwarding Detection (BFD) authentication ensures that
+BFD sessions are only established between trusted routers. This is
+accomplished by using a keychain to store authentication keys. The
+configuration involves creating a keychain, defining one or more keys
+with a key string (password), and specifying an authentication algorithm.
+
+There are two primary methods to apply
+this authentication:
+
+    Direct Peer Application: The keychain is directly associated
+    with a specific BFD peer.
+
+    Profile-based Application: The keychain is linked to a BFD profile,
+    which is then applied to one or more peers. This allows for more
+    scalable and manageable configurations.
+
+Possible example is a simple cryptographic algorithm, which means
+the key string is sent in clear text and will be visible in packet
+captures (e.g., using tcpdump).
+
+BFD authentication configuration
+================================
+
+Here are two examples demonstrating how to configure BFD authentication with a
+keychain.
+
+Example 1: Applying Authentication via a Profile
+
+This method uses a BFD profile, which is useful for applying the same
+authentication settings to multiple peers.
+
+Define the Keychain and Key:
+
+.. code-block:: frr
+
+   key chain 0
+    key 0
+     key-string secret123456
+     cryptographic-algorithm cleartext
+
+Create a BFD Profile and Link the Keychain:
+
+.. code-block:: frr
+
+   bfd
+    profile 0
+     authentication key-chain 0
+
+Apply the Profile to the BFD Peer:
+
+.. code-block:: frr
+
+   bfd
+    peer 10.0.1.2 interface eth-rt2
+     profile 0
+
+Example 2: Applying hmac-sha-1 Authentication via a Profile
+
+This method uses a BFD profile, which is useful for applying the same
+hmac-sha-1 authentication settings to multiple peers.
+
+Define the Keychain and Key:
+
+.. code-block:: frr
+
+   key chain 0
+    key 0
+     key-string secret123456
+     cryptographic-algorithm hmac-sha-1
+
+Create a BFD Profile and Link the Keychain:
+
+.. code-block:: frr
+
+   bfd
+    profile 0
+     authentication key-chain 0
+
+Apply the Profile to the BFD Peer:
+
+.. code-block:: frr
+
+   bfd
+    peer 10.0.1.2 interface eth-rt2
+     profile 0
 
 Debugging
 =========

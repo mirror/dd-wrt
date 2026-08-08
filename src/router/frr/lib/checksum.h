@@ -3,8 +3,11 @@
 #ifndef _FRR_CHECKSUM_H
 #define _FRR_CHECKSUM_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <netinet/in.h>
+
+#include "lib/compiler.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,8 +69,7 @@ static inline uint16_t in_cksum_with_ph6(const struct ipv6_ph *ph,
 }
 
 #define FLETCHER_CHECKSUM_VALIDATE 0xffff
-extern uint16_t fletcher_checksum(uint8_t *, const size_t len,
-				  const uint16_t offset);
+extern uint16_t fletcher_checksum(uint8_t *buffer, const size_t len, const uint16_t offset);
 
 #ifdef __cplusplus
 }

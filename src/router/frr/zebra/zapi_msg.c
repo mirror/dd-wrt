@@ -42,6 +42,7 @@
 #include "zebra/zebra_vxlan.h"
 #include "zebra/zebra_evpn_mh.h"
 #include "zebra/rt.h"
+#include "zebra/zebra_trace.h"
 #include "zebra/zebra_pbr.h"
 #include "zebra/zebra_tc.h"
 #include "zebra/table_manager.h"
@@ -52,6 +53,7 @@
 #include "zebra/zebra_opaque.h"
 #include "zebra/zebra_srte.h"
 #include "zebra/zebra_srv6.h"
+#include "zebra/zebra_neigh.h"
 
 DEFINE_MTYPE_STATIC(ZEBRA, RE_OPAQUE, "Route Opaque Data");
 
@@ -77,6 +79,7 @@ static void zserv_encode_interface(struct stream *s, struct interface *ifp)
 	stream_putl(s, ifp->mtu6);
 	stream_putl(s, ifp->bandwidth);
 	stream_putl(s, zif->link_ifindex);
+	stream_putl(s, ifp->zif_type);
 	stream_putl(s, ifp->ll_type);
 	stream_putl(s, ifp->hw_addr_len);
 	if (ifp->hw_addr_len)
@@ -547,6 +550,7 @@ int zsend_redistribute_route(int cmd, struct zserv *client, const struct route_n
 		break;
 	case AFI_L2VPN:
 	case AFI_MAX:
+	case AFI_BGP_LS:
 	case AFI_UNSPEC:
 		break;
 	}
@@ -586,6 +590,15 @@ int zsend_redistribute_route(int cmd, struct zserv *client, const struct route_n
 			api_nh->gate.ipv6 = nexthop->gate.ipv6;
 			api_nh->ifindex = nexthop->ifindex;
 		}
+
+		if (nexthop->nh_srv6 &&
+		    nexthop->nh_srv6->seg6local_action != ZEBRA_SEG6_LOCAL_ACTION_UNSPEC) {
+			SET_FLAG(api_nh->flags, ZAPI_NEXTHOP_FLAG_SEG6LOCAL);
+			api_nh->seg6local_action = nexthop->nh_srv6->seg6local_action;
+			memcpy(&api_nh->seg6local_ctx, &nexthop->nh_srv6->seg6local_ctx,
+			       sizeof(struct seg6local_context));
+		}
+
 		count++;
 	}
 
@@ -639,7 +652,7 @@ int zsend_redistribute_route(int cmd, struct zserv *client, const struct route_n
  * so it'd be rather complex to do NHT for.)
  *
  * 9/19/24 NEB I've updated this API to include the SAFI in the lookup
- * request and response. This allows PIM to do a syncronous lookup for the
+ * request and response. This allows PIM to do a synchronous lookup for the
  * correct table along side NHT.
  * This also makes this a more generic synchronous lookup not specifically
  * tied to the mrib.
@@ -1055,11 +1068,7 @@ void zsend_srv6_sid_notify(struct zserv *client, const struct srv6_sid_ctx *ctx,
 	/* SRv6 wide SID function */
 	stream_putl(s, wide_func);
 	/* SRv6 locator name optional */
-	if (locator_name) {
-		stream_putw(s, strlen(locator_name));
-		stream_put(s, locator_name, strlen(locator_name));
-	} else
-		stream_putw(s, 0);
+	zapi_srv6_locname_encode(s, locator_name, __func__);
 
 	stream_putw_at(s, 0, stream_get_endp(s));
 
@@ -1300,29 +1309,36 @@ static void zread_rnh_register(ZAPI_HANDLER_ARGS)
 				p.family);
 			return;
 		}
-		rnh = zebra_add_rnh(&p, zvrf_id(zvrf), safi, &exist);
+		rnh = zebra_add_rnh(&p, zvrf_id(zvrf), safi, client, &exist);
 		if (!rnh)
 			return;
 
 		orig_flags = rnh->flags;
-		if (connected && !CHECK_FLAG(rnh->flags, ZEBRA_NHT_CONNECTED))
+
+		/* Set flags specific to this client's registration */
+		if (connected)
 			SET_FLAG(rnh->flags, ZEBRA_NHT_CONNECTED);
-		else if (!connected
-			 && CHECK_FLAG(rnh->flags, ZEBRA_NHT_CONNECTED))
+		else
 			UNSET_FLAG(rnh->flags, ZEBRA_NHT_CONNECTED);
 
 		if (resolve_via_default)
 			SET_FLAG(rnh->flags, ZEBRA_NHT_RESOLVE_VIA_DEFAULT);
+		else
+			UNSET_FLAG(rnh->flags, ZEBRA_NHT_RESOLVE_VIA_DEFAULT);
 
 		if (orig_flags != rnh->flags)
 			flag_changed = true;
 
-		/* Anything not AF_INET/INET6 has been filtered out above */
+		/* zebra_add_rnh_client will send the update, so only evaluate
+		 * if we're not adding/notifying the client
+		 */
 		if (!exist || flag_changed)
 			zebra_evaluate_rnh(zvrf, family2afi(p.family), 1, &p,
 					   safi);
-
-		zebra_add_rnh_client(rnh, client, zvrf_id(zvrf));
+		else {
+			/* This will send an RNH update to the client */
+			zebra_add_rnh_client(rnh, client, zvrf_id(zvrf));
+		}
 	}
 
 stream_failure:
@@ -1387,7 +1403,7 @@ static void zread_rnh_unregister(ZAPI_HANDLER_ARGS)
 				p.family);
 			return;
 		}
-		rnh = zebra_lookup_rnh(&p, zvrf_id(zvrf), safi);
+		rnh = zebra_lookup_rnh(&p, zvrf_id(zvrf), safi, client);
 		if (rnh) {
 			client->nh_dereg_time = monotime(NULL);
 			zebra_remove_rnh_client(rnh, client);
@@ -1949,7 +1965,7 @@ static bool zapi_read_nexthops(struct zserv *client, struct prefix *p,
 	}
 
 
-	/* succesfully read, set caller pointers now */
+	/* successfully read, set caller pointers now */
 	if (png)
 		*png = ng;
 
@@ -2045,6 +2061,8 @@ static void zread_nhg_del(ZAPI_HANDLER_ARGS)
 	nhe->zapi_instance = client->instance;
 	nhe->zapi_session = client->session_id;
 
+	frrtrace(2, frr_zebra, zread_nhg_del, api_nhg.id, api_nhg.proto);
+
 	/* Sanity check - Empty nexthop and group */
 	nhe->nhg.nexthop = NULL;
 
@@ -2138,7 +2156,7 @@ static void zread_route_add(ZAPI_HANDLER_ARGS)
 	struct nhg_backup_info *bnhg = NULL;
 	int ret;
 	vrf_id_t vrf_id;
-	struct nhg_hash_entry nhe, *n = NULL;
+	struct nhg_hash_entry nhe = { 0 }, *n = NULL;
 
 	s = msg;
 	if (zapi_route_decode(s, &api) < 0) {
@@ -2232,7 +2250,7 @@ static void zread_route_add(ZAPI_HANDLER_ARGS)
 	 * If we have an ID, this proto owns the NHG it sent along with the
 	 * route, so we just send the ID into rib code with it.
 	 *
-	 * Havent figured out how to handle backup NHs with this yet, so lets
+	 * Haven't figured out how to handle backup NHs with this yet, so lets
 	 * keep that separate.
 	 * Include backup info with the route. We use a temporary nhe here;
 	 * if this is a new/unknown nhe, a new copy will be allocated
@@ -2244,8 +2262,7 @@ static void zread_route_add(ZAPI_HANDLER_ARGS)
 		nhe.backup_info = bnhg;
 		n = zebra_nhe_copy(&nhe, 0);
 	}
-	ret = rib_add_multipath_nhe(afi, api.safi, &api.prefix, src_p, re, n,
-				    false);
+	ret = rib_add_multipath_nhe(afi, api.safi, &api.prefix, src_p, re, n, false, true);
 
 	/*
 	 * rib_add_multipath_nhe only fails in a couple spots
@@ -2319,6 +2336,11 @@ static void zread_route_del(ZAPI_HANDLER_ARGS)
 			   __func__, zvrf_id(zvrf), table_id, &api.prefix,
 			   (int)api.message, api.flags);
 
+	char lttng_buf_prefix[PREFIX_STRLEN] = { 0 };
+
+	prefix2str(&api.prefix, lttng_buf_prefix, sizeof(lttng_buf_prefix));
+	frrtrace(3, frr_zebra, zread_route_del, api, lttng_buf_prefix, table_id);
+
 	rib_delete(afi, api.safi, zvrf_id(zvrf), api.type, api.instance,
 		   api.flags, &api.prefix, src_p, NULL, 0, table_id, api.metric,
 		   api.distance, false);
@@ -2334,7 +2356,7 @@ static void zread_route_del(ZAPI_HANDLER_ARGS)
 	}
 }
 
-/* Syncronous Nexthop lookup. */
+/* Synchronous Nexthop lookup. */
 static void zread_nexthop_lookup(ZAPI_HANDLER_ARGS)
 {
 	struct ipaddr addr;
@@ -2431,7 +2453,7 @@ static void zsend_capabilities(struct zserv *client, struct zebra_vrf *zvrf)
 	struct stream *s = stream_new(ZEBRA_SMALL_PACKET_SIZE);
 
 	zclient_create_header(s, ZEBRA_CAPABILITIES, zvrf->vrf->vrf_id);
-	stream_putl(s, vrf_get_backend());
+	stream_putc(s, vrf_get_backend());
 	stream_putc(s, mpls_enabled);
 	stream_putl(s, zrouter.zav.multipath_num);
 	stream_putc(s, zebra_mlag_get_role());
@@ -3020,17 +3042,10 @@ static void zread_srv6_manager_get_locator_chunk(struct zserv *client,
 						 vrf_id_t vrf_id)
 {
 	struct stream *s = msg;
-	uint16_t len;
 	char locator_name[SRV6_LOCNAME_SIZE] = {0};
 
 	/* Get data. */
-	STREAM_GETW(s, len);
-	if (len > SRV6_LOCNAME_SIZE) {
-		zlog_warn("%s: SRv6 locator name length %u exceeds maximum %d", __func__, len,
-			  SRV6_LOCNAME_SIZE);
-		goto stream_failure;
-	}
-	STREAM_GET(locator_name, s, len);
+	ZAPI_GET_SRV6_LOCNAME(locator_name, s);
 
 	/* call hook to get a chunk using wrapper */
 	struct srv6_locator *loc = NULL;
@@ -3045,17 +3060,10 @@ static void zread_srv6_manager_release_locator_chunk(struct zserv *client,
 						     vrf_id_t vrf_id)
 {
 	struct stream *s = msg;
-	uint16_t len;
 	char locator_name[SRV6_LOCNAME_SIZE] = {0};
 
 	/* Get data. */
-	STREAM_GETW(s, len);
-	if (len > SRV6_LOCNAME_SIZE) {
-		zlog_warn("%s: SRv6 locator name length %u exceeds maximum %d", __func__, len,
-			  SRV6_LOCNAME_SIZE);
-		goto stream_failure;
-	}
-	STREAM_GET(locator_name, s, len);
+	ZAPI_GET_SRV6_LOCNAME(locator_name, s);
 
 	/* call hook to release a chunk using wrapper */
 	srv6_manager_release_locator_chunk_call(client, locator_name, vrf_id);
@@ -3078,9 +3086,8 @@ static void zread_srv6_manager_get_srv6_sid(struct zserv *client,
 	struct in6_addr sid_value = {};
 	struct in6_addr *sid_value_ptr = NULL;
 	char locator[SRV6_LOCNAME_SIZE] = { 0 };
-	uint16_t len;
 	struct zebra_srv6_sid *sid = NULL;
-	uint8_t flags;
+	uint8_t flags = 0;
 	bool is_localonly = false;
 
 	/* Get input stream */
@@ -3093,10 +3100,8 @@ static void zread_srv6_manager_get_srv6_sid(struct zserv *client,
 		STREAM_GET(&sid_value, s, sizeof(struct in6_addr));
 		sid_value_ptr = &sid_value;
 	}
-	if (CHECK_FLAG(flags, ZAPI_SRV6_MANAGER_SID_FLAG_HAS_LOCATOR)) {
-		STREAM_GETW(s, len);
-		STREAM_GET(locator, s, len);
-	}
+	if (CHECK_FLAG(flags, ZAPI_SRV6_MANAGER_SID_FLAG_HAS_LOCATOR))
+		ZAPI_GET_SRV6_LOCNAME(locator, s);
 	if (CHECK_FLAG(flags, ZAPI_SRV6_MANAGER_SID_FLAG_IS_LOCALONLY))
 		is_localonly = true;
 
@@ -3120,7 +3125,6 @@ static void zread_srv6_manager_release_srv6_sid(struct zserv *client,
 	struct stream *s;
 	struct srv6_sid_ctx ctx = {};
 	char locator[SRV6_LOCNAME_SIZE] = { 0 };
-	uint16_t len;
 	uint8_t flags;
 	bool is_localonly = false;
 
@@ -3130,17 +3134,8 @@ static void zread_srv6_manager_release_srv6_sid(struct zserv *client,
 	/* Get data */
 	STREAM_GET(&ctx, s, sizeof(struct srv6_sid_ctx));
 	STREAM_GETC(s, flags);
-	if (CHECK_FLAG(flags, ZAPI_SRV6_MANAGER_SID_FLAG_HAS_LOCATOR)) {
-		STREAM_GETW(s, len);
-
-		if (len > SRV6_LOCNAME_SIZE) {
-			zlog_warn("Received locator name length (%u) exceeds maximum length (%u)",
-				  len, SRV6_LOCNAME_SIZE);
-			goto stream_failure;
-		}
-
-		STREAM_GET(locator, s, len);
-	}
+	if (CHECK_FLAG(flags, ZAPI_SRV6_MANAGER_SID_FLAG_HAS_LOCATOR))
+		ZAPI_GET_SRV6_LOCNAME(locator, s);
 	if (CHECK_FLAG(flags, ZAPI_SRV6_MANAGER_SID_FLAG_IS_LOCALONLY))
 		is_localonly = true;
 
@@ -3161,16 +3156,14 @@ static void zread_srv6_manager_get_locator(struct zserv *client,
 					   struct stream *msg)
 {
 	struct stream *s = msg;
-	uint16_t len;
 	char locator_name[SRV6_LOCNAME_SIZE] = { 0 };
 	struct srv6_locator *locator = NULL;
 
 	/* Get data */
-	STREAM_GETW(s, len);
-	STREAM_GET(locator_name, s, len);
+	ZAPI_GET_SRV6_LOCNAME(locator_name, s);
 
 	/* Call hook to get the locator info using wrapper */
-	srv6_manager_get_locator_call(&locator, client, locator_name);
+	srv6_manager_get_locator_call(&locator, client, locator_name[0] ? locator_name : NULL);
 
 stream_failure:
 	return;
@@ -3197,7 +3190,8 @@ static void zread_srv6_manager_request(ZAPI_HANDLER_ARGS)
 		zread_srv6_manager_get_locator(client, msg);
 		break;
 	default:
-		zlog_err("%s: unknown SRv6 Manager command", __func__);
+		flog_err(EC_ZEBRA_SRV6_MANAGER_UNKNOWN_COMMAND, "%s: unknown SRv6 Manager command",
+			 __func__);
 		break;
 	}
 }
@@ -3406,8 +3400,10 @@ static void zread_vrf_label(ZAPI_HANDLER_ARGS)
 
 	if (nlabel != MPLS_LABEL_NONE) {
 		mpls_label_t out_label = MPLS_LABEL_IMPLICIT_NULL;
-		mpls_lsp_install(def_zvrf, ltype, nlabel, 1, &out_label,
-				 NEXTHOP_TYPE_IFINDEX, NULL, ifp->ifindex);
+		if (mpls_lsp_install(def_zvrf, ltype, nlabel, 1, &out_label, NEXTHOP_TYPE_IFINDEX,
+				     NULL, ifp->ifindex) < 0) {
+			zlog_debug("%s: Failed to install LSP for label %u", __func__, nlabel);
+		}
 	}
 
 	zvrf->label[afi] = nlabel;
@@ -3767,6 +3763,66 @@ stream_failure:
 	return;
 }
 
+/* Send neighbor info to client */
+static void zsend_neighbor(struct zserv *client, struct interface *ifp,
+			   struct zebra_neigh_ent *neigh)
+{
+	struct stream *s;
+	union sockunion ip, lladdr;
+
+	/* Convert ipaddr to sockunion */
+	sockunion_family(&ip) = neigh->ip.ipa_type;
+	if (neigh->ip.ipa_type == AF_INET)
+		memcpy(&ip.sin.sin_addr, &neigh->ip.ipaddr_v4, sizeof(struct in_addr));
+	else
+		memcpy(&ip.sin6.sin6_addr, &neigh->ip.ipaddr_v6, sizeof(struct in6_addr));
+
+	/* Convert lladdr to sockunion */
+	sockunion_family(&lladdr) = AF_UNSPEC;
+
+	s = stream_new(ZEBRA_MAX_PACKET_SIZ);
+	zclient_neigh_ip_encode(s, ZEBRA_NEIGH_ADDED, &ip, &lladdr, ifp,
+				ZEBRA_NEIGH_STATE_REACHABLE, 0);
+	stream_putw_at(s, 0, stream_get_endp(s));
+	zserv_send_message(client, s);
+}
+
+static void zebra_neigh_get(ZAPI_HANDLER_ARGS)
+{
+	ifindex_t ifindex;
+	struct interface *ifp;
+	struct zebra_neigh_ent *n;
+	afi_t afi;
+
+	STREAM_GETL(msg, ifindex);
+	STREAM_GETW(msg, afi);
+
+	if (!(IS_VALID_AFI(afi))) {
+		zlog_warn("Failed to get neighbors: invalid AFI %u", afi);
+		return;
+	}
+
+	ifp = if_lookup_by_index(ifindex, zvrf_id(zvrf));
+	if (!ifp) {
+		zlog_warn("Failed to get neighbors: interface with index %u not found", ifindex);
+		return;
+	}
+
+	/* Send all neighbors for this interface */
+	RB_FOREACH (n, zebra_neigh_rb_head, &zneigh_info->neigh_rb_tree) {
+		if (n->ifindex != ifindex)
+			continue;
+
+		if ((afi == AFI_IP && n->ip.ipa_type != AF_INET) ||
+		    (afi == AFI_IP6 && n->ip.ipa_type != AF_INET6))
+			continue;
+
+		zsend_neighbor(client, ifp, n);
+	}
+
+stream_failure:
+	return;
+}
 
 static inline void zebra_neigh_register(ZAPI_HANDLER_ARGS)
 {
@@ -3822,7 +3878,7 @@ static inline void zebra_gre_get(ZAPI_HANDLER_ARGS)
 
 	zclient_create_header(s, ZEBRA_GRE_UPDATE, vrf_id);
 
-	if (ifp  && IS_ZEBRA_IF_GRE(ifp) && zebra_if) {
+	if (ifp && IS_ZEBRA_IF_GRE(ifp) && zebra_if) {
 		gre_info = &zebra_if->l2info.gre;
 
 		stream_putl(s, idx);
@@ -3836,9 +3892,12 @@ static inline void zebra_gre_get(ZAPI_HANDLER_ARGS)
 		if (ifp_link)
 			vrf_id_link = ifp_link->vrf->vrf_id;
 		stream_putl(s, vrf_id_link);
-		stream_putl(s, gre_info->vtep_ip.s_addr);
-		stream_putl(s, gre_info->vtep_ip_remote.s_addr);
+		stream_putl(s, gre_info->vtep_ip.ipaddr_v4.s_addr);
+		stream_putl(s, gre_info->vtep_ip_remote.ipaddr_v4.s_addr);
 	} else {
+		/* XXX TODO: other tunnels kinds,
+		 * including IP6GRE tunnels should/should not  be handled
+		 */
 		stream_putl(s, idx);
 		stream_putl(s, 0);
 		stream_putl(s, 0);
@@ -4016,6 +4075,7 @@ static inline void zebra_gre_source_set(ZAPI_HANDLER_ARGS)
 		return;
 	}
 
+	/* XXX TODO: other tunnels kinds should be handled */
 	if (!IS_ZEBRA_IF_GRE(ifp))
 		return;
 
@@ -4157,6 +4217,7 @@ void (*const zserv_handlers[])(ZAPI_HANDLER_ARGS) = {
 	[ZEBRA_NEIGH_IP_DEL] = zebra_neigh_ip_del,
 	[ZEBRA_NEIGH_REGISTER] = zebra_neigh_register,
 	[ZEBRA_NEIGH_UNREGISTER] = zebra_neigh_unregister,
+	[ZEBRA_NEIGH_GET] = zebra_neigh_get,
 	[ZEBRA_CONFIGURE_ARP] = zebra_configure_arp,
 	[ZEBRA_GRE_GET] = zebra_gre_get,
 	[ZEBRA_GRE_SOURCE_SET] = zebra_gre_source_set,

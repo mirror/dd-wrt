@@ -21,10 +21,12 @@
 
 #include "log.h"
 #include "memory.h"
+#include "seqlock.h"
 #include "module.h"
 #include "defaults.h"
 #include "lib_vty.h"
 #include "northbound_cli.h"
+#include "json.h"
 
 /* Looking up memory status from vty interface. */
 #include "vector.h"
@@ -34,12 +36,26 @@
 #if defined(HAVE_MALLINFO2) || defined(HAVE_MALLINFO)
 static int show_memory_mallinfo(struct vty *vty)
 {
+	char buf[MTYPE_MEMSTR_LEN];
 #if defined(HAVE_MALLINFO2)
 	struct mallinfo2 minfo = mallinfo2();
 #elif defined(HAVE_MALLINFO)
 	struct mallinfo minfo = mallinfo();
+
+	/* If any 'int' values have rolled over, coerce them back */
+	if (minfo.arena < 0)
+		minfo.arena = 0x7fffffff;
+	if (minfo.hblkhd < 0)
+		minfo.hblkhd = 0x7fffffff;
+	if (minfo.usmblks < 0)
+		minfo.usmblks = 0x7fffffff;
+	if (minfo.uordblks < 0)
+		minfo.uordblks = 0x7fffffff;
+	if (minfo.fsmblks < 0)
+		minfo.fsmblks = 0x7fffffff;
+	if (minfo.fordblks < 0)
+		minfo.fordblks = 0x7fffffff;
 #endif
-	char buf[MTYPE_MEMSTR_LEN];
 
 	vty_out(vty, "System allocator statistics:\n");
 	vty_out(vty, "  Total heap allocated:  %s\n",
@@ -64,6 +80,11 @@ static int show_memory_mallinfo(struct vty *vty)
 	return 1;
 }
 #endif /* HAVE_MALLINFO */
+
+struct qmem_walk_json_arg {
+	struct json_object *json;
+	struct json_object *current_group;
+};
 
 static int qmem_walker(void *arg, struct memgroup *mg, struct memtype *mt)
 {
@@ -112,18 +133,64 @@ static int qmem_walker(void *arg, struct memgroup *mg, struct memtype *mt)
 	return 0;
 }
 
+static int qmem_walker_json(void *arg, struct memgroup *mg, struct memtype *mt)
+{
+	struct qmem_walk_json_arg *jarg = arg;
+
+	if (!mt) {
+		jarg->current_group = json_object_new_array();
+		json_object_object_add(jarg->json, mg->name, jarg->current_group);
+	} else {
+		if (mt->n_max != 0) {
+			struct json_object *jmt = json_object_new_object();
+
+			json_object_string_add(jmt, "name", mt->name);
+			json_object_int_add(jmt, "currentAllocations", mt->n_alloc);
+			json_object_boolean_add(jmt, "sizeVariable", mt->size == SIZE_VAR);
+			json_object_int_add(jmt, "size", mt->size);
+
+#ifdef HAVE_MALLOC_USABLE_SIZE
+			json_object_int_add(jmt, "totalBytes", mt->total);
+#endif
+			json_object_int_add(jmt, "maxAllocations", mt->n_max);
+#ifdef HAVE_MALLOC_USABLE_SIZE
+			json_object_int_add(jmt, "maxBytes", mt->max_size);
+#endif
+
+			json_object_array_add(jarg->current_group, jmt);
+		}
+	}
+	return 0;
+}
+
 
 DEFUN_NOSH (show_memory,
 	    show_memory_cmd,
-	    "show memory",
+	    "show memory [json]",
 	    "Show running system information\n"
-	    "Memory statistics\n")
+	    "Memory statistics\n"
+	    JSON_STR)
 {
+	bool uj = use_json(argc, argv);
+	struct json_object *json = NULL;
+	struct qmem_walk_json_arg jarg;
+
+	if (uj) {
+		json = json_object_new_object();
+
+		jarg.json = json;
+		jarg.current_group = NULL;
+		qmem_walk(qmem_walker_json, &jarg);
+
+		vty_json(vty, json);
+	} else {
 #ifdef HAVE_MALLINFO
-	show_memory_mallinfo(vty);
+		show_memory_mallinfo(vty);
 #endif /* HAVE_MALLINFO */
 
-	qmem_walk(qmem_walker, vty);
+		qmem_walk(qmem_walker, vty);
+	}
+
 	return CMD_SUCCESS;
 }
 
@@ -170,6 +237,51 @@ DEFUN_NOSH (show_modules,
 	return CMD_SUCCESS;
 }
 
+DEFUN_NOSH (show_rcu,
+	    show_rcu_cmd,
+	    "show rcu [json]",
+	    "Show running system information\n"
+	    "RCU (read-copy-update) statistics\n"
+	    JSON_STR)
+{
+	bool uj = use_json(argc, argv);
+	struct json_object *json = NULL;
+	struct rcu_stats stats;
+
+	rcu_stats(&stats);
+
+	if (uj) {
+		json = json_object_new_object();
+
+		json_object_boolean_add(json, "rcuActive", stats.rcu_active);
+		if (!stats.rcu_active) {
+			vty_json(vty, json);
+			return CMD_SUCCESS;
+		}
+
+		json_object_int_add(json, "seqHead", stats.seq_head / SEQLOCK_INCR);
+		json_object_int_add(json, "seqLag", stats.seq_delta / (int)SEQLOCK_INCR);
+		json_object_int_add(json, "nThreadsHolding", stats.holding);
+		json_object_int_add(json, "queueLength", stats.qlen);
+		json_object_int_add(json, "totalCallsExecuted", stats.completed);
+
+		vty_json(vty, json);
+	} else {
+		if (!stats.rcu_active) {
+			vty_out(vty, "%% RCU not in use by this daemon\n");
+			return CMD_SUCCESS;
+		}
+
+		vty_out(vty, "RCU sequence counter: 0x%08x\n", stats.seq_head / SEQLOCK_INCR);
+		vty_out(vty, "RCU sequence lag:     %d\n", stats.seq_delta / (int)SEQLOCK_INCR);
+		vty_out(vty, "Threads holding RCU:  %zu\n", stats.holding);
+		vty_out(vty, "Queue length:         %zu\n", stats.qlen);
+		vty_out(vty, "Total calls executed: %zu\n", stats.completed);
+	}
+
+	return CMD_SUCCESS;
+}
+
 DEFUN (frr_defaults,
        frr_defaults_cmd,
        "frr defaults PROFILE...",
@@ -207,8 +319,8 @@ DEFUN (frr_version,
 static struct call_back {
 	time_t readin_time;
 
-	void (*start_config)(void);
-	void (*end_config)(void);
+	void (*start_config)(struct vty *vty);
+	void (*end_config)(struct vty *vty);
 } callback;
 
 
@@ -220,7 +332,7 @@ DEFUN_NOSH(start_config, start_config_cmd, "XFRR_start_configuration",
 	vty->pending_allowed = 1;
 
 	if (callback.start_config)
-		(*callback.start_config)();
+		(*callback.start_config)(vty);
 
 	return CMD_SUCCESS;
 }
@@ -238,6 +350,7 @@ DEFUN_NOSH(end_config, end_config_cmd, "XFRR_end_configuration",
 	frrtime_to_interval(readin_time, readin_time_str,
 			    sizeof(readin_time_str));
 
+	/* This is also getting cleared in the config node exit */
 	vty->pending_allowed = 0;
 	ret = nb_cli_pending_commit_check(vty);
 
@@ -245,23 +358,14 @@ DEFUN_NOSH(end_config, end_config_cmd, "XFRR_end_configuration",
 	zlog_debug("%s: VTY:%p, pending SET-CFG: %u", __func__, vty,
 		   (uint32_t)vty->mgmt_num_pending_setcfg);
 
-	/*
-	 * If (and only if) we have sent any CLI config commands to MGMTd
-	 * FE interface using vty_mgmt_send_config_data() without implicit
-	 * commit before, should we need to send an explicit COMMIT-REQ now
-	 * to apply all those commands at once.
-	 */
-	if (vty->mgmt_num_pending_setcfg && vty_mgmt_fe_enabled())
-		vty_mgmt_send_commit_config(vty, false, false, false);
-
 	if (callback.end_config)
-		(*callback.end_config)();
+		(*callback.end_config)(vty);
 
 	return ret;
 }
 
-void cmd_init_config_callbacks(void (*start_config_cb)(void),
-			       void (*end_config_cb)(void))
+void cmd_init_config_callbacks(void (*start_config_cb)(struct vty *vty),
+			       void (*end_config_cb)(struct vty *vty))
 {
 	callback.start_config = start_config_cb;
 	callback.end_config = end_config_cb;
@@ -290,6 +394,7 @@ void lib_cmd_init(void)
 
 	install_element(VIEW_NODE, &show_memory_cmd);
 	install_element(VIEW_NODE, &show_modules_cmd);
+	install_element(VIEW_NODE, &show_rcu_cmd);
 
 	install_element(CONFIG_NODE, &start_config_cmd);
 	install_element(CONFIG_NODE, &end_config_cmd);
@@ -305,7 +410,7 @@ void lib_cmd_init(void)
  */
 const char *mtype_memstr(char *buf, size_t len, unsigned long bytes)
 {
-	unsigned int m, k;
+	unsigned int g, m, k;
 
 	/* easy cases */
 	if (!bytes)
@@ -313,20 +418,15 @@ const char *mtype_memstr(char *buf, size_t len, unsigned long bytes)
 	if (bytes == 1)
 		return "1 byte";
 
-	/*
-	 * When we pass the 2gb barrier mallinfo() can no longer report
-	 * correct data so it just does something odd...
-	 * Reporting like Terrabytes of data.  Which makes users...
-	 * edgy.. yes edgy that's the term for it.
-	 * So let's just give up gracefully
-	 */
-	if (bytes > 0x7fffffff)
-		return "> 2GB";
-
+	g = bytes >> 30;
 	m = bytes >> 20;
 	k = bytes >> 10;
 
-	if (m > 10) {
+	if (g > 10) {
+		if (bytes & (1 << 29))
+			g++;
+		snprintf(buf, len, "%d GB", g);
+	} else if (m > 10) {
 		if (bytes & (1 << 19))
 			m++;
 		snprintf(buf, len, "%d MiB", m);
