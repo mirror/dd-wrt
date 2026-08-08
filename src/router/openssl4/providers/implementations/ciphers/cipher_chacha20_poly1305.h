@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -30,6 +30,7 @@ typedef struct {
     size_t tag_len;
     size_t tls_payload_length;
     size_t tls_aad_pad_sz;
+    unsigned int iv_state; /* set to one of IV_STATE_XXX */
 } PROV_CHACHA20_POLY1305_CTX;
 
 typedef struct prov_cipher_hw_chacha_aead_st {

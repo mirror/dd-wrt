@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
 
-# Copyright 2023-2025 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2023-2026 The OpenSSL Project Authors. All Rights Reserved.
 # Copyright (C) Cavium networks Ltd. 2016.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
@@ -2395,6 +2395,7 @@ $code.=<<___;
 
 .global asm_sha1_hmac_aescbc_dec
 .type	asm_sha1_hmac_aescbc_dec,%function
+.align 4
 
 asm_sha1_hmac_aescbc_dec:
 	AARCH64_VALID_CALL_TARGET

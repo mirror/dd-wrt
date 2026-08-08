@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2016-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -319,12 +319,19 @@ static void writer_fn(int id, int *iterations)
     int count;
     OSSL_TIME t1, t2;
     uint64_t *old, *new;
+    CRYPTO_RCU_CB_ITEM *cbi = NULL;
 
     t1 = ossl_time_now();
 
     for (count = 0;; count++) {
         new = CRYPTO_malloc(sizeof(uint64_t), NULL, 0);
         *new = (uint64_t)0xBAD;
+
+        if (contention == 0) {
+            cbi = ossl_rcu_cb_item_new();
+            OPENSSL_assert(cbi != NULL);
+        }
+
         if (contention == 0)
             OSSL_sleep(1000);
         ossl_rcu_write_lock(rcu_lock);
@@ -333,7 +340,7 @@ static void writer_fn(int id, int *iterations)
         *new = global_ctr++;
         ossl_rcu_assign_ptr(&writer_ptr, &new);
         if (contention == 0)
-            ossl_rcu_call(rcu_lock, free_old_rcu_data, old);
+            ossl_rcu_call(rcu_lock, cbi, free_old_rcu_data, old);
         ossl_rcu_write_unlock(rcu_lock);
         if (contention != 0) {
             ossl_synchronize_rcu(rcu_lock);
@@ -1370,7 +1377,7 @@ static void test_obj_create_worker(void)
 
     for (i = 0; i < 4; i++) {
         now = time(NULL);
-        snprintf(name, sizeof(name), "Time in Seconds = %ld", (long)now);
+        BIO_snprintf(name, sizeof(name), "Time in Seconds = %ld", (long)now);
         while (now == time(NULL))
             /* no-op */;
         nid = OBJ_create(NULL, NULL, name);

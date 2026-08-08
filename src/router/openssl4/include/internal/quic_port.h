@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2023-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -47,8 +47,8 @@ typedef struct quic_port_args_st {
      * connection object for the incoming channel
      * user_ssl_arg is expected to point to a quic listener object
      */
-    SSL *(*get_conn_user_ssl)(QUIC_CHANNEL *ch, void *arg);
-    void *user_ssl_arg;
+    SSL *(*get_conn_user_ssl)(QUIC_CHANNEL *ch, QUIC_LISTENER *ql);
+    QUIC_LISTENER *ql;
 
     /*
      * This SSL_CTX will be used when constructing the handshake layer object

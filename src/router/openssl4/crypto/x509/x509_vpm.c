@@ -269,8 +269,8 @@ static int validate_hostname_part(const char *name, size_t len,
             }
             if (!is_label_ok(c, charset) && c != '-')
                 return 0;
+            part_len++;
         }
-        part_len++;
         if (part_len > 63)
             return 0;
 
@@ -322,11 +322,11 @@ static int validate_email_name(const char *name, size_t len, int rfc822)
         at = next;
 
     /* Ensure the local part is not oversize */
-    local_len = len - (at - name);
+    local_len = at - name;
     if (local_len > 64)
         goto err;
 
-    if (!validate_local_part(name, len, &local_charset))
+    if (!validate_local_part(name, local_len, &local_charset))
         goto err;
 
     if (rfc822 && local_charset == OSSL_CHARSET_NONASCII)
@@ -864,8 +864,7 @@ static const unsigned char *int_X509_VERIFY_PARAM_get0_ip(X509_VERIFY_PARAM *par
 char *X509_VERIFY_PARAM_get1_ip_asc(X509_VERIFY_PARAM *param)
 {
     size_t iplen;
-    /* XXX casts away const */
-    unsigned char *ip = (unsigned char *)int_X509_VERIFY_PARAM_get0_ip(param, &iplen, 0);
+    const unsigned char *ip = int_X509_VERIFY_PARAM_get0_ip(param, &iplen, 0);
 
     return ip == NULL ? NULL : ossl_ipaddr_to_asc(ip, (int)iplen);
 }

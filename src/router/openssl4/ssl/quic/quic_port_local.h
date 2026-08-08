@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2023-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -51,8 +51,8 @@ struct quic_port_st {
      */
     OSSL_LIST_MEMBER(port, QUIC_PORT);
 
-    SSL *(*get_conn_user_ssl)(QUIC_CHANNEL *ch, void *arg);
-    void *user_ssl_arg;
+    SSL *(*get_conn_user_ssl)(QUIC_CHANNEL *ch, QUIC_LISTENER *ql);
+    QUIC_LISTENER *ql;
 
     /* Used to create handshake layer objects inside newly created channels. */
     SSL_CTX *channel_ctx;

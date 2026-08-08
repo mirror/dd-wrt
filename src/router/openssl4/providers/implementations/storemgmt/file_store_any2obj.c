@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2020-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -336,6 +336,7 @@ static int raw2obj_decode(void *vctx, OSSL_CORE_BIO *cin, int selection,
     }
 
     BIO_free(in);
+    in = NULL;
 
     if (BUF_MEM_grow(mem, len) != len) {
         ERR_raise(ERR_LIB_PEM, ERR_R_BUF_LIB);

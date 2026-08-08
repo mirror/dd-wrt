@@ -253,8 +253,19 @@ again:
         goto done;
     }
 
-    ciphertext_leni = i2d_SM2_Ciphertext(&ctext_struct, &ciphertext_buf);
+    ciphertext_leni = i2d_SM2_Ciphertext(&ctext_struct, NULL);
     /* Ensure cast to size_t is safe */
+    if (ciphertext_leni < 0) {
+        ERR_raise(ERR_LIB_SM2, ERR_R_INTERNAL_ERROR);
+        goto done;
+    }
+
+    if (*ciphertext_len < (size_t)ciphertext_leni) {
+        ERR_raise(ERR_LIB_SM2, SM2_R_BUFFER_TOO_SMALL);
+        goto done;
+    }
+
+    ciphertext_leni = i2d_SM2_Ciphertext(&ctext_struct, &ciphertext_buf);
     if (ciphertext_leni < 0) {
         ERR_raise(ERR_LIB_SM2, ERR_R_INTERNAL_ERROR);
         goto done;
@@ -271,6 +282,7 @@ done:
     OPENSSL_free(x2y2);
     OPENSSL_free(C3);
     EVP_MD_CTX_free(hash);
+    BN_CTX_end(ctx);
     BN_CTX_free(ctx);
     EC_POINT_free(kG);
     EC_POINT_free(kP);
@@ -411,6 +423,7 @@ done:
     OPENSSL_free(x2y2);
     OPENSSL_free(computed_C3);
     EC_POINT_free(C1);
+    BN_CTX_end(ctx);
     BN_CTX_free(ctx);
     SM2_Ciphertext_free(sm2_ctext);
     EVP_MD_CTX_free(hash);

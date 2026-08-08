@@ -114,7 +114,7 @@ const OPTIONS enc_options[] = {
     { "S", OPT_UPPER_S, 's', "Salt, in hex" },
     { "iv", OPT_IV, 's', "IV in hex" },
     { "md", OPT_MD, 's', "Use specified digest to create a key from the passphrase" },
-    { "k", OPT_K, 's', "Passphrase (Deprecated" },
+    { "k", OPT_K, 's', "Passphrase (Deprecated)" },
     { "kfile", OPT_KFILE, '<', "Read passphrase from file (Deprecated)" },
     { "pass", OPT_PASS, 's', "Passphrase source" },
     { "iter", OPT_ITER, 'p',
@@ -162,7 +162,7 @@ static EVP_SKEY *skey_from_params(const EVP_CIPHER *cipher, const char *skeymgmt
 
     skey = EVP_SKEY_import(app_get0_libctx(), EVP_SKEYMGMT_get0_name(mgmt),
         app_get0_propq(), OSSL_SKEYMGMT_SELECT_ALL, params);
-    OSSL_PARAM_free(params);
+    app_params_free(params);
     EVP_SKEYMGMT_free(mgmt);
 
     return skey;

@@ -1344,6 +1344,10 @@ int tls_parse_ctos_psk(SSL_CONNECTION *s, PACKET *pkt, unsigned int context,
         }
 
         idlen = PACKET_remaining(&identity);
+        if (idlen == 0) {
+            SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_R_BAD_EXTENSION);
+            return 0;
+        }
         if (s->psk_find_session_cb != NULL
             && !s->psk_find_session_cb(ussl, PACKET_data(&identity), idlen,
                 &sess)) {
@@ -1442,13 +1446,13 @@ int tls_parse_ctos_psk(SSL_CONNECTION *s, PACKET *pkt, unsigned int context,
 
             if (ret == SSL_TICKET_EMPTY) {
                 SSLfatal(s, SSL_AD_DECODE_ERROR, SSL_R_BAD_EXTENSION);
-                return 0;
+                goto err;
             }
 
             if (ret == SSL_TICKET_FATAL_ERR_MALLOC
                 || ret == SSL_TICKET_FATAL_ERR_OTHER) {
                 SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
-                return 0;
+                goto err;
             }
             if (ret == SSL_TICKET_NONE || ret == SSL_TICKET_NO_DECRYPT)
                 continue;
@@ -1503,7 +1507,12 @@ int tls_parse_ctos_psk(SSL_CONNECTION *s, PACKET *pkt, unsigned int context,
             SSL_SESSION_free(sess);
             sess = NULL;
             s->ext.early_data_ok = 0;
-            s->ext.ticket_expected = 0;
+            /*
+             * We fall back to a full handshake. The new session ticket will be
+             * issued to the client with the newly negotiated ciphersuite,
+             * allowing successful resumption on future connections.
+             */
+            s->ext.ticket_expected = 1;
             continue;
         }
         break;

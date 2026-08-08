@@ -27,11 +27,7 @@ static const struct abs_get_length_test abs_get_length_tests[] = {
     {
         .descr = "zero bits",
         .valid = 1,
-        .der = {
-            0x03,
-            0x01,
-            0x00,
-        },
+        .der = { 0x03, 0x01, 0x00 },
         .der_len = 3,
         .length = 0,
         .unused_bits = 0,
@@ -39,22 +35,13 @@ static const struct abs_get_length_test abs_get_length_tests[] = {
     {
         .descr = "zero bits one unused",
         .valid = 0,
-        .der = {
-            0x03,
-            0x01,
-            0x01,
-        },
+        .der = { 0x03, 0x01, 0x01 },
         .der_len = 3,
     },
     {
         .descr = "single zero bit",
         .valid = 1,
-        .der = {
-            0x03,
-            0x02,
-            0x07,
-            0x00,
-        },
+        .der = { 0x03, 0x02, 0x07, 0x00 },
         .der_len = 4,
         .length = 1,
         .unused_bits = 7,
@@ -62,12 +49,7 @@ static const struct abs_get_length_test abs_get_length_tests[] = {
     {
         .descr = "single one bit",
         .valid = 1,
-        .der = {
-            0x03,
-            0x02,
-            0x07,
-            0x80,
-        },
+        .der = { 0x03, 0x02, 0x07, 0x80 },
         .der_len = 4,
         .length = 1,
         .unused_bits = 7,
@@ -76,12 +58,7 @@ static const struct abs_get_length_test abs_get_length_tests[] = {
         /* XXX - the library pretends this is 03 02 07 80 */
         .descr = "invalid: single one bit, seventh bit set",
         .valid = 1,
-        .der = {
-            0x03,
-            0x02,
-            0x07,
-            0xc0,
-        },
+        .der = { 0x03, 0x02, 0x07, 0xc0 },
         .der_len = 4,
         .length = 1,
         .unused_bits = 7,
@@ -89,17 +66,7 @@ static const struct abs_get_length_test abs_get_length_tests[] = {
     {
         .descr = "x.690, primitive encoding in example 8.6.4.2",
         .valid = 1,
-        .der = {
-            0x03,
-            0x07,
-            0x04,
-            0x0A,
-            0x3b,
-            0x5F,
-            0x29,
-            0x1c,
-            0xd0,
-        },
+        .der = { 0x03, 0x07, 0x04, 0x0A, 0x3b, 0x5F, 0x29, 0x1c, 0xd0 },
         .der_len = 9,
         .length = 6,
         .unused_bits = 4,
@@ -113,24 +80,8 @@ static const struct abs_get_length_test abs_get_length_tests[] = {
          */
         .descr = "x.690, constructed encoding in example 8.6.4.2",
         .valid = 1,
-        .der = {
-            0x23,
-            0x80,
-            0x03,
-            0x03,
-            0x00,
-            0x0A,
-            0x3b,
-            0x03,
-            0x05,
-            0x04,
-            0x5F,
-            0x29,
-            0x1c,
-            0xd0,
-            0x00,
-            0x00,
-        },
+        .der = { 0x23, 0x80, 0x03, 0x03, 0x00, 0x0A, 0x3b, 0x03, 0x05, 0x04,
+            0x5F, 0x29, 0x1c, 0xd0, 0x00, 0x00 },
         .der_len = 16,
         .length = 7, /* XXX - should be 6. */
         .unused_bits = 0, /* XXX - should be 4. */
@@ -138,15 +89,7 @@ static const struct abs_get_length_test abs_get_length_tests[] = {
     {
         .descr = "RFC 3779, 2.1.1, IPv4 address 10.5.0.4",
         .valid = 1,
-        .der = {
-            0x03,
-            0x05,
-            0x00,
-            0x0a,
-            0x05,
-            0x00,
-            0x04,
-        },
+        .der = { 0x03, 0x05, 0x00, 0x0a, 0x05, 0x00, 0x04 },
         .der_len = 7,
         .length = 4,
         .unused_bits = 0,
@@ -154,14 +97,7 @@ static const struct abs_get_length_test abs_get_length_tests[] = {
     {
         .descr = "RFC 3779, 2.1.1, IPv4 prefix 10.5.0/23",
         .valid = 1,
-        .der = {
-            0x03,
-            0x04,
-            0x01,
-            0x0a,
-            0x05,
-            0x00,
-        },
+        .der = { 0x03, 0x04, 0x01, 0x0a, 0x05, 0x00 },
         .der_len = 6,
         .length = 3,
         .unused_bits = 1,
@@ -169,27 +105,8 @@ static const struct abs_get_length_test abs_get_length_tests[] = {
     {
         .descr = "RFC 3779, 2.1.1, IPv6 address 2001:0:200:3::1",
         .valid = 1,
-        .der = {
-            0x03,
-            0x11,
-            0x00,
-            0x20,
-            0x01,
-            0x00,
-            0x00,
-            0x02,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x03,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x01,
-        },
+        .der = { 0x03, 0x11, 0x00, 0x20, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00,
+            0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 },
         .der_len = 19,
         .length = 16,
         .unused_bits = 0,
@@ -197,16 +114,7 @@ static const struct abs_get_length_test abs_get_length_tests[] = {
     {
         .descr = "RFC 3779, 2.1.1, IPv6 prefix 2001:0:200/39",
         .valid = 1,
-        .der = {
-            0x03,
-            0x06,
-            0x01,
-            0x20,
-            0x01,
-            0x00,
-            0x00,
-            0x02,
-        },
+        .der = { 0x03, 0x06, 0x01, 0x20, 0x01, 0x00, 0x00, 0x02 },
         .der_len = 8,
         .length = 5,
         .unused_bits = 1,
@@ -225,14 +133,14 @@ abs_get_length_test(const struct abs_get_length_test *tbl, int idx)
 
     p = test->der;
     if (!TEST_ptr(abs = d2i_ASN1_BIT_STRING(NULL, &p, test->der_len))) {
-        TEST_info("%s, (idx=%d) - d2i_ASN1_BIT_STRING faled", __func__, idx);
+        TEST_info("%s, (idx=%d) - d2i_ASN1_BIT_STRING faled", OPENSSL_FUNC, idx);
         goto err;
     }
 
     ret = ASN1_BIT_STRING_get_length(abs, &length, &unused_bits);
     if (!TEST_int_eq(test->valid, ret)) {
         TEST_info("%s (idx=%d): %s ASN1_BIT_STRING_get_length want %d, got %d\n",
-            __func__, idx, test->descr, test->valid, ret);
+            OPENSSL_FUNC, idx, test->descr, test->valid, ret);
         goto err;
     }
     if (!test->valid)
@@ -240,7 +148,7 @@ abs_get_length_test(const struct abs_get_length_test *tbl, int idx)
 
     if (!TEST_size_t_eq(length, test->length)
         || !TEST_int_eq(unused_bits, test->unused_bits)) {
-        TEST_info("%s: (idx=%d) %s: want (%zu, %d), got (%zu, %d)\n", __func__,
+        TEST_info("%s: (idx=%d) %s: want (%zu, %d), got (%zu, %d)\n", OPENSSL_FUNC,
             idx, test->descr, test->length, test->unused_bits, length,
             unused_bits);
         goto err;
@@ -291,316 +199,138 @@ static const struct abs_set1_test abs_set1_tests[] = {
         .descr = "empty with unused bits",
         .valid = 0,
         .data = {
-            0x00,
-        },
+            0x00 },
         .length = 0,
         .unused_bits = 1,
     },
     {
         .descr = "empty",
         .valid = 1,
-        .data = {
-            0x00,
-        },
+        .data = { 0x00 },
         .length = 0,
         .unused_bits = 0,
-        .der = {
-            0x03,
-            0x01,
-            0x00,
-        },
+        .der = { 0x03, 0x01, 0x00 },
         .der_len = 3,
     },
     {
         .descr = "single zero bit",
         .valid = 1,
-        .data = {
-            0x00,
-        },
+        .data = { 0x00 },
         .length = 1,
         .unused_bits = 7,
-        .der = {
-            0x03,
-            0x02,
-            0x07,
-            0x00,
-        },
+        .der = { 0x03, 0x02, 0x07, 0x00 },
         .der_len = 4,
     },
     {
         .descr = "single zero bit, with non-zero unused bit 6",
         .valid = 0,
-        .data = {
-            0x40,
-        },
+        .data = { 0x40 },
         .length = 1,
         .unused_bits = 7,
     },
     {
         .descr = "single zero bit, with non-zero unused bit 0",
         .valid = 0,
-        .data = {
-            0x01,
-        },
+        .data = { 0x01 },
         .length = 1,
         .unused_bits = 7,
     },
     {
         .descr = "single one bit",
         .valid = 1,
-        .data = {
-            0x80,
-        },
+        .data = { 0x80 },
         .length = 1,
         .unused_bits = 7,
-        .der = {
-            0x03,
-            0x02,
-            0x07,
-            0x80,
-        },
+        .der = { 0x03, 0x02, 0x07, 0x80 },
         .der_len = 4,
     },
     {
         .descr = "single one bit, with non-zero unused-bit 6",
         .valid = 0,
-        .data = {
-            0xc0,
-        },
+        .data = { 0xc0 },
         .length = 1,
         .unused_bits = 7,
     },
     {
         .descr = "single one bit, with non-zero unused-bit 0",
         .valid = 0,
-        .data = {
-            0x81,
-        },
+        .data = { 0x81 },
         .length = 1,
         .unused_bits = 7,
     },
     {
         .descr = "RFC 3779, 2.1.1, IPv4 address 10.5.0.4",
         .valid = 1,
-        .data = {
-            0x0a,
-            0x05,
-            0x00,
-            0x04,
-        },
+        .data = { 0x0a, 0x05, 0x00, 0x04 },
         .length = 4,
         .unused_bits = 0,
-        .der = {
-            0x03,
-            0x05,
-            0x00,
-            0x0a,
-            0x05,
-            0x00,
-            0x04,
-        },
+        .der = { 0x03, 0x05, 0x00, 0x0a, 0x05, 0x00, 0x04 },
         .der_len = 7,
     },
     {
         .descr = "RFC 3779, 2.1.1, IPv4 address 10.5.0/23",
         .valid = 1,
-        .data = {
-            0x0a,
-            0x05,
-            0x00,
-        },
+        .data = { 0x0a, 0x05, 0x00 },
         .length = 3,
         .unused_bits = 1,
-        .der = {
-            0x03,
-            0x04,
-            0x01,
-            0x0a,
-            0x05,
-            0x00,
-        },
+        .der = { 0x03, 0x04, 0x01, 0x0a, 0x05, 0x00 },
         .der_len = 6,
     },
     {
         .descr = "RFC 3779, 2.1.1, IPv4 address 10.5.0/23, unused bit",
         .valid = 0,
-        .data = {
-            0x0a,
-            0x05,
-            0x01,
-        },
+        .data = { 0x0a, 0x05, 0x01 },
         .length = 3,
         .unused_bits = 1,
     },
     {
         .descr = "RFC 3779, IPv4 address 10.5.0/17",
         .valid = 1,
-        .data = {
-            0x0a,
-            0x05,
-            0x00,
-        },
+        .data = { 0x0a, 0x05, 0x00 },
         .length = 3,
         .unused_bits = 7,
-        .der = {
-            0x03,
-            0x04,
-            0x07,
-            0x0a,
-            0x05,
-            0x00,
-        },
+        .der = { 0x03, 0x04, 0x07, 0x0a, 0x05, 0x00 },
         .der_len = 6,
     },
     {
         .descr = "RFC 3779, IPv4 address 10.5.0/18, unused bit set",
         .valid = 0,
-        .data = {
-            0x0a,
-            0x05,
-            0x20,
-        },
+        .data = { 0x0a, 0x05, 0x20 },
         .length = 3,
         .unused_bits = 6,
     },
     {
         .descr = "RFC 3779, 2.1.1, IPv6 address 2001:0:200:3::1",
         .valid = 1,
-        .data = {
-            0x20,
-            0x01,
-            0x00,
-            0x00,
-            0x02,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x03,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x01,
-        },
+        .data = { 0x20, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 },
         .length = 16,
         .unused_bits = 0,
-        .der = {
-            0x03,
-            0x11,
-            0x00,
-            0x20,
-            0x01,
-            0x00,
-            0x00,
-            0x02,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x03,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x01,
-        },
+        .der = { 0x03, 0x11, 0x00, 0x20, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 },
         .der_len = 19,
     },
     {
         .descr = "RFC 3779, IPv6 address 2001:0:200:3::/127",
         .valid = 1,
-        .data = {
-            0x20,
-            0x01,
-            0x00,
-            0x00,
-            0x02,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x03,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-        },
+        .data = { 0x20, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
         .length = 16,
         .unused_bits = 1,
-        .der = {
-            0x03,
-            0x11,
-            0x01,
-            0x20,
-            0x01,
-            0x00,
-            0x00,
-            0x02,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x03,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-        },
+        .der = { 0x03, 0x11, 0x01, 0x20, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
         .der_len = 19,
     },
     {
         .descr = "RFC 3779, IPv6 address 2001:0:200:3::/127, unused bit",
         .valid = 0,
-        .data = {
-            0x20,
-            0x01,
-            0x00,
-            0x00,
-            0x02,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x03,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x01,
-        },
+        .data = { 0x20, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 },
         .length = 16,
         .unused_bits = 1,
     },
     {
         .descr = "RFC 3779, 2.1.1, IPv6 address 2001:0:200:3::/39",
         .valid = 1,
-        .data = {
-            0x20,
-            0x01,
-            0x00,
-            0x00,
-            0x02,
-        },
+        .data = { 0x20, 0x01, 0x00, 0x00, 0x02 },
         .length = 5,
         .unused_bits = 1,
-        .der = {
-            0x03,
-            0x06,
-            0x01,
-            0x20,
-            0x01,
-            0x00,
-            0x00,
-            0x02,
-        },
+        .der = { 0x03, 0x06, 0x01, 0x20, 0x01, 0x00, 0x00, 0x02 },
         .der_len = 8,
     },
 };
@@ -615,14 +345,14 @@ abs_set1_test(const struct abs_set1_test *tbl, int idx)
     int success = 0;
 
     if (!TEST_ptr(abs = ASN1_BIT_STRING_new())) {
-        TEST_info("%s: (idx = %d) %s ASN1_BIT_STRING_new()", __func__, idx, test->descr);
+        TEST_info("%s: (idx = %d) %s ASN1_BIT_STRING_new()", OPENSSL_FUNC, idx, test->descr);
         goto err;
     }
 
     ret = ASN1_BIT_STRING_set1(abs, test->data, test->length, test->unused_bits);
     if (!TEST_int_eq(ret, test->valid)) {
         TEST_info("%s: (idx = %d) %s ASN1_BIT_STRING_set1(): want %d, got %d",
-            __func__, idx, test->descr, test->valid, ret);
+            OPENSSL_FUNC, idx, test->descr, test->valid, ret);
         goto err;
     }
 
@@ -632,14 +362,14 @@ abs_set1_test(const struct abs_set1_test *tbl, int idx)
     der = NULL;
     if (!TEST_int_eq((der_len = i2d_ASN1_BIT_STRING(abs, &der)), test->der_len)) {
         TEST_info("%s: (idx=%d), %s i2d_ASN1_BIT_STRING(): want %d, got %d",
-            __func__, idx, test->descr, test->der_len, der_len);
+            OPENSSL_FUNC, idx, test->descr, test->der_len, der_len);
         if (der_len < 0)
             der_len = 0;
         goto err;
     }
 
     if (!TEST_mem_eq(der, der_len, test->der, test->der_len)) {
-        TEST_info("%s: (idx = %d)  %s DER mismatch", __func__, idx, test->descr);
+        TEST_info("%s: (idx = %d)  %s DER mismatch", OPENSSL_FUNC, idx, test->descr);
         goto err;
     }
 
