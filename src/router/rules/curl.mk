@@ -19,9 +19,9 @@ curl-configure: zlib openssl
 	-$(MAKE) -C openssl
 	$(MAKE) -C zlib clean
 	$(MAKE) -C zlib
-	cd curl && autoreconf -fi
+	cd $(CURLPATH) && autoreconf -fi
 	mkdir -p $(CURLPATH)/build
-	cd curl/build && ../configure --disable-verbose \
+	cd $(CURLPATH)/build && ../configure --disable-verbose \
 	--disable-ntlm \
 	--disable-debug \
 	--disable-ares \
