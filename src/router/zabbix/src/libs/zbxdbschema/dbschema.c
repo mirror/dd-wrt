@@ -2771,27 +2771,27 @@ static zbx_db_table_t	tables[] = {
 
 static const zbx_db_table_changelog_t	changelog_tables[] =
 {
-	{"httpstep_field", 15},
-	{"proxy_group", 20},
-	{"httptestitem", 13},
-	{"hosts", 1},
-	{"connector", 17},
-	{"drules", 9},
-	{"connector_tag", 18},
-	{"dchecks", 10},
-	{"httpstepitem", 16},
-	{"proxy", 19},
-	{"httptest_field", 12},
-	{"host_tag", 2},
-	{"triggers", 5},
-	{"functions", 7},
-	{"httpstep", 14},
-	{"items", 3},
-	{"host_proxy", 21},
-	{"trigger_tag", 6},
 	{"item_tag", 4},
-	{"httptest", 11},
+	{"trigger_tag", 6},
+	{"triggers", 5},
+	{"httpstep", 14},
+	{"connector", 17},
+	{"functions", 7},
+	{"httptestitem", 13},
 	{"item_preproc", 8},
+	{"httpstep_field", 15},
+	{"httptest", 11},
+	{"drules", 9},
+	{"hosts", 1},
+	{"proxy", 19},
+	{"proxy_group", 20},
+	{"httpstepitem", 16},
+	{"connector_tag", 18},
+	{"host_proxy", 21},
+	{"items", 3},
+	{"httptest_field", 12},
+	{"dchecks", 10},
+	{"host_tag", 2},
 	{0}
 };
 #if defined(HAVE_SQLITE3)
@@ -5233,7 +5233,7 @@ mandatory integer DEFAULT '0' NOT NULL,\n\
 optional integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (dbversionid)\n\
 );\n\
-INSERT INTO dbversion VALUES ('1','7040000','7040009');\n\
+INSERT INTO dbversion VALUES ('1','7040000','7040011');\n\
 create trigger hosts_insert after insert on hosts\n\
 for each row\n\
 begin\n\

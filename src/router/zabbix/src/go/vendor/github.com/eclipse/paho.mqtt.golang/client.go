@@ -141,6 +141,8 @@ type client struct {
 	stop         chan struct{}  // Closed to request that workers stop
 	workers      sync.WaitGroup // used to wait for workers to complete (ping, keepalive, errwatch, resume)
 	commsStopped chan struct{}  // closed when the comms routines have stopped (kept running until after workers have closed to avoid deadlocks)
+
+	backoff *backoffController
 }
 
 // NewClient will create an MQTT v3.1.1 client with all of the options specified
@@ -169,6 +171,7 @@ func NewClient(o *ClientOptions) Client {
 	c.msgRouter.setDefaultHandler(c.options.DefaultPublishHandler)
 	c.obound = make(chan *PacketAndToken)
 	c.oboundP = make(chan *PacketAndToken)
+	c.backoff = newBackoffController()
 	return c
 }
 
@@ -255,12 +258,15 @@ func (c *client) Connect() Token {
 			return
 		}
 
+		var attemptCount int
+
 	RETRYCONN:
 		var conn net.Conn
 		var rc byte
 		var err error
-		conn, rc, t.sessionPresent, err = c.attemptConnection()
+		conn, rc, t.sessionPresent, err = c.attemptConnection(false, attemptCount)
 		if err != nil {
+			attemptCount++
 			if c.options.ConnectRetry {
 				DEBUG.Println(CLI, "Connect failed, sleeping for", int(c.options.ConnectRetryInterval.Seconds()), "seconds and will then retry, error:", err.Error())
 				time.Sleep(c.options.ConnectRetryInterval)
@@ -302,28 +308,29 @@ func (c *client) Connect() Token {
 func (c *client) reconnect(connectionUp connCompletedFn) {
 	DEBUG.Println(CLI, "enter reconnect")
 	var (
-		sleep = 1 * time.Second
-		conn  net.Conn
+		initSleep = 1 * time.Second
+		conn      net.Conn
 	)
 
+	// If the reason of connection lost is same as the before one, sleep timer is set before attempting connection is started.
+	// Sleep time is exponentially increased as the same situation continues
+	if slp, isContinual := c.backoff.sleepWithBackoff("connectionLost", initSleep, c.options.MaxReconnectInterval, 3*time.Second, true); isContinual {
+		DEBUG.Println(CLI, "Detect continual connection lost after reconnect, slept for", int(slp.Seconds()), "seconds")
+	}
+
+	var attemptCount int
 	for {
 		if nil != c.options.OnReconnecting {
 			c.options.OnReconnecting(c, &c.options)
 		}
 		var err error
-		conn, _, _, err = c.attemptConnection()
+		conn, _, _, err = c.attemptConnection(true, attemptCount)
 		if err == nil {
 			break
 		}
-		DEBUG.Println(CLI, "Reconnect failed, sleeping for", int(sleep.Seconds()), "seconds:", err)
-		time.Sleep(sleep)
-		if sleep < c.options.MaxReconnectInterval {
-			sleep *= 2
-		}
-
-		if sleep > c.options.MaxReconnectInterval {
-			sleep = c.options.MaxReconnectInterval
-		}
+		attemptCount++
+		sleep, _ := c.backoff.sleepWithBackoff("attemptReconnection", initSleep, c.options.MaxReconnectInterval, c.options.ConnectTimeout, false)
+		DEBUG.Println(CLI, "Reconnect failed, slept for", int(sleep.Seconds()), "seconds:", err)
 
 		if c.status.ConnectionStatus() != reconnecting { // Disconnect may have been called
 			if err := connectionUp(false); err != nil { // Should always return an error
@@ -349,7 +356,7 @@ func (c *client) reconnect(connectionUp connCompletedFn) {
 // byte - Return code (packets.Accepted indicates a successful connection).
 // bool - SessionPresent flag from the connect ack (only valid if packets.Accepted)
 // err - Error (err != nil guarantees that conn has been set to active connection).
-func (c *client) attemptConnection() (net.Conn, byte, bool, error) {
+func (c *client) attemptConnection(isReconnect bool, attempt int) (net.Conn, byte, bool, error) {
 	protocolVersion := c.options.ProtocolVersion
 	var (
 		sessionPresent bool
@@ -357,6 +364,10 @@ func (c *client) attemptConnection() (net.Conn, byte, bool, error) {
 		err            error
 		rc             byte
 	)
+
+	if c.options.OnConnectionNotification != nil {
+		c.options.OnConnectionNotification(c, ConnectionNotificationConnecting{isReconnect, attempt})
+	}
 
 	c.optionsMu.Lock() // Protect c.options.Servers so that servers can be added in test cases
 	brokers := c.options.Servers
@@ -369,6 +380,9 @@ func (c *client) attemptConnection() (net.Conn, byte, bool, error) {
 		if c.options.OnConnectAttempt != nil {
 			DEBUG.Println(CLI, "using custom onConnectAttempt handler...")
 			tlsCfg = c.options.OnConnectAttempt(broker, c.options.TLSConfig)
+		}
+		if c.options.OnConnectionNotification != nil {
+			c.options.OnConnectionNotification(c, ConnectionNotificationBroker{broker})
 		}
 		connDeadline := time.Now().Add(c.options.ConnectTimeout) // Time by which connection must be established
 		dialer := c.options.Dialer
@@ -386,6 +400,9 @@ func (c *client) attemptConnection() (net.Conn, byte, bool, error) {
 			ERROR.Println(CLI, err.Error())
 			WARN.Println(CLI, "failed to connect to broker, trying next")
 			rc = packets.ErrNetworkError
+			if c.options.OnConnectionNotification != nil {
+				c.options.OnConnectionNotification(c, ConnectionNotificationBrokerFailed{broker, err})
+			}
 			continue
 		}
 		DEBUG.Println(CLI, "socket connected to broker")
@@ -425,8 +442,11 @@ func (c *client) attemptConnection() (net.Conn, byte, bool, error) {
 		if rc != packets.ErrNetworkError { // mqtt error
 			err = packets.ConnErrors[rc]
 		} else { // network error (if this occurred in ConnectMQTT then err will be nil)
-			err = fmt.Errorf("%s : %s", packets.ConnErrors[rc], err)
+			err = fmt.Errorf("%w : %w", packets.ConnErrors[rc], err)
 		}
+	}
+	if err != nil && c.options.OnConnectionNotification != nil {
+		c.options.OnConnectionNotification(c, ConnectionNotificationFailed{err})
 	}
 	return conn, rc, sessionPresent, err
 }
@@ -562,6 +582,9 @@ func (c *client) internalConnLost(whyConnLost error) {
 		if c.options.OnConnectionLost != nil {
 			go c.options.OnConnectionLost(c, whyConnLost)
 		}
+		if c.options.OnConnectionNotification != nil {
+			go c.options.OnConnectionNotification(c, ConnectionNotificationLost{whyConnLost})
+		}
 		DEBUG.Println(CLI, "internalConnLost complete")
 	}()
 }
@@ -599,20 +622,20 @@ func (c *client) startCommsWorkers(conn net.Conn, connectionUp connCompletedFn, 
 	c.workers.Add(1) // Done will be called when ackOut is closed
 	ackOut := c.msgRouter.matchAndDispatch(incomingPubChan, c.options.Order, c)
 
-	// The connection is now ready for use (we spin up a few go routines below). It is possible that
-	// Disconnect has been called in the interim...
+	// The connection is now ready for use (we spin up a few go routines below).
+	// It is possible that Disconnect has been called in the interim...
+	// issue 675：we will allow the connection to complete before the Disconnect is allowed to proceed
+	//   as if a Disconnect event occurred immediately after connectionUp(true) completed.
 	if err := connectionUp(true); err != nil {
-		DEBUG.Println(CLI, err)
-		close(c.stop) // Tidy up anything we have already started
-		close(incomingPubChan)
-		c.workers.Wait()
-		c.conn.Close()
-		c.conn = nil
-		return false
+		ERROR.Println(CLI, err)
 	}
+
 	DEBUG.Println(CLI, "client is connected/reconnected")
 	if c.options.OnConnect != nil {
 		go c.options.OnConnect(c)
+	}
+	if c.options.OnConnectionNotification != nil {
+		go c.options.OnConnectionNotification(c, ConnectionNotificationConnected{})
 	}
 
 	// c.oboundP and c.obound need to stay active for the life of the client because, depending upon the options,
@@ -797,9 +820,13 @@ func (c *client) Publish(topic string, qos byte, retained bool, payload interfac
 		if publishWaitTimeout == 0 {
 			publishWaitTimeout = time.Second * 30
 		}
+
+		t := time.NewTimer(publishWaitTimeout)
+		defer t.Stop()
+
 		select {
 		case c.obound <- &PacketAndToken{p: pub, t: token}:
-		case <-time.After(publishWaitTimeout):
+		case <-t.C:
 			token.setError(errors.New("publish was broken by timeout"))
 		}
 	}

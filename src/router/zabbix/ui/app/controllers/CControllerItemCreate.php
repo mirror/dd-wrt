@@ -119,8 +119,11 @@ class CControllerItemCreate extends CControllerItem {
 			'url' => ['db items.url', 'required', 'not_empty', 'when' => ['type', 'in' => [ITEM_TYPE_HTTPAGENT]]],
 			'query_fields' => ['objects',
 				'fields' => [
-					'name' => ['string', 'required', 'not_empty', 'length' => 255],
 					'value' => ['string', 'length' => 255],
+					'name' => [
+						['string', 'required', 'length' => 255],
+						['string', 'required', 'length' => 255, 'not_empty', 'when' => ['value', 'not_empty']]
+					],
 					'sortorder' => ['integer']
 				],
 				'when' => ['type', 'in' => [ITEM_TYPE_HTTPAGENT]]
@@ -167,14 +170,17 @@ class CControllerItemCreate extends CControllerItem {
 			],
 			'headers' => ['objects',
 				'fields' => [
-					'name' => ['string', 'required', 'not_empty', 'length' => 255],
-					'value' => ['string', 'length' => 2000]
+					'value' => ['string', 'length' => 2000],
+					'name' => [
+						['string', 'required', 'length' => 255],
+						['string', 'required', 'length' => 255, 'not_empty', 'when' => ['value', 'not_empty']]
+					]
 				],
 				'when' => ['type', 'in' => [ITEM_TYPE_HTTPAGENT]]
 			],
 			'status_codes' => ['db items.status_codes',
 				'use' => [CRangesParser::class, ['usermacros' => true, 'with_minus' => true]],
-				'messages' => ['use' => _('Invalid range expression.')],
+				'messages' => ['use' => _('Invalid HTTP status code or range.')],
 				'when' => ['type', 'in' => [ITEM_TYPE_HTTPAGENT]]
 			],
 			'follow_redirects' => ['db items.follow_redirects',
@@ -273,20 +279,24 @@ class CControllerItemCreate extends CControllerItem {
 			],
 			'delay_flex' => ['objects', 'fields' => [
 				'type' => ['integer', 'in' => [ITEM_DELAY_FLEXIBLE, ITEM_DELAY_SCHEDULING]],
-				'schedule' => ['string', 'required', 'not_empty',
+				'schedule' => ['string', 'required',
 					'use' => [CSchedulingIntervalParser::class, ['usermacros' => true]],
 					'messages' => ['use' => _('Invalid interval.')],
 					'when' => ['type', 'in' => [ITEM_DELAY_SCHEDULING]]
 				],
-				'delay' => ['string', 'required', 'not_empty',
+				'delay' => ['string', 'required',
 					'use' => [CSimpleIntervalParser::class, ['usermacros' => true]],
 					'messages' => ['use' => _('Invalid interval.')],
 					'when' => ['type', 'in' => [ITEM_DELAY_FLEXIBLE]]
 				],
-				'period' => ['string', 'required', 'not_empty',
-					'use' => [CTimePeriodParser::class, ['usermacros' => true]],
-					'messages' => ['use' => _('Invalid period.')],
-					'when' => ['type', 'in' => [ITEM_DELAY_FLEXIBLE]]
+				'period' => [
+					[
+						'string', 'required',
+						'use' => [CTimePeriodParser::class, ['usermacros' => true]],
+						'messages' => ['use' => _('Invalid period.')],
+						'when' => ['type', 'in' => [ITEM_DELAY_FLEXIBLE]]
+					],
+					['string', 'required', 'not_empty', 'when' => ['delay', 'not_empty']]
 				]
 			]],
 			'delay' => [
