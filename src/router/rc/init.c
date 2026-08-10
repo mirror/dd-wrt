@@ -361,8 +361,8 @@ static int fatal_signals[] = {
 void fatal_signal(int sig)
 {
 	dd_loginfo("init", "%s....................................", strsignal(sig));
-	eval("emergency_reboot");
 	shutdown_system();
+	eval("emergency_reboot");
 	eval("sync");
 	sysprintf("echo 3 > /proc/sys/vm/drop_caches");
 
