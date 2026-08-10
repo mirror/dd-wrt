@@ -33,6 +33,22 @@ int statedir_file(char *dst, int dlen, char *file, char *deffile) {
   return 0;
 }
 
+int uam_random_challenge(uint8_t *dst, size_t len) {
+  FILE *f;
+
+  if ((f = fopen("/dev/urandom", "r")) == NULL) {
+    syslog(LOG_ERR, "%s: fopen(/dev/urandom): %s", __FUNCTION__, strerror(errno));
+    return -1;
+  }
+  if (fread(dst, 1, len, f) != len) {
+    syslog(LOG_ERR, "%s: fread(/dev/urandom)", __FUNCTION__);
+    fclose(f);
+    return -1;
+  }
+  fclose(f);
+  return 0;
+}
+
 int bblk_fromfd(bstring s, int fd, int len) {
   int blen = len > 0 ? len : 128;
   int rd, rlen=0;

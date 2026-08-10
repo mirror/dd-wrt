@@ -289,7 +289,7 @@ option "forcedns1port"   - "Force all DNS to a specific port" int default="0" no
 option "forcedns2"   - "Force all secondary DNS to a specific address" string no 
 option "forcedns2port"   - "Force all secondary DNS to a specific port" int default="0" no 
 
-option "captiveportalapi_uri" - "DHCP Captive Portal API URI (RFC 8910). Use HTTPS and valid certificate. Default Coova API: https://<my_domain><:my_uamuiport>/captive-portal-identification." string no
+option "captiveportalapi_uri" - "DHCP Captive Portal API URI (RFC 8910/8908). HTTPS recommended. Optional per-client placeholders: %{m} MAC, %{M} MAC hex, %{i} client IPv4, %{n} NAS-ID (URL-encoded), %{s} Chilli session id (RADIUS Acct-Session-Id), %{t} imestamp (seconds since Unix epoch) indicating when the API URL was assigned to the client in the DHCP lease. Expanded URI must be <=255 bytes (DHCPv4). Only %{...} sequences are expanded; %XX stays as-is." string no
 option "captiveportalvenue_info_url"  - "Venue info URL (RFC 8908)" string no
 
 option "ipv6" - "Enable IPv6 support" flag off

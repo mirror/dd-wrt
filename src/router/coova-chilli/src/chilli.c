@@ -7123,6 +7123,73 @@ int chilli_io(int fd_ctrl_r, int fd_ctrl_w, int fd_pkt_r, int fd_pkt_w) {
 #endif
 
 #ifdef USING_IPC_UNIX
+static int uam_ensure_challenge_reply(int sock, struct redir_msg_t *msg) {
+  struct ippoolm_t *ipm;
+  struct app_conn_t *appconn = NULL;
+  struct redir_conn_t outconn;
+  long req = msg->mtype;
+  int policy = (int)(req - REDIR_MSG_ENSURE_CHALLENGE_PRELOGIN);
+  time_t timenow = mainclock_now();
+  int need = 0;
+
+  if (req < REDIR_MSG_ENSURE_CHALLENGE_PRELOGIN ||
+      req > REDIR_MSG_ENSURE_CHALLENGE_ALWAYS)
+    return -1;
+
+#if defined(HAVE_NETFILTER_QUEUE) || defined(HAVE_NETFILTER_COOVA)
+  if (_options.uamlisten.s_addr != _options.dhcplisten.s_addr) {
+    msg->mdata.address.sin_addr.s_addr =
+        msg->mdata.address.sin_addr.s_addr & ~(_options.mask.s_addr);
+    msg->mdata.address.sin_addr.s_addr |=
+        _options.dhcplisten.s_addr & _options.mask.s_addr;
+  }
+#endif
+
+  if (ippool_getip(ippool, &ipm, &msg->mdata.address.sin_addr))
+    return -1;
+
+  if ((appconn = (struct app_conn_t *)ipm->peer) == NULL ||
+      appconn->dnlink == NULL)
+    return -1;
+
+  switch (policy) {
+  case 0:
+    need = !appconn->s_state.uamtime ||
+      (_options.challengetimeout &&
+       (appconn->s_state.uamtime + _options.challengetimeout) < timenow);
+    break;
+  case 1:
+    need = _options.challengetimeout &&
+      (appconn->s_state.uamtime + _options.challengetimeout) < timenow;
+    break;
+  case 2:
+    need = _options.challengetimeout2 &&
+      (appconn->s_state.uamtime + _options.challengetimeout2) < timenow;
+    break;
+  case 3:
+    need = 1;
+    break;
+  default:
+    return -1;
+  }
+
+  if (!_options.nochallenge && need) {
+    if (uam_random_challenge(appconn->s_state.redir.uamchal, REDIR_MD5LEN))
+      return -1;
+    appconn->s_state.uamtime = mainclock.tv_sec;
+    appconn->uamabort = 0;
+  }
+
+  memset(&outconn, 0, sizeof(outconn));
+  if (cb_redir_getstate(redir, &msg->mdata.address, &msg->mdata.baddress,
+                        &outconn) == -1)
+    return -1;
+
+  if (safe_write(sock, &outconn, sizeof(outconn)) != (ssize_t)sizeof(outconn))
+    return -1;
+  return 0;
+}
+
 int static redir_msg(struct redir_t *this) {
   struct redir_msg_t msg;
   struct sockaddr_un remote;
@@ -7142,6 +7209,10 @@ int static redir_msg(struct redir_t *this) {
 	    syslog(LOG_ERR, "%s: redir_msg writing", strerror(errno));
 	  }
 	}
+      } else if (msg.mtype >= REDIR_MSG_ENSURE_CHALLENGE_PRELOGIN &&
+		 msg.mtype <= REDIR_MSG_ENSURE_CHALLENGE_ALWAYS) {
+	if (uam_ensure_challenge_reply(socket, &msg) < 0 && _options.debug)
+	  syslog(LOG_DEBUG, "%s: ensure challenge reply failed", __FUNCTION__);
       } else {
 	uam_msg(&msg);
       }

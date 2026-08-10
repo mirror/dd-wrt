@@ -82,7 +82,7 @@ struct coova_table {
 	unsigned int		refcnt;
 	unsigned int		entries;
 	struct list_head	lru_list;
-	struct list_head	iphash[0];
+	struct list_head	iphash[];
 };
 
 static LIST_HEAD(tables);
@@ -320,7 +320,7 @@ static int coova_mt_check(const struct xt_mtchk_param *par)
 		goto out;
 	}
 
-	t = kzalloc(sizeof(*t) + sizeof(t->iphash[0]) * ip_list_hash_size,
+	t = kzalloc(sizeof(*t) + sizeof(struct list_head) * ip_list_hash_size,
 		    GFP_KERNEL);
 	if (t == NULL) {
 		ret = -ENOMEM;

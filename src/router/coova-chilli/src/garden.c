@@ -23,7 +23,7 @@
 #ifdef HAVE_PATRICIA
 struct node_pass_through_list {
   uint32_t ptcnt;
-  pass_through ptlist[1];
+  pass_through ptlist[];
 };
 #endif
 
@@ -468,9 +468,9 @@ int pass_throughs_from_string(pass_through *ptlist, uint32_t ptlen,
 			      ) {
   struct hostent *host;
   pass_through pt;
-  char *t  = NULL, 
-       *p1 = NULL, 
-       *p2 = NULL, 
+  char *t  = NULL,
+       *p1 = NULL,
+       *p2 = NULL,
        *p3 = NULL;
 
   if (!s || strlen(s) == 0)

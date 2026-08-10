@@ -322,7 +322,7 @@ struct options_t {
   uint32_t ipsrc_num_pass_throughs;
 #endif
 
-  char* captiveportalapi_uri; /* RFC 8910 Captive Portal API URI, nullptr if not used. */
+  char* captiveportalapi_uri; /* RFC 8910 API URI template; optional %{m},%{M},%{i},%{n},%{s},%{t} per client (RFC 8908). */
 
   char* captiveportalvenue_info_url; /* RFC 8908 Captive Portal Venue Information URL, nullptr if not used. */
 

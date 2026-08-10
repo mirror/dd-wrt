@@ -721,8 +721,11 @@ int mopt_main(int argc, char **argv) {
   syslog(LOG_DEBUG, "UAM Listen: %s", inet_ntoa(_options.uamlisten));
 
   if (args_info.captiveportalapi_uri_given) {
+    /* RFC 8910: DHCPv4 option 114 carries the URI in one length octet => max 255 octets.
+     * Reject longer templates here (static URI = sent as-is). Expansion in dhcp.c also
+     * enforces <=255 on the value placed in the option. */
     if (strlen(args_info.captiveportalapi_uri_arg) > 255) {
-      syslog(LOG_ERR, "Captive portal URI is too long for DHCP option.");
+      syslog(LOG_ERR, "Captive portal URI is too long for DHCP option (max 255 octets).");
       if (!args_info.forgiving_flag) {
 	      goto end_processing;
       }

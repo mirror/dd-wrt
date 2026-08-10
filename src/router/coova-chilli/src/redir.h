@@ -284,6 +284,11 @@ struct redir_msg_t {
 } __attribute__((packed));
 
 #define REDIR_MSG_STATUS_TYPE 1000
+/* RPC: daemon generates/refreshes UAM challenge (serialized, no lock files) */
+#define REDIR_MSG_ENSURE_CHALLENGE_PRELOGIN  1001
+#define REDIR_MSG_ENSURE_CHALLENGE_STATUS    1002
+#define REDIR_MSG_ENSURE_CHALLENGE_LOGIN2   1003
+#define REDIR_MSG_ENSURE_CHALLENGE_ALWAYS    1004
 
 int redir_md_param(bstring str, char *secret, char *amp);
 

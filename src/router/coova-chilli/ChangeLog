@@ -1,3 +1,9 @@
+== ChangeLog (CoovaChilli-v1.9) ==
+* xt_coova: kzalloc: use struct_size (#608)
+* Fix UAM challenge race by issuing challenges in the main daemon (#609)
+* RFC8910/RFC8908 per device API URL #607 (#610)
+* Add API URI (RFC 8910/8908) per-client placeholders ${t} (#611)
+
 == ChangeLog (CoovaChilli-v1.8) ==
 * RFC8910 - Captive Portal Identification (#593)
 * rename cyassl to wolfssl (#599)

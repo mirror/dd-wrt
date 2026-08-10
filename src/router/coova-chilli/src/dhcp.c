@@ -3092,6 +3092,151 @@ dhcp_create_pkt(uint8_t type, uint8_t *pack, uint8_t *req,
  * Search a DHCP packet for a particular tag.
  * Returns -1 if not found.
  **/
+/* RFC 8910: DHCP option 114 length is one byte => URI max 255 octets after expansion.
+ * Placeholders: %{m} MAC aa:bb:cc:dd:ee:ff, %{M} MAC AABBCCDDEEFF (path-safe),
+ * %{i} client IPv4, %{n} radius NAS-Identifier (application/x-www-form-urlencoded),
+ * %{s} Chilli session id (s_state.sessionid, same as RADIUS Acct-Session-Id when set). */
+#define DHCP_CAPPORT_URI_MAX 255
+
+static const char *
+dhcp_capport_sessionid(struct dhcp_conn_t *conn) {
+  struct app_conn_t *appconn = (struct app_conn_t *) conn->peer;
+  if (appconn && appconn->s_state.sessionid[0])
+    return appconn->s_state.sessionid;
+  return "";
+}
+
+static int dhcp_expand_captiveportal_uri(struct dhcp_conn_t *conn,
+					 char *out, size_t outsz) {
+  const char *s;
+  char *d;
+  char *dend;
+
+  if (!outsz)
+    return -1;
+  s = _options.captiveportalapi_uri;
+  d = out;
+  dend = out + outsz - 1;
+
+  for (; *s && d < dend; ) {
+    if (s[0] == '%' && s[1] == '{') {
+      const char *close = strchr(s + 2, '}');
+      size_t tlen;
+      char macm[18];
+      char macM[13];
+      char ipbuf[16]; /* IPv4 dotted-quad + nul */
+      bstring btn;
+      bstring btenc;
+
+      if (!close || close >= s + 2 + 64) {
+	*d++ = *s++;
+	continue;
+      }
+      tlen = (size_t)(close - (s + 2));
+      if (tlen == 1) {
+	switch (s[2]) {
+	case 'm':
+	  snprintf(macm, sizeof(macm), "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x",
+		     conn->hismac[0], conn->hismac[1], conn->hismac[2],
+		     conn->hismac[3], conn->hismac[4], conn->hismac[5]);
+	  {
+	    size_t l = strlen(macm);
+	    if ((size_t)(dend - d) < l)
+	      return -1;
+	    memcpy(d, macm, l);
+	    d += l;
+	  }
+	  break;
+	case 'M':
+	  snprintf(macM, sizeof(macM), "%.2X%.2X%.2X%.2X%.2X%.2X",
+		     conn->hismac[0], conn->hismac[1], conn->hismac[2],
+		     conn->hismac[3], conn->hismac[4], conn->hismac[5]);
+	  {
+	    size_t l = strlen(macM);
+	    if ((size_t)(dend - d) < l)
+	      return -1;
+	    memcpy(d, macM, l);
+	    d += l;
+	  }
+	  break;
+	case 'i':
+	  if (!inet_ntop(AF_INET, &conn->hisip, ipbuf, sizeof(ipbuf)))
+	    return -1;
+	  {
+	    size_t l = strlen(ipbuf);
+	    if ((size_t)(dend - d) < l)
+	      return -1;
+	    memcpy(d, ipbuf, l);
+	    d += l;
+	  }
+	  break;
+	case 'n':
+	  btn = bfromcstr(_options.radiusnasid ? _options.radiusnasid : "");
+	  btenc = bfromcstralloc(DHCP_CAPPORT_URI_MAX + 1, "");
+	  if (!btn || !btenc) {
+	    if (btn) bdestroy(btn);
+	    if (btenc) bdestroy(btenc);
+	    return -1;
+	  }
+	  redir_urlencode(btn, btenc);
+	  {
+	    size_t l = (size_t) btenc->slen;
+	    if ((size_t)(dend - d) < l) {
+	      bdestroy(btn);
+	      bdestroy(btenc);
+	      return -1;
+	    }
+	    memcpy(d, btenc->data, l);
+	    d += l;
+	  }
+	  bdestroy(btn);
+	  bdestroy(btenc);
+	  break;
+	case 's':
+	  {
+	    const char *sid = dhcp_capport_sessionid(conn);
+	    size_t l = strlen(sid);
+	    if ((size_t)(dend - d) < l)
+	      return -1;
+	    memcpy(d, sid, l);
+	    d += l;
+	  }
+	  break;
+	case 't':
+	  {
+	    time_t time_now = time(NULL);
+	    char time_now_string[32];
+	    snprintf(time_now_string, sizeof(time_now_string), "%ld", (long)time_now);
+	    memcpy(d, time_now_string, strlen(time_now_string));
+	    d += strlen(time_now_string);
+	  }
+	  break;
+	default:
+	  /* unknown %{x}: copy verbatim */
+	  goto copy_verbatim;
+	}
+	s = close + 1;
+	continue;
+      }
+    copy_verbatim:
+      {
+	size_t chunk = (size_t)(close - s + 1);
+	if ((size_t)(dend - d) < chunk)
+	  return -1;
+	memcpy(d, s, chunk);
+	d += chunk;
+	s = close + 1;
+      }
+      continue;
+    }
+    *d++ = *s++;
+  }
+  *d = 0;
+  if ((size_t)(d - out) > DHCP_CAPPORT_URI_MAX)
+    return -1;
+  return 0;
+}
+
 int dhcp_gettag(struct dhcp_packet_t *pack, size_t length,
 		struct dhcp_tag_t **tag, uint8_t tagtype) {
   struct dhcp_tag_t *t;
@@ -3208,12 +3353,20 @@ static int dhcp_accept_opt(struct dhcp_conn_t *conn, uint8_t *o, int pos) {
 #endif
 
   if (_options.captiveportalapi_uri) {
-    o[pos++] = DHCP_OPTION_CAPTIVE_PORTAL_URI;
-    o[pos++] = strlen(_options.captiveportalapi_uri);
-    memcpy(&o[pos], _options.captiveportalapi_uri, strlen(_options.captiveportalapi_uri));
-    pos += strlen(_options.captiveportalapi_uri);
-    if (_options.debug)
-      syslog(LOG_DEBUG, "%s(%d): DHCP Captive Portal API URI %s\n", __FUNCTION__, __LINE__, _options.captiveportalapi_uri);
+    char capuri[DHCP_CAPPORT_URI_MAX + 1];
+
+    if (dhcp_expand_captiveportal_uri(conn, capuri, sizeof(capuri)) == 0) {
+      size_t ulen = strlen(capuri);
+      o[pos++] = DHCP_OPTION_CAPTIVE_PORTAL_URI;
+      o[pos++] = (uint8_t) ulen;
+      memcpy(&o[pos], capuri, ulen);
+      pos += ulen;
+      if (_options.debug)
+	syslog(LOG_DEBUG, "%s(%d): DHCP Captive Portal API URI %s\n", __FUNCTION__, __LINE__, capuri);
+    } else {
+      syslog(LOG_ERR, "%s(%d): Captive Portal API URI too long or invalid after template expansion (max %d)\n",
+	     __FUNCTION__, __LINE__, DHCP_CAPPORT_URI_MAX);
+    }
   }
 
   o[pos++] = DHCP_OPTION_END;

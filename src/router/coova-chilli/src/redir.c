@@ -3329,6 +3329,72 @@ int redir_send_msg(struct redir_t *this, struct redir_msg_t *msg) {
   safe_close(s);
   return 0;
 }
+
+/*
+ * Ask the main chilli daemon to create or reuse the UAM challenge for this
+ * subscriber (serialized in the daemon).  Replies with a full redir_conn_t
+ * snapshot like REDIR_MSG_STATUS_TYPE.
+ */
+static int redir_ensure_challenge_rpc(struct redir_t *this,
+				      struct sockaddr_in *address,
+				      struct sockaddr_in *baddress,
+				      struct redir_conn_t *conn,
+				      long mtype_req) {
+  struct redir_msg_t msg;
+  struct sockaddr_un remote;
+  size_t len = sizeof(remote);
+  int s;
+  char filedest[512];
+
+  (void)this;
+
+  memset(&msg, 0, sizeof(msg));
+  msg.mtype = mtype_req;
+  memcpy(&msg.mdata.address, address, sizeof(*address));
+  memcpy(&msg.mdata.baddress, baddress, sizeof(*baddress));
+
+  statedir_file(filedest, sizeof(filedest), _options.unixipc, "chilli.ipc");
+
+  if ((s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+    syslog(LOG_ERR, "%s: socket()", __FUNCTION__);
+    return -1;
+  }
+
+  memset(&remote, 0, sizeof(remote));
+  remote.sun_family = AF_UNIX;
+  strlcpy(remote.sun_path, filedest, sizeof(remote.sun_path));
+
+#if defined (__FreeBSD__)  || defined (__APPLE__) || defined (__OpenBSD__) || defined (__NetBSD__)
+  remote.sun_len = strlen(remote.sun_path) + 1;
+#endif
+
+  len = offsetof(struct sockaddr_un, sun_path) + strlen(remote.sun_path);
+
+  if (safe_connect(s, (struct sockaddr *)&remote, len) == -1) {
+    syslog(LOG_ERR, "%s: could not connect to %s", strerror(errno),
+	   remote.sun_path);
+    safe_close(s);
+    return -1;
+  }
+
+  if (safe_write(s, &msg, sizeof(msg)) != sizeof(msg)) {
+    syslog(LOG_ERR, "%s: could not write to %s", strerror(errno),
+	   remote.sun_path);
+    safe_close(s);
+    return -1;
+  }
+
+  if (safe_read(s, conn, sizeof(*conn)) != sizeof(*conn)) {
+    syslog(LOG_ERR, "%s: short read from %s", strerror(errno),
+	   remote.sun_path);
+    safe_close(s);
+    return -1;
+  }
+
+  shutdown(s, 2);
+  safe_close(s);
+  return 0;
+}
 #endif
 
 pid_t redir_fork(int in, int out) {
@@ -3463,6 +3529,25 @@ int redir_main(struct redir_t *redir,
            strerror(errno), redir->msgid, msg.mtype, (int)sizeof(msg.mdata)); \
     return redir_main_exit(&socket, forked, rreq);                      \
   }
+#endif
+
+#ifdef USING_IPC_UNIX
+#define redir_uam_challenge_via_daemon(pol)				\
+  do {									\
+    if (redir_ensure_challenge_rpc(redir, address, baddress, &conn,	\
+				   (pol)) < 0)				\
+      return redir_main_exit(&socket, forked, rreq);			\
+    redir_chartohex(conn.s_state.redir.uamchal, hexchal, REDIR_MD5LEN); \
+    msg.mtype = REDIR_CHALLENGE;					\
+    redir_msg_send(REDIR_MSG_OPT_REDIR);				\
+  } while (0)
+#else
+#define redir_uam_challenge_via_daemon(pol)				\
+  do {									\
+    (void)(pol);							\
+    redir_memcopy(REDIR_CHALLENGE);					\
+    redir_msg_send(REDIR_MSG_OPT_REDIR);				\
+  } while (0)
 #endif
 
   /*
@@ -3997,18 +4082,33 @@ int redir_main(struct redir_t *redir,
       if (_options.challengetimeout2 &&
           (conn.s_state.uamtime + _options.challengetimeout2) <
           mainclock_now()) {
+        int still_bad = 1;
+
         if (_options.debug)
           syslog(LOG_DEBUG, "%s(%d): redir_accept: challenge expired: %ld : %ld", __FUNCTION__, __LINE__,
                  (long) conn.s_state.uamtime, (long) mainclock_now());
 
-        redir_memcopy(REDIR_CHALLENGE);
-        redir_msg_send(REDIR_MSG_OPT_REDIR);
+#ifdef USING_IPC_UNIX
+        {
+          int _r = redir_ensure_challenge_rpc(redir, address, baddress, &conn,
+					      REDIR_MSG_ENSURE_CHALLENGE_LOGIN2);
+          if (_r < 0)
+            return redir_main_exit(&socket, forked, rreq);
+          if ((conn.s_state.uamtime + _options.challengetimeout2) >= mainclock_now())
+            still_bad = 0;
+        }
+#endif
 
-        redir_reply(redir, &socket, &conn, REDIR_FAILED_OTHER, NULL,
-                    0, hexchal, NULL, NULL, NULL,
-                    0, conn.hismac, &conn.hisip, httpreq.qs);
+        if (still_bad) {
+          redir_memcopy(REDIR_CHALLENGE);
+          redir_msg_send(REDIR_MSG_OPT_REDIR);
 
-        return redir_main_exit(&socket, forked, rreq);
+          redir_reply(redir, &socket, &conn, REDIR_FAILED_OTHER, NULL,
+                      0, hexchal, NULL, NULL, NULL,
+                      0, conn.hismac, &conn.hisip, httpreq.qs);
+
+          return redir_main_exit(&socket, forked, rreq);
+        }
       }
 
       if (is_local_user(redir, &conn)) {
@@ -4109,7 +4209,15 @@ int redir_main(struct redir_t *redir,
 
         if (!hasnexturl) {
           if (_options.challengetimeout) {
+#ifdef USING_IPC_UNIX
+            if (redir_ensure_challenge_rpc(redir, address, baddress, &conn,
+					   REDIR_MSG_ENSURE_CHALLENGE_ALWAYS) < 0)
+              return redir_main_exit(&socket, forked, rreq);
+            redir_chartohex(conn.s_state.redir.uamchal, hexchal, REDIR_MD5LEN);
+            msg.mtype = REDIR_CHALLENGE;
+#else
             redir_memcopy(REDIR_CHALLENGE);
+#endif
 	  }
         } else {
           msg.mtype = REDIR_NOTYET;
@@ -4158,8 +4266,7 @@ int redir_main(struct redir_t *redir,
           (_options.challengetimeout &&
            (conn.s_state.uamtime + _options.challengetimeout) <
            mainclock_now())) {
-        redir_memcopy(REDIR_CHALLENGE);
-        redir_msg_send(REDIR_MSG_OPT_REDIR);
+        redir_uam_challenge_via_daemon(REDIR_MSG_ENSURE_CHALLENGE_PRELOGIN);
       }
 
       if (state == 1) {
@@ -4209,8 +4316,7 @@ int redir_main(struct redir_t *redir,
         /* Did the challenge expire? */
         if (_options.challengetimeout &&
             (conn.s_state.uamtime + _options.challengetimeout) < timenow) {
-          redir_memcopy(REDIR_CHALLENGE);
-          redir_msg_send(REDIR_MSG_OPT_REDIR);
+          redir_uam_challenge_via_daemon(REDIR_MSG_ENSURE_CHALLENGE_STATUS);
         }
 
         sessiontime = timenow - conn.s_state.start_time;
@@ -4391,8 +4497,7 @@ int redir_main(struct redir_t *redir,
   if (!conn.s_state.uamtime ||
       (_options.challengetimeout &&
        (conn.s_state.uamtime + _options.challengetimeout) < mainclock_now())) {
-    redir_memcopy(REDIR_CHALLENGE);
-    redir_msg_send(REDIR_MSG_OPT_REDIR);
+    redir_uam_challenge_via_daemon(REDIR_MSG_ENSURE_CHALLENGE_PRELOGIN);
   }
   else {
     redir_chartohex(conn.s_state.redir.uamchal, hexchal, REDIR_MD5LEN);

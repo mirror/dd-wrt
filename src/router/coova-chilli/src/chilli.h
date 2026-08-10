@@ -333,6 +333,7 @@ int runscript(struct app_conn_t *appconn, char* script,
 
 /* utils.c */
 int statedir_file(char *dst, int dlen, char *file, char *deffile);
+int uam_random_challenge(uint8_t *dst, size_t len);
 int bblk_fromfd(bstring s, int fd, int len);
 int bstring_fromfd(bstring s, int fd);
 #ifndef HAVE_GETLINE
