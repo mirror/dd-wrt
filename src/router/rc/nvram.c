@@ -117,7 +117,7 @@ static int nvram_main(int argc, char **argv)
 				puts(name);
 			int space;
 			size = nvram_used(&space);
-			fprintf(stdout, "size: %d bytes (%d total, %s left)\n", size, space, space - size);
+			fprintf(stdout, "size: %d bytes (%d total, %d left)\n", size, space, space - size);
 		} else if (!strncmp(*argv, "backup", 6)) {
 			if (*++argv) {
 				int ret = nvram_backup(*argv);
