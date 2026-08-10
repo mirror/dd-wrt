@@ -70,11 +70,14 @@ for i in etc bin lib usr/lib sbin proc dev sys usr/sbin usr/bin oldroot
 do
 	mkdir -p ${R}/$i
 done
-for i in /bin/busybox /bin/sh /bin/mount /bin/umount /bin/sync /bin/ls /bin/cat /bin/ps /bin/cp /bin/login /bin/mv /sbin/reboot \
-		/sbin/pivot_root /usr/sbin/chroot /bin/dd /bin/sleep /bin/echo /sbin/write /sbin/mtd /bin/init /sbin/hotplug2 \
-	/sbin/rc /sbin/hdparm /sbin/event /sbin/startservice /sbin/stopservice /sbin/service /sbin/servicemanager /sbin/write /sbin/ledtool \
-	/usr/sbin/httpd /sbin/service /usr/sbin/writetool /sbin/watchdog \
-	/usr/sbin/sdparm /usr/sbin/wpa_supplicant  /usr/sbin/hostapd  /usr/sbin/wpad /usr/bin/killall
+for i in /bin/busybox /bin/sh /bin/mount /bin/umount /bin/sync /bin/ls /bin/cat /usr/sbin/ubidetach /usr/sbin/ubiattach /usr/sbin/mount.ubifs \
+	/sbin/emergency_reboot /bin/login /usr/sbin/telnetd /bin/ps /bin/cp /bin/mv /sbin/reboot \
+	/sbin/pivot_root /usr/sbin/chroot /bin/dd /bin/df /sbin/get_lanip /bin/sleep /bin/echo /sbin/write /sbin/mtd /sbin/init /sbin/hotplug2 \
+	/sbin/rc /sbin/hdparm /sbin/event /sbin/startservice /sbin/stopservice /sbin/service /usr/sbin/fw_setenv  /usr/sbin/fw_printenv \
+	/usr/sbin/nvram /usr/sbin/ubiupdatevol  /usr/sbin/ubiformat /sbin/servicemanager /sbin/ledtool /sbin/ubootenv \
+	/usr/sbin/httpd /sbin/service /sbin/watchdog /usr/sbin/dropbearmulti /usr/sbin/dropbear /usr/bin/dbclient /usr/bin/dropbearconvert /usr/bin/dropbearkey \
+	/usr/bin/ssh /usr/bin/scp /sbin/syslogd /sbin/klogd \
+	/usr/sbin/sdparm /usr/sbin/wpa_supplicant /usr/sbin/hostapd /usr/sbin/wpad /usr/bin/killall
 do
 	cp -a $i $R/$i
 	copylibs $i $R
