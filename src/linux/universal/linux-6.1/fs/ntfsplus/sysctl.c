@@ -12,6 +12,7 @@
 
 #ifdef CONFIG_SYSCTL
 
+#include <linux/version.h>
 #include <linux/proc_fs.h>
 #include <linux/sysctl.h>
 
@@ -19,7 +20,11 @@
 #include "debug.h"
 
 /* Definition of the ntfs sysctl. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 13, 0)
 static const struct ctl_table ntfs_sysctls[] = {
+#else
+static struct ctl_table ntfs_sysctls[] = {
+#endif
 	{
 		.procname	= "ntfs-debug",
 		.data		= &debug_msgs,		/* Data pointer and size. */
