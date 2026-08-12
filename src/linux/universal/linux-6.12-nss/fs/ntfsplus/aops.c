@@ -15,6 +15,111 @@
 #include "debug.h"
 #include "iomap.h"
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
+static void ntfs_iomap_read_end_io(struct bio *bio)
+{
+	int error = blk_status_to_errno(bio->bi_status);
+	struct folio_iter iter;
+
+	bio_for_each_folio_all(iter, bio) {
+		struct folio *folio = iter.folio;
+		struct ntfs_inode *ni = NTFS_I(folio->mapping->host);
+		s64 init_size;
+		loff_t pos = folio_pos(folio);
+
+		init_size = ni->initialized_size;
+		if (pos + iter.offset < init_size &&
+		    pos + iter.offset + iter.length > init_size)
+			folio_zero_segment(folio, offset_in_folio(folio, init_size),
+					   iter.offset + iter.length);
+
+		iomap_finish_folio_read(folio, iter.offset, iter.length, error);
+	}
+	bio_put(bio);
+}
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 2, 0)
+static void ntfs_iomap_bio_submit_read(const struct iomap_iter *iter,
+		struct iomap_read_folio_ctx *ctx)
+{
+	iomap_bio_submit_read_endio(iter, ctx, ntfs_iomap_read_end_io);
+}
+#else
+static void ntfs_iomap_bio_submit_read(const struct iomap_iter *iter,
+		struct iomap_read_folio_ctx *ctx)
+{
+	struct bio *bio = ctx->read_ctx;
+
+	bio->bi_end_io = ntfs_iomap_read_end_io;
+	submit_bio(bio);
+}
+#endif
+
+static const struct iomap_read_ops ntfs_iomap_bio_read_ops = {
+	.read_folio_range	= iomap_bio_read_folio_range,
+	.submit_read		= ntfs_iomap_bio_submit_read,
+};
+#else
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
+static int ntfs_iomap_bio_read_folio_range(const struct iomap_iter *iter,
+		struct iomap_read_folio_ctx *ctx, size_t plen)
+{
+	struct folio *folio = ctx->cur_folio;
+	const struct iomap *iomap = &iter->iomap;
+	loff_t pos = iter->pos;
+	size_t poff = offset_in_folio(folio, pos);
+	loff_t length = iomap_length(iter);
+	sector_t sector;
+	struct bio *bio = ctx->read_ctx;
+
+	sector = iomap_sector(iomap, pos);
+	if (!bio || bio_end_sector(bio) != sector ||
+	    !bio_add_folio(bio, folio, plen, poff)) {
+		gfp_t gfp = mapping_gfp_constraint(folio->mapping, GFP_KERNEL);
+		gfp_t orig_gfp = gfp;
+		unsigned int nr_vecs = DIV_ROUND_UP(length, PAGE_SIZE);
+
+		if (bio)
+			submit_bio(bio);
+
+		if (ctx->rac) /* same as readahead_gfp_mask */
+			gfp |= __GFP_NORETRY | __GFP_NOWARN;
+		bio = bio_alloc(iomap->bdev, bio_max_segs(nr_vecs), REQ_OP_READ,
+				     gfp);
+		/*
+		 * If the bio_alloc fails, try it again for a single page to
+		 * avoid having to deal with partial page reads.  This emulates
+		 * what do_mpage_read_folio does.
+		 */
+		if (!bio)
+			bio = bio_alloc(iomap->bdev, 1, REQ_OP_READ, orig_gfp);
+		if (ctx->rac)
+			bio->bi_opf |= REQ_RAHEAD;
+		bio->bi_iter.bi_sector = sector;
+		bio->bi_end_io = ntfs_iomap_read_end_io;
+		bio_add_folio_nofail(bio, folio, plen, poff);
+		ctx->read_ctx = bio;
+	}
+	return 0;
+}
+
+static void ntfs_iomap_bio_submit_read(struct iomap_read_folio_ctx *ctx)
+{
+	struct bio *bio = ctx->read_ctx;
+
+	if (bio)
+		submit_bio(bio);
+}
+
+static const struct iomap_read_ops ntfs_iomap_bio_read_ops = {
+	.read_folio_range	= ntfs_iomap_bio_read_folio_range,
+	.submit_read		= ntfs_iomap_bio_submit_read,
+};
+#endif
+#endif
+
 /*
  * ntfs_read_folio - Read data for a folio from the device
  * @file:	open file to which the folio @folio belongs or NULL
@@ -40,6 +145,12 @@ static int ntfs_readpage(struct file *file, struct page *page)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 	struct ntfs_inode *ni = NTFS_I(folio->mapping->host);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
+	struct iomap_read_folio_ctx ctx = {
+		.cur_folio = folio,
+		.ops = &ntfs_iomap_bio_read_ops,
+	};
+#endif
 
 	/*
 	 * Only $DATA attributes can be encrypted and only unnamed $DATA
@@ -61,6 +172,8 @@ static int ntfs_readpage(struct file *file, struct page *page)
 		/* Compressed data streams are handled in compress.c. */
 		if (NInoNonResident(ni) && NInoCompressed(ni))
 			return ntfs_read_compressed_block(folio);
+		else if (NInoWofCompressed(ni))
+			return ntfs_read_wof_compressed_block(folio);
 	}
 #else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
@@ -112,18 +225,27 @@ static int ntfs_readpage(struct file *file, struct page *page)
 			BUG_ON(ni->type != AT_DATA);
 			BUG_ON(ni->name_len);
 			return ntfs_read_compressed_block(page);
+		} else if (NInoWofCompressed(ni)) {
+			BUG_ON(ni->type != AT_DATA);
+			BUG_ON(ni->name_len);
+			return ntfs_read_wof_compressed_block(page);
 		}
 	}
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 0, 0)
+	iomap_read_folio(&ntfs_read_iomap_ops, &ctx, NULL);
+	return 0;
+#else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
-	iomap_bio_read_folio(folio, &ntfs_read_iomap_ops);
+	iomap_read_folio(&ntfs_read_iomap_ops, &ctx);
 	return 0;
 #else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
 	return iomap_read_folio(folio, &ntfs_read_iomap_ops);
 #else
 	return iomap_readpage(page, &ntfs_read_iomap_ops);
+#endif
 #endif
 #endif
 }
@@ -339,18 +461,29 @@ static void ntfs_readahead(struct readahead_control *rac)
 	struct address_space *mapping = rac->mapping;
 	struct inode *inode = mapping->host;
 	struct ntfs_inode *ni = NTFS_I(inode);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
+	struct iomap_read_folio_ctx ctx = {
+		.ops = &ntfs_iomap_bio_read_ops,
+		.rac = rac,
+	};
+#endif
 
 	/*
 	 * Resident files are not cached in the page cache,
 	 * and readahead is not implemented for compressed files.
 	 */
-	if (!NInoNonResident(ni) || NInoCompressed(ni))
+	if (!NInoNonResident(ni) || NInoCompressed(ni) ||
+	    NInoWofCompressed(ni))
 		return;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 0, 0)
+	iomap_readahead(&ntfs_read_iomap_ops, &ctx, NULL);
+#else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
-	iomap_bio_readahead(rac, &ntfs_read_iomap_ops);
+	iomap_readahead(&ntfs_read_iomap_ops, &ctx);
 #else
 	iomap_readahead(rac, &ntfs_read_iomap_ops);
+#endif
 #endif
 }
 
@@ -368,6 +501,8 @@ static int ntfs_writepages(struct address_space *mapping,
 #else
 	struct iomap_writepage_ctx wpc = { };
 #endif
+	bool need_iput = false;
+	int ret;
 
 	if (NVolShutdown(ni->vol))
 		return -EIO;
@@ -384,11 +519,24 @@ static int ntfs_writepages(struct address_space *mapping,
 		return -EOPNOTSUPP;
 	}
 
+	/*
+	 * Prevent eviction in writeback to avoid deadlock in
+	 * ntfs_drop_big_inode().
+	 */
+	if ((ni->type == AT_DATA || ni->type == AT_INDEX_ALLOCATION) &&
+	    igrab(inode))
+		need_iput = true;
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
-	return iomap_writepages(&wpc);
+	ret = iomap_writepages(&wpc);
 #else
-	return iomap_writepages(mapping, wbc, &wpc, &ntfs_writeback_ops);
+	ret = iomap_writepages(mapping, wbc, &wpc, &ntfs_writeback_ops);
 #endif
+
+	if (need_iput)
+		iput(inode);
+
+	return ret;
 }
 
 static int ntfs_swap_activate(struct swap_info_struct *sis,
@@ -409,7 +557,9 @@ const struct address_space_operations ntfs_aops = {
 	.writepage		= ntfs_writepage,
 #endif
 	.writepages		= ntfs_writepages,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 5, 0)
 	.direct_IO		= noop_direct_IO,
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 	.dirty_folio		= iomap_dirty_folio,
 #else
