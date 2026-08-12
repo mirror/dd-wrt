@@ -61,11 +61,11 @@ static int ntfs_check_bad_windows_name(struct ntfs_volume *vol,
 				       const __le16 *wc,
 				       unsigned int wc_len)
 {
-	if (ntfs_check_bad_char(wc, wc_len))
-		return -EINVAL;
-
 	if (!NVolCheckWindowsNames(vol))
 		return 0;
+
+	if (ntfs_check_bad_char(wc, wc_len))
+		return -EINVAL;
 
 	/* Check for trailing space or dot. */
 	if (wc_len > 0 &&
@@ -230,9 +230,8 @@ static struct dentry *ntfs_lookup(struct inode *dir_ino, struct dentry *dent,
 	if (MREF_ERR(mref) == -ENOENT) {
 		ntfs_debug("Entry was not found, adding negative dentry.");
 		/* The dcache will handle negative entries. */
-		d_add(dent, NULL);
 		ntfs_debug("Done.");
-		return NULL;
+		return d_splice_alias(NULL, dent);
 	}
 	ntfs_error(vol->sb, "ntfs_lookup_ino_by_name() failed with error code %i.",
 			-MREF_ERR(mref));
@@ -274,7 +273,6 @@ handle_name:
 			}
 			do {
 				struct attr_record *a;
-				u32 val_len;
 
 				err = ntfs_attr_lookup(AT_FILE_NAME, NULL, 0, 0, 0,
 						NULL, 0, ctx);
@@ -289,15 +287,8 @@ handle_name:
 				a = ctx->attr;
 				if (a->non_resident || a->flags)
 					goto eio_err_out;
-				val_len = le32_to_cpu(a->data.resident.value_length);
-				if (le16_to_cpu(a->data.resident.value_offset) +
-						val_len > le32_to_cpu(a->length))
-					goto eio_err_out;
 				fn = (struct file_name_attr *)((u8 *)ctx->attr + le16_to_cpu(
 							ctx->attr->data.resident.value_offset));
-				if ((u32)(fn->file_name_length * sizeof(__le16) +
-							sizeof(struct file_name_attr)) > val_len)
-					goto eio_err_out;
 			} while (fn->file_name_type != FILE_NAME_WIN32);
 
 			/* Convert the found WIN32 name to current NLS code page. */
@@ -352,9 +343,9 @@ static int ntfs_sd_add_everyone(struct ntfs_inode *ni)
 	sd_len = sizeof(struct security_descriptor_relative) + 2 *
 		(sizeof(struct ntfs_sid) + 8) + sizeof(struct ntfs_acl) +
 		sizeof(struct ntfs_ace) + 4;
-	sd = kmalloc(sd_len, GFP_NOFS);
+	sd = kzalloc(sd_len, GFP_NOFS);
 	if (!sd)
-		return -1;
+		return -ENOMEM;
 
 	sd->revision = 1;
 	sd->control = SE_DACL_PRESENT | SE_SELF_RELATIVE;
@@ -403,11 +394,11 @@ static int ntfs_sd_add_everyone(struct ntfs_inode *ni)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
 static struct ntfs_inode *__ntfs_create(struct mnt_idmap *idmap, struct inode *dir,
 		__le16 *name, u8 name_len, mode_t mode, dev_t dev,
-		__le16 *target, int target_len)
+		const char *target, int target_len)
 #else
 static struct ntfs_inode *__ntfs_create(struct user_namespace *mnt_userns, struct inode *dir,
 		__le16 *name, u8 name_len, mode_t mode, dev_t dev,
-		__le16 *target, int target_len)
+		const char *target, int target_len)
 #endif
 {
 	struct ntfs_inode *dir_ni = NTFS_I(dir);
@@ -439,8 +430,6 @@ static struct ntfs_inode *__ntfs_create(struct user_namespace *mnt_userns, struc
 	 * directories, also setup the index values to the defaults.
 	 */
 	if (S_ISDIR(mode)) {
-		mode &= ~vol->dmask;
-
 		NInoSetMstProtected(ni);
 		ni->itype.index.block_size = 4096;
 		ni->itype.index.block_size_bits = ntfs_ffs(4096) - 1;
@@ -454,8 +443,6 @@ static struct ntfs_inode *__ntfs_create(struct user_namespace *mnt_userns, struc
 			ni->itype.index.vcn_size_bits =
 				vol->sector_size_bits;
 		}
-	} else {
-		mode &= ~vol->fmask;
 	}
 
 	if (IS_RDONLY(vi))
@@ -470,7 +457,11 @@ static struct ntfs_inode *__ntfs_create(struct user_namespace *mnt_userns, struc
 
 #ifdef CONFIG_NTFS_FS_POSIX_ACL
 	if (!S_ISLNK(mode) && (sb->s_flags & SB_POSIXACL)) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
 		err = ntfs_init_acl(idmap, vi, dir);
+#else
+		err = ntfs_init_acl(mnt_userns, vi, dir);
+#endif
 		if (err)
 			goto err_out;
 	} else
@@ -650,7 +641,10 @@ static struct ntfs_inode *__ntfs_create(struct user_namespace *mnt_userns, struc
 			goto err_out;
 
 		if (S_ISLNK(mode)) {
-			err = ntfs_reparse_set_wsl_symlink(ni, target, target_len);
+			if (NVolSymlinkNative(vol))
+				err = ntfs_reparse_set_native_symlink(ni, target, target_len);
+			else
+				err = ntfs_reparse_set_wsl_symlink(ni, target, target_len);
 			if (!err)
 				rollback_reparse = true;
 		} else if (S_ISBLK(mode) || S_ISCHR(mode) || S_ISSOCK(mode) ||
@@ -725,7 +719,8 @@ static struct ntfs_inode *__ntfs_create(struct user_namespace *mnt_userns, struc
 	mutex_unlock(&dir_ni->mrec_lock);
 	mutex_unlock(&ni->mrec_lock);
 
-	ni->flags = fn->file_attributes;
+	ni->flags = fn->file_attributes |
+		    (ni->flags & FILE_ATTRIBUTE_RECALL_ON_OPEN);
 	/* Set the sequence number. */
 	vi->i_generation = ni->seq_no;
 	set_nlink(vi, 1);
@@ -996,7 +991,8 @@ search:
 
 	ni_mrec = actx->base_mrec ? actx->base_mrec : actx->mrec;
 	ni_mrec->link_count = cpu_to_le16(le16_to_cpu(ni_mrec->link_count) - 1);
-	drop_nlink(VFS_I(ni));
+	if (!S_ISDIR(VFS_I(ni)->i_mode))
+		drop_nlink(VFS_I(ni));
 
 	mark_mft_record_dirty(ni);
 	if (looking_for_dos_name) {
@@ -1005,6 +1001,13 @@ search:
 		ntfs_attr_reinit_search_ctx(actx);
 		goto search;
 	}
+
+	/*
+	 * For directories, Drop VFS nlink only when mft record link count
+	 * becomes zero. Because we fixes VFS nlink to 1 for directories.
+	 */
+	if (S_ISDIR(VFS_I(ni)->i_mode) && !le16_to_cpu(ni_mrec->link_count))
+		drop_nlink(VFS_I(ni));
 
 	/*
 	 * If hard link count is not equal to zero then we are done. In other
@@ -1344,7 +1347,8 @@ static int __ntfs_link(struct ntfs_inode *ni, struct ntfs_inode *dir_ni,
 	}
 	/* Increment hard links count. */
 	ni_mrec->link_count = cpu_to_le16(le16_to_cpu(ni_mrec->link_count) + 1);
-	inc_nlink(VFS_I(ni));
+	if (!S_ISDIR(vi->i_mode))
+		inc_nlink(VFS_I(ni));
 
 	/* Done! */
 	mark_mft_record_dirty(ni);
@@ -1384,6 +1388,7 @@ static int ntfs_rename(struct user_namespace *mnt_userns, struct inode *old_dir,
 	struct ntfs_volume *vol = NTFS_SB(sb);
 	struct ntfs_inode *old_ni, *new_ni = NULL;
 	struct ntfs_inode *old_dir_ni = NTFS_I(old_dir), *new_dir_ni = NTFS_I(new_dir);
+	bool new_dir_first = false;
 
 	if (NVolShutdown(old_dir_ni->vol))
 		return -EIO;
@@ -1419,36 +1424,39 @@ static int ntfs_rename(struct user_namespace *mnt_userns, struct inode *old_dir,
 	old_inode = old_dentry->d_inode;
 	new_inode = new_dentry->d_inode;
 	old_ni = NTFS_I(old_inode);
+	if (new_inode)
+		new_ni = NTFS_I(new_inode);
+	if (old_dir != new_dir)
+		new_dir_first = is_subdir(new_dentry->d_parent,
+					  old_dentry->d_parent);
 
 	if (!(vol->vol_flags & VOLUME_IS_DIRTY))
 		ntfs_set_volume_flags(vol, VOLUME_IS_DIRTY);
 
 	mutex_lock_nested(&old_ni->mrec_lock, NTFS_INODE_MUTEX_NORMAL);
-	mutex_lock_nested(&old_dir_ni->mrec_lock, NTFS_INODE_MUTEX_PARENT);
+	if (new_ni)
+		mutex_lock_nested(&new_ni->mrec_lock, NTFS_INODE_MUTEX_NORMAL_2);
 
-	if (NInoBeingDeleted(old_ni) || NInoBeingDeleted(old_dir_ni)) {
+	if (old_dir == new_dir) {
+		mutex_lock_nested(&old_dir_ni->mrec_lock, NTFS_INODE_MUTEX_PARENT);
+	} else if (new_dir_first) {
+		mutex_lock_nested(&new_dir_ni->mrec_lock, NTFS_INODE_MUTEX_PARENT);
+		mutex_lock_nested(&old_dir_ni->mrec_lock, NTFS_INODE_MUTEX_PARENT_2);
+	} else {
+		mutex_lock_nested(&old_dir_ni->mrec_lock, NTFS_INODE_MUTEX_PARENT);
+		mutex_lock_nested(&new_dir_ni->mrec_lock, NTFS_INODE_MUTEX_PARENT_2);
+	}
+
+	if (NInoBeingDeleted(old_ni) || NInoBeingDeleted(old_dir_ni) ||
+	    (new_ni && NInoBeingDeleted(new_ni)) ||
+	    (old_dir != new_dir && NInoBeingDeleted(new_dir_ni))) {
 		err = -ENOENT;
-		goto unlock_old;
+		goto err_out;
 	}
 
 	is_dir = S_ISDIR(old_inode->i_mode);
 
 	if (new_inode) {
-		new_ni = NTFS_I(new_inode);
-		mutex_lock_nested(&new_ni->mrec_lock, NTFS_INODE_MUTEX_NORMAL_2);
-		if (old_dir != new_dir) {
-			mutex_lock_nested(&new_dir_ni->mrec_lock, NTFS_INODE_MUTEX_PARENT_2);
-			if (NInoBeingDeleted(new_dir_ni)) {
-				err = -ENOENT;
-				goto err_out;
-			}
-		}
-
-		if (NInoBeingDeleted(new_ni)) {
-			err = -ENOENT;
-			goto err_out;
-		}
-
 		if (is_dir) {
 			struct mft_record *ni_mrec;
 
@@ -1466,14 +1474,6 @@ static int ntfs_rename(struct user_namespace *mnt_userns, struct inode *old_dir,
 		err = ntfs_delete(new_ni, new_dir_ni, uname_new, new_name_len, false);
 		if (err)
 			goto err_out;
-	} else {
-		if (old_dir != new_dir) {
-			mutex_lock_nested(&new_dir_ni->mrec_lock, NTFS_INODE_MUTEX_PARENT_2);
-			if (NInoBeingDeleted(new_dir_ni)) {
-				err = -ENOENT;
-				goto err_out;
-			}
-		}
 	}
 
 	err = __ntfs_link(old_ni, new_dir_ni, uname_new, new_name_len);
@@ -1522,13 +1522,17 @@ static int ntfs_rename(struct user_namespace *mnt_userns, struct inode *old_dir,
 	inode_inc_iversion(new_dir);
 
 err_out:
-	if (old_dir != new_dir)
+	if (old_dir == new_dir) {
+		mutex_unlock(&old_dir_ni->mrec_lock);
+	} else if (new_dir_first) {
+		mutex_unlock(&old_dir_ni->mrec_lock);
 		mutex_unlock(&new_dir_ni->mrec_lock);
-	if (new_inode)
+	} else {
+		mutex_unlock(&new_dir_ni->mrec_lock);
+		mutex_unlock(&old_dir_ni->mrec_lock);
+	}
+	if (new_ni)
 		mutex_unlock(&new_ni->mrec_lock);
-
-unlock_old:
-	mutex_unlock(&old_dir_ni->mrec_lock);
 	mutex_unlock(&old_ni->mrec_lock);
 	if (uname_new)
 		kmem_cache_free(ntfs_name_cache, uname_new);
@@ -1552,9 +1556,7 @@ static int ntfs_symlink(struct user_namespace *mnt_userns, struct inode *dir,
 	int err = 0;
 	struct ntfs_inode *ni;
 	__le16 *usrc;
-	__le16 *utarget;
 	int usrc_len;
-	int utarget_len;
 	int symlen = strlen(symname);
 
 	if (NVolShutdown(vol))
@@ -1575,28 +1577,17 @@ static int ntfs_symlink(struct user_namespace *mnt_userns, struct inode *dir,
 		goto out;
 	}
 
-	utarget_len = ntfs_nlstoucs(vol, symname, symlen, &utarget,
-				    PATH_MAX);
-	if (utarget_len < 0) {
-		if (utarget_len != -ENAMETOOLONG)
-			ntfs_error(sb, "Failed to convert target name to Unicode.");
-		err =  -ENOMEM;
-		kmem_cache_free(ntfs_name_cache, usrc);
-		goto out;
-	}
-
 	if (!(vol->vol_flags & VOLUME_IS_DIRTY))
 		ntfs_set_volume_flags(vol, VOLUME_IS_DIRTY);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
 	ni = __ntfs_create(idmap, dir, usrc, usrc_len, S_IFLNK | 0777, 0,
-			utarget, utarget_len);
+			   symname, symlen);
 #else
 	ni = __ntfs_create(mnt_userns, dir, usrc, usrc_len, S_IFLNK | 0777, 0,
-			utarget, utarget_len);
+			   symname, symlen);
 #endif
 	kmem_cache_free(ntfs_name_cache, usrc);
-	kvfree(utarget);
 	if (IS_ERR(ni)) {
 		err = PTR_ERR(ni);
 		goto out;
