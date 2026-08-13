@@ -51,7 +51,7 @@ Enables log output optimized for systemd-journal.
 
 .TP
 .B -p, --powerthresh=<threshold>
-Set the threshold at which we attempt to move a CPU into powersave mode
+Set the threshold at which we attempt to move a CPU into powersave mode.
 If more than <threshold> CPUs are more than 1 standard deviation below the
 average CPU softirq workload, and no CPUs are more than 1 standard deviation
 above (and have more than 1 IRQ assigned to them), attempt to place 1 CPU in
@@ -183,6 +183,8 @@ for the consider of compatibility.
 Provides a cpulist which irqbalance should ignore and never assign interrupts to.
 If not specified, irqbalance use mask of isolated and adaptive-ticks CPUs on the
 system as the default value.
+Notes: Empty value as "IRQBALANCE_BANNED_CPULIST=" will result in an empty banned
+mask, effectively allowing all CPUs on the system to participate in the IRQ balancing.
 
 .SH "SIGNALS"
 .TP
@@ -193,13 +195,13 @@ Forces a rescan of the available IRQs and system topology.
 irqbalance is able to communicate via socket and return it's current assignment
 tree and setup, as well as set new settings based on sent values. Socket is abstract,
 with a name in form of
-.B irqbalance<PID>.sock
-, where <PID> is the process ID of irqbalance instance to communicate with.
+.BR irqbalance<PID>.sock ,
+where <PID> is the process ID of irqbalance instance to communicate with.
 Possible values to send:
 .TP
 .B stats
 Retrieve assignment tree of IRQs to CPUs, in recursive manner. For each CPU node
-in tree, it's type, number, load and whether the save mode is active are sent. For
+in tree, its type, number, load and whether the save mode is active are sent. For
 each assigned IRQ type, it's number, load, number of IRQs since last rebalancing
 and it's class are sent. Refer to types.h file for explanation of defines.
 .TP
@@ -220,4 +222,3 @@ Based on chosen tools, ancillary message with credentials needs to be sent with 
 
 .SH "HOMEPAGE"
 https://github.com/Irqbalance/irqbalance
-

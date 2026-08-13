@@ -84,7 +84,7 @@ void build_numa_node_list(void)
 		if (!entry)
 			break;
 		if ((entry->d_type == DT_DIR) &&
-		    (strncmp(entry->d_name, "node", 4) == 0) &&
+		    g_str_has_prefix(entry->d_name, "node") &&
 		    isdigit(entry->d_name[4])) {
 			add_one_node(strtoul(&entry->d_name[4], NULL, 10));
 		}
@@ -116,7 +116,7 @@ void connect_cpu_mem_topo(struct topo_obj *p, void *data __attribute__((unused))
 
 	if (len == 0) {
 		return;
-	} else if (len > 1) {
+	} if (len > 1) {
 		for_each_object(p->children, connect_cpu_mem_topo, NULL);
 		return;
 	}

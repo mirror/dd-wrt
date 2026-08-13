@@ -1,4 +1,4 @@
-AC_INIT(irqbalance,1.9.4)
+AC_INIT(irqbalance,1.9.5)
 AC_PREREQ(2.69)dnl
 AC_CONFIG_HEADERS(config.h)
 
@@ -12,6 +12,7 @@ AC_PROG_INSTALL
 AC_PROG_AWK
 
 AC_HEADER_STDC
+AC_CHECK_HEADERS([numa.h])
 
 AC_CHECK_FUNCS(getopt_long)
 
@@ -31,18 +32,12 @@ AS_IF([test "$enable_numa" = "no"],[
   ac_cv_header_numa_h=no
   ac_cv_lib_numa_numa_available=no
 ])
-#PKG_CHECK_MODULES([NUMA], [numa], [has_numa=yes], [AC_CHECK_LIB(numa, numa_available)])
+PKG_CHECK_MODULES([NUMA], [numa], [has_numa=yes], [AC_CHECK_LIB(numa, numa_available)])
 AC_CHECK_LIB(m, floor)
 
 PKG_CHECK_MODULES([GLIB2], [glib-2.0], [], [AC_MSG_ERROR([glib-2.0 is required])])
 
-#PKG_CHECK_MODULES([NCURSESW], [ncursesw], [has_ncursesw=yes], [AC_CHECK_LIB(curses, mvprintw)])
-#AS_IF([test "x$has_ncursesw" = "xyes"], [
-#  AC_SUBST([NCURSESW_CFLAGS])
-# AC_SUBST([NCURSESW_LIBS])
-#  LIBS="$LIBS $NCURSESW_LIBS"
-#  AC_SUBST([LIBS])
-#])
+PKG_CHECK_MODULES([NCURSESW], [ncursesw], [has_ncursesw=yes], [AC_CHECK_LIB(curses, mvprintw)])
 
 AC_CANONICAL_HOST
 
@@ -77,11 +72,17 @@ AC_ARG_WITH([irqbalance-ui],
 AS_IF(
   [test "x$with_irqbalanceui" = "xyes"], [
     AC_DEFINE([HAVE_IRQBALANCEUI], 1, [Build irqbalance ui component.])
+    AS_IF([test "x$has_ncursesw" = "xyes"], [
+        AC_SUBST([NCURSESW_CFLAGS])
+        AC_SUBST([NCURSESW_LIBS])
+        LIBS="$LIBS $NCURSESW_LIBS"
+        AC_SUBST([LIBS])
+   ])
 ])
 AM_CONDITIONAL([IRQBALANCEUI], [test x$with_irqbalanceui = xyes])
 
 AC_ARG_WITH([systemd],
-  [ AS_HELP_STRING([--with-systemd],[Add systemd-lib support])]
+  [AS_HELP_STRING([--with-systemd],[Add systemd-lib support])]
 )
 AS_IF(
   [test "x$with_systemd" = xyes], [
@@ -114,6 +115,24 @@ AS_IF(
   ]
 )
 
+AC_ARG_WITH([pkgconfdir],
+  [AS_HELP_STRING([--with-pkgconfdir=DIR],
+    [Systemd Environment configs sourced by irqbalanced])],
+    [pkgconfdir=$withval],
+    [pkgconfdir="$prefix/etc/default"])
+AC_SUBST([pkgconfdir])
+
+AC_ARG_WITH([usrconfdir],
+  [AS_HELP_STRING([--with-usrconfdir=DIR],
+    [Systemd Environment user configs sourced by irqbalanced])],
+    [usrconfdir=$withval],
+    [usrconfdir="${sysconfdir}/default"])
+AC_SUBST([usrconfdir])
+
+AC_CONFIG_FILES([misc/irqbalance.service])
+
+PKG_CHECK_VAR([systemdsystemunitdir], [systemd], [systemdsystemunitdir])
+
 AC_OUTPUT(Makefile tests/Makefile)
 
 AC_MSG_NOTICE()
@@ -122,3 +141,4 @@ AC_MSG_NOTICE([Target:                 $target])
 AC_MSG_NOTICE([Installation prefix:    $prefix])
 AC_MSG_NOTICE([Compiler:               $CC])
 AC_MSG_NOTICE([Compiler flags: $CFLAGS])
+AC_MSG_NOTICE([Systemdunitdir:         $systemdsystemunitdir])

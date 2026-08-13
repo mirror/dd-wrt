@@ -1,0 +1,576 @@
+diff --git a/activate.c b/activate.c
+index 62cfd08..548a401 100644
+--- a/activate.c
++++ b/activate.c
+@@ -25,10 +25,12 @@
+  * of interrupts to the kernel.
+  */
+ #include "config.h"
++#include <errno.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <stdint.h>
++#include <string.h>
+ 
+ #include "irqbalance.h"
+ 
+@@ -48,7 +50,7 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
+ {
+ 	char buf[PATH_MAX];
+ 	FILE *file;
+-	int ret = 0;
++	int errsave, ret;
+ 	cpumask_t applied_mask;
+ 
+ 	/*
+@@ -60,6 +62,9 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
+ 	if (!info->assigned_obj)
+ 		return;
+ 
++	if (info->flags & IRQ_FLAG_AFFINITY_UNMANAGED)
++		return;
++
+ 	/* activate only online cpus, otherwise writing to procfs returns EOVERFLOW */
+ 	cpus_and(applied_mask, cpu_online_map, info->assigned_obj->mask);
+ 
+@@ -72,17 +77,38 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
+ 	sprintf(buf, "/proc/irq/%i/smp_affinity", info->irq);
+ 	file = fopen(buf, "w");
+ 	if (!file)
+-		return;
++		goto error;
+ 
+ 	cpumask_scnprintf(buf, PATH_MAX, applied_mask);
+ 	ret = fprintf(file, "%s", buf);
+-	if (ret < 0) {
+-		log(TO_ALL, LOG_WARNING, "cannot change irq %i's affinity, add it to banned list", info->irq);
+-		add_banned_irq(info->irq);
+-		remove_one_irq_from_db(info->irq);
++	errsave = errno;
++	if (fclose(file)) {
++		errsave = errno;
++		goto error;
+ 	}
+-	fclose(file);
++	if (ret < 0)
++		goto error;
+ 	info->moved = 0; /*migration is done*/
++	return;
++error:
++	log(TO_ALL, LOG_WARNING,
++		"Cannot change IRQ %i affinity: %s\n",
++		info->irq, strerror(errsave));
++	switch (errsave) {
++	case ENOSPC: /* Specified CPU APIC is full. */
++	case EAGAIN: /* Interrupted by signal. */
++	case EBUSY: /* Affinity change already in progress. */
++	case EINVAL: /* IRQ would be bound to no CPU. */
++	case ERANGE: /* CPU in mask is offline. */
++	case ENOMEM: /* Kernel cannot allocate CPU mask. */
++		/* Do not blacklist the IRQ on transient errors. */
++		break;
++	default:
++		/* Any other error is considered permanent. */
++		info->flags |= IRQ_FLAG_AFFINITY_UNMANAGED;
++		log(TO_ALL, LOG_WARNING, "IRQ %i affinity is now unmanaged\n",
++			info->irq);
++	}
+ }
+ 
+ void activate_mappings(void)
+diff --git a/classify.c b/classify.c
+index 3858754..1601a1e 100644
+--- a/classify.c
++++ b/classify.c
+@@ -257,7 +257,7 @@ static gint compare_ints(gconstpointer a, gconstpointer b)
+ 	return ai->irq - bi->irq;
+ }
+ 
+-static void __add_banned_irq(int irq, GList **list)
++static void add_banned_irq(int irq, GList **list)
+ {
+ 	struct irq_info find, *new;
+ 	GList *entry;
+@@ -281,14 +281,9 @@ static void __add_banned_irq(int irq, GList **list)
+ 	return;
+ }
+ 
+-void add_banned_irq(int irq)
+-{
+-	__add_banned_irq(irq, &banned_irqs);
+-}
+-
+ void add_cl_banned_irq(int irq)
+ {
+-	__add_banned_irq(irq, &cl_banned_irqs);
++	add_banned_irq(irq, &cl_banned_irqs);
+ }
+ 
+ gint substr_find(gconstpointer a, gconstpointer b)
+@@ -392,23 +387,6 @@ get_numa_node:
+ 	return new;
+ }
+ 
+-void remove_one_irq_from_db(int irq)
+-{
+-	struct irq_info find, *tmp;
+-	GList *entry = NULL;
+-
+-	find.irq = irq;
+-	entry = g_list_find_custom(interrupts_db, &find, compare_ints);
+-	if (!entry)
+-		return;
+-
+-	tmp = entry->data;
+-	interrupts_db = g_list_remove(interrupts_db, tmp);
+-	free(tmp);
+-	log(TO_CONSOLE, LOG_INFO, "IRQ %d was removed from db.\n", irq);
+-	return;
+-}
+-
+ static void parse_user_policy_key(char *buf, int irq, struct user_irq_policy *pol)
+ {
+ 	char *key, *value, *end;
+@@ -629,7 +607,7 @@ static void add_new_irq(char *path, struct irq_info *hint)
+ 	/* Set NULL devpath for the irq has no sysfs entries */
+ 	get_irq_user_policy(path, irq, &pol);
+ 	if ((pol.ban == 1) || check_for_irq_ban(hint, mod)) { /*FIXME*/
+-		__add_banned_irq(irq, &banned_irqs);
++		add_banned_irq(irq, &banned_irqs);
+ 		new = get_irq_info(irq);
+ 	} else
+ 		new = add_one_irq_to_db(path, hint, &pol);
+@@ -646,7 +624,7 @@ static void build_one_dev_entry(const char *dirname, int build_irq)
+ 	struct dirent *entry;
+ 	DIR *msidir;
+ 	int irqnum;
+-	struct irq_info hint;
++	struct irq_info hint = {0};
+ 	char path[PATH_MAX];
+ 	char devpath[PATH_MAX];
+ 
+@@ -778,6 +756,8 @@ int proc_irq_hotplug(char *savedline, int irq, struct irq_info **pinfo)
+ 		/* secondly, init irq info by parse savedline */
+ 		init_irq_class_and_type(savedline, &tmp_info, irq);
+ 		add_new_irq(NULL, &tmp_info);
++		free(tmp_info.name);
++
+ 		*pinfo = get_irq_info(irq);
+ 	}
+ 	if (*pinfo == NULL) {
+diff --git a/configure.ac b/configure.ac
+index 3f919d7..0bf0edc 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1,4 +1,4 @@
+-AC_INIT(irqbalance,1.9.1)
++AC_INIT(irqbalance,1.9.2)
+ AC_PREREQ(2.69)dnl
+ AC_CONFIG_HEADERS(config.h)
+ 
+diff --git a/cputree.c b/cputree.c
+index eb1981e..d66be55 100644
+--- a/cputree.c
++++ b/cputree.c
+@@ -315,7 +315,7 @@ static void do_one_cpu(char *path)
+ 
+ 	cpu->obj_type = OBJ_TYPE_CPU;
+ 
+-	cpu->number = strtoul(&path[27], NULL, 10);
++	cpu->number = cpunr;
+ 
+ 	cpu_set(cpu->number, cpu_online_map);
+ 	
+diff --git a/irqbalance.h b/irqbalance.h
+index e7f6b94..46e05ca 100644
+--- a/irqbalance.h
++++ b/irqbalance.h
+@@ -109,8 +109,6 @@ extern struct irq_info *get_irq_info(int irq);
+ extern void migrate_irq(GList **from, GList **to, struct irq_info *info);
+ extern void free_cl_opts(void);
+ extern void add_cl_banned_module(char *modname);
+-extern void add_banned_irq(int irq);
+-extern void remove_one_irq_from_db(int irq);
+ #define irq_numa_node(irq) ((irq)->numa_node)
+ 
+ 
+diff --git a/misc/irqbalance.service b/misc/irqbalance.service
+index 0f79c3e..8544f66 100644
+--- a/misc/irqbalance.service
++++ b/misc/irqbalance.service
+@@ -11,7 +11,7 @@ EnvironmentFile=-/path/to/irqbalance.env
+ ExecStart=/usr/sbin/irqbalance --foreground $IRQBALANCE_ARGS
+ ReadOnlyPaths=/
+ ReadWritePaths=/proc/irq
+-RestrictAddressFamilies=AF_UNIX
++RestrictAddressFamilies=AF_UNIX AF_NETLINK
+ RuntimeDirectory=irqbalance/
+ 
+ [Install]
+diff --git a/procinterrupts.c b/procinterrupts.c
+index e91b203..dfa95c6 100644
+--- a/procinterrupts.c
++++ b/procinterrupts.c
+@@ -107,10 +107,10 @@ static void guess_arm_irq_hints(char *name, struct irq_info *info)
+ 	static int compiled = 0;
+ 	/* Note: Last entry is a catchall */
+ 	static struct irq_match matches[] = {
+-		{ "eth.*" ,{NULL} ,NULL, IRQ_TYPE_LEGACY, IRQ_GBETH },
+-		{ "[A-Z0-9]{4}[0-9a-f]{4}", {NULL} ,check_platform_device, IRQ_TYPE_LEGACY, IRQ_OTHER},
+-		{ "PNP[0-9a-f]{4}", {NULL} ,check_platform_device, IRQ_TYPE_LEGACY, IRQ_OTHER},
+-		{ ".*", {NULL}, NULL, IRQ_TYPE_LEGACY, IRQ_OTHER},
++		{ "eth.*" , {0},NULL, IRQ_TYPE_LEGACY, IRQ_GBETH },
++		{ "[A-Z0-9]{4}[0-9a-f]{4}", {0}, check_platform_device, IRQ_TYPE_LEGACY, IRQ_OTHER},
++		{ "PNP[0-9a-f]{4}", {0}, check_platform_device, IRQ_TYPE_LEGACY, IRQ_OTHER},
++		{ ".*", {0}, NULL, IRQ_TYPE_LEGACY, IRQ_OTHER},
+ 		{NULL},
+ 	};
+ 
+@@ -178,12 +178,14 @@ void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq)
+ 	}
+ 
+ #ifdef AARCH64
+-	if (savedptr && strlen(savedptr) > 0) {
++	if (savedptr && strlen(savedptr) > 0)
+ 		snprintf(irq_fullname, PATH_MAX, "%s %s", last_token, savedptr);
+-		tmp = strchr(irq_fullname, '\n');
+-		if (tmp)
+-			*tmp = 0;
+-	}
++	else
++		snprintf(irq_fullname, PATH_MAX, "%s", last_token);
++
++	tmp = strchr(irq_fullname, '\n');
++	if (tmp)
++		*tmp = 0;
+ #else
+ 	snprintf(irq_fullname, PATH_MAX, "%s", last_token);
+ #endif
+diff --git a/thermal.c b/thermal.c
+index 64a9cdf..ffff9bd 100644
+--- a/thermal.c
++++ b/thermal.c
+@@ -99,13 +99,13 @@ static gboolean prepare_netlink(void)
+ 
+ 	rc = genl_connect(sock);
+ 	if (rc) {
+-		log(TO_ALL, LOG_ERR, "thermal: socket bind failed.\n");
++		log(TO_ALL, LOG_INFO, "thermal: socket bind failed.\n");
+ 		return TRUE;
+ 	}
+ 
+ 	callback = nl_cb_alloc(NL_CB_DEFAULT);
+ 	if (!callback) {
+-		log(TO_ALL, LOG_ERR, "thermal: callback allocation failed.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: callback allocation failed.\n");
+ 		return TRUE;
+ 	}
+ 
+@@ -123,7 +123,7 @@ static int handle_groupid(struct nl_msg *msg, void *arg)
+ 	int attrlen, rc, i;
+ 
+ 	if (!arg) {
+-		log(TO_ALL, LOG_ERR, "thermal: group id - failed to receive argument.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: group id - failed to receive argument.\n");
+ 		return NL_SKIP;
+ 	}
+ 	data = arg;
+@@ -148,14 +148,14 @@ static int handle_groupid(struct nl_msg *msg, void *arg)
+ 		attrlen,	/* length of attribute stream */
+ 		policy);	/* validation policy */
+ 	if (rc) {
+-		log(TO_ALL, LOG_ERR, "thermal: group id - failed to create attributes.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: group id - failed to create attributes.\n");
+ 		return NL_SKIP;
+ 	}
+ 
+ 	/* start of the multi-cast group attribute */
+ 	mcgrp = attrs[CTRL_ATTR_MCAST_GROUPS];
+ 	if (!mcgrp) {
+-		log(TO_ALL, LOG_ERR, "thermal: group id - no multi-cast group attributes.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: group id - no multi-cast group attributes.\n");
+ 		return NL_SKIP;
+ 	}
+ 
+@@ -190,12 +190,14 @@ static int handle_groupid(struct nl_msg *msg, void *arg)
+ static int handle_error(struct sockaddr_nl *sk_addr __attribute__((unused)),
+ 			struct nlmsgerr *err, void *arg)
+ {
+-	if (arg) {
++	int rc = (err->error == -NLE_INTR) ? NL_STOP : NL_SKIP;
++
++	if (arg && err->error != -NLE_INTR) {
+ 		log(TO_ALL, LOG_INFO, "thermal: received a netlink error (%s).\n",
+ 		    nl_geterror(err->error));
+ 		*((int *)arg) = err->error;
+ 	}
+-	return NL_SKIP;
++	return rc;
+ }
+ 
+ static int handle_end(struct nl_msg *msg __attribute__((unused)), void *arg)
+@@ -223,82 +225,82 @@ static gboolean establish_netlink(void)
+ 
+ 	msg = nlmsg_alloc();
+ 	if (!msg) {
+-		log(TO_ALL, LOG_ERR, "thermal: message allocation failed.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: message allocation failed.\n");
+ 		goto err_out;
+ 	}
+ 
+ 	msghdr.id = genl_ctrl_resolve(sock, NL_FAMILY_NAME);
+ 	if (msghdr.id < 0) {
+-		log(TO_ALL, LOG_ERR, "thermal: message id enumeration failed.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: message id enumeration failed.\n");
+ 		goto err_out;
+ 	}
+ 
+ 	hdr = genlmsg_put(msg, msghdr.port, msghdr.seq, msghdr.id, msghdr.hdrlen,
+ 			  msghdr.flags, msghdr.cmd, msghdr.version);
+ 	if (!hdr) {
+-		log(TO_ALL, LOG_ERR, "thermal: netlink header setup failed.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: netlink header setup failed.\n");
+ 		goto err_out;
+ 	}
+ 
+ 	rc = nla_put_string(msg, CTRL_ATTR_FAMILY_NAME, THERMAL_GENL_FAMILY_NAME);
+ 	if (rc) {
+-		log(TO_ALL, LOG_ERR, "thermal: message setup failed.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: message setup failed.\n");
+ 		goto err_out;
+ 	}
+ 
+ 	cloned_callback = nl_cb_clone(callback);
+ 	if (!cloned_callback) {
+-		log(TO_ALL, LOG_ERR, "thermal: callback handle duplication failed.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: callback handle duplication failed.\n");
+ 		goto err_out;
+ 	}
+ 
+ 	rc = nl_send_auto(sock, msg);
+ 	if (rc < 0) {
+-		log(TO_ALL, LOG_ERR, "thermal: failed to send the first message.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: failed to send the first message.\n");
+ 		goto err_out;
+ 	}
+ 
+ 	rc = nl_cb_err(cloned_callback, NL_CB_CUSTOM, handle_error, &callback_rc);
+ 	if (rc) {
+-		log(TO_ALL, LOG_ERR, "thermal: error callback setup failed.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: error callback setup failed.\n");
+ 		goto err_out;
+ 	}
+ 
+ 	rc = nl_cb_set(cloned_callback, NL_CB_ACK, NL_CB_CUSTOM, handle_end, &callback_rc);
+ 	if (rc) {
+-		log(TO_ALL, LOG_ERR, "thermal: ack callback setup failed.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: ack callback setup failed.\n");
+ 		goto err_out;
+ 	}
+ 
+ 	rc = nl_cb_set(cloned_callback, NL_CB_FINISH, NL_CB_CUSTOM, handle_end, &callback_rc);
+ 	if (rc) {
+-		log(TO_ALL, LOG_ERR, "thermal: finish callback setup failed.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: finish callback setup failed.\n");
+ 		goto err_out;
+ 	}
+ 
+ 	rc = nl_cb_set(cloned_callback, NL_CB_VALID, NL_CB_CUSTOM, handle_groupid, &nldata);
+ 	if (rc) {
+-		log(TO_ALL, LOG_ERR, "thermal: group id callback setup failed.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: group id callback setup failed.\n");
+ 		goto err_out;
+ 	}
+ 
+ 	while (callback_rc != 0) {
+ 		rc = nl_recvmsgs(sock, cloned_callback);
+ 		if (rc < 0) {
+-			log(TO_ALL, LOG_ERR, "thermal: failed to receive messages.\n");
++			log(TO_ALL, LOG_WARNING, "thermal: failed to receive messages.\n");
+ 			goto err_out;
+ 		}
+ 	}
+ 
+ 	group_id = nldata.id;
+ 	if (group_id < 0) {
+-		log(TO_ALL, LOG_ERR, "thermal: invalid group_id was received.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: invalid group_id was received.\n");
+ 		goto err_out;
+ 	}
+ 
+ 	rc = nl_socket_add_membership(sock, group_id);
+ 	if (rc) {
+-		log(TO_ALL, LOG_ERR, "thermal: failed to join the netlink group.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: failed to join the netlink group.\n");
+ 		goto err_out;
+ 	}
+ 
+@@ -407,7 +409,7 @@ static int handle_thermal_event(struct nl_msg *msg, void *arg __attribute__((unu
+ 		need_to_ban = !!(!event_data[INDEX_PERF] && !event_data[INDEX_EFFI]);
+ 		update_banned_cpus(cur_cpuidx, need_to_ban);
+ 
+-		log(TO_ALL, LOG_DEBUG, "thermal: event - CPU %d, efficiency %d, perf %d.\n",
++		log(TO_ALL, LOG_DEBUG, "thermal: event - CPU %d, perf %d, efficiency %d.\n",
+ 		    cur_cpuidx, event_data[INDEX_PERF], event_data[INDEX_EFFI]);
+ 	}
+ 
+@@ -428,20 +430,20 @@ static gboolean register_netlink_handler(void)
+ 	int rc;
+ 
+ 	if (sysconf(_SC_NPROCESSORS_ONLN) == SYSCONF_ERR) {
+-		log(TO_ALL, LOG_ERR, "thermal: _SC_NPROCESSORS_ONLN not available.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: _SC_NPROCESSORS_ONLN not available.\n");
+ 		return TRUE;
+ 	}
+ 
+ 	rc = nl_cb_set(callback, NL_CB_SEQ_CHECK, NL_CB_CUSTOM, handler_for_debug, NULL);
+ 	if (rc) {
+-		log(TO_ALL, LOG_ERR, "thermal: debug handler registration failed.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: debug handler registration failed.\n");
+ 		return TRUE;
+ 	}
+ 
+ 
+ 	rc = nl_cb_set(callback, NL_CB_VALID, NL_CB_CUSTOM, handle_thermal_event, NULL);
+ 	if (rc) {
+-		log(TO_ALL, LOG_ERR, "thermal: thermal handler registration failed.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: thermal handler registration failed.\n");
+ 		return TRUE;
+ 	}
+ 
+@@ -461,7 +463,7 @@ gboolean receive_thermal_event(gint fd __attribute__((unused)),
+ 
+ 		err = nl_recvmsgs(sock, callback);
+ 		if (err) {
+-			log(TO_ALL, LOG_ERR, "thermal: failed to receive messages (rc=%d).\n", err);
++			log(TO_ALL, LOG_WARNING, "thermal: failed to receive messages (rc=%d).\n", err);
+ 			retry++;
+ 
+ 			/*
+@@ -469,9 +471,9 @@ gboolean receive_thermal_event(gint fd __attribute__((unused)),
+ 			 * failing down.
+ 			 */
+ 			if (retry <= MAX_RECV_ERRS) {
+-				log(TO_ALL, LOG_ERR, "thermal: but keep the connection.\n");
++				log(TO_ALL, LOG_WARNING, "thermal: but keep the connection.\n");
+ 			} else {
+-				log(TO_ALL, LOG_ERR, "thermal: disconnect now with %u failures.\n",
++				log(TO_ALL, LOG_WARNING, "thermal: disconnect now with %u failures.\n",
+ 				    retry);
+ 				return FALSE;
+ 			}
+@@ -489,13 +491,13 @@ static gboolean set_netlink_nonblocking(void)
+ 
+ 	rc = nl_socket_set_nonblocking(sock);
+ 	if (rc) {
+-		log(TO_ALL, LOG_ERR, "thermal: non-blocking mode setup failed.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: non-blocking mode setup failed.\n");
+ 		return TRUE;
+ 	}
+ 
+ 	fd = nl_socket_get_fd(sock);
+ 	if (fd == INVALID_NL_FD) {
+-		log(TO_ALL, LOG_ERR, "thermal: file descriptor setup failed.\n");
++		log(TO_ALL, LOG_WARNING, "thermal: file descriptor setup failed.\n");
+ 		return TRUE;
+ 	}
+ 
+@@ -506,8 +508,14 @@ static gboolean set_netlink_nonblocking(void)
+ 
+ void deinit_thermal(void)
+ {
+-	nl_cb_put(callback);
+-	nl_socket_free(sock);
++	if (callback) {
++		nl_cb_put(callback);
++		callback = NULL;
++	}
++	if (sock) {
++		nl_socket_free(sock);
++		sock = NULL;
++	}
+ }
+ 
+ /*
+diff --git a/types.h b/types.h
+index 9693cf4..c63cfea 100644
+--- a/types.h
++++ b/types.h
+@@ -34,7 +34,8 @@
+ /*
+  * IRQ Internal tracking flags
+  */
+-#define IRQ_FLAG_BANNED	1
++#define IRQ_FLAG_BANNED                 (1ULL << 0)
++#define IRQ_FLAG_AFFINITY_UNMANAGED     (1ULL << 1)
+ 
+ enum obj_type_e {
+ 	OBJ_TYPE_CPU,
+diff --git a/ui/ui.c b/ui/ui.c
+index 897371b..bee6868 100644
+--- a/ui/ui.c
++++ b/ui/ui.c
+@@ -45,7 +45,7 @@ void show_footer()
+ 	while(strlen(footer) != (size_t)COLS - 1) {
+ 		snprintf(footer + strlen(footer), COLS - strlen(footer), " ");
+ 	}
+-	attrset(COLOR_PAIR(4));
++	attrset(COLOR_PAIR(4) | A_BOLD);
+ 	mvprintw(LINES - 1, 0, "%s", footer);
+ }
+ 
+@@ -73,7 +73,7 @@ char * check_control_in_sleep_input(int max_len, int column_offest, int line_off
+ 				mvaddch(line_offset, column_offest + iteration, ' ');
+ 			}
+ 			move(line_offset, column_offest + iteration);
+-			attrset(COLOR_PAIR(6));
++			attrset(COLOR_PAIR(5) | A_REVERSE | A_BOLD);
+ 			break;
+ 		case 27:
+ 			free(input_to);
+@@ -93,7 +93,7 @@ int get_valid_sleep_input(int column_offest)
+ 	while(1) {
+ 		attrset(COLOR_PAIR(5));
+ 		mvprintw(2, column_offest, "			");
+-		attrset(COLOR_PAIR(6));
++		attrset(COLOR_PAIR(5) | A_REVERSE | A_BOLD);
+ 		refresh();
+ 		move(2, column_offest);
+ 		curs_set(1);
+@@ -115,7 +115,7 @@ int get_valid_sleep_input(int column_offest)
+ 			break;
+ 		} else {
+ 			new_sleep = setup.sleep;
+-			attrset(COLOR_PAIR(4));
++			attrset(COLOR_PAIR(4) | A_BOLD);
+ 			mvprintw(LINES - 2, 1,
+ 				"Invalid input: %s								",
+ 				input);
+@@ -705,16 +705,17 @@ void init()
+ 	echo();
+ 	if(has_colors()) {
+ 		start_color();
+-		init_pair(1, COLOR_RED, COLOR_BLACK);
+-		init_pair(2, COLOR_YELLOW, COLOR_BLACK);
+-		init_pair(3, COLOR_GREEN, COLOR_BLACK);
++		use_default_colors();
++		init_pair(1, COLOR_RED, -1);
++		init_pair(2, COLOR_YELLOW, -1);
++		init_pair(3, COLOR_GREEN, -1);
+ 		init_pair(4, COLOR_WHITE, COLOR_BLUE);
+-		init_pair(5, COLOR_WHITE, COLOR_RED);
+-		init_pair(6, COLOR_RED, COLOR_WHITE);
+-		init_pair(7, COLOR_BLACK, COLOR_CYAN);
+-		init_pair(8, COLOR_BLUE, COLOR_BLACK);
+-		init_pair(9, COLOR_CYAN, COLOR_BLACK);
+-		init_pair(10, COLOR_MAGENTA, COLOR_BLACK);
++		init_pair(5, -1, COLOR_RED);
++		/* Pair 6 is unused */
++		/* Pair 7 is unused */
++		init_pair(8, COLOR_BLUE, -1);
++		init_pair(9, COLOR_CYAN, -1);
++		init_pair(10, COLOR_MAGENTA, -1);
+ 	}
+ 
+ 	offset = 0;

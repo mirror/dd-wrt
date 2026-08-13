@@ -28,30 +28,29 @@ setup_t setup;
 GMainLoop *main_loop;
 static int default_bufsz = 8192;
 
-struct msghdr * create_credentials_msg()
+struct msghdr create_credentials_msg(void)
 {
-	struct ucred *credentials = malloc(sizeof(struct ucred));
-	credentials->pid = getpid();
-	credentials->uid = geteuid();
-	credentials->gid = getegid();
+	struct ucred credentials = {
+		.pid = getpid(),
+		.uid = geteuid(),
+		.gid = getegid(),
+	};
 
-	struct msghdr *msg = malloc(sizeof(struct msghdr));
-	memset(msg, 0, sizeof(struct msghdr));
-	msg->msg_iovlen = 1;
-	msg->msg_control = malloc(CMSG_SPACE(sizeof(struct ucred)));
-	msg->msg_controllen = CMSG_SPACE(sizeof(struct ucred));
+	struct msghdr msg = {
+		.msg_iovlen = 1,
+		.msg_control = g_malloc(CMSG_SPACE(sizeof(struct ucred))),
+		.msg_controllen = CMSG_SPACE(sizeof(struct ucred)),
+	};
 
-	struct cmsghdr *cmsg = CMSG_FIRSTHDR(msg);
+	struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
 	cmsg->cmsg_level = SOL_SOCKET;
 	cmsg->cmsg_type = SCM_CREDENTIALS;
 	cmsg->cmsg_len = CMSG_LEN(sizeof(struct ucred));
-	memcpy(CMSG_DATA(cmsg), credentials, sizeof(struct ucred));
-
-	free(credentials);
+	memcpy(CMSG_DATA(cmsg), &credentials, sizeof(struct ucred));
 	return msg;
 }
 
-int init_connection()
+int init_connection(void)
 {
 	struct sockaddr_un addr;
 	memset(&addr, 0, sizeof(struct sockaddr_un));
@@ -92,16 +91,17 @@ void send_settings(char *data)
 		return;
 	}
 
-	struct msghdr *msg = create_credentials_msg();
-	struct iovec iov;
-	iov.iov_base = (void *) data;
-	iov.iov_len = strlen(data);
-	msg->msg_iov = &iov;
-	sendmsg(socket_fd, msg, 0);
+	struct iovec iov = {
+		.iov_base = (void *) data,
+		.iov_len = strlen(data),
+	};
+
+	struct msghdr msg = create_credentials_msg();
+	msg.msg_iov = &iov;
+	sendmsg(socket_fd, &msg, 0);
 
 	close(socket_fd);
-	free(msg->msg_control);
-	free(msg);
+	g_free(msg.msg_control);
 }
 
 char * get_data(char *string)
@@ -117,23 +117,27 @@ try_again:
 		return NULL;
 	}
 
-	struct msghdr *msg = create_credentials_msg();
-	struct iovec iov;
-	iov.iov_base = (void *) string;
-	iov.iov_len = strlen(string);
-	msg->msg_iov = &iov;
-	sendmsg(socket_fd, msg, 0);
+	struct msghdr msg = create_credentials_msg();
+	struct iovec iov = {
+		.iov_base = (void *) string,
+		.iov_len = strlen(string),
+	};
+	msg.msg_iov = &iov;
+	sendmsg(socket_fd, &msg, 0);
 
-	char *data = malloc(default_bufsz);
+	char *data = g_malloc(default_bufsz);
 	int len = recv(socket_fd, data, default_bufsz, MSG_TRUNC);
 	close(socket_fd);
+	g_free(msg.msg_control);
+	if (len < 0) {
+		g_free(data);
+		return NULL;
+	}
 	data[len] = '\0';
-	free(msg->msg_control);
-	free(msg);
 	if (len >= default_bufsz) {
 		/* msg was truncated, increase bufsz and try again */
 		default_bufsz += 8192;
-		free(data);
+		g_free(data);
 		goto try_again;
 	}
 	return data;
@@ -153,21 +157,21 @@ void parse_setup(char *setup_data)
 	setup.banned_irqs = NULL;
 	setup.banned_cpus = NULL;
 	token = strtok_r(copy, " ", &ptr);
-	if(strncmp(token, "SLEEP", strlen("SLEEP"))) goto out;
+	if(!g_str_has_prefix(token, "SLEEP")) goto out;
 	setup.sleep = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 	token = strtok_r(NULL, " ", &ptr);
 	/* Parse banned IRQ data */
-	while(!strncmp(token, "IRQ", strlen("IRQ"))) {
-		new_irq = malloc(sizeof(irq_t));
+	while(g_str_has_prefix(token, "IRQ")) {
+		new_irq = g_malloc(sizeof(irq_t));
 		new_irq->vector = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		token = strtok_r(NULL, " ", &ptr);
-		if(strncmp(token, "LOAD", strlen("LOAD"))) goto out;
+		if(!g_str_has_prefix(token, "LOAD")) goto out;
 		new_irq->load = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		token = strtok_r(NULL, " ", &ptr);
-		if(strncmp(token, "DIFF", strlen("DIFF"))) goto out;
+		if(!g_str_has_prefix(token, "DIFF")) goto out;
 		new_irq->diff = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		token = strtok_r(ptr, " ", &ptr);
-		if(strncmp(token, "CLASS", strlen("CLASS"))) goto out;
+		if(!g_str_has_prefix(token, "CLASS")) goto out;
 		new_irq->class = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		new_irq->is_banned = 1;
 		new_irq->assigned_to = NULL;
@@ -176,7 +180,7 @@ void parse_setup(char *setup_data)
 		new_irq = NULL;
 	}
 
-	if(strncmp(token, "BANNED", strlen("BANNED"))) goto out;
+	if(!g_str_has_prefix(token, "BANNED")) goto out;
 	token = strtok_r(NULL, " ", &ptr);
 	for(i = strlen(token) - 1; i >= 0; i--) {
 		if (token[i] == ',')
@@ -184,26 +188,24 @@ void parse_setup(char *setup_data)
 		char *map = hex_to_bitmap(token[i]);
 		for(j = 3; j >= 0; j--) {
 			if(map[j] == '1') {
-				uint64_t *banned_cpu = malloc(sizeof(uint64_t));
+				uint64_t *banned_cpu = g_malloc(sizeof(uint64_t));
 				*banned_cpu = cpu;
 				setup.banned_cpus = g_list_append(setup.banned_cpus,
 								banned_cpu);
 			}
 			cpu++;
 		}
-		free(map);
+		g_free(map);
 	
 	}
-	free(copy);
+	g_free(copy);
 	return;
 
 out: {
 	/* Invalid data presented */
 	printf("Invalid data sent.  Unexpected token: %s", token);
-	if (new_irq) {
-		free(new_irq);
-	}
-	free(copy);
+	g_free(new_irq);
+	g_free(copy);
 	g_list_free(tree);
 	exit(1);
 }
@@ -212,17 +214,18 @@ out: {
 GList * concat_child_lists(cpu_node_t *node)
 {
 	GList *new = NULL;
+	GList *cpu_entry;
 	GList *child_entry = g_list_first(node->children);
-	do {
+	while (child_entry) {
 		cpu_node_t *child = (cpu_node_t *)child_entry->data;
-		GList *cpu_entry = g_list_first(child->cpu_list);
-		do {
+		cpu_entry = g_list_first(child->cpu_list);
+		while (cpu_entry) {
 			uint64_t *cpu = (uint64_t *)cpu_entry->data;
 			new = g_list_append(new, cpu);
 			cpu_entry = g_list_next(cpu_entry);
-		} while(cpu_entry != NULL);
+		};
 		child_entry = g_list_next(child_entry);
-	} while(child_entry != NULL);
+	}
 
 	return new;
 }
@@ -247,15 +250,15 @@ void assign_cpu_lists(cpu_node_t *node, void *data __attribute__((unused)))
 
 void assign_cpu_mask(cpu_node_t *node, void *data __attribute__((unused)))
 {
-	char *mask = malloc(16 * sizeof(char));
+	char *mask = g_malloc_n(16, sizeof(char));
 	mask[0] = '\0';
 	unsigned int sum = 0;
 	GList *list_entry = g_list_first(node->cpu_list);
-	do {
+	while (list_entry) {
 		int *cpu = list_entry->data;
 		sum += 1 << (*cpu);
 		list_entry = g_list_next(list_entry);
-	} while(list_entry != NULL);
+	};
 	snprintf(mask, 15, "0x%x", sum);
 	node->cpu_mask = mask;
 
@@ -276,22 +279,18 @@ void parse_into_tree(char *data)
 	if (!data || strlen(data) == 0)
 		return;
 
-	copy = strdup(data);
+	copy = g_strdup(data);
 	if (!copy)
 		return;
 
 	token = strtok_r(copy, " ", &ptr);
 	while(token != NULL) {
 		/* Parse node data */
-		if(strncmp(token, "TYPE", strlen("TYPE"))) {
-			free(copy);
-			 goto out;
+		if(!g_str_has_prefix(token, "TYPE")) {
+			g_free(copy);
+			goto out;
 		}
-		new = malloc(sizeof(cpu_node_t));
-		new->irqs = NULL;
-		new->children = NULL;
-		new->cpu_list = NULL;
-		new->cpu_mask = NULL;
+		new = g_malloc0(sizeof(cpu_node_t));
 		new->type = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		if(new->type == OBJ_TYPE_NODE) {
 			parent = NULL;
@@ -299,28 +298,28 @@ void parse_into_tree(char *data)
 			parent = parent->parent;
 		}
 		token = strtok_r(NULL, " ", &ptr);
-		if(strncmp(token, "NUMBER", strlen("NUMBER"))) goto out;
+		if(!g_str_has_prefix(token, "NUMBER")) goto out;
 		new->number = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		token = strtok_r(NULL, " ", &ptr);
-		if(strncmp(token, "LOAD", strlen("LOAD"))) goto out;
+		if(!g_str_has_prefix(token, "LOAD")) goto out;
 		new->load = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		token = strtok_r(NULL, " ", &ptr);
-		if(strncmp(token, "SAVE_MODE", strlen("SAVE_MODE"))) goto out;
+		if(!g_str_has_prefix(token, "SAVE_MODE")) goto out;
 		new->is_powersave = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 		token = strtok_r(NULL, " ", &ptr);
 
 		/* Parse assigned IRQ data */
-		while((token != NULL) && (!strncmp(token, "IRQ", strlen("IRQ")))) {
-			new_irq = malloc(sizeof(irq_t));
+		while(token && g_str_has_prefix(token, "IRQ")) {
+			new_irq = g_malloc(sizeof(irq_t));
 			new_irq->vector = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 			token = strtok_r(NULL, " ", &ptr);
-			if(strncmp(token, "LOAD", strlen("LOAD"))) goto out;
+			if(!g_str_has_prefix(token, "LOAD")) goto out;
 			new_irq->load = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 			token = strtok_r(NULL, " ", &ptr);
-			if(strncmp(token, "DIFF", strlen("DIFF"))) goto out;
+			if(!g_str_has_prefix(token, "DIFF")) goto out;
 			new_irq->diff = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 			token = strtok_r(NULL, " ", &ptr);
-			if(strncmp(token, "CLASS", strlen("CLASS"))) goto out;
+			if(!g_str_has_prefix(token, "CLASS")) goto out;
 			new_irq->class = strtol(strtok_r(NULL, " ", &ptr), NULL, 10);
 			new_irq->is_banned = 0;
 			new->irqs = g_list_append(new->irqs, new_irq);
@@ -328,7 +327,7 @@ void parse_into_tree(char *data)
 			new_irq = NULL;
 		}
 
-		if((token == NULL) || (strncmp(token, "IRQ", strlen("IRQ")))) {
+		if(!token || !g_str_has_prefix(token, "IRQ")) {
 			new->parent = parent;
 			if(parent == NULL) {
 				tree = g_list_append(tree, new);
@@ -342,7 +341,7 @@ void parse_into_tree(char *data)
 
 		new = NULL;
 	}
-	free(copy);
+	g_free(copy);
 	for_each_node(tree, assign_cpu_lists, NULL);
 	for_each_node(tree, assign_cpu_mask, NULL);
 	return;
@@ -350,12 +349,8 @@ void parse_into_tree(char *data)
 out: {
 	/* Invalid data presented */
 	printf("Invalid data sent.  Unexpected token: %s\n", token);
-	if (new_irq) {
-		free(new_irq);
-	}
-	if (new) {
-		free(new);
-	}
+	g_free(new_irq);
+	g_free(new);
 	g_list_free(tree);
 	exit(1);
 }
@@ -374,7 +369,7 @@ gboolean rescan_tree(gpointer data __attribute__((unused)))
 	free(irqbalance_data);
 	return TRUE;
 }
-void scroll_window() {
+void scroll_window(void) {
 	switch(state) {
 	case STATE_TREE:
 		display_tree();

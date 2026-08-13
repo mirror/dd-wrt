@@ -55,7 +55,7 @@ struct irq_match {
 static int check_platform_device(char *name, struct irq_info *info)
 {
 	DIR *dirfd;
-	char path[512];
+	char path[PATH_MAX];
 	struct dirent *ent;
 	int rc = -ENOENT, i;
 	static struct pdev_irq_info {
@@ -69,11 +69,11 @@ static int check_platform_device(char *name, struct irq_info *info)
 		{NULL},
 	};
 
-	memset(path, 0, 512);
+	if (snprintf(path, PATH_MAX, "/sys/devices/platform/%s/", name) >= PATH_MAX) {
+		log(TO_ALL, LOG_WARNING, "WARNING: Platform device path in /sys exceeds PATH_MAX, cannot examine");
+		return -ENAMETOOLONG;
+	}
 
-	strcat(path, "/sys/devices/platform/");
-	strcat(path, name);
-	strcat(path, "/");
 	dirfd = opendir(path);
 
 	if (!dirfd) {
@@ -85,7 +85,7 @@ static int check_platform_device(char *name, struct irq_info *info)
 
 		log(TO_ALL, LOG_DEBUG, "Checking entry %s\n", ent->d_name);
 		for (i = 0; pdev_irq_info[i].d_name != NULL; i++) {
-			if (!strncmp(ent->d_name, pdev_irq_info[i].d_name, strlen(pdev_irq_info[i].d_name))) {
+			if (g_str_has_prefix(ent->d_name, pdev_irq_info[i].d_name)) {
 				info->type = pdev_irq_info[i].type;
 				info->class = pdev_irq_info[i].class;
 				rc = 0;
@@ -171,9 +171,9 @@ void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq)
 		 * /proc/interrupts format defined, after of interrupt type
 		 * the reset string is mark the irq desc name.
 		 */
-		if (strncmp(irq_name, "Level", strlen("Level")) == 0 ||
-                                strncmp(irq_name, "Edge", strlen("Edge")) == 0)
-                        break;
+		if (g_str_has_prefix(irq_name, "Level") ||
+				g_str_has_prefix(irq_name, "Edge"))
+			break;
 #endif
 	}
 
@@ -191,7 +191,7 @@ void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq)
 #endif
 	info->irq = irq;
 
-	if (strstr(irq_fullname, "-event") != NULL && is_xen_dyn == 1) {
+	if (strstr(irq_name, "-event") != NULL && is_xen_dyn == 1) {
 		info->type = IRQ_TYPE_VIRT_EVENT;
 		info->class = IRQ_VIRT_EVENT;
 	} else {
@@ -206,7 +206,7 @@ void init_irq_class_and_type(char *savedline, struct irq_info *info, int irq)
 	info->name = strdup(irq_fullname);
 }
 
-GList* collect_full_irq_list()
+GList* collect_full_irq_list(void)
 {
 	GList *tmp_list = NULL;
 	FILE *file;

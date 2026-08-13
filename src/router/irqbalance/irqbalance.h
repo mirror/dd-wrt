@@ -36,7 +36,7 @@ extern char *classes[];
 extern void parse_cpu_tree(void);
 extern void clear_work_stats(void);
 extern void parse_proc_interrupts(void);
-extern GList* collect_full_irq_list();
+extern GList* collect_full_irq_list(void);
 extern void parse_proc_stat(void);
 extern void set_interrupt_count(int number, uint64_t count);
 extern void set_msi_interrupt_numa(int number);
@@ -52,6 +52,7 @@ void dump_workloads(void);
 void sort_irq_list(GList **list);
 void calculate_placement(void);
 void dump_tree(void);
+void migrate_irq_obj(struct topo_obj *from, struct topo_obj *to, struct irq_info *info);
 
 void activate_mappings(void);
 void clear_cpu_tree(void);
@@ -97,6 +98,7 @@ extern struct topo_obj *get_numa_node(int nodeid);
 #define cpu_numa_node(cpu) ((cpu)->parent->numa_nodes)
 extern struct topo_obj *find_cpu_core(int cpunr);
 extern int get_cpu_count(void);
+extern void clear_slots(void);
 
 /*
  * irq db functions
@@ -164,7 +166,7 @@ extern unsigned int log_mask;
 #endif /* HAVE_LIBSYSTEMD */
 
 #define SOCKET_PATH "irqbalance"
-#define SOCKET_TMPFS "/var/run/irqbalance"
+#define SOCKET_TMPFS "/run/irqbalance"
 
 extern int process_one_line(char *path, void (*cb)(char *line, void *data), void *data);
 extern void get_mask_from_bitmap(char *line, void *mask);
