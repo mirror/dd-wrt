@@ -108,7 +108,7 @@ static void guess_arm_irq_hints(char *name, struct irq_info *info)
 	/* Note: Last entry is a catchall */
 	static struct irq_match matches[] = {
 		{ "eth.*" , {0},NULL, IRQ_TYPE_LEGACY, IRQ_GBETH },
-/*		{ "ce[0-9][0-9]*" ,{0} ,NULL, IRQ_TYPE_LEGACY, IRQ_GBETH },*/
+		{ "ce[0-9][0-9]*" ,{0} ,NULL, IRQ_TYPE_LEGACY, IRQ_SUCKS },
 		{ "nss_queue[0-9][0-9]*" ,{0} ,NULL, IRQ_TYPE_LEGACY, IRQ_GBETH },
 		{ "DP_EXT_IRQ*" ,{0} ,NULL, IRQ_TYPE_LEGACY, IRQ_GBETH },
 		{ "edma_[rt]x.*" ,{0} ,NULL, IRQ_TYPE_LEGACY, IRQ_GBETH },

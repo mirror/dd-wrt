@@ -709,7 +709,6 @@ void free_cl_opts(void)
 
 static void add_missing_irq(struct irq_info *info, void *data __attribute__((unused)))
 {
-
 	add_new_irq(NULL, info);
 }
 
