@@ -4,15 +4,17 @@ irqbalance-configure: libffi glib20
 		--with-libcap_ng=no \
 		--with-systemd=no \
 		--disable-numa \
-		--without-irqbalance-ui \
+		--with-irqbalance-ui \
 		--enable-static=glib2 \
 		--disable-thermal \
 		--host=$(ARCH)-linux \
 		CC="$(CC)" \
 		GLIB2_CFLAGS="-I$(TOP)/_staging_static/usr/include/glib-2.0 -I$(TOP)/_staging_static/usr/lib/glib-2.0/include -L$(INSTALLDIR)/util-linux/usr/lib" \
 		GLIB2_LIBS="-L$(TOP)/_staging_static/usr/lib -lglib-2.0" \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) $(THUMB) -DNEED_PRINTF" \
-		LDFLAGS="$(LDLTO)"
+		NCURSESW_CFLAGS="-I$(TOP)/ncurses/include" \
+		NCURSESW_LIBS="-L$(TOP)/ncurses/lib -lncurses" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) $(THUMB) -I$(TOP)/ncurses/include -DNEED_PRINTF" \
+		LDFLAGS="$(LDLTO) -L$(TOP)/ncurses/lib -lncurses"
 
 irqbalance: zlib glib20
 	$(MAKE) -C irqbalance
@@ -27,6 +29,8 @@ irqbalance-install:
 	$(MAKE) -C irqbalance install DESTDIR=$(INSTALLDIR)/irqbalance
 	mkdir -p $(INSTALLDIR)/irqbalance/etc/irqbalance
 	rm -rf $(INSTALLDIR)/irqbalance/etc
+	rm -rf $(INSTALLDIR)/irqbalance/usr/etc
+	rm -rf $(INSTALLDIR)/irqbalance/usr/lib
 	rm -rf $(INSTALLDIR)/irqbalance/usr/include
 	rm -rf $(INSTALLDIR)/irqbalance/usr/share
 	
