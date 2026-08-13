@@ -1,4 +1,4 @@
-irqbalance-configure: libffi glib20
+irqbalance-configure: libffi glib20 ncurses
 	cd irqbalance && ./autogen.sh
 	cd irqbalance && ./configure --disable-numa --prefix=/usr \
 		--with-libcap_ng=no \
@@ -16,7 +16,7 @@ irqbalance-configure: libffi glib20
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) $(THUMB) -I$(TOP)/ncurses/include -DNEED_PRINTF" \
 		LDFLAGS="$(LDLTO) -L$(TOP)/ncurses/lib -lncurses"
 
-irqbalance: zlib glib20
+irqbalance: zlib glib20 ncurses
 	$(MAKE) -C irqbalance
 
 irqbalance-clean: 
