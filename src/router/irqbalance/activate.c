@@ -422,7 +422,9 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	cpumask_t applied_mask;
 
 	if (info->class == IRQ_SUCKS) {
-		goto sucks;
+		info->level = BALANCE_NONE;
+		info->moved = 0; /* migration impossible, mark as done */
+		return;
 	}
 	/*
  	 * only activate mappings for irqs that have moved

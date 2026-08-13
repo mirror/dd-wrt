@@ -260,7 +260,7 @@ static gint compare_ints(gconstpointer a, gconstpointer b)
 	return ai->irq - bi->irq;
 }
 
-static void remove_irq(int irq)
+void remove_irq(int irq)
 {
 	struct irq_info find, *new;
 	GList *entry;
