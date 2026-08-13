@@ -1,4 +1,4 @@
-irqbalance-configure: libffi glib20 libnl
+irqbalance-configure: libffi glib20
 	cd irqbalance && ./autogen.sh
 	cd irqbalance && ./configure --disable-numa --prefix=/usr \
 		--with-libcap_ng=no \
@@ -6,18 +6,15 @@ irqbalance-configure: libffi glib20 libnl
 		--disable-numa \
 		--without-irqbalance-ui \
 		--enable-static=glib2 \
+		--disable-thermal \
 		--host=$(ARCH)-linux \
 		CC="$(CC)" \
 		GLIB2_CFLAGS="-I$(TOP)/_staging_static/usr/include/glib-2.0 -I$(TOP)/_staging_static/usr/lib/glib-2.0/include -L$(INSTALLDIR)/util-linux/usr/lib" \
 		GLIB2_LIBS="-L$(TOP)/_staging_static/usr/lib -lglib-2.0" \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) $(THUMB) -DNEED_PRINTF" \
-		LDFLAGS="$(LDLTO)" \
-		LIBNL3_CFLAGS="-I$(TOP)/libnl/include" \
-		LIBNL3_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-3  -lnl-genl-3" \
-		LIBNL3GENL_CFLAGS="-I$(TOP)/libnl/include" \
-		LIBNL3GENL_LIBS="-L$(TOP)/libnl/lib/.libs -lnl-genl-3"
+		LDFLAGS="$(LDLTO)"
 
-irqbalance: zlib libnl glib20
+irqbalance: zlib glib20
 	$(MAKE) -C irqbalance
 
 irqbalance-clean: 
