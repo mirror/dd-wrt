@@ -72,36 +72,36 @@ endif
 OPENSSL_CMAKEFLAGS+= -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
 
 openssl: libucontext
-	$(MAKE) -C openssl3 MAKE=make CC="$(CC) -I$(SSLPATH)/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	$(MAKE) -C openssl3 build_libs MAKE=make CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	$(MAKE)  -C openssl3 build_programs MAKE=make CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	rm -f openssl3/apps/openssl
+	$(MAKE) -C $(SSLPATH) MAKE=make CC="$(CC) -I$(SSLPATH)/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	$(MAKE) -C $(SSLPATH) build_libs MAKE=make CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	$(MAKE)  -C $(SSLPATH) build_programs MAKE=make CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	rm -f $(SSLPATH)/apps/openssl
 
 openssl-shared: openssl
-	$(MAKE) -C openssl3 build_libs MAKE=make CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	$(MAKE) -C $(SSLPATH) build_libs MAKE=make CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 
 
 openssl-apps: openssl-shared	
-	-rm openssl3/apps/openssl
-	$(MAKE) -C openssl3 build_programs MAKE=make CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	-rm $(SSLPATH)/apps/openssl
+	$(MAKE) -C $(SSLPATH) build_programs MAKE=make CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 
 openssl-apps-static:
-	-rm openssl3/libcrypto.so.1.1
-	-rm openssl3/libssl.so.1.1
-	-rm openssl3/apps/openssl
-	$(MAKE) -C openssl3 build_programs MAKE=make CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	-rm $(SSLPATH)/libcrypto.so.1.1
+	-rm $(SSLPATH)/libssl.so.1.1
+	-rm $(SSLPATH)/apps/openssl
+	$(MAKE) -C $(SSLPATH) build_programs MAKE=make CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 
 openssl-install:
 #ifeq ($(CONFIG_MADWIFI),y)
-	-install -D openssl3/libcrypto.so.3 $(INSTALLDIR)/openssl/usr/lib/libcrypto.so.3
-	-install -D openssl3/libssl.so.3 $(INSTALLDIR)/openssl/usr/lib/libssl.so.3
+	-install -D $(SSLPATH)/libcrypto.so.3 $(INSTALLDIR)/openssl/usr/lib/libcrypto.so.3
+	-install -D $(SSLPATH)/libssl.so.3 $(INSTALLDIR)/openssl/usr/lib/libssl.so.3
 #endif
 #ifneq ($(ARCH),mipsel)
-#	-install -D openssl3/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl
+#	-install -D $(SSLPATH)/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl
 #endif
 ifeq ($(CONFIG_FREERADIUS),y)
-	$(MAKE) -C openssl3 build_programs MAKE=make CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	-install -D openssl3/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl 
+	$(MAKE) -C $(SSLPATH) build_programs MAKE=make CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	-install -D $(SSLPATH)/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl 
 endif
 	-mkdir -p $(INSTALLDIR)/openssl/etc/ssl
 	-mkdir -p $(INSTALLDIR)/openssl/etc/ssl/certs
@@ -109,15 +109,15 @@ endif
 	-touch $(INSTALLDIR)/openssl/etc/ssl/openssl.cnf
 
 	install -d $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d $(INSTALLDIR)/openssl/usr/lib/engines-3 $(INSTALLDIR)/openssl/usr/lib/ossl-modules
-	cp openssl3/apps/openssl.cnf $(INSTALLDIR)/openssl/etc/ssl/
-	-cp openssl3/engines/*.so $(INSTALLDIR)/openssl/usr/lib/engines-3
+	cp $(SSLPATH)/apps/openssl.cnf $(INSTALLDIR)/openssl/etc/ssl/
+	-cp $(SSLPATH)/engines/*.so $(INSTALLDIR)/openssl/usr/lib/engines-3
 #	sed 's!engines = engines_sect!#&!' $(INSTALLDIR)/openssl/etc/ssl/openssl.cnf
-	cp openssl3/apps/devcrypto.cnf $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d/
-	cp openssl3/apps/afalg.cnf $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d/
-	cp openssl3/providers/*.so $(INSTALLDIR)/openssl/usr/lib/ossl-modules
+	cp $(SSLPATH)/apps/devcrypto.cnf $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d/
+	cp $(SSLPATH)/apps/afalg.cnf $(INSTALLDIR)/openssl/etc/ssl/modules.cnf.d/
+	cp $(SSLPATH)/providers/*.so $(INSTALLDIR)/openssl/usr/lib/ossl-modules
 
 openssl-clean:
-	$(MAKE) -C openssl3 clean MAKE=make
+	$(MAKE) -C $(SSLPATH) clean MAKE=make
 
 
 
@@ -149,7 +149,7 @@ endif
 
 
 openssl-configure:
-	cd openssl3 && CROSS_COMPILE= MAKE=make && ./Configure $(OPENSSL_TARGET) \
+	cd $(SSLPATH) && CROSS_COMPILE= MAKE=make && ./Configure $(OPENSSL_TARGET) \
 			--prefix=/usr \
 			--libdir=/usr/lib \
 			--openssldir=/etc/ssl \
@@ -158,19 +158,19 @@ openssl-configure:
 			$(OPENSSL_NO_CIPHERS) \
 			$(OPENSSL_OPTIONS)
 ifeq ($(ARCH),mips)
-	-cd openssl3 && patch -p0 < mips.diff
+	-cd $(SSLPATH) && patch -p0 < mips.diff
 endif
 ifeq ($(ARCH),mipsel)
-	-cd openssl3 && patch -p0 < mips.diff
+	-cd $(SSLPATH) && patch -p0 < mips.diff
 endif
 #ifeq ($(ARCH),mips64)
-#	rm openssl3/crypto/aes/build.info
-#	svn up openssl3
-#	cd openssl3 && patch -p0 < octeon.patch
+#	rm $(SSLPATH)/crypto/aes/build.info
+#	svn up $(SSLPATH)
+#	cd $(SSLPATH) && patch -p0 < octeon.patch
 #endif
 
-	$(MAKE) -C openssl3 MAKE=make clean
-	-$(MAKE) -C openssl3 MAKE=make CC="$(CC) -I$(SSLPATH)/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	-$(MAKE) -C openssl3 MAKE=make build_libs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	-$(MAKE) -C openssl3 MAKE=make build_programs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	-rm -f openssl3/apps/openssl
+	$(MAKE) -C $(SSLPATH) MAKE=make clean
+	-$(MAKE) -C $(SSLPATH) MAKE=make CC="$(CC) -I$(SSLPATH)/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	-$(MAKE) -C $(SSLPATH) MAKE=make build_libs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	-$(MAKE) -C $(SSLPATH) MAKE=make build_programs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	-rm -f $(SSLPATH)/apps/openssl
