@@ -79,7 +79,7 @@ static void move_candidate_irqs(struct irq_info *info, void *data)
 	unsigned long delta_load = 0;
 
 	/* Don't rebalance irqs that don't want or support it */
-	if (info->level == BALANCE_NONE)
+	if (info->level == BALANCE_NONE || info->class == IRQ_SUCKS)
 		return;
 
 	/* Don't move cpus that only have one irq, regardless of load */
@@ -106,7 +106,7 @@ static void move_candidate_irqs(struct irq_info *info, void *data)
 	} else
 		return;
 
-	log(TO_CONSOLE, LOG_INFO, "Selecting irq %d for rebalancing\n", info->irq);
+	log(TO_CONSOLE, LOG_INFO, "Selecting irq %d (class %d) for rebalancing\n", info->irq, info->class);
 
 	force_rebalance_irq(info, NULL);
 }

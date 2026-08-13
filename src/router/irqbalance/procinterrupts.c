@@ -147,13 +147,15 @@ static void guess_arm_irq_hints(char *name, struct irq_info *info)
 		if (!regexec(&matches[i].rcomp, name, 0, NULL, 0)) {
 			info->type = matches[i].type;
 			info->class = matches[i].class;
+
+			if (matches[i].refine_match)
+			    matches[i].refine_match(name, info);
+
 			if (info->class == IRQ_SUCKS) {
 		    		info->level = BALANCE_NONE;
 				info->moved = 0;
 			}
 
-			if (matches[i].refine_match)
-			    matches[i].refine_match(name, info);
 			log(TO_ALL, LOG_DEBUG, "IRQ %s(%d) guessed as class %d\n", name, info->irq,info->class);
 			break;
 		}	

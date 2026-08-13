@@ -421,6 +421,9 @@ static void activate_mapping(struct irq_info *info, void *data __attribute__((un
 	int errsave, ret;
 	cpumask_t applied_mask;
 
+	if (info->class == IRQ_SUCKS) {
+		goto sucks;
+	}
 	/*
  	 * only activate mappings for irqs that have moved
  	 */
@@ -509,6 +512,7 @@ error:
 		info->moved = 0; /* Allow reconsideration in next cycle */
 		break;
 	default:
+		sucks:;
 		/* Any other error is considered permanent. */
 		info->level = BALANCE_NONE;
 		info->moved = 0; /* migration impossible, mark as done */

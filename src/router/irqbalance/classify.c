@@ -260,6 +260,17 @@ static gint compare_ints(gconstpointer a, gconstpointer b)
 	return ai->irq - bi->irq;
 }
 
+static void remove_irq(int irq)
+{
+	struct irq_info find, *new;
+	GList *entry;
+	find.irq = irq;
+	entry = g_list_find_custom(interrupts_db, &find, compare_ints);
+	if (entry) {
+		interrupts_db = g_list_delete_link(interrupts_db, entry);
+	}
+}
+
 static void add_banned_irq(int irq, GList **list)
 {
 	struct irq_info find, *new;
@@ -339,22 +350,24 @@ static struct irq_info *add_one_irq_to_db(const char *devpath, struct irq_info *
 	new->irq = irq;
 	new->type = hint->type;
 	new->class = hint->class;
-
+	new->level = hint->level;
+	remove_irq(irq);
 	interrupts_db = g_list_append(interrupts_db, new);
-
  	/* Some special irqs have NULL devpath */
-	if (devpath != NULL) {
-		/* Map PCI class code to irq class */
-		int irq_class = get_irq_class(devpath);
-		if (irq_class < 0)
-			goto get_numa_node;
-		new->class = irq_class;
-	}
+	if (new->class != IRQ_SUCKS) {
+		if (devpath != NULL) {
+			/* Map PCI class code to irq class */
+			int irq_class = get_irq_class(devpath);
+			if (irq_class < 0)
+				goto get_numa_node;
+			new->class = irq_class;
+		}
 
-	if (pol->level >= 0)
-		new->level = pol->level;
-	else
-		new->level = map_class_to_level[new->class];
+		if (pol->level >= 0)
+			new->level = pol->level;
+		else
+			new->level = map_class_to_level[new->class];
+	}
 
 get_numa_node:
 	numa_node = NUMA_NO_NODE;
@@ -591,10 +604,12 @@ static void add_new_irq(char *path, struct irq_info *hint)
 	char buf[PATH_MAX], drvpath[PATH_MAX];
 	char *mod = NULL;
 	int ret;
-
+#if 0
+	// we may overwrite irqs with new defitions. so we remove existing irqs later before adding a new one
 	new = get_irq_info(irq);
 	if (new)
 		return;
+#endif
 
 	if (path) {
 		sprintf(buf, "%s/driver", path);
