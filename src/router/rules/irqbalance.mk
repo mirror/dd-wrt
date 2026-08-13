@@ -1,4 +1,4 @@
-irqbalance-configure: libffi-configure glib20-configure libnl glib20
+irqbalance-configure: libffi glib20 libnl
 	cd irqbalance && ./autogen.sh
 	cd irqbalance && ./configure --disable-numa --prefix=/usr \
 		--with-libcap_ng=no \
