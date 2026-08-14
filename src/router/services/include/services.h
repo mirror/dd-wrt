@@ -208,6 +208,7 @@ DECLARE_SERVICE(poe);
 DECLARE_SERVICE(antaira);
 DECLARE_SERVICE(antaira_agent);
 DECLARE_SERVICE(benchmark);
+DECLARE_SERVICE(irqbalance);
 
 #if defined(HAVE_IPQ6018)
 int nss_disabled(int setcur);
