@@ -2579,7 +2579,7 @@ fe_mul_op:
 	adc	r11, r11, #0
 	mov	r12, #19
 	lsl	r11, r11, #1
-	orr	r11, r11, r10, LSR #31
+	orr	r11, r11, r10, lsr #31
 	mul	r11, r12, r11
 	ldm	lr!, {r1, r2}
 	mov	r12, #38
@@ -2737,12 +2737,12 @@ fe_mul_op:
 	lsl	r0, r0, #1
 	orr	r0, r0, r10, lsr #31
 	mul	r11, r0, lr
-	pop	{r0, r1, r2}
+	pop	{r0-r2}
 	mov	lr, #38
 	umaal	r0, r11, r12, lr
 	umaal	r1, r11, r4, lr
 	umaal	r2, r11, r5, lr
-	pop	{r3, r4, r5}
+	pop	{r3-r5}
 	umaal	r3, r11, r6, lr
 	umaal	r4, r11, r7, lr
 	umaal	r5, r11, r8, lr
@@ -3005,7 +3005,7 @@ fe_sq_op:
 	adc	r11, r11, #0
 	mov	r12, #19
 	lsl	r11, r11, #1
-	orr	r11, r11, r10, LSR #31
+	orr	r11, r11, r10, lsr #31
 	mul	r11, r12, r11
 	ldm	lr!, {r1, r2}
 	mov	r12, #38
@@ -3147,18 +3147,18 @@ fe_sq_op:
 	lsl	r0, r0, #1
 	orr	r0, r0, r7, lsr #31
 	mul	lr, r0, r6
-	pop	{r0, r1}
+	pop	{r0-r1}
 	mov	r6, #38
 	umaal	r0, lr, r12, r6
 	umaal	r1, lr, r11, r6
 	mov	r12, r3
 	mov	r11, r4
-	pop	{r2, r3, r4}
+	pop	{r2-r4}
 	umaal	r2, lr, r10, r6
 	umaal	r3, lr, r12, r6
 	umaal	r4, lr, r11, r6
 	mov	r12, r6
-	pop	{r5, r6}
+	pop	{r5-r6}
 	umaal	r5, lr, r8, r12
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
 	bic	r7, r7, #0x80000000
@@ -3233,7 +3233,7 @@ fe_mul121666:
 	mov	r10, #19
 	adc	lr, lr, #0
 	lsl	lr, lr, #1
-	orr	lr, lr, r9, LSR #31
+	orr	lr, lr, r9, lsr #31
 	mul	lr, r10, lr
 	adds	r2, r2, lr
 	adcs	r3, r3, #0
@@ -3677,6 +3677,33 @@ L_curve25519_inv_8:
 	ldr	r1, [sp, #160]
 	ldr	r0, [sp, #160]
 	bl	fe_mul_op
+	# Ensure result is less than modulus
+	ldr	r0, [sp, #160]
+	ldm	r0, {r4, r5, r6, r7, r8, r9, r10, r11}
+	adds	r2, r4, #19
+	adcs	r2, r5, #0
+	adcs	r2, r6, #0
+	adcs	r2, r7, #0
+	adcs	r2, r8, #0
+	adcs	r2, r9, #0
+	adcs	r2, r10, #0
+	adc	r2, r11, #0
+	asr	r2, r2, #31
+	and	r2, r2, #19
+	adds	r4, r4, r2
+	adcs	r5, r5, #0
+	adcs	r6, r6, #0
+	adcs	r7, r7, #0
+	adcs	r8, r8, #0
+	adcs	r9, r9, #0
+	adcs	r10, r10, #0
+	adc	r11, r11, #0
+#if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
+	bic	r11, r11, #0x80000000
+#else
+	bfc	r11, #31, #1
+#endif
+	stm	r0, {r4, r5, r6, r7, r8, r9, r10, r11}
 	mov	r0, #0
 	add	sp, sp, #0xbc
 	pop	{r4, r5, r6, r7, r8, r9, r10, r11, pc}
@@ -3959,21 +3986,29 @@ L_curve25519_inv_8:
 	# Ensure result is less than modulus
 	ldr	r0, [sp, #176]
 	ldm	r0, {r4, r5, r6, r7, r8, r9, r10, r11}
-	mov	r2, #19
-	and	r2, r2, r11, asr #31
+	adds	r2, r4, #19
+	adcs	r2, r5, #0
+	adcs	r2, r6, #0
+	adcs	r2, r7, #0
+	adcs	r2, r8, #0
+	adcs	r2, r9, #0
+	adcs	r2, r10, #0
+	adc	r2, r11, #0
+	asr	r2, r2, #31
+	and	r2, r2, #19
 	adds	r4, r4, r2
 	adcs	r5, r5, #0
 	adcs	r6, r6, #0
 	adcs	r7, r7, #0
 	adcs	r8, r8, #0
 	adcs	r9, r9, #0
+	adcs	r10, r10, #0
+	adc	r11, r11, #0
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
 	bic	r11, r11, #0x80000000
 #else
 	bfc	r11, #31, #1
 #endif
-	adcs	r10, r10, #0
-	adc	r11, r11, #0
 	stm	r0, {r4, r5, r6, r7, r8, r9, r10, r11}
 	mov	r0, #0
 	add	sp, sp, #0xc0
@@ -4375,7 +4410,7 @@ fe_sq2:
 	adc	r11, r11, #0
 	mov	r12, #19
 	lsl	r11, r11, #1
-	orr	r11, r11, r10, LSR #31
+	orr	r11, r11, r10, lsr #31
 	mul	r11, r12, r11
 	ldm	lr!, {r1, r2}
 	mov	r12, #38
@@ -4411,7 +4446,7 @@ fe_sq2:
 	adds	r8, r10, r11
 	# Reduce if top bit set
 	mov	r12, #19
-	and	r11, r12, r8, ASR #31
+	and	r11, r12, r8, asr #31
 	adds	r1, r1, r11
 	adcs	r2, r2, #0
 	adcs	r3, r3, #0
@@ -4436,7 +4471,7 @@ fe_sq2:
 	adc	r8, r8, r8
 	# Reduce if top bit set
 	mov	r12, #19
-	and	r11, r12, r8, ASR #31
+	and	r11, r12, r8, asr #31
 	adds	r1, r1, r11
 	adcs	r2, r2, #0
 	adcs	r3, r3, #0
@@ -4563,18 +4598,18 @@ fe_sq2:
 	lsl	r0, r0, #1
 	orr	r0, r0, r7, lsr #31
 	mul	lr, r0, r6
-	pop	{r0, r1}
+	pop	{r0-r1}
 	mov	r6, #38
 	umaal	r0, lr, r12, r6
 	umaal	r1, lr, r11, r6
 	mov	r12, r3
 	mov	r11, r4
-	pop	{r2, r3, r4}
+	pop	{r2-r4}
 	umaal	r2, lr, r10, r6
 	umaal	r3, lr, r12, r6
 	umaal	r4, lr, r11, r6
 	mov	r12, r6
-	pop	{r5, r6}
+	pop	{r5-r6}
 	umaal	r5, lr, r8, r12
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
 	bic	r7, r7, #0x80000000
@@ -4585,7 +4620,7 @@ fe_sq2:
 	add	r7, r7, lr
 	# Reduce if top bit set
 	mov	r11, #19
-	and	r12, r11, r7, ASR #31
+	and	r12, r11, r7, asr #31
 	adds	r0, r0, r12
 	adcs	r1, r1, #0
 	adcs	r2, r2, #0
@@ -4610,7 +4645,7 @@ fe_sq2:
 	adc	r7, r7, r7
 	# Reduce if top bit set
 	mov	r11, #19
-	and	r12, r11, r7, ASR #31
+	and	r12, r11, r7, asr #31
 	adds	r0, r0, r12
 	adcs	r1, r1, #0
 	adcs	r2, r2, #0
@@ -5233,21 +5268,21 @@ sc_reduce:
 	ldm	r0, {r1, r2, r3, r4, r5, r6, r7, r8, r9}
 	lsr	lr, r9, #24
 	lsl	r9, r9, #4
-	orr	r9, r9, r8, LSR #28
+	orr	r9, r9, r8, lsr #28
 	lsl	r8, r8, #4
-	orr	r8, r8, r7, LSR #28
+	orr	r8, r8, r7, lsr #28
 	lsl	r7, r7, #4
-	orr	r7, r7, r6, LSR #28
+	orr	r7, r7, r6, lsr #28
 	lsl	r6, r6, #4
-	orr	r6, r6, r5, LSR #28
+	orr	r6, r6, r5, lsr #28
 	lsl	r5, r5, #4
-	orr	r5, r5, r4, LSR #28
+	orr	r5, r5, r4, lsr #28
 	lsl	r4, r4, #4
-	orr	r4, r4, r3, LSR #28
+	orr	r4, r4, r3, lsr #28
 	lsl	r3, r3, #4
-	orr	r3, r3, r2, LSR #28
+	orr	r3, r3, r2, lsr #28
 	lsl	r2, r2, #4
-	orr	r2, r2, r1, LSR #28
+	orr	r2, r2, r1, lsr #28
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
 	bic	r9, r9, #0xf0000000
 #else
@@ -6018,21 +6053,21 @@ sc_reduce:
 	ldm	r0, {r1, r2, r3, r4, r5, r6, r7, r8, r9}
 	lsr	lr, r9, #24
 	lsl	r9, r9, #4
-	orr	r9, r9, r8, LSR #28
+	orr	r9, r9, r8, lsr #28
 	lsl	r8, r8, #4
-	orr	r8, r8, r7, LSR #28
+	orr	r8, r8, r7, lsr #28
 	lsl	r7, r7, #4
-	orr	r7, r7, r6, LSR #28
+	orr	r7, r7, r6, lsr #28
 	lsl	r6, r6, #4
-	orr	r6, r6, r5, LSR #28
+	orr	r6, r6, r5, lsr #28
 	lsl	r5, r5, #4
-	orr	r5, r5, r4, LSR #28
+	orr	r5, r5, r4, lsr #28
 	lsl	r4, r4, #4
-	orr	r4, r4, r3, LSR #28
+	orr	r4, r4, r3, lsr #28
 	lsl	r3, r3, #4
-	orr	r3, r3, r2, LSR #28
+	orr	r3, r3, r2, lsr #28
 	lsl	r2, r2, #4
-	orr	r2, r2, r1, LSR #28
+	orr	r2, r2, r1, lsr #28
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
 	bic	r9, r9, #0xf0000000
 #else
@@ -7027,21 +7062,21 @@ sc_muladd:
 	# Get 252..503 and 504..507
 	lsr	lr, r9, #24
 	lsl	r9, r9, #4
-	orr	r9, r9, r8, LSR #28
+	orr	r9, r9, r8, lsr #28
 	lsl	r8, r8, #4
-	orr	r8, r8, r7, LSR #28
+	orr	r8, r8, r7, lsr #28
 	lsl	r7, r7, #4
-	orr	r7, r7, r6, LSR #28
+	orr	r7, r7, r6, lsr #28
 	lsl	r6, r6, #4
-	orr	r6, r6, r5, LSR #28
+	orr	r6, r6, r5, lsr #28
 	lsl	r5, r5, #4
-	orr	r5, r5, r4, LSR #28
+	orr	r5, r5, r4, lsr #28
 	lsl	r4, r4, #4
-	orr	r4, r4, r3, LSR #28
+	orr	r4, r4, r3, lsr #28
 	lsl	r3, r3, #4
-	orr	r3, r3, r2, LSR #28
+	orr	r3, r3, r2, lsr #28
 	lsl	r2, r2, #4
-	orr	r2, r2, r1, LSR #28
+	orr	r2, r2, r1, lsr #28
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
 	bic	r9, r9, #0xf0000000
 #else
@@ -7942,21 +7977,21 @@ sc_muladd:
 	# Get 252..503 and 504..507
 	lsr	lr, r9, #24
 	lsl	r9, r9, #4
-	orr	r9, r9, r8, LSR #28
+	orr	r9, r9, r8, lsr #28
 	lsl	r8, r8, #4
-	orr	r8, r8, r7, LSR #28
+	orr	r8, r8, r7, lsr #28
 	lsl	r7, r7, #4
-	orr	r7, r7, r6, LSR #28
+	orr	r7, r7, r6, lsr #28
 	lsl	r6, r6, #4
-	orr	r6, r6, r5, LSR #28
+	orr	r6, r6, r5, lsr #28
 	lsl	r5, r5, #4
-	orr	r5, r5, r4, LSR #28
+	orr	r5, r5, r4, lsr #28
 	lsl	r4, r4, #4
-	orr	r4, r4, r3, LSR #28
+	orr	r4, r4, r3, lsr #28
 	lsl	r3, r3, #4
-	orr	r3, r3, r2, LSR #28
+	orr	r3, r3, r2, lsr #28
 	lsl	r2, r2, #4
-	orr	r2, r2, r1, LSR #28
+	orr	r2, r2, r1, lsr #28
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
 	bic	r9, r9, #0xf0000000
 #else

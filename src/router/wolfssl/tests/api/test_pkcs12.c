@@ -28,9 +28,11 @@
     #include <wolfcrypt/src/misc.c>
 #endif
 
+#include <wolfssl/wolfcrypt/hmac.h>
 #include <wolfssl/wolfcrypt/pkcs12.h>
 #include <wolfssl/wolfcrypt/pwdbased.h>
 #include <wolfssl/wolfcrypt/types.h>
+#include <wolfssl/wolfcrypt/aes.h>
 #include <tests/api/api.h>
 #include <tests/api/test_pkcs12.h>
 
@@ -272,6 +274,330 @@ int test_wc_d2i_PKCS12_oid_underflow(void)
     return EXPECT_RESULT();
 }
 
+/* Test that validates the fix for heap OOB read vulnerability where
+ * ASN.1 parsing after DecryptContent() would use stale ContentInfo bounds.
+ * This is a basic test that verifies the fix compiles and basic PKCS#12
+ * functionality still works after adding contentSz bounds checking. */
+int test_wc_PKCS12_encrypted_content_bounds(void)
+{
+    EXPECT_DECLS;
+#if !defined(NO_ASN) && !defined(NO_PWDBASED) && defined(HAVE_PKCS12) && \
+    !defined(NO_RSA) && !defined(NO_AES) && !defined(NO_SHA) && \
+    !defined(NO_SHA256) && defined(USE_CERT_BUFFERS_2048)
+
+    /* This test validates that the fix for heap OOB read is in place.
+     * The fix ensures ASN.1 parsing uses contentSz (actual decrypted size)
+     * instead of ci->dataSz (original ContentInfo size) as bounds.
+     *
+     * We test this by exercising the PKCS#12 parsing path with encrypted
+     * content to ensure the fix doesn't break normal operation. */
+
+    byte* inKey = (byte*) server_key_der_2048;
+    const word32 inKeySz = sizeof_server_key_der_2048;
+    byte* inCert = (byte*) server_cert_der_2048;
+    const word32 inCertSz = sizeof_server_cert_der_2048;
+    WC_DerCertList inCa = {
+        (byte*)ca_cert_der_2048, sizeof_ca_cert_der_2048, NULL
+    };
+    char pkcs12Passwd[] = "test_bounds_fix";
+
+    WC_PKCS12* pkcs12Export = NULL;
+    WC_PKCS12* pkcs12Import = NULL;
+    byte* pkcs12Der = NULL;
+    byte* outKey = NULL;
+    byte* outCert = NULL;
+    WC_DerCertList* outCaList = NULL;
+    int exportRet = 0;
+    word32 pkcs12DerSz = 0;
+    word32 outKeySz = 0;
+    word32 outCertSz = 0;
+
+    /* Create a PKCS#12 with encrypted content */
+    ExpectNotNull(pkcs12Export = wc_PKCS12_create(pkcs12Passwd,
+        sizeof(pkcs12Passwd) - 1, NULL, inKey, inKeySz, inCert, inCertSz,
+        &inCa, -1, -1, 2048, 2048, 0, NULL));
+
+    /* Serialize to DER - use int intermediate to avoid word32 truncation
+     * of negative error codes from wc_i2d_PKCS12(). */
+    ExpectIntGE((exportRet = wc_i2d_PKCS12(pkcs12Export, &pkcs12Der, NULL)), 0);
+    pkcs12DerSz = (word32)exportRet;
+
+    /* Parse it back - this exercises the fixed bounds checking code path */
+    ExpectNotNull(pkcs12Import = wc_PKCS12_new_ex(NULL));
+    ExpectIntGE(wc_d2i_PKCS12(pkcs12Der, pkcs12DerSz, pkcs12Import), 0);
+
+    /* This parse operation now uses contentSz instead of ci->dataSz for bounds,
+     * preventing the heap OOB read that existed before the fix */
+    ExpectIntEQ(wc_PKCS12_parse(pkcs12Import, pkcs12Passwd, &outKey, &outKeySz,
+        &outCert, &outCertSz, &outCaList), 0);
+
+    /* Verify the parsing worked correctly */
+    ExpectIntEQ(outKeySz, inKeySz);
+    ExpectIntEQ(outCertSz, inCertSz);
+    ExpectNotNull(outCaList);
+    ExpectIntEQ(outCaList->bufferSz, inCa.bufferSz);
+    ExpectIntEQ(XMEMCMP(outKey, inKey, inKeySz), 0);
+    ExpectIntEQ(XMEMCMP(outCert, inCert, inCertSz), 0);
+    ExpectIntEQ(XMEMCMP(outCaList->buffer, inCa.buffer, inCa.bufferSz), 0);
+
+    /* Clean up */
+    XFREE(outKey, NULL, DYNAMIC_TYPE_PUBLIC_KEY);
+    XFREE(outCert, NULL, DYNAMIC_TYPE_PKCS);
+    wc_FreeCertList(outCaList, NULL);
+    wc_PKCS12_free(pkcs12Import);
+    XFREE(pkcs12Der, NULL, DYNAMIC_TYPE_PKCS);
+    wc_PKCS12_free(pkcs12Export);
+
+#endif
+
+    /* Part 2: True regression test - craft a malformed PKCS#12 whose decrypted
+     * SafeBags SEQUENCE claims a length that exceeds the decrypted content
+     * bounds (contentSz) but fits within the stale ContentInfo bounds
+     * (ci->dataSz). Before the fix, the parser used ci->dataSz, allowing a
+     * heap OOB read; with the fix it uses contentSz and rejects the blob. */
+#if !defined(NO_ASN) && !defined(NO_PWDBASED) && defined(HAVE_PKCS12) && \
+    defined(WOLFSSL_AES_256) && defined(HAVE_AES_CBC) && \
+    defined(HAVE_AES_DECRYPT) && !defined(NO_SHA256) && !defined(NO_HMAC) && \
+    defined(WOLFSSL_ASN_TEMPLATE) && !defined(HAVE_FIPS)
+    {
+        static const char regPassword[] = "test";
+        static const byte regSalt[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+        static const byte regIv[16]  = {0};
+
+        /* Malformed SafeBags plaintext (one AES block = 16 bytes).
+         * The outer SEQUENCE claims length 100 - this exceeds the decrypted
+         * content size (16) but fits inside the stale ci->dataSz (127) that
+         * the unfixed code used as the parsing bound. */
+        static const byte regPlaintext[16] = {
+            0x30, 0x64, /* SEQUENCE, length 100 */
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        };
+
+        /* Complete PKCS#12 DER (170 bytes).
+         * Structure: PFX { version 3, authSafe { DATA { AuthenticatedSafe {
+         *   EncryptedData { PBES2(AES-256-CBC, HMAC-SHA256, PBKDF2)
+         *     <ciphertext placeholder at offset 154> } } } } }
+         * No MacData - macIter=0 skips MAC verification. */
+        byte regDer[170] = {
+            0x30, 0x81, 0xA7,                               /* PFX SEQ (167) */
+            0x02, 0x01, 0x03,                               /* version 3 */
+            0x30, 0x81, 0xA1,                   /* authSafe ContentInfo (161) */
+            0x06, 0x09, 0x2A, 0x86, 0x48, 0x86,
+                0xF7, 0x0D, 0x01, 0x07, 0x01,                /* OID data */
+            0xA0, 0x81, 0x93,                            /* [0] CONS. (147) */
+            0x04, 0x81, 0x90,                        /* OCTET STRING (144) */
+            0x30, 0x81, 0x8D,              /* AuthenticatedSafe SEQ (141) */
+            0x30, 0x81, 0x8A,                    /* ContentInfo SEQ (138) */
+            0x06, 0x09, 0x2A, 0x86, 0x48, 0x86,
+                0xF7, 0x0D, 0x01, 0x07, 0x06,       /* OID encryptedData */
+            0xA0, 0x7D,                              /* [0] CONS. (125) */
+            0x30, 0x7B,                        /* EncryptedData SEQ (123) */
+            0x02, 0x01, 0x00,                            /* version 0 */
+            0x30, 0x76,                  /* EncryptedContentInfo SEQ (118) */
+            0x06, 0x09, 0x2A, 0x86, 0x48, 0x86,
+                0xF7, 0x0D, 0x01, 0x07, 0x01,                /* OID data */
+            /* --- EncryptContent payload (107 bytes) --- */
+            0x30, 0x57,                  /* AlgorithmIdentifier SEQ (87) */
+            0x06, 0x09, 0x2A, 0x86, 0x48, 0x86,
+                0xF7, 0x0D, 0x01, 0x05, 0x0D,                /* OID pbes2 */
+            0x30, 0x4A,                         /* PBES2-params SEQ (74) */
+            0x30, 0x29,                       /* keyDerivFunc SEQ (41) */
+            0x06, 0x09, 0x2A, 0x86, 0x48, 0x86,
+                0xF7, 0x0D, 0x01, 0x05, 0x0C,               /* OID pbkdf2 */
+            0x30, 0x1C,                      /* PBKDF2-params SEQ (28) */
+            0x04, 0x08,
+                0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,  /* salt */
+            0x02, 0x02, 0x08, 0x00,                  /* iterations 2048 */
+            0x30, 0x0C,                                /* PRF SEQ (12) */
+            0x06, 0x08, 0x2A, 0x86, 0x48, 0x86,
+                0xF7, 0x0D, 0x02, 0x09,            /* OID hmac-sha256 */
+            0x05, 0x00,                                        /* NULL */
+            0x30, 0x1D,                    /* encryptionScheme SEQ (29) */
+            0x06, 0x09, 0x60, 0x86, 0x48, 0x01,
+                0x65, 0x03, 0x04, 0x01, 0x2A,        /* OID aes256-cbc */
+            0x04, 0x10,                                  /* IV OCT (16) */
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x80, 0x10,                       /* [0] IMPLICIT CT (16) */
+            /* 16 bytes ciphertext - filled at runtime */
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        };
+
+        byte regKey[32];
+        byte regCiphertext[16];
+        Aes regAes;
+        WC_PKCS12* regP12 = NULL;
+        byte* regPkey = NULL;
+        byte* regCert = NULL;
+        word32 regPkeySz = 0;
+        word32 regCertSz = 0;
+
+        XMEMSET(regCiphertext, 0, sizeof(regCiphertext));
+        /* Derive AES-256 key with the same PBKDF2 that DecryptContent uses */
+        ExpectIntEQ(wc_PBKDF2(regKey, (const byte*)regPassword,
+            (int)XSTRLEN(regPassword), regSalt, (int)sizeof(regSalt),
+            2048, 32, WC_SHA256), 0);
+
+        /* Encrypt the malformed plaintext */
+        ExpectIntEQ(wc_AesInit(&regAes, NULL, INVALID_DEVID), 0);
+        ExpectIntEQ(wc_AesSetKey(&regAes, regKey, 32, regIv,
+            AES_ENCRYPTION), 0);
+        ExpectIntEQ(wc_AesCbcEncrypt(&regAes, regCiphertext, regPlaintext,
+            sizeof(regPlaintext)), 0);
+        wc_AesFree(&regAes);
+
+        /* Patch ciphertext into the DER template at offset 154 */
+        XMEMCPY(regDer + 154, regCiphertext, sizeof(regCiphertext));
+
+        /* Parse the crafted PKCS#12 - d2i should succeed (outer structure
+         * is valid), but wc_PKCS12_parse must fail because GetSequence
+         * rejects SEQUENCE length 100 against contentSz 16. */
+        ExpectNotNull(regP12 = wc_PKCS12_new_ex(NULL));
+        ExpectIntGE(wc_d2i_PKCS12(regDer, (word32)sizeof(regDer), regP12), 0);
+        ExpectIntLT(wc_PKCS12_parse(regP12, regPassword, &regPkey, &regPkeySz,
+            &regCert, &regCertSz, NULL), 0);
+
+        XFREE(regPkey, NULL, DYNAMIC_TYPE_PUBLIC_KEY);
+        XFREE(regCert, NULL, DYNAMIC_TYPE_PKCS);
+        wc_PKCS12_free(regP12);
+    }
+#endif
+    return EXPECT_RESULT();
+}
+
+/* Test that a crafted PKCS12 with a MAC OCTET STRING shorter than the
+ * algorithm's native digest size is rejected, rather than allowing the
+ * integrity check to be truncated to a brute-forceable length. */
+int test_wc_PKCS12_truncated_mac_bypass(void)
+{
+    EXPECT_DECLS;
+#if !defined(NO_ASN) && !defined(NO_PWDBASED) && defined(HAVE_PKCS12) \
+    && !defined(NO_HMAC) && !defined(NO_SHA256)
+    static const byte authSafe[] = { 0x30, 0x00 }; /* empty SEQUENCE OF CI */
+    static const char password[] = "wolfSSL test";
+    static const byte salt[8] = {
+        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08
+    };
+    const int iter = 1;
+    const word32 pwLen = (word32)(sizeof(password) - 1);
+
+    byte unicodePw[2 * sizeof(password) + 2];
+    int  unicodePwLen = 0;
+    byte macKey[WC_SHA256_DIGEST_SIZE];
+    byte fullMac[WC_SHA256_DIGEST_SIZE] = {0};
+    Hmac hmac;
+    int  hmacInited = 0;
+    word32 i;
+
+    WC_PKCS12* pkcs12 = NULL;
+    byte pfx[64];
+    word32 pfxLen = 0;
+
+    /* BMPString-style password (UTF-16BE) with trailing 0x00 0x00, matching
+     * the unicode conversion done internally by wc_PKCS12_create_mac. */
+    for (i = 0; i < pwLen; i++) {
+        unicodePw[unicodePwLen++] = 0x00;
+        unicodePw[unicodePwLen++] = (byte)password[i];
+    }
+    unicodePw[unicodePwLen++] = 0x00;
+    unicodePw[unicodePwLen++] = 0x00;
+
+    /* Derive the MAC key the same way wc_PKCS12_create_mac does:
+     * PKCS12-PBKDF SHA-256, id=3 (MAC key), kLen=32. */
+    ExpectIntEQ(wc_PKCS12_PBKDF_ex(macKey, unicodePw, unicodePwLen,
+                                   salt, (int)sizeof(salt),
+                                   iter, WC_SHA256_DIGEST_SIZE,
+                                   WC_SHA256, 3 /* id = MAC */, NULL),
+                                   0);
+
+    /* Compute the genuine HMAC-SHA256 over the authSafe content. */
+    ExpectIntEQ(wc_HmacInit(&hmac, NULL, INVALID_DEVID), 0);
+    if (EXPECT_SUCCESS())
+        hmacInited = 1;
+    ExpectIntEQ(wc_HmacSetKey(&hmac, WC_SHA256, macKey, sizeof(macKey)), 0);
+    ExpectIntEQ(wc_HmacUpdate(&hmac, authSafe, (word32)sizeof(authSafe)), 0);
+    ExpectIntEQ(wc_HmacFinal(&hmac, fullMac), 0);
+    if (hmacInited)
+        wc_HmacFree(&hmac);
+
+    /*
+     * Build a 59-byte PFX with a 1-byte truncated digest equal to fullMac[0]:
+     *
+     *   30 39                                  PFX SEQUENCE (57)
+     *      02 01 03                            version = 3
+     *      30 11                               AuthSafe ContentInfo (17)
+     *         06 09 2A 86 48 86 F7 0D 01 07 01 OID 1.2.840.113549.1.7.1 (data)
+     *         A0 04                            [0] EXPLICIT (4)
+     *            04 02                            OCTET STRING (2)
+     *               30 00                           authSafe = empty SEQUENCE
+     *      30 21                               MacData (33)
+     *         30 12                               DigestInfo (18)
+     *            30 0d                               AlgorithmIdentifier (13)
+     *               06 09 60 86 48 01 65 03 04 02 01 OID SHA-256
+     *               05 00                            NULL
+     *            04 01 XX                            OCTET STRING (1)
+     *         04 08 01 02 03 04 05 06 07 08      salt
+     *         02 01 01                           iterations = 1
+     */
+    pfx[pfxLen++] = 0x30; pfx[pfxLen++] = 0x39;
+    pfx[pfxLen++] = 0x02; pfx[pfxLen++] = 0x01; pfx[pfxLen++] = 0x03;
+    pfx[pfxLen++] = 0x30; pfx[pfxLen++] = 0x11;
+    pfx[pfxLen++] = 0x06; pfx[pfxLen++] = 0x09;
+    pfx[pfxLen++] = 0x2A; pfx[pfxLen++] = 0x86; pfx[pfxLen++] = 0x48;
+    pfx[pfxLen++] = 0x86; pfx[pfxLen++] = 0xF7; pfx[pfxLen++] = 0x0D;
+    pfx[pfxLen++] = 0x01; pfx[pfxLen++] = 0x07; pfx[pfxLen++] = 0x01;
+    pfx[pfxLen++] = 0xA0; pfx[pfxLen++] = 0x04;
+    pfx[pfxLen++] = 0x04; pfx[pfxLen++] = 0x02;
+    pfx[pfxLen++] = 0x30; pfx[pfxLen++] = 0x00;
+    pfx[pfxLen++] = 0x30; pfx[pfxLen++] = 0x21;
+    pfx[pfxLen++] = 0x30; pfx[pfxLen++] = 0x12;
+    pfx[pfxLen++] = 0x30; pfx[pfxLen++] = 0x0D;
+    pfx[pfxLen++] = 0x06; pfx[pfxLen++] = 0x09;
+    pfx[pfxLen++] = 0x60; pfx[pfxLen++] = 0x86; pfx[pfxLen++] = 0x48;
+    pfx[pfxLen++] = 0x01; pfx[pfxLen++] = 0x65; pfx[pfxLen++] = 0x03;
+    pfx[pfxLen++] = 0x04; pfx[pfxLen++] = 0x02; pfx[pfxLen++] = 0x01;
+    pfx[pfxLen++] = 0x05; pfx[pfxLen++] = 0x00;
+    pfx[pfxLen++] = 0x04; pfx[pfxLen++] = 0x01;
+    pfx[pfxLen++] = fullMac[0];
+    pfx[pfxLen++] = 0x04; pfx[pfxLen++] = 0x08;
+    pfx[pfxLen++] = 0x01; pfx[pfxLen++] = 0x02; pfx[pfxLen++] = 0x03;
+    pfx[pfxLen++] = 0x04; pfx[pfxLen++] = 0x05; pfx[pfxLen++] = 0x06;
+    pfx[pfxLen++] = 0x07; pfx[pfxLen++] = 0x08;
+    pfx[pfxLen++] = 0x02; pfx[pfxLen++] = 0x01; pfx[pfxLen++] = 0x01;
+
+    {
+        byte* parsedPkey = NULL;
+        word32 parsedPkeySz = 0;
+        byte* parsedCert = NULL;
+        word32 parsedCertSz = 0;
+        int d2iRet;
+
+        ExpectNotNull(pkcs12 = wc_PKCS12_new());
+
+        /* Accept rejection at either parse time (wc_d2i_PKCS12) or
+         * verify time (wc_PKCS12_parse); the test fails only if both
+         * succeed. */
+        d2iRet = wc_d2i_PKCS12(pfx, pfxLen, pkcs12);
+        if (d2iRet == 0) {
+            ExpectIntNE(wc_PKCS12_parse(pkcs12, password,
+                            &parsedPkey, &parsedPkeySz,
+                            &parsedCert, &parsedCertSz, NULL),
+                        0);
+        }
+        else {
+            ExpectIntNE(d2iRet, 0);
+        }
+
+        XFREE(parsedPkey, NULL, DYNAMIC_TYPE_PUBLIC_KEY);
+        XFREE(parsedCert, NULL, DYNAMIC_TYPE_PKCS);
+        wc_PKCS12_free(pkcs12);
+    }
+#endif
+    return EXPECT_RESULT();
+}
+
 int test_wc_PKCS12_PBKDF(void)
 {
     EXPECT_DECLS;
@@ -321,10 +647,13 @@ int test_wc_PKCS12_PBKDF(void)
                     salt2, (int)sizeof(salt2), 1000, 24, WC_SHA256, 1), 0);
     ExpectIntEQ(XMEMCMP(derived, verify2, 24), 0);
 
-    /* iterations <= 0 treated as 1 */
+    /* iterations <= 0 must be rejected */
+    #if !defined(HAVE_FIPS) || FIPS_VERSION3_GE(7,0,0)
     ExpectIntEQ(wc_PKCS12_PBKDF(derived, passwd, (int)sizeof(passwd),
-                    salt, (int)sizeof(salt), 0, 24, WC_SHA256, 1), 0);
-    ExpectIntEQ(XMEMCMP(derived, verify, 24), 0);
+                    salt, (int)sizeof(salt), 0, 24, WC_SHA256, 1), BAD_FUNC_ARG);
+    ExpectIntEQ(wc_PKCS12_PBKDF(derived, passwd, (int)sizeof(passwd),
+                    salt, (int)sizeof(salt), -1, 24, WC_SHA256, 1), BAD_FUNC_ARG);
+    #endif /* !HAVE_FIPS || FIPS_VERSION3_GE(7,0,0) */
 #endif
     return EXPECT_RESULT();
 }
@@ -388,6 +717,16 @@ int test_wc_PKCS12_PBKDF_ex(void)
                     salt, (int)sizeof(salt), 1, 24, WC_SHA256, 2, NULL), 0);
     ExpectIntEQ(wc_PKCS12_PBKDF_ex(derived, passwd, (int)sizeof(passwd),
                     salt, (int)sizeof(salt), 1, 24, WC_SHA256, 3, NULL), 0);
+
+    /* iterations <= 0 must be rejected */
+    #if !defined(HAVE_FIPS) || FIPS_VERSION3_GE(7,0,0)
+    ExpectIntEQ(wc_PKCS12_PBKDF_ex(derived, passwd, (int)sizeof(passwd),
+                    salt, (int)sizeof(salt), 0, 24, WC_SHA256, 1, NULL),
+                BAD_FUNC_ARG);
+    ExpectIntEQ(wc_PKCS12_PBKDF_ex(derived, passwd, (int)sizeof(passwd),
+                    salt, (int)sizeof(salt), -1, 24, WC_SHA256, 1, NULL),
+                BAD_FUNC_ARG);
+    #endif /* !HAVE_FIPS || FIPS_VERSION3_GE(7,0,0) */
 #endif
     return EXPECT_RESULT();
 }
@@ -675,4 +1014,3 @@ int test_wc_PKCS12_PBKDF_ex_sha512_256(void)
 #endif
     return EXPECT_RESULT();
 }
-

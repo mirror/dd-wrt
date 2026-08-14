@@ -454,6 +454,10 @@ WOLFSSL_RSA *wolfSSL_d2i_RSAPublicKey(WOLFSSL_RSA **out,
         WOLFSSL_ERROR_MSG("Bad argument");
         err = 1;
     }
+    if ((!err) && (derSz <= 0)) {
+        WOLFSSL_ERROR_MSG("Bad argument");
+        err = 1;
+    }
     /* Create a new RSA key to return. */
     if ((!err) && ((rsa = wolfSSL_RSA_new()) == NULL)) {
         WOLFSSL_ERROR_MSG("RSA_new failed");
@@ -500,6 +504,10 @@ WOLFSSL_RSA *wolfSSL_d2i_RSAPrivateKey(WOLFSSL_RSA **out,
 
     /* Validate parameters. */
     if (derBuf == NULL) {
+        WOLFSSL_ERROR_MSG("Bad argument");
+        err = 1;
+    }
+    if ((!err) && (derSz <= 0)) {
         WOLFSSL_ERROR_MSG("Bad argument");
         err = 1;
     }
@@ -719,6 +727,9 @@ WOLFSSL_RSA* wolfSSL_d2i_RSAPrivateKey_bio(WOLFSSL_BIO *bio, WOLFSSL_RSA **out)
         key = NULL;
     }
     /* Dispose of allocated data. */
+    if (der != NULL) {
+        ForceZero(der, (word32)derLen);
+    }
     XFREE(der, bio ? bio->heap : NULL, DYNAMIC_TYPE_TMP_BUFFER);
     return key;
 }
@@ -779,6 +790,7 @@ static int wolfSSL_RSA_To_Der_ex(WOLFSSL_RSA* rsa, byte** outBuf, int publicKey,
 {
     int ret = 1;
     int derSz = 0;
+    word32 derAllocSz = 0;
     byte* derBuf = NULL;
 
     WOLFSSL_ENTER("wolfSSL_RSA_To_Der");
@@ -830,6 +842,9 @@ static int wolfSSL_RSA_To_Der_ex(WOLFSSL_RSA* rsa, byte** outBuf, int publicKey,
                 WOLFSSL_ERROR_MSG("Memory allocation failed");
                 ret = MEMORY_ERROR;
             }
+            else {
+                derAllocSz = (word32)derSz;
+            }
         }
     }
     if ((ret == 1) && (outBuf != NULL)) {
@@ -863,6 +878,9 @@ static int wolfSSL_RSA_To_Der_ex(WOLFSSL_RSA* rsa, byte** outBuf, int publicKey,
 
     if ((outBuf != NULL) && (*outBuf != derBuf)) {
         /* Not returning buffer, needs to be disposed of. */
+        if ((derBuf != NULL) && (publicKey == 0) && (derAllocSz > 0)) {
+            ForceZero(derBuf, derAllocSz);
+        }
         XFREE(derBuf, heap, DYNAMIC_TYPE_TMP_BUFFER);
     }
     WOLFSSL_LEAVE("wolfSSL_RSA_To_Der", ret);
@@ -976,7 +994,6 @@ int wolfSSL_RSA_LoadDer_ex(WOLFSSL_RSA* rsa, const unsigned char* derBuf,
 
 #if defined(OPENSSL_EXTRA) || defined(WOLFSSL_WPAS_SMALL)
 
-#if !defined(NO_BIO) || !defined(NO_FILESYSTEM)
 /* Load DER encoded data into WOLFSSL_RSA object.
  *
  * Creates a new WOLFSSL_RSA object if one is not passed in.
@@ -1016,7 +1033,6 @@ static WOLFSSL_RSA* wolfssl_rsa_d2i(WOLFSSL_RSA** rsa, const unsigned char* in,
     }
     return ret;
 }
-#endif
 
 #endif /* OPENSSL_EXTRA || WOLFSSL_WPAS_SMALL */
 
@@ -3101,7 +3117,7 @@ int wolfSSL_RSA_sign_mgf(int hashAlg, const unsigned char* hash,
 #else
     WC_RNG  _tmpRng[1];
     WC_RNG* tmpRng = _tmpRng;
-    byte    encodedSig[MAX_ENCODED_SIG_SZ];
+    byte    encodedSig[MAX_ENCODED_CLASSIC_SIG_SZ];
 #endif
     unsigned int encSz = 0;
 
@@ -3142,7 +3158,7 @@ int wolfSSL_RSA_sign_mgf(int hashAlg, const unsigned char* hash,
 #ifdef WOLFSSL_SMALL_STACK
     if (ret == 1) {
         /* Allocate encoded signature buffer if doing PKCS#1 padding. */
-        encodedSig = (byte*)XMALLOC(MAX_ENCODED_SIG_SZ, NULL,
+        encodedSig = (byte*)XMALLOC(MAX_ENCODED_CLASSIC_SIG_SZ, NULL,
             DYNAMIC_TYPE_SIGNATURE);
         if (encodedSig == NULL) {
             ret = 0;
@@ -3298,10 +3314,10 @@ int wolfSSL_RSA_verify_mgf(int hashAlg, const unsigned char* hash,
 #ifdef WOLFSSL_SMALL_STACK
     unsigned char*   encodedSig = NULL;
 #else
-    unsigned char    encodedSig[MAX_ENCODED_SIG_SZ];
+    unsigned char    encodedSig[MAX_ENCODED_CLASSIC_SIG_SZ];
 #endif
     unsigned char*   sigDec = NULL;
-    unsigned int     len    = MAX_ENCODED_SIG_SZ;
+    unsigned int     len    = MAX_ENCODED_CLASSIC_SIG_SZ;
     int              verLen = 0;
 #if (!defined(HAVE_FIPS) || FIPS_VERSION_GE(5, 1)) && !defined(HAVE_SELFTEST)
     enum wc_HashType hType = WC_HASH_TYPE_NONE;

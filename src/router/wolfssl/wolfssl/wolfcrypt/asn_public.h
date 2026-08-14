@@ -36,6 +36,9 @@ This library defines the interface APIs for X509 certificates.
     #include <wolfssl/wolfcrypt/dsa.h>
 #endif
 #include <wolfssl/wolfcrypt/random.h>
+#ifdef WOLFSSL_ACME_OID
+    #include <wolfssl/wolfcrypt/sha256.h>
+#endif
 
 #ifdef __cplusplus
     extern "C" {
@@ -74,13 +77,35 @@ This library defines the interface APIs for X509 certificates.
     typedef struct falcon_key falcon_key;
     #define WC_FALCONKEY_TYPE_DEFINED
 #endif
-#ifndef WC_DILITHIUMKEY_TYPE_DEFINED
-    typedef struct dilithium_key dilithium_key;
+#ifndef WC_MLDSAKEY_TYPE_DEFINED
+    typedef struct wc_MlDsaKey wc_MlDsaKey;
+    #define WC_MLDSAKEY_TYPE_DEFINED
+#endif
+/* Legacy typedef aliases. Kept until the dilithium.h compatibility shim is
+ * removed in a future release. Application code that included only
+ * <wolfssl/wolfcrypt/asn_public.h> on master continues to compile. Suppress
+ * with WOLFSSL_NO_DILITHIUM_LEGACY_NAMES. */
+#if !defined(WOLFSSL_NO_DILITHIUM_LEGACY_NAMES) && \
+    !defined(WC_DILITHIUMKEY_TYPE_DEFINED)
+    typedef struct wc_MlDsaKey dilithium_key;
     #define WC_DILITHIUMKEY_TYPE_DEFINED
 #endif
-#ifndef WC_SPHINCSKEY_TYPE_DEFINED
-    typedef struct sphincs_key sphincs_key;
-    #define WC_SPHINCSKEY_TYPE_DEFINED
+#if !defined(WOLFSSL_NO_DILITHIUM_LEGACY_NAMES) && \
+    !defined(WC_MLDSAKEY_LEGACY_TYPE_DEFINED)
+    typedef struct wc_MlDsaKey MlDsaKey;
+    #define WC_MLDSAKEY_LEGACY_TYPE_DEFINED
+#endif
+#ifndef WC_SLHDSAKEY_TYPE_DEFINED
+    typedef struct SlhDsaKey SlhDsaKey;
+    #define WC_SLHDSAKEY_TYPE_DEFINED
+#endif
+#ifndef WC_LMSKEY_TYPE_DEFINED
+    typedef struct LmsKey LmsKey;
+    #define WC_LMSKEY_TYPE_DEFINED
+#endif
+#ifndef WC_XMSSKEY_TYPE_DEFINED
+    typedef struct XmssKey XmssKey;
+    #define WC_XMSSKEY_TYPE_DEFINED
 #endif
 
 enum EncPkcs8Types {
@@ -137,20 +162,37 @@ enum CertType {
     DILITHIUM_LEVEL2_TYPE,
     DILITHIUM_LEVEL3_TYPE,
     DILITHIUM_LEVEL5_TYPE,
-    ML_DSA_LEVEL2_TYPE,
-    ML_DSA_LEVEL3_TYPE,
-    ML_DSA_LEVEL5_TYPE,
-    SPHINCS_FAST_LEVEL1_TYPE,
-    SPHINCS_FAST_LEVEL3_TYPE,
-    SPHINCS_FAST_LEVEL5_TYPE,
-    SPHINCS_SMALL_LEVEL1_TYPE,
-    SPHINCS_SMALL_LEVEL3_TYPE,
-    SPHINCS_SMALL_LEVEL5_TYPE,
+    ML_DSA_44_TYPE,
+    ML_DSA_65_TYPE,
+    ML_DSA_87_TYPE,
+    SLH_DSA_SHA2_128S_TYPE,
+    SLH_DSA_SHA2_128F_TYPE,
+    SLH_DSA_SHA2_192S_TYPE,
+    SLH_DSA_SHA2_192F_TYPE,
+    SLH_DSA_SHA2_256S_TYPE,
+    SLH_DSA_SHA2_256F_TYPE,
+    SLH_DSA_SHAKE_128S_TYPE,
+    SLH_DSA_SHAKE_128F_TYPE,
+    SLH_DSA_SHAKE_192S_TYPE,
+    SLH_DSA_SHAKE_192F_TYPE,
+    SLH_DSA_SHAKE_256S_TYPE,
+    SLH_DSA_SHAKE_256F_TYPE,
     ECC_PARAM_TYPE,
     CHAIN_CERT_TYPE,
     PKCS7_TYPE,
-    TRUSTED_CERT_TYPE
+    TRUSTED_CERT_TYPE,
+    LMS_TYPE,
+    XMSS_TYPE,
+    XMSSMT_TYPE
 };
+
+#ifndef WOLFSSL_NO_DILITHIUM_LEGACY_NAMES
+/* Legacy LEVEL2/3/5 spellings for the pre-standardization names. Will
+ * be removed alongside the dilithium.h shim. */
+#define ML_DSA_LEVEL2_TYPE ML_DSA_44_TYPE
+#define ML_DSA_LEVEL3_TYPE ML_DSA_65_TYPE
+#define ML_DSA_LEVEL5_TYPE ML_DSA_87_TYPE
+#endif
 
 
 enum Ctc_Encoding {
@@ -469,6 +511,10 @@ typedef struct Cert {
     word16  certPoliciesNb;              /* Number of Cert Policy */
     byte    crlInfo[CTC_MAX_CRLINFO_SZ]; /* CRL Distribution points */
     int     crlInfoSz;
+#ifdef WOLFSSL_ACME_OID
+    byte    acmeIdentifier[WC_SHA256_DIGEST_SIZE]; /* SHA256 of ACME keyAuth */
+    int     acmeIdentifierSz;
+#endif
 #endif
 #if defined(WOLFSSL_CERT_EXT) || defined(OPENSSL_EXTRA) || \
     defined(WOLFSSL_CERT_REQ)
@@ -622,6 +668,26 @@ WOLFSSL_API int wc_SetKeyUsage(Cert *cert, const char *value);
  */
 WOLFSSL_API int wc_SetExtKeyUsage(Cert *cert, const char *value);
 
+#ifdef WOLFSSL_ACME_OID
+/* Set the RFC 8737 id-pe-acmeIdentifier (1.3.6.1.5.5.7.1.31) extension on
+ * the certificate. Used to construct TLS-ALPN-01 ACME challenge response
+ * certificates.
+ *
+ * keyAuth is the ACME key authorization string (token "." JWK_thumbprint
+ * per RFC 8555 8.1), as raw bytes - keyAuthSz is its byte length.
+ * wc_SetAcmeIdentifierExt computes SHA-256 over keyAuth internally and
+ * stores the digest as the extension value, emitted critical=TRUE per
+ * RFC 8737 3.
+ *
+ * Returns 0 on success.
+ * Returns BAD_FUNC_ARG when cert is NULL, keyAuth is NULL, or
+ * keyAuthSz is 0.
+ * May return a SHA-256 error code if hashing fails. */
+WOLFSSL_API int wc_SetAcmeIdentifierExt(Cert *cert,
+                                        const byte *keyAuth,
+                                        word32 keyAuthSz);
+#endif /* WOLFSSL_ACME_OID */
+
 
 #ifdef WOLFSSL_EKU_OID
 /* Set ExtendedKeyUsage with unique OID
@@ -720,10 +786,10 @@ WOLFSSL_API word32 wc_PkcsPad(byte* buf, word32 sz, word32 blockSz);
          !defined(HAVE_FIPS_VERSION) || \
          ((HAVE_FIPS_VERSION > 2) && \
          (! ((HAVE_FIPS_VERSION == 5) && (HAVE_FIPS_VERSION_MINOR == 0)))))
-    WOLFSSL_API int wc_RsaKeyToPublicDer(RsaKey* key, byte* output, word32 inLen);
+    WOLFSSL_API int wc_RsaKeyToPublicDer(RsaKey* key, byte* output, word32 outLen);
     #endif
     WOLFSSL_API int wc_RsaPublicKeyDerSize(RsaKey* key, int with_header);
-    WOLFSSL_API int wc_RsaKeyToPublicDer_ex(RsaKey* key, byte* output, word32 inLen,
+    WOLFSSL_API int wc_RsaKeyToPublicDer_ex(RsaKey* key, byte* output, word32 outLen,
         int with_header);
 
     /* For FIPS v1/v2 and selftest rsa.h is replaced. */
@@ -739,9 +805,9 @@ WOLFSSL_API word32 wc_PkcsPad(byte* buf, word32 sz, word32 blockSz);
     WOLFSSL_API int wc_DsaParamsDecode(const byte* input, word32* inOutIdx, DsaKey* key,
                         word32 inSz);
     WOLFSSL_API int wc_DsaKeyToParamsDer(DsaKey* key, byte* output,
-        word32 inLen);
+        word32 outLen);
     WOLFSSL_API int wc_DsaKeyToParamsDer_ex(DsaKey* key, byte* output,
-        word32* inLen);
+        word32* outLen);
 #endif
 
 #if !defined(NO_DH) && defined(WOLFSSL_DH_EXTRA)
@@ -756,12 +822,12 @@ WOLFSSL_API int wc_DhPrivKeyToDer(DhKey* key, byte* out, word32* outSz);
     WOLFSSL_ABI
     WOLFSSL_API int wc_EccPrivateKeyDecode(const byte* input, word32* inOutIdx,
                                            ecc_key* key, word32 inSz);
-    WOLFSSL_LOCAL int wc_BuildEccKeyDer(ecc_key* key, byte* output, word32 *inLen,
+    WOLFSSL_LOCAL int wc_BuildEccKeyDer(ecc_key* key, byte* output, word32 *outLen,
                                         int pubIn, int curveIn);
     WOLFSSL_ABI
-    WOLFSSL_API int wc_EccKeyToDer(ecc_key* key, byte* output, word32 inLen);
+    WOLFSSL_API int wc_EccKeyToDer(ecc_key* key, byte* output, word32 outLen);
     WOLFSSL_API int wc_EccPrivateKeyToDer(ecc_key* key, byte* output,
-                                          word32 inLen);
+                                          word32 outLen);
     WOLFSSL_API int wc_EccKeyDerSize(ecc_key* key, int pub);
     WOLFSSL_API int wc_EccPrivateKeyToPKCS8(ecc_key* key, byte* output,
                                             word32* outLen);
@@ -773,9 +839,9 @@ WOLFSSL_API int wc_DhPrivKeyToDer(DhKey* key, byte* out, word32* outSz);
     WOLFSSL_API int wc_EccPublicKeyDecode(const byte* input, word32* inOutIdx,
                           ecc_key* key, word32 inSz);
     WOLFSSL_ABI WOLFSSL_API int wc_EccPublicKeyToDer(ecc_key* key, byte* output,
-                                         word32 inLen, int with_AlgCurve);
+                                         word32 outLen, int with_AlgCurve);
     WOLFSSL_API int wc_EccPublicKeyToDer_ex(ecc_key* key, byte* output,
-                                         word32 inLen, int with_AlgCurve,
+                                         word32 outLen, int with_AlgCurve,
                                          int comp);
     WOLFSSL_API int wc_EccPublicKeyDerSize(ecc_key* key, int with_AlgCurve);
 #endif
@@ -789,11 +855,11 @@ WOLFSSL_API int wc_Ed25519PublicKeyDecode(const byte* input, word32* inOutIdx,
 #endif
 #ifdef HAVE_ED25519_KEY_EXPORT
 WOLFSSL_API int wc_Ed25519KeyToDer(const ed25519_key* key, byte* output,
-                                   word32 inLen);
+                                   word32 outLen);
 WOLFSSL_API int wc_Ed25519PrivateKeyToDer(const ed25519_key* key, byte* output,
-                                          word32 inLen);
+                                          word32 outLen);
 WOLFSSL_API int wc_Ed25519PublicKeyToDer(const ed25519_key* key, byte* output,
-                                         word32 inLen, int withAlg);
+                                         word32 outLen, int withAlg);
 #endif
 #endif /* HAVE_ED25519 */
 
@@ -808,11 +874,11 @@ WOLFSSL_API int wc_Curve25519KeyDecode(const byte *input, word32 *inOutIdx,
 #endif
 #ifdef HAVE_CURVE25519_KEY_EXPORT
 WOLFSSL_API int wc_Curve25519PrivateKeyToDer(
-    curve25519_key* key, byte* output, word32 inLen);
+    curve25519_key* key, byte* output, word32 outLen);
 WOLFSSL_API int wc_Curve25519PublicKeyToDer(
-    curve25519_key* key, byte* output, word32 inLen, int withAlg);
+    curve25519_key* key, byte* output, word32 outLen, int withAlg);
 WOLFSSL_API int wc_Curve25519KeyToDer(curve25519_key* key, byte* output,
-                                      word32 inLen, int withAlg);
+                                      word32 outLen, int withAlg);
 #endif
 #endif /* HAVE_CURVE25519 */
 
@@ -824,11 +890,11 @@ WOLFSSL_API int wc_Ed448PublicKeyDecode(
     const byte* input, word32* inOutIdx, ed448_key* key, word32 inSz);
 #endif
 #ifdef HAVE_ED448_KEY_EXPORT
-WOLFSSL_API int wc_Ed448KeyToDer(ed448_key* key, byte* output, word32 inLen);
+WOLFSSL_API int wc_Ed448KeyToDer(const ed448_key* key, byte* output, word32 outLen);
 WOLFSSL_API int wc_Ed448PrivateKeyToDer(
-    ed448_key* key, byte* output, word32 inLen);
+    const ed448_key* key, byte* output, word32 outLen);
 WOLFSSL_API int wc_Ed448PublicKeyToDer(
-    ed448_key* key, byte* output, word32 inLen, int withAlg);
+    const ed448_key* key, byte* output, word32 outLen, int withAlg);
 #endif
 #endif /* HAVE_ED448 */
 
@@ -841,9 +907,9 @@ WOLFSSL_API int wc_Curve448PublicKeyDecode(const byte* input, word32* inOutIdx,
 #endif
 #ifdef HAVE_CURVE448_KEY_EXPORT
 WOLFSSL_API int wc_Curve448PrivateKeyToDer(curve448_key* key, byte* output,
-                                           word32 inLen);
+                                           word32 outLen);
 WOLFSSL_API int wc_Curve448PublicKeyToDer(curve448_key* key, byte* output,
-                                          word32 inLen, int withAlg);
+                                          word32 outLen, int withAlg);
 #endif
 #endif /* HAVE_CURVE448 */
 

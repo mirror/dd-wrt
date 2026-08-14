@@ -67,6 +67,10 @@ static const char *wolfsentry_config_path = NULL;
 #include <wolfssl/test.h>
 #include <wolfssl/error-ssl.h>
 
+#ifdef WOLFSSL_SWDEV
+    #include "tests/swdev/swdev_loader.h"
+#endif
+
 #ifdef USE_FLAT_TEST_H
     #include "server.h"
 #else
@@ -487,6 +491,7 @@ int ServerEchoData(WOLFSSL* ssl, int clientfd, int echoData, int block,
                   ret = wolfSSL_write(ssl, buffer, (int)min((word32)len, (word32)rx_pos)),
                   ret <= 0);
             if (ret != (int)min((word32)len, (word32)rx_pos)) {
+                err = wolfSSL_get_error(ssl, 0);
                 LOG_ERROR("SSL_write echo error %d\n", err);
                 err_sys_ex(runWithErrors, "SSL_write failed");
             }
@@ -704,7 +709,7 @@ static void SetKeyShare(WOLFSSL* ssl, int onlyKeyShare, int useX25519,
     #endif
         }
         else if (usePqc == 1) {
-    #ifdef HAVE_PQC
+    #ifdef WOLFSSL_HAVE_MLKEM
             groups[count] = 0;
     #ifndef WOLFSSL_NO_ML_KEM
         #if !defined(WOLFSSL_NO_ML_KEM_512) && \
@@ -933,7 +938,7 @@ static void SetKeyShare(WOLFSSL* ssl, int onlyKeyShare, int useX25519,
 /*  4. add the same message into Japanese section         */
 /*     (will be translated later)                         */
 /*  5. add printf() into suitable position of Usage()     */
-static const char* server_usage_msg[][70] = {
+static const char* server_usage_msg[][71] = {
     /* English */
     {
         " NOTE: All files relative to wolfSSL home dir\n",               /* 0 */
@@ -1082,7 +1087,7 @@ static const char* server_usage_msg[][70] = {
         "-7          Set minimum downgrade protocol version [0-4] "
            " SSLv3(0) - TLS1.3(4)\n",                                   /* 59 */
 #endif
-#ifdef HAVE_PQC
+#ifdef WOLFSSL_HAVE_MLKEM
         "--pqc <alg> Key Share with specified post-quantum algorithm only:\n"
 #ifndef WOLFSSL_NO_ML_KEM
             "            ML_KEM_512, ML_KEM_768, ML_KEM_1024,\n"
@@ -1123,25 +1128,28 @@ static const char* server_usage_msg[][70] = {
 #ifdef HAVE_SUPPORTED_CURVES
         "--onlyPskDheKe Must use DHE key exchange with PSK\n",          /* 64 */
 #endif
+#if defined(WOLFSSL_TLS13) && defined(WOLFSSL_CERT_WITH_EXTERN_PSK) && \
+    !defined(NO_PSK)
+        "--psk-with-certs  Use TLS 1.3 PSK with certificates\n",        /* 65 */
+#endif
 #ifdef WOLFSSL_DUAL_ALG_CERTS
-        "--altPrivKey <file> Generate alternative signature with this key.\n",
-                                                                        /* 65 */
+        "--altPrivKey <file> Generate alternative signature with this key.\n", /* 66 */
 #endif
 #ifdef WOLFSSL_SYS_CRYPTO_POLICY
-        "--crypto-policy  <path to crypto policy file>\n", /* 66 */
+        "--crypto-policy  <path to crypto policy file>\n", /* 67 */
 #endif
 #if defined(WOLFSSL_TLS13) && defined(HAVE_ECH)
         "--ech <name>  Generate Encrypted Client Hello config with "
             "public name <name>\n",
-                                                                        /* 67 */
+                                                                        /* 68 */
         "--ech-suite <KEM,KDF,AEAD>  HPKE suite to use for ech config.\n"
             "                            Supplied as 3 integers (ex: 32,1,3)\n",
-                                                                        /* 68 */
+                                                                        /* 69 */
 #endif
         "\n"
            "For simpler wolfSSL TLS server examples, visit\n"
            "https://github.com/wolfSSL/wolfssl-examples/tree/master/tls\n",
-                                                                        /* 69 */
+                                                                        /* 70 */
         NULL,
     },
 #ifndef NO_MULTIBYTE_PRINT
@@ -1306,7 +1314,7 @@ static const char* server_usage_msg[][70] = {
         "-7          最小ダウングレード可能なプロトコルバージョンを設定します [0-4] "
         " SSLv3(0) - TLS1.3(4)\n",                          /* 59 */
 #endif
-#ifdef HAVE_PQC
+#ifdef WOLFSSL_HAVE_MLKEM
         "--pqc <alg> post-quantum 名前付きグループとの鍵共有のみ:\n"
 #ifndef WOLFSSL_NO_ML_KEM
             "            ML_KEM_512, ML_KEM_768, ML_KEM_1024,"
@@ -1346,26 +1354,29 @@ static const char* server_usage_msg[][70] = {
 #ifdef HAVE_SUPPORTED_CURVES
         "--onlyPskDheKe Must use DHE key exchange with PSK\n",          /* 64 */
 #endif
+#if defined(WOLFSSL_TLS13) && defined(WOLFSSL_CERT_WITH_EXTERN_PSK) && \
+    !defined(NO_PSK)
+        "--psk-with-certs  Use TLS 1.3 PSK with certificates\n",        /* 65 */
+#endif
 #ifdef WOLFSSL_DUAL_ALG_CERTS
-        "--altPrivKey <file> Generate alternative signature with this key.\n",
-                                                                        /* 65 */
+        "--altPrivKey <file> Generate alternative signature with this key.\n", /* 66 */
 #endif
 #ifdef WOLFSSL_SYS_CRYPTO_POLICY
-        "--crypto-policy  <path to crypto policy file>\n", /* 66 */
+        "--crypto-policy  <path to crypto policy file>\n", /* 67 */
 #endif
 #if defined(WOLFSSL_TLS13) && defined(HAVE_ECH)
         "--ech <name>  Generate Encrypted Client Hello config with "
             "public name <name>\n",
-                                                                        /* 67 */
+                                                                        /* 68 */
         "--ech-suite <KEM,KDF,AEAD>  HPKE suite to use for ech config.\n"
             "                            Supplied as 3 integers (ex: 32,1,3)\n",
-                                                                        /* 68 */
+                                                                        /* 69 */
 #endif
         "\n"
         "より簡単なwolfSSL TSL クライアントの例については"
                                           "下記にアクセスしてください\n"
         "https://github.com/wolfSSL/wolfssl-examples/tree/master/tls\n",
-                                                                        /* 69 */
+                                                                        /* 70 */
         NULL,
     },
 #endif
@@ -1504,7 +1515,7 @@ static void Usage(void)
     printf("%s", msg[++msgId]); /* --wolfsentry-config */
 #endif
     printf("%s", msg[++msgId]); /* -7 */
-#ifdef HAVE_PQC
+#ifdef WOLFSSL_HAVE_MLKEM
     printf("%s", msg[++msgId]);     /* --pqc */
     printf("%s", msg[++msgId]);     /* --pqc options */
     printf("%s", msg[++msgId]);     /* more --pqc options */
@@ -1521,6 +1532,10 @@ static void Usage(void)
 #endif
 #ifdef HAVE_SUPPORTED_CURVES
     printf("%s", msg[++msgId]);     /* --onlyPskDheKe */
+#endif
+#if defined(WOLFSSL_TLS13) && defined(WOLFSSL_CERT_WITH_EXTERN_PSK) && \
+    !defined(NO_PSK)
+    printf("%s", msg[++msgId]);     /* --psk-with-certs */
 #endif
 #ifdef WOLFSSL_DUAL_ALG_CERTS
     printf("%s", msg[++msgId]);     /* --altPrivKey */
@@ -1623,7 +1638,7 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
 #ifndef NO_MULTIBYTE_PRINT
         { "ヘルプ", 0, 258 },
 #endif
-#if defined(HAVE_PQC)
+#if defined(WOLFSSL_HAVE_MLKEM)
         { "pqc", 1, 259 },
 #endif
 #ifdef WOLFSSL_SRTP
@@ -1655,6 +1670,10 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
         { "ech", 1, 269 },
         { "ech-suite", 1, 270 },
 #endif
+#if defined(WOLFSSL_TLS13) && defined(WOLFSSL_CERT_WITH_EXTERN_PSK) && \
+    !defined(NO_PSK)
+        { "psk-with-certs", 0, 271 },
+#endif
         { 0, 0, 0 }
     };
 #endif
@@ -1671,6 +1690,7 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
     word16 port = wolfSSLPort;
     int    usePsk = 0;
     int    usePskPlus = 0;
+    int    usePskWithCerts = 0;
     int    useAnon = 0;
     int    doDTLS = 0;
     int    dtlsUDP = 0;
@@ -1907,6 +1927,7 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
     (void)pqcAlg;
     (void)usePqc;
     (void)altPrivKey;
+    (void)usePskWithCerts;
 
 #ifdef WOLFSSL_TIRTOS
     fdOpenSession(Task_self());
@@ -2437,7 +2458,7 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
                 break;
 #endif
 
-#ifdef HAVE_PQC
+#ifdef WOLFSSL_HAVE_MLKEM
             case 259:
             {
                 usePqc = 1;
@@ -2597,6 +2618,12 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
 
                 break;
 #endif
+#if defined(WOLFSSL_TLS13) && defined(WOLFSSL_CERT_WITH_EXTERN_PSK) && \
+    !defined(NO_PSK)
+        case 271:
+            usePskWithCerts = 1;
+            break;
+#endif
 
         case -1:
             default:
@@ -2607,6 +2634,18 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
 
     myoptind = 0;      /* reset for test cases */
 #endif /* !WOLFSSL_VXWORKS */
+
+#if defined(WOLFSSL_TLS13) && defined(WOLFSSL_CERT_WITH_EXTERN_PSK) && \
+    !defined(NO_PSK)
+    if (usePskWithCerts) {
+        usePsk = 1;
+        if (noPskDheKe) {
+            LOG_ERROR("--psk-with-certs requires PSK key exchange with (EC)DHE");
+            Usage();
+            XEXIT_T(MY_EX_USAGE);
+        }
+    }
+#endif
 
     /* Can only use DTLS over UDP or SCTP, can't do both. */
     if (dtlsUDP && dtlsSCTP) {
@@ -2654,7 +2693,7 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
                    "file");
 #endif
 
-#ifdef HAVE_PQC
+#ifdef WOLFSSL_HAVE_MLKEM
     if (usePqc) {
         if (version == SERVER_DOWNGRADE_VERSION ||
             version == EITHER_DOWNGRADE_VERSION) {
@@ -2814,6 +2853,10 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
             err_sys_ex(catastrophic, "can't set minimum downgrade version");
     }
 
+#ifdef WOLFSSL_EARLY_DATA
+    if (earlyData)
+        wolfSSL_CTX_set_max_early_data(ctx, 4096);
+#endif
 #ifdef OPENSSL_COMPATIBLE_DEFAULTS
     /* Restore wolfSSL verify defaults */
     wolfSSL_CTX_set_verify(ctx, WOLFSSL_VERIFY_DEFAULT, NULL);
@@ -2930,7 +2973,8 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
 #endif
 
 #if !defined(NO_CERTS)
-    if ((!usePsk || usePskPlus) && !useAnon && !(loadCertKeyIntoSSLObj == 1)) {
+    if ((!usePsk || usePskPlus || usePskWithCerts) && !useAnon &&
+            !(loadCertKeyIntoSSLObj == 1)) {
     #if defined(NO_FILESYSTEM) && defined(USE_CERT_BUFFERS_2048)
         if (wolfSSL_CTX_use_certificate_chain_buffer_format(ctx,
                 server_cert_der_2048, sizeof_server_cert_der_2048,
@@ -2974,7 +3018,7 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
     #ifdef HAVE_PK_CALLBACKS
         pkCbInfo.ourKey = ourKey;
     #endif
-    if ((!usePsk || usePskPlus) && !useAnon
+    if ((!usePsk || usePskPlus || usePskWithCerts) && !useAnon
         && !(loadCertKeyIntoSSLObj == 1)
     #if defined(HAVE_PK_CALLBACKS) && defined(TEST_PK_PRIVKEY)
         && !pkCallbacks
@@ -3016,6 +3060,14 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
         wolfSSL_CTX_set_psk_server_callback(ctx, my_psk_server_cb);
     #ifdef WOLFSSL_TLS13
         wolfSSL_CTX_set_psk_server_tls13_callback(ctx, my_psk_server_tls13_cb);
+    #if defined(WOLFSSL_CERT_WITH_EXTERN_PSK)
+        if (usePskWithCerts) {
+            if (wolfSSL_CTX_set_cert_with_extern_psk(ctx, 1) != WOLFSSL_SUCCESS) {
+                err_sys_ex(runWithErrors,
+                    "server can't enable cert_with_extern_psk");
+            }
+        }
+    #endif
     #endif
         if (sendPskIdentityHint == 1)
             wolfSSL_CTX_use_psk_identity_hint(ctx, "cyassl server");
@@ -3188,13 +3240,6 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
     }
 #endif
 
-#ifdef USE_WINDOWS_API
-    if (port == 0) {
-        /* Generate random port for testing */
-        port = GetRandomPort();
-    }
-#endif /* USE_WINDOWS_API */
-
 #ifdef WOLFSSL_ASYNC_CRYPT
     ret = wolfAsync_DevOpen(&devId);
     if (ret < 0) {
@@ -3304,7 +3349,8 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
 
     /* Support for loading private key and cert using WOLFSSL object */
 #if !defined(NO_CERTS)
-    if ((!usePsk || usePskPlus) && !useAnon && loadCertKeyIntoSSLObj) {
+    if ((!usePsk || usePskPlus || usePskWithCerts) && !useAnon &&
+            loadCertKeyIntoSSLObj) {
     #if defined(NO_FILESYSTEM) && defined(USE_CERT_BUFFERS_2048)
         if (wolfSSL_use_certificate_chain_buffer_format(ssl,
                 server_cert_der_2048, sizeof_server_cert_der_2048,
@@ -3321,7 +3367,7 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
     #endif
     }
 
-    if ((!usePsk || usePskPlus) && !useAnon &&
+    if ((!usePsk || usePskPlus || usePskWithCerts) && !useAnon &&
         loadCertKeyIntoSSLObj
     #if defined(HAVE_PK_CALLBACKS) && defined(TEST_PK_PRIVKEY)
         && !pkCallbacks
@@ -4215,6 +4261,12 @@ exit:
 #ifdef WC_RNG_SEED_CB
         wc_SetSeed_Cb(WC_GENERATE_SEED_DEFAULT);
 #endif
+#ifdef WOLFSSL_SWDEV
+        if (wc_SwDev_Init() != 0) {
+            fprintf(stderr, "wc_SwDev_Init failed\n");
+            return EXIT_FAILURE;
+        }
+#endif
         ChangeToWolfRoot();
 
 #if !defined(NO_WOLFSSL_SERVER) && !defined(NO_TLS)
@@ -4227,6 +4279,9 @@ exit:
         fprintf(stderr, "Server not compiled in!\n");
 #endif
 
+#ifdef WOLFSSL_SWDEV
+        wc_SwDev_Cleanup();
+#endif
         wolfSSL_Cleanup();
         FreeTcpReady(&ready);
 

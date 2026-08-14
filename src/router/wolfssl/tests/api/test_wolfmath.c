@@ -70,6 +70,11 @@ int test_mp_get_digit(void)
     ExpectIntEQ(mp_get_digit(NULL, n), 0);
     ExpectIntEQ(mp_get_digit(&a, n), 0);
 
+    /* negative index must return 0, not index out of bounds */
+    ExpectIntEQ(mp_get_digit(&a, -1), 0);
+    ExpectIntEQ(mp_get_digit(&a, -100), 0);
+    ExpectIntEQ(mp_get_digit(NULL, -1), 0);
+
     mp_clear(&a);
 #endif
     return EXPECT_RESULT();
@@ -188,6 +193,14 @@ int test_wc_export_int(void)
     ExpectIntEQ(wc_export_int(&mp, buf, &len, 0, WC_TYPE_HEX_STR), 0);
     /* hex version of 1234 is 04D2 and should be 4 digits + 1 null */
     ExpectIntEQ(len, 5);
+    mp_clear(&mp);
+
+    /* test mp_int too large for export buf */
+    len = sizeof(buf);
+    ExpectIntEQ(mp_init(&mp), MP_OKAY);
+    ExpectIntEQ(mp_set_bit(&mp, 257), 0);
+    ExpectIntEQ(wc_export_int(&mp, buf, &len, keySz, WC_TYPE_UNSIGNED_BIN),
+        WC_NO_ERR_TRACE(BUFFER_E));
 
     mp_clear(&mp);
 #endif

@@ -382,7 +382,7 @@ int wc_HpkeSerializePublicKey(Hpke* hpke, void* key, byte* out, word16* outSz)
             /* TODO: Add X448 */
 #endif
         default:
-            ret = -1;
+            ret = BAD_FUNC_ARG;
             break;
     }
 
@@ -438,7 +438,7 @@ int wc_HpkeDeserializePublicKey(Hpke* hpke, void** key, const byte* in,
             /* TODO: Add X448 */
 #endif
         default:
-            ret = -1;
+            ret = BAD_FUNC_ARG;
             break;
     }
 
@@ -850,7 +850,7 @@ static int wc_HpkeEncap(Hpke* hpke, void* ephemeralKey, void* receiverKey,
             /* TODO: Add X448 */
 #endif
         default:
-            ret = -1;
+            ret = BAD_FUNC_ARG;
             break;
     }
 
@@ -906,6 +906,11 @@ static int wc_HpkeSetupBaseSender(Hpke* hpke, HpkeBaseContext* context,
             infoSz);
     }
 
+#if defined(HAVE_SECRET_CALLBACK) && defined(HAVE_ECH)
+    if (ret == 0 && hpke->echSecret != NULL) {
+        XMEMCPY(hpke->echSecret, sharedSecret, hpke->Nsecret);
+    }
+#endif
     ForceZero(sharedSecret, hpke->Nsecret);
     WC_FREE_VAR_EX(sharedSecret, hpke->heap, DYNAMIC_TYPE_TMP_BUFFER);
 
@@ -917,7 +922,7 @@ int wc_HpkeInitSealContext(Hpke* hpke, HpkeBaseContext* context,
     void* ephemeralKey, void* receiverKey, byte* info, word32 infoSz)
 {
     if (hpke == NULL || context == NULL || ephemeralKey == NULL ||
-        receiverKey == NULL || (info == NULL && infoSz > 0)) {
+        receiverKey == NULL || (info == NULL && infoSz != 0)) {
         return BAD_FUNC_ARG;
     }
 
@@ -935,7 +940,7 @@ int wc_HpkeContextSealBase(Hpke* hpke, HpkeBaseContext* context,
     int ret;
     byte nonce[HPKE_Nn_MAX];
     WC_DECLARE_VAR(aes, Aes, 1, 0);
-    if (hpke == NULL || context == NULL || (aad == NULL && aadSz > 0) ||
+    if (hpke == NULL || context == NULL || (aad == NULL && aadSz != 0) ||
         plaintext == NULL || out == NULL) {
         return BAD_FUNC_ARG;
     }
@@ -1098,7 +1103,7 @@ static int wc_HpkeDecap(Hpke* hpke, void* receiverKey, const byte* pubKey,
                 /* TODO: Add X448 */
 #endif
             default:
-                ret = -1;
+                ret = BAD_FUNC_ARG;
                 break;
         }
 
@@ -1148,6 +1153,11 @@ static int wc_HpkeSetupBaseReceiver(Hpke* hpke, HpkeBaseContext* context,
             infoSz);
     }
 
+#if defined(HAVE_SECRET_CALLBACK) && defined(HAVE_ECH)
+    if (ret == 0 && hpke->echSecret != NULL) {
+        XMEMCPY(hpke->echSecret, sharedSecret, hpke->Nsecret);
+    }
+#endif
     ForceZero(sharedSecret, hpke->Nsecret);
     WC_FREE_VAR_EX(sharedSecret, hpke->heap, DYNAMIC_TYPE_TMP_BUFFER);
 
@@ -1160,7 +1170,7 @@ int wc_HpkeInitOpenContext(Hpke* hpke, HpkeBaseContext* context,
     word32 infoSz)
 {
     if (hpke == NULL || context == NULL || receiverKey == NULL || pubKey == NULL
-        || (info == NULL && infoSz > 0)) {
+        || (info == NULL && infoSz != 0)) {
         return BAD_FUNC_ARG;
     }
 
@@ -1175,7 +1185,8 @@ int wc_HpkeContextOpenBase(Hpke* hpke, HpkeBaseContext* context, byte* aad,
     int ret;
     byte nonce[HPKE_Nn_MAX];
     WC_DECLARE_VAR(aes, Aes, 1, 0);
-    if (hpke == NULL || context == NULL || ciphertext == NULL || out == NULL) {
+    if (hpke == NULL || context == NULL || (aad == NULL && aadSz != 0) ||
+        ciphertext == NULL || out == NULL) {
         return BAD_FUNC_ARG;
     }
 
@@ -1343,5 +1354,27 @@ WOLFSSL_LOCAL int wc_HpkeAeadIsSupported(word16 aeadId)
         return 0;
     }
 }
+
+#if defined(HAVE_SECRET_CALLBACK) && defined(HAVE_ECH)
+WOLFSSL_LOCAL int wc_HpkeInitEchSecret(Hpke* hpke)
+{
+    if (hpke == NULL)
+        return BAD_FUNC_ARG;
+    hpke->echSecret = (byte*)XMALLOC(hpke->Nsecret, hpke->heap,
+        DYNAMIC_TYPE_SECRET);
+    if (hpke->echSecret == NULL)
+        return MEMORY_E;
+    return 0;
+}
+
+WOLFSSL_LOCAL void wc_HpkeFreeEchSecret(Hpke* hpke)
+{
+    if (hpke == NULL || hpke->echSecret == NULL)
+        return;
+    ForceZero(hpke->echSecret, hpke->Nsecret);
+    XFREE(hpke->echSecret, hpke->heap, DYNAMIC_TYPE_SECRET);
+    hpke->echSecret = NULL;
+}
+#endif /* HAVE_SECRET_CALLBACK && HAVE_ECH */
 
 #endif /* HAVE_HPKE && (HAVE_ECC || HAVE_CURVE25519) && HAVE_AESGCM */

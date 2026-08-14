@@ -29,6 +29,8 @@ int test_wolfSSL_X509_STORE_check_time(void);
 int test_wolfSSL_X509_STORE_CTX_get0_store(void);
 int test_wolfSSL_X509_STORE_CTX(void);
 int test_wolfSSL_X509_STORE_CTX_ex(void);
+int test_X509_verify_cert_untrusted_inter(void);
+int test_X509_verify_cert_ca_no_keycertsign(void);
 int test_X509_STORE_untrusted(void);
 int test_X509_STORE_InvalidCa(void);
 int test_X509_STORE_InvalidCa_NoCallback(void);
@@ -42,6 +44,7 @@ int test_wolfSSL_X509_STORE_get1_certs(void);
 int test_wolfSSL_X509_STORE_set_get_crl(void);
 int test_wolfSSL_X509_CA_num(void);
 int test_X509_STORE_No_SSL_CTX(void);
+int test_wolfSSL_CTX_set_cert_store(void);
 
 #define TEST_OSSL_X509_STORE_DECLS                                             \
     TEST_DECL_GROUP("ossl_x509_store", test_wolfSSL_X509_STORE_CTX_set_time),  \
@@ -50,6 +53,9 @@ int test_X509_STORE_No_SSL_CTX(void);
                                       test_wolfSSL_X509_STORE_CTX_get0_store), \
     TEST_DECL_GROUP("ossl_x509_store", test_wolfSSL_X509_STORE_CTX),           \
     TEST_DECL_GROUP("ossl_x509_store", test_wolfSSL_X509_STORE_CTX_ex),        \
+    TEST_DECL_GROUP("ossl_x509_store", test_X509_verify_cert_untrusted_inter), \
+    TEST_DECL_GROUP("ossl_x509_store",                                         \
+                                  test_X509_verify_cert_ca_no_keycertsign),    \
     TEST_DECL_GROUP("ossl_x509_store", test_X509_STORE_untrusted),             \
     TEST_DECL_GROUP("ossl_x509_store", test_X509_STORE_InvalidCa),             \
     TEST_DECL_GROUP("ossl_x509_store", test_X509_STORE_InvalidCa_NoCallback),  \
@@ -65,6 +71,7 @@ int test_X509_STORE_No_SSL_CTX(void);
     TEST_DECL_GROUP("ossl_x509_store", test_wolfSSL_X509_STORE_get1_certs),    \
     TEST_DECL_GROUP("ossl_x509_store", test_wolfSSL_X509_STORE_set_get_crl),   \
     TEST_DECL_GROUP("ossl_x509_store", test_wolfSSL_X509_CA_num),              \
-    TEST_DECL_GROUP("ossl_x509_store", test_X509_STORE_No_SSL_CTX)
+    TEST_DECL_GROUP("ossl_x509_store", test_X509_STORE_No_SSL_CTX),             \
+    TEST_DECL_GROUP("ossl_x509_store", test_wolfSSL_CTX_set_cert_store)
 
 #endif /* WOLFCRYPT_TEST_OSSL_X509_STR_H */

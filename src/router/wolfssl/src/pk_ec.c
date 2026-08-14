@@ -426,7 +426,6 @@ void wolfSSL_EC_GROUP_free(WOLFSSL_EC_GROUP *group)
 #endif /* OPENSSL_EXTRA || OPENSSL_EXTRA_X509_SMALL */
 
 #ifdef OPENSSL_EXTRA
-#ifndef NO_BIO
 
 /* Creates an EC group from the DER encoding.
  *
@@ -449,6 +448,8 @@ static WOLFSSL_EC_GROUP* wolfssl_ec_group_d2i(WOLFSSL_EC_GROUP** group,
     const unsigned char* in;
 
     if (in_pp == NULL || *in_pp == NULL)
+        return NULL;
+    if (inSz <= 0)
         return NULL;
 
     in = *in_pp;
@@ -506,6 +507,7 @@ static WOLFSSL_EC_GROUP* wolfssl_ec_group_d2i(WOLFSSL_EC_GROUP** group,
     return ret;
 }
 
+#ifndef NO_BIO
 /* Creates a new EC group from the PEM encoding in the BIO.
  *
  * @param [in]  bio    BIO to read PEM encoding from.
@@ -545,6 +547,7 @@ WOLFSSL_EC_GROUP* wolfSSL_PEM_read_bio_ECPKParameters(WOLFSSL_BIO* bio,
     FreeDer(&der);
     return ret;
 }
+#endif /* !NO_BIO */
 
 WOLFSSL_EC_GROUP *wolfSSL_d2i_ECPKParameters(WOLFSSL_EC_GROUP **out,
         const unsigned char **in, long len)
@@ -592,7 +595,6 @@ int wolfSSL_i2d_ECPKParameters(const WOLFSSL_EC_GROUP* grp, unsigned char** pp)
 
     return len;
 }
-#endif /* !NO_BIO */
 
 #if defined(OPENSSL_ALL) && !defined(NO_CERTS)
 /* Copy an EC group.
@@ -1356,8 +1358,18 @@ WOLFSSL_EC_POINT* wolfSSL_EC_POINT_hex2point(const WOLFSSL_EC_GROUP *group,
     }
 
     key_sz = (wolfSSL_EC_GROUP_get_degree(group) + 7) / 8;
+    if (key_sz <= 0 || (size_t)key_sz > MAX_ECC_BYTES)
+        goto err;
+
     if (hex[0] ==  '0' && hex[1] == '4') { /* uncompressed mode */
         str_sz = (size_t)key_sz * 2;
+
+        /* The uncompressed encoding is exactly 2 + 4*key_sz hex chars
+         * ("04" prefix plus X and Y as 2*key_sz hex chars each). Reject
+         * any other length so XMEMCPY/BN_hex2bn cannot read past the end
+         * of the input and trailing garbage is not silently absorbed. */
+        if (XSTRLEN(hex + 2) != str_sz * 2)
+            goto err;
 
         XMEMSET(strGx, 0x0, str_sz + 1);
         XMEMCPY(strGx, hex + 2, str_sz);
@@ -1377,10 +1389,20 @@ WOLFSSL_EC_POINT* wolfSSL_EC_POINT_hex2point(const WOLFSSL_EC_GROUP *group,
         }
     }
     else if (hex[0] == '0' && (hex[1] == '2' || hex[1] == '3')) {
-        size_t sz = XSTRLEN(hex + 2) / 2;
-        /* compressed mode */
-        octGx[0] = ECC_POINT_COMP_ODD;
-        if (hex_to_bytes(hex + 2, octGx + 1, sz) != sz) {
+        /* The SEC 1 compressed encoding is exactly 1 + key_sz bytes, so
+         * the hex payload after the "02"/"03" prefix must be exactly
+         * 2*key_sz hex chars. Compare the input length directly (rather
+         * than XSTRLEN/2) so that odd-length inputs cannot slip past via
+         * integer truncation. The exact-match rejects oversized inputs
+         * (preventing a hex_to_bytes() write past strGx) and undersized
+         * inputs (preventing wolfSSL_ECPoint_d2i() from reading
+         * uninitialized stack bytes as the X coordinate). */
+        if (XSTRLEN(hex + 2) != (size_t)key_sz * 2)
+            goto err;
+        octGx[0] = (hex[1] == '2') ? ECC_POINT_COMP_EVEN
+                                   : ECC_POINT_COMP_ODD;
+        if (hex_to_bytes(hex + 2, octGx + 1, (size_t)key_sz)
+                                            != (size_t)key_sz) {
             goto err;
         }
         if (wolfSSL_ECPoint_d2i(octGx, (word32)key_sz + 1, group, p)
@@ -3524,6 +3546,9 @@ int wolfSSL_i2d_ECPrivateKey(const WOLFSSL_EC_KEY *key, unsigned char **out)
 
         /* Dispose of any allocated buffer on error. */
         if (err && (*out == buf)) {
+            if (buf != NULL) {
+                ForceZero(buf, len);
+            }
             XFREE(buf, NULL, DYNAMIC_TYPE_TMP_BUFFER);
             *out = NULL;
         }
@@ -4095,6 +4120,7 @@ int wolfSSL_PEM_write_mem_ECPrivateKey(WOLFSSL_EC_KEY* ec,
         derSz = wc_EccKeyToDer((ecc_key*)ec->internal, derBuf, der_max_len);
         if (derSz < 0) {
             WOLFSSL_MSG("wc_EccKeyToDer failed");
+            ForceZero(derBuf, der_max_len);
             XFREE(derBuf, NULL, DYNAMIC_TYPE_DER);
             ret = 0;
         }
@@ -4974,7 +5000,10 @@ WOLFSSL_ECDSA_SIG* wolfSSL_d2i_ECDSA_SIG(WOLFSSL_ECDSA_SIG** sig,
     WOLFSSL_ECDSA_SIG *s = NULL;
 
     /* Validate parameter. */
-    if (pp == NULL) {
+    if (pp == NULL || *pp == NULL) {
+        err = 1;
+    }
+    if ((!err) && (len <= 0)) {
         err = 1;
     }
     if (!err) {

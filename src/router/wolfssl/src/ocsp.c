@@ -21,15 +21,6 @@
 
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
-  /* Name change compatibility layer no longer needs to be included here */
-
-/*
- * WOLFSSL_NO_OCSP_ISSUER_CHAIN_CHECK:
- *     Disable looking for an authorized responder in the verification path of
- *     the issuer. This will make the authorized responder only look at the
- *     OCSP response signer and direct issuer.
- */
-
 /*
  * OCSP responder missing features:
  * - Support for multiple requests and responses in a single OCSP exchange
@@ -544,7 +535,14 @@ int CheckOcspRequest(WOLFSSL_OCSP* ocsp, OcspRequest* ocspRequest,
         urlSz = ocspRequest->urlSz;
     }
     else {
-        /* cert doesn't have extAuthInfo, assuming CERT_GOOD */
+        /* No AIA URL and no override. ocspCheckAll asks for strict chain
+         * checking, so fail closed - but only on the client verification
+         * instance (cm->ocsp); stapling (cm->ocsp_stapling) shares the cm
+         * flag and must stay best-effort. */
+        if (ocsp->cm->ocspCheckAll && ocsp == ocsp->cm->ocsp) {
+            WOLFSSL_MSG("Cert has no OCSP URL and ocspCheckAll is set");
+            return OCSP_NEED_URL;
+        }
         WOLFSSL_MSG("Cert has no OCSP URL, assuming CERT_GOOD");
         return 0;
     }
@@ -583,66 +581,13 @@ int CheckOcspRequest(WOLFSSL_OCSP* ocsp, OcspRequest* ocspRequest,
     return ret;
 }
 
-#ifndef WOLFSSL_NO_OCSP_ISSUER_CHAIN_CHECK
-static int CheckOcspResponderChain(OcspEntry* single, byte* issuerHash,
-        void* vp, Signer* pendingCAs) {
-    /* Attempt to build a chain up to cert's issuer */
-    WOLFSSL_CERT_MANAGER* cm = (WOLFSSL_CERT_MANAGER*)vp;
-    Signer* ca = NULL;
-    Signer* prev = NULL;
-    int passed = 0;
-
-    /*
-     *       Relation between certs:
-     *                 CA
-     *        /                 \
-     *  intermediate(s)   cert in OCSP response
-     *        |           with OCSP key usage ext
-     *  issuer of cert
-     *  in OCSP request
-     */
-
-    /* End loop if no more issuers found or if we have found a self
-     * signed cert (ca == prev) */
-    ca = GetCAByName(cm, single->issuerHash);
-#if defined(HAVE_CERTIFICATE_STATUS_REQUEST_V2)
-    if (ca == NULL && pendingCAs != NULL) {
-        ca = findSignerByName(pendingCAs, single->issuerHash);
-    }
-#else
-    (void)pendingCAs;
-#endif
-    for (; ca != NULL && ca != prev;
-            prev = ca) {
-        if (XMEMCMP(issuerHash, ca->issuerNameHash, OCSP_DIGEST_SIZE) == 0) {
-            WOLFSSL_MSG("\tOCSP Response signed by authorized "
-                    "responder delegated by issuer "
-                    "(found in chain)");
-            passed = 1;
-            break;
-        }
-        ca = GetCAByName(cm, ca->issuerNameHash);
-#if defined(HAVE_CERTIFICATE_STATUS_REQUEST_V2)
-        if (ca == NULL && pendingCAs != NULL) {
-            ca = findSignerByName(pendingCAs, single->issuerHash);
-        }
-#endif
-    }
-    return passed;
-}
-#endif
-
-/**
- * Enforce https://www.rfc-editor.org/rfc/rfc6960#section-4.2.2.2
- * @param bs              The basic OCSP response to verify
- * @param subjectHash     The subject key hash of the OCSP responder certificate
- * @param extExtKeyUsage  The extended key usage bits of the responder certificate
- * @param issuerHash      The issuer name hash of the OCSP responder certificate
- * @param vp              Unused (reserved for future use)
- * @return 1 if the responder is authorized to sign the response, 0 otherwise
- */
-int CheckOcspResponder(OcspResponse *bs, byte* subjectHash,
-        byte extExtKeyUsage, byte* issuerHash, void* vp)
+/* Enforce https://www.rfc-editor.org/rfc/rfc6960#section-4.2.2.2. Both halves
+ * of CertID (issuerNameHash and issuerKeyHash) must match; name-only matching
+ * would authorize a same-DN / different-key CA. issuerKeyHash may be NULL when
+ * unavailable, which disables the delegated branch. */
+int CheckOcspResponder(OcspResponse *bs, byte* subjectNameHash,
+        byte* subjectKeyHash, byte extExtKeyUsage, byte* issuerNameHash,
+        byte* issuerKeyHash)
 {
     int ret = 0;
     OcspEntry* single;
@@ -650,38 +595,35 @@ int CheckOcspResponder(OcspResponse *bs, byte* subjectHash,
     /* Both evaluate to enum values so can't use a pre-processor check */
     WOLFSSL_ASSERT_EQ(OCSP_DIGEST_SIZE, SIGNER_DIGEST_SIZE);
 
-    (void)vp;
-
     WOLFSSL_ENTER("CheckOcspResponder");
 
     /* In the future if this API is used more then it could be beneficial to
      * implement calling InitDecodedCert and ParseCertRelative here
      * automatically when cert == NULL. */
-    if (bs == NULL || subjectHash == NULL || issuerHash == NULL)
+    if (bs == NULL || subjectNameHash == NULL || issuerNameHash == NULL)
         return BAD_FUNC_ARG;
 
-    /* Traverse the list and check that the cert has the authority to provide
-     * an OCSP response for each entry. */
     for (single = bs->single; single != NULL; single = single->next) {
         int passed = 0;
 
-        if (XMEMCMP(subjectHash, single->issuerHash, OCSP_DIGEST_SIZE) == 0) {
+        if (subjectKeyHash != NULL &&
+                XMEMCMP(subjectNameHash, single->issuerHash,
+                    OCSP_DIGEST_SIZE) == 0 &&
+                XMEMCMP(subjectKeyHash, single->issuerKeyHash,
+                    KEYID_SIZE) == 0) {
             WOLFSSL_MSG("\tOCSP Response signed by issuer");
             passed = 1;
         }
         else if ((extExtKeyUsage & EXTKEYUSE_OCSP_SIGN) != 0) {
-            if (XMEMCMP(issuerHash, single->issuerHash, OCSP_DIGEST_SIZE)
-                    == 0) {
+            if (issuerKeyHash != NULL &&
+                    XMEMCMP(issuerNameHash, single->issuerHash,
+                        OCSP_DIGEST_SIZE) == 0 &&
+                    XMEMCMP(issuerKeyHash, single->issuerKeyHash,
+                        KEYID_SIZE) == 0) {
                 WOLFSSL_MSG("\tOCSP Response signed by authorized responder "
                             "delegated by issuer");
                 passed = 1;
             }
-#ifndef WOLFSSL_NO_OCSP_ISSUER_CHAIN_CHECK
-            else if (vp != NULL) {
-                passed = CheckOcspResponderChain(single, issuerHash, vp,
-                        bs->pendingCAs);
-            }
-#endif
         }
 
         if (!passed) {
@@ -749,7 +691,10 @@ int wolfSSL_OCSP_resp_find_status(WOLFSSL_OCSP_BASICRESP *bs,
 
     single = bs->single;
     while (single != NULL) {
-        if ((XMEMCMP(single->status->serial, id->status->serial, (size_t)single->status->serialSz) == 0)
+        if (single->status != NULL && id->status != NULL &&
+            (single->status->serialSz == id->status->serialSz)
+         && (XMEMCMP(single->status->serial, id->status->serial,
+                     (size_t)single->status->serialSz) == 0)
          && (XMEMCMP(single->issuerHash, id->issuerHash, OCSP_DIGEST_SIZE) == 0)
          && (XMEMCMP(single->issuerKeyHash, id->issuerKeyHash, OCSP_DIGEST_SIZE) == 0)) {
             break;
@@ -1081,8 +1026,9 @@ static int OcspVerifySigner(WOLFSSL_OCSP_BASICRESP *resp, DecodedCert *cert,
     }
 #ifndef WOLFSSL_NO_OCSP_ISSUER_CHECK
     if ((flags & WOLFSSL_OCSP_NOCHECKS) == 0) {
-        ret = CheckOcspResponder(resp, c->subjectHash, c->extExtKeyUsage,
-                c->issuerHash, st->cm);
+        ret = CheckOcspResponder(resp, c->subjectHash, c->subjectKeyHash,
+                c->extExtKeyUsage, c->issuerHash,
+                (c->ca != NULL) ? c->ca->subjectKeyHash : NULL);
     }
     else {
         ret = 0;
@@ -1107,6 +1053,9 @@ int wolfSSL_OCSP_basic_verify(WOLFSSL_OCSP_BASICRESP* bs,
     int         ret = WC_NO_ERR_TRACE(WOLFSSL_FAILURE);
     int embedded;
     DecodedCert *cert = NULL;
+
+    if (bs == NULL)
+        return WOLFSSL_FAILURE;
 
     ret = OcspFindSigner(bs, certs, &cert, &embedded, flags);
     if (ret != 0) {
@@ -1237,7 +1186,11 @@ OcspResponse* wolfSSL_d2i_OCSP_RESPONSE(OcspResponse** response,
     int length = 0;
     int ret;
 
-    if (data == NULL)
+    if (data == NULL || *data == NULL || len <= 0)
+        return NULL;
+    if (*data == NULL)
+        return NULL;
+    if (len <= 0)
         return NULL;
 
     if (response != NULL)
@@ -1250,30 +1203,27 @@ OcspResponse* wolfSSL_d2i_OCSP_RESPONSE(OcspResponse** response,
         XMEMSET(resp, 0, sizeof(OcspResponse));
     }
 
+    if (resp->source != NULL)
+        XFREE(resp->source, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     resp->source = (byte*)XMALLOC((size_t)len, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    if (resp->source == NULL) {
-        XFREE(resp, NULL, DYNAMIC_TYPE_OCSP_REQUEST);
-        return NULL;
+    if (resp->source == NULL)
+        goto error;
+
+    if (resp->single != NULL) {
+        FreeOcspEntry(resp->single, NULL);
+        XFREE(resp->single, NULL, DYNAMIC_TYPE_OCSP_ENTRY);
     }
     resp->single = (OcspEntry*)XMALLOC(sizeof(OcspEntry), NULL,
                                       DYNAMIC_TYPE_OCSP_ENTRY);
-    if (resp->single == NULL) {
-        XFREE(resp->source, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-        XFREE(resp, NULL, DYNAMIC_TYPE_OCSP_REQUEST);
-        return NULL;
-    }
+    if (resp->single == NULL)
+        goto error;
     XMEMSET(resp->single, 0, sizeof(OcspEntry));
     resp->single->status = (CertStatus*)XMALLOC(sizeof(CertStatus), NULL,
                                       DYNAMIC_TYPE_OCSP_STATUS);
+    if (resp->single->status == NULL)
+        goto error;
     resp->single->ownStatus = 1;
-    if (resp->single->status == NULL) {
-        XFREE(resp->source, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-        XFREE(resp->single, NULL, DYNAMIC_TYPE_OCSP_ENTRY);
-        XFREE(resp, NULL, DYNAMIC_TYPE_OCSP_REQUEST);
-        return NULL;
-    }
     XMEMSET(resp->single->status, 0, sizeof(CertStatus));
-
     XMEMCPY(resp->source, *data, (size_t)len);
     resp->maxIdx = (word32)len;
 
@@ -1281,8 +1231,7 @@ OcspResponse* wolfSSL_d2i_OCSP_RESPONSE(OcspResponse** response,
     if (ret != 0 && ret != WC_NO_ERR_TRACE(ASN_OCSP_CONFIRM_E)) {
         /* for just converting from a DER to an internal structure the CA may
          * not yet be known to this function for signature verification */
-        wolfSSL_OCSP_RESPONSE_free(resp);
-        return NULL;
+        goto error;
     }
 
     if (GetSequence(*data, &idx, &length, (word32)len) >= 0)
@@ -1292,6 +1241,12 @@ OcspResponse* wolfSSL_d2i_OCSP_RESPONSE(OcspResponse** response,
         *response = resp;
 
     return resp;
+
+error:
+    wolfSSL_OCSP_RESPONSE_free(resp);
+    if (response != NULL && *response == resp)
+        *response = NULL;
+    return NULL;
 }
 
 int wolfSSL_i2d_OCSP_RESPONSE(OcspResponse* response,
@@ -1300,15 +1255,31 @@ int wolfSSL_i2d_OCSP_RESPONSE(OcspResponse* response,
     if (response == NULL)
         return BAD_FUNC_ARG;
 
+    if (response->source == NULL)
+        return BAD_FUNC_ARG;
+
     if (data == NULL)
         return (int)response->maxIdx;
 
-    XMEMCPY(*data, response->source, response->maxIdx);
+    if (*data == NULL) {
+        *data = (unsigned char*)XMALLOC(response->maxIdx, NULL,
+                                        DYNAMIC_TYPE_OPENSSL);
+        if (*data == NULL)
+            return -1;
+        XMEMCPY(*data, response->source, response->maxIdx);
+    }
+    else {
+        XMEMCPY(*data, response->source, response->maxIdx);
+        *data += response->maxIdx;
+    }
+
     return (int)response->maxIdx;
 }
 
 int wolfSSL_OCSP_response_status(OcspResponse *response)
 {
+    if (response == NULL)
+        return -1;
     return response->responseStatus;
 }
 
@@ -1335,8 +1306,12 @@ const char *wolfSSL_OCSP_response_status_str(long s)
 WOLFSSL_OCSP_BASICRESP* wolfSSL_OCSP_response_get1_basic(OcspResponse* response)
 {
     WOLFSSL_OCSP_BASICRESP* bs;
-    const unsigned char *ptr = response->source;
+    const unsigned char *ptr;
 
+    if (response == NULL || response->source == NULL)
+        return NULL;
+
+    ptr = response->source;
     bs = wolfSSL_d2i_OCSP_RESPONSE(NULL, &ptr, response->maxIdx);
     return bs;
 }
@@ -1568,7 +1543,9 @@ WOLFSSL_OCSP_CERTID* wolfSSL_d2i_OCSP_CERTID(WOLFSSL_OCSP_CERTID** cidOut,
     cid->status = (CertStatus*)XMALLOC(sizeof(CertStatus), NULL,
         DYNAMIC_TYPE_OCSP_STATUS);
     if (cid->status == NULL) {
-        XFREE(cid, NULL, DYNAMIC_TYPE_OPENSSL);
+        if (isAllocated) {
+            XFREE(cid, NULL, DYNAMIC_TYPE_OPENSSL);
+        }
         return NULL;
     }
     XMEMSET(cid->status, 0, sizeof(CertStatus));
@@ -1637,8 +1614,8 @@ int wolfSSL_OCSP_single_get0_status(WOLFSSL_OCSP_SINGLERESP *single,
                                     WOLFSSL_ASN1_TIME **thisupd,
                                     WOLFSSL_ASN1_TIME **nextupd)
 {
-    if (single == NULL)
-        return WOLFSSL_FAILURE;
+    if (single == NULL || single->status == NULL)
+        return -1;
 
 #ifdef WOLFSSL_OCSP_PARSE_STATUS
     if (thisupd != NULL)
@@ -1784,7 +1761,7 @@ int wolfSSL_OCSP_REQ_CTX_add1_header(WOLFSSL_OCSP_REQ_CTX *ctx,
 {
     WOLFSSL_ENTER("wolfSSL_OCSP_REQ_CTX_add1_header");
 
-    if (name == NULL) {
+    if (ctx == NULL || name == NULL) {
         WOLFSSL_MSG("Bad parameter");
         return WOLFSSL_FAILURE;
     }

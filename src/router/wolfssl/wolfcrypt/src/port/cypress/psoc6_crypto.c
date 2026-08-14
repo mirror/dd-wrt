@@ -527,6 +527,9 @@ int wc_InitSha512_ex(wc_Sha512* sha, void* heap, int devid)
     int ret;
     (void)heap;
     (void)devid;
+    if (sha == NULL) {
+        return BAD_FUNC_ARG;
+    }
     XMEMSET(sha, 0, sizeof(wc_Sha512));
     /* Lock the mutex to perform crypto operations */
     ret = wolfSSL_CryptHwMutexLock();
@@ -536,6 +539,11 @@ int wc_InitSha512_ex(wc_Sha512* sha, void* heap, int devid)
         /* Release the lock */
         wolfSSL_CryptHwMutexUnLock();
     }
+#if defined(WOLFSSL_SHA512_HASHTYPE)
+    if (ret == 0) {
+        sha->hashType = WC_HASH_TYPE_SHA512;
+    }
+#endif
     return ret;
 }
 
@@ -606,6 +614,11 @@ int wc_InitSha512_224_ex(wc_Sha512* sha, void* heap, int devid)
         /* Release the lock */
         wolfSSL_CryptHwMutexUnLock();
     }
+#if defined(WOLFSSL_SHA512_HASHTYPE)
+    if (ret == 0) {
+        sha->hashType = WC_HASH_TYPE_SHA512_224;
+    }
+#endif
     return ret;
 }
 
@@ -630,6 +643,9 @@ int wc_Sha512_224Final(wc_Sha512* sha, byte* hash)
         /* Release the lock */
         wolfSSL_CryptHwMutexUnLock();
     }
+
+    if (ret != 0)
+        return ret;
 
     /* Reset state */
     return wc_InitSha512_224(sha);
@@ -658,6 +674,11 @@ int wc_InitSha512_256_ex(wc_Sha512* sha, void* heap, int devid)
         /* Release the lock */
         wolfSSL_CryptHwMutexUnLock();
     }
+#if defined(WOLFSSL_SHA512_HASHTYPE)
+    if (ret == 0) {
+        sha->hashType = WC_HASH_TYPE_SHA512_256;
+    }
+#endif
     return ret;
 }
 

@@ -26,7 +26,26 @@ Encryption Standard (AES) functionality.
 #![cfg(aes)]
 
 use crate::sys;
-use core::mem::{size_of_val, MaybeUninit};
+use core::mem::MaybeUninit;
+use zeroize::{Zeroize, ZeroizeOnDrop};
+
+#[cfg(feature = "aead")]
+use aead::{AeadCore, AeadInPlace, KeyInit, KeySizeUser};
+
+#[cfg(feature = "aead")]
+use aead::generic_array::typenum::{U0, U12, U16, U24, U32};
+
+#[cfg(all(feature = "cipher", not(feature = "aead")))]
+use cipher::typenum::consts::{U16, U24, U32};
+
+#[cfg(feature = "cipher")]
+use cipher::{
+    BlockModeDecBackend, BlockModeDecClosure, BlockModeDecrypt,
+    BlockModeEncBackend, BlockModeEncClosure, BlockModeEncrypt,
+    IvSizeUser, KeyIvInit, ParBlocksSizeUser,
+};
+#[cfg(all(any(aes_ctr, aes_ofb), feature = "cipher"))]
+use cipher::{StreamCipher,StreamCipherError};
 
 #[cfg(aes_wc_block_size)]
 pub const AES_BLOCK_SIZE: usize = sys::WC_AES_BLOCK_SIZE as usize;
@@ -95,7 +114,7 @@ impl CBC {
     }
 
     fn init(&mut self, key: &[u8], iv: &[u8], dir: i32) -> Result<(), i32> {
-        let key_size = key.len() as u32;
+        let key_size = crate::buffer_len_to_u32(key.len())?;
         if iv.len() != AES_BLOCK_SIZE {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
@@ -162,16 +181,14 @@ impl CBC {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn encrypt<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    pub fn encrypt(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesCbcEncrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size)
+            sys::wc_AesCbcEncrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), in_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -194,16 +211,14 @@ impl CBC {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn decrypt<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    pub fn decrypt(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesCbcDecrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size)
+            sys::wc_AesCbcDecrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), in_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -212,10 +227,17 @@ impl CBC {
     }
 }
 #[cfg(aes_cbc)]
+impl CBC {
+    fn zeroize(&mut self) {
+        unsafe { crate::zeroize_raw(&mut self.ws_aes); }
+    }
+}
+#[cfg(aes_cbc)]
 impl Drop for CBC {
     /// Safely free the wolfSSL resources.
     fn drop(&mut self) {
         unsafe { sys::wc_AesFree(&mut self.ws_aes); }
+        self.zeroize();
     }
 }
 
@@ -312,7 +334,7 @@ impl CCM {
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
     pub fn init(&mut self, key: &[u8]) -> Result<(), i32> {
-        let key_size = key.len() as u32;
+        let key_size = crate::buffer_len_to_u32(key.len())?;
         let rc = unsafe {
             sys::wc_AesCcmSetKey(&mut self.ws_aes, key.as_ptr(), key_size)
         };
@@ -339,24 +361,19 @@ impl CCM {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn encrypt<I,O,N,A>(&mut self, din: &[I], dout: &mut [O], nonce: &[N], auth: &[A], auth_tag: &mut [A]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
-        let nonce_ptr = nonce.as_ptr() as *const u8;
-        let nonce_size = size_of_val(nonce) as u32;
-        let auth_ptr = auth.as_ptr() as *const u8;
-        let auth_size = size_of_val(auth) as u32;
-        let auth_tag_ptr = auth_tag.as_mut_ptr() as *mut u8;
-        let auth_tag_size = size_of_val(auth_tag) as u32;
+    pub fn encrypt(&mut self, din: &[u8], dout: &mut [u8], nonce: &[u8], auth: &[u8], auth_tag: &mut [u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
+        let nonce_size = crate::buffer_len_to_u32(nonce.len())?;
+        let auth_size = crate::buffer_len_to_u32(auth.len())?;
+        let auth_tag_size = crate::buffer_len_to_u32(auth_tag.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesCcmEncrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size,
-                nonce_ptr, nonce_size, auth_tag_ptr, auth_tag_size,
-                auth_ptr, auth_size)
+            sys::wc_AesCcmEncrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), in_size,
+                nonce.as_ptr(), nonce_size, auth_tag.as_mut_ptr(), auth_tag_size,
+                auth.as_ptr(), auth_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -381,24 +398,19 @@ impl CCM {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn decrypt<I,O,N,A>(&mut self, din: &[I], dout: &mut [O], nonce: &[N], auth: &[A], auth_tag: &[A]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
-        let nonce_ptr = nonce.as_ptr() as *const u8;
-        let nonce_size = size_of_val(nonce) as u32;
-        let auth_ptr = auth.as_ptr() as *const u8;
-        let auth_size = size_of_val(auth) as u32;
-        let auth_tag_ptr = auth_tag.as_ptr() as *const u8;
-        let auth_tag_size = size_of_val(auth_tag) as u32;
+    pub fn decrypt(&mut self, din: &[u8], dout: &mut [u8], nonce: &[u8], auth: &[u8], auth_tag: &[u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
+        let nonce_size = crate::buffer_len_to_u32(nonce.len())?;
+        let auth_size = crate::buffer_len_to_u32(auth.len())?;
+        let auth_tag_size = crate::buffer_len_to_u32(auth_tag.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesCcmDecrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size,
-                nonce_ptr, nonce_size, auth_tag_ptr, auth_tag_size,
-                auth_ptr, auth_size)
+            sys::wc_AesCcmDecrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), in_size,
+                nonce.as_ptr(), nonce_size, auth_tag.as_ptr(), auth_tag_size,
+                auth.as_ptr(), auth_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -407,10 +419,242 @@ impl CCM {
     }
 }
 #[cfg(aes_ccm)]
+impl CCM {
+    fn zeroize(&mut self) {
+        unsafe { crate::zeroize_raw(&mut self.ws_aes); }
+    }
+}
+#[cfg(aes_ccm)]
 impl Drop for CCM {
     /// Safely free the wolfSSL resources.
     fn drop(&mut self) {
         unsafe { sys::wc_AesFree(&mut self.ws_aes); }
+        self.zeroize();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// AES-CCM aead trait implementations
+// ---------------------------------------------------------------------------
+
+/// Encrypt `buffer` in-place using AES-CCM (12-byte nonce, 16-byte tag).
+#[cfg(all(aes_ccm, feature = "aead"))]
+fn ccm_encrypt_in_place(
+    key: &[u8],
+    nonce: &[u8],
+    aad: &[u8],
+    buffer: &mut [u8],
+    tag: &mut [u8],
+) -> Result<(), aead::Error> {
+    if buffer.len() > u32::MAX as usize || nonce.len() > u32::MAX as usize
+        || tag.len() > u32::MAX as usize || aad.len() > u32::MAX as usize {
+        return Err(aead::Error);
+    }
+    let mut ccm = CCM::new().map_err(|_| aead::Error)?;
+    ccm.init(key).map_err(|_| aead::Error)?;
+    // wolfCrypt CCM supports in-place operation (out == in).
+    let buf_ptr = buffer.as_mut_ptr();
+    let in_ptr = buf_ptr as *const u8;
+    let rc = unsafe {
+        sys::wc_AesCcmEncrypt(
+            &mut ccm.ws_aes,
+            buf_ptr, in_ptr, buffer.len() as u32,
+            nonce.as_ptr(), nonce.len() as u32,
+            tag.as_mut_ptr(), tag.len() as u32,
+            aad.as_ptr(), aad.len() as u32,
+        )
+    };
+    if rc != 0 {
+        return Err(aead::Error);
+    }
+    Ok(())
+}
+
+/// Decrypt `buffer` in-place using AES-CCM and verify `tag`.
+#[cfg(all(aes_ccm, feature = "aead"))]
+fn ccm_decrypt_in_place(
+    key: &[u8],
+    nonce: &[u8],
+    aad: &[u8],
+    buffer: &mut [u8],
+    tag: &[u8],
+) -> Result<(), aead::Error> {
+    if buffer.len() > u32::MAX as usize || nonce.len() > u32::MAX as usize
+        || tag.len() > u32::MAX as usize || aad.len() > u32::MAX as usize {
+        return Err(aead::Error);
+    }
+    let mut ccm = CCM::new().map_err(|_| aead::Error)?;
+    ccm.init(key).map_err(|_| aead::Error)?;
+    let buf_ptr = buffer.as_mut_ptr();
+    let in_ptr = buf_ptr as *const u8;
+    let rc = unsafe {
+        sys::wc_AesCcmDecrypt(
+            &mut ccm.ws_aes,
+            buf_ptr, in_ptr, buffer.len() as u32,
+            nonce.as_ptr(), nonce.len() as u32,
+            tag.as_ptr(), tag.len() as u32,
+            aad.as_ptr(), aad.len() as u32,
+        )
+    };
+    if rc != 0 {
+        return Err(aead::Error);
+    }
+    Ok(())
+}
+
+/// AES-128-CCM authenticated encryption (12-byte nonce, 16-byte tag).
+#[cfg(all(aes_ccm, feature = "aead"))]
+#[derive(Zeroize, ZeroizeOnDrop)]
+pub struct Aes128Ccm {
+    key: [u8; 16],
+}
+
+#[cfg(all(aes_ccm, feature = "aead"))]
+impl KeySizeUser for Aes128Ccm {
+    type KeySize = U16;
+}
+
+#[cfg(all(aes_ccm, feature = "aead"))]
+impl AeadCore for Aes128Ccm {
+    type NonceSize = U12;
+    type TagSize = U16;
+    type CiphertextOverhead = U0;
+}
+
+#[cfg(all(aes_ccm, feature = "aead"))]
+impl KeyInit for Aes128Ccm {
+    fn new(key: &aead::Key<Self>) -> Self {
+        let mut k = [0u8; 16];
+        k.copy_from_slice(key.as_ref());
+        Aes128Ccm { key: k }
+    }
+}
+
+#[cfg(all(aes_ccm, feature = "aead"))]
+impl AeadInPlace for Aes128Ccm {
+    fn encrypt_in_place_detached(
+        &self,
+        nonce: &aead::Nonce<Self>,
+        associated_data: &[u8],
+        buffer: &mut [u8],
+    ) -> Result<aead::Tag<Self>, aead::Error> {
+        let mut tag = aead::Tag::<Self>::default();
+        ccm_encrypt_in_place(&self.key, nonce.as_ref(), associated_data, buffer, tag.as_mut())?;
+        Ok(tag)
+    }
+
+    fn decrypt_in_place_detached(
+        &self,
+        nonce: &aead::Nonce<Self>,
+        associated_data: &[u8],
+        buffer: &mut [u8],
+        tag: &aead::Tag<Self>,
+    ) -> Result<(), aead::Error> {
+        ccm_decrypt_in_place(&self.key, nonce.as_ref(), associated_data, buffer, tag.as_ref())
+    }
+}
+
+/// AES-192-CCM authenticated encryption (12-byte nonce, 16-byte tag).
+#[cfg(all(aes_ccm, feature = "aead"))]
+#[derive(Zeroize, ZeroizeOnDrop)]
+pub struct Aes192Ccm {
+    key: [u8; 24],
+}
+
+#[cfg(all(aes_ccm, feature = "aead"))]
+impl KeySizeUser for Aes192Ccm {
+    type KeySize = U24;
+}
+
+#[cfg(all(aes_ccm, feature = "aead"))]
+impl AeadCore for Aes192Ccm {
+    type NonceSize = U12;
+    type TagSize = U16;
+    type CiphertextOverhead = U0;
+}
+
+#[cfg(all(aes_ccm, feature = "aead"))]
+impl KeyInit for Aes192Ccm {
+    fn new(key: &aead::Key<Self>) -> Self {
+        let mut k = [0u8; 24];
+        k.copy_from_slice(key.as_ref());
+        Aes192Ccm { key: k }
+    }
+}
+
+#[cfg(all(aes_ccm, feature = "aead"))]
+impl AeadInPlace for Aes192Ccm {
+    fn encrypt_in_place_detached(
+        &self,
+        nonce: &aead::Nonce<Self>,
+        associated_data: &[u8],
+        buffer: &mut [u8],
+    ) -> Result<aead::Tag<Self>, aead::Error> {
+        let mut tag = aead::Tag::<Self>::default();
+        ccm_encrypt_in_place(&self.key, nonce.as_ref(), associated_data, buffer, tag.as_mut())?;
+        Ok(tag)
+    }
+
+    fn decrypt_in_place_detached(
+        &self,
+        nonce: &aead::Nonce<Self>,
+        associated_data: &[u8],
+        buffer: &mut [u8],
+        tag: &aead::Tag<Self>,
+    ) -> Result<(), aead::Error> {
+        ccm_decrypt_in_place(&self.key, nonce.as_ref(), associated_data, buffer, tag.as_ref())
+    }
+}
+
+/// AES-256-CCM authenticated encryption (12-byte nonce, 16-byte tag).
+#[cfg(all(aes_ccm, feature = "aead"))]
+#[derive(Zeroize, ZeroizeOnDrop)]
+pub struct Aes256Ccm {
+    key: [u8; 32],
+}
+
+#[cfg(all(aes_ccm, feature = "aead"))]
+impl KeySizeUser for Aes256Ccm {
+    type KeySize = U32;
+}
+
+#[cfg(all(aes_ccm, feature = "aead"))]
+impl AeadCore for Aes256Ccm {
+    type NonceSize = U12;
+    type TagSize = U16;
+    type CiphertextOverhead = U0;
+}
+
+#[cfg(all(aes_ccm, feature = "aead"))]
+impl KeyInit for Aes256Ccm {
+    fn new(key: &aead::Key<Self>) -> Self {
+        let mut k = [0u8; 32];
+        k.copy_from_slice(key.as_ref());
+        Aes256Ccm { key: k }
+    }
+}
+
+#[cfg(all(aes_ccm, feature = "aead"))]
+impl AeadInPlace for Aes256Ccm {
+    fn encrypt_in_place_detached(
+        &self,
+        nonce: &aead::Nonce<Self>,
+        associated_data: &[u8],
+        buffer: &mut [u8],
+    ) -> Result<aead::Tag<Self>, aead::Error> {
+        let mut tag = aead::Tag::<Self>::default();
+        ccm_encrypt_in_place(&self.key, nonce.as_ref(), associated_data, buffer, tag.as_mut())?;
+        Ok(tag)
+    }
+
+    fn decrypt_in_place_detached(
+        &self,
+        nonce: &aead::Nonce<Self>,
+        associated_data: &[u8],
+        buffer: &mut [u8],
+        tag: &aead::Tag<Self>,
+    ) -> Result<(), aead::Error> {
+        ccm_decrypt_in_place(&self.key, nonce.as_ref(), associated_data, buffer, tag.as_ref())
     }
 }
 
@@ -510,7 +754,7 @@ impl CFB {
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
     pub fn init(&mut self, key: &[u8], iv: &[u8]) -> Result<(), i32> {
-        let key_size = key.len() as u32;
+        let key_size = crate::buffer_len_to_u32(key.len())?;
         if iv.len() != AES_BLOCK_SIZE {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
@@ -538,16 +782,14 @@ impl CFB {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn encrypt<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    pub fn encrypt(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesCfbEncrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size)
+            sys::wc_AesCfbEncrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), in_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -564,21 +806,23 @@ impl CFB {
     /// * `din`: Data to encrypt.
     /// * `dout`: Buffer in which to store the encrypted data. The size of
     ///   the buffer must match that of the `din` buffer.
+    /// * `size`: Number of bits to encrypt. The `din` and `dout` buffers must
+    ///   each be large enough to hold this number of bits.
     ///
     /// # Returns
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn encrypt1<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
-        if in_size != out_size {
+    pub fn encrypt1(&mut self, din: &[u8], dout: &mut [u8], size: usize) -> Result<(), i32> {
+        if din.len() != dout.len() {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
+        if din.len() < size.div_ceil(8) {
+            return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
+        }
+        let bit_size = crate::buffer_len_to_u32(size)?;
         let rc = unsafe {
-            sys::wc_AesCfb1Encrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size)
+            sys::wc_AesCfb1Encrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), bit_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -600,16 +844,14 @@ impl CFB {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn encrypt8<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    pub fn encrypt8(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesCfb8Encrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size)
+            sys::wc_AesCfb8Encrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), in_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -632,16 +874,14 @@ impl CFB {
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
     #[cfg(aes_decrypt)]
-    pub fn decrypt<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    pub fn decrypt(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesCfbDecrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size)
+            sys::wc_AesCfbDecrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), in_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -658,22 +898,24 @@ impl CFB {
     /// * `din`: Data to decrypt.
     /// * `dout`: Buffer in which to store the decrypted data. The size of
     ///   the buffer must match that of the `din` buffer.
+    /// * `size`: Number of bits to decrypt. The `din` and `dout` buffers must
+    ///   each be large enough to hold this number of bits.
     ///
     /// # Returns
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
     #[cfg(aes_decrypt)]
-    pub fn decrypt1<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
-        if in_size != out_size {
+    pub fn decrypt1(&mut self, din: &[u8], dout: &mut [u8], size: usize) -> Result<(), i32> {
+        if din.len() != dout.len() {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
+        if din.len() < size.div_ceil(8) {
+            return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
+        }
+        let bit_size = crate::buffer_len_to_u32(size)?;
         let rc = unsafe {
-            sys::wc_AesCfb1Decrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size)
+            sys::wc_AesCfb1Decrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), bit_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -696,16 +938,14 @@ impl CFB {
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
     #[cfg(aes_decrypt)]
-    pub fn decrypt8<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    pub fn decrypt8(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesCfb8Decrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size)
+            sys::wc_AesCfb8Decrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), in_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -714,10 +954,17 @@ impl CFB {
     }
 }
 #[cfg(aes_cfb)]
+impl CFB {
+    fn zeroize(&mut self) {
+        unsafe { crate::zeroize_raw(&mut self.ws_aes); }
+    }
+}
+#[cfg(aes_cfb)]
 impl Drop for CFB {
     /// Safely free the wolfSSL resources.
     fn drop(&mut self) {
         unsafe { sys::wc_AesFree(&mut self.ws_aes); }
+        self.zeroize();
     }
 }
 
@@ -816,7 +1063,7 @@ impl CTR {
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
     pub fn init(&mut self, key: &[u8], iv: &[u8]) -> Result<(), i32> {
-        let key_size = key.len() as u32;
+        let key_size = crate::buffer_len_to_u32(key.len())?;
         if iv.len() != AES_BLOCK_SIZE {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
@@ -830,16 +1077,14 @@ impl CTR {
         Ok(())
     }
 
-    fn encrypt_decrypt<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    fn encrypt_decrypt(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesCtrEncrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size)
+            sys::wc_AesCtrEncrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), in_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -861,7 +1106,7 @@ impl CTR {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn encrypt<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
+    pub fn encrypt(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
         self.encrypt_decrypt(din, dout)
     }
 
@@ -879,8 +1124,14 @@ impl CTR {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn decrypt<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
+    pub fn decrypt(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
         self.encrypt_decrypt(din, dout)
+    }
+}
+#[cfg(aes_ctr)]
+impl CTR {
+    fn zeroize(&mut self) {
+        unsafe { crate::zeroize_raw(&mut self.ws_aes); }
     }
 }
 #[cfg(aes_ctr)]
@@ -888,6 +1139,7 @@ impl Drop for CTR {
     /// Safely free the wolfSSL resources.
     fn drop(&mut self) {
         unsafe { sys::wc_AesFree(&mut self.ws_aes); }
+        self.zeroize();
     }
 }
 
@@ -955,22 +1207,20 @@ impl EAX {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn encrypt<I,O>(din: &[I], dout: &mut [O], key: &[u8], nonce: &[u8],
+    pub fn encrypt(din: &[u8], dout: &mut [u8], key: &[u8], nonce: &[u8],
             auth: &[u8], auth_tag: &mut [u8]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
-        let key_size = key.len() as u32;
-        let nonce_size = nonce.len() as u32;
-        let auth_size = auth.len() as u32;
-        let auth_tag_size = auth_tag.len() as u32;
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
+        let key_size = crate::buffer_len_to_u32(key.len())?;
+        let nonce_size = crate::buffer_len_to_u32(nonce.len())?;
+        let auth_size = crate::buffer_len_to_u32(auth.len())?;
+        let auth_tag_size = crate::buffer_len_to_u32(auth_tag.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesEaxEncryptAuth(key.as_ptr(), key_size, out_ptr,
-                in_ptr, in_size, nonce.as_ptr(), nonce_size,
+            sys::wc_AesEaxEncryptAuth(key.as_ptr(), key_size, dout.as_mut_ptr(),
+                din.as_ptr(), in_size, nonce.as_ptr(), nonce_size,
                 auth_tag.as_mut_ptr(), auth_tag_size, auth.as_ptr(), auth_size)
         };
         if rc != 0 {
@@ -996,22 +1246,20 @@ impl EAX {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn decrypt<I,O>(din: &[I], dout: &mut [O], key: &[u8], nonce: &[u8],
+    pub fn decrypt(din: &[u8], dout: &mut [u8], key: &[u8], nonce: &[u8],
             auth: &[u8], auth_tag: &[u8]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
-        let key_size = key.len() as u32;
-        let nonce_size = nonce.len() as u32;
-        let auth_size = auth.len() as u32;
-        let auth_tag_size = auth_tag.len() as u32;
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
+        let key_size = crate::buffer_len_to_u32(key.len())?;
+        let nonce_size = crate::buffer_len_to_u32(nonce.len())?;
+        let auth_size = crate::buffer_len_to_u32(auth.len())?;
+        let auth_tag_size = crate::buffer_len_to_u32(auth_tag.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesEaxDecryptAuth(key.as_ptr(), key_size, out_ptr,
-                in_ptr, in_size, nonce.as_ptr(), nonce_size,
+            sys::wc_AesEaxDecryptAuth(key.as_ptr(), key_size, dout.as_mut_ptr(),
+                din.as_ptr(), in_size, nonce.as_ptr(), nonce_size,
                 auth_tag.as_ptr(), auth_tag_size, auth.as_ptr(), auth_size)
         };
         if rc != 0 {
@@ -1082,7 +1330,7 @@ impl ECB {
     }
 
     fn init(&mut self, key: &[u8], dir: i32) -> Result<(), i32> {
-        let key_size = key.len() as u32;
+        let key_size = crate::buffer_len_to_u32(key.len())?;
         let rc = unsafe {
             sys::wc_AesSetKey(&mut self.ws_aes, key.as_ptr(), key_size,
                 core::ptr::null(), dir)
@@ -1142,16 +1390,14 @@ impl ECB {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn encrypt<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    pub fn encrypt(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesEcbEncrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size)
+            sys::wc_AesEcbEncrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), in_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -1174,16 +1420,14 @@ impl ECB {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn decrypt<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    pub fn decrypt(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesEcbDecrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size)
+            sys::wc_AesEcbDecrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), in_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -1192,10 +1436,17 @@ impl ECB {
     }
 }
 #[cfg(aes_ecb)]
+impl ECB {
+    fn zeroize(&mut self) {
+        unsafe { crate::zeroize_raw(&mut self.ws_aes); }
+    }
+}
+#[cfg(aes_ecb)]
 impl Drop for ECB {
     /// Safely free the wolfSSL resources.
     fn drop(&mut self) {
         unsafe { sys::wc_AesFree(&mut self.ws_aes); }
+        self.zeroize();
     }
 }
 
@@ -1296,7 +1547,7 @@ impl GCM {
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
     pub fn init(&mut self, key: &[u8]) -> Result<(), i32> {
-        let key_size = key.len() as u32;
+        let key_size = crate::buffer_len_to_u32(key.len())?;
         let rc = unsafe {
             sys::wc_AesGcmSetKey(&mut self.ws_aes, key.as_ptr(), key_size)
         };
@@ -1323,20 +1574,18 @@ impl GCM {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn encrypt<I,O>(&mut self, din: &[I], dout: &mut [O], iv: &[u8],
+    pub fn encrypt(&mut self, din: &[u8], dout: &mut [u8], iv: &[u8],
             auth: &[u8], auth_tag: &mut [u8]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
-        let iv_size = iv.len() as u32;
-        let auth_size = auth.len() as u32;
-        let auth_tag_size = auth_tag.len() as u32;
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
+        let iv_size = crate::buffer_len_to_u32(iv.len())?;
+        let auth_size = crate::buffer_len_to_u32(auth.len())?;
+        let auth_tag_size = crate::buffer_len_to_u32(auth_tag.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesGcmEncrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size,
+            sys::wc_AesGcmEncrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), in_size,
                 iv.as_ptr(), iv_size, auth_tag.as_mut_ptr(), auth_tag_size,
                 auth.as_ptr(), auth_size)
         };
@@ -1363,20 +1612,18 @@ impl GCM {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn decrypt<I,O>(&mut self, din: &[I], dout: &mut [O], iv: &[u8],
+    pub fn decrypt(&mut self, din: &[u8], dout: &mut [u8], iv: &[u8],
             auth: &[u8], auth_tag: &[u8]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
-        let iv_size = iv.len() as u32;
-        let auth_size = auth.len() as u32;
-        let auth_tag_size = auth_tag.len() as u32;
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
+        let iv_size = crate::buffer_len_to_u32(iv.len())?;
+        let auth_size = crate::buffer_len_to_u32(auth.len())?;
+        let auth_tag_size = crate::buffer_len_to_u32(auth_tag.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesGcmDecrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size,
+            sys::wc_AesGcmDecrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), in_size,
                 iv.as_ptr(), iv_size, auth_tag.as_ptr(), auth_tag_size,
                 auth.as_ptr(), auth_size)
         };
@@ -1387,10 +1634,243 @@ impl GCM {
     }
 }
 #[cfg(aes_gcm)]
+impl GCM {
+    fn zeroize(&mut self) {
+        unsafe { crate::zeroize_raw(&mut self.ws_aes); }
+    }
+}
+#[cfg(aes_gcm)]
 impl Drop for GCM {
     /// Safely free the wolfSSL resources.
     fn drop(&mut self) {
         unsafe { sys::wc_AesFree(&mut self.ws_aes); }
+        self.zeroize();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// AES-GCM aead trait implementations
+// ---------------------------------------------------------------------------
+
+/// Encrypt `buffer` in-place using AES-GCM (12-byte nonce, 16-byte tag).
+///
+/// wolfCrypt's `wc_AesGcmEncrypt` supports in-place operation (out == in).
+#[cfg(all(aes_gcm, feature = "aead"))]
+fn gcm_encrypt_in_place(
+    key: &[u8],
+    nonce: &[u8],
+    aad: &[u8],
+    buffer: &mut [u8],
+    tag: &mut [u8],
+) -> Result<(), aead::Error> {
+    if buffer.len() > u32::MAX as usize || nonce.len() > u32::MAX as usize
+        || tag.len() > u32::MAX as usize || aad.len() > u32::MAX as usize {
+        return Err(aead::Error);
+    }
+    let mut gcm = GCM::new().map_err(|_| aead::Error)?;
+    gcm.init(key).map_err(|_| aead::Error)?;
+    let buf_ptr = buffer.as_mut_ptr();
+    let in_ptr = buf_ptr as *const u8;
+    let rc = unsafe {
+        sys::wc_AesGcmEncrypt(
+            &mut gcm.ws_aes,
+            buf_ptr, in_ptr, buffer.len() as u32,
+            nonce.as_ptr(), nonce.len() as u32,
+            tag.as_mut_ptr(), tag.len() as u32,
+            aad.as_ptr(), aad.len() as u32,
+        )
+    };
+    if rc != 0 {
+        return Err(aead::Error);
+    }
+    Ok(())
+}
+
+/// Decrypt `buffer` in-place using AES-GCM and verify `tag`.
+#[cfg(all(aes_gcm, feature = "aead"))]
+fn gcm_decrypt_in_place(
+    key: &[u8],
+    nonce: &[u8],
+    aad: &[u8],
+    buffer: &mut [u8],
+    tag: &[u8],
+) -> Result<(), aead::Error> {
+    if buffer.len() > u32::MAX as usize || nonce.len() > u32::MAX as usize
+        || tag.len() > u32::MAX as usize || aad.len() > u32::MAX as usize {
+        return Err(aead::Error);
+    }
+    let mut gcm = GCM::new().map_err(|_| aead::Error)?;
+    gcm.init(key).map_err(|_| aead::Error)?;
+    let buf_ptr = buffer.as_mut_ptr();
+    let in_ptr = buf_ptr as *const u8;
+    let rc = unsafe {
+        sys::wc_AesGcmDecrypt(
+            &mut gcm.ws_aes,
+            buf_ptr, in_ptr, buffer.len() as u32,
+            nonce.as_ptr(), nonce.len() as u32,
+            tag.as_ptr(), tag.len() as u32,
+            aad.as_ptr(), aad.len() as u32,
+        )
+    };
+    if rc != 0 {
+        return Err(aead::Error);
+    }
+    Ok(())
+}
+
+/// AES-128-GCM authenticated encryption (12-byte nonce, 16-byte tag).
+#[cfg(all(aes_gcm, feature = "aead"))]
+#[derive(Zeroize, ZeroizeOnDrop)]
+pub struct Aes128Gcm {
+    key: [u8; 16],
+}
+
+#[cfg(all(aes_gcm, feature = "aead"))]
+impl KeySizeUser for Aes128Gcm {
+    type KeySize = U16;
+}
+
+#[cfg(all(aes_gcm, feature = "aead"))]
+impl AeadCore for Aes128Gcm {
+    type NonceSize = U12;
+    type TagSize = U16;
+    type CiphertextOverhead = U0;
+}
+
+#[cfg(all(aes_gcm, feature = "aead"))]
+impl KeyInit for Aes128Gcm {
+    fn new(key: &aead::Key<Self>) -> Self {
+        let mut k = [0u8; 16];
+        k.copy_from_slice(key.as_ref());
+        Aes128Gcm { key: k }
+    }
+}
+
+#[cfg(all(aes_gcm, feature = "aead"))]
+impl AeadInPlace for Aes128Gcm {
+    fn encrypt_in_place_detached(
+        &self,
+        nonce: &aead::Nonce<Self>,
+        associated_data: &[u8],
+        buffer: &mut [u8],
+    ) -> Result<aead::Tag<Self>, aead::Error> {
+        let mut tag = aead::Tag::<Self>::default();
+        gcm_encrypt_in_place(&self.key, nonce.as_ref(), associated_data, buffer, tag.as_mut())?;
+        Ok(tag)
+    }
+
+    fn decrypt_in_place_detached(
+        &self,
+        nonce: &aead::Nonce<Self>,
+        associated_data: &[u8],
+        buffer: &mut [u8],
+        tag: &aead::Tag<Self>,
+    ) -> Result<(), aead::Error> {
+        gcm_decrypt_in_place(&self.key, nonce.as_ref(), associated_data, buffer, tag.as_ref())
+    }
+}
+
+/// AES-192-GCM authenticated encryption (12-byte nonce, 16-byte tag).
+#[cfg(all(aes_gcm, feature = "aead"))]
+#[derive(Zeroize, ZeroizeOnDrop)]
+pub struct Aes192Gcm {
+    key: [u8; 24],
+}
+
+#[cfg(all(aes_gcm, feature = "aead"))]
+impl KeySizeUser for Aes192Gcm {
+    type KeySize = U24;
+}
+
+#[cfg(all(aes_gcm, feature = "aead"))]
+impl AeadCore for Aes192Gcm {
+    type NonceSize = U12;
+    type TagSize = U16;
+    type CiphertextOverhead = U0;
+}
+
+#[cfg(all(aes_gcm, feature = "aead"))]
+impl KeyInit for Aes192Gcm {
+    fn new(key: &aead::Key<Self>) -> Self {
+        let mut k = [0u8; 24];
+        k.copy_from_slice(key.as_ref());
+        Aes192Gcm { key: k }
+    }
+}
+
+#[cfg(all(aes_gcm, feature = "aead"))]
+impl AeadInPlace for Aes192Gcm {
+    fn encrypt_in_place_detached(
+        &self,
+        nonce: &aead::Nonce<Self>,
+        associated_data: &[u8],
+        buffer: &mut [u8],
+    ) -> Result<aead::Tag<Self>, aead::Error> {
+        let mut tag = aead::Tag::<Self>::default();
+        gcm_encrypt_in_place(&self.key, nonce.as_ref(), associated_data, buffer, tag.as_mut())?;
+        Ok(tag)
+    }
+
+    fn decrypt_in_place_detached(
+        &self,
+        nonce: &aead::Nonce<Self>,
+        associated_data: &[u8],
+        buffer: &mut [u8],
+        tag: &aead::Tag<Self>,
+    ) -> Result<(), aead::Error> {
+        gcm_decrypt_in_place(&self.key, nonce.as_ref(), associated_data, buffer, tag.as_ref())
+    }
+}
+
+/// AES-256-GCM authenticated encryption (12-byte nonce, 16-byte tag).
+#[cfg(all(aes_gcm, feature = "aead"))]
+#[derive(Zeroize, ZeroizeOnDrop)]
+pub struct Aes256Gcm {
+    key: [u8; 32],
+}
+
+#[cfg(all(aes_gcm, feature = "aead"))]
+impl KeySizeUser for Aes256Gcm {
+    type KeySize = U32;
+}
+
+#[cfg(all(aes_gcm, feature = "aead"))]
+impl AeadCore for Aes256Gcm {
+    type NonceSize = U12;
+    type TagSize = U16;
+    type CiphertextOverhead = U0;
+}
+
+#[cfg(all(aes_gcm, feature = "aead"))]
+impl KeyInit for Aes256Gcm {
+    fn new(key: &aead::Key<Self>) -> Self {
+        let mut k = [0u8; 32];
+        k.copy_from_slice(key.as_ref());
+        Aes256Gcm { key: k }
+    }
+}
+
+#[cfg(all(aes_gcm, feature = "aead"))]
+impl AeadInPlace for Aes256Gcm {
+    fn encrypt_in_place_detached(
+        &self,
+        nonce: &aead::Nonce<Self>,
+        associated_data: &[u8],
+        buffer: &mut [u8],
+    ) -> Result<aead::Tag<Self>, aead::Error> {
+        let mut tag = aead::Tag::<Self>::default();
+        gcm_encrypt_in_place(&self.key, nonce.as_ref(), associated_data, buffer, tag.as_mut())?;
+        Ok(tag)
+    }
+
+    fn decrypt_in_place_detached(
+        &self,
+        nonce: &aead::Nonce<Self>,
+        associated_data: &[u8],
+        buffer: &mut [u8],
+        tag: &aead::Tag<Self>,
+    ) -> Result<(), aead::Error> {
+        gcm_decrypt_in_place(&self.key, nonce.as_ref(), associated_data, buffer, tag.as_ref())
     }
 }
 
@@ -1521,8 +2001,8 @@ impl GCMStream {
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
     pub fn init(&mut self, key: &[u8], iv: &[u8]) -> Result<(), i32> {
-        let key_size = key.len() as u32;
-        let iv_size = iv.len() as u32;
+        let key_size = crate::buffer_len_to_u32(key.len())?;
+        let iv_size = crate::buffer_len_to_u32(iv.len())?;
         let rc = unsafe {
             sys::wc_AesGcmInit(&mut self.ws_aes, key.as_ptr(), key_size,
                 iv.as_ptr(), iv_size)
@@ -1554,19 +2034,17 @@ impl GCMStream {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn encrypt_update<I,O>(&mut self, din: &[I], dout: &mut [O],
+    pub fn encrypt_update(&mut self, din: &[u8], dout: &mut [u8],
             auth: &[u8]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
-        let auth_size = auth.len() as u32;
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
+        let auth_size = crate::buffer_len_to_u32(auth.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesGcmEncryptUpdate(&mut self.ws_aes, out_ptr,
-                in_ptr, in_size, auth.as_ptr(), auth_size)
+            sys::wc_AesGcmEncryptUpdate(&mut self.ws_aes, dout.as_mut_ptr(),
+                din.as_ptr(), in_size, auth.as_ptr(), auth_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -1590,7 +2068,7 @@ impl GCMStream {
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
     pub fn encrypt_final(&mut self, auth_tag: &mut [u8]) -> Result<(), i32> {
-        let auth_tag_size = auth_tag.len() as u32;
+        let auth_tag_size = crate::buffer_len_to_u32(auth_tag.len())?;
         let rc = unsafe {
             sys::wc_AesGcmEncryptFinal(&mut self.ws_aes,
                 auth_tag.as_mut_ptr(), auth_tag_size)
@@ -1622,19 +2100,17 @@ impl GCMStream {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn decrypt_update<I,O>(&mut self, din: &[I], dout: &mut [O],
+    pub fn decrypt_update(&mut self, din: &[u8], dout: &mut [u8],
             auth: &[u8]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
-        let auth_size = auth.len() as u32;
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
+        let auth_size = crate::buffer_len_to_u32(auth.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesGcmDecryptUpdate(&mut self.ws_aes, out_ptr,
-                in_ptr, in_size, auth.as_ptr(), auth_size)
+            sys::wc_AesGcmDecryptUpdate(&mut self.ws_aes, dout.as_mut_ptr(),
+                din.as_ptr(), in_size, auth.as_ptr(), auth_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -1658,7 +2134,7 @@ impl GCMStream {
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
     pub fn decrypt_final(&mut self, auth_tag: &[u8]) -> Result<(), i32> {
-        let auth_tag_size = auth_tag.len() as u32;
+        let auth_tag_size = crate::buffer_len_to_u32(auth_tag.len())?;
         let rc = unsafe {
             sys::wc_AesGcmDecryptFinal(&mut self.ws_aes,
                 auth_tag.as_ptr(), auth_tag_size)
@@ -1670,10 +2146,17 @@ impl GCMStream {
     }
 }
 #[cfg(aes_gcm_stream)]
+impl GCMStream {
+    fn zeroize(&mut self) {
+        unsafe { crate::zeroize_raw(&mut self.ws_aes); }
+    }
+}
+#[cfg(aes_gcm_stream)]
 impl Drop for GCMStream {
     /// Safely free the wolfSSL resources.
     fn drop(&mut self) {
         unsafe { sys::wc_AesFree(&mut self.ws_aes); }
+        self.zeroize();
     }
 }
 
@@ -1773,7 +2256,7 @@ impl OFB {
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
     pub fn init(&mut self, key: &[u8], iv: &[u8]) -> Result<(), i32> {
-        let key_size = key.len() as u32;
+        let key_size = crate::buffer_len_to_u32(key.len())?;
         if iv.len() != AES_BLOCK_SIZE {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
@@ -1801,16 +2284,14 @@ impl OFB {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn encrypt<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    pub fn encrypt(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesOfbEncrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size)
+            sys::wc_AesOfbEncrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), in_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -1833,16 +2314,14 @@ impl OFB {
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
     #[cfg(aes_decrypt)]
-    pub fn decrypt<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    pub fn decrypt(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesOfbDecrypt(&mut self.ws_aes, out_ptr, in_ptr, in_size)
+            sys::wc_AesOfbDecrypt(&mut self.ws_aes, dout.as_mut_ptr(), din.as_ptr(), in_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -1851,10 +2330,17 @@ impl OFB {
     }
 }
 #[cfg(aes_ofb)]
+impl OFB {
+    fn zeroize(&mut self) {
+        unsafe { crate::zeroize_raw(&mut self.ws_aes); }
+    }
+}
+#[cfg(aes_ofb)]
 impl Drop for OFB {
     /// Safely free the wolfSSL resources.
     fn drop(&mut self) {
         unsafe { sys::wc_AesFree(&mut self.ws_aes); }
+        self.zeroize();
     }
 }
 
@@ -1952,7 +2438,7 @@ impl XTS {
     }
 
     fn init(&mut self, key: &[u8], dir: i32) -> Result<(), i32> {
-        let key_size = key.len() as u32;
+        let key_size = crate::buffer_len_to_u32(key.len())?;
         let rc = unsafe {
             sys::wc_AesXtsSetKeyNoInit(&mut self.ws_xtsaes,
                 key.as_ptr(), key_size, dir)
@@ -2012,18 +2498,16 @@ impl XTS {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn encrypt<I,O>(&mut self, din: &[I], dout: &mut [O], tweak: &[u8]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
-        let tweak_size = tweak.len() as u32;
+    pub fn encrypt(&mut self, din: &[u8], dout: &mut [u8], tweak: &[u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
+        let tweak_size = crate::buffer_len_to_u32(tweak.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesXtsEncrypt(&mut self.ws_xtsaes, out_ptr,
-                in_ptr, in_size, tweak.as_ptr(), tweak_size)
+            sys::wc_AesXtsEncrypt(&mut self.ws_xtsaes, dout.as_mut_ptr(),
+                din.as_ptr(), in_size, tweak.as_ptr(), tweak_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -2051,17 +2535,15 @@ impl XTS {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn encrypt_sector<I,O>(&mut self, din: &[I], dout: &mut [O], sector: u64) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    pub fn encrypt_sector(&mut self, din: &[u8], dout: &mut [u8], sector: u64) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesXtsEncryptSector(&mut self.ws_xtsaes, out_ptr,
-                in_ptr, in_size, sector)
+            sys::wc_AesXtsEncryptSector(&mut self.ws_xtsaes, dout.as_mut_ptr(),
+                din.as_ptr(), in_size, sector)
         };
         if rc != 0 {
             return Err(rc);
@@ -2090,18 +2572,16 @@ impl XTS {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn encrypt_consecutive_sectors<I,O>(&mut self, din: &[I], dout: &mut [O],
+    pub fn encrypt_consecutive_sectors(&mut self, din: &[u8], dout: &mut [u8],
             sector: u64, sector_size: u32) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
             sys::wc_AesXtsEncryptConsecutiveSectors(&mut self.ws_xtsaes,
-                out_ptr, in_ptr, in_size, sector, sector_size)
+                dout.as_mut_ptr(), din.as_ptr(), in_size, sector, sector_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -2124,18 +2604,16 @@ impl XTS {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn decrypt<I,O>(&mut self, din: &[I], dout: &mut [O], tweak: &[u8]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
-        let tweak_size = tweak.len() as u32;
+    pub fn decrypt(&mut self, din: &[u8], dout: &mut [u8], tweak: &[u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
+        let tweak_size = crate::buffer_len_to_u32(tweak.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesXtsDecrypt(&mut self.ws_xtsaes, out_ptr,
-                in_ptr, in_size, tweak.as_ptr(), tweak_size)
+            sys::wc_AesXtsDecrypt(&mut self.ws_xtsaes, dout.as_mut_ptr(),
+                din.as_ptr(), in_size, tweak.as_ptr(), tweak_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -2163,17 +2641,15 @@ impl XTS {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn decrypt_sector<I,O>(&mut self, din: &[I], dout: &mut [O], sector: u64) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    pub fn decrypt_sector(&mut self, din: &[u8], dout: &mut [u8], sector: u64) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesXtsDecryptSector(&mut self.ws_xtsaes, out_ptr,
-                in_ptr, in_size, sector)
+            sys::wc_AesXtsDecryptSector(&mut self.ws_xtsaes, dout.as_mut_ptr(),
+                din.as_ptr(), in_size, sector)
         };
         if rc != 0 {
             return Err(rc);
@@ -2202,18 +2678,16 @@ impl XTS {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn decrypt_consecutive_sectors<I,O>(&mut self, din: &[I], dout: &mut [O],
+    pub fn decrypt_consecutive_sectors(&mut self, din: &[u8], dout: &mut [u8],
             sector: u64, sector_size: u32) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_mut_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
             sys::wc_AesXtsDecryptConsecutiveSectors(&mut self.ws_xtsaes,
-                out_ptr, in_ptr, in_size, sector, sector_size)
+                dout.as_mut_ptr(), din.as_ptr(), in_size, sector, sector_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -2222,10 +2696,17 @@ impl XTS {
     }
 }
 #[cfg(aes_xts)]
+impl XTS {
+    fn zeroize(&mut self) {
+        unsafe { crate::zeroize_raw(&mut self.ws_xtsaes); }
+    }
+}
+#[cfg(aes_xts)]
 impl Drop for XTS {
     /// Safely free the wolfSSL resources.
     fn drop(&mut self) {
         unsafe { sys::wc_AesXtsFree(&mut self.ws_xtsaes); }
+        self.zeroize();
     }
 }
 
@@ -2244,7 +2725,7 @@ impl Drop for XTS {
 ///     0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
 ///     0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
 ///     0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
-///     0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+///     0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x21,
 /// ];
 /// let tweak: [u8; 16] = [
 ///     0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
@@ -2258,11 +2739,11 @@ impl Drop for XTS {
 ///     0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20
 /// ];
 /// let expected_cipher: [u8; 40] = [
-///     0xA2, 0x07, 0x47, 0x76, 0x3F, 0xEC, 0x0C, 0x23,
-///     0x1B, 0xD0, 0xBD, 0x46, 0x9A, 0x27, 0x38, 0x12,
-///     0x95, 0x02, 0x3D, 0x5D, 0xC6, 0x94, 0x51, 0x36,
-///     0xA0, 0x85, 0xD2, 0x69, 0x6E, 0x87, 0x0A, 0xBF,
-///     0xB5, 0x5A, 0xDD, 0xCB, 0x80, 0xE0, 0xFC, 0xCD
+///     0x39, 0x06, 0xE7, 0xF3, 0x33, 0x0B, 0x1B, 0x1D,
+///     0x2B, 0x11, 0xB0, 0xB7, 0xAF, 0x43, 0xB1, 0x8F,
+///     0xE6, 0xBE, 0x79, 0x34, 0xBD, 0x31, 0x64, 0x3D,
+///     0xA1, 0x16, 0xB5, 0xF0, 0x9B, 0x1D, 0x41, 0xF2,
+///     0x3F, 0xED, 0x11, 0x37, 0xCB, 0x4D, 0xAD, 0xA4
 /// ];
 ///
 /// let mut xtsstream = XTSStream::new().expect("Failed to create XTSStream");
@@ -2309,7 +2790,7 @@ impl XTSStream {
     /// wolfSSL library return code on failure.
     pub fn new_ex(heap: Option<*mut core::ffi::c_void>, dev_id: Option<i32>) -> Result<Self, i32> {
         let ws_xtsaes = new_ws_xtsaes(heap, dev_id)?;
-        let ws_xtsaesstreamdata: MaybeUninit<sys::XtsAesStreamData> = MaybeUninit::uninit();
+        let ws_xtsaesstreamdata: MaybeUninit<sys::XtsAesStreamData> = MaybeUninit::zeroed();
         let ws_xtsaesstreamdata = unsafe { ws_xtsaesstreamdata.assume_init() };
         let xtsstream = XTSStream {ws_xtsaes, ws_xtsaesstreamdata};
         Ok(xtsstream)
@@ -2330,7 +2811,7 @@ impl XTSStream {
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
     pub fn init_encrypt(&mut self, key: &[u8], tweak: &[u8]) -> Result<(), i32> {
-        let key_size = key.len() as u32;
+        let key_size = crate::buffer_len_to_u32(key.len())?;
         let rc = unsafe {
             sys::wc_AesXtsSetKeyNoInit(&mut self.ws_xtsaes,
                 key.as_ptr(), key_size, sys::AES_ENCRYPTION as i32)
@@ -2338,7 +2819,7 @@ impl XTSStream {
         if rc != 0 {
             return Err(rc);
         }
-        let tweak_size = tweak.len() as u32;
+        let tweak_size = crate::buffer_len_to_u32(tweak.len())?;
         let rc = unsafe {
             sys::wc_AesXtsEncryptInit(&mut self.ws_xtsaes,
                 tweak.as_ptr(), tweak_size, &mut self.ws_xtsaesstreamdata)
@@ -2364,7 +2845,7 @@ impl XTSStream {
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
     pub fn init_decrypt(&mut self, key: &[u8], tweak: &[u8]) -> Result<(), i32> {
-        let key_size = key.len() as u32;
+        let key_size = crate::buffer_len_to_u32(key.len())?;
         let rc = unsafe {
             sys::wc_AesXtsSetKeyNoInit(&mut self.ws_xtsaes,
                 key.as_ptr(), key_size, sys::AES_DECRYPTION as i32)
@@ -2372,7 +2853,7 @@ impl XTSStream {
         if rc != 0 {
             return Err(rc);
         }
-        let tweak_size = tweak.len() as u32;
+        let tweak_size = crate::buffer_len_to_u32(tweak.len())?;
         let rc = unsafe {
             sys::wc_AesXtsDecryptInit(&mut self.ws_xtsaes,
                 tweak.as_ptr(), tweak_size, &mut self.ws_xtsaesstreamdata)
@@ -2401,17 +2882,15 @@ impl XTSStream {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn encrypt_update<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    pub fn encrypt_update(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesXtsEncryptUpdate(&mut self.ws_xtsaes, out_ptr,
-                in_ptr, in_size, &mut self.ws_xtsaesstreamdata)
+            sys::wc_AesXtsEncryptUpdate(&mut self.ws_xtsaes, dout.as_mut_ptr(),
+                din.as_ptr(), in_size, &mut self.ws_xtsaesstreamdata)
         };
         if rc != 0 {
             return Err(rc);
@@ -2436,17 +2915,15 @@ impl XTSStream {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn encrypt_final<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    pub fn encrypt_final(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesXtsEncryptFinal(&mut self.ws_xtsaes, out_ptr,
-                in_ptr, in_size, &mut self.ws_xtsaesstreamdata)
+            sys::wc_AesXtsEncryptFinal(&mut self.ws_xtsaes, dout.as_mut_ptr(),
+                din.as_ptr(), in_size, &mut self.ws_xtsaesstreamdata)
         };
         if rc != 0 {
             return Err(rc);
@@ -2472,17 +2949,15 @@ impl XTSStream {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn decrypt_update<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    pub fn decrypt_update(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesXtsDecryptUpdate(&mut self.ws_xtsaes, out_ptr,
-                in_ptr, in_size, &mut self.ws_xtsaesstreamdata)
+            sys::wc_AesXtsDecryptUpdate(&mut self.ws_xtsaes, dout.as_mut_ptr(),
+                din.as_ptr(), in_size, &mut self.ws_xtsaesstreamdata)
         };
         if rc != 0 {
             return Err(rc);
@@ -2507,17 +2982,15 @@ impl XTSStream {
     ///
     /// A Result which is Ok(()) on success or an Err containing the wolfSSL
     /// library return code on failure.
-    pub fn decrypt_final<I,O>(&mut self, din: &[I], dout: &mut [O]) -> Result<(), i32> {
-        let in_ptr = din.as_ptr() as *const u8;
-        let in_size = size_of_val(din) as u32;
-        let out_ptr = dout.as_ptr() as *mut u8;
-        let out_size = size_of_val(dout) as u32;
+    pub fn decrypt_final(&mut self, din: &[u8], dout: &mut [u8]) -> Result<(), i32> {
+        let in_size = crate::buffer_len_to_u32(din.len())?;
+        let out_size = crate::buffer_len_to_u32(dout.len())?;
         if in_size != out_size {
             return Err(sys::wolfCrypt_ErrorCodes_BAD_FUNC_ARG);
         }
         let rc = unsafe {
-            sys::wc_AesXtsDecryptFinal(&mut self.ws_xtsaes, out_ptr,
-                in_ptr, in_size, &mut self.ws_xtsaesstreamdata)
+            sys::wc_AesXtsDecryptFinal(&mut self.ws_xtsaes, dout.as_mut_ptr(),
+                din.as_ptr(), in_size, &mut self.ws_xtsaesstreamdata)
         };
         if rc != 0 {
             return Err(rc);
@@ -2526,10 +2999,1031 @@ impl XTSStream {
     }
 }
 #[cfg(aes_xts_stream)]
+impl XTSStream {
+    fn zeroize(&mut self) {
+        unsafe {
+            crate::zeroize_raw(&mut self.ws_xtsaes);
+            crate::zeroize_raw(&mut self.ws_xtsaesstreamdata);
+        }
+    }
+}
+#[cfg(aes_xts_stream)]
 impl Drop for XTSStream {
     /// Safely free the wolfSSL resources.
     fn drop(&mut self) {
         unsafe { sys::wc_AesXtsFree(&mut self.ws_xtsaes); }
+        self.zeroize();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// AES-ECB cipher trait implementations
+// ---------------------------------------------------------------------------
+
+/// AES-128 ECB block cipher (encryption) implementing [`cipher::BlockModeEncrypt`].
+///
+/// The key schedule is computed once during construction via
+/// [`cipher::KeyInit::new`] or [`cipher::KeyInit::new_from_slice`].
+#[cfg(all(aes_ecb, feature = "cipher"))]
+pub struct Aes128EcbEnc {
+    inner: ECB,
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes128EcbEnc {
+    type KeySize = U16;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes128EcbEnc {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::KeyInit for Aes128EcbEnc {
+    fn new(key: &cipher::Key<Self>) -> Self {
+        let mut ecb = ECB::new().expect("wc_AesInit failed");
+        ecb.init_encrypt(key.as_ref()).expect("wc_AesSetKey failed");
+        Self { inner: ecb }
+    }
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+struct Aes128EcbEncBackend<'a>(&'a mut Aes128EcbEnc);
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes128EcbEncBackend<'_> {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl ParBlocksSizeUser for Aes128EcbEncBackend<'_> {
+    type ParBlocksSize = cipher::typenum::consts::U1;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl BlockModeEncBackend for Aes128EcbEncBackend<'_> {
+    fn encrypt_block(&mut self, mut block: cipher::InOut<'_, '_, cipher::Block<Self>>) {
+        let in_block = *block.get_in();
+        let out = block.get_out();
+        self.0.inner.encrypt(in_block.as_ref(), out.as_mut()).expect("wc_AesEcbEncrypt failed");
+    }
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl BlockModeEncrypt for Aes128EcbEnc {
+    fn encrypt_with_backend(&mut self, f: impl BlockModeEncClosure<BlockSize = Self::BlockSize>) {
+        f.call(&mut Aes128EcbEncBackend(self));
+    }
+}
+
+/// AES-192 ECB block cipher (encryption) implementing [`cipher::BlockModeEncrypt`].
+#[cfg(all(aes_ecb, feature = "cipher"))]
+pub struct Aes192EcbEnc {
+    inner: ECB,
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes192EcbEnc {
+    type KeySize = U24;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes192EcbEnc {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::KeyInit for Aes192EcbEnc {
+    fn new(key: &cipher::Key<Self>) -> Self {
+        let mut ecb = ECB::new().expect("wc_AesInit failed");
+        ecb.init_encrypt(key.as_ref()).expect("wc_AesSetKey failed");
+        Self { inner: ecb }
+    }
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+struct Aes192EcbEncBackend<'a>(&'a mut Aes192EcbEnc);
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes192EcbEncBackend<'_> {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl ParBlocksSizeUser for Aes192EcbEncBackend<'_> {
+    type ParBlocksSize = cipher::typenum::consts::U1;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl BlockModeEncBackend for Aes192EcbEncBackend<'_> {
+    fn encrypt_block(&mut self, mut block: cipher::InOut<'_, '_, cipher::Block<Self>>) {
+        let in_block = *block.get_in();
+        let out = block.get_out();
+        self.0.inner.encrypt(in_block.as_ref(), out.as_mut()).expect("wc_AesEcbEncrypt failed");
+    }
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl BlockModeEncrypt for Aes192EcbEnc {
+    fn encrypt_with_backend(&mut self, f: impl BlockModeEncClosure<BlockSize = Self::BlockSize>) {
+        f.call(&mut Aes192EcbEncBackend(self));
+    }
+}
+
+/// AES-256 ECB block cipher (encryption) implementing [`cipher::BlockModeEncrypt`].
+#[cfg(all(aes_ecb, feature = "cipher"))]
+pub struct Aes256EcbEnc {
+    inner: ECB,
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes256EcbEnc {
+    type KeySize = U32;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes256EcbEnc {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::KeyInit for Aes256EcbEnc {
+    fn new(key: &cipher::Key<Self>) -> Self {
+        let mut ecb = ECB::new().expect("wc_AesInit failed");
+        ecb.init_encrypt(key.as_ref()).expect("wc_AesSetKey failed");
+        Self { inner: ecb }
+    }
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+struct Aes256EcbEncBackend<'a>(&'a mut Aes256EcbEnc);
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes256EcbEncBackend<'_> {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl ParBlocksSizeUser for Aes256EcbEncBackend<'_> {
+    type ParBlocksSize = cipher::typenum::consts::U1;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl BlockModeEncBackend for Aes256EcbEncBackend<'_> {
+    fn encrypt_block(&mut self, mut block: cipher::InOut<'_, '_, cipher::Block<Self>>) {
+        let in_block = *block.get_in();
+        let out = block.get_out();
+        self.0.inner.encrypt(in_block.as_ref(), out.as_mut()).expect("wc_AesEcbEncrypt failed");
+    }
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl BlockModeEncrypt for Aes256EcbEnc {
+    fn encrypt_with_backend(&mut self, f: impl BlockModeEncClosure<BlockSize = Self::BlockSize>) {
+        f.call(&mut Aes256EcbEncBackend(self));
+    }
+}
+
+/// AES-128 ECB block cipher (decryption) implementing [`cipher::BlockModeDecrypt`].
+///
+/// The key schedule is computed once during construction via
+/// [`cipher::KeyInit::new`] or [`cipher::KeyInit::new_from_slice`].
+#[cfg(all(aes_ecb, feature = "cipher"))]
+pub struct Aes128EcbDec {
+    inner: ECB,
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes128EcbDec {
+    type KeySize = U16;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes128EcbDec {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::KeyInit for Aes128EcbDec {
+    fn new(key: &cipher::Key<Self>) -> Self {
+        let mut ecb = ECB::new().expect("wc_AesInit failed");
+        ecb.init_decrypt(key.as_ref()).expect("wc_AesSetKey failed");
+        Self { inner: ecb }
+    }
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+struct Aes128EcbDecBackend<'a>(&'a mut Aes128EcbDec);
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes128EcbDecBackend<'_> {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl ParBlocksSizeUser for Aes128EcbDecBackend<'_> {
+    type ParBlocksSize = cipher::typenum::consts::U1;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl BlockModeDecBackend for Aes128EcbDecBackend<'_> {
+    fn decrypt_block(&mut self, mut block: cipher::InOut<'_, '_, cipher::Block<Self>>) {
+        let in_block = *block.get_in();
+        let out = block.get_out();
+        self.0.inner.decrypt(in_block.as_ref(), out.as_mut()).expect("wc_AesEcbDecrypt failed");
+    }
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl BlockModeDecrypt for Aes128EcbDec {
+    fn decrypt_with_backend(&mut self, f: impl BlockModeDecClosure<BlockSize = Self::BlockSize>) {
+        f.call(&mut Aes128EcbDecBackend(self));
+    }
+}
+
+/// AES-192 ECB block cipher (decryption) implementing [`cipher::BlockModeDecrypt`].
+#[cfg(all(aes_ecb, feature = "cipher"))]
+pub struct Aes192EcbDec {
+    inner: ECB,
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes192EcbDec {
+    type KeySize = U24;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes192EcbDec {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::KeyInit for Aes192EcbDec {
+    fn new(key: &cipher::Key<Self>) -> Self {
+        let mut ecb = ECB::new().expect("wc_AesInit failed");
+        ecb.init_decrypt(key.as_ref()).expect("wc_AesSetKey failed");
+        Self { inner: ecb }
+    }
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+struct Aes192EcbDecBackend<'a>(&'a mut Aes192EcbDec);
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes192EcbDecBackend<'_> {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl ParBlocksSizeUser for Aes192EcbDecBackend<'_> {
+    type ParBlocksSize = cipher::typenum::consts::U1;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl BlockModeDecBackend for Aes192EcbDecBackend<'_> {
+    fn decrypt_block(&mut self, mut block: cipher::InOut<'_, '_, cipher::Block<Self>>) {
+        let in_block = *block.get_in();
+        let out = block.get_out();
+        self.0.inner.decrypt(in_block.as_ref(), out.as_mut()).expect("wc_AesEcbDecrypt failed");
+    }
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl BlockModeDecrypt for Aes192EcbDec {
+    fn decrypt_with_backend(&mut self, f: impl BlockModeDecClosure<BlockSize = Self::BlockSize>) {
+        f.call(&mut Aes192EcbDecBackend(self));
+    }
+}
+
+/// AES-256 ECB block cipher (decryption) implementing [`cipher::BlockModeDecrypt`].
+#[cfg(all(aes_ecb, feature = "cipher"))]
+pub struct Aes256EcbDec {
+    inner: ECB,
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes256EcbDec {
+    type KeySize = U32;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes256EcbDec {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::KeyInit for Aes256EcbDec {
+    fn new(key: &cipher::Key<Self>) -> Self {
+        let mut ecb = ECB::new().expect("wc_AesInit failed");
+        ecb.init_decrypt(key.as_ref()).expect("wc_AesSetKey failed");
+        Self { inner: ecb }
+    }
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+struct Aes256EcbDecBackend<'a>(&'a mut Aes256EcbDec);
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes256EcbDecBackend<'_> {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl ParBlocksSizeUser for Aes256EcbDecBackend<'_> {
+    type ParBlocksSize = cipher::typenum::consts::U1;
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl BlockModeDecBackend for Aes256EcbDecBackend<'_> {
+    fn decrypt_block(&mut self, mut block: cipher::InOut<'_, '_, cipher::Block<Self>>) {
+        let in_block = *block.get_in();
+        let out = block.get_out();
+        self.0.inner.decrypt(in_block.as_ref(), out.as_mut()).expect("wc_AesEcbDecrypt failed");
+    }
+}
+
+#[cfg(all(aes_ecb, feature = "cipher"))]
+impl BlockModeDecrypt for Aes256EcbDec {
+    fn decrypt_with_backend(&mut self, f: impl BlockModeDecClosure<BlockSize = Self::BlockSize>) {
+        f.call(&mut Aes256EcbDecBackend(self));
+    }
+}
+
+// ---------------------------------------------------------------------------
+// AES-CTR cipher trait implementations
+// ---------------------------------------------------------------------------
+
+/// AES-128 CTR stream cipher implementing [`cipher::StreamCipher`].
+///
+/// wolfCrypt AES-CTR supports in-place operation, so the in/out pointers from
+/// the [`cipher::inout::InOutBuf`] are passed directly to `wc_AesCtrEncrypt`.
+#[cfg(all(aes_ctr, feature = "cipher"))]
+pub struct Aes128Ctr {
+    inner: CTR,
+}
+
+#[cfg(all(aes_ctr, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes128Ctr {
+    type KeySize = U16;
+}
+
+#[cfg(all(aes_ctr, feature = "cipher"))]
+impl IvSizeUser for Aes128Ctr {
+    type IvSize = U16;
+}
+
+#[cfg(all(aes_ctr, feature = "cipher"))]
+impl KeyIvInit for Aes128Ctr {
+    fn new(key: &cipher::Key<Self>, iv: &cipher::Iv<Self>) -> Self {
+        let mut ctr = CTR::new().expect("wc_AesInit failed");
+        ctr.init(key.as_ref(), iv.as_ref()).expect("wc_AesSetKeyDirect failed");
+        Self { inner: ctr }
+    }
+}
+
+#[cfg(all(aes_ctr, feature = "cipher"))]
+impl StreamCipher for Aes128Ctr {
+    fn check_remaining(&self, _data_len: usize) -> Result<(), StreamCipherError> {
+        Ok(())
+    }
+
+    fn unchecked_apply_keystream_inout(&mut self, mut buf: cipher::InOutBuf<'_, '_, u8>) {
+        let len = buf.len();
+        if len == 0 { return; }
+        assert!(len <= u32::MAX as usize, "buffer too large for wc_AesCtrEncrypt");
+        // wolfCrypt AES-CTR supports in-place operation (out == in).
+        let in_ptr = buf.get_in().as_ptr();
+        let out_ptr = buf.get_out().as_mut_ptr();
+        // SAFETY: CTR in-place is valid; C function called directly to avoid
+        // creating aliasing slices.
+        let rc = unsafe { sys::wc_AesCtrEncrypt(&mut self.inner.ws_aes, out_ptr, in_ptr, len as u32) };
+        assert_eq!(rc, 0, "wc_AesCtrEncrypt failed");
+    }
+
+    fn unchecked_write_keystream(&mut self, buf: &mut [u8]) {
+        buf.fill(0);
+        self.unchecked_apply_keystream_inout(buf.into());
+    }
+}
+
+/// AES-192 CTR stream cipher implementing [`cipher::StreamCipher`].
+#[cfg(all(aes_ctr, feature = "cipher"))]
+pub struct Aes192Ctr {
+    inner: CTR,
+}
+
+#[cfg(all(aes_ctr, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes192Ctr {
+    type KeySize = U24;
+}
+
+#[cfg(all(aes_ctr, feature = "cipher"))]
+impl IvSizeUser for Aes192Ctr {
+    type IvSize = U16;
+}
+
+#[cfg(all(aes_ctr, feature = "cipher"))]
+impl KeyIvInit for Aes192Ctr {
+    fn new(key: &cipher::Key<Self>, iv: &cipher::Iv<Self>) -> Self {
+        let mut ctr = CTR::new().expect("wc_AesInit failed");
+        ctr.init(key.as_ref(), iv.as_ref()).expect("wc_AesSetKeyDirect failed");
+        Self { inner: ctr }
+    }
+}
+
+#[cfg(all(aes_ctr, feature = "cipher"))]
+impl StreamCipher for Aes192Ctr {
+    fn check_remaining(&self, _data_len: usize) -> Result<(), StreamCipherError> {
+        Ok(())
+    }
+
+    fn unchecked_apply_keystream_inout(&mut self, mut buf: cipher::InOutBuf<'_, '_, u8>) {
+        let len = buf.len();
+        if len == 0 { return; }
+        assert!(len <= u32::MAX as usize, "buffer too large for wc_AesCtrEncrypt");
+        let in_ptr = buf.get_in().as_ptr();
+        let out_ptr = buf.get_out().as_mut_ptr();
+        // SAFETY: CTR in-place is valid; C function called directly to avoid
+        // creating aliasing slices.
+        let rc = unsafe { sys::wc_AesCtrEncrypt(&mut self.inner.ws_aes, out_ptr, in_ptr, len as u32) };
+        assert_eq!(rc, 0, "wc_AesCtrEncrypt failed");
+    }
+
+    fn unchecked_write_keystream(&mut self, buf: &mut [u8]) {
+        buf.fill(0);
+        self.unchecked_apply_keystream_inout(buf.into());
+    }
+}
+
+/// AES-256 CTR stream cipher implementing [`cipher::StreamCipher`].
+#[cfg(all(aes_ctr, feature = "cipher"))]
+pub struct Aes256Ctr {
+    inner: CTR,
+}
+
+#[cfg(all(aes_ctr, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes256Ctr {
+    type KeySize = U32;
+}
+
+#[cfg(all(aes_ctr, feature = "cipher"))]
+impl IvSizeUser for Aes256Ctr {
+    type IvSize = U16;
+}
+
+#[cfg(all(aes_ctr, feature = "cipher"))]
+impl KeyIvInit for Aes256Ctr {
+    fn new(key: &cipher::Key<Self>, iv: &cipher::Iv<Self>) -> Self {
+        let mut ctr = CTR::new().expect("wc_AesInit failed");
+        ctr.init(key.as_ref(), iv.as_ref()).expect("wc_AesSetKeyDirect failed");
+        Self { inner: ctr }
+    }
+}
+
+#[cfg(all(aes_ctr, feature = "cipher"))]
+impl StreamCipher for Aes256Ctr {
+    fn check_remaining(&self, _data_len: usize) -> Result<(), StreamCipherError> {
+        Ok(())
+    }
+
+    fn unchecked_apply_keystream_inout(&mut self, mut buf: cipher::InOutBuf<'_, '_, u8>) {
+        let len = buf.len();
+        if len == 0 { return; }
+        assert!(len <= u32::MAX as usize, "buffer too large for wc_AesCtrEncrypt");
+        let in_ptr = buf.get_in().as_ptr();
+        let out_ptr = buf.get_out().as_mut_ptr();
+        // SAFETY: CTR in-place is valid; C function called directly to avoid
+        // creating aliasing slices.
+        let rc = unsafe { sys::wc_AesCtrEncrypt(&mut self.inner.ws_aes, out_ptr, in_ptr, len as u32) };
+        assert_eq!(rc, 0, "wc_AesCtrEncrypt failed");
+    }
+
+    fn unchecked_write_keystream(&mut self, buf: &mut [u8]) {
+        buf.fill(0);
+        self.unchecked_apply_keystream_inout(buf.into());
+    }
+}
+
+// ---------------------------------------------------------------------------
+// AES-OFB cipher trait implementations
+// ---------------------------------------------------------------------------
+
+/// AES-128 OFB stream cipher implementing [`cipher::StreamCipher`].
+///
+/// OFB (Output FeedBack) generates a keystream independent of the data, so
+/// [`StreamCipher::apply_keystream`] is self-inverse and wolfCrypt supports
+/// in-place operation.
+#[cfg(all(aes_ofb, feature = "cipher"))]
+pub struct Aes128Ofb {
+    inner: OFB,
+}
+
+#[cfg(all(aes_ofb, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes128Ofb {
+    type KeySize = U16;
+}
+
+#[cfg(all(aes_ofb, feature = "cipher"))]
+impl IvSizeUser for Aes128Ofb {
+    type IvSize = U16;
+}
+
+#[cfg(all(aes_ofb, feature = "cipher"))]
+impl KeyIvInit for Aes128Ofb {
+    fn new(key: &cipher::Key<Self>, iv: &cipher::Iv<Self>) -> Self {
+        let mut ofb = OFB::new().expect("wc_AesInit failed");
+        ofb.init(key.as_ref(), iv.as_ref()).expect("wc_AesSetKey failed");
+        Self { inner: ofb }
+    }
+}
+
+#[cfg(all(aes_ofb, feature = "cipher"))]
+impl StreamCipher for Aes128Ofb {
+    fn check_remaining(&self, _data_len: usize) -> Result<(), StreamCipherError> {
+        Ok(())
+    }
+
+    fn unchecked_apply_keystream_inout(&mut self, mut buf: cipher::InOutBuf<'_, '_, u8>) {
+        let len = buf.len();
+        if len == 0 { return; }
+        assert!(len <= u32::MAX as usize, "buffer too large for wc_AesOfbEncrypt");
+        // wolfCrypt AES-OFB supports in-place operation (out == in).
+        let in_ptr = buf.get_in().as_ptr();
+        let out_ptr = buf.get_out().as_mut_ptr();
+        // SAFETY: OFB in-place is valid; C function called directly to avoid
+        // creating aliasing slices.
+        let rc = unsafe { sys::wc_AesOfbEncrypt(&mut self.inner.ws_aes, out_ptr, in_ptr, len as u32) };
+        assert_eq!(rc, 0, "wc_AesOfbEncrypt failed");
+    }
+
+    fn unchecked_write_keystream(&mut self, buf: &mut [u8]) {
+        buf.fill(0);
+        self.unchecked_apply_keystream_inout(buf.into());
+    }
+}
+
+/// AES-192 OFB stream cipher implementing [`cipher::StreamCipher`].
+#[cfg(all(aes_ofb, feature = "cipher"))]
+pub struct Aes192Ofb {
+    inner: OFB,
+}
+
+#[cfg(all(aes_ofb, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes192Ofb {
+    type KeySize = U24;
+}
+
+#[cfg(all(aes_ofb, feature = "cipher"))]
+impl IvSizeUser for Aes192Ofb {
+    type IvSize = U16;
+}
+
+#[cfg(all(aes_ofb, feature = "cipher"))]
+impl KeyIvInit for Aes192Ofb {
+    fn new(key: &cipher::Key<Self>, iv: &cipher::Iv<Self>) -> Self {
+        let mut ofb = OFB::new().expect("wc_AesInit failed");
+        ofb.init(key.as_ref(), iv.as_ref()).expect("wc_AesSetKey failed");
+        Self { inner: ofb }
+    }
+}
+
+#[cfg(all(aes_ofb, feature = "cipher"))]
+impl StreamCipher for Aes192Ofb {
+    fn check_remaining(&self, _data_len: usize) -> Result<(), StreamCipherError> {
+        Ok(())
+    }
+
+    fn unchecked_apply_keystream_inout(&mut self, mut buf: cipher::InOutBuf<'_, '_, u8>) {
+        let len = buf.len();
+        if len == 0 { return; }
+        assert!(len <= u32::MAX as usize, "buffer too large for wc_AesOfbEncrypt");
+        let in_ptr = buf.get_in().as_ptr();
+        let out_ptr = buf.get_out().as_mut_ptr();
+        // SAFETY: OFB in-place is valid; C function called directly to avoid
+        // creating aliasing slices.
+        let rc = unsafe { sys::wc_AesOfbEncrypt(&mut self.inner.ws_aes, out_ptr, in_ptr, len as u32) };
+        assert_eq!(rc, 0, "wc_AesOfbEncrypt failed");
+    }
+
+    fn unchecked_write_keystream(&mut self, buf: &mut [u8]) {
+        buf.fill(0);
+        self.unchecked_apply_keystream_inout(buf.into());
+    }
+}
+
+/// AES-256 OFB stream cipher implementing [`cipher::StreamCipher`].
+#[cfg(all(aes_ofb, feature = "cipher"))]
+pub struct Aes256Ofb {
+    inner: OFB,
+}
+
+#[cfg(all(aes_ofb, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes256Ofb {
+    type KeySize = U32;
+}
+
+#[cfg(all(aes_ofb, feature = "cipher"))]
+impl IvSizeUser for Aes256Ofb {
+    type IvSize = U16;
+}
+
+#[cfg(all(aes_ofb, feature = "cipher"))]
+impl KeyIvInit for Aes256Ofb {
+    fn new(key: &cipher::Key<Self>, iv: &cipher::Iv<Self>) -> Self {
+        let mut ofb = OFB::new().expect("wc_AesInit failed");
+        ofb.init(key.as_ref(), iv.as_ref()).expect("wc_AesSetKey failed");
+        Self { inner: ofb }
+    }
+}
+
+#[cfg(all(aes_ofb, feature = "cipher"))]
+impl StreamCipher for Aes256Ofb {
+    fn check_remaining(&self, _data_len: usize) -> Result<(), StreamCipherError> {
+        Ok(())
+    }
+
+    fn unchecked_apply_keystream_inout(&mut self, mut buf: cipher::InOutBuf<'_, '_, u8>) {
+        let len = buf.len();
+        if len == 0 { return; }
+        assert!(len <= u32::MAX as usize, "buffer too large for wc_AesOfbEncrypt");
+        let in_ptr = buf.get_in().as_ptr();
+        let out_ptr = buf.get_out().as_mut_ptr();
+        // SAFETY: OFB in-place is valid; C function called directly to avoid
+        // creating aliasing slices.
+        let rc = unsafe { sys::wc_AesOfbEncrypt(&mut self.inner.ws_aes, out_ptr, in_ptr, len as u32) };
+        assert_eq!(rc, 0, "wc_AesOfbEncrypt failed");
+    }
+
+    fn unchecked_write_keystream(&mut self, buf: &mut [u8]) {
+        buf.fill(0);
+        self.unchecked_apply_keystream_inout(buf.into());
+    }
+}
+
+// ---------------------------------------------------------------------------
+// AES-CBC block mode trait implementations
+// ---------------------------------------------------------------------------
+
+/// AES-128 CBC block cipher (encryption) implementing [`cipher::BlockModeEncrypt`].
+///
+/// CBC chains ciphertext blocks: each plaintext block is XORed with the
+/// previous ciphertext block (or the IV for the first block) before
+/// encryption. wolfCrypt maintains the IV state internally between calls,
+/// so blocks can be encrypted one at a time and the chaining is preserved.
+#[cfg(all(aes_cbc, feature = "cipher"))]
+pub struct Aes128CbcEnc {
+    inner: CBC,
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes128CbcEnc {
+    type KeySize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes128CbcEnc {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl IvSizeUser for Aes128CbcEnc {
+    type IvSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl KeyIvInit for Aes128CbcEnc {
+    fn new(key: &cipher::Key<Self>, iv: &cipher::Iv<Self>) -> Self {
+        let mut cbc = CBC::new().expect("wc_AesInit failed");
+        cbc.init_encrypt(key.as_ref(), iv.as_ref()).expect("wc_AesSetKey failed");
+        Self { inner: cbc }
+    }
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+struct Aes128CbcEncBackend<'a>(&'a mut Aes128CbcEnc);
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes128CbcEncBackend<'_> {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl ParBlocksSizeUser for Aes128CbcEncBackend<'_> {
+    type ParBlocksSize = cipher::typenum::consts::U1;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl BlockModeEncBackend for Aes128CbcEncBackend<'_> {
+    fn encrypt_block(&mut self, mut block: cipher::InOut<'_, '_, cipher::Block<Self>>) {
+        let in_block = *block.get_in();
+        let out = block.get_out();
+        self.0.inner.encrypt(in_block.as_ref(), out.as_mut()).expect("wc_AesCbcEncrypt failed");
+    }
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl BlockModeEncrypt for Aes128CbcEnc {
+    fn encrypt_with_backend(&mut self, f: impl BlockModeEncClosure<BlockSize = Self::BlockSize>) {
+        f.call(&mut Aes128CbcEncBackend(self));
+    }
+}
+
+/// AES-192 CBC block cipher (encryption) implementing [`cipher::BlockModeEncrypt`].
+#[cfg(all(aes_cbc, feature = "cipher"))]
+pub struct Aes192CbcEnc {
+    inner: CBC,
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes192CbcEnc {
+    type KeySize = U24;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes192CbcEnc {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl IvSizeUser for Aes192CbcEnc {
+    type IvSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl KeyIvInit for Aes192CbcEnc {
+    fn new(key: &cipher::Key<Self>, iv: &cipher::Iv<Self>) -> Self {
+        let mut cbc = CBC::new().expect("wc_AesInit failed");
+        cbc.init_encrypt(key.as_ref(), iv.as_ref()).expect("wc_AesSetKey failed");
+        Self { inner: cbc }
+    }
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+struct Aes192CbcEncBackend<'a>(&'a mut Aes192CbcEnc);
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes192CbcEncBackend<'_> {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl ParBlocksSizeUser for Aes192CbcEncBackend<'_> {
+    type ParBlocksSize = cipher::typenum::consts::U1;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl BlockModeEncBackend for Aes192CbcEncBackend<'_> {
+    fn encrypt_block(&mut self, mut block: cipher::InOut<'_, '_, cipher::Block<Self>>) {
+        let in_block = *block.get_in();
+        let out = block.get_out();
+        self.0.inner.encrypt(in_block.as_ref(), out.as_mut()).expect("wc_AesCbcEncrypt failed");
+    }
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl BlockModeEncrypt for Aes192CbcEnc {
+    fn encrypt_with_backend(&mut self, f: impl BlockModeEncClosure<BlockSize = Self::BlockSize>) {
+        f.call(&mut Aes192CbcEncBackend(self));
+    }
+}
+
+/// AES-256 CBC block cipher (encryption) implementing [`cipher::BlockModeEncrypt`].
+#[cfg(all(aes_cbc, feature = "cipher"))]
+pub struct Aes256CbcEnc {
+    inner: CBC,
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes256CbcEnc {
+    type KeySize = U32;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes256CbcEnc {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl IvSizeUser for Aes256CbcEnc {
+    type IvSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl KeyIvInit for Aes256CbcEnc {
+    fn new(key: &cipher::Key<Self>, iv: &cipher::Iv<Self>) -> Self {
+        let mut cbc = CBC::new().expect("wc_AesInit failed");
+        cbc.init_encrypt(key.as_ref(), iv.as_ref()).expect("wc_AesSetKey failed");
+        Self { inner: cbc }
+    }
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+struct Aes256CbcEncBackend<'a>(&'a mut Aes256CbcEnc);
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes256CbcEncBackend<'_> {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl ParBlocksSizeUser for Aes256CbcEncBackend<'_> {
+    type ParBlocksSize = cipher::typenum::consts::U1;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl BlockModeEncBackend for Aes256CbcEncBackend<'_> {
+    fn encrypt_block(&mut self, mut block: cipher::InOut<'_, '_, cipher::Block<Self>>) {
+        let in_block = *block.get_in();
+        let out = block.get_out();
+        self.0.inner.encrypt(in_block.as_ref(), out.as_mut()).expect("wc_AesCbcEncrypt failed");
+    }
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl BlockModeEncrypt for Aes256CbcEnc {
+    fn encrypt_with_backend(&mut self, f: impl BlockModeEncClosure<BlockSize = Self::BlockSize>) {
+        f.call(&mut Aes256CbcEncBackend(self));
+    }
+}
+
+/// AES-128 CBC block cipher (decryption) implementing [`cipher::BlockModeDecrypt`].
+///
+/// wolfCrypt maintains the IV state (last ciphertext block) internally, so
+/// blocks can be decrypted one at a time and the chaining is preserved.
+#[cfg(all(aes_cbc, feature = "cipher"))]
+pub struct Aes128CbcDec {
+    inner: CBC,
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes128CbcDec {
+    type KeySize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes128CbcDec {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl IvSizeUser for Aes128CbcDec {
+    type IvSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl KeyIvInit for Aes128CbcDec {
+    fn new(key: &cipher::Key<Self>, iv: &cipher::Iv<Self>) -> Self {
+        let mut cbc = CBC::new().expect("wc_AesInit failed");
+        cbc.init_decrypt(key.as_ref(), iv.as_ref()).expect("wc_AesSetKey failed");
+        Self { inner: cbc }
+    }
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+struct Aes128CbcDecBackend<'a>(&'a mut Aes128CbcDec);
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes128CbcDecBackend<'_> {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl ParBlocksSizeUser for Aes128CbcDecBackend<'_> {
+    type ParBlocksSize = cipher::typenum::consts::U1;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl BlockModeDecBackend for Aes128CbcDecBackend<'_> {
+    fn decrypt_block(&mut self, mut block: cipher::InOut<'_, '_, cipher::Block<Self>>) {
+        let in_block = *block.get_in();
+        let out = block.get_out();
+        self.0.inner.decrypt(in_block.as_ref(), out.as_mut()).expect("wc_AesCbcDecrypt failed");
+    }
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl BlockModeDecrypt for Aes128CbcDec {
+    fn decrypt_with_backend(&mut self, f: impl BlockModeDecClosure<BlockSize = Self::BlockSize>) {
+        f.call(&mut Aes128CbcDecBackend(self));
+    }
+}
+
+/// AES-192 CBC block cipher (decryption) implementing [`cipher::BlockModeDecrypt`].
+#[cfg(all(aes_cbc, feature = "cipher"))]
+pub struct Aes192CbcDec {
+    inner: CBC,
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes192CbcDec {
+    type KeySize = U24;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes192CbcDec {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl IvSizeUser for Aes192CbcDec {
+    type IvSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl KeyIvInit for Aes192CbcDec {
+    fn new(key: &cipher::Key<Self>, iv: &cipher::Iv<Self>) -> Self {
+        let mut cbc = CBC::new().expect("wc_AesInit failed");
+        cbc.init_decrypt(key.as_ref(), iv.as_ref()).expect("wc_AesSetKey failed");
+        Self { inner: cbc }
+    }
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+struct Aes192CbcDecBackend<'a>(&'a mut Aes192CbcDec);
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes192CbcDecBackend<'_> {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl ParBlocksSizeUser for Aes192CbcDecBackend<'_> {
+    type ParBlocksSize = cipher::typenum::consts::U1;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl BlockModeDecBackend for Aes192CbcDecBackend<'_> {
+    fn decrypt_block(&mut self, mut block: cipher::InOut<'_, '_, cipher::Block<Self>>) {
+        let in_block = *block.get_in();
+        let out = block.get_out();
+        self.0.inner.decrypt(in_block.as_ref(), out.as_mut()).expect("wc_AesCbcDecrypt failed");
+    }
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl BlockModeDecrypt for Aes192CbcDec {
+    fn decrypt_with_backend(&mut self, f: impl BlockModeDecClosure<BlockSize = Self::BlockSize>) {
+        f.call(&mut Aes192CbcDecBackend(self));
+    }
+}
+
+/// AES-256 CBC block cipher (decryption) implementing [`cipher::BlockModeDecrypt`].
+#[cfg(all(aes_cbc, feature = "cipher"))]
+pub struct Aes256CbcDec {
+    inner: CBC,
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::KeySizeUser for Aes256CbcDec {
+    type KeySize = U32;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes256CbcDec {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl IvSizeUser for Aes256CbcDec {
+    type IvSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl KeyIvInit for Aes256CbcDec {
+    fn new(key: &cipher::Key<Self>, iv: &cipher::Iv<Self>) -> Self {
+        let mut cbc = CBC::new().expect("wc_AesInit failed");
+        cbc.init_decrypt(key.as_ref(), iv.as_ref()).expect("wc_AesSetKey failed");
+        Self { inner: cbc }
+    }
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+struct Aes256CbcDecBackend<'a>(&'a mut Aes256CbcDec);
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl cipher::BlockSizeUser for Aes256CbcDecBackend<'_> {
+    type BlockSize = U16;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl ParBlocksSizeUser for Aes256CbcDecBackend<'_> {
+    type ParBlocksSize = cipher::typenum::consts::U1;
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl BlockModeDecBackend for Aes256CbcDecBackend<'_> {
+    fn decrypt_block(&mut self, mut block: cipher::InOut<'_, '_, cipher::Block<Self>>) {
+        let in_block = *block.get_in();
+        let out = block.get_out();
+        self.0.inner.decrypt(in_block.as_ref(), out.as_mut()).expect("wc_AesCbcDecrypt failed");
+    }
+}
+
+#[cfg(all(aes_cbc, feature = "cipher"))]
+impl BlockModeDecrypt for Aes256CbcDec {
+    fn decrypt_with_backend(&mut self, f: impl BlockModeDecClosure<BlockSize = Self::BlockSize>) {
+        f.call(&mut Aes256CbcDecBackend(self));
     }
 }
 

@@ -89,11 +89,11 @@ static void wc_SetupRsaPrivate(struct crypt_kop* kop, WC_CRYPTODEV* dev,
 
     if (dpSz == 0 || dqSz == 0) {
         kop->crk_param[inIdx].crp_p     = n;
-        kop->crk_param[inIdx].crp_nbits = dSz * WOLFSSL_BIT_SIZE;
+        kop->crk_param[inIdx].crp_nbits = nSz * WOLFSSL_BIT_SIZE;
         inIdx++;
 
         kop->crk_param[inIdx].crp_p     = d;
-        kop->crk_param[inIdx].crp_nbits = nSz * WOLFSSL_BIT_SIZE;
+        kop->crk_param[inIdx].crp_nbits = dSz * WOLFSSL_BIT_SIZE;
         inIdx++;
     }
     else {
@@ -175,7 +175,7 @@ static int _PrivateOperation(const byte* in, word32 inlen, byte* out,
     p = (byte*)XMALLOC(pSz, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     q = (byte*)XMALLOC(qSz, NULL, DYNAMIC_TYPE_TMP_BUFFER);
     n = (byte*)XMALLOC(dSz, NULL, DYNAMIC_TYPE_TMP_BUFFER);
-    if (d == NULL || p == NULL || q == NULL) {
+    if (d == NULL || p == NULL || q == NULL || n == NULL) {
         ret = MEMORY_E;
     }
 

@@ -31,8 +31,7 @@
     #error LINUXKM_LKCAPI_REGISTER is supported only on Linux kernel versions >= 5.4.0.
 #endif
 
-#if defined(CONFIG_CRYPTO_MANAGER) && \
-    !defined(CONFIG_CRYPTO_MANAGER_DISABLE_TESTS)
+#ifdef WC_LINUXKM_HAVE_SELFTEST
     /* kernel crypto self-test includes test setups that have different expected
      * results FIPS vs non-FIPS, and the required kernel exported symbol
      * "fips_enabled" is only available in CONFIG_CRYPTO_FIPS kernels (otherwise
@@ -65,8 +64,7 @@
     #define WOLFSSL_LINUXKM_LKCAPI_PRIORITY 100000
 #endif
 
-#if defined(CONFIG_CRYPTO_MANAGER_EXTRA_TESTS) || \
-    defined(CONFIG_CRYPTO_SELFTESTS_FULL)
+#ifdef WC_LINUXKM_HAVE_SELFTEST_FULL
     static int disable_setkey_warnings = 0;
 #else
     #define disable_setkey_warnings 0
@@ -227,8 +225,7 @@ static wolfSSL_Atomic_Int linuxkm_lkcapi_registering_now = WOLFSSL_ATOMIC_INITIA
 static int linuxkm_lkcapi_register(void);
 static int linuxkm_lkcapi_unregister(void);
 
-#if defined(HAVE_FIPS) && defined(CONFIG_CRYPTO_MANAGER) && \
-    !defined(CONFIG_CRYPTO_MANAGER_DISABLE_TESTS)
+#if defined(HAVE_FIPS) && defined(WC_LINUXKM_HAVE_SELFTEST)
 static int enabled_fips = 0;
 #endif
 
@@ -244,7 +241,7 @@ static ssize_t install_algs_handler(struct kobject *kobj, struct kobj_attribute 
     if (kstrtoint(buf, 10, &arg) || arg != 1)
         return -EINVAL;
 
-    pr_info("wolfCrypt: Installing algorithms");
+    pr_info("wolfCrypt: Installing algorithms\n");
 
     ret = linuxkm_lkcapi_register();
     if (ret != 0)
@@ -265,16 +262,15 @@ static ssize_t deinstall_algs_handler(struct kobject *kobj, struct kobj_attribut
     if (kstrtoint(buf, 10, &arg) || arg != 1)
         return -EINVAL;
 
-    pr_info("wolfCrypt: Deinstalling algorithms");
+    pr_info("wolfCrypt: Deinstalling algorithms\n");
 
     ret = linuxkm_lkcapi_unregister();
     if (ret != 0)
         return ret;
 
-#if defined(HAVE_FIPS) && defined(CONFIG_CRYPTO_MANAGER) && \
-    !defined(CONFIG_CRYPTO_MANAGER_DISABLE_TESTS)
+#if defined(HAVE_FIPS) && defined(WC_LINUXKM_HAVE_SELFTEST)
     if (enabled_fips) {
-        pr_info("wolfCrypt: restoring fips_enabled to off.");
+        pr_info("wolfCrypt: restoring fips_enabled to off.\n");
         enabled_fips = fips_enabled = 0;
     }
 #endif
@@ -296,8 +292,10 @@ static int linuxkm_lkcapi_sysfs_install(void) {
         if (ret)
             return ret;
         ret = linuxkm_lkcapi_sysfs_install_node(&deinstall_algs_attr, NULL);
-        if (ret)
+        if (ret) {
+            (void)linuxkm_lkcapi_sysfs_deinstall_node(&install_algs_attr, NULL);
             return ret;
+        }
         installed_sysfs_LKCAPI_files = 1;
     }
     return 0;
@@ -343,8 +341,7 @@ static int linuxkm_lkcapi_register(void)
     if (ret)
         goto out;
 
-#if defined(CONFIG_CRYPTO_MANAGER_EXTRA_TESTS) || \
-    defined(CONFIG_CRYPTO_SELFTESTS_FULL)
+#ifdef WC_LINUXKM_HAVE_SELFTEST_FULL
     /* temporarily disable warnings around setkey failures, which are expected
      * from the crypto fuzzer in FIPS configs, and potentially in others.
      * unexpected setkey failures are fatal errors returned by the fuzzer.
@@ -352,13 +349,12 @@ static int linuxkm_lkcapi_register(void)
     disable_setkey_warnings = 1;
 #endif
 #if !defined(LINUXKM_DONT_FORCE_FIPS_ENABLED) && \
-    defined(HAVE_FIPS) && defined(CONFIG_CRYPTO_MANAGER) && \
-    !defined(CONFIG_CRYPTO_MANAGER_DISABLE_TESTS)
+    defined(HAVE_FIPS) && defined(WC_LINUXKM_HAVE_SELFTEST)
     if (! fips_enabled) {
         /* assert system-wide FIPS status, to disable FIPS-forbidden
          * test vectors and fuzzing from the CRYPTO_MANAGER.
          */
-        pr_info("wolfCrypt: changing fips_enabled from 0 to 1 for FIPS module.");
+        pr_info("wolfCrypt: changing fips_enabled from 0 to 1 for FIPS module.\n");
         enabled_fips = fips_enabled = 1;
     }
 #endif
@@ -382,7 +378,7 @@ static int linuxkm_lkcapi_register(void)
                     if (! ((alg).base.cra_flags & CRYPTO_ALG_DEAD)) {        \
                         pr_err("ERROR: alg %s not _DEAD "                    \
                                "after crypto_unregister_%s -- "              \
-                               "marking as loaded despite test failure.",    \
+                               "marking as loaded despite test failure.\n",  \
                                (alg).base.cra_driver_name,                   \
                                #alg_class);                                  \
                         alg ## _loaded = 1;                                  \
@@ -397,8 +393,7 @@ static int linuxkm_lkcapi_register(void)
         }                                                                    \
     } while (0)
 
-#if defined(HAVE_FIPS) && defined(CONFIG_CRYPTO_MANAGER) && \
-    !defined(CONFIG_CRYPTO_MANAGER_DISABLE_TESTS)
+#if defined(HAVE_FIPS) && defined(WC_LINUXKM_HAVE_SELFTEST)
 /* Same as above, but allow for option to skip problematic algs that are
  * not consistently labeled fips_allowed in crypto/testmgr.c, and hence
  * may be rejected by the kernel at runtime if is_fips is true. */
@@ -431,10 +426,10 @@ static int linuxkm_lkcapi_register(void)
                                (alg).base.cra_driver_name, ret);             \
                     }                                                        \
                     (crypto_unregister_ ## alg_class)(&(alg));               \
-                    if (! (alg.base.cra_flags & CRYPTO_ALG_DEAD)) {          \
+                    if (! ((alg).base.cra_flags & CRYPTO_ALG_DEAD)) {        \
                         pr_err("ERROR: alg %s not _DEAD "                    \
                                "after crypto_unregister_%s -- "              \
-                               "marking as loaded despite test failure.",    \
+                               "marking as loaded despite test failure.\n",  \
                                (alg).base.cra_driver_name,                   \
                                #alg_class);                                  \
                         alg ## _loaded = 1;                                  \
@@ -459,6 +454,12 @@ static int linuxkm_lkcapi_register(void)
 #endif
 #ifdef LINUXKM_LKCAPI_REGISTER_AESGCM
     REGISTER_ALG(gcmAesAead, aead, linuxkm_test_aesgcm);
+#endif
+#ifdef LINUXKM_LKCAPI_REGISTER_AESCCM_RFC4309
+    REGISTER_ALG(ccmAesAead_rfc4309, aead, linuxkm_test_aesccm_rfc4309);
+#endif
+#ifdef LINUXKM_LKCAPI_REGISTER_AESCCM
+    REGISTER_ALG(ccmAesAead, aead, linuxkm_test_aesccm);
 #endif
 #ifdef LINUXKM_LKCAPI_REGISTER_AESXTS
     REGISTER_ALG(xtsAesAlg, skcipher, linuxkm_test_aesxts);
@@ -554,8 +555,7 @@ static int linuxkm_lkcapi_register(void)
 #ifdef LINUXKM_LKCAPI_REGISTER_ECDSA
     #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0)) &&    \
         defined(HAVE_FIPS) && defined(CONFIG_CRYPTO_FIPS) && \
-        defined(CONFIG_CRYPTO_MANAGER) &&                    \
-        !defined(CONFIG_CRYPTO_MANAGER_DISABLE_TESTS)
+        defined(WC_LINUXKM_HAVE_SELFTEST)
         /*
          * ecdsa was not recognized as fips_allowed before linux v6.3
          * in kernel crypto/testmgr.c.
@@ -595,8 +595,7 @@ static int linuxkm_lkcapi_register(void)
 
     #if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0)) &&    \
         defined(HAVE_FIPS) && defined(CONFIG_CRYPTO_FIPS) && \
-        defined(CONFIG_CRYPTO_MANAGER) &&                    \
-        !defined(CONFIG_CRYPTO_MANAGER_DISABLE_TESTS)
+        defined(WC_LINUXKM_HAVE_SELFTEST)
     #endif
 
 #endif /* LINUXKM_LKCAPI_REGISTER_ECDSA */
@@ -618,8 +617,7 @@ static int linuxkm_lkcapi_register(void)
     * enabled. Failures because of !fips_allowed are skipped over.
     */
     #if defined(HAVE_FIPS) && defined(CONFIG_CRYPTO_FIPS) && \
-        defined(CONFIG_CRYPTO_MANAGER) &&             \
-        !defined(CONFIG_CRYPTO_MANAGER_DISABLE_TESTS)
+        defined(WC_LINUXKM_HAVE_SELFTEST)
         #if defined(LINUXKM_ECC192)
         REGISTER_ALG_OPTIONAL(ecdh_nist_p192, kpp, linuxkm_test_ecdh_nist_p192);
         #endif /* LINUXKM_ECC192 */
@@ -718,12 +716,11 @@ static int linuxkm_lkcapi_register(void)
 #undef REGISTER_ALG
 #undef REGISTER_ALG_OPTIONAL
 
-#if defined(CONFIG_CRYPTO_MANAGER_EXTRA_TESTS) || \
-    defined(CONFIG_CRYPTO_SELFTESTS_FULL)
+#ifdef WC_LINUXKM_HAVE_SELFTEST_FULL
     disable_setkey_warnings = 0;
 #endif
 
-    pr_info("wolfCrypt: %d algorithm%s registered.", linuxkm_lkcapi_n_registered,
+    pr_info("wolfCrypt: %d algorithm%s registered.\n", linuxkm_lkcapi_n_registered,
             linuxkm_lkcapi_n_registered == 1 ? "" : "s");
 
     if (ret == -1) {
@@ -788,7 +785,7 @@ static int linuxkm_lkcapi_unregister(void)
     do {                                                                 \
         if (alg ## _loaded) {                                            \
             if ((alg).base.cra_flags & CRYPTO_ALG_DEAD) {                \
-                pr_err("alg %s already CRYPTO_ALG_DEAD.",                \
+                pr_err("alg %s already CRYPTO_ALG_DEAD.\n",              \
                        (alg).base.cra_driver_name);                      \
                 alg ## _loaded = 0;                                      \
                 ++n_deregistered;                                        \
@@ -801,7 +798,7 @@ static int linuxkm_lkcapi_unregister(void)
                     if (! ((alg).base.cra_flags & CRYPTO_ALG_DEAD)) {    \
                         pr_err("ERROR: alg %s not _DEAD after "          \
                                "crypto_unregister_%s -- "                \
-                               "leaving marked as loaded.",              \
+                               "leaving marked as loaded.\n",            \
                                (alg).base.cra_driver_name,               \
                                #alg_class);                              \
                         seen_err = -EBUSY;                               \
@@ -811,7 +808,7 @@ static int linuxkm_lkcapi_unregister(void)
                     }                                                    \
                 }                                                        \
                 else {                                                   \
-                    pr_err("alg %s cannot be uninstalled (refcnt = %d)", \
+                    pr_err("alg %s cannot be uninstalled (refcnt = %d)\n", \
                            (alg).base.cra_driver_name, cur_refcnt);      \
                     if (cur_refcnt > 0) { seen_err = -EBUSY; }           \
                 }                                                        \
@@ -830,6 +827,12 @@ static int linuxkm_lkcapi_unregister(void)
 #endif
 #ifdef LINUXKM_LKCAPI_REGISTER_AESGCM_RFC4106
     UNREGISTER_ALG(gcmAesAead_rfc4106, aead);
+#endif
+#ifdef LINUXKM_LKCAPI_REGISTER_AESCCM
+    UNREGISTER_ALG(ccmAesAead, aead);
+#endif
+#ifdef LINUXKM_LKCAPI_REGISTER_AESCCM_RFC4309
+    UNREGISTER_ALG(ccmAesAead_rfc4309, aead);
 #endif
 #ifdef LINUXKM_LKCAPI_REGISTER_AESXTS
     UNREGISTER_ALG(xtsAesAlg, skcipher);
@@ -948,9 +951,6 @@ static int linuxkm_lkcapi_unregister(void)
         #ifdef WOLFSSL_SHA384
             UNREGISTER_ALG(pkcs1_sha384, akcipher);
         #endif /* WOLFSSL_SHA384 */
-        #ifdef WOLFSSL_SHA384
-            UNREGISTER_ALG(pkcs1_sha384, akcipher);
-        #endif /* WOLFSSL_SHA384 */
         #ifdef WOLFSSL_SHA512
             UNREGISTER_ALG(pkcs1_sha512, akcipher);
         #endif /* WOLFSSL_SHA512 */
@@ -966,9 +966,6 @@ static int linuxkm_lkcapi_unregister(void)
         #ifndef NO_SHA256
             UNREGISTER_ALG(pkcs1_sha256, sig);
         #endif /* !NO_SHA256 */
-        #ifdef WOLFSSL_SHA384
-            UNREGISTER_ALG(pkcs1_sha384, sig);
-        #endif /* WOLFSSL_SHA384 */
         #ifdef WOLFSSL_SHA384
             UNREGISTER_ALG(pkcs1_sha384, sig);
         #endif /* WOLFSSL_SHA384 */
@@ -1013,7 +1010,7 @@ static int linuxkm_lkcapi_unregister(void)
 #undef UNREGISTER_ALG
 
     linuxkm_lkcapi_n_registered -= n_deregistered;
-    pr_info("wolfCrypt: %d algorithm%s deregistered, %d remain%s registered.",
+    pr_info("wolfCrypt: %d algorithm%s deregistered, %d remain%s registered.\n",
             n_deregistered, n_deregistered == 1 ? "" : "s",
             linuxkm_lkcapi_n_registered, linuxkm_lkcapi_n_registered == 1 ? "s" : "");
 

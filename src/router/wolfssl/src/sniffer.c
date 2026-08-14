@@ -1824,7 +1824,7 @@ static int SetNamedPrivateKey(const char* name, const char* address, int port,
     if (serverIp.ip4 == XINADDR_NONE) {
     #ifdef FUSION_RTOS
         if (XINET_PTON(AF_INET6, address, serverIp.ip6,
-                       sizeof(serverIp.ip4)) == 1)
+                       sizeof(serverIp.ip6)) == 1)
     #elif defined(FREESCALE_MQX)
         if (XINET_PTON(AF_INET6, address, serverIp.ip6,
                        sizeof(serverIp.ip6)) == RTCS_OK)
@@ -2459,11 +2459,15 @@ static void FreeSetupKeysArgs(WOLFSSL* ssl, void* pArgs)
         args->key->type = WC_PK_TYPE_NONE;
         args->key->initPriv = 0; args->key->initPub = 0;
 
+        /* Scrub the raw DH private exponent (and any other key material
+         * embedded in the union) before release. wc_FreeDhKey above only
+         * clears the mp_int DhKey, not the separate privKey byte array.
+         * Use ForceZero (rather than XMEMSET) so the wipe cannot be
+         * elided by the optimizer. */
+        ForceZero(args->key, sizeof(*args->key));
 #ifdef WOLFSSL_ASYNC_CRYPT
         XFREE(args->key, NULL, DYNAMIC_TYPE_SNIFFER_KEY);
         args->key = NULL;
-#else
-        XMEMSET(args->key, 0, sizeof(args->key));
 #endif
     }
 
@@ -4195,6 +4199,9 @@ static int ProcessClientHello(const byte* input, int* sslBytes,
         {
             word16 listLen = 0, offset = 0;
 
+            if (extLen < OPAQUE16_LEN)
+                return BUFFER_ERROR;
+
             ato16(input + offset, &listLen);
             offset += OPAQUE16_LEN;
 
@@ -4228,7 +4235,13 @@ static int ProcessClientHello(const byte* input, int* sslBytes,
     #ifdef WOLFSSL_TLS13
         case EXT_KEY_SHARE:
         {
-            word16 ksLen = (word16)((input[0] << 8) | input[1]);
+            word16 ksLen = 0;
+            if (extLen < OPAQUE16_LEN) {
+                SetError(BUFFER_ERROR_STR, error, session, FATAL_ERROR_STATE);
+                return BUFFER_ERROR;
+            }
+
+            ksLen = (word16)((input[0] << 8) | input[1]);
             if (ksLen + OPAQUE16_LEN > extLen) {
                 SetError(CLIENT_HELLO_INPUT_STR, error, session, FATAL_ERROR_STATE);
                 return WOLFSSL_FATAL_ERROR;
@@ -4251,6 +4264,11 @@ static int ProcessClientHello(const byte* input, int* sslBytes,
             word16 idsLen, idLen, bindersLen, idx = 0;
             word32 ticketAge;
             const byte *identity, *binders;
+
+            if (extLen < OPAQUE16_LEN) {
+                SetError(BUFFER_ERROR_STR, error, session, FATAL_ERROR_STATE);
+                return BUFFER_ERROR;
+            }
 
             idsLen = (word16)((input[idx] << 8) | input[idx+1]);
             if ((word32)idsLen + OPAQUE16_LEN + idx > (word32)extLen) {
@@ -7242,12 +7260,16 @@ int ssl_SetWatchKey_file(void* vSniffer, const char* keyFile, int keyType,
     ret = LoadKeyFile(&keyBuf, &keyBufSz, keyFile, 0, keyType, password);
     if (ret < 0) {
         SetError(KEY_FILE_STR, error, NULL, 0);
+        if (keyBuf != NULL) {
+            ForceZero(keyBuf, keyBufSz);
+        }
         XFREE(keyBuf, NULL, DYNAMIC_TYPE_X509);
         return WOLFSSL_FATAL_ERROR;
     }
 
     ret = ssl_SetWatchKey_buffer(vSniffer, keyBuf, keyBufSz, FILETYPE_DER,
             error);
+    ForceZero(keyBuf, keyBufSz);
     XFREE(keyBuf, NULL, DYNAMIC_TYPE_X509);
 
     return ret;
@@ -7569,11 +7591,15 @@ static int parseKeyLogFile(const char* fileName, char* error)
 
         if (ret != 0) {
             fclose(file);
+            ForceZero(secret, SECRET_LENGTH);
+            ForceZero(secretHex, sizeof(secretHex));
             return ret;
         }
     }
     fclose(file);
 
+    ForceZero(secret, SECRET_LENGTH);
+    ForceZero(secretHex, sizeof(secretHex));
     return 0;
 }
 
@@ -7591,6 +7617,7 @@ static void freeSecretList(void)
 
         while (current != NULL) {
             next = current->next;
+            ForceZero(current, sizeof(SecretNode));
             XFREE(current, NULL, DYNAMIC_TYPE_SNIFFER_KEYLOG_NODE);
             current = next;
         }
@@ -7658,7 +7685,10 @@ static int addKeyLogSnifferServerHelper(const char* address,
     if (serverIp.ip4 == XINADDR_NONE) {
     #ifdef FUSION_RTOS
         if (XINET_PTON(AF_INET6, address, serverIp.ip6,
-                       sizeof(serverIp.ip4)) == 1)
+                       sizeof(serverIp.ip6)) == 1)
+    #elif defined(FREESCALE_MQX)
+        if (XINET_PTON(AF_INET6, address, serverIp.ip6,
+                       sizeof(serverIp.ip6)) == RTCS_OK)
     #else
         if (XINET_PTON(AF_INET6, address, serverIp.ip6) == 1)
     #endif
@@ -7783,7 +7813,7 @@ int ssl_RemoveSession(const char* clientIp, int clientPort,
     if (clientAddr.ip4 == XINADDR_NONE) {
     #ifdef FUSION_RTOS
         if (XINET_PTON(AF_INET6, clientIp, clientAddr.ip6,
-                       sizeof(clientAddr.ip4)) == 1)
+                       sizeof(clientAddr.ip6)) == 1)
     #elif defined(FREESCALE_MQX)
         if (XINET_PTON(AF_INET6, clientIp, clientAddr.ip6,
                        sizeof(clientAddr.ip6)) == RTCS_OK)
@@ -7805,10 +7835,10 @@ int ssl_RemoveSession(const char* clientIp, int clientPort,
     if (serverAddr.ip4 == XINADDR_NONE) {
     #ifdef FUSION_RTOS
         if (XINET_PTON(AF_INET6, serverIp, serverAddr.ip6,
-                       sizeof(serverAddr.ip4)) == 1)
+                       sizeof(serverAddr.ip6)) == 1)
     #elif defined(FREESCALE_MQX)
-        if (XINET_PTON(AF_INET6, clientIp, clientAddr.ip6,
-                       sizeof(clientAddr.ip6)) == RTCS_OK)
+        if (XINET_PTON(AF_INET6, serverIp, serverAddr.ip6,
+                       sizeof(serverAddr.ip6)) == RTCS_OK)
     #else
         if (XINET_PTON(AF_INET6, serverIp, serverAddr.ip6) == 1)
     #endif

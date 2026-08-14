@@ -36,9 +36,11 @@ int test_wc_ecc_size(void);
 int test_wc_ecc_params(void);
 int test_wc_ecc_signVerify_hash(void);
 int test_wc_ecc_shared_secret(void);
+int test_wc_ecc_shared_secret_size_bounds(void);
 int test_wc_ecc_export_x963(void);
 int test_wc_ecc_export_x963_ex(void);
 int test_wc_ecc_import_x963(void);
+int test_wc_ecc_import_x963_off_curve(void);
 int test_wc_ecc_import_private_key(void);
 int test_wc_ecc_export_private_only(void);
 int test_wc_ecc_rs_to_sig(void);
@@ -73,9 +75,11 @@ int test_wc_EccPrivateKeyToDer(void);
     TEST_DECL_GROUP("ecc", test_wc_ecc_params),                         \
     TEST_DECL_GROUP("ecc", test_wc_ecc_signVerify_hash),                \
     TEST_DECL_GROUP("ecc", test_wc_ecc_shared_secret),                  \
+    TEST_DECL_GROUP("ecc", test_wc_ecc_shared_secret_size_bounds),      \
     TEST_DECL_GROUP("ecc", test_wc_ecc_export_x963),                    \
     TEST_DECL_GROUP("ecc", test_wc_ecc_export_x963_ex),                 \
     TEST_DECL_GROUP("ecc", test_wc_ecc_import_x963),                    \
+    TEST_DECL_GROUP("ecc", test_wc_ecc_import_x963_off_curve),          \
     TEST_DECL_GROUP("ecc", test_wc_ecc_import_private_key),             \
     TEST_DECL_GROUP("ecc", test_wc_ecc_export_private_only),            \
     TEST_DECL_GROUP("ecc", test_wc_ecc_rs_to_sig),                      \

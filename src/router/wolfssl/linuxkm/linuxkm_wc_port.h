@@ -167,13 +167,14 @@
     #ifndef WC_LINUXKM_INTR_SIGNALS
         #define WC_LINUXKM_INTR_SIGNALS { SIGKILL, SIGABRT, SIGHUP, SIGINT }
     #endif
-    extern int wc_linuxkm_sig_ignore_begin(void);
-    extern int wc_linuxkm_sig_ignore_end(void);
-    extern int wc_linuxkm_check_for_intr_signals(void);
+    WOLFSSL_API int wc_linuxkm_can_block(void);
+    WOLFSSL_API int wc_linuxkm_sig_ignore_begin(void);
+    WOLFSSL_API int wc_linuxkm_sig_ignore_end(void);
+    WOLFSSL_API int wc_linuxkm_check_for_intr_signals(void);
     #ifndef WC_LINUXKM_MAX_NS_WITHOUT_YIELD
         #define WC_LINUXKM_MAX_NS_WITHOUT_YIELD 1000000000
     #endif
-    extern void wc_linuxkm_relax_long_loop(void);
+    WOLFSSL_API void wc_linuxkm_relax_long_loop(void);
 
     #ifndef WC_SIG_IGNORE_BEGIN
         #define WC_SIG_IGNORE_BEGIN() wc_linuxkm_sig_ignore_begin()
@@ -216,15 +217,22 @@
         #endif
     #endif
 
-    #if defined(HAVE_HASHDRBG) && defined(HAVE_FIPS) && \
+    #if defined(HAVE_FIPS) && FIPS_VERSION3_LT(7, 0, 0)
+        #if defined(HAVE_HASHDRBG) && \
             defined(HAVE_ENTROPY_MEMUSE) && \
             !defined(WC_LINUXKM_WOLFENTROPY_IN_GLUE_LAYER)
-        #define WC_LINUXKM_WOLFENTROPY_IN_GLUE_LAYER
-    #elif defined(HAVE_HASHDRBG) && defined(HAVE_FIPS) && \
-            (defined(HAVE_INTEL_RDSEED) || defined(HAVE_AMD_RDSEED)) && \
-            !defined(HAVE_ENTROPY_MEMUSE) && \
-            !defined(WC_LINUXKM_RDSEED_IN_GLUE_LAYER)
-        #define WC_LINUXKM_RDSEED_IN_GLUE_LAYER
+            #define WC_LINUXKM_WOLFENTROPY_IN_GLUE_LAYER
+        #elif defined(HAVE_HASHDRBG) && \
+              (defined(HAVE_INTEL_RDSEED) || defined(HAVE_AMD_RDSEED)) && \
+              !defined(HAVE_ENTROPY_MEMUSE) && \
+              !defined(WC_LINUXKM_RDSEED_IN_GLUE_LAYER)
+            #define WC_LINUXKM_RDSEED_IN_GLUE_LAYER
+            /* Work around -Wmaybe-uninitialized in old FIPS random.c.
+             * Glue-layer wc_linuxkm_GenerateSeed_IntelRD() always forces
+             * failure if RDSEED is missing or fails.
+             */
+            #undef FORCE_FAILURE_RDSEED
+        #endif
     #endif
     #if defined(WC_LINUXKM_WOLFENTROPY_IN_GLUE_LAYER)
         struct OS_Seed;
@@ -247,6 +255,13 @@
         !defined(LINUXKM_LKCAPI_REGISTER_HASH_DRBG_DEFAULT) && \
         defined(HAVE_HASHDRBG)
         #define LINUXKM_LKCAPI_REGISTER_HASH_DRBG_DEFAULT
+    #endif
+
+    #if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)) && \
+        defined(WC_SYM_RELOC_TABLES) && \
+        !defined(WC_LINUXKM_NO_USE_HEAP_WRAPPERS) && \
+        !defined(WC_LINUXKM_USE_HEAP_WRAPPERS)
+        #define WC_LINUXKM_USE_HEAP_WRAPPERS
     #endif
 
     #ifdef BUILDING_WOLFSSL
@@ -363,6 +378,29 @@
     #include <linux/kernel.h>
     #include <linux/ctype.h>
 
+    #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 16, 0)
+        #if defined(CONFIG_CRYPTO_MANAGER) && !defined(CONFIG_CRYPTO_MANAGER_DISABLE_TESTS)
+            #define WC_LINUXKM_HAVE_SELFTEST
+        #endif
+        #if defined(WC_LINUXKM_HAVE_SELFTEST) && defined(CONFIG_CRYPTO_MANAGER_EXTRA_TESTS)
+            #define WC_LINUXKM_HAVE_SELFTEST_FULL
+        #endif
+    #else
+        /* see Linux 698de822780f */
+        #if defined(CONFIG_CRYPTO_MANAGER) && defined(CONFIG_CRYPTO_SELFTESTS)
+            #define WC_LINUXKM_HAVE_SELFTEST
+        #endif
+        /* see Linux ac90aad0e9 */
+        #if defined(WC_LINUXKM_HAVE_SELFTEST) && defined(CONFIG_CRYPTO_SELFTESTS_FULL)
+            #define WC_LINUXKM_HAVE_SELFTEST_FULL
+        #endif
+    #endif
+
+    /* Kernel non-FIPS self-test ("testmgr") has a KAT with all-zeros keys. */
+    #if defined(WC_LINUXKM_HAVE_SELFTEST) && !defined(HAVE_FIPS)
+        #define WC_AES_XTS_ALLOW_DUPLICATE_KEYS
+    #endif
+
     #if defined(CONFIG_FORTIFY_SOURCE) || defined(DEBUG_LINUXKM_FORTIFY_OVERLAY)
         #ifdef WC_CONTAINERIZE_THIS
             /* the inline definitions in fortify-string.h use non-inline
@@ -450,6 +488,8 @@
         #define memset my_memset
 
         static inline void *my_memmove(void *dest, const void *src, size_t n) {
+            if (n == 0)
+                return dest;
             if (! (((uintptr_t)dest | (uintptr_t)src | (uintptr_t)n)
                    & (uintptr_t)(sizeof(uintptr_t) - 1)))
             {
@@ -517,6 +557,13 @@
             #endif
         #endif
         #include <linux/mm.h>
+    #endif
+
+    #ifdef WC_LINUXKM_USE_HEAP_WRAPPERS
+        WOLFSSL_API void *wc_linuxkm_malloc(size_t size);
+        WOLFSSL_API void wc_linuxkm_free(void *ptr);
+        WOLFSSL_API void *wc_linuxkm_realloc(void *ptr, size_t newsize);
+        WOLFSSL_API size_t wc_linuxkm_malloc_usable_size(void *ptr);
     #endif
 
 #ifndef WC_CONTAINERIZE_THIS
@@ -618,7 +665,7 @@
                 static inline int wc_lkm_refcount_to_int(atomic_t *refcount) {
                     _Pragma("GCC diagnostic push");
                     _Pragma("GCC diagnostic ignored \"-Wnested-externs\"");
-                    return atomic_read(&refcount);
+                    return atomic_read(refcount);
                     _Pragma("GCC diagnostic pop");
                 }
             #endif
@@ -876,15 +923,33 @@
         __wc_bss_end[];
 
     extern ssize_t wc_linuxkm_normalize_relocations(
-        const u8 *text_in,
-        size_t text_in_len,
-        u8 *text_out,
+        const u8 *seg_in,
+        size_t *seg_in_out_len,
+        u8 *seg_out,
         ssize_t *cur_index_p);
 
+    extern ssize_t wc_linuxkm_normalize_relocations_noresize(
+        const u8 *seg_in,
+        size_t seg_in_len,
+        u8 *seg_out,
+        ssize_t *cur_index_p);
+
+    #ifndef WOLFSSL_SEGMENT_CANONICALIZER_BUFSIZ
+        #define WOLFSSL_SEGMENT_CANONICALIZER_BUFSIZ 8192
+    #endif
+
+    #ifndef WOLFSSL_SEGMENT_CANONICALIZER
+        #define WOLFSSL_SEGMENT_CANONICALIZER(seg_in, seg_in_out_len, seg_out, cur_index_p) \
+            wc_linuxkm_normalize_relocations(seg_in, seg_in_out_len, seg_out, cur_index_p)
+    #endif
+
+    /* backward-compatible wrappers */
     #ifndef WOLFSSL_TEXT_SEGMENT_CANONICALIZER
         #define WOLFSSL_TEXT_SEGMENT_CANONICALIZER(text_in, text_in_len, text_out, cur_index_p) \
-            wc_linuxkm_normalize_relocations(text_in, text_in_len, text_out, cur_index_p)
-        #define WOLFSSL_TEXT_SEGMENT_CANONICALIZER_BUFSIZ 8192
+            wc_linuxkm_normalize_relocations_noresize(text_in, text_in_len, text_out, cur_index_p)
+    #endif
+    #ifndef WOLFSSL_TEXT_SEGMENT_CANONICALIZER_BUFSIZ
+        #define WOLFSSL_TEXT_SEGMENT_CANONICALIZER_BUFSIZ WOLFSSL_SEGMENT_CANONICALIZER_BUFSIZ
     #endif
 
 #ifdef CONFIG_MIPS
@@ -896,6 +961,7 @@
     struct wolfssl_linuxkm_pie_redirect_table {
     #ifdef HAVE_FIPS
         typeof(wc_linuxkm_normalize_relocations) *wc_linuxkm_normalize_relocations;
+        typeof(wc_linuxkm_normalize_relocations_noresize) *wc_linuxkm_normalize_relocations_noresize;
     #endif
 
     #ifndef __ARCH_MEMCMP_NO_REDIRECT
@@ -952,6 +1018,12 @@
 
         const unsigned char *_ctype;
 
+#ifdef WC_LINUXKM_USE_HEAP_WRAPPERS
+        typeof(wc_linuxkm_malloc) *wc_linuxkm_malloc;
+        typeof(wc_linuxkm_free) *wc_linuxkm_free;
+        typeof(wc_linuxkm_realloc) *wc_linuxkm_realloc;
+        typeof(wc_linuxkm_malloc_usable_size) *wc_linuxkm_malloc_usable_size;
+#else /* !WC_LINUXKM_USE_HEAP_WRAPPERS */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
         typeof(kmalloc_noprof) *kmalloc_noprof;
         typeof(krealloc_node_align_noprof) *krealloc_node_align_noprof;
@@ -1002,6 +1074,7 @@
         #endif
         typeof(kfree) *kfree;
         typeof(ksize) *ksize;
+#endif /* !WC_LINUXKM_USE_HEAP_WRAPPERS */
 
 #ifndef LINUXKM_LKCAPI_REGISTER_HASH_DRBG_DEFAULT
         typeof(get_random_bytes) *get_random_bytes;
@@ -1179,6 +1252,7 @@
         typeof(wc_lkm_LockMutex) *wc_lkm_LockMutex;
         #endif
 
+        typeof(wc_linuxkm_can_block) *wc_linuxkm_can_block;
         typeof(wc_linuxkm_sig_ignore_begin) *wc_linuxkm_sig_ignore_begin;
         typeof(wc_linuxkm_sig_ignore_end) *wc_linuxkm_sig_ignore_end;
         typeof(wc_linuxkm_check_for_intr_signals) *wc_linuxkm_check_for_intr_signals;
@@ -1234,6 +1308,8 @@
     #ifdef HAVE_FIPS
         #define wc_linuxkm_normalize_relocations \
             WC_PIE_INDIRECT_SYM(wc_linuxkm_normalize_relocations)
+        #define wc_linuxkm_normalize_relocations_noresize \
+            WC_PIE_INDIRECT_SYM(wc_linuxkm_normalize_relocations_noresize)
     #endif
 
     #ifndef __ARCH_MEMCMP_NO_REDIRECT
@@ -1290,6 +1366,11 @@
 
     #define _ctype WC_PIE_INDIRECT_SYM(_ctype)
 
+#ifdef WC_LINUXKM_USE_HEAP_WRAPPERS
+    /* no native heap call masking -- wc_linuxkm wrapper functions bound
+     * directly to malloc() and friends.
+     */
+#else /* !WC_LINUXKM_USE_HEAP_WRAPPERS */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
     /* see include/linux/alloc_tag.h and include/linux/slab.h */
     #define kmalloc_noprof WC_PIE_INDIRECT_SYM(kmalloc_noprof)
@@ -1345,6 +1426,7 @@
         #define kvfree WC_PIE_INDIRECT_SYM(kvfree)
     #endif
     #define ksize WC_PIE_INDIRECT_SYM(ksize)
+#endif /* !WC_LINUXKM_USE_HEAP_WRAPPERS */
 
 #ifndef LINUXKM_LKCAPI_REGISTER_HASH_DRBG_DEFAULT
     #define get_random_bytes WC_PIE_INDIRECT_SYM(get_random_bytes)
@@ -1397,8 +1479,8 @@
      */
     #undef tolower
     #undef toupper
-    #define tolower(c) (islower(c) ? (c) : ((c) + ('a'-'A')))
-    #define toupper(c) (isupper(c) ? (c) : ((c) - ('a'-'A')))
+    #define tolower(c) (isupper(c) ? ((c) + ('a'-'A')) : (c))
+    #define toupper(c) (islower(c) ? ((c) - ('a'-'A')) : (c))
 
     #if !defined(WOLFCRYPT_ONLY) && !defined(NO_CERTS)
         #define GetCA WC_PIE_INDIRECT_SYM(GetCA)
@@ -1471,8 +1553,9 @@
         wolfssl_spin_unlock_irqrestore_rt((lock), (flags))
     #endif
 
-    #define wc_linuxkm_sig_ignore_begin WC_PIE_INDIRECT_SYM(wc_linuxkm_sig_ignore_begin);
-    #define wc_linuxkm_sig_ignore_end WC_PIE_INDIRECT_SYM(wc_linuxkm_sig_ignore_end);
+    #define wc_linuxkm_can_block WC_PIE_INDIRECT_SYM(wc_linuxkm_can_block)
+    #define wc_linuxkm_sig_ignore_begin WC_PIE_INDIRECT_SYM(wc_linuxkm_sig_ignore_begin)
+    #define wc_linuxkm_sig_ignore_end WC_PIE_INDIRECT_SYM(wc_linuxkm_sig_ignore_end)
     #define wc_linuxkm_check_for_intr_signals WC_PIE_INDIRECT_SYM(wc_linuxkm_check_for_intr_signals)
     #define wc_linuxkm_relax_long_loop WC_PIE_INDIRECT_SYM(wc_linuxkm_relax_long_loop)
 
@@ -1682,6 +1765,12 @@
                 #error WOLFSSL_USE_SAVE_VECTOR_REGISTERS is set for an unimplemented architecture.
             #endif /* !CONFIG_X86 */
         #endif /* WOLFSSL_USE_SAVE_VECTOR_REGISTERS */
+        #ifdef WC_LINUXKM_USE_HEAP_WRAPPERS
+            WOLFSSL_API extern void *wc_linuxkm_malloc(size_t size);
+            WOLFSSL_API void wc_linuxkm_free(void *ptr);
+            WOLFSSL_API void *wc_linuxkm_realloc(void *ptr, size_t newsize);
+            WOLFSSL_API size_t wc_linuxkm_malloc_usable_size(void *ptr);
+        #endif
     #endif /* !BUILDING_WOLFSSL */
 
     /* Copied from wc_port.h */
@@ -1836,19 +1925,36 @@
               ((sizeof(_alloc_sz) * 8UL) - __builtin_clzl(_alloc_sz - 1)); \
         _alloc_sz;                                                         \
     })
+
+    #ifdef WC_LINUXKM_USE_HEAP_WRAPPERS
+        #ifdef WC_CONTAINERIZE_THIS
+            #define malloc(size) WC_PIE_INDIRECT_SYM(wc_linuxkm_malloc)(size)
+            #define free(ptr) WC_PIE_INDIRECT_SYM(wc_linuxkm_free)(ptr)
+            #define realloc(ptr, newsize) WC_PIE_INDIRECT_SYM(wc_linuxkm_realloc)(ptr, newsize)
+        #else
+            #define malloc(size) wc_linuxkm_malloc(size)
+            #define free(ptr) wc_linuxkm_free(ptr)
+            #define realloc(ptr, newsize) wc_linuxkm_realloc(ptr, newsize)
+        #endif
+    #else /* !WC_LINUXKM_USE_HEAP_WRAPPERS */
     #ifdef USE_KVMALLOC
-        #define malloc(size) kvmalloc_node(WC_LINUXKM_ROUND_UP_P_OF_2(size), (preempt_count() == 0 ? GFP_KERNEL : GFP_ATOMIC), NUMA_NO_NODE)
-        #define free(ptr) kvfree(ptr)
+        #define malloc(size) kvmalloc_node(WC_LINUXKM_ROUND_UP_P_OF_2(size), (wc_linuxkm_can_block() ? GFP_KERNEL : GFP_ATOMIC), NUMA_NO_NODE)
+        #if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 2, 0)
+            #define free(ptr) (wc_linuxkm_can_block() ? kvfree(ptr) : kvfree_atomic(ptr))
+        #else
+            #define free(ptr) kvfree(ptr)
+        #endif
         #ifdef USE_KVREALLOC
-            #define realloc(ptr, newsize) kvrealloc(ptr, WC_LINUXKM_ROUND_UP_P_OF_2(newsize), (preempt_count() == 0 ? GFP_KERNEL : GFP_ATOMIC))
+            #define realloc(ptr, newsize) kvrealloc(ptr, WC_LINUXKM_ROUND_UP_P_OF_2(newsize), (wc_linuxkm_can_block() ? GFP_KERNEL : GFP_ATOMIC))
         #else
             #define realloc(ptr, newsize) ((void)(ptr), (void)(newsize), NULL)
         #endif
     #else
-        #define malloc(size) kmalloc(WC_LINUXKM_ROUND_UP_P_OF_2(size), (preempt_count() == 0 ? GFP_KERNEL : GFP_ATOMIC))
+        #define malloc(size) kmalloc(WC_LINUXKM_ROUND_UP_P_OF_2(size), (wc_linuxkm_can_block() ? GFP_KERNEL : GFP_ATOMIC))
         #define free(ptr) kfree(ptr)
-        #define realloc(ptr, newsize) krealloc(ptr, WC_LINUXKM_ROUND_UP_P_OF_2(newsize), (preempt_count() == 0 ? GFP_KERNEL : GFP_ATOMIC))
+        #define realloc(ptr, newsize) krealloc(ptr, WC_LINUXKM_ROUND_UP_P_OF_2(newsize), (wc_linuxkm_can_block() ? GFP_KERNEL : GFP_ATOMIC))
     #endif
+    #endif /* !WC_LINUXKM_USE_HEAP_WRAPPERS */
 
     #ifndef static_assert
         #define static_assert(expr, ...) __static_assert(expr, ##__VA_ARGS__, #expr)

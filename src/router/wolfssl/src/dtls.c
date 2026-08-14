@@ -212,7 +212,7 @@ static int CreateDtls12Cookie(const WOLFSSL* ssl, const WolfSSL_CH* ch,
                               byte* cookie)
 {
     int ret;
-    Hmac cookieHmac;
+    WC_DECLARE_VAR(cookieHmac, Hmac, 1, ssl->heap);
 
     if (ssl->buffers.dtlsCookieSecret.buffer == NULL ||
             ssl->buffers.dtlsCookieSecret.length == 0) {
@@ -220,38 +220,42 @@ static int CreateDtls12Cookie(const WOLFSSL* ssl, const WolfSSL_CH* ch,
         return COOKIE_ERROR;
     }
 
-    ret = wc_HmacInit(&cookieHmac, ssl->heap, ssl->devId);
+    WC_ALLOC_VAR_EX(cookieHmac, Hmac, 1, ssl->heap, DYNAMIC_TYPE_HMAC,
+                    return MEMORY_E);
+
+    ret = wc_HmacInit(cookieHmac, ssl->heap, ssl->devId);
     if (ret == 0) {
-        ret = wc_HmacSetKey(&cookieHmac, DTLS_COOKIE_TYPE,
+        ret = wc_HmacSetKey(cookieHmac, DTLS_COOKIE_TYPE,
             ssl->buffers.dtlsCookieSecret.buffer,
             ssl->buffers.dtlsCookieSecret.length);
         if (ret == 0) {
             /* peerLock not necessary. Still in handshake phase. */
-            ret = wc_HmacUpdate(&cookieHmac,
+            ret = wc_HmacUpdate(cookieHmac,
                    (const byte*)ssl->buffers.dtlsCtx.peer.sa,
                                 ssl->buffers.dtlsCtx.peer.sz);
         }
         if (ret == 0)
-            ret = wc_HmacUpdate(&cookieHmac, (byte*)ch->pv, OPAQUE16_LEN);
+            ret = wc_HmacUpdate(cookieHmac, (byte*)ch->pv, OPAQUE16_LEN);
         if (ret == 0)
-            ret = wc_HmacUpdate(&cookieHmac, (byte*)ch->random, RAN_LEN);
+            ret = wc_HmacUpdate(cookieHmac, (byte*)ch->random, RAN_LEN);
         if (ret == 0) {
-            ret = wc_HmacUpdate(&cookieHmac, (byte*)ch->sessionId.elements,
+            ret = wc_HmacUpdate(cookieHmac, (byte*)ch->sessionId.elements,
                     ch->sessionId.size);
         }
         if (ret == 0) {
-            ret = wc_HmacUpdate(&cookieHmac, (byte*)ch->cipherSuite.elements,
+            ret = wc_HmacUpdate(cookieHmac, (byte*)ch->cipherSuite.elements,
                 ch->cipherSuite.size);
         }
         if (ret == 0) {
-            ret = wc_HmacUpdate(&cookieHmac, (byte*)ch->compression.elements,
+            ret = wc_HmacUpdate(cookieHmac, (byte*)ch->compression.elements,
                 ch->compression.size);
         }
         if (ret == 0)
-            ret = wc_HmacFinal(&cookieHmac, cookie);
-        wc_HmacFree(&cookieHmac);
+            ret = wc_HmacFinal(cookieHmac, cookie);
+        wc_HmacFree(cookieHmac);
     }
 
+    WC_FREE_VAR_EX(cookieHmac, ssl->heap, DYNAMIC_TYPE_HMAC);
     return ret;
 }
 
@@ -631,9 +635,8 @@ static int SendStatelessReplyDtls13(const WOLFSSL* ssl, WolfSSL_CH* ch)
 
     XMEMSET(&cs, 0, sizeof(cs));
 
-    /* We need to echo the session ID sent by the client */
     if (ch->sessionId.size > ID_LEN) {
-        /* Too large. We can't echo this. */
+        /* Too large */
         ERROR_OUT(INVALID_PARAMETER, dtls13_cleanup);
     }
 
@@ -857,9 +860,16 @@ static int SendStatelessReplyDtls13(const WOLFSSL* ssl, WolfSSL_CH* ch)
         nonConstSSL->options.tls1_1 = 1;
         nonConstSSL->options.tls1_3 = 1;
 
+#ifdef WOLFSSL_DTLS13_ECHO_LEGACY_SESSION_ID
+        nonConstSSL->session->sessionIDSz = (byte)ch->sessionId.size;
+        if (ch->sessionId.size > 0)
+            XMEMCPY(nonConstSSL->session->sessionID, ch->sessionId.elements,
+                ch->sessionId.size);
+#else
         /* RFC 9147 Section 5.3: DTLS 1.3 ServerHello must have empty
          * legacy_session_id_echo. Don't copy the client's session ID. */
         nonConstSSL->session->sessionIDSz = 0;
+#endif
         nonConstSSL->options.cipherSuite0 = cs.cipherSuite0;
         nonConstSSL->options.cipherSuite = cs.cipherSuite;
         nonConstSSL->extensions = parsedExts;
@@ -1307,6 +1317,14 @@ int TLSX_ConnectionID_Parse(WOLFSSL* ssl, const byte* input, word16 length,
         XMEMCPY(id->id, input + OPAQUE8_LEN, cidSz);
         id->length = cidSz;
         info->tx = id;
+        /* Invalidate the cached AEAD record overhead because the TX CID
+         * changes record framing. Today this only fires during the initial
+         * extension exchange (before the cache can be populated). When
+         * mid-connection CID change is added (DTLS 1.3), add a regression
+         * test that primes the cache, changes the CID, and re-asserts that
+         * wolfssl_local_GetRecordSize() agrees with BuildMessage(sizeOnly=1)
+         * after the change. */
+        ssl->recordSzOverhead = 0;
     }
 
     info->negotiated = 1;

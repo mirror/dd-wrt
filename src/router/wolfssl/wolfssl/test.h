@@ -203,6 +203,7 @@
             #include <zephyr/posix/netdb.h>
             #include <zephyr/posix/sys/socket.h>
             #include <zephyr/posix/sys/select.h>
+            #include <zephyr/posix/arpa/inet.h>
         #endif
     #else
         #include <net/socket.h>
@@ -1669,6 +1670,12 @@ static WC_INLINE void tcp_listen(SOCKET_T* sockfd, word16* port, int useAnyAddr,
         if (res < 0)
             err_sys_with_errno("setsockopt SO_REUSEADDR failed\n");
     }
+/* glibc hides SO_REUSEPORT under strict C99 feature-test visibility
+ * (no _DEFAULT_SOURCE/__USE_MISC). Fall back to the Linux numeric value
+ * so concurrent binds on the same port remain supported. */
+#if defined(__linux__) && !defined(SO_REUSEPORT)
+    #define SO_REUSEPORT 15
+#endif
 #ifdef SO_REUSEPORT
     {
         int       res, on  = 1;
@@ -1691,8 +1698,7 @@ static WC_INLINE void tcp_listen(SOCKET_T* sockfd, word16* port, int useAnyAddr,
         if (listen(*sockfd, SOCK_LISTEN_MAX_QUEUE) != 0)
                 err_sys_with_errno("tcp listen failed");
     }
-    #if !defined(USE_WINDOWS_API) && !defined(WOLFSSL_TIRTOS) \
-                                                     && !defined(WOLFSSL_ZEPHYR)
+    #if !defined(WOLFSSL_TIRTOS) && !defined(WOLFSSL_ZEPHYR)
         if (*port == 0) {
             socklen_t len = sizeof(addr);
             if (getsockname(*sockfd, (struct sockaddr*)&addr, &len) == 0) {
@@ -1764,8 +1770,7 @@ static WC_INLINE void udp_accept(SOCKET_T* sockfd, SOCKET_T* clientfd,
     if (bind(*sockfd, (const struct sockaddr*)&addr, sizeof(addr)) != 0)
         err_sys_with_errno("tcp bind failed");
 
-    #if !defined(USE_WINDOWS_API) && !defined(WOLFSSL_TIRTOS) && \
-           !defined(SINGLE_THREADED)
+    #if !defined(WOLFSSL_TIRTOS) && !defined(SINGLE_THREADED)
         if (port == 0) {
             socklen_t len = sizeof(addr);
             if (getsockname(*sockfd, (struct sockaddr*)&addr, &len) == 0) {

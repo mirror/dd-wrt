@@ -152,7 +152,7 @@ static int ed448_hash(ed448_key* key, const byte* in, word32 inLen,
 {
     int ret;
 #ifndef WOLFSSL_ED448_PERSISTENT_SHA
-    wc_Shake sha[1];
+    WC_DECLARE_VAR(sha, wc_Shake, 1, key ? key->heap : NULL);
 #else
     wc_Shake *sha;
 #endif
@@ -165,10 +165,16 @@ static int ed448_hash(ed448_key* key, const byte* in, word32 inLen,
     sha = &key->sha;
     ret = ed448_hash_reset(key);
 #else
+    WC_ALLOC_VAR_EX(sha, wc_Shake, 1, key->heap, DYNAMIC_TYPE_HASHES,
+                    return MEMORY_E);
     ret = ed448_hash_init(key, sha);
 #endif
-    if (ret < 0)
+    if (ret < 0) {
+    #ifndef WOLFSSL_ED448_PERSISTENT_SHA
+        WC_FREE_VAR_EX(sha, key->heap, DYNAMIC_TYPE_HASHES);
+    #endif
         return ret;
+    }
 
     ret = ed448_hash_update(key, sha, in, inLen);
     if (ret == 0)
@@ -176,6 +182,7 @@ static int ed448_hash(ed448_key* key, const byte* in, word32 inLen,
 
 #ifndef WOLFSSL_ED448_PERSISTENT_SHA
     ed448_hash_free(key, sha);
+    WC_FREE_VAR_EX(sha, key->heap, DYNAMIC_TYPE_HASHES);
 #endif
 
     return ret;
@@ -230,6 +237,77 @@ static int ed448_pairwise_consistency_test(ed448_key* key, WC_RNG* rng)
     return err;
 }
 #endif
+
+/* Reject small-order Ed448 public keys: h*A vanishes during verification
+ * so any (R = [S]B, S) verifies for an arbitrary message. Cofactor is 4. */
+static int ed448_is_small_order(const byte p[ED448_PUB_KEY_SIZE])
+{
+    /* y-coordinates of every order-1/2/4 point plus the non-canonical
+     * encodings y = p / y = p+1. Byte 56 is cleared in both table and
+     * input before compare, masking the x-sign bit and the
+     * spec-mandated-zero (but decoder-ignored) bits 0-6. The decoder
+     * (fe448_from_bytes) reads bytes 0-55 modulo p with no canonical-form
+     * check, so y = p decodes to 0 and y = p+1 decodes to 1; both must
+     * be rejected here. Only {y, y + p} fits in 56 bytes (2p overflows),
+     * so listing y and y + p exhausts the reachable encodings. */
+    static const byte small_order_y[][ED448_PUB_KEY_SIZE] = {
+        /* order 1: identity y = 1, x = 0 */
+        {0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00},
+        /* order 4: y = 0 (x = +/-1; sign bit covered by mask) */
+        {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00},
+        /* order 2: y = p - 1, x = 0; p = 2^448 - 2^224 - 1 */
+        {0xfe,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xfe,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0x00},
+        /* non-canonical y = p (decodes to y = 0) */
+        {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xfe,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0x00},
+        /* non-canonical y = p + 1 (decodes to y = 1) */
+        {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0x00},
+    };
+    byte y[ED448_PUB_KEY_SIZE];
+    word32 i;
+
+    XMEMCPY(y, p, ED448_PUB_KEY_SIZE);
+    y[ED448_PUB_KEY_SIZE - 1] = 0;
+    for (i = 0; i < sizeof(small_order_y) / ED448_PUB_KEY_SIZE; i++) {
+        if (XMEMCMP(y, small_order_y[i], ED448_PUB_KEY_SIZE) == 0)
+            return 1;
+    }
+    return 0;
+}
 
 /* Derive the public key for the private key.
  *
@@ -358,6 +436,9 @@ int wc_ed448_sign_msg_ex(const byte* in, word32 inLen, byte* out,
 #ifdef WOLFSSL_EDDSA_CHECK_PRIV_ON_SIGN
     byte     orig_k[ED448_KEY_SIZE];
 #endif
+#ifndef WOLFSSL_ED448_PERSISTENT_SHA
+    WC_DECLARE_VAR(sha, wc_Shake, 1, key ? key->heap : NULL);
+#endif
 
     /* sanity check on arguments */
     if ((in == NULL) || (out == NULL) || (outLen == NULL) || (key == NULL) ||
@@ -397,8 +478,10 @@ int wc_ed448_sign_msg_ex(const byte* in, word32 inLen, byte* out,
 #ifdef WOLFSSL_ED448_PERSISTENT_SHA
         wc_Shake *sha = &key->sha;
 #else
-        wc_Shake sha[1];
-        ret = ed448_hash_init(key, sha);
+        WC_ALLOC_VAR_EX(sha, wc_Shake, 1, key->heap, DYNAMIC_TYPE_HASHES,
+                        ret = MEMORY_E);
+        if (ret == 0)
+            ret = ed448_hash_init(key, sha);
 #endif
         /* apply clamp */
         az[0]  &= 0xfc;
@@ -434,7 +517,6 @@ int wc_ed448_sign_msg_ex(const byte* in, word32 inLen, byte* out,
 #ifdef WOLFSSL_ED448_PERSISTENT_SHA
         wc_Shake *sha = &key->sha;
 #else
-        wc_Shake sha[1];
         ret = ed448_hash_init(key, sha);
 #endif
         if (ret == 0)
@@ -476,6 +558,9 @@ int wc_ed448_sign_msg_ex(const byte* in, word32 inLen, byte* out,
         ed448_hash_free(key, sha);
 #endif
     }
+#ifndef WOLFSSL_ED448_PERSISTENT_SHA
+    WC_FREE_VAR_EX(sha, key->heap, DYNAMIC_TYPE_HASHES);
+#endif
 
     if (ret == 0) {
         sc448_reduce(hram);
@@ -491,6 +576,7 @@ int wc_ed448_sign_msg_ex(const byte* in, word32 inLen, byte* out,
         }
         ret = ctMaskGT(c, 0) & SIG_VERIFY_E;
     }
+    ForceZero(orig_k, sizeof(orig_k));
 #endif
 
     ForceZero(az, sizeof(az));
@@ -716,16 +802,11 @@ static int ed448_verify_msg_final_with_sha(const byte* sig, word32 sigLen,
     if (i == -1)
         return BAD_FUNC_ARG;
 
-    /* Reject identity public key (0,1): 0x01 followed by 56 zero bytes. */
-    {
-        int isIdentity = (key->p[0] == 0x01);
-        int j;
-        for (j = 1; j < ED448_PUB_KEY_SIZE && isIdentity; j++) {
-            if (key->p[j] != 0x00)
-                isIdentity = 0;
-        }
-        if (isIdentity)
-            return BAD_FUNC_ARG;
+    /* Defence in depth: also catch small-order keys imported with trusted=1. */
+    if (ed448_is_small_order(key->p)) {
+        WOLFSSL_MSG("Ed448 small-order public key rejected during "
+                    "signature verification");
+        return BAD_FUNC_ARG;
     }
 
     /* uncompress A (public key), test if valid, and negate it */
@@ -807,7 +888,7 @@ int wc_ed448_verify_msg_ex(const byte* sig, word32 sigLen, const byte* msg,
 #ifdef WOLFSSL_ED448_PERSISTENT_SHA
     wc_Shake *sha;
 #else
-    wc_Shake sha[1];
+    WC_DECLARE_VAR(sha, wc_Shake, 1, key ? key->heap : NULL);
 #endif
 
     if (key == NULL)
@@ -822,9 +903,13 @@ int wc_ed448_verify_msg_ex(const byte* sig, word32 sigLen, const byte* msg,
 #ifdef WOLFSSL_ED448_PERSISTENT_SHA
     sha = &key->sha;
 #else
+    WC_ALLOC_VAR_EX(sha, wc_Shake, 1, key->heap, DYNAMIC_TYPE_HASHES,
+                    return MEMORY_E);
     ret = ed448_hash_init(key, sha);
-    if (ret < 0)
+    if (ret < 0) {
+        WC_FREE_VAR_EX(sha, key->heap, DYNAMIC_TYPE_HASHES);
         return ret;
+    }
 #endif
 
     ret = ed448_verify_msg_init_with_sha(sig, sigLen, key, sha,
@@ -836,6 +921,7 @@ int wc_ed448_verify_msg_ex(const byte* sig, word32 sigLen, const byte* msg,
 
 #ifndef WOLFSSL_ED448_PERSISTENT_SHA
     ed448_hash_free(key, sha);
+    WC_FREE_VAR_EX(sha, key->heap, DYNAMIC_TYPE_HASHES);
 #endif
 
     return ret;
@@ -982,6 +1068,41 @@ void wc_ed448_free(ed448_key* key)
     }
 }
 
+#ifndef WC_NO_CONSTRUCTORS
+ed448_key* wc_ed448_new(void* heap, int devId, int *result_code)
+{
+    int ret;
+    ed448_key* key = (ed448_key*)XMALLOC(sizeof(ed448_key), heap,
+                        DYNAMIC_TYPE_ED448);
+    if (key == NULL) {
+        ret = MEMORY_E;
+    }
+    else {
+        ret = wc_ed448_init_ex(key, heap, devId);
+        if (ret != 0) {
+            XFREE(key, heap, DYNAMIC_TYPE_ED448);
+            key = NULL;
+        }
+    }
+
+    if (result_code != NULL)
+        *result_code = ret;
+
+    return key;
+}
+
+int wc_ed448_delete(ed448_key* key, ed448_key** key_p) {
+    void* heap;
+    if (key == NULL)
+        return BAD_FUNC_ARG;
+    heap = key->heap;
+    wc_ed448_free(key);
+    XFREE(key, heap, DYNAMIC_TYPE_ED448);
+    if (key_p != NULL)
+        *key_p = NULL;
+    return 0;
+}
+#endif /* !WC_NO_CONSTRUCTORS */
 
 #ifdef HAVE_ED448_KEY_EXPORT
 
@@ -991,7 +1112,8 @@ void wc_ed448_free(ed448_key* key)
  * out     [in]      Array to hold public key.
  * outLen  [in/out]  On in, the number of bytes in array.
  *                   On out, the number bytes put into array.
- * returns BAD_FUNC_ARG when a parameter is NULL,
+ * returns PUBLIC_KEY_E the given key only has a private key present,
+ *         BAD_FUNC_ARG when a parameter is NULL,
  *         ECC_BAD_ARG_E when outLen is less than ED448_PUB_KEY_SIZE,
  *         0 otherwise.
  */
@@ -1007,6 +1129,10 @@ int wc_ed448_export_public(const ed448_key* key, byte* out, word32* outLen)
     if ((ret == 0) && (*outLen < ED448_PUB_KEY_SIZE)) {
         *outLen = ED448_PUB_KEY_SIZE;
         ret = BUFFER_E;
+    }
+
+    if ((ret == 0) && (!key->pubKeySet)) {
+        ret = PUBLIC_KEY_E;
     }
 
     if (ret == 0) {
@@ -1247,6 +1373,10 @@ int wc_ed448_export_private_only(const ed448_key* key, byte* out, word32* outLen
         ret = BAD_FUNC_ARG;
     }
 
+    if ((ret == 0) && (!key->privKeySet)) {
+        ret = BAD_FUNC_ARG;
+    }
+
     if ((ret == 0) && (*outLen < ED448_KEY_SIZE)) {
         *outLen = ED448_KEY_SIZE;
         ret = BUFFER_E;
@@ -1276,6 +1406,10 @@ int wc_ed448_export_private(const ed448_key* key, byte* out, word32* outLen)
 
     /* sanity checks on arguments */
     if ((key == NULL) || (out == NULL) || (outLen == NULL)) {
+        ret = BAD_FUNC_ARG;
+    }
+
+    if ((ret == 0) && (!key->privKeySet)) {
         ret = BAD_FUNC_ARG;
     }
 
@@ -1349,6 +1483,13 @@ int wc_ed448_check_key(ed448_key* key)
         ret = PUBLIC_KEY_E;
     }
 
+    /* Reject small-order pub key before the priv-vs-pub compare so the
+     * diagnostic isn't masked by a "mismatch" error. */
+    if ((ret == 0) && ed448_is_small_order(key->p)) {
+        WOLFSSL_MSG("Ed448 small-order public key rejected during key check");
+        ret = PUBLIC_KEY_E;
+    }
+
     /* If we have a private key just make the public key and compare. */
     if ((ret == 0) && key->privKeySet) {
         ret = wc_ed448_make_public(key, pubKey, sizeof(pubKey));
@@ -1358,23 +1499,6 @@ int wc_ed448_check_key(ed448_key* key)
     }
     /* No private key, check Y is valid. */
     else if ((ret == 0) && (!key->privKeySet)) {
-        /* Reject the identity element (0, 1).
-         * Encoding: 0x01 followed by 56 zero bytes. */
-        {
-            int isIdentity = 1;
-            int i;
-            if (key->p[0] != 0x01)
-                isIdentity = 0;
-            for (i = 1; i < ED448_PUB_KEY_SIZE && isIdentity; i++) {
-                if (key->p[i] != 0x00)
-                    isIdentity = 0;
-            }
-            if (isIdentity) {
-                WOLFSSL_MSG("Ed448 public key is the identity element");
-                ret = PUBLIC_KEY_E;
-            }
-        }
-
         /* Verify that xQ and yQ are integers in the interval [0, p - 1].
          * Only have yQ so check that ordinate.
          * p = 2^448-2^224-1 = 0xff..fe..ff

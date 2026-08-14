@@ -36,14 +36,6 @@
     #include <wolfcrypt/src/misc.c>
 #endif
 
-#if defined(WOLFSSL_USE_SAVE_VECTOR_REGISTERS) && !defined(WOLFSSL_SP_ASM)
-    /* force off unneeded vector register save/restore. */
-    #undef SAVE_VECTOR_REGISTERS
-    #define SAVE_VECTOR_REGISTERS(fail_clause) SAVE_NO_VECTOR_REGISTERS(fail_clause)
-    #undef RESTORE_VECTOR_REGISTERS
-    #define RESTORE_VECTOR_REGISTERS() RESTORE_NO_VECTOR_REGISTERS()
-#endif
-
 #ifdef _MSC_VER
     /* disable for while(0) cases (MSVC bug) */
     #pragma warning(disable:4127)
@@ -93,6 +85,104 @@ void wc_FreeDsaKey(DsaKey* key)
     mp_clear(&key->p);
 }
 
+
+/* Validate DSA domain parameters and public key.
+ *
+ * Performs the following checks (subset of FIPS 186-4 / SP 800-89):
+ *   - p > 1 and q > 1
+ *   - q divides (p - 1)            (FIPS 186-4 A.1.1.2)
+ *   - 1 < g < p
+ *   - 1 < y < p
+ *   - g^q mod p == 1  (i.e. ord(g) divides q)
+ *   - y^q mod p == 1  (i.e. ord(y) divides q)
+ *
+ * Note: this routine does not run primality tests on p or q. Full FIPS
+ * 186-4 domain-parameter validation additionally requires that p and q be
+ * prime; callers that need that level of assurance should use
+ * wc_DsaImportParamsRawCheck() (which exercises p) and/or run
+ * mp_prime_is_prime_ex() on q at import time.
+ *
+ * key - pointer to DsaKey populated with p, q, g, and y.
+ * return 0 on success, BAD_FUNC_ARG when the key fails validation, or a
+ *        negative error code on internal failure.
+ */
+#ifndef NO_DSA_PUBKEY_CHECK
+int wc_DsaCheckPubKey(DsaKey* key)
+{
+    int err = MP_OKAY;
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
+    mp_int* tmp = NULL;
+    mp_int* tmp2 = NULL;
+#else
+    mp_int tmp[1];
+    mp_int tmp2[1];
+#endif
+
+    if (key == NULL)
+        return BAD_FUNC_ARG;
+
+    /* p and q must be at least 2 */
+    if (mp_cmp_d(&key->p, 1) != MP_GT || mp_cmp_d(&key->q, 1) != MP_GT)
+        return BAD_FUNC_ARG;
+
+    /* 1 < g < p */
+    if (mp_cmp_d(&key->g, 1) != MP_GT || mp_cmp(&key->g, &key->p) != MP_LT)
+        return BAD_FUNC_ARG;
+
+    /* 1 < y < p */
+    if (mp_cmp_d(&key->y, 1) != MP_GT || mp_cmp(&key->y, &key->p) != MP_LT)
+        return BAD_FUNC_ARG;
+
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
+    tmp = (mp_int*)XMALLOC(sizeof(*tmp), key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+    if (tmp == NULL)
+        return MEMORY_E;
+    tmp2 = (mp_int*)XMALLOC(sizeof(*tmp2), key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+    if (tmp2 == NULL) {
+        XFREE(tmp, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+        return MEMORY_E;
+    }
+#endif
+
+    err = mp_init_multi(tmp, tmp2, NULL, NULL, NULL, NULL);
+    if (err != MP_OKAY) {
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
+        XFREE(tmp2, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(tmp, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+#endif
+        return err;
+    }
+
+    /* q divides (p - 1): tmp2 = (p - 1) mod q, must be 0. */
+    if (err == MP_OKAY)
+        err = mp_sub_d(&key->p, 1, tmp);
+    if (err == MP_OKAY)
+        err = mp_mod(tmp, &key->q, tmp2);
+    if (err == MP_OKAY && !mp_iszero(tmp2))
+        err = BAD_FUNC_ARG;
+
+    /* g^q mod p == 1 */
+    if (err == MP_OKAY)
+        err = mp_exptmod(&key->g, &key->q, &key->p, tmp);
+    if (err == MP_OKAY && mp_cmp_d(tmp, 1) != MP_EQ)
+        err = BAD_FUNC_ARG;
+
+    /* y^q mod p == 1 */
+    if (err == MP_OKAY)
+        err = mp_exptmod(&key->y, &key->q, &key->p, tmp);
+    if (err == MP_OKAY && mp_cmp_d(tmp, 1) != MP_EQ)
+        err = BAD_FUNC_ARG;
+
+    mp_clear(tmp);
+    mp_clear(tmp2);
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
+    XFREE(tmp2, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(tmp, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
+#endif
+
+    return err;
+}
+#endif /* !NO_DSA_PUBKEY_CHECK */
 
 /* validate that (L,N) match allowed sizes from FIPS 186-4, Section 4.2.
  * modLen - represents L, the size of p (prime modulus) in bits
@@ -171,11 +261,9 @@ int wc_MakeDsaKey(WC_RNG *rng, DsaKey *dsa)
     }
 #endif
 
-    SAVE_VECTOR_REGISTERS(;);
-
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
-    if ((tmpQ = (mp_int *)XMALLOC(sizeof(*tmpQ), NULL,
-            DYNAMIC_TYPE_WOLF_BIGINT)) == NULL)
+    if ((tmpQ = (mp_int *)XMALLOC(sizeof(*tmpQ), dsa->heap,
+            DYNAMIC_TYPE_TMP_BUFFER)) == NULL)
         err = MEMORY_E;
     else
         err = MP_OKAY;
@@ -239,8 +327,6 @@ int wc_MakeDsaKey(WC_RNG *rng, DsaKey *dsa)
 #else
     mp_clear(tmpQ);
 #endif
-
-    RESTORE_VECTOR_REGISTERS();
 
     return err;
 }
@@ -356,6 +442,11 @@ int wc_MakeDsaParameters(WC_RNG *rng, int modulus_size, DsaKey *dsa)
                     break;
                 loop_check_prime++;
             }
+
+            err = WC_CHECK_FOR_INTR_SIGNALS();
+            if (err != 0)
+                break;
+            WC_RELAX_LONG_LOOP();
         }
     }
 
@@ -632,6 +723,11 @@ int wc_DsaExportKeyRaw(DsaKey* dsa, byte* x, word32* xSz, byte* y, word32* ySz)
     if (x == NULL || y == NULL)
         return BAD_FUNC_ARG;
 
+    /* check we have a key to export */
+    if (mp_iszero(&dsa->x) && mp_iszero(&dsa->y)) {
+        return BAD_FUNC_ARG;
+    }
+
     /* export x */
     if (*xSz < xLen) {
         WOLFSSL_MSG("Output buffer for DSA private key (x) too small, "
@@ -695,8 +791,6 @@ int wc_DsaSign_ex(const byte* digest, word32 digestSz, byte* out, DsaKey* key,
     {
         return BAD_LENGTH_E;
     }
-
-    SAVE_VECTOR_REGISTERS(return _svr_ret;);
 
     do {
 #ifdef WOLFSSL_SMALL_STACK
@@ -942,8 +1036,6 @@ int wc_DsaSign_ex(const byte* digest, word32 digestSz, byte* out, DsaKey* key,
         }
     } while (0);
 
-    RESTORE_VECTOR_REGISTERS();
-
 #ifdef WOLFSSL_SMALL_STACK
     if (k) {
         if ((ret != WC_NO_ERR_TRACE(MP_INIT_E)) &&
@@ -1038,6 +1130,14 @@ int wc_DsaVerify_ex(const byte* digest, word32 digestSz, const byte* sig,
     {
         return BAD_LENGTH_E;
     }
+
+    /* Validate domain parameters and public key before doing any
+     * signature math. */
+#ifndef NO_DSA_PUBKEY_CHECK
+    ret = wc_DsaCheckPubKey(key);
+    if (ret != 0)
+        return ret;
+#endif
 
     do {
 #ifdef WOLFSSL_SMALL_STACK

@@ -117,6 +117,16 @@ int test_wc_DsaSignVerify(void)
     ExpectIntEQ(wc_DsaVerify(hash, signature, NULL, &answer), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
     ExpectIntEQ(wc_DsaVerify(hash, signature, &key, NULL), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
 
+    {
+        byte badHash[WC_SHA_DIGEST_SIZE];
+
+        XMEMCPY(badHash, hash, sizeof(badHash));
+        badHash[0] ^= 0x01;
+        answer = 1;
+        ExpectIntEQ(wc_DsaVerify(badHash, signature, &key, &answer), 0);
+        ExpectIntEQ(answer, 0);
+    }
+
 #if !defined(HAVE_SELFTEST) && !defined(HAVE_FIPS) && defined(WOLFSSL_PUBLIC_MP)
     /* hard set q to 0 and test fail case */
     mp_free(&key.q);
@@ -537,7 +547,8 @@ int test_wc_DsaExportKeyRaw(void)
     WC_RNG rng;
     byte xOut[MAX_DSA_PARAM_SIZE];
     byte yOut[MAX_DSA_PARAM_SIZE];
-    word32 xOutSz, yOutSz;
+    word32 xOutSz = sizeof(xOut);
+    word32 yOutSz = sizeof(yOut);
 
     XMEMSET(&key, 0, sizeof(key));
     XMEMSET(&rng, 0, sizeof(rng));
@@ -545,11 +556,14 @@ int test_wc_DsaExportKeyRaw(void)
     ExpectIntEQ(wc_InitDsaKey(&key), 0);
     ExpectIntEQ(wc_InitRng(&rng), 0);
     ExpectIntEQ(wc_MakeDsaParameters(&rng, 1024, &key), 0);
+    #if !defined(HAVE_SELFTEST) && (!defined(HAVE_FIPS) || FIPS_VERSION3_GE(7,0,0))
+    /* export before make key should return error. */
+    ExpectIntEQ(wc_DsaExportKeyRaw(&key, xOut, &xOutSz, yOut, &yOutSz),
+                WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    #endif /* !HAVE_SELFTEST && (!HAVE_FIPS || FIPS_VERSION3_GE(7,0,0)) */
     ExpectIntEQ(wc_MakeDsaKey(&rng, &key), 0);
 
     /* try successful export */
-    xOutSz = sizeof(xOut);
-    yOutSz = sizeof(yOut);
     ExpectIntEQ(wc_DsaExportKeyRaw(&key, xOut, &xOutSz, yOut, &yOutSz), 0);
 
     /* test bad args */
@@ -577,4 +591,144 @@ int test_wc_DsaExportKeyRaw(void)
 #endif
     return EXPECT_RESULT();
 } /* END test_wc_DsaExportParamsRaw */
+
+
+/*
+ * Testing wc_DsaCheckPubKey() and DSA verify rejecting malformed public
+ * keys / domain parameters (e.g. g = 1, y = 1 forgery class).
+ *
+ * Requires WOLFSSL_PUBLIC_MP so the test can manipulate mp_int fields
+ * directly to construct malformed keys without going through the (already
+ * partially validating) import paths.
+ */
+int test_wc_DsaCheckPubKey(void)
+{
+    EXPECT_DECLS;
+#if !defined(NO_DSA) && !defined(WC_FIPS_186_5_PLUS) && \
+    !defined(HAVE_SELFTEST) && !defined(HAVE_FIPS) && defined(WOLFSSL_PUBLIC_MP) \
+    && !defined(NO_DSA_PUBKEY_CHECK)
+    DsaKey key;
+    int    answer = -1;
+    int    ret;
+    /* Well-formed FIPS 186-4 [L=1024, N=160] domain parameters.
+     * Same vector as used by test_wc_DsaImportParamsRaw above. */
+    const char* p =
+        "d38311e2cd388c3ed698e82fdf88eb92b5a9a483dc88005d"
+        "4b725ef341eabb47cf8a7a8a41e792a156b7ce97206c4f9c"
+        "5ce6fc5ae7912102b6b502e59050b5b21ce263dddb2044b6"
+        "52236f4d42ab4b5d6aa73189cef1ace778d7845a5c1c1c71"
+        "47123188f8dc551054ee162b634d60f097f719076640e209"
+        "80a0093113a8bd73";
+    const char* q = "96c5390a8b612c0e422bb2b0ea194a3ec935a281";
+    const char* g =
+        "06b7861abbd35cc89e79c52f68d20875389b127361ca66822"
+        "138ce4991d2b862259d6b4548a6495b195aa0e0b6137ca37e"
+        "b23b94074d3c3d300042bdf15762812b6333ef7b07ceba786"
+        "07610fcc9ee68491dbc1e34cd12615474e52b18bc934fb00c"
+        "61d39e7da8902291c4434a4e2224c3f4fd9f93cd6f4f17fc0"
+        "76341a7e7d9";
+    /* For verify: a SHA-1-sized digest (any value) */
+    byte digest[WC_SHA_DIGEST_SIZE];
+    /* signature is r || s, each q-sized (20 bytes for 160-bit q). */
+    byte sig[2 * 20];
+
+    XMEMSET(&key, 0, sizeof(DsaKey));
+    XMEMSET(digest, 0xAA, sizeof(digest));
+
+    ExpectIntEQ(wc_InitDsaKey(&key), 0);
+
+    /* --- Bad-arg coverage. --- */
+    ExpectIntEQ(wc_DsaCheckPubKey(NULL), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+
+    /* Load good (p, q, g). */
+    ExpectIntEQ(wc_DsaImportParamsRaw(&key, p, q, g), 0);
+    /* Compute a well-formed y = g^x mod p using x = 2 so the baseline
+     * passes wc_DsaCheckPubKey. */
+    ExpectIntEQ(mp_set(&key.x, 2), 0);
+    ExpectIntEQ(mp_exptmod(&key.g, &key.x, &key.p, &key.y), 0);
+    key.type = DSA_PUBLIC;
+    /* Sanity: a well-formed key should pass validation. */
+    ExpectIntEQ(wc_DsaCheckPubKey(&key), 0);
+
+    /* Now set g = 1, y = 1, sig = (1, 1).
+       This should fail validation. */
+    ExpectIntEQ(mp_set(&key.g, 1), 0);
+    ExpectIntEQ(mp_set(&key.y, 1), 0);
+    XMEMSET(sig, 0, sizeof(sig));
+    sig[19] = 0x01; /* r = 1 */
+    sig[39] = 0x01; /* s = 1 */
+    answer = -1;
+    ret = wc_DsaVerify(digest, sig, &key, &answer);
+    ExpectIntEQ(ret, WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    ExpectIntNE(answer, 1);
+    ExpectIntEQ(wc_DsaCheckPubKey(&key), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+
+    /* g out of range: g = 0 */
+    ExpectIntEQ(mp_set(&key.g, 0), 0);
+    /* restore a valid y for the remaining checks */
+    ExpectIntEQ(mp_read_radix(&key.g, g, MP_RADIX_HEX), 0);
+    ExpectIntEQ(mp_exptmod(&key.g, &key.x, &key.p, &key.y), 0);
+    ExpectIntEQ(mp_set(&key.g, 0), 0);
+    ExpectIntEQ(wc_DsaCheckPubKey(&key), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+
+    /* g out of range: g = 1 */
+    ExpectIntEQ(mp_set(&key.g, 1), 0);
+    ExpectIntEQ(wc_DsaCheckPubKey(&key), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+
+    /* g = p (>= p) */
+    ExpectIntEQ(mp_copy(&key.p, &key.g), 0);
+    ExpectIntEQ(wc_DsaCheckPubKey(&key), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+
+    /* g in range [2, p-1] but ord(g) does not divide q.
+     * For our FIPS-style p, 2 has order (p-1)/k for small k and (p-1)/q
+     * is not 1, so 2^q mod p != 1 and the check rejects. */
+    ExpectIntEQ(mp_set(&key.g, 2), 0);
+    ExpectIntEQ(wc_DsaCheckPubKey(&key), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+
+    /* y out of range: restore good g and a valid y between cases. */
+    ExpectIntEQ(mp_read_radix(&key.g, g, MP_RADIX_HEX), 0);
+    ExpectIntEQ(mp_exptmod(&key.g, &key.x, &key.p, &key.y), 0);
+    /* Confirm the restoration produced a valid key. */
+    ExpectIntEQ(wc_DsaCheckPubKey(&key), 0);
+
+    /* y = 0 */
+    ExpectIntEQ(mp_set(&key.y, 0), 0);
+    ExpectIntEQ(wc_DsaCheckPubKey(&key), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+
+    /* y = 1 */
+    ExpectIntEQ(mp_set(&key.y, 1), 0);
+    ExpectIntEQ(wc_DsaCheckPubKey(&key), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+
+    /* y = p */
+    ExpectIntEQ(mp_copy(&key.p, &key.y), 0);
+    ExpectIntEQ(wc_DsaCheckPubKey(&key), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+
+    /* y in range but ord(y) does not divide q: y = 2 fails y^q mod p == 1. */
+    ExpectIntEQ(mp_set(&key.y, 2), 0);
+    ExpectIntEQ(wc_DsaCheckPubKey(&key), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+
+    /* q does not divide (p - 1). Replace q with (p - 2). This is plain
+     * integer arithmetic (no primality assumption on p): for any integer
+     * p > 3, p - 1 = 1 * (p - 2) + 1, so (p - 1) mod (p - 2) = 1, which
+     * is deterministically non-zero. q' = p-2 is also > 1 and is not
+     * compared against p in DsaCheckPubKey, so the divisibility check
+     * is the only one that fires. */
+    ExpectIntEQ(mp_exptmod(&key.g, &key.x, &key.p, &key.y), 0);
+    ExpectIntEQ(mp_copy(&key.p, &key.q), 0);     /* q = p   */
+    ExpectIntEQ(mp_sub_d(&key.q, 2, &key.q), 0); /* q = p-2 */
+    ExpectIntEQ(wc_DsaCheckPubKey(&key), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    /* Restore the original q for any subsequent checks. */
+    ExpectIntEQ(mp_read_radix(&key.q, q, MP_RADIX_HEX), 0);
+
+    /* p, q sanity floors: p = 1 or q = 1 must be rejected. */
+    ExpectIntEQ(mp_set(&key.p, 1), 0);
+    ExpectIntEQ(wc_DsaCheckPubKey(&key), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    ExpectIntEQ(mp_read_radix(&key.p, p, MP_RADIX_HEX), 0);
+    ExpectIntEQ(mp_set(&key.q, 1), 0);
+    ExpectIntEQ(wc_DsaCheckPubKey(&key), WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+
+    wc_FreeDsaKey(&key);
+#endif
+    return EXPECT_RESULT();
+} /* END test_wc_DsaCheckPubKey */
 

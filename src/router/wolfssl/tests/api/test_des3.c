@@ -165,11 +165,82 @@ int test_wc_Des3_CbcEncryptDecrypt(void)
     ExpectIntEQ(wc_Des3_CbcDecrypt(&des, plain, NULL, 24),
         WC_NO_ERR_TRACE(BAD_FUNC_ARG));
 
+#ifndef HAVE_FIPS
+    /* non-block-aligned input rejected with BAD_LENGTH_E.
+     * FIPS builds use the FIPS-certified DES3 implementation which does not
+     * have this check, so skip the test for FIPS. */
+    ExpectIntEQ(wc_Des3_CbcEncrypt(&des, cipher, vector, DES_BLOCK_SIZE - 1),
+        WC_NO_ERR_TRACE(BAD_LENGTH_E));
+    ExpectIntEQ(wc_Des3_CbcDecrypt(&des, plain, cipher, DES_BLOCK_SIZE - 1),
+        WC_NO_ERR_TRACE(BAD_LENGTH_E));
+#endif
+
     wc_Des3Free(&des);
 #endif
     return EXPECT_RESULT();
 
 } /* END wc_Des3_CbcEncrypt */
+
+/*
+ * Regression test for issue 5379: wc_Des3_CbcEncrypt/Decrypt must refuse to
+ * run unless a key has been configured with wc_Des3_SetKey(), both before
+ * SetKey and after Free. Otherwise the operation would silently run with
+ * uninitialized or zeroed key material and return success.
+ *
+ * FIPS builds use the FIPS-certified DES3 implementation which does not track
+ * key state, so skip the test for FIPS.
+ */
+int test_wc_Des3_CbcEncryptDecrypt_no_key(void)
+{
+    EXPECT_DECLS;
+#if !defined(NO_DES3) && !defined(HAVE_FIPS)
+    Des3 des;
+    byte cipher[24];
+    byte plain[24];
+    const byte key[] = {
+        0x01,0x23,0x45,0x67,0x89,0xab,0xcd,0xef,
+        0xfe,0xde,0xba,0x98,0x76,0x54,0x32,0x10,
+        0x89,0xab,0xcd,0xef,0x01,0x23,0x45,0x67
+    };
+    const byte iv[] = {
+        0x12,0x34,0x56,0x78,0x90,0xab,0xcd,0xef,
+        0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,
+        0x11,0x21,0x31,0x41,0x51,0x61,0x71,0x81
+    };
+    const byte vector[] = { /* "Now is the time for all " w/o trailing 0 */
+        0x4e,0x6f,0x77,0x20,0x69,0x73,0x20,0x74,
+        0x68,0x65,0x20,0x74,0x69,0x6d,0x65,0x20,
+        0x66,0x6f,0x72,0x20,0x61,0x6c,0x6c,0x20
+    };
+
+    XMEMSET(&des, 0, sizeof(Des3));
+    XMEMSET(cipher, 0, sizeof(cipher));
+    XMEMSET(plain, 0, sizeof(plain));
+
+    /* Encrypt/decrypt without a key after init must fail, not silently run. */
+    ExpectIntEQ(wc_Des3Init(&des, NULL, INVALID_DEVID), 0);
+    ExpectIntEQ(wc_Des3_CbcEncrypt(&des, cipher, vector, 24),
+        WC_NO_ERR_TRACE(MISSING_KEY));
+    ExpectIntEQ(wc_Des3_CbcDecrypt(&des, plain, vector, 24),
+        WC_NO_ERR_TRACE(MISSING_KEY));
+
+    /* After a key is set, the operations succeed. */
+    ExpectIntEQ(wc_Des3_SetKey(&des, key, iv, DES_ENCRYPTION), 0);
+    ExpectIntEQ(wc_Des3_CbcEncrypt(&des, cipher, vector, 24), 0);
+    ExpectIntEQ(wc_Des3_SetKey(&des, key, iv, DES_DECRYPTION), 0);
+    ExpectIntEQ(wc_Des3_CbcDecrypt(&des, plain, cipher, 24), 0);
+    ExpectIntEQ(XMEMCMP(plain, vector, 24), 0);
+
+    /* After free, the keyed state is cleared and operations must fail again. */
+    wc_Des3Free(&des);
+    ExpectIntEQ(wc_Des3_CbcEncrypt(&des, cipher, vector, 24),
+        WC_NO_ERR_TRACE(MISSING_KEY));
+    ExpectIntEQ(wc_Des3_CbcDecrypt(&des, plain, vector, 24),
+        WC_NO_ERR_TRACE(MISSING_KEY));
+#endif
+    return EXPECT_RESULT();
+
+} /* END test_wc_Des3_CbcEncryptDecrypt_no_key */
 
 /*
  *  Unit test for wc_Des3_EcbEncrypt
@@ -221,3 +292,69 @@ int test_wc_Des3_EcbEncrypt(void)
     return EXPECT_RESULT();
 } /* END test_wc_Des3_EcbEncrypt */
 
+
+#include <wolfssl/wolfcrypt/random.h>
+
+#define MC_CIPHER_TEST_COUNT  100
+#define MC_DES3_MAX_DATA_SZ   1024
+
+/* Monte Carlo test for 3DES-CBC: random key, IV, and plaintext each
+ * iteration */
+int test_wc_Des3Cbc_MonteCarlo(void)
+{
+    EXPECT_DECLS;
+#ifndef NO_DES3
+    Des3 enc, dec;
+    WC_RNG rng;
+    byte key[DES3_KEYLEN];
+    byte iv[DES_IVLEN];
+    word32 plainLen = 0;
+    int i;
+    WC_DECLARE_VAR(plain,     byte, MC_DES3_MAX_DATA_SZ, NULL);
+    WC_DECLARE_VAR(cipher,    byte, MC_DES3_MAX_DATA_SZ, NULL);
+    WC_DECLARE_VAR(decrypted, byte, MC_DES3_MAX_DATA_SZ, NULL);
+
+    WC_ALLOC_VAR(plain,     byte, MC_DES3_MAX_DATA_SZ, NULL);
+    WC_ALLOC_VAR(cipher,    byte, MC_DES3_MAX_DATA_SZ, NULL);
+    WC_ALLOC_VAR(decrypted, byte, MC_DES3_MAX_DATA_SZ, NULL);
+#ifdef WC_DECLARE_VAR_IS_HEAP_ALLOC
+    ExpectNotNull(plain);
+    ExpectNotNull(cipher);
+    ExpectNotNull(decrypted);
+#endif
+
+    XMEMSET(&enc, 0, sizeof(enc));
+    XMEMSET(&dec, 0, sizeof(dec));
+    XMEMSET(&rng, 0, sizeof(rng));
+
+    ExpectIntEQ(wc_Des3Init(&enc, NULL, INVALID_DEVID), 0);
+    ExpectIntEQ(wc_Des3Init(&dec, NULL, INVALID_DEVID), 0);
+    ExpectIntEQ(wc_InitRng(&rng), 0);
+
+    for (i = 0; i < MC_CIPHER_TEST_COUNT && EXPECT_SUCCESS(); i++) {
+        ExpectIntEQ(wc_RNG_GenerateBlock(&rng, key, sizeof(key)), 0);
+        ExpectIntEQ(wc_RNG_GenerateBlock(&rng, iv, sizeof(iv)), 0);
+        ExpectIntEQ(wc_RNG_GenerateBlock(&rng, (byte*)&plainLen,
+            sizeof(plainLen)), 0);
+        /* Length 1..1024, rounded up to DES block size */
+        plainLen = (plainLen % MC_DES3_MAX_DATA_SZ) + 1;
+        plainLen = (plainLen + DES_BLOCK_SIZE - 1) &
+                   ~((word32)DES_BLOCK_SIZE - 1);
+        ExpectIntEQ(wc_RNG_GenerateBlock(&rng, plain, plainLen), 0);
+
+        ExpectIntEQ(wc_Des3_SetKey(&enc, key, iv, DES_ENCRYPTION), 0);
+        ExpectIntEQ(wc_Des3_CbcEncrypt(&enc, cipher, plain, plainLen), 0);
+        ExpectIntEQ(wc_Des3_SetKey(&dec, key, iv, DES_DECRYPTION), 0);
+        ExpectIntEQ(wc_Des3_CbcDecrypt(&dec, decrypted, cipher, plainLen), 0);
+        ExpectBufEQ(decrypted, plain, plainLen);
+    }
+
+    wc_Des3Free(&enc);
+    wc_Des3Free(&dec);
+    wc_FreeRng(&rng);
+    WC_FREE_VAR(plain,     NULL);
+    WC_FREE_VAR(cipher,    NULL);
+    WC_FREE_VAR(decrypted, NULL);
+#endif
+    return EXPECT_RESULT();
+}

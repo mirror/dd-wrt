@@ -237,8 +237,12 @@ extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  rsa_no_pad_test(void);
 #endif
 extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  rsa_test(void);
 extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  dh_test(void);
+#ifndef NO_DSA
 extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  dsa_test(void);
+#endif
+#ifdef WOLFCRYPT_HAVE_SRP
 extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  srp_test(void);
+#endif
 #ifndef WC_NO_RNG
 extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  random_test(void);
 #ifdef WC_RNG_BANK_SUPPORT
@@ -262,12 +266,18 @@ extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  openSSL_evpMD_test(void);
 extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  openssl_evpSig_test(void);
 #endif
 
+#if defined(HAVE_PBKDF1) && !defined(NO_SHA)
 extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t pbkdf1_test(void);
+#endif
+#if defined(HAVE_PKCS12) && !defined(NO_SHA256)
 extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t pkcs12_pbkdf_test(void);
+#endif
 #if defined(HAVE_PBKDF2) && !defined(NO_SHA256) && !defined(NO_HMAC)
 extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t pbkdf2_test(void);
 #endif
+#if !defined(NO_PWDBASED) && defined(HAVE_SCRYPT)
 extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t scrypt_test(void);
+#endif
 #ifdef HAVE_ECC
     extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  ecc_test(void);
     #if defined(HAVE_ECC_ENCRYPT) && defined(HAVE_AES_CBC) && \
@@ -277,7 +287,7 @@ extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t scrypt_test(void);
     #if defined(USE_CERT_BUFFERS_256) && !defined(WOLFSSL_ATECC508A) && \
         !defined(WOLFSSL_ATECC608A) && !defined(NO_ECC256) && \
         defined(HAVE_ECC_VERIFY) && defined(HAVE_ECC_SIGN) && \
-        !defined(WOLF_CRYPTO_CB_ONLY_ECC) && !defined(NO_ECC_SECP)
+        (!defined(WOLF_CRYPTO_CB_ONLY_ECC) || defined(WOLFSSL_SWDEV)) && !defined(NO_ECC_SECP)
         /* skip for ATECC508/608A, cannot import private key buffers */
         extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t ecc_test_buffers(void);
     #endif
@@ -297,8 +307,8 @@ extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t scrypt_test(void);
 #ifdef WOLFSSL_HAVE_MLKEM
     extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  mlkem_test(void);
 #endif
-#ifdef HAVE_DILITHIUM
-    extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  dilithium_test(void);
+#ifdef WOLFSSL_HAVE_MLDSA
+    extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  mldsa_test(void);
 #endif
 #if defined(WOLFSSL_HAVE_XMSS)
     #if !defined(WOLFSSL_SMALL_STACK) && WOLFSSL_XMSS_MIN_HEIGHT <= 10
@@ -310,8 +320,7 @@ extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t scrypt_test(void);
 #endif
 #if defined(WOLFSSL_HAVE_LMS)
     #if !defined(WOLFSSL_SMALL_STACK)
-        #if (defined(WOLFSSL_WC_LMS) && (LMS_MAX_HEIGHT >= 10) && \
-             !defined(WOLFSSL_NO_LMS_SHA256_256)) || defined(HAVE_LIBLMS)
+        #if (LMS_MAX_HEIGHT >= 10) && !defined(WOLFSSL_NO_LMS_SHA256_256)
     extern WOLFSSL_TEST_SUBROUTINE wc_test_ret_t  lms_test_verify_only(void);
         #endif
     #endif

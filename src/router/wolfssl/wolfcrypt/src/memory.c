@@ -521,10 +521,11 @@ void* wolfSSL_Realloc(void *ptr, size_t size)
 }
 #endif /* WOLFSSL_STATIC_MEMORY */
 
-#ifdef WOLFSSL_TRACK_MEMORY
+#if defined(WOLFSSL_TRACK_MEMORY) && defined(USE_WOLFSSL_MEMORY) && \
+    !defined(WOLFSSL_STATIC_MEMORY)
 #include <wolfssl/wolfcrypt/mem_track.h>
 WOLFSSL_API memoryStats *wc_MemStats_Ptr;
-#endif
+#endif /* WOLFSSL_TRACK_MEMORY && USE_WOLFSSL_MEMORY && !WOLFSSL_STATIC_MEMORY */
 
 #ifdef WOLFSSL_STATIC_MEMORY
 
@@ -1183,14 +1184,13 @@ void wolfSSL_Free(void *ptr, void* heap, int type)
 #endif
 {
     int i;
-    wc_Memory* pt = NULL;
 
     if (ptr) {
         /* check for testing heap hint was set */
     #ifdef WOLFSSL_HEAP_TEST
         if (heap == (void*)WOLFSSL_HEAP_TEST) {
         #ifdef WOLFSSL_DEBUG_MEMORY
-            fprintf(stderr, "[HEAP %p] Free: %p at %s:%u\n", heap, pt, func,
+            fprintf(stderr, "[HEAP %p] Free: %p at %s:%u\n", heap, ptr, func,
                 line);
         #endif
             return free(ptr); /* native heap */
@@ -1210,7 +1210,7 @@ void wolfSSL_Free(void *ptr, void* heap, int type)
         #endif
         #ifndef WOLFSSL_NO_MALLOC
             #ifdef WOLFSSL_DEBUG_MEMORY
-            fprintf(stderr, "[HEAP %p] Free: %p at %s:%u\n", heap, pt, func,
+            fprintf(stderr, "[HEAP %p] Free: %p at %s:%u\n", heap, ptr, func,
                 line);
             #endif
             #ifdef FREERTOS
@@ -1227,6 +1227,7 @@ void wolfSSL_Free(void *ptr, void* heap, int type)
         else {
             WOLFSSL_HEAP_HINT* hint = (WOLFSSL_HEAP_HINT*)heap;
             WOLFSSL_HEAP*      mem;
+            wc_Memory* pt;
             word32 padSz = -(int)sizeof(wc_Memory) & (WOLFSSL_STATIC_ALIGN - 1);
 
             if (hint == NULL) {
@@ -1322,7 +1323,6 @@ void wolfSSL_Free(void *ptr, void* heap, int type)
     }
 
     (void)i;
-    (void)pt;
     (void)type;
 }
 

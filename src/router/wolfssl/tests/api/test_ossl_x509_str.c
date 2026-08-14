@@ -785,6 +785,130 @@ static int test_wolfSSL_X509_STORE_CTX_ex11(X509_STORE_test_data *testData)
     return EXPECT_RESULT();
 }
 
+static int test_wolfSSL_X509_STORE_CTX_ex_partial_chain_neg(
+    X509_STORE_test_data *testData)
+{
+    EXPECT_DECLS;
+    X509_STORE* store = NULL;
+    X509_STORE_CTX* ctx = NULL;
+    STACK_OF(X509)* untrusted = NULL;
+
+    /* Negative partial-chain test: with X509_V_FLAG_PARTIAL_CHAIN set, the
+     * intermediates are supplied ONLY as untrusted (passed through the
+     * X509_STORE_CTX_init "chain" argument and never added to the store).
+     * No certificate in the chain is in the store, so verification must
+     * fail.  Pre-fix, wolfSSL_X509_verify_cert would incorrectly accept
+     * this chain because its partial-chain fallback only checked that some
+     * intermediate had been temporarily loaded into the CertManager, not
+     * that any chain certificate was actually trusted. */
+    ExpectNotNull(store = X509_STORE_new());
+    /* Intentionally do NOT add x509CaInt, x509CaInt2, or x509Ca. */
+    ExpectIntEQ(X509_STORE_set_flags(store, X509_V_FLAG_PARTIAL_CHAIN), 1);
+
+    ExpectNotNull(untrusted = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(untrusted, testData->x509CaInt2), 0);
+    ExpectIntGT(sk_X509_push(untrusted, testData->x509CaInt), 0);
+
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, testData->x509Leaf, untrusted),
+        1);
+    /* Must NOT verify: partial-chain does not relax the trust requirement. */
+    ExpectIntNE(X509_verify_cert(ctx), 1);
+    /* Verify the failure is specifically due to missing trust anchor, not
+     * some unrelated error. */
+    ExpectIntEQ(X509_STORE_CTX_get_error(ctx),
+        X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY);
+
+    X509_STORE_CTX_free(ctx);
+    X509_STORE_free(store);
+    sk_X509_free(untrusted);
+    return EXPECT_RESULT();
+}
+
+static int test_wolfSSL_X509_STORE_CTX_ex_partial_chain_mixed(
+    X509_STORE_test_data *testData)
+{
+    EXPECT_DECLS;
+    X509_STORE* store = NULL;
+    X509_STORE_CTX* ctx = NULL;
+    STACK_OF(X509)* untrusted = NULL;
+
+    /* Mixed trusted-store + untrusted-chain partial-chain test: the store
+     * trusts an intermediate (x509CaInt2, the leaf's direct issuer), while
+     * an additional intermediate (x509CaInt) is supplied only as untrusted
+     * via the chain argument.  With X509_V_FLAG_PARTIAL_CHAIN, verification
+     * must succeed by terminating at the trusted intermediate.  This test
+     * exercises the snapshot-based trust check in X509StoreCertIsTrusted:
+     * the untrusted intermediate injected during verification must not be
+     * treated as a trust anchor, but the intermediate already in the store
+     * must be. */
+    ExpectNotNull(store = X509_STORE_new());
+    ExpectIntEQ(X509_STORE_add_cert(store, testData->x509CaInt2), 1);
+    ExpectIntEQ(X509_STORE_set_flags(store, X509_V_FLAG_PARTIAL_CHAIN), 1);
+
+    ExpectNotNull(untrusted = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(untrusted, testData->x509CaInt), 0);
+
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, testData->x509Leaf, untrusted),
+        1);
+    /* Must verify: chain terminates at trusted intermediate in the store. */
+    ExpectIntEQ(X509_verify_cert(ctx), 1);
+    ExpectIntEQ(X509_STORE_CTX_get_error(ctx), X509_V_OK);
+
+    X509_STORE_CTX_free(ctx);
+    X509_STORE_free(store);
+    sk_X509_free(untrusted);
+    return EXPECT_RESULT();
+}
+
+static int test_wolfSSL_X509_STORE_CTX_ex_partial_chain_untrusted_terminal(
+    X509_STORE_test_data *testData)
+{
+    EXPECT_DECLS;
+    X509_STORE* store = NULL;
+    X509_STORE_CTX* ctx = NULL;
+    STACK_OF(X509)* untrusted = NULL;
+
+    /* Partial-chain boundary test: the store trusts a CA (x509Ca) that is
+     * NOT reachable from the leaf given the supplied untrusted intermediates,
+     * and an untrusted intermediate (x509CaInt2) IS the terminal of the
+     * (truncated) chain.  With X509_V_FLAG_PARTIAL_CHAIN set, verification
+     * must FAIL because the chain terminates at an untrusted certificate.
+     *
+     * This test specifically targets the snapshot-based trust check in
+     * X509StoreCertIsTrusted.  Before addAllButSelfSigned injects
+     * x509CaInt2, origTrustedSk is snapshotted from the caller-trusted set
+     * and contains only x509Ca.  When the chain terminates at x509CaInt2,
+     * the trust check consults origTrustedSk (not the mutated working
+     * stack) and correctly finds no match.  A regression that consulted
+     * the post-injection working stack instead of the snapshot would
+     * incorrectly mark x509CaInt2 as trusted and cause verification to
+     * succeed. */
+    ExpectNotNull(store = X509_STORE_new());
+    ExpectIntEQ(X509_STORE_add_cert(store, testData->x509Ca), 1);
+    ExpectIntEQ(X509_STORE_set_flags(store, X509_V_FLAG_PARTIAL_CHAIN), 1);
+
+    /* Only x509CaInt2 supplied as untrusted; x509CaInt is intentionally
+     * withheld so the chain cannot actually reach the trusted x509Ca. */
+    ExpectNotNull(untrusted = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(untrusted, testData->x509CaInt2), 0);
+
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, testData->x509Leaf, untrusted),
+        1);
+    /* Must NOT verify: the chain terminal (x509CaInt2) is not in the
+     * original trust set, even though the store is non-empty. */
+    ExpectIntNE(X509_verify_cert(ctx), 1);
+    ExpectIntEQ(X509_STORE_CTX_get_error(ctx),
+        X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY);
+
+    X509_STORE_CTX_free(ctx);
+    X509_STORE_free(store);
+    sk_X509_free(untrusted);
+    return EXPECT_RESULT();
+}
+
 #ifdef HAVE_ECC
 static int test_wolfSSL_X509_STORE_CTX_ex12(void)
 {
@@ -870,6 +994,12 @@ int test_wolfSSL_X509_STORE_CTX_ex(void)
     ExpectIntEQ(test_wolfSSL_X509_STORE_CTX_ex9(&testData), 1);
     ExpectIntEQ(test_wolfSSL_X509_STORE_CTX_ex10(&testData), 1);
     ExpectIntEQ(test_wolfSSL_X509_STORE_CTX_ex11(&testData), 1);
+    ExpectIntEQ(test_wolfSSL_X509_STORE_CTX_ex_partial_chain_neg(&testData), 1);
+    ExpectIntEQ(test_wolfSSL_X509_STORE_CTX_ex_partial_chain_mixed(&testData),
+        1);
+    ExpectIntEQ(
+        test_wolfSSL_X509_STORE_CTX_ex_partial_chain_untrusted_terminal(
+            &testData), 1);
 #ifdef HAVE_ECC
     ExpectIntEQ(test_wolfSSL_X509_STORE_CTX_ex12(), 1);
 #endif
@@ -893,6 +1023,670 @@ int test_wolfSSL_X509_STORE_CTX_ex(void)
 #endif /* defined(OPENSSL_EXTRA) && !defined(NO_CERTS) && \
         * !defined(NO_FILESYSTEM) && !defined(NO_RSA) */
 
+    return EXPECT_RESULT();
+}
+
+#if defined(OPENSSL_EXTRA) && !defined(NO_RSA) && !defined(NO_CERTS) && \
+    !defined(NO_FILESYSTEM)
+/* Regression: an untrusted intermediate supplied to wolfSSL_X509_verify_cert()
+ * via the X509_STORE_CTX_init "chain" argument must never be treated as a
+ * trust anchor.  Verification may only succeed when the chain terminates at a
+ * certificate the caller actually trusts.
+ *
+ *     leaf (CN=www.example.test) <- int-ca (CA) <- root-ca (self-signed)
+ *
+ * The attack sub-cases (empty trust store, a populated-but-wrong trust anchor,
+ * and a tampered intermediate signature) must all be rejected; the single- and
+ * two-intermediate chains that genuinely reach the trusted root must still
+ * verify.  Certificates live in certs/intermediate/untrusted_anchor/.
+ */
+static X509* untrusted_inter_load(const char* file)
+{
+    return X509_load_certificate_file(file, SSL_FILETYPE_PEM);
+}
+
+/* Positive control: leaf <- int-ca <- root with the genuine self-signed root
+ * trusted.  Must verify - guards against a test that merely rejects
+ * everything. */
+static int test_untrusted_inter_sanity(X509* leaf, X509* inter, X509* root)
+{
+    EXPECT_DECLS;
+    X509_STORE* store = NULL;
+    X509_STORE_CTX* ctx = NULL;
+    STACK_OF(X509)* untrusted = NULL;
+
+    ExpectNotNull(store = X509_STORE_new());
+    ExpectIntEQ(X509_STORE_add_cert(store, root), 1);
+    ExpectNotNull(untrusted = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(untrusted, inter), 0);
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, leaf, untrusted), 1);
+    /* Chain reaches the trusted root -> must verify. */
+    ExpectIntEQ(X509_verify_cert(ctx), 1);
+    ExpectIntEQ(X509_STORE_CTX_get_error(ctx), X509_V_OK);
+    X509_STORE_CTX_free(ctx);
+    X509_STORE_free(store);
+    sk_X509_free(untrusted);
+    return EXPECT_RESULT();
+}
+
+/* Positive control with two untrusted intermediates:
+ *     leaf-deep <- int-ca2 <- int-ca <- root  (root trusted).
+ * A legitimate multi-level chain that genuinely reaches the trusted root must
+ * still verify; guards against over-rejecting deeper chains. */
+static int test_untrusted_inter_two_level(X509* leafDeep, X509* inter,
+    X509* inter2, X509* root)
+{
+    EXPECT_DECLS;
+    X509_STORE* store = NULL;
+    X509_STORE_CTX* ctx = NULL;
+    STACK_OF(X509)* untrusted = NULL;
+
+    ExpectNotNull(store = X509_STORE_new());
+    ExpectIntEQ(X509_STORE_add_cert(store, root), 1);
+    ExpectNotNull(untrusted = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(untrusted, inter), 0);
+    ExpectIntGT(sk_X509_push(untrusted, inter2), 0);
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, leafDeep, untrusted), 1);
+    /* Two-level chain reaches the trusted root -> must verify. */
+    ExpectIntEQ(X509_verify_cert(ctx), 1);
+    ExpectIntEQ(X509_STORE_CTX_get_error(ctx), X509_V_OK);
+    X509_STORE_CTX_free(ctx);
+    X509_STORE_free(store);
+    sk_X509_free(untrusted);
+    return EXPECT_RESULT();
+}
+
+/* Empty trust store.  The untrusted intermediate must not anchor the path -
+ * with nothing trusted, verification must fail. */
+static int test_untrusted_inter_empty_store(X509* leaf, X509* inter)
+{
+    EXPECT_DECLS;
+    X509_STORE* store = NULL;
+    X509_STORE_CTX* ctx = NULL;
+    STACK_OF(X509)* untrusted = NULL;
+
+    ExpectNotNull(store = X509_STORE_new());
+    /* Intentionally empty: no trusted certificates added. */
+    ExpectNotNull(untrusted = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(untrusted, inter), 0);
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, leaf, untrusted), 1);
+    /* No trust anchor exists -> rejected with "issuer not found". */
+    ExpectIntEQ(X509_verify_cert(ctx), 0);
+    ExpectIntEQ(X509_STORE_CTX_get_error(ctx),
+        X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY);
+    X509_STORE_CTX_free(ctx);
+    X509_STORE_free(store);
+    sk_X509_free(untrusted);
+    return EXPECT_RESULT();
+}
+
+/* Populated but wrong trust store.  An unrelated self-signed root is trusted;
+ * it did not issue the intermediate, so verification must fail. */
+static int test_untrusted_inter_wrong_anchor(X509* leaf, X509* inter,
+    X509* wrongRoot)
+{
+    EXPECT_DECLS;
+    X509_STORE* store = NULL;
+    X509_STORE_CTX* ctx = NULL;
+    STACK_OF(X509)* untrusted = NULL;
+
+    ExpectNotNull(store = X509_STORE_new());
+    ExpectIntEQ(X509_STORE_add_cert(store, wrongRoot), 1);
+    ExpectNotNull(untrusted = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(untrusted, inter), 0);
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, leaf, untrusted), 1);
+    /* Trusted root did not issue the intermediate -> "issuer not found". */
+    ExpectIntEQ(X509_verify_cert(ctx), 0);
+    ExpectIntEQ(X509_STORE_CTX_get_error(ctx),
+        X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY);
+    X509_STORE_CTX_free(ctx);
+    X509_STORE_free(store);
+    sk_X509_free(untrusted);
+    return EXPECT_RESULT();
+}
+
+/* Tampered intermediate signature.  The real root is trusted but the
+ * intermediate's outer signature is corrupt, so it is not authentically
+ * signed - verification must fail. */
+static int test_untrusted_inter_tampered(X509* leaf, X509* tamperedInter,
+    X509* root)
+{
+    EXPECT_DECLS;
+    X509_STORE* store = NULL;
+    X509_STORE_CTX* ctx = NULL;
+    STACK_OF(X509)* untrusted = NULL;
+
+    ExpectNotNull(store = X509_STORE_new());
+    ExpectIntEQ(X509_STORE_add_cert(store, root), 1);
+    ExpectNotNull(untrusted = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(untrusted, tamperedInter), 0);
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, leaf, untrusted), 1);
+    /* Intermediate is not authentically signed -> rejected.  Assert only the
+     * rejection (error != X509_V_OK), not a specific code: wolfSSL currently
+     * surfaces the corrupt intermediate as "no valid issuer" rather than a
+     * signature-failure error, and pinning that quirk would turn a future
+     * error-reporting improvement into a spurious test failure. */
+    ExpectIntEQ(X509_verify_cert(ctx), 0);
+    ExpectIntNE(X509_STORE_CTX_get_error(ctx), X509_V_OK);
+    X509_STORE_CTX_free(ctx);
+    X509_STORE_free(store);
+    sk_X509_free(untrusted);
+    return EXPECT_RESULT();
+}
+
+/* Reuse one store across a rejected verification followed immediately by a
+ * good one.  The rejected attempt temporarily loads an intermediate into the
+ * store's CertManager and pushes the caller intermediates onto its working
+ * list; a failed check must clean both up so the store is left in a pristine
+ * state.  Verifying a genuine chain on the same store right afterwards proves
+ * nothing stale was left behind. */
+static int test_untrusted_inter_reused_store(X509* leaf, X509* inter,
+    X509* tamperedInter, X509* root)
+{
+    EXPECT_DECLS;
+    X509_STORE* store = NULL;
+    X509_STORE_CTX* ctx = NULL;
+    STACK_OF(X509)* badChain = NULL;
+    STACK_OF(X509)* goodChain = NULL;
+
+    ExpectNotNull(store = X509_STORE_new());
+    ExpectIntEQ(X509_STORE_add_cert(store, root), 1);
+
+    /* First: a chain that must be rejected (tampered intermediate signature).
+     * This is the path that loads the intermediate into the store. */
+    ExpectNotNull(badChain = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(badChain, tamperedInter), 0);
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, leaf, badChain), 1);
+    ExpectIntEQ(X509_verify_cert(ctx), 0);
+    ExpectIntNE(X509_STORE_CTX_get_error(ctx), X509_V_OK);
+    X509_STORE_CTX_free(ctx);
+    ctx = NULL;
+
+    /* Then: reuse the SAME store for the genuine chain.  If the failed check
+     * left stale state behind (a temporarily-loaded intermediate or
+     * unrestored working list), this would misbehave. */
+    ExpectNotNull(goodChain = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(goodChain, inter), 0);
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, leaf, goodChain), 1);
+    ExpectIntEQ(X509_verify_cert(ctx), 1);
+    ExpectIntEQ(X509_STORE_CTX_get_error(ctx), X509_V_OK);
+
+    X509_STORE_CTX_free(ctx);
+    X509_STORE_free(store);
+    sk_X509_free(badChain);
+    sk_X509_free(goodChain);
+    return EXPECT_RESULT();
+}
+
+/* A verification that loads an intermediate must not leave it behind to anchor
+ * a later chain.  Verify a genuine chain on the store (which temporarily loads
+ * the intermediate), then reuse the SAME store to verify the leaf alone with
+ * NO intermediate supplied: the leaf's issuer is not in the trusted store, so
+ * it must be rejected.  If the first check left the intermediate loaded, this
+ * second one would wrongly succeed. */
+static int test_untrusted_inter_no_stale_anchor(X509* leaf, X509* inter,
+    X509* root)
+{
+    EXPECT_DECLS;
+    X509_STORE* store = NULL;
+    X509_STORE_CTX* ctx = NULL;
+    STACK_OF(X509)* chain = NULL;
+
+    ExpectNotNull(store = X509_STORE_new());
+    ExpectIntEQ(X509_STORE_add_cert(store, root), 1);
+
+    /* First: genuine chain verifies (temporarily loads the intermediate). */
+    ExpectNotNull(chain = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(chain, inter), 0);
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, leaf, chain), 1);
+    ExpectIntEQ(X509_verify_cert(ctx), 1);
+    ExpectIntEQ(X509_STORE_CTX_get_error(ctx), X509_V_OK);
+    X509_STORE_CTX_free(ctx);
+    ctx = NULL;
+
+    /* Then: reuse the SAME store, leaf alone, NO intermediate supplied.  The
+     * leaf's issuer is not trusted, so this must be rejected.  A stale
+     * intermediate left behind by the first check would wrongly anchor it. */
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, leaf, NULL), 1);
+    ExpectIntEQ(X509_verify_cert(ctx), 0);
+    ExpectIntNE(X509_STORE_CTX_get_error(ctx), X509_V_OK);
+
+    X509_STORE_CTX_free(ctx);
+    X509_STORE_free(store);
+    sk_X509_free(chain);
+    return EXPECT_RESULT();
+}
+
+/* Depth exhaustion: a chain that cannot be walked to the trusted anchor within
+ * the configured path-building depth budget must be rejected,.
+ *
+ *     leaf-deep <- int-ca2 <- int-ca <- root  (root trusted)
+ *
+ * The chain is genuine and verifies at the default depth (covered by
+ * test_untrusted_inter_two_level); here the depth is capped below the chain
+ * length so the budget is consumed before the trusted root is reached.  The
+ * fix must report it as "certificate chain too long". */
+static int test_untrusted_inter_depth_exhaustion(X509* leafDeep, X509* inter,
+    X509* inter2, X509* root)
+{
+    EXPECT_DECLS;
+    X509_STORE* store = NULL;
+    X509_STORE_CTX* ctx = NULL;
+    STACK_OF(X509)* untrusted = NULL;
+
+    ExpectNotNull(store = X509_STORE_new());
+    ExpectIntEQ(X509_STORE_add_cert(store, root), 1);
+    ExpectNotNull(untrusted = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(untrusted, inter), 0);
+    ExpectIntGT(sk_X509_push(untrusted, inter2), 0);
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, leafDeep, untrusted), 1);
+    /* Cap the path-building budget below the chain length so the walk runs
+     * out of depth before it can reach the trusted root. */
+    X509_STORE_CTX_set_depth(ctx, 1);
+    ExpectIntEQ(X509_verify_cert(ctx), 0);
+    ExpectIntEQ(X509_STORE_CTX_get_error(ctx),
+        X509_V_ERR_CERT_CHAIN_TOO_LONG);
+    X509_STORE_CTX_free(ctx);
+    X509_STORE_free(store);
+    sk_X509_free(untrusted);
+    return EXPECT_RESULT();
+}
+
+/* Intermediate-stack cleanup: the caller-supplied intermediates that the
+ * verifier temporarily appends to its working cert list must be removed from
+ * the exact stack they were added to once verification finishes.  When a
+ * trusted_stack is in use (X509_STORE_CTX_set0_trusted_stack), they are
+ * appended to that caller-owned stack; if they are not removed again, a later
+ * verification reusing the stack/ctx would snapshot them as trust anchors.
+ *
+ *     leaf <- int-ca <- root, with root supplied via the trusted_stack.
+ *
+ * Verify the chain (which reaches root in the trusted stack), then assert the
+ * trusted stack is left exactly as the caller supplied it: only root, with the
+ * injected intermediate removed again. */
+static int test_untrusted_inter_trusted_stack_cleanup(X509* leaf, X509* inter,
+    X509* root)
+{
+    EXPECT_DECLS;
+    X509_STORE* store = NULL;
+    X509_STORE_CTX* ctx = NULL;
+    STACK_OF(X509)* trusted = NULL;
+    STACK_OF(X509)* untrusted = NULL;
+
+    ExpectNotNull(store = X509_STORE_new());
+    ExpectNotNull(trusted = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(trusted, root), 0);
+    ExpectNotNull(untrusted = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(untrusted, inter), 0);
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, leaf, untrusted), 1);
+    X509_STORE_CTX_trusted_stack(ctx, trusted);
+    /* Chain reaches root in the trusted stack -> verifies. */
+    ExpectIntEQ(X509_verify_cert(ctx), 1);
+    ExpectIntEQ(X509_STORE_CTX_get_error(ctx), X509_V_OK);
+    /* The trusted stack must be restored: the injected intermediate appended
+     * during verification must have been removed, leaving only root. */
+    ExpectIntEQ(sk_X509_num(trusted), 1);
+    ExpectPtrEq(sk_X509_value(trusted, 0), root);
+    X509_STORE_CTX_free(ctx);
+    X509_STORE_free(store);
+    sk_X509_free(untrusted);
+    sk_X509_free(trusted);
+    return EXPECT_RESULT();
+}
+
+/* One mixed-candidate verification: leaf with both the tampered intermediate
+ * (broken outer signature, same subject as int-ca) and the genuine int-ca in
+ * the untrusted stack, in the given push order.  The chain must verify - the
+ * verifier tries the candidates and recovers via X509VerifyCertSetupRetry when
+ * it hits the tampered one first.  Only the return value is asserted: when the
+ * tampered candidate is tried first wolfSSL intentionally preserves its error
+ * code even though the chain recovers (see the "worst-seen error must persist"
+ * behaviour exercised by test_X509_STORE_InvalidCa), so the error after success
+ * is order-dependent and not asserted here. */
+static int untrusted_inter_retry_one(X509_STORE* store, X509* leaf,
+    X509* first, X509* second)
+{
+    EXPECT_DECLS;
+    X509_STORE_CTX* ctx = NULL;
+    STACK_OF(X509)* mixed = NULL;
+
+    ExpectNotNull(mixed = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(mixed, first), 0);
+    ExpectIntGT(sk_X509_push(mixed, second), 0);
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, leaf, mixed), 1);
+    ExpectIntEQ(X509_verify_cert(ctx), 1);
+    X509_STORE_CTX_free(ctx);
+    sk_X509_free(mixed);
+    return EXPECT_RESULT();
+}
+
+/* Retry path: when several caller-supplied candidates share a subject, the
+ * verifier tries one, fails, and retries with another
+ * (X509VerifyCertSetupRetry), moving entries through an internal "failed" list.
+ * Exercise BOTH push orderings so that, whichever order the verifier enumerates
+ * same-subject candidates, at least one ordering forces it to hit the tampered
+ * candidate first and recover.  Then prove the store is left clean: a later
+ * verification on the same store with only the tampered intermediate must fail
+ * (no genuine int-ca left behind), and one with the genuine intermediate must
+ * still succeed. */
+static int test_untrusted_inter_retry(X509* leaf, X509* inter,
+    X509* tamperedInter, X509* root)
+{
+    EXPECT_DECLS;
+    X509_STORE* store = NULL;
+    X509_STORE_CTX* ctx = NULL;
+    STACK_OF(X509)* goodOnly = NULL;
+    STACK_OF(X509)* badOnly = NULL;
+
+    ExpectNotNull(store = X509_STORE_new());
+    ExpectIntEQ(X509_STORE_add_cert(store, root), 1);
+
+    /* Both orderings verify and report X509_V_OK. */
+    ExpectIntEQ(untrusted_inter_retry_one(store, leaf, tamperedInter, inter), 1);
+    ExpectIntEQ(untrusted_inter_retry_one(store, leaf, inter, tamperedInter), 1);
+
+    /* Reuse the SAME store with only the tampered intermediate: must fail.  If
+     * a retry above left the genuine int-ca behind in the store, this would
+     * wrongly succeed. */
+    ExpectNotNull(badOnly = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(badOnly, tamperedInter), 0);
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, leaf, badOnly), 1);
+    ExpectIntEQ(X509_verify_cert(ctx), 0);
+    ExpectIntNE(X509_STORE_CTX_get_error(ctx), X509_V_OK);
+    X509_STORE_CTX_free(ctx);
+    ctx = NULL;
+
+    /* Reuse the SAME store with the genuine intermediate: must still succeed,
+     * proving the retry left no stale state that breaks later verifications. */
+    ExpectNotNull(goodOnly = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(goodOnly, inter), 0);
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, leaf, goodOnly), 1);
+    ExpectIntEQ(X509_verify_cert(ctx), 1);
+    ExpectIntEQ(X509_STORE_CTX_get_error(ctx), X509_V_OK);
+
+    X509_STORE_CTX_free(ctx);
+    X509_STORE_free(store);
+    sk_X509_free(goodOnly);
+    sk_X509_free(badOnly);
+    return EXPECT_RESULT();
+}
+#endif /* OPENSSL_EXTRA && !NO_RSA && !NO_CERTS && !NO_FILESYSTEM */
+
+int test_X509_verify_cert_untrusted_inter(void)
+{
+    EXPECT_DECLS;
+#if defined(OPENSSL_EXTRA) && !defined(NO_RSA) && !defined(NO_CERTS) && \
+    !defined(NO_FILESYSTEM)
+#define UA_CERT_DIR "./certs/intermediate/untrusted_anchor/"
+    X509* leaf = NULL;
+    X509* leafDeep = NULL;
+    X509* inter = NULL;
+    X509* inter2 = NULL;
+    X509* tamperedInter = NULL;
+    X509* root = NULL;
+    X509* wrongRoot = NULL;
+    int sanityRes = 0;
+    int twoLevelRes = 0;
+    int emptyStoreRes = 0;
+    int wrongAnchorRes = 0;
+    int tamperedRes = 0;
+    int reusedStoreRes = 0;
+    int noStaleRes = 0;
+    int depthExhaustRes = 0;
+    int trustedStackCleanupRes = 0;
+    int retryRes = 0;
+
+    ExpectNotNull(leaf = untrusted_inter_load(UA_CERT_DIR "leaf-cert.pem"));
+    ExpectNotNull(leafDeep =
+        untrusted_inter_load(UA_CERT_DIR "leaf-deep-cert.pem"));
+    ExpectNotNull(inter = untrusted_inter_load(UA_CERT_DIR "int-ca-cert.pem"));
+    ExpectNotNull(inter2 =
+        untrusted_inter_load(UA_CERT_DIR "int-ca2-cert.pem"));
+    ExpectNotNull(tamperedInter =
+        untrusted_inter_load(UA_CERT_DIR "int-ca-tampered-cert.pem"));
+    ExpectNotNull(root = untrusted_inter_load(UA_CERT_DIR "root-ca-cert.pem"));
+    ExpectNotNull(wrongRoot =
+        untrusted_inter_load(UA_CERT_DIR "alt-ca-cert.pem"));
+
+    /* Run every sub-case unconditionally - each reports its own result - so a
+     * regression in one does not mask the others. */
+    if (leaf != NULL && leafDeep != NULL && inter != NULL && inter2 != NULL &&
+            tamperedInter != NULL && root != NULL && wrongRoot != NULL) {
+        sanityRes      = test_untrusted_inter_sanity(leaf, inter, root);
+        twoLevelRes    = test_untrusted_inter_two_level(leafDeep, inter,
+                            inter2, root);
+        emptyStoreRes  = test_untrusted_inter_empty_store(leaf, inter);
+        wrongAnchorRes = test_untrusted_inter_wrong_anchor(leaf, inter,
+                            wrongRoot);
+        tamperedRes    = test_untrusted_inter_tampered(leaf, tamperedInter,
+                            root);
+        reusedStoreRes = test_untrusted_inter_reused_store(leaf, inter,
+                            tamperedInter, root);
+        noStaleRes     = test_untrusted_inter_no_stale_anchor(leaf, inter,
+                            root);
+        depthExhaustRes = test_untrusted_inter_depth_exhaustion(leafDeep,
+                            inter, inter2, root);
+        trustedStackCleanupRes = test_untrusted_inter_trusted_stack_cleanup(
+                            leaf, inter, root);
+        retryRes = test_untrusted_inter_retry(leaf, inter, tamperedInter, root);
+        ExpectIntEQ(sanityRes, 1);
+        ExpectIntEQ(twoLevelRes, 1);
+        ExpectIntEQ(emptyStoreRes, 1);
+        ExpectIntEQ(wrongAnchorRes, 1);
+        ExpectIntEQ(tamperedRes, 1);
+        ExpectIntEQ(reusedStoreRes, 1);
+        ExpectIntEQ(noStaleRes, 1);
+        ExpectIntEQ(depthExhaustRes, 1);
+        ExpectIntEQ(trustedStackCleanupRes, 1);
+        ExpectIntEQ(retryRes, 1);
+    }
+
+    X509_free(leaf);
+    X509_free(leafDeep);
+    X509_free(inter);
+    X509_free(inter2);
+    X509_free(tamperedInter);
+    X509_free(root);
+    X509_free(wrongRoot);
+#undef UA_CERT_DIR
+#endif /* OPENSSL_EXTRA && !NO_RSA && !NO_CERTS && !NO_FILESYSTEM */
+    return EXPECT_RESULT();
+}
+
+#if defined(OPENSSL_EXTRA) && !defined(NO_RSA) && !defined(NO_CERTS) && \
+    defined(WOLFSSL_CERT_GEN) && defined(WOLFSSL_CERT_EXT) && \
+    !defined(NO_SHA256) && defined(USE_CERT_BUFFERS_2048) && \
+    !defined(NO_ASN_TIME) && !defined(ALLOW_INVALID_CERTSIGN)
+/* Build a CA:TRUE intermediate signed by the 2048-bit test root
+ * (ca_cert_der_2048 / ca_key_der_2048).  keyUsage == NULL omits the KeyUsage
+ * extension entirely.  Returns the DER length, or <= 0 on failure. */
+static int gen_ca_int_keyusage(byte* out, int outMax, RsaKey* subjKey,
+    RsaKey* caKey, WC_RNG* rng, const char* cn, const char* keyUsage)
+{
+    Cert cert;
+
+    if (wc_InitCert(&cert) != 0)
+        return -1;
+    cert.isCA    = 1;
+    cert.sigType = CTC_SHA256wRSA;
+    XSTRNCPY(cert.subject.country, "US", CTC_NAME_SIZE - 1);
+    XSTRNCPY(cert.subject.org, "wolfSSL_test", CTC_NAME_SIZE - 1);
+    XSTRNCPY(cert.subject.commonName, cn, CTC_NAME_SIZE - 1);
+    if (wc_SetSubjectKeyIdFromPublicKey(&cert, subjKey, NULL) != 0)
+        return -1;
+    if (wc_SetAuthKeyIdFromCert(&cert, ca_cert_der_2048,
+            (int)sizeof_ca_cert_der_2048) != 0)
+        return -1;
+    if (keyUsage != NULL && wc_SetKeyUsage(&cert, keyUsage) != 0)
+        return -1;
+    if (wc_SetIssuerBuffer(&cert, ca_cert_der_2048,
+            (int)sizeof_ca_cert_der_2048) != 0)
+        return -1;
+    if (wc_MakeCert(&cert, out, (word32)outMax, subjKey, NULL, rng) < 0)
+        return -1;
+    return wc_SignCert(cert.bodySz, cert.sigType, out, (word32)outMax, caKey,
+        NULL, rng);
+}
+
+/* Build a leaf signed by the given intermediate (its DER + private key). */
+static int gen_leaf_under_int(byte* out, int outMax, RsaKey* leafKey,
+    const byte* issuerDer, int issuerDerSz, RsaKey* issuerKey, WC_RNG* rng,
+    const char* cn)
+{
+    Cert cert;
+
+    if (wc_InitCert(&cert) != 0)
+        return -1;
+    cert.isCA    = 0;
+    cert.sigType = CTC_SHA256wRSA;
+    XSTRNCPY(cert.subject.country, "US", CTC_NAME_SIZE - 1);
+    XSTRNCPY(cert.subject.org, "wolfSSL_test", CTC_NAME_SIZE - 1);
+    XSTRNCPY(cert.subject.commonName, cn, CTC_NAME_SIZE - 1);
+    if (wc_SetSubjectKeyIdFromPublicKey(&cert, leafKey, NULL) != 0)
+        return -1;
+    if (wc_SetAuthKeyIdFromCert(&cert, issuerDer, issuerDerSz) != 0)
+        return -1;
+    if (wc_SetKeyUsage(&cert, "digitalSignature") != 0)
+        return -1;
+    if (wc_SetIssuerBuffer(&cert, issuerDer, issuerDerSz) != 0)
+        return -1;
+    if (wc_MakeCert(&cert, out, (word32)outMax, leafKey, NULL, rng) < 0)
+        return -1;
+    return wc_SignCert(cert.bodySz, cert.sigType, out, (word32)outMax,
+        issuerKey, NULL, rng);
+}
+
+/* Verify "leaf <- intermediate <- root(ca-cert)" where the intermediate is
+ * supplied only as an untrusted candidate.  Returns the X509_verify_cert()
+ * result (1 verified, 0 rejected) via *verifyRet. */
+static int run_int_keyusage_case(const byte* intDer, int intSz,
+    const byte* leafDer, int leafSz, X509* root, int* verifyRet)
+{
+    EXPECT_DECLS;
+    X509* inter = NULL;
+    X509* leaf  = NULL;
+    X509_STORE* store = NULL;
+    X509_STORE_CTX* ctx = NULL;
+    STACK_OF(X509)* untrusted = NULL;
+    const byte* p;
+
+    p = intDer;
+    ExpectNotNull(inter = d2i_X509(NULL, &p, intSz));
+    p = leafDer;
+    ExpectNotNull(leaf = d2i_X509(NULL, &p, leafSz));
+    ExpectNotNull(store = X509_STORE_new());
+    ExpectIntEQ(X509_STORE_add_cert(store, root), 1);
+    ExpectNotNull(untrusted = sk_X509_new_null());
+    ExpectIntGT(sk_X509_push(untrusted, inter), 0);
+    ExpectNotNull(ctx = X509_STORE_CTX_new());
+    ExpectIntEQ(X509_STORE_CTX_init(ctx, store, leaf, untrusted), 1);
+    if (verifyRet != NULL)
+        *verifyRet = X509_verify_cert(ctx);
+    X509_STORE_CTX_free(ctx);
+    X509_STORE_free(store);
+    sk_X509_free(untrusted);
+    X509_free(leaf);
+    X509_free(inter);
+    return EXPECT_RESULT();
+}
+#endif
+
+/* Regression: a chain-supplied (untrusted) intermediate that is CA:TRUE but
+ * whose KeyUsage extension does NOT assert keyCertSign must NOT be usable to
+ * sign the leaf - RFC 5280 4.2.1.3.  Previously such an intermediate, added as
+ * a temporary CA during path building, was accepted as a signing CA.
+ *
+ * Conversely, an intermediate with NO KeyUsage extension implies all usages
+ * (including keyCertSign) and must still verify - the fix must not over-reject
+ * those. */
+int test_X509_verify_cert_ca_no_keycertsign(void)
+{
+    EXPECT_DECLS;
+#if defined(OPENSSL_EXTRA) && !defined(NO_RSA) && !defined(NO_CERTS) && \
+    defined(WOLFSSL_CERT_GEN) && defined(WOLFSSL_CERT_EXT) && \
+    !defined(NO_SHA256) && defined(USE_CERT_BUFFERS_2048) && \
+    !defined(NO_ASN_TIME) && !defined(ALLOW_INVALID_CERTSIGN)
+    /* ALLOW_INVALID_CERTSIGN disables the keyCertSign enforcement that Case 1
+     * relies on, so the test is only meaningful when it is not defined. */
+    WC_RNG rng;
+    RsaKey caKey, intKey, leafKey;
+    int rngI = 0, caI = 0, intI = 0, leafI = 0;
+    word32 idx;
+    byte* intDer = NULL;
+    byte* leafDer = NULL;
+    int intSz = 0, leafSz = 0;
+    int verifyRet = -1;
+    const byte* p;
+    X509* root = NULL;
+
+    intDer  = (byte*)XMALLOC(FOURK_BUF, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    leafDer = (byte*)XMALLOC(FOURK_BUF, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    ExpectNotNull(intDer);
+    ExpectNotNull(leafDer);
+
+    ExpectIntEQ(wc_InitRng(&rng), 0);
+    if (EXPECT_SUCCESS()) rngI = 1;
+    ExpectIntEQ(wc_InitRsaKey(&caKey, NULL), 0);
+    if (EXPECT_SUCCESS()) caI = 1;
+    idx = 0;
+    ExpectIntEQ(wc_RsaPrivateKeyDecode(ca_key_der_2048, &idx, &caKey,
+        sizeof_ca_key_der_2048), 0);
+    ExpectIntEQ(wc_InitRsaKey(&intKey, NULL), 0);
+    if (EXPECT_SUCCESS()) intI = 1;
+    idx = 0;
+    ExpectIntEQ(wc_RsaPrivateKeyDecode(server_key_der_2048, &idx, &intKey,
+        sizeof_server_key_der_2048), 0);
+    ExpectIntEQ(wc_InitRsaKey(&leafKey, NULL), 0);
+    if (EXPECT_SUCCESS()) leafI = 1;
+    idx = 0;
+    ExpectIntEQ(wc_RsaPrivateKeyDecode(client_key_der_2048, &idx, &leafKey,
+        sizeof_client_key_der_2048), 0);
+
+    p = ca_cert_der_2048;
+    ExpectNotNull(root = d2i_X509(NULL, &p, (int)sizeof_ca_cert_der_2048));
+
+    /* Case 1: intermediate CA WITHOUT keyCertSign -> verification must fail. */
+    ExpectIntGT((intSz = gen_ca_int_keyusage(intDer, FOURK_BUF, &intKey, &caKey,
+        &rng, "No keyCertSign Intermediate", "digitalSignature")), 0);
+    ExpectIntGT((leafSz = gen_leaf_under_int(leafDer, FOURK_BUF, &leafKey,
+        intDer, intSz, &intKey, &rng, "Leaf under bad int")), 0);
+    verifyRet = -1;
+    ExpectIntEQ(run_int_keyusage_case(intDer, intSz, leafDer, leafSz, root,
+        &verifyRet), 1);
+    ExpectIntNE(verifyRet, 1);
+
+    /* Case 2: intermediate CA with NO KeyUsage extension -> must verify. */
+    ExpectIntGT((intSz = gen_ca_int_keyusage(intDer, FOURK_BUF, &intKey, &caKey,
+        &rng, "No KeyUsage Intermediate", NULL)), 0);
+    ExpectIntGT((leafSz = gen_leaf_under_int(leafDer, FOURK_BUF, &leafKey,
+        intDer, intSz, &intKey, &rng, "Leaf under noKU int")), 0);
+    verifyRet = -1;
+    ExpectIntEQ(run_int_keyusage_case(intDer, intSz, leafDer, leafSz, root,
+        &verifyRet), 1);
+    ExpectIntEQ(verifyRet, 1);
+
+    X509_free(root);
+    if (rngI)  wc_FreeRng(&rng);
+    if (caI)   wc_FreeRsaKey(&caKey);
+    if (intI)  wc_FreeRsaKey(&intKey);
+    if (leafI) wc_FreeRsaKey(&leafKey);
+    XFREE(intDer, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(leafDer, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+#endif
     return EXPECT_RESULT();
 }
 
@@ -1014,7 +1808,8 @@ int test_X509_STORE_untrusted(void)
     return EXPECT_RESULT();
 }
 
-#if defined(OPENSSL_ALL) && !defined(NO_RSA) && !defined(NO_FILESYSTEM)
+#if defined(OPENSSL_ALL) && !defined(NO_RSA) && !defined(NO_FILESYSTEM) && \
+    !defined(WOLFSSL_X509_STORE_ALLOW_NON_CA_INTERMEDIATE)
 
 static int last_errcode;
 static int last_errdepth;
@@ -1035,7 +1830,8 @@ static int X509Callback(int ok, X509_STORE_CTX *ctx)
 int test_X509_STORE_InvalidCa(void)
 {
     EXPECT_DECLS;
-#if defined(OPENSSL_ALL) && !defined(NO_RSA) && !defined(NO_FILESYSTEM)
+#if defined(OPENSSL_ALL) && !defined(NO_RSA) && !defined(NO_FILESYSTEM) && \
+    !defined(WOLFSSL_X509_STORE_ALLOW_NON_CA_INTERMEDIATE)
     const char* filename = "./certs/intermediate/ca_false_intermediate/"
                                                     "test_int_not_cacert.pem";
     const char* srvfile = "./certs/intermediate/ca_false_intermediate/"
@@ -1074,6 +1870,7 @@ int test_X509_STORE_InvalidCa(void)
     ExpectIntEQ(X509_STORE_CTX_init(ctx, str, cert, untrusted), 1);
     ExpectIntEQ(X509_verify_cert(ctx), 1);
     ExpectIntEQ(last_errcode, X509_V_ERR_INVALID_CA);
+    (void)last_errdepth;
     /* Defense in depth: ctx->error must not be clobbered back to X509_V_OK
      * by the later successful verification of the intermediate against the
      * trusted root.  The worst-seen error must persist. */
@@ -1090,7 +1887,8 @@ int test_X509_STORE_InvalidCa(void)
 int test_X509_STORE_InvalidCa_NoCallback(void)
 {
     EXPECT_DECLS;
-#if defined(OPENSSL_ALL) && !defined(NO_RSA) && !defined(NO_FILESYSTEM)
+#if defined(OPENSSL_EXTRA) && !defined(NO_RSA) && !defined(NO_FILESYSTEM) && \
+    !defined(WOLFSSL_X509_STORE_ALLOW_NON_CA_INTERMEDIATE)
     const char* filename = "./certs/intermediate/ca_false_intermediate/"
                                                     "test_int_not_cacert.pem";
     const char* srvfile = "./certs/intermediate/ca_false_intermediate/"
@@ -1843,3 +2641,126 @@ int test_X509_STORE_No_SSL_CTX(void)
 #endif
     return EXPECT_RESULT();
 }
+
+/* Test that SSL_CTX_set_cert_store propagates certificates (including
+ * non-self-signed intermediates) into the CertManager, and that certs
+ * added to the store after set_cert_store also reach the CertManager.
+ * Regression test for ZD 19760 / GitHub PR #8708.
+ */
+int test_wolfSSL_CTX_set_cert_store(void)
+{
+    EXPECT_DECLS;
+#if defined(OPENSSL_EXTRA) && !defined(NO_RSA) && !defined(NO_FILESYSTEM) && \
+    !defined(NO_WOLFSSL_CLIENT) && !defined(NO_TLS)
+    SSL_CTX* ctx = NULL;
+    X509_STORE* store = NULL;
+    X509* rootCa = NULL;
+    X509* intCa = NULL;
+    X509* int2Ca = NULL;
+    X509_STORE_CTX* storeCtx = NULL;
+    X509* svrCert = NULL;
+
+    const char caCert[]     = "./certs/ca-cert.pem";
+    const char intCaCert[]  = "./certs/intermediate/ca-int-cert.pem";
+    const char int2CaCert[] = "./certs/intermediate/ca-int2-cert.pem";
+    const char svrIntCert[] = "./certs/intermediate/server-int-cert.pem";
+
+    /* --- Part 1: Add certs to store BEFORE set_cert_store ---
+     * Non-self-signed intermediates should be pushed into the CertManager
+     * when set_cert_store is called. */
+    ExpectNotNull(store = X509_STORE_new());
+    ExpectNotNull(rootCa = wolfSSL_X509_load_certificate_file(caCert,
+                    SSL_FILETYPE_PEM));
+    ExpectNotNull(intCa = wolfSSL_X509_load_certificate_file(intCaCert,
+                    SSL_FILETYPE_PEM));
+    ExpectNotNull(int2Ca = wolfSSL_X509_load_certificate_file(int2CaCert,
+                    SSL_FILETYPE_PEM));
+
+    ExpectIntEQ(X509_STORE_add_cert(store, rootCa), SSL_SUCCESS);
+    ExpectIntEQ(X509_STORE_add_cert(store, intCa), SSL_SUCCESS);
+    ExpectIntEQ(X509_STORE_add_cert(store, int2Ca), SSL_SUCCESS);
+
+    ExpectNotNull(ctx = SSL_CTX_new(TLS_client_method()));
+
+    /* This should push intermediates from store->certs into the CM */
+    SSL_CTX_set_cert_store(ctx, store);
+    if (SSL_CTX_get_cert_store(ctx) != store) {
+        X509_STORE_free(store);
+        store = NULL;
+    }
+
+    /* After set_cert_store, store->certs and store->trusted should be NULLed
+     * to signal CTX ownership */
+    if ((store != NULL) && EXPECT_SUCCESS()) {
+        ExpectNull(store->certs);
+        ExpectNull(store->trusted);
+    }
+
+    /* Verify using CertManagerVerify - this only checks the CM, not the
+     * store's certs stack, so it proves the intermediates were pushed */
+    ExpectIntEQ(wolfSSL_CertManagerVerify(wolfSSL_CTX_GetCertManager(ctx),
+                svrIntCert, SSL_FILETYPE_PEM), WOLFSSL_SUCCESS);
+
+    /* Also verify using X509_verify_cert for completeness */
+    ExpectNotNull(svrCert = wolfSSL_X509_load_certificate_file(svrIntCert,
+                    SSL_FILETYPE_PEM));
+    ExpectNotNull(storeCtx = X509_STORE_CTX_new());
+    if (EXPECT_SUCCESS()) {
+        ExpectIntEQ(X509_STORE_CTX_init(storeCtx,
+                    SSL_CTX_get_cert_store(ctx), svrCert, NULL), SSL_SUCCESS);
+        ExpectIntEQ(X509_verify_cert(storeCtx), SSL_SUCCESS);
+    }
+
+    X509_STORE_CTX_free(storeCtx);
+    storeCtx = NULL;
+    X509_free(svrCert);
+    svrCert = NULL;
+    SSL_CTX_free(ctx);
+    ctx = NULL;
+    /* store is freed by SSL_CTX_free */
+    store = NULL;
+
+    X509_free(rootCa);
+    rootCa = NULL;
+    X509_free(intCa);
+    intCa = NULL;
+    X509_free(int2Ca);
+    int2Ca = NULL;
+
+    /* --- Part 2: Add certs to store AFTER set_cert_store ---
+     * When store->certs is NULL (CTX-owned), X509_STORE_add_cert should
+     * route non-self-signed certs directly to the CertManager. */
+    ExpectNotNull(store = X509_STORE_new());
+    ExpectNotNull(ctx = SSL_CTX_new(TLS_client_method()));
+
+    /* Attach empty store first */
+    SSL_CTX_set_cert_store(ctx, store);
+    if (!EXPECT_SUCCESS()) {
+        X509_STORE_free(store);
+    }
+
+    /* Now add certs after ownership transfer */
+    ExpectNotNull(rootCa = wolfSSL_X509_load_certificate_file(caCert,
+                    SSL_FILETYPE_PEM));
+    ExpectNotNull(intCa = wolfSSL_X509_load_certificate_file(intCaCert,
+                    SSL_FILETYPE_PEM));
+    ExpectNotNull(int2Ca = wolfSSL_X509_load_certificate_file(int2CaCert,
+                    SSL_FILETYPE_PEM));
+
+    ExpectIntEQ(X509_STORE_add_cert(store, rootCa), SSL_SUCCESS);
+    ExpectIntEQ(X509_STORE_add_cert(store, intCa), SSL_SUCCESS);
+    ExpectIntEQ(X509_STORE_add_cert(store, int2Ca), SSL_SUCCESS);
+
+    /* Verify that certs added after set_cert_store are in the CM */
+    ExpectIntEQ(wolfSSL_CertManagerVerify(wolfSSL_CTX_GetCertManager(ctx),
+                svrIntCert, SSL_FILETYPE_PEM), WOLFSSL_SUCCESS);
+
+    SSL_CTX_free(ctx);
+    /* store freed by SSL_CTX_free */
+    X509_free(rootCa);
+    X509_free(intCa);
+    X509_free(int2Ca);
+#endif
+    return EXPECT_RESULT();
+}
+

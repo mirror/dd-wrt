@@ -172,7 +172,7 @@ static int ed25519_hash(ed25519_key* key, const byte* in, word32 inLen,
 {
     int ret;
 #ifndef WOLFSSL_ED25519_PERSISTENT_SHA
-    wc_Sha512 sha[1];
+    WC_DECLARE_VAR(sha, wc_Sha512, 1, key ? key->heap : NULL);
 #else
     wc_Sha512 *sha;
 #endif
@@ -185,6 +185,8 @@ static int ed25519_hash(ed25519_key* key, const byte* in, word32 inLen,
     sha = &key->sha;
     ret = ed25519_hash_reset(key);
 #else
+    WC_ALLOC_VAR_EX(sha, wc_Sha512, 1, key->heap, DYNAMIC_TYPE_HASHES,
+                    return MEMORY_E);
     ret = ed25519_hash_init(key, sha);
 #endif
     if (ret == 0) {
@@ -197,7 +199,68 @@ static int ed25519_hash(ed25519_key* key, const byte* in, word32 inLen,
     #endif
     }
 
+#ifndef WOLFSSL_ED25519_PERSISTENT_SHA
+    WC_FREE_VAR_EX(sha, key->heap, DYNAMIC_TYPE_HASHES);
+#endif
     return ret;
+}
+
+/* Reject small-order Ed25519 public keys: h*A vanishes during verification
+ * so any (R = [S]B, S) verifies for an arbitrary message. */
+static int ed25519_is_small_order(const byte p[ED25519_PUB_KEY_SIZE])
+{
+    /* y-coordinates of every order-1/2/4/8 point plus the two non-canonical
+     * encodings y = p / y = p+1. Sign bit masked before compare. Only
+     * {y, y + p} fits in 32 bytes (2p overflows the 255-bit y field), so
+     * listing y and y + p exhausts the reachable encodings for each
+     * small-order y. */
+    static const byte small_order_y[][ED25519_PUB_KEY_SIZE] = {
+        /* order 4: y = 0 */
+        {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+        /* order 1: y = 1 (identity) */
+        {0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+        /* order 8 */
+        {0x26,0xe8,0x95,0x8f,0xc2,0xb2,0x27,0xb0,
+         0x45,0xc3,0xf4,0x89,0xf2,0xef,0x98,0xf0,
+         0xd5,0xdf,0xac,0x05,0xd3,0xc6,0x33,0x39,
+         0xb1,0x38,0x02,0x88,0x6d,0x53,0xfc,0x05},
+        /* order 8 */
+        {0xc7,0x17,0x6a,0x70,0x3d,0x4d,0xd8,0x4f,
+         0xba,0x3c,0x0b,0x76,0x0d,0x10,0x67,0x0f,
+         0x2a,0x20,0x53,0xfa,0x2c,0x39,0xcc,0xc6,
+         0x4e,0xc7,0xfd,0x77,0x92,0xac,0x03,0x7a},
+        /* order 2: y = p - 1 */
+        {0xec,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x7f},
+        /* non-canonical y = p (decodes to y = 0) */
+        {0xed,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x7f},
+        /* non-canonical y = p + 1 (decodes to y = 1) */
+        {0xee,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x7f},
+    };
+    byte y[ED25519_PUB_KEY_SIZE];
+    word32 i;
+
+    XMEMCPY(y, p, ED25519_PUB_KEY_SIZE);
+    y[ED25519_PUB_KEY_SIZE - 1] &= 0x7f;
+    for (i = 0; i < sizeof(small_order_y) / ED25519_PUB_KEY_SIZE; i++) {
+        if (XMEMCMP(y, small_order_y[i], ED25519_PUB_KEY_SIZE) == 0)
+            return 1;
+    }
+    return 0;
 }
 
 #ifdef HAVE_ED25519_MAKE_KEY
@@ -429,8 +492,11 @@ int wc_ed25519_sign_msg_ex(const byte* in, word32 inLen, byte* out,
 #ifdef WOLFSSL_ED25519_PERSISTENT_SHA
         wc_Sha512 *sha = &key->sha;
 #else
-        wc_Sha512 sha[1];
-        ret = ed25519_hash_init(key, sha);
+        WC_DECLARE_VAR(sha, wc_Sha512, 1, key->heap);
+        WC_ALLOC_VAR_EX(sha, wc_Sha512, 1, key->heap, DYNAMIC_TYPE_HASHES,
+                        ret = MEMORY_E);
+        if (ret == 0)
+            ret = ed25519_hash_init(key, sha);
 #endif
 
         /* apply clamp */
@@ -457,6 +523,7 @@ int wc_ed25519_sign_msg_ex(const byte* in, word32 inLen, byte* out,
             ret = ed25519_hash_final(key, sha, nonce);
 #ifndef WOLFSSL_ED25519_PERSISTENT_SHA
         ed25519_hash_free(key, sha);
+        WC_FREE_VAR_EX(sha, key->heap, DYNAMIC_TYPE_HASHES);
 #endif
     }
 
@@ -485,8 +552,11 @@ int wc_ed25519_sign_msg_ex(const byte* in, word32 inLen, byte* out,
 #ifdef WOLFSSL_ED25519_PERSISTENT_SHA
         wc_Sha512 *sha = &key->sha;
 #else
-        wc_Sha512 sha[1];
-        ret = ed25519_hash_init(key, sha);
+        WC_DECLARE_VAR(sha, wc_Sha512, 1, key->heap);
+        WC_ALLOC_VAR_EX(sha, wc_Sha512, 1, key->heap, DYNAMIC_TYPE_HASHES,
+                        ret = MEMORY_E);
+        if (ret == 0)
+            ret = ed25519_hash_init(key, sha);
 #endif
 
         if (ret == 0 && (type == Ed25519ctx || type == Ed25519ph)) {
@@ -509,6 +579,7 @@ int wc_ed25519_sign_msg_ex(const byte* in, word32 inLen, byte* out,
             ret = ed25519_hash_final(key, sha, hram);
 #ifndef WOLFSSL_ED25519_PERSISTENT_SHA
         ed25519_hash_free(key, sha);
+        WC_FREE_VAR_EX(sha, key->heap, DYNAMIC_TYPE_HASHES);
 #endif
     }
 
@@ -535,6 +606,7 @@ int wc_ed25519_sign_msg_ex(const byte* in, word32 inLen, byte* out,
         }
         ret = ctMaskGT(c, 0) & SIG_VERIFY_E;
     }
+    ForceZero(orig_k, sizeof(orig_k));
 #endif
 
     return ret;
@@ -794,6 +866,13 @@ static int ed25519_verify_msg_final_with_sha(const byte* sig, word32 sigLen,
     if (i == -1)
         return BAD_FUNC_ARG;
 
+    /* Defence in depth: also catch small-order keys imported with trusted=1. */
+    if (ed25519_is_small_order(key->p)) {
+        WOLFSSL_MSG("Ed25519 small-order public key rejected during "
+                    "signature verification");
+        return BAD_FUNC_ARG;
+    }
+
     /* uncompress A (public key), test if valid, and negate it */
 #ifndef FREESCALE_LTC_ECC
     if (ge_frombytes_negate_vartime(&A, key->p) != 0)
@@ -895,7 +974,7 @@ int wc_ed25519_verify_msg_ex(const byte* sig, word32 sigLen, const byte* msg,
 #ifdef WOLFSSL_ED25519_PERSISTENT_SHA
     wc_Sha512 *sha;
 #else
-    wc_Sha512 sha[1];
+    WC_DECLARE_VAR(sha, wc_Sha512, 1, key ? key->heap : NULL);
 #endif
 
     /* sanity check on arguments */
@@ -922,8 +1001,11 @@ int wc_ed25519_verify_msg_ex(const byte* sig, word32 sigLen, const byte* msg,
 #ifdef WOLFSSL_ED25519_PERSISTENT_SHA
     sha = &key->sha;
 #else
+    WC_ALLOC_VAR_EX(sha, wc_Sha512, 1, key->heap, DYNAMIC_TYPE_HASHES,
+                    return MEMORY_E);
     ret = ed25519_hash_init(key, sha);
     if (ret < 0) {
+        WC_FREE_VAR_EX(sha, key->heap, DYNAMIC_TYPE_HASHES);
         return ret;
     }
 #endif /* WOLFSSL_ED25519_PERSISTENT_SHA */
@@ -937,6 +1019,7 @@ int wc_ed25519_verify_msg_ex(const byte* sig, word32 sigLen, const byte* msg,
 
 #ifndef WOLFSSL_ED25519_PERSISTENT_SHA
     ed25519_hash_free(key, sha);
+    WC_FREE_VAR_EX(sha, key->heap, DYNAMIC_TYPE_HASHES);
 #endif
 #endif /* WOLFSSL_SE050 */
     return ret;
@@ -1169,6 +1252,18 @@ int wc_ed25519_import_public_ex(const byte* in, word32 inLen, ed25519_key* key,
     if (inLen < ED25519_PUB_KEY_SIZE)
         return BAD_FUNC_ARG;
 
+#ifdef WOLFSSL_SE050
+    /* Importing new key material invalidates any prior SE050 object binding;
+     * erase the old object (no-op when keyIdSet == 0) so the host and the
+     * secure element agree on what's bound. Clear the binding fields
+     * explicitly afterwards so a stale keyId never survives, even when
+     * se050_ed25519_free_key() returns early because the SE050 session isn't
+     * configured yet. */
+    se050_ed25519_free_key(key);
+    key->keyId    = 0;
+    key->keyIdSet = 0;
+#endif
+
     /* compressed prefix according to draft
        http://www.ietf.org/id/draft-koch-eddsa-for-openpgp-02.txt */
     if (in[0] == 0x40 && inLen == ED25519_PUB_KEY_SIZE + 1) {
@@ -1255,6 +1350,18 @@ int wc_ed25519_import_private_only(const byte* priv, word32 privSz,
     if (privSz != ED25519_KEY_SIZE)
         return BAD_FUNC_ARG;
 
+#ifdef WOLFSSL_SE050
+    /* Importing new key material invalidates any prior SE050 object binding;
+     * erase the old object (no-op when keyIdSet == 0) so the host and the
+     * secure element agree on what's bound. Clear the binding fields
+     * explicitly afterwards so a stale keyId never survives, even when
+     * se050_ed25519_free_key() returns early because the SE050 session isn't
+     * configured yet. */
+    se050_ed25519_free_key(key);
+    key->keyId    = 0;
+    key->keyIdSet = 0;
+#endif
+
     XMEMCPY(key->k, priv, ED25519_KEY_SIZE);
     key->privKeySet = 1;
 
@@ -1311,6 +1418,21 @@ int wc_ed25519_import_private_key_ex(const byte* priv, word32 privSz,
         return BAD_FUNC_ARG;
     }
 
+#ifdef WOLFSSL_SE050
+    /* Importing new key material invalidates any prior SE050 object binding;
+     * erase the old object (no-op when keyIdSet == 0) so the host and the
+     * secure element agree on what's bound. key->k is overwritten before the
+     * wc_ed25519_import_public_ex() call below, so the binding must be
+     * dropped here first in case that function fails its own early-return
+     * argument checks before reaching its reset. Clear the binding fields
+     * explicitly afterwards so a stale keyId never survives, even when
+     * se050_ed25519_free_key() returns early because the SE050 session isn't
+     * configured yet. */
+    se050_ed25519_free_key(key);
+    key->keyId    = 0;
+    key->keyIdSet = 0;
+#endif
+
     XMEMCPY(key->k, priv, ED25519_KEY_SIZE);
     key->privKeySet = 1;
 
@@ -1358,7 +1480,7 @@ int wc_ed25519_import_private_key(const byte* priv, word32 privSz,
 int wc_ed25519_export_private_only(const ed25519_key* key, byte* out, word32* outLen)
 {
     /* sanity checks on arguments */
-    if (key == NULL || out == NULL || outLen == NULL)
+    if (key == NULL || !key->privKeySet || out == NULL || outLen == NULL)
         return BAD_FUNC_ARG;
 
     if (*outLen < ED25519_KEY_SIZE) {
@@ -1406,13 +1528,10 @@ int wc_ed25519_export_key(const ed25519_key* key,
 
     /* export 'full' private part */
     ret = wc_ed25519_export_private(key, priv, privSz);
-    if (ret != 0)
-        return ret;
-
-    /* export public part */
-    ret = wc_ed25519_export_public(key, pub, pubSz);
-    if (ret == WC_NO_ERR_TRACE(PUBLIC_KEY_E))
-        ret = 0; /* ignore no public key */
+    if (ret == 0) {
+        /* export public part */
+        ret = wc_ed25519_export_public(key, pub, pubSz);
+    }
 
     return ret;
 }
@@ -1445,6 +1564,13 @@ int wc_ed25519_check_key(ed25519_key* key)
         ret = PUBLIC_KEY_E;
     }
 
+    /* Reject small-order pub key before the priv-vs-pub compare so the
+     * diagnostic isn't masked by a "mismatch" error. */
+    if ((ret == 0) && ed25519_is_small_order(key->p)) {
+        WOLFSSL_MSG("Ed25519 small-order public key rejected during key check");
+        ret = PUBLIC_KEY_E;
+    }
+
 #ifdef HAVE_ED25519_MAKE_KEY
     /* If we have a private key just make the public key and compare. */
     if ((ret == 0) && (key->privKeySet)) {
@@ -1459,14 +1585,11 @@ int wc_ed25519_check_key(ed25519_key* key)
 #endif /* HAVE_ED25519_MAKE_KEY */
 
     /* No private key (or ability to make a public key), check Y is valid. */
-    if ((ret == 0)
+    if (ret == 0
 #ifdef HAVE_ED25519_MAKE_KEY
         && (!key->privKeySet)
 #endif
         ) {
-        /* Verify that Q is not identity element 0.
-         * 0 has no representation for Ed25519. */
-
         /* Verify that xQ and yQ are integers in the interval [0, p - 1].
          * Only have yQ so check that ordinate. p = 2^255 - 19 */
         if ((key->p[ED25519_PUB_KEY_SIZE - 1] & 0x7f) == 0x7f) {

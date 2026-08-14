@@ -30,8 +30,6 @@
 
 #ifdef WOLFSSL_ARMASM
 #if !defined(__aarch64__) && !defined(WOLFSSL_ARMASM_THUMB2)
-#include <stdint.h>
-#include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 #ifdef WOLFSSL_ARMASM_INLINE
 
 #ifdef __IAR_SYSTEMS_ICC__
@@ -64,7 +62,7 @@
 WC_OMIT_FRAME_POINTER void fe_init()
 #else
 WC_OMIT_FRAME_POINTER void fe_init()
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
@@ -86,7 +84,7 @@ void fe_add_sub_op(void);
 WC_OMIT_FRAME_POINTER void fe_add_sub_op()
 #else
 WC_OMIT_FRAME_POINTER void fe_add_sub_op()
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
@@ -305,7 +303,7 @@ void fe_sub_op(void);
 WC_OMIT_FRAME_POINTER void fe_sub_op()
 #else
 WC_OMIT_FRAME_POINTER void fe_sub_op()
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
@@ -357,12 +355,12 @@ WC_OMIT_FRAME_POINTER void fe_sub_op()
 WC_OMIT_FRAME_POINTER void fe_sub(fe r_p, const fe a_p, const fe b_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_sub(fe r, const fe a, const fe b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sword32* r asm ("r0") = (sword32*)r_p;
-    register const sword32* a asm ("r1") = (const sword32*)a_p;
-    register const sword32* b asm ("r2") = (const sword32*)b_p;
+    register sword32* r __asm__ ("r0") = (sword32*)r_p;
+    register const sword32* a __asm__ ("r1") = (const sword32*)a_p;
+    register const sword32* b __asm__ ("r2") = (const sword32*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -384,7 +382,7 @@ void fe_add_op(void);
 WC_OMIT_FRAME_POINTER void fe_add_op()
 #else
 WC_OMIT_FRAME_POINTER void fe_add_op()
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
@@ -437,12 +435,12 @@ WC_OMIT_FRAME_POINTER void fe_add_op()
 WC_OMIT_FRAME_POINTER void fe_add(fe r_p, const fe a_p, const fe b_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_add(fe r, const fe a, const fe b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sword32* r asm ("r0") = (sword32*)r_p;
-    register const sword32* a asm ("r1") = (const sword32*)a_p;
-    register const sword32* b asm ("r2") = (const sword32*)b_p;
+    register sword32* r __asm__ ("r0") = (sword32*)r_p;
+    register const sword32* a __asm__ ("r1") = (const sword32*)a_p;
+    register const sword32* b __asm__ ("r2") = (const sword32*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -464,11 +462,12 @@ WC_OMIT_FRAME_POINTER void fe_add(fe r, const fe a, const fe b)
 WC_OMIT_FRAME_POINTER void fe_frombytes(fe out_p, const unsigned char* in_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_frombytes(fe out, const unsigned char* in)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sword32* out asm ("r0") = (sword32*)out_p;
-    register const unsigned char* in asm ("r1") = (const unsigned char*)in_p;
+    register sword32* out __asm__ ("r0") = (sword32*)out_p;
+    register const unsigned char* in __asm__ ("r1") =
+        (const unsigned char*)in_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -508,11 +507,11 @@ WC_OMIT_FRAME_POINTER void fe_frombytes(fe out, const unsigned char* in)
 WC_OMIT_FRAME_POINTER void fe_tobytes(unsigned char* out_p, const fe n_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_tobytes(unsigned char* out, const fe n)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register unsigned char* out asm ("r0") = (unsigned char*)out_p;
-    register const sword32* n asm ("r1") = (const sword32*)n_p;
+    register unsigned char* out __asm__ ("r0") = (unsigned char*)out_p;
+    register const sword32* n __asm__ ("r1") = (const sword32*)n_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -563,10 +562,10 @@ WC_OMIT_FRAME_POINTER void fe_tobytes(unsigned char* out, const fe n)
 WC_OMIT_FRAME_POINTER void fe_1(fe n_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_1(fe n)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sword32* n asm ("r0") = (sword32*)n_p;
+    register sword32* n __asm__ ("r0") = (sword32*)n_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -595,10 +594,10 @@ WC_OMIT_FRAME_POINTER void fe_1(fe n)
 WC_OMIT_FRAME_POINTER void fe_0(fe n_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_0(fe n)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sword32* n asm ("r0") = (sword32*)n_p;
+    register sword32* n __asm__ ("r0") = (sword32*)n_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -627,11 +626,11 @@ WC_OMIT_FRAME_POINTER void fe_0(fe n)
 WC_OMIT_FRAME_POINTER void fe_copy(fe r_p, const fe a_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_copy(fe r, const fe a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sword32* r asm ("r0") = (sword32*)r_p;
-    register const sword32* a asm ("r1") = (const sword32*)a_p;
+    register sword32* r __asm__ ("r0") = (sword32*)r_p;
+    register const sword32* a __asm__ ("r1") = (const sword32*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -697,11 +696,11 @@ WC_OMIT_FRAME_POINTER void fe_copy(fe r, const fe a)
 WC_OMIT_FRAME_POINTER void fe_neg(fe r_p, const fe a_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_neg(fe r, const fe a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sword32* r asm ("r0") = (sword32*)r_p;
-    register const sword32* a asm ("r1") = (const sword32*)a_p;
+    register sword32* r __asm__ ("r0") = (sword32*)r_p;
+    register const sword32* a __asm__ ("r1") = (const sword32*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -735,10 +734,10 @@ WC_OMIT_FRAME_POINTER void fe_neg(fe r, const fe a)
 WC_OMIT_FRAME_POINTER int fe_isnonzero(const fe a_p)
 #else
 WC_OMIT_FRAME_POINTER int fe_isnonzero(const fe a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sword32* a asm ("r0") = (const sword32*)a_p;
+    register const sword32* a __asm__ ("r0") = (const sword32*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -790,10 +789,10 @@ WC_OMIT_FRAME_POINTER int fe_isnonzero(const fe a)
 WC_OMIT_FRAME_POINTER int fe_isnegative(const fe a_p)
 #else
 WC_OMIT_FRAME_POINTER int fe_isnegative(const fe a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sword32* a asm ("r0") = (const sword32*)a_p;
+    register const sword32* a __asm__ ("r0") = (const sword32*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -831,12 +830,12 @@ WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r_p, const fe* base_p,
     signed char b_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r, const fe* base, signed char b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register fe* r asm ("r0") = (fe*)r_p;
-    register const fe* base asm ("r1") = (const fe*)base_p;
-    register signed char b asm ("r2") = (signed char)b_p;
+    register fe* r __asm__ ("r0") = (fe*)r_p;
+    register const fe* base __asm__ ("r1") = (const fe*)base_p;
+    register signed char b __asm__ ("r2") = (signed char)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -2377,12 +2376,12 @@ WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r_p, const fe* base_p,
     signed char b_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_cmov_table(fe* r, const fe* base, signed char b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register fe* r asm ("r0") = (fe*)r_p;
-    register const fe* base asm ("r1") = (const fe*)base_p;
-    register signed char b asm ("r2") = (signed char)b_p;
+    register fe* r __asm__ ("r0") = (fe*)r_p;
+    register const fe* base __asm__ ("r1") = (const fe*)base_p;
+    register signed char b __asm__ ("r2") = (signed char)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -2514,7 +2513,7 @@ void fe_mul_op(void);
 WC_OMIT_FRAME_POINTER void fe_mul_op()
 #else
 WC_OMIT_FRAME_POINTER void fe_mul_op()
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
@@ -2854,7 +2853,7 @@ WC_OMIT_FRAME_POINTER void fe_mul_op()
         "adc	r11, r11, #0\n\t"
         "mov	r12, #19\n\t"
         "lsl	r11, r11, #1\n\t"
-        "orr	r11, r11, r10, LSR #31\n\t"
+        "orr	r11, r11, r10, lsr #31\n\t"
         "mul	r11, r12, r11\n\t"
         "ldm	lr!, {r1, r2}\n\t"
         "mov	r12, #38\n\t"
@@ -2909,7 +2908,7 @@ void fe_mul_op(void);
 WC_OMIT_FRAME_POINTER void fe_mul_op()
 #else
 WC_OMIT_FRAME_POINTER void fe_mul_op()
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
@@ -3062,12 +3061,12 @@ WC_OMIT_FRAME_POINTER void fe_mul_op()
 WC_OMIT_FRAME_POINTER void fe_mul(fe r_p, const fe a_p, const fe b_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_mul(fe r, const fe a, const fe b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sword32* r asm ("r0") = (sword32*)r_p;
-    register const sword32* a asm ("r1") = (const sword32*)a_p;
-    register const sword32* b asm ("r2") = (const sword32*)b_p;
+    register sword32* r __asm__ ("r0") = (sword32*)r_p;
+    register const sword32* a __asm__ ("r1") = (const sword32*)a_p;
+    register const sword32* b __asm__ ("r2") = (const sword32*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -3090,7 +3089,7 @@ void fe_sq_op(void);
 WC_OMIT_FRAME_POINTER void fe_sq_op()
 #else
 WC_OMIT_FRAME_POINTER void fe_sq_op()
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
@@ -3323,7 +3322,7 @@ WC_OMIT_FRAME_POINTER void fe_sq_op()
         "adc	r11, r11, #0\n\t"
         "mov	r12, #19\n\t"
         "lsl	r11, r11, #1\n\t"
-        "orr	r11, r11, r10, LSR #31\n\t"
+        "orr	r11, r11, r10, lsr #31\n\t"
         "mul	r11, r12, r11\n\t"
         "ldm	lr!, {r1, r2}\n\t"
         "mov	r12, #38\n\t"
@@ -3378,7 +3377,7 @@ void fe_sq_op(void);
 WC_OMIT_FRAME_POINTER void fe_sq_op()
 #else
 WC_OMIT_FRAME_POINTER void fe_sq_op()
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
@@ -3517,11 +3516,11 @@ WC_OMIT_FRAME_POINTER void fe_sq_op()
 WC_OMIT_FRAME_POINTER void fe_sq(fe r_p, const fe a_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_sq(fe r, const fe a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sword32* r asm ("r0") = (sword32*)r_p;
-    register const sword32* a asm ("r1") = (const sword32*)a_p;
+    register sword32* r __asm__ ("r0") = (sword32*)r_p;
+    register const sword32* a __asm__ ("r1") = (const sword32*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -3544,11 +3543,11 @@ WC_OMIT_FRAME_POINTER void fe_sq(fe r, const fe a)
 WC_OMIT_FRAME_POINTER void fe_mul121666(fe r_p, fe a_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_mul121666(fe r, fe a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sword32* r asm ("r0") = (sword32*)r_p;
-    register sword32* a asm ("r1") = (sword32*)a_p;
+    register sword32* r __asm__ ("r0") = (sword32*)r_p;
+    register sword32* a __asm__ ("r1") = (sword32*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -3595,7 +3594,7 @@ WC_OMIT_FRAME_POINTER void fe_mul121666(fe r, fe a)
         "mov	r10, #19\n\t"
         "adc	lr, lr, #0\n\t"
         "lsl	lr, lr, #1\n\t"
-        "orr	lr, lr, r9, LSR #31\n\t"
+        "orr	lr, lr, r9, lsr #31\n\t"
         "mul	lr, r10, lr\n\t"
         "adds	r2, r2, lr\n\t"
         "adcs	r3, r3, #0\n\t"
@@ -3628,11 +3627,11 @@ WC_OMIT_FRAME_POINTER void fe_mul121666(fe r, fe a)
 WC_OMIT_FRAME_POINTER void fe_mul121666(fe r_p, fe a_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_mul121666(fe r, fe a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sword32* r asm ("r0") = (sword32*)r_p;
-    register sword32* a asm ("r1") = (sword32*)a_p;
+    register sword32* r __asm__ ("r0") = (sword32*)r_p;
+    register sword32* a __asm__ ("r1") = (sword32*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -3701,12 +3700,12 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r_p, const byte* n_p,
     const byte* a_p)
 #else
 WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register byte* r asm ("r0") = (byte*)r_p;
-    register const byte* n asm ("r1") = (const byte*)n_p;
-    register const byte* a asm ("r2") = (const byte*)a_p;
+    register byte* r __asm__ ("r0") = (byte*)r_p;
+    register const byte* n __asm__ ("r1") = (const byte*)n_p;
+    register const byte* a __asm__ ("r2") = (const byte*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -3739,9 +3738,9 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "mov	%[a], #28\n\t"
         "str	%[a], [sp, #176]\n\t"
         "\n"
-    "L_curve25519_words_%=: \n\t"
+    "L_curve25519_words_%=:\n\t"
         "\n"
-    "L_curve25519_bits_%=: \n\t"
+    "L_curve25519_bits_%=:\n\t"
         "ldr	%[n], [sp, #164]\n\t"
         "ldr	%[a], [%[n], r2]\n\t"
         "ldr	%[n], [sp, #180]\n\t"
@@ -3957,7 +3956,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #4\n\t"
         "\n"
-    "L_curve25519_inv_1_%=: \n\t"
+    "L_curve25519_inv_1_%=:\n\t"
         "add	r1, sp, #0x60\n\t"
         "add	r0, sp, #0x60\n\t"
         "push	{r12}\n\t"
@@ -3974,7 +3973,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #9\n\t"
         "\n"
-    "L_curve25519_inv_2_%=: \n\t"
+    "L_curve25519_inv_2_%=:\n\t"
         "add	r1, sp, #0x60\n\t"
         "add	r0, sp, #0x60\n\t"
         "push	{r12}\n\t"
@@ -3991,7 +3990,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #19\n\t"
         "\n"
-    "L_curve25519_inv_3_%=: \n\t"
+    "L_curve25519_inv_3_%=:\n\t"
         "add	r1, sp, #0x80\n\t"
         "add	r0, sp, #0x80\n\t"
         "push	{r12}\n\t"
@@ -4005,7 +4004,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "bl	fe_mul_op\n\t"
         "mov	r12, #10\n\t"
         "\n"
-    "L_curve25519_inv_4_%=: \n\t"
+    "L_curve25519_inv_4_%=:\n\t"
         "add	r1, sp, #0x60\n\t"
         "add	r0, sp, #0x60\n\t"
         "push	{r12}\n\t"
@@ -4022,7 +4021,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #49\n\t"
         "\n"
-    "L_curve25519_inv_5_%=: \n\t"
+    "L_curve25519_inv_5_%=:\n\t"
         "add	r1, sp, #0x60\n\t"
         "add	r0, sp, #0x60\n\t"
         "push	{r12}\n\t"
@@ -4039,7 +4038,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #0x63\n\t"
         "\n"
-    "L_curve25519_inv_6_%=: \n\t"
+    "L_curve25519_inv_6_%=:\n\t"
         "add	r1, sp, #0x80\n\t"
         "add	r0, sp, #0x80\n\t"
         "push	{r12}\n\t"
@@ -4053,7 +4052,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "bl	fe_mul_op\n\t"
         "mov	r12, #50\n\t"
         "\n"
-    "L_curve25519_inv_7_%=: \n\t"
+    "L_curve25519_inv_7_%=:\n\t"
         "add	r1, sp, #0x60\n\t"
         "add	r0, sp, #0x60\n\t"
         "push	{r12}\n\t"
@@ -4067,7 +4066,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "bl	fe_mul_op\n\t"
         "mov	r12, #5\n\t"
         "\n"
-    "L_curve25519_inv_8_%=: \n\t"
+    "L_curve25519_inv_8_%=:\n\t"
         "add	r1, sp, #0x40\n\t"
         "add	r0, sp, #0x40\n\t"
         "push	{r12}\n\t"
@@ -4083,6 +4082,33 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "ldr	r1, [sp, #160]\n\t"
         "ldr	r0, [sp, #160]\n\t"
         "bl	fe_mul_op\n\t"
+        /* Ensure result is less than modulus */
+        "ldr	%[r], [sp, #160]\n\t"
+        "ldm	%[r], {r4, r5, r6, r7, r8, r9, r10, r11}\n\t"
+        "adds	%[a], r4, #19\n\t"
+        "adcs	%[a], r5, #0\n\t"
+        "adcs	%[a], r6, #0\n\t"
+        "adcs	%[a], r7, #0\n\t"
+        "adcs	%[a], r8, #0\n\t"
+        "adcs	%[a], r9, #0\n\t"
+        "adcs	%[a], r10, #0\n\t"
+        "adc	%[a], r11, #0\n\t"
+        "asr	%[a], %[a], #31\n\t"
+        "and	%[a], %[a], #19\n\t"
+        "adds	r4, r4, %[a]\n\t"
+        "adcs	r5, r5, #0\n\t"
+        "adcs	r6, r6, #0\n\t"
+        "adcs	r7, r7, #0\n\t"
+        "adcs	r8, r8, #0\n\t"
+        "adcs	r9, r9, #0\n\t"
+        "adcs	r10, r10, #0\n\t"
+        "adc	r11, r11, #0\n\t"
+#if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
+        "bic	r11, r11, #0x80000000\n\t"
+#else
+        "bfc	r11, #31, #1\n\t"
+#endif
+        "stm	%[r], {r4, r5, r6, r7, r8, r9, r10, r11}\n\t"
         "mov	r0, #0\n\t"
         "add	sp, sp, #0xbc\n\t"
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
@@ -4104,12 +4130,12 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r_p, const byte* n_p,
     const byte* a_p)
 #else
 WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register byte* r asm ("r0") = (byte*)r_p;
-    register const byte* n asm ("r1") = (const byte*)n_p;
-    register const byte* a asm ("r2") = (const byte*)a_p;
+    register byte* r __asm__ ("r0") = (byte*)r_p;
+    register const byte* n __asm__ ("r1") = (const byte*)n_p;
+    register const byte* a __asm__ ("r2") = (const byte*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -4144,7 +4170,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "stm	r3, {r4, r5, r6, r7, r8, r9, r10, r11}\n\t"
         "mov	%[a], #0xfe\n\t"
         "\n"
-    "L_curve25519_bits_%=: \n\t"
+    "L_curve25519_bits_%=:\n\t"
         "str	%[a], [sp, #168]\n\t"
         "ldr	%[n], [sp, #160]\n\t"
         "and	r4, %[a], #31\n\t"
@@ -4264,7 +4290,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #4\n\t"
         "\n"
-    "L_curve25519_inv_1_%=: \n\t"
+    "L_curve25519_inv_1_%=:\n\t"
         "add	r1, sp, #0x60\n\t"
         "add	r0, sp, #0x60\n\t"
         "push	{r12}\n\t"
@@ -4281,7 +4307,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #9\n\t"
         "\n"
-    "L_curve25519_inv_2_%=: \n\t"
+    "L_curve25519_inv_2_%=:\n\t"
         "add	r1, sp, #0x60\n\t"
         "add	r0, sp, #0x60\n\t"
         "push	{r12}\n\t"
@@ -4298,7 +4324,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #19\n\t"
         "\n"
-    "L_curve25519_inv_3_%=: \n\t"
+    "L_curve25519_inv_3_%=:\n\t"
         "add	r1, sp, #0x80\n\t"
         "add	r0, sp, #0x80\n\t"
         "push	{r12}\n\t"
@@ -4312,7 +4338,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "bl	fe_mul_op\n\t"
         "mov	r12, #10\n\t"
         "\n"
-    "L_curve25519_inv_4_%=: \n\t"
+    "L_curve25519_inv_4_%=:\n\t"
         "add	r1, sp, #0x60\n\t"
         "add	r0, sp, #0x60\n\t"
         "push	{r12}\n\t"
@@ -4329,7 +4355,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #49\n\t"
         "\n"
-    "L_curve25519_inv_5_%=: \n\t"
+    "L_curve25519_inv_5_%=:\n\t"
         "add	r1, sp, #0x60\n\t"
         "add	r0, sp, #0x60\n\t"
         "push	{r12}\n\t"
@@ -4346,7 +4372,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #0x63\n\t"
         "\n"
-    "L_curve25519_inv_6_%=: \n\t"
+    "L_curve25519_inv_6_%=:\n\t"
         "add	r1, sp, #0x80\n\t"
         "add	r0, sp, #0x80\n\t"
         "push	{r12}\n\t"
@@ -4360,7 +4386,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "bl	fe_mul_op\n\t"
         "mov	r12, #50\n\t"
         "\n"
-    "L_curve25519_inv_7_%=: \n\t"
+    "L_curve25519_inv_7_%=:\n\t"
         "add	r1, sp, #0x60\n\t"
         "add	r0, sp, #0x60\n\t"
         "push	{r12}\n\t"
@@ -4374,7 +4400,7 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         "bl	fe_mul_op\n\t"
         "mov	r12, #5\n\t"
         "\n"
-    "L_curve25519_inv_8_%=: \n\t"
+    "L_curve25519_inv_8_%=:\n\t"
         "add	r1, sp, #0x40\n\t"
         "add	r0, sp, #0x40\n\t"
         "push	{r12}\n\t"
@@ -4393,21 +4419,29 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
         /* Ensure result is less than modulus */
         "ldr	%[r], [sp, #176]\n\t"
         "ldm	%[r], {r4, r5, r6, r7, r8, r9, r10, r11}\n\t"
-        "mov	%[a], #19\n\t"
-        "and	%[a], %[a], r11, asr #31\n\t"
+        "adds	%[a], r4, #19\n\t"
+        "adcs	%[a], r5, #0\n\t"
+        "adcs	%[a], r6, #0\n\t"
+        "adcs	%[a], r7, #0\n\t"
+        "adcs	%[a], r8, #0\n\t"
+        "adcs	%[a], r9, #0\n\t"
+        "adcs	%[a], r10, #0\n\t"
+        "adc	%[a], r11, #0\n\t"
+        "asr	%[a], %[a], #31\n\t"
+        "and	%[a], %[a], #19\n\t"
         "adds	r4, r4, %[a]\n\t"
         "adcs	r5, r5, #0\n\t"
         "adcs	r6, r6, #0\n\t"
         "adcs	r7, r7, #0\n\t"
         "adcs	r8, r8, #0\n\t"
         "adcs	r9, r9, #0\n\t"
+        "adcs	r10, r10, #0\n\t"
+        "adc	r11, r11, #0\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "bic	r11, r11, #0x80000000\n\t"
 #else
         "bfc	r11, #31, #1\n\t"
 #endif
-        "adcs	r10, r10, #0\n\t"
-        "adc	r11, r11, #0\n\t"
         "stm	%[r], {r4, r5, r6, r7, r8, r9, r10, r11}\n\t"
         "mov	r0, #0\n\t"
         "add	sp, sp, #0xc0\n\t"
@@ -4431,11 +4465,11 @@ WC_OMIT_FRAME_POINTER int curve25519(byte* r, const byte* n, const byte* a)
 WC_OMIT_FRAME_POINTER void fe_invert(fe r_p, const fe a_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_invert(fe r, const fe a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sword32* r asm ("r0") = (sword32*)r_p;
-    register const sword32* a asm ("r1") = (const sword32*)a_p;
+    register sword32* r __asm__ ("r0") = (sword32*)r_p;
+    register const sword32* a __asm__ ("r1") = (const sword32*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -4472,7 +4506,7 @@ WC_OMIT_FRAME_POINTER void fe_invert(fe r, const fe a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #4\n\t"
         "\n"
-    "L_fe_invert1_%=: \n\t"
+    "L_fe_invert1_%=:\n\t"
         "add	r1, sp, #0x40\n\t"
         "add	r0, sp, #0x40\n\t"
         "push	{r12}\n\t"
@@ -4489,7 +4523,7 @@ WC_OMIT_FRAME_POINTER void fe_invert(fe r, const fe a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #9\n\t"
         "\n"
-    "L_fe_invert2_%=: \n\t"
+    "L_fe_invert2_%=:\n\t"
         "add	r1, sp, #0x40\n\t"
         "add	r0, sp, #0x40\n\t"
         "push	{r12}\n\t"
@@ -4506,7 +4540,7 @@ WC_OMIT_FRAME_POINTER void fe_invert(fe r, const fe a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #19\n\t"
         "\n"
-    "L_fe_invert3_%=: \n\t"
+    "L_fe_invert3_%=:\n\t"
         "add	r1, sp, #0x60\n\t"
         "add	r0, sp, #0x60\n\t"
         "push	{r12}\n\t"
@@ -4520,7 +4554,7 @@ WC_OMIT_FRAME_POINTER void fe_invert(fe r, const fe a)
         "bl	fe_mul_op\n\t"
         "mov	r12, #10\n\t"
         "\n"
-    "L_fe_invert4_%=: \n\t"
+    "L_fe_invert4_%=:\n\t"
         "add	r1, sp, #0x40\n\t"
         "add	r0, sp, #0x40\n\t"
         "push	{r12}\n\t"
@@ -4537,7 +4571,7 @@ WC_OMIT_FRAME_POINTER void fe_invert(fe r, const fe a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #49\n\t"
         "\n"
-    "L_fe_invert5_%=: \n\t"
+    "L_fe_invert5_%=:\n\t"
         "add	r1, sp, #0x40\n\t"
         "add	r0, sp, #0x40\n\t"
         "push	{r12}\n\t"
@@ -4554,7 +4588,7 @@ WC_OMIT_FRAME_POINTER void fe_invert(fe r, const fe a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #0x63\n\t"
         "\n"
-    "L_fe_invert6_%=: \n\t"
+    "L_fe_invert6_%=:\n\t"
         "add	r1, sp, #0x60\n\t"
         "add	r0, sp, #0x60\n\t"
         "push	{r12}\n\t"
@@ -4568,7 +4602,7 @@ WC_OMIT_FRAME_POINTER void fe_invert(fe r, const fe a)
         "bl	fe_mul_op\n\t"
         "mov	r12, #50\n\t"
         "\n"
-    "L_fe_invert7_%=: \n\t"
+    "L_fe_invert7_%=:\n\t"
         "add	r1, sp, #0x40\n\t"
         "add	r0, sp, #0x40\n\t"
         "push	{r12}\n\t"
@@ -4582,7 +4616,7 @@ WC_OMIT_FRAME_POINTER void fe_invert(fe r, const fe a)
         "bl	fe_mul_op\n\t"
         "mov	r12, #5\n\t"
         "\n"
-    "L_fe_invert8_%=: \n\t"
+    "L_fe_invert8_%=:\n\t"
         "add	r1, sp, #32\n\t"
         "add	r0, sp, #32\n\t"
         "push	{r12}\n\t"
@@ -4614,11 +4648,11 @@ WC_OMIT_FRAME_POINTER void fe_invert(fe r, const fe a)
 WC_OMIT_FRAME_POINTER void fe_sq2(fe r_p, const fe a_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_sq2(fe r, const fe a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sword32* r asm ("r0") = (sword32*)r_p;
-    register const sword32* a asm ("r1") = (const sword32*)a_p;
+    register sword32* r __asm__ ("r0") = (sword32*)r_p;
+    register const sword32* a __asm__ ("r1") = (const sword32*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -4850,7 +4884,7 @@ WC_OMIT_FRAME_POINTER void fe_sq2(fe r, const fe a)
         "adc	r11, r11, #0\n\t"
         "mov	r12, #19\n\t"
         "lsl	r11, r11, #1\n\t"
-        "orr	r11, r11, r10, LSR #31\n\t"
+        "orr	r11, r11, r10, lsr #31\n\t"
         "mul	r11, r12, r11\n\t"
         "ldm	lr!, {r1, r2}\n\t"
         "mov	r12, #38\n\t"
@@ -4886,7 +4920,7 @@ WC_OMIT_FRAME_POINTER void fe_sq2(fe r, const fe a)
         "adds	r8, r10, r11\n\t"
         /* Reduce if top bit set */
         "mov	r12, #19\n\t"
-        "and	r11, r12, r8, ASR #31\n\t"
+        "and	r11, r12, r8, asr #31\n\t"
         "adds	r1, r1, r11\n\t"
         "adcs	r2, r2, #0\n\t"
         "adcs	r3, r3, #0\n\t"
@@ -4911,7 +4945,7 @@ WC_OMIT_FRAME_POINTER void fe_sq2(fe r, const fe a)
         "adc	r8, r8, r8\n\t"
         /* Reduce if top bit set */
         "mov	r12, #19\n\t"
-        "and	r11, r12, r8, ASR #31\n\t"
+        "and	r11, r12, r8, asr #31\n\t"
         "adds	r1, r1, r11\n\t"
         "adcs	r2, r2, #0\n\t"
         "adcs	r3, r3, #0\n\t"
@@ -4945,11 +4979,11 @@ WC_OMIT_FRAME_POINTER void fe_sq2(fe r, const fe a)
 WC_OMIT_FRAME_POINTER void fe_sq2(fe r_p, const fe a_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_sq2(fe r, const fe a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sword32* r asm ("r0") = (sword32*)r_p;
-    register const sword32* a asm ("r1") = (const sword32*)a_p;
+    register sword32* r __asm__ ("r0") = (sword32*)r_p;
+    register const sword32* a __asm__ ("r1") = (const sword32*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5075,7 +5109,7 @@ WC_OMIT_FRAME_POINTER void fe_sq2(fe r, const fe a)
         "add	r7, r7, lr\n\t"
         /* Reduce if top bit set */
         "mov	r11, #19\n\t"
-        "and	r12, r11, r7, ASR #31\n\t"
+        "and	r12, r11, r7, asr #31\n\t"
         "adds	r0, r0, r12\n\t"
         "adcs	r1, r1, #0\n\t"
         "adcs	r2, r2, #0\n\t"
@@ -5100,7 +5134,7 @@ WC_OMIT_FRAME_POINTER void fe_sq2(fe r, const fe a)
         "adc	r7, r7, r7\n\t"
         /* Reduce if top bit set */
         "mov	r11, #19\n\t"
-        "and	r12, r11, r7, ASR #31\n\t"
+        "and	r12, r11, r7, asr #31\n\t"
         "adds	r0, r0, r12\n\t"
         "adcs	r1, r1, #0\n\t"
         "adcs	r2, r2, #0\n\t"
@@ -5135,11 +5169,11 @@ WC_OMIT_FRAME_POINTER void fe_sq2(fe r, const fe a)
 WC_OMIT_FRAME_POINTER void fe_pow22523(fe r_p, const fe a_p)
 #else
 WC_OMIT_FRAME_POINTER void fe_pow22523(fe r, const fe a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sword32* r asm ("r0") = (sword32*)r_p;
-    register const sword32* a asm ("r1") = (const sword32*)a_p;
+    register sword32* r __asm__ ("r0") = (sword32*)r_p;
+    register const sword32* a __asm__ ("r1") = (const sword32*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5176,7 +5210,7 @@ WC_OMIT_FRAME_POINTER void fe_pow22523(fe r, const fe a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #4\n\t"
         "\n"
-    "L_fe_pow22523_1_%=: \n\t"
+    "L_fe_pow22523_1_%=:\n\t"
         "add	r1, sp, #32\n\t"
         "add	r0, sp, #32\n\t"
         "push	{r12}\n\t"
@@ -5193,7 +5227,7 @@ WC_OMIT_FRAME_POINTER void fe_pow22523(fe r, const fe a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #9\n\t"
         "\n"
-    "L_fe_pow22523_2_%=: \n\t"
+    "L_fe_pow22523_2_%=:\n\t"
         "add	r1, sp, #32\n\t"
         "add	r0, sp, #32\n\t"
         "push	{r12}\n\t"
@@ -5210,7 +5244,7 @@ WC_OMIT_FRAME_POINTER void fe_pow22523(fe r, const fe a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #19\n\t"
         "\n"
-    "L_fe_pow22523_3_%=: \n\t"
+    "L_fe_pow22523_3_%=:\n\t"
         "add	r1, sp, #0x40\n\t"
         "add	r0, sp, #0x40\n\t"
         "push	{r12}\n\t"
@@ -5224,7 +5258,7 @@ WC_OMIT_FRAME_POINTER void fe_pow22523(fe r, const fe a)
         "bl	fe_mul_op\n\t"
         "mov	r12, #10\n\t"
         "\n"
-    "L_fe_pow22523_4_%=: \n\t"
+    "L_fe_pow22523_4_%=:\n\t"
         "add	r1, sp, #32\n\t"
         "add	r0, sp, #32\n\t"
         "push	{r12}\n\t"
@@ -5241,7 +5275,7 @@ WC_OMIT_FRAME_POINTER void fe_pow22523(fe r, const fe a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #49\n\t"
         "\n"
-    "L_fe_pow22523_5_%=: \n\t"
+    "L_fe_pow22523_5_%=:\n\t"
         "add	r1, sp, #32\n\t"
         "add	r0, sp, #32\n\t"
         "push	{r12}\n\t"
@@ -5258,7 +5292,7 @@ WC_OMIT_FRAME_POINTER void fe_pow22523(fe r, const fe a)
         "bl	fe_sq_op\n\t"
         "mov	r12, #0x63\n\t"
         "\n"
-    "L_fe_pow22523_6_%=: \n\t"
+    "L_fe_pow22523_6_%=:\n\t"
         "add	r1, sp, #0x40\n\t"
         "add	r0, sp, #0x40\n\t"
         "push	{r12}\n\t"
@@ -5272,7 +5306,7 @@ WC_OMIT_FRAME_POINTER void fe_pow22523(fe r, const fe a)
         "bl	fe_mul_op\n\t"
         "mov	r12, #50\n\t"
         "\n"
-    "L_fe_pow22523_7_%=: \n\t"
+    "L_fe_pow22523_7_%=:\n\t"
         "add	r1, sp, #32\n\t"
         "add	r0, sp, #32\n\t"
         "push	{r12}\n\t"
@@ -5286,7 +5320,7 @@ WC_OMIT_FRAME_POINTER void fe_pow22523(fe r, const fe a)
         "bl	fe_mul_op\n\t"
         "mov	r12, #2\n\t"
         "\n"
-    "L_fe_pow22523_8_%=: \n\t"
+    "L_fe_pow22523_8_%=:\n\t"
         "mov	r1, sp\n\t"
         "mov	r0, sp\n\t"
         "push	{r12}\n\t"
@@ -5317,11 +5351,11 @@ WC_OMIT_FRAME_POINTER void fe_pow22523(fe r, const fe a)
 WC_OMIT_FRAME_POINTER void ge_p1p1_to_p2(ge_p2 * r_p, const ge_p1p1 * p_p)
 #else
 WC_OMIT_FRAME_POINTER void ge_p1p1_to_p2(ge_p2 * r, const ge_p1p1 * p)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register ge_p2 * r asm ("r0") = (ge_p2 *)r_p;
-    register const ge_p1p1 * p asm ("r1") = (const ge_p1p1 *)p_p;
+    register ge_p2 * r __asm__ ("r0") = (ge_p2 *)r_p;
+    register const ge_p1p1 * p __asm__ ("r1") = (const ge_p1p1 *)p_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5359,11 +5393,11 @@ WC_OMIT_FRAME_POINTER void ge_p1p1_to_p2(ge_p2 * r, const ge_p1p1 * p)
 WC_OMIT_FRAME_POINTER void ge_p1p1_to_p3(ge_p3 * r_p, const ge_p1p1 * p_p)
 #else
 WC_OMIT_FRAME_POINTER void ge_p1p1_to_p3(ge_p3 * r, const ge_p1p1 * p)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register ge_p3 * r asm ("r0") = (ge_p3 *)r_p;
-    register const ge_p1p1 * p asm ("r1") = (const ge_p1p1 *)p_p;
+    register ge_p3 * r __asm__ ("r0") = (ge_p3 *)r_p;
+    register const ge_p1p1 * p __asm__ ("r1") = (const ge_p1p1 *)p_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5406,11 +5440,11 @@ WC_OMIT_FRAME_POINTER void ge_p1p1_to_p3(ge_p3 * r, const ge_p1p1 * p)
 WC_OMIT_FRAME_POINTER void ge_p2_dbl(ge_p1p1 * r_p, const ge_p2 * p_p)
 #else
 WC_OMIT_FRAME_POINTER void ge_p2_dbl(ge_p1p1 * r, const ge_p2 * p)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register ge_p1p1 * r asm ("r0") = (ge_p1p1 *)r_p;
-    register const ge_p2 * p asm ("r1") = (const ge_p2 *)p_p;
+    register ge_p1p1 * r __asm__ ("r0") = (ge_p1p1 *)r_p;
+    register const ge_p2 * p __asm__ ("r1") = (const ge_p2 *)p_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5467,12 +5501,12 @@ WC_OMIT_FRAME_POINTER void ge_madd(ge_p1p1 * r_p, const ge_p3 * p_p,
 #else
 WC_OMIT_FRAME_POINTER void ge_madd(ge_p1p1 * r, const ge_p3 * p,
     const ge_precomp * q)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register ge_p1p1 * r asm ("r0") = (ge_p1p1 *)r_p;
-    register const ge_p3 * p asm ("r1") = (const ge_p3 *)p_p;
-    register const ge_precomp * q asm ("r2") = (const ge_precomp *)q_p;
+    register ge_p1p1 * r __asm__ ("r0") = (ge_p1p1 *)r_p;
+    register const ge_p3 * p __asm__ ("r1") = (const ge_p3 *)p_p;
+    register const ge_precomp * q __asm__ ("r2") = (const ge_precomp *)q_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5567,12 +5601,12 @@ WC_OMIT_FRAME_POINTER void ge_msub(ge_p1p1 * r_p, const ge_p3 * p_p,
 #else
 WC_OMIT_FRAME_POINTER void ge_msub(ge_p1p1 * r, const ge_p3 * p,
     const ge_precomp * q)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register ge_p1p1 * r asm ("r0") = (ge_p1p1 *)r_p;
-    register const ge_p3 * p asm ("r1") = (const ge_p3 *)p_p;
-    register const ge_precomp * q asm ("r2") = (const ge_precomp *)q_p;
+    register ge_p1p1 * r __asm__ ("r0") = (ge_p1p1 *)r_p;
+    register const ge_p3 * p __asm__ ("r1") = (const ge_p3 *)p_p;
+    register const ge_precomp * q __asm__ ("r2") = (const ge_precomp *)q_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5668,12 +5702,12 @@ WC_OMIT_FRAME_POINTER void ge_add(ge_p1p1 * r_p, const ge_p3 * p_p,
 #else
 WC_OMIT_FRAME_POINTER void ge_add(ge_p1p1 * r, const ge_p3 * p,
     const ge_cached* q)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register ge_p1p1 * r asm ("r0") = (ge_p1p1 *)r_p;
-    register const ge_p3 * p asm ("r1") = (const ge_p3 *)p_p;
-    register const ge_cached* q asm ("r2") = (const ge_cached*)q_p;
+    register ge_p1p1 * r __asm__ ("r0") = (ge_p1p1 *)r_p;
+    register const ge_p3 * p __asm__ ("r1") = (const ge_p3 *)p_p;
+    register const ge_cached* q __asm__ ("r2") = (const ge_cached*)q_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5769,12 +5803,12 @@ WC_OMIT_FRAME_POINTER void ge_sub(ge_p1p1 * r_p, const ge_p3 * p_p,
 #else
 WC_OMIT_FRAME_POINTER void ge_sub(ge_p1p1 * r, const ge_p3 * p,
     const ge_cached* q)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register ge_p1p1 * r asm ("r0") = (ge_p1p1 *)r_p;
-    register const ge_p3 * p asm ("r1") = (const ge_p3 *)p_p;
-    register const ge_cached* q asm ("r2") = (const ge_cached*)q_p;
+    register ge_p1p1 * r __asm__ ("r0") = (ge_p1p1 *)r_p;
+    register const ge_p3 * p __asm__ ("r1") = (const ge_p3 *)p_p;
+    register const ge_cached* q __asm__ ("r2") = (const ge_cached*)q_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5871,10 +5905,10 @@ WC_OMIT_FRAME_POINTER void ge_sub(ge_p1p1 * r, const ge_p3 * p,
 WC_OMIT_FRAME_POINTER void sc_reduce(byte* s_p)
 #else
 WC_OMIT_FRAME_POINTER void sc_reduce(byte* s)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register byte* s asm ("r0") = (byte*)s_p;
+    register byte* s __asm__ ("r0") = (byte*)s_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5885,21 +5919,21 @@ WC_OMIT_FRAME_POINTER void sc_reduce(byte* s)
         "ldm	%[s], {r1, r2, r3, r4, r5, r6, r7, r8, r9}\n\t"
         "lsr	lr, r9, #24\n\t"
         "lsl	r9, r9, #4\n\t"
-        "orr	r9, r9, r8, LSR #28\n\t"
+        "orr	r9, r9, r8, lsr #28\n\t"
         "lsl	r8, r8, #4\n\t"
-        "orr	r8, r8, r7, LSR #28\n\t"
+        "orr	r8, r8, r7, lsr #28\n\t"
         "lsl	r7, r7, #4\n\t"
-        "orr	r7, r7, r6, LSR #28\n\t"
+        "orr	r7, r7, r6, lsr #28\n\t"
         "lsl	r6, r6, #4\n\t"
-        "orr	r6, r6, r5, LSR #28\n\t"
+        "orr	r6, r6, r5, lsr #28\n\t"
         "lsl	r5, r5, #4\n\t"
-        "orr	r5, r5, r4, LSR #28\n\t"
+        "orr	r5, r5, r4, lsr #28\n\t"
         "lsl	r4, r4, #4\n\t"
-        "orr	r4, r4, r3, LSR #28\n\t"
+        "orr	r4, r4, r3, lsr #28\n\t"
         "lsl	r3, r3, #4\n\t"
-        "orr	r3, r3, r2, LSR #28\n\t"
+        "orr	r3, r3, r2, lsr #28\n\t"
         "lsl	r2, r2, #4\n\t"
-        "orr	r2, r2, r1, LSR #28\n\t"
+        "orr	r2, r2, r1, lsr #28\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "bic	r9, r9, #0xf0000000\n\t"
 #else
@@ -6671,10 +6705,10 @@ WC_OMIT_FRAME_POINTER void sc_reduce(byte* s)
 WC_OMIT_FRAME_POINTER void sc_reduce(byte* s_p)
 #else
 WC_OMIT_FRAME_POINTER void sc_reduce(byte* s)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register byte* s asm ("r0") = (byte*)s_p;
+    register byte* s __asm__ ("r0") = (byte*)s_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -6685,21 +6719,21 @@ WC_OMIT_FRAME_POINTER void sc_reduce(byte* s)
         "ldm	%[s], {r1, r2, r3, r4, r5, r6, r7, r8, r9}\n\t"
         "lsr	lr, r9, #24\n\t"
         "lsl	r9, r9, #4\n\t"
-        "orr	r9, r9, r8, LSR #28\n\t"
+        "orr	r9, r9, r8, lsr #28\n\t"
         "lsl	r8, r8, #4\n\t"
-        "orr	r8, r8, r7, LSR #28\n\t"
+        "orr	r8, r8, r7, lsr #28\n\t"
         "lsl	r7, r7, #4\n\t"
-        "orr	r7, r7, r6, LSR #28\n\t"
+        "orr	r7, r7, r6, lsr #28\n\t"
         "lsl	r6, r6, #4\n\t"
-        "orr	r6, r6, r5, LSR #28\n\t"
+        "orr	r6, r6, r5, lsr #28\n\t"
         "lsl	r5, r5, #4\n\t"
-        "orr	r5, r5, r4, LSR #28\n\t"
+        "orr	r5, r5, r4, lsr #28\n\t"
         "lsl	r4, r4, #4\n\t"
-        "orr	r4, r4, r3, LSR #28\n\t"
+        "orr	r4, r4, r3, lsr #28\n\t"
         "lsl	r3, r3, #4\n\t"
-        "orr	r3, r3, r2, LSR #28\n\t"
+        "orr	r3, r3, r2, lsr #28\n\t"
         "lsl	r2, r2, #4\n\t"
-        "orr	r2, r2, r1, LSR #28\n\t"
+        "orr	r2, r2, r1, lsr #28\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "bic	r9, r9, #0xf0000000\n\t"
 #else
@@ -7346,13 +7380,13 @@ WC_OMIT_FRAME_POINTER void sc_muladd(byte* s_p, const byte* a_p,
 #else
 WC_OMIT_FRAME_POINTER void sc_muladd(byte* s, const byte* a, const byte* b,
     const byte* c)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register byte* s asm ("r0") = (byte*)s_p;
-    register const byte* a asm ("r1") = (const byte*)a_p;
-    register const byte* b asm ("r2") = (const byte*)b_p;
-    register const byte* c asm ("r3") = (const byte*)c_p;
+    register byte* s __asm__ ("r0") = (byte*)s_p;
+    register const byte* a __asm__ ("r1") = (const byte*)a_p;
+    register const byte* b __asm__ ("r2") = (const byte*)b_p;
+    register const byte* c __asm__ ("r3") = (const byte*)c_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -7714,21 +7748,21 @@ WC_OMIT_FRAME_POINTER void sc_muladd(byte* s, const byte* a, const byte* b,
         /* Get 252..503 and 504..507 */
         "lsr	lr, r9, #24\n\t"
         "lsl	r9, r9, #4\n\t"
-        "orr	r9, r9, r8, LSR #28\n\t"
+        "orr	r9, r9, r8, lsr #28\n\t"
         "lsl	r8, r8, #4\n\t"
-        "orr	r8, r8, r7, LSR #28\n\t"
+        "orr	r8, r8, r7, lsr #28\n\t"
         "lsl	r7, r7, #4\n\t"
-        "orr	r7, r7, r6, LSR #28\n\t"
+        "orr	r7, r7, r6, lsr #28\n\t"
         "lsl	r6, r6, #4\n\t"
-        "orr	r6, r6, r5, LSR #28\n\t"
+        "orr	r6, r6, r5, lsr #28\n\t"
         "lsl	r5, r5, #4\n\t"
-        "orr	r5, r5, r4, LSR #28\n\t"
+        "orr	r5, r5, r4, lsr #28\n\t"
         "lsl	r4, r4, #4\n\t"
-        "orr	r4, r4, %[c], LSR #28\n\t"
+        "orr	r4, r4, %[c], lsr #28\n\t"
         "lsl	%[c], %[c], #4\n\t"
-        "orr	%[c], %[c], %[b], LSR #28\n\t"
+        "orr	%[c], %[c], %[b], lsr #28\n\t"
         "lsl	%[b], %[b], #4\n\t"
-        "orr	%[b], %[b], %[a], LSR #28\n\t"
+        "orr	%[b], %[b], %[a], lsr #28\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "bic	r9, r9, #0xf0000000\n\t"
 #else
@@ -8508,13 +8542,13 @@ WC_OMIT_FRAME_POINTER void sc_muladd(byte* s_p, const byte* a_p,
 #else
 WC_OMIT_FRAME_POINTER void sc_muladd(byte* s, const byte* a, const byte* b,
     const byte* c)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register byte* s asm ("r0") = (byte*)s_p;
-    register const byte* a asm ("r1") = (const byte*)a_p;
-    register const byte* b asm ("r2") = (const byte*)b_p;
-    register const byte* c asm ("r3") = (const byte*)c_p;
+    register byte* s __asm__ ("r0") = (byte*)s_p;
+    register const byte* a __asm__ ("r1") = (const byte*)a_p;
+    register const byte* b __asm__ ("r2") = (const byte*)b_p;
+    register const byte* c __asm__ ("r3") = (const byte*)c_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -8649,21 +8683,21 @@ WC_OMIT_FRAME_POINTER void sc_muladd(byte* s, const byte* a, const byte* b,
         /* Get 252..503 and 504..507 */
         "lsr	lr, r9, #24\n\t"
         "lsl	r9, r9, #4\n\t"
-        "orr	r9, r9, r8, LSR #28\n\t"
+        "orr	r9, r9, r8, lsr #28\n\t"
         "lsl	r8, r8, #4\n\t"
-        "orr	r8, r8, r7, LSR #28\n\t"
+        "orr	r8, r8, r7, lsr #28\n\t"
         "lsl	r7, r7, #4\n\t"
-        "orr	r7, r7, r6, LSR #28\n\t"
+        "orr	r7, r7, r6, lsr #28\n\t"
         "lsl	r6, r6, #4\n\t"
-        "orr	r6, r6, r5, LSR #28\n\t"
+        "orr	r6, r6, r5, lsr #28\n\t"
         "lsl	r5, r5, #4\n\t"
-        "orr	r5, r5, r4, LSR #28\n\t"
+        "orr	r5, r5, r4, lsr #28\n\t"
         "lsl	r4, r4, #4\n\t"
-        "orr	r4, r4, %[c], LSR #28\n\t"
+        "orr	r4, r4, %[c], lsr #28\n\t"
         "lsl	%[c], %[c], #4\n\t"
-        "orr	%[c], %[c], %[b], LSR #28\n\t"
+        "orr	%[c], %[c], %[b], lsr #28\n\t"
         "lsl	%[b], %[b], #4\n\t"
-        "orr	%[b], %[b], %[a], LSR #28\n\t"
+        "orr	%[b], %[b], %[a], lsr #28\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "bic	r9, r9, #0xf0000000\n\t"
 #else

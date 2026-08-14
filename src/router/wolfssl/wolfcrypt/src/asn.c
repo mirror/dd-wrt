@@ -185,13 +185,13 @@ ASN Options:
  * HAVE_PKCS12:              Enable PKCS#12 support
  *
  * Algorithms (ASN encoding/decoding):
- * HAVE_DILITHIUM:           Enable Dilithium ASN support
- * WOLFSSL_DILITHIUM_NO_ASN1: Disable Dilithium ASN.1 encoding
- * WOLFSSL_DILITHIUM_FIPS204_DRAFT: FIPS 204 draft Dilithium
- * WOLFSSL_DILITHIUM_NO_SIGN: Disable Dilithium signing
- * WOLFSSL_DILITHIUM_NO_VERIFY: Disable Dilithium verify
+ * WOLFSSL_HAVE_MLDSA:       Enable ML-DSA ASN support
+ * WOLFSSL_MLDSA_NO_ASN1:    Disable ML-DSA ASN.1 encoding
+ * WOLFSSL_MLDSA_FIPS204_DRAFT: FIPS 204 draft ML-DSA
+ * WOLFSSL_MLDSA_NO_SIGN:    Disable ML-DSA signing
+ * WOLFSSL_MLDSA_NO_VERIFY:  Disable ML-DSA verify
  * HAVE_FALCON:              Enable Falcon ASN support
- * HAVE_SPHINCS:             Enable SPHINCS+ ASN support
+ * WOLFSSL_HAVE_SLHDSA:      Enable SLH-DSA ASN support
  *
  * Key Import/Export:
  * WC_ENABLE_ASYM_KEY_IMPORT: Enable asymmetric key import
@@ -274,11 +274,11 @@ ASN Options:
 #if defined(HAVE_FALCON)
     #include <wolfssl/wolfcrypt/falcon.h>
 #endif
-#if defined(HAVE_DILITHIUM)
-    #include <wolfssl/wolfcrypt/dilithium.h>
+#if defined(WOLFSSL_HAVE_MLDSA)
+    #include <wolfssl/wolfcrypt/wc_mldsa.h>
 #endif
-#if defined(HAVE_SPHINCS)
-    #include <wolfssl/wolfcrypt/sphincs.h>
+#if defined(WOLFSSL_HAVE_SLHDSA)
+    #include <wolfssl/wolfcrypt/wc_slhdsa.h>
 #endif
 
 #ifdef WOLFSSL_QNX_CAAM
@@ -864,8 +864,15 @@ int SizeASN_Items(const ASNItem* asn, ASNSetData *data, int count,
             case ASN_DATA_TYPE_MP:
                 /* Calculate the size of the MP integer data. */
                 length = mp_unsigned_bin_size(data[i].data.mp);
+                if (length < 0) {
+                    return ASN_PARSE_E;
+                }
                 length += mp_leading_bit(data[i].data.mp) ? 1 : 0;
                 len = (word32)SizeASNHeader((word32)length) + (word32)length;
+                /* Check for overflow: header + length must not wrap word32. */
+                if (len < (word32)length) {
+                    return ASN_PARSE_E;
+                }
                 break;
 
             case ASN_DATA_TYPE_REPLACE_BUFFER:
@@ -3458,6 +3465,13 @@ int GetShortInt(const byte* input, word32* inOutIdx, int* number, word32 maxIdx)
     if (len > 4)
         return ASN_PARSE_E;
 
+    /* to be consistent with GetASN_Integer */
+    #if (!defined(HAVE_SELFTEST) && !defined(HAVE_FIPS)) || \
+        (defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION > 2))
+    if (len == 0)
+        return ASN_PARSE_E;
+    #endif
+
     if (len + idx > maxIdx)
         return ASN_PARSE_E;
 
@@ -4347,7 +4361,7 @@ static int GetAlgoIdImpl(const byte* input, word32* inOutIdx, word32* oid, word3
 static int _RsaPrivateKeyDecode(const byte* input, word32* inOutIdx, RsaKey* key, int* keySz, word32 inSz);
 #endif
 #ifndef NO_DSA
-static int DsaKeyIntsToDer(DsaKey* key, byte* output, word32* inLen, int ints, int includeVersion);
+static int DsaKeyIntsToDer(DsaKey* key, byte* output, word32* outLen, int ints, int includeVersion);
 #endif
 #if defined(HAVE_ECC) && defined(HAVE_ECC_KEY_EXPORT)
 static int SetEccPublicKey(byte* output, ecc_key* key, int outLen, int with_header, int comp);
@@ -4375,7 +4389,8 @@ static int DecodeAltNames(const byte* input, word32 sz, DecodedCert* cert);
 static int DecodeCrlDist(const byte* input, word32 sz, DecodedCert* cert);
 static int DecodeAuthInfo(const byte* input, word32 sz, DecodedCert* cert);
 #ifndef IGNORE_NAME_CONSTRAINTS
-static int DecodeSubtree(const byte* input, word32 sz, Base_entry** head, word32 limit, void* heap);
+static int DecodeSubtree(const byte* input, word32 sz, Base_entry** head,
+                         word32 limit, byte* hasUnsupported, void* heap);
 static int DecodeNameConstraints(const byte* input, word32 sz, DecodedCert* cert);
 #endif
 #if defined(WOLFSSL_SEP) || defined(WOLFSSL_CERT_EXT)
@@ -4403,9 +4418,9 @@ static int EncodeName(EncodedName* name, const char* nameStr, byte nameTag, byte
 #endif
 #ifdef WOLFSSL_CERT_GEN
 static int SetValidity(byte* output, int daysValid);
-static int MakeAnyCert(Cert* cert, byte* derBuffer, word32 derSz, RsaKey* rsaKey, ecc_key* eccKey, WC_RNG* rng, DsaKey* dsaKey, ed25519_key* ed25519Key, ed448_key* ed448Key, falcon_key* falconKey, dilithium_key* dilithiumKey, sphincs_key* sphincsKey);
+static int MakeAnyCert(Cert* cert, byte* derBuffer, word32 derSz, RsaKey* rsaKey, ecc_key* eccKey, WC_RNG* rng, DsaKey* dsaKey, ed25519_key* ed25519Key, ed448_key* ed448Key, falcon_key* falconKey, wc_MlDsaKey* mldsaKey, SlhDsaKey* slhDsaKey, LmsKey* lmsKey, XmssKey* xmssKey);
 #ifdef WOLFSSL_CERT_REQ
-static int MakeCertReq(Cert* cert, byte* derBuffer, word32 derSz, RsaKey* rsaKey, DsaKey* dsaKey, ecc_key* eccKey, ed25519_key* ed25519Key, ed448_key* ed448Key, falcon_key* falconKey, dilithium_key* dilithiumKey, sphincs_key* sphincsKey);
+static int MakeCertReq(Cert* cert, byte* derBuffer, word32 derSz, RsaKey* rsaKey, DsaKey* dsaKey, ecc_key* eccKey, ed25519_key* ed25519Key, ed448_key* ed448Key, falcon_key* falconKey, wc_MlDsaKey* mldsaKey, SlhDsaKey* slhDsaKey, LmsKey* lmsKey, XmssKey* xmssKey);
 #endif
 #endif
 #endif
@@ -4466,6 +4481,12 @@ static int ParseCRL_Extensions(DecodedCRL* dcrl, const byte* buf, word32* inOutI
 #ifndef WOLFSSL_NOSHA3_512
     static const byte hashSha3_512hOid[] = {96, 134, 72, 1, 101, 3, 4, 2, 10};
 #endif /* WOLFSSL_NOSHA3_512 */
+#ifdef WOLFSSL_SHAKE128
+    static const byte hashShake128hOid[] = {96, 134, 72, 1, 101, 3, 4, 2, 11};
+#endif /* WOLFSSL_SHAKE128 */
+#ifdef WOLFSSL_SHAKE256
+    static const byte hashShake256hOid[] = {96, 134, 72, 1, 101, 3, 4, 2, 12};
+#endif /* WOLFSSL_SHAKE256 */
 #endif /* WOLFSSL_SHA3 */
 
 /* hmacType */
@@ -4571,14 +4592,14 @@ static int ParseCRL_Extensions(DecodedCRL* dcrl, const byte* buf, word32* inOutI
     static const byte sigEd448Oid[] = {43, 101, 113};
 #endif /* HAVE_ED448 */
 #ifdef HAVE_FALCON
-    /* Falcon Level 1: 1 3 9999 3 6 */
-    static const byte sigFalcon_Level1Oid[] = {43, 206, 15, 3, 6};
+    /* Falcon Level 1: 1 3 9999 3 11 */
+    static const byte sigFalcon_Level1Oid[] = {43, 206, 15, 3, 11};
 
-    /* Falcon Level 5: 1 3 9999 3 9 */
-    static const byte sigFalcon_Level5Oid[] = {43, 206, 15, 3, 9};
+    /* Falcon Level 5: 1 3 9999 3 14 */
+    static const byte sigFalcon_Level5Oid[] = {43, 206, 15, 3, 14};
 #endif /* HAVE_FALCON */
-#ifdef HAVE_DILITHIUM
-#ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+#ifdef WOLFSSL_HAVE_MLDSA
+#ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
     /* Dilithium Level 2: 1.3.6.1.4.1.2.267.12.4.4 */
     static const byte sigDilithium_Level2Oid[] =
         {43, 6, 1, 4, 1, 2, 130, 11, 12, 4, 4};
@@ -4590,45 +4611,57 @@ static int ParseCRL_Extensions(DecodedCRL* dcrl, const byte* buf, word32* inOutI
     /* Dilithium Level 5: 1.3.6.1.4.1.2.267.12.8.7 */
     static const byte sigDilithium_Level5Oid[] =
         {43, 6, 1, 4, 1, 2, 130, 11, 12, 8, 7};
-#endif /* WOLFSSL_DILITHIUM_FIPS204_DRAFT */
+#endif /* WOLFSSL_MLDSA_FIPS204_DRAFT */
 
-    /* ML-DSA Level 2: 2.16.840.1.101.3.4.3.17 */
-    static const byte sigMlDsa_Level2Oid[] =
+    /* ML-DSA-44: 2.16.840.1.101.3.4.3.17 */
+    static const byte sigMlDsa_44Oid[] =
         {96, 134, 72, 1, 101, 3, 4, 3, 17};
 
-    /* ML-DSA Level 3: 2.16.840.1.101.3.4.3.18 */
-    static const byte sigMlDsa_Level3Oid[] =
+    /* ML-DSA-65: 2.16.840.1.101.3.4.3.18 */
+    static const byte sigMlDsa_65Oid[] =
         {96, 134, 72, 1, 101, 3, 4, 3, 18};
 
-    /* ML-DSA Level 5: 2.16.840.1.101.3.4.3.19 */
-    static const byte sigMlDsa_Level5Oid[] =
+    /* ML-DSA-87: 2.16.840.1.101.3.4.3.19 */
+    static const byte sigMlDsa_87Oid[] =
         {96, 134, 72, 1, 101, 3, 4, 3, 19};
-#endif /* HAVE_DILITHIUM */
-#ifdef HAVE_SPHINCS
-    /* Sphincs Fast Level 1: 1 3 9999 6 7 4 */
-    static const byte sigSphincsFast_Level1Oid[] =
-        {43, 206, 15, 6, 7, 4};
-
-    /* Sphincs Fast Level 3: 1 3 9999 6 8 3 */
-    static const byte sigSphincsFast_Level3Oid[] =
-        {43, 206, 15, 6, 8, 3};
-
-    /* Sphincs Fast Level 5: 1 3 9999 6 9 3 */
-    static const byte sigSphincsFast_Level5Oid[] =
-        {43, 206, 15, 6, 9, 3};
-
-    /* Sphincs Small Level 1: 1 3 9999 6 7 10 */
-    static const byte sigSphincsSmall_Level1Oid[] =
-        {43, 206, 15, 6, 7, 10};
-
-    /* Sphincs Small Level 3: 1 3 9999 6 8 7 */
-    static const byte sigSphincsSmall_Level3Oid[] =
-        {43, 206, 15, 6, 8, 7};
-
-    /* Sphincs Small Level 5: 1 3 9999 6 9 7 */
-    static const byte sigSphincsSmall_Level5Oid[] =
-        {43, 206, 15, 6, 9, 7};
-#endif /* HAVE_SPHINCS */
+#endif /* WOLFSSL_HAVE_MLDSA */
+#ifdef WOLFSSL_HAVE_SLHDSA
+    /* SLH-DSA-SHA2-128s: 2.16.840.1.101.3.4.3.20 */
+    static const byte sigSlhDsa_Sha2_128sOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 20};
+    /* SLH-DSA-SHA2-128f: 2.16.840.1.101.3.4.3.21 */
+    static const byte sigSlhDsa_Sha2_128fOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 21};
+    /* SLH-DSA-SHA2-192s: 2.16.840.1.101.3.4.3.22 */
+    static const byte sigSlhDsa_Sha2_192sOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 22};
+    /* SLH-DSA-SHA2-192f: 2.16.840.1.101.3.4.3.23 */
+    static const byte sigSlhDsa_Sha2_192fOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 23};
+    /* SLH-DSA-SHA2-256s: 2.16.840.1.101.3.4.3.24 */
+    static const byte sigSlhDsa_Sha2_256sOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 24};
+    /* SLH-DSA-SHA2-256f: 2.16.840.1.101.3.4.3.25 */
+    static const byte sigSlhDsa_Sha2_256fOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 25};
+    /* SLH-DSA-SHAKE-128s: 2.16.840.1.101.3.4.3.26 */
+    static const byte sigSlhDsa_Shake_128sOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 26};
+    /* SLH-DSA-SHAKE-128f: 2.16.840.1.101.3.4.3.27 */
+    static const byte sigSlhDsa_Shake_128fOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 27};
+    /* SLH-DSA-SHAKE-192s: 2.16.840.1.101.3.4.3.28 */
+    static const byte sigSlhDsa_Shake_192sOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 28};
+    /* SLH-DSA-SHAKE-192f: 2.16.840.1.101.3.4.3.29 */
+    static const byte sigSlhDsa_Shake_192fOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 29};
+    /* SLH-DSA-SHAKE-256s: 2.16.840.1.101.3.4.3.30 */
+    static const byte sigSlhDsa_Shake_256sOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 30};
+    /* SLH-DSA-SHAKE-256f: 2.16.840.1.101.3.4.3.31 */
+    static const byte sigSlhDsa_Shake_256fOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 31};
+#endif /* WOLFSSL_HAVE_SLHDSA */
+#ifdef WOLFSSL_HAVE_LMS
+    /* RFC 9802 id-alg-hss-lms-hashsig: 1.2.840.113549.1.9.16.3.17 */
+    static const byte sigHssLmsOid[] =
+        {42, 134, 72, 134, 247, 13, 1, 9, 16, 3, 17};
+#endif /* WOLFSSL_HAVE_LMS */
+#ifdef WOLFSSL_HAVE_XMSS
+    /* RFC 9802 id-alg-xmss-hashsig: 1.3.6.1.5.5.7.6.34 */
+    static const byte sigXmssOid[] = {43, 6, 1, 5, 5, 7, 6, 34};
+    /* RFC 9802 id-alg-xmssmt-hashsig: 1.3.6.1.5.5.7.6.35 */
+    static const byte sigXmssMtOid[] = {43, 6, 1, 5, 5, 7, 6, 35};
+#endif /* WOLFSSL_HAVE_XMSS */
 
 /* keyType */
 #ifndef NO_DSA
@@ -4659,14 +4692,14 @@ static int ParseCRL_Extensions(DecodedCRL* dcrl, const byte* buf, word32* inOutI
     static const byte keyDhOid[] = {42, 134, 72, 134, 247, 13, 1, 3, 1};
 #endif /* !NO_DH */
 #ifdef HAVE_FALCON
-    /* Falcon Level 1: 1 3 9999 3 6 */
-    static const byte keyFalcon_Level1Oid[] = {43, 206, 15, 3, 6};
+    /* Falcon Level 1: 1 3 9999 3 11 */
+    static const byte keyFalcon_Level1Oid[] = {43, 206, 15, 3, 11};
 
-    /* Falcon Level 5: 1 3 9999 3 9 */
-    static const byte keyFalcon_Level5Oid[] = {43, 206, 15, 3, 9};
+    /* Falcon Level 5: 1 3 9999 3 14 */
+    static const byte keyFalcon_Level5Oid[] = {43, 206, 15, 3, 14};
 #endif /* HAVE_FALCON */
-#ifdef HAVE_DILITHIUM
-#ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+#ifdef WOLFSSL_HAVE_MLDSA
+#ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
     /* Dilithium Level 2: 1.3.6.1.4.1.2.267.12.4.4 */
     static const byte keyDilithium_Level2Oid[] =
         {43, 6, 1, 4, 1, 2, 130, 11, 12, 4, 4};
@@ -4680,43 +4713,297 @@ static int ParseCRL_Extensions(DecodedCRL* dcrl, const byte* buf, word32* inOutI
         {43, 6, 1, 4, 1, 2, 130, 11, 12, 8, 7};
 #endif
 
-    /* ML-DSA Level 2: 2.16.840.1.101.3.4.3.17 */
-    static const byte keyMlDsa_Level2Oid[] =
+    /* ML-DSA-44: 2.16.840.1.101.3.4.3.17 */
+    static const byte keyMlDsa_44Oid[] =
         {96, 134, 72, 1, 101, 3, 4, 3, 17};
 
-    /* ML-DSA Level 3: 2.16.840.1.101.3.4.3.18 */
-    static const byte keyMlDsa_Level3Oid[] =
+    /* ML-DSA-65: 2.16.840.1.101.3.4.3.18 */
+    static const byte keyMlDsa_65Oid[] =
         {96, 134, 72, 1, 101, 3, 4, 3, 18};
 
-    /* ML-DSA Level 5: 2.16.840.1.101.3.4.3.19 */
-    static const byte keyMlDsa_Level5Oid[] =
+    /* ML-DSA-87: 2.16.840.1.101.3.4.3.19 */
+    static const byte keyMlDsa_87Oid[] =
         {96, 134, 72, 1, 101, 3, 4, 3, 19};
-#endif /* HAVE_DILITHIUM */
-#ifdef HAVE_SPHINCS
-    /* Sphincs Fast Level 1: 1 3 9999 6 7 4 */
-    static const byte keySphincsFast_Level1Oid[] =
-        {43, 206, 15, 6, 7, 4};
+#endif /* WOLFSSL_HAVE_MLDSA */
+#ifdef WOLFSSL_HAVE_SLHDSA
+    /* SLH-DSA-SHA2-128s: 2.16.840.1.101.3.4.3.20 */
+    static const byte keySlhDsa_Sha2_128sOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 20};
+    /* SLH-DSA-SHA2-128f: 2.16.840.1.101.3.4.3.21 */
+    static const byte keySlhDsa_Sha2_128fOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 21};
+    /* SLH-DSA-SHA2-192s: 2.16.840.1.101.3.4.3.22 */
+    static const byte keySlhDsa_Sha2_192sOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 22};
+    /* SLH-DSA-SHA2-192f: 2.16.840.1.101.3.4.3.23 */
+    static const byte keySlhDsa_Sha2_192fOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 23};
+    /* SLH-DSA-SHA2-256s: 2.16.840.1.101.3.4.3.24 */
+    static const byte keySlhDsa_Sha2_256sOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 24};
+    /* SLH-DSA-SHA2-256f: 2.16.840.1.101.3.4.3.25 */
+    static const byte keySlhDsa_Sha2_256fOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 25};
+    /* SLH-DSA-SHAKE-128s: 2.16.840.1.101.3.4.3.26 */
+    static const byte keySlhDsa_Shake_128sOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 26};
+    /* SLH-DSA-SHAKE-128f: 2.16.840.1.101.3.4.3.27 */
+    static const byte keySlhDsa_Shake_128fOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 27};
+    /* SLH-DSA-SHAKE-192s: 2.16.840.1.101.3.4.3.28 */
+    static const byte keySlhDsa_Shake_192sOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 28};
+    /* SLH-DSA-SHAKE-192f: 2.16.840.1.101.3.4.3.29 */
+    static const byte keySlhDsa_Shake_192fOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 29};
+    /* SLH-DSA-SHAKE-256s: 2.16.840.1.101.3.4.3.30 */
+    static const byte keySlhDsa_Shake_256sOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 30};
+    /* SLH-DSA-SHAKE-256f: 2.16.840.1.101.3.4.3.31 */
+    static const byte keySlhDsa_Shake_256fOid[] = {96, 134, 72, 1, 101, 3, 4, 3, 31};
 
-    /* Sphincs Fast Level 3: 1 3 9999 6 8 3 */
-    static const byte keySphincsFast_Level3Oid[] =
-        {43, 206, 15, 6, 8, 3};
+/* Single source of truth for all SLH-DSA OID/param/cert-type mappings.
+ *
+ * Replaces the five parallel switches that each had to be kept in lockstep
+ * with the same set of WOLFSSL_SLHDSA_PARAM_NO_* macros. The `builtIn`
+ * column is the only place those macros appear now, so adding or
+ * disabling a variant is a one-line change.
+ *
+ * Rows for unbuilt variants are kept (with builtIn=0) so OID-keyed
+ * lookups can distinguish "known SLH-DSA OID, variant disabled"
+ * (NOT_COMPILED_IN) from "OID not recognised" (-1). Param-keyed lookups
+ * filter on builtIn=1 so disabled-variant params never escape.
+ *
+ * The certKeyType column carries cert_enums values (SLH_DSA_*_KEY) which
+ * are declared in asn.h only under WOLFSSL_CERT_GEN; the column and its
+ * single reader (SlhDsaParamToKeyType) are gated accordingly.
+ */
+typedef struct {
+    int param;       /* enum SlhDsaParam (held as int for uniformity). */
+    int oidKeySum;   /* SLH_DSA_*k from oid_sum.h. */
+#ifdef WOLFSSL_CERT_GEN
+    int certKeyType; /* SLH_DSA_*_KEY from cert_enums; cert generation only. */
+#endif
+    int certType;    /* SLH_DSA_*_TYPE from CertType (asn_public.h). */
+    int builtIn;     /* 1 if this variant is compiled in. */
+} SlhDsaOidMap;
 
-    /* Sphincs Fast Level 5: 1 3 9999 6 9 3 */
-    static const byte keySphincsFast_Level5Oid[] =
-        {43, 206, 15, 6, 9, 3};
+#if !defined(WOLFSSL_SLHDSA_PARAM_NO_128S)
+    #define SLHDSA_BUILT_128S 1
+#else
+    #define SLHDSA_BUILT_128S 0
+#endif
+#if !defined(WOLFSSL_SLHDSA_PARAM_NO_128F)
+    #define SLHDSA_BUILT_128F 1
+#else
+    #define SLHDSA_BUILT_128F 0
+#endif
+#if !defined(WOLFSSL_SLHDSA_PARAM_NO_192S)
+    #define SLHDSA_BUILT_192S 1
+#else
+    #define SLHDSA_BUILT_192S 0
+#endif
+#if !defined(WOLFSSL_SLHDSA_PARAM_NO_192F)
+    #define SLHDSA_BUILT_192F 1
+#else
+    #define SLHDSA_BUILT_192F 0
+#endif
+#if !defined(WOLFSSL_SLHDSA_PARAM_NO_256S)
+    #define SLHDSA_BUILT_256S 1
+#else
+    #define SLHDSA_BUILT_256S 0
+#endif
+#if !defined(WOLFSSL_SLHDSA_PARAM_NO_256F)
+    #define SLHDSA_BUILT_256F 1
+#else
+    #define SLHDSA_BUILT_256F 0
+#endif
 
-    /* Sphincs Small Level 1: 1 3 9999 6 7 10 */
-    static const byte keySphincsSmall_Level1Oid[] =
-        {43, 206, 15, 6, 7, 10};
+#if defined(WOLFSSL_SLHDSA_SHA2) && \
+    !defined(WOLFSSL_SLHDSA_PARAM_NO_SHA2_128S)
+    #define SLHDSA_BUILT_SHA2_128S 1
+#else
+    #define SLHDSA_BUILT_SHA2_128S 0
+#endif
+#if defined(WOLFSSL_SLHDSA_SHA2) && \
+    !defined(WOLFSSL_SLHDSA_PARAM_NO_SHA2_128F)
+    #define SLHDSA_BUILT_SHA2_128F 1
+#else
+    #define SLHDSA_BUILT_SHA2_128F 0
+#endif
+#if defined(WOLFSSL_SLHDSA_SHA2) && \
+    !defined(WOLFSSL_SLHDSA_PARAM_NO_SHA2_192S)
+    #define SLHDSA_BUILT_SHA2_192S 1
+#else
+    #define SLHDSA_BUILT_SHA2_192S 0
+#endif
+#if defined(WOLFSSL_SLHDSA_SHA2) && \
+    !defined(WOLFSSL_SLHDSA_PARAM_NO_SHA2_192F)
+    #define SLHDSA_BUILT_SHA2_192F 1
+#else
+    #define SLHDSA_BUILT_SHA2_192F 0
+#endif
+#if defined(WOLFSSL_SLHDSA_SHA2) && \
+    !defined(WOLFSSL_SLHDSA_PARAM_NO_SHA2_256S)
+    #define SLHDSA_BUILT_SHA2_256S 1
+#else
+    #define SLHDSA_BUILT_SHA2_256S 0
+#endif
+#if defined(WOLFSSL_SLHDSA_SHA2) && \
+    !defined(WOLFSSL_SLHDSA_PARAM_NO_SHA2_256F)
+    #define SLHDSA_BUILT_SHA2_256F 1
+#else
+    #define SLHDSA_BUILT_SHA2_256F 0
+#endif
 
-    /* Sphincs Small Level 3: 1 3 9999 6 8 7 */
-    static const byte keySphincsSmall_Level3Oid[] =
-        {43, 206, 15, 6, 8, 7};
+/* Helper to keep the row literals readable while certKeyType is
+ * conditional on WOLFSSL_CERT_GEN. */
+#ifdef WOLFSSL_CERT_GEN
+    #define SLHDSA_OID_ROW(p, k, certK, t, b) { (p), (k), (certK), (t), (b) }
+#else
+    #define SLHDSA_OID_ROW(p, k, certK, t, b) { (p), (k), (t), (b) }
+#endif
 
-    /* Sphincs Small Level 5: 1 3 9999 6 9 7 */
-    static const byte keySphincsSmall_Level5Oid[] =
-        {43, 206, 15, 6, 9, 7};
-#endif /* HAVE_SPHINCS */
+/* SHA2 rows: in non-SHA2 builds the public enum SlhDsaParam doesn't
+ * declare SLHDSA_SHA2_*, so substitute -1 (a value no real param can
+ * take) for the param column and discard the macro arg. The OID is still
+ * present, so wc_SlhDsaOidToParam(SLH_DSA_SHA2_*k) returns NOT_COMPILED_IN
+ * (via builtIn=0) instead of -1 (unknown). The sentinel never escapes
+ * because lookups by param go through builtIn=1 rows only. */
+#ifdef WOLFSSL_SLHDSA_SHA2
+    #define SLHDSA_SHA2_OID_ROW(p, k, certK, t, b) \
+        SLHDSA_OID_ROW(p, k, certK, t, b)
+#else
+    #define SLHDSA_SHA2_OID_ROW(p, k, certK, t, b) \
+        SLHDSA_OID_ROW(-1, k, certK, t, b)
+#endif
+
+static const SlhDsaOidMap slhDsaOidMap[] = {
+    SLHDSA_OID_ROW(SLHDSA_SHAKE128S, SLH_DSA_SHAKE_128Sk,
+        SLH_DSA_SHAKE_128S_KEY, SLH_DSA_SHAKE_128S_TYPE, SLHDSA_BUILT_128S),
+    SLHDSA_OID_ROW(SLHDSA_SHAKE128F, SLH_DSA_SHAKE_128Fk,
+        SLH_DSA_SHAKE_128F_KEY, SLH_DSA_SHAKE_128F_TYPE, SLHDSA_BUILT_128F),
+    SLHDSA_OID_ROW(SLHDSA_SHAKE192S, SLH_DSA_SHAKE_192Sk,
+        SLH_DSA_SHAKE_192S_KEY, SLH_DSA_SHAKE_192S_TYPE, SLHDSA_BUILT_192S),
+    SLHDSA_OID_ROW(SLHDSA_SHAKE192F, SLH_DSA_SHAKE_192Fk,
+        SLH_DSA_SHAKE_192F_KEY, SLH_DSA_SHAKE_192F_TYPE, SLHDSA_BUILT_192F),
+    SLHDSA_OID_ROW(SLHDSA_SHAKE256S, SLH_DSA_SHAKE_256Sk,
+        SLH_DSA_SHAKE_256S_KEY, SLH_DSA_SHAKE_256S_TYPE, SLHDSA_BUILT_256S),
+    SLHDSA_OID_ROW(SLHDSA_SHAKE256F, SLH_DSA_SHAKE_256Fk,
+        SLH_DSA_SHAKE_256F_KEY, SLH_DSA_SHAKE_256F_TYPE, SLHDSA_BUILT_256F),
+    SLHDSA_SHA2_OID_ROW(SLHDSA_SHA2_128S, SLH_DSA_SHA2_128Sk,
+        SLH_DSA_SHA2_128S_KEY, SLH_DSA_SHA2_128S_TYPE, SLHDSA_BUILT_SHA2_128S),
+    SLHDSA_SHA2_OID_ROW(SLHDSA_SHA2_128F, SLH_DSA_SHA2_128Fk,
+        SLH_DSA_SHA2_128F_KEY, SLH_DSA_SHA2_128F_TYPE, SLHDSA_BUILT_SHA2_128F),
+    SLHDSA_SHA2_OID_ROW(SLHDSA_SHA2_192S, SLH_DSA_SHA2_192Sk,
+        SLH_DSA_SHA2_192S_KEY, SLH_DSA_SHA2_192S_TYPE, SLHDSA_BUILT_SHA2_192S),
+    SLHDSA_SHA2_OID_ROW(SLHDSA_SHA2_192F, SLH_DSA_SHA2_192Fk,
+        SLH_DSA_SHA2_192F_KEY, SLH_DSA_SHA2_192F_TYPE, SLHDSA_BUILT_SHA2_192F),
+    SLHDSA_SHA2_OID_ROW(SLHDSA_SHA2_256S, SLH_DSA_SHA2_256Sk,
+        SLH_DSA_SHA2_256S_KEY, SLH_DSA_SHA2_256S_TYPE, SLHDSA_BUILT_SHA2_256S),
+    SLHDSA_SHA2_OID_ROW(SLHDSA_SHA2_256F, SLH_DSA_SHA2_256Fk,
+        SLH_DSA_SHA2_256F_KEY, SLH_DSA_SHA2_256F_TYPE, SLHDSA_BUILT_SHA2_256F)
+};
+
+#define SLHDSA_OID_MAP_LEN \
+    ((int)(sizeof(slhDsaOidMap) / sizeof(slhDsaOidMap[0])))
+
+/* Map SLH-DSA OID key type (SLH_DSA_*k) to enum SlhDsaParam.
+ *
+ * A known OID whose parameter set is disabled returns NOT_COMPILED_IN so
+ * callers can render a "variant unavailable" diagnostic; an unknown OID
+ * returns -1. */
+int wc_SlhDsaOidToParam(int oid)
+{
+    int i;
+    for (i = 0; i < SLHDSA_OID_MAP_LEN; i++) {
+        if (slhDsaOidMap[i].oidKeySum == oid) {
+            return slhDsaOidMap[i].builtIn ? slhDsaOidMap[i].param
+                                           : NOT_COMPILED_IN;
+        }
+    }
+    return -1;
+}
+
+/* Map SLH-DSA OID key type (SLH_DSA_*k) to CertType (SLH_DSA_*_TYPE).
+ *
+ * Returns NOT_COMPILED_IN for a known but disabled OID; -1 for unknown. */
+int wc_SlhDsaOidToCertType(int oid)
+{
+    int i;
+    for (i = 0; i < SLHDSA_OID_MAP_LEN; i++) {
+        if (slhDsaOidMap[i].oidKeySum == oid) {
+            return slhDsaOidMap[i].builtIn ? slhDsaOidMap[i].certType
+                                           : NOT_COMPILED_IN;
+        }
+    }
+    return -1;
+}
+
+/* True if oid is any SLH-DSA OID, even one whose parameter set is not
+ * built. The x509 dispatch uses this to route to the SLH-DSA branch so
+ * unbuilt-variant errors surface as NOT_COMPILED_IN rather than the
+ * generic "No public key found" diagnostic. */
+int wc_IsSlhDsaOid(int oid)
+{
+    int i;
+    for (i = 0; i < SLHDSA_OID_MAP_LEN; i++) {
+        if (slhDsaOidMap[i].oidKeySum == oid) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* Map enum SlhDsaParam to its OID Key_Sum identifier (SLH_DSA_*k).
+ *
+ * Symmetric with wc_SlhDsaOidToParam: a known SLH-DSA param whose
+ * variant is disabled returns NOT_COMPILED_IN; an unknown / out-of-range
+ * value returns BAD_FUNC_ARG. */
+int wc_SlhDsaParamToOid(enum SlhDsaParam param)
+{
+    int i;
+    for (i = 0; i < SLHDSA_OID_MAP_LEN; i++) {
+        if (slhDsaOidMap[i].param == (int)param) {
+            return slhDsaOidMap[i].builtIn ? slhDsaOidMap[i].oidKeySum
+                                           : NOT_COMPILED_IN;
+        }
+    }
+    return BAD_FUNC_ARG;
+}
+
+#if defined(WOLFSSL_CERT_GEN) || defined(WOLFSSL_CERT_REQ)
+/* True if certType (SLH_DSA_*_TYPE) is any built-in SLH-DSA cert key
+ * type. */
+static int IsSlhDsaKeyType(int certType)
+{
+    int i;
+    for (i = 0; i < SLHDSA_OID_MAP_LEN; i++) {
+        if (slhDsaOidMap[i].builtIn &&
+                slhDsaOidMap[i].certType == certType) {
+            return 1;
+        }
+    }
+    return 0;
+}
+#endif /* WOLFSSL_CERT_GEN || WOLFSSL_CERT_REQ */
+
+#ifdef WOLFSSL_CERT_GEN
+/* Map enum SlhDsaParam to Cert keyType identifier (SLH_DSA_*_KEY), or 0
+ * on unknown / unbuilt. */
+static int SlhDsaParamToKeyType(enum SlhDsaParam param)
+{
+    int i;
+    for (i = 0; i < SLHDSA_OID_MAP_LEN; i++) {
+        if (slhDsaOidMap[i].builtIn &&
+                slhDsaOidMap[i].param == (int)param) {
+            return slhDsaOidMap[i].certKeyType;
+        }
+    }
+    return 0;
+}
+#endif /* WOLFSSL_CERT_GEN */
+#endif /* WOLFSSL_HAVE_SLHDSA */
+#ifdef WOLFSSL_HAVE_LMS
+    /* RFC 9802 id-alg-hss-lms-hashsig: 1.2.840.113549.1.9.16.3.17 */
+    static const byte keyHssLmsOid[] =
+        {42, 134, 72, 134, 247, 13, 1, 9, 16, 3, 17};
+#endif /* WOLFSSL_HAVE_LMS */
+#ifdef WOLFSSL_HAVE_XMSS
+    /* RFC 9802 id-alg-xmss-hashsig: 1.3.6.1.5.5.7.6.34 */
+    static const byte keyXmssOid[] = {43, 6, 1, 5, 5, 7, 6, 34};
+    /* RFC 9802 id-alg-xmssmt-hashsig: 1.3.6.1.5.5.7.6.35 */
+    static const byte keyXmssMtOid[] = {43, 6, 1, 5, 5, 7, 6, 35};
+#endif /* WOLFSSL_HAVE_XMSS */
 
 /* curveType */
 #ifdef HAVE_ECC
@@ -5339,6 +5626,18 @@ const byte* OidFromId(word32 id, word32 type, word32* oidSz)
                     *oidSz = sizeof(hashSha3_512hOid);
                     break;
             #endif /* WOLFSSL_NOSHA3_512 */
+            #ifdef WOLFSSL_SHAKE128
+                case SHAKE128h:
+                    oid = hashShake128hOid;
+                    *oidSz = sizeof(hashShake128hOid);
+                    break;
+            #endif /* WOLFSSL_SHAKE128 */
+            #ifdef WOLFSSL_SHAKE256
+                case SHAKE256h:
+                    oid = hashShake256hOid;
+                    *oidSz = sizeof(hashShake256hOid);
+                    break;
+            #endif /* WOLFSSL_SHAKE256 */
             #endif /* WOLFSSL_SHA3 */
                 default:
                     break;
@@ -5519,8 +5818,8 @@ const byte* OidFromId(word32 id, word32 type, word32* oidSz)
                     *oidSz = sizeof(sigFalcon_Level5Oid);
                     break;
                 #endif /* HAVE_FALCON */
-            #ifdef HAVE_DILITHIUM
-                #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+            #ifdef WOLFSSL_HAVE_MLDSA
+                #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
                 case CTC_DILITHIUM_LEVEL2:
                     oid = sigDilithium_Level2Oid;
                     *oidSz = sizeof(sigDilithium_Level2Oid);
@@ -5534,45 +5833,85 @@ const byte* OidFromId(word32 id, word32 type, word32* oidSz)
                     *oidSz = sizeof(sigDilithium_Level5Oid);
                     break;
                 #endif
-                case CTC_ML_DSA_LEVEL2:
-                    oid = sigMlDsa_Level2Oid;
-                    *oidSz = sizeof(sigMlDsa_Level2Oid);
+                case CTC_ML_DSA_44:
+                    oid = sigMlDsa_44Oid;
+                    *oidSz = sizeof(sigMlDsa_44Oid);
                     break;
-                case CTC_ML_DSA_LEVEL3:
-                    oid = sigMlDsa_Level3Oid;
-                    *oidSz = sizeof(sigMlDsa_Level3Oid);
+                case CTC_ML_DSA_65:
+                    oid = sigMlDsa_65Oid;
+                    *oidSz = sizeof(sigMlDsa_65Oid);
                     break;
-                case CTC_ML_DSA_LEVEL5:
-                    oid = sigMlDsa_Level5Oid;
-                    *oidSz = sizeof(sigMlDsa_Level5Oid);
+                case CTC_ML_DSA_87:
+                    oid = sigMlDsa_87Oid;
+                    *oidSz = sizeof(sigMlDsa_87Oid);
                     break;
-            #endif /* HAVE_DILITHIUM */
-                #ifdef HAVE_SPHINCS
-                case CTC_SPHINCS_FAST_LEVEL1:
-                    oid = sigSphincsFast_Level1Oid;
-                    *oidSz = sizeof(sigSphincsFast_Level1Oid);
+            #endif /* WOLFSSL_HAVE_MLDSA */
+            #ifdef WOLFSSL_HAVE_SLHDSA
+                case CTC_SLH_DSA_SHA2_128S:
+                    oid = sigSlhDsa_Sha2_128sOid;
+                    *oidSz = sizeof(sigSlhDsa_Sha2_128sOid);
                     break;
-                case CTC_SPHINCS_FAST_LEVEL3:
-                    oid = sigSphincsFast_Level3Oid;
-                    *oidSz = sizeof(sigSphincsFast_Level3Oid);
+                case CTC_SLH_DSA_SHA2_128F:
+                    oid = sigSlhDsa_Sha2_128fOid;
+                    *oidSz = sizeof(sigSlhDsa_Sha2_128fOid);
                     break;
-                case CTC_SPHINCS_FAST_LEVEL5:
-                    oid = sigSphincsFast_Level5Oid;
-                    *oidSz = sizeof(sigSphincsFast_Level5Oid);
+                case CTC_SLH_DSA_SHA2_192S:
+                    oid = sigSlhDsa_Sha2_192sOid;
+                    *oidSz = sizeof(sigSlhDsa_Sha2_192sOid);
                     break;
-                case CTC_SPHINCS_SMALL_LEVEL1:
-                    oid = sigSphincsSmall_Level1Oid;
-                    *oidSz = sizeof(sigSphincsSmall_Level1Oid);
+                case CTC_SLH_DSA_SHA2_192F:
+                    oid = sigSlhDsa_Sha2_192fOid;
+                    *oidSz = sizeof(sigSlhDsa_Sha2_192fOid);
                     break;
-                case CTC_SPHINCS_SMALL_LEVEL3:
-                    oid = sigSphincsSmall_Level3Oid;
-                    *oidSz = sizeof(sigSphincsSmall_Level3Oid);
+                case CTC_SLH_DSA_SHA2_256S:
+                    oid = sigSlhDsa_Sha2_256sOid;
+                    *oidSz = sizeof(sigSlhDsa_Sha2_256sOid);
                     break;
-                case CTC_SPHINCS_SMALL_LEVEL5:
-                    oid = sigSphincsSmall_Level5Oid;
-                    *oidSz = sizeof(sigSphincsSmall_Level5Oid);
+                case CTC_SLH_DSA_SHA2_256F:
+                    oid = sigSlhDsa_Sha2_256fOid;
+                    *oidSz = sizeof(sigSlhDsa_Sha2_256fOid);
                     break;
-                #endif /* HAVE_SPHINCS */
+                case CTC_SLH_DSA_SHAKE_128S:
+                    oid = sigSlhDsa_Shake_128sOid;
+                    *oidSz = sizeof(sigSlhDsa_Shake_128sOid);
+                    break;
+                case CTC_SLH_DSA_SHAKE_128F:
+                    oid = sigSlhDsa_Shake_128fOid;
+                    *oidSz = sizeof(sigSlhDsa_Shake_128fOid);
+                    break;
+                case CTC_SLH_DSA_SHAKE_192S:
+                    oid = sigSlhDsa_Shake_192sOid;
+                    *oidSz = sizeof(sigSlhDsa_Shake_192sOid);
+                    break;
+                case CTC_SLH_DSA_SHAKE_192F:
+                    oid = sigSlhDsa_Shake_192fOid;
+                    *oidSz = sizeof(sigSlhDsa_Shake_192fOid);
+                    break;
+                case CTC_SLH_DSA_SHAKE_256S:
+                    oid = sigSlhDsa_Shake_256sOid;
+                    *oidSz = sizeof(sigSlhDsa_Shake_256sOid);
+                    break;
+                case CTC_SLH_DSA_SHAKE_256F:
+                    oid = sigSlhDsa_Shake_256fOid;
+                    *oidSz = sizeof(sigSlhDsa_Shake_256fOid);
+                    break;
+            #endif /* WOLFSSL_HAVE_SLHDSA */
+            #ifdef WOLFSSL_HAVE_LMS
+                case CTC_HSS_LMS:
+                    oid = sigHssLmsOid;
+                    *oidSz = sizeof(sigHssLmsOid);
+                    break;
+            #endif /* WOLFSSL_HAVE_LMS */
+            #ifdef WOLFSSL_HAVE_XMSS
+                case CTC_XMSS:
+                    oid = sigXmssOid;
+                    *oidSz = sizeof(sigXmssOid);
+                    break;
+                case CTC_XMSSMT:
+                    oid = sigXmssMtOid;
+                    *oidSz = sizeof(sigXmssMtOid);
+                    break;
+            #endif /* WOLFSSL_HAVE_XMSS */
                 default:
                     break;
             }
@@ -5644,8 +5983,8 @@ const byte* OidFromId(word32 id, word32 type, word32* oidSz)
                     *oidSz = sizeof(keyFalcon_Level5Oid);
                     break;
                 #endif /* HAVE_FALCON */
-            #ifdef HAVE_DILITHIUM
-                #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+            #ifdef WOLFSSL_HAVE_MLDSA
+                #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
                 case DILITHIUM_LEVEL2k:
                     oid = keyDilithium_Level2Oid;
                     *oidSz = sizeof(keyDilithium_Level2Oid);
@@ -5659,45 +5998,85 @@ const byte* OidFromId(word32 id, word32 type, word32* oidSz)
                     *oidSz = sizeof(keyDilithium_Level5Oid);
                     break;
                 #endif
-                case ML_DSA_LEVEL2k:
-                    oid = keyMlDsa_Level2Oid;
-                    *oidSz = sizeof(keyMlDsa_Level2Oid);
+                case ML_DSA_44k:
+                    oid = keyMlDsa_44Oid;
+                    *oidSz = sizeof(keyMlDsa_44Oid);
                     break;
-                case ML_DSA_LEVEL3k:
-                    oid = keyMlDsa_Level3Oid;
-                    *oidSz = sizeof(keyMlDsa_Level3Oid);
+                case ML_DSA_65k:
+                    oid = keyMlDsa_65Oid;
+                    *oidSz = sizeof(keyMlDsa_65Oid);
                     break;
-                case ML_DSA_LEVEL5k:
-                    oid = keyMlDsa_Level5Oid;
-                    *oidSz = sizeof(keyMlDsa_Level5Oid);
+                case ML_DSA_87k:
+                    oid = keyMlDsa_87Oid;
+                    *oidSz = sizeof(keyMlDsa_87Oid);
                     break;
-            #endif /* HAVE_DILITHIUM */
-                #ifdef HAVE_SPHINCS
-                case SPHINCS_FAST_LEVEL1k:
-                    oid = keySphincsFast_Level1Oid;
-                    *oidSz = sizeof(keySphincsFast_Level1Oid);
+            #endif /* WOLFSSL_HAVE_MLDSA */
+            #ifdef WOLFSSL_HAVE_SLHDSA
+                case SLH_DSA_SHA2_128Sk:
+                    oid = keySlhDsa_Sha2_128sOid;
+                    *oidSz = sizeof(keySlhDsa_Sha2_128sOid);
                     break;
-                case SPHINCS_FAST_LEVEL3k:
-                    oid = keySphincsFast_Level3Oid;
-                    *oidSz = sizeof(keySphincsFast_Level3Oid);
+                case SLH_DSA_SHA2_128Fk:
+                    oid = keySlhDsa_Sha2_128fOid;
+                    *oidSz = sizeof(keySlhDsa_Sha2_128fOid);
                     break;
-                case SPHINCS_FAST_LEVEL5k:
-                    oid = keySphincsFast_Level5Oid;
-                    *oidSz = sizeof(keySphincsFast_Level5Oid);
+                case SLH_DSA_SHA2_192Sk:
+                    oid = keySlhDsa_Sha2_192sOid;
+                    *oidSz = sizeof(keySlhDsa_Sha2_192sOid);
                     break;
-                case SPHINCS_SMALL_LEVEL1k:
-                    oid = keySphincsSmall_Level1Oid;
-                    *oidSz = sizeof(keySphincsSmall_Level1Oid);
+                case SLH_DSA_SHA2_192Fk:
+                    oid = keySlhDsa_Sha2_192fOid;
+                    *oidSz = sizeof(keySlhDsa_Sha2_192fOid);
                     break;
-                case SPHINCS_SMALL_LEVEL3k:
-                    oid = keySphincsSmall_Level3Oid;
-                    *oidSz = sizeof(keySphincsSmall_Level3Oid);
+                case SLH_DSA_SHA2_256Sk:
+                    oid = keySlhDsa_Sha2_256sOid;
+                    *oidSz = sizeof(keySlhDsa_Sha2_256sOid);
                     break;
-                case SPHINCS_SMALL_LEVEL5k:
-                    oid = keySphincsSmall_Level5Oid;
-                    *oidSz = sizeof(keySphincsSmall_Level5Oid);
+                case SLH_DSA_SHA2_256Fk:
+                    oid = keySlhDsa_Sha2_256fOid;
+                    *oidSz = sizeof(keySlhDsa_Sha2_256fOid);
                     break;
-                #endif /* HAVE_SPHINCS */
+                case SLH_DSA_SHAKE_128Sk:
+                    oid = keySlhDsa_Shake_128sOid;
+                    *oidSz = sizeof(keySlhDsa_Shake_128sOid);
+                    break;
+                case SLH_DSA_SHAKE_128Fk:
+                    oid = keySlhDsa_Shake_128fOid;
+                    *oidSz = sizeof(keySlhDsa_Shake_128fOid);
+                    break;
+                case SLH_DSA_SHAKE_192Sk:
+                    oid = keySlhDsa_Shake_192sOid;
+                    *oidSz = sizeof(keySlhDsa_Shake_192sOid);
+                    break;
+                case SLH_DSA_SHAKE_192Fk:
+                    oid = keySlhDsa_Shake_192fOid;
+                    *oidSz = sizeof(keySlhDsa_Shake_192fOid);
+                    break;
+                case SLH_DSA_SHAKE_256Sk:
+                    oid = keySlhDsa_Shake_256sOid;
+                    *oidSz = sizeof(keySlhDsa_Shake_256sOid);
+                    break;
+                case SLH_DSA_SHAKE_256Fk:
+                    oid = keySlhDsa_Shake_256fOid;
+                    *oidSz = sizeof(keySlhDsa_Shake_256fOid);
+                    break;
+            #endif /* WOLFSSL_HAVE_SLHDSA */
+            #ifdef WOLFSSL_HAVE_LMS
+                case HSS_LMSk:
+                    oid = keyHssLmsOid;
+                    *oidSz = sizeof(keyHssLmsOid);
+                    break;
+            #endif /* WOLFSSL_HAVE_LMS */
+            #ifdef WOLFSSL_HAVE_XMSS
+                case XMSSk:
+                    oid = keyXmssOid;
+                    *oidSz = sizeof(keyXmssOid);
+                    break;
+                case XMSSMTk:
+                    oid = keyXmssMtOid;
+                    *oidSz = sizeof(keyXmssMtOid);
+                    break;
+            #endif /* WOLFSSL_HAVE_XMSS */
                 default:
                     break;
             }
@@ -7237,43 +7616,23 @@ static int GetOID(const byte* input, word32* inOutIdx, word32* oid,
 {
     int    ret = 0;
     word32 idx = *inOutIdx;
-#ifndef NO_VERIFY_OID
     word32 actualOidSz;
     const byte* actualOid;
+#ifndef NO_VERIFY_OID
     const byte* checkOid = NULL;
     word32 checkOidSz;
 #endif /* NO_VERIFY_OID */
 #ifdef WOLFSSL_OLD_OID_SUM
-#if defined(HAVE_SPHINCS) || defined(WOLFSSL_FPKI)
+#if defined(WOLFSSL_FPKI)
     word32 found_collision = 0;
 #endif
 #endif
     (void)oidType;
     *oid = 0;
 
-#if !defined(NO_VERIFY_OID) || defined(WOLFSSL_FPKI)
-    /* Keep references to OID data and length for check. */
+    /* Keep references to OID data and length for sum and (optional) check. */
     actualOid = &input[idx];
     actualOidSz = (word32)length;
-#endif /* NO_VERIFY_OID */
-
-#ifdef WOLFSSL_OLD_OID_SUM
-#if defined(HAVE_SPHINCS)
-    /* Since we are summing it up, there could be collisions...and indeed there
-     * are: SPHINCS_FAST_LEVEL1 and SPHINCS_FAST_LEVEL3.
-     *
-     * We will look for the special case of SPHINCS_FAST_LEVEL3 and set *oid to
-     * 283 instead of 281; 282 is taken.
-     *
-     * These hacks will hopefully disappear when new standardized OIDs appear.
-     */
-    if (idx + (word32)sizeof(sigSphincsFast_Level3Oid) < (word32)length &&
-            XMEMCMP(&input[idx], sigSphincsFast_Level3Oid,
-               sizeof(sigSphincsFast_Level3Oid)) == 0) {
-        found_collision = SPHINCS_FAST_LEVEL3k;
-    }
-#endif /* HAVE_SPHINCS */
-#endif
 
     *oid = wc_oid_sum(actualOid, (int)actualOidSz);
     idx += actualOidSz;
@@ -7288,11 +7647,11 @@ static int GetOID(const byte* input, word32* inOutIdx, word32* oid,
     }
 #endif
 
-#if defined(HAVE_SPHINCS) || defined(WOLFSSL_FPKI)
+#if defined(WOLFSSL_FPKI)
     if (found_collision) {
         *oid = found_collision;
     }
-#endif /* HAVE_SPHINCS */
+#endif /* WOLFSSL_FPKI */
 #endif
 
     /* Return the index after the OID data. */
@@ -7715,6 +8074,9 @@ static int DecodeRsaPssParams(const byte* params, word32 sz,
 {
     DECL_ASNGETDATA(dataASN, rsaPssParamsASN_Length);
     int ret = 0;
+#ifndef WOLFSSL_NO_ASN_STRICT
+    word16 trailerVal = 1;
+#endif
     word16 sLen = 20;
 
     /* Default values. */
@@ -7730,6 +8092,10 @@ static int DecodeRsaPssParams(const byte* params, word32 sz,
         GetASN_OID(&dataASN[RSAPSSPARAMSASN_IDX_MGFHOID], oidHashType);
         /* Place the salt length into 16-bit var sLen. */
         GetASN_Int16Bit(&dataASN[RSAPSSPARAMSASN_IDX_SALTLENINT], &sLen);
+#ifndef WOLFSSL_NO_ASN_STRICT
+        /* Capture trailerField value for RFC 8017 A.2.3 validation. */
+        GetASN_Int16Bit(&dataASN[RSAPSSPARAMSASN_IDX_TRAILERINT], &trailerVal);
+#endif
         /* Decode the algorithm identifier. */
         ret = GetASN_Items(rsaPssParamsASN, dataASN, rsaPssParamsASN_Length, 1,
             params, &inOutIdx, sz);
@@ -7746,6 +8112,15 @@ static int DecodeRsaPssParams(const byte* params, word32 sz,
         word32 oid = dataASN[RSAPSSPARAMSASN_IDX_MGFHOID].data.oid.sum;
         ret = RsaPssHashOidToMgf1(oid, mgf);
     }
+#ifndef WOLFSSL_NO_ASN_STRICT
+    /* RFC 8017 A.2.3: trailerField SHALL be trailerFieldBC(1). */
+    if ((ret == 0) && (dataASN[RSAPSSPARAMSASN_IDX_TRAILERINT].tag != 0)) {
+        if (trailerVal != 1) {
+            WOLFSSL_MSG("DecodeRsaPssParams: trailerField must be 1");
+            ret = ASN_PARSE_E;
+        }
+    }
+#endif
     if (ret == 0) {
         *saltLen = sLen;
     }
@@ -7892,12 +8267,26 @@ static int DecodeRsaPssParams(const byte* params, word32 sz,
             }
             if (ret == 0) {
                 ret = GetInteger16Bit(params, &idx, sz);
+#ifndef WOLFSSL_NO_ASN_STRICT
+                /* RFC 8017 A.2.3: trailerField SHALL be trailerFieldBC(1). */
+                if (ret == 1) {
+                    ret = 0;
+                }
+                else if (ret >= 0) {
+                    WOLFSSL_MSG("DecodeRsaPssParams: trailerField must be 1");
+                    ret = ASN_PARSE_E;
+                }
+                else {
+                    WOLFSSL_MSG("DecodeRsaPssParams: fail at trailer_value");
+                }
+#else
                 if (ret > 0) {
                     ret = 0;
                 }
                 else if (ret != 0) {
                     WOLFSSL_MSG("DecodeRsaPssParams: fail at trailer_value");
                 }
+#endif
             }
         }
     }
@@ -8297,9 +8686,61 @@ static int _RsaPrivateKeyDecode(const byte* input, word32* inOutIdx,
 int wc_RsaPrivateKeyDecode(const byte* input, word32* inOutIdx, RsaKey* key,
     word32 inSz)
 {
-    if (key == NULL) {
+#if defined(WOLF_CRYPTO_CB) && defined(WOLF_CRYPTO_CB_SETKEY)
+    int cbRet = WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE);
+    int tmpErr = 0;
+    word32 tmpIdx;
+    WC_DECLARE_VAR(tmpKey, RsaKey, 1, NULL);
+#endif
+
+    if (key == NULL || input == NULL || inOutIdx == NULL) {
         return BAD_FUNC_ARG;
     }
+
+#if defined(WOLF_CRYPTO_CB) && defined(WOLF_CRYPTO_CB_SETKEY)
+    #ifndef WOLF_CRYPTO_CB_FIND
+    if (key->devId != INVALID_DEVID)
+    #endif
+    {
+        tmpIdx = *inOutIdx;
+
+        WC_ALLOC_VAR(tmpKey, RsaKey, 1, key->heap);
+        if (!WC_VAR_OK(tmpKey)) {
+            return MEMORY_E;
+        }
+        XMEMSET(tmpKey, 0, sizeof(RsaKey));
+
+        tmpErr = wc_InitRsaKey_ex(tmpKey, key->heap, INVALID_DEVID);
+        if (tmpErr != 0) {
+            WC_FREE_VAR(tmpKey, key->heap);
+            return tmpErr;
+        }
+
+        /* Decode into temp key (software-only, no callback recursion
+         * since tmpKey has INVALID_DEVID) */
+        tmpErr = _RsaPrivateKeyDecode(input, &tmpIdx, tmpKey, NULL, inSz);
+        if (tmpErr == 0) {
+            cbRet = wc_CryptoCb_SetKey(key->devId,
+                WC_SETKEY_RSA_PRIV, key, tmpKey,
+                wc_RsaEncryptSize(tmpKey), NULL, 0, 0);
+        }
+
+        /* wc_FreeRsaKey calls mp_forcezero on all private key components,
+         * so no separate ForceZero of the struct is needed here. */
+        wc_FreeRsaKey(tmpKey);
+        WC_FREE_VAR(tmpKey, key->heap);
+
+        if (tmpErr != 0) {
+            return tmpErr;
+        }
+        if (cbRet != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE)) {
+            *inOutIdx = tmpIdx;
+            return cbRet;
+        }
+        /* CRYPTOCB_UNAVAILABLE: fall through to software import */
+    }
+#endif
+
     return _RsaPrivateKeyDecode(input, inOutIdx, key, NULL, inSz);
 }
 
@@ -8332,9 +8773,8 @@ int wc_RsaPrivateKeyValidate(const byte* input, word32* inOutIdx, int* keySz,
 #endif /* NO_RSA */
 
 #ifdef WOLFSSL_ASN_TEMPLATE
-/* ASN.1 template for a PKCS #8 key.
- * Ignoring optional attributes and public key.
- * PKCS #8: RFC 5958, 2 - PrivateKeyInfo
+/* ASN.1 template for a PKCS #8 PrivateKeyInfo / RFC 5958 OneAsymmetricKey.
+ * Includes the optional [0] attributes and [1] publicKey trailing fields.
  */
 static const ASNItem pkcs8KeyASN[] = {
 /*  SEQ                 */    { 0, ASN_SEQUENCE, 1, 1, 0 },
@@ -8347,9 +8787,10 @@ static const ASNItem pkcs8KeyASN[] = {
 /*  PKEY_ALGO_PARAM_SEQ */            { 2, ASN_SEQUENCE, 1, 0, 1 },
 #endif
 /*  PKEY_DATA           */        { 1, ASN_OCTET_STRING, 0, 0, 0 },
-/*  OPTIONAL Attributes IMPLICIT [0] */
+/*  Attributes [0] OPTIONAL */
                                   { 1, ASN_CONTEXT_SPECIFIC | 0, 1, 0, 1 },
-/* [[2: publicKey        [1] PublicKey OPTIONAL ]] */
+/*  publicKey [1] OPTIONAL */
+                                  { 1, ASN_CONTEXT_SPECIFIC | 1, 0, 0, 1 },
 };
 enum {
     PKCS8KEYASN_IDX_SEQ = 0,
@@ -8363,6 +8804,7 @@ enum {
 #endif
     PKCS8KEYASN_IDX_PKEY_DATA,
     PKCS8KEYASN_IDX_PKEY_ATTRIBUTES,
+    PKCS8KEYASN_IDX_PKEY_PUBKEY,
     WOLF_ENUM_DUMMY_LAST_ELEMENT(PKCS8KEYASN_IDX)
 };
 
@@ -8422,11 +8864,13 @@ int ToTraditionalInline_ex2(const byte* input, word32* inOutIdx, word32 sz,
         /* Key type OID. */
         oid = dataASN[PKCS8KEYASN_IDX_PKEY_ALGO_OID_KEY].data.oid.sum;
 
-        /* Version 1 includes an optional public key.
-         * If public key is included then the parsing will fail as it did not
-         * use all the data.
-         */
+        /* Only v1(0) and v2(1) are supported (RFC 5958). The [1] publicKey
+         * trailer is permitted only when version == v1. */
         if (version > PKCS8v1) {
+            ret = ASN_PARSE_E;
+        }
+        else if ((version < PKCS8v1) &&
+                 (dataASN[PKCS8KEYASN_IDX_PKEY_PUBKEY].tag != 0)) {
             ret = ASN_PARSE_E;
         }
     }
@@ -8524,9 +8968,71 @@ int ToTraditionalInline_ex2(const byte* input, word32* inOutIdx, word32 sz,
                 }
                 break;
         #endif
-            /* DSAk not supported. */
-            /* Falcon, Dilithium and Sphincs not supported. */
-            /* Ignore OID lookup failures. */
+        #ifdef HAVE_FALCON
+            case FALCON_LEVEL1k:
+            case FALCON_LEVEL5k:
+                /* Neither NULL item nor OBJECT_ID item allowed. */
+                if ((dataASN[PKCS8KEYASN_IDX_PKEY_ALGO_NULL].tag != 0) ||
+                    (dataASN[PKCS8KEYASN_IDX_PKEY_ALGO_OID_CURVE].tag != 0)) {
+                    ret = ASN_PARSE_E;
+                }
+                break;
+        #endif
+        #ifdef HAVE_DILITHIUM
+            #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+            case DILITHIUM_LEVEL2k:
+            case DILITHIUM_LEVEL3k:
+            case DILITHIUM_LEVEL5k:
+            #endif
+            case ML_DSA_LEVEL2k:
+            case ML_DSA_LEVEL3k:
+            case ML_DSA_LEVEL5k:
+                /* Neither NULL item nor OBJECT_ID item allowed. */
+                if ((dataASN[PKCS8KEYASN_IDX_PKEY_ALGO_NULL].tag != 0) ||
+                    (dataASN[PKCS8KEYASN_IDX_PKEY_ALGO_OID_CURVE].tag != 0)) {
+                    ret = ASN_PARSE_E;
+                }
+                break;
+        #endif
+        #ifdef WOLFSSL_HAVE_SLHDSA
+            case SLH_DSA_SHA2_128Sk:
+            case SLH_DSA_SHA2_128Fk:
+            case SLH_DSA_SHA2_192Sk:
+            case SLH_DSA_SHA2_192Fk:
+            case SLH_DSA_SHA2_256Sk:
+            case SLH_DSA_SHA2_256Fk:
+            case SLH_DSA_SHAKE_128Sk:
+            case SLH_DSA_SHAKE_128Fk:
+            case SLH_DSA_SHAKE_192Sk:
+            case SLH_DSA_SHAKE_192Fk:
+            case SLH_DSA_SHAKE_256Sk:
+            case SLH_DSA_SHAKE_256Fk:
+                /* Neither NULL item nor OBJECT_ID item allowed. */
+                if ((dataASN[PKCS8KEYASN_IDX_PKEY_ALGO_NULL].tag != 0) ||
+                    (dataASN[PKCS8KEYASN_IDX_PKEY_ALGO_OID_CURVE].tag != 0)) {
+                    ret = ASN_PARSE_E;
+                }
+                break;
+        #endif
+        #ifdef WOLFSSL_HAVE_LMS
+            case HSS_LMSk:
+                /* Neither NULL item nor OBJECT_ID item allowed. */
+                if ((dataASN[PKCS8KEYASN_IDX_PKEY_ALGO_NULL].tag != 0) ||
+                    (dataASN[PKCS8KEYASN_IDX_PKEY_ALGO_OID_CURVE].tag != 0)) {
+                    ret = ASN_PARSE_E;
+                }
+                break;
+        #endif
+        #ifdef WOLFSSL_HAVE_XMSS
+            case XMSSk:
+                /* Neither NULL item nor OBJECT_ID item allowed. */
+                if ((dataASN[PKCS8KEYASN_IDX_PKEY_ALGO_NULL].tag != 0) ||
+                    (dataASN[PKCS8KEYASN_IDX_PKEY_ALGO_OID_CURVE].tag != 0)) {
+                    ret = ASN_PARSE_E;
+                }
+                break;
+        #endif
+            /* Other OIDs (DSAk), no parameter validation. */
             default:
                 break;
         }
@@ -8626,9 +9132,9 @@ int wc_GetPkcs8TraditionalOffset(byte* input, word32* inOutIdx, word32 sz)
 int wc_CreatePKCS8Key(byte* out, word32* outSz, byte* key, word32 keySz,
         int algoID, const byte* curveOID, word32 oidSz)
 {
-    /* pkcs8KeyASN_Length-1, the -1 is because we are not adding the optional
-     * set of attributes */
-    DECL_ASNSETDATA(dataASN, pkcs8KeyASN_Length-1);
+    /* pkcs8KeyASN_Length-2, the -2 is because we are not adding the optional
+     * set of attributes or publicKey */
+    DECL_ASNSETDATA(dataASN, pkcs8KeyASN_Length-2);
     word32 sz = 0;
     int ret = 0;
     word32 keyIdx = 0;
@@ -8655,7 +9161,7 @@ int wc_CreatePKCS8Key(byte* out, word32* outSz, byte* key, word32 keySz,
 #endif
 
     if (ret == 0)
-        CALLOC_ASNSETDATA(dataASN, pkcs8KeyASN_Length-1, ret, NULL);
+        CALLOC_ASNSETDATA(dataASN, pkcs8KeyASN_Length-2, ret, NULL);
 
     if (ret == 0) {
         /* Only support default PKCS #8 format - v0. */
@@ -8681,7 +9187,7 @@ int wc_CreatePKCS8Key(byte* out, word32* outSz, byte* key, word32 keySz,
         SetASN_Buffer(&dataASN[PKCS8KEYASN_IDX_PKEY_DATA], key, keySz);
 
         /* Get the size of the DER encoding. */
-        ret = SizeASN_Items(pkcs8KeyASN, dataASN, pkcs8KeyASN_Length-1, &sz);
+        ret = SizeASN_Items(pkcs8KeyASN, dataASN, pkcs8KeyASN_Length-2, &sz);
     }
     if ((ret == 0) || (ret == WC_NO_ERR_TRACE(LENGTH_ONLY_E))) {
         /* Always return the calculated size. */
@@ -8694,7 +9200,7 @@ int wc_CreatePKCS8Key(byte* out, word32* outSz, byte* key, word32 keySz,
     }
     if (ret == 0) {
         /*  Encode PKCS #8 key into buffer. */
-        SetASN_Items(pkcs8KeyASN, dataASN, pkcs8KeyASN_Length-1, out);
+        SetASN_Items(pkcs8KeyASN, dataASN, pkcs8KeyASN_Length-2, out);
         ret = (int)sz;
     }
 
@@ -8993,127 +9499,109 @@ int wc_CheckPrivateKey(const byte* privKey, word32 privKeySz,
     }
     else
     #endif /* HAVE_FALCON */
-#if defined(HAVE_DILITHIUM) && !defined(WOLFSSL_DILITHIUM_NO_SIGN) && \
-    !defined(WOLFSSL_DILITHIUM_NO_VERIFY) && !defined(WOLFSSL_DILITHIUM_NO_ASN1)
-    if ((ks == ML_DSA_LEVEL2k) ||
-        (ks == ML_DSA_LEVEL3k) ||
-        (ks == ML_DSA_LEVEL5k)
-    #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+#if defined(WOLFSSL_HAVE_MLDSA) && !defined(WOLFSSL_MLDSA_NO_SIGN) && \
+    !defined(WOLFSSL_MLDSA_NO_VERIFY) && !defined(WOLFSSL_MLDSA_NO_ASN1)
+    if ((ks == ML_DSA_44k) ||
+        (ks == ML_DSA_65k) ||
+        (ks == ML_DSA_87k)
+    #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
      || (ks == DILITHIUM_LEVEL2k)
      || (ks == DILITHIUM_LEVEL3k)
      || (ks == DILITHIUM_LEVEL5k)
     #endif
         ) {
-        WC_DECLARE_VAR(key_pair, dilithium_key, 1, 0);
+        WC_DECLARE_VAR(key_pair, wc_MlDsaKey, 1, 0);
         word32     keyIdx = 0;
 
-        WC_ALLOC_VAR_EX(key_pair, dilithium_key, 1, NULL,
-            DYNAMIC_TYPE_DILITHIUM, return MEMORY_E);
-        ret = wc_dilithium_init(key_pair);
+        WC_ALLOC_VAR_EX(key_pair, wc_MlDsaKey, 1, NULL,
+            DYNAMIC_TYPE_MLDSA, return MEMORY_E);
+        ret = wc_MlDsaKey_Init(key_pair, NULL, INVALID_DEVID);
         if (ret  < 0) {
-            WC_FREE_VAR_EX(key_pair, NULL, DYNAMIC_TYPE_DILITHIUM);
+            WC_FREE_VAR_EX(key_pair, NULL, DYNAMIC_TYPE_MLDSA);
             return ret;
         }
 
 
-        if (ks == ML_DSA_LEVEL2k) {
-            ret = wc_dilithium_set_level(key_pair, WC_ML_DSA_44);
+        if (ks == ML_DSA_44k) {
+            ret = wc_MlDsaKey_SetParams(key_pair, WC_ML_DSA_44);
         }
-        else if (ks == ML_DSA_LEVEL3k) {
-            ret = wc_dilithium_set_level(key_pair, WC_ML_DSA_65);
+        else if (ks == ML_DSA_65k) {
+            ret = wc_MlDsaKey_SetParams(key_pair, WC_ML_DSA_65);
         }
-        else if (ks == ML_DSA_LEVEL5k) {
-            ret = wc_dilithium_set_level(key_pair, WC_ML_DSA_87);
+        else if (ks == ML_DSA_87k) {
+            ret = wc_MlDsaKey_SetParams(key_pair, WC_ML_DSA_87);
         }
-    #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+    #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
         else if (ks == DILITHIUM_LEVEL2k) {
-            ret = wc_dilithium_set_level(key_pair, WC_ML_DSA_44_DRAFT);
+            ret = wc_MlDsaKey_SetParams(key_pair, WC_ML_DSA_44_DRAFT);
         }
         else if (ks == DILITHIUM_LEVEL3k) {
-            ret = wc_dilithium_set_level(key_pair, WC_ML_DSA_65_DRAFT);
+            ret = wc_MlDsaKey_SetParams(key_pair, WC_ML_DSA_65_DRAFT);
         }
         else if (ks == DILITHIUM_LEVEL5k) {
-            ret = wc_dilithium_set_level(key_pair, WC_ML_DSA_87_DRAFT);
+            ret = wc_MlDsaKey_SetParams(key_pair, WC_ML_DSA_87_DRAFT);
         }
     #endif
 
         if (ret  < 0) {
-            WC_FREE_VAR_EX(key_pair, NULL, DYNAMIC_TYPE_DILITHIUM);
+            WC_FREE_VAR_EX(key_pair, NULL, DYNAMIC_TYPE_MLDSA);
             return ret;
         }
-        if ((ret = wc_Dilithium_PrivateKeyDecode(privKey, &keyIdx, key_pair,
-                                             privKeySz)) == 0) {
-            WOLFSSL_MSG("Checking Dilithium key pair");
+        if ((ret = wc_MlDsaKey_PrivateKeyDecode(key_pair, privKey,
+                                             privKeySz, &keyIdx)) == 0) {
+            WOLFSSL_MSG("Checking ML-DSA key pair");
             keyIdx = 0;
-            if ((ret = wc_dilithium_import_public(pubKey, pubKeySz,
-                                               key_pair)) == 0) {
+            if ((ret = wc_MlDsaKey_ImportPubRaw(key_pair, pubKey,
+                                               pubKeySz)) == 0) {
                 /* Public and private extracted successfully. Sanity check. */
-                if ((ret = wc_dilithium_check_key(key_pair)) == 0)
+                if ((ret = wc_MlDsaKey_CheckKey(key_pair)) == 0)
                     ret = 1;
             }
         }
-        wc_dilithium_free(key_pair);
-        WC_FREE_VAR_EX(key_pair, NULL, DYNAMIC_TYPE_DILITHIUM);
+        wc_MlDsaKey_Free(key_pair);
+        WC_FREE_VAR_EX(key_pair, NULL, DYNAMIC_TYPE_MLDSA);
     }
     else
-#endif /* HAVE_DILITHIUM && !WOLFSSL_DILITHIUM_VERIFY_ONLY */
-    #if defined(HAVE_SPHINCS)
-    if ((ks == SPHINCS_FAST_LEVEL1k) ||
-        (ks == SPHINCS_FAST_LEVEL3k) ||
-        (ks == SPHINCS_FAST_LEVEL5k) ||
-        (ks == SPHINCS_SMALL_LEVEL1k) ||
-        (ks == SPHINCS_SMALL_LEVEL3k) ||
-        (ks == SPHINCS_SMALL_LEVEL5k)) {
-        WC_DECLARE_VAR(key_pair, sphincs_key, 1, 0);
+#endif /* WOLFSSL_HAVE_MLDSA && !WOLFSSL_MLDSA_VERIFY_ONLY */
+#if defined(WOLFSSL_HAVE_SLHDSA) && !defined(WOLFSSL_SLHDSA_VERIFY_ONLY)
+    if (wc_IsSlhDsaOid(ks)) {
+        WC_DECLARE_VAR(key_pair, SlhDsaKey, 1, 0);
         word32     keyIdx = 0;
+        int        slhDsaParam;
 
-        WC_ALLOC_VAR_EX(key_pair, sphincs_key, 1, NULL, DYNAMIC_TYPE_SPHINCS,
+        WC_ALLOC_VAR_EX(key_pair, SlhDsaKey, 1, NULL, DYNAMIC_TYPE_SLHDSA,
             return MEMORY_E);
-        ret = wc_sphincs_init(key_pair);
+
+        slhDsaParam = wc_SlhDsaOidToParam(ks);
+
+        if (slhDsaParam < 0) {
+            WC_FREE_VAR_EX(key_pair, NULL, DYNAMIC_TYPE_SLHDSA);
+            return NOT_COMPILED_IN;
+        }
+
+        ret = wc_SlhDsaKey_Init(key_pair, (enum SlhDsaParam)slhDsaParam,
+                                NULL, INVALID_DEVID);
         if (ret  < 0) {
-            WC_FREE_VAR_EX(key_pair, NULL, DYNAMIC_TYPE_SPHINCS);
+            WC_FREE_VAR_EX(key_pair, NULL, DYNAMIC_TYPE_SLHDSA);
             return ret;
         }
 
-        if (ks == SPHINCS_FAST_LEVEL1k) {
-            ret = wc_sphincs_set_level_and_optim(key_pair, 1, FAST_VARIANT);
-        }
-        else if (ks == SPHINCS_FAST_LEVEL3k) {
-            ret = wc_sphincs_set_level_and_optim(key_pair, 3, FAST_VARIANT);
-        }
-        else if (ks == SPHINCS_FAST_LEVEL5k) {
-            ret = wc_sphincs_set_level_and_optim(key_pair, 5, FAST_VARIANT);
-        }
-        else if (ks == SPHINCS_SMALL_LEVEL1k) {
-            ret = wc_sphincs_set_level_and_optim(key_pair, 1, SMALL_VARIANT);
-        }
-        else if (ks == SPHINCS_SMALL_LEVEL3k) {
-            ret = wc_sphincs_set_level_and_optim(key_pair, 3, SMALL_VARIANT);
-        }
-        else if (ks == SPHINCS_SMALL_LEVEL5k) {
-            ret = wc_sphincs_set_level_and_optim(key_pair, 5, SMALL_VARIANT);
-        }
-
-        if (ret  < 0) {
-            WC_FREE_VAR_EX(key_pair, NULL, DYNAMIC_TYPE_SPHINCS);
-            return ret;
-        }
-        if ((ret = wc_Sphincs_PrivateKeyDecode(privKey, &keyIdx, key_pair,
+        if ((ret = wc_SlhDsaKey_PrivateKeyDecode(privKey, &keyIdx, key_pair,
                                              privKeySz)) == 0) {
-            WOLFSSL_MSG("Checking Sphincs key pair");
+            WOLFSSL_MSG("Checking SLH-DSA key pair");
             keyIdx = 0;
-            if ((ret = wc_sphincs_import_public(pubKey, pubKeySz,
-                                               key_pair)) == 0) {
+            if ((ret = wc_SlhDsaKey_ImportPublic(key_pair, pubKey,
+                                               pubKeySz)) == 0) {
                 /* Public and private extracted successfully. Sanity check. */
-                if ((ret = wc_sphincs_check_key(key_pair)) == 0)
+                if ((ret = wc_SlhDsaKey_CheckKey(key_pair)) == 0)
                     ret = 1;
             }
         }
-        wc_sphincs_free(key_pair);
-        WC_FREE_VAR_EX(key_pair, NULL, DYNAMIC_TYPE_SPHINCS);
+        wc_SlhDsaKey_Free(key_pair);
+        WC_FREE_VAR_EX(key_pair, NULL, DYNAMIC_TYPE_SLHDSA);
     }
     else
-    #endif /* HAVE_SPHINCS */
+#endif /* WOLFSSL_HAVE_SLHDSA && !WOLFSSL_SLHDSA_VERIFY_ONLY */
     {
         ret = 0;
     }
@@ -9478,8 +9966,8 @@ int wc_GetKeyOID(byte* key, word32 keySz, const byte** curveOID, word32* oidSz,
             return MEMORY_E;
 
         if (wc_falcon_init(falcon) == 0) {
-            tmpIdx = 0;
-            if (wc_falcon_set_level(falcon, 1) == 0) {
+            if ((*algoID == 0) && (wc_falcon_set_level(falcon, 1) == 0)) {
+                tmpIdx = 0;
                 if (wc_Falcon_PrivateKeyDecode(key, &tmpIdx, falcon, keySz)
                     == 0) {
                     *algoID = FALCON_LEVEL1k;
@@ -9488,7 +9976,8 @@ int wc_GetKeyOID(byte* key, word32 keySz, const byte** curveOID, word32* oidSz,
                     WOLFSSL_MSG("Not Falcon Level 1 DER key");
                 }
             }
-            else if (wc_falcon_set_level(falcon, 5) == 0) {
+            if ((*algoID == 0) && (wc_falcon_set_level(falcon, 5) == 0)) {
+                tmpIdx = 0;
                 if (wc_Falcon_PrivateKeyDecode(key, &tmpIdx, falcon, keySz)
                     == 0) {
                     *algoID = FALCON_LEVEL5k;
@@ -9497,143 +9986,172 @@ int wc_GetKeyOID(byte* key, word32 keySz, const byte** curveOID, word32* oidSz,
                     WOLFSSL_MSG("Not Falcon Level 5 DER key");
                 }
             }
-            else {
-                WOLFSSL_MSG("GetKeyOID falcon initialization failed");
+            if (*algoID == 0) {
+                WOLFSSL_MSG("GetKeyOID could not match Falcon DER key");
             }
             wc_falcon_free(falcon);
         }
         XFREE(falcon, heap, DYNAMIC_TYPE_TMP_BUFFER);
     }
 #endif /* HAVE_FALCON */
-#if defined(HAVE_DILITHIUM) && !defined(WOLFSSL_DILITHIUM_NO_SIGN) && \
-    !defined(WOLFSSL_DILITHIUM_NO_VERIFY) && !defined(WOLFSSL_DILITHIUM_NO_ASN1)
+#if defined(WOLFSSL_HAVE_MLDSA) && !defined(WOLFSSL_MLDSA_NO_SIGN) && \
+    !defined(WOLFSSL_MLDSA_NO_VERIFY) && !defined(WOLFSSL_MLDSA_NO_ASN1)
     if (*algoID == 0) {
-        dilithium_key *dilithium = (dilithium_key *)XMALLOC(sizeof(*dilithium),
+        wc_MlDsaKey *mldsa = (wc_MlDsaKey *)XMALLOC(sizeof(*mldsa),
              heap, DYNAMIC_TYPE_TMP_BUFFER);
-        if (dilithium == NULL)
+        if (mldsa == NULL)
             return MEMORY_E;
 
-        /* wc_dilithium_init() returns 0 on success and a non-zero value on
+        /* wc_MlDsaKey_Init() returns 0 on success and a non-zero value on
          * failure. */
-        if (wc_dilithium_init(dilithium) == 0) {
+        if (wc_MlDsaKey_Init(mldsa, NULL, INVALID_DEVID) == 0) {
             if ((*algoID == 0) &&
-                (wc_dilithium_set_level(dilithium, WC_ML_DSA_44) == 0)) {
+                (wc_MlDsaKey_SetParams(mldsa, WC_ML_DSA_44) == 0)) {
                 tmpIdx = 0;
-                if (wc_Dilithium_PrivateKeyDecode(key, &tmpIdx, dilithium,
-                        keySz) == 0) {
-                    *algoID = ML_DSA_LEVEL2k;
+                if (wc_MlDsaKey_PrivateKeyDecode(mldsa, key, keySz,
+                        &tmpIdx) == 0) {
+                    *algoID = ML_DSA_44k;
                 }
                 else {
-                    WOLFSSL_MSG("Not Dilithium Level 2 DER key");
+                    WOLFSSL_MSG("Not ML-DSA-44 DER key");
                 }
             }
             if ((*algoID == 0) &&
-                (wc_dilithium_set_level(dilithium, WC_ML_DSA_65) == 0)) {
+                (wc_MlDsaKey_SetParams(mldsa, WC_ML_DSA_65) == 0)) {
                 tmpIdx = 0;
-                if (wc_Dilithium_PrivateKeyDecode(key, &tmpIdx, dilithium,
-                        keySz) == 0) {
-                    *algoID = ML_DSA_LEVEL3k;
+                if (wc_MlDsaKey_PrivateKeyDecode(mldsa, key, keySz,
+                        &tmpIdx) == 0) {
+                    *algoID = ML_DSA_65k;
                 }
                 else {
-                    WOLFSSL_MSG("Not Dilithium Level 3 DER key");
+                    WOLFSSL_MSG("Not ML-DSA-65 DER key");
                 }
             }
             if ((*algoID == 0) &&
-                (wc_dilithium_set_level(dilithium, WC_ML_DSA_87) == 0)) {
+                (wc_MlDsaKey_SetParams(mldsa, WC_ML_DSA_87) == 0)) {
                 tmpIdx = 0;
-                if (wc_Dilithium_PrivateKeyDecode(key, &tmpIdx, dilithium,
-                        keySz) == 0) {
-                    *algoID = ML_DSA_LEVEL5k;
+                if (wc_MlDsaKey_PrivateKeyDecode(mldsa, key, keySz,
+                        &tmpIdx) == 0) {
+                    *algoID = ML_DSA_87k;
                 }
                 else {
-                    WOLFSSL_MSG("Not Dilithium Level 5 DER key");
+                    WOLFSSL_MSG("Not ML-DSA-87 DER key");
                 }
             }
             if (*algoID == 0) {
-                WOLFSSL_MSG("GetKeyOID dilithium initialization failed");
+                WOLFSSL_MSG("GetKeyOID ML-DSA initialization failed");
             }
-            wc_dilithium_free(dilithium);
+            wc_MlDsaKey_Free(mldsa);
         }
-        XFREE(dilithium, heap, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(mldsa, heap, DYNAMIC_TYPE_TMP_BUFFER);
     }
-#endif /* HAVE_DILITHIUM && !WOLFSSL_DILITHIUM_VERIFY_ONLY */
-#if defined(HAVE_SPHINCS)
+#endif /* WOLFSSL_HAVE_MLDSA && !WOLFSSL_MLDSA_VERIFY_ONLY */
+#if defined(WOLFSSL_HAVE_SLHDSA) && !defined(WOLFSSL_SLHDSA_VERIFY_ONLY)
     if (*algoID == 0) {
-        sphincs_key *sphincs = (sphincs_key *)XMALLOC(sizeof(*sphincs),
+        enum SlhDsaParam placeholder;
+        SlhDsaKey *slhDsa = (SlhDsaKey *)XMALLOC(sizeof(*slhDsa),
              heap, DYNAMIC_TYPE_TMP_BUFFER);
-        if (sphincs == NULL)
+        if (slhDsa == NULL)
             return MEMORY_E;
 
-        if (wc_sphincs_init(sphincs) == 0) {
+        /* wc_SlhDsaKey_PrivateKeyDecode auto-detects the parameter set from
+         * the OID in the DER encoding, so a single call handles all twelve
+         * SLH-DSA variants. The initial parameter is only a placeholder;
+         * it is overwritten by the decoder. Pick whichever variant is
+         * compiled in so wc_SlhDsaKey_Init does not fail with
+         * NOT_COMPILED_IN when a specific variant (like 128F) is disabled. */
+    #if defined(WOLFSSL_SLHDSA_PARAM_128F)
+        placeholder = SLHDSA_SHAKE128F;
+    #elif defined(WOLFSSL_SLHDSA_PARAM_128S)
+        placeholder = SLHDSA_SHAKE128S;
+    #elif defined(WOLFSSL_SLHDSA_PARAM_192F)
+        placeholder = SLHDSA_SHAKE192F;
+    #elif defined(WOLFSSL_SLHDSA_PARAM_192S)
+        placeholder = SLHDSA_SHAKE192S;
+    #elif defined(WOLFSSL_SLHDSA_PARAM_256F)
+        placeholder = SLHDSA_SHAKE256F;
+    #elif defined(WOLFSSL_SLHDSA_PARAM_256S)
+        placeholder = SLHDSA_SHAKE256S;
+    #elif defined(WOLFSSL_SLHDSA_SHA2) && \
+          defined(WOLFSSL_SLHDSA_PARAM_SHA2_128F)
+        placeholder = SLHDSA_SHA2_128F;
+    #elif defined(WOLFSSL_SLHDSA_SHA2) && \
+          defined(WOLFSSL_SLHDSA_PARAM_SHA2_128S)
+        placeholder = SLHDSA_SHA2_128S;
+    #elif defined(WOLFSSL_SLHDSA_SHA2) && \
+          defined(WOLFSSL_SLHDSA_PARAM_SHA2_192F)
+        placeholder = SLHDSA_SHA2_192F;
+    #elif defined(WOLFSSL_SLHDSA_SHA2) && \
+          defined(WOLFSSL_SLHDSA_PARAM_SHA2_192S)
+        placeholder = SLHDSA_SHA2_192S;
+    #elif defined(WOLFSSL_SLHDSA_SHA2) && \
+          defined(WOLFSSL_SLHDSA_PARAM_SHA2_256F)
+        placeholder = SLHDSA_SHA2_256F;
+    #elif defined(WOLFSSL_SLHDSA_SHA2) && \
+          defined(WOLFSSL_SLHDSA_PARAM_SHA2_256S)
+        placeholder = SLHDSA_SHA2_256S;
+    #else
+        #error "WOLFSSL_HAVE_SLHDSA requires at least one parameter set"
+    #endif
+        if (wc_SlhDsaKey_Init(slhDsa, placeholder, NULL, INVALID_DEVID) == 0) {
             tmpIdx = 0;
-            if (wc_sphincs_set_level_and_optim(sphincs, 1, FAST_VARIANT)
-                == 0) {
-                if (wc_Sphincs_PrivateKeyDecode(key, &tmpIdx, sphincs,
+            if (wc_SlhDsaKey_PrivateKeyDecode(key, &tmpIdx, slhDsa,
                     keySz) == 0) {
-                    *algoID = SPHINCS_FAST_LEVEL1k;
-                }
-                else {
-                    WOLFSSL_MSG("Not Sphincs-fast Level 1 DER key");
-                }
-            }
-            else if (wc_sphincs_set_level_and_optim(sphincs, 3, FAST_VARIANT)
-                == 0) {
-                if (wc_Sphincs_PrivateKeyDecode(key, &tmpIdx, sphincs,
-                    keySz) == 0) {
-                    *algoID = SPHINCS_FAST_LEVEL3k;
-                }
-                else {
-                    WOLFSSL_MSG("Not Sphincs-fast Level 3 DER key");
-                }
-            }
-            else if (wc_sphincs_set_level_and_optim(sphincs, 5, FAST_VARIANT)
-                == 0) {
-                if (wc_Sphincs_PrivateKeyDecode(key, &tmpIdx, sphincs,
-                    keySz) == 0) {
-                    *algoID = SPHINCS_FAST_LEVEL5k;
-                }
-                else {
-                    WOLFSSL_MSG("Not Sphincs-fast Level 5 DER key");
-                }
-            }
-            else if (wc_sphincs_set_level_and_optim(sphincs, 1, SMALL_VARIANT)
-                == 0) {
-                if (wc_Sphincs_PrivateKeyDecode(key, &tmpIdx, sphincs,
-                    keySz) == 0) {
-                    *algoID = SPHINCS_SMALL_LEVEL1k;
-                }
-                else {
-                    WOLFSSL_MSG("Not Sphincs-small Level 1 DER key");
-                }
-            }
-            else if (wc_sphincs_set_level_and_optim(sphincs, 3, SMALL_VARIANT)
-                == 0) {
-                if (wc_Sphincs_PrivateKeyDecode(key, &tmpIdx, sphincs,
-                    keySz) == 0) {
-                    *algoID = SPHINCS_SMALL_LEVEL3k;
-                }
-                else {
-                    WOLFSSL_MSG("Not Sphincs-small Level 3 DER key");
-                }
-            }
-            else if (wc_sphincs_set_level_and_optim(sphincs, 5, SMALL_VARIANT)
-                == 0) {
-                if (wc_Sphincs_PrivateKeyDecode(key, &tmpIdx, sphincs,
-                    keySz) == 0) {
-                    *algoID = SPHINCS_SMALL_LEVEL5k;
-                }
-                else {
-                    WOLFSSL_MSG("Not Sphincs-small Level 5 DER key");
+                switch (slhDsa->params->param) {
+                    case SLHDSA_SHAKE128S:
+                        *algoID = SLH_DSA_SHAKE_128Sk;
+                        break;
+                    case SLHDSA_SHAKE128F:
+                        *algoID = SLH_DSA_SHAKE_128Fk;
+                        break;
+                    case SLHDSA_SHAKE192S:
+                        *algoID = SLH_DSA_SHAKE_192Sk;
+                        break;
+                    case SLHDSA_SHAKE192F:
+                        *algoID = SLH_DSA_SHAKE_192Fk;
+                        break;
+                    case SLHDSA_SHAKE256S:
+                        *algoID = SLH_DSA_SHAKE_256Sk;
+                        break;
+                    case SLHDSA_SHAKE256F:
+                        *algoID = SLH_DSA_SHAKE_256Fk;
+                        break;
+                #ifdef WOLFSSL_SLHDSA_SHA2
+                    case SLHDSA_SHA2_128S:
+                        *algoID = SLH_DSA_SHA2_128Sk;
+                        break;
+                    case SLHDSA_SHA2_128F:
+                        *algoID = SLH_DSA_SHA2_128Fk;
+                        break;
+                    case SLHDSA_SHA2_192S:
+                        *algoID = SLH_DSA_SHA2_192Sk;
+                        break;
+                    case SLHDSA_SHA2_192F:
+                        *algoID = SLH_DSA_SHA2_192Fk;
+                        break;
+                    case SLHDSA_SHA2_256S:
+                        *algoID = SLH_DSA_SHA2_256Sk;
+                        break;
+                    case SLHDSA_SHA2_256F:
+                        *algoID = SLH_DSA_SHA2_256Fk;
+                        break;
+                #endif
+                    default:
+                        WOLFSSL_MSG("Unexpected SLH-DSA parameter set");
+                        break;
                 }
             }
             else {
-                WOLFSSL_MSG("GetKeyOID sphincs initialization failed");
+                WOLFSSL_MSG("Not an SLH-DSA DER key");
             }
-            wc_sphincs_free(sphincs);
+            wc_SlhDsaKey_Free(slhDsa);
         }
-        XFREE(sphincs, heap, DYNAMIC_TYPE_TMP_BUFFER);
+        else {
+            WOLFSSL_MSG("GetKeyOID SLH-DSA initialization failed");
+        }
+        XFREE(slhDsa, heap, DYNAMIC_TYPE_TMP_BUFFER);
     }
-#endif /* HAVE_SPHINCS */
+#endif /* WOLFSSL_HAVE_SLHDSA && !WOLFSSL_SLHDSA_VERIFY_ONLY */
 
     /* if flag is not set then this is not a key that we understand. */
     if (*algoID == 0) {
@@ -11731,14 +12249,14 @@ int wc_SetDsaPublicKey(byte* output, DsaKey* key, int outLen, int with_header)
  *          encoding size.
  * @return  MEMORY_E when dynamic memory allocation fails.
  */
-int wc_DsaKeyToPublicDer(DsaKey* key, byte* output, word32 inLen)
+int wc_DsaKeyToPublicDer(DsaKey* key, byte* output, word32 outLen)
 {
-    return wc_SetDsaPublicKey(output, key, (int)inLen, 1);
+    return wc_SetDsaPublicKey(output, key, (int)outLen, 1);
 }
 #endif /* !HAVE_SELFTEST && (WOLFSSL_KEY_GEN || WOLFSSL_CERT_GEN) */
 
 #ifdef WOLFSSL_ASN_TEMPLATE
-static int DsaKeyIntsToDer(DsaKey* key, byte* output, word32* inLen,
+static int DsaKeyIntsToDer(DsaKey* key, byte* output, word32* outLen,
                            int ints, int includeVersion)
 {
     DECL_ASNSETDATA(dataASN, dsaKeyASN_Length);
@@ -11747,7 +12265,7 @@ static int DsaKeyIntsToDer(DsaKey* key, byte* output, word32* inLen,
 
     (void)ints;
 
-    if ((key == NULL) || (inLen == NULL)) {
+    if ((key == NULL) || (outLen == NULL)) {
         ret = BAD_FUNC_ARG;
     }
     if ((ret == 0) && (ints > DSA_INTS)) {
@@ -11779,11 +12297,11 @@ static int DsaKeyIntsToDer(DsaKey* key, byte* output, word32* inLen,
         ret = SizeASN_Items(dsaKeyASN, dataASN, dsaKeyASN_Length, &sz);
     }
     if ((ret == 0) && (output == NULL)) {
-        *inLen = sz;
+        *outLen = sz;
         ret = WC_NO_ERR_TRACE(LENGTH_ONLY_E);
     }
     /* Check buffer is big enough for encoding. */
-    if ((ret == 0) && (sz > *inLen)) {
+    if ((ret == 0) && (sz > *outLen)) {
         ret = BAD_FUNC_ARG;
     }
     if (ret == 0) {
@@ -11801,13 +12319,13 @@ static int DsaKeyIntsToDer(DsaKey* key, byte* output, word32* inLen,
  *
  * @param [in]  key          DSA key object.
  * @param [out] output       Buffer to hold encoded data.
- * @param [out] inLen        Length of buffer.
+ * @param [out] outLen       Length of buffer.
  * @return  Size of encoded data in bytes on success.
  * @return  BAD_FUNC_ARG when key or output is NULL, or key is not a private key
  *          or, buffer size is smaller than encoding size.
  * @return  MEMORY_E when dynamic memory allocation fails.
  */
-int wc_DsaKeyToDer(DsaKey* key, byte* output, word32 inLen)
+int wc_DsaKeyToDer(DsaKey* key, byte* output, word32 outLen)
 {
     if (!key || !output)
         return BAD_FUNC_ARG;
@@ -11815,29 +12333,29 @@ int wc_DsaKeyToDer(DsaKey* key, byte* output, word32 inLen)
     if (key->type != DSA_PRIVATE)
         return BAD_FUNC_ARG;
 
-    return DsaKeyIntsToDer(key, output, &inLen, DSA_INTS, 1);
+    return DsaKeyIntsToDer(key, output, &outLen, DSA_INTS, 1);
 }
 
-/* Convert DsaKey parameters to DER format, write to output (inLen),
+/* Convert DsaKey parameters to DER format, write to output (outLen),
    return bytes written. Version is excluded to be compatible with
    OpenSSL d2i_DSAparams */
-int wc_DsaKeyToParamsDer(DsaKey* key, byte* output, word32 inLen)
+int wc_DsaKeyToParamsDer(DsaKey* key, byte* output, word32 outLen)
 {
     if (!key || !output)
         return BAD_FUNC_ARG;
 
-    return DsaKeyIntsToDer(key, output, &inLen, DSA_PARAM_INTS, 0);
+    return DsaKeyIntsToDer(key, output, &outLen, DSA_PARAM_INTS, 0);
 }
 
 /* This version of the function allows output to be NULL. In that case, the
    DsaKeyIntsToDer will return WC_NO_ERR_TRACE(LENGTH_ONLY_E) and the required
-   output buffer size will be pointed to by inLen. */
-int wc_DsaKeyToParamsDer_ex(DsaKey* key, byte* output, word32* inLen)
+   output buffer size will be pointed to by outLen. */
+int wc_DsaKeyToParamsDer_ex(DsaKey* key, byte* output, word32* outLen)
 {
-    if (!key || !inLen)
+    if (!key || !outLen)
         return BAD_FUNC_ARG;
 
-    return DsaKeyIntsToDer(key, output, inLen, DSA_PARAM_INTS, 0);
+    return DsaKeyIntsToDer(key, output, outLen, DSA_PARAM_INTS, 0);
 }
 
 #endif /* NO_DSA */
@@ -12068,6 +12586,8 @@ void FreeDecodedCert(DecodedCert* cert)
         FreeAltNames(cert->altEmailNames, cert->heap);
     if (cert->altDirNames)
         FreeAltNames(cert->altDirNames, cert->heap);
+    if (cert->altOtherNamesRaw)
+        FreeAltNames(cert->altOtherNamesRaw, cert->heap);
     if (cert->permittedNames)
         FreeNameSubtrees(cert->permittedNames, cert->heap);
     if (cert->excludedNames)
@@ -12096,7 +12616,8 @@ void wc_FreeDecodedCert(DecodedCert* cert)
 }
 
 #if defined(HAVE_ED25519) || defined(HAVE_ED448) || defined(HAVE_FALCON) || \
-    defined(HAVE_DILITHIUM) || defined(HAVE_SPHINCS)
+    defined(WOLFSSL_HAVE_MLDSA) || defined(WOLFSSL_HAVE_SLHDSA) || \
+    defined(WOLFSSL_HAVE_LMS) || defined(WOLFSSL_HAVE_XMSS)
 /* Store the key data under the BIT_STRING in dynamically allocated data.
  *
  * @param [in, out] cert    Certificate object.
@@ -12366,23 +12887,23 @@ static int SetEccPublicKey(byte* output, ecc_key* key, int outLen,
  *
  * @param [in]  key            ECC key object.
  * @param [out] output         Buffer to hold DER encoding.
- * @param [in]  inLen          Size of buffer in bytes.
+ * @param [in]  outLen         Size of buffer in bytes.
  * @param [in]  with_AlgCurve  Whether to use SubjectPublicKeyInfo format.
  * @return  Size of encoded data in bytes on success.
  * @return  BAD_FUNC_ARG when key or key's parameters is NULL.
  * @return  MEMORY_E when dynamic memory allocation failed.
  */
 WOLFSSL_ABI
-int wc_EccPublicKeyToDer(ecc_key* key, byte* output, word32 inLen,
+int wc_EccPublicKeyToDer(ecc_key* key, byte* output, word32 outLen,
                                                               int with_AlgCurve)
 {
-    return SetEccPublicKey(output, key, (int)inLen, with_AlgCurve, 0);
+    return SetEccPublicKey(output, key, (int)outLen, with_AlgCurve, 0);
 }
 
-int wc_EccPublicKeyToDer_ex(ecc_key* key, byte* output, word32 inLen,
+int wc_EccPublicKeyToDer_ex(ecc_key* key, byte* output, word32 outLen,
                                                     int with_AlgCurve, int comp)
 {
-    return SetEccPublicKey(output, key, (int)inLen, with_AlgCurve, comp);
+    return SetEccPublicKey(output, key, (int)outLen, with_AlgCurve, comp);
 }
 
 int wc_EccPublicKeyDerSize(ecc_key* key, int with_AlgCurve)
@@ -12395,7 +12916,7 @@ int wc_EccPublicKeyDerSize(ecc_key* key, int with_AlgCurve)
 #ifdef WOLFSSL_ASN_TEMPLATE
 #if defined(WC_ENABLE_ASYM_KEY_EXPORT) || defined(WC_ENABLE_ASYM_KEY_IMPORT)
 /* ASN.1 template for the SubjectPublicKeyInfo of a general asymmetric key.
- * Used with Ed448/Ed25519, Curve448/Curve25519, SPHINCS+, falcon, dilithium,
+ * Used with Ed448/Ed25519, Curve448/Curve25519, SLH-DSA, falcon, dilithium,
  * etc.
  *
  * X.509: RFC 5280, 4.1 - SubjectPublicKeyInfo
@@ -12514,7 +13035,7 @@ int SetAsymKeyDerPublic(const byte* pubKey, word32 pubKeyLen,
  * @return  BAD_FUNC_ARG when key is NULL.
  * @return  MEMORY_E when dynamic memory allocation failed.
  */
-int wc_Ed25519PublicKeyToDer(const ed25519_key* key, byte* output, word32 inLen,
+int wc_Ed25519PublicKeyToDer(const ed25519_key* key, byte* output, word32 outLen,
                              int withAlg)
 {
     int    ret;
@@ -12531,7 +13052,7 @@ int wc_Ed25519PublicKeyToDer(const ed25519_key* key, byte* output, word32 inLen,
     ret = wc_ed25519_export_public(key, pubKey, &pubKeyLen);
     #endif
     if (ret == 0) {
-        ret = SetAsymKeyDerPublic(pubKey, pubKeyLen, output, inLen,
+        ret = SetAsymKeyDerPublic(pubKey, pubKeyLen, output, outLen,
             ED25519k, withAlg);
     }
     return ret;
@@ -12551,7 +13072,7 @@ int wc_Ed25519PublicKeyToDer(const ed25519_key* key, byte* output, word32 inLen,
  * @return  BAD_FUNC_ARG when key is NULL.
  * @return  MEMORY_E when dynamic memory allocation failed.
  */
-int wc_Ed448PublicKeyToDer(ed448_key* key, byte* output, word32 inLen,
+int wc_Ed448PublicKeyToDer(const ed448_key* key, byte* output, word32 outLen,
                            int withAlg)
 {
     int    ret;
@@ -12562,14 +13083,94 @@ int wc_Ed448PublicKeyToDer(ed448_key* key, byte* output, word32 inLen,
         return BAD_FUNC_ARG;
     }
 
+    #if defined(HAVE_FIPS) && FIPS_VERSION3_LT(7,0,0)
+    ret = wc_ed448_export_public((ed448_key *)key, pubKey, &pubKeyLen);
+    #else
     ret = wc_ed448_export_public(key, pubKey, &pubKeyLen);
+    #endif
     if (ret == 0) {
-        ret = SetAsymKeyDerPublic(pubKey, pubKeyLen, output, inLen,
+        ret = SetAsymKeyDerPublic(pubKey, pubKeyLen, output, outLen,
             ED448k, withAlg);
     }
     return ret;
 }
 #endif /* HAVE_ED448 && HAVE_ED448_KEY_EXPORT */
+
+#if defined(WOLFSSL_HAVE_LMS) && !defined(WOLFSSL_LMS_VERIFY_ONLY)
+/* Encode the public part of an LMS/HSS key in DER.
+ *
+ * Per RFC 9802, the SubjectPublicKeyInfo for HSS/LMS uses the
+ * id-alg-hss-lms-hashsig OID and carries the raw HSS public key in the
+ * BIT STRING with no additional wrapping.
+ *
+ * Pass NULL for output to get the size of the encoding.
+ *
+ * @param [in]  key       LMS key object.
+ * @param [out] output    Buffer to put encoded data in.
+ * @param [in]  outLen    Size of buffer in bytes.
+ * @param [in]  withAlg   Whether to use SubjectPublicKeyInfo format.
+ * @return  Size of encoded data in bytes on success.
+ * @return  BAD_FUNC_ARG when key is NULL.
+ */
+int wc_LmsKey_PublicKeyToDer(const LmsKey* key, byte* output, word32 outLen,
+                             int withAlg)
+{
+    int    ret;
+    byte   pubKey[HSS_MAX_PUBLIC_KEY_LEN];
+    word32 pubKeyLen = (word32)sizeof(pubKey);
+
+    if (key == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+    ret = wc_LmsKey_ExportPubRaw(key, pubKey, &pubKeyLen);
+    if (ret == 0) {
+        ret = SetAsymKeyDerPublic(pubKey, pubKeyLen, output, outLen,
+            HSS_LMSk, withAlg);
+    }
+    return ret;
+}
+#endif /* WOLFSSL_HAVE_LMS && !WOLFSSL_LMS_VERIFY_ONLY */
+
+#if defined(WOLFSSL_HAVE_XMSS) && !defined(WOLFSSL_XMSS_VERIFY_ONLY)
+/* Encode the public part of an XMSS/XMSS^MT key in DER.
+ *
+ * Per RFC 9802, the SubjectPublicKeyInfo for XMSS/XMSS^MT uses the
+ * id-alg-xmss-hashsig / id-alg-xmssmt-hashsig OID and carries the raw
+ * public key in the BIT STRING with no additional wrapping.
+ *
+ * Pass NULL for output to get the size of the encoding.
+ *
+ * @param [in]  key       XMSS key object.
+ * @param [out] output    Buffer to put encoded data in.
+ * @param [in]  outLen    Size of buffer in bytes.
+ * @param [in]  withAlg   Whether to use SubjectPublicKeyInfo format.
+ * @return  Size of encoded data in bytes on success.
+ * @return  BAD_FUNC_ARG when key is NULL.
+ */
+int wc_XmssKey_PublicKeyToDer(const XmssKey* key, byte* output, word32 outLen,
+                              int withAlg)
+{
+    int    ret;
+    byte   pubKey[2 * WC_XMSS_MAX_N + XMSS_OID_LEN];
+    word32 pubKeyLen = (word32)sizeof(pubKey);
+    int    keyType;
+
+    if (key == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+    keyType = key->is_xmssmt ? XMSSMTk : XMSSk;
+
+    ret = wc_XmssKey_ExportPubRaw(key, pubKey, &pubKeyLen);
+    if (ret == 0) {
+        ret = SetAsymKeyDerPublic(pubKey, pubKeyLen, output, outLen,
+            keyType, withAlg);
+    }
+    return ret;
+}
+#endif /* WOLFSSL_HAVE_XMSS && !WOLFSSL_XMSS_VERIFY_ONLY */
+
 #if !defined(NO_RSA) && !defined(NO_CERTS)
 #ifdef WOLFSSL_ASN_TEMPLATE
 /* ASN.1 template for header before RSA key in certificate. */
@@ -12987,45 +13588,52 @@ static int GetCertKey(DecodedCert* cert, const byte* source, word32* inOutIdx,
             ret = StoreKey(cert, source, &srcIdx, maxIdx);
             break;
     #endif /* HAVE_FALCON */
-    #ifdef HAVE_DILITHIUM
-        #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+    #ifdef WOLFSSL_HAVE_MLDSA
+        #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
         case DILITHIUM_LEVEL2k:
         case DILITHIUM_LEVEL3k:
         case DILITHIUM_LEVEL5k:
         #endif
-        case ML_DSA_LEVEL2k:
-        case ML_DSA_LEVEL3k:
-        case ML_DSA_LEVEL5k:
+        case ML_DSA_44k:
+        case ML_DSA_65k:
+        case ML_DSA_87k:
             cert->pkCurveOID = cert->keyOID;
             ret = StoreKey(cert, source, &srcIdx, maxIdx);
             break;
-    #endif /* HAVE_DILITHIUM */
-    #ifdef HAVE_SPHINCS
-        case SPHINCS_FAST_LEVEL1k:
-            cert->pkCurveOID = SPHINCS_FAST_LEVEL1k;
+    #endif /* WOLFSSL_HAVE_MLDSA */
+    #ifdef WOLFSSL_HAVE_SLHDSA
+        case SLH_DSA_SHAKE_128Fk:
+        case SLH_DSA_SHAKE_192Fk:
+        case SLH_DSA_SHAKE_256Fk:
+        case SLH_DSA_SHAKE_128Sk:
+        case SLH_DSA_SHAKE_192Sk:
+        case SLH_DSA_SHAKE_256Sk:
+        case SLH_DSA_SHA2_128Fk:
+        case SLH_DSA_SHA2_192Fk:
+        case SLH_DSA_SHA2_256Fk:
+        case SLH_DSA_SHA2_128Sk:
+        case SLH_DSA_SHA2_192Sk:
+        case SLH_DSA_SHA2_256Sk:
+            cert->pkCurveOID = cert->keyOID;
             ret = StoreKey(cert, source, &srcIdx, maxIdx);
             break;
-        case SPHINCS_FAST_LEVEL3k:
-            cert->pkCurveOID = SPHINCS_FAST_LEVEL3k;
+    #endif /* WOLFSSL_HAVE_SLHDSA */
+    #ifdef WOLFSSL_HAVE_LMS
+        case HSS_LMSk:
+            cert->pkCurveOID = HSS_LMSk;
             ret = StoreKey(cert, source, &srcIdx, maxIdx);
             break;
-        case SPHINCS_FAST_LEVEL5k:
-            cert->pkCurveOID = SPHINCS_FAST_LEVEL5k;
+    #endif /* WOLFSSL_HAVE_LMS */
+    #ifdef WOLFSSL_HAVE_XMSS
+        case XMSSk:
+            cert->pkCurveOID = XMSSk;
             ret = StoreKey(cert, source, &srcIdx, maxIdx);
             break;
-        case SPHINCS_SMALL_LEVEL1k:
-            cert->pkCurveOID = SPHINCS_SMALL_LEVEL1k;
+        case XMSSMTk:
+            cert->pkCurveOID = XMSSMTk;
             ret = StoreKey(cert, source, &srcIdx, maxIdx);
             break;
-        case SPHINCS_SMALL_LEVEL3k:
-            cert->pkCurveOID = SPHINCS_SMALL_LEVEL3k;
-            ret = StoreKey(cert, source, &srcIdx, maxIdx);
-            break;
-        case SPHINCS_SMALL_LEVEL5k:
-            cert->pkCurveOID = SPHINCS_SMALL_LEVEL5k;
-            ret = StoreKey(cert, source, &srcIdx, maxIdx);
-            break;
-    #endif /* HAVE_SPHINCS */
+    #endif /* WOLFSSL_HAVE_XMSS */
     #ifndef NO_DSA
         case DSAk:
             cert->publicKey = source + pubIdx;
@@ -14612,7 +15220,7 @@ int GetTimeString(byte* date, int format, char* buf, int len, int dateLen)
 #endif /* WOLFSSL_ASN_TIME_STRING */
 
 /* Check time struct for valid values. Returns 0 for success */
-static int ValidateGmtime(struct tm* inTime)
+int ValidateGmtime(struct tm* inTime)
 {
     int ret = 1;
     if ((inTime != NULL) &&
@@ -15445,14 +16053,16 @@ static WC_INLINE int IsSigAlgoECDSA(word32 algoOID)
 }
 #endif
 
-/* Determines if OID is for an EC signing algorithm including ECDSA and EdDSA
- * and post-quantum algorithms.
+/* Determines whether the signature algorithm's AlgorithmIdentifier omits
+ * the trailing NULL parameters element. True for ECC / EdDSA / SM2 and
+ * for the post-quantum families (Falcon, ML-DSA , SLH-DSA, LMS, XMSS).
  *
  * @param [in] algoOID  Algorithm OID.
- * @return  1 when is EC signing algorithm.
+ * @return  1 when the algorithm encodes its AlgorithmIdentifier without
+ *          a NULL parameters element.
  * @return  0 otherwise.
  */
-static WC_INLINE int IsSigAlgoECC(word32 algoOID)
+static WC_INLINE int IsSigAlgoNoParams(word32 algoOID)
 {
     (void)algoOID;
 
@@ -15479,23 +16089,36 @@ static WC_INLINE int IsSigAlgoECC(word32 algoOID)
               || (algoOID == FALCON_LEVEL1k)
               || (algoOID == FALCON_LEVEL5k)
         #endif
-        #ifdef HAVE_DILITHIUM
-            #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+        #ifdef WOLFSSL_HAVE_MLDSA
+            #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
               || (algoOID == DILITHIUM_LEVEL2k)
               || (algoOID == DILITHIUM_LEVEL3k)
               || (algoOID == DILITHIUM_LEVEL5k)
             #endif
-              || (algoOID == ML_DSA_LEVEL2k)
-              || (algoOID == ML_DSA_LEVEL3k)
-              || (algoOID == ML_DSA_LEVEL5k)
+              || (algoOID == ML_DSA_44k)
+              || (algoOID == ML_DSA_65k)
+              || (algoOID == ML_DSA_87k)
         #endif
-        #ifdef HAVE_SPHINCS
-              || (algoOID == SPHINCS_FAST_LEVEL1k)
-              || (algoOID == SPHINCS_FAST_LEVEL3k)
-              || (algoOID == SPHINCS_FAST_LEVEL5k)
-              || (algoOID == SPHINCS_SMALL_LEVEL1k)
-              || (algoOID == SPHINCS_SMALL_LEVEL3k)
-              || (algoOID == SPHINCS_SMALL_LEVEL5k)
+        #ifdef WOLFSSL_HAVE_SLHDSA
+              || (algoOID == SLH_DSA_SHAKE_128Fk)
+              || (algoOID == SLH_DSA_SHAKE_192Fk)
+              || (algoOID == SLH_DSA_SHAKE_256Fk)
+              || (algoOID == SLH_DSA_SHAKE_128Sk)
+              || (algoOID == SLH_DSA_SHAKE_192Sk)
+              || (algoOID == SLH_DSA_SHAKE_256Sk)
+              || (algoOID == SLH_DSA_SHA2_128Fk)
+              || (algoOID == SLH_DSA_SHA2_192Fk)
+              || (algoOID == SLH_DSA_SHA2_256Fk)
+              || (algoOID == SLH_DSA_SHA2_128Sk)
+              || (algoOID == SLH_DSA_SHA2_192Sk)
+              || (algoOID == SLH_DSA_SHA2_256Sk)
+        #endif
+        #ifdef WOLFSSL_HAVE_LMS
+              || (algoOID == HSS_LMSk)
+        #endif
+        #ifdef WOLFSSL_HAVE_XMSS
+              || (algoOID == XMSSk)
+              || (algoOID == XMSSMTk)
         #endif
     );
 }
@@ -15541,7 +16164,7 @@ static word32 SetAlgoIDImpl(int algoOID, byte* output, int type, int curveSz,
         SetASN_OID(&dataASN[ALGOIDASN_IDX_OID], (word32)algoOID, (word32)type);
         /* Hashes, signatures not ECC and keys not RSA output NULL tag. */
         if (!(type == oidHashType ||
-                 (type == oidSigType && !IsSigAlgoECC((word32)algoOID)) ||
+                 (type == oidSigType && !IsSigAlgoNoParams((word32)algoOID)) ||
                  (type == oidKeyType && algoOID == RSAk))) {
             /* Don't put out NULL DER item. */
             dataASN[ALGOIDASN_IDX_NULL].noOut = 1;
@@ -15813,37 +16436,64 @@ void FreeSignatureCtx(SignatureCtx* sigCtx)
             #endif
                 break;
         #endif /* HAVE_FALCON */
-        #if defined(HAVE_DILITHIUM)
-            #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+        #if defined(WOLFSSL_HAVE_MLDSA)
+            #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
             case DILITHIUM_LEVEL2k:
             case DILITHIUM_LEVEL3k:
             case DILITHIUM_LEVEL5k:
             #endif
-            case ML_DSA_LEVEL2k:
-            case ML_DSA_LEVEL3k:
-            case ML_DSA_LEVEL5k:
-                wc_dilithium_free(sigCtx->key.dilithium);
+            case ML_DSA_44k:
+            case ML_DSA_65k:
+            case ML_DSA_87k:
+                wc_MlDsaKey_Free(sigCtx->key.mldsa);
             #ifndef WOLFSSL_NO_MALLOC
-                XFREE(sigCtx->key.dilithium, sigCtx->heap,
-                    DYNAMIC_TYPE_DILITHIUM);
-                sigCtx->key.dilithium = NULL;
+                XFREE(sigCtx->key.mldsa, sigCtx->heap,
+                    DYNAMIC_TYPE_MLDSA);
+                sigCtx->key.mldsa = NULL;
             #endif
                 break;
-        #endif /* HAVE_DILITHIUM */
-        #if defined(HAVE_SPHINCS)
-            case SPHINCS_FAST_LEVEL1k:
-            case SPHINCS_FAST_LEVEL3k:
-            case SPHINCS_FAST_LEVEL5k:
-            case SPHINCS_SMALL_LEVEL1k:
-            case SPHINCS_SMALL_LEVEL3k:
-            case SPHINCS_SMALL_LEVEL5k:
-                wc_sphincs_free(sigCtx->key.sphincs);
+        #endif /* WOLFSSL_HAVE_MLDSA */
+        #if defined(WOLFSSL_HAVE_SLHDSA)
+            case SLH_DSA_SHAKE_128Fk:
+            case SLH_DSA_SHAKE_192Fk:
+            case SLH_DSA_SHAKE_256Fk:
+            case SLH_DSA_SHAKE_128Sk:
+            case SLH_DSA_SHAKE_192Sk:
+            case SLH_DSA_SHAKE_256Sk:
+        #ifdef WOLFSSL_SLHDSA_SHA2
+            case SLH_DSA_SHA2_128Fk:
+            case SLH_DSA_SHA2_192Fk:
+            case SLH_DSA_SHA2_256Fk:
+            case SLH_DSA_SHA2_128Sk:
+            case SLH_DSA_SHA2_192Sk:
+            case SLH_DSA_SHA2_256Sk:
+        #endif
+                wc_SlhDsaKey_Free(sigCtx->key.slhdsa);
             #ifndef WOLFSSL_NO_MALLOC
-                XFREE(sigCtx->key.sphincs, sigCtx->heap, DYNAMIC_TYPE_SPHINCS);
-                sigCtx->key.sphincs = NULL;
+                XFREE(sigCtx->key.slhdsa, sigCtx->heap, DYNAMIC_TYPE_SLHDSA);
+                sigCtx->key.slhdsa = NULL;
             #endif
                 break;
-        #endif /* HAVE_SPHINCS */
+        #endif /* WOLFSSL_HAVE_SLHDSA */
+        #ifdef WOLFSSL_HAVE_LMS
+            case HSS_LMSk:
+                wc_LmsKey_Free(sigCtx->key.lms);
+            #ifndef WOLFSSL_NO_MALLOC
+                XFREE(sigCtx->key.lms, sigCtx->heap, DYNAMIC_TYPE_LMS);
+                sigCtx->key.lms = NULL;
+            #endif
+                break;
+        #endif /* WOLFSSL_HAVE_LMS */
+        #ifdef WOLFSSL_HAVE_XMSS
+            case XMSSk:
+            case XMSSMTk:
+                wc_XmssKey_Free(sigCtx->key.xmss);
+            #ifndef WOLFSSL_NO_MALLOC
+                XFREE(sigCtx->key.xmss, sigCtx->heap, DYNAMIC_TYPE_XMSS);
+                sigCtx->key.xmss = NULL;
+            #endif
+                break;
+        #endif /* WOLFSSL_HAVE_XMSS */
             default:
                 break;
         } /* switch (keyOID) */
@@ -15880,6 +16530,13 @@ static int HashForSignature(const byte* buf, word32 bufSz, word32 sigOID,
     #endif
     #ifndef NO_MD5
         case CTC_MD5wRSA:
+        #ifndef WOLFSSL_ALLOW_MD5_CERT_SIGS
+            if (verify) {
+                ret = HASH_TYPE_E;
+                WOLFSSL_MSG("MD5 not supported for certificate verification");
+                break;
+            }
+        #endif
             if ((ret = wc_Md5Hash_ex(buf, bufSz, digest, heap, devId)) == 0) {
                 *typeH    = MD5h;
                 *digestSz = WC_MD5_DIGEST_SIZE;
@@ -16007,26 +16664,43 @@ static int HashForSignature(const byte* buf, word32 bufSz, word32 sigOID,
             /* Hashes done in signing operation. */
             break;
     #endif
-    #ifdef HAVE_DILITHIUM
-        #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+    #ifdef WOLFSSL_HAVE_MLDSA
+        #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
         case CTC_DILITHIUM_LEVEL2:
         case CTC_DILITHIUM_LEVEL3:
         case CTC_DILITHIUM_LEVEL5:
         #endif
-        case CTC_ML_DSA_LEVEL2:
-        case CTC_ML_DSA_LEVEL3:
-        case CTC_ML_DSA_LEVEL5:
+        case CTC_ML_DSA_44:
+        case CTC_ML_DSA_65:
+        case CTC_ML_DSA_87:
             /* Hashes done in signing operation. */
             break;
     #endif
-    #ifdef HAVE_SPHINCS
-        case CTC_SPHINCS_FAST_LEVEL1:
-        case CTC_SPHINCS_FAST_LEVEL3:
-        case CTC_SPHINCS_FAST_LEVEL5:
-        case CTC_SPHINCS_SMALL_LEVEL1:
-        case CTC_SPHINCS_SMALL_LEVEL3:
-        case CTC_SPHINCS_SMALL_LEVEL5:
+    #ifdef WOLFSSL_HAVE_SLHDSA
+        case CTC_SLH_DSA_SHA2_128S:
+        case CTC_SLH_DSA_SHA2_128F:
+        case CTC_SLH_DSA_SHA2_192S:
+        case CTC_SLH_DSA_SHA2_192F:
+        case CTC_SLH_DSA_SHA2_256S:
+        case CTC_SLH_DSA_SHA2_256F:
+        case CTC_SLH_DSA_SHAKE_128S:
+        case CTC_SLH_DSA_SHAKE_128F:
+        case CTC_SLH_DSA_SHAKE_192S:
+        case CTC_SLH_DSA_SHAKE_192F:
+        case CTC_SLH_DSA_SHAKE_256S:
+        case CTC_SLH_DSA_SHAKE_256F:
             /* Hashes done in signing operation. */
+            break;
+    #endif
+    #ifdef WOLFSSL_HAVE_LMS
+        case CTC_HSS_LMS:
+            /* RFC 9802 sec 2: no digest is applied before signing. */
+            break;
+    #endif
+    #ifdef WOLFSSL_HAVE_XMSS
+        case CTC_XMSS:
+        case CTC_XMSSMT:
+            /* RFC 9802 sec 2: no digest is applied before signing. */
             break;
     #endif
 
@@ -16183,9 +16857,9 @@ static int SigOidMatchesKeyOid(word32 sigOID, word32 keyOID)
         case FALCON_LEVEL5k:
             return (sigOID == CTC_FALCON_LEVEL5);
     #endif
-    #if defined(HAVE_DILITHIUM) && !defined(WOLFSSL_DILITHIUM_NO_VERIFY) && \
-        !defined(WOLFSSL_DILITHIUM_NO_ASN1)
-        #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+    #if defined(WOLFSSL_HAVE_MLDSA) && !defined(WOLFSSL_MLDSA_NO_VERIFY) && \
+        !defined(WOLFSSL_MLDSA_NO_ASN1)
+        #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
         case DILITHIUM_LEVEL2k:
             return (sigOID == CTC_DILITHIUM_LEVEL2);
         case DILITHIUM_LEVEL3k:
@@ -16193,26 +16867,48 @@ static int SigOidMatchesKeyOid(word32 sigOID, word32 keyOID)
         case DILITHIUM_LEVEL5k:
             return (sigOID == CTC_DILITHIUM_LEVEL5);
         #endif
-        case ML_DSA_LEVEL2k:
-            return (sigOID == CTC_ML_DSA_LEVEL2);
-        case ML_DSA_LEVEL3k:
-            return (sigOID == CTC_ML_DSA_LEVEL3);
-        case ML_DSA_LEVEL5k:
-            return (sigOID == CTC_ML_DSA_LEVEL5);
+        case ML_DSA_44k:
+            return (sigOID == CTC_ML_DSA_44);
+        case ML_DSA_65k:
+            return (sigOID == CTC_ML_DSA_65);
+        case ML_DSA_87k:
+            return (sigOID == CTC_ML_DSA_87);
     #endif
-    #if defined(HAVE_SPHINCS)
-        case SPHINCS_FAST_LEVEL1k:
-            return (sigOID == CTC_SPHINCS_FAST_LEVEL1);
-        case SPHINCS_FAST_LEVEL3k:
-            return (sigOID == CTC_SPHINCS_FAST_LEVEL3);
-        case SPHINCS_FAST_LEVEL5k:
-            return (sigOID == CTC_SPHINCS_FAST_LEVEL5);
-        case SPHINCS_SMALL_LEVEL1k:
-            return (sigOID == CTC_SPHINCS_SMALL_LEVEL1);
-        case SPHINCS_SMALL_LEVEL3k:
-            return (sigOID == CTC_SPHINCS_SMALL_LEVEL3);
-        case SPHINCS_SMALL_LEVEL5k:
-            return (sigOID == CTC_SPHINCS_SMALL_LEVEL5);
+    #if defined(WOLFSSL_HAVE_SLHDSA)
+        case SLH_DSA_SHAKE_128Fk:
+            return (sigOID == CTC_SLH_DSA_SHAKE_128F);
+        case SLH_DSA_SHAKE_192Fk:
+            return (sigOID == CTC_SLH_DSA_SHAKE_192F);
+        case SLH_DSA_SHAKE_256Fk:
+            return (sigOID == CTC_SLH_DSA_SHAKE_256F);
+        case SLH_DSA_SHAKE_128Sk:
+            return (sigOID == CTC_SLH_DSA_SHAKE_128S);
+        case SLH_DSA_SHAKE_192Sk:
+            return (sigOID == CTC_SLH_DSA_SHAKE_192S);
+        case SLH_DSA_SHAKE_256Sk:
+            return (sigOID == CTC_SLH_DSA_SHAKE_256S);
+        case SLH_DSA_SHA2_128Fk:
+            return (sigOID == CTC_SLH_DSA_SHA2_128F);
+        case SLH_DSA_SHA2_192Fk:
+            return (sigOID == CTC_SLH_DSA_SHA2_192F);
+        case SLH_DSA_SHA2_256Fk:
+            return (sigOID == CTC_SLH_DSA_SHA2_256F);
+        case SLH_DSA_SHA2_128Sk:
+            return (sigOID == CTC_SLH_DSA_SHA2_128S);
+        case SLH_DSA_SHA2_192Sk:
+            return (sigOID == CTC_SLH_DSA_SHA2_192S);
+        case SLH_DSA_SHA2_256Sk:
+            return (sigOID == CTC_SLH_DSA_SHA2_256S);
+    #endif
+    #ifdef WOLFSSL_HAVE_LMS
+        case HSS_LMSk:
+            return (sigOID == CTC_HSS_LMS);
+    #endif
+    #ifdef WOLFSSL_HAVE_XMSS
+        case XMSSk:
+            return (sigOID == CTC_XMSS);
+        case XMSSMTk:
+            return (sigOID == CTC_XMSSMT);
     #endif
     }
 
@@ -16364,7 +17060,9 @@ int ConfirmSignature(SignatureCtx* sigCtx,
                         ERROR_OUT(MEMORY_E, exit_cs);
                     }
                 #endif
-                    if (sigSz > MAX_ENCODED_SIG_SZ) {
+                    /* RSA signature copied into sigCpy, which under
+                     * WOLFSSL_NO_MALLOC is sized to MAX_ENCODED_CLASSIC_SIG_SZ. */
+                    if (sigSz > MAX_ENCODED_CLASSIC_SIG_SZ) {
                         WOLFSSL_MSG("Verify Signature is too big");
                         ERROR_OUT(BUFFER_E, exit_cs);
                     }
@@ -16392,7 +17090,7 @@ int ConfirmSignature(SignatureCtx* sigCtx,
                         WOLFSSL_MSG("Verify Signature is too small");
                         ERROR_OUT(BUFFER_E, exit_cs);
                     }
-                    else if (sigSz > MAX_ENCODED_SIG_SZ) {
+                    else if (sigSz > MAX_ENCODED_CLASSIC_SIG_SZ) {
                         WOLFSSL_MSG("Verify Signature is too big");
                         ERROR_OUT(BUFFER_E, exit_cs);
                     }
@@ -16606,30 +17304,30 @@ int ConfirmSignature(SignatureCtx* sigCtx,
                     break;
                 }
             #endif /* HAVE_FALCON */
-            #if defined(HAVE_DILITHIUM) && \
-                !defined(WOLFSSL_DILITHIUM_NO_VERIFY) && \
-                !defined(WOLFSSL_DILITHIUM_NO_ASN1)
-                #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+            #if defined(WOLFSSL_HAVE_MLDSA) && \
+                !defined(WOLFSSL_MLDSA_NO_VERIFY) && \
+                !defined(WOLFSSL_MLDSA_NO_ASN1)
+                #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
                 case DILITHIUM_LEVEL2k:
                 case DILITHIUM_LEVEL3k:
                 case DILITHIUM_LEVEL5k:
                 #endif
-                case ML_DSA_LEVEL2k:
-                case ML_DSA_LEVEL3k:
-                case ML_DSA_LEVEL5k:
+                case ML_DSA_44k:
+                case ML_DSA_65k:
+                case ML_DSA_87k:
                 {
                     word32 idx = 0;
                     int level;
-                    if (keyOID == ML_DSA_LEVEL2k) {
+                    if (keyOID == ML_DSA_44k) {
                         level = WC_ML_DSA_44;
                     }
-                    else if (keyOID == ML_DSA_LEVEL3k) {
+                    else if (keyOID == ML_DSA_65k) {
                         level = WC_ML_DSA_65;
                     }
-                    else if (keyOID == ML_DSA_LEVEL5k) {
+                    else if (keyOID == ML_DSA_87k) {
                         level = WC_ML_DSA_87;
                     }
-                #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+                #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
                     else if (keyOID == DILITHIUM_LEVEL2k) {
                         level = WC_ML_DSA_44_DRAFT;
                     }
@@ -16641,205 +17339,155 @@ int ConfirmSignature(SignatureCtx* sigCtx,
                     }
                 #endif
                     else {
-                        WOLFSSL_MSG("Invalid Dilithium key OID");
+                        WOLFSSL_MSG("Invalid ML-DSA key OID");
                         goto exit_cs;
                     }
                     sigCtx->verify = 0;
                 #ifndef WOLFSSL_NO_MALLOC
-                    sigCtx->key.dilithium = (dilithium_key*)XMALLOC(
-                        sizeof(dilithium_key), sigCtx->heap,
-                        DYNAMIC_TYPE_DILITHIUM);
-                    if (sigCtx->key.dilithium == NULL) {
+                    sigCtx->key.mldsa = (wc_MlDsaKey*)XMALLOC(
+                        sizeof(wc_MlDsaKey), sigCtx->heap,
+                        DYNAMIC_TYPE_MLDSA);
+                    if (sigCtx->key.mldsa == NULL) {
                         ERROR_OUT(MEMORY_E, exit_cs);
                     }
                 #endif
-                    if ((ret = wc_dilithium_init_ex(sigCtx->key.dilithium,
+                    if ((ret = wc_MlDsaKey_Init(sigCtx->key.mldsa,
                             sigCtx->heap, sigCtx->devId)) < 0) {
                         goto exit_cs;
                     }
-                    if ((ret = wc_dilithium_set_level(sigCtx->key.dilithium,
-                            level)) < 0) {
+                    if ((ret = wc_MlDsaKey_SetParams(sigCtx->key.mldsa,
+                            (byte)level)) < 0) {
                         goto exit_cs;
                     }
-                    if ((ret = wc_Dilithium_PublicKeyDecode(key, &idx,
-                        sigCtx->key.dilithium, keySz)) < 0) {
-                        WOLFSSL_MSG("ASN Key import error Dilithium");
+                    if ((ret = wc_MlDsaKey_PublicKeyDecode(sigCtx->key.mldsa,
+                        key, keySz, &idx)) < 0) {
+                        WOLFSSL_MSG("ASN Key import error ML-DSA");
                         goto exit_cs;
                     }
                     break;
                 }
-            #endif /* HAVE_DILITHIUM */
-            #if defined(HAVE_SPHINCS)
-                case SPHINCS_FAST_LEVEL1k:
+            #endif /* WOLFSSL_HAVE_MLDSA */
+            #if defined(WOLFSSL_HAVE_SLHDSA)
+            #ifndef WOLFSSL_SLHDSA_SHA2
+                /* SHA-2 OIDs recognised but backend not built; emit a
+                 * specific NOT_COMPILED_IN so callers can render a
+                 * "variant unavailable" diagnostic instead of the
+                 * generic ASN_UNKNOWN_OID_E for "malformed DER". */
+                case SLH_DSA_SHA2_128Fk:
+                case SLH_DSA_SHA2_192Fk:
+                case SLH_DSA_SHA2_256Fk:
+                case SLH_DSA_SHA2_128Sk:
+                case SLH_DSA_SHA2_192Sk:
+                case SLH_DSA_SHA2_256Sk:
+                    WOLFSSL_MSG("SHA2-SLH-DSA recognised but not compiled in");
+                    ERROR_OUT(NOT_COMPILED_IN, exit_cs);
+            #else
+                case SLH_DSA_SHA2_128Fk:
+                case SLH_DSA_SHA2_192Fk:
+                case SLH_DSA_SHA2_256Fk:
+                case SLH_DSA_SHA2_128Sk:
+                case SLH_DSA_SHA2_192Sk:
+                case SLH_DSA_SHA2_256Sk:
+            #endif
+                case SLH_DSA_SHAKE_128Fk:
+                case SLH_DSA_SHAKE_192Fk:
+                case SLH_DSA_SHAKE_256Fk:
+                case SLH_DSA_SHAKE_128Sk:
+                case SLH_DSA_SHAKE_192Sk:
+                case SLH_DSA_SHAKE_256Sk:
                 {
-                    word32 idx = 0;
+                    int slhDsaParam = wc_SlhDsaOidToParam((int)keyOID);
                     sigCtx->verify = 0;
-                #ifndef WOLFSSL_NO_MALLOC
-                    sigCtx->key.sphincs =
-                        (sphincs_key*)XMALLOC(sizeof(sphincs_key),
-                                             sigCtx->heap,
-                                             DYNAMIC_TYPE_SPHINCS);
-                    if (sigCtx->key.sphincs == NULL) {
-                        ERROR_OUT(MEMORY_E, exit_cs);
-                    }
-                #endif
 
-                    if ((ret = wc_sphincs_init(sigCtx->key.sphincs)) < 0) {
-                        goto exit_cs;
+                    /* Mirror PrivateKeyDecode/PublicKeyDecode: a recognised
+                     * SLH-DSA OID with a per-variant disable returns
+                     * NOT_COMPILED_IN; pass it through so callers can render
+                     * a "variant unavailable" diagnostic instead of the
+                     * malformed-DER ASN_UNKNOWN_OID_E. */
+                    if (slhDsaParam == WC_NO_ERR_TRACE(NOT_COMPILED_IN)) {
+                        WOLFSSL_MSG("SLH-DSA variant not compiled in");
+                        ERROR_OUT(NOT_COMPILED_IN, exit_cs);
                     }
-                    if ((ret = wc_sphincs_set_level_and_optim(
-                                   sigCtx->key.sphincs, 1, FAST_VARIANT))
-                        < 0) {
-                        goto exit_cs;
+                    if (slhDsaParam < 0) {
+                        ERROR_OUT(ASN_UNKNOWN_OID_E, exit_cs);
                     }
-                    if ((ret = wc_Sphincs_PublicKeyDecode(key, &idx,
-                        sigCtx->key.sphincs, keySz)) < 0) {
-                        WOLFSSL_MSG("ASN Key import err: Sphincs-fast Level1");
-                        goto exit_cs;
-                    }
-                    break;
-                }
-                case SPHINCS_FAST_LEVEL3k:
-                {
-                    word32 idx = 0;
-                    sigCtx->verify = 0;
+
                 #ifndef WOLFSSL_NO_MALLOC
-                    sigCtx->key.sphincs =
-                        (sphincs_key*)XMALLOC(sizeof(sphincs_key),
+                    sigCtx->key.slhdsa =
+                        (SlhDsaKey*)XMALLOC(sizeof(SlhDsaKey),
                                              sigCtx->heap,
-                                             DYNAMIC_TYPE_SPHINCS);
-                    if (sigCtx->key.sphincs == NULL) {
+                                             DYNAMIC_TYPE_SLHDSA);
+                    if (sigCtx->key.slhdsa == NULL) {
                         ERROR_OUT(MEMORY_E, exit_cs);
                     }
                 #endif
-                    if ((ret = wc_sphincs_init(sigCtx->key.sphincs)) < 0) {
+                    if ((ret = wc_SlhDsaKey_Init(sigCtx->key.slhdsa,
+                                                 (enum SlhDsaParam)slhDsaParam,
+                                                 NULL, INVALID_DEVID)) < 0) {
+                        WOLFSSL_MSG("ASN Key init err: SLH-DSA");
                         goto exit_cs;
                     }
-                    if ((ret = wc_sphincs_set_level_and_optim(
-                                   sigCtx->key.sphincs, 3, FAST_VARIANT))
-                        < 0) {
-                        goto exit_cs;
-                    }
-                    if ((ret = wc_Sphincs_PublicKeyDecode(key, &idx,
-                        sigCtx->key.sphincs, keySz)) < 0) {
-                        WOLFSSL_MSG("ASN Key import err: Sphincs-fast Level3");
+                    /* StoreKey() stashes the BIT STRING contents (raw
+                     * public-key bytes) in cert->publicKey, not the
+                     * SPKI envelope. Use ImportPublic which accepts
+                     * raw bytes; _PublicKeyDecode would expect an SPKI
+                     * SEQUENCE and fail with ASN_PARSE_E. */
+                    if ((ret = wc_SlhDsaKey_ImportPublic(sigCtx->key.slhdsa,
+                        key, keySz)) < 0) {
+                        WOLFSSL_MSG("ASN Key import err: SLH-DSA");
                         goto exit_cs;
                     }
                     break;
                 }
-                case SPHINCS_FAST_LEVEL5k:
+            #endif /* WOLFSSL_HAVE_SLHDSA */
+            #ifdef WOLFSSL_HAVE_LMS
+                case HSS_LMSk:
                 {
-                    word32 idx = 0;
                     sigCtx->verify = 0;
                 #ifndef WOLFSSL_NO_MALLOC
-                    sigCtx->key.sphincs =
-                        (sphincs_key*)XMALLOC(sizeof(sphincs_key),
-                                             sigCtx->heap,
-                                             DYNAMIC_TYPE_SPHINCS);
-                    if (sigCtx->key.sphincs == NULL) {
+                    sigCtx->key.lms = (LmsKey*)XMALLOC(sizeof(LmsKey),
+                        sigCtx->heap, DYNAMIC_TYPE_LMS);
+                    if (sigCtx->key.lms == NULL) {
                         ERROR_OUT(MEMORY_E, exit_cs);
                     }
                 #endif
-                    if ((ret = wc_sphincs_init(sigCtx->key.sphincs)) < 0) {
+                    if ((ret = wc_LmsKey_Init(sigCtx->key.lms,
+                            sigCtx->heap, sigCtx->devId)) < 0) {
                         goto exit_cs;
                     }
-                    if ((ret = wc_sphincs_set_level_and_optim(
-                                   sigCtx->key.sphincs, 5, FAST_VARIANT))
-                        < 0) {
-                        goto exit_cs;
-                    }
-                    if ((ret = wc_Sphincs_PublicKeyDecode(key, &idx,
-                        sigCtx->key.sphincs, keySz)) < 0) {
-                        WOLFSSL_MSG("ASN Key import err: Sphincs-fast Level5");
+                    if ((ret = wc_LmsKey_ImportPubRaw(sigCtx->key.lms,
+                            key, keySz)) < 0) {
+                        WOLFSSL_MSG("ASN Key import error HSS/LMS");
                         goto exit_cs;
                     }
                     break;
                 }
-                case SPHINCS_SMALL_LEVEL1k:
+            #endif /* WOLFSSL_HAVE_LMS */
+            #ifdef WOLFSSL_HAVE_XMSS
+                case XMSSk:
+                case XMSSMTk:
                 {
-                    word32 idx = 0;
+                    int is_xmssmt = (keyOID == XMSSMTk);
                     sigCtx->verify = 0;
                 #ifndef WOLFSSL_NO_MALLOC
-                    sigCtx->key.sphincs =
-                        (sphincs_key*)XMALLOC(sizeof(sphincs_key),
-                                             sigCtx->heap,
-                                             DYNAMIC_TYPE_SPHINCS);
-                    if (sigCtx->key.sphincs == NULL) {
+                    sigCtx->key.xmss = (XmssKey*)XMALLOC(sizeof(XmssKey),
+                        sigCtx->heap, DYNAMIC_TYPE_XMSS);
+                    if (sigCtx->key.xmss == NULL) {
                         ERROR_OUT(MEMORY_E, exit_cs);
                     }
                 #endif
-                    if ((ret = wc_sphincs_init(sigCtx->key.sphincs)) < 0) {
+                    if ((ret = wc_XmssKey_Init(sigCtx->key.xmss,
+                            sigCtx->heap, sigCtx->devId)) < 0) {
                         goto exit_cs;
                     }
-                    if ((ret = wc_sphincs_set_level_and_optim(
-                                   sigCtx->key.sphincs, 1, SMALL_VARIANT))
-                        < 0) {
-                        goto exit_cs;
-                    }
-                    if ((ret = wc_Sphincs_PublicKeyDecode(key, &idx,
-                        sigCtx->key.sphincs, keySz)) < 0) {
-                        WOLFSSL_MSG("ASN Key import err: Sphincs-fast Level1");
+                    if ((ret = wc_XmssKey_ImportPubRaw_ex(sigCtx->key.xmss,
+                            key, keySz, is_xmssmt)) < 0) {
+                        WOLFSSL_MSG("ASN Key import error XMSS/XMSS^MT");
                         goto exit_cs;
                     }
                     break;
                 }
-                case SPHINCS_SMALL_LEVEL3k:
-                {
-                    word32 idx = 0;
-                    sigCtx->verify = 0;
-                #ifndef WOLFSSL_NO_MALLOC
-                    sigCtx->key.sphincs =
-                        (sphincs_key*)XMALLOC(sizeof(sphincs_key),
-                                             sigCtx->heap,
-                                             DYNAMIC_TYPE_SPHINCS);
-                    if (sigCtx->key.sphincs == NULL) {
-                        ERROR_OUT(MEMORY_E, exit_cs);
-                    }
-                #endif
-                    if ((ret = wc_sphincs_init(sigCtx->key.sphincs)) < 0) {
-                        goto exit_cs;
-                    }
-                    if ((ret = wc_sphincs_set_level_and_optim(
-                                   sigCtx->key.sphincs, 3, SMALL_VARIANT))
-                        < 0) {
-                        goto exit_cs;
-                    }
-                    if ((ret = wc_Sphincs_PublicKeyDecode(key, &idx,
-                        sigCtx->key.sphincs, keySz)) < 0) {
-                        WOLFSSL_MSG("ASN Key import err: Sphincs-fast Level3");
-                        goto exit_cs;
-                    }
-                    break;
-                }
-                case SPHINCS_SMALL_LEVEL5k:
-                {
-                    word32 idx = 0;
-                    sigCtx->verify = 0;
-                #ifndef WOLFSSL_NO_MALLOC
-                    sigCtx->key.sphincs =
-                        (sphincs_key*)XMALLOC(sizeof(sphincs_key),
-                                             sigCtx->heap,
-                                             DYNAMIC_TYPE_SPHINCS);
-                    if (sigCtx->key.sphincs == NULL) {
-                        ERROR_OUT(MEMORY_E, exit_cs);
-                    }
-                #endif
-                    if ((ret = wc_sphincs_init(sigCtx->key.sphincs)) < 0) {
-                        goto exit_cs;
-                    }
-                    if ((ret = wc_sphincs_set_level_and_optim(
-                                   sigCtx->key.sphincs, 5, SMALL_VARIANT))
-                        < 0) {
-                        goto exit_cs;
-                    }
-                    if ((ret = wc_Sphincs_PublicKeyDecode(key, &idx,
-                        sigCtx->key.sphincs, keySz)) < 0) {
-                        WOLFSSL_MSG("ASN Key import err: Sphincs-fast Level5");
-                        goto exit_cs;
-                    }
-                    break;
-                }
-            #endif /* HAVE_SPHINCS */
+            #endif /* WOLFSSL_HAVE_XMSS */
                 default:
                     WOLFSSL_MSG("Verify Key type unknown");
                     ret = ASN_UNKNOWN_OID_E;
@@ -17006,41 +17654,70 @@ int ConfirmSignature(SignatureCtx* sigCtx,
                     break;
                 }
             #endif /* HAVE_FALCON */
-            #if defined(HAVE_DILITHIUM) && !defined(WOLFSSL_DILITHIUM_NO_VERIFY)
-                #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+            #if defined(WOLFSSL_HAVE_MLDSA) && !defined(WOLFSSL_MLDSA_NO_VERIFY)
+                #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
                 case DILITHIUM_LEVEL2k:
                 case DILITHIUM_LEVEL3k:
                 case DILITHIUM_LEVEL5k:
                 {
-                    ret = wc_dilithium_verify_msg(sig, sigSz, buf, bufSz,
-                                               &sigCtx->verify,
-                                               sigCtx->key.dilithium);
+                    ret = wc_MlDsaKey_Verify(sigCtx->key.mldsa, sig, sigSz,
+                                             buf, bufSz, &sigCtx->verify);
                     break;
                 }
                 #endif
-                case ML_DSA_LEVEL2k:
-                case ML_DSA_LEVEL3k:
-                case ML_DSA_LEVEL5k:
+                case ML_DSA_44k:
+                case ML_DSA_65k:
+                case ML_DSA_87k:
                 {
-                    ret = wc_dilithium_verify_ctx_msg(sig, sigSz, NULL, 0, buf,
-                        bufSz, &sigCtx->verify, sigCtx->key.dilithium);
+                    ret = wc_MlDsaKey_VerifyCtx(sigCtx->key.mldsa, sig, sigSz,
+                        NULL, 0, buf, bufSz, &sigCtx->verify);
                     break;
                 }
-            #endif /* HAVE_DILITHIUM */
-            #if defined(HAVE_SPHINCS)
-                case SPHINCS_FAST_LEVEL1k:
-                case SPHINCS_FAST_LEVEL3k:
-                case SPHINCS_FAST_LEVEL5k:
-                case SPHINCS_SMALL_LEVEL1k:
-                case SPHINCS_SMALL_LEVEL3k:
-                case SPHINCS_SMALL_LEVEL5k:
+            #endif /* WOLFSSL_HAVE_MLDSA */
+            #if defined(WOLFSSL_HAVE_SLHDSA)
+            #ifdef WOLFSSL_SLHDSA_SHA2
+                case SLH_DSA_SHA2_128Fk:
+                case SLH_DSA_SHA2_192Fk:
+                case SLH_DSA_SHA2_256Fk:
+                case SLH_DSA_SHA2_128Sk:
+                case SLH_DSA_SHA2_192Sk:
+                case SLH_DSA_SHA2_256Sk:
+            #endif
+                case SLH_DSA_SHAKE_128Fk:
+                case SLH_DSA_SHAKE_192Fk:
+                case SLH_DSA_SHAKE_256Fk:
+                case SLH_DSA_SHAKE_128Sk:
+                case SLH_DSA_SHAKE_192Sk:
+                case SLH_DSA_SHAKE_256Sk:
                 {
-                    ret = wc_sphincs_verify_msg(sig, sigSz, buf, bufSz,
-                                                &sigCtx->verify,
-                                                sigCtx->key.sphincs);
+                    ret = wc_SlhDsaKey_Verify(sigCtx->key.slhdsa,
+                                              NULL, 0, buf, bufSz,
+                                              sig, sigSz);
+                    if (ret == 0) {
+                        sigCtx->verify = 1;
+                    }
                     break;
                 }
-            #endif /* HAVE_SPHINCS */
+            #endif /* WOLFSSL_HAVE_SLHDSA */
+            #ifdef WOLFSSL_HAVE_LMS
+                case HSS_LMSk:
+                {
+                    ret = wc_LmsKey_Verify(sigCtx->key.lms, sig, sigSz,
+                        buf, (int)bufSz);
+                    sigCtx->verify = (ret == 0);
+                    break;
+                }
+            #endif /* WOLFSSL_HAVE_LMS */
+            #ifdef WOLFSSL_HAVE_XMSS
+                case XMSSk:
+                case XMSSMTk:
+                {
+                    ret = wc_XmssKey_Verify(sigCtx->key.xmss, sig, sigSz,
+                        buf, (int)bufSz);
+                    sigCtx->verify = (ret == 0);
+                    break;
+                }
+            #endif /* WOLFSSL_HAVE_XMSS */
                 default:
                     break;
             }  /* switch (keyOID) */
@@ -17102,13 +17779,15 @@ int ConfirmSignature(SignatureCtx* sigCtx,
                     if (sigCtx->CertAtt.verifyByTSIP_SCE == 1) break;
                 #endif
                 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_NO_MALLOC)
-                    byte* encodedSig = (byte*)XMALLOC(MAX_ENCODED_SIG_SZ,
+                    /* Holds a PKCS#1 DigestInfo encoding for RSA verification,
+                     * never a PQC signature -- size to the classic tier. */
+                    byte* encodedSig = (byte*)XMALLOC(MAX_ENCODED_CLASSIC_SIG_SZ,
                                         sigCtx->heap, DYNAMIC_TYPE_TMP_BUFFER);
                     if (encodedSig == NULL) {
                         ERROR_OUT(MEMORY_E, exit_cs);
                     }
                 #else
-                    byte encodedSig[MAX_ENCODED_SIG_SZ];
+                    byte encodedSig[MAX_ENCODED_CLASSIC_SIG_SZ];
                 #endif
 
                     verifySz = ret;
@@ -17219,15 +17898,15 @@ int ConfirmSignature(SignatureCtx* sigCtx,
                     break;
                 }
             #endif /* HAVE_FALCON */
-            #ifdef HAVE_DILITHIUM
-                #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+            #ifdef WOLFSSL_HAVE_MLDSA
+                #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
                 case DILITHIUM_LEVEL2k:
                 case DILITHIUM_LEVEL3k:
                 case DILITHIUM_LEVEL5k:
-                #endif /* WOLFSSL_DILITHIUM_FIPS204_DRAFT */
-                case ML_DSA_LEVEL2k:
-                case ML_DSA_LEVEL3k:
-                case ML_DSA_LEVEL5k:
+                #endif /* WOLFSSL_MLDSA_FIPS204_DRAFT */
+                case ML_DSA_44k:
+                case ML_DSA_65k:
+                case ML_DSA_87k:
                     if (sigCtx->verify == 1) {
                         ret = 0;
                     }
@@ -17236,75 +17915,60 @@ int ConfirmSignature(SignatureCtx* sigCtx,
                         ret = ASN_SIG_CONFIRM_E;
                     }
                     break;
-            #endif /* HAVE_DILITHIUM */
-            #ifdef HAVE_SPHINCS
-                case SPHINCS_FAST_LEVEL1k:
+            #endif /* WOLFSSL_HAVE_MLDSA */
+            #ifdef WOLFSSL_HAVE_SLHDSA
+            #ifdef WOLFSSL_SLHDSA_SHA2
+                case SLH_DSA_SHA2_128Fk:
+                case SLH_DSA_SHA2_192Fk:
+                case SLH_DSA_SHA2_256Fk:
+                case SLH_DSA_SHA2_128Sk:
+                case SLH_DSA_SHA2_192Sk:
+                case SLH_DSA_SHA2_256Sk:
+            #endif
+                case SLH_DSA_SHAKE_128Fk:
+                case SLH_DSA_SHAKE_192Fk:
+                case SLH_DSA_SHAKE_256Fk:
+                case SLH_DSA_SHAKE_128Sk:
+                case SLH_DSA_SHAKE_192Sk:
+                case SLH_DSA_SHAKE_256Sk:
                 {
                     if (sigCtx->verify == 1) {
                         ret = 0;
                     }
                     else {
-                        WOLFSSL_MSG("SPHINCS_FAST_LEVEL1 Verify didn't match");
+                        WOLFSSL_MSG("SLH-DSA Verify didn't match");
                         ret = ASN_SIG_CONFIRM_E;
                     }
                     break;
                 }
-                case SPHINCS_FAST_LEVEL3k:
+            #endif /* WOLFSSL_HAVE_SLHDSA */
+            #ifdef WOLFSSL_HAVE_LMS
+                case HSS_LMSk:
                 {
                     if (sigCtx->verify == 1) {
                         ret = 0;
                     }
                     else {
-                        WOLFSSL_MSG("SPHINCS_FAST_LEVEL3 Verify didn't match");
+                        WOLFSSL_MSG("HSS/LMS Verify didn't match");
                         ret = ASN_SIG_CONFIRM_E;
                     }
                     break;
                 }
-                case SPHINCS_FAST_LEVEL5k:
+            #endif /* WOLFSSL_HAVE_LMS */
+            #ifdef WOLFSSL_HAVE_XMSS
+                case XMSSk:
+                case XMSSMTk:
                 {
                     if (sigCtx->verify == 1) {
                         ret = 0;
                     }
                     else {
-                        WOLFSSL_MSG("SPHINCS_FAST_LEVEL5 Verify didn't match");
+                        WOLFSSL_MSG("XMSS/XMSS^MT Verify didn't match");
                         ret = ASN_SIG_CONFIRM_E;
                     }
                     break;
                 }
-                case SPHINCS_SMALL_LEVEL1k:
-                {
-                    if (sigCtx->verify == 1) {
-                        ret = 0;
-                    }
-                    else {
-                        WOLFSSL_MSG("SPHINCS_SMALL_LEVEL1 Verify didn't match");
-                        ret = ASN_SIG_CONFIRM_E;
-                    }
-                    break;
-                }
-                case SPHINCS_SMALL_LEVEL3k:
-                {
-                    if (sigCtx->verify == 1) {
-                        ret = 0;
-                    }
-                    else {
-                        WOLFSSL_MSG("SPHINCS_SMALL_LEVEL3 Verify didn't match");
-                        ret = ASN_SIG_CONFIRM_E;
-                    }
-                    break;
-                }
-                case SPHINCS_SMALL_LEVEL5k:
-                {
-                    if (sigCtx->verify == 1) {
-                        ret = 0;
-                    }
-                    else {
-                        WOLFSSL_MSG("SPHINCS_SMALL_LEVEL5 Verify didn't match");
-                        ret = ASN_SIG_CONFIRM_E;
-                    }
-                    break;
-                }
-            #endif /* HAVE_SPHINCS */
+            #endif /* WOLFSSL_HAVE_XMSS */
                 default:
                     break;
             }  /* switch (keyOID) */
@@ -17344,9 +18008,28 @@ int wolfssl_local_MatchBaseName(int type, const char* name, int nameSz,
     const char* base, int baseSz)
 {
     if (base == NULL || baseSz <= 0 || name == NULL || nameSz <= 0 ||
-            name[0] == '.' || nameSz < baseSz ||
+            name[0] == '.' ||
             (type != ASN_RFC822_TYPE && type != ASN_DNS_TYPE &&
              type != ASN_DIR_TYPE)) {
+        return 0;
+    }
+
+    if (type == ASN_DNS_TYPE) {
+        /* MatchDomainName treats one trailing dot as the absolute-FQDN marker.
+         * Apply the same normalization before enforcing DNS name constraints.
+         */
+        if (name[nameSz - 1] == '.') {
+            nameSz--;
+        }
+        if (base[baseSz - 1] == '.') {
+            baseSz--;
+        }
+        if (nameSz <= 0 || baseSz <= 0) {
+            return 0;
+        }
+    }
+
+    if (nameSz < baseSz) {
         return 0;
     }
 
@@ -17438,8 +18121,8 @@ int wolfssl_local_MatchBaseName(int type, const char* name, int nameSz,
     return 1;
 }
 
-static int MatchUriNameConstraint(const char* uri, int uriSz, const char* base,
-    int baseSz)
+int wolfssl_local_MatchUriNameConstraint(const char* uri, int uriSz,
+    const char* base, int baseSz)
 {
     const char* hostStart;
     const char* hostEnd;
@@ -17447,7 +18130,10 @@ static int MatchUriNameConstraint(const char* uri, int uriSz, const char* base,
     const char* uriEnd;
     int hostSz;
 
-    if (uri == NULL || uriSz <= 0 || base == NULL || baseSz <= 0) {
+    /* Need at least 3 bytes for the "://" scheme separator; rejecting short
+     * inputs early also keeps the loop bound (uriEnd - 2) from forming a
+     * pointer before `uri`. */
+    if (uri == NULL || uriSz < 3 || base == NULL || baseSz <= 0) {
         return 0;
     }
 
@@ -17503,8 +18189,168 @@ static int MatchUriNameConstraint(const char* uri, int uriSz, const char* base,
         return 0;
     }
 
-    return wolfssl_local_MatchBaseName(ASN_DNS_TYPE, hostStart, hostSz, base,
-        baseSz);
+    /* RFC 5280 4.2.1.10: for URIs the constraint applies to the host part.
+     * A constraint that begins with a '.' matches any host with one or more
+     * additional leading labels (the bare host is excluded) - this is the
+     * DNS subtree behaviour. A constraint without a leading '.' specifies a
+     * single host and must match it exactly. */
+    if (base[0] == '.') {
+        return wolfssl_local_MatchBaseName(ASN_DNS_TYPE, hostStart, hostSz,
+            base, baseSz);
+    }
+    else {
+        int i;
+        if (hostSz != baseSz) {
+            return 0;
+        }
+        for (i = 0; i < baseSz; i++) {
+            if (XTOLOWER((unsigned char)hostStart[i]) !=
+                XTOLOWER((unsigned char)base[i])) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+}
+
+/* Locate the right-most label of `s` that ends (exclusive) at index `end`.
+ * Sets *outStart to its starting index (the index of its first byte). If
+ * outHasWild is non-NULL, sets *outHasWild to 1 iff the label contains '*'.
+ * The '.' immediately before *outStart (if any) is the label separator and is
+ * not part of either the current or the preceding label. */
+static void PrevDnsLabel(const char* s, int end, int* outStart,
+    int* outHasWild)
+{
+    int start = end;
+    int hasWild = 0;
+    while (start > 0 && s[start - 1] != '.') {
+        if (s[start - 1] == '*') {
+            hasWild = 1;
+        }
+        start--;
+    }
+    *outStart = start;
+    if (outHasWild != NULL) {
+        *outHasWild = hasWild;
+    }
+}
+
+/* Match a wildcard DNS SAN against a DNS name-constraint subtree.
+ *
+ * A wildcard SAN denotes the set of names its '*'(s) can expand to. Because a
+ * '*' never crosses a label boundary (see MatchDomainName), every expansion
+ * has the same number of labels and only the content of '*'-bearing labels
+ * varies. Matching is therefore done label-by-label from the right against the
+ * constraint base.
+ *
+ * permitted != 0: containment. Accept only if EVERY expansion stays inside the
+ *   subtree, i.e. each of the right-most base-length labels of the name is
+ *   wildcard-free and equal to the corresponding base label. Extra labels to
+ *   the left may be anything (adding labels on the left stays in-subtree).
+ *
+ * permitted == 0: intersection (for excluded subtrees). Reject if SOME
+ *   expansion falls inside the subtree. A label containing a '*' is
+ *   conservatively treated as able to match any single base label; a literal
+ *   label must equal the base label.
+ *
+ * A leading '.' on the base denotes a proper subtree (the apex is excluded),
+ * which requires at least one extra label on the left of the name.
+ *
+ * Returns 1 on match (contained / intersecting), 0 otherwise.
+ */
+int wolfssl_local_MatchDnsConstraintWildcard(const char* name, int nameSz,
+    const char* base, int baseSz, int permitted)
+{
+    int baseLead;
+    int ni, bi;
+
+    if (name == NULL || base == NULL || nameSz <= 0 || baseSz <= 0) {
+        return 0;
+    }
+
+    /* MatchDomainName treats one trailing dot as the absolute-FQDN marker.
+     * Apply the same normalization before label-wise constraint matching.
+     */
+    if (name[nameSz - 1] == '.') {
+        nameSz--;
+    }
+    if (base[baseSz - 1] == '.') {
+        baseSz--;
+    }
+    if (nameSz <= 0 || baseSz <= 0 || name[0] == '.') {
+        return 0;
+    }
+
+    baseLead = (base[0] == '.');
+    if (baseLead) {
+        base++;
+        baseSz--;
+    }
+    /* A base of only dots (".", "..") has no labels to match. */
+    if (baseSz <= 0 || base[0] == '.') {
+        return 0;
+    }
+
+    ni = nameSz; /* exclusive end of the unconsumed name */
+    bi = baseSz; /* exclusive end of the unconsumed base */
+
+    /* Compare each base label (right to left) with the aligned name label. */
+    while (bi > 0) {
+        int nStart, bStart, nLen, bLen, k;
+        int hasWild = 0;
+
+        /* Base labels remain but the name has none left -> name is shorter in
+         * labels and cannot contain the base. */
+        if (ni <= 0) {
+            return 0;
+        }
+
+        PrevDnsLabel(name, ni, &nStart, &hasWild);
+        PrevDnsLabel(base, bi, &bStart, NULL);
+        nLen = ni - nStart;
+        bLen = bi - bStart;
+
+        /* Empty label (e.g. "a..b" or an extra trailing dot) is invalid. */
+        if (nLen == 0 || bLen == 0) {
+            return 0;
+        }
+
+        if (hasWild) {
+            /* permitted: a wildcard label cannot prove containment.
+             * excluded: a wildcard label is conservatively treated as
+             * compatible, so nothing more to check. */
+            if (permitted) {
+                return 0;
+            }
+        }
+        else {
+            /* Literal label: both modes require exact case-insensitive
+             * equality with the base label. */
+            if (nLen != bLen) {
+                return 0;
+            }
+            for (k = 0; k < bLen; k++) {
+                if (XTOLOWER((unsigned char)name[nStart + k]) !=
+                    XTOLOWER((unsigned char)base[bStart + k])) {
+                    return 0;
+                }
+            }
+        }
+
+        /* Consume both labels and the '.' that precedes them (if any). */
+        ni = nStart - 1;
+        bi = bStart - 1;
+    }
+
+    /* All base labels matched. ni >= 0 means name[ni] == '.' and at least one
+     * extra label remains on the left; ni < 0 means the name had exactly the
+     * base's label count (an apex match). A leading-dot base is a proper
+     * subtree and requires at least one extra left label. */
+    if (baseLead && ni < 0) {
+        return 0;
+    }
+
+    return 1;
 }
 
 /* Check if IP address matches a name constraint.
@@ -17544,6 +18390,31 @@ int wolfssl_local_MatchIpSubnet(const byte* ip, int ipSz,
     return match;
 }
 
+/* RFC 5280 4.2.1.10: otherName matching is byte-exact comparison of the
+ * full OtherName encoding (OID || [0] EXPLICIT value). Both the leaf SAN
+ * (cert->altOtherNamesRaw) and the constraint subtree (Base_entry from
+ * DecodeSubtree) store the same form, so a memcmp suffices. */
+static int MatchOtherNameConstraint(DNS_entry* name, Base_entry* current)
+{
+    if (name == NULL || current == NULL)
+        return 0;
+    if (name->len != current->nameSz)
+        return 0;
+    return XMEMCMP(name->name, current->name, (size_t)current->nameSz) == 0;
+}
+
+/* Return 1 if the name contains a wildcard '*' character. */
+static int DnsNameHasWildcard(const char* name, int nameSz)
+{
+    int i;
+    for (i = 0; i < nameSz; i++) {
+        if (name[i] == '*') {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /* Search through the list to find if the name is permitted.
  * name     The DNS name to search for
  * dnsList  The list to search through
@@ -17571,8 +18442,36 @@ static int PermittedListOk(DNS_entry* name, Base_entry* dnsList, byte nameType)
                 }
             }
             else if (nameType == ASN_URI_TYPE) {
-                if (MatchUriNameConstraint(name->name, name->len,
+                if (wolfssl_local_MatchUriNameConstraint(name->name, name->len,
                         current->name, current->nameSz)) {
+                    match = 1;
+                    break;
+                }
+            }
+            else if (nameType == ASN_OTHER_TYPE) {
+                if (MatchOtherNameConstraint(name, current)) {
+                    match = 1;
+                    break;
+                }
+            }
+            else if (nameType == ASN_RID_TYPE) {
+                /* registeredID matches when the OID bodies are bytewise
+                 * equal. RFC 5280 Sec. 4.2.1.10 does not define a
+                 * subtree relation for OIDs, so use exact-match. */
+                if (name->len == current->nameSz &&
+                    XMEMCMP(name->name, current->name,
+                            (size_t)name->len) == 0) {
+                    match = 1;
+                    break;
+                }
+            }
+            else if (nameType == ASN_DNS_TYPE &&
+                     DnsNameHasWildcard(name->name, name->len)) {
+                /* Wildcard DNS SAN: a '*' can expand to a longer label, so the
+                 * byte-length guard used for literal names below is invalid.
+                 * Permit only if every expansion stays inside the subtree. */
+                if (wolfssl_local_MatchDnsConstraintWildcard(name->name,
+                        name->len, current->name, current->nameSz, 1)) {
                     match = 1;
                     break;
                 }
@@ -17618,8 +18517,35 @@ static int IsInExcludedList(DNS_entry* name, Base_entry* dnsList, byte nameType)
                 }
             }
             else if (nameType == ASN_URI_TYPE) {
-                if (MatchUriNameConstraint(name->name, name->len,
+                if (wolfssl_local_MatchUriNameConstraint(name->name, name->len,
                         current->name, current->nameSz)) {
+                    ret = 1;
+                    break;
+                }
+            }
+            else if (nameType == ASN_OTHER_TYPE) {
+                if (MatchOtherNameConstraint(name, current)) {
+                    ret = 1;
+                    break;
+                }
+            }
+            else if (nameType == ASN_RID_TYPE) {
+                /* registeredID matches when the OID bodies are bytewise
+                 * equal. See PermittedListOk for the rationale. */
+                if (name->len == current->nameSz &&
+                    XMEMCMP(name->name, current->name,
+                            (size_t)name->len) == 0) {
+                    ret = 1;
+                    break;
+                }
+            }
+            else if (nameType == ASN_DNS_TYPE &&
+                     DnsNameHasWildcard(name->name, name->len)) {
+                /* Wildcard DNS SAN: a '*' can expand to a longer label, so the
+                 * byte-length guard used for literal names below is invalid.
+                 * Exclude if any expansion can fall inside the subtree. */
+                if (wolfssl_local_MatchDnsConstraintWildcard(name->name,
+                        name->len, current->name, current->nameSz, 0)) {
                     ret = 1;
                     break;
                 }
@@ -17641,13 +18567,15 @@ static int IsInExcludedList(DNS_entry* name, Base_entry* dnsList, byte nameType)
 static int ConfirmNameConstraints(Signer* signer, DecodedCert* cert)
 {
     const byte nameTypes[] = {ASN_RFC822_TYPE, ASN_DNS_TYPE, ASN_DIR_TYPE,
-                              ASN_IP_TYPE, ASN_URI_TYPE};
+                              ASN_IP_TYPE, ASN_URI_TYPE, ASN_OTHER_TYPE,
+                              ASN_RID_TYPE};
     int i;
 
     if (signer == NULL || cert == NULL)
         return 0;
 
-    if (signer->excludedNames == NULL && signer->permittedNames == NULL)
+    if (signer->excludedNames == NULL && signer->permittedNames == NULL &&
+            !signer->extNameConstraintHasUnsupported)
         return 1;
 
     for (i=0; i < (int)sizeof(nameTypes); i++) {
@@ -17658,9 +18586,16 @@ static int ConfirmNameConstraints(Signer* signer, DecodedCert* cert)
         XMEMSET(&subjectDnsName, 0, sizeof(DNS_entry));
         switch (nameType) {
             case ASN_DNS_TYPE:
-                /* Should it also consider CN in subject? It could use
-                 * subjectDnsName too */
                 name = cert->altNames;
+
+                /* When no SAN is present, apply DNS name constraints to the
+                 * Subject CN. */
+                if (cert->subjectCN != NULL && cert->altNames == NULL) {
+                    subjectDnsName.next = NULL;
+                    subjectDnsName.type = ASN_DNS_TYPE;
+                    subjectDnsName.len  = cert->subjectCNLen;
+                    subjectDnsName.name = cert->subjectCN;
+                }
                 break;
             case ASN_IP_TYPE:
                 /* IP addresses are stored in altNames with type ASN_IP_TYPE */
@@ -17705,10 +18640,20 @@ static int ConfirmNameConstraints(Signer* signer, DecodedCert* cert)
             case ASN_URI_TYPE:
                 name = cert->altNames;
                 break;
+            case ASN_OTHER_TYPE:
+                /* otherName SAN entries are stored on cert->altOtherNamesRaw
+                 * (kept separate from altNames so the public altNames view
+                 * is unaffected). Each entry holds the raw OtherName
+                 * encoding (OID || [0] EXPLICIT value) and is byte-matched
+                 * against the issuing CA's subtree. */
+                name = cert->altOtherNamesRaw;
+                break;
+            case ASN_RID_TYPE:
+                /* registeredID entries also live on cert->altNames as
+                 * raw OID body bytes. */
+                name = cert->altNames;
+                break;
             default:
-                /* Other types of names are ignored for now.
-                 * Shouldn't it be rejected if it there is a altNamesByType[nameType]
-                 * and signer->extNameConstraintCrit is set? */
                 return 0;
         }
 
@@ -17747,6 +18692,19 @@ static int ConfirmNameConstraints(Signer* signer, DecodedCert* cert)
                 return 0;
             }
         }
+    }
+
+    /* RFC 5280 4.2.1.10: "If a name constraints extension that is marked as
+     * critical imposes constraints on a particular name form ... the
+     * application MUST either process the constraint or reject the
+     * certificate." otherName and registeredID are both processed by
+     * byte-comparison above; any remaining unsupported forms
+     * (x400Address, ediPartyName) trigger the fail-closed reject below. */
+    if (signer->extNameConstraintCrit &&
+            signer->extNameConstraintHasUnsupported) {
+        WOLFSSL_MSG("Critical nameConstraints contains unsupported "
+                    "GeneralName form; rejecting");
+        return 0;
     }
 
     return 1;
@@ -17942,6 +18900,19 @@ static int DecodeOtherName(DecodedCert* cert, const byte* input,
  * @return  ASN_UNKNOWN_OID_E when the OID cannot be verified.
  * @return  MEMORY_E when dynamic memory allocation fails.
  */
+/* Reject IA5String SAN content that cannot legally appear in
+ * dNSName / rfc822Name / URI per RFC 5280 4.2.1.6. Currently just NUL. */
+static int DecodeGeneralNameCheckChars(const byte* input, int len)
+{
+    int i;
+    for (i = 0; i < len; i++) {
+        if (input[i] == 0) {
+            return ASN_PARSE_E;
+        }
+    }
+    return 0;
+}
+
 static int DecodeGeneralName(const byte* input, word32* inOutIdx, byte tag,
                              int len, DecodedCert* cert)
 {
@@ -17950,6 +18921,10 @@ static int DecodeGeneralName(const byte* input, word32* inOutIdx, byte tag,
 
     /* GeneralName choice: dnsName */
     if (tag == (ASN_CONTEXT_SPECIFIC | ASN_DNS_TYPE)) {
+        ret = DecodeGeneralNameCheckChars(input + idx, len);
+        if (ret != 0) {
+            return ret;
+        }
         ret = SetDNSEntry(cert->heap, (const char*)(input + idx), len,
                 ASN_DNS_TYPE, &cert->altNames);
         if (ret == 0) {
@@ -17977,6 +18952,10 @@ static int DecodeGeneralName(const byte* input, word32* inOutIdx, byte tag,
     }
     /* GeneralName choice: rfc822Name */
     else if (tag == (ASN_CONTEXT_SPECIFIC | ASN_RFC822_TYPE)) {
+        ret = DecodeGeneralNameCheckChars(input + idx, len);
+        if (ret != 0) {
+            return ret;
+        }
         ret = SetDNSEntry(cert->heap, (const char*)(input + idx), len,
                 ASN_RFC822_TYPE, &cert->altEmailNames);
         if (ret == 0) {
@@ -17985,9 +18964,13 @@ static int DecodeGeneralName(const byte* input, word32* inOutIdx, byte tag,
     }
     /* GeneralName choice: uniformResourceIdentifier */
     else if (tag == (ASN_CONTEXT_SPECIFIC | ASN_URI_TYPE)) {
+        ret = DecodeGeneralNameCheckChars(input + idx, len);
+        if (ret != 0) {
+            return ret;
+        }
         WOLFSSL_MSG("\tPutting URI into list but not using");
 
-    #if !defined(WOLFSSL_NO_ASN_STRICT) && !defined(WOLFSSL_FPKI)
+    #ifndef WOLFSSL_NO_ASN_STRICT
         /* Verify RFC 5280 Sec 4.2.1.6 rule:
             "The name MUST NOT be a relative URI"
             As per RFC 3986 Sec 4.3, an absolute URI is only required to contain
@@ -18003,9 +18986,8 @@ static int DecodeGeneralName(const byte* input, word32* inOutIdx, byte tag,
                     break;
                 }
                 if (input[idx + (word32)i] == '/') {
-                    i = len; /* error, found relative path since '/' was
-                              * encountered before ':'. Returning error
-                              * value in next if statement. */
+                    /* path is relative since '/' was encountered before ':'. */
+                    return ASN_ALT_NAME_E;
                 }
             }
 
@@ -18031,8 +19013,32 @@ static int DecodeGeneralName(const byte* input, word32* inOutIdx, byte tag,
             idx += (word32)len;
         }
     }
-    #ifdef WOLFSSL_IP_ALT_NAME
-    /* GeneralName choice: iPAddress */
+    /* GeneralName choice: iPAddress
+     *
+     * Always parse iPAddress into cert->altNames so ConfirmNameConstraints
+     * can enforce permitted/excluded iPAddress subtrees (RFC 5280
+     * Sec. 4.2.1.10). The entry holds raw 4/16 octet payloads;
+     * WOLFSSL_IP_ALT_NAME still gates the human-readable ipString
+     * generation in SetDNSEntry.
+     *
+     * Consequences for downstream consumers when WOLFSSL_IP_ALT_NAME is
+     * undefined:
+     *   - wolfSSL_X509_get_next_altname (string iterator): explicitly
+     *     skips iPAddress entries, since returning raw bytes as a C
+     *     string would truncate at any embedded NUL. This preserves the
+     *     pre-fix behavior for that getter.
+     *   - CheckForAltNames (TLS hostname matching): the iPAddress branch
+     *     is compiled out, so iPAddress entries cannot match anything;
+     *     they are also excluded from the *checkCN decision so an
+     *     IP-only-SAN cert still falls back to CN matching as before.
+     *   - All other altNames walkers (e.g. ALT_NAMES_OID handling in
+     *     wolfSSL_X509_get_ext_d2i, wolfssl_x509_alt_names_to_gn,
+     *     FlattenAltNames in cert generation) now see iPAddress entries
+     *     unconditionally. This is intentional and brings wolfSSL closer
+     *     to OpenSSL's SAN-exposure semantics; the OPENSSL_EXTRA APIs
+     *     surface the raw octets as OCTET_STRING already (see the
+     *     ASN_IP_TYPE case under WOLFSSL_GEN_IPADD in src/x509.c).
+     */
     else if (tag == (ASN_CONTEXT_SPECIFIC | ASN_IP_TYPE)) {
         ret = SetDNSEntry(cert->heap, (const char*)(input + idx), len,
                 ASN_IP_TYPE, &cert->altNames);
@@ -18040,9 +19046,31 @@ static int DecodeGeneralName(const byte* input, word32* inOutIdx, byte tag,
             idx += (word32)len;
         }
     }
-    #endif /* WOLFSSL_IP_ALT_NAME */
-    #ifdef WOLFSSL_RID_ALT_NAME
-    /* GeneralName choice: registeredID */
+    /* GeneralName choice: registeredID
+     *
+     * Always parse registeredID into cert->altNames so
+     * ConfirmNameConstraints can enforce permitted/excluded subtrees
+     * (RFC 5280 Sec. 4.2.1.10). The entry holds raw OID body bytes;
+     * WOLFSSL_RID_ALT_NAME only gates the human-readable ridString
+     * generation in SetDNSEntry. Downstream consumer treatment in
+     * default builds:
+     *   - wolfSSL_X509_get_next_altname (string iterator): skips
+     *     ASN_RID_TYPE entries (raw OID bytes are not a C string).
+     *   - CheckForAltNames (TLS hostname matching): skips ASN_RID_TYPE
+     *     unconditionally and excludes them from *checkCN, so a cert
+     *     with only registeredID SANs still falls back to CN.
+     *   - CheckForAltNames (TLS hostname matching): skips ASN_URI_TYPE
+     *     for DNS hostname checks (RFC 9525 Sec. 6.3) but URI SAN presence
+     *     still suppresses CN fallback because URI-ID is a distinct presented
+     *     identifier.
+     *   - DNS_to_GENERAL_NAME (used by wolfSSL_X509_get_ext) and the
+     *     ALT_NAMES_OID arm of wolfSSL_X509_get_ext_d2i: build a proper
+     *     ASN1_OBJECT in d.registeredID from raw OID bytes regardless
+     *     of WOLFSSL_RID_ALT_NAME, so OPENSSL_EXTRA-style callers see
+     *     correctly-typed GENERAL_NAME entries.
+     *   - X509_print_name_entry: emits "Registered ID:<unavailable>"
+     *     when ridString is not generated, instead of failing the
+     *     whole print operation. */
     else if (tag == (ASN_CONTEXT_SPECIFIC | ASN_RID_TYPE)) {
         ret = SetDNSEntry(cert->heap, (const char*)(input + idx), len,
                 ASN_RID_TYPE, &cert->altNames);
@@ -18050,12 +19078,37 @@ static int DecodeGeneralName(const byte* input, word32* inOutIdx, byte tag,
             idx += (word32)len;
         }
     }
-    #endif /* WOLFSSL_RID_ALT_NAME */
 #endif /* IGNORE_NAME_CONSTRAINTS */
-#if defined(WOLFSSL_SEP) || defined(WOLFSSL_FPKI)
-    /* GeneralName choice: otherName */
+#ifndef IGNORE_NAME_CONSTRAINTS
+    /* GeneralName choice: otherName.
+     * Store the raw OtherName encoding (OID || [0] EXPLICIT value) on a
+     * dedicated internal list so ConfirmNameConstraints() can byte-match
+     * it against the issuing CA's nameConstraints subtree (RFC 5280
+     * 4.2.1.10). The raw form is kept separate from cert->altNames so
+     * the public altNames view (used by OpenSSL-compat APIs) reflects
+     * exactly what the SAN extension carries. */
     else if (tag == (ASN_CONTEXT_SPECIFIC | ASN_CONSTRUCTED | ASN_OTHER_TYPE)) {
-        /* TODO: test data for code path */
+        ret = SetDNSEntry(cert->heap, (const char*)(input + idx), len,
+                ASN_OTHER_TYPE, &cert->altOtherNamesRaw);
+        if (ret != 0) {
+            return ret;
+        }
+    #if defined(WOLFSSL_SEP) || defined(WOLFSSL_FPKI)
+        /* FPKI/SEP also OID-decode the otherName into a separate altNames
+         * entry that holds the parsed UPN/FASCN value (with oidSum != 0).
+         * That parsed entry is consumed by wc_GetUUIDFromCert /
+         * wc_GetFASCNFromCert; ConfirmNameConstraints() does not look at
+         * it - it iterates altOtherNamesRaw instead. */
+        ret = DecodeOtherName(cert, input, &idx, len);
+    #else
+        idx += (word32)len;
+    #endif
+    }
+#elif defined(WOLFSSL_SEP) || defined(WOLFSSL_FPKI)
+    /* No name constraints support in the build, but FPKI/SEP still need
+     * the parsed otherName entry for wc_GetUUIDFromCert /
+     * wc_GetFASCNFromCert. */
+    else if (tag == (ASN_CONTEXT_SPECIFIC | ASN_CONSTRUCTED | ASN_OTHER_TYPE)) {
         ret = DecodeOtherName(cert, input, &idx, len);
     }
 #endif
@@ -18930,6 +19983,39 @@ static int DecodeKeyUsageInternal(const byte* input, word32 sz,
     return DecodeKeyUsage(input, sz, &cert->extKeyUsage);
 }
 
+#ifdef WOLFSSL_ACME_OID
+/* Decodes the RFC 8737 id-pe-acmeIdentifier (1.3.6.1.5.5.7.1.31)
+ * extension value into cert->acmeIdentifier.
+ *
+ * The extnValue is an OCTET STRING wrapping a SHA-256 digest of the
+ * ACME keyAuth, per RFC 8737 3. Length is verified against
+ * WC_SHA256_DIGEST_SIZE.
+ *
+ * @param [in]      input  ASN.1 DER-encoded extension value.
+ * @param [in]      sz     Length of input in bytes.
+ * @param [in, out] cert   DecodedCert to populate (acmeIdentifier and
+ *                         acmeIdentifierSz fields).
+ *
+ * @return  0 on success.
+ * @return  ASN_PARSE_E when the inner OCTET STRING is missing or not
+ *          exactly WC_SHA256_DIGEST_SIZE bytes.
+ */
+static int DecodeAcmeId(const byte* input, word32 sz, DecodedCert* cert)
+{
+    word32 hashIdx = 0;
+    int    hashLen = 0;
+
+    if (GetOctetString(input, &hashIdx, &hashLen, sz) < 0)
+        return ASN_PARSE_E;
+    if (hashLen != WC_SHA256_DIGEST_SIZE)
+        return ASN_PARSE_E;
+
+    XMEMCPY(cert->acmeIdentifier, &input[hashIdx], WC_SHA256_DIGEST_SIZE);
+    cert->acmeIdentifierSz = WC_SHA256_DIGEST_SIZE;
+    return 0;
+}
+#endif /* WOLFSSL_ACME_OID */
+
 #ifdef WOLFSSL_ASN_TEMPLATE
 /* ASN.1 template for KeyPurposeId.
  * X.509: RFC 5280, 4.2.1.12 - Extended Key Usage.
@@ -19165,8 +20251,14 @@ static int DecodeSubtreeGeneralName(const byte* input, word32 sz, byte tag,
 
     (void)heap;
 
-    /* if constructed has leading sequence */
-    if ((tag & ASN_CONSTRUCTED) == ASN_CONSTRUCTED) {
+    /* directoryName is encoded as [4] CONSTRUCTED { Name } where Name is a
+     * SEQUENCE - strip the inner SEQUENCE header.
+     * otherName is encoded as [0] CONSTRUCTED { OID, [0] EXPLICIT value }
+     * where the inner content is NOT a SEQUENCE; keep the bytes as-is so
+     * we can byte-match a leaf SAN otherName against the constraint.
+     */
+    if ((tag & ASN_CONSTRUCTED) == ASN_CONSTRUCTED &&
+            (tag & ASN_TYPE_MASK) != ASN_OTHER_TYPE) {
         ret = GetASN_Sequence(input, &nameIdx, &strLen, sz, 0);
         if (ret < 0) {
             ret = ASN_PARSE_E;
@@ -19225,8 +20317,17 @@ static int DecodeSubtreeGeneralName(const byte* input, word32 sz, byte tag,
  * @return  ASN_PARSE_E when SEQUENCE is not found as expected.
  */
 #ifdef WOLFSSL_ASN_TEMPLATE
+/* Decode a sub-tree of name constraints.
+ *
+ * @param [out]     hasUnsupported  Set to 1 when an entry with a GeneralName
+ *                                  form we cannot fully enforce was
+ *                                  encountered. Drives the RFC 5280 4.2.1.10
+ *                                  fail-closed requirement for critical
+ *                                  nameConstraints extensions; must not be
+ *                                  NULL.
+ */
 static int DecodeSubtree(const byte* input, word32 sz, Base_entry** head,
-                         word32 limit, void* heap)
+                         word32 limit, byte* hasUnsupported, void* heap)
 {
     DECL_ASNGETDATA(dataASN, subTreeASN_Length);
     word32 idx = 0;
@@ -19263,18 +20364,31 @@ static int DecodeSubtree(const byte* input, word32 sz, Base_entry** head,
         if (ret == 0) {
             byte t = dataASN[SUBTREEASN_IDX_BASE].tag;
 
-            /* Check GeneralName tag is one of the types we can handle. */
+            /* Check GeneralName tag is one of the types we can handle.
+             * registeredID is included so that ConfirmNameConstraints can
+             * enforce permitted/excluded subtrees of OIDs (RFC 5280
+             * Sec. 4.2.1.10). */
             if (t == (ASN_CONTEXT_SPECIFIC | ASN_DNS_TYPE) ||
                 t == (ASN_CONTEXT_SPECIFIC | ASN_RFC822_TYPE) ||
                 t == (ASN_CONTEXT_SPECIFIC | ASN_CONSTRUCTED | ASN_DIR_TYPE) ||
                 t == (ASN_CONTEXT_SPECIFIC | ASN_IP_TYPE) ||
-                t == (ASN_CONTEXT_SPECIFIC | ASN_URI_TYPE)) {
+                t == (ASN_CONTEXT_SPECIFIC | ASN_URI_TYPE) ||
+                t == (ASN_CONTEXT_SPECIFIC | ASN_CONSTRUCTED |
+                      ASN_OTHER_TYPE) ||
+                t == (ASN_CONTEXT_SPECIFIC | ASN_RID_TYPE)) {
                 /* Parse the general name and store a new entry. */
                 ret = DecodeSubtreeGeneralName(input +
                     GetASNItem_DataIdx(dataASN[SUBTREEASN_IDX_BASE], input),
                     dataASN[SUBTREEASN_IDX_BASE].length, t, head, heap);
             }
-            /* Skip entry. */
+            else {
+                /* GeneralName form (e.g. x400Address, ediPartyName) we do
+                 * not enforce. Record so the caller can fail-closed when the
+                 * nameConstraints extension is critical (RFC 5280 4.2.1.10).
+                 * registeredID is handled above; this branch covers truly
+                 * unrecognised forms. */
+                *hasUnsupported = 1;
+            }
         }
     }
 
@@ -19322,6 +20436,7 @@ static int DecodeNameConstraints(const byte* input, word32 sz,
     DECL_ASNGETDATA(dataASN, nameConstraintsASN_Length);
     word32 idx = 0;
     int    ret = 0;
+    byte   hasUnsupported = 0;
 
     CALLOC_ASNGETDATA(dataASN, nameConstraintsASN_Length, ret, cert->heap);
 
@@ -19337,7 +20452,7 @@ static int DecodeNameConstraints(const byte* input, word32 sz,
                     dataASN[NAMECONSTRAINTSASN_IDX_PERMIT].data.ref.data,
                     dataASN[NAMECONSTRAINTSASN_IDX_PERMIT].data.ref.length,
                     &cert->permittedNames, WOLFSSL_MAX_NAME_CONSTRAINTS,
-                    cert->heap);
+                    &hasUnsupported, cert->heap);
         }
     }
     if (ret == 0) {
@@ -19347,8 +20462,12 @@ static int DecodeNameConstraints(const byte* input, word32 sz,
                     dataASN[NAMECONSTRAINTSASN_IDX_EXCLUDE].data.ref.data,
                     dataASN[NAMECONSTRAINTSASN_IDX_EXCLUDE].data.ref.length,
                     &cert->excludedNames, WOLFSSL_MAX_NAME_CONSTRAINTS,
-                    cert->heap);
+                    &hasUnsupported, cert->heap);
         }
+    }
+
+    if (ret == 0 && hasUnsupported) {
+        cert->extNameConstraintHasUnsupported = 1;
     }
 
     FREE_ASNGETDATA(dataASN, cert->heap);
@@ -19658,14 +20777,8 @@ static int DecodeSubjInfoAcc(const byte* input, word32 sz, DecodedCert* cert)
 {
     word32 idx = 0;
     int length = 0;
-    int ret = 0;
 
     WOLFSSL_ENTER("DecodeSubjInfoAcc");
-
-#ifdef OPENSSL_ALL
-    cert->extSubjAltNameSrc = input;
-    cert->extSubjAltNameSz = sz;
-#endif /* OPENSSL_ALL */
 
     /* Unwrap SubjectInfoAccessSyntax, the list of AccessDescriptions */
     if (GetSequence(input, &idx, &length, sz) < 0)
@@ -19679,12 +20792,11 @@ static int DecodeSubjInfoAcc(const byte* input, word32 sz, DecodedCert* cert)
         return ASN_PARSE_E;
     }
 
-    /* Per fpkx-x509-cert-profile-common... section 5.3.
-     * [The] subjectInfoAccess extension must contain at least one
-     * instance of the id-ad-caRepository access method containing a
-     * publicly accessible HTTP URI which returns as certs-only
-     * CMS.
-     */
+    /* RFC 5280 specifies that at least one entry must be present but does not
+     * specify any particular OID must be present. For certificates following
+     * fpki-x509-cert-profile-common, we extract the id-ad-caRepository caRepo
+     * entry to cert->extSubjInfoAccCaRepo / cert->extSubjInfoAccCaRepoSz for
+     * convenient user access. */
 
     while (idx < (word32)sz) {
         word32 oid = 0;
@@ -19714,14 +20826,8 @@ static int DecodeSubjInfoAcc(const byte* input, word32 sz, DecodedCert* cert)
         idx += (word32)length;
     }
 
-    if (cert->extSubjInfoAccCaRepo == NULL ||
-            cert->extSubjInfoAccCaRepoSz == 0) {
-        WOLFSSL_MSG("SubjectInfoAccess missing an URL.");
-        ret = ASN_PARSE_E;
-    }
-
-    WOLFSSL_LEAVE("DecodeSubjInfoAcc", ret);
-    return ret;
+    WOLFSSL_LEAVE("DecodeSubjInfoAcc", 0);
+    return 0;
 }
 #endif /* WOLFSSL_SUBJ_INFO_ACC */
 
@@ -19930,8 +21036,9 @@ static int DecodeAltSigVal(const byte* input, int sz, DecodedCert* cert)
  * @return  MEMORY_E on dynamic memory allocation failure.
  * @return  Other negative values on error.
  */
-int DecodeExtensionType(const byte* input, word32 length, word32 oid,
-                        byte critical, DecodedCert* cert, int *isUnknownExt)
+WOLFSSL_TEST_VIS int DecodeExtensionType(const byte* input, word32 length,
+                                         word32 oid, byte critical,
+                                         DecodedCert* cert, int *isUnknownExt)
 {
     int ret = 0;
     word32 idx = 0;
@@ -20031,11 +21138,17 @@ int DecodeExtensionType(const byte* input, word32 length, word32 oid,
 
         /* Certificate policies. */
         case CERT_POLICY_OID:
-        #ifdef WOLFSSL_SEP
+        #if defined(WOLFSSL_SEP) || defined(WOLFSSL_CERT_EXT)
+            /* certificatePolicies is non-repeatable (RFC 5280 4.2). In strict
+             * mode (the default; VERIFY_AND_SET_OID is a no-op under
+             * WOLFSSL_NO_ASN_STRICT, like every other extension) reject a
+             * duplicate regardless of WOLFSSL_SEP - otherwise the second one
+             * silently overwrites the first (DecodeCertPolicy resets
+             * extCertPoliciesNb), a policy-authorization confusion. */
             VERIFY_AND_SET_OID(cert->extCertPolicySet);
+        #ifdef WOLFSSL_SEP
             cert->extCertPolicyCrit = critical ? 1 : 0;
         #endif
-        #if defined(WOLFSSL_SEP) || defined(WOLFSSL_CERT_EXT)
             if (DecodeCertPolicy(input, length, cert) < 0) {
                 ret = ASN_PARSE_E;
             }
@@ -20152,6 +21265,14 @@ int DecodeExtensionType(const byte* input, word32 length, word32 oid,
                 return ASN_PARSE_E;
             break;
     #endif /* WOLFSSL_DUAL_ALG_CERTS */
+    #ifdef WOLFSSL_ACME_OID
+        case ACME_IDENTIFIER_OID:
+            VERIFY_AND_SET_OID(cert->extAcmeIdentifierSet);
+            cert->extAcmeIdentifierCrit = critical ? 1 : 0;
+            if (DecodeAcmeId(&input[idx], length, cert) < 0)
+                return ASN_PARSE_E;
+            break;
+    #endif
         default:
             if (isUnknownExt != NULL)
                 *isUnknownExt = 1;
@@ -20678,21 +21799,10 @@ static int DecodeCertInternal(DecodedCert* cert, int verify, int* criticalExt,
         cert->version = version;
         cert->serialSz = (int)serialSz;
 
-    #if !defined(WOLFSSL_NO_ASN_STRICT) && !defined(WOLFSSL_PYTHON) && \
-        !defined(WOLFSSL_ASN_ALLOW_0_SERIAL)
-        /* RFC 5280 section 4.1.2.2 states that non-conforming CAs may issue
-         * a negative or zero serial number and should be handled gracefully.
-         * Since it is a non-conforming CA that issues a serial of 0 then we
-         * treat it as an error here. */
-        if (cert->serialSz == 1 && cert->serial[0] == 0) {
-            WOLFSSL_MSG("Error serial number of 0, use WOLFSSL_NO_ASN_STRICT "
-                "if wanted");
-            ret = ASN_PARSE_E;
-        }
-    #endif
+        /* RFC 5280 requires serial number to be present and at least 1 byte */
         if (cert->serialSz == 0) {
-            WOLFSSL_MSG("Error serial size is zero. Should be at least one "
-                        "even with no serial number.");
+            WOLFSSL_MSG("Error: certificate serial number is empty "
+                        "(zero-length serial is invalid per RFC 5280)");
             ret = ASN_PARSE_E;
         }
 
@@ -20759,7 +21869,7 @@ static int DecodeCertInternal(DecodedCert* cert, int verify, int* criticalExt,
             ret = ASN_SIG_OID_E;
         }
         /* Parameters not allowed after ECDSA or EdDSA algorithm OID. */
-        else if (IsSigAlgoECC(cert->signatureOID)) {
+        else if (IsSigAlgoNoParams(cert->signatureOID)) {
         #ifndef WOLFSSL_ECC_SIGALG_PARAMS_NULL_ALLOWED
             if (dataASN[X509CERTASN_IDX_SIGALGO_PARAMS_NULL].tag != 0) {
                 WOLFSSL_ERROR_VERBOSE(ASN_PARSE_E);
@@ -20914,6 +22024,29 @@ static int DecodeCertInternal(DecodedCert* cert, int verify, int* criticalExt,
         /* Parsed whole certificate fine but return any date errors. */
         ret = badDate;
     }
+
+#if !defined(WOLFSSL_NO_ASN_STRICT) && !defined(WOLFSSL_PYTHON) && \
+    !defined(WOLFSSL_ASN_ALLOW_0_SERIAL)
+    /* Structural serial-0 rejection. RFC 5280 4.1.2.2 requires positive
+     * serials; reject here so non-trust-bearing pubkey-extraction callers
+     * (DecodeToKey, wc_GetPubX509, d2i_X509-style decode) do not silently
+     * accept malformed certs. ParseCertRelative performs the authoritative
+     * trust-bearing check (with the CA_TYPE/TRUSTED_PEER_TYPE exemption
+     * for legacy self-signed root CAs); the exemption here is intentionally
+     * narrow: when extensions are not parsed (stopAtPubKey/stopAfterPubKey)
+     * isCA is not populated, so the exemption never fires and serial-0 is
+     * always rejected on those paths. */
+    if ((ret == 0) && (cert->serialSz == 1) && (cert->serial[0] == 0)) {
+        if (!(cert->isCA && cert->selfSigned)
+#ifdef WOLFSSL_CERT_REQ
+            && !cert->isCSR
+#endif
+        ) {
+            WOLFSSL_MSG("Error serial number of 0 for non-root certificate");
+            ret = ASN_PARSE_E;
+        }
+    }
+#endif
 
     return ret;
 }
@@ -22315,6 +23448,36 @@ int ParseCertRelative(DecodedCert* cert, int type, int verify, void* cm,
         }
 #endif
 
+#if !defined(WOLFSSL_NO_ASN_STRICT) && !defined(WOLFSSL_PYTHON) && \
+    !defined(WOLFSSL_ASN_ALLOW_0_SERIAL)
+        /* RFC 5280 section 4.1.2.2 requires conforming CAs to issue
+         * positive serial numbers; the same section notes that verifiers
+         * SHOULD gracefully handle non-conforming certs with zero or
+         * negative serials. wolfSSL's policy is to reject as a security
+         * guard, with an exemption for self-signed CA certs loaded as
+         * explicitly-trusted anchors (some legacy real-world roots have
+         * serial 0).
+         *
+         * Note: cert->selfSigned is a subject/issuer name-hash compare
+         * (see DecodeCertInternal where it's set), not a validated
+         * self-signature. That is acceptable here because the trust
+         * decision is user-driven via CertManagerLoadCA; this check is
+         * only a structural sanity guard. */
+        if ((ret == 0) && (cert->serialSz == 1) && (cert->serial[0] == 0)) {
+            int isTrustAnchorLoad =
+                (type == CA_TYPE || type == TRUSTED_PEER_TYPE)
+                && cert->isCA && cert->selfSigned;
+            int isCsr = 0;
+        #ifdef WOLFSSL_CERT_REQ
+            isCsr = cert->isCSR;
+        #endif
+            if (!isTrustAnchorLoad && !isCsr) {
+                WOLFSSL_MSG("Error serial number of 0 for non-root certificate");
+                return ASN_PARSE_E;
+            }
+        }
+#endif
+
     #ifndef ALLOW_INVALID_CERTSIGN
         /* https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.9
          *   If the cA boolean is not asserted, then the keyCertSign bit in the
@@ -22334,6 +23497,10 @@ int ParseCertRelative(DecodedCert* cert, int type, int verify, void* cm,
         if (cert->extSubjKeyIdSet == 0 && cert->publicKey != NULL &&
                                                          cert->pubKeySize > 0) {
             if (cert->signatureOID == CTC_SM3wSM2) {
+                if (cert->pubKeySize < 65) {
+                    WOLFSSL_ERROR_VERBOSE(BUFFER_E);
+                    return BUFFER_E;
+                }
                 /* TODO: GmSSL creates IDs this way but whole public key info
                  * block should be hashed. */
                 ret = CalcHashId_ex(cert->publicKey + cert->pubKeySize - 65, 65,
@@ -22425,16 +23592,24 @@ int ParseCertRelative(DecodedCert* cert, int type, int verify, void* cm,
         if (cert->pathLengthSet)
             cert->maxPathLen = cert->pathLength;
 
-        if (!cert->selfSigned) {
-            /* Need to perform a pathlen check on anything that will be used
-             * to sign certificates later on. Otherwise, pathLen doesn't
-             * mean anything.
-             * Nothing to check if we don't have the issuer of this cert. */
-            if (type != CERT_TYPE && cert->isCA && cert->extKeyUsageSet &&
-                (cert->extKeyUsage & KEYUSE_KEY_CERT_SIGN) != 0 && cert->ca) {
+        /* RFC 5280 6.1.4: Check issuer's pathLen constraint.
+         * Need to perform a pathlen check on anything that will be used
+         * to sign certificates later on. Otherwise, pathLen doesn't
+         * mean anything.
+         * Nothing to check if we don't have the issuer of this cert.
+         *
+         * Per RFC 5280, when the KeyUsage extension is absent, all key
+         * uses are implicitly valid (including keyCertSign), so pathLen
+         * enforcement must not be gated on KeyUsage presence. */
+        if (type != CERT_TYPE && cert->isCA && cert->ca &&
+            (!cert->extKeyUsageSet ||
+             (cert->extKeyUsage & KEYUSE_KEY_CERT_SIGN) != 0)) {
+            if (!cert->selfSigned) {
+                /* RFC 5280 6.1.4(l): Non-self-issued cert decrements and
+                 * checks the issuer's max_path_length. */
                 if (cert->ca->maxPathLen == 0) {
-                    /* This cert CAN NOT be used as an intermediate cert. The
-                     * issuer does not allow it. */
+                    /* This cert CAN NOT be used as an intermediate cert.
+                     * The issuer does not allow it. */
                     cert->maxPathLen = 0;
                     if (verify != NO_VERIFY) {
                         WOLFSSL_MSG("\tNon-entity cert, maxPathLen is 0");
@@ -22444,24 +23619,58 @@ int ParseCertRelative(DecodedCert* cert, int type, int verify, void* cm,
                     }
                 }
                 else {
-                    cert->maxPathLen = (byte)min(cert->ca->maxPathLen - 1U,
+                    cert->maxPathLen = (word16)min(cert->ca->maxPathLen - 1U,
+                                           cert->maxPathLen);
+                }
+            }
+            else {
+                /* RFC 5280 6.1.4(l): Self-issued certs do NOT decrement
+                 * max_path_length, but the issuer's constraint still
+                 * applies. A self-issued cert from a CA with maxPathLen=0
+                 * cannot act as an intermediate CA. */
+                if (cert->publicKey != NULL &&
+                        cert->ca->publicKey != NULL &&
+                        cert->pubKeySize > 0 &&
+                        cert->pubKeySize == cert->ca->pubKeySize &&
+                        XMEMCMP(cert->publicKey, cert->ca->publicKey,
+                                cert->pubKeySize) == 0) {
+                    /* Exclude the trust anchor itself from step (l). Per
+                     * RFC 5280 6.1, when the trust anchor is supplied as a
+                     * self-signed certificate it "is not included as part
+                     * of the prospective certification path" */
+
+                    /* Trust anchor: honor issuer's constraint */
+                    cert->maxPathLen = (word16)min(cert->ca->maxPathLen,
+                                           cert->maxPathLen);
+                }
+                else if (cert->ca->maxPathLen == 0) {
+                    cert->maxPathLen = 0;
+                    if (verify != NO_VERIFY) {
+                        WOLFSSL_MSG("\tSelf-issued cert, maxPathLen is 0");
+                        WOLFSSL_MSG("\tmaxPathLen status: ERROR");
+                        WOLFSSL_ERROR_VERBOSE(ASN_PATHLEN_INV_E);
+                        return ASN_PATHLEN_INV_E;
+                    }
+                }
+                else {
+                    /* Self-issued: honor issuer's constraint without
+                     * decrementing. */
+                    cert->maxPathLen = (word16)min(cert->ca->maxPathLen,
                                            cert->maxPathLen);
                 }
             }
         }
 
         #ifdef HAVE_OCSP
-        if (type != CA_TYPE &&
-                                                type != TRUSTED_PEER_TYPE) {
-            /* Need the CA's public key hash for OCSP */
-            if (cert->ca) {
-                XMEMCPY(cert->issuerKeyHash, cert->ca->subjectKeyHash,
-                    KEYID_SIZE);
-            }
-            else if (cert->selfSigned) {
-                XMEMCPY(cert->issuerKeyHash, cert->subjectKeyHash,
-                    KEYID_SIZE);
-            }
+        /* Needed for OCSP requests, and for binding responder authorization
+         * to CertID's issuerKeyHash when this cert becomes a Signer. */
+        if (cert->ca) {
+            XMEMCPY(cert->issuerKeyHash, cert->ca->subjectKeyHash,
+                KEYID_SIZE);
+        }
+        else if (cert->selfSigned) {
+            XMEMCPY(cert->issuerKeyHash, cert->subjectKeyHash,
+                KEYID_SIZE);
         }
         #endif /* HAVE_OCSP */
     }
@@ -22750,6 +23959,9 @@ int FillSigner(Signer* signer, DecodedCert* cert, int type, DerBuffer *der)
     #ifndef IGNORE_NAME_CONSTRAINTS
         signer->permittedNames = cert->permittedNames;
         signer->excludedNames  = cert->excludedNames;
+        signer->extNameConstraintCrit = cert->extNameConstraintCrit;
+        signer->extNameConstraintHasUnsupported =
+            cert->extNameConstraintHasUnsupported;
     #endif
     #ifndef NO_SKID
         XMEMCPY(signer->subjectKeyIdHash, cert->extSubjKeyId,
@@ -22763,6 +23975,8 @@ int FillSigner(Signer* signer, DecodedCert* cert, int type, DerBuffer *der)
     #endif
     #ifdef HAVE_OCSP
         XMEMCPY(signer->subjectKeyHash, cert->subjectKeyHash,
+                KEYID_SIZE);
+        XMEMCPY(signer->issuerKeyHash, cert->issuerKeyHash,
                 KEYID_SIZE);
     #endif
         signer->keyUsage = cert->extKeyUsageSet ? cert->extKeyUsage
@@ -23162,8 +24376,8 @@ static wcchar END_PUB_KEY          = "-----END PUBLIC KEY-----";
     static wcchar BEGIN_FALCON_LEVEL5_PRIV  = "-----BEGIN FALCON_LEVEL5 PRIVATE KEY-----";
     static wcchar END_FALCON_LEVEL5_PRIV    = "-----END FALCON_LEVEL5 PRIVATE KEY-----";
 #endif /* HAVE_FALCON */
-#if defined(HAVE_DILITHIUM)
-    #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+#if defined(WOLFSSL_HAVE_MLDSA)
+    #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
     static wcchar BEGIN_DILITHIUM_LEVEL2_PRIV = "-----BEGIN DILITHIUM_LEVEL2 PRIVATE KEY-----";
     static wcchar END_DILITHIUM_LEVEL2_PRIV   = "-----END DILITHIUM_LEVEL2 PRIVATE KEY-----";
     static wcchar BEGIN_DILITHIUM_LEVEL3_PRIV = "-----BEGIN DILITHIUM_LEVEL3 PRIVATE KEY-----";
@@ -23177,22 +24391,37 @@ static wcchar END_PUB_KEY          = "-----END PUBLIC KEY-----";
     static wcchar END_ML_DSA_LEVEL3_PRIV   = "-----END ML_DSA_LEVEL3 PRIVATE KEY-----";
     static wcchar BEGIN_ML_DSA_LEVEL5_PRIV = "-----BEGIN ML_DSA_LEVEL5 PRIVATE KEY-----";
     static wcchar END_ML_DSA_LEVEL5_PRIV   = "-----END ML_DSA_LEVEL5 PRIVATE KEY-----";
-#endif /* HAVE_DILITHIUM */
-#if defined(HAVE_SPHINCS)
-    static wcchar BEGIN_SPHINCS_FAST_LEVEL1_PRIV = "-----BEGIN SPHINCS_FAST_LEVEL1 PRIVATE KEY-----";
-    static wcchar END_SPHINCS_FAST_LEVEL1_PRIV   = "-----END SPHINCS_FAST_LEVEL1 PRIVATE KEY-----";
-    static wcchar BEGIN_SPHINCS_FAST_LEVEL3_PRIV = "-----BEGIN SPHINCS_FAST_LEVEL3 PRIVATE KEY-----";
-    static wcchar END_SPHINCS_FAST_LEVEL3_PRIV   = "-----END SPHINCS_FAST_LEVEL3 PRIVATE KEY-----";
-    static wcchar BEGIN_SPHINCS_FAST_LEVEL5_PRIV = "-----BEGIN SPHINCS_FAST_LEVEL5 PRIVATE KEY-----";
-    static wcchar END_SPHINCS_FAST_LEVEL5_PRIV   = "-----END SPHINCS_FAST_LEVEL5 PRIVATE KEY-----";
+#endif /* WOLFSSL_HAVE_MLDSA */
+#if defined(WOLFSSL_HAVE_SLHDSA)
+    static wcchar BEGIN_SLH_DSA_SHAKE_128F_PRIV = "-----BEGIN SLH_DSA_SHAKE_128F PRIVATE KEY-----";
+    static wcchar END_SLH_DSA_SHAKE_128F_PRIV   = "-----END SLH_DSA_SHAKE_128F PRIVATE KEY-----";
+    static wcchar BEGIN_SLH_DSA_SHAKE_192F_PRIV = "-----BEGIN SLH_DSA_SHAKE_192F PRIVATE KEY-----";
+    static wcchar END_SLH_DSA_SHAKE_192F_PRIV   = "-----END SLH_DSA_SHAKE_192F PRIVATE KEY-----";
+    static wcchar BEGIN_SLH_DSA_SHAKE_256F_PRIV = "-----BEGIN SLH_DSA_SHAKE_256F PRIVATE KEY-----";
+    static wcchar END_SLH_DSA_SHAKE_256F_PRIV   = "-----END SLH_DSA_SHAKE_256F PRIVATE KEY-----";
 
-    static wcchar BEGIN_SPHINCS_SMALL_LEVEL1_PRIV = "-----BEGIN SPHINCS_SMALL_LEVEL1 PRIVATE KEY-----";
-    static wcchar END_SPHINCS_SMALL_LEVEL1_PRIV   = "-----END SPHINCS_SMALL_LEVEL1 PRIVATE KEY-----";
-    static wcchar BEGIN_SPHINCS_SMALL_LEVEL3_PRIV = "-----BEGIN SPHINCS_SMALL_LEVEL3 PRIVATE KEY-----";
-    static wcchar END_SPHINCS_SMALL_LEVEL3_PRIV   = "-----END SPHINCS_SMALL_LEVEL3 PRIVATE KEY-----";
-    static wcchar BEGIN_SPHINCS_SMALL_LEVEL5_PRIV = "-----BEGIN SPHINCS_SMALL_LEVEL5 PRIVATE KEY-----";
-    static wcchar END_SPHINCS_SMALL_LEVEL5_PRIV   = "-----END SPHINCS_SMALL_LEVEL5 PRIVATE KEY-----";
-#endif /* HAVE_SPHINCS */
+    static wcchar BEGIN_SLH_DSA_SHAKE_128S_PRIV = "-----BEGIN SLH_DSA_SHAKE_128S PRIVATE KEY-----";
+    static wcchar END_SLH_DSA_SHAKE_128S_PRIV   = "-----END SLH_DSA_SHAKE_128S PRIVATE KEY-----";
+    static wcchar BEGIN_SLH_DSA_SHAKE_192S_PRIV = "-----BEGIN SLH_DSA_SHAKE_192S PRIVATE KEY-----";
+    static wcchar END_SLH_DSA_SHAKE_192S_PRIV   = "-----END SLH_DSA_SHAKE_192S PRIVATE KEY-----";
+    static wcchar BEGIN_SLH_DSA_SHAKE_256S_PRIV = "-----BEGIN SLH_DSA_SHAKE_256S PRIVATE KEY-----";
+    static wcchar END_SLH_DSA_SHAKE_256S_PRIV   = "-----END SLH_DSA_SHAKE_256S PRIVATE KEY-----";
+#ifdef WOLFSSL_SLHDSA_SHA2
+    static wcchar BEGIN_SLH_DSA_SHA2_128F_PRIV = "-----BEGIN SLH_DSA_SHA2_128F PRIVATE KEY-----";
+    static wcchar END_SLH_DSA_SHA2_128F_PRIV   = "-----END SLH_DSA_SHA2_128F PRIVATE KEY-----";
+    static wcchar BEGIN_SLH_DSA_SHA2_192F_PRIV = "-----BEGIN SLH_DSA_SHA2_192F PRIVATE KEY-----";
+    static wcchar END_SLH_DSA_SHA2_192F_PRIV   = "-----END SLH_DSA_SHA2_192F PRIVATE KEY-----";
+    static wcchar BEGIN_SLH_DSA_SHA2_256F_PRIV = "-----BEGIN SLH_DSA_SHA2_256F PRIVATE KEY-----";
+    static wcchar END_SLH_DSA_SHA2_256F_PRIV   = "-----END SLH_DSA_SHA2_256F PRIVATE KEY-----";
+
+    static wcchar BEGIN_SLH_DSA_SHA2_128S_PRIV = "-----BEGIN SLH_DSA_SHA2_128S PRIVATE KEY-----";
+    static wcchar END_SLH_DSA_SHA2_128S_PRIV   = "-----END SLH_DSA_SHA2_128S PRIVATE KEY-----";
+    static wcchar BEGIN_SLH_DSA_SHA2_192S_PRIV = "-----BEGIN SLH_DSA_SHA2_192S PRIVATE KEY-----";
+    static wcchar END_SLH_DSA_SHA2_192S_PRIV   = "-----END SLH_DSA_SHA2_192S PRIVATE KEY-----";
+    static wcchar BEGIN_SLH_DSA_SHA2_256S_PRIV = "-----BEGIN SLH_DSA_SHA2_256S PRIVATE KEY-----";
+    static wcchar END_SLH_DSA_SHA2_256S_PRIV   = "-----END SLH_DSA_SHA2_256S PRIVATE KEY-----";
+#endif /* WOLFSSL_SLHDSA_SHA2 */
+#endif /* WOLFSSL_HAVE_SLHDSA */
 
 const int pem_struct_min_sz = XSTR_SIZEOF("-----BEGIN X509 CRL-----"
                                              "-----END X509 CRL-----");
@@ -23326,8 +24555,8 @@ int wc_PemGetHeaderFooter(int type, const char** header, const char** footer)
             ret = 0;
             break;
 #endif /* HAVE_FALCON */
-#ifdef HAVE_DILITHIUM
-    #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+#ifdef WOLFSSL_HAVE_MLDSA
+    #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
         case DILITHIUM_LEVEL2_TYPE:
             if (header) *header = BEGIN_DILITHIUM_LEVEL2_PRIV;
             if (footer) *footer = END_DILITHIUM_LEVEL2_PRIV;
@@ -23344,54 +24573,86 @@ int wc_PemGetHeaderFooter(int type, const char** header, const char** footer)
             ret = 0;
             break;
     #endif
-        case ML_DSA_LEVEL2_TYPE:
+        case ML_DSA_44_TYPE:
             if (header) *header = BEGIN_ML_DSA_LEVEL2_PRIV;
             if (footer) *footer = END_ML_DSA_LEVEL2_PRIV;
             ret = 0;
             break;
-        case ML_DSA_LEVEL3_TYPE:
+        case ML_DSA_65_TYPE:
             if (header) *header = BEGIN_ML_DSA_LEVEL3_PRIV;
             if (footer) *footer = END_ML_DSA_LEVEL3_PRIV;
             ret = 0;
             break;
-        case ML_DSA_LEVEL5_TYPE:
+        case ML_DSA_87_TYPE:
             if (header) *header = BEGIN_ML_DSA_LEVEL5_PRIV;
             if (footer) *footer = END_ML_DSA_LEVEL5_PRIV;
             ret = 0;
             break;
-#endif /* HAVE_DILITHIUM */
-#ifdef HAVE_SPHINCS
-        case SPHINCS_FAST_LEVEL1_TYPE:
-            if (header) *header = BEGIN_SPHINCS_FAST_LEVEL1_PRIV;
-            if (footer) *footer = END_SPHINCS_FAST_LEVEL1_PRIV;
+#endif /* WOLFSSL_HAVE_MLDSA */
+#ifdef WOLFSSL_HAVE_SLHDSA
+        case SLH_DSA_SHAKE_128F_TYPE:
+            if (header) *header = BEGIN_SLH_DSA_SHAKE_128F_PRIV;
+            if (footer) *footer = END_SLH_DSA_SHAKE_128F_PRIV;
             ret = 0;
             break;
-        case SPHINCS_FAST_LEVEL3_TYPE:
-            if (header) *header = BEGIN_SPHINCS_FAST_LEVEL3_PRIV;
-            if (footer) *footer = END_SPHINCS_FAST_LEVEL3_PRIV;
+        case SLH_DSA_SHAKE_192F_TYPE:
+            if (header) *header = BEGIN_SLH_DSA_SHAKE_192F_PRIV;
+            if (footer) *footer = END_SLH_DSA_SHAKE_192F_PRIV;
             ret = 0;
             break;
-        case SPHINCS_FAST_LEVEL5_TYPE:
-            if (header) *header = BEGIN_SPHINCS_FAST_LEVEL5_PRIV;
-            if (footer) *footer = END_SPHINCS_FAST_LEVEL5_PRIV;
+        case SLH_DSA_SHAKE_256F_TYPE:
+            if (header) *header = BEGIN_SLH_DSA_SHAKE_256F_PRIV;
+            if (footer) *footer = END_SLH_DSA_SHAKE_256F_PRIV;
             ret = 0;
             break;
-        case SPHINCS_SMALL_LEVEL1_TYPE:
-            if (header) *header = BEGIN_SPHINCS_SMALL_LEVEL1_PRIV;
-            if (footer) *footer = END_SPHINCS_SMALL_LEVEL1_PRIV;
+        case SLH_DSA_SHAKE_128S_TYPE:
+            if (header) *header = BEGIN_SLH_DSA_SHAKE_128S_PRIV;
+            if (footer) *footer = END_SLH_DSA_SHAKE_128S_PRIV;
             ret = 0;
             break;
-        case SPHINCS_SMALL_LEVEL3_TYPE:
-            if (header) *header = BEGIN_SPHINCS_SMALL_LEVEL3_PRIV;
-            if (footer) *footer = END_SPHINCS_SMALL_LEVEL3_PRIV;
+        case SLH_DSA_SHAKE_192S_TYPE:
+            if (header) *header = BEGIN_SLH_DSA_SHAKE_192S_PRIV;
+            if (footer) *footer = END_SLH_DSA_SHAKE_192S_PRIV;
             ret = 0;
             break;
-        case SPHINCS_SMALL_LEVEL5_TYPE:
-            if (header) *header = BEGIN_SPHINCS_SMALL_LEVEL5_PRIV;
-            if (footer) *footer = END_SPHINCS_SMALL_LEVEL5_PRIV;
+        case SLH_DSA_SHAKE_256S_TYPE:
+            if (header) *header = BEGIN_SLH_DSA_SHAKE_256S_PRIV;
+            if (footer) *footer = END_SLH_DSA_SHAKE_256S_PRIV;
             ret = 0;
             break;
-#endif /* HAVE_SPHINCS */
+    #ifdef WOLFSSL_SLHDSA_SHA2
+        case SLH_DSA_SHA2_128F_TYPE:
+            if (header) *header = BEGIN_SLH_DSA_SHA2_128F_PRIV;
+            if (footer) *footer = END_SLH_DSA_SHA2_128F_PRIV;
+            ret = 0;
+            break;
+        case SLH_DSA_SHA2_192F_TYPE:
+            if (header) *header = BEGIN_SLH_DSA_SHA2_192F_PRIV;
+            if (footer) *footer = END_SLH_DSA_SHA2_192F_PRIV;
+            ret = 0;
+            break;
+        case SLH_DSA_SHA2_256F_TYPE:
+            if (header) *header = BEGIN_SLH_DSA_SHA2_256F_PRIV;
+            if (footer) *footer = END_SLH_DSA_SHA2_256F_PRIV;
+            ret = 0;
+            break;
+        case SLH_DSA_SHA2_128S_TYPE:
+            if (header) *header = BEGIN_SLH_DSA_SHA2_128S_PRIV;
+            if (footer) *footer = END_SLH_DSA_SHA2_128S_PRIV;
+            ret = 0;
+            break;
+        case SLH_DSA_SHA2_192S_TYPE:
+            if (header) *header = BEGIN_SLH_DSA_SHA2_192S_PRIV;
+            if (footer) *footer = END_SLH_DSA_SHA2_192S_PRIV;
+            ret = 0;
+            break;
+        case SLH_DSA_SHA2_256S_TYPE:
+            if (header) *header = BEGIN_SLH_DSA_SHA2_256S_PRIV;
+            if (footer) *footer = END_SLH_DSA_SHA2_256S_PRIV;
+            ret = 0;
+            break;
+    #endif /* WOLFSSL_SLHDSA_SHA2 */
+#endif /* WOLFSSL_HAVE_SLHDSA */
         case PUBLICKEY_TYPE:
         case ECC_PUBLICKEY_TYPE:
             if (header) *header = BEGIN_PUB_KEY;
@@ -23815,10 +25076,10 @@ int PemToDer(const unsigned char* buff, long longSz, int type,
     const char* headerEnd   = NULL;
     const char* footerEnd   = NULL;
     const char* consumedEnd = NULL;
-    const char* bufferEnd   = (const char*)(buff + longSz);
+    const char* bufferEnd   = NULL;
     long        neededSz;
     int         ret         = 0;
-    word32      sz          = (word32)longSz;
+    word32      sz          = 0;
     int         encrypted_key = 0;
     DerBuffer*  der;
     word32      algId = 0;
@@ -23838,6 +25099,14 @@ int PemToDer(const unsigned char* buff, long longSz, int type,
 #endif
 
     WOLFSSL_ENTER("PemToDer");
+
+    /* Reject negative size - would wrap word32 and corrupt pointer arithmetic. */
+    if (longSz < 0) {
+        return BAD_FUNC_ARG;
+    }
+
+    bufferEnd = (const char*)(buff + longSz);
+    sz        = (word32)longSz;
 
     /* get PEM header and footer based on type */
     ret = wc_PemGetHeaderFooter(type, &header, &footer);
@@ -24072,8 +25341,8 @@ int PemToDer(const unsigned char* buff, long longSz, int type,
 #endif /* WOLFSSL_ENCRYPTED_KEYS */
 
     /* find footer */
-    footerEnd = XSTRNSTR(headerEnd, footer, (unsigned int)((const char*)buff +
-        sz - headerEnd));
+    footerEnd = XSTRNSTR(headerEnd, footer,
+        (size_t)((const char*)buff + sz - headerEnd));
     if (!footerEnd) {
         if (info)
             info->consumed = longSz; /* No more certs if no footer */
@@ -24283,7 +25552,14 @@ int PemToDer(const unsigned char* buff, long longSz, int type,
 int wc_PemToDer(const unsigned char* buff, long longSz, int type,
               DerBuffer** pDer, void* heap, EncryptedInfo* info, int* keyFormat)
 {
-    int ret = PemToDer(buff, longSz, type, pDer, heap, info, keyFormat);
+    int ret;
+
+    if (buff == NULL || longSz <= 0) {
+        WOLFSSL_MSG("Bad pem der args");
+        return BAD_FUNC_ARG;
+    }
+
+    ret = PemToDer(buff, longSz, type, pDer, heap, info, keyFormat);
 #if defined(HAVE_PKCS8) || defined(HAVE_PKCS12)
     if (ret == 0 && type == PRIVATEKEY_TYPE) {
         DerBuffer* der = *pDer;
@@ -24322,7 +25598,7 @@ int wc_KeyPemToDer(const unsigned char* pem, int pemSz,
 
     WOLFSSL_ENTER("wc_KeyPemToDer");
 
-    if (pem == NULL || (buff != NULL && buffSz <= 0)) {
+    if (pem == NULL || (buff != NULL && buffSz <= 0) || pemSz <= 0) {
         WOLFSSL_MSG("Bad pem der args");
         return BAD_FUNC_ARG;
     }
@@ -24373,7 +25649,7 @@ int wc_CertPemToDer(const unsigned char* pem, int pemSz,
 
     WOLFSSL_ENTER("wc_CertPemToDer");
 
-    if (pem == NULL || buff == NULL || buffSz <= 0) {
+    if (pem == NULL || buff == NULL || buffSz <= 0 || pemSz <= 0) {
         WOLFSSL_MSG("Bad pem der args");
         return BAD_FUNC_ARG;
     }
@@ -24420,7 +25696,7 @@ int wc_PubKeyPemToDer(const unsigned char* pem, int pemSz,
 
     WOLFSSL_ENTER("wc_PubKeyPemToDer");
 
-    if (pem == NULL || (buff != NULL && buffSz <= 0)) {
+    if (pem == NULL || (buff != NULL && buffSz <= 0) || pemSz <= 0) {
         WOLFSSL_MSG("Bad pem der args");
         return BAD_FUNC_ARG;
     }
@@ -24880,22 +26156,22 @@ int wc_RsaPublicKeyDerSize(RsaKey* key, int with_header)
  *
  * @param [in]  key     RSA key object.
  * @param [out] output  Buffer to put encoded data in.
- * @param [in]  inLen   Size of buffer in bytes.
+ * @param [in]  outLen  Size of buffer in bytes.
  * @return  Size of encoded data in bytes on success.
  * @return  BAD_FUNC_ARG when key or output is NULL.
  * @return  MEMORY_E when dynamic memory allocation failed.
  */
-int wc_RsaKeyToPublicDer(RsaKey* key, byte* output, word32 inLen)
+int wc_RsaKeyToPublicDer(RsaKey* key, byte* output, word32 outLen)
 {
-    return SetRsaPublicKey(output, key, (int)inLen, 1);
+    return SetRsaPublicKey(output, key, (int)outLen, 1);
 }
 
 /* Returns public DER version of the RSA key. If with_header is 0 then only a
  * seq + n + e is returned in ASN.1 DER format */
-int wc_RsaKeyToPublicDer_ex(RsaKey* key, byte* output, word32 inLen,
+int wc_RsaKeyToPublicDer_ex(RsaKey* key, byte* output, word32 outLen,
     int with_header)
 {
-    return SetRsaPublicKey(output, key, (int)inLen, with_header);
+    return SetRsaPublicKey(output, key, (int)outLen, with_header);
 }
 
 #endif /* !NO_RSA && WOLFSSL_KEY_TO_DER */
@@ -24909,13 +26185,13 @@ int wc_RsaKeyToPublicDer_ex(RsaKey* key, byte* output, word32 inLen,
  *
  * @param [in]  key     RSA key object.
  * @param [out] output  Buffer to put encoded data in.
- * @param [in]  inLen   Size of buffer in bytes.
+ * @param [in]  outLen  Size of buffer in bytes.
  * @return  Size of encoded data in bytes on success.
  * @return  BAD_FUNC_ARG when key is NULL or not a private key.
  * @return  MEMORY_E when dynamic memory allocation failed.
  */
 #ifdef WOLFSSL_ASN_TEMPLATE
-int wc_RsaKeyToDer(RsaKey* key, byte* output, word32 inLen)
+int wc_RsaKeyToDer(RsaKey* key, byte* output, word32 outLen)
 {
     DECL_ASNSETDATA(dataASN, rsaKeyASN_Length);
     int i;
@@ -24941,7 +26217,7 @@ int wc_RsaKeyToDer(RsaKey* key, byte* output, word32 inLen)
         ret = SizeASN_Items(rsaKeyASN, dataASN, rsaKeyASN_Length, &sz);
     }
     /* Check output buffer has enough space for encoding. */
-    if ((ret == 0) && (output != NULL) && (sz > inLen)) {
+    if ((ret == 0) && (output != NULL) && (sz > outLen)) {
         ret = BAD_FUNC_ARG;
     }
     if ((ret == 0) && (output != NULL)) {
@@ -24985,10 +26261,16 @@ int wc_InitCert_ex(Cert* cert, void* heap, int devId)
     XMEMSET(cert, 0, sizeof(Cert));
 
     cert->version    = 2;   /* version 3 is hex 2 */
-#ifndef NO_SHA
-    cert->sigType    = CTC_SHAwRSA;
-#elif !defined(NO_SHA256)
+#if !defined(NO_SHA256)
     cert->sigType    = CTC_SHA256wRSA;
+#elif defined(WOLFSSL_SHA384)
+    cert->sigType    = CTC_SHA384wRSA;
+#elif defined(WOLFSSL_SHA512)
+    cert->sigType    = CTC_SHA512wRSA;
+#elif defined(WOLFSSL_SHA224)
+    cert->sigType    = CTC_SHA224wRSA;
+#elif !defined(NO_SHA)
+    cert->sigType    = CTC_SHAwRSA;
 #else
     cert->sigType    = 0;
 #endif
@@ -25116,6 +26398,9 @@ typedef struct DerCert {
 #endif
     byte certPolicies[MAX_CERTPOL_NB*MAX_CERTPOL_SZ]; /* Certificate Policies */
     byte crlInfo[CTC_MAX_CRLINFO_SZ];  /* CRL Distribution Points */
+#ifdef WOLFSSL_ACME_OID
+    byte acmeId[MAX_ACMEID_SZ];        /* RFC 8737 id-pe-acmeIdentifier */
+#endif
 #endif
 #ifdef WOLFSSL_CERT_REQ
     byte attrib[MAX_ATTRIB_SZ];        /* Cert req attributes encoded */
@@ -25146,6 +26431,9 @@ typedef struct DerCert {
 #endif
     int  certPoliciesSz;               /* encoded CertPolicies extension length*/
     int  crlInfoSz;                    /* encoded CRL Dist Points length */
+#ifdef WOLFSSL_ACME_OID
+    int  acmeIdSz;                     /* encoded acmeIdentifier length */
+#endif
 #endif
 #ifdef WOLFSSL_ALT_NAMES
     int  altNamesSz;                   /* encoded AltNames extension length */
@@ -25985,7 +27273,7 @@ static void SetRdnItems(ASNItem* namesASN, ASNSetData* dataASN, const byte* oid,
 static int FindMultiAttrib(CertName* name, int id, int* idx)
 {
     int i;
-    for (i = *idx + 1; i < CTC_MAX_ATTRIB; i++) {
+    for (i = *idx + 1; i >= 0 && i < CTC_MAX_ATTRIB; i++) {
         if (name->name[i].sz > 0 && name->name[i].id == id) {
             break;
         }
@@ -26226,7 +27514,8 @@ static int EncodePublicKey(int keyType, byte* output, int outLen,
                            RsaKey* rsaKey, ecc_key* eccKey,
                            ed25519_key* ed25519Key, ed448_key* ed448Key,
                            DsaKey* dsaKey, falcon_key* falconKey,
-                           dilithium_key* dilithiumKey, sphincs_key* sphincsKey)
+                           wc_MlDsaKey* mldsaKey, SlhDsaKey* slhDsaKey,
+                           LmsKey* lmsKey, XmssKey* xmssKey)
 {
     int ret = 0;
 
@@ -26237,8 +27526,10 @@ static int EncodePublicKey(int keyType, byte* output, int outLen,
     (void)ed448Key;
     (void)dsaKey;
     (void)falconKey;
-    (void)dilithiumKey;
-    (void)sphincsKey;
+    (void)mldsaKey;
+    (void)slhDsaKey;
+    (void)lmsKey;
+    (void)xmssKey;
 
     switch (keyType) {
     #ifndef NO_RSA
@@ -26284,36 +27575,61 @@ static int EncodePublicKey(int keyType, byte* output, int outLen,
             }
             break;
     #endif /* HAVE_FALCON */
-    #if defined(HAVE_DILITHIUM) && !defined(WOLFSSL_DILITHIUM_NO_ASN1)
-        #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+    #if defined(WOLFSSL_HAVE_MLDSA) && !defined(WOLFSSL_MLDSA_NO_ASN1)
+        #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
         case DILITHIUM_LEVEL2_KEY:
         case DILITHIUM_LEVEL3_KEY:
         case DILITHIUM_LEVEL5_KEY:
         #endif
-        case ML_DSA_LEVEL2_KEY:
-        case ML_DSA_LEVEL3_KEY:
-        case ML_DSA_LEVEL5_KEY:
-            ret = wc_Dilithium_PublicKeyToDer(dilithiumKey, output,
+        case ML_DSA_44_KEY:
+        case ML_DSA_65_KEY:
+        case ML_DSA_87_KEY:
+            ret = wc_MlDsaKey_PublicKeyToDer(mldsaKey, output,
                                               (word32)outLen, 1);
             if (ret <= 0) {
                 ret = PUBLIC_KEY_E;
             }
             break;
-    #endif /* HAVE_DILITHIUM */
-    #if defined(HAVE_SPHINCS)
-        case SPHINCS_FAST_LEVEL1_KEY:
-        case SPHINCS_FAST_LEVEL3_KEY:
-        case SPHINCS_FAST_LEVEL5_KEY:
-        case SPHINCS_SMALL_LEVEL1_KEY:
-        case SPHINCS_SMALL_LEVEL3_KEY:
-        case SPHINCS_SMALL_LEVEL5_KEY:
-            ret = wc_Sphincs_PublicKeyToDer(sphincsKey, output,
+    #endif /* WOLFSSL_HAVE_MLDSA */
+    #if defined(WOLFSSL_HAVE_SLHDSA)
+        case SLH_DSA_SHAKE_128F_KEY:
+        case SLH_DSA_SHAKE_192F_KEY:
+        case SLH_DSA_SHAKE_256F_KEY:
+        case SLH_DSA_SHAKE_128S_KEY:
+        case SLH_DSA_SHAKE_192S_KEY:
+        case SLH_DSA_SHAKE_256S_KEY:
+        #ifdef WOLFSSL_SLHDSA_SHA2
+        case SLH_DSA_SHA2_128F_KEY:
+        case SLH_DSA_SHA2_192F_KEY:
+        case SLH_DSA_SHA2_256F_KEY:
+        case SLH_DSA_SHA2_128S_KEY:
+        case SLH_DSA_SHA2_192S_KEY:
+        case SLH_DSA_SHA2_256S_KEY:
+        #endif
+            ret = wc_SlhDsaKey_PublicKeyToDer(slhDsaKey, output,
                                             (word32)outLen, 1);
             if (ret <= 0) {
                 ret = PUBLIC_KEY_E;
             }
             break;
-    #endif /* HAVE_SPHINCS */
+    #endif /* WOLFSSL_HAVE_SLHDSA */
+    #if defined(WOLFSSL_HAVE_LMS) && !defined(WOLFSSL_LMS_VERIFY_ONLY)
+        case LMS_KEY:
+            ret = wc_LmsKey_PublicKeyToDer(lmsKey, output, (word32)outLen, 1);
+            if (ret <= 0) {
+                ret = PUBLIC_KEY_E;
+            }
+            break;
+    #endif /* WOLFSSL_HAVE_LMS && !WOLFSSL_LMS_VERIFY_ONLY */
+    #if defined(WOLFSSL_HAVE_XMSS) && !defined(WOLFSSL_XMSS_VERIFY_ONLY)
+        case XMSS_KEY:
+        case XMSSMT_KEY:
+            ret = wc_XmssKey_PublicKeyToDer(xmssKey, output, (word32)outLen, 1);
+            if (ret <= 0) {
+                ret = PUBLIC_KEY_E;
+            }
+            break;
+    #endif /* WOLFSSL_HAVE_XMSS && !WOLFSSL_XMSS_VERIFY_ONLY */
         default:
             ret = PUBLIC_KEY_E;
             break;
@@ -26376,6 +27692,12 @@ static const ASNItem static_certExtsASN[] = {
 /* CRLINFO_SEQ   */    { 0, ASN_SEQUENCE, 1, 1, 0 },
 /* CRLINFO_OID   */        { 1, ASN_OBJECT_ID, 0, 0, 0 },
 /* CRLINFO_STR   */        { 1, ASN_OCTET_STRING, 0, 0, 0 },
+                                       /* RFC 8737 id-pe-acmeIdentifier */
+/* ACMEID_SEQ    */    { 0, ASN_SEQUENCE, 1, 1, 0 },
+/* ACMEID_OID    */        { 1, ASN_OBJECT_ID, 0, 0, 0 },
+/* ACMEID_CRIT   */        { 1, ASN_BOOLEAN, 0, 0, 0 },
+/* ACMEID_STR    */        { 1, ASN_OCTET_STRING, 0, 1, 0 },
+/* ACMEID_HASH   */            { 2, ASN_OCTET_STRING, 0, 0, 0 },
 #ifdef WOLFSSL_DUAL_ALG_CERTS
 /* SAPKI_SEQ     */    { 0, ASN_SEQUENCE, 1, 1, 0 },
 /* SAPKI_OID     */        { 1, ASN_OBJECT_ID, 0, 0, 0 },
@@ -26434,6 +27756,11 @@ enum {
     CERTEXTSASN_IDX_CRLINFO_SEQ,
     CERTEXTSASN_IDX_CRLINFO_OID,
     CERTEXTSASN_IDX_CRLINFO_STR,
+    CERTEXTSASN_IDX_ACMEID_SEQ,
+    CERTEXTSASN_IDX_ACMEID_OID,
+    CERTEXTSASN_IDX_ACMEID_CRIT,
+    CERTEXTSASN_IDX_ACMEID_STR,
+    CERTEXTSASN_IDX_ACMEID_HASH,
 #ifdef WOLFSSL_DUAL_ALG_CERTS
     CERTEXTSASN_IDX_SAPKI_SEQ,
     CERTEXTSASN_IDX_SAPKI_OID,
@@ -26489,6 +27816,10 @@ static int EncodeExtensions(Cert* cert, byte* output, word32 maxSz,
     static const byte nsCertOID[] = { 0x60, 0x86, 0x48, 0x01,
                                       0x86, 0xF8, 0x42, 0x01, 0x01 };
     static const byte crlInfoOID[] = { 0x55, 0x1D, 0x1F };
+#ifdef WOLFSSL_ACME_OID
+    static const byte acmeIdOID[] = { 0x2B, 0x06, 0x01, 0x05, 0x05, 0x07,
+                                      0x01, 0x1F };
+#endif
 #ifdef WOLFSSL_DUAL_ALG_CERTS
     static const byte sapkiOID[] = { 0x55, 0x1d, 0x48 };
     static const byte altSigAlgOID[] = { 0x55, 0x1d, 0x49 };
@@ -26742,6 +28073,24 @@ static int EncodeExtensions(Cert* cert, byte* output, word32 maxSz,
             /* Don't write out CRL Distribution Points. */
             SetASNItem_NoOut(dataASN, CERTEXTSASN_IDX_CRLINFO_SEQ,
                     CERTEXTSASN_IDX_CRLINFO_STR);
+        }
+
+    #ifdef WOLFSSL_ACME_OID
+        /* id-pe-acmeIdentifier (TLS-ALPN-01 challenge cert).
+         * Always critical=TRUE. */
+        if (cert->acmeIdentifierSz == WC_SHA256_DIGEST_SIZE) {
+            SetASN_Buffer(&dataASN[CERTEXTSASN_IDX_ACMEID_OID],
+                    acmeIdOID, sizeof(acmeIdOID));
+            SetASN_Boolean(&dataASN[CERTEXTSASN_IDX_ACMEID_CRIT], 1);
+            SetASN_Buffer(&dataASN[CERTEXTSASN_IDX_ACMEID_HASH],
+                    cert->acmeIdentifier, (word32)cert->acmeIdentifierSz);
+        }
+        else
+    #endif /* WOLFSSL_ACME_OID */
+        {
+            /* Don't write out the ACME identifier extension. */
+            SetASNItem_NoOut(dataASN, CERTEXTSASN_IDX_ACMEID_SEQ,
+                    CERTEXTSASN_IDX_ACMEID_HASH);
         }
 
     #ifdef WOLFSSL_DUAL_ALG_CERTS
@@ -27046,24 +28395,21 @@ static int InternalSignCb(const byte* in, word32 inLen,
     }
     else
 #endif /* HAVE_FALCON */
-#if defined(HAVE_DILITHIUM) && !defined(WOLFSSL_DILITHIUM_NO_SIGN)
+#if defined(WOLFSSL_HAVE_MLDSA) && !defined(WOLFSSL_MLDSA_NO_SIGN)
     if ((keyType == DILITHIUM_LEVEL2_TYPE || keyType == DILITHIUM_LEVEL3_TYPE ||
         keyType == DILITHIUM_LEVEL5_TYPE) && signCtx->key) {
         /* Dilithium signs messages, not hashes - cannot use callback path */
         ret = SIG_TYPE_E;
     }
     else
-#endif /* HAVE_DILITHIUM && !WOLFSSL_DILITHIUM_NO_SIGN */
-#if defined(HAVE_SPHINCS)
-    if ((keyType == SPHINCS_FAST_LEVEL1_TYPE || keyType == SPHINCS_FAST_LEVEL3_TYPE ||
-        keyType == SPHINCS_FAST_LEVEL5_TYPE || keyType == SPHINCS_SMALL_LEVEL1_TYPE ||
-        keyType == SPHINCS_SMALL_LEVEL3_TYPE || keyType == SPHINCS_SMALL_LEVEL5_TYPE) &&
-        signCtx->key) {
-        /* Sphincs signs messages, not hashes - cannot use callback path */
+#endif /* WOLFSSL_HAVE_MLDSA && !WOLFSSL_MLDSA_NO_SIGN */
+#if defined(WOLFSSL_HAVE_SLHDSA)
+    if (IsSlhDsaKeyType(keyType) && signCtx->key) {
+        /* SLH-DSA signs messages, not hashes - cannot use callback path */
         ret = SIG_TYPE_E;
     }
     else
-#endif /* HAVE_SPHINCS */
+#endif /* WOLFSSL_HAVE_SLHDSA */
     {
         /* Unhandled key type */
         (void)in;
@@ -27079,6 +28425,270 @@ static int InternalSignCb(const byte* in, word32 inLen,
 #endif /* WOLFSSL_CERT_GEN || WOLFSSL_CERT_REQ */
 
 
+/* Return the buffer size needed to hold the raw signature that
+ * MakeSignature() will produce for the provided key, or a negative error code
+ * if it cannot be determined. The per-algorithm branches mirror the dispatch
+ * in MakeSignature() so the two stay in agreement; exactly one key pointer is
+ * expected to be non-NULL.
+ *
+ * Sizing the signature buffer from the key (rather than the worst-case
+ * MAX_ENCODED_SIG_SZ) avoids allocating tens of KB for classic keys in builds
+ * that merely enable a PQC algorithm, and is required for LMS/XMSS whose
+ * parameter-dependent signatures can exceed MAX_ENCODED_SIG_SZ. */
+static int GetSignatureBufferSz(RsaKey* rsaKey, ecc_key* eccKey,
+    ed25519_key* ed25519Key, ed448_key* ed448Key, falcon_key* falconKey,
+    wc_MlDsaKey* mldsaKey, SlhDsaKey* slhDsaKey, LmsKey* lmsKey,
+    XmssKey* xmssKey)
+{
+    int sigSz = ALGO_ID_E;
+
+    (void)rsaKey;     (void)eccKey;    (void)ed25519Key; (void)ed448Key;
+    (void)falconKey;  (void)mldsaKey;  (void)slhDsaKey;  (void)lmsKey;
+    (void)xmssKey;
+
+#ifndef NO_RSA
+    if (rsaKey != NULL)
+        sigSz = wc_RsaEncryptSize(rsaKey);
+#endif
+#ifdef HAVE_ECC
+    if (eccKey != NULL)
+        sigSz = wc_ecc_sig_size(eccKey);
+#endif
+#if defined(HAVE_ED25519)
+    if (ed25519Key != NULL)
+        sigSz = wc_ed25519_sig_size(ed25519Key);
+#endif
+#if defined(HAVE_ED448)
+    if (ed448Key != NULL)
+        sigSz = wc_ed448_sig_size(ed448Key);
+#endif
+#if defined(HAVE_FALCON)
+    if (falconKey != NULL)
+        sigSz = wc_falcon_sig_size(falconKey);
+#endif
+#if defined(WOLFSSL_HAVE_MLDSA)
+    if (mldsaKey != NULL) {
+        int len = 0;
+        int rc = wc_MlDsaKey_GetSigLen(mldsaKey, &len);
+        sigSz = (rc == 0) ? len : rc;
+    }
+#endif
+#if defined(WOLFSSL_HAVE_SLHDSA)
+    if (slhDsaKey != NULL)
+        sigSz = wc_SlhDsaKey_SigSize(slhDsaKey);
+#endif
+#if defined(WOLFSSL_HAVE_LMS) && !defined(WOLFSSL_LMS_VERIFY_ONLY)
+    if (lmsKey != NULL) {
+        word32 len = 0;
+        int rc = wc_LmsKey_GetSigLen(lmsKey, &len);
+        sigSz = (rc == 0) ? (int)len : rc;
+    }
+#endif
+#if defined(WOLFSSL_HAVE_XMSS) && !defined(WOLFSSL_XMSS_VERIFY_ONLY)
+    if (xmssKey != NULL) {
+        word32 len = 0;
+        int rc = wc_XmssKey_GetSigLen(xmssKey, &len);
+        sigSz = (rc == 0) ? (int)len : rc;
+    }
+#endif
+
+    /* sigSz still ALGO_ID_E means no (compiled-in) key matched; a getter
+     * returning 0 means the matched key was not usable. */
+    if (sigSz == 0)
+        sigSz = BAD_FUNC_ARG;
+    return sigSz;
+}
+
+#ifndef NO_RSA
+/* True if sType is an RSA signature-algorithm OID (any hash, incl. PSS). */
+static int IsRsaSigType(int sType)
+{
+    switch (sType) {
+        case CTC_MD2wRSA:
+        case CTC_MD5wRSA:
+        case CTC_SHAwRSA:
+        case CTC_SHA224wRSA:
+        case CTC_SHA256wRSA:
+        case CTC_SHA384wRSA:
+        case CTC_SHA512wRSA:
+        case CTC_SHA3_224wRSA:
+        case CTC_SHA3_256wRSA:
+        case CTC_SHA3_384wRSA:
+        case CTC_SHA3_512wRSA:
+        case CTC_RSASSAPSS:
+            return 1;
+        default:
+            return 0;
+    }
+}
+#endif /* !NO_RSA */
+#ifdef HAVE_ECC
+/* True if sType is an ECDSA (or SM2) signature-algorithm OID (any hash). */
+static int IsEccSigType(int sType)
+{
+    switch (sType) {
+        case CTC_SHAwECDSA:
+        case CTC_SHA224wECDSA:
+        case CTC_SHA256wECDSA:
+        case CTC_SHA384wECDSA:
+        case CTC_SHA512wECDSA:
+        case CTC_SHA3_224wECDSA:
+        case CTC_SHA3_256wECDSA:
+        case CTC_SHA3_384wECDSA:
+        case CTC_SHA3_512wECDSA:
+    #if defined(WOLFSSL_SM2) && defined(WOLFSSL_SM3)
+        case CTC_SM3wSM2:
+    #endif
+            return 1;
+        default:
+            return 0;
+    }
+}
+#endif /* HAVE_ECC */
+
+/* Return the heap hint of whichever signing key is set, or NULL if none does
+ * (falcon_key has no heap member). Centralizes the lookup shared by the
+ * certificate/CSR signing entry points. */
+static void* GetSigningKeyHeap(RsaKey* rsaKey, ecc_key* eccKey,
+    ed25519_key* ed25519Key, ed448_key* ed448Key, wc_MlDsaKey* mldsaKey,
+    SlhDsaKey* slhDsaKey, LmsKey* lmsKey, XmssKey* xmssKey)
+{
+    (void)rsaKey;    (void)eccKey;   (void)ed25519Key; (void)ed448Key;
+    (void)mldsaKey;  (void)slhDsaKey; (void)lmsKey;    (void)xmssKey;
+#ifndef NO_RSA
+    if (rsaKey != NULL)
+        return rsaKey->heap;
+#endif
+#ifdef HAVE_ECC
+    if (eccKey != NULL)
+        return eccKey->heap;
+#endif
+#ifdef HAVE_ED25519
+    if (ed25519Key != NULL)
+        return ed25519Key->heap;
+#endif
+#ifdef HAVE_ED448
+    if (ed448Key != NULL)
+        return ed448Key->heap;
+#endif
+#ifdef WOLFSSL_HAVE_MLDSA
+    if (mldsaKey != NULL)
+        return mldsaKey->heap;
+#endif
+#ifdef WOLFSSL_HAVE_SLHDSA
+    if (slhDsaKey != NULL)
+        return slhDsaKey->heap;
+#endif
+#if defined(WOLFSSL_HAVE_LMS) && !defined(WOLFSSL_LMS_VERIFY_ONLY)
+    if (lmsKey != NULL)
+        return lmsKey->heap;
+#endif
+#if defined(WOLFSSL_HAVE_XMSS) && !defined(WOLFSSL_XMSS_VERIFY_ONLY)
+    if (xmssKey != NULL)
+        return xmssKey->heap;
+#endif
+    return NULL;
+}
+
+/* Verify that the requested signature type -- which becomes the certificate's
+ * signatureAlgorithm OID -- is consistent with the signing key. The signature
+ * is produced by dispatching on the key while the OID is written from sType,
+ * so a mismatch would emit a certificate whose advertised algorithm
+ * contradicts the key that signed it (e.g. leaving the wc_InitCert default of
+ * CTC_SHA256wRSA on a non-RSA key). For RSA/ECC the hash is free to vary, so
+ * the whole signature-algorithm family is accepted; the remaining algorithms
+ * have a single (level/parameter-determined) OID. Returns 0 if consistent or
+ * if there is no key to check, ALGO_ID_E on a mismatch. */
+static int CheckSigTypeForKey(int sType, RsaKey* rsaKey, ecc_key* eccKey,
+    ed25519_key* ed25519Key, ed448_key* ed448Key, falcon_key* falconKey,
+    wc_MlDsaKey* mldsaKey, SlhDsaKey* slhDsaKey, LmsKey* lmsKey,
+    XmssKey* xmssKey)
+{
+    (void)sType;
+    (void)rsaKey;    (void)eccKey;    (void)ed25519Key; (void)ed448Key;
+    (void)falconKey; (void)mldsaKey;  (void)slhDsaKey;  (void)lmsKey;
+    (void)xmssKey;
+
+#ifdef WOLFSSL_DUAL_ALG_CERTS
+    /* sigType 0 indicates preTBS encoding: no signatureAlgorithm to validate. */
+    if (sType == 0)
+        return 0;
+#endif
+
+#ifndef NO_RSA
+    if (rsaKey != NULL)
+        return IsRsaSigType(sType) ? 0 : ALGO_ID_E;
+#endif
+#ifdef HAVE_ECC
+    if (eccKey != NULL)
+        return IsEccSigType(sType) ? 0 : ALGO_ID_E;
+#endif
+#ifdef HAVE_ED25519
+    if (ed25519Key != NULL)
+        return (sType == CTC_ED25519) ? 0 : ALGO_ID_E;
+#endif
+#ifdef HAVE_ED448
+    if (ed448Key != NULL)
+        return (sType == CTC_ED448) ? 0 : ALGO_ID_E;
+#endif
+#ifdef HAVE_FALCON
+    if (falconKey != NULL) {
+        if (falconKey->level == 1)
+            return (sType == CTC_FALCON_LEVEL1) ? 0 : ALGO_ID_E;
+        if (falconKey->level == 5)
+            return (sType == CTC_FALCON_LEVEL5) ? 0 : ALGO_ID_E;
+        return ALGO_ID_E;
+    }
+#endif
+#ifdef WOLFSSL_HAVE_MLDSA
+    if (mldsaKey != NULL) {
+        if (mldsaKey->params == NULL)
+            return ALGO_ID_E;
+    #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
+        if (mldsaKey->params->level == WC_ML_DSA_44_DRAFT)
+            return (sType == CTC_DILITHIUM_LEVEL2) ? 0 : ALGO_ID_E;
+        if (mldsaKey->params->level == WC_ML_DSA_65_DRAFT)
+            return (sType == CTC_DILITHIUM_LEVEL3) ? 0 : ALGO_ID_E;
+        if (mldsaKey->params->level == WC_ML_DSA_87_DRAFT)
+            return (sType == CTC_DILITHIUM_LEVEL5) ? 0 : ALGO_ID_E;
+    #endif
+        if (mldsaKey->level == WC_ML_DSA_44)
+            return (sType == CTC_ML_DSA_44) ? 0 : ALGO_ID_E;
+        if (mldsaKey->level == WC_ML_DSA_65)
+            return (sType == CTC_ML_DSA_65) ? 0 : ALGO_ID_E;
+        if (mldsaKey->level == WC_ML_DSA_87)
+            return (sType == CTC_ML_DSA_87) ? 0 : ALGO_ID_E;
+        return ALGO_ID_E;
+    }
+#endif
+#ifdef WOLFSSL_HAVE_SLHDSA
+    if (slhDsaKey != NULL) {
+        /* SLH-DSA uses one OID per parameter set for both the key and the
+         * signature, so the key OID sum equals the CTC signature value. */
+        int oid;
+        if (slhDsaKey->params == NULL)
+            return ALGO_ID_E;
+        oid = wc_SlhDsaParamToOid(slhDsaKey->params->param);
+        if (oid < 0)
+            return ALGO_ID_E;
+        return (sType == oid) ? 0 : ALGO_ID_E;
+    }
+#endif
+#if defined(WOLFSSL_HAVE_LMS) && !defined(WOLFSSL_LMS_VERIFY_ONLY)
+    if (lmsKey != NULL)
+        return (sType == CTC_HSS_LMS) ? 0 : ALGO_ID_E;
+#endif
+#if defined(WOLFSSL_HAVE_XMSS) && !defined(WOLFSSL_XMSS_VERIFY_ONLY)
+    if (xmssKey != NULL) {
+        if (xmssKey->is_xmssmt)
+            return (sType == CTC_XMSSMT) ? 0 : ALGO_ID_E;
+        return (sType == CTC_XMSS) ? 0 : ALGO_ID_E;
+    }
+#endif
+
+    return 0;
+}
+
 /* Make signature from buffer (sz), write to sig (sigSz)
  * This function now uses MakeSignatureCb internally for RSA and ECC,
  * eliminating code duplication. Ed25519, Ed448, and post-quantum algorithms
@@ -27086,8 +28696,8 @@ static int InternalSignCb(const byte* in, word32 inLen,
 static int MakeSignature(CertSignCtx* certSignCtx, const byte* buf, word32 sz,
     byte* sig, word32 sigSz, RsaKey* rsaKey, ecc_key* eccKey,
     ed25519_key* ed25519Key, ed448_key* ed448Key, falcon_key* falconKey,
-    dilithium_key* dilithiumKey, sphincs_key* sphincsKey, WC_RNG* rng,
-    word32 sigAlgoType, void* heap)
+    wc_MlDsaKey* mldsaKey, SlhDsaKey* slhDsaKey, LmsKey* lmsKey,
+    XmssKey* xmssKey, WC_RNG* rng, word32 sigAlgoType, void* heap)
 {
     int ret = 0;
 
@@ -27098,8 +28708,10 @@ static int MakeSignature(CertSignCtx* certSignCtx, const byte* buf, word32 sz,
     (void)ed25519Key;
     (void)ed448Key;
     (void)falconKey;
-    (void)dilithiumKey;
-    (void)sphincsKey;
+    (void)mldsaKey;
+    (void)slhDsaKey;
+    (void)lmsKey;
+    (void)xmssKey;
     (void)rng;
     (void)heap;
 
@@ -27158,40 +28770,60 @@ static int MakeSignature(CertSignCtx* certSignCtx, const byte* buf, word32 sz,
         word32 outSz = sigSz;
         ret = wc_falcon_sign_msg(buf, sz, sig, &outSz, falconKey, rng);
         if (ret == 0)
-            ret = outSz;
+            ret = (int)outSz;
     }
 #endif /* HAVE_FALCON */
 
-#if defined(HAVE_DILITHIUM) && !defined(WOLFSSL_DILITHIUM_NO_SIGN)
-    if (dilithiumKey) {
+#if defined(WOLFSSL_HAVE_MLDSA) && !defined(WOLFSSL_MLDSA_NO_SIGN)
+    if (mldsaKey) {
         word32 outSz = sigSz;
-        #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
-        if ((dilithiumKey->params->level == WC_ML_DSA_44_DRAFT) ||
-                (dilithiumKey->params->level == WC_ML_DSA_65_DRAFT) ||
-                (dilithiumKey->params->level == WC_ML_DSA_87_DRAFT)) {
-            ret = wc_dilithium_sign_msg(buf, sz, sig, &outSz, dilithiumKey, rng);
+        #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
+        if ((mldsaKey->params->level == WC_ML_DSA_44_DRAFT) ||
+                (mldsaKey->params->level == WC_ML_DSA_65_DRAFT) ||
+                (mldsaKey->params->level == WC_ML_DSA_87_DRAFT)) {
+            ret = wc_MlDsaKey_Sign(mldsaKey, sig, &outSz, buf, sz, rng);
             if (ret == 0)
-                ret = outSz;
+                ret = (int)outSz;
         }
         else
         #endif
         {
-            ret = wc_dilithium_sign_ctx_msg(NULL, 0, buf, sz, sig,
-                &outSz, dilithiumKey, rng);
+            ret = wc_MlDsaKey_SignCtx(mldsaKey, NULL, 0, sig, &outSz,
+                buf, sz, rng);
             if (ret == 0)
-                ret = outSz;
+                ret = (int)outSz;
         }
     }
-#endif /* HAVE_DILITHIUM && !WOLFSSL_DILITHIUM_NO_SIGN */
+#endif /* WOLFSSL_HAVE_MLDSA && !WOLFSSL_MLDSA_NO_SIGN */
 
-#if defined(HAVE_SPHINCS)
-    if (sphincsKey) {
+#if defined(WOLFSSL_HAVE_SLHDSA) && !defined(WOLFSSL_SLHDSA_VERIFY_ONLY)
+    if (slhDsaKey) {
         word32 outSz = sigSz;
-        ret = wc_sphincs_sign_msg(buf, sz, sig, &outSz, sphincsKey, rng);
+        ret = wc_SlhDsaKey_Sign(slhDsaKey, NULL, 0, buf, sz, sig, &outSz, rng);
         if (ret == 0)
-            ret = outSz;
+            ret = (int)outSz;
     }
-#endif /* HAVE_SPHINCS */
+#endif /* WOLFSSL_HAVE_SLHDSA && !WOLFSSL_SLHDSA_VERIFY_ONLY */
+
+#if defined(WOLFSSL_HAVE_LMS) && !defined(WOLFSSL_LMS_VERIFY_ONLY)
+    if (lmsKey) {
+        word32 outSz = sigSz;
+        /* RFC 9802: the TBS is signed directly with no pre-hash. */
+        ret = wc_LmsKey_Sign(lmsKey, sig, &outSz, buf, (int)sz);
+        if (ret == 0)
+            ret = (int)outSz;
+    }
+#endif /* WOLFSSL_HAVE_LMS && !WOLFSSL_LMS_VERIFY_ONLY */
+
+#if defined(WOLFSSL_HAVE_XMSS) && !defined(WOLFSSL_XMSS_VERIFY_ONLY)
+    if (xmssKey) {
+        word32 outSz = sigSz;
+        /* RFC 9802: the TBS is signed directly with no pre-hash. */
+        ret = wc_XmssKey_Sign(xmssKey, sig, &outSz, buf, (int)sz);
+        if (ret == 0)
+            ret = (int)outSz;
+    }
+#endif /* WOLFSSL_HAVE_XMSS && !WOLFSSL_XMSS_VERIFY_ONLY */
 
     if (ret == -1)
         ret = ALGO_ID_E;
@@ -27295,7 +28927,7 @@ int AddSignature(byte* buf, int bodySz, const byte* sig, int sigSz,
         }
     }
     if (ret == 0) {
-        if (IsSigAlgoECC((word32)sigAlgoType)) {
+        if (IsSigAlgoNoParams((word32)sigAlgoType)) {
             /* ECDSA and EdDSA doesn't have NULL tagged item. */
             dataASN[SIGASN_IDX_SIGALGO_NULL].noOut = 1;
         }
@@ -27340,7 +28972,8 @@ static int MakeAnyCert(Cert* cert, byte* derBuffer, word32 derSz,
                        RsaKey* rsaKey, ecc_key* eccKey, WC_RNG* rng,
                        DsaKey* dsaKey, ed25519_key* ed25519Key,
                        ed448_key* ed448Key, falcon_key* falconKey,
-                       dilithium_key* dilithiumKey, sphincs_key* sphincsKey)
+                       wc_MlDsaKey* mldsaKey, SlhDsaKey* slhDsaKey,
+                       LmsKey* lmsKey, XmssKey* xmssKey)
 {
     /* TODO: issRaw and sbjRaw should be NUL terminated. */
     DECL_ASNSETDATA(dataASN, x509CertASN_Length);
@@ -27353,10 +28986,12 @@ static int MakeAnyCert(Cert* cert, byte* derBuffer, word32 derSz,
     word32 issRawLen = 0;
     word32 sbjRawLen = 0;
 
-    /* Unused without OQS */
+    /* Unused without PQC */
     (void)falconKey;
-    (void)dilithiumKey;
-    (void)sphincsKey;
+    (void)mldsaKey;
+    (void)slhDsaKey;
+    (void)lmsKey;
+    (void)xmssKey;
 
     CALLOC_ASNSETDATA(dataASN, x509CertASN_Length, ret, cert->heap);
 
@@ -27385,60 +29020,55 @@ static int MakeAnyCert(Cert* cert, byte* derBuffer, word32 derSz,
             cert->keyType = FALCON_LEVEL5_KEY;
         }
 #endif /* HAVE_FALCON */
-#ifdef HAVE_DILITHIUM
-    #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
-        else if ((dilithiumKey != NULL) &&
-                    (dilithiumKey->params->level == WC_ML_DSA_44_DRAFT)) {
+#ifdef WOLFSSL_HAVE_MLDSA
+    #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
+        else if ((mldsaKey != NULL) &&
+                    (mldsaKey->params->level == WC_ML_DSA_44_DRAFT)) {
             cert->keyType = DILITHIUM_LEVEL2_KEY;
         }
-        else if ((dilithiumKey != NULL) &&
-                    (dilithiumKey->params->level == WC_ML_DSA_65_DRAFT)) {
+        else if ((mldsaKey != NULL) &&
+                    (mldsaKey->params->level == WC_ML_DSA_65_DRAFT)) {
             cert->keyType = DILITHIUM_LEVEL3_KEY;
         }
-        else if ((dilithiumKey != NULL) &&
-                    (dilithiumKey->params->level == WC_ML_DSA_87_DRAFT)) {
+        else if ((mldsaKey != NULL) &&
+                    (mldsaKey->params->level == WC_ML_DSA_87_DRAFT)) {
             cert->keyType = DILITHIUM_LEVEL5_KEY;
         }
     #endif
-        else if ((dilithiumKey != NULL) &&
-                    (dilithiumKey->level == WC_ML_DSA_44)) {
-            cert->keyType = ML_DSA_LEVEL2_KEY;
+        else if ((mldsaKey != NULL) &&
+                    (mldsaKey->level == WC_ML_DSA_44)) {
+            cert->keyType = ML_DSA_44_KEY;
         }
-        else if ((dilithiumKey != NULL) &&
-                    (dilithiumKey->level == WC_ML_DSA_65)) {
-            cert->keyType = ML_DSA_LEVEL3_KEY;
+        else if ((mldsaKey != NULL) &&
+                    (mldsaKey->level == WC_ML_DSA_65)) {
+            cert->keyType = ML_DSA_65_KEY;
         }
-        else if ((dilithiumKey != NULL) &&
-                    (dilithiumKey->level == WC_ML_DSA_87)) {
-            cert->keyType = ML_DSA_LEVEL5_KEY;
+        else if ((mldsaKey != NULL) &&
+                    (mldsaKey->level == WC_ML_DSA_87)) {
+            cert->keyType = ML_DSA_87_KEY;
         }
-#endif /* HAVE_DILITHIUM */
-#ifdef HAVE_SPHINCS
-        else if ((sphincsKey != NULL) && (sphincsKey->level == 1)
-                 && (sphincsKey->optim == FAST_VARIANT)) {
-            cert->keyType = SPHINCS_FAST_LEVEL1_KEY;
+#endif /* WOLFSSL_HAVE_MLDSA */
+#ifdef WOLFSSL_HAVE_SLHDSA
+        else if ((slhDsaKey != NULL) && (slhDsaKey->params != NULL)) {
+            int slhdsaKt = SlhDsaParamToKeyType(slhDsaKey->params->param);
+            if (slhdsaKt != 0) {
+                cert->keyType = slhdsaKt;
+            }
+            else {
+                ret = BAD_FUNC_ARG;
+            }
         }
-        else if ((sphincsKey != NULL) && (sphincsKey->level == 3)
-                 && (sphincsKey->optim == FAST_VARIANT)) {
-            cert->keyType = SPHINCS_FAST_LEVEL3_KEY;
+#endif /* WOLFSSL_HAVE_SLHDSA */
+#if defined(WOLFSSL_HAVE_LMS) && !defined(WOLFSSL_LMS_VERIFY_ONLY)
+        else if (lmsKey != NULL) {
+            cert->keyType = LMS_KEY;
         }
-        else if ((sphincsKey != NULL) && (sphincsKey->level == 5)
-                 && (sphincsKey->optim == FAST_VARIANT)) {
-            cert->keyType = SPHINCS_FAST_LEVEL5_KEY;
+#endif /* WOLFSSL_HAVE_LMS && !WOLFSSL_LMS_VERIFY_ONLY */
+#if defined(WOLFSSL_HAVE_XMSS) && !defined(WOLFSSL_XMSS_VERIFY_ONLY)
+        else if (xmssKey != NULL) {
+            cert->keyType = xmssKey->is_xmssmt ? XMSSMT_KEY : XMSS_KEY;
         }
-        else if ((sphincsKey != NULL) && (sphincsKey->level == 1)
-                 && (sphincsKey->optim == SMALL_VARIANT)) {
-            cert->keyType = SPHINCS_SMALL_LEVEL1_KEY;
-        }
-        else if ((sphincsKey != NULL) && (sphincsKey->level == 3)
-                 && (sphincsKey->optim == SMALL_VARIANT)) {
-            cert->keyType = SPHINCS_SMALL_LEVEL3_KEY;
-        }
-        else if ((sphincsKey != NULL) && (sphincsKey->level == 5)
-                 && (sphincsKey->optim == SMALL_VARIANT)) {
-            cert->keyType = SPHINCS_SMALL_LEVEL5_KEY;
-        }
-#endif /* HAVE_SPHINCS */
+#endif /* WOLFSSL_HAVE_XMSS && !WOLFSSL_XMSS_VERIFY_ONLY */
         else {
             ret = BAD_FUNC_ARG;
         }
@@ -27487,7 +29117,7 @@ static int MakeAnyCert(Cert* cert, byte* derBuffer, word32 derSz,
         /* Calculate public key encoding size. */
         ret = EncodePublicKey(cert->keyType, NULL, 0, rsaKey,
                 eccKey, ed25519Key, ed448Key, dsaKey, falconKey,
-                dilithiumKey, sphincsKey);
+                mldsaKey, slhDsaKey, lmsKey, xmssKey);
         publicKeySz = (word32)ret;
     }
     if (ret >= 0) {
@@ -27521,7 +29151,7 @@ static int MakeAnyCert(Cert* cert, byte* derBuffer, word32 derSz,
                        (word32)cert->sigType, oidSigType);
         }
 
-        if (IsSigAlgoECC((word32)cert->sigType)) {
+        if (IsSigAlgoNoParams((word32)cert->sigType)) {
             /* No NULL tagged item with ECDSA and EdDSA signature OIDs. */
             dataASN[X509CERTASN_IDX_TBS_ALGOID_PARAMS_NULL].noOut = 1;
         }
@@ -27674,7 +29304,7 @@ static int MakeAnyCert(Cert* cert, byte* derBuffer, word32 derSz,
             (int)dataASN[X509CERTASN_IDX_TBS_SPUBKEYINFO_SEQ]
                            .data.buffer.length,
             rsaKey, eccKey, ed25519Key, ed448Key, dsaKey,
-            falconKey, dilithiumKey, sphincsKey);
+            falconKey, mldsaKey, slhDsaKey, lmsKey, xmssKey);
     }
     if ((ret >= 0) && (!dataASN[X509CERTASN_IDX_TBS_EXT_SEQ].noOut)) {
         /* Encode extensions into buffer. */
@@ -27717,8 +29347,10 @@ int wc_MakeCert_ex(Cert* cert, byte* derBuffer, word32 derSz, int keyType,
     ed25519_key*       ed25519Key = NULL;
     ed448_key*         ed448Key = NULL;
     falcon_key*        falconKey = NULL;
-    dilithium_key*     dilithiumKey = NULL;
-    sphincs_key*       sphincsKey = NULL;
+    wc_MlDsaKey*       mldsaKey = NULL;
+    SlhDsaKey*         slhDsaKey = NULL;
+    LmsKey*            lmsKey = NULL;
+    XmssKey*           xmssKey = NULL;
 
     if (keyType == RSA_TYPE)
         rsaKey = (RsaKey*)key;
@@ -27734,36 +29366,46 @@ int wc_MakeCert_ex(Cert* cert, byte* derBuffer, word32 derSz, int keyType,
         falconKey = (falcon_key*)key;
     else if (keyType == FALCON_LEVEL5_TYPE)
         falconKey = (falcon_key*)key;
-#ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+#ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
     else if (keyType == DILITHIUM_LEVEL2_TYPE)
-        dilithiumKey = (dilithium_key*)key;
+        mldsaKey = (wc_MlDsaKey*)key;
     else if (keyType == DILITHIUM_LEVEL3_TYPE)
-        dilithiumKey = (dilithium_key*)key;
+        mldsaKey = (wc_MlDsaKey*)key;
     else if (keyType == DILITHIUM_LEVEL5_TYPE)
-        dilithiumKey = (dilithium_key*)key;
+        mldsaKey = (wc_MlDsaKey*)key;
 #endif
-    else if (keyType == ML_DSA_LEVEL2_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == ML_DSA_LEVEL3_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == ML_DSA_LEVEL5_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == SPHINCS_FAST_LEVEL1_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_FAST_LEVEL3_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_FAST_LEVEL5_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_SMALL_LEVEL1_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_SMALL_LEVEL3_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_SMALL_LEVEL5_TYPE)
-        sphincsKey = (sphincs_key*)key;
+    else if (keyType == ML_DSA_44_TYPE)
+        mldsaKey = (wc_MlDsaKey*)key;
+    else if (keyType == ML_DSA_65_TYPE)
+        mldsaKey = (wc_MlDsaKey*)key;
+    else if (keyType == ML_DSA_87_TYPE)
+        mldsaKey = (wc_MlDsaKey*)key;
+#ifdef WOLFSSL_HAVE_SLHDSA
+    else if (IsSlhDsaKeyType(keyType))
+        slhDsaKey = (SlhDsaKey*)key;
+#endif
+#if defined(WOLFSSL_HAVE_LMS) && !defined(WOLFSSL_LMS_VERIFY_ONLY)
+    else if (keyType == LMS_TYPE)
+        lmsKey = (LmsKey*)key;
+#endif
+#if defined(WOLFSSL_HAVE_XMSS) && !defined(WOLFSSL_XMSS_VERIFY_ONLY)
+    /* The selector must match the key's actual tree variant so XMSS_TYPE and
+     * XMSSMT_TYPE are not silently interchangeable. */
+    else if (keyType == XMSS_TYPE) {
+        xmssKey = (XmssKey*)key;
+        if (xmssKey != NULL && xmssKey->is_xmssmt)
+            return BAD_FUNC_ARG;
+    }
+    else if (keyType == XMSSMT_TYPE) {
+        xmssKey = (XmssKey*)key;
+        if (xmssKey != NULL && !xmssKey->is_xmssmt)
+            return BAD_FUNC_ARG;
+    }
+#endif
 
     return MakeAnyCert(cert, derBuffer, derSz, rsaKey, eccKey, rng, dsaKey,
-                       ed25519Key, ed448Key, falconKey, dilithiumKey,
-                       sphincsKey);
+                       ed25519Key, ed448Key, falconKey, mldsaKey,
+                       slhDsaKey, lmsKey, xmssKey);
 }
 
 /* Make an x509 Certificate v3 RSA or ECC from cert input, write to buffer */
@@ -27772,7 +29414,7 @@ int wc_MakeCert(Cert* cert, byte* derBuffer, word32 derSz, RsaKey* rsaKey,
              ecc_key* eccKey, WC_RNG* rng)
 {
     return MakeAnyCert(cert, derBuffer, derSz, rsaKey, eccKey, rng, NULL, NULL,
-                       NULL, NULL, NULL, NULL);
+                       NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 
@@ -27839,8 +29481,8 @@ enum {
 static int MakeCertReq(Cert* cert, byte* derBuffer, word32 derSz,
                    RsaKey* rsaKey, DsaKey* dsaKey, ecc_key* eccKey,
                    ed25519_key* ed25519Key, ed448_key* ed448Key,
-                   falcon_key* falconKey, dilithium_key* dilithiumKey,
-                   sphincs_key* sphincsKey)
+                   falcon_key* falconKey, wc_MlDsaKey* mldsaKey,
+                   SlhDsaKey* slhDsaKey, LmsKey* lmsKey, XmssKey* xmssKey)
 {
     DECL_ASNSETDATA(dataASN, certReqBodyASN_Length);
     word32 publicKeySz = 0;
@@ -27852,10 +29494,12 @@ static int MakeCertReq(Cert* cert, byte* derBuffer, word32 derSz,
     word32 sbjRawSz = 0;
 #endif
 
-    /* Unused without OQS */
+    /* Unused without PQC */
     (void)falconKey;
-    (void)dilithiumKey;
-    (void)sphincsKey;
+    (void)mldsaKey;
+    (void)slhDsaKey;
+    (void)lmsKey;
+    (void)xmssKey;
 
     CALLOC_ASNSETDATA(dataASN, certReqBodyASN_Length, ret, cert->heap);
 
@@ -27884,60 +29528,55 @@ static int MakeCertReq(Cert* cert, byte* derBuffer, word32 derSz,
             cert->keyType = FALCON_LEVEL5_KEY;
         }
 #endif /* HAVE_FALCON */
-#ifdef HAVE_DILITHIUM
-    #ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
-        else if ((dilithiumKey != NULL) &&
-                    (dilithiumKey->params->level == WC_ML_DSA_44_DRAFT)) {
+#ifdef WOLFSSL_HAVE_MLDSA
+    #ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
+        else if ((mldsaKey != NULL) &&
+                    (mldsaKey->params->level == WC_ML_DSA_44_DRAFT)) {
             cert->keyType = DILITHIUM_LEVEL2_KEY;
         }
-        else if ((dilithiumKey != NULL) &&
-                    (dilithiumKey->params->level == WC_ML_DSA_65_DRAFT)) {
+        else if ((mldsaKey != NULL) &&
+                    (mldsaKey->params->level == WC_ML_DSA_65_DRAFT)) {
             cert->keyType = DILITHIUM_LEVEL3_KEY;
         }
-        else if ((dilithiumKey != NULL) &&
-                    (dilithiumKey->params->level == WC_ML_DSA_87_DRAFT)) {
+        else if ((mldsaKey != NULL) &&
+                    (mldsaKey->params->level == WC_ML_DSA_87_DRAFT)) {
             cert->keyType = DILITHIUM_LEVEL5_KEY;
         }
     #endif
-        else if ((dilithiumKey != NULL) &&
-                    (dilithiumKey->level == WC_ML_DSA_44)) {
-            cert->keyType = ML_DSA_LEVEL2_KEY;
+        else if ((mldsaKey != NULL) &&
+                    (mldsaKey->level == WC_ML_DSA_44)) {
+            cert->keyType = ML_DSA_44_KEY;
         }
-        else if ((dilithiumKey != NULL) &&
-                    (dilithiumKey->level == WC_ML_DSA_65)) {
-            cert->keyType = ML_DSA_LEVEL3_KEY;
+        else if ((mldsaKey != NULL) &&
+                    (mldsaKey->level == WC_ML_DSA_65)) {
+            cert->keyType = ML_DSA_65_KEY;
         }
-        else if ((dilithiumKey != NULL) &&
-                    (dilithiumKey->level == WC_ML_DSA_87)) {
-            cert->keyType = ML_DSA_LEVEL5_KEY;
+        else if ((mldsaKey != NULL) &&
+                    (mldsaKey->level == WC_ML_DSA_87)) {
+            cert->keyType = ML_DSA_87_KEY;
         }
-#endif /* HAVE_DILITHIUM */
-#ifdef HAVE_SPHINCS
-        else if ((sphincsKey != NULL) && (sphincsKey->level == 1)
-                 && (sphincsKey->optim == FAST_VARIANT)) {
-            cert->keyType = SPHINCS_FAST_LEVEL1_KEY;
+#endif /* WOLFSSL_HAVE_MLDSA */
+#ifdef WOLFSSL_HAVE_SLHDSA
+        else if ((slhDsaKey != NULL) && (slhDsaKey->params != NULL)) {
+            int slhdsaKt = SlhDsaParamToKeyType(slhDsaKey->params->param);
+            if (slhdsaKt != 0) {
+                cert->keyType = slhdsaKt;
+            }
+            else {
+                ret = BAD_FUNC_ARG;
+            }
         }
-        else if ((sphincsKey != NULL) && (sphincsKey->level == 3)
-                 && (sphincsKey->optim == FAST_VARIANT)) {
-            cert->keyType = SPHINCS_FAST_LEVEL3_KEY;
+#endif /* WOLFSSL_HAVE_SLHDSA */
+#if defined(WOLFSSL_HAVE_LMS) && !defined(WOLFSSL_LMS_VERIFY_ONLY)
+        else if (lmsKey != NULL) {
+            cert->keyType = LMS_KEY;
         }
-        else if ((sphincsKey != NULL) && (sphincsKey->level == 5)
-                 && (sphincsKey->optim == FAST_VARIANT)) {
-            cert->keyType = SPHINCS_FAST_LEVEL5_KEY;
+#endif /* WOLFSSL_HAVE_LMS && !WOLFSSL_LMS_VERIFY_ONLY */
+#if defined(WOLFSSL_HAVE_XMSS) && !defined(WOLFSSL_XMSS_VERIFY_ONLY)
+        else if (xmssKey != NULL) {
+            cert->keyType = xmssKey->is_xmssmt ? XMSSMT_KEY : XMSS_KEY;
         }
-        else if ((sphincsKey != NULL) && (sphincsKey->level == 1)
-                 && (sphincsKey->optim == SMALL_VARIANT)) {
-            cert->keyType = SPHINCS_SMALL_LEVEL1_KEY;
-        }
-        else if ((sphincsKey != NULL) && (sphincsKey->level == 3)
-                 && (sphincsKey->optim == SMALL_VARIANT)) {
-            cert->keyType = SPHINCS_SMALL_LEVEL3_KEY;
-        }
-        else if ((sphincsKey != NULL) && (sphincsKey->level == 5)
-                 && (sphincsKey->optim == SMALL_VARIANT)) {
-            cert->keyType = SPHINCS_SMALL_LEVEL5_KEY;
-        }
-#endif /* HAVE_SPHINCS */
+#endif /* WOLFSSL_HAVE_XMSS && !WOLFSSL_XMSS_VERIFY_ONLY */
         else {
             ret = BAD_FUNC_ARG;
         }
@@ -27960,7 +29599,7 @@ static int MakeCertReq(Cert* cert, byte* derBuffer, word32 derSz,
         /* Determine encode public key size. */
          ret = EncodePublicKey(cert->keyType, NULL, 0, rsaKey,
              eccKey, ed25519Key, ed448Key, dsaKey, falconKey,
-             dilithiumKey, sphincsKey);
+             mldsaKey, slhDsaKey, lmsKey, xmssKey);
          publicKeySz = (word32)ret;
     }
     if (ret >= 0) {
@@ -28080,7 +29719,7 @@ static int MakeCertReq(Cert* cert, byte* derBuffer, word32 derSz,
                 dataASN[CERTREQBODYASN_IDX_SPUBKEYINFO_SEQ].data.buffer.data,
             (int)dataASN[CERTREQBODYASN_IDX_SPUBKEYINFO_SEQ].data.buffer.length,
             rsaKey, eccKey, ed25519Key, ed448Key, dsaKey, falconKey,
-            dilithiumKey, sphincsKey);
+            mldsaKey, slhDsaKey, lmsKey, xmssKey);
     }
     if ((ret >= 0 && derBuffer != NULL) &&
             (!dataASN[CERTREQBODYASN_IDX_EXT_BODY].noOut)) {
@@ -28112,8 +29751,10 @@ int wc_MakeCertReq_ex(Cert* cert, byte* derBuffer, word32 derSz, int keyType,
     ed25519_key*   ed25519Key = NULL;
     ed448_key*     ed448Key = NULL;
     falcon_key*    falconKey = NULL;
-    dilithium_key* dilithiumKey = NULL;
-    sphincs_key*   sphincsKey = NULL;
+    wc_MlDsaKey*   mldsaKey = NULL;
+    SlhDsaKey*     slhDsaKey = NULL;
+    LmsKey*        lmsKey = NULL;
+    XmssKey*       xmssKey = NULL;
 
     if (keyType == RSA_TYPE)
         rsaKey = (RsaKey*)key;
@@ -28129,36 +29770,46 @@ int wc_MakeCertReq_ex(Cert* cert, byte* derBuffer, word32 derSz, int keyType,
         falconKey = (falcon_key*)key;
     else if (keyType == FALCON_LEVEL5_TYPE)
         falconKey = (falcon_key*)key;
-#ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+#ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
     else if (keyType == DILITHIUM_LEVEL2_TYPE)
-        dilithiumKey = (dilithium_key*)key;
+        mldsaKey = (wc_MlDsaKey*)key;
     else if (keyType == DILITHIUM_LEVEL3_TYPE)
-        dilithiumKey = (dilithium_key*)key;
+        mldsaKey = (wc_MlDsaKey*)key;
     else if (keyType == DILITHIUM_LEVEL5_TYPE)
-        dilithiumKey = (dilithium_key*)key;
+        mldsaKey = (wc_MlDsaKey*)key;
 #endif
-    else if (keyType == ML_DSA_LEVEL2_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == ML_DSA_LEVEL3_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == ML_DSA_LEVEL5_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == SPHINCS_FAST_LEVEL1_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_FAST_LEVEL3_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_FAST_LEVEL5_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_SMALL_LEVEL1_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_SMALL_LEVEL3_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_SMALL_LEVEL5_TYPE)
-        sphincsKey = (sphincs_key*)key;
+    else if (keyType == ML_DSA_44_TYPE)
+        mldsaKey = (wc_MlDsaKey*)key;
+    else if (keyType == ML_DSA_65_TYPE)
+        mldsaKey = (wc_MlDsaKey*)key;
+    else if (keyType == ML_DSA_87_TYPE)
+        mldsaKey = (wc_MlDsaKey*)key;
+#ifdef WOLFSSL_HAVE_SLHDSA
+    else if (IsSlhDsaKeyType(keyType))
+        slhDsaKey = (SlhDsaKey*)key;
+#endif
+#if defined(WOLFSSL_HAVE_LMS) && !defined(WOLFSSL_LMS_VERIFY_ONLY)
+    else if (keyType == LMS_TYPE)
+        lmsKey = (LmsKey*)key;
+#endif
+#if defined(WOLFSSL_HAVE_XMSS) && !defined(WOLFSSL_XMSS_VERIFY_ONLY)
+    /* The selector must match the key's actual tree variant so XMSS_TYPE and
+     * XMSSMT_TYPE are not silently interchangeable. */
+    else if (keyType == XMSS_TYPE) {
+        xmssKey = (XmssKey*)key;
+        if (xmssKey != NULL && xmssKey->is_xmssmt)
+            return BAD_FUNC_ARG;
+    }
+    else if (keyType == XMSSMT_TYPE) {
+        xmssKey = (XmssKey*)key;
+        if (xmssKey != NULL && !xmssKey->is_xmssmt)
+            return BAD_FUNC_ARG;
+    }
+#endif
 
     return MakeCertReq(cert, derBuffer, derSz, rsaKey, dsaKey, eccKey,
-                       ed25519Key, ed448Key, falconKey, dilithiumKey,
-                       sphincsKey);
+                       ed25519Key, ed448Key, falconKey, mldsaKey,
+                       slhDsaKey, lmsKey, xmssKey);
 }
 
 WOLFSSL_ABI
@@ -28166,7 +29817,7 @@ int wc_MakeCertReq(Cert* cert, byte* derBuffer, word32 derSz,
                    RsaKey* rsaKey, ecc_key* eccKey)
 {
     return MakeCertReq(cert, derBuffer, derSz, rsaKey, NULL, eccKey, NULL,
-                       NULL, NULL, NULL, NULL);
+                       NULL, NULL, NULL, NULL, NULL, NULL);
 }
 #endif /* WOLFSSL_CERT_REQ */
 
@@ -28312,11 +29963,14 @@ exit_ms:
 static int SignCert(int requestSz, int sType, byte* buf, word32 buffSz,
                     RsaKey* rsaKey, ecc_key* eccKey, ed25519_key* ed25519Key,
                     ed448_key* ed448Key, falcon_key* falconKey,
-                    dilithium_key* dilithiumKey, sphincs_key* sphincsKey,
-                    WC_RNG* rng)
+                    wc_MlDsaKey* mldsaKey, SlhDsaKey* slhDsaKey,
+                    LmsKey* lmsKey, XmssKey* xmssKey, WC_RNG* rng)
 {
     int sigSz = 0;
+    int ret;
     void* heap = NULL;
+    /* The signature buffer is sized from the key at runtime. */
+    int maxSigSz;
     CertSignCtx  certSignCtx_lcl;
     CertSignCtx* certSignCtx = &certSignCtx_lcl;
 
@@ -28325,13 +29979,13 @@ static int SignCert(int requestSz, int sType, byte* buf, word32 buffSz,
     if (requestSz < 0)
         return requestSz;
 
-    /* locate ctx */
+    /* Async crypto reuses the signing key's embedded CertSignCtx; only RSA and
+     * ECC keys carry one. */
     if (rsaKey) {
     #ifndef NO_RSA
     #ifdef WOLFSSL_ASYNC_CRYPT
         certSignCtx = &rsaKey->certSignCtx;
     #endif
-        heap = rsaKey->heap;
     #else
         return NOT_COMPILED_IN;
     #endif /* NO_RSA */
@@ -28341,24 +29995,51 @@ static int SignCert(int requestSz, int sType, byte* buf, word32 buffSz,
     #ifdef WOLFSSL_ASYNC_CRYPT
         certSignCtx = &eccKey->certSignCtx;
     #endif
-        heap = eccKey->heap;
     #else
         return NOT_COMPILED_IN;
     #endif /* HAVE_ECC */
     }
+    heap = GetSigningKeyHeap(rsaKey, eccKey, ed25519Key, ed448Key, mldsaKey,
+        slhDsaKey, lmsKey, xmssKey);
+
+    /* The signatureAlgorithm OID is written from sType while the signature is
+     * produced from the key, so reject a mismatch rather than emit a cert
+     * whose advertised algorithm contradicts the signing key. */
+    ret = CheckSigTypeForKey(sType, rsaKey, eccKey, ed25519Key, ed448Key,
+        falconKey, mldsaKey, slhDsaKey, lmsKey, xmssKey);
+    if (ret != 0) {
+        WOLFSSL_MSG("Signature type does not match signing key");
+        return ret;
+    }
+
+    /* Size the signature buffer from the key in use. */
+    maxSigSz = GetSignatureBufferSz(rsaKey, eccKey, ed25519Key, ed448Key,
+        falconKey, mldsaKey, slhDsaKey, lmsKey, xmssKey);
+    if (maxSigSz <= 0)
+        return (maxSigSz < 0) ? maxSigSz : ALGO_ID_E;
 
 #ifndef WOLFSSL_NO_MALLOC
     if (certSignCtx->sig == NULL) {
-        certSignCtx->sig = (byte*)XMALLOC(MAX_ENCODED_SIG_SZ, heap,
+        certSignCtx->sig = (byte*)XMALLOC((word32)maxSigSz, heap,
             DYNAMIC_TYPE_TMP_BUFFER);
         if (certSignCtx->sig == NULL)
             return MEMORY_E;
     }
+#else
+    /* Without dynamic memory the signature buffer is a fixed
+     * WOLFSSL_MAX_SIG_SZ array in CertSignCtx. LMS/XMSS signatures are
+     * parameter-dependent and can be larger, so reject rather than overflow
+     * the fixed buffer. */
+    if ((word32)maxSigSz > WOLFSSL_MAX_SIG_SZ) {
+        WOLFSSL_MSG("Signature larger than fixed CertSignCtx buffer");
+        return BUFFER_E;
+    }
 #endif
 
     sigSz = MakeSignature(certSignCtx, buf, (word32)requestSz, certSignCtx->sig,
-        MAX_ENCODED_SIG_SZ, rsaKey, eccKey, ed25519Key, ed448Key,
-        falconKey, dilithiumKey, sphincsKey, rng, (word32)sType, heap);
+        (word32)maxSigSz, rsaKey, eccKey, ed25519Key, ed448Key,
+        falconKey, mldsaKey, slhDsaKey, lmsKey, xmssKey, rng, (word32)sType,
+        heap);
 #ifdef WOLFSSL_ASYNC_CRYPT
     if (sigSz == WC_NO_ERR_TRACE(WC_PENDING_E)) {
         /* Not free'ing certSignCtx->sig here because it could still be in use
@@ -28407,10 +30088,11 @@ int wc_MakeSigWithBitStr(byte *sig, int sigSz, int sType, byte* buf,
     ed25519_key*       ed25519Key = NULL;
     ed448_key*         ed448Key = NULL;
     falcon_key*        falconKey = NULL;
-    dilithium_key*     dilithiumKey = NULL;
-    sphincs_key*       sphincsKey = NULL;
+    wc_MlDsaKey*       mldsaKey = NULL;
+    SlhDsaKey*         slhDsaKey = NULL;
     int ret = 0;
     int headerSz;
+    int maxSigSz;
     void* heap = NULL;
     CertSignCtx  certSignCtx_lcl;
     CertSignCtx* certSignCtx = &certSignCtx_lcl;
@@ -28441,35 +30123,43 @@ int wc_MakeSigWithBitStr(byte *sig, int sigSz, int sType, byte* buf,
         case FALCON_LEVEL5_TYPE:
             falconKey = (falcon_key*)key;
             break;
-#ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+#ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
         case DILITHIUM_LEVEL2_TYPE:
         case DILITHIUM_LEVEL3_TYPE:
         case DILITHIUM_LEVEL5_TYPE:
 #endif
-        case ML_DSA_LEVEL2_TYPE:
-        case ML_DSA_LEVEL3_TYPE:
-        case ML_DSA_LEVEL5_TYPE:
-            dilithiumKey = (dilithium_key*)key;
+        case ML_DSA_44_TYPE:
+        case ML_DSA_65_TYPE:
+        case ML_DSA_87_TYPE:
+            mldsaKey = (wc_MlDsaKey*)key;
             break;
-        case SPHINCS_FAST_LEVEL1_TYPE:
-        case SPHINCS_FAST_LEVEL3_TYPE:
-        case SPHINCS_FAST_LEVEL5_TYPE:
-        case SPHINCS_SMALL_LEVEL1_TYPE:
-        case SPHINCS_SMALL_LEVEL3_TYPE:
-        case SPHINCS_SMALL_LEVEL5_TYPE:
-            sphincsKey = (sphincs_key*)key;
+        case SLH_DSA_SHAKE_128F_TYPE:
+        case SLH_DSA_SHAKE_192F_TYPE:
+        case SLH_DSA_SHAKE_256F_TYPE:
+        case SLH_DSA_SHAKE_128S_TYPE:
+        case SLH_DSA_SHAKE_192S_TYPE:
+        case SLH_DSA_SHAKE_256S_TYPE:
+    #ifdef WOLFSSL_SLHDSA_SHA2
+        case SLH_DSA_SHA2_128F_TYPE:
+        case SLH_DSA_SHA2_192F_TYPE:
+        case SLH_DSA_SHA2_256F_TYPE:
+        case SLH_DSA_SHA2_128S_TYPE:
+        case SLH_DSA_SHA2_192S_TYPE:
+        case SLH_DSA_SHA2_256S_TYPE:
+    #endif
+            slhDsaKey = (SlhDsaKey*)key;
             break;
         default:
             return BAD_FUNC_ARG;
     }
 
-    /* locate ctx */
+    /* Async crypto reuses the signing key's embedded CertSignCtx; only RSA and
+     * ECC keys carry one. */
     if (rsaKey) {
     #ifndef NO_RSA
     #ifdef WOLFSSL_ASYNC_CRYPT
         certSignCtx = &rsaKey->certSignCtx;
     #endif
-        heap = rsaKey->heap;
     #else
         return NOT_COMPILED_IN;
     #endif /* NO_RSA */
@@ -28479,24 +30169,46 @@ int wc_MakeSigWithBitStr(byte *sig, int sigSz, int sType, byte* buf,
     #ifdef WOLFSSL_ASYNC_CRYPT
         certSignCtx = &eccKey->certSignCtx;
     #endif
-        heap = eccKey->heap;
     #else
         return NOT_COMPILED_IN;
     #endif /* HAVE_ECC */
     }
+    heap = GetSigningKeyHeap(rsaKey, eccKey, ed25519Key, ed448Key, mldsaKey,
+        slhDsaKey, NULL, NULL);
+
+    /* The signatureAlgorithm OID is written from sType while the signature is
+     * produced from the key, so reject a mismatch rather than emit a cert
+     * whose advertised algorithm contradicts the signing key. */
+    ret = CheckSigTypeForKey(sType, rsaKey, eccKey, ed25519Key, ed448Key,
+        falconKey, mldsaKey, slhDsaKey, NULL, NULL);
+    if (ret != 0) {
+        WOLFSSL_MSG("Signature type does not match signing key");
+        return ret;
+    }
+
+    /* Size the signature buffer from the key in use. */
+    maxSigSz = GetSignatureBufferSz(rsaKey, eccKey, ed25519Key, ed448Key,
+        falconKey, mldsaKey, slhDsaKey, NULL, NULL);
+    if (maxSigSz <= 0)
+        return (maxSigSz < 0) ? maxSigSz : ALGO_ID_E;
 
 #ifndef WOLFSSL_NO_MALLOC
     if (certSignCtx->sig == NULL) {
-        certSignCtx->sig = (byte*)XMALLOC(MAX_ENCODED_SIG_SZ, heap,
+        certSignCtx->sig = (byte*)XMALLOC((word32)maxSigSz, heap,
             DYNAMIC_TYPE_TMP_BUFFER);
         if (certSignCtx->sig == NULL)
             return MEMORY_E;
     }
+#else
+    if ((word32)maxSigSz > WOLFSSL_MAX_SIG_SZ) {
+        WOLFSSL_MSG("Signature larger than fixed CertSignCtx buffer");
+        return BUFFER_E;
+    }
 #endif
 
     ret = MakeSignature(certSignCtx, buf, (word32)bufSz, certSignCtx->sig,
-        MAX_ENCODED_SIG_SZ, rsaKey, eccKey, ed25519Key, ed448Key,
-        falconKey, dilithiumKey, sphincsKey, rng, (word32)sType, heap);
+        (word32)maxSigSz, rsaKey, eccKey, ed25519Key, ed448Key,
+        falconKey, mldsaKey, slhDsaKey, NULL, NULL, rng, (word32)sType, heap);
 #ifdef WOLFSSL_ASYNC_CRYPT
     if (ret == WC_NO_ERR_TRACE(WC_PENDING_E)) {
         /* Not free'ing certSignCtx->sig here because it could still be in use
@@ -28554,8 +30266,10 @@ int wc_SignCert_ex(int requestSz, int sType, byte* buf, word32 buffSz,
     ed25519_key*       ed25519Key = NULL;
     ed448_key*         ed448Key = NULL;
     falcon_key*        falconKey = NULL;
-    dilithium_key*     dilithiumKey = NULL;
-    sphincs_key*       sphincsKey = NULL;
+    wc_MlDsaKey*       mldsaKey = NULL;
+    SlhDsaKey*         slhDsaKey = NULL;
+    LmsKey*            lmsKey = NULL;
+    XmssKey*           xmssKey = NULL;
 
     if (keyType == RSA_TYPE)
         rsaKey = (RsaKey*)key;
@@ -28569,42 +30283,53 @@ int wc_SignCert_ex(int requestSz, int sType, byte* buf, word32 buffSz,
         falconKey = (falcon_key*)key;
     else if (keyType == FALCON_LEVEL5_TYPE)
         falconKey = (falcon_key*)key;
-#ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+#ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
     else if (keyType == DILITHIUM_LEVEL2_TYPE)
-        dilithiumKey = (dilithium_key*)key;
+        mldsaKey = (wc_MlDsaKey*)key;
     else if (keyType == DILITHIUM_LEVEL3_TYPE)
-        dilithiumKey = (dilithium_key*)key;
+        mldsaKey = (wc_MlDsaKey*)key;
     else if (keyType == DILITHIUM_LEVEL5_TYPE)
-        dilithiumKey = (dilithium_key*)key;
+        mldsaKey = (wc_MlDsaKey*)key;
 #endif
-    else if (keyType == ML_DSA_LEVEL2_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == ML_DSA_LEVEL3_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == ML_DSA_LEVEL5_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == SPHINCS_FAST_LEVEL1_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_FAST_LEVEL3_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_FAST_LEVEL5_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_SMALL_LEVEL1_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_SMALL_LEVEL3_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_SMALL_LEVEL5_TYPE)
-        sphincsKey = (sphincs_key*)key;
+    else if (keyType == ML_DSA_44_TYPE)
+        mldsaKey = (wc_MlDsaKey*)key;
+    else if (keyType == ML_DSA_65_TYPE)
+        mldsaKey = (wc_MlDsaKey*)key;
+    else if (keyType == ML_DSA_87_TYPE)
+        mldsaKey = (wc_MlDsaKey*)key;
+#ifdef WOLFSSL_HAVE_SLHDSA
+    else if (IsSlhDsaKeyType(keyType))
+        slhDsaKey = (SlhDsaKey*)key;
+#endif
+#if defined(WOLFSSL_HAVE_LMS) && !defined(WOLFSSL_LMS_VERIFY_ONLY)
+    else if (keyType == LMS_TYPE)
+        lmsKey = (LmsKey*)key;
+#endif
+#if defined(WOLFSSL_HAVE_XMSS) && !defined(WOLFSSL_XMSS_VERIFY_ONLY)
+    /* The selector must match the key's actual tree variant so XMSS_TYPE and
+     * XMSSMT_TYPE are not silently interchangeable. */
+    else if (keyType == XMSS_TYPE) {
+        xmssKey = (XmssKey*)key;
+        if (xmssKey != NULL && xmssKey->is_xmssmt)
+            return BAD_FUNC_ARG;
+    }
+    else if (keyType == XMSSMT_TYPE) {
+        xmssKey = (XmssKey*)key;
+        if (xmssKey != NULL && !xmssKey->is_xmssmt)
+            return BAD_FUNC_ARG;
+    }
+#endif
 
     return SignCert(requestSz, sType, buf, buffSz, rsaKey, eccKey, ed25519Key,
-                    ed448Key, falconKey, dilithiumKey, sphincsKey, rng);
+                    ed448Key, falconKey, mldsaKey, slhDsaKey, lmsKey, xmssKey,
+                    rng);
 }
 
 int wc_SignCert(int requestSz, int sType, byte* buf, word32 buffSz,
                 RsaKey* rsaKey, ecc_key* eccKey, WC_RNG* rng)
 {
     return SignCert(requestSz, sType, buf, buffSz, rsaKey, eccKey, NULL, NULL,
-                    NULL, NULL, NULL, rng);
+                    NULL, NULL, NULL, NULL, NULL, rng);
 }
 
 /* Sign certificate/CSR using a callback function
@@ -28635,6 +30360,7 @@ int wc_SignCert_cb(int requestSz, int sType, byte* buf, word32 buffSz,
                    WC_RNG* rng)
 {
     int sigSz = 0;
+    word32 sigCap = MAX_ENCODED_CLASSIC_SIG_SZ;
     CertSignCtx certSignCtx_lcl;
     CertSignCtx* certSignCtx = &certSignCtx_lcl;
 
@@ -28661,22 +30387,40 @@ int wc_SignCert_cb(int requestSz, int sType, byte* buf, word32 buffSz,
     return NOT_COMPILED_IN;
 #endif
 
+    /* The callback produces the signature for keyType while the cert's
+     * signatureAlgorithm OID is written from sType, so reject a family
+     * mismatch (e.g. an ECDSA OID with an RSA key). */
+#ifndef NO_RSA
+    if (keyType == RSA_TYPE && !IsRsaSigType(sType))
+        return ALGO_ID_E;
+#endif
+#ifdef HAVE_ECC
+    if (keyType == ECC_TYPE && !IsEccSigType(sType))
+        return ALGO_ID_E;
+#endif
+
     XMEMSET(certSignCtx, 0, sizeof(*certSignCtx));
 
     if (requestSz < 0) {
         return requestSz;
     }
 
+    /* keyType is restricted to RSA_TYPE/ECC_TYPE above, so the signature is
+     * a classic (non-PQC) one and fits MAX_ENCODED_CLASSIC_SIG_SZ. */
 #ifndef WOLFSSL_NO_MALLOC
-    certSignCtx->sig = (byte*)XMALLOC(MAX_ENCODED_SIG_SZ, NULL,
+    certSignCtx->sig = (byte*)XMALLOC(MAX_ENCODED_CLASSIC_SIG_SZ, NULL,
         DYNAMIC_TYPE_TMP_BUFFER);
     if (certSignCtx->sig == NULL) {
         return MEMORY_E;
     }
+#else
+    /* Don't claim more capacity than the fixed sig buffer really has. */
+    if (sigCap > (word32)sizeof(certSignCtx->sig))
+        sigCap = (word32)sizeof(certSignCtx->sig);
 #endif
 
     sigSz = MakeSignatureCb(certSignCtx, buf, (word32)requestSz,
-        certSignCtx->sig, MAX_ENCODED_SIG_SZ, sType, keyType,
+        certSignCtx->sig, sigCap, sType, keyType,
         signCb, signCtx, rng, NULL);
 
 #ifdef WOLFSSL_ASYNC_CRYPT
@@ -28752,16 +30496,16 @@ int wc_GetSubjectRaw(byte **subjectRaw, Cert *cert)
 static int SetKeyIdFromPublicKey(Cert *cert, RsaKey *rsakey, ecc_key *eckey,
                                  ed25519_key* ed25519Key, ed448_key* ed448Key,
                                  falcon_key* falconKey,
-                                 dilithium_key* dilithiumKey,
-                                 sphincs_key *sphincsKey, int kid_type)
+                                 wc_MlDsaKey* mldsaKey,
+                                 SlhDsaKey *slhDsaKey, int kid_type)
 {
     byte *buf;
     int   bufferSz, ret;
 
     if (cert == NULL ||
         (rsakey == NULL && eckey == NULL && ed25519Key == NULL &&
-         ed448Key == NULL && falconKey == NULL && dilithiumKey == NULL &&
-         sphincsKey == NULL) ||
+         ed448Key == NULL && falconKey == NULL && mldsaKey == NULL &&
+         slhDsaKey == NULL) ||
         (kid_type != SKID_TYPE && kid_type != AKID_TYPE))
         return BAD_FUNC_ARG;
 
@@ -28800,15 +30544,15 @@ static int SetKeyIdFromPublicKey(Cert *cert, RsaKey *rsakey, ecc_key *eckey,
                                             0);
     }
 #endif
-#if defined(HAVE_DILITHIUM) && !defined(WOLFSSL_DILITHIUM_NO_ASN1)
-    if (dilithiumKey != NULL) {
-        bufferSz = wc_Dilithium_PublicKeyToDer(dilithiumKey, buf,
+#if defined(WOLFSSL_HAVE_MLDSA) && !defined(WOLFSSL_MLDSA_NO_ASN1)
+    if (mldsaKey != NULL) {
+        bufferSz = wc_MlDsaKey_PublicKeyToDer(mldsaKey, buf,
                                                MAX_PUBLIC_KEY_SZ, 0);
     }
 #endif
-#if defined(HAVE_SPHINCS)
-    if (sphincsKey != NULL) {
-        bufferSz = wc_Sphincs_PublicKeyToDer(sphincsKey, buf,
+#if defined(WOLFSSL_HAVE_SLHDSA)
+    if (slhDsaKey != NULL) {
+        bufferSz = wc_SlhDsaKey_PublicKeyToDer(slhDsaKey, buf,
                                                MAX_PUBLIC_KEY_SZ, 0);
     }
 #endif
@@ -28849,8 +30593,8 @@ int wc_SetSubjectKeyIdFromPublicKey_ex(Cert *cert, int keyType, void* key)
     ed25519_key*       ed25519Key = NULL;
     ed448_key*         ed448Key = NULL;
     falcon_key*        falconKey = NULL;
-    dilithium_key*     dilithiumKey = NULL;
-    sphincs_key*       sphincsKey = NULL;
+    wc_MlDsaKey*       mldsaKey = NULL;
+    SlhDsaKey*         slhDsaKey = NULL;
 
     if (keyType == RSA_TYPE)
         rsaKey = (RsaKey*)key;
@@ -28864,35 +30608,27 @@ int wc_SetSubjectKeyIdFromPublicKey_ex(Cert *cert, int keyType, void* key)
         falconKey = (falcon_key*)key;
     else if (keyType == FALCON_LEVEL5_TYPE)
         falconKey = (falcon_key*)key;
-#ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+#ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
     else if (keyType == DILITHIUM_LEVEL2_TYPE)
-        dilithiumKey = (dilithium_key*)key;
+        mldsaKey = (wc_MlDsaKey*)key;
     else if (keyType == DILITHIUM_LEVEL3_TYPE)
-        dilithiumKey = (dilithium_key*)key;
+        mldsaKey = (wc_MlDsaKey*)key;
     else if (keyType == DILITHIUM_LEVEL5_TYPE)
-        dilithiumKey = (dilithium_key*)key;
+        mldsaKey = (wc_MlDsaKey*)key;
 #endif
-    else if (keyType == ML_DSA_LEVEL2_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == ML_DSA_LEVEL3_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == ML_DSA_LEVEL5_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == SPHINCS_FAST_LEVEL1_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_FAST_LEVEL3_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_FAST_LEVEL5_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_SMALL_LEVEL1_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_SMALL_LEVEL3_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_SMALL_LEVEL5_TYPE)
-        sphincsKey = (sphincs_key*)key;
+    else if (keyType == ML_DSA_44_TYPE)
+        mldsaKey = (wc_MlDsaKey*)key;
+    else if (keyType == ML_DSA_65_TYPE)
+        mldsaKey = (wc_MlDsaKey*)key;
+    else if (keyType == ML_DSA_87_TYPE)
+        mldsaKey = (wc_MlDsaKey*)key;
+#ifdef WOLFSSL_HAVE_SLHDSA
+    else if (IsSlhDsaKeyType(keyType))
+        slhDsaKey = (SlhDsaKey*)key;
+#endif
 
     return SetKeyIdFromPublicKey(cert, rsaKey, eccKey, ed25519Key, ed448Key,
-                                 falconKey, dilithiumKey, sphincsKey,
+                                 falconKey, mldsaKey, slhDsaKey,
                                  SKID_TYPE);
 }
 
@@ -28910,8 +30646,8 @@ int wc_SetAuthKeyIdFromPublicKey_ex(Cert *cert, int keyType, void* key)
     ed25519_key*       ed25519Key = NULL;
     ed448_key*         ed448Key = NULL;
     falcon_key*        falconKey = NULL;
-    dilithium_key*     dilithiumKey = NULL;
-    sphincs_key*       sphincsKey = NULL;
+    wc_MlDsaKey*       mldsaKey = NULL;
+    SlhDsaKey*         slhDsaKey = NULL;
 
     if (keyType == RSA_TYPE)
         rsaKey = (RsaKey*)key;
@@ -28925,35 +30661,27 @@ int wc_SetAuthKeyIdFromPublicKey_ex(Cert *cert, int keyType, void* key)
         falconKey = (falcon_key*)key;
     else if (keyType == FALCON_LEVEL5_TYPE)
         falconKey = (falcon_key*)key;
-#ifdef WOLFSSL_DILITHIUM_FIPS204_DRAFT
+#ifdef WOLFSSL_MLDSA_FIPS204_DRAFT
     else if (keyType == DILITHIUM_LEVEL2_TYPE)
-        dilithiumKey = (dilithium_key*)key;
+        mldsaKey = (wc_MlDsaKey*)key;
     else if (keyType == DILITHIUM_LEVEL3_TYPE)
-        dilithiumKey = (dilithium_key*)key;
+        mldsaKey = (wc_MlDsaKey*)key;
     else if (keyType == DILITHIUM_LEVEL5_TYPE)
-        dilithiumKey = (dilithium_key*)key;
+        mldsaKey = (wc_MlDsaKey*)key;
 #endif
-    else if (keyType == ML_DSA_LEVEL2_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == ML_DSA_LEVEL3_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == ML_DSA_LEVEL5_TYPE)
-        dilithiumKey = (dilithium_key*)key;
-    else if (keyType == SPHINCS_FAST_LEVEL1_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_FAST_LEVEL3_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_FAST_LEVEL5_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_SMALL_LEVEL1_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_SMALL_LEVEL3_TYPE)
-        sphincsKey = (sphincs_key*)key;
-    else if (keyType == SPHINCS_SMALL_LEVEL5_TYPE)
-        sphincsKey = (sphincs_key*)key;
+    else if (keyType == ML_DSA_44_TYPE)
+        mldsaKey = (wc_MlDsaKey*)key;
+    else if (keyType == ML_DSA_65_TYPE)
+        mldsaKey = (wc_MlDsaKey*)key;
+    else if (keyType == ML_DSA_87_TYPE)
+        mldsaKey = (wc_MlDsaKey*)key;
+#ifdef WOLFSSL_HAVE_SLHDSA
+    else if (IsSlhDsaKeyType(keyType))
+        slhDsaKey = (SlhDsaKey*)key;
+#endif
 
     return SetKeyIdFromPublicKey(cert, rsaKey, eccKey, ed25519Key, ed448Key,
-                                 falconKey, dilithiumKey, sphincsKey,
+                                 falconKey, mldsaKey, slhDsaKey,
                                  AKID_TYPE);
 }
 
@@ -29089,11 +30817,16 @@ static int SetAuthKeyIdFromDcert(Cert* cert, DecodedCert* decoded)
     #if defined(WOLFSSL_SM2) && defined(WOLFSSL_SM3)
         cert->akidSz = wc_HashGetDigestSize(wc_HashTypeConvert(HashIdAlg(
             cert->sigType)));
+        if (cert->akidSz <= 0) {
+            ret = HASH_TYPE_E;
+        }
     #else
         cert->akidSz = KEYID_SIZE;
     #endif
-        /* Put the SKID of CA to AKID of certificate */
-        XMEMCPY(cert->akid, decoded->extSubjKeyId, (size_t)cert->akidSz);
+        if (ret == 0) {
+            /* Put the SKID of CA to AKID of certificate */
+            XMEMCPY(cert->akid, decoded->extSubjKeyId, (size_t)cert->akidSz);
+        }
     }
 
     return ret;
@@ -29105,6 +30838,9 @@ int wc_SetAuthKeyIdFromCert(Cert *cert, const byte *der, int derSz)
     int ret = 0;
 
     if (cert == NULL) {
+        ret = BAD_FUNC_ARG;
+    }
+    else if (derSz < 0) {
         ret = BAD_FUNC_ARG;
     }
     else {
@@ -29178,6 +30914,40 @@ int wc_SetExtKeyUsage(Cert *cert, const char *value)
 
     return ret;
 }
+
+#ifdef WOLFSSL_ACME_OID
+/* Set the id-pe-acmeIdentifier extension value from the ACME
+ * keyAuth string. Computes SHA-256 over keyAuth and stores the digest
+ * as the extension value. RFC 8737 3 requires critical=TRUE; that's
+ * applied at encode time in EncodeExtensions.
+ *
+ * keyAuth is the raw bytes of the key authorization string per
+ * RFC 8555 8.1: token "." JWK_thumbprint.
+ */
+int wc_SetAcmeIdentifierExt(Cert *cert, const byte *keyAuth, word32 keyAuthSz)
+{
+    int    ret;
+    byte   digest[WC_SHA256_DIGEST_SIZE];
+    wc_Sha256 sha;
+
+    if (cert == NULL || keyAuth == NULL || keyAuthSz == 0)
+        return BAD_FUNC_ARG;
+
+    ret = wc_InitSha256(&sha);
+    if (ret != 0)
+        return ret;
+    ret = wc_Sha256Update(&sha, keyAuth, keyAuthSz);
+    if (ret == 0)
+        ret = wc_Sha256Final(&sha, digest);
+    wc_Sha256Free(&sha);
+    if (ret != 0)
+        return ret;
+
+    XMEMCPY(cert->acmeIdentifier, digest, WC_SHA256_DIGEST_SIZE);
+    cert->acmeIdentifierSz = WC_SHA256_DIGEST_SIZE;
+    return 0;
+}
+#endif /* WOLFSSL_ACME_OID */
 
 #ifdef WOLFSSL_EKU_OID
 /*
@@ -29577,6 +31347,9 @@ int wc_SetIssuerBuffer(Cert* cert, const byte* der, int derSz)
     if (cert == NULL) {
         ret = BAD_FUNC_ARG;
     }
+    else if (derSz < 0) {
+        ret = BAD_FUNC_ARG;
+    }
     else {
         cert->selfSigned = 0;
 
@@ -29606,6 +31379,9 @@ int wc_SetSubjectBuffer(Cert* cert, const byte* der, int derSz)
     if (cert == NULL) {
         ret = BAD_FUNC_ARG;
     }
+    else if (derSz < 0) {
+        ret = BAD_FUNC_ARG;
+    }
     else {
         /* Check if decodedCert is cached */
         if (cert->der != der) {
@@ -29631,6 +31407,9 @@ int wc_SetSubjectRaw(Cert* cert, const byte* der, int derSz)
     int ret = 0;
 
     if (cert == NULL) {
+        ret = BAD_FUNC_ARG;
+    }
+    else if (derSz < 0) {
         ret = BAD_FUNC_ARG;
     }
     else {
@@ -29665,6 +31444,9 @@ int wc_SetIssuerRaw(Cert* cert, const byte* der, int derSz)
     int ret = 0;
 
     if (cert == NULL) {
+        ret = BAD_FUNC_ARG;
+    }
+    else if (derSz < 0) {
         ret = BAD_FUNC_ARG;
     }
     else {
@@ -29704,6 +31486,9 @@ int wc_SetAltNamesBuffer(Cert* cert, const byte* der, int derSz)
     if (cert == NULL) {
        ret = BAD_FUNC_ARG;
     }
+    else if (derSz < 0) {
+        ret = BAD_FUNC_ARG;
+    }
     else {
         /* Check if decodedCert is cached */
         if (cert->der != der) {
@@ -29730,6 +31515,9 @@ int wc_SetDatesBuffer(Cert* cert, const byte* der, int derSz)
 
     if (cert == NULL) {
      ret = BAD_FUNC_ARG;
+    }
+    else if (derSz < 0) {
+        ret = BAD_FUNC_ARG;
     }
     else {
         /* Check if decodedCert is cached */
@@ -30575,7 +32363,7 @@ int wc_EccPublicKeyDecode(const byte* input, word32* inOutIdx,
 /* build DER formatted ECC key, include optional public key if requested,
  * return length on success, negative on error */
 #ifdef WOLFSSL_ASN_TEMPLATE
-int wc_BuildEccKeyDer(ecc_key* key, byte* output, word32 *inLen,
+int wc_BuildEccKeyDer(ecc_key* key, byte* output, word32 *outLen,
                              int pubIn, int curveIn)
 {
     DECL_ASNSETDATA(dataASN, eccKeyASN_Length);
@@ -30586,7 +32374,7 @@ int wc_BuildEccKeyDer(ecc_key* key, byte* output, word32 *inLen,
     int curveIdSz = 0;
 
     /* Check validity of parameters. */
-    if ((key == NULL) || ((output == NULL) && (inLen == NULL))) {
+    if ((key == NULL) || ((output == NULL) && (outLen == NULL))) {
         ret = BAD_FUNC_ARG;
     }
 
@@ -30646,11 +32434,11 @@ int wc_BuildEccKeyDer(ecc_key* key, byte* output, word32 *inLen,
     }
     /* Return the size if no buffer. */
     if ((ret == 0) && (output == NULL)) {
-        *inLen = sz;
+        *outLen = sz;
         ret = WC_NO_ERR_TRACE(LENGTH_ONLY_E);
     }
     /* Check the buffer is big enough. */
-    if ((ret == 0) && (inLen != NULL) && (sz > *inLen)) {
+    if ((ret == 0) && (outLen != NULL) && (sz > *outLen)) {
         ret = BAD_FUNC_ARG;
     }
     if ((ret == 0) && (output != NULL)) {
@@ -30703,9 +32491,9 @@ int wc_BuildEccKeyDer(ecc_key* key, byte* output, word32 *inLen,
  * length on success else < 0 */
 /* Note: use wc_EccKeyDerSize to get length only */
 WOLFSSL_ABI
-int wc_EccKeyToDer(ecc_key* key, byte* output, word32 inLen)
+int wc_EccKeyToDer(ecc_key* key, byte* output, word32 outLen)
 {
-    return wc_BuildEccKeyDer(key, output, &inLen, 1, 1);
+    return wc_BuildEccKeyDer(key, output, &outLen, 1, 1);
 }
 
 /* Write only private ecc key to DER format,
@@ -30722,11 +32510,11 @@ int wc_EccKeyDerSize(ecc_key* key, int pub)
 
 /* Write only private ecc key to DER format,
  * length on success else < 0 */
-int wc_EccPrivateKeyToDer(ecc_key* key, byte* output, word32 inLen)
+int wc_EccPrivateKeyToDer(ecc_key* key, byte* output, word32 outLen)
 {
-    int ret = wc_BuildEccKeyDer(key, output, &inLen, 0, 1);
+    int ret = wc_BuildEccKeyDer(key, output, &outLen, 0, 1);
     if (ret == WC_NO_ERR_TRACE(LENGTH_ONLY_E)) {
-        return (int)inLen;
+        return (int)outLen;
     }
     return ret;
 }
@@ -30775,10 +32563,7 @@ static int eccToPKCS8(ecc_key* key, byte* output, word32* outLen,
 
     ret = wc_BuildEccKeyDer(key, tmpDer, &sz, includePublic, 0);
     if (ret < 0) {
-    #ifndef WOLFSSL_NO_MALLOC
-        XFREE(tmpDer, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
-    #endif
-        return ret;
+        goto exit;
     }
     tmpDerSz = (word32)ret;
 
@@ -30786,42 +32571,36 @@ static int eccToPKCS8(ecc_key* key, byte* output, word32* outLen,
     ret = wc_CreatePKCS8Key(NULL, &pkcs8Sz, tmpDer, tmpDerSz, algoID,
                             curveOID, oidSz);
     if (ret != WC_NO_ERR_TRACE(LENGTH_ONLY_E)) {
-    #ifndef WOLFSSL_NO_MALLOC
-        XFREE(tmpDer, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
-    #endif
-        return ret;
+        goto exit;
     }
 
     if (output == NULL) {
-    #ifndef WOLFSSL_NO_MALLOC
-        XFREE(tmpDer, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
-    #endif
         *outLen = pkcs8Sz;
-        return WC_NO_ERR_TRACE(LENGTH_ONLY_E);
-
+        ret = WC_NO_ERR_TRACE(LENGTH_ONLY_E);
+        goto exit;
     }
     else if (*outLen < pkcs8Sz) {
-    #ifndef WOLFSSL_NO_MALLOC
-        XFREE(tmpDer, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
-    #endif
         WOLFSSL_MSG("Input buffer too small for ECC PKCS#8 key");
-        return BUFFER_E;
+        ret = BUFFER_E;
+        goto exit;
     }
 
     ret = wc_CreatePKCS8Key(output, &pkcs8Sz, tmpDer, tmpDerSz,
                             algoID, curveOID, oidSz);
     if (ret < 0) {
-    #ifndef WOLFSSL_NO_MALLOC
-        XFREE(tmpDer, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
-    #endif
-        return ret;
+        goto exit;
     }
 
+    *outLen = (word32)ret;
+
+exit:
+    /* tmpDer holds a plaintext copy of the ECC private key - always zeroize
+     * it before releasing (or before the stack buffer goes out of scope). */
+    ForceZero(tmpDer, ECC_BUFSIZE);
 #ifndef WOLFSSL_NO_MALLOC
     XFREE(tmpDer, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
 #endif
 
-    *outLen = (word32)ret;
     return ret;
 }
 
@@ -30896,7 +32675,7 @@ enum {
     || (defined(HAVE_CURVE25519) && defined(HAVE_CURVE25519_KEY_IMPORT)) \
     || (defined(HAVE_ED448) && defined(HAVE_ED448_KEY_IMPORT)) \
     || (defined(HAVE_CURVE448) && defined(HAVE_CURVE448_KEY_IMPORT)) \
-    || defined(HAVE_FALCON) || defined(HAVE_DILITHIUM) || defined(HAVE_SPHINCS))
+    || defined(HAVE_FALCON) || defined(WOLFSSL_HAVE_MLDSA) || defined(WOLFSSL_HAVE_SLHDSA))
 
 
 int DecodeAsymKey_Assign(const byte* input, word32* inOutIdx, word32 inSz,
@@ -30941,7 +32720,9 @@ int DecodeAsymKey_Assign(const byte* input, word32* inOutIdx, word32 inSz,
 
         if (GetMyVersion(input, inOutIdx, &version, inSz) < 0)
             return ASN_PARSE_E;
-        if (version != 0) {
+
+        /* RFC 5958: v1 (0) for privateKey only, v2 (1) when publicKey added. */
+        if (version != 0 && version != 1) {
             WOLFSSL_MSG("Unrecognized version of private key");
             return ASN_PARSE_E;
         }
@@ -31256,7 +33037,7 @@ int DecodeAsymKeyPublic(const byte* input, word32* inOutIdx, word32 inSz,
 
     return ret;
 }
-#endif /* HAVE_ED25519 || etc... ||  HAVE_DILITHIUM || HAVE_SPHINCS */
+#endif /* HAVE_ED25519 || etc... ||  WOLFSSL_HAVE_MLDSA || WOLFSSL_HAVE_SLHDSA */
 #endif /* WC_ENABLE_ASYM_KEY_IMPORT */
 
 #if defined(HAVE_ED25519) && defined(HAVE_ED25519_KEY_IMPORT)
@@ -31464,8 +33245,8 @@ int SetAsymKeyDer(const byte* privKey, word32 privKeyLen,
         /* seq */
         seqSz = SetSequence(verSz + algoSz + privSz + pubSz, output);
         idx = seqSz;
-        /* ver */
-        SetMyVersion(0, output + idx, FALSE);
+        /* ver: RFC 5958 requires v2 (1) iff publicKey present, else v1 (0). */
+        SetMyVersion((word32)(pubKey ? PKCS8v1 : PKCS8v0), output + idx, FALSE);
         idx += verSz;
         /* algo */
         algoSz = SetAlgoID(keyType, output + idx, oidKeyType, 0);
@@ -31493,8 +33274,9 @@ int SetAsymKeyDer(const byte* privKey, word32 privKeyLen,
     CALLOC_ASNSETDATA(dataASN, privateKeyASN_Length, ret, NULL);
 
     if (ret == 0) {
-        /* Set version = 0 */
-        SetASN_Int8Bit(&dataASN[PRIVKEYASN_IDX_VER], 0);
+        /* RFC 5958: v2 (1) iff publicKey present, else v1 (0). */
+        SetASN_Int8Bit(&dataASN[PRIVKEYASN_IDX_VER],
+            (byte)(pubKey ? PKCS8v1 : PKCS8v0));
         /* Set OID. */
         SetASN_OID(&dataASN[PRIVKEYASN_IDX_PKEYALGO_OID], (word32)keyType,
                    oidKeyType);
@@ -31558,24 +33340,24 @@ int SetAsymKeyDer(const byte* privKey, word32 privKeyLen,
 #if defined(HAVE_ED25519) && defined(HAVE_ED25519_KEY_EXPORT)
 /* Write a Private ED25519 key, including public to DER format,
  * length on success else < 0 */
-int wc_Ed25519KeyToDer(const ed25519_key* key, byte* output, word32 inLen)
+int wc_Ed25519KeyToDer(const ed25519_key* key, byte* output, word32 outLen)
 {
     if (key == NULL) {
         return BAD_FUNC_ARG;
     }
     return SetAsymKeyDer(key->k, ED25519_KEY_SIZE,
-        key->p, ED25519_PUB_KEY_SIZE, output, inLen, ED25519k);
+        key->p, ED25519_PUB_KEY_SIZE, output, outLen, ED25519k);
 }
 
 /* Write only private ED25519 key to DER format,
  * length on success else < 0 */
-int wc_Ed25519PrivateKeyToDer(const ed25519_key* key, byte* output, word32 inLen)
+int wc_Ed25519PrivateKeyToDer(const ed25519_key* key, byte* output, word32 outLen)
 {
     if (key == NULL) {
         return BAD_FUNC_ARG;
     }
     return SetAsymKeyDer(key->k, ED25519_KEY_SIZE,
-        NULL, 0, output, inLen, ED25519k);
+        NULL, 0, output, outLen, ED25519k);
 }
 #endif /* HAVE_ED25519 && HAVE_ED25519_KEY_EXPORT */
 
@@ -31583,7 +33365,7 @@ int wc_Ed25519PrivateKeyToDer(const ed25519_key* key, byte* output, word32 inLen
 /* Write only private Curve25519 key to DER format,
  * length on success else < 0 */
 int wc_Curve25519PrivateKeyToDer(curve25519_key* key, byte* output,
-                                 word32 inLen)
+                                 word32 outLen)
 {
     int    ret;
     byte   privKey[CURVE25519_KEYSIZE];
@@ -31595,7 +33377,7 @@ int wc_Curve25519PrivateKeyToDer(curve25519_key* key, byte* output,
 
     ret = wc_curve25519_export_private_raw(key, privKey, &privKeyLen);
     if (ret == 0) {
-        ret = SetAsymKeyDer(privKey, privKeyLen, NULL, 0, output, inLen,
+        ret = SetAsymKeyDer(privKey, privKeyLen, NULL, 0, output, outLen,
             X25519k);
     }
     return ret;
@@ -31603,7 +33385,7 @@ int wc_Curve25519PrivateKeyToDer(curve25519_key* key, byte* output,
 
 /* Write a public Curve25519 key to DER format,
  * length on success else < 0 */
-int wc_Curve25519PublicKeyToDer(curve25519_key* key, byte* output, word32 inLen,
+int wc_Curve25519PublicKeyToDer(curve25519_key* key, byte* output, word32 outLen,
                              int withAlg)
 {
     int    ret;
@@ -31616,7 +33398,7 @@ int wc_Curve25519PublicKeyToDer(curve25519_key* key, byte* output, word32 inLen,
 
     ret = wc_curve25519_export_public(key, pubKey, &pubKeyLen);
     if (ret == 0) {
-        ret = SetAsymKeyDerPublic(pubKey, pubKeyLen, output, inLen,
+        ret = SetAsymKeyDerPublic(pubKey, pubKeyLen, output, outLen,
             X25519k, withAlg);
     }
     return ret;
@@ -31625,7 +33407,7 @@ int wc_Curve25519PublicKeyToDer(curve25519_key* key, byte* output, word32 inLen,
 /* Export Curve25519 key to DER format - handles private only, public only,
  * or private+public key pairs based on what's set in the key structure.
  * Returns length written on success, negative on error */
-int wc_Curve25519KeyToDer(curve25519_key* key, byte* output, word32 inLen,
+int wc_Curve25519KeyToDer(curve25519_key* key, byte* output, word32 outLen,
                           int withAlg)
 {
     int ret;
@@ -31655,13 +33437,13 @@ int wc_Curve25519KeyToDer(curve25519_key* key, byte* output, word32 inLen,
             /* Export both private and public */
             ret = SetAsymKeyDer(privKey, privKeyLen,
                                 pubKey, pubKeyLen,
-                                output, inLen, X25519k);
+                                output, outLen, X25519k);
         }
         else {
             /* Export private only */
             ret = SetAsymKeyDer(privKey, privKeyLen,
                                 NULL, 0,
-                                output, inLen, X25519k);
+                                output, outLen, X25519k);
         }
     }
     else if (key->pubSet) {
@@ -31669,7 +33451,7 @@ int wc_Curve25519KeyToDer(curve25519_key* key, byte* output, word32 inLen,
         ret = wc_curve25519_export_public(key, pubKey, &pubKeyLen);
         if (ret == 0) {
             ret = SetAsymKeyDerPublic(pubKey, pubKeyLen,
-                                      output, inLen, X25519k, withAlg);
+                                      output, outLen, X25519k, withAlg);
         }
     }
     else {
@@ -31774,24 +33556,24 @@ int wc_Curve448PublicKeyDecode(const byte* input, word32* inOutIdx,
 #if defined(HAVE_ED448) && defined(HAVE_ED448_KEY_EXPORT)
 /* Write a Private ecc key, including public to DER format,
  * length on success else < 0 */
-int wc_Ed448KeyToDer(ed448_key* key, byte* output, word32 inLen)
+int wc_Ed448KeyToDer(const ed448_key* key, byte* output, word32 outLen)
 {
     if (key == NULL) {
         return BAD_FUNC_ARG;
     }
     return SetAsymKeyDer(key->k, ED448_KEY_SIZE,
-        key->p, ED448_KEY_SIZE, output, inLen, ED448k);
+        key->p, ED448_KEY_SIZE, output, outLen, ED448k);
 }
 
 /* Write only private ecc key to DER format,
  * length on success else < 0 */
-int wc_Ed448PrivateKeyToDer(ed448_key* key, byte* output, word32 inLen)
+int wc_Ed448PrivateKeyToDer(const ed448_key* key, byte* output, word32 outLen)
 {
     if (key == NULL) {
         return BAD_FUNC_ARG;
     }
     return SetAsymKeyDer(key->k, ED448_KEY_SIZE,
-        NULL, 0, output, inLen, ED448k);
+        NULL, 0, output, outLen, ED448k);
 }
 
 #endif /* HAVE_ED448 && HAVE_ED448_KEY_EXPORT */
@@ -31799,7 +33581,7 @@ int wc_Ed448PrivateKeyToDer(ed448_key* key, byte* output, word32 inLen)
 #if defined(HAVE_CURVE448) && defined(HAVE_CURVE448_KEY_EXPORT)
 /* Write private Curve448 key to DER format,
  * length on success else < 0 */
-int wc_Curve448PrivateKeyToDer(curve448_key* key, byte* output, word32 inLen)
+int wc_Curve448PrivateKeyToDer(curve448_key* key, byte* output, word32 outLen)
 {
     int    ret;
     byte   privKey[CURVE448_KEY_SIZE];
@@ -31811,14 +33593,14 @@ int wc_Curve448PrivateKeyToDer(curve448_key* key, byte* output, word32 inLen)
 
     ret = wc_curve448_export_private_raw(key, privKey, &privKeyLen);
     if (ret == 0) {
-        ret = SetAsymKeyDer(privKey, privKeyLen, NULL, 0, output, inLen,
+        ret = SetAsymKeyDer(privKey, privKeyLen, NULL, 0, output, outLen,
             X448k);
     }
     return ret;
 }
 /* Write a public Curve448 key to DER format,
  * length on success else < 0 */
-int wc_Curve448PublicKeyToDer(curve448_key* key, byte* output, word32 inLen,
+int wc_Curve448PublicKeyToDer(curve448_key* key, byte* output, word32 outLen,
                              int withAlg)
 {
     int    ret;
@@ -31831,7 +33613,7 @@ int wc_Curve448PublicKeyToDer(curve448_key* key, byte* output, word32 inLen,
 
     ret = wc_curve448_export_public(key, pubKey, &pubKeyLen);
     if (ret == 0) {
-        ret = SetAsymKeyDerPublic(pubKey, pubKeyLen, output, inLen,
+        ret = SetAsymKeyDerPublic(pubKey, pubKeyLen, output, outLen,
             X448k, withAlg);
     }
     return ret;
@@ -32761,7 +34543,7 @@ static int OcspRespIdMatch(OcspResponse *resp, const byte *NameHash,
 }
 
 #ifndef WOLFSSL_NO_OCSP_ISSUER_CHECK
-static int OcspRespCheck(OcspResponse *resp, Signer *responder, void* vp)
+static int OcspRespCheck(OcspResponse *resp, Signer *responder)
 {
     OcspEntry *s;
     int ret;
@@ -32775,7 +34557,8 @@ static int OcspRespCheck(OcspResponse *resp, Signer *responder, void* vp)
         return -1;
 
     ret = CheckOcspResponder(resp, responder->subjectNameHash,
-            responder->extKeyUsage, responder->issuerNameHash, vp);
+            responder->subjectKeyHash, responder->extKeyUsage,
+            responder->issuerNameHash, responder->issuerKeyHash);
     if (ret != 0)
         return -1;
 
@@ -32863,8 +34646,9 @@ static int OcspCheckCert(OcspResponse *resp, int noVerify,
 
 #ifndef WOLFSSL_NO_OCSP_ISSUER_CHECK
     if (ret == 0 && !noVerify) {
-        ret = CheckOcspResponder(resp, cert->subjectHash, cert->extExtKeyUsage,
-                cert->issuerHash, cm);
+        ret = CheckOcspResponder(resp, cert->subjectHash, cert->subjectKeyHash,
+                cert->extExtKeyUsage, cert->issuerHash,
+                (cert->ca != NULL) ? cert->ca->subjectKeyHash : NULL);
         if (ret != 0) {
             WOLFSSL_MSG("\tOCSP Responder certificate issuer check failed");
             goto err;
@@ -32932,6 +34716,7 @@ WC_MAYBE_UNUSED static int EncodeBasicOcspResponse(OcspResponse* resp,
     if (ret == 0) {
         SetASN_OID(&dataASN[OCSPBASICRESPASN_IDX_SIGALGO_OID], resp->sigOID,
                 oidSigType);
+    #ifdef WC_RSA_PSS
         if (resp->sigParams != NULL && resp->sigParamsSz != 0) {
             SetASN_Buffer(&dataASN[OCSPBASICRESPASN_IDX_SIGNATURE_PARAMS],
                 resp->sigParams, resp->sigParamsSz);
@@ -32941,6 +34726,7 @@ WC_MAYBE_UNUSED static int EncodeBasicOcspResponse(OcspResponse* resp,
                 OCSPBASICRESPASN_IDX_SIGNATURE_PARAMS,
                 ocspBasicRespASN_Length);
         }
+    #endif
         if (resp->cert != NULL && resp->certSz > 0) {
             SetASN_Buffer(&dataASN[OCSPBASICRESPASN_IDX_CERTS_SEQ],
                 resp->cert, resp->certSz);
@@ -32974,7 +34760,7 @@ WC_MAYBE_UNUSED static int EncodeBasicOcspResponse(OcspResponse* resp,
                 XMEMSET(&certSignCtx, 0, sizeof(CertSignCtx));
                 ret = MakeSignature(&certSignCtx, respData, respDataSz,
                         sigData, sigSz, rsaKey, eccKey, NULL, NULL, NULL, NULL,
-                        NULL, rng, resp->sigOID, resp->heap);
+                        NULL, NULL, NULL, rng, resp->sigOID, resp->heap);
                 if (ret > 0) {
                     sigSz = (word32)ret;
                     ret = 0;
@@ -33083,7 +34869,7 @@ static int DecodeBasicOcspResponse(const byte* source, word32* ioIndex,
     }
 #ifndef WOLFSSL_NO_OCSP_ISSUER_CHECK
     if (ret == 0 && !noVerifySignature && !sigValid) {
-        if (OcspRespCheck(resp, ca, cm) != 0) {
+        if (OcspRespCheck(resp, ca) != 0) {
             ret = BAD_OCSP_RESPONDER;
         }
     }
@@ -34032,16 +35818,22 @@ enum {
 /* CRL Reason Code OID: 2.5.29.21 */
 static const byte crlReasonOid[] = { 0x55, 0x1d, 0x15 };
 
-/* Parse CRL entry extensions to extract the reason code.
- * Sets *reasonCode if found, otherwise leaves it unchanged. */
-static void ParseCRL_ReasonCode(const byte* buff, word32 idx, word32 maxIdx,
-                                int* reasonCode)
+/* Parse CRL entry extensions.
+ * Extracts the reason code into *reasonCode if the CRL Reason extension
+ * is present. Per RFC 5280 Section 5.3, returns ASN_CRIT_EXT_E if any
+ * unknown extension is marked critical. Returns 0 on success. */
+static int ParseCRL_EntryExtensions(const byte* buff, word32 idx, word32 maxIdx,
+                                    int* reasonCode)
 {
     while (idx < maxIdx) {
         int len;
+        int oidLen;
         word32 end;
         word32 localIdx;
+        word32 oidContent;
         byte tag;
+        int critical = 0;
+        int isReasonOid = 0;
 
         /* Each extension is a SEQUENCE */
         if (GetSequence(buff, &idx, &len, maxIdx) < 0) {
@@ -34049,23 +35841,39 @@ static void ParseCRL_ReasonCode(const byte* buff, word32 idx, word32 maxIdx,
         }
         end = idx + (word32)len;
 
-        /* Check for CRL Reason OID: 2.5.29.21 */
-        if (end - idx >= (word32)(2 + sizeof(crlReasonOid)) &&
-                buff[idx] == ASN_OBJECT_ID &&
-                buff[idx + 1] == sizeof(crlReasonOid) &&
-                XMEMCMP(buff + idx + 2, crlReasonOid,
+        /* Parse OID: tag, length (short or long form), content */
+        if (GetASNTag(buff, &idx, &tag, end) < 0 ||
+                tag != ASN_OBJECT_ID) {
+            break;
+        }
+        if (GetLength(buff, &idx, &oidLen, end) < 0) {
+            break;
+        }
+        oidContent = idx;
+        if (idx + (word32)oidLen > end) {
+            break;
+        }
+
+        /* Check if it's the CRL Reason OID: 2.5.29.21 */
+        if ((word32)oidLen == sizeof(crlReasonOid) &&
+                XMEMCMP(buff + oidContent, crlReasonOid,
                         sizeof(crlReasonOid)) == 0) {
-            /* Skip past the OID */
-            idx += 2 + (word32)sizeof(crlReasonOid);
-            /* Skip optional critical BOOLEAN */
-            localIdx = idx;
-            if (GetASNTag(buff, &localIdx, &tag, end) == 0 &&
-                    tag == ASN_BOOLEAN) {
-                /* Consume full BOOLEAN TLV (tag + length + value). */
-                if (GetBoolean(buff, &idx, end) < 0) {
-                    break;
-                }
+            isReasonOid = 1;
+        }
+        idx = oidContent + (word32)oidLen;
+
+        /* Parse optional critical BOOLEAN */
+        localIdx = idx;
+        if (GetASNTag(buff, &localIdx, &tag, end) == 0 &&
+                tag == ASN_BOOLEAN) {
+            int ret = GetBoolean(buff, &idx, end);
+            if (ret < 0) {
+                break;
             }
+            critical = ret;
+        }
+
+        if (isReasonOid) {
             /* Get OCTET STRING wrapping the ENUMERATED */
             if (GetOctetString(buff, &idx, &len, end) >= 0) {
                 /* Parse ENUMERATED reason value */
@@ -34081,8 +35889,15 @@ static void ParseCRL_ReasonCode(const byte* buff, word32 idx, word32 maxIdx,
                 }
             }
         }
+        else if (critical) {
+            /* RFC 5280 Section 5.3: reject CRL with unknown critical
+             * entry extension. */
+            WOLFSSL_MSG("Unknown critical CRL entry extension");
+            return ASN_CRIT_EXT_E;
+        }
         idx = end;
     }
+    return 0;
 }
 
 #ifdef HAVE_CRL
@@ -34095,8 +35910,7 @@ WOLFSSL_TEST_VIS int wc_ParseCRLReasonFromExtensions(const byte* ext,
         return BAD_FUNC_ARG;
     }
 
-    ParseCRL_ReasonCode(ext, 0, extSz, reasonCode);
-    return 0;
+    return ParseCRL_EntryExtensions(ext, 0, extSz, reasonCode);
 }
 #endif
 
@@ -34159,49 +35973,58 @@ static int GetRevoked(RevokedCert* rcert, const byte* buff, word32* idx,
         /* Parse CRL entry extensions (v2 only) */
         if (dataASN[REVOKEDASN_IDX_TIME_EXT].length > 0) {
             word32 extOff = dataASN[REVOKEDASN_IDX_TIME_EXT].offset;
-            word32 extLen = dataASN[REVOKEDASN_IDX_TIME_EXT].length;
-            word32 extEnd = extOff + extLen;
-            word32 extIdx2 = extOff;
+            word32 extTagEnd = extOff +
+                    dataASN[REVOKEDASN_IDX_TIME_EXT].length + 6;
+            int extLen;
+
+            /* .offset points at the outer SEQUENCE tag. Re-parse the
+             * SEQUENCE header to locate the content start (list of
+             * Extension SEQUENCEs), which handles long-form length.
+             * extTagEnd adds 6 to cover the worst-case tag+long-form-length
+             * header for the outer SEQUENCE. */
+            if (GetSequence(buff, &extOff, &extLen, extTagEnd) < 0) {
+                ret = ASN_PARSE_E;
+            }
+            else {
+                word32 extEnd = extOff + (word32)extLen;
 
 #if defined(OPENSSL_EXTRA)
-            /* Store raw DER of extensions for OpenSSL compat API.
-             * Include the outer SEQUENCE tag+length. */
-            {
-                /* Back up to include the SEQUENCE header. We know the
-                 * content starts at extOff, so the header is just before.
-                 * Use the raw buffer start from before GetASN_Items. */
-                word32 seqHdrSz = 0;
-                /* The outer SEQUENCE header is at most 4 bytes before
-                 * content. Rather than guess, store just the content. */
-                rc->extensions = (byte*)XMALLOC(extLen, dcrl->heap,
+                /* Store raw DER of extension contents for OpenSSL compat. */
+                rc->extensions = (byte*)XMALLOC((size_t)extLen, dcrl->heap,
                                                 DYNAMIC_TYPE_REVOKED);
                 if (rc->extensions != NULL) {
-                    XMEMCPY(rc->extensions, buff + extOff, extLen);
-                    rc->extensionsSz = extLen;
+                    XMEMCPY(rc->extensions, buff + extOff, (size_t)extLen);
+                    rc->extensionsSz = (word32)extLen;
                 }
-                (void)seqHdrSz;
-            }
 #endif
 
-            ParseCRL_ReasonCode(buff, extIdx2, extEnd, &rc->reasonCode);
+                ret = ParseCRL_EntryExtensions(buff, extOff, extEnd,
+                    &rc->reasonCode);
+            }
         }
 
-        /* Add revoked certificate to chain. */
+        if (ret == 0) {
+            /* Add revoked certificate to chain. */
 #ifndef CRL_STATIC_REVOKED_LIST
-        rc->next = dcrl->certs;
-        dcrl->certs = rc;
+            rc->next = dcrl->certs;
+            dcrl->certs = rc;
 #endif
-        dcrl->totalCerts++;
+            dcrl->totalCerts++;
+        }
     }
 
     FREE_ASNGETDATA(dataASN, dcrl->heap);
-#ifndef CRL_STATIC_REVOKED_LIST
     if ((ret != 0) && (rc != NULL)) {
 #if defined(OPENSSL_EXTRA)
         XFREE(rc->extensions, dcrl->heap, DYNAMIC_TYPE_REVOKED);
+        rc->extensions = NULL;
+        rc->extensionsSz = 0;
 #endif
+#ifndef CRL_STATIC_REVOKED_LIST
         XFREE(rc, dcrl->heap, DYNAMIC_TYPE_CRL);
+#endif
     }
+#ifndef CRL_STATIC_REVOKED_LIST
     (void)rcert;
 #endif
     return ret;
@@ -34225,7 +36048,13 @@ static int ParseCRL_RevokedCerts(RevokedCert* rcert, DecodedCRL* dcrl,
     /* Parse each revoked certificate. */
     while ((ret == 0) && (idx < maxIdx)) {
         /* Parse a revoked certificate. */
-        if (GetRevoked(rcert, buff, &idx, dcrl, maxIdx) < 0) {
+        int r = GetRevoked(rcert, buff, &idx, dcrl, maxIdx);
+        if (r == WC_NO_ERR_TRACE(ASN_CRIT_EXT_E)) {
+            /* Preserve the specific error so callers can distinguish a
+             * rejected critical extension from a generic parse failure. */
+            ret = r;
+        }
+        else if (r < 0) {
             ret = ASN_PARSE_E;
         }
     }
@@ -34490,14 +36319,17 @@ static int ParseCRL_Extensions(DecodedCRL* dcrl, const byte* buf, word32 idx,
                     mp_free(m);
                     FREE_MP_INT_SIZE(m, NULL, DYNAMIC_TYPE_TMP_BUFFER);
                 }
+                else if (critical) {
+                    WOLFSSL_MSG("Unknown critical CRL extension");
+                    ret = ASN_CRIT_EXT_E;
+                }
             }
-            /* TODO: check criticality */
             /* Move index on to next extension. */
             idx += (word32)length;
         }
     }
 
-    if (ret < 0) {
+    if (ret < 0 && ret != WC_NO_ERR_TRACE(ASN_CRIT_EXT_E)) {
         ret = ASN_PARSE_E;
     }
 
@@ -35104,6 +36936,7 @@ int wc_SignCRL_ex(const byte* tbsBuf, int tbsSz, int sType,
 {
     int ret;
     int sigSz;
+    word32 sigCap = MAX_ENCODED_CLASSIC_SIG_SZ;
     CertSignCtx  certSignCtx_lcl;
     CertSignCtx* certSignCtx = &certSignCtx_lcl;
     void* heap = NULL;
@@ -35115,38 +36948,44 @@ int wc_SignCRL_ex(const byte* tbsBuf, int tbsSz, int sType,
     if (rsaKey != NULL && eccKey != NULL)
         return BAD_FUNC_ARG;
 
+    /* The CRL's signatureAlgorithm OID is written from sType while the
+     * signature is produced from the key, so reject a mismatch. */
+    ret = CheckSigTypeForKey(sType, rsaKey, eccKey, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL);
+    if (ret != 0) {
+        WOLFSSL_MSG("Signature type does not match signing key");
+        return ret;
+    }
+
     XMEMSET(certSignCtx, 0, sizeof(*certSignCtx));
 
-#ifndef NO_RSA
-    if (rsaKey != NULL) {
-        heap = rsaKey->heap;
-    }
-#endif
-#ifdef HAVE_ECC
-    if (eccKey != NULL) {
-        heap = eccKey->heap;
-    }
-#endif
+    heap = GetSigningKeyHeap(rsaKey, eccKey, NULL, NULL, NULL, NULL, NULL, NULL);
 
     /* Copy TBS to output buffer first */
     if ((word32)tbsSz > bufSz)
         return BUFFER_E;
     XMEMCPY(buf, tbsBuf, (size_t)tbsSz);
 
+    /* Only RSA/ECC keys are accepted above, so the signature is a classic
+     * (non-PQC) one and fits MAX_ENCODED_CLASSIC_SIG_SZ. */
 #ifndef WOLFSSL_NO_MALLOC
-    certSignCtx->sig = (byte*)XMALLOC(MAX_ENCODED_SIG_SZ, heap,
+    certSignCtx->sig = (byte*)XMALLOC(MAX_ENCODED_CLASSIC_SIG_SZ, heap,
         DYNAMIC_TYPE_TMP_BUFFER);
     if (certSignCtx->sig == NULL)
         return MEMORY_E;
     /* Initialize first byte to avoid static analysis warnings about using
      * uninitialized memory if MakeSignature fails before writing sig. */
     certSignCtx->sig[0] = 0;
+#else
+    /* Don't claim more capacity than the fixed sig buffer really has. */
+    if (sigCap > (word32)sizeof(certSignCtx->sig))
+        sigCap = (word32)sizeof(certSignCtx->sig);
 #endif
 
     /* Create signature */
     sigSz = MakeSignature(certSignCtx, buf, (word32)tbsSz, certSignCtx->sig,
-                          MAX_ENCODED_SIG_SZ, rsaKey, eccKey, NULL, NULL, NULL,
-                          NULL, NULL, rng, (word32)sType, heap);
+                          sigCap, rsaKey, eccKey, NULL, NULL,
+                          NULL, NULL, NULL, NULL, NULL, rng, (word32)sType, heap);
     if (sigSz < 0) {
 #ifndef WOLFSSL_NO_MALLOC
         XFREE(certSignCtx->sig, heap, DYNAMIC_TYPE_TMP_BUFFER);
@@ -35822,6 +37661,10 @@ static int EncodedDottedForm(const byte* in, word32 inSz, word32* out,
         return BAD_FUNC_ARG;
     }
 
+    if (*outSz < 2) {
+        return BUFFER_E;
+    }
+
     /* decode bytes */
     while (inSz--) {
         t = (t << 7) | (in[x] & 0x7F);
@@ -35830,8 +37673,15 @@ static int EncodedDottedForm(const byte* in, word32 inSz, word32* out,
                 return BUFFER_E;
             }
             if (y == 0) {
-                out[0] = (word16)(t / 40);
-                out[1] = (word16)(t % 40);
+                /* Special case for when first arc is 2 */
+                if (t < 80) {
+                    out[0] = t / 40;
+                    out[1] = t % 40;
+                }
+                else {
+                    out[0] = 2;
+                    out[1] = t - 80;
+                }
                 y = 2;
             }
             else {
@@ -36485,18 +38335,20 @@ int wc_Asn1_PrintAll(Asn1* asn1, Asn1PrintOptions* opts, unsigned char* data,
 
 /* Functions that parse, but are not using ASN.1 */
 #if !defined(NO_RSA) && (!defined(NO_BIG_INT) || defined(WOLFSSL_SP_MATH))
-/* import RSA public key elements (n, e) into RsaKey structure (key) */
-/* this function does not use any ASN.1 parsing */
-int wc_RsaPublicKeyDecodeRaw(const byte* n, word32 nSz, const byte* e,
-                             word32 eSz, RsaKey* key)
+/* Software-only import of RSA public key elements (n, e) into RsaKey.
+ * This internal helper avoids recursion when called from the SETKEY path. */
+static int _RsaPublicKeyDecodeRaw(const byte* n, word32 nSz, const byte* e,
+                                  word32 eSz, RsaKey* key)
 {
-    if (n == NULL || e == NULL || key == NULL)
+    if (n == NULL || e == NULL || key == NULL) {
         return BAD_FUNC_ARG;
+    }
 
     key->type = RSA_PUBLIC;
 
-    if (mp_init(&key->n) != MP_OKAY)
+    if (mp_init(&key->n) != MP_OKAY) {
         return MP_INIT_E;
+    }
 
     if (mp_read_unsigned_bin(&key->n, n, nSz) != 0) {
         mp_clear(&key->n);
@@ -36534,6 +38386,63 @@ int wc_RsaPublicKeyDecodeRaw(const byte* n, word32 nSz, const byte* e,
 #endif
 
     return 0;
+}
+
+/* import RSA public key elements (n, e) into RsaKey structure (key) */
+/* this function does not use any ASN.1 parsing */
+int wc_RsaPublicKeyDecodeRaw(const byte* n, word32 nSz, const byte* e,
+                             word32 eSz, RsaKey* key)
+{
+#if defined(WOLF_CRYPTO_CB) && defined(WOLF_CRYPTO_CB_SETKEY)
+    int cbRet = WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE);
+    int tmpErr = 0;
+    WC_DECLARE_VAR(tmpKey, RsaKey, 1, NULL);
+#endif
+
+    if (n == NULL || e == NULL || key == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+#if defined(WOLF_CRYPTO_CB) && defined(WOLF_CRYPTO_CB_SETKEY)
+    #ifndef WOLF_CRYPTO_CB_FIND
+    if (key->devId != INVALID_DEVID)
+    #endif
+    {
+        /* Allocate temp key for callback to export from */
+        WC_ALLOC_VAR(tmpKey, RsaKey, 1, key->heap);
+        if (!WC_VAR_OK(tmpKey)) {
+            return MEMORY_E;
+        }
+        XMEMSET(tmpKey, 0, sizeof(RsaKey));
+
+        tmpErr = wc_InitRsaKey_ex(tmpKey, key->heap, INVALID_DEVID);
+        if (tmpErr != 0) {
+            WC_FREE_VAR(tmpKey, key->heap);
+            return tmpErr;
+        }
+
+        /* Import into temp via software helper (no callback recursion) */
+        tmpErr = _RsaPublicKeyDecodeRaw(n, nSz, e, eSz, tmpKey);
+        if (tmpErr == 0) {
+            cbRet = wc_CryptoCb_SetKey(key->devId,
+                WC_SETKEY_RSA_PUB, key, tmpKey,
+                wc_RsaEncryptSize(tmpKey), NULL, 0, 0);
+        }
+
+        wc_FreeRsaKey(tmpKey);
+        WC_FREE_VAR(tmpKey, key->heap);
+
+        if (tmpErr != 0) {
+            return tmpErr;
+        }
+        if (cbRet != WC_NO_ERR_TRACE(CRYPTOCB_UNAVAILABLE)) {
+            return cbRet;
+        }
+        /* CRYPTOCB_UNAVAILABLE: fall through to software import */
+    }
+#endif /* WOLF_CRYPTO_CB && WOLF_CRYPTO_CB_SETKEY */
+
+    return _RsaPublicKeyDecodeRaw(n, nSz, e, eSz, key);
 }
 #endif /* !NO_RSA && (!NO_BIG_INT || WOLFSSL_SP_MATH) */
 
@@ -36660,7 +38569,7 @@ static int DecodeAcertGeneralName(const byte* input, word32* inOutIdx,
     else if (tag == (ASN_CONTEXT_SPECIFIC | ASN_URI_TYPE)) {
         WOLFSSL_MSG("\tPutting URI into list but not using");
 
-    #if !defined(WOLFSSL_NO_ASN_STRICT) && !defined(WOLFSSL_FPKI)
+    #ifndef WOLFSSL_NO_ASN_STRICT
         /* Verify RFC 5280 Sec 4.2.1.6 rule:
            "The name MUST NOT be a relative URI"
            As per RFC 3986 Sec 4.3, an absolute URI is only required to contain
@@ -36676,9 +38585,8 @@ static int DecodeAcertGeneralName(const byte* input, word32* inOutIdx,
                     break;
                 }
                 if (input[idx + (word32)i] == '/') {
-                    i = len; /* error, found relative path since '/' was
-                              * encountered before ':'. Returning error
-                              * value in next if statement. */
+                    /* path is relative since '/' was encountered before ':'. */
+                    return ASN_ALT_NAME_E;
                 }
             }
 
@@ -36706,7 +38614,15 @@ static int DecodeAcertGeneralName(const byte* input, word32* inOutIdx,
     }
     #if defined(WOLFSSL_QT) || defined(OPENSSL_ALL) || \
                                             defined(WOLFSSL_IP_ALT_NAME)
-    /* GeneralName choice: iPAddress */
+    /* GeneralName choice: iPAddress
+     *
+     * Asymmetric with the X.509 DecodeGeneralName path on purpose:
+     * attribute-certificate names (RFC 5755) are not consumed by
+     * ConfirmNameConstraints, which only walks DecodedCert lists. These
+     * entries flow into AC holder/issuer name fields where the iPAddress
+     * is only consumed by callers that opt in (Qt, OpenSSL_ALL, or the
+     * IP-SAN compat layer). If iPAddress name-constraint enforcement is
+     * ever extended to attribute certificates, this gate must drop. */
     else if (tag == (ASN_CONTEXT_SPECIFIC | ASN_IP_TYPE)) {
         ret = SetDNSEntry(acert->heap, (const char*)(input + idx), len,
                           ASN_IP_TYPE, entries);
@@ -36714,7 +38630,7 @@ static int DecodeAcertGeneralName(const byte* input, word32* inOutIdx,
             idx += (word32)len;
         }
     }
-    #endif /* WOLFSSL_QT || OPENSSL_ALL */
+    #endif /* WOLFSSL_QT || OPENSSL_ALL || WOLFSSL_IP_ALT_NAME */
 
     #ifdef OPENSSL_ALL
     /* GeneralName choice: registeredID */
@@ -37314,7 +39230,7 @@ int ParseX509Acert(DecodedAcert* acert, int verify)
     }
 
     /* Parameters not allowed after ECDSA or EdDSA algorithm OID. */
-    if (IsSigAlgoECC(acert->signatureOID)) {
+    if (IsSigAlgoNoParams(acert->signatureOID)) {
         if ((dataASN[ACERT_IDX_SIGALGO_PARAMS_NULL].tag != 0)
     #ifdef WC_RSA_PSS
             || (dataASN[ACERT_IDX_SIGALGO_PARAMS].tag != 0)

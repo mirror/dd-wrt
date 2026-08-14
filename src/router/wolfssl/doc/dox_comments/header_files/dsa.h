@@ -165,6 +165,56 @@ int wc_DsaVerify(const byte* digest, const byte* sig,
 /*!
     \ingroup DSA
 
+    \brief This function validates DSA domain parameters and the public
+    key contained in the given DsaKey. It performs the following checks
+    (a subset of the requirements in FIPS 186-4 and NIST SP 800-89):
+    p > 1 and q > 1; q divides (p - 1); 1 < g < p; 1 < y < p; g^q mod p
+    == 1 (so the multiplicative order of g divides q); and y^q mod p == 1
+    (so the multiplicative order of y divides q).  The verify
+    routines (wc_DsaVerify, wc_DsaVerify_ex) call this internally before
+    any signature math runs, but the function is also exposed so callers
+    can validate keys at import or decode time.
+
+    \return 0 Returned when the key and domain parameters pass validation.
+    \return BAD_FUNC_ARG Returned when key is NULL, or when the key fails
+    any of the validation checks listed above.
+    \return MEMORY_E Returned on memory allocation failure (small-stack
+    builds only).
+    \return MP_INIT_E Returned when mp_int initialization fails.
+    \return Other negative MP error codes (e.g. MP_EXPTMOD_E) Returned on
+    internal big-integer failures.
+
+    Note: this function does not run primality tests on p or q. Full
+    FIPS 186-4 domain-parameter validation additionally requires that p
+    and q be prime; callers that need that level of assurance should use
+    wc_DsaImportParamsRawCheck() (which validates p) and/or run
+    mp_prime_is_prime_ex() on q at import time.
+
+    \param key pointer to a DsaKey structure populated with p, q, g, and y
+
+    _Example_
+    \code
+    DsaKey key;
+    int ret;
+    wc_InitDsaKey(&key);
+    // ... import or decode the public key into &key ...
+    ret = wc_DsaCheckPubKey(&key);
+    if (ret != 0) {
+        // domain parameters or public key are invalid; reject
+    }
+    wc_FreeDsaKey(&key);
+    \endcode
+
+    \sa wc_DsaVerify
+    \sa wc_DsaPublicKeyDecode
+    \sa wc_DsaImportParamsRaw
+    \sa wc_DsaImportParamsRawCheck
+*/
+int wc_DsaCheckPubKey(DsaKey* key);
+
+/*!
+    \ingroup DSA
+
     \brief This function decodes a DER formatted certificate buffer containing
     a DSA public key, and stores the key in the given DsaKey structure. It
     also sets the inOutIdx parameter according to the length of the input read.
@@ -246,7 +296,7 @@ int wc_DsaPrivateKeyDecode(const byte* input, word32* inOutIdx,
 /*!
     \ingroup DSA
 
-    \brief Convert DsaKey key to DER format, write to output (inLen),
+    \brief Convert DsaKey key to DER format, write to output (outLen),
     return bytes written.
 
     \return outLen Success, number of bytes written
@@ -256,7 +306,7 @@ int wc_DsaPrivateKeyDecode(const byte* input, word32* inOutIdx,
 
     \param key Pointer to DsaKey structure to convert.
     \param output Pointer to output buffer for converted key.
-    \param inLen Length of key input.
+    \param outLen Length of output buffer.
 
     _Example_
     \code
@@ -276,7 +326,7 @@ int wc_DsaPrivateKeyDecode(const byte* input, word32* inOutIdx,
     \sa wc_FreeDsaKey
     \sa wc_MakeDsaKey
 */
-int wc_DsaKeyToDer(DsaKey* key, byte* output, word32 inLen);
+int wc_DsaKeyToDer(DsaKey* key, byte* output, word32 outLen);
 
 /*!
     \ingroup DSA
@@ -446,7 +496,7 @@ int wc_SetDsaPublicKey(byte* output, DsaKey* key, int outLen,
 
     \param key DSA key
     \param output Output buffer
-    \param inLen Output buffer length
+    \param outLen Output buffer length
 
     _Example_
     \code
@@ -473,7 +523,7 @@ int wc_SetDsaPublicKey(byte* output, DsaKey* key, int outLen,
 
     \sa wc_SetDsaPublicKey
 */
-int wc_DsaKeyToPublicDer(DsaKey* key, byte* output, word32 inLen);
+int wc_DsaKeyToPublicDer(DsaKey* key, byte* output, word32 outLen);
 
 /*!
     \ingroup DSA

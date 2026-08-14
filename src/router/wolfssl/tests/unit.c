@@ -25,6 +25,9 @@
 #include <tests/unit.h>
 
 #include <wolfssl/wolfcrypt/types.h>
+#ifdef HAVE_ECC
+    #include <wolfssl/wolfcrypt/ecc.h>
+#endif
 
 #include <stdio.h>
 #include <wolfssl/wolfcrypt/fips_test.h>
@@ -34,8 +37,13 @@
 #include "wolfcrypt/test/test.h"
 #endif
 
+#ifdef WOLFSSL_SWDEV
+#include "swdev/swdev_loader.h"
+#endif
+
 int allTesting = 1;
 int apiTesting = 1;
+int wolfCryptTesting = 1;
 int myoptind = 0;
 char* myoptarg = NULL;
 int unit_test(int argc, char** argv);
@@ -195,6 +203,9 @@ int unit_test(int argc, char** argv)
             ApiTest_PrintTestCases();
             goto exit;
         }
+        else if (XSTRCMP(argv[1], "--no-wc") == 0) {
+            wolfCryptTesting = 0;
+        }
         else if (XSTRCMP(argv[1], "--api") == 0) {
             allTesting = 0;
         }
@@ -250,7 +261,7 @@ int unit_test(int argc, char** argv)
 
 #ifndef NO_CRYPT_TEST
     /* wc_ test */
-    if (allTesting) {
+    if (allTesting && wolfCryptTesting) {
         func_args wc_args;
 
         printf("\nwolfCrypt unit test:\n");
@@ -260,12 +271,23 @@ int unit_test(int argc, char** argv)
             goto exit;
         }
 
+    #ifdef WOLFSSL_SWDEV
+        if ((ret = wc_SwDev_Init()) != 0) {
+            fprintf(stderr, "wc_SwDev_Init failed: %d\n", (int)ret);
+            goto exit;
+        }
+    #endif
+
         XMEMSET(&wc_args, 0, sizeof(wc_args));
         wolfcrypt_test(&wc_args);
         if (wc_args.return_code != 0) {
             ret = 1;
             goto exit;
         }
+
+    #ifdef WOLFSSL_SWDEV
+        wc_SwDev_Cleanup();
+    #endif
 
         if ((ret = wolfCrypt_Cleanup()) != 0) {
             fprintf(stderr, "wolfCrypt_Cleanup failed: %d\n", (int)ret);
@@ -319,10 +341,26 @@ int unit_test(int argc, char** argv)
     !defined(NO_TLS) && \
     !defined(SINGLE_THREADED) && \
     defined(WOLFSSL_PEM_TO_DER)
+    #ifdef WOLFSSL_SWDEV
+    if (wolfCrypt_Init() != 0) {
+        fprintf(stderr, "wolfCrypt_Init before SuiteTest failed\n");
+        ret = 1;
+        goto exit;
+    }
+    if (wc_SwDev_Init() != 0) {
+        fprintf(stderr, "wc_SwDev_Init before SuiteTest failed\n");
+        ret = 1;
+        goto exit;
+    }
+    #endif
     if ((ret = SuiteTest(argc, argv)) != 0) {
         fprintf(stderr, "suite test failed with %d\n", ret);
         goto exit;
     }
+    #ifdef WOLFSSL_SWDEV
+    wc_SwDev_Cleanup();
+    wolfCrypt_Cleanup();
+    #endif
 #endif
 
 exit:
@@ -330,6 +368,21 @@ exit:
     if (wc_FreeNetRandom() < 0)
         err_sys("Failed to free netRandom context");
 #endif /* HAVE_WNR */
+
+    /* Drop process-global ECC caches before exit. wolfCrypt_Cleanup() only
+     * runs its cleanup body when initRefCount transitions 2->1 (the body
+     * itself does the second decrement to 0); the unit driver's single
+     * init/cleanup pair never reaches that state, and individual API tests
+     * that create+free a CTX go 0->1->0 without triggering the body either.
+     * Without explicit calls here the ECC_CACHE_CURVE entries (and their
+     * HAVE_WOLF_BIGINT raw buffers) survive to exit and trip valgrind's
+     * --leak-check=full. */
+#if defined(HAVE_ECC) && defined(FP_ECC)
+    wc_ecc_fp_free();
+#endif
+#if defined(HAVE_ECC) && defined(ECC_CACHE_CURVE)
+    wc_ecc_curve_cache_free();
+#endif
 
 #ifdef WOLFSSL_TRACK_MEMORY
     if (ret == 0) {

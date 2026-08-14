@@ -25,6 +25,13 @@
 
 #include <wolfssl/wolfcrypt/arc4.h>
 
+#ifdef NO_INLINE
+    #include <wolfssl/wolfcrypt/misc.h>
+#else
+    #define WOLFSSL_MISC_INCLUDED
+    #include <wolfcrypt/src/misc.c>
+#endif
+
 
 int wc_Arc4SetKey(Arc4* arc4, const byte* key, word32 length)
 {
@@ -59,6 +66,8 @@ int wc_Arc4SetKey(Arc4* arc4, const byte* key, word32 length)
         if (++keyIndex >= length)
             keyIndex = 0;
     }
+
+    arc4->keySet = 1;
 
     return ret;
 }
@@ -95,6 +104,10 @@ int wc_Arc4Process(Arc4* arc4, byte* out, const byte* in, word32 length)
     }
 #endif
 
+    if (!arc4->keySet) {
+        return MISSING_KEY;
+    }
+
     x = arc4->x;
     y = arc4->y;
 
@@ -116,6 +129,7 @@ int wc_Arc4Init(Arc4* arc4, void* heap, int devId)
         return BAD_FUNC_ARG;
 
     arc4->heap = heap;
+    arc4->keySet = 0;
 
 #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_ARC4)
     ret = wolfAsync_DevCtxInit(&arc4->asyncDev, WOLFSSL_ASYNC_MARKER_ARC4,
@@ -137,6 +151,11 @@ void wc_Arc4Free(Arc4* arc4)
 #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_ARC4)
     wolfAsync_DevCtxFree(&arc4->asyncDev, WOLFSSL_ASYNC_MARKER_ARC4);
 #endif /* WOLFSSL_ASYNC_CRYPT */
+
+    ForceZero(arc4->state, sizeof(arc4->state));
+    arc4->x = 0;
+    arc4->y = 0;
+    arc4->keySet = 0;
 }
 
 #endif /* NO_RC4 */

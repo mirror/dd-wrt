@@ -347,6 +347,17 @@ int test_wc_ed25519_export(void)
     XMEMSET(&rng, 0, sizeof(WC_RNG));
 
     ExpectIntEQ(wc_ed25519_init(&key), 0);
+
+#if !defined(HAVE_FIPS) || FIPS_VERSION3_GE(7,0,0)
+    /* Reject export when private key not set. */
+    PRIVATE_KEY_UNLOCK();
+    ExpectIntEQ(wc_ed25519_export_private_only(&key, priv, &privSz),
+        WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    ExpectIntEQ(wc_ed25519_export_private(&key, priv, &privSz),
+        WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    PRIVATE_KEY_LOCK();
+#endif /* !HAVE_FIPS || FIPS_VERSION3_GE(7,0,0) */
+
     ExpectIntEQ(wc_InitRng(&rng), 0);
 #ifdef HAVE_ED25519_MAKE_KEY
     ExpectIntEQ(wc_ed25519_make_key(&rng, ED25519_KEY_SIZE, &key), 0);
@@ -378,6 +389,24 @@ int test_wc_ed25519_export(void)
     ExpectIntEQ(wc_ed25519_export_private_only(&key, priv, NULL),
         WC_NO_ERR_TRACE(BAD_FUNC_ARG));
     PRIVATE_KEY_LOCK();
+
+#ifdef HAVE_ED25519_KEY_IMPORT
+    /* Public-only key: re-init and import just the public part; private
+     * exports must still fail with privKeySet == 0. */
+    wc_ed25519_free(&key);
+    ExpectIntEQ(wc_ed25519_init(&key), 0);
+    ExpectIntEQ(wc_ed25519_import_public(pub, pubSz, &key), 0);
+
+#if !defined(HAVE_FIPS) || FIPS_VERSION3_GE(7,0,0)
+    PRIVATE_KEY_UNLOCK();
+    ExpectIntEQ(wc_ed25519_export_private_only(&key, priv, &privSz),
+        WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    ExpectIntEQ(wc_ed25519_export_private(&key, priv, &privSz),
+        WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+    PRIVATE_KEY_LOCK();
+#endif /* !HAVE_FIPS || FIPS_VERSION3_GE(7,0,0) */
+
+#endif
 
     DoExpectIntEQ(wc_FreeRng(&rng), 0);
     wc_ed25519_free(&key);
@@ -528,7 +557,9 @@ int test_wc_Ed25519PublicKeyToDer(void)
     (defined(WOLFSSL_CERT_GEN) || defined(WOLFSSL_KEY_GEN))
     ed25519_key key;
     byte        derBuf[1024];
+    WC_RNG rng;
 
+    XMEMSET(&rng, 0, sizeof(WC_RNG));
     XMEMSET(&key, 0, sizeof(ed25519_key));
 
     /* Test bad args */
@@ -547,12 +578,16 @@ int test_wc_Ed25519PublicKeyToDer(void)
 #endif
     wc_ed25519_free(&key);
 
+    ExpectIntEQ(wc_ed25519_init(&key), 0);
+    ExpectIntEQ(wc_InitRng(&rng), 0);
+    ExpectIntEQ(wc_ed25519_make_key(&rng, ED25519_KEY_SIZE, &key), 0);
+    ExpectIntEQ(wc_Ed25519PublicKeyToDer(&key, derBuf, 0, 0),
+        WC_NO_ERR_TRACE(BUFFER_E));
+    DoExpectIntEQ(wc_FreeRng(&rng), 0);
+    wc_ed25519_free(&key);
+
     /*  Test good args */
     if (EXPECT_SUCCESS()) {
-        WC_RNG rng;
-
-        XMEMSET(&rng, 0, sizeof(WC_RNG));
-
         ExpectIntEQ(wc_ed25519_init(&key), 0);
         ExpectIntEQ(wc_InitRng(&rng), 0);
         ExpectIntEQ(wc_ed25519_make_key(&rng, ED25519_KEY_SIZE, &key), 0);
@@ -648,4 +683,236 @@ int test_wc_Ed25519PrivateKeyToDer(void)
 #endif
     return EXPECT_RESULT();
 } /* End test_wc_Ed25519PrivateKeyToDer*/
+
+/*
+ * RFC 5958: version=v2 (1) when pub key is bundled, v1 (0) for private only. */
+int test_wc_Ed25519KeyToDer_oneasymkey_version(void)
+{
+    EXPECT_DECLS;
+#if defined(HAVE_ED25519) && defined(HAVE_ED25519_KEY_EXPORT) && \
+    defined(HAVE_ED25519_KEY_IMPORT) && defined(WOLFSSL_KEY_GEN)
+    ed25519_key key;
+    ed25519_key key2;
+    WC_RNG rng;
+    byte ref[256];   /* reference DER (bundled, then private only) */
+    byte rt[256];    /* re-export target for memcmp */
+    int  refSz = 0;
+    int  rtSz = 0;
+    word32 idx;
+
+    XMEMSET(&key,  0, sizeof(key));
+    XMEMSET(&key2, 0, sizeof(key2));
+    XMEMSET(&rng,  0, sizeof(rng));
+
+    ExpectIntEQ(wc_InitRng(&rng), 0);
+    ExpectIntEQ(wc_ed25519_init(&key), 0);
+    ExpectIntEQ(wc_ed25519_init(&key2), 0);
+    ExpectIntEQ(wc_ed25519_make_key(&rng, ED25519_KEY_SIZE, &key), 0);
+
+    /* Bundled (v=1) */
+    ExpectIntGT(refSz = wc_Ed25519KeyToDer(&key, ref, (word32)sizeof(ref)), 0);
+    ExpectIntEQ(test_pkcs8_get_version_byte(ref, (word32)refSz), 1);
+    idx = 0;
+    ExpectIntEQ(wc_Ed25519PrivateKeyDecode(ref, &idx, &key2, (word32)refSz),
+        0);
+    ExpectIntEQ(rtSz = wc_Ed25519KeyToDer(&key2, rt, (word32)sizeof(rt)),
+        refSz);
+    ExpectIntEQ(XMEMCMP(ref, rt, (size_t)refSz), 0);
+
+    /* Priv-only (v=0) */
+    ExpectIntGT(refSz = wc_Ed25519PrivateKeyToDer(&key, ref,
+        (word32)sizeof(ref)), 0);
+    ExpectIntEQ(test_pkcs8_get_version_byte(ref, (word32)refSz), 0);
+
+    wc_ed25519_free(&key);
+    wc_ed25519_free(&key2);
+    wc_FreeRng(&rng);
+#endif
+    return EXPECT_RESULT();
+}
+
+/* Ed25519 identity and small-order public keys must be rejected. When
+ * the public key is the identity point (or any small-order point), any
+ * signature of the form (R = [S]B, S) verifies for arbitrary messages
+ * because h*A is the neutral element. Gated on FIPS_VERSION3_GE(7,0,0)
+ * because older FIPS-certified modules do not have this check in their
+ * frozen copy of ed25519.c and would fail this test. */
+int test_wc_ed25519_reject_small_order_keys(void)
+{
+    EXPECT_DECLS;
+#if (!defined(HAVE_FIPS) || FIPS_VERSION3_GE(7,0,0)) && \
+    defined(HAVE_ED25519) && defined(HAVE_ED25519_KEY_IMPORT)
+    /* Each entry holds an encoded small-order Ed25519 public key. The
+     * sign-bit variants of each y-coordinate are listed explicitly so
+     * the test catches both possible encodings of each y. */
+    static const byte small_order_keys[][ED25519_PUB_KEY_SIZE] = {
+        /* identity (y = 1) */
+        {0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+        /* identity with x-sign bit set */
+        {0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80},
+        /* order 2: y = p - 1 */
+        {0xec,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x7f},
+        /* order 2: y = p - 1 with x-sign bit set */
+        {0xec,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff},
+        /* non-canonical y = p (decodes to y = 0) */
+        {0xed,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x7f},
+        /* non-canonical y = p with x-sign bit set */
+        {0xed,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff},
+        /* non-canonical y = p + 1 (decodes to y = 1) */
+        {0xee,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x7f},
+        /* non-canonical y = p + 1 with x-sign bit set */
+        {0xee,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+         0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff},
+        /* order 4: y = 0 */
+        {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+        /* order 4 with x-sign bit set */
+        {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80},
+        /* order 8 */
+        {0x26,0xe8,0x95,0x8f,0xc2,0xb2,0x27,0xb0,
+         0x45,0xc3,0xf4,0x89,0xf2,0xef,0x98,0xf0,
+         0xd5,0xdf,0xac,0x05,0xd3,0xc6,0x33,0x39,
+         0xb1,0x38,0x02,0x88,0x6d,0x53,0xfc,0x05},
+        /* order 8 with x-sign bit set */
+        {0x26,0xe8,0x95,0x8f,0xc2,0xb2,0x27,0xb0,
+         0x45,0xc3,0xf4,0x89,0xf2,0xef,0x98,0xf0,
+         0xd5,0xdf,0xac,0x05,0xd3,0xc6,0x33,0x39,
+         0xb1,0x38,0x02,0x88,0x6d,0x53,0xfc,0x85},
+        /* order 8 (other y) */
+        {0xc7,0x17,0x6a,0x70,0x3d,0x4d,0xd8,0x4f,
+         0xba,0x3c,0x0b,0x76,0x0d,0x10,0x67,0x0f,
+         0x2a,0x20,0x53,0xfa,0x2c,0x39,0xcc,0xc6,
+         0x4e,0xc7,0xfd,0x77,0x92,0xac,0x03,0x7a},
+        /* order 8 (other y) with x-sign bit set */
+        {0xc7,0x17,0x6a,0x70,0x3d,0x4d,0xd8,0x4f,
+         0xba,0x3c,0x0b,0x76,0x0d,0x10,0x67,0x0f,
+         0x2a,0x20,0x53,0xfa,0x2c,0x39,0xcc,0xc6,
+         0x4e,0xc7,0xfd,0x77,0x92,0xac,0x03,0xfa},
+    };
+#ifndef NO_ED25519_VERIFY
+    /* Forged signature: R = B (base point), S = 1.
+     * With public key A = identity, S*B - h*A = B = R for any message. */
+    static const byte forged_sig[ED25519_SIG_SIZE] = {
+        0x58,0x66,0x66,0x66,0x66,0x66,0x66,0x66,
+        0x66,0x66,0x66,0x66,0x66,0x66,0x66,0x66,
+        0x66,0x66,0x66,0x66,0x66,0x66,0x66,0x66,
+        0x66,0x66,0x66,0x66,0x66,0x66,0x66,0x66,
+        0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+    };
+#endif
+    ed25519_key key;
+    word32 i;
+    word32 num_keys = (word32)(sizeof(small_order_keys) / ED25519_PUB_KEY_SIZE);
+
+    /* (1) Untrusted wc_ed25519_import_public must reject every small-order
+     * encoding (it runs wc_ed25519_check_key as part of the import). */
+    for (i = 0; i < num_keys; i++) {
+        int rc;
+        XMEMSET(&key, 0, sizeof(key));
+        ExpectIntEQ(wc_ed25519_init(&key), 0);
+        rc = wc_ed25519_import_public(small_order_keys[i],
+            ED25519_PUB_KEY_SIZE, &key);
+        if (rc != WC_NO_ERR_TRACE(PUBLIC_KEY_E)) {
+            fprintf(stderr, "small_order_keys[%u]: import_public returned %d, "
+                "expected PUBLIC_KEY_E\n", (unsigned)i, rc);
+        }
+        ExpectIntEQ(rc, WC_NO_ERR_TRACE(PUBLIC_KEY_E));
+        wc_ed25519_free(&key);
+    }
+
+    /* (2) wc_ed25519_check_key called directly must also reject. Guards
+     * against a refactor that moves the small-order check out of
+     * check_key and into the import path: (1) would still pass, but the
+     * documented check_key contract would silently regress. */
+    for (i = 0; i < num_keys; i++) {
+        int rc;
+        XMEMSET(&key, 0, sizeof(key));
+        ExpectIntEQ(wc_ed25519_init(&key), 0);
+        /* trusted = 1 bypasses the import-time check_key call so the
+         * direct check_key below is what's under test. */
+        ExpectIntEQ(wc_ed25519_import_public_ex(small_order_keys[i],
+            ED25519_PUB_KEY_SIZE, &key, 1), 0);
+        rc = wc_ed25519_check_key(&key);
+        if (rc != WC_NO_ERR_TRACE(PUBLIC_KEY_E)) {
+            fprintf(stderr, "small_order_keys[%u]: check_key returned %d, "
+                "expected PUBLIC_KEY_E\n", (unsigned)i, rc);
+        }
+        ExpectIntEQ(rc, WC_NO_ERR_TRACE(PUBLIC_KEY_E));
+        wc_ed25519_free(&key);
+    }
+
+#ifndef NO_ED25519_VERIFY
+    /* (3) Even a "trusted" import (which bypasses wc_ed25519_check_key)
+     * must not let wc_ed25519_verify_msg accept a forged signature against
+     * an identity public key. Test both the canonical encoding (y = 1,
+     * small_order_keys[0]) and the non-canonical encoding (y = p + 1,
+     * small_order_keys[6]) so the verify-side check is exercised against
+     * the canonical-form bypass route, not just the byte-for-byte
+     * identity. The forged sig (R = B, S = 1) verifies for an identity
+     * public key only - other small-order points would reject it on the
+     * math alone, so they aren't useful here. */
+    {
+        static const word32 identity_indices[] = { 0, 6 };
+        const char* msg = "forged message";
+        word32 j;
+
+        for (j = 0;
+             j < sizeof(identity_indices)/sizeof(identity_indices[0]);
+             j++) {
+            word32 idx = identity_indices[j];
+            int verify_result = 1;
+            int rc;
+
+            XMEMSET(&key, 0, sizeof(key));
+            ExpectIntEQ(wc_ed25519_init(&key), 0);
+            ExpectIntEQ(wc_ed25519_import_public_ex(small_order_keys[idx],
+                ED25519_PUB_KEY_SIZE, &key, 1), 0);
+            rc = wc_ed25519_verify_msg(forged_sig, sizeof(forged_sig),
+                (const byte*)msg, (word32)XSTRLEN(msg), &verify_result, &key);
+            if (rc != WC_NO_ERR_TRACE(BAD_FUNC_ARG) || verify_result != 0) {
+                fprintf(stderr, "verify_msg with identity-equiv "
+                    "small_order_keys[%u]: rc=%d verify_result=%d "
+                    "(expected BAD_FUNC_ARG and 0)\n",
+                    (unsigned)idx, rc, verify_result);
+            }
+            ExpectIntEQ(rc, WC_NO_ERR_TRACE(BAD_FUNC_ARG));
+            ExpectIntEQ(verify_result, 0);
+            wc_ed25519_free(&key);
+        }
+    }
+#endif
+#endif
+    return EXPECT_RESULT();
+}
 

@@ -578,6 +578,116 @@ int test_wc_ecc_shared_secret(void)
     return EXPECT_RESULT();
 } /* END tests_wc_ecc_shared_secret */
 
+#if defined(HAVE_ECC) && defined(HAVE_ECC_DHE) && !defined(WC_NO_RNG) && \
+    (defined(HAVE_ECC384) || defined(HAVE_ECC521) || \
+     defined(HAVE_ALL_CURVES)) && \
+    (!defined(WOLFSSL_SP_521) || \
+     ((!defined(HAVE_FIPS) || FIPS_VERSION_GT(7,0)) && !defined(HAVE_SELFTEST)))
+/* Verify the output-buffer size contract of wc_ecc_shared_secret() at the
+ * field-size boundary. The single-precision (SP) math secret generators for
+ * P-384/P-521 historically validated the caller's buffer against the wrong
+ * length (e.g. P-521 checked 65 but writes 66), so a buffer declared one byte
+ * short of the field size slipped past the check and was overwritten. Assert
+ * that fieldSz-1 is rejected with BUFFER_E and fieldSz succeeds, for whichever
+ * math backend is built.
+ *
+ * Coverage note: this drives the blocking generators only (wc_ecc_shared_secret
+ * is synchronous). The fix also corrected the non-blocking (_nb) variants
+ * (sp_ecc_secret_gen_384_nb / _521_nb), which need WOLFSSL_SP_NONBLOCK plus the
+ * specialized SP build and are not exercised here. Of the blocking cases only
+ * P-521 (65->66) actually fails without the fix; P-384 already used 48, so its
+ * case is a guard against regression rather than a reproduction. */
+static int ecc_shared_secret_size_bound(WC_RNG* rng, int curveId, int fieldSz)
+{
+    EXPECT_DECLS;
+    ecc_key key;
+    ecc_key pub;
+    byte    out[80]; /* >= P-521 field size (66) */
+    word32  outlen;
+    int     keyInit = 0, pubInit = 0;
+    int     ret;
+
+    XMEMSET(&key, 0, sizeof(key));
+    XMEMSET(&pub, 0, sizeof(pub));
+
+    ExpectIntEQ(wc_ecc_init(&key), 0);
+    if (EXPECT_SUCCESS()) keyInit = 1;
+    ExpectIntEQ(wc_ecc_init(&pub), 0);
+    if (EXPECT_SUCCESS()) pubInit = 1;
+
+    ret = wc_ecc_make_key_ex(rng, fieldSz, &key, curveId);
+#if defined(WOLFSSL_ASYNC_CRYPT)
+    ret = wc_AsyncWait(ret, &key.asyncDev, WC_ASYNC_FLAG_NONE);
+#endif
+    ExpectIntEQ(ret, 0);
+
+    ret = wc_ecc_make_key_ex(rng, fieldSz, &pub, curveId);
+#if defined(WOLFSSL_ASYNC_CRYPT)
+    ret = wc_AsyncWait(ret, &pub.asyncDev, WC_ASYNC_FLAG_NONE);
+#endif
+    ExpectIntEQ(ret, 0);
+
+#if defined(ECC_TIMING_RESISTANT) && (!defined(HAVE_FIPS) || \
+    (!defined(HAVE_FIPS_VERSION) || (HAVE_FIPS_VERSION != 2))) && \
+    !defined(HAVE_SELFTEST)
+    ExpectIntEQ(wc_ecc_set_rng(&key, rng), 0);
+#endif
+
+    /* One byte short of the field size: must be rejected, not written past. */
+    outlen = (word32)(fieldSz - 1);
+    ExpectIntEQ(wc_ecc_shared_secret(&key, &pub, out, &outlen),
+        WC_NO_ERR_TRACE(BUFFER_E));
+
+    /* Exactly the field size: must succeed and report the field size. */
+    outlen = (word32)fieldSz;
+    ExpectIntEQ(wc_ecc_shared_secret(&key, &pub, out, &outlen), 0);
+    ExpectIntEQ(outlen, (word32)fieldSz);
+
+    if (pubInit)
+        wc_ecc_free(&pub);
+    if (keyInit)
+        wc_ecc_free(&key);
+    return EXPECT_RESULT();
+}
+#endif
+
+/*
+ * Testing wc_ecc_shared_secret() output buffer bounds at the field-size edge.
+ */
+int test_wc_ecc_shared_secret_size_bounds(void)
+{
+    EXPECT_DECLS;
+#if defined(HAVE_ECC) && defined(HAVE_ECC_DHE) && !defined(WC_NO_RNG) && \
+    (defined(HAVE_ECC384) || defined(HAVE_ECC521) || \
+     defined(HAVE_ALL_CURVES)) && \
+    (!defined(WOLFSSL_SP_521) || \
+     ((!defined(HAVE_FIPS) || FIPS_VERSION_GT(7,0)) && !defined(HAVE_SELFTEST)))
+    WC_RNG rng;
+    int    rngInit = 0;
+
+    XMEMSET(&rng, 0, sizeof(rng));
+    PRIVATE_KEY_UNLOCK();
+    ExpectIntEQ(wc_InitRng(&rng), 0);
+    if (EXPECT_SUCCESS())
+        rngInit = 1;
+
+#if defined(HAVE_ECC384) || defined(HAVE_ALL_CURVES)
+    ExpectIntEQ(ecc_shared_secret_size_bound(&rng, ECC_SECP384R1, 48), 1);
+#endif
+#if defined(HAVE_ECC521) || defined(HAVE_ALL_CURVES)
+    ExpectIntEQ(ecc_shared_secret_size_bound(&rng, ECC_SECP521R1, 66), 1);
+#endif
+
+    if (rngInit)
+        DoExpectIntEQ(wc_FreeRng(&rng), 0);
+#ifdef FP_ECC
+    wc_ecc_fp_free();
+#endif
+    PRIVATE_KEY_LOCK();
+#endif
+    return EXPECT_RESULT();
+}
+
 /*
  * testint wc_ecc_export_x963()
  */
@@ -771,6 +881,61 @@ int test_wc_ecc_import_x963(void)
 #endif
     return EXPECT_RESULT();
 } /* END wc_ecc_import_x963 */
+
+/*
+ * testing wc_ecc_import_x963() rejects an off-curve public point.
+ *
+ * Regression coverage for the invalid-curve attack: the legacy wrapper
+ * wc_ecc_import_x963_ex (called by wc_ecc_import_x963()) must pass untrusted=1
+ * to wc_ecc_import_x963_ex2 so that ECIES, PKCS#7 KARI, and EVP ECDH callers
+ * validate that the imported point actually lies on the curve. Without that,
+ * an attacker can feed a point from a weak twist and leak the victim's private
+ * scalar modulo small primes (Biehl-Meyer-Mueller).
+ */
+int test_wc_ecc_import_x963_off_curve(void)
+{
+    EXPECT_DECLS;
+/* point-on-curve validation inside wc_ecc_import_x963 is raw math stripped
+ * by WOLF_CRYPTO_CB_ONLY_ECC; swdev cannot reach below the dispatch layer. */
+#if defined(HAVE_ECC) && defined(HAVE_ECC_KEY_IMPORT) && \
+    !defined(NO_ECC256) && !defined(NO_ECC_SECP) && \
+    (!defined(HAVE_FIPS) || FIPS_VERSION_GE(7,0)) && !defined(HAVE_SELFTEST) && \
+    !defined(WOLF_CRYPTO_CB_ONLY_ECC)
+    ecc_key pubKey;
+    /* Uncompressed X9.63 P-256 point: 0x04 || Gx || Gy with the last byte
+     * of Gy flipped by 1. Gx/Gy are the NIST P-256 generator coordinates;
+     * modifying a single bit of Gy produces a point that is not on the
+     * curve, so wc_ecc_import_x963 must reject it. */
+    static const byte offCurveX963[] = {
+        0x04,
+        0x6B, 0x17, 0xD1, 0xF2, 0xE1, 0x2C, 0x42, 0x47,
+        0xF8, 0xBC, 0xE6, 0xE5, 0x63, 0xA4, 0x40, 0xF2,
+        0x77, 0x03, 0x7D, 0x81, 0x2D, 0xEB, 0x33, 0xA0,
+        0xF4, 0xA1, 0x39, 0x45, 0xD8, 0x98, 0xC2, 0x96,
+        0x4F, 0xE3, 0x42, 0xE2, 0xFE, 0x1A, 0x7F, 0x9B,
+        0x8E, 0xE7, 0xEB, 0x4A, 0x7C, 0x0F, 0x9E, 0x16,
+        0x2B, 0xCE, 0x33, 0x57, 0x6B, 0x31, 0x5E, 0xCE,
+        0xCB, 0xB6, 0x40, 0x68, 0x37, 0xBF, 0x51, 0xF4
+    };
+
+    XMEMSET(&pubKey, 0, sizeof(ecc_key));
+
+    ExpectIntEQ(wc_ecc_init(&pubKey), 0);
+
+    /* Importing an off-curve point must fail. wc_ecc_import_x963() calls
+     * wc_ecc_import_x963_ex() which ultimately calls wc_ecc_import_x963_ex2()
+     * with the required untrusted=1 flag. */
+    ExpectIntNE(wc_ecc_import_x963(offCurveX963, (word32)sizeof(offCurveX963),
+                                   &pubKey), 0);
+
+    wc_ecc_free(&pubKey);
+
+#ifdef FP_ECC
+    wc_ecc_fp_free();
+#endif
+#endif
+    return EXPECT_RESULT();
+} /* END test_wc_ecc_import_x963_off_curve */
 
 /*
  * testing wc_ecc_import_private_key()
@@ -1370,7 +1535,8 @@ int test_wc_ecc_pointFns(void)
     EXPECT_DECLS;
 #if defined(HAVE_ECC) && defined(HAVE_ECC_KEY_EXPORT) && \
     !defined(WC_NO_RNG) && !defined(WOLFSSL_ATECC508A) && \
-    !defined(WOLFSSL_ATECC608A) && !defined(WOLF_CRYPTO_CB_ONLY_ECC)
+    !defined(WOLFSSL_ATECC608A) && !defined(WOLF_CRYPTO_CB_ONLY_ECC) && \
+    !defined(WOLFSSL_MICROCHIP_TA100)
     ecc_key    key;
     WC_RNG     rng;
     int        ret;
@@ -1473,7 +1639,8 @@ int test_wc_ecc_shared_secret_ssh(void)
 #if defined(HAVE_ECC) && defined(HAVE_ECC_DHE) && \
     !defined(WC_NO_RNG) && !defined(WOLFSSL_ATECC508A) && \
     !defined(WOLFSSL_ATECC608A) && !defined(PLUTON_CRYPTO_ECC) && \
-    !defined(WOLFSSL_CRYPTOCELL) && !defined(WOLF_CRYPTO_CB_ONLY_ECC)
+    !defined(WOLFSSL_CRYPTOCELL) && !defined(WOLF_CRYPTO_CB_ONLY_ECC) && \
+    !defined(WOLFSSL_MICROCHIP_TA100)
     ecc_key key;
     ecc_key key2;
     WC_RNG  rng;
@@ -1553,7 +1720,8 @@ int test_wc_ecc_verify_hash_ex(void)
     EXPECT_DECLS;
 #if defined(HAVE_ECC) && defined(HAVE_ECC_SIGN) && defined(WOLFSSL_PUBLIC_MP) \
     && !defined(WC_NO_RNG) && !defined(WOLFSSL_ATECC508A) && \
-       !defined(WOLFSSL_ATECC608A) && !defined(WOLFSSL_KCAPI_ECC)
+       !defined(WOLFSSL_ATECC608A) && !defined(WOLFSSL_KCAPI_ECC) && \
+       !defined(WOLFSSL_MICROCHIP_TA100)
     ecc_key       key;
     WC_RNG        rng;
     int           ret;
@@ -1647,6 +1815,7 @@ int test_wc_ecc_mulmod(void)
     EXPECT_DECLS;
 #if defined(HAVE_ECC) && !defined(WC_NO_RNG) && \
     !(defined(WOLFSSL_ATECC508A) || defined(WOLFSSL_ATECC608A) || \
+      defined(WOLFSSL_MICROCHIP_TA100) || \
       defined(WOLFSSL_VALIDATE_ECC_IMPORT)) && \
     !defined(WOLF_CRYPTO_CB_ONLY_ECC)
     ecc_key     key1;

@@ -76,6 +76,24 @@
     #include <wolfcrypt/src/misc.c>
 #endif
 
+/* Gates the non-WOLFSSL_SHA3_SMALL software Keccak primitives
+ * (hash_keccak_r, BlockSha3, InitSha3, Sha3Update, Sha3Final and the
+ * Load64* helpers). Compiled when:
+ *  - No HW SHA-3 backend is selected (the original baseline), OR
+ *  - STM32 HW SHA-3 is selected and SHAKE is enabled - SHAKE on STM32MP13
+ *    runs in software because the HASH peripheral's SHAKE support is
+ *    fixed-length and does not match wolfSSL's variable-length / iterative
+ *    SqueezeBlocks API. SHA-3 still uses the HASH peripheral.
+ *
+ * Note: the WOLFSSL_SHA3_SMALL branch earlier in this file defines its
+ * own hash_keccak_r and BlockSha3 unconditionally inside its #ifdef
+ * block, so this macro only controls the non-SMALL implementation. */
+#if (!defined(STM32_HASH_SHA3) && !defined(PSOC6_HASH_SHA3)) || \
+    (defined(STM32_HASH_SHA3) && \
+     (defined(WOLFSSL_SHAKE128) || defined(WOLFSSL_SHAKE256)))
+    #define WC_SHA3_SW_KECCAK
+#endif
+
 #if FIPS_VERSION3_GE(6,0,0)
     const unsigned int wolfCrypt_FIPS_sha3_ro_sanity[2] =
                                                      { 0x1a2b3c4d, 0x00000016 };
@@ -320,7 +338,7 @@ void BlockSha3(word64* s)
  */
 #define ROTL64(a, n)    (((a)<<(n))|((a)>>(64-(n))))
 
-#if !defined(STM32_HASH_SHA3) && !defined(PSOC6_HASH_SHA3)
+#ifdef WC_SHA3_SW_KECCAK
 /* An array of values to XOR for block operation. */
 static const word64 hash_keccak_r[24] =
 {
@@ -555,7 +573,7 @@ do {                                                      \
 while (0)
 #endif /* SHA3_BY_SPEC */
 
-#if !defined(STM32_HASH_SHA3) && !defined(PSOC6_HASH_SHA3)
+#ifdef WC_SHA3_SW_KECCAK
 /* The block operation performed on the state.
  *
  * s  The state.
@@ -581,11 +599,11 @@ void BlockSha3(word64* s)
         s[0] ^= hash_keccak_r[i+1];
     }
 }
-#endif /* WOLFSSL_SHA3_SMALL */
-#endif /* STM32_HASH_SHA3 */
+#endif /* WC_SHA3_SW_KECCAK */
+#endif /* !WOLFSSL_SHA3_SMALL */
 #endif /* !WOLFSSL_ARMASM && !WOLFSSL_RISCV_ASM */
 
-#if !defined(STM32_HASH_SHA3) && !defined(PSOC6_HASH_SHA3)
+#ifdef WC_SHA3_SW_KECCAK
 #if defined(BIG_ENDIAN_ORDER)
 static WC_INLINE word64 Load64Unaligned(const unsigned char *a)
 {
@@ -615,19 +633,8 @@ static word64 Load64BitLittleEndian(const byte* a)
     return n;
 }
 #elif defined(WC_SHA3_FAULT_HARDEN)
-static WC_INLINE word64 Load64Unaligned(const unsigned char *a)
-{
-#ifdef WC_64BIT_CPU
-    return *(word64*)a;
-#elif defined(WC_32BIT_CPU)
-    return (((word64)((word32*)a)[1]) << 32) |
-                     ((word32*)a)[0];
-#else
-    return (((word64)((word16*)a)[3]) << 48) |
-           (((word64)((word16*)a)[2]) << 32) |
-           (((word64)((word16*)a)[1]) << 16) |
-                     ((word16*)a)[0];
-#endif
+static WC_INLINE word64 Load64Unaligned(const unsigned char *a) {
+    return readUnalignedWord64(a);
 }
 
 /* Convert the array of bytes, in little-endian order, to a 64-bit integer.
@@ -653,9 +660,16 @@ static int InitSha3(wc_Sha3* sha3)
 
     for (i = 0; i < 25; i++)
         sha3->s[i] = 0;
+    XMEMSET(sha3->t, 0, sizeof(sha3->t));
     sha3->i = 0;
 #ifdef WOLFSSL_HASH_FLAGS
     sha3->flags = 0;
+#endif
+#ifdef WOLF_CRYPTO_CB
+    /* Cached hash variant is tied to sponge state; clear it whenever the
+     * state is reset so reuse for a different SHA3 variant dispatches
+     * correctly through the crypto callback. */
+    sha3->hashType = WC_HASH_TYPE_NONE;
 #endif
 
 #ifdef USE_INTEL_SPEEDUP
@@ -933,7 +947,7 @@ static int Sha3Final(wc_Sha3* sha3, byte padChar, byte* hash, byte p, word32 l)
 
     return 0;
 }
-#endif
+#endif /* WC_SHA3_SW_KECCAK */
 #if defined(STM32_HASH_SHA3)
 
 /* Supports CubeMX HAL or Standard Peripheral Library */
@@ -1117,6 +1131,8 @@ static int wc_InitSha3(wc_Sha3* sha3, void* heap, int devId)
     return ret;
 }
 
+#if !(defined(WOLFSSL_NOSHA3_224) && defined(WOLFSSL_NOSHA3_256) && \
+      defined(WOLFSSL_NOSHA3_384) && defined(WOLFSSL_NOSHA3_512))
 /* Update the SHA-3 hash state with message data.
  *
  * sha3  wc_Sha3 object holding state.
@@ -1247,6 +1263,7 @@ static int wc_Sha3Final(wc_Sha3* sha3, byte* hash, byte p, byte len)
     return InitSha3(sha3);  /* reset state */
 }
 #endif
+#endif
 
 /* Dispose of any dynamically allocated data from the SHA3-384 operation.
  * (Required for async ops.)
@@ -1346,6 +1363,8 @@ static int wc_Sha3Copy(wc_Sha3* src, wc_Sha3* dst)
     return ret;
 }
 
+#if !(defined(WOLFSSL_NOSHA3_224) && defined(WOLFSSL_NOSHA3_256) && \
+      defined(WOLFSSL_NOSHA3_384) && defined(WOLFSSL_NOSHA3_512))
 /* Calculate the SHA3-224 hash based on all the message data so far.
  * More message data can be added, after this operation, using the current
  * state.
@@ -1359,19 +1378,26 @@ static int wc_Sha3Copy(wc_Sha3* src, wc_Sha3* dst)
 static int wc_Sha3GetHash(wc_Sha3* sha3, byte* hash, byte p, byte len)
 {
     int ret;
-    wc_Sha3 tmpSha3;
+    WC_DECLARE_VAR(tmpSha3, wc_Sha3, 1, sha3 ? sha3->heap : NULL);
 
     if (sha3 == NULL || hash == NULL)
         return BAD_FUNC_ARG;
 
-    XMEMSET(&tmpSha3, 0, sizeof(tmpSha3));
-    ret = wc_Sha3Copy(sha3, &tmpSha3);
+    WC_ALLOC_VAR_EX(tmpSha3, wc_Sha3, 1, sha3->heap, DYNAMIC_TYPE_TMP_BUFFER,
+                    return MEMORY_E);
+
+    XMEMSET(tmpSha3, 0, sizeof(*tmpSha3));
+    ret = wc_Sha3Copy(sha3, tmpSha3);
     if (ret == 0) {
-        ret = wc_Sha3Final(&tmpSha3, hash, p, len);
+        ret = wc_Sha3Final(tmpSha3, hash, p, len);
     }
+
+    WC_FREE_VAR_EX(tmpSha3, sha3->heap, DYNAMIC_TYPE_TMP_BUFFER);
     return ret;
 }
+#endif
 
+#ifndef WOLFSSL_NOSHA3_224
 /* Initialize the state for a SHA3-224 hash operation.
  *
  * sha3   wc_Sha3 object holding state.
@@ -1442,8 +1468,9 @@ int wc_Sha3_224_Copy(wc_Sha3* src, wc_Sha3* dst)
 {
     return wc_Sha3Copy(src, dst);
 }
+#endif
 
-
+#ifndef WOLFSSL_NOSHA3_256
 /* Initialize the state for a SHA3-256 hash operation.
  *
  * sha3   wc_Sha3 object holding state.
@@ -1514,8 +1541,9 @@ int wc_Sha3_256_Copy(wc_Sha3* src, wc_Sha3* dst)
 {
     return wc_Sha3Copy(src, dst);
 }
+#endif
 
-
+#ifndef WOLFSSL_NOSHA3_384
 /* Initialize the state for a SHA3-384 hash operation.
  *
  * sha3   wc_Sha3 object holding state.
@@ -1586,8 +1614,9 @@ int wc_Sha3_384_Copy(wc_Sha3* src, wc_Sha3* dst)
 {
     return wc_Sha3Copy(src, dst);
 }
+#endif
 
-
+#ifndef WOLFSSL_NOSHA3_512
 /* Initialize the state for a SHA3-512 hash operation.
  *
  * sha3   wc_Sha3 object holding state.
@@ -1658,6 +1687,7 @@ int wc_Sha3_512_Copy(wc_Sha3* src, wc_Sha3* dst)
 {
     return wc_Sha3Copy(src, dst);
 }
+#endif
 
 #ifdef WOLFSSL_HASH_FLAGS
 int wc_Sha3_SetFlags(wc_Sha3* sha3, word32 flags)

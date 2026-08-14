@@ -382,6 +382,76 @@ int test_wolfSSL_EVP_MD_hmac_signing(void)
     return EXPECT_RESULT();
 }
 
+/* Verify that EVP_DigestVerifyFinal rejects zero-length HMAC tags. */
+int test_wolfSSL_EVP_DigestVerify_HMAC_zero_len_forgery(void)
+{
+    EXPECT_DECLS;
+#if defined(OPENSSL_EXTRA) && !defined(NO_HMAC) && !defined(NO_SHA256)
+    static const unsigned char key[] = {
+        0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+        0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+        0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+        0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b
+    };
+    static const char message[] = "wolfSSL DigestVerifyFinal forgery probe";
+    static const unsigned char zeros[WC_MAX_DIGEST_SIZE] = { 0 };
+
+    WOLFSSL_EVP_PKEY*  pkey = NULL;
+    WOLFSSL_EVP_MD_CTX mdCtx;
+    unsigned char      tag[WC_MAX_DIGEST_SIZE];
+    size_t             tagLen = sizeof(tag);
+
+    wolfSSL_EVP_MD_CTX_init(&mdCtx);
+
+    ExpectNotNull(pkey = wolfSSL_EVP_PKEY_new_mac_key(EVP_PKEY_HMAC, NULL,
+                                                      key, (int)sizeof(key)));
+
+    /* Compute the genuine HMAC-SHA256 tag for the message. */
+    ExpectIntEQ(wolfSSL_EVP_DigestSignInit(&mdCtx, NULL, wolfSSL_EVP_sha256(),
+                                           NULL, pkey), 1);
+    ExpectIntEQ(wolfSSL_EVP_DigestSignUpdate(&mdCtx, message,
+                                             (unsigned int)XSTRLEN(message)),
+                1);
+    ExpectIntEQ(wolfSSL_EVP_DigestSignFinal(&mdCtx, tag, &tagLen), 1);
+    ExpectIntEQ((int)tagLen, WC_SHA256_DIGEST_SIZE);
+    ExpectIntEQ(wolfSSL_EVP_MD_CTX_cleanup(&mdCtx), 1);
+
+    /* Full-length genuine tag verifies. */
+    wolfSSL_EVP_MD_CTX_init(&mdCtx);
+    ExpectIntEQ(wolfSSL_EVP_DigestVerifyInit(&mdCtx, NULL, wolfSSL_EVP_sha256(),
+                                             NULL, pkey), 1);
+    ExpectIntEQ(wolfSSL_EVP_DigestVerifyUpdate(&mdCtx, message,
+                                               (unsigned int)XSTRLEN(message)),
+                1);
+    ExpectIntEQ(wolfSSL_EVP_DigestVerifyFinal(&mdCtx, tag, tagLen), 1);
+    ExpectIntEQ(wolfSSL_EVP_MD_CTX_cleanup(&mdCtx), 1);
+
+    /* Wrong full-length tag is rejected. */
+    wolfSSL_EVP_MD_CTX_init(&mdCtx);
+    ExpectIntEQ(wolfSSL_EVP_DigestVerifyInit(&mdCtx, NULL, wolfSSL_EVP_sha256(),
+                                             NULL, pkey), 1);
+    ExpectIntEQ(wolfSSL_EVP_DigestVerifyUpdate(&mdCtx, message,
+                                               (unsigned int)XSTRLEN(message)),
+                1);
+    ExpectIntNE(wolfSSL_EVP_DigestVerifyFinal(&mdCtx, zeros,
+                                              WC_SHA256_DIGEST_SIZE), 1);
+    ExpectIntEQ(wolfSSL_EVP_MD_CTX_cleanup(&mdCtx), 1);
+
+    /* Zero-length tag must be rejected. */
+    wolfSSL_EVP_MD_CTX_init(&mdCtx);
+    ExpectIntEQ(wolfSSL_EVP_DigestVerifyInit(&mdCtx, NULL, wolfSSL_EVP_sha256(),
+                                             NULL, pkey), 1);
+    ExpectIntEQ(wolfSSL_EVP_DigestVerifyUpdate(&mdCtx, message,
+                                               (unsigned int)XSTRLEN(message)),
+                1);
+    ExpectIntNE(wolfSSL_EVP_DigestVerifyFinal(&mdCtx, zeros, 0), 1);
+    ExpectIntEQ(wolfSSL_EVP_MD_CTX_cleanup(&mdCtx), 1);
+
+    wolfSSL_EVP_PKEY_free(pkey);
+#endif
+    return EXPECT_RESULT();
+}
+
 int test_wolfSSL_EVP_PKEY_new_mac_key(void)
 {
     EXPECT_DECLS;
@@ -1522,9 +1592,25 @@ static int test_wolfSSL_EVP_PKEY_sign_verify(int keyType)
     ExpectIntEQ(EVP_PKEY_verify(
         ctx_verify, sig, siglen, hash, SHA256_DIGEST_LENGTH),
         WOLFSSL_SUCCESS);
-    ExpectIntEQ(EVP_PKEY_verify(
-        ctx_verify, sig, siglen, zero, SHA256_DIGEST_LENGTH),
-        WC_NO_ERR_TRACE(WOLFSSL_FAILURE));
+
+    if (keyType == EVP_PKEY_EC) {
+#ifdef WC_TEST_NO_ECC_SIGN_VERIFY_ZERO_DIGEST
+        /* wolfSSL differs from OpenSSL in that it treats a hash of all 0's as a
+         * fatal error and does not attempt to verify */
+        ExpectIntEQ(EVP_PKEY_verify(
+            ctx_verify, sig, siglen, zero, SHA256_DIGEST_LENGTH),
+            WC_NO_ERR_TRACE(WOLFSSL_FATAL_ERROR));
+#else
+        ExpectIntEQ(EVP_PKEY_verify(
+            ctx_verify, sig, siglen, zero, SHA256_DIGEST_LENGTH),
+            WC_NO_ERR_TRACE(WOLFSSL_FAILURE));
+#endif
+    }
+    else {
+        ExpectIntEQ(EVP_PKEY_verify(
+            ctx_verify, sig, siglen, zero, SHA256_DIGEST_LENGTH),
+            WC_NO_ERR_TRACE(WOLFSSL_FAILURE));
+    }
 
 #if defined(OPENSSL_EXTRA) && !defined(NO_RSA) && defined(WOLFSSL_KEY_GEN) && \
     !defined(HAVE_SELFTEST)
@@ -1917,6 +2003,121 @@ int test_wolfSSL_EVP_MD_ecc_signing(void)
                                            (unsigned int)XSTRLEN(testData) - 4),
                 1);
     ExpectIntEQ(wolfSSL_EVP_DigestVerifyFinal(&mdCtx, check, checkSz), 1);
+    ret = wolfSSL_EVP_MD_CTX_cleanup(&mdCtx);
+    ExpectIntEQ(ret, 1);
+
+    wolfSSL_EVP_PKEY_free(pubKey);
+    wolfSSL_EVP_PKEY_free(privKey);
+#endif
+    return EXPECT_RESULT();
+}
+
+
+int test_wolfSSL_EVP_DigestSign(void)
+{
+    EXPECT_DECLS;
+#if defined(OPENSSL_EXTRA) && !defined(NO_RSA) && defined(USE_CERT_BUFFERS_2048)
+    WOLFSSL_EVP_PKEY* privKey = NULL;
+    WOLFSSL_EVP_PKEY* pubKey = NULL;
+    const unsigned char testData[] = "Hi There";
+    WOLFSSL_EVP_MD_CTX mdCtx;
+    int ret;
+    const unsigned char* cp;
+    const unsigned char* p;
+    unsigned char sig[2048/8];
+    size_t sigSz;
+
+    cp = client_key_der_2048;
+    ExpectNotNull((privKey = wolfSSL_d2i_PrivateKey(EVP_PKEY_RSA, NULL, &cp,
+                                                  sizeof_client_key_der_2048)));
+    p = client_keypub_der_2048;
+    ExpectNotNull((pubKey = wolfSSL_d2i_PUBKEY(NULL, &p,
+                                               sizeof_client_keypub_der_2048)));
+
+    /* One-shot sign: query size first */
+    wolfSSL_EVP_MD_CTX_init(&mdCtx);
+    ExpectIntEQ(wolfSSL_EVP_DigestSignInit(&mdCtx, NULL, wolfSSL_EVP_sha256(),
+                                                             NULL, privKey), 1);
+    sigSz = 0;
+    ExpectIntEQ(wolfSSL_EVP_DigestSign(&mdCtx, NULL, &sigSz, testData,
+                                       (unsigned int)XSTRLEN((const char*)testData)), 1);
+    ExpectIntGT((int)sigSz, 0);
+    ret = wolfSSL_EVP_MD_CTX_cleanup(&mdCtx);
+    ExpectIntEQ(ret, 1);
+
+    /* One-shot sign: actually produce the signature */
+    wolfSSL_EVP_MD_CTX_init(&mdCtx);
+    ExpectIntEQ(wolfSSL_EVP_DigestSignInit(&mdCtx, NULL, wolfSSL_EVP_sha256(),
+                                                             NULL, privKey), 1);
+    sigSz = sizeof(sig);
+    ExpectIntEQ(wolfSSL_EVP_DigestSign(&mdCtx, sig, &sigSz, testData,
+                                       (unsigned int)XSTRLEN((const char*)testData)), 1);
+    ExpectIntGT((int)sigSz, 0);
+    ret = wolfSSL_EVP_MD_CTX_cleanup(&mdCtx);
+    ExpectIntEQ(ret, 1);
+
+    /* One-shot verify */
+    wolfSSL_EVP_MD_CTX_init(&mdCtx);
+    ExpectIntEQ(wolfSSL_EVP_DigestVerifyInit(&mdCtx, NULL,
+                wolfSSL_EVP_sha256(), NULL, pubKey), 1);
+    ExpectIntEQ(wolfSSL_EVP_DigestVerify(&mdCtx, sig, sigSz, testData,
+                                         (unsigned int)XSTRLEN((const char*)testData)), 1);
+    ret = wolfSSL_EVP_MD_CTX_cleanup(&mdCtx);
+    ExpectIntEQ(ret, 1);
+
+    /* One-shot sign + verify with NULL ctx should fail */
+    ExpectIntEQ(wolfSSL_EVP_DigestSign(NULL, sig, &sigSz, testData,
+                                       (unsigned int)XSTRLEN((const char*)testData)),
+                WOLFSSL_FAILURE);
+    ExpectIntEQ(wolfSSL_EVP_DigestVerify(NULL, sig, sigSz, testData,
+                                         (unsigned int)XSTRLEN((const char*)testData)),
+                WOLFSSL_FAILURE);
+
+    wolfSSL_EVP_PKEY_free(pubKey);
+    wolfSSL_EVP_PKEY_free(privKey);
+#endif
+    return EXPECT_RESULT();
+}
+
+
+int test_wolfSSL_EVP_DigestSign_ecc(void)
+{
+    EXPECT_DECLS;
+#if defined(OPENSSL_EXTRA) && defined(HAVE_ECC) && defined(USE_CERT_BUFFERS_256)
+    WOLFSSL_EVP_PKEY* privKey = NULL;
+    WOLFSSL_EVP_PKEY* pubKey = NULL;
+    const unsigned char testData[] = "ECC one-shot test";
+    WOLFSSL_EVP_MD_CTX mdCtx;
+    int ret;
+    const unsigned char* cp;
+    const unsigned char* p;
+    unsigned char sig[256];
+    size_t sigSz;
+
+    cp = ecc_clikey_der_256;
+    ExpectNotNull(privKey = wolfSSL_d2i_PrivateKey(EVP_PKEY_EC, NULL, &cp,
+                                                   sizeof_ecc_clikey_der_256));
+    p = ecc_clikeypub_der_256;
+    ExpectNotNull((pubKey = wolfSSL_d2i_PUBKEY(NULL, &p,
+                                                sizeof_ecc_clikeypub_der_256)));
+
+    /* One-shot sign */
+    wolfSSL_EVP_MD_CTX_init(&mdCtx);
+    ExpectIntEQ(wolfSSL_EVP_DigestSignInit(&mdCtx, NULL, wolfSSL_EVP_sha256(),
+                                                             NULL, privKey), 1);
+    sigSz = sizeof(sig);
+    ExpectIntEQ(wolfSSL_EVP_DigestSign(&mdCtx, sig, &sigSz, testData,
+                                       (unsigned int)XSTRLEN((const char*)testData)), 1);
+    ExpectIntGT((int)sigSz, 0);
+    ret = wolfSSL_EVP_MD_CTX_cleanup(&mdCtx);
+    ExpectIntEQ(ret, 1);
+
+    /* One-shot verify */
+    wolfSSL_EVP_MD_CTX_init(&mdCtx);
+    ExpectIntEQ(wolfSSL_EVP_DigestVerifyInit(&mdCtx, NULL,
+                wolfSSL_EVP_sha256(), NULL, pubKey), 1);
+    ExpectIntEQ(wolfSSL_EVP_DigestVerify(&mdCtx, sig, sigSz, testData,
+                                         (unsigned int)XSTRLEN((const char*)testData)), 1);
     ret = wolfSSL_EVP_MD_CTX_cleanup(&mdCtx);
     ExpectIntEQ(ret, 1);
 
@@ -2356,6 +2557,310 @@ int test_wolfSSL_EVP_PKEY_print_public(void)
     (void)line1;
     (void)i;
 #endif /* OPENSSL_EXTRA */
+    return EXPECT_RESULT();
+}
+
+int test_wolfSSL_EVP_PKEY_ed25519(void)
+{
+    EXPECT_DECLS;
+#if defined(OPENSSL_EXTRA) && defined(HAVE_ED25519) && \
+    defined(HAVE_ED25519_KEY_IMPORT)
+    WOLFSSL_EVP_PKEY* pkey = NULL;
+    const unsigned char* p;
+
+    /* Known-valid Ed25519 public key matching server_ed25519_key. The bytes
+     * are the raw 32-byte BIT STRING contents from
+     * ./certs/ed25519/server-ed25519-key.der so the import succeeds even
+     * under strict point-validation. */
+    static const unsigned char rawPub[32] = {
+        0x23, 0xaa, 0x4d, 0x60, 0x50, 0xe0, 0x13, 0xd3,
+        0x3a, 0xed, 0xab, 0xf6, 0xa9, 0xcc, 0x4a, 0xfe,
+        0xd7, 0x4d, 0x2f, 0xd2, 0x5b, 0x1a, 0x10, 0x05,
+        0xef, 0x5a, 0x41, 0x25, 0xce, 0x1b, 0x53, 0x78
+    };
+
+    /* SPKI wrapper around the same known-valid public key (the full
+     * contents of ./certs/ed25519/server-ed25519-key.der). */
+    static const unsigned char spkiPub[] = {
+        0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00,
+        0x23, 0xaa, 0x4d, 0x60, 0x50, 0xe0, 0x13, 0xd3,
+        0x3a, 0xed, 0xab, 0xf6, 0xa9, 0xcc, 0x4a, 0xfe,
+        0xd7, 0x4d, 0x2f, 0xd2, 0x5b, 0x1a, 0x10, 0x05,
+        0xef, 0x5a, 0x41, 0x25, 0xce, 0x1b, 0x53, 0x78
+    };
+
+    /* Exercise the WC_EVP_PKEY_ED25519 case in d2i_evp_pkey()
+     * including the algId match for the PKCS#8 wrapper. */
+    p = server_ed25519_key;
+    ExpectNotNull(pkey = wolfSSL_d2i_PrivateKey(EVP_PKEY_ED25519, NULL,
+        &p, (long)sizeof_server_ed25519_key));
+    ExpectIntEQ(wolfSSL_EVP_PKEY_id(pkey), EVP_PKEY_ED25519);
+    wolfSSL_EVP_PKEY_free(pkey);
+    pkey = NULL;
+
+    p = spkiPub;
+    ExpectNotNull(pkey = wolfSSL_d2i_PUBKEY(NULL, &p, (long)sizeof(spkiPub)));
+    ExpectIntEQ(wolfSSL_EVP_PKEY_id(pkey), EVP_PKEY_ED25519);
+    wolfSSL_EVP_PKEY_free(pkey);
+    pkey = NULL;
+
+    /* Exercise EVP_PKEY_new_raw_public_key to parse 32 raw BIT STRING bytes */
+    ExpectNotNull(pkey = wolfSSL_EVP_PKEY_new_raw_public_key(
+        WC_EVP_PKEY_ED25519, NULL, rawPub, sizeof(rawPub)));
+    ExpectIntEQ(wolfSSL_EVP_PKEY_id(pkey), EVP_PKEY_ED25519);
+    wolfSSL_EVP_PKEY_free(pkey);
+    pkey = NULL;
+
+    {
+        static const unsigned char junk[16] = { 0 };
+        const unsigned char* jp = junk;
+        ExpectNull(wolfSSL_d2i_PUBKEY(NULL, &jp, (long)sizeof(junk)));
+    }
+#endif
+    return EXPECT_RESULT();
+}
+
+int test_wolfSSL_CTX_use_PrivateKey_ed25519(void)
+{
+    EXPECT_DECLS;
+#if defined(OPENSSL_EXTRA) && defined(HAVE_ED25519) && \
+    defined(HAVE_ED25519_KEY_IMPORT) && !defined(NO_WOLFSSL_SERVER) && \
+    !defined(NO_TLS)
+    WOLFSSL_CTX* ctx = NULL;
+    WOLFSSL_EVP_PKEY* pkey = NULL;
+    const unsigned char* p;
+
+    ExpectNotNull(ctx = wolfSSL_CTX_new(wolfSSLv23_server_method()));
+
+     /* Load the matching Ed25519 server cert */
+    ExpectIntEQ(wolfSSL_CTX_use_certificate_buffer(ctx, server_ed25519_cert,
+        (long)sizeof_server_ed25519_cert, WOLFSSL_FILETYPE_ASN1),
+        WOLFSSL_SUCCESS);
+
+    /* Decode the Ed25519 private key as a WOLFSSL_EVP_PKEY */
+    p = server_ed25519_key;
+    ExpectNotNull(pkey = wolfSSL_d2i_PrivateKey(EVP_PKEY_ED25519, NULL,
+        &p, (long)sizeof_server_ed25519_key));
+    ExpectIntEQ(wolfSSL_EVP_PKEY_id(pkey), EVP_PKEY_ED25519);
+
+    /* Load the pkey and check for success */
+    ExpectIntEQ(wolfSSL_CTX_use_PrivateKey(ctx, pkey), WOLFSSL_SUCCESS);
+
+    wolfSSL_EVP_PKEY_free(pkey);
+    wolfSSL_CTX_free(ctx);
+#endif
+    return EXPECT_RESULT();
+}
+
+int test_wolfSSL_EVP_PKEY_ed448(void)
+{
+    EXPECT_DECLS;
+#if defined(OPENSSL_EXTRA) && defined(HAVE_ED448) && \
+    defined(HAVE_ED448_KEY_IMPORT)
+    WOLFSSL_EVP_PKEY* pkey = NULL;
+    const unsigned char* p;
+
+    /* Known-valid Ed448 public key: the raw 57-byte BIT STRING contents
+     * from ./certs/ed448/server-ed448-key.der so the import succeeds even
+     * under strict point-validation. */
+    static const unsigned char rawPub[57] = {
+        0x54, 0x81, 0x39, 0x01, 0xeb, 0x37, 0xd9, 0xa9,
+        0x07, 0xcd, 0x01, 0xbc, 0x9d, 0x70, 0x16, 0xc2,
+        0x2c, 0x2b, 0x75, 0x5b, 0x63, 0xdb, 0xee, 0x3a,
+        0x2d, 0x44, 0x92, 0x46, 0xb4, 0x7b, 0x07, 0x03,
+        0x4f, 0xa2, 0xae, 0x86, 0x86, 0xdc, 0x8b, 0x4b,
+        0x2c, 0x7f, 0xe8, 0x6b, 0x14, 0x8d, 0x58, 0xdd,
+        0x6d, 0xe7, 0x6f, 0x3a, 0x05, 0x95, 0xa8, 0xef,
+        0x00
+    };
+
+    /* SPKI wrapper around the same known-valid public key (the full
+     * contents of ./certs/ed448/server-ed448-key.der). */
+    static const unsigned char spkiPub[] = {
+        0x30, 0x43, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x71, 0x03, 0x3a, 0x00,
+        0x54, 0x81, 0x39, 0x01, 0xeb, 0x37, 0xd9, 0xa9,
+        0x07, 0xcd, 0x01, 0xbc, 0x9d, 0x70, 0x16, 0xc2,
+        0x2c, 0x2b, 0x75, 0x5b, 0x63, 0xdb, 0xee, 0x3a,
+        0x2d, 0x44, 0x92, 0x46, 0xb4, 0x7b, 0x07, 0x03,
+        0x4f, 0xa2, 0xae, 0x86, 0x86, 0xdc, 0x8b, 0x4b,
+        0x2c, 0x7f, 0xe8, 0x6b, 0x14, 0x8d, 0x58, 0xdd,
+        0x6d, 0xe7, 0x6f, 0x3a, 0x05, 0x95, 0xa8, 0xef,
+        0x00
+    };
+
+    /* SPKI path. */
+    p = spkiPub;
+    ExpectNotNull(pkey = wolfSSL_d2i_PUBKEY(NULL, &p, (long)sizeof(spkiPub)));
+    ExpectIntEQ(wolfSSL_EVP_PKEY_id(pkey), EVP_PKEY_ED448);
+    wolfSSL_EVP_PKEY_free(pkey);
+    pkey = NULL;
+
+    /* Parse raw bytes */
+    ExpectNotNull(pkey = wolfSSL_EVP_PKEY_new_raw_public_key(
+        WC_EVP_PKEY_ED448, NULL, rawPub, sizeof(rawPub)));
+    ExpectIntEQ(wolfSSL_EVP_PKEY_id(pkey), EVP_PKEY_ED448);
+    wolfSSL_EVP_PKEY_free(pkey);
+    pkey = NULL;
+#endif
+    return EXPECT_RESULT();
+}
+
+int test_wolfSSL_EVP_PKEY_x25519(void)
+{
+    EXPECT_DECLS;
+#if defined(OPENSSL_EXTRA) && defined(HAVE_CURVE25519)
+    EVP_PKEY* pkey = NULL;
+    EVP_PKEY* peer = NULL;
+    EVP_PKEY_CTX* genCtx = NULL;
+    EVP_PKEY_CTX* ctx = NULL;
+    unsigned char rawPriv[32];
+    unsigned char rawPub[32];
+    unsigned char secretA[32];
+    unsigned char secretB[32];
+    size_t secretLen;
+    int i;
+
+    for (i = 0; i < 32; i++) {
+        rawPriv[i] = (unsigned char)i;
+        rawPub[i]  = (unsigned char)(0x40 + i);
+    }
+
+    /* Raw import with the correct length reports the X25519 type. */
+    ExpectNotNull(pkey = EVP_PKEY_new_raw_public_key(
+        EVP_PKEY_X25519, NULL, rawPub, sizeof(rawPub)));
+    ExpectIntEQ(EVP_PKEY_id(pkey), EVP_PKEY_X25519);
+    EVP_PKEY_free(pkey);
+    pkey = NULL;
+
+    ExpectNotNull(pkey = EVP_PKEY_new_raw_private_key(
+        EVP_PKEY_X25519, NULL, rawPriv, sizeof(rawPriv)));
+    ExpectIntEQ(EVP_PKEY_id(pkey), EVP_PKEY_X25519);
+
+    /* X25519 is key-agreement only: signing must be rejected. */
+    ExpectNotNull(ctx = EVP_PKEY_CTX_new(pkey, NULL));
+    ExpectIntNE(EVP_PKEY_sign_init(ctx), WOLFSSL_SUCCESS);
+    EVP_PKEY_CTX_free(ctx);
+    ctx = NULL;
+    EVP_PKEY_free(pkey);
+    pkey = NULL;
+
+    /* Wrong raw lengths are rejected. */
+    ExpectNull(EVP_PKEY_new_raw_public_key(
+        EVP_PKEY_X25519, NULL, rawPub, 16));
+    ExpectNull(EVP_PKEY_new_raw_private_key(
+        EVP_PKEY_X25519, NULL, rawPriv, 16));
+
+    /* Generate two key pairs and confirm ECDH agreement is symmetric. This
+     * also exercises the little-endian convention used on import/derive. */
+    ExpectNotNull(genCtx = EVP_PKEY_CTX_new_id(EVP_PKEY_X25519, NULL));
+    ExpectIntEQ(EVP_PKEY_keygen_init(genCtx), WOLFSSL_SUCCESS);
+    ExpectIntEQ(EVP_PKEY_keygen(genCtx, &pkey), WOLFSSL_SUCCESS);
+    ExpectIntEQ(EVP_PKEY_keygen(genCtx, &peer), WOLFSSL_SUCCESS);
+    EVP_PKEY_CTX_free(genCtx);
+    genCtx = NULL;
+
+    ExpectNotNull(ctx = EVP_PKEY_CTX_new(pkey, NULL));
+    ExpectIntEQ(EVP_PKEY_derive_init(ctx), WOLFSSL_SUCCESS);
+    ExpectIntEQ(EVP_PKEY_derive_set_peer(ctx, peer), WOLFSSL_SUCCESS);
+    secretLen = sizeof(secretA);
+    ExpectIntEQ(EVP_PKEY_derive(ctx, secretA, &secretLen), WOLFSSL_SUCCESS);
+    ExpectIntEQ((int)secretLen, 32);
+    EVP_PKEY_CTX_free(ctx);
+    ctx = NULL;
+
+    ExpectNotNull(ctx = EVP_PKEY_CTX_new(peer, NULL));
+    ExpectIntEQ(EVP_PKEY_derive_init(ctx), WOLFSSL_SUCCESS);
+    ExpectIntEQ(EVP_PKEY_derive_set_peer(ctx, pkey), WOLFSSL_SUCCESS);
+    secretLen = sizeof(secretB);
+    ExpectIntEQ(EVP_PKEY_derive(ctx, secretB, &secretLen), WOLFSSL_SUCCESS);
+    ExpectIntEQ((int)secretLen, 32);
+    EVP_PKEY_CTX_free(ctx);
+    ctx = NULL;
+
+    ExpectIntEQ(XMEMCMP(secretA, secretB, 32), 0);
+
+    EVP_PKEY_free(peer);
+    EVP_PKEY_free(pkey);
+#endif
+    return EXPECT_RESULT();
+}
+
+int test_wolfSSL_EVP_PKEY_x448(void)
+{
+    EXPECT_DECLS;
+#if defined(OPENSSL_EXTRA) && defined(HAVE_CURVE448)
+    EVP_PKEY* pkey = NULL;
+    EVP_PKEY* peer = NULL;
+    EVP_PKEY_CTX* genCtx = NULL;
+    EVP_PKEY_CTX* ctx = NULL;
+    unsigned char rawPriv[56];
+    unsigned char rawPub[56];
+    unsigned char secretA[56];
+    unsigned char secretB[56];
+    size_t secretLen;
+    int i;
+
+    for (i = 0; i < 56; i++) {
+        rawPriv[i] = (unsigned char)i;
+        rawPub[i]  = (unsigned char)(0x40 + i);
+    }
+
+    /* Raw import with the correct length reports the X448 type. */
+    ExpectNotNull(pkey = EVP_PKEY_new_raw_public_key(
+        EVP_PKEY_X448, NULL, rawPub, sizeof(rawPub)));
+    ExpectIntEQ(EVP_PKEY_id(pkey), EVP_PKEY_X448);
+    EVP_PKEY_free(pkey);
+    pkey = NULL;
+
+    ExpectNotNull(pkey = EVP_PKEY_new_raw_private_key(
+        EVP_PKEY_X448, NULL, rawPriv, sizeof(rawPriv)));
+    ExpectIntEQ(EVP_PKEY_id(pkey), EVP_PKEY_X448);
+
+    /* X448 is key-agreement only: signing must be rejected. */
+    ExpectNotNull(ctx = EVP_PKEY_CTX_new(pkey, NULL));
+    ExpectIntNE(EVP_PKEY_sign_init(ctx), WOLFSSL_SUCCESS);
+    EVP_PKEY_CTX_free(ctx);
+    ctx = NULL;
+    EVP_PKEY_free(pkey);
+    pkey = NULL;
+
+    /* Wrong raw lengths are rejected. */
+    ExpectNull(EVP_PKEY_new_raw_public_key(
+        EVP_PKEY_X448, NULL, rawPub, 16));
+    ExpectNull(EVP_PKEY_new_raw_private_key(
+        EVP_PKEY_X448, NULL, rawPriv, 16));
+
+    /* Generate two key pairs and confirm ECDH agreement is symmetric. */
+    ExpectNotNull(genCtx = EVP_PKEY_CTX_new_id(EVP_PKEY_X448, NULL));
+    ExpectIntEQ(EVP_PKEY_keygen_init(genCtx), WOLFSSL_SUCCESS);
+    ExpectIntEQ(EVP_PKEY_keygen(genCtx, &pkey), WOLFSSL_SUCCESS);
+    ExpectIntEQ(EVP_PKEY_keygen(genCtx, &peer), WOLFSSL_SUCCESS);
+    EVP_PKEY_CTX_free(genCtx);
+    genCtx = NULL;
+
+    ExpectNotNull(ctx = EVP_PKEY_CTX_new(pkey, NULL));
+    ExpectIntEQ(EVP_PKEY_derive_init(ctx), WOLFSSL_SUCCESS);
+    ExpectIntEQ(EVP_PKEY_derive_set_peer(ctx, peer), WOLFSSL_SUCCESS);
+    secretLen = sizeof(secretA);
+    ExpectIntEQ(EVP_PKEY_derive(ctx, secretA, &secretLen), WOLFSSL_SUCCESS);
+    ExpectIntEQ((int)secretLen, 56);
+    EVP_PKEY_CTX_free(ctx);
+    ctx = NULL;
+
+    ExpectNotNull(ctx = EVP_PKEY_CTX_new(peer, NULL));
+    ExpectIntEQ(EVP_PKEY_derive_init(ctx), WOLFSSL_SUCCESS);
+    ExpectIntEQ(EVP_PKEY_derive_set_peer(ctx, pkey), WOLFSSL_SUCCESS);
+    secretLen = sizeof(secretB);
+    ExpectIntEQ(EVP_PKEY_derive(ctx, secretB, &secretLen), WOLFSSL_SUCCESS);
+    ExpectIntEQ((int)secretLen, 56);
+    EVP_PKEY_CTX_free(ctx);
+    ctx = NULL;
+
+    ExpectIntEQ(XMEMCMP(secretA, secretB, 56), 0);
+
+    EVP_PKEY_free(peer);
+    EVP_PKEY_free(pkey);
+#endif
     return EXPECT_RESULT();
 }
 

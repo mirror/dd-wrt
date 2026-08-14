@@ -115,13 +115,12 @@ extern "C" {
 /* ------------------------------------------------- */
 #define WOLFSSL_EXPERIMENTAL_SETTINGS
 
-#if 1 /* ML-DSA / Dilithium */
-    #define HAVE_DILITHIUM
-    #define WOLFSSL_WC_DILITHIUM
+#if 1 /* ML-DSA (FIPS 204) */
+    #define WOLFSSL_HAVE_MLDSA
     /* Builds to FIPS 204 final standard by default.
      * Set to 1 for draft version. */
     #if 0 /* FIPS 204 Draft */
-        #define WOLFSSL_DILITHIUM_FIPS204_DRAFT
+        #define WOLFSSL_MLDSA_FIPS204_DRAFT
     #endif
     #ifndef ML_DSA_LEVEL
         #define ML_DSA_LEVEL 2
@@ -131,7 +130,6 @@ extern "C" {
 
 #if 1 /* LMS */
     #define WOLFSSL_HAVE_LMS
-    #define WOLFSSL_WC_LMS
     #ifndef LMS_LEVELS
         #define LMS_LEVELS 1
     #endif
@@ -145,7 +143,6 @@ extern "C" {
 
 #if 1 /* XMSS */
     #define WOLFSSL_HAVE_XMSS
-    #define WOLFSSL_WC_XMSS
     #ifndef WOLFSSL_XMSS_MAX_HEIGHT
         #define WOLFSSL_XMSS_MAX_HEIGHT 32
     #endif

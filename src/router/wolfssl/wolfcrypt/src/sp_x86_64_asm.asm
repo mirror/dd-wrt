@@ -18,6 +18,7 @@
 ;  * along with this program; if not, write to the Free Software
 ;  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
 ;  */
+
 IF @Version LT 1200
 ; AVX2 instructions not recognized by old versions of MASM
 IFNDEF NO_AVX2_SUPPORT
@@ -50,7 +51,7 @@ IFNDEF WOLFSSL_SP_NO_2048
 ;  * a  Byte array.
 ;  * n  Number of bytes in array to read.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_from_bin_bswap PROC
         push	r12
         push	r13
@@ -128,7 +129,7 @@ L_2048_from_bin_bswap_zero_end:
         pop	r12
         ret
 sp_2048_from_bin_bswap ENDP
-_text ENDS
+_TEXT ENDS
 IFNDEF NO_MOVBE_SUPPORT
 ; /* Read big endian unsigned byte array into r.
 ;  * Uses the movbe instruction which is an optional instruction.
@@ -138,7 +139,7 @@ IFNDEF NO_MOVBE_SUPPORT
 ;  * a  Byte array.
 ;  * n  Number of bytes in array to read.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_from_bin_movbe PROC
         push	r12
         mov	r11, r8
@@ -204,7 +205,7 @@ L_2048_from_bin_movbe_zero_end:
         pop	r12
         ret
 sp_2048_from_bin_movbe ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Write r as big endian to byte array.
 ;  * Fixed length number of bytes written: 256
@@ -213,7 +214,7 @@ ENDIF
 ;  * r  A single precision integer.
 ;  * a  Byte array.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_to_bin_bswap_32 PROC
         mov	rax, QWORD PTR [rcx+248]
         mov	r8, QWORD PTR [rcx+240]
@@ -313,7 +314,7 @@ sp_2048_to_bin_bswap_32 PROC
         mov	QWORD PTR [rdx+248], r8
         ret
 sp_2048_to_bin_bswap_32 ENDP
-_text ENDS
+_TEXT ENDS
 IFNDEF NO_MOVBE_SUPPORT
 ; /* Write r as big endian to byte array.
 ;  * Fixed length number of bytes written: 256
@@ -322,7 +323,7 @@ IFNDEF NO_MOVBE_SUPPORT
 ;  * r  A single precision integer.
 ;  * a  Byte array.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_to_bin_movbe_32 PROC
         movbe	rax, QWORD PTR [rcx+248]
         movbe	r8, QWORD PTR [rcx+240]
@@ -390,7 +391,7 @@ sp_2048_to_bin_movbe_32 PROC
         mov	QWORD PTR [rdx+248], r8
         ret
 sp_2048_to_bin_movbe_32 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Multiply a and b into r. (r = a * b)
 ;  *
@@ -398,7 +399,7 @@ ENDIF
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_mul_16 PROC
         push	r12
         mov	r9, rdx
@@ -2034,7 +2035,7 @@ sp_2048_mul_16 PROC
         pop	r12
         ret
 sp_2048_mul_16 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Multiply a and b into r. (r = a * b)
 ;  *
@@ -2042,7 +2043,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a   First number to multiply.
 ;  * b   Second number to multiply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_mul_avx2_16 PROC
         push	rbx
         push	rbp
@@ -3705,7 +3706,7 @@ L_end_2048_mul_avx2_16:
         pop	rbx
         ret
 sp_2048_mul_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Add b to a into r. (r = a + b)
 ;  *
@@ -3713,7 +3714,7 @@ ENDIF
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_add_16 PROC
         ; Add
         mov	r9, QWORD PTR [rdx]
@@ -3768,13 +3769,13 @@ sp_2048_add_16 PROC
         adc	rax, 0
         ret
 sp_2048_add_16 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Sub b from a into a. (a -= b)
 ;  *
 ;  * a  A single precision integer and result.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_sub_in_place_32 PROC
         mov	r8, QWORD PTR [rcx]
         sub	r8, QWORD PTR [rdx]
@@ -3875,14 +3876,14 @@ sp_2048_sub_in_place_32 PROC
         sbb	rax, rax
         ret
 sp_2048_sub_in_place_32 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Add b to a into r. (r = a + b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_add_32 PROC
         ; Add
         mov	r9, QWORD PTR [rdx]
@@ -3985,14 +3986,14 @@ sp_2048_add_32 PROC
         adc	rax, 0
         ret
 sp_2048_add_32 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Multiply a and b into r. (r = a * b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_mul_32 PROC
         push	r12
         push	r13
@@ -4690,7 +4691,7 @@ ENDIF
         pop	r12
         ret
 sp_2048_mul_32 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Multiply a and b into r. (r = a * b)
 ;  *
@@ -4698,7 +4699,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_mul_avx2_32 PROC
         push	r12
         push	r13
@@ -5348,14 +5349,14 @@ ENDIF
         pop	r12
         ret
 sp_2048_mul_avx2_32 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Square a and put result in r. (r = a * a)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_sqr_16 PROC
         push	r12
         push	r13
@@ -6437,14 +6438,14 @@ sp_2048_sqr_16 PROC
         pop	r12
         ret
 sp_2048_sqr_16 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Square a and put result in r. (r = a * a)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_sqr_avx2_16 PROC
         push	rbp
         push	r12
@@ -7490,7 +7491,7 @@ L_end_2048_sqr_avx2_16:
         pop	rbp
         ret
 sp_2048_sqr_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Square a and put result in r. (r = a * a)
 ;  *
@@ -7499,7 +7500,7 @@ ENDIF
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_sqr_32 PROC
         sub	rsp, 272
         mov	QWORD PTR [rsp+256], rcx
@@ -8008,7 +8009,7 @@ ENDIF
         add	rsp, 272
         ret
 sp_2048_sqr_32 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Square a and put result in r. (r = a * a)
 ;  *
@@ -8017,7 +8018,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_sqr_avx2_32 PROC
         sub	rsp, 272
         mov	QWORD PTR [rsp+256], rcx
@@ -8526,14 +8527,14 @@ ENDIF
         add	rsp, 272
         ret
 sp_2048_sqr_avx2_32 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Sub b from a into a. (a -= b)
 ;  *
 ;  * a  A single precision integer and result.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_sub_in_place_16 PROC
         mov	r8, QWORD PTR [rcx]
         sub	r8, QWORD PTR [rdx]
@@ -8586,14 +8587,14 @@ sp_2048_sub_in_place_16 PROC
         sbb	rax, rax
         ret
 sp_2048_sub_in_place_16 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_mul_d_32 PROC
         push	r12
         mov	r9, rdx
@@ -8854,7 +8855,7 @@ sp_2048_mul_d_32 PROC
         pop	r12
         ret
 sp_2048_mul_d_32 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Conditionally subtract b from a using the mask m.
 ;  * m is -1 to subtract and 0 when not copying.
 ;  *
@@ -8863,7 +8864,7 @@ _text ENDS
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_cond_sub_16 PROC
         sub	rsp, 128
         mov	r10, QWORD PTR [r8]
@@ -8982,14 +8983,14 @@ sp_2048_cond_sub_16 PROC
         add	rsp, 128
         ret
 sp_2048_cond_sub_16 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Reduce the number back to 2048 bits using Montgomery reduction.
 ;  *
 ;  * a   A single precision number to reduce in place.
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_mont_reduce_16 PROC
         push	r12
         push	r13
@@ -9189,7 +9190,7 @@ ENDIF
         pop	r12
         ret
 sp_2048_mont_reduce_16 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Conditionally subtract b from a using the mask m.
 ;  * m is -1 to subtract and 0 when not copying.
@@ -9199,7 +9200,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_cond_sub_avx2_16 PROC
         push	r12
         mov	r12, QWORD PTR [r8]
@@ -9286,7 +9287,7 @@ sp_2048_cond_sub_avx2_16 PROC
         pop	r12
         ret
 sp_2048_cond_sub_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
@@ -9294,7 +9295,7 @@ ENDIF
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_mul_d_16 PROC
         push	r12
         mov	r9, rdx
@@ -9427,7 +9428,7 @@ sp_2048_mul_d_16 PROC
         pop	r12
         ret
 sp_2048_mul_d_16 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
@@ -9435,7 +9436,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_mul_d_avx2_16 PROC
         push	r12
         push	r13
@@ -9541,7 +9542,7 @@ sp_2048_mul_d_avx2_16 PROC
         pop	r12
         ret
 sp_2048_mul_d_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF _WIN64
 ; /* Divide the double width number (d1|d0) by the dividend. (d1|d0 / div)
@@ -9551,7 +9552,7 @@ IFDEF _WIN64
 ;  * div  The dividend.
 ;  * returns the result of the division.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 div_2048_word_asm_16 PROC
         mov	r9, rdx
         mov	rax, r9
@@ -9559,7 +9560,7 @@ div_2048_word_asm_16 PROC
         div	r8
         ret
 div_2048_word_asm_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Compare a with b in constant time.
 ;  *
@@ -9568,7 +9569,7 @@ ENDIF
 ;  * return -ve, 0 or +ve if a is less than, equal to or greater than b
 ;  * respectively.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_cmp_16 PROC
         push	r12
         xor	r9, r9
@@ -9707,1181 +9708,7 @@ sp_2048_cmp_16 PROC
         pop	r12
         ret
 sp_2048_cmp_16 ENDP
-_text ENDS
-IFNDEF WC_NO_CACHE_RESISTANT
-_text SEGMENT READONLY PARA
-sp_2048_get_from_table_16 PROC
-        sub	rsp, 128
-        movdqu	OWORD PTR [rsp], xmm6
-        movdqu	OWORD PTR [rsp+16], xmm7
-        movdqu	OWORD PTR [rsp+32], xmm8
-        movdqu	OWORD PTR [rsp+48], xmm9
-        movdqu	OWORD PTR [rsp+64], xmm10
-        movdqu	OWORD PTR [rsp+80], xmm11
-        movdqu	OWORD PTR [rsp+96], xmm12
-        movdqu	OWORD PTR [rsp+112], xmm13
-        mov	rax, 1
-        movd	xmm10, r8
-        movd	xmm11, rax
-        pxor	xmm13, xmm13
-        pshufd	xmm11, xmm11, 0
-        pshufd	xmm10, xmm10, 0
-        ; START: 0-7
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 16
-        mov	r9, QWORD PTR [rdx+128]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 17
-        mov	r9, QWORD PTR [rdx+136]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 18
-        mov	r9, QWORD PTR [rdx+144]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 19
-        mov	r9, QWORD PTR [rdx+152]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 20
-        mov	r9, QWORD PTR [rdx+160]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 21
-        mov	r9, QWORD PTR [rdx+168]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 22
-        mov	r9, QWORD PTR [rdx+176]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 23
-        mov	r9, QWORD PTR [rdx+184]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 24
-        mov	r9, QWORD PTR [rdx+192]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 25
-        mov	r9, QWORD PTR [rdx+200]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 26
-        mov	r9, QWORD PTR [rdx+208]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 27
-        mov	r9, QWORD PTR [rdx+216]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 28
-        mov	r9, QWORD PTR [rdx+224]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 29
-        mov	r9, QWORD PTR [rdx+232]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 30
-        mov	r9, QWORD PTR [rdx+240]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 31
-        mov	r9, QWORD PTR [rdx+248]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 0-7
-        ; START: 8-15
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 16
-        mov	r9, QWORD PTR [rdx+128]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 17
-        mov	r9, QWORD PTR [rdx+136]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 18
-        mov	r9, QWORD PTR [rdx+144]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 19
-        mov	r9, QWORD PTR [rdx+152]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 20
-        mov	r9, QWORD PTR [rdx+160]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 21
-        mov	r9, QWORD PTR [rdx+168]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 22
-        mov	r9, QWORD PTR [rdx+176]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 23
-        mov	r9, QWORD PTR [rdx+184]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 24
-        mov	r9, QWORD PTR [rdx+192]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 25
-        mov	r9, QWORD PTR [rdx+200]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 26
-        mov	r9, QWORD PTR [rdx+208]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 27
-        mov	r9, QWORD PTR [rdx+216]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 28
-        mov	r9, QWORD PTR [rdx+224]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 29
-        mov	r9, QWORD PTR [rdx+232]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 30
-        mov	r9, QWORD PTR [rdx+240]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 31
-        mov	r9, QWORD PTR [rdx+248]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        ; END: 8-15
-        movdqu	xmm6, OWORD PTR [rsp]
-        movdqu	xmm7, OWORD PTR [rsp+16]
-        movdqu	xmm8, OWORD PTR [rsp+32]
-        movdqu	xmm9, OWORD PTR [rsp+48]
-        movdqu	xmm10, OWORD PTR [rsp+64]
-        movdqu	xmm11, OWORD PTR [rsp+80]
-        movdqu	xmm12, OWORD PTR [rsp+96]
-        movdqu	xmm13, OWORD PTR [rsp+112]
-        add	rsp, 128
-        ret
-sp_2048_get_from_table_16 ENDP
-_text ENDS
-ENDIF
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Reduce the number back to 2048 bits using Montgomery reduction.
 ;  *
@@ -10889,7 +9716,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_mont_reduce_avx2_16 PROC
         push	r12
         push	r13
@@ -11212,10 +10039,10 @@ L_2048_mont_reduce_avx2_16_loop:
         pop	r12
         ret
 sp_2048_mont_reduce_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFNDEF WC_NO_CACHE_RESISTANT
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_get_from_table_avx2_16 PROC
         sub	rsp, 128
         vmovdqu	OWORD PTR [rsp], xmm6
@@ -11766,7 +10593,7 @@ sp_2048_get_from_table_avx2_16 PROC
         add	rsp, 128
         ret
 sp_2048_get_from_table_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Conditionally subtract b from a using the mask m.
 ;  * m is -1 to subtract and 0 when not copying.
@@ -11776,7 +10603,7 @@ ENDIF
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_cond_sub_32 PROC
         sub	rsp, 256
         mov	r10, QWORD PTR [r8]
@@ -12007,14 +10834,14 @@ sp_2048_cond_sub_32 PROC
         add	rsp, 256
         ret
 sp_2048_cond_sub_32 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Reduce the number back to 2048 bits using Montgomery reduction.
 ;  *
 ;  * a   A single precision number to reduce in place.
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_mont_reduce_32 PROC
         push	r12
         push	r13
@@ -12374,14 +11201,14 @@ ENDIF
         pop	r12
         ret
 sp_2048_mont_reduce_32 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Sub b from a into r. (r = a - b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_sub_32 PROC
         mov	r9, QWORD PTR [rdx]
         sub	r9, QWORD PTR [r8]
@@ -12482,7 +11309,7 @@ sp_2048_sub_32 PROC
         sbb	rax, rax
         ret
 sp_2048_sub_32 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
@@ -12490,7 +11317,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_mul_d_avx2_32 PROC
         push	r12
         push	r13
@@ -12692,7 +11519,7 @@ sp_2048_mul_d_avx2_32 PROC
         pop	r12
         ret
 sp_2048_mul_d_avx2_32 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF _WIN64
 ; /* Divide the double width number (d1|d0) by the dividend. (d1|d0 / div)
@@ -12702,7 +11529,7 @@ IFDEF _WIN64
 ;  * div  The dividend.
 ;  * returns the result of the division.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 div_2048_word_asm_32 PROC
         mov	r9, rdx
         mov	rax, r9
@@ -12710,7 +11537,7 @@ div_2048_word_asm_32 PROC
         div	r8
         ret
 div_2048_word_asm_32 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Conditionally subtract b from a using the mask m.
@@ -12721,7 +11548,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_cond_sub_avx2_32 PROC
         push	r12
         mov	r12, QWORD PTR [r8]
@@ -12888,7 +11715,7 @@ sp_2048_cond_sub_avx2_32 PROC
         pop	r12
         ret
 sp_2048_cond_sub_avx2_32 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Compare a with b in constant time.
 ;  *
@@ -12897,7 +11724,7 @@ ENDIF
 ;  * return -ve, 0 or +ve if a is less than, equal to or greater than b
 ;  * respectively.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_cmp_32 PROC
         push	r12
         xor	r9, r9
@@ -13164,4629 +11991,7 @@ sp_2048_cmp_32 PROC
         pop	r12
         ret
 sp_2048_cmp_32 ENDP
-_text ENDS
-IFNDEF WC_NO_CACHE_RESISTANT
-_text SEGMENT READONLY PARA
-sp_2048_get_from_table_32 PROC
-        sub	rsp, 128
-        movdqu	OWORD PTR [rsp], xmm6
-        movdqu	OWORD PTR [rsp+16], xmm7
-        movdqu	OWORD PTR [rsp+32], xmm8
-        movdqu	OWORD PTR [rsp+48], xmm9
-        movdqu	OWORD PTR [rsp+64], xmm10
-        movdqu	OWORD PTR [rsp+80], xmm11
-        movdqu	OWORD PTR [rsp+96], xmm12
-        movdqu	OWORD PTR [rsp+112], xmm13
-        mov	rax, 1
-        movd	xmm10, r8
-        movd	xmm11, rax
-        pxor	xmm13, xmm13
-        pshufd	xmm11, xmm11, 0
-        pshufd	xmm10, xmm10, 0
-        ; START: 0-7
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 16
-        mov	r9, QWORD PTR [rdx+128]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 17
-        mov	r9, QWORD PTR [rdx+136]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 18
-        mov	r9, QWORD PTR [rdx+144]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 19
-        mov	r9, QWORD PTR [rdx+152]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 20
-        mov	r9, QWORD PTR [rdx+160]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 21
-        mov	r9, QWORD PTR [rdx+168]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 22
-        mov	r9, QWORD PTR [rdx+176]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 23
-        mov	r9, QWORD PTR [rdx+184]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 24
-        mov	r9, QWORD PTR [rdx+192]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 25
-        mov	r9, QWORD PTR [rdx+200]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 26
-        mov	r9, QWORD PTR [rdx+208]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 27
-        mov	r9, QWORD PTR [rdx+216]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 28
-        mov	r9, QWORD PTR [rdx+224]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 29
-        mov	r9, QWORD PTR [rdx+232]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 30
-        mov	r9, QWORD PTR [rdx+240]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 31
-        mov	r9, QWORD PTR [rdx+248]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 32
-        mov	r9, QWORD PTR [rdx+256]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 33
-        mov	r9, QWORD PTR [rdx+264]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 34
-        mov	r9, QWORD PTR [rdx+272]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 35
-        mov	r9, QWORD PTR [rdx+280]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 36
-        mov	r9, QWORD PTR [rdx+288]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 37
-        mov	r9, QWORD PTR [rdx+296]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 38
-        mov	r9, QWORD PTR [rdx+304]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 39
-        mov	r9, QWORD PTR [rdx+312]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 40
-        mov	r9, QWORD PTR [rdx+320]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 41
-        mov	r9, QWORD PTR [rdx+328]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 42
-        mov	r9, QWORD PTR [rdx+336]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 43
-        mov	r9, QWORD PTR [rdx+344]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 44
-        mov	r9, QWORD PTR [rdx+352]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 45
-        mov	r9, QWORD PTR [rdx+360]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 46
-        mov	r9, QWORD PTR [rdx+368]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 47
-        mov	r9, QWORD PTR [rdx+376]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 48
-        mov	r9, QWORD PTR [rdx+384]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 49
-        mov	r9, QWORD PTR [rdx+392]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 50
-        mov	r9, QWORD PTR [rdx+400]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 51
-        mov	r9, QWORD PTR [rdx+408]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 52
-        mov	r9, QWORD PTR [rdx+416]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 53
-        mov	r9, QWORD PTR [rdx+424]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 54
-        mov	r9, QWORD PTR [rdx+432]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 55
-        mov	r9, QWORD PTR [rdx+440]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 56
-        mov	r9, QWORD PTR [rdx+448]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 57
-        mov	r9, QWORD PTR [rdx+456]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 58
-        mov	r9, QWORD PTR [rdx+464]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 59
-        mov	r9, QWORD PTR [rdx+472]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 60
-        mov	r9, QWORD PTR [rdx+480]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 61
-        mov	r9, QWORD PTR [rdx+488]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 62
-        mov	r9, QWORD PTR [rdx+496]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 63
-        mov	r9, QWORD PTR [rdx+504]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 0-7
-        ; START: 8-15
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 16
-        mov	r9, QWORD PTR [rdx+128]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 17
-        mov	r9, QWORD PTR [rdx+136]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 18
-        mov	r9, QWORD PTR [rdx+144]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 19
-        mov	r9, QWORD PTR [rdx+152]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 20
-        mov	r9, QWORD PTR [rdx+160]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 21
-        mov	r9, QWORD PTR [rdx+168]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 22
-        mov	r9, QWORD PTR [rdx+176]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 23
-        mov	r9, QWORD PTR [rdx+184]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 24
-        mov	r9, QWORD PTR [rdx+192]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 25
-        mov	r9, QWORD PTR [rdx+200]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 26
-        mov	r9, QWORD PTR [rdx+208]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 27
-        mov	r9, QWORD PTR [rdx+216]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 28
-        mov	r9, QWORD PTR [rdx+224]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 29
-        mov	r9, QWORD PTR [rdx+232]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 30
-        mov	r9, QWORD PTR [rdx+240]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 31
-        mov	r9, QWORD PTR [rdx+248]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 32
-        mov	r9, QWORD PTR [rdx+256]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 33
-        mov	r9, QWORD PTR [rdx+264]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 34
-        mov	r9, QWORD PTR [rdx+272]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 35
-        mov	r9, QWORD PTR [rdx+280]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 36
-        mov	r9, QWORD PTR [rdx+288]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 37
-        mov	r9, QWORD PTR [rdx+296]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 38
-        mov	r9, QWORD PTR [rdx+304]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 39
-        mov	r9, QWORD PTR [rdx+312]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 40
-        mov	r9, QWORD PTR [rdx+320]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 41
-        mov	r9, QWORD PTR [rdx+328]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 42
-        mov	r9, QWORD PTR [rdx+336]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 43
-        mov	r9, QWORD PTR [rdx+344]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 44
-        mov	r9, QWORD PTR [rdx+352]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 45
-        mov	r9, QWORD PTR [rdx+360]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 46
-        mov	r9, QWORD PTR [rdx+368]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 47
-        mov	r9, QWORD PTR [rdx+376]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 48
-        mov	r9, QWORD PTR [rdx+384]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 49
-        mov	r9, QWORD PTR [rdx+392]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 50
-        mov	r9, QWORD PTR [rdx+400]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 51
-        mov	r9, QWORD PTR [rdx+408]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 52
-        mov	r9, QWORD PTR [rdx+416]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 53
-        mov	r9, QWORD PTR [rdx+424]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 54
-        mov	r9, QWORD PTR [rdx+432]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 55
-        mov	r9, QWORD PTR [rdx+440]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 56
-        mov	r9, QWORD PTR [rdx+448]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 57
-        mov	r9, QWORD PTR [rdx+456]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 58
-        mov	r9, QWORD PTR [rdx+464]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 59
-        mov	r9, QWORD PTR [rdx+472]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 60
-        mov	r9, QWORD PTR [rdx+480]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 61
-        mov	r9, QWORD PTR [rdx+488]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 62
-        mov	r9, QWORD PTR [rdx+496]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 63
-        mov	r9, QWORD PTR [rdx+504]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 8-15
-        ; START: 16-23
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 16
-        mov	r9, QWORD PTR [rdx+128]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 17
-        mov	r9, QWORD PTR [rdx+136]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 18
-        mov	r9, QWORD PTR [rdx+144]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 19
-        mov	r9, QWORD PTR [rdx+152]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 20
-        mov	r9, QWORD PTR [rdx+160]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 21
-        mov	r9, QWORD PTR [rdx+168]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 22
-        mov	r9, QWORD PTR [rdx+176]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 23
-        mov	r9, QWORD PTR [rdx+184]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 24
-        mov	r9, QWORD PTR [rdx+192]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 25
-        mov	r9, QWORD PTR [rdx+200]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 26
-        mov	r9, QWORD PTR [rdx+208]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 27
-        mov	r9, QWORD PTR [rdx+216]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 28
-        mov	r9, QWORD PTR [rdx+224]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 29
-        mov	r9, QWORD PTR [rdx+232]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 30
-        mov	r9, QWORD PTR [rdx+240]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 31
-        mov	r9, QWORD PTR [rdx+248]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 32
-        mov	r9, QWORD PTR [rdx+256]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 33
-        mov	r9, QWORD PTR [rdx+264]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 34
-        mov	r9, QWORD PTR [rdx+272]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 35
-        mov	r9, QWORD PTR [rdx+280]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 36
-        mov	r9, QWORD PTR [rdx+288]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 37
-        mov	r9, QWORD PTR [rdx+296]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 38
-        mov	r9, QWORD PTR [rdx+304]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 39
-        mov	r9, QWORD PTR [rdx+312]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 40
-        mov	r9, QWORD PTR [rdx+320]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 41
-        mov	r9, QWORD PTR [rdx+328]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 42
-        mov	r9, QWORD PTR [rdx+336]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 43
-        mov	r9, QWORD PTR [rdx+344]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 44
-        mov	r9, QWORD PTR [rdx+352]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 45
-        mov	r9, QWORD PTR [rdx+360]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 46
-        mov	r9, QWORD PTR [rdx+368]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 47
-        mov	r9, QWORD PTR [rdx+376]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 48
-        mov	r9, QWORD PTR [rdx+384]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 49
-        mov	r9, QWORD PTR [rdx+392]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 50
-        mov	r9, QWORD PTR [rdx+400]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 51
-        mov	r9, QWORD PTR [rdx+408]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 52
-        mov	r9, QWORD PTR [rdx+416]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 53
-        mov	r9, QWORD PTR [rdx+424]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 54
-        mov	r9, QWORD PTR [rdx+432]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 55
-        mov	r9, QWORD PTR [rdx+440]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 56
-        mov	r9, QWORD PTR [rdx+448]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 57
-        mov	r9, QWORD PTR [rdx+456]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 58
-        mov	r9, QWORD PTR [rdx+464]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 59
-        mov	r9, QWORD PTR [rdx+472]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 60
-        mov	r9, QWORD PTR [rdx+480]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 61
-        mov	r9, QWORD PTR [rdx+488]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 62
-        mov	r9, QWORD PTR [rdx+496]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 63
-        mov	r9, QWORD PTR [rdx+504]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 16-23
-        ; START: 24-31
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 16
-        mov	r9, QWORD PTR [rdx+128]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 17
-        mov	r9, QWORD PTR [rdx+136]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 18
-        mov	r9, QWORD PTR [rdx+144]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 19
-        mov	r9, QWORD PTR [rdx+152]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 20
-        mov	r9, QWORD PTR [rdx+160]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 21
-        mov	r9, QWORD PTR [rdx+168]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 22
-        mov	r9, QWORD PTR [rdx+176]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 23
-        mov	r9, QWORD PTR [rdx+184]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 24
-        mov	r9, QWORD PTR [rdx+192]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 25
-        mov	r9, QWORD PTR [rdx+200]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 26
-        mov	r9, QWORD PTR [rdx+208]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 27
-        mov	r9, QWORD PTR [rdx+216]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 28
-        mov	r9, QWORD PTR [rdx+224]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 29
-        mov	r9, QWORD PTR [rdx+232]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 30
-        mov	r9, QWORD PTR [rdx+240]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 31
-        mov	r9, QWORD PTR [rdx+248]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 32
-        mov	r9, QWORD PTR [rdx+256]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 33
-        mov	r9, QWORD PTR [rdx+264]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 34
-        mov	r9, QWORD PTR [rdx+272]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 35
-        mov	r9, QWORD PTR [rdx+280]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 36
-        mov	r9, QWORD PTR [rdx+288]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 37
-        mov	r9, QWORD PTR [rdx+296]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 38
-        mov	r9, QWORD PTR [rdx+304]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 39
-        mov	r9, QWORD PTR [rdx+312]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 40
-        mov	r9, QWORD PTR [rdx+320]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 41
-        mov	r9, QWORD PTR [rdx+328]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 42
-        mov	r9, QWORD PTR [rdx+336]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 43
-        mov	r9, QWORD PTR [rdx+344]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 44
-        mov	r9, QWORD PTR [rdx+352]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 45
-        mov	r9, QWORD PTR [rdx+360]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 46
-        mov	r9, QWORD PTR [rdx+368]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 47
-        mov	r9, QWORD PTR [rdx+376]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 48
-        mov	r9, QWORD PTR [rdx+384]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 49
-        mov	r9, QWORD PTR [rdx+392]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 50
-        mov	r9, QWORD PTR [rdx+400]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 51
-        mov	r9, QWORD PTR [rdx+408]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 52
-        mov	r9, QWORD PTR [rdx+416]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 53
-        mov	r9, QWORD PTR [rdx+424]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 54
-        mov	r9, QWORD PTR [rdx+432]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 55
-        mov	r9, QWORD PTR [rdx+440]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 56
-        mov	r9, QWORD PTR [rdx+448]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 57
-        mov	r9, QWORD PTR [rdx+456]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 58
-        mov	r9, QWORD PTR [rdx+464]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 59
-        mov	r9, QWORD PTR [rdx+472]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 60
-        mov	r9, QWORD PTR [rdx+480]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 61
-        mov	r9, QWORD PTR [rdx+488]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 62
-        mov	r9, QWORD PTR [rdx+496]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 63
-        mov	r9, QWORD PTR [rdx+504]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        ; END: 24-31
-        movdqu	xmm6, OWORD PTR [rsp]
-        movdqu	xmm7, OWORD PTR [rsp+16]
-        movdqu	xmm8, OWORD PTR [rsp+32]
-        movdqu	xmm9, OWORD PTR [rsp+48]
-        movdqu	xmm10, OWORD PTR [rsp+64]
-        movdqu	xmm11, OWORD PTR [rsp+80]
-        movdqu	xmm12, OWORD PTR [rsp+96]
-        movdqu	xmm13, OWORD PTR [rsp+112]
-        add	rsp, 128
-        ret
-sp_2048_get_from_table_32 ENDP
-_text ENDS
-ENDIF
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Reduce the number back to 2048 bits using Montgomery reduction.
 ;  *
@@ -17794,7 +11999,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_mont_reduce_avx2_32 PROC
         push	r12
         push	r13
@@ -18192,10 +12397,10 @@ L_2048_mont_reduce_avx2_32_loop:
         pop	r12
         ret
 sp_2048_mont_reduce_avx2_32 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFNDEF WC_NO_CACHE_RESISTANT
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_get_from_table_avx2_32 PROC
         sub	rsp, 128
         vmovdqu	OWORD PTR [rsp], xmm6
@@ -20358,7 +14563,7 @@ sp_2048_get_from_table_avx2_32 PROC
         add	rsp, 128
         ret
 sp_2048_get_from_table_avx2_32 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Conditionally add a and b using the mask m.
 ;  * m is -1 to add and 0 when not.
@@ -20368,7 +14573,7 @@ ENDIF
 ;  * b  A single precision number to add.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_cond_add_16 PROC
         sub	rsp, 128
         mov	rax, 0
@@ -20488,7 +14693,7 @@ sp_2048_cond_add_16 PROC
         add	rsp, 128
         ret
 sp_2048_cond_add_16 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Conditionally add a and b using the mask m.
 ;  * m is -1 to add and 0 when not.
@@ -20498,7 +14703,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * b  A single precision number to add.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_cond_add_avx2_16 PROC
         push	r12
         mov	rax, 0
@@ -20586,7 +14791,7 @@ sp_2048_cond_add_avx2_16 PROC
         pop	r12
         ret
 sp_2048_cond_add_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Shift number left by n bit. (r = a << n)
 ;  *
@@ -20594,7 +14799,7 @@ ENDIF
 ;  * a  Number to shift.
 ;  * n  Amoutnt o shift.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_2048_lshift_32 PROC
         push	r12
         push	r13
@@ -20703,7 +14908,7 @@ sp_2048_lshift_32 PROC
         pop	r12
         ret
 sp_2048_lshift_32 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ENDIF
 IFNDEF WOLFSSL_SP_NO_3072
@@ -20716,7 +14921,7 @@ IFNDEF WOLFSSL_SP_NO_3072
 ;  * a  Byte array.
 ;  * n  Number of bytes in array to read.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_from_bin_bswap PROC
         push	r12
         push	r13
@@ -20794,7 +14999,7 @@ L_3072_from_bin_bswap_zero_end:
         pop	r12
         ret
 sp_3072_from_bin_bswap ENDP
-_text ENDS
+_TEXT ENDS
 IFNDEF NO_MOVBE_SUPPORT
 ; /* Read big endian unsigned byte array into r.
 ;  * Uses the movbe instruction which is an optional instruction.
@@ -20804,7 +15009,7 @@ IFNDEF NO_MOVBE_SUPPORT
 ;  * a  Byte array.
 ;  * n  Number of bytes in array to read.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_from_bin_movbe PROC
         push	r12
         mov	r11, r8
@@ -20870,7 +15075,7 @@ L_3072_from_bin_movbe_zero_end:
         pop	r12
         ret
 sp_3072_from_bin_movbe ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Write r as big endian to byte array.
 ;  * Fixed length number of bytes written: 384
@@ -20879,7 +15084,7 @@ ENDIF
 ;  * r  A single precision integer.
 ;  * a  Byte array.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_to_bin_bswap_48 PROC
         mov	rax, QWORD PTR [rcx+376]
         mov	r8, QWORD PTR [rcx+368]
@@ -21027,7 +15232,7 @@ sp_3072_to_bin_bswap_48 PROC
         mov	QWORD PTR [rdx+376], r8
         ret
 sp_3072_to_bin_bswap_48 ENDP
-_text ENDS
+_TEXT ENDS
 IFNDEF NO_MOVBE_SUPPORT
 ; /* Write r as big endian to byte array.
 ;  * Fixed length number of bytes written: 384
@@ -21036,7 +15241,7 @@ IFNDEF NO_MOVBE_SUPPORT
 ;  * r  A single precision integer.
 ;  * a  Byte array.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_to_bin_movbe_48 PROC
         movbe	rax, QWORD PTR [rcx+376]
         movbe	r8, QWORD PTR [rcx+368]
@@ -21136,7 +15341,7 @@ sp_3072_to_bin_movbe_48 PROC
         mov	QWORD PTR [rdx+376], r8
         ret
 sp_3072_to_bin_movbe_48 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Multiply a and b into r. (r = a * b)
 ;  *
@@ -21144,7 +15349,7 @@ ENDIF
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_mul_12 PROC
         push	r12
         mov	r9, rdx
@@ -22084,7 +16289,7 @@ sp_3072_mul_12 PROC
         pop	r12
         ret
 sp_3072_mul_12 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Multiply a and b into r. (r = a * b)
 ;  *
@@ -22092,7 +16297,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a   First number to multiply.
 ;  * b   Second number to multiply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_mul_avx2_12 PROC
         push	rbx
         push	rbp
@@ -23055,7 +17260,7 @@ L_end_3072_mul_avx2_12:
         pop	rbx
         ret
 sp_3072_mul_avx2_12 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Add b to a into r. (r = a + b)
 ;  *
@@ -23063,7 +17268,7 @@ ENDIF
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_add_12 PROC
         ; Add
         mov	r9, QWORD PTR [rdx]
@@ -23106,13 +17311,13 @@ sp_3072_add_12 PROC
         adc	rax, 0
         ret
 sp_3072_add_12 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Sub b from a into a. (a -= b)
 ;  *
 ;  * a  A single precision integer and result.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_sub_in_place_24 PROC
         mov	r8, QWORD PTR [rcx]
         sub	r8, QWORD PTR [rdx]
@@ -23189,14 +17394,14 @@ sp_3072_sub_in_place_24 PROC
         sbb	rax, rax
         ret
 sp_3072_sub_in_place_24 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Add b to a into r. (r = a + b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_add_24 PROC
         ; Add
         mov	r9, QWORD PTR [rdx]
@@ -23275,14 +17480,14 @@ sp_3072_add_24 PROC
         adc	rax, 0
         ret
 sp_3072_add_24 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Multiply a and b into r. (r = a * b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_mul_24 PROC
         push	r12
         push	r13
@@ -23824,7 +18029,7 @@ ENDIF
         pop	r12
         ret
 sp_3072_mul_24 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Multiply a and b into r. (r = a * b)
 ;  *
@@ -23832,7 +18037,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_mul_avx2_24 PROC
         push	r12
         push	r13
@@ -24338,14 +18543,14 @@ ENDIF
         pop	r12
         ret
 sp_3072_mul_avx2_24 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Sub b from a into a. (a -= b)
 ;  *
 ;  * a  A single precision integer and result.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_sub_in_place_48 PROC
         mov	r8, QWORD PTR [rcx]
         sub	r8, QWORD PTR [rdx]
@@ -24494,14 +18699,14 @@ sp_3072_sub_in_place_48 PROC
         sbb	rax, rax
         ret
 sp_3072_sub_in_place_48 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Add b to a into r. (r = a + b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_add_48 PROC
         ; Add
         mov	r9, QWORD PTR [rdx]
@@ -24652,14 +18857,14 @@ sp_3072_add_48 PROC
         adc	rax, 0
         ret
 sp_3072_add_48 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Multiply a and b into r. (r = a * b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_mul_48 PROC
         push	r12
         push	r13
@@ -25669,7 +19874,7 @@ ENDIF
         pop	r12
         ret
 sp_3072_mul_48 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Multiply a and b into r. (r = a * b)
 ;  *
@@ -25677,7 +19882,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_mul_avx2_48 PROC
         push	r12
         push	r13
@@ -26615,14 +20820,14 @@ ENDIF
         pop	r12
         ret
 sp_3072_mul_avx2_48 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Square a and put result in r. (r = a * a)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_sqr_12 PROC
         push	r12
         push	r13
@@ -27284,14 +21489,14 @@ sp_3072_sqr_12 PROC
         pop	r12
         ret
 sp_3072_sqr_12 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Square a and put result in r. (r = a * a)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_sqr_avx2_12 PROC
         push	rbp
         push	r12
@@ -27926,7 +22131,7 @@ L_end_3072_sqr_avx2_12:
         pop	rbp
         ret
 sp_3072_sqr_avx2_12 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Square a and put result in r. (r = a * a)
 ;  *
@@ -27935,7 +22140,7 @@ ENDIF
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_sqr_24 PROC
         sub	rsp, 208
         mov	QWORD PTR [rsp+192], rcx
@@ -28328,7 +22533,7 @@ ENDIF
         add	rsp, 208
         ret
 sp_3072_sqr_24 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Square a and put result in r. (r = a * a)
 ;  *
@@ -28337,7 +22542,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_sqr_avx2_24 PROC
         sub	rsp, 208
         mov	QWORD PTR [rsp+192], rcx
@@ -28730,7 +22935,7 @@ ENDIF
         add	rsp, 208
         ret
 sp_3072_sqr_avx2_24 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Square a and put result in r. (r = a * a)
 ;  *
@@ -28739,7 +22944,7 @@ ENDIF
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_sqr_48 PROC
         sub	rsp, 400
         mov	QWORD PTR [rsp+384], rcx
@@ -29480,7 +23685,7 @@ ENDIF
         add	rsp, 400
         ret
 sp_3072_sqr_48 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Square a and put result in r. (r = a * a)
 ;  *
@@ -29489,7 +23694,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_sqr_avx2_48 PROC
         sub	rsp, 400
         mov	QWORD PTR [rsp+384], rcx
@@ -30230,7 +24435,7 @@ ENDIF
         add	rsp, 400
         ret
 sp_3072_sqr_avx2_48 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
@@ -30238,7 +24443,7 @@ ENDIF
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_mul_d_48 PROC
         push	r12
         mov	r9, rdx
@@ -30627,7 +24832,7 @@ sp_3072_mul_d_48 PROC
         pop	r12
         ret
 sp_3072_mul_d_48 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Conditionally subtract b from a using the mask m.
 ;  * m is -1 to subtract and 0 when not copying.
 ;  *
@@ -30636,7 +24841,7 @@ _text ENDS
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_cond_sub_24 PROC
         sub	rsp, 192
         mov	r10, QWORD PTR [r8]
@@ -30811,14 +25016,14 @@ sp_3072_cond_sub_24 PROC
         add	rsp, 192
         ret
 sp_3072_cond_sub_24 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Reduce the number back to 3072 bits using Montgomery reduction.
 ;  *
 ;  * a   A single precision number to reduce in place.
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_mont_reduce_24 PROC
         push	r12
         push	r13
@@ -31098,7 +25303,7 @@ ENDIF
         pop	r12
         ret
 sp_3072_mont_reduce_24 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Conditionally subtract b from a using the mask m.
 ;  * m is -1 to subtract and 0 when not copying.
@@ -31108,7 +25313,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_cond_sub_avx2_24 PROC
         push	r12
         mov	r12, QWORD PTR [r8]
@@ -31235,7 +25440,7 @@ sp_3072_cond_sub_avx2_24 PROC
         pop	r12
         ret
 sp_3072_cond_sub_avx2_24 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
@@ -31243,7 +25448,7 @@ ENDIF
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_mul_d_24 PROC
         push	r12
         mov	r9, rdx
@@ -31440,7 +25645,7 @@ sp_3072_mul_d_24 PROC
         pop	r12
         ret
 sp_3072_mul_d_24 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
@@ -31448,7 +25653,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_mul_d_avx2_24 PROC
         push	r12
         push	r13
@@ -31602,7 +25807,7 @@ sp_3072_mul_d_avx2_24 PROC
         pop	r12
         ret
 sp_3072_mul_d_avx2_24 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF _WIN64
 ; /* Divide the double width number (d1|d0) by the dividend. (d1|d0 / div)
@@ -31612,7 +25817,7 @@ IFDEF _WIN64
 ;  * div  The dividend.
 ;  * returns the result of the division.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 div_3072_word_asm_24 PROC
         mov	r9, rdx
         mov	rax, r9
@@ -31620,7 +25825,7 @@ div_3072_word_asm_24 PROC
         div	r8
         ret
 div_3072_word_asm_24 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Compare a with b in constant time.
 ;  *
@@ -31629,7 +25834,7 @@ ENDIF
 ;  * return -ve, 0 or +ve if a is less than, equal to or greater than b
 ;  * respectively.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_cmp_24 PROC
         push	r12
         xor	r9, r9
@@ -31832,1769 +26037,7 @@ sp_3072_cmp_24 PROC
         pop	r12
         ret
 sp_3072_cmp_24 ENDP
-_text ENDS
-IFNDEF WC_NO_CACHE_RESISTANT
-_text SEGMENT READONLY PARA
-sp_3072_get_from_table_24 PROC
-        sub	rsp, 128
-        movdqu	OWORD PTR [rsp], xmm6
-        movdqu	OWORD PTR [rsp+16], xmm7
-        movdqu	OWORD PTR [rsp+32], xmm8
-        movdqu	OWORD PTR [rsp+48], xmm9
-        movdqu	OWORD PTR [rsp+64], xmm10
-        movdqu	OWORD PTR [rsp+80], xmm11
-        movdqu	OWORD PTR [rsp+96], xmm12
-        movdqu	OWORD PTR [rsp+112], xmm13
-        mov	rax, 1
-        movd	xmm10, r8
-        movd	xmm11, rax
-        pxor	xmm13, xmm13
-        pshufd	xmm11, xmm11, 0
-        pshufd	xmm10, xmm10, 0
-        ; START: 0-7
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 16
-        mov	r9, QWORD PTR [rdx+128]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 17
-        mov	r9, QWORD PTR [rdx+136]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 18
-        mov	r9, QWORD PTR [rdx+144]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 19
-        mov	r9, QWORD PTR [rdx+152]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 20
-        mov	r9, QWORD PTR [rdx+160]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 21
-        mov	r9, QWORD PTR [rdx+168]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 22
-        mov	r9, QWORD PTR [rdx+176]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 23
-        mov	r9, QWORD PTR [rdx+184]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 24
-        mov	r9, QWORD PTR [rdx+192]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 25
-        mov	r9, QWORD PTR [rdx+200]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 26
-        mov	r9, QWORD PTR [rdx+208]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 27
-        mov	r9, QWORD PTR [rdx+216]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 28
-        mov	r9, QWORD PTR [rdx+224]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 29
-        mov	r9, QWORD PTR [rdx+232]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 30
-        mov	r9, QWORD PTR [rdx+240]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 31
-        mov	r9, QWORD PTR [rdx+248]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 0-7
-        ; START: 8-15
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 16
-        mov	r9, QWORD PTR [rdx+128]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 17
-        mov	r9, QWORD PTR [rdx+136]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 18
-        mov	r9, QWORD PTR [rdx+144]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 19
-        mov	r9, QWORD PTR [rdx+152]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 20
-        mov	r9, QWORD PTR [rdx+160]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 21
-        mov	r9, QWORD PTR [rdx+168]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 22
-        mov	r9, QWORD PTR [rdx+176]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 23
-        mov	r9, QWORD PTR [rdx+184]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 24
-        mov	r9, QWORD PTR [rdx+192]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 25
-        mov	r9, QWORD PTR [rdx+200]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 26
-        mov	r9, QWORD PTR [rdx+208]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 27
-        mov	r9, QWORD PTR [rdx+216]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 28
-        mov	r9, QWORD PTR [rdx+224]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 29
-        mov	r9, QWORD PTR [rdx+232]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 30
-        mov	r9, QWORD PTR [rdx+240]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 31
-        mov	r9, QWORD PTR [rdx+248]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 8-15
-        ; START: 16-23
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 16
-        mov	r9, QWORD PTR [rdx+128]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 17
-        mov	r9, QWORD PTR [rdx+136]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 18
-        mov	r9, QWORD PTR [rdx+144]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 19
-        mov	r9, QWORD PTR [rdx+152]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 20
-        mov	r9, QWORD PTR [rdx+160]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 21
-        mov	r9, QWORD PTR [rdx+168]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 22
-        mov	r9, QWORD PTR [rdx+176]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 23
-        mov	r9, QWORD PTR [rdx+184]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 24
-        mov	r9, QWORD PTR [rdx+192]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 25
-        mov	r9, QWORD PTR [rdx+200]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 26
-        mov	r9, QWORD PTR [rdx+208]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 27
-        mov	r9, QWORD PTR [rdx+216]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 28
-        mov	r9, QWORD PTR [rdx+224]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 29
-        mov	r9, QWORD PTR [rdx+232]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 30
-        mov	r9, QWORD PTR [rdx+240]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 31
-        mov	r9, QWORD PTR [rdx+248]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        ; END: 16-23
-        movdqu	xmm6, OWORD PTR [rsp]
-        movdqu	xmm7, OWORD PTR [rsp+16]
-        movdqu	xmm8, OWORD PTR [rsp+32]
-        movdqu	xmm9, OWORD PTR [rsp+48]
-        movdqu	xmm10, OWORD PTR [rsp+64]
-        movdqu	xmm11, OWORD PTR [rsp+80]
-        movdqu	xmm12, OWORD PTR [rsp+96]
-        movdqu	xmm13, OWORD PTR [rsp+112]
-        add	rsp, 128
-        ret
-sp_3072_get_from_table_24 ENDP
-_text ENDS
-ENDIF
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Reduce the number back to 3072 bits using Montgomery reduction.
 ;  *
@@ -33602,7 +26045,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_mont_reduce_avx2_24 PROC
         push	r12
         push	r13
@@ -33912,10 +26355,10 @@ L_3072_mont_reduce_avx2_24_loop:
         pop	r12
         ret
 sp_3072_mont_reduce_avx2_24 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFNDEF WC_NO_CACHE_RESISTANT
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_get_from_table_avx2_24 PROC
         sub	rsp, 128
         vmovdqu	OWORD PTR [rsp], xmm6
@@ -34826,7 +27269,7 @@ sp_3072_get_from_table_avx2_24 PROC
         add	rsp, 128
         ret
 sp_3072_get_from_table_avx2_24 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Conditionally subtract b from a using the mask m.
 ;  * m is -1 to subtract and 0 when not copying.
@@ -34836,7 +27279,7 @@ ENDIF
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_cond_sub_48 PROC
         sub	rsp, 384
         mov	r10, QWORD PTR [r8]
@@ -35179,14 +27622,14 @@ sp_3072_cond_sub_48 PROC
         add	rsp, 384
         ret
 sp_3072_cond_sub_48 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Reduce the number back to 3072 bits using Montgomery reduction.
 ;  *
 ;  * a   A single precision number to reduce in place.
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_mont_reduce_48 PROC
         push	r12
         push	r13
@@ -35706,14 +28149,14 @@ ENDIF
         pop	r12
         ret
 sp_3072_mont_reduce_48 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Sub b from a into r. (r = a - b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_sub_48 PROC
         mov	r9, QWORD PTR [rdx]
         sub	r9, QWORD PTR [r8]
@@ -35862,7 +28305,7 @@ sp_3072_sub_48 PROC
         sbb	rax, rax
         ret
 sp_3072_sub_48 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
@@ -35870,7 +28313,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_mul_d_avx2_48 PROC
         push	r12
         push	r13
@@ -36168,7 +28611,7 @@ sp_3072_mul_d_avx2_48 PROC
         pop	r12
         ret
 sp_3072_mul_d_avx2_48 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF _WIN64
 ; /* Divide the double width number (d1|d0) by the dividend. (d1|d0 / div)
@@ -36178,7 +28621,7 @@ IFDEF _WIN64
 ;  * div  The dividend.
 ;  * returns the result of the division.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 div_3072_word_asm_48 PROC
         mov	r9, rdx
         mov	rax, r9
@@ -36186,7 +28629,7 @@ div_3072_word_asm_48 PROC
         div	r8
         ret
 div_3072_word_asm_48 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Conditionally subtract b from a using the mask m.
@@ -36197,7 +28640,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_cond_sub_avx2_48 PROC
         push	r12
         mov	r12, QWORD PTR [r8]
@@ -36444,7 +28887,7 @@ sp_3072_cond_sub_avx2_48 PROC
         pop	r12
         ret
 sp_3072_cond_sub_avx2_48 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Compare a with b in constant time.
 ;  *
@@ -36453,7 +28896,7 @@ ENDIF
 ;  * return -ve, 0 or +ve if a is less than, equal to or greater than b
 ;  * respectively.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_cmp_48 PROC
         push	r12
         xor	r9, r9
@@ -36848,1821 +29291,7 @@ sp_3072_cmp_48 PROC
         pop	r12
         ret
 sp_3072_cmp_48 ENDP
-_text ENDS
-IFNDEF WC_NO_CACHE_RESISTANT
-_text SEGMENT READONLY PARA
-sp_3072_get_from_table_48 PROC
-        sub	rsp, 128
-        movdqu	OWORD PTR [rsp], xmm6
-        movdqu	OWORD PTR [rsp+16], xmm7
-        movdqu	OWORD PTR [rsp+32], xmm8
-        movdqu	OWORD PTR [rsp+48], xmm9
-        movdqu	OWORD PTR [rsp+64], xmm10
-        movdqu	OWORD PTR [rsp+80], xmm11
-        movdqu	OWORD PTR [rsp+96], xmm12
-        movdqu	OWORD PTR [rsp+112], xmm13
-        mov	rax, 1
-        movd	xmm10, r8
-        movd	xmm11, rax
-        pxor	xmm13, xmm13
-        pshufd	xmm11, xmm11, 0
-        pshufd	xmm10, xmm10, 0
-        ; START: 0-7
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 0-7
-        ; START: 8-15
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 8-15
-        ; START: 16-23
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 16-23
-        ; START: 24-31
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 24-31
-        ; START: 32-39
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 32-39
-        ; START: 40-47
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        ; END: 40-47
-        movdqu	xmm6, OWORD PTR [rsp]
-        movdqu	xmm7, OWORD PTR [rsp+16]
-        movdqu	xmm8, OWORD PTR [rsp+32]
-        movdqu	xmm9, OWORD PTR [rsp+48]
-        movdqu	xmm10, OWORD PTR [rsp+64]
-        movdqu	xmm11, OWORD PTR [rsp+80]
-        movdqu	xmm12, OWORD PTR [rsp+96]
-        movdqu	xmm13, OWORD PTR [rsp+112]
-        add	rsp, 128
-        ret
-sp_3072_get_from_table_48 ENDP
-_text ENDS
-ENDIF
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Reduce the number back to 3072 bits using Montgomery reduction.
 ;  *
@@ -38670,7 +29299,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_mont_reduce_avx2_48 PROC
         push	r12
         push	r13
@@ -39244,10 +29873,10 @@ L_3072_mont_reduce_avx2_48_loop:
         pop	r12
         ret
 sp_3072_mont_reduce_avx2_48 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFNDEF WC_NO_CACHE_RESISTANT
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_get_from_table_avx2_48 PROC
         sub	rsp, 128
         vmovdqu	OWORD PTR [rsp], xmm6
@@ -40110,7 +30739,7 @@ sp_3072_get_from_table_avx2_48 PROC
         add	rsp, 128
         ret
 sp_3072_get_from_table_avx2_48 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Conditionally add a and b using the mask m.
 ;  * m is -1 to add and 0 when not.
@@ -40120,7 +30749,7 @@ ENDIF
 ;  * b  A single precision number to add.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_cond_add_24 PROC
         sub	rsp, 192
         mov	rax, 0
@@ -40296,7 +30925,7 @@ sp_3072_cond_add_24 PROC
         add	rsp, 192
         ret
 sp_3072_cond_add_24 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Conditionally add a and b using the mask m.
 ;  * m is -1 to add and 0 when not.
@@ -40306,7 +30935,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * b  A single precision number to add.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_cond_add_avx2_24 PROC
         push	r12
         mov	rax, 0
@@ -40434,7 +31063,7 @@ sp_3072_cond_add_avx2_24 PROC
         pop	r12
         ret
 sp_3072_cond_add_avx2_24 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Shift number left by n bit. (r = a << n)
 ;  *
@@ -40442,7 +31071,7 @@ ENDIF
 ;  * a  Number to shift.
 ;  * n  Amoutnt o shift.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_3072_lshift_48 PROC
         push	r12
         push	r13
@@ -40599,7 +31228,7 @@ sp_3072_lshift_48 PROC
         pop	r12
         ret
 sp_3072_lshift_48 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ENDIF
 IFDEF WOLFSSL_SP_4096
@@ -40612,7 +31241,7 @@ IFDEF WOLFSSL_SP_4096
 ;  * a  Byte array.
 ;  * n  Number of bytes in array to read.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_from_bin_bswap PROC
         push	r12
         push	r13
@@ -40690,7 +31319,7 @@ L_4096_from_bin_bswap_zero_end:
         pop	r12
         ret
 sp_4096_from_bin_bswap ENDP
-_text ENDS
+_TEXT ENDS
 IFNDEF NO_MOVBE_SUPPORT
 ; /* Read big endian unsigned byte array into r.
 ;  * Uses the movbe instruction which is an optional instruction.
@@ -40700,7 +31329,7 @@ IFNDEF NO_MOVBE_SUPPORT
 ;  * a  Byte array.
 ;  * n  Number of bytes in array to read.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_from_bin_movbe PROC
         push	r12
         mov	r11, r8
@@ -40766,7 +31395,7 @@ L_4096_from_bin_movbe_zero_end:
         pop	r12
         ret
 sp_4096_from_bin_movbe ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Write r as big endian to byte array.
 ;  * Fixed length number of bytes written: 512
@@ -40775,7 +31404,7 @@ ENDIF
 ;  * r  A single precision integer.
 ;  * a  Byte array.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_to_bin_bswap_64 PROC
         mov	rax, QWORD PTR [rcx+504]
         mov	r8, QWORD PTR [rcx+496]
@@ -40971,7 +31600,7 @@ sp_4096_to_bin_bswap_64 PROC
         mov	QWORD PTR [rdx+504], r8
         ret
 sp_4096_to_bin_bswap_64 ENDP
-_text ENDS
+_TEXT ENDS
 IFNDEF NO_MOVBE_SUPPORT
 ; /* Write r as big endian to byte array.
 ;  * Fixed length number of bytes written: 512
@@ -40980,7 +31609,7 @@ IFNDEF NO_MOVBE_SUPPORT
 ;  * r  A single precision integer.
 ;  * a  Byte array.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_to_bin_movbe_64 PROC
         movbe	rax, QWORD PTR [rcx+504]
         movbe	r8, QWORD PTR [rcx+496]
@@ -41112,14 +31741,14 @@ sp_4096_to_bin_movbe_64 PROC
         mov	QWORD PTR [rdx+504], r8
         ret
 sp_4096_to_bin_movbe_64 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Sub b from a into a. (a -= b)
 ;  *
 ;  * a  A single precision integer and result.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_sub_in_place_64 PROC
         mov	r8, QWORD PTR [rcx]
         sub	r8, QWORD PTR [rdx]
@@ -41316,14 +31945,14 @@ sp_4096_sub_in_place_64 PROC
         sbb	rax, rax
         ret
 sp_4096_sub_in_place_64 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Add b to a into r. (r = a + b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_add_64 PROC
         ; Add
         mov	r9, QWORD PTR [rdx]
@@ -41522,14 +32151,14 @@ sp_4096_add_64 PROC
         adc	rax, 0
         ret
 sp_4096_add_64 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Multiply a and b into r. (r = a * b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_mul_64 PROC
         push	r12
         push	r13
@@ -42851,7 +33480,7 @@ ENDIF
         pop	r12
         ret
 sp_4096_mul_64 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Multiply a and b into r. (r = a * b)
 ;  *
@@ -42859,7 +33488,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_mul_avx2_64 PROC
         push	r12
         push	r13
@@ -44085,7 +34714,7 @@ ENDIF
         pop	r12
         ret
 sp_4096_mul_avx2_64 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Square a and put result in r. (r = a * a)
 ;  *
@@ -44094,7 +34723,7 @@ ENDIF
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_sqr_64 PROC
         sub	rsp, 528
         mov	QWORD PTR [rsp+512], rcx
@@ -45067,7 +35696,7 @@ ENDIF
         add	rsp, 528
         ret
 sp_4096_sqr_64 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Square a and put result in r. (r = a * a)
 ;  *
@@ -45076,7 +35705,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_sqr_avx2_64 PROC
         sub	rsp, 528
         mov	QWORD PTR [rsp+512], rcx
@@ -46049,7 +36678,7 @@ ENDIF
         add	rsp, 528
         ret
 sp_4096_sqr_avx2_64 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
@@ -46057,7 +36686,7 @@ ENDIF
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_mul_d_64 PROC
         push	r12
         mov	r9, rdx
@@ -46574,7 +37203,7 @@ sp_4096_mul_d_64 PROC
         pop	r12
         ret
 sp_4096_mul_d_64 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Conditionally subtract b from a using the mask m.
 ;  * m is -1 to subtract and 0 when not copying.
 ;  *
@@ -46583,7 +37212,7 @@ _text ENDS
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_cond_sub_64 PROC
         sub	rsp, 512
         mov	r10, QWORD PTR [r8]
@@ -47038,14 +37667,14 @@ sp_4096_cond_sub_64 PROC
         add	rsp, 512
         ret
 sp_4096_cond_sub_64 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Reduce the number back to 4096 bits using Montgomery reduction.
 ;  *
 ;  * a   A single precision number to reduce in place.
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_mont_reduce_64 PROC
         push	r12
         push	r13
@@ -47725,14 +38354,14 @@ ENDIF
         pop	r12
         ret
 sp_4096_mont_reduce_64 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Sub b from a into r. (r = a - b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_sub_64 PROC
         mov	r9, QWORD PTR [rdx]
         sub	r9, QWORD PTR [r8]
@@ -47929,7 +38558,7 @@ sp_4096_sub_64 PROC
         sbb	rax, rax
         ret
 sp_4096_sub_64 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
@@ -47937,7 +38566,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_mul_d_avx2_64 PROC
         push	r12
         push	r13
@@ -48331,7 +38960,7 @@ sp_4096_mul_d_avx2_64 PROC
         pop	r12
         ret
 sp_4096_mul_d_avx2_64 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF _WIN64
 ; /* Divide the double width number (d1|d0) by the dividend. (d1|d0 / div)
@@ -48341,7 +38970,7 @@ IFDEF _WIN64
 ;  * div  The dividend.
 ;  * returns the result of the division.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 div_4096_word_asm_64 PROC
         mov	r9, rdx
         mov	rax, r9
@@ -48349,7 +38978,7 @@ div_4096_word_asm_64 PROC
         div	r8
         ret
 div_4096_word_asm_64 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Conditionally subtract b from a using the mask m.
@@ -48360,7 +38989,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_cond_sub_avx2_64 PROC
         push	r12
         mov	r12, QWORD PTR [r8]
@@ -48687,7 +39316,7 @@ sp_4096_cond_sub_avx2_64 PROC
         pop	r12
         ret
 sp_4096_cond_sub_avx2_64 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Compare a with b in constant time.
 ;  *
@@ -48696,7 +39325,7 @@ ENDIF
 ;  * return -ve, 0 or +ve if a is less than, equal to or greater than b
 ;  * respectively.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_cmp_64 PROC
         push	r12
         xor	r9, r9
@@ -49219,2421 +39848,7 @@ sp_4096_cmp_64 PROC
         pop	r12
         ret
 sp_4096_cmp_64 ENDP
-_text ENDS
-IFNDEF WC_NO_CACHE_RESISTANT
-_text SEGMENT READONLY PARA
-sp_4096_get_from_table_64 PROC
-        sub	rsp, 128
-        movdqu	OWORD PTR [rsp], xmm6
-        movdqu	OWORD PTR [rsp+16], xmm7
-        movdqu	OWORD PTR [rsp+32], xmm8
-        movdqu	OWORD PTR [rsp+48], xmm9
-        movdqu	OWORD PTR [rsp+64], xmm10
-        movdqu	OWORD PTR [rsp+80], xmm11
-        movdqu	OWORD PTR [rsp+96], xmm12
-        movdqu	OWORD PTR [rsp+112], xmm13
-        mov	rax, 1
-        movd	xmm10, r8
-        movd	xmm11, rax
-        pxor	xmm13, xmm13
-        pshufd	xmm11, xmm11, 0
-        pshufd	xmm10, xmm10, 0
-        ; START: 0-7
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 0-7
-        ; START: 8-15
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 64
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 8-15
-        ; START: 16-23
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 128
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 16-23
-        ; START: 24-31
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 192
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 24-31
-        ; START: 32-39
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 256
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 32-39
-        ; START: 40-47
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 320
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 40-47
-        ; START: 48-55
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 384
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 384
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 384
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 384
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 384
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 384
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 384
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 384
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 384
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 384
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 384
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 384
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 384
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 384
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 384
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 384
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        add	rcx, 64
-        ; END: 48-55
-        ; START: 56-63
-        pxor	xmm13, xmm13
-        pxor	xmm4, xmm4
-        pxor	xmm5, xmm5
-        pxor	xmm6, xmm6
-        pxor	xmm7, xmm7
-        ; ENTRY: 0
-        mov	r9, QWORD PTR [rdx]
-        add	r9, 448
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 1
-        mov	r9, QWORD PTR [rdx+8]
-        add	r9, 448
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 2
-        mov	r9, QWORD PTR [rdx+16]
-        add	r9, 448
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 3
-        mov	r9, QWORD PTR [rdx+24]
-        add	r9, 448
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 4
-        mov	r9, QWORD PTR [rdx+32]
-        add	r9, 448
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 5
-        mov	r9, QWORD PTR [rdx+40]
-        add	r9, 448
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 6
-        mov	r9, QWORD PTR [rdx+48]
-        add	r9, 448
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 7
-        mov	r9, QWORD PTR [rdx+56]
-        add	r9, 448
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 8
-        mov	r9, QWORD PTR [rdx+64]
-        add	r9, 448
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 9
-        mov	r9, QWORD PTR [rdx+72]
-        add	r9, 448
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 10
-        mov	r9, QWORD PTR [rdx+80]
-        add	r9, 448
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 11
-        mov	r9, QWORD PTR [rdx+88]
-        add	r9, 448
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 12
-        mov	r9, QWORD PTR [rdx+96]
-        add	r9, 448
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 13
-        mov	r9, QWORD PTR [rdx+104]
-        add	r9, 448
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 14
-        mov	r9, QWORD PTR [rdx+112]
-        add	r9, 448
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        ; ENTRY: 15
-        mov	r9, QWORD PTR [rdx+120]
-        add	r9, 448
-        movdqu	xmm12, xmm13
-        pcmpeqd	xmm12, xmm10
-        movdqu	xmm0, OWORD PTR [r9]
-        movdqu	xmm1, OWORD PTR [r9+16]
-        movdqu	xmm2, OWORD PTR [r9+32]
-        movdqu	xmm3, OWORD PTR [r9+48]
-        pand	xmm0, xmm12
-        pand	xmm1, xmm12
-        pand	xmm2, xmm12
-        pand	xmm3, xmm12
-        por	xmm4, xmm0
-        por	xmm5, xmm1
-        por	xmm6, xmm2
-        por	xmm7, xmm3
-        paddd	xmm13, xmm11
-        movdqu	OWORD PTR [rcx], xmm4
-        movdqu	OWORD PTR [rcx+16], xmm5
-        movdqu	OWORD PTR [rcx+32], xmm6
-        movdqu	OWORD PTR [rcx+48], xmm7
-        ; END: 56-63
-        movdqu	xmm6, OWORD PTR [rsp]
-        movdqu	xmm7, OWORD PTR [rsp+16]
-        movdqu	xmm8, OWORD PTR [rsp+32]
-        movdqu	xmm9, OWORD PTR [rsp+48]
-        movdqu	xmm10, OWORD PTR [rsp+64]
-        movdqu	xmm11, OWORD PTR [rsp+80]
-        movdqu	xmm12, OWORD PTR [rsp+96]
-        movdqu	xmm13, OWORD PTR [rsp+112]
-        add	rsp, 128
-        ret
-sp_4096_get_from_table_64 ENDP
-_text ENDS
-ENDIF
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Reduce the number back to 4096 bits using Montgomery reduction.
 ;  *
@@ -51641,7 +39856,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_mont_reduce_avx2_64 PROC
         push	r12
         push	r13
@@ -52391,10 +40606,10 @@ L_4096_mont_reduce_avx2_64_loop:
         pop	r12
         ret
 sp_4096_mont_reduce_avx2_64 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFNDEF WC_NO_CACHE_RESISTANT
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_get_from_table_avx2_64 PROC
         sub	rsp, 128
         vmovdqu	OWORD PTR [rsp], xmm6
@@ -53541,7 +41756,7 @@ sp_4096_get_from_table_avx2_64 PROC
         add	rsp, 128
         ret
 sp_4096_get_from_table_avx2_64 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Conditionally add a and b using the mask m.
 ;  * m is -1 to add and 0 when not.
@@ -53551,7 +41766,7 @@ ENDIF
 ;  * b  A single precision number to add.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_cond_add_32 PROC
         sub	rsp, 256
         mov	rax, 0
@@ -53783,7 +41998,7 @@ sp_4096_cond_add_32 PROC
         add	rsp, 256
         ret
 sp_4096_cond_add_32 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Conditionally add a and b using the mask m.
 ;  * m is -1 to add and 0 when not.
@@ -53793,7 +42008,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * b  A single precision number to add.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_cond_add_avx2_32 PROC
         push	r12
         mov	rax, 0
@@ -53961,7 +42176,7 @@ sp_4096_cond_add_avx2_32 PROC
         pop	r12
         ret
 sp_4096_cond_add_avx2_32 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Shift number left by n bit. (r = a << n)
 ;  *
@@ -53969,7 +42184,7 @@ ENDIF
 ;  * a  Number to shift.
 ;  * n  Amoutnt o shift.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_4096_lshift_64 PROC
         push	r12
         push	r13
@@ -54174,7 +42389,7 @@ sp_4096_lshift_64 PROC
         pop	r12
         ret
 sp_4096_lshift_64 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ENDIF
 IFNDEF WOLFSSL_SP_NO_256
@@ -54184,7 +42399,7 @@ IFNDEF WOLFSSL_SP_NO_256
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mul_4 PROC
         push	r12
         mov	r9, rdx
@@ -54308,7 +42523,7 @@ sp_256_mul_4 PROC
         pop	r12
         ret
 sp_256_mul_4 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Multiply a and b into r. (r = a * b)
 ;  *
@@ -54316,7 +42531,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a   First number to multiply.
 ;  * b   Second number to multiply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mul_avx2_4 PROC
         push	rbp
         push	r12
@@ -54418,14 +42633,14 @@ sp_256_mul_avx2_4 PROC
         pop	rbp
         ret
 sp_256_mul_avx2_4 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Square a and put result in r. (r = a * a)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_sqr_4 PROC
         push	r12
         push	r13
@@ -54535,14 +42750,14 @@ sp_256_sqr_4 PROC
         pop	r12
         ret
 sp_256_sqr_4 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Square a and put result in r. (r = a * a)
 ;  *
 ;  * r   Result of squaring.
 ;  * a   Number to square in Montgomery form.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_sqr_avx2_4 PROC
         push	r12
         push	r13
@@ -54626,7 +42841,7 @@ sp_256_sqr_avx2_4 PROC
         pop	r12
         ret
 sp_256_sqr_avx2_4 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Add b to a into r. (r = a + b)
 ;  *
@@ -54634,7 +42849,7 @@ ENDIF
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_add_4 PROC
         push	r12
         xor	rax, rax
@@ -54654,14 +42869,14 @@ sp_256_add_4 PROC
         pop	r12
         ret
 sp_256_add_4 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Sub b from a into r. (r = a - b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_sub_4 PROC
         push	r12
         xor	rax, rax
@@ -54681,7 +42896,7 @@ sp_256_sub_4 PROC
         pop	r12
         ret
 sp_256_sub_4 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Conditionally copy a into r using the mask m.
 ;  * m is -1 to copy and 0 when not.
 ;  *
@@ -54689,7 +42904,7 @@ _text ENDS
 ;  * a  A single precision number to copy.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_cond_copy_4 PROC
         mov	rax, QWORD PTR [rcx]
         mov	r9, QWORD PTR [rcx+8]
@@ -54709,7 +42924,7 @@ sp_256_cond_copy_4 PROC
         xor	QWORD PTR [rcx+24], r11
         ret
 sp_256_cond_copy_4 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Multiply two Montgomery form numbers mod the modulus (prime).
 ;  * (r = a * b mod m)
 ;  *
@@ -54719,7 +42934,7 @@ _text ENDS
 ;  * m   Modulus (prime).
 ;  * mp  Montgomery multiplier.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mont_mul_4 PROC
         push	r12
         push	r13
@@ -54907,7 +43122,7 @@ sp_256_mont_mul_4 PROC
         pop	r12
         ret
 sp_256_mont_mul_4 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Square the Montgomery form number mod the modulus (prime). (r = a * a mod m)
 ;  *
 ;  * r   Result of squaring.
@@ -54915,7 +43130,7 @@ _text ENDS
 ;  * m   Modulus (prime).
 ;  * mp  Montgomery multiplier.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mont_sqr_4 PROC
         push	r12
         push	r13
@@ -55082,7 +43297,7 @@ sp_256_mont_sqr_4 PROC
         pop	r12
         ret
 sp_256_mont_sqr_4 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Compare a with b in constant time.
 ;  *
 ;  * a  A single precision integer.
@@ -55090,7 +43305,7 @@ _text ENDS
 ;  * return -ve, 0 or +ve if a is less than, equal to or greater than b
 ;  * respectively.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_cmp_4 PROC
         push	r12
         xor	r9, r9
@@ -55133,7 +43348,7 @@ sp_256_cmp_4 PROC
         pop	r12
         ret
 sp_256_cmp_4 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Conditionally subtract b from a using the mask m.
 ;  * m is -1 to subtract and 0 when not copying.
 ;  *
@@ -55142,7 +43357,7 @@ _text ENDS
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_cond_sub_4 PROC
         push	r12
         push	r13
@@ -55179,14 +43394,14 @@ sp_256_cond_sub_4 PROC
         pop	r12
         ret
 sp_256_cond_sub_4 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Reduce the number back to 256 bits using Montgomery reduction.
 ;  *
 ;  * a   A single precision number to reduce in place.
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mont_reduce_4 PROC
         push	rbx
         push	rsi
@@ -55284,14 +43499,14 @@ sp_256_mont_reduce_4 PROC
         pop	rbx
         ret
 sp_256_mont_reduce_4 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Reduce the number back to 256 bits using Montgomery reduction.
 ;  *
 ;  * a   A single precision number to reduce in place.
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mont_reduce_order_4 PROC
         push	r12
         push	r13
@@ -55385,7 +43600,7 @@ L_mont_loop_4:
         pop	r12
         ret
 sp_256_mont_reduce_order_4 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Add two Montgomery form numbers (r = a + b % m).
 ;  *
 ;  * r   Result of addition.
@@ -55393,7 +43608,7 @@ _text ENDS
 ;  * b   Second number to add in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mont_add_4 PROC
         push	r12
         push	r13
@@ -55428,14 +43643,14 @@ sp_256_mont_add_4 PROC
         pop	r12
         ret
 sp_256_mont_add_4 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Double a Montgomery form number (r = a + a % m).
 ;  *
 ;  * r   Result of doubling.
 ;  * a   Number to double in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mont_dbl_4 PROC
         push	r12
         push	r13
@@ -55471,14 +43686,14 @@ sp_256_mont_dbl_4 PROC
         pop	r12
         ret
 sp_256_mont_dbl_4 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Triple a Montgomery form number (r = a + a + a % m).
 ;  *
 ;  * r   Result of Tripling.
 ;  * a   Number to triple in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mont_tpl_4 PROC
         push	r12
         push	r13
@@ -55532,7 +43747,7 @@ sp_256_mont_tpl_4 PROC
         pop	r12
         ret
 sp_256_mont_tpl_4 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Subtract two Montgomery form numbers (r = a - b % m).
 ;  *
 ;  * r   Result of subtration.
@@ -55540,7 +43755,7 @@ _text ENDS
 ;  * b   Number to subtract with in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mont_sub_4 PROC
         push	r12
         push	r13
@@ -55575,14 +43790,14 @@ sp_256_mont_sub_4 PROC
         pop	r12
         ret
 sp_256_mont_sub_4 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Divide the number by 2 mod the modulus (prime). (r = a / 2 % m)
 ;  *
 ;  * r  Result of division by 2.
 ;  * a  Number to divide.
 ;  * m  Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mont_div2_4 PROC
         push	r12
         push	r13
@@ -55614,7 +43829,7 @@ sp_256_mont_div2_4 PROC
         pop	r12
         ret
 sp_256_mont_div2_4 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Two Montgomery numbers, subtract double second from first (r = a - 2.b % m).
 ;  *
 ;  * r   Result of subtration.
@@ -55622,7 +43837,7 @@ _text ENDS
 ;  * b   Number to double and subtract with in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mont_rsb_sub_dbl_4 PROC
         push	r12
         push	r13
@@ -55715,7 +43930,7 @@ sp_256_mont_rsb_sub_dbl_4 PROC
         pop	r12
         ret
 sp_256_mont_rsb_sub_dbl_4 ENDP
-_text ENDS
+_TEXT ENDS
 IFNDEF WC_NO_CACHE_RESISTANT
 ; /* Touch each possible point that could be being copied.
 ;  *
@@ -55723,7 +43938,7 @@ IFNDEF WC_NO_CACHE_RESISTANT
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of point to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_get_point_33_4 PROC
         sub	rsp, 160
         movdqu	OWORD PTR [rsp], xmm6
@@ -55795,7 +44010,7 @@ L_256_get_point_33_4_start_1:
         add	rsp, 160
         ret
 sp_256_get_point_33_4 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Touch each possible point that could be being copied.
 ;  *
@@ -55803,7 +44018,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of point to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_get_point_33_avx2_4 PROC
         sub	rsp, 64
         vmovdqu	OWORD PTR [rsp], xmm6
@@ -55847,7 +44062,7 @@ L_256_get_point_33_avx2_4_start:
         add	rsp, 64
         ret
 sp_256_get_point_33_avx2_4 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ENDIF
 IFDEF HAVE_INTEL_AVX2
@@ -55860,7 +44075,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * m   Modulus (prime).
 ;  * mp  Montgomery multiplier.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mont_mul_avx2_4 PROC
         push	rbp
         push	r12
@@ -56025,7 +44240,7 @@ sp_256_mont_mul_avx2_4 PROC
         pop	rbp
         ret
 sp_256_mont_mul_avx2_4 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Square the Montgomery form number mod the modulus (prime). (r = a * a mod m)
@@ -56035,7 +44250,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * m   Modulus (prime).
 ;  * mp  Montgomery multiplier.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mont_sqr_avx2_4 PROC
         push	r12
         push	r13
@@ -56182,7 +44397,7 @@ sp_256_mont_sqr_avx2_4 PROC
         pop	r12
         ret
 sp_256_mont_sqr_avx2_4 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Conditionally subtract b from a using the mask m.
@@ -56193,7 +44408,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_cond_sub_avx2_4 PROC
         push	r12
         push	r13
@@ -56230,7 +44445,7 @@ sp_256_cond_sub_avx2_4 PROC
         pop	r12
         ret
 sp_256_cond_sub_avx2_4 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Reduce the number back to 256 bits using Montgomery reduction.
@@ -56239,7 +44454,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mont_reduce_order_avx2_4 PROC
         push	r12
         push	r13
@@ -56389,7 +44604,7 @@ sp_256_mont_reduce_order_avx2_4 PROC
         pop	r12
         ret
 sp_256_mont_reduce_order_avx2_4 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Divide the number by 2 mod the modulus (prime). (r = a / 2 % m)
@@ -56398,7 +44613,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  Number to divide.
 ;  * m  Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mont_div2_avx2_4 PROC
         push	r12
         push	r13
@@ -56430,7 +44645,7 @@ sp_256_mont_div2_avx2_4 PROC
         pop	r12
         ret
 sp_256_mont_div2_avx2_4 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFNDEF WC_NO_CACHE_RESISTANT
 ; /* Touch each possible entry that could be being copied.
@@ -56439,7 +44654,7 @@ IFNDEF WC_NO_CACHE_RESISTANT
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of entry to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_get_entry_64_4 PROC
         sub	rsp, 96
         movdqu	OWORD PTR [rsp], xmm6
@@ -56494,7 +44709,7 @@ L_256_get_entry_64_4_start_0:
         add	rsp, 96
         ret
 sp_256_get_entry_64_4 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Touch each possible entry that could be being copied.
 ;  *
@@ -56502,7 +44717,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of entry to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_get_entry_64_avx2_4 PROC
         sub	rsp, 32
         vmovdqu	OWORD PTR [rsp], xmm6
@@ -56537,7 +44752,7 @@ L_256_get_entry_64_avx2_4_start:
         add	rsp, 32
         ret
 sp_256_get_entry_64_avx2_4 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ENDIF
 IFNDEF WC_NO_CACHE_RESISTANT
@@ -56547,7 +44762,7 @@ IFNDEF WC_NO_CACHE_RESISTANT
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of entry to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_get_entry_65_4 PROC
         sub	rsp, 96
         movdqu	OWORD PTR [rsp], xmm6
@@ -56602,7 +44817,7 @@ L_256_get_entry_65_4_start_0:
         add	rsp, 96
         ret
 sp_256_get_entry_65_4 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Touch each possible entry that could be being copied.
 ;  *
@@ -56610,7 +44825,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of entry to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_get_entry_65_avx2_4 PROC
         sub	rsp, 32
         vmovdqu	OWORD PTR [rsp], xmm6
@@ -56645,14 +44860,14 @@ L_256_get_entry_65_avx2_4_start:
         add	rsp, 32
         ret
 sp_256_get_entry_65_avx2_4 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ENDIF
 ; /* Add 1 to a. (a = a + 1)
 ;  *
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_add_one_4 PROC
         add	QWORD PTR [rcx], 1
         adc	QWORD PTR [rcx+8], 0
@@ -56660,7 +44875,7 @@ sp_256_add_one_4 PROC
         adc	QWORD PTR [rcx+24], 0
         ret
 sp_256_add_one_4 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Read big endian unsigned byte array into r.
 ;  * Uses the bswap instruction.
 ;  *
@@ -56669,7 +44884,7 @@ _text ENDS
 ;  * a  Byte array.
 ;  * n  Number of bytes in array to read.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_from_bin_bswap PROC
         push	r12
         push	r13
@@ -56747,7 +44962,7 @@ L_256_from_bin_bswap_zero_end:
         pop	r12
         ret
 sp_256_from_bin_bswap ENDP
-_text ENDS
+_TEXT ENDS
 IFNDEF NO_MOVBE_SUPPORT
 ; /* Read big endian unsigned byte array into r.
 ;  * Uses the movbe instruction which is an optional instruction.
@@ -56757,7 +44972,7 @@ IFNDEF NO_MOVBE_SUPPORT
 ;  * a  Byte array.
 ;  * n  Number of bytes in array to read.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_from_bin_movbe PROC
         push	r12
         mov	r11, r8
@@ -56823,7 +45038,7 @@ L_256_from_bin_movbe_zero_end:
         pop	r12
         ret
 sp_256_from_bin_movbe ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Write r as big endian to byte array.
 ;  * Fixed length number of bytes written: 32
@@ -56832,7 +45047,7 @@ ENDIF
 ;  * r  A single precision integer.
 ;  * a  Byte array.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_to_bin_bswap_4 PROC
         mov	rax, QWORD PTR [rcx+24]
         mov	r8, QWORD PTR [rcx+16]
@@ -56848,7 +45063,7 @@ sp_256_to_bin_bswap_4 PROC
         mov	QWORD PTR [rdx+24], r8
         ret
 sp_256_to_bin_bswap_4 ENDP
-_text ENDS
+_TEXT ENDS
 IFNDEF NO_MOVBE_SUPPORT
 ; /* Write r as big endian to byte array.
 ;  * Fixed length number of bytes written: 32
@@ -56857,7 +45072,7 @@ IFNDEF NO_MOVBE_SUPPORT
 ;  * r  A single precision integer.
 ;  * a  Byte array.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_to_bin_movbe_4 PROC
         movbe	rax, QWORD PTR [rcx+24]
         movbe	r8, QWORD PTR [rcx+16]
@@ -56869,14 +45084,14 @@ sp_256_to_bin_movbe_4 PROC
         mov	QWORD PTR [rdx+24], r8
         ret
 sp_256_to_bin_movbe_4 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Sub b from a into a. (a -= b)
 ;  *
 ;  * a  A single precision integer and result.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_sub_in_place_4 PROC
         mov	r8, QWORD PTR [rdx]
         mov	r9, QWORD PTR [rdx+8]
@@ -56889,14 +45104,14 @@ sp_256_sub_in_place_4 PROC
         sbb	rax, rax
         ret
 sp_256_sub_in_place_4 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mul_d_4 PROC
         push	r12
         mov	r9, rdx
@@ -56933,7 +45148,7 @@ sp_256_mul_d_4 PROC
         pop	r12
         ret
 sp_256_mul_d_4 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
@@ -56941,7 +45156,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mul_d_avx2_4 PROC
         push	r12
         push	r13
@@ -56975,7 +45190,7 @@ sp_256_mul_d_avx2_4 PROC
         pop	r12
         ret
 sp_256_mul_d_avx2_4 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF _WIN64
 ; /* Divide the double width number (d1|d0) by the dividend. (d1|d0 / div)
@@ -56985,7 +45200,7 @@ IFDEF _WIN64
 ;  * div  The dividend.
 ;  * returns the result of the division.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 div_256_word_asm_4 PROC
         mov	r9, rdx
         mov	rax, r9
@@ -56993,7 +45208,7 @@ div_256_word_asm_4 PROC
         div	r8
         ret
 div_256_word_asm_4 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Multiply two Montgomery form numbers mod the modulus (prime).
@@ -57003,7 +45218,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a   First number to multiply in Montgomery form.
 ;  * b   Second number to multiply in Montgomery form.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mont_mul_order_avx2_4 PROC
         push	rbp
         push	r12
@@ -57214,7 +45429,7 @@ sp_256_mont_mul_order_avx2_4 PROC
         pop	rbp
         ret
 sp_256_mont_mul_order_avx2_4 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Square the Montgomery form number mod the modulus (prime). (r = a * a mod m)
@@ -57222,7 +45437,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * r   Result of squaring.
 ;  * a   Number to square in Montgomery form.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mont_sqr_order_avx2_4 PROC
         push	rbp
         push	r12
@@ -57417,7 +45632,7 @@ sp_256_mont_sqr_order_avx2_4 PROC
         pop	rbp
         ret
 sp_256_mont_sqr_order_avx2_4 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Non-constant time modular inversion.
 ;  *
@@ -57426,7 +45641,7 @@ ENDIF
 ;  * @param  [in]   m   Modulus.
 ;  * @return  MP_OKAY on success.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mod_inv_4 PROC
         push	r12
         push	r13
@@ -57638,47 +45853,64 @@ L_256_mod_inv_4_store_end:
         pop	r12
         ret
 sp_256_mod_inv_4 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 _DATA SEGMENT
 ALIGN 16
-L_sp256_mod_inv_avx2_4_order DWORD 6497617,32001851,62711546,67108863,67043328,0,0,0,41070783,45522014,67108863,1023,4194303,0,0,0
+L_sp256_mod_inv_avx2_4_order DWORD \
+     00632551h,  01e84f3bh,  03bce6fah,  03ffffffh,
+     03ff0000h,  00000000h,  00000000h,  00000000h,
+     0272b0bfh,  02b69c5eh,  03ffffffh,  000003ffh,
+     003fffffh,  00000000h,  00000000h,  00000000h
 ptr_L_sp256_mod_inv_avx2_4_order QWORD L_sp256_mod_inv_avx2_4_order
 _DATA ENDS
 _DATA SEGMENT
 ALIGN 16
-L_sp256_mod_inv_avx2_4_one QWORD 1, 0,
-    0, 0
+L_sp256_mod_inv_avx2_4_one QWORD \
+     0000000000000001h,  0000000000000000h,
+     0000000000000000h,  0000000000000000h
 ptr_L_sp256_mod_inv_avx2_4_one QWORD L_sp256_mod_inv_avx2_4_one
 _DATA ENDS
 _DATA SEGMENT
 ALIGN 16
-L_sp256_mod_inv_avx2_4_all_one DWORD 1,1,1,1,1,1,1,1
+L_sp256_mod_inv_avx2_4_all_one DWORD \
+     00000001h,  00000001h,  00000001h,  00000001h,
+     00000001h,  00000001h,  00000001h,  00000001h
 ptr_L_sp256_mod_inv_avx2_4_all_one QWORD L_sp256_mod_inv_avx2_4_all_one
 _DATA ENDS
 _DATA SEGMENT
 ALIGN 16
-L_sp256_mod_inv_avx2_4_mask01111 DWORD 0,1,1,1,1,0,0,0
+L_sp256_mod_inv_avx2_4_mask01111 DWORD \
+     00000000h,  00000001h,  00000001h,  00000001h,
+     00000001h,  00000000h,  00000000h,  00000000h
 ptr_L_sp256_mod_inv_avx2_4_mask01111 QWORD L_sp256_mod_inv_avx2_4_mask01111
 _DATA ENDS
 _DATA SEGMENT
 ALIGN 16
-L_sp256_mod_inv_avx2_4_down_one_dword DWORD 1,2,3,4,5,6,7,7
+L_sp256_mod_inv_avx2_4_down_one_dword DWORD \
+     00000001h,  00000002h,  00000003h,  00000004h,
+     00000005h,  00000006h,  00000007h,  00000007h
 ptr_L_sp256_mod_inv_avx2_4_down_one_dword QWORD L_sp256_mod_inv_avx2_4_down_one_dword
 _DATA ENDS
 _DATA SEGMENT
 ALIGN 16
-L_sp256_mod_inv_avx2_4_neg DWORD 0,0,0,0,2147483648,0,0,0
+L_sp256_mod_inv_avx2_4_neg DWORD \
+     00000000h,  00000000h,  00000000h,  00000000h,
+     80000000h,  00000000h,  00000000h,  00000000h
 ptr_L_sp256_mod_inv_avx2_4_neg QWORD L_sp256_mod_inv_avx2_4_neg
 _DATA ENDS
 _DATA SEGMENT
 ALIGN 16
-L_sp256_mod_inv_avx2_4_up_one_dword DWORD 7,0,1,2,3,7,7,7
+L_sp256_mod_inv_avx2_4_up_one_dword DWORD \
+     00000007h,  00000000h,  00000001h,  00000002h,
+     00000003h,  00000007h,  00000007h,  00000007h
 ptr_L_sp256_mod_inv_avx2_4_up_one_dword QWORD L_sp256_mod_inv_avx2_4_up_one_dword
 _DATA ENDS
 _DATA SEGMENT
 ALIGN 16
-L_sp256_mod_inv_avx2_4_mask26 DWORD 67108863,67108863,67108863,67108863,67108863,0,0,0
+L_sp256_mod_inv_avx2_4_mask26 DWORD \
+     03ffffffh,  03ffffffh,  03ffffffh,  03ffffffh,
+     03ffffffh,  00000000h,  00000000h,  00000000h
 ptr_L_sp256_mod_inv_avx2_4_mask26 QWORD L_sp256_mod_inv_avx2_4_mask26
 _DATA ENDS
 ; /* Non-constant time modular inversion.
@@ -57688,7 +45920,7 @@ _DATA ENDS
 ;  * @param  [in]   m   Modulus.
 ;  * @return  MP_OKAY on success.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_256_mod_inv_avx2_4 PROC
         push	r12
         push	r13
@@ -57820,8 +46052,8 @@ L_256_mod_inv_avx2_4_usubv_sub_shr1:
         vpextrd	r11d, xmm1, 1
         vpextrd	r13d, xmm1, 2
         vpextrd	r15d, xmm1, 3
-        vextracti128 	xmm0, ymm0, 1
-        vextracti128 	xmm1, ymm1, 1
+        vextracti128	xmm0, ymm0, 1
+        vextracti128	xmm1, ymm1, 1
         vpextrd	edi, xmm0, 0
         vpextrd	esi, xmm1, 0
         jmp	L_256_mod_inv_avx2_4_store_done
@@ -57873,8 +46105,8 @@ L_256_mod_inv_avx2_4_vsubu_sub_shr1:
         vpextrd	r11d, xmm3, 1
         vpextrd	r13d, xmm3, 2
         vpextrd	r15d, xmm3, 3
-        vextracti128 	xmm2, ymm2, 1
-        vextracti128 	xmm3, ymm3, 1
+        vextracti128	xmm2, ymm2, 1
+        vextracti128	xmm3, ymm3, 1
         vpextrd	edi, xmm2, 0
         vpextrd	esi, xmm3, 0
 L_256_mod_inv_avx2_4_store_done:
@@ -57934,7 +46166,7 @@ L_256_mod_inv_avx2_4_store_done:
         adc	r14, r15
         movsxd	rdi, edi
         adc	rdi, rsi
-        jge	L_256_mod_inv_avx2_4_3_no_add_order
+        jge	L_256_mod_inv_avx2_4_no_add_order
         mov	r9, 2756213597218129
         mov	r11, 3054930678533947
         mov	r13, 4503599622973178
@@ -57962,7 +46194,7 @@ L_256_mod_inv_avx2_4_store_done:
         and	r14, rdx
         sar	r15, 52
         add	rdi, r15
-L_256_mod_inv_avx2_4_3_no_add_order:
+L_256_mod_inv_avx2_4_no_add_order:
         mov	r9, r10
         mov	r11, r12
         mov	r13, r14
@@ -58000,7 +46232,7 @@ L_256_mod_inv_avx2_4_3_no_add_order:
         pop	r12
         ret
 sp_256_mod_inv_avx2_4 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ENDIF
 IFDEF WOLFSSL_SP_384
@@ -58010,7 +46242,7 @@ IFDEF WOLFSSL_SP_384
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_mul_6 PROC
         push	r12
         mov	r9, rdx
@@ -58266,7 +46498,7 @@ sp_384_mul_6 PROC
         pop	r12
         ret
 sp_384_mul_6 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Multiply a and b into r. (r = a * b)
 ;  *
@@ -58274,7 +46506,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a   First number to multiply.
 ;  * b   Second number to multiply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_mul_avx2_6 PROC
         push	r12
         push	r13
@@ -58482,14 +46714,14 @@ sp_384_mul_avx2_6 PROC
         pop	r12
         ret
 sp_384_mul_avx2_6 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Square a and put result in r. (r = a * a)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_sqr_6 PROC
         push	r12
         push	r13
@@ -58701,14 +46933,14 @@ sp_384_sqr_6 PROC
         pop	r12
         ret
 sp_384_sqr_6 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Square a and put result in r. (r = a * a)
 ;  *
 ;  * r   Result of squaring.
 ;  * a   Number to square in Montgomery form.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_sqr_avx2_6 PROC
         push	r12
         push	r13
@@ -58858,7 +47090,7 @@ sp_384_sqr_avx2_6 PROC
         pop	r12
         ret
 sp_384_sqr_avx2_6 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Add b to a into r. (r = a + b)
 ;  *
@@ -58866,7 +47098,7 @@ ENDIF
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_add_6 PROC
         push	r12
         push	r13
@@ -58896,14 +47128,14 @@ sp_384_add_6 PROC
         pop	r12
         ret
 sp_384_add_6 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Sub b from a into r. (r = a - b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_sub_6 PROC
         push	r12
         push	r13
@@ -58933,7 +47165,7 @@ sp_384_sub_6 PROC
         pop	r12
         ret
 sp_384_sub_6 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Conditionally copy a into r using the mask m.
 ;  * m is -1 to copy and 0 when not.
 ;  *
@@ -58941,7 +47173,7 @@ _text ENDS
 ;  * a  A single precision number to copy.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_cond_copy_6 PROC
         push	r12
         push	r13
@@ -58973,7 +47205,7 @@ sp_384_cond_copy_6 PROC
         pop	r12
         ret
 sp_384_cond_copy_6 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Conditionally subtract b from a using the mask m.
 ;  * m is -1 to subtract and 0 when not copying.
 ;  *
@@ -58982,7 +47214,7 @@ _text ENDS
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_cond_sub_6 PROC
         sub	rsp, 48
         mov	r10, QWORD PTR [r8]
@@ -59031,14 +47263,14 @@ sp_384_cond_sub_6 PROC
         add	rsp, 48
         ret
 sp_384_cond_sub_6 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Reduce the number back to 384 bits using Montgomery reduction.
 ;  *
 ;  * a   A single precision number to reduce in place.
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_mont_reduce_6 PROC
         push	r12
         push	r13
@@ -59203,14 +47435,14 @@ sp_384_mont_reduce_6 PROC
         pop	r12
         ret
 sp_384_mont_reduce_6 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Reduce the number back to 384 bits using Montgomery reduction.
 ;  *
 ;  * a   A single precision number to reduce in place.
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_mont_reduce_order_6 PROC
         push	r12
         push	r13
@@ -59310,7 +47542,7 @@ ENDIF
         pop	r12
         ret
 sp_384_mont_reduce_order_6 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Compare a with b in constant time.
 ;  *
 ;  * a  A single precision integer.
@@ -59318,7 +47550,7 @@ _text ENDS
 ;  * return -ve, 0 or +ve if a is less than, equal to or greater than b
 ;  * respectively.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_cmp_6 PROC
         push	r12
         xor	r9, r9
@@ -59377,7 +47609,7 @@ sp_384_cmp_6 PROC
         pop	r12
         ret
 sp_384_cmp_6 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Add two Montgomery form numbers (r = a + b % m).
 ;  *
 ;  * r   Result of addition.
@@ -59385,7 +47617,7 @@ _text ENDS
 ;  * b   Second number to add in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_mont_add_6 PROC
         push	r12
         push	r13
@@ -59439,14 +47671,14 @@ sp_384_mont_add_6 PROC
         pop	r12
         ret
 sp_384_mont_add_6 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Double a Montgomery form number (r = a + a % m).
 ;  *
 ;  * r   Result of doubling.
 ;  * a   Number to double in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_mont_dbl_6 PROC
         push	r12
         push	r13
@@ -59501,14 +47733,14 @@ sp_384_mont_dbl_6 PROC
         pop	r12
         ret
 sp_384_mont_dbl_6 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Double a Montgomery form number (r = a + a % m).
 ;  *
 ;  * r   Result of doubling.
 ;  * a   Number to double in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_mont_tpl_6 PROC
         push	r12
         push	r13
@@ -59591,7 +47823,7 @@ sp_384_mont_tpl_6 PROC
         pop	r12
         ret
 sp_384_mont_tpl_6 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Subtract two Montgomery form numbers (r = a - b % m).
 ;  *
 ;  * r   Result of subtration.
@@ -59599,7 +47831,7 @@ _text ENDS
 ;  * b   Number to subtract with in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_mont_sub_6 PROC
         push	r12
         push	r13
@@ -59653,14 +47885,14 @@ sp_384_mont_sub_6 PROC
         pop	r12
         ret
 sp_384_mont_sub_6 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Divide the number by 2 mod the modulus (prime). (r = a / 2 % m)
 ;  *
 ;  * r  Result of division by 2.
 ;  * a  Number to divide.
 ;  * m  Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_mont_div2_6 PROC
         push	r12
         push	r13
@@ -59723,7 +47955,7 @@ sp_384_mont_div2_6 PROC
         pop	r12
         ret
 sp_384_mont_div2_6 ENDP
-_text ENDS
+_TEXT ENDS
 IFNDEF WC_NO_CACHE_RESISTANT
 ; /* Touch each possible point that could be being copied.
 ;  *
@@ -59731,7 +47963,7 @@ IFNDEF WC_NO_CACHE_RESISTANT
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of point to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_get_point_33_6 PROC
         sub	rsp, 160
         movdqu	OWORD PTR [rsp], xmm6
@@ -59834,7 +48066,7 @@ L_384_get_point_33_6_start_2:
         add	rsp, 160
         ret
 sp_384_get_point_33_6 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Touch each possible point that could be being copied.
 ;  *
@@ -59842,7 +48074,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of point to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_get_point_33_avx2_6 PROC
         sub	rsp, 160
         vmovdqu	OWORD PTR [rsp], xmm6
@@ -59913,7 +48145,7 @@ L_384_get_point_33_avx2_6_start:
         add	rsp, 160
         ret
 sp_384_get_point_33_avx2_6 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ENDIF
 IFDEF HAVE_INTEL_AVX2
@@ -59923,7 +48155,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_mont_reduce_order_avx2_6 PROC
         push	r12
         push	r13
@@ -60237,7 +48469,7 @@ L_mont_loop_order_avx2_6:
         pop	r12
         ret
 sp_384_mont_reduce_order_avx2_6 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Conditionally subtract b from a using the mask m.
@@ -60248,7 +48480,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_cond_sub_avx2_6 PROC
         push	r12
         mov	r12, QWORD PTR [r8]
@@ -60285,7 +48517,7 @@ sp_384_cond_sub_avx2_6 PROC
         pop	r12
         ret
 sp_384_cond_sub_avx2_6 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Divide the number by 2 mod the modulus (prime). (r = a / 2 % m)
@@ -60294,7 +48526,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  Number to divide.
 ;  * m  Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_mont_div2_avx2_6 PROC
         push	r12
         push	r13
@@ -60356,7 +48588,7 @@ sp_384_mont_div2_avx2_6 PROC
         pop	r12
         ret
 sp_384_mont_div2_avx2_6 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFNDEF WC_NO_CACHE_RESISTANT
 ; /* Touch each possible entry that could be being copied.
@@ -60365,7 +48597,7 @@ IFNDEF WC_NO_CACHE_RESISTANT
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of entry to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_get_entry_64_6 PROC
         sub	rsp, 160
         movdqu	OWORD PTR [rsp], xmm6
@@ -60438,7 +48670,7 @@ L_384_get_entry_64_6_start_0:
         add	rsp, 160
         ret
 sp_384_get_entry_64_6 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Touch each possible entry that could be being copied.
 ;  *
@@ -60446,7 +48678,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of entry to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_get_entry_64_avx2_6 PROC
         sub	rsp, 96
         vmovdqu	OWORD PTR [rsp], xmm6
@@ -60499,7 +48731,7 @@ L_384_get_entry_64_avx2_6_start:
         add	rsp, 96
         ret
 sp_384_get_entry_64_avx2_6 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ENDIF
 IFNDEF WC_NO_CACHE_RESISTANT
@@ -60509,7 +48741,7 @@ IFNDEF WC_NO_CACHE_RESISTANT
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of entry to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_get_entry_65_6 PROC
         sub	rsp, 160
         movdqu	OWORD PTR [rsp], xmm6
@@ -60582,7 +48814,7 @@ L_384_get_entry_65_6_start_0:
         add	rsp, 160
         ret
 sp_384_get_entry_65_6 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Touch each possible entry that could be being copied.
 ;  *
@@ -60590,7 +48822,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of entry to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_get_entry_65_avx2_6 PROC
         sub	rsp, 96
         vmovdqu	OWORD PTR [rsp], xmm6
@@ -60643,14 +48875,14 @@ L_384_get_entry_65_avx2_6_start:
         add	rsp, 96
         ret
 sp_384_get_entry_65_avx2_6 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ENDIF
 ; /* Add 1 to a. (a = a + 1)
 ;  *
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_add_one_6 PROC
         add	QWORD PTR [rcx], 1
         adc	QWORD PTR [rcx+8], 0
@@ -60660,7 +48892,7 @@ sp_384_add_one_6 PROC
         adc	QWORD PTR [rcx+40], 0
         ret
 sp_384_add_one_6 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Read big endian unsigned byte array into r.
 ;  * Uses the bswap instruction.
 ;  *
@@ -60669,7 +48901,7 @@ _text ENDS
 ;  * a  Byte array.
 ;  * n  Number of bytes in array to read.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_from_bin_bswap PROC
         push	r12
         push	r13
@@ -60747,7 +48979,7 @@ L_384_from_bin_bswap_zero_end:
         pop	r12
         ret
 sp_384_from_bin_bswap ENDP
-_text ENDS
+_TEXT ENDS
 IFNDEF NO_MOVBE_SUPPORT
 ; /* Read big endian unsigned byte array into r.
 ;  * Uses the movbe instruction which is an optional instruction.
@@ -60757,7 +48989,7 @@ IFNDEF NO_MOVBE_SUPPORT
 ;  * a  Byte array.
 ;  * n  Number of bytes in array to read.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_from_bin_movbe PROC
         push	r12
         mov	r11, r8
@@ -60823,7 +49055,7 @@ L_384_from_bin_movbe_zero_end:
         pop	r12
         ret
 sp_384_from_bin_movbe ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Write r as big endian to byte array.
 ;  * Fixed length number of bytes written: 48
@@ -60832,7 +49064,7 @@ ENDIF
 ;  * r  A single precision integer.
 ;  * a  Byte array.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_to_bin_bswap_6 PROC
         mov	rax, QWORD PTR [rcx+40]
         mov	r8, QWORD PTR [rcx+32]
@@ -60854,7 +49086,7 @@ sp_384_to_bin_bswap_6 PROC
         mov	QWORD PTR [rdx+40], r8
         ret
 sp_384_to_bin_bswap_6 ENDP
-_text ENDS
+_TEXT ENDS
 IFNDEF NO_MOVBE_SUPPORT
 ; /* Write r as big endian to byte array.
 ;  * Fixed length number of bytes written: 48
@@ -60863,7 +49095,7 @@ IFNDEF NO_MOVBE_SUPPORT
 ;  * r  A single precision integer.
 ;  * a  Byte array.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_to_bin_movbe_6 PROC
         movbe	rax, QWORD PTR [rcx+40]
         movbe	r8, QWORD PTR [rcx+32]
@@ -60879,14 +49111,14 @@ sp_384_to_bin_movbe_6 PROC
         mov	QWORD PTR [rdx+40], r8
         ret
 sp_384_to_bin_movbe_6 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Sub b from a into a. (a -= b)
 ;  *
 ;  * a  A single precision integer and result.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_sub_in_place_6 PROC
         push	r12
         push	r13
@@ -60907,14 +49139,14 @@ sp_384_sub_in_place_6 PROC
         pop	r12
         ret
 sp_384_sub_in_place_6 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_mul_d_6 PROC
         push	r12
         mov	r9, rdx
@@ -60967,7 +49199,7 @@ sp_384_mul_d_6 PROC
         pop	r12
         ret
 sp_384_mul_d_6 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
@@ -60975,7 +49207,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_mul_d_avx2_6 PROC
         push	r12
         push	r13
@@ -61021,7 +49253,7 @@ sp_384_mul_d_avx2_6 PROC
         pop	r12
         ret
 sp_384_mul_d_avx2_6 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF _WIN64
 ; /* Divide the double width number (d1|d0) by the dividend. (d1|d0 / div)
@@ -61031,7 +49263,7 @@ IFDEF _WIN64
 ;  * div  The dividend.
 ;  * returns the result of the division.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 div_384_word_asm_6 PROC
         mov	r9, rdx
         mov	rax, r9
@@ -61039,14 +49271,14 @@ div_384_word_asm_6 PROC
         div	r8
         ret
 div_384_word_asm_6 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Shift number right by 1 bit. (r = a >> 1)
 ;  *
 ;  * r  Result of right shift by 1.
 ;  * a  Number to shift.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_rshift1_6 PROC
         push	r12
         mov	rax, QWORD PTR [rdx]
@@ -61070,14 +49302,14 @@ sp_384_rshift1_6 PROC
         pop	r12
         ret
 sp_384_rshift1_6 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Divide the number by 2 mod the prime. (r = a / 2 % m)
 ;  *
 ;  * r  Result of division by 2.
 ;  * a  Number to divide.
 ;  * m  Modulus
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_384_div2_mod_6 PROC
         push	r12
         push	r13
@@ -61133,8 +49365,8 @@ L_384_mod_inv_6_div2_mod_no_add:
         pop	r12
         ret
 sp_384_div2_mod_6 ENDP
-_text ENDS
-_text SEGMENT READONLY PARA
+_TEXT ENDS
+_TEXT SEGMENT READONLY PARA
 sp_384_num_bits_6 PROC
         xor	rax, rax
         mov	rdx, QWORD PTR [rcx+40]
@@ -61188,7 +49420,7 @@ L_384_num_bits_6_end_0:
 L_384_num_bits_6_done:
         ret
 sp_384_num_bits_6 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF WOLFSSL_SP_521
 ; /* Multiply a and b into r. (r = a * b)
@@ -61197,7 +49429,7 @@ IFDEF WOLFSSL_SP_521
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mul_9 PROC
         push	r12
         mov	r9, rdx
@@ -61741,7 +49973,7 @@ sp_521_mul_9 PROC
         pop	r12
         ret
 sp_521_mul_9 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Multiply a and b into r. (r = a * b)
 ;  *
@@ -61749,7 +49981,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a   First number to multiply.
 ;  * b   Second number to multiply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mul_avx2_9 PROC
         push	rbx
         push	rbp
@@ -62319,14 +50551,14 @@ L_end_521_mul_avx2_9:
         pop	rbx
         ret
 sp_521_mul_avx2_9 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Square a and put result in r. (r = a * a)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_sqr_9 PROC
         push	r12
         push	r13
@@ -62736,14 +50968,14 @@ sp_521_sqr_9 PROC
         pop	r12
         ret
 sp_521_sqr_9 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Square a and put result in r. (r = a * a)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_sqr_avx2_9 PROC
         push	rbp
         push	r12
@@ -63134,7 +51366,7 @@ L_end_521_sqr_avx2_9:
         pop	rbp
         ret
 sp_521_sqr_avx2_9 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Add b to a into r. (r = a + b)
 ;  *
@@ -63142,7 +51374,7 @@ ENDIF
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_add_9 PROC
         ; Add
         mov	r9, QWORD PTR [rdx]
@@ -63176,14 +51408,14 @@ sp_521_add_9 PROC
         adc	rax, 0
         ret
 sp_521_add_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Sub b from a into r. (r = a - b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_sub_9 PROC
         mov	r9, QWORD PTR [rdx]
         sub	r9, QWORD PTR [r8]
@@ -63215,7 +51447,7 @@ sp_521_sub_9 PROC
         sbb	rax, rax
         ret
 sp_521_sub_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Conditionally copy a into r using the mask m.
 ;  * m is -1 to copy and 0 when not.
 ;  *
@@ -63223,7 +51455,7 @@ _text ENDS
 ;  * a  A single precision number to copy.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_cond_copy_9 PROC
         push	r12
         mov	rax, QWORD PTR [rcx]
@@ -63265,7 +51497,7 @@ sp_521_cond_copy_9 PROC
         pop	r12
         ret
 sp_521_cond_copy_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Multiply two Montgomery form numbers mod the modulus (prime).
 ;  * (r = a * b mod m)
 ;  *
@@ -63275,7 +51507,7 @@ _text ENDS
 ;  * m   Modulus (prime).
 ;  * mp  Montgomery multiplier.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mont_mul_9 PROC
         push	r12
         push	r13
@@ -63857,7 +52089,7 @@ sp_521_mont_mul_9 PROC
         pop	r12
         ret
 sp_521_mont_mul_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Square the Montgomery form number mod the modulus (prime). (r = a * a mod m)
 ;  *
 ;  * r   Result of squaring.
@@ -63865,7 +52097,7 @@ _text ENDS
 ;  * m   Modulus (prime).
 ;  * mp  Montgomery multiplier.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mont_sqr_9 PROC
         push	r12
         push	r13
@@ -64309,7 +52541,7 @@ sp_521_mont_sqr_9 PROC
         pop	r12
         ret
 sp_521_mont_sqr_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Compare a with b in constant time.
 ;  *
 ;  * a  A single precision integer.
@@ -64317,7 +52549,7 @@ _text ENDS
 ;  * return -ve, 0 or +ve if a is less than, equal to or greater than b
 ;  * respectively.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_cmp_9 PROC
         push	r12
         xor	r9, r9
@@ -64400,7 +52632,7 @@ sp_521_cmp_9 PROC
         pop	r12
         ret
 sp_521_cmp_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Conditionally subtract b from a using the mask m.
 ;  * m is -1 to subtract and 0 when not copying.
 ;  *
@@ -64409,7 +52641,7 @@ _text ENDS
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_cond_sub_9 PROC
         sub	rsp, 72
         mov	r10, QWORD PTR [r8]
@@ -64479,14 +52711,14 @@ sp_521_cond_sub_9 PROC
         add	rsp, 72
         ret
 sp_521_cond_sub_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Reduce the number back to 521 bits using Montgomery reduction.
 ;  *
 ;  * a   A single precision number to reduce in place.
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mont_reduce_9 PROC
         push	r12
         push	r13
@@ -64548,14 +52780,14 @@ sp_521_mont_reduce_9 PROC
         pop	r12
         ret
 sp_521_mont_reduce_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Reduce the number back to 521 bits using Montgomery reduction.
 ;  *
 ;  * a   A single precision number to reduce in place.
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mont_reduce_order_9 PROC
         push	r12
         push	r13
@@ -64723,7 +52955,7 @@ ENDIF
         pop	r12
         ret
 sp_521_mont_reduce_order_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Add two Montgomery form numbers (r = a + b % m).
 ;  *
 ;  * r   Result of addition.
@@ -64731,7 +52963,7 @@ _text ENDS
 ;  * b   Second number to add in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mont_add_9 PROC
         push	r12
         push	r13
@@ -64786,14 +53018,14 @@ sp_521_mont_add_9 PROC
         pop	r12
         ret
 sp_521_mont_add_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Double a Montgomery form number (r = a + a % m).
 ;  *
 ;  * r   Result of addition.
 ;  * a   Number to double in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mont_dbl_9 PROC
         push	r12
         push	r13
@@ -64846,14 +53078,14 @@ sp_521_mont_dbl_9 PROC
         pop	r12
         ret
 sp_521_mont_dbl_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Triple a Montgomery form number (r = a + a + a % m).
 ;  *
 ;  * r   Result of Tripling.
 ;  * a   Number to triple in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mont_tpl_9 PROC
         push	r12
         push	r13
@@ -64915,7 +53147,7 @@ sp_521_mont_tpl_9 PROC
         pop	r12
         ret
 sp_521_mont_tpl_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Subtract two Montgomery form numbers (r = a - b % m).
 ;  *
 ;  * r   Result of addition.
@@ -64923,7 +53155,7 @@ _text ENDS
 ;  * b   Second number to add in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mont_sub_9 PROC
         push	r12
         push	r13
@@ -64979,14 +53211,14 @@ sp_521_mont_sub_9 PROC
         pop	r12
         ret
 sp_521_mont_sub_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Divide the number by 2 mod the modulus (prime). (r = a / 2 % m)
 ;  *
 ;  * r  Result of division by 2.
 ;  * a  Number to divide.
 ;  * m  Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mont_div2_9 PROC
         push	r12
         push	r13
@@ -65040,7 +53272,7 @@ sp_521_mont_div2_9 PROC
         pop	r12
         ret
 sp_521_mont_div2_9 ENDP
-_text ENDS
+_TEXT ENDS
 IFNDEF WC_NO_CACHE_RESISTANT
 ; /* Touch each possible point that could be being copied.
 ;  *
@@ -65048,7 +53280,7 @@ IFNDEF WC_NO_CACHE_RESISTANT
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of point to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_get_point_33_9 PROC
         push	r12
         push	r13
@@ -65200,7 +53432,7 @@ L_521_get_point_33_9_start_2:
         pop	r12
         ret
 sp_521_get_point_33_9 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Touch each possible point that could be being copied.
 ;  *
@@ -65208,7 +53440,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of point to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_get_point_33_avx2_9 PROC
         push	r12
         push	r13
@@ -65310,7 +53542,7 @@ L_521_get_point_33_avx2_9_start:
         pop	r12
         ret
 sp_521_get_point_33_avx2_9 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ENDIF
 IFDEF HAVE_INTEL_AVX2
@@ -65323,7 +53555,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * m   Modulus (prime).
 ;  * mp  Montgomery multiplier.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mont_mul_avx2_9 PROC
         push	rbx
         push	rbp
@@ -65923,7 +54155,7 @@ sp_521_mont_mul_avx2_9 PROC
         pop	rbx
         ret
 sp_521_mont_mul_avx2_9 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Square the Montgomery form number mod the modulus (prime). (r = a * a mod m)
@@ -65933,7 +54165,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * m   Modulus (prime).
 ;  * mp  Montgomery multiplier.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mont_sqr_avx2_9 PROC
         push	rbp
         push	r12
@@ -66365,7 +54597,7 @@ sp_521_mont_sqr_avx2_9 PROC
         pop	rbp
         ret
 sp_521_mont_sqr_avx2_9 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Conditionally subtract b from a using the mask m.
@@ -66376,7 +54608,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_cond_sub_avx2_9 PROC
         push	r12
         mov	r12, QWORD PTR [r8]
@@ -66428,7 +54660,7 @@ sp_521_cond_sub_avx2_9 PROC
         pop	r12
         ret
 sp_521_cond_sub_avx2_9 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Reduce the number back to 521 bits using Montgomery reduction.
@@ -66437,7 +54669,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mont_reduce_order_avx2_9 PROC
         push	r12
         push	r13
@@ -66741,7 +54973,7 @@ L_521_mont_reduce_order_avx2_9_loop:
         pop	r12
         ret
 sp_521_mont_reduce_order_avx2_9 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Divide the number by 2 mod the modulus (prime). (r = a / 2 % m)
@@ -66750,7 +54982,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  Number to divide.
 ;  * m  Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mont_div2_avx2_9 PROC
         push	r12
         push	r13
@@ -66804,7 +55036,7 @@ sp_521_mont_div2_avx2_9 PROC
         pop	r12
         ret
 sp_521_mont_div2_avx2_9 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFNDEF WC_NO_CACHE_RESISTANT
 ; /* Touch each possible entry that could be being copied.
@@ -66813,7 +55045,7 @@ IFNDEF WC_NO_CACHE_RESISTANT
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of entry to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_get_entry_64_9 PROC
         push	r12
         sub	rsp, 160
@@ -66937,7 +55169,7 @@ L_521_get_entry_64_9_start_1:
         pop	r12
         ret
 sp_521_get_entry_64_9 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Touch each possible entry that could be being copied.
 ;  *
@@ -66945,7 +55177,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of entry to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_get_entry_64_avx2_9 PROC
         push	r12
         push	r13
@@ -67020,7 +55252,7 @@ L_521_get_entry_64_avx2_9_start:
         pop	r12
         ret
 sp_521_get_entry_64_avx2_9 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ENDIF
 IFNDEF WC_NO_CACHE_RESISTANT
@@ -67030,7 +55262,7 @@ IFNDEF WC_NO_CACHE_RESISTANT
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of entry to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_get_entry_65_9 PROC
         push	r12
         sub	rsp, 160
@@ -67154,7 +55386,7 @@ L_521_get_entry_65_9_start_1:
         pop	r12
         ret
 sp_521_get_entry_65_9 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Touch each possible entry that could be being copied.
 ;  *
@@ -67162,7 +55394,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * table  Table - start of the entries to access
 ;  * idx    Index of entry to retrieve.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_get_entry_65_avx2_9 PROC
         push	r12
         push	r13
@@ -67237,14 +55469,14 @@ L_521_get_entry_65_avx2_9_start:
         pop	r12
         ret
 sp_521_get_entry_65_avx2_9 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ENDIF
 ; /* Add 1 to a. (a = a + 1)
 ;  *
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_add_one_9 PROC
         add	QWORD PTR [rcx], 1
         adc	QWORD PTR [rcx+8], 0
@@ -67257,7 +55489,7 @@ sp_521_add_one_9 PROC
         adc	QWORD PTR [rcx+64], 0
         ret
 sp_521_add_one_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Read big endian unsigned byte array into r.
 ;  * Uses the bswap instruction.
 ;  *
@@ -67266,7 +55498,7 @@ _text ENDS
 ;  * a  Byte array.
 ;  * n  Number of bytes in array to read.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_from_bin_bswap PROC
         push	r12
         push	r13
@@ -67344,7 +55576,7 @@ L_521_from_bin_bswap_zero_end:
         pop	r12
         ret
 sp_521_from_bin_bswap ENDP
-_text ENDS
+_TEXT ENDS
 IFNDEF NO_MOVBE_SUPPORT
 ; /* Read big endian unsigned byte array into r.
 ;  * Uses the movbe instruction which is an optional instruction.
@@ -67354,7 +55586,7 @@ IFNDEF NO_MOVBE_SUPPORT
 ;  * a  Byte array.
 ;  * n  Number of bytes in array to read.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_from_bin_movbe PROC
         push	r12
         mov	r11, r8
@@ -67420,7 +55652,7 @@ L_521_from_bin_movbe_zero_end:
         pop	r12
         ret
 sp_521_from_bin_movbe ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Write r as big endian to byte array.
 ;  * Fixed length number of bytes written: 65
@@ -67429,7 +55661,7 @@ ENDIF
 ;  * r  A single precision integer.
 ;  * a  Byte array.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_to_bin_bswap_9 PROC
         mov	r8b, BYTE PTR [rcx+64]
         mov	al, BYTE PTR [rcx+65]
@@ -67461,7 +55693,7 @@ sp_521_to_bin_bswap_9 PROC
         mov	QWORD PTR [rdx+58], r8
         ret
 sp_521_to_bin_bswap_9 ENDP
-_text ENDS
+_TEXT ENDS
 IFNDEF NO_MOVBE_SUPPORT
 ; /* Write r as big endian to byte array.
 ;  * Fixed length number of bytes written: 65
@@ -67470,7 +55702,7 @@ IFNDEF NO_MOVBE_SUPPORT
 ;  * r  A single precision integer.
 ;  * a  Byte array.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_to_bin_movbe_9 PROC
         mov	r8b, BYTE PTR [rcx+64]
         mov	al, BYTE PTR [rcx+65]
@@ -67494,14 +55726,14 @@ sp_521_to_bin_movbe_9 PROC
         mov	QWORD PTR [rdx+58], r8
         ret
 sp_521_to_bin_movbe_9 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Shift number right by 1 bit. (r = a >> 1)
 ;  *
 ;  * r  Result of right shift by 1.
 ;  * a  Number to shift.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_rshift_9 PROC
         push	r12
         mov	rax, rcx
@@ -67536,14 +55768,14 @@ sp_521_rshift_9 PROC
         pop	r12
         ret
 sp_521_rshift_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Shift number left by n bit. (r = a << n)
 ;  *
 ;  * r  Result of left shift by n.
 ;  * a  Number to shift.
 ;  * n  Amoutnt o shift.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_lshift_9 PROC
         push	r12
         push	r13
@@ -67583,14 +55815,14 @@ sp_521_lshift_9 PROC
         pop	r12
         ret
 sp_521_lshift_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Shift number left by n bit. (r = a << n)
 ;  *
 ;  * r  Result of left shift by n.
 ;  * a  Number to shift.
 ;  * n  Amoutnt o shift.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_lshift_18 PROC
         push	r12
         push	r13
@@ -67657,13 +55889,13 @@ sp_521_lshift_18 PROC
         pop	r12
         ret
 sp_521_lshift_18 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Sub b from a into a. (a -= b)
 ;  *
 ;  * a  A single precision integer and result.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_sub_in_place_9 PROC
         mov	r8, QWORD PTR [rcx]
         sub	r8, QWORD PTR [rdx]
@@ -67695,14 +55927,14 @@ sp_521_sub_in_place_9 PROC
         sbb	rax, rax
         ret
 sp_521_sub_in_place_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mul_d_9 PROC
         push	r12
         mov	r9, rdx
@@ -67779,7 +56011,7 @@ sp_521_mul_d_9 PROC
         pop	r12
         ret
 sp_521_mul_d_9 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
@@ -67787,7 +56019,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_mul_d_avx2_9 PROC
         push	r12
         push	r13
@@ -67851,7 +56083,7 @@ sp_521_mul_d_avx2_9 PROC
         pop	r12
         ret
 sp_521_mul_d_avx2_9 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF _WIN64
 ; /* Divide the double width number (d1|d0) by the dividend. (d1|d0 / div)
@@ -67861,7 +56093,7 @@ IFDEF _WIN64
 ;  * div  The dividend.
 ;  * returns the result of the division.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 div_521_word_asm_9 PROC
         mov	r9, rdx
         mov	rax, r9
@@ -67869,14 +56101,14 @@ div_521_word_asm_9 PROC
         div	r8
         ret
 div_521_word_asm_9 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Shift number right by 1 bit. (r = a >> 1)
 ;  *
 ;  * r  Result of right shift by 1.
 ;  * a  Number to shift.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_rshift1_9 PROC
         push	r12
         mov	rax, QWORD PTR [rdx]
@@ -67909,14 +56141,14 @@ sp_521_rshift1_9 PROC
         pop	r12
         ret
 sp_521_rshift1_9 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Divide the number by 2 mod the prime. (r = a / 2 % m)
 ;  *
 ;  * r  Result of division by 2.
 ;  * a  Number to divide.
 ;  * m  Modulus
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_521_div2_mod_9 PROC
         push	r12
         mov	rax, QWORD PTR [rdx]
@@ -67989,8 +56221,8 @@ L_521_mod_inv_9_div2_mod_no_add:
         pop	r12
         ret
 sp_521_div2_mod_9 ENDP
-_text ENDS
-_text SEGMENT READONLY PARA
+_TEXT ENDS
+_TEXT SEGMENT READONLY PARA
 sp_521_num_bits_9 PROC
         xor	rax, rax
         mov	rdx, QWORD PTR [rcx+64]
@@ -68068,7 +56300,7 @@ L_521_num_bits_9_end_0:
 L_521_num_bits_9_done:
         ret
 sp_521_num_bits_9 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF WOLFSSL_SP_1024
 ; /* Multiply a and b into r. (r = a * b)
@@ -68077,7 +56309,7 @@ IFDEF WOLFSSL_SP_1024
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_mul_16 PROC
         push	r12
         mov	r9, rdx
@@ -69713,13 +57945,13 @@ sp_1024_mul_16 PROC
         pop	r12
         ret
 sp_1024_mul_16 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Square a and put result in r. (r = a * a)
 ;  *
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_sqr_16 PROC
         push	r12
         push	r13
@@ -70801,7 +59033,7 @@ sp_1024_sqr_16 PROC
         pop	r12
         ret
 sp_1024_sqr_16 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Multiply a and b into r. (r = a * b)
 ;  *
@@ -70809,7 +59041,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a   First number to multiply.
 ;  * b   Second number to multiply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_mul_avx2_16 PROC
         push	rbx
         push	rbp
@@ -72472,7 +60704,7 @@ L_end_1024_mul_avx2_16:
         pop	rbx
         ret
 sp_1024_mul_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Square a and put result in r. (r = a * a)
@@ -72480,7 +60712,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * r  A single precision integer.
 ;  * a  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_sqr_avx2_16 PROC
         push	rbp
         push	r12
@@ -73526,7 +61758,7 @@ L_end_1024_sqr_avx2_16:
         pop	rbp
         ret
 sp_1024_sqr_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Add b to a into r. (r = a + b)
 ;  *
@@ -73534,7 +61766,7 @@ ENDIF
 ;  * a  A single precision integer.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_add_16 PROC
         ; Add
         mov	r9, QWORD PTR [rdx]
@@ -73589,13 +61821,13 @@ sp_1024_add_16 PROC
         adc	rax, 0
         ret
 sp_1024_add_16 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Sub b from a into a. (a -= b)
 ;  *
 ;  * a  A single precision integer and result.
 ;  * b  A single precision integer.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_sub_in_place_16 PROC
         mov	r8, QWORD PTR [rcx]
         sub	r8, QWORD PTR [rdx]
@@ -73648,7 +61880,7 @@ sp_1024_sub_in_place_16 PROC
         sbb	rax, rax
         ret
 sp_1024_sub_in_place_16 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Conditionally subtract b from a using the mask m.
 ;  * m is -1 to subtract and 0 when not copying.
 ;  *
@@ -73657,7 +61889,7 @@ _text ENDS
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_cond_sub_16 PROC
         sub	rsp, 128
         mov	r10, QWORD PTR [r8]
@@ -73776,7 +62008,7 @@ sp_1024_cond_sub_16 PROC
         add	rsp, 128
         ret
 sp_1024_cond_sub_16 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Conditionally subtract b from a using the mask m.
 ;  * m is -1 to subtract and 0 when not copying.
@@ -73786,7 +62018,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * b  A single precision number to subtract.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_cond_sub_avx2_16 PROC
         push	r12
         mov	r12, QWORD PTR [r8]
@@ -73873,7 +62105,7 @@ sp_1024_cond_sub_avx2_16 PROC
         pop	r12
         ret
 sp_1024_cond_sub_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
@@ -73881,7 +62113,7 @@ ENDIF
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_mul_d_16 PROC
         push	r12
         mov	r9, rdx
@@ -74014,7 +62246,7 @@ sp_1024_mul_d_16 PROC
         pop	r12
         ret
 sp_1024_mul_d_16 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Mul a by digit b into r. (r = a * b)
 ;  *
@@ -74022,7 +62254,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  A single precision integer.
 ;  * b  A single precision digit.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_mul_d_avx2_16 PROC
         push	r12
         push	r13
@@ -74128,7 +62360,7 @@ sp_1024_mul_d_avx2_16 PROC
         pop	r12
         ret
 sp_1024_mul_d_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF _WIN64
 ; /* Divide the double width number (d1|d0) by the dividend. (d1|d0 / div)
@@ -74138,7 +62370,7 @@ IFDEF _WIN64
 ;  * div  The dividend.
 ;  * returns the result of the division.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 div_1024_word_asm_16 PROC
         mov	r9, rdx
         mov	rax, r9
@@ -74146,7 +62378,7 @@ div_1024_word_asm_16 PROC
         div	r8
         ret
 div_1024_word_asm_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Compare a with b in constant time.
 ;  *
@@ -74155,7 +62387,7 @@ ENDIF
 ;  * return -ve, 0 or +ve if a is less than, equal to or greater than b
 ;  * respectively.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_cmp_16 PROC
         push	r12
         xor	r9, r9
@@ -74294,7 +62526,7 @@ sp_1024_cmp_16 PROC
         pop	r12
         ret
 sp_1024_cmp_16 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Conditionally copy a into r using the mask m.
 ;  * m is -1 to copy and 0 when not.
 ;  *
@@ -74302,7 +62534,7 @@ _text ENDS
 ;  * a  A single precision number to copy.
 ;  * m  Mask value to apply.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_cond_copy_16 PROC
         mov	rax, QWORD PTR [rcx]
         mov	r9, QWORD PTR [rcx+8]
@@ -74370,14 +62602,14 @@ sp_1024_cond_copy_16 PROC
         xor	QWORD PTR [rcx+120], r11
         ret
 sp_1024_cond_copy_16 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Reduce the number back to 1024 bits using Montgomery reduction.
 ;  *
 ;  * a   A single precision number to reduce in place.
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_mont_reduce_16 PROC
         push	r12
         push	r13
@@ -74582,7 +62814,7 @@ ENDIF
         pop	r12
         ret
 sp_1024_mont_reduce_16 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Add two Montgomery form numbers (r = a + b % m).
 ;  *
 ;  * r   Result of addition.
@@ -74590,7 +62822,7 @@ _text ENDS
 ;  * b   Second number to add in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_mont_add_16 PROC
         push	r12
         push	r13
@@ -74750,14 +62982,14 @@ sp_1024_mont_add_16 PROC
         pop	r12
         ret
 sp_1024_mont_add_16 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Double a Montgomery form number (r = a + a % m).
 ;  *
 ;  * r   Result of addition.
 ;  * a   Number to double in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_mont_dbl_16 PROC
         push	r12
         sub	rsp, 128
@@ -74915,14 +63147,14 @@ sp_1024_mont_dbl_16 PROC
         pop	r12
         ret
 sp_1024_mont_dbl_16 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Triple a Montgomery form number (r = a + a + a % m).
 ;  *
 ;  * r   Result of addition.
 ;  * a   Number to double in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_mont_tpl_16 PROC
         push	r12
         sub	rsp, 128
@@ -75230,7 +63462,7 @@ sp_1024_mont_tpl_16 PROC
         pop	r12
         ret
 sp_1024_mont_tpl_16 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Subtract two Montgomery form numbers (r = a - b % m).
 ;  *
 ;  * r   Result of addition.
@@ -75238,7 +63470,7 @@ _text ENDS
 ;  * b   Second number to add in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_mont_sub_16 PROC
         push	r12
         push	r13
@@ -75394,14 +63626,14 @@ sp_1024_mont_sub_16 PROC
         pop	r12
         ret
 sp_1024_mont_sub_16 ENDP
-_text ENDS
+_TEXT ENDS
 ; /* Divide the number by 2 mod the modulus (prime). (r = a / 2 % m)
 ;  *
 ;  * r  Result of division by 2.
 ;  * a  Number to divide.
 ;  * m  Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_mont_div2_16 PROC
         push	r12
         push	r13
@@ -75544,7 +63776,7 @@ sp_1024_mont_div2_16 PROC
         pop	r12
         ret
 sp_1024_mont_div2_16 ENDP
-_text ENDS
+_TEXT ENDS
 IFDEF HAVE_INTEL_AVX2
 ; /* Reduce the number back to 1024 bits using Montgomery reduction.
 ;  *
@@ -75552,7 +63784,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * m   The single precision number representing the modulus.
 ;  * mp  The digit representing the negative inverse of m mod 2^n.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_mont_reduce_avx2_16 PROC
         push	r12
         push	r13
@@ -75879,7 +64111,7 @@ L_1024_mont_reduce_avx2_16_loop:
         pop	r12
         ret
 sp_1024_mont_reduce_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Add two Montgomery form numbers (r = a + b % m).
@@ -75889,7 +64121,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * b   Second number to add in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_mont_add_avx2_16 PROC
         push	r12
         push	r13
@@ -76031,7 +64263,7 @@ sp_1024_mont_add_avx2_16 PROC
         pop	r12
         ret
 sp_1024_mont_add_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Double a Montgomery form number (r = a + a % m).
@@ -76040,7 +64272,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a   Number to double in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_mont_dbl_avx2_16 PROC
         push	r12
         mov	rax, QWORD PTR [rdx]
@@ -76180,7 +64412,7 @@ sp_1024_mont_dbl_avx2_16 PROC
         pop	r12
         ret
 sp_1024_mont_dbl_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Triple a Montgomery form number (r = a + a + a % m).
@@ -76189,7 +64421,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a   Number to double in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_mont_tpl_avx2_16 PROC
         push	r12
         mov	rax, QWORD PTR [rdx]
@@ -76463,7 +64695,7 @@ sp_1024_mont_tpl_avx2_16 PROC
         pop	r12
         ret
 sp_1024_mont_tpl_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Subtract two Montgomery form numbers (r = a - b % m).
@@ -76473,7 +64705,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * b   Second number to add in Montgomery form.
 ;  * m   Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_mont_sub_avx2_16 PROC
         push	r12
         push	r13
@@ -76611,7 +64843,7 @@ sp_1024_mont_sub_avx2_16 PROC
         pop	r12
         ret
 sp_1024_mont_sub_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 IFDEF HAVE_INTEL_AVX2
 ; /* Divide the number by 2 mod the modulus (prime). (r = a / 2 % m)
@@ -76620,7 +64852,7 @@ IFDEF HAVE_INTEL_AVX2
 ;  * a  Number to divide.
 ;  * m  Modulus (prime).
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_mont_div2_avx2_16 PROC
         push	r12
         push	r13
@@ -76762,7 +64994,7 @@ sp_1024_mont_div2_avx2_16 PROC
         pop	r12
         ret
 sp_1024_mont_div2_avx2_16 ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ; /* Read big endian unsigned byte array into r.
 ;  * Uses the bswap instruction.
@@ -76772,7 +65004,7 @@ ENDIF
 ;  * a  Byte array.
 ;  * n  Number of bytes in array to read.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_from_bin_bswap PROC
         push	r12
         push	r13
@@ -76850,7 +65082,7 @@ L_1024_from_bin_bswap_zero_end:
         pop	r12
         ret
 sp_1024_from_bin_bswap ENDP
-_text ENDS
+_TEXT ENDS
 IFNDEF NO_MOVBE_SUPPORT
 ; /* Read big endian unsigned byte array into r.
 ;  * Uses the movbe instruction which is an optional instruction.
@@ -76860,7 +65092,7 @@ IFNDEF NO_MOVBE_SUPPORT
 ;  * a  Byte array.
 ;  * n  Number of bytes in array to read.
 ;  */
-_text SEGMENT READONLY PARA
+_TEXT SEGMENT READONLY PARA
 sp_1024_from_bin_movbe PROC
         push	r12
         mov	r11, r8
@@ -76926,7 +65158,7 @@ L_1024_from_bin_movbe_zero_end:
         pop	r12
         ret
 sp_1024_from_bin_movbe ENDP
-_text ENDS
+_TEXT ENDS
 ENDIF
 ENDIF
 END

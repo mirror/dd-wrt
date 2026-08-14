@@ -371,6 +371,9 @@ fn scan_cfg() -> Result<()> {
     check_cfg(&binding, "wc_Dh_ffdhe6144_Get", "dh_ffdhe_6144");
     check_cfg(&binding, "wc_Dh_ffdhe8192_Get", "dh_ffdhe_8192");
 
+    /* crypto callback */
+    check_cfg(&binding, "wc_CryptoCb_RegisterDevice", "wolf_crypto_cb");
+
     /* ecc */
     check_cfg(&binding, "wc_ecc_init", "ecc");
     check_cfg(&binding, "wc_ecc_export_point_der_compressed", "ecc_comp_key");
@@ -422,6 +425,7 @@ fn scan_cfg() -> Result<()> {
     /* kdf */
     check_cfg(&binding, "wc_PBKDF2", "kdf_pbkdf2");
     check_cfg(&binding, "wc_PKCS12_PBKDF_ex", "kdf_pkcs12");
+    check_cfg(&binding, "wc_scrypt", "kdf_scrypt");
     check_cfg(&binding, "wc_SRTP_KDF", "kdf_srtp");
     check_cfg(&binding, "wc_SSH_KDF", "kdf_ssh");
     check_cfg(&binding, "wc_Tls13_HKDF_Extract_ex", "kdf_tls13");
@@ -433,11 +437,28 @@ fn scan_cfg() -> Result<()> {
     check_cfg(&binding, "wc_RNG_DRBG_Reseed", "random_hashdrbg");
     check_cfg(&binding, "wc_InitRng", "random");
 
+    // When WOLFSSL_NO_MALLOC is set without WOLFSSL_STATIC_MEMORY, the
+    // WC_RNG struct contains an inline `drbg_data` field and wolfCrypt sets
+    // `rng->drbg = &rng->drbg_data` — a self-referential pointer.  Rust
+    // moves values by memcpy, which would silently invalidate that pointer.
+    // Detect this configuration and refuse to build.
+    if binding.contains("drbg_data") {
+        eprintln!(
+            "error: wolfSSL appears to be built with WOLFSSL_NO_MALLOC \
+             (without WOLFSSL_STATIC_MEMORY). This embeds a self-referential \
+             pointer inside WC_RNG (drbg -> drbg_data) that is incompatible \
+             with Rust move semantics. Please rebuild wolfSSL without \
+             WOLFSSL_NO_MALLOC, or enable WOLFSSL_STATIC_MEMORY."
+        );
+        std::process::exit(1);
+    }
+
     /* rsa */
     check_cfg(&binding, "wc_InitRsaKey", "rsa");
     check_cfg(&binding, "wc_RsaDirect", "rsa_direct");
     check_cfg(&binding, "wc_MakeRsaKey", "rsa_keygen");
     check_cfg(&binding, "wc_RsaPSS_Sign", "rsa_pss");
+    check_cfg(&binding, "wc_RsaPublicEncrypt_ex", "rsa_oaep");
     check_cfg(&binding, "wc_RsaSetRNG", "rsa_setrng");
     check_cfg(&binding, "WC_MGF1SHA512_224", "rsa_mgf1sha512_224");
     check_cfg(&binding, "WC_MGF1SHA512_256", "rsa_mgf1sha512_256");
@@ -461,8 +482,6 @@ fn scan_cfg() -> Result<()> {
     check_cfg(&binding, "DILITHIUM_LEVEL2_KEY_SIZE", "dilithium_level2");
     check_cfg(&binding, "DILITHIUM_LEVEL3_KEY_SIZE", "dilithium_level3");
     check_cfg(&binding, "DILITHIUM_LEVEL5_KEY_SIZE", "dilithium_level5");
-    check_cfg(&binding, "DILITHIUM_SEED_SZ", "dilithium_make_key_seed_sz");
-    check_cfg(&binding, "DILITHIUM_RND_SZ", "dilithium_rnd_sz");
 
     /* mlkem / ML-KEM */
     check_cfg(&binding, "wc_MlKemKey_Init", "mlkem");

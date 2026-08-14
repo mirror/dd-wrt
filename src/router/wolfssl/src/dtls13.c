@@ -489,29 +489,33 @@ int Dtls13HashClientHello(const WOLFSSL* ssl, byte* hash, int* hashSz,
     /* msg_type(1) + length (3) */
     byte header[OPAQUE32_LEN];
     int ret;
-    wc_HashAlg hashCtx;
+    WC_DECLARE_VAR(hashCtx, wc_HashAlg, 1, ssl->heap);
     int type = wolfSSL_GetHmacType_ex(specs);
 
     if (type < 0)
         return type;
 
+    WC_ALLOC_VAR_EX(hashCtx, wc_HashAlg, 1, ssl->heap, DYNAMIC_TYPE_HASHES,
+                    return MEMORY_E);
+
     header[0] = (byte)client_hello;
     c32to24(length, header + 1);
 
-    ret = wc_HashInit_ex(&hashCtx, (enum wc_HashType)type, ssl->heap, ssl->devId);
+    ret = wc_HashInit_ex(hashCtx, (enum wc_HashType)type, ssl->heap, ssl->devId);
     if (ret == 0) {
-        ret = wc_HashUpdate(&hashCtx, (enum wc_HashType)type, header, OPAQUE32_LEN);
+        ret = wc_HashUpdate(hashCtx, (enum wc_HashType)type, header, OPAQUE32_LEN);
         if (ret == 0)
-            ret = wc_HashUpdate(&hashCtx, (enum wc_HashType)type, body, length);
+            ret = wc_HashUpdate(hashCtx, (enum wc_HashType)type, body, length);
         if (ret == 0)
-            ret = wc_HashFinal(&hashCtx, (enum wc_HashType)type, hash);
+            ret = wc_HashFinal(hashCtx, (enum wc_HashType)type, hash);
         if (ret == 0) {
             *hashSz = wc_HashGetDigestSize((enum wc_HashType)type);
             if (*hashSz < 0)
                 ret = *hashSz;
         }
-        wc_HashFree(&hashCtx, (enum wc_HashType)type);
+        wc_HashFree(hashCtx, (enum wc_HashType)type);
     }
+    WC_FREE_VAR_EX(hashCtx, ssl->heap, DYNAMIC_TYPE_HASHES);
     return ret;
 }
 
@@ -893,7 +897,7 @@ static void Dtls13RtxRemoveCurAck(WOLFSSL* ssl)
 #endif
 }
 
-static void Dtls13MaybeSaveClientHello(WOLFSSL* ssl)
+static void Dtls13SaveOrFlushClientHello(WOLFSSL* ssl)
 {
     Dtls13RtxRecord *r, **prev_next;
 
@@ -902,15 +906,18 @@ static void Dtls13MaybeSaveClientHello(WOLFSSL* ssl)
 
     if (ssl->options.side == WOLFSSL_CLIENT_END &&
         ssl->options.connectState >= CLIENT_HELLO_SENT &&
-        ssl->options.connectState <= HELLO_AGAIN_REPLY &&
-        ssl->options.downgrade && ssl->options.minDowngrade >= DTLSv1_2_MINOR) {
+        ssl->options.connectState <= HELLO_AGAIN_REPLY) {
         while (r != NULL) {
             if (r->handshakeType == client_hello) {
                 Dtls13RtxRecordUnlink(ssl, prev_next, r);
-                XFREE(ssl->dtls13ClientHello, ssl->heap, DYNAMIC_TYPE_DTLS_MSG);
-                ssl->dtls13ClientHello = r->data;
-                ssl->dtls13ClientHelloSz = r->length;
-                r->data = NULL;
+                if (ssl->options.downgrade &&
+                        ssl->options.minDowngrade >= DTLSv1_2_MINOR) {
+                    XFREE(ssl->dtls13ClientHello, ssl->heap,
+                        DYNAMIC_TYPE_DTLS_MSG);
+                    ssl->dtls13ClientHello = r->data;
+                    ssl->dtls13ClientHelloSz = r->length;
+                    r->data = NULL;
+                }
                 Dtls13FreeRtxBufferRecord(ssl, r);
                 return;
             }
@@ -930,7 +937,7 @@ static int Dtls13RtxMsgRecvd(WOLFSSL* ssl, enum HandShakeType hs,
             ssl->keys.dtls_expected_peer_handshake_number) {
 
         if (hs == server_hello)
-            Dtls13MaybeSaveClientHello(ssl);
+            Dtls13SaveOrFlushClientHello(ssl);
 
         /* In the handshake, receiving part of the next flight, acknowledge the
          * sent flight. */
@@ -989,6 +996,7 @@ void Dtls13FreeFsmResources(WOLFSSL* ssl)
     /* Use 1.2 API to clear 1.2 buffers too */
     DtlsMsgPoolReset(ssl);
     Dtls13RtxFlushBuffered(ssl, 0);
+    Dtls13FreeFragmentsBuffer(ssl);
 }
 
 static int Dtls13SendOneFragmentRtx(WOLFSSL* ssl,
@@ -1865,13 +1873,15 @@ static int _Dtls13HandshakeRecv(WOLFSSL* ssl, byte* input, word32 size,
             *processedSize = size;
             return 0;
         }
-        /* To be able to operate in stateless mode, we assume the ClientHello
-         * is in order and we use its Handshake Message number and Sequence
-         * Number for our Tx. */
-        ssl->keys.dtls_expected_peer_handshake_number =
-            ssl->keys.dtls_handshake_number =
-                ssl->keys.dtls_peer_handshake_number;
-        ssl->dtls13Epochs[0].nextSeqNumber = ssl->keys.curSeq;
+        if (!ssl->options.dtlsStateful) {
+            /* To be able to operate in stateless mode, we assume the
+             * ClientHello is in order and we use its Handshake Message number
+             * and Sequence Number for our Tx. */
+            ssl->keys.dtls_expected_peer_handshake_number =
+                ssl->keys.dtls_handshake_number =
+                    ssl->keys.dtls_peer_handshake_number;
+            ssl->dtls13Epochs[0].nextSeqNumber = ssl->keys.curSeq;
+        }
     }
 
     if (idx + fragLength > size) {
@@ -1895,7 +1905,7 @@ static int _Dtls13HandshakeRecv(WOLFSSL* ssl, byte* input, word32 size,
 #endif /* WOLFSSL_DEBUG_TLS */
 
         /* ignore the message */
-        *processedSize = idx + fragLength + ssl->keys.padSz;
+        *processedSize = idx + fragLength;
 
         return 0;
     }
@@ -1929,7 +1939,7 @@ static int _Dtls13HandshakeRecv(WOLFSSL* ssl, byte* input, word32 size,
             WOLFSSL_MSG("DTLS1.3 not accepting fragmented plaintext message");
 #endif /* WOLFSSL_DEBUG_TLS */
             /* ignore the message */
-            *processedSize = idx + fragLength + ssl->keys.padSz;
+            *processedSize = idx + fragLength;
             return 0;
         }
     }
@@ -1957,7 +1967,7 @@ static int _Dtls13HandshakeRecv(WOLFSSL* ssl, byte* input, word32 size,
             return DTLS_TOO_MANY_FRAGMENTS_E;
         }
 
-        *processedSize = idx + fragLength + ssl->keys.padSz;
+        *processedSize = idx + fragLength;
         if (Dtls13NextMessageComplete(ssl))
             return Dtls13ProcessBufferedMessages(ssl);
 
@@ -2131,8 +2141,10 @@ static const byte snLabel[SN_LABEL_SZ + 1] = "sn";
  */
 int Dtls13DeriveSnKeys(WOLFSSL* ssl, int provision)
 {
-    byte key_dig[MAX_PRF_DIG];
     int ret = 0;
+    WC_DECLARE_VAR(key_dig, byte, MAX_PRF_DIG, ssl->heap);
+    WC_ALLOC_VAR_EX(key_dig, byte, MAX_PRF_DIG, ssl->heap, DYNAMIC_TYPE_DIGEST,
+                    return MEMORY_E);
 
     if (provision & PROVISION_CLIENT) {
         WOLFSSL_MSG("Derive SN Client key");
@@ -2159,8 +2171,9 @@ int Dtls13DeriveSnKeys(WOLFSSL* ssl, int provision)
 end:
     ForceZero(key_dig, MAX_PRF_DIG);
 #ifdef WOLFSSL_CHECK_MEM_ZERO
-    wc_MemZero_Check(key_dig, sizeof(key_dig));
+    wc_MemZero_Check(key_dig, MAX_PRF_DIG);
 #endif
+    WC_FREE_VAR_EX(key_dig, ssl->heap, DYNAMIC_TYPE_DIGEST);
     return ret;
 }
 
@@ -2181,16 +2194,27 @@ static int Dtls13InitAesCipher(WOLFSSL* ssl, RecordNumberCiphers* cipher,
     XMEMSET(cipher->aes, 0, sizeof(*cipher->aes));
 
     ret = wc_AesInit(cipher->aes, ssl->heap, INVALID_DEVID);
-    if (ret != 0)
+    if (ret != 0) {
+        XFREE(cipher->aes, ssl->heap, DYNAMIC_TYPE_CIPHER);
+        cipher->aes = NULL;
         return ret;
+    }
 
-    return wc_AesSetKey(cipher->aes, key, keySize, NULL, AES_ENCRYPTION);
+    ret = wc_AesSetKey(cipher->aes, key, keySize, NULL, AES_ENCRYPTION);
+    if (ret != 0) {
+        wc_AesFree(cipher->aes);
+        XFREE(cipher->aes, ssl->heap, DYNAMIC_TYPE_CIPHER);
+        cipher->aes = NULL;
+    }
+
+    return ret;
 }
 
 #ifdef HAVE_CHACHA
 static int Dtls13InitChaChaCipher(RecordNumberCiphers* c, byte* key,
     word16 keySize, void* heap)
 {
+    int ret;
     (void)heap;
 
     if (c->chacha == NULL) {
@@ -2200,7 +2224,14 @@ static int Dtls13InitChaChaCipher(RecordNumberCiphers* c, byte* key,
             return MEMORY_E;
     }
 
-    return wc_Chacha_SetKey(c->chacha, key, keySize);
+    ret = wc_Chacha_SetKey(c->chacha, key, keySize);
+    if (ret != 0) {
+        ForceZero(c->chacha, sizeof(ChaCha));
+        XFREE(c->chacha, heap, DYNAMIC_TYPE_CIPHER);
+        c->chacha = NULL;
+    }
+
+    return ret;
 }
 #endif /* HAVE_CHACHA */
 
@@ -2340,7 +2371,6 @@ static Dtls13Epoch* Dtls13NewEpochSlot(WOLFSSL* ssl)
     w64wrapper oldestNumber;
     int i;
 
-    /* FIXME: add max function */
     oldestNumber = w64From32((word32)-1, (word32)-1);
     oldest = NULL;
 
@@ -2351,8 +2381,10 @@ static Dtls13Epoch* Dtls13NewEpochSlot(WOLFSSL* ssl)
 
         if (!w64Equal(e->epochNumber, ssl->dtls13Epoch) &&
             !w64Equal(e->epochNumber, ssl->dtls13PeerEpoch) &&
-            w64LT(e->epochNumber, oldestNumber))
+            w64LT(e->epochNumber, oldestNumber)) {
             oldest = e;
+            oldestNumber = e->epochNumber;
+        }
     }
 
     if (oldest == NULL)
@@ -2364,7 +2396,10 @@ static Dtls13Epoch* Dtls13NewEpochSlot(WOLFSSL* ssl)
     WOLFSSL_MSG_EX("Delete epoch: %d", e->epochNumber);
 #endif /* WOLFSSL_DEBUG_TLS */
 
-    XMEMSET(e, 0, sizeof(*e));
+    /* The slot we are reusing holds the previous epoch's symmetric keys, IVs,
+     * and sn-keys; use ForceZero so the wipe cannot be elided by the
+     * optimizer when the slot is later overwritten. */
+    ForceZero(e, sizeof(*e));
 
     return e;
 }
@@ -2688,16 +2723,26 @@ static int Dtls13RtxIsTrackedByRn(const Dtls13RtxRecord* r, w64wrapper epoch,
 static int Dtls13KeyUpdateAckReceived(WOLFSSL* ssl)
 {
     int ret;
+    /* Validate on a local copy so ssl->dtls13Epoch is left untouched when a
+     * check fails. */
+    w64wrapper newEpoch = ssl->dtls13Epoch;
 
     ret = DeriveTls13Keys(ssl, update_traffic_key, ENCRYPT_SIDE_ONLY, 1);
     if (ret != 0)
         return ret;
 
-    w64Increment(&ssl->dtls13Epoch);
+    w64Increment(&newEpoch);
 
     /* Epoch wrapped up */
-    if (w64IsZero(ssl->dtls13Epoch))
+    if (w64IsZero(newEpoch))
         return BAD_STATE_E;
+
+    /* RFC 9147 Section 4.2.1: the epoch must not exceed 2^48-1. */
+    if (w64GT(newEpoch,
+              w64From32(DTLS13_EPOCH_MAX_HI32, DTLS13_EPOCH_MAX_LO32)))
+        return BAD_STATE_E;
+
+    ssl->dtls13Epoch = newEpoch;
 
     return Dtls13SetEpochKeys(ssl, ssl->dtls13Epoch, ENCRYPT_SIDE_ONLY);
 }
@@ -3029,11 +3074,17 @@ int SendDtls13Ack(WOLFSSL* ssl)
 static int Dtls13RtxRecordMatchesReqCtx(Dtls13RtxRecord* r, byte* ctx,
     byte ctxLen)
 {
+    /* r->data points at the 12-byte Dtls13HandshakeHeader (set by
+     * Dtls13RtxNewRecord from message + recordHeaderLength); the
+     * CertificateRequest body starts at r->data[DTLS13_HANDSHAKE_HEADER_SZ]
+     * with a 1-byte request_context length followed by ctxLength bytes. */
     if (r->handshakeType != certificate_request)
         return 0;
-    if (r->length <= ctxLen + 1)
+    if (r->length < (word16)(DTLS13_HANDSHAKE_HEADER_SZ + 1 + ctxLen))
         return 0;
-    return XMEMCMP(ctx, r->data + 1, ctxLen) == 0;
+    if (r->data[DTLS13_HANDSHAKE_HEADER_SZ] != ctxLen)
+        return 0;
+    return XMEMCMP(ctx, r->data + DTLS13_HANDSHAKE_HEADER_SZ + 1, ctxLen) == 0;
 }
 
 int Dtls13RtxProcessingCertificate(WOLFSSL* ssl, byte* input, word32 inputSize)

@@ -491,6 +491,65 @@ int test_wc_RsaPSS_Verify(void)
     return EXPECT_RESULT();
 } /* END  test_wc_RsaPSS_Verify */
 
+int test_wc_RsaPSS_BadTerminator(void)
+{
+    EXPECT_DECLS;
+#if !defined(NO_RSA) && defined(WOLFSSL_KEY_GEN) && !defined(HAVE_SELFTEST) && \
+    !defined(HAVE_FIPS) && defined(WC_RSA_BLINDING) && defined(WC_RSA_PSS) && \
+    (defined(WC_RSA_DIRECT) || defined(WC_RSA_NO_PADDING) || \
+     defined(OPENSSL_EXTRA) || defined(OPENSSL_EXTRA_X509_SMALL))
+    RsaKey        key;
+    WC_RNG        rng;
+    const char*   msg = "This is the string to be signed";
+    unsigned char sig[2048/8];
+    unsigned char em[2048/8];
+    unsigned char badSig[2048/8];
+    unsigned char verifyOut[2048/8];
+    int           sigLen = 0;
+    word32        emSz = sizeof(em);
+    word32        badSigSz = sizeof(badSig);
+
+    XMEMSET(&key, 0, sizeof(RsaKey));
+    XMEMSET(&rng, 0, sizeof(WC_RNG));
+    XMEMSET(em, 0, sizeof(em));
+    XMEMSET(sig, 0, sizeof(sig));
+    XMEMSET(badSig, 0, sizeof(badSig));
+
+    ExpectIntEQ(wc_InitRsaKey(&key, HEAP_HINT), 0);
+    ExpectIntEQ(wc_InitRng(&rng), 0);
+    ExpectIntEQ(wc_RsaSetRNG(&key, &rng), 0);
+    ExpectIntEQ(wc_MakeRsaKey(&key, 2048, WC_RSA_EXPONENT, &rng), 0);
+
+    ExpectIntGT(sigLen = wc_RsaPSS_Sign((const byte*)msg,
+        (word32)XSTRLEN(msg) + 1, sig, sizeof(sig),
+        WC_HASH_TYPE_SHA256, WC_MGF1SHA256, &key, &rng), 0);
+
+    ExpectIntGT(wc_RsaDirect(sig, (word32)sigLen, em, &emSz, &key,
+        RSA_PUBLIC_DECRYPT, NULL), 0);
+
+    ExpectTrue(emSz > 0);
+    if (emSz > 0) {
+        ExpectIntEQ((int)em[emSz - 1], 0xbc);
+    }
+
+    if (emSz > 0 && em[emSz - 1] == 0xbc) {
+        em[emSz - 1] = 0xbd;
+
+        ExpectIntGT(wc_RsaDirect(em, emSz, badSig, &badSigSz, &key,
+            RSA_PRIVATE_ENCRYPT, &rng), 0);
+
+        ExpectIntEQ(wc_RsaPSS_Verify(badSig, badSigSz, verifyOut,
+            sizeof(verifyOut),
+            WC_HASH_TYPE_SHA256, WC_MGF1SHA256, &key),
+            WC_NO_ERR_TRACE(BAD_PADDING_E));
+    }
+
+    DoExpectIntEQ(wc_FreeRsaKey(&key), 0);
+    DoExpectIntEQ(wc_FreeRng(&rng), 0);
+#endif
+    return EXPECT_RESULT();
+} /* END test_wc_RsaPSS_BadTerminator */
+
 /*
  * Testing wc_RsaPSS_VerifyCheck()
  */
@@ -1151,4 +1210,188 @@ int test_wc_RsaDecrypt_BoundsCheck(void)
 #endif
     return EXPECT_RESULT();
 } /* END test_wc_RsaDecryptBoundsCheck */
+
+/*
+ * Oversized RSA modulus (mp_bitsused(n) > RSA_MAX_SIZE) must not overflow the
+ * static stack buffer used by RsaFunctionCheckIn (DECL_MP_INT_SIZE_DYN).
+ *
+ * The buffer is sized for RSA_MAX_SIZE digits, and NEW_MP_INT_SIZE would zero
+ * mp_bitsused(&key->n) digits of it -- so an oversized modulus must be
+ * caught by MP_BITS_OVER_MAX *before* NEW_MP_INT_SIZE is reached.  We feed
+ * wc_RsaDirect() an input/output buffer matching the oversized modulus byte
+ * size so we get past wc_RsaDirect()'s inLen sanity check and reach the
+ * RsaFunctionCheckIn() guard inside wc_RsaFunction_ex().
+ */
+int test_wc_RsaFunctionCheckIn_OversizedModulus(void)
+{
+    EXPECT_DECLS;
+#if !defined(NO_RSA) && defined(WC_RSA_NO_PADDING) && defined(WC_RSA_DIRECT) && \
+    defined(WOLFSSL_PUBLIC_MP) && !defined(NO_RSA_BOUNDS_CHECK) && \
+    !defined(WOLFSSL_RSA_VERIFY_ONLY) && !defined(TEST_UNPAD_CONSTANT_TIME) && \
+    (defined(WOLFSSL_SP_MATH) || defined(WOLFSSL_SP_MATH_ALL)) && \
+    !defined(WOLFSSL_SMALL_STACK) && \
+    (defined(USE_CERT_BUFFERS_1024) || defined(USE_CERT_BUFFERS_2048))
+    /* Setting bit RSA_MAX_SIZE makes the modulus RSA_MAX_SIZE+1 bits, i.e.
+     * (RSA_MAX_SIZE/8 + 1) bytes -- size buffers accordingly with slack. */
+    #define WC_RSA_OVERSIZED_BUF_LEN ((RSA_MAX_SIZE / 8) + 8)
+    WC_RNG rng;
+    RsaKey key;
+    const byte* derKey;
+    word32 derKeySz;
+    word32 idx = 0;
+    byte flatC[WC_RSA_OVERSIZED_BUF_LEN];
+    word32 flatCSz;
+    byte out[WC_RSA_OVERSIZED_BUF_LEN];
+    word32 outSz = sizeof(out);
+    int    encSz;
+
+    #ifdef USE_CERT_BUFFERS_1024
+        derKey = server_key_der_1024;
+        derKeySz = (word32)sizeof_server_key_der_1024;
+    #else
+        derKey = server_key_der_2048;
+        derKeySz = (word32)sizeof_server_key_der_2048;
+    #endif
+
+    XMEMSET(&key, 0, sizeof(RsaKey));
+    XMEMSET(&rng, 0, sizeof(WC_RNG));
+
+    ExpectIntEQ(wc_InitRsaKey(&key, HEAP_HINT), 0);
+    ExpectIntEQ(wc_InitRng(&rng), 0);
+    ExpectIntEQ(wc_RsaPrivateKeyDecode(derKey, &idx, &key, derKeySz), 0);
+    /* Force modulus bit count above RSA_MAX_SIZE. */
+    ExpectIntEQ(mp_set_bit(&key.n, RSA_MAX_SIZE), 0);
+
+    /* Match wc_RsaDirect()'s inLen check so we actually reach
+     * RsaFunctionCheckIn() (where the MP_BITS_OVER_MAX guard lives). */
+    encSz = wc_RsaEncryptSize(&key);
+    ExpectIntGT(encSz, 0);
+    ExpectIntLE(encSz, (int)sizeof(flatC));
+    if (encSz > 0 && (size_t)encSz <= sizeof(flatC)) {
+        flatCSz = (word32)encSz;
+        XMEMSET(flatC, 0, flatCSz);
+        ExpectIntEQ(wc_RsaDirect(flatC, flatCSz, out, &outSz, &key,
+            RSA_PRIVATE_DECRYPT, &rng), WC_NO_ERR_TRACE(WC_KEY_SIZE_E));
+    }
+
+    DoExpectIntEQ(wc_FreeRsaKey(&key), 0);
+    DoExpectIntEQ(wc_FreeRng(&rng), 0);
+    #undef WC_RSA_OVERSIZED_BUF_LEN
+#endif
+    return EXPECT_RESULT();
+} /* END test_wc_RsaFunctionCheckIn_OversizedModulus */
+
+/*
+ * Test wc_RsaKeyToDer with an mp_int large enough to wrap size calculations.
+ */
+int test_wc_RsaKeyToDer_SizeOverflow(void)
+{
+    EXPECT_DECLS;
+#if !defined(NO_RSA) && defined(USE_INTEGER_HEAP_MATH) && \
+    !defined(USE_FAST_MATH) && \
+    defined(WOLFSSL_ASN_TEMPLATE) && defined(WOLFSSL_PUBLIC_MP) && \
+    (defined(WOLFSSL_KEY_GEN) || defined(WOLFSSL_KEY_TO_DER))
+    RsaKey    key;
+    int       i;
+    int       derRet;
+    int       crafted_used;
+    int       top_bits;
+    mp_digit  top_digit;
+    mp_digit  storage   = 0;  /* the only digit mp_count_bits ever reads */
+    mp_digit* fake_dp   = NULL;
+
+    int       orig_used  = 0;
+    int       orig_alloc = 0;
+    int       orig_sign  = 0;
+    mp_digit* orig_dp    = NULL;
+
+    mp_int* fields[8];
+
+    XMEMSET(&key, 0, sizeof(key));
+
+    /* Skip on 32-bit: biasing dp by ~half the address space is unsafe. */
+    if (sizeof(void*) < 8) {
+        return TEST_SKIPPED;
+    }
+
+    /* Find 'used' count that makes (used-1)*DIGIT_BIT + top_bits = -48
+     * as signed int, causing mp_unsigned_bin_size to return -6. */
+    {
+        unsigned int target = 0xFFFFFFD0u;  /* -48 as unsigned 32-bit */
+        int found = 0;
+
+        crafted_used = 0;
+        top_bits = 0;
+        top_digit = 0;
+
+        for (top_bits = 1; top_bits < DIGIT_BIT; top_bits++) {
+            unsigned int base = target - (unsigned int)top_bits;
+            if (base % (unsigned int)DIGIT_BIT == 0) {
+                crafted_used = (int)(base / (unsigned int)DIGIT_BIT) + 1;
+                top_digit = (mp_digit)1 << (top_bits - 1);
+                found = 1;
+                break;
+            }
+        }
+        if (!found) {
+            return TEST_SKIPPED;
+        }
+    }
+
+    ExpectIntEQ(wc_InitRsaKey(&key, HEAP_HINT), 0);
+
+    /* Set up dummy RSA private key fields. */
+    key.type = RSA_PRIVATE;
+    fields[0] = &key.n;
+    fields[1] = &key.e;
+    fields[2] = &key.d;
+    fields[3] = &key.p;
+    fields[4] = &key.q;
+    fields[5] = &key.dP;
+    fields[6] = &key.dQ;
+    fields[7] = &key.u;
+
+    for (i = 0; i < 8; i++) {
+        if (EXPECT_SUCCESS()) {
+            ExpectIntEQ(mp_init(fields[i]), 0);
+            mp_set(fields[i], 0x42);
+        }
+    }
+
+    if (EXPECT_SUCCESS()) {
+        orig_used  = key.p.used;
+        orig_alloc = key.p.alloc;
+        orig_sign  = key.p.sign;
+        orig_dp    = key.p.dp;
+    }
+
+    /* The vulnerable path (mp_unsigned_bin_size -> mp_count_bits, and
+     * mp_leading_bit) only reads dp[used-1].  Bias dp so that index
+     * (used-1) lands on our single real digit -- no giant allocation
+     * (and no mmap/VirtualAlloc) needed. */
+    if (EXPECT_SUCCESS()) {
+        storage = top_digit;
+        fake_dp = (mp_digit*)((wc_ptr_t)&storage
+                  - (wc_ptr_t)(crafted_used - 1) * sizeof(mp_digit));
+
+        key.p.dp    = fake_dp;
+        key.p.used  = crafted_used;
+        key.p.alloc = crafted_used;
+        key.p.sign  = 0;  /* MP_ZPOS */
+    }
+
+    /* Should return an error, not a bogus small size. */
+    derRet = wc_RsaKeyToDer(&key, NULL, 0);
+    ExpectIntLT(derRet, 0);
+
+    /* Restore key.p before cleanup. */
+    key.p.dp    = orig_dp;
+    key.p.used  = orig_used;
+    key.p.alloc = orig_alloc;
+    key.p.sign  = orig_sign;
+
+    DoExpectIntEQ(wc_FreeRsaKey(&key), 0);
+#endif
+    return EXPECT_RESULT();
+} /* END test_wc_RsaKeyToDer_SizeOverflow */
 

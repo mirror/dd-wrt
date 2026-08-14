@@ -24,6 +24,11 @@ endif
 tests_unit_test_CFLAGS       = -DNO_MAIN_DRIVER $(AM_CFLAGS) $(WOLFSENTRY_INCLUDE)
 tests_unit_test_LDADD        = src/libwolfssl@LIBSUFFIX@.la $(LIB_STATIC_ADD) $(WOLFSENTRY_LIB)
 tests_unit_test_DEPENDENCIES = src/libwolfssl@LIBSUFFIX@.la
+if BUILD_SWDEV
+tests_unit_test_SOURCES     += tests/swdev/swdev_loader.c
+tests_unit_test_LDADD       += $(top_builddir)/tests/swdev/build/swdev.o $(LIBM)
+tests_unit_test_DEPENDENCIES += $(top_builddir)/tests/swdev/build/swdev.o
+endif
 include tests/api/include.am
 endif
 EXTRA_DIST += tests/unit.h \
@@ -36,6 +41,9 @@ EXTRA_DIST += tests/unit.h \
               tests/test-tls13-pq-standalone.conf \
               tests/test-tls13-pq-hybrid.conf \
               tests/test-tls13-pq-hybrid-extra.conf \
+              tests/test-tls13-slhdsa-shake.conf \
+              tests/test-tls13-slhdsa-sha2.conf \
+              tests/test-tls13-slhdsa-fail.conf \
               tests/test-dtls13-pq-standalone.conf \
               tests/test-dtls13-pq-standalone-frag.conf \
               tests/test-dtls13-pq-hybrid-frag.conf \
@@ -81,5 +89,15 @@ EXTRA_DIST += tests/unit.h \
               tests/NCONF_test.cnf \
               tests/test-tls-downgrade.conf \
               tests/TXT_DB.txt \
-              tests/utils.h
+              tests/utils.h \
+              tests/emnet/IP/IP.h \
+              tests/emnet/emnet_shim.c \
+              tests/emnet/emnet_nonblock_test.c \
+              tests/emnet/Makefile \
+              tests/freertos-mem-track-repro/user_settings.h \
+              tests/freertos-mem-track-repro/repro.c \
+              tests/freertos-mem-track-repro/FreeRTOS.h \
+              tests/freertos-mem-track-repro/semphr.h \
+              tests/freertos-mem-track-repro/task.h \
+              tests/freertos-mem-track-repro/run.sh
 DISTCLEANFILES+= tests/.libs/unit.test

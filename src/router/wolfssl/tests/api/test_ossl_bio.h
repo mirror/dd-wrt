@@ -35,6 +35,7 @@ int test_wolfSSL_BIO_datagram(void);
 int test_wolfSSL_BIO_s_null(void);
 int test_wolfSSL_BIO_accept(void);
 int test_wolfSSL_BIO_write(void);
+int test_wolfSSL_BIO_read_negative_len(void);
 int test_wolfSSL_BIO_printf(void);
 int test_wolfSSL_BIO_f_md(void);
 int test_wolfSSL_BIO_up_ref(void);
@@ -43,6 +44,10 @@ int test_wolfSSL_BIO_get_len(void);
 int test_wolfSSL_BIO(void);
 int test_wolfSSL_BIO_BIO_ring_read(void);
 int test_wolfSSL_BIO_custom_method(void);
+int test_wolfSSL_BIO_set_conn_hostname(void);
+int test_wolfSSL_BIO_ctrl_pending_chain(void);
+int test_wolfSSL_BIO_meth_type_large(void);
+int test_wolfSSL_BIO_get_init(void);
 
 #define TEST_OSSL_BIO_DECLS                                       \
     TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_gets),           \
@@ -51,6 +56,7 @@ int test_wolfSSL_BIO_custom_method(void);
     TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_should_retry),   \
     TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_s_null),         \
     TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_write),          \
+    TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_read_negative_len), \
     TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_printf),         \
     TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_f_md),           \
     TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_up_ref),         \
@@ -58,7 +64,11 @@ int test_wolfSSL_BIO_custom_method(void);
     TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_get_len),        \
     TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO),                \
     TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_BIO_ring_read),  \
-    TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_custom_method)
+    TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_custom_method),  \
+    TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_set_conn_hostname), \
+    TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_ctrl_pending_chain), \
+    TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_meth_type_large), \
+    TEST_DECL_GROUP("ossl_bio", test_wolfSSL_BIO_get_init)
 
 #define TEST_OSSL_BIO_TLS_DECLS                                   \
     TEST_DECL_GROUP("ossl_bio_tls", test_wolfSSL_BIO_connect),    \

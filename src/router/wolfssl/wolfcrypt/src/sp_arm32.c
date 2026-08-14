@@ -47,6 +47,17 @@
 
 #include <wolfssl/wolfcrypt/sp.h>
 
+#if defined(WOLFSSL_USE_SAVE_VECTOR_REGISTERS) && !defined(WOLFSSL_SP_ASM) && \
+        !defined(DEBUG_VECTOR_REGISTER_ACCESS)
+    /* force off unneeded vector register save/restore. */
+    #undef SAVE_VECTOR_REGISTERS
+    #define SAVE_VECTOR_REGISTERS(fail_clause) SAVE_NO_VECTOR_REGISTERS(fail_clause)
+    #undef SAVE_VECTOR_REGISTERS2
+    #define SAVE_VECTOR_REGISTERS2() SAVE_NO_VECTOR_REGISTERS2()
+    #undef RESTORE_VECTOR_REGISTERS
+    #define RESTORE_VECTOR_REGISTERS() RESTORE_NO_VECTOR_REGISTERS()
+#endif
+
 #ifdef __IAR_SYSTEMS_ICC__
 #define __asm__        asm
 #define __volatile__   volatile
@@ -141,10 +152,10 @@ static void sp_2048_from_bin(sp_digit* r, int size, const byte* a, int n)
 
     j = 0;
     for (i = n - 1; i >= 3; i -= 4) {
-        r[j]  = ((sp_digit)a[i - 0] <<  0) |
-                ((sp_digit)a[i - 1] <<  8) |
-                ((sp_digit)a[i - 2] << 16) |
-                ((sp_digit)a[i - 3] << 24);
+        r[j]  = ((sp_uint32)a[i - 0] <<  0) |
+                ((sp_uint32)a[i - 1] <<  8) |
+                ((sp_uint32)a[i - 2] << 16) |
+                ((sp_uint32)a[i - 3] << 24);
         j++;
     }
 
@@ -199,7 +210,7 @@ static void sp_2048_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
+        r[j] |= ((sp_uint32)a->dp[i] << s);
         r[j] &= 0xffffffff;
         s = 32U - s;
         if (j + 1 >= size) {
@@ -234,7 +245,7 @@ static void sp_2048_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_uint32)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 32) {
             r[j] &= 0xffffffff;
             if (j + 1 >= size) {
@@ -308,12 +319,12 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_2048_mul_8(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -2317,12 +2328,12 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_2048_mul_8(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -2684,12 +2695,12 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_2048_mul_8(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -2829,12 +2840,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_add_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_add_8(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -2877,11 +2888,11 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_in_place_16(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_in_place_16(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -2938,12 +2949,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_add_16(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_add_16(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -3065,11 +3076,11 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_in_place_32(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_in_place_32(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -3154,12 +3165,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_add_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_add_32(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -3313,11 +3324,11 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_in_place_64(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_in_place_64(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -3458,12 +3469,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_add_64(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_add_64(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -3673,11 +3684,11 @@ WC_OMIT_FRAME_POINTER static void sp_2048_sqr_8(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_2048_sqr_8(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -4896,11 +4907,11 @@ WC_OMIT_FRAME_POINTER static void sp_2048_sqr_8(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_2048_sqr_8(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5152,11 +5163,11 @@ WC_OMIT_FRAME_POINTER static void sp_2048_sqr_8(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_2048_sqr_8(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5283,12 +5294,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_8(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5367,12 +5378,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_16(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_16(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5465,12 +5476,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_32(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5593,19 +5604,19 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_add_64(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_add_64(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r3, #0\n\t"
         "add	r12, %[a], #0x100\n\t"
         "\n"
-    "L_sp_2048_add_64_word_%=: \n\t"
+    "L_sp_2048_add_64_word_%=:\n\t"
         "adds	r3, r3, #-1\n\t"
         "ldm	%[a]!, {r4, r5, r6, r7}\n\t"
         "ldm	%[b]!, {r8, r9, r10, r11}\n\t"
@@ -5645,18 +5656,18 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_in_place_64(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_in_place_64(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r12, #0\n\t"
         "add	lr, %[a], #0x100\n\t"
         "\n"
-    "L_sp_2048_sub_in_place_64_word_%=: \n\t"
+    "L_sp_2048_sub_in_place_64_word_%=:\n\t"
         "rsbs	r12, r12, #0\n\t"
         "ldm	%[a], {r2, r3, r4, r5}\n\t"
         "ldm	%[b]!, {r6, r7, r8, r9}\n\t"
@@ -5696,12 +5707,12 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_64(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_2048_mul_64(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5714,13 +5725,13 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_64(sp_digit* r, const sp_digit* a,
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_2048_mul_64_outer_%=: \n\t"
+    "L_sp_2048_mul_64_outer_%=:\n\t"
         "subs	r3, r5, #0xfc\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_2048_mul_64_inner_%=: \n\t"
+    "L_sp_2048_mul_64_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[b], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -5838,7 +5849,7 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_64(sp_digit* r, const sp_digit* a,
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_2048_mul_64_inner_done_%=: \n\t"
+    "L_sp_2048_mul_64_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -5880,7 +5891,7 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_64(sp_digit* r, const sp_digit* a,
         "add	r5, r5, #4\n\t"
         "str	r7, [sp, r5]\n\t"
         "\n"
-    "L_sp_2048_mul_64_store_%=: \n\t"
+    "L_sp_2048_mul_64_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -5907,11 +5918,11 @@ WC_OMIT_FRAME_POINTER static void sp_2048_sqr_64(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_2048_sqr_64(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -5923,13 +5934,13 @@ WC_OMIT_FRAME_POINTER static void sp_2048_sqr_64(sp_digit* r, const sp_digit* a)
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_2048_sqr_64_outer_%=: \n\t"
+    "L_sp_2048_sqr_64_outer_%=:\n\t"
         "subs	r3, r5, #0xfc\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_2048_sqr_64_inner_%=: \n\t"
+    "L_sp_2048_sqr_64_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[a], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -6014,7 +6025,7 @@ WC_OMIT_FRAME_POINTER static void sp_2048_sqr_64(sp_digit* r, const sp_digit* a)
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_2048_sqr_64_inner_done_%=: \n\t"
+    "L_sp_2048_sqr_64_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -6050,7 +6061,7 @@ WC_OMIT_FRAME_POINTER static void sp_2048_sqr_64(sp_digit* r, const sp_digit* a)
         "add	r5, r5, #4\n\t"
         "str	r7, [sp, r5]\n\t"
         "\n"
-    "L_sp_2048_sqr_64_store_%=: \n\t"
+    "L_sp_2048_sqr_64_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -6099,19 +6110,19 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_add_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_add_32(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r3, #0\n\t"
         "add	r12, %[a], #0x80\n\t"
         "\n"
-    "L_sp_2048_add_32_word_%=: \n\t"
+    "L_sp_2048_add_32_word_%=:\n\t"
         "adds	r3, r3, #-1\n\t"
         "ldm	%[a]!, {r4, r5, r6, r7}\n\t"
         "ldm	%[b]!, {r8, r9, r10, r11}\n\t"
@@ -6151,18 +6162,18 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_in_place_32(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_in_place_32(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r12, #0\n\t"
         "add	lr, %[a], #0x80\n\t"
         "\n"
-    "L_sp_2048_sub_in_place_32_word_%=: \n\t"
+    "L_sp_2048_sub_in_place_32_word_%=:\n\t"
         "rsbs	r12, r12, #0\n\t"
         "ldm	%[a], {r2, r3, r4, r5}\n\t"
         "ldm	%[b]!, {r6, r7, r8, r9}\n\t"
@@ -6202,12 +6213,12 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_2048_mul_32(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -6220,13 +6231,13 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_32(sp_digit* r, const sp_digit* a,
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_2048_mul_32_outer_%=: \n\t"
+    "L_sp_2048_mul_32_outer_%=:\n\t"
         "subs	r3, r5, #0x7c\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_2048_mul_32_inner_%=: \n\t"
+    "L_sp_2048_mul_32_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[b], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -6344,7 +6355,7 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_32(sp_digit* r, const sp_digit* a,
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_2048_mul_32_inner_done_%=: \n\t"
+    "L_sp_2048_mul_32_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -6386,7 +6397,7 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_32(sp_digit* r, const sp_digit* a,
         "add	r5, r5, #4\n\t"
         "str	r7, [sp, r5]\n\t"
         "\n"
-    "L_sp_2048_mul_32_store_%=: \n\t"
+    "L_sp_2048_mul_32_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -6413,11 +6424,11 @@ WC_OMIT_FRAME_POINTER static void sp_2048_sqr_32(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_2048_sqr_32(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -6429,13 +6440,13 @@ WC_OMIT_FRAME_POINTER static void sp_2048_sqr_32(sp_digit* r, const sp_digit* a)
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_2048_sqr_32_outer_%=: \n\t"
+    "L_sp_2048_sqr_32_outer_%=:\n\t"
         "subs	r3, r5, #0x7c\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_2048_sqr_32_inner_%=: \n\t"
+    "L_sp_2048_sqr_32_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[a], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -6520,7 +6531,7 @@ WC_OMIT_FRAME_POINTER static void sp_2048_sqr_32(sp_digit* r, const sp_digit* a)
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_2048_sqr_32_inner_done_%=: \n\t"
+    "L_sp_2048_sqr_32_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -6556,7 +6567,7 @@ WC_OMIT_FRAME_POINTER static void sp_2048_sqr_32(sp_digit* r, const sp_digit* a)
         "add	r5, r5, #4\n\t"
         "str	r7, [sp, r5]\n\t"
         "\n"
-    "L_sp_2048_sqr_32_store_%=: \n\t"
+    "L_sp_2048_sqr_32_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -6583,17 +6594,17 @@ WC_OMIT_FRAME_POINTER static void sp_2048_sqr_32(sp_digit* r, const sp_digit* a)
  */
 static void sp_2048_mont_setup(const sp_digit* a, sp_digit* rho)
 {
-    sp_digit x;
-    sp_digit b;
+    sp_uint32 x;
+    sp_uint32 b;
 
-    b = a[0];
+    b = (sp_uint32)a[0];
     x = (((b + 2) & 4) << 1) + b; /* here x*a==1 mod 2**4 */
     x *= 2 - b * x;               /* here x*a==1 mod 2**8 */
     x *= 2 - b * x;               /* here x*a==1 mod 2**16 */
     x *= 2 - b * x;               /* here x*a==1 mod 2**32 */
 
     /* rho = -1/m mod b */
-    *rho = (sp_digit)0 - x;
+    *rho = (sp_digit)((sp_int32)0 - (sp_int32)x);
 }
 
 #ifdef WOLFSSL_SP_SMALL
@@ -6609,12 +6620,12 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_d_64(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_2048_mul_d_64(sp_digit* r,
     const sp_digit* a, sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -6650,7 +6661,7 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_d_64(sp_digit* r,
         "mov	r5, #0\n\t"
         "mov	r9, #4\n\t"
         "\n"
-    "L_sp_2048_mul_d_64_word_%=: \n\t"
+    "L_sp_2048_mul_d_64_word_%=:\n\t"
         /* A[i] * B */
         "ldr	r8, [%[a], r9]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -6720,12 +6731,12 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_d_64(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_2048_mul_d_64(sp_digit* r,
     const sp_digit* a, sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -8816,13 +8827,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_cond_sub_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_cond_sub_32(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -8830,7 +8841,7 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_cond_sub_32(sp_digit* r,
         "mov	r12, #0\n\t"
         "mov	lr, #0\n\t"
         "\n"
-    "L_sp_2048_cond_sub_32_words_%=: \n\t"
+    "L_sp_2048_cond_sub_32_words_%=:\n\t"
         "subs	r12, r6, r12\n\t"
         "ldr	r4, [%[a], lr]\n\t"
         "ldr	r5, [%[b], lr]\n\t"
@@ -8869,13 +8880,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_cond_sub_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_cond_sub_32(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -9019,12 +9030,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_32(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_32(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -9037,7 +9048,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_32(
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_2048_mont_reduce_32_word_%=: \n\t"
+    "L_sp_2048_mont_reduce_32_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -10013,12 +10024,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_32(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_32(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -10029,7 +10040,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_32(
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_2048_mont_reduce_32_word_%=: \n\t"
+    "L_sp_2048_mont_reduce_32_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -10322,12 +10333,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_32(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_32(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -10340,7 +10351,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_32(
         "ldr	r7, [%[a], #12]\n\t"
         "ldr	r8, [%[a], #16]\n\t"
         "\n"
-    "L_sp_2048_mont_reduce_32_word_%=: \n\t"
+    "L_sp_2048_mont_reduce_32_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r11, %[mp], r4\n\t"
         /* a[i+0] += m[0] * mu */
@@ -10572,12 +10583,12 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_d_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_2048_mul_d_32(sp_digit* r,
     const sp_digit* a, sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -10613,7 +10624,7 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_d_32(sp_digit* r,
         "mov	r5, #0\n\t"
         "mov	r9, #4\n\t"
         "\n"
-    "L_sp_2048_mul_d_32_word_%=: \n\t"
+    "L_sp_2048_mul_d_32_word_%=:\n\t"
         /* A[i] * B */
         "ldr	r8, [%[a], r9]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -10683,12 +10694,12 @@ WC_OMIT_FRAME_POINTER static void sp_2048_mul_d_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_2048_mul_d_32(sp_digit* r,
     const sp_digit* a, sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -11741,12 +11752,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_2048_word_32(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_2048_word_32(sp_digit d1, sp_digit d0,
     sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -11813,12 +11824,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_2048_word_32(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_2048_word_32(sp_digit d1, sp_digit d0,
     sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -11836,7 +11847,7 @@ WC_OMIT_FRAME_POINTER static sp_digit div_2048_word_32(sp_digit d1, sp_digit d0,
         /* Next 30 bits */
         "mov	r12, #29\n\t"
         "\n"
-    "L_div_2048_word_32_bit_%=: \n\t"
+    "L_div_2048_word_32_bit_%=:\n\t"
         "lsls	r4, r4, #1\n\t"
         "adc	r5, r5, r5\n\t"
         "subs	r6, lr, r5\n\t"
@@ -11962,11 +11973,11 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_2048_cmp_32(const sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_int32 sp_2048_cmp_32(const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sp_digit* a asm ("r0") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register const sp_digit* a __asm__ ("r0") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -11977,7 +11988,7 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_2048_cmp_32(const sp_digit* a,
 #ifdef WOLFSSL_SP_SMALL
         "mov	r4, #0x7c\n\t"
         "\n"
-    "L_sp_2048_cmp_32_words_%=: \n\t"
+    "L_sp_2048_cmp_32_words_%=:\n\t"
         "ldr	r12, [%[a], r4]\n\t"
         "ldr	lr, [%[b], r4]\n\t"
         "and	r12, r12, r3\n\t"
@@ -12498,10 +12509,10 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint32)n << c);
             n = e[i--];
             y |= (byte)(n >> (32 - c));
-            n <<= c;
+            n = (sp_uint32)n << c;
             c = 32 - c;
         }
         else if (c == 0) {
@@ -12510,14 +12521,14 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 32 - c;
+            n = (sp_uint32)n << (32 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 32);
         for (; i>=0 || c>=4; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 28);
-                n <<= 4;
+                n = (sp_uint32)n << 4;
                 c = 28;
             }
             else if (c < 4) {
@@ -12525,12 +12536,12 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 4 - c;
                 y |= (byte)(n >> (32 - c));
-                n <<= c;
+                n = (sp_uint32)n << c;
                 c = 32 - c;
             }
             else {
                 y = (byte)((n >> 28) & 0xf);
-                n <<= 4;
+                n = (sp_uint32)n << 4;
                 c -= 4;
             }
 
@@ -12651,10 +12662,10 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint32)n << c);
             n = e[i--];
             y |= (byte)(n >> (32 - c));
-            n <<= c;
+            n = (sp_uint32)n << c;
             c = 32 - c;
         }
         else if (c == 0) {
@@ -12663,14 +12674,14 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 32 - c;
+            n = (sp_uint32)n << (32 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 32);
         for (; i>=0 || c>=5; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 27);
-                n <<= 5;
+                n = (sp_uint32)n << 5;
                 c = 27;
             }
             else if (c < 5) {
@@ -12678,12 +12689,12 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 5 - c;
                 y |= (byte)(n >> (32 - c));
-                n <<= c;
+                n = (sp_uint32)n << c;
                 c = 32 - c;
             }
             else {
                 y = (byte)((n >> 27) & 0x1f);
-                n <<= 5;
+                n = (sp_uint32)n << 5;
                 c -= 5;
             }
 
@@ -12742,13 +12753,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_cond_sub_64(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_cond_sub_64(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -12756,7 +12767,7 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_cond_sub_64(sp_digit* r,
         "mov	r12, #0\n\t"
         "mov	lr, #0\n\t"
         "\n"
-    "L_sp_2048_cond_sub_64_words_%=: \n\t"
+    "L_sp_2048_cond_sub_64_words_%=:\n\t"
         "subs	r12, r6, r12\n\t"
         "ldr	r4, [%[a], lr]\n\t"
         "ldr	r5, [%[b], lr]\n\t"
@@ -12795,13 +12806,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_cond_sub_64(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_cond_sub_64(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -13057,12 +13068,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_64(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_64(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -13075,7 +13086,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_64(
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_2048_mont_reduce_64_word_%=: \n\t"
+    "L_sp_2048_mont_reduce_64_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -14979,12 +14990,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_64(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_64(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -14995,7 +15006,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_64(
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_2048_mont_reduce_64_word_%=: \n\t"
+    "L_sp_2048_mont_reduce_64_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -15544,12 +15555,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_64(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_64(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -15562,7 +15573,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_2048_mont_reduce_64(
         "ldr	r7, [%[a], #12]\n\t"
         "ldr	r8, [%[a], #16]\n\t"
         "\n"
-    "L_sp_2048_mont_reduce_64_word_%=: \n\t"
+    "L_sp_2048_mont_reduce_64_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r11, %[mp], r4\n\t"
         /* a[i+0] += m[0] * mu */
@@ -15954,19 +15965,19 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_64(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_64(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r12, #0\n\t"
         "add	lr, %[a], #0x100\n\t"
         "\n"
-    "L_sp_2048_sub_64_word_%=: \n\t"
+    "L_sp_2048_sub_64_word_%=:\n\t"
         "rsbs	r12, r12, #0\n\t"
         "ldm	%[a]!, {r3, r4, r5, r6}\n\t"
         "ldm	%[b]!, {r7, r8, r9, r10}\n\t"
@@ -16005,12 +16016,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_64(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_sub_64(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -16156,12 +16167,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_2048_word_64(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_2048_word_64(sp_digit d1, sp_digit d0,
     sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -16228,12 +16239,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_2048_word_64(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_2048_word_64(sp_digit d1, sp_digit d0,
     sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -16251,7 +16262,7 @@ WC_OMIT_FRAME_POINTER static sp_digit div_2048_word_64(sp_digit d1, sp_digit d0,
         /* Next 30 bits */
         "mov	r12, #29\n\t"
         "\n"
-    "L_div_2048_word_64_bit_%=: \n\t"
+    "L_div_2048_word_64_bit_%=:\n\t"
         "lsls	r4, r4, #1\n\t"
         "adc	r5, r5, r5\n\t"
         "subs	r6, lr, r5\n\t"
@@ -16481,11 +16492,11 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_2048_cmp_64(const sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_int32 sp_2048_cmp_64(const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sp_digit* a asm ("r0") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register const sp_digit* a __asm__ ("r0") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -16496,7 +16507,7 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_2048_cmp_64(const sp_digit* a,
 #ifdef WOLFSSL_SP_SMALL
         "mov	r4, #0xfc\n\t"
         "\n"
-    "L_sp_2048_cmp_64_words_%=: \n\t"
+    "L_sp_2048_cmp_64_words_%=:\n\t"
         "ldr	r12, [%[a], r4]\n\t"
         "ldr	lr, [%[b], r4]\n\t"
         "and	r12, r12, r3\n\t"
@@ -17364,10 +17375,10 @@ static int sp_2048_mod_exp_64(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint32)n << c);
             n = e[i--];
             y |= (byte)(n >> (32 - c));
-            n <<= c;
+            n = (sp_uint32)n << c;
             c = 32 - c;
         }
         else if (c == 0) {
@@ -17376,14 +17387,14 @@ static int sp_2048_mod_exp_64(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 32 - c;
+            n = (sp_uint32)n << (32 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 64);
         for (; i>=0 || c>=3; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 29);
-                n <<= 3;
+                n = (sp_uint32)n << 3;
                 c = 29;
             }
             else if (c < 3) {
@@ -17391,12 +17402,12 @@ static int sp_2048_mod_exp_64(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 3 - c;
                 y |= (byte)(n >> (32 - c));
-                n <<= c;
+                n = (sp_uint32)n << c;
                 c = 32 - c;
             }
             else {
                 y = (byte)((n >> 29) & 0x7);
-                n <<= 3;
+                n = (sp_uint32)n << 3;
                 c -= 3;
             }
 
@@ -17500,10 +17511,10 @@ static int sp_2048_mod_exp_64(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint32)n << c);
             n = e[i--];
             y |= (byte)(n >> (32 - c));
-            n <<= c;
+            n = (sp_uint32)n << c;
             c = 32 - c;
         }
         else if (c == 0) {
@@ -17512,14 +17523,14 @@ static int sp_2048_mod_exp_64(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 32 - c;
+            n = (sp_uint32)n << (32 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 64);
         for (; i>=0 || c>=4; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 28);
-                n <<= 4;
+                n = (sp_uint32)n << 4;
                 c = 28;
             }
             else if (c < 4) {
@@ -17527,12 +17538,12 @@ static int sp_2048_mod_exp_64(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 4 - c;
                 y |= (byte)(n >> (32 - c));
-                n <<= c;
+                n = (sp_uint32)n << c;
                 c = 32 - c;
             }
             else {
                 y = (byte)((n >> 28) & 0xf);
-                n <<= 4;
+                n = (sp_uint32)n << 4;
                 c -= 4;
             }
 
@@ -17605,7 +17616,7 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, const mp_int* em,
 #else
         e[0] = em->dp[0];
         if (em->used > 1) {
-            e[0] |= ((sp_digit)em->dp[1]) << DIGIT_BIT;
+            e[0] |= ((sp_uint32)em->dp[1]) << DIGIT_BIT;
         }
 #endif
         if (e[0] == 0) {
@@ -17722,13 +17733,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_cond_add_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_cond_add_32(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -17736,7 +17747,7 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_cond_add_32(sp_digit* r,
         "mov	r6, #0\n\t"
         "mov	r12, #0\n\t"
         "\n"
-    "L_sp_2048_cond_add_32_words_%=: \n\t"
+    "L_sp_2048_cond_add_32_words_%=:\n\t"
         "adds	lr, lr, #-1\n\t"
         "ldr	r4, [%[a], r12]\n\t"
         "ldr	r5, [%[b], r12]\n\t"
@@ -17775,13 +17786,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_2048_cond_add_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_2048_cond_add_32(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -18087,7 +18098,7 @@ static int sp_2048_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 64; i++) {
-            r->dp[j] |= (mp_digit)(a[i] << s);
+            r->dp[j] |= (mp_digit)((sp_uint32)a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
@@ -18112,7 +18123,7 @@ static int sp_2048_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 64; i++) {
-            r->dp[j] |= ((mp_digit)a[i]) << s;
+            r->dp[j] |= ((sp_uint32)a[i]) << s;
             if (s + 32 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
                 r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
@@ -18191,12 +18202,12 @@ WC_OMIT_FRAME_POINTER static void sp_2048_lshift_64(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_2048_lshift_64(sp_digit* r,
     const sp_digit* a, byte n)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register byte n asm ("r2") = (byte)n_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register byte n __asm__ ("r2") = (byte)n_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -18646,10 +18657,10 @@ static int sp_2048_mod_exp_2_64(sp_digit* r, const sp_digit* e, int bits,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint32)n << c);
             n = e[i--];
             y |= (byte)(n >> (32 - c));
-            n <<= c;
+            n = (sp_uint32)n << c;
             c = 32 - c;
         }
         else if (c == 0) {
@@ -18658,14 +18669,14 @@ static int sp_2048_mod_exp_2_64(sp_digit* r, const sp_digit* e, int bits,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 32 - c;
+            n = (sp_uint32)n << (32 - c);
         }
         sp_2048_lshift_64(r, norm, y);
         for (; i>=0 || c>=5; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 27);
-                n <<= 5;
+                n = (sp_uint32)n << 5;
                 c = 27;
             }
             else if (c < 5) {
@@ -18673,12 +18684,12 @@ static int sp_2048_mod_exp_2_64(sp_digit* r, const sp_digit* e, int bits,
                 n = e[i--];
                 c = 5 - c;
                 y |= (byte)(n >> (32 - c));
-                n <<= c;
+                n = (sp_uint32)n << c;
                 c = 32 - c;
             }
             else {
                 y = (byte)((n >> 27) & 0x1f);
-                n <<= 5;
+                n = (sp_uint32)n << 5;
                 c -= 5;
             }
 
@@ -18846,10 +18857,10 @@ static void sp_3072_from_bin(sp_digit* r, int size, const byte* a, int n)
 
     j = 0;
     for (i = n - 1; i >= 3; i -= 4) {
-        r[j]  = ((sp_digit)a[i - 0] <<  0) |
-                ((sp_digit)a[i - 1] <<  8) |
-                ((sp_digit)a[i - 2] << 16) |
-                ((sp_digit)a[i - 3] << 24);
+        r[j]  = ((sp_uint32)a[i - 0] <<  0) |
+                ((sp_uint32)a[i - 1] <<  8) |
+                ((sp_uint32)a[i - 2] << 16) |
+                ((sp_uint32)a[i - 3] << 24);
         j++;
     }
 
@@ -18904,7 +18915,7 @@ static void sp_3072_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
+        r[j] |= ((sp_uint32)a->dp[i] << s);
         r[j] &= 0xffffffff;
         s = 32U - s;
         if (j + 1 >= size) {
@@ -18939,7 +18950,7 @@ static void sp_3072_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_uint32)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 32) {
             r[j] &= 0xffffffff;
             if (j + 1 >= size) {
@@ -19012,12 +19023,12 @@ WC_OMIT_FRAME_POINTER static void sp_3072_mul_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_3072_mul_12(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -24522,12 +24533,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_add_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_add_12(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -24577,11 +24588,11 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_in_place_24(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_in_place_24(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -24652,12 +24663,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_add_24(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_add_24(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -24797,11 +24808,11 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_in_place_48(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_in_place_48(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -24914,12 +24925,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_add_48(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_add_48(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -25101,11 +25112,11 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_in_place_96(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_in_place_96(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -25302,12 +25313,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_add_96(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_add_96(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -25572,11 +25583,11 @@ WC_OMIT_FRAME_POINTER static void sp_3072_sqr_12(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_3072_sqr_12(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -28649,12 +28660,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_12(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -28740,12 +28751,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_24(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_24(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -28852,12 +28863,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_48(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_48(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -29008,19 +29019,19 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_add_96(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_add_96(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r3, #0\n\t"
         "add	r12, %[a], #0x180\n\t"
         "\n"
-    "L_sp_3072_add_96_word_%=: \n\t"
+    "L_sp_3072_add_96_word_%=:\n\t"
         "adds	r3, r3, #-1\n\t"
         "ldm	%[a]!, {r4, r5, r6, r7}\n\t"
         "ldm	%[b]!, {r8, r9, r10, r11}\n\t"
@@ -29060,18 +29071,18 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_in_place_96(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_in_place_96(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r12, #0\n\t"
         "add	lr, %[a], #0x180\n\t"
         "\n"
-    "L_sp_3072_sub_in_place_96_word_%=: \n\t"
+    "L_sp_3072_sub_in_place_96_word_%=:\n\t"
         "rsbs	r12, r12, #0\n\t"
         "ldm	%[a], {r2, r3, r4, r5}\n\t"
         "ldm	%[b]!, {r6, r7, r8, r9}\n\t"
@@ -29111,12 +29122,12 @@ WC_OMIT_FRAME_POINTER static void sp_3072_mul_96(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_3072_mul_96(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -29129,13 +29140,13 @@ WC_OMIT_FRAME_POINTER static void sp_3072_mul_96(sp_digit* r, const sp_digit* a,
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_3072_mul_96_outer_%=: \n\t"
+    "L_sp_3072_mul_96_outer_%=:\n\t"
         "subs	r3, r5, #0x17c\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_3072_mul_96_inner_%=: \n\t"
+    "L_sp_3072_mul_96_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[b], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -29253,7 +29264,7 @@ WC_OMIT_FRAME_POINTER static void sp_3072_mul_96(sp_digit* r, const sp_digit* a,
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_3072_mul_96_inner_done_%=: \n\t"
+    "L_sp_3072_mul_96_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -29295,7 +29306,7 @@ WC_OMIT_FRAME_POINTER static void sp_3072_mul_96(sp_digit* r, const sp_digit* a,
         "add	r5, r5, #4\n\t"
         "str	r7, [sp, r5]\n\t"
         "\n"
-    "L_sp_3072_mul_96_store_%=: \n\t"
+    "L_sp_3072_mul_96_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -29322,11 +29333,11 @@ WC_OMIT_FRAME_POINTER static void sp_3072_sqr_96(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_3072_sqr_96(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -29338,13 +29349,13 @@ WC_OMIT_FRAME_POINTER static void sp_3072_sqr_96(sp_digit* r, const sp_digit* a)
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_3072_sqr_96_outer_%=: \n\t"
+    "L_sp_3072_sqr_96_outer_%=:\n\t"
         "subs	r3, r5, #0x17c\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_3072_sqr_96_inner_%=: \n\t"
+    "L_sp_3072_sqr_96_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[a], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -29429,7 +29440,7 @@ WC_OMIT_FRAME_POINTER static void sp_3072_sqr_96(sp_digit* r, const sp_digit* a)
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_3072_sqr_96_inner_done_%=: \n\t"
+    "L_sp_3072_sqr_96_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -29465,7 +29476,7 @@ WC_OMIT_FRAME_POINTER static void sp_3072_sqr_96(sp_digit* r, const sp_digit* a)
         "add	r5, r5, #4\n\t"
         "str	r7, [sp, r5]\n\t"
         "\n"
-    "L_sp_3072_sqr_96_store_%=: \n\t"
+    "L_sp_3072_sqr_96_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -29514,19 +29525,19 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_add_48(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_add_48(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r3, #0\n\t"
         "add	r12, %[a], #0xc0\n\t"
         "\n"
-    "L_sp_3072_add_48_word_%=: \n\t"
+    "L_sp_3072_add_48_word_%=:\n\t"
         "adds	r3, r3, #-1\n\t"
         "ldm	%[a]!, {r4, r5, r6, r7}\n\t"
         "ldm	%[b]!, {r8, r9, r10, r11}\n\t"
@@ -29566,18 +29577,18 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_in_place_48(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_in_place_48(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r12, #0\n\t"
         "add	lr, %[a], #0xc0\n\t"
         "\n"
-    "L_sp_3072_sub_in_place_48_word_%=: \n\t"
+    "L_sp_3072_sub_in_place_48_word_%=:\n\t"
         "rsbs	r12, r12, #0\n\t"
         "ldm	%[a], {r2, r3, r4, r5}\n\t"
         "ldm	%[b]!, {r6, r7, r8, r9}\n\t"
@@ -29617,12 +29628,12 @@ WC_OMIT_FRAME_POINTER static void sp_3072_mul_48(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_3072_mul_48(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -29635,13 +29646,13 @@ WC_OMIT_FRAME_POINTER static void sp_3072_mul_48(sp_digit* r, const sp_digit* a,
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_3072_mul_48_outer_%=: \n\t"
+    "L_sp_3072_mul_48_outer_%=:\n\t"
         "subs	r3, r5, #0xbc\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_3072_mul_48_inner_%=: \n\t"
+    "L_sp_3072_mul_48_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[b], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -29759,7 +29770,7 @@ WC_OMIT_FRAME_POINTER static void sp_3072_mul_48(sp_digit* r, const sp_digit* a,
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_3072_mul_48_inner_done_%=: \n\t"
+    "L_sp_3072_mul_48_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -29801,7 +29812,7 @@ WC_OMIT_FRAME_POINTER static void sp_3072_mul_48(sp_digit* r, const sp_digit* a,
         "add	r5, r5, #4\n\t"
         "str	r7, [sp, r5]\n\t"
         "\n"
-    "L_sp_3072_mul_48_store_%=: \n\t"
+    "L_sp_3072_mul_48_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -29828,11 +29839,11 @@ WC_OMIT_FRAME_POINTER static void sp_3072_sqr_48(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_3072_sqr_48(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -29844,13 +29855,13 @@ WC_OMIT_FRAME_POINTER static void sp_3072_sqr_48(sp_digit* r, const sp_digit* a)
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_3072_sqr_48_outer_%=: \n\t"
+    "L_sp_3072_sqr_48_outer_%=:\n\t"
         "subs	r3, r5, #0xbc\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_3072_sqr_48_inner_%=: \n\t"
+    "L_sp_3072_sqr_48_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[a], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -29935,7 +29946,7 @@ WC_OMIT_FRAME_POINTER static void sp_3072_sqr_48(sp_digit* r, const sp_digit* a)
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_3072_sqr_48_inner_done_%=: \n\t"
+    "L_sp_3072_sqr_48_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -29971,7 +29982,7 @@ WC_OMIT_FRAME_POINTER static void sp_3072_sqr_48(sp_digit* r, const sp_digit* a)
         "add	r5, r5, #4\n\t"
         "str	r7, [sp, r5]\n\t"
         "\n"
-    "L_sp_3072_sqr_48_store_%=: \n\t"
+    "L_sp_3072_sqr_48_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -29998,17 +30009,17 @@ WC_OMIT_FRAME_POINTER static void sp_3072_sqr_48(sp_digit* r, const sp_digit* a)
  */
 static void sp_3072_mont_setup(const sp_digit* a, sp_digit* rho)
 {
-    sp_digit x;
-    sp_digit b;
+    sp_uint32 x;
+    sp_uint32 b;
 
-    b = a[0];
+    b = (sp_uint32)a[0];
     x = (((b + 2) & 4) << 1) + b; /* here x*a==1 mod 2**4 */
     x *= 2 - b * x;               /* here x*a==1 mod 2**8 */
     x *= 2 - b * x;               /* here x*a==1 mod 2**16 */
     x *= 2 - b * x;               /* here x*a==1 mod 2**32 */
 
     /* rho = -1/m mod b */
-    *rho = (sp_digit)0 - x;
+    *rho = (sp_digit)((sp_int32)0 - (sp_int32)x);
 }
 
 #ifdef WOLFSSL_SP_SMALL
@@ -30024,12 +30035,12 @@ WC_OMIT_FRAME_POINTER static void sp_3072_mul_d_96(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_3072_mul_d_96(sp_digit* r,
     const sp_digit* a, sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -30065,7 +30076,7 @@ WC_OMIT_FRAME_POINTER static void sp_3072_mul_d_96(sp_digit* r,
         "mov	r5, #0\n\t"
         "mov	r9, #4\n\t"
         "\n"
-    "L_sp_3072_mul_d_96_word_%=: \n\t"
+    "L_sp_3072_mul_d_96_word_%=:\n\t"
         /* A[i] * B */
         "ldr	r8, [%[a], r9]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -30135,12 +30146,12 @@ WC_OMIT_FRAME_POINTER static void sp_3072_mul_d_96(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_3072_mul_d_96(sp_digit* r,
     const sp_digit* a, sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -33255,13 +33266,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_cond_sub_48(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_cond_sub_48(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -33269,7 +33280,7 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_cond_sub_48(sp_digit* r,
         "mov	r12, #0\n\t"
         "mov	lr, #0\n\t"
         "\n"
-    "L_sp_3072_cond_sub_48_words_%=: \n\t"
+    "L_sp_3072_cond_sub_48_words_%=:\n\t"
         "subs	r12, r6, r12\n\t"
         "ldr	r4, [%[a], lr]\n\t"
         "ldr	r5, [%[b], lr]\n\t"
@@ -33308,13 +33319,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_cond_sub_48(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_cond_sub_48(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -33514,12 +33525,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_48(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_48(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -33532,7 +33543,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_48(
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_3072_mont_reduce_48_word_%=: \n\t"
+    "L_sp_3072_mont_reduce_48_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -34972,12 +34983,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_48(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_48(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -34988,7 +34999,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_48(
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_3072_mont_reduce_48_word_%=: \n\t"
+    "L_sp_3072_mont_reduce_48_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -35409,12 +35420,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_48(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_48(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -35427,7 +35438,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_48(
         "ldr	r7, [%[a], #12]\n\t"
         "ldr	r8, [%[a], #16]\n\t"
         "\n"
-    "L_sp_3072_mont_reduce_48_word_%=: \n\t"
+    "L_sp_3072_mont_reduce_48_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r11, %[mp], r4\n\t"
         /* a[i+0] += m[0] * mu */
@@ -35739,12 +35750,12 @@ WC_OMIT_FRAME_POINTER static void sp_3072_mul_d_48(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_3072_mul_d_48(sp_digit* r,
     const sp_digit* a, sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -35780,7 +35791,7 @@ WC_OMIT_FRAME_POINTER static void sp_3072_mul_d_48(sp_digit* r,
         "mov	r5, #0\n\t"
         "mov	r9, #4\n\t"
         "\n"
-    "L_sp_3072_mul_d_48_word_%=: \n\t"
+    "L_sp_3072_mul_d_48_word_%=:\n\t"
         /* A[i] * B */
         "ldr	r8, [%[a], r9]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -35850,12 +35861,12 @@ WC_OMIT_FRAME_POINTER static void sp_3072_mul_d_48(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_3072_mul_d_48(sp_digit* r,
     const sp_digit* a, sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -37420,12 +37431,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_3072_word_48(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_3072_word_48(sp_digit d1, sp_digit d0,
     sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -37492,12 +37503,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_3072_word_48(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_3072_word_48(sp_digit d1, sp_digit d0,
     sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -37515,7 +37526,7 @@ WC_OMIT_FRAME_POINTER static sp_digit div_3072_word_48(sp_digit d1, sp_digit d0,
         /* Next 30 bits */
         "mov	r12, #29\n\t"
         "\n"
-    "L_div_3072_word_48_bit_%=: \n\t"
+    "L_div_3072_word_48_bit_%=:\n\t"
         "lsls	r4, r4, #1\n\t"
         "adc	r5, r5, r5\n\t"
         "subs	r6, lr, r5\n\t"
@@ -37641,11 +37652,11 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_3072_cmp_48(const sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_int32 sp_3072_cmp_48(const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sp_digit* a asm ("r0") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register const sp_digit* a __asm__ ("r0") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -37656,7 +37667,7 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_3072_cmp_48(const sp_digit* a,
 #ifdef WOLFSSL_SP_SMALL
         "mov	r4, #0xbc\n\t"
         "\n"
-    "L_sp_3072_cmp_48_words_%=: \n\t"
+    "L_sp_3072_cmp_48_words_%=:\n\t"
         "ldr	r12, [%[a], r4]\n\t"
         "ldr	lr, [%[b], r4]\n\t"
         "and	r12, r12, r3\n\t"
@@ -38353,10 +38364,10 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint32)n << c);
             n = e[i--];
             y |= (byte)(n >> (32 - c));
-            n <<= c;
+            n = (sp_uint32)n << c;
             c = 32 - c;
         }
         else if (c == 0) {
@@ -38365,14 +38376,14 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 32 - c;
+            n = (sp_uint32)n << (32 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 48);
         for (; i>=0 || c>=4; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 28);
-                n <<= 4;
+                n = (sp_uint32)n << 4;
                 c = 28;
             }
             else if (c < 4) {
@@ -38380,12 +38391,12 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 4 - c;
                 y |= (byte)(n >> (32 - c));
-                n <<= c;
+                n = (sp_uint32)n << c;
                 c = 32 - c;
             }
             else {
                 y = (byte)((n >> 28) & 0xf);
-                n <<= 4;
+                n = (sp_uint32)n << 4;
                 c -= 4;
             }
 
@@ -38506,10 +38517,10 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint32)n << c);
             n = e[i--];
             y |= (byte)(n >> (32 - c));
-            n <<= c;
+            n = (sp_uint32)n << c;
             c = 32 - c;
         }
         else if (c == 0) {
@@ -38518,14 +38529,14 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 32 - c;
+            n = (sp_uint32)n << (32 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 48);
         for (; i>=0 || c>=5; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 27);
-                n <<= 5;
+                n = (sp_uint32)n << 5;
                 c = 27;
             }
             else if (c < 5) {
@@ -38533,12 +38544,12 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 5 - c;
                 y |= (byte)(n >> (32 - c));
-                n <<= c;
+                n = (sp_uint32)n << c;
                 c = 32 - c;
             }
             else {
                 y = (byte)((n >> 27) & 0x1f);
-                n <<= 5;
+                n = (sp_uint32)n << 5;
                 c -= 5;
             }
 
@@ -38597,13 +38608,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_cond_sub_96(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_cond_sub_96(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -38611,7 +38622,7 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_cond_sub_96(sp_digit* r,
         "mov	r12, #0\n\t"
         "mov	lr, #0\n\t"
         "\n"
-    "L_sp_3072_cond_sub_96_words_%=: \n\t"
+    "L_sp_3072_cond_sub_96_words_%=:\n\t"
         "subs	r12, r6, r12\n\t"
         "ldr	r4, [%[a], lr]\n\t"
         "ldr	r5, [%[b], lr]\n\t"
@@ -38650,13 +38661,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_cond_sub_96(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_cond_sub_96(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -39024,12 +39035,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_96(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_96(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -39042,7 +39053,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_96(
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_3072_mont_reduce_96_word_%=: \n\t"
+    "L_sp_3072_mont_reduce_96_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -41874,12 +41885,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_96(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_96(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -41890,7 +41901,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_96(
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_3072_mont_reduce_96_word_%=: \n\t"
+    "L_sp_3072_mont_reduce_96_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -42695,12 +42706,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_96(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_96(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -42713,7 +42724,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_3072_mont_reduce_96(
         "ldr	r7, [%[a], #12]\n\t"
         "ldr	r8, [%[a], #16]\n\t"
         "\n"
-    "L_sp_3072_mont_reduce_96_word_%=: \n\t"
+    "L_sp_3072_mont_reduce_96_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r11, %[mp], r4\n\t"
         /* a[i+0] += m[0] * mu */
@@ -43265,19 +43276,19 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_96(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_96(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r12, #0\n\t"
         "add	lr, %[a], #0x180\n\t"
         "\n"
-    "L_sp_3072_sub_96_word_%=: \n\t"
+    "L_sp_3072_sub_96_word_%=:\n\t"
         "rsbs	r12, r12, #0\n\t"
         "ldm	%[a]!, {r3, r4, r5, r6}\n\t"
         "ldm	%[b]!, {r7, r8, r9, r10}\n\t"
@@ -43316,12 +43327,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_96(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_sub_96(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -43523,12 +43534,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_3072_word_96(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_3072_word_96(sp_digit d1, sp_digit d0,
     sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -43595,12 +43606,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_3072_word_96(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_3072_word_96(sp_digit d1, sp_digit d0,
     sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -43618,7 +43629,7 @@ WC_OMIT_FRAME_POINTER static sp_digit div_3072_word_96(sp_digit d1, sp_digit d0,
         /* Next 30 bits */
         "mov	r12, #29\n\t"
         "\n"
-    "L_div_3072_word_96_bit_%=: \n\t"
+    "L_div_3072_word_96_bit_%=:\n\t"
         "lsls	r4, r4, #1\n\t"
         "adc	r5, r5, r5\n\t"
         "subs	r6, lr, r5\n\t"
@@ -43848,11 +43859,11 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_3072_cmp_96(const sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_int32 sp_3072_cmp_96(const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sp_digit* a asm ("r0") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register const sp_digit* a __asm__ ("r0") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -43868,7 +43879,7 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_3072_cmp_96(const sp_digit* a,
         "mov	r4, #0x17c\n\t"
 #endif
         "\n"
-    "L_sp_3072_cmp_96_words_%=: \n\t"
+    "L_sp_3072_cmp_96_words_%=:\n\t"
         "ldr	r12, [%[a], r4]\n\t"
         "ldr	lr, [%[b], r4]\n\t"
         "and	r12, r12, r3\n\t"
@@ -45088,10 +45099,10 @@ static int sp_3072_mod_exp_96(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint32)n << c);
             n = e[i--];
             y |= (byte)(n >> (32 - c));
-            n <<= c;
+            n = (sp_uint32)n << c;
             c = 32 - c;
         }
         else if (c == 0) {
@@ -45100,14 +45111,14 @@ static int sp_3072_mod_exp_96(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 32 - c;
+            n = (sp_uint32)n << (32 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 96);
         for (; i>=0 || c>=3; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 29);
-                n <<= 3;
+                n = (sp_uint32)n << 3;
                 c = 29;
             }
             else if (c < 3) {
@@ -45115,12 +45126,12 @@ static int sp_3072_mod_exp_96(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 3 - c;
                 y |= (byte)(n >> (32 - c));
-                n <<= c;
+                n = (sp_uint32)n << c;
                 c = 32 - c;
             }
             else {
                 y = (byte)((n >> 29) & 0x7);
-                n <<= 3;
+                n = (sp_uint32)n << 3;
                 c -= 3;
             }
 
@@ -45224,10 +45235,10 @@ static int sp_3072_mod_exp_96(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint32)n << c);
             n = e[i--];
             y |= (byte)(n >> (32 - c));
-            n <<= c;
+            n = (sp_uint32)n << c;
             c = 32 - c;
         }
         else if (c == 0) {
@@ -45236,14 +45247,14 @@ static int sp_3072_mod_exp_96(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 32 - c;
+            n = (sp_uint32)n << (32 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 96);
         for (; i>=0 || c>=4; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 28);
-                n <<= 4;
+                n = (sp_uint32)n << 4;
                 c = 28;
             }
             else if (c < 4) {
@@ -45251,12 +45262,12 @@ static int sp_3072_mod_exp_96(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 4 - c;
                 y |= (byte)(n >> (32 - c));
-                n <<= c;
+                n = (sp_uint32)n << c;
                 c = 32 - c;
             }
             else {
                 y = (byte)((n >> 28) & 0xf);
-                n <<= 4;
+                n = (sp_uint32)n << 4;
                 c -= 4;
             }
 
@@ -45329,7 +45340,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
 #else
         e[0] = em->dp[0];
         if (em->used > 1) {
-            e[0] |= ((sp_digit)em->dp[1]) << DIGIT_BIT;
+            e[0] |= ((sp_uint32)em->dp[1]) << DIGIT_BIT;
         }
 #endif
         if (e[0] == 0) {
@@ -45446,13 +45457,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_cond_add_48(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_cond_add_48(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -45460,7 +45471,7 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_cond_add_48(sp_digit* r,
         "mov	r6, #0\n\t"
         "mov	r12, #0\n\t"
         "\n"
-    "L_sp_3072_cond_add_48_words_%=: \n\t"
+    "L_sp_3072_cond_add_48_words_%=:\n\t"
         "adds	lr, lr, #-1\n\t"
         "ldr	r4, [%[a], r12]\n\t"
         "ldr	r5, [%[b], r12]\n\t"
@@ -45499,13 +45510,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_3072_cond_add_48(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_3072_cond_add_48(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -45867,7 +45878,7 @@ static int sp_3072_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 96; i++) {
-            r->dp[j] |= (mp_digit)(a[i] << s);
+            r->dp[j] |= (mp_digit)((sp_uint32)a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
@@ -45892,7 +45903,7 @@ static int sp_3072_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 96; i++) {
-            r->dp[j] |= ((mp_digit)a[i]) << s;
+            r->dp[j] |= ((sp_uint32)a[i]) << s;
             if (s + 32 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
                 r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
@@ -45971,12 +45982,12 @@ WC_OMIT_FRAME_POINTER static void sp_3072_lshift_96(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_3072_lshift_96(sp_digit* r,
     const sp_digit* a, byte n)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register byte n asm ("r2") = (byte)n_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register byte n __asm__ ("r2") = (byte)n_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -46618,10 +46629,10 @@ static int sp_3072_mod_exp_2_96(sp_digit* r, const sp_digit* e, int bits,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint32)n << c);
             n = e[i--];
             y |= (byte)(n >> (32 - c));
-            n <<= c;
+            n = (sp_uint32)n << c;
             c = 32 - c;
         }
         else if (c == 0) {
@@ -46630,14 +46641,14 @@ static int sp_3072_mod_exp_2_96(sp_digit* r, const sp_digit* e, int bits,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 32 - c;
+            n = (sp_uint32)n << (32 - c);
         }
         sp_3072_lshift_96(r, norm, y);
         for (; i>=0 || c>=5; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 27);
-                n <<= 5;
+                n = (sp_uint32)n << 5;
                 c = 27;
             }
             else if (c < 5) {
@@ -46645,12 +46656,12 @@ static int sp_3072_mod_exp_2_96(sp_digit* r, const sp_digit* e, int bits,
                 n = e[i--];
                 c = 5 - c;
                 y |= (byte)(n >> (32 - c));
-                n <<= c;
+                n = (sp_uint32)n << c;
                 c = 32 - c;
             }
             else {
                 y = (byte)((n >> 27) & 0x1f);
-                n <<= 5;
+                n = (sp_uint32)n << 5;
                 c -= 5;
             }
 
@@ -46818,10 +46829,10 @@ static void sp_4096_from_bin(sp_digit* r, int size, const byte* a, int n)
 
     j = 0;
     for (i = n - 1; i >= 3; i -= 4) {
-        r[j]  = ((sp_digit)a[i - 0] <<  0) |
-                ((sp_digit)a[i - 1] <<  8) |
-                ((sp_digit)a[i - 2] << 16) |
-                ((sp_digit)a[i - 3] << 24);
+        r[j]  = ((sp_uint32)a[i - 0] <<  0) |
+                ((sp_uint32)a[i - 1] <<  8) |
+                ((sp_uint32)a[i - 2] << 16) |
+                ((sp_uint32)a[i - 3] << 24);
         j++;
     }
 
@@ -46876,7 +46887,7 @@ static void sp_4096_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
+        r[j] |= ((sp_uint32)a->dp[i] << s);
         r[j] &= 0xffffffff;
         s = 32U - s;
         if (j + 1 >= size) {
@@ -46911,7 +46922,7 @@ static void sp_4096_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_uint32)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 32) {
             r[j] &= 0xffffffff;
             if (j + 1 >= size) {
@@ -46983,11 +46994,11 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_4096_sub_in_place_128(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_4096_sub_in_place_128(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -47240,12 +47251,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_4096_add_128(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_4096_add_128(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -47576,19 +47587,19 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_4096_add_128(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_4096_add_128(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r3, #0\n\t"
         "add	r12, %[a], #0x200\n\t"
         "\n"
-    "L_sp_4096_add_128_word_%=: \n\t"
+    "L_sp_4096_add_128_word_%=:\n\t"
         "adds	r3, r3, #-1\n\t"
         "ldm	%[a]!, {r4, r5, r6, r7}\n\t"
         "ldm	%[b]!, {r8, r9, r10, r11}\n\t"
@@ -47628,18 +47639,18 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_4096_sub_in_place_128(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_4096_sub_in_place_128(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r12, #0\n\t"
         "add	lr, %[a], #0x200\n\t"
         "\n"
-    "L_sp_4096_sub_in_place_128_word_%=: \n\t"
+    "L_sp_4096_sub_in_place_128_word_%=:\n\t"
         "rsbs	r12, r12, #0\n\t"
         "ldm	%[a], {r2, r3, r4, r5}\n\t"
         "ldm	%[b]!, {r6, r7, r8, r9}\n\t"
@@ -47679,12 +47690,12 @@ WC_OMIT_FRAME_POINTER static void sp_4096_mul_128(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_4096_mul_128(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -47697,13 +47708,13 @@ WC_OMIT_FRAME_POINTER static void sp_4096_mul_128(sp_digit* r,
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_4096_mul_128_outer_%=: \n\t"
+    "L_sp_4096_mul_128_outer_%=:\n\t"
         "subs	r3, r5, #0x1fc\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_4096_mul_128_inner_%=: \n\t"
+    "L_sp_4096_mul_128_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[b], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -47821,7 +47832,7 @@ WC_OMIT_FRAME_POINTER static void sp_4096_mul_128(sp_digit* r,
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_4096_mul_128_inner_done_%=: \n\t"
+    "L_sp_4096_mul_128_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -47863,7 +47874,7 @@ WC_OMIT_FRAME_POINTER static void sp_4096_mul_128(sp_digit* r,
         "add	r5, r5, #4\n\t"
         "str	r7, [sp, r5]\n\t"
         "\n"
-    "L_sp_4096_mul_128_store_%=: \n\t"
+    "L_sp_4096_mul_128_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -47891,11 +47902,11 @@ WC_OMIT_FRAME_POINTER static void sp_4096_sqr_128(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_4096_sqr_128(sp_digit* r,
     const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -47907,13 +47918,13 @@ WC_OMIT_FRAME_POINTER static void sp_4096_sqr_128(sp_digit* r,
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_4096_sqr_128_outer_%=: \n\t"
+    "L_sp_4096_sqr_128_outer_%=:\n\t"
         "subs	r3, r5, #0x1fc\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_4096_sqr_128_inner_%=: \n\t"
+    "L_sp_4096_sqr_128_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[a], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -47998,7 +48009,7 @@ WC_OMIT_FRAME_POINTER static void sp_4096_sqr_128(sp_digit* r,
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_4096_sqr_128_inner_done_%=: \n\t"
+    "L_sp_4096_sqr_128_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -48034,7 +48045,7 @@ WC_OMIT_FRAME_POINTER static void sp_4096_sqr_128(sp_digit* r,
         "add	r5, r5, #4\n\t"
         "str	r7, [sp, r5]\n\t"
         "\n"
-    "L_sp_4096_sqr_128_store_%=: \n\t"
+    "L_sp_4096_sqr_128_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -48059,17 +48070,17 @@ WC_OMIT_FRAME_POINTER static void sp_4096_sqr_128(sp_digit* r,
  */
 static void sp_4096_mont_setup(const sp_digit* a, sp_digit* rho)
 {
-    sp_digit x;
-    sp_digit b;
+    sp_uint32 x;
+    sp_uint32 b;
 
-    b = a[0];
+    b = (sp_uint32)a[0];
     x = (((b + 2) & 4) << 1) + b; /* here x*a==1 mod 2**4 */
     x *= 2 - b * x;               /* here x*a==1 mod 2**8 */
     x *= 2 - b * x;               /* here x*a==1 mod 2**16 */
     x *= 2 - b * x;               /* here x*a==1 mod 2**32 */
 
     /* rho = -1/m mod b */
-    *rho = (sp_digit)0 - x;
+    *rho = (sp_digit)((sp_int32)0 - (sp_int32)x);
 }
 
 #ifdef WOLFSSL_SP_SMALL
@@ -48085,12 +48096,12 @@ WC_OMIT_FRAME_POINTER static void sp_4096_mul_d_128(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_4096_mul_d_128(sp_digit* r,
     const sp_digit* a, sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -48126,7 +48137,7 @@ WC_OMIT_FRAME_POINTER static void sp_4096_mul_d_128(sp_digit* r,
         "mov	r5, #0\n\t"
         "mov	r9, #4\n\t"
         "\n"
-    "L_sp_4096_mul_d_128_word_%=: \n\t"
+    "L_sp_4096_mul_d_128_word_%=:\n\t"
         /* A[i] * B */
         "ldr	r8, [%[a], r9]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -48196,12 +48207,12 @@ WC_OMIT_FRAME_POINTER static void sp_4096_mul_d_128(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_4096_mul_d_128(sp_digit* r,
     const sp_digit* a, sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -52341,13 +52352,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_4096_cond_sub_128(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_4096_cond_sub_128(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -52355,7 +52366,7 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_4096_cond_sub_128(sp_digit* r,
         "mov	r12, #0\n\t"
         "mov	lr, #0\n\t"
         "\n"
-    "L_sp_4096_cond_sub_128_words_%=: \n\t"
+    "L_sp_4096_cond_sub_128_words_%=:\n\t"
         "subs	r12, r6, r12\n\t"
         "ldr	r4, [%[a], lr]\n\t"
         "ldr	r5, [%[b], lr]\n\t"
@@ -52394,13 +52405,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_4096_cond_sub_128(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_4096_cond_sub_128(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -52880,12 +52891,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_4096_mont_reduce_128(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_4096_mont_reduce_128(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -52898,7 +52909,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_4096_mont_reduce_128(
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_4096_mont_reduce_128_word_%=: \n\t"
+    "L_sp_4096_mont_reduce_128_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -56658,12 +56669,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_4096_mont_reduce_128(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_4096_mont_reduce_128(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -56674,7 +56685,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_4096_mont_reduce_128(
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_4096_mont_reduce_128_word_%=: \n\t"
+    "L_sp_4096_mont_reduce_128_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -57735,12 +57746,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_4096_mont_reduce_128(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_4096_mont_reduce_128(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -57753,7 +57764,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_4096_mont_reduce_128(
         "ldr	r7, [%[a], #12]\n\t"
         "ldr	r8, [%[a], #16]\n\t"
         "\n"
-    "L_sp_4096_mont_reduce_128_word_%=: \n\t"
+    "L_sp_4096_mont_reduce_128_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r11, %[mp], r4\n\t"
         /* a[i+0] += m[0] * mu */
@@ -58465,19 +58476,19 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_4096_sub_128(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_4096_sub_128(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r12, #0\n\t"
         "add	lr, %[a], #0x200\n\t"
         "\n"
-    "L_sp_4096_sub_128_word_%=: \n\t"
+    "L_sp_4096_sub_128_word_%=:\n\t"
         "rsbs	r12, r12, #0\n\t"
         "ldm	%[a]!, {r3, r4, r5, r6}\n\t"
         "ldm	%[b]!, {r7, r8, r9, r10}\n\t"
@@ -58516,12 +58527,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_4096_sub_128(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_4096_sub_128(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -58779,12 +58790,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_4096_word_128(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_4096_word_128(sp_digit d1,
     sp_digit d0, sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -58851,12 +58862,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_4096_word_128(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_4096_word_128(sp_digit d1,
     sp_digit d0, sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -58874,7 +58885,7 @@ WC_OMIT_FRAME_POINTER static sp_digit div_4096_word_128(sp_digit d1,
         /* Next 30 bits */
         "mov	r12, #29\n\t"
         "\n"
-    "L_div_4096_word_128_bit_%=: \n\t"
+    "L_div_4096_word_128_bit_%=:\n\t"
         "lsls	r4, r4, #1\n\t"
         "adc	r5, r5, r5\n\t"
         "subs	r6, lr, r5\n\t"
@@ -59104,11 +59115,11 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_4096_cmp_128(const sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_int32 sp_4096_cmp_128(const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sp_digit* a asm ("r0") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register const sp_digit* a __asm__ ("r0") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -59124,7 +59135,7 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_4096_cmp_128(const sp_digit* a,
         "mov	r4, #0x1fc\n\t"
 #endif
         "\n"
-    "L_sp_4096_cmp_128_words_%=: \n\t"
+    "L_sp_4096_cmp_128_words_%=:\n\t"
         "ldr	r12, [%[a], r4]\n\t"
         "ldr	lr, [%[b], r4]\n\t"
         "and	r12, r12, r3\n\t"
@@ -60696,10 +60707,10 @@ static int sp_4096_mod_exp_128(sp_digit* r, const sp_digit* a, const sp_digit* e
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint32)n << c);
             n = e[i--];
             y |= (byte)(n >> (32 - c));
-            n <<= c;
+            n = (sp_uint32)n << c;
             c = 32 - c;
         }
         else if (c == 0) {
@@ -60708,14 +60719,14 @@ static int sp_4096_mod_exp_128(sp_digit* r, const sp_digit* a, const sp_digit* e
         }
         else {
             y = (byte)(n >> c);
-            n <<= 32 - c;
+            n = (sp_uint32)n << (32 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 128);
         for (; i>=0 || c>=3; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 29);
-                n <<= 3;
+                n = (sp_uint32)n << 3;
                 c = 29;
             }
             else if (c < 3) {
@@ -60723,12 +60734,12 @@ static int sp_4096_mod_exp_128(sp_digit* r, const sp_digit* a, const sp_digit* e
                 n = e[i--];
                 c = 3 - c;
                 y |= (byte)(n >> (32 - c));
-                n <<= c;
+                n = (sp_uint32)n << c;
                 c = 32 - c;
             }
             else {
                 y = (byte)((n >> 29) & 0x7);
-                n <<= 3;
+                n = (sp_uint32)n << 3;
                 c -= 3;
             }
 
@@ -60832,10 +60843,10 @@ static int sp_4096_mod_exp_128(sp_digit* r, const sp_digit* a, const sp_digit* e
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint32)n << c);
             n = e[i--];
             y |= (byte)(n >> (32 - c));
-            n <<= c;
+            n = (sp_uint32)n << c;
             c = 32 - c;
         }
         else if (c == 0) {
@@ -60844,14 +60855,14 @@ static int sp_4096_mod_exp_128(sp_digit* r, const sp_digit* a, const sp_digit* e
         }
         else {
             y = (byte)(n >> c);
-            n <<= 32 - c;
+            n = (sp_uint32)n << (32 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 128);
         for (; i>=0 || c>=4; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 28);
-                n <<= 4;
+                n = (sp_uint32)n << 4;
                 c = 28;
             }
             else if (c < 4) {
@@ -60859,12 +60870,12 @@ static int sp_4096_mod_exp_128(sp_digit* r, const sp_digit* a, const sp_digit* e
                 n = e[i--];
                 c = 4 - c;
                 y |= (byte)(n >> (32 - c));
-                n <<= c;
+                n = (sp_uint32)n << c;
                 c = 32 - c;
             }
             else {
                 y = (byte)((n >> 28) & 0xf);
-                n <<= 4;
+                n = (sp_uint32)n << 4;
                 c -= 4;
             }
 
@@ -60937,7 +60948,7 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
 #else
         e[0] = em->dp[0];
         if (em->used > 1) {
-            e[0] |= ((sp_digit)em->dp[1]) << DIGIT_BIT;
+            e[0] |= ((sp_uint32)em->dp[1]) << DIGIT_BIT;
         }
 #endif
         if (e[0] == 0) {
@@ -61054,13 +61065,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_4096_cond_add_64(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_4096_cond_add_64(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -61068,7 +61079,7 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_4096_cond_add_64(sp_digit* r,
         "mov	r6, #0\n\t"
         "mov	r12, #0\n\t"
         "\n"
-    "L_sp_4096_cond_add_64_words_%=: \n\t"
+    "L_sp_4096_cond_add_64_words_%=:\n\t"
         "adds	lr, lr, #-1\n\t"
         "ldr	r4, [%[a], r12]\n\t"
         "ldr	r5, [%[b], r12]\n\t"
@@ -61107,13 +61118,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_4096_cond_add_64(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_4096_cond_add_64(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -61531,7 +61542,7 @@ static int sp_4096_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 128; i++) {
-            r->dp[j] |= (mp_digit)(a[i] << s);
+            r->dp[j] |= (mp_digit)((sp_uint32)a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
@@ -61556,7 +61567,7 @@ static int sp_4096_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 128; i++) {
-            r->dp[j] |= ((mp_digit)a[i]) << s;
+            r->dp[j] |= ((sp_uint32)a[i]) << s;
             if (s + 32 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
                 r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
@@ -61635,12 +61646,12 @@ WC_OMIT_FRAME_POINTER static void sp_4096_lshift_128(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_4096_lshift_128(sp_digit* r,
     const sp_digit* a, byte n)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register byte n asm ("r2") = (byte)n_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register byte n __asm__ ("r2") = (byte)n_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -62474,10 +62485,10 @@ static int sp_4096_mod_exp_2_128(sp_digit* r, const sp_digit* e, int bits,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint32)n << c);
             n = e[i--];
             y |= (byte)(n >> (32 - c));
-            n <<= c;
+            n = (sp_uint32)n << c;
             c = 32 - c;
         }
         else if (c == 0) {
@@ -62486,14 +62497,14 @@ static int sp_4096_mod_exp_2_128(sp_digit* r, const sp_digit* e, int bits,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 32 - c;
+            n = (sp_uint32)n << (32 - c);
         }
         sp_4096_lshift_128(r, norm, y);
         for (; i>=0 || c>=5; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 27);
-                n <<= 5;
+                n = (sp_uint32)n << 5;
                 c = 27;
             }
             else if (c < 5) {
@@ -62501,12 +62512,12 @@ static int sp_4096_mod_exp_2_128(sp_digit* r, const sp_digit* e, int bits,
                 n = e[i--];
                 c = 5 - c;
                 y |= (byte)(n >> (32 - c));
-                n <<= c;
+                n = (sp_uint32)n << c;
                 c = 32 - c;
             }
             else {
                 y = (byte)((n >> 27) & 0x1f);
-                n <<= 5;
+                n = (sp_uint32)n << 5;
                 c -= 5;
             }
 
@@ -62686,13 +62697,10 @@ static const sp_point_256 p256_base = {
     /* infinity */
     0
 };
-#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER) || \
-     defined(HAVE_COMP_KEY)
 static const sp_digit p256_b[8] = {
     0x27d2604b,0x3bce3c3e,0xcc53b0f6,0x651d06b0,0x769886bc,0xb3ebbd55,
     0xaa3a93e7,0x5ac635d8
 };
-#endif
 
 #ifdef WOLFSSL_SP_SMALL
 /* Multiply a and b into r. (r = a * b)
@@ -62707,12 +62715,12 @@ WC_OMIT_FRAME_POINTER static void sp_256_mul_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_mul_8(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -62725,13 +62733,13 @@ WC_OMIT_FRAME_POINTER static void sp_256_mul_8(sp_digit* r, const sp_digit* a,
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_256_mul_8_outer_%=: \n\t"
+    "L_sp_256_mul_8_outer_%=:\n\t"
         "subs	r3, r5, #28\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_256_mul_8_inner_%=: \n\t"
+    "L_sp_256_mul_8_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[b], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -62849,7 +62857,7 @@ WC_OMIT_FRAME_POINTER static void sp_256_mul_8(sp_digit* r, const sp_digit* a,
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_256_mul_8_inner_done_%=: \n\t"
+    "L_sp_256_mul_8_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -62891,7 +62899,7 @@ WC_OMIT_FRAME_POINTER static void sp_256_mul_8(sp_digit* r, const sp_digit* a,
         "add	r5, r5, #4\n\t"
         "str	r7, [sp, r5]\n\t"
         "\n"
-    "L_sp_256_mul_8_store_%=: \n\t"
+    "L_sp_256_mul_8_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -62922,12 +62930,12 @@ WC_OMIT_FRAME_POINTER static void sp_256_mul_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_mul_8(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -64931,12 +64939,12 @@ WC_OMIT_FRAME_POINTER static void sp_256_mul_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_mul_8(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -65298,12 +65306,12 @@ WC_OMIT_FRAME_POINTER static void sp_256_mul_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_mul_8(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -65443,11 +65451,11 @@ WC_OMIT_FRAME_POINTER static void sp_256_sqr_8(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_sqr_8(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -65459,13 +65467,13 @@ WC_OMIT_FRAME_POINTER static void sp_256_sqr_8(sp_digit* r, const sp_digit* a)
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_256_sqr_8_outer_%=: \n\t"
+    "L_sp_256_sqr_8_outer_%=:\n\t"
         "subs	r3, r5, #28\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_256_sqr_8_inner_%=: \n\t"
+    "L_sp_256_sqr_8_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[a], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -65550,7 +65558,7 @@ WC_OMIT_FRAME_POINTER static void sp_256_sqr_8(sp_digit* r, const sp_digit* a)
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_256_sqr_8_inner_done_%=: \n\t"
+    "L_sp_256_sqr_8_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -65586,7 +65594,7 @@ WC_OMIT_FRAME_POINTER static void sp_256_sqr_8(sp_digit* r, const sp_digit* a)
         "add	r5, r5, #4\n\t"
         "str	r7, [sp, r5]\n\t"
         "\n"
-    "L_sp_256_sqr_8_store_%=: \n\t"
+    "L_sp_256_sqr_8_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -65615,11 +65623,11 @@ WC_OMIT_FRAME_POINTER static void sp_256_sqr_8(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_sqr_8(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -66838,11 +66846,11 @@ WC_OMIT_FRAME_POINTER static void sp_256_sqr_8(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_sqr_8(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -67094,11 +67102,11 @@ WC_OMIT_FRAME_POINTER static void sp_256_sqr_8(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_sqr_8(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -67227,19 +67235,19 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_256_add_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_256_add_8(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r3, #0\n\t"
         "add	r12, %[a], #32\n\t"
         "\n"
-    "L_sp_256_add_8_word_%=: \n\t"
+    "L_sp_256_add_8_word_%=:\n\t"
         "adds	r3, r3, #-1\n\t"
         "ldm	%[a]!, {r4, r5, r6, r7}\n\t"
         "ldm	%[b]!, {r8, r9, r10, r11}\n\t"
@@ -67279,12 +67287,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_256_add_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_256_add_8(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -67329,11 +67337,11 @@ WC_OMIT_FRAME_POINTER static int sp_256_mod_mul_norm_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static int sp_256_mod_mul_norm_8(sp_digit* r,
     const sp_digit* a, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -67597,7 +67605,7 @@ static void sp_256_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
+        r[j] |= ((sp_uint32)a->dp[i] << s);
         r[j] &= 0xffffffff;
         s = 32U - s;
         if (j + 1 >= size) {
@@ -67632,7 +67640,7 @@ static void sp_256_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_uint32)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 32) {
             r[j] &= 0xffffffff;
             if (j + 1 >= size) {
@@ -67698,7 +67706,7 @@ static int sp_256_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 8; i++) {
-            r->dp[j] |= (mp_digit)(a[i] << s);
+            r->dp[j] |= (mp_digit)((sp_uint32)a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
@@ -67723,7 +67731,7 @@ static int sp_256_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 8; i++) {
-            r->dp[j] |= ((mp_digit)a[i]) << s;
+            r->dp[j] |= ((sp_uint32)a[i]) << s;
             if (s + 32 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
                 r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
@@ -67783,12 +67791,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_mul_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_mul_8(sp_digit* r,
     const sp_digit* a, const sp_digit* b, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -69926,12 +69934,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_mul_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_mul_8(sp_digit* r,
     const sp_digit* a, const sp_digit* b, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -70426,12 +70434,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_mul_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_mul_8(sp_digit* r,
     const sp_digit* a, const sp_digit* b, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -70702,11 +70710,11 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_sqr_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_sqr_8(sp_digit* r,
     const sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -71921,11 +71929,11 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_sqr_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_sqr_8(sp_digit* r,
     const sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -72309,11 +72317,11 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_sqr_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_sqr_8(sp_digit* r,
     const sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -72601,7 +72609,7 @@ static void sp_256_mont_inv_8(sp_digit* r, const sp_digit* a, sp_digit* td)
     XMEMCPY(t, a, sizeof(sp_digit) * 8);
     for (i=254; i>=0; i--) {
         sp_256_mont_sqr_8(t, t, p256_mod, p256_mp_mod);
-        if (p256_mod_minus_2[i / 32] & ((sp_digit)1 << (i % 32)))
+        if (p256_mod_minus_2[i / 32] & ((sp_uint32)1 << (i % 32)))
             sp_256_mont_mul_8(t, t, a, p256_mod, p256_mp_mod);
     }
     XMEMCPY(r, t, sizeof(sp_digit) * 8);
@@ -72667,11 +72675,11 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_256_cmp_8(const sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_int32 sp_256_cmp_8(const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sp_digit* a asm ("r0") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register const sp_digit* a __asm__ ("r0") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -72682,7 +72690,7 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_256_cmp_8(const sp_digit* a,
 #ifdef WOLFSSL_SP_SMALL
         "mov	r4, #28\n\t"
         "\n"
-    "L_sp_256_cmp_8_words_%=: \n\t"
+    "L_sp_256_cmp_8_words_%=:\n\t"
         "ldr	r12, [%[a], r4]\n\t"
         "ldr	lr, [%[b], r4]\n\t"
         "and	r12, r12, r3\n\t"
@@ -72822,13 +72830,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_256_cond_sub_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_256_cond_sub_8(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -72836,7 +72844,7 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_256_cond_sub_8(sp_digit* r,
         "mov	r12, #0\n\t"
         "mov	lr, #0\n\t"
         "\n"
-    "L_sp_256_cond_sub_8_words_%=: \n\t"
+    "L_sp_256_cond_sub_8_words_%=:\n\t"
         "subs	r12, r6, r12\n\t"
         "ldr	r4, [%[a], lr]\n\t"
         "ldr	r5, [%[b], lr]\n\t"
@@ -72875,13 +72883,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_256_cond_sub_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_256_cond_sub_8(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -72944,12 +72952,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_8(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_8(sp_digit* a,
     const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -72962,7 +72970,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_8(sp_digit* a,
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_256_mont_reduce_8_word_%=: \n\t"
+    "L_sp_256_mont_reduce_8_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -73242,12 +73250,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_8(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_8(sp_digit* a,
     const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -73258,7 +73266,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_8(sp_digit* a,
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_256_mont_reduce_8_word_%=: \n\t"
+    "L_sp_256_mont_reduce_8_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -73359,12 +73367,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_8(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_8(sp_digit* a,
     const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -73377,7 +73385,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_8(sp_digit* a,
         "ldr	r7, [%[a], #12]\n\t"
         "ldr	r8, [%[a], #16]\n\t"
         "\n"
-    "L_sp_256_mont_reduce_8_word_%=: \n\t"
+    "L_sp_256_mont_reduce_8_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r11, %[mp], r4\n\t"
         /* a[i+0] += m[0] * mu */
@@ -73459,10 +73467,10 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_8(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_8(sp_digit* a,
     const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -73632,12 +73640,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_order_8(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_order_8(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -73650,7 +73658,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_order_8(
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_256_mont_reduce_order_8_word_%=: \n\t"
+    "L_sp_256_mont_reduce_order_8_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -73930,12 +73938,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_order_8(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_order_8(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -73946,7 +73954,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_order_8(
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_256_mont_reduce_order_8_word_%=: \n\t"
+    "L_sp_256_mont_reduce_order_8_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -74047,12 +74055,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_order_8(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_order_8(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -74065,7 +74073,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_256_mont_reduce_order_8(
         "ldr	r7, [%[a], #12]\n\t"
         "ldr	r8, [%[a], #16]\n\t"
         "\n"
-    "L_sp_256_mont_reduce_order_8_word_%=: \n\t"
+    "L_sp_256_mont_reduce_order_8_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r11, %[mp], r4\n\t"
         /* a[i+0] += m[0] * mu */
@@ -74188,12 +74196,12 @@ WC_OMIT_FRAME_POINTER static void sp_256_mont_add_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_mont_add_8(sp_digit* r,
     const sp_digit* a, const sp_digit* b, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -74261,11 +74269,11 @@ WC_OMIT_FRAME_POINTER static void sp_256_mont_dbl_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_mont_dbl_8(sp_digit* r,
     const sp_digit* a, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -74329,11 +74337,11 @@ WC_OMIT_FRAME_POINTER static void sp_256_mont_tpl_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_mont_tpl_8(sp_digit* r,
     const sp_digit* a, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -74430,12 +74438,12 @@ WC_OMIT_FRAME_POINTER static void sp_256_mont_sub_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_mont_sub_8(sp_digit* r,
     const sp_digit* a, const sp_digit* b, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -74501,12 +74509,12 @@ WC_OMIT_FRAME_POINTER static void sp_256_mont_div2_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_mont_div2_8(sp_digit* r,
     const sp_digit* a, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* m asm ("r2") = (const sp_digit*)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r2") = (const sp_digit*)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -75246,7 +75254,7 @@ static int sp_256_ecc_mulmod_fast_8(sp_point_256* r, const sp_point_256* g, cons
         t[15].infinity = 0;
 
         i = 6;
-        n = k[i+1] << 0;
+        n = (sp_uint32)k[i+1] << 0;
         c = 28;
         y = (int)(n >> 28);
     #ifndef WC_NO_CACHE_RESISTANT
@@ -75259,14 +75267,14 @@ static int sp_256_ecc_mulmod_fast_8(sp_point_256* r, const sp_point_256* g, cons
         {
             XMEMCPY(rt, &t[y], sizeof(sp_point_256));
         }
-        n <<= 4;
+        n = (sp_uint32)n << (4);
         for (; i>=0 || c>=4; ) {
             if (c < 4) {
                 n |= k[i--];
                 c += 32;
             }
             y = (n >> 28) & 0xf;
-            n <<= 4;
+            n = (sp_uint32)n << 4;
             c -= 4;
 
             sp_256_proj_point_dbl_8(rt, rt, tmp);
@@ -75764,9 +75772,9 @@ static THREAD_LS_T int sp_cache_256_last = -1;
 /* Cache has been initialized. */
 static THREAD_LS_T int sp_cache_256_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     #ifndef WOLFSSL_MUTEX_INITIALIZER
-    static volatile int initCacheMutex_256 = 0;
+    static wolfSSL_Atomic_Uint initCacheMutex_256 = 0;
     #endif
     static wolfSSL_Mutex sp_cache_256_lock WOLFSSL_MUTEX_INITIALIZER_CLAUSE(sp_cache_256_lock);
 #endif
@@ -75833,6 +75841,7 @@ static void sp_ecc_get_cache_256(const sp_point_256* g, sp_cache_256_t** cache)
 }
 #endif /* FP_ECC */
 
+
 /* Multiply the base point of P256 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -75855,19 +75864,42 @@ static int sp_256_ecc_mulmod_8(sp_point_256* r, const sp_point_256* g,
     int err = MP_OKAY;
 
     SP_ALLOC_VAR(sp_digit, tmp, 2 * 8 * 6, heap, DYNAMIC_TYPE_ECC);
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     if (err == MP_OKAY) {
-        #ifndef WOLFSSL_MUTEX_INITIALIZER
-        if (initCacheMutex_256 == 0) {
-            wc_InitMutex(&sp_cache_256_lock);
-            initCacheMutex_256 = 1;
+    #ifndef WOLFSSL_MUTEX_INITIALIZER
+        /* Lazy initialization of mutex - one atomic with three states:
+         *   0 = uninitialized, 1 = initialization in progress,
+         *   2 = initialized.
+         */
+        if (WOLFSSL_ATOMIC_LOAD(initCacheMutex_256) != 2) {
+            unsigned int expected_then_actual;
+
+            for (;;) {
+                expected_then_actual = 0;
+                if (wolfSSL_Atomic_Uint_CompareExchange(
+                        &initCacheMutex_256, &expected_then_actual,
+                        1) == 1) {
+                    /* Won race - initialize mutex. On failure, reset state
+                     * to 0 so that a later call retries. */
+                    err = wc_InitMutex(&sp_cache_256_lock);
+                    WOLFSSL_ATOMIC_STORE(initCacheMutex_256,
+                        (err == 0) ? 2U : 0U);
+                    break;
+                }
+                if (expected_then_actual == 2) {
+                    /* Another thread completed initialization. */
+                    break;
+                }
+                /* Initialization in progress in another thread. */
+                WC_RELAX_LONG_LOOP();
+            }
         }
-        #endif
-        if (wc_LockMutex(&sp_cache_256_lock) != 0) {
+    #endif
+        if ((err == MP_OKAY) && (wc_LockMutex(&sp_cache_256_lock) != 0)) {
             err = BAD_MUTEX_E;
         }
     }
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
         sp_ecc_get_cache_256(g, &cache);
@@ -75881,9 +75913,9 @@ static int sp_256_ecc_mulmod_8(sp_point_256* r, const sp_point_256* g,
             err = sp_256_ecc_mulmod_stripe_8(r, g, cache->table, k,
                     map, ct, heap);
         }
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
         wc_UnLockMutex(&sp_cache_256_lock);
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -76145,9 +76177,9 @@ static THREAD_LS_T int sp_cache_256_last = -1;
 /* Cache has been initialized. */
 static THREAD_LS_T int sp_cache_256_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     #ifndef WOLFSSL_MUTEX_INITIALIZER
-    static volatile int initCacheMutex_256 = 0;
+    static wolfSSL_Atomic_Uint initCacheMutex_256 = 0;
     #endif
     static wolfSSL_Mutex sp_cache_256_lock WOLFSSL_MUTEX_INITIALIZER_CLAUSE(sp_cache_256_lock);
 #endif
@@ -76214,6 +76246,7 @@ static void sp_ecc_get_cache_256(const sp_point_256* g, sp_cache_256_t** cache)
 }
 #endif /* FP_ECC */
 
+
 /* Multiply the base point of P256 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -76236,19 +76269,42 @@ static int sp_256_ecc_mulmod_8(sp_point_256* r, const sp_point_256* g,
     int err = MP_OKAY;
 
     SP_ALLOC_VAR(sp_digit, tmp, 2 * 8 * 6, heap, DYNAMIC_TYPE_ECC);
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     if (err == MP_OKAY) {
-        #ifndef WOLFSSL_MUTEX_INITIALIZER
-        if (initCacheMutex_256 == 0) {
-            wc_InitMutex(&sp_cache_256_lock);
-            initCacheMutex_256 = 1;
+    #ifndef WOLFSSL_MUTEX_INITIALIZER
+        /* Lazy initialization of mutex - one atomic with three states:
+         *   0 = uninitialized, 1 = initialization in progress,
+         *   2 = initialized.
+         */
+        if (WOLFSSL_ATOMIC_LOAD(initCacheMutex_256) != 2) {
+            unsigned int expected_then_actual;
+
+            for (;;) {
+                expected_then_actual = 0;
+                if (wolfSSL_Atomic_Uint_CompareExchange(
+                        &initCacheMutex_256, &expected_then_actual,
+                        1) == 1) {
+                    /* Won race - initialize mutex. On failure, reset state
+                     * to 0 so that a later call retries. */
+                    err = wc_InitMutex(&sp_cache_256_lock);
+                    WOLFSSL_ATOMIC_STORE(initCacheMutex_256,
+                        (err == 0) ? 2U : 0U);
+                    break;
+                }
+                if (expected_then_actual == 2) {
+                    /* Another thread completed initialization. */
+                    break;
+                }
+                /* Initialization in progress in another thread. */
+                WC_RELAX_LONG_LOOP();
+            }
         }
-        #endif
-        if (wc_LockMutex(&sp_cache_256_lock) != 0) {
+    #endif
+        if ((err == MP_OKAY) && (wc_LockMutex(&sp_cache_256_lock) != 0)) {
             err = BAD_MUTEX_E;
         }
     }
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
         sp_ecc_get_cache_256(g, &cache);
@@ -76262,9 +76318,9 @@ static int sp_256_ecc_mulmod_8(sp_point_256* r, const sp_point_256* g,
             err = sp_256_ecc_mulmod_stripe_8(r, g, cache->table, k,
                     map, ct, heap);
         }
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
         wc_UnLockMutex(&sp_cache_256_lock);
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -77886,10 +77942,10 @@ int sp_ecc_mulmod_base_add_256(const mp_int* km, const ecc_point* am,
 WC_OMIT_FRAME_POINTER static void sp_256_add_one_8(sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_add_one_8(sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -77932,10 +77988,10 @@ static void sp_256_from_bin(sp_digit* r, int size, const byte* a, int n)
 
     j = 0;
     for (i = n - 1; i >= 3; i -= 4) {
-        r[j]  = ((sp_digit)a[i - 0] <<  0) |
-                ((sp_digit)a[i - 1] <<  8) |
-                ((sp_digit)a[i - 2] << 16) |
-                ((sp_digit)a[i - 3] << 24);
+        r[j]  = ((sp_uint32)a[i - 0] <<  0) |
+                ((sp_uint32)a[i - 1] <<  8) |
+                ((sp_uint32)a[i - 2] << 16) |
+                ((sp_uint32)a[i - 3] << 24);
         j++;
     }
 
@@ -78271,18 +78327,18 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_256_sub_in_place_8(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_256_sub_in_place_8(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r12, #0\n\t"
         "add	lr, %[a], #32\n\t"
         "\n"
-    "L_sp_256_sub_in_place_8_word_%=: \n\t"
+    "L_sp_256_sub_in_place_8_word_%=:\n\t"
         "rsbs	r12, r12, #0\n\t"
         "ldm	%[a], {r2, r3, r4, r5}\n\t"
         "ldm	%[b]!, {r6, r7, r8, r9}\n\t"
@@ -78320,11 +78376,11 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_256_sub_in_place_8(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_256_sub_in_place_8(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -78369,12 +78425,12 @@ WC_OMIT_FRAME_POINTER static void sp_256_mul_d_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_mul_d_8(sp_digit* r, const sp_digit* a,
     sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -78410,7 +78466,7 @@ WC_OMIT_FRAME_POINTER static void sp_256_mul_d_8(sp_digit* r, const sp_digit* a,
         "mov	r5, #0\n\t"
         "mov	r9, #4\n\t"
         "\n"
-    "L_sp_256_mul_d_8_word_%=: \n\t"
+    "L_sp_256_mul_d_8_word_%=:\n\t"
         /* A[i] * B */
         "ldr	r8, [%[a], r9]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -78480,12 +78536,12 @@ WC_OMIT_FRAME_POINTER static void sp_256_mul_d_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_mul_d_8(sp_digit* r, const sp_digit* a,
     sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -78770,12 +78826,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_256_word_8(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_256_word_8(sp_digit d1, sp_digit d0,
     sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -78842,12 +78898,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_256_word_8(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_256_word_8(sp_digit d1, sp_digit d0,
     sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -78865,7 +78921,7 @@ WC_OMIT_FRAME_POINTER static sp_digit div_256_word_8(sp_digit d1, sp_digit d0,
         /* Next 30 bits */
         "mov	r12, #29\n\t"
         "\n"
-    "L_div_256_word_8_bit_%=: \n\t"
+    "L_div_256_word_8_bit_%=:\n\t"
         "lsls	r4, r4, #1\n\t"
         "adc	r5, r5, r5\n\t"
         "subs	r6, lr, r5\n\t"
@@ -79603,19 +79659,19 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_256_sub_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_256_sub_8(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r12, #0\n\t"
         "add	lr, %[a], #32\n\t"
         "\n"
-    "L_sp_256_sub_8_word_%=: \n\t"
+    "L_sp_256_sub_8_word_%=:\n\t"
         "rsbs	r12, r12, #0\n\t"
         "ldm	%[a]!, {r3, r4, r5, r6}\n\t"
         "ldm	%[b]!, {r7, r8, r9, r10}\n\t"
@@ -79654,12 +79710,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_256_sub_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_256_sub_8(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -79697,11 +79753,11 @@ WC_OMIT_FRAME_POINTER static void sp_256_rshift1_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_rshift1_8(sp_digit* r,
     const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -79793,12 +79849,12 @@ WC_OMIT_FRAME_POINTER static void sp_256_div2_mod_8(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_256_div2_mod_8(sp_digit* r,
     const sp_digit* a, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* m asm ("r2") = (const sp_digit*)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r2") = (const sp_digit*)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -79822,7 +79878,7 @@ WC_OMIT_FRAME_POINTER static void sp_256_div2_mod_8(sp_digit* r,
         "adc	r3, r12, r12\n\t"
         "b	L_sp_256_div2_mod_8_div2_%=\n\t"
         "\n"
-    "L_sp_256_div2_mod_8_even_%=: \n\t"
+    "L_sp_256_div2_mod_8_even_%=:\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "ldr	r4, [%[a], #12]\n\t"
         "ldr	r5, [%[a], #16]\n\t"
@@ -79836,7 +79892,7 @@ WC_OMIT_FRAME_POINTER static void sp_256_div2_mod_8(sp_digit* r,
         "ldrd	r6, r7, [%[a], #20]\n\t"
 #endif
         "\n"
-    "L_sp_256_div2_mod_8_div2_%=: \n\t"
+    "L_sp_256_div2_mod_8_div2_%=:\n\t"
         "lsr	r8, r4, #1\n\t"
         "and	r4, r4, #1\n\t"
         "lsr	r9, r5, #1\n\t"
@@ -79882,7 +79938,7 @@ WC_OMIT_FRAME_POINTER static void sp_256_div2_mod_8(sp_digit* r,
 }
 
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-static const byte L_sp_256_num_bits_8_table[] = {
+XALIGNED(4) static const word8 L_sp_256_num_bits_8_table[] = {
     0x00, 0x01, 0x02, 0x02, 0x03, 0x03, 0x03, 0x03,
     0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
     0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
@@ -79921,15 +79977,15 @@ static const byte L_sp_256_num_bits_8_table[] = {
 WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sp_digit* a asm ("r0") = (const sp_digit*)a_p;
-    register byte* L_sp_256_num_bits_8_table_c asm ("r1") =
-        (byte*)&L_sp_256_num_bits_8_table;
+    register const sp_digit* a __asm__ ("r0") = (const sp_digit*)a_p;
+    register word8* L_sp_256_num_bits_8_table_c __asm__ ("r1") =
+        (word8*)&L_sp_256_num_bits_8_table;
 #else
-    register byte* L_sp_256_num_bits_8_table_c =
-        (byte*)&L_sp_256_num_bits_8_table;
+    register word8* L_sp_256_num_bits_8_table_c =
+        (word8*)&L_sp_256_num_bits_8_table;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -79945,7 +80001,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_7_3_%=: \n\t"
+    "L_sp_256_num_bits_8_7_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -79955,7 +80011,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_7_2_%=: \n\t"
+    "L_sp_256_num_bits_8_7_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -79965,14 +80021,14 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_7_1_%=: \n\t"
+    "L_sp_256_num_bits_8_7_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0xe0\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_7_%=: \n\t"
+    "L_sp_256_num_bits_8_7_%=:\n\t"
         "ldr	r1, [%[a], #24]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_256_num_bits_8_6_%=\n\t"
@@ -79984,7 +80040,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_6_3_%=: \n\t"
+    "L_sp_256_num_bits_8_6_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -79994,7 +80050,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_6_2_%=: \n\t"
+    "L_sp_256_num_bits_8_6_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -80004,14 +80060,14 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_6_1_%=: \n\t"
+    "L_sp_256_num_bits_8_6_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0xc0\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_6_%=: \n\t"
+    "L_sp_256_num_bits_8_6_%=:\n\t"
         "ldr	r1, [%[a], #20]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_256_num_bits_8_5_%=\n\t"
@@ -80023,7 +80079,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_5_3_%=: \n\t"
+    "L_sp_256_num_bits_8_5_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -80033,7 +80089,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_5_2_%=: \n\t"
+    "L_sp_256_num_bits_8_5_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -80043,14 +80099,14 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_5_1_%=: \n\t"
+    "L_sp_256_num_bits_8_5_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0xa0\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_5_%=: \n\t"
+    "L_sp_256_num_bits_8_5_%=:\n\t"
         "ldr	r1, [%[a], #16]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_256_num_bits_8_4_%=\n\t"
@@ -80062,7 +80118,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_4_3_%=: \n\t"
+    "L_sp_256_num_bits_8_4_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -80072,7 +80128,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_4_2_%=: \n\t"
+    "L_sp_256_num_bits_8_4_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -80082,14 +80138,14 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_4_1_%=: \n\t"
+    "L_sp_256_num_bits_8_4_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0x80\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_4_%=: \n\t"
+    "L_sp_256_num_bits_8_4_%=:\n\t"
         "ldr	r1, [%[a], #12]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_256_num_bits_8_3_%=\n\t"
@@ -80101,7 +80157,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_3_3_%=: \n\t"
+    "L_sp_256_num_bits_8_3_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -80111,7 +80167,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_3_2_%=: \n\t"
+    "L_sp_256_num_bits_8_3_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -80121,14 +80177,14 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_3_1_%=: \n\t"
+    "L_sp_256_num_bits_8_3_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0x60\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_3_%=: \n\t"
+    "L_sp_256_num_bits_8_3_%=:\n\t"
         "ldr	r1, [%[a], #8]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_256_num_bits_8_2_%=\n\t"
@@ -80140,7 +80196,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_2_3_%=: \n\t"
+    "L_sp_256_num_bits_8_2_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -80150,7 +80206,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_2_2_%=: \n\t"
+    "L_sp_256_num_bits_8_2_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -80160,14 +80216,14 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_2_1_%=: \n\t"
+    "L_sp_256_num_bits_8_2_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0x40\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_2_%=: \n\t"
+    "L_sp_256_num_bits_8_2_%=:\n\t"
         "ldr	r1, [%[a], #4]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_256_num_bits_8_1_%=\n\t"
@@ -80179,7 +80235,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_1_3_%=: \n\t"
+    "L_sp_256_num_bits_8_1_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -80189,7 +80245,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_1_2_%=: \n\t"
+    "L_sp_256_num_bits_8_1_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -80199,14 +80255,14 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_1_1_%=: \n\t"
+    "L_sp_256_num_bits_8_1_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #32\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_1_%=: \n\t"
+    "L_sp_256_num_bits_8_1_%=:\n\t"
         "ldr	r1, [%[a]]\n\t"
         "lsr	r3, r1, #24\n\t"
         "cmp	r3, #0\n\t"
@@ -80216,7 +80272,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_0_3_%=: \n\t"
+    "L_sp_256_num_bits_8_0_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -80226,7 +80282,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_0_2_%=: \n\t"
+    "L_sp_256_num_bits_8_0_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -80236,11 +80292,11 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_0_1_%=: \n\t"
+    "L_sp_256_num_bits_8_0_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "\n"
-    "L_sp_256_num_bits_8_9_%=: \n\t"
+    "L_sp_256_num_bits_8_9_%=:\n\t"
         "mov	%[a], r12\n\t"
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
         : [a] "+r" (a),
@@ -80261,10 +80317,10 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
 WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sp_digit* a asm ("r0") = (const sp_digit*)a_p;
+    register const sp_digit* a __asm__ ("r0") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -80276,7 +80332,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_7_%=: \n\t"
+    "L_sp_256_num_bits_8_7_%=:\n\t"
         "ldr	r1, [%[a], #24]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_256_num_bits_8_6_%=\n\t"
@@ -80285,7 +80341,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_6_%=: \n\t"
+    "L_sp_256_num_bits_8_6_%=:\n\t"
         "ldr	r1, [%[a], #20]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_256_num_bits_8_5_%=\n\t"
@@ -80294,7 +80350,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_5_%=: \n\t"
+    "L_sp_256_num_bits_8_5_%=:\n\t"
         "ldr	r1, [%[a], #16]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_256_num_bits_8_4_%=\n\t"
@@ -80303,7 +80359,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_4_%=: \n\t"
+    "L_sp_256_num_bits_8_4_%=:\n\t"
         "ldr	r1, [%[a], #12]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_256_num_bits_8_3_%=\n\t"
@@ -80312,7 +80368,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_3_%=: \n\t"
+    "L_sp_256_num_bits_8_3_%=:\n\t"
         "ldr	r1, [%[a], #8]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_256_num_bits_8_2_%=\n\t"
@@ -80321,7 +80377,7 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_2_%=: \n\t"
+    "L_sp_256_num_bits_8_2_%=:\n\t"
         "ldr	r1, [%[a], #4]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_256_num_bits_8_1_%=\n\t"
@@ -80330,13 +80386,13 @@ WC_OMIT_FRAME_POINTER static int sp_256_num_bits_8(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_256_num_bits_8_9_%=\n\t"
         "\n"
-    "L_sp_256_num_bits_8_1_%=: \n\t"
+    "L_sp_256_num_bits_8_1_%=:\n\t"
         "ldr	r1, [%[a]]\n\t"
         "mov	r2, #32\n\t"
         "clz	r12, r1\n\t"
         "sub	r12, r2, r12\n\t"
         "\n"
-    "L_sp_256_num_bits_8_9_%=: \n\t"
+    "L_sp_256_num_bits_8_9_%=:\n\t"
         "mov	%[a], r12\n\t"
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
         : [a] "+r" (a)
@@ -80771,7 +80827,6 @@ int sp_ecc_verify_256_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash,
 #endif /* WOLFSSL_SP_NONBLOCK */
 #endif /* HAVE_ECC_VERIFY */
 
-#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER)
 /* Check that the x and y ordinates are a valid point on the curve.
  *
  * point  EC point.
@@ -80844,6 +80899,7 @@ int sp_ecc_is_point_256(const mp_int* pX, const mp_int* pY)
     return err;
 }
 
+#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER)
 /* Check that the private scalar generates the EC point (px, py), the point is
  * on the curve and the point has the correct order.
  *
@@ -81271,13 +81327,10 @@ static const sp_point_384 p384_base = {
     /* infinity */
     0
 };
-#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER) || \
-     defined(HAVE_COMP_KEY)
 static const sp_digit p384_b[12] = {
     0xd3ec2aef,0x2a85c8ed,0x8a2ed19d,0xc656398d,0x5013875a,0x0314088f,
     0xfe814112,0x181d9c6e,0xe3f82d19,0x988e056b,0xe23ee7e4,0xb3312fa7
 };
-#endif
 
 #ifdef WOLFSSL_SP_SMALL
 /* Multiply a and b into r. (r = a * b)
@@ -81292,12 +81345,12 @@ WC_OMIT_FRAME_POINTER static void sp_384_mul_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_384_mul_12(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -81310,13 +81363,13 @@ WC_OMIT_FRAME_POINTER static void sp_384_mul_12(sp_digit* r, const sp_digit* a,
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_384_mul_12_outer_%=: \n\t"
+    "L_sp_384_mul_12_outer_%=:\n\t"
         "subs	r3, r5, #44\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_384_mul_12_inner_%=: \n\t"
+    "L_sp_384_mul_12_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[b], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -81434,7 +81487,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_mul_12(sp_digit* r, const sp_digit* a,
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_384_mul_12_inner_done_%=: \n\t"
+    "L_sp_384_mul_12_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -81476,7 +81529,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_mul_12(sp_digit* r, const sp_digit* a,
         "add	r5, r5, #4\n\t"
         "str	r7, [sp, r5]\n\t"
         "\n"
-    "L_sp_384_mul_12_store_%=: \n\t"
+    "L_sp_384_mul_12_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -81506,12 +81559,12 @@ WC_OMIT_FRAME_POINTER static void sp_384_mul_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_384_mul_12(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -87016,11 +87069,11 @@ WC_OMIT_FRAME_POINTER static void sp_384_sqr_12(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_384_sqr_12(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -87032,13 +87085,13 @@ WC_OMIT_FRAME_POINTER static void sp_384_sqr_12(sp_digit* r, const sp_digit* a)
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_384_sqr_12_outer_%=: \n\t"
+    "L_sp_384_sqr_12_outer_%=:\n\t"
         "subs	r3, r5, #44\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_384_sqr_12_inner_%=: \n\t"
+    "L_sp_384_sqr_12_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[a], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -87123,7 +87176,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_sqr_12(sp_digit* r, const sp_digit* a)
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_384_sqr_12_inner_done_%=: \n\t"
+    "L_sp_384_sqr_12_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -87159,7 +87212,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_sqr_12(sp_digit* r, const sp_digit* a)
         "add	r5, r5, #4\n\t"
         "str	r7, [sp, r5]\n\t"
         "\n"
-    "L_sp_384_sqr_12_store_%=: \n\t"
+    "L_sp_384_sqr_12_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -87187,11 +87240,11 @@ WC_OMIT_FRAME_POINTER static void sp_384_sqr_12(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_384_sqr_12(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -90266,19 +90319,19 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_384_add_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_384_add_12(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r3, #0\n\t"
         "add	r12, %[a], #48\n\t"
         "\n"
-    "L_sp_384_add_12_word_%=: \n\t"
+    "L_sp_384_add_12_word_%=:\n\t"
         "adds	r3, r3, #-1\n\t"
         "ldm	%[a]!, {r4, r5, r6, r7}\n\t"
         "ldm	%[b]!, {r8, r9, r10, r11}\n\t"
@@ -90318,12 +90371,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_384_add_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_384_add_12(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -90478,7 +90531,7 @@ static void sp_384_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
+        r[j] |= ((sp_uint32)a->dp[i] << s);
         r[j] &= 0xffffffff;
         s = 32U - s;
         if (j + 1 >= size) {
@@ -90513,7 +90566,7 @@ static void sp_384_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_uint32)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 32) {
             r[j] &= 0xffffffff;
             if (j + 1 >= size) {
@@ -90579,7 +90632,7 @@ static int sp_384_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 12; i++) {
-            r->dp[j] |= (mp_digit)(a[i] << s);
+            r->dp[j] |= (mp_digit)((sp_uint32)a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
@@ -90604,7 +90657,7 @@ static int sp_384_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 12; i++) {
-            r->dp[j] |= ((mp_digit)a[i]) << s;
+            r->dp[j] |= ((sp_uint32)a[i]) << s;
             if (s + 32 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
                 r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
@@ -90662,13 +90715,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_384_cond_sub_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_384_cond_sub_12(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -90676,7 +90729,7 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_384_cond_sub_12(sp_digit* r,
         "mov	r12, #0\n\t"
         "mov	lr, #0\n\t"
         "\n"
-    "L_sp_384_cond_sub_12_words_%=: \n\t"
+    "L_sp_384_cond_sub_12_words_%=:\n\t"
         "subs	r12, r6, r12\n\t"
         "ldr	r4, [%[a], lr]\n\t"
         "ldr	r5, [%[b], lr]\n\t"
@@ -90715,13 +90768,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_384_cond_sub_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_384_cond_sub_12(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -90797,12 +90850,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_384_mont_reduce_12(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_384_mont_reduce_12(sp_digit* a,
     const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -90815,7 +90868,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_384_mont_reduce_12(sp_digit* a,
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_384_mont_reduce_12_word_%=: \n\t"
+    "L_sp_384_mont_reduce_12_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -91211,12 +91264,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_384_mont_reduce_12(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_384_mont_reduce_12(sp_digit* a,
     const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -91227,7 +91280,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_384_mont_reduce_12(sp_digit* a,
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_384_mont_reduce_12_word_%=: \n\t"
+    "L_sp_384_mont_reduce_12_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -91360,12 +91413,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_384_mont_reduce_12(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_384_mont_reduce_12(sp_digit* a,
     const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -91378,7 +91431,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_384_mont_reduce_12(sp_digit* a,
         "ldr	r7, [%[a], #12]\n\t"
         "ldr	r8, [%[a], #16]\n\t"
         "\n"
-    "L_sp_384_mont_reduce_12_word_%=: \n\t"
+    "L_sp_384_mont_reduce_12_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r11, %[mp], r4\n\t"
         /* a[i+0] += m[0] * mu */
@@ -91540,7 +91593,7 @@ static void sp_384_mont_inv_12(sp_digit* r, const sp_digit* a, sp_digit* td)
     XMEMCPY(t, a, sizeof(sp_digit) * 12);
     for (i=382; i>=0; i--) {
         sp_384_mont_sqr_12(t, t, p384_mod, p384_mp_mod);
-        if (p384_mod_minus_2[i / 32] & ((sp_digit)1 << (i % 32)))
+        if (p384_mod_minus_2[i / 32] & ((sp_uint32)1 << (i % 32)))
             sp_384_mont_mul_12(t, t, a, p384_mod, p384_mp_mod);
     }
     XMEMCPY(r, t, sizeof(sp_digit) * 12);
@@ -91622,11 +91675,11 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_384_cmp_12(const sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_int32 sp_384_cmp_12(const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sp_digit* a asm ("r0") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register const sp_digit* a __asm__ ("r0") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -91637,7 +91690,7 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_384_cmp_12(const sp_digit* a,
 #ifdef WOLFSSL_SP_SMALL
         "mov	r4, #44\n\t"
         "\n"
-    "L_sp_384_cmp_12_words_%=: \n\t"
+    "L_sp_384_cmp_12_words_%=:\n\t"
         "ldr	r12, [%[a], r4]\n\t"
         "ldr	lr, [%[b], r4]\n\t"
         "and	r12, r12, r3\n\t"
@@ -91859,13 +91912,13 @@ WC_OMIT_FRAME_POINTER static void sp_384_mont_add_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_384_mont_add_12(sp_digit* r,
     const sp_digit* a, const sp_digit* b, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register const sp_digit* m asm ("r3") = (const sp_digit*)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register const sp_digit* m __asm__ ("r3") = (const sp_digit*)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -91902,7 +91955,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_mont_add_12(sp_digit* r,
         "sbcs	r11, r11, r3\n\t"
         "stm	%[r]!, {r8, r9, r10, r11}\n\t"
         "ldm	%[r], {r8, r9, r10, r11}\n\t"
-        "sbcs	r8, r8, r12, LSL #1\n\t"
+        "sbcs	r8, r8, r12, lsl #1\n\t"
         "sbcs	r9, r9, r3\n\t"
         "sbcs	r10, r10, r3\n\t"
         "sbcs	r11, r11, r3\n\t"
@@ -91924,7 +91977,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_mont_add_12(sp_digit* r,
         "sbcs	r11, r11, r3\n\t"
         "stm	%[r]!, {r8, r9, r10, r11}\n\t"
         "ldm	%[r], {r8, r9, r10, r11}\n\t"
-        "sbcs	r8, r8, r12, LSL #1\n\t"
+        "sbcs	r8, r8, r12, lsl #1\n\t"
         "sbcs	r9, r9, r3\n\t"
         "sbcs	r10, r10, r3\n\t"
         "sbcs	r11, r11, r3\n\t"
@@ -91959,12 +92012,12 @@ WC_OMIT_FRAME_POINTER static void sp_384_mont_dbl_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_384_mont_dbl_12(sp_digit* r,
     const sp_digit* a, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* m asm ("r2") = (const sp_digit*)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r2") = (const sp_digit*)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -91994,7 +92047,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_mont_dbl_12(sp_digit* r,
         "sbcs	r5, r5, #0\n\t"
         "sbcs	r6, r6, #0\n\t"
         "sbcs	r7, r7, r2\n\t"
-        "sbcs	r8, r8, r3, LSL #1\n\t"
+        "sbcs	r8, r8, r3, lsl #1\n\t"
         "sbcs	r9, r9, r2\n\t"
         "stm	%[r]!, {r4, r5, r6, r7, r8, r9}\n\t"
         "ldm	%[r], {r4, r5, r6, r7, r8, r9}\n\t"
@@ -92014,7 +92067,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_mont_dbl_12(sp_digit* r,
         "sbcs	r5, r5, #0\n\t"
         "sbcs	r6, r6, #0\n\t"
         "sbcs	r7, r7, r2\n\t"
-        "sbcs	r8, r8, r3, LSL #1\n\t"
+        "sbcs	r8, r8, r3, lsl #1\n\t"
         "sbcs	r9, r9, r2\n\t"
         "stm	%[r]!, {r4, r5, r6, r7, r8, r9}\n\t"
         "ldm	%[r], {r4, r5, r6, r7, r8, r9}\n\t"
@@ -92048,12 +92101,12 @@ WC_OMIT_FRAME_POINTER static void sp_384_mont_tpl_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_384_mont_tpl_12(sp_digit* r,
     const sp_digit* a, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* m asm ("r2") = (const sp_digit*)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r2") = (const sp_digit*)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -92083,7 +92136,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_mont_tpl_12(sp_digit* r,
         "sbcs	r5, r5, #0\n\t"
         "sbcs	r6, r6, #0\n\t"
         "sbcs	r7, r7, r2\n\t"
-        "sbcs	r8, r8, r3, LSL #1\n\t"
+        "sbcs	r8, r8, r3, lsl #1\n\t"
         "sbcs	r9, r9, r2\n\t"
         "stm	%[r]!, {r4, r5, r6, r7, r8, r9}\n\t"
         "ldm	%[r], {r4, r5, r6, r7, r8, r9}\n\t"
@@ -92103,7 +92156,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_mont_tpl_12(sp_digit* r,
         "sbcs	r5, r5, #0\n\t"
         "sbcs	r6, r6, #0\n\t"
         "sbcs	r7, r7, r2\n\t"
-        "sbcs	r8, r8, r3, LSL #1\n\t"
+        "sbcs	r8, r8, r3, lsl #1\n\t"
         "sbcs	r9, r9, r2\n\t"
         "stm	%[r]!, {r4, r5, r6, r7, r8, r9}\n\t"
         "ldm	%[r], {r4, r5, r6, r7, r8, r9}\n\t"
@@ -92147,7 +92200,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_mont_tpl_12(sp_digit* r,
         "sbcs	r5, r5, #0\n\t"
         "sbcs	r6, r6, #0\n\t"
         "sbcs	r7, r7, r2\n\t"
-        "sbcs	r8, r8, r3, LSL #1\n\t"
+        "sbcs	r8, r8, r3, lsl #1\n\t"
         "sbcs	r9, r9, r2\n\t"
         "stm	%[r]!, {r4, r5, r6, r7, r8, r9}\n\t"
         "ldm	%[r], {r4, r5, r6, r7, r8, r9}\n\t"
@@ -92167,7 +92220,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_mont_tpl_12(sp_digit* r,
         "sbcs	r5, r5, #0\n\t"
         "sbcs	r6, r6, #0\n\t"
         "sbcs	r7, r7, r2\n\t"
-        "sbcs	r8, r8, r3, LSL #1\n\t"
+        "sbcs	r8, r8, r3, lsl #1\n\t"
         "sbcs	r9, r9, r2\n\t"
         "stm	%[r]!, {r4, r5, r6, r7, r8, r9}\n\t"
         "ldm	%[r], {r4, r5, r6, r7, r8, r9}\n\t"
@@ -92203,12 +92256,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_384_sub_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_384_sub_12(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -92262,13 +92315,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_384_cond_add_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_384_cond_add_12(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -92276,7 +92329,7 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_384_cond_add_12(sp_digit* r,
         "mov	r6, #0\n\t"
         "mov	r12, #0\n\t"
         "\n"
-    "L_sp_384_cond_add_12_words_%=: \n\t"
+    "L_sp_384_cond_add_12_words_%=:\n\t"
         "adds	lr, lr, #-1\n\t"
         "ldr	r4, [%[a], r12]\n\t"
         "ldr	r5, [%[b], r12]\n\t"
@@ -92315,13 +92368,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_384_cond_add_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_384_cond_add_12(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -92395,13 +92448,13 @@ WC_OMIT_FRAME_POINTER static void sp_384_mont_sub_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_384_mont_sub_12(sp_digit* r,
     const sp_digit* a, const sp_digit* b, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register const sp_digit* m asm ("r3") = (const sp_digit*)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register const sp_digit* m __asm__ ("r3") = (const sp_digit*)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -92437,7 +92490,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_mont_sub_12(sp_digit* r,
         "adcs	r11, r11, r3\n\t"
         "stm	%[r]!, {r8, r9, r10, r11}\n\t"
         "ldm	%[r], {r8, r9, r10, r11}\n\t"
-        "adcs	r8, r8, r12, LSL #1\n\t"
+        "adcs	r8, r8, r12, lsl #1\n\t"
         "adcs	r9, r9, r3\n\t"
         "adcs	r10, r10, r3\n\t"
         "adcs	r11, r11, r3\n\t"
@@ -92458,7 +92511,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_mont_sub_12(sp_digit* r,
         "adcs	r11, r11, r3\n\t"
         "stm	%[r]!, {r8, r9, r10, r11}\n\t"
         "ldm	%[r], {r8, r9, r10, r11}\n\t"
-        "adcs	r8, r8, r12, LSL #1\n\t"
+        "adcs	r8, r8, r12, lsl #1\n\t"
         "adcs	r9, r9, r3\n\t"
         "adcs	r10, r10, r3\n\t"
         "adcs	r11, r11, r3\n\t"
@@ -92490,11 +92543,11 @@ WC_OMIT_FRAME_POINTER static void sp_384_rshift1_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_384_rshift1_12(sp_digit* r,
     const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -93263,7 +93316,7 @@ static int sp_384_ecc_mulmod_fast_12(sp_point_384* r, const sp_point_384* g, con
         t[15].infinity = 0;
 
         i = 10;
-        n = k[i+1] << 0;
+        n = (sp_uint32)k[i+1] << 0;
         c = 28;
         y = (int)(n >> 28);
     #ifndef WC_NO_CACHE_RESISTANT
@@ -93276,14 +93329,14 @@ static int sp_384_ecc_mulmod_fast_12(sp_point_384* r, const sp_point_384* g, con
         {
             XMEMCPY(rt, &t[y], sizeof(sp_point_384));
         }
-        n <<= 4;
+        n = (sp_uint32)n << (4);
         for (; i>=0 || c>=4; ) {
             if (c < 4) {
                 n |= k[i--];
                 c += 32;
             }
             y = (n >> 28) & 0xf;
-            n <<= 4;
+            n = (sp_uint32)n << 4;
             c -= 4;
 
             sp_384_proj_point_dbl_12(rt, rt, tmp);
@@ -93797,9 +93850,9 @@ static THREAD_LS_T int sp_cache_384_last = -1;
 /* Cache has been initialized. */
 static THREAD_LS_T int sp_cache_384_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     #ifndef WOLFSSL_MUTEX_INITIALIZER
-    static volatile int initCacheMutex_384 = 0;
+    static wolfSSL_Atomic_Uint initCacheMutex_384 = 0;
     #endif
     static wolfSSL_Mutex sp_cache_384_lock WOLFSSL_MUTEX_INITIALIZER_CLAUSE(sp_cache_384_lock);
 #endif
@@ -93866,6 +93919,7 @@ static void sp_ecc_get_cache_384(const sp_point_384* g, sp_cache_384_t** cache)
 }
 #endif /* FP_ECC */
 
+
 /* Multiply the base point of P384 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -93888,19 +93942,42 @@ static int sp_384_ecc_mulmod_12(sp_point_384* r, const sp_point_384* g,
     int err = MP_OKAY;
 
     SP_ALLOC_VAR(sp_digit, tmp, 2 * 12 * 7, heap, DYNAMIC_TYPE_ECC);
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     if (err == MP_OKAY) {
-        #ifndef WOLFSSL_MUTEX_INITIALIZER
-        if (initCacheMutex_384 == 0) {
-            wc_InitMutex(&sp_cache_384_lock);
-            initCacheMutex_384 = 1;
+    #ifndef WOLFSSL_MUTEX_INITIALIZER
+        /* Lazy initialization of mutex - one atomic with three states:
+         *   0 = uninitialized, 1 = initialization in progress,
+         *   2 = initialized.
+         */
+        if (WOLFSSL_ATOMIC_LOAD(initCacheMutex_384) != 2) {
+            unsigned int expected_then_actual;
+
+            for (;;) {
+                expected_then_actual = 0;
+                if (wolfSSL_Atomic_Uint_CompareExchange(
+                        &initCacheMutex_384, &expected_then_actual,
+                        1) == 1) {
+                    /* Won race - initialize mutex. On failure, reset state
+                     * to 0 so that a later call retries. */
+                    err = wc_InitMutex(&sp_cache_384_lock);
+                    WOLFSSL_ATOMIC_STORE(initCacheMutex_384,
+                        (err == 0) ? 2U : 0U);
+                    break;
+                }
+                if (expected_then_actual == 2) {
+                    /* Another thread completed initialization. */
+                    break;
+                }
+                /* Initialization in progress in another thread. */
+                WC_RELAX_LONG_LOOP();
+            }
         }
-        #endif
-        if (wc_LockMutex(&sp_cache_384_lock) != 0) {
+    #endif
+        if ((err == MP_OKAY) && (wc_LockMutex(&sp_cache_384_lock) != 0)) {
             err = BAD_MUTEX_E;
         }
     }
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
         sp_ecc_get_cache_384(g, &cache);
@@ -93914,9 +93991,9 @@ static int sp_384_ecc_mulmod_12(sp_point_384* r, const sp_point_384* g,
             err = sp_384_ecc_mulmod_stripe_12(r, g, cache->table, k,
                     map, ct, heap);
         }
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
         wc_UnLockMutex(&sp_cache_384_lock);
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -94194,9 +94271,9 @@ static THREAD_LS_T int sp_cache_384_last = -1;
 /* Cache has been initialized. */
 static THREAD_LS_T int sp_cache_384_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     #ifndef WOLFSSL_MUTEX_INITIALIZER
-    static volatile int initCacheMutex_384 = 0;
+    static wolfSSL_Atomic_Uint initCacheMutex_384 = 0;
     #endif
     static wolfSSL_Mutex sp_cache_384_lock WOLFSSL_MUTEX_INITIALIZER_CLAUSE(sp_cache_384_lock);
 #endif
@@ -94263,6 +94340,7 @@ static void sp_ecc_get_cache_384(const sp_point_384* g, sp_cache_384_t** cache)
 }
 #endif /* FP_ECC */
 
+
 /* Multiply the base point of P384 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -94285,19 +94363,42 @@ static int sp_384_ecc_mulmod_12(sp_point_384* r, const sp_point_384* g,
     int err = MP_OKAY;
 
     SP_ALLOC_VAR(sp_digit, tmp, 2 * 12 * 7, heap, DYNAMIC_TYPE_ECC);
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     if (err == MP_OKAY) {
-        #ifndef WOLFSSL_MUTEX_INITIALIZER
-        if (initCacheMutex_384 == 0) {
-            wc_InitMutex(&sp_cache_384_lock);
-            initCacheMutex_384 = 1;
+    #ifndef WOLFSSL_MUTEX_INITIALIZER
+        /* Lazy initialization of mutex - one atomic with three states:
+         *   0 = uninitialized, 1 = initialization in progress,
+         *   2 = initialized.
+         */
+        if (WOLFSSL_ATOMIC_LOAD(initCacheMutex_384) != 2) {
+            unsigned int expected_then_actual;
+
+            for (;;) {
+                expected_then_actual = 0;
+                if (wolfSSL_Atomic_Uint_CompareExchange(
+                        &initCacheMutex_384, &expected_then_actual,
+                        1) == 1) {
+                    /* Won race - initialize mutex. On failure, reset state
+                     * to 0 so that a later call retries. */
+                    err = wc_InitMutex(&sp_cache_384_lock);
+                    WOLFSSL_ATOMIC_STORE(initCacheMutex_384,
+                        (err == 0) ? 2U : 0U);
+                    break;
+                }
+                if (expected_then_actual == 2) {
+                    /* Another thread completed initialization. */
+                    break;
+                }
+                /* Initialization in progress in another thread. */
+                WC_RELAX_LONG_LOOP();
+            }
         }
-        #endif
-        if (wc_LockMutex(&sp_cache_384_lock) != 0) {
+    #endif
+        if ((err == MP_OKAY) && (wc_LockMutex(&sp_cache_384_lock) != 0)) {
             err = BAD_MUTEX_E;
         }
     }
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
         sp_ecc_get_cache_384(g, &cache);
@@ -94311,9 +94412,9 @@ static int sp_384_ecc_mulmod_12(sp_point_384* r, const sp_point_384* g,
             err = sp_384_ecc_mulmod_stripe_12(r, g, cache->table, k,
                     map, ct, heap);
         }
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
         wc_UnLockMutex(&sp_cache_384_lock);
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -95935,10 +96036,10 @@ int sp_ecc_mulmod_base_add_384(const mp_int* km, const ecc_point* am,
 WC_OMIT_FRAME_POINTER static void sp_384_add_one_12(sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_384_add_one_12(sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -95987,10 +96088,10 @@ static void sp_384_from_bin(sp_digit* r, int size, const byte* a, int n)
 
     j = 0;
     for (i = n - 1; i >= 3; i -= 4) {
-        r[j]  = ((sp_digit)a[i - 0] <<  0) |
-                ((sp_digit)a[i - 1] <<  8) |
-                ((sp_digit)a[i - 2] << 16) |
-                ((sp_digit)a[i - 3] << 24);
+        r[j]  = ((sp_uint32)a[i - 0] <<  0) |
+                ((sp_uint32)a[i - 1] <<  8) |
+                ((sp_uint32)a[i - 2] << 16) |
+                ((sp_uint32)a[i - 3] << 24);
         j++;
     }
 
@@ -96277,7 +96378,7 @@ int sp_ecc_secret_gen_384_nb(sp_ecc_ctx_t* sp_ctx, const mp_int* priv,
     typedef char ctx_size_test[sizeof(sp_ecc_sec_gen_384_ctx) >= sizeof(*sp_ctx) ? -1 : 1];
     (void)sizeof(ctx_size_test);
 
-    if (*outLen < 32U) {
+    if (*outLen < 48U) {
         err = BUFFER_E;
     }
 
@@ -96326,18 +96427,18 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_384_sub_in_place_12(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_384_sub_in_place_12(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r12, #0\n\t"
         "add	lr, %[a], #48\n\t"
         "\n"
-    "L_sp_384_sub_in_place_12_word_%=: \n\t"
+    "L_sp_384_sub_in_place_12_word_%=:\n\t"
         "rsbs	r12, r12, #0\n\t"
         "ldm	%[a], {r2, r3, r4, r5}\n\t"
         "ldm	%[b]!, {r6, r7, r8, r9}\n\t"
@@ -96375,11 +96476,11 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_384_sub_in_place_12(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_384_sub_in_place_12(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -96431,12 +96532,12 @@ WC_OMIT_FRAME_POINTER static void sp_384_mul_d_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_384_mul_d_12(sp_digit* r,
     const sp_digit* a, sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -96472,7 +96573,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_mul_d_12(sp_digit* r,
         "mov	r5, #0\n\t"
         "mov	r9, #4\n\t"
         "\n"
-    "L_sp_384_mul_d_12_word_%=: \n\t"
+    "L_sp_384_mul_d_12_word_%=:\n\t"
         /* A[i] * B */
         "ldr	r8, [%[a], r9]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -96542,12 +96643,12 @@ WC_OMIT_FRAME_POINTER static void sp_384_mul_d_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_384_mul_d_12(sp_digit* r,
     const sp_digit* a, sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -96960,12 +97061,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_384_word_12(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_384_word_12(sp_digit d1, sp_digit d0,
     sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -97032,12 +97133,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_384_word_12(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_384_word_12(sp_digit d1, sp_digit d0,
     sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -97055,7 +97156,7 @@ WC_OMIT_FRAME_POINTER static sp_digit div_384_word_12(sp_digit d1, sp_digit d0,
         /* Next 30 bits */
         "mov	r12, #29\n\t"
         "\n"
-    "L_div_384_word_12_bit_%=: \n\t"
+    "L_div_384_word_12_bit_%=:\n\t"
         "lsls	r4, r4, #1\n\t"
         "adc	r5, r5, r5\n\t"
         "subs	r6, lr, r5\n\t"
@@ -97763,12 +97864,12 @@ WC_OMIT_FRAME_POINTER static void sp_384_div2_mod_12(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_384_div2_mod_12(sp_digit* r,
     const sp_digit* a, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* m asm ("r2") = (const sp_digit*)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r2") = (const sp_digit*)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -97800,7 +97901,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_div2_mod_12(sp_digit* r,
         "adc	r3, r12, r12\n\t"
         "b	L_sp_384_div2_mod_12_div2_%=\n\t"
         "\n"
-    "L_sp_384_div2_mod_12_even_%=: \n\t"
+    "L_sp_384_div2_mod_12_even_%=:\n\t"
         "ldm	%[a]!, {r5, r6, r7}\n\t"
         "stm	%[r]!, {r4, r5, r6, r7}\n\t"
         "ldm	%[a]!, {r4, r5, r6, r7}\n\t"
@@ -97808,7 +97909,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_div2_mod_12(sp_digit* r,
         "ldm	%[a]!, {r4, r5, r6, r7}\n\t"
         "stm	%[r]!, {r4, r5, r6, r7}\n\t"
         "\n"
-    "L_sp_384_div2_mod_12_div2_%=: \n\t"
+    "L_sp_384_div2_mod_12_div2_%=:\n\t"
         "sub	%[r], %[r], #48\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "ldm	r0, {r8, r9}\n\t"
@@ -97874,7 +97975,7 @@ WC_OMIT_FRAME_POINTER static void sp_384_div2_mod_12(sp_digit* r,
 }
 
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-static const byte L_sp_384_num_bits_12_table[] = {
+XALIGNED(4) static const word8 L_sp_384_num_bits_12_table[] = {
     0x00, 0x01, 0x02, 0x02, 0x03, 0x03, 0x03, 0x03,
     0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
     0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
@@ -97913,15 +98014,15 @@ static const byte L_sp_384_num_bits_12_table[] = {
 WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sp_digit* a asm ("r0") = (const sp_digit*)a_p;
-    register byte* L_sp_384_num_bits_12_table_c asm ("r1") =
-        (byte*)&L_sp_384_num_bits_12_table;
+    register const sp_digit* a __asm__ ("r0") = (const sp_digit*)a_p;
+    register word8* L_sp_384_num_bits_12_table_c __asm__ ("r1") =
+        (word8*)&L_sp_384_num_bits_12_table;
 #else
-    register byte* L_sp_384_num_bits_12_table_c =
-        (byte*)&L_sp_384_num_bits_12_table;
+    register word8* L_sp_384_num_bits_12_table_c =
+        (word8*)&L_sp_384_num_bits_12_table;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -97942,7 +98043,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_11_3_%=: \n\t"
+    "L_sp_384_num_bits_12_11_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -97957,7 +98058,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_11_2_%=: \n\t"
+    "L_sp_384_num_bits_12_11_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -97972,7 +98073,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_11_1_%=: \n\t"
+    "L_sp_384_num_bits_12_11_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "mov	r2, #0x60\n\t"
@@ -97984,7 +98085,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_11_%=: \n\t"
+    "L_sp_384_num_bits_12_11_%=:\n\t"
         "ldr	r1, [%[a], #40]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_10_%=\n\t"
@@ -98001,7 +98102,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_10_3_%=: \n\t"
+    "L_sp_384_num_bits_12_10_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98016,7 +98117,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_10_2_%=: \n\t"
+    "L_sp_384_num_bits_12_10_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98031,7 +98132,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_10_1_%=: \n\t"
+    "L_sp_384_num_bits_12_10_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "mov	r2, #0x40\n\t"
@@ -98043,7 +98144,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_10_%=: \n\t"
+    "L_sp_384_num_bits_12_10_%=:\n\t"
         "ldr	r1, [%[a], #36]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_9_%=\n\t"
@@ -98060,7 +98161,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_9_3_%=: \n\t"
+    "L_sp_384_num_bits_12_9_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98075,7 +98176,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_9_2_%=: \n\t"
+    "L_sp_384_num_bits_12_9_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98090,7 +98191,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_9_1_%=: \n\t"
+    "L_sp_384_num_bits_12_9_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "mov	r2, #0x20\n\t"
@@ -98102,7 +98203,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_9_%=: \n\t"
+    "L_sp_384_num_bits_12_9_%=:\n\t"
         "ldr	r1, [%[a], #32]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_8_%=\n\t"
@@ -98119,7 +98220,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_8_3_%=: \n\t"
+    "L_sp_384_num_bits_12_8_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98134,7 +98235,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_8_2_%=: \n\t"
+    "L_sp_384_num_bits_12_8_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98149,14 +98250,14 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_8_1_%=: \n\t"
+    "L_sp_384_num_bits_12_8_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0x100\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_8_%=: \n\t"
+    "L_sp_384_num_bits_12_8_%=:\n\t"
         "ldr	r1, [%[a], #28]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_7_%=\n\t"
@@ -98168,7 +98269,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_7_3_%=: \n\t"
+    "L_sp_384_num_bits_12_7_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98178,7 +98279,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_7_2_%=: \n\t"
+    "L_sp_384_num_bits_12_7_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98188,14 +98289,14 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_7_1_%=: \n\t"
+    "L_sp_384_num_bits_12_7_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0xe0\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_7_%=: \n\t"
+    "L_sp_384_num_bits_12_7_%=:\n\t"
         "ldr	r1, [%[a], #24]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_6_%=\n\t"
@@ -98207,7 +98308,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_6_3_%=: \n\t"
+    "L_sp_384_num_bits_12_6_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98217,7 +98318,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_6_2_%=: \n\t"
+    "L_sp_384_num_bits_12_6_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98227,14 +98328,14 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_6_1_%=: \n\t"
+    "L_sp_384_num_bits_12_6_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0xc0\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_6_%=: \n\t"
+    "L_sp_384_num_bits_12_6_%=:\n\t"
         "ldr	r1, [%[a], #20]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_5_%=\n\t"
@@ -98246,7 +98347,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_5_3_%=: \n\t"
+    "L_sp_384_num_bits_12_5_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98256,7 +98357,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_5_2_%=: \n\t"
+    "L_sp_384_num_bits_12_5_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98266,14 +98367,14 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_5_1_%=: \n\t"
+    "L_sp_384_num_bits_12_5_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0xa0\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_5_%=: \n\t"
+    "L_sp_384_num_bits_12_5_%=:\n\t"
         "ldr	r1, [%[a], #16]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_4_%=\n\t"
@@ -98285,7 +98386,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_4_3_%=: \n\t"
+    "L_sp_384_num_bits_12_4_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98295,7 +98396,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_4_2_%=: \n\t"
+    "L_sp_384_num_bits_12_4_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98305,14 +98406,14 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_4_1_%=: \n\t"
+    "L_sp_384_num_bits_12_4_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0x80\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_4_%=: \n\t"
+    "L_sp_384_num_bits_12_4_%=:\n\t"
         "ldr	r1, [%[a], #12]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_3_%=\n\t"
@@ -98324,7 +98425,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_3_3_%=: \n\t"
+    "L_sp_384_num_bits_12_3_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98334,7 +98435,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_3_2_%=: \n\t"
+    "L_sp_384_num_bits_12_3_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98344,14 +98445,14 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_3_1_%=: \n\t"
+    "L_sp_384_num_bits_12_3_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0x60\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_3_%=: \n\t"
+    "L_sp_384_num_bits_12_3_%=:\n\t"
         "ldr	r1, [%[a], #8]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_2_%=\n\t"
@@ -98363,7 +98464,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_2_3_%=: \n\t"
+    "L_sp_384_num_bits_12_2_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98373,7 +98474,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_2_2_%=: \n\t"
+    "L_sp_384_num_bits_12_2_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98383,14 +98484,14 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_2_1_%=: \n\t"
+    "L_sp_384_num_bits_12_2_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0x40\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_2_%=: \n\t"
+    "L_sp_384_num_bits_12_2_%=:\n\t"
         "ldr	r1, [%[a], #4]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_1_%=\n\t"
@@ -98402,7 +98503,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_1_3_%=: \n\t"
+    "L_sp_384_num_bits_12_1_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98412,7 +98513,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_1_2_%=: \n\t"
+    "L_sp_384_num_bits_12_1_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98422,14 +98523,14 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_1_1_%=: \n\t"
+    "L_sp_384_num_bits_12_1_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #32\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_1_%=: \n\t"
+    "L_sp_384_num_bits_12_1_%=:\n\t"
         "ldr	r1, [%[a]]\n\t"
         "lsr	r3, r1, #24\n\t"
         "cmp	r3, #0\n\t"
@@ -98439,7 +98540,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_0_3_%=: \n\t"
+    "L_sp_384_num_bits_12_0_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98449,7 +98550,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_0_2_%=: \n\t"
+    "L_sp_384_num_bits_12_0_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -98459,11 +98560,11 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_0_1_%=: \n\t"
+    "L_sp_384_num_bits_12_0_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "\n"
-    "L_sp_384_num_bits_12_13_%=: \n\t"
+    "L_sp_384_num_bits_12_13_%=:\n\t"
         "mov	%[a], r12\n\t"
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
         : [a] "+r" (a),
@@ -98484,10 +98585,10 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
 WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sp_digit* a asm ("r0") = (const sp_digit*)a_p;
+    register const sp_digit* a __asm__ ("r0") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -98504,7 +98605,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_11_%=: \n\t"
+    "L_sp_384_num_bits_12_11_%=:\n\t"
         "ldr	r1, [%[a], #40]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_10_%=\n\t"
@@ -98518,7 +98619,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_10_%=: \n\t"
+    "L_sp_384_num_bits_12_10_%=:\n\t"
         "ldr	r1, [%[a], #36]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_9_%=\n\t"
@@ -98532,7 +98633,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_9_%=: \n\t"
+    "L_sp_384_num_bits_12_9_%=:\n\t"
         "ldr	r1, [%[a], #32]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_8_%=\n\t"
@@ -98546,7 +98647,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_8_%=: \n\t"
+    "L_sp_384_num_bits_12_8_%=:\n\t"
         "ldr	r1, [%[a], #28]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_7_%=\n\t"
@@ -98555,7 +98656,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_7_%=: \n\t"
+    "L_sp_384_num_bits_12_7_%=:\n\t"
         "ldr	r1, [%[a], #24]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_6_%=\n\t"
@@ -98564,7 +98665,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_6_%=: \n\t"
+    "L_sp_384_num_bits_12_6_%=:\n\t"
         "ldr	r1, [%[a], #20]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_5_%=\n\t"
@@ -98573,7 +98674,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_5_%=: \n\t"
+    "L_sp_384_num_bits_12_5_%=:\n\t"
         "ldr	r1, [%[a], #16]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_4_%=\n\t"
@@ -98582,7 +98683,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_4_%=: \n\t"
+    "L_sp_384_num_bits_12_4_%=:\n\t"
         "ldr	r1, [%[a], #12]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_3_%=\n\t"
@@ -98591,7 +98692,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_3_%=: \n\t"
+    "L_sp_384_num_bits_12_3_%=:\n\t"
         "ldr	r1, [%[a], #8]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_2_%=\n\t"
@@ -98600,7 +98701,7 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_2_%=: \n\t"
+    "L_sp_384_num_bits_12_2_%=:\n\t"
         "ldr	r1, [%[a], #4]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_384_num_bits_12_1_%=\n\t"
@@ -98609,13 +98710,13 @@ WC_OMIT_FRAME_POINTER static int sp_384_num_bits_12(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_384_num_bits_12_13_%=\n\t"
         "\n"
-    "L_sp_384_num_bits_12_1_%=: \n\t"
+    "L_sp_384_num_bits_12_1_%=:\n\t"
         "ldr	r1, [%[a]]\n\t"
         "mov	r2, #32\n\t"
         "clz	r12, r1\n\t"
         "sub	r12, r2, r12\n\t"
         "\n"
-    "L_sp_384_num_bits_12_13_%=: \n\t"
+    "L_sp_384_num_bits_12_13_%=:\n\t"
         "mov	%[a], r12\n\t"
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
         : [a] "+r" (a)
@@ -99054,7 +99155,6 @@ int sp_ecc_verify_384_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash,
 #endif /* WOLFSSL_SP_NONBLOCK */
 #endif /* HAVE_ECC_VERIFY */
 
-#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER)
 /* Check that the x and y ordinates are a valid point on the curve.
  *
  * point  EC point.
@@ -99127,6 +99227,7 @@ int sp_ecc_is_point_384(const mp_int* pX, const mp_int* pY)
     return err;
 }
 
+#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER)
 /* Check that the private scalar generates the EC point (px, py), the point is
  * on the curve and the point has the correct order.
  *
@@ -99596,14 +99697,11 @@ static const sp_point_521 p521_base = {
     /* infinity */
     0
 };
-#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER) || \
-     defined(HAVE_COMP_KEY)
 static const sp_digit p521_b[17] = {
     0x6b503f00,0xef451fd4,0x3d2c34f1,0x3573df88,0x3bb1bf07,0x1652c0bd,
     0xec7e937b,0x56193951,0x8ef109e1,0xb8b48991,0x99b315f3,0xa2da725b,
     0xb68540ee,0x929a21a0,0x8e1c9a1f,0x953eb961,0x00000051
 };
-#endif
 
 #ifdef WOLFSSL_SP_SMALL
 /* Multiply a and b into r. (r = a * b)
@@ -99618,12 +99716,12 @@ WC_OMIT_FRAME_POINTER static void sp_521_mul_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_521_mul_17(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -99636,13 +99734,13 @@ WC_OMIT_FRAME_POINTER static void sp_521_mul_17(sp_digit* r, const sp_digit* a,
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_521_mul_17_outer_%=: \n\t"
+    "L_sp_521_mul_17_outer_%=:\n\t"
         "subs	r3, r5, #0x40\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_521_mul_17_inner_%=: \n\t"
+    "L_sp_521_mul_17_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[b], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -99760,7 +99858,7 @@ WC_OMIT_FRAME_POINTER static void sp_521_mul_17(sp_digit* r, const sp_digit* a,
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_521_mul_17_inner_done_%=: \n\t"
+    "L_sp_521_mul_17_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -99805,7 +99903,7 @@ WC_OMIT_FRAME_POINTER static void sp_521_mul_17(sp_digit* r, const sp_digit* a,
         "stm	%[r]!, {r6, r7}\n\t"
         "sub	r5, r5, #8\n\t"
         "\n"
-    "L_sp_521_mul_17_store_%=: \n\t"
+    "L_sp_521_mul_17_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -99835,12 +99933,12 @@ WC_OMIT_FRAME_POINTER static void sp_521_mul_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_521_mul_17(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -110864,11 +110962,11 @@ WC_OMIT_FRAME_POINTER static void sp_521_sqr_17(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_521_sqr_17(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -110880,13 +110978,13 @@ WC_OMIT_FRAME_POINTER static void sp_521_sqr_17(sp_digit* r, const sp_digit* a)
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_521_sqr_17_outer_%=: \n\t"
+    "L_sp_521_sqr_17_outer_%=:\n\t"
         "subs	r3, r5, #0x40\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_521_sqr_17_inner_%=: \n\t"
+    "L_sp_521_sqr_17_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[a], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -110971,7 +111069,7 @@ WC_OMIT_FRAME_POINTER static void sp_521_sqr_17(sp_digit* r, const sp_digit* a)
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_521_sqr_17_inner_done_%=: \n\t"
+    "L_sp_521_sqr_17_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -111010,7 +111108,7 @@ WC_OMIT_FRAME_POINTER static void sp_521_sqr_17(sp_digit* r, const sp_digit* a)
         "stm	%[r]!, {r6, r7}\n\t"
         "sub	r5, r5, #8\n\t"
         "\n"
-    "L_sp_521_sqr_17_store_%=: \n\t"
+    "L_sp_521_sqr_17_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -111038,11 +111136,11 @@ WC_OMIT_FRAME_POINTER static void sp_521_sqr_17(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_521_sqr_17(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -116926,19 +117024,19 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_521_add_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_521_add_17(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r3, #0\n\t"
         "add	r12, %[a], #0x40\n\t"
         "\n"
-    "L_sp_521_add_17_word_%=: \n\t"
+    "L_sp_521_add_17_word_%=:\n\t"
         "adds	r3, r3, #-1\n\t"
         "ldm	%[a]!, {r4, r5, r6, r7}\n\t"
         "ldm	%[b]!, {r8, r9, r10, r11}\n\t"
@@ -116984,12 +117082,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_521_add_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_521_add_17(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -117084,7 +117182,7 @@ static void sp_521_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
+        r[j] |= ((sp_uint32)a->dp[i] << s);
         r[j] &= 0xffffffff;
         s = 32U - s;
         if (j + 1 >= size) {
@@ -117119,7 +117217,7 @@ static void sp_521_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_uint32)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 32) {
             r[j] &= 0xffffffff;
             if (j + 1 >= size) {
@@ -117185,7 +117283,7 @@ static int sp_521_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 17; i++) {
-            r->dp[j] |= (mp_digit)(a[i] << s);
+            r->dp[j] |= (mp_digit)((sp_uint32)a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
@@ -117210,7 +117308,7 @@ static int sp_521_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 17; i++) {
-            r->dp[j] |= ((mp_digit)a[i]) << s;
+            r->dp[j] |= ((sp_uint32)a[i]) << s;
             if (s + 32 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
                 r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
@@ -117268,13 +117366,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_521_cond_sub_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_521_cond_sub_17(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -117282,7 +117380,7 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_521_cond_sub_17(sp_digit* r,
         "mov	r12, #0\n\t"
         "mov	lr, #0\n\t"
         "\n"
-    "L_sp_521_cond_sub_17_words_%=: \n\t"
+    "L_sp_521_cond_sub_17_words_%=:\n\t"
         "subs	r12, r6, r12\n\t"
         "ldr	r4, [%[a], lr]\n\t"
         "ldr	r5, [%[b], lr]\n\t"
@@ -117321,13 +117419,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_521_cond_sub_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_521_cond_sub_17(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -117419,10 +117517,10 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_521_mont_reduce_17(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_521_mont_reduce_17(sp_digit* a,
     const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -117569,12 +117667,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_521_mont_reduce_order_17(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_521_mont_reduce_order_17(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -117587,7 +117685,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_521_mont_reduce_order_17(
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_521_mont_reduce_order_17_word_%=: \n\t"
+    "L_sp_521_mont_reduce_order_17_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         "cmp	r9, #0x40\n\t"
@@ -117600,7 +117698,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_521_mont_reduce_order_17(
 #endif
         "and	r8, r8, r7\n\t"
         "\n"
-    "L_sp_521_mont_reduce_order_17_nomask_%=: \n\t"
+    "L_sp_521_mont_reduce_order_17_nomask_%=:\n\t"
         /* a[i+0] += m[0] * mu */
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
         "ldr	r11, [%[m]]\n\t"
@@ -118210,12 +118308,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_521_mont_reduce_order_17(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_521_mont_reduce_order_17(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -118226,7 +118324,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_521_mont_reduce_order_17(
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_521_mont_reduce_order_17_word_%=: \n\t"
+    "L_sp_521_mont_reduce_order_17_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         "cmp	r9, #0x40\n\t"
@@ -118239,7 +118337,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_521_mont_reduce_order_17(
 #endif
         "and	r8, r8, r7\n\t"
         "\n"
-    "L_sp_521_mont_reduce_order_17_nomask_%=: \n\t"
+    "L_sp_521_mont_reduce_order_17_nomask_%=:\n\t"
         /* a[i+0] += m[0] * mu */
         "mov	r5, #0\n\t"
         "umlal	r12, r5, r8, r11\n\t"
@@ -118481,12 +118579,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_521_mont_reduce_order_17(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_521_mont_reduce_order_17(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -118499,7 +118597,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_521_mont_reduce_order_17(
         "ldr	r7, [%[a], #12]\n\t"
         "ldr	r8, [%[a], #16]\n\t"
         "\n"
-    "L_sp_521_mont_reduce_order_17_word_%=: \n\t"
+    "L_sp_521_mont_reduce_order_17_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r11, %[mp], r4\n\t"
         "cmp	r12, #0x40\n\t"
@@ -118512,7 +118610,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_521_mont_reduce_order_17(
 #endif
         "and	r11, r11, r10\n\t"
         "\n"
-    "L_sp_521_mont_reduce_order_17_nomask_%=: \n\t"
+    "L_sp_521_mont_reduce_order_17_nomask_%=:\n\t"
         /* a[i+0] += m[0] * mu */
         "ldr	r10, [%[m]]\n\t"
         "mov	r3, #0\n\t"
@@ -118769,7 +118867,7 @@ static void sp_521_mont_inv_17(sp_digit* r, const sp_digit* a, sp_digit* td)
     XMEMCPY(t, a, sizeof(sp_digit) * 17);
     for (i=519; i>=0; i--) {
         sp_521_mont_sqr_17(t, t, p521_mod, p521_mp_mod);
-        if (p521_mod_minus_2[i / 32] & ((sp_digit)1 << (i % 32)))
+        if (p521_mod_minus_2[i / 32] & ((sp_uint32)1 << (i % 32)))
             sp_521_mont_mul_17(t, t, a, p521_mod, p521_mp_mod);
     }
     XMEMCPY(r, t, sizeof(sp_digit) * 17);
@@ -118847,11 +118945,11 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_521_cmp_17(const sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_int32 sp_521_cmp_17(const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sp_digit* a asm ("r0") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register const sp_digit* a __asm__ ("r0") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -118862,7 +118960,7 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_521_cmp_17(const sp_digit* a,
 #ifdef WOLFSSL_SP_SMALL
         "mov	r4, #0x40\n\t"
         "\n"
-    "L_sp_521_cmp_17_words_%=: \n\t"
+    "L_sp_521_cmp_17_words_%=:\n\t"
         "ldr	r12, [%[a], r4]\n\t"
         "ldr	lr, [%[b], r4]\n\t"
         "and	r12, r12, r3\n\t"
@@ -119139,12 +119237,12 @@ WC_OMIT_FRAME_POINTER static void sp_521_mont_add_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_521_mont_add_17(sp_digit* r,
     const sp_digit* a, const sp_digit* b, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -119242,11 +119340,11 @@ WC_OMIT_FRAME_POINTER static void sp_521_mont_dbl_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_521_mont_dbl_17(sp_digit* r,
     const sp_digit* a, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -119335,11 +119433,11 @@ WC_OMIT_FRAME_POINTER static void sp_521_mont_tpl_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_521_mont_tpl_17(sp_digit* r,
     const sp_digit* a, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -119463,12 +119561,12 @@ WC_OMIT_FRAME_POINTER static void sp_521_mont_sub_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_521_mont_sub_17(sp_digit* r,
     const sp_digit* a, const sp_digit* b, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -119561,11 +119659,11 @@ WC_OMIT_FRAME_POINTER static void sp_521_rshift1_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_521_rshift1_17(sp_digit* r,
     const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -119658,7 +119756,7 @@ static void sp_521_mont_div2_17(sp_digit* r, const sp_digit* a, const sp_digit* 
 
     (void)m;
 
-    sp_521_rshift1_17(r, r);
+    sp_521_rshift1_17(r, a);
     r[16] |= o << 8;
 }
 
@@ -120388,7 +120486,7 @@ static int sp_521_ecc_mulmod_fast_17(sp_point_521* r, const sp_point_521* g, con
         t[15].infinity = 0;
 
         i = 15;
-        n = k[i+1] << 0;
+        n = (sp_uint32)k[i+1] << 0;
         c = 5;
         y = (int)(n >> 5);
     #ifndef WC_NO_CACHE_RESISTANT
@@ -120401,15 +120499,15 @@ static int sp_521_ecc_mulmod_fast_17(sp_point_521* r, const sp_point_521* g, con
         {
             XMEMCPY(rt, &t[y], sizeof(sp_point_521));
         }
-        n <<= 27;
+        n = (sp_uint32)n << (27);
         for (; i>=0 || c>=4; ) {
             if (c < 4) {
-                n = (k[i+1] << 31) | (k[i] >> 1);
+                n = ((sp_uint32)k[i+1] << 31) | (k[i] >> 1);
                 i--;
                 c += 32;
             }
             y = (n >> 28) & 0xf;
-            n <<= 4;
+            n = (sp_uint32)n << 4;
             c -= 4;
 
             sp_521_proj_point_dbl_17(rt, rt, tmp);
@@ -120956,9 +121054,9 @@ static THREAD_LS_T int sp_cache_521_last = -1;
 /* Cache has been initialized. */
 static THREAD_LS_T int sp_cache_521_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     #ifndef WOLFSSL_MUTEX_INITIALIZER
-    static volatile int initCacheMutex_521 = 0;
+    static wolfSSL_Atomic_Uint initCacheMutex_521 = 0;
     #endif
     static wolfSSL_Mutex sp_cache_521_lock WOLFSSL_MUTEX_INITIALIZER_CLAUSE(sp_cache_521_lock);
 #endif
@@ -121025,6 +121123,7 @@ static void sp_ecc_get_cache_521(const sp_point_521* g, sp_cache_521_t** cache)
 }
 #endif /* FP_ECC */
 
+
 /* Multiply the base point of P521 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -121047,19 +121146,42 @@ static int sp_521_ecc_mulmod_17(sp_point_521* r, const sp_point_521* g,
     int err = MP_OKAY;
 
     SP_ALLOC_VAR(sp_digit, tmp, 2 * 17 * 6, heap, DYNAMIC_TYPE_ECC);
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     if (err == MP_OKAY) {
-        #ifndef WOLFSSL_MUTEX_INITIALIZER
-        if (initCacheMutex_521 == 0) {
-            wc_InitMutex(&sp_cache_521_lock);
-            initCacheMutex_521 = 1;
+    #ifndef WOLFSSL_MUTEX_INITIALIZER
+        /* Lazy initialization of mutex - one atomic with three states:
+         *   0 = uninitialized, 1 = initialization in progress,
+         *   2 = initialized.
+         */
+        if (WOLFSSL_ATOMIC_LOAD(initCacheMutex_521) != 2) {
+            unsigned int expected_then_actual;
+
+            for (;;) {
+                expected_then_actual = 0;
+                if (wolfSSL_Atomic_Uint_CompareExchange(
+                        &initCacheMutex_521, &expected_then_actual,
+                        1) == 1) {
+                    /* Won race - initialize mutex. On failure, reset state
+                     * to 0 so that a later call retries. */
+                    err = wc_InitMutex(&sp_cache_521_lock);
+                    WOLFSSL_ATOMIC_STORE(initCacheMutex_521,
+                        (err == 0) ? 2U : 0U);
+                    break;
+                }
+                if (expected_then_actual == 2) {
+                    /* Another thread completed initialization. */
+                    break;
+                }
+                /* Initialization in progress in another thread. */
+                WC_RELAX_LONG_LOOP();
+            }
         }
-        #endif
-        if (wc_LockMutex(&sp_cache_521_lock) != 0) {
+    #endif
+        if ((err == MP_OKAY) && (wc_LockMutex(&sp_cache_521_lock) != 0)) {
             err = BAD_MUTEX_E;
         }
     }
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
         sp_ecc_get_cache_521(g, &cache);
@@ -121073,9 +121195,9 @@ static int sp_521_ecc_mulmod_17(sp_point_521* r, const sp_point_521* g,
             err = sp_521_ecc_mulmod_stripe_17(r, g, cache->table, k,
                     map, ct, heap);
         }
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
         wc_UnLockMutex(&sp_cache_521_lock);
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -121373,9 +121495,9 @@ static THREAD_LS_T int sp_cache_521_last = -1;
 /* Cache has been initialized. */
 static THREAD_LS_T int sp_cache_521_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     #ifndef WOLFSSL_MUTEX_INITIALIZER
-    static volatile int initCacheMutex_521 = 0;
+    static wolfSSL_Atomic_Uint initCacheMutex_521 = 0;
     #endif
     static wolfSSL_Mutex sp_cache_521_lock WOLFSSL_MUTEX_INITIALIZER_CLAUSE(sp_cache_521_lock);
 #endif
@@ -121442,6 +121564,7 @@ static void sp_ecc_get_cache_521(const sp_point_521* g, sp_cache_521_t** cache)
 }
 #endif /* FP_ECC */
 
+
 /* Multiply the base point of P521 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -121464,19 +121587,42 @@ static int sp_521_ecc_mulmod_17(sp_point_521* r, const sp_point_521* g,
     int err = MP_OKAY;
 
     SP_ALLOC_VAR(sp_digit, tmp, 2 * 17 * 6, heap, DYNAMIC_TYPE_ECC);
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     if (err == MP_OKAY) {
-        #ifndef WOLFSSL_MUTEX_INITIALIZER
-        if (initCacheMutex_521 == 0) {
-            wc_InitMutex(&sp_cache_521_lock);
-            initCacheMutex_521 = 1;
+    #ifndef WOLFSSL_MUTEX_INITIALIZER
+        /* Lazy initialization of mutex - one atomic with three states:
+         *   0 = uninitialized, 1 = initialization in progress,
+         *   2 = initialized.
+         */
+        if (WOLFSSL_ATOMIC_LOAD(initCacheMutex_521) != 2) {
+            unsigned int expected_then_actual;
+
+            for (;;) {
+                expected_then_actual = 0;
+                if (wolfSSL_Atomic_Uint_CompareExchange(
+                        &initCacheMutex_521, &expected_then_actual,
+                        1) == 1) {
+                    /* Won race - initialize mutex. On failure, reset state
+                     * to 0 so that a later call retries. */
+                    err = wc_InitMutex(&sp_cache_521_lock);
+                    WOLFSSL_ATOMIC_STORE(initCacheMutex_521,
+                        (err == 0) ? 2U : 0U);
+                    break;
+                }
+                if (expected_then_actual == 2) {
+                    /* Another thread completed initialization. */
+                    break;
+                }
+                /* Initialization in progress in another thread. */
+                WC_RELAX_LONG_LOOP();
+            }
         }
-        #endif
-        if (wc_LockMutex(&sp_cache_521_lock) != 0) {
+    #endif
+        if ((err == MP_OKAY) && (wc_LockMutex(&sp_cache_521_lock) != 0)) {
             err = BAD_MUTEX_E;
         }
     }
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
         sp_ecc_get_cache_521(g, &cache);
@@ -121490,9 +121636,9 @@ static int sp_521_ecc_mulmod_17(sp_point_521* r, const sp_point_521* g,
             err = sp_521_ecc_mulmod_stripe_17(r, g, cache->table, k,
                     map, ct, heap);
         }
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
         wc_UnLockMutex(&sp_cache_521_lock);
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -123658,10 +123804,10 @@ int sp_ecc_mulmod_base_add_521(const mp_int* km, const ecc_point* am,
 WC_OMIT_FRAME_POINTER static void sp_521_add_one_17(sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_521_add_one_17(sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -123719,10 +123865,10 @@ static void sp_521_from_bin(sp_digit* r, int size, const byte* a, int n)
 
     j = 0;
     for (i = n - 1; i >= 3; i -= 4) {
-        r[j]  = ((sp_digit)a[i - 0] <<  0) |
-                ((sp_digit)a[i - 1] <<  8) |
-                ((sp_digit)a[i - 2] << 16) |
-                ((sp_digit)a[i - 3] << 24);
+        r[j]  = ((sp_uint32)a[i - 0] <<  0) |
+                ((sp_uint32)a[i - 1] <<  8) |
+                ((sp_uint32)a[i - 2] << 16) |
+                ((sp_uint32)a[i - 3] << 24);
         j++;
     }
 
@@ -123971,7 +124117,7 @@ int sp_ecc_secret_gen_521(const mp_int* priv, const ecc_point* pub, byte* out,
     SP_DECL_VAR(sp_digit, k, 17);
     int err = MP_OKAY;
 
-    if (*outLen < 65U) {
+    if (*outLen < 66U) {
         err = BUFFER_E;
     }
 
@@ -124012,7 +124158,7 @@ int sp_ecc_secret_gen_521_nb(sp_ecc_ctx_t* sp_ctx, const mp_int* priv,
     typedef char ctx_size_test[sizeof(sp_ecc_sec_gen_521_ctx) >= sizeof(*sp_ctx) ? -1 : 1];
     (void)sizeof(ctx_size_test);
 
-    if (*outLen < 32U) {
+    if (*outLen < 66U) {
         err = BUFFER_E;
     }
 
@@ -124051,12 +124197,12 @@ WC_OMIT_FRAME_POINTER static void sp_521_rshift_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_521_rshift_17(sp_digit* r,
     const sp_digit* a, byte n)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register byte n asm ("r2") = (byte)n_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register byte n __asm__ ("r2") = (byte)n_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -124172,12 +124318,12 @@ WC_OMIT_FRAME_POINTER static void sp_521_lshift_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_521_lshift_17(sp_digit* r,
     const sp_digit* a, byte n)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register byte n asm ("r2") = (byte)n_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register byte n __asm__ ("r2") = (byte)n_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -124301,12 +124447,12 @@ WC_OMIT_FRAME_POINTER static void sp_521_lshift_34(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_521_lshift_34(sp_digit* r,
     const sp_digit* a, byte n)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register byte n asm ("r2") = (byte)n_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register byte n __asm__ ("r2") = (byte)n_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -124538,18 +124684,18 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_521_sub_in_place_17(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_521_sub_in_place_17(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r12, #0\n\t"
         "add	lr, %[a], #0x40\n\t"
         "\n"
-    "L_sp_521_sub_in_place_17_word_%=: \n\t"
+    "L_sp_521_sub_in_place_17_word_%=:\n\t"
         "rsbs	r12, r12, #0\n\t"
         "ldm	%[a], {r2, r3, r4, r5}\n\t"
         "ldm	%[b]!, {r6, r7, r8, r9}\n\t"
@@ -124592,11 +124738,11 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_521_sub_in_place_17(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_521_sub_in_place_17(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -124659,12 +124805,12 @@ WC_OMIT_FRAME_POINTER static void sp_521_mul_d_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_521_mul_d_17(sp_digit* r,
     const sp_digit* a, sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -124700,7 +124846,7 @@ WC_OMIT_FRAME_POINTER static void sp_521_mul_d_17(sp_digit* r,
         "mov	r5, #0\n\t"
         "mov	r9, #4\n\t"
         "\n"
-    "L_sp_521_mul_d_17_word_%=: \n\t"
+    "L_sp_521_mul_d_17_word_%=:\n\t"
         /* A[i] * B */
         "ldr	r8, [%[a], r9]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -124770,12 +124916,12 @@ WC_OMIT_FRAME_POINTER static void sp_521_mul_d_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_521_mul_d_17(sp_digit* r,
     const sp_digit* a, sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -125348,12 +125494,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_521_word_17(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_521_word_17(sp_digit d1, sp_digit d0,
     sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -125420,12 +125566,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_521_word_17(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_521_word_17(sp_digit d1, sp_digit d0,
     sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -125443,7 +125589,7 @@ WC_OMIT_FRAME_POINTER static sp_digit div_521_word_17(sp_digit d1, sp_digit d0,
         /* Next 30 bits */
         "mov	r12, #29\n\t"
         "\n"
-    "L_div_521_word_17_bit_%=: \n\t"
+    "L_div_521_word_17_bit_%=:\n\t"
         "lsls	r4, r4, #1\n\t"
         "adc	r5, r5, r5\n\t"
         "subs	r6, lr, r5\n\t"
@@ -125605,8 +125751,6 @@ static WC_INLINE int sp_521_div_17(const sp_digit* a, const sp_digit* d,
     sp_digit div;
     sp_digit r1;
     int i;
-
-    ASSERT_SAVED_VECTOR_REGISTERS();
 
     (void)m;
     div = (d[16] << 23) | (d[15] >> 9);
@@ -126182,19 +126326,19 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_521_sub_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_521_sub_17(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r12, #0\n\t"
         "add	lr, %[a], #0x40\n\t"
         "\n"
-    "L_sp_521_sub_17_word_%=: \n\t"
+    "L_sp_521_sub_17_word_%=:\n\t"
         "rsbs	r12, r12, #0\n\t"
         "ldm	%[a]!, {r3, r4, r5, r6}\n\t"
         "ldm	%[b]!, {r7, r8, r9, r10}\n\t"
@@ -126238,12 +126382,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_521_sub_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_521_sub_17(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -126305,12 +126449,12 @@ WC_OMIT_FRAME_POINTER static void sp_521_div2_mod_17(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_521_div2_mod_17(sp_digit* r,
     const sp_digit* a, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* m asm ("r2") = (const sp_digit*)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r2") = (const sp_digit*)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -126353,7 +126497,7 @@ WC_OMIT_FRAME_POINTER static void sp_521_div2_mod_17(sp_digit* r,
         "adc	r3, r12, r12\n\t"
         "b	L_sp_521_div2_mod_17_div2_%=\n\t"
         "\n"
-    "L_sp_521_div2_mod_17_even_%=: \n\t"
+    "L_sp_521_div2_mod_17_even_%=:\n\t"
         "ldm	%[a]!, {r5, r6, r7}\n\t"
         "stm	%[r]!, {r4, r5, r6, r7}\n\t"
         "ldm	%[a]!, {r4, r5, r6, r7}\n\t"
@@ -126365,7 +126509,7 @@ WC_OMIT_FRAME_POINTER static void sp_521_div2_mod_17(sp_digit* r,
         "ldm	%[a]!, {r4}\n\t"
         "stm	%[r]!, {r4}\n\t"
         "\n"
-    "L_sp_521_div2_mod_17_div2_%=: \n\t"
+    "L_sp_521_div2_mod_17_div2_%=:\n\t"
         "sub	%[r], %[r], #0x44\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "ldm	r0, {r8, r9}\n\t"
@@ -126451,7 +126595,7 @@ WC_OMIT_FRAME_POINTER static void sp_521_div2_mod_17(sp_digit* r,
 }
 
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
-static const byte L_sp_521_num_bits_17_table[] = {
+XALIGNED(4) static const word8 L_sp_521_num_bits_17_table[] = {
     0x00, 0x01, 0x02, 0x02, 0x03, 0x03, 0x03, 0x03,
     0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
     0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05,
@@ -126490,15 +126634,15 @@ static const byte L_sp_521_num_bits_17_table[] = {
 WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sp_digit* a asm ("r0") = (const sp_digit*)a_p;
-    register byte* L_sp_521_num_bits_17_table_c asm ("r1") =
-        (byte*)&L_sp_521_num_bits_17_table;
+    register const sp_digit* a __asm__ ("r0") = (const sp_digit*)a_p;
+    register word8* L_sp_521_num_bits_17_table_c __asm__ ("r1") =
+        (word8*)&L_sp_521_num_bits_17_table;
 #else
-    register byte* L_sp_521_num_bits_17_table_c =
-        (byte*)&L_sp_521_num_bits_17_table;
+    register word8* L_sp_521_num_bits_17_table_c =
+        (word8*)&L_sp_521_num_bits_17_table;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -126519,7 +126663,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_16_3_%=: \n\t"
+    "L_sp_521_num_bits_17_16_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -126534,7 +126678,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_16_2_%=: \n\t"
+    "L_sp_521_num_bits_17_16_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -126549,14 +126693,14 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_16_1_%=: \n\t"
+    "L_sp_521_num_bits_17_16_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0x200\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_16_%=: \n\t"
+    "L_sp_521_num_bits_17_16_%=:\n\t"
         "ldr	r1, [%[a], #60]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_15_%=\n\t"
@@ -126573,7 +126717,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_15_3_%=: \n\t"
+    "L_sp_521_num_bits_17_15_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -126588,7 +126732,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_15_2_%=: \n\t"
+    "L_sp_521_num_bits_17_15_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -126603,7 +126747,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_15_1_%=: \n\t"
+    "L_sp_521_num_bits_17_15_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "mov	r2, #0xe0\n\t"
@@ -126615,7 +126759,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_15_%=: \n\t"
+    "L_sp_521_num_bits_17_15_%=:\n\t"
         "ldr	r1, [%[a], #56]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_14_%=\n\t"
@@ -126632,7 +126776,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_14_3_%=: \n\t"
+    "L_sp_521_num_bits_17_14_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -126647,7 +126791,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_14_2_%=: \n\t"
+    "L_sp_521_num_bits_17_14_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -126662,7 +126806,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_14_1_%=: \n\t"
+    "L_sp_521_num_bits_17_14_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "mov	r2, #0xc0\n\t"
@@ -126674,7 +126818,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_14_%=: \n\t"
+    "L_sp_521_num_bits_17_14_%=:\n\t"
         "ldr	r1, [%[a], #52]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_13_%=\n\t"
@@ -126691,7 +126835,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_13_3_%=: \n\t"
+    "L_sp_521_num_bits_17_13_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -126706,7 +126850,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_13_2_%=: \n\t"
+    "L_sp_521_num_bits_17_13_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -126721,7 +126865,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_13_1_%=: \n\t"
+    "L_sp_521_num_bits_17_13_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "mov	r2, #0xa0\n\t"
@@ -126733,7 +126877,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_13_%=: \n\t"
+    "L_sp_521_num_bits_17_13_%=:\n\t"
         "ldr	r1, [%[a], #48]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_12_%=\n\t"
@@ -126750,7 +126894,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_12_3_%=: \n\t"
+    "L_sp_521_num_bits_17_12_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -126765,7 +126909,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_12_2_%=: \n\t"
+    "L_sp_521_num_bits_17_12_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -126780,7 +126924,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_12_1_%=: \n\t"
+    "L_sp_521_num_bits_17_12_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "mov	r2, #0x80\n\t"
@@ -126792,7 +126936,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_12_%=: \n\t"
+    "L_sp_521_num_bits_17_12_%=:\n\t"
         "ldr	r1, [%[a], #44]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_11_%=\n\t"
@@ -126809,7 +126953,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_11_3_%=: \n\t"
+    "L_sp_521_num_bits_17_11_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -126824,7 +126968,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_11_2_%=: \n\t"
+    "L_sp_521_num_bits_17_11_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -126839,7 +126983,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_11_1_%=: \n\t"
+    "L_sp_521_num_bits_17_11_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "mov	r2, #0x60\n\t"
@@ -126851,7 +126995,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_11_%=: \n\t"
+    "L_sp_521_num_bits_17_11_%=:\n\t"
         "ldr	r1, [%[a], #40]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_10_%=\n\t"
@@ -126868,7 +127012,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_10_3_%=: \n\t"
+    "L_sp_521_num_bits_17_10_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -126883,7 +127027,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_10_2_%=: \n\t"
+    "L_sp_521_num_bits_17_10_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -126898,7 +127042,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_10_1_%=: \n\t"
+    "L_sp_521_num_bits_17_10_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "mov	r2, #0x40\n\t"
@@ -126910,7 +127054,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_10_%=: \n\t"
+    "L_sp_521_num_bits_17_10_%=:\n\t"
         "ldr	r1, [%[a], #36]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_9_%=\n\t"
@@ -126927,7 +127071,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_9_3_%=: \n\t"
+    "L_sp_521_num_bits_17_9_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -126942,7 +127086,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_9_2_%=: \n\t"
+    "L_sp_521_num_bits_17_9_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -126957,7 +127101,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_9_1_%=: \n\t"
+    "L_sp_521_num_bits_17_9_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 7)
         "mov	r2, #0x20\n\t"
@@ -126969,7 +127113,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_9_%=: \n\t"
+    "L_sp_521_num_bits_17_9_%=:\n\t"
         "ldr	r1, [%[a], #32]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_8_%=\n\t"
@@ -126986,7 +127130,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_8_3_%=: \n\t"
+    "L_sp_521_num_bits_17_8_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127001,7 +127145,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_8_2_%=: \n\t"
+    "L_sp_521_num_bits_17_8_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127016,14 +127160,14 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_8_1_%=: \n\t"
+    "L_sp_521_num_bits_17_8_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0x100\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_8_%=: \n\t"
+    "L_sp_521_num_bits_17_8_%=:\n\t"
         "ldr	r1, [%[a], #28]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_7_%=\n\t"
@@ -127035,7 +127179,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_7_3_%=: \n\t"
+    "L_sp_521_num_bits_17_7_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127045,7 +127189,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_7_2_%=: \n\t"
+    "L_sp_521_num_bits_17_7_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127055,14 +127199,14 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_7_1_%=: \n\t"
+    "L_sp_521_num_bits_17_7_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0xe0\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_7_%=: \n\t"
+    "L_sp_521_num_bits_17_7_%=:\n\t"
         "ldr	r1, [%[a], #24]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_6_%=\n\t"
@@ -127074,7 +127218,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_6_3_%=: \n\t"
+    "L_sp_521_num_bits_17_6_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127084,7 +127228,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_6_2_%=: \n\t"
+    "L_sp_521_num_bits_17_6_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127094,14 +127238,14 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_6_1_%=: \n\t"
+    "L_sp_521_num_bits_17_6_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0xc0\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_6_%=: \n\t"
+    "L_sp_521_num_bits_17_6_%=:\n\t"
         "ldr	r1, [%[a], #20]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_5_%=\n\t"
@@ -127113,7 +127257,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_5_3_%=: \n\t"
+    "L_sp_521_num_bits_17_5_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127123,7 +127267,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_5_2_%=: \n\t"
+    "L_sp_521_num_bits_17_5_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127133,14 +127277,14 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_5_1_%=: \n\t"
+    "L_sp_521_num_bits_17_5_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0xa0\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_5_%=: \n\t"
+    "L_sp_521_num_bits_17_5_%=:\n\t"
         "ldr	r1, [%[a], #16]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_4_%=\n\t"
@@ -127152,7 +127296,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_4_3_%=: \n\t"
+    "L_sp_521_num_bits_17_4_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127162,7 +127306,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_4_2_%=: \n\t"
+    "L_sp_521_num_bits_17_4_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127172,14 +127316,14 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_4_1_%=: \n\t"
+    "L_sp_521_num_bits_17_4_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0x80\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_4_%=: \n\t"
+    "L_sp_521_num_bits_17_4_%=:\n\t"
         "ldr	r1, [%[a], #12]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_3_%=\n\t"
@@ -127191,7 +127335,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_3_3_%=: \n\t"
+    "L_sp_521_num_bits_17_3_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127201,7 +127345,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_3_2_%=: \n\t"
+    "L_sp_521_num_bits_17_3_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127211,14 +127355,14 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_3_1_%=: \n\t"
+    "L_sp_521_num_bits_17_3_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0x60\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_3_%=: \n\t"
+    "L_sp_521_num_bits_17_3_%=:\n\t"
         "ldr	r1, [%[a], #8]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_2_%=\n\t"
@@ -127230,7 +127374,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_2_3_%=: \n\t"
+    "L_sp_521_num_bits_17_2_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127240,7 +127384,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_2_2_%=: \n\t"
+    "L_sp_521_num_bits_17_2_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127250,14 +127394,14 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_2_1_%=: \n\t"
+    "L_sp_521_num_bits_17_2_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #0x40\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_2_%=: \n\t"
+    "L_sp_521_num_bits_17_2_%=:\n\t"
         "ldr	r1, [%[a], #4]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_1_%=\n\t"
@@ -127269,7 +127413,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_1_3_%=: \n\t"
+    "L_sp_521_num_bits_17_1_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127279,7 +127423,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_1_2_%=: \n\t"
+    "L_sp_521_num_bits_17_1_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127289,14 +127433,14 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_1_1_%=: \n\t"
+    "L_sp_521_num_bits_17_1_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "mov	r2, #32\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_1_%=: \n\t"
+    "L_sp_521_num_bits_17_1_%=:\n\t"
         "ldr	r1, [%[a]]\n\t"
         "lsr	r3, r1, #24\n\t"
         "cmp	r3, #0\n\t"
@@ -127306,7 +127450,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_0_3_%=: \n\t"
+    "L_sp_521_num_bits_17_0_3_%=:\n\t"
         "lsr	r3, r1, #16\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127316,7 +127460,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_0_2_%=: \n\t"
+    "L_sp_521_num_bits_17_0_2_%=:\n\t"
         "lsr	r3, r1, #8\n\t"
         "and	r3, r3, #0xff\n\t"
         "cmp	r3, #0\n\t"
@@ -127326,11 +127470,11 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "add	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_0_1_%=: \n\t"
+    "L_sp_521_num_bits_17_0_1_%=:\n\t"
         "and	r3, r1, #0xff\n\t"
         "ldrb	r12, [lr, r3]\n\t"
         "\n"
-    "L_sp_521_num_bits_17_18_%=: \n\t"
+    "L_sp_521_num_bits_17_18_%=:\n\t"
         "mov	%[a], r12\n\t"
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
         : [a] "+r" (a),
@@ -127351,10 +127495,10 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
 WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sp_digit* a asm ("r0") = (const sp_digit*)a_p;
+    register const sp_digit* a __asm__ ("r0") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -127371,7 +127515,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_16_%=: \n\t"
+    "L_sp_521_num_bits_17_16_%=:\n\t"
         "ldr	r1, [%[a], #60]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_15_%=\n\t"
@@ -127380,7 +127524,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_15_%=: \n\t"
+    "L_sp_521_num_bits_17_15_%=:\n\t"
         "ldr	r1, [%[a], #56]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_14_%=\n\t"
@@ -127394,7 +127538,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_14_%=: \n\t"
+    "L_sp_521_num_bits_17_14_%=:\n\t"
         "ldr	r1, [%[a], #52]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_13_%=\n\t"
@@ -127408,7 +127552,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_13_%=: \n\t"
+    "L_sp_521_num_bits_17_13_%=:\n\t"
         "ldr	r1, [%[a], #48]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_12_%=\n\t"
@@ -127422,7 +127566,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_12_%=: \n\t"
+    "L_sp_521_num_bits_17_12_%=:\n\t"
         "ldr	r1, [%[a], #44]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_11_%=\n\t"
@@ -127436,7 +127580,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_11_%=: \n\t"
+    "L_sp_521_num_bits_17_11_%=:\n\t"
         "ldr	r1, [%[a], #40]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_10_%=\n\t"
@@ -127450,7 +127594,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_10_%=: \n\t"
+    "L_sp_521_num_bits_17_10_%=:\n\t"
         "ldr	r1, [%[a], #36]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_9_%=\n\t"
@@ -127464,7 +127608,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_9_%=: \n\t"
+    "L_sp_521_num_bits_17_9_%=:\n\t"
         "ldr	r1, [%[a], #32]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_8_%=\n\t"
@@ -127478,7 +127622,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_8_%=: \n\t"
+    "L_sp_521_num_bits_17_8_%=:\n\t"
         "ldr	r1, [%[a], #28]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_7_%=\n\t"
@@ -127487,7 +127631,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_7_%=: \n\t"
+    "L_sp_521_num_bits_17_7_%=:\n\t"
         "ldr	r1, [%[a], #24]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_6_%=\n\t"
@@ -127496,7 +127640,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_6_%=: \n\t"
+    "L_sp_521_num_bits_17_6_%=:\n\t"
         "ldr	r1, [%[a], #20]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_5_%=\n\t"
@@ -127505,7 +127649,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_5_%=: \n\t"
+    "L_sp_521_num_bits_17_5_%=:\n\t"
         "ldr	r1, [%[a], #16]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_4_%=\n\t"
@@ -127514,7 +127658,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_4_%=: \n\t"
+    "L_sp_521_num_bits_17_4_%=:\n\t"
         "ldr	r1, [%[a], #12]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_3_%=\n\t"
@@ -127523,7 +127667,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_3_%=: \n\t"
+    "L_sp_521_num_bits_17_3_%=:\n\t"
         "ldr	r1, [%[a], #8]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_2_%=\n\t"
@@ -127532,7 +127676,7 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_2_%=: \n\t"
+    "L_sp_521_num_bits_17_2_%=:\n\t"
         "ldr	r1, [%[a], #4]\n\t"
         "cmp	r1, #0\n\t"
         "beq	L_sp_521_num_bits_17_1_%=\n\t"
@@ -127541,13 +127685,13 @@ WC_OMIT_FRAME_POINTER static int sp_521_num_bits_17(const sp_digit* a)
         "sub	r12, r2, r12\n\t"
         "b	L_sp_521_num_bits_17_18_%=\n\t"
         "\n"
-    "L_sp_521_num_bits_17_1_%=: \n\t"
+    "L_sp_521_num_bits_17_1_%=:\n\t"
         "ldr	r1, [%[a]]\n\t"
         "mov	r2, #32\n\t"
         "clz	r12, r1\n\t"
         "sub	r12, r2, r12\n\t"
         "\n"
-    "L_sp_521_num_bits_17_18_%=: \n\t"
+    "L_sp_521_num_bits_17_18_%=:\n\t"
         "mov	%[a], r12\n\t"
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
         : [a] "+r" (a)
@@ -127998,7 +128142,6 @@ int sp_ecc_verify_521_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash,
 #endif /* WOLFSSL_SP_NONBLOCK */
 #endif /* HAVE_ECC_VERIFY */
 
-#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER)
 /* Check that the x and y ordinates are a valid point on the curve.
  *
  * point  EC point.
@@ -128071,6 +128214,7 @@ int sp_ecc_is_point_521(const mp_int* pX, const mp_int* pY)
     return err;
 }
 
+#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER)
 /* Check that the private scalar generates the EC point (px, py), the point is
  * on the curve and the point has the correct order.
  *
@@ -128335,7 +128479,7 @@ static int sp_521_mont_sqrt_17(sp_digit* y)
             XMEMCPY(t, y, sizeof(sp_digit) * 17);
             for (i=518; i>=0; i--) {
                 sp_521_mont_sqr_17(t, t, p521_mod, p521_mp_mod);
-                if (p521_sqrt_power[i / 32] & ((sp_digit)1 << (i % 32)))
+                if (p521_sqrt_power[i / 32] & ((sp_uint32)1 << (i % 32)))
                     sp_521_mont_mul_17(t, t, y, p521_mod, p521_mp_mod);
             }
             XMEMCPY(y, t, sizeof(sp_digit) * 17);
@@ -128430,12 +128574,12 @@ WC_OMIT_FRAME_POINTER static void sp_1024_mul_16(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_1024_mul_16(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -138200,11 +138344,11 @@ WC_OMIT_FRAME_POINTER static void sp_1024_sqr_16(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_1024_sqr_16(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -143447,12 +143591,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_1024_add_16(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_1024_add_16(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -143509,11 +143653,11 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_1024_sub_in_place_32(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_1024_sub_in_place_32(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -143598,12 +143742,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_1024_add_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_1024_add_32(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -143758,12 +143902,12 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_1024_sub_16(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_1024_sub_16(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -143857,12 +144001,12 @@ WC_OMIT_FRAME_POINTER static void sp_1024_mul_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_1024_mul_32(sp_digit* r, const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -143875,13 +144019,13 @@ WC_OMIT_FRAME_POINTER static void sp_1024_mul_32(sp_digit* r, const sp_digit* a,
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_1024_mul_32_outer_%=: \n\t"
+    "L_sp_1024_mul_32_outer_%=:\n\t"
         "subs	r3, r5, #0x7c\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_1024_mul_32_inner_%=: \n\t"
+    "L_sp_1024_mul_32_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[b], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -143999,7 +144143,7 @@ WC_OMIT_FRAME_POINTER static void sp_1024_mul_32(sp_digit* r, const sp_digit* a,
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_1024_mul_32_inner_done_%=: \n\t"
+    "L_sp_1024_mul_32_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -144041,7 +144185,7 @@ WC_OMIT_FRAME_POINTER static void sp_1024_mul_32(sp_digit* r, const sp_digit* a,
         "add	r5, r5, #4\n\t"
         "str	r7, [sp, r5]\n\t"
         "\n"
-    "L_sp_1024_mul_32_store_%=: \n\t"
+    "L_sp_1024_mul_32_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -144068,11 +144212,11 @@ WC_OMIT_FRAME_POINTER static void sp_1024_sqr_32(sp_digit* r_p,
     const sp_digit* a_p)
 #else
 WC_OMIT_FRAME_POINTER static void sp_1024_sqr_32(sp_digit* r, const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -144084,13 +144228,13 @@ WC_OMIT_FRAME_POINTER static void sp_1024_sqr_32(sp_digit* r, const sp_digit* a)
         "mov	r8, #0\n\t"
         "mov	r5, #4\n\t"
         "\n"
-    "L_sp_1024_sqr_32_outer_%=: \n\t"
+    "L_sp_1024_sqr_32_outer_%=:\n\t"
         "subs	r3, r5, #0x7c\n\t"
         "it	cc\n\t"
         "movcc	r3, #0\n\t"
         "sub	r4, r5, r3\n\t"
         "\n"
-    "L_sp_1024_sqr_32_inner_%=: \n\t"
+    "L_sp_1024_sqr_32_inner_%=:\n\t"
         "ldr	lr, [%[a], r3]\n\t"
         "ldr	r11, [%[a], r4]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -144175,7 +144319,7 @@ WC_OMIT_FRAME_POINTER static void sp_1024_sqr_32(sp_digit* r, const sp_digit* a)
         "adc	r8, r8, #0\n\t"
 #endif
         "\n"
-    "L_sp_1024_sqr_32_inner_done_%=: \n\t"
+    "L_sp_1024_sqr_32_inner_done_%=:\n\t"
         "str	r6, [sp, r5]\n\t"
         "mov	r6, r7\n\t"
         "mov	r7, r8\n\t"
@@ -144211,7 +144355,7 @@ WC_OMIT_FRAME_POINTER static void sp_1024_sqr_32(sp_digit* r, const sp_digit* a)
         "add	r5, r5, #4\n\t"
         "str	r7, [sp, r5]\n\t"
         "\n"
-    "L_sp_1024_sqr_32_store_%=: \n\t"
+    "L_sp_1024_sqr_32_store_%=:\n\t"
         "ldm	sp!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "stm	%[r]!, {r3, r4, r6, r7, r8, r9, r10, r11}\n\t"
         "subs	r5, r5, #32\n\t"
@@ -144326,18 +144470,18 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_1024_sub_in_place_32(sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_1024_sub_in_place_32(sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r12, #0\n\t"
         "add	lr, %[a], #0x80\n\t"
         "\n"
-    "L_sp_1024_sub_in_place_32_word_%=: \n\t"
+    "L_sp_1024_sub_in_place_32_word_%=:\n\t"
         "rsbs	r12, r12, #0\n\t"
         "ldm	%[a], {r2, r3, r4, r5}\n\t"
         "ldm	%[b]!, {r6, r7, r8, r9}\n\t"
@@ -144379,13 +144523,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_1024_cond_sub_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_1024_cond_sub_32(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -144393,7 +144537,7 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_1024_cond_sub_32(sp_digit* r,
         "mov	r12, #0\n\t"
         "mov	lr, #0\n\t"
         "\n"
-    "L_sp_1024_cond_sub_32_words_%=: \n\t"
+    "L_sp_1024_cond_sub_32_words_%=:\n\t"
         "subs	r12, r6, r12\n\t"
         "ldr	r4, [%[a], lr]\n\t"
         "ldr	r5, [%[b], lr]\n\t"
@@ -144432,13 +144576,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_1024_cond_sub_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_1024_cond_sub_32(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -144582,19 +144726,19 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_1024_add_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_1024_add_32(sp_digit* r,
     const sp_digit* a, const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
         "mov	r3, #0\n\t"
         "add	r12, %[a], #0x80\n\t"
         "\n"
-    "L_sp_1024_add_32_word_%=: \n\t"
+    "L_sp_1024_add_32_word_%=:\n\t"
         "adds	r3, r3, #-1\n\t"
         "ldm	%[a]!, {r4, r5, r6, r7}\n\t"
         "ldm	%[b]!, {r8, r9, r10, r11}\n\t"
@@ -144635,12 +144779,12 @@ WC_OMIT_FRAME_POINTER static void sp_1024_mul_d_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_1024_mul_d_32(sp_digit* r,
     const sp_digit* a, sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -144676,7 +144820,7 @@ WC_OMIT_FRAME_POINTER static void sp_1024_mul_d_32(sp_digit* r,
         "mov	r5, #0\n\t"
         "mov	r9, #4\n\t"
         "\n"
-    "L_sp_1024_mul_d_32_word_%=: \n\t"
+    "L_sp_1024_mul_d_32_word_%=:\n\t"
         /* A[i] * B */
         "ldr	r8, [%[a], r9]\n\t"
 #if defined(WOLFSSL_ARM_ARCH) && (WOLFSSL_ARM_ARCH < 4)
@@ -144746,12 +144890,12 @@ WC_OMIT_FRAME_POINTER static void sp_1024_mul_d_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_1024_mul_d_32(sp_digit* r,
     const sp_digit* a, sp_digit b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register sp_digit b asm ("r2") = (sp_digit)b_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register sp_digit b __asm__ ("r2") = (sp_digit)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -145804,12 +145948,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_1024_word_32(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_1024_word_32(sp_digit d1, sp_digit d0,
     sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -145876,12 +146020,12 @@ WC_OMIT_FRAME_POINTER static sp_digit div_1024_word_32(sp_digit d1_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit div_1024_word_32(sp_digit d1, sp_digit d0,
     sp_digit div)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit d1 asm ("r0") = (sp_digit)d1_p;
-    register sp_digit d0 asm ("r1") = (sp_digit)d0_p;
-    register sp_digit div asm ("r2") = (sp_digit)div_p;
+    register sp_digit d1 __asm__ ("r0") = (sp_digit)d1_p;
+    register sp_digit d0 __asm__ ("r1") = (sp_digit)d0_p;
+    register sp_digit div __asm__ ("r2") = (sp_digit)div_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -145899,7 +146043,7 @@ WC_OMIT_FRAME_POINTER static sp_digit div_1024_word_32(sp_digit d1, sp_digit d0,
         /* Next 30 bits */
         "mov	r12, #29\n\t"
         "\n"
-    "L_div_1024_word_32_bit_%=: \n\t"
+    "L_div_1024_word_32_bit_%=:\n\t"
         "lsls	r4, r4, #1\n\t"
         "adc	r5, r5, r5\n\t"
         "subs	r6, lr, r5\n\t"
@@ -146055,11 +146199,11 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_1024_cmp_32(const sp_digit* a_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_int32 sp_1024_cmp_32(const sp_digit* a,
     const sp_digit* b)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register const sp_digit* a asm ("r0") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r1") = (const sp_digit*)b_p;
+    register const sp_digit* a __asm__ ("r0") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r1") = (const sp_digit*)b_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -146070,7 +146214,7 @@ WC_OMIT_FRAME_POINTER static sp_int32 sp_1024_cmp_32(const sp_digit* a,
 #ifdef WOLFSSL_SP_SMALL
         "mov	r4, #0x7c\n\t"
         "\n"
-    "L_sp_1024_cmp_32_words_%=: \n\t"
+    "L_sp_1024_cmp_32_words_%=:\n\t"
         "ldr	r12, [%[a], r4]\n\t"
         "ldr	lr, [%[b], r4]\n\t"
         "and	r12, r12, r3\n\t"
@@ -146613,7 +146757,7 @@ static void sp_1024_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
+        r[j] |= ((sp_uint32)a->dp[i] << s);
         r[j] &= 0xffffffff;
         s = 32U - s;
         if (j + 1 >= size) {
@@ -146648,7 +146792,7 @@ static void sp_1024_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_uint32)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 32) {
             r[j] &= 0xffffffff;
             if (j + 1 >= size) {
@@ -146714,7 +146858,7 @@ static int sp_1024_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 32; i++) {
-            r->dp[j] |= (mp_digit)(a[i] << s);
+            r->dp[j] |= (mp_digit)((sp_uint32)a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
@@ -146739,7 +146883,7 @@ static int sp_1024_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 32; i++) {
-            r->dp[j] |= ((mp_digit)a[i]) << s;
+            r->dp[j] |= ((sp_uint32)a[i]) << s;
             if (s + 32 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
                 r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
@@ -146795,12 +146939,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_1024_mont_reduce_32(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_1024_mont_reduce_32(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -146813,7 +146957,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_1024_mont_reduce_32(
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_1024_mont_reduce_32_word_%=: \n\t"
+    "L_sp_1024_mont_reduce_32_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -147794,12 +147938,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_1024_mont_reduce_32(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_1024_mont_reduce_32(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -147810,7 +147954,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_1024_mont_reduce_32(
         "ldr	r12, [%[a]]\n\t"
         "ldr	lr, [%[a], #4]\n\t"
         "\n"
-    "L_sp_1024_mont_reduce_32_word_%=: \n\t"
+    "L_sp_1024_mont_reduce_32_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r8, %[mp], r12\n\t"
         /* a[i+0] += m[0] * mu */
@@ -148108,12 +148252,12 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_1024_mont_reduce_32(
 #else
 WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_1024_mont_reduce_32(
     sp_digit* a, const sp_digit* m, sp_digit mp)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* a asm ("r0") = (sp_digit*)a_p;
-    register const sp_digit* m asm ("r1") = (const sp_digit*)m_p;
-    register sp_digit mp asm ("r2") = (sp_digit)mp_p;
+    register sp_digit* a __asm__ ("r0") = (sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r1") = (const sp_digit*)m_p;
+    register sp_digit mp __asm__ ("r2") = (sp_digit)mp_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -148126,7 +148270,7 @@ WC_OMIT_FRAME_POINTER static SP_NOINLINE void sp_1024_mont_reduce_32(
         "ldr	r7, [%[a], #12]\n\t"
         "ldr	r8, [%[a], #16]\n\t"
         "\n"
-    "L_sp_1024_mont_reduce_32_word_%=: \n\t"
+    "L_sp_1024_mont_reduce_32_word_%=:\n\t"
         /* mu = a[i] * mp */
         "mul	r11, %[mp], r4\n\t"
         /* a[i+0] += m[0] * mu */
@@ -148470,13 +148614,13 @@ WC_OMIT_FRAME_POINTER static void sp_1024_mont_add_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_1024_mont_add_32(sp_digit* r,
     const sp_digit* a, const sp_digit* b, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register const sp_digit* m asm ("r3") = (const sp_digit*)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register const sp_digit* m __asm__ ("r3") = (const sp_digit*)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -148656,12 +148800,12 @@ WC_OMIT_FRAME_POINTER static void sp_1024_mont_dbl_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_1024_mont_dbl_32(sp_digit* r,
     const sp_digit* a, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* m asm ("r2") = (const sp_digit*)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r2") = (const sp_digit*)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -148825,12 +148969,12 @@ WC_OMIT_FRAME_POINTER static void sp_1024_mont_tpl_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_1024_mont_tpl_32(sp_digit* r,
     const sp_digit* a, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* m asm ("r2") = (const sp_digit*)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* m __asm__ ("r2") = (const sp_digit*)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -149150,13 +149294,13 @@ WC_OMIT_FRAME_POINTER static void sp_1024_mont_sub_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_1024_mont_sub_32(sp_digit* r,
     const sp_digit* a, const sp_digit* b, const sp_digit* m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register const sp_digit* m asm ("r3") = (const sp_digit*)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register const sp_digit* m __asm__ ("r3") = (const sp_digit*)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -149333,13 +149477,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_1024_cond_add_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_1024_cond_add_32(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -149347,7 +149491,7 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_1024_cond_add_32(sp_digit* r,
         "mov	r6, #0\n\t"
         "mov	r12, #0\n\t"
         "\n"
-    "L_sp_1024_cond_add_32_words_%=: \n\t"
+    "L_sp_1024_cond_add_32_words_%=:\n\t"
         "adds	lr, lr, #-1\n\t"
         "ldr	r4, [%[a], r12]\n\t"
         "ldr	r5, [%[b], r12]\n\t"
@@ -149386,13 +149530,13 @@ WC_OMIT_FRAME_POINTER static sp_digit sp_1024_cond_add_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static sp_digit sp_1024_cond_add_32(sp_digit* r,
     const sp_digit* a, const sp_digit* b, sp_digit m)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
-    register const sp_digit* b asm ("r2") = (const sp_digit*)b_p;
-    register sp_digit m asm ("r3") = (sp_digit)m_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
+    register const sp_digit* b __asm__ ("r2") = (const sp_digit*)b_p;
+    register sp_digit m __asm__ ("r3") = (sp_digit)m_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -149529,11 +149673,11 @@ WC_OMIT_FRAME_POINTER static void sp_1024_rshift1_32(sp_digit* r_p,
 #else
 WC_OMIT_FRAME_POINTER static void sp_1024_rshift1_32(sp_digit* r,
     const sp_digit* a)
-#endif /* WOLFSSL_NO_VAR_ASSIGN_REG */
+#endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 {
 #ifndef WOLFSSL_NO_VAR_ASSIGN_REG
-    register sp_digit* r asm ("r0") = (sp_digit*)r_p;
-    register const sp_digit* a asm ("r1") = (const sp_digit*)a_p;
+    register sp_digit* r __asm__ ("r0") = (sp_digit*)r_p;
+    register const sp_digit* a __asm__ ("r1") = (const sp_digit*)a_p;
 #endif /* !WOLFSSL_NO_VAR_ASSIGN_REG */
 
     __asm__ __volatile__ (
@@ -150295,18 +150439,18 @@ static int sp_1024_ecc_mulmod_fast_32(sp_point_1024* r, const sp_point_1024* g, 
         t[15].infinity = 0;
 
         i = 30;
-        n = k[i+1] << 0;
+        n = (sp_uint32)k[i+1] << 0;
         c = 28;
         y = (int)(n >> 28);
         XMEMCPY(rt, &t[y], sizeof(sp_point_1024));
-        n <<= 4;
+        n = (sp_uint32)n << (4);
         for (; i>=0 || c>=4; ) {
             if (c < 4) {
                 n |= k[i--];
                 c += 32;
             }
             y = (n >> 28) & 0xf;
-            n <<= 4;
+            n = (sp_uint32)n << 4;
             c -= 4;
 
             sp_1024_proj_point_dbl_32(rt, rt, tmp);
@@ -150723,9 +150867,9 @@ static THREAD_LS_T int sp_cache_1024_last = -1;
 /* Cache has been initialized. */
 static THREAD_LS_T int sp_cache_1024_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     #ifndef WOLFSSL_MUTEX_INITIALIZER
-    static volatile int initCacheMutex_1024 = 0;
+    static wolfSSL_Atomic_Uint initCacheMutex_1024 = 0;
     #endif
     static wolfSSL_Mutex sp_cache_1024_lock WOLFSSL_MUTEX_INITIALIZER_CLAUSE(sp_cache_1024_lock);
 #endif
@@ -150792,6 +150936,7 @@ static void sp_ecc_get_cache_1024(const sp_point_1024* g, sp_cache_1024_t** cach
 }
 #endif /* FP_ECC */
 
+
 /* Multiply the base point of P1024 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -150814,19 +150959,42 @@ static int sp_1024_ecc_mulmod_32(sp_point_1024* r, const sp_point_1024* g,
     int err = MP_OKAY;
 
     SP_ALLOC_VAR(sp_digit, tmp, 2 * 32 * 38, heap, DYNAMIC_TYPE_ECC);
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     if (err == MP_OKAY) {
-        #ifndef WOLFSSL_MUTEX_INITIALIZER
-        if (initCacheMutex_1024 == 0) {
-            wc_InitMutex(&sp_cache_1024_lock);
-            initCacheMutex_1024 = 1;
+    #ifndef WOLFSSL_MUTEX_INITIALIZER
+        /* Lazy initialization of mutex - one atomic with three states:
+         *   0 = uninitialized, 1 = initialization in progress,
+         *   2 = initialized.
+         */
+        if (WOLFSSL_ATOMIC_LOAD(initCacheMutex_1024) != 2) {
+            unsigned int expected_then_actual;
+
+            for (;;) {
+                expected_then_actual = 0;
+                if (wolfSSL_Atomic_Uint_CompareExchange(
+                        &initCacheMutex_1024, &expected_then_actual,
+                        1) == 1) {
+                    /* Won race - initialize mutex. On failure, reset state
+                     * to 0 so that a later call retries. */
+                    err = wc_InitMutex(&sp_cache_1024_lock);
+                    WOLFSSL_ATOMIC_STORE(initCacheMutex_1024,
+                        (err == 0) ? 2U : 0U);
+                    break;
+                }
+                if (expected_then_actual == 2) {
+                    /* Another thread completed initialization. */
+                    break;
+                }
+                /* Initialization in progress in another thread. */
+                WC_RELAX_LONG_LOOP();
+            }
         }
-        #endif
-        if (wc_LockMutex(&sp_cache_1024_lock) != 0) {
+    #endif
+        if ((err == MP_OKAY) && (wc_LockMutex(&sp_cache_1024_lock) != 0)) {
             err = BAD_MUTEX_E;
         }
     }
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
         sp_ecc_get_cache_1024(g, &cache);
@@ -150840,9 +151008,9 @@ static int sp_1024_ecc_mulmod_32(sp_point_1024* r, const sp_point_1024* g,
             err = sp_1024_ecc_mulmod_stripe_32(r, g, cache->table, k,
                     map, ct, heap);
         }
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
         wc_UnLockMutex(&sp_cache_1024_lock);
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -151037,9 +151205,9 @@ static THREAD_LS_T int sp_cache_1024_last = -1;
 /* Cache has been initialized. */
 static THREAD_LS_T int sp_cache_1024_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     #ifndef WOLFSSL_MUTEX_INITIALIZER
-    static volatile int initCacheMutex_1024 = 0;
+    static wolfSSL_Atomic_Uint initCacheMutex_1024 = 0;
     #endif
     static wolfSSL_Mutex sp_cache_1024_lock WOLFSSL_MUTEX_INITIALIZER_CLAUSE(sp_cache_1024_lock);
 #endif
@@ -151106,6 +151274,7 @@ static void sp_ecc_get_cache_1024(const sp_point_1024* g, sp_cache_1024_t** cach
 }
 #endif /* FP_ECC */
 
+
 /* Multiply the base point of P1024 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -151128,19 +151297,42 @@ static int sp_1024_ecc_mulmod_32(sp_point_1024* r, const sp_point_1024* g,
     int err = MP_OKAY;
 
     SP_ALLOC_VAR(sp_digit, tmp, 2 * 32 * 38, heap, DYNAMIC_TYPE_ECC);
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     if (err == MP_OKAY) {
-        #ifndef WOLFSSL_MUTEX_INITIALIZER
-        if (initCacheMutex_1024 == 0) {
-            wc_InitMutex(&sp_cache_1024_lock);
-            initCacheMutex_1024 = 1;
+    #ifndef WOLFSSL_MUTEX_INITIALIZER
+        /* Lazy initialization of mutex - one atomic with three states:
+         *   0 = uninitialized, 1 = initialization in progress,
+         *   2 = initialized.
+         */
+        if (WOLFSSL_ATOMIC_LOAD(initCacheMutex_1024) != 2) {
+            unsigned int expected_then_actual;
+
+            for (;;) {
+                expected_then_actual = 0;
+                if (wolfSSL_Atomic_Uint_CompareExchange(
+                        &initCacheMutex_1024, &expected_then_actual,
+                        1) == 1) {
+                    /* Won race - initialize mutex. On failure, reset state
+                     * to 0 so that a later call retries. */
+                    err = wc_InitMutex(&sp_cache_1024_lock);
+                    WOLFSSL_ATOMIC_STORE(initCacheMutex_1024,
+                        (err == 0) ? 2U : 0U);
+                    break;
+                }
+                if (expected_then_actual == 2) {
+                    /* Another thread completed initialization. */
+                    break;
+                }
+                /* Initialization in progress in another thread. */
+                WC_RELAX_LONG_LOOP();
+            }
         }
-        #endif
-        if (wc_LockMutex(&sp_cache_1024_lock) != 0) {
+    #endif
+        if ((err == MP_OKAY) && (wc_LockMutex(&sp_cache_1024_lock) != 0)) {
             err = BAD_MUTEX_E;
         }
     }
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
         sp_ecc_get_cache_1024(g, &cache);
@@ -151154,9 +151346,9 @@ static int sp_1024_ecc_mulmod_32(sp_point_1024* r, const sp_point_1024* g,
             err = sp_1024_ecc_mulmod_stripe_32(r, g, cache->table, k,
                     map, ct, heap);
         }
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
         wc_UnLockMutex(&sp_cache_1024_lock);
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -158395,7 +158587,6 @@ int sp_Pairing_precomp_1024(const ecc_point* pm, const ecc_point* qm,
 }
 
 #endif /* WOLFSSL_SP_SMALL */
-#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER)
 /* Read big endian unsigned byte array into r.
  *
  * r  A single precision integer.
@@ -158411,10 +158602,10 @@ static void sp_1024_from_bin(sp_digit* r, int size, const byte* a, int n)
 
     j = 0;
     for (i = n - 1; i >= 3; i -= 4) {
-        r[j]  = ((sp_digit)a[i - 0] <<  0) |
-                ((sp_digit)a[i - 1] <<  8) |
-                ((sp_digit)a[i - 2] << 16) |
-                ((sp_digit)a[i - 3] << 24);
+        r[j]  = ((sp_uint32)a[i - 0] <<  0) |
+                ((sp_uint32)a[i - 1] <<  8) |
+                ((sp_uint32)a[i - 2] << 16) |
+                ((sp_uint32)a[i - 3] << 24);
         j++;
     }
 
@@ -158519,6 +158710,7 @@ int sp_ecc_is_point_1024(const mp_int* pX, const mp_int* pY)
     return err;
 }
 
+#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER)
 /* Check that the private scalar generates the EC point (px, py), the point is
  * on the curve and the point has the correct order.
  *

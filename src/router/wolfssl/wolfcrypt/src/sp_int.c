@@ -125,8 +125,6 @@ This library provides single precision (SP) integer math functions.
  * WOLFSSL_NO_ASM:              Disable all assembly implementations
  * WOLFSSL_KEIL:                Keil compiler in use, affects inline assembly
  *      syntax
- * WOLFSSL_USE_SAVE_VECTOR_REGISTERS: Save/restore vector registers around
- *      SP ASM calls
  * WOLFSSL_SP_INT_LARGE_COMBA:  Enable large Comba multiplication and
  *      squaring
  * WOLFSSL_SP_INT_SQR_VOLATILE: Declare squaring intermediate variables as
@@ -196,15 +194,6 @@ This library provides single precision (SP) integer math functions.
  */
     PRAGMA_GCC_DIAG_PUSH
     PRAGMA_GCC("GCC diagnostic ignored \"-Warray-bounds\"")
-#endif
-
-#if defined(WOLFSSL_USE_SAVE_VECTOR_REGISTERS) && !defined(WOLFSSL_SP_ASM)
-    /* force off unneeded vector register save/restore. */
-    #undef SAVE_VECTOR_REGISTERS
-    #define SAVE_VECTOR_REGISTERS(fail_clause) \
-        SAVE_NO_VECTOR_REGISTERS(fail_clause)
-    #undef RESTORE_VECTOR_REGISTERS
-    #define RESTORE_VECTOR_REGISTERS() RESTORE_NO_VECTOR_REGISTERS()
 #endif
 
 /* DECL_SP_INT: Declare one variable of type 'sp_int'. */
@@ -5115,12 +5104,28 @@ static WC_INLINE sp_int_digit sp_div_word(sp_int_digit hi, sp_int_digit lo,
     (defined(HAVE_ECC) && defined(HAVE_COMP_KEY)) || defined(OPENSSL_EXTRA) || \
     (defined(WOLFSSL_SP_MATH_ALL) && !defined(WOLFSSL_RSA_PUBLIC_ONLY))
 #ifndef WC_NO_CACHE_RESISTANT
+#ifdef WC_NO_PTR_INT_CAST
+static void _sp_cond_copy(const sp_int* a, int copy, sp_int* r, sp_size_t used)
+{
+    sp_int_digit mask = (sp_int_digit)0 - (sp_int_digit)copy;
+    unsigned int i;
+
+    for (i = 0; i < (unsigned int)used; i++) {
+        r->dp[i] ^= (r->dp[i] ^ a->dp[i]) & mask;
+    }
+    r->used ^= (r->used ^ a->used) & (sp_size_t)mask;
+#ifdef WOLFSSL_SP_INT_NEGATIVE
+    r->sign ^= (r->sign ^ a->sign) & (sp_sign_t)mask;
+#endif
+}
+#else
     /* Mask of address for constant time operations. */
     const size_t sp_off_on_addr[2] =
     {
         (size_t) 0,
         (size_t)-1
     };
+#endif
 #endif
 #endif
 
@@ -5471,6 +5476,22 @@ static void _sp_copy_2_ct(const sp_int* a1, const sp_int* a2, sp_int* r1,
     sp_int* r2, int y, unsigned int used)
 {
     unsigned int i;
+#ifdef WC_NO_GLOBAL_OBJECT_POINTERS
+    static const wc_ptr_t wc_off_on_addr[2] =
+    {
+    #if defined(WC_64BIT_CPU)
+        W64LIT(0x0000000000000000),
+        W64LIT(0xffffffffffffffff)
+    #elif defined(WC_16BIT_CPU)
+        0x0000U,
+        0xffffU
+    #else
+        /* 32 bit */
+        0x00000000U,
+        0xffffffffU
+    #endif
+    };
+#endif
 
     /* Copy data - constant time. */
     for (i = 0; i < used; i++) {
@@ -6124,14 +6145,24 @@ int sp_leading_bit(const sp_int* a)
 int sp_set_bit(sp_int* a, int i)
 {
     int err = MP_OKAY;
-    /* Get index of word to set. */
-    sp_size_t w = (sp_size_t)(i >> SP_WORD_SHIFT);
+    /* Compute word index in full int width so that bit indices large enough
+     * to make the word index overflow sp_size_t are caught by the bounds
+     * check below rather than wrapping. */
+    int wi = (i < 0) ? 0 : (i >> SP_WORD_SHIFT);
 
+#if SP_INT_DIGITS < (65536 / SP_WORD_SIZEOF)
+    /* Check bit index isn't bigger than maximum allowed. */
+    if (i > SP_INT_DIGITS * SP_WORD_SIZE) {
+        err = MP_VAL;
+    }
+    else
+#endif
     /* Check for valid number and space for bit. */
-    if ((a == NULL) || (i < 0) || (w >= a->size)) {
+    if ((a == NULL) || (i < 0) || (wi >= (int)a->size)) {
         err = MP_VAL;
     }
     if (err == MP_OKAY) {
+        sp_size_t w = (sp_size_t)wi;
         /* Amount to shift up to set bit in word. */
         unsigned int s = (unsigned int)(i & (SP_WORD_SIZE - 1));
         unsigned int j;
@@ -7392,9 +7423,8 @@ static void _sp_div_2(const sp_int* a, sp_int* r)
     /* Last word only needs to be shifted down. */
     r->dp[i] = a->dp[i] >> 1;
     /* Set used to be all words seen. */
-    r->used = (sp_size_t)(i + 1);
-    /* Remove leading zeros. */
-    sp_clamp(r);
+    r->used = (sp_size_t)(i + 1 - (int)((sp_int_digit)(r->dp[i] - 1) >>
+                                        (SP_WORD_SIZE - 1)));
 #ifdef WOLFSSL_SP_INT_NEGATIVE
     /* Same sign in result. */
     r->sign = a->sign;
@@ -7876,7 +7906,7 @@ int sp_sub(const sp_int* a, const sp_int* b, sp_int* r)
         else {
             /* Reverse subtract absolute values and use opposite sign of a */
             _sp_sub_off(b, a, r, 0);
-            r->sign = 1 - a->sign;
+            r->sign = (sp_sign_t)(1 - a->sign);
         }
     #endif
     }
@@ -8033,7 +8063,8 @@ static int _sp_submod(const sp_int* a, const sp_int* b, const sp_int* m,
     FREE_SP_INT(t0, NULL);
     FREE_SP_INT(t1, NULL);
 #else /* WOLFSSL_SP_INT_NEGATIVE */
-    sp_size_t used = ((a->used >= b->used) ? a->used + 1 : b->used + 1);
+    sp_size_t used = (sp_size_t)((a->used >= b->used) ? a->used + 1 :
+                                                        b->used + 1);
     DECL_SP_INT(t, used);
 
     ALLOC_SP_INT_SIZE(t, used, err, NULL);
@@ -8546,14 +8577,17 @@ static int sp_lshb(sp_int* a, int n)
     if (a->used != 0) {
         /* Calculate number of digits to shift. */
         sp_size_t s = (sp_size_t)n >> SP_WORD_SHIFT;
+        /* Get count of bits to move in digit. */
+        n &= (int)SP_WORD_MASK;
 
         /* Ensure number has enough digits for result. */
-        if (a->used + s >= a->size) {
+        if ((n != 0) && (a->used + s >= a->size)) {
+            err = MP_VAL;
+        }
+        else if ((s > 0) && (a->used + s > a->size)) {
             err = MP_VAL;
         }
         if (err == MP_OKAY) {
-            /* Get count of bits to move in digit. */
-            n &= (int)SP_WORD_MASK;
             /* Check whether this is a complicated case. */
             if (n != 0) {
                 unsigned int i;
@@ -8602,15 +8636,16 @@ void sp_rshd(sp_int* a, int c)
 {
     /* Do shift if we have an SP int. */
     if ((a != NULL) && (c > 0)) {
-        /* Make zero if shift removes all digits. */
-        if ((sp_size_t)c >= a->used) {
+        /* Compare c in int width to avoid narrowing to sp_size_t (which can
+         * be word16) before the bounds check. */
+        if (c >= (int)a->used) {
             _sp_zero(a);
         }
         else {
             sp_size_t i;
 
             /* Update used digits count. */
-            a->used = (sp_size_t)(a->used - c);
+            a->used = (sp_size_t)((int)a->used - c);
             /* Move digits down. */
             for (i = 0; i < a->used; i++, c++) {
                 a->dp[i] = a->dp[c];
@@ -8632,21 +8667,23 @@ void sp_rshd(sp_int* a, int c)
 int sp_rshb(const sp_int* a, int n, sp_int* r)
 {
     int err = MP_OKAY;
-    /* Number of digits to shift down. */
-    sp_size_t i;
+    /* Compute the digit-shift count in full int width to avoid wrapping
+     * when n is large enough that the count would exceed sp_size_t range. */
+    int ni = (n < 0) ? 0 : (n >> SP_WORD_SHIFT);
 
     if ((a == NULL) || (n < 0)) {
         err = MP_VAL;
     }
     /* Handle case where shifting out all digits. */
-    else if ((i = (sp_size_t)(n >> SP_WORD_SHIFT)) >= a->used) {
+    else if (ni >= (int)a->used) {
         _sp_zero(r);
     }
     /* Change callers when more error cases returned. */
-    else if ((err == MP_OKAY) && (a->used - i > r->size)) {
+    else if ((err == MP_OKAY) && ((int)a->used - ni > (int)r->size)) {
         err = MP_VAL;
     }
     else if (err == MP_OKAY) {
+        sp_size_t i = (sp_size_t)ni;
         sp_size_t j;
 
         /* Number of bits to shift in digits. */
@@ -9180,7 +9217,7 @@ static int _sp_mod(const sp_int* a, const sp_int* m, sp_int* r)
     /* In case remainder is modulus - allocate temporary. */
     ALLOC_SP_INT(t, a->used + 1, err, NULL);
     if (err == MP_OKAY) {
-        _sp_init_size(t, a->used + 1);
+        _sp_init_size(t, (sp_size_t)(a->used + 1));
         /* Use divide to calculate remainder and don't get quotient. */
         err = sp_div(a, m, NULL, t);
     }
@@ -12258,24 +12295,30 @@ static int _sp_mulmod_tmp(const sp_int* a, const sp_int* b, const sp_int* m,
     sp_int* r)
 {
     int err = MP_OKAY;
-    /* Create temporary for multiplication result. */
-    DECL_SP_INT(t, a->used + b->used);
 
-    ALLOC_SP_INT(t, a->used + b->used, err, NULL);
-    if (err == MP_OKAY) {
-        err = sp_init_size(t, (sp_size_t)(a->used + b->used));
+    if (sp_iszero(a) || sp_iszero(b)) {
+        _sp_zero(r);
     }
+    else {
+        /* Create temporary for multiplication result. */
+        DECL_SP_INT(t, a->used + b->used);
 
-    /* Multiply and reduce. */
-    if (err == MP_OKAY) {
-        err = sp_mul(a, b, t);
-    }
-    if (err == MP_OKAY) {
-        err = sp_mod(t, m, r);
-    }
+        ALLOC_SP_INT(t, a->used + b->used, err, NULL);
+        if (err == MP_OKAY) {
+            err = sp_init_size(t, (sp_size_t)(a->used + b->used));
+        }
 
-    /* Dispose of an allocated SP int. */
-    FREE_SP_INT(t, NULL);
+        /* Multiply and reduce. */
+        if (err == MP_OKAY) {
+            err = sp_mul(a, b, t);
+        }
+        if (err == MP_OKAY) {
+            err = sp_mod(t, m, r);
+        }
+
+        /* Dispose of an allocated SP int. */
+        FREE_SP_INT(t, NULL);
+    }
 
     return err;
 }
@@ -13157,13 +13200,23 @@ static int _sp_exptmod_ex(const sp_int* b, const sp_int* e, int bits,
             }
 #else
             /* 4.1. t[s] = t[s] ^ 2 */
+#ifdef WC_NO_PTR_INT_CAST
+            _sp_cond_copy(t[0], s^1, t[2], m->used);
+            _sp_cond_copy(t[1], s,   t[2], m->used);
+#else
             _sp_copy((sp_int*)(((size_t)t[0] & sp_off_on_addr[s^1]) +
                                ((size_t)t[1] & sp_off_on_addr[s  ])),
                      t[2]);
+#endif
             err = sp_sqrmod(t[2], m, t[2]);
+#ifdef WC_NO_PTR_INT_CAST
+            _sp_cond_copy(t[2], s^1, t[0], m->used);
+            _sp_cond_copy(t[2], s,   t[1], m->used);
+#else
             _sp_copy(t[2],
                      (sp_int*)(((size_t)t[0] & sp_off_on_addr[s^1]) +
                                ((size_t)t[1] & sp_off_on_addr[s  ])));
+#endif
 
             if (err == MP_OKAY) {
                 /* 4.2. y = e[i] */
@@ -13174,13 +13227,23 @@ static int _sp_exptmod_ex(const sp_int* b, const sp_int* e, int bits,
                 /* 4.4  s = s | y */
                 s |= y;
                 /* 4.5. t[j] = t[j] * b */
+#ifdef WC_NO_PTR_INT_CAST
+                _sp_cond_copy(t[0], j^1, t[2], m->used);
+                _sp_cond_copy(t[1], j,   t[2], m->used);
+#else
                 _sp_copy((sp_int*)(((size_t)t[0] & sp_off_on_addr[j^1]) +
                                    ((size_t)t[1] & sp_off_on_addr[j  ])),
                          t[2]);
+#endif
                 err = _sp_mulmod(t[2], b, m, t[2]);
+#ifdef WC_NO_PTR_INT_CAST
+                _sp_cond_copy(t[2], j^1, t[0], m->used);
+                _sp_cond_copy(t[2], j,   t[1], m->used);
+#else
                 _sp_copy(t[2],
                          (sp_int*)(((size_t)t[0] & sp_off_on_addr[j^1]) +
                                    ((size_t)t[1] & sp_off_on_addr[j  ])));
+#endif
             }
 #endif
         }
@@ -13270,9 +13333,14 @@ static int _sp_exptmod_ex(const sp_int* b, const sp_int* e, int bits,
             err = sp_mulmod(t[0], t[1], m, t[2]);
             /* 3.3. t[3] = t[y] ^ 2 */
             if (err == MP_OKAY) {
+#ifdef WC_NO_PTR_INT_CAST
+                _sp_cond_copy(t[0], y^1, t[3], m->used);
+                _sp_cond_copy(t[1], y,   t[3], m->used);
+#else
                 _sp_copy((sp_int*)(((size_t)t[0] & sp_off_on_addr[y^1]) +
                                    ((size_t)t[1] & sp_off_on_addr[y  ])),
                          t[3]);
+#endif
                 err = sp_sqrmod(t[3], m, t[3]);
             }
             /* 3.4. t[y] = t[3], t[y^1] = t[2] */
@@ -13394,16 +13462,26 @@ static int _sp_exptmod_mont_ex(const sp_int* b, const sp_int* e, int bits,
         /* 6. For i in (bits-1)...0 */
         for (i = bits - 1; (err == MP_OKAY) && (i >= 0); i--) {
             /* 6.1. t[s] = t[s] ^ 2 */
+#ifdef WC_NO_PTR_INT_CAST
+            _sp_cond_copy(t[0], s^1, t[3], m->used);
+            _sp_cond_copy(t[1], s,   t[3], m->used);
+#else
             _sp_copy((sp_int*)(((size_t)t[0] & sp_off_on_addr[s^1]) +
                                ((size_t)t[1] & sp_off_on_addr[s  ])),
                      t[3]);
+#endif
             err = sp_sqr(t[3], t[3]);
             if (err == MP_OKAY) {
                 err = _sp_mont_red(t[3], m, mp, 0);
             }
+#ifdef WC_NO_PTR_INT_CAST
+            _sp_cond_copy(t[3], s^1, t[0], m->used);
+            _sp_cond_copy(t[3], s,   t[1], m->used);
+#else
             _sp_copy(t[3],
                      (sp_int*)(((size_t)t[0] & sp_off_on_addr[s^1]) +
                                ((size_t)t[1] & sp_off_on_addr[s  ])));
+#endif
 
             if (err == MP_OKAY) {
                 /* 6.2. y = e[i] */
@@ -13415,16 +13493,26 @@ static int _sp_exptmod_mont_ex(const sp_int* b, const sp_int* e, int bits,
                 s |= y;
 
                 /* 6.5. t[j] = t[j] * bm */
+#ifdef WC_NO_PTR_INT_CAST
+                _sp_cond_copy(t[0], j^1, t[3], m->used);
+                _sp_cond_copy(t[1], j,   t[3], m->used);
+#else
                 _sp_copy((sp_int*)(((size_t)t[0] & sp_off_on_addr[j^1]) +
                                    ((size_t)t[1] & sp_off_on_addr[j  ])),
                          t[3]);
+#endif
                 err = sp_mul(t[3], t[2], t[3]);
                 if (err == MP_OKAY) {
                     err = _sp_mont_red(t[3], m, mp, 0);
                 }
+#ifdef WC_NO_PTR_INT_CAST
+                _sp_cond_copy(t[3], j^1, t[0], m->used);
+                _sp_cond_copy(t[3], j,   t[1], m->used);
+#else
                 _sp_copy(t[3],
                          (sp_int*)(((size_t)t[0] & sp_off_on_addr[j^1]) +
                                    ((size_t)t[1] & sp_off_on_addr[j  ])));
+#endif
             }
         }
         if (err == MP_OKAY) {
@@ -13534,9 +13622,14 @@ static int _sp_exptmod_mont_ex(const sp_int* b, const sp_int* e, int bits,
             }
             /* 4.3. t[3] = t[y] ^ 2 */
             if (err == MP_OKAY) {
+#ifdef WC_NO_PTR_INT_CAST
+                _sp_cond_copy(t[0], y^1, t[3], m->used);
+                _sp_cond_copy(t[1], y,   t[3], m->used);
+#else
                 _sp_copy((sp_int*)(((size_t)t[0] & sp_off_on_addr[y^1]) +
                                    ((size_t)t[1] & sp_off_on_addr[y  ])),
                          t[3]);
+#endif
                 err = sp_sqr(t[3], t[3]);
             }
             if (err == MP_OKAY) {
@@ -14242,11 +14335,9 @@ int sp_exptmod(const sp_int* b, const sp_int* e, const sp_int* m, sp_int* r)
     if ((b == NULL) || (e == NULL) || (m == NULL) || (r == NULL)) {
         err = MP_VAL;
     }
-    SAVE_VECTOR_REGISTERS(err = _svr_ret;);
     if (err == MP_OKAY) {
         err = sp_exptmod_ex(b, e, (int)e->used, m, r);
     }
-    RESTORE_VECTOR_REGISTERS();
     return err;
 }
 #endif
@@ -14839,19 +14930,29 @@ int sp_div_2d(const sp_int* a, int e, sp_int* r, sp_int* rem)
 int sp_mod_2d(const sp_int* a, int e, sp_int* r)
 {
     int err = MP_OKAY;
-    sp_size_t digits = (sp_size_t)((e + SP_WORD_SIZE - 1) >> SP_WORD_SHIFT);
+    /* Compute digit count in full int width. Decompose to avoid signed
+     * overflow if e is near INT_MAX: (e + SP_WORD_SIZE - 1) >> SHIFT is
+     * equivalent to (e >> SHIFT) + (e has remainder ? 1 : 0). */
+    int digits_full = 0;
+    sp_size_t digits = 0;
 
     if ((a == NULL) || (r == NULL) || (e < 0)) {
         err = MP_VAL;
     }
-    if ((err == MP_OKAY) && (digits > r->size)) {
-        err = MP_VAL;
+    if (err == MP_OKAY) {
+        digits_full = (e >> SP_WORD_SHIFT) +
+                      (((e & (SP_WORD_SIZE - 1)) != 0) ? 1 : 0);
+        if (digits_full > (int)r->size) {
+            err = MP_VAL;
+        }
     }
 
     if (err == MP_OKAY) {
+        digits = (sp_size_t)digits_full;
         /* Copy a into r if not same pointer. */
         if (a != r) {
-            XMEMCPY(r->dp, a->dp, digits * (word32)SP_WORD_SIZEOF);
+            sp_size_t cnt = (a->used < digits) ? a->used : digits;
+            XMEMCPY(r->dp, a->dp, cnt * (word32)SP_WORD_SIZEOF);
             r->used = a->used;
         #ifdef WOLFSSL_SP_INT_NEGATIVE
             r->sign = a->sign;
@@ -14870,9 +14971,10 @@ int sp_mod_2d(const sp_int* a, int e, sp_int* r)
             if (a->sign == MP_NEG) {
                 unsigned int i;
                 sp_int_digit carry = 0;
+                sp_size_t cnt = (r->used < digits) ? r->used : digits;
 
                 /* Negate value. */
-                for (i = 0; i < r->used; i++) {
+                for (i = 0; i < cnt; i++) {
                     sp_int_digit next = r->dp[i] > 0;
                     r->dp[i] = (sp_int_digit)0 - r->dp[i] - carry;
                     carry |= next;
@@ -14979,7 +15081,7 @@ static int _sp_sqr(const sp_int* a, sp_int* r)
 #elif defined(WOLFSSL_SP_DYN_STACK)
     sp_int_digit t[((a->used + 1) / 2) * 2 + 1];
 #else
-    sp_int_digit t[(SP_INT_DIGITS + 1) / 2];
+    sp_int_digit t[(SP_INT_DIGITS + 1) / 2 + 1];
 #endif
 
 #if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_SP_NO_MALLOC)
@@ -17401,24 +17503,31 @@ int sp_sqr(const sp_int* a, sp_int* r)
 static int _sp_sqrmod(const sp_int* a, const sp_int* m, sp_int* r)
 {
     int err = MP_OKAY;
-    /* Create temporary for multiplication result. */
-    DECL_SP_INT(t, a->used * 2);
 
-    ALLOC_SP_INT(t, a->used * 2, err, NULL);
-    if (err == MP_OKAY) {
-        err = sp_init_size(t, a->used * 2U);
+    if (sp_iszero(a)) {
+        _sp_zero(r);
+    }
+    else {
+        /* Create temporary for multiplication result. */
+        DECL_SP_INT(t, a->used * 2);
+
+        ALLOC_SP_INT(t, a->used * 2, err, NULL);
+        if (err == MP_OKAY) {
+            err = sp_init_size(t, a->used * 2U);
+        }
+
+        /* Square and reduce. */
+        if (err == MP_OKAY) {
+            err = sp_sqr(a, t);
+        }
+        if (err == MP_OKAY) {
+            err = sp_mod(t, m, r);
+        }
+
+        /* Dispose of an allocated SP int. */
+        FREE_SP_INT(t, NULL);
     }
 
-    /* Square and reduce. */
-    if (err == MP_OKAY) {
-        err = sp_sqr(a, t);
-    }
-    if (err == MP_OKAY) {
-        err = sp_mod(t, m, r);
-    }
-
-    /* Dispose of an allocated SP int. */
-    FREE_SP_INT(t, NULL);
     return err;
 }
 
@@ -19449,8 +19558,6 @@ int sp_prime_is_prime(const sp_int* a, int trials, int* result)
         haveRes = 1;
     }
 
-    SAVE_VECTOR_REGISTERS(err = _svr_ret;);
-
     /* Check against known small primes when a has 1 digit. */
     if ((err == MP_OKAY) && (!haveRes) && (a->used == 1) &&
             (a->dp[0] <= sp_primes[SP_PRIME_SIZE - 1])) {
@@ -19466,8 +19573,6 @@ int sp_prime_is_prime(const sp_int* a, int trials, int* result)
     if ((err == MP_OKAY) && (!haveRes)) {
         err = _sp_prime_trials(a, trials, result);
     }
-
-    RESTORE_VECTOR_REGISTERS();
 
     return err;
 }
@@ -19609,8 +19714,6 @@ int sp_prime_is_prime_ex(const sp_int* a, int trials, int* result, WC_RNG* rng)
         haveRes = 1;
     }
 
-    SAVE_VECTOR_REGISTERS(err = _svr_ret;);
-
     /* Check against known small primes when a has 1 digit. */
     if ((err == MP_OKAY) && (!haveRes) && (a->used == 1) &&
             (a->dp[0] <= (sp_int_digit)sp_primes[SP_PRIME_SIZE - 1])) {
@@ -19634,8 +19737,6 @@ int sp_prime_is_prime_ex(const sp_int* a, int trials, int* result, WC_RNG* rng)
     if (result != NULL) {
         *result = ret;
     }
-
-    RESTORE_VECTOR_REGISTERS();
 
     return err;
 }
@@ -19677,8 +19778,6 @@ static WC_INLINE int _sp_gcd(const sp_int* a, const sp_int* b, sp_int* r)
     /* Determine maximum digit length numbers will reach. */
     unsigned int used = (a->used >= b->used) ? a->used + 1U : b->used + 1U;
     DECL_SP_INT_ARRAY(d, used, 3);
-
-    SAVE_VECTOR_REGISTERS(err = _svr_ret;);
 
     ALLOC_SP_INT_ARRAY(d, used, 3, err, NULL);
     if (err == MP_OKAY) {
@@ -19743,8 +19842,6 @@ static WC_INLINE int _sp_gcd(const sp_int* a, const sp_int* b, sp_int* r)
     }
 
     FREE_SP_INT_ARRAY(d, NULL);
-
-    RESTORE_VECTOR_REGISTERS();
 
     return err;
 }
@@ -19850,8 +19947,6 @@ static int _sp_lcm(const sp_int* a, const sp_int* b, sp_int* r)
         _sp_init_size(t[0], used);
         _sp_init_size(t[1], used);
 
-        SAVE_VECTOR_REGISTERS(err = _svr_ret;);
-
         if (err == MP_OKAY) {
             /* 1. t0 = gcd(a, b) */
             err = sp_gcd(a, b, t[0]);
@@ -19880,8 +19975,6 @@ static int _sp_lcm(const sp_int* a, const sp_int* b, sp_int* r)
                 }
             }
         }
-
-        RESTORE_VECTOR_REGISTERS();
     }
 
     FREE_SP_INT_ARRAY(t, NULL);

@@ -430,9 +430,15 @@ int wolfSSL_memsave_session_cache(void* mem, int sz)
 {
     int i;
     cache_header_t cache_header;
-    SessionRow*    row  = (SessionRow*)((byte*)mem + sizeof(cache_header));
+    SessionRow*    row;
 
     WOLFSSL_ENTER("wolfSSL_memsave_session_cache");
+
+    if (mem == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+    row = (SessionRow*)((byte*)mem + sizeof(cache_header));
 
     if (sz < wolfSSL_get_session_cache_memsize()) {
         WOLFSSL_MSG("Memory buffer too small");
@@ -520,9 +526,15 @@ int wolfSSL_memrestore_session_cache(const void* mem, int sz)
 {
     int    i;
     cache_header_t cache_header;
-    SessionRow*    row  = (SessionRow*)((byte*)mem + sizeof(cache_header));
+    SessionRow*    row;
 
     WOLFSSL_ENTER("wolfSSL_memrestore_session_cache");
+
+    if (mem == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+    row = (SessionRow*)((byte*)mem + sizeof(cache_header));
 
     if (sz < wolfSSL_get_session_cache_memsize()) {
         WOLFSSL_MSG("Memory buffer too small");
@@ -1586,14 +1598,35 @@ int wolfSSL_SetSession(WOLFSSL* ssl, WOLFSSL_SESSION* session)
 #if !defined(OPENSSL_EXTRA) || !defined(WOLFSSL_ERROR_CODE_OPENSSL)
         return WOLFSSL_FAILURE;  /* session timed out */
 #else /* defined(OPENSSL_EXTRA) && defined(WOLFSSL_ERROR_CODE_OPENSSL) */
+        /* Return success for OpenSSL compatibility but do not carry the
+         * expired session's version/cipher into ssl state, which would
+         * otherwise pin the ClientHello to stale values. */
         WOLFSSL_MSG("Session is expired but return success for "
                     "OpenSSL compatibility");
+        return WOLFSSL_SUCCESS;
 #endif
     }
     ssl->options.resuming = 1;
     ssl->options.haveEMS = (ssl->session->haveEMS) ? 1 : 0;
 
     if (ssl->session->version.major != 0) {
+        /* Reject sessions whose protocol version is below the configured
+         * minimum so a stale cached session cannot make the client send a
+         * ClientHello advertising a version it isn't allowed to negotiate.
+         * DTLS minor versions are inverted: a higher minor means an older
+         * protocol, so the comparison flips. */
+        byte belowMinDowngrade;
+        if (ssl->options.dtls)
+            belowMinDowngrade = ssl->session->version.minor >
+                                ssl->options.minDowngrade;
+        else
+            belowMinDowngrade = ssl->session->version.minor <
+                                ssl->options.minDowngrade;
+        if (belowMinDowngrade) {
+            WOLFSSL_MSG("Session version below configured minDowngrade");
+            ssl->options.resuming = 0;
+            return WOLFSSL_FAILURE;
+        }
         ssl->version              = ssl->session->version;
         if (IsAtLeastTLSv1_3(ssl->version))
             ssl->options.tls1_3 = 1;
@@ -2682,6 +2715,16 @@ int wolfSSL_i2d_SSL_SESSION(WOLFSSL_SESSION* sess, unsigned char** p)
 #ifdef HAVE_SESSION_TICKET
     /* ticket len | ticket */
     size += OPAQUE16_LEN + sess->ticketLen;
+#if !defined(NO_WOLFSSL_SERVER) && !defined(NO_TLS)
+#ifdef HAVE_SNI
+    /* sniHash */
+    size += TICKET_BINDING_HASH_SZ;
+#endif
+#ifdef HAVE_ALPN
+    /* alpnHash */
+    size += TICKET_BINDING_HASH_SZ;
+#endif
+#endif /* !NO_WOLFSSL_SERVER && !NO_TLS */
 #endif
 
     if (p != NULL) {
@@ -2767,6 +2810,16 @@ int wolfSSL_i2d_SSL_SESSION(WOLFSSL_SESSION* sess, unsigned char** p)
         c16toa(sess->ticketLen, data + idx); idx += OPAQUE16_LEN;
         XMEMCPY(data + idx, sess->ticket, sess->ticketLen);
         idx += sess->ticketLen;
+#if !defined(NO_WOLFSSL_SERVER) && !defined(NO_TLS)
+#ifdef HAVE_SNI
+        XMEMCPY(data + idx, sess->sniHash, TICKET_BINDING_HASH_SZ);
+        idx += TICKET_BINDING_HASH_SZ;
+#endif
+#ifdef HAVE_ALPN
+        XMEMCPY(data + idx, sess->alpnHash, TICKET_BINDING_HASH_SZ);
+        idx += TICKET_BINDING_HASH_SZ;
+#endif
+#endif /* !NO_WOLFSSL_SERVER && !NO_TLS */
 #endif
     }
 #endif
@@ -3053,10 +3106,31 @@ WOLFSSL_SESSION* wolfSSL_d2i_SSL_SESSION(WOLFSSL_SESSION** sess,
         goto end;
     }
     XMEMCPY(s->ticket, data + idx, s->ticketLen); idx += s->ticketLen;
+#if !defined(NO_WOLFSSL_SERVER) && !defined(NO_TLS)
+#ifdef HAVE_SNI
+    /* sniHash - SNI binding for stateful resumption (RFC 6066 section 3) */
+    if (i - idx < TICKET_BINDING_HASH_SZ) {
+        ret = BUFFER_ERROR;
+        goto end;
+    }
+    XMEMCPY(s->sniHash, data + idx, TICKET_BINDING_HASH_SZ);
+    idx += TICKET_BINDING_HASH_SZ;
+#endif
+#ifdef HAVE_ALPN
+    /* alpnHash - ALPN binding for stateful resumption */
+    if (i - idx < TICKET_BINDING_HASH_SZ) {
+        ret = BUFFER_ERROR;
+        goto end;
+    }
+    XMEMCPY(s->alpnHash, data + idx, TICKET_BINDING_HASH_SZ);
+    idx += TICKET_BINDING_HASH_SZ;
+#endif
+#endif /* !NO_WOLFSSL_SERVER && !NO_TLS */
 #endif
     (void)idx;
 
     if (sess != NULL) {
+        wolfSSL_FreeSession(NULL, *sess);
         *sess = s;
     }
 
@@ -3242,12 +3316,13 @@ static void SESSION_ex_data_cache_update(WOLFSSL_SESSION* session, int idx,
 
 #endif
 
-#if defined(OPENSSL_ALL) || defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY) \
-    || defined(OPENSSL_EXTRA) || defined(HAVE_LIGHTY)
-
 #ifndef NO_SESSION_CACHE
+/* OpenSSL-compatible return: 1 if the session was found and removed from the
+ * internal cache, or if the external remove callback (rem_sess_cb) was
+ * invoked. 0 if neither applied (not present, or null arguments). */
 int wolfSSL_SSL_CTX_remove_session(WOLFSSL_CTX *ctx, WOLFSSL_SESSION *s)
 {
+    int found = 0;
 #if defined(HAVE_EXT_CACHE) || defined(HAVE_EX_DATA)
     int rem_called = FALSE;
 #endif
@@ -3256,7 +3331,7 @@ int wolfSSL_SSL_CTX_remove_session(WOLFSSL_CTX *ctx, WOLFSSL_SESSION *s)
 
     s = ClientSessionToSession(s);
     if (ctx == NULL || s == NULL)
-        return BAD_FUNC_ARG;
+        return 0;
 
 #ifdef HAVE_EXT_CACHE
     if (!ctx->internalCacheOff)
@@ -3273,6 +3348,7 @@ int wolfSSL_SSL_CTX_remove_session(WOLFSSL_CTX *ctx, WOLFSSL_SESSION *s)
 
         ret = TlsSessionCacheGetAndWrLock(id, &sess, &row, ctx->method->side);
         if (ret == 0 && sess != NULL) {
+            found = 1;
 #if defined(HAVE_EXT_CACHE) || defined(HAVE_EX_DATA)
             if (sess->rem_sess_cb != NULL) {
                 rem_called = TRUE;
@@ -3311,26 +3387,26 @@ int wolfSSL_SSL_CTX_remove_session(WOLFSSL_CTX *ctx, WOLFSSL_SESSION *s)
 #if defined(HAVE_EXT_CACHE) || defined(HAVE_EX_DATA)
     if (ctx->rem_sess_cb != NULL && !rem_called) {
         ctx->rem_sess_cb(ctx, s);
+        /* Assume the external cache had the session. */
+        found = 1;
     }
 #endif
 
-    /* s cannot be resumed at this point */
-    s->timeout = 0;
-
-    return 0;
+    return found;
 }
 
+#if defined(OPENSSL_ALL) || defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY) \
+    || defined(OPENSSL_EXTRA) || defined(HAVE_LIGHTY)
 WOLFSSL_SESSION *wolfSSL_SSL_get0_session(const WOLFSSL *ssl)
 {
     WOLFSSL_ENTER("wolfSSL_SSL_get0_session");
 
     return ssl->session;
 }
-
-#endif /* NO_SESSION_CACHE */
-
 #endif /* OPENSSL_ALL || WOLFSSL_NGINX || WOLFSSL_HAPROXY ||
     OPENSSL_EXTRA || HAVE_LIGHTY */
+
+#endif /* NO_SESSION_CACHE */
 
 #ifdef WOLFSSL_SESSION_EXPORT
 /* Used to import a serialized TLS session.
@@ -3628,6 +3704,16 @@ void SetupSession(WOLFSSL* ssl)
         session->sessionCtxSz = ssl->sessionCtxSz;
     }
 #endif
+#if defined(HAVE_SESSION_TICKET) && \
+    !defined(NO_WOLFSSL_SERVER) && !defined(NO_TLS)
+    /* Bind the current SNI/ALPN to the session to verify on later resumption */
+#ifdef HAVE_SNI
+    (void)TicketSniHash(ssl, session->sniHash);
+#endif
+#ifdef HAVE_ALPN
+    (void)TicketAlpnHash(ssl, session->alpnHash);
+#endif
+#endif /* HAVE_SESSION_TICKET && !NO_WOLFSSL_SERVER && !NO_TLS */
     session->timeout = ssl->timeout;
 #ifndef NO_ASN_TIME
     session->bornOn  = LowResTimer();
@@ -4366,8 +4452,8 @@ int wolfSSL_SESSION_get_ex_new_index(long ctx_l,void* ctx_ptr,
         WOLFSSL_CRYPTO_EX_free* free_func)
 {
     WOLFSSL_ENTER("wolfSSL_SESSION_get_ex_new_index");
-    return wolfssl_get_ex_new_index(WOLF_CRYPTO_EX_INDEX_SSL_SESSION, ctx_l,
-            ctx_ptr, new_func, dup_func, free_func);
+    return wolfssl_local_get_ex_new_index(WOLF_CRYPTO_EX_INDEX_SSL_SESSION,
+            ctx_l, ctx_ptr, new_func, dup_func, free_func);
 }
 #endif /* HAVE_EX_DATA_CRYPTO */
 #endif /* HAVE_EX_DATA */

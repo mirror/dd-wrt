@@ -26,11 +26,13 @@
 static volatile int fd;
 
 #include <wolfssl/wolfcrypt/port/devcrypto/wc_devcrypto.h>
+#include <fcntl.h>
 
 int wc_DevCryptoInit(void)
 {
     /* create descriptor */
-    if ((fd = open("/dev/crypto", O_RDWR, 0)) < 0) {
+    fd = wc_open_cloexec("/dev/crypto", O_RDWR);
+    if (fd < 0) {
         WOLFSSL_MSG("Error opening /dev/crypto is cryptodev module loaded?");
         return WC_DEVCRYPTO_E;
     }
@@ -232,7 +234,7 @@ void wc_SetupCryptAead(struct crypt_auth_op* crt, WC_CRYPTODEV* dev,
          byte* src, word32 srcSz, byte* dst, byte* iv, word32 ivSz, int flag,
          byte* authIn, word32 authInSz, byte* authTag, word32 authTagSz)
 {
-    XMEMSET(crt, 0, sizeof(struct crypt_op));
+    XMEMSET(crt, 0, sizeof(struct crypt_auth_op));
     crt->ses    = dev->sess.ses;
     crt->src    = src;
     crt->len    = srcSz;

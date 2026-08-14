@@ -354,19 +354,37 @@ static word64 entropy_state[ENTROPY_NUM_WORDS + EXTRA_ENTROPY_WORDS] = {0};
 
 /* Using memory will take different amount of times depending on the CPU's
  * caches and business.
+ *
+ * Returns int (not void) because the SHA-3 conditioning calls go through
+ * FIPS wrappers. When the FIPS module is in FAILED state (e.g. integrity
+ * hash mismatch during first build before fips-hash.sh), every SHA-3 call
+ * returns FIPS_NOT_ALLOWED_E. Without checking these returns, this function
+ * would silently loop through all ENTROPY_NUM_UPDATES iterations on every
+ * noise sample, each iteration firing the FIPS error callback -- producing
+ * tens of thousands of spurious error reports during Entropy_Init().
+ *
+ * Non-FIPS builds never hit this path because SHA-3 calls always succeed
+ * without a CAST gate. We use int returns unconditionally (rather than
+ * void in non-FIPS, int in FIPS) to maintain a common ABI in case these
+ * functions become public API as wolfentropy matures.
  */
-static void Entropy_MemUse(void)
+static int Entropy_MemUse(void)
 {
     int i;
     static byte d[WC_SHA3_256_DIGEST_SIZE];
     int j;
+    int ret;
 
     for (j = 0; j < ENTROPY_NUM_UPDATES; j++) {
         /* Hash the first 32 64-bit words of state. */
-        wc_Sha3_256_Update(&entropyHash, (byte*)entropy_state,
+        ret = wc_Sha3_256_Update(&entropyHash, (byte*)entropy_state,
             sizeof(*entropy_state) * ENTROPY_NUM_64BIT_WORDS);
+        if (ret != 0)
+            return ret;
         /* Get pseudo-random indices. */
-        wc_Sha3_256_Final(&entropyHash, d);
+        ret = wc_Sha3_256_Final(&entropyHash, d);
+        if (ret != 0)
+            return ret;
 
         for (i = 0; i < ENTROPY_NUM_64BIT_WORDS; i++) {
             /* Choose a 64-bit word from a pseudo-random block.*/
@@ -378,6 +396,8 @@ static void Entropy_MemUse(void)
             entropy_state[i] += entropy_state[idx];
         }
     }
+
+    return 0;
 }
 
 
@@ -390,34 +410,40 @@ static word64 entropy_last_time = 0;
  *
  * Called to test raw entropy.
  *
- * @return  64-bit value that is the noise.
+ * @param [out] sample  64-bit noise value (time delta).
+ * @return  0 on success.
+ * @return  Negative on failure (e.g. FIPS module not operational).
  */
-static word64 Entropy_GetSample(void)
+static int Entropy_GetSample(word64* sample)
 {
     word64 now;
-    word64 ret;
+    int ret = 0;
 
 #ifdef HAVE_FIPS
     /* First sample must be disregard when in FIPS. */
     if (entropy_last_time == 0) {
         /* Get sample which triggers CAST in FIPS mode. */
-        Entropy_MemUse();
+        ret = Entropy_MemUse();
+        if (ret != 0)
+            return ret;
         /* Start entropy time after CASTs. */
         entropy_last_time = Entropy_TimeHiRes();
     }
 #endif
 
     /* Use memory such that it will take an unpredictable amount of time. */
-    Entropy_MemUse();
+    ret = Entropy_MemUse();
+    if (ret != 0)
+        return ret;
 
     /* Get the time now to subtract from previous end time. */
     now = Entropy_TimeHiRes();
     /* Calculate time diff since last sampling. */
-    ret = now - entropy_last_time;
+    *sample = now - entropy_last_time;
     /* Store last time. */
     entropy_last_time = now;
 
-    return ret;
+    return 0;
 }
 
 /* Get as many samples of noise as required.
@@ -426,19 +452,35 @@ static word64 Entropy_GetSample(void)
  *
  * @param [out] noise    Buffer to hold samples.
  * @param [in]  samples  Number of one byte samples to get.
+ * @return  0 on success.
+ * @return  Negative on hash failure (e.g. FIPS module not operational).
  */
-static void Entropy_GetNoise(unsigned char* noise, int samples)
+static int Entropy_GetNoise(unsigned char* noise, int samples)
 {
     int i;
+    int ret;
+    word64 sample;
 
     /* Do it once to get things going. */
-    Entropy_MemUse();
+    ret = Entropy_MemUse();
+    if (ret != 0)
+        return ret;
 
     /* Get as many samples as required. */
     for (i = 0; i < samples; i++) {
-       noise[i] = (byte)Entropy_GetSample();
+        ret = Entropy_GetSample(&sample);
+        if (ret != 0)
+            return ret;
+        noise[i] = (byte)sample;
     }
+
+    return 0;
 }
+
+/* Mutex to prevent multiple callers requesting entropy operations at the
+ * same time.
+ */
+static wolfSSL_Mutex entropy_mutex WOLFSSL_MUTEX_INITIALIZER_CLAUSE(entropy_mutex);
 
 /* Generate raw entropy for performing assessment.
  *
@@ -451,19 +493,45 @@ static void Entropy_GetNoise(unsigned char* noise, int samples)
 int wc_Entropy_GetRawEntropy(unsigned char* raw, int cnt)
 {
     int ret = 0;
+    int locked = 0;
+
+    if (raw == NULL || cnt <= 0) {
+        return BAD_FUNC_ARG;
+    }
+
+#ifdef HAVE_FIPS
+    if (!entropy_memuse_initialized) {
+        ret = Entropy_Init();
+    }
+#endif
+
+    /* Lock the mutex as collection uses globals. */
+    if (ret == 0) {
+        if (wc_LockMutex(&entropy_mutex) != 0) {
+            ret = BAD_MUTEX_E;
+        }
+        else {
+            locked = 1;
+        }
+    }
 
 #ifdef ENTROPY_MEMUSE_THREADED
-    /* Start the counter thread as a proxy for time counter. */
-    ret = Entropy_StartThread();
-    if (ret == 0)
+    if (ret == 0) {
+        /* Start the counter thread as a proxy for time counter. */
+        ret = Entropy_StartThread();
+    }
 #endif
-    {
-        Entropy_GetNoise(raw, cnt);
+    if (ret == 0) {
+        ret = Entropy_GetNoise(raw, cnt);
     }
 #ifdef ENTROPY_MEMUSE_THREADED
     /* Stop the counter thread to avoid thrashing the system. */
     Entropy_StopThread();
 #endif
+
+    if (locked) {
+        wc_UnLockMutex(&entropy_mutex);
+    }
 
     return ret;
 }
@@ -670,7 +738,7 @@ static int Entropy_HealthTest_Startup(void)
     Entropy_HealthTest_Reset();
 
     /* Fill initial sample buffer with noise. */
-    Entropy_GetNoise(initial, ENTROPY_INITIAL_COUNT);
+    ret = Entropy_GetNoise(initial, ENTROPY_INITIAL_COUNT);
     /* Health check initial noise. */
     for (i = 0; (ret == 0) && (i < ENTROPY_INITIAL_COUNT); i++) {
         ret = Entropy_HealthTest_Repetition(initial[i]);
@@ -729,11 +797,6 @@ static int Entropy_Condition(byte* output, word32 len, byte* noise,
     return ret;
 }
 
-/* Mutex to prevent multiple callers requesting entropy operations at the
- * same time.
- */
-static wolfSSL_Mutex entropy_mutex WOLFSSL_MUTEX_INITIALIZER_CLAUSE(entropy_mutex);
-
 /* Get entropy of specified strength.
  *
  * SP800-90b 2.3.1 - GetEntropy: An Interface to the Entropy Source
@@ -750,10 +813,16 @@ static wolfSSL_Mutex entropy_mutex WOLFSSL_MUTEX_INITIALIZER_CLAUSE(entropy_mute
 int wc_Entropy_Get(int bits, unsigned char* entropy, word32 len)
 {
     int ret = 0;
+    int noise_len;
+    static byte noise[MAX_NOISE_CNT];
+
+    if (bits <= 0 || bits > MAX_ENTROPY_BITS || (entropy == NULL && len > 0)) {
+        return BAD_FUNC_ARG;
+    }
+
     /* Noise length is the number of 8 byte samples required to get the bits of
      * entropy requested. */
-    int noise_len = (bits + ENTROPY_EXTRA) / ENTROPY_MIN;
-    static byte noise[MAX_NOISE_CNT];
+    noise_len = (bits + ENTROPY_EXTRA) / ENTROPY_MIN;
 
 #ifdef HAVE_FIPS
     /* FIPS KATs, e.g. EccPrimitiveZ_KnownAnswerTest(), call wc_Entropy_Get()
@@ -799,7 +868,7 @@ int wc_Entropy_Get(int bits, unsigned char* entropy, word32 len)
         }
 
         /* Get raw entropy noise. */
-        Entropy_GetNoise(noise, noise_len);
+        ret = Entropy_GetNoise(noise, noise_len);
         /* Health check each noise value. */
         for (i = 0; (ret == 0) && (i < noise_len); i++) {
             ret = Entropy_HealthTest_Repetition(noise[i]);

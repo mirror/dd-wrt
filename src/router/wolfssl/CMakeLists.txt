@@ -34,7 +34,7 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
      You must delete them, or cmake will refuse to work.")
 endif()
 
-project(wolfssl VERSION 5.9.1 LANGUAGES C ASM)
+project(wolfssl VERSION 5.9.2 LANGUAGES C ASM)
 
 # Set WOLFSSL_ROOT if not already defined
 if ("${WOLFSSL_ROOT}" STREQUAL "")
@@ -49,11 +49,11 @@ endif()
 
 # shared library versioning
 # increment if interfaces have been removed or changed
-set(WOLFSSL_LIBRARY_VERSION_FIRST 44)
+set(WOLFSSL_LIBRARY_VERSION_FIRST 45)
 
 # increment if interfaces have been added
 # set to zero if WOLFSSL_LIBRARY_VERSION_FIRST is incremented
-set(WOLFSSL_LIBRARY_VERSION_SECOND 2)
+set(WOLFSSL_LIBRARY_VERSION_SECOND 0)
 
 # increment if source code has changed
 # set to zero if WOLFSSL_LIBRARY_VERSION_FIRST is incremented or
@@ -112,6 +112,14 @@ check_include_file("strings.h" HAVE_STRINGS_H)
 check_include_file("sys/stat.h" HAVE_SYS_STAT_H)
 check_include_file("sys/types.h" HAVE_SYS_TYPES_H)
 check_include_file("unistd.h" HAVE_UNISTD_H)
+
+# types.h depends on HAVE_LIMITS_H, and it is defined in options.h (rather than
+# config.h) so that applications consuming wolfSSL headers see it. The in-tree
+# build, however, is configured through config.h/compile definitions and does
+# not include options.h, so define it here as well.
+if(HAVE_LIMITS_H)
+    add_definitions("-DHAVE_LIMITS_H")
+endif()
 
 include(CheckFunctionExists)
 
@@ -376,6 +384,24 @@ if(WOLFSSL_POSTAUTH)
     endif()
 endif()
 
+# Certificate Authentication with External PSK (RFC 8773bis)
+add_option("WOLFSSL_CERT_WITH_EXTERN_PSK"
+    "Enable Certificate Authentication with External PSKs for TLS 1.3 (default: disabled)"
+    "no" "yes;no")
+
+if(WOLFSSL_CERT_WITH_EXTERN_PSK)
+    if(NOT WOLFSSL_TLS13)
+        message(WARNING "TLS 1.3 is disabled - disabling cert-with-extern-psk")
+        override_cache(WOLFSSL_CERT_WITH_EXTERN_PSK "no")
+    elseif(NOT WOLFSSL_PSK)
+        message(WARNING "PSK is disabled - disabling cert-with-extern-psk")
+        override_cache(WOLFSSL_CERT_WITH_EXTERN_PSK "no")
+    else()
+        list(APPEND WOLFSSL_DEFINITIONS
+            "-DWOLFSSL_CERT_WITH_EXTERN_PSK")
+    endif()
+endif()
+
 # Hello Retry Request Cookie
 add_option("WOLFSSL_HRR_COOKIE"
     "Enable the server to send Cookie Extension in HRR with state (default: disabled)"
@@ -607,6 +633,11 @@ add_option(WOLFSSL_OQS
     "Enable integration with the OQS (Open Quantum Safe) liboqs library (default: disabled)"
     "no" "yes;no")
 
+# Falcon (provided via liboqs)
+add_option(WOLFSSL_FALCON
+    "Enable Falcon post-quantum signatures via liboqs (default: disabled)"
+    "no" "yes;no")
+
 # ML-KEM/Kyber
 add_option(WOLFSSL_MLKEM
     "Enable the wolfSSL PQ ML-KEM library (default: disabled)"
@@ -614,13 +645,11 @@ add_option(WOLFSSL_MLKEM
 
 if (WOLFSSL_MLKEM)
     list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_HAVE_MLKEM")
-    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_WC_MLKEM")
     list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_SHA3")
     list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_SHAKE128")
     list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_SHAKE256")
 
     set_wolfssl_definitions("WOLFSSL_HAVE_MLKEM" RESULT)
-    set_wolfssl_definitions("WOLFSSL_WC_MLKEM"   RESULT)
     set_wolfssl_definitions("WOLFSSL_SHA3"       RESULT)
     set_wolfssl_definitions("WOLFSSL_SHAKE128"   RESULT)
     set_wolfssl_definitions("WOLFSSL_SHAKE256"   RESULT)
@@ -652,23 +681,31 @@ if (WOLFSSL_PQC_HYBRIDS)
     list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_PQC_HYBRIDS")
 endif()
 
-# Dilithium
+# ML-DSA (FIPS 204)
+add_option(WOLFSSL_MLDSA
+    "Enable the wolfSSL PQ ML-DSA (FIPS 204) implementation (default: disabled)"
+    "no" "yes;no")
+# Legacy alias: WOLFSSL_DILITHIUM. Kept for backward compatibility.
 add_option(WOLFSSL_DILITHIUM
-    "Enable the wolfSSL PQ Dilithium (ML-DSA) implementation (default: disabled)"
+    "Legacy alias for WOLFSSL_MLDSA (default: disabled)"
     "no" "yes;no")
 
 if (WOLFSSL_DILITHIUM)
-    list(APPEND WOLFSSL_DEFINITIONS "-DHAVE_DILITHIUM")
-    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_WC_DILITHIUM")
+    message(DEPRECATION
+        "WOLFSSL_DILITHIUM is the legacy alias for WOLFSSL_MLDSA and will be "
+        "removed in a future release. Set -DWOLFSSL_MLDSA=yes instead.")
+endif()
+
+if (WOLFSSL_MLDSA OR WOLFSSL_DILITHIUM)
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_HAVE_MLDSA")
     list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_SHA3")
     list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_SHAKE128")
     list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_SHAKE256")
 
-    set_wolfssl_definitions("HAVE_DILITHIUM"       RESULT)
-    set_wolfssl_definitions("WOLFSSL_WC_DILITHIUM" RESULT)
-    set_wolfssl_definitions("WOLFSSL_SHA3"         RESULT)
-    set_wolfssl_definitions("WOLFSSL_SHAKE128"     RESULT)
-    set_wolfssl_definitions("WOLFSSL_SHAKE256"     RESULT)
+    set_wolfssl_definitions("WOLFSSL_HAVE_MLDSA" RESULT)
+    set_wolfssl_definitions("WOLFSSL_SHA3"       RESULT)
+    set_wolfssl_definitions("WOLFSSL_SHAKE128"   RESULT)
+    set_wolfssl_definitions("WOLFSSL_SHAKE256"   RESULT)
 endif()
 
 # LMS
@@ -680,18 +717,24 @@ add_option(WOLFSSL_LMSSHA256192
     "Enable the LMS SHA_256_192 truncated variant (default: disabled)"
     "no" "yes;no")
 
+add_option(WOLFSSL_LMSNOSHA256256
+    "Disable the LMS SHA_256_256 standard variant (default: disabled)"
+    "no" "yes;no")
+
 if (WOLFSSL_LMS)
     list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_HAVE_LMS")
-    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_WC_LMS")
 
     set_wolfssl_definitions("WOLFSSL_HAVE_LMS" RESULT)
-    set_wolfssl_definitions("WOLFSSL_WC_LMS"   RESULT)
 
     if (WOLFSSL_LMSSHA256192)
         list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_LMS_SHA256_192")
-        list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_NO_LMS_SHA256_256")
 
         set_wolfssl_definitions("WOLFSSL_LMS_SHA256_192"    RESULT)
+    endif()
+
+    if (WOLFSSL_LMSNOSHA256256)
+        list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_NO_LMS_SHA256_256")
+
         set_wolfssl_definitions("WOLFSSL_NO_LMS_SHA256_256" RESULT)
     endif()
 endif()
@@ -715,6 +758,15 @@ if (WOLFSSL_EXPERIMENTAL)
 
     set_wolfssl_definitions("WOLFSSL_EXPERIMENTAL_SETTINGS" RESULT)
 
+    # Cross-validate WOLFSSL_OQS and WOLFSSL_FALCON: liboqs is only linked
+    # when a liboqs-backed algorithm (Falcon) is actually enabled.
+    if (WOLFSSL_FALCON AND NOT WOLFSSL_OQS)
+        message(FATAL_ERROR "WOLFSSL_FALCON requires WOLFSSL_OQS.")
+    endif()
+    if (WOLFSSL_OQS AND NOT WOLFSSL_FALCON)
+        message(FATAL_ERROR "WOLFSSL_OQS requires WOLFSSL_FALCON.")
+    endif()
+
     # Checking for experimental feature: OQS
     message(STATUS "Looking for WOLFSSL_OQS")
     if (WOLFSSL_OQS)
@@ -731,6 +783,7 @@ if (WOLFSSL_EXPERIMENTAL)
             set_wolfssl_definitions("HAVE_LIBOQS"          RESULT)
             set_wolfssl_definitions("HAVE_TLS_EXTENSIONS"  RESULT)
             set_wolfssl_definitions("OPENSSL_EXTRA"        RESULT)
+            set_wolfssl_definitions("HAVE_FALCON"          RESULT)
 
         else()
             message(STATUS "Checking OQS - not found")
@@ -759,18 +812,14 @@ if (WOLFSSL_EXPERIMENTAL)
         message(STATUS "Warning: WOLFSSL_EXPERIMENTAL enabled, but no experimental features enabled.")
     endif()
 
-    # Sanity checks
-    if(WOLFSSL_OQS AND WOLFSSL_MLKEM)
-        message(FATAL_ERROR "Error: cannot enable both WOLFSSL_OQS and WOLFSSL_MLKEM at the same time.")
-    endif()
-    if(WOLFSSL_OQS AND WOLFSSL_DILITHIUM)
-        message(FATAL_ERROR "Error: cannot enable both WOLFSSL_OQS and WOLFSSL_DILITHIUM at the same time.")
-    endif()
 else()
     # Experimental mode not enabled, but were any experimental features enabled? Error out if so:
     message(STATUS "Looking for WOLFSSL_EXPERIMENTAL - not found")
     if (WOLFSSL_OQS)
         message(FATAL_ERROR "Error: WOLFSSL_OQS requires WOLFSSL_EXPERIMENTAL at this time.")
+    endif()
+    if (WOLFSSL_FALCON)
+        message(FATAL_ERROR "Error: WOLFSSL_FALCON requires WOLFSSL_EXPERIMENTAL at this time.")
     endif()
 endif()
 
@@ -1640,6 +1689,30 @@ if(WOLFSSL_CMAC)
     endif()
 endif()
 
+# SHE (Secure Hardware Extension) key update message generation
+# standard: core SHE support, extended: adds custom KDF/header overrides
+add_option("WOLFSSL_SHE"
+    "Enable SHE key update support (standard|extended|no)"
+    "no" "standard;extended;no")
+
+if(WOLFSSL_SHE STREQUAL "standard" OR WOLFSSL_SHE STREQUAL "extended")
+    if (NOT WOLFSSL_AES)
+        message(FATAL_ERROR "Cannot use SHE without AES.")
+    else()
+        list(APPEND WOLFSSL_DEFINITIONS
+            "-DWOLFSSL_SHE"
+            "-DWOLFSSL_CMAC"
+            "-DWOLFSSL_AES_DIRECT")
+        override_cache(WOLFSSL_CMAC "yes")
+        override_cache(WOLFSSL_AESCBC "yes")
+    endif()
+endif()
+
+if(WOLFSSL_SHE STREQUAL "extended")
+    list(APPEND WOLFSSL_DEFINITIONS
+        "-DWOLFSSL_SHE_EXTENDED")
+endif()
+
 # TODO: - RC2
 #       - FIPS, again (there's more logic for FIPS in configure.ac)
 #       - Selftest
@@ -1729,6 +1802,28 @@ if(NOT ("${WOLFSSL_CHACHA}" STREQUAL "noasm") AND WOLFSSL_CHACHA)
 endif()
 
 # TODO: - XCHACHA
+
+# SRAM PUF
+add_option("WOLFSSL_PUF"
+    "Enable SRAM PUF support (default: disabled)"
+    "no" "yes;no")
+
+if(WOLFSSL_PUF)
+    list(APPEND WOLFSSL_DEFINITIONS
+        "-DWOLFSSL_PUF"
+        "-DWOLFSSL_PUF_SRAM"
+        "-DHAVE_HKDF")
+    override_cache(WOLFSSL_HKDF "yes")
+endif()
+
+# PUF test mode (synthetic SRAM data injection)
+add_option("WOLFSSL_PUF_TEST"
+    "Enable PUF test mode with synthetic data (default: disabled)"
+    "no" "yes;no")
+
+if(WOLFSSL_PUF_TEST)
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLFSSL_PUF_TEST")
+endif()
 
 # Hash DRBG
 add_option("WOLFSSL_HASH_DRBG"
@@ -2166,6 +2261,10 @@ add_option("WOLFSSL_CRYPTOCB_NO_SW_TEST"
     "Disable crypto callback SW testing (default: disabled)"
     "no" "yes;no")
 
+add_option("WOLFSSL_CRYPTOCB_RSA_PAD"
+    "Enable RSA padding aware crypto callbacks (default: disabled)"
+    "no" "yes;no")
+
 add_option("WOLFSSL_PKCALLBACKS"
     "Enable public key callbacks (default: disabled)"
     "no" "yes;no")
@@ -2396,6 +2495,13 @@ endif()
 
 if(WOLFSSL_CRYPTOCB_NO_SW_TEST)
     list(APPEND WOLFSSL_DEFINITIONS "-DWC_TEST_NO_CRYPTOCB_SW_TEST")
+endif()
+
+if(WOLFSSL_CRYPTOCB_RSA_PAD)
+    if(NOT WOLFSSL_CRYPTOCB)
+        message(FATAL_ERROR "WOLFSSL_CRYPTOCB_RSA_PAD requires WOLFSSL_CRYPTOCB")
+    endif()
+    list(APPEND WOLFSSL_DEFINITIONS "-DWOLF_CRYPTO_CB_RSA_PAD")
 endif()
 
 # Public Key Callbacks
@@ -2816,6 +2922,7 @@ if(WOLFSSL_EXAMPLES)
         tests/api/test_hash.c
         tests/api/test_hmac.c
         tests/api/test_cmac.c
+        tests/api/test_she.c
         tests/api/test_des3.c
         tests/api/test_chacha.c
         tests/api/test_poly1305.c
@@ -2840,17 +2947,25 @@ if(WOLFSSL_EXAMPLES)
         tests/api/test_ed448.c
         tests/api/test_mlkem.c
         tests/api/test_mldsa.c
+        tests/api/test_mldsa_legacy.c
         tests/api/test_slhdsa.c
         tests/api/test_signature.c
+        tests/api/test_lms_xmss.c
         tests/api/test_dtls.c
+        tests/api/test_dtls13.c
+        tests/api/test_ssl_cert.c
+        tests/api/test_ssl_pk.c
+        tests/api/test_ssl_ext.c
         tests/api/test_ocsp.c
         tests/api/test_evp.c
         tests/api/test_tls_ext.c
         tests/api/test_tls.c
+        tests/api/test_session.c
         tests/api/test_x509.c
         tests/api/test_asn.c
         tests/api/test_pkcs7.c
         tests/api/test_pkcs12.c
+        tests/api/test_pwdbased.c
         tests/api/test_ossl_asn1.c
         tests/api/test_ossl_bio.c
         tests/api/test_ossl_bn.c

@@ -269,24 +269,42 @@ WOLFSSL_STACK* wolfSSL_PKCS7_get0_signers(PKCS7* pkcs7, WOLFSSL_STACK* certs,
     WOLFSSL_X509* x509 = NULL;
     WOLFSSL_STACK* signers = NULL;
     WOLFSSL_PKCS7* p7 = (WOLFSSL_PKCS7*)pkcs7;
+    byte* signerCert;
+    word32 signerCertSz;
 
     if (p7 == NULL)
         return NULL;
 
-    /* Only PKCS#7 messages with a single cert that is the verifying certificate
-     * is supported.
-     */
     if (flags & PKCS7_NOINTERN) {
         WOLFSSL_MSG("PKCS7_NOINTERN flag not supported");
         return NULL;
+    }
+
+    /* Prefer the certificate that actually verified the signature. Falling
+     * back to singleCert (cert[0]) would let an attacker that bundles a
+     * trusted cert ahead of their own attacker cert have the trusted cert
+     * reported as the signer even though it did not produce the signature.
+     *
+     * Copy the chosen pointer into a local before passing its address to
+     * wolfSSL_d2i_X509; d2i_X509 advances *in by the DER length, and if
+     * we handed it the address of the struct field directly it would
+     * permanently corrupt the field, producing a heap-OOB read on the
+     * next use (pointer advanced, singleCertSz unchanged). */
+    if (p7->pkcs7.verifyCert != NULL && p7->pkcs7.verifyCertSz > 0) {
+        signerCert   = p7->pkcs7.verifyCert;
+        signerCertSz = p7->pkcs7.verifyCertSz;
+    }
+    else {
+        signerCert   = p7->pkcs7.singleCert;
+        signerCertSz = p7->pkcs7.singleCertSz;
     }
 
     signers = wolfSSL_sk_X509_new_null();
     if (signers == NULL)
         return NULL;
 
-    if (wolfSSL_d2i_X509(&x509, (const byte**)&p7->pkcs7.singleCert,
-                         p7->pkcs7.singleCertSz) == NULL) {
+    if (wolfSSL_d2i_X509(&x509, (const byte**)&signerCert,
+                         signerCertSz) == NULL) {
         wolfSSL_sk_X509_pop_free(signers, NULL);
         return NULL;
     }
@@ -798,6 +816,19 @@ int wolfSSL_PKCS7_verify(PKCS7* pkcs7, WOLFSSL_STACK* certs,
     if (ret != 0)
         return WOLFSSL_FAILURE;
 
+    /* Reject a degenerate (certs-only) PKCS#7 with no verified signer. Such an
+     * object has empty signerInfos, so wc_PKCS7_VerifySignedData() succeeds
+     * without authenticating the content. pkcs7.verifyCert is only set once a
+     * signer's signature has actually been verified, so a NULL value here means
+     * the content carries no valid signature and must not be reported as
+     * verified - regardless of PKCS7_NOVERIFY, which only suppresses signer
+     * certificate chain validation, not the requirement that a signature exist.
+     */
+    if (p7->pkcs7.verifyCert == NULL) {
+        WOLFSSL_MSG("PKCS7 has no verified signer (degenerate/certs-only)");
+        return WOLFSSL_FAILURE;
+    }
+
     if ((flags & PKCS7_NOVERIFY) != PKCS7_NOVERIFY) {
         /* Verify signer certificates */
         if (store == NULL || store->cm == NULL) {
@@ -970,7 +1001,7 @@ int wolfSSL_PEM_write_bio_PKCS7(WOLFSSL_BIO* bio, PKCS7* p7)
     outputHead = (byte*)XMALLOC(outputHeadSz, bio->heap,
         DYNAMIC_TYPE_TMP_BUFFER);
     if (outputHead == NULL)
-        return MEMORY_E;
+        return WOLFSSL_FAILURE;
 
     outputFoot = (byte*)XMALLOC(outputFootSz, bio->heap,
         DYNAMIC_TYPE_TMP_BUFFER);

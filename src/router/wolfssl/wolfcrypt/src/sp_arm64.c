@@ -47,6 +47,17 @@
 
 #include <wolfssl/wolfcrypt/sp.h>
 
+#if defined(WOLFSSL_USE_SAVE_VECTOR_REGISTERS) && !defined(WOLFSSL_SP_ASM) && \
+        !defined(DEBUG_VECTOR_REGISTER_ACCESS)
+    /* force off unneeded vector register save/restore. */
+    #undef SAVE_VECTOR_REGISTERS
+    #define SAVE_VECTOR_REGISTERS(fail_clause) SAVE_NO_VECTOR_REGISTERS(fail_clause)
+    #undef SAVE_VECTOR_REGISTERS2
+    #define SAVE_VECTOR_REGISTERS2() SAVE_NO_VECTOR_REGISTERS2()
+    #undef RESTORE_VECTOR_REGISTERS
+    #define RESTORE_VECTOR_REGISTERS() RESTORE_NO_VECTOR_REGISTERS()
+#endif
+
 #ifdef __IAR_SYSTEMS_ICC__
 #define __asm__        asm
 #define __volatile__   volatile
@@ -265,7 +276,7 @@ static void sp_2048_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
+        r[j] |= ((sp_uint64)a->dp[i] << s);
         r[j] &= 0xffffffffffffffffl;
         s = 64U - s;
         if (j + 1 >= size) {
@@ -300,7 +311,7 @@ static void sp_2048_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_uint64)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 64) {
             r[j] &= 0xffffffffffffffffl;
             if (j + 1 >= size) {
@@ -2911,10 +2922,10 @@ static void sp_2048_sqr_16(sp_digit* r, const sp_digit* a)
  */
 static void sp_2048_mont_setup(const sp_digit* a, sp_digit* rho)
 {
-    sp_digit x;
-    sp_digit b;
+    sp_uint64 x;
+    sp_uint64 b;
 
-    b = a[0];
+    b = (sp_uint64)a[0];
     x = (((b + 2) & 4) << 1) + b; /* here x*a==1 mod 2**4 */
     x *= 2 - b * x;               /* here x*a==1 mod 2**8 */
     x *= 2 - b * x;               /* here x*a==1 mod 2**16 */
@@ -2922,7 +2933,7 @@ static void sp_2048_mont_setup(const sp_digit* a, sp_digit* rho)
     x *= 2 - b * x;               /* here x*a==1 mod 2**64 */
 
     /* rho = -1/m mod b */
-    *rho = (sp_digit)0 - x;
+    *rho = (sp_digit)((sp_int64)0 - (sp_int64)x);
 }
 
 /* Mul a by digit b into r. (r = a * b)
@@ -4151,10 +4162,10 @@ static int sp_2048_mod_exp_16(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint64)n << c);
             n = e[i--];
             y |= (byte)(n >> (64 - c));
-            n <<= c;
+            n = (sp_uint64)n << c;
             c = 64 - c;
         }
         else if (c == 0) {
@@ -4163,14 +4174,14 @@ static int sp_2048_mod_exp_16(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 64 - c;
+            n = (sp_uint64)n << (64 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 16);
         for (; i>=0 || c>=4; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 60);
-                n <<= 4;
+                n = (sp_uint64)n << 4;
                 c = 60;
             }
             else if (c < 4) {
@@ -4178,12 +4189,12 @@ static int sp_2048_mod_exp_16(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 4 - c;
                 y |= (byte)(n >> (64 - c));
-                n <<= c;
+                n = (sp_uint64)n << c;
                 c = 64 - c;
             }
             else {
                 y = (byte)((n >> 60) & 0xf);
-                n <<= 4;
+                n = (sp_uint64)n << 4;
                 c -= 4;
             }
 
@@ -4304,10 +4315,10 @@ static int sp_2048_mod_exp_16(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint64)n << c);
             n = e[i--];
             y |= (byte)(n >> (64 - c));
-            n <<= c;
+            n = (sp_uint64)n << c;
             c = 64 - c;
         }
         else if (c == 0) {
@@ -4316,14 +4327,14 @@ static int sp_2048_mod_exp_16(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 64 - c;
+            n = (sp_uint64)n << (64 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 16);
         for (; i>=0 || c>=5; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 59);
-                n <<= 5;
+                n = (sp_uint64)n << 5;
                 c = 59;
             }
             else if (c < 5) {
@@ -4331,12 +4342,12 @@ static int sp_2048_mod_exp_16(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 5 - c;
                 y |= (byte)(n >> (64 - c));
-                n <<= c;
+                n = (sp_uint64)n << c;
                 c = 64 - c;
             }
             else {
                 y = (byte)((n >> 59) & 0x1f);
-                n <<= 5;
+                n = (sp_uint64)n << 5;
                 c -= 5;
             }
 
@@ -5746,10 +5757,10 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint64)n << c);
             n = e[i--];
             y |= (byte)(n >> (64 - c));
-            n <<= c;
+            n = (sp_uint64)n << c;
             c = 64 - c;
         }
         else if (c == 0) {
@@ -5758,14 +5769,14 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 64 - c;
+            n = (sp_uint64)n << (64 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 32);
         for (; i>=0 || c>=5; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 59);
-                n <<= 5;
+                n = (sp_uint64)n << 5;
                 c = 59;
             }
             else if (c < 5) {
@@ -5773,12 +5784,12 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 5 - c;
                 y |= (byte)(n >> (64 - c));
-                n <<= c;
+                n = (sp_uint64)n << c;
                 c = 64 - c;
             }
             else {
                 y = (byte)((n >> 59) & 0x1f);
-                n <<= 5;
+                n = (sp_uint64)n << 5;
                 c -= 5;
             }
 
@@ -5932,10 +5943,10 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint64)n << c);
             n = e[i--];
             y |= (byte)(n >> (64 - c));
-            n <<= c;
+            n = (sp_uint64)n << c;
             c = 64 - c;
         }
         else if (c == 0) {
@@ -5944,14 +5955,14 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 64 - c;
+            n = (sp_uint64)n << (64 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 32);
         for (; i>=0 || c>=6; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 58);
-                n <<= 6;
+                n = (sp_uint64)n << 6;
                 c = 58;
             }
             else if (c < 6) {
@@ -5959,12 +5970,12 @@ static int sp_2048_mod_exp_32(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 6 - c;
                 y |= (byte)(n >> (64 - c));
-                n <<= c;
+                n = (sp_uint64)n << c;
                 c = 64 - c;
             }
             else {
                 y = (byte)((n >> 58) & 0x3f);
-                n <<= 6;
+                n = (sp_uint64)n << 6;
                 c -= 6;
             }
 
@@ -6039,7 +6050,7 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, const mp_int* em,
 #else
         e[0] = em->dp[0];
         if (em->used > 1) {
-            e[0] |= ((sp_digit)em->dp[1]) << DIGIT_BIT;
+            e[0] |= ((sp_uint64)em->dp[1]) << DIGIT_BIT;
         }
 #endif
         if (e[0] == 0) {
@@ -6352,7 +6363,7 @@ static int sp_2048_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 32; i++) {
-            r->dp[j] |= (mp_digit)(a[i] << s);
+            r->dp[j] |= (mp_digit)((sp_uint64)a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
@@ -6377,7 +6388,7 @@ static int sp_2048_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 32; i++) {
-            r->dp[j] |= ((mp_digit)a[i]) << s;
+            r->dp[j] |= ((sp_uint64)a[i]) << s;
             if (s + 64 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
                 r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
@@ -6703,10 +6714,10 @@ static int sp_2048_mod_exp_2_32(sp_digit* r, const sp_digit* e, int bits,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint64)n << c);
             n = e[i--];
             y |= (byte)(n >> (64 - c));
-            n <<= c;
+            n = (sp_uint64)n << c;
             c = 64 - c;
         }
         else if (c == 0) {
@@ -6715,14 +6726,14 @@ static int sp_2048_mod_exp_2_32(sp_digit* r, const sp_digit* e, int bits,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 64 - c;
+            n = (sp_uint64)n << (64 - c);
         }
         sp_2048_lshift_32(r, norm, y);
         for (; i>=0 || c>=6; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 58);
-                n <<= 6;
+                n = (sp_uint64)n << 6;
                 c = 58;
             }
             else if (c < 6) {
@@ -6730,12 +6741,12 @@ static int sp_2048_mod_exp_2_32(sp_digit* r, const sp_digit* e, int bits,
                 n = e[i--];
                 c = 6 - c;
                 y |= (byte)(n >> (64 - c));
-                n <<= c;
+                n = (sp_uint64)n << c;
                 c = 64 - c;
             }
             else {
                 y = (byte)((n >> 58) & 0x3f);
-                n <<= 6;
+                n = (sp_uint64)n << 6;
                 c -= 6;
             }
 
@@ -7028,7 +7039,7 @@ static void sp_3072_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
+        r[j] |= ((sp_uint64)a->dp[i] << s);
         r[j] &= 0xffffffffffffffffl;
         s = 64U - s;
         if (j + 1 >= size) {
@@ -7063,7 +7074,7 @@ static void sp_3072_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_uint64)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 64) {
             r[j] &= 0xffffffffffffffffl;
             if (j + 1 >= size) {
@@ -11584,10 +11595,10 @@ static void sp_3072_sqr_24(sp_digit* r, const sp_digit* a)
  */
 static void sp_3072_mont_setup(const sp_digit* a, sp_digit* rho)
 {
-    sp_digit x;
-    sp_digit b;
+    sp_uint64 x;
+    sp_uint64 b;
 
-    b = a[0];
+    b = (sp_uint64)a[0];
     x = (((b + 2) & 4) << 1) + b; /* here x*a==1 mod 2**4 */
     x *= 2 - b * x;               /* here x*a==1 mod 2**8 */
     x *= 2 - b * x;               /* here x*a==1 mod 2**16 */
@@ -11595,7 +11606,7 @@ static void sp_3072_mont_setup(const sp_digit* a, sp_digit* rho)
     x *= 2 - b * x;               /* here x*a==1 mod 2**64 */
 
     /* rho = -1/m mod b */
-    *rho = (sp_digit)0 - x;
+    *rho = (sp_digit)((sp_int64)0 - (sp_int64)x);
 }
 
 /* Mul a by digit b into r. (r = a * b)
@@ -13212,10 +13223,10 @@ static int sp_3072_mod_exp_24(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint64)n << c);
             n = e[i--];
             y |= (byte)(n >> (64 - c));
-            n <<= c;
+            n = (sp_uint64)n << c;
             c = 64 - c;
         }
         else if (c == 0) {
@@ -13224,14 +13235,14 @@ static int sp_3072_mod_exp_24(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 64 - c;
+            n = (sp_uint64)n << (64 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 24);
         for (; i>=0 || c>=4; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 60);
-                n <<= 4;
+                n = (sp_uint64)n << 4;
                 c = 60;
             }
             else if (c < 4) {
@@ -13239,12 +13250,12 @@ static int sp_3072_mod_exp_24(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 4 - c;
                 y |= (byte)(n >> (64 - c));
-                n <<= c;
+                n = (sp_uint64)n << c;
                 c = 64 - c;
             }
             else {
                 y = (byte)((n >> 60) & 0xf);
-                n <<= 4;
+                n = (sp_uint64)n << 4;
                 c -= 4;
             }
 
@@ -13365,10 +13376,10 @@ static int sp_3072_mod_exp_24(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint64)n << c);
             n = e[i--];
             y |= (byte)(n >> (64 - c));
-            n <<= c;
+            n = (sp_uint64)n << c;
             c = 64 - c;
         }
         else if (c == 0) {
@@ -13377,14 +13388,14 @@ static int sp_3072_mod_exp_24(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 64 - c;
+            n = (sp_uint64)n << (64 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 24);
         for (; i>=0 || c>=5; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 59);
-                n <<= 5;
+                n = (sp_uint64)n << 5;
                 c = 59;
             }
             else if (c < 5) {
@@ -13392,12 +13403,12 @@ static int sp_3072_mod_exp_24(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 5 - c;
                 y |= (byte)(n >> (64 - c));
-                n <<= c;
+                n = (sp_uint64)n << c;
                 c = 64 - c;
             }
             else {
                 y = (byte)((n >> 59) & 0x1f);
-                n <<= 5;
+                n = (sp_uint64)n << 5;
                 c -= 5;
             }
 
@@ -15175,10 +15186,10 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint64)n << c);
             n = e[i--];
             y |= (byte)(n >> (64 - c));
-            n <<= c;
+            n = (sp_uint64)n << c;
             c = 64 - c;
         }
         else if (c == 0) {
@@ -15187,14 +15198,14 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 64 - c;
+            n = (sp_uint64)n << (64 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 48);
         for (; i>=0 || c>=3; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 61);
-                n <<= 3;
+                n = (sp_uint64)n << 3;
                 c = 61;
             }
             else if (c < 3) {
@@ -15202,12 +15213,12 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 3 - c;
                 y |= (byte)(n >> (64 - c));
-                n <<= c;
+                n = (sp_uint64)n << c;
                 c = 64 - c;
             }
             else {
                 y = (byte)((n >> 61) & 0x7);
-                n <<= 3;
+                n = (sp_uint64)n << 3;
                 c -= 3;
             }
 
@@ -15311,10 +15322,10 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint64)n << c);
             n = e[i--];
             y |= (byte)(n >> (64 - c));
-            n <<= c;
+            n = (sp_uint64)n << c;
             c = 64 - c;
         }
         else if (c == 0) {
@@ -15323,14 +15334,14 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 64 - c;
+            n = (sp_uint64)n << (64 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 48);
         for (; i>=0 || c>=4; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 60);
-                n <<= 4;
+                n = (sp_uint64)n << 4;
                 c = 60;
             }
             else if (c < 4) {
@@ -15338,12 +15349,12 @@ static int sp_3072_mod_exp_48(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 4 - c;
                 y |= (byte)(n >> (64 - c));
-                n <<= c;
+                n = (sp_uint64)n << c;
                 c = 64 - c;
             }
             else {
                 y = (byte)((n >> 60) & 0xf);
-                n <<= 4;
+                n = (sp_uint64)n << 4;
                 c -= 4;
             }
 
@@ -15416,7 +15427,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, const mp_int* em,
 #else
         e[0] = em->dp[0];
         if (em->used > 1) {
-            e[0] |= ((sp_digit)em->dp[1]) << DIGIT_BIT;
+            e[0] |= ((sp_uint64)em->dp[1]) << DIGIT_BIT;
         }
 #endif
         if (e[0] == 0) {
@@ -15729,7 +15740,7 @@ static int sp_3072_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 48; i++) {
-            r->dp[j] |= (mp_digit)(a[i] << s);
+            r->dp[j] |= (mp_digit)((sp_uint64)a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
@@ -15754,7 +15765,7 @@ static int sp_3072_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 48; i++) {
-            r->dp[j] |= ((mp_digit)a[i]) << s;
+            r->dp[j] |= ((sp_uint64)a[i]) << s;
             if (s + 64 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
                 r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
@@ -16176,10 +16187,10 @@ static int sp_3072_mod_exp_2_48(sp_digit* r, const sp_digit* e, int bits,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint64)n << c);
             n = e[i--];
             y |= (byte)(n >> (64 - c));
-            n <<= c;
+            n = (sp_uint64)n << c;
             c = 64 - c;
         }
         else if (c == 0) {
@@ -16188,14 +16199,14 @@ static int sp_3072_mod_exp_2_48(sp_digit* r, const sp_digit* e, int bits,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 64 - c;
+            n = (sp_uint64)n << (64 - c);
         }
         sp_3072_lshift_48(r, norm, y);
         for (; i>=0 || c>=6; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 58);
-                n <<= 6;
+                n = (sp_uint64)n << 6;
                 c = 58;
             }
             else if (c < 6) {
@@ -16203,12 +16214,12 @@ static int sp_3072_mod_exp_2_48(sp_digit* r, const sp_digit* e, int bits,
                 n = e[i--];
                 c = 6 - c;
                 y |= (byte)(n >> (64 - c));
-                n <<= c;
+                n = (sp_uint64)n << c;
                 c = 64 - c;
             }
             else {
                 y = (byte)((n >> 58) & 0x3f);
-                n <<= 6;
+                n = (sp_uint64)n << 6;
                 c -= 6;
             }
 
@@ -16501,7 +16512,7 @@ static void sp_4096_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
+        r[j] |= ((sp_uint64)a->dp[i] << s);
         r[j] &= 0xffffffffffffffffl;
         s = 64U - s;
         if (j + 1 >= size) {
@@ -16536,7 +16547,7 @@ static void sp_4096_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_uint64)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 64) {
             r[j] &= 0xffffffffffffffffl;
             if (j + 1 >= size) {
@@ -17444,10 +17455,10 @@ static void sp_4096_sqr_64(sp_digit* r, const sp_digit* a)
  */
 static void sp_4096_mont_setup(const sp_digit* a, sp_digit* rho)
 {
-    sp_digit x;
-    sp_digit b;
+    sp_uint64 x;
+    sp_uint64 b;
 
-    b = a[0];
+    b = (sp_uint64)a[0];
     x = (((b + 2) & 4) << 1) + b; /* here x*a==1 mod 2**4 */
     x *= 2 - b * x;               /* here x*a==1 mod 2**8 */
     x *= 2 - b * x;               /* here x*a==1 mod 2**16 */
@@ -17455,7 +17466,7 @@ static void sp_4096_mont_setup(const sp_digit* a, sp_digit* rho)
     x *= 2 - b * x;               /* here x*a==1 mod 2**64 */
 
     /* rho = -1/m mod b */
-    *rho = (sp_digit)0 - x;
+    *rho = (sp_digit)((sp_int64)0 - (sp_int64)x);
 }
 
 /* Mul a by digit b into r. (r = a * b)
@@ -20186,10 +20197,10 @@ static int sp_4096_mod_exp_64(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint64)n << c);
             n = e[i--];
             y |= (byte)(n >> (64 - c));
-            n <<= c;
+            n = (sp_uint64)n << c;
             c = 64 - c;
         }
         else if (c == 0) {
@@ -20198,14 +20209,14 @@ static int sp_4096_mod_exp_64(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 64 - c;
+            n = (sp_uint64)n << (64 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 64);
         for (; i>=0 || c>=3; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 61);
-                n <<= 3;
+                n = (sp_uint64)n << 3;
                 c = 61;
             }
             else if (c < 3) {
@@ -20213,12 +20224,12 @@ static int sp_4096_mod_exp_64(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 3 - c;
                 y |= (byte)(n >> (64 - c));
-                n <<= c;
+                n = (sp_uint64)n << c;
                 c = 64 - c;
             }
             else {
                 y = (byte)((n >> 61) & 0x7);
-                n <<= 3;
+                n = (sp_uint64)n << 3;
                 c -= 3;
             }
 
@@ -20322,10 +20333,10 @@ static int sp_4096_mod_exp_64(sp_digit* r, const sp_digit* a, const sp_digit* e,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint64)n << c);
             n = e[i--];
             y |= (byte)(n >> (64 - c));
-            n <<= c;
+            n = (sp_uint64)n << c;
             c = 64 - c;
         }
         else if (c == 0) {
@@ -20334,14 +20345,14 @@ static int sp_4096_mod_exp_64(sp_digit* r, const sp_digit* a, const sp_digit* e,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 64 - c;
+            n = (sp_uint64)n << (64 - c);
         }
         XMEMCPY(r, t[y], sizeof(sp_digit) * 64);
         for (; i>=0 || c>=4; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 60);
-                n <<= 4;
+                n = (sp_uint64)n << 4;
                 c = 60;
             }
             else if (c < 4) {
@@ -20349,12 +20360,12 @@ static int sp_4096_mod_exp_64(sp_digit* r, const sp_digit* a, const sp_digit* e,
                 n = e[i--];
                 c = 4 - c;
                 y |= (byte)(n >> (64 - c));
-                n <<= c;
+                n = (sp_uint64)n << c;
                 c = 64 - c;
             }
             else {
                 y = (byte)((n >> 60) & 0xf);
-                n <<= 4;
+                n = (sp_uint64)n << 4;
                 c -= 4;
             }
 
@@ -20427,7 +20438,7 @@ int sp_RsaPublic_4096(const byte* in, word32 inLen, const mp_int* em,
 #else
         e[0] = em->dp[0];
         if (em->used > 1) {
-            e[0] |= ((sp_digit)em->dp[1]) << DIGIT_BIT;
+            e[0] |= ((sp_uint64)em->dp[1]) << DIGIT_BIT;
         }
 #endif
         if (e[0] == 0) {
@@ -20740,7 +20751,7 @@ static int sp_4096_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 64; i++) {
-            r->dp[j] |= (mp_digit)(a[i] << s);
+            r->dp[j] |= (mp_digit)((sp_uint64)a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
@@ -20765,7 +20776,7 @@ static int sp_4096_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 64; i++) {
-            r->dp[j] |= ((mp_digit)a[i]) << s;
+            r->dp[j] |= ((sp_uint64)a[i]) << s;
             if (s + 64 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
                 r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
@@ -21283,10 +21294,10 @@ static int sp_4096_mod_exp_2_64(sp_digit* r, const sp_digit* e, int bits,
         if (c < 0) {
             /* Number of bits in top word is less than number needed. */
             c = -c;
-            y = (byte)(n << c);
+            y = (byte)((sp_uint64)n << c);
             n = e[i--];
             y |= (byte)(n >> (64 - c));
-            n <<= c;
+            n = (sp_uint64)n << c;
             c = 64 - c;
         }
         else if (c == 0) {
@@ -21295,14 +21306,14 @@ static int sp_4096_mod_exp_2_64(sp_digit* r, const sp_digit* e, int bits,
         }
         else {
             y = (byte)(n >> c);
-            n <<= 64 - c;
+            n = (sp_uint64)n << (64 - c);
         }
         sp_4096_lshift_64(r, norm, y);
         for (; i>=0 || c>=6; ) {
             if (c == 0) {
                 n = e[i--];
                 y = (byte)(n >> 58);
-                n <<= 6;
+                n = (sp_uint64)n << 6;
                 c = 58;
             }
             else if (c < 6) {
@@ -21310,12 +21321,12 @@ static int sp_4096_mod_exp_2_64(sp_digit* r, const sp_digit* e, int bits,
                 n = e[i--];
                 c = 6 - c;
                 y |= (byte)(n >> (64 - c));
-                n <<= c;
+                n = (sp_uint64)n << c;
                 c = 64 - c;
             }
             else {
                 y = (byte)((n >> 58) & 0x3f);
-                n <<= 6;
+                n = (sp_uint64)n << 6;
                 c -= 6;
             }
 
@@ -21495,13 +21506,10 @@ static const sp_point_256 p256_base = {
     0
 };
 #endif /* WOLFSSL_SP_SMALL */
-#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER) || \
-     defined(HAVE_COMP_KEY)
 static const sp_digit p256_b[4] = {
     0x3bce3c3e27d2604bL,0x651d06b0cc53b0f6L,0xb3ebbd55769886bcL,
     0x5ac635d8aa3a93e7L
 };
-#endif
 
 #ifdef WOLFSSL_SP_SMALL
 /* Multiply a and b into r. (r = a * b)
@@ -21865,10 +21873,10 @@ static int sp_256_mod_mul_norm_4(sp_digit* r, const sp_digit* a, const sp_digit*
     t[5] += t[4] >> 32; t[4] &= 0xffffffff;
     t[6] += t[5] >> 32; t[5] &= 0xffffffff;
     t[7] += t[6] >> 32; t[6] &= 0xffffffff;
-    r[0] = (sp_digit)((t[1] << 32) | t[0]);
-    r[1] = (sp_digit)((t[3] << 32) | t[2]);
-    r[2] = (sp_digit)((t[5] << 32) | t[4]);
-    r[3] = (sp_digit)((t[7] << 32) | t[6]);
+    r[0] = (sp_digit)(((sp_uint64)t[1] << 32) | (sp_uint64)t[0]);
+    r[1] = (sp_digit)(((sp_uint64)t[3] << 32) | (sp_uint64)t[2]);
+    r[2] = (sp_digit)(((sp_uint64)t[5] << 32) | (sp_uint64)t[4]);
+    r[3] = (sp_digit)(((sp_uint64)t[7] << 32) | (sp_uint64)t[6]);
 
     return MP_OKAY;
 }
@@ -21899,7 +21907,7 @@ static void sp_256_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
+        r[j] |= ((sp_uint64)a->dp[i] << s);
         r[j] &= 0xffffffffffffffffl;
         s = 64U - s;
         if (j + 1 >= size) {
@@ -21934,7 +21942,7 @@ static void sp_256_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_uint64)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 64) {
             r[j] &= 0xffffffffffffffffl;
             if (j + 1 >= size) {
@@ -22000,7 +22008,7 @@ static int sp_256_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 4; i++) {
-            r->dp[j] |= (mp_digit)(a[i] << s);
+            r->dp[j] |= (mp_digit)((sp_uint64)a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
@@ -22025,7 +22033,7 @@ static int sp_256_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 4; i++) {
-            r->dp[j] |= ((mp_digit)a[i]) << s;
+            r->dp[j] |= ((sp_uint64)a[i]) << s;
             if (s + 64 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
                 r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
@@ -22465,7 +22473,7 @@ static void sp_256_mont_inv_4(sp_digit* r, const sp_digit* a, sp_digit* td)
     XMEMCPY(t, a, sizeof(sp_digit) * 4);
     for (i=254; i>=0; i--) {
         sp_256_mont_sqr_4(t, t, p256_mod, p256_mp_mod);
-        if (p256_mod_minus_2[i / 64] & ((sp_digit)1 << (i % 64)))
+        if (p256_mod_minus_2[i / 64] & ((sp_uint64)1 << (i % 64)))
             sp_256_mont_mul_4(t, t, a, p256_mod, p256_mp_mod);
     }
     XMEMCPY(r, t, sizeof(sp_digit) * 4);
@@ -23959,7 +23967,7 @@ static void sp_256_ecc_recode_6_4(const sp_digit* k, ecc_recode_256* v)
         }
         else if (++j < 4) {
             n = k[j];
-            y |= (word8)((n << (64 - o)) & 0x3f);
+            y |= (word8)(((sp_uint64)n << (64 - o)) & 0x3f);
             o -= 58;
             n >>= o;
         }
@@ -24575,9 +24583,9 @@ static THREAD_LS_T int sp_cache_256_last = -1;
 /* Cache has been initialized. */
 static THREAD_LS_T int sp_cache_256_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     #ifndef WOLFSSL_MUTEX_INITIALIZER
-    static volatile int initCacheMutex_256 = 0;
+    static wolfSSL_Atomic_Uint initCacheMutex_256 = 0;
     #endif
     static wolfSSL_Mutex sp_cache_256_lock WOLFSSL_MUTEX_INITIALIZER_CLAUSE(sp_cache_256_lock);
 #endif
@@ -24644,6 +24652,7 @@ static void sp_ecc_get_cache_256(const sp_point_256* g, sp_cache_256_t** cache)
 }
 #endif /* FP_ECC */
 
+
 /* Multiply the base point of P256 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -24666,19 +24675,42 @@ static int sp_256_ecc_mulmod_4(sp_point_256* r, const sp_point_256* g,
     int err = MP_OKAY;
 
     SP_ALLOC_VAR(sp_digit, tmp, 2 * 4 * 5, heap, DYNAMIC_TYPE_ECC);
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     if (err == MP_OKAY) {
-        #ifndef WOLFSSL_MUTEX_INITIALIZER
-        if (initCacheMutex_256 == 0) {
-            wc_InitMutex(&sp_cache_256_lock);
-            initCacheMutex_256 = 1;
+    #ifndef WOLFSSL_MUTEX_INITIALIZER
+        /* Lazy initialization of mutex - one atomic with three states:
+         *   0 = uninitialized, 1 = initialization in progress,
+         *   2 = initialized.
+         */
+        if (WOLFSSL_ATOMIC_LOAD(initCacheMutex_256) != 2) {
+            unsigned int expected_then_actual;
+
+            for (;;) {
+                expected_then_actual = 0;
+                if (wolfSSL_Atomic_Uint_CompareExchange(
+                        &initCacheMutex_256, &expected_then_actual,
+                        1) == 1) {
+                    /* Won race - initialize mutex. On failure, reset state
+                     * to 0 so that a later call retries. */
+                    err = wc_InitMutex(&sp_cache_256_lock);
+                    WOLFSSL_ATOMIC_STORE(initCacheMutex_256,
+                        (err == 0) ? 2U : 0U);
+                    break;
+                }
+                if (expected_then_actual == 2) {
+                    /* Another thread completed initialization. */
+                    break;
+                }
+                /* Initialization in progress in another thread. */
+                WC_RELAX_LONG_LOOP();
+            }
         }
-        #endif
-        if (wc_LockMutex(&sp_cache_256_lock) != 0) {
+    #endif
+        if ((err == MP_OKAY) && (wc_LockMutex(&sp_cache_256_lock) != 0)) {
             err = BAD_MUTEX_E;
         }
     }
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
         sp_ecc_get_cache_256(g, &cache);
@@ -24692,9 +24724,9 @@ static int sp_256_ecc_mulmod_4(sp_point_256* r, const sp_point_256* g,
             err = sp_256_ecc_mulmod_stripe_4(r, g, cache->table, k,
                     map, ct, heap);
         }
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
         wc_UnLockMutex(&sp_cache_256_lock);
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -24963,9 +24995,9 @@ static THREAD_LS_T int sp_cache_256_last = -1;
 /* Cache has been initialized. */
 static THREAD_LS_T int sp_cache_256_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     #ifndef WOLFSSL_MUTEX_INITIALIZER
-    static volatile int initCacheMutex_256 = 0;
+    static wolfSSL_Atomic_Uint initCacheMutex_256 = 0;
     #endif
     static wolfSSL_Mutex sp_cache_256_lock WOLFSSL_MUTEX_INITIALIZER_CLAUSE(sp_cache_256_lock);
 #endif
@@ -25032,6 +25064,7 @@ static void sp_ecc_get_cache_256(const sp_point_256* g, sp_cache_256_t** cache)
 }
 #endif /* FP_ECC */
 
+
 /* Multiply the base point of P256 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -25054,19 +25087,42 @@ static int sp_256_ecc_mulmod_4(sp_point_256* r, const sp_point_256* g,
     int err = MP_OKAY;
 
     SP_ALLOC_VAR(sp_digit, tmp, 2 * 4 * 5, heap, DYNAMIC_TYPE_ECC);
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     if (err == MP_OKAY) {
-        #ifndef WOLFSSL_MUTEX_INITIALIZER
-        if (initCacheMutex_256 == 0) {
-            wc_InitMutex(&sp_cache_256_lock);
-            initCacheMutex_256 = 1;
+    #ifndef WOLFSSL_MUTEX_INITIALIZER
+        /* Lazy initialization of mutex - one atomic with three states:
+         *   0 = uninitialized, 1 = initialization in progress,
+         *   2 = initialized.
+         */
+        if (WOLFSSL_ATOMIC_LOAD(initCacheMutex_256) != 2) {
+            unsigned int expected_then_actual;
+
+            for (;;) {
+                expected_then_actual = 0;
+                if (wolfSSL_Atomic_Uint_CompareExchange(
+                        &initCacheMutex_256, &expected_then_actual,
+                        1) == 1) {
+                    /* Won race - initialize mutex. On failure, reset state
+                     * to 0 so that a later call retries. */
+                    err = wc_InitMutex(&sp_cache_256_lock);
+                    WOLFSSL_ATOMIC_STORE(initCacheMutex_256,
+                        (err == 0) ? 2U : 0U);
+                    break;
+                }
+                if (expected_then_actual == 2) {
+                    /* Another thread completed initialization. */
+                    break;
+                }
+                /* Initialization in progress in another thread. */
+                WC_RELAX_LONG_LOOP();
+            }
         }
-        #endif
-        if (wc_LockMutex(&sp_cache_256_lock) != 0) {
+    #endif
+        if ((err == MP_OKAY) && (wc_LockMutex(&sp_cache_256_lock) != 0)) {
             err = BAD_MUTEX_E;
         }
     }
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
         sp_ecc_get_cache_256(g, &cache);
@@ -25080,9 +25136,9 @@ static int sp_256_ecc_mulmod_4(sp_point_256* r, const sp_point_256* g,
             err = sp_256_ecc_mulmod_stripe_4(r, g, cache->table, k,
                     map, ct, heap);
         }
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
         wc_UnLockMutex(&sp_cache_256_lock);
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -26903,7 +26959,7 @@ static void sp_256_ecc_recode_7_4(const sp_digit* k, ecc_recode_256* v)
         }
         else if (++j < 4) {
             n = k[j];
-            y |= (word8)((n << (64 - o)) & 0x7f);
+            y |= (word8)(((sp_uint64)n << (64 - o)) & 0x7f);
             o -= 57;
             n >>= o;
         }
@@ -41470,7 +41526,6 @@ int sp_ecc_verify_256_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash,
 #endif /* WOLFSSL_SP_NONBLOCK */
 #endif /* HAVE_ECC_VERIFY */
 
-#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER)
 /* Add two Montgomery form numbers (r = a + b % m).
  *
  * r   Result of addition.
@@ -41587,6 +41642,7 @@ int sp_ecc_is_point_256(const mp_int* pX, const mp_int* pY)
     return err;
 }
 
+#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER)
 /* Check that the private scalar generates the EC point (px, py), the point is
  * on the curve and the point has the correct order.
  *
@@ -42013,13 +42069,10 @@ static const sp_point_384 p384_base = {
     0
 };
 #endif /* WOLFSSL_SP_SMALL */
-#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER) || \
-     defined(HAVE_COMP_KEY)
 static const sp_digit p384_b[6] = {
     0x2a85c8edd3ec2aefL,0xc656398d8a2ed19dL,0x0314088f5013875aL,
     0x181d9c6efe814112L,0x988e056be3f82d19L,0xb3312fa7e23ee7e4L
 };
-#endif
 
 #ifdef WOLFSSL_SP_SMALL
 /* Multiply a and b into r. (r = a * b)
@@ -42693,12 +42746,12 @@ static int sp_384_mod_mul_norm_6(sp_digit* r, const sp_digit* a, const sp_digit*
         t[10] += t[9] >> 32; t[9] &= 0xffffffff;
         t[11] += t[10] >> 32; t[10] &= 0xffffffff;
 
-        r[0] = (sp_digit)((t[1] << 32) | t[0]);
-        r[1] = (sp_digit)((t[3] << 32) | t[2]);
-        r[2] = (sp_digit)((t[5] << 32) | t[4]);
-        r[3] = (sp_digit)((t[7] << 32) | t[6]);
-        r[4] = (sp_digit)((t[9] << 32) | t[8]);
-        r[5] = (sp_digit)((t[11] << 32) | t[10]);
+        r[0] = (sp_digit)(((sp_uint64)t[1] << 32) | (sp_uint64)t[0]);
+        r[1] = (sp_digit)(((sp_uint64)t[3] << 32) | (sp_uint64)t[2]);
+        r[2] = (sp_digit)(((sp_uint64)t[5] << 32) | (sp_uint64)t[4]);
+        r[3] = (sp_digit)(((sp_uint64)t[7] << 32) | (sp_uint64)t[6]);
+        r[4] = (sp_digit)(((sp_uint64)t[9] << 32) | (sp_uint64)t[8]);
+        r[5] = (sp_digit)(((sp_uint64)t[11] << 32) | (sp_uint64)t[10]);
     }
 
     SP_FREE_VAR(t, NULL, DYNAMIC_TYPE_ECC);
@@ -42732,7 +42785,7 @@ static void sp_384_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
+        r[j] |= ((sp_uint64)a->dp[i] << s);
         r[j] &= 0xffffffffffffffffl;
         s = 64U - s;
         if (j + 1 >= size) {
@@ -42767,7 +42820,7 @@ static void sp_384_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_uint64)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 64) {
             r[j] &= 0xffffffffffffffffl;
             if (j + 1 >= size) {
@@ -42833,7 +42886,7 @@ static int sp_384_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 6; i++) {
-            r->dp[j] |= (mp_digit)(a[i] << s);
+            r->dp[j] |= (mp_digit)((sp_uint64)a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
@@ -42858,7 +42911,7 @@ static int sp_384_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 6; i++) {
-            r->dp[j] |= ((mp_digit)a[i]) << s;
+            r->dp[j] |= ((sp_uint64)a[i]) << s;
             if (s + 64 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
                 r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
@@ -43247,7 +43300,7 @@ static void sp_384_mont_inv_6(sp_digit* r, const sp_digit* a, sp_digit* td)
     XMEMCPY(t, a, sizeof(sp_digit) * 6);
     for (i=382; i>=0; i--) {
         sp_384_mont_sqr_6(t, t, p384_mod, p384_mp_mod);
-        if (p384_mod_minus_2[i / 64] & ((sp_digit)1 << (i % 64)))
+        if (p384_mod_minus_2[i / 64] & ((sp_uint64)1 << (i % 64)))
             sp_384_mont_mul_6(t, t, a, p384_mod, p384_mp_mod);
     }
     XMEMCPY(r, t, sizeof(sp_digit) * 6);
@@ -44497,7 +44550,7 @@ static void sp_384_ecc_recode_6_6(const sp_digit* k, ecc_recode_384* v)
         }
         else if (++j < 6) {
             n = k[j];
-            y |= (word8)((n << (64 - o)) & 0x3f);
+            y |= (word8)(((sp_uint64)n << (64 - o)) & 0x3f);
             o -= 58;
             n >>= o;
         }
@@ -45077,9 +45130,9 @@ static THREAD_LS_T int sp_cache_384_last = -1;
 /* Cache has been initialized. */
 static THREAD_LS_T int sp_cache_384_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     #ifndef WOLFSSL_MUTEX_INITIALIZER
-    static volatile int initCacheMutex_384 = 0;
+    static wolfSSL_Atomic_Uint initCacheMutex_384 = 0;
     #endif
     static wolfSSL_Mutex sp_cache_384_lock WOLFSSL_MUTEX_INITIALIZER_CLAUSE(sp_cache_384_lock);
 #endif
@@ -45146,6 +45199,7 @@ static void sp_ecc_get_cache_384(const sp_point_384* g, sp_cache_384_t** cache)
 }
 #endif /* FP_ECC */
 
+
 /* Multiply the base point of P384 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -45168,19 +45222,42 @@ static int sp_384_ecc_mulmod_6(sp_point_384* r, const sp_point_384* g,
     int err = MP_OKAY;
 
     SP_ALLOC_VAR(sp_digit, tmp, 2 * 6 * 7, heap, DYNAMIC_TYPE_ECC);
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     if (err == MP_OKAY) {
-        #ifndef WOLFSSL_MUTEX_INITIALIZER
-        if (initCacheMutex_384 == 0) {
-            wc_InitMutex(&sp_cache_384_lock);
-            initCacheMutex_384 = 1;
+    #ifndef WOLFSSL_MUTEX_INITIALIZER
+        /* Lazy initialization of mutex - one atomic with three states:
+         *   0 = uninitialized, 1 = initialization in progress,
+         *   2 = initialized.
+         */
+        if (WOLFSSL_ATOMIC_LOAD(initCacheMutex_384) != 2) {
+            unsigned int expected_then_actual;
+
+            for (;;) {
+                expected_then_actual = 0;
+                if (wolfSSL_Atomic_Uint_CompareExchange(
+                        &initCacheMutex_384, &expected_then_actual,
+                        1) == 1) {
+                    /* Won race - initialize mutex. On failure, reset state
+                     * to 0 so that a later call retries. */
+                    err = wc_InitMutex(&sp_cache_384_lock);
+                    WOLFSSL_ATOMIC_STORE(initCacheMutex_384,
+                        (err == 0) ? 2U : 0U);
+                    break;
+                }
+                if (expected_then_actual == 2) {
+                    /* Another thread completed initialization. */
+                    break;
+                }
+                /* Initialization in progress in another thread. */
+                WC_RELAX_LONG_LOOP();
+            }
         }
-        #endif
-        if (wc_LockMutex(&sp_cache_384_lock) != 0) {
+    #endif
+        if ((err == MP_OKAY) && (wc_LockMutex(&sp_cache_384_lock) != 0)) {
             err = BAD_MUTEX_E;
         }
     }
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
         sp_ecc_get_cache_384(g, &cache);
@@ -45194,9 +45271,9 @@ static int sp_384_ecc_mulmod_6(sp_point_384* r, const sp_point_384* g,
             err = sp_384_ecc_mulmod_stripe_6(r, g, cache->table, k,
                     map, ct, heap);
         }
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
         wc_UnLockMutex(&sp_cache_384_lock);
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -45465,9 +45542,9 @@ static THREAD_LS_T int sp_cache_384_last = -1;
 /* Cache has been initialized. */
 static THREAD_LS_T int sp_cache_384_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     #ifndef WOLFSSL_MUTEX_INITIALIZER
-    static volatile int initCacheMutex_384 = 0;
+    static wolfSSL_Atomic_Uint initCacheMutex_384 = 0;
     #endif
     static wolfSSL_Mutex sp_cache_384_lock WOLFSSL_MUTEX_INITIALIZER_CLAUSE(sp_cache_384_lock);
 #endif
@@ -45534,6 +45611,7 @@ static void sp_ecc_get_cache_384(const sp_point_384* g, sp_cache_384_t** cache)
 }
 #endif /* FP_ECC */
 
+
 /* Multiply the base point of P384 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -45556,19 +45634,42 @@ static int sp_384_ecc_mulmod_6(sp_point_384* r, const sp_point_384* g,
     int err = MP_OKAY;
 
     SP_ALLOC_VAR(sp_digit, tmp, 2 * 6 * 7, heap, DYNAMIC_TYPE_ECC);
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     if (err == MP_OKAY) {
-        #ifndef WOLFSSL_MUTEX_INITIALIZER
-        if (initCacheMutex_384 == 0) {
-            wc_InitMutex(&sp_cache_384_lock);
-            initCacheMutex_384 = 1;
+    #ifndef WOLFSSL_MUTEX_INITIALIZER
+        /* Lazy initialization of mutex - one atomic with three states:
+         *   0 = uninitialized, 1 = initialization in progress,
+         *   2 = initialized.
+         */
+        if (WOLFSSL_ATOMIC_LOAD(initCacheMutex_384) != 2) {
+            unsigned int expected_then_actual;
+
+            for (;;) {
+                expected_then_actual = 0;
+                if (wolfSSL_Atomic_Uint_CompareExchange(
+                        &initCacheMutex_384, &expected_then_actual,
+                        1) == 1) {
+                    /* Won race - initialize mutex. On failure, reset state
+                     * to 0 so that a later call retries. */
+                    err = wc_InitMutex(&sp_cache_384_lock);
+                    WOLFSSL_ATOMIC_STORE(initCacheMutex_384,
+                        (err == 0) ? 2U : 0U);
+                    break;
+                }
+                if (expected_then_actual == 2) {
+                    /* Another thread completed initialization. */
+                    break;
+                }
+                /* Initialization in progress in another thread. */
+                WC_RELAX_LONG_LOOP();
+            }
         }
-        #endif
-        if (wc_LockMutex(&sp_cache_384_lock) != 0) {
+    #endif
+        if ((err == MP_OKAY) && (wc_LockMutex(&sp_cache_384_lock) != 0)) {
             err = BAD_MUTEX_E;
         }
     }
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
         sp_ecc_get_cache_384(g, &cache);
@@ -45582,9 +45683,9 @@ static int sp_384_ecc_mulmod_6(sp_point_384* r, const sp_point_384* g,
             err = sp_384_ecc_mulmod_stripe_6(r, g, cache->table, k,
                     map, ct, heap);
         }
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
         wc_UnLockMutex(&sp_cache_384_lock);
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -47405,7 +47506,7 @@ static void sp_384_ecc_recode_7_6(const sp_digit* k, ecc_recode_384* v)
         }
         else if (++j < 6) {
             n = k[j];
-            y |= (word8)((n << (64 - o)) & 0x7f);
+            y |= (word8)(((sp_uint64)n << (64 - o)) & 0x7f);
             o -= 57;
             n >>= o;
         }
@@ -65844,7 +65945,7 @@ int sp_ecc_secret_gen_384_nb(sp_ecc_ctx_t* sp_ctx, const mp_int* priv,
     typedef char ctx_size_test[sizeof(sp_ecc_sec_gen_384_ctx) >= sizeof(*sp_ctx) ? -1 : 1];
     (void)sizeof(ctx_size_test);
 
-    if (*outLen < 32U) {
+    if (*outLen < 48U) {
         err = BUFFER_E;
     }
 
@@ -67147,7 +67248,6 @@ int sp_ecc_verify_384_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash,
 #endif /* WOLFSSL_SP_NONBLOCK */
 #endif /* HAVE_ECC_VERIFY */
 
-#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER)
 /* Check that the x and y ordinates are a valid point on the curve.
  *
  * point  EC point.
@@ -67220,6 +67320,7 @@ int sp_ecc_is_point_384(const mp_int* pX, const mp_int* pY)
     return err;
 }
 
+#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER)
 /* Check that the private scalar generates the EC point (px, py), the point is
  * on the curve and the point has the correct order.
  *
@@ -67685,14 +67786,11 @@ static const sp_point_521 p521_base = {
     0
 };
 #endif /* WOLFSSL_SP_SMALL */
-#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER) || \
-     defined(HAVE_COMP_KEY)
 static const sp_digit p521_b[9] = {
     0xef451fd46b503f00L,0x3573df883d2c34f1L,0x1652c0bd3bb1bf07L,
     0x56193951ec7e937bL,0xb8b489918ef109e1L,0xa2da725b99b315f3L,
     0x929a21a0b68540eeL,0x953eb9618e1c9a1fL,0x0000000000000051L
 };
-#endif
 
 #ifdef WOLFSSL_SP_SMALL
 /* Multiply a and b into r. (r = a * b)
@@ -69631,8 +69729,6 @@ static WC_INLINE int sp_521_div_9(const sp_digit* a, const sp_digit* d,
     sp_digit r1;
     int i;
 
-    ASSERT_SAVED_VECTOR_REGISTERS();
-
     (void)m;
     div = (d[8] << 55) | (d[7] >> 9);
     XMEMCPY(t1, a, sizeof(*t1) * 2 * 9);
@@ -69713,7 +69809,7 @@ static void sp_521_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
+        r[j] |= ((sp_uint64)a->dp[i] << s);
         r[j] &= 0xffffffffffffffffl;
         s = 64U - s;
         if (j + 1 >= size) {
@@ -69748,7 +69844,7 @@ static void sp_521_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_uint64)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 64) {
             r[j] &= 0xffffffffffffffffl;
             if (j + 1 >= size) {
@@ -69814,7 +69910,7 @@ static int sp_521_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 9; i++) {
-            r->dp[j] |= (mp_digit)(a[i] << s);
+            r->dp[j] |= (mp_digit)((sp_uint64)a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
@@ -69839,7 +69935,7 @@ static int sp_521_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 9; i++) {
-            r->dp[j] |= ((mp_digit)a[i]) << s;
+            r->dp[j] |= ((sp_uint64)a[i]) << s;
             if (s + 64 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
                 r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
@@ -71004,7 +71100,7 @@ static void sp_521_mont_inv_9(sp_digit* r, const sp_digit* a, sp_digit* td)
     XMEMCPY(t, a, sizeof(sp_digit) * 9);
     for (i=519; i>=0; i--) {
         sp_521_mont_sqr_9(t, t, p521_mod, p521_mp_mod);
-        if (p521_mod_minus_2[i / 64] & ((sp_digit)1 << (i % 64)))
+        if (p521_mod_minus_2[i / 64] & ((sp_uint64)1 << (i % 64)))
             sp_521_mont_mul_9(t, t, a, p521_mod, p521_mp_mod);
     }
     XMEMCPY(r, t, sizeof(sp_digit) * 9);
@@ -72442,7 +72538,7 @@ static void sp_521_ecc_recode_6_9(const sp_digit* k, ecc_recode_521* v)
         }
         else if (++j < 9) {
             n = k[j];
-            y |= (word8)((n << (64 - o)) & 0x3f);
+            y |= (word8)(((sp_uint64)n << (64 - o)) & 0x3f);
             o -= 58;
             n >>= o;
         }
@@ -73067,9 +73163,9 @@ static THREAD_LS_T int sp_cache_521_last = -1;
 /* Cache has been initialized. */
 static THREAD_LS_T int sp_cache_521_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     #ifndef WOLFSSL_MUTEX_INITIALIZER
-    static volatile int initCacheMutex_521 = 0;
+    static wolfSSL_Atomic_Uint initCacheMutex_521 = 0;
     #endif
     static wolfSSL_Mutex sp_cache_521_lock WOLFSSL_MUTEX_INITIALIZER_CLAUSE(sp_cache_521_lock);
 #endif
@@ -73136,6 +73232,7 @@ static void sp_ecc_get_cache_521(const sp_point_521* g, sp_cache_521_t** cache)
 }
 #endif /* FP_ECC */
 
+
 /* Multiply the base point of P521 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -73158,19 +73255,42 @@ static int sp_521_ecc_mulmod_9(sp_point_521* r, const sp_point_521* g,
     int err = MP_OKAY;
 
     SP_ALLOC_VAR(sp_digit, tmp, 2 * 9 * 6, heap, DYNAMIC_TYPE_ECC);
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     if (err == MP_OKAY) {
-        #ifndef WOLFSSL_MUTEX_INITIALIZER
-        if (initCacheMutex_521 == 0) {
-            wc_InitMutex(&sp_cache_521_lock);
-            initCacheMutex_521 = 1;
+    #ifndef WOLFSSL_MUTEX_INITIALIZER
+        /* Lazy initialization of mutex - one atomic with three states:
+         *   0 = uninitialized, 1 = initialization in progress,
+         *   2 = initialized.
+         */
+        if (WOLFSSL_ATOMIC_LOAD(initCacheMutex_521) != 2) {
+            unsigned int expected_then_actual;
+
+            for (;;) {
+                expected_then_actual = 0;
+                if (wolfSSL_Atomic_Uint_CompareExchange(
+                        &initCacheMutex_521, &expected_then_actual,
+                        1) == 1) {
+                    /* Won race - initialize mutex. On failure, reset state
+                     * to 0 so that a later call retries. */
+                    err = wc_InitMutex(&sp_cache_521_lock);
+                    WOLFSSL_ATOMIC_STORE(initCacheMutex_521,
+                        (err == 0) ? 2U : 0U);
+                    break;
+                }
+                if (expected_then_actual == 2) {
+                    /* Another thread completed initialization. */
+                    break;
+                }
+                /* Initialization in progress in another thread. */
+                WC_RELAX_LONG_LOOP();
+            }
         }
-        #endif
-        if (wc_LockMutex(&sp_cache_521_lock) != 0) {
+    #endif
+        if ((err == MP_OKAY) && (wc_LockMutex(&sp_cache_521_lock) != 0)) {
             err = BAD_MUTEX_E;
         }
     }
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
         sp_ecc_get_cache_521(g, &cache);
@@ -73184,9 +73304,9 @@ static int sp_521_ecc_mulmod_9(sp_point_521* r, const sp_point_521* g,
             err = sp_521_ecc_mulmod_stripe_9(r, g, cache->table, k,
                     map, ct, heap);
         }
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
         wc_UnLockMutex(&sp_cache_521_lock);
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -73473,9 +73593,9 @@ static THREAD_LS_T int sp_cache_521_last = -1;
 /* Cache has been initialized. */
 static THREAD_LS_T int sp_cache_521_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     #ifndef WOLFSSL_MUTEX_INITIALIZER
-    static volatile int initCacheMutex_521 = 0;
+    static wolfSSL_Atomic_Uint initCacheMutex_521 = 0;
     #endif
     static wolfSSL_Mutex sp_cache_521_lock WOLFSSL_MUTEX_INITIALIZER_CLAUSE(sp_cache_521_lock);
 #endif
@@ -73542,6 +73662,7 @@ static void sp_ecc_get_cache_521(const sp_point_521* g, sp_cache_521_t** cache)
 }
 #endif /* FP_ECC */
 
+
 /* Multiply the base point of P521 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -73564,19 +73685,42 @@ static int sp_521_ecc_mulmod_9(sp_point_521* r, const sp_point_521* g,
     int err = MP_OKAY;
 
     SP_ALLOC_VAR(sp_digit, tmp, 2 * 9 * 6, heap, DYNAMIC_TYPE_ECC);
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     if (err == MP_OKAY) {
-        #ifndef WOLFSSL_MUTEX_INITIALIZER
-        if (initCacheMutex_521 == 0) {
-            wc_InitMutex(&sp_cache_521_lock);
-            initCacheMutex_521 = 1;
+    #ifndef WOLFSSL_MUTEX_INITIALIZER
+        /* Lazy initialization of mutex - one atomic with three states:
+         *   0 = uninitialized, 1 = initialization in progress,
+         *   2 = initialized.
+         */
+        if (WOLFSSL_ATOMIC_LOAD(initCacheMutex_521) != 2) {
+            unsigned int expected_then_actual;
+
+            for (;;) {
+                expected_then_actual = 0;
+                if (wolfSSL_Atomic_Uint_CompareExchange(
+                        &initCacheMutex_521, &expected_then_actual,
+                        1) == 1) {
+                    /* Won race - initialize mutex. On failure, reset state
+                     * to 0 so that a later call retries. */
+                    err = wc_InitMutex(&sp_cache_521_lock);
+                    WOLFSSL_ATOMIC_STORE(initCacheMutex_521,
+                        (err == 0) ? 2U : 0U);
+                    break;
+                }
+                if (expected_then_actual == 2) {
+                    /* Another thread completed initialization. */
+                    break;
+                }
+                /* Initialization in progress in another thread. */
+                WC_RELAX_LONG_LOOP();
+            }
         }
-        #endif
-        if (wc_LockMutex(&sp_cache_521_lock) != 0) {
+    #endif
+        if ((err == MP_OKAY) && (wc_LockMutex(&sp_cache_521_lock) != 0)) {
             err = BAD_MUTEX_E;
         }
     }
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
         sp_ecc_get_cache_521(g, &cache);
@@ -73590,9 +73734,9 @@ static int sp_521_ecc_mulmod_9(sp_point_521* r, const sp_point_521* g,
             err = sp_521_ecc_mulmod_stripe_9(r, g, cache->table, k,
                     map, ct, heap);
         }
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
         wc_UnLockMutex(&sp_cache_521_lock);
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -76049,7 +76193,7 @@ static void sp_521_ecc_recode_7_9(const sp_digit* k, ecc_recode_521* v)
         }
         else if (++j < 9) {
             n = k[j];
-            y |= (word8)((n << (64 - o)) & 0x7f);
+            y |= (word8)(((sp_uint64)n << (64 - o)) & 0x7f);
             o -= 57;
             n >>= o;
         }
@@ -110536,7 +110680,7 @@ int sp_ecc_secret_gen_521(const mp_int* priv, const ecc_point* pub, byte* out,
     SP_DECL_VAR(sp_digit, k, 9);
     int err = MP_OKAY;
 
-    if (*outLen < 65U) {
+    if (*outLen < 66U) {
         err = BUFFER_E;
     }
 
@@ -110577,7 +110721,7 @@ int sp_ecc_secret_gen_521_nb(sp_ecc_ctx_t* sp_ctx, const mp_int* priv,
     typedef char ctx_size_test[sizeof(sp_ecc_sec_gen_521_ctx) >= sizeof(*sp_ctx) ? -1 : 1];
     (void)sizeof(ctx_size_test);
 
-    if (*outLen < 32U) {
+    if (*outLen < 66U) {
         err = BUFFER_E;
     }
 
@@ -111657,7 +111801,6 @@ int sp_ecc_verify_521_nb(sp_ecc_ctx_t* sp_ctx, const byte* hash,
 #endif /* WOLFSSL_SP_NONBLOCK */
 #endif /* HAVE_ECC_VERIFY */
 
-#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER)
 /* Check that the x and y ordinates are a valid point on the curve.
  *
  * point  EC point.
@@ -111730,6 +111873,7 @@ int sp_ecc_is_point_521(const mp_int* pX, const mp_int* pY)
     return err;
 }
 
+#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER)
 /* Check that the private scalar generates the EC point (px, py), the point is
  * on the curve and the point has the correct order.
  *
@@ -111994,7 +112138,7 @@ static int sp_521_mont_sqrt_9(sp_digit* y)
             XMEMCPY(t, y, sizeof(sp_digit) * 9);
             for (i=518; i>=0; i--) {
                 sp_521_mont_sqr_9(t, t, p521_mod, p521_mp_mod);
-                if (p521_sqrt_power[i / 64] & ((sp_digit)1 << (i % 64)))
+                if (p521_sqrt_power[i / 64] & ((sp_uint64)1 << (i % 64)))
                     sp_521_mont_mul_9(t, t, y, p521_mod, p521_mp_mod);
             }
             XMEMCPY(y, t, sizeof(sp_digit) * 9);
@@ -114032,7 +114176,7 @@ static void sp_1024_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i] << s);
+        r[j] |= ((sp_uint64)a->dp[i] << s);
         r[j] &= 0xffffffffffffffffl;
         s = 64U - s;
         if (j + 1 >= size) {
@@ -114067,7 +114211,7 @@ static void sp_1024_from_mp(sp_digit* r, int size, const mp_int* a)
 
     r[0] = 0;
     for (i = 0; i < (unsigned int)a->used && j < size; i++) {
-        r[j] |= ((sp_digit)a->dp[i]) << s;
+        r[j] |= ((sp_uint64)a->dp[i]) << s;
         if (s + DIGIT_BIT >= 64) {
             r[j] &= 0xffffffffffffffffl;
             if (j + 1 >= size) {
@@ -114133,7 +114277,7 @@ static int sp_1024_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 16; i++) {
-            r->dp[j] |= (mp_digit)(a[i] << s);
+            r->dp[j] |= (mp_digit)((sp_uint64)a[i] << s);
             r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
             s = DIGIT_BIT - s;
             r->dp[++j] = (mp_digit)(a[i] >> s);
@@ -114158,7 +114302,7 @@ static int sp_1024_to_mp(const sp_digit* a, mp_int* r)
 
         r->dp[0] = 0;
         for (i = 0; i < 16; i++) {
-            r->dp[j] |= ((mp_digit)a[i]) << s;
+            r->dp[j] |= ((sp_uint64)a[i]) << s;
             if (s + 64 >= DIGIT_BIT) {
     #if DIGIT_BIT != 32 && DIGIT_BIT != 64
                 r->dp[j] &= ((sp_digit)1 << DIGIT_BIT) - 1;
@@ -116114,7 +116258,7 @@ static void sp_1024_ecc_recode_7_16(const sp_digit* k, ecc_recode_1024* v)
         }
         else if (++j < 16) {
             n = k[j];
-            y |= (word8)((n << (64 - o)) & 0x7f);
+            y |= (word8)(((sp_uint64)n << (64 - o)) & 0x7f);
             o -= 57;
             n >>= o;
         }
@@ -116552,9 +116696,9 @@ static THREAD_LS_T int sp_cache_1024_last = -1;
 /* Cache has been initialized. */
 static THREAD_LS_T int sp_cache_1024_inited = 0;
 
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     #ifndef WOLFSSL_MUTEX_INITIALIZER
-    static volatile int initCacheMutex_1024 = 0;
+    static wolfSSL_Atomic_Uint initCacheMutex_1024 = 0;
     #endif
     static wolfSSL_Mutex sp_cache_1024_lock WOLFSSL_MUTEX_INITIALIZER_CLAUSE(sp_cache_1024_lock);
 #endif
@@ -116621,6 +116765,7 @@ static void sp_ecc_get_cache_1024(const sp_point_1024* g, sp_cache_1024_t** cach
 }
 #endif /* FP_ECC */
 
+
 /* Multiply the base point of P1024 by the scalar and return the result.
  * If map is true then convert result to affine coordinates.
  *
@@ -116643,19 +116788,42 @@ static int sp_1024_ecc_mulmod_16(sp_point_1024* r, const sp_point_1024* g,
     int err = MP_OKAY;
 
     SP_ALLOC_VAR(sp_digit, tmp, 2 * 16 * 38, heap, DYNAMIC_TYPE_ECC);
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
     if (err == MP_OKAY) {
-        #ifndef WOLFSSL_MUTEX_INITIALIZER
-        if (initCacheMutex_1024 == 0) {
-            wc_InitMutex(&sp_cache_1024_lock);
-            initCacheMutex_1024 = 1;
+    #ifndef WOLFSSL_MUTEX_INITIALIZER
+        /* Lazy initialization of mutex - one atomic with three states:
+         *   0 = uninitialized, 1 = initialization in progress,
+         *   2 = initialized.
+         */
+        if (WOLFSSL_ATOMIC_LOAD(initCacheMutex_1024) != 2) {
+            unsigned int expected_then_actual;
+
+            for (;;) {
+                expected_then_actual = 0;
+                if (wolfSSL_Atomic_Uint_CompareExchange(
+                        &initCacheMutex_1024, &expected_then_actual,
+                        1) == 1) {
+                    /* Won race - initialize mutex. On failure, reset state
+                     * to 0 so that a later call retries. */
+                    err = wc_InitMutex(&sp_cache_1024_lock);
+                    WOLFSSL_ATOMIC_STORE(initCacheMutex_1024,
+                        (err == 0) ? 2U : 0U);
+                    break;
+                }
+                if (expected_then_actual == 2) {
+                    /* Another thread completed initialization. */
+                    break;
+                }
+                /* Initialization in progress in another thread. */
+                WC_RELAX_LONG_LOOP();
+            }
         }
-        #endif
-        if (wc_LockMutex(&sp_cache_1024_lock) != 0) {
+    #endif
+        if ((err == MP_OKAY) && (wc_LockMutex(&sp_cache_1024_lock) != 0)) {
             err = BAD_MUTEX_E;
         }
     }
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
 
     if (err == MP_OKAY) {
         sp_ecc_get_cache_1024(g, &cache);
@@ -116669,9 +116837,9 @@ static int sp_1024_ecc_mulmod_16(sp_point_1024* r, const sp_point_1024* g,
             err = sp_1024_ecc_mulmod_stripe_16(r, g, cache->table, k,
                     map, ct, heap);
         }
-#ifndef HAVE_THREAD_LS
+#if !defined(SINGLE_THREADED) && !defined(HAVE_THREAD_LS)
         wc_UnLockMutex(&sp_cache_1024_lock);
-#endif /* HAVE_THREAD_LS */
+#endif /* !SINGLE_THREADED && !HAVE_THREAD_LS */
     }
 
     SP_FREE_VAR(tmp, heap, DYNAMIC_TYPE_ECC);
@@ -123416,7 +123584,6 @@ int sp_Pairing_precomp_1024(const ecc_point* pm, const ecc_point* qm,
 }
 
 #endif /* WOLFSSL_SP_SMALL */
-#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER)
 /* Read big endian unsigned byte array into r.
  *
  * r  A single precision integer.
@@ -123606,6 +123773,7 @@ int sp_ecc_is_point_1024(const mp_int* pX, const mp_int* pY)
     return err;
 }
 
+#if defined(HAVE_ECC_CHECK_KEY) || !defined(NO_ECC_CHECK_PUBKEY_ORDER)
 /* Check that the private scalar generates the EC point (px, py), the point is
  * on the curve and the point has the correct order.
  *

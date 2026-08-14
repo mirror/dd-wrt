@@ -45,18 +45,41 @@ if ! "$AWK" --version 2>&1 | grep -F -q 'GNU Awk'; then
     exit 1
 fi
 
+if [[ ! -v COREKEY ]]; then
+    if [[ ! -v LIBWOLFSSL ]]; then
+        LIBWOLFSSL=./libwolfssl-user-build/src/.libs/libwolfssl.so
+    fi
+    read -a coreKey_a < <("${READELF-readelf}" --symbols --wide "$LIBWOLFSSL" | grep --max-count=1 -E -e '[[:space:]]coreKey$') || exit $?
+    if [[ ${#coreKey_a[@]} != 8 || "${coreKey_a[2]}" != "65" ]]; then
+        echo "unexpected readelf output: \"${coreKey_a[*]}\" (${#coreKey_a[@]})" >&2
+        exit 1
+    fi
+    coreKey_offset=$((0x${coreKey_a[1]}))
+    COREKEY=$(dd if="$LIBWOLFSSL" bs=64 iflag=skip_bytes,count_bytes skip="$coreKey_offset" count=64 status=none) || exit $?
+    if [[ "$COREKEY" =~ ^[0-9A-Fa-f]{64}$ ]]; then
+        :
+    else
+        echo "unexpected value for coreKey \"${COREKEY}\"." >&2
+        exit 1
+    fi
+fi
+
 # shellcheck disable=SC2016 # using $AWK instead of awk confuses shellcheck.
 readarray -t fenceposts < <(readelf --wide --sections --symbols "$mod_path" | "$AWK" '
 BEGIN {
-    fips_fenceposts["wc_linuxkm_pie_reloc_tab"] = "reloc_tab_start";
-    fips_fenceposts["wc_linuxkm_pie_reloc_tab_length"] = "reloc_tab_len_start";
+    fips_fenceposts["wc_linuxkm_pie_text_reloc_tab"] = "text_reloc_tab.start";
+    fips_fenceposts["wc_linuxkm_pie_text_reloc_tab_length"] = "text_reloc_tab.len_start";
+    fips_fenceposts["wc_linuxkm_pie_rodata_reloc_tab"] = "rodata_reloc_tab.start";
+    fips_fenceposts["wc_linuxkm_pie_rodata_reloc_tab_length"] = "rodata_reloc_tab.len_start";
     fips_fenceposts["verifyCore"] = "verifyCore_start";
     fips_fenceposts["wolfCrypt_FIPS_first"] = "fips_text_start";
     fips_fenceposts["wolfCrypt_FIPS_last"] = "fips_text_end";
     fips_fenceposts["wolfCrypt_FIPS_ro_start"] = "fips_rodata_start";
     fips_fenceposts["wolfCrypt_FIPS_ro_end"] = "fips_rodata_end";
-    singleton_ends["wc_linuxkm_pie_reloc_tab"] = "reloc_tab_end";
-    singleton_ends["wc_linuxkm_pie_reloc_tab_length"] = "reloc_tab_len_end";
+    singleton_ends["wc_linuxkm_pie_text_reloc_tab"] = "text_reloc_tab.end";
+    singleton_ends["wc_linuxkm_pie_text_reloc_tab_length"] = "text_reloc_tab.len_end";
+    singleton_ends["wc_linuxkm_pie_rodata_reloc_tab"] = "rodata_reloc_tab.end";
+    singleton_ends["wc_linuxkm_pie_rodata_reloc_tab_length"] = "rodata_reloc_tab.len_end";
     singleton_ends["verifyCore"] = "verifyCore_end";
 }
 
@@ -106,4 +129,4 @@ BEGIN {
     }
 }')
 
-./linuxkm-fips-hash "${fenceposts[@]}" --mod-path "$mod_path" --in-place "$@"
+./linuxkm-fips-hash "${fenceposts[@]}" --mod-path "$mod_path" --in-place --core-key="$COREKEY" "$@"

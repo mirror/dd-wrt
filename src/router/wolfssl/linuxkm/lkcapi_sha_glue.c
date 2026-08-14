@@ -604,8 +604,11 @@ static int km_ ## name ## _init(struct shash_desc *desc) {                 \
     ret = init_f(ctx-> name ## _state, NULL, INVALID_DEVID);               \
     if (ret == 0)                                                          \
         return 0;                                                          \
-    else                                                                   \
+    else {                                                                 \
+        free(ctx-> name ## _state);                                        \
+        ctx-> name ## _state = NULL;                                       \
         return -EINVAL;                                                    \
+    }                                                                      \
 }                                                                          \
                                                                            \
 static int km_ ## name ## _update(struct shash_desc *desc, const u8 *data, \
@@ -646,6 +649,7 @@ static int km_ ## name ## _finup(struct shash_desc *desc, const u8 *data,  \
                                                                            \
     if (ret != 0) {                                                        \
         free_f(ctx-> name ## _state);                                      \
+        km_sha3_free_tstate(ctx);                                          \
         return -EINVAL;                                                    \
     }                                                                      \
                                                                            \
@@ -818,6 +822,7 @@ WC_MAYBE_UNUSED static int km_hmac_init(struct shash_desc *desc) {
 
     ret = wc_HmacCopy(&p_ctx->wc_hmac, t_ctx->wc_hmac);
     if (ret != 0) {
+        ForceZero(t_ctx->wc_hmac, sizeof *t_ctx->wc_hmac);
         free(t_ctx->wc_hmac);
         t_ctx->wc_hmac = NULL;
         return -EINVAL;
@@ -861,8 +866,10 @@ WC_MAYBE_UNUSED static int km_hmac_finup(struct shash_desc *desc, const u8 *data
 
     int ret = wc_HmacUpdate(ctx->wc_hmac, data, len);
 
-    if (ret != 0)
+    if (ret != 0) {
+        km_hmac_free_tstate(ctx);
         return -EINVAL;
+    }
 
     return km_hmac_final(desc, out);
 }
@@ -1009,7 +1016,7 @@ static volatile int wc_linuxkm_rng_initing_default_bank_flag = 0;
 
 static int linuxkm_affinity_lock(void *arg) {
     (void)arg;
-    if (preempt_count() != 0)
+    if (! wc_linuxkm_can_block())
         return ALREADY_E;
 #if defined(CONFIG_SMP) && (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0))
     migrate_disable(); /* this actually makes irq_count() nonzero, so that
@@ -1118,7 +1125,7 @@ static struct wc_rng_bank_inst *linuxkm_get_drbg(struct wc_rng_bank *ctx) {
         WC_RNG_BANK_FLAG_CAN_WAIT |
         WC_RNG_BANK_FLAG_PREFER_AFFINITY_INST;
 
-    if (preempt_count() == 0)
+    if (wc_linuxkm_can_block())
         flags |= WC_RNG_BANK_FLAG_AFFINITY_LOCK;
     else
         flags |= WC_RNG_BANK_FLAG_NO_VECTOR_OPS;
@@ -1188,7 +1195,7 @@ static int wc_linuxkm_drbg_generate(struct wc_rng_bank *ctx,
     struct wc_rng_bank_inst *drbg = linuxkm_get_drbg(ctx);
 
     if (! drbg) {
-        pr_err_once("BUG: linuxkm_get_drbg() failed.");
+        pr_err_once("BUG: linuxkm_get_drbg() failed.\n");
         return -EFAULT;
     }
 
@@ -1223,10 +1230,16 @@ static int wc_linuxkm_drbg_generate(struct wc_rng_bank *ctx,
         if (ret == 0)
             continue;
 
-        if (unlikely(ret == WC_NO_ERR_TRACE(RNG_FAILURE_E)) && (! retried)) {
-            if (slen > 0)
+        if (unlikely(ret == WC_NO_ERR_TRACE(RNG_FAILURE_E))) {
+            if (slen > 0) {
+                ret = -EINVAL;
                 break;
+            }
 
+            if (retried) {
+                ret = -EINVAL;
+                break;
+            }
             retried = 1;
 
             ret = wc_rng_bank_inst_reinit(ctx,
@@ -1235,11 +1248,11 @@ static int wc_linuxkm_drbg_generate(struct wc_rng_bank *ctx,
                                           WC_RNG_BANK_FLAG_CAN_WAIT);
 
             if (ret == 0) {
-                pr_warn("WARNING: reinitialized DRBG #%d after RNG_FAILURE_E from wc_RNG_GenerateBlock().", raw_smp_processor_id());
+                pr_warn("WARNING: reinitialized DRBG #%d after RNG_FAILURE_E from wc_RNG_GenerateBlock().\n", raw_smp_processor_id());
                 continue;
             }
             else {
-                pr_warn_once("ERROR: reinitialization of DRBG #%d after RNG_FAILURE_E failed with ret %d.", raw_smp_processor_id(), ret);
+                pr_warn_once("ERROR: reinitialization of DRBG #%d after RNG_FAILURE_E failed with ret %d.\n", raw_smp_processor_id(), ret);
                 ret = -EINVAL;
                 break;
             }
@@ -1264,7 +1277,7 @@ static int wc_linuxkm_drbg_generate_tfm(struct crypto_rng *tfm,
 {
     if (tfm->base.__crt_alg->cra_init != wc_linuxkm_drbg_init_tfm)
     {
-        pr_err_once("BUG: mismatched tfm.");
+        pr_err_once("BUG: mismatched tfm.\n");
         return -EFAULT;
     }
 
@@ -1294,7 +1307,7 @@ static int wc_linuxkm_drbg_seed_tfm(struct crypto_rng *tfm,
 {
     if (tfm->base.__crt_alg->cra_init != wc_linuxkm_drbg_init_tfm)
     {
-        pr_err_once("BUG: mismatched tfm.");
+        pr_err_once("BUG: mismatched tfm.\n");
         return -EFAULT;
     }
 
@@ -1354,7 +1367,7 @@ static int wc__get_random_bytes(void *buf, size_t len)
                                            NULL, 0, buf, len);
         (void)wc_rng_bank_default_checkin(&current_default_wc_rng_bank);
         if (ret) {
-            pr_warn("BUG: wc__get_random_bytes falling through to native get_random_bytes with wc_linuxkm_drbg_default_instance_registered, ret=%d.", ret);
+            pr_warn("BUG: wc__get_random_bytes falling through to native get_random_bytes with wc_linuxkm_drbg_default_instance_registered, ret=%d.\n", ret);
         }
         return ret;
     }
@@ -1383,7 +1396,7 @@ static ssize_t wc_get_random_bytes_user(struct iov_iter *iter) {
             ret = wc_linuxkm_drbg_generate(current_default_wc_rng_bank,
                                            NULL, 0, block, sizeof block);
             if (unlikely(ret != 0)) {
-                pr_err("ERROR: wc_get_random_bytes_user() wc_linuxkm_drbg_generate() returned %d.", ret);
+                pr_err("ERROR: wc_get_random_bytes_user() wc_linuxkm_drbg_generate() returned %d.\n", ret);
                 break;
             }
 
@@ -1445,7 +1458,7 @@ static ssize_t wc_extract_crng_user(void __user *buf, size_t nbytes) {
             ret = wc_linuxkm_drbg_generate(current_default_wc_rng_bank,
                                            NULL, 0, block, sizeof block);
             if (unlikely(ret != 0)) {
-                pr_err("ERROR: wc_extract_crng_user() wc_linuxkm_drbg_generate() returned %d.", ret);
+                pr_err("ERROR: wc_extract_crng_user() wc_linuxkm_drbg_generate() returned %d.\n", ret);
                 break;
             }
 
@@ -1487,7 +1500,7 @@ static int wc_mix_pool_bytes(const void *buf, size_t len) {
     struct wc_rng_bank *ctx;
     size_t i;
     int n;
-    int can_sleep = (preempt_count() == 0);
+    int can_sleep = wc_linuxkm_can_block();
 
     if (len == 0)
         return 0;
@@ -1510,10 +1523,22 @@ static int wc_mix_pool_bytes(const void *buf, size_t len) {
         if (wc_rng_bank_checkout(ctx, &drbg, n, 0, WC_RNG_BANK_FLAG_NONE) != 0)
             continue;
 
-        for (i = 0, V_offset = 0; i < len; ++i) {
-            ((struct DRBG_internal *)WC_RNG_BANK_INST_TO_RNG(drbg)->drbg)->V[V_offset++] += ((byte *)buf)[i];
-            if (V_offset == (int)sizeof ((struct DRBG_internal *)WC_RNG_BANK_INST_TO_RNG(drbg)->drbg)->V)
-                V_offset = 0;
+#ifdef WOLFSSL_DRBG_SHA512
+        if (WC_RNG_BANK_INST_TO_RNG(drbg)->drbgType == WC_DRBG_SHA512) {
+            for (i = 0, V_offset = 0; i < len; ++i) {
+                ((struct DRBG_SHA512_internal *)WC_RNG_BANK_INST_TO_RNG(drbg)->drbg512)->V[V_offset++] += ((byte *)buf)[i];
+                if (V_offset == (int)sizeof ((struct DRBG_SHA512_internal *)WC_RNG_BANK_INST_TO_RNG(drbg)->drbg512)->V)
+                    V_offset = 0;
+            }
+        }
+        else
+#endif /* WOLFSSL_DRBG_SHA512 */
+        {
+            for (i = 0, V_offset = 0; i < len; ++i) {
+                ((struct DRBG_internal *)WC_RNG_BANK_INST_TO_RNG(drbg)->drbg)->V[V_offset++] += ((byte *)buf)[i];
+                if (V_offset == (int)sizeof ((struct DRBG_internal *)WC_RNG_BANK_INST_TO_RNG(drbg)->drbg)->V)
+                    V_offset = 0;
+            }
         }
 
         wc_rng_bank_checkin(ctx, &drbg);
@@ -1533,7 +1558,7 @@ static int wc_mix_pool_bytes(const void *buf, size_t len) {
 
 static int wc_crng_reseed(void) {
     struct wc_rng_bank *ctx;
-    int can_sleep = (preempt_count() == 0);
+    int can_sleep = wc_linuxkm_can_block();
     int ret = wc_rng_bank_default_checkout(&ctx);
 
     if (ret) {
@@ -1598,10 +1623,10 @@ static int wc_get_random_bytes_by_kprobe(struct kprobe *p, struct pt_regs *regs)
             regs->ip = (unsigned long)p->addr + p->ainsn.size;
             return 1; /* Handled. */
         }
-        pr_warn("BUG: wc_get_random_bytes_by_kprobe falling through to native get_random_bytes with wc_linuxkm_drbg_default_instance_registered, ret=%d.", ret);
+        pr_warn("BUG: wc_get_random_bytes_by_kprobe falling through to native get_random_bytes with wc_linuxkm_drbg_default_instance_registered, ret=%d.\n", ret);
     }
     else
-        pr_warn("BUG: wc_get_random_bytes_by_kprobe called without wc_linuxkm_drbg_default_instance_registered.");
+        pr_warn("BUG: wc_get_random_bytes_by_kprobe called without wc_linuxkm_drbg_default_instance_registered.\n");
 
     /* Not handled.  Fall through to native implementation, given
      * that the alternative is an immediate kernel panic.
@@ -1656,7 +1681,7 @@ static int wc_get_random_bytes_user_kretprobe_enter(struct kretprobe_instance *p
     byte block[WC_SHA256_BLOCK_SIZE];
 
     if (unlikely(!wc_linuxkm_drbg_default_instance_registered)) {
-        pr_warn("BUG: wc_get_random_bytes_user_kretprobe_enter() without wc_linuxkm_drbg_default_instance_registered.");
+        pr_warn("BUG: wc_get_random_bytes_user_kretprobe_enter() without wc_linuxkm_drbg_default_instance_registered.\n");
         ret = -ENOENT;
         goto out;
     }
@@ -1669,7 +1694,7 @@ static int wc_get_random_bytes_user_kretprobe_enter(struct kretprobe_instance *p
     for (;;) {
         ret = crypto_rng_get_bytes(crypto_default_rng, block, sizeof block);
         if (ret != 0) {
-            pr_err("ERROR: wc_get_random_bytes_user_kretprobe_enter() crypto_rng_get_bytes() returned %d.", ret);
+            pr_err("ERROR: wc_get_random_bytes_user_kretprobe_enter() crypto_rng_get_bytes() returned %d.\n", ret);
             break;
         }
 
@@ -1702,7 +1727,7 @@ out:
 
     if ((ret != 0) && (this_copied == (size_t)(-1L))) {
         /* crypto_rng_get_bytes() failed on the first call, before any update to the iov_iter. */
-        pr_warn("WARNING: wc_get_random_bytes_user_kretprobe_enter() falling through to native get_random_bytes_user().");
+        pr_warn("WARNING: wc_get_random_bytes_user_kretprobe_enter() falling through to native get_random_bytes_user().\n");
         return -EFAULT;
     }
 
@@ -1729,7 +1754,7 @@ static int wc_get_random_bytes_user_kretprobe_exit(struct kretprobe_instance *p,
     struct wc_get_random_bytes_user_kretprobe_ctx *ctx = (struct wc_get_random_bytes_user_kretprobe_ctx *)p->data;
 
     if (unlikely(!wc_linuxkm_drbg_default_instance_registered)) {
-        pr_warn("BUG: wc_get_random_bytes_user_kretprobe_exit without wc_linuxkm_drbg_default_instance_registered.");
+        pr_warn("BUG: wc_get_random_bytes_user_kretprobe_exit without wc_linuxkm_drbg_default_instance_registered.\n");
         return -EFAULT;
     }
 
@@ -1765,7 +1790,7 @@ static int wc_linuxkm_drbg_startup(void)
     int ret;
 
     if (wc_linuxkm_drbg_loaded) {
-        pr_err("ERROR: wc_linuxkm_drbg_set_default called with wc_linuxkm_drbg_loaded.");
+        pr_err("ERROR: wc_linuxkm_drbg_set_default called with wc_linuxkm_drbg_loaded.\n");
         return -EBUSY;
     }
 
@@ -1779,7 +1804,7 @@ static int wc_linuxkm_drbg_startup(void)
 
     ret = crypto_register_rng(&wc_linuxkm_drbg);
     if (ret != 0) {
-        pr_err("ERROR: crypto_register_rng: %d", ret);
+        pr_err("ERROR: crypto_register_rng: %d\n", ret);
         return ret;
     }
 
@@ -1810,8 +1835,8 @@ static int wc_linuxkm_drbg_startup(void)
             u8 buf1[16], buf2[17];
             int i, j;
 
-            memset(buf1, 0, sizeof buf1);
-            memset(buf2, 0, sizeof buf2);
+            XMEMSET(buf1, 0, sizeof buf1);
+            XMEMSET(buf2, 0, sizeof buf2);
 
             ret = crypto_rng_generate(tfm, NULL, 0, buf1, (unsigned int)sizeof buf1);
             if (! ret)
@@ -1833,7 +1858,7 @@ static int wc_linuxkm_drbg_startup(void)
                  */
                 for (i = 1; i <= (int)sizeof buf2; ++i) {
                     for (j = 0; j < 20; ++j) {
-                        memset(buf2, 0, (size_t)i);
+                        XMEMSET(buf2, 0, (size_t)i);
                         ret = crypto_rng_generate(tfm, NULL, 0, buf2, (unsigned int)i);
                         if (ret)
                             break;
@@ -1848,7 +1873,7 @@ static int wc_linuxkm_drbg_startup(void)
                 }
 
                 if (ret)
-                    pr_err("ERROR: wc_linuxkm_drbg_startup: PRNG quality test failed, block length %d, iters %d, ret %d",
+                    pr_err("ERROR: wc_linuxkm_drbg_startup: PRNG quality test failed, block length %d, iters %d, ret %d\n",
                            i, j, ret);
             }
         }
@@ -1878,7 +1903,7 @@ static int wc_linuxkm_drbg_startup(void)
     ret = crypto_del_default_rng();
     if (ret) {
         wc_linuxkm_rng_initing_default_bank_flag = 0;
-        pr_err("ERROR: crypto_del_default_rng returned %d", ret);
+        pr_err("ERROR: crypto_del_default_rng returned %d\n", ret);
         return ret;
     }
 
@@ -1887,27 +1912,27 @@ static int wc_linuxkm_drbg_startup(void)
     wc_linuxkm_rng_initing_default_bank_flag = 0;
 
     if (ret) {
-        pr_err("ERROR: crypto_get_default_rng returned %d", ret);
+        pr_err("ERROR: crypto_get_default_rng returned %d\n", ret);
         return ret;
     }
 
     {
         int cur_refcnt = WC_LKM_REFCOUNT_TO_INT(wc_linuxkm_drbg.base.cra_refcnt);
         if (cur_refcnt < 2) {
-            pr_err("ERROR: wc_linuxkm_drbg refcnt = %d after crypto_get_default_rng()", cur_refcnt);
+            pr_err("ERROR: wc_linuxkm_drbg refcnt = %d after crypto_get_default_rng()\n", cur_refcnt);
             crypto_put_default_rng();
             return -EINVAL;
         }
     }
 
     if (! crypto_default_rng) {
-        pr_err("ERROR: crypto_default_rng is null");
+        pr_err("ERROR: crypto_default_rng is null\n");
         crypto_put_default_rng();
         return -EINVAL;
     }
 
     if (crypto_default_rng->base.__crt_alg->cra_init != wc_linuxkm_drbg_init_tfm) {
-        pr_err("ERROR: %s NOT registered as systemwide default stdrng -- found \"%s\".", wc_linuxkm_drbg.base.cra_driver_name, crypto_tfm_alg_driver_name(&crypto_default_rng->base));
+        pr_err("ERROR: %s NOT registered as systemwide default stdrng -- found \"%s\".\n", wc_linuxkm_drbg.base.cra_driver_name, crypto_tfm_alg_driver_name(&crypto_default_rng->base));
         crypto_put_default_rng();
         return -EINVAL;
     }
@@ -1923,7 +1948,7 @@ static int wc_linuxkm_drbg_startup(void)
         ret = crypto_del_default_rng();
         if (ret) {
             wc_linuxkm_rng_initing_default_bank_flag = 0;
-            pr_err("ERROR: crypto_del_default_rng returned %d", ret);
+            pr_err("ERROR: crypto_del_default_rng returned %d\n", ret);
             return ret;
         }
 
@@ -1932,7 +1957,7 @@ static int wc_linuxkm_drbg_startup(void)
         wc_linuxkm_rng_initing_default_bank_flag = 0;
 
         if (ret) {
-            pr_err("ERROR: __crypto_stdrng_get_bytes returned %d", ret);
+            pr_err("ERROR: __crypto_stdrng_get_bytes returned %d\n", ret);
             return ret;
         }
     }
@@ -1942,7 +1967,7 @@ static int wc_linuxkm_drbg_startup(void)
         ret = wc_linuxkm_rng_bank_init(&default_bank);
         wc_linuxkm_rng_initing_default_bank_flag = 0;
         if (ret) {
-            pr_err("ERROR: wc_linuxkm_rng_bank_init returned %d", ret);
+            pr_err("ERROR: wc_linuxkm_rng_bank_init returned %d\n", ret);
             return ret;
         }
         default_bank_inited = 1;
@@ -1954,11 +1979,11 @@ static int wc_linuxkm_drbg_startup(void)
         struct wc_rng_bank *current_default_wc_rng_bank;
         ret = wc_rng_bank_default_checkout(&current_default_wc_rng_bank);
         if (ret)
-            pr_err("ERROR: wc_rng_bank_default_checkout() after default stdrng registration returned %d", ret);
+            pr_err("ERROR: wc_rng_bank_default_checkout() after default stdrng registration returned %d\n", ret);
         else {
             ret = wc_rng_bank_default_checkin(&current_default_wc_rng_bank);
             if (ret)
-                pr_err("ERROR: wc_rng_bank_default_checkin() after wc_rng_bank_default_checkout() returned %d", ret);
+                pr_err("ERROR: wc_rng_bank_default_checkin() after wc_rng_bank_default_checkout() returned %d\n", ret);
         }
         if (ret != 0) {
 #if defined(LINUXKM_LKCAPI_REGISTER_HASH_DRBG_DEFAULT) && \
@@ -1974,8 +1999,8 @@ static int wc_linuxkm_drbg_startup(void)
     }
 
     wc_linuxkm_drbg_default_instance_registered = 1;
-    pr_info("%s registered as systemwide default stdrng.", wc_linuxkm_drbg.base.cra_driver_name);
-    pr_info("libwolfssl: to unload module, first echo 1 > /sys/module/libwolfssl/deinstall_algs");
+    pr_info("%s registered as systemwide default stdrng.\n", wc_linuxkm_drbg.base.cra_driver_name);
+    pr_info("libwolfssl: to unload module, first echo 1 > /sys/module/libwolfssl/deinstall_algs\n");
 
 #ifdef LINUXKM_DRBG_GET_RANDOM_BYTES
 
@@ -1987,7 +2012,7 @@ static int wc_linuxkm_drbg_startup(void)
 
     if (ret == 0) {
         wc_get_random_bytes_callbacks_installed = 1;
-        pr_info("libwolfssl: kernel global random_bytes handlers installed.");
+        pr_info("libwolfssl: kernel global random_bytes handlers installed.\n");
     }
     else {
         pr_err("ERROR: wolfssl_linuxkm_register_random_bytes_handlers() failed: %d\n", ret);
@@ -2027,22 +2052,22 @@ static int wc_linuxkm_drbg_startup(void)
         byte scratch[4];
         ret = wc__get_random_bytes(scratch, sizeof(scratch));
         if (ret != 0) {
-            pr_err("ERROR: wc__get_random_bytes() returned %d", ret);
+            pr_err("ERROR: wc__get_random_bytes() returned %d\n", ret);
             return -EINVAL;
         }
         ret = wc_mix_pool_bytes(scratch, sizeof(scratch));
         if (ret != 0) {
-            pr_err("ERROR: wc_mix_pool_bytes() returned %d", ret);
+            pr_err("ERROR: wc_mix_pool_bytes() returned %d\n", ret);
             return -EINVAL;
         }
         ret = wc_crng_reseed();
         if (ret != 0) {
-            pr_err("ERROR: wc_crng_reseed() returned %d", ret);
+            pr_err("ERROR: wc_crng_reseed() returned %d\n", ret);
             return -EINVAL;
         }
         ret = wc__get_random_bytes(scratch, sizeof(scratch));
         if (ret != 0) {
-            pr_err("ERROR: wc__get_random_bytes() returned %d", ret);
+            pr_err("ERROR: wc__get_random_bytes() returned %d\n", ret);
             return -EINVAL;
         }
     }
@@ -2059,7 +2084,7 @@ static int wc_linuxkm_drbg_cleanup(void) {
     int cur_refcnt;
 
     if (! wc_linuxkm_drbg_loaded) {
-        pr_err("ERROR: wc_linuxkm_drbg_cleanup called with ! wc_linuxkm_drbg_loaded");
+        pr_err("ERROR: wc_linuxkm_drbg_cleanup called with ! wc_linuxkm_drbg_loaded\n");
         return -EINVAL;
     }
 
@@ -2082,7 +2107,7 @@ static int wc_linuxkm_drbg_cleanup(void) {
         if (wc_get_random_bytes_callbacks_installed) {
             ret = wolfssl_linuxkm_unregister_random_bytes_handlers();
             if (ret != 0) {
-                pr_err("ERROR: wolfssl_linuxkm_unregister_random_bytes_handlers returned %d", ret);
+                pr_err("ERROR: wolfssl_linuxkm_unregister_random_bytes_handlers returned %d\n", ret);
                 return ret;
             }
             pr_info("libwolfssl: kernel global random_bytes handlers uninstalled\n");
@@ -2115,7 +2140,7 @@ static int wc_linuxkm_drbg_cleanup(void) {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(7, 1, 0)
         ret = crypto_del_default_rng();
         if (ret) {
-            pr_err("ERROR: crypto_del_default_rng failed: %d", ret);
+            pr_err("ERROR: crypto_del_default_rng failed: %d\n", ret);
             return ret;
         }
 #else /* >= 7.1.0 */
@@ -2124,7 +2149,7 @@ static int wc_linuxkm_drbg_cleanup(void) {
         if (fips_enabled) {
             ret = crypto_del_default_rng();
             if (ret) {
-                pr_err("ERROR: crypto_del_default_rng failed: %d", ret);
+                pr_err("ERROR: crypto_del_default_rng failed: %d\n", ret);
                 return ret;
             }
         }
@@ -2133,11 +2158,11 @@ static int wc_linuxkm_drbg_cleanup(void) {
         if (default_bank_inited) {
             ret = wc_rng_bank_default_clear(&default_bank);
             if (ret)
-                pr_err("ERROR: wc_rng_bank_default_clear in wc_linuxkm_drbg_cleanup failed: %d", ret);
+                pr_err("ERROR: wc_rng_bank_default_clear in wc_linuxkm_drbg_cleanup failed: %d\n", ret);
             else {
                 ret = wc_rng_bank_fini(&default_bank);
                 if (ret)
-                    pr_err("ERROR: wc_rng_bank_fini in wc_linuxkm_drbg_cleanup failed: %d", ret);
+                    pr_err("ERROR: wc_rng_bank_fini in wc_linuxkm_drbg_cleanup failed: %d\n", ret);
             }
             default_bank_inited = 0;
         }
@@ -2150,14 +2175,14 @@ static int wc_linuxkm_drbg_cleanup(void) {
     cur_refcnt = WC_LKM_REFCOUNT_TO_INT(wc_linuxkm_drbg.base.cra_refcnt);
 
     if (cur_refcnt != 1) {
-        pr_err("ERROR: wc_linuxkm_drbg_cleanup called with refcnt = %d", cur_refcnt);
+        pr_err("ERROR: wc_linuxkm_drbg_cleanup called with refcnt = %d\n", cur_refcnt);
         return -EBUSY;
     }
 
     crypto_unregister_rng(&wc_linuxkm_drbg);
 
     if (! (wc_linuxkm_drbg.base.cra_flags & CRYPTO_ALG_DEAD)) {
-        pr_warn("WARNING: wc_linuxkm_drbg_cleanup: after crypto_unregister_rng, wc_linuxkm_drbg isn't dead.");
+        pr_warn("WARNING: wc_linuxkm_drbg_cleanup: after crypto_unregister_rng, wc_linuxkm_drbg isn't dead.\n");
         return -EBUSY;
     }
 

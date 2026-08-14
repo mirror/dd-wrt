@@ -42,6 +42,7 @@
 #include <wolfssl/wolfio.h>
 #include <wolfssl/wolfcrypt/logging.h>
 
+
 #ifdef NUCLEUS_PLUS_2_3
 /* Holds last Nucleus networking error number */
 int Nucleus_Net_Errno;
@@ -150,8 +151,28 @@ static WC_INLINE int wolfSSL_LastError(int err, SOCKET_T sd)
     return WSAGetLastError();
 #elif defined(EBSNET)
     return xn_getlasterror();
-#elif defined(WOLFSSL_LINUXKM) || defined(WOLFSSL_EMNET)
+#elif defined(WOLFSSL_LINUXKM)
     return -err; /* Return provided error value with corrected sign. */
+#elif defined(WOLFSSL_EMNET)
+    /* Any negative recv/send return is a SOCKET_ERROR sentinel under
+     * emNET; the canonical IP_ERR_* lives in the socket SO_ERROR.
+     * Retrieving it via IP_SOCK_getsockopt works across both emNET
+     * integrator conventions (native: recv returns IP_ERR_* directly;
+     * POSIX facade: recv returns -1 with errno set). If the lookup
+     * itself fails, fall back to IP_ERR_FAULT rather than returning
+     * the raw -1 sentinel - the latter matches no SOCKET_E* constant
+     * and would regress into WOLFSSL_CBIO_ERR_GENERAL. */
+    if (err < 0) {
+        int sock_err = err;
+        if (IP_SOCK_getsockopt(sd, SOL_SOCKET, SO_ERROR, &sock_err,
+                               (int)sizeof(sock_err)) == 0) {
+            err = sock_err;
+        }
+        else if (err == -1) {
+            err = IP_ERR_FAULT;
+        }
+    }
+    return err;
 #elif defined(FUSION_RTOS)
     #include <fclerrno.h>
     return FCL_GET_ERRNO;
@@ -169,10 +190,6 @@ static WC_INLINE int wolfSSL_LastError(int err, SOCKET_T sd)
         }
         return err;
     }
-#elif defined(WOLFSSL_EMNET)
-    /* Get the real socket error */
-    IP_SOCK_getsockopt(sd, SOL_SOCKET, SO_ERROR, &err, (int)sizeof(old));
-    return err;
 #else
     return errno;
 #endif
@@ -401,6 +418,7 @@ int SslBioSend(WOLFSSL* ssl, char *buf, int sz, void *ctx)
 
 #ifdef USE_WOLFSSL_IO
 
+#ifndef WOLFSSL_DTLS_ONLY
 /* The receive embedded callback
  *  return : nb bytes read, or error
  */
@@ -449,6 +467,7 @@ int EmbedSend(WOLFSSL* ssl, char *buf, int sz, void *ctx)
 
     return sent;
 }
+#endif /* !WOLFSSL_DTLS_ONLY */
 
 
 #ifdef WOLFSSL_DTLS
@@ -673,6 +692,9 @@ int EmbedReceiveFrom(WOLFSSL *ssl, char *buf, int sz, void *ctx)
 
     WOLFSSL_ENTER("EmbedReceiveFrom");
     (void)ret; /* possibly unused */
+
+    if (sz < 0)
+        return WOLFSSL_CBIO_ERR_GENERAL;
 
     XMEMSET(&lclPeer, 0, sizeof(lclPeer));
 
@@ -917,6 +939,9 @@ int EmbedSendTo(WOLFSSL* ssl, char *buf, int sz, void *ctx)
 
     WOLFSSL_ENTER("EmbedSendTo");
 
+    if (sz < 0)
+        return WOLFSSL_CBIO_ERR_GENERAL;
+
     if (!isDGramSock(sd)) {
         /* Probably a TCP socket. peer and peerSz MUST be NULL and 0 */
     }
@@ -963,6 +988,9 @@ int EmbedReceiveFromMcast(WOLFSSL *ssl, char *buf, int sz, void *ctx)
 
     WOLFSSL_ENTER("EmbedReceiveFromMcast");
 
+    if (sz < 0)
+        return WOLFSSL_CBIO_ERR_GENERAL;
+
     recvd = (int)DTLS_RECVFROM_FUNCTION(sd, buf, (size_t)sz, ssl->rflags, NULL, NULL);
 
     recvd = TranslateIoReturnCode(recvd, sd, SOCKET_RECEIVING);
@@ -992,6 +1020,9 @@ int EmbedGenerateCookie(WOLFSSL* ssl, byte *buf, int sz, void *ctx)
     int  ret = 0;
 
     (void)ctx;
+
+    if (sz < 0)
+        return BAD_FUNC_ARG;
 
     XMEMSET(&peer, 0, sizeof(peer));
     if (getpeername(sd, (SOCKADDR*)&peer, &peerSz) != 0) {
@@ -1221,6 +1252,9 @@ int wolfIO_Recv(SOCKET_T sd, char *buf, int sz, int rdFlags)
 {
     int recvd;
 
+    if (sz < 0)
+        return WOLFSSL_CBIO_ERR_GENERAL;
+
     recvd = (int)RECV_FUNCTION(sd, buf, (size_t)sz, rdFlags);
     recvd = TranslateIoReturnCode(recvd, sd, SOCKET_RECEIVING);
 
@@ -1230,6 +1264,9 @@ int wolfIO_Recv(SOCKET_T sd, char *buf, int sz, int rdFlags)
 int wolfIO_Send(SOCKET_T sd, char *buf, int sz, int wrFlags)
 {
     int sent;
+
+    if (sz < 0)
+        return WOLFSSL_CBIO_ERR_GENERAL;
 
     sent = (int)SEND_FUNCTION(sd, buf, (size_t)sz, wrFlags);
     sent = TranslateIoReturnCode(sent, sd, SOCKET_SENDING);
@@ -1244,6 +1281,9 @@ int wolfIO_RecvFrom(SOCKET_T sd, WOLFSSL_BIO_ADDR *addr, char *buf, int sz, int 
     int recvd;
     socklen_t addr_len = (socklen_t)sizeof(*addr);
 
+    if (sz < 0)
+        return WOLFSSL_CBIO_ERR_GENERAL;
+
     recvd = (int)DTLS_RECVFROM_FUNCTION(sd, buf, (size_t)sz, rdFlags,
                                             addr ? &addr->sa : NULL,
                                             addr ? &addr_len : 0);
@@ -1256,6 +1296,9 @@ int wolfIO_SendTo(SOCKET_T sd, WOLFSSL_BIO_ADDR *addr, char *buf, int sz, int wr
 {
     int sent;
     socklen_t addr_len = addr ? wolfSSL_BIO_ADDR_size(addr) : 0;
+
+    if (sz < 0)
+        return WOLFSSL_CBIO_ERR_GENERAL;
 
     sent = (int)DTLS_SENDTO_FUNCTION(sd, buf, (size_t)sz, wrFlags,
                                          addr ? &addr->sa : NULL,
@@ -1494,7 +1537,7 @@ int wolfIO_TcpConnect(SOCKET_T* sockfd, const char* ip, word16 port, int to_sec)
     }
 #endif
 
-    *sockfd = (SOCKET_T)socket(addr.ss_family, SOCK_STREAM, 0);
+    *sockfd = (SOCKET_T)wc_socket_cloexec(addr.ss_family, SOCK_STREAM, 0);
 #ifdef USE_WINDOWS_API
     if (*sockfd == SOCKET_INVALID)
 #else
@@ -1572,12 +1615,12 @@ int wolfIO_TcpBind(SOCKET_T* sockfd, word16 port)
     sin->sin6_family = AF_INET6;
     sin->sin6_addr = in6addr_any;
     sin->sin6_port = XHTONS(port);
-    *sockfd = (SOCKET_T)socket(AF_INET6, SOCK_STREAM, 0);
+    *sockfd = (SOCKET_T)wc_socket_cloexec(AF_INET6, SOCK_STREAM, 0);
 #else
     sin->sin_family = AF_INET;
     sin->sin_addr.s_addr = INADDR_ANY;
     sin->sin_port = XHTONS(port);
-    *sockfd = (SOCKET_T)socket(AF_INET, SOCK_STREAM, 0);
+    *sockfd = (SOCKET_T)wc_socket_cloexec(AF_INET, SOCK_STREAM, 0);
 #endif
 
 #ifdef USE_WINDOWS_API
@@ -1623,7 +1666,7 @@ int wolfIO_TcpBind(SOCKET_T* sockfd, word16 port)
 #ifdef HAVE_SOCKADDR
 int wolfIO_TcpAccept(SOCKET_T sockfd, SOCKADDR* peer_addr, XSOCKLENT* peer_len)
 {
-    return (int)accept(sockfd, peer_addr, peer_len);
+    return (int)wc_accept_cloexec((int)sockfd, peer_addr, peer_len);
 }
 #endif /* HAVE_SOCKADDR */
 
@@ -3286,7 +3329,11 @@ int LwIPNativeSend(WOLFSSL* ssl, char* buf, int sz, void* ctx)
     err_t ret;
     WOLFSSL_LWIP_NATIVE_STATE* nlwip = (WOLFSSL_LWIP_NATIVE_STATE*)ctx;
 
-    ret = tcp_write(nlwip->pcb, buf, sz, TCP_WRITE_FLAG_COPY);
+    if (sz < 0 || sz > (int)WOLFSSL_MAX_16BIT) {
+        return BAD_FUNC_ARG;
+    }
+
+    ret = tcp_write(nlwip->pcb, buf, (u16_t)sz, TCP_WRITE_FLAG_COPY);
     if (ret != ERR_OK) {
         sz = WOLFSSL_FATAL_ERROR;
     }

@@ -21,6 +21,11 @@
 
 #include <wolfssl/wolfcrypt/libwolfssl_sources.h>
 
+#if FIPS_VERSION3_GE(2,0,0)
+    /* set NO_WRAPPERS before headers, use direct internal f()s not wrappers */
+    #define FIPS_NO_WRAPPERS
+#endif
+
 #include <wolfssl/wolfcrypt/port/riscv/riscv-64-asm.h>
 
 #if !defined(NO_AES)
@@ -35,6 +40,15 @@
 #endif
 
 #ifdef WOLFSSL_RISCV_ASM
+
+#if FIPS_VERSION3_GE(6,0,0)
+    const unsigned int wolfCrypt_FIPS_aes_ro_sanity[2] =
+                                                     { 0x1a2b3c4d, 0x00000002 };
+    int wolfCrypt_FIPS_AES_sanity(void)
+    {
+        return 0;
+    }
+#endif
 
 /* Copy a 16-byte value from in to out.
  *
@@ -1857,8 +1871,7 @@ int wc_AesSetKey(Aes* aes, const byte* key, word32 keyLen, const byte* iv,
 static void wc_AesEncrypt(Aes* aes, const byte* in, byte* out)
 {
     __asm__ __volatile__ (
-        "ld          t2, 0(%[in])\n\t"
-        "ld          t3, 8(%[in])\n\t"
+        UNALIGNED_LD2(t2, t3, 0, %[in], t0)
         "ld          a3, 0(%[key])\n\t"
         "ld          a4, 8(%[key])\n\t"
         "ld          a5, 16(%[key])\n\t"
@@ -1883,8 +1896,7 @@ static void wc_AesEncrypt(Aes* aes, const byte* in, byte* out)
         AESENC_2_ROUNDS(208, 216, 224, 232)
       "L_aes_encrypt_done:\n\t"
         AESENC_LAST_ROUND()
-        "sd          t2, 0(%[out])\n\t"
-        "sd          t3, 8(%[out])\n\t"
+        UNALIGNED_SD2(t2, t3, 0, %[out], t0)
         :
         : [in] "r" (in), [out] "r" (out), [key] "r" (aes->key),
           [rounds] "r" (aes->rounds)
@@ -1904,8 +1916,7 @@ static void wc_AesEncrypt(Aes* aes, const byte* in, byte* out)
 static void wc_AesDecrypt(Aes* aes, const byte* in, byte* out)
 {
     __asm__ __volatile__ (
-        "ld          t2, 0(%[in])\n\t"
-        "ld          t3, 8(%[in])\n\t"
+        UNALIGNED_LD2(t2, t3, 0, %[in], t0)
         "ld          a3, 0(%[key])\n\t"
         "ld          a4, 8(%[key])\n\t"
         "ld          a5, 16(%[key])\n\t"
@@ -1930,8 +1941,7 @@ static void wc_AesDecrypt(Aes* aes, const byte* in, byte* out)
         AESDEC_2_ROUNDS(208, 216, 224, 232)
       "L_aes_decrypt_done:\n\t"
         AESDEC_LAST_ROUND()
-        "sd          t2, 0(%[out])\n\t"
-        "sd          t3, 8(%[out])\n\t"
+        UNALIGNED_SD2(t2, t3, 0, %[out], t0)
         :
         : [in] "r" (in), [out] "r" (out), [key] "r" (aes->key),
           [rounds] "r" (aes->rounds)
@@ -3195,8 +3205,7 @@ static void wc_AesEncrypt(Aes* aes, const byte* in, byte* out)
         LOAD_WORD_REV(t2, 8, %[in])
         LOAD_WORD_REV(t3, 12, %[in])
 #else
-        "ld         t1,  0(%[in])\n\t"
-        "ld         t3,  8(%[in])\n\t"
+        UNALIGNED_LD2(t1, t3, 0, %[in], t0)
         REV8(REG_T1, REG_T1)
         REV8(REG_T3, REG_T3)
         "srli       t0, t1, 32\n\t"
@@ -3362,16 +3371,14 @@ static void wc_AesEncrypt(Aes* aes, const byte* in, byte* out)
         REV8(REG_T1, REG_T1)
         REV8(REG_T3, REG_T3)
         /* Write encrypted block to output. */
-        "sd         t1,  0(%[out])\n\t"
-        "sd         t3,  8(%[out])\n\t"
+        UNALIGNED_SD2(t1, t3, 0, %[out], t0)
 #else
         PACK(REG_T1, REG_A5, REG_A4)
         PACK(REG_T3, REG_A7, REG_A6)
         REV8(REG_T1, REG_T1)
         REV8(REG_T3, REG_T3)
         /* Write encrypted block to output. */
-        "sd         t1,  0(%[out])\n\t"
-        "sd         t3,  8(%[out])\n\t"
+        UNALIGNED_SD2(t1, t3, 0, %[out], t0)
 #endif
 
         :
@@ -3627,8 +3634,7 @@ static void wc_AesDecrypt(Aes* aes, const byte* in, byte* out)
         LOAD_WORD_REV(t2, 8, %[in])
         LOAD_WORD_REV(t3, 12, %[in])
 #else
-        "ld         t1,  0(%[in])\n\t"
-        "ld         t3,  8(%[in])\n\t"
+        UNALIGNED_LD2(t1, t3, 0, %[in], t0)
         REV8(REG_T1, REG_T1)
         REV8(REG_T3, REG_T3)
         "srli       t0, t1, 32\n\t"
@@ -3779,16 +3785,14 @@ static void wc_AesDecrypt(Aes* aes, const byte* in, byte* out)
         REV8(REG_T1, REG_T1)
         REV8(REG_T3, REG_T3)
         /* Write encrypted block to output. */
-        "sd         t1,  0(%[out])\n\t"
-        "sd         t3,  8(%[out])\n\t"
+        UNALIGNED_SD2(t1, t3, 0, %[out], t0)
 #else
         PACK(REG_T1, REG_A5, REG_A4)
         PACK(REG_T3, REG_A7, REG_A6)
         REV8(REG_T1, REG_T1)
         REV8(REG_T3, REG_T3)
         /* Write encrypted block to output. */
-        "sd         t1,  0(%[out])\n\t"
-        "sd         t3,  8(%[out])\n\t"
+        UNALIGNED_SD2(t1, t3, 0, %[out], t0)
 #endif
 
         :
@@ -4099,7 +4103,7 @@ static WC_INLINE void IncrementAesCounter(byte* inOutCtr)
  */
 int wc_AesCtrEncrypt(Aes* aes, byte* out, const byte* in, word32 sz)
 {
-    byte scratch[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte scratch[WC_AES_BLOCK_SIZE];
     word32 processed;
     int ret = 0;
 
@@ -4549,8 +4553,8 @@ void GHASH(Gcm* gcm, const byte* a, word32 aSz, const byte* c, word32 cSz,
     byte* s, word32 sSz)
 {
     if (gcm != NULL) {
-        byte x[WC_AES_BLOCK_SIZE];
-        byte scratch[WC_AES_BLOCK_SIZE];
+        ALIGN8 byte x[WC_AES_BLOCK_SIZE];
+        ALIGN8 byte scratch[WC_AES_BLOCK_SIZE];
         byte* h = gcm->H;
 
         __asm__ __volatile__ (
@@ -4882,8 +4886,8 @@ static void GMULT(byte* x, byte* y)
 void GHASH(Gcm* gcm, const byte* a, word32 aSz, const byte* c, word32 cSz,
     byte* s, word32 sSz)
 {
-    byte x[WC_AES_BLOCK_SIZE];
-    byte scratch[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte x[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte scratch[WC_AES_BLOCK_SIZE];
     word32 blocks, partial;
     byte* h;
 
@@ -5149,8 +5153,7 @@ static void ghash_blocks(byte* x, byte* y, const byte* in, word32 blocks)
 
     "L_ghash_loop:\n\t"
         /* Load input block. */
-        "ld          t5, 0(%[in])\n\t"
-        "ld          a5, 8(%[in])\n\t"
+        UNALIGNED_LD2(t5, a5, 0, %[in], t4)
         /* Reverse bits to match x. */
 #ifdef WOLFSSL_RISCV_BIT_MANIPULATION
         BREV8(REG_T5, REG_T5)
@@ -5293,8 +5296,8 @@ void GHASH(Gcm* gcm, const byte* a, word32 aSz, const byte* c, word32 cSz,
     byte* s, word32 sSz)
 {
     if (gcm != NULL) {
-        byte x[WC_AES_BLOCK_SIZE];
-        byte scratch[WC_AES_BLOCK_SIZE];
+        ALIGN8 byte x[WC_AES_BLOCK_SIZE];
+        ALIGN8 byte scratch[WC_AES_BLOCK_SIZE];
         word32 blocks, partial;
         byte* h = gcm->H;
 
@@ -5374,8 +5377,8 @@ static void Aes128GcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     const byte* nonce, word32 nonceSz, byte* tag, word32 tagSz,
     const byte* aad, word32 aadSz)
 {
-    byte counter[WC_AES_BLOCK_SIZE];
-    byte scratch[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte counter[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte scratch[WC_AES_BLOCK_SIZE];
     /* Noticed different optimization levels treated head of array different.
      * Some cases was stack pointer plus offset others was a register containing
      * address. To make uniform for passing in to inline assembly code am using
@@ -5872,8 +5875,8 @@ static void Aes192GcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     const byte* nonce, word32 nonceSz, byte* tag, word32 tagSz,
     const byte* aad, word32 aadSz)
 {
-    byte counter[WC_AES_BLOCK_SIZE];
-    byte scratch[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte counter[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte scratch[WC_AES_BLOCK_SIZE];
     /* Noticed different optimization levels treated head of array different.
      * Some cases was stack pointer plus offset others was a register containing
      * address. To make uniform for passing in to inline assembly code am using
@@ -6384,8 +6387,8 @@ static void Aes256GcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     const byte* nonce, word32 nonceSz, byte* tag, word32 tagSz,
     const byte* aad, word32 aadSz)
 {
-    byte counter[WC_AES_BLOCK_SIZE];
-    byte scratch[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte counter[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte scratch[WC_AES_BLOCK_SIZE];
     /* Noticed different optimization levels treated head of array different.
      * Some cases was stack pointer plus offset others was a register containing
      * address. To make uniform for passing in to inline assembly code am using
@@ -6989,8 +6992,8 @@ static int Aes128GcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     const byte* aad, word32 aadSz)
 {
     int ret = 0;
-    byte counter[WC_AES_BLOCK_SIZE];
-    byte scratch[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte counter[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte scratch[WC_AES_BLOCK_SIZE];
     /* Noticed different optimization levels treated head of array different.
      * Some cases was stack pointer plus offset others was a register containing
      * address. To make uniform for passing in to inline assembly code am using
@@ -7443,8 +7446,8 @@ static int Aes128GcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
       "L_aes_gcm_128_decrypt_store_tag_byte:\n\t"
         "lb         t2, (%[scratch])\n\t"
         "lb         t3, (%[tag])\n\t"
-        "xor        t0, t0, t2\n\t"
-        "xor        t0, t0, t3\n\t"
+        "xor        t3, t3, t2\n\t"
+        "or         t0, t0, t3\n\t"
         "addi       %[scratch], %[scratch], 1\n\t"
         "addi       %[tag], %[tag], 1\n\t"
         "addi       t1, t1, -1\n\t"
@@ -7498,8 +7501,8 @@ static int Aes192GcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     const byte* aad, word32 aadSz)
 {
     int ret = 0;
-    byte counter[WC_AES_BLOCK_SIZE];
-    byte scratch[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte counter[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte scratch[WC_AES_BLOCK_SIZE];
     /* Noticed different optimization levels treated head of array different.
      * Some cases was stack pointer plus offset others was a register containing
      * address. To make uniform for passing in to inline assembly code am using
@@ -7966,8 +7969,8 @@ static int Aes192GcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
       "L_aes_gcm_192_decrypt_store_tag_byte:\n\t"
         "lb         t2, (%[scratch])\n\t"
         "lb         t3, (%[tag])\n\t"
-        "xor        t0, t0, t2\n\t"
-        "xor        t0, t0, t3\n\t"
+        "xor        t3, t3, t2\n\t"
+        "or         t0, t0, t3\n\t"
         "addi       %[scratch], %[scratch], 1\n\t"
         "addi       %[tag], %[tag], 1\n\t"
         "addi       t1, t1, -1\n\t"
@@ -8021,8 +8024,8 @@ static int Aes256GcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     const byte* aad, word32 aadSz)
 {
     int ret = 0;
-    byte counter[WC_AES_BLOCK_SIZE];
-    byte scratch[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte counter[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte scratch[WC_AES_BLOCK_SIZE];
     /* Noticed different optimization levels treated head of array different.
      * Some cases was stack pointer plus offset others was a register containing
      * address. To make uniform for passing in to inline assembly code am using
@@ -8506,8 +8509,8 @@ static int Aes256GcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
       "L_aes_gcm_256_decrypt_store_tag_byte:\n\t"
         "lb         t2, (%[scratch])\n\t"
         "lb         t3, (%[tag])\n\t"
-        "xor        t0, t0, t2\n\t"
-        "xor        t0, t0, t3\n\t"
+        "xor        t3, t3, t2\n\t"
+        "or         t0, t0, t3\n\t"
         "addi       %[scratch], %[scratch], 1\n\t"
         "addi       %[tag], %[tag], 1\n\t"
         "addi       t1, t1, -1\n\t"
@@ -8719,8 +8722,8 @@ void GHASH(Gcm* gcm, const byte* a, word32 aSz, const byte* c, word32 cSz,
     byte* s, word32 sSz)
 {
     if (gcm != NULL) {
-        byte x[WC_AES_BLOCK_SIZE];
-        byte scratch[WC_AES_BLOCK_SIZE];
+        ALIGN8 byte x[WC_AES_BLOCK_SIZE];
+        ALIGN8 byte scratch[WC_AES_BLOCK_SIZE];
         word32 blocks, partial;
 
         XMEMSET(x, 0, WC_AES_BLOCK_SIZE);
@@ -8820,9 +8823,9 @@ int wc_AesGcmEncrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     word32 partial = sz % WC_AES_BLOCK_SIZE;
     const byte* p = in;
     byte* c = out;
-    ALIGN16 byte counter[WC_AES_BLOCK_SIZE];
-    ALIGN16 byte initialCounter[WC_AES_BLOCK_SIZE];
-    ALIGN16 byte scratch[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte counter[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte initialCounter[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte scratch[WC_AES_BLOCK_SIZE];
 
     /* Validate parameters. */
     if ((aes == NULL) || (nonce == NULL) || (nonceSz == 0) || (tag == NULL) ||
@@ -8920,10 +8923,10 @@ int wc_AesGcmDecrypt(Aes* aes, byte* out, const byte* in, word32 sz,
     word32 partial = sz % WC_AES_BLOCK_SIZE;
     const byte* c = in;
     byte* p = out;
-    ALIGN16 byte counter[WC_AES_BLOCK_SIZE];
-    ALIGN16 byte scratch[WC_AES_BLOCK_SIZE];
-    ALIGN16 byte Tprime[WC_AES_BLOCK_SIZE];
-    ALIGN16 byte EKY0[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte counter[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte scratch[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte Tprime[WC_AES_BLOCK_SIZE];
+    ALIGN8 byte EKY0[WC_AES_BLOCK_SIZE];
     sword32 res;
 
     /* Validate parameters. */
@@ -9099,6 +9102,7 @@ int wc_AesCcmEncrypt(Aes* aes, byte* out, const byte* in, word32 inSz,
                    const byte* authIn, word32 authInSz)
 {
     int ret = 0;
+    byte lenSz = 0;
 
     /* sanity check on arguments */
     if ((aes == NULL) || ((inSz != 0) && ((in == NULL) || (out == NULL))) ||
@@ -9112,13 +9116,25 @@ int wc_AesCcmEncrypt(Aes* aes, byte* out, const byte* in, word32 inSz,
     }
 
     if (ret == 0) {
+        lenSz = WC_AES_BLOCK_SIZE - 1 - (byte)nonceSz;
+
+        /* With a large nonce, B[] runs out of room to represent inSz, and beyond
+         * that, the counter itself can wrap.
+         */
+        if ((lenSz < sizeof(inSz)) &&
+            (inSz >= ((word32)1 << (lenSz * 8))))
+        {
+            ret = AES_CCM_OVERFLOW_E;
+        }
+    }
+
+    if (ret == 0) {
         byte A[WC_AES_BLOCK_SIZE];
         byte B[WC_AES_BLOCK_SIZE];
-        byte lenSz;
         byte i;
 
         XMEMCPY(B+1, nonce, nonceSz);
-        lenSz = WC_AES_BLOCK_SIZE - 1 - (byte)nonceSz;
+
         B[0] = (authInSz > 0 ? 64 : 0)
              + (8 * (((byte)authTagSz - 2) / 2))
              + (lenSz - 1);
@@ -9177,6 +9193,7 @@ int  wc_AesCcmDecrypt(Aes* aes, byte* out, const byte* in, word32 inSz,
                    const byte* authIn, word32 authInSz)
 {
     int ret = 0;
+    byte lenSz = 0;
 
     /* sanity check on arguments */
     if ((aes == NULL) || ((inSz != 0) && ((in == NULL) || (out == NULL))) ||
@@ -9190,15 +9207,26 @@ int  wc_AesCcmDecrypt(Aes* aes, byte* out, const byte* in, word32 inSz,
     }
 
     if (ret == 0) {
+        lenSz = WC_AES_BLOCK_SIZE - 1 - (byte)nonceSz;
+
+        /* With a large nonce, B[] runs out of room to represent inSz, and beyond
+         * that, the counter itself can wrap.
+         */
+        if ((lenSz < sizeof(inSz)) &&
+            (inSz >= ((word32)1 << (lenSz * 8))))
+        {
+            ret = AES_CCM_OVERFLOW_E;
+        }
+    }
+
+    if (ret == 0) {
         byte A[WC_AES_BLOCK_SIZE];
         byte B[WC_AES_BLOCK_SIZE];
-        byte lenSz;
         byte i;
         byte* o = out;
         word32 oSz = inSz;
 
         XMEMCPY(B+1, nonce, nonceSz);
-        lenSz = WC_AES_BLOCK_SIZE - 1 - (byte)nonceSz;
 
         B[0] = lenSz - 1;
         for (i = 0; i < lenSz; i++) {

@@ -72,6 +72,10 @@ use crate::random::RNG;
 ///
 /// An instance is created with [`MlKem::generate()`],
 /// [`MlKem::generate_with_random()`], or [`MlKem::new()`].
+///
+/// This struct does not implement Send or Sync because it is not safe in the
+/// general case to access the underlying C API from multiple threads
+/// concurrently.
 pub struct MlKem {
     ws_key: *mut sys::MlKemKey,
 }
@@ -119,7 +123,7 @@ impl MlKem {
     /// }
     /// ```
     #[cfg(random)]
-    pub fn generate(key_type: i32, rng: &mut RNG) -> Result<Self, i32> {
+    pub fn generate(key_type: i32, rng: &RNG) -> Result<Self, i32> {
         Self::generate_ex(key_type, rng, None, None)
     }
 
@@ -153,12 +157,12 @@ impl MlKem {
     #[cfg(random)]
     pub fn generate_ex(
         key_type: i32,
-        rng: &mut RNG,
+        rng: &RNG,
         heap: Option<*mut core::ffi::c_void>,
         dev_id: Option<i32>,
     ) -> Result<Self, i32> {
         let key = Self::new_ex(key_type, heap, dev_id)?;
-        let rc = unsafe { sys::wc_MlKemKey_MakeKey(key.ws_key, &mut rng.wc_rng) };
+        let rc = unsafe { sys::wc_MlKemKey_MakeKey(key.ws_key, rng.wc_rng) };
         if rc != 0 {
             return Err(rc);
         }
@@ -468,7 +472,7 @@ impl MlKem {
         &mut self,
         ct: &mut [u8],
         ss: &mut [u8],
-        rng: &mut RNG,
+        rng: &RNG,
     ) -> Result<(), i32> {
         // Verify the cipher text length is as expected based on the parameter
         // set (key type) in use.
@@ -485,7 +489,7 @@ impl MlKem {
                 self.ws_key,
                 ct.as_mut_ptr(),
                 ss.as_mut_ptr(),
-                &mut rng.wc_rng,
+                rng.wc_rng,
             )
         };
         if rc != 0 {
@@ -608,12 +612,13 @@ impl MlKem {
         if ss.len() != Self::SHARED_SECRET_SIZE {
             return Err(sys::wolfCrypt_ErrorCodes_BUFFER_E);
         }
+        let ct_size = crate::buffer_len_to_u32(ct.len())?;
         let rc = unsafe {
             sys::wc_MlKemKey_Decapsulate(
                 self.ws_key,
                 ss.as_mut_ptr(),
                 ct.as_ptr(),
-                ct.len() as u32,
+                ct_size,
             )
         };
         if rc != 0 {
@@ -632,8 +637,8 @@ impl MlKem {
     ///
     /// # Returns
     ///
-    /// Returns either Ok(size) containing the number of bytes written or Err(e)
-    /// containing the wolfSSL library error code value.
+    /// Returns either Ok(()) or Err(e) containing the wolfSSL library error
+    /// code value.
     ///
     /// # Example
     ///
@@ -647,19 +652,18 @@ impl MlKem {
     ///     .expect("Error with generate()");
     /// let pub_size = key.public_key_size().unwrap();
     /// let mut pub_buf = vec![0u8; pub_size];
-    /// let written = key.encode_public_key(&mut pub_buf)
-    ///     .expect("Error with encode_public_key()");
-    /// assert_eq!(written, pub_size);
+    /// key.encode_public_key(&mut pub_buf).expect("Error with encode_public_key()");
     /// }
     /// ```
-    pub fn encode_public_key(&self, out: &mut [u8]) -> Result<usize, i32> {
+    pub fn encode_public_key(&self, out: &mut [u8]) -> Result<(), i32> {
+        let out_size = crate::buffer_len_to_u32(out.len())?;
         let rc = unsafe {
-            sys::wc_MlKemKey_EncodePublicKey(self.ws_key, out.as_mut_ptr(), out.len() as u32)
+            sys::wc_MlKemKey_EncodePublicKey(self.ws_key, out.as_mut_ptr(), out_size)
         };
         if rc != 0 {
             return Err(rc);
         }
-        Ok(out.len())
+        Ok(())
     }
 
     /// Encode (export) the private key to a byte buffer.
@@ -672,8 +676,8 @@ impl MlKem {
     ///
     /// # Returns
     ///
-    /// Returns either Ok(size) containing the number of bytes written or Err(e)
-    /// containing the wolfSSL library error code value.
+    /// Returns either Ok(()) or Err(e) containing the wolfSSL library error
+    /// code value.
     ///
     /// # Example
     ///
@@ -687,19 +691,18 @@ impl MlKem {
     ///     .expect("Error with generate()");
     /// let priv_size = key.private_key_size().unwrap();
     /// let mut priv_buf = vec![0u8; priv_size];
-    /// let written = key.encode_private_key(&mut priv_buf)
-    ///     .expect("Error with encode_private_key()");
-    /// assert_eq!(written, priv_size);
+    /// key.encode_private_key(&mut priv_buf).expect("Error with encode_private_key()");
     /// }
     /// ```
-    pub fn encode_private_key(&self, out: &mut [u8]) -> Result<usize, i32> {
+    pub fn encode_private_key(&self, out: &mut [u8]) -> Result<(), i32> {
+        let out_size = crate::buffer_len_to_u32(out.len())?;
         let rc = unsafe {
-            sys::wc_MlKemKey_EncodePrivateKey(self.ws_key, out.as_mut_ptr(), out.len() as u32)
+            sys::wc_MlKemKey_EncodePrivateKey(self.ws_key, out.as_mut_ptr(), out_size)
         };
         if rc != 0 {
             return Err(rc);
         }
-        Ok(out.len())
+        Ok(())
     }
 
     /// Decode (import) a public key from a byte buffer.
@@ -731,8 +734,9 @@ impl MlKem {
     /// }
     /// ```
     pub fn decode_public_key(&mut self, data: &[u8]) -> Result<(), i32> {
+        let data_size = crate::buffer_len_to_u32(data.len())?;
         let rc = unsafe {
-            sys::wc_MlKemKey_DecodePublicKey(self.ws_key, data.as_ptr(), data.len() as u32)
+            sys::wc_MlKemKey_DecodePublicKey(self.ws_key, data.as_ptr(), data_size)
         };
         if rc != 0 {
             return Err(rc);
@@ -769,13 +773,20 @@ impl MlKem {
     /// }
     /// ```
     pub fn decode_private_key(&mut self, data: &[u8]) -> Result<(), i32> {
+        let data_size = crate::buffer_len_to_u32(data.len())?;
         let rc = unsafe {
-            sys::wc_MlKemKey_DecodePrivateKey(self.ws_key, data.as_ptr(), data.len() as u32)
+            sys::wc_MlKemKey_DecodePrivateKey(self.ws_key, data.as_ptr(), data_size)
         };
         if rc != 0 {
             return Err(rc);
         }
         Ok(())
+    }
+}
+
+impl MlKem {
+    fn zeroize(&mut self) {
+        self.ws_key = core::ptr::null_mut();
     }
 }
 
@@ -788,5 +799,6 @@ impl Drop for MlKem {
         unsafe {
             sys::wc_MlKemKey_Delete(self.ws_key, core::ptr::null_mut());
         }
+        self.zeroize();
     }
 }

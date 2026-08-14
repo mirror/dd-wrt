@@ -81,6 +81,9 @@ int wc_Compress_ex(byte* out, word32 outSz, const byte* in, word32 inSz,
     z_stream stream;
     int result = 0;
 
+    if (out == NULL || in == NULL)
+        return BAD_FUNC_ARG;
+
     stream.next_in = (Bytef*)in;
     stream.avail_in = (uInt)inSz;
 #ifdef MAXSEG_64K
@@ -149,6 +152,9 @@ int wc_DeCompress_ex(byte* out, word32 outSz, const byte* in, word32 inSz,
     z_stream stream;
     int result = 0;
 
+    if (out == NULL || in == NULL)
+        return BAD_FUNC_ARG;
+
     stream.next_in = (Bytef*)in;
     stream.avail_in = (uInt)inSz;
     /* Check for source > 64K on 16-bit machine: */
@@ -215,6 +221,11 @@ int wc_DeCompressDynamic(byte** out, int maxSz, int memoryType,
     if (out == NULL || in == NULL) {
         return BAD_FUNC_ARG;
     }
+    /* Cap input so the initial doubling and additive growth in the loop
+     * cannot overflow word32 or the int return type. */
+    if (inSz > (word32)(INT_MAX / 2)) {
+        return BAD_FUNC_ARG;
+    }
     i = (maxSz == 1)? 1 : 2; /* start with output buffer twice the size of input
                               * unless max was set to 1 */
 
@@ -223,7 +234,7 @@ int wc_DeCompressDynamic(byte** out, int maxSz, int memoryType,
     /* Check for source > 64K on 16-bit machine: */
     if ((uLong)stream.avail_in != inSz) return DECOMPRESS_INIT_E;
 
-    tmpSz = inSz * i;
+    tmpSz = inSz * (word32)i;
     tmp = (byte*)XMALLOC(tmpSz, heap, memoryType);
     if (tmp == NULL)
         return MEMORY_E;
@@ -272,6 +283,11 @@ int wc_DeCompressDynamic(byte** out, int maxSz, int memoryType,
             }
             i++;
 
+            if (tmpSz > (word32)INT_MAX - inSz) {
+                WOLFSSL_MSG("Decompress buffer would exceed INT_MAX");
+                result = DECOMPRESS_E;
+                break;
+            }
             newSz = tmpSz + inSz;
             newTmp = (byte*)XMALLOC(newSz, heap, memoryType);
             if (newTmp == NULL) {
@@ -289,13 +305,18 @@ int wc_DeCompressDynamic(byte** out, int maxSz, int memoryType,
     } while (result == Z_OK);
 
     if (result == Z_STREAM_END) {
-        result = (int)stream.total_out;
-        *out   = (byte*)XMALLOC(result, heap, memoryType);
-        if (*out != NULL) {
-            XMEMCPY(*out, tmp, result);
+        if (stream.total_out > (uLong)INT_MAX) {
+            result = DECOMPRESS_E;
         }
         else {
-            result = MEMORY_E;
+            result = (int)stream.total_out;
+            *out   = (byte*)XMALLOC(result, heap, memoryType);
+            if (*out != NULL) {
+                XMEMCPY(*out, tmp, result);
+            }
+            else {
+                result = MEMORY_E;
+            }
         }
     }
     else {

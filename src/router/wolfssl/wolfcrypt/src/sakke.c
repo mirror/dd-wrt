@@ -37,14 +37,6 @@
 #include <wolfssl/wolfcrypt/sakke.h>
 #include <wolfssl/wolfcrypt/asn_public.h>
 
-#if defined(WOLFSSL_USE_SAVE_VECTOR_REGISTERS) && !defined(WOLFSSL_SP_ASM)
-    /* force off unneeded vector register save/restore. */
-    #undef SAVE_VECTOR_REGISTERS
-    #define SAVE_VECTOR_REGISTERS(fail_clause) SAVE_NO_VECTOR_REGISTERS(fail_clause)
-    #undef RESTORE_VECTOR_REGISTERS
-    #define RESTORE_VECTOR_REGISTERS() RESTORE_NO_VECTOR_REGISTERS()
-#endif
-
 #ifndef WOLFSSL_HAVE_ECC_KEY_GET_PRIV
     /* FIPS build has replaced ecc.h. */
     #define wc_ecc_key_get_priv(key) (&((key)->k))
@@ -1328,13 +1320,11 @@ int wc_GenerateSakkeRskTable(const SakkeKey* key, const ecc_point* rsk,
         err = BAD_FUNC_ARG;
     }
     if (err == 0) {
-        SAVE_VECTOR_REGISTERS(return _svr_ret;);
 #ifdef WOLFSSL_SP_1024
         err = sp_Pairing_gen_precomp_1024(rsk, table, len);
 #else
         err = NOT_COMPILED_IN;
 #endif
-        RESTORE_VECTOR_REGISTERS();
     }
 
     return err;
@@ -2441,8 +2431,6 @@ int wc_ValidateSakkeRsk(SakkeKey* key, const byte* id, word16 idSz,
         err = BAD_FUNC_ARG;
     }
 
-    SAVE_VECTOR_REGISTERS(return _svr_ret;);
-
     /* Load elliptic curve parameters */
     if (err == 0) {
         err = sakke_load_params(key);
@@ -2477,8 +2465,6 @@ int wc_ValidateSakkeRsk(SakkeKey* key, const byte* id, word16 idSz,
     if (valid != NULL) {
         *valid = ((err == 0) && (mp_cmp(a, &key->params.g) == MP_EQ));
     }
-
-    RESTORE_VECTOR_REGISTERS();
 
     return err;
 }
@@ -2622,6 +2608,22 @@ static int sakke_modexp_loop(SakkeKey* key, mp_int* b, mp_int* e, mp_proj* r,
     mp_int* by = key->tmp.p1->z;
     mp_int* prime = &key->params.prime;
     int i;
+#ifdef WC_NO_GLOBAL_OBJECT_POINTERS
+    static const wc_ptr_t wc_off_on_addr[2] =
+    {
+    #if defined(WC_64BIT_CPU)
+        W64LIT(0x0000000000000000),
+        W64LIT(0xffffffffffffffff)
+    #elif defined(WC_16BIT_CPU)
+        0x0000U,
+        0xffffU
+    #else
+        /* 32 bit */
+        0x00000000U,
+        0xffffffffU
+    #endif
+    };
+#endif
 
 #ifdef WC_NO_CACHE_RESISTANT
     c[0] = r;
@@ -2649,12 +2651,19 @@ static int sakke_modexp_loop(SakkeKey* key, mp_int* b, mp_int* e, mp_proj* r,
             err = sakke_proj_mul_qx1(c[0], by, prime, mp, c[j^1], t1, t2);
 #else
             err = sakke_proj_mul_qx1(c[0], by, prime, mp, c[2], t1, t2);
+#ifdef WC_NO_PTR_INT_CAST
+            err = mp_cond_copy(c[2]->x, j,   c[0]->x);
+            err = mp_cond_copy(c[2]->x, j^1, c[1]->x);
+            err = mp_cond_copy(c[2]->y, j,   c[0]->y);
+            err = mp_cond_copy(c[2]->y, j^1, c[1]->y);
+#else
             mp_copy(c[2]->x,
             (mp_int*) ( ((wc_ptr_t)c[0]->x & wc_off_on_addr[j]) +
                         ((wc_ptr_t)c[1]->x & wc_off_on_addr[j^1]) ) );
             mp_copy(c[2]->y,
             (mp_int*) ( ((wc_ptr_t)c[0]->y & wc_off_on_addr[j]) +
                         ((wc_ptr_t)c[1]->y & wc_off_on_addr[j^1]) ) );
+#endif
 #endif
         }
     }
@@ -6018,14 +6027,17 @@ static int sakke_modexp_loop(SakkeKey* key, const mp_int* b, mp_int* e,
     mp_int* t2 = &key->tmp.m2;
     mp_int* by = key->tmp.p1->z;
     mp_int* prime = &key->params.prime;
-    unsigned char eb[128];
+    WC_DECLARE_VAR(eb, unsigned char, SAKKE_EB_BUF_SIZE, key->heap);
     int i;
     int y;
+
+    WC_ALLOC_VAR_EX(eb, unsigned char, SAKKE_EB_BUF_SIZE, key->heap,
+                    DYNAMIC_TYPE_TMP_BUFFER, return MEMORY_E);
 
     /* Use table for values of b exponentiated. */
     (void)b;
 
-    (void)mp_to_unsigned_bin_len(e, eb, sizeof(eb));
+    (void)mp_to_unsigned_bin_len(e, eb, SAKKE_EB_BUF_SIZE);
 
     /* Set the working value to the base in PF_p[q] */
     err = mp_montgomery_calc_normalization(c->x, prime);
@@ -6058,6 +6070,7 @@ static int sakke_modexp_loop(SakkeKey* key, const mp_int* b, mp_int* e,
         }
     }
 
+    WC_FREE_VAR_EX(eb, key->heap, DYNAMIC_TYPE_TMP_BUFFER);
     return err;
 }
 #endif /* WOLFSSL_SAKKE_SMALL */
@@ -6158,20 +6171,28 @@ static int sakke_calc_h_v(SakkeKey* key, enum wc_HashType hashType,
 static void sakke_xor_in_v(const byte* v, word32 hashSz, byte* out, word32 idx,
         word32 n)
 {
-    int o;
-    word32 i;
+    word32 skip;
+    word32 off;
+    word32 len;
+
+    /* RFC 6508, Section 5.1: output is the low n octets of
+     * v_1||v_2||...||v_l (the concatenation of l hash outputs taken
+     * modulo 2^(n*8)). When n is not a multiple of hashSz, drop the
+     * leading 'skip' high bytes of the first hash output. */
+    skip = n % hashSz;
+    skip = (skip == 0) ? 0 : (hashSz - skip);
 
     if (idx == 0) {
-        i = hashSz - (n % hashSz);
-        if (i == hashSz) {
-            i = 0;
-        }
+        xorbuf(out, v + skip, hashSz - skip);
     }
     else {
-        i = 0;
+        off = idx - skip;
+        len = n - off;
+        if (len > hashSz) {
+            len = hashSz;
+        }
+        xorbuf(out + off, v, len);
     }
-    o = (int)i;
-    xorbuf(out + idx + i - o, v + i, hashSz - i);
 }
 
 /*
@@ -6368,8 +6389,6 @@ int wc_MakeSakkePointI(SakkeKey* key, const byte* id, word16 idSz)
         err = BAD_FUNC_ARG;
     }
 
-    SAVE_VECTOR_REGISTERS(return _svr_ret;);
-
     if (err == 0) {
         err = sakke_load_params(key);
     }
@@ -6381,8 +6400,6 @@ int wc_MakeSakkePointI(SakkeKey* key, const byte* id, word16 idSz)
         XMEMCPY(key->i.id, id, idSz);
         key->i.idSz = idSz;
     }
-
-    RESTORE_VECTOR_REGISTERS();
 
     return err;
 }
@@ -6513,9 +6530,7 @@ int wc_GenerateSakkePointITable(SakkeKey* key, byte* table, word32* len)
 
 #ifdef WOLFSSL_HAVE_SP_ECC
     if (err == 0) {
-        SAVE_VECTOR_REGISTERS(return _svr_ret;);
         err = sp_ecc_gen_table_1024(key->i.i, table, len, key->heap);
-        RESTORE_VECTOR_REGISTERS();
     }
     if (err == 0) {
         key->i.table = table;
@@ -6678,8 +6693,9 @@ static int sakke_compute_point_r(SakkeKey* key, const byte* id, word16 idSz,
  * @param  [out]     auth      Authentication data.
  * @param  [out]     authSz    Size of authentication data in bytes.
  * @return  0 on success.
- * @return  BAD_FUNC_ARG when key, ssv or encSz is NULL, ssvSz is to big or
- *          encSz is too small.
+ * @return  BAD_FUNC_ARG when key, ssv or authSz is NULL, ssvSz is 0 or
+ *          larger than the curve modulus byte length, or *authSz is too
+ *          small when encapsulating.
  * @return  BAD_STATE_E when identity not set.
  * @return  LENGTH_ONLY_E when auth is NULL. authSz contains required size of
  *          auth in bytes.
@@ -6695,14 +6711,12 @@ int wc_MakeSakkeEncapsulatedSSV(SakkeKey* key, enum wc_HashType hashType,
     word16 outSz = 0;
     byte a[WC_MAX_DIGEST_SIZE];
 
-    if ((key == NULL) || (ssv == NULL) || (authSz == NULL)) {
+    if ((key == NULL) || (ssv == NULL) || (authSz == NULL) || (ssvSz == 0)) {
         err = BAD_FUNC_ARG;
     }
     if ((err == 0) && (key->idSz == 0)) {
         err = BAD_STATE_E;
     }
-
-    SAVE_VECTOR_REGISTERS(return _svr_ret;);
 
     /* Load parameters */
     if (err == 0) {
@@ -6714,7 +6728,14 @@ int wc_MakeSakkeEncapsulatedSSV(SakkeKey* key, enum wc_HashType hashType,
         /* Uncompressed point */
         outSz = (word16)(1 + 2 * n);
 
-        if ((auth != NULL) && (*authSz < outSz)) {
+        /* RFC 6508, Section 6.2.1, Step 1 places SSV in 0..2^n-1, so
+         * ssvSz must be <= n. Enforced on both the encapsulation and
+         * size-query paths so callers cannot probe authSz with an
+         * invalid ssvSz. */
+        if (ssvSz > n) {
+            err = BAD_FUNC_ARG;
+        }
+        else if ((auth != NULL) && (*authSz < outSz)) {
             err = BAD_FUNC_ARG;
         }
     }
@@ -6772,8 +6793,6 @@ int wc_MakeSakkeEncapsulatedSSV(SakkeKey* key, enum wc_HashType hashType,
 
     /* Step 6: Output SSV - already encoded in buffer */
 
-    RESTORE_VECTOR_REGISTERS();
-
     return err;
 }
 
@@ -6809,7 +6828,7 @@ int wc_GenerateSakkeSSV(SakkeKey* key, WC_RNG* rng, byte* ssv, word16* ssvSz)
     if (err == 0) {
         n = (word16)WC_BITS_TO_BYTES(mp_count_bits(&key->params.prime));
 
-        if ((ssv != NULL) && (*ssvSz > n)) {
+        if ((ssv != NULL) && ((*ssvSz == 0) || (*ssvSz > n))) {
             err = BAD_FUNC_ARG;
         }
     }
@@ -6853,7 +6872,8 @@ int wc_GenerateSakkeSSV(SakkeKey* key, WC_RNG* rng, byte* ssv, word16* ssvSz)
  * @param  [in]      auth      Authentication data.
  * @param  [in]      authSz    Size of authentication data in bytes.
  * @return  0 on success.
- * @return  BAD_FUNC_ARG when key, ssv or auth is NULL.
+ * @return  BAD_FUNC_ARG when key, ssv or auth is NULL, ssvSz is 0 or
+ *          larger than the curve modulus byte length.
  * @return  BAD_STATE_E when RSK or identity not set.
  * @return  SAKKE_VERIFY_FAIL_E when calculated R doesn't match the encapsulated
  *          data's R.
@@ -6870,16 +6890,16 @@ int wc_DeriveSakkeSSV(SakkeKey* key, enum wc_HashType hashType, byte* ssv,
     mp_int* ri = NULL;
     byte* wb = NULL;
     byte* test = NULL;
-    byte a[WC_MAX_DIGEST_SIZE] = {0};
+    byte a[WC_MAX_DIGEST_SIZE];
 
-    if ((key == NULL) || (ssv == NULL) || (auth == NULL)) {
+    XMEMSET(a, 0, sizeof(a));
+
+    if ((key == NULL) || (ssv == NULL) || (auth == NULL) || (ssvSz == 0)) {
         err = BAD_FUNC_ARG;
     }
     if ((err == 0) && (!key->rsk.set || (key->idSz == 0))) {
         err = BAD_STATE_E;
     }
-
-    SAVE_VECTOR_REGISTERS(return _svr_ret;);
 
     /* Load parameters */
     if (err == 0) {
@@ -6889,6 +6909,11 @@ int wc_DeriveSakkeSSV(SakkeKey* key, enum wc_HashType hashType, byte* ssv,
         n = (word16)WC_BITS_TO_BYTES(mp_count_bits(&key->params.prime));
 
         if (authSz != 2 * n + 1) {
+            err = BAD_FUNC_ARG;
+        }
+        /* RFC 6508, Section 6.2.1: SSV is in 0..2^n-1, so ssvSz must
+         * be <= n. */
+        else if (ssvSz > n) {
             err = BAD_FUNC_ARG;
         }
     }
@@ -6945,8 +6970,6 @@ int wc_DeriveSakkeSSV(SakkeKey* key, enum wc_HashType hashType, byte* ssv,
     if ((err == 0) && (ConstantCompare(auth, test, (int)(2 * n + 1)) != 0)) {
         err = SAKKE_VERIFY_FAIL_E;
     }
-
-    RESTORE_VECTOR_REGISTERS();
 
     return err;
 }

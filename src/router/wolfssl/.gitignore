@@ -25,6 +25,7 @@ build-aux/
 rpm/spec
 *.rpm
 stamp-h
+wolfssl-test-data.stamp
 cyassl/options.h
 wolfssl/options.h
 .build_params
@@ -200,12 +201,15 @@ tracefile.txt
 *.bak
 *.dummy
 *.xcworkspace
+workspace.pid*/
 xcuserdata
 compile
 NTRU_algorithm/
 NTRU/
 build-test/
 build/
+# Out-of-tree build dirs created by .github/scripts/parallel-make-check.py
+/build-*/
 cyassl.xcodeproj/
 cyassl*rc*
 autoscan.log
@@ -249,6 +253,7 @@ linuxkm/patches/src
 linuxkm/libwolfssl-user-build
 linuxkm/linuxkm-fips-hash
 *.nds
+/certs/.rnd
 
 # Generated during FreeBSD kernel module build.
 bsdkm/export_syms

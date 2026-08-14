@@ -357,10 +357,6 @@ int test_wolfSSL_BIO_should_retry(void)
     StartTCP();
     InitTcpReady(&ready);
 
-#if defined(USE_WINDOWS_API)
-    /* use RNG to get random port if using windows */
-    ready.port = GetRandomPort();
-#endif
 
     server_args.signal = &ready;
     start_thread(test_server_nofail, &server_args, &serverThread);
@@ -465,10 +461,6 @@ int test_wolfSSL_BIO_connect(void)
     XMEMSET(&server_args, 0, sizeof(func_args));
     StartTCP();
     InitTcpReady(&ready);
-#if defined(USE_WINDOWS_API)
-    /* use RNG to get random port if using windows */
-    ready.port = GetRandomPort();
-#endif
     server_args.signal = &ready;
     start_thread(test_server_nofail, &server_args, &serverThread);
     wait_tcp_ready(&server_args);
@@ -512,10 +504,6 @@ int test_wolfSSL_BIO_connect(void)
     XMEMSET(&server_args, 0, sizeof(func_args));
     StartTCP();
     InitTcpReady(&ready);
-#if defined(USE_WINDOWS_API)
-    /* use RNG to get random port if using windows */
-    ready.port = GetRandomPort();
-#endif
     server_args.signal = &ready;
     start_thread(test_server_nofail, &server_args, &serverThread);
     wait_tcp_ready(&server_args);
@@ -992,6 +980,45 @@ int test_wolfSSL_BIO_write(void)
     return EXPECT_RESULT();
 }
 
+/* A negative length must never defeat the memory-BIO read bounds check and
+ * reach XMEMCPY with (size_t)-1. This exercises the public BIO_read() boundary
+ * (which rejects a negative length before dispatch); the matching guard in the
+ * static wolfSSL_BIO_MEMORY_read() sink is defense-in-depth and not separately
+ * reachable through the public API. Verify a negative length is rejected with
+ * an error without copying, a zero length reads nothing, and the pending data
+ * is left intact and still readable. */
+int test_wolfSSL_BIO_read_negative_len(void)
+{
+    EXPECT_DECLS;
+#if defined(OPENSSL_EXTRA)
+    BIO*  bio = NULL;
+    char  msg[] = "negative length test";
+    int   msgLen = (int)XSTRLEN(msg);
+    char  out[64];
+
+    ExpectNotNull(bio = BIO_new(BIO_s_mem()));
+    ExpectIntEQ(BIO_write(bio, msg, msgLen), msgLen);
+
+    /* Negative length: must be rejected with an error, not a wild copy and not
+     * a silent 0-byte read. */
+    XMEMSET(out, 0, sizeof(out));
+    ExpectIntLT(BIO_read(bio, out, -1), 0);
+    /* Data must be untouched - still all pending. */
+    ExpectIntEQ(BIO_pending(bio), msgLen);
+
+    /* Zero length: nothing read, data still pending. */
+    ExpectIntEQ(BIO_read(bio, out, 0), 0);
+    ExpectIntEQ(BIO_pending(bio), msgLen);
+
+    /* A normal read still returns the intact message. */
+    ExpectIntEQ(BIO_read(bio, out, (int)sizeof(out)), msgLen);
+    ExpectIntEQ(XMEMCMP(out, msg, msgLen), 0);
+
+    BIO_free(bio);
+#endif
+    return EXPECT_RESULT();
+}
+
 
 int test_wolfSSL_BIO_printf(void)
 {
@@ -1150,7 +1177,7 @@ int test_wolfSSL_BIO_reset(void)
     ExpectIntEQ(BIO_read(bio, buf, 16), 10);
     ExpectIntEQ(XMEMCMP(buf, " your data", 10), 0);
     /* You cannot write to MEM BIO with read-only mode. */
-    ExpectIntEQ(BIO_write(bio, "WriteToReadonly", 15), 0);
+    ExpectIntEQ(BIO_write(bio, "WriteToReadonly", 15), WOLFSSL_BIO_ERROR);
     ExpectIntEQ(BIO_read(bio, buf, 16), -1);
     XMEMSET(buf, 0, 16);
     ExpectIntEQ(BIO_reset(bio), 1);
@@ -1673,6 +1700,167 @@ int test_wolfSSL_BIO_custom_method(void)
     custom_bio_destroyCalled = 0;
     BIO_free(bio);
     ExpectTrue(custom_bio_destroyCalled);
+    BIO_meth_free(method);
+#endif
+    return EXPECT_RESULT();
+}
+
+int test_wolfSSL_BIO_set_conn_hostname(void)
+{
+    EXPECT_DECLS;
+#if defined(OPENSSL_EXTRA)
+    BIO* bio = NULL;
+
+    /* NULL bio should fail */
+    ExpectIntEQ(BIO_set_conn_hostname(NULL, (char*)"localhost"),
+        WOLFSSL_FAILURE);
+
+    /* Create a bare socket BIO (ip starts as NULL) */
+    ExpectNotNull(bio = BIO_new(BIO_s_socket()));
+
+    /* NULL hostname should fail */
+    ExpectIntEQ(BIO_set_conn_hostname(bio, NULL), WOLFSSL_FAILURE);
+
+    /* Set initial hostname (ip == NULL, triggers malloc) */
+    ExpectIntEQ(BIO_set_conn_hostname(bio, (char*)"127.0.0.1"),
+        WOLFSSL_SUCCESS);
+
+    /* Set same-length hostname (reuses existing buffer) */
+    ExpectIntEQ(BIO_set_conn_hostname(bio, (char*)"192.168.0"),
+        WOLFSSL_SUCCESS);
+
+    /* Set shorter hostname (triggers free + malloc) */
+    ExpectIntEQ(BIO_set_conn_hostname(bio, (char*)"short"), WOLFSSL_SUCCESS);
+
+    /* Set longer hostname (triggers free + malloc) */
+    ExpectIntEQ(BIO_set_conn_hostname(bio, (char*)"a]longer.hostname.example"),
+        WOLFSSL_SUCCESS);
+
+    BIO_free(bio);
+#endif
+    return EXPECT_RESULT();
+}
+
+#if defined(OPENSSL_EXTRA)
+static long pending_ctrlCb(WOLFSSL_BIO* bio, int cmd, long larg, void* parg)
+{
+    (void)bio;
+    (void)larg;
+    (void)parg;
+    if (cmd == BIO_CTRL_PENDING)
+        return 42;
+    return 0;
+}
+#endif
+
+int test_wolfSSL_BIO_ctrl_pending_chain(void)
+{
+    EXPECT_DECLS;
+#if defined(OPENSSL_EXTRA)
+    BIO* md = NULL;
+    BIO* b64 = NULL;
+    BIO* mem = NULL;
+    char msg[] = "hello";
+
+    /* Build chain: md -> b64 -> mem */
+    ExpectNotNull(md = BIO_new(BIO_f_md()));
+    ExpectNotNull(b64 = BIO_new(BIO_f_base64()));
+    ExpectNotNull(mem = BIO_new(BIO_s_mem()));
+    ExpectNotNull(BIO_push(md, b64));
+    ExpectNotNull(BIO_push(b64, mem));
+
+    /* Write directly to mem so wrSz is set */
+    ExpectIntEQ(BIO_write(mem, msg, sizeof(msg)), (int)sizeof(msg));
+
+    /* ctrl_pending on mem should work */
+    ExpectIntEQ((int)BIO_ctrl_pending(mem), (int)sizeof(msg));
+
+    /* ctrl_pending on the head of the chain (md) should skip both wrappers
+     * and return mem's pending count */
+    ExpectIntEQ((int)BIO_ctrl_pending(md), (int)sizeof(msg));
+
+    BIO_free(md);
+    BIO_free(b64);
+    BIO_free(mem);
+
+    /* Test that ctrl_pending reaches a custom ctrlCb through a wrapper.
+     * Chain: md -> custom(with ctrlCb) -> mem. The custom BIO's ctrlCb
+     * returns 42 for BIO_CTRL_PENDING, so ctrl_pending on md should
+     * return 42 (stopping at custom), not fall through to mem. */
+    {
+        BIO* md2 = NULL;
+        BIO* custom = NULL;
+        BIO* mem2 = NULL;
+        BIO_METHOD* meth = NULL;
+
+        ExpectNotNull(meth = BIO_meth_new(0, "pending_test"));
+        ExpectIntEQ(BIO_meth_set_ctrl(meth, pending_ctrlCb), WOLFSSL_SUCCESS);
+        ExpectNotNull(md2 = BIO_new(BIO_f_md()));
+        ExpectNotNull(custom = BIO_new(meth));
+        ExpectNotNull(mem2 = BIO_new(BIO_s_mem()));
+        ExpectNotNull(BIO_push(md2, custom));
+        ExpectNotNull(BIO_push(custom, mem2));
+
+        ExpectIntEQ((int)BIO_ctrl_pending(md2), 42);
+
+        BIO_free(md2);
+        BIO_free(custom);
+        BIO_free(mem2);
+        BIO_meth_free(meth);
+    }
+#endif
+    return EXPECT_RESULT();
+}
+
+int test_wolfSSL_BIO_meth_type_large(void)
+{
+    EXPECT_DECLS;
+#if defined(OPENSSL_EXTRA)
+    BIO_METHOD* method = NULL;
+    BIO* bio = NULL;
+
+    /* Type value exceeding 255, as used by applications like HAProxy (0x666) */
+    ExpectNotNull(method = BIO_meth_new(0x666, "large_type_test"));
+    ExpectNotNull(bio = BIO_new(method));
+    ExpectIntEQ(BIO_method_type(bio), 0x666);
+
+    BIO_free(bio);
+    BIO_meth_free(method);
+#endif
+    return EXPECT_RESULT();
+}
+
+int test_wolfSSL_BIO_get_init(void)
+{
+    EXPECT_DECLS;
+#if defined(OPENSSL_EXTRA)
+    BIO_METHOD* method = NULL;
+    BIO* bio = NULL;
+
+    /* BIO_new with a custom method that calls BIO_set_init(bio, 1) */
+    ExpectNotNull(method = BIO_meth_new(WOLFSSL_BIO_UNDEF, "get_init_test"));
+    ExpectIntEQ(BIO_meth_set_create(method, custom_bio_createCb),
+        WOLFSSL_SUCCESS);
+    ExpectIntEQ(BIO_meth_set_destroy(method, custom_bio_destroyCb),
+        WOLFSSL_SUCCESS);
+
+    ExpectNotNull(bio = BIO_new(method));
+
+    /* createCb calls BIO_set_init(bio, 1), so get_init should return 1 */
+    ExpectIntEQ(BIO_get_init(bio), 1);
+
+    /* Clear init and verify it returns 0 */
+    BIO_set_init(bio, 0);
+    ExpectIntEQ(BIO_get_init(bio), 0);
+
+    /* Set init back and verify */
+    BIO_set_init(bio, 1);
+    ExpectIntEQ(BIO_get_init(bio), 1);
+
+    /* NULL should return 0 */
+    ExpectIntEQ(BIO_get_init(NULL), 0);
+
+    BIO_free(bio);
     BIO_meth_free(method);
 #endif
     return EXPECT_RESULT();
