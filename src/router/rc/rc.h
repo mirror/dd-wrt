@@ -45,7 +45,7 @@ extern int dhcpc_main(int argc, char **argv);
 
 extern void shutdown_system(void);
 
-extern void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leasetime, int nodeconfig);
+extern void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leasetime, int nodeconfig);
 
 /*
  * ppp scripts 

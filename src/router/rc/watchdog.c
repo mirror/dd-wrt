@@ -217,12 +217,13 @@ static unsigned char zerocount[8][17];
 static void check_signal(const char *var, int interface, int vap)
 {
 	struct mac80211_info *mac80211_info;
-
+	int clientcount = 0;
 	mac80211_info = mac80211_assoclist(var);
 	if (mac80211_info && mac80211_info->wci) {
 		struct wifi_client_info *wc;
 		for (wc = mac80211_info->wci; wc; wc = wc->next) {
 			if (wc) {
+				clientcount++;
 				char mac[32];
 				ether_etoa(wc->etheraddr, mac);
 				if (!(wc->signal - wc->noise)) {
@@ -235,6 +236,7 @@ static void check_signal(const char *var, int interface, int vap)
 							    wc->ifname, mac);
 						sys_reboot();
 					}
+				
 				} else {
 					if (zerocount[interface][vap]) {
 						if (zerocount[interface][vap] > 20)
@@ -248,6 +250,8 @@ static void check_signal(const char *var, int interface, int vap)
 				}
 			}
 		}
+		if (!clientcount)
+			zerocount[interface][vap] = 0;
 		free_wifi_clients(mac80211_info->wci);
 	}
 	if (mac80211_info)
