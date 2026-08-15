@@ -1185,8 +1185,7 @@ void start_qos(void)
 	if (!nvram_matchi("wshaper_enable", 1)) {
 		start_sfe();
 		return;
-	}
-	else
+	} else
 		stop_sfe();
 
 	if (!strcmp(wshaper_dev, "WAN") && (nvram_match("wan_proto", "disabled") || client_bridged_enabled()))

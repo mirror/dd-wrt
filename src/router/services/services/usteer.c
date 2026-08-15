@@ -240,7 +240,6 @@ void stop_usteer(void)
 	return;
 }
 
-
 #endif
 #if defined(HAVE_USTEER) || defined(HAVE_REALTEK)
 void start_ubus(void)

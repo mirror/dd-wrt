@@ -96,9 +96,9 @@ void start_sshd(void)
 		write_key_file(NVRAM_ED25519_PUB_KEY_NAME, ED25519_PUB_KEY_FILE, 0600);
 		changed = 1;
 	}
-	
+
 	eval("dropbearconvert", "openssh", "dropbear", ED25519_HOST_KEY_FILE_TMP, ED25519_HOST_KEY_FILE);
-//	unlink(ED25519_HOST_KEY_FILE_TMP);
+	//	unlink(ED25519_HOST_KEY_FILE_TMP);
 	nvram_unset("sshd_dss_host_key");
 	if (changed)
 		nvram_commit();

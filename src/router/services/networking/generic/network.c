@@ -2474,7 +2474,7 @@ void start_lan(void)
 		//              eval("ifconfig", wifi, "up");
 	}
 	ifconfig(lan_ifname, IFUP, get_lan_ipaddr(), get_lan_netmask());
-		/* start mactelnet (if enabled) as early as possible to allow early access if anything bad happens */
+	/* start mactelnet (if enabled) as early as possible to allow early access if anything bad happens */
 	start_mactelnetd();
 	void configure_wifi(void);
 	configure_wifi();
