@@ -164,10 +164,8 @@ void start_anchorfree(void)
 			start_lan();
 			stop_dnsmasq();
 			start_dnsmasq();
-#ifdef HAVE_SMARTDNS
 			stop_smartdns();
 			start_smartdns();
-#endif
 			stop_unbound();
 			start_unbound();
 			start_firewall();

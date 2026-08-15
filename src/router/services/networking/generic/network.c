@@ -2475,9 +2475,7 @@ void start_lan(void)
 	}
 	ifconfig(lan_ifname, IFUP, get_lan_ipaddr(), get_lan_netmask());
 		/* start mactelnet (if enabled) as early as possible to allow early access if anything bad happens */
-		#ifdef HAVE_MACTELNET
 	start_mactelnetd();
-		#endif
 	void configure_wifi(void);
 	configure_wifi();
 	#endif
@@ -2817,10 +2815,8 @@ void start_lan(void)
 #if defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_MT7621)
 	start_postnetwork();
 #endif
-#ifdef HAVE_IRQBALANCE
 	stop_irqbalance();
 	start_irqbalance();
-#endif
 }
 
 void stop_lan(void)
@@ -4269,10 +4265,8 @@ void start_wan_service(void)
 	stop_ddns();
 	start_process_monitor();
 	start_ddns();
-#ifdef HAVE_SPEEDCHECKER
 	stop_speedchecker();
 	start_speedchecker();
-#endif
 }
 
 #ifdef HAVE_IPV6
@@ -4606,18 +4600,11 @@ void wan_done(char *wan_ifname)
 
 	nvram_set("wan_iface", nvram_safe_get("wan_ifname"));
 
-#ifdef HAVE_DNSMASQ
 	restart_dnsmasq();
-#endif
-#ifdef HAVE_SMARTDNS
 	stop_smartdns();
 	start_smartdns();
-#endif
-#ifdef HAVE_OPENVPN
 	stop_openvpn_wandone();
 	start_openvpn();
-
-#endif
 
 #ifdef HAVE_ANTAIRA_AGENT
 	stop_antaira_agent();
@@ -4628,10 +4615,8 @@ void wan_done(char *wan_ifname)
 	stop_strongswan();
 	start_strongswan();
 #endif
-#ifdef HAVE_OPENVPN
 	stop_openvpnserverwan();
 	start_openvpnserverwan();
-#endif
 #ifdef HAVE_DHCPFORWARD
 	stop_dhcpfwd();
 	start_dhcpfwd();
@@ -4651,19 +4636,12 @@ void wan_done(char *wan_ifname)
 	start_tor();
 #endif
 
-#ifdef HAVE_IPVS
 	stop_ipvs();
 	start_ipvs();
-#endif
-
-#ifdef HAVE_SPEEDCHECKER
 	stop_speedchecker();
 	start_speedchecker();
-#endif
-#ifdef HAVE_RADVD
 	stop_radvd();
 	start_radvd();
-#endif
 	stop_unbound();
 	start_unbound();
 
@@ -4730,10 +4708,8 @@ void stop_wan(void)
 	led_control(LED_CONNECTED, LED_OFF);
 	unlink("/tmp/.wanuptime");
 
-#ifdef HAVE_OPENVPN
 	stop_openvpnserverwan();
 	stop_openvpn_wandone();
-#endif
 #ifdef HAVE_ANTAIRA_AGENT
 	stop_antaira_agent();
 #endif

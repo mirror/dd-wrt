@@ -186,12 +186,8 @@ void start_post_sysinit(void)
 	set_ip_forward('1');
 	set_tcp_params();
 	set_systunes();
-#ifdef HAVE_MMC
 	start_mmc();
-#endif
-#ifdef HAVE_SPEEDCHECKER
 	start_speedchecker_init();
-#endif
 
 	start_mkfiles();
 
@@ -324,48 +320,23 @@ void start_init_stop(void)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	stop_service(wlconf);
 #endif
-#ifdef HAVE_MADWIFI
 	stop_service(stabridge);
-#endif
-#ifdef HAVE_EMF
 	stop_service(emf);
-#endif
-#ifdef HAVE_IPVS
 	stop_service(ipvs);
-#endif
-#ifdef HAVE_IPTOOLS
 	stop_service(arpd);
-#endif
-#ifdef HAVE_VLAN_FILTERING
 	stop_service(vlanfiltering);
-#endif
-#ifdef HAVE_VLANTAGGING
 	stop_service(bridging);
-#endif
-#ifdef HAVE_BONDING
 	stop_service(bonding);
-#endif
-
-#ifdef HAVE_VLANTAGGING
 	stop_service(bridgesif);
 	stop_service(vlantagging);
-#endif
-#ifdef HAVE_USTEER
 	stop_service(usteer);
-#endif
-#ifdef HAVE_REALTEK
 	stop_service(poe);
-#endif
-#if defined(HAVE_USTEER) || defined(HAVE_REALTEK)
 	stop_service(ubus);
-#endif
 	stop_service(lan);
 #ifndef HAVE_RB500
 	stop_service(resetbutton);
 #endif
-#ifdef HAVE_IPV6
 	stop_service(ipv6);
-#endif
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
@@ -459,19 +430,10 @@ void start_init_start(void)
 	nvram_set("IPTABLES", IPTABLES);
 	nvram_set("IP6TABLES", IP6TABLES);
 
-#ifdef HAVE_JFFS2
 	start_service(jffs2);
-#endif
-#ifdef HAVE_SYSLOG
 	start_service(syslog);
-#endif
-
-#ifdef HAVE_SMARTD
 	start_service(smartd);
-#endif
-#ifdef HAVE_IPV6
 	start_service(ipv6);
-#endif
 #ifndef HAVE_RB500
 	start_service(resetbutton);
 #endif
@@ -479,47 +441,24 @@ void start_init_start(void)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 //                      start_wlconf(); // doesnt make any sense. its already triggered by start lan
 #endif
-#ifdef HAVE_VLANTAGGING
 	start_service(bridging);
-#endif
-#ifdef HAVE_VLAN_FILTERING
 	start_service(vlanfiltering);
-#endif
-#if defined(HAVE_USTEER) || defined(HAVE_REALTEK)
 	start_service(ubus);
-#endif
-#if defined(HAVE_REALTEK)
 	start_service(poe);
-#endif
 	start_service(lan);
 	/* we need todo it a second time since the bridge did not exist before */
 	start_service(setup_vlans);
-#ifdef HAVE_IPVS
 	start_service(ipvs);
-#endif
-#ifdef HAVE_BONDING
 	start_service(bonding);
-#endif
 #ifdef HAVE_REGISTER
 	start_service(mkfiles);
 #endif
-#ifdef HAVE_MADWIFI
 	start_service(stabridge);
-#endif
-
-#ifdef HAVE_VLANTAGGING
 	start_service(vlantagging);
 	start_service(bridgesif);
-#endif
-#ifdef HAVE_VLAN_FILTERING
 	start_service(vlanfiltering);
-#endif
-#ifdef HAVE_IPTOOLS
 	start_service(arpd);
-#endif
-#ifdef HAVE_USTEER
 	start_service(usteer);
-#endif
 	start_services();
 	nvram_seti("sysup", 1);
 	start_service(wan_boot);
@@ -537,19 +476,13 @@ void start_init_start(void)
 	} else {
 		start_service(radio_on);
 	}
-#ifdef HAVE_EMF
 	start_service(emf);
-#endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT2860) && !defined(HAVE_RT61)
 	start_service(nas);
 #endif
 	start_service(radio_timer);
-#ifdef HAVE_CHILLI
 	start_service(chilli);
-#endif
-#ifdef HAVE_WIFIDOG
 	start_service(wifidog);
-#endif
 	start_service(httpd);
 	led_control(LED_DIAG, LED_OFF);
 	lcdmessage("System Ready");
@@ -600,13 +533,9 @@ void start_modules_wait(void)
 
 int restart_dns_main(int argc, char *argv[])
 {
-#ifdef HAVE_DNSMASQ
 	restart_dnsmasq();
-#endif
-#ifdef HAVE_SMARTDNS
 	stop_smartdns();
 	start_smartdns();
-#endif
 	return 0;
 }
 

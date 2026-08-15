@@ -4111,18 +4111,10 @@ void start_firewall(void)
  *	Services restart.
  * 	Should be always at the end. 
  */
-#ifdef HAVE_WIFIDOG
-	if (nvram_matchi("wd_enable", 1)) {
-		stop_wifidog();
-		start_wifidog();
-	}
-#endif
-#ifdef HAVE_CHILLI
-	if (nvram_matchi("chilli_enable", 1) || nvram_matchi("hotss_enable", 1)) {
-		stop_chilli();
-		start_chilli();
-	}
-#endif
+	stop_wifidog();
+	start_wifidog();
+	stop_chilli();
+	start_chilli();
 #ifdef HAVE_OPENVPN
 	if (nvram_matchi("openvpncl_enable", 1)) {
 		eval("/tmp/openvpncl_fw.sh");
@@ -4137,14 +4129,9 @@ void start_firewall(void)
 		start_pppoeserver();
 	}
 #endif
-#ifdef HAVE_SFE
 	start_sfe();
-#endif
-#ifdef HAVE_NODOG
 	stop_splashd();
 	start_splashd();
-#endif
-
 #ifdef HAVE_SYSCTL_EDIT
 	start_sysctl_config();
 #endif
@@ -4205,9 +4192,7 @@ void stop_firewall(void)
 #ifdef HAVE_IPV6
 	halt_firewall6();
 #endif
-#ifdef HAVE_SFE
 	start_sfe();
-#endif
 	unlock();
 #if !defined(HAVE_MICRO) //&& !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
 

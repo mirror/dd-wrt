@@ -240,6 +240,9 @@ void stop_usteer(void)
 	return;
 }
 
+
+#endif
+#if defined(HAVE_USTEER) || defined(HAVE_REALTEK)
 void start_ubus(void)
 {
 	eval("ubusd");
@@ -249,5 +252,4 @@ void stop_ubus(void)
 {
 	stop_process("ubusd", "daemon");
 }
-
 #endif

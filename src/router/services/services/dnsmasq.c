@@ -704,9 +704,7 @@ void start_dnsmasq(void)
 		stop_dnsmasq();
 		return;
 	}
-	#ifdef HAVE_SMARTDNS
 	start_smartdns();
-	#endif
 	int leasechange = nvram_state_change("static_leases");
 
 	update_timezone();
@@ -1236,9 +1234,7 @@ void restart_dnsmasq(void)
 
 void stop_dnsmasq(void)
 {
-	#ifdef HAVE_SMARTDNS
 	stop_smartdns();
-	#endif
 	if (stop_process("dnsmasq", "daemon")) {
 		unlink("/tmp/dnsmasq/resolv.dnsmasq");
 	}

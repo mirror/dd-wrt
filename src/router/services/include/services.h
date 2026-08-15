@@ -22,25 +22,42 @@
 
 #ifndef SERVICES_H
 #define SERVICES_H
-#define DECLARE_SERVICE(name)         \
-	extern void start_##name();   \
-	extern void stop_##name();    \
-	extern void restart_##name(); \
-	extern char *name##_deps();   \
-	extern char *name##_proc();
+#define DECLARE_SERVICE(name)             \
+	extern void start_##name(void);   \
+	extern void stop_##name(void);    \
+	extern void restart_##name(void); \
+	extern char *name##_deps(void);   \
+	extern char *name##_proc(void);
+
+#define DISABLE_SERVICE(name)                   \
+	static inline void start_##name(void)   \
+	{                                       \
+	}                                       \
+	static inline void stop_##name(void)    \
+	{                                       \
+	}                                       \
+	static inline void restart_##name(void) \
+	{                                       \
+	}
 
 DECLARE_SERVICE(backup);
+#ifdef HAVE_BONDING
 DECLARE_SERVICE(bonding);
+#else
+DISABLE_SERVICE(bonding);
+#endif
 DECLARE_SERVICE(bootconfig);
 DECLARE_SERVICE(bootconfig_efi);
 DECLARE_SERVICE(bootconfig_legacy);
-DECLARE_SERVICE(bridgesif);
-DECLARE_SERVICE(bridging);
 DECLARE_SERVICE(check_qmi);
 DECLARE_SERVICE(check_sierradirectip);
 DECLARE_SERVICE(check_sierrappp);
 DECLARE_SERVICE(checkhostapd);
+#ifdef HAVE_CHILLI
 DECLARE_SERVICE(chilli);
+#else
+DISABLE_SERVICE(chilli);
+#endif
 DECLARE_SERVICE(config_vlan);
 DECLARE_SERVICE(configurewifi);
 DECLARE_SERVICE(conntrack);
@@ -59,7 +76,11 @@ DECLARE_SERVICE(dhcpfwd);
 DECLARE_SERVICE(dlna);
 DECLARE_SERVICE(dlna_rescan);
 DECLARE_SERVICE(dns_clear_resolv);
+#ifdef HAVE_DNSMASQ
 DECLARE_SERVICE(dnsmasq);
+#else
+DISABLE_SERVICE(dnsmasq);
+#endif
 DECLARE_SERVICE(drivers);
 DECLARE_SERVICE(drivers_net);
 DECLARE_SERVICE(duallink);
@@ -85,9 +106,21 @@ DECLARE_SERVICE(init_start);
 DECLARE_SERVICE(init_stop);
 DECLARE_SERVICE(initvlans);
 DECLARE_SERVICE(iptqueue);
+#ifdef HAVE_IPV6
 DECLARE_SERVICE(ipv6);
+#else
+DISABLE_SERVICE(ipv6);
+#endif
+#ifdef HAVE_IPVS
 DECLARE_SERVICE(ipvs);
+#else
+DISABLE_SERVICE(ipvs);
+#endif
+#ifdef HAVE_JFFS2
 DECLARE_SERVICE(jffs2);
+#else
+DISABLE_SERVICE(jffs2);
+#endif
 DECLARE_SERVICE(l2tp_boot);
 DECLARE_SERVICE(l2tp_redial);
 DECLARE_SERVICE(l2tp);
@@ -95,10 +128,18 @@ DECLARE_SERVICE(lan);
 DECLARE_SERVICE(lighttpd);
 DECLARE_SERVICE(lltd);
 DECLARE_SERVICE(loadfwmodules);
+#ifdef HAVE_MACTELNET
 DECLARE_SERVICE(mactelnetd);
+#else
+DISABLE_SERVICE(mactelnetd);
+#endif
 DECLARE_SERVICE(mdns);
 DECLARE_SERVICE(mkfiles);
+#ifdef HAVE_MMC
 DECLARE_SERVICE(mmc);
+#else
+DISABLE_SERVICE(mmc);
+#endif
 DECLARE_SERVICE(modules);
 DECLARE_SERVICE(modules_wait);
 DECLARE_SERVICE(nfs);
@@ -107,10 +148,19 @@ DECLARE_SERVICE(nstxd);
 DECLARE_SERVICE(ntpc);
 DECLARE_SERVICE(nvram);
 DECLARE_SERVICE(olsrd);
+#ifdef HAVE_OPENVPN
 DECLARE_SERVICE(openvpn);
 DECLARE_SERVICE(openvpnserver);
 DECLARE_SERVICE(openvpnserversys);
 DECLARE_SERVICE(openvpnserverwan);
+DECLARE_SERVICE(openvpn_wandone);
+#else
+DISABLE_SERVICE(openvpn);
+DISABLE_SERVICE(openvpnserver);
+DISABLE_SERVICE(openvpnserversys);
+DISABLE_SERVICE(openvpnserverwan);
+DISABLE_SERVICE(openvpn_wandone);
+#endif
 DECLARE_SERVICE(overclocking);
 DECLARE_SERVICE(plex);
 DECLARE_SERVICE(postnetwork);
@@ -136,7 +186,11 @@ DECLARE_SERVICE(radio_on_0);
 DECLARE_SERVICE(radio_on_1);
 DECLARE_SERVICE(radio_on_2);
 DECLARE_SERVICE(radio_timer);
+#ifdef HAVE_RADVD
 DECLARE_SERVICE(radvd);
+#else
+DISABLE_SERVICE(radvd);
+#endif
 DECLARE_SERVICE(raid);
 DECLARE_SERVICE(recover);
 DECLARE_SERVICE(redial);
@@ -154,33 +208,78 @@ DECLARE_SERVICE(ses_led_control);
 DECLARE_SERVICE(set_routes);
 DECLARE_SERVICE(setup_affinity);
 DECLARE_SERVICE(setup_vlans);
+#ifdef HAVE_SFE
 DECLARE_SERVICE(sfe);
+#else
+DISABLE_SERVICE(sfe);
+#endif
+#ifdef HAVE_SMARTD
 DECLARE_SERVICE(smartd);
+#else
+DISABLE_SERVICE(smartd);
+#endif
 DECLARE_SERVICE(smcrouted);
 DECLARE_SERVICE(snmp);
 DECLARE_SERVICE(softether);
+#ifdef HAVE_SPEEDCHECKER
 DECLARE_SERVICE(speedchecker);
 DECLARE_SERVICE(speedchecker_init);
+#else
+DISABLE_SERVICE(speedchecker);
+DISABLE_SERVICE(speedchecker_init);
+#endif
+#ifdef HAVE_NODOG
 DECLARE_SERVICE(splashd);
+#else
+DISABLE_SERVICE(splashd);
+#endif
 DECLARE_SERVICE(sshd);
+#ifdef HAVE_MADWIFI
 DECLARE_SERVICE(stabridge);
+#else
+DISABLE_SERVICE(stabridge);
+#endif
 DECLARE_SERVICE(sysctl_cleanup);
 DECLARE_SERVICE(sysctl_config);
 DECLARE_SERVICE(sysinit);
+#ifdef HAVE_SYSLOG
 DECLARE_SERVICE(syslog);
+#else
+DISABLE_SERVICE(syslog);
+#endif
 DECLARE_SERVICE(sysshutdown);
 DECLARE_SERVICE(telnetd);
 DECLARE_SERVICE(test_ndpi);
 DECLARE_SERVICE(tor);
 DECLARE_SERVICE(transmission);
 DECLARE_SERVICE(ttraff);
+#if defined(HAVE_USTEER) || defined(HAVE_REALTEK)
 DECLARE_SERVICE(ubus);
+#else
+DISABLE_SERVICE(ubus);
+#endif
 DECLARE_SERVICE(udpxy);
 DECLARE_SERVICE(upnpd);
+#ifdef HAVE_USTEER
 DECLARE_SERVICE(usteer);
+#else
+DISABLE_SERVICE(usteer);
+#endif
 DECLARE_SERVICE(vifs);
+#ifdef HAVE_VLANTAGGING
 DECLARE_SERVICE(vlantagging);
+DECLARE_SERVICE(bridging);
+DECLARE_SERVICE(bridgesif);
+#else
+DISABLE_SERVICE(vlantagging);
+DISABLE_SERVICE(bridging);
+DISABLE_SERVICE(bridgesif);
+#endif
+#ifdef HAVE_VLAN_FILTERING
 DECLARE_SERVICE(vlanfiltering);
+#else
+DISABLE_SERVICE(vlanfiltering);
+#endif
 DECLARE_SERVICE(vncrepeater);
 DECLARE_SERVICE(vpn_modules);
 DECLARE_SERVICE(wan);
@@ -189,7 +288,11 @@ DECLARE_SERVICE(wan_redial);
 DECLARE_SERVICE(wan_service);
 DECLARE_SERVICE(wanup);
 DECLARE_SERVICE(watchdog);
+#ifdef HAVE_WIFIDOG
 DECLARE_SERVICE(wifidog);
+#else
+DISABLE_SERVICE(wifidog);
+#endif
 DECLARE_SERVICE(wland);
 DECLARE_SERVICE(wlconf);
 DECLARE_SERVICE(wol);
@@ -199,17 +302,32 @@ DECLARE_SERVICE(wifi_drivers);
 DECLARE_SERVICE(arch_defaults);
 DECLARE_SERVICE(dbus);
 DECLARE_SERVICE(bluetooth);
+#ifdef HAVE_IPTOOLS
 DECLARE_SERVICE(arpd);
+#else
+DISABLE_SERVICE(arpd);
+#endif
 DECLARE_SERVICE(atm);
+#ifdef HAVE_EMF
 DECLARE_SERVICE(emf);
+#else
+DISABLE_SERVICE(emf);
+#endif
 DECLARE_SERVICE(nas);
 DECLARE_SERVICE(qtn);
+#ifdef HAVE_REALTEK
 DECLARE_SERVICE(poe);
+#else
+DISABLE_SERVICE(poe);
+#endif
 DECLARE_SERVICE(antaira);
 DECLARE_SERVICE(antaira_agent);
 DECLARE_SERVICE(benchmark);
+#ifdef HAVE_IRQBALANCE
 DECLARE_SERVICE(irqbalance);
-
+#else
+DISABLE_SERVICE(irqbalance);
+#endif
 #if defined(HAVE_IPQ6018)
 int nss_disabled(int setcur);
 	#define has_nss !nss_disabled(0)
@@ -221,13 +339,7 @@ extern void run_pptp(int status);
 #ifdef HAVE_UNBOUND
 DECLARE_SERVICE(unbound);
 #else
-static inline void start_unbound(void)
-{
-}
-
-static inline void stop_unbound(void)
-{
-}
+DISABLE_SERVICE(unbound);
 #endif
 
 extern void run_pptp(int status);
@@ -235,13 +347,7 @@ extern void run_l2tp(int status);
 #ifdef HAVE_SMARTDNS
 DECLARE_SERVICE(smartdns);
 #else
-static inline void start_smartdns(void)
-{
-}
-
-static inline void stop_smartdns(void)
-{
-}
+DISABLE_SERVICE(smartdns);
 #endif
 extern void run_wan(int status);
 extern void wan_done(char *ifname);

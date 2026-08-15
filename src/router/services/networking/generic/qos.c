@@ -1183,15 +1183,12 @@ void start_qos(void)
 	wshaper_dev = nvram_safe_get("wshaper_dev");
 
 	if (!nvram_matchi("wshaper_enable", 1)) {
-#ifdef HAVE_SFE
 		start_sfe();
-#endif
 		return;
 	}
-#ifdef HAVE_SFE
 	else
 		stop_sfe();
-#endif
+
 	if (!strcmp(wshaper_dev, "WAN") && (nvram_match("wan_proto", "disabled") || client_bridged_enabled()))
 		return;
 

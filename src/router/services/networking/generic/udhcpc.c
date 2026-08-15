@@ -216,20 +216,12 @@ static int bound(void)
 			generate_hosts();
 			start_set_routes();
 			dns_to_resolv();
-#ifdef HAVE_DNSMASQ
 			restart_dnsmasq();
-#endif
-#ifdef HAVE_SMARTDNS
 			stop_smartdns();
 			start_smartdns();
-#endif
-#ifdef HAVE_UNBOUND
 			stop_unbound();
 			start_unbound();
-#endif
-#ifdef HAVE_MACTELNET
 			restart_mactelnetd();
-#endif
 			start_wan_service();
 			nvram_seti("dhcpc_done", 1);
 		}
@@ -352,9 +344,7 @@ static int bound(void)
 		start_heartbeat_boot();
 		stop_unbound();
 		start_unbound();
-	#ifdef HAVE_MACTELNET
 		start_mactelnetd();
-	#endif
 	}
 #else
 	if (0) {
