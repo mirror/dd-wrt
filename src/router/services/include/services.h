@@ -167,7 +167,11 @@ DECLARE_SERVICE(postnetwork);
 DECLARE_SERVICE(post_sysinit);
 DECLARE_SERVICE(pppmodules);
 DECLARE_SERVICE(pppoerelay);
+#ifdef HAVE_PPPOESERVER
 DECLARE_SERVICE(pppoeserver);
+#else
+DISABLE_SERVICE(pppoeserver);
+#endif
 DECLARE_SERVICE(pppoe_dual);
 DECLARE_SERVICE(pppoe);
 DECLARE_SERVICE(pptp);

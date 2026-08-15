@@ -4123,12 +4123,8 @@ void start_firewall(void)
 		eval("/tmp/openvpnsrv_fw.sh");
 	}
 #endif
-#ifdef HAVE_PPPOESERVER
-	if (nvram_matchi("pppoeserver_enabled", 1)) {
-		stop_pppoeserver();
-		start_pppoeserver();
-	}
-#endif
+	stop_pppoeserver();
+	start_pppoeserver();
 	start_sfe();
 	stop_splashd();
 	start_splashd();
