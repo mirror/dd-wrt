@@ -171,7 +171,7 @@ void static_leases(webs_t wp)
 	if (!ip || !mac || !hostname)
 		return;
 	char newlease[256];
-	sprintf(newlease, "%s=%s=%s=%s=%s", mac, hostname, ip, "infinite" ,"0");
+	sprintf(newlease, "%s=%s=%s=%s=%s", mac, hostname, ip, "infinite", "0");
 	char *oldleases = nvram_safe_get("static_leases");
 	size_t slen = strlen(oldleases) + strlen(newlease) + 2;
 	char *target = malloc(slen);

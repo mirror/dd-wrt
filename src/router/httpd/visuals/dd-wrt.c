@@ -6061,7 +6061,7 @@ static int disable_if_be_or_ah(const char *prefix)
 {
 	if (!has_be(prefix) || has_5ghz(prefix) || has_2ghz(prefix))
 		return 1;
-	
+
 	char *netmode = nvram_nget("%s_net_mode", prefix);
 	return !(!strcmp(netmode, "mixed") || !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") ||
 		 !strcmp(netmode, "be6-only") || !strcmp(netmode, "beax6-only") || !strcmp(netmode, "beax5-only") ||
@@ -6171,8 +6171,10 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 	struct pair s_authpair_80211x[] = {
 		{ "wpa.wpa", "wpa", alwaystrue, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz, disable_if_be_or_ah },
 		{ "wpa.wpa2", "wpa2", alwaystrue, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz, disable_if_be_or_ah },
-		{ "wpa.wpa2_sha256", "wpa2-sha256", has_wpa3, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz, disable_if_be_or_ah },
-		{ "wpa.wpa2_sha384", "wpa2-sha384", has_wpa3, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz, disable_if_be_or_ah },
+		{ "wpa.wpa2_sha256", "wpa2-sha256", has_wpa3, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz,
+		  disable_if_be_or_ah },
+		{ "wpa.wpa2_sha384", "wpa2-sha384", has_wpa3, alwaystrue, alwaystrue, alwaystrue, disable_if_6ghz,
+		  disable_if_be_or_ah },
 		{ "wpa.wpa3", "wpa3", has_wpa3, is_mac80211, alwaystrue, alwaystrue, alwaystrue, alwaystrue },
 		{ "wpa.wpa3_128", "wpa3-128", wpa3_gcmp128, has_gmac_128, alwaystrue, alwaystrue, alwaystrue, alwaystrue },
 		{ "wpa.wpa3_192", "wpa3-192", wpa3_gcmp256, has_gmac_256, alwaystrue, alwaystrue, alwaystrue, alwaystrue },

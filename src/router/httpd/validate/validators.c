@@ -2467,7 +2467,8 @@ EJ_VISIBLE void validate_staticleases(webs_t wp, char *value, struct variable *v
 		if (hostname == NULL || *(hostname) == 0 || ip == NULL || *(ip) == 0 || *(nodhcp) == 0)
 			break;
 		if (leases == NULL)
-			leases = calloc(1, strlen(mac) + 1 + strlen(hostname) + 1 + strlen(ip) + 1 + strlen(time) + 1 + strlen(nodhcp) + 2);
+			leases = calloc(1, strlen(mac) + 1 + strlen(hostname) + 1 + strlen(ip) + 1 + strlen(time) + 1 +
+						   strlen(nodhcp) + 2);
 		else
 			leases = realloc(leases, strlen(leases) + strlen(mac) + 1 + strlen(hostname) + 1 + strlen(ip) + 1 +
 							 strlen(time) + 1 + strlen(nodhcp) + 2);

@@ -92,7 +92,7 @@ static int hik_generic(const char *filename, const char *mem, size_t len)
 	char *desc = getXMLTag(mem, "eventDescription", s_desc, sizeof(s_desc));
 	char *addr = getXMLTag(mem, "ipAddress", s_addr, sizeof(s_addr));
 
-/*	static int lastevent = -(5 * 60);
+	/*	static int lastevent = -(5 * 60);
 	int new = time(NULL);
 	if (new < lastevent)
 		lastevent = new;
@@ -156,12 +156,12 @@ static int alarmserver_in(char *url, webs_t wp, size_t len, char *boundary)
 		/*
 	 * Look for our part 
 	 */
-		dd_logdebug("httpd","enter %s\n", __func__);
+		dd_logdebug("httpd", "enter %s\n", __func__);
 		int v2 = 0;
 		while (len > 0) {
 			if (!wfgets(buf, MIN(len + 1, sizeof(buf)), wp, NULL))
 				return -1;
-			dd_logdebug("httpd", "%s\n",buf);
+			dd_logdebug("httpd", "%s\n", buf);
 			len -= strlen(buf);
 			/* there are 2 different protocol versions out there */
 			if (!strncasecmp(buf, "Content-Disposition:", 20)) {
@@ -231,7 +231,7 @@ static int alarmserver_out(unsigned char method, struct mime_handler *handler, c
 {
 	websWrite(wp, "HikVision/Abus compatible Alarmserver\n");
 	websDone(wp, 200);
-	dd_logdebug("httpd", "alarm: path %s\n",path);
+	dd_logdebug("httpd", "alarm: path %s\n", path);
 	char *addr = wp->http_client_ip;
 	char check[INET6_ADDRSTRLEN + 1];
 	getipv4fromipv6(check, addr);

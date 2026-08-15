@@ -487,7 +487,7 @@ static int can_not_scan(char *prefix)
 	strncpy(base, prefix, 32);
 	char *p = strchr(base, '.');
 	if (p)
-	    *p = 0;
+		*p = 0;
 	if (nvram_nmatch("sta", "%s_mode", base) || nvram_nmatch("wdssta", "%s_mode", base) ||
 	    nvram_nmatch("wet", "%s_mode", base) || nvram_nmatch("mesh", "%s_mode", base) ||
 	    nvram_nmatch("infra", "%s_mode", base) || nvram_nmatch("wdssta_mtik", "%s_mode", base)) {
@@ -530,7 +530,7 @@ EJ_VISIBLE void ej_get_curchannel(webs_t wp, int argc, char_t **argv)
 	strncpy(base, prefix, 32);
 	char *p = strchr(base, '.');
 	if (p)
-	    *p = 0;
+		*p = 0;
 	int channel = wifi_getchannel(base);
 	if (channel >= 0 && channel < 1000) {
 		struct wifi_interface *interface = wifi_getfreq(base);
