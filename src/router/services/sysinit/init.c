@@ -199,79 +199,79 @@ void start_post_sysinit(void)
 	FILE *fp = fopen("/tmp/loginprompt", "wb");
 
 #ifndef HAVE_MAKSAT
-#ifndef HAVE_TRIMAX
-#ifndef HAVE_WIKINGS
-#ifndef HAVE_ESPOD
-#ifndef HAVE_IPR
-#ifndef HAVE_NEXTMEDIA
-#ifndef HAVE_ERC
-#ifndef HAVE_CORENET
-#ifdef HAVE_TMK
+	#ifndef HAVE_TRIMAX
+		#ifndef HAVE_WIKINGS
+			#ifndef HAVE_ESPOD
+				#ifndef HAVE_IPR
+					#ifndef HAVE_NEXTMEDIA
+						#ifndef HAVE_ERC
+							#ifndef HAVE_CORENET
+								#ifdef HAVE_TMK
 	fprintf(fp, "KMT-WAS %s (c) " BUILD_YEAR " KMT GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
 		SVN_REVISION, getRouter());
-#elif HAVE_SANSFIL
+								#elif HAVE_SANSFIL
 	fprintf(fp, "SANSFIL %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n",
 		DIST, SVN_REVISION, getRouter());
-#elif HAVE_KORENRON
+								#elif HAVE_KORENRON
 	fprintf(fp, "KORENRON %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n",
 		DIST, SVN_REVISION, getRouter());
-#elif HAVE_TESTEM
+								#elif HAVE_TESTEM
 	fprintf(fp, "TESTEM %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
 		SVN_REVISION, getRouter());
-#elif HAVE_HOBBIT
+								#elif HAVE_HOBBIT
 	fprintf(fp, "HQ-NDS %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
 		SVN_REVISION, getRouter());
-#elif HAVE_ONNET
-#ifdef HAVE_ONNET_BLANK
+								#elif HAVE_ONNET
+									#ifdef HAVE_ONNET_BLANK
 	fprintf(fp, "Enterprise AP %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST,
 		SVN_REVISION, getRouter());
-#elif HAVE_UNFY
+									#elif HAVE_UNFY
 	//fprintf(fp, "UNIFY %s (c) 2013 \nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 	fprintf(fp, "Firmware %s (c) " BUILD_YEAR " \nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION,
 		getRouter());
-#else
+									#else
 	fprintf(fp, "OTAi %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
 		SVN_REVISION, getRouter());
-#endif
-#elif HAVE_RAYTRONIK
+									#endif
+								#elif HAVE_RAYTRONIK
 	fprintf(fp, "RAYTRONIK %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n",
 		DIST, SVN_REVISION, getRouter());
-#elif HAVE_ANTAIRA
+								#elif HAVE_ANTAIRA
 	fprintf(fp, "Antaira %s\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST, SVN_REVISION, getRouter());
-#elif HAVE_HDWIFI
+								#elif HAVE_HDWIFI
 	fprintf(fp, "HDWIFI %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n", DIST,
 		SVN_REVISION, getRouter());
-#elif HAVE_NDTRADE
+								#elif HAVE_NDTRADE
 	fprintf(fp, "ND TRADE %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\nBoard: %s\n",
 		DIST, SVN_REVISION, getRouter());
-#else
-#ifdef DIST
+								#else
+									#ifdef DIST
 	if (*(DIST))
 		fprintf(fp, "DD-WRT v3.0-r%s %s (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n",
 			SVN_REVISION, DIST, getRouter());
 	else
 		fprintf(fp, "DD-WRT v3.0-r%s custom (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n",
 			SVN_REVISION, getRouter());
-#else
+									#else
 	fprintf(fp, "DD-WRT v3.0-r%s custom (c) " BUILD_YEAR " NewMedia-NET GmbH\nRelease: " BUILD_DATE "\nBoard: %s\n",
 		SVN_REVISION, getRouter());
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
+									#endif
+								#endif
+							#endif
+						#endif
+					#endif
+				#endif
+			#endif
+		#endif
+	#endif
 #endif
 
 	fclose(fp);
 
 #ifndef HAVE_MADWIFI
-#ifdef HAVE_QTN
+	#ifdef HAVE_QTN
 	nvram_seti("qtn_ready", 0);
-#endif
+	#endif
 #endif
 }
 
@@ -284,10 +284,10 @@ void start_init_restart(void)
 
 #ifndef HAVE_MADWIFI
 	int cnt = get_wl_instances();
-#ifdef HAVE_QTN
+	#ifdef HAVE_QTN
 	cnt = 1;
 	nvram_seti("qtn_ready", 0);
-#endif
+	#endif
 #endif
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
@@ -501,11 +501,11 @@ void start_init_start(void)
 void start_modules_wait(void)
 {
 #ifndef HAVE_MICRO
-#ifdef HAVE_REGISTER
-#ifndef HAVE_ERC
+	#ifdef HAVE_REGISTER
+		#ifndef HAVE_ERC
 	if (isregistered_real())
-#endif
-#endif
+		#endif
+	#endif
 	{
 		// start init scripts
 		eval("/etc/init.d/rcS");
@@ -515,9 +515,9 @@ void start_modules_wait(void)
 		// startup script
 		// (siPath impl)
 		start_modules();
-#ifdef HAVE_MILKFISH
+	#ifdef HAVE_MILKFISH
 		start_milkfish_boot();
-#endif
+	#endif
 		if (nvram_invmatch("rc_custom", "")) // create
 		// custom
 		// script

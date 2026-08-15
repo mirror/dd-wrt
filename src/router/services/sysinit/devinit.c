@@ -207,26 +207,26 @@ void start_devinit(void)
 #if defined(HAVE_ATH10K)
 	eval("rm", "-f", "/tmp/ath10k-board.bin");
 	eval("ln", "-s", "/lib/ath10k/board.bin", "/tmp/ath10k-board.bin");
-#if !defined(HAVE_X86) && !defined(HAVE_VENTANA) && !defined(HAVE_LAGUNA) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN) && \
-	!defined(HAVE_NEWPORT) && !defined(HAVE_QCA9888)
+	#if !defined(HAVE_X86) && !defined(HAVE_VENTANA) && !defined(HAVE_LAGUNA) && !defined(HAVE_LIMA) && \
+		!defined(HAVE_RAMBUTAN) && !defined(HAVE_NEWPORT) && !defined(HAVE_QCA9888)
 	eval("ln", "-s", "/lib/ath10k/board_9984.bin", "/tmp/board1.bin");
-#endif
+	#endif
 #endif
 
 #ifndef HAVE_OPENRISC
-#if !defined(HAVE_VENTANA) || defined(HAVE_NEWPORT)
-#ifndef HAVE_RAMBUTAN
-#ifndef HAVE_WDR4900
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600)
+	#if !defined(HAVE_VENTANA) || defined(HAVE_NEWPORT)
+		#ifndef HAVE_RAMBUTAN
+			#ifndef HAVE_WDR4900
+				#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600)
 	system("mount --bind /usr/local /jffs");
 	nvram_seti("enable_jffs2", 1);
-#elif HAVE_IPQ806X
+				#elif HAVE_IPQ806X
 	eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
-#else
-#endif
-#endif
-#endif
-#endif
+				#else
+				#endif
+			#endif
+		#endif
+	#endif
 #endif
 	char *aqd = nvram_safe_get("svqos_aqd");
 #ifdef HAVE_CODEL

@@ -765,7 +765,8 @@ void start_wifi_drivers(void)
 				sprintf(country, "country=%s", region);
 				if (!nvram_match("cur_region", region)) {
 					eval("rmmod", "morse");
-					eval("insmod", "morse", "reattach_hw=0", "enable_airtime_fairness=1", suffix, "bcf=bcf_mm_hl2_ext.bin", country);
+					eval("insmod", "morse", "reattach_hw=0", "enable_airtime_fairness=1", suffix,
+					     "bcf=bcf_mm_hl2_ext.bin", country);
 				}
 			}
 			nvram_set("cur_region", region);
