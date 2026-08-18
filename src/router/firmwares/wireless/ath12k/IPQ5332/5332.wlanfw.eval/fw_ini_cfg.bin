@@ -1,0 +1,11 @@
+//Number of VAPs
+{"Mode": 0,"num vap":32}    // Max VAP support is 17 per MAC
+{"Mode": 1,"num vap":16}    // Max VAP support is 9 per MAC
+{"Mode": 2,"num vap":9}    // Max VAP support is 9 per MAC
+
+//Number of clients
+{"Mode":0, "num clients":256}   // Max client support is 256 per single MAC
+{"Mode":1, "num clients":256}   // Max client support is 128 per MAC
+{"Mode":2, "num clients":128}   // Max client support is 128 per MAC
+
+// Please do not reduce the default configuration for QWRAP case(¼°vKÁVK#‡ŒüGlÑdÿŞÀE&¬æõÑ©5ş

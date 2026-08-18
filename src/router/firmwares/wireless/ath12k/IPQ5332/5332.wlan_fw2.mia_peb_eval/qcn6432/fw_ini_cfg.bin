@@ -1,0 +1,16 @@
+//Number of VAPs
+{"Mode": 0,"num vap":17}    // Max VAP support is 17 per MAC
+{"Mode": 1,"num vap":17}    // Max VAP support is 17 per MAC
+{"Mode": 2,"num vap":17}    // Max VAP support is 17 per MAC
+
+//Number of clients
+{"Mode":0, "num clients":256}   // Max client support is 256 for both single MAC and dual MAC
+{"Mode":1, "num clients":256}   // Max client support is 256 per MAC
+{"Mode":2, "num clients":256}   // Max client support is 256 per MAC
+
+// Please do not reduce the default configuration while working in QWRAP Mode.
+
+//AFC Proxy ,Deployment type ,Power mode mask INI configuration
+{"afc_local_rsvd":0,"Deployment_Type":1,"Power_mode_mask":7}
+2ï=RÜ[I 
+ë;¿b|G%ê…²ªÑŠ[þnT
