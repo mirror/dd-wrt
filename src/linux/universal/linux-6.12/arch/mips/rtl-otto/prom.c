@@ -318,7 +318,7 @@ static uint32_t __init read_model_name(void)
 static void __init parse_model_name(uint32_t model)
 {
 	int val, offset, num_chars, pos;
-	char suffix[5] = {};
+	char suffix[5] = {0};
 
 	if (soc_info.family == RTL9300_FAMILY_ID ||
 	    soc_info.family == RTL9310_FAMILY_ID) {
@@ -351,7 +351,7 @@ static void __init parse_model_name(uint32_t model)
 		soc_info.testchip = true;
 	}
 
-	snprintf(soc_info.name, sizeof(soc_info.name), "RTL%04X%c",
+	snprintf(soc_info.name, sizeof(soc_info.name), "RTL%04X%s",
 		 soc_info.id, suffix);
 
 }
@@ -386,21 +386,21 @@ static void __init read_chip_info(void)
 
 static void __init set_system_type(void) {
 	char revision = '?';
-	char *es = "";
+//	char *es = "";
 	char subtype[12] = "";
 
 	if (soc_info.revision >= 0 && soc_info.revision < 26)
 		revision = 'A' + soc_info.revision;
 
-	if (soc_info.testchip)
-		es = " ES";
+//	if (soc_info.testchip)
+//		es = " ES";
 
 	if (soc_info.subtype)
 		snprintf(subtype, sizeof(subtype), " subtype %02X", soc_info.subtype);
 
 	snprintf(soc_info.system_type, sizeof(soc_info.system_type),
-		 "Realtek %s%s%s rev %c (%04X)",
-		 soc_info.name, es, subtype, revision, soc_info.cpu);
+		 "Realtek %s%s rev %c (%04X)",
+		 soc_info.name, subtype, revision, soc_info.cpu);
 }
 
 #ifdef CONFIG_EARLY_PRINTK
