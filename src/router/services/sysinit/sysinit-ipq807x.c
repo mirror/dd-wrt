@@ -1208,6 +1208,7 @@ void start_sysinit(void)
 			fclose(out);
 			break;
 		}
+		case ROUTER_DYNALINK_DLWRX36:
 		case ROUTER_GLINET_AX1800: {
 			fseek(fp, 0, SEEK_SET);
 			unsigned char newmac2[6];
@@ -1287,6 +1288,7 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", ethaddr);
 		set_hwaddr("eth0", ethaddr);
 		set_hwaddr("wan", ethaddr);
+		MAC_ADD(ethaddr);
 		set_hwaddr("lan1", ethaddr);
 		set_hwaddr("lan2", ethaddr);
 		set_hwaddr("lan3", ethaddr);
@@ -1297,6 +1299,7 @@ void start_sysinit(void)
 		set_hwaddr("lan8", ethaddr);
 		set_hwaddr("10gcopper", ethaddr);
 		set_hwaddr("10gsfp", ethaddr);
+		MAC_SUB(ethaddr);
 	}
 	switch (brand) {
 	case ROUTER_XIAOMI_BE7000:
@@ -1490,6 +1493,15 @@ void start_sysinit(void)
 		set_envtools(uenv, "0x0", "0x40000", "0x20000", 2);
 		break;
 	case ROUTER_DYNALINK_DLWRX36:
+		MAC_ADD(ethaddr);
+		MAC_ADD(ethaddr);
+		nvram_set("wlan0_hwaddr", ethaddr);
+		patch(ethaddr, 20);
+		MAC_ADD(ethaddr);
+		nvram_set("wlan1_hwaddr", ethaddr);
+		patch(ethaddr, 14);
+		removeregdomain("/tmp/caldata.bin", IPQ8074);
+		removeregdomain("/tmp/board.bin", IPQ8074);
 		set_envtools(getMTD("appsblenv"), "0x0", "0x40000", "0x20000", 2);
 		break;
 	case ROUTER_BUFFALO_WXR5950AX12:
