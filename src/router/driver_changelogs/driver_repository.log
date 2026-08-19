@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8833 | brainslayer | 2026-08-16 15:50:36 +0600 (Sun, 16 Aug 2026) | 1 line
+
+ath11k: fix the mesh MPP expiry timer interval, thx julius
+------------------------------------------------------------------------
 r8832 | brainslayer | 2026-08-10 13:43:55 +0600 (Mon, 10 Aug 2026) | 1 line
 
 merge from upstream
