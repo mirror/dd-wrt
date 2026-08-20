@@ -346,11 +346,6 @@ struct asd_sas_phy {
 	void *lldd_phy;		  /* not touched by the sas_class_code */
 };
 
-struct scsi_core {
-	struct Scsi_Host *shost;
-
-};
-
 enum sas_ha_state {
 	SAS_HA_REGISTERED,
 	SAS_HA_DRAINING,
@@ -371,7 +366,7 @@ struct sas_ha_struct {
 
 	struct mutex disco_mutex;
 
-	struct scsi_core core;
+	struct Scsi_Host *shost;
 
 /* public: */
 	char *sas_ha_name;
@@ -708,7 +703,6 @@ extern int sas_register_ha(struct sas_ha_struct *);
 extern int sas_unregister_ha(struct sas_ha_struct *);
 extern void sas_prep_resume_ha(struct sas_ha_struct *sas_ha);
 extern void sas_resume_ha(struct sas_ha_struct *sas_ha);
-extern void sas_resume_ha_no_sync(struct sas_ha_struct *sas_ha);
 extern void sas_suspend_ha(struct sas_ha_struct *sas_ha);
 
 int sas_set_phy_speed(struct sas_phy *phy, struct sas_phy_linkrates *rates);

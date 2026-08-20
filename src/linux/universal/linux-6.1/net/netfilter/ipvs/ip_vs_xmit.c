@@ -184,7 +184,7 @@ static inline bool crosses_local_route_boundary(int skb_af, struct sk_buff *skb,
 			(!skb->dev || skb->dev->flags & IFF_LOOPBACK) &&
 			(addr_type & IPV6_ADDR_LOOPBACK);
 		old_rt_is_local = __ip_vs_is_local_route6(
-			(struct rt6_info *)skb_dst(skb));
+			dst_rt6_info(skb_dst(skb)));
 	} else
 #endif
 	{
@@ -484,7 +484,7 @@ __ip_vs_get_out_rt_v6(struct netns_ipvs *ipvs, int skb_af, struct sk_buff *skb,
 	if (dest) {
 		dest_dst = __ip_vs_dst_check(dest);
 		if (likely(dest_dst))
-			rt = (struct rt6_info *) dest_dst->dst_cache;
+			rt = dst_rt6_info(dest_dst->dst_cache);
 		else {
 			u32 cookie;
 
@@ -504,7 +504,7 @@ __ip_vs_get_out_rt_v6(struct netns_ipvs *ipvs, int skb_af, struct sk_buff *skb,
 				ip_vs_dest_dst_free(dest_dst);
 				goto err_unreach;
 			}
-			rt = (struct rt6_info *) dst;
+			rt = dst_rt6_info(dst);
 			cookie = rt6_get_cookie(rt);
 			__ip_vs_dst_set(dest, dest_dst, &rt->dst, cookie);
 			spin_unlock_bh(&dest->dst_lock);
@@ -520,7 +520,7 @@ __ip_vs_get_out_rt_v6(struct netns_ipvs *ipvs, int skb_af, struct sk_buff *skb,
 					      rt_mode);
 		if (!dst)
 			goto err_unreach;
-		rt = (struct rt6_info *) dst;
+		rt = dst_rt6_info(dst);
 	}
 
 	local = __ip_vs_is_local_route6(rt);
@@ -879,7 +879,7 @@ ip_vs_nat_xmit_v6(struct sk_buff *skb, struct ip_vs_conn *cp,
 				      IP_VS_RT_MODE_RDR);
 	if (local < 0)
 		goto tx_error;
-	rt = (struct rt6_info *) skb_dst(skb);
+	rt = dst_rt6_info(skb_dst(skb));
 	/*
 	 * Avoid duplicate tuple in reply direction for NAT traffic
 	 * to local address when connection is sync-ed
@@ -1315,7 +1315,7 @@ ip_vs_tunnel_xmit_v6(struct sk_buff *skb, struct ip_vs_conn *cp,
 	if (local)
 		return ip_vs_send_or_cont(NFPROTO_IPV6, skb, cp, 1);
 
-	rt = (struct rt6_info *) skb_dst(skb);
+	rt = dst_rt6_info(skb_dst(skb));
 	tdev = rt->dst.dev;
 
 	/*
@@ -1511,13 +1511,15 @@ tx_error:
  */
 int
 ip_vs_icmp_xmit(struct sk_buff *skb, struct ip_vs_conn *cp,
-		struct ip_vs_protocol *pp, int offset, unsigned int hooknum,
-		struct ip_vs_iphdr *iph)
+		struct ip_vs_protocol *pp, unsigned int toff,
+		unsigned int hooknum, struct ip_vs_iphdr *ciph)
 {
 	struct rtable	*rt;	/* Route to the other host */
 	int rc;
 	int local;
 	int rt_mode, was_input;
+	bool has_ports = false;
+	unsigned int wlen;
 
 	EnterFunction(10);
 
@@ -1526,7 +1528,7 @@ ip_vs_icmp_xmit(struct sk_buff *skb, struct ip_vs_conn *cp,
 	   translate address/port back */
 	if (IP_VS_FWD_METHOD(cp) != IP_VS_CONN_F_MASQ) {
 		if (cp->packet_xmit)
-			rc = cp->packet_xmit(skb, cp, pp, iph);
+			rc = cp->packet_xmit(skb, cp, pp, ciph);
 		else
 			rc = NF_ACCEPT;
 		/* do not touch skb anymore */
@@ -1544,7 +1546,7 @@ ip_vs_icmp_xmit(struct sk_buff *skb, struct ip_vs_conn *cp,
 		  IP_VS_RT_MODE_LOCAL | IP_VS_RT_MODE_NON_LOCAL |
 		  IP_VS_RT_MODE_RDR : IP_VS_RT_MODE_NON_LOCAL;
 	local = __ip_vs_get_out_rt(cp->ipvs, cp->af, skb, cp->dest, cp->daddr.ip, rt_mode,
-				   NULL, iph);
+				   NULL, ciph);
 	if (local < 0)
 		goto tx_error;
 	rt = skb_rtable(skb);
@@ -1575,14 +1577,21 @@ ip_vs_icmp_xmit(struct sk_buff *skb, struct ip_vs_conn *cp,
 		goto tx_error;
 	}
 
+	wlen = ciph->len;
+	if (ciph->protocol == IPPROTO_TCP || ciph->protocol == IPPROTO_UDP ||
+	    ciph->protocol == IPPROTO_SCTP) {
+		wlen += 2 * sizeof(__u16); /* Also mangle ports */
+		has_ports = true;
+	}
+
 	/* copy-on-write the packet before mangling it */
-	if (skb_ensure_writable(skb, offset))
+	if (skb_ensure_writable(skb, wlen))
 		goto tx_error;
 
 	if (skb_cow(skb, rt->dst.dev->hard_header_len))
 		goto tx_error;
 
-	ip_vs_nat_icmp(skb, pp, cp, 0);
+	ip_vs_nat_icmp(skb, pp, cp, 0, toff, has_ports, ciph);
 
 	/* Another hack: avoid icmp_send in ip_fragment */
 	skb->ignore_df = 1;
@@ -1601,10 +1610,12 @@ ip_vs_icmp_xmit(struct sk_buff *skb, struct ip_vs_conn *cp,
 #ifdef CONFIG_IP_VS_IPV6
 int
 ip_vs_icmp_xmit_v6(struct sk_buff *skb, struct ip_vs_conn *cp,
-		struct ip_vs_protocol *pp, int offset, unsigned int hooknum,
-		struct ip_vs_iphdr *ipvsh)
+		struct ip_vs_protocol *pp, unsigned int toff,
+		unsigned int hooknum, struct ip_vs_iphdr *ciph)
 {
+	bool has_ports = false;
 	struct rt6_info	*rt;	/* Route to the other host */
+	unsigned int wlen;
 	int rc;
 	int local;
 	int rt_mode;
@@ -1616,7 +1627,7 @@ ip_vs_icmp_xmit_v6(struct sk_buff *skb, struct ip_vs_conn *cp,
 	   translate address/port back */
 	if (IP_VS_FWD_METHOD(cp) != IP_VS_CONN_F_MASQ) {
 		if (cp->packet_xmit)
-			rc = cp->packet_xmit(skb, cp, pp, ipvsh);
+			rc = cp->packet_xmit(skb, cp, pp, ciph);
 		else
 			rc = NF_ACCEPT;
 		/* do not touch skb anymore */
@@ -1633,10 +1644,10 @@ ip_vs_icmp_xmit_v6(struct sk_buff *skb, struct ip_vs_conn *cp,
 		  IP_VS_RT_MODE_LOCAL | IP_VS_RT_MODE_NON_LOCAL |
 		  IP_VS_RT_MODE_RDR : IP_VS_RT_MODE_NON_LOCAL;
 	local = __ip_vs_get_out_rt_v6(cp->ipvs, cp->af, skb, cp->dest,
-				      &cp->daddr.in6, NULL, ipvsh, 0, rt_mode);
+				      &cp->daddr.in6, NULL, ciph, 0, rt_mode);
 	if (local < 0)
 		goto tx_error;
-	rt = (struct rt6_info *) skb_dst(skb);
+	rt = dst_rt6_info(skb_dst(skb));
 	/*
 	 * Avoid duplicate tuple in reply direction for NAT traffic
 	 * to local address when connection is sync-ed
@@ -1664,14 +1675,21 @@ ip_vs_icmp_xmit_v6(struct sk_buff *skb, struct ip_vs_conn *cp,
 		goto tx_error;
 	}
 
+	wlen = ciph->len;
+	if (ciph->protocol == IPPROTO_TCP || ciph->protocol == IPPROTO_UDP ||
+	    ciph->protocol == IPPROTO_SCTP) {
+		wlen += 2 * sizeof(__u16); /* Also mangle ports */
+		has_ports = true;
+	}
+
 	/* copy-on-write the packet before mangling it */
-	if (skb_ensure_writable(skb, offset))
+	if (skb_ensure_writable(skb, wlen))
 		goto tx_error;
 
 	if (skb_cow(skb, rt->dst.dev->hard_header_len))
 		goto tx_error;
 
-	ip_vs_nat_icmp_v6(skb, pp, cp, 0);
+	ip_vs_nat_icmp_v6(skb, pp, cp, 0, toff, has_ports, ciph);
 
 	/* Another hack: avoid icmp_send in ip_fragment */
 	skb->ignore_df = 1;
