@@ -78,18 +78,18 @@ size_t download(char *url, char *filename, int connecttimeout, int maxtimeout, i
 	curl_easy_setopt(hnd, CURLOPT_VERBOSE, 0L);
 	curl_easy_setopt(hnd, CURLOPT_NOPROGRESS, 1L);
 	curl_easy_setopt(hnd, CURLOPT_BUFFERSIZE, 512000L);
-//	if (followlocation) {
-//		curl_easy_setopt(hnd, CURLOPT_FOLLOWLOCATION, 1L);
-//		curl_easy_setopt(hnd, CURLOPT_MAXREDIRS, 10L);
-//	}
-	
+	//	if (followlocation) {
+	//		curl_easy_setopt(hnd, CURLOPT_FOLLOWLOCATION, 1L);
+	//		curl_easy_setopt(hnd, CURLOPT_MAXREDIRS, 10L);
+	//	}
+
 	curl_easy_setopt(hnd, CURLOPT_USERAGENT, "dd-wrt speedtest");
 	if (maxtimeout)
 		curl_easy_setopt(hnd, CURLOPT_TIMEOUT_MS, (long)(maxtimeout * 1000));
 	if (connecttimeout)
 		curl_easy_setopt(hnd, CURLOPT_CONNECTTIMEOUT_MS, (long)(connecttimeout * 1000));
 
-	CURLcode ret = curl_easy_perform(hnd);
+	curl_easy_perform(hnd);
 	curl_easy_cleanup(hnd);
 	if (out)
 		fclose(out);
@@ -122,7 +122,7 @@ size_t upload(char *url, char *filedata, int size, int connecttimeout, int maxti
 	if (connecttimeout)
 		curl_easy_setopt(hnd, CURLOPT_CONNECTTIMEOUT_MS, (long)(connecttimeout * 1000));
 
-	CURLcode ret = curl_easy_perform(hnd);
+	curl_easy_perform(hnd);
 	curl_easy_cleanup(hnd);
 	return cnt;
 }
@@ -410,10 +410,8 @@ static double get_distance(client_config_t *client, server_config_t *server)
 static int get_nearest_servers(client_config_t *client, server_config_t *servers)
 {
 	FILE *fp1;
-	char line[256];
 	server_config_t server;
 	int j, k;
-	int i;
 	char url[128];
 	if (search)
 		snprintf(url, sizeof(url), "%s?search=%s&limit=%d", STATIC_SERVER, search, maxsearch);
@@ -436,7 +434,6 @@ static int get_nearest_servers(client_config_t *client, server_config_t *servers
 	buf[len] = 0;
 	fread(buf, len, 1, fp1);
 	fclose(fp1);
-	int ccc = 0;
 	while (1) {
 		if ((server.url = get_str_json("url", &buf)) == NULL) {
 			server_free(&server);
@@ -559,7 +556,7 @@ double ping(char *addr);
 
 static int get_lowest_latency_server(server_config_t *servers, server_config_t *best_server)
 {
-	int i, j, len, best;
+	int i, j, best = 0;
 	char *url = NULL;
 	struct timeval tv1, tv2;
 	FILE *fp1;
@@ -596,7 +593,7 @@ static int get_lowest_latency_server(server_config_t *servers, server_config_t *
 		servers[i].latency = (latency[0] + latency[1] + latency[2]) / 3;
 		servers[i].ping = ping(url);
 		if (servers[i].ping == -1.0)
-		    servers[i].ping = servers[i].latency / 1000.0f;
+			servers[i].ping = servers[i].latency / 1000.0f;
 		free(url);
 		url = NULL;
 	}
@@ -625,15 +622,14 @@ static int get_lowest_latency_server(server_config_t *servers, server_config_t *
 	best_server->id = servers[best].id;
 	best_server->dist = servers[best].dist;
 	best_server->latency = servers[best].latency;
-	best_server->ping =  servers[best].ping;
-	best_server->host =  servers[best].host;
+	best_server->ping = servers[best].ping;
+	best_server->host = servers[best].host;
 	return 0;
 }
 
 static void *download_thread(void *ptr)
 {
 	dl_thread_arg_t *in;
-	struct stat file_stat;
 	double time_diff, time_thread;
 
 	if (get_uptime(&time_thread)) {
@@ -661,7 +657,7 @@ typedef struct THREAD {
 
 static int test_download_speed(server_config_t *best_server)
 {
-	int i, j, k = 0, ret, url_len, queue_count = 0;
+	int i, j, k = 0, queue_count = 0;
 	dl_thread_arg_t download_url[DL_FILE_NUM * DL_FILE_TIMES];
 	THREAD_T q[dl_thread_num];
 	double duration;
@@ -690,7 +686,7 @@ static int test_download_speed(server_config_t *best_server)
 					q[dl_thread_num - j - 1] = q[dl_thread_num - j - 2];
 				}
 				q[0].joined = 0;
-				ret = pthread_create(&q[0].q, NULL, download_thread, (void *)&download_url[i]);
+				pthread_create(&q[0].q, NULL, download_thread, (void *)&download_url[i]);
 				queue_count++;
 			}
 			if (queue_count == dl_thread_num) {
@@ -749,7 +745,6 @@ done:;
 static void *upload_thread(void *ptr)
 {
 	ul_thread_arg_t *in;
-	struct stat file_stat;
 	double time_diff;
 	double time_thread;
 
@@ -762,7 +757,7 @@ static void *upload_thread(void *ptr)
 		return NULL;
 
 	in = (ul_thread_arg_t *)ptr;
-	size_t size = upload(in->url, in->ul_file, in->size, 0, 0);
+	upload(in->url, in->ul_file, in->size, 0, 0);
 
 	pthread_mutex_lock(&finished_mutex);
 	finished += (double)in->size;
@@ -876,6 +871,8 @@ static int speedtest(int dl_enable, int ul_enable)
 	server_config_t *servers;
 	server_config_t best_server;
 	servers = calloc(maxsearch, sizeof(*servers));
+	if (!servers)
+		return -1;
 
 	for (i = 0; i < CLOSEST_SERVERS_NUM; i++) {
 		init_server(&servers[i]);

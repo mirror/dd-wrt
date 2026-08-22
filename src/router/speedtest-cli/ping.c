@@ -69,7 +69,6 @@ char *dns_lookup(char *addr_host, struct sockaddr_in *addr_con)
 {
 	struct hostent *host_entity;
 	char *ip = (char *)malloc(NI_MAXHOST * sizeof(char));
-	int i;
 
 	if ((host_entity = gethostbyname(addr_host)) == NULL) {
 		// No ip found for hostname
@@ -88,12 +87,12 @@ char *dns_lookup(char *addr_host, struct sockaddr_in *addr_con)
 // make a ping request
 double send_ping(int ping_sockfd, struct sockaddr_in *ping_addr, char *ping_ip)
 {
-	int ttl_val = 64, msg_count = 0, i, addr_len, msg_received_count = 0;
-
+	int ttl_val = 64, msg_count = 0, i, msg_received_count = 0;
+	socklen_t addr_len;
 	struct ping_pkt pckt;
 	struct sockaddr_in r_addr;
-	struct timespec time_start, time_end, tfs, tfe;
-	double rtt_msec = 0, total_msec = 0;
+	struct timespec time_start, time_end, tfs;
+	double rtt_msec = 0;
 	struct timeval tv_out;
 	tv_out.tv_sec = RECV_TIMEOUT;
 	tv_out.tv_usec = 0;
@@ -154,10 +153,8 @@ double send_ping(int ping_sockfd, struct sockaddr_in *ping_addr, char *ping_ip)
 double ping(char *addr)
 {
 	int sockfd;
-	char *ip_addr, *reverse_hostname;
+	char *ip_addr;
 	struct sockaddr_in addr_con;
-	int addrlen = sizeof(addr_con);
-	char net_buf[NI_MAXHOST];
 	char convert[256];
 	strcpy(convert, addr);
 	char *offset = strstr(convert, "//") + 2;
