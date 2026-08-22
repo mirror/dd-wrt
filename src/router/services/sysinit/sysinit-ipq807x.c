@@ -526,7 +526,7 @@ static void load_nss(int profile, int cores, char *type)
 	init_skb_recycler(profile);
 	int accel_type = NSS;
 	if (!strcmp(type, "ipq95xx"))
-		type = PPE;
+		accel_type = PPE;
 
 	loadnss("qca-ssdk", type);
 	if (accel_type == PPE)
