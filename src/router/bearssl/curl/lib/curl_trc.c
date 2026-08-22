@@ -129,6 +129,7 @@ static size_t trc_end_buf(char *buf, size_t len, size_t maxlen, bool addnl)
   buf[len] = '\0';
   return len;
 }
+#if 0 
 
 void Curl_debug(struct Curl_easy *data, curl_infotype type,
                 const char *ptr, size_t size)
@@ -199,6 +200,7 @@ void Curl_failf(struct Curl_easy *data, const char *fmt, ...)
     va_end(ap);
   }
 }
+#endif
 
 #if !defined(CURL_DISABLE_VERBOSE_STRINGS)
 
@@ -588,12 +590,13 @@ CURLcode Curl_trc_init(void)
 {
   return CURLE_OK;
 }
+#if 0 
 
 void Curl_infof(struct Curl_easy *data, const char *fmt, ...)
 {
   (void)data; (void)fmt;
 }
-
+#endif
 void Curl_trc_cf_infof(struct Curl_easy *data, const struct Curl_cfilter *cf,
                        const char *fmt, ...)
 {
