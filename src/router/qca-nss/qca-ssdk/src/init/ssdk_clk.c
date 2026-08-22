@@ -68,6 +68,8 @@ struct clk {
 };
 #endif
 
+static char *ppe_clk_ids[];
+
 #if defined(CONFIG_OF) && (LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0))
 struct device_node *clock_node = NULL;
 static struct clk *uniphy_port_clks[UNIPHYT_CLK_MAX] = {0};
@@ -621,7 +623,7 @@ void ssdk_uniphy_clock_enable(
 		{
 			if (enable) {
 				if (clk_prepare_enable(uniphy_clk))
-					SSDK_ERROR("clock enable fail!\n");
+					SSDK_ERROR("clock enable fail! %s\n", ppe_clk_ids[clock_type]);
 			} else
 				clk_disable_unprepare(uniphy_clk);
 		}
@@ -830,8 +832,9 @@ static void ssdk_ppe_uniphy_clock_init(adpt_ppe_type_t chip_type)
 
 	for (i = 0; i < ARRAY_SIZE(ppe_clk_ids); i++) {
 		uniphy_port_clks[i] = of_clk_get_by_name(clock_node, ppe_clk_ids[i]);
-		if (IS_ERR(uniphy_port_clks[i]))
+		if (IS_ERR(uniphy_port_clks[i])) {
 			continue;
+		}
 		if (i != PORT5_RX_SRC_E && i != PORT5_TX_SRC_E)
 			ssdk_uniphy_clock_enable(0, i, A_TRUE);
 	}

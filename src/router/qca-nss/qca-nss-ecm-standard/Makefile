@@ -5,7 +5,7 @@ ifeq ($(ECM_FRONT_END_SFE_ENABLE), y)
 obj-m += examples/ecm_sfe_l2.o
 endif
 
-obj-m += ecm.o
+obj-m += ecm$(postfix).o
 ifeq ($(BUILD_ECM_WIFI_PLUGIN),y)
 obj-m += ecm_wifi_plugins/
 endif
@@ -27,7 +27,7 @@ ifeq ($(EXAMPLES_BUILD_AE),y)
 obj-m +=examples/ecm_ae_select.o
 endif
 
-ecm-y := \
+ecm$(postfix)-y := \
 	 frontends/cmn/ecm_ae_classifier.o \
 	 frontends/cmn/ecm_ipv4.o \
 	 frontends/cmn/ecm_ported_ipv4.o \
@@ -53,48 +53,48 @@ ecm-y := \
 	 ecm_init.o \
 	 ecm_notifier.o
 
-ecm-$(ECM_IPV6_ENABLE) += frontends/ecm_front_end_ipv6.o
-ecm-$(ECM_IPV6_ENABLE) += frontends/cmn/ecm_ipv6.o
-ecm-$(ECM_IPV6_ENABLE) += frontends/cmn/ecm_ported_ipv6.o
-ecm-$(ECM_IPV6_ENABLE) += frontends/cmn/ecm_stats_v6.o
-ecm-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/cmn/ecm_non_ported_ipv4.o
+ecm$(postfix)-$(ECM_IPV6_ENABLE) += frontends/ecm_front_end_ipv6.o
+ecm$(postfix)-$(ECM_IPV6_ENABLE) += frontends/cmn/ecm_ipv6.o
+ecm$(postfix)-$(ECM_IPV6_ENABLE) += frontends/cmn/ecm_ported_ipv6.o
+ecm$(postfix)-$(ECM_IPV6_ENABLE) += frontends/cmn/ecm_stats_v6.o
+ecm$(postfix)-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/cmn/ecm_non_ported_ipv4.o
 ifeq ($(ECM_NON_PORTED_SUPPORT_ENABLE), y)
-ecm-$(ECM_IPV6_ENABLE) += frontends/cmn/ecm_non_ported_ipv6.o
+ecm$(postfix)-$(ECM_IPV6_ENABLE) += frontends/cmn/ecm_non_ported_ipv6.o
 endif
 
 ECM_MULTICAST_ENABLE=y
 
 #SFE Multicast is enabled in case NSS disabled
-ecm-$(ECM_MULTICAST_ENABLE) += frontends/cmn/ecm_multicast_ipv4.o
+ecm$(postfix)-$(ECM_MULTICAST_ENABLE) += frontends/cmn/ecm_multicast_ipv4.o
 ifeq ($(ECM_IPV6_ENABLE), y)
-ecm-$(ECM_MULTICAST_ENABLE) += frontends/cmn/ecm_multicast_ipv6.o
+ecm$(postfix)-$(ECM_MULTICAST_ENABLE) += frontends/cmn/ecm_multicast_ipv6.o
 endif
 
 # #############################################################################
 # Define ECM_FRONT_END_NSS_ENABLE=y in order to select
 # nss as ECM's front end.
 # #############################################################################
-ecm-$(ECM_FRONT_END_NSS_ENABLE) += frontends/nss/ecm_nss_common.o
-ecm-$(ECM_FRONT_END_NSS_ENABLE) += frontends/nss/ecm_nss_ipv4.o
-ecm-$(ECM_FRONT_END_NSS_ENABLE) += frontends/nss/ecm_nss_ported_ipv4.o
+ecm$(postfix)-$(ECM_FRONT_END_NSS_ENABLE) += frontends/nss/ecm_nss_common.o
+ecm$(postfix)-$(ECM_FRONT_END_NSS_ENABLE) += frontends/nss/ecm_nss_ipv4.o
+ecm$(postfix)-$(ECM_FRONT_END_NSS_ENABLE) += frontends/nss/ecm_nss_ported_ipv4.o
 ccflags-$(ECM_FRONT_END_NSS_ENABLE) += -DECM_FRONT_END_NSS_ENABLE
 
 # #############################################################################
 # Define ECM_FRONT_END_SFE_ENABLE=y in order to select
 # sfe as ECM's front end.
 # #############################################################################
-ecm-$(ECM_FRONT_END_SFE_ENABLE) += frontends/sfe/ecm_sfe_common.o
-ecm-$(ECM_FRONT_END_SFE_ENABLE) += frontends/sfe/ecm_sfe_ipv4.o
-ecm-$(ECM_FRONT_END_SFE_ENABLE) += frontends/sfe/ecm_sfe_ported_ipv4.o
+ecm$(postfix)-$(ECM_FRONT_END_SFE_ENABLE) += frontends/sfe/ecm_sfe_common.o
+ecm$(postfix)-$(ECM_FRONT_END_SFE_ENABLE) += frontends/sfe/ecm_sfe_ipv4.o
+ecm$(postfix)-$(ECM_FRONT_END_SFE_ENABLE) += frontends/sfe/ecm_sfe_ported_ipv4.o
 ccflags-$(ECM_FRONT_END_SFE_ENABLE) += -DECM_FRONT_END_SFE_ENABLE
 
 # #############################################################################
 # Define ECM_FRONT_END_PPE_ENABLE=y in order to select
 # ppe as ECM's front end.
 # #############################################################################
-ecm-$(ECM_FRONT_END_PPE_ENABLE) += frontends/ppe/ecm_ppe_common.o
-ecm-$(ECM_FRONT_END_PPE_ENABLE) += frontends/ppe/ecm_ppe_ipv4.o
-ecm-$(ECM_FRONT_END_PPE_ENABLE) += frontends/ppe/ecm_ppe_ported_ipv4.o
+ecm$(postfix)-$(ECM_FRONT_END_PPE_ENABLE) += frontends/ppe/ecm_ppe_common.o
+ecm$(postfix)-$(ECM_FRONT_END_PPE_ENABLE) += frontends/ppe/ecm_ppe_ipv4.o
+ecm$(postfix)-$(ECM_FRONT_END_PPE_ENABLE) += frontends/ppe/ecm_ppe_ported_ipv4.o
 ccflags-$(ECM_FRONT_END_PPE_ENABLE) += -DECM_FRONT_END_PPE_ENABLE
 
 # #############################################################################
@@ -112,7 +112,7 @@ ccflags-$(ECM_FRONT_END_CONN_LIMIT_ENABLE) += -DECM_FRONT_END_CONN_LIMIT_ENABLE
 # Define ECM_INTERFACE_BOND_ENABLE=y in order to enable
 # Bonding / Link Aggregation support.
 # #############################################################################
-ecm-$(ECM_INTERFACE_BOND_ENABLE) += frontends/cmn/ecm_bond_notifier.o
+ecm$(postfix)-$(ECM_INTERFACE_BOND_ENABLE) += frontends/cmn/ecm_bond_notifier.o
 ccflags-$(ECM_INTERFACE_BOND_ENABLE) += -DECM_INTERFACE_BOND_ENABLE
 
 # #############################################################################
@@ -223,18 +223,18 @@ ccflags-$(ECM_IPV6_ENABLE) += -DECM_IPV6_ENABLE
 # multicast acceleration.
 # #############################################################################
 
-ecm-$(ECM_MULTICAST_ENABLE) += ecm_db/ecm_db_multicast.o
+ecm$(postfix)-$(ECM_MULTICAST_ENABLE) += ecm_db/ecm_db_multicast.o
 ccflags-$(ECM_MULTICAST_ENABLE) += -DECM_MULTICAST_ENABLE
 
 ifeq ($(ECM_FRONT_END_NSS_ENABLE), y)
-ecm-$(ECM_MULTICAST_ENABLE) += frontends/nss/ecm_nss_multicast_ipv4.o
+ecm$(postfix)-$(ECM_MULTICAST_ENABLE) += frontends/nss/ecm_nss_multicast_ipv4.o
 ifeq ($(ECM_IPV6_ENABLE), y)
-ecm-$(ECM_MULTICAST_ENABLE) += frontends/nss/ecm_nss_multicast_ipv6.o
+ecm$(postfix)-$(ECM_MULTICAST_ENABLE) += frontends/nss/ecm_nss_multicast_ipv6.o
 endif
 else
-ecm-$(ECM_MULTICAST_ENABLE) += frontends/sfe/ecm_sfe_multicast_ipv4.o
+ecm$(postfix)-$(ECM_MULTICAST_ENABLE) += frontends/sfe/ecm_sfe_multicast_ipv4.o
 ifeq ($(ECM_IPV6_ENABLE), y)
-ecm-$(ECM_MULTICAST_ENABLE) += frontends/sfe/ecm_sfe_multicast_ipv6.o
+ecm$(postfix)-$(ECM_MULTICAST_ENABLE) += frontends/sfe/ecm_sfe_multicast_ipv6.o
 endif
 endif
 
@@ -274,22 +274,22 @@ ccflags-$(ECM_INTERFACE_IPSEC_GLUE_LAYER_SUPPORT_ENABLE) += -DECM_INTERFACE_IPSE
 endif
 
 ifeq ($(ECM_FRONT_END_NSS_ENABLE), y)
-ecm-$(ECM_IPV6_ENABLE) += frontends/nss/ecm_nss_ipv6.o
-ecm-$(ECM_IPV6_ENABLE) += frontends/nss/ecm_nss_ported_ipv6.o
+ecm$(postfix)-$(ECM_IPV6_ENABLE) += frontends/nss/ecm_nss_ipv6.o
+ecm$(postfix)-$(ECM_IPV6_ENABLE) += frontends/nss/ecm_nss_ported_ipv6.o
 endif
 ifeq ($(ECM_FRONT_END_SFE_ENABLE), y)
-ecm-$(ECM_IPV6_ENABLE) += frontends/sfe/ecm_sfe_ipv6.o
-ecm-$(ECM_IPV6_ENABLE) += frontends/sfe/ecm_sfe_ported_ipv6.o
+ecm$(postfix)-$(ECM_IPV6_ENABLE) += frontends/sfe/ecm_sfe_ipv6.o
+ecm$(postfix)-$(ECM_IPV6_ENABLE) += frontends/sfe/ecm_sfe_ported_ipv6.o
 endif
 ifeq ($(ECM_FRONT_END_PPE_ENABLE), y)
-ecm-$(ECM_IPV6_ENABLE) += frontends/ppe/ecm_ppe_ipv6.o
-ecm-$(ECM_IPV6_ENABLE) += frontends/ppe/ecm_ppe_ported_ipv6.o
+ecm$(postfix)-$(ECM_IPV6_ENABLE) += frontends/ppe/ecm_ppe_ipv6.o
+ecm$(postfix)-$(ECM_IPV6_ENABLE) += frontends/ppe/ecm_ppe_ported_ipv6.o
 endif
 
 # #############################################################################
 # Define ECM_CLASSIFIER_OVS_ENABLE=y in order to enable ovs classifier.
 # #############################################################################
-ecm-$(ECM_CLASSIFIER_OVS_ENABLE) += ecm_classifier_ovs.o
+ecm$(postfix)-$(ECM_CLASSIFIER_OVS_ENABLE) += ecm_classifier_ovs.o
 ccflags-$(ECM_CLASSIFIER_OVS_ENABLE) += -DECM_CLASSIFIER_OVS_ENABLE
 
 # #############################################################################
@@ -298,13 +298,13 @@ ccflags-$(ECM_CLASSIFIER_OVS_ENABLE) += -DECM_CLASSIFIER_OVS_ENABLE
 ifndef $(ECM_CLASSIFIER_MARK_ENABLE)
 	ECM_CLASSIFIER_MARK_ENABLE=y
 endif
-ecm-$(ECM_CLASSIFIER_MARK_ENABLE) += ecm_classifier_mark.o
+ecm$(postfix)-$(ECM_CLASSIFIER_MARK_ENABLE) += ecm_classifier_mark.o
 ccflags-$(ECM_CLASSIFIER_MARK_ENABLE) += -DECM_CLASSIFIER_MARK_ENABLE
 
 # #############################################################################
 # Define ECM_CLASSIFIER_MSCS_ENABLE=y in order to enable mscs flow classifier.
 # #############################################################################
-ecm-$(ECM_CLASSIFIER_MSCS_ENABLE) += ecm_classifier_mscs.o
+ecm$(postfix)-$(ECM_CLASSIFIER_MSCS_ENABLE) += ecm_classifier_mscs.o
 ccflags-$(ECM_CLASSIFIER_MSCS_ENABLE) += -DECM_CLASSIFIER_MSCS_ENABLE
 
 # #############################################################################
@@ -315,7 +315,7 @@ ccflags-$(ECM_CLASSIFIER_MSCS_SCS_ENABLE) += -DECM_CLASSIFIER_MSCS_SCS_ENABLE
 # #############################################################################
 # Define ECM_CLASSIFIER_NL_ENABLE=y in order to enable NL classifier.
 # #############################################################################
-ecm-$(ECM_CLASSIFIER_NL_ENABLE) += ecm_classifier_nl.o
+ecm$(postfix)-$(ECM_CLASSIFIER_NL_ENABLE) += ecm_classifier_nl.o
 ccflags-$(ECM_CLASSIFIER_NL_ENABLE) += -DECM_CLASSIFIER_NL_ENABLE
 
 # #############################################################################
@@ -324,7 +324,7 @@ ccflags-$(ECM_CLASSIFIER_NL_ENABLE) += -DECM_CLASSIFIER_NL_ENABLE
 ifndef $(ECM_CLASSIFIER_DSCP_ENABLE)
 	ECM_CLASSIFIER_DSCP_ENABLE=y
 endif
-ecm-$(ECM_CLASSIFIER_DSCP_ENABLE) += ecm_classifier_dscp.o
+ecm$(postfix)-$(ECM_CLASSIFIER_DSCP_ENABLE) += ecm_classifier_dscp.o
 ccflags-$(ECM_CLASSIFIER_DSCP_ENABLE) += -DECM_CLASSIFIER_DSCP_ENABLE
 ccflags-$(ECM_CLASSIFIER_DSCP_IGS) += -DECM_CLASSIFIER_DSCP_IGS
 
@@ -334,7 +334,7 @@ ccflags-$(ECM_CLASSIFIER_DSCP_IGS) += -DECM_CLASSIFIER_DSCP_IGS
 # with Hy-Fi is completed.
 # #############################################################################
 #
-ecm-$(ECM_CLASSIFIER_HYFI_ENABLE) += ecm_classifier_hyfi.o
+ecm$(postfix)-$(ECM_CLASSIFIER_HYFI_ENABLE) += ecm_classifier_hyfi.o
 ccflags-$(ECM_CLASSIFIER_HYFI_ENABLE) += -DECM_CLASSIFIER_HYFI_ENABLE
 
 # #############################################################################
@@ -345,13 +345,13 @@ ccflags-$(ECM_CLASSIFIER_HYFI_ENABLE) += -DECM_CLASSIFIER_HYFI_ENABLE
 #ifndef $(ECM_CLASSIFIER_PCC_ENABLE)
 #	ECM_CLASSIFIER_PCC_ENABLE=y
 #endif
-ecm-$(ECM_CLASSIFIER_PCC_ENABLE) += ecm_classifier_pcc.o
+ecm$(postfix)-$(ECM_CLASSIFIER_PCC_ENABLE) += ecm_classifier_pcc.o
 ccflags-$(ECM_CLASSIFIER_PCC_ENABLE) += -DECM_CLASSIFIER_PCC_ENABLE
 
 # #############################################################################
 # Define ECM_CLASSIFIER_EMESH_ENABLE=y in order to enable E-Mesh classifier.
 # #############################################################################
-ecm-$(ECM_CLASSIFIER_EMESH_ENABLE) += ecm_classifier_emesh.o
+ecm$(postfix)-$(ECM_CLASSIFIER_EMESH_ENABLE) += ecm_classifier_emesh.o
 ccflags-$(ECM_CLASSIFIER_EMESH_ENABLE) += -DECM_CLASSIFIER_EMESH_ENABLE
 
 # #############################################################################
@@ -364,27 +364,27 @@ ccflags-$(ECM_CLASSIFIER_EMESH_ENABLE) += -DECM_CLASSIFIER_EMESH_ENABLE
 ccflags-$(ECM_MHT_ENABLE) += -DECM_MHT_ENABLE
 # Define ECM_CLASSIFIER_WIFI_ENABLE=y in order to enable WIFI classifier.
 # #############################################################################
-ecm-$(ECM_CLASSIFIER_WIFI_ENABLE) += ecm_classifier_wifi.o
+ecm$(postfix)-$(ECM_CLASSIFIER_WIFI_ENABLE) += ecm_classifier_wifi.o
 ccflags-$(ECM_CLASSIFIER_WIFI_ENABLE) += -DECM_CLASSIFIER_WIFI_ENABLE
 
 ifeq ($(ECM_FRONT_END_NSS_ENABLE), y)
-ecm-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/nss/ecm_nss_non_ported_ipv4.o
+ecm$(postfix)-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/nss/ecm_nss_non_ported_ipv4.o
 ifeq ($(ECM_IPV6_ENABLE), y)
-ecm-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/nss/ecm_nss_non_ported_ipv6.o
+ecm$(postfix)-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/nss/ecm_nss_non_ported_ipv6.o
 endif
 endif
 
 ifeq ($(ECM_FRONT_END_SFE_ENABLE), y)
-ecm-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/sfe/ecm_sfe_non_ported_ipv4.o
+ecm$(postfix)-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/sfe/ecm_sfe_non_ported_ipv4.o
 ifeq ($(ECM_IPV6_ENABLE), y)
-ecm-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/sfe/ecm_sfe_non_ported_ipv6.o
+ecm$(postfix)-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/sfe/ecm_sfe_non_ported_ipv6.o
 endif
 endif
 
 ifeq ($(ECM_FRONT_END_PPE_ENABLE), y)
-ecm-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/ppe/ecm_ppe_non_ported_ipv4.o
+ecm$(postfix)-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/ppe/ecm_ppe_non_ported_ipv4.o
 ifeq ($(ECM_IPV6_ENABLE), y)
-ecm-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/ppe/ecm_ppe_non_ported_ipv6.o
+ecm$(postfix)-$(ECM_NON_PORTED_SUPPORT_ENABLE) += frontends/ppe/ecm_ppe_non_ported_ipv6.o
 endif
 endif
 
@@ -396,7 +396,7 @@ ccflags-$(ECM_NON_PORTED_SUPPORT_ENABLE) += -DECM_NON_PORTED_SUPPORT_ENABLE
 ifndef $(ECM_STATE_OUTPUT_ENABLE)
 	ECM_STATE_OUTPUT_ENABLE=y
 endif
-ecm-$(ECM_STATE_OUTPUT_ENABLE) += ecm_state.o
+ecm$(postfix)-$(ECM_STATE_OUTPUT_ENABLE) += ecm_state.o
 ccflags-$(ECM_STATE_OUTPUT_ENABLE) += -DECM_STATE_OUTPUT_ENABLE
 
 # #############################################################################

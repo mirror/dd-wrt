@@ -42,7 +42,7 @@ qca-nss-dp-$(SoC)-objs += nss_dp_main_alt.o
 endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq95xx))
-qca-nss-dp-$(SoC)-objs += nss_dp_main.o
+qca-nss-dp-$(SoC)-objs += nss_dp_main_alt.o
 endif
 
 ifeq ($(SoC),$(filter $(SoC),ipq53xx))
