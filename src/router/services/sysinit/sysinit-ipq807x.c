@@ -518,14 +518,19 @@ void loadnss(const char *module, const char *type)
 	snprintf(driver, sizeof(driver), "%s-%s", module, type);
 	insmod(driver);
 }
+#define PPE 1
+#define NSS 0
 
 static void load_nss(int profile, int cores, char *type)
 {
 	init_skb_recycler(profile);
-	loadnss("qca-ssdk", type);
-
+	int accel_type = NSS;
 	if (!strcmp(type, "ipq95xx"))
-		insmod("qca-nss-ppe-ipq95xx");
+		type = PPE;
+
+	loadnss("qca-ssdk", type);
+	if (accel_type == PPE)
+		loadnss("qca-nss-ppe", type);
 	char driver[64];
 	snprintf(driver, sizeof(driver), "qca-nss-dp-%s", type);
 
@@ -551,7 +556,7 @@ static void load_nss(int profile, int cores, char *type)
 		loadnss("qca-nss-netlink", type);
 	}
 	loadnss("qca-nss-ppe-vp", type);
-	if (!nss_disabled(0)) {
+	if (!nss_disabled(0) && accel_type == PPE) {
 		loadnss("qca-nss-ppe-ds", type);
 		loadnss("qca-nss-ppe-rule", type);
 		loadnss("qca-nss-ppe-tun", type);
@@ -562,16 +567,19 @@ static void load_nss(int profile, int cores, char *type)
 
 	eval("insmod", "bonding", "miimon=1000", "downdelay=200", "updelay=200");
 	if (!nss_disabled(0)) {
-		loadnss("qca-nss-pppoe", type);
-		loadnss("qca-nss-ppe-pppoe-mgr", type);
-		loadnss("qca-nss-vlan", type);
-		loadnss("qca-nss-ppe-vlan", type);
-		loadnss("qca-nss-ppe-bridge-mgr", type);
-		loadnss("qca-nss-qdisc", type);
-		loadnss("qca-nss-ppe-qdisc", type);
+		if (accel_type == PPE) {
+			loadnss("qca-nss-ppe-pppoe-mgr", type);
+			loadnss("qca-nss-ppe-vlan", type);
+			loadnss("qca-nss-ppe-bridge-mgr", type);
+		} else {
+			loadnss("qca-nss-pppoe", type);
+			loadnss("qca-nss-vlan", type);
+			loadnss("qca-nss-qdisc", type);
+			loadnss("qca-nss-ppe-qdisc", type);
+		}
 	}
 	insmod("pptp");
-	if (!nss_disabled(0))
+	if (!nss_disabled(0) && accel_type == NSS)
 		loadnss("qca-nss-pptp", type);
 	insmod("udp_tunnel");
 	insmod("ip6_udp_tunnel");
@@ -582,24 +590,29 @@ static void load_nss(int profile, int cores, char *type)
 	insmod("l2tp_ip");
 	insmod("l2tp_ip6");
 	if (!nss_disabled(0)) {
-		loadnss("qca-nss-l2tpv2", type);
-		loadnss("qca-nss-ppe-l2tp", type);
+		if (accel_type == PPE)
+			loadnss("qca-nss-ppe-l2tp", type);
+		else
+			loadnss("qca-nss-l2tpv2", type);
 	}
 	insmod("vxlan");
 	if (!nss_disabled(0)) {
-		loadnss("qca-nss-vxlanmgr", type);
-		loadnss("qca-nss-ppe-vxlanmgr", type);
+		if (accel_type == PPE)
+			loadnss("qca-nss-ppe-vxlanmgr", type);
+		else
+			loadnss("qca-nss-vxlanmgr", type);
 	}
 	insmod("tunnel6");
 	insmod("ip6_tunnel");
-	if (!nss_disabled(0)) {
+	if (!nss_disabled(0) && accel_type == NSS) {
 		loadnss("qca-nss-tunipip6", type);
 		loadnss("qca-nss-tlsmgr", type);
 		insmod("qca-mcs");
 		insmod("nss-ifb");
 		//		loadnss("qca-nss-bridge-mgr", type);
 	}
-	insmod("qca-nss-wifi-meshmgr");
+	if (accel_type == NSS)
+		insmod("qca-nss-wifi-meshmgr");
 }
 
 static void load_nss_ipq60xx(int profile)
