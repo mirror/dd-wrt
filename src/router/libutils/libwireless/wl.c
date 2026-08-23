@@ -250,7 +250,7 @@ int has_5ghz(const char *prefix)
 	return ret;
 }
 
-int has_6ghz(const char *prefix)
+int _has_6ghz(const char *prefix)
 {
 	INITVALUECACHE();
 	if (has_ad(prefix)) {
@@ -264,9 +264,9 @@ int has_6ghz(const char *prefix)
 	return ret;
 }
 
-int has_6ghz_only(const char *prefix)
+int _has_6ghz_only(const char *prefix)
 {
-	return has_6ghz(prefix) && !has_5ghz(prefix);
+	return _has_6ghz(prefix) && !has_5ghz(prefix);
 }
 
 #endif
