@@ -129,7 +129,7 @@ int __ntfs_bitmap_set_bits_in_run(struct inode *vi, const s64 start_bit,
 	struct page *page;
 #endif
 	u8 *kaddr;
-	int pos, len, err;
+	int pos, len;
 	u8 bit;
 	struct ntfs_inode *ni = NTFS_I(vi);
 	struct ntfs_volume *vol = ni->vol;
@@ -219,10 +219,8 @@ int __ntfs_bitmap_set_bits_in_run(struct inode *vi, const s64 start_bit,
 
 	/* If we are not in the last page, deal with all subsequent pages. */
 	while (index < end_index) {
-		if (cnt <= 0) {
-			err = -EIO;
+		if (cnt <= 0)
 			goto rollback;
-		}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 		/* Update @index and get the next folio. */
@@ -235,7 +233,6 @@ int __ntfs_bitmap_set_bits_in_run(struct inode *vi, const s64 start_bit,
 			ntfs_error(vi->i_sb,
 				   "Failed to map subsequent page (error %li), aborting.",
 				   PTR_ERR(folio));
-			err = PTR_ERR(folio);
 			goto rollback;
 		}
 
@@ -252,7 +249,6 @@ int __ntfs_bitmap_set_bits_in_run(struct inode *vi, const s64 start_bit,
 			ntfs_error(vi->i_sb,
 				   "Failed to map subsequent page (error %li), aborting.",
 				   PTR_ERR(page));
-			err = PTR_ERR(page);
 			goto rollback;
 		}
 
@@ -306,13 +302,14 @@ done:
 	ntfs_debug("Done.");
 	return 0;
 rollback:
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
 	/*
 	 * Current state:
 	 *	- no pages are mapped
 	 *	- @count - @cnt is the number of bits that have been modified
 	 */
 	if (is_rollback)
-		return err;
+		return PTR_ERR(folio);
 	if (count != cnt)
 		pos = __ntfs_bitmap_set_bits_in_run(vi, start_bit, count - cnt,
 				value ? 0 : 1, true);
@@ -321,14 +318,41 @@ rollback:
 	if (!pos) {
 		/* Rollback was successful. */
 		ntfs_error(vi->i_sb,
-			"Failed to map subsequent page (error %i), aborting.",
-			err);
+			"Failed to map subsequent page (error %li), aborting.",
+			PTR_ERR(folio));
 	} else {
 		/* Rollback failed. */
 		ntfs_error(vi->i_sb,
-			"Failed to map subsequent page (error %i) and rollback failed (error %i). Aborting and leaving inconsistent metadata. Unmount and run chkdsk.",
-			err, pos);
+			"Failed to map subsequent page (error %li) and rollback failed (error %i). Aborting and leaving inconsistent metadata. Unmount and run chkdsk.",
+			PTR_ERR(folio), pos);
 		NVolSetErrors(NTFS_SB(vi->i_sb));
 	}
-	return err;
+	return PTR_ERR(folio);
+#else
+	/*
+	 * Current state:
+	 *	- no pages are mapped
+	 *	- @count - @cnt is the number of bits that have been modified
+	 */
+	if (is_rollback)
+		return PTR_ERR(page);
+	if (count != cnt)
+		pos = __ntfs_bitmap_set_bits_in_run(vi, start_bit, count - cnt,
+				value ? 0 : 1, true);
+	else
+		pos = 0;
+	if (!pos) {
+		/* Rollback was successful. */
+		ntfs_error(vi->i_sb,
+			"Failed to map subsequent page (error %li), aborting.",
+			PTR_ERR(page));
+	} else {
+		/* Rollback failed. */
+		ntfs_error(vi->i_sb,
+			"Failed to map subsequent page (error %li) and rollback failed (error %i). Aborting and leaving inconsistent metadata.  Unmount and run chkdsk.",
+			PTR_ERR(page), pos);
+		NVolSetErrors(NTFS_SB(vi->i_sb));
+	}
+	return PTR_ERR(page);
+#endif
 }

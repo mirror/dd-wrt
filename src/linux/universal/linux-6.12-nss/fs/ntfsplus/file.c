@@ -27,7 +27,6 @@
 #include "iomap.h"
 #include "bitmap.h"
 #include "uapi_ntfs.h"
-#include "volume.h"
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 0, 0)
 #include <linux/filelock.h>
@@ -286,7 +285,6 @@ static int ntfs_setattr_size(struct inode *vi, struct iattr *attr)
 
 	inode_dio_wait(vi);
 	/* Serialize against page faults */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 19, 0)
 	if (NInoNonResident(NTFS_I(vi)) && attr->ia_size < old_size) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
 		err = iomap_truncate_page(vi, attr->ia_size, NULL,
@@ -304,19 +302,32 @@ static int ntfs_setattr_size(struct inode *vi, struct iattr *attr)
 		if (err)
 			return err;
 	}
-#endif
 
-	if (attr->ia_size > old_size) {
-		truncate_pagecache(vi, old_size);
-		i_size_write(vi, attr->ia_size);
-		pagecache_isize_extended(vi, old_size, attr->ia_size);
-	} else
-		truncate_setsize(vi, attr->ia_size);
-
+	truncate_setsize(vi, attr->ia_size);
 	err = ntfs_truncate_vfs(vi, attr->ia_size, old_size);
 	if (err) {
 		i_size_write(vi, old_size);
 		return err;
+	}
+
+	if (NInoNonResident(ni) && attr->ia_size > old_size &&
+	    old_size % PAGE_SIZE != 0) {
+		loff_t len = min_t(loff_t,
+				round_up(old_size, PAGE_SIZE) - old_size,
+				attr->ia_size - old_size);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
+		err = iomap_zero_range(vi, old_size, len,
+				NULL, &ntfs_seek_iomap_ops,
+				&ntfs_iomap_folio_ops, NULL);
+#else
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
+		err = iomap_zero_range(vi, old_size, len,
+				NULL, &ntfs_seek_iomap_ops, NULL);
+#else
+		err = iomap_zero_range(vi, old_size, len,
+				NULL, &ntfs_seek_iomap_ops);
+#endif
+#endif
 	}
 
 	return err;
@@ -397,12 +408,14 @@ int ntfs_setattr(struct user_namespace *mnt_userns, struct dentry *dentry,
 		if (ia_valid & ATTR_MODE)
 			flags |= NTFS_EA_MODE;
 
-		mutex_lock(&ni->mrec_lock);
-		err = ntfs_ea_set_wsl_inode(vi, 0, NULL, flags);
-		mutex_unlock(&ni->mrec_lock);
-		if (err)
-			goto out;
+		if (S_ISDIR(vi->i_mode))
+			vi->i_mode &= ~vol->dmask;
+		else
+			vi->i_mode &= ~vol->fmask;
 
+		mutex_lock(&ni->mrec_lock);
+		ntfs_ea_set_wsl_inode(vi, 0, NULL, flags);
+		mutex_unlock(&ni->mrec_lock);
 	}
 
 	mark_inode_dirty(vi);
@@ -616,38 +629,14 @@ static ssize_t ntfs_dio_write_iter(struct kiocb *iocb, struct iov_iter *from)
 			ret = -EIO;
 			goto out;
 		}
-		invalidate_mapping_pages(iocb->ki_filp->f_mapping,
-					 offset >> PAGE_SHIFT,
-					 end >> PAGE_SHIFT);
+		if (!ret2)
+			invalidate_mapping_pages(iocb->ki_filp->f_mapping,
+						 offset >> PAGE_SHIFT,
+						 end >> PAGE_SHIFT);
 	}
 
 out:
 	return ret;
-}
-
-static int ntfs_expand_for_write(struct ntfs_inode *ni, loff_t end)
-{
-	struct ntfs_volume *vol = ni->vol;
-	loff_t prealloc_size = 0;
-	int err;
-
-	if (end <= ni->data_size)
-		return 0;
-
-	if (NInoCompressed(ni)) {
-		if (end > ni->allocated_size)
-			prealloc_size = round_up(end,
-						 ni->itype.compressed.block_size);
-	} else if (end > ni->allocated_size &&
-		   end < ni->allocated_size + vol->preallocated_size) {
-		prealloc_size = ni->allocated_size + vol->preallocated_size;
-	}
-
-	mutex_lock(&ni->mrec_lock);
-	err = ntfs_attr_expand(ni, end, prealloc_size);
-	mutex_unlock(&ni->mrec_lock);
-
-	return err;
 }
 
 static ssize_t ntfs_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
@@ -658,7 +647,7 @@ static ssize_t ntfs_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	struct ntfs_volume *vol = ni->vol;
 	ssize_t ret;
 	ssize_t count;
-	loff_t pos, end;
+	loff_t pos;
 	int err;
 	loff_t old_data_size, old_init_size;
 
@@ -695,23 +684,9 @@ static ssize_t ntfs_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 
 	pos = iocb->ki_pos;
 	count = ret;
-	end = pos + count;
 
 	old_data_size = ni->data_size;
 	old_init_size = ni->initialized_size;
-
-	if (end > old_data_size) {
-		ret = ntfs_expand_for_write(ni, end);
-		if (ret < 0)
-			goto out;
-	}
-
-	if (NInoNonResident(ni) && !NInoCompressed(ni) &&
-	    end > old_init_size) {
-		ret = ntfs_extend_initialized_size(vi, pos, end);
-		if (ret < 0)
-			goto out;
-	}
 
 	if (NInoNonResident(ni) && NInoCompressed(ni)) {
 		ret = ntfs_compress_write(ni, pos, count, from);
@@ -798,17 +773,12 @@ static int ntfs_file_mmap(struct file *file, struct vm_area_struct *vma)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 0, 0)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 1, 0)
-	if (vma_desc_test_all(desc, VMA_SHARED_BIT, VMA_MAYWRITE_BIT)) {
+	if (vma_desc_test_flags(desc, VMA_WRITE_BIT)) {
 #else
-	if (vma_desc_test_flags(desc, VMA_SHARED_BIT) &&
-	    vma_desc_test_flags(desc, VMA_MAYWRITE_BIT)) {
+	if (desc->vm_flags & VM_WRITE) {
 #endif
 #else
-	if ((desc->vm_flags & VM_SHARED) && (desc->vm_flags & VM_MAYWRITE)) {
-#endif
-#else
-	if ((vma->vm_flags & VM_SHARED) && (vma->vm_flags & VM_MAYWRITE)) {
+	if (vma->vm_flags & VM_WRITE) {
 #endif
 		struct inode *inode = file_inode(file);
 		loff_t from, to;
@@ -830,7 +800,7 @@ static int ntfs_file_mmap(struct file *file, struct vm_area_struct *vma)
 #endif
 
 		if (NTFS_I(inode)->initialized_size < to) {
-			err = ntfs_extend_initialized_size(inode, to, to);
+			err = ntfs_extend_initialized_size(inode, to, to, false);
 			if (err)
 				return err;
 		}
@@ -855,29 +825,10 @@ static int ntfs_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
 static const char *ntfs_get_link(struct dentry *dentry, struct inode *inode,
 		struct delayed_call *done)
 {
-	struct ntfs_inode *ni = NTFS_I(inode);
-	char *target;
-	int err;
-
-	if (!dentry)
-		return ERR_PTR(-ECHILD);
-
-	if (!ni->target)
+	if (!NTFS_I(inode)->target)
 		return ERR_PTR(-EINVAL);
 
-	if (ni->reparse_tag == IO_REPARSE_TAG_MOUNT_POINT ||
-	    (ni->reparse_tag == IO_REPARSE_TAG_SYMLINK &&
-	     !(ni->reparse_flags & cpu_to_le32(SYMLINK_FLAG_RELATIVE)))) {
-		if (NVolNativeSymlinkRel(ni->vol)) {
-			err = ntfs_translate_symlink_path(dentry, ni->target, &target);
-			if (err < 0)
-				return ERR_PTR(err);
-			set_delayed_call(done, kfree_link, target);
-			return target;
-		}
-	}
-
-	return ni->target;
+	return NTFS_I(inode)->target;
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 5, 0)
@@ -908,21 +859,12 @@ static int ntfs_ioctl_get_volume_label(struct file *filp, unsigned long arg)
 {
 	struct ntfs_volume *vol = NTFS_SB(file_inode(filp)->i_sb);
 	char __user *buf = (char __user *)arg;
-	char label[FSLABEL_MAX];
-	ssize_t len;
 
-	mutex_lock(&vol->volume_label_lock);
 	if (!vol->volume_label) {
-		label[0] = '\0';
-		len = 0;
-	} else {
-		len = strscpy(label, vol->volume_label, sizeof(label));
-		if (len == -E2BIG)
-			len = FSLABEL_MAX - 1;
-	}
-	mutex_unlock(&vol->volume_label_lock);
-
-	if (copy_to_user(buf, label, len + 1))
+		if (copy_to_user(buf, "", 1))
+			return -EFAULT;
+	} else if (copy_to_user(buf, vol->volume_label,
+				min_t(int, FSLABEL_MAX, strlen(vol->volume_label) + 1)))
 		return -EFAULT;
 	return 0;
 }
@@ -1087,29 +1029,24 @@ static int ntfs_punch_hole(struct ntfs_inode *ni, int mode, loff_t offset,
 	end_vcn = ntfs_bytes_to_cluster(vol, end_offset - 1) + 1;
 
 	if (offset & vol->cluster_size_mask) {
-		if (offset < ni->initialized_size) {
-			loff_t to;
+		loff_t to;
 
-			to = min_t(loff_t,
-				   ntfs_cluster_to_bytes(vol, start_vcn + 1),
-				   end_offset);
+		to = min_t(loff_t, ntfs_cluster_to_bytes(vol, start_vcn + 1),
+				end_offset);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
-			err = iomap_zero_range(vi, offset, to - offset,
-					       NULL, &ntfs_seek_iomap_ops,
-					       &ntfs_iomap_folio_ops, NULL);
+		err = iomap_zero_range(vi, offset, to - offset, NULL,
+				&ntfs_seek_iomap_ops,
+				&ntfs_iomap_folio_ops, NULL);
 #else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
-			err = iomap_zero_range(vi, offset, to - offset, NULL,
-					       &ntfs_seek_iomap_ops, NULL);
+		err = iomap_zero_range(vi, offset, to - offset, NULL,
+				&ntfs_seek_iomap_ops, NULL);
 #else
-			err = iomap_zero_range(vi, offset, to - offset, NULL,
-					       &ntfs_seek_iomap_ops);
+		err = iomap_zero_range(vi, offset, to - offset, NULL,
+				&ntfs_seek_iomap_ops);
 #endif
 #endif
-			if (err < 0)
-				goto out;
-		}
-		if (end_vcn - start_vcn == 1)
+		if (err < 0 || (end_vcn - start_vcn) == 1)
 			goto out;
 		start_vcn++;
 	}
@@ -1118,25 +1055,20 @@ static int ntfs_punch_hole(struct ntfs_inode *ni, int mode, loff_t offset,
 		loff_t from;
 
 		from = ntfs_cluster_to_bytes(vol, end_vcn - 1);
-		if (from < ni->initialized_size) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
-			err = iomap_zero_range(vi, from, end_offset - from,
-					       NULL, &ntfs_seek_iomap_ops,
-					       &ntfs_iomap_folio_ops, NULL);
+		err = iomap_zero_range(vi, from, end_offset - from, NULL,
+				&ntfs_seek_iomap_ops,
+				&ntfs_iomap_folio_ops, NULL);
 #else
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
-			err = iomap_zero_range(vi, from, end_offset - from,
-					       NULL, &ntfs_seek_iomap_ops,
-					       NULL);
+		err = iomap_zero_range(vi, from, end_offset - from, NULL,
+				&ntfs_seek_iomap_ops, NULL);
 #else
-			err = iomap_zero_range(vi, from, end_offset - from,
-					       NULL, &ntfs_seek_iomap_ops);
+		err = iomap_zero_range(vi, from, end_offset - from, NULL,
+				&ntfs_seek_iomap_ops);
 #endif
 #endif
-			if (err < 0)
-				goto out;
-		}
-		if (end_vcn - start_vcn == 1)
+		if (err < 0 || (end_vcn - start_vcn) == 1)
 			goto out;
 		end_vcn--;
 	}
@@ -1343,9 +1275,23 @@ out:
 		filemap_invalidate_unlock(vi->i_mapping);
 	if (!err) {
 		if (mode == 0 && NInoNonResident(ni) &&
-		    offset > old_size) {
-			truncate_pagecache(vi, old_size);
-			pagecache_isize_extended(vi, old_size, offset);
+		    offset > old_size && old_size % PAGE_SIZE != 0) {
+			loff_t len = min_t(loff_t,
+					   round_up(old_size, PAGE_SIZE) - old_size,
+					   offset - old_size);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 17, 0)
+			err = iomap_zero_range(vi, old_size, len, NULL,
+					       &ntfs_seek_iomap_ops,
+					       &ntfs_iomap_folio_ops, NULL);
+#else
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 15, 0)
+			err = iomap_zero_range(vi, old_size, len, NULL,
+					       &ntfs_seek_iomap_ops, NULL);
+#else
+			err = iomap_zero_range(vi, old_size, len, NULL,
+					       &ntfs_seek_iomap_ops);
+#endif
+#endif
 		}
 		NInoSetFileNameDirty(ni);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
