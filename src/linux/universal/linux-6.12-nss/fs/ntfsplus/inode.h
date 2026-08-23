@@ -149,6 +149,8 @@ struct ntfs_inode {
 		struct ntfs_inode *base_ntfs_ino;
 	} ext;
 	unsigned int i_dealloc_clusters;
+	__le32 reparse_tag;
+	__le32 reparse_flags;
 	char *target;
 };
 
@@ -194,6 +196,7 @@ enum {
 	NI_NonResident,
 	NI_IndexAllocPresent,
 	NI_Compressed,
+	NI_WofCompressed,
 	NI_Encrypted,
 	NI_Sparse,
 	NI_SparseDisabled,
@@ -253,6 +256,7 @@ NINO_FNS(MstProtected)
 NINO_FNS(NonResident)
 NINO_FNS(IndexAllocPresent)
 NINO_FNS(Compressed)
+NINO_FNS(WofCompressed)
 NINO_FNS(Encrypted)
 NINO_FNS(Sparse)
 NINO_FNS(SparseDisabled)
@@ -363,6 +367,7 @@ int ntfs_get_block_mft_record(struct ntfs_inode *mft_ni, struct ntfs_inode *ni);
 int __ntfs_write_inode(struct inode *vi, int sync);
 int ntfs_inode_attach_all_extents(struct ntfs_inode *ni);
 int ntfs_inode_add_attrlist(struct ntfs_inode *ni);
+int ntfs_inode_free_empty_extents(struct ntfs_inode *ni);
 void ntfs_destroy_ext_inode(struct ntfs_inode *ni);
 int ntfs_inode_free_space(struct ntfs_inode *ni, int size);
 s64 ntfs_inode_attr_pread(struct inode *vi, s64 pos, s64 count, u8 *buf);
@@ -377,7 +382,7 @@ static inline void ntfs_commit_inode(struct inode *vi)
 
 int ntfs_inode_sync_filename(struct ntfs_inode *ni);
 int ntfs_extend_initialized_size(struct inode *vi, const loff_t offset,
-		const loff_t new_size, bool bsync);
+		const loff_t new_size);
 void ntfs_set_vfs_operations(struct inode *inode, mode_t mode, dev_t dev);
 struct folio *ntfs_get_locked_folio(struct address_space *mapping,
 		pgoff_t index, pgoff_t end_index, struct file_ra_state *ra);
