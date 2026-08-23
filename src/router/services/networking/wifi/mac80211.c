@@ -504,8 +504,7 @@ void configure_single_mac80211(int count)
 		sprintf(farg, "%d", atoi(freq) + (channeloffset * 5));
 
 		const char *htmode = gethtmode(dev);
-		//todo 80+80 center2_freq
-
+		if (has_6ghz(dev) && freq >= 5925) {
 		if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
 			eval("iw", wif, "interface", "add", dev, "type", "mp");
 			if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
@@ -522,6 +521,27 @@ void configure_single_mac80211(int count)
 				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg, farg2);
 			else
 				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg);
+		}
+			    
+		
+		} else { 
+		if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
+			eval("iw", wif, "interface", "add", dev, "type", "mp");
+			if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
+				eval("iw", "dev", dev, "set", "freq", freq, htmode);
+			else if (!strcmp(htmode, "80+80"))
+				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg, farg2);
+			else
+				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg);
+		} else {
+			eval("iw", wif, "interface", "add", dev, "type", "mp", "mesh_id", nvram_nget("%s_ssid", dev));
+			if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
+				eval("iw", "dev", dev, "set", "freq", freq, htmode);
+			else if (!strcmp(htmode, "80+80"))
+				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg, farg2);
+			else
+				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg);
+		}
 		}
 
 		strcpy(primary, dev);
