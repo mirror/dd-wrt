@@ -9,7 +9,9 @@
 #define	ENCRYPT_H
 
 #include "MayaType.h"
-
+#ifdef linux
+	#include <pthread.h>
+#endif
 #include <openssl/opensslv.h>
 
 // Constant
