@@ -898,12 +898,14 @@ set_fattr:
 	mutex_unlock(&ni->mrec_lock);
 
 out:
+	if (!err) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
-	inode_set_ctime_current(inode);
+		inode_set_ctime_current(inode);
 #else
-	inode->i_ctime = current_time(inode);
+		inode->i_ctime = current_time(inode);
 #endif
-	mark_inode_dirty(inode);
+		mark_inode_dirty(inode);
+	}
 	return err;
 }
 
