@@ -1,0 +1,142 @@
+SoftEther VPN is developed by SoftEther VPN Project at University of Tsukuba.
+https://www.softether.org/
+
+AUTHORS OF SOFTETHER VPN
+------------------------
+
+CORE DEVELOPERS:
+
+  - Daiyuu Nobori, Ph.D.
+    Computer Science, Graduate School of University of Tsukuba
+    SoftEther Corporation
+    E-mail: daiyuu-nobori [at] softether.org
+
+  - Tetsuo Sugiyama, Ph.D.
+    SoftEther Corporation
+
+  - Junpei Kuwana, Ph.D.
+    Risk Engineering, Graduate School of University of Tsukuba
+    SoftEther Corporation
+
+  - Takao Ito, Ph.D.
+    Computer Science, Graduate School of University of Tsukuba
+    SoftEther Corporation
+
+  - Mei Sharie Ann Yamaguchi, Ph.D.
+    Life and Environmental Sciences, Graduate School of University of Tsukuba
+
+  - Christopher Smith
+    College of Information Science, University of Tsukuba
+
+
+WEB-SITE DESIGNER:
+
+  - Genya Hatakeyama
+    College of Information Science, University of Tsukuba
+
+
+DEVELOPMENT BOARD MEMBERS:
+
+  - Moataz Elmasry
+    https://github.com/moatazelmasry2
+
+  - Zulyandri Zardi
+    https://github.com/zulzardi
+
+  - Alex Maslakov
+    https://github.com/GildedHonour
+
+  - Davide Beatrici
+    https://github.com/davidebeatrici
+
+  - Ilya Shipitsin
+    https://github.com/chipitsine
+
+  - Yihong Wu
+    https://github.com/domosekai
+
+SPECIAL CONTRIBUTORS:
+
+  - Guido Vranken
+    https://github.com/guidovranken
+
+
+CONTRIBUTORS:
+
+  - ajeecai <ajee.cai@gmail.com>
+  - Alexandre De Oliveira <yodresh@gmail.com>
+  - Alexey Kryuchkov <alexey.kruchkov@gmail.com>
+  - Allen Cui <allen_st_clair@msn.com>
+  - Andy Walsh <andy.walsh44+github@gmail.com>
+  - Bernhard Rosenkränzer <bero@lindev.ch>
+  - Bill Welliver <bill@welliver.org>
+  - Charles Surett <surettcharles@gmail.com>
+  - cm0x4d <cm0x4d@codemonkey.ch>
+  - DDGo <Wiki13@hotmail.nl>
+  - Denis Lesnov <den.lesnov@gmail.com>
+  - Den Lesnov <https://github.com/Leden>
+  - Dexter Ang <thepoch@gmail.com>
+  - Dmitry Glushenok <dglushenok@yandex.ru>
+  - Dmitry Orlov <dorlov@undev.ru>
+  - ELIN <elin@mikomoe.jp>
+  - Guanzhong Chen <quantum2048@gmail.com>
+  - Hideki Saito <hideki@hidekisaito.com>
+  - holoreimu <michael3707@gmail.com>
+  - Holoreimu <michael3707@gmail.com>
+  - hoppler <https://github.com/hoppler>
+  - Igor Pikovets <igor@ahrefs.com>
+  - James Brink <brink.james@gmail.com>
+  - Jeff Tang <https://github.com/mrjefftang>
+  - Jioh L. Jung <ziozzang@gmail.com>
+  - Johan de Vries <devries@wivion.nl>
+  - Josh Soref <https://github.com/jsoref>
+  - Joshua Perry <josh@6bit.com>
+  - Koichiro Iwao <meta@FreeBSD.org>
+  - Luiz Eduardo Gava <luiz.gava@procempa.com.br>
+  - macvk <tutumbul@gmail.com>
+  - Maks Naumov <maksqwe1@ukr.net>
+  - Matt Lewandowsky <lewellyn@foxmail.com>
+  - Max Miroshnikov <mogikanin.tir@gmail.com>
+  - Melvyn <yaurthek@gmail.com>
+  - Michael B <https://github.com/DownWithUp>
+  - Michael Clausen <cm0x4d@codemonkey.ch>
+  - Michael Clausen <michael.clausen@hevs.ch>
+  - Mike Selivanov <mikes777@gmail.com>
+  - Mikhail Pridushchenko <mikhail.pridushchenko@dsr-company.com>
+  - mogikanin <mogikanin.tir@gmail.com>
+  - Mykhaylo Yehorov <yehorov@gmail.com>
+  - nattoheaven <nattoheaven@gmail.com>
+  - Nguyễn Hồng Quân <ng.hong.quan@gmail.com>
+  - Noah O'Donoghue <https://github.com/NoahO>
+  - NOKUBI Takatsugu <knok@daionet.gr.jp>
+  - NoNameA 774 <nonamea774@gmail.com>
+  - Norbert Preining <norbert@preining.info>
+  - NV <nvsofts@gmail.com>
+  - Olimjon <olim98@bk.ru>
+  - parly <https://github.com/parly>
+  - PeTeeR <tom2pet@gmail.com>
+  - Quantum <quantum2048@gmail.com>
+  - Quintin <quintin@last.za.net>
+  - Raymond Tau <raymondtau@gmail.com>
+  - rel22 <rel22@inbox.ru>
+  - Renaud Allard <renaud@allard.it>
+  - root <root@vpn.sjbcom.com>
+  - Sacha J Bernstein <sacha@sjbcom.com>
+  - Sahal Ansari <github@sahal.info>
+  - Shadus Black <blackholefoxdev@gmail.com>
+  - thepyper <thepyper@gmail.com>
+  - Tim Schneider <schneider0tim@gmail.com>
+  - tonychung00 <tonychung00@gmail.com>
+  - Victor Salgado <vms@pinhaotec.com.br>
+  - William Welliver <william@welliver.org>
+  - YF <yfdyh000@gmail.com>
+
+
+JOIN THE SOFTETHER VPN DEVELOPMENT
+----------------------------------
+
+Want to become a contributor? Please send us a patch.
+
+See also: SoftEther VPN Patch Acceptance Policy
+https://www.softether.org/5-download/src/9.patch
+
