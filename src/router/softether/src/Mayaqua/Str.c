@@ -2062,11 +2062,11 @@ void EnSafeHttpHeaderValueStr(char *str, char replace)
 	length = StrLen(str);
 	while (index < length)
 	{
-		if (str[index] == '\r' || str[index] == '\n')
+		if ((str[index] == '\r' || str[index] == '\n') &&  length - index > 1)
 		{
 			if (replace == ' ')
 			{
-				Move(&str[index], &str[index + 1], length - index);
+				Move(&str[index], &str[index + 1], length - index - 1);
 			}
 			else
 			{
@@ -2075,12 +2075,12 @@ void EnSafeHttpHeaderValueStr(char *str, char replace)
 		}
 		else if (str[index] == '\\')
 		{
-			if (str[index + 1] == 'r' || str[index + 1] == 'n')
+			if ((str[index + 1] == 'r' || str[index + 1] == 'n') && length - index > 2)
 			{
 				if (replace == ' ')
 				{
-					Move(&str[index], &str[index + 2], length - index);
-					index--;
+					Move(&str[index], &str[index + 2], length - index - 2);
+					index++;
 				}
 				else
 				{
@@ -4667,12 +4667,11 @@ UINT JsonArrayAddNumber(JSON_ARRAY *array, UINT64 number) {
 UINT JsonArrayAddData(JSON_ARRAY *array, void *data, UINT size)
 {
 	UINT ret;
-	char *b64 = ZeroMalloc(size * 4 + 32);
-	B64_Encode(b64, data, size);
+	char *base64 = Base64FromBin(NULL, data, size);
 
-	ret = JsonArrayAddStr(array, b64);
+	ret = JsonArrayAddStr(array, base64);
 
-	Free(b64);
+	Free(base64);
 	return ret;
 }
 
@@ -4724,12 +4723,11 @@ UINT JsonSet(JSON_OBJECT *object, char *name, JSON_VALUE *value) {
 UINT JsonSetData(JSON_OBJECT *object, char *name, void *data, UINT size)
 {
 	UINT ret;
-	char *b64 = ZeroMalloc(size * 4 + 32);
-	B64_Encode(b64, data, size);
+	char *base64 = Base64FromBin(NULL, data, size);
 
-	ret = JsonSetStr(object, name, b64);
+	ret = JsonSetStr(object, name, base64);
 
-	Free(b64);
+	Free(base64);
 	return ret;
 }
 

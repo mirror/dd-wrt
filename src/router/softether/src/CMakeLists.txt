@@ -60,6 +60,21 @@ include_directories(.)
 
 if(WIN32)
   add_definitions(-DWIN32 -D_WINDOWS -DOS_WIN32 -D_CRT_SECURE_NO_WARNINGS)
+
+  #
+  # https://msrc-blog.microsoft.com/2020/08/17/control-flow-guard-for-clang-llvm-and-rust/
+  #
+
+  message("Setting CONTROL FLOW GUARD") 
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /guard:cf")
+  set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} /guard:cf /DYNAMICBASE")
+
+  message("Setting QSPECTRE")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Qspectre")
+
+  message("Setting CETCOMPAT")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /CETCOMPAT")
+
 endif()
 
 if(UNIX)
@@ -112,6 +127,9 @@ if(UNIX)
   if(SE_PIDDIR)
     add_definitions(-DSE_PIDDIR="${SE_PIDDIR}")
   endif()
+
+  # Use system libraries instead of bundled
+  set(USE_SYSTEM_CPU_FEATURES false CACHE BOOL "Use system cpu_features")
 endif()
 
 # Cedar communication module

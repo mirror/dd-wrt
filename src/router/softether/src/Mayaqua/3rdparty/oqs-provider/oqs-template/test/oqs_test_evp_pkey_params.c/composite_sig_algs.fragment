@@ -1,0 +1,14 @@
+
+
+/** \brief List of composite signature algorithms. */
+const char *kCompositeSignatureAlgorithms[] = {
+{% for sig in config['sigs'] %}
+   {%- for variant in sig['variants'] %}
+     {%- for composite_alg in variant['composite'] -%}
+     "{{variant['name']}}_{{ composite_alg['name'] }}",
+     {%- endfor -%}
+   {%- endfor %}
+{%- endfor %}
+NULL,
+};
+

@@ -302,7 +302,7 @@ LANGLIST *GetBestLangForCurrentEnvironment(LIST *o)
 		}
 		else
 		{
-			ret = GetBestLangByLangStr(o, "en_US.UTF-8");
+			ret = GetBestLangByLangStr(o, "C");
 		}
 	}
 #endif	// OS_WIN32

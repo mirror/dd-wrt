@@ -2568,6 +2568,7 @@ MS_ADAPTER_LIST *MsCreateAdapterListInnerExVista(bool no_info)
 				UniStrCpy(a->TitleW, sizeof(a->TitleW), title);
 				UniToStr(a->Title, sizeof(a->Title), title);
 				a->Index = r->InterfaceIndex;
+				a->MediaConnectState = r->MediaConnectState;
 				a->Type = r->Type;
 				a->Status = ConvertMidStatusVistaToXp(r->OperStatus);
 				a->Mtu = r->Mtu;
@@ -4258,7 +4259,7 @@ UINT MsService(char *name, SERVICE_FUNCTION *start, SERVICE_FUNCTION *stop, UINT
 
 		if ((mode == SVC_MODE_INSTALL || mode == SVC_MODE_UNINSTALL || mode == SVC_MODE_START ||
 			mode == SVC_MODE_STOP || mode == SVC_MODE_SERVICE) &&
-			(ms->IsNt == false))
+			(IsNt() == false))
 		{
 			// Tried to use the command for the NT in non-WindowsNT system
 			MsgBox(NULL, MB_ICONSTOP, _UU("SVC_NT_ONLY"));

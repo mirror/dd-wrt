@@ -114,6 +114,12 @@ bool ServerAccept(CONNECTION *c);
 bool ClientConnect(CONNECTION *c);
 SOCK *ClientConnectToServer(CONNECTION *c);
 SOCK *TcpIpConnectEx(char *hostname, UINT port, bool *cancel_flag, void *hWnd, UINT *nat_t_error_code, bool no_nat_t, bool try_start_ssl, IP *ret_ip);
+SOCK *TcpIpConnectEx2(char *hostname, UINT port, bool *cancel_flag, void *hWnd, UINT *nat_t_error_code, bool no_nat_t, bool try_start_ssl, SSL_VERIFY_OPTION *ssl_option, UINT *ssl_err, char *hint_str, IP *ret_ip);
+
+// New function named with prefix "Bind" binds outgoing connection to a specific address. New one is wrapped in original one.
+SOCK* BindTcpIpConnectEx(IP *localIP, UINT localport, char *hostname, UINT port, bool *cancel_flag, void *hWnd, UINT *nat_t_error_code, bool no_nat_t, bool try_start_ssl, IP *ret_ip);
+SOCK* BindTcpIpConnectEx2(IP *localIP, UINT localport, char *hostname, UINT port, bool *cancel_flag, void *hWnd, UINT *nat_t_error_code, bool no_nat_t, bool try_start_ssl, SSL_VERIFY_OPTION *ssl_option, UINT *ssl_err, char *hint_str, IP *ret_ip);
+
 bool ClientUploadSignature(SOCK *s);
 bool ClientDownloadHello(CONNECTION *c, SOCK *s);
 bool ServerDownloadSignature(CONNECTION *c, char **error_detail_str);
@@ -121,6 +127,11 @@ bool ServerUploadHello(CONNECTION *c);
 bool ClientUploadAuth(CONNECTION *c);
 SOCK *ClientConnectGetSocket(CONNECTION *c, bool additional_connect);
 SOCK *TcpConnectEx3(char *hostname, UINT port, UINT timeout, bool *cancel_flag, void *hWnd, bool no_nat_t, UINT *nat_t_error_code, bool try_start_ssl, IP *ret_ip);
+SOCK *TcpConnectEx4(char *hostname, UINT port, UINT timeout, bool *cancel_flag, void *hWnd, bool no_nat_t, UINT *nat_t_error_code, bool try_start_ssl, SSL_VERIFY_OPTION *ssl_option, UINT *ssl_err, char *hint_str, IP *ret_ip);
+
+// New function named with prefix "Bind" binds outgoing connection to a specific address. New one is wrapped in original one.
+SOCK* BindTcpConnectEx3(IP *localIP, UINT localport, char *hostname, UINT port, UINT timeout, bool *cancel_flag, void *hWnd, bool no_nat_t, UINT *nat_t_error_code, bool try_start_ssl, IP *ret_ip);
+SOCK* BindTcpConnectEx4(IP *localIP, UINT localport, char *hostname, UINT port, UINT timeout, bool *cancel_flag, void *hWnd, bool no_nat_t, UINT *nat_t_error_code, bool try_start_ssl, SSL_VERIFY_OPTION *ssl_option, UINT *ssl_err, char *hint_str, IP *ret_ip);
 
 UINT ProxyCodeToCedar(UINT code);
 
@@ -132,6 +143,7 @@ void PackAddPolicy(PACK *p, POLICY *y);
 PACK *PackWelcome(SESSION *s);
 PACK *PackHello(void *random, UINT ver, UINT build, char *server_str);
 bool GetHello(PACK *p, void *random, UINT *ver, UINT *build, char *server_str, UINT server_str_size);
+PACK *PackLoginWithExternal(char *hubname, char *username);
 PACK *PackLoginWithAnonymous(char *hubname, char *username);
 PACK *PackLoginWithPassword(char *hubname, char *username, void *secure_password);
 PACK *PackLoginWithPlainPassword(char *hubname, char *username, void *plain_password);

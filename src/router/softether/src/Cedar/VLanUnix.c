@@ -29,7 +29,7 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 
-#ifdef UNIX_OPENBSD
+#if defined(UNIX_OPENBSD) || defined(UNIX_SOLARIS)
 #include <netinet/if_ether.h>
 #else
 #include <net/ethernet.h>
@@ -263,7 +263,7 @@ void FreeVLan(VLAN *v)
 }
 
 // Create a tap
-VLAN *NewTap(char *name, char *mac_address, bool create_up)
+VLAN *NewBridgeTap(char *name, char *mac_address, bool create_up)
 {
 	int fd;
 	VLAN *v;
@@ -273,7 +273,7 @@ VLAN *NewTap(char *name, char *mac_address, bool create_up)
 		return NULL;
 	}
 
-	fd = UnixCreateTapDeviceEx(name, "tap", mac_address, create_up);
+	fd = UnixCreateTapDeviceEx(name, UNIX_VLAN_BRIDGE_IFACE_PREFIX, mac_address, create_up);
 	if (fd == -1)
 	{
 		return NULL;
@@ -288,7 +288,7 @@ VLAN *NewTap(char *name, char *mac_address, bool create_up)
 }
 
 // Close the tap
-void FreeTap(VLAN *v)
+void FreeBridgeTap(VLAN *v)
 {
 	// Validate arguments
 	if (v == NULL)
@@ -296,7 +296,11 @@ void FreeTap(VLAN *v)
 		return;
 	}
 
-	close(v->fd);
+	UnixCloseTapDevice(v->fd);
+#ifdef	UNIX_BSD
+	UnixDestroyBridgeTapDevice(v->InstanceName);
+#endif
+
 	FreeVLan(v);
 }
 
@@ -470,6 +474,20 @@ int UnixCreateTapDeviceEx(char *name, char *prefix, UCHAR *mac_address, bool cre
 			ioctl(s, SIOCSIFLLADDR, &ifr);
 		}
 
+		// Set interface description
+#ifdef	SIOCSIFDESCR
+		{
+			char desc[] = CEDAR_PRODUCT_STR " Virtual Network Adapter";
+
+			ifr.ifr_buffer.buffer = desc;
+			ifr.ifr_buffer.length = StrLen(desc) + 1;
+			ioctl(s, SIOCSIFDESCR, &ifr);
+		}
+#endif
+
+		// Set interface group
+		UnixSetIfGroup(s, tap_name, CEDAR_PRODUCT_STR);
+
 		if (create_up)
 		{
 			Zero(&ifr, sizeof(ifr));
@@ -554,7 +572,7 @@ int UnixCreateTapDeviceEx(char *name, char *prefix, UCHAR *mac_address, bool cre
 }
 int UnixCreateTapDevice(char *name, UCHAR *mac_address, bool create_up)
 {
-	return UnixCreateTapDeviceEx(name, "vpn", mac_address, create_up);
+	return UnixCreateTapDeviceEx(name, UNIX_VLAN_CLIENT_IFACE_PREFIX, mac_address, create_up);
 }
 
 // Close the tap device
@@ -569,9 +587,77 @@ void UnixCloseTapDevice(int fd)
 	close(fd);
 }
 
+// Destroy the tap device (for FreeBSD)
+// FreeBSD tap device is still plumbed after closing fd so need to destroy after close
+void UnixDestroyTapDeviceEx(char *name, char *prefix)
+{
+#ifdef UNIX_BSD
+	struct ifreq ifr;
+	char eth_name[MAX_SIZE];
+	int s;
+
+	Zero(&ifr, sizeof(ifr));
+	GenerateTunName(name, prefix, eth_name, sizeof(eth_name));
+	StrCpy(ifr.ifr_name, sizeof(ifr.ifr_name), eth_name);
+
+	s = socket(AF_INET, SOCK_DGRAM, 0);
+	if (s == -1)
+	{
+		return;
+	}
+	ioctl(s, SIOCIFDESTROY, &ifr);
+
+	close(s);
+#endif	// UNIX_BSD
+}
+
+void UnixDestroyBridgeTapDevice(char *name)
+{
+#ifdef UNIX_BSD
+	UnixDestroyTapDeviceEx(name, UNIX_VLAN_BRIDGE_IFACE_PREFIX);
+#endif	// UNIX_BSD
+}
+
+void UnixDestroyClientTapDevice(char *name)
+{
+#ifdef UNIX_BSD
+	UnixDestroyTapDeviceEx(name, UNIX_VLAN_CLIENT_IFACE_PREFIX);
+#endif	// UNIX_BSD
+}
+
+void UnixSetIfGroup(int fd, const char *name, const char *group_name)
+{
+#ifdef	SIOCAIFGROUP
+	struct ifgroupreq ifgr;
+	char *tmp;
+
+	tmp = CopyStr((char *)group_name);
+	StrLower(tmp);
+	Zero(&ifgr, sizeof(ifgr));
+
+	StrCpy(ifgr.ifgr_name, sizeof(ifgr.ifgr_name), (char *) name);
+	StrCpy(ifgr.ifgr_group, sizeof(ifgr.ifgr_group), tmp);
+	ioctl(fd, SIOCAIFGROUP, &ifgr);
+
+	Free(tmp);
+#endif
+}
+
 #else	// NO_VLAN
 
-void UnixCloseTapDevice(int fd)
+void UnixCloseDevice(int fd)
+{
+}
+
+void UnixDestroyTapDevice(char *name)
+{
+}
+
+void UnixDestroyTapDeviceEx(char *name, char *prefix)
+{
+}
+
+void UnixSetIfGroup()
 {
 }
 
@@ -662,13 +748,13 @@ bool UnixVLanCreateEx(char *name, char *prefix, UCHAR *mac_address, bool create_
 }
 bool UnixVLanCreate(char *name, UCHAR *mac_address, bool create_up)
 {
-	return UnixVLanCreateEx(name, "vpn", mac_address, create_up);
+	return UnixVLanCreateEx(name, UNIX_VLAN_CLIENT_IFACE_PREFIX, mac_address, create_up);
 }
 
 // Set a VLAN up/down
 bool UnixVLanSetState(char* name, bool state_up)
 {
-#ifdef UNIX_LINUX
+#if defined(UNIX_LINUX) || defined(UNIX_BSD)
 	UNIX_VLAN_LIST *t, tt;
 	struct ifreq ifr;
 	int s;
@@ -689,7 +775,7 @@ bool UnixVLanSetState(char* name, bool state_up)
 			return false;
 		}
 
-		GenerateTunName(name, "vpn", eth_name, sizeof(eth_name));
+		GenerateTunName(name, UNIX_VLAN_CLIENT_IFACE_PREFIX, eth_name, sizeof(eth_name));
 		Zero(&ifr, sizeof(ifr));
 		StrCpy(ifr.ifr_name, sizeof(ifr.ifr_name), eth_name);
 
@@ -714,7 +800,7 @@ bool UnixVLanSetState(char* name, bool state_up)
 		close(s);
 	}
 	UnlockList(unix_vlan);
-#endif // UNIX_LINUX
+#endif // UNIX_LINUX || UNIX_BSD
 
 	return true;
 }
@@ -769,6 +855,9 @@ void UnixVLanDelete(char *name)
 		if (t != NULL)
 		{
 			UnixCloseTapDevice(t->fd);
+#ifdef UNIX_BSD
+			UnixDestroyClientTapDevice(t->Name);
+#endif
 			Delete(unix_vlan, t);
 			Free(t);
 		}
@@ -815,6 +904,9 @@ void UnixVLanFree()
 		UNIX_VLAN_LIST *t = LIST_DATA(unix_vlan, i);
 
 		UnixCloseTapDevice(t->fd);
+#ifdef UNIX_BSD
+		UnixDestroyClientTapDevice(t->Name);
+#endif
 		Free(t);
 	}
 

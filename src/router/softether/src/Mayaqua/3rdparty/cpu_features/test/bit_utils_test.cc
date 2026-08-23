@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,18 +22,18 @@ namespace {
 TEST(UtilsTest, IsBitSet) {
   for (size_t bit_set = 0; bit_set < 32; ++bit_set) {
     const uint32_t value = 1UL << bit_set;
-    for (size_t i = 0; i < 32; ++i) {
+    for (uint32_t i = 0; i < 32; ++i) {
       EXPECT_EQ(IsBitSet(value, i), i == bit_set);
     }
   }
 
   // testing 0, all bits should be 0.
-  for (size_t i = 0; i < 32; ++i) {
+  for (uint32_t i = 0; i < 32; ++i) {
     EXPECT_FALSE(IsBitSet(0, i));
   }
 
   // testing ~0, all bits should be 1.
-  for (size_t i = 0; i < 32; ++i) {
+  for (uint32_t i = 0; i < 32; ++i) {
     EXPECT_TRUE(IsBitSet(-1, i));
   }
 }

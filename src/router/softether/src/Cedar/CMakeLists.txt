@@ -19,13 +19,21 @@ set_target_properties(cedar
   RUNTIME_OUTPUT_DIRECTORY "${BUILD_DIRECTORY}"
 )
 
-#cmake_host_system_information(RESULT HAS_SSE2 QUERY HAS_SSE2)
+target_link_libraries(cedar PUBLIC mayaqua)
+
+cmake_host_system_information(RESULT HAS_SSE2 QUERY HAS_SSE2)
 
 set(BLAKE2_SRC_PATH $<IF:$<BOOL:${HAS_SSE2}>,${TOP_DIRECTORY}/3rdparty/BLAKE2/sse,${TOP_DIRECTORY}/3rdparty/BLAKE2/ref>)
 set(BLAKE2_SRC $<IF:$<BOOL:${HAS_SSE2}>,${BLAKE2_SRC_PATH}/blake2s.c,${BLAKE2_SRC_PATH}/blake2s-ref.c>)
 
 target_include_directories(cedar PUBLIC ${BLAKE2_SRC_PATH})
 target_sources(cedar PRIVATE ${BLAKE2_SRC})
+
+if(HAS_SSE2)
+  # If SSE2 is enabled, a build failure occurs with MSVC because it doesn't define "__SSE2__".
+  # The fix consists in defining "HAVE_SSE2" manually, effectively overriding the check.
+  set_property(SOURCE ${BLAKE2_SRC} PROPERTY COMPILE_DEFINITIONS "HAVE_SSE2")
+endif()
 
 if(VCPKG_TARGET_TRIPLET)
   find_package(unofficial-sodium CONFIG REQUIRED)
@@ -93,6 +101,6 @@ if(UNIX)
   install(TARGETS cedar
     COMPONENT "common"
     DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
   )
 endif()

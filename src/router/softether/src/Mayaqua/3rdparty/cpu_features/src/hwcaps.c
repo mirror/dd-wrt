@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "internal/hwcaps.h"
+
 #include <stdlib.h>
 #include <string.h>
 
 #include "cpu_features_macros.h"
 #include "internal/filesystem.h"
-#include "internal/hwcaps.h"
 #include "internal/string_view.h"
 
+static bool IsSet(const uint32_t mask, const uint32_t value) {
+  if (mask == 0) return false;
+  return (value & mask) == mask;
+}
+
+bool CpuFeatures_IsHwCapsSet(const HardwareCapabilities hwcaps_mask,
+                             const HardwareCapabilities hwcaps) {
+  return IsSet(hwcaps_mask.hwcaps, hwcaps.hwcaps) ||
+         IsSet(hwcaps_mask.hwcaps2, hwcaps.hwcaps2);
+}
+
+#ifdef CPU_FEATURES_TEST
+// In test mode, hwcaps_for_testing will define the following functions.
+HardwareCapabilities CpuFeatures_GetHardwareCapabilities(void);
+const char* CpuFeatures_GetPlatformPointer(void);
+const char* CpuFeatures_GetBasePlatformPointer(void);
+#else
+
+// Debug facilities
 #if defined(NDEBUG)
 #define D(...)
 #else
@@ -31,59 +51,38 @@
   } while (0)
 #endif
 
-#if defined(CPU_FEATURES_ARCH_MIPS) || defined(CPU_FEATURES_ARCH_ANY_ARM)
-#define HWCAPS_ANDROID_MIPS_OR_ARM
-#endif
-
-#if defined(CPU_FEATURES_OS_LINUX_OR_ANDROID) && \
-    !defined(HWCAPS_ANDROID_MIPS_OR_ARM)
-#define HWCAPS_REGULAR_LINUX
-#endif
-
-#if defined(HWCAPS_ANDROID_MIPS_OR_ARM) || defined(HWCAPS_REGULAR_LINUX)
-#define HWCAPS_SUPPORTED
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////
 // Implementation of GetElfHwcapFromGetauxval
 ////////////////////////////////////////////////////////////////////////////////
 
-// On Linux we simply use getauxval.
-#if defined(HWCAPS_REGULAR_LINUX)
-#include <dlfcn.h>
-#include <sys/auxv.h>
-static unsigned long GetElfHwcapFromGetauxval(uint32_t hwcap_type) {
-  return getauxval(hwcap_type);
-}
-#endif  // defined(HWCAPS_REGULAR_LINUX)
-
-// On Android we probe the system's C library for a 'getauxval' function and
-// call it if it exits, or return 0 for failure. This function is available
-// since API level 20.
-//
-// This code does *NOT* check for '__ANDROID_API__ >= 20' to support the edge
-// case where some NDK developers use headers for a platform that is newer than
-// the one really targetted by their application. This is typically done to use
-// newer native APIs only when running on more recent Android versions, and
-// requires careful symbol management.
-//
-// Note that getauxval() can't really be re-implemented here, because its
-// implementation does not parse /proc/self/auxv. Instead it depends on values
-// that are passed by the kernel at process-init time to the C runtime
-// initialization layer.
-#if defined(HWCAPS_ANDROID_MIPS_OR_ARM)
-#include <dlfcn.h>
 #define AT_HWCAP 16
 #define AT_HWCAP2 26
 #define AT_PLATFORM 15
 #define AT_BASE_PLATFORM 24
 
+#if defined(HAVE_STRONG_GETAUXVAL)
+#include <sys/auxv.h>
+static unsigned long GetElfHwcapFromGetauxval(uint32_t hwcap_type) {
+  return getauxval(hwcap_type);
+}
+#elif defined(HAVE_DLFCN_H)
+// On Android we probe the system's C library for a 'getauxval' function and
+// call it if it exits, or return 0 for failure. This function is available
+// since API level 18.
+//
+// Note that getauxval() can't really be re-implemented here, because its
+// implementation does not parse /proc/self/auxv. Instead it depends on values
+// that are passed by the kernel at process-init time to the C runtime
+// initialization layer.
+
+#include <dlfcn.h>
+
 typedef unsigned long getauxval_func_t(unsigned long);
 
 static uint32_t GetElfHwcapFromGetauxval(uint32_t hwcap_type) {
   uint32_t ret = 0;
-  void* libc_handle = NULL;
-  getauxval_func_t* func = NULL;
+  void *libc_handle = NULL;
+  getauxval_func_t *func = NULL;
 
   dlerror();  // Cleaning error state before calling dlopen.
   libc_handle = dlopen("libc.so", RTLD_NOW);
@@ -91,7 +90,7 @@ static uint32_t GetElfHwcapFromGetauxval(uint32_t hwcap_type) {
     D("Could not dlopen() C library: %s\n", dlerror());
     return 0;
   }
-  func = (getauxval_func_t*)dlsym(libc_handle, "getauxval");
+  func = (getauxval_func_t *)dlsym(libc_handle, "getauxval");
   if (!func) {
     D("Could not find getauxval() in C library\n");
   } else {
@@ -101,12 +100,12 @@ static uint32_t GetElfHwcapFromGetauxval(uint32_t hwcap_type) {
   dlclose(libc_handle);
   return ret;
 }
-#endif  // defined(HWCAPS_ANDROID_MIPS_OR_ARM)
+#else
+#error "This platform does not provide hardware capabilities."
+#endif
 
-#if defined(HWCAPS_SUPPORTED)
-////////////////////////////////////////////////////////////////////////////////
-// Implementation of GetHardwareCapabilities for Android and Linux
-////////////////////////////////////////////////////////////////////////////////
+// Implementation of GetHardwareCapabilities for OS that provide
+// GetElfHwcapFromGetauxval().
 
 // Fallback when getauxval is not available, retrieves hwcaps from
 // "/proc/self/auxv".
@@ -123,7 +122,7 @@ static uint32_t GetElfHwcapFromProcSelfAuxv(uint32_t hwcap_type) {
     return 0;
   }
   for (;;) {
-    const int ret = CpuFeatures_ReadFile(fd, (char*)&entry, sizeof entry);
+    const int ret = CpuFeatures_ReadFile(fd, (char *)&entry, sizeof entry);
     if (ret < 0) {
       D("Error while reading %s\n", filepath);
       break;
@@ -159,29 +158,12 @@ HardwareCapabilities CpuFeatures_GetHardwareCapabilities(void) {
   return capabilities;
 }
 
-PlatformType kEmptyPlatformType;
-
-PlatformType CpuFeatures_GetPlatformType(void) {
-  PlatformType type = kEmptyPlatformType;
-  char *platform = (char *)GetHardwareCapabilitiesFor(AT_PLATFORM);
-  char *base_platform = (char *)GetHardwareCapabilitiesFor(AT_BASE_PLATFORM);
-
-  if (platform != NULL)
-    CpuFeatures_StringView_CopyString(str(platform), type.platform,
-                                      sizeof(type.platform));
-  if (base_platform != NULL)
-    CpuFeatures_StringView_CopyString(str(base_platform), type.base_platform,
-                                      sizeof(type.base_platform));
-  return type;
+const char *CpuFeatures_GetPlatformPointer(void) {
+  return (const char *)GetHardwareCapabilitiesFor(AT_PLATFORM);
 }
-#else  // (defined(HWCAPS_SUPPORTED)
 
-////////////////////////////////////////////////////////////////////////////////
-// Implementation of GetHardwareCapabilities for unsupported platforms.
-////////////////////////////////////////////////////////////////////////////////
-
-const HardwareCapabilities kEmptyHardwareCapabilities;
-HardwareCapabilities CpuFeatures_GetHardwareCapabilities(void) {
-  return kEmptyHardwareCapabilities;
+const char *CpuFeatures_GetBasePlatformPointer(void) {
+  return (const char *)GetHardwareCapabilitiesFor(AT_BASE_PLATFORM);
 }
-#endif
+
+#endif  // CPU_FEATURES_TEST

@@ -15,8 +15,8 @@
 #ifndef CPU_FEATURES_INCLUDE_CPUINFO_PPC_H_
 #define CPU_FEATURES_INCLUDE_CPUINFO_PPC_H_
 
+#include "cpu_features_cache_info.h"
 #include "cpu_features_macros.h"
-#include "internal/hwcaps.h"
 
 CPU_FEATURES_START_CPP_NAMESPACE
 
@@ -70,15 +70,19 @@ typedef struct {
   PPCFeatures features;
 } PPCInfo;
 
-// This function is guaranteed to be malloc, memset and memcpy free.
 PPCInfo GetPPCInfo(void);
+
+typedef struct {
+  char platform[64];       // 0 terminated string
+  char base_platform[64];  // 0 terminated string
+} PPCPlatformTypeStrings;
 
 typedef struct {
   char platform[64];  // 0 terminated string
   char model[64];     // 0 terminated string
   char machine[64];   // 0 terminated string
   char cpu[64];       // 0 terminated string
-  PlatformType type;
+  PPCPlatformTypeStrings type;
 } PPCPlatformStrings;
 
 PPCPlatformStrings GetPPCPlatformStrings(void);
@@ -137,5 +141,9 @@ int GetPPCFeaturesEnumValue(const PPCFeatures* features, PPCFeaturesEnum value);
 const char* GetPPCFeaturesEnumName(PPCFeaturesEnum);
 
 CPU_FEATURES_END_CPP_NAMESPACE
+
+#if !defined(CPU_FEATURES_ARCH_PPC)
+#error "Including cpuinfo_ppc.h from a non-ppc target."
+#endif
 
 #endif  // CPU_FEATURES_INCLUDE_CPUINFO_PPC_H_

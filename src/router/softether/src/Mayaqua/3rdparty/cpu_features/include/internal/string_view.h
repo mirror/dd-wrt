@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
+
 #include "cpu_features_macros.h"
 
 CPU_FEATURES_START_CPP_NAMESPACE
@@ -95,7 +96,8 @@ void CpuFeatures_StringView_CopyString(const StringView src, char* dst,
 
 // Checks if line contains the specified whitespace separated word.
 bool CpuFeatures_StringView_HasWord(const StringView line,
-                                    const char* const word);
+                                    const char* const word,
+                                    const char separator);
 
 // Get key/value from line. key and value are separated by ": ".
 // key and value are cleaned up from leading and trailing whitespaces.

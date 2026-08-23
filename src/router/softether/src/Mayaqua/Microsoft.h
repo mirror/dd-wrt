@@ -170,7 +170,6 @@ typedef struct MS
 {
 	HINSTANCE hInst;
 	HINSTANCE hKernel32;
-	bool IsNt;
 	bool IsAdmin;
 	HANDLE hCurrentProcess;
 	UINT CurrentProcessId;
@@ -281,6 +280,7 @@ typedef struct MS_ADAPTER
 	char Title[MAX_PATH];			// Display name
 	wchar_t TitleW[MAX_PATH];		// Display Name (Unicode)
 	UINT Index;						// Index
+	UINT MediaConnectState;			// Media Connect State
 	UINT Type;						// Type
 	UINT Status;					// Status
 	UINT Mtu;						// MTU

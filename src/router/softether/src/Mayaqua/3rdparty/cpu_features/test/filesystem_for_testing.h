@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ class FakeFilesystem {
   FakeFile* FindFileOrNull(const std::string& filename) const;
 
  private:
-  size_t next_file_descriptor_ = 0;
+  int next_file_descriptor_ = 0;
   std::unordered_map<std::string, std::unique_ptr<FakeFile>> files_;
 };
 

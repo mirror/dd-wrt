@@ -927,7 +927,7 @@ void GetCurrentCharSet(char *name, UINT size)
 		Zero(tmp, sizeof(tmp));
 		if (GetEnv("LOCATION", tmp, sizeof(tmp)) == false || IsEmptyStr(tmp))
 		{
-			StrCpy(tmp, sizeof(tmp), "en_US.UTF-8");
+			StrCpy(tmp, sizeof(tmp), "C");
 		}
 	}
 

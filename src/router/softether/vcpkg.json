@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+  "name": "softether-vpn",
+  "version-string": "5.02",
+  "dependencies": [
+    "libsodium",
+    "openssl",
+    "zlib"
+  ]
+}

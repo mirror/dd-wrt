@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,11 @@
 namespace cpu_features {
 
 void SetHardwareCapabilities(uint32_t hwcaps, uint32_t hwcaps2);
-void SetPlatformTypes(const char *platform, const char *base_platform);
+void SetPlatformPointer(const char* string);
+void SetBasePlatformPointer(const char* string);
+
+// To be called before each test.
+void ResetHwcaps();
 
 }  // namespace cpu_features
 

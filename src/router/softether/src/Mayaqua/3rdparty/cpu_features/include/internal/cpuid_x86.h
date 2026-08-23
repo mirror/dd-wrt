@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ typedef struct {
   uint32_t eax, ebx, ecx, edx;
 } Leaf;
 
-// Retrieves the leaf for a particular cpuid.
-Leaf CpuId(uint32_t leaf_id);
+// Returns the result of a call to the cpuid instruction.
+Leaf GetCpuidLeaf(uint32_t leaf_id, int ecx);
 
 // Returns the eax value of the XCR0 register.
 uint32_t GetXCR0Eax(void);

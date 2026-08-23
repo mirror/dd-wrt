@@ -1,65 +1,58 @@
-source "$(dirname -- "$0")"/run_integration.sh
+#!/usr/bin/env bash
 
 # Toolchains for little-endian, 64-bit ARMv8 for GNU/Linux systems
 function set_aarch64-linux-gnu() {
-  TOOLCHAIN=LINARO
-  TARGET=aarch64-linux-gnu
-  QEMU_ARCH=aarch64
+  export TARGET=aarch64-linux-gnu
 }
 
-# Toolchains for little-endian, hard-float, 32-bit ARMv7 (and earlier) for GNU/Linux systems 
+# Toolchains for little-endian, hard-float, 32-bit ARMv7 (and earlier) for GNU/Linux systems
 function set_arm-linux-gnueabihf() {
-  TOOLCHAIN=LINARO
-  TARGET=arm-linux-gnueabihf
-  QEMU_ARCH=arm
+  export TARGET=arm-linux-gnueabihf
 }
 
 # Toolchains for little-endian, 32-bit ARMv8 for GNU/Linux systems
 function set_armv8l-linux-gnueabihf() {
-  TOOLCHAIN=LINARO
-  TARGET=armv8l-linux-gnueabihf
-  QEMU_ARCH=arm
+  export TARGET=armv8l-linux-gnueabihf
 }
 
 # Toolchains for little-endian, soft-float, 32-bit ARMv7 (and earlier) for GNU/Linux systems
 function set_arm-linux-gnueabi() {
-  TOOLCHAIN=LINARO
-  TARGET=arm-linux-gnueabi
-  QEMU_ARCH=arm
+  export TARGET=arm-linux-gnueabi
 }
 
 # Toolchains for big-endian, 64-bit ARMv8 for GNU/Linux systems
 function set_aarch64_be-linux-gnu() {
-  TOOLCHAIN=LINARO
-  TARGET=aarch64_be-linux-gnu
-  QEMU_ARCH="DISABLED"
+  export TARGET=aarch64_be-linux-gnu
 }
 
 # Toolchains for big-endian, hard-float, 32-bit ARMv7 (and earlier) for GNU/Linux systems
 function set_armeb-linux-gnueabihf() {
-  TOOLCHAIN=LINARO
-  TARGET=armeb-linux-gnueabihf
-  QEMU_ARCH="DISABLED"
+  export TARGET=armeb-linux-gnueabihf
 }
 
 # Toolchains for big-endian, soft-float, 32-bit ARMv7 (and earlier) for GNU/Linux systems
 function set_armeb-linux-gnueabi() {
-  TOOLCHAIN=LINARO
-  TARGET=armeb-linux-gnueabi
-  QEMU_ARCH="DISABLED"
+  export TARGET=armeb-linux-gnueabi
 }
 
-
-function set_mips() {
-  TOOLCHAIN=CODESCAPE
-  TARGET=mips-mti-linux-gnu
-  QEMU_ARCH="DISABLED"
+function set_mips32() {
+  export TARGET=mips32
 }
 
-function set_native() {
-  TOOLCHAIN=NATIVE
-  TARGET=native
-  QEMU_ARCH=""
+function set_mips32el() {
+  export TARGET=mips32el
+}
+
+function set_mips64() {
+  export TARGET=mips64
+}
+
+function set_mips64el() {
+  export TARGET=mips64el
+}
+
+function set_x86_64() {
+  export TARGET=x86_64
 }
 
 ENVIRONMENTS="
@@ -70,11 +63,17 @@ ENVIRONMENTS="
   set_aarch64_be-linux-gnu
   set_armeb-linux-gnueabihf
   set_armeb-linux-gnueabi
-  set_native
-  set_mips
+  set_mips32
+  set_mips32el
+  set_mips64
+  set_mips64el
+  set_x86_64
 "
 
+set -e
+
 for SET_ENVIRONMENT in ${ENVIRONMENTS}; do
+  echo "testing ${SET_ENVIRONMENT}"
   ${SET_ENVIRONMENT}
-  expand_environment_and_integrate
+  ./"$(dirname -- "$0")"/run_integration.sh
 done

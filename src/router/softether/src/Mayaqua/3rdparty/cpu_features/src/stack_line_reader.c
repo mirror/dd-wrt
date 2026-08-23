@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,11 +13,12 @@
 // limitations under the License.
 
 #include "internal/stack_line_reader.h"
-#include "internal/filesystem.h"
 
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
+
+#include "internal/filesystem.h"
 
 void StackLineReader_Initialize(StackLineReader* reader, int fd) {
   reader->view.ptr = reader->buffer;

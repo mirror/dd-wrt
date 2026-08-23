@@ -123,11 +123,7 @@ typedef int (COMPARE)(void *p1, void *p2);
 #define	GET_ABS(a)			((a) >= 0 ? (a) : -(a))
 
 // Convert the pointer to UINT
-#ifdef	CPU_64
-#define	POINTER_TO_KEY(p)		HashPtrToUINT(p)
-#else
-#define	POINTER_TO_KEY(p)		(UINT)(p)
-#endif
+#define	POINTER_TO_KEY(p)		(HashPtrToUINT(p))
 
 // Compare the pointer and UINT
 #define	COMPARE_POINTER_AND_KEY(p, i)	(POINTER_TO_KEY(p) == (i))
@@ -282,7 +278,8 @@ typedef struct TRACKING_LIST TRACKING_LIST;
 typedef struct IO IO;
 
 // Memory.h
-typedef struct MEMTAG MEMTAG;
+typedef struct MEMTAG1 MEMTAG1;
+typedef struct MEMTAG2 MEMTAG2;
 typedef struct BUF BUF;
 typedef struct FIFO FIFO;
 typedef struct LIST LIST;
@@ -380,7 +377,9 @@ typedef struct RUDP_STACK RUDP_STACK;
 typedef struct RUDP_SOURCE_IP RUDP_SOURCE_IP;
 typedef struct RUDP_SESSION RUDP_SESSION;
 typedef struct RUDP_SEGMENT RUDP_SEGMENT;
+typedef struct CONNECT_SERIAL_PARAM CONNECT_SERIAL_PARAM;
 typedef struct CONNECT_TCP_RUDP_PARAM CONNECT_TCP_RUDP_PARAM;
+typedef struct SSL_VERIFY_OPTION SSL_VERIFY_OPTION;
 typedef struct TCP_PAIR_HEADER TCP_PAIR_HEADER;
 typedef struct NIC_ENTRY NIC_ENTRY;
 typedef struct HTTP_VALUE HTTP_VALUE;
@@ -465,5 +464,7 @@ typedef struct DNS_CACHE DNS_CACHE;
 typedef struct DNS_CACHE_REVERSE DNS_CACHE_REVERSE;
 typedef struct DNS_RESOLVER DNS_RESOLVER;
 typedef struct DNS_RESOLVER_REVERSE DNS_RESOLVER_REVERSE;
+
+#include "Crypto/Types.h"
 
 #endif	// MAYATYPE_H

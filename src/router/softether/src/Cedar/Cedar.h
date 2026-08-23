@@ -366,6 +366,7 @@
 #define	AUTHTYPE_ROOTCERT				3			// Root certificate which is issued by trusted Certificate Authority
 #define	AUTHTYPE_RADIUS					4			// Radius authentication
 #define	AUTHTYPE_NT						5			// Windows NT authentication
+#define AUTHTYPE_EXTERNAL				96			// External authentication (completed)
 #define	AUTHTYPE_WIREGUARD_KEY			97			// WireGuard public key authentication
 #define	AUTHTYPE_OPENVPN_CERT    		98			// TLS client certificate authentication
 #define	AUTHTYPE_TICKET					99			// Ticket authentication
@@ -675,6 +676,9 @@
 // 
 //////////////////////////////////////////////////////////////////////
 
+#define	UNIX_VLAN_CLIENT_IFACE_PREFIX		"vpn"			// Prefix of UNIX virtual LAN card interface (used for client)
+#define	UNIX_VLAN_BRIDGE_IFACE_PREFIX		"tap"			// Prefix of UNIX virtual LAN card interface (used for bridge destination)
+
 #ifndef	UNIX_BSD
 #define	TAP_FILENAME_1				"/dev/net/tun"
 #define	TAP_FILENAME_2				"/dev/tun"
@@ -869,6 +873,10 @@
 #define	ERR_VPNGATE_INCLIENT_CANT_STOP	146	// Can not be stopped if operating within VPN Client mode
 #define	ERR_NOT_SUPPORTED_FUNCTION_ON_OPENSOURCE	147	// It is a feature that is not supported in the open source version
 #define	ERR_SUSPENDING					148	// System is suspending
+#define ERR_HOSTNAME_MISMATCH			149	// SSL hostname mismatch
+#define ERR_SSL_PROTOCOL_VERSION		150 // SSL version not supported
+#define ERR_SSL_SHARED_CIPHER			151 // Can't find common cipher
+#define ERR_SSL_HANDSHAKE				152 // Other SSL handshake error
 
 
 ////////////////////////////
@@ -930,6 +938,7 @@ struct CEDAR
 	COUNTER *ConnectionIncrement;	// Connection increment counter
 	X *ServerX;						// Server certificate
 	K *ServerK;						// Private key of the server certificate
+	LIST *ServerChain;				// Server trust chain
 	char UsernameHubSeparator;		// Character which separates the username from the hub name
 	char *CipherList;				// List of encryption algorithms
 	UINT Version;					// Version information
@@ -1000,6 +1009,7 @@ CEDAR *NewCedar(X *server_x, K *server_k);
 void CedarForceLink();
 void SetCedarVpnBridge(CEDAR *c);
 void SetCedarCert(CEDAR *c, X *server_x, K *server_k);
+void SetCedarCertAndChain(CEDAR *c, X *server_x, K *server_k, LIST *server_chain);
 void ReleaseCedar(CEDAR *c);
 void CleanupCedar(CEDAR *c);
 void StopCedar(CEDAR *c);
@@ -1012,6 +1022,7 @@ void DelHubEx(CEDAR *c, HUB *h, bool no_lock);
 void StopAllHub(CEDAR *c);
 void StopAllConnection(CEDAR *c);
 void AddConnection(CEDAR *cedar, CONNECTION *c);
+UINT GetUnestablishedConnections(CEDAR *cedar);
 void DelConnection(CEDAR *cedar, CONNECTION *c);
 void SetCedarCipherList(CEDAR *cedar, char *name);
 void InitCedar();
@@ -1036,6 +1047,7 @@ bool AddNoSsl(CEDAR *c, IP *ip);
 void DecrementNoSsl(CEDAR *c, IP *ip, UINT num_dec);
 void DeleteOldNoSsl(CEDAR *c);
 NON_SSL *SearchNoSslList(CEDAR *c, IP *ip);
+bool IsInNoSsl(CEDAR *c, IP *ip);
 void FreeTinyLog(TINY_LOG *t);
 void WriteTinyLog(TINY_LOG *t, char *str);
 TINY_LOG *NewTinyLog();

@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ int FakeFile::Read(int fd, void* buf, size_t count) {
   memcpy(buf, content_.data() + head_index_, read);
   head_index_ += read;
   assert(read < INT_MAX);
-  return read;
+  return (int)read;
 }
 
 void FakeFilesystem::Reset() { files_.clear(); }

@@ -91,7 +91,8 @@ UINT num_admin_options = sizeof(admin_options) / sizeof(ADMIN_OPTION);
 
 
 // Create an EAP client for the specified Virtual Hub
-EAP_CLIENT *HubNewEapClient(CEDAR *cedar, char *hubname, char *client_ip_str, char *username, char *vpn_protocol_state_str)
+EAP_CLIENT *HubNewEapClient(CEDAR *cedar, char *hubname, char *client_ip_str, char *username, char *vpn_protocol_state_str, bool proxy_only, 
+							PPP_LCP **response, UCHAR last_recv_eapid)
 {
 	HUB *hub = NULL;
 	EAP_CLIENT *ret = NULL;
@@ -137,7 +138,7 @@ EAP_CLIENT *HubNewEapClient(CEDAR *cedar, char *hubname, char *client_ip_str, ch
 						if (GetIP(&ip, radius_servers_list->Token[i]))
 						{
 							eap = NewEapClient(&ip, radius_port, radius_secret, radius_retry_interval,
-								RADIUS_INITIAL_EAP_TIMEOUT, client_ip_str, username, hubname);
+								RADIUS_INITIAL_EAP_TIMEOUT, client_ip_str, username, hubname, last_recv_eapid);
 
 							if (eap != NULL)
 							{
@@ -146,7 +147,19 @@ EAP_CLIENT *HubNewEapClient(CEDAR *cedar, char *hubname, char *client_ip_str, ch
 									StrCpy(eap->In_VpnProtocolState, sizeof(eap->In_VpnProtocolState), vpn_protocol_state_str);
 								}
 
-								if (use_peap == false)
+								if (proxy_only && response != NULL)
+								{
+									// EAP proxy for EAP-capable clients
+									PPP_LCP *lcp = EapClientSendEapIdentity(eap);
+									if (lcp != NULL)
+									{
+										*response = lcp;
+										eap->GiveupTimeout = RADIUS_RETRY_TIMEOUT;
+										ret = eap;
+										finish = true;
+									}
+								}
+								else if (use_peap == false)
 								{
 									// EAP
 									if (EapClientSendMsChapv2AuthRequest(eap))
@@ -606,6 +619,7 @@ void DataToHubOptionStruct(HUB_OPTION *o, RPC_ADMIN_OPTION *ao)
 	GetHubAdminOptionDataAndSet(ao, "DoNotSaveHeavySecurityLogs", o->DoNotSaveHeavySecurityLogs);
 	GetHubAdminOptionDataAndSet(ao, "DropBroadcastsInPrivacyFilterMode", o->DropBroadcastsInPrivacyFilterMode);
 	GetHubAdminOptionDataAndSet(ao, "DropArpInPrivacyFilterMode", o->DropArpInPrivacyFilterMode);
+	GetHubAdminOptionDataAndSet(ao, "AllowSameUserInPrivacyFilterMode", o->AllowSameUserInPrivacyFilterMode);
 	GetHubAdminOptionDataAndSet(ao, "SuppressClientUpdateNotification", o->SuppressClientUpdateNotification);
 	GetHubAdminOptionDataAndSet(ao, "FloodingSendQueueBufferQuota", o->FloodingSendQueueBufferQuota);
 	GetHubAdminOptionDataAndSet(ao, "AssignVLanIdByRadiusAttribute", o->AssignVLanIdByRadiusAttribute);
@@ -615,6 +629,7 @@ void DataToHubOptionStruct(HUB_OPTION *o, RPC_ADMIN_OPTION *ao)
 	GetHubAdminOptionDataAndSet(ao, "NoPhysicalIPOnPacketLog", o->NoPhysicalIPOnPacketLog);
 	GetHubAdminOptionDataAndSet(ao, "UseHubNameAsDhcpUserClassOption", o->UseHubNameAsDhcpUserClassOption);
 	GetHubAdminOptionDataAndSet(ao, "UseHubNameAsRadiusNasId", o->UseHubNameAsRadiusNasId);
+	GetHubAdminOptionDataAndSet(ao, "AllowEapMatchUserByCert", o->AllowEapMatchUserByCert);
 }
 
 // Convert the contents of the HUB_OPTION to data
@@ -679,6 +694,7 @@ void HubOptionStructToData(RPC_ADMIN_OPTION *ao, HUB_OPTION *o, char *hub_name)
 	Add(aol, NewAdminOption("DoNotSaveHeavySecurityLogs", o->DoNotSaveHeavySecurityLogs));
 	Add(aol, NewAdminOption("DropBroadcastsInPrivacyFilterMode", o->DropBroadcastsInPrivacyFilterMode));
 	Add(aol, NewAdminOption("DropArpInPrivacyFilterMode", o->DropArpInPrivacyFilterMode));
+	Add(aol, NewAdminOption("AllowSameUserInPrivacyFilterMode", o->AllowSameUserInPrivacyFilterMode));
 	Add(aol, NewAdminOption("SuppressClientUpdateNotification", o->SuppressClientUpdateNotification));
 	Add(aol, NewAdminOption("FloodingSendQueueBufferQuota", o->FloodingSendQueueBufferQuota));
 	Add(aol, NewAdminOption("AssignVLanIdByRadiusAttribute", o->AssignVLanIdByRadiusAttribute));
@@ -688,6 +704,7 @@ void HubOptionStructToData(RPC_ADMIN_OPTION *ao, HUB_OPTION *o, char *hub_name)
 	Add(aol, NewAdminOption("NoPhysicalIPOnPacketLog", o->NoPhysicalIPOnPacketLog));
 	Add(aol, NewAdminOption("UseHubNameAsDhcpUserClassOption", o->UseHubNameAsDhcpUserClassOption));
 	Add(aol, NewAdminOption("UseHubNameAsRadiusNasId", o->UseHubNameAsRadiusNasId));
+	Add(aol, NewAdminOption("AllowEapMatchUserByCert", o->AllowEapMatchUserByCert));
 
 	Zero(ao, sizeof(RPC_ADMIN_OPTION));
 
@@ -3562,7 +3579,7 @@ bool HubPaPutPacket(SESSION *s, void *data, UINT size)
 
 		target_mss = MIN(target_mss, session_mss);
 
-		if (s->IsUsingUdpAcceleration && s->UdpAccelMss != 0)
+		if (s->UseUdpAcceleration && s->UdpAccelMss != 0)
 		{
 			// If the link is established with UDP acceleration function, use optimum value of the UDP acceleration function
 			target_mss = MIN(target_mss, s->UdpAccelMss);
@@ -3915,6 +3932,7 @@ void StorePacket(HUB *hub, SESSION *s, PKT *packet)
 	bool no_heavy = false;
 	bool drop_broadcast_packet_privacy = false;
 	bool drop_arp_packet_privacy = false;
+	bool allow_same_user_packet_privacy = false;
 	UINT tcp_queue_quota = 0;
 	UINT64 dormant_interval = 0;
 	// Validate arguments
@@ -3939,6 +3957,7 @@ void StorePacket(HUB *hub, SESSION *s, PKT *packet)
 		no_heavy = hub->Option->DoNotSaveHeavySecurityLogs;
 		drop_broadcast_packet_privacy = hub->Option->DropBroadcastsInPrivacyFilterMode;
 		drop_arp_packet_privacy = hub->Option->DropArpInPrivacyFilterMode;
+		allow_same_user_packet_privacy = hub->Option->AllowSameUserInPrivacyFilterMode;
 		tcp_queue_quota = hub->Option->FloodingSendQueueBufferQuota;
 		if (hub->Option->DetectDormantSessionInterval != 0)
 		{
@@ -4840,7 +4859,11 @@ UPDATE_FDB:
 							// Privacy filter
 							if (drop_arp_packet_privacy || packet->TypeL3 != L3_ARPV4)
 							{
-								goto DISCARD_UNICAST_PACKET;
+								// Do not block sessions owned by the same user, if the corresponding option is enabled.
+								if (allow_same_user_packet_privacy == false || StrCmp(s->Username, dest_session->Username))
+								{
+									goto DISCARD_UNICAST_PACKET;
+								}
 							}
 						}
 
@@ -5057,7 +5080,11 @@ DISCARD_UNICAST_PACKET:
 									// Privacy filter
 									if (drop_arp_packet_privacy || packet->TypeL3 != L3_ARPV4)
 									{
-										discard = true;
+										// Do not block sessions owned by the same user, if the corresponding option is enabled.
+										if (allow_same_user_packet_privacy == false || StrCmp(s->Username, dest_session->Username))
+										{
+											discard = true;
+										}
 									}
 								}
 
@@ -5350,7 +5377,7 @@ void StorePacketToHubPa(HUB_PA *dest, SESSION *src, void *data, UINT size, PKT *
 	if (src != NULL && dest->Session != NULL && src->Hub != NULL && src->Hub->Option != NULL)
 	{
 		if (dest->Session->AdjustMss != 0 ||
-			(dest->Session->IsUsingUdpAcceleration && dest->Session->UdpAccelMss != 0) ||
+			(dest->Session->UseUdpAcceleration && dest->Session->UdpAccelMss != 0) ||
 			(dest->Session->IsRUDPSession && dest->Session->RUdpMss != 0))
 		{
 			if (src->Hub->Option->DisableAdjustTcpMss == false)
@@ -5362,7 +5389,7 @@ void StorePacketToHubPa(HUB_PA *dest, SESSION *src, void *data, UINT size, PKT *
 					target_mss = MIN(target_mss, dest->Session->AdjustMss);
 				}
 
-				if (dest->Session->IsUsingUdpAcceleration && dest->Session->UdpAccelMss != 0)
+				if (dest->Session->UseUdpAcceleration && dest->Session->UdpAccelMss != 0)
 				{
 					target_mss = MIN(target_mss, dest->Session->UdpAccelMss);
 				}
@@ -6955,6 +6982,7 @@ HUB *NewHub(CEDAR *cedar, char *HubName, HUB_OPTION *option)
 
 	h->Option->DropBroadcastsInPrivacyFilterMode = true;
 	h->Option->DropArpInPrivacyFilterMode = true;
+	h->Option->AllowSameUserInPrivacyFilterMode = false;
 
 	Rand(h->HubSignature, sizeof(h->HubSignature));
 

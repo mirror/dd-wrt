@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,13 +16,22 @@
 
 #include <assert.h>
 #include <ctype.h>
-#include <string.h>
+
+#include "copy.inl"
+#include "equals.inl"
+
+static const char* CpuFeatures_memchr(const char* const ptr, const size_t size,
+                                      const char c) {
+  for (size_t i = 0; ptr && ptr[i] != '\0' && i < size; ++i)
+    if (ptr[i] == c) return ptr + i;
+  return NULL;
+}
 
 int CpuFeatures_StringView_IndexOfChar(const StringView view, char c) {
   if (view.ptr && view.size) {
-    const char* const found = (const char*)memchr(view.ptr, c, view.size);
+    const char* const found = CpuFeatures_memchr(view.ptr, view.size, c);
     if (found) {
-      return found - view.ptr;
+      return (int)(found - view.ptr);
     }
   }
   return -1;
@@ -38,7 +47,7 @@ int CpuFeatures_StringView_IndexOf(const StringView view,
       if (found_index < 0) break;
       remainder = CpuFeatures_StringView_PopFront(remainder, found_index);
       if (CpuFeatures_StringView_StartsWith(remainder, sub_view)) {
-        return remainder.ptr - view.ptr;
+        return (int)(remainder.ptr - view.ptr);
       }
       remainder = CpuFeatures_StringView_PopFront(remainder, 1);
     }
@@ -48,14 +57,14 @@ int CpuFeatures_StringView_IndexOf(const StringView view,
 
 bool CpuFeatures_StringView_IsEquals(const StringView a, const StringView b) {
   if (a.size == b.size) {
-    return a.ptr == b.ptr || memcmp(a.ptr, b.ptr, b.size) == 0;
+    return a.ptr == b.ptr || equals(a.ptr, b.ptr, b.size);
   }
   return false;
 }
 
 bool CpuFeatures_StringView_StartsWith(const StringView a, const StringView b) {
   return a.ptr && b.ptr && b.size && a.size >= b.size
-             ? memcmp(a.ptr, b.ptr, b.size) == 0
+             ? equals(a.ptr, b.ptr, b.size)
              : false;
 }
 
@@ -138,13 +147,14 @@ void CpuFeatures_StringView_CopyString(const StringView src, char* dst,
     const size_t max_copy_size = dst_size - 1;
     const size_t copy_size =
         src.size > max_copy_size ? max_copy_size : src.size;
-    memcpy(dst, src.ptr, copy_size);
+    copy(dst, src.ptr, copy_size);
     dst[copy_size] = '\0';
   }
 }
 
 bool CpuFeatures_StringView_HasWord(const StringView line,
-                                    const char* const word_str) {
+                                    const char* const word_str,
+                                    const char separator) {
   const StringView word = str(word_str);
   StringView remainder = line;
   for (;;) {
@@ -157,9 +167,9 @@ bool CpuFeatures_StringView_HasWord(const StringView line,
       const StringView after =
           CpuFeatures_StringView_PopFront(line, index_of_word + word.size);
       const bool valid_before =
-          before.size == 0 || CpuFeatures_StringView_Back(before) == ' ';
+          before.size == 0 || CpuFeatures_StringView_Back(before) == separator;
       const bool valid_after =
-          after.size == 0 || CpuFeatures_StringView_Front(after) == ' ';
+          after.size == 0 || CpuFeatures_StringView_Front(after) == separator;
       if (valid_before && valid_after) return true;
       remainder =
           CpuFeatures_StringView_PopFront(remainder, index_of_word + word.size);
