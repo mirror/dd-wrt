@@ -2173,8 +2173,8 @@ UINT StMakeOpenVpnConfigFile(ADMIN *a, RPC_READ_LOG_FILE *t)
 	UINT ret = ERR_NO_ERROR;
 	ZIP_PACKER *p;
 	FIFO *f;
-	BUF *readme_buf;
-	BUF *readme_pdf_buf;
+	BUF *readme_buf = NULL;
+	BUF *readme_pdf_buf = NULL;
 	BUF *sample_buf;
 	LIST *port_list;
 	char my_hostname[MAX_SIZE];
@@ -2211,7 +2211,7 @@ UINT StMakeOpenVpnConfigFile(ADMIN *a, RPC_READ_LOG_FILE *t)
 	GetMachineHostName(my_hostname, sizeof(my_hostname));
 	my_hostname[16] = 0;
 
-	if (readme_buf == NULL || sample_buf == NULL || readme_pdf_buf == NULL)
+	if (sample_buf == NULL)
 	{
 		ret = ERR_INTERNAL_ERROR;
 	}
@@ -2362,8 +2362,9 @@ UINT StMakeOpenVpnConfigFile(ADMIN *a, RPC_READ_LOG_FILE *t)
 
 			StrLower(my_hostname);
 		}
-
+		if (readme_buf)
 		ZipAddFileSimple(p, "readme.txt", LocalTime64(), 0, readme_buf->Buf, readme_buf->Size);
+		if (readme_pdf_buf)
 		ZipAddFileSimple(p, "readme.pdf", LocalTime64(), 0, readme_pdf_buf->Buf, readme_pdf_buf->Size);
 
 		ReplaceStrEx((char *)config_l3_buf->Buf, config_l3_buf->Size, (char *)config_l3_buf->Buf,
@@ -2418,8 +2419,10 @@ UINT StMakeOpenVpnConfigFile(ADMIN *a, RPC_READ_LOG_FILE *t)
 			SeekBuf(t->Buffer, 0, 0);
 		}
 
+		if (readme_buf)
 		FreeBuf(readme_buf);
 		FreeBuf(sample_buf);
+		if (readme_pdf_buf)
 		FreeBuf(readme_pdf_buf);
 		FreeBuf(x_buf);
 
