@@ -343,18 +343,30 @@ extern int has_2ghz(const char *prefix);
 extern int is_wrt3200(void);
 extern int has_5ghz(const char *prefix);
 #ifdef HAVE_MADWIFI
-extern int has_6ghz(const char *prefix);
-extern int has_6ghz_only(const char *prefix);
+extern int _has_6ghz(const char *prefix);
+extern int _has_6ghz_only(const char *prefix);
 #else
-static inline int has_6ghz_only(const char *prefix)
+static inline int _has_6ghz_only(const char *prefix)
 {
 	return 0;
 }
-static inline int has_6ghz(const char *prefix)
+static inline int _has_6ghz(const char *prefix)
 {
 	return 0;
 }
 #endif
+
+static inline int has_6ghz(const char *prefix) {
+	
+	return (has_ax(prefix) || has_be(prefix)) && _has_6ghz(prefix);
+
+}
+
+static inline int has_6ghz_only(const char *prefix) {
+	
+	return (has_ax(prefix) || has_be(prefix)) && _has_6ghz_only(prefix);
+
+}
 #ifdef HAVE_ATH9K
 extern int can_ht40(const char *prefix);
 extern int can_vht80(const char *prefix);
