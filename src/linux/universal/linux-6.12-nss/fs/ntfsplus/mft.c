@@ -2661,7 +2661,11 @@ mft_rec_already_initialized:
 		 * wrong with the previous mft record.
 		 */
 		seq_no = m->sequence_number;
-		usn = *(__le16 *)((u8 *)m + le16_to_cpu(m->usa_ofs));
+		if (!(le16_to_cpu(m->usa_ofs) & 1) &&
+		    le16_to_cpu(m->usa_ofs) + sizeof(usn) <= vol->mft_record_size)
+			usn = *(__le16 *)((u8 *)m + le16_to_cpu(m->usa_ofs));
+		else
+			usn = 0;
 		err = ntfs_mft_record_layout(vol, bit, m);
 		if (unlikely(err)) {
 			ntfs_error(vol->sb, "Failed to layout allocated mft record 0x%llx.",
