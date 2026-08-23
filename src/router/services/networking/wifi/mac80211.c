@@ -504,44 +504,38 @@ void configure_single_mac80211(int count)
 		sprintf(farg, "%d", atoi(freq) + (channeloffset * 5));
 
 		const char *htmode = gethtmode(dev);
-		if (has_6ghz(dev) && freq >= 5925) {
-		if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
-			eval("iw", wif, "interface", "add", dev, "type", "mp");
-			if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
-				eval("iw", "dev", dev, "set", "freq", freq, htmode);
-			else if (!strcmp(htmode, "80+80"))
-				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg, farg2);
-			else
-				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg);
+
+		if (has_6ghz(dev) && atoi(freq) >= 5925 && !strncmp(htmode, "HT4", 3)) {
+			int chan = ieee80211_mhz2ieee(dev, atoi(freq));
+			int c_base = ((chan - 1) / 8) * 8 + 1;
+			char cntr[32];
+			sprintf(cntr, "%d", 5950 + ((c_base + 2) * 5));
+			if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
+				eval("iw", wif, "interface", "add", dev, "type", "mp");
+				eval("iw", "dev", dev, "set", "freq", freq, "40", cntr);
+			} else {
+				eval("iw", wif, "interface", "add", dev, "type", "mp", "mesh_id", nvram_nget("%s_ssid", dev));
+				eval("iw", "dev", dev, "set", "freq", freq, "40", cntr);
+			}
+
 		} else {
-			eval("iw", wif, "interface", "add", dev, "type", "mp", "mesh_id", nvram_nget("%s_ssid", dev));
-			if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
-				eval("iw", "dev", dev, "set", "freq", freq, htmode);
-			else if (!strcmp(htmode, "80+80"))
-				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg, farg2);
-			else
-				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg);
-		}
-			    
-		
-		} else { 
-		if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
-			eval("iw", wif, "interface", "add", dev, "type", "mp");
-			if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
-				eval("iw", "dev", dev, "set", "freq", freq, htmode);
-			else if (!strcmp(htmode, "80+80"))
-				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg, farg2);
-			else
-				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg);
-		} else {
-			eval("iw", wif, "interface", "add", dev, "type", "mp", "mesh_id", nvram_nget("%s_ssid", dev));
-			if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
-				eval("iw", "dev", dev, "set", "freq", freq, htmode);
-			else if (!strcmp(htmode, "80+80"))
-				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg, farg2);
-			else
-				eval("iw", "dev", dev, "set", "freq", freq, htmode, farg);
-		}
+			if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
+				eval("iw", wif, "interface", "add", dev, "type", "mp");
+				if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
+					eval("iw", "dev", dev, "set", "freq", freq, htmode);
+				else if (!strcmp(htmode, "80+80"))
+					eval("iw", "dev", dev, "set", "freq", freq, htmode, farg, farg2);
+				else
+					eval("iw", "dev", dev, "set", "freq", freq, htmode, farg);
+			} else {
+				eval("iw", wif, "interface", "add", dev, "type", "mp", "mesh_id", nvram_nget("%s_ssid", dev));
+				if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
+					eval("iw", "dev", dev, "set", "freq", freq, htmode);
+				else if (!strcmp(htmode, "80+80"))
+					eval("iw", "dev", dev, "set", "freq", freq, htmode, farg, farg2);
+				else
+					eval("iw", "dev", dev, "set", "freq", freq, htmode, farg);
+			}
 		}
 
 		strcpy(primary, dev);
@@ -550,19 +544,22 @@ void configure_single_mac80211(int count)
 		sprintf(akm, "%s_akm", dev);
 		eval("iw", wif, "interface", "add", dev, "type", "ibss");
 		isadhoc = 1;
-		//              if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
-		//                      // setup and join does wpa_supplicant
-		//              } else
-		{
-			char *freq = nvram_nget("%s_channel", dev);
-			eval("ifconfig", dev, "up");
-			const char *htmode = gethtmode(dev);
-			int iht, channeloffset;
-			get_channeloffset(dev, &iht, &channeloffset);
-			char farg[32];
-			//todo 80+80 center2_freq
-			char *farg2 = "5775";
-			sprintf(farg, "%d", atoi(freq) + (channeloffset * 5));
+		char *freq = nvram_nget("%s_channel", dev);
+		eval("ifconfig", dev, "up");
+		const char *htmode = gethtmode(dev);
+		int iht, channeloffset;
+		get_channeloffset(dev, &iht, &channeloffset);
+		char farg[32];
+		//todo 80+80 center2_freq
+		char *farg2 = "5775";
+		sprintf(farg, "%d", atoi(freq) + (channeloffset * 5));
+		if (has_6ghz(dev) && atoi(freq) >= 5925 && !strncmp(htmode, "HT4", 3)) {
+			int chan = ieee80211_mhz2ieee(dev, atoi(freq));
+			int c_base = ((chan - 1) / 8) * 8 + 1;
+			char cntr[32];
+			sprintf(cntr, "%d", 5950 + ((c_base + 2) * 5));
+			eval("iw", "dev", dev, "ibss", "join", nvram_nget("%s_ssid", dev), freq, "40", cntr);
+		} else {
 			if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
 				eval("iw", "dev", dev, "ibss", "join", nvram_nget("%s_ssid", dev), freq, htmode);
 			else if (!strcmp(htmode, "80+80"))
