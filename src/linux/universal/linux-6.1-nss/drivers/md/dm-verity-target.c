@@ -114,6 +114,7 @@ static int verity_hash_update(struct dm_verity *v, struct ahash_request *req,
 		do {
 			int r;
 			size_t this_step = min_t(size_t, len, PAGE_SIZE - offset_in_page(data));
+
 			flush_kernel_vmap_range((void *)data, this_step);
 			sg_init_table(&sg, 1);
 			sg_set_page(&sg, vmalloc_to_page(data), this_step, offset_in_page(data));
@@ -224,14 +225,16 @@ static int verity_handle_err(struct dm_verity *v, enum verity_block_type type,
 	char *envp[] = { verity_env, NULL };
 	const char *type_str = "";
 	struct mapped_device *md = dm_table_get_md(v->ti->table);
+	int ce;
 
 	/* Corruption should be visible in device status in all modes */
 	v->hash_failed = true;
 
-	if (v->corrupted_errs >= DM_VERITY_MAX_CORRUPTED_ERRS)
-		goto out;
-
-	v->corrupted_errs++;
+	ce = atomic_read(&v->corrupted_errs);
+	do {
+		if (ce >= DM_VERITY_MAX_CORRUPTED_ERRS)
+			goto out;
+	} while (!atomic_try_cmpxchg(&v->corrupted_errs, &ce, ce + 1));
 
 	switch (type) {
 	case DM_VERITY_BLOCK_TYPE_DATA:
@@ -247,7 +250,7 @@ static int verity_handle_err(struct dm_verity *v, enum verity_block_type type,
 	DMERR_LIMIT("%s: %s block %llu is corrupted", v->data_dev->name,
 		    type_str, block);
 
-	if (v->corrupted_errs == DM_VERITY_MAX_CORRUPTED_ERRS)
+	if (ce + 1 == DM_VERITY_MAX_CORRUPTED_ERRS)
 		DMERR("%s: reached maximum errors", v->data_dev->name);
 
 	snprintf(verity_env, DM_VERITY_ENV_LENGTH, "%s=%d,%llu",
@@ -333,10 +336,8 @@ static int verity_verify_level(struct dm_verity *v, struct dm_verity_io *io,
 			 */
 			r = -EAGAIN;
 			goto release_ret_r;
-		}
-		else if (verity_fec_decode(v, io,
-					   DM_VERITY_BLOCK_TYPE_METADATA,
-					   hash_block, data, NULL) == 0)
+		} else if (verity_fec_decode(v, io, DM_VERITY_BLOCK_TYPE_METADATA,
+					     hash_block, data, NULL) == 0)
 			aux->hash_verified = 1;
 		else if (verity_handle_err(v,
 					   DM_VERITY_BLOCK_TYPE_METADATA,
@@ -721,8 +722,10 @@ static void verity_prefetch_io(struct work_struct *work)
 	for (i = v->levels - 2; i >= 0; i--) {
 		sector_t hash_block_start;
 		sector_t hash_block_end;
+
 		verity_hash_at_level(v, pw->block, i, &hash_block_start, NULL);
 		verity_hash_at_level(v, pw->block + pw->n_blocks - 1, i, &hash_block_end, NULL);
+
 		if (!i) {
 			unsigned int cluster = READ_ONCE(dm_verity_prefetch_cluster);
 
@@ -1151,6 +1154,8 @@ static int verity_parse_opt_args(struct dm_arg_set *as, struct dm_verity *v,
 			continue;
 
 		} else if (!strcasecmp(arg_name, DM_VERITY_OPT_TASKLET_VERIFY)) {
+			if (v->use_tasklet)
+				continue;
 			v->use_tasklet = true;
 			static_branch_inc(&use_tasklet_enabled);
 			continue;
@@ -1419,6 +1424,7 @@ static int verity_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 	hash_position = v->hash_start;
 	for (i = v->levels - 1; i >= 0; i--) {
 		sector_t s;
+
 		v->hash_level_block[i] = hash_position;
 		s = (v->data_blocks + ((sector_t)1 << ((i + 1) * v->hash_per_block_bits)) - 1)
 					>> ((i + 1) * v->hash_per_block_bits);
