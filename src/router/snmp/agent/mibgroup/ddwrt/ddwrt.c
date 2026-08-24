@@ -1144,7 +1144,7 @@ void ddxrWlStatTable_madwifi()
 	char *names;
 	// struct ether_addr *mac;
 	char var[32];
-	char temp[32];
+	char temp[128];
 	int count = getdevicecount();
 	int i;
 	int vap;
@@ -1197,7 +1197,7 @@ void ddxrWlStatTable_madwifi()
 		set_ddxrWlStatnetmode(entry, (int)madwifi_getwirelessnetmode(var));
 		set_ddxrWlStatmode(entry, (int)madwifi_getwirelessmode(var));
 #ifdef HAVE_ATH9K
-		sprintf(temp, "A 2ghz:%d 5ghz:%d 6ghz:%d 802.11n:%d 80211ac:%d 80211ax:%d", has_2ghz(var), has_5ghz(var), has_6ghz(var), has_n(var), has_ac(var), has_ax(var));
+		sprintf(temp, "A 2ghz:%d 5ghz:%d 6ghz:%d 802.11n:%d 80211ac:%d 80211ax:%d 80211be:%d", has_2ghz(var), has_5ghz(var), has_6ghz(var), has_n(var), has_ac(var), has_ax(var), has_be(var));
 #else
 		sprintf(temp, "A 2ghz:%d 5ghz:%d 802.11n:%d 80211ac:%d", has_2ghz(var), has_5ghz(var), 0, 0);
 #endif
