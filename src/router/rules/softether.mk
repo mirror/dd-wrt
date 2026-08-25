@@ -16,7 +16,7 @@ SOFTETHER_CMAKE_OPTIONS=-DCURSES_LIBRARY=$(TOP)/ncurses/lib \
 		    -DCMAKE_BUILD_TYPE=release
 
 SOFTETHER_STAGING_DIR=$(TOP)/_staging/usr
-SOFTETHER_EXTRA_CFLAGS=$(COPTS) $(MIPS16_OPT) -I$(TOP) -I $(SSLPATH)/include -I$(TOP)/libsodium/src/libsodium/include -lcrypto -Wno-incompatible-pointer-types
+SOFTETHER_EXTRA_CFLAGS=$(COPTS) -fPIC $(MIPS16_OPT) -I$(TOP) -I $(SSLPATH)/include -I$(TOP)/libsodium/src/libsodium/include -lcrypto -Wno-incompatible-pointer-types
 SOFTETHER_EXTRA_LDFLAGS=-L$(SSLPATH) -lcrypto -lssl -L$(TOP)/readline/shlib -L$(TOP)/ncurses/lib -L$(TOP)/zlib -L$(TOP)/libsodium/src/libsodium/.libs -lreadline -lhistory -lncurses -lz
 
 
