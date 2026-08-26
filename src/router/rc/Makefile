@@ -1403,6 +1403,7 @@ ifneq ($(CONFIG_MICRO),y)
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
 	@echo "[LD] $@"
+#	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lshutils ../libutils/libwireless.a
 	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lshutils -lwireless
 else
 	@true
