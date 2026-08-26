@@ -897,8 +897,6 @@ skip:;
 	// print_wifi_clients(mac80211_info->wci);
 	// free_wifi_clients(mac80211_info->wci);
 	globfree(&globbuf);
-	unlock();
-	return (data.mac80211_info);
 nla_put_failure:
 	nlmsg_free(msg);
 	unlock();
