@@ -388,7 +388,7 @@ static void watchdog(void)
 		}
 		check_fan(brand);
 		#ifdef HAVE_ATH11K
-		check_wifi();
+		//check_wifi();
 		#endif
 		
 		static int blockcounter = 0;
