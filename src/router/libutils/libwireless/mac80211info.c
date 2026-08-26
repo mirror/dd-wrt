@@ -236,6 +236,8 @@ static void getNoise_mac80211_internal(char *interface, struct mac80211_info *ma
 	struct nl_msg *msg;
 	int wdev = if_nametoindex(interface);
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
+	if (!msg)
+		return;
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, mac80211_info);
 	return;
@@ -260,6 +262,10 @@ struct mac80211_info *mac80211_getcurrentsurvey(const char *interface, struct ma
 	mac80211_info->noise = -95;
 #endif
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
+	if (!msg) {
+		unlock();
+		return NULL;
+	}
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, mac80211_info);
 	unlock();
@@ -374,6 +380,10 @@ int getFrequency_mac80211(char *interface)
 	int wdev = if_nametoindex(interface);
 	bzero(&mac80211_info, sizeof(mac80211_info));
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
+	if (!msg) {
+	    unlock();
+	    return 0;
+	}
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);
 	unlock();
@@ -434,8 +444,13 @@ int mac80211_get_coverageclass(char *interface)
 		return 0;
 	}
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	if (!msg) {
+		unlock();
+		return 0;
+	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		nlmsg_free(msg);
 		unlock();
 		return 0;
 	}
@@ -486,8 +501,13 @@ int mac80211_get_maxpower(char *interface)
 		return 0;
 	}
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	if (!msg) {
+		unlock();
+		return 0;
+	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		nlmsg_free(msg);
 		unlock();
 		return 0;
 	}
@@ -874,6 +894,10 @@ struct mac80211_info *mac80211_assoclist(const char *interface)
 		// get noise for the actual interface
 		getNoise_mac80211_internal(ifname + 1, data.mac80211_info);
 		msg = unl_genl_msg(&unl, NL80211_CMD_GET_STATION, true);
+		if (!msg) {
+			unlock();
+			return NULL;
+		}
 		NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(ifname + 1));
 		data.iftype = 0;
 		if (is_ath10k(ifname + 1))
@@ -894,11 +918,8 @@ skip:;
 	}
 	if (history)
 		free(history);
-	// print_wifi_clients(mac80211_info->wci);
-	// free_wifi_clients(mac80211_info->wci);
 	globfree(&globbuf);
 nla_put_failure:
-	nlmsg_free(msg);
 	unlock();
 	return (data.mac80211_info);
 }
@@ -1025,8 +1046,17 @@ char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int 
 		return strdup("");
 	}
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	if (!msg) {
+		unlock();
+		return strdup("");
+	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		nlmsg_free(msg);
+		unlock();
+		return strdup("");
+	}
+	if (!msg) {
 		unlock();
 		return strdup("");
 	}
@@ -1161,8 +1191,17 @@ char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vh
 		return strdup("");
 	}
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	if (!msg) {
+		unlock();
+		return strdup("");
+	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		nlmsg_free(msg);
+		unlock();
+		return strdup("");
+	}
+	if (!msg) {
 		unlock();
 		return strdup("");
 	}
@@ -1676,8 +1715,17 @@ int mac80211_check_band(const char *interface, int checkband)
 	}
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	if (!msg) {
+		unlock();
+		return 0;
+	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		nlmsg_free(msg);
+		unlock();
+		return 0;
+	}
+	if (!msg) {
 		unlock();
 		return 0;
 	}
@@ -1969,8 +2017,17 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 	}
 
 	msg = unl_genl_msg(local_unl, NL80211_CMD_GET_WIPHY, false);
+	if (!msg) {
+		unlock();
+		return NULL;
+	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(local_unl, msg, &msg) < 0) {
+		nlmsg_free(msg);
+		return NULL;
+	}
+	if (!msg) {
+		unlock();
 		return NULL;
 	}
 
@@ -2351,7 +2408,6 @@ static MICRO_MAP us_chans[] = {
 	{ 916000, 5570, 160, 71 },
 	{ 924000, 5815, 160, 71 },
 };
-
 
 static MICRO_MAP br_chans[] = {
 	//1 Mhz
@@ -3088,8 +3144,17 @@ int mac80211_get_maxrate(char *interface)
 		return 0;
 	}
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	if (!msg) {
+		unlock();
+		return NULL;
+	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		nlmsg_free(msg);
+		unlock();
+		return 0;
+	}
+	if (!msg) {
 		unlock();
 		return 0;
 	}
@@ -3133,8 +3198,17 @@ int mac80211_get_maxmcs(char *interface)
 		return 0;
 	}
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	if (!msg) {
+		unlock();
+		return 0;
+	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		nlmsg_free(msg);
+		unlock();
+		return 0;
+	}
+	if (!msg) {
 		unlock();
 		return 0;
 	}
@@ -3150,8 +3224,6 @@ int mac80211_get_maxmcs(char *interface)
 	unlock();
 	return maxmcs;
 out:
-	unlock();
-	return 0;
 nla_put_failure:
 	nlmsg_free(msg);
 	unlock();
@@ -3174,8 +3246,17 @@ int mac80211_get_maxvhtmcs(char *interface)
 		return 0;
 	}
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	if (!msg) {
+		unlock();
+		return 0;
+	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		nlmsg_free(msg);
+		unlock();
+		return 0;
+	}
+	if (!msg) {
 		unlock();
 		return 0;
 	}
@@ -3192,8 +3273,6 @@ int mac80211_get_maxvhtmcs(char *interface)
 	unlock();
 	return maxmcs;
 out:
-	unlock();
-	return 0;
 nla_put_failure:
 	nlmsg_free(msg);
 	unlock();
@@ -3341,6 +3420,11 @@ static int mac80211_get_antennas(const char *prefix, int which, int direction)
 	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		nlmsg_free(msg);
+		unlock();
+		return 0;
+	}
+	if (!msg) {
 		unlock();
 		return 0;
 	}
@@ -3550,6 +3634,11 @@ struct wifi_interface *mac80211_get_interface(char *dev)
 	int devidx = if_nametoindex(dev);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, devidx);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		nlmsg_free(msg);
+		unlock();
+		return NULL;
+	}
+	if (!msg) {
 		unlock();
 		return NULL;
 	}
@@ -3631,9 +3720,6 @@ struct wifi_interface *mac80211_get_interface(char *dev)
 		interface->txpower = txp;
 	}
 #endif
-	nlmsg_free(msg);
-	unlock();
-	return interface;
 nla_put_failure:
 	nlmsg_free(msg);
 	unlock();
