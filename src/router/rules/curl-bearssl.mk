@@ -5,7 +5,7 @@ curl-bearssl:
 	$(MAKE) -C bearssl/curl/build_static
 
 curl-bearssl-clean:
-	$(MAKE) -C bearssl/curl/build_static clean
+#	$(MAKE) -C bearssl/curl/build_static clean
 
 curl-bearssl-configure:
 	$(MAKE) -C bearssl clean
