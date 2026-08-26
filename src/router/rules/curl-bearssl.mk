@@ -36,6 +36,7 @@ curl-bearssl-configure:
 	--disable-gopher \
 	--disable-ldap \
 	--disable-ldaps \
+	--disable-ipfs \
 	--disable-rtsp \
 	--disable-proxy \
 	--disable-dict \

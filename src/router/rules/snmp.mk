@@ -26,6 +26,26 @@ ifeq ($(ARCH),powerpc)
 SNMP_ENDIAN=big
 endif
 SNMP_EXTRACFLAGS+=-DHAVE_MADWIFI -I$(TOP)/madwifi.dev/madwifi.dev -include $(TOP)/madwifi.dev/madwifi.dev/include/compat.h -I$(TOP)/wireless-tools -I$(TOP)/shared -DHEADERS_KERNEL -Wno-incompatible-pointer-types
+ifeq ($(CONFIG_BRCMFMAC),y)
+SNMP_EXTRACFLAGS+= -DHAVE_BRCMFMAC
+endif
+ifeq ($(CONFIG_MT76),y)
+SNMP_EXTRACFLAGS+= -DHAVE_MT76
+endif
+ifeq ($(CONFIG_ATH10K),y)
+SNMP_EXTRACFLAGS+= -DHAVE_ATH10K
+endif
+ifeq ($(CONFIG_ATH11K),y)
+SNMP_EXTRACFLAGS+= -DHAVE_ATH11K
+endif
+ifeq ($(CONFIG_ATH12K),y)
+SNMP_EXTRACFLAGS+= -DHAVE_ATH12K
+endif
+ifeq ($(CONFIG_IPQ95XX),y)
+SNMP_EXTRACFLAGS+= -DHAVE_IPQ95XX
+endif
+
+
 SNMP_EXTRAMIB=,ddwrt/ddwrt
 ifeq ($(CONFIG_WIRELESS_TOOLS),y)
 SNMP_EXTRALIB=-liw -lnl-tiny
@@ -202,6 +222,7 @@ snmp-configure: nvram libutils
 				RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 snmp:
+	rm -f snmp/build_mac80211/agent/mibgroup/ddwrt/ddwrt.*
 	install -D snmp/config/snmp.webservices httpd/ej_temp/snmp.webservices
 ifeq ($(CONFIG_SNMP),y)
 ifeq ($(CONFIG_ATH9K),y)
