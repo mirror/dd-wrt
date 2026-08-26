@@ -99,6 +99,43 @@ static void setdlinkcountry(void)
 
 #endif
 
+void ext_output_value(unsigned int led_status, int clk, int data, int max_shifts)
+{
+	int i;
+
+	set_gpio(data, 1); /* init off, pull high */
+	set_gpio(clk, 0); /* init reset */
+
+	for (i = max_shifts; i >= 0; i--) {
+		if (led_status & (1 << i))
+			set_gpio(data, 0); /* on, pull low */
+		else
+			set_gpio(data, 1); /* off, pull high */
+
+		set_gpio(clk, 1); /* pull high to trigger */
+		set_gpio(clk, 0); /* reset to low */
+	}
+}
+
+void gpio_control_clk_data(int pin, int value, int clk, int data, int max_shifts)
+{
+	int old = 0;
+	int ext_led_new;
+
+	if (pin < 0 || pin > max_shifts)
+		return;
+
+	if (value)
+		ext_led_new = old | (1 << pin); /* set pin bit */
+	else
+		ext_led_new = old & (~(1 << pin)); /* clear pin bit */
+
+	if (ext_led_new == old)
+		return;
+
+	ext_output_value(ext_led_new, clk, data, max_shifts);
+}
+
 void start_sysinit(void)
 {
 	time_t tm = 0;
@@ -470,7 +507,7 @@ void start_sysinit(void)
 			copy[4] & 0xff, copy[5] & 0xff);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		set_hwaddr("eth0", mac);
-		for (i = 0; i < 256; i++)
+		for (i = 0; i < 250; i++)
 			copy[i] = buf2[i + 6] & 0xff;
 		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6] & 0xff, copy[7] & 0xff, copy[8] & 0xff, copy[9] & 0xff,
 			copy[10] & 0xff, copy[11] & 0xff);
@@ -1072,6 +1109,7 @@ void start_wifi_drivers(void)
 		setWirelessLed(1, 22);
 		setWirelessAssocLed(0, 19);
 		setWirelessAssocLed(1, 21);
+		ext_output_value(0x5, 93, 94, 7);
 	#elif defined(HAVE_RUCKUSR500)
 		setWirelessLed(0, 2);
 		setWirelessLed(1, 22);
