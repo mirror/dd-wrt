@@ -3146,7 +3146,7 @@ int mac80211_get_maxrate(char *interface)
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	if (!msg) {
 		unlock();
-		return NULL;
+		return 0;
 	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
