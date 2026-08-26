@@ -1582,7 +1582,7 @@ int has_vht80(const char *interface)
 #endif
 
 #if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
-int has_ac(const char *prefix)
+int _has_ac(const char *prefix)
 {
 	INITVALUECACHE();
 	char *vhtcaps = mac80211_get_vhtcaps(prefix, 1, 1, 1, 1, 1, 1);
