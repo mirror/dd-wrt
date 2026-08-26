@@ -24,9 +24,9 @@
 #define UTILS_H
 
 #ifdef CDEBUG
-#include <shutils.h>
-#include <malloc.h>
-#include <cy_conf.h>
+	#include <shutils.h>
+	#include <malloc.h>
+	#include <cy_conf.h>
 #endif
 #include <string.h>
 #include <stdio.h>
@@ -38,7 +38,7 @@
 #include <arpa/inet.h>
 
 #ifndef sys_reboot
-#define sys_reboot() eval("event", "3", "1", "15")
+	#define sys_reboot() eval("event", "3", "1", "15")
 #endif
 /*
  * 2 byte router ID number; Eko 4.jul.06
@@ -215,9 +215,9 @@
 
 // swapped phy definition and Kendin switch
 #ifdef HAVE_MI424WR
-#define ROUTER_BOARD_GATEWORX_GW2345 0x2b0a
+	#define ROUTER_BOARD_GATEWORX_GW2345 0x2b0a
 #else
-#define ROUTER_BOARD_GATEWORX_GW2345 0x2b0f
+	#define ROUTER_BOARD_GATEWORX_GW2345 0x2b0f
 #endif
 // Linksys WRT54G3G (BCM4712 cpu, 5325E switch, PCMCIA slot, fccid: Linksys
 // Q87-WRT54G3G)
@@ -403,13 +403,13 @@
 #define ROUTER_BELKIN_F5D7230_V3000 0x6011
 
 #ifdef HAVE_WMBR_G300NH
-#define ROUTER_BOARD_DANUBE 0x6101
+	#define ROUTER_BOARD_DANUBE 0x6101
 #elif HAVE_VF803
-#define ROUTER_BOARD_DANUBE 0x6101 //dummy. gpio 28
+	#define ROUTER_BOARD_DANUBE 0x6101 //dummy. gpio 28
 #elif HAVE_SX763
-#define ROUTER_BOARD_DANUBE 0x6101 //dummy. gpio 28
+	#define ROUTER_BOARD_DANUBE 0x6101 //dummy. gpio 28
 #else
-#define ROUTER_BOARD_DANUBE 0x610f
+	#define ROUTER_BOARD_DANUBE 0x610f
 #endif
 #define ROUTER_BOARD_STORM 0x6201 // value 1 is a fake to enable reset button code. real gpio is 60
 
@@ -488,19 +488,19 @@
 #define ROUTER_BOARD_BR6574N 0x8c1a
 
 #ifdef HAVE_HORNET
-#define ROUTER_BOARD_WHRHPGN 0x8d1c //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+	#define ROUTER_BOARD_WHRHPGN 0x8d1c //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 #elif HAVE_CARAMBOLA
-#define ROUTER_BOARD_WHRHPGN 0x8d1b //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+	#define ROUTER_BOARD_WHRHPGN 0x8d1b //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 #elif HAVE_DIR825C1
-#define ROUTER_BOARD_WHRHPGN 0x8d111 //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+	#define ROUTER_BOARD_WHRHPGN 0x8d111 //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 #elif HAVE_WASP
-#define ROUTER_BOARD_WHRHPGN 0x8d110 //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+	#define ROUTER_BOARD_WHRHPGN 0x8d110 //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 #elif HAVE_WNR2200
-#define ROUTER_BOARD_WHRHPGN 0x8d126 //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+	#define ROUTER_BOARD_WHRHPGN 0x8d126 //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 #elif HAVE_WNR2000
-#define ROUTER_BOARD_WHRHPGN 0x8d128 //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+	#define ROUTER_BOARD_WHRHPGN 0x8d128 //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 #else
-#define ROUTER_BOARD_WHRHPGN 0x8d1b //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
+	#define ROUTER_BOARD_WHRHPGN 0x8d1b //Buffalo WHR HP GN AR7240 / 4 MB Flash / 32 MB RAM
 #endif
 // Dynex DX-NRUTER (BCM4703 cpu, 4MB flash / 32MB ram, BCM5325E switch, fccid: Belkin K7SDXNRUTER)
 #define ROUTER_DYNEX_DX_NRUTER 0x8e12
@@ -1085,7 +1085,7 @@ static void cdebug(char *function)
 }
 
 #else
-#define cdebug(a)
+	#define cdebug(a)
 #endif
 extern int first_time(void);
 
@@ -1252,9 +1252,9 @@ void lcdmessage(char *message);
 void initlcd(void);
 void lcdmessaged(char *dual, char *message);
 #else
-#define initlcd()
-#define lcdmessage(a)
-#define lcdmessaged(a, b)
+	#define initlcd()
+	#define lcdmessage(a)
+	#define lcdmessaged(a, b)
 #endif
 
 extern char *getBridgeMTU(const char *, char *word);
@@ -1302,11 +1302,11 @@ int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
 
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ6018)
-#define DEFAULT_ETH_LIST "bond ixp vlan wlan ra rb apcli wds wl br oet lan wan wan2 10gcopper 10gsfp vxlan ofdm"
+	#define DEFAULT_ETH_LIST "bond ixp vlan wlan ra rb apcli wds wl br oet lan wan wan2 10gcopper 10gsfp vxlan ofdm"
 #else
-#define DEFAULT_ETH_LIST_DEFAULT "bond eth ixp vlan wlan ra rb apcli wds wl br oet lan wan wan2 10gcopper 10gsfp vxlan ofdm"
-#define DEFAULT_ETH_LIST_DSA "bond ixp vlan wlan ra rb apcli wds wl br oet lan usblan wan wan2 10gcopper 10gsfp vxlan ofdm"
-#define DEFAULT_ETH_LIST nvram_match("dsa", "1") ? DEFAULT_ETH_LIST_DSA : DEFAULT_ETH_LIST_DEFAULT
+	#define DEFAULT_ETH_LIST_DEFAULT "bond eth ixp vlan wlan ra rb apcli wds wl br oet lan wan wan2 10gcopper 10gsfp vxlan ofdm"
+	#define DEFAULT_ETH_LIST_DSA "bond ixp vlan wlan ra rb apcli wds wl br oet lan usblan wan wan2 10gcopper 10gsfp vxlan ofdm"
+	#define DEFAULT_ETH_LIST nvram_match("dsa", "1") ? DEFAULT_ETH_LIST_DSA : DEFAULT_ETH_LIST_DEFAULT
 #endif
 
 extern void waitfordead(const char *procname, int maxtime);
@@ -1478,28 +1478,28 @@ static inline int has_no_apmode(const char *prefix)
 	return 0;
 }
 
-#ifdef HAVE_MADWIFI
+	#ifdef HAVE_MADWIFI
 static inline int has_wdsap(const char *prefix)
 {
 	return 1;
 }
-#else
+	#else
 static inline int has_wdsap(const char *prefix)
 {
 	return 0;
 }
-#endif
-#ifdef HAVE_IPQ6018
+	#endif
+	#ifdef HAVE_IPQ6018
 static inline int has_apup(const char *prefix)
 {
 	return 1;
 }
-#else
+	#else
 static inline int has_apup(const char *prefix)
 {
 	return 0;
 }
-#endif
+	#endif
 static inline int has_nolivesurvey(const char *prefix)
 {
 	return 0;
@@ -1688,7 +1688,7 @@ int jffs_mounted(void);
 #define OLD_NAME_IP "/tmp/.old_name_ip"
 
 #ifndef MAX_LEASES
-#define MAX_LEASES 254
+	#define MAX_LEASES 254
 #endif
 
 struct wl_client_mac {
@@ -1762,26 +1762,26 @@ char *getRADev(const char *prefix);
 #endif
 
 #ifndef HAVE_SYSLOG
-#define dd_syslog(a, args...) \
-	do {                  \
-	} while (0)
-#define dd_loginfo(a, fmt, args...) \
-	do {                        \
-	} while (0)
-#define dd_loginfoverbose(a, fmt, args...) \
-	do {                               \
-	} while (0)
-#define dd_logdebug(a, fmt, args...) \
-	do {                         \
-	} while (0)
-#define dd_logerror(a, fmt, args...) \
-	do {                         \
-	} while (0)
-#define dd_logstart(a, ret) \
-	do {                \
-	} while (0)
+	#define dd_syslog(a, args...) \
+		do {                  \
+		} while (0)
+	#define dd_loginfo(a, fmt, args...) \
+		do {                        \
+		} while (0)
+	#define dd_loginfoverbose(a, fmt, args...) \
+		do {                               \
+		} while (0)
+	#define dd_logdebug(a, fmt, args...) \
+		do {                         \
+		} while (0)
+	#define dd_logerror(a, fmt, args...) \
+		do {                         \
+		} while (0)
+	#define dd_logstart(a, ret) \
+		do {                \
+		} while (0)
 #else
-#define dd_syslog(a, args...) syslog(a, ##args);
+	#define dd_syslog(a, args...) syslog(a, ##args);
 void dd_loginfo(const char *servicename, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 void dd_loginfoverbose(const char *servicename, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 void dd_logdebug(const char *servicename, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
@@ -1869,23 +1869,23 @@ long long getfreespace(const char *path);
 #define ETHER_ADDR_LEN 6 /* 18-bytes of Ethernet address buffer length */
 
 #ifndef ABS
-#define ABS(a) (((a) < 0) ? -(a) : (a))
+	#define ABS(a) (((a) < 0) ? -(a) : (a))
 #endif /* ABS */
 
 #ifndef MIN
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+	#define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif /* MIN */
 
 #ifndef MAX
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+	#define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #endif /* MAX */
 
 #ifndef OFFSETOF
-#define OFFSETOF(type, member) ((uint)(uintptr) & ((type *)0)->member)
+	#define OFFSETOF(type, member) ((uint)(uintptr) & ((type *)0)->member)
 #endif
 
 #ifndef ROUNDUP
-#define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
+	#define ROUNDUP(x, y) ((((x) + ((y) - 1)) / (y)) * (y))
 #endif
 
 #define NR_RULES 20

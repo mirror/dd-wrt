@@ -15,18 +15,18 @@
 #ifndef _shutils_h_
 #define _shutils_h_
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+	#define _GNU_SOURCE
 #endif
 #include <malloc.h>
 #include <string.h>
 #include <stdio.h>
 
 #ifndef ARRAY_SIZE
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+	#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 #endif
 
 #ifndef unlikely
-#define unlikely(cond) __builtin_expect(0, !!(cond))
+	#define unlikely(cond) __builtin_expect(0, !!(cond))
 #endif
 
 #define MAX_NVPARSE 256
@@ -35,21 +35,21 @@
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
 #ifdef HAVE_NFTABLES
-#define EBTABLES "ebtables-nft"
-#define IPTABLES "iptables-nft"
-#define IP6TABLES "ip6tables-nft"
-#define IP6TABLES_SAVE "ip6tables-nft-save"
-#define IPTABLES_SAVE "iptables-nft-save"
-#define IPTABLES_RESTORE "iptables-nft-restore"
-#define IP6TABLES_RESTORE "ip6tables-nft-restore"
+	#define EBTABLES "ebtables-nft"
+	#define IPTABLES "iptables-nft"
+	#define IP6TABLES "ip6tables-nft"
+	#define IP6TABLES_SAVE "ip6tables-nft-save"
+	#define IPTABLES_SAVE "iptables-nft-save"
+	#define IPTABLES_RESTORE "iptables-nft-restore"
+	#define IP6TABLES_RESTORE "ip6tables-nft-restore"
 #else
-#define EBTABLES "ebtables"
-#define IPTABLES "iptables"
-#define IP6TABLES "ip6tables"
-#define IP6TABLES_SAVE "ip6tables-save"
-#define IPTABLES_SAVE "iptables-save"
-#define IPTABLES_RESTORE "iptables-restore"
-#define IP6TABLES_RESTORE "ip6tables-restore"
+	#define EBTABLES "ebtables"
+	#define IPTABLES "iptables"
+	#define IP6TABLES "ip6tables"
+	#define IP6TABLES_SAVE "ip6tables-save"
+	#define IPTABLES_SAVE "iptables-save"
+	#define IPTABLES_RESTORE "iptables-restore"
+	#define IP6TABLES_RESTORE "ip6tables-restore"
 #endif
 
 #define DEBUG_CONSOLE 0
@@ -61,7 +61,7 @@ extern void dd_debug(int target, const char *fmt, ...) __attribute__((format(pri
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
 extern int debug_ready(void);
 #else
-#define debug_ready() (1)
+	#define debug_ready() (1)
 #endif
 
 /*
@@ -130,7 +130,6 @@ extern int safe_fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
  * @return      number of items successfully written
  */
 extern int safe_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
-
 
 extern FILE *fopencreate(const char *name, const char *mode);
 /*
@@ -221,7 +220,7 @@ extern int dd_sprintf(char *str, const char *fmt, ...) __attribute__((format(pri
 extern int dd_snprintf(char *str, size_t len, const char *fmt, ...) __attribute__((format(printf, 3, 4)));
 
 void *dd_malloc(size_t size);
-/*
+	/*
 void *dd_calloc(size_t nmemb, size_t size);
 void *dd_realloc(void *p, size_t size);
 void dd_free(void *p);
@@ -235,21 +234,21 @@ void iso_free(void *p);
 char *iso_strdup(const char *str);
 
 */
-#define malloc(len) dd_malloc(len)
-/*#define malloc iso_alloc
+	#define malloc(len) dd_malloc(len)
+	/*#define malloc iso_alloc
 #define realloc iso_realloc
 #define calloc iso_calloc
 #define free iso_free
 #define strdup iso_strdup
 */
 
-/*#define malloc dd_malloc
+	/*#define malloc dd_malloc
 #define realloc dd_realloc
 #define calloc dd_calloc
 #define free dd_free
 #define strdup dd_strdup
 */
-#define compile_time_assert(cond) char a[cond ? 1 : 0]
+	#define compile_time_assert(cond) char a[cond ? 1 : 0]
 
 static inline char *strlcpyhelp(char *dst, const char *s, size_t len)
 {
@@ -257,12 +256,12 @@ static inline char *strlcpyhelp(char *dst, const char *s, size_t len)
 	return dst;
 }
 
-#define strcpy(dst, src) (sizeof(dst) == sizeof(void *) ? strcpy(dst, src) : strlcpyhelp(dst, src, sizeof(dst)))
-#define sprintf(output, format, args...)                                         \
-	(sizeof(output) == sizeof(void *) ? dd_sprintf(output, format, ##args) : \
-					    dd_snprintf(output, sizeof(output), format, ##args))
-#define snprintf(output, len, format, args...) dd_snprintf(output, len, format, ##args)
-#define system(cmd) dd_system(cmd)
+	#define strcpy(dst, src) (sizeof(dst) == sizeof(void *) ? strcpy(dst, src) : strlcpyhelp(dst, src, sizeof(dst)))
+	#define sprintf(output, format, args...)                                         \
+		(sizeof(output) == sizeof(void *) ? dd_sprintf(output, format, ##args) : \
+						    dd_snprintf(output, sizeof(output), format, ##args))
+	#define snprintf(output, len, format, args...) dd_snprintf(output, len, format, ##args)
+	#define system(cmd) dd_system(cmd)
 #endif
 
 void dd_daemon(void);
@@ -276,36 +275,36 @@ void showmemdebugstat();
 long getmemfree(void);
 long getmemtotal(void);
 
-#define safe_malloc(size) mymalloc(size, __func__, __LINE__)
-#define safe_free(mem) myfree(mem, __func__, __LINE__)
-#define free(mem) myfree(mem, __func__, __LINE__)
+	#define safe_malloc(size) mymalloc(size, __func__, __LINE__)
+	#define safe_free(mem) myfree(mem, __func__, __LINE__)
+	#define free(mem) myfree(mem, __func__, __LINE__)
 
-#define memdebug_enter()             \
-	struct sysinfo memdebuginfo; \
-	sysinfo(&memdebuginfo);      \
-	long before = memdebuginfo.freeram;
+	#define memdebug_enter()             \
+		struct sysinfo memdebuginfo; \
+		sysinfo(&memdebuginfo);      \
+		long before = memdebuginfo.freeram;
 
-#define memdebug_leave()                                                                                                    \
-	sysinfo(&memdebuginfo);                                                                                             \
-	long after = memdebuginfo.freeram;                                                                                  \
-	if ((before - after) > 0) {                                                                                         \
-		fprintf(stderr, "function %s->%s:%d leaks %ld bytes memory (before: %ld, after: %ld\n", __FILE__, __func__, \
-			__LINE__, (before - after), before, after);                                                         \
-	}
-#define memdebug_leave_info(a)                                                                                                   \
-	sysinfo(&memdebuginfo);                                                                                                  \
-	long after = memdebuginfo.freeram;                                                                                       \
-	if ((before - after) > 0) {                                                                                              \
-		fprintf(stderr, "function %s->%s:%d (%s) leaks %ld bytes memory (before: %ld, after: %ld\n", __FILE__, __func__, \
-			__LINE__, a, (before - after), before, after);                                                           \
-	}
+	#define memdebug_leave()                                                                                          \
+		sysinfo(&memdebuginfo);                                                                                   \
+		long after = memdebuginfo.freeram;                                                                        \
+		if ((before - after) > 0) {                                                                               \
+			fprintf(stderr, "function %s->%s:%d leaks %ld bytes memory (before: %ld, after: %ld\n", __FILE__, \
+				__func__, __LINE__, (before - after), before, after);                                     \
+		}
+	#define memdebug_leave_info(a)                                                                                         \
+		sysinfo(&memdebuginfo);                                                                                        \
+		long after = memdebuginfo.freeram;                                                                             \
+		if ((before - after) > 0) {                                                                                    \
+			fprintf(stderr, "function %s->%s:%d (%s) leaks %ld bytes memory (before: %ld, after: %ld\n", __FILE__, \
+				__func__, __LINE__, a, (before - after), before, after);                                       \
+		}
 #else
-#define safe_malloc malloc
-#define safe_free free
-#define memdebug_enter()
-#define memdebug_leave()
-#define memdebug_leave_info(a)
-#define showmemdebugstat()
+	#define safe_malloc malloc
+	#define safe_free free
+	#define memdebug_enter()
+	#define memdebug_leave()
+	#define memdebug_leave_info(a)
+	#define showmemdebugstat()
 #endif
 
 /*
@@ -372,44 +371,44 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, ch
 #define safe_getenv(s) (getenv(s) ?: "")
 
 #ifdef HAVE_MICRO
-#define FORK(a) a;
+	#define FORK(a) a;
 #else
-#define FORK(func)                      \
-	{                               \
-		switch (fork()) {       \
-		case -1:                \
-			break;          \
-		case 0:                 \
-			(void)setsid(); \
-			func;           \
-			exit(0);        \
-			break;          \
-		default:                \
-			break;          \
-		}                       \
-	}
+	#define FORK(func)                      \
+		{                               \
+			switch (fork()) {       \
+			case -1:                \
+				break;          \
+			case 0:                 \
+				(void)setsid(); \
+				func;           \
+				exit(0);        \
+				break;          \
+			default:                \
+				break;          \
+			}                       \
+		}
 #endif
 
 #ifdef HAVE_MICRO
-#define FORKWAIT(a) a;
+	#define FORKWAIT(a) a;
 #else
-#define FORKWAIT(func)                                    \
-	{                                                 \
-		int forkpid;                              \
-		int forkstatus;                           \
-		switch (forkpid = fork()) {               \
-		case -1:                                  \
-			break;                            \
-		case 0:                                   \
-			(void)setsid();                   \
-			func;                             \
-			exit(0);                          \
-			break;                            \
-		default:                                  \
-			waitpid(forkpid, &forkstatus, 0); \
-			break;                            \
-		}                                         \
-	}
+	#define FORKWAIT(func)                                    \
+		{                                                 \
+			int forkpid;                              \
+			int forkstatus;                           \
+			switch (forkpid = fork()) {               \
+			case -1:                                  \
+				break;                            \
+			case 0:                                   \
+				(void)setsid();                   \
+				func;                             \
+				exit(0);                          \
+				break;                            \
+			default:                                  \
+				waitpid(forkpid, &forkstatus, 0); \
+				break;                            \
+			}                                         \
+		}
 #endif
 #include <sys/time.h>
 int getipv4fromipv6(char *dstip, const char *srcip);
@@ -424,10 +423,10 @@ char *get_ipfromsock(int socket, char *ip);
 #if defined(HAVE_SYSLOG) && !defined(HAVE_MICRO)
 void airbag_setpostinfo(const char *string);
 #else
-#undef airbag_setpostinfo
-#define airbag_setpostinfo(string) \
-	do {                       \
-	} while (0)
+	#undef airbag_setpostinfo
+	#define airbag_setpostinfo(string) \
+		do {                       \
+		} while (0)
 #endif
 /*
 #define debug_free(ptr) { \

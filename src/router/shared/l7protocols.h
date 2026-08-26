@@ -33,10 +33,10 @@ typedef struct _l7filters {
 #define FILTER_CUSTOM 4
 
 #ifdef HAVE_OPENDPI
-#define DPI 2 //open dpi based
-#define PDPI 2 //open dpi based
+	#define DPI 2 //open dpi based
+	#define PDPI 2 //open dpi based
 #else
-#define DPI 0 //default l7
-#define PDPI 1 //default p2p
+	#define DPI 0 //default l7
+	#define PDPI 1 //default p2p
 #endif
 //Added ,  (in extra), dazhihui, .

@@ -19,8 +19,8 @@
 #ifndef _LIBBRIDGE_H
 #define _LIBBRIDGE_H
 #ifndef __UCLIBC__
-#include <netinet/in.h>
-#include <sys/time.h>
+	#include <netinet/in.h>
+	#include <sys/time.h>
 #endif
 
 struct bridge_id {

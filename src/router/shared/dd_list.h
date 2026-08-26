@@ -16,7 +16,7 @@ struct dd_list_head {
  *
  */
 #ifndef container_of
-#define container_of(ptr, type, member) ((type *)((char *)ptr - offsetof(type, member)))
+	#define container_of(ptr, type, member) ((type *)((char *)ptr - offsetof(type, member)))
 #endif
 
 /*
@@ -29,10 +29,7 @@ struct dd_list_head {
  * using the generic single-entry routines.
  */
 
-#define DD_LIST_HEAD_INIT(name)  \
-	{                        \
-		&(name), &(name) \
-	}
+#define DD_LIST_HEAD_INIT(name) { &(name), &(name) }
 
 #define DD_LIST_HEAD(name) struct dd_list_head name = DD_LIST_HEAD_INIT(name)
 

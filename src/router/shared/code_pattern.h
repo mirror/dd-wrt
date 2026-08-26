@@ -76,9 +76,9 @@
 #define CODE_PATTERN_NV64K "NV64" //used for flashing nvram=64k routers
 
 #ifdef HAVE_OMNI
-#define MODEL_NAME "OMNI"
+	#define MODEL_NAME "OMNI"
 #else
-#define MODEL_NAME "DD-WRT"
+	#define MODEL_NAME "DD-WRT"
 #endif
 #define VENDOR "NewMedia-NET GmbH"
 
@@ -111,20 +111,20 @@
  * HTTP_CHARSET =		       *
  ***************************************/
 #if LOCALE == JAPAN
-#define LANGUAGE JAPANESE
-#define HTTP_CHARSET "shift-jis"
+	#define LANGUAGE JAPANESE
+	#define HTTP_CHARSET "shift-jis"
 #elif LOCALE == GERMANY
-#define LANGUAGE GERMAN
-#define HTTP_CHARSET "iso-8859-1"
+	#define LANGUAGE GERMAN
+	#define HTTP_CHARSET "iso-8859-1"
 #elif LOCALE == FRANCE
-#define LANGUAGE FRENCH
-#define HTTP_CHARSET "iso-8859-1"
+	#define LANGUAGE FRENCH
+	#define HTTP_CHARSET "iso-8859-1"
 #elif LOCALE == KOREA
-#define LANGUAGE KOREAN
-#define HTTP_CHARSET "euc-kr"
+	#define LANGUAGE KOREAN
+	#define HTTP_CHARSET "euc-kr"
 #else
-#define LANGUAGE ENGLISH
-#define HTTP_CHARSET "iso-8859-1"
+	#define LANGUAGE ENGLISH
+	#define HTTP_CHARSET "iso-8859-1"
 #endif
 
 /***************************************
@@ -132,9 +132,9 @@
  * WL_MAX_CHANNEL =                    *
  ***************************************/
 #if LOCALE == JAPAN || LOCALE == EUROPE || LOCALE == GERMANY || LOCALE == FRANCE
-#define WL_MAX_CHANNEL "13"
+	#define WL_MAX_CHANNEL "13"
 #else
-#define WL_MAX_CHANNEL "11"
+	#define WL_MAX_CHANNEL "11"
 #endif
 
 /***************************************
@@ -142,33 +142,33 @@
  * WEB_PAGE =                          *
  ***************************************/
 #if UI_STYLE == CISCO
-#if LOCALE == JAPAN
-#define WEB_PAGE "cisco_wrt54g_jp"
-#elif LOCALE == GERMANY
-#define WEB_PAGE "cisco_wrt54g_de"
-#elif LOCALE == FRANCE
-#define WEB_PAGE "cisco_wrt54g_fr"
+	#if LOCALE == JAPAN
+		#define WEB_PAGE "cisco_wrt54g_jp"
+	#elif LOCALE == GERMANY
+		#define WEB_PAGE "cisco_wrt54g_de"
+	#elif LOCALE == FRANCE
+		#define WEB_PAGE "cisco_wrt54g_fr"
+	#else
+		#if LINKSYS_MODEL == WRT54GV5
+			#define WEB_PAGE "verizon_wrt54g_en"
+		#elif LINKSYS_MODEL == RTA41
+			#define WEB_PAGE "verizon_wrt54g_en"
+		#else
+			//                      #define WEB_PAGE        "cisco_wrt54g_en"
+			#define WEB_PAGE "cisco_wrt54g_m"
+		#endif
+	#endif
 #else
-#if LINKSYS_MODEL == WRT54GV5
-#define WEB_PAGE "verizon_wrt54g_en"
-#elif LINKSYS_MODEL == RTA41
-#define WEB_PAGE "verizon_wrt54g_en"
-#else
-//                      #define WEB_PAGE        "cisco_wrt54g_en"
-#define WEB_PAGE "cisco_wrt54g_m"
-#endif
-#endif
-#else
-#if LOCALE == JAPAN
-#define WEB_PAGE "linksys_wrt54g_jp"
-#else
-#define WEB_PAGE "linksys_wrt54g_en"
-#endif
+	#if LOCALE == JAPAN
+		#define WEB_PAGE "linksys_wrt54g_jp"
+	#else
+		#define WEB_PAGE "linksys_wrt54g_en"
+	#endif
 #endif
 
 /***************************************
  * check LOCALE
  ***************************************/
 #if LOCALE != JAPAN && LOCALE != USA && LOCALE != EUROPE && LOCALE != GERMANY && LOCALE != FRANCE
-#error "The LOCALE for LINKSYS is error, must be USA, EUROPE, JAPAN, GERMANY or FRANCE"
+	#error "The LOCALE for LINKSYS is error, must be USA, EUROPE, JAPAN, GERMANY or FRANCE"
 #endif

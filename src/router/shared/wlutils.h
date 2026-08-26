@@ -20,21 +20,21 @@
 #include <stdint.h>
 #include <utils.h>
 #ifndef _NO_WLIOCTL_H
-#include <wlioctl.h>
+	#include <wlioctl.h>
 #endif
 #ifndef WLC_IOCTL_SMLEN
-#define WLC_IOCTL_SMLEN \
-	256 /* "small" length ioctl buffer
+	#define WLC_IOCTL_SMLEN \
+		256 /* "small" length ioctl buffer
 					 * required */
 #endif
 #ifndef BCME_BUFTOOSHORT
-#define BCME_BUFTOOSHORT -14 /* Buffer too short */
+	#define BCME_BUFTOOSHORT -14 /* Buffer too short */
 #endif
 
 #ifdef HAVE_MADWIFI
-#define WIFINAME "wlan"
+	#define WIFINAME "wlan"
 #else
-#define WIFINAME "wl"
+	#define WIFINAME "wl"
 #endif
 
 /*
@@ -152,7 +152,7 @@ struct wifi_channels {
 	unsigned int no_outdoor : 1, no_indoor : 1, no_ofdm : 1, no_cck : 1, ptp_only : 1, ptmp_only : 1, passive_scan : 1,
 		no_ibss : 1, //
 		lll : 1, llu : 1, lul : 1, luu : 1, ull : 1, ulu : 1, uul : 1, uuu : 1, //
-		ht40 : 1, vht80 : 1, vht160 : 1 , eht320 : 1, //
+		ht40 : 1, vht80 : 1, vht160 : 1, eht320 : 1, //
 		dfs : 1;
 };
 
@@ -174,9 +174,10 @@ struct wifi_client_info {
 	int8_t vht_mcs;
 	int8_t rx_mcs;
 	int8_t rx_vht_mcs;
-	unsigned int is_40mhz : 1, is_80mhz : 1, is_160mhz : 1 , is_320mhz : 1, is_80p80mhz : 1, is_ht : 1, is_vht : 1, is_short_gi : 1,
-		rx_is_40mhz : 1, rx_is_80mhz : 1, rx_is_160mhz : 1, rx_is_320mhz : 1, rx_is_80p80mhz : 1, rx_is_ht : 1, rx_is_vht : 1,
-		rx_is_short_gi : 1, ht40intol : 1, islzo : 1, ps : 1, rx_is_he : 1, is_he : 1, rx_is_eht : 1, is_eht : 1;
+	unsigned int is_40mhz : 1, is_80mhz : 1, is_160mhz : 1, is_320mhz : 1, is_80p80mhz : 1, is_ht : 1, is_vht : 1,
+		is_short_gi : 1, rx_is_40mhz : 1, rx_is_80mhz : 1, rx_is_160mhz : 1, rx_is_320mhz : 1, rx_is_80p80mhz : 1,
+		rx_is_ht : 1, rx_is_vht : 1, rx_is_short_gi : 1, ht40intol : 1, islzo : 1, ps : 1, rx_is_he : 1, is_he : 1,
+		rx_is_eht : 1, is_eht : 1;
 	uint32_t inactive_time;
 	uint32_t rx_packets;
 	uint32_t tx_packets;
@@ -209,9 +210,9 @@ int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **chan
 int getassoclist(const char *name, unsigned char *list);
 
 #ifdef HAVE_IPQ6018
-#define DEFAULT_BF 1
+	#define DEFAULT_BF 1
 #else
-#define DEFAULT_BF 0
+	#define DEFAULT_BF 0
 #endif
 
 #define INFO_UPTIME 0
@@ -238,7 +239,16 @@ int getRssi_11n(const char *ifname, unsigned char *mac);
 extern int mac80211_getassoclist(const char *name, unsigned char *list);
 
 extern int has_mimo(const char *prefix);
+#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
+extern int _has_ac(const char *prefix);
+
+static inline int has_ac(const char *prefix)
+{
+	return (is_ath10k(prefix) || is_ath11k(prefix) || is_ath12k(prefix || is_brcmfmac(prefix) || is_mt7615(prefix) || is_mt7915(prefix) || is_mt7921(prefix)) && _has_ac(prefix);
+}
+#else
 extern int has_ac(const char *prefix);
+#endif
 #ifdef HAVE_WIL6210
 extern int has_ad(const char *prefix);
 #else
@@ -250,10 +260,10 @@ static inline int has_ad(const char *prefix)
 
 #ifdef HAVE_ATH9K
 extern int has_ibss(const char *prefix);
-#ifdef HAVE_MAC80211_MESH
+	#ifdef HAVE_MAC80211_MESH
 extern int has_mesh(const char *prefix);
 extern int has_tdma(const char *prefix);
-#else
+	#else
 static inline int has_mesh(const char *prefix)
 {
 	return 0;
@@ -263,7 +273,7 @@ static inline int has_tdma(const char *prefix)
 {
 	return 0;
 }
-#endif
+	#endif
 extern int has_gcmp(const char *prefix);
 extern int has_cmac(const char *prefix);
 extern int has_gcmp_128(const char *prefix);
@@ -356,16 +366,14 @@ static inline int _has_6ghz(const char *prefix)
 }
 #endif
 
-static inline int has_6ghz(const char *prefix) {
-	
+static inline int has_6ghz(const char *prefix)
+{
 	return (has_ax(prefix) || has_be(prefix)) && _has_6ghz(prefix);
-
 }
 
-static inline int has_6ghz_only(const char *prefix) {
-	
+static inline int has_6ghz_only(const char *prefix)
+{
 	return (has_ax(prefix) || has_be(prefix)) && _has_6ghz_only(prefix);
-
 }
 #ifdef HAVE_ATH9K
 extern int can_ht40(const char *prefix);
@@ -373,10 +381,10 @@ extern int can_vht80(const char *prefix);
 extern int can_vht160(const char *prefix);
 extern int can_eht320(const char *prefix);
 #else
-#define can_ht40(prefix) 0
-#define can_vht80(prefix) 0
-#define can_vht160(prefix) 0
-#define can_eht320(prefix) 0
+	#define can_ht40(prefix) 0
+	#define can_vht80(prefix) 0
+	#define can_vht160(prefix) 0
+	#define can_eht320(prefix) 0
 #endif
 #ifdef HAVE_80211AC
 extern int has_beamforming(const char *prefix);
@@ -482,16 +490,16 @@ extern struct mac80211_info *mac80211_assoclist(const char *interface);
 extern char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int ht40, int ldpc, int smps);
 extern int has_greenfield(const char *interface);
 extern int has_n(const char *interface);
-#ifdef HAVE_ATH9K
+	#ifdef HAVE_ATH9K
 extern int has_airtime_fairness(const char *prefix);
-#ifdef HAVE_WPA3
+		#ifdef HAVE_WPA3
 extern int has_airtime_policy(const char *prefix);
-#else
+		#else
 static inline int has_airtime_policy(const char *prefix)
 {
 	return 0;
 }
-#endif
+		#endif
 extern int has_shortgi(const char *interface);
 extern int has_uapsd(const char *interface);
 extern int has_ldpc(const char *interface);
@@ -499,7 +507,7 @@ extern int has_smps(const char *interface);
 extern int has_dynamic_smps(const char *interface);
 extern int has_static_smps(const char *interface);
 extern int has_ht(const char *interface);
-#else
+	#else
 static inline int has_airtime_fairness(const char *prefix)
 {
 	return 0;
@@ -538,33 +546,33 @@ static inline int has_dynamic_smps(const char *prefix)
 	return 0;
 }
 
-#endif
-#ifdef HAVE_MADWIFI
-#ifdef HAVE_ATH9K
+	#endif
+	#ifdef HAVE_MADWIFI
+		#ifdef HAVE_ATH9K
 extern int has_acktiming(const char *prefix);
-#else
+		#else
 static inline int has_acktiming(const char *prefix)
 {
 	return 1;
 }
-#endif
-#elif defined(HAVE_RT2880) || defined(HAVE_RT61)
+		#endif
+	#elif defined(HAVE_RT2880) || defined(HAVE_RT61)
 static inline int has_acktiming(const char *prefix)
 {
 	return 0;
 }
-#else
+	#else
 extern int has_acktiming(const char *prefix);
-#endif
+	#endif
 
-#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || defined(HAVE_MVEBU)
+	#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || defined(HAVE_MVEBU)
 extern int has_vht160(const char *interface);
 extern int has_vht80(const char *interface);
 extern int has_vht80plus80(const char *interface);
 int has_subeamforming(const char *interface);
 int has_mubeamforming(const char *interface);
 extern char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int subf, int mubf);
-#else
+	#else
 static inline char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int subf, int mubf)
 {
 	return NULL;
@@ -579,24 +587,24 @@ static inline int has_mubeamforming(const char *prefix)
 	return 0;
 }
 
-#ifdef HAVE_MADWIFI
+		#ifdef HAVE_MADWIFI
 static inline int has_vht160(const char *prefix)
 {
 	return 0;
 }
-#endif
-#ifdef HAVE_MADWIFI
+		#endif
+		#ifdef HAVE_MADWIFI
 static inline int has_vht80(const char *prefix)
 {
 	return 0;
 }
-#endif
+		#endif
 static inline int has_vht80plus80(const char *prefix)
 {
 	return 0;
 }
 
-#endif
+	#endif
 
 struct unl;
 extern int mac80211_check_band(const char *interface, int checkband);
@@ -604,14 +612,15 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 					    int max_bandwidth_khz, unsigned char checkband, int nocache);
 struct wifi_channels *mac80211_get_channels_simple(const char *interface, const char *country, int max_bandwidth_khz,
 						   unsigned char checkband);
-#define AUTO_FORCEHT40 1
-#define AUTO_FORCEVHT80 2
-#define AUTO_FORCEVHT160 4
-#define AUTO_FORCEEHT320 5
-#define AUTO_ALL 0
+	#define AUTO_FORCEHT40 1
+	#define AUTO_FORCEVHT80 2
+	#define AUTO_FORCEVHT160 4
+	#define AUTO_FORCEEHT320 5
+	#define AUTO_ALL 0
 
 void mac80211autochannel_cleanup(void);
-extern struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range, int scans, int enable_passive, int htflags, int band);
+extern struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range, int scans, int enable_passive, int htflags,
+					       int band);
 extern void mac80211_set_antennas(const char *prefix, uint32_t tx_ant, uint32_t rx_ant);
 extern int mac80211_get_avail_tx_antenna(const char *prefix);
 extern int mac80211_get_avail_rx_antenna(const char *prefix);
@@ -635,17 +644,17 @@ struct mac80211_ac {
 extern void free_wifi_clients(struct wifi_client_info *wci);
 extern void free_mac80211_ac(struct mac80211_ac *ac);
 #else
-#define has_airtime_fairness(prefix) 0
-#define has_shortgi(prefix) 0
-#define has_subeamforming(prefix) 0
-#define has_mubeamforming(prefix) 0
-#define has_vht80(interface) 0
-#if !defined(HAVE_MADWIFI) && (defined(HAVE_RT2880) || defined(HAVE_RT61))
+	#define has_airtime_fairness(prefix) 0
+	#define has_shortgi(prefix) 0
+	#define has_subeamforming(prefix) 0
+	#define has_mubeamforming(prefix) 0
+	#define has_vht80(interface) 0
+	#if !defined(HAVE_MADWIFI) && (defined(HAVE_RT2880) || defined(HAVE_RT61))
 static inline int has_acktiming(const char *prefix)
 {
 	return 0;
 }
-#endif
+	#endif
 #endif
 
 #ifdef HAVE_WPA3

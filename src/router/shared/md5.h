@@ -34,30 +34,30 @@
 #include <sys/types.h>
 
 #ifdef __BIG_ENDIAN__
-#define BB_BIG_ENDIAN 1
-#define BB_LITTLE_ENDIAN 0
+	#define BB_BIG_ENDIAN 1
+	#define BB_LITTLE_ENDIAN 0
 #elif __BYTE_ORDER == __BIG_ENDIAN
-#define BB_BIG_ENDIAN 1
-#define BB_LITTLE_ENDIAN 0
+	#define BB_BIG_ENDIAN 1
+	#define BB_LITTLE_ENDIAN 0
 #else
-#define BB_BIG_ENDIAN 0
-#define BB_LITTLE_ENDIAN 1
+	#define BB_BIG_ENDIAN 0
+	#define BB_LITTLE_ENDIAN 1
 #endif
 
 #if BB_BIG_ENDIAN
-#define SWAP_BE16(x) (x)
-#define SWAP_BE32(x) (x)
-#define SWAP_BE64(x) (x)
-#define SWAP_LE16(x) bswap_16(x)
-#define SWAP_LE32(x) bswap_32(x)
-#define SWAP_LE64(x) bswap_64(x)
+	#define SWAP_BE16(x) (x)
+	#define SWAP_BE32(x) (x)
+	#define SWAP_BE64(x) (x)
+	#define SWAP_LE16(x) bswap_16(x)
+	#define SWAP_LE32(x) bswap_32(x)
+	#define SWAP_LE64(x) bswap_64(x)
 #else
-#define SWAP_BE16(x) bswap_16(x)
-#define SWAP_BE32(x) bswap_32(x)
-#define SWAP_BE64(x) bswap_64(x)
-#define SWAP_LE16(x) (x)
-#define SWAP_LE32(x) (x)
-#define SWAP_LE64(x) (x)
+	#define SWAP_BE16(x) bswap_16(x)
+	#define SWAP_BE32(x) bswap_32(x)
+	#define SWAP_BE64(x) bswap_64(x)
+	#define SWAP_LE16(x) (x)
+	#define SWAP_LE32(x) (x)
+	#define SWAP_LE64(x) (x)
 #endif
 
 #define FAST_FUNC

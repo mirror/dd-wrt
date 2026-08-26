@@ -17,8 +17,8 @@
 
 #ifndef _LANGUAGE_ASSEMBLY
 
-#include <stdint.h>
-#include <stdio.h>
+	#include <stdint.h>
+	#include <stdio.h>
 
 struct nvram_header {
 	uint32_t magic;
@@ -203,17 +203,17 @@ extern int write_nvram(char *name, char *nv);
 #define NVRAM_VERSION 1
 #define NVRAM_HEADER_SIZE 20
 #if defined(HAVE_WZRG300NH) || defined(HAVE_ALPINE) || defined(HAVE_WDR4900)
-#define NVRAM_SPACE 0x20000
+	#define NVRAM_SPACE 0x20000
 #elif defined(HAVE_X86) || defined(HAVE_WHRAG108) || defined(HAVE_FONERA) || defined(HAVE_AR531X) || defined(HAVE_RT2880) || \
 	defined(HAVE_RT3052) || defined(HAVE_XSCALE) || defined(HAVE_STORM) || defined(HAVE_LSX) || defined(HAVE_LAGUNA) ||  \
 	defined(HAVE_WDR4900) || defined(HAVE_VENTANA) || defined(HAVE_EROUTER)
-#define NVRAM_SPACE 0x10000
+	#define NVRAM_SPACE 0x10000
 #elif defined(HAVE_NVRAM_64K) //some new Netgear models
-#define NVRAM_SPACE 0x10000
+	#define NVRAM_SPACE 0x10000
 #elif defined(HAVE_NVRAM_60K) //some new Linksys models
-#define NVRAM_SPACE 0xf000
+	#define NVRAM_SPACE 0xf000
 #else
-#define NVRAM_SPACE 0x8000
+	#define NVRAM_SPACE 0x8000
 #endif
 
 #define NVRAM_MAX_VALUE_LEN 255

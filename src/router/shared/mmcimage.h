@@ -20,7 +20,6 @@
  * $Id:
  */
 
-
 #ifndef MMCIMAGE_H
 #define MMCIMAGE_H
 

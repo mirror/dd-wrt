@@ -53,61 +53,61 @@
 extern bool bcmreclaimed;
 extern bool attach_part_reclaimed;
 
-#define BCMATTACHDATA(_data) __attribute__((__section__(".dataini2." #_data))) _data
-#define BCMATTACHFN(_fn) __attribute__((__section__(".textini2." #_fn), noinline)) _fn
+	#define BCMATTACHDATA(_data) __attribute__((__section__(".dataini2." #_data))) _data
+	#define BCMATTACHFN(_fn) __attribute__((__section__(".textini2." #_fn), noinline)) _fn
 
-#ifndef PREATTACH_NORECLAIM
-#define BCMPREATTACHDATA(_data) __attribute__((__section__(".dataini3." #_data))) _data
-#define BCMPREATTACHFN(_fn) __attribute__((__section__(".textini3." #_fn), noinline)) _fn
-#else
-#define BCMPREATTACHDATA(_data) __attribute__((__section__(".dataini2." #_data))) _data
-#define BCMPREATTACHFN(_fn) __attribute__((__section__(".textini2." #_fn), noinline)) _fn
-#endif
+	#ifndef PREATTACH_NORECLAIM
+		#define BCMPREATTACHDATA(_data) __attribute__((__section__(".dataini3." #_data))) _data
+		#define BCMPREATTACHFN(_fn) __attribute__((__section__(".textini3." #_fn), noinline)) _fn
+	#else
+		#define BCMPREATTACHDATA(_data) __attribute__((__section__(".dataini2." #_data))) _data
+		#define BCMPREATTACHFN(_fn) __attribute__((__section__(".textini2." #_fn), noinline)) _fn
+	#endif
 
-#if defined(BCMRECLAIM)
-#define BCMINITDATA(_data) __attribute__((__section__(".dataini1." #_data))) _data
-#define BCMINITFN(_fn) __attribute__((__section__(".textini1." #_fn), noinline)) _fn
-#define CONST
-#else
-#define BCMINITDATA(_data) _data
-#define BCMINITFN(_fn) _fn
-#define CONST const
-#endif
+	#if defined(BCMRECLAIM)
+		#define BCMINITDATA(_data) __attribute__((__section__(".dataini1." #_data))) _data
+		#define BCMINITFN(_fn) __attribute__((__section__(".textini1." #_fn), noinline)) _fn
+		#define CONST
+	#else
+		#define BCMINITDATA(_data) _data
+		#define BCMINITFN(_fn) _fn
+		#define CONST const
+	#endif
 
-/* Non-manufacture or internal attach function/dat */
-#if !defined(WLTEST)
-#define BCMNMIATTACHFN(_fn) BCMATTACHFN(_fn)
-#define BCMNMIATTACHDATA(_data) BCMATTACHDATA(_data)
-#else
-#define BCMNMIATTACHFN(_fn) _fn
-#define BCMNMIATTACHDATA(_data) _data
-#endif
+	/* Non-manufacture or internal attach function/dat */
+	#if !defined(WLTEST)
+		#define BCMNMIATTACHFN(_fn) BCMATTACHFN(_fn)
+		#define BCMNMIATTACHDATA(_data) BCMATTACHDATA(_data)
+	#else
+		#define BCMNMIATTACHFN(_fn) _fn
+		#define BCMNMIATTACHDATA(_data) _data
+	#endif
 
-#define BCMUNINITFN(_fn) _fn
+	#define BCMUNINITFN(_fn) _fn
 
-#define BCMFASTPATH
+	#define BCMFASTPATH
 #else /* DONGLEBUILD */
 
-#define bcmreclaimed 0
-#define BCMATTACHDATA(_data) _data
-#define BCMATTACHFN(_fn) _fn
-#define BCMPREATTACHDATA(_data) _data
-#define BCMPREATTACHFN(_fn) _fn
-#define BCMINITDATA(_data) _data
-#define BCMINITFN(_fn) _fn
-#define BCMUNINITFN(_fn) _fn
-#define BCMNMIATTACHFN(_fn) _fn
-#define BCMNMIATTACHDATA(_data) _data
-#define CONST const
-#ifndef BCMFASTPATH
-#if defined(mips) || defined(__ARM_ARCH_7A__)
-#define BCMFASTPATH __attribute__((__section__(".text.fastpath")))
-#define BCMFASTPATH_HOST __attribute__((__section__(".text.fastpath_host")))
-#else
-#define BCMFASTPATH
-#define BCMFASTPATH_HOST
-#endif
-#endif /* BCMFASTPATH */
+	#define bcmreclaimed 0
+	#define BCMATTACHDATA(_data) _data
+	#define BCMATTACHFN(_fn) _fn
+	#define BCMPREATTACHDATA(_data) _data
+	#define BCMPREATTACHFN(_fn) _fn
+	#define BCMINITDATA(_data) _data
+	#define BCMINITFN(_fn) _fn
+	#define BCMUNINITFN(_fn) _fn
+	#define BCMNMIATTACHFN(_fn) _fn
+	#define BCMNMIATTACHDATA(_data) _data
+	#define CONST const
+	#ifndef BCMFASTPATH
+		#if defined(mips) || defined(__ARM_ARCH_7A__)
+			#define BCMFASTPATH __attribute__((__section__(".text.fastpath")))
+			#define BCMFASTPATH_HOST __attribute__((__section__(".text.fastpath_host")))
+		#else
+			#define BCMFASTPATH
+			#define BCMFASTPATH_HOST
+		#endif
+	#endif /* BCMFASTPATH */
 
 #endif /* DONGLEBUILD */
 
@@ -121,18 +121,18 @@ typedef struct {
 
 /* Put some library data/code into ROM to reduce RAM requirements */
 #if defined(BCMROMBUILD) && !defined(BCMROMSYMGEN_BUILD) && !defined(BCMJMPTBL_TCAM)
-#include <bcmjmptbl.h>
-#define STATIC static
+	#include <bcmjmptbl.h>
+	#define STATIC static
 #else /* !BCMROMBUILD */
-#define BCMROMDATA(_data) _data
-#define BCMROMDAT_NAME(_data) _data
-#define BCMROMFN(_fn) _fn
-#define BCMROMFN_NAME(_fn) _fn
-#define STATIC static
-#define BCMROMDAT_ARYSIZ(data) ARRAYSIZE(data)
-#define BCMROMDAT_SIZEOF(data) sizeof(data)
-#define BCMROMDAT_APATCH(data)
-#define BCMROMDAT_SPATCH(data)
+	#define BCMROMDATA(_data) _data
+	#define BCMROMDAT_NAME(_data) _data
+	#define BCMROMFN(_fn) _fn
+	#define BCMROMFN_NAME(_fn) _fn
+	#define STATIC static
+	#define BCMROMDAT_ARYSIZ(data) ARRAYSIZE(data)
+	#define BCMROMDAT_SIZEOF(data) sizeof(data)
+	#define BCMROMDAT_APATCH(data)
+	#define BCMROMDAT_SPATCH(data)
 #endif /* !BCMROMBUILD */
 
 /* Bus types */
@@ -147,38 +147,38 @@ typedef struct {
 
 /* Allows size optimization for single-bus image */
 #ifdef BCMBUSTYPE
-#define BUSTYPE(bus) (BCMBUSTYPE)
+	#define BUSTYPE(bus) (BCMBUSTYPE)
 #else
-#define BUSTYPE(bus) (bus)
+	#define BUSTYPE(bus) (bus)
 #endif
 
 /* Allows size optimization for single-backplane image */
 #ifdef BCMCHIPTYPE
-#define CHIPTYPE(bus) (BCMCHIPTYPE)
+	#define CHIPTYPE(bus) (BCMCHIPTYPE)
 #else
-#define CHIPTYPE(bus) (bus)
+	#define CHIPTYPE(bus) (bus)
 #endif
 
 /* Allows size optimization for SPROM support */
 #if defined(BCMSPROMBUS)
-#define SPROMBUS (BCMSPROMBUS)
+	#define SPROMBUS (BCMSPROMBUS)
 #elif defined(SI_PCMCIA_SROM)
-#define SPROMBUS (PCMCIA_BUS)
+	#define SPROMBUS (PCMCIA_BUS)
 #else
-#define SPROMBUS (PCI_BUS)
+	#define SPROMBUS (PCI_BUS)
 #endif
 
 /* Allows size optimization for single-chip image */
 #ifdef BCMCHIPID
-#define CHIPID(chip) (BCMCHIPID)
+	#define CHIPID(chip) (BCMCHIPID)
 #else
-#define CHIPID(chip) (chip)
+	#define CHIPID(chip) (chip)
 #endif
 
 #ifdef BCMCHIPREV
-#define CHIPREV(rev) (BCMCHIPREV)
+	#define CHIPREV(rev) (BCMCHIPREV)
 #else
-#define CHIPREV(rev) (rev)
+	#define CHIPREV(rev) (rev)
 #endif
 
 /* Defines for DMA Address Width - Shared between OSL and HNDDMA */
@@ -198,26 +198,26 @@ typedef struct {
 } dma64addr_t;
 
 typedef dma64addr_t dmaaddr_t;
-#define PHYSADDRHI(_pa) ((_pa).hiaddr)
-#define PHYSADDRHISET(_pa, _val)       \
-	do {                           \
-		(_pa).hiaddr = (_val); \
-	} while (0)
-#define PHYSADDRLO(_pa) ((_pa).loaddr)
-#define PHYSADDRLOSET(_pa, _val)       \
-	do {                           \
-		(_pa).loaddr = (_val); \
-	} while (0)
+	#define PHYSADDRHI(_pa) ((_pa).hiaddr)
+	#define PHYSADDRHISET(_pa, _val)       \
+		do {                           \
+			(_pa).hiaddr = (_val); \
+		} while (0)
+	#define PHYSADDRLO(_pa) ((_pa).loaddr)
+	#define PHYSADDRLOSET(_pa, _val)       \
+		do {                           \
+			(_pa).loaddr = (_val); \
+		} while (0)
 
 #else
 typedef unsigned long dmaaddr_t;
-#define PHYSADDRHI(_pa) (0)
-#define PHYSADDRHISET(_pa, _val)
-#define PHYSADDRLO(_pa) ((_pa))
-#define PHYSADDRLOSET(_pa, _val) \
-	do {                     \
-		(_pa) = (_val);  \
-	} while (0)
+	#define PHYSADDRHI(_pa) (0)
+	#define PHYSADDRHISET(_pa, _val)
+	#define PHYSADDRLO(_pa) ((_pa))
+	#define PHYSADDRLOSET(_pa, _val) \
+		do {                     \
+			(_pa) = (_val);  \
+		} while (0)
 #endif /* BCMDMA64OSL */
 
 /* One physical DMA segment */
@@ -227,17 +227,17 @@ typedef struct {
 } hnddma_seg_t;
 
 #if defined(MACOSX)
-/* In MacOS, the OS API may return large number of segments. Setting this number lower
+	/* In MacOS, the OS API may return large number of segments. Setting this number lower
  * will result in failure of dma map
  */
-#define MAX_DMA_SEGS 8
+	#define MAX_DMA_SEGS 8
 #elif defined(__NetBSD__)
-/* In NetBSD we also want more segments because the lower level mbuf mapping api might
+	/* In NetBSD we also want more segments because the lower level mbuf mapping api might
  * allocate a large number of segments
  */
-#define MAX_DMA_SEGS 16
+	#define MAX_DMA_SEGS 16
 #else
-#define MAX_DMA_SEGS 4
+	#define MAX_DMA_SEGS 4
 #endif
 
 typedef struct {
@@ -254,19 +254,19 @@ typedef struct {
  */
 
 #if defined(BCM_RPC_NOCOPY) || defined(BCM_RCP_TXNOCOPY)
-/* add 40 bytes to allow for extra RPC header and info  */
-#define BCMEXTRAHDROOM 220
+	/* add 40 bytes to allow for extra RPC header and info  */
+	#define BCMEXTRAHDROOM 220
 #else /* BCM_RPC_NOCOPY || BCM_RPC_TXNOCOPY */
-#ifdef CTFMAP
-#define BCMEXTRAHDROOM 208
-#else /* CTFMAP */
-#define BCMEXTRAHDROOM 204
-#endif /* CTFMAP */
+	#ifdef CTFMAP
+		#define BCMEXTRAHDROOM 208
+	#else /* CTFMAP */
+		#define BCMEXTRAHDROOM 204
+	#endif /* CTFMAP */
 #endif /* BCM_RPC_NOCOPY || BCM_RPC_TXNOCOPY */
 
 /* Packet alignment for most efficient SDIO (can change based on platform) */
 #ifndef SDALIGN
-#define SDALIGN 32
+	#define SDALIGN 32
 #endif
 
 /* Headroom required for dongle-to-host communication.  Packets allocated
@@ -283,11 +283,11 @@ typedef struct {
 
 #ifdef BCMDBG
 
-#ifndef BCMDBG_ERR
-#define BCMDBG_ERR
-#endif /* BCMDBG_ERR */
+	#ifndef BCMDBG_ERR
+		#define BCMDBG_ERR
+	#endif /* BCMDBG_ERR */
 
-#define BCMDBG_ASSERT
+	#define BCMDBG_ASSERT
 
 #endif /* BCMDBG */
 
@@ -307,18 +307,18 @@ typedef struct {
 
 /* define BCMSMALL to remove misc features for memory-constrained environments */
 #ifdef BCMSMALL
-#undef BCMSPACE
-#define bcmspace FALSE /* if (bcmspace) code is discarded */
+	#undef BCMSPACE
+	#define bcmspace FALSE /* if (bcmspace) code is discarded */
 #else
-#define BCMSPACE
-#define bcmspace TRUE /* if (bcmspace) code is retained */
+	#define BCMSPACE
+	#define bcmspace TRUE /* if (bcmspace) code is retained */
 #endif
 
 /* Max. nvram variable table size */
 #define MAXSZ_NVRAM_VARS 4096
 
 #ifdef EFI
-#define __attribute__(x) /* CSTYLED */
+	#define __attribute__(x) /* CSTYLED */
 #endif
 
 #endif /* _bcmdefs_h_ */

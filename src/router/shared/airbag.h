@@ -77,19 +77,19 @@ void airbag_deinit();
 
 void airbag_setpostinfo(const char *string);
 #else
-#undef airbag_setpostinfo
-#define airbag_setpostinfo(string) \
-	do {                       \
-	} while (0)
-#define airbag_init(string) \
-	do {                \
-	} while (0)
-#define airbag_init_delegate(string) \
-	do {                         \
-	} while (0)
-#define airbag_deinit(string) \
-	do {                  \
-	} while (0)
+	#undef airbag_setpostinfo
+	#define airbag_setpostinfo(string) \
+		do {                       \
+		} while (0)
+	#define airbag_init(string) \
+		do {                \
+		} while (0)
+	#define airbag_init_delegate(string) \
+		do {                         \
+		} while (0)
+	#define airbag_deinit(string) \
+		do {                  \
+		} while (0)
 #endif
 
 #ifdef __cplusplus

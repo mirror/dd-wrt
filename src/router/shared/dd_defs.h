@@ -5,33 +5,33 @@
 #include "../../opt/build.h"
 
 #ifdef HAVE_POWERNOC
-#define CYBERTAN_VERSION "POWERNOC v23"
+	#define CYBERTAN_VERSION "POWERNOC v23"
 #elif HAVE_WTS
-#define CYBERTAN_VERSION "WTS v23"
+	#define CYBERTAN_VERSION "WTS v23"
 #elif HAVE_OMNI
-#define CYBERTAN_VERSION "OMNI Wifi v23"
+	#define CYBERTAN_VERSION "OMNI Wifi v23"
 #elif HAVE_DLS
-#define CYBERTAN_VERSION "DLS v23"
+	#define CYBERTAN_VERSION "DLS v23"
 #elif HAVE_SKYTRON
-#define CYBERTAN_VERSION "SKYTRON v23"
+	#define CYBERTAN_VERSION "SKYTRON v23"
 #elif HAVE_GGEW
-#define CYBERTAN_VERSION "NMN 1.6 (" BUILD_DATE ")"
+	#define CYBERTAN_VERSION "NMN 1.6 (" BUILD_DATE ")"
 #elif HAVE_NEWMEDIA
-#define CYBERTAN_VERSION "NMN 1.5 (" BUILD_DATE ")"
+	#define CYBERTAN_VERSION "NMN 1.5 (" BUILD_DATE ")"
 #elif HAVE_SKYTEL
-#define CYBERTAN_VERSION "ST54G v23"
+	#define CYBERTAN_VERSION "ST54G v23"
 #elif HAVE_34TELECOM
-#define CYBERTAN_VERSION "MiuraBasic v23"
+	#define CYBERTAN_VERSION "MiuraBasic v23"
 #elif HAVE_FON
-#define CYBERTAN_VERSION "FON powered by DD-WRT v23 (" BUILD_DATE ")"
+	#define CYBERTAN_VERSION "FON powered by DD-WRT v23 (" BUILD_DATE ")"
 #elif HAVE_MAKSAT
-#define CYBERTAN_VERSION "MAKSAT 1.5 (" BUILD_DATE ")"
+	#define CYBERTAN_VERSION "MAKSAT 1.5 (" BUILD_DATE ")"
 #elif HAVE_GATEWORX
-#define CYBERTAN_VERSION "DD-WRT v24 (" BUILD_DATE ")"
+	#define CYBERTAN_VERSION "DD-WRT v24 (" BUILD_DATE ")"
 #elif HAVE_BUFFALO
-#define CYBERTAN_VERSION "DD-WRT v24SP2-" DEFAULT_COUNTRY_CODE " (" BUILD_DATE ")"
+	#define CYBERTAN_VERSION "DD-WRT v24SP2-" DEFAULT_COUNTRY_CODE " (" BUILD_DATE ")"
 #else
-#define CYBERTAN_VERSION "DD-WRT v24-sp2 (" BUILD_DATE ")"
+	#define CYBERTAN_VERSION "DD-WRT v24-sp2 (" BUILD_DATE ")"
 #endif
 
 #define LANG_VERSION "v1.00.00"
@@ -96,21 +96,21 @@ struct boot_header {
  * define Parental Control link        *
  ***************************************/
 #if LOCALE == EUROPE
-#define SIGN_UP_URL "http://pcsvc.ourlinksys.com/eu/language.jsp"
-#define MORE_INFO_URL "http://www.linksys.com/pcsvc/eu/info_eu.asp"
-#define ADMIN_URL "http://pcsvc.ourlinksys.com/en"
+	#define SIGN_UP_URL "http://pcsvc.ourlinksys.com/eu/language.jsp"
+	#define MORE_INFO_URL "http://www.linksys.com/pcsvc/eu/info_eu.asp"
+	#define ADMIN_URL "http://pcsvc.ourlinksys.com/en"
 #elif LOCALE == GERMANY
-#define SIGN_UP_URL "http://pcsvc.ourlinksys.com/de/trial.asp"
-#define MORE_INFO_URL "http://www.linksys.com/pcsvc/de/info_de.asp"
-#define ADMIN_URL "http://pcsvc.ourlinksys.com/de/admin.asp"
+	#define SIGN_UP_URL "http://pcsvc.ourlinksys.com/de/trial.asp"
+	#define MORE_INFO_URL "http://www.linksys.com/pcsvc/de/info_de.asp"
+	#define ADMIN_URL "http://pcsvc.ourlinksys.com/de/admin.asp"
 #elif LOCALE == FRANCE
-#define SIGN_UP_URL "http://pcsvc.ourlinksys.com/fr/trial.asp"
-#define MORE_INFO_URL "http://www.linksys.com/pcsvc/fr/info_fr.asp"
-#define ADMIN_URL "http://pcsvc.ourlinksys.com/fr/admin.asp"
+	#define SIGN_UP_URL "http://pcsvc.ourlinksys.com/fr/trial.asp"
+	#define MORE_INFO_URL "http://www.linksys.com/pcsvc/fr/info_fr.asp"
+	#define ADMIN_URL "http://pcsvc.ourlinksys.com/fr/admin.asp"
 #else
-#define SIGN_UP_URL "http://pcsvc.ourlinksys.com/us/trial.asp"
-#define MORE_INFO_URL "http://www.linksys.com/pcsvc/info.asp"
-#define ADMIN_URL "http://pcsvc.ourlinksys.com/us/admin.asp"
+	#define SIGN_UP_URL "http://pcsvc.ourlinksys.com/us/trial.asp"
+	#define MORE_INFO_URL "http://www.linksys.com/pcsvc/info.asp"
+	#define ADMIN_URL "http://pcsvc.ourlinksys.com/us/admin.asp"
 #endif
 
 /***************************************

@@ -12,11 +12,11 @@
 #include <bcmcvar.h> // Added by Daniel(2004-07-29) for EZC
 
 #ifndef STATIC_BUILD
-#define EJ_VISIBLE __attribute__((used)) __attribute__((__visibility__("default")))
-#define EJ_HIDDEN __attribute__((__visibility__("hidden")))
+	#define EJ_VISIBLE __attribute__((used)) __attribute__((__visibility__("default")))
+	#define EJ_HIDDEN __attribute__((__visibility__("hidden")))
 #else
-#define EJ_VISIBLE
-#define EJ_HIDDEN
+	#define EJ_VISIBLE
+	#define EJ_HIDDEN
 #endif
 //#define EJ_VISIBLE __attribute__((__visibility__("default")))
 //#define EJ_HIDDEN __attribute__((__visibility__("hidden")))
@@ -232,11 +232,11 @@ void showRadioInvPrefix(webs_t wp, char *propname, char *nv, char *prefix);
 // #define service_restart() eval("event","3","1","16")
 
 #ifdef HAVE_WRK54G
-#define sys_restart() kill(1, 1)
-#define sys_reboot() kill(1, 15)
+	#define sys_restart() kill(1, 1)
+	#define sys_reboot() kill(1, 15)
 #else
-#define sys_restart() eval("event", "0", "1", "1")
-#define sys_reboot() eval("event", "3", "1", "15")
+	#define sys_restart() eval("event", "0", "1", "1")
+	#define sys_reboot() eval("event", "3", "1", "15")
 #endif
 
 #define sys_stats(url) eval("stats", (url))
@@ -714,11 +714,11 @@ extern void alias_delete_ip(webs_t wp);
 extern int valid_ipaddr(webs_t wp, char *value, struct variable *v);
 
 #ifndef VALIDSOURCE
-#define valid_range(wp, value, v) start_validator("valid_range", wp, value, v)
-#define valid_hwaddr(wp, value, v) start_validator("valid_hwaddr", wp, value, v)
-#define valid_netmask(wp, value, v) start_validator("valid_netmask", wp, value, v)
-#define valid_wep_key(wp, value, v) start_validator("valid_wep_key", wp, value, v)
-#define valid_choice(wp, value, v) start_validator("valid_choice", wp, value, v)
+	#define valid_range(wp, value, v) start_validator("valid_range", wp, value, v)
+	#define valid_hwaddr(wp, value, v) start_validator("valid_hwaddr", wp, value, v)
+	#define valid_netmask(wp, value, v) start_validator("valid_netmask", wp, value, v)
+	#define valid_wep_key(wp, value, v) start_validator("valid_wep_key", wp, value, v)
+	#define valid_choice(wp, value, v) start_validator("valid_choice", wp, value, v)
 #else
 
 extern int valid_range(webs_t wp, char *value, struct variable *v);
