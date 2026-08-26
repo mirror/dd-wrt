@@ -626,28 +626,21 @@ void set_gpio(int gpio, int value)
 		if (writestr(buf, "1"))
 			return;
 		sprintf(buf, "/proc/gpio/%d_out", gpio);
-	} else {
+	} else
 	#if defined(HAVE_ERC)
 		if (gpio >= 55) {
-			set_linux_gpio(gpio, value);
-			return;
-		}
-	}
-	else
-	{
+		set_linux_gpio(gpio, value);
+		return;
+	} else
 	#endif
 	#ifdef HAVE_DANUBE
 		if (gpio >= 200)
-			sprintf(buf, "/proc/gpiostp/%d_out", gpio - 200);
-	}
+		sprintf(buf, "/proc/gpiostp/%d_out", gpio - 200);
 	else
 	#endif
-		if (gpio < 64)
-	{
+		if (gpio < 64) {
 		sprintf(buf, "/proc/wl0gpio/%d_out", (gpio - GPIOMAX));
-	}
-	else
-	{
+	} else {
 		set_linux_gpio(gpio, value);
 		return;
 	}
