@@ -7,6 +7,7 @@
 
 #ifndef	CEDARTYPE_H
 #define	CEDARTYPE_H
+#include <string.h>
 
 typedef struct CEDAR CEDAR;
 typedef struct TRAFFIC TRAFFIC;
