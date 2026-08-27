@@ -2963,6 +2963,7 @@ wl_basic.fw_type="Firmware Typ";
 wl_basic.cell_density="Zelldichte";
 wl_basic.legacy="Alte Raten (11b)";
 wl_basic.allow_mcs15="Erlaube EHT-MCS 15 Empfang";
+wl_basic.ema="Erweitertes MBSSID Advertisement ";
 
 //help container
 

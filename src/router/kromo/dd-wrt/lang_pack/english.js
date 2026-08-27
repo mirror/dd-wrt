@@ -3424,6 +3424,7 @@ wl_basic.bss_color="BSS Color";
 wl_basic.bss_color_partial="BSS Color Partial";
 wl_basic.cell_density="Cell Density";
 wl_basic.legacy="Legacy Rates (11b)";
+wl_basic.ema="Enhanced MBSSID Advertisement";
 
 //help container
 var hwl_basic=new Object();
