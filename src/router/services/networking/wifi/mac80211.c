@@ -1935,6 +1935,8 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		fprintf(fp, "rrm_neighbor_report=1\n");
 		fprintf(fp, "rrm_beacon_report=1\n");
 		fprintf(fp, "rnr=1\n");
+	}
+	if (nvram_nmatch("1", "%s_ema", prefix)) {
 		if (!has_hidden_ssid(prefix) && has_vaps(prefix))
 			fprintf(fp, "mbssid=2\n");
 	}
