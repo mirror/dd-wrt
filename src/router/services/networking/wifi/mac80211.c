@@ -742,7 +742,7 @@ int has_vaps(const char *prefix)
 
 int is_6ghz_freq_prefix(const char *prefix, int freq)
 {
-	if (!is_ath11k(prefix) && !has_ax(prefix))
+	if (!is_ath11k(prefix) && !is_ath12k(prefix) && !has_ax(prefix))
 		return 0;
 	return is_6ghz_freq(freq);
 }
@@ -1476,24 +1476,21 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				}
 			}
 			if (has_ax(prefix) || has_be(prefix)) {
-	#ifdef HAVE_IPQ95XX
-				if (has_6ghz("wlan1") && strcmp(prefix, "wlan1") && nvram_ngeti("%s_config_freq", prefix) >= 5925) {
-					fprintf(fp, "stationary_ap=1\n");
-					fprintf(fp, "he_co_locate=1\n");
-					fprintf(fp, "rrm_neighbor_report=1\n");
-					fprintf(fp, "rrm_beacon_report=1\n");
-					fprintf(fp, "rnr=1\n");
+				int i;
+				for (i = 0; i < 16; i++) {
+					char check[16];
+					sprintf(check, "wlan%d", i);
+					size_t checklen = strlen(check);
+					if (has_6ghz(check) && strncmp(prefix, check, checklen) &&
+					    nvram_ngeti("%s_config_freq", check) >= 5925) {
+						fprintf(fp, "stationary_ap=1\n");
+						fprintf(fp, "he_co_locate=1\n");
+						fprintf(fp, "rrm_neighbor_report=1\n");
+						fprintf(fp, "rrm_beacon_report=1\n");
+						fprintf(fp, "rnr=1\n");
+						break;
+					}
 				}
-
-	#else
-				if (has_6ghz("wlan2") && strcmp(prefix, "wlan2")) {
-					fprintf(fp, "stationary_ap=1\n");
-					fprintf(fp, "he_co_locate=1\n");
-					fprintf(fp, "rrm_neighbor_report=1\n");
-					fprintf(fp, "rrm_beacon_report=1\n");
-					fprintf(fp, "rnr=1\n");
-				}
-	#endif
 			}
 			if (!is_morse_micro(prefix) && !has_ax(prefix))
 				fprintf(fp, "no_country_ie=1\n");
@@ -1803,24 +1800,21 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 				fprintf(fp, "he_bss_color_partial=%d\n", nvram_nmatch("1", "%s_bss_color_partial", prefix) ? 1 : 0);
 				fprintf(fp, "he_twt_required=%d\n", nvram_nmatch("1", "%s_twt_required", prefix) ? 1 : 0);
 				/* hack to detect if third interface is 6ghz */
-	#ifdef HAVE_IPQ95XX
-				if (has_6ghz("wlan1") && strcmp(prefix, "wlan1") && nvram_ngeti("%s_config_freq", prefix) >= 5925) {
-					fprintf(fp, "stationary_ap=1\n");
-					fprintf(fp, "he_co_locate=1\n");
-					fprintf(fp, "rrm_neighbor_report=1\n");
-					fprintf(fp, "rrm_beacon_report=1\n");
-					fprintf(fp, "rnr=1\n");
+				int i;
+				for (i = 0; i < 16; i++) {
+					char check[16];
+					sprintf(check, "wlan%d", i);
+					size_t checklen = strlen(check);
+					if (has_6ghz(check) && strncmp(prefix, check, checklen) &&
+					    nvram_ngeti("%s_config_freq", check) >= 5925) {
+						fprintf(fp, "stationary_ap=1\n");
+						fprintf(fp, "he_co_locate=1\n");
+						fprintf(fp, "rrm_neighbor_report=1\n");
+						fprintf(fp, "rrm_beacon_report=1\n");
+						fprintf(fp, "rnr=1\n");
+						break;
+					}
 				}
-
-	#else
-				if (has_6ghz("wlan2") && strcmp(prefix, "wlan2")) {
-					fprintf(fp, "stationary_ap=1\n");
-					fprintf(fp, "he_co_locate=1\n");
-					fprintf(fp, "rrm_neighbor_report=1\n");
-					fprintf(fp, "rrm_beacon_report=1\n");
-					fprintf(fp, "rnr=1\n");
-				}
-	#endif
 			}
 		}
 		if (strcmp(netmode, "b-only")) {
@@ -2454,20 +2448,20 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "time_advertisement=0\n");
 		}
 	}
-		#ifdef HAVE_IPQ95XX
-	if (has_6ghz("wlan1") && strcmp(maininterface, "wlan1") && nvram_ngeti("%s_config_freq", maininterface) >= 5925) {
-		fprintf(fp, "rrm_neighbor_report=1\n");
-		fprintf(fp, "rrm_beacon_report=1\n");
-		fprintf(fp, "rnr=1\n");
-	} else
-		#else
-	if (has_6ghz("wlan2") && strcmp(maininterface, "wlan2")) {
-		fprintf(fp, "rrm_neighbor_report=1\n");
-		fprintf(fp, "rrm_beacon_report=1\n");
-		fprintf(fp, "rnr=1\n");
-	} else
-		#endif
+
 	{
+		int i;
+		for (i = 0; i < 16; i++) {
+			char check[16];
+			sprintf(check, "wlan%d", i);
+			size_t checklen = strlen(check);
+			if (has_6ghz(check) && strncmp(ifname, check, checklen) && nvram_ngeti("%s_config_freq", check) >= 5925) {
+				fprintf(fp, "rrm_neighbor_report=1\n");
+				fprintf(fp, "rrm_beacon_report=1\n");
+				fprintf(fp, "rnr=1\n");
+				break;
+			}
+		}
 		if (nvram_nmatch("1", "%s_80211k", ifname)) {
 			fprintf(fp, "rrm_neighbor_report=%d\n", nvram_nmatch("1", "%s_rrm_neighbor_report", ifname) ? 1 : 0);
 			fprintf(fp, "rrm_beacon_report=%d\n", nvram_nmatch("1", "%s_rrm_beacon_report", ifname) ? 1 : 0);
