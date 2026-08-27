@@ -5680,6 +5680,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadioDefaultOn(wp, "wl_adv.label18", wmm);
 	else
 		showRadio(wp, "wl_adv.label18", wmm);
+	
+	sprintf(wmm, "%s_ema", prefix);
+	if (is_mac80211(prefix) && has_ax(prefix))
+		showRadioDefaultOff(wp, "wl_basic.ema", wmm);
+	
 	#endif
 	// radar detection
 	#ifdef HAVE_MADWIFI
