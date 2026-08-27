@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8834 | brainslayer | 2026-08-27 13:49:27 +0600 (Thu, 27 Aug 2026) | 1 line
+
+test airtime fainess implementation for ath11k
+------------------------------------------------------------------------
 r8833 | brainslayer | 2026-08-16 15:50:36 +0600 (Sun, 16 Aug 2026) | 1 line
 
 ath11k: fix the mesh MPP expiry timer interval, thx julius
