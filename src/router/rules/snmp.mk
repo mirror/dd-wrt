@@ -27,22 +27,22 @@ SNMP_ENDIAN=big
 endif
 SNMP_EXTRACFLAGS+=-DHAVE_MADWIFI -I$(TOP)/madwifi.dev/madwifi.dev -include $(TOP)/madwifi.dev/madwifi.dev/include/compat.h -I$(TOP)/wireless-tools -I$(TOP)/shared -DHEADERS_KERNEL -Wno-incompatible-pointer-types
 ifeq ($(CONFIG_BRCMFMAC),y)
-SNMP_EXTRACFLAGS+= -DHAVE_BRCMFMAC
+SNMP_WIFICFLAGS+= -DHAVE_BRCMFMAC
 endif
 ifeq ($(CONFIG_MT76),y)
-SNMP_EXTRACFLAGS+= -DHAVE_MT76
+SNMP_WIFICFLAGS+= -DHAVE_MT76
 endif
 ifeq ($(CONFIG_ATH10K),y)
-SNMP_EXTRACFLAGS+= -DHAVE_ATH10K
+SNMP_WIFICFLAGS+= -DHAVE_ATH10K
 endif
 ifeq ($(CONFIG_ATH11K),y)
-SNMP_EXTRACFLAGS+= -DHAVE_ATH11K
+SNMP_WIFICFLAGS+= -DHAVE_ATH11K
 endif
 ifeq ($(CONFIG_ATH12K),y)
-SNMP_EXTRACFLAGS+= -DHAVE_ATH12K
+SNMP_WIFICFLAGS+= -DHAVE_ATH12K
 endif
 ifeq ($(CONFIG_IPQ95XX),y)
-SNMP_EXTRACFLAGS+= -DHAVE_IPQ95XX
+SNMP_WIFICFLAGS+= -DHAVE_IPQ95XX
 endif
 
 
@@ -226,7 +226,7 @@ snmp:
 	install -D snmp/config/snmp.webservices httpd/ej_temp/snmp.webservices
 ifeq ($(CONFIG_SNMP),y)
 ifeq ($(CONFIG_ATH9K),y)
-	$(MAKE) -C snmp/build_mac80211 LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram $(SNMP_EXTRALIB)"
+	$(MAKE) -C snmp/build_mac80211 CFLAGS="$(COPTS) $(MIPS16_OPT) $(SNMP_EXTRACFLAGS) $(LTO) -DHAVE_LINUX_RTNETLINK_H -I$(SSLPATH)/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24 $(SNMP_EXTRACFLAGS) $(SNMP_WIFICFLAGS)" LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram $(SNMP_EXTRALIB)"
 else
 	$(MAKE) -C snmp/build_standard LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram"
 endif
@@ -243,7 +243,7 @@ snmp-install:
 ifeq ($(CONFIG_SNMP),y)
 
 ifeq ($(CONFIG_ATH9K),y)
-	$(MAKE) -C snmp/build_mac80211 LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram $(SNMP_EXTRALIB)" install DESTDIR=$(INSTALLDIR)/snmp
+	$(MAKE) -C snmp/build_mac80211 CFLAGS="$(COPTS) $(MIPS16_OPT) $(SNMP_EXTRACFLAGS) $(LTO) -DHAVE_LINUX_RTNETLINK_H -I$(SSLPATH)/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24 $(SNMP_EXTRACFLAGS) $(SNMP_WIFICFLAGS)" LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram $(SNMP_EXTRALIB)" install DESTDIR=$(INSTALLDIR)/snmp
 else
 	$(MAKE) -C snmp/build_standard LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSLPATH) -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram" install DESTDIR=$(INSTALLDIR)/snmp
 endif
