@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2024-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -297,6 +297,7 @@ err:
     EVP_MD_CTX_free(md_ctx);
     OPENSSL_clear_free(alloc, alloc_len);
     OPENSSL_cleanse(rho_prime, sizeof(rho_prime));
+    OPENSSL_cleanse(c_tilde, sizeof(c_tilde));
     return ret;
 }
 
@@ -454,6 +455,7 @@ int ossl_ml_dsa_sign(const ML_DSA_KEY *priv, int msg_is_mu,
 
 err:
     EVP_MD_CTX_free(md_ctx);
+    OPENSSL_cleanse(mu, sizeof(mu));
     return ret;
 }
 
@@ -493,5 +495,6 @@ int ossl_ml_dsa_verify(const ML_DSA_KEY *pub, int msg_is_mu,
     ret = ml_dsa_verify_internal(pub, mu_ptr, mu_len, sig, sig_len);
 err:
     EVP_MD_CTX_free(md_ctx);
+    OPENSSL_cleanse(mu, sizeof(mu));
     return ret;
 }

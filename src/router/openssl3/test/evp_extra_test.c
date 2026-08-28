@@ -1126,6 +1126,135 @@ err:
 #endif /* !OPENSSL_NO_DH || !OPENSSL_NO_DSA || !OPENSSL_NO_EC */
 
 /*
+ * RSASVE (SP 800-56B 7.2) must reject mathematically degenerate inputs:
+ * a public exponent e <= 1, and a ciphertext c in {0, 1, n - 1}.  Outside
+ * the FIPS module these were previously accepted; the checks now apply to
+ * every build, so exercise them in the default provider.
+ */
+
+/*
+ * With e <= 1 the RSA public operation is the identity (or worse), so
+ * encapsulation setup must reject the key with PROV_R_INVALID_KEY.  idx
+ * selects the exponent: 0 or 1.
+ */
+static int test_rsasve_degenerate_exponent(int idx)
+{
+    EVP_PKEY *rsakey = NULL;
+    EVP_PKEY *pubkey = NULL;
+    EVP_PKEY_CTX *genctx = NULL;
+    EVP_PKEY_CTX *ctx = NULL;
+    OSSL_PARAM_BLD *bld = NULL;
+    OSSL_PARAM *params = NULL;
+    BIGNUM *n = NULL;
+    BIGNUM *e = NULL;
+    int testresult = 0;
+
+    /* Borrow a real modulus; only the exponent is degenerate. */
+    if (!TEST_ptr(rsakey = load_example_rsa_key())
+        || !TEST_true(EVP_PKEY_get_bn_param(rsakey, OSSL_PKEY_PARAM_RSA_N, &n)))
+        goto err;
+
+    if (!TEST_ptr(e = BN_new())
+        || !TEST_true(BN_set_word(e, (BN_ULONG)idx))) /* idx is 0 or 1 */
+        goto err;
+
+    if (!TEST_ptr(bld = OSSL_PARAM_BLD_new())
+        || !TEST_true(OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_RSA_N, n))
+        || !TEST_true(OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_RSA_E, e))
+        || !TEST_ptr(params = OSSL_PARAM_BLD_to_param(bld)))
+        goto err;
+
+    if (!TEST_ptr(genctx = EVP_PKEY_CTX_new_from_name(testctx, "RSA", NULL))
+        || !TEST_int_gt(EVP_PKEY_fromdata_init(genctx), 0)
+        || !TEST_int_gt(EVP_PKEY_fromdata(genctx, &pubkey, EVP_PKEY_PUBLIC_KEY,
+                            params),
+            0))
+        goto err;
+
+    ERR_clear_error();
+    if (!TEST_ptr(ctx = EVP_PKEY_CTX_new_from_pkey(testctx, pubkey, NULL))
+        || !TEST_int_eq(EVP_PKEY_encapsulate_init(ctx, NULL), 0)
+        || !TEST_int_eq(ERR_GET_REASON(ERR_get_error()), PROV_R_INVALID_KEY))
+        goto err;
+
+    testresult = 1;
+err:
+    EVP_PKEY_CTX_free(ctx);
+    EVP_PKEY_CTX_free(genctx);
+    EVP_PKEY_free(pubkey);
+    EVP_PKEY_free(rsakey);
+    OSSL_PARAM_free(params);
+    OSSL_PARAM_BLD_free(bld);
+    BN_free(e);
+    BN_free(n);
+    return testresult;
+}
+
+/*
+ * A ciphertext c in {0, 1, n - 1} is a fixed point or trivial case of RSADP,
+ * so RSASVE recovery must reject it.  idx selects the ciphertext: 0, 1, or
+ * n - 1.  The ciphertext length must equal the modulus length.
+ */
+static int test_rsasve_degenerate_ciphertext(int idx)
+{
+    EVP_PKEY *rsakey = NULL;
+    EVP_PKEY_CTX *ctx = NULL;
+    BIGNUM *n = NULL;
+    unsigned char *ct = NULL;
+    unsigned char *secret = NULL;
+    size_t ctlen = 0;
+    size_t secretlen = 0;
+    int expected_reason = 0;
+    int testresult = 0;
+
+    if (!TEST_ptr(rsakey = load_example_rsa_key())
+        || !TEST_true(EVP_PKEY_get_bn_param(rsakey, OSSL_PKEY_PARAM_RSA_N, &n)))
+        goto err;
+
+    ctlen = secretlen = (size_t)EVP_PKEY_get_size(rsakey);
+    if (!TEST_ptr(ct = OPENSSL_zalloc(ctlen))
+        || !TEST_ptr(secret = OPENSSL_malloc(secretlen)))
+        goto err;
+
+    switch (idx) {
+    case 0: /* c = 0 */
+        expected_reason = RSA_R_DATA_TOO_SMALL;
+        break;
+    case 1: /* c = 1 */
+        ct[ctlen - 1] = 1;
+        expected_reason = RSA_R_DATA_TOO_SMALL;
+        break;
+    case 2: /* c = n - 1 */
+        if (!TEST_true(BN_sub_word(n, 1))
+            || !TEST_int_eq(BN_bn2binpad(n, ct, (int)ctlen), (int)ctlen))
+            goto err;
+        expected_reason = RSA_R_DATA_TOO_LARGE_FOR_MODULUS;
+        break;
+    default:
+        goto err;
+    }
+
+    if (!TEST_ptr(ctx = EVP_PKEY_CTX_new_from_pkey(testctx, rsakey, NULL))
+        || !TEST_int_eq(EVP_PKEY_decapsulate_init(ctx, NULL), 1)
+        || !TEST_int_eq(EVP_PKEY_CTX_set_kem_op(ctx, "RSASVE"), 1))
+        goto err;
+
+    ERR_clear_error();
+    if (!TEST_int_eq(EVP_PKEY_decapsulate(ctx, secret, &secretlen, ct, ctlen), 0)
+        || !TEST_int_eq(ERR_GET_REASON(ERR_get_error()), expected_reason))
+        goto err;
+
+    testresult = 1;
+err:
+    OPENSSL_free(secret);
+    OPENSSL_free(ct);
+    EVP_PKEY_CTX_free(ctx);
+    EVP_PKEY_free(rsakey);
+    BN_free(n);
+    return testresult;
+}
+
+/*
  * Test combinations of private, public, missing and private + public key
  * params to ensure they are all accepted
  */
@@ -2229,20 +2358,83 @@ out:
 }
 
 #ifndef OPENSSL_NO_POLY1305
-/* Test that EVP_MAC_final fails for Poly1305 when no key was set */
+/* Test Poly1305 no-key failures and staged key initialization */
 static int test_evp_mac_poly1305_no_key(void)
 {
     int ret = 0;
     EVP_MAC *mac = NULL;
     EVP_MAC_CTX *ctx = NULL;
+    /* RFC 7539 Poly1305 test vector. */
+    static const unsigned char staged_data[] = "Cryptographic Forum Research Group";
+    static const unsigned char expected[16] = {
+        0xa8, 0x06, 0x1d, 0xc1, 0x30, 0x51, 0x36, 0xc6,
+        0xc2, 0x2b, 0x8b, 0xaf, 0x0c, 0x01, 0x27, 0xa9
+    };
+    unsigned char no_key_data[16] = { 0 };
+    unsigned char key[32] = {
+        0x85, 0xd6, 0xbe, 0x78, 0x57, 0x55, 0x6d, 0x33,
+        0x7f, 0x44, 0x52, 0xfe, 0x42, 0xd5, 0x06, 0xa8,
+        0x01, 0x03, 0x80, 0x8a, 0xfb, 0x0d, 0xb2, 0xfd,
+        0x4a, 0xbf, 0xf6, 0xaf, 0x41, 0x49, 0xf5, 0x1b
+    };
     unsigned char out[16];
+    OSSL_PARAM key_params[2];
+    OSSL_PARAM null_key_params[2];
     size_t outl = 0;
+
+    key_params[0] = OSSL_PARAM_construct_octet_string(OSSL_MAC_PARAM_KEY,
+        key, sizeof(key));
+    key_params[1] = OSSL_PARAM_construct_end();
+    null_key_params[0] = OSSL_PARAM_construct_octet_string(OSSL_MAC_PARAM_KEY,
+        NULL, sizeof(key));
+    null_key_params[1] = OSSL_PARAM_construct_end();
 
     if (!TEST_ptr(mac = EVP_MAC_fetch(testctx, "Poly1305", testpropq))
         || !TEST_ptr(ctx = EVP_MAC_CTX_new(mac))
-        || !TEST_int_eq(EVP_MAC_init(ctx, NULL, 0, NULL), 1)
-        || !TEST_int_eq(EVP_MAC_final(ctx, out, &outl, sizeof(out)), 0))
+        || !TEST_int_eq(EVP_MAC_init(ctx, NULL, 0, NULL), 1))
         goto err;
+
+    ERR_clear_error();
+    if (!TEST_int_eq(EVP_MAC_update(ctx, no_key_data, sizeof(no_key_data)), 0)
+        || !TEST_int_eq(ERR_GET_REASON(ERR_get_error()), PROV_R_NO_KEY_SET))
+        goto err;
+
+    /* The failed update must not block staged key initialization. */
+    if (!TEST_int_eq(EVP_MAC_CTX_set_params(ctx, key_params), 1)
+        || !TEST_int_eq(EVP_MAC_update(ctx, staged_data,
+                            sizeof(staged_data) - 1),
+            1)
+        || !TEST_int_eq(EVP_MAC_final(ctx, out, &outl, sizeof(out)), 1)
+        || !TEST_size_t_eq(outl, sizeof(expected))
+        || !TEST_mem_eq(out, outl, expected, sizeof(expected)))
+        goto err;
+
+    EVP_MAC_CTX_free(ctx);
+    ctx = NULL;
+
+    if (!TEST_ptr(ctx = EVP_MAC_CTX_new(mac))
+        || !TEST_int_eq(EVP_MAC_init(ctx, NULL, 0, NULL), 1))
+        goto err;
+
+    ERR_clear_error();
+    if (!TEST_int_eq(EVP_MAC_final(ctx, out, &outl, sizeof(out)), 0)
+        || !TEST_int_eq(ERR_GET_REASON(ERR_get_error()), PROV_R_NO_KEY_SET))
+        goto err;
+
+    ERR_clear_error();
+    if (!TEST_int_eq(EVP_MAC_init(ctx, NULL, 0, null_key_params), 0)
+        || !TEST_int_eq(ERR_GET_REASON(ERR_get_error()),
+            PROV_R_INVALID_KEY_LENGTH))
+        goto err;
+
+    ERR_clear_error();
+    if (!TEST_int_eq(EVP_MAC_CTX_set_params(ctx, null_key_params), 0)
+        || !TEST_int_eq(ERR_GET_REASON(ERR_get_error()),
+            PROV_R_INVALID_KEY_LENGTH))
+        goto err;
+
+    EVP_MAC_CTX_free(ctx);
+    ctx = NULL;
     ret = 1;
 err:
     EVP_MAC_CTX_free(ctx);
@@ -4087,6 +4279,76 @@ done:
     return ret;
 }
 
+/*
+ * A raw RSA PKCS#1 v1.5 signature whose recovered data is empty must be
+ * recovered successfully with a length of zero, not rejected as an error.
+ */
+static int test_RSA_verify_recover_empty_payload(void)
+{
+    int ret = 0;
+    int recovered_cap = 0;
+    EVP_PKEY *pkey = NULL;
+    EVP_PKEY_CTX *sign_ctx = NULL, *verify_ctx = NULL;
+    unsigned char *sig = NULL, *recovered = NULL;
+    size_t sig_len = 0, recovered_len = 0;
+    /*
+     * The signed input has zero length, but a valid non-null address is still
+     * passed so the result does not depend on how lower layers treat NULL for
+     * zero-length data.
+     */
+    const unsigned char empty[] = { 0 };
+
+    if (OSSL_PROVIDER_available(testctx, "fips"))
+        return TEST_skip("Test skipped for FIPS provider");
+
+    if (!TEST_ptr(pkey = load_example_rsa_key())
+        || !TEST_ptr(sign_ctx = EVP_PKEY_CTX_new_from_pkey(testctx, pkey, NULL))
+        || !TEST_int_gt(EVP_PKEY_sign_init(sign_ctx), 0)
+        || !TEST_int_gt(EVP_PKEY_CTX_set_rsa_padding(sign_ctx, RSA_PKCS1_PADDING), 0)
+        /*
+         * Deliberately do not configure a signature digest so that the raw
+         * PKCS#1 v1.5 sign and verify-recover paths are exercised.
+         */
+        || !TEST_int_gt(EVP_PKEY_sign(sign_ctx, NULL, &sig_len, empty, 0), 0)
+        || !TEST_ptr(sig = OPENSSL_malloc(sig_len))
+        || !TEST_int_gt(EVP_PKEY_sign(sign_ctx, sig, &sig_len, empty, 0), 0)
+        || !TEST_int_gt(recovered_cap = EVP_PKEY_get_size(pkey), 0)
+        || !TEST_ptr(recovered = OPENSSL_malloc(recovered_cap))
+        || !TEST_ptr(verify_ctx = EVP_PKEY_CTX_new_from_pkey(testctx, pkey, NULL))
+        || !TEST_int_gt(EVP_PKEY_verify_recover_init(verify_ctx), 0)
+        || !TEST_int_gt(EVP_PKEY_CTX_set_rsa_padding(verify_ctx, RSA_PKCS1_PADDING),
+            0))
+        goto done;
+
+    /* Size-query call must succeed. */
+    recovered_len = (size_t)recovered_cap;
+    if (!TEST_int_gt(EVP_PKEY_verify_recover(verify_ctx, NULL,
+                         &recovered_len, sig, sig_len),
+            0))
+        goto done;
+
+    /*
+     * The actual recovery call is essential: a NULL output buffer would only
+     * run the size-query path, which never decodes the signature and so would
+     * not reproduce the regression.
+     */
+    recovered_len = (size_t)recovered_cap;
+    if (!TEST_int_gt(EVP_PKEY_verify_recover(verify_ctx, recovered,
+                         &recovered_len, sig, sig_len),
+            0)
+        || !TEST_size_t_eq(recovered_len, 0))
+        goto done;
+
+    ret = 1;
+done:
+    EVP_PKEY_CTX_free(sign_ctx);
+    EVP_PKEY_CTX_free(verify_ctx);
+    EVP_PKEY_free(pkey);
+    OPENSSL_free(sig);
+    OPENSSL_free(recovered);
+    return ret;
+}
+
 static int test_RSA_encrypt(void)
 {
     int ret = 0;
@@ -4339,6 +4601,139 @@ err:
     return ret;
 }
 #endif /* !OPENSSL_NO_DEPRECATED_3_0 */
+
+/* Test that DHX (X9.42) rejects a malicious peer key during the
+ * derivation phase (specifically EVP_PKEY_derive_set_peer) when the
+ * remote 'q' does not match the local domain parameters but is still
+ * consistent with the remote key share.
+ * (CVE-2026-42770)
+ */
+static int test_dhx_derive_rejects_bad_peer_q(void)
+{
+    int ret = 0;
+    EVP_PKEY *local_key = NULL, *remote_key = NULL;
+    EVP_PKEY_CTX *pctx = NULL, *derive_ctx = NULL;
+    OSSL_PARAM_BLD *bld = NULL;
+    OSSL_PARAM *params = NULL;
+
+    BIGNUM *p = NULL, *g = NULL;
+    BIGNUM *q_valid = NULL, *pub_local = NULL, *priv_local = NULL;
+    BIGNUM *q_bad = NULL, *pub_bad = NULL;
+
+    const char *hex_p = "87a8e61db4b6663cffbbd19c651959998ceef608660dd0f25d2ceed4435e3b00"
+                        "e00df8f1d61957d4faf7df4561b2aa3016c3d91134096faa3bf4296d830e9a7c"
+                        "209e0c6497517abd5a8a9d306bcf67ed91f9e6725b4758c022e0b1ef4275bf7b"
+                        "6c5bfc11d45f9088b941f54eb1e59bb8bc39a0bf12307f5c4fdb70c581b23f76"
+                        "b63acae1caa6b7902d52526735488a0ef13c6d9a51bfa4ab3ad8347796524d8e"
+                        "f6a167b5a41825d967e144e5140564251ccacb83e6b486f6b3ca3f7971506026"
+                        "c0b857f689962856ded4010abd0be621c3a3960a54e710c375f26375d7014103"
+                        "a4b54330c198af126116d2276e11715f693877fad7ef09cadb094ae91e1a1597";
+    const char *hex_g = "3FB32C9B73134D0B2E77506660EDBD484CA7B18F21EF205407F4793A1A0BA125"
+                        "10DBC15077BE463FFF4FED4AAC0BB555BE3A6C1B0C6B47B1BC3773BF7E8C6F62"
+                        "901228F8C28CBB18A55AE31341000A650196F931C77A57F2DDF463E5E9EC144B"
+                        "777DE62AAAB8A8628AC376D282D6ED3864E67982428EBC831D14348F6F2F9193"
+                        "B5045AF2767164E1DFC967C1FB3F2E55A4BD1BFFE83B9C80D052B985D182EA0A"
+                        "DB2A3B7313D3FE14C8484B1E052588B9B7D2BBD2DF016199ECD06E1557CD0915"
+                        "B3353BBB64E0EC377FD028370DF92B52C7891428CDC67EB6184B523D1DB246C3"
+                        "2F63078490F00EF8D647D148D47954515E2327CFEF98C582664B4C0F6CC41659";
+
+    const char *hex_q_valid = "8CF83642A709A097B447997640129DA299B1A47D1EB3750BA308B0FE64F5FBD3";
+    const char *hex_local_pub = "796e15431470ac86fa8a78b8bcdd1f3589dbf15ffe0e0a7a41dd8640887f3cc3"
+                                "f0439e281f4cf3800bac2dbdfcda589b26cc828512085ce0d3e57aa13cd9e7a4"
+                                "66d881bace91ed10c6064ab36e0d66367c4bfed56a9f907e4daec16732fb5c54"
+                                "891cb0d26251fd61c32040774246b3f8bdcd5ef60e6847cdd69bd6d318d1cda0"
+                                "e8a30a716de4dc1a4eb99b0686b77120c4b69b0005f6a8c3ae768d23c08c85bd"
+                                "1d58f40dc0138d6277436137ae69779fdc218c071c14826f471562033e85ffc9"
+                                "9a2147d539e274136a4a1e7f1db97583b51dc0385a52d7383963758d893398a8"
+                                "d013fdbad20ddf30fbe05fbb2249913ae6751b6b246ae5622ba26c4827417c2d";
+    const char *hex_local_priv = "1122334455667788990011223344556677889900112233445566778899001122";
+
+    /* Remote malicious parameters */
+    const char *hex_remote_q = "09f5";
+    const char *hex_remote_pub = "54c057903d362235a65c03f001d8a3ea252836b3580250abdc0a1083451af012"
+                                 "6fd150f9e8d212b384ae0c23aa7c67fe851368114ccc061a661e986bd7e63d25"
+                                 "7513339a6914cbfab209ad793ef25704cd532ddfb7e693de701d17e629ef3c18"
+                                 "4d40d5fea1f9edb89c5bf8d7aa19e3374f805932159ca7b5d573b9e2f3c94fe7"
+                                 "47c4a3b09e31afa3788d35833aaf2ac8ae8bc48500131464e793a2e0352e7c3e"
+                                 "d9da9fcf89b121bc1cee83c544214ceb3338b14ac6891968351746eaf62bb517"
+                                 "eb98fc633d8d235bac37bc08e47f1851d05501949a6733965adbfe8e43f7c3b9"
+                                 "3ca7515cd6ab36d7ef26bb0fd6033abc39613e880fffc8729b03bfeaddf08833";
+
+    if (!TEST_true(BN_hex2bn(&p, hex_p)) || !TEST_true(BN_hex2bn(&g, hex_g)))
+        goto err;
+
+    if (!TEST_true(BN_hex2bn(&q_valid, hex_q_valid))
+        || !TEST_true(BN_hex2bn(&pub_local, hex_local_pub))
+        || !TEST_true(BN_hex2bn(&priv_local, hex_local_priv)))
+        goto err;
+
+    if (!TEST_ptr(bld = OSSL_PARAM_BLD_new())
+        || !TEST_true(OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_FFC_P, p))
+        || !TEST_true(OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_FFC_Q, q_valid))
+        || !TEST_true(OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_FFC_G, g))
+        || !TEST_true(OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_PUB_KEY, pub_local))
+        || !TEST_true(OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_PRIV_KEY, priv_local))
+        || !TEST_ptr(params = OSSL_PARAM_BLD_to_param(bld)))
+        goto err;
+
+    if (!TEST_ptr(pctx = EVP_PKEY_CTX_new_from_name(testctx, "DHX", testpropq))
+        || !TEST_int_gt(EVP_PKEY_fromdata_init(pctx), 0)
+        || !TEST_int_gt(EVP_PKEY_fromdata(pctx, &local_key, EVP_PKEY_KEYPAIR, params), 0))
+        goto err;
+
+    OSSL_PARAM_free(params);
+    OSSL_PARAM_BLD_free(bld);
+    EVP_PKEY_CTX_free(pctx);
+    params = NULL;
+    bld = NULL;
+    pctx = NULL;
+
+    if (!TEST_true(BN_hex2bn(&q_bad, hex_remote_q))
+        || !TEST_true(BN_hex2bn(&pub_bad, hex_remote_pub)))
+        goto err;
+
+    if (!TEST_ptr(bld = OSSL_PARAM_BLD_new())
+        || !TEST_true(OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_FFC_P, p))
+        || !TEST_true(OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_FFC_Q, q_bad))
+        || !TEST_true(OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_FFC_G, g))
+        || !TEST_true(OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_PUB_KEY, pub_bad))
+        || !TEST_ptr(params = OSSL_PARAM_BLD_to_param(bld)))
+        goto err;
+
+    if (!TEST_ptr(pctx = EVP_PKEY_CTX_new_from_name(testctx, "DHX", testpropq))
+        || !TEST_int_gt(EVP_PKEY_fromdata_init(pctx), 0)
+        || !TEST_int_gt(EVP_PKEY_fromdata(pctx, &remote_key, EVP_PKEY_PUBLIC_KEY, params), 0))
+        goto err;
+
+    if (!TEST_ptr(derive_ctx = EVP_PKEY_CTX_new(local_key, NULL))
+        || !TEST_int_gt(EVP_PKEY_derive_init(derive_ctx), 0))
+        goto err;
+
+    /* reject the remote key share, even if it is self-consistent, correct
+     * code needs to use local q, not remote-provided q. */
+    if (!TEST_int_le(EVP_PKEY_derive_set_peer(derive_ctx, remote_key), 0)) {
+        TEST_error("EVP_PKEY_derive_set_peer incorrectly accepted a peer with malicious 'q'");
+        goto err;
+    }
+
+    ret = 1;
+
+err:
+    BN_free(p);
+    BN_free(g);
+    BN_free(q_valid);
+    BN_free(pub_local);
+    BN_free(priv_local);
+    BN_free(q_bad);
+    BN_free(pub_bad);
+    OSSL_PARAM_free(params);
+    OSSL_PARAM_BLD_free(bld);
+    EVP_PKEY_CTX_free(pctx);
+    EVP_PKEY_CTX_free(derive_ctx);
+    EVP_PKEY_free(local_key);
+    EVP_PKEY_free(remote_key);
+    return ret;
+}
 #endif /* !OPENSSL_NO_DH */
 
 /*
@@ -6754,6 +7149,30 @@ err:
     return ret;
 }
 
+#if !defined(OPENSSL_NO_CHACHA) && !defined(OPENSSL_NO_POLY1305)
+static int test_chacha20_poly1305_late_aad(void)
+{
+    EVP_CIPHER_CTX *ctx = NULL;
+    EVP_CIPHER *c = NULL;
+    unsigned char key[32] = { 0 };
+    unsigned char iv[12] = { 0 };
+    unsigned char aad[4] = "aad";
+    unsigned char msg[8] = "message";
+    unsigned char out[32];
+    int len, test;
+
+    test = TEST_ptr(ctx = EVP_CIPHER_CTX_new())
+        && TEST_ptr(c = EVP_CIPHER_fetch(testctx, "ChaCha20-Poly1305", testpropq))
+        && TEST_true(EVP_EncryptInit_ex2(ctx, c, key, iv, NULL))
+        && TEST_true(EVP_EncryptUpdate(ctx, NULL, &len, aad, sizeof(aad)))
+        && TEST_true(EVP_EncryptUpdate(ctx, out, &len, msg, sizeof(msg)))
+        && TEST_false(EVP_EncryptUpdate(ctx, NULL, &len, aad, sizeof(aad)));
+
+    EVP_CIPHER_free(c);
+    EVP_CIPHER_CTX_free(ctx);
+    return test;
+}
+#endif
 /*
  * AES-SIV reuse-without-rekey:
  *   msg1: legit non-empty CT, tag verifies, final_ret=0
@@ -6911,6 +7330,12 @@ static const AEAD_ONESHOT_CFG aead_oneshot_cfgs[] = {
     { "AES-128-OCB", 16, 12, 16, 0 },
     { "AES-256-OCB", 32, 12, 16, 0 },
     { "ChaCha20-Poly1305", 32, 12, 16, 0 }
+};
+
+static const AEAD_ONESHOT_CFG aead_oneshot_zerolen_cfgs[] = {
+    { "AES-128-OCB", 16, 12, 16, 0 },
+    { "ChaCha20-Poly1305", 32, 12, 16, 0 },
+    { "AES-128-GCM-SIV", 16, 12, 16, 0 }
 };
 
 /*
@@ -7128,6 +7553,302 @@ static int test_aead_oneshot_roundtrip(int idx)
             cfg->name, with_aad ? "with AAD" : "no AAD");
         goto end;
     }
+    ok = 1;
+end:
+    return ok;
+}
+
+static EVP_CIPHER_CTX *aead_oneshot_zerolen_ctx(const EVP_CIPHER *cipher,
+    int enc, const unsigned char *key, const unsigned char *iv,
+    const unsigned char *aad, size_t aad_len,
+    const unsigned char *tag, size_t tag_len)
+{
+    EVP_CIPHER_CTX *ctx = NULL;
+    int outl = 0;
+
+    if (!TEST_ptr(ctx = EVP_CIPHER_CTX_new())
+        || !TEST_true(EVP_CipherInit_ex2(ctx, cipher, key, iv, enc, NULL))
+        || (aad_len > 0
+            && !TEST_true(EVP_CipherUpdate(ctx, NULL, &outl, aad,
+                (int)aad_len)))
+        || (!enc
+            && !TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG,
+                                (int)tag_len, (void *)tag),
+                0))) {
+        EVP_CIPHER_CTX_free(ctx);
+        return NULL;
+    }
+    return ctx;
+}
+
+/*
+ * For these built-in provider implementations, a NULL-input EVP_Cipher() call
+ * must produce or check the empty-message tag even when no payload Update was
+ * made.
+ */
+static int test_aead_oneshot_zerolen(int idx)
+{
+    static const unsigned char key[32] = {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+        0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f
+    };
+    static const unsigned char iv[12] = {
+        0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
+        0xa8, 0xa9, 0xaa, 0xab
+    };
+    static const unsigned char aad[] = "empty message context";
+    const AEAD_ONESHOT_CFG *cfg = &aead_oneshot_zerolen_cfgs[idx / 2];
+    int with_aad = idx % 2;
+    size_t aad_len = with_aad ? sizeof(aad) - 1 : 0;
+    EVP_CIPHER *cipher = NULL;
+    EVP_CIPHER_CTX *ctx_oracle = NULL, *ctx_oneshot = NULL;
+    EVP_CIPHER_CTX *ctx_dec = NULL, *ctx_dec_bad = NULL;
+    static const unsigned char empty = 0;
+    unsigned char out[16] = { 0 };
+    unsigned char tag_oracle[16] = { 0 };
+    unsigned char tag_oneshot[16] = { 0 };
+    unsigned char tag_bad[16] = { 0 };
+    int outl = 0, ret = 0;
+
+    ERR_set_mark();
+    cipher = EVP_CIPHER_fetch(testctx, cfg->name, testpropq);
+    ERR_pop_to_mark();
+    if (cipher == NULL)
+        return TEST_skip("'%s' is not available", cfg->name);
+
+    /*
+     * The explicit zero-length Update provides an oracle that also works on
+     * the unpatched GCM-SIV implementation, whose empty Final cannot generate
+     * a tag.
+     */
+    ctx_oracle = aead_oneshot_zerolen_ctx(cipher, 1, key, iv, aad, aad_len,
+        NULL, cfg->taglen);
+    if (!TEST_ptr(ctx_oracle)
+        || !TEST_true(EVP_EncryptUpdate(ctx_oracle, out, &outl, &empty, 0))
+        || !TEST_true(EVP_EncryptFinal_ex(ctx_oracle, out, &outl))
+        || !TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx_oracle, EVP_CTRL_AEAD_GET_TAG,
+                            (int)cfg->taglen, tag_oracle),
+            0))
+        goto end;
+
+    ctx_dec = aead_oneshot_zerolen_ctx(cipher, 0, key, iv, aad, aad_len,
+        tag_oracle, cfg->taglen);
+    if (!TEST_ptr(ctx_dec)
+        || !TEST_int_ge(EVP_Cipher(ctx_dec, out, NULL, 0), 0))
+        goto end;
+
+    memcpy(tag_bad, tag_oracle, cfg->taglen);
+    tag_bad[0] ^= 1;
+    ctx_dec_bad = aead_oneshot_zerolen_ctx(cipher, 0, key, iv, aad, aad_len,
+        tag_bad, cfg->taglen);
+    if (!TEST_ptr(ctx_dec_bad)
+        || !TEST_int_lt(EVP_Cipher(ctx_dec_bad, out, NULL, 0), 0))
+        goto end;
+
+    ctx_oneshot = aead_oneshot_zerolen_ctx(cipher, 1, key, iv, aad, aad_len,
+        NULL, cfg->taglen);
+    if (!TEST_ptr(ctx_oneshot)
+        || !TEST_int_ge(EVP_Cipher(ctx_oneshot, out, NULL, 0), 0)
+        || !TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx_oneshot, EVP_CTRL_AEAD_GET_TAG,
+                            (int)cfg->taglen, tag_oneshot),
+            0)
+        || !TEST_mem_eq(tag_oneshot, cfg->taglen,
+            tag_oracle, cfg->taglen))
+        goto end;
+
+    ret = 1;
+end:
+    if (!ret)
+        TEST_info("zero-length %s test failed (%s)", cfg->name,
+            with_aad ? "with AAD" : "no AAD");
+    EVP_CIPHER_CTX_free(ctx_oracle);
+    EVP_CIPHER_CTX_free(ctx_oneshot);
+    EVP_CIPHER_CTX_free(ctx_dec);
+    EVP_CIPHER_CTX_free(ctx_dec_bad);
+    EVP_CIPHER_free(cipher);
+    return ret;
+}
+
+static const AEAD_ONESHOT_CFG ccm_empty_final_cfgs[] = {
+    { "AES-128-CCM", 16, 12, 16, 1 },
+    { "AES-192-CCM", 24, 12, 16, 1 },
+    { "AES-256-CCM", 32, 12, 16, 1 },
+    { "ARIA-128-CCM", 16, 12, 16, 1 },
+    { "ARIA-192-CCM", 24, 12, 16, 1 },
+    { "ARIA-256-CCM", 32, 12, 16, 1 },
+    { "SM4-CCM", 16, 12, 16, 1 }
+};
+
+/*
+ * Finalize CCM after declaring an empty payload and supplying AAD, without a
+ * payload Update. Return one for authentication success, zero for an
+ * authentication failure, and minus one for any other failure.
+ */
+static int ccm_empty_final_op(const AEAD_ONESHOT_CFG *cfg, int enc,
+    int oneshot_final, const unsigned char *key, const unsigned char *iv,
+    const unsigned char *aad, size_t aad_len, unsigned char *tag,
+    const char **why)
+{
+    EVP_CIPHER_CTX *ctx = NULL;
+    EVP_CIPHER *cipher = NULL;
+    unsigned char out[1] = { 0 };
+    int outl = 0, rv;
+    int ret = -1;
+
+    *why = NULL;
+
+    if (!TEST_ptr(cipher = EVP_CIPHER_fetch(testctx, cfg->name, testpropq))) {
+        *why = "CIPHER_FETCH";
+        goto end;
+    }
+    if (!TEST_ptr(ctx = EVP_CIPHER_CTX_new())) {
+        *why = "CTX_NEW";
+        goto end;
+    }
+    if (!TEST_true(EVP_CipherInit_ex(ctx, cipher, NULL, NULL, NULL, enc))) {
+        *why = "INIT_CIPHER";
+        goto end;
+    }
+    if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_IVLEN,
+                         (int)cfg->ivlen, NULL),
+            0)) {
+        *why = "SET_IVLEN";
+        goto end;
+    }
+    if (!TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG,
+                         (int)cfg->taglen, enc ? NULL : tag),
+            0)) {
+        *why = "SET_TAG";
+        goto end;
+    }
+    if (!TEST_true(EVP_CipherInit_ex(ctx, NULL, NULL, key, iv, enc))) {
+        *why = "INIT_KEY_IV";
+        goto end;
+    }
+    if (!TEST_true(EVP_CipherUpdate(ctx, NULL, &outl, NULL, 0))) {
+        *why = "LENGTH";
+        goto end;
+    }
+    if (!TEST_true(EVP_CipherUpdate(ctx, NULL, &outl, aad, (int)aad_len))) {
+        *why = "AAD";
+        goto end;
+    }
+
+    if (oneshot_final) {
+        rv = EVP_Cipher(ctx, out, NULL, 0);
+        ret = rv >= 0;
+        if (ret && rv != 0) {
+            *why = "ONESHOT_FINAL_LENGTH";
+            ret = -1;
+            goto end;
+        }
+    } else {
+        ret = EVP_CipherFinal_ex(ctx, out, &outl) > 0;
+        if (ret && outl != 0) {
+            *why = "STREAM_FINAL_LENGTH";
+            ret = -1;
+            goto end;
+        }
+    }
+
+    if (ret && enc
+        && !TEST_int_gt(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG,
+                            (int)cfg->taglen, tag),
+            0)) {
+        *why = "GET_TAG";
+        ret = -1;
+    }
+
+end:
+    EVP_CIPHER_CTX_free(ctx);
+    EVP_CIPHER_free(cipher);
+    return ret;
+}
+
+static int test_ccm_empty_final(int idx)
+{
+    static const unsigned char fixed_key[32] = {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+        0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+        0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f
+    };
+    static const unsigned char fixed_iv[12] = {
+        0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5,
+        0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab
+    };
+    static const unsigned char fixed_aad[] = "CCM empty-payload Final regression";
+    const AEAD_ONESHOT_CFG *cfg = &ccm_empty_final_cfgs[idx];
+    EVP_CIPHER *probe = NULL;
+    unsigned char tag_stream[16], tag_oneshot[16], bad_tag[16];
+    const char *why = NULL;
+    int rv, ok = 0;
+
+    ERR_set_mark();
+    probe = EVP_CIPHER_fetch(testctx, cfg->name, testpropq);
+    ERR_pop_to_mark();
+    if (probe == NULL) {
+        TEST_info("skipping, '%s' is not available", cfg->name);
+        return 1;
+    }
+    EVP_CIPHER_free(probe);
+
+    memset(tag_stream, 0, sizeof(tag_stream));
+    rv = ccm_empty_final_op(cfg, 1, 0, fixed_key, fixed_iv, fixed_aad,
+        sizeof(fixed_aad) - 1, tag_stream, &why);
+    if (!TEST_int_eq(rv, 1)) {
+        TEST_error("%s: streaming encryption failed at %s",
+            cfg->name, why ? why : "FINAL");
+        goto end;
+    }
+
+    memset(tag_oneshot, 0, sizeof(tag_oneshot));
+    rv = ccm_empty_final_op(cfg, 1, 1, fixed_key, fixed_iv, fixed_aad,
+        sizeof(fixed_aad) - 1, tag_oneshot, &why);
+    if (!TEST_int_eq(rv, 1)) {
+        TEST_error("%s: one-shot encryption failed at %s",
+            cfg->name, why ? why : "FINAL");
+        goto end;
+    }
+    if (!TEST_mem_eq(tag_stream, cfg->taglen, tag_oneshot, cfg->taglen)) {
+        TEST_error("%s: streaming and one-shot tags differ", cfg->name);
+        goto end;
+    }
+
+    rv = ccm_empty_final_op(cfg, 0, 0, fixed_key, fixed_iv, fixed_aad,
+        sizeof(fixed_aad) - 1, tag_stream, &why);
+    if (!TEST_int_eq(rv, 1)) {
+        TEST_error("%s: streaming verification failed at %s",
+            cfg->name, why ? why : "FINAL");
+        goto end;
+    }
+    rv = ccm_empty_final_op(cfg, 0, 1, fixed_key, fixed_iv, fixed_aad,
+        sizeof(fixed_aad) - 1, tag_stream, &why);
+    if (!TEST_int_eq(rv, 1)) {
+        TEST_error("%s: one-shot verification failed at %s",
+            cfg->name, why ? why : "FINAL");
+        goto end;
+    }
+
+    memcpy(bad_tag, tag_stream, cfg->taglen);
+    bad_tag[0] ^= 1;
+    rv = ccm_empty_final_op(cfg, 0, 0, fixed_key, fixed_iv, fixed_aad,
+        sizeof(fixed_aad) - 1, bad_tag, &why);
+    if (!TEST_int_eq(rv, 0)) {
+        TEST_error("%s: streaming Final accepted an invalid tag", cfg->name);
+        goto end;
+    }
+    ERR_clear_error();
+    rv = ccm_empty_final_op(cfg, 0, 1, fixed_key, fixed_iv, fixed_aad,
+        sizeof(fixed_aad) - 1, bad_tag, &why);
+    if (!TEST_int_eq(rv, 0)) {
+        TEST_error("%s: one-shot Final accepted an invalid tag", cfg->name);
+        goto end;
+    }
+    ERR_clear_error();
+
     ok = 1;
 end:
     return ok;
@@ -7519,18 +8240,21 @@ int setup_tests(void)
     ADD_TEST(test_RSA_OAEP_set_get_params);
     ADD_TEST(test_RSA_OAEP_set_null_label);
     ADD_TEST(test_RSA_verify_recover_rejects_short_buffer);
+    ADD_TEST(test_RSA_verify_recover_empty_payload);
     ADD_TEST(test_RSA_encrypt);
 #ifndef OPENSSL_NO_DEPRECATED_3_0
     ADD_TEST(test_RSA_legacy);
 #endif
 #if !defined(OPENSSL_NO_CHACHA) && !defined(OPENSSL_NO_POLY1305)
     ADD_TEST(test_decrypt_null_chunks);
+    ADD_TEST(test_chacha20_poly1305_late_aad);
 #endif
 #ifndef OPENSSL_NO_DH
     ADD_TEST(test_DH_priv_pub);
 #ifndef OPENSSL_NO_DEPRECATED_3_0
     ADD_TEST(test_EVP_PKEY_set1_DH);
 #endif
+    ADD_TEST(test_dhx_derive_rejects_bad_peer_q);
 #endif
 #ifndef OPENSSL_NO_EC
     ADD_TEST(test_EC_priv_pub);
@@ -7604,6 +8328,12 @@ int setup_tests(void)
 #endif
 
     ADD_ALL_TESTS(test_aead_oneshot_roundtrip, 2 * OSSL_NELEM(aead_oneshot_cfgs));
+    ADD_ALL_TESTS(test_aead_oneshot_zerolen,
+        2 * OSSL_NELEM(aead_oneshot_zerolen_cfgs));
+
+    ADD_ALL_TESTS(test_rsasve_degenerate_exponent, 2);
+    ADD_ALL_TESTS(test_rsasve_degenerate_ciphertext, 3);
+    ADD_ALL_TESTS(test_ccm_empty_final, OSSL_NELEM(ccm_empty_final_cfgs));
 
     /* Test cases for CVE-2026-45446 */
     ADD_TEST(test_aes_gcm_siv_empty_data);
