@@ -2815,6 +2815,10 @@ void start_lan(void)
 #if defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_MT7621)
 	start_postnetwork();
 #endif
+#if defined(HAVE_RUCKUSH500)
+	start_postnetwork();
+#endif
+
 	stop_irqbalance();
 	start_irqbalance();
 }

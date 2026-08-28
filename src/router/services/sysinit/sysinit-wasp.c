@@ -1198,6 +1198,18 @@ void start_wifi_drivers(void)
 #endif
 	}
 }
+void start_postnetwork(void)
+{
+	#if defined(HAVE_RUCKUSH500)
+		setWirelessLed(0, 20);
+		setWirelessLed(1, 22);
+		setWirelessAssocLed(0, 19);
+		setWirelessAssocLed(1, 21);
+		ext_output_value(0x5, 93, 94, 7);
+	#endif
+}
+
+
 void start_arch_defaults(void)
 {
 }
