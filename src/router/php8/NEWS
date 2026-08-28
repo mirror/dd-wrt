@@ -1,5 +1,110 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+27 Aug 2026, PHP 8.5.10
+
+- Core:
+  . Fixed bug GH-22782 (Const expr FCC crashes under preloading). (Arnaud)
+  . Fixed bug GH-23088 (Stack overflow when comparing deeply nested arrays).
+    (Lazizbek Ergashev)
+
+- Date:
+  . Fixed leak on double DatePeriod::__construct() call. (ilutov)
+
+- DOM:
+  . Fixed bug GH-23116 (Stack overflow when normalizing a deeply nested
+    DOMDocument). (Lazizbek Ergashev)
+  . Fixed bug GH-23117 (Stack overflow when normalizing a deeply nested
+    Dom\XMLDocument). (Lazizbek Ergashev)
+  . Fixed bug GH-22825 (DOMElement::setAttribute() fails silently when the DTD
+    declares a default value for the attribute). (iliaal)
+  . Fixed bug GH-23120 (Stack overflow when comparing deeply nested DOM nodes
+    with DOMNode::isEqualNode()). (Weilin Du)
+
+- Exif:
+  . Fixed exif_read_data() allocating a HEIF meta box larger than the file
+    it came from. (iliaal)
+
+- Intl:
+  . Fixed IntlListFormatter::__construct() leaving stale global error state
+    after successful calls. (Weilin Du)
+
+- Opcache:
+  . Fixed GH-22693 (DT_TEXTREL in JIT-generated TLS access on x86_64).
+    (David Carlier)
+  . Fixed bug GH-22763 (JIT fails to clear ZREG_TYPE_ONLY after setting reg).
+    (Arnaud)
+  . Fixed bug GH-22857 (Function JIT emits wrong code for FETCH_OBJ_FUNC_ARG on
+    a property hook getter, losing register-held variables). (Zhao Hao)
+  . Fixed bug GH-22916 (Preserve parent regs in zend_jit_deoptimizer_start()).
+    (Arnaud)
+
+- OpenSSL:
+  . Fix missing error check on invalid alpn protocols. (ndossche)
+
+- MBString:
+  . Fixed bug GH-22779 (mb_strrpos() returns the wrong position for a negative
+    offset in a non-UTF-8 encoding). (Eyüp Can Akman)
+  . Fixed bug GH-21036 (mb_ereg_search_getregs() crashes after mb_eregi()
+    invalidates the regex cache). (Matthias Goergens)
+
+- PCRE:
+  . Fixed bug GH-21134 (Crash with \C + UTF-8). Using \C in UTF-8 patterns is
+    now forbidden. (Arnaud)
+
+- PDO_ODBC:
+  . Fixed bug GH-23016 (NULL values in long columns come back as garbage
+    binary strings). (Calvin Buckley, iliaal)
+
+- PDO_PGSQL:
+  . Fixed several lazy fetch (PDO::ATTR_PREFETCH => 0) defects: an infinite
+    loop when cleaning up a fetch left in a COPY, a use-after-free when a
+    statement with emulated or disabled prepares is destroyed, a connection
+    left busy for the next fetch, and rows delivered from a result another
+    statement took over. (KentarouTakeda)
+
+- Reflection:
+  . Fixed bug GH-22905 (Reflection exception messages truncate on null bytes).
+    (DanielEScherzer)
+  . Fixed ReflectionProperty::isLazy() and skipLazyInitialization() using the
+    parent slot when a child class hooks an inherited property. (iliaal)
+  . Fixed segfault in ReflectionMethod::createFromMethodName() on an
+    uninstantiable subclass. (iliaal)
+
+- Session:
+  . Fix corruption in mod_mm. (ndossche)
+  . Fixed bug GH-23043 (broken session id code can cause zend_mm_heap
+    corrupted). (ndossche)
+
+- SimpleXML:
+  . Fixed integer element offsets that cannot resolve aliasing an existing
+    element. (iliaal)
+  . Fixed segfault when comparing uninitialized SimpleXMLElement
+    instances. (iliaal)
+
+- Sockets:
+  . Fixed socket_set_option() validation error messages for UDP_SEGMENT and
+    SO_LINGER options. (Weilin Du)
+  . Fixed various memory related issues in ext/sockets. (David Carlier)
+
+- SQLite:
+  . Fix leak when trying to close db if blob stream is still open. (ndossche)
+
+- Standard:
+  . Fixed bug GH-23111 (Stack overflow in array_walk_recursive() with deeply
+    nested arrays). (Lazizbek Ergashev)
+  . Fixed bug GH-23113 (Stack overflow in array_replace_recursive() with deeply
+    nested arrays). (Lazizbek Ergashev)
+  . Fixed bug GH-23115 (Stack overflow in compact() with deeply nested
+    arrays). (Lazizbek Ergashev)
+
+- Streams:
+  . Fixed bug GH-15836 (Use-after-free when a user stream filter accesses
+    $this->stream during the close flush). (iliaal)
+
+- XSL:
+  . Fixed use-after-free when a DOMDocument subclass __clone() retains the
+    stylesheet copy made by XSLTProcessor::importStylesheet(). (iliaal)
+
 30 Jul 2026, PHP 8.5.9
 
 - Core:

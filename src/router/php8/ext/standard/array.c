@@ -611,10 +611,18 @@ PHPAPI zend_long php_count_recursive(HashTable *ht) /* {{{ */
 	zend_long cnt = 0;
 	zval *element;
 
+#ifdef ZEND_CHECK_STACK_LIMIT
+	if (UNEXPECTED(zend_call_stack_overflowed(EG(stack_limit)))) {
+		zend_call_stack_size_error();
+		return -1;
+	}
+#endif
+
 	if (!(GC_FLAGS(ht) & GC_IMMUTABLE)) {
 		if (GC_IS_RECURSIVE(ht)) {
 			php_error_docref(NULL, E_WARNING, "Recursion detected");
-			return 0;
+			/* A user error handler may have thrown. */
+			return EG(exception) ? -1 : 0;
 		}
 		GC_PROTECT_RECURSION(ht);
 	}
@@ -623,7 +631,12 @@ PHPAPI zend_long php_count_recursive(HashTable *ht) /* {{{ */
 	ZEND_HASH_FOREACH_VAL(ht, element) {
 		ZVAL_DEREF(element);
 		if (Z_TYPE_P(element) == IS_ARRAY) {
-			cnt += php_count_recursive(Z_ARRVAL_P(element));
+			zend_long sub_cnt = php_count_recursive(Z_ARRVAL_P(element));
+			if (UNEXPECTED(sub_cnt < 0)) {
+				cnt = -1;
+				break;
+			}
+			cnt += sub_cnt;
 		}
 	} ZEND_HASH_FOREACH_END();
 
@@ -668,6 +681,9 @@ PHP_FUNCTION(count)
 				cnt = zend_hash_num_elements(Z_ARRVAL_P(array));
 			} else {
 				cnt = php_count_recursive(Z_ARRVAL_P(array));
+				if (UNEXPECTED(cnt < 0)) {
+					RETURN_THROWS();
+				}
 			}
 			RETURN_LONG(cnt);
 			break;
@@ -1449,6 +1465,13 @@ static zend_result php_array_walk(
 	/* Create a local copy of fci, as we want to use different arguments at different
 	 * levels of recursion. */
 	zend_fcall_info fci = context->fci;
+
+#ifdef ZEND_CHECK_STACK_LIMIT
+	if (UNEXPECTED(zend_call_stack_overflowed(EG(stack_limit)))) {
+		zend_call_stack_size_error();
+		return FAILURE;
+	}
+#endif
 
 	if (zend_hash_num_elements(target_hash) == 0) {
 		return result;
@@ -2677,7 +2700,7 @@ PHP_FUNCTION(extract)
 }
 /* }}} */
 
-static void php_compact_var(HashTable *eg_active_symbol_table, zval *return_value, zval *entry, uint32_t pos) /* {{{ */
+static zend_result php_compact_var(HashTable *eg_active_symbol_table, zval *return_value, zval *entry, uint32_t pos) /* {{{ */
 {
 	zval *value_ptr, data;
 
@@ -2695,25 +2718,43 @@ static void php_compact_var(HashTable *eg_active_symbol_table, zval *return_valu
 			}
 		} else {
 			php_error_docref_unchecked(NULL, E_WARNING, "Undefined variable $%S", Z_STR_P(entry));
+			/* A user error handler may have thrown. */
+			return EG(exception) ? FAILURE : SUCCESS;
 		}
 	} else if (Z_TYPE_P(entry) == IS_ARRAY) {
+		zend_result result = SUCCESS;
+
+#ifdef ZEND_CHECK_STACK_LIMIT
+		if (UNEXPECTED(zend_call_stack_overflowed(EG(stack_limit)))) {
+			zend_call_stack_size_error();
+			return FAILURE;
+		}
+#endif
 		if (Z_REFCOUNTED_P(entry)) {
 			if (Z_IS_RECURSIVE_P(entry)) {
 				zend_throw_error(NULL, "Recursion detected");
-				return;
+				return FAILURE;
 			}
 			Z_PROTECT_RECURSION_P(entry);
 		}
 		ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(entry), value_ptr) {
-			php_compact_var(eg_active_symbol_table, return_value, value_ptr, pos);
+			if (UNEXPECTED(php_compact_var(eg_active_symbol_table, return_value, value_ptr, pos) == FAILURE)) {
+				result = FAILURE;
+				break;
+			}
 		} ZEND_HASH_FOREACH_END();
 		if (Z_REFCOUNTED_P(entry)) {
 			Z_UNPROTECT_RECURSION_P(entry);
 		}
+
+		return result;
 	} else {
 		php_error_docref(NULL, E_WARNING, "Argument #%d must be string or array of strings, %s given", pos, zend_zval_value_name(entry));
-		return;
+		/* A user error handler may have thrown. */
+		return EG(exception) ? FAILURE : SUCCESS;
 	}
+
+	return SUCCESS;
 }
 /* }}} */
 
@@ -2745,7 +2786,9 @@ PHP_FUNCTION(compact)
 	}
 
 	for (i = 0; i < num_args; i++) {
-		php_compact_var(symbol_table, return_value, &args[i], i + 1);
+		if (UNEXPECTED(php_compact_var(symbol_table, return_value, &args[i], i + 1) == FAILURE)) {
+			RETURN_THROWS();
+		}
 	}
 }
 /* }}} */
@@ -4151,6 +4194,13 @@ PHPAPI int php_array_replace_recursive(HashTable *dest, HashTable *src) /* {{{ *
 	zend_string *string_key;
 	zend_ulong num_key;
 	int ret;
+
+#ifdef ZEND_CHECK_STACK_LIMIT
+	if (UNEXPECTED(zend_call_stack_overflowed(EG(stack_limit)))) {
+		zend_call_stack_size_error();
+		return 0;
+	}
+#endif
 
 	ZEND_HASH_FOREACH_KEY_VAL(src, num_key, string_key, src_entry) {
 		src_zval = src_entry;
