@@ -568,6 +568,10 @@ ifeq ($(CONFIG_IPQ95XX),y)
 	-cp -av $(TOP)/firmwares/wireless/ath12k/* $(INSTALLDIR)/ath9k/lib/firmware/ath12k
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCC2072
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/WCN7850
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/IPQ5332
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/IPQ5424
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCN9589
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCN9625
 endif
 ifeq ($(CONFIG_IPQ6018),y)
 ifeq ($(CONFIG_IPQ95XX),y)
