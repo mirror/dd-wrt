@@ -112,7 +112,7 @@
 		los-gpio = <&gpio0 29 GPIO_ACTIVE_HIGH>;
 		tx-fault-gpio = <&gpio0 30 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio0 28 GPIO_ACTIVE_LOW>;
-//		tx-disable-gpio = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio0 31 GPIO_ACTIVE_HIGH>;
 	};
 
 	sfp1: sfp-p1 {
@@ -121,7 +121,7 @@
 		los-gpio = <&gpio0 25 GPIO_ACTIVE_HIGH>;
 		tx-fault-gpio = <&gpio0 26 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio0 24 GPIO_ACTIVE_LOW>;
-//		tx-disable-gpio = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio0 27 GPIO_ACTIVE_HIGH>;
 	};
 /*
 &gpio0 {
@@ -350,6 +350,9 @@
 		};
 	};
 };
+
+&serdes12 { tx-polarity = <PHY_POL_INVERT>; };
+&serdes13 { tx-polarity = <PHY_POL_INVERT>; };
 
 &uart1 {
 	status = "okay";
