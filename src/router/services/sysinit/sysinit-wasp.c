@@ -1198,18 +1198,21 @@ void start_wifi_drivers(void)
 #endif
 	}
 }
+#if defined(HAVE_RUCKUSH500)
 void start_postnetwork(void)
 {
-	#if defined(HAVE_RUCKUSH500)
-		setWirelessLed(0, 20);
-		setWirelessLed(1, 22);
-		setWirelessAssocLed(0, 19);
-		setWirelessAssocLed(1, 21);
-		ext_output_value(0x5, 93, 94, 7);
-	#endif
+	setWirelessLed(0, 20);
+	setWirelessLed(1, 22);
+	setWirelessAssocLed(0, 19);
+	setWirelessAssocLed(1, 21);
+	ext_output_value(0x5, 93, 94, 7);
 }
 
-
+void smartantenna_main(int argc, char *argv)
+{
+	ext_output_value(atoi(argv[3]), atoi(argv[1]), atoi(argv[2]), 7);
+}
+#endif
 void start_arch_defaults(void)
 {
 }
