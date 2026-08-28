@@ -1937,8 +1937,14 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 		fprintf(fp, "rnr=1\n");
 	}
 	if (has_ax(prefix) && nvram_nmatch("1", "%s_ema", prefix)) {
-		if (!has_hidden_ssid(prefix) && has_vaps(prefix))
-			fprintf(fp, "mbssid=2\n");
+		if (!strcmp(netmode, "xacn-mixed") || !strcmp(netmode, "ax-only") || !strcmp(netmode, "ax6-only") ||
+		    !strcmp(netmode, "ax5-only") || !strcmp(netmode, "bexacn-mixed") || !strcmp(netmode, "be-only") ||
+		    !strcmp(netmode, "be5-only") || !strcmp(netmode, "be6-only") || !strcmp(netmode, "beax5-only") ||
+		    !strcmp(netmode, "beax6-only") || !strcmp(netmode, "mixed") || !strcmp(netmode, "mixed5") ||
+		    !strcmp(netmode, "axg-only") || !strcmp(netmode, "be-only")) {
+			if (!has_hidden_ssid(prefix) && has_vaps(prefix))
+				fprintf(fp, "mbssid=2\n");
+		}
 	}
 	#ifdef HAVE_ATH9K
 
