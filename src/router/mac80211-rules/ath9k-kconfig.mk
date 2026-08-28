@@ -552,11 +552,15 @@ ifeq ($(CONFIG_ATH11K),y)
 	-cp -av $(TOP)/firmwares/wireless/ath11k/* $(INSTALLDIR)/ath9k/lib/firmware/ath11k
 endif
 ifeq ($(CONFIG_ATH12K),y)
-	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath12k
-	-cp -av $(TOP)/firmwares/wireless/ath12k/* $(INSTALLDIR)/ath9k/lib/firmware/ath12k
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/ath12k/
+	-cp -av $(TOP)/firmwares/wireless/ath12k/* $(INSTALLDIR)/ath9k/lib/firmware/ath12k/
 ifeq ($(CONFIG_IPQ95XX),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCC2072
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/WCN7850
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/IPQ5332
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/IPQ5424
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCN9589
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCN9625
 endif
 endif
 ifeq ($(CONFIG_IPQ95XX),y)
