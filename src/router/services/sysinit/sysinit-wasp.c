@@ -1208,7 +1208,7 @@ void start_postnetwork(void)
 	ext_output_value(0x5, 93, 94, 7);
 }
 
-void smartantenna_main(int argc, char *argv)
+void smartantenna_main(int argc, char *argv[])
 {
 	ext_output_value(atoi(argv[3]), atoi(argv[1]), atoi(argv[2]), 7);
 }
