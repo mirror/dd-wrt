@@ -56,7 +56,7 @@
  *
  ***************************************************************************/
 
-/* $Id: sys_wrap.h 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 
 #ifndef SYS_WRAP_H
 #define SYS_WRAP_H
@@ -108,5 +108,6 @@ sighandler_t Signal(int signum, sighandler_t handler);
 int Socket(int domain, int type, int protocol);
 char *Strdup(const char *s);
 ssize_t Write(int fd, const void *buf, size_t count);
+ssize_t Ignore(int fd, const void *buf, size_t count);
 
 #endif

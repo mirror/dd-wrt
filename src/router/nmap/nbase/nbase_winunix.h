@@ -58,7 +58,7 @@
  *
  ***************************************************************************/
 
-/* $Id: nbase_winunix.h 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 
 #ifndef NBASE_WINUNIX_H
 #define NBASE_WINUNIX_H

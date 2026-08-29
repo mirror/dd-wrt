@@ -17,7 +17,7 @@
 /* Modified by Fyodor (fyodor@nmap.org) for inclusion in the Nmap
  * Security Scanner.
  *
- * $Id: inet_ntop.c 35834 2016-06-04 02:46:12Z dmiller $
+ * $Id$
  */
 
 #include "nbase.h"
@@ -247,7 +247,7 @@ inet_ntop6(const unsigned char *src, char *dst, size_t size)
 #endif
         return (NULL);
     }
-    strncpy(dst, tmp, size);
+    Strncpy(dst, tmp, size);
     return (dst);
 }
 #endif

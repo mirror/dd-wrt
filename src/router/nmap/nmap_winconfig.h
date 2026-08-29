@@ -61,7 +61,7 @@
  *
  ***************************************************************************/
 
-/* $Id: nmap_winconfig.h 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 
 #ifndef NMAP_WINCONFIG_H
 #define NMAP_WINCONFIG_H

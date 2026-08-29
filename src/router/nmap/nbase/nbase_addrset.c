@@ -56,13 +56,12 @@
  *
  ***************************************************************************/
 
-/* $Id: nbase_addrset.c 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 
 /* The code in this file has tests in the file ncat/tests/test-addrset.sh. Run that
    program after making any big changes. Also, please add tests for any new
    features. */
 
-#include <limits.h> /* CHAR_BIT */
 #include <errno.h>
 #include <assert.h>
 
@@ -104,13 +103,6 @@ struct trie_node {
   struct trie_node *next_bit_zero;
 };
 
-/* We use bit vectors to represent what values are allowed in an IPv4 octet.
-   Each vector is built up of an array of bitvector_t (any convenient integer
-   type). */
-typedef unsigned long bitvector_t;
-/* A 256-element bit vector, representing legal values for one octet. */
-typedef bitvector_t octet_bitvector[(256 - 1) / (sizeof(unsigned long) * CHAR_BIT) + 1];
-
 /* A chain of tests for set inclusion. If one test is passed, the address is in
    the set. */
 struct addrset_elem {
@@ -131,7 +123,7 @@ struct addrset {
 
 /* Special node pointer to represent "all possible addresses"
  * This will be used to represent netmask specifications. */
-static struct trie_node g_TRIE_NODE_TRUE = {0};
+static struct trie_node g_TRIE_NODE_TRUE = {{0}, {0}, NULL, NULL};
 #define TRIE_NODE_TRUE &g_TRIE_NODE_TRUE
 
 struct addrset *addrset_new()
@@ -159,7 +151,9 @@ static void trie_free(struct trie_node *curr)
     }
     /* if next_bit_zero is valid, descend */
     if (curr->next_bit_zero != NULL && curr->next_bit_zero != TRIE_NODE_TRUE) {
+      struct trie_node *tmp = curr;
       curr = curr->next_bit_zero;
+      free(tmp);
     }
     else {
       /* next_bit_one was stashed, next_bit_zero is invalid. Free it and move back up the stack. */
@@ -215,7 +209,7 @@ static u32 common_mask(u32 a, u32 b)
     return 0;
   }
   else {
-    return ~((1 << (r + 1)) - 1);
+    return ~(((u32)1 << (r + 1)) - 1);
   }
 }
 
@@ -347,7 +341,7 @@ static void trie_split (struct trie_node *this, const u32 *addr, const u32 *mask
 static void _trie_insert (struct trie_node *this, const u32 *addr, const u32 *mask)
 {
   /* On entry, at least the 1st bit must match this node */
-  assert(this == TRIE_NODE_TRUE || (this->addr[0] ^ addr[0]) < (1 << 31));
+  assert(this == TRIE_NODE_TRUE || (this->addr[0] ^ addr[0]) < ((u32)1 << 31));
 
   while (this != NULL && this != TRIE_NODE_TRUE) {
     /* Split the node if necessary to ensure a match */
@@ -393,7 +387,7 @@ static int sockaddr_to_addr(const struct sockaddr *sa, u32 *addr)
     u8 i;
     unsigned char *addr6 = ((struct sockaddr_in6 *) sa)->sin6_addr.s6_addr;
     for (i=0; i < 4; i++) {
-      addr[i] = (addr6[i*4] << 24) + (addr6[i*4+1] << 16) + (addr6[i*4+2] << 8) + addr6[i*4+3];
+      addr[i] = ((u32)addr6[i*4] << 24) + ((u32)addr6[i*4+1] << 16) + ((u32)addr6[i*4+2] << 8) + addr6[i*4+3];
     }
   }
 #endif
@@ -583,10 +577,6 @@ static void in_addr_to_octets(const struct in_addr *ia, uint8_t octets[4])
     octets[2] = (uint8_t) ((hbo & (0xFFU << 8)) >> 8);
     octets[3] = (uint8_t) (hbo & 0xFFU);
 }
-
-#define BITVECTOR_BITS (sizeof(bitvector_t) * CHAR_BIT)
-#define BIT_SET(v, n) ((v)[(n) / BITVECTOR_BITS] |= 1UL << ((n) % BITVECTOR_BITS))
-#define BIT_IS_SET(v, n) (((v)[(n) / BITVECTOR_BITS] & 1UL << ((n) % BITVECTOR_BITS)) != 0)
 
 static int parse_ipv4_ranges(struct addrset_elem *elem, const char *spec);
 static void apply_ipv4_netmask_bits(struct addrset_elem *elem, int bits);

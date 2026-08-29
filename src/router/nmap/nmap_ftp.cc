@@ -58,7 +58,7 @@
  *
  ***************************************************************************/
 
-/* $Id: nmap_ftp.cc 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 #include "nmap.h"
 #include "nmap_ftp.h"
 #include "output.h"
@@ -341,11 +341,9 @@ void bounce_scan(Target *target, u16 *portarray, int numports,
       }
     }
     nextport:
-    if (SPM->mayBePrinted(NULL)) {
-      SPM->printStatsIfNecessary((double) i / numports, NULL);
-    }
-    else if (keyWasPressed()) {
-      SPM->printStats((double) i / numports, NULL);
+    if (!SPM->printStatsIfNecessary(i, numports, NULL)
+        && keyWasPressed()) {
+      SPM->printStats(i, numports, NULL);
       log_flush(LOG_STDOUT);
     }
   }

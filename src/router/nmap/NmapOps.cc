@@ -59,7 +59,7 @@
  *
  ***************************************************************************/
 
-/* $Id: NmapOps.cc 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 #ifdef WIN32
 #include "winfix.h"
 #endif
@@ -150,7 +150,7 @@ int NmapOps::pf() {
 }
 
 int NmapOps::SourceSockAddr(struct sockaddr_storage *ss, size_t *ss_len) {
-  if (sourcesocklen <= 0)
+  if (sourcesocklen <= 0 || sourcesock.ss_family == AF_UNSPEC)
     return 1;
   assert(sourcesocklen <= sizeof(*ss));
   if (ss)
@@ -162,7 +162,7 @@ int NmapOps::SourceSockAddr(struct sockaddr_storage *ss, size_t *ss_len) {
 
 /* Returns a const pointer to the source address if set, or NULL if unset. */
 const struct sockaddr_storage *NmapOps::SourceSockAddr() const {
-  if (sourcesock.ss_family == AF_UNSPEC)
+  if (sourcesocklen <= 0 || sourcesock.ss_family == AF_UNSPEC)
     return NULL;
   else
     return &sourcesock;
@@ -315,7 +315,6 @@ void NmapOps::Initialize() {
   ipoptionslen = 0;
   ipopt_firsthop = 0;
   ipopt_lasthop  = 0;
-  release_memory = false;
   topportlevel = -1;
 #ifndef NOLUA
   script = false;

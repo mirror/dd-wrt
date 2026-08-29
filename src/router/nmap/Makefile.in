@@ -48,7 +48,7 @@ CPPFLAGS = @CPPFLAGS@ $(DEFS)
 CFLAGS = @CFLAGS@ $(DBGFLAGS) $(CCOPT)
 STATIC =
 LDFLAGS = @LDFLAGS@ $(DBGFLAGS) $(STATIC)
-LIBS =  @LIBNSOCK_LIBS@ @LIBNBASE_LIBS@ @LIBPCRE_LIBS@ @LIBPCAP_LIBS@ $(LIBSSH2_LIBS) $(OPENSSL_LIBS) $(ZLIB_LIBS) libnetutil/libnetutil.a @LIBDNET_LIBS@ @LIBLUA_LIBS@ @LIBLINEAR_LIBS@ @LIBS@
+LIBS =  $(top_srcdir)/libnetutil/libnetutil.a @LIBNSOCK_LIBS@ @LIBNBASE_LIBS@ @LIBPCRE_LIBS@ @LIBPCAP_LIBS@ $(LIBSSH2_LIBS) $(OPENSSL_LIBS) $(ZLIB_LIBS) @LIBDNET_LIBS@ @LIBLUA_LIBS@ @LIBLINEAR_LIBS@ @LIBS@
 OPENSSL_LIBS = @OPENSSL_LIBS@
 LIBSSH2_LIBS = @LIBSSH2_LIBS@
 ZLIB_LIBS = @ZLIB_LIBS@
@@ -341,7 +341,7 @@ $(NCATDIR)/ncat.h: nmap.h
 
 # Update the Nping version number.
 $(NPINGDIR)/nping.h: nmap.h
-	sed -e 's/^#[ \t]*define[ \t]\+NPING_VERSION[ \t]\+\(".*"\)/#define NPING_VERSION "0.$(NMAP_VERSION)"/' $@ > $@.tmp
+	sed -e 's/^#[ \t]*define[ \t]\+NPING_VERSION[ \t]\+\(".*"\)/#define NPING_VERSION "$(NMAP_VERSION)"/' $@ > $@.tmp
 	mv -f $@.tmp $@
 
 # Update the version number used by Zenmap.
@@ -438,7 +438,7 @@ uninstall-nping:
 	@cd $(NPINGDIR) && $(MAKE) uninstall
 
 check-nse:
-	./nmap -d --datadir . --script=unittest --script-args=unittest.run
+	./nmap -d --datadir . --script=unittest --script-args=unittest.run --release-mem
 
 check-ncat:
 	@cd $(NCATDIR) && $(MAKE) check
@@ -452,7 +452,7 @@ check-nsock:
 check-zenmap:
 	@cd $(ZENMAPDIR)/test && $(PYTHON) run_tests.py
 
-check-nmap: tests/nmap_dns_test tests/expr_match_test
+check-nmap: tests/nmap_dns_test tests/expr_match_test tests/cstring_unescape_test
 	for test in $^; do ./$$test; done
 
 check: @NCAT_CHECK@ @NSOCK_CHECK@ @ZENMAP_CHECK@ @NSE_CHECK@ @NDIFF_CHECK@ check-nmap

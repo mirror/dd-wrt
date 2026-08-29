@@ -2,7 +2,7 @@ dnl # -*- mode: fundamental; -*-
 dnl # Autoconf configuration file for Nbase
 dnl #
 dnl # Process this file with autoconf to produce a configure script.
-dnl # $Id: configure.ac 38732 2023-10-30 19:01:08Z dmiller $
+dnl # $Id$
 
 # Because nbase is usually distributed with Nmap, the necessary files
 # config.guess, config.guess, and install-sh are not distributed with

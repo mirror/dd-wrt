@@ -1,6 +1,6 @@
 dnl -----------------------------------------------------------------
 dnl Nbase local macros
-dnl $Id: acinclude.m4 36993 2017-09-19 17:01:39Z dmiller $
+dnl $Id$
 dnl -----------------------------------------------------------------
 
 dnl
@@ -41,6 +41,7 @@ int main(void) {
     if (ai->ai_addr->sa_family != AF_INET) {
         return 1;
     }
+    freeaddrinfo(ai);
     return 0;
 }
 ],[

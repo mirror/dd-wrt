@@ -66,6 +66,16 @@
 
 char **cmdline_split(const char *cmdexec);
 
+volatile sig_atomic_t child_alive = 0;
+
+static void sigchld_watcher(int signum)
+{
+    int saved_errno = errno;
+    if (waitpid(-1, NULL, WNOHANG) > 0)
+        child_alive = 0;
+    errno = saved_errno;
+}
+
 /* fork and exec a child process with netexec. Close the given file descriptor
    in the parent process. Return the child's PID or -1 on error. */
 int netrun(struct fdinfo *info, char *cmdexec)
@@ -177,6 +187,10 @@ void netexec(struct fdinfo *info, char *cmdexec)
     if (pipe(child_stdin) == -1 || pipe(child_stdout) == -1)
         bye("Can't create child pipes: %s", strerror(errno));
 
+    /* No longer using ncat_listen.c's sigchld_handler */
+    Signal(SIGCHLD, sigchld_watcher);
+
+    child_alive = 1;
     pid = fork();
     if (pid == -1)
         bye("Error in fork: %s", strerror(errno));
@@ -242,7 +256,7 @@ void netexec(struct fdinfo *info, char *cmdexec)
     checked_fd_set(child_stdout[0], &all_fds);
 #define PIPE_CLOSE(_PipeName) shutdown_##_PipeName(info, child_stdout[0], child_stdin[1], &all_fds, &maxfd)
 
-    while (maxfd >= 0) {
+    while (child_alive && maxfd >= 0) {
         fd_set fds = all_fds;
         int r, n_r;
 
@@ -311,6 +325,16 @@ void netexec(struct fdinfo *info, char *cmdexec)
     }
 #endif
     close(info->fd);
+
+    while (waitpid(pid, NULL, 0) < 0) {
+        if (errno == ECHILD) {
+            break;
+        }
+        else if (errno == EINTR) {
+            continue;
+        }
+        die("waitpid");
+    }
 
     exit(0);
 }
@@ -409,27 +433,16 @@ void set_lf_mode(void)
 
 #ifdef HAVE_OPENSSL
 
-#define NCAT_CA_CERTS_PATH (NCAT_DATADIR "/" NCAT_CA_CERTS_FILE)
-
 int ssl_load_default_ca_certs(SSL_CTX *ctx)
 {
     int rc;
 
     if (o.debug)
-        logdebug("Using system default trusted CA certificates and those in %s.\n", NCAT_CA_CERTS_PATH);
+        logdebug("Using system default trusted CA certificates.\n");
 
     /* Load distribution-provided defaults, if any. */
     rc = SSL_CTX_set_default_verify_paths(ctx);
     ncat_assert(rc > 0);
-
-    /* Also load the trusted certificates we ship. */
-    rc = SSL_CTX_load_verify_locations(ctx, NCAT_CA_CERTS_PATH, NULL);
-    if (rc != 1) {
-        if (o.debug)
-            logdebug("Unable to load trusted CA certificates from %s: %s\n",
-                NCAT_CA_CERTS_PATH, ERR_error_string(ERR_get_error(), NULL));
-        return -1;
-    }
 
     return 0;
 }

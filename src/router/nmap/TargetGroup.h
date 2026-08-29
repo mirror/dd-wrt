@@ -61,7 +61,7 @@
  *
  ***************************************************************************/
 
-/* $Id: TargetGroup.h 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 
 #ifndef TARGETGROUP_H
 #define TARGETGROUP_H

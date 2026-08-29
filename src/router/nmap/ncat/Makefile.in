@@ -80,7 +80,6 @@ DATAFILES =
 ifneq ($(HAVE_OPENSSL),)
 SRCS += http_digest.c
 OBJS += http_digest.o
-DATAFILES = certs/ca-bundle.crt
 endif
 
 ifneq ($(NOLUA),yes)

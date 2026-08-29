@@ -534,6 +534,10 @@ function Packet:ip_parse(force_continue)
     stdnse.debug2("Packet.ip_parse: Not IPv4")
     return false
   end
+  if self.ip_hl < 5 then
+    stdnse.debug2("Packet.ip_parse: Header length bad")
+    return false
+  end
   self.ip = true
   self.ip_tos = self:u8(self.ip_offset + 1)
   self.ip_len = self:u16(self.ip_offset + 2)
@@ -686,10 +690,7 @@ function Packet:parse_options(offset, length)
   local opt_ptr = 0
   while opt_ptr < length do
     local t, l, d
-    options[op] = {}
-
     t = self:u8(offset + opt_ptr)
-    options[op].type = t
     if t==0 or t==1 then
       l = 1
       d = nil
@@ -699,6 +700,11 @@ function Packet:parse_options(offset, length)
         d = self:raw(offset + opt_ptr + 2, l-2)
       end
     end
+    if l==0 then
+      break
+    end
+    options[op] = {}
+    options[op].type = t
     options[op].len  = l
     options[op].data = d
     opt_ptr = opt_ptr + l
@@ -794,6 +800,10 @@ function Packet:tcp_parse(force_continue)
   self.tcp_seq = self:u32(self.tcp_offset + 4)
   self.tcp_ack = self:u32(self.tcp_offset + 8)
   self.tcp_hl = (self:u8(self.tcp_offset+12) & 0xF0) >> 4 -- header_length or data_offset
+  if self.tcp_hl < 5 then
+    stdnse.debug2("Packet.tcp_parse: Header length bad")
+    return false
+  end
   self.tcp_x2 = (self:u8(self.tcp_offset+12) & 0x0F)
   self.tcp_flags = self:u8(self.tcp_offset + 13)
   self.tcp_th_fin = (self.tcp_flags & 0x01)~=0 -- true/false

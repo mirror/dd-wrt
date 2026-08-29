@@ -65,7 +65,6 @@
 #define NPINGTARGET_H
 
 #include "nping.h"
-#include "common.h"
 #include "../libnetutil/netutil.h"
 
 #ifndef INET6_ADDRSTRLEN
@@ -202,7 +201,6 @@ class NpingTarget {
     const char *getSourceIPStr();
     const char *getSpoofedSourceIPStr();
     const char *getNextHopIPStr();
-    const char *getMACStr(u8 *mac);
     const char *getTargetMACStr();
     const char *getSourceMACStr();
     const char *getNextHopMACStr(); 

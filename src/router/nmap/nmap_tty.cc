@@ -125,7 +125,7 @@ extern int tcsetattr(int fd, int actions, struct termios *termios_p);
 #endif
 #endif
 
-static int tty_fd = 0;
+static volatile sig_atomic_t tty_fd = 0;
 static struct termios saved_ti;
 
 static int tty_getchar()
@@ -246,6 +246,10 @@ void tty_init()
 
 #endif  //!win32
 
+TTYState::~TTYState() {
+  tty_done();
+}
+
 /* Catches all of the predefined
    keypresses and interpret them, and it will also tell you if you
    should print anything. A value of true being returned means a
@@ -257,10 +261,7 @@ bool keyWasPressed()
   static struct timeval stats_time = { 0 };
   int c;
 
-  if (o.noninteractive)
-    return false;
-
-  if ((c = tty_getchar()) >= 0) {
+  if (!o.noninteractive && (c = tty_getchar()) >= 0) {
     tty_flush(); /* flush input queue */
 
     // printf("You pressed key '%c'!\n", c);

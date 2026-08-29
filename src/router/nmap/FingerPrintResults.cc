@@ -59,7 +59,7 @@
  *
  ***************************************************************************/
 
-/* $Id: FingerPrintResults.cc 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 
 #include "FingerPrintResults.h"
 #include "osscan.h"

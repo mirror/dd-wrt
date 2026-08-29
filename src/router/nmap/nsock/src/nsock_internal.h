@@ -50,7 +50,7 @@
  *
  ***************************************************************************/
 
-/* $Id: nsock_internal.h 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 
 #ifndef NSOCK_INTERNAL_H
 #define NSOCK_INTERNAL_H
@@ -203,6 +203,10 @@ struct npool {
   SSL_CTX *sslctx;
 #ifndef OPENSSL_NO_DTLS
   SSL_CTX *dtlsctx;
+#endif
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+  OSSL_PROVIDER *legacy_provider;
+  OSSL_PROVIDER *default_provider;
 #endif
 #endif
 

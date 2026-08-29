@@ -1,4 +1,4 @@
-# $Id: nmap-rpc 39349 2026-02-23 16:39:09Z dmiller $ -*- mode: fundamental; -*-
+# $Id$ -*- mode: fundamental; -*-
 #
 # /***************************************************************************
 # * nmap-rpc -- Known RPC numbers.  Nmap uses them for RPC grinding.        *

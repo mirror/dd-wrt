@@ -56,7 +56,7 @@
  *
  ***************************************************************************/
 
-/* $Id: ncat_ssl.h 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 #ifndef NCAT_SSL_H
 #define NCAT_SSL_H
 
@@ -65,8 +65,6 @@
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
 #include <openssl/err.h>
-
-#define NCAT_CA_CERTS_FILE "ca-bundle.crt"
 
 enum {
     SHA1_BYTES = 160 / 8,

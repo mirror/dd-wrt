@@ -56,7 +56,7 @@
  *
  ***************************************************************************/
 
-/* $Id: ncat_core.h 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 
 #ifndef NCAT_CORE_H
 #define NCAT_CORE_H
@@ -213,7 +213,7 @@ int ncat_send(struct fdinfo *fdn, const char *buf, size_t size);
 extern int ncat_broadcast(fd_set *fds, const fd_list_t *fdlist, const char *msg, size_t size);
 
 /* Do telnet WILL/WONT DO/DONT negotiations */
-extern void dotelnet(int s, unsigned char *buf, size_t bufsiz);
+extern void dotelnet(int s, unsigned char *buf, int *bufsiz);
 
 /* sleep(), usleep(), msleep(), Sleep() -- all together now, "portability".
  *

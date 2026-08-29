@@ -49,7 +49,7 @@
  *
  ***************************************************************************/
 
-/* $Id: nsock_core.c 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 
 #include "nsock_internal.h"
 #include "gh_list.h"
@@ -364,7 +364,14 @@ void handle_connect_result(struct npool *ms, struct nevent *nse, enum nse_status
     if (nse->type == NSE_TYPE_CONNECT_SSL &&
         nse->status == NSE_STATUS_SUCCESS) {
 #if HAVE_OPENSSL
-      sslctx = iod->lastproto == IPPROTO_UDP ? ms->dtlsctx : ms->sslctx;
+      if (iod->lastproto == IPPROTO_UDP)
+#ifndef OPENSSL_NO_DTLS
+        sslctx = ms->dtlsctx;
+#else
+        fatal("%s called with no OpenSSL DTLS support", __func__);
+#endif
+      else
+        sslctx = ms->sslctx;
       assert(sslctx != NULL);
       /* Reuse iod->ssl if present. If set, this is the second try at connection
          without the SSL_OP_NO_SSLv2 option set. */
@@ -1252,6 +1259,8 @@ void nsock_pool_add_event(struct npool *nsp, struct nevent *nse) {
     assert(nse->type >= 0 && nse->type < NSE_TYPE_MAX);
     event_dispatch_and_delete(nsp, nse, 1);
     // No need to call nevent_unref since we never added it to any lists!
+    // However, we do need to keep ownership of the event object.
+    gh_list_append(&nsp->free_events, &nse->nodeq_io);
     return;
   }
 

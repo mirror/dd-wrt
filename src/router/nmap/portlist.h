@@ -58,7 +58,7 @@
  *
  ***************************************************************************/
 
-/* $Id: portlist.h 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 
 #ifndef PORTLIST_H
 #define PORTLIST_H
@@ -136,6 +136,10 @@ struct serviceDeductions {
   // if we should give the user a service fingerprint to submit, here it is.  Otherwise NULL.
   char *service_fp;
   enum service_detection_type dtype; // definition above
+private:
+  // Forbid copy and assignment
+  serviceDeductions(const serviceDeductions&);
+  serviceDeductions& operator=(const serviceDeductions&);
 };
 
 class Port {
@@ -236,10 +240,9 @@ class PortList {
                               const std::vector<const char *> *cpe,
                               const char *fingerprint);
 
-  // pass in an allocated struct serviceDeductions (don't worry about initializing, and
-  // you don't have to free any internal ptrs.  See the serviceDeductions definition for
-  // the fields that are populated.
-  void getServiceDeductions(u16 portno, int protocol, struct serviceDeductions *sd) const;
+  // The returned serviceDeductions* may point to a static object that will be
+  // overwritten by the next call.
+  const serviceDeductions *getServiceDeductions(u16 portno, int protocol) const;
 
 #ifndef NOLUA
   void addScriptResult(u16 portno, int protocol, ScriptResult *sr);

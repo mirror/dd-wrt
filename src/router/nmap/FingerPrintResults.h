@@ -59,7 +59,7 @@
  *
  ***************************************************************************/
 
-/* $Id: FingerPrintResults.h 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 
 #ifndef FINGERPRINTRESULTS_H
 #define FINGERPRINTRESULTS_H

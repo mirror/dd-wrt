@@ -49,7 +49,7 @@
  *
  ***************************************************************************/
 
-/* $Id: nsock_pcap.h 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 
 #ifndef NSOCK_PCAP_H
 #define NSOCK_PCAP_H
@@ -140,8 +140,8 @@ typedef struct{
 
 typedef struct{
   struct timeval ts;
-  int caplen;
-  int len;
+  u32 caplen;
+  u32 len;
   const unsigned char *packet;  /* caplen bytes */
 } nsock_pcap;
 

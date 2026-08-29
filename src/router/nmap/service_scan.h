@@ -60,7 +60,7 @@
  *
  ***************************************************************************/
 
-/* $Id: service_scan.h 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 
 #ifndef SERVICE_SCAN_H
 #define SERVICE_SCAN_H

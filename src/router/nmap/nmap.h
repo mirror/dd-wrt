@@ -59,7 +59,7 @@
  *
  ***************************************************************************/
 
-/* $Id: nmap.h 39387 2026-03-19 18:06:20Z dmiller $ */
+/* $Id$ */
 
 #ifndef NMAP_H
 #define NMAP_H
@@ -123,7 +123,7 @@
 /* Edit this definition only within the quotes, because it is read from this
    file by the makefiles. */
 #define NMAP_MAJOR 7
-#define NMAP_MINOR 99
+#define NMAP_MINOR 991
 #define NMAP_BUILD 0
 /* SVN, BETA, etc. */
 #define NMAP_SPECIAL ""

@@ -59,7 +59,7 @@
  *
  ***************************************************************************/
 
-/* $Id: nmap.cc 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 
 #ifdef WIN32
 #include "winfix.h"
@@ -728,7 +728,7 @@ void parse_options(int argc, char **argv) {
         } else if (strcmp(long_options[option_index].name, "nogcc") == 0) {
           o.nogcc = true;
         } else if (strcmp(long_options[option_index].name, "release-memory") == 0) {
-          o.release_memory = true;
+          /* No-op. We always release memory now. */
         } else if (strcmp(long_options[option_index].name, "min-parallelism") == 0) {
           o.min_parallelism = atoi(optarg);
           if (o.min_parallelism < 1)
@@ -888,31 +888,47 @@ void parse_options(int argc, char **argv) {
         } else if (strcmp(long_options[option_index].name, "webxml") == 0) {
           o.setXSLStyleSheet("https://svn.nmap.org/nmap/docs/nmap.xsl");
         } else if (strcmp(long_options[option_index].name, "oN") == 0) {
+          if (delayed_options.normalfilename)
+            fatal("Can't use -oN multiple times or with -oA.");
           test_file_name(optarg, long_options[option_index].name);
           delayed_options.normalfilename = logfilename(optarg, &local_time);
         } else if (strcmp(long_options[option_index].name, "oG") == 0
                    || strcmp(long_options[option_index].name, "oM") == 0) {
+          if (long_options[option_index].name[1] == 'M')
+            delayed_options.warn_deprecated("oM", "oG");
+          if (delayed_options.machinefilename)
+            fatal("Can't use -oG multiple times or with -oA.");
           test_file_name(optarg, long_options[option_index].name);
           delayed_options.machinefilename = logfilename(optarg, &local_time);
           if (long_options[option_index].name[1] == 'M')
             delayed_options.warn_deprecated("oM", "oG");
         } else if (strcmp(long_options[option_index].name, "oS") == 0) {
+          if (delayed_options.kiddiefilename)
+            fatal("Can't use -oS multiple times.");
           test_file_name(optarg, long_options[option_index].name);
           delayed_options.kiddiefilename = logfilename(optarg, &local_time);
         } else if (strcmp(long_options[option_index].name, "oH") == 0) {
           fatal("HTML output is not directly supported, though Nmap includes an XSL for transforming XML output into HTML.  See the man page.");
         } else if (strcmp(long_options[option_index].name, "oX") == 0) {
+          if (delayed_options.xmlfilename)
+            fatal("Can't use -oX multiple times or with -oA.");
           test_file_name(optarg, long_options[option_index].name);
           delayed_options.xmlfilename = logfilename(optarg, &local_time);
         } else if (strcmp(long_options[option_index].name, "oA") == 0) {
           char buf[MAXPATHLEN];
+          if (delayed_options.normalfilename || delayed_options.machinefilename || delayed_options.xmlfilename)
+            fatal("Can't use -oA multiple times or with -oN, -oX, or -oG.");
+          char *logname = logfilename(optarg, &local_time);
+          if (strlen(logname) > (MAXPATHLEN - sizeof(".gnmap")))
+            fatal("Filename too long!");
           test_file_name(optarg, long_options[option_index].name);
-          Snprintf(buf, sizeof(buf), "%s.nmap", logfilename(optarg, &local_time));
+          Snprintf(buf, sizeof(buf), "%s.nmap", logname);
           delayed_options.normalfilename = strdup(buf);
-          Snprintf(buf, sizeof(buf), "%s.gnmap", logfilename(optarg, &local_time));
+          Snprintf(buf, sizeof(buf), "%s.gnmap", logname);
           delayed_options.machinefilename = strdup(buf);
-          Snprintf(buf, sizeof(buf), "%s.xml", logfilename(optarg, &local_time));
+          Snprintf(buf, sizeof(buf), "%s.xml", logname);
           delayed_options.xmlfilename = strdup(buf);
+          free(logname);
         } else if (strcmp(long_options[option_index].name, "thc") == 0) {
           log_write(LOG_STDOUT, "!!Greets to Van Hauser, Plasmoid, Skyper and the rest of THC!!\n");
           exit(0);
@@ -1111,6 +1127,8 @@ void parse_options(int argc, char **argv) {
       break;
     case 'm':
       delayed_options.warn_deprecated("m", "oG");
+      if (delayed_options.machinefilename)
+        fatal("Can't use -oG multiple times or with -oA.");
       test_file_name(optarg, "oG");
       delayed_options.machinefilename = logfilename(optarg, &local_time);
       break;
@@ -1127,6 +1145,8 @@ void parse_options(int argc, char **argv) {
       break;
     case 'o':
       delayed_options.warn_deprecated("o", "oN");
+      if (delayed_options.normalfilename)
+        fatal("Can't use -oN multiple times or with -oA.");
       test_file_name(optarg, "o");
       delayed_options.normalfilename = logfilename(optarg, &local_time);
       break;
@@ -1838,6 +1858,7 @@ void nmap_free_mem() {
   AllProbes::service_scan_free();
   traceroute_hop_cache_clear();
   nsock_set_default_engine(NULL);
+  close_nse();
 }
 
 int nmap_main(int argc, char *argv[]) {
@@ -1898,8 +1919,7 @@ int nmap_main(int argc, char *argv[]) {
   else
     nbase_set_log(fatal, NULL);
 
-
-  tty_init(); // Put the keyboard in raw mode
+  TTYState ttystate; // Put the keyboard in raw mode
 
 #ifdef WIN32
   // Must come after parse_options because of --unprivileged
@@ -2177,7 +2197,7 @@ int nmap_main(int argc, char *argv[]) {
             currenths->setSourceSockAddr(&ss, sslen);
             if (! sourceaddrwarning) {
               error("WARNING: We could not determine for sure which interface to use, so we are guessing %s .  If this is wrong, use -S <my_IP_address>.",
-                    inet_socktop(&ss));
+                    inet_socktop_safe(&ss));
               sourceaddrwarning = 1;
             }
           }
@@ -2370,8 +2390,9 @@ int nmap_main(int argc, char *argv[]) {
 
   eth_close_cached();
 
-  if (o.release_memory) {
-    nmap_free_mem();
+  nmap_free_mem();
+  if (o.resuming) {
+    arg_parse_free(argv);
   }
   return 0;
 }
@@ -2812,9 +2833,9 @@ static void display_nmap_version() {
 
 #if HAVE_LIBSSH2
 #ifdef LIBSSH2_INCLUDED
-  with.push_back(std::string("nmap-libssh2-") + get_word_or_quote(LIBSSH2_VERSION, 0));
+  with.push_back(std::string("nmap-libssh2-") + libssh2_version(0));
 #else
-  with.push_back(std::string("libssh2-") + get_word_or_quote(LIBSSH2_VERSION, 0));
+  with.push_back(std::string("libssh2-") + libssh2_version(0));
 #endif
 #else
   without.push_back("libssh2");

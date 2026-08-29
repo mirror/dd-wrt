@@ -59,7 +59,7 @@
  *
  ***************************************************************************/
 
-/* $Id: NmapOps.h 39343 2026-02-16 22:33:40Z dmiller $ */
+/* $Id$ */
 
 #ifndef NMAP_OPS_H
 #define NMAP_OPS_H
@@ -339,7 +339,6 @@ class NmapOps {
   bool noninteractive;
   char *locale;
 
-  bool release_memory;	/* suggest to release memory before quitting. used to find memory leaks. */
  private:
   int max_os_tries;
   int max_rtt_timeout;

@@ -56,7 +56,7 @@
  *
  ***************************************************************************/
 
-/* $Id: ncat.h 39387 2026-03-19 18:06:20Z dmiller $ */
+/* $Id$ */
 
 #ifndef NCAT_H_
 #define NCAT_H_
@@ -79,7 +79,7 @@
 /* Ncat information for output, etc. */
 #define NCAT_NAME "Ncat"
 #define NCAT_URL "https://nmap.org/ncat"
-#define NCAT_VERSION "7.99"
+#define NCAT_VERSION "7.991"
 
 #ifndef __GNUC__
 #ifndef __attribute__

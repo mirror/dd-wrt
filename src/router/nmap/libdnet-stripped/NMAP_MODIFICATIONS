@@ -1,4 +1,4 @@
-$Id: NMAP_MODIFICATIONS 39108 2025-03-31 19:30:47Z dmiller $
+$Id$
 
 This is Dug Song's excellent Libdnet networking library version 1.18.
 It has been stripped down for inclusion within Nmap and modified as follows:

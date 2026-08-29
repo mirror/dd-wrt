@@ -56,7 +56,7 @@
  *
  ***************************************************************************/
 
-/* $Id: ncat_proxy.c 39357 2026-03-05 20:16:22Z dmiller $ */
+/* $Id$ */
 
 #include "base64.h"
 #include "http.h"
@@ -72,8 +72,10 @@
 /* SIG_CHLD handler */
 static void proxyreaper(int signo)
 {
+    int saved_errno = errno;
     while (waitpid(-1, NULL, WNOHANG) > 0)
         ;
+    errno = saved_errno;
 }
 #endif
 
