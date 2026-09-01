@@ -2201,6 +2201,8 @@ install: all
 	install -d $(INSTALLDIR)/services/etc
 	install services_main $(INSTALLDIR)/services/sbin/service
 	install bin/defaults.bin $(INSTALLDIR)/services/etc
+	cd $(INSTALLDIR)/services/sbin && ln -sf service smartantenna
+
 ifeq ($(CONFIG_RT2880),y)
 	install -d $(INSTALLDIR)/services/sbin	
 	install switch $(INSTALLDIR)/services/sbin
