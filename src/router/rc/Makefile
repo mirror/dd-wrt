@@ -1376,7 +1376,9 @@ resetbutton: resetbutton.o
 
 wlanled: wlanled.o
 	@echo "[LD] $@"
+ifeq ($(CONFIG_ATH9K),y)
 	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ -L$(TOP)/libnl-tiny -lnl-tiny
+endif
 
 ttraff: ttraff.o
 	@echo "[LD] $@"
