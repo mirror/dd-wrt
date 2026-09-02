@@ -142,7 +142,8 @@ Ftp::CtrlChannel::CtrlChannel():
     last_reply(nullptr),
     replycode(0)
 {
-    buf = static_cast<char*>(memAllocBuf(4096, &size));
+    // min() limits the initial read size when Config.maxReplyHeaderSize is huge
+    buf = static_cast<char*>(memAllocBuf(min(size_t(4096), Config.maxReplyHeaderSize), &size));
 }
 
 Ftp::CtrlChannel::~CtrlChannel()
@@ -344,6 +345,20 @@ Ftp::Client::scheduleReadControlReply(int buffered_ok)
             commUnsetConnTimeout(data.conn);
         }
 
+        const auto maxSize = min(Config.maxReplyHeaderSize, std::numeric_limits<decltype(ctrl.size)>::max());
+        if (ctrl.offset >= maxSize) {
+            debugs(9, 2, "FTP control reply size will exceed " << maxSize << "; reply_header_max_size=" << Config.maxReplyHeaderSize);
+            failed(ERR_FTP_FAILURE, 0);
+            return;
+        }
+
+        if (ctrl.offset == ctrl.size) {
+            const auto newSize = (ctrl.size <= maxSize/2) ? (ctrl.size*2) : maxSize;
+            Assure(newSize > ctrl.size);
+            ctrl.buf = static_cast<char*>(memReallocBuf(ctrl.buf, newSize, &ctrl.size));
+            Assure(ctrl.offset < ctrl.size);
+        }
+
         const time_t tout = shortenReadTimeout ?
                             min(Config.Timeout.connect, Config.Timeout.read):
                             Config.Timeout.read;
@@ -355,7 +370,13 @@ Ftp::Client::scheduleReadControlReply(int buffered_ok)
 
         typedef CommCbMemFunT<Client, CommIoCbParams> Dialer;
         AsyncCall::Pointer reader = JobCallback(9, 5, Dialer, this, Ftp::Client::readControlReply);
-        comm_read(ctrl.conn, ctrl.buf + ctrl.offset, ctrl.size - ctrl.offset, reader);
+        // Do not accumulate more than Config.maxReplyHeaderSize bytes,
+        // even if we happened to have enough buffer space to do so.
+        const auto maxOffset = min(ctrl.size, Config.maxReplyHeaderSize);
+        Assure(maxOffset > ctrl.offset); // we can make progress (and no underflows)
+        Assure(maxOffset <= ctrl.size); // paranoid: we will not read beyond our buffer space
+        const auto maxReadSize = maxOffset - ctrl.offset;
+        comm_read(ctrl.conn, ctrl.buf + ctrl.offset, maxReadSize, reader);
     }
 }
 
@@ -423,15 +444,15 @@ Ftp::Client::handleControlReply()
 
     size_t bytes_used = 0;
     wordlistDestroy(&ctrl.message);
-
-    if (!parseControlReply(bytes_used)) {
-        /* didn't get complete reply yet */
-
-        if (ctrl.offset == ctrl.size) {
-            ctrl.buf = static_cast<char*>(memReallocBuf(ctrl.buf, ctrl.size << 1, &ctrl.size));
+    try {
+        if (!parseControlReply(bytes_used)) {
+            /* didn't get complete reply yet */
+            scheduleReadControlReply(0);
+            return;
         }
-
-        scheduleReadControlReply(0);
+    } catch (...) {
+        debugs(9, 2, "ERROR: Cannot parse control reply: " << CurrentException);
+        failed(ERR_FTP_FAILURE, 0);
         return;
     }
 
@@ -823,6 +844,21 @@ Ftp::Client::dataClosed(const CommCloseCbParams &)
 void
 Ftp::Client::writeCommand(const char *buf)
 {
+    // The caller must supply a non-empty command followed by CRLF.
+    // TODO: Move CRLF appending code from callers to here.
+    const auto bufLen = strlen(buf);
+    Assure(bufLen > 2);
+    Assure(buf[bufLen-2] == '\r');
+    Assure(buf[bufLen-1] == '\n');
+
+    const auto crlfCharPosition = strcspn(buf, crlf);
+    if (crlfCharPosition != bufLen-2) {
+        const auto invalidCharName = buf[crlfCharPosition] == '\r' ? "CR" : "LF";
+        debugs(9, 2, "ERROR: Caller assembled a malformed FTP command. Found " << invalidCharName << " at position " << crlfCharPosition);
+        failed(ERR_FTP_FAILURE, 0);
+        return;
+    }
+
     char *ebuf;
     /* trace FTP protocol communications at level 2 */
     debugs(9, 2, "ftp<< " << buf);
@@ -930,7 +966,7 @@ Ftp::Client::maybeReadVirginBody()
 
     debugs(9, 9, "FTP may read up to " << read_sz << " bytes");
 
-    if (read_sz < 2) // see http.cc
+    if (!read_sz)
         return;
 
     data.read_pending = true;
@@ -1104,11 +1140,12 @@ bool
 Ftp::Client::parseControlReply(size_t &bytesUsed)
 {
     char *s;
-    char *sbuf;
     char *end;
     int usable;
     int complete = 0;
     wordlist *head = nullptr;
+    auto headDeleter = [](wordlist *h) { wordlistDestroy(&h); };
+    auto headGuard = std::unique_ptr<wordlist, decltype(headDeleter)>(head, headDeleter);
     wordlist *list;
     wordlist **tail = &head;
     size_t linelen;
@@ -1117,7 +1154,8 @@ Ftp::Client::parseControlReply(size_t &bytesUsed)
      * We need a NULL-terminated buffer for scanning, ick
      */
     const size_t len = ctrl.offset;
-    sbuf = (char *)xmalloc(len + 1);
+    const auto sbufOwner = std::unique_ptr<void, decltype(&xfree)>(xmalloc(len + 1), xfree);
+    const auto sbuf = static_cast<char*>(sbufOwner.get());
     xstrncpy(sbuf, ctrl.buf, len + 1);
     end = sbuf + len - 1;
 
@@ -1130,7 +1168,6 @@ Ftp::Client::parseControlReply(size_t &bytesUsed)
 
     if (usable == 0) {
         debugs(9, 3, "didn't find end of line");
-        safe_free(sbuf);
         return false;
     }
 
@@ -1139,6 +1176,9 @@ Ftp::Client::parseControlReply(size_t &bytesUsed)
     s = sbuf;
     s += strspn(s, crlf);
 
+    // cumulative length of parsed control reply lines added to the list
+    size_t replyLength = 0;
+
     for (; s < end; s += strcspn(s, crlf), s += strspn(s, crlf)) {
         if (complete)
             break;
@@ -1146,14 +1186,20 @@ Ftp::Client::parseControlReply(size_t &bytesUsed)
         debugs(9, 5, "s = {" << s << "}");
 
         linelen = strcspn(s, crlf) + 1;
+        replyLength += linelen;
 
         if (linelen < 2)
             break;
+
+        if (replyLength > String::RawSizeMaxXXX())
+            throw TextException(ToSBuf("control reply too long: ", replyLength, " exceeds safe limit of ", String::RawSizeMaxXXX(), " bytes"), Here());
 
         if (linelen > 3)
             complete = (*s >= '0' && *s <= '9' && *(s + 3) == ' ');
 
         list = new wordlist();
+        if (!headGuard)
+            headGuard.reset(list);
 
         list->key = (char *)xmalloc(linelen);
 
@@ -1175,14 +1221,12 @@ Ftp::Client::parseControlReply(size_t &bytesUsed)
     }
 
     bytesUsed = static_cast<size_t>(s - sbuf);
-    safe_free(sbuf);
 
     if (!complete) {
-        wordlistDestroy(&head);
         return false;
     }
 
-    ctrl.message = head;
+    ctrl.message = headGuard.release();
     assert(ctrl.replycode >= 0);
     assert(ctrl.last_reply);
     assert(ctrl.message);
