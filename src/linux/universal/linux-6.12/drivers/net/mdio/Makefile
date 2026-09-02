@@ -24,6 +24,7 @@ obj-$(CONFIG_MDIO_REGMAP)		+= mdio-regmap.o
 obj-$(CONFIG_MDIO_REALTEK_OTTO)	+= mdio-realtek-otto.o
 obj-$(CONFIG_MDIO_REALTEK_OTTO_AUX)	+= mdio-realtek-otto-aux.o
 obj-$(CONFIG_MDIO_REALTEK_OTTO_SERDES)	+= mdio-realtek-otto-serdes.o
+obj-$(CONFIG_MDIO_REALTEK_OTTO_RTL960X)	+= mdio-realtek-otto-rtl960x.o
 obj-$(CONFIG_MDIO_SMBUS)		+= mdio-smbus.o
 obj-$(CONFIG_MDIO_SUN4I)		+= mdio-sun4i.o
 obj-$(CONFIG_MDIO_THUNDER)		+= mdio-thunder.o

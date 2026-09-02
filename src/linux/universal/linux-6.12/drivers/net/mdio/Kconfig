@@ -238,6 +238,13 @@ config MDIO_REALTEK_OTTO_SERDES
         help
           This driver provides MDIO access to the RTL83xx/RTL93xx SerDes.
 
+config MDIO_REALTEK_OTTO_RTL960X
+	tristate "Realtek Otto RTL960X MDIO interface support"
+	default MACH_REALTEK_RTL && RTL960X
+	depends on (MACH_REALTEK_RTL && RTL960X) || COMPILE_TEST
+	help
+	  This driver supports the internal MDIO bus on RTL960x SoCs.
+
 config MDIO_THUNDER
 	tristate "ThunderX SOCs MDIO buses"
 	depends on 64BIT

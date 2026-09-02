@@ -4,6 +4,7 @@
 
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/phy/phy.h>
 
 / {
 	compatible = "edgecore,ecs4125-10p", "realtek,rtl838x-soc";
@@ -351,9 +352,10 @@
 	};
 };
 
+/*
 &serdes12 { tx-polarity = <PHY_POL_INVERT>; };
 &serdes13 { tx-polarity = <PHY_POL_INVERT>; };
-
+*/
 &uart1 {
 	status = "okay";
 };
