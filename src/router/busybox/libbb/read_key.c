@@ -130,7 +130,12 @@ int64_t FAST_FUNC read_key(int fd, char *buffer, int timeout)
 			 * regardless of SA_RESTART-ness of that signal!
 			 */
 			/* test bb_got_signal, then poll(), atomically wrt signals */
+#ifdef ppoll
 			n = check_got_signal_and_poll(pfd, timeout);
+#else
+			n = poll(pfd, 1, timeout);
+#endif
+
 			if (n < 0 && errno == EINTR)
 				return n;
 			if (n == 0) {

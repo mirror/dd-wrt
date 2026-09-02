@@ -217,7 +217,11 @@ shell_builtin_read(struct builtin_read_params *params)
 		pfd->events = POLLIN;
 
 		/* test bb_got_signal, then poll(), atomically wrt signals */
+#ifdef ppoll
 		if (check_got_signal_and_poll(pfd, timeout) <= 0) {
+#else
+		if (poll(pfd, 1, timeout) <= 0) {
+#endif
 			/* timed out, or some error */
 			err = errno;
 			if (!err) { /* timed out */

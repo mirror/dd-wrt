@@ -20,6 +20,7 @@
  * is racy.
  * This is a bit heavy-handed, but safe wrt races:
  */
+#ifdef ppoll
 int FAST_FUNC check_got_signal_and_poll(struct pollfd pfd[1], int timeout)
 {
 	int n;
@@ -46,3 +47,4 @@ int FAST_FUNC check_got_signal_and_poll(struct pollfd pfd[1], int timeout)
 	sigprocmask2(SIG_SETMASK, &orig_mask);
 	return n;
 }
+#endif
