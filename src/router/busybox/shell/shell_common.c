@@ -217,7 +217,7 @@ shell_builtin_read(struct builtin_read_params *params)
 		pfd->events = POLLIN;
 
 		/* test bb_got_signal, then poll(), atomically wrt signals */
-#ifdef ppoll
+#ifdef __NR_ppoll
 		if (check_got_signal_and_poll(pfd, timeout) <= 0) {
 #else
 		if (poll(pfd, 1, timeout) <= 0) {

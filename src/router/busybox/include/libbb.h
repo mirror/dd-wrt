@@ -12,6 +12,7 @@
 
 #include "platform.h"
 
+#include <syscall.h>
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>

@@ -9,7 +9,6 @@
 //kbuild:lib-y += poll_with_signals.o
 
 #include "libbb.h"
-
 /* Shells, for example, need their line input and "read" builtin
  * to be interruptible, and the naive handling of it a-la:
  *	if (bb_got_signal) {
@@ -20,7 +19,7 @@
  * is racy.
  * This is a bit heavy-handed, but safe wrt races:
  */
-#ifdef ppoll
+#ifdef __NR_ppoll
 int FAST_FUNC check_got_signal_and_poll(struct pollfd pfd[1], int timeout)
 {
 	int n;
