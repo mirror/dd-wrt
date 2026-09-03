@@ -15,6 +15,49 @@
 #define RTL930X_MAC_L2_PORT_CTRL(port)		(0x3268 + (((port) << 6)))
 #define RTL931X_MAC_L2_PORT_CTRL		(0x6000)
 
+/* MAC maximum packet length (jumbo frame) control.
+ *
+ * The switch MAC drops frames whose L2 length exceeds the configured maximum.
+ * A family holds either one register per user port or a single one for the
+ * whole switch. The length is a direct byte value held in two 14-bit fields
+ * (high-speed links in [13:0], 10/100M links in [27:14]); bit 28 selects
+ * whether VLAN tag bytes count towards the limit.
+ */
+
+/* RTL930x holds one register per user port, inside the 64-byte MAC block of
+ * the port. The CPU port has a row of its own, which the ethernet driver owns
+ * and programs from the conduit MTU. Register offsets taken from the
+ * reverse-engineered Realtek register maps at https://svanheule.net/realtek/
+ */
+#define RTL930X_MAC_L2_PORT_MAX_LEN_CTRL(port)	(0x326C + (((port) << 6)))
+/* RTL931x covers ports 0 to 55 only, one word each. The CPU port has no row:
+ * the word that would follow the array is MAC_DBG_SEL_CTRL.
+ */
+#define RTL931X_MAC_L2_PORT_MAX_LEN_CTRL	(0x5554)
+/* RTL838x and RTL839x hold one limit for the whole switch instead, bounding
+ * the CPU port with it. RTL838x mirrors it in a second register, and the
+ * vendor SDK writes both (dal_maple_switch_maxPktLenLinkSpeed_set()).
+ */
+#define RTL838X_MAC_MAX_LEN_CTRL		(0xa9e0)
+#define RTL838X_MAC_MAX_LEN_CTRL_DUP		(0x6b00)
+#define RTL839X_MAC_MAX_LEN_CTRL		(0x02b0)
+
+/* Both length fields are 14 bits wide (hardware maximum 16383 bytes). */
+#define RTLDSA_MAC_MAX_LEN_FIELD		GENMASK(13, 0)
+/* Mask of both length fields, leaving the tag-inclusion bit (28) untouched. */
+#define RTLDSA_MAC_MAX_LEN_MASK \
+	(RTLDSA_MAC_MAX_LEN_FIELD | (RTLDSA_MAC_MAX_LEN_FIELD << 14))
+/* Encode @len into both the high-speed and the 10/100M length field. */
+#define RTLDSA_MAC_MAX_LEN_VAL(len) \
+	(((len) & RTLDSA_MAC_MAX_LEN_FIELD) | (((len) & RTLDSA_MAC_MAX_LEN_FIELD) << 14))
+
+/* Largest frame each family switches; the length field would allow 16383 */
+#define RTL930X_MAX_FRAME			12288
+#define RTL931X_MAX_FRAME			12288
+/* RTL838x stops at what its datasheet gives, below the vendor SDK value */
+#define RTL838X_MAX_FRAME			10000
+#define RTL839X_MAX_FRAME			12288
+
 #define RTL838X_RST_GLB_CTRL_0			(0x003c)
 
 #define RTL838X_MAC_FORCE_MODE_CTRL		(0xa104)
@@ -1376,6 +1419,36 @@ struct rtldsa_config {
 	u32 mac_force_mode_mask;
 	int  (*mac_force_mode_ctrl)(int port);
 	int  (*mac_port_ctrl)(int port);
+
+	/**
+	 * @mac_max_len_reg: Return the switch register holding the MAC maximum
+	 * accepted L2 frame length of user port @p. Families whose limit is one
+	 * register for the whole switch leave this unset and set
+	 * @mac_max_len_ctrl instead.
+	 */
+	int  (*mac_max_len_reg)(int p);
+
+	/**
+	 * @mac_max_len_ctrl: Register holding that same limit for every port of
+	 * the switch at once, on the families that have no per port register.
+	 * Set this or @mac_max_len_reg, never both.
+	 */
+	int mac_max_len_ctrl;
+
+	/**
+	 * @mac_max_len_ctrl_dup: Second register mirroring @mac_max_len_ctrl,
+	 * where the family has one. The vendor SDK writes both.
+	 */
+	int mac_max_len_ctrl_dup;
+
+	/**
+	 * @max_frame: Largest L2 frame the family switches, and what turns the
+	 * MTU operations on: families leaving it unset keep the ether_setup()
+	 * default MTU and refuse changes. Set together with a max-length
+	 * register.
+	 */
+	int max_frame;
+
 	int  (*l2_port_new_salrn)(int port);
 	int  (*l2_port_new_sa_fwd)(int port);
 	int (*set_ageing_time)(unsigned long msec);
