@@ -46,4 +46,9 @@ int FAST_FUNC check_got_signal_and_poll(struct pollfd pfd[1], int timeout)
 	sigprocmask2(SIG_SETMASK, &orig_mask);
 	return n;
 }
+#else
+int FAST_FUNC check_got_signal_and_poll(struct pollfd pfd[1], int timeout)
+{
+	return poll(pfd, 1, timeout);
+}
 #endif
