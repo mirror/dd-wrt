@@ -6459,7 +6459,7 @@ const char *ndpi_ikev2_dh_name(u_int16_t id) {
 
 /* ****************************************** */
 
-gcry_error_t hkdf_expand(int hashalgo, const uint8_t *prk, uint32_t prk_len,
+static gcry_error_t hkdf_expand(int hashalgo, const uint8_t *prk, uint32_t prk_len,
                          const uint8_t *info, uint32_t info_len,
                          uint8_t *out, uint32_t out_len)
 {
@@ -6507,7 +6507,7 @@ gcry_error_t hkdf_expand(int hashalgo, const uint8_t *prk, uint32_t prk_len,
  * Caller MUST ensure that 'prk' is large enough to store the digest from hash
  * algorithm 'hashalgo' (e.g. 32 bytes for SHA-256).
  */
-gcry_error_t hkdf_extract(int hashalgo, const uint8_t *salt, size_t salt_len,
+static gcry_error_t hkdf_extract(int hashalgo, const uint8_t *salt, size_t salt_len,
                           const uint8_t *ikm, size_t ikm_len, uint8_t *prk)
 {
   /* PRK = HMAC-Hash(salt, IKM) where salt is key, and IKM is input. */
@@ -6533,7 +6533,7 @@ gcry_error_t hkdf_extract(int hashalgo, const uint8_t *salt, size_t salt_len,
 /*
  * Computes HKDF-Expand-Label(Secret, Label, Hash(context_value), Length) with "tls13 " as label prefix
  */
-int hkdf_expand_label(int hashalgo, uint8_t *secret, uint32_t secret_len,
+static int hkdf_expand_label(int hashalgo, uint8_t *secret, uint32_t secret_len,
                       const char *label, uint8_t *out, uint32_t out_len)
 {
   /* RFC 8446 Section 7.1:

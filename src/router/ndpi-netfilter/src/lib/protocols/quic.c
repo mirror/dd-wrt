@@ -42,12 +42,12 @@
  #include <gcrypt_light.h>
 #endif
 
-extern gcry_error_t hkdf_expand(int hashalgo, const uint8_t *prk, uint32_t prk_len,
+static gcry_error_t hkdf_expand(int hashalgo, const uint8_t *prk, uint32_t prk_len,
                                 const uint8_t *info, uint32_t info_len,
                                 uint8_t *out, uint32_t out_len);
-extern gcry_error_t hkdf_extract(int hashalgo, const uint8_t *salt, size_t salt_len,
+static gcry_error_t hkdf_extract(int hashalgo, const uint8_t *salt, size_t salt_len,
                                  const uint8_t *ikm, size_t ikm_len, uint8_t *prk);
-extern int hkdf_expand_label(int hashalgo, uint8_t *secret, uint32_t secret_len,
+static int hkdf_expand_label(int hashalgo, uint8_t *secret, uint32_t secret_len,
                              const char *label, uint8_t *out, uint32_t out_len);
 
 /* This dissector handles GQUIC and IETF-QUIC both.
