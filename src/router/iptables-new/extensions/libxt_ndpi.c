@@ -537,7 +537,7 @@ static char *prot_short_str[NDPI_MAX_NUM_STATIC_BITMAP+1] = {
 	"proton_calendar",
 	"proton_docs",
 	"proton_wallet",
-	"proton_limo",
+	"proton_lumo",
 	"proton_meet",
 	"yggdrasil",
 	"nebula",
