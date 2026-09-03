@@ -44,7 +44,7 @@ enum protobuf_type {
   PT_I32
 };
 
-size_t protobuf_dissect(unsigned char const * const buffer, size_t const size,
+static size_t protobuf_dissect(unsigned char const * const buffer, size_t const size,
                         size_t * const protobuf_elements,
                         size_t * const protobuf_len_elements);
 

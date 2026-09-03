@@ -192,7 +192,7 @@ extern "C" {
    */
   NDPI_STATIC void ndpi_global_deinit(struct ndpi_global_context *g_ctx);
 
-  void *ndpi_memdup(const uint8_t *orig, size_t len);
+  NDPI_STATIC void *ndpi_memdup(const uint8_t *orig, size_t len);
 
   /**
    * Returns a new initialized detection module

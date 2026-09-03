@@ -36,7 +36,7 @@ struct meshtastic_header {
   uint16_t length_be;
 } PACK_OFF;
 
-extern size_t protobuf_dissect(unsigned char const * const buffer, size_t const size,
+static size_t protobuf_dissect(unsigned char const * const buffer, size_t const size,
                                size_t * const protobuf_elements,
                                size_t * const protobuf_len_elements);
 
