@@ -174,6 +174,7 @@ static l7filters filters_list[] = {
 #endif
 #ifdef HAVE_OPENDPI
 	{ "discord", NDPI_ONLY, 0, NULL },
+	{ "discord_call", NDPI_ONLY, 0, NULL },
 	{ "disneyplus", NDPI_ONLY, 0, NULL },
 	{ "dlep", NDPI_ONLY, 0, NULL },
 	{ "dnp3", NDPI_ONLY, 0, NULL },
@@ -447,6 +448,7 @@ static l7filters filters_list[] = {
 	{ "melsec", NDPI_ONLY, 0, NULL },
 	{ "memcached", NDPI_ONLY, 0, NULL },
 	{ "meraki_cloud", NDPI_ONLY, 0, NULL },
+	{ "meshtastic", NDPI_ONLY, 0, NULL },
 	{ "mgcp", NDPI_ONLY, 0, NULL },
 	{ "microsoft", NDPI_ONLY, 0, NULL },
 	{ "microsoft365", NDPI_ONLY, 0, NULL },
@@ -498,6 +500,7 @@ static l7filters filters_list[] = {
 	{ "nbns", L7_ONLY, 0, NULL },
 	{ "ncp", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "nebula", NDPI_ONLY, 0, NULL },
 	{ "nestlogsink", NDPI_ONLY, 0, NULL },
 	{ "netease_games", DPI, 0, NULL },
 #endif
@@ -505,6 +508,7 @@ static l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "netflix", NDPI_ONLY, 0, NULL },
 	{ "netflow", NDPI_ONLY, 0, NULL },
+	{ "netmotion", NDPI_ONLY, 0, NULL },
 	{ "nexon", NDPI_ONLY, 0, NULL },
 	{ "nfs", NDPI_ONLY, 0, NULL },
 #endif
@@ -581,6 +585,15 @@ static l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "profinet_io", NDPI_ONLY, 0, NULL },
 	{ "protobuf", NDPI_ONLY, 0, NULL },
+	{ "proton", NDPI_ONLY, 0, NULL },
+	{ "proton_mail", NDPI_ONLY, 0, NULL },
+	{ "proton_pass", NDPI_ONLY, 0, NULL },
+	{ "proton_drive", NDPI_ONLY, 0, NULL },
+	{ "proton_calendar", NDPI_ONLY, 0, NULL },
+	{ "proton_docs", NDPI_ONLY, 0, NULL },
+	{ "proton_wallet", NDPI_ONLY, 0, NULL },
+	{ "proton_lumo", NDPI_ONLY, 0, NULL },
+	{ "proton_meet", NDPI_ONLY, 0, NULL },
 	{ "protonvpn", NDPI_ONLY, 0, NULL },
 	{ "psiphon", NDPI_ONLY, 0, NULL },
 #endif
@@ -922,6 +935,7 @@ static l7filters filters_list[] = {
 	{ "yandex_market", NDPI_ONLY, 0, NULL },
 	{ "yandex_metrika", NDPI_ONLY, 0, NULL },
 	{ "yandex_music", NDPI_ONLY, 0, NULL },
+	{ "yggdrasil", NDPI_ONLY, 0, NULL },
 	{ "yojimbo", DPI, 0, NULL },
 #endif
 	{ "youtube", DPI, 0, NULL },
