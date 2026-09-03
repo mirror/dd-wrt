@@ -278,6 +278,7 @@
     <ClCompile Include="..\src\lib\protocols\mail_smtp.c" />
     <ClCompile Include="..\src\lib\protocols\nexon.c" />
     <ClCompile Include="..\src\lib\protocols\megaco.c" />
+    <ClCompile Include="..\src\lib\protocols\meshtastic.c" />
     <ClCompile Include="..\src\lib\protocols\mgcp.c" />
     <ClCompile Include="..\src\lib\protocols\monero.c" />
     <ClCompile Include="..\src\lib\protocols\mpegts.c" />
@@ -287,6 +288,7 @@
     <ClCompile Include="..\src\lib\protocols\mudfish.c" />
     <ClCompile Include="..\src\lib\protocols\munin.c" />
     <ClCompile Include="..\src\lib\protocols\mysql.c" />
+    <ClCompile Include="..\src\lib\protocols\nebula.c" />
     <ClCompile Include="..\src\lib\protocols\netbios.c" />
     <ClCompile Include="..\src\lib\protocols\netflow.c" />
     <ClCompile Include="..\src\lib\protocols\nfs.c" />
@@ -409,8 +411,10 @@
     <ClCompile Include="..\src\lib\protocols\msdo.c" />
     <ClCompile Include="..\src\lib\protocols\melsec.c" />
     <ClCompile Include="..\src\lib\protocols\hamachi.c" />
+    <ClCompile Include="..\src\lib\protocols\netmotion.c" />
     <ClCompile Include="..\src\lib\protocols\glbp.c" />
     <ClCompile Include="..\src\lib\protocols\matter.c" />
+    <ClCompile Include="..\src\lib\protocols\yggdrasil.c" />
     <ClCompile Include="..\src\lib\third_party\src\gcrypt_light.c" />
     <ClCompile Include="..\src\lib\third_party\src\libcache.c" />
     <ClCompile Include="..\src\lib\third_party\src\libinjection_html5.c" />

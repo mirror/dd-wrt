@@ -192,6 +192,8 @@ extern "C" {
    */
   NDPI_STATIC void ndpi_global_deinit(struct ndpi_global_context *g_ctx);
 
+  void *ndpi_memdup(const uint8_t *orig, size_t len);
+
   /**
    * Returns a new initialized detection module
    * Note that before you can use it you can still load
@@ -295,7 +297,8 @@ extern "C" {
 			      ndpi_protocol_qoe_category_t qoeCategory,
 			      ndpi_port_range *tcpDefPorts,
 			      ndpi_port_range *udpDefPorts,
-			      u_int8_t is_custom_protocol);
+			      u_int8_t is_custom_protocol,
+			      u_int8_t partialClassificationCanChange);
 
   /**
    * Set protocol ids mapping
@@ -1061,9 +1064,12 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
 					      u_int16_t user_proto_id);
   NDPI_STATIC u_int16_t ndpi_map_ndpi_id_to_user_proto_id(struct ndpi_detection_module_struct *ndpi_str,
 					      u_int16_t ndpi_proto_id);
+  NDPI_STATIC bool ndpi_can_partial_proto_classification_change(struct ndpi_detection_module_struct *ndpi_struct,
+						    u_int16_t ndpi_proto_id);
 
   /* Tells to called on what l4 protocol given application protocol can be found */
-  NDPI_STATIC ndpi_l4_proto_info ndpi_get_l4_proto_info(struct ndpi_detection_module_struct *ndpi_struct, u_int16_t ndpi_proto_id);
+  NDPI_STATIC ndpi_l4_proto_info ndpi_get_l4_proto_info(struct ndpi_detection_module_struct *ndpi_struct,
+					    u_int16_t ndpi_proto_id);
   NDPI_STATIC const char* ndpi_get_l4_proto_name(ndpi_l4_proto_info proto);
 
   NDPI_STATIC u_int16_t ndpi_get_lower_proto(ndpi_master_app_protocol proto);

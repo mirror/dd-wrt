@@ -529,3 +529,11 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/iris.c"
 #undef NDPI_CURRENT_PROTO
+#include "protocols/netmotion.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/yggdrasil.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/meshtastic.c"
+#undef NDPI_CURRENT_PROTO
+#include "protocols/nebula.c"
+#undef NDPI_CURRENT_PROTO

@@ -1,5 +1,91 @@
 # CHANGELOG
 
+#### nDPI 6.0 (Aug 2025)
+
+## Major Changes
+* Add detection of Slow Dos, SlowDoS 3WH and Slowloris attacks. See: https://www.ntop.org/slow-dos-detection-and-prevention/
+* More flexible and useful (nDPI-) fingerprints. See: https://www.ntop.org/is-ja4-now-obsolete/
+* Add USDT static tracing probes for zero-overhead runtime observability. See: https://www.ntop.org/observing-ndpi-from-the-inside-introducing-usdt-tracepoints/
+* Add ability to define protocol dissectors in shared libraries and load them at runtime
+
+## New Supported Protocols and Services
+
+Further information are available at https://github.com/ntop/nDPI/blob/dev/doc/protocols.rst
+
+* Add Meshtstic
+* Add (generic) JSON
+* Add (generic) MsgPack
+* Add sub-classification for some GitHub services: Copilot, Packages, Actions
+* Add Youtube Kids
+* Add SBE
+* Add Iris
+* Add libp2p
+* Add NetMotion
+* Add sub-classification for some Proton services: generic Proton, Mail, Pass, Drive, Calendar, Docs, Wallet, Lumo, Meet
+* Add YGGDRASIL
+* Add Nebula
+* Add identification of Discord audio/video calls
+* Removed Zattoo
+* Add content-control categories: Search Engine, Children, Violence, Drugs, Weapons
+
+## New algorithms
+* Add `ndpi_data_burstiness()` for computing data burstiness
+* Add new API calls for implementing anomaly detection in https://github.com/ntop/nDPI/commit/5ce0a0cd6264ba6dafbc972b37427bbcc23cc1ed
+
+## New configuration knobs
+
+Further information are available at https://github.com/ntop/nDPI/blob/dev/doc/configuration_parameters.md
+
+* Removed `flow.direction_detection`
+* `metadata.ndpi_server_fingerprint`: Enable/disable computation and export of nDPI server fingerprint
+* `metadata.ndpi_fingerprint`: Enable/disable computation and export of nDPI fingerprint
+* `metadata.ndpi_fingerprint_format`:  Format of the nDPI fingerprint ((i.e. metadata.ndpi_fingerprint)). 0 = client only, 1 = client and server
+* `metadata.ndpi_fingerprint_ignore_tcp_fp`: Configure if TCP fingerprint is used or not for nDPI fingerprint (i.e. for metadata.ndpi_fingerprint) calculation
+* `ssdp,metadata`: Enable/disable extraction of ALL metadata for SSDP flows. Note that, unlike others protocols, for SSDP flows you can't enable/disable a specific metadata
+* `ntp,metadata`: Enable/disable extraction of ALL metadata for NTP flows. Note that, unlike others protocols, for NTP flows you can't enable/disable a specific metadata
+* `dns,max_packets_extra_dissection`: After a flow has been classified has DNS, nDPI might analyse more packets to look for a sub-classification or for metadata. This parameter set the upper limit on the number of these packets. Useful if interested in handling big DNS messages (i.e. AXFR transfers)
+* `tls,max_num_blocks_to_analyze`: Set the maximum number of TLS block to process; if 0, TLS blocks are not analyze
+* `tls,tls_blocks_show_timing`: Enable/disable usage of timing information in TLS block processing
+* `ssh,metadata.hassh_fingerprint`: Enable/disable computation and export of HASHH fingerprint for SSH flows
+* `ssh,metadata.ssh_data`: Enable/disable export of SSH key exchanges parameters and negotiated SSH key exchange method
+
+
+## Important improvements and bux fixes
+* tests: improve parallelization in https://github.com/ntop/nDPI/pull/3027
+* Build system: lots of improvements about speed, stability, cross-compilation, portability, parallelization and out-of-tree builds
+* Fuzzing: lots of changes to improve fuzzing coverage and speed
+* croaring: update to 4.4.2 (from 4.3.6) in https://github.com/ntop/nDPI/pull/3030
+* Extend s7comm dissector with metadata extractions in https://github.com/ntop/nDPI/commit/9e980968d6969272f4dabd2df9d6cd9dc352119a
+* Reworked TLS dissector to export further metadata in https://github.com/ntop/nDPI/pull/3066
+* Added ability to export SSH key exchanges and negotiated SSH key exchange method in https://github.com/ntop/nDPI/pull/3067
+* Enhanced TLS blocks computation and included in nDPI Fingerprint in https://github.com/ntop/nDPI/pull/3071
+* Fix HTTP hostname normalization with IPv6 literal address in https://github.com/ntop/nDPI/pull/3081
+* NTP metadata export in https://github.com/ntop/nDPI/pull/2768
+* Extended IPSEC dissection and added metadata extraction in https://github.com/ntop/nDPI/commit/ae586c875c501db10db4ee2665c66a1394eb2165
+* Remove Whatsapp IPs list: Meta doesn't provide it anymore in https://github.com/ntop/nDPI/pull/3153
+* Improve HAProxy to support Proxy Protocol v2 as well in https://github.com/ntop/nDPI/pull/3165
+* Improved GearUP Booster proprietary TCP protocol detection in https://github.com/ntop/nDPI/pull/3168
+* Improved LagoFast detection pattern in https://github.com/ntop/nDPI/pull/3171
+* Fix urls for downloading google crawlers in https://github.com/ntop/nDPI/pull/3191
+* Add Webex STUN sub-classification in https://github.com/ntop/nDPI/pull/3194
+* Improve HBO Max/Max streaming detection in https://github.com/ntop/nDPI/pull/3193
+* activision: classify Warzone game session in https://github.com/ntop/nDPI/pull/3199
+* Fix DNS TCP reassembly for split segments in https://github.com/ntop/nDPI/pull/3201
+
+## New Contributors
+* @cmonroe made their first contribution in https://github.com/ntop/nDPI/pull/3075
+* @OwenSanzas made their first contribution in https://github.com/ntop/nDPI/pull/3128
+* @matheusgstolf made their first contribution in https://github.com/ntop/nDPI/pull/3143
+* @parasol-aser made their first contribution in https://github.com/ntop/nDPI/pull/3163
+* @BryanProg made their first contribution in https://github.com/ntop/nDPI/pull/3179
+* @netcons made their first contribution in https://github.com/ntop/nDPI/pull/3187
+* @yalanmao made their first contribution in https://github.com/ntop/nDPI/pull/3202
+* @smtobs made their first contribution in https://github.com/ntop/nDPI/pull/3201
+
+**Full Changelog**: https://github.com/ntop/nDPI/compare/5.0...x
+
+
+
 
 #### nDPI 5.0 (Nov 2025)
 

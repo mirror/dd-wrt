@@ -492,6 +492,14 @@ iQIYI is a Chinese online video platform with original and licensed movies, dram
 References: `iQIYI official site: <https://www.iqiyi.com/>`_
 
 
+.. _Proto_55:
+
+`NDPI_PROTOCOL_MESHTASTIC`
+==========================
+An open source, off-grid, decentralized mesh network built to run on affordable, low-power devices. No cell towers. No internet. Just pure peer-to-peer connectivity.
+
+References: `TCP Client API: <https://meshtastic.org/docs/development/device/client-api/>`_
+
 
 .. _Proto_56:
 
@@ -518,6 +526,7 @@ References: `Yandex.Disk official site <https://disk.yandex.com/>`_
 Discord is a VoIP, instant messaging and digital distribution platform designed for creating communities. Popular among gamers but also used for business and education.
 
 References: `Discord official site <https://discord.com/>`_, `Protocol info <https://discord.com/developers/docs/intro>`_
+
 
 .. _Proto_59:
 
@@ -4327,3 +4336,120 @@ References: `InterSystems IRIS official site: <https://www.intersystems.com/prod
 libp2p is a modular network stack and open-source library that enables developers to build decentralised, peer-to-peer (P2P) applications.
 
 References: `Official site: <https://libp2p.io>`_
+
+
+.. _Proto_477:
+
+`NDPI_PROTOCOL_NETMOTION`
+=========================
+NetMotion Mobility (formerly Mobility XE) is an enterprise mobile VPN that keeps sessions persistent across network changes, widely deployed in public-sector and first-responder fleets. Clients tunnel to the Mobility server using the Internet Mobility Protocol (IMP), by default over UDP/5008.
+
+References: `Official site: <https://www.netmotionsoftware.com>`_
+
+
+.. _Proto_478:
+
+`NDPI_PROTOCOL_PROTON`
+======================
+Proton account/umbrella traffic (proton.me): sign-in and any Proton AG service not matched by a more specific Proton protocol below.
+
+References: `Official site: <https://proton.me/>`_
+
+
+.. _Proto_479:
+
+`NDPI_PROTOCOL_PROTON_MAIL`
+===========================
+Proton Mail is an end-to-end encrypted email service by Proton AG.
+
+References: `Official site: <https://proton.me/mail>`_
+
+
+.. _Proto_480:
+
+`NDPI_PROTOCOL_PROTON_PASS`
+===========================
+Proton Pass is an end-to-end encrypted password manager by Proton AG.
+
+References: `Official site: <https://proton.me/pass>`_
+
+
+.. _Proto_481:
+
+`NDPI_PROTOCOL_PROTON_DRIVE`
+============================
+Proton Drive is an end-to-end encrypted cloud storage service by Proton AG.
+
+References: `Official site: <https://proton.me/drive>`_
+
+
+.. _Proto_482:
+
+`NDPI_PROTOCOL_PROTON_CALENDAR`
+===============================
+Proton Calendar is an end-to-end encrypted calendar service by Proton AG.
+
+References: `Official site: <https://proton.me/calendar>`_
+
+
+.. _Proto_483:
+
+`NDPI_PROTOCOL_PROTON_DOCS`
+===========================
+Proton Docs is an end-to-end encrypted collaborative document and spreadsheet editor by Proton AG.
+
+References: `Official site: <https://proton.me/drive/docs>`_
+
+
+.. _Proto_484:
+
+`NDPI_PROTOCOL_PROTON_WALLET`
+=============================
+Proton Wallet is a self-custodial Bitcoin wallet by Proton AG.
+
+References: `Official site: <https://proton.me/wallet>`_
+
+
+.. _Proto_485:
+
+`NDPI_PROTOCOL_PROTON_LUMO`
+===========================
+Proton Lumo is a privacy-focused AI assistant by Proton AG.
+
+References: `Official site: <https://lumo.proton.me/>`_
+
+
+.. _Proto_486:
+
+`NDPI_PROTOCOL_PROTON_MEET`
+===========================
+Proton Meet is an end-to-end encrypted video conferencing service by Proton AG.
+
+References: `Official site: <https://proton.me/meet>`_
+
+
+.. _Proto_487:
+
+`NDPI_PROTOCOL_YGGDRASIL`
+=========================
+Yggdrasil is a new experimental compact routing scheme. It is designed to be a future-proof and decentralised alternative to the structured routing protocols commonly used today on the Internet, as well as an enabling technology for future large-scale mesh networks.
+
+References: `Official site: <https://yggdrasil-network.github.io/>`_
+
+
+.. _Proto_488:
+
+`NDPI_PROTOCOL_NEBULA`
+======================
+Nebula is a self-hosted overlay networking tool designed to be fast, secure, and scalable. Connect any number of hosts with on-demand, encrypted tunnels that work across any IP networks and without opening firewall ports.
+
+References: `Official site: <https://nebula.defined.net/docs/>`_, `Nebula Software: <https://github.com/slackhq/nebula>`_
+
+
+.. _Proto_489:
+
+`NDPI_PROTOCOL_DISCORD_CALL`
+============================
+Discoed Call protocol handles both audio and video calls within the Discord app.
+
+References: `Discord official site <https://discord.com/>`_

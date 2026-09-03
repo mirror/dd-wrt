@@ -50,6 +50,7 @@ static inline long int strtol(const char *nptr, char **endptr, int base) {
     return ret;
 }
 
+#define be64toh(v) be64_to_cpu(v)
 #define le64toh(v) le64_to_cpu(v)
 #define le32toh(v) le32_to_cpu(v)
 #define le16toh(v) le16_to_cpu(v)

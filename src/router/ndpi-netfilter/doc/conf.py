@@ -62,7 +62,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'nDPI'
-copyright = u'2021, ntop and contributors'
+copyright = u'2026, ntop and contributors'
 author = u'ntop.org'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -302,6 +302,6 @@ texinfo_documents = [
 
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
-def setup(app):
-    app.add_css_file('css/ntop.css')
-    app.add_css_file('custom.css')
+#def setup(app):
+#    app.add_css_file('css/ntop.css')
+#    app.add_css_file('custom.css')

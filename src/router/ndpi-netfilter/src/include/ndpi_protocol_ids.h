@@ -84,7 +84,7 @@ typedef enum {
   NDPI_PROTOCOL_ICECAST               = 52,
   NDPI_PROTOCOL_CPHA                  = 53,
   NDPI_PROTOCOL_IQIYI                 = 54,
-  NDPI_PROTOCOL_FREE                  = 55, /* Free protocol */
+  NDPI_PROTOCOL_MESHTASTIC            = 55,
   NDPI_PROTOCOL_YANDEX_MARKET         = 56,
   NDPI_PROTOCOL_YANDEX_DISK           = 57,
   NDPI_PROTOCOL_DISCORD               = 58,
@@ -506,6 +506,19 @@ typedef enum {
   NDPI_PROTOCOL_SBE                   = 474,
   NDPI_PROTOCOL_IRIS                  = 475,
   NDPI_PROTOCOL_LIBP2P                = 476,
+  NDPI_PROTOCOL_NETMOTION             = 477,
+  NDPI_PROTOCOL_PROTON                = 478,
+  NDPI_PROTOCOL_PROTON_MAIL           = 479,
+  NDPI_PROTOCOL_PROTON_PASS           = 480,
+  NDPI_PROTOCOL_PROTON_DRIVE          = 481,
+  NDPI_PROTOCOL_PROTON_CALENDAR       = 482,
+  NDPI_PROTOCOL_PROTON_DOCS           = 483,
+  NDPI_PROTOCOL_PROTON_WALLET         = 484,
+  NDPI_PROTOCOL_PROTON_LUMO           = 485,
+  NDPI_PROTOCOL_PROTON_MEET           = 486,
+  NDPI_PROTOCOL_YGGDRASIL             = 487,
+  NDPI_PROTOCOL_NEBULA                = 488,
+  NDPI_PROTOCOL_DISCORD_CALL          = 489,
 
 #ifdef CUSTOM_NDPI_PROTOCOLS
 #include "../../../nDPI-custom/custom_ndpi_protocol_ids.h"

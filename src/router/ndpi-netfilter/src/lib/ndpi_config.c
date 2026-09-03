@@ -81,10 +81,12 @@ static char *_get_param_int(struct ndpi_detection_module_struct *ndpi_str,
 			    void *_variable, const char *proto, char *buf, int buf_len);
 static char *_get_param_string(struct ndpi_detection_module_struct *ndpi_str,
 			       void *_variable, const char *proto, char *buf, int buf_len);
+#ifndef __KERNEL__
 static ndpi_cfg_error _set_param_filename(struct ndpi_detection_module_struct *ndpi_str,
 					  void *_variable, const char *value,
 					  const char *min_value, const char *max_value,
 					  const char *proto, const char *param);
+#endif
 static ndpi_cfg_error _set_param_filename_config(struct ndpi_detection_module_struct *ndpi_str,
 						 void *_variable, const char *value,
 						 const char *min_value, const char *max_value,
@@ -199,6 +201,7 @@ const struct cfg_param cfg_params[] = {
 
   { "dns",           "subclassification",                       "disable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(dns_subclassification_enabled), NULL },
   { "dns",           "process_response",                        "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(dns_parse_response_enabled), NULL },
+  { "dns",           "max_packets_extra_dissection",            "5", "0", "255", CFG_PARAM_INT, __OFF(dns_max_packets_extra_dissection), NULL },
 
   { "http",          "process_response",                        "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(http_parse_response_enabled), NULL },
   { "http",          "subclassification",                       "enable", NULL, NULL, CFG_PARAM_ENABLE_DISABLE, __OFF(http_subclassification_enabled), NULL },
@@ -721,11 +724,11 @@ static char *_get_param_string(struct ndpi_detection_module_struct *ndpi_str,
 
 /* ****************************************** */
 
+#ifndef __KERNEL__
 static ndpi_cfg_error _set_param_filename(struct ndpi_detection_module_struct *ndpi_str,
                                           void *_variable, const char *value,
                                           const char *min_value, const char *max_value,
                                           const char *proto, const char *param) {
-#ifndef __KERNEL__
   char *variable = (char *)_variable;
 
   (void)ndpi_str;
@@ -743,9 +746,9 @@ static ndpi_cfg_error _set_param_filename(struct ndpi_detection_module_struct *n
     return NDPI_CFG_INVALID_PARAM;
 
   strncpy(variable, value, CFG_MAX_LEN);
-#endif
   return NDPI_CFG_OK;
 }
+#endif
 /* ****************************************** */
 
 static ndpi_cfg_error _set_param_filename_config(struct ndpi_detection_module_struct *ndpi_str,

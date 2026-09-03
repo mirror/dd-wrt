@@ -610,6 +610,16 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
       *app_proto = NDPI_PROTOCOL_MSTEAMS_CALL;
       break;
 
+    case 0x8022: /* SOFTWARE */
+      if(off + 4 + len <= payload_length) {
+	if(ndpi_strnstr((const char *)&payload[off + 4], "Cisco-Spark", len) != NULL)
+	  *app_proto = NDPI_PROTOCOL_WEBEX; /* Webex (formerly Cisco Spark) */
+	else if(ndpi_strnstr((const char *)&payload[off + 4], "discord-sfu", len) != NULL)
+          *app_proto = NDPI_PROTOCOL_DISCORD_CALL;
+      }
+
+      break;
+
     case 0x8029: /* ICE-CONTROLLED */
       if(current_pkt_from_client_to_server(ndpi_struct, flow))
         flow->stun.is_client_controlling = 0;

@@ -38,9 +38,22 @@
 
 #define PKT_LEN_ALERT 512
 
+/* Max DNS message size is 65535.
+ * Over TCP we also have the 2-byte prefix -> max L5 length is 65537
+ * However our internal engine doesn't handle pkt/message bigger than 65535
+ * (because ip length and packet->payload_packet_len are 16 bits long) ->
+ * clamp to 65533. That shouldn't have any practical effects.... */
+#define DNS_TCP_MAX_MSG_LEN 65533
+
 
 static void search_dns(struct ndpi_detection_module_struct *ndpi_struct,
 		       struct ndpi_flow_struct *flow);
+
+static int search_dns_again(struct ndpi_detection_module_struct *ndpi_struct,
+			    struct ndpi_flow_struct *flow);
+
+static int dns_tcp_process(struct ndpi_detection_module_struct *ndpi_struct,
+			   struct ndpi_flow_struct *flow);
 
 /* *********************************************** */
 
@@ -692,6 +705,223 @@ static int is_valid_dns(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* *********************************************** */
 
+static void dns_tcp_reasm_free_dir(struct ndpi_dns_tcp_reasm *reasm)
+{
+  if(reasm->buf != NULL) {
+    ndpi_free(reasm->buf);
+    reasm->buf = NULL;
+  }
+
+  reasm->cur_len = 0;
+  reasm->msg_len = 0;
+}
+
+/* *********************************************** */
+
+/*
+ * Schedule extra packets only after DNS is classified (see search_dns()).
+ * While UNKNOWN, ndpi_search_dns keeps running on later segments.
+ */
+static void dns_tcp_reasm_enable_extra(struct ndpi_detection_module_struct *ndpi_struct,
+				       struct ndpi_flow_struct *flow)
+{
+  if(flow->extra_packets_func != NULL ||
+     flow->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN)
+    return;
+
+  if(!ndpi_struct->cfg.dns_parse_response_enabled)
+    return;
+
+  if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_LLMNR ||
+     flow->detected_protocol_stack[1] == NDPI_PROTOCOL_LLMNR)
+    return;
+
+  flow->max_extra_packets_to_check = ndpi_struct->cfg.dns_max_packets_extra_dissection;
+  flow->extra_packets_func = search_dns_again;
+}
+
+/* *********************************************** */
+
+static int dns_tcp_reasm_append(struct ndpi_dns_tcp_reasm *reasm,
+				const u_int8_t *data, u_int16_t len)
+{
+  u_int32_t new_len;
+  u_int8_t *new_buf;
+
+  if(len == 0)
+    return 0;
+
+  new_len = (u_int32_t)reasm->cur_len + len;
+  if(new_len > (u_int32_t)(DNS_TCP_MAX_MSG_LEN + 2))
+    return -1;
+
+  if(reasm->buf == NULL) {
+    reasm->buf = ndpi_malloc(new_len);
+    if(reasm->buf == NULL)
+      return -1;
+
+    memcpy(reasm->buf, data, len);
+    reasm->cur_len = len;
+    return 0;
+  }
+
+  new_buf = (u_int8_t *)ndpi_realloc(reasm->buf, new_len);
+  if(new_buf == NULL)
+    return -1;
+
+  reasm->buf = new_buf;
+
+  memcpy(&reasm->buf[reasm->cur_len], data, len);
+  reasm->cur_len = new_len;
+
+  return 0;
+}
+
+/* *********************************************** */
+
+static void dns_tcp_reasm_consume(struct ndpi_dns_tcp_reasm *reasm, u_int32_t consumed)
+{
+  if(consumed >= reasm->cur_len) {
+    dns_tcp_reasm_free_dir(reasm);
+    return;
+  }
+
+  memmove(reasm->buf, &reasm->buf[consumed], reasm->cur_len - consumed);
+  reasm->cur_len -= consumed;
+  reasm->msg_len = 0;
+}
+
+/* *********************************************** */
+
+/*
+ * DNS over TCP uses a 2-byte length prefix followed by the DNS message (RFC 7766).
+ * Avoid per-packet reassembly allocations when the full message(s) fit in the segment.
+ */
+static int dns_tcp_process(struct ndpi_detection_module_struct *ndpi_struct,
+			   struct ndpi_flow_struct *flow)
+{
+  struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
+  struct ndpi_dns_tcp_reasm *reasm = NULL;
+  const u_int8_t *original_payload;
+  u_int16_t original_payload_len;
+  u_int32_t msg_len, total_len, offset;
+  int processed = 0;
+
+  original_payload = packet->payload;
+  original_payload_len = packet->payload_packet_len;
+
+  /* Message already split: append this segment and parse from the reassembly buffer. */
+  if(flow->dns_tcp_reasm != NULL) {
+    reasm = &flow->dns_tcp_reasm->dir[packet->packet_direction];
+    if(reasm->buf != NULL || reasm->cur_len > 0)
+      goto append_and_reasm;
+  }
+
+  /* Fast path: dissect every complete length-prefixed message in this TCP payload. */
+  for(offset = 0; offset + 2 <= original_payload_len; ) {
+    msg_len = ntohs(get_u_int16_t(&original_payload[offset], 0));
+    if(msg_len < sizeof(struct ndpi_dns_packet_header) ||
+       msg_len > DNS_TCP_MAX_MSG_LEN)
+      return -1;
+
+    total_len = 2 + msg_len;
+    if(offset + total_len > original_payload_len)
+      break; /* incomplete message: handled below */
+
+    if(msg_len == 0) {
+      offset += 2;
+      continue;
+    }
+
+    packet->payload = (u_int8_t *)&original_payload[offset];
+    packet->payload_packet_len = (u_int16_t)total_len;
+    search_dns(ndpi_struct, flow);
+    processed = 1;
+
+    packet->payload = original_payload;
+    packet->payload_packet_len = original_payload_len;
+    offset += total_len;
+  }
+
+  /*
+   * Fast path finished the whole segment (no trailing bytes for reassembly).
+   * Return 1 if we dissected at least one message; 0 otherwise.
+   */
+  if(offset >= original_payload_len)
+    return processed > 0 ? 1 : 0;
+
+  /* Split segment: store only the trailing bytes; wait for the next TCP packet. */
+  if(flow->dns_tcp_reasm == NULL) {
+    flow->dns_tcp_reasm = ndpi_calloc(1, sizeof(struct ndpi_dns_tcp_reasm_state));
+    if(flow->dns_tcp_reasm == NULL)
+      return -1;
+  }
+
+  reasm = &flow->dns_tcp_reasm->dir[packet->packet_direction];
+  if(dns_tcp_reasm_append(reasm, &original_payload[offset],
+			  (u_int16_t)(original_payload_len - offset)) < 0) {
+    dns_tcp_reasm_free_dir(reasm);
+    return -1;
+  }
+
+  dns_tcp_reasm_enable_extra(ndpi_struct, flow);
+  return processed > 0 ? 1 : 0;
+
+append_and_reasm:
+  if(dns_tcp_reasm_append(reasm, packet->payload, packet->payload_packet_len) < 0) {
+    dns_tcp_reasm_free_dir(reasm);
+    return -1;
+  }
+
+  /* Decode complete messages from the buffer; leave a short tail if still incomplete. */
+  while(1) {
+    if(reasm->cur_len < 2) {
+      dns_tcp_reasm_enable_extra(ndpi_struct, flow);
+      packet->payload = original_payload;
+      packet->payload_packet_len = original_payload_len;
+      return processed > 0 ? 1 : 0;
+    }
+
+    if(reasm->msg_len == 0) {
+      msg_len = ntohs(get_u_int16_t(reasm->buf, 0));
+      if(msg_len < sizeof(struct ndpi_dns_packet_header) ||
+         msg_len > DNS_TCP_MAX_MSG_LEN) {
+        dns_tcp_reasm_free_dir(reasm);
+        packet->payload = original_payload;
+        packet->payload_packet_len = original_payload_len;
+      }
+      reasm->msg_len = msg_len;
+    } else
+      msg_len = reasm->msg_len;
+
+    total_len = 2 + msg_len;
+
+    if(reasm->cur_len < total_len) {
+      dns_tcp_reasm_enable_extra(ndpi_struct, flow);
+      packet->payload = original_payload;
+      packet->payload_packet_len = original_payload_len;
+      return processed > 0 ? 1 : 0;
+    }
+
+    if(msg_len == 0) {
+      dns_tcp_reasm_consume(reasm, 2);
+      continue;
+    }
+
+    packet->payload = (u_int8_t *)reasm->buf;
+    packet->payload_packet_len = (u_int16_t)total_len;
+    search_dns(ndpi_struct, flow);
+    processed = 1;
+
+    packet->payload = original_payload;
+    packet->payload_packet_len = original_payload_len;
+
+    dns_tcp_reasm_consume(reasm, total_len);
+  }
+}
+
+/* *********************************************** */
+
 static int dns_keep_extra_dissection(struct ndpi_flow_struct *flow)
 {
   /* As a general rule, we wait for a valid response
@@ -704,8 +934,16 @@ static int dns_keep_extra_dissection(struct ndpi_flow_struct *flow)
 static int search_dns_again(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
-  if(packet->tcp_retransmission || packet->payload_packet_len == 0)
+  if(packet->tcp_retransmission || packet->payload_packet_len == 0) {
     return dns_keep_extra_dissection(flow);
+  }
+
+  if(packet->tcp != NULL) {
+    if(dns_tcp_process(ndpi_struct, flow) < 0) {
+      return 0; /* Something is seriously wrong: stop here */
+    }
+    return dns_keep_extra_dissection(flow);
+  }
 
   /* possibly dissect the DNS reply */
   search_dns(ndpi_struct, flow);
@@ -918,7 +1156,7 @@ static void search_dns(struct ndpi_detection_module_struct *ndpi_struct, struct 
      flow->detected_protocol_stack[1] != NDPI_PROTOCOL_LLMNR) {
     if(dns_keep_extra_dissection(flow)) {
       NDPI_LOG_DBG(ndpi_struct, "Enabling extra dissection\n");
-      flow->max_extra_packets_to_check = 5;
+      flow->max_extra_packets_to_check = ndpi_struct->cfg.dns_max_packets_extra_dissection;
       flow->extra_packets_func = search_dns_again;
     }
   }
@@ -953,14 +1191,12 @@ static void search_dns(struct ndpi_detection_module_struct *ndpi_struct, struct 
 void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int16_t s_port = 0, d_port = 0;
-  int payload_offset = 0;
 
   NDPI_LOG_DBG(ndpi_struct, "search DNS\n");
 
   if(packet->udp != NULL) {
     s_port = ntohs(packet->udp->source);
     d_port = ntohs(packet->udp->dest);
-    payload_offset = 0;
 
     /* For MDNS/LLMNR: If the packet is not a response, dest addr needs to be multicast. */
     if ((d_port == MDNS_PORT && isMDNSMulticastAddress(packet) == 0) ||
@@ -977,7 +1213,6 @@ void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct, struct nd
   } else if(packet->tcp != NULL) {
     s_port = ntohs(packet->tcp->source);
     d_port = ntohs(packet->tcp->dest);
-    payload_offset = 2;
   }
 
   /* We are able to detect DNS/MDNS/LLMNR only on standard ports (see #1788) */
@@ -988,12 +1223,15 @@ void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct, struct nd
     return;
   }
 
-  /* Since:
-      UDP: every packet must contains a complete/valid DNS message;
-      TCP: we are not able to handle DNS messages spanning multiple TCP packets;
-     we must be able to detect these protocols on the first packet
-  */
-  if(packet->payload_packet_len < sizeof(struct ndpi_dns_packet_header) + payload_offset) {
+  if(packet->tcp != NULL) {
+    if(dns_tcp_process(ndpi_struct, flow) < 0)
+      NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
+    return;
+  }
+
+  /* Since every UDP packet must contain a complete/valid DNS message,
+     we must be able to detect these protocols on the first packet */
+  if(packet->payload_packet_len < sizeof(struct ndpi_dns_packet_header)) {
     NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
     return;
   }

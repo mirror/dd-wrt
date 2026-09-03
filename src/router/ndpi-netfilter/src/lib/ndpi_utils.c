@@ -65,6 +65,12 @@
 
 #include "third_party/include/uthash.h"
 
+#ifdef USE_HOST_LIBGCRYPT
+#include <gcrypt.h>
+#else
+#include "gcrypt_light.h"
+#endif
+
 #include "ndpi_replace_printf.h"
 #include "ndpi_sha256.h"
 
@@ -1491,11 +1497,20 @@ static void ndpi_tls2json(struct ndpi_detection_module_struct *ndpi_struct, ndpi
 
     ndpi_ssl_version2str(version, sizeof(version), flow->protos.tls_quic.ssl_version, &unknown_tls_version);
 
-    if(flow->protos.tls_quic.notBefore)
-      before = ndpi_gmtime_r((const time_t *)&flow->protos.tls_quic.notBefore, &a);
+    /* notBefore/notAfter are u_int32_t, so their address cannot be passed as a
+       time_t *: on 64-bit platforms that reads 8 bytes out of a 4-byte field.
+       Convert to a real time_t instead. */
+    if(flow->protos.tls_quic.notBefore) {
+      time_t not_before = (time_t)flow->protos.tls_quic.notBefore;
 
-    if(flow->protos.tls_quic.notAfter)
-      after = ndpi_gmtime_r((const time_t *)&flow->protos.tls_quic.notAfter, &b);
+      before = ndpi_gmtime_r(&not_before, &a);
+    }
+
+    if(flow->protos.tls_quic.notAfter) {
+      time_t not_after = (time_t)flow->protos.tls_quic.notAfter;
+
+      after = ndpi_gmtime_r(&not_after, &b);
+    }
 
     if(!unknown_tls_version) {
       ndpi_serialize_start_of_block(serializer, "tls");
@@ -5511,126 +5526,188 @@ struct ndpi_tls_block* ndpi_decode_tls_blocks(const u_char *encoded_blocks,
 
 const char* ndpi_tls_extension2str(u_int16_t extension_id,
 				   char unknown_extn[8]) {
-  switch(extension_id) {
-    /* RFC 6066 - TLS Extensions Definitions */
-  case 0: return "server_name";
-  case 1: return "max_fragment_length";
-  case 2: return "client_certificate_url";
-  case 3: return "trusted_ca_keys";
-  case 4: return "truncated_hmac";
-  case 5: return "status_request";
+  switch (extension_id) {
+	/* RFC 6066 - TLS Extensions Definitions */
+case 0: return "server_name";
+case 1: return "max_fragment_length";
+case 2: return "client_certificate_url";
+case 3: return "trusted_ca_keys";
+case 4: return "truncated_hmac";
+case 5: return "status_request";
 
-    /* RFC 4366 - Transport Layer Security (TLS) Extensions */
-  case 6: return "user_mapping";
-  case 7: return "client_authz";
-  case 8: return "server_authz";
+/* RFC 4681 - TLS User Mapping Extension */
+case 6: return "user_mapping";
 
-    /* RFC 4492 - Elliptic Curve Cryptography (ECC) Cipher Suites */
-  case 10: return "supported_groups";  /* Formerly "elliptic_curves" */
-  case 11: return "ec_point_formats";
+/* RFC 5878 - TLS Authorization Extensions */
+case 7: return "client_authz";                             
+case 8: return "server_authz";                             
 
-    /* RFC 4681 - TLS User Mapping Extension */
-  case 12: return "srp";
-  case 13: return "signature_algorithms";
-  case 14: return "use_srtp";
-  case 15: return "heartbeat";
+/* RFC 6091 - Using OpenPGP Keys for TLS Authentication */
+case 9: return "cert_type";                                
 
-    /* RFC 7301 - Application-Layer Protocol Negotiation (ALPN) */
-  case 16: return "application_layer_protocol_negotiation";
+/* RFC 8422 - Elliptic Curve Cryptography (ECC) Cipher Suites */
+case 10: return "supported_groups";                        
+case 11: return "ec_point_formats";                        
 
-    /* RFC 7685 - A TLS Extension for Certificate Status Request */
-  case 17: return "status_request_v2";
-  case 18: return "signed_certificate_timestamp";
-  case 19: return "client_certificate_type";
-  case 20: return "server_certificate_type";
+/* RFC 5054 - Using the Secure Remote Password (SRP) Protocol for TLS */
+case 12: return "srp";                                    
 
-    /* RFC 8879 - TLS Certificate Compression */
-  case 22: return "compress_certificate";
+/* RFC 8446 - The Transport Layer Security (TLS) Protocol Version 1.3 */
+case 13: return "signature_algorithms";                    
 
-    /* RFC 8449 - Record Size Limit Extension */
-  case 28: return "record_size_limit";
+/* RFC 5764 - DTLS Extension to Establish SRTP */
+case 14: return "use_srtp";                                
 
-    /* RFC 5746 - Transport Layer Security (TLS) Renegotiation Indication */
-  case 65281: return "renegotiation_info";
+/* RFC 6520 - TLS Heartbeat Extension */
+case 15: return "heartbeat";                               
 
-    /* TLS 1.3 Extensions (RFC 8446) */
-  case 21: return "padding";
-  case 23: return "session_ticket";
-  case 24: return "pre_shared_key";
-  case 25: return "early_data";
-  case 26: return "supported_versions";
-  case 27: return "cookie";
-  case 29: return "preshared_key";  /* Alternate spelling */
-  case 30: return "psk_key_exchange_modes";
-  case 31: return "ticket_early_data_info";
-  case 32: return "certificate_authorities";
-  case 33: return "oid_filters";
-  case 34: return "post_handshake_auth";
-  case 35: return "signature_algorithms_cert";
-  case 36: return "key_share";
-  case 37: return "transparency_info";
-  case 38: return "connection_id";
-  case 39: return "external_id_hash";
-  case 40: return "external_session_id";
-  case 41: return "quic_transport_parameters";
-  case 42: return "ticket_request";
-  case 43: return "dnssec_chain";
+/* RFC 7301 - Application-Layer Protocol Negotiation (ALPN) */
+case 16: return "application_layer_protocol_negotiation";  
 
-    /* RFC 7627 - Extended Master Secret Extension */
-  case 44: return "extended_master_secret";
+/* RFC 6961 - TLS Multiple Certificate Status Request */
+case 17: return "status_request_v2";                      
 
-    /* RFC 8446 - Other TLS 1.3 extensions */
-  case 45: return "token_binding";
-  case 46: return "cached_info";
-  case 47: return "tls_lts";
+/* RFC 6962 - Certificate Transparency */
+case 18: return "signed_certificate_timestamp";            
 
-    /* Drafts and other extensions */
-  case 48: return "compress_certificate_algorithms";
-  case 49: return "record_size_limit";
-  case 50: return "pwd_protect";
-  case 51: return "pwd_clear";
-  case 52: return "password_salt";
-  case 53: return "ticket_pinning";
-  case 54: return "tls_cert_with_extern_psk";
-  case 55: return "delegated_credential";
-  case 56: return "session_ticket_tls";
-  case 57: return "TLD";
-  case 58: return "external_id_hash";
-  case 59: return "external_session_id";
-  case 60: return "quic_transport_parameters";
-  case 61: return "ticket_request";
-  case 62: return "dnssec_chain";
-  case 63: return "sequence_number_encryption_algorithms";
+/* RFC 7250 - Using Raw Public Keys in TLS */
+case 19: return "client_certificate_type";                 
+case 20: return "server_certificate_type";                 
 
-    /* GREASE values (RFC 8701) */
-  case 0x0A0A: return "(GREASE)";
-  case 0x1A1A: return "(GREASE)";
-  case 0x2A2A: return "(GREASE)";
-  case 0x3A3A: return "(GREASE)";
-  case 0x4A4A: return "(GREASE)";
-  case 0x5A5A: return "(GREASE)";
-  case 0x6A6A: return "(GREASE)";
-  case 0x7A7A: return "(GREASE)";
-  case 0x8A8A: return "(GREASE)";
-  case 0x9A9A: return "(GREASE)";
-  case 0xAAAA: return "(GREASE)";
-  case 0xBABA: return "(GREASE)";
-  case 0xCACA: return "(GREASE)";
-  case 0xDADA: return "(GREASE)";
-  case 0xEAEA: return "(GREASE)";
-  case 0xFAFA: return "(GREASE)";
+/* RFC 7685 - A TLS Extension for Certificate Status Request */
+case 21: return "padding";                                 
 
-  case 0x44CD: return "application_settings";
+/* RFC 7366 - Encrypt-then-MAC for TLS */
+case 22: return "encrypt_then_mac";                        
 
-    /* Custom/Private extensions (experimental range) */
-  case 65037: return "next_protocol_negotiation";  /*  Google NPN */
-  case 65280: return "extended_random";  /* Used in some implementations */
-  case 65282: return "token_binding";  /* Alternate value */
+/* RFC 7627 - Extended Master Secret Extension */
+case 23: return "extended_master_secret";                  
 
-  default:
-    ndpi_snprintf(unknown_extn, 8, "0X%04X", extension_id);
-    return(unknown_extn);
-  }
+/* RFC 8472 - Token Binding for TLS */
+case 24: return "token_binding";                           
+
+/* RFC 7924 - Transport Layer Security (TLS) Cached Information Extension */
+case 25: return "cached_info";                             
+
+/* draft-gutmann-tls-lts - TLS Long-term Support Extension */
+case 26: return "tls_lts";                                 
+
+/* RFC 8879 - TLS Certificate Compression */
+case 27: return "compress_certificate";                    
+
+/* RFC 8449 - Record Size Limit Extension */
+case 28: return "record_size_limit";                       
+
+/* RFC 8492 - Secure Password Ciphersuites */
+case 29: return "pwd_protect";                             
+case 30: return "pwd_clear";                               
+case 31: return "password_salt";                           
+
+/* RFC 8672 - TLS Ticket Pinning Extension */
+case 32: return "ticket_pinning";                          
+
+/* draft-ietf-tls-8773bis - TLS Certificate with External PSK */
+case 33: return "tls_cert_with_extern_psk";                
+
+/* RFC 9345 - Delegated Credentials for TLS */
+case 34: return "delegated_credential";                   
+
+/* RFC 5077 - Session Ticket */
+case 35: return "session_ticket";                         
+
+/* ETSI TS 103 523-2 - TLMSP */
+case 36: return "TLMSP";
+case 37: return "TLMSP_proxying";
+case 38: return "TLMSP_delegate";
+
+/* RFC 8870 - TLS Encrypted Key Transport */
+case 39: return "supported_ekt_ciphers";                   
+
+/* Reserved (formerly 40) */
+case 40: return "Reserved";                               
+
+/* TLS 1.3 Core Extensions (RFC 8446) */
+case 41: return "pre_shared_key";
+case 42: return "early_data";
+case 43: return "supported_versions";
+case 44: return "cookie";
+case 45: return "psk_key_exchange_modes";
+
+/* RFC 9847 Reserved (formerly 46) */
+case 46: return "Reserved";                               
+
+/* RFC 8446 */
+case 47: return "certificate_authorities";
+case 48: return "oid_filters";
+case 49: return "post_handshake_auth";
+case 50: return "signature_algorithms_cert";
+case 51: return "key_share";
+
+/* RFC 9162 - Certificate Transparency Version 2.0 */
+case 52: return "transparency_info";                       
+
+/* RFC 9146 - Connection ID for DTLS */
+case 53: return "connection_id (deprecated)";              
+case 54: return "connection_id";                           
+
+/* RFC 8844 - DTLS 1.3 Extension for External ID */
+case 55: return "external_id_hash";
+case 56: return "external_session_id";
+
+/* RFC 9001 - QUIC Transport Parameters */
+case 57: return "quic_transport_parameters";               
+
+/* RFC 9149 - TLS Ticket Requests */
+case 58: return "ticket_request";                          
+
+/* RFC 9102 - TLS DNSSEC Chain Extension */
+case 59: return "dnssec_chain";                            
+
+/* draft-pismenny-tls-dtls-plaintext-sequence-number */
+case 60: return "sequence_number_encryption_algorithms";
+
+/* draft-ietf-tls-dtls-rrc - RRC for DTLS 1.3 */
+case 61: return "rrc";                                     
+
+/* draft-ietf-tls-tlsflags - TLS Flags Extension */
+case 62: return "tls_flags";                               
+
+/* RFC 9849 - TLS Encrypted Client Hello (ECH) Extensions */
+case 64768: return "ech_outer_extensions";                 
+case 65037: return "encrypted_client_hello";               
+
+/* Private Use Range */
+case 65280: return "PrivateUse";                 
+
+/* RFC 5746 - Renegotiation Indication Extension */
+case 65281: return "renegotiation_info";                   
+
+/* GREASE values (RFC 8701) */
+case 0x0A0A:                                               
+case 0x1A1A:                                               
+case 0x2A2A:                                               
+case 0x3A3A:                                               
+case 0x4A4A:                                               
+case 0x5A5A:                                               
+case 0x6A6A:                                               
+case 0x7A7A:                                               
+case 0x8A8A:                                               
+case 0x9A9A:                                               
+case 0xAAAA:                                               
+case 0xBABA:                                               
+case 0xCACA:                                               
+case 0xDADA:                                               
+case 0xEAEA:                                               
+case 0xFAFA: return "(GREASE)";                            
+
+default:
+	/* Range 65282 ... 65535. Removed check to avoid:
+	   warning: comparison is always true due to limited range of data type */
+	if (extension_id >= 65282)
+   		return "PrivateUse";
+	ndpi_snprintf(unknown_extn, 8, "0X%04X", extension_id);
+	return unknown_extn;
+}
 }
 
 /* ****************************************** */
@@ -6378,4 +6455,136 @@ const char *ndpi_ikev2_dh_name(u_int16_t id) {
     case 32: return "CURVE448";
     default: return "UNKNOWN";
   }
+}
+
+/* ****************************************** */
+
+gcry_error_t hkdf_expand(int hashalgo, const uint8_t *prk, uint32_t prk_len,
+                         const uint8_t *info, uint32_t info_len,
+                         uint8_t *out, uint32_t out_len)
+{
+  /* Current maximum hash output size: 48 bytes for SHA-384. */
+  uint8_t lastoutput[48];
+  gcry_md_hd_t h;
+  gcry_error_t err;
+  const unsigned int hash_len = gcry_md_get_algo_dlen(hashalgo);
+  uint32_t off;
+
+  /* Some sanity checks */
+  if(!(out_len > 0 && out_len <= 255 * hash_len) ||
+     !(hash_len > 0 && hash_len <= sizeof(lastoutput))) {
+    return GPG_ERR_INV_ARG;
+  }
+
+  err = gcry_md_open(&h, hashalgo, GCRY_MD_FLAG_HMAC);
+  if(err) {
+    return err;
+  }
+
+  for(off = 0; off < out_len; off += hash_len) {
+    gcry_md_reset(h);
+    gcry_md_setkey(h, prk, prk_len); /* Set PRK */
+    if(off > 0) {
+      gcry_md_write(h, lastoutput, hash_len); /* T(1..N) */
+    }
+    gcry_md_write(h, info, info_len);                   /* info */
+
+    uint8_t c = off / hash_len + 1;
+    gcry_md_write(h, &c, sizeof(c));                    /* constant 0x01..N */
+
+    memcpy(lastoutput, gcry_md_read(h, hashalgo), hash_len);
+    memcpy(out + off, lastoutput, ndpi_min(hash_len, out_len - off));
+  }
+
+  gcry_md_close(h);
+  return 0;
+}
+
+/* ****************************************** */
+
+/*
+ * Calculate HKDF-Extract(salt, IKM) -> PRK according to RFC 5869.
+ * Caller MUST ensure that 'prk' is large enough to store the digest from hash
+ * algorithm 'hashalgo' (e.g. 32 bytes for SHA-256).
+ */
+gcry_error_t hkdf_extract(int hashalgo, const uint8_t *salt, size_t salt_len,
+                          const uint8_t *ikm, size_t ikm_len, uint8_t *prk)
+{
+  /* PRK = HMAC-Hash(salt, IKM) where salt is key, and IKM is input. */
+
+  gcry_md_hd_t hmac_handle;
+  gcry_error_t result = gcry_md_open(&hmac_handle, hashalgo, GCRY_MD_FLAG_HMAC);
+  if(result) {
+    return result;
+  }
+  result = gcry_md_setkey(hmac_handle, salt, salt_len);
+  if(result) {
+    gcry_md_close(hmac_handle);
+    return result;
+  }
+  gcry_md_write(hmac_handle, ikm, ikm_len);
+  memcpy(prk, gcry_md_read(hmac_handle, 0), gcry_md_get_algo_dlen(hashalgo));
+  gcry_md_close(hmac_handle);
+  return GPG_ERR_NO_ERROR;
+}
+
+/* ****************************************** */
+
+/*
+ * Computes HKDF-Expand-Label(Secret, Label, Hash(context_value), Length) with "tls13 " as label prefix
+ */
+int hkdf_expand_label(int hashalgo, uint8_t *secret, uint32_t secret_len,
+                      const char *label, uint8_t *out, uint32_t out_len)
+{
+  /* RFC 8446 Section 7.1:
+   * HKDF-Expand-Label(Secret, Label, Context, Length) =
+   *      HKDF-Expand(Secret, HkdfLabel, Length)
+   * struct {
+   *     uint16 length = Length;
+   *     opaque label<7..255> = "tls13 " + Label; // "tls13 " is label prefix.
+   *     opaque context<0..255> = Context;
+   * } HkdfLabel;
+   *
+   * RFC 5869 HMAC-based Extract-and-Expand Key Derivation Function (HKDF):
+   * HKDF-Expand(PRK, info, L) -> OKM
+   */
+  gcry_error_t err;
+  const unsigned label_length = (unsigned int)strlen(label);
+  const char *label_prefix = "tls13 ";
+  const unsigned int label_prefix_length = (unsigned int)strlen(label_prefix);
+
+  /* Some sanity checks */
+  if(!(label_length > 0 && label_prefix_length + label_length <= 255)) {
+    return 0;
+  }
+
+  /* info = HkdfLabel { length, label, context } */
+  uint32_t info_len = 0;
+  uint8_t *info_data = (uint8_t *)ndpi_malloc(1024);
+  if(!info_data)
+    return 0;
+  const uint16_t length = htons(out_len);
+  memcpy(&info_data[info_len], &length, sizeof(length));
+  info_len += sizeof(length);
+
+  const uint8_t label_vector_length = label_prefix_length + label_length;
+  memcpy(&info_data[info_len], &label_vector_length, 1);
+  info_len += 1;
+  memcpy(&info_data[info_len], (const uint8_t *)label_prefix, label_prefix_length);
+  info_len += label_prefix_length;
+  memcpy(&info_data[info_len], (const uint8_t *)label, label_length);
+  info_len += label_length;
+
+  uint8_t context_length = 0; /* We don't use context */
+  memcpy(&info_data[info_len], &context_length, 1);
+  info_len += 1;
+
+  err = hkdf_expand(hashalgo, secret, secret_len, info_data, info_len, out, out_len);
+  ndpi_free(info_data);
+
+  if(err) {
+    return 0;
+  }
+
+  return 1;
 }

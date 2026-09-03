@@ -170,6 +170,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/megaco.c \
 		     protocols/melsec.c \
 		     protocols/memcached.c \
+		     protocols/meshtastic.c \
 		     protocols/merakicloud.c \
 		     protocols/mikrotik.c \
 		     protocols/mining.c \
@@ -190,10 +191,12 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/nano.c \
 		     protocols/natpmp.c \
 		     protocols/nats.c \
+		     protocols/nebula.c \
 		     protocols/nest_log_sink.c \
 		     protocols/netease_games.c \
 		     protocols/netbios.c \
 		     protocols/netflow.c \
+		     protocols/netmotion.c \
 		     protocols/nexon.c \
 		     protocols/nintendo.c \
 		     protocols/nfs.c \
@@ -294,6 +297,7 @@ libndpi_a_SOURCES = ndpi_content_match.c.inc \
 		     protocols/xdmcp.c \
 		     protocols/xiaomi.c \
 		     protocols/yojimbo.c \
+		     protocols/yggdrasil.c \
 		     protocols/zeromq.c \
 		     protocols/zoom.c \
 		     protocols/smpp.c \

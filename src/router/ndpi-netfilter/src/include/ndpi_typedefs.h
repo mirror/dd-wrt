@@ -1082,6 +1082,9 @@ struct ndpi_flow_udp_struct {
   /* NDPI_PROTOCOL_HAMACHI */
   u_int32_t hamachi_stage:2;
 
+  /* NDPI_PROTOCOL_NETMOTION */
+  u_int32_t netmotion_stage:2;
+
   /* NDPI_PROTOCOL_EPICGAMES */
   u_int32_t epicgames_stage:1;
   u_int32_t epicgames_word;
@@ -1107,6 +1110,10 @@ struct ndpi_flow_udp_struct {
   /* NDPI_PROTOCOL_HAMACHI */
   u_int32_t hamachi_long[2];
   u_int16_t hamachi_short[2];
+
+  /* NDPI_PROTOCOL_NETMOTION */
+  u_int32_t netmotion_token[2];
+  u_int16_t netmotion_cid[2];
 
   /* NDPI_PROTOCOL_QUIC */
   u_int8_t *quic_reasm_buf;
@@ -1376,7 +1383,8 @@ typedef enum {
 typedef struct ndpi_proto_defaults {
   char protoName[32];
   ndpi_protocol_category_t protoCategory;
-  u_int8_t isClearTextProto:1, isAppProtocol:1, isCustomProto:1, performIPcheck:1, haveDissector:1, _notused:3;
+  u_int8_t isClearTextProto:1, isAppProtocol:1, isCustomProto:1, performIPcheck:1, haveDissector:1,
+    partialClassificationCanChange:1, _notused:2;
   u_int16_t *subprotocols;
   u_int32_t subprotocol_count;
   u_int16_t protoId, dissector_idx;
@@ -1807,6 +1815,8 @@ struct ndpi_flow_struct {
     char *pktbuf;
     u_int16_t pktbuf_maxlen, pktbuf_currlen;
   } kerberos_buf;
+
+  struct ndpi_dns_tcp_reasm_state *dns_tcp_reasm;
 
   struct {
     u_int8_t maybe_dtls:1, rtcp_seen:1, is_turn : 1, is_client_controlling:1, pad : 4;
