@@ -80,7 +80,6 @@ struct nlmsghdr
  */
 #define NLM_F_ECHO		8
 
-#error "heck"
 #define NLM_F_DUMP_INTR		0x10
 
 /** @} */
