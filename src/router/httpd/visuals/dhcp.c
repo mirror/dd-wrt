@@ -428,6 +428,14 @@ EJ_VISIBLE void ej_show_dhcpd_settings(webs_t wp, int argc, char_t **argv)
 		websWrite(wp, "<input type=\"checkbox\" name=\"_dns_redirectdot\" value=\"1\" %s />\n",
 			  nvram_matchi("dns_redirectdot", 1) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "idx.dns_adblock", NULL);
+		websWrite(wp, "<input type=\"checkbox\" name=\"_dns_adblock\" value=\"1\" %s />\n",
+			  nvram_matchi("dns_adblock", 1) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
+
+
 	}
 
 	websWrite(wp, "</fieldset><br />\n");
