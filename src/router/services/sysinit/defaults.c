@@ -3716,7 +3716,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "smartdns_prefetch_domain", "1" },	// do cyclic background resolv and measurement
 	{ "smartdns_serve_expired", "1" },	// 
 	{ "smartdns_use_dns", "0" },	// 0 = use dns-list from router e.g. from WAN, Static DNS, WireGuard or VPN; 1 = use only SmartDNS servers from Addtional Options
-	{ "smartdns_custom", "1" },
+	{ "smartdns_custom", "0" },
 #endif
 #ifdef HAVE_MDNS
 	{ "mdns_enable", "0" },
