@@ -103,14 +103,28 @@ void start_smartdns(void)
 		if (nvram_matchi("recursive_dns", 1)) {
 			fprintf(fp, "server 127.0.0.1:7053\n");
 		} else if (nvram_matchi("smartdns_use_dns", 0)) {
-			dns_list = get_dns_list(1);
-			if (dns_list && dns_list->num_servers > 0) {
-				int i;
-				for (i = 0; i < dns_list->num_servers; i++)
-					fprintf(fp, "server %s\n", dns_list->dns_server[i].ip);
+			if (nvram_match("dns_adblock", "1")) {
+	#ifdef HAVE_OPENSSL
+				fprintf(fp,
+					"server-tls 188.34.161.210:853 -host-name root.hagezi.org -tls-host-verify root.hagezi.org\n");
+				fprintf(fp,
+					"server-tls 159.69.155.94:853 -host-name wurzn.hagezi.org -tls-host-verify wurzn.hagezi.org\n");
+				fprintf(fp,
+					"server-tls 95.217.163.17:853 -host-name juuri.hagezi.org -tls-host-verify juuri.hagezi.org\n");
+	#endif
+				fprintf(fp, "server 188.34.161.210\n");
+				fprintf(fp, "server 159.69.155.94\n");
+				fprintf(fp, "server 95.217.163.17\n");
+			} else {
+				dns_list = get_dns_list(1);
+				if (dns_list && dns_list->num_servers > 0) {
+					int i;
+					for (i = 0; i < dns_list->num_servers; i++)
+						fprintf(fp, "server %s\n", dns_list->dns_server[i].ip);
+				}
+				if (dns_list)
+					free_dns_list(dns_list);
 			}
-			if (dns_list)
-				free_dns_list(dns_list);
 		}
 	}
 	fwritenvram("smartdns_options", fp);
