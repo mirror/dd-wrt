@@ -1229,6 +1229,7 @@ idx.dhcp_lease="Lease-Ablauf";
 idx.dhcp_dnsmasq="Nutze dnsmasq für DHCP";
 idx.lan_dhcp="Versuche DHCP on LAN";
 idx.dns_dnsmasq="Nutze dnsmasq für DNS";
+idx.dns_adblock="Blockiere Werbung mittels DNS";
 idx.auth_dnsmasq="DHCP-Authoritative";
 idx.force_dnsmasq="Erzwungene DNS Umleitung";
 idx.force_dnsmasqdot="Erzwungene DoT DNS Umleitung";
