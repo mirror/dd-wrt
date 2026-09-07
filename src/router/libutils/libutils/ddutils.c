@@ -598,45 +598,57 @@ struct dns_lists *get_dns_list(int v6)
 		if (*wg_get_dns) {
 			add_dnslist(dns_list, wg_get_dns, 0, 0);
 		}
-		/*
+		if (nvram_match("dns_adblock", "1")) {
+			add_dnslist(dns_list, "188.34.161.210", 0, 0);
+			add_dnslist(dns_list, "159.69.155.94", 0, 0);
+			add_dnslist(dns_list, "95.217.163.17", 0, 0);
+		} else {
+			/*
 		 * if < 3 DNS servers found, try to insert alternates 
 		 */
-		while (altdns_index <= 3) {
-			char altdnsvar[32] = { 0 };
+			while (altdns_index <= 3) {
+				char altdnsvar[32] = { 0 };
 
-			snprintf(altdnsvar, 31, "altdns%d", altdns_index);
+				snprintf(altdnsvar, 31, "altdns%d", altdns_index);
 
-			if (*(nvram_safe_get(altdnsvar))) {
-				add_dnslist(dns_list, nvram_safe_get(altdnsvar), 1, 0);
+				if (*(nvram_safe_get(altdnsvar))) {
+					add_dnslist(dns_list, nvram_safe_get(altdnsvar), 1, 0);
+				}
+				altdns_index++;
 			}
-			altdns_index++;
-		}
-		if (*lan_dns)
-			add_dnslist(dns_list, lan_dns, 0, 0);
-		//egc if DNS server from WG or OpenVPN exist do not add existing DNS server from Static DNS to stop DNS leak
-		if (*wan_dns && !*wg_get_dns && !*openvpn_get_dns) {
-			add_dnslist(dns_list, wan_dns, 0, 0);
-		}
-		if (!nvram_match("ignore_wan_dns", "1") || nvram_match("wan_proto", "static")) {
-			if (*wan_get_dns) {
-				add_dnslist(dns_list, wan_get_dns, 0, 0);
+			if (*lan_dns)
+				add_dnslist(dns_list, lan_dns, 0, 0);
+			//egc if DNS server from WG or OpenVPN exist do not add existing DNS server from Static DNS to stop DNS leak
+			if (*wan_dns && !*wg_get_dns && !*openvpn_get_dns) {
+				add_dnslist(dns_list, wan_dns, 0, 0);
+			}
+			if (!nvram_match("ignore_wan_dns", "1") || nvram_match("wan_proto", "static")) {
+				if (*wan_get_dns) {
+					add_dnslist(dns_list, wan_get_dns, 0, 0);
+				}
 			}
 		}
 	}
 #ifdef HAVE_IPV6
 	if (v6 && nvram_matchi("ipv6_enable", 1)) {
-		char *a1 = nvram_safe_get("ipv6_dns1");
-		char *a2 = nvram_safe_get("ipv6_dns2");
-		if (*a1)
-			add_dnslist(dns_list, a1, 1, 1);
-		if (*a2)
-			add_dnslist(dns_list, a2, 1, 1);
+		if (nvram_match("dns_adblock", "1")) {
+			add_dnslist(dns_list, "2a01:4f8:c17:1c66::1", 0, 0);
+			add_dnslist(dns_list, "2a01:4f8:1c1c:d363::1", 0, 0);
+			add_dnslist(dns_list, "2a01:4f9:c013:dc4e::1", 0, 0);
+		} else {
+			char *a1 = nvram_safe_get("ipv6_dns1");
+			char *a2 = nvram_safe_get("ipv6_dns2");
+			if (*a1)
+				add_dnslist(dns_list, a1, 1, 1);
+			if (*a2)
+				add_dnslist(dns_list, a2, 1, 1);
 
-		if (!nvram_match("ignore_wan_dns", "1") || nvram_match("wan_proto", "static")) {
-			const char *next, *wordlist = nvram_safe_get("ipv6_get_dns");
-			char word[64];
-			foreach(word, wordlist, next) {
-				add_dnslist(dns_list, word, 0, 1);
+			if (!nvram_match("ignore_wan_dns", "1") || nvram_match("wan_proto", "static")) {
+				const char *next, *wordlist = nvram_safe_get("ipv6_get_dns");
+				char word[64];
+				foreach(word, wordlist, next) {
+					add_dnslist(dns_list, word, 0, 1);
+				}
 			}
 		}
 	}
@@ -668,7 +680,7 @@ int dns_to_resolv(void)
 		//egc set IPv6 adress either local address ::/1 or ipv6_rtr_addr
 		if (nvram_matchi("ipv6_enable", 1)) {
 			//fprintf(fp_w, "nameserver %s\n", nvram_safe_get("ipv6_rtr_addr"));
-			fprintf(fp_w, "nameserver %s\n", "::1");
+			fprintf(fp_w, "nameserver ::1\n");
 		}
 		fclose(fp_w);
 		if (!(fp_w = fopencreate(RESOLV_FORW, "w"))) {
