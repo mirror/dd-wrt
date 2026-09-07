@@ -1165,7 +1165,7 @@ vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 	@echo "[CC] $@"
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: rc init resetbutton wlanled wland et writetool ttraff process_monitor redial dump_blocklist radio_timer watchdog hotplug servicemanager
+all: rc init resetbutton wlanled wland et writetool ttraff process_monitor redial dump_blocklist radio_timer watchdog signal_watchdog hotplug servicemanager
 
 clean:
 	rm -f *.o rc init resetbutton wland et writetool
@@ -1215,6 +1215,9 @@ endif
 	install servicemanager $(INSTALLDIR)/sbin
 ifneq ($(CONFIG_MICRO),y)
 ifneq ($(CONFIG_DIST),"micro")
+ifeq ($(CONFIG_ATH9K),y)
+	-install signal_watchdog $(INSTALLDIR)/sbin
+endif
 	-install watchdog $(INSTALLDIR)/sbin
 	-install dump_blocklist $(INSTALLDIR)/usr/sbin
 endif
@@ -1401,6 +1404,23 @@ hotplug: hotplug.o
 	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lshutils -lnvram
 
 watchdog: watchdog.o
+ifneq ($(CONFIG_MICRO),y)
+ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
+	@echo "[LD] $@"
+#	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lshutils ../libutils/libwireless.a
+	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lshutils -lwireless
+else
+	@true
+endif
+else
+	@true
+endif
+else
+	@true
+endif
+
+signal_watchdog: signal_watchdog.o
 ifneq ($(CONFIG_MICRO),y)
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
