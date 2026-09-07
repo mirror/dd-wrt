@@ -7,7 +7,7 @@
  *                OS-independent.  Contains #ifdefs to make this work
  *                on many platforms.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2022 the
+ * Copyright   :  Written by and Copyright (C) 2001-2026 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -250,15 +250,18 @@ static jb_socket rfc2553_connect_to(const char *host, int portnum, struct client
       return(JB_INVALID_SOCKET);
    }
 
-   csp->http->host_ip_addr_str = malloc_or_die(NI_MAXHOST);
+   csp->http->host_ip_addr_str = zalloc_or_die(NI_MAXHOST);
 
    for (rp = result; rp != NULL; rp = rp->ai_next)
    {
 
 #ifdef FEATURE_ACL
       memcpy(&dst->addr, rp->ai_addr, rp->ai_addrlen);
+#ifdef ACL_DEBUG
+      dst->addr_length = rp->ai_addrlen;
+#endif
 
-      if (block_acl(dst, csp))
+      if (block_acl(csp, dst))
       {
          socket_error = errno = EPERM;
          continue;
@@ -468,7 +471,7 @@ static jb_socket no_rfc2553_connect_to(const char *host, int portnum, struct cli
    dst->addr = ntohl(addr);
    dst->port = portnum;
 
-   if (block_acl(dst, csp))
+   if (block_acl(csp, dst))
    {
       errno = EPERM;
       return(JB_INVALID_SOCKET);
@@ -1084,7 +1087,8 @@ int bind_port(const char *hostnam, int portnum, int backlog, jb_socket *pfd)
  * Function    :  get_host_information
  *
  * Description :  Determines the IP address the client used to
- *                reach us and the hostname associated with it.
+ *                reach us, the hostname associated with it and
+ *                the listening address and port.
  *
  *                XXX: Most of the code has been copy and pasted
  *                from accept_connection() and not all of the
@@ -1416,7 +1420,7 @@ int accept_connection(struct client_state * csp, jb_socket fds[])
    if (!csp->ip_addr_str || retval)
    {
       log_error(LOG_LEVEL_ERROR, "Can not save csp->ip_addr_str: %s",
-         (csp->ip_addr_str) ? gai_strerror(retval) : "Insuffcient memory");
+         (csp->ip_addr_str) ? gai_strerror(retval) : "Insufficient memory");
       freez(csp->ip_addr_str);
    }
 #undef client
@@ -1442,6 +1446,9 @@ int accept_connection(struct client_state * csp, jb_socket fds[])
          "Server name (%s) and port number (%d) ASCII decimal representation "
          "don't fit into %lu bytes",
          host_addr, csp->config->hport[i], listen_addr_size);
+      freez(csp->ip_addr_str);
+      freez(csp->listen_addr_str);
+      close_socket(csp->cfd);
       return 0;
    }
 

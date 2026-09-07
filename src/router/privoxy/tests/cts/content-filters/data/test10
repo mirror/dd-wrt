@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -9,12 +10,12 @@ filter banners-by-link
 
 <reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-X-Control: swsclose
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Control: swsclose%CR
+%CR
 # Here is some HTML that the banners-by-link filter should modify:
 
 # pcrs command 1:
@@ -45,13 +46,13 @@ X-Control: swsclose
 
 <proxy-reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-X-Control: swsclose
-Content-Length: 3256
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Control: swsclose%CR
+Content-Length: 3256%CR
+%CR
 # Here is some HTML that the banners-by-link filter should modify:
 
 # pcrs command 1:
@@ -97,12 +98,12 @@ http://%HOSTIP:%HTTPPORT/banners-by-link/%TESTNUMBER
 
 <verify>
 <protocol>
-GET /banners-by-link/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-Connection: close
-
+GET /banners-by-link/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Connection: close%CR
+%CR
 </protocol>
 </verify>
 </testcase>

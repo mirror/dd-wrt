@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -35,14 +36,14 @@ proxy
 
 <verify>
 <protocol nonewline="yes">
-POST /bumfidel-to-tralala/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-Content-Length: 7
-Content-Type: application/x-www-form-urlencoded
-Connection: close
-
+POST /bumfidel-to-tralala/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Content-Length: 7%CR
+Content-Type: application/x-www-form-urlencoded%CR
+Connection: close%CR
+%CR
 tralala
 </protocol>
 </verify>

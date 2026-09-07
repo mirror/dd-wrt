@@ -3,6 +3,7 @@ keyword:--request-target: Tests with keyword '--request-target' don't work with 
 keyword:--resolve: Tests with keyword '--resolve' currently don't work with Privoxy as they need additional runtests.pl changes.
 keyword:curl-config: Tests with keyword 'curl-config' do not reach the proxy. Or do they?
 keyword:CURLOPT_RESOLVE: Tests with keyword 'CURLOPT_RESOLVE' currently don't work with Privoxy as they need additional runtests.pl changes.
+keyword:DOH: Tests with keyword 'DOH' don't work with Privoxy.
 keyword:FAILURE: Tests with keyword 'FAILURE' do not reach the proxy. Or do they?
 keyword:FILE: Protocol FILE is not supported by Privoxy.
 keyword:FTP: Protocol FTP is not supported by Privoxy.
@@ -18,6 +19,7 @@ keyword:SOCKS4: Protocol SOCKS4 is supported by Privoxy but the tests need addit
 keyword:SOCKS5: Protocol SOCKS5 is supported by Privoxy but the tests need additional magic before they can be used.
 keyword:TELNET: Protocol TELNET is not supported by Privoxy.
 keyword:unsupported: Tests with keyword 'unsupported' do not reach the proxy. Or do they?
+test:1: Expected to fail. Multiple values in Connection header that get removed by Privoxy.
 test:1052: Expected to fail. Connection header expected in one response but not in the other. Not yet covered by runtests.pl's proxy mode.
 test:1074: Expected to fail. Privoxy doesn't downgrade the forwarded request and doesn't have to as long as the client is treated like a HTTP/1.0 client. Needs double-checking.
 test:1118: Expected to fail. Looks like a curl bug although Privoxy's behaviour seems subobtimal as well.
@@ -33,20 +35,28 @@ test:129: Invalid HTTP version. Privoxy downgrades it to 1.1.
 test:1292: Expected to fail as Privoxy replaces the empty Host header.
 test:1310: Known to fail. NTLM-related. Cause not properly diagnosed yet. Privoxy's behaviour seems reasonable.
 test:1433: Expected to fail. Privoxy will enforce a valid HTTP version number
+test:1479: Expected to fail. Uses HTTP/0.9 response.
+test:1480: Expected to fail. Uses HTTP Continue response but no final response.
 test:1506, 1510: Expected to fail when using a proxy. Hardcoded addresses in expected output.
 test:1533: Sends an invalid method. Needs investigating.
+test:1542: Expected to fail. Expects HTTPPORT in logs which gets replaced by Privoxy's listening port.
 test:1543: Expected to fail as the URL contains spaces. XXX: Looks like a curl bug that should be investigated.
 test:155: Known to fail. Not yet analyzed.
 test:1556: Known to fail. Body value changes from 100008 to 100009. Needs investigating.
 test:158, 246, 565, 579: Known to fail. Not properly analyzed. Looks like Privoxy's continue hack is insufficient.
+test:1598: Expected to fail. Privoxy does not support chunk-encoded POST requests with trailers.
 test:16, 45, 63: Not supposed to work with Privoxy. Expected forwarding failure. Workaround probably possible.
+test:1665: Expected to fail. Trigger Privoxy's MS IIS 5 hack which the test does not expect.
 test:1671: Known to fail as curl adds a Proxy-Connection header to the JSON output which the test doesn't expect.
+test:1685: Known to fail as Privoxy converts a tab in a Cookie header to space.
 test:17: Not supposed to work with Privoxy. Invalid METHODs get rejected.
 test:187: Expected to fail. Test doesn't deal with Privoxy's error message in case of invalid URLs.
 test:19, 20: Not supposed to work with Privoxy. Tests behaviour with non-existing server and doesn't deal with error messages coming from a proxy.
 test:1901, 1902, 1903: Known to fail due to different response orders.
 test:1915: Known to fail. Uses tool that doesn't expect a proxy.
 test:1933: Known to fail. Modified signature in Authorization header. Needs investigating
+test:1960: Known to fail. Test does not expect proxy request.
+test:2: Expected to fail. Missing space after status code that gets added by Privoxy.
 test:2032, 2033: Known to fail due to a limitation of the test which doesn't properly deal with interleaved output from two parallel connections
 test:2049, 2052, 2053, 2054: Uses --connect-to. Need investigating.
 test:207: Expected to fail. Test doesn't handle Privoxy's error message. Privoxy doesn't behave correctly, though.
@@ -59,20 +69,28 @@ test:30, 37, 66, 1079: Expected to fail with Privoxy. In case of missing server 
 test:3014, 3015: Known to fail. Curl adds a Proxy-Connection header while test expect a certain number of headers.
 test:309: Known to fail. Uses https and test does not expect the 'Connection established' response from Privoxy
 test:31, 1105, 1160: Expected to fail. Privoxy normalizes white-space in a cookie.
-test:339, 347, 1591: Chunked transfer with trailers which Privoxy does not understand. Needs investigating.
+test:339, 347, 1482, 1483, 1591: Chunked transfer with trailers which Privoxy does not understand. Needs investigating.
+test:34, 457, 1417, 1493: Expected to fail with Privoxy. Test contains non-standard 'Connection: mooo' header that Privoxy replaces with 'Connection: close'.
 test:389: Known to fail depending on the DNS resolver on the system as Privoxy does not implement RFC6761 internally.
 test:412, 413: Known to fail as curl is tunneling the request even though it's vanilla HTTP.
 test:415: Known to fail. Control code in Content-Length header.
 test:435: Expected to fail. Uses %%{remote_port} and expects the port of the server and not the one from Privoxy.
+test:439: Expected to fail. Privoxy adds a 'Connection established' response the test does not expect.
 test:46: Invalid URL and use of --resolv.
+test:461: Expected to fail. Privoxy adds a 'Host' header.
+test:471, 1704: Expected to fail. Uses HTTP/2 which Privoxy does not support.
+test:473, 1499: Expected to fail. Privoxy does not support chunked trailers.
+test:500: Known to fail when curl has been build with TrackMemory suppport. Proxy use results in 'TOO MANY ALLOCS'.
 test:501: Not relevant for a proxy.
 test:507: Expected to fail. DNS failures cause a Privoxy error message the test doesn't handle.
 test:530, 584: Known to fail. Test server expects pipelined requests and doesn't respond otherwise.
 test:556: Expected to fail. Uses HTTP/1.2 which Privoxy rejects as invalid.
+test:58: Expected to fail when using Privoxy. Doesn't appear to be obviously Privoxy's fault.
 test:581: Expected to fail. Privoxy removes second Content-Type header.
 test:587, 644: Expected to fail. POST request doesn't make it to the server. Needs investigating.
 test:59: Invalid URL gets rejected by Privoxy which the test can't handle.
 test:655: Expected to fail. Uses tool. Failure reason not yet analyzed
+test:696: Expected to fail. Test uses tool that does not support proxies.
 test:8: Expected to fail. Tab in cookie that Privoxy converts to a space which the test does not expect.
 test:96: Test 96 is incomplete
 test:970, 972: Expected to fail. Privoxy adds a Proxy-Connection header which results in a modified num_headers value in the JSON output

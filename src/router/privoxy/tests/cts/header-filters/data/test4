@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -9,25 +10,25 @@ client-header-filter hide-tor-exit-notation
 
 <reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-X-Control: swsclose
-Content-Length: 0
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Control: swsclose%CR
+Content-Length: 0%CR
+%CR
 </data>
 </reply>
 
 <proxy-reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-X-Control: swsclose
-Content-Length: 0
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Control: swsclose%CR
+Content-Length: 0%CR
+%CR
 </data>
 </proxy-reply>
 
@@ -48,13 +49,13 @@ proxy
 
 <verify>
 <protocol>
-HEAD /hide-tor-exit-notation/%TESTNUMBER HTTP/1.1
-Host: www.example.org
-User-Agent: curl/%VERSION
-Accept: */*
-Referer: http://www.example.org/
-Connection: close
-
+HEAD /hide-tor-exit-notation/%TESTNUMBER HTTP/1.1%CR
+Host: www.example.org%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Referer: http://www.example.org/%CR
+Connection: close%CR
+%CR
 </protocol>
 </verify>
 </testcase>

@@ -112,13 +112,7 @@ const char *pcrs_strerror(const int error)
             return "(pcrs:) At least one variable was too big and has been truncated before compilation";
 
          default:
-#ifdef HAVE_PCRE2
             pcre2_get_error_message(error, (PCRE2_UCHAR8*)buf, sizeof(buf));
-#else
-            snprintf(buf, sizeof(buf),
-               "Error code %d. For details, check the pcre documentation.",
-               error);
-#endif
             return buf;
       }
    }
@@ -471,22 +465,8 @@ pcrs_job *pcrs_free_job(pcrs_job *job)
       next = job->next;
       if (job->pattern != NULL)
       {
-#ifdef HAVE_PCRE2
          pcre2_code_free(job->pattern);
-#else
-         free(job->pattern);
-#endif
       }
-#ifndef HAVE_PCRE2
-      if (job->hints != NULL)
-      {
-#ifdef PCRE_CONFIG_JIT
-         pcre_free_study(job->hints);
-#else
-         free(job->hints);
-#endif
-      }
-#endif
       if (job->substitute != NULL)
       {
          if (job->substitute->text != NULL) free(job->substitute->text);
@@ -635,11 +615,8 @@ pcrs_job *pcrs_compile(const char *pattern, const char *substitute, const char *
    pcrs_job *newjob;
    unsigned int flags;
    int capturecount;
-#ifdef HAVE_PCRE2
+#ifndef DISABLE_PCRE_JIT_COMPILATION
    int ret;
-#else
-   int pcre_study_options = 0;
-   const char *error;
 #endif
 
    *errptr = 0;
@@ -672,27 +649,21 @@ pcrs_job *pcrs_compile(const char *pattern, const char *substitute, const char *
    /*
     * Compile the pattern
     */
-#ifdef HAVE_PCRE2
    PCRE2_SIZE error_offset;
    newjob->pattern = pcre2_compile((const unsigned char *)pattern,
       PCRE2_ZERO_TERMINATED, (unsigned)newjob->options, errptr,
       &error_offset, NULL);
-#else
-   newjob->pattern = pcre_compile(pattern, newjob->options, &error, errptr, NULL);
-#endif
    if (newjob->pattern == NULL)
    {
       pcrs_free_job(newjob);
       return NULL;
    }
 
-#if defined(PCRE_STUDY_JIT_COMPILE) || defined(HAVE_PCRE2)
 #ifdef DISABLE_PCRE_JIT_COMPILATION
 #warning PCRE_STUDY_JIT_COMPILE is supported but Privoxy has been configured not to use it
 #else
    if (!(flags & PCRS_DYNAMIC))
    {
-#ifdef HAVE_PCRE2
       /* Try to enable JIT compilation but continue if it's unsupported. */
       if ((ret = pcre2_jit_compile(newjob->pattern, PCRE2_JIT_COMPLETE)) &&
           (ret != PCRE2_ERROR_JIT_BADOPTION))
@@ -701,36 +672,15 @@ pcrs_job *pcrs_compile(const char *pattern, const char *substitute, const char *
          pcrs_free_job(newjob);
          return NULL;
        }
-#else
-      pcre_study_options = PCRE_STUDY_JIT_COMPILE;
-#endif
    }
-#endif
 #endif
 
-#ifndef HAVE_PCRE2
-   /*
-    * Generate hints. This has little overhead, since the
-    * hints will be NULL for a boring pattern anyway.
-    */
-   newjob->hints = pcre_study(newjob->pattern, pcre_study_options, &error);
-   if (error != NULL)
-   {
-      *errptr = PCRS_ERR_STUDY;
-      pcrs_free_job(newjob);
-      return NULL;
-   }
-#endif
 
    /*
     * Determine the number of capturing subpatterns.
     * This is needed for handling $+ in the substitute.
     */
-#ifdef HAVE_PCRE2
    if (0 > (*errptr = pcre2_pattern_info(newjob->pattern, PCRE2_INFO_CAPTURECOUNT, &capturecount)))
-#else
-   if (0 > (*errptr = pcre_fullinfo(newjob->pattern, newjob->hints, PCRE_INFO_CAPTURECOUNT, &capturecount)))
-#endif
    {
       pcrs_free_job(newjob);
       return NULL;
@@ -848,14 +798,9 @@ int pcrs_execute(pcrs_job *job, const char *subject, size_t subject_length, char
        submatches,
        max_matches = PCRS_MAX_MATCH_INIT;
    size_t newsize;
-#ifdef HAVE_PCRE2
    pcrs_match *matches, *dummy;
    pcre2_match_data *pcre2_matches;
    size_t *offsets;
-#else
-   pcrs_match *matches, *dummy;
-   int offsets[3 * PCRS_MAX_SUBMATCHES];
-#endif
    char *result_offset;
 
    offset = i = 0;
@@ -869,13 +814,12 @@ int pcrs_execute(pcrs_job *job, const char *subject, size_t subject_length, char
       return(PCRS_ERR_BADJOB);
    }
 
-#ifdef HAVE_PCRE2
    if (NULL == (pcre2_matches = pcre2_match_data_create_from_pattern(job->pattern, NULL)))
    {
       return(PCRS_ERR_NOMEM);
    }
    offsets = pcre2_get_ovector_pointer(pcre2_matches);
-#endif
+
    if (NULL == (matches = (pcrs_match *)malloc((size_t)max_matches * sizeof(pcrs_match))))
    {
       return(PCRS_ERR_NOMEM);
@@ -888,12 +832,8 @@ int pcrs_execute(pcrs_job *job, const char *subject, size_t subject_length, char
     */
    newsize = subject_length;
 
-#ifdef HAVE_PCRE2
    while ((submatches = pcre2_match(job->pattern, (const unsigned char *)subject,
                            subject_length, (size_t)offset, 0, pcre2_matches, NULL)) > 0)
-#else
-   while ((submatches = pcre_exec(job->pattern, job->hints, subject, (int)subject_length, offset, 0, offsets, 3 * PCRS_MAX_SUBMATCHES)) > 0)
-#endif
    {
       job->flags |= PCRS_SUCCESS;
       matches[i].submatches = submatches;
@@ -947,16 +887,11 @@ int pcrs_execute(pcrs_job *job, const char *subject, size_t subject_length, char
          offset = (int)offsets[1];
    }
    /* Pass pcre error through if (bad) failure */
-#ifdef HAVE_PCRE2
    if (submatches < PCRE2_ERROR_NOMATCH)
-#else
-   if (submatches < PCRE_ERROR_NOMATCH)
-#endif
    {
       free(matches);
-#ifdef HAVE_PCRE2
       pcre2_match_data_free(pcre2_matches);
-#endif
+
       return submatches;
    }
    matches_found = i;
@@ -967,18 +902,15 @@ int pcrs_execute(pcrs_job *job, const char *subject, size_t subject_length, char
     * and append terminating null byte.
     */
    if ((*result = (char *)malloc(newsize + 1
-#ifdef HAVE_PCRE2
    /*
     * Work around to prevent invalid reads in the jit code.
     */
                                              + 16
-#endif
                                                  )) == NULL)
    {
       free(matches);
-#ifdef HAVE_PCRE2
       pcre2_match_data_free(pcre2_matches);
-#endif
+
       return PCRS_ERR_NOMEM;
    }
    else
@@ -1031,10 +963,9 @@ int pcrs_execute(pcrs_job *job, const char *subject, size_t subject_length, char
    memcpy(result_offset, subject + offset, subject_length - (size_t)offset);
 
    *result_length = newsize;
-#ifdef HAVE_PCRE2
    pcre2_match_data_free(pcre2_matches);
-#endif
    free(matches);
+
    return matches_found;
 
 }

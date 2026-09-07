@@ -185,8 +185,6 @@ https://www.privoxy.org/donate
 86) Add a server-body-tagger action. This is trivial as as all the
     functionality required to do it already exists.
 
-87) Add a client-body-tagger action. Work in progress.
-
 88) Investigate if there's a Perl module that Privoxy-Regression-Test
     could optionally use to keep connections alive, preferably while
     requiring less forks at the same time.
@@ -214,10 +212,6 @@ https://www.privoxy.org/donate
     addresses, instead of trusting the libc to return them in an order
     that makes sense. Like #93, this could be useful as a workaround
     for misconfigured setups.
-
-96) Filters should be easier to look up. Currently get_filter() has to
-    go through all filters and skip the filter types the caller isn't
-    interested in.
 
 98) When showing action sections on the CGI pages, properly escape
     line breaks so they can be copy&pasted into action files without
@@ -487,7 +481,7 @@ https://www.privoxy.org/donate
      Interested donors: 0.
 
 190) The socks5 authentication code should send user name an password
-     seperately or we should increase the cbuf size to allow longer
+     separately or we should increase the cbuf size to allow longer
      user names and passwords.
 
 191) The cipher-list directive should be split into cipher-list-server
@@ -495,9 +489,6 @@ https://www.privoxy.org/donate
 
 192) The client TLS contexts should probably be shared among threads
      to spend less time and memory loading the root certificates.
-
-193) Use SHA256 instead of MD5 for the host hash used when generating file
-     names for host certificates and keys.
 
 194) There should be a way to force gif deanimation if the server does not
      declare the content as gif.
@@ -530,11 +521,16 @@ https://www.privoxy.org/donate
 202) Allow to use multiple log files with different debug settings.
      Suggested by Jonathan Marten in FR#607.
 
-203) Add HTTP/2 support.
-
 204) Make the Privoxy website available over IPv6.
 
 205) Document how commit messages should look like.
+
+206) Figure out how to provide Windows binaries again. They should probably
+     be cross-built.
+     Interested donors: 0.
+
+207) Prepare for the shutdown of SourceForge's interactive shell service
+     which is supposed to happen on 2026-06-20.
 
 ##########################################################################
 

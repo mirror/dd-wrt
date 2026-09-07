@@ -5,7 +5,7 @@
  * Purpose     :  Declares functions to match URLs against URL
  *                patterns.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2020
+ * Copyright   :  Written by and Copyright (C) 2001-2025
  *                the Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -122,6 +122,7 @@ jb_err init_domain_components(struct http_request *http)
    size_t size;
    char *p;
 
+   assert(http->dbuffer == NULL);
    http->dbuffer = strdup_or_die(http->host);
 
    /* map to lower case */
@@ -146,6 +147,7 @@ jb_err init_domain_components(struct http_request *http)
    /* save a copy of the pointers in dvec */
    size = (size_t)http->dcount * sizeof(*http->dvec);
 
+   assert(http->dvec == NULL);
    http->dvec = malloc_or_die(size);
 
    memcpy(http->dvec, vec, size);
@@ -326,6 +328,11 @@ jb_err parse_http_url(const char *url, struct http_request *http, int require_pr
 
    if (!host_available)
    {
+      if (!require_protocol)
+      {
+         log_error(LOG_LEVEL_ERROR, "No host found in request line.");
+         return JB_ERR_PARSE;
+      }
       /* Without host, there is nothing left to do here */
       return JB_ERR_OK;
    }
@@ -604,7 +611,6 @@ jb_err parse_http_request(const char *req, struct http_request *http)
 }
 
 
-#ifdef HAVE_PCRE2
 /*********************************************************************
  *
  * Function    :  compile_pattern
@@ -628,12 +634,15 @@ jb_err parse_http_request(const char *req, struct http_request *http)
 static jb_err compile_pattern(const char *pattern, enum regex_anchoring anchoring,
                               struct pattern_spec *url, pcre2_code **regex)
 {
+   PCRE2_UCHAR error_message[120];
    int errcode;
    const char *fmt = NULL;
    char *rebuf;
    size_t rebuf_size;
    PCRE2_SIZE error_offset;
+#ifndef DISABLE_PCRE_JIT_COMPILATION
    int ret;
+#endif
 
    assert(pattern);
 
@@ -671,8 +680,9 @@ static jb_err compile_pattern(const char *pattern, enum regex_anchoring anchorin
       &error_offset, NULL);
    if (*regex == NULL)
    {
-      log_error(LOG_LEVEL_ERROR, "error compiling %s from %s: %s",
-         pattern, url->spec, rebuf);
+      pcre2_get_error_message(errcode, error_message, sizeof(error_message));
+      log_error(LOG_LEVEL_ERROR, "Failed to compile '%s' (%s) from '%s': %s",
+         pattern, rebuf, url->spec, error_message);
       freez(rebuf);
 
       return JB_ERR_PARSE;
@@ -683,9 +693,10 @@ static jb_err compile_pattern(const char *pattern, enum regex_anchoring anchorin
    if ((ret = pcre2_jit_compile(*regex, PCRE2_JIT_COMPLETE)) &&
        (ret != PCRE2_ERROR_JIT_BADOPTION))
    {
+      pcre2_get_error_message(ret, error_message, sizeof(error_message));
       log_error(LOG_LEVEL_ERROR,
-         "Unexpected error enabling JIT compilation for %s from %s: %s",
-         pattern, url->spec, rebuf);
+         "Failed to JIT-compile '%s' (%s) from '%s': %s",
+         pattern, rebuf, url->spec, error_message);
       freez(rebuf);
 
       return JB_ERR_PARSE;
@@ -697,90 +708,6 @@ static jb_err compile_pattern(const char *pattern, enum regex_anchoring anchorin
    return JB_ERR_OK;
 
 }
-#else
-/*********************************************************************
- *
- * Function    :  compile_pattern
- *
- * Description :  Compiles a host, domain or TAG pattern.
- *
- * Parameters  :
- *          1  :  pattern = The pattern to compile.
- *          2  :  anchoring = How the regex should be modified
- *                            before compilation. Can be either
- *                            one of NO_ANCHORING, LEFT_ANCHORED,
- *                            RIGHT_ANCHORED or RIGHT_ANCHORED_HOST.
- *          3  :  url     = In case of failures, the spec member is
- *                          logged and the structure freed.
- *          4  :  regex   = Where the compiled regex should be stored.
- *
- * Returns     :  JB_ERR_OK - Success
- *                JB_ERR_PARSE - Cannot parse regex
- *
- *********************************************************************/
-static jb_err compile_pattern(const char *pattern, enum regex_anchoring anchoring,
-                              struct pattern_spec *url, regex_t **regex)
-{
-   int errcode;
-   const char *fmt = NULL;
-   char *rebuf;
-   size_t rebuf_size;
-
-   assert(pattern);
-
-   if (pattern[0] == '\0')
-   {
-      *regex = NULL;
-      return JB_ERR_OK;
-   }
-
-   switch (anchoring)
-   {
-      case NO_ANCHORING:
-         fmt = "%s";
-         break;
-      case RIGHT_ANCHORED:
-         fmt = "%s$";
-         break;
-      case RIGHT_ANCHORED_HOST:
-         fmt = "%s\\.?$";
-         break;
-      case LEFT_ANCHORED:
-         fmt = "^%s";
-         break;
-      default:
-         log_error(LOG_LEVEL_FATAL,
-            "Invalid anchoring in compile_pattern %d", anchoring);
-   }
-   rebuf_size = strlen(pattern) + strlen(fmt);
-   rebuf = malloc_or_die(rebuf_size);
-   *regex = zalloc_or_die(sizeof(**regex));
-
-   snprintf(rebuf, rebuf_size, fmt, pattern);
-
-   errcode = regcomp(*regex, rebuf, (REG_EXTENDED|REG_NOSUB|REG_ICASE));
-
-   if (errcode)
-   {
-      size_t errlen = regerror(errcode, *regex, rebuf, rebuf_size);
-      if (errlen > (rebuf_size - (size_t)1))
-      {
-         errlen = rebuf_size - (size_t)1;
-      }
-      rebuf[errlen] = '\0';
-      log_error(LOG_LEVEL_ERROR, "error compiling %s from %s: %s",
-         pattern, url->spec, rebuf);
-      free_pattern_spec(url);
-      freez(rebuf);
-
-      return JB_ERR_PARSE;
-   }
-   freez(rebuf);
-
-   return JB_ERR_OK;
-
-}
-#endif
 
 
 /*********************************************************************
@@ -1146,7 +1073,6 @@ static int simplematch(const char *pattern, const char *text)
 }
 
 
-#ifdef HAVE_PCRE2
 /*********************************************************************
  *
  * Function    :  pcre2_pattern_matches
@@ -1186,15 +1112,13 @@ static int pcre2_pattern_matches(const pcre2_code *pattern, const char *string)
 
    return (ret >= 0);
 }
-#endif
 
 
 /*********************************************************************
  *
  * Function    :  regex_matches
  *
- * Description :  Checks if a compiled regex pattern matches a string
- *                using either pcre2 or pcre1 code.
+ * Description :  Checks if a compiled regex pattern matches a string.
  *
  * Parameters  :
  *          1  :  pattern = The compiled pattern
@@ -1203,13 +1127,9 @@ static int pcre2_pattern_matches(const pcre2_code *pattern, const char *string)
  * Returns     :  TRUE for yes, FALSE otherwise.
  *
  *********************************************************************/
-int regex_matches(const REGEX_TYPE *pattern, const char *string)
+int regex_matches(const pcre2_code *pattern, const char *string)
 {
-#ifdef HAVE_PCRE2
    return pcre2_pattern_matches(pattern, string);
-#else
-   return (0 == regexec(pattern, string, 0, NULL, 0));
-#endif
 }
 
 /*********************************************************************
@@ -1429,12 +1349,7 @@ void free_pattern_spec(struct pattern_spec *pattern)
    {
       if (pattern->pattern.tag_regex)
       {
-#ifdef HAVE_PCRE2
          pcre2_code_free(pattern->pattern.tag_regex);
-#else
-         regfree(pattern->pattern.tag_regex);
-         freez(pattern->pattern.tag_regex);
-#endif
       }
       return;
    }
@@ -1442,12 +1357,7 @@ void free_pattern_spec(struct pattern_spec *pattern)
 #ifdef FEATURE_PCRE_HOST_PATTERNS
    if (pattern->pattern.url_spec.host_regex)
    {
-#ifdef HAVE_PCRE2
       pcre2_code_free(pattern->pattern.url_spec.host_regex);
-#else
-      regfree(pattern->pattern.url_spec.host_regex);
-      freez(pattern->pattern.url_spec.host_regex);
-#endif
    }
 #endif /* def FEATURE_PCRE_HOST_PATTERNS */
    freez(pattern->pattern.url_spec.dbuffer);
@@ -1456,12 +1366,7 @@ void free_pattern_spec(struct pattern_spec *pattern)
    freez(pattern->pattern.url_spec.port_list);
    if (pattern->pattern.url_spec.preg)
    {
-#ifdef HAVE_PCRE2
       pcre2_code_free(pattern->pattern.url_spec.preg);
-#else
-      regfree(pattern->pattern.url_spec.preg);
-      freez(pattern->pattern.url_spec.preg);
-#endif
    }
 }
 

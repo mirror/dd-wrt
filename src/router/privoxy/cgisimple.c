@@ -5,7 +5,7 @@
  * Purpose     :  Simple CGIs to get information about Privoxy's
  *                status.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2022 the
+ * Copyright   :  Written by and Copyright (C) 2001-2026 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -374,7 +374,8 @@ jb_err cgi_show_client_tags(struct client_state *csp,
          int tag_state;
 
          privoxy_mutex_lock(&client_tags_mutex);
-         tag_state = client_has_requested_tag(csp->client_address, this_tag->name);
+         tag_state = client_has_requested_tag(csp->client_address,
+            csp->listen_addr_str, this_tag->name);
          privoxy_mutex_unlock(&client_tags_mutex);
          if (!err) err = string_append(&client_tag_status, "<tr><td>");
          if (!err) err = string_append(&client_tag_status, this_tag->name);
@@ -404,7 +405,7 @@ jb_err cgi_show_client_tags(struct client_state *csp,
          return JB_ERR_MEMORY;
       }
    }
-   refresh_delay = get_next_tag_timeout_for_client(csp->client_address);
+   refresh_delay = get_next_tag_timeout_for_client(csp->client_address, csp->listen_addr_str);
    if (refresh_delay != 0)
    {
       snprintf(buf, sizeof(buf), "%u", csp->config->client_tag_lifetime);
@@ -1201,24 +1202,20 @@ static char *get_filter_statistics_table(const struct client_state *csp)
          */
         continue;
      }
-
-     for (b = fl->f; b != NULL; b = b->next)
+     for (b = ((struct re_filters *)(fl->f))->filters[FT_CONTENT_FILTER]; b != NULL; b = b->next)
      {
-        if (b->type == FT_CONTENT_FILTER)
-        {
-           unsigned long long executions;
-           unsigned long long response_bodies_modified;
-           unsigned long long hits;
+        unsigned long long executions;
+        unsigned long long response_bodies_modified;
+        unsigned long long hits;
 
-           get_filter_statistics(b->name, &executions, &response_bodies_modified, &hits);
-           snprintf(buf, sizeof(buf),
-              "<tr><td>%s</td><td style=\"text-align: right\">%llu</td>"
-              "<td style=\"text-align: right\">%llu</td>"
-              "<td style=\"text-align: right\">%llu</td><tr>\n",
-              b->name, executions, response_bodies_modified, hits);
+        get_filter_statistics(b->name, &executions, &response_bodies_modified, &hits);
+        snprintf(buf, sizeof(buf),
+           "<tr><td>%s</td><td style=\"text-align: right\">%llu</td>"
+           "<td style=\"text-align: right\">%llu</td>"
+           "<td style=\"text-align: right\">%llu</td><tr>\n",
+           b->name, executions, response_bodies_modified, hits);
 
-           if (!err) err = string_append(&statistics, buf);
-        }
+        if (!err) err = string_append(&statistics, buf);
      }
    }
 
@@ -1716,8 +1713,7 @@ jb_err cgi_show_url_info(struct client_state *csp,
 
       for (i = 0; i < MAX_AF_FILES; i++)
       {
-         if (NULL == csp->config->actions_file_short[i]
-             || !strcmp(csp->config->actions_file_short[i], "standard.action")) continue;
+         if (NULL == csp->config->actions_file_short[i]) continue;
 
          b = NULL;
          hits = 1;
@@ -2202,7 +2198,15 @@ static jb_err show_defines(struct map *exports)
 #else
          0,
 #endif
-      }
+      },
+      {
+         "FEATURE_ZSTD",
+#ifdef FEATURE_ZSTD
+         1,
+#else
+         0,
+#endif
+      },
    };
 
    for (i = 0; i < SZ(features); i++)

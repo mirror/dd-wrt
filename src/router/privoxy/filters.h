@@ -40,7 +40,7 @@
  * ACL checking
  */
 #ifdef FEATURE_ACL
-extern int block_acl(const struct access_control_addr *dst, const struct client_state *csp);
+extern int block_acl(const struct client_state *csp, const struct access_control_addr *dst);
 extern int acl_addr(const char *aspec, struct access_control_addr *aca);
 #endif /* def FEATURE_ACL */
 
@@ -104,6 +104,7 @@ extern struct http_response *direct_response(struct client_state *csp);
 
 extern int get_bytes_missing_from_chunked_data(char *buffer, size_t size, size_t offset);
 extern int chunked_data_is_complete(char *buffer, size_t size, size_t offset);
+extern jb_err parse_chunk_size(char *buffer, size_t buffer_size, unsigned int *chunk_size);
 
 #ifdef FUZZ
 extern char *gif_deanimate_response(struct client_state *csp);

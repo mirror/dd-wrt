@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -10,13 +11,13 @@ skip
 
 <reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-Content-Encoding: deflate
-X-Control: swsclose
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+Content-Encoding: deflate%CR
+X-Control: swsclose%CR
+%CR
 %hex[%0b%ce%cf%4d%55%48%49%4d%cb%49%2c%49%55%48%cd%4b%ce%4f%49%4d%]hex%
 Bogus data blafasel
 </data>
@@ -27,13 +28,13 @@ Bogus data blafasel
 # own line.
 <proxy-reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-Content-Encoding: deflate
-X-Control: swsclose
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+Content-Encoding: deflate%CR
+X-Control: swsclose%CR
+%CR
 %hex[%0b%ce%cf%4d%55%48%49%4d%cb%49%2c%49%55%48%cd%4b%ce%4f%49%4d%]hex%
 Bogus data blafasel
 %hex[%00]hex%
@@ -57,12 +58,12 @@ proxy
 
 <verify>
 <protocol>
-GET /deflate-compressed-data/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-Accept-Encoding: deflate
-
+GET /deflate-compressed-data/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Accept-Encoding: deflate%CR
+%CR
 </protocol>
 <errorcode>
 0

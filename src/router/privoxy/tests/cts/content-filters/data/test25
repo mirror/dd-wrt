@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -9,12 +10,12 @@ filter sourceforge
 
 <reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-X-Control: swsclose
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Control: swsclose%CR
+%CR
 # Here are some strings the sourceforge filter should filter:
 
 # pcrs command 1:
@@ -36,18 +37,38 @@ X-Control: swsclose
 # pcrs command 5:
 
 <div class="sterling" id="banner-sterling" blafasel
+
+# pcrs command 6:
+
+<div id="monb-sticky-obj" blafasel
+
+<div id="mongo-stick-obj" blafasel
+
+<div id="mon-sticky-div" blafasel
+
+<div id="mon-sticky-el" blafasel
+
+<div id="mdb_obj" blafasel
+
+# pcrs command 7:
+
+<div id="retool-coding-bar" blafasel
+
+<div id="bolt-coding-bar" blafasel
+
+<div id="vibe-main-row" blafasel
 </data>
 </reply>
 
 <proxy-reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-X-Control: swsclose
-Content-Length: 488
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Control: swsclose%CR
+Content-Length: 949%CR
+%CR
 # Here are some strings the sourceforge filter should filter:
 
 # pcrs command 1:
@@ -69,6 +90,26 @@ Content-Length: 488
 # pcrs command 5:
 
 <div class="sterling" id="banner-sterling" style="display:none;" blafasel
+
+# pcrs command 6:
+
+<div id="monb-sticky-obj" style="display:none;" blafasel
+
+<div id="mongo-stick-obj" style="display:none;" blafasel
+
+<div id="mon-sticky-div" style="display:none;" blafasel
+
+<div id="mon-sticky-el" style="display:none;" blafasel
+
+<div id="mdb_obj" style="display:none;" blafasel
+
+# pcrs command 7:
+
+<div style="display:none !important;" blafasel
+
+<div style="display:none !important;" blafasel
+
+<div style="display:none !important;" blafasel
 </data>
 </proxy-reply>
 
@@ -89,12 +130,12 @@ http://%HOSTIP:%HTTPPORT/sourceforge/%TESTNUMBER
 
 <verify>
 <protocol>
-GET /sourceforge/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-Connection: close
-
+GET /sourceforge/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Connection: close%CR
+%CR
 </protocol>
 </verify>
 </testcase>

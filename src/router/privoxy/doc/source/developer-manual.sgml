@@ -5,7 +5,7 @@
 <!entity p-intro SYSTEM "privoxy.sgml">
 <!entity history SYSTEM "history.sgml">
 <!entity seealso SYSTEM "seealso.sgml">
-<!entity p-version "4.0.0">
+<!entity p-version "4.2.0">
 <!entity p-status "stable">
 <!entity % p-not-stable "IGNORE">
 <!entity % p-stable "INCLUDE">
@@ -2757,7 +2757,7 @@ git clone ssh://git@git.privoxy.org:23/git/OSXPackageBuilder.git
      mirrored on the Privoxy websites
      (<ulink url="https://www.privoxy.org/">https://www.privoxy.org/</ulink>
       and
-      <ulink url="http://l3tczdiiwoo63iwxty4lhs6p7eaxop5micbn7vbliydgv63x5zrrrfyd.onion/">http://l3tczdiiwoo63iwxty4lhs6p7eaxop5micbn7vbliydgv63x5zrrrfyd.onion/</ulink>).
+      <ulink url="http://privoxy5wtwbtk4wwyrdbg6oxeghvhghghmokcx2iawydkqmaztfbbid.onion/">http://privoxy5wtwbtk4wwyrdbg6oxeghvhghghmokcx2iawydkqmaztfbbid.onion/</ulink>).
      This is usually done by Fabian who uses a couple of shell functions
      for this that aren't documented or published yet.
     </para>

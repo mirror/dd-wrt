@@ -8,7 +8,7 @@
  *                project.  Does not define any variables or functions
  *                (though it does declare some macros).
  *
- * Copyright   :  Written by and Copyright (C) 2001-2021 the
+ * Copyright   :  Written by and Copyright (C) 2001-2026 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -103,38 +103,20 @@
  */
 
 #ifdef STATIC_PCRE
-#ifdef HAVE_PCRE2
 #  include "pcre2.h"
 #  include "pcre2posix.h"
 #else
-#  include "pcre.h"
-#  include "pcreposix.h"
-#endif
-#else
-#  ifdef HAVE_PCRE2
-#    ifdef PCRE2_H_IN_SUBDIR
-#      define PCRE2_CODE_UNIT_WIDTH 8
-#      include <pcre2/pcre2.h>
-#    else
-#      define PCRE2_CODE_UNIT_WIDTH 8
-#      include <pcre2.h>
-#    endif
-#    ifdef PCRE2POSIX_H_IN_SUBDIR
-#        include <pcre2/pcre2posix.h>
-#    else
-#        include <pcre2posix.h>
-#    endif
+#  ifdef PCRE2_H_IN_SUBDIR
+#    define PCRE2_CODE_UNIT_WIDTH 8
+#    include <pcre2/pcre2.h>
 #  else
-#    ifdef PCRE_H_IN_SUBDIR
-#      include <pcre/pcre.h>
-#    else
-#      include <pcre.h>
-#    endif
-#    ifdef PCREPOSIX_H_IN_SUBDIR
-#        include <pcre/pcreposix.h>
-#    else
-#        include <pcreposix.h>
-#    endif
+#    define PCRE2_CODE_UNIT_WIDTH 8
+#    include <pcre2.h>
+#  endif
+#  ifdef PCRE2POSIX_H_IN_SUBDIR
+#      include <pcre2/pcre2posix.h>
+#  else
+#      include <pcre2posix.h>
 #  endif
 #endif
 
@@ -249,7 +231,6 @@ typedef enum privoxy_err jb_err;
 
 /**
  * Default TCP/IP address to listen on, as a string.
- * Set to "127.0.0.1:8118".
  */
 #define HADDR_DEFAULT   "127.0.0.1:8118"
 
@@ -316,7 +297,7 @@ struct map
 
 #ifdef FEATURE_HTTPS_INSPECTION_MBEDTLS
 /*
- * Struct of attributes necessary for TLS/SSL connection
+ * Struct of attributes necessary for TLS connection
  */
 typedef struct {
    mbedtls_ssl_context      ssl;
@@ -335,7 +316,7 @@ typedef struct {
 
 #ifdef FEATURE_HTTPS_INSPECTION_OPENSSL
 /*
- * Struct of attributes necessary for TLS/SSL connection
+ * Struct of attributes necessary for TLS connection
  */
 typedef struct {
    SSL_CTX *ctx;
@@ -345,7 +326,7 @@ typedef struct {
 
 #ifdef FEATURE_HTTPS_INSPECTION_WOLFSSL
 /*
- * Struct of attributes necessary for TLS/SSL connection
+ * Struct of attributes necessary for TLS connection
  */
 typedef struct {
    WOLFSSL_CTX *ctx;
@@ -440,16 +421,10 @@ struct http_response
   enum crunch_reason crunch_reason; /**< Why the response was generated in the first place. */
 };
 
-#ifdef HAVE_PCRE2
-#define REGEX_TYPE pcre2_code
-#else
-#define REGEX_TYPE regex_t
-#endif
-
 struct url_spec
 {
 #ifdef FEATURE_PCRE_HOST_PATTERNS
-   REGEX_TYPE *host_regex;/**< Regex for host matching                          */
+   pcre2_code *host_regex;/**< Regex for host matching                          */
    enum host_regex_type { VANILLA_HOST_PATTERN, PCRE_HOST_PATTERN } host_regex_type;
 #endif /* defined FEATURE_PCRE_HOST_PATTERNS */
    int    dcount;      /**< How many parts to this domain? (length of dvec)   */
@@ -459,7 +434,7 @@ struct url_spec
 
    char  *port_list;   /**< List of acceptable ports, or NULL to match all ports */
 
-  REGEX_TYPE *preg;    /**< Regex for matching path part                      */
+   pcre2_code *preg;    /**< Regex for matching path part                      */
 };
 
 /**
@@ -474,7 +449,7 @@ struct pattern_spec
    union
    {
       struct url_spec url_spec;
-      REGEX_TYPE *tag_regex;
+      pcre2_code *tag_regex;
    } pattern;
 
    unsigned int flags; /**< Bitmap with various pattern properties. */
@@ -537,13 +512,14 @@ struct iob
 #define CT_GZIP    0x0010U /**< gzip-compressed data. */
 #define CT_DEFLATE 0x0020U /**< zlib-compressed data. */
 #define CT_BROTLI  0x0040U /**< Brotli-compressed data. */
+#define CT_ZSTD    0x0080U /**< Zstandard-compressed data. */
 
 /**
  * Flag to signal that the server declared the content type,
  * so we can differentiate between unknown and undeclared
  * content types.
  */
-#define CT_DECLARED 0x0080U
+#define CT_DECLARED 0x0100U
 
 /**
  * The mask which includes all actions.
@@ -1361,7 +1337,8 @@ enum filter_type
  * This struct represents one filter (one block) from
  * the re_filterfile. If there is more than one filter
  * in the file, the file will be represented by a
- * chained list of re_filterfile specs.
+ * chained list of re_filterfile specs of the same filter
+ * type.
  */
 struct re_filterfile_spec
 {
@@ -1369,10 +1346,14 @@ struct re_filterfile_spec
    char *description;               /**< Description from FILTER: statement in re_filterfile. */
    struct list patterns[1];         /**< The patterns from the re_filterfile. */
    pcrs_job *joblist;               /**< The resulting compiled pcrs_jobs. */
-   enum filter_type type;           /**< Filter type (content, client-header, server-header). */
    int dynamic;                     /**< Set to one if the pattern might contain variables
                                          and has to be recompiled for every request. */
    struct re_filterfile_spec *next; /**< The pointer for chaining. */
+};
+
+struct re_filters
+{
+   struct re_filterfile_spec *filters[MAX_FILTER_TYPES];
 };
 
 
@@ -1389,6 +1370,9 @@ struct access_control_addr
 #ifdef HAVE_RFC2553
    struct sockaddr_storage addr; /* <The TCP address in network order. */
    struct sockaddr_storage mask; /* <The TCP mask in network order. */
+#ifdef ACL_DEBUG
+   socklen_t addr_length;
+#endif
 #else
    unsigned long addr;  /**< The IP address as an integer. */
    unsigned long mask;  /**< The network mask as an integer. */
@@ -1405,9 +1389,11 @@ struct access_control_list
 {
    struct access_control_addr src[1];  /**< Client IP address */
    struct access_control_addr dst[1];  /**< Website or parent proxy IP address */
-#ifdef HAVE_RFC2553
-   short wildcard_dst;                 /** < dst address is wildcard */
+#ifdef ACL_DEBUG
+   char *src_string;
+   char *dst_string;
 #endif
+   short wildcard_dst;                 /** < dst address is wildcard */
 
    short action;                       /**< ACL_PERMIT or ACL_DENY */
    struct access_control_list *next;   /**< The next entry in the ACL. */
@@ -1525,9 +1511,6 @@ struct configuration_spec
    /** The file names of the pcre filter files. */
    const char *re_filterfile[MAX_AF_FILES];
 
-   /** The short names of the pcre filter files. */
-   const char *re_filterfile_short[MAX_AF_FILES];
-
    /**< List of ordered client header names. */
    struct list ordered_client_headers[1];
 
@@ -1639,6 +1622,8 @@ struct configuration_spec
 
    /** Filename of trusted CAs certificates **/
    char *trusted_cas_file;
+
+   int elliptic_curve_keys;
 #endif
 };
 

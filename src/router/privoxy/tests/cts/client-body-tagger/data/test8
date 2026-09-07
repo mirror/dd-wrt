@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -35,24 +36,24 @@ proxy
 
 <verify>
 <protocol>
-GET /%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-Connection: close
-
-POST /%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-Transfer-Encoding: chunked
-Content-Type: application/x-www-form-urlencoded
-Connection: close
-
-8
-blafasel
-0
-
+GET /%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Connection: close%CR
+%CR
+POST /%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Transfer-Encoding: chunked%CR
+Content-Type: application/x-www-form-urlencoded%CR
+Connection: close%CR
+%CR
+8%CR
+blafasel%CR
+0%CR
+%CR
 </protocol>
 <stderr>
 200

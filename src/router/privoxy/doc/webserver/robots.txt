@@ -13,5 +13,6 @@ Disallow: /config/
 Disallow: /actions/
 Disallow: /submit/
 
-
-
+# The /gitweb can be crawled "endlessly" causing high load
+# on the webserver.
+Disallow: /gitweb/

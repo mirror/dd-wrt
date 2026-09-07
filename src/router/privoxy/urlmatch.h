@@ -50,7 +50,7 @@ extern int url_requires_percent_encoding(const char *url);
 extern int url_match(const struct pattern_spec *pattern,
                      const struct http_request *http);
 
-int regex_matches(const REGEX_TYPE *pattern, const char *string);
+int regex_matches(const pcre2_code *pattern, const char *string);
 
 extern jb_err create_pattern_spec(struct pattern_spec *url, char *buf);
 extern void free_pattern_spec(struct pattern_spec *url);

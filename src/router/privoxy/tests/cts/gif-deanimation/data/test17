@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -9,26 +10,26 @@ gif deanimation
 
 <reply>
 <data nonewline="yes">
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: image/gif
-X-Control: swsclose
-Content-Encoding: gzip
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: image/gif%CR
+X-Control: swsclose%CR
+Content-Encoding: gzip%CR
+%CR
 %hex[%1f%8b%08%00%00%00%00%00%00%03%03%00%00%00%00%00%00%00%00%00]hex%
 </data>
 </reply>
 
 <proxy-reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: image/gif
-X-Control: swsclose
-Content-Length: 0
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: image/gif%CR
+X-Control: swsclose%CR
+Content-Length: 0%CR
+%CR
 </data>
 </proxy-reply>
 
@@ -49,12 +50,12 @@ proxy
 
 <verify>
 <protocol>
-GET /deanimate-gif/last-frame/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-Accept-Encoding: gzip
-
+GET /deanimate-gif/last-frame/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Accept-Encoding: gzip%CR
+%CR
 </protocol>
 <errorcode>
 0

@@ -58,9 +58,6 @@
 {+filter{crude-parental}}
 /crude-parental/
 
-{+filter{ie-exploits}}
-/ie-exploits/
-
 {+filter{site-specifics}}
 /site-specifics/
 
@@ -79,9 +76,6 @@
 {+filter{google}}
 /google/
 
-{+filter{google}}
-/google/
-
 {+filter{yahoo}}
 /yahoo/
 
@@ -93,3 +87,9 @@
 
 {+filter{sourceforge}}
 /sourceforge/
+
+{+filter{taz.de}}
+/taz\.de/
+
+{+filter{bundeswehr.de}}
+/bundeswehr.de/

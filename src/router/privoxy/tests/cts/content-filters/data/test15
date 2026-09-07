@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -9,12 +10,12 @@ filter iframes
 
 <reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-X-Control: swsclose
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Control: swsclose%CR
+%CR
 # Here are some iframes the iframes filter should filter:
 
 <iframe src="https://www.example.org/ads" title="Some ads for you"></iframe>
@@ -33,13 +34,13 @@ X-Control: swsclose
 
 <proxy-reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-X-Control: swsclose
-Content-Length: 266
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Control: swsclose%CR
+Content-Length: 266%CR
+%CR
 # Here are some iframes the iframes filter should filter:
 
 <!-- iframe removed by Privoxy's iframe filter -->
@@ -69,12 +70,12 @@ http://%HOSTIP:%HTTPPORT/iframes/%TESTNUMBER
 
 <verify>
 <protocol>
-GET /iframes/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-Connection: close
-
+GET /iframes/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Connection: close%CR
+%CR
 </protocol>
 </verify>
 </testcase>

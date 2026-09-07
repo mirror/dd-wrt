@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -9,36 +10,36 @@ chunked transfer encoding
 
 <reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-Transfer-Encoding: chunked
-X-Control: swsclose
-
-12345
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+Transfer-Encoding: chunked%CR
+X-Control: swsclose%CR
+%CR
+12345%CR
 %repeat[74564 x A]%
-
-67891
+%CR
+67891%CR
 %repeat[424080 x B]%
-
-31337
+%CR
+31337%CR
 %repeat[201526 x C]%
-
-0
-
+%CR
+0%CR
+%CR
 </data>
 </reply>
 
 <proxy-reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-X-Control: swsclose
-Content-Length: 700173
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Control: swsclose%CR
+Content-Length: 700173%CR
+%CR
 %repeat[74564 x A]%
 %repeat[424080 x B]%
 %repeat[201526 x C]%
@@ -62,11 +63,11 @@ http://%HOSTIP:%HTTPPORT/chunked-transfer-encoding/%TESTNUMBER
 
 <verify>
 <protocol>
-GET /chunked-transfer-encoding/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-
+GET /chunked-transfer-encoding/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+%CR
 </protocol>
 <errorcode>
 0

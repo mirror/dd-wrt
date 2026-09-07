@@ -1,0 +1,46 @@
+<!--
+ File        :  doc/source/license-explanation.sgml
+
+ Purpose     :  Entity included in other project documents.
+
+ Copyright (C) 2001-2026 the Privoxy Developers https://www.privoxy.org/
+ See LICENSE.
+
+ ======================================================================
+  This file used for inclusion with other documents only.
+ ======================================================================
+
+ If you make changes to this file, please verify the finished
+ docs all display as intended.
+
+ This file is included into:
+
+  privoxy-man-page
+  user-manual
+  developer-manual
+  faq
+  webserver/index.sgml
+
+-->
+
+<para>
+ <application>Privoxy</application> is free software; you can
+ redistribute and/or modify its source code under the terms
+ of the <citetitle>GNU General Public License</citetitle>
+ as published by the Free Software Foundation, either version 2
+ of the license, or (at your option) any later version.
+</para>
+
+<para>
+ The same is true for <application>Privoxy</application> binaries
+ unless they are linked with a
+ <ulink url="https://www.trustedfirmware.org/projects/mbed-tls/">mbed TLS</ulink> or
+ <ulink url="https://www.openssl.org/">OpenSSL</ulink> version
+ that is licensed under the Apache 2.0 license or against a
+ <ulink url="https://github.com/wolfSSL/wolfssl/">wolfSSL</ulink> version
+ that is licensed under the GPL 3 in which
+ case you can redistribute and/or modify the <application>Privoxy</application>
+ binaries under the terms of the <citetitle>GNU General Public License</citetitle>
+ as published by the Free Software Foundation, either version 3
+ of the license, or (at your option) any later version.
+</para>

@@ -4,7 +4,7 @@
  *
  * Purpose     :  Declares functions to parse/crunch headers and pages.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2024 the
+ * Copyright   :  Written by and Copyright (C) 2001-2026 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -72,6 +72,13 @@
 
 #ifdef _WIN32
 #include "win32.h"
+#endif
+
+#ifdef ACL_DEBUG
+#ifndef RFC_2553
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#endif
 #endif
 
 typedef char *(*filter_function_ptr)(struct client_state *csp);
@@ -238,17 +245,25 @@ static int match_sockaddr(const struct sockaddr_storage *network,
  *                Decide yes or no based on ACL file.
  *
  * Parameters  :
- *          1  :  dst = The proxy or gateway address this is going to.
- *                      Or NULL to check all possible targets.
- *          2  :  csp = Current client state (buffers, headers, etc...)
+ *          1  :  csp = Current client state (buffers, headers, etc...)
  *                      Also includes the client IP address.
+ *          2  :  dst = The proxy or gateway address this is going to.
+ *                      Or NULL to check all possible targets.
  *
- * Returns     : 0 = FALSE (don't block) and 1 = TRUE (do block)
+ * Returns     : 0 = FALSE (don't block (yet)) and 1 = TRUE (do block)
  *
  *********************************************************************/
-int block_acl(const struct access_control_addr *dst, const struct client_state *csp)
+int block_acl(const struct client_state *csp, const struct access_control_addr *dst)
 {
    struct access_control_list *acl = csp->config->acl;
+#ifdef ACL_DEBUG
+#ifdef HAVE_RFC2553
+   int retval;
+   char dst_string[NI_MAXHOST];
+#else
+   char *dst_string;
+#endif
+#endif
 
    /* if not using an access control list, then permit the connection */
    if (acl == NULL)
@@ -256,9 +271,45 @@ int block_acl(const struct access_control_addr *dst, const struct client_state *
       return(0);
    }
 
+#ifdef ACL_DEBUG
+   if (dst == NULL)
+   {
+#ifdef HAVE_RFC2553
+      strlcpy(dst_string, "not yet known", sizeof(dst_string));
+#else
+      dst_string = "not yet known";
+#endif
+   }
+   else
+   {
+#ifdef HAVE_RFC2553
+      retval = getnameinfo((const struct sockaddr *)&dst->addr, dst->addr_length,
+         dst_string, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+      if (retval)
+      {
+         log_error(LOG_LEVEL_ERROR,
+            "Failed to get the host name from the ACL destination: %s",
+            gai_strerror(retval));
+         strlcpy(dst_string, "getnaminfo() failed!", sizeof(dst_string));
+      }
+#else
+      struct in_addr dst_addr;
+      dst_addr.s_addr = htonl(dst->addr);
+      dst_string = inet_ntoa(dst_addr);
+#endif
+   }
+#endif
+
    /* search the list */
    while (acl != NULL)
    {
+#ifdef ACL_DEBUG
+      log_error(LOG_LEVEL_CONNECT,
+         "Checking client address %s against %s rule for source %s and destination %s. "
+         "Destination: %s.",
+         csp->ip_addr_str, (acl->action == ACL_PERMIT) ? "permit" : "deny",
+         acl->src_string, acl->dst_string, dst_string);
+#endif
       if (
 #ifdef HAVE_RFC2553
             match_sockaddr(&acl->src->addr, &acl->src->mask, &csp->tcp_addr)
@@ -269,6 +320,16 @@ int block_acl(const struct access_control_addr *dst, const struct client_state *
       {
          if (dst == NULL)
          {
+            if (!acl->wildcard_dst)
+            {
+               /*
+                * While the client address matches, the ACL also
+                * has a destination address which we can't check
+                * yet so we accept the connection for now and check
+                * again later when the destination is known.
+                */
+               return(0);
+            }
             /* Just want to check if they have any access */
             if (acl->action == ACL_PERMIT)
             {
@@ -284,7 +345,7 @@ int block_acl(const struct access_control_addr *dst, const struct client_state *
                /*
                 * XXX: An undefined acl->dst is full of zeros and should be
                 * considered a wildcard address. sockaddr_storage_to_ip()
-                * fails on such destinations because of unknown sa_familly
+                * fails on such destinations because of unknown sa_family
                 * (glibc only?). However this test is not portable.
                 *
                 * So, we signal the acl->dst is wildcard in wildcard_dst.
@@ -342,9 +403,11 @@ int acl_addr(const char *aspec, struct access_control_addr *aca)
    char *p;
    char *acl_spec = NULL;
 
+#ifdef HAVE_RFC2553
    mask_data = NULL;
    mask_port = NULL;
    addr_len = 0;
+#endif
 
 #ifdef HAVE_RFC2553
    /* XXX: Depend on ai_family */
@@ -385,6 +448,7 @@ int acl_addr(const char *aspec, struct access_control_addr *aca)
 
    if ((*acl_spec == '[') && (NULL != (p = strchr(acl_spec, ']'))))
    {
+#ifdef HAVE_RFC2553
       *p = '\0';
       memmove(acl_spec, acl_spec + 1, (size_t)(p - acl_spec));
 
@@ -392,6 +456,14 @@ int acl_addr(const char *aspec, struct access_control_addr *aca)
       {
          p = NULL;
       }
+#else
+      log_error(LOG_LEVEL_ERROR,
+         "Ignoring ACL with IPv6 address due to lack of RFC2553 support: %s",
+         acl_spec);
+      freez(acl_spec);
+
+      return(-1);
+#endif
    }
    else
    {
@@ -1558,13 +1630,8 @@ struct re_filterfile_spec *get_filter(const struct client_state *csp,
         continue;
      }
 
-     for (b = fl->f; b != NULL; b = b->next)
+     for (b = ((struct re_filters *)(fl->f))->filters[requested_type]; b != NULL; b = b->next)
      {
-        if (b->type != requested_type)
-        {
-           /* The callers isn't interested in this filter type. */
-           continue;
-        }
         if (strcmp(b->name, requested_name) == 0)
         {
            /* The requested filter has been found. Abort search. */
@@ -2184,7 +2251,7 @@ static int get_bytes_to_next_chunk_start(char *buffer, size_t size, size_t offse
       return -1;
    }
 
-   if (sscanf(chunk_start, "%x", &chunk_size) != 1)
+   if (JB_ERR_OK != parse_chunk_size(chunk_start, size, &chunk_size))
    {
       /* XXX: Write test case to trigger this. */
       log_error(LOG_LEVEL_ERROR, "Failed to parse chunk size. "
@@ -2195,7 +2262,7 @@ static int get_bytes_to_next_chunk_start(char *buffer, size_t size, size_t offse
 
    /*
     * To get to the start of the next chunk size we have to skip
-    * the line with the current chunk size followed by "\r\n" followd
+    * the line with the current chunk size followed by "\r\n" followed
     * by the actual data and another "\r\n" following the data.
     */
    bytes_to_skip = (int)(p - chunk_start) + 2 + (int)chunk_size + 2;
@@ -2305,6 +2372,94 @@ int chunked_data_is_complete(char *buffer, size_t size, size_t offset)
 
 /*********************************************************************
  *
+ * Function    :  parse_chunk_size
+ *
+ * Description :  Parses the chunk-size or returns an error if the
+ *                size is considered "unreasonably" large.
+ *
+ * Parameters  :
+ *          1  :  buffer = Pointer to the chunk-encoded content.
+ *          2  :  buffer_size =  Size of the buffer.
+ *          3  :  chunk_size = Storage for the parsed chunk-size.
+ *                             Only valid if the function returns
+ *                             JB_ERR_OK
+ *
+ * Returns     :  JB_ERR_OK for success,
+ *                JB_ERR_PARSE otherwise
+ *
+ *********************************************************************/
+jb_err parse_chunk_size(char *buffer, size_t buffer_size, unsigned int *chunk_size)
+{
+   char *p = buffer;
+   const unsigned int max_hex_digits = 7;
+   unsigned int hex_digits_that_matter = 0;
+   unsigned int leading_zeros = 0;
+   int skipping_leading_zeros = TRUE;
+
+   *chunk_size = 0;
+
+   while (p < buffer + buffer_size && xdtoi(*p) != -1)
+   {
+      if (skipping_leading_zeros)
+      {
+         if (*p == '0')
+         {
+            p++;
+            leading_zeros++;
+
+            continue;
+         }
+         skipping_leading_zeros = FALSE;
+      }
+
+      p++;
+      hex_digits_that_matter++;
+
+      /*
+       * We cap the number of hex digits that matter to make
+       * sure we can represent the chunk-size with an unsigned
+       * integer.
+       */
+      if (hex_digits_that_matter == max_hex_digits)
+      {
+         log_error(LOG_LEVEL_ERROR, "Chunk-size 'unreasonably' large. "
+            "Counted %u hex digits that matter and %u leading zeros.",
+            hex_digits_that_matter, leading_zeros);
+         return JB_ERR_PARSE;
+      }
+   }
+
+   if (leading_zeros != 0)
+   {
+      if (xdtoi(*(buffer + leading_zeros)) == -1)
+      {
+         /*
+          * Looks like the chunk-size consists entirely of zeros
+          * so let's not skip the last one.
+          */
+         leading_zeros--;
+      }
+
+      if (leading_zeros != 0)
+      {
+         log_error(LOG_LEVEL_RE_FILTER,
+            "Parsing the chunk-size after skipping %d leading zeros.",
+            leading_zeros);
+      }
+   }
+
+   if (sscanf(buffer + leading_zeros, "%x", chunk_size) != 1)
+   {
+      return JB_ERR_PARSE;
+   }
+
+   return JB_ERR_OK;
+
+}
+
+
+/*********************************************************************
+ *
  * Function    :  remove_chunked_transfer_coding
  *
  * Description :  In-situ remove the "chunked" transfer coding as defined
@@ -2353,7 +2508,7 @@ static jb_err remove_chunked_transfer_coding(char *buffer, size_t *size)
    }
 #endif
 
-   if (sscanf(buffer, "%x", &chunksize) != 1)
+   if (JB_ERR_OK != parse_chunk_size(buffer, *size, &chunksize))
    {
       log_error(LOG_LEVEL_ERROR, "Invalid first chunksize while stripping \"chunked\" transfer coding");
       return JB_ERR_PARSE;
@@ -2420,7 +2575,8 @@ static jb_err remove_chunked_transfer_coding(char *buffer, size_t *size)
          return JB_ERR_PARSE;
       }
       from_p += 2;
-      if (sscanf(from_p, "%x", &chunksize) != 1)
+      assert(*size > newsize);
+      if (JB_ERR_OK != parse_chunk_size(from_p, *size - newsize, &chunksize))
       {
          log_error(LOG_LEVEL_INFO, "Invalid \"chunked\" transfer encoding detected and ignored.");
          break;
@@ -2443,7 +2599,7 @@ static jb_err remove_chunked_transfer_coding(char *buffer, size_t *size)
  * Function    :  prepare_for_filtering
  *
  * Description :  If necessary, de-chunks and decompresses
- *                the content so it can get filterd.
+ *                the content so it can get filtered.
  *
  * Parameters  :
  *          1  :  csp = Current client state (buffers, headers, etc...)
@@ -2486,6 +2642,9 @@ static jb_err prepare_for_filtering(struct client_state *csp)
 #ifdef FEATURE_BROTLI
       || (csp->content_type & CT_BROTLI)
 #endif
+#ifdef FEATURE_ZSTD
+      || (csp->content_type & CT_ZSTD)
+#endif
        )
    {
       if (0 == csp->iob->eod - csp->iob->cur)
@@ -2511,6 +2670,9 @@ static jb_err prepare_for_filtering(struct client_state *csp)
          csp->content_type &= ~CT_DEFLATE;
 #ifdef FEATURE_BROTLI
          csp->content_type &= ~CT_BROTLI;
+#endif
+#ifdef FEATURE_ZSTD
+         csp->content_type &= ~CT_ZSTD;
 #endif
       }
    }
@@ -2619,7 +2781,7 @@ char *execute_content_filters(struct client_state *csp)
  *          2  :  content_length = content length. Upon successful filtering
  *                the passed value is updated with the new content length.
  *
- * Returns     :  1 if the content has been filterd. 0 if it hasn't.
+ * Returns     :  1 if the content has been filtered. 0 if it hasn't.
  *
  *********************************************************************/
 int execute_client_body_filters(struct client_state *csp, size_t *content_length)

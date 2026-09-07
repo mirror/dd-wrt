@@ -1,0 +1,237 @@
+<!-- Creator     : groff version 1.19.2 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <meta name="generator" content="groff -Thtml, see www.gnu.org">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="Content-Style" content="text/css">
+  <style type="text/css">
+       p     { margin-top: 0; margin-bottom: 0; }
+       pre   { margin-top: 0; margin-bottom: 0; }
+       table { margin-top: 0; margin-bottom: 0; }
+  </style>
+  <title>PRIVOXY-REGRESSION-TEST</title>
+</head>
+<body>
+  <h1 align="center">PRIVOXY-REGRESSION-TEST</h1><a href="#NAME">NAME</a><br>
+  <a href="#SYNOPSIS">SYNOPSIS</a><br>
+  <a href="#DESCRIPTION">DESCRIPTION</a><br>
+  <a href="#CONFIGURATION%20FILE%20SYNTAX">CONFIGURATION FILE SYNTAX</a><br>
+  <a href="#TEST%20LEVELS">TEST LEVELS</a><br>
+  <a href="#OPTIONS">OPTIONS</a><br>
+  <a href="#PRIVOXY%20CONFIGURATION">PRIVOXY CONFIGURATION</a><br>
+  <a href="#CAVEATS">CAVEATS</a><br>
+  <a href="#LIMITATIONS">LIMITATIONS</a><br>
+  <a href="#SEE%20ALSO">SEE ALSO</a><br>
+  <a href="#AUTHOR">AUTHOR</a><br>
+  <hr>
+  <a name="NAME" id="NAME"></a>
+  <h2>NAME</h2>
+  <p style="margin-left:11%; margin-top: 1em">privoxy&minus;regression&minus;test &minus; A regression test
+  &quot;framework&quot; for Privoxy.</p><a name="SYNOPSIS" id="SYNOPSIS"></a>
+  <h2>SYNOPSIS</h2>
+  <p style="margin-left:11%; margin-top: 1em"><b>privoxy&minus;regression&minus;test</b>
+  [<b>&minus;&minus;check&minus;bad&minus;ssl</b>] [<b>&minus;&minus;curl curl</b>] [<b>&minus;&minus;debug
+  bitmask</b>] [<b>&minus;&minus;forks</b> forks] [<b>&minus;&minus;fuzzer&minus;feeding</b>]
+  [<b>&minus;&minus;fuzzer&minus;feeding</b>] [<b>&minus;&minus;help</b>] [<b>&minus;&minus;level level</b>]
+  [<b>&minus;&minus;local&minus;test&minus;file testfile</b>] [<b>&minus;&minus;loops count</b>]
+  [<b>&minus;&minus;max&minus;level max&minus;level</b>] [<b>&minus;&minus;max&minus;time max&minus;time</b>]
+  [<b>&minus;&minus;min&minus;level min&minus;level</b>] <b>&minus;&minus;privoxy&minus;address proxy&minus;address
+  &minus;&minus;privoxy&minus;cgi&minus;prefix cgi&minus;prefix</b> [<b>&minus;&minus;retries retries</b>]
+  [<b>&minus;&minus;test&minus;number test&minus;number</b>] [<b>&minus;&minus;show&minus;skipped&minus;tests</b>]
+  [<b>&minus;&minus;sleep&minus;time</b> seconds] [<b>&minus;&minus;verbose</b>]
+  [<b>&minus;&minus;version</b>]</p><a name="DESCRIPTION" id="DESCRIPTION"></a>
+  <h2>DESCRIPTION</h2>
+  <p style="margin-left:11%; margin-top: 1em">Privoxy&minus;Regression&minus;Test is supposed to one day become a
+  regression test suite for Privoxy. It's not quite there yet, however, and can currently only test header actions,
+  check the returned status code for requests to arbitrary URLs and verify which actions are applied to them.</p>
+  <p style="margin-left:11%; margin-top: 1em">Client header actions are tested by requesting
+  <b>http://p.p/show&minus;request</b> and checking whether or not Privoxy modified the original request as
+  expected.</p>
+  <p style="margin-left:11%; margin-top: 1em">The original request contains both the header the
+  action&minus;to&minus;be&minus;tested acts upon and an additional tagger&minus;triggering header that enables the
+  action to test.</p>
+  <p style="margin-left:11%; margin-top: 1em">Applied actions are checked through
+  <b>http://p.p/show&minus;url&minus;info</b>.</p><a name="CONFIGURATION FILE SYNTAX"></a>
+  <h2>CONFIGURATION FILE SYNTAX</h2>
+  <p style="margin-left:11%; margin-top: 1em">Privoxy&minus;Regression&minus;Test's configuration is embedded in
+  Privoxy action files and loaded through Privoxy's web interface.</p>
+  <p style="margin-left:11%; margin-top: 1em">It makes testing a Privoxy version running on a remote system easier and
+  should prevent you from updating your tests without updating Privoxy's configuration accordingly.</p>
+  <p style="margin-left:11%; margin-top: 1em">A client&minus;header&minus;action test section looks like this:</p>
+  <pre style=
+  "margin-left:11%; margin-top: 1em">    # Set Header    = Referer: http://www.example.org.zwiebelsuppe.exit/
+    # Expect Header = Referer: http://www.example.org/
+    {+client&minus;header&minus;filter{hide&minus;tor&minus;exit&minus;notation} &minus;hide&minus;referer}
+    TAG:^client&minus;header&minus;filter\{hide&minus;tor&minus;exit&minus;notation\}$</pre>
+  <p style="margin-left:11%; margin-top: 1em">The example above causes Privoxy&minus;Regression&minus;Test to set the
+  header <b>Referer: http://www.example.org.zwiebelsuppe.exit/</b> and to expect it to be modified to <b>Referer:
+  http://www.example.org/</b>.</p>
+  <p style="margin-left:11%; margin-top: 1em">When testing this section, Privoxy&minus;Regression&minus;Test will set
+  the header <b>X&minus;Privoxy&minus;Control:
+  client&minus;header&minus;filter{hide&minus;tor&minus;exit&minus;notation}</b> causing the
+  <b>privoxy&minus;control</b> tagger to create the tag
+  <b>client&minus;header&minus;filter{hide&minus;tor&minus;exit&minus;notation}</b> which will finally cause Privoxy to
+  enable the action section.</p>
+  <p style="margin-left:11%; margin-top: 1em">Note that the actions itself are only used by Privoxy,
+  Privoxy&minus;Regression&minus;Test ignores them and will be happy as long as the expectations are satisfied.</p>
+  <p style="margin-left:11%; margin-top: 1em">A fetch test looks like this:</p>
+  <pre style="margin-left:11%; margin-top: 1em">    # Fetch Test = http://p.p/user&minus;manual
+    # Expect Status Code = 302</pre>
+  <p style="margin-left:11%; margin-top: 1em">It tells Privoxy&minus;Regression&minus;Test to request
+  <b>http://p.p/user&minus;manual</b> and to expect a response with the HTTP status code <b>302</b>. Obviously that's
+  not a very thorough test and mainly useful to get some code coverage for Valgrind or to verify that the templates are
+  installed correctly.</p>
+  <p style="margin-left:11%; margin-top: 1em">If you want to test CGI pages that require a trusted referer, you can
+  use:</p>
+  <pre style="margin-left:11%; margin-top: 1em">    # Trusted CGI Request = http://p.p/edit&minus;actions</pre>
+  <p style="margin-left:11%; margin-top: 1em">It works like ordinary fetch tests, but sets the referer header to a
+  trusted value.</p>
+  <p style="margin-left:11%; margin-top: 1em">If no explicit status code expectation is set, <b>200</b> is used.</p>
+  <p style="margin-left:11%; margin-top: 1em">To verify that a URL is blocked, use:</p>
+  <pre style="margin-left:11%; margin-top: 1em">    # Blocked URL = http://www.example.com/blocked</pre>
+  <p style="margin-left:11%; margin-top: 1em">To verify that a specific set of actions is applied to an URL, use:</p>
+  <pre style=
+  "margin-left:11%; margin-top: 1em">    # Sticky Actions = +block{foo} +handle&minus;as&minus;empty&minus;document &minus;handle&minus;as&minus;image
+    # URL = http://www.example.org/my&minus;first&minus;url</pre>
+  <p style="margin-left:11%; margin-top: 1em">The sticky actions will be checked for all URLs below it until the next
+  sticky actions directive.</p>
+  <p style="margin-left:11%; margin-top: 1em">To verify that requests for a URL get redirected, use:</p>
+  <pre style="margin-left:11%; margin-top: 1em">    # Redirected URL = http://www.example.com/redirect&minus;me
+    # Redirect Destination = http://www.example.org/redirected</pre>
+  <p style="margin-left:11%; margin-top: 1em">To skip a test, add the following line:</p>
+  <pre style="margin-left:11%; margin-top: 1em">    # Ignore = Yes</pre>
+  <p style="margin-left:11%; margin-top: 1em">The difference between a skipped test and a removed one is that removing
+  a test affects the numbers of the following tests, while a skipped test is still loaded and thus keeps the test
+  numbers unchanged.</p>
+  <p style="margin-left:11%; margin-top: 1em">Sometimes user modifications intentionally conflict with tests in the
+  default configuration and thus cause test failures. Adding the Ignore directive to the failing tests works but is
+  inconvenient as the directive is likely to get lost with the next update.</p>
+  <p style="margin-left:11%; margin-top: 1em">Overwrite conditions are an alternative and can be added in any action
+  file as long as the come after the test that is expected to fail. They cause all previous tests that match the
+  condition to be skipped.</p>
+  <p style="margin-left:11%; margin-top: 1em">It is recommended to put the overwrite condition below the custom Privoxy
+  section that causes the expected test failure and before the custom test that verifies that tests the now expected
+  behaviour. Example:</p>
+  <pre style="margin-left:11%; margin-top: 1em">    # The following section is expected to overwrite a section in
+    # default.action, whose effect is being tested. Thus also disable
+    # the test that is now expected to fail and add a new one.
+    #
+    {+block{Facebook makes Firefox even more unstable. Do not want.}}
+    # Overwrite condition = http://apps.facebook.com/onthefarm/track.php?creative=&amp;cat=friendvisit&amp;subcat=weeds&amp;key=a789a971dc687bee4c20c044834fabdd&amp;next=index.php%3Fref%3Dnotif%26visitId%3D898835505
+    # Blocked URL = http://apps.facebook.com/
+    .facebook./</pre><a name="TEST LEVELS"></a>
+  <h2>TEST LEVELS</h2>
+  <p style="margin-left:11%; margin-top: 1em">All tests have test levels to let the user control which ones to execute
+  (see <i>OPTIONS</i> below). Test levels are either set with the <b>Level</b> directive, or implicitly through the
+  test type.</p>
+  <p style="margin-left:11%; margin-top: 1em">Redirect tests default to level 108, block tests to level 7, fetch tests
+  to level 6, &quot;Sticky Actions&quot; tests default to level 5, tests for trusted CGI requests to level 3 and
+  client&minus;header&minus;action tests to level 1.</p>
+  <p style="margin-left:11%; margin-top: 1em">The current redirect test level is above the default max&minus;level
+  value as failed tests will result in outgoing connections. Use the <b>&minus;&minus;max&minus;level</b> option to run
+  them as well.</p>
+  <p style="margin-left:11%; margin-top: 1em">The &quot;Default level offset&quot; directive can be used to change the
+  default level by a given value. This directive affects all tests located after it until the end of the file or a
+  another &quot;Default level offset&quot; directive is reached. The purpose of this directive is to make it more
+  convenient to skip similar tests in a given file without having to remove or disable the tests
+  completely.</p><a name="OPTIONS" id="OPTIONS"></a>
+  <h2>OPTIONS</h2>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;check&minus;bad&minus;ssl</b> Instead of running the
+  regression tests as described above, request pages from badssl.com with bad certificates to verify that Privoxy is
+  detecting the certificate issues. Only works if Privoxy has been compiled with FEATURE_HTTPS_INSPECTION, has been
+  configured properly and can reach the Internet.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;curl curl</b> Use a non&minus;default curl binary.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;debug bitmask</b> Add the bitmask provided as integer to
+  the debug settings.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;forks forks</b> Number of forks to start before
+  executing the regression tests. This is mainly useful for stress&minus;testing.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;fuzzer&minus;address</b> Listening address used when
+  executing the regression tests. Useful to make sure that the requests to load the regression tests don't fail due to
+  fuzzing.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;fuzzer&minus;feeding</b> Ignore some errors that would
+  otherwise cause Privoxy&minus;Regression&minus;Test to abort the test because they shouldn't happen in normal
+  operation. This option is intended to be used if Privoxy&minus;Regression&minus;Test is only used to feed a fuzzer in
+  which case there's a high chance that Privoxy gets an invalid request and returns an error message.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;help</b> Shows available command line options.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;header&minus;fuzzing</b> Modifies linear white space in
+  headers in a way that should not affect the test result.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;level level</b> Only execute tests with the specified
+  <b>level</b>.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;local&minus;test&minus;file test&minus;file</b> Do not
+  get the tests through Privoxy's web interface, but use a single local file. Not recommended for testing Privoxy, but
+  can be useful to &quot;misappropriate&quot; Privoxy&minus;Regression&minus;Test to test other stuff, like webserver
+  configurations.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;loop count</b> Loop through the regression tests
+  <b>count</b> times. Useful to feed a fuzzer, or when doing stress tests with several
+  Privoxy&minus;Regression&minus;Test instances running at the same time.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;max&minus;level max&minus;level</b> Only execute tests
+  with a <b>level</b> below or equal to the numerical <b>max&minus;level</b>.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;max&minus;time max&minus;time</b> Give Privoxy
+  <b>max&minus;time</b> seconds to return data. Increasing the default may make sense when Privoxy is run through
+  Valgrind, decreasing the default may make sense when Privoxy&minus;Regression&minus;Test is used to feed a
+  fuzzer.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;min&minus;level min&minus;level</b> Only execute tests
+  with a <b>level</b> above or equal to the numerical <b>min&minus;level</b>. If the <b>min&minus;level</b> is larger
+  than the <b>max&minus;level</b>, the <b>max&minus;level</b> is set to the <b>min&minus;level</b>.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;privoxy&minus;address proxy&minus;address</b> Privoxy's
+  listening address. If it's not set, the value of the environment variable http_proxy will be used unless the variable
+  isn't set in which case http://127.0.0.1:8118/ will be used. <b>proxy&minus;address</b> has to be specified in
+  http_proxy syntax.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;privoxy&minus;cgi&minus;prefix
+  privoxy&minus;cgi&minus;prefix</b> The prefix to use when building URLs that are supposed to reach Privoxy's CGI
+  interface. If it's not set, <b>http://p.p/</b> is used, which is supposed to work with the default Privoxy
+  configuration. If Privoxy has been built with <b>FEATURE_HTTPS_INSPECTION</b> enabled, and if https inspection is
+  activated with the <b>+https&minus;inspection</b> action, this option can be used with <b>https://p.p/</b> provided
+  the system running Privoxy&minus;Regression&minus;Test has been configured to trust the certificate used by Privoxy.
+  Note that there are currently two tests in the official <b>regression&minus;tests.action</b> file that are expected
+  to fail when using a <b>privoxy&minus;cgi&minus;prefix</b> with <b>https://</b> and aren't automatically skipped.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;retries retries</b> Retry <b>retries</b> times.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;test&minus;number test&minus;number</b> Only run the
+  test with the specified number.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;show&minus;skipped&minus;tests</b> Log skipped tests
+  even if verbose mode is off.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;shuffle&minus;tests</b> Shuffle test sections and their
+  tests before executing them. When combined with <b>&minus;&minus;forks</b>, this can increase the chances of
+  detecting race conditions. Of course some problems are easier to detect without this option.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;sleep&minus;time seconds</b> Wait <b>seconds</b> between
+  tests. Useful when debugging issues with systems that don't log with millisecond precision.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;verbose</b> Log successful tests as well. By default
+  only the failures are logged.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>&minus;&minus;version</b> Print version and exit.</p>
+  <p style="margin-left:11%; margin-top: 1em">The second dash is optional, options can be shortened, as long as there
+  are no ambiguities.</p><a name="PRIVOXY CONFIGURATION"></a>
+  <h2>PRIVOXY CONFIGURATION</h2>
+  <p style="margin-left:11%; margin-top: 1em">Privoxy&minus;Regression&minus;Test is shipped with
+  <b>regression&minus;tests.action</b> which aims to test all official client&minus;header modifying actions and can be
+  used to verify that the templates and the user manual files are installed correctly.</p>
+  <p style="margin-left:11%; margin-top: 1em">To use it, it has to be copied in Privoxy's configuration directory, and
+  afterwards referenced in Privoxy's configuration file with the line:</p>
+  <pre style="margin-left:11%; margin-top: 1em">    actionsfile regression&minus;tests.action</pre>
+  <p style="margin-left:11%; margin-top: 1em">In general, its tests are supposed to work without changing any other
+  action files, unless you already added lots of taggers yourself. If you are using taggers that cause problems, you
+  might have to temporary disable them for Privoxy's CGI pages.</p>
+  <p style="margin-left:11%; margin-top: 1em">Some of the regression tests rely on Privoxy features that may be
+  disabled in your configuration. Tests with a level below 7 are supposed to work with all Privoxy configurations
+  (provided you didn't build with FEATURE_GRACEFUL_TERMINATION).</p>
+  <p style="margin-left:11%; margin-top: 1em">Tests with level 9 require Privoxy to deliver the User Manual, tests with
+  level 12 require the CGI editor to be enabled.</p><a name="CAVEATS" id="CAVEATS"></a>
+  <h2>CAVEATS</h2>
+  <p style="margin-left:11%; margin-top: 1em">Expect the configuration file syntax to change with future
+  releases.</p><a name="LIMITATIONS" id="LIMITATIONS"></a>
+  <h2>LIMITATIONS</h2>
+  <p style="margin-left:11%; margin-top: 1em">As Privoxy's <b>show&minus;request</b> page only shows client headers,
+  Privoxy&minus;Regression&minus;Test can't use it to test Privoxy actions that modify server headers.</p>
+  <p style="margin-left:11%; margin-top: 1em">As Privoxy&minus;Regression&minus;Test relies on Privoxy's tag feature to
+  control the actions to test, it currently only works with Privoxy 3.0.7 or later.</p>
+  <p style="margin-left:11%; margin-top: 1em">At the moment Privoxy&minus;Regression&minus;Test fetches Privoxy's
+  configuration page through <i>curl</i>(1), therefore you have to have <i>curl</i> installed, otherwise you won't be
+  able to run Privoxy&minus;Regression&minus;Test in a meaningful way.</p><a name="SEE ALSO"></a>
+  <h2>SEE ALSO</h2>
+  <p style="margin-left:11%; margin-top: 1em"><b>privoxy</b>(8) <b>curl</b>(1)</p><a name="AUTHOR" id="AUTHOR"></a>
+  <h2>AUTHOR</h2>
+  <p style="margin-left:11%; margin-top: 1em">Fabian Keil &lt;fk@fabiankeil.de&gt;</p>
+  <hr>
+</body>
+</html>

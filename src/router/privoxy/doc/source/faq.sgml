@@ -8,7 +8,8 @@
 <!entity history SYSTEM "history.sgml">
 <!entity copyright SYSTEM "copyright.sgml">
 <!entity license SYSTEM "license.sgml">
-<!entity p-version "4.0.0">
+<!entity license-explanation SYSTEM "license-explanation.sgml">
+<!entity p-version "4.2.0">
 <!entity p-status "stable">
 <!entity % p-not-stable "IGNORE">
 <!entity % p-stable "INCLUDE">
@@ -25,7 +26,7 @@
 
  Purpose     :  FAQ
 
- Copyright (C) 2001-2025 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2026 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  Based partially on the Internet Junkbuster FAQ originally written by and
@@ -69,7 +70,7 @@
  <subscript>
 <!-- Completely the wrong markup, but very little is allowed  -->
 <!-- in this part of an article. FIXME -->
- <link linkend="copyright">Copyright</link> &my-copy; 2001-2023 by
+ <link linkend="copyright">Copyright</link> &my-copy; 2001-2026 by
  <ulink url="https://www.privoxy.org/">Privoxy Developers</ulink>
  </subscript>
 </pubdate>
@@ -497,6 +498,11 @@ warranty? Registration?</title>
 </para>
 
 <para>
+ The Privoxy project is currently underfunded and the income doesn't
+ even cover the hosting expenses (~161 EUR/month for 2025).
+</para>
+
+<para>
  <application>Privoxy</application> is an associated
  project of <ulink url="https://www.spi-inc.org/">Software
  in the Public Interest (SPI)</ulink>, which allows us to receive
@@ -505,6 +511,10 @@ warranty? Registration?</title>
  and <ulink url="https://co.clickandpledge.com/advanced/default.aspx?wid=34115">Click & Pledge</ulink>.
  For details, please have a look at
  <ulink url="https://www.spi-inc.org/donations">SPI's general donation page</ulink>.
+</para>
+
+<para>
+ You can also donate through <ulink url="https://liberapay.com/Privoxy/">Liberapay</ulink>.
 </para>
 
 <para>
@@ -572,6 +582,9 @@ warranty? Registration?</title>
 <para>
  The details may change over time but changes will only affect new sponsors
  (or existing sponsors that explicitly agreed to the changes).
+</para>
+<para>
+ We do not accept <quote>sponsored articles</quote>.
 </para>
 <para>
  Thanks to <ulink url="https://www.spi-inc.org/">Software in the Public Interest (SPI)</ulink>
@@ -2303,6 +2316,28 @@ and related issues?</title>
 </para>
 </sect2>
 
+<sect2 renderas="sect3" id="supposedly-infected-tarball">
+<title>Is the Privoxy source tarball infected by a virus?</title>
+
+<para>
+ If you verified the OpenPGP signature the tarball should be fine.
+</para>
+<para>
+ Starting with the 4.0.0 release the source tarball contains a
+ new test framework.
+ Some of the test cases contain hex-encoded data, for exampe see
+ <ulink url="https://www.privoxy.org/gitweb/?p=privoxy.git;a=blob;f=tests/cts/gzip-compression/data/test10;hb=HEAD">gzip decompression test 10</ulink>.
+ While none of the test cases contain viruses they may contain
+ patterns that viruses also contain, for example there is a
+ <ulink url="https://www.privoxy.org/gitweb/?p=privoxy.git;a=blob;f=tests/cts/content-filters/data/test33;hb=HEAD">test
+  case for the obsolete ie-exploits filter</ulink>.
+</para>
+<para>
+ The tests don't get executed automatically and if you feel
+ safer you can remove the tests/cts directory before building
+ Privoxy ...
+</para>
+</sect2>
 
 </sect1>
 
@@ -2971,7 +3006,7 @@ browsing has slowed to a crawl. What gives? </title>
  once the client closed its connection to &my-app;.
  Technically &my-app; could keep the connection to the server open,
  but the server would not accept requests that do not belong to the
- previous TLS/SSL session (and the client may even have terminated
+ previous TLS session (and the client may even have terminated
  the session).
 </para>
 <para>

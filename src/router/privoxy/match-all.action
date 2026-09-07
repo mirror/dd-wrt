@@ -11,6 +11,7 @@
 +client-header-tagger{image-requests} \
 +client-header-tagger{range-requests} \
 +hide-from-header{block} \
++server-header-tagger{content-type} \
 +set-image-blocker{pattern} \
 }
 / # Match all URLs

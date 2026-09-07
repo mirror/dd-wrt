@@ -5,7 +5,7 @@
 #
 # Runs the Privoxy tests based on curl's runtests.pl framework.
 #
-# Copyright (c) 2021-2025 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2021-2026 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -27,9 +27,11 @@ UPSTREAM_TEST_SCENARIO=upstream-tests
 # elegant method to verify that Privoxy is running or failed to start.
 SECONDS_TO_WAIT_FOR_PRIVOXY_TO_START=1
 
+USE_VALGRIND=false
+
 start_privoxy() {
     local test_dir test_scenario
-    local privoxy_config privoxy_binary pid_file
+    local privoxy_config privoxy_binary pid_file log_file valgrind_command valgrind_log_file
     test_dir="${1}"
     test_scenario="${2}"
 
@@ -38,9 +40,16 @@ start_privoxy() {
     pid_file="${test_dir}/${test_scenario}/../privoxy.pid"
     log_file="${test_dir}/logs/${test_scenario}.log"
 
-    (
+    if $USE_VALGRIND; then
+        valgrind_log_file="${test_dir}/logs/${test_scenario}-valgrind.log"
+        valgrind_command="valgrind --tool=memcheck --leak-check=full --log-file=$valgrind_log_file
+           --trace-children=yes --track-origins=yes"
+        SECONDS_TO_WAIT_FOR_PRIVOXY_TO_START=3
+    fi
+
+     (
         cd "${privoxy_config_dir}" || exit 1
-        "${privoxy_binary}" --no-daemon \
+        $valgrind_command "${privoxy_binary}" --no-daemon \
                             --pidfile "${pid_file}" \
                             privoxy.conf > "${log_file}" 2>&1 || exit 1 &
     )
@@ -52,7 +61,9 @@ start_privoxy() {
         if [ -f "${log_file}" ]; then
             tail -n 1 "${log_file}"
         fi
-        exit 1
+        # Kill the whole process group including Privoxy
+        # if it started after the PID file was checked.
+        kill -- -$$
     fi
 }
 
@@ -68,8 +79,8 @@ stop_privoxy() {
 }
 
 run_privoxy_tests() {
-    local start_privoxy="$1"
-    local test_scenario="$2"
+    local start_privoxy="${1}"; shift
+    local test_scenario="${1}"; shift
     local directory_name="$(dirname "$0")"
     local test_dir="$(realpath "${directory_name}")"
     local ret
@@ -77,7 +88,7 @@ run_privoxy_tests() {
     echo "Test scenario: ${test_scenario}"
     $start_privoxy && start_privoxy "${test_dir}" "${test_scenario}"
 
-    "${test_dir}/runtests-wrapper.sh" -A -E -t "${test_dir}/${test_scenario}/data" HTTP HTTPS
+    "${test_dir}/runtests-wrapper.sh" -E -t "${test_dir}/${test_scenario}/data" HTTP HTTPS "${@}"
     ret=$?
 
     $start_privoxy && stop_privoxy "${test_dir}" "${test_scenario}"
@@ -86,7 +97,7 @@ run_privoxy_tests() {
 }
 
 run_upstream_tests() {
-    local start_privoxy="$1"
+    local start_privoxy="${1}"; shift
     local directory_name="$(dirname "$0")"
     local test_dir="$(realpath "${directory_name}")"
     local ret
@@ -94,7 +105,7 @@ run_upstream_tests() {
     echo "Test scenario: ${UPSTREAM_TEST_SCENARIO}"
     $start_privoxy && start_privoxy "${test_dir}" "${UPSTREAM_TEST_SCENARIO}"
 
-    "${test_dir}/runtests-wrapper.sh" -A -T HTTP
+    "${test_dir}/runtests-wrapper.sh" -T HTTP "${@}"
     ret=$?
 
     $start_privoxy && stop_privoxy "${test_dir}" "${UPSTREAM_TEST_SCENARIO}"
@@ -140,8 +151,19 @@ main() {
                 test_scenarios="$1"
                 shift
                 ;;
+            "-v")
+                echo "Running Privoxy through valgrind."
+                USE_VALGRIND=true
+                shift
+                ;;
+            "--")
+                shift
+                echo "Passing remaining arguments to runtests-wrapper.sh: ${@}"
+                break
+                ;;
             *)
-                echo "Invalid parameter: $1"
+                echo "Invalid argument: $1"
+                echo "Supported arguments: -c -r -t test-scenario -- Arguments for runtests-wrapper.sh"
                 exit 1
                 ;;
         esac
@@ -153,9 +175,9 @@ main() {
 
     for test_scenario in ${test_scenarios}; do
         if [ "${test_scenario}" = "${UPSTREAM_TEST_SCENARIO}" ]; then
-            run_upstream_tests ${start_privoxy}
+            run_upstream_tests ${start_privoxy} "$@"
         else
-            run_privoxy_tests ${start_privoxy} "${test_scenario}"
+            run_privoxy_tests ${start_privoxy} "${test_scenario}" "$@"
         fi
         if [ $? != 0 ]; then
             scenarios_with_errors="${scenarios_with_errors} ${test_scenario}"
@@ -167,6 +189,8 @@ main() {
        echo "The following test scenarios had at least one error:${scenarios_with_errors}"
        exit 1
     fi
+
+    echo "All test scenarios finished without errors."
 
     exit 0
 }

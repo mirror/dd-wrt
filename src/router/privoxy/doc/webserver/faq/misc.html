@@ -557,6 +557,20 @@
       talk to us. If you think somebody gave you a modified Privoxy version without complying to the license, please
       let us know.</p>
     </div>
+    <div class="SECT2">
+      <h3 class="SECT2"><a name="SUPPOSEDLY-INFECTED-TARBALL" id="SUPPOSEDLY-INFECTED-TARBALL">4.29. Is the Privoxy
+      source tarball infected by a virus?</a></h3>
+      <p>If you verified the OpenPGP signature the tarball should be fine.</p>
+      <p>Starting with the 4.0.0 release the source tarball contains a new test framework. Some of the test cases
+      contain hex-encoded data, for exampe see <a href=
+      "https://www.privoxy.org/gitweb/?p=privoxy.git;a=blob;f=tests/cts/gzip-compression/data/test10;hb=HEAD" target=
+      "_top">gzip decompression test 10</a>. While none of the test cases contain viruses they may contain patterns
+      that viruses also contain, for example there is a <a href=
+      "https://www.privoxy.org/gitweb/?p=privoxy.git;a=blob;f=tests/cts/content-filters/data/test33;hb=HEAD" target=
+      "_top">test case for the obsolete ie-exploits filter</a>.</p>
+      <p>The tests don't get executed automatically and if you feel safer you can remove the tests/cts directory before
+      building Privoxy ...</p>
+    </div>
   </div>
   <div class="NAVFOOTER">
     <hr align="left" width="100%">

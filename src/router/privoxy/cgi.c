@@ -914,9 +914,9 @@ struct http_response *error_response(struct client_state *csp,
    }
    err = string_append(&path, csp->http->path);
 
+   if (!err) err = map(exports, "path", 1, html_encode_and_free_original(path), 0);
    if (!err) err = map(exports, "host", 1, html_encode(csp->http->host), 0);
    if (!err) err = map(exports, "hostport", 1, html_encode(csp->http->hostport), 0);
-   if (!err) err = map(exports, "path", 1, html_encode_and_free_original(path), 0);
    if (!err) err = map(exports, "protocol", 1, csp->http->ssl ? "https://" : "http://", 1);
    if (!err)
    {
@@ -1747,9 +1747,10 @@ struct http_response *finish_http_response(struct client_state *csp, struct http
        * is older than Privoxy's error message, the server would send status code
        * 304 and the browser would display the outdated error message again and again.
        *
-       * For documents delivered with status code 403, 404 and 503 we set "Last-Modified"
-       * to Tim Berners-Lee's birthday, which predates the age of any page on the web
-       * and can be safely used to "revalidate" without getting a status code 304.
+       * For documents delivered with status code 403, 404, 502, 503 and
+       * 504 we set "Last-Modified" to Tim Berners-Lee's birthday, which
+       * predates the age of any page on the web and can be safely used to
+       * "revalidate" without getting a status code 304.
        *
        * There is no need to let the useless If-Modified-Since header reach the
        * server, it is therefore stripped by client_if_modified_since in parsers.c.
@@ -1818,7 +1819,7 @@ struct http_response *alloc_http_response(void)
  * Function    :  free_http_response
  *
  * Description :  Free the memory occupied by an http_response
- *                and its depandant structures.
+ *                and its dependent structures.
  *
  * Parameters  :
  *          1  :  rsp = pointer to http_response to be freed

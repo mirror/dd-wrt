@@ -4,7 +4,7 @@
  *
  * Purpose     :  Give a short intro about Privoxy.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2021 the
+ * Copyright   :  Written by and Copyright (C) 2001-2026 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -32,7 +32,7 @@
  *
  *********************************************************************/
 
-This README is included with Privoxy 4.0.0. See https://www.privoxy.org/ for
+This README is included with Privoxy 4.2.0. See https://www.privoxy.org/ for
 more information. The current code maturity level is "stable".
 
 -------------------------------------------------------------------------------
@@ -294,9 +294,16 @@ If you discovered a security problem or merely suspect that a bug might be a
 security issue, please mail Fabian Keil <fk@fabiankeil.de> (OpenPGP
 fingerprint: 4F36 C17F 3816 9136 54A1 E850 6918 2291 8BA2 371C).
 
+If you used "artificial intelligence" to find the reported issue, please
+disclose the details and make it clear whether or not you confirmed that the
+issue is real or are merely forwarding a report that might be entirely
+hallucinated.
+
 Usually you should get a response within a day, otherwise it's likely that
 either your mail or the response didn't make it. If that happens, please mail
 to the developer list to request a status update.
+
+Please be prepared to respond to questions about your report.
 
 -------------------------------------------------------------------------------
 

@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -9,26 +10,26 @@ deflate compression
 
 <reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-Content-Encoding: deflate
-X-Control: swsclose
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+Content-Encoding: deflate%CR
+X-Control: swsclose%CR
+%CR
 %hex[%0b%ce%cf%4d%55%48%49%4d%cb%49%2c%49%55%48%cd%4b%ce%4f%49%4d%51%48%49%2c%49%d4%e3%f2%4b%2d%57%c8%c9%cc%4b%55%c8%48%2d%4a%d5%e3%02%00]hex%
 </data>
 </reply>
 
 <proxy-reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-X-Control: swsclose
-Content-Length: 42
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Control: swsclose%CR
+Content-Length: 42%CR
+%CR
 Some deflate encoded data.
 New line here.
 </data>
@@ -51,12 +52,12 @@ proxy
 
 <verify>
 <protocol>
-GET /deflate-compressed-data/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-Accept-Encoding: deflate
-
+GET /deflate-compressed-data/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Accept-Encoding: deflate%CR
+%CR
 </protocol>
 <errorcode>
 0

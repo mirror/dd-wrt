@@ -38,13 +38,16 @@ export CPPFLAGS=""
 export LDFLAGS=""
 # start with initially empty flags
 
+export LIBS=""
+# start with initially empty flags
+
 
 CFLAGS="${CFLAGS} -fdiagnostics-color=always"
 # Have gcc diagnostics be in color even if stderr is not going to a terminal.
 # It's nice having warnings in color even if I run a script that does
 #   'make 2>&1 | tee log.make'
 
-CFLAGS="${CFLAGS} -fstack-protector-strong -D_FORTIFY_SOURCE=2"
+CFLAGS="${CFLAGS} -fstack-protector-strong"
 LDFLAGS="${LDFLAGS} -fstack-protector-strong"
 # -fstack-protector-strong:  enable stack checking.
 # NOTE: need to specify when compiling _and_ linking
@@ -54,7 +57,9 @@ LDFLAGS="${LDFLAGS} -fstack-protector-strong"
 # see : https://en.wikipedia.org/wiki/Buffer_overflow_protection
 # NOTE: needs static linking or the following in the path:
 #         /usr/i686-w64-mingw32/sys-root/mingw/bin/libssp-0.dll
-#
+
+CFLAGS="${CFLAGS} -D_FORTIFY_SOURCE=3"
+# https://www.gnu.org/software/libc/manual/html_node/Source-Fortification.html
 # -D_FORTIFY_SOURCE:  detect some buffer overflow errors
 #     ***>> requires compiler optimization level 1 or above <<***
 # see : https://gcc.gnu.org/legacy-ml/gcc-patches/2004-09/msg02055.html
@@ -146,9 +151,9 @@ usepcre2=yes
 #
 if [ "$usepcre2" = "yes" ]; then
     PCREOPT=""
-    inc="/source/pcre2-10.44/src/"
+    inc="/source/pcre2-10.47/src/"
       # need pcre2.h
-    lib="/source/pcre2-10.44/.libs"
+    lib="/source/pcre2-10.47/.libs"
       # need libpcre2-8.a & libpcre2-posix.a
 else
     PCREOPT="--disable-pcre2"
@@ -158,30 +163,53 @@ fi
 CPPFLAGS="${CPPFLAGS} -I${inc}"
 LDFLAGS="${LDFLAGS} -L${lib}"
 
+# pick a library for doing https interception (ie. playing man-in-the-middle)
+#   mbedtls
+#   openssl
+#   none
+mitmlib="mbedtls"
+
+if [ "$mitmlib" = "mbedtls" ]; then
+MITMOPT="--with-mbedtls"
+
 # mbedtls
-## https://github.com/Mbed-TLS/mbedtls/releases/tag/v2.16.12
-##   This is the last release of the 2.16 long-time support branch.
-##   Users who want a long-time branch should move to mbedtls-2.28,
-##   which is backward-compatible and will be supported for at least
-##   3 years.
-# Get the 2.28.x mbedtls library from  https://github.com/Mbed-TLS/mbedtls/tags
-# Release Notes: https://github.com/Mbed-TLS/mbedtls/releases/tag/v2.28.4
+# Get the 3.6.x mbedtls library from  https://github.com/Mbed-TLS/mbedtls/tags
+# Release Notes: https://github.com/Mbed-TLS/mbedtls/releases?q=3.6.3
 
-##MITMOPT="--with-mbedtls"
-##inc="/source/mbedtls-2.28.4/include"
-##lib="/source/mbedtls-2.28.4/library"
-##CPPFLAGS="${CPPFLAGS} -I${inc}"
-##LDFLAGS="${LDFLAGS} -L${lib}"
+inc="/source/mbedtls-3.6.5/include"
+lib="/source/mbedtls-3.6.5/library"
+CPPFLAGS="${CPPFLAGS} -I${inc}"
+LDFLAGS="${LDFLAGS} -L${lib}"
+LIBS="${LIBS} -lbcrypt"
+#  fixes the  undefined reference to `BCryptGenRandom@16'
 
+
+elif [ "$mitmlib" = "openssl" ]; then
 MITMOPT="--with-openssl"
+
+# OpenSSL
+#   using the cygwin supplied mingw32 openssl library
+
+
+else
+  MITMOPT=""
+fi
 
 # brotli
 # Get the brotli library from  https://github.com/google/brotli/releases
-inc="/source/brotli-1.1.0/build/installed/include"
-lib="/source/brotli-1.1.0/build/installed/lib"
+inc="/source/brotli-1.2.0/build/installed/include"
+lib="/source/brotli-1.2.0/build/installed/lib"
 BROTLIOPT="--with-brotli"
 CPPFLAGS="${CPPFLAGS} -I${inc}"
 LDFLAGS="${LDFLAGS} -L${lib}"
+
+# zstd
+# Get the zstd library from  https://github.com/facebook/zstd
+inc="/source/zstd-1.5.7/lib"
+lib="/source/zstd-1.5.7/lib"
+CPPFLAGS="${CPPFLAGS} -I${inc}"
+LDFLAGS="${LDFLAGS} -L${lib}"
+
 
 ###
 echo "CFLAGS=${CFLAGS}"
@@ -202,6 +230,7 @@ echo "LDFLAGS=${LDFLAGS}"
              --enable-strptime-sanity-checks \
              --disable-pthread  \
              --with-brotli  \
+             --with-zstd  \
              ${MITMOPT} \
              --with-docbook=yes
 

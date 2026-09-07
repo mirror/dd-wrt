@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: test1, test2, test3, keep-alive
+Content-Type: text/plain
+Content-Length: 10
+
+Blafasel.
+</data>
+</reply>
+
+<proxy-reply>
+<data>
+HTTP/1.1 200 OK
+Connection: keep-alive
+Content-Type: text/plain
+Content-Length: 10
+
+Blafasel.
+</data>
+</proxy-reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+"Connection:" header with some unsupported keywords, keep-alive keyword at the end
+</name>
+<command>
+http://%HOSTIP:%HTTPPORT/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+</verify>
+</testcase>

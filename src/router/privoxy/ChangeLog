@@ -1,6 +1,317 @@
 --------------------------------------------------------------------
 ChangeLog for Privoxy
 --------------------------------------------------------------------
+*** Version 4.2.0 stable ***
+
+- Security improvements:
+  - Parse the chunk-size with a dedicated function and reject "unreasonably"
+    large values to prevent silent truncation by sscanf(), integer overflows
+    and misinterpretation of the content later on. Heap buffer overflows on
+    platforms with 32-bit pointers were alleged as well.
+    Commit 5b3bb22b77. OVE-20260515-0002. Reported by @TristanInSec.
+  - ssl_send_certificate_error(): Store the generated message on the heap
+    instead of the stack to prevent an alleged segmentation fault if there
+    are enough certificates in the chain to exceed the stack size.
+    While at it, replace another variable-length array that was probably
+    unproblematic with a heap-based buffer as well.
+    Commit 4963aa4f08. OVE-20260515-0001. Reported by @TristanInSec.
+
+- Bug fixes:
+  - block_acl(): Ignore ACL matches when we don't have a destination yet
+    but the ACL requires one to match. block_acl() will be called
+    again later on when the destination is known from parsing the request.
+    Fixes SF bug #913 reported by Rainer Sokoll with confirmation from
+    Peter Geelhoed.
+  - rfc2553_connect_to(): Prevent theoretical memory disclosure through
+    the CGI interface if a request is rejected due to ACLs. It's theoretical
+    due to the previous bug in the ACL code.
+  - send_http_request(): Give up on the client connection if writing the
+    request data failed. If there's a request body Privoxy may not have
+    read all the data yet. The issue could be reproduced by running the
+    upstream curl test 1293 multiple times in a row.
+  - load_one_re_filterfile(): Only register content filters for statistics.
+    Previously all filter types were registered which wasted a bit of memory.
+  - Prevent unused-variable warnings when compiling with
+    DISABLE_PCRE_JIT_COMPILATION defined.
+  - cgi_show_url_info(): Remove special handling of "standard.action".
+
+- General improvements:
+  - Add elliptic-curve-keys directive and enable it by default.
+    It lets Privoxy use the SN_X9_62_prime256v1 group instead of RSA when
+    generating website keys and certificates. This is expected to be faster
+    but may not be supported by older clients. The OpenSSL-specific code is
+    based on on a patch by Steven Smith submitted in SF#933.
+  - Check the listening address when deciding whether or not a client tag
+    matches. This allows to use different client tags for different clients
+    running on the same host.
+  - Add code to make debugging ACL rules more convenient. It can be enabled
+    with the new configure parameter --enable-acl-debugging.
+  - acl_addr(): Properly reject IPv6 addresses when compiled without RFC2553 support.
+  - Use separate linked lists for filters of different types to be able look up
+    filters more efficiently. Implements TODO item #96.
+  - Allow to set and unset external filters through the CGI editor.
+  - parse_acl_rule(): Include the config file line number in the error messages.
+  - wolfssl: Downgrade an error message in create_server_ssl_connection()
+    to LOG_LEVEL_ERROR.
+  - Remove useless csp member re_filterfile_short[].
+  - templates: Update description of the 'unstable' conditional symbol.
+  - templates/url-info-osd.xml: Update address of the Privoxy developers mailing list.
+  - Factor parse_acl_rule() out of load_config().
+  - configure.in: Don't claim that OpenSSL has been detected when it may be LibreSSL.
+  - configure.in: Remove code to disable pcre2. Since the removal of pcre1
+    support in 24d0ff8398fdf pcre2 is no longer optional.
+  - Replace the term 'TLS/SSL' with 'TLS' in a bunch of places as most (all?)
+    supported TLS libraries default to not supporting SSL anymore.
+  - utils/filter2docs.pl: Add two spaces between filter names and description
+    so there's space after the longest filter name which currently is
+    'allow-autocompletion'.
+  - utils/filter2docs.pl: Recognize filters with dots in the name.
+  - Remove support for mbedtls 2.x.
+  - Remove support for OpenSSL versions before 2.0.
+  - GNUMakefile.in: Remove duplicated 'only' in the web-rss-feed target's message.
+  - GNUMakefile.in: Add a web-rss-feed target that only syncs the RSS feed.
+  - GNUMakefile.in: The Privoxy tools privoxy-log-parser, privoxy-regression-test
+    and uagen are handled by the "install" and "uninstall" targets now.
+
+- Action file improvements:
+  - Disable fast-redirects for "/.*&__goaway_referer=http".
+  - Block ".parsely.com/p(logger|x)/" to match URLs that weren't
+    covered by ".pixel.parsely.com/".
+  - Block requests to ".siteintercept.qualtrics.com/".
+  - Unblock "gitlab./search/count\?".
+  - Reword a comment in user.action that claimed that 'we' want
+    to support certain sites.
+  - Remove obsolete domain sunsolve.sun.com from user.action.
+  - Stop referring to SSL in comments.
+  - Disable fast-redirects for "archive.is/".
+  - Add example section for the taz.de filter to user.action.
+  - default.action.master: Update list of predefined filters.
+
+- Filter improvements:
+  - Let the "sourceforge" filter hide the "MongoDB" ad and the "vibe coding bar".
+  - Add a "taz.de" filter which hides the "paywahl" banner on taz.de by default.
+
+- Documentation improvements:
+  - FAQ: Mention that one can also donate through Liberapay and add a link.
+  - Add two paragraphs to the 'Reporting security problems' section.
+    Request that use of "AI" is disclosed and that reporters respond to
+    questions about the report.
+  - The Privoxy tools privoxy-log-parser, privoxy-regression-test and uagen
+    have man pages now. Previously they were only documented in perldoc.
+  - user-manual: Update the content filter list.
+  - user-manual: Update limit-connect description. If the https-inspection action
+    is enabled, Privoxy does filter the transferred content even if the CONNECT
+    action is being used.
+  - Document that the listen-address is taken into account for client
+    tags as well now.
+  - Update limit-connect description.
+  - Don't mention an obsolete mbed TLS version in the user manual's
+    'Third-party licenses and copyrights' section. While at it, link to the
+    GitHub page which shows the README instead of the list of tags which is
+    less informative and replace an 'and' with a comma.
+  - Mention zstd in the user manual's 'Third-party licenses and copyrights' section.
+  - license.sgml: Remove incorrect comment claiming that the file is included
+    into the user manual.
+  - Factor out license explanation into separate SGML document
+    to deduplicate the content. No HTML output change intended.
+  - user-manual: Sync paragraph explaining the license of Privoxy binaries
+    when linked to a recent TLS library with license.sgml.
+  - user-manual: Use &lt; instead of literal '<' to unbreak highlighting in Emacs.
+
+- Website improvements:
+  - Update doc/webserver/README.txt.
+  - Delete doc/webserver/redirect.php which hasn't been used in years.
+
+- Privoxy-Log-Parser:
+  - Highlight listen address in "Evaluating tag 'forward-directly' for client
+    127.0.0.1 using 127.0.1.1:8120. End of life 1774948202."
+  - Deal with a log message containing only 'TLS' instead of 'TLS/SSL'.
+  - Bump version to 0.9.8.
+  - Highlight listen address in 'Enlisting tag 'allow-cookies' for client
+    127.0.0.1 using 127.0.1.1:8120.'
+
+- Test improvements:
+  - run-privoxy-tests.sh: Kill the whole process group if Privoxy
+    doesn't start up in time. This prevents hangs when the system is
+    heavily loaded, run-privoxy-test.sh's output is piped into tee(1)
+    and Privoxy starts up after the the script checks for it, but before
+    it exits.
+  - Add test for the content filter "taz.de".
+  - Add test scenarios for the ACL code.
+  - tests/cts: Make the TESTDIR available as environment variable so
+    the prechecks can access it.
+  - Add test helper script that checks if a local address is available
+    to bind to.
+  - run-privoxy-tests.sh: Add valgrind support that can be enabled with "-v".
+  - run-privoxy-tests.sh: Turn $log_file into a local variable in start_privoxy().
+  - tests/cts/README: Recommend to use curl upstream tag curl-8_20_0.
+  - Regenerate curl-test-manifest-for-privoxy.
+  - gen-skip-reasons.pl: Use '==' instead of 'eq' when checking whether or
+    not a test should be skipped. While the script output is the same, the
+    test number isn't a  string so using '==' seems more appropriate.
+  - gen-skip-reasons.pl: Skip test 1 due to multiple Connection header values.
+  - gen-skip-reasons.pl: Skip test 58 for now which doesn't work anymore after
+    a recent curl upstream change.
+  - gen-skip-reasons.pl: Skip test 1685 which uses a Cookie header with a tab
+    that Privoxy converts into a space.
+  - Privoxy-Regression-Test: Bump version to 0.7.6
+  - Privoxy-Regression-Test: Allow '!' characters which are used in URLs from
+    taz.de for example.
+  - Privoxy-Regression-Test: Include the offending line in the error message
+    when rejecting Sticky Actions with whitespace inside the action parameters.
+  - Add three more tests for the chunked-transfer-encoding scenario.
+
+*** Version 4.1.0 stable ***
+
+- General improvements:
+  - Add Zstandard-decompression support.
+  - compile_pattern(): Use pcre2_get_error_message() to provide better error messages.
+  - wolfssl: Use wolfTLS_client_method() instead of wolfSSLv23_method()
+    when creating the connection to the server. Allows to connect to
+    https://media.ccc.de/ and https://traxxas.com/ while wolfSSLv23_method()
+    currently doesn't (wolfSSL 5.8.4). Unfortunately this does not allow to
+    connect to https://www.fsf.org/ while wolfSSLv23_method() does.
+    Reported upstream in https://github.com/wolfSSL/wolfssl/issues/7735.
+    curl is using wolfTLS_client_method() with recent wolfSSL versions
+    as well so this seems to be the way to go.
+  - wolfssl: Warn if HAVE_SECURE_RENEGOTIATION is unavailable
+    and don't suggest to use HAVE_RENEGOTIATION_INDICATION instead.
+  - show-status template: Add links for external (de)compression libraries.
+  - If the server sends multiple Connection headers, only parse and
+    forward the first one.
+  - create_hexadecimal_hash_of_host(): Use snprintf() instead of sprint()
+    Silences a warning on OpenBSD.
+  - Also log the listening address and port the request came in on.
+  - Added periods to a couple of log messages.
+  - Removed support for pcre1.
+  - configure.in: Removed obsolete warning if OpenSSL is detected.
+    Recent OpenSSL versions are licensed under the Apache 2 license so
+    the "special exception" from section 3 of the GPLv2 isn't needed
+    and a Privoxy binary linked to OpenSSL can be distributed under the
+    GPLv3 or later.
+  - init_domain_components(): Assert that the http->dbuffer and http->dvec
+    are NULL to detect memory leaks earlier.
+
+- Bug fixes:
+  - openssl: Don't call SSL_set_tlsext_host_name() if the host is an IP address
+    With LibreSSl the call simply fails and with OpenSSL the call
+    succeeds but results in an syntactically incorrect ClientHello
+    a server may object to. While at it, add the host name to the error message.
+  - Don't forward connection options Privoxy doesn't understand.
+  - Look for the "keep-alive" keyword more carefully in Connection headers.
+    Previously connections were not kept alive if the Connection header
+    contained additional keywords like "Upgrade".
+  - If the MS IIS5 hack fails, only send the error response if we're buffering content
+    Previously the error response was also sent if the client already
+    received the HTTP headers from the server.
+  - Fix compilation when configured with --disable-ipv6-support.
+    Submitted by Luca Broglio.
+  - Fixed detection and use of pcre2.h from a subdirectory.
+    SF bug #946. Patch submitted by Jakub Kulik.
+  - Properly handle IPv6 addresses in the Host header.
+    Reported by Joshua Rogers.
+  - socks4_connect(): Fix the dstsize passed to strlcpy() in case of socks4a.
+    Previously Privoxy would substract sizeof(struct socks_op) twice
+    as it's already part of csiz. While this was wrong it didn't
+    cause any actual problems as the buffer size is so large that
+    it didn't matter. Reported by Joshua Rogers.
+  - error_response(): Prevent a theoretical memory leak. Reported by Joshua Rogers.
+  - log_error(): Fix a segmentation fault when logging %E on a platform that
+    isn't Windows and doesn't have strerror(). Reported by Joshua Rogers.
+  - accept_connection(): Fix memory and socket leak if the server name and
+    port number ASCII decimal representation don't fit. This is not expected
+    to happen. Reported by Joshua Rogers.
+  - parse_http_url(): Fail if no host is found when we expected one.
+    This can happen in case of invalid requests in which case
+    Privoxy previously would leak a couple of bytes of memory.
+
+- Action file improvements:
+  - Prevent a fingerprinting issue with various login pages by not handling
+    the requests as image requests or fast-redirecting them. Without the added
+    section a request to a blocked or redirected login URL could be misdetected
+    by third parties as the user being logged in to the given site, thus making
+    fingerprinting Privoxy users easier. Note that this does not prevent the
+    fingerprinting issue if the client is actually logged in. For details see:
+    https://robinlinus.github.io/socialmedia-leak/
+    Doing that would probably be too invasive for a default configuration.
+  - Stop downgrading the HTTP version for port 631. It was supposed to work
+    around a problem with the CUPS webinterface but about 20 years later we
+    probably don't need it anymore ...
+  - Fix sticky actions for .flickr.com to match the action section.
+  - Remove an action section without an URL pattern.
+  - Disable fast-redirects for .bahn.de/
+  - Disable fast-redirects for report.error-report.com/
+  - Unblock metrics.1aeo.com/
+  - Unblock .crates.io/
+  - Block requests for mv.outbrain.com/
+  - Disable filter{banners-by-size} for .jwz.org/
+  - Disable deanimate-gifs for .githubusercontent.com/
+  - Disable the banners-by-size filter for github.com
+  - Widen block pattern from 'metrics.' to '.metricts.'
+  - Add +server-header-tagger{content-type} to all standard settings.
+
+- Filter improvements:
+  - Update imdb filter to remove wasted space below the search field.
+  - Update bundeswehr.de filter to be effective again.
+  - Removed the obsolete ie-exploits filter. It didn't actually reliably
+    protect against Nimda, there never were active maintainers and IE is
+    obsolete anyway. Also some virus scanners seem to be offended by the
+    test case for the filter in the source tarball.
+
+- Privoxy-Log-Parser:
+  - Bumped version to 0.9.7.
+  - Fully highlight: Accepted connection from 127.0.0.1 on socket 9 connected through 127.0.1.1:8118.
+  - Highlight: Socket 8 timed out while waiting for client headers
+  - Highlight: 'Giving up draining socket 35.'
+  - Highlight: "Tagger 'http-method' didn't add tag 'POST': suppressed"
+  - Highlight: 'Skipped filter 'banners-by-size' after job number 1: match limit exceeded (-47)'
+
+- uagen:
+  - Bumped version to 0.1.7
+  - Bumped BROWSER_VERSION and BROWSER_REVISION to match Firefox ESR 140.
+
+- Documentation:
+  - Updated license info to deal with wolfSSL's license change to GPLv3.
+  - Added new FAQ: 'Is the Privoxy source tarball infected by a virus?'.
+  - Removed claims that path matching can be turned case-sensitive.
+    The suggested method didn't actually work.
+
+- Website improvements:
+  - GNUmakefile.in: Add a web-robots.txt target to only transfer the robots.txt to the SF server.
+  - robots.txt: Disallow /gitweb to hopefully reduce the load on the webserver
+  - robots.txt: Remove stray empty lines
+  - Added a vanity onion address for the privoxy.org onion service.
+
+- Tests:
+  - Updated test framework to work with recent (rc-8_18_0-3) cts upstream tests.
+  - tests/cts/run-privoxy-tests.sh: Pass arguments that follow "--" to
+    runtests-wrapper.sh so they can be passed to runtests.pl.
+    This allows to only run a single test without modifying the scripts:
+        ./run-privoxy-tests.sh -t upstream-tests -- 473
+  - run-privoxy-tests.sh: Explicitly log if there were no errors.
+  - run-privoxy-tests.sh: Continue testing if a test in a test scenario fails.
+  - runtests-wrapper.sh: Explicitly set the path to the curl binary
+    using an absolute path. Otherwise runtests.pl uses a relative
+    path in its output which can be confusing.
+  - runtests-wrapper.sh: Improve a log message.
+  - Disable the forward-to-socks-proxy and forward-to-http-proxy scenarios
+    for now. Since curl commit d39db811929f the port randomisation can no
+    longer be disabled by the injected module so the tests don't work at the
+    moment. Discussion on the curl library mailinglist didn't result in
+    a solution (https://curl.se/mail/lib-2025-08/0000.html).
+  - tests/cts: Remove 'none' server section from tests.
+    It's no longer supported as of curl commit 71c9706959cb.
+  - run-privoxy-tests.sh: Print supported arguments in case of invalid ones.
+  - Add a test for the bundeswehr.de filter.
+  - tests/cts/gzip-compression/data/test13: Fix repetitive sequence by adding a missing %.
+  - Add a couple of tests for connection headers with keep-alive-timeout set.
+  - Add fetch test for the How-Tos in the user manual.
+  - ../privoxy-runtests.pm: Prevent warning if $_ is undefined.
+  - tests/cts/runtests-wrapper.sh: Stop explicitly setting HOSTIP.
+    It doesn't work with curl master at the moment.
+  - Let the "clean" target remove logs from the cts tests.
+  - .../content-filters/content-filters.action: Remove duplicate action section.
+
 *** Version 4.0.0 stable ***
 
 - Bug fixes:
@@ -3676,7 +3987,7 @@ being a mix of "U.S. English", "U.K. English" and "Irish English".
 
 
 ----------------------------------------------------------------------
-Copyright   :  Written by and Copyright (C) 2001-2025 the
+Copyright   :  Written by and Copyright (C) 2001-2026 the
                Privoxy team. https://www.privoxy.org/
 
                Based on the Internet Junkbuster originally written

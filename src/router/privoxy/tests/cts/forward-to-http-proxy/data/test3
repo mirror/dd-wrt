@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -85,21 +86,21 @@ http://www.example.org/%TESTNUMBER0000 http://www.example.org/%TESTNUMBER0001 ht
 
 <verify>
 <protocol>
-GET http://www.example.org/%TESTNUMBER0000 HTTP/1.1
-Host: www.example.org
-User-Agent: curl/%VERSION
-Accept: */*
-
-GET http://www.example.org/%TESTNUMBER0001 HTTP/1.1
-Host: www.example.org
-User-Agent: curl/%VERSION
-Accept: */*
-
-GET /%TESTNUMBER0002 HTTP/1.1
-Host: www.example.org
-User-Agent: curl/%VERSION
-Accept: */*
-
+GET http://www.example.org/%TESTNUMBER0000 HTTP/1.1%CR
+Host: www.example.org%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+%CR
+GET http://www.example.org/%TESTNUMBER0001 HTTP/1.1%CR
+Host: www.example.org%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+%CR
+GET /%TESTNUMBER0002 HTTP/1.1%CR
+Host: www.example.org%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+%CR
 </protocol>
 </verify>
 </testcase>

@@ -230,7 +230,6 @@ function show_limit_connect_opts(tf)
     </tr>
 
 <!-- @if-unstable-start -->
-# This will only appear if CODE_STATUS is "alpha" or "beta". See configure.in
     <tr>
       <td class="warning">
 

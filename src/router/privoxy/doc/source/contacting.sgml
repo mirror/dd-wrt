@@ -286,10 +286,19 @@ debug 65536 # Log applying actions</literallayout>
  (OpenPGP fingerprint: 4F36 C17F 3816 9136 54A1 E850 6918 2291 8BA2 371C).
 </para>
 <para>
+ If you used <quote>artificial intelligence</quote> to find the reported issue,
+ please disclose the details and make it clear whether or not you confirmed
+ that the issue is real or are merely forwarding a report that might be
+ entirely hallucinated.
+</para>
+<para>
  Usually you should get a response within a day, otherwise it's
  likely that either your mail or the response didn't make it.
  If that happens, please mail to the developer list to request a
  status update.
+</para>
+<para>
+ Please be prepared to respond to questions about your report.
 </para>
 </sect2>
 

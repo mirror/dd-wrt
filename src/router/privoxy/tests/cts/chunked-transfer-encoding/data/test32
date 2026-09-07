@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -11,11 +12,11 @@ skip
 
 <reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Content-Type: text/html
-Transfer-Encoding: chunked
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Content-Type: text/html%CR
+Transfer-Encoding: chunked%CR
+%CR
 %hex[1%0d%0a%0a%0d%0a0%0d%0a%0d%0a]hex%
 </data>
 <servercmd>
@@ -41,11 +42,11 @@ proxy
 
 <verify>
 <protocol>
-GET /no-filter/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-
+GET /no-filter/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+%CR
 </protocol>
 </verify>
 </testcase>

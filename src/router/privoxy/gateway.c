@@ -875,7 +875,7 @@ static jb_socket socks4_connect(const struct forward_spec *fwd,
          }
          else
          {
-            strlcpy(buf + csiz, target_host, sizeof(buf) - sizeof(struct socks_op) - csiz);
+            strlcpy(buf + csiz, target_host, sizeof(buf) - csiz);
             /*
              * What we forward to the socks4a server should have the
              * size of socks_op, plus the length of the userid plus

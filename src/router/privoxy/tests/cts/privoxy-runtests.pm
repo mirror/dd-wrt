@@ -4,7 +4,7 @@
 # Code that has to be loaded by curl's runtests.pl with the -L option
 # to deal with modifications required when using the tests with Privoxy.
 #
-# Copyright (c) 2014-2022 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2014-2026 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -175,6 +175,7 @@ sub getpartattr {
 # about unknown tests
 sub logmsg {
     for (@_) {
+        next unless defined($_);
         next if /^Warning: test\d+ not present in/;
         print "$_";
     }
@@ -216,6 +217,9 @@ sub main() {
         $use_external_proxy = 1 if ($arg eq "-P");
         $verbose = 1 if ($arg eq "-v");
     }
+
+    # Export TESTDIR so the prechecks can access it.
+    $ENV{TESTDIR} = $TESTDIR;
 
     return 1;
 }

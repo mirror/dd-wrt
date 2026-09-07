@@ -7,7 +7,7 @@
  *                routine to load the configuration and the global
  *                variables it writes to.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2022 the
+ * Copyright   :  Written by and Copyright (C) 2001-2026 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -148,6 +148,7 @@ static struct file_list *current_configfile = NULL;
 #define hash_debug                            78263U /* "debug" */
 #define hash_default_server_timeout      2530089913U /* "default-server-timeout" */
 #define hash_deny_access                 1227333715U /* "deny-access" */
+#define hash_elliptic_curve_keys          258906537U /* "elliptic-curve-keys" */
 #define hash_enable_accept_filter        2909040407U /* "enable-accept-filter" */
 #define hash_enable_edit_actions         2517097536U /* "enable-edit-actions" */
 #define hash_enable_compression          3943696946U /* "enable-compression" */
@@ -228,6 +229,10 @@ static void unload_configfile (void * data)
    while (cur_acl != NULL)
    {
       struct access_control_list * next_acl = cur_acl->next;
+#ifdef ACL_DEBUG
+      free(cur_acl->src_string);
+      free(cur_acl->dst_string);
+#endif
       free(cur_acl);
       cur_acl = next_acl;
    }
@@ -262,7 +267,6 @@ static void unload_configfile (void * data)
    {
       freez(config->actions_file_short[i]);
       freez(config->actions_file[i]);
-      freez(config->re_filterfile_short[i]);
       freez(config->re_filterfile[i]);
    }
 
@@ -557,6 +561,103 @@ static void parse_client_header_order(struct list *ordered_header_list, const ch
 }
 
 
+#ifdef FEATURE_ACL
+/*********************************************************************
+ *
+ * Function    :  parse_acl_rule
+ *
+ * Description :  Parse the value of the deny-access and permit-access
+ *                directives
+ *
+ * Parameters  :
+ *          1  :  arg:         The arguments of the directive we're parsing.
+ *          2  :  proxy_args:  The proxy arguments to fill in.
+ *          3  :  action_type: The type of action we're parsing.
+ *          4  :  line_number: Line number in the configuration file.
+ *
+ * Returns     :  NULL in case of errors, or a
+ *                pointer to an ACL that can be enlisted.
+ *
+ *********************************************************************/
+static struct access_control_list *parse_acl_rule(const char *arg, char **proxy_args,
+   const short action_type, const unsigned long line_number)
+{
+   char tmp[BUFFER_SIZE];
+   struct access_control_list *acl;
+   char *vec[3];
+   int vec_count;
+   const char *action_type_string = (action_type == ACL_DENY) ?
+      "deny-access" : "permit-access";
+
+   strlcpy(tmp, arg, sizeof(tmp));
+   vec_count = ssplit(tmp, " \t", vec, SZ(vec));
+
+   if ((vec_count != 1) && (vec_count != 2))
+   {
+      log_error(LOG_LEVEL_ERROR, "Wrong number of parameters for "
+         "%s directive in configuration file line %u.", action_type_string,
+         line_number);
+      string_append(proxy_args,
+         "<br>\nWARNING: Wrong number of parameters for ");
+      string_append(proxy_args, action_type_string);
+      string_append(proxy_args, " directive in configuration file.<br><br>\n");
+
+      return NULL;
+   }
+
+   /* allocate a new node */
+   acl = zalloc_or_die(sizeof(*acl));
+   acl->action = action_type;
+
+   if (acl_addr(vec[0], acl->src) < 0)
+   {
+      log_error(LOG_LEVEL_ERROR, "Invalid source address, port or netmask "
+         "for %s directive in configuration file line %u: \"%s\"",
+         action_type_string, line_number, vec[0]);
+      string_append(proxy_args,
+         "<br>\nWARNING: Invalid source address, port or netmask for ");
+      string_append(proxy_args, action_type_string);
+      string_append(proxy_args, " directive in configuration file: \"");
+      string_append(proxy_args, vec[0]);
+      string_append(proxy_args, "\"<br><br>\n");
+      freez(acl);
+
+      return NULL;
+   }
+   if (vec_count == 2)
+   {
+      if (acl_addr(vec[1], acl->dst) < 0)
+      {
+        log_error(LOG_LEVEL_ERROR,
+           "Invalid destination address, port or netmask for %s directive "
+           "in configuration file: \"%s\"", action_type_string, vec[1]);
+        string_append(proxy_args,
+           "<br>\nWARNING: Invalid destination address, port or netmask for ");
+        string_append(proxy_args, action_type_string);
+        string_append(proxy_args, " directive in configuration file: \"");
+        string_append(proxy_args, vec[1]);
+        string_append(proxy_args, "\"<br><br>\n");
+        freez(acl);
+
+        return NULL;
+      }
+   }
+   else
+   {
+      acl->wildcard_dst = 1;
+   }
+
+#ifdef ACL_DEBUG
+   acl->src_string = strdup_or_die(vec[0]);
+   acl->dst_string = strdup_or_die((vec_count == 2) ? vec[1] : "unspecified");
+#endif
+
+   return acl;
+
+}
+#endif
+
+
 /*********************************************************************
  *
  * Function    :  load_config
@@ -678,6 +779,9 @@ struct configuration_spec * load_config(void)
 #endif
    config->feature_flags            &= ~RUNTIME_FEATURE_TOLERATE_PIPELINING;
    config->cors_allowed_origin       = NULL;
+#ifdef FEATURE_HTTPS_INSPECTION
+   config->elliptic_curve_keys = 1;
+#endif
 
    configfp = fopen(configfile, "r");
    if (NULL == configfp)
@@ -957,61 +1061,11 @@ struct configuration_spec * load_config(void)
  * *************************************************************************/
 #ifdef FEATURE_ACL
          case hash_deny_access:
-            strlcpy(tmp, arg, sizeof(tmp));
-            vec_count = ssplit(tmp, " \t", vec, SZ(vec));
-
-            if ((vec_count != 1) && (vec_count != 2))
+            cur_acl = parse_acl_rule(arg, &config->proxy_args, ACL_DENY, linenum);
+            if (cur_acl == NULL)
             {
-               log_error(LOG_LEVEL_ERROR, "Wrong number of parameters for "
-                     "deny-access directive in configuration file.");
-               string_append(&config->proxy_args,
-                  "<br>\nWARNING: Wrong number of parameters for "
-                  "deny-access directive in configuration file.<br><br>\n");
                break;
             }
-
-            /* allocate a new node */
-            cur_acl = zalloc_or_die(sizeof(*cur_acl));
-            cur_acl->action = ACL_DENY;
-
-            if (acl_addr(vec[0], cur_acl->src) < 0)
-            {
-               log_error(LOG_LEVEL_ERROR, "Invalid source address, port or netmask "
-                  "for deny-access directive in configuration file: \"%s\"", vec[0]);
-               string_append(&config->proxy_args,
-                  "<br>\nWARNING: Invalid source address, port or netmask "
-                  "for deny-access directive in configuration file: \"");
-               string_append(&config->proxy_args,
-                  vec[0]);
-               string_append(&config->proxy_args,
-                  "\"<br><br>\n");
-               freez(cur_acl);
-               break;
-            }
-            if (vec_count == 2)
-            {
-               if (acl_addr(vec[1], cur_acl->dst) < 0)
-               {
-                  log_error(LOG_LEVEL_ERROR, "Invalid destination address, port or netmask "
-                     "for deny-access directive in configuration file: \"%s\"", vec[1]);
-                  string_append(&config->proxy_args,
-                     "<br>\nWARNING: Invalid destination address, port or netmask "
-                     "for deny-access directive in configuration file: \"");
-                  string_append(&config->proxy_args,
-                     vec[1]);
-                  string_append(&config->proxy_args,
-                     "\"<br><br>\n");
-                  freez(cur_acl);
-                  break;
-               }
-            }
-#ifdef HAVE_RFC2553
-            else
-            {
-               cur_acl->wildcard_dst = 1;
-            }
-#endif /* def HAVE_RFC2553 */
-
             /*
              * Add it to the list.  Note we reverse the list to get the
              * behaviour the user expects.  With both the ACL and
@@ -1026,6 +1080,15 @@ struct configuration_spec * load_config(void)
 
             break;
 #endif /* def FEATURE_ACL */
+
+#ifdef FEATURE_HTTPS_INSPECTION
+/* *************************************************************************
+ * elliptic-curve-keys 0|1
+ * *************************************************************************/
+         case hash_elliptic_curve_keys :
+            config->elliptic_curve_keys = parse_toggle_state(cmd, arg);
+            break;
+#endif /* def FEATURE_HTTPS_INSPECTION */
 
 #if defined(FEATURE_ACCEPT_FILTER) && defined(SO_ACCEPTFILTER)
 /* *************************************************************************
@@ -1148,7 +1211,6 @@ struct configuration_spec * load_config(void)
                   "(You can increase this limit by changing MAX_AF_FILES in project.h and recompiling).",
                   MAX_AF_FILES);
             }
-            config->re_filterfile_short[i] = strdup_or_die(arg);
             config->re_filterfile[i] = make_path(config->confdir, arg);
 
             break;
@@ -1423,7 +1485,7 @@ struct configuration_spec * load_config(void)
  * *************************************************************************/
          case hash_listen_backlog :
             /*
-             * We don't enfore an upper or lower limit because on
+             * We don't enforce an upper or lower limit because on
              * many platforms all values are valid and negative
              * number mean "use the highest value allowed".
              */
@@ -1504,61 +1566,11 @@ struct configuration_spec * load_config(void)
  * *************************************************************************/
 #ifdef FEATURE_ACL
          case hash_permit_access:
-            strlcpy(tmp, arg, sizeof(tmp));
-            vec_count = ssplit(tmp, " \t", vec, SZ(vec));
-
-            if ((vec_count != 1) && (vec_count != 2))
+            cur_acl = parse_acl_rule(arg, &config->proxy_args, ACL_PERMIT, linenum);
+            if (cur_acl == NULL)
             {
-               log_error(LOG_LEVEL_ERROR, "Wrong number of parameters for "
-                     "permit-access directive in configuration file.");
-               string_append(&config->proxy_args,
-                  "<br>\nWARNING: Wrong number of parameters for "
-                  "permit-access directive in configuration file.<br><br>\n");
-
                break;
             }
-
-            /* allocate a new node */
-            cur_acl = zalloc_or_die(sizeof(*cur_acl));
-            cur_acl->action = ACL_PERMIT;
-
-            if (acl_addr(vec[0], cur_acl->src) < 0)
-            {
-               log_error(LOG_LEVEL_ERROR, "Invalid source address, port or netmask "
-                  "for permit-access directive in configuration file: \"%s\"", vec[0]);
-               string_append(&config->proxy_args,
-                  "<br>\nWARNING: Invalid source address, port or netmask for "
-                  "permit-access directive in configuration file: \"");
-               string_append(&config->proxy_args,
-                  vec[0]);
-               string_append(&config->proxy_args,
-                  "\"<br><br>\n");
-               freez(cur_acl);
-               break;
-            }
-            if (vec_count == 2)
-            {
-               if (acl_addr(vec[1], cur_acl->dst) < 0)
-               {
-                  log_error(LOG_LEVEL_ERROR, "Invalid destination address, port or netmask "
-                     "for permit-access directive in configuration file: \"%s\"", vec[1]);
-                  string_append(&config->proxy_args,
-                     "<br>\nWARNING: Invalid destination address, port or netmask for "
-                     "permit-access directive in configuration file: \"");
-                  string_append(&config->proxy_args,
-                     vec[1]);
-                  string_append(&config->proxy_args,
-                     "\"<br><br>\n");
-                  freez(cur_acl);
-                  break;
-               }
-            }
-#ifdef HAVE_RFC2553
-            else
-            {
-               cur_acl->wildcard_dst = 1;
-            }
-#endif /* def HAVE_RFC2553 */
 
             /*
              * Add it to the list.  Note we reverse the list to get the

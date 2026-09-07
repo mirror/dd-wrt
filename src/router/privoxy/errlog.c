@@ -843,7 +843,7 @@ void log_error(int loglevel, const char *fmt, ...)
 #ifdef HAVE_STRERROR
             format_string = strerror(ival);
 #else /* ifndef HAVE_STRERROR */
-            format_string = NULL;
+            format_string = "Unable to convert errno to string.";
 #endif /* ndef HAVE_STRERROR */
             if (sval == NULL)
             {

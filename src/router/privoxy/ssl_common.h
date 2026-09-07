@@ -4,9 +4,9 @@
 *
 * File        :  $Source: /cvsroot/ijbswa/current/ssl_common.h,v $
 *
-* Purpose     :  File with TLS/SSL extension. Contains methods for
-*                creating, using and closing TLS/SSL connections that do
-*                not depend on particular TLS/SSL library.
+* Purpose     :  File with TLS extension. Contains methods for
+*                creating, using and closing TLS connections that do
+*                not depend on particular TLS library.
 *
 * Copyright   :  Written by and Copyright (c) 2017 Vaclav Svec. FIT CVUT.
 *

@@ -7,7 +7,7 @@
  *                the list of active loaders, and to automatically
  *                unload files that are no longer in use.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2014 the
+ * Copyright   :  Written by and Copyright (C) 2001-2026 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -967,20 +967,27 @@ load_trustfile_error:
  *********************************************************************/
 static void unload_re_filterfile(void *f)
 {
-   struct re_filterfile_spec *a, *b = (struct re_filterfile_spec *)f;
+   int filter_type;
 
-   while (b != NULL)
+   for (filter_type = 0; filter_type < MAX_FILTER_TYPES; filter_type++)
    {
-      a = b->next;
+      struct re_filterfile_spec *a, *b;
 
-      destroy_list(b->patterns);
-      pcrs_free_joblist(b->joblist);
-      freez(b->name);
-      freez(b->description);
-      freez(b);
+      b = ((struct re_filters *)f)->filters[filter_type];
+      while (b != NULL)
+      {
+         a = b->next;
 
-      b = a;
+         destroy_list(b->patterns);
+         pcrs_free_joblist(b->joblist);
+         freez(b->name);
+         freez(b->description);
+         freez(b);
+
+         b = a;
+      }
    }
+   freez(f);
 
    return;
 }
@@ -1103,11 +1110,14 @@ int load_one_re_filterfile(struct client_state *csp, int fileid)
 
    struct re_filterfile_spec *new_bl, *bl = NULL;
    struct file_list *fs;
+   struct re_filters last_filters;
 
    char *buf = NULL;
    unsigned long linenum = 0;
    pcrs_job *dummy, *lastjob = NULL;
+   enum filter_type current_filter = FT_INVALID_FILTER;
 
+   memset(&last_filters, 0, sizeof(last_filters));
    /*
     * No need to reload if unchanged
     */
@@ -1179,6 +1189,7 @@ int load_one_re_filterfile(struct client_state *csp, int fileid)
        */
       if (new_filter != FT_INVALID_FILTER)
       {
+         current_filter = new_filter;
          new_bl = zalloc_or_die(sizeof(*bl));
          if (new_filter == FT_CONTENT_FILTER)
          {
@@ -1202,7 +1213,6 @@ int load_one_re_filterfile(struct client_state *csp, int fileid)
          {
             new_bl->name = chomp(buf + 21);
          }
-         new_bl->type = new_filter;
 
          /*
           * If a filter description is available,
@@ -1225,32 +1235,39 @@ int load_one_re_filterfile(struct client_state *csp, int fileid)
 
          new_bl->name = strdup_or_die(chomp(new_bl->name));
 
-         /*
-          * If this is the first filter block, chain it
-          * to the file_list rather than its (nonexistent)
-          * predecessor
-          */
          if (fs->f == NULL)
          {
-            fs->f = new_bl;
+            fs->f = zalloc_or_die(sizeof(struct re_filters));
+         }
+
+         if (((struct re_filters *)(fs->f))->filters[new_filter] == NULL)
+         {
+            ((struct re_filters *)(fs->f))->filters[new_filter] = new_bl;
          }
          else
          {
-            assert(NULL != bl);
-            bl->next = new_bl;
+            if (last_filters.filters[new_filter] != NULL)
+            {
+               last_filters.filters[new_filter]->next = new_bl;
+            }
          }
          bl = new_bl;
+         last_filters.filters[new_filter] = new_bl;
 
-         log_error(LOG_LEVEL_RE_FILTER, "Reading in filter \"%s\" (\"%s\")", bl->name, bl->description);
+         log_error(LOG_LEVEL_RE_FILTER, "Reading in filter \"%s\" (\"%s\"). Type %d.",
+            bl->name, bl->description, new_filter);
 #ifdef FEATURE_EXTENDED_STATISTICS
-         register_filter_for_statistics(bl->name);
+         if (new_filter == FT_CONTENT_FILTER)
+         {
+            register_filter_for_statistics(bl->name);
+         }
 #endif
          freez(buf);
          continue;
       }
 
 #ifdef FEATURE_EXTERNAL_FILTERS
-      if ((bl != NULL) && (bl->type == FT_EXTERNAL_CONTENT_FILTER))
+      if ((bl != NULL) && (current_filter == FT_EXTERNAL_CONTENT_FILTER))
       {
          jb_err jb_error;
          /* Save the code as "pattern", but do not compile anything. */

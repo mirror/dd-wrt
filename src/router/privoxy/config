@@ -1,6 +1,6 @@
-#        Sample Configuration File for Privoxy 4.0.0
+#        Sample Configuration File for Privoxy 4.2.0
 #
-# Copyright (C) 2001-2025 Privoxy Developers https://www.privoxy.org/
+# Copyright (C) 2001-2026 Privoxy Developers https://www.privoxy.org/
 #
 #####################################################################
 #                                                                   #
@@ -2296,7 +2296,9 @@ socket-timeout 300
 #      The tag is set for all requests that come from clients that
 #      requested it to be set. Note that "clients" are differentiated
 #      by IP address, if the IP address changes the tag has to be
-#      requested again.
+#      requested again. The listen-address used to reach Privoxy is
+#      taken into account as well. This allows multiple clients
+#      running on the same system to request different settings.
 #
 #      Clients can request tags to be set by using the CGI interface
 #      http://config.privoxy.org/client-tags. The specific tag
@@ -2623,9 +2625,9 @@ socket-timeout 300
 #
 #  Notes:
 #
-#      This directive specifies the directory where generated TLS/SSL
-#      keys and certificates are saved when https inspection is
-#      enabled with the https-inspection action.
+#      This directive specifies the directory where generated keys
+#      and certificates are saved when https inspection is enabled
+#      with the https-inspection action.
 #
 #      The keys and certificates currently have to be deleted
 #      manually when changing the ca-cert-file and the ca-cert-key.
@@ -2652,7 +2654,44 @@ socket-timeout 300
 #
 #certificate-directory /usr/local/var/privoxy/certs
 #
-#  7.6. cipher-list
+#  7.6. elliptic-curve-keys
+#  =========================
+#
+#  Specifies:
+#
+#      Whether or not Privoxy uses Elliptic-curve cryptography.
+#
+#  Type of value:
+#
+#      1 or 0
+#
+#  Default value:
+#
+#      1
+#
+#  Effect if unset:
+#
+#      Website certificates with public elliptic curve keys are being
+#      used.
+#
+#  Notes:
+#
+#      This directive specifies whether or not Privoxy should use
+#      Elliptic-curve cryptography when generating website keys that
+#      are being used when https inspection is enabled with the
+#      https-inspection action.
+#
+#      When set to 0, Privoxy generates website certificates that use
+#      RSA keys. This is expected to be slower but may be required
+#      for compatibility with very old clients.
+#
+#  Example:
+#
+#      elliptic-curve-keys 0
+#
+elliptic-curve-keys 1
+#
+#  7.7. cipher-list
 #  =================
 #
 #  Specifies:
@@ -2747,7 +2786,7 @@ socket-timeout 300
 #        cipher-list ALL:!EXPORT:!EXPORT40:!EXPORT56:!aNULL:!LOW:!RC4:@STRENGTH
 #
 #
-#  7.7. trusted-cas-file
+#  7.8. trusted-cas-file
 #  ======================
 #
 #  Specifies:
@@ -2769,7 +2808,7 @@ socket-timeout 300
 #  Notes:
 #
 #      This directive specifies the trusted CAs file that is used
-#      when validating certificates for intercepted TLS/SSL requests.
+#      when validating certificates for intercepted HTTPS requests.
 #
 #      An example file can be downloaded from https://curl.se/ca/cacert.pem.
 #      If you want to create the file yourself, please

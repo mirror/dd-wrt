@@ -4,7 +4,7 @@
 <head>
   <title>The Main Configuration File</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 4.0.0 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 4.2.0 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Privoxy Configuration" href="configuration.html">
   <link rel="NEXT" title="Actions Files" href="actions-file.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -15,7 +15,7 @@
   <div class="NAVHEADER">
     <table summary="Header navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 4.0.0 User Manual</th>
+        <th colspan="3" align="center">Privoxy 4.2.0 User Manual</th>
       </tr>
       <tr>
         <td width="10%" align="left" valign="bottom"><a href="configuration.html" accesskey="P">Prev</a></td>
@@ -2232,8 +2232,10 @@
               as a result the last matching pattern wins. Tags that are created based on client or server headers are
               evaluated later on and can overrule CLIENT-TAG and URL patterns!</p>
               <p>The tag is set for all requests that come from clients that requested it to be set. Note that
-              "clients" are differentiated by IP address, if the IP address changes the tag has to be requested
-              again.</p>
+              "clients" are differentiated by IP address, if the IP address changes the tag has to be requested again.
+              The <tt class="LITERAL">listen-address</tt> used to reach <span class="APPLICATION">Privoxy</span> is
+              taken into account as well. This allows multiple clients running on the same system to request different
+              settings.</p>
               <p>Clients can request tags to be set by using the CGI interface <a href=
               "http://config.privoxy.org/client-tags" target="_top">http://config.privoxy.org/client-tags</a>. The
               specific tag description is only used on the web page and should be phrased in away that the user
@@ -2574,9 +2576,9 @@
             </dd>
             <dt>Notes:</dt>
             <dd>
-              <p>This directive specifies the directory where generated TLS/SSL keys and certificates are saved when
-              https inspection is enabled with the <tt class="LITERAL"><a href="actions-file.html#HTTPS-INSPECTION"
-              target="_top">https-inspection</a></tt> action.</p>
+              <p>This directive specifies the directory where generated keys and certificates are saved when https
+              inspection is enabled with the <tt class="LITERAL"><a href="actions-file.html#HTTPS-INSPECTION" target=
+              "_top">https-inspection</a></tt> action.</p>
               <p>The keys and certificates currently have to be deleted manually when changing the <a href=
               "#CA-CERT-FILE" target="_top">ca-cert-file</a> and the <a href="#CA-CERT-KEY" target=
               "_top">ca-cert-key</a>.</p>
@@ -2607,7 +2609,43 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="CIPHER-LIST" id="CIPHER-LIST">7.7.6. cipher-list</a></h4>
+        <h4 class="SECT3"><a name="ELLIPTIC-CURVE-KEYS" id="ELLIPTIC-CURVE-KEYS">7.7.6. elliptic-curve-keys</a></h4>
+        <div class="VARIABLELIST">
+          <dl>
+            <dt>Specifies:</dt>
+            <dd>
+              <p>Whether or not <span class="APPLICATION">Privoxy</span> uses Elliptic-curve cryptography.</p>
+            </dd>
+            <dt>Type of value:</dt>
+            <dd>
+              <p>1 or 0</p>
+            </dd>
+            <dt>Default value:</dt>
+            <dd>
+              <p>1</p>
+            </dd>
+            <dt>Effect if unset:</dt>
+            <dd>
+              <p>Website certificates with public elliptic curve keys are being used.</p>
+            </dd>
+            <dt>Notes:</dt>
+            <dd>
+              <p>This directive specifies whether or not <span class="APPLICATION">Privoxy</span> should use
+              Elliptic-curve cryptography when generating website keys that are being used when https inspection is
+              enabled with the <tt class="LITERAL"><a href="actions-file.html#HTTPS-INSPECTION" target=
+              "_top">https-inspection</a></tt> action.</p>
+              <p>When set to 0, <span class="APPLICATION">Privoxy</span> generates website certificates that use RSA
+              keys. This is expected to be slower but may be required for compatibility with very old clients.</p>
+            </dd>
+            <dt>Example:</dt>
+            <dd>
+              <p>elliptic-curve-keys 0</p>
+            </dd>
+          </dl>
+        </div>
+      </div>
+      <div class="SECT3">
+        <h4 class="SECT3"><a name="CIPHER-LIST" id="CIPHER-LIST">7.7.7. cipher-list</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Specifies:</dt>
@@ -2726,7 +2764,7 @@
         </div>
       </div>
       <div class="SECT3">
-        <h4 class="SECT3"><a name="TRUSTED-CAS-FILE" id="TRUSTED-CAS-FILE">7.7.7. trusted-cas-file</a></h4>
+        <h4 class="SECT3"><a name="TRUSTED-CAS-FILE" id="TRUSTED-CAS-FILE">7.7.8. trusted-cas-file</a></h4>
         <div class="VARIABLELIST">
           <dl>
             <dt>Specifies:</dt>
@@ -2748,7 +2786,7 @@
             <dt>Notes:</dt>
             <dd>
               <p>This directive specifies the trusted CAs file that is used when validating certificates for
-              intercepted TLS/SSL requests.</p>
+              intercepted HTTPS requests.</p>
               <p>An example file can be downloaded from <a href="https://curl.se/ca/cacert.pem" target=
               "_top">https://curl.se/ca/cacert.pem</a>. If you want to create the file yourself, please see: <a href=
               "https://curl.se/docs/caextract.html" target="_top">https://curl.se/docs/caextract.html</a>.</p>

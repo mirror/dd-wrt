@@ -46,11 +46,12 @@
 #  homepage:
 #    The URL of the Privoxy project, which maintains this software.
 #
-# CONDITIONAL SYMBOLS FOR THIS TEMPLATE AND THEIR DEPANDANT SYMBOLS:
+# CONDITIONAL SYMBOLS FOR THIS TEMPLATE AND THEIR DEPENDENT SYMBOLS:
 # ------------------------------------------------------------------
 #
 #  unstable:
-#    this is an alpha or beta release of the proxy software
+#    The code status is something other than "stable", for example
+#    "alpha", "beta" or "UNRELEASED".
 #  have-adminaddr-info:
 #    An e-mail address for the local Privoxy administrator has
 #    been specified and is available through the "admin-address"

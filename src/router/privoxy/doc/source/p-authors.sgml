@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- Copyright (C) 2001-2023 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2025 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -92,6 +92,7 @@ Current Privoxy Team:
  David Bo
  Gergely Bor
  Francois Botha
+ Luca Broglio
  Reiner Buehl
  Burberry
  Calestyo
@@ -124,6 +125,7 @@ Current Privoxy Team:
  Fabrice Fontaine
  T Ford
  Dean Gaudet
+ Peter Geelhoed
  Stephen Gildea
  Morton A. Goldberg
  John McGowan
@@ -158,6 +160,7 @@ Current Privoxy Team:
  Max Khon
  Steven Kolins
  Korda
+ Jakub Kulik
  Stefan Kurtz
  Zeno Kugy
  David Laight
@@ -220,6 +223,7 @@ Current Privoxy Team:
  Benjamin C. Wiley Sittler
  Juliusz Sosinowicz
  DRS David Soft
+ Rainer Sokoll
  Simon South
  Dan Stahlke
  Stefan

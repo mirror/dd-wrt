@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP CONNECT
+HTTPS
+</keywords>
+</info>
+
+<proxy-reply>
+<data>
+HTTP/1.1 503 Connect failed
+Content-Length: 48
+Content-Type: text/html
+Cache-Control: no-cache
+X-Ignore-Header: Date
+Date: Wed, 01 Apr 2026 07:30:49 GMT
+Last-Modified: Wed, 08 Jun 1955 12:00:00 GMT
+Expires: Sat, 17 Jun 2000 12:00:00 GMT
+Pragma: no-cache
+
+</data>
+</proxy-reply>
+
+<client>
+<name>
+Request to https address that is explicitly denied for the client
+</name>
+<command>
+--interface 127.0.1.2 https://127.0.0.1/%TESTNUMBER
+</command>
+<precheck>
+%PERL $TESTDIR/../../bind-to-address.pl 127.0.1.2
+</precheck>
+</client>
+
+<verify>
+<errorcode>
+7
+</errorcode>
+</verify>
+
+</testcase>

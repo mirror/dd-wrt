@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -9,12 +10,12 @@ filter no-ping
 
 <reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-X-Control: swsclose
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Control: swsclose%CR
+%CR
 # Here are some strings the no-ping filter should filter:
 
 <a ping="http://www.example.org/ping-target" href="http://www.example.org/link-target">click here</a>
@@ -29,13 +30,13 @@ X-Control: swsclose
 
 <proxy-reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-X-Control: swsclose
-Content-Length: 836
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Control: swsclose%CR
+Content-Length: 836%CR
+%CR
 # Here are some strings the no-ping filter should filter:
 
 <strong style="color:white; background-color:red;" title="Privoxy removed ping target 'http://www.example.org/ping-target'">PING!</strong>
@@ -69,12 +70,12 @@ http://%HOSTIP:%HTTPPORT/no-ping/%TESTNUMBER
 
 <verify>
 <protocol>
-GET /no-ping/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-Connection: close
-
+GET /no-ping/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Connection: close%CR
+%CR
 </protocol>
 </verify>
 </testcase>

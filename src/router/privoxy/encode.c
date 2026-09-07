@@ -270,7 +270,7 @@ char * url_encode(const char *s)
  * Returns     :  The integer value, or -1 for non-hex characters.
  *
  *********************************************************************/
-static int xdtoi(const int d)
+int xdtoi(const int d)
 {
    if ((d >= '0') && (d <= '9'))
    {

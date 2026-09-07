@@ -6,7 +6,7 @@
 # Wrapper around curl's runtests.pl that sets a couple of options
 # so Privoxy is being used.
 #
-# Copyright (c) 2013-2021 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2013-2025 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -57,10 +57,10 @@ runtests_wrapper() {
     curl_setup_is_sane "${curl_source_directory}" || exit 1
 
     # Defaults that can be changed through arguments
-    privoxy_ip=127.0.0.1
+    privoxy_ip=127.0.0.1 # changing this currently doesn't work
     privoxy_port=9119
     a_flag="-a"
-    proxy_args="-P http://${privoxy_ip}:${privoxy_port}/ -o HOSTIP=${privoxy_ip}"
+    proxy_args="-P http://${privoxy_ip}:${privoxy_port}/"
     exclude_file_args="-E ${privoxy_source_directory}/tests/cts/curl-test-manifest-for-privoxy"
     testdir_args="-o TESTDIR=${privoxy_source_directory}/tests/cts/data"
     keyword=HTTP
@@ -85,7 +85,7 @@ runtests_wrapper() {
                 shift
                 privoxy_ip="$1"
                 shift
-                proxy_args="-P http://${privoxy_ip}:${privoxy_port}/ -o HOSTIP=${privoxy_ip}"
+                proxy_args="-P http://${privoxy_ip}:${privoxy_port}/"
                 ;;
             "-T")
                 echo "Not setting TESTDIR"
@@ -94,7 +94,7 @@ runtests_wrapper() {
                 ;;
             "-t")
                 shift
-                echo "Overwriting default TESTDIR with $1"
+                echo "Setting TESTDIR to ${1}"
                 testdir_args="-o TESTDIR=$1"
                 shift
                 ;;
@@ -102,7 +102,7 @@ runtests_wrapper() {
                 shift
                 privoxy_port="$1"
                 shift
-                proxy_args="-P http://${privoxy_ip}:${privoxy_port}/ -o HOSTIP=${privoxy_ip}"
+                proxy_args="-P http://${privoxy_ip}:${privoxy_port}/"
                 ;;
             "-P")
                 # "Obviously" -P means not setting -P
@@ -118,7 +118,10 @@ runtests_wrapper() {
     extra_args="$*"
     
     cd "${curl_source_directory}/tests" || exit 1
-    ./runtests.pl -L "${privoxy_lib}" $proxy_args $exclude_file_args $testdir_args $a_flag -n $keyword !skip $extra_args
+    ./runtests.pl -c "${curl_source_directory}/src/curl" \
+                  $testdir_args \
+                  -L "${privoxy_lib}" \
+                  $proxy_args $exclude_file_args $a_flag -n $keyword !skip $extra_args
 }
 
 main() {

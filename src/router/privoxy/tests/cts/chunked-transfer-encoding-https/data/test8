@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -9,35 +10,35 @@ chunked transfer encoding
 
 <reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-Transfer-Encoding: chunked
-X-Control: swsclose
-
-100
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+Transfer-Encoding: chunked%CR
+X-Control: swsclose%CR
+%CR
+100%CR
 %repeat[255 x A]%
-
-
+%CR
+%CR
 </data>
 </reply>
 
 <proxy-reply>
 <data>
-HTTP/1.1 200 Connection established
-
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-Transfer-Encoding: chunked
-X-Control: swsclose
-
-100
+HTTP/1.1 200 Connection established%CR
+%CR
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+Transfer-Encoding: chunked%CR
+X-Control: swsclose%CR
+%CR
+100%CR
 %repeat[255 x A]%
-
-
+%CR
+%CR
 </data>
 </proxy-reply>
 
@@ -58,11 +59,11 @@ proxy
 
 <verify>
 <protocol>
-GET /chunked-transfer-encoding/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPSPORT
-User-Agent: curl/%VERSION
-Accept: */*
-
+GET /chunked-transfer-encoding/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPSPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+%CR
 </protocol>
 <errorcode>
 56

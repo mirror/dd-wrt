@@ -17,7 +17,7 @@
 # - Document magic Expect Header values
 # - Internal fuzz support?
 #
-# Copyright (c) 2007-2024 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2007-2026 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -38,7 +38,7 @@ use strict;
 use Getopt::Long;
 
 use constant {
-    PRT_VERSION => 'Privoxy-Regression-Test 0.7.5',
+    PRT_VERSION => 'Privoxy-Regression-Test 0.7.6',
  
     CURL => 'curl',
 
@@ -135,7 +135,7 @@ sub parse_tag($) {
 sub check_for_forbidden_characters($) {
 
     my $string = shift;
-    my $allowed = '[-=\dA-Za-z~{}\[\]:./();\t ,+@"_%?&*^|]';
+    my $allowed = '[-=\dA-Za-z~{}\[\]:./();\t ,+@"_%?&*^|!]';
 
     unless ($string =~ m/^$allowed*$/o) {
         my $forbidden = $string;
@@ -206,7 +206,7 @@ sub load_regression_tests_from_file($) {
             $sticky_actions = $value;
             if ($sticky_actions =~ /{[^}]*\s/) {
                 log_and_die("'Sticky Actions' with whitespace inside the " .
-                            "action parameters are currently unsupported.");
+                            "action parameters are currently unsupported: '$_'");
             }
         }
 
@@ -577,7 +577,7 @@ sub load_action_files($) {
                 $sticky_actions = $value;
                 if ($sticky_actions =~ /{[^}]*\s/) {
                     log_and_die("'Sticky Actions' with whitespace inside the " .
-                                "action parameters are currently unsupported.");
+                                "action parameters are currently unsupported: '$_'");
                 }
             }
 

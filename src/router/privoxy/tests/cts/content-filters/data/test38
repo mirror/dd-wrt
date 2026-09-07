@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -9,17 +10,17 @@ filter imdb
 
 <reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-X-Control: swsclose
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Control: swsclose%CR
+%CR
 # Here are some strings the imdb filter should filter:
 
 # pcrs command 1:
 
-<div id="top_ad_wrapper"
+<div id="inline20_responsive_wrapper" class="slot_wrapper nas-spacing nas-dark" style="position:relative">
 
 # pcrs command 2:
 
@@ -33,18 +34,18 @@ X-Control: swsclose
 
 <proxy-reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-X-Control: swsclose
-Content-Length: 259
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Control: swsclose%CR
+Content-Length: 240%CR
+%CR
 # Here are some strings the imdb filter should filter:
 
 # pcrs command 1:
 
-<div id="top_ad_wrapper" style="display:none"
+<div style="display:none">
 
 # pcrs command 2:
 
@@ -73,12 +74,12 @@ http://%HOSTIP:%HTTPPORT/imdb/%TESTNUMBER
 
 <verify>
 <protocol>
-GET /imdb/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-Connection: close
-
+GET /imdb/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Connection: close%CR
+%CR
 </protocol>
 </verify>
 </testcase>

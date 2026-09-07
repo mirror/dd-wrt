@@ -8,13 +8,13 @@
 <!entity contacting SYSTEM "contacting.sgml">
 <!entity history SYSTEM "history.sgml">
 <!entity copyright SYSTEM "copyright.sgml">
-<!entity license SYSTEM "license.sgml">
+<!entity license-explanation SYSTEM "license-explanation.sgml">
 <!entity GPLv2 SYSTEM "../../LICENSE">
 <!entity GPLv3 SYSTEM "../../LICENSE.GPLv3">
 <!entity p-authors SYSTEM "p-authors.sgml">
 <!entity config SYSTEM "p-config.sgml">
 <!entity changelog SYSTEM "changelog.sgml">
-<!entity p-version "4.0.0">
+<!entity p-version "4.2.0">
 <!entity p-status "stable">
 <!entity % p-authors-formal "INCLUDE"> <!-- include additional text, etc  -->
 <!entity % p-not-stable "IGNORE">
@@ -35,7 +35,7 @@
 
  Purpose     :  user manual
 
- Copyright (C) 2001-2025 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2026 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -54,7 +54,7 @@
  <subscript>
 <!-- Completely the wrong markup, but very little is allowed  -->
 <!-- in this part of an article. FIXME -->
- <link linkend="copyright">Copyright</link> &my-copy; 2001-2025 by
+ <link linkend="copyright">Copyright</link> &my-copy; 2001-2026 by
  <ulink url="https://www.privoxy.org/">Privoxy Developers</ulink>
  </subscript>
 </pubdate>
@@ -575,6 +575,12 @@ $ make                             # build Privoxy
 <title>What's New in this Release</title>
 
 &changelog;
+
+<para>
+  The Privoxy project is currently underfunded.
+  If you can afford it, please consider
+  <ulink url="https://www.privoxy.org/donate">making a donation</ulink>.
+</para>
 
 <!--   ~~~~~       New section      ~~~~~     -->
 
@@ -2371,14 +2377,6 @@ media.example.com/.*banners
  Note that the path pattern is automatically left-anchored at the <quote>/</quote>,
  i.e. it matches as if it would start with a <quote>^</quote> (regular expression speak
  for the beginning of a line).
-</para>
-
-<para>
- Please also note that matching in the path is <emphasis>CASE INSENSITIVE</emphasis>
- by default, but you can switch to case sensitive at any point in the pattern by using the
- <quote>(?-i)</quote> switch: <literal>www.example.com/(?-i)PaTtErN.*</literal> will match
- only documents whose path starts with <literal>PaTtErN</literal> in
- <emphasis>exactly</emphasis> this capitalization.
 </para>
 
 <variablelist>
@@ -4374,128 +4372,132 @@ another.example.com/testing
   <listitem>
    <para>
     <anchor id="filter-js-annoyances">
+    <screen>+filter{js-annoyances}         # Get rid of particularly annoying JavaScript abuse.</screen>
    </para>
-    <screen>+filter{js-annoyances}       # Get rid of particularly annoying JavaScript abuse.</screen>
    <para>
     <anchor id="filter-js-events">
+    <screen>+filter{js-events}             # Kill JavaScript event bindings and timers (Radically destructive! Only for extra nasty sites).</screen>
    </para>
-    <screen>+filter{js-events}           # Kill JavaScript event bindings and timers (Radically destructive! Only for extra nasty sites).</screen>
    <para>
     <anchor id="filter-html-annoyances">
+    <screen>+filter{html-annoyances}       # Get rid of particularly annoying HTML abuse.</screen>
    </para>
-    <screen>+filter{html-annoyances}     # Get rid of particularly annoying HTML abuse.</screen>
    <para>
     <anchor id="filter-content-cookies">
+    <screen>+filter{content-cookies}       # Kill cookies that come in the HTML or JS content.</screen>
    </para>
-    <screen>+filter{content-cookies}     # Kill cookies that come in the HTML or JS content.</screen>
    <para>
     <anchor id="filter-refresh-tags">
+    <screen>+filter{refresh-tags}          # Kill automatic refresh tags if refresh time is larger than 9 seconds.</screen>
    </para>
-    <screen>+filter{refresh-tags}        # Kill automatic refresh tags if refresh time is larger than 9 seconds.</screen>
    <para>
     <anchor id="filter-unsolicited-popups">
+    <screen>+filter{unsolicited-popups}    # Disable only unsolicited pop-up windows.</screen>
    </para>
-    <screen>+filter{unsolicited-popups}  # Disable only unsolicited pop-up windows.</screen>
    <para>
     <anchor id="filter-all-popups">
+    <screen>+filter{all-popups}            # Kill all popups in JavaScript and HTML.</screen>
    </para>
-    <screen>+filter{all-popups}          # Kill all popups in JavaScript and HTML.</screen>
    <para>
     <anchor id="filter-img-reorder">
+    <screen>+filter{img-reorder}           # Reorder attributes in &lt;img&gt; tags to make the banners-by-* filters more effective.</screen>
    </para>
-    <screen>+filter{img-reorder}         # Reorder attributes in &lt;img&gt; tags to make the banners-by-* filters more effective.</screen>
    <para>
     <anchor id="filter-banners-by-size">
+    <screen>+filter{banners-by-size}       # Kill banners by size.</screen>
    </para>
-    <screen>+filter{banners-by-size}     # Kill banners by size.</screen>
    <para>
     <anchor id="filter-banners-by-link">
+    <screen>+filter{banners-by-link}       # Kill banners by their links to known clicktrackers.</screen>
    </para>
-    <screen>+filter{banners-by-link}     # Kill banners by their links to known clicktrackers.</screen>
    <para>
     <anchor id="filter-webbugs">
+    <screen>+filter{webbugs}               # Squish WebBugs (1x1 invisible GIFs used for user tracking).</screen>
    </para>
-    <screen>+filter{webbugs}             # Squish WebBugs (1x1 invisible GIFs used for user tracking).</screen>
    <para>
     <anchor id="filter-tiny-textforms">
+    <screen>+filter{tiny-textforms}        # Extend those tiny textareas up to 40x80 and kill the hard wrap.</screen>
    </para>
-    <screen>+filter{tiny-textforms}      # Extend those tiny textareas up to 40x80 and kill the hard wrap.</screen>
    <para>
     <anchor id="filter-jumping-windows">
+    <screen>+filter{jumping-windows}       # Prevent windows from resizing and moving themselves.</screen>
    </para>
-    <screen>+filter{jumping-windows}     # Prevent windows from resizing and moving themselves.</screen>
    <para>
     <anchor id="filter-frameset-borders">
+    <screen>+filter{frameset-borders}      # Give frames a border and make them resizable.</screen>
    </para>
-    <screen>+filter{frameset-borders}    # Give frames a border and make them resizable.</screen>
    <para>
     <anchor id="filter-iframes">
+    <screen>+filter{iframes}               # Removes all detected iframes. Should only be enabled for individual sites.</screen>
    </para>
-    <screen>+filter{iframes}             # Removes all detected iframes. Should only be enabled for individual sites.</screen>
    <para>
     <anchor id="filter-demoronizer">
+    <screen>+filter{demoronizer}           # Fix MS's non-standard use of standard charsets.</screen>
    </para>
-    <screen>+filter{demoronizer}         # Fix MS's non-standard use of standard charsets.</screen>
    <para>
     <anchor id="filter-shockwave-flash">
+    <screen>+filter{shockwave-flash}       # Kill embedded Shockwave Flash objects.</screen>
    </para>
-    <screen>+filter{shockwave-flash}     # Kill embedded Shockwave Flash objects.</screen>
    <para>
     <anchor id="filter-quicktime-kioskmode">
+    <screen>+filter{quicktime-kioskmode}   # Make Quicktime movies saveable.</screen>
    </para>
-    <screen>+filter{quicktime-kioskmode} # Make Quicktime movies saveable.</screen>
    <para>
     <anchor id="filter-fun">
+    <screen>+filter{fun}                   # Text replacements for subversive browsing fun!</screen>
    </para>
-    <screen>+filter{fun}                 # Text replacements for subversive browsing fun!</screen>
    <para>
     <anchor id="filter-crude-parental">
+    <screen>+filter{crude-parental}        # Crude parental filtering. Note that this filter doesn't work reliably.</screen>
    </para>
-    <screen>+filter{crude-parental}      # Crude parental filtering. Note that this filter doesn't work reliably.</screen>
-   <para>
-    <anchor id="filter-ie-exploits">
-   </para>
-    <screen>+filter{ie-exploits}         # Disable some known Internet Explorer bug exploits.</screen>
    <para>
     <anchor id="filter-site-specifics">
+    <screen>+filter{site-specifics}        # Cure for site-specific problems. Don't apply generally!</screen>
    </para>
-    <screen>+filter{site-specifics}      # Cure for site-specific problems. Don't apply generally!</screen>
    <para>
     <anchor id="filter-no-ping">
+    <screen>+filter{no-ping}               # Removes non-standard ping attributes in &lt;a&gt; and &lt;area&gt; tags.</screen>
    </para>
-    <screen>+filter{no-ping}             # Removes non-standard ping attributes in &lt;a&gt; and &lt;area&gt; tags.</screen>
    <para>
-    <anchor id="filter-bundeswehr.de">
+    <anchor id="filter-allow-autocompletion">
+    <screen>+filter{allow-autocompletion}  # Changes autocomplete="off" on form and input fields to "on" to allow autocompletion.</screen>
    </para>
-    <screen>+filter{bundeswehr.de}      # Hide the cookie and privacy info banner on bundeswehr.de.</screen>
    <para>
     <anchor id="filter-github">
+    <screen>+filter{github}                # Removes the annoying "Sign-Up" banner and the Cookie disclaimer.</screen>
    </para>
-    <screen>+filter{github}              # Removes the annoying "Sign-Up" banner and the Cookie disclaimer.</screen>
-   <para>
-    <anchor id="filter-google">
-   </para>
-    <screen>+filter{google}              # CSS-based block for Google text ads. Also removes a width limitation and the toolbar advertisement.</screen>
    <para>
     <anchor id="filter-imdb">
+    <screen>+filter{imdb}                  # Removes some ads on IMDb.</screen>
    </para>
-    <screen>+filter{imdb}                # Removes some ads on IMDb.</screen>
+   <para>
+    <anchor id="filter-google">
+    <screen>+filter{google}                # CSS-based block for Google text ads. Also removes a width limitation and the toolbar advertisement.</screen>
+   </para>
    <para>
     <anchor id="filter-yahoo">
+    <screen>+filter{yahoo}                 # CSS-based block for Yahoo text ads. Also removes a width limitation.</screen>
    </para>
-    <screen>+filter{yahoo}               # CSS-based block for Yahoo text ads. Also removes a width limitation.</screen>
    <para>
     <anchor id="filter-msn">
+    <screen>+filter{msn}                   # CSS-based block for MSN text ads. Also removes tracking URLs and a width limitation.</screen>
    </para>
-    <screen>+filter{msn}                 # CSS-based block for MSN text ads. Also removes tracking URLs and a width limitation.</screen>
    <para>
     <anchor id="filter-blogspot">
+    <screen>+filter{blogspot}              # Cleans up some Blogspot blogs. Read the fine print before using this.</screen>
    </para>
-    <screen>+filter{blogspot}            # Cleans up some Blogspot blogs. Read the fine print before using this.</screen>
+   <para>
+    <anchor id="filter-bundeswehr.de">
+    <screen>+filter{bundeswehr.de}         # Hide the cookie and privacy info banner on bundeswehr.de</screen>
+   </para>
    <para>
     <anchor id="filter-sourceforge">
+    <screen>+filter{sourceforge}           # Reduces the amount of ads for proprietary software on SourceForge.</screen>
    </para>
-    <screen>+filter{sourceforge}         # Reduces the amount of ads for proprietary software on SourceForge.</screen>
+   <para>
+    <anchor id="filter-taz.de">
+    <screen>+filter{taz.de}                # Hides the 'paywahl' banner on taz.de by default without relying on cookies.</screen>
+   </para>
   </listitem>
  </varlistentry>
 </variablelist>
@@ -5549,7 +5551,7 @@ www.example.com</screen>
  <varlistentry>
   <term>Typical use:</term>
   <listitem>
-   <para>Prevent abuse of <application>Privoxy</application> as a TCP proxy relay or disable SSL for untrusted sites</para>
+   <para>Prevent abuse of <application>Privoxy</application> as a TCP proxy relay</para>
   </listitem>
  </varlistentry>
 
@@ -5597,9 +5599,13 @@ www.example.com</screen>
     This means CONNECT-enabled proxies can be used as TCP relays very easily.
   </para>
   <para>
-   <application>Privoxy</application> relays HTTPS traffic without seeing
-   the decoded content. Websites can leverage this limitation to circumvent &my-app;'s
-   filters. By specifying an invalid port range you can disable HTTPS entirely.
+   If the CONNECT method is being used and the
+   <link linkend="https-inspection">https-inspection</link> action
+   is not enabled, &my-app; relays HTTPS or other traffic without
+   seeing the decoded content.
+   Websites can leverage this limitation to circumvent &my-app;'s filters.
+   By specifying an invalid port range you can disallow the CONNECT method
+   and prevent this.
   </para>
   </listitem>
  </varlistentry>
@@ -6032,7 +6038,7 @@ example.com/.*toChange=(?!bar)
 i[0-9][0-9][0-9][0-9]*/
 
 # Redirect requests for the old Tor Hidden Service of the Privoxy website to the new one
-{+redirect{s@^http://jvauzb4sb3bwlsnc.onion/@http://l3tczdiiwoo63iwxty4lhs6p7eaxop5micbn7vbliydgv63x5zrrrfyd.onion/@}}
+{+redirect{s@^http://jvauzb4sb3bwlsnc.onion/@http://privoxy5wtwbtk4wwyrdbg6oxeghvhghghmokcx2iawydkqmaztfbbid.onion/@}}
 jvauzb4sb3bwlsnc.onion/
 
 # Redirect remote requests for this manual
@@ -7298,7 +7304,7 @@ webmail.example.com
  might end up with unintended variables if you use a variable name
  directly after the delimiter. Variables will be resolved without
  escaping anything, therefore you also have to be careful not to chose
- delimiters that appear in the replacement text. For example '<' should
+ delimiters that appear in the replacement text. For example '&lt;' should
  be save, while '?' will sooner or later cause conflicts with $url.
 </para>
 
@@ -7852,20 +7858,6 @@ pre-defined filters for your convenience:
    <para>
     A demonstration-only filter that shows how <application>Privoxy</application>
     can be used to delete web content on a keyword basis.
-   </para>
-  </listitem>
- </varlistentry>
-
- <varlistentry>
-  <term><emphasis>ie-exploits</emphasis></term>
-  <listitem>
-   <para>
-    An experimental collection of text replacements to disable malicious HTML and JavaScript
-    code that exploits known security holes in Internet Explorer.
-   </para>
-   <para>
-    Presently, it only protects against Nimda and a cross-site scripting bug, and
-    would need active maintenance to provide more substantial protection.
    </para>
   </listitem>
  </varlistentry>
@@ -8535,24 +8527,8 @@ Requests</title>
  &copyright;
 <!-- end copyright -->
 
-<para>
- <application>Privoxy</application> is free software; you can
- redistribute and/or modify its source code under the terms
- of the <citetitle>GNU General Public License</citetitle>
- as published by the Free Software Foundation, either version 2
- of the license, or (at your option) any later version.
-</para>
-
-<para>
- The same is true for <application>Privoxy</application> binaries
- unless they are linked with a
- <ulink url="https://www.trustedfirmware.org/projects/mbed-tls/">mbed TLS</ulink> version
- that is licensed under the Apache 2.0 license in which
- case you can redistribute and/or modify the <application>Privoxy</application>
- binaries under the terms of the <citetitle>GNU General Public License</citetitle>
- as published by the Free Software Foundation, either version 3
- of the license, or (at your option) any later version.
-</para>
+<!-- Include license-explanation.sgml: -->
+ &license-explanation;
 
 <para>
  Both licenses are included in the next section.
@@ -8586,13 +8562,17 @@ Requests</title>
  When compiled with FEATURE_HTTPS_INSPECTION (optional),
  Privoxy depends on a TLS library. The supported libraries are
  <ulink url="https://www.libressl.org/">LibreSSL</ulink>,
- <ulink url="https://github.com/Mbed-TLS/mbedtls/tags">mbed TLS 2.28.x</ulink> and
+ <ulink url="https://github.com/Mbed-TLS/mbedtls/">mbed TLS</ulink>,
  <ulink url="https://www.openssl.org/">OpenSSL</ulink> and
  <ulink url="https://www.wolfssl.com/">wolfSSL</ulink>.
 </para>
 <para>
  When compiled with FEATURE_ZLIB (optional),
  Privoxy depends on <ulink url="https://zlib.net/">zlib</ulink>.
+</para>
+<para>
+ When compiled with FEATURE_ZSTD (optional),
+ Privoxy depends on <ulink url="https://facebook.github.io/zstd/">zstd</ulink>.
 </para>
 </sect3>
 
@@ -9183,7 +9163,6 @@ In file: default.action <guibutton>[ View ]</guibutton> <guibutton>[ Edit ]</gui
  +filter {banners-by-size}
  +filter {webbugs}
  +filter {jumping-windows}
- +filter {ie-exploits}
  +hide-from-header {block}
  +hide-referrer {forge}
  +session-cookies-only
@@ -9292,7 +9271,6 @@ Final results:
 +filter {banners-by-size}
 +filter {webbugs}
 +filter {jumping-windows}
-+filter {ie-exploits}
 -filter {google}
 -filter {yahoo}
 -filter {msn}
@@ -9407,7 +9385,6 @@ In file: default.action <guibutton>[ View ]</guibutton> <guibutton>[ Edit ]</gui
  +filter {banners-by-size}
  +filter {webbugs}
  +filter {jumping-windows}
- +filter {ie-exploits}
  -filter {google}
  -filter {yahoo}
  -filter {msn}

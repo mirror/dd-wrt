@@ -1,6 +1,6 @@
 # Note:  GNUmakefile is built automatically from GNUmakefile.in
 #
-# Written by and Copyright (C) 2001-2024 members of the
+# Written by and Copyright (C) 2001-2026 members of the
 # Privoxy team. https://www.privoxy.org/
 #
 # Based on the Internet Junkbuster originally written
@@ -57,10 +57,12 @@ datarootdir  = @datarootdir@
 prefix       = @prefix@
 exec_prefix  = @exec_prefix@
 CONF_BASE    = @sysconfdir@
+BIN_DEST     = @bindir@
 SBIN_DEST    = @sbindir@
 MAN_DIR      = @mandir@
 MAN_DEST     = $(MAN_DIR)/man8
-MAN_PAGE     = privoxy.8
+PRIVOXY_TOOL_MAN_DEST = $(MAN_DIR)/man1
+PRIVOXY_MAN_PAGE = privoxy.8
 SHARE_DEST   = @datadir@
 DOC_DEST     = $(SHARE_DEST)/doc/privoxy
 VAR_DEST     = @localstatedir@
@@ -148,6 +150,7 @@ DB_TXT     = $(JADEBIN) $(JADECAT) -ihtml -t sgml  -D.. -d ldp.dsl\#print
 DB2HTML    = @DB2HTML@
 MAN2HTML   = @MAN2HTML@
 G2H_CMD    = groff -mandoc -Thtml
+POD2MAN_CMD= pod2man
 TARGET_OS  = @host@
 PERL       = perl
 DOC_DIR    = doc/source
@@ -204,7 +207,12 @@ CONFIG_FILES = $(CONFIGS) \
 DOC_FILES = AUTHORS LICENSE LICENSE.GPLv3 README ChangeLog INSTALL \
 		`find doc/webserver/ -name "*.html" | grep -v "\(webserver\|team\)\/index\.html" | sort` \
 		`find doc/webserver/ -name "*.css" | sort` \
-                $(MAN_PAGE)
+                man/$(PRIVOXY_MAN_PAGE)
+
+# We ignore url-pattern-translator here which has no man
+# page and is of limitted use now that Privoxy supports PCRE
+# in host patterns.
+PRIVOXY_TOOLS = privoxy-log-parser privoxy-regression-test uagen
 
 #############################################################################
 # Filenames and libraries
@@ -528,7 +536,7 @@ dok-man:
 	echo MAN2HTML is $(MAN2HTML)
 	@if [ $(MAN2HTML) != "false" ]; then \
 		$(ECHO) "<html><head><title>Privoxy Man page</title><link rel=\"stylesheet\" type=\"text/css\" href=\"../p_web.css\"></head><body><H2>NAME</H2>" > doc/webserver/man-page/privoxy-man-page.html; \
-		man ./$(MAN_PAGE) | $(MAN2HTML) -bare >> doc/webserver/man-page/privoxy-man-page.html; \
+		man ./man/$(PRIVOXY_MAN_PAGE) | $(MAN2HTML) -bare >> doc/webserver/man-page/privoxy-man-page.html; \
 		$(ECHO) "</body></html>" >> doc/webserver/man-page/privoxy-man-page.html; \
 	else \
 		$(MAKE) groff2html; \
@@ -540,19 +548,19 @@ dok-man:
 man: dok-release
 	mkdir -p doc/source/temp && cd doc/source/temp && $(RM) * ;\
 	$(NSGMLS) ../privoxy-man-page.sgml  | sgmlspl ../../../utils/docbook2man/docbook2man-spec.pl &&\
-	perl -pi.bak -e 's/ <URL:.*>//; s/\[ /\[/g' $(MAN_PAGE) ;\
-	perl -pi.bak -e "s/\[ /\[/g;s/á/\\\\['a]/g;s/é/\\\\['e]/g" $(MAN_PAGE); \
-	perl -pi.bak -e "s/ö/\\\\[:o]/g" $(MAN_PAGE); \
-	perl -pi.bak -e 's/([ {])-([a-z])/$$1\\-$$2/g' $(MAN_PAGE); \
-	perl -pi.bak -e 's/ --([a-z])/ \\-\\-$$1/g' $(MAN_PAGE); \
-	perl -pi.bak -e 's/\\fB--/\\fB\\-\\-/g' $(MAN_PAGE); \
-	$(DB) ../privoxy-man-page.sgml && $(MV) -f $(MAN_PAGE) ../../../$(MAN_PAGE)
+	perl -pi.bak -e 's/ <URL:.*>//; s/\[ /\[/g' $(PRIVOXY_MAN_PAGE) ;\
+	perl -pi.bak -e "s/\[ /\[/g;s/á/\\\\['a]/g;s/é/\\\\['e]/g" $(PRIVOXY_MAN_PAGE); \
+	perl -pi.bak -e "s/ö/\\\\[:o]/g" $(PRIVOXY_MAN_PAGE); \
+	perl -pi.bak -e 's/([ {])-([a-z])/$$1\\-$$2/g' $(PRIVOXY_MAN_PAGE); \
+	perl -pi.bak -e 's/ --([a-z])/ \\-\\-$$1/g' $(PRIVOXY_MAN_PAGE); \
+	perl -pi.bak -e 's/\\fB--/\\fB\\-\\-/g' $(PRIVOXY_MAN_PAGE); \
+	$(DB) ../privoxy-man-page.sgml && $(MV) -f $(PRIVOXY_MAN_PAGE) ../../../man/$(PRIVOXY_MAN_PAGE)
 
 # For those with man2html ala RH7s.
 man2html:
 	mkdir -p doc/webserver/man-page
 	@if [ $(MAN2HTML) != "false" ]; then \
-		$(MAN2HTML) $(MAN_PAGE) |grep -v "^Content-type" > tmp.html; \
+		$(MAN2HTML) man/$(PRIVOXY_MAN_PAGE) |grep -v "^Content-type" > tmp.html; \
 		$(PERL) -pi.bak -e 's/<A .*Contents<\/A>//; s/<A .*man2html<\/A>/man2html/' tmp.html; \
 		$(PERL) -pi.bak -e 's/(<\/HEAD>)/<LINK REL=\"STYLESHEET\" TYPE=\"text\/css\" HREF=\"..\/p_doc.css\"><\/HEAD>/' tmp.html; \
 		$(PERL) -pi.bak -e 's/(<A.*),(">)/$$1$$2/g' tmp.html; \
@@ -565,7 +573,7 @@ man2html:
 
 # Otherwise we get plain groff conversion.
 groff2html:
-	$(G2H_CMD) ./$(MAN_PAGE) | $(SED) -e 's@</head>@<link REL="STYLESHEET" TYPE="text/css" HREF="../p_doc.css"></head>@' > doc/webserver/man-page/privoxy-man-page.html
+	$(G2H_CMD) ./man/$(PRIVOXY_MAN_PAGE) | $(SED) -e 's@</head>@<link REL="STYLESHEET" TYPE="text/css" HREF="../p_doc.css"></head>@' > doc/webserver/man-page/privoxy-man-page.html
 
 
 # readme page and INSTALL file
@@ -601,8 +609,17 @@ dok-index:
 	s/__copy/&copy;/' \
      doc/webserver/privoxy-index.html && $(RM) doc/webserver/*.bak
 
+dok-privoxy-tools:
+	cd tools && for privoxy_tool in $(PRIVOXY_TOOLS); do \
+		echo Generating man page for $${privoxy_tool}; \
+		man_page=$${privoxy_tool}.1; \
+		$(POD2MAN_CMD) $${privoxy_tool}.pl > ../man/$${man_page}; \
+		html_man_page=../doc/webserver/man-page/$${man_page##*/}.html; \
+		$(G2H_CMD) ../man/$${man_page} | $(GREP) -v CreationDate > $${html_man_page}; \
+	done
+
 # Main documentation target.
-dok: dok-release dok-devel dok-user dok-faq dok-readme dok-webserver dok-authors dok-index
+dok: dok-release dok-devel dok-user dok-faq dok-readme dok-webserver dok-authors dok-index dok-privoxy-tools
 	@$(ECHO) Documentation created.
 
 ## Make AUTHORS file
@@ -696,6 +713,14 @@ web-faq:
 	@$(ECHO) Updating the FAQ on the webserver ...
 	@$(RSYNC) doc/webserver/faq/*.html shell.sourceforge.net:$(WWW_ROOT)/htdocs/faq
 
+web-robots.txt:
+	@$(ECHO) "Updating the robots.txt only ..."
+	@$(RSYNC) doc/webserver/robots.txt shell.sourceforge.net:$(WWW_ROOT)/htdocs/
+
+web-rss-feed:
+	@$(ECHO) "Updating the rss feed only ..."
+	@$(RSYNC) doc/webserver/feeds/ shell.sourceforge.net:$(WWW_ROOT)/htdocs/feeds/
+
 web-sponsors:
 	@$(ECHO) "Updating the sponsor page (index.html) only ..."
 	@$(RSYNC) doc/webserver/sponsors/index.html shell.sourceforge.net:$(WWW_ROOT)/htdocs/sponsors/
@@ -768,7 +793,8 @@ clean:
 	$(RM) a.out $(OBJS) $(W32_FILES) $(W32_INIS) $(PROGRAM) default.action \
 		config.base config.tmp \
 		`find . \( -name TAGS -o -name tags \) -a -not -path "./.git/*"` \
-		`find . -name "*.orig" -a -not -path "./.git/*"`
+		`find . -name "*.orig" -a -not -path "./.git/*"` \
+		`find ./tests/cts/logs/ -name "*.log"`
 
 clean-editor-files:
 	$(RM) `find . -name "*~"`
@@ -844,7 +870,8 @@ install: CONF_DEST LOG_DEST PID_DEST check_doc GROUP_T
 
 	@$(ECHO) "Creating directories, and preparing $(PROGRAM_V) installation"
 	$(CHMOD) $(DIR_MODE) $(MKDIR)
-	@$(MKDIR) $(DESTDIR)$(SBIN_DEST) $(DESTDIR)$(prefix) $(DESTDIR)$(CONF_DEST) \
+	@$(MKDIR) $(DESTDIR)$(BIN_DEST) $(DESTDIR)$(SBIN_DEST) \
+		$(DESTDIR)$(prefix) $(DESTDIR)$(CONF_DEST) \
 		$(DESTDIR)$(CONF_DEST)/templates $(DESTDIR)$(SHARE_DEST) \
 		$(DESTDIR)$(LOG_DEST) $(DESTDIR)$(PID_DEST)
 	@# Install the executable binary, strip if invoked as install-strip
@@ -861,7 +888,7 @@ install: CONF_DEST LOG_DEST PID_DEST check_doc GROUP_T
 		DOC=$(prefix)/doc/privoxy ;\
 	fi;\
 	$(MKDIR) $(DESTDIR)$$DOC $(DESTDIR)$$DOC/user-manual $(DESTDIR)$$DOC/faq $(DESTDIR)$$DOC/developer-manual \
-	     $(DESTDIR)$$DOC/man-page $(DESTDIR)$(MAN_DEST) ;\
+	     $(DESTDIR)$$DOC/man-page $(DESTDIR)$(MAN_DEST) $(DESTDIR)$(PRIVOXY_TOOL_MAN_DEST);\
 	if [ -d "$(DOK_WEB)" ]; then \
 		$(ECHO) Installing FAQ, Manual, and other docs to $(DESTDIR)$$DOC;\
           for i in user-manual developer-manual faq; do \
@@ -883,8 +910,16 @@ install: CONF_DEST LOG_DEST PID_DEST check_doc GROUP_T
 		$(INSTALL) $(INSTALL_T) $(DOK_WEB)/p_doc.css $(DESTDIR)$$DOC/user-manual;\
 	fi
 	@# Not all platforms support gzipped man pages.
-	@$(ECHO) Installing man page to $(DESTDIR)$(MAN_DEST)/$(MAN_PAGE)
-	-$(INSTALL) $(INSTALL_T) $(MAN_PAGE)  $(DESTDIR)$(MAN_DEST)/$(MAN_PAGE)
+	@$(ECHO) Installing Privoxy man page to $(DESTDIR)$(MAN_DEST)/$(PRIVOXY_MAN_PAGE)
+	-$(INSTALL) $(INSTALL_T) man/$(PRIVOXY_MAN_PAGE)  $(DESTDIR)$(MAN_DEST)/$(PRIVOXY_MAN_PAGE)
+	@$(ECHO) Installing Privoxy tools to $(DESTDIR)$(BIN_DEST)
+	@for f in $(PRIVOXY_TOOLS); do \
+		$(INSTALL) tools/$${f}.pl  $(DESTDIR)$(BIN_DEST)/$${f}; \
+	done
+	@$(ECHO) Installing Privoxy tool man pages to $(DESTDIR)$(PRIVOXY_TOOL_MAN_DEST)
+	@for f in $(PRIVOXY_TOOLS); do \
+		$(INSTALL) $(INSTALL_T) man/$${f}.1  $(DESTDIR)$(PRIVOXY_TOOL_MAN_DEST); \
+	done
 
 	@# Change the config file default directories according to the configured ones
 	@$(ECHO) Rewriting config for this installation
@@ -1016,6 +1051,11 @@ uninstall: CONF_DEST LOG_DEST PID_DEST check_doc
 	@$(ECHO) Removing $(PROGRAM) binary
 	$(RM) $(DESTDIR)$(SBIN_DEST)/$(PROGRAM) $(SBIN_DEST)/$(PROGRAM)~
 
+	@$(ECHO) Removing Privoxy tools from $(DESTDIR)$(BIN_DEST)
+	@for f in $(PRIVOXY_TOOLS); do \
+		$(RM) $(DESTDIR)$(BIN_DEST)/$${f}; \
+	done
+
 	@# config files and dir, and maybe old install backups
 	-@if [ -d $(DESTDIR)$(CONF_DEST) ]; then \
 		$(ECHO) Saving $(PROGRAM) config files to $(DESTDIR)/tmp/$(PROGRAM)-save ;\
@@ -1035,8 +1075,11 @@ uninstall: CONF_DEST LOG_DEST PID_DEST check_doc
 
 	@# man page and docs
 	@$(ECHO) Removing $(PROGRAM) docs
-	-$(RM) $(DESTDIR)$(MAN_DEST)/$(MAN_PAGE)*
+	-$(RM) $(DESTDIR)$(MAN_DEST)/$(PRIVOXY_MAN_PAGE)*
 	-$(RM) -r $(DESTDIR)$(DOC_DEST) || $(RM) -r $(DESTDIR)$(prefix)/doc/privoxy
+	-@for f in $(PRIVOXY_TOOLS); do \
+		$(RM) $(DESTDIR)/$(PRIVOXY_TOOL_MAN_DEST)/$${f}.1; \
+	done
 
 	@# Log and pidfile
 	@$(ECHO) Removing $(PROGRAM) logs

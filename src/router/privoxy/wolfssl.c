@@ -2,11 +2,11 @@
  *
  * File        :  $Source: /cvsroot/ijbswa/current/wolfssl.c,v $
  *
- * Purpose     :  File with TLS/SSL extension. Contains methods for
- *                creating, using and closing TLS/SSL connections
+ * Purpose     :  File with TLS extension. Contains methods for
+ *                creating, using and closing TLS connections
  *                using wolfSSL.
  *
- * Copyright   :  Copyright (C) 2018-2024 by Fabian Keil <fk@fabiankeil.de>
+ * Copyright   :  Copyright (C) 2018-2026 by Fabian Keil <fk@fabiankeil.de>
  *                Copyright (C) 2020 Maxim Antonov <mantonov@gmail.com>
  *                Copyright (C) 2017 Vaclav Svec. FIT CVUT.
  *
@@ -877,7 +877,7 @@ extern int create_client_ssl_connection(struct client_state *csp)
     *  Handshake with client
     */
    log_error(LOG_LEVEL_CONNECT,
-      "Performing the TLS/SSL handshake with client. Hash of host: %s",
+      "Performing the TLS handshake with client. Hash of host: %s",
       csp->http->hash_of_host_hex);
 
    ret = wolfSSL_accept(ssl);
@@ -1086,7 +1086,7 @@ extern int create_server_ssl_connection(struct client_state *csp)
    csp->server_cert_verification_result = SSL_CERT_NOT_VERIFIED;
    csp->server_certs_chain.next = NULL;
 
-   ssl_attrs->ctx = wolfSSL_CTX_new(wolfSSLv23_method());
+   ssl_attrs->ctx = wolfSSL_CTX_new(wolfTLS_client_method());
    if (ssl_attrs->ctx == NULL)
    {
       log_error(LOG_LEVEL_ERROR, "TLS context creation failed");
@@ -1145,7 +1145,7 @@ extern int create_server_ssl_connection(struct client_state *csp)
    {
       char buffer[80];
       int error = wolfSSL_get_error(ssl, ret);
-      log_error(LOG_LEVEL_FATAL,
+      log_error(LOG_LEVEL_ERROR,
          "Failed to set check domain name. error = %d, %s",
          error, wolfSSL_ERR_error_string((unsigned long)error, buffer));
       ret = -1;
@@ -1153,19 +1153,17 @@ extern int create_server_ssl_connection(struct client_state *csp)
    }
 
 #ifdef HAVE_SECURE_RENEGOTIATION
-#warning wolfssl has been compiled with HAVE_SECURE_RENEGOTIATION while you probably want HAVE_RENEGOTIATION_INDICATION
    if(wolfSSL_UseSecureRenegotiation(ssl) != WOLFSSL_SUCCESS)
    {
       log_error(LOG_LEVEL_ERROR,
          "Failed to enable 'Secure' Renegotiation. Continuing anyway.");
    }
-#endif
-#ifndef HAVE_RENEGOTIATION_INDICATION
-#warning Looks like wolfssl has been compiled without HAVE_RENEGOTIATION_INDICATION
+#else
+#warning Looks like wolfSSL has been compiled without HAVE_SECURE_RENEGOTIATION
 #endif
 
    log_error(LOG_LEVEL_CONNECT,
-      "Performing the TLS/SSL handshake with the server");
+      "Performing the TLS handshake with the server");
 
    /* wolfSSL_Debugging_ON(); */
    connect_ret = wolfSSL_connect(ssl);
@@ -1208,8 +1206,8 @@ extern int create_server_ssl_connection(struct client_state *csp)
                   log_error(LOG_LEVEL_ERROR,
                      "ssl_store_cert() failed for cert %d", i);
                   /*
-                   * ssl_send_certificate_error() wil not be able to show
-                   * the certificate but the user will stil get the error
+                   * ssl_send_certificate_error() will not be able to show
+                   * the certificate but the user will still get the error
                    * description.
                    */
                }
@@ -1334,7 +1332,7 @@ static void log_ssl_errors(int debuglevel, const char* fmt, ...)
  *          4  :  src = Source buffer
  *          5  :  slen = Amount of data to be encoded
  *
- * Returns     :  0 on success, error code othervise
+ * Returns     :  0 on success, error code otherwise
  *
  *********************************************************************/
 extern int ssl_base64_encode(unsigned char *dst, size_t dlen, size_t *olen,
@@ -1506,6 +1504,89 @@ static int generate_rsa_key(const char *rsa_key_path)
    }
 
    close_file_stream(f, rsa_key_path);
+
+exit:
+
+   return ret;
+
+}
+
+
+/*********************************************************************
+ *
+ * Function    :  generate_ecc_key
+ *
+ * Description : Generates a new ECC key and saves it in a file.
+ *
+ * Parameters  :
+ *          1  :  ecc_key_path = Path to the key that should be written.
+ *
+ * Returns     :  -1 => Error while generating private key
+ *                 0 => Success.
+ *
+ *********************************************************************/
+static int generate_ecc_key(const char *ecc_key_path)
+{
+   ecc_key ecc_key;
+   byte ecc_key_der[4096];
+   int ret;
+   byte key_pem[4096];
+   int der_key_size;
+   int pem_key_size;
+   FILE *f = NULL;
+
+   assert(file_exists(ecc_key_path) != 1);
+
+   wc_ecc_init(&ecc_key);
+
+   ret = wc_ecc_make_key(&wolfssl_rng, 32, &ecc_key);
+   if (ret != 0)
+   {
+      log_error(LOG_LEVEL_ERROR, "ECC key generation failed");
+      ret = -1;
+      goto exit;
+   }
+
+   der_key_size = wc_EccKeyToDer(&ecc_key, ecc_key_der, sizeof(ecc_key_der));
+   wc_ecc_free(&ecc_key);
+   if (der_key_size < 0)
+   {
+      log_error(LOG_LEVEL_ERROR, "ECC key conversion to DER format failed");
+      ret = -1;
+      goto exit;
+   }
+   pem_key_size = wc_DerToPem(ecc_key_der, (word32)der_key_size,
+      key_pem, sizeof(key_pem), ECC_PRIVATEKEY_TYPE);
+   if (pem_key_size < 0)
+   {
+      log_error(LOG_LEVEL_ERROR, "ECC key conversion to PEM format failed");
+      ret = -1;
+      goto exit;
+   }
+
+   /*
+    * Saving key into file
+    */
+   if ((f = fopen(ecc_key_path, "wb")) == NULL)
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Opening file %s to save private key failed: %E",
+         ecc_key_path);
+      ret = -1;
+      goto exit;
+   }
+
+   if (fwrite(key_pem, 1, (size_t)pem_key_size, f) != pem_key_size)
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Writing private key into file %s failed",
+         ecc_key_path);
+      close_file_stream(f, ecc_key_path);
+      ret = -1;
+      goto exit;
+   }
+
+   close_file_stream(f, ecc_key_path);
 
 exit:
 
@@ -1716,6 +1797,106 @@ static int load_rsa_key(const char *rsa_key_path, const char *password, RsaKey *
    return 1;
 }
 
+
+/*********************************************************************
+ *
+ * Function    :  load_ecc_key
+ *
+ * Description :  Load a PEM-encoded ECC file into memory.
+ *
+ * Parameters  :
+ *          1  :  ecc_key_path = Path to the file that holds the key.
+ *          2  :  ecc_key = Initialized ECC key storage.
+ *
+ * Returns     :   0 => Error while creating the key.
+ *                 1 => It worked
+ *
+ *********************************************************************/
+static int load_ecc_key(const char *ecc_key_path, ecc_key *ecc_key)
+{
+   FILE *fp;
+   size_t length;
+   long ret;
+   unsigned char *key_pem;
+   DerBuffer *der_buffer;
+   word32 der_index = 0;
+
+   fp = fopen(ecc_key_path, "rb");
+   if (NULL == fp)
+   {
+      log_error(LOG_LEVEL_ERROR, "Failed to open %s: %E", ecc_key_path);
+      return 0;
+   }
+
+   /* Get file length */
+   if (fseek(fp, 0, SEEK_END))
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Unexpected error while fseek()ing to the end of %s: %E",
+         ecc_key_path);
+      fclose(fp);
+      return 0;
+   }
+   ret = ftell(fp);
+   if (-1 == ret)
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Unexpected ftell() error while loading %s: %E",
+         ecc_key_path);
+      fclose(fp);
+      return 0;
+   }
+   length = (size_t)ret;
+
+   /* Go back to the beginning. */
+   if (fseek(fp, 0, SEEK_SET))
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Unexpected error while fseek()ing to the beginning of %s: %E",
+         ecc_key_path);
+      fclose(fp);
+      return 0;
+   }
+
+   key_pem = malloc_or_die(length);
+
+   if (1 != fread(key_pem, length, 1, fp))
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Couldn't completely read file %s.", ecc_key_path);
+      fclose(fp);
+      freez(key_pem);
+      return 0;
+   }
+
+   fclose(fp);
+
+   ret = wc_PemToDer(key_pem, (long)length, ECC_PRIVATEKEY_TYPE,
+     &der_buffer, NULL, NULL, NULL);
+   freez(key_pem);
+   if (ret < 0)
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Failed to convert buffer into DER format for file %s. Error = %ld",
+         ecc_key_path, ret);
+      return 0;
+   }
+
+   ret = wc_EccPrivateKeyDecode(der_buffer->buffer, &der_index, ecc_key,
+      der_buffer->length);
+   freez(der_buffer);
+   if (ret < 0)
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Failed to decode DER buffer into ECC key structure for %s",
+         ecc_key_path);
+      return 0;
+   }
+
+   return 1;
+}
+
+
 #ifndef WOLFSSL_ALT_NAMES
 #error wolfSSL lacks Subject Alternative Name support (WOLFSSL_ALT_NAMES) which is mandatory
 #endif
@@ -1774,8 +1955,8 @@ static int set_subject_alternative_name(struct Cert *certificate, const char *ho
  *
  * Parameters  :
  *          1  :  csp = Current client state (buffers, headers, etc...)
- *          2  :  certificate_path = Path to the certficate to generate.
- *          3  :  rsa_key_path = Path to the key to generate for the
+ *          2  :  certificate_path = Path to the certificate to generate.
+ *          3  :  key_path = Path to the key to generate for the
  *                               certificate.
  *
  * Returns     :  -1 => Error while creating certificate.
@@ -1784,11 +1965,12 @@ static int set_subject_alternative_name(struct Cert *certificate, const char *ho
  *
  *********************************************************************/
 static int generate_host_certificate(struct client_state *csp,
-   const char *certificate_path, const char *rsa_key_path)
+   const char *certificate_path, const char *key_path)
 {
    struct Cert certificate;
    RsaKey ca_key;
    RsaKey rsa_key;
+   ecc_key ecc_key;
    int ret;
    byte certificate_der[4096];
    int der_certificate_length;
@@ -1809,10 +1991,10 @@ static int generate_host_certificate(struct client_state *csp,
                certificate_path);
             return -1;
          }
-         if (unlink(rsa_key_path))
+         if (unlink(key_path))
          {
             log_error(LOG_LEVEL_ERROR, "Failed to unlink %s: %E",
-               rsa_key_path);
+               key_path);
             return -1;
          }
       }
@@ -1826,18 +2008,28 @@ static int generate_host_certificate(struct client_state *csp,
       log_error(LOG_LEVEL_CONNECT, "Creating new certificate %s",
          certificate_path);
    }
-   if (enforce_sane_certificate_state(certificate_path, rsa_key_path))
+   if (enforce_sane_certificate_state(certificate_path, key_path))
    {
       return -1;
    }
 
-   wc_InitRsaKey(&rsa_key, NULL);
+   if (csp->config->elliptic_curve_keys)
+   {
+      wc_ecc_init(&ecc_key);
+      if (generate_ecc_key(key_path) == -1)
+      {
+         return -1;
+      }
+   }
+   else
+   {
+      wc_InitRsaKey(&rsa_key, NULL);
+      if (generate_rsa_key(key_path) == -1)
+      {
+         return -1;
+      }
+   }
    wc_InitRsaKey(&ca_key, NULL);
-
-   if (generate_rsa_key(rsa_key_path) == -1)
-   {
-      return -1;
-   }
 
    wc_InitCert(&certificate);
 
@@ -1864,22 +2056,35 @@ static int generate_host_certificate(struct client_state *csp,
       goto exit;
    }
 
-   if (load_rsa_key(rsa_key_path, NULL, &rsa_key) != 1)
+   if (csp->config->elliptic_curve_keys)
    {
-      log_error(LOG_LEVEL_ERROR,
-         "Failed to load RSA key %s", rsa_key_path);
-      ret = -1;
-      goto exit;
+      if (load_ecc_key(key_path, &ecc_key) != 1)
+      {
+         log_error(LOG_LEVEL_ERROR,
+            "Failed to load ECC key %s", key_path);
+         ret = -1;
+         goto exit;
+      }
+      der_certificate_length = wc_MakeCert(&certificate, certificate_der,
+         sizeof(certificate_der), NULL, &ecc_key, &wolfssl_rng);
    }
-
-   /* wolfSSL_Debugging_ON(); */
-   der_certificate_length = wc_MakeCert(&certificate, certificate_der,
-      sizeof(certificate_der), &rsa_key, NULL, &wolfssl_rng);
-   /* wolfSSL_Debugging_OFF(); */
+   else
+   {
+      if (load_rsa_key(key_path, NULL, &rsa_key) != 1)
+      {
+         log_error(LOG_LEVEL_ERROR,
+            "Failed to load RSA key %s", key_path);
+         ret = -1;
+         goto exit;
+      }
+      der_certificate_length = wc_MakeCert(&certificate, certificate_der,
+         sizeof(certificate_der), &rsa_key, NULL, &wolfssl_rng);
+   }
 
    if (der_certificate_length < 0)
    {
-      log_error(LOG_LEVEL_ERROR, "Failed to make certificate");
+      log_error(LOG_LEVEL_ERROR, "Failed to make certificate. "
+         "wc_MakeCert() return code: %d", der_certificate_length);
       ret = -1;
       goto exit;
    }
@@ -1924,7 +2129,14 @@ static int generate_host_certificate(struct client_state *csp,
    ret = 1;
 
 exit:
-   wc_FreeRsaKey(&rsa_key);
+   if (csp->config->elliptic_curve_keys)
+   {
+      wc_ecc_free(&ecc_key);
+   }
+   else
+   {
+      wc_FreeRsaKey(&rsa_key);
+   }
    wc_FreeRsaKey(&ca_key);
 
    return 1;

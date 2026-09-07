@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -31,22 +32,22 @@ HTTP client header order 2
 
 <verify>
 <protocol>
-GET /%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: Client with unsorted headers
-Accept: */*
-Accept-Language: en-CA
-Accept-Encoding: gzip
-Referer: https://www.example.org/
-Cookie: yolo=123
-DNT: 1
-Connection: close
-Pragma: no-cache
-Upgrade-Insecure-Requests: 1
-If-Modified-Since: Thu, 07 Jan 2021 22:05:31 GMT
-Cache-Control: max-age=315576000
-Origin: https://www.privoxy.org/
-
+GET /%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: Client with unsorted headers%CR
+Accept: */*%CR
+Accept-Language: en-CA%CR
+Accept-Encoding: gzip%CR
+Referer: https://www.example.org/%CR
+Cookie: yolo=123%CR
+DNT: 1%CR
+Connection: close%CR
+Pragma: no-cache%CR
+Upgrade-Insecure-Requests: 1%CR
+If-Modified-Since: Thu, 07 Jan 2021 22:05:31 GMT%CR
+Cache-Control: max-age=315576000%CR
+Origin: https://www.privoxy.org/%CR
+%CR
 </protocol>
 </verify>
 </testcase>

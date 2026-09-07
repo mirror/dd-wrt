@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -11,28 +12,28 @@ skip
 
 <reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: keep-alive
-Content-Type: text/html
-Transfer-Encoding: chunked
-
-FE
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: keep-alive%CR
+Content-Type: text/html%CR
+Transfer-Encoding: chunked%CR
+%CR
+FE%CR
 %repeat[253 x A]%
-
-FB
+%CR
+FB%CR
 %repeat[50 x 0%0d%0a%0d%0a]%
-
-0
-
+%CR
+0%CR
+%CR
 </data>
 <data1>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-X-Connection: swsclose
-Content-Type: text/html
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+X-Connection: swsclose%CR
+Content-Type: text/html%CR
+%CR
 Here's your unchunked data.
 </data1>
 # The write size is chosen so that Privoxy's second read
@@ -63,16 +64,16 @@ proxy
 
 <verify>
 <protocol>
-GET /no-filter/chunked-content/%TESTNUMBER0000 HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: Blafasel/1 beta
-Accept: */*
-
-GET /no-filter/unchunked-content/%TESTNUMBER0001 HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: Blafasel/1 beta
-Accept: */*
-
+GET /no-filter/chunked-content/%TESTNUMBER0000 HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: Blafasel/1 beta%CR
+Accept: */*%CR
+%CR
+GET /no-filter/unchunked-content/%TESTNUMBER0001 HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: Blafasel/1 beta%CR
+Accept: */*%CR
+%CR
 </protocol>
 <errorcode>
 0

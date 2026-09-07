@@ -4,7 +4,7 @@
  *
  * Purpose     :  Functions related to client-specific tags.
  *
- * Copyright   :  Copyright (C) 2016-2017 Fabian Keil <fk@fabiankeil.de>
+ * Copyright   :  Copyright (C) 2016-2025 Fabian Keil <fk@fabiankeil.de>
  *
  *                This program is free software; you can redistribute it
  *                and/or modify it under the terms of the GNU General
@@ -61,6 +61,7 @@ struct client_specific_tag
 struct requested_tags
 {
    char *client; /**< The IP address of the client that requested the tag */
+   char *listen_address; /**< The listen address the client uses */
 
    /**< List of tags the client requested .... */
    struct client_specific_tag *tags;
@@ -70,7 +71,8 @@ struct requested_tags
 };
 
 struct requested_tags *requested_tags;
-static void remove_tag_for_client(const char *client_address, const char *tag);
+static void remove_tag_for_client(const char *client_address,
+   const char *listen_address, const char *tag);
 
 /*********************************************************************
  *
@@ -185,11 +187,13 @@ static struct client_tag_spec *get_client_specific_tag(
  *
  * Parameters  :
  *          1  :  client_address = Address of the client
+ *          2  :  listen_address = Address the request arrived on.
  *
  * Returns     :  Pointer to tag structure or NULL on error.
  *
  *********************************************************************/
-static struct client_specific_tag *get_tags_for_client(const char *client_address)
+static struct client_specific_tag *get_tags_for_client(const char *client_address,
+                                                       const char *listen_address)
 {
    struct requested_tags *requested_tag;
 
@@ -198,7 +202,10 @@ static struct client_specific_tag *get_tags_for_client(const char *client_addres
    {
       if (!strcmp(requested_tag->client, client_address))
       {
-         return requested_tag->tags;
+         if (!strcmp(requested_tag->listen_address, listen_address))
+         {
+            return requested_tag->tags;
+         }
       }
    }
 
@@ -216,19 +223,21 @@ static struct client_specific_tag *get_tags_for_client(const char *client_addres
  * Parameters  :
  *          1  :  tag_list = The list to fill in.
  *          2  :  client_address = Address of the client
+ *          3  :  listen_address = The address the request arrived on.
  *
  * Returns     :  Pointer to tag list.
  *
  *********************************************************************/
 void get_tag_list_for_client(struct list *tag_list,
-                             const char *client_address)
+                             const char *client_address,
+                             const char *listen_address)
 {
    struct client_specific_tag *enabled_tags;
    const time_t now = time(NULL);
 
    privoxy_mutex_lock(&client_tags_mutex);
 
-   enabled_tags = get_tags_for_client(client_address);
+   enabled_tags = get_tags_for_client(client_address, listen_address);
    while (enabled_tags != NULL)
    {
       if (enabled_tags->end_of_life && (enabled_tags->end_of_life < now))
@@ -238,14 +247,14 @@ void get_tag_list_for_client(struct list *tag_list,
             "Tag '%s' for client %s expired %ld seconds ago. Deleting it.",
             enabled_tags->name, client_address,
             (now - enabled_tags->end_of_life));
-         remove_tag_for_client(client_address, enabled_tags->name);
+         remove_tag_for_client(client_address, listen_address, enabled_tags->name);
          enabled_tags = next_tag;
          continue;
       }
       else
       {
-         log_error(LOG_LEVEL_TAGGING, "Enlisting tag '%s' for client %s.",
-            enabled_tags->name, client_address);
+         log_error(LOG_LEVEL_TAGGING, "Enlisting tag '%s' for client %s using %s.",
+            enabled_tags->name, client_address, listen_address);
          enlist(tag_list, enabled_tags->name);
       }
       enabled_tags = enabled_tags->next;
@@ -264,11 +273,13 @@ void get_tag_list_for_client(struct list *tag_list,
  *
  * Parameters  :
  *          1  :  client_address = Address of the client
+ *          2  :  listen_address = Address the request arrived on.
  *
  * Returns     :  Lowest timeout in seconds
  *
  *********************************************************************/
-time_t get_next_tag_timeout_for_client(const char *client_address)
+time_t get_next_tag_timeout_for_client(const char *client_address,
+                             const char *listen_address)
 {
    struct client_specific_tag *enabled_tags;
    time_t next_timeout = 0;
@@ -276,12 +287,13 @@ time_t get_next_tag_timeout_for_client(const char *client_address)
 
    privoxy_mutex_lock(&client_tags_mutex);
 
-   enabled_tags = get_tags_for_client(client_address);
+   enabled_tags = get_tags_for_client(client_address, listen_address);
    while (enabled_tags != NULL)
    {
       log_error(LOG_LEVEL_TAGGING,
-         "Evaluating tag '%s' for client %s. End of life %ld.",
-         enabled_tags->name, client_address, enabled_tags->end_of_life);
+         "Evaluating tag '%s' for client %s using %s. End of life %ld.",
+         enabled_tags->name, client_address, listen_address,
+         enabled_tags->end_of_life);
       if (enabled_tags->end_of_life)
       {
           time_t time_left = enabled_tags->end_of_life - now;
@@ -341,14 +353,16 @@ static struct client_specific_tag *create_client_specific_tag(const char *name,
  *
  * Parameters  :
  *          1  :  client_address = Address of the client
- *          2  :  tag = The tag to add.
- *          3  :  time_to_live = 0, or the number of seconds
+ *          2  :  listen_address = Address used by the client.
+ *          3  :  tag = The tag to add.
+ *          4  :  time_to_live = 0, or the number of seconds
  *                               the tag remains activated.
  *
  * Returns     :  void
  *
  *********************************************************************/
 static void add_tag_for_client(const char *client_address,
+   const char *listen_address,
    const char *tag, const time_t time_to_live)
 {
    struct requested_tags *clients_with_tags;
@@ -361,6 +375,7 @@ static void add_tag_for_client(const char *client_address,
       /* XXX: Code duplication. */
       requested_tags = zalloc_or_die(sizeof(struct requested_tags));
       requested_tags->client = strdup_or_die(client_address);
+      requested_tags->listen_address = strdup_or_die(listen_address);
       requested_tags->tags = create_client_specific_tag(tag, time_to_live);
 
       validate_requested_tags();
@@ -384,6 +399,7 @@ static void add_tag_for_client(const char *client_address,
          clients_with_tags->next->prev = clients_with_tags;
          clients_with_tags = clients_with_tags->next;
          clients_with_tags->client = strdup_or_die(client_address);
+         clients_with_tags->listen_address = strdup_or_die(listen_address);
          clients_with_tags->tags = create_client_specific_tag(tag, time_to_live);
 
          validate_requested_tags();
@@ -416,12 +432,14 @@ static void add_tag_for_client(const char *client_address,
  *
  * Parameters  :
  *          1  :  client_address = Address of the client
- *          2  :  tag = The tag to remove.
+ *          2  :  listen_address = Address used by the client
+ *          3  :  tag = The tag to remove.
  *
  * Returns     :  void
  *
  *********************************************************************/
-static void remove_tag_for_client(const char *client_address, const char *tag)
+static void remove_tag_for_client(const char *client_address,
+                                  const char *listen_address, const char *tag)
 {
    struct requested_tags *clients_with_tags;
    struct client_specific_tag *enabled_tags;
@@ -431,7 +449,8 @@ static void remove_tag_for_client(const char *client_address, const char *tag)
    clients_with_tags = requested_tags;
    while (clients_with_tags != NULL && clients_with_tags->client != NULL)
    {
-      if (!strcmp(clients_with_tags->client, client_address))
+      if (!strcmp(clients_with_tags->client, client_address) &&
+          !strcmp(clients_with_tags->listen_address, listen_address))
       {
          break;
       }
@@ -486,6 +505,7 @@ static void remove_tag_for_client(const char *client_address, const char *tag)
                requested_tags = NULL;
             }
             freez(clients_with_tags->client);
+            freez(clients_with_tags->listen_address);
             freez(clients_with_tags);
          }
          freez(enabled_tags->name);
@@ -510,16 +530,19 @@ static void remove_tag_for_client(const char *client_address, const char *tag)
  *
  * Parameters  :
  *          1  :  client_address = Address of the client
- *          2  :  tag = Tag to check.
+ *          2  :  listen_address = Address the request arrived on.
+ *          4  :  tag = Tag to check.
  *
  * Returns     :  TRUE or FALSE.
  *
  *********************************************************************/
-int client_has_requested_tag(const char *client_address, const char *tag)
+int client_has_requested_tag(const char *client_address,
+                             const char *listen_address,
+                             const char *tag)
 {
    struct client_specific_tag *enabled_tags;
 
-   enabled_tags = get_tags_for_client(client_address);
+   enabled_tags = get_tags_for_client(client_address, listen_address);
 
    while (enabled_tags != NULL)
    {
@@ -563,7 +586,7 @@ jb_err enable_client_specific_tag(struct client_state *csp,
       return JB_ERR_PARSE;
    }
 
-   if (client_has_requested_tag(csp->client_address, tag_name))
+   if (client_has_requested_tag(csp->client_address, csp->listen_addr_str, tag_name))
    {
       log_error(LOG_LEVEL_TAGGING,
          "Tag '%s' already enabled for client '%s'.",
@@ -571,7 +594,8 @@ jb_err enable_client_specific_tag(struct client_state *csp,
    }
    else
    {
-      add_tag_for_client(csp->client_address, tag_name, time_to_live);
+      add_tag_for_client(csp->client_address, csp->listen_addr_str,
+         tag_name, time_to_live);
       log_error(LOG_LEVEL_TAGGING,
          "Tag '%s' enabled for client '%s'. TTL: %ld.",
          tag->name, csp->client_address, time_to_live);
@@ -609,9 +633,10 @@ jb_err disable_client_specific_tag(struct client_state *csp, const char *tag_nam
       return JB_ERR_PARSE;
    }
 
-   if (client_has_requested_tag(csp->client_address, tag_name))
+   if (client_has_requested_tag(csp->client_address, csp->listen_addr_str,
+         tag_name))
    {
-      remove_tag_for_client(csp->client_address, tag_name);
+      remove_tag_for_client(csp->client_address, csp->listen_addr_str, tag_name);
       log_error(LOG_LEVEL_TAGGING,
          "Tag '%s' disabled for client '%s'.", tag->name, csp->client_address);
    }

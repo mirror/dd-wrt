@@ -10,7 +10,7 @@ Privoxy sources do:
  git clone https://github.com/curl/curl.git
 
  cd curl
- git checkout -b cts-compatible-with-privoxy-tests curl-7_85_0
+ git checkout -b cts-compatible-with-privoxy-tests curl-8_20_0
 
  # Build curl as described in GIT-INFO. Note that the configure
  # call needs to explicitly choose a TLS library. For example
@@ -40,7 +40,7 @@ containing the test files.
 
 The tests are written using the "curl test suite file format"
 described at:
-https://github.com/curl/curl/blob/master/tests/FILEFORMAT.md
+https://github.com/curl/curl/blob/master/docs/tests/FILEFORMAT.md
 
 One extension made is that a <proxy-reply> section is supported
 which will be used when checking the test results instead of using

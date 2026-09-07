@@ -9,7 +9,7 @@
 #
 #############################################################################
 #
-# Copyright (c) 2007-2023 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2007-2025 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -931,6 +931,8 @@ TAG:^Proxy-Authorization header forwarding$
 # Fetch Test = http://p.p/user-manual/files-in-use.jpg
 # Level = 9
 # Fetch Test = http://p.p/user-manual/filter-file.html
+# Level = 9
+# Fetch Test = http://p.p/user-manual/howto.html
 # Level = 9
 # Fetch Test = http://p.p/user-manual/index.html
 # Level = 9

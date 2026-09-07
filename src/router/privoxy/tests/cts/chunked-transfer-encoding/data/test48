@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+chunked transfer encoding
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+Transfer-Encoding: chunked%CR
+X-Control: swsclose%CR
+%CR
+FFFFFFFE%CR
+Not enough data in chunk but as the chunk-size will be rejected
+by Privoxy it does not matter.
+%repeat[1000000 x A]%
+</data>
+</reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Chunked transfer encoding - One chunk with "unreasonably" large chunk size close to what can be represented with a 32-bit integer.
+</name>
+<features>
+proxy
+</features>
+<command>
+--raw http://%HOSTIP:%HTTPPORT/chunked-transfer-encoding/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<protocol>
+GET /chunked-transfer-encoding/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+%CR
+</protocol>
+<errorcode>
+18
+</errorcode>
+</verify>
+</testcase>

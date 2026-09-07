@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -31,9 +32,6 @@ Date: Sun, 10 Jan 2021 08:13:02 GMT
 </proxy-reply>
 
 <client>
-<server>
-none
-</server>
 <name>
 Redirect to https://www.privoxy.org/path-replaced using a pcrs command
 </name>

@@ -429,8 +429,8 @@
       <p>For example server sockets that were used for CONNECT requests (which are used to tunnel https:// requests)
       are considered tainted once the client closed its connection to <span class="APPLICATION">Privoxy</span>.
       Technically <span class="APPLICATION">Privoxy</span> could keep the connection to the server open, but the server
-      would not accept requests that do not belong to the previous TLS/SSL session (and the client may even have
-      terminated the session).</p>
+      would not accept requests that do not belong to the previous TLS session (and the client may even have terminated
+      the session).</p>
       <p>Server sockets are also marked tainted when a client requests a resource, but closes the connection before
       <span class="APPLICATION">Privoxy</span> has completely received (and forwarded) the resource to the client. In
       this case the server would (probably) accept additional requests, but <span class="APPLICATION">Privoxy</span>

@@ -33,7 +33,6 @@
     </tr>
 
 <!-- @if-unstable-start -->
-# This will only appear if CODE_STATUS is "alpha" or "beta". See configure.in
     <tr>
       <td class="warning" colspan="2">
 

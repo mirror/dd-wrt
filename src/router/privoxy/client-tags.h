@@ -31,14 +31,17 @@
 extern int client_tag_match(const struct pattern_spec *pattern,
                             const struct list *tags);
 extern void get_tag_list_for_client(struct list *tag_list,
-                                    const char *client_address);
-extern time_t get_next_tag_timeout_for_client(const char *client_address);
+                                    const char *client_address,
+                                    const char *listen_address);
+extern time_t get_next_tag_timeout_for_client(const char *client_address,
+                                              const char *listen_address);
 extern jb_err disable_client_specific_tag(struct client_state *csp,
                                           const char *tag_name);
 extern jb_err enable_client_specific_tag(struct client_state *csp,
                                          const char *tag_name,
                                          const time_t time_to_live);
 extern int client_has_requested_tag(const char *client_address,
+                                    const char *listen_address,
                                     const char *tag);
 extern void set_client_address(struct client_state *csp,
                                const struct list *headers);

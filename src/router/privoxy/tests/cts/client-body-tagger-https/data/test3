@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -20,13 +21,13 @@ Received your input.
 
 <proxy-reply>
 <data>
-HTTP/1.1 200 Connection established
-
-HTTP/1.1 200 OK
-Connection: close
-Content-Type: text/html
-X-Connection: swsclose
-
+HTTP/1.1 200 Connection established%CR
+%CR
+HTTP/1.1 200 OK%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Connection: swsclose%CR
+%CR
 Received your input.
 </data>
 </proxyreply>
@@ -48,11 +49,11 @@ proxy
 
 <verify>
 <protocol>
-GET /%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPSPORT
-User-Agent: curl/%VERSION
-Accept: */*
-
+GET /%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPSPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+%CR
 </protocol>
 <stderr>
 200

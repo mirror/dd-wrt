@@ -1,0 +1,141 @@
+<!-- Creator     : groff version 1.19.2 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <meta name="generator" content="groff -Thtml, see www.gnu.org">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="Content-Style" content="text/css">
+  <style type="text/css">
+       p     { margin-top: 0; margin-bottom: 0; }
+       pre   { margin-top: 0; margin-bottom: 0; }
+       table { margin-top: 0; margin-bottom: 0; }
+  </style>
+  <title>PRIVOXY-LOG-PARSER</title>
+</head>
+<body>
+  <h1 align="center">PRIVOXY-LOG-PARSER</h1><a href="#NAME">NAME</a><br>
+  <a href="#SYNOPSIS">SYNOPSIS</a><br>
+  <a href="#DESCRIPTION">DESCRIPTION</a><br>
+  <a href="#OPTIONS">OPTIONS</a><br>
+  <a href="#EXAMPLES">EXAMPLES</a><br>
+  <a href="#CAVEATS">CAVEATS</a><br>
+  <a href="#BUGS">BUGS</a><br>
+  <a href="#SEE%20ALSO">SEE ALSO</a><br>
+  <a href="#AUTHOR">AUTHOR</a><br>
+  <hr>
+  <a name="NAME" id="NAME"></a>
+  <h2>NAME</h2>
+  <p style="margin-left:11%; margin-top: 1em">privoxy&minus;log&minus;parser &minus; A parser and
+  syntax&minus;highlighter for Privoxy log messages</p><a name="SYNOPSIS" id="SYNOPSIS"></a>
+  <h2>SYNOPSIS</h2>
+  <p style="margin-left:11%; margin-top: 1em"><b>privoxy&minus;log&minus;parser</b>
+  [<b>&minus;&minus;detect&minus;inactivity</b>] [<b>&minus;&minus;inactivity&minus;threshold msecs</b>]
+  [<b>&minus;&minus;html&minus;output</b>] [<b>&minus;&minus;no&minus;msecs</b>]
+  [<b>&minus;&minus;no&minus;syntax&minus;higlighting</b>] [<b>&minus;&minus;statistics</b>]
+  [<b>&minus;&minus;shorten&minus;thread&minus;ids</b>] [<b>&minus;&minus;show&minus;ineffective&minus;filters</b>]
+  [<b>&minus;&minus;url&minus;statistics&minus;threshold</b>] [<b>&minus;&minus;version</b>]</p><a name="DESCRIPTION"
+  id="DESCRIPTION"></a>
+  <h2>DESCRIPTION</h2>
+  <p style="margin-left:11%; margin-top: 1em"><b>privoxy&minus;log&minus;parser</b> reads Privoxy log messages and</p>
+  <p style="margin-left:11%; margin-top: 1em">&minus; syntax&minus;highlights recognized lines,</p>
+  <p style="margin-left:11%; margin-top: 1em">&minus; reformats some of them for easier comprehension,</p>
+  <p style="margin-left:11%; margin-top: 1em">&minus; filters out less useful messages, and</p>
+  <p style="margin-left:11%; margin-top: 1em">&minus; (in some cases) calculates additional information,<br>
+  like the compression ratio or how a filter affected<br>
+  the content size.</p>
+  <p style="margin-left:11%; margin-top: 1em">With <b>privoxy&minus;log&minus;parser</b> you should be able to increase
+  Privoxy's log level without getting confused by the resulting amount of output. For example for &quot;debug 64&quot;
+  <b>privoxy&minus;log&minus;parser</b> will (by default) only show messages that affect the content. If a filter
+  doesn't cause any hits, <b>privoxy&minus;log&minus;parser</b> will hide the &quot;filter foo caused 0 hits&quot;
+  message.</p><a name="OPTIONS" id="OPTIONS"></a>
+  <h2>OPTIONS</h2>
+  <p style="margin-left:11%; margin-top: 1em">[<b>&minus;&minus;detect&minus;inactivity</b>] Instead of syntax
+  highlighting, detect periods of log inactivity of more than the amount of milliseconds specified with the
+  <b>&minus;&minus;inactivity&minus;threshold</b> option. Mainly useful for debugging.</p>
+  <p style="margin-left:11%; margin-top: 1em">[<b>&minus;&minus;host&minus;statistics&minus;threshold</b>] Only show
+  the request count for a host if it's above or equal to the given threshold. If the threshold is 0, host statistics
+  are disabled.</p>
+  <p style="margin-left:11%; margin-top: 1em">[<b>&minus;&minus;html&minus;output</b>] Use HTML and CSS when syntax
+  highlighting. If this option is omitted, ANSI escape sequences are used unless
+  <b>&minus;&minus;no&minus;syntax&minus;highlighting</b> is active. This option is only intended to make embedding log
+  excerpts in web pages easier. It does not escape any input!</p>
+  <p style="margin-left:11%; margin-top: 1em">[<b>&minus;&minus;inactivity&minus;threshold msecs</b>] Specifies the
+  number of milliseconds between log messages to consider inactivity when running in
+  [<b>&minus;&minus;detect&minus;inactivity</b>] mode.</p>
+  <p style="margin-left:11%; margin-top: 1em">[<b>&minus;&minus;keep&minus;date</b>] Don't remove the date when
+  printing highlighted log messages. Useful when parsing multiple log files at once.</p>
+  <p style="margin-left:11%; margin-top: 1em">[<b>&minus;&minus;no&minus;msecs</b>] Don't expect millisecond
+  resolution</p>
+  <p style="margin-left:11%; margin-top: 1em">[<b>&minus;&minus;no&minus;syntax&minus;highlighting</b>] Disable
+  syntax&minus;highlighting. Useful when the filtered output is piped into less in which case the ANSI control codes
+  don't work, or if the terminal itself doesn't support the control codes.</p>
+  <p style="margin-left:11%; margin-top: 1em">
+  [<b>&minus;&minus;passed&minus;request&minus;statistics&minus;threshold</b>] Only show the request count for a passed
+  requests if it's above or equal to the given threshold. If the threshold is 0, passed request statistics are
+  disabled.</p>
+  <p style="margin-left:11%; margin-top: 1em">[<b>&minus;&minus;shorten&minus;thread&minus;ids</b>] Shorten the thread
+  ids to a three&minus;digit decimal number. Note that the mapping from thread ids to shortened ids is created at
+  run&minus;time and thus varies with the input.</p>
+  <p style="margin-left:11%; margin-top: 1em">[<b>&minus;&minus;show&minus;ineffective&minus;filters</b>] Don't
+  suppress log lines for filters that didn't modify the content.</p>
+  <p style="margin-left:11%; margin-top: 1em">
+  [<b>&minus;&minus;show&minus;complete&minus;request&minus;distribution</b>] Show the complete client request
+  distribution in the <b>&minus;&minus;statistics</b> output. Without this option only the ten most common numbers are
+  shown.</p>
+  <p style="margin-left:11%; margin-top: 1em">[<b>&minus;&minus;statistics</b>] Gather various statistics instead of
+  syntax highlighting log messages. This is an experimental feature, if the results look wrong they very well might be.
+  Also note that the results are pretty much guaranteed to be incorrect if Privoxy and Privoxy&minus;Log&minus;Parser
+  aren't in sync.</p>
+  <p style="margin-left:11%; margin-top: 1em">[<b>&minus;&minus;strict&minus;checks</b>] When generating statistics,
+  look more careful at the input data and abort if it is unexpected, even if it doesn't affect the results.
+  Significantly slows the parsing down and is not expected to catch any problems that matter. When highlighting, print
+  warnings in case of unknown messages which can't be properly highlighted.</p>
+  <p style="margin-left:11%; margin-top: 1em">[<b>&minus;&minus;unbreak&minus;lines&minus;only</b>] Tries to fix lines
+  that got messed up by a broken or interestingly configured mail client and thus are no longer recognized properly.
+  Only fixes some breakage, but may be good enough or at least better than nothing. Doesn't do anything else, so you
+  probably want to pipe the output into <b>privoxy&minus;log&minus;parser</b> again.</p>
+  <p style="margin-left:11%; margin-top: 1em">[<b>&minus;&minus;url&minus;statistics&minus;threshold</b>] Only show the
+  request count for a resource if it's above or equal to the given threshold. If the threshold is 0, URL statistics are
+  disabled.</p>
+  <p style="margin-left:11%; margin-top: 1em">[<b>&minus;&minus;version</b>] Print version and exit.</p><a name=
+  "EXAMPLES" id="EXAMPLES"></a>
+  <h2>EXAMPLES</h2>
+  <p style="margin-left:11%; margin-top: 1em">To monitor a log file:</p>
+  <p style="margin-left:11%; margin-top: 1em">tail &minus;F /usr/jails/privoxy&minus;jail/var/log/privoxy/privoxy.log |
+  <b>privoxy&minus;log&minus;parser</b></p>
+  <p style="margin-left:11%; margin-top: 1em">Replace '&minus;F' with '&minus;f' if your tail implementation lacks
+  '&minus;F' support or if the log won't get rotated anyway. The log file location depends on your system (Doh!).</p>
+  <p style="margin-left:11%; margin-top: 1em">To monitor Privoxy without having it write to a log file:</p>
+  <p style="margin-left:11%; margin-top: 1em">privoxy &minus;&minus;no&minus;daemon
+  /usr/jails/privoxy&minus;jail/usr/local/etc/privoxy/config 2&gt;&amp;1 | <b>privoxy&minus;log&minus;parser</b></p>
+  <p style="margin-left:11%; margin-top: 1em">Again, the config file location depends on your system. Output
+  redirection depends on your shell, the above works with bourne shells.</p>
+  <p style="margin-left:11%; margin-top: 1em">To read a processed Privoxy log file from top to bottom, letting the
+  content scroll by slightly faster than you can read:</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>privoxy&minus;log&minus;parser</b> &lt;
+  /usr/jails/privoxy&minus;jail/var/log/privoxy/privoxy.log</p>
+  <p style="margin-left:11%; margin-top: 1em">This is probably only useful to fill screens in the background of haxor
+  movies.</p><a name="CAVEATS" id="CAVEATS"></a>
+  <h2>CAVEATS</h2>
+  <p style="margin-left:11%; margin-top: 1em">Syntax highlighting with ANSI escape sequences will look strange if your
+  background color isn't black.</p>
+  <p style="margin-left:11%; margin-top: 1em">Some messages aren't recognized yet and will not be fully
+  highlighted.</p>
+  <p style="margin-left:11%; margin-top: 1em"><b>privoxy&minus;log&minus;parser</b> is developed with Privoxy 3.0.7 or
+  later in mind, using earlier Privoxy versions will probably result in an increased amount of unrecognized log
+  lines.</p>
+  <p style="margin-left:11%; margin-top: 1em">Privoxy's log files tend to be rather large. If you use HTML highlighting
+  some browsers can't handle them, get confused and will eventually crash because of segmentation faults or unexpected
+  exceptions. This is a problem in the browser and not <b>privoxy&minus;log&minus;parser</b>'s fault.</p><a name="BUGS"
+  id="BUGS"></a>
+  <h2>BUGS</h2>
+  <p style="margin-left:11%; margin-top: 1em">Many settings can't be controlled through command line options
+  yet.</p><a name="SEE ALSO"></a>
+  <h2>SEE ALSO</h2>
+  <p style="margin-left:11%; margin-top: 1em"><b>privoxy</b>(8)</p><a name="AUTHOR" id="AUTHOR"></a>
+  <h2>AUTHOR</h2>
+  <p style="margin-left:11%; margin-top: 1em">Fabian Keil &lt;fk@fabiankeil.de&gt;</p>
+  <hr>
+</body>
+</html>

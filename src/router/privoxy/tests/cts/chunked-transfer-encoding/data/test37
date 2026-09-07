@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -9,13 +10,13 @@ chunked transfer encoding
 
 <reply>
 <data nonewline="yes">
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-Transfer-Encoding: chunked
-
-88888888888
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+Transfer-Encoding: chunked%CR
+%CR
+88888888888%CR
 The chunk-size for this chunk causes an integer overflow.
 swsclose
 </data>
@@ -39,11 +40,11 @@ proxy
 
 <verify>
 <protocol>
-GET /no-filter/chunked-content/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-
+GET /no-filter/chunked-content/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+%CR
 </protocol>
 <errorcode>
 18

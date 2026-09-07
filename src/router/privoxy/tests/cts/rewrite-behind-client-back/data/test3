@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -31,12 +32,12 @@ http://www.example.org/%TESTNUMBER-%HOSTIP:%HTTPPORT
 
 <verify>
 <protocol>
-GET /%TESTNUMBER HTTP/1.1
-Host: www.example.org
-User-Agent: curl/%VERSION
-Accept: */*
-Connection: close
-
+GET /%TESTNUMBER HTTP/1.1%CR
+Host: www.example.org%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Connection: close%CR
+%CR
 </protocol>
 </verify>
 </testcase>

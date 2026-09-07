@@ -21,7 +21,7 @@
 #                 and enhancements are better placed in user.action,
 #                 the match-all section has been moved to match-all.action.
 #
-#  Copyright   :  Written by and Copyright (C) 2001-2025 the
+#  Copyright   :  Written by and Copyright (C) 2001-2026 the
 #                 Privoxy team. https://www.privoxy.org/
 #
 # Feedback welcome, for details please have a look at:
@@ -122,18 +122,6 @@
 # Perl compatible regular expressions are used. See the pcre/docs/ directory or
 # man perlre (also available at https://perldoc.perl.org/perlre) for
 # details. The appendix to our User Manual also has some detail.
-#
-# Please note that matching in the path is CASE INSENSITIVE by default, but
-# you can switch to case sensitive by starting the pattern with the "(?-i)"
-# switch:
-#
-# www.example.com/(?-i)PaTtErN.*
-#   will match only documents whose path starts with PaTtErN in exactly this
-#   capitalization.
-#
-# Partially case-sensitive and partially case-insensitive patterns are
-# possible, but the rules about splitting them up are extremely complex
-# - see the PCRE documentation for more information.
 #
 #############################################################################
 # Action Syntax
@@ -275,33 +263,38 @@
 #
 #    Filters predefined in the supplied default.filter include:
 #
-#     js-annoyances:       Get rid of particularly annoying JavaScript abuse.
-#     js-events:           Kill JavaScript event bindings and timers (Radically destructive! Only for extra nasty sites).
-#     html-annoyances:     Get rid of particularly annoying HTML abuse.
-#     content-cookies:     Kill cookies that come in the HTML or JS content.
-#     refresh-tags:        Kill automatic refresh tags if refresh time is larger than 9 seconds.
-#     unsolicited-popups:  Disable only unsolicited pop-up windows.
-#     all-popups:          Kill all popups in JavaScript and HTML.
-#     img-reorder:         Reorder attributes in <img> tags to make the banners-by-* filters more effective.
-#     banners-by-size:     Kill banners by size.
-#     banners-by-link:     Kill banners by their links to known clicktrackers.
-#     webbugs:             Squish WebBugs (1x1 invisible GIFs used for user tracking).
-#     tiny-textforms:      Extend those tiny textareas up to 40x80 and kill the hard wrap.
-#     jumping-windows:     Prevent windows from resizing and moving themselves.
-#     frameset-borders:    Give frames a border and make them resizable.
-#     iframes:             Removes all detected iframes. Should only be enabled for individual sites.
-#     demoronizer:         Fix MS's non-standard use of standard charsets.
-#     shockwave-flash:     Kill embedded Shockwave Flash objects.
-#     quicktime-kioskmode: Make Quicktime movies saveable.
-#     fun:                 Text replacements for subversive browsing fun!
-#     crude-parental:      Crude parental filtering. Note that this filter doesn't work reliably.
-#     ie-exploits:         Disable some known Internet Explorer bug exploits.
-#     site-specifics:      Cure for site-specific problems. Don't apply generally!
-#     no-ping:             Removes non-standard ping attributes in <a> and <area> tags.
-#     google:              CSS-based block for Google text ads. Also removes a width limitation and the toolbar advertisement.
-#     yahoo:               CSS-based block for Yahoo text ads. Also removes a width limitation.
-#     msn:                 CSS-based block for MSN text ads. Also removes tracking URLs and a width limitation.
-#     blogspot:            Cleans up some Blogspot blogs. Read the fine print before using this.
+#     js-annoyances:         Get rid of particularly annoying JavaScript abuse.
+#     js-events:             Kill JavaScript event bindings and timers (Radically destructive! Only for extra nasty sites).
+#     html-annoyances:       Get rid of particularly annoying HTML abuse.
+#     content-cookies:       Kill cookies that come in the HTML or JS content.
+#     refresh-tags:          Kill automatic refresh tags if refresh time is larger than 9 seconds.
+#     unsolicited-popups:    Disable only unsolicited pop-up windows.
+#     all-popups:            Kill all popups in JavaScript and HTML.
+#     img-reorder:           Reorder attributes in <img> tags to make the banners-by-* filters more effective.
+#     banners-by-size:       Kill banners by size.
+#     banners-by-link:       Kill banners by their links to known clicktrackers.
+#     webbugs:               Squish WebBugs (1x1 invisible GIFs used for user tracking).
+#     tiny-textforms:        Extend those tiny textareas up to 40x80 and kill the hard wrap.
+#     jumping-windows:       Prevent windows from resizing and moving themselves.
+#     frameset-borders:      Give frames a border and make them resizable.
+#     iframes:               Removes all detected iframes. Should only be enabled for individual sites.
+#     demoronizer:           Fix MS's non-standard use of standard charsets.
+#     shockwave-flash:       Kill embedded Shockwave Flash objects.
+#     quicktime-kioskmode:   Make Quicktime movies saveable.
+#     fun:                   Text replacements for subversive browsing fun!
+#     crude-parental:        Crude parental filtering. Note that this filter doesn't work reliably.
+#     site-specifics:        Cure for site-specific problems. Don't apply generally!
+#     no-ping:               Removes non-standard ping attributes in <a> and <area> tags.
+#     allow-autocompletion:  Changes autocomplete="off" on form and input fields to "on" to allow autocompletion.
+#     github:                Removes the annoying "Sign-Up" banner and the Cookie disclaimer.
+#     imdb:                  Removes some ads on IMDb.
+#     google:                CSS-based block for Google text ads. Also removes a width limitation and the toolbar advertisement.
+#     yahoo:                 CSS-based block for Yahoo text ads. Also removes a width limitation.
+#     msn:                   CSS-based block for MSN text ads. Also removes tracking URLs and a width limitation.
+#     blogspot:              Cleans up some Blogspot blogs. Read the fine print before using this.
+#     bundeswehr.de:         Hide the cookie and privacy info banner on bundeswehr.de
+#     sourceforge:           Reduces the amount of ads for proprietary software on SourceForge.
+#     taz.de:                Hides the 'paywahl' banner on taz.de by default without relying on cookies.
 #
 # +force-text-mode
 #    Declares a document as plain text, even if the "Content-Type:" isn't detected
@@ -381,23 +374,27 @@
 #
 # +limit-connect{portlist}
 #
-#    By default, i.e. if no limit-connect action applies, Privoxy
-#    allows HTTP CONNECT requests to all ports. Use limit-connect
-#    if fine-grained control is desired for some or all destinations.
-#    The CONNECT methods exists in HTTP to allow access to secure websites
-#    ("https://" URLs) through proxies. It works very simply: the proxy
-#    connects to the server on the specified port, and then short-circuits
-#    its connections to the client and to the remote server. This means
-#    CONNECT-enabled proxies can be used as TCP relays very easily. Privoxy
-#    relays HTTPS traffic without seeing the decoded content. Websites can
-#    leverage this limitation to circumvent Privoxy's filters. By specifying
-#    an invalid port range you can disable HTTPS entirely.
+#    By default, i.e. if no limit-connect action applies, Privoxy allows
+#    HTTP CONNECT requests to all ports. Use limit-connect if fine-grained
+#    control is desired for some or all destinations.
+#    The CONNECT methods exists in HTTP to allow access to secure
+#    websites ("https://" URLs) through proxies. It works very simply:
+#    the proxy connects to the server on the specified port, and then
+#    short-circuits its connections to the client and to the remote
+#    server. This means CONNECT-enabled proxies can be used as TCP
+#    relays very easily.
+#    If the CONNECT method is being used and the https-inspection
+#    action is not enabled, Privoxy relays HTTPS or other traffic
+#    without seeing the decoded content. Websites can leverage this
+#    limitation to circumvent Privoxy's filters. By specifying an
+#    invalid port range you can disallow the CONNECT method and prevent
+#    this.
 #
 #    +limit-connect{443}                   # Only port 443 is OK.
 #    +limit-connect{80,443}                # Ports 80 and 443 are OK.
 #    +limit-connect{-3, 7, 20-100, 500-}   # Ports less than 3, 7, 20 to 100 and above 500 are OK.
 #    +limit-connect{-}                     # All ports are OK
-#    +limit-connect{,}                     # No HTTPS/SSL traffic is allowed
+#    +limit-connect{,}                     # All CONNECT requests are rejected.
 #
 # +limit-cookie-lifetime{lifetime in minutes}
 #
@@ -559,6 +556,7 @@ allow-ads   = -block -filter{banners-by-size} -filter{banners-by-link}
 +client-header-tagger{image-requests} \
 +client-header-tagger{range-requests} \
 +hide-from-header{block} \
++server-header-tagger{content-type} \
 +set-image-blocker{pattern} \
 }
 standard.Cautious
@@ -578,9 +576,9 @@ standard.Cautious
 +filter{banners-by-size} \
 +filter{webbugs} \
 +filter{jumping-windows} \
-+filter{ie-exploits} \
 +hide-from-header{block} \
 +hide-referrer{conditional-block} \
++server-header-tagger{content-type} \
 +session-cookies-only \
 +set-image-blocker{pattern} \
 }
@@ -622,6 +620,7 @@ standard.Medium
 +hide-referrer{conditional-block} \
 +limit-connect{,} \
 +overwrite-last-modified{randomize} \
++server-header-tagger{content-type} \
 +set-image-blocker{pattern} \
 }
 standard.Advanced
@@ -668,7 +667,8 @@ count*.
 *counter.
 #MASTER# BLOCK-REFERRER: http://tech.cybernetnews.com/
 # Blocked URL = http://metrics.performancing.com/
-metrics.
+# Blocked URL = https://cdn.prod.metrics.imdb.com/tr?fcn=IMDbNext-Client&ht=actionOnly&hr=https%3A%2F%2Fwww.imdb.com%2Ftitle%2Ftt1499372%2F%3Fref_%3Dtt_ov_ep_nx&isu=true&mid=A1EVAM02EL8SFB&ip=45.84.107.198&pa=vp-browser-blocked-autoplay&pc=vi2983640345&pt=title&ref=&sid=134-5211317-7699348&st=1758273618592&spt=main&ua=Mozilla%2F5.0+%28X11%3B+Linux+x86_64%3B+rv%3A128.0%29+Gecko%2F20100101+Firefox%2F128.0&pat=main&lang=en-US&cor=AQ&sv=web&sc=200&sn=www.imdb.com&pi=%2Ftitle%2Ftt1499371%2F&qs=ref_%3Dtt_ov_ep_nx&rrid=CA38A5FB680849E98903
+.metrics.
 
 #############################################################################
 # Generic unblockers by host:
@@ -697,6 +697,8 @@ countr*.
 #MASTER# REMARKS: We still like tor
 # URL = http://metrics.torproject.org/consensus-graphs.html
 metrics.torproject.org/
+# URL = https://metrics.1aeo.com/platform/ElectroBSD/
+metrics.1aeo.com/
 # URL = http://linuxcounter.net/
 linuxcounter.net/
 # URL = http://adinablafasel.example.org/
@@ -812,6 +814,8 @@ support./(.*/)?track
 #MASTER# UNBLOCK-REFERRER: http://munirihsparrow.bandcamp.com/track/lamp-lighted
 # URL = http://popplers5.bandcamp.com/download/track?enc=mp3-128&fsig=bad421a4c31dda49faceefb0f3923630&id=342903379&stream=1&ts=1355881937.0
 /.*download
+# URL = https://gitlab.torproject.org/search/count?group_id=268&project_id=571&scope=users&search=src%2Ftest%2Ftest_util.c
+gitlab./search/count\?
 
 #----------------------------------------------------------------------------
 # Misc Web-bugs, JS and just plain Junk. Images here aren't normal images.
@@ -958,6 +962,8 @@ ih.adscale.de/
 api.theadex.com/
 # Blocked URL = https://odb.outbrain.com/utils/get?url=https%3A%2F%2Fwww.ksta.de%2Fratgeber%2Fgesundheit%2Fhausaerztin-erklaert-milder-verlauf-bei-einer-omikron-infektion---was-heisst-das--39393164&idx=0&rand=18368&key=NANOWDGT01&widgetJSId=AR_2&va=true&et=true&format=html&pdobuid=-1&adblck=false&abwl=false&px=205&py=1389&vpd=0&cw=940&activeTab=true&darkMode=false&settings=true&recs=true&version=2000570&sig=bvSz55IV&apv=false&osLang=en-CA&winW=1350&winH=621&scrW=1366&scrH=768&dpr=1&secured=true&cnsntv2=CPSvfxSPSvfxSAGABCENB9CgAP_AAEAAAAYgIXBVJD7dTWlAMHZ5GNpkCYAU1sAUIOQCCBCAAwAFAEGA8IAC0SACEEQABAACAQAAgRABAAAEEABUAECgQAAEAQEkAAQAhAAIAAJEAAEQAgAQAAoIAAAAAAAIAAABCgSAkBiQQ8LGRGAghIAwQgAQwAABgIACAAMASAAYABAAAAIAAABAAgIEEELoAIELgEQkC0ABAAFQAMgAcgA8AEAAMgAaQBEAEUAJgATwArABvADmAH4AQgAhoBEAESAJYAUoAtwBhwD7AP0AgYBFACNAEpALmAYoA2gBuADiAHoAPkAhsBIgCdgFDgLzAYMAyQBpwDWQHBAPHAhCEACAAkAXQAyECBgaAOAFYALgAhgB-AHyASIAnYMABAOoIgDABWAEMAPwA-QCRAE7CAAIAJBUAUAJgAXAB-AJBAXmMgBgBMgH2AfgC8xgAEAsQ6BsABUADIAHIAPgBAADIAGgAPoAiACKAEwAJ4AVgAuABfADeAHMAPwAhoBEAESAJYATAAowBSgCxAFuAMMAaMA-wD9AIGARQAiwBKQCxAFzAMUAbQA3ABxADqAHoAQ2Ai8BIICRAE7AKHAXmAwYBiQDJAGWANOAcWA8cB-I4AeAAgAC4AJAAyABoAIiAXoAwAB5AD5AIQAXQAyEBpoDbCEBQADIATAAuABfADeALGAfYB-AEUAJSAXMAxQBtADqAHoASCAkQBbQDEgHjgQoIABgAEABoALEAYABdADbCUBYABAAGQAOAAfACIAEwALgAXwBDQCIAIkAUYApQBbgD8AMUAbgA6gB8gEXgJEAXmAywkADAAuAGQBdBSBOABUADIAHIAPgBAADIAGkARABFACYAE8AKQAXwA5gB-AENAIgAiQBRgClAFiALcAaMA-wD9AIsASkAuYBigDaAG4APQAi8BIgCdgFDgLzAZIAywBrIDggHjgQhKACgALgAkACsAGQAsQBgADyALoAaaBAwAAA.YAAAAAAAAAAA&cmpStat=1&ccpaStat=0&ref=https%3A%2F%2Fwww.ksta.de%2Fhtml%2Fdumont-consent%2Findex.html%3Fparam%3DeyJyZWRpcmVjdFVybCI6Ii9yYXRnZWJlci9nZXN1bmRoZWl0L2hhdXNhZXJ6dGluLWVya2xhZXJ0LW1pbGRlci12ZXJsYXVmLWJlaS1laW5lci1vbWlrcm9uLWluZmVrdGlvbi0tLXdhcy1oZWlzc3QtZGFzLS0zOTM5MzE2ND9jYj0xNjQzMDgyNTMxNDU5JmRtY2lkPXNtX3R3X3B1IiwicmVmZXJyZXIiOiIiLCJzdWJkb21haW4iOiJ3d3cifQ%3D%3D
 odb.outbrain.com/
+# Blocked URL = https://mv.outbrain.com/Multivac/api/get?url=https%3A%2F%2Fwww.n-tv.de%2F&srcUrl=https%3A%2F%2Fwww.n-tv.de%2Frss&idx=0&rand=68582&widgetJSId=SF_15&va=true&et=true&format=html&px=10&py=8607&vpd=8607&settings=true&recs=true&cw=10&key=NANOWDGT01&tch=0&adblck=0&abwl=0&activeTab=true&clientType=21&clientVer=20101040&version=20101040&sig=suufTooA&apv=false&osLang=en-CA&winW=0&winH=0&scrW=1366&scrH=768&dpr=1&secured=true&cmpStat=1&ccpaStat=0&iframe=true&ref=https%3A%2F%2Fwww.n-tv.de%2F&ogn=https%3A%2F%2Fwww.n-tv.de%2F
+mv.outbrain.com/
 # Blocked URL = https://elsa.memoinsights.com/t?pid=62012a7a19351c07620394e0&url=https%3A%2F%2Farstechnica.com%2Ftech-policy%2F2022%2F08%2Fthe-women-calling-out-apples-handling-of-misconduct-claims%2F&author%5B%5D=Financial%20Times&title=The%20women%20calling%20out%20Apple%E2%80%99s%20handling%20of%20misconduct%20claims&date=2022-08-04T13%3A39%3A42Z&referrer=&ref_url=&page_url=https%3A%2F%2Farstechnica.com%2Ftech-policy%2F2022%2F08%2Fthe-women-calling-out-apples-handling-of-misconduct-claims%2F%3Fcomments%3D1&cb=MEMO.API.callbacks.cbakynzcplf&v=v3.0.6&t=5000&e=5000&s=7362
 elsa.memoinsights.com/t
 # Blocked URL = https://ups.xplosion.de/ctx?event_id=ctx_json&_sid=24141&hostSiteUrl=https://www.presseportal.de/blaulicht/pm/12415/5302821&referrer=&userAgent=Mozilla/5.0%20(X11;%20FreeBSD%20amd64;%20rv:91.0)%20Gecko/20100101%20Firefox/91.0&userLang=en-CA&gdpr=1&gdpr_consent=[...]
@@ -1013,7 +1019,9 @@ collector.githubapp.com/
 # Blocked URL = http://consentmanager.mgr.consensu.org/delivery/pixel.php?id=11319&did=0&cfdid=0&t=pv&h=https%3A%2F%2Fsourceforge.net%2Fp%2Fijbswa%2Ffeature-requests%2F535%2F&o=1591880198219&l=EN&lv=0&d=0&ct=14&e=&e2=&e3=&i=&sv=0&dv=0
 .consensu.org/delivery/pixel\.php
 # Blocked URL = https://srv-2020-08-22-20.pixel.parsely.com/plogger/?rand=1598128327825&plid=94157330&idsite=theverge.com&url=https%3A%2F%2Fwww.theverge.com%2F2020%2F8%2F21%2F21396316%2Fapple-wordpress-in-app-purchase-tax-update-store&urlref=&screen=1366x768%7C1366x768%7C24&data=%7B%7D&sid=1&surl=https%3A%2F%2Fwww.theverge.com%2F2020%2F8%2F21%2F21396316%2Fapple-wordpress-in-app-purchase-tax-update-store&sref=&sts=1598128167510&slts=0&date=Sat+Aug+22+2020+22%3A32%3A07+GMT%2B0200+(CEST)&action=heartbeat&inc=6&tt=140923&pvid=91707838&u=pid%3D72b66a2ec3c73c8fbf8c925f679fcbd9
-.pixel.parsely.com/
+# Blocked URL = https://p1.parsely.com/px/?rand=1767775988630&plid=c08caca6-8f5d-4fd3-8b0a-74c88f544fb2&idsite=theonion.com&url=https%3A%2F%2Ftheonion.com%2Frfk-jr-warns-mistress-that-condoms-cause-autism%2F&urlref=&screen=1366x768%7C1366x768%7C24&data=%7B%7D&sid=1&surl=https%3A%2F%2Ftheonion.com%2Frfk-jr-warns-mistress-that-condoms-cause-autism%2F&sref=&sts=1767775808556&slts=0&date=Wed+Jan+07+2026+09%3A53%3A08+GMT%2B0100+(Central+European+Standard+Time)&action=heartbeat&inc=5&tt=4562&pvid=989eb6b7-8ff8-44e2-ae0d-f22d057b59b8&u=pid%3D9708cd34-c10d-4c4f-a236-5f38ab74e6aa
+# Blocked URL = https://p1.parsely.com/plogger/?rand=1767869446003&plid=dde1bc79-14c3-475a-89ef-c94666d2c7c2&idsite=missionlocal.org&url=https%3A%2F%2Fmissionlocal.org%2F2026%2F01%2Fsan-francisco-sewers-flooding-comic%2F&urlref=&screen=1366x768%7C1366x768%7C24&data=%7B%7D&sid=1&surl=https%3A%2F%2Fmissionlocal.org%2F2026%2F01%2Fsan-francisco-sewers-flooding-comic%2F&sref=&sts=1767868739976&slts=0&date=Thu+Jan+08+2026+11%3A50%3A46+GMT%2B0100+(Central+European+Standard+Time)&action=heartbeat&inc=4&tt=4430&pvid=3b35b582-026a-4549-95d4-a8e690ccbc79&u=pid%3D25c23c17-45cb-4351-b8fd-a271d75fd3a5
+.parsely.com/p(logger|x)/
 # Blocked URL = http://t.9gag.com/img.gif?a=unique-viewed&v=v&ref=&lbl=&lblv=&p=d&e=aD4X2GG&u=&w=l&url=https%3A%2F%2F9gag.com%2F&referrer=&t=1600253599&
 t.9gag.com/img\.gif
 # Blocked URL = http://t.lto.connectaserver.de/t.php?ht=e&in=Verweildauer%7C%7CTimeOnPage%7C%7C1m%2030s&pp=https%3A%2F%2Fwww.lto.de%2Frecht%2Fhintergruende%2Fh%2Feugh-c62317-vorratsdatenspeicherung-internet-telefon-eu-staaten-sicherheit-terrorismus-datenschutz-speichern-deutschland-kinderpornographie%2F&sr=1366x768&vp=1362x676&cid=602d486b-9a75-4ea2-99d3-ebfb063e1be8&dt=Vorratsdatenspeicherung:%20Was%20bedeutet%20das%20EuGH-Urteil?&rf=&z=1602062648454
@@ -1267,6 +1275,8 @@ html-load.com/
 1.html-load.com/
 # Blocked URL = https://0.css-load.com/contents/hardware.slashdot.org/0/489/127/364/a/vkdsgkckckjkskiffk5ksks28kck6k5d2pksgw28jdk62c2cfwmk5k928ks3ek1d28k2k5kmjkc2pk5jw28kgkj2028ksks2pvk5kcwkw283ek1e1242ae24xk5wj28kgkj2028ksksxvk5kcwkw282pk5ksks28kc3ek1k5wj28kgkj2028ksksxk9jk5ksks28ksxvk5kcwkw282pk5ksks28kck69kjk9
 0.css-load.com/
+# Blocked URL = https://zn0lxkzethotizctx-bahn.siteintercept.qualtrics.com/SIE/?Q_ZID=ZN_0lxkzEthotizcTX&Q_LOC=https%3A%2F%2Fwww.bahn.de%2Fbuchung%2Ffahrplan%2Fsuche%23sts%3Dtrue%26so%3DK%25C3%25B6ln-M%25C3%25BClheim%26zo%3DBochum%2520Hbf%26kl%3D2%26r%3D13%3A16%3AKLASSENLOS%3A1%26soid%3DA%253D1%2540O%253DK%25C3%25B6ln-M%25C3%25BClheim%2540X%253D7013294%2540Y%253D50957987%2540U%253D80%2540L%253D8000209%2540p%253D1779908603%2540i%253DU%25C3%2597008015541%2540%26zoid%3DA%253D1%2540O%253DBochum%2520Hbf%2540X%253D7223273%2540Y%253D51478607%2540U%253D80%2540L%253D8000041%2540p%253D1779908603%2540i%253DU%25C3%2597008010179%2540%26sot%3DST%26zot%3DST%26soei%3D8000209%26zoei%3D8000041%26hd%3D2026-05-29T08%3A45%3A46%26hza%3DD%26hz%3D%255B%255D%26ar%3Dfalse%26s%3Dtrue%26d%3Dfalse%26vm%3D00%2C01%2C02%2C03%2C04%2C05%2C06%2C07%2C08%2C09%26fm%3Dfalse%26bp%3Dfalse%26dlt%3Dtrue%26dltv%3Dfalse&t=1780037311354
+.siteintercept.qualtrics.com/
 
 
 #----------------------------------------------------------------------------
@@ -2076,6 +2086,8 @@ pinkstinks.de/
 .eff.org/
 # URL = https://www.datenschmutz.de/banner-square.png
 .datenschmutz.de/
+# URL = https://index.crates.io/ad/le/adler
+.crates.io/
 
 
 #############################################################################
@@ -2326,6 +2338,14 @@ accounts.bahn.de/
 .creator-spring.com/_next/image
 # URL = https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/iu/?u=https%3A%2F%2Ftse4.mm.bing.net%2Fth%3Fid%3DOIP.JNbKidcpiIxSgywXqxj1GAHaFC%26pid%3DApi&f=1&ipt=3754158f389c998b95c12d25e257114f092a3830762e99ba45a66f75b9a0cd3f&ipo=images
 duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/
+# URL = https://report.error-report.com/modal?eventId=&error=Failed%20to%20fetch%20script%3A%20Error%3A%20Error%3A%20script%20malformed.%20source%20length%3A%20401759%2C%20X-Length%3A%20401622&domain=as.slashdot.org&urlhttps%3A%2F%2Fyro.slashdot.org%2Fstory%2F25%2F08%2F26%2F0354217%2Fclass-action-lawsuit-targets-movie-ownership
+report.error-report.com/
+# URL = https://www.bahn.de/st/b/ss/dbbahnprod/1/JS-2.23.0/s34945143417157?AQB=1&ndh=1&pf=1&t=8%2F11%2F2025%2012%3A53%3A20%201%20-60&sdid=15203DD0161DC925-6CB1EFADADD1EEA9&mid=13958675294666984104395893324836301200&ce=UTF-8&ns=deutschebahn&cdp=2&pageName=bahn-de_kontakt_access-error&g=https%3A%2F%2Fwww.bahn.de%2Fkontakt%2Faccess-error%3FerrorCode%3D751%26errorId%3Dbf7ce870%26errorIdLong%3D0.af4d2417.1765194797.37c56890&r=https%3A%2F%2Fwww.bahn.de%2Fbuchung%2Ffahrplan%2Fsuche&cc=EUR&ch=Content&c3=Anonym&v3=Anonym&c4=Content&v4=Content&c22=https%3A%2F%2Fwww.bahn.de%2Fkontakt%2Faccess-error&v22=https%3A%2F%2Fwww.bahn.de%2Fkontakt%2Faccess-error&c24=bahn-de_kontakt_access-error&v24=bahn-de_kontakt_access-error&v26=nein%3E0&c69=Logout&v69=Logout&c74=bahn-de_kontakt_access-error&v74=bahn-de_kontakt_access-error&c75=https%3A%2F%2Fwww.bahn.de%2Fkontakt%2Faccess-error&v75=https%3A%2F%2Fwww.bahn.de%2Fkontakt%2Faccess-error&v106=Partial%3Eanalytics&v110=bahn-de&v111=www.bahn.de&v112=kontakt_access-error&v113=Content&v115=https%3A%2F%2Fwww.bahn.de%2Fkontakt%2Faccess-error&v116=https%3A%2F%2Fwww.bahn.de%2Fbuchung%2Ffahrplan%2Fsuche&v117=de&v118=Landscape&v119=undefined_1362x621&v120=kontakt_access-error&v121=Logout&v122=Anonym&v123=PK&v126=false&v183=751&v186=view%3Eut4.53.202512040819&v187=prd--default&v199=next-main&pid=bahn-de_startseite&pidt=1&oid=Heute%2C%20ab%2012%3A51%0AHinfahrt%20%C3%A4ndern%0A&oidt=3&ot=SUBMIT&s=1366x768&c=24&j=1.6&v=N&k=Y&bw=1362&bh=621&mcorgid=5FA50A5953FB37E50A4C98BC%40AdobeOrg&AQE=1
+.bahn.de/
+# URL = https://gstreamer.freedesktop.org/security/sa-2026-0003.html?__goaway_challenge=resource-load&__goaway_id=c17b407714c97e4931b45e8b61315ea7&__goaway_referer=https%3A%2F%2Fgstreamer.freedesktop.org%2F
+/.*&__goaway_referer=http
+# URL = https://archive.is/submit/?url=https%3A%2F%2Fwww.zeit.de%2Fwissen%2F2026-04%2Fnsdap-mitgliederkartei-karteikarten-familienmitglieder-suche
+archive.is/
 
 {+redirect{s@.*url=@http://@} -block}
 # Sticky Actions = +redirect -block
@@ -2501,6 +2521,10 @@ kggp.de/
 freebsdfoundation.org/
 # URL = https://freiheitsfoo.de/2022/10/03/wahlplakat-show-nds-ltw-2022/
 .freiheitsfoo.de/
+# URL = https://github.com/AFLplusplus/AFLplusplus/
+github.com/
+# URL = https://www.jwz.org/blog/2025/08/the-pigs-who-stare-at-crosswalks/
+.jwz.org/
 
 {-filter{banners-by-link}}
 # Sticky Actions = -filter{banners-by-link}
@@ -2550,6 +2574,8 @@ schneegans.de/sv/\?url=referer
 .rubberslug.com
 #MASTER# REMARKS: Actionsfile feedback item #2040467, allow animated gifs from wikipedia.org
 .wikipedia.org/
+# URL = https://raw.githubusercontent.com/asomers/ztop/master/doc/demo.gif
+.githubusercontent.com/
 
 #----------------------------------------------------------------------------
 # The "site-specifics" filter has special cures for problems found here:
@@ -2681,11 +2707,6 @@ tr.anp.se/
 {+filter{tiny-textforms}}
 .sourceforge.net/tracker
 
-{+downgrade-http-version}
-#MASTER# COMMENTS: This section not checked 10/17/06 HB
-#MASTER# REMARKS: This is work-around for CUPS http configuration.
-:631
-
 #MASTER# REMARKS: If Privoxy is disabled, requests for config.privoxy.org/
 #MASTER# REMARKS: reach privoxy.org and are redirected to privoxy.org/config.
 #MASTER# REMARKS: The instructions tell the user to reload the page with
@@ -2739,13 +2760,94 @@ config.privoxy.org/
 # URL = http://l.yimg.com/g/combo/1?event-custom/event-custom-min.js&event/event-min.js&j/.H-.K.A.vNKEa&j/.CP-.U-.DE.A.vKEJz&j/.J_.BR_.CA.A.vKYkg&j/.J_.DB.A.vPpBT&j/popup-login.A.vR53Z&dump/dump-min.js&datatype/datatype-xml-min.js&substitute/substitute-min.js&json/json-min.js&queue-promote/queue-promote-min.js&io/io-min.js&j/.J_.DS.A.vQa28&j/.FW-.FX-.GH.A.vP3XB&j/grease.A.vRktP&j/.CC.A.vNiA6&j/.C-.BL.A.vPPj2&j/.CE-.K.A.vNy32&attribute/attribute-base-min.js&base/base-min.js&anim/anim-min.js&cookie/cookie-min.js&j/.B-.C-.F.A.vQ7SZ&j/urls.A.vQtXp&j/.B-.BY.A.vQCXP&j/.H-.BY.A.vQXXx&j/.DS-value-conversions.A.vQpRt&j/.G-.BD.A.vNHSH&event/event-synthetic-min.js&j/.G-.BO.A.vNwR4&j/.CV-.CH.A.vPFSZ&j/.X-.W-.C-.F.A.vKPQa&j/.X-.W-.D.A.vQXXx&j/.Q-.BX-.K.A.vR1kt&j/.DL.A.vLPjD&j/.CF.A.vNC24&j/.CX-.CY.A.vP8ND&event-simulate/event-simulate-min.js&node/node-event-simulate-min.js&j/.B-.T-.CI-.C-.F.A.vPJPF&j/.CM/.BA_2.5.1-.D.A.vPzui&j/bo-.S-.C-.F.A.vNwWe&j/bo-.S-.D.A.vR6Hx&j/.BZ-.D.A.vNstB&j/.B-.L-.C-.F.A.vNxPX&j/.B-.L-.BH.A.vMdVB&j/.CN-.DD.A.vLjJ2&j/.B-.O-.C-.F.A.vPpcK&j/.BM.A.vKPmz&j/.B-.O.A.vQyHg&j/.B-.H-.BB-.C-.F.A.vQvrB&j/.CW-.CU.A.vQ7Rg&j/.Y-.C-.F.A.vNqGa&j/.Y.A.vLKiT&j/.B-.M-.C-.F.A.vQxDc&j/.U-.CG.A.vQ5Tt&j/.B-.M.A.vQXXx&j/.B-.Q-.BQ.A.vQvTt&j/.B-.N-.C-.F.A.vQaRp&j/.CL.A.vN4N6&j/.B-.CL-.BW.A.vPwkx&j/.DR-.DG.A.vMLJr&j/.B-.BE-.C-.F.A.vPHP4&j/.B-.BE-.D.A.vQLQH&j/.BV.A.vm3Uz&j/.Z-.DK-.D.A.vLQEe&j/.Z-.DJ-.BJ.A.vLQEe&j/.B-.I-.C-.F.A.vPKTK&stylesheet/stylesheet-min.js&j/.B-.I.A.vQvDF&j/.CM-.DO.A.vPboD&j/.B-.D.A.vRbv8&j/.B-.H-.BB.A.vQuhn&j/.B-.N.A.vR6Cn&j/.B-.L-.CZ.A.vQmzP&j/.B-.T-.CI.A.vQXXx&j/.B-.I-.CQ-.BK-.C-.F.A.vNwZF&j/.B-.I-.CQ-.BK.A.vLWQR&j/.B-.R-.C-.F.A.vPfwi&j/.B-.R.A.vRhND&j/.DN-.BB-.D-.C-.F.A.vQXZg&j/.DN-.BB-.D.A.vRcXB&j/.BF_.D-.C-.F.A.vPGYM&j/.BF_.D.A.vQxJn&plugin/plugin-min.js&cache/cache-min.js&j/.CB-.C-.F.A.vNwWe&j/.CB-.D.A.vQS6T
 .yimg.com/g/combo/1\?event-custom/
 
-{-block -filter{content-cookies}}
-#MASTER# PROBLEM-URL: http://www.flickr.com/
 {-filter{content-cookies}}
-# Sticky Actions = -block
+# Sticky Actions = -filter{content-cookies}
 # URL = http://www.flickr.com/
 .flickr.com/
 
+# Without this section a request to a blocked or redirected
+# login URL could be misdetected by third parties as the
+# user being logged in to the given site, thus making
+# fingerprinting Privoxy users easier.
+#
+# Note that this does not prevent the fingerprinting issue
+# if the client is actually logged in. For details see:
+# https://robinlinus.github.io/socialmedia-leak/
+{-client-header-tagger{image-requests} \
+ -fast-redirects \
+ -handle-as-image \
+}
+# Sticky Actions = -client-header-tagger{image-requests} -fast-redirects -handle-as-image
+# URL = https://squareup.com/login?return_to=%2Ffavicon.ico
+squareup.com/login\?
+# URL = https://twitter.com/login?redirect_after_login=%2f..%2ffavicon.ico
+twitter.com/login\?
+# URL = https://www.facebook.com/login.php?next=https%3A%2F%2Fwww.facebook.com%2Ffavicon.ico%3F_rdr%3Dp
+www.facebook.com/login.php\?
+# URL = https://accounts.google.com/ServiceLogin?passive=true&continue=https%3A%2F%2Fwww.google.com%2Ffavicon.ico&uilel=3&hl=en&service=mail
+# URL = https://accounts.google.com/ServiceLogin?passive=true&continue=https%3A%2F%2Fwww.youtube.com%2Ffavicon.ico&uilel=3&hl=en&service=youtube
+# URL = https://accounts.google.com/ServiceLogin?service=blogger&hl=de&passive=1209600&continue=https://www.blogger.com/favicon.ico
+accounts.google.com/ServiceLogin\?
+# URL = https://plus.google.com/up/accounts/upgrade/?continue=https://plus.google.com/favicon.ico
+plus.google.com/up/accounts/upgrade/\?
+# URL = https://login.skype.com/login?message=signin_continue&redirect_uri=https%3A%2F%2Fsecure.skype.com%2Ffavicon.ico
+login.skype.com/login\?
+# URL = https://www.spotify.com/en/login/?forward_url=https%3A%2F%2Fwww.spotify.com%2Ffavicon.ico
+# URL = https://www.spotify.com/de/en/login/?forward_url=https%3A%2F%2Fwww.spotify.com%2Ffavicon.ico
+# URL = http://www.spotify.com/login/?forward_url=https%3A%2F%2Fwww.spotify.com%2Ffavicon.ico
+www.spotify.com/.*login/\?
+# URL = https://www.reddit.com/login?dest=https%3A%2F%2Fwww.reddit.com%2Ffavicon.ico
+# URL = https://www.reddit.com/login/?dest=https%3A%2F%2Fwww.reddit.com%2Ffavicon.ico
+www.reddit.com/login
+# URL = https://www.tumblr.com/login?redirect_to=%2Ffavicon.ico
+www.tumblr.com/login\?
+# URL = https://www.expedia.de/user/login?ckoflag=0&selc=0&uurl=qscr%3Dreds%26rurl%3D%252Ffavicon.ico
+www.expedia.de/user/login\?
+# URL = https://www.dropbox.com/login?cont=https%3A%2F%2Fwww.dropbox.com%2Fstatic%2Fimages%2Fabout%2Fdropbox_logo_glyph_2015.svg
+www.dropbox.com/login\?
+# URL = https://www.amazon.com/ap/signin/178-4417027-1316064?_encoding=UTF8&openid.assoc_handle=usflex&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.mode=checkid_setup&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0&openid.ns.pape=http%3A%2F%2Fspecs.openid.net%2Fextensions%2Fpape%2F1.0&openid.pape.max_auth_age=10000000&openid.return_to=https%3A%2F%2Fwww.amazon.com%2Ffavicon.ico
+www.amazon.com/ap/signin/
+# URL = https://www.pinterest.com/login/?next=https%3A%2F%2Fwww.pinterest.com%2Ffavicon.ico
+www.pinterest.com/login/
+# URL = https://de.foursquare.com/login?continue=%2Ffavicon.ico
+de.foursquare.com/login\?
+# URL = https://eu.battle.net/login/de/index?ref=http://eu.battle.net/favicon.ico
+eu.battle.net/login/
+# URL = https://store.steampowered.com/login/?redir=favicon.ico
+store.steampowered.com/login/
+# URL = https://www.academia.edu/login?cp=/favicon.ico&cs=www
+www.academia.edu/login\?
+# URL = https://github.com/login?return_to=https%3A%2F%2Fgithub.com%2Ffavicon.ico%3Fid%3D1
+github.com/login\?
+# URL = https://medium.com/m/signin?redirect=https%3A%2F%2Fmedium.com%2Ffavicon.ico&loginType=default
+medium.com/m/signin\?
+# URL = https://news.ycombinator.com/login?goto=y18.gif%23
+news.ycombinator.com/login\?
+# URL = https://carbonmade.com/signin?returnTo=favicon.ico
+carbonmade.com/signin\?
+# URL = https://courses.edx.org/login?next=/favicon.ico
+courses.edx.org/login\?
+# URL = https://slack.com/checkcookie?redir=https%3A%2F%2Fslack.com%2Ffavicon.ico%23
+slack.com/checkcookie\?
+# URL = https://www.khanacademy.org/login?continue=https%3A//www.khanacademy.org/favicon.ico
+www.khanacademy.org/login\?
+# URL = https://www.paypal.com/signin?returnUri=https://t.paypal.com/ts?v=1.0.0
+www.paypal.com/signin\?
+# URL = https://500px.com/login?r=%2Ffavicon.ico
+500px.com/login\?
+# URL = https://www.airbnb.com/login?redirect_params[action]=favicon.ico&redirect_params[controller]=home
+www.airbnb.com/login\?
+# URL = https://disqus.com/profile/login/?next=https%3A%2F%2Fdisqus.com%2Ffavicon.ico
+disqus.com/profile/login/\?
+# URL = https://secure.meetup.com/login/?returnUri=https%3A%2F%2Fwww.meetup.com%2Fimg%2Fajax_loader_trans.gif
+# URL = https://www.meetup.com/login/?returnUri=https%3A%2F%2Fwww.meetup.com%2Fimg%2Fajax_loader_trans.gif
+.meetup.com/login/\?
+# URL = https://bitbucket.org/account/signin/?next=/favicon.ico
+bitbucket.org/account/signin/\?
+# URL = https://secure.indeed.com/account/login?continue=%2ffavicon.ico
+secure.indeed.com/account/login\?
+# URL = https://vk.com/login?u=2&to=ZmF2aWNvbi5pY28-
+vk.com/login\?
 
 #----------------------------------------------------------------------------
 # Sections that modify the action settings based on tags.

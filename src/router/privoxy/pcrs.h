@@ -33,17 +33,14 @@
  *********************************************************************/
 
 
-#ifdef HAVE_PCRE2
 #define PCRE2_CODE_UNIT_WIDTH 8
 #define PCREn(x) PCRE2_ ## x
 #ifndef _PCRE2_H
-#include <pcre2.h>
-#endif
-#else
-#define PCREn(x) PCRE_ ## x
-#ifndef _PCRE_H
-#include <pcre.h>
-#endif
+#  ifdef PCRE2_H_IN_SUBDIR
+#    include <pcre2/pcre2.h>
+#  else
+#    include <pcre2.h>
+#  endif
 #endif
 
 /*
@@ -117,12 +114,7 @@ typedef struct {
 /* A PCRS job */
 
 typedef struct PCRS_JOB {
-#ifdef HAVE_PCRE2
-    pcre2_code *pattern;
-#else
-  pcre *pattern;                            /* The compiled pcre pattern */
-  pcre_extra *hints;                        /* The pcre hints for the pattern */
-#endif
+  pcre2_code *pattern;
   int options;                              /* The pcre options (numeric) */
   unsigned int flags;                       /* The pcrs and user flags (see "Flags" above) */
   pcrs_substitute *substitute;              /* The compiled pcrs substitute */

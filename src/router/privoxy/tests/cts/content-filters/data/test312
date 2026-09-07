@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -9,12 +10,12 @@ filter crude-parental
 
 <reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-X-Control: swsclose
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Control: swsclose%CR
+%CR
 # This is a age disclaimer that triggers pcrs command 5 of the crude-parental filter:
 
 The persons were over 21 years old last we checked!
@@ -23,13 +24,13 @@ The persons were over 21 years old last we checked!
 
 <proxy-reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-X-Control: swsclose
-Content-Length: 126
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+X-Control: swsclose%CR
+Content-Length: 126%CR
+%CR
 This page has been blocked by <a href="http://p.p/">Privoxy's</a> crude-parental content filter because of an age disclaimer.
 </data>
 </proxy-reply>
@@ -51,12 +52,12 @@ http://%HOSTIP:%HTTPPORT/crude-parental/age-disclaimer-c/%TESTNUMBER
 
 <verify>
 <protocol>
-GET /crude-parental/age-disclaimer-c/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-Connection: close
-
+GET /crude-parental/age-disclaimer-c/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Connection: close%CR
+%CR
 </protocol>
 </verify>
 </testcase>

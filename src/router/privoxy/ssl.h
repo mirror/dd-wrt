@@ -4,8 +4,8 @@
 *
 * File        :  $Source: $
 *
-* Purpose     :  File with TLS/SSL extension. Contains methods for
-*                creating, using and closing TLS/SSL connections.
+* Purpose     :  File with TLS extension. Contains methods for
+*                creating, using and closing TLS connections.
 *
 * Copyright   :  Written by and Copyright (c) 2017 Vaclav Svec. FIT CVUT.
 *
@@ -31,13 +31,13 @@
 
 #include "project.h"
 
-/* Boolean functions to get information about TLS/SSL connections */
+/* Boolean functions to get information about TLS connections */
 extern int    client_use_ssl(const struct client_state *csp);
 extern int    server_use_ssl(const struct client_state *csp);
 extern size_t is_ssl_pending(struct ssl_attr *ssl_attr);
 extern int tunnel_established_successfully(const char *response, unsigned int response_len);
 
-/* Functions for sending and receiving data over TLS/SSL connections */
+/* Functions for sending and receiving data over TLS connections */
 extern int  ssl_send_data(struct ssl_attr *ssl_attr, const unsigned char *buf, size_t len);
 extern int ssl_send_data_delayed(struct ssl_attr *ssl_attr, const unsigned char *buf,
                                  size_t len, unsigned int delay);
@@ -45,7 +45,7 @@ extern int  ssl_recv_data(struct ssl_attr *ssl_attr, unsigned char *buf, size_t 
 extern long ssl_flush_socket(struct ssl_attr *ssl_attr, struct iob *iob);
 extern void ssl_send_certificate_error(struct client_state *csp);
 
-/* Functions for opening and closing TLS/SSL connections */
+/* Functions for opening and closing TLS connections */
 extern int  create_client_ssl_connection(struct client_state *csp);
 extern int  create_server_ssl_connection(struct client_state *csp);
 extern void close_client_and_server_ssl_connections(struct client_state *csp);

@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -9,26 +10,26 @@ gzip compression
 
 <reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-Content-Encoding: gzip
-X-Control: swsclose
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+Content-Encoding: gzip%CR
+X-Control: swsclose%CR
+%CR
 %hex[%1f%8c%08%08%a2%c1%12%60%00%03%62%6c%61%66%61%73%65%6c%00%73%ca%49%4c%4b%2c%4e%cd%51%48%c9%4c%55%48%49%e4%0a%ce%cf%4d%55%c8%cd%2f%02%71%4a%12%15%32%52%8b%52%b9%00%62%37%9b%0c%24%00%00%00%0a]hex%
 </data>
 </reply>
 
 <proxy-reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-Content-Encoding: gzip
-X-Control: swsclose
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+Content-Encoding: gzip%CR
+X-Control: swsclose%CR
+%CR
 %hex[%1f%8c%08%08%a2%c1%12%60%00%03%62%6c%61%66%61%73%65%6c%00%73%ca%49%4c%4b%2c%4e%cd%51%48%c9%4c%55%48%49%e4%0a%ce%cf%4d%55%c8%cd%2f%02%71%4a%12%15%32%52%8b%52%b9%00%62%37%9b%0c%24%00%00%00%0a]hex%
 </data>
 </proxy-reply>
@@ -50,12 +51,12 @@ proxy
 
 <verify>
 <protocol>
-GET /gzip-compressed-data/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-Accept-Encoding: gzip
-
+GET /gzip-compressed-data/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Accept-Encoding: gzip%CR
+%CR
 </protocol>
 <errorcode>
 0

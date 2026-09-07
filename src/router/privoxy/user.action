@@ -5,7 +5,7 @@
 #  Purpose     :  User-maintained actions file, see
 #                 https://www.privoxy.org/user-manual/actions-file.html
 #
-#  Copyright   :  Written by and Copyright (C) 2002-2022 the
+#  Copyright   :  Written by and Copyright (C) 2002-2026 the
 #                 Privoxy team. https://www.privoxy.org/
 #
 ######################################################################
@@ -83,7 +83,6 @@ allow-ads   = -block -filter{banners-by-size} -filter{banners-by-link}
 #
 { allow-all-cookies }
 #.sourceforge.net
-#sunsolve.sun.com
 #slashdot.org
 #.yahoo.com
 #.msdn.microsoft.com
@@ -149,8 +148,7 @@ www.example.com/nasty-ads/sponsor.gif
 { fragile }
 #.forbes.com
 
-# Here are some sites we wish to support, and we will allow their ads
-# through.
+# Here are some sites some may wish to support. Allow their ads through.
 #
 { allow-ads }
 #.sourceforge.net
@@ -162,7 +160,6 @@ www.example.com/nasty-ads/sponsor.gif
 # safe to have their default policies set here though. So let's set a
 # default policy to have a 'blank' image as opposed to the checkerboard
 # pattern for ALL sites. '/' of course matches all URLs.
-# patterns:
 #
 { +set-image-blocker{blank} }
 #/
@@ -202,8 +199,12 @@ www.example.com/nasty-ads/sponsor.gif
 # {+filter{bundeswehr.de}}
 # .bundeswehr.de/
 
-######### Examples for SSL actions #########
-# Following section enables TLS/SSL filtering for all sites defined by pattern and requested by HTTPS.
+# Hides the 'paywahl' banner on taz.de by default without relying on cookies.
+# {+filter{taz.de}}
+# .taz.de/
+
+######### Examples for HTTPS-related actions #########
+# Following section enables TLS filtering for all sites defined by pattern and requested by HTTPS.
 # {+https-inspection}
 # privoxy.org
 

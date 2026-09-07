@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -29,9 +30,6 @@ Bad request. Messed up with header filters.
 
 
 <client>
-<server>
-none
-</server>
 <name>
 Rewrite behind the client's back: invalid upgrade to https
 </name>

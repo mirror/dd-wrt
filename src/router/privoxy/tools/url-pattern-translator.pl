@@ -93,11 +93,11 @@ sub looks_interesting($) {
 
     } elsif (m@^\s*CLIENT-TAG:@i) {
 
-        $type_to_skip = "client tag patttern";
+        $type_to_skip = "client tag pattern";
 
     } elsif (m@^\s*TAG:@i) {
 
-        $type_to_skip = "tag patttern";
+        $type_to_skip = "tag pattern";
 
     } elsif (m@^[^/]*=@) {
 
@@ -109,7 +109,7 @@ sub looks_interesting($) {
 
     } elsif (m@^\s*PCRE-HOST-PATTERN:@i) {
 
-        $type_to_skip = "already converted pcre host patttern";
+        $type_to_skip = "already converted pcre host pattern";
 
     }
 

@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -9,27 +10,27 @@ server-header-filter html-to-xml
 
 <reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-Content-Type: text/html; blafasel
-X-Control: swsclose
-Content-Length: 0
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+Content-Type: text/html; blafasel%CR
+X-Control: swsclose%CR
+Content-Length: 0%CR
+%CR
 </data>
 </reply>
 
 <proxy-reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: application/xhtml+xml
-Content-Type: application/xhtml+xml; blafasel
-X-Control: swsclose
-Content-Length: 0
-
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: application/xhtml+xml%CR
+Content-Type: application/xhtml+xml; blafasel%CR
+X-Control: swsclose%CR
+Content-Length: 0%CR
+%CR
 </data>
 </proxy-reply>
 
@@ -50,12 +51,12 @@ proxy
 
 <verify>
 <protocol>
-HEAD /html-to-xml/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-Connection: close
-
+HEAD /html-to-xml/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Connection: close%CR
+%CR
 </protocol>
 </verify>
 </testcase>

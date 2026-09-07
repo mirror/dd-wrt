@@ -4,7 +4,7 @@
 <head>
   <title>What's New in this Release</title>
   <meta name="GENERATOR" content="Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 4.0.0 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 4.2.0 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Installation" href="installation.html">
   <link rel="NEXT" title="Quickstart to Using Privoxy" href="quickstart.html">
   <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
@@ -15,7 +15,7 @@
   <div class="NAVHEADER">
     <table summary="Header navigation table" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 4.0.0 User Manual</th>
+        <th colspan="3" align="center">Privoxy 4.2.0 User Manual</th>
       </tr>
       <tr>
         <td width="10%" align="left" valign="bottom"><a href="installation.html" accesskey="P">Prev</a></td>
@@ -27,58 +27,54 @@
   </div>
   <div class="SECT1">
     <h1 class="SECT1"><a name="WHATSNEW" id="WHATSNEW">3. What's New in this Release</a></h1>
-    <p><span class="APPLICATION">Privoxy 4.0.0</span> fixes a few minor bugs and comes with a couple of general
-    improvements and new features. HTTPS inspection is no longer considered experimental.</p>
-    <p>Two new features have been funded by donations. If you can, please consider <a href=
-    "https://www.privoxy.org/donate" target="_top">making a donation</a> to support future improvements.</p>
-    <p>Changes in <span class="APPLICATION">Privoxy 4.0.0</span> stable:</p>
+    <p><span class="APPLICATION">Privoxy 4.2.0</span> fixes a couple of bugs and brings general improvements such as
+    support for elliptic-curve keys.</p>
+    <p>Two potential security problems have been reported and addressed.</p>
+    <p>Changes in <span class="APPLICATION">Privoxy 4.2.0</span> stable:</p>
     <ul>
+      <li>
+        <p>Security improvements:</p>
+        <ul>
+          <li>
+            <p>Parse the chunk-size with a dedicated function and reject "unreasonably" large values to prevent silent
+            truncation by sscanf(), integer overflows and misinterpretation of the content later on. Heap buffer
+            overflows on platforms with 32-bit pointers were alleged as well. Commit 5b3bb22b77. OVE-20260515-0002.
+            Reported by @TristanInSec.</p>
+          </li>
+          <li>
+            <p>ssl_send_certificate_error(): Store the generated message on the heap instead of the stack to prevent an
+            alleged segmentation fault if there are enough certificates in the chain to exceed the stack size. While at
+            it, replace another variable-length array that was probably unproblematic with a heap-based buffer as well.
+            Commit 4963aa4f08. OVE-20260515-0001. Reported by @TristanInSec.</p>
+          </li>
+        </ul>
+      </li>
       <li>
         <p>Bug fixes:</p>
         <ul>
           <li>
-            <p>Add missing client-body-tagger data to the action_type_info[] struct so lookups based on the action
-            index work correctly again. Prevents assertion failures or segfaults when trying to edit an action file
-            with the CGI editor. The type of failure depended on whether or not assertions were enabled and on whether
-            or not Privoxy had been compiled with FEATURE_EXTERNAL_FILTERS. Regression introduced in Privoxy 3.0.34.
-            Patch submitted by Aaron Li in #940.</p>
+            <p>block_acl(): Ignore ACL matches when we don't have a destination yet but the ACL requires one to match.
+            block_acl() will be called again later on when the destination is known from parsing the request. Fixes SF
+            bug #913 reported by Rainer Sokoll with confirmation from Peter Geelhoed.</p>
           </li>
           <li>
-            <p>Bump MAX_FILTER_TYPES which should have been done in d128e6aa4 when introducing the client-body-tagger{}
-            action. Prevents an assertion in cgi_edit_actions_for_url() from triggering after e32d03e0 when using the
-            CGI editor with assertions enabled.</p>
+            <p>rfc2553_connect_to(): Prevent theoretical memory disclosure through the CGI interface if a request is
+            rejected due to ACLs. It's theoretical due to the previous bug in the ACL code.</p>
           </li>
           <li>
-            <p>is_untrusted_url(): Search the encrypted headers for the Referer when the client is using https and
-            https inspection is enabled. Fixes the trust mechanism for https requests. Reported by Laurent Caumont in
-            #1767.</p>
+            <p>send_http_request(): Give up on the client connection if writing the request data failed. If there's a
+            request body Privoxy may not have read all the data yet. The issue could be reproduced by running the
+            upstream curl test 1293 multiple times in a row.</p>
           </li>
           <li>
-            <p>GNUMakefile.in: Let the install target work if no group is specified.</p>
+            <p>load_one_re_filterfile(): Only register content filters for statistics. Previously all filter types were
+            registered which wasted a bit of memory.</p>
           </li>
           <li>
-            <p>GNUMakefile.in: Set GROUP_T when installing configuration files as root and there is no privoxy user
-            available so the install target doesn't fail. Patch by Fabrice Fontaine.</p>
+            <p>Prevent unused-variable warnings when compiling with DISABLE_PCRE_JIT_COMPILATION defined.</p>
           </li>
           <li>
-            <p>GNUmakefile.in: Don't exit if configuration files are installed as root as this can be considered
-            acceptable when cross-compiling Privoxy inside an autobuilder with only a root user. Patch by Fabrice
-            Fontaine.</p>
-          </li>
-          <li>
-            <p>configure.in: Fix argument types in gmtime_r() and localtime_r() probes. Otherwise these probes always
-            fail with stricter compilers even if there is C library support for these functions. Patch submitted by
-            Florian Weimer in SF#149.</p>
-          </li>
-          <li>
-            <p>Fix socks4 and socks4a support under glibc's source fortification. With glibc's source fortification,
-            gcc offers the compilation warning resulting in a runtime abort() when using a socks4 or socks4a upstream
-            proxy. Despite the warning, the strlcpy() call in question is fine: gcc misidentifies the size of the
-            destination buffer, estimating to hold only a single char while in fact the buffer stretches beyond the end
-            of the struct socks_op. The issue was originally reported in the <a href=
-            "https://github.com/NixOS/nixpkgs/issues/265654" target="_top">NixOS issue tracker</a> prompted by an
-            upgrade of glibc from 2.37-39 to 2.38-0. Patch submitted by Ingo Blechschmid, joint work with @esclear and
-            @richi235.</p>
+            <p>cgi_show_url_info(): Remove special handling of "standard.action".</p>
           </li>
         </ul>
       </li>
@@ -86,69 +82,80 @@
         <p>General improvements:</p>
         <ul>
           <li>
-            <p>Allow to use wolfSSL for https inspection. wolfSSL supports TLS 1.3 and can be significantly faster than
-            mbedTLS. Mainly tested on ElectroBSD amd64 where it can <a href=
-            "https://www.fabiankeil.de/gehacktes/privoxy-tls-benchmarks/" target="_top">compete with OpenSSL and
-            LibreSSL</a> To enable the support, install wolfSSL and run ./configure with the --with-wolfssl option.
-            Sponsored by Privoxy project funds collected at SPI.</p>
+            <p>Add elliptic-curve-keys directive and enable it by default. It lets Privoxy use the SN_X9_62_prime256v1
+            group instead of RSA when generating website keys and certificates. This is expected to be faster but may
+            not be supported by older clients. The OpenSSL-specific code is based on on a patch by Steven Smith
+            submitted in SF#933.</p>
           </li>
           <li>
-            <p>Add an test framework that leverages the curl test suite. Sponsored by Privoxy project funds collected
-            at SPI.</p>
+            <p>Check the listening address when deciding whether or not a client tag matches. This allows to use
+            different client tags for different clients running on the same host.</p>
           </li>
           <li>
-            <p>Add pcre2 support. Closes bug #935. Initial patch submitted by Gagan Sidhu.</p>
+            <p>Add code to make debugging ACL rules more convenient. It can be enabled with the new configure parameter
+            --enable-acl-debugging.</p>
           </li>
           <li>
-            <p>Use SHA256 as hash algorithm for the certificate and key file names instead of MD5. The known MD5
-            vulnerabilities shouldn't matter for Privoxy's use case but it doesn't hurt to use a hash algorithm that
-            isn't deprecated. Sponsored by: Robert Klemme</p>
+            <p>acl_addr(): Properly reject IPv6 addresses when compiled without RFC2553 support.</p>
           </li>
           <li>
-            <p>Add support for mbedTLS 3.x. This removes a sanity check (whether issuer key and issuer certificate
-            match) that seems overly cautious and fails to compile with mbedTLS 3.x as the struct members are private.
-            We don't have an equivalent check in the OpenSSL or wolfSSL code either.</p>
+            <p>Use separate linked lists for filters of different types to be able look up filters more efficiently.
+            Implements TODO item #96.</p>
           </li>
           <li>
-            <p>Factor out newer_privoxy_version_required() and improve the logic Previously 3.0.11 was considered newer
-            than 4.0.0.</p>
+            <p>Allow to set and unset external filters through the CGI editor.</p>
           </li>
           <li>
-            <p>init_error_log(): Include the reason for failures to open the log file.</p>
+            <p>parse_acl_rule(): Include the config file line number in the error messages.</p>
           </li>
           <li>
-            <p>create_client_ssl_connection(): Don't keep the certificate lock longer than necessary.</p>
+            <p>wolfssl: Downgrade an error message in create_server_ssl_connection() to LOG_LEVEL_ERROR.</p>
           </li>
           <li>
-            <p>Add periods to a bunch of log messages.</p>
+            <p>Remove useless csp member re_filterfile_short[].</p>
           </li>
           <li>
-            <p>normalize_lws(): Only log the 'Reducing whitespace ...' message once per header</p>
+            <p>templates: Update description of the 'unstable' conditional symbol.</p>
           </li>
           <li>
-            <p>log_error() Win32: Only call LogShowActivity() for debug level LOG_LEVEL_REQUEST. As of b94bbe62a950,
-            which was part of Privoxy 3.0.29, LOG_LEVEL_REQUEST is used for all requests including crunched ones.
-            Previously LogShowActivity() was called twice for crunched requests, (presumably) resulting in an aborted
-            animation.</p>
+            <p>templates/url-info-osd.xml: Update address of the Privoxy developers mailing list.</p>
           </li>
           <li>
-            <p>Remove ./ prefix from tarball-dist files.</p>
+            <p>Factor parse_acl_rule() out of load_config().</p>
           </li>
           <li>
-            <p>create_client_ssl_connection(): Make it more obvious from an error message that a function failed.</p>
+            <p>configure.in: Don't claim that OpenSSL has been detected when it may be LibreSSL.</p>
           </li>
           <li>
-            <p>Use stringify() instead of section_target() and remove section_target(). Like the XXX comment suggested
-            this could be done my moving the hash into the templates which seems preferable anyway.</p>
+            <p>configure.in: Remove code to disable pcre2. Since the removal of pcre1 support in 24d0ff8398fdf pcre2 is
+            no longer optional.</p>
           </li>
           <li>
-            <p>Prevent some compiler warnings.</p>
+            <p>Replace the term 'TLS/SSL' with 'TLS' in a bunch of places as most (all?) supported TLS libraries
+            default to not supporting SSL anymore.</p>
           </li>
           <li>
-            <p>parse_numeric_value(): Expect a base-ten number.</p>
+            <p>utils/filter2docs.pl: Add two spaces between filter names and description so there's space after the
+            longest filter name which currently is 'allow-autocompletion'.</p>
           </li>
           <li>
-            <p>windows/MYconfigure: Have gcc diagnostics in color.</p>
+            <p>utils/filter2docs.pl: Recognize filters with dots in the name.</p>
+          </li>
+          <li>
+            <p>Remove support for mbedtls 2.x.</p>
+          </li>
+          <li>
+            <p>Remove support for OpenSSL versions before 2.0.</p>
+          </li>
+          <li>
+            <p>GNUMakefile.in: Remove duplicated 'only' in the web-rss-feed target's message.</p>
+          </li>
+          <li>
+            <p>GNUMakefile.in: Add a web-rss-feed target that only syncs the RSS feed.</p>
+          </li>
+          <li>
+            <p>GNUMakefile.in: The Privoxy tools privoxy-log-parser, privoxy-regression-test and uagen are handled by
+            the "install" and "uninstall" targets now.</p>
           </li>
         </ul>
       </li>
@@ -156,62 +163,107 @@
         <p>Action file improvements:</p>
         <ul>
           <li>
-            <p>Block requests to .amazon-adsystem.com/</p>
+            <p>Disable fast-redirects for "/.*&#38;__goaway_referer=http".</p>
           </li>
           <li>
-            <p>Block requests to 0.css-load.com/</p>
+            <p>Block ".parsely.com/p(logger|x)/" to match URLs that weren't covered by ".pixel.parsely.com/".</p>
           </li>
           <li>
-            <p>Block requests to html-load.com/ and 1.html-load.com/</p>
+            <p>Block requests to ".siteintercept.qualtrics.com/".</p>
           </li>
           <li>
-            <p>Block requests to b.6sc.co/</p>
+            <p>Unblock "gitlab./search/count\?".</p>
           </li>
           <li>
-            <p>Block requests to i.clean.gg/</p>
+            <p>Reword a comment in user.action that claimed that 'we' want to support certain sites.</p>
           </li>
           <li>
-            <p>Block requests to s.cpx.to/</p>
+            <p>Remove obsolete domain sunsolve.sun.com from user.action.</p>
           </li>
           <li>
-            <p>Block requests to track.venatusmedia.com/</p>
+            <p>Stop referring to SSL in comments.</p>
           </li>
           <li>
-            <p>Block requests to secure-eu.nmrodam.com/</p>
+            <p>Disable fast-redirects for "archive.is/".</p>
           </li>
           <li>
-            <p>Block requests to o2.mouseflow.com/</p>
+            <p>Add example section for the taz.de filter to user.action.</p>
           </li>
           <li>
-            <p>Disable fast-redirects for services.akteneinsichtsportal.de/</p>
+            <p>default.action.master: Update list of predefined filters.</p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>Filter improvements:</p>
+        <ul>
+          <li>
+            <p>Let the "sourceforge" filter hide the "MongoDB" ad and the "vibe coding bar".</p>
           </li>
           <li>
-            <p>Disable fast-redirects for /wp-content/plugins/pdf-viewer-for-elementor</p>
+            <p>Add a "taz.de" filter which hides the "paywahl" banner on taz.de by default.</p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>Documentation improvements:</p>
+        <ul>
+          <li>
+            <p>FAQ: Mention that one can also donate through Liberapay and add a link.</p>
           </li>
           <li>
-            <p>Disable fast-redirects for syndication.twitter.com/</p>
+            <p>Add two paragraphs to the 'Reporting security problems' section. Request that use of "AI" is disclosed
+            and that reporters respond to questions about the report.</p>
           </li>
           <li>
-            <p>Disable fast-redirects for archive.softwareheritage.org/</p>
+            <p>The Privoxy tools privoxy-log-parser, privoxy-regression-test and uagen have man pages now. Previously
+            they were only documented in perldoc.</p>
           </li>
           <li>
-            <p>Disable fast-redirects to duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/</p>
+            <p>user-manual: Update the content filter list.</p>
           </li>
           <li>
-            <p>Disable fast-redirects for .creator-spring.com/_next/image</p>
+            <p>user-manual: Update limit-connect description. If the https-inspection action is enabled, Privoxy does
+            filter the transferred content even if the CONNECT action is being used.</p>
           </li>
           <li>
-            <p>Disable fast redirects for accounts.bahn.de/</p>
+            <p>Document that the listen-address is taken into account for client tags as well now.</p>
           </li>
           <li>
-            <p>Unblock .datenschmutz.de/</p>
+            <p>Update limit-connect description.</p>
           </li>
           <li>
-            <p>Unblock requests for 'adventur*.'</p>
+            <p>Don't mention an obsolete mbed TLS version in the user manual's 'Third-party licenses and copyrights'
+            section. While at it, link to the GitHub page which shows the README instead of the list of tags which is
+            less informative and replace an 'and' with a comma.</p>
           </li>
           <li>
-            <p>Unblock adl.windows.com/ as it is apparently required to update from Windows 10 to 11. Reported by Sam
-            Varshavchik.</p>
+            <p>Mention zstd in the user manual's 'Third-party licenses and copyrights' section.</p>
+          </li>
+          <li>
+            <p>license.sgml: Remove incorrect comment claiming that the file is included into the user manual.</p>
+          </li>
+          <li>
+            <p>Factor out license explanation into separate SGML document to deduplicate the content. No HTML output
+            change intended.</p>
+          </li>
+          <li>
+            <p>user-manual: Sync paragraph explaining the license of Privoxy binaries when linked to a recent TLS
+            library with license.sgml.</p>
+          </li>
+          <li>
+            <p>user-manual: Use &lt; instead of literal '&#60;' to unbreak highlighting in Emacs.</p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>Website improvements:</p>
+        <ul>
+          <li>
+            <p>Update doc/webserver/README.txt.</p>
+          </li>
+          <li>
+            <p>Delete doc/webserver/redirect.php which hasn't been used in years.</p>
           </li>
         </ul>
       </li>
@@ -219,83 +271,87 @@
         <p>Privoxy-Log-Parser:</p>
         <ul>
           <li>
-            <p>Highlight 'Couldn't deliver the error message for [...]'.</p>
+            <p>Highlight listen address in "Evaluating tag 'forward-directly' for client 127.0.0.1 using
+            127.0.1.1:8120. End of life 1774948202."</p>
           </li>
           <li>
-            <p>Highlight 'Failed to accept() incoming connection: Software caused connection abort'.</p>
+            <p>Deal with a log message containing only 'TLS' instead of 'TLS/SSL'.</p>
           </li>
           <li>
-            <p>Highlight 'Keeping chunk offset at 0 despite flushing 31 bytes.'.</p>
+            <p>Bump version to 0.9.8.</p>
           </li>
           <li>
-            <p>Highlight 'Not shutting down client connection on socket 8. The socket is no longer alive.'.</p>
-          </li>
-          <li>
-            <p>Bump version to 0.9.6.</p>
-          </li>
-        </ul>
-      </li>
-      <li>
-        <p>Privoxy-Regression-Test.pl:</p>
-        <ul>
-          <li>
-            <p>Let the --min-level option increase the --max-level if the latter is smaller than the former.</p>
-          </li>
-          <li>
-            <p>Add --curl option to use a non-default curl binary.</p>
-          </li>
-          <li>
-            <p>Bump version to 0.7.5.</p>
+            <p>Highlight listen address in 'Enlisting tag 'allow-cookies' for client 127.0.0.1 using
+            127.0.1.1:8120.'</p>
           </li>
         </ul>
       </li>
       <li>
-        <p>uagen:</p>
+        <p>Test improvements:</p>
         <ul>
           <li>
-            <p>Bump BROWSER_VERSION and BROWSER_REVISION to match Firefox ESR 128.</p>
+            <p>run-privoxy-tests.sh: Kill the whole process group if Privoxy doesn't start up in time. This prevents
+            hangs when the system is heavily loaded, run-privoxy-test.sh's output is piped into tee(1) and Privoxy
+            starts up after the the script checks for it, but before it exits.</p>
           </li>
           <li>
-            <p>Bump version to 1.2.6.</p>
-          </li>
-        </ul>
-      </li>
-      <li>
-        <p>Documentation:</p>
-        <ul>
-          <li>
-            <p>Add HOWTOs for https inspection and client-tags to user-manual.</p>
+            <p>Add test for the content filter "taz.de".</p>
           </li>
           <li>
-            <p>Suggest to use the force-text-mode action when filtering binary content with external filters.</p>
+            <p>Add test scenarios for the ACL code.</p>
           </li>
           <li>
-            <p>Declare https-inspection non-experimental.</p>
+            <p>tests/cts: Make the TESTDIR available as environment variable so the prechecks can access it.</p>
           </li>
           <li>
-            <p>FAQ: Mention that <a href="https://www.fabiankeil.de/gehacktes/privoxy-moral-license/" target=
-            "_top">Privoxy Moral Licenses</a> are available as well.</p>
+            <p>Add test helper script that checks if a local address is available to bind to.</p>
           </li>
           <li>
-            <p>Fix LibreSSL URL.</p>
+            <p>run-privoxy-tests.sh: Add valgrind support that can be enabled with "-v".</p>
           </li>
           <li>
-            <p>Update perlre perldoc URL.</p>
+            <p>run-privoxy-tests.sh: Turn $log_file into a local variable in start_privoxy().</p>
           </li>
           <li>
-            <p>config: Add SOCKS 5 to the list of supported protocols.</p>
+            <p>tests/cts/README: Recommend to use curl upstream tag curl-8_20_0.</p>
           </li>
           <li>
-            <p>In the Windows build section, note that one only needs tidy to build the docs. If you're not building
-            the docbook stuff you don't need tidy.</p>
+            <p>Regenerate curl-test-manifest-for-privoxy.</p>
           </li>
           <li>
-            <p>trust: Use the words 'allowlists' and 'blocklists' instead of "whitelists" and "blacklists" which some
-            people consider to be less inclusive.</p>
+            <p>gen-skip-reasons.pl: Use '==' instead of 'eq' when checking whether or not a test should be skipped.
+            While the script output is the same, the test number isn't a string so using '==' seems more
+            appropriate.</p>
+          </li>
+          <li>
+            <p>gen-skip-reasons.pl: Skip test 1 due to multiple Connection header values.</p>
+          </li>
+          <li>
+            <p>gen-skip-reasons.pl: Skip test 58 for now which doesn't work anymore after a recent curl upstream
+            change.</p>
+          </li>
+          <li>
+            <p>gen-skip-reasons.pl: Skip test 1685 which uses a Cookie header with a tab that Privoxy converts into a
+            space.</p>
+          </li>
+          <li>
+            <p>Privoxy-Regression-Test: Bump version to 0.7.6</p>
+          </li>
+          <li>
+            <p>Privoxy-Regression-Test: Allow '!' characters which are used in URLs from taz.de for example.</p>
+          </li>
+          <li>
+            <p>Privoxy-Regression-Test: Include the offending line in the error message when rejecting Sticky Actions
+            with whitespace inside the action parameters.</p>
+          </li>
+          <li>
+            <p>Add three more tests for the chunked-transfer-encoding scenario.</p>
           </li>
         </ul>
       </li>
     </ul>
+    <p>The Privoxy project is currently underfunded. If you can afford it, please consider <a href=
+    "https://www.privoxy.org/donate" target="_top">making a donation</a>.</p>
     <div class="SECT2">
       <h2 class="SECT2"><a name="UPGRADERSNOTE" id="UPGRADERSNOTE">3.1. Note to Upgraders</a></h2>
       <p>A quick list of things to be aware of before upgrading from earlier versions of <span class=

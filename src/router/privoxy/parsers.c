@@ -4,7 +4,7 @@
  *
  * Purpose     :  Declares functions to parse/crunch headers and pages.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2021 the
+ * Copyright   :  Written by and Copyright (C) 2001-2025 the
  *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -66,6 +66,9 @@
 #endif
 #ifdef FEATURE_BROTLI
 #include <brotli/decode.h>
+#endif
+#ifdef FEATURE_ZSTD
+#include <zstd.h>
 #endif
 
 #if !defined(_WIN32)
@@ -497,6 +500,98 @@ static jb_err decompress_iob_with_brotli(struct client_state *csp)
 }
 #endif
 
+
+#ifdef FEATURE_ZSTD
+/*********************************************************************
+ *
+ * Function    :  decompress_iob_with_zstd
+ *
+ * Description :  Decompress buffered page using zstd.
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *
+ * Returns     :  JB_ERR_OK on success,
+ *                JB_ERR_MEMORY if out-of-memory limit reached, and
+ *                JB_ERR_COMPRESS if error decompressing buffer.
+ *
+ *********************************************************************/
+static jb_err decompress_iob_with_zstd(struct client_state *csp)
+{
+   ZSTD_DCtx *dctx;
+   ZSTD_inBuffer zstd_input;
+   ZSTD_outBuffer zstd_output;
+   char *decoded_buffer;
+   size_t result;
+   size_t decoded_buffer_size;
+   size_t encoded_size;
+   enum { MAX_COMPRESSION_FACTOR = 15 };
+
+   dctx = ZSTD_createDCtx();
+   if (dctx == NULL)
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Failed to zstd-decompress content. ZSTD_createDCtx() failed!");
+      return JB_ERR_COMPRESS;
+   }
+
+   encoded_size = (size_t)(csp->iob->eod - csp->iob->cur);
+   decoded_buffer_size = encoded_size * MAX_COMPRESSION_FACTOR;
+
+   if (decoded_buffer_size > csp->config->buffer_limit)
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Buffer limit reached before decompressing iob with zstd");
+      return JB_ERR_MEMORY;
+   }
+
+   decoded_buffer = malloc(decoded_buffer_size);
+   if (decoded_buffer == NULL)
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Failed to allocate %lu bytes for zstd decompression",
+         decoded_buffer_size);
+      return JB_ERR_MEMORY;
+   }
+
+   zstd_input.src = csp->iob->cur;
+   zstd_input.size = encoded_size;
+   zstd_input.pos = 0;
+
+   zstd_output.dst = decoded_buffer;
+   zstd_output.size = decoded_buffer_size;
+   zstd_output.pos = 0;
+
+   result = ZSTD_decompressStream(dctx, &zstd_output , &zstd_input);
+   ZSTD_freeDCtx(dctx);
+   if (result == 0)
+   {
+      /*
+       * Update the iob, since the decompression was successful.
+       */
+      freez(csp->iob->buf);
+      csp->iob->buf  = decoded_buffer;
+      csp->iob->cur  = csp->iob->buf;
+      csp->iob->eod  = csp->iob->cur + zstd_output.pos;
+      csp->iob->size = decoded_buffer_size;
+
+      log_error(LOG_LEVEL_RE_FILTER,
+         "Decompression successful. Old size: %lu, new size: %lu.",
+         encoded_size, zstd_output.pos);
+
+      return JB_ERR_OK;
+   }
+   else
+   {
+      log_error(LOG_LEVEL_ERROR, "Failed to decompress buffer with zstd");
+      freez(decoded_buffer);
+
+      return JB_ERR_COMPRESS;
+   }
+}
+#endif
+
+
 /*********************************************************************
  *
  * Function    :  decompress_iob
@@ -556,6 +651,13 @@ jb_err decompress_iob(struct client_state *csp)
    if (csp->content_type & CT_BROTLI)
    {
       return decompress_iob_with_brotli(csp);
+   }
+#endif
+
+#ifdef FEATURE_ZSTD
+   if (csp->content_type & CT_ZSTD)
+   {
+      return decompress_iob_with_zstd(csp);
    }
 #endif
 
@@ -1793,6 +1895,52 @@ static jb_err filter_header(struct client_state *csp, char **header)
 
 /*********************************************************************
  *
+ * Function    :  keep_alive_keyword_detected
+ *
+ * Description :  Checks whether or not a Connection header contains
+ *                the keep-alive keyword.
+ *
+ * Parameters  :
+ *          1  :  header = The Connection header to check.
+ *
+ * Returns     :  TRUE or FALSE. FALSE is also returned if "too many"
+ *                keywords are present.
+ *
+ *********************************************************************/
+static int keep_alive_keyword_detected(const char *header)
+{
+   char *header_content;
+   char *keywords[4];
+   int segments;
+   int keep_alive_keyword_present = FALSE;
+
+   header_content = strdup(header+11);
+   if (header_content == NULL)
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Out of memory while looking for keep-alive keyword in %s", header);
+      return FALSE;
+   }
+
+   segments = ssplit(header_content, " ,", keywords, SZ(keywords));
+   while (segments-- > 0)
+   {
+      if (!strcmpic(keywords[segments], "keep-alive"))
+      {
+         keep_alive_keyword_present = TRUE;
+         break;
+      }
+   }
+
+   freez(header_content);
+
+   return keep_alive_keyword_present;
+
+}
+
+
+/*********************************************************************
+ *
  * Function    :  server_connection
  *
  * Description :  Makes sure a proper "Connection:" header is
@@ -1811,7 +1959,15 @@ static jb_err filter_header(struct client_state *csp, char **header)
  *********************************************************************/
 static jb_err server_connection(struct client_state *csp, char **header)
 {
-   if (!strcmpic(*header, "Connection: keep-alive")
+   if ((csp->flags & CSP_FLAG_SERVER_CONNECTION_HEADER_SET) != 0)
+   {
+      log_error(LOG_LEVEL_HEADER,
+         "Removing \'%s\' header to only parse and forward one.", *header);
+      freez(*header);
+
+      return JB_ERR_OK;
+   }
+   if (keep_alive_keyword_detected(*header)
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
     && !(csp->flags & CSP_FLAG_SERVER_SOCKET_TAINTED)
 #endif
@@ -1825,8 +1981,20 @@ static jb_err server_connection(struct client_state *csp, char **header)
 
       if ((csp->flags & CSP_FLAG_CLIENT_CONNECTION_KEEP_ALIVE))
       {
-         log_error(LOG_LEVEL_HEADER,
-            "Keeping the server header '%s' around.", *header);
+         if (!strcmpic(*header, "Connection: keep-alive"))
+         {
+            log_error(LOG_LEVEL_HEADER,
+               "Keeping the server header '%s' around.", *header);
+         }
+         else
+         {
+            char *old_header = *header;
+
+            *header = strdup_or_die("Connection: keep-alive");
+            log_error(LOG_LEVEL_HEADER, "Replaced: \'%s\' with \'%s\'",
+               old_header, *header);
+            freez(old_header);
+         }
       }
       else
 #endif /* FEATURE_CONNECTION_KEEP_ALIVE */
@@ -1835,6 +2003,22 @@ static jb_err server_connection(struct client_state *csp, char **header)
 
          *header = strdup_or_die("Connection: close");
          log_error(LOG_LEVEL_HEADER, "Replaced: \'%s\' with \'%s\'", old_header, *header);
+         freez(old_header);
+      }
+   }
+   else
+   {
+      if (strcmpic(*header, "Connection: close"))
+      {
+         /*
+          * This can happen if there are "too many" keywords
+          * in the connection header.
+          */
+         char *old_header = *header;
+
+         *header = strdup_or_die("Connection: close");
+         log_error(LOG_LEVEL_HEADER, "Replaced: \'%s\' with \'%s\'",
+            old_header, *header);
          freez(old_header);
       }
    }
@@ -2584,6 +2768,15 @@ static jb_err server_content_encoding(struct client_state *csp, char **header)
       csp->content_type |= CT_TABOO;
 #endif
    }
+   else if (strstr(*header, "zstd"))
+   {
+#ifdef FEATURE_ZSTD
+      /* Mark for zstd decompression */
+      csp->content_type |= CT_ZSTD;
+#else
+      csp->content_type |= CT_TABOO;
+#endif
+   }
    else if (strstr(*header, "compress"))
    {
       /*
@@ -2653,6 +2846,9 @@ static jb_err server_adjust_content_encoding(struct client_state *csp, char **he
       && ((csp->content_type & (CT_GZIP | CT_DEFLATE))
 #ifdef FEATURE_BROTLI
          || (csp->content_type & CT_BROTLI)
+#endif
+#ifdef FEATURE_ZSTD
+         || (csp->content_type & CT_ZSTD)
 #endif
          )
       )
@@ -3567,7 +3763,36 @@ static jb_err client_host(struct client_state *csp, char **header)
       csp->http->hostport = p;
       freez(csp->http->host);
       csp->http->host = q;
-      q = strchr(csp->http->host, ':');
+
+      if (*p == '[')
+      {
+         /* Numeric IPv6 address delimited by brackets */
+         p++;
+
+         q = strchr(p, ']');
+         if (q == NULL)
+         {
+            /* Missing closing bracket */
+            return JB_ERR_PARSE;
+         }
+
+         *q++ = '\0';
+
+         if (*q == '\0')
+         {
+            q = NULL;
+         }
+         else if (*q != ':')
+         {
+            /* Garbage after closing bracket */
+            return JB_ERR_PARSE;
+         }
+      }
+      else
+      {
+         /* Plain non-escaped hostname */
+         q = strchr(csp->http->host, ':');
+      }
       if (q != NULL)
       {
          /* Terminate hostname and evaluate port string */
@@ -3864,7 +4089,7 @@ static jb_err client_host_adder(struct client_state *csp)
    /*
     * remove 'user:pass@' from 'proto://user:pass@host'
     */
-   if ((p = strchr( csp->http->hostport, '@')) != NULL)
+   if ((p = strchr(csp->http->hostport, '@')) != NULL)
    {
       p++;
    }
@@ -4503,7 +4728,7 @@ int strclean(char *string, const char *substring)
  * Function    :  parse_header_time
  *
  * Description :  Parses time formats used in HTTP header strings
- *                to get the numerical respresentation.
+ *                to get the numerical representation.
  *
  * Parameters  :
  *          1  :  header_time = HTTP header time as string.
@@ -4612,7 +4837,7 @@ static jb_err parse_header_time(const char *header_time, time_t *result)
  * Function    :  parse_time_header
  *
  * Description :  Parses the time in an HTTP time header to get
- *                the numerical respresentation.
+ *                the numerical representation.
  *
  * Parameters  :
  *          1  :  header = HTTP header with a time value
@@ -4664,13 +4889,14 @@ static jb_err parse_time_header(const char *header, time_t *result)
  *          1  :  headers = List of headers (one of them hopefully being
  *                the "Host:" header)
  *          2  :  http = storage for the result (host, port and hostport).
+ *          3  :  https_request = Whether or not the request was received through https
  *
  * Returns     :  JB_ERR_MEMORY (or terminates) in case of memory problems,
- *                JB_ERR_PARSE if the host header couldn't be found,
+ *                JB_ERR_PARSE if the host header couldn't be found or parsed,
  *                JB_ERR_OK otherwise.
  *
  *********************************************************************/
-jb_err get_destination_from_headers(const struct list *headers, struct http_request *http)
+jb_err get_destination_from_headers(const struct list *headers, struct http_request *http, int https_request)
 {
    char *q;
    char *p;
@@ -4696,7 +4922,35 @@ jb_err get_destination_from_headers(const struct list *headers, struct http_requ
    http->hostport = p;
    freez(http->host);
    http->host = q;
-   q = strchr(http->host, ':');
+   if (*p == '[')
+   {
+      /* Numeric IPv6 address delimited by brackets */
+      p++;
+
+      q = strchr(p, ']');
+      if (q == NULL)
+      {
+         /* Missing closing bracket */
+         return JB_ERR_PARSE;
+      }
+
+      *q++ = '\0';
+
+      if (*q == '\0')
+      {
+         q = NULL;
+      }
+      else if (*q != ':')
+      {
+         /* Garbage after closing bracket */
+         return JB_ERR_PARSE;
+      }
+   }
+   else
+   {
+      /* Plain non-escaped hostname */
+      q = strchr(http->host, ':');
+   }
    if (q != NULL)
    {
       /* Terminate hostname and evaluate port string */
@@ -4705,14 +4959,21 @@ jb_err get_destination_from_headers(const struct list *headers, struct http_requ
    }
    else
    {
-      http->port = 80;
+      http->port = https_request ? 443 : 80;
    }
 
    /* Rebuild request URL */
    freez(http->url);
-   http->url = strdup("http://");
-   string_append(&http->url, http->hostport);
-   string_append(&http->url, http->path);
+   if (https_request)
+   {
+      http->url = strdup(http->path);
+   }
+   else
+   {
+      http->url = strdup("http://");
+      string_append(&http->url, http->hostport);
+      string_append(&http->url, http->path);
+   }
    if (http->url == NULL)
    {
       return JB_ERR_MEMORY;
@@ -4741,92 +5002,6 @@ jb_err get_destination_from_headers(const struct list *headers, struct http_requ
    return JB_ERR_OK;
 
 }
-
-
-#ifdef FEATURE_HTTPS_INSPECTION
-/*********************************************************************
- *
- * Function    :  get_destination_from_https_headers
- *
- * Description :  Parse the previously encrypted "Host:" header to
- *                get the request's destination.
- *
- * Parameters  :
- *          1  :  headers = List of headers (one of them hopefully being
- *                the "Host:" header)
- *          2  :  http = storage for the result (host, port and hostport).
- *
- * Returns     :  JB_ERR_MEMORY (or terminates) in case of memory problems,
- *                JB_ERR_PARSE if the host header couldn't be found,
- *                JB_ERR_OK otherwise.
- *
- *********************************************************************/
-jb_err get_destination_from_https_headers(const struct list *headers, struct http_request *http)
-{
-   char *q;
-   char *p;
-   char *host;
-
-   host = get_header_value(headers, "Host:");
-
-   if (NULL == host)
-   {
-      log_error(LOG_LEVEL_ERROR, "No \"Host:\" header found.");
-      return JB_ERR_PARSE;
-   }
-
-   p = string_tolower(host);
-   if (p == NULL)
-   {
-      return JB_ERR_MEMORY;
-   }
-   chomp(p);
-   q = strdup_or_die(p);
-
-   freez(http->hostport);
-   http->hostport = p;
-   freez(http->host);
-   http->host = q;
-   q = strchr(http->host, ':');
-   if (q != NULL)
-   {
-      /* Terminate hostname and evaluate port string */
-      *q++ = '\0';
-      http->port = atoi(q);
-   }
-   else
-   {
-      http->port = 443;
-   }
-
-   /* Rebuild request URL */
-   freez(http->url);
-   http->url = strdup_or_die(http->path);
-
-   log_error(LOG_LEVEL_HEADER,
-      "Destination extracted from \"Host\" header. New request URL: %s",
-      http->url);
-
-   /*
-    * Regenerate request line in "proxy format"
-    * to make rewrites more convenient.
-    */
-   assert(http->cmd != NULL);
-   freez(http->cmd);
-   http->cmd = strdup_or_die(http->gpc);
-   string_append(&http->cmd, " ");
-   string_append(&http->cmd, http->url);
-   string_append(&http->cmd, " ");
-   string_append(&http->cmd, http->version);
-   if (http->cmd == NULL)
-   {
-      return JB_ERR_MEMORY;
-   }
-
-   return JB_ERR_OK;
-
-}
-#endif /* def FEATURE_HTTPS_INSPECTION */
 
 
 /*********************************************************************

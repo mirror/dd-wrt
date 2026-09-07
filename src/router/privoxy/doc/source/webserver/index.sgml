@@ -5,7 +5,8 @@
 <!entity history SYSTEM "history.sgml">
 <!entity copyright SYSTEM "copyright.sgml">
 <!entity license SYSTEM "license.sgml">
-<!entity p-version "4.0.0">
+<!entity license-explanation SYSTEM "license-explanation.sgml">
+<!entity p-version "4.2.0">
 <!entity p-status "stable">
 <!entity % p-not-stable "IGNORE">
 <!entity % p-stable "INCLUDE">
@@ -18,7 +19,7 @@
 
  Purpose     :  Index file of the project's homepage and also documentation index
                 
- Copyright (C) 2001-2023 Privoxy developers <privoxy-devel@lists.privoxy.org>
+ Copyright (C) 2001-2026 Privoxy developers <privoxy-devel@lists.privoxy.org>
  See LICENSE.
 
  ========================================================================
@@ -74,8 +75,7 @@
 <sect1 renderas="sect2" id="download" label=""><title>Download</title>
 <para>
  You can <ulink url="/sf-download-mirror/">download Privoxy here</ulink>,
- from <ulink url="https://www.silvester.org.uk/privoxy/">this mirror</ulink>,
- or from <ulink url="https://sourceforge.net/projects/ijbswa/files/">SourceForge</ulink>.
+ or from <ulink url="https://www.silvester.org.uk/privoxy/">this download mirror</ulink>.
 </para>
 <para>
  Note that the Privoxy project currently has no trusted build infrastructure.
@@ -157,7 +157,7 @@
 <para>
  <subscript>
    The Privoxy website is also available as
-   <ulink url="http://l3tczdiiwoo63iwxty4lhs6p7eaxop5micbn7vbliydgv63x5zrrrfyd.onion/">Tor onion service</ulink>.
+   <ulink url="http://privoxy5wtwbtk4wwyrdbg6oxeghvhghghmokcx2iawydkqmaztfbbid.onion/">Tor onion service</ulink>.
  </subscript>
 </para>
 ]]>
@@ -172,7 +172,7 @@
 <!-- GNUMakefile is inserting this now -->
 <para>
  <subscript>
-  Copyright __copy 2001-2025 by Privoxy Developers
+  Copyright __copy 2001-2026 by Privoxy Developers
  </subscript>
 </para>
 

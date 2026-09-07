@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -9,23 +10,23 @@ chunked transfer encoding
 
 <reply>
 <data>
-HTTP/1.1 200 OK
-Date: Thu, 22 Jul 2010 11:22:33 GMT
-Connection: close
-Content-Type: text/html
-Transfer-Encoding: chunked
-X-Control: swsclose
-
-3
+HTTP/1.1 200 OK%CR
+Date: Thu, 22 Jul 2010 11:22:33 GMT%CR
+Connection: close%CR
+Content-Type: text/html%CR
+Transfer-Encoding: chunked%CR
+X-Control: swsclose%CR
+%CR
+3%CR
 AA
-
-4
+%CR
+4%CR
 BBB
-
-123
+%CR
+123%CR
 This chunk is too small
-0
-
+0%CR
+%CR
 </data>
 </reply>
 
@@ -46,11 +47,11 @@ proxy
 
 <verify>
 <protocol>
-GET /chunked-transfer-encoding/%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPPORT
-User-Agent: curl/%VERSION
-Accept: */*
-
+GET /chunked-transfer-encoding/%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+%CR
 </protocol>
 <errorcode>
 18

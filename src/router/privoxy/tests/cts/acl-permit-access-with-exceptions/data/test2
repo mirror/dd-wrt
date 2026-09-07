@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+</keywords>
+</info>
+
+<reply>
+<data>
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: text/html
+Content-Length: 14
+
+Blafaseldieda
+</data>
+</reply>
+
+<client>
+<server>
+http
+</server>
+<name>
+Request from explicitly permitted client address
+</name>
+<command>
+--interface 127.0.1.3 http://%HOSTIP:%HTTPPORT/%TESTNUMBER
+</command>
+<precheck>
+%PERL $TESTDIR/../../bind-to-address.pl 127.0.1.3
+</precheck>
+</client>
+
+<verify>
+<errorcode>
+0
+</errorcode>
+<strip>
+^Date
+</strip>
+</verify>
+
+</testcase>

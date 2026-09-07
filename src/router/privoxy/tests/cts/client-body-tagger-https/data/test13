@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="US-ASCII"?>
 <testcase>
 <info>
 <keywords>
@@ -19,12 +20,12 @@ Received your input.
 
 <proxy-reply>
 <data>
-HTTP/1.1 200 Connection established
-
-HTTP/1.1 200 OK
-Content-Length: 21
-Content-Type: text/html
-
+HTTP/1.1 200 Connection established%CR
+%CR
+HTTP/1.1 200 OK%CR
+Content-Length: 21%CR
+Content-Type: text/html%CR
+%CR
 Received your input.
 </data>
 </proxyreply>
@@ -46,18 +47,18 @@ proxy
 
 <verify>
 <protocol nonewline="yes">
-GET /%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPSPORT
-User-Agent: curl/%VERSION
-Accept: */*
-
-POST /%TESTNUMBER HTTP/1.1
-Host: %HOSTIP:%HTTPSPORT
-User-Agent: curl/%VERSION
-Accept: */*
-Content-Length: 35008
-Content-Type: application/x-www-form-urlencoded
-
+GET /%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPSPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+%CR
+POST /%TESTNUMBER HTTP/1.1%CR
+Host: %HOSTIP:%HTTPSPORT%CR
+User-Agent: curl/%VERSION%CR
+Accept: */*%CR
+Content-Length: 35008%CR
+Content-Type: application/x-www-form-urlencoded%CR
+%CR
 %repeat[5000 x padding]%bumfidel
 </protocol>
 <stderr>

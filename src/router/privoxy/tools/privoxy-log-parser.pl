@@ -23,7 +23,7 @@
 #         hash key as input.
 #       - Add --compress and --decompress options.
 #
-# Copyright (c) 2007-2024 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2007-2026 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -43,7 +43,7 @@ use warnings;
 use Getopt::Long;
 
 use constant {
-    PRIVOXY_LOG_PARSER_VERSION => '0.9.6',
+    PRIVOXY_LOG_PARSER_VERSION => '0.9.8',
     # Feel free to mess with these ...
     DEFAULT_BACKGROUND => 'black',  # Choose registered colour (like 'black')
     DEFAULT_TEXT_COLOUR => 'white', # Choose registered colour (like 'black')
@@ -118,7 +118,7 @@ my $line_end;
 
 sub prepare_our_stuff() {
 
-    # Syntax Higlight hash
+    # Syntax Highlight hash
     @all_colours = (
         'red', 'green', 'brown', 'blue', 'purple', 'cyan',
         'light_gray', 'light_red', 'light_green', 'yellow',
@@ -188,6 +188,7 @@ sub prepare_our_stuff() {
         'HOST'               => HEADER_DEFAULT_COLOUR,
         'tls-version'        => 'pink',
         'cipher-suite'       => 'light_cyan',
+        'listen-address'     => 'light_cyan',
     );
 
     %h_colours = %h;
@@ -728,7 +729,7 @@ sub highlight_matched_url($$) {
 
 sub highlight_matched_host($$) {
 
-    my ($result, $regex) = @_; # XXX: result ist stupid name;
+    my ($result, $regex) = @_; # XXX: result is stupid name;
 
     if ($result =~ m@(.*?)($regex)(.*)@) {
         $result = $1 . $h{host} . $2 . $h{Standard} . $3;
@@ -1262,12 +1263,25 @@ sub handle_loglevel_tagging($) {
         $c =~ s@(?<=added tag \')([^\']*)@$h{'tag'}$1$h{'Standard'}@;
         $c =~ s@(?<=Action bits )(updated)@$h{'action-bits-update'}$1$h{'Standard'}@;
 
+    } elsif ($c =~ /^Tagger \'([^\']*)\' didn\'t add tag \'([^\']*)\'/) {
+
+        # Tagger 'http-method' didn't add tag 'POST': suppressed
+        # Tagger 'revalidation' didn't add tag 'REVALIDATION-REQUEST'. Tag already present
+        # XXX: Save tag and tagger
+
+        $c =~ s@(?<=^Tagger \')([^\']*)@$h{'tag'}$1$h{'Standard'}@;
+        $c =~ s@(?<=didn['']t add tag \')([^\']*)@$h{'tagger'}$1$h{'Standard'}@;
+
     } elsif ($c =~ /^Enlisting tag/) {
 
+        # >= 4.2.0:
+        # Enlisting tag 'allow-cookies' for client 127.0.0.1 using 127.0.1.1:8120.
+        # < 4.2.0:
         # Enlisting tag 'forward-directly' for client 127.0.0.1.
 
         $c =~ s@(?<=tag \')([^\']*)@$h{'tag'}$1$h{'Standard'}@;
-        $c = highlight_matched_host($c, '[^\s]+(?=\.$)');
+        $c = highlight_matched_host($c, '(?<=for client )[^\s]+');
+        $c =~ s@(?<=using )(.*)(?=\.$)@$h{'listen-address'}$1$h{'Standard'}@;
 
     } elsif ($c =~ /^Tag/) {
 
@@ -1279,10 +1293,14 @@ sub handle_loglevel_tagging($) {
 
     } elsif ($c =~ /^Evaluating/) {
 
+        # >= 4.2.0:
+        # Evaluating tag 'forward-directly' for client 127.0.0.1 using 127.0.1.1:8120. End of life 1774948202.
+        # < 4.2.0:
         # Evaluating tag 'change-tor-socks-port' for client 127.0.0.1. End of life 1613162302.
 
         $c =~ s@(?<=tag \')([^\']*)@$h{'tag'}$1$h{'Standard'}@;
-        $c = highlight_matched_host($c, '(?<=client )[^\s]+(?=\.)');
+        $c = highlight_matched_host($c, '(?<=client )[^\s]+(?=[. ])');
+        $c =~ s@(?<=using )(.*)(?=\. )@$h{'listen-address'}$1$h{'Standard'}@;
         $c =~ s@(?<=life )(\d+)@$h{'Number'}$1$h{'Standard'}@;
 
     } elsif ($c =~ /^Client tag/) {
@@ -1520,6 +1538,8 @@ sub handle_loglevel_connect($) {
     } elsif ($c =~ m/^[Aa]ccepted connection from .*/ or
              $c =~ m/^OK/) {
 
+        # Privoxy >=4.1.0:
+        # Accepted connection from 127.0.0.1 on socket 9 connected through 127.0.1.1:8118.
         # Privoxy 3.0.20:
         # Accepted connection from 10.0.0.1 on socket 5
         # Privoxy between 3.0.20 and 3.0.6:
@@ -1528,6 +1548,7 @@ sub handle_loglevel_connect($) {
         # OK
         $c = highlight_matched_host($c, '(?<=connection from )[^ ]*');
         $c = highlight_matched_pattern($c, 'Number', '(?<=socket )\d+');
+        $c = highlight_matched_host($c, '(?<=through )[^ ]*(?=\.$)');
 
     } elsif ($c =~ m/^Closing client socket/) {
 
@@ -1553,7 +1574,7 @@ sub handle_loglevel_connect($) {
     } elsif ($c =~ m/^write header to client failed:/) {
 
         # write header to client failed: Broken pipe
-        # XXX: Stil in use?
+        # XXX: Still in use?
         $c =~ s@(?<=failed: )(.*)@$h{'Error'}$1$h{'Standard'}@;
 
     } elsif ($c =~ m/^socks4_connect:/) {
@@ -1831,6 +1852,11 @@ sub handle_loglevel_connect($) {
         $c =~ s@(?<=Drained )(\d+)@$h{'Number'}$1$h{'Standard'}@;
         $c =~ s@(?<=socket )(\d+)@$h{'Number'}$1$h{'Standard'}@;
 
+    } elsif ($c =~ m/^Giving up draining socket \d+/) {
+
+        # Giving up draining socket 35.
+        $c =~ s@(?<=socket )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
     } elsif ($c =~ m/^Tainting client socket/ or
              $c =~ m/^Failed to shutdown socket/) {
 
@@ -1851,8 +1877,11 @@ sub handle_loglevel_connect($) {
         $c =~ s@(?<=Flushed )(\d+)@$h{'Number'}$1$h{'Standard'}@;
         $c =~ s@(?<=expecting )(\d+)@$h{'Number'}$1$h{'Standard'}@;
 
-    } elsif ($c =~ m/^Performing the TLS\/SSL handshake with client. Hash of host:/) {
+    } elsif ($c =~ m/^Performing the TLS(?:\/SSL)? handshake with client. Hash of host:/) {
 
+        # >= 4.2.0:
+        # Performing the TLS handshake with client. Hash of host: bab5296b25e256c7b06b92b17b56bcae
+        # < 4.2.0:
         # Performing the TLS/SSL handshake with client. Hash of host: bab5296b25e256c7b06b92b17b56bcae
         $c = highlight_matched_host($c, '(?<=Hash of host: ).+');
 
@@ -1922,6 +1951,11 @@ sub handle_loglevel_connect($) {
         # Socket timeout 3 reached: http://127.0.0.1:20000/no-filter/chunked-content/36
         $c =~ s@(?<=timeout )(\d+)@$h{'Number'}$1$h{'Standard'}@;
         $c = highlight_matched_url($c, "(?<=reached: ).*")
+
+    } elsif ($c =~ m/^Socket \d+ timed out/) {
+
+        # Socket 8 timed out while waiting for client headers.
+        $c =~ s@(?<=Socket )(\d+)@$h{'Number'}$1$h{'Standard'}@;
 
     } elsif ($c =~ m/^Prepared to read up to /) {
 
@@ -2231,6 +2265,13 @@ sub handle_loglevel_error($) {
 
         # The socks connection timed out after 60 seconds.
         $c =~ s@(?<=after )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+
+    } elsif ($c =~ m/^Skipped filter /) {
+
+        # Skipped filter 'banners-by-size' after job number 1: match limit exceeded (-47)
+        $c =~ s@(?<=filter ')([^']+)@$h{'Filter'}$1$h{'Standard'}@;
+        $c =~ s@(?<=number )(\d+)@$h{'Number'}$1$h{'Standard'}@;
+        $c =~ s@(?<=exceeded \(-)(\d+)@$h{'Number'}$1$h{'Standard'}@;
     }
 
     # XXX: There are probably more messages that deserve highlighting.
@@ -2605,7 +2646,7 @@ sub print_stats() {
         print "Requested URLs:\n";
         foreach my $resource (sort {$stats{'resource'}{$b} <=> $stats{'resource'}{$a}} keys %{$stats{'resource'}}) {
             if ($stats{'resource'}{$resource} < $cli_options{'url-statistics-threshold'}) {
-                print "Skipped statistics for URLs below the treshold.\n";
+                print "Skipped statistics for URLs below the threshold.\n";
                 last;
             }
             printf "%d : %s\n", $stats{'resource'}{$resource}, $resource;
@@ -2619,7 +2660,7 @@ sub print_stats() {
         foreach my $passed_url (sort {$stats{'passed-request-url'}{$b} <=> $stats{'passed-request-url'}{$a}}
                                 keys %{$stats{'passed-request-url'}}) {
             if ($stats{'passed-request-url'}{$passed_url} < $cli_options{'passed-request-statistics-threshold'}) {
-                print "Skipped statistics for passed URLs below the treshold.\n";
+                print "Skipped statistics for passed URLs below the threshold.\n";
                 last;
             }
             printf "%d : %s\n", $stats{'passed-request-url'}{$passed_url}, $passed_url;
@@ -2631,7 +2672,7 @@ sub print_stats() {
         print "Requested Hosts:\n";
         foreach my $host (sort {$stats{'hosts'}{$b} <=> $stats{'hosts'}{$a}} keys %{$stats{'hosts'}}) {
             if ($stats{'hosts'}{$host} < $cli_options{'host-statistics-threshold'}) {
-                print "Skipped statistics for Hosts below the treshold.\n";
+                print "Skipped statistics for Hosts below the threshold.\n";
                 last;
             }
             printf "%d : %s\n", $stats{'hosts'}{$host}, $host;

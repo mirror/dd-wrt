@@ -79,13 +79,13 @@ dnl set status to "UNRELEASED" whenever git differs from the last
 dnl release and no new release is near.
 
 VERSION_MAJOR=4
-VERSION_MINOR=0
+VERSION_MINOR=2
 VERSION_POINT=0
 CODE_STATUS="stable"
 
 dnl Timestamp (date +%s) used by the mtree-spec target.
 dnl Should be updated before releases but forgetting it isn't critical.
-SOURCE_DATE_EPOCH=1735969800
+SOURCE_DATE_EPOCH=1780217830
 
 dnl =================================================================
 dnl Substitute the version numbers
@@ -863,19 +863,6 @@ else
   ])
 fi
 
-AC_ARG_ENABLE(pcre2,
-[  --disable-pcre2                  Don't try to use pcre2 even if it's available],
-[enableval2=$enableval],
-[enableval2=yes])
-if test $enableval2 = yes; then
-  try_pcre2=yes
-else
-  AC_MSG_WARN([Ignoring pcre2 even if it's available])
-  try_pcre2=no
-  have_pcre2=no
-fi
-
-if test $try_pcre2 != no; then
 dnl =================================================================
 dnl Checks for libraries.
 dnl =================================================================
@@ -887,8 +874,8 @@ AC_CHECK_LIB(pcre2-8, pcre2_compile_8, [
       AC_EGREP_HEADER(pcre2_pattern_info, pcre2.h,[have_pcre2=yes; AC_DEFINE(HAVE_PCRE2)], [AC_MSG_WARN([[pcre2 old version installed]]); have_pcre2=no])
    ], [
       AC_CHECK_HEADER(pcre2/pcre2.h, [
-         AC_EGREP_HEADER(pcre2_pattern_info, pcre2/pcre2.h, [have_pcre2=yes; AC_DEFINE(PCRE2_H_IN_SUBDIR)], [AC_MSG_WARN([[pcre2 old version installed]]); have_pcre2=no])
-      ], [have_pcre2=no])
+         AC_EGREP_HEADER(pcre2_pattern_info, pcre2/pcre2.h, [have_pcre2=yes; AC_DEFINE(HAVE_PCRE2) AC_DEFINE(PCRE2_H_IN_SUBDIR)], [AC_MSG_WARN([[pcre2 old version installed]]); have_pcre2=no])
+      ], [have_pcre2=no], [#define PCRE2_CODE_UNIT_WIDTH 8])
    ], [#define PCRE2_CODE_UNIT_WIDTH 8])
 ], [have_pcre2=no])
 
@@ -901,31 +888,7 @@ AC_CHECK_LIB(pcre2-posix, regcomp, [
       ], [have_pcre2posix=no])
    ])
 ], [have_pcre2posix=no], -lpcre2-8)
-fi
 
-if test $have_pcre2 = "no"; then
-
-AC_CHECK_LIB(pcre, pcre_compile, [
-   AC_CHECK_HEADER(pcre.h, [
-      AC_EGREP_HEADER(pcre_fullinfo, pcre.h, [have_pcre=yes], [AC_MSG_WARN([[pcre old version installed]]); have_pcre=no])
-   ], [
-      AC_CHECK_HEADER(pcre/pcre.h, [
-         AC_EGREP_HEADER(pcre_fullinfo, pcre/pcre.h, [have_pcre=yes]; [AC_DEFINE(PCRE_H_IN_SUBDIR)], [AC_MSG_WARN([[pcre old version installed]]); have_pcre=no])
-      ], [have_pcre=no])
-   ])
-], [have_pcre=no])
-
-AC_CHECK_LIB(pcreposix, regcomp, [
-   AC_CHECK_HEADER(pcreposix.h, [
-      AC_EGREP_HEADER(pcreposix_regerror, pcreposix.h, [AC_MSG_WARN([[pcreposix old version installed]]); have_pcreposix=no], [have_pcreposix=yes])
-   ], [
-      AC_CHECK_HEADER(pcre/pcreposix.h, [
-         AC_EGREP_HEADER(pcreposix_regerror, pcre/pcreposix.h, [AC_MSG_WARN([[pcreposix old version installed]]); have_pcreposix=no], [have_pcreposix=yes]; [AC_DEFINE(PCREPOSIX_H_IN_SUBDIR)])
-      ], [have_pcreposix=no])
-   ])
-], [have_pcreposix=no], -lpcre)
-
-fi
 dnl ================================================================
 dnl libpcrs is temporarily disabled.
 dnl
@@ -992,6 +955,12 @@ AC_ARG_ENABLE(acl-support,
   AC_DEFINE(FEATURE_ACL)
 fi],
 AC_DEFINE(FEATURE_ACL))
+
+AC_ARG_ENABLE(acl-debugging,
+[  --enable-acl-debugging                   Enable code that makes debugging ACLs more convenient],
+[if test $enableval = yes; then
+  AC_DEFINE(ACL_DEBUG,1,[Define to make debugging ACLs more convenient.])
+fi])
 
 AC_ARG_ENABLE(trust-files,
 [  --disable-trust-files           Prevents the use of trust files.],
@@ -1133,10 +1102,7 @@ fi
 # build it and link statically
 #
 
-#check for libpcre2 first. then regular pcre
-
 if test $have_pcre2 = "yes"; then
-  echo "using libpcre2"
   STATIC_PCRE_ONLY=#
   LIBS="$LIBS -lpcre2-8 -lpcre2-posix"
   if test "$use_static_pcre" = "yes"; then
@@ -1158,30 +1124,7 @@ if test $have_pcre2 = "yes"; then
     AC_DEFINE(FEATURE_DYNAMIC_PCRE,1,[Define to dynamically link to pcre.])
   fi
 else
-
-if test $have_pcre = "yes"; then
-  echo "using libpcre"
-  STATIC_PCRE_ONLY=#
-  LIBS="$LIBS -lpcre -lpcreposix"
-  if test "$use_static_pcre" = "yes"; then
-    pcre_dyn=no
-    AC_DEFINE(PCRE_STATIC,1,[Define to statically link to pcre library on Windows.])
-#     see /usr/i686-w64-mingw32/sys-root/mingw/include/pcre.h line 54
-#       #if defined(_WIN32) && !defined(PCRE_STATIC)
-#       #  ifndef PCRE_EXP_DECL
-#       #    define PCRE_EXP_DECL  extern __declspec(dllimport)
-#       #  endif
-#     If you want to statically link a program against a PCRE library in the form of
-#     a non-dll .a file, you must define PCRE_STATIC before including pcre.h or
-#     pcrecpp.h, otherwise the pcre_malloc() and pcre_free() exported functions will
-#     be declared __declspec(dllimport), with unwanted results.
-  else
-    pcre_dyn=yes
-    AC_DEFINE(FEATURE_DYNAMIC_PCRE,1,[Define to dynamically link to pcre.])
-  fi
-else
-  AC_MSG_ERROR(Detected neither pcre2 nor pcre library.)
-fi
+  AC_MSG_ERROR(Failed to detect pcre2 library.)
 fi
 
 AC_DEFINE(FEATURE_CONNECTION_KEEP_ALIVE)
@@ -1283,8 +1226,7 @@ if test X"$OPT_OPENSSL" != Xno; then
   fi
 
   if test "x$FEATURE_HTTPS_INSPECTION_OPENSSL" = "xyes"; then
-    AC_MSG_NOTICE([Detected OpenSSL. Enabling https inspection.])
-    AC_MSG_WARN([If you intend to redistribute Privoxy, please make sure the "special exception" from section 3 of the GPLv2 applies.])
+    AC_MSG_NOTICE([Detected OpenSSL-compatible library. Enabling https inspection.])
 
     LIBS="$LIBS -lssl -lcrypto"
     old_CFLAGS_nospecial="$old_CFLAGS_nospecial"
@@ -1359,6 +1301,28 @@ if test X"$WITH_BROTLI" != Xno; then
     FEATURE_BROTLI=1
     AC_DEFINE(FEATURE_BROTLI, 1, [If Brotli is used for decompression])
     AC_SUBST(FEATURE_BROTLI, [1])
+  )
+fi
+
+
+dnl ========================================================
+dnl Check for zstd which can be used for decompression
+dnl ========================================================
+WITH_ZSTD=no
+AC_ARG_WITH(zstd,
+AC_HELP_STRING([--with-zstd], [Enable zstd detection])
+AC_HELP_STRING([--without-zstd], [Disable zstd detection]),
+  WITH_ZSTD=$withval)
+
+if test X"$WITH_ZSTD" != Xno; then
+
+  LIBS="$LIBS -lzstd"
+  AC_CHECK_LIB(zstd, ZSTD_decompressStream)
+
+  AC_CHECK_HEADERS(zstd.h,
+    FEATURE_ZSTD=1
+    AC_DEFINE(FEATURE_ZSTD, 1, [If zstd is used for decompression])
+    AC_SUBST(FEATURE_ZSTD, [1])
   )
 fi
 
