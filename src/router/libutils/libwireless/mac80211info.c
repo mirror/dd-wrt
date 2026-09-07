@@ -118,7 +118,7 @@ static void __attribute__((constructor)) mac80211_init(void)
 	if (!bunl) {
 		int ret = unl_genl_init(&unl, "nl80211");
 		if (!ret) {
-			bunl = 1;
+			bunl = true;
 		}
 	}
 }
@@ -140,7 +140,7 @@ void special_mac80211_init(void)
 	}
 	if (!unl.family) {
 		if (!unl_genl_init(&unl, "nl80211"))
-			bunl = 1;
+			bunl = true;
 	}
 }
 
