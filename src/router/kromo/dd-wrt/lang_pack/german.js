@@ -1693,6 +1693,7 @@ service.dns_smartdns_dualstack="Dualstack IP Vorauswahl";
 service.dns_smartdns_prefetch_domain="Domain Vorabruf";
 service.dns_smartdns_serve_expired="Serve Expired";
 service.dns_smartdns_use_dns="Verwende nur zusätzliche Server";
+service.dns_smartdns_custom="Verwende nur die zusätzlichen Optionen";
 service.dns_smartdns_option="Zusätzliche SmartDNS-Optionen";
 
 //sshd.webservices
