@@ -4605,8 +4605,6 @@ void wan_done(char *wan_ifname)
 	nvram_set("wan_iface", nvram_safe_get("wan_ifname"));
 
 	restart_dnsmasq();
-	stop_smartdns();
-	start_smartdns();
 	stop_openvpn_wandone();
 	start_openvpn();
 
@@ -4698,6 +4696,9 @@ void wan_done(char *wan_ifname)
 #endif
 	}
 	start_wan_service();
+	/* restart it a second time, since lan if may not have assigned ipv6 addresses at the beginning */
+	restart_dnsmasq();
+
 	nvram_seti("wanup", 1);
 }
 

@@ -164,8 +164,6 @@ void start_anchorfree(void)
 			start_lan();
 			stop_dnsmasq();
 			start_dnsmasq();
-			stop_smartdns();
-			start_smartdns();
 			stop_unbound();
 			start_unbound();
 			start_firewall();

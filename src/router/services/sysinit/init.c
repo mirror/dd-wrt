@@ -534,8 +534,6 @@ void start_modules_wait(void)
 int restart_dns_main(int argc, char *argv[])
 {
 	restart_dnsmasq();
-	stop_smartdns();
-	start_smartdns();
 	return 0;
 }
 

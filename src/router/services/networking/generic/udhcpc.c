@@ -217,8 +217,6 @@ static int bound(void)
 			start_set_routes();
 			dns_to_resolv();
 			restart_dnsmasq();
-			stop_smartdns();
-			start_smartdns();
 			stop_unbound();
 			start_unbound();
 			restart_mactelnetd();
