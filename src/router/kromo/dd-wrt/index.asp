@@ -339,6 +339,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="dns_redirect" value="0" />
 							<input type="hidden" name="dns_redirectdot" value="0" />
 							<input type="hidden" name="recursive_dns" value="0" />
+							<input type="hidden" name="dns_adblock" value="0" />
 							<input type="hidden" name="ppp_mlppp" value="0" />
 							<input type="hidden" name="ignore_wan_dns" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
