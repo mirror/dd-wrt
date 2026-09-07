@@ -135,8 +135,8 @@ static void __attribute__((destructor)) mac80211_deinit(void)
 void special_mac80211_init(void)
 {
 	if (bunl) {
-		unl_free(&unl);
 		memset(&unl, 0, sizeof(unl));
+		unl_free(&unl);
 	}
 	if (!unl.family) {
 		if (!unl_genl_init(&unl, "nl80211"))
