@@ -32,7 +32,7 @@
 
 int isregistered_real(void);
 int isregistered(void);
-#ifdef HAVE_ATH11K
+
 /* check signal code, its unused now, we keep it if we need it later again */
 static unsigned char zerocount[8][17];
 static void check_signal(const char *var, int interface, int vap)
@@ -109,7 +109,7 @@ static void check_wifi(void)
 		}
 	}
 }
-#endif
+
 static void watchdog(void)
 {
 	while (1) {

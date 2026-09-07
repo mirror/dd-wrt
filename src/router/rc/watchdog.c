@@ -314,8 +314,8 @@ static void watchdog(void)
 		sleep(5);
 		if (!((blockcounter++) % 60)) // check every 5 minutes
 			check_blocklist("watchdog", NULL);
-#ifdef HAVE_ATH9K
-		if (!((blockcounter++) % (60 * 4))) { // check every 20 minutes
+#ifdef HAVE_ATH11K
+		if (!((blockcounter) % (60 * 4))) { // check every 20 minutes
 			killall("signal_watchdog", SIGKILL);
 			eval("signal_watchdog");
 		}
@@ -326,7 +326,7 @@ static void watchdog(void)
 int main(int argc, char *argv[])
 {
 	dd_daemon();
-#ifdef HAVE_ATH9K
+#ifdef HAVE_ATH11K
 	killall("signal_watchdog", SIGKILL);
 	eval("signal_watchdog");
 #endif
