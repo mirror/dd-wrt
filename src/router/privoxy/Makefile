@@ -52,20 +52,6 @@ error:
 	    echo "*** To build this program, you must run"; \
 	    echo "*** autoheader && autoconf && ./configure and then run GNU make."; \
 	    echo "***"; \
-	    echo -n "*** Shall I do this for you now? (y/n) "; \
-	    read answer; \
-	    if [ "$$answer" = "y" ]; then \
-		autoheader && autoconf && ./configure || exit 1; \
-	  	if $(GNU_MAKE_CMD) -v |grep GNU >/dev/null 2>/dev/null; then \
-		   $(GNU_MAKE_CMD) ;\
-		elif $(MAKE_CMD) -v |grep GNU >/dev/null 2>/dev/null; then \
-		   $(MAKE_CMD) ;\
-		else \
-		   echo "Neither 'make' nor 'gmake' are GNU compatible!" ; \
-		   echo "Please read INSTALL." ; \
-		   exit 1 ; \
-		fi ;\
-	    fi; \
 	 fi
 
 .PHONY: error
