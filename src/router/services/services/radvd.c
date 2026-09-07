@@ -61,8 +61,7 @@ void start_radvd(void)
 	char wan_if_buffer[33];
 	int c = 0, manual = 0;
 	int mtu = 1500;
-	;
-	char *buf, *prefix;
+	char *prefix;
 	const char *ip;
 	char *p = NULL;
 	int do_mtu = 0, do_6to4 = 0, do_6rd = 0;
@@ -89,7 +88,7 @@ void start_radvd(void)
 	}
 
 	if (nvram_matchi("radvd_custom", 1)) {
-		buf = nvram_safe_get("radvd_conf");
+		char *buf = nvram_safe_get("radvd_conf");
 		if (buf != NULL)
 			writenvram("radvd_conf", "/tmp/radvd/radvd.conf");
 	} else {
@@ -145,10 +144,7 @@ void start_radvd(void)
 		int i;
 
 		struct dns_lists *dns_list = get_dns_list(2);
-
-		char buf[INET6_ADDRSTRLEN + 1];
-		char *ip = getifaddr_any(buf, nvram_safe_get("lan_ifname"), AF_INET6) ?: NULL;
-		if (nvram_matchi("dns_dnsmasq", 0) || !ip) {
+		if (nvram_matchi("dns_dnsmasq", 0) || !*ip) {
 			if (dns_list && dns_list->num_servers) {
 				fprintf(fp, " RDNSS");
 				for (i = 0; i < dns_list->num_servers; i++) {
