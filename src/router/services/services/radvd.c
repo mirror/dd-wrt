@@ -146,15 +146,21 @@ void start_radvd(void)
 
 		struct dns_lists *dns_list = get_dns_list(2);
 
-		if (dns_list && dns_list->num_servers) {
-			fprintf(fp, " RDNSS");
-			for (i = 0; i < dns_list->num_servers; i++) {
-				fprintf(fp, " %s", dns_list->dns_server[i].ip);
+		char buf[INET6_ADDRSTRLEN + 1];
+		char *ip = getifaddr_any(buf, nvram_safe_get("lan_ifname"), AF_INET6) ?: NULL;
+		if (nvram_matchi("dns_dnsmasq", 0) || !ip) {
+			if (dns_list && dns_list->num_servers) {
+				fprintf(fp, " RDNSS");
+				for (i = 0; i < dns_list->num_servers; i++) {
+					fprintf(fp, " %s", dns_list->dns_server[i].ip);
+				}
+				fprintf(fp, "{};\n");
 			}
-			fprintf(fp, "{};\n");
+			if (dns_list)
+				free_dns_list(dns_list);
+		} else {
+			fprintf(fp, " RDNSS %s{};\n", ip);
 		}
-		if (dns_list)
-			free_dns_list(dns_list);
 
 		fprintf(fp, "};\n");
 		fclose(fp);
