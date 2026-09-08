@@ -30,6 +30,8 @@
 #include <ddnvram.h>
 #include <shutils.h>
 
+#ifdef HAVE_ATH11K
+
 int isregistered_real(void);
 int isregistered(void);
 
@@ -126,3 +128,4 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+#endif
