@@ -6,6 +6,7 @@
 #include <net/nexthop.h>
 #include <net/neighbour.h>
 #include <net/netevent.h>
+#include <linux/cleanup.h>
 #include <linux/etherdevice.h>
 #include <linux/if_vlan.h>
 #include <linux/inetdevice.h>
@@ -664,38 +665,77 @@ int rtldsa_93xx_lag_set_port_members(struct rtl838x_switch_priv *priv, int group
 // 	return idx;
 // }
 
-/* Allocate a 32-bit packet counter
- * 2 32-bit packet counters share the location of a 64-bit octet counter
- * Initially there are no free packet counters and 2 new ones need to be freed
- * by allocating the corresponding octet counter
+/*
+ * Packet counters share hardware memory with octet counters (2 packet counters
+ * per 1 octet block). Allocation relies on two complementary bitmaps:
+ *
+ *   octet_cntr_use_bm:  0 = free block, 1 = used (or split into packet counters)
+ *   packet_cntr_use_bm: 1 = free standalone counter, 0 = unavailable
+ *
+ * Allocation strategy:
+ * 1. Look for a free standalone counter from an already split block (bit = 1).
+ * 2. If none are free, claim a new octet block 'j', use counter index (2 * j),
+ *    and mark counter (2 * j + 1) as available for future allocations.
  */
-int rtl83xx_packet_cntr_alloc(struct rtl838x_switch_priv *priv)
+
+/**
+ * rtldsa_packet_cntr_alloc - Allocate a hardware packet counter.
+ * @priv: Switch driver private structure.
+ *
+ * Return: Counter index (>= 0) on success, or -1 if full.
+ */
+int rtldsa_packet_cntr_alloc(struct rtl838x_switch_priv *priv)
 {
 	int idx, j;
 
-	mutex_lock(&priv->reg_mutex);
+	scoped_guard(mutex, &priv->reg_mutex) {
+		idx = find_first_bit(priv->packet_cntr_use_bm, priv->r->n_counters * 2);
+		if (idx >= priv->r->n_counters * 2) {
+			j = find_first_zero_bit(priv->octet_cntr_use_bm, priv->r->n_counters);
+			if (j >= priv->r->n_counters)
+				return -1;
 
-	/* Because initially no packet counters are free, the logic is reversed:
-	 * a 0-bit means the counter is already allocated (for octets)
-	 */
-	idx = find_first_bit(priv->packet_cntr_use_bm, MAX_COUNTERS * 2);
-	if (idx >= priv->r->n_counters * 2) {
-		j = find_first_zero_bit(priv->octet_cntr_use_bm, MAX_COUNTERS);
-		if (j >= priv->r->n_counters) {
-			mutex_unlock(&priv->reg_mutex);
-			return -1;
+			__set_bit(j, priv->octet_cntr_use_bm);
+			idx = j * 2;
+			__set_bit(j * 2 + 1, priv->packet_cntr_use_bm);
+		} else {
+			__clear_bit(idx, priv->packet_cntr_use_bm);
 		}
-		set_bit(j, priv->octet_cntr_use_bm);
-		idx = j * 2;
-		set_bit(j * 2 + 1, priv->packet_cntr_use_bm);
-
-	} else {
-		clear_bit(idx, priv->packet_cntr_use_bm);
 	}
 
-	mutex_unlock(&priv->reg_mutex);
-
 	return idx;
+}
+
+/**
+ * rtldsa_packet_cntr_free - Release a packet counter from rtldsa_packet_cntr_alloc().
+ * @priv: Switch driver private structure.
+ * @idx: Packet counter index to free; a negative id is ignored.
+ *
+ * Marks the counter free again and, once both halves of its octet block are
+ * free, returns the whole block to the octet counter pool.
+ */
+void rtldsa_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx)
+{
+	int j;
+
+	if (idx < 0 || idx >= priv->r->n_counters * 2)
+		return;
+
+	scoped_guard(mutex, &priv->reg_mutex) {
+		/* already free - guard against a double release */
+		if (test_bit(idx, priv->packet_cntr_use_bm))
+			return;
+
+		__set_bit(idx, priv->packet_cntr_use_bm);
+
+		j = idx / 2;
+		if (test_bit(j, priv->octet_cntr_use_bm) &&
+		    test_bit(idx ^ 1, priv->packet_cntr_use_bm)) {
+			__clear_bit(idx, priv->packet_cntr_use_bm);
+			__clear_bit(idx ^ 1, priv->packet_cntr_use_bm);
+			__clear_bit(j, priv->octet_cntr_use_bm);
+		}
+	}
 }
 
 /* Add an L2 nexthop entry for the L3 routing system / PIE forwarding in the SoC

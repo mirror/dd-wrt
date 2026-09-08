@@ -1688,7 +1688,8 @@ void rtldsa_838x_qos_init(struct rtl838x_switch_priv *priv);
 void rtldsa_839x_qos_init(struct rtl838x_switch_priv *priv);
 
 void rtldsa_port_fast_age(struct dsa_switch *ds, int port);
-int rtl83xx_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
+int rtldsa_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
+void rtldsa_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx);
 int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port);
 int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_priv *priv);
 void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);

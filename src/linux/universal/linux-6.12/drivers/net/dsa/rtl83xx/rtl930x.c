@@ -1635,9 +1635,9 @@ static void rtl930x_write_pie_action(u32 r[],  struct pie_rule *pr)
 	r[15] |= pr->log_octets ? BIT(31) : 0;
 	r[15] |= (u32)(pr->meter_data) << 23;
 
-	r[15] |= ((u32)(pr->ivid_act) << 21) & 0x3;
-	r[15] |= ((u32)(pr->ivid_data) << 9) & 0xfff;
-	r[16] |= ((u32)(pr->ovid_act) << 30) & 0x3;
+	r[15] |= ((u32)(pr->ivid_act) & 0x3) << 21;
+	r[15] |= ((u32)(pr->ivid_data) & 0xfff) << 9;
+	r[16] |= ((u32)(pr->ovid_act) & 0x3) << 30;
 	r[16] |= ((u32)(pr->ovid_data) & 0xfff) << 16;
 	r[16] |= (pr->mir_data & 0x3) << 6;
 	r[17] |= ((u32)(pr->tagst_data) & 0xf) << 28;

@@ -930,7 +930,7 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 			ctrl->cfg->set_nexthop(ctrl, r->nh.id, r->nh.l2_id, r->nh.if_id);
 
 		if (r->pr.id < 0) {
-			r->pr.packet_cntr = rtl83xx_packet_cntr_alloc(priv);
+			r->pr.packet_cntr = rtldsa_packet_cntr_alloc(priv);
 			if (r->pr.packet_cntr >= 0) {
 				dev_info(ctrl->dev, "Using packet counter %d\n",
 					 r->pr.packet_cntr);
@@ -1222,7 +1222,7 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	rtl83xx_l2_nexthop_rm(priv, &route->nh);
 
 	dev_info(ctrl->dev, "releasing packet counter %d\n", route->pr.packet_cntr);
-	set_bit(route->pr.packet_cntr, priv->packet_cntr_use_bm);
+	rtldsa_packet_cntr_free(priv, route->pr.packet_cntr);
 	priv->r->pie_rule_rm(priv, &route->pr);
 
 	otto_l3_route_remove(ctrl, route);
