@@ -94,11 +94,6 @@ void start_smartdns(void)
 		fprintf(fp, "ca-file /etc/ssl/certs/ca-certificates.crt\n");
 		fprintf(fp, "ca-path /etc/ssl/certs/\n");
 	#endif
-	#ifdef HAVE_TOR
-		if (nvram_match("tor_enable", "1")) {
-			fprintf(fp, "server %s:5353\n", get_lan_ipaddr());
-		}
-	#endif
 		struct dns_lists *dns_list = NULL;
 		if (nvram_matchi("recursive_dns", 1)) {
 			fprintf(fp, "server 127.0.0.1:7053\n");
@@ -126,6 +121,11 @@ void start_smartdns(void)
 					free_dns_list(dns_list);
 			}
 		}
+	#ifdef HAVE_TOR
+		if (nvram_match("tor_enable", "1")) {
+			fprintf(fp, "server %s:5353\n", get_lan_ipaddr());
+		}
+	#endif
 	}
 	fwritenvram("smartdns_options", fp);
 	fclose(fp);
