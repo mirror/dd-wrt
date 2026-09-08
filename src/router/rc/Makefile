@@ -1218,6 +1218,9 @@ ifneq ($(CONFIG_DIST),"micro")
 ifeq ($(CONFIG_ATH11K),y)
 	-install signal_watchdog $(INSTALLDIR)/sbin
 endif
+ifeq ($(CONFIG_IPQ6018),y)
+	-install signal_watchdog $(INSTALLDIR)/sbin
+endif
 	-install watchdog $(INSTALLDIR)/sbin
 	-install dump_blocklist $(INSTALLDIR)/usr/sbin
 endif
@@ -1425,6 +1428,12 @@ ifeq ($(CONFIG_ATH11K),y)
 	@echo "[LD] $@"
 	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lshutils -lwireless
 else
+ifeq ($(CONFIG_IPQ6018),y)
+	@echo "[LD] $@"
+	$(CC) $(CFLAGS) $(LDLTO) -o $@ $^ $(LDFLAGS) -lshutils -lwireless
+else
+	@true
+endif
 	@true
 endif
 
