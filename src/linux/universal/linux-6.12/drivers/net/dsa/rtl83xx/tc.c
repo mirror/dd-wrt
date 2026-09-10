@@ -323,13 +323,92 @@ static const struct rhashtable_params tc_ht_params = {
 	.automatic_shrinking = true,
 };
 
-static int rtl83xx_configure_flower(struct rtl838x_switch_priv *priv,
-				    struct flow_cls_offload *f)
+int rtldsa_tc_init(struct rtl838x_switch_priv *priv)
+{
+	int err;
+
+	if (priv->tc_initialized)
+		return 0;
+
+	err = rhashtable_init(&priv->tc_ht, &tc_ht_params);
+	if (err)
+		return err;
+
+	mutex_init(&priv->tc_flow_lock);
+	priv->tc_initialized = true;
+
+	return 0;
+}
+
+/* Zero the hardware LOG counter and hand its allocator slot back. Done
+ * together so a slot is never returned to rtldsa_packet_cntr_alloc() while
+ * the hardware entry still holds the previous flow's count.
+ */
+static void rtldsa_packet_cntr_release(struct rtl838x_switch_priv *priv, int counter)
+{
+	if (counter < 0)
+		return;
+
+	if (priv->r->packet_cntr_clear) {
+		mutex_lock(&priv->reg_mutex);
+		priv->r->packet_cntr_clear(priv, counter);
+		mutex_unlock(&priv->reg_mutex);
+	}
+
+	rtldsa_packet_cntr_free(priv, counter);
+}
+
+static void rtldsa_tc_flow_free(void *ptr, void *arg)
+{
+	struct rtl83xx_flow *flow = ptr;
+	struct rtl838x_switch_priv *priv = arg;
+
+	priv->r->pie_rule_rm(priv, &flow->rule);
+	rtldsa_packet_cntr_release(priv, flow->rule.packet_cntr);
+
+	/* Readers may still hold an RCU-protected reference after the
+	 * object has been removed from the hash table.
+	 */
+	kfree_rcu(flow, rcu_head);
+}
+
+void rtldsa_tc_cleanup(struct rtl838x_switch_priv *priv)
+{
+	if (!priv->tc_initialized)
+		return;
+
+	/* Hold tc_flow_lock like the add/del/stats callbacks do: any
+	 * callback that slipped in before teardown must finish before the
+	 * table and rules are torn down, otherwise it can walk a half-freed
+	 * flow or run pie_rule_rm() against a rule this path already removed.
+	 */
+	mutex_lock(&priv->tc_flow_lock);
+	rhashtable_free_and_destroy(&priv->tc_ht, rtldsa_tc_flow_free, priv);
+	priv->tc_initialized = false;
+	mutex_unlock(&priv->tc_flow_lock);
+
+	rcu_barrier();
+	mutex_destroy(&priv->tc_flow_lock);
+}
+
+static int rtldsa_configure_flower(struct rtl838x_switch_priv *priv,
+				   struct flow_cls_offload *f)
 {
 	struct rtl83xx_flow *flow;
 	int err = 0;
 
 	pr_debug("In %s\n", __func__);
+
+	mutex_lock(&priv->tc_flow_lock);
+
+	/* rtldsa_tc_cleanup() clears this under the lock before it destroys
+	 * tc_ht; a callback that was parked on the lock must bail rather than
+	 * walk the freed table.
+	 */
+	if (!priv->tc_initialized) {
+		err = -ENODEV;
+		goto out_unlock;
+	}
 
 	rcu_read_lock();
 	pr_debug("Cookie %08lx\n", f->cookie);
@@ -337,13 +416,16 @@ static int rtl83xx_configure_flower(struct rtl838x_switch_priv *priv,
 	rcu_read_unlock();
 	if (flow) {
 		pr_info("%s: Got flow\n", __func__);
-		return -EEXIST;
+		err = -EEXIST;
+		goto out_unlock;
 	}
 	pr_debug("%s: New flow\n", __func__);
 
 	flow = kzalloc(sizeof(*flow), GFP_KERNEL);
-	if (!flow)
-		return -ENOMEM;
+	if (!flow) {
+		err = -ENOMEM;
+		goto out_unlock;
+	}
 
 	flow->cookie = f->cookie;
 	flow->priv = priv;
@@ -372,11 +454,12 @@ static int rtl83xx_configure_flower(struct rtl838x_switch_priv *priv,
 	if (err)
 		goto out_remove;
 
+	mutex_unlock(&priv->tc_flow_lock);
 	return 0;
 
 out_remove:
 	rhashtable_remove_fast(&priv->tc_ht, &flow->node, tc_ht_params);
-	rtldsa_packet_cntr_free(priv, flow->rule.packet_cntr);
+	rtldsa_packet_cntr_release(priv, flow->rule.packet_cntr);
 	/* published in tc_ht above; a concurrent reader may still hold a ref */
 	kfree_rcu(flow, rcu_head);
 	goto out_err;
@@ -384,60 +467,99 @@ out_free:
 	kfree(flow);
 out_err:
 	pr_err("%s: error %d\n", __func__, err);
+out_unlock:
+	mutex_unlock(&priv->tc_flow_lock);
 
 	return err;
 }
 
-static int rtl83xx_delete_flower(struct rtl838x_switch_priv *priv,
-				 struct flow_cls_offload *cls_flower)
+static int rtldsa_delete_flower(struct rtl838x_switch_priv *priv,
+				struct flow_cls_offload *cls_flower)
 {
 	struct rtl83xx_flow *flow;
 	int err;
 
 	pr_debug("In %s\n", __func__);
+
+	mutex_lock(&priv->tc_flow_lock);
+
+	/* see rtldsa_configure_flower(): bail if teardown already ran */
+	if (!priv->tc_initialized) {
+		err = -ENODEV;
+		goto out_unlock;
+	}
+
 	rcu_read_lock();
 	flow = rhashtable_lookup_fast(&priv->tc_ht, &cls_flower->cookie, tc_ht_params);
 	if (!flow) {
 		rcu_read_unlock();
-		return -ENOENT;
+		err = -ENOENT;
+		goto out_unlock;
 	}
 
 	err = rhashtable_remove_fast(&priv->tc_ht, &flow->node, tc_ht_params);
 	rcu_read_unlock();
 	if (err)
-		return err;
+		goto out_unlock;
 
 	priv->r->pie_rule_rm(priv, &flow->rule);
+	rtldsa_packet_cntr_release(priv, flow->rule.packet_cntr);
 
 	kfree_rcu(flow, rcu_head);
 
-	return 0;
+out_unlock:
+	mutex_unlock(&priv->tc_flow_lock);
+
+	return err;
 }
 
-static int rtl83xx_stats_flower(struct rtl838x_switch_priv *priv,
-				struct flow_cls_offload *cls_flower)
+static int rtldsa_stats_flower(struct rtl838x_switch_priv *priv,
+			       struct flow_cls_offload *cls_flower)
 {
 	struct rtl83xx_flow *flow;
 	unsigned long lastused = 0;
-	int total_packets, new_packets;
+	u32 total_packets, new_packets = 0;
+	int err = 0;
 
 	pr_debug("%s:\n", __func__);
-	flow = rhashtable_lookup_fast(&priv->tc_ht, &cls_flower->cookie, tc_ht_params);
-	if (!flow)
-		return -1;
 
+	mutex_lock(&priv->tc_flow_lock);
+
+	/* see rtldsa_configure_flower(): bail if teardown already ran */
+	if (!priv->tc_initialized) {
+		err = -ENODEV;
+		goto out_unlock;
+	}
+
+	rcu_read_lock();
+	flow = rhashtable_lookup_fast(&priv->tc_ht, &cls_flower->cookie, tc_ht_params);
+	rcu_read_unlock();
+	if (!flow) {
+		err = -ENOENT;
+		goto out_unlock;
+	}
+
+	/* tc_flow_lock keeps the flow alive for the duration of the sleeping
+	 * counter read, so it is safe to dereference it after the RCU lock.
+	 */
 	if (flow->rule.packet_cntr >= 0) {
-		total_packets = priv->r->packet_cntr_read(flow->rule.packet_cntr);
-		pr_debug("Total packets: %d\n", total_packets);
+		mutex_lock(&priv->reg_mutex);
+		total_packets = priv->r->packet_cntr_read(priv, flow->rule.packet_cntr);
+		mutex_unlock(&priv->reg_mutex);
+		dev_dbg(priv->dev, "total packets: %u\n", total_packets);
+
 		new_packets = total_packets - flow->rule.last_packet_cnt;
 		flow->rule.last_packet_cnt = total_packets;
 	}
 
-	/* TODO: We need a second PIE rule to count the bytes */
-	flow_stats_update(&cls_flower->stats, 100 * new_packets, new_packets, 0, lastused,
+	/* We have no byte counter, report packets only */
+	flow_stats_update(&cls_flower->stats, 0, new_packets, 0, lastused,
 			  FLOW_ACTION_HW_STATS_IMMEDIATE);
 
-	return 0;
+out_unlock:
+	mutex_unlock(&priv->tc_flow_lock);
+
+	return err;
 }
 
 static int rtl83xx_setup_tc_cls_flower(struct rtl838x_switch_priv *priv,
@@ -446,11 +568,11 @@ static int rtl83xx_setup_tc_cls_flower(struct rtl838x_switch_priv *priv,
 	pr_debug("%s: %d\n", __func__, cls_flower->command);
 	switch (cls_flower->command) {
 	case FLOW_CLS_REPLACE:
-		return rtl83xx_configure_flower(priv, cls_flower);
+		return rtldsa_configure_flower(priv, cls_flower);
 	case FLOW_CLS_DESTROY:
-		return rtl83xx_delete_flower(priv, cls_flower);
+		return rtldsa_delete_flower(priv, cls_flower);
 	case FLOW_CLS_STATS:
-		return rtl83xx_stats_flower(priv, cls_flower);
+		return rtldsa_stats_flower(priv, cls_flower);
 	default:
 		return -EOPNOTSUPP;
 	}
@@ -476,8 +598,6 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
 {
 	struct rtl838x_switch_priv *priv;
 	struct flow_block_offload *f = type_data;
-	static bool first_time = true;
-	int err;
 
 	pr_debug("%s: %d\n", __func__, type);
 
@@ -489,13 +609,9 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
 
 	switch (type) {
 	case TC_SETUP_BLOCK:
-		if (first_time) {
-			first_time = false;
-			err = rhashtable_init(&priv->tc_ht, &tc_ht_params);
-			if (err)
-				pr_err("%s: Could not initialize hash table\n", __func__);
-		}
-
+		/* tc_ht is set up for the switch's lifetime in
+		 * rtldsa_93xx_setup(); nothing to do here.
+		 */
 		f->unlocked_driver_cb = true;
 		return flow_block_cb_setup_simple(type_data,
 						  &rtl83xx_block_cb_list,

@@ -47,58 +47,44 @@ struct otto_l3_walk_data {
 
 static void otto_l3_838x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
-	struct table_reg *r = rtl_table_get(RTL8380_TBL_1, 2);
+	u32 data[2];
 
-	rtl_table_read(r, idx);
+	otto_table_read(RTL8380_TBL_ROUTING, idx, &data);
 
-	/* The table has a size of 2 registers */
-	rt->nh.gw = sw_r32(rtl_table_data(r, 0));
+	rt->nh.gw = data[0];
 	rt->nh.gw <<= 32;
-	rt->nh.gw |= sw_r32(rtl_table_data(r, 1));
-
-	rtl_table_release(r);
+	rt->nh.gw |= data[1];
 }
 
 static void otto_l3_838x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
-	struct table_reg *r = rtl_table_get(RTL8380_TBL_1, 2);
+	u32 data[2] = { rt->nh.gw >> 32, rt->nh.gw };
 
-	sw_w32(rt->nh.gw >> 32, rtl_table_data(r, 0));
-	sw_w32(rt->nh.gw, rtl_table_data(r, 1));
-	rtl_table_write(r, idx);
-
-	rtl_table_release(r);
+	otto_table_write(RTL8380_TBL_ROUTING, idx, &data);
 }
 
 static void otto_l3_839x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
-	struct table_reg *r = rtl_table_get(RTL8390_TBL_1, 2);
+	u32 data[2];
 	u64 v;
 
-	rtl_table_read(r, idx);
+	otto_table_read(RTL8390_TBL_ROUTING, idx, &data);
 
-	/* The table has a size of 2 registers */
-	v = sw_r32(rtl_table_data(r, 0));
+	v = data[0];
 	v <<= 32;
-	v |= sw_r32(rtl_table_data(r, 1));
+	v |= data[1];
 	rt->switch_mac_id = (v >> 12) & 0xf;
 	rt->nh.gw = v >> 16;
-
-	rtl_table_release(r);
 }
 
 static void otto_l3_839x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
-	struct table_reg *r = rtl_table_get(RTL8390_TBL_1, 2);
-	u32 v;
+	u32 data[2];
 
-	sw_w32(rt->nh.gw >> 16, rtl_table_data(r, 0));
-	v = rt->nh.gw << 16;
-	v |= rt->switch_mac_id << 12;
-	sw_w32(v, rtl_table_data(r, 1));
-	rtl_table_write(r, idx);
+	data[0] = rt->nh.gw >> 16;
+	data[1] = (rt->nh.gw << 16) | (rt->switch_mac_id << 12);
 
-	rtl_table_release(r);
+	otto_table_write(RTL8390_TBL_ROUTING, idx, &data);
 }
 
 static void otto_l3_839x_setup_port_macs(struct otto_l3_ctrl *ctrl)
@@ -160,15 +146,13 @@ static u32 otto_l3_930x_hash4(u32 ip, int algorithm, bool move_dip)
 __maybe_unused
 static u64 otto_l3_930x_get_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx)
 {
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_2, 2);
+	u32 data[2];
 	u64 mac;
 
-	rtl_table_read(r, idx);
-	/* The table has a size of 2 registers */
-	mac = sw_r32(rtl_table_data(r, 0));
+	otto_table_read(RTL9300_TBL_L3_EGR_INTF_MAC, idx, &data);
+	mac = data[0];
 	mac <<= 32;
-	mac |= sw_r32(rtl_table_data(r, 1));
-	rtl_table_release(r);
+	mac |= data[1];
 
 	return mac;
 }
@@ -179,46 +163,41 @@ static u64 otto_l3_930x_get_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx)
 __maybe_unused
 static void otto_l3_930x_set_egress_mac(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac)
 {
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_2, 2);
-
-	/* The table has a size of 2 registers */
-	sw_w32(mac >> 32, rtl_table_data(r, 0));
-	sw_w32(mac, rtl_table_data(r, 1));
+	u32 data[2] = { mac >> 32, mac };
 
 	dev_dbg(ctrl->dev, "setting index %d to %016llx\n", idx, mac);
-	rtl_table_write(r, idx);
-	rtl_table_release(r);
+	otto_table_write(RTL9300_TBL_L3_EGR_INTF_MAC, idx, &data);
 }
 
 /* Read a host route entry from the table using its index. Only IPv4 and IPv6 unicast supported */
 __maybe_unused
 static void otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 1);
+	/* Only the unicast layout is handled below */
+	u32 data[5];
 	u32 v;
 
 	idx = ((idx / 6) * 8) + (idx % 6);
 
-	rtl_table_read(r, idx);
-	/* The table has a size of 5 (for UC, 11 for MC) registers */
-	v = sw_r32(rtl_table_data(r, 0));
+	otto_table_read(RTL9300_TBL_L3_HOST_ROUTE_IPUC, idx, &data);
+	v = data[0];
 	rt->attr.valid = !!(v & BIT(31));
 	if (!rt->attr.valid)
-		goto out;
+		return;
 	rt->attr.type = (v >> 29) & 0x3;
 	switch (rt->attr.type) {
 	case 0: /* IPv4 Unicast route */
-		rt->dst_ip = sw_r32(rtl_table_data(r, 4));
+		rt->dst_ip = data[4];
 		break;
 	case 2: /* IPv6 Unicast route */
 		ipv6_addr_set(&rt->dst_ip6,
-			      sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 2)),
-			      sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 0)));
+			      data[3], data[2],
+			      data[1], data[0]);
 		break;
 	case 1: /* IPv4 Multicast route */
 	case 3: /* IPv6 Multicast route */
 		dev_warn(ctrl->dev, "route type not supported\n");
-		goto out;
+		return;
 	}
 
 	rt->attr.hit = !!(v & BIT(20));
@@ -234,17 +213,14 @@ static void otto_l3_930x_host_route_read(struct otto_l3_ctrl *ctrl, int idx, str
 		rt->nh.id, rt->attr.hit, rt->attr.action, rt->attr.ttl_dec, rt->attr.ttl_check,
 		rt->attr.dst_null);
 	dev_dbg(ctrl->dev, "Destination: %pI4\n", &rt->dst_ip);
-
-out:
-	rtl_table_release(r);
 }
 
 /* Write a host route entry from the table using its index. Only unicast routes supported */
 __maybe_unused
 static void otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
-	/* The table has a size of 5 (for UC, 11 for MC) registers */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 1);
+	/* Only the unicast layout is handled below */
+	u32 data[5];
 	u32 v;
 
 	idx = ((idx / 6) * 8) + (idx % 6);
@@ -266,30 +242,27 @@ static void otto_l3_930x_host_route_write(struct otto_l3_ctrl *ctrl, int idx, st
 	v |= rt->attr.qos_as ? BIT(3) : 0;
 	v |= rt->attr.qos_prio & 0x7;
 
-	sw_w32(v, rtl_table_data(r, 0));
+	data[0] = v;
 	switch (rt->attr.type) {
 	case 0: /* IPv4 Unicast route */
-		sw_w32(0, rtl_table_data(r, 1));
-		sw_w32(0, rtl_table_data(r, 2));
-		sw_w32(0, rtl_table_data(r, 3));
-		sw_w32(rt->dst_ip, rtl_table_data(r, 4));
+		data[1] = 0;
+		data[2] = 0;
+		data[3] = 0;
+		data[4] = rt->dst_ip;
 		break;
 	case 2: /* IPv6 Unicast route */
-		sw_w32(rt->dst_ip6.s6_addr32[0], rtl_table_data(r, 1));
-		sw_w32(rt->dst_ip6.s6_addr32[1], rtl_table_data(r, 2));
-		sw_w32(rt->dst_ip6.s6_addr32[2], rtl_table_data(r, 3));
-		sw_w32(rt->dst_ip6.s6_addr32[3], rtl_table_data(r, 4));
+		data[1] = rt->dst_ip6.s6_addr32[0];
+		data[2] = rt->dst_ip6.s6_addr32[1];
+		data[3] = rt->dst_ip6.s6_addr32[2];
+		data[4] = rt->dst_ip6.s6_addr32[3];
 		break;
 	case 1: /* IPv4 Multicast route */
 	case 3: /* IPv6 Multicast route */
 		dev_warn(ctrl->dev, "route type not supported\n");
-		goto out;
+		return;
 	}
 
-	rtl_table_write(r, idx);
-
-out:
-	rtl_table_release(r);
+	otto_table_write(RTL9300_TBL_L3_HOST_ROUTE_IPUC, idx, &data);
 }
 
 __maybe_unused
@@ -335,30 +308,24 @@ __maybe_unused
 static void otto_l3_930x_get_router_mac(struct otto_l3_ctrl *ctrl,
 					u32 idx, struct otto_l3_router_mac *m)
 {
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 0);
+	u32 data[7];
 	u32 v, w;
 
-	rtl_table_read(r, idx);
-	/* The table has a size of 7 registers, 64 entries */
-	v = sw_r32(rtl_table_data(r, 0));
-	w = sw_r32(rtl_table_data(r, 3));
+	otto_table_read(RTL9300_TBL_L3_ROUTER_MAC, idx, &data);
+	v = data[0];
+	w = data[3];
 	m->valid = !!(v & BIT(20));
 	if (!m->valid)
-		goto out;
+		return;
 
 	m->p_type = !!(v & BIT(19));
 	m->p_id = (v >> 13) & 0x3f;  /* trunk id of port */
 	m->vid = v & 0xfff;
 	m->vid_mask = w & 0xfff;
-	m->action = sw_r32(rtl_table_data(r, 6)) & 0x7;
-	m->mac_mask = ((((u64)sw_r32(rtl_table_data(r, 5))) << 32) & 0xffffffffffffULL) |
-		      (sw_r32(rtl_table_data(r, 4)));
-	m->mac = ((((u64)sw_r32(rtl_table_data(r, 1))) << 32) & 0xffffffffffffULL) |
-		 (sw_r32(rtl_table_data(r, 2)));
+	m->action = data[6] & 0x7;
+	m->mac_mask = ((((u64)data[5]) << 32) & 0xffffffffffffULL) | data[4];
+	m->mac = ((((u64)data[1]) << 32) & 0xffffffffffffULL) | data[2];
 	/* Bits L3_INTF and BMSK_L3_INTF are 0 */
-
-out:
-	rtl_table_release(r);
 }
 
 /*
@@ -369,10 +336,9 @@ __maybe_unused
 static void otto_l3_930x_set_router_mac(struct otto_l3_ctrl *ctrl,
 					u32 idx, struct otto_l3_router_mac *m)
 {
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 0);
+	u32 data[7];
 	u32 v, w;
 
-	/* The table has a size of 7 registers, 64 entries */
 	v = BIT(20); /* mac entry valid, port type is 0: individual */
 	v |= (m->p_id & 0x3f) << 13;
 	v |= (m->vid & 0xfff); /* Set the interface_id to the vlan id */
@@ -380,26 +346,22 @@ static void otto_l3_930x_set_router_mac(struct otto_l3_ctrl *ctrl,
 	w = m->vid_mask;
 	w |= (m->p_id_mask & 0x3f) << 13;
 
-	sw_w32(v, rtl_table_data(r, 0));
-	sw_w32(w, rtl_table_data(r, 3));
+	data[0] = v;
+	data[3] = w;
 
 	/* Set MAC address, L3_INTF (bit 12 in register 1) needs to be 0 */
-	sw_w32((u32)(m->mac), rtl_table_data(r, 2));
-	sw_w32(m->mac >> 32, rtl_table_data(r, 1));
+	data[2] = (u32)(m->mac);
+	data[1] = m->mac >> 32;
 
 	/* Set MAC address mask, BMSK_L3_INTF (bit 12 in register 5) needs to be 0 */
-	sw_w32((u32)(m->mac_mask >> 32), rtl_table_data(r, 4));
-	sw_w32((u32)m->mac_mask, rtl_table_data(r, 5));
+	data[4] = (u32)(m->mac_mask >> 32);
+	data[5] = (u32)m->mac_mask;
 
-	sw_w32(m->action & 0x7, rtl_table_data(r, 6));
+	data[6] = m->action & 0x7;
 
 	dev_dbg(ctrl->dev, "writing index %d: %08x %08x %08x %08x %08x %08x %08x\n", idx,
-		 sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 2)),
-		 sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 4)), sw_r32(rtl_table_data(r, 5)),
-		 sw_r32(rtl_table_data(r, 6))
-	);
-	rtl_table_write(r, idx);
-	rtl_table_release(r);
+		 data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
+	otto_table_write(RTL9300_TBL_L3_ROUTER_MAC, idx, &data);
 }
 
 /* Destination MAC and L3 egress interface ID of a nexthop entry from the SoC's L3_NEXTHOP table */
@@ -407,13 +369,9 @@ __maybe_unused
 static void otto_l3_930x_get_nexthop(struct otto_l3_ctrl *ctrl,
 				     int idx, u16 *dmac_id, u16 *interface)
 {
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 3);
 	u32 v;
 
-	rtl_table_read(r, idx);
-	/* The table has a size of 1 register */
-	v = sw_r32(rtl_table_data(r, 0));
-	rtl_table_release(r);
+	otto_table_read(RTL9300_TBL_L3_NEXTHOP, idx, &v);
 
 	*dmac_id = (v >> 7) & 0x7fff;
 	*interface = v & 0x7f;
@@ -431,16 +389,13 @@ __maybe_unused
 static void otto_l3_930x_set_nexthop(struct otto_l3_ctrl *ctrl,
 				     int idx, u16 dmac_id, u16 interface)
 {
-	/* Access L3_NEXTHOP table (3) via register RTL9300_TBL_1 */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 3);
+	u32 v = ((dmac_id & 0x7fff) << 7) | (interface & 0x7f);
 
 	dev_dbg(ctrl->dev, "Writing to L3_NEXTHOP table, index %d, dmac_id %d, interface %d\n",
 		idx, dmac_id, interface);
-	sw_w32(((dmac_id & 0x7fff) << 7) | (interface & 0x7f), rtl_table_data(r, 0));
 
-	dev_dbg(ctrl->dev, "value at index 0: %08x\n", sw_r32(rtl_table_data(r, 0)));
-	rtl_table_write(r, idx);
-	rtl_table_release(r);
+	dev_dbg(ctrl->dev, "value at index 0: %08x\n", v);
+	otto_table_write(RTL9300_TBL_L3_NEXTHOP, idx, &v);
 }
 
 
@@ -450,22 +405,21 @@ static void otto_l3_930x_set_nexthop(struct otto_l3_ctrl *ctrl,
 __maybe_unused
 static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 2);
 	bool host_route, default_route;
 	struct in6_addr ip6_m;
+	u32 data[11];
 	u32 v, ip4_m;
 
 	dev_dbg(ctrl->dev, "%s\n", __func__);
 
-	rtl_table_read(r, idx);
-	/* The table has a size of 11 registers */
-	rt->attr.valid = !!(sw_r32(rtl_table_data(r, 0)) & BIT(31));
+	otto_table_read(RTL9300_TBL_L3_PREFIX_ROUTE_IPUC, idx, &data);
+	rt->attr.valid = !!(data[0] & BIT(31));
 	if (!rt->attr.valid)
-		goto out;
+		return;
 
-	rt->attr.type = (sw_r32(rtl_table_data(r, 0)) >> 29) & 0x3;
+	rt->attr.type = (data[0] >> 29) & 0x3;
 
-	v = sw_r32(rtl_table_data(r, 10));
+	v = data[10];
 	host_route = !!(v & BIT(21));
 	default_route = !!(v & BIT(20));
 	rt->prefix_len = -1;
@@ -473,8 +427,8 @@ static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct o
 
 	switch (rt->attr.type) {
 	case 0: /* IPv4 Unicast route */
-		rt->dst_ip = sw_r32(rtl_table_data(r, 4));
-		ip4_m = sw_r32(rtl_table_data(r, 9));
+		rt->dst_ip = data[4];
+		ip4_m = data[9];
 		dev_dbg(ctrl->dev, "Read ip4 mask: %08x\n", ip4_m);
 		rt->prefix_len = host_route ? 32 : -1;
 		rt->prefix_len = (rt->prefix_len < 0 && default_route) ? 0 : -1;
@@ -483,11 +437,11 @@ static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct o
 		break;
 	case 2: /* IPv6 Unicast route */
 		ipv6_addr_set(&rt->dst_ip6,
-			      sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 2)),
-			      sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 4)));
+			      data[1], data[2],
+			      data[3], data[4]);
 		ipv6_addr_set(&ip6_m,
-			      sw_r32(rtl_table_data(r, 6)), sw_r32(rtl_table_data(r, 7)),
-			      sw_r32(rtl_table_data(r, 8)), sw_r32(rtl_table_data(r, 9)));
+			      data[6], data[7],
+			      data[8], data[9]);
 		rt->prefix_len = host_route ? 128 : 0;
 		rt->prefix_len = (rt->prefix_len < 0 && default_route) ? 0 : -1;
 		if (rt->prefix_len < 0)
@@ -497,7 +451,7 @@ static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct o
 	case 1: /* IPv4 Multicast route */
 	case 3: /* IPv6 Multicast route */
 		dev_warn(ctrl->dev, "route type not supported\n");
-		goto out;
+		return;
 	}
 
 	rt->attr.hit = !!(v & BIT(22));
@@ -513,8 +467,6 @@ static void otto_l3_930x_route_read(struct otto_l3_ctrl *ctrl, int idx, struct o
 		rt->nh.id, rt->attr.hit, rt->attr.action,
 		rt->attr.ttl_dec, rt->attr.ttl_check, rt->attr.dst_null);
 	dev_dbg(ctrl->dev, "GW: %pI4, prefix_len: %d\n", &rt->dst_ip, rt->prefix_len);
-out:
-	rtl_table_release(r);
 }
 
 __maybe_unused
@@ -580,10 +532,8 @@ static int otto_l3_930x_route_lookup_hw(struct otto_l3_ctrl *ctrl, struct otto_l
 __maybe_unused
 static void otto_l3_930x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt)
 {
-	/* Access L3_PREFIX_ROUTE_IPUC table (2) via register RTL9300_TBL_1 */
-	/* The table has a size of 11 registers (20 for MC) */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 2);
 	struct in6_addr ip6_m;
+	u32 data[11];
 	u32 v, ip4_m;
 
 	dev_dbg(ctrl->dev, "%s\n", __func__);
@@ -595,7 +545,7 @@ static void otto_l3_930x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 
 	v = rt->attr.valid ? BIT(31) : 0;
 	v |= (rt->attr.type & 0x3) << 29;
-	sw_w32(v, rtl_table_data(r, 0));
+	data[0] = v;
 
 	v = rt->attr.hit ? BIT(22) : 0;
 	v |= (rt->attr.action & 0x3) << 18;
@@ -608,53 +558,49 @@ static void otto_l3_930x_route_write(struct otto_l3_ctrl *ctrl, int idx, struct 
 	v |= rt->prefix_len == 0 ? BIT(20) : 0; /* set default route bit */
 
 	/* set bit mask for entry type always to 0x3 */
-	sw_w32(0x3 << 29, rtl_table_data(r, 5));
+	data[5] = 0x3 << 29;
 
 	switch (rt->attr.type) {
 	case 0: /* IPv4 Unicast route */
-		sw_w32(0, rtl_table_data(r, 1));
-		sw_w32(0, rtl_table_data(r, 2));
-		sw_w32(0, rtl_table_data(r, 3));
-		sw_w32(rt->dst_ip, rtl_table_data(r, 4));
+		data[1] = 0;
+		data[2] = 0;
+		data[3] = 0;
+		data[4] = rt->dst_ip;
 
 		v |= rt->prefix_len == 32 ? BIT(21) : 0; /* set host-route bit */
 		ip4_m = inet_make_mask(rt->prefix_len);
-		sw_w32(0, rtl_table_data(r, 6));
-		sw_w32(0, rtl_table_data(r, 7));
-		sw_w32(0, rtl_table_data(r, 8));
-		sw_w32(ip4_m, rtl_table_data(r, 9));
+		data[6] = 0;
+		data[7] = 0;
+		data[8] = 0;
+		data[9] = ip4_m;
 		break;
 	case 2: /* IPv6 Unicast route */
-		sw_w32(rt->dst_ip6.s6_addr32[0], rtl_table_data(r, 1));
-		sw_w32(rt->dst_ip6.s6_addr32[1], rtl_table_data(r, 2));
-		sw_w32(rt->dst_ip6.s6_addr32[2], rtl_table_data(r, 3));
-		sw_w32(rt->dst_ip6.s6_addr32[3], rtl_table_data(r, 4));
+		data[1] = rt->dst_ip6.s6_addr32[0];
+		data[2] = rt->dst_ip6.s6_addr32[1];
+		data[3] = rt->dst_ip6.s6_addr32[2];
+		data[4] = rt->dst_ip6.s6_addr32[3];
 
 		v |= rt->prefix_len == 128 ? BIT(21) : 0; /* set host-route bit */
 
 		otto_l3_930x_net6_mask(rt->prefix_len, &ip6_m);
 
-		sw_w32(ip6_m.s6_addr32[0], rtl_table_data(r, 6));
-		sw_w32(ip6_m.s6_addr32[1], rtl_table_data(r, 7));
-		sw_w32(ip6_m.s6_addr32[2], rtl_table_data(r, 8));
-		sw_w32(ip6_m.s6_addr32[3], rtl_table_data(r, 9));
+		data[6] = ip6_m.s6_addr32[0];
+		data[7] = ip6_m.s6_addr32[1];
+		data[8] = ip6_m.s6_addr32[2];
+		data[9] = ip6_m.s6_addr32[3];
 		break;
 	case 1: /* IPv4 Multicast route */
 	case 3: /* IPv6 Multicast route */
 		dev_warn(ctrl->dev, "route type not supported\n");
-		rtl_table_release(r);
 		return;
 	}
-	sw_w32(v, rtl_table_data(r, 10));
+	data[10] = v;
 
 	dev_dbg(ctrl->dev, "%08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n",
-		 sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 2)),
-		 sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 4)), sw_r32(rtl_table_data(r, 5)),
-		 sw_r32(rtl_table_data(r, 6)), sw_r32(rtl_table_data(r, 7)), sw_r32(rtl_table_data(r, 8)),
-		 sw_r32(rtl_table_data(r, 9)), sw_r32(rtl_table_data(r, 10)));
+		 data[0], data[1], data[2], data[3], data[4], data[5],
+		 data[6], data[7], data[8], data[9], data[10]);
 
-	rtl_table_write(r, idx);
-	rtl_table_release(r);
+	otto_table_write(RTL9300_TBL_L3_PREFIX_ROUTE_IPUC, idx, &data);
 }
 
 static int otto_l3_port_lower_walk(struct net_device *lower, struct netdev_nested_priv *_priv)
@@ -740,28 +686,22 @@ static int otto_l3_alloc_router_mac(struct otto_l3_ctrl *ctrl, u64 mac)
 __maybe_unused
 static void otto_l3_930x_set_egress_intf(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf)
 {
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 4);
-	u32 u, v;
+	u32 data[2];
 
-	/* The table has 2 registers */
-	u = (intf->vid & 0xfff) << 9;
-	u |= (intf->smac_idx & 0x3f) << 3;
-	u |= (intf->ip4_mtu_id & 0x7);
+	data[0] = (intf->vid & 0xfff) << 9;
+	data[0] |= (intf->smac_idx & 0x3f) << 3;
+	data[0] |= (intf->ip4_mtu_id & 0x7);
 
-	v = (intf->ip6_mtu_id & 0x7) << 28;
-	v |= (intf->ttl_scope & 0xff) << 20;
-	v |= (intf->hl_scope & 0xff) << 12;
-	v |= (intf->ip4_icmp_redirect & 0x7) << 9;
-	v |= (intf->ip6_icmp_redirect & 0x7) << 6;
-	v |= (intf->ip4_pbr_icmp_redirect & 0x7) << 3;
-	v |= (intf->ip6_pbr_icmp_redirect & 0x7);
+	data[1] = (intf->ip6_mtu_id & 0x7) << 28;
+	data[1] |= (intf->ttl_scope & 0xff) << 20;
+	data[1] |= (intf->hl_scope & 0xff) << 12;
+	data[1] |= (intf->ip4_icmp_redirect & 0x7) << 9;
+	data[1] |= (intf->ip6_icmp_redirect & 0x7) << 6;
+	data[1] |= (intf->ip4_pbr_icmp_redirect & 0x7) << 3;
+	data[1] |= (intf->ip6_pbr_icmp_redirect & 0x7);
 
-	sw_w32(u, rtl_table_data(r, 0));
-	sw_w32(v, rtl_table_data(r, 1));
-
-	dev_dbg(ctrl->dev, "writing to index %d: %08x %08x\n", idx, u, v);
-	rtl_table_write(r, idx & 0x7f);
-	rtl_table_release(r);
+	dev_dbg(ctrl->dev, "writing to index %d: %08x %08x\n", idx, data[0], data[1]);
+	otto_table_write(RTL9300_TBL_L3_EGR_INTF, idx & 0x7f, &data);
 }
 
 /* Configure L3 routing settings of the device:
@@ -939,7 +879,7 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 			}
 			priv->r->pie_rule_add(priv, &r->pr);
 		} else {
-			int pkts = priv->r->packet_cntr_read(r->pr.packet_cntr);
+			int pkts = priv->r->packet_cntr_read(priv, r->pr.packet_cntr);
 
 			dev_dbg(ctrl->dev, "total packets: %d\n", pkts);
 

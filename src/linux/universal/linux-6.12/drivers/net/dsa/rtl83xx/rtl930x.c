@@ -230,13 +230,14 @@ const struct rtldsa_mib_desc rtldsa_930x_mib_desc = {
 
 void rtldsa_930x_print_matrix(void)
 {
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
+	int tbl = otto_table_acquire(RTL9300_TBL_PORT_ISO_CTRL);
+	u32 v;
 
 	for (int i = 0; i < 29; i++) {
-		rtl_table_read(r, i);
-		pr_debug("> %08x\n", sw_r32(rtl_table_data(r, 0)));
+		__otto_table_read(tbl, i, &v);
+		pr_debug("> %08x\n", v);
 	}
-	rtl_table_release(r);
+	otto_table_release(tbl);
 }
 
 static inline int rtl930x_l2_port_new_salrn(int p)
@@ -347,15 +348,13 @@ static inline int rtl930x_trk_mbr_ctr(int group)
 
 static void rtl930x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 {
+	u32 buf[2];
 	u32 v, w;
-	/* Read VLAN table (1) via register 0 */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 1);
 
-	rtl_table_read(r, vlan);
-	v = sw_r32(rtl_table_data(r, 0));
-	w = sw_r32(rtl_table_data(r, 1));
+	otto_table_read(RTL9300_TBL_VLAN, vlan, &buf);
+	v = buf[0];
+	w = buf[1];
 	pr_debug("VLAN_READ %d: %08x %08x\n", vlan, v, w);
-	rtl_table_release(r);
 
 	info->member_ports = v >> 3;
 	info->profile_id = (w >> 24) & 7;
@@ -363,11 +362,7 @@ static void rtl930x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 	info->hash_uc_fid = !!(w & BIT(28));
 	info->fid = ((v & 0x7) << 3) | ((w >> 29) & 0x7);
 
-	/* Read UNTAG table via table register 2 */
-	r = rtl_table_get(RTL9300_TBL_2, 0);
-	rtl_table_read(r, vlan);
-	v = sw_r32(rtl_table_data(r, 0));
-	rtl_table_release(r);
+	otto_table_read(RTL9300_TBL_UNTAG, vlan, &v);
 
 	info->untagged_ports = v >> 3;
 }
@@ -375,8 +370,7 @@ static void rtl930x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 static void rtl930x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
 {
 	u32 v, w;
-	/* Access VLAN table (1) via register 0 */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 1);
+	u32 buf[2];
 
 	v = info->member_ports << 3;
 	v |= ((u32)info->fid) >> 3;
@@ -386,11 +380,9 @@ static void rtl930x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
 	w |= info->hash_uc_fid ? BIT(28) : 0;
 	w |= info->profile_id << 24;
 
-	sw_w32(v, rtl_table_data(r, 0));
-	sw_w32(w, rtl_table_data(r, 1));
-
-	rtl_table_write(r, vlan);
-	rtl_table_release(r);
+	buf[0] = v;
+	buf[1] = w;
+	otto_table_write(RTL9300_TBL_VLAN, vlan, &buf);
 }
 
 static int
@@ -450,11 +442,9 @@ rtldsa_930x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
 
 static void rtl930x_vlan_set_untagged(u32 vlan, u64 portmask)
 {
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_2, 0);
+	u32 v = portmask << 3;
 
-	sw_w32(portmask << 3, rtl_table_data(r, 0));
-	rtl_table_write(r, vlan);
-	rtl_table_release(r);
+	otto_table_write(RTL9300_TBL_UNTAG, vlan, &v);
 }
 
 /* Sets the L2 forwarding to be based on either the inner VLAN tag or the outer */
@@ -543,14 +533,12 @@ static void rtldsa_930x_enable_bcast_flood(int port, bool enable)
 
 static void rtldsa_930x_lag_set_port2group(int group, int port, bool valid)
 {
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 8);
+	int tbl = otto_table_acquire(RTL9300_TBL_SRC_TRK_MAP);
 	u32 mask = valid ? RTL930X_SRC_TRK_MAP_TRK_VALID : 0;
 
-	rtl_table_read(r, port);
 	mask |= FIELD_PREP(RTL930X_SRC_TRK_MAP_TRK_ID, group); // Update TRK Field.
-	sw_w32(mask, rtl_table_data(r, 0));
-	rtl_table_write(r, port);
-	rtl_table_release(r);
+	__otto_table_write(tbl, port, &mask);
+	otto_table_release(tbl);
 }
 
 /* Write data from the data buffer into the lag-entry strucure */
@@ -648,35 +636,37 @@ static void rtldsa_930x_lag_sync_tables(void)
 		pr_err("%s: timeout\n", __func__);
 }
 
-static struct table_reg *rtldsa_930x_lag_table(void)
+static int rtldsa_930x_lag_table(void)
 {
-	return rtl_table_get(RTL9300_TBL_0, 7);
+	return otto_table_acquire(RTL9300_TBL_LAG);
 }
 
 static int rtldsa_930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port)
 {
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 4);
 	int idx = 1 - ((port + 3) / 16);
 	int bit = 2 * ((port + 3) % 16);
+	/* port ranges 0..RTL930X_CPU_PORT (28), so idx is always 0 or 1 */
+	u32 buf[2];
 	int state;
 
-	rtl_table_read(r, msti);
-	state = (sw_r32(rtl_table_data(r, idx)) >> bit) & 0x3;
-	rtl_table_release(r);
+	otto_table_read(RTL9300_TBL_MSTI, msti, &buf);
+	state = (buf[idx] >> bit) & 0x3;
 
 	return state;
 }
 
 static void rtl930x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, int port, int state)
 {
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 4);
+	int tbl = otto_table_acquire(RTL9300_TBL_MSTI);
 	int idx = 1 - ((port + 3) / 16);
 	int bit = 2 * ((port + 3) % 16);
+	/* port ranges 0..RTL930X_CPU_PORT (28), so idx is always 0 or 1 */
+	u32 buf[2];
 
-	rtl_table_read(r, msti);
-	sw_w32_mask(0x3 << bit, state << bit, rtl_table_data(r, idx));
-	rtl_table_write(r, msti);
-	rtl_table_release(r);
+	__otto_table_read(tbl, msti, &buf);
+	buf[idx] = (buf[idx] & ~(0x3 << bit)) | (state << bit);
+	__otto_table_write(tbl, msti, &buf);
+	otto_table_release(tbl);
 }
 
 static inline int rtl930x_mac_force_mode_ctrl(int p)
@@ -867,7 +857,6 @@ static void rtl930x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 static u64 rtl930x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
-	struct table_reg *q = rtl_table_get(RTL9300_TBL_L2, 0);
 	u32 idx;
 	u64 mac;
 	u64 seed;
@@ -888,11 +877,7 @@ static u64 rtl930x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2
 	idx = (0 << 14) | (hash << 2) | pos; /* Search SRAM, with hash and at pos in bucket */
 	pr_debug("%s: NOW hash %08x, pos: %d\n", __func__, hash, pos);
 
-	rtl_table_read(q, idx);
-	for (int i = 0; i < 3; i++)
-		r[i] = sw_r32(rtl_table_data(q, i));
-
-	rtl_table_release(q);
+	otto_table_read(RTL9300_TBL_L2_UC, idx, &r);
 
 	rtl930x_fill_l2_entry(r, e);
 
@@ -917,7 +902,6 @@ static u64 rtl930x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2
 static void rtl930x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
-	struct table_reg *q = rtl_table_get(RTL9300_TBL_L2, 0);
 	u32 idx = (0 << 14) | (hash << 2) | pos; /* Access SRAM, with hash and at pos in bucket */
 
 	pr_debug("%s: hash %d, pos %d\n", __func__, hash, pos);
@@ -926,23 +910,14 @@ static void rtl930x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 
 	rtl930x_fill_l2_row(r, e);
 
-	for (int i = 0; i < 3; i++)
-		sw_w32(r[i], rtl_table_data(q, i));
-
-	rtl_table_write(q, idx);
-	rtl_table_release(q);
+	otto_table_write(RTL9300_TBL_L2_UC, idx, &r);
 }
 
 static u64 rtl930x_read_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
-	struct table_reg *q = rtl_table_get(RTL9300_TBL_L2, 1);
 
-	rtl_table_read(q, idx);
-	for (int i = 0; i < 3; i++)
-		r[i] = sw_r32(rtl_table_data(q, i));
-
-	rtl_table_release(q);
+	otto_table_read(RTL9300_TBL_L2_CAM_UC, idx, &r);
 
 	rtl930x_fill_l2_entry(r, e);
 	if (!e->valid)
@@ -955,27 +930,19 @@ static u64 rtl930x_read_cam(int idx, struct rtl838x_l2_entry *e)
 static void rtl930x_write_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
-	struct table_reg *q = rtl_table_get(RTL9300_TBL_L2, 1); /* Access L2 Table 1 */
 
 	rtl930x_fill_l2_row(r, e);
 
-	for (int i = 0; i < 3; i++)
-		sw_w32(r[i], rtl_table_data(q, i));
-
-	rtl_table_write(q, idx);
-	rtl_table_release(q);
+	/* Access L2 Table 1 */
+	otto_table_write(RTL9300_TBL_L2_CAM_UC, idx, &r);
 }
 
 static u64 rtl930x_read_mcast_pmask(int idx)
 {
 	u32 portmask;
-	/* Read MC_PORTMASK (2) via register RTL9300_TBL_L2 */
-	struct table_reg *q = rtl_table_get(RTL9300_TBL_L2, 2);
 
-	rtl_table_read(q, idx);
-	portmask = sw_r32(rtl_table_data(q, 0));
+	otto_table_read(RTL9300_TBL_MC_PORTMASK, idx, &portmask);
 	portmask >>= 3;
-	rtl_table_release(q);
 
 	pr_debug("%s: Index idx %d has portmask %08x\n", __func__, idx, portmask);
 
@@ -986,14 +953,10 @@ static void rtl930x_write_mcast_pmask(int idx, u64 portmask)
 {
 	u32 pm = portmask;
 
-	/* Access MC_PORTMASK (2) via register RTL9300_TBL_L2 */
-	struct table_reg *q = rtl_table_get(RTL9300_TBL_L2, 2);
-
 	pr_debug("%s: Index idx %d has portmask %08x\n", __func__, idx, pm);
 	pm <<= 3;
-	sw_w32(pm, rtl_table_data(q, 0));
-	rtl_table_write(q, idx);
-	rtl_table_release(q);
+
+	otto_table_write(RTL9300_TBL_MC_PORTMASK, idx, &pm);
 }
 
 static void rtldsa_930x_set_receive_management_action(int port, rma_ctrl_t type,
@@ -1078,31 +1041,31 @@ static void rtldsa_930x_set_receive_management_action(int port, rma_ctrl_t type,
 /* Enable traffic between a source port and a destination port matrix */
 static void rtl930x_traffic_set(int source, u64 dest_matrix)
 {
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
+	u32 v = dest_matrix << 3;
 
-	sw_w32((dest_matrix << 3), rtl_table_data(r, 0));
-	rtl_table_write(r, source);
-	rtl_table_release(r);
+	otto_table_write(RTL9300_TBL_PORT_ISO_CTRL, source, &v);
 }
 
 static void rtl930x_traffic_enable(int source, int dest)
 {
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
+	int tbl = otto_table_acquire(RTL9300_TBL_PORT_ISO_CTRL);
+	u32 v;
 
-	rtl_table_read(r, source);
-	sw_w32_mask(0, BIT(dest + 3), rtl_table_data(r, 0));
-	rtl_table_write(r, source);
-	rtl_table_release(r);
+	__otto_table_read(tbl, source, &v);
+	v |= BIT(dest + 3);
+	__otto_table_write(tbl, source, &v);
+	otto_table_release(tbl);
 }
 
 static void rtl930x_traffic_disable(int source, int dest)
 {
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
+	int tbl = otto_table_acquire(RTL9300_TBL_PORT_ISO_CTRL);
+	u32 v;
 
-	rtl_table_read(r, source);
-	sw_w32_mask(BIT(dest + 3), 0, rtl_table_data(r, 0));
-	rtl_table_write(r, source);
-	rtl_table_release(r);
+	__otto_table_read(tbl, source, &v);
+	v &= ~BIT(dest + 3);
+	__otto_table_write(tbl, source, &v);
+	otto_table_release(tbl);
 }
 
 void rtl9300_dump_debug(void)
@@ -1667,8 +1630,7 @@ void rtl930x_pie_rule_dump_raw(u32 r[])
 
 static int rtl930x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr)
 {
-	/* Access IACL table (2) via register 0 */
-	struct table_reg *q = rtl_table_get(RTL9300_TBL_0, 2);
+	int tbl = otto_table_acquire(RTL9300_TBL_IACL);
 	u32 r[19];
 	int block = idx / PIE_BLOCK_SIZE;
 	u32 t_select = sw_r32(RTL930X_PIE_BLK_TMPLTE_CTRL(block));
@@ -1679,8 +1641,8 @@ static int rtl930x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 		r[i] = 0;
 
 	if (!pr->valid) {
-		rtl_table_write(q, idx);
-		rtl_table_release(q);
+		__otto_table_write(tbl, idx, &r);
+		otto_table_release(tbl);
 		return 0;
 	}
 	rtl930x_write_pie_fixed_fields(r, pr);
@@ -1692,11 +1654,8 @@ static int rtl930x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 
 /*	rtl930x_pie_rule_dump_raw(r); */
 
-	for (int i = 0; i < 19; i++)
-		sw_w32(r[i], rtl_table_data(q, i));
-
-	rtl_table_write(q, idx);
-	rtl_table_release(q);
+	__otto_table_write(tbl, idx, &r);
+	otto_table_release(tbl);
 
 	return 0;
 }
@@ -1884,50 +1843,42 @@ static void rtl930x_pie_init(struct rtl838x_switch_priv *priv)
 		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
 }
 
-static u32 rtl930x_packet_cntr_read(int counter)
+static u32 rtl930x_packet_cntr_read(struct rtl838x_switch_priv *priv, int counter)
 {
+	u32 buf[2];
 	u32 v;
 
-	/* Read LOG table (3) via register RTL9300_TBL_0 */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 3);
+	dev_dbg(priv->dev, "reading LOG packet counter %d\n", counter);
+	/* Two counters share one entry, so the parity of counter picks which
+	 * half of it to return.
+	 */
+	otto_table_read(RTL9300_TBL_LOG, counter / 2, &buf);
 
-	pr_debug("In %s, id %d\n", __func__, counter);
-	rtl_table_read(r, counter / 2);
-
-	pr_debug("Registers: %08x %08x\n",
-		 sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)));
-	/* The table has a size of 2 registers */
+	dev_dbg(priv->dev, "LOG entry: %08x %08x\n", buf[0], buf[1]);
 	if (counter % 2)
-		v = sw_r32(rtl_table_data(r, 0));
+		v = buf[0];
 	else
-		v = sw_r32(rtl_table_data(r, 1));
-
-	rtl_table_release(r);
+		v = buf[1];
 
 	return v;
 }
 
-static void rtl930x_packet_cntr_clear(int counter)
+static void rtl930x_packet_cntr_clear(struct rtl838x_switch_priv *priv, int counter)
 {
-	/* Access LOG table (3) via register RTL9300_TBL_0 */
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 3);
+	int tbl = otto_table_acquire(RTL9300_TBL_LOG);
 
-	pr_debug("In %s, id %d\n", __func__, counter);
+	u32 v[2];
+
+	dev_dbg(priv->dev, "clearing LOG packet counter %d\n", counter);
 
 	/* Two counters share one LOG table entry. Read the current entry
 	 * first so clearing one half preserves the adjacent counter.
 	 */
-	rtl_table_read(r, counter / 2);
+	__otto_table_read(tbl, counter / 2, &v);
+	v[counter % 2 ? 0 : 1] = 0;
+	__otto_table_write(tbl, counter / 2, &v);
 
-	/* The table has a size of 2 registers */
-	if (counter % 2)
-		sw_w32(0, rtl_table_data(r, 0));
-	else
-		sw_w32(0, rtl_table_data(r, 1));
-
-	rtl_table_write(r, counter / 2);
-
-	rtl_table_release(r);
+	otto_table_release(tbl);
 }
 
 static void rtl930x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)

@@ -205,6 +205,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 static int rtldsa_93xx_setup(struct dsa_switch *ds)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	int err;
 
 	pr_info("%s called\n", __func__);
 
@@ -243,6 +244,11 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	ds->assisted_learning_on_cpu_port = true;
 
 	priv->r->pie_init(priv);
+
+	err = rtldsa_tc_init(priv);
+	if (err)
+		return err;
+
 	priv->r->led_init(priv);
 
 	return 0;
@@ -2345,7 +2351,8 @@ static void rtldsa_port_mirror_del(struct dsa_switch *ds, int port,
 		priv->r->mask_port_reg_be(1ULL << port, 0, config.dpm);
 	}
 
-	if (!(sw_r32(config.spm) || sw_r32(config.dpm))) {
+	if (!(priv->r->get_port_reg_be(config.spm) ||
+	      priv->r->get_port_reg_be(config.dpm))) {
 		priv->mirror_group_ports[group] = -1;
 		sw_w32(0, config.ctrl);
 	}
