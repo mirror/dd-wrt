@@ -164,6 +164,11 @@ static int getbuttonstate()
 {
 	return !get_gpio(496);
 }
+#elif defined(HAVE_VENICE)
+static int getbuttonstate()
+{
+	return 0;
+}
 #elif defined(HAVE_E200)
 static int getbuttonstate()
 {
@@ -1147,10 +1152,10 @@ static void resetbtn_period_check(int sig)
 	// time(&t);
 	// DEBUG("resetbutton: now time=%d\n", t);
 
-#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_REALTEK) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || \
-	defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) ||   \
-	defined(HAVE_TW6600) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) ||        \
-	defined(HAVE_SOLO51) || defined(HAVE_OPENRISC) || defined(HAVE_DANUBE) || defined(HAVE_WDR4900) ||                     \
+#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_REALTEK) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) ||    \
+	defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_VENICE) || defined(HAVE_STORM) || defined(HAVE_LS2) ||   \
+	defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) ||             \
+	defined(HAVE_NP28G) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC) || defined(HAVE_DANUBE) || defined(HAVE_WDR4900) || \
 	defined(HAVE_VENTANA) || defined(HAVE_AC622) || defined(HAVE_AC722) || defined(HAVE_EROUTER) || defined(HAVE_IPQ6018)
 	val = getbuttonstate();
 	#ifdef HAVE_WRK54G
@@ -1264,11 +1269,11 @@ static void resetbtn_period_check(int sig)
 
 	int state = 0;
 
-#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_REALTEK) || (HAVE_XSCALE) || defined(HAVE_MAGICBOX) ||          \
-	defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) ||  \
-	defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) ||            \
-	defined(HAVE_NP28G) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC) || defined(HAVE_DANUBE) || defined(HAVE_UNIWIP) || \
-	defined(HAVE_EROUTER) || defined(HAVE_VENTANA) || defined(HAVE_WDR4900) || defined(HAVE_IPQ6018)
+#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_REALTEK) || (HAVE_XSCALE) || defined(HAVE_MAGICBOX) ||         \
+	defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || \
+	defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_LS5) || defined(HAVE_VENICE) || defined(HAVE_LSX) ||          \
+	defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC) || defined(HAVE_DANUBE) || \
+	defined(HAVE_UNIWIP) || defined(HAVE_EROUTER) || defined(HAVE_VENTANA) || defined(HAVE_WDR4900) || defined(HAVE_IPQ6018)
 	state = val;
 	int sesgpio = 0xfff;
 	int wifi24gpio = 0xfff;

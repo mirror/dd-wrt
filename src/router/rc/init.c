@@ -255,7 +255,7 @@ static void unmount_fs(void)
 			continue;
 		if (!strcmp(fstype, "usbfs"))
 			continue;
-#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_OPENRISC)
+#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_VENICE) || defined(HAVE_OPENRISC)
 		if (!strcmp(mpoint, "/usr/local")) {
 			continue;
 		}
@@ -330,7 +330,7 @@ void shutdown_system(void)
 		wait_for_finish("waiting for %s to be killed");
 		sync();
 		unmount_fs(); // try to unmount
-#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_OPENRISC)
+#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_VENICE) || defined(HAVE_OPENRISC)
 		eval("mount", "-o", "remount,ro", "/usr/local");
 		eval("mount", "-o", "remount,ro", "/");
 		eval("umount", "-r", "-f", "/usr/local");

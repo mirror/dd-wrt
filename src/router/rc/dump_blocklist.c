@@ -4,7 +4,6 @@
 #include <time.h>
 #include <arpa/inet.h>
 
-
 char *rfctime(const time_t timep, char *s)
 {
 	struct tm tm;

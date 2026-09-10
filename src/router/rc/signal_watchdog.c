@@ -59,7 +59,7 @@ static void check_signal(const char *var, int interface, int vap)
 							    wc->ifname, mac);
 						sys_reboot();
 					}
-				
+
 				} else {
 					if (zerocount[interface][vap]) {
 						if (zerocount[interface][vap] > 20)
