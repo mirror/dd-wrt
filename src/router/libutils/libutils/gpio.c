@@ -1439,6 +1439,36 @@ int get_gpio(int pin)
 	return get_linux_gpio(pin);
 }
 
+#elif HAVE_VENICE
+void set_gpio(int pin, int value)
+{
+	switch (pin) {
+	case 102:
+		writestr("/sys/class/leds/green:status/trigger", "none");
+		writeint("/sys/class/leds/green:status/brightness", value ? 255 : 0);
+		break;
+	case 103:
+		writestr("/sys/class/leds/red:status/trigger", "none");
+		writeint("/sys/class/leds/red:status/brightness", value ? 255 : 0);
+		break;
+	default:
+		set_linux_gpio(pin, value);
+		break;
+	}
+}
+
+int get_gpio(int pin)
+{
+	int val = 0;
+	switch (pin) {
+	case 102:
+	case 103:
+		break;
+	default:
+		val = get_linux_gpio(pin);
+	}
+	return val;
+}
 #elif HAVE_VENTANA
 void set_gpio(int pin, int value)
 {

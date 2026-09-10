@@ -1405,6 +1405,8 @@ char *cpustring(void)
 	return "FreeScale MPC8343";
 #elif HAVE_NEWPORT
 	return "Cavium ThunderX CN81XX";
+#elif HAVE_VENICE
+	return "FreeScale i.MX8";
 #elif HAVE_VENTANA
 	return "FreeScale i.MX6 Quad/DualLite";
 #elif HAVE_NORTHSTAR

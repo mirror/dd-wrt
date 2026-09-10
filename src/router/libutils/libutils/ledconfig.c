@@ -438,6 +438,12 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->connected_gpio = GPIO_LOW | 0x10; // 16 is mapped to front led
 	#endif
 		break;
+	case ROUTER_BOARD_VENICE:
+		cfg->power_gpio = GPIO_LOW | 0x66;
+		cfg->diag_gpio = 0x6F;
+		cfg->connected_gpio = 0x66;
+		cfg->disconnected_gpio = 0x67;
+		break;
 	case ROUTER_BOARD_GATEWORX:
 	#ifdef HAVE_WG302V1
 		cfg->diag_gpio = GPIO_LOW | 0x4;

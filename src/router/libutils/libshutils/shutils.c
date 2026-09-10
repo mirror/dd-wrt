@@ -1106,7 +1106,7 @@ u_int64_t freediskSpace(char *path)
 
 int jffs_mounted(void)
 {
-#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_RAMBUTAN) || defined(HAVE_OCTEON) || defined(HAVE_NEWPORT) || \
+#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_RAMBUTAN) || defined(HAVE_OCTEON) || defined(HAVE_NEWPORT) || defined(HAVE_VENICE) || \
 	(defined(HAVE_RB600) && !defined(HAVE_WDR4900))
 	return 1;
 #endif
@@ -1425,7 +1425,7 @@ static void precommit(void)
 #if defined(HAVE_WZRHPG300NH) || defined(HAVE_WHRHPGN) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_DIR825) || \
 	defined(HAVE_TEW632BRP) || defined(HAVE_TG2521) || defined(HAVE_WR1043) || defined(HAVE_WRT400) ||      \
 	defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450) || defined(HAVE_DANUBE) || defined(HAVE_WR741) ||   \
-	defined(HAVE_NORTHSTAR) || defined(HAVE_DIR615I) || defined(HAVE_WDR4900) || defined(HAVE_VENTANA) ||   \
+	defined(HAVE_NORTHSTAR) || defined(HAVE_DIR615I) || defined(HAVE_WDR4900) || defined(HAVE_VENTANA) || defined(HAVE_VENICE) ||   \
 	defined(HAVE_UBNTM) || defined(DHAVE_IPQ806X) || defined(DHAVE_IPQ6018)
 	eval("ledtool", "1");
 #elif HAVE_LSX

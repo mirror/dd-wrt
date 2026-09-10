@@ -886,6 +886,8 @@
 
 #define ROUTER_XIAOMI_BE7000 0x12f02c
 
+#define ROUTER_BOARD_VENICE 0x1300ff
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
