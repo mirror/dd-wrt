@@ -118,13 +118,14 @@ static void svqos_reset_ports(void)
 															#ifndef HAVE_STORM
 																#ifndef HAVE_LAGUNA
 																	#ifndef HAVE_VENTANA
-																		#ifndef HAVE_IPQ6018
-																			#ifndef HAVE_REALTEK
-																				#ifndef HAVE_NEWPORT
-																					#ifndef HAVE_EROUTER
-																						#ifndef HAVE_OPENRISC
-																							#ifndef HAVE_ADM5120
-																								#ifndef HAVE_TW6600
+																		#ifndef HAVE_VENICE
+																			#ifndef HAVE_IPQ6018
+																				#ifndef HAVE_REALTEK
+																					#ifndef HAVE_NEWPORT
+																						#ifndef HAVE_EROUTER
+																							#ifndef HAVE_OPENRISC
+																								#ifndef HAVE_ADM5120
+																									#ifndef HAVE_TW6600
 	if (nvram_matchi("portprio_support", 1)) {
 		writeproc("/proc/switch/eth0/port/1/enable", "1");
 		writeproc("/proc/switch/eth0/port/2/enable", "1");
@@ -146,6 +147,7 @@ static void svqos_reset_ports(void)
 		writeproc("/proc/switch/eth0/port/3/bandwidth", "FULL");
 		writeproc("/proc/switch/eth0/port/4/bandwidth", "FULL");
 	}
+																									#endif
 																								#endif
 																							#endif
 																						#endif
@@ -189,15 +191,16 @@ static int svqos_set_ports(void)
 													#ifndef HAVE_IPQ6018
 														#ifndef HAVE_REALTEK
 															#ifndef HAVE_VENTANA
-																#ifndef HAVE_NEWPORT
-																	#ifndef HAVE_EROUTER
-																		#ifndef HAVE_TW6600
-																			#ifndef HAVE_PB42
-																				#ifndef HAVE_LSX
-																					#ifndef HAVE_DANUBE
-																						#ifndef HAVE_STORM
-																							#ifndef HAVE_OPENRISC
-																								#ifndef HAVE_ADM5120
+																#ifndef HAVE_VENICE
+																	#ifndef HAVE_NEWPORT
+																		#ifndef HAVE_EROUTER
+																			#ifndef HAVE_TW6600
+																				#ifndef HAVE_PB42
+																					#ifndef HAVE_LSX
+																						#ifndef HAVE_DANUBE
+																							#ifndef HAVE_STORM
+																								#ifndef HAVE_OPENRISC
+																									#ifndef HAVE_ADM5120
 	if (nvram_matchi("portprio_support", 1)) {
 		int loop = 1;
 		char nvram_var[32] = { 0 }, *level;
@@ -219,6 +222,7 @@ static int svqos_set_ports(void)
 			writevaproc(lvl, "/proc/switch/eth0/port/%d/prio", loop);
 		}
 	}
+																									#endif
 																								#endif
 																							#endif
 																						#endif

@@ -662,11 +662,11 @@ void reset_hwaddr(char *ifname)
 			char *def = nvram_safe_get("et0macaddr_safe");
 			if (!*def)
 				def = nvram_safe_get("lan_hwaddr");
-#if defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || \
-	defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) ||       \
-	defined(HAVE_SOLO51) || defined(HAVE_WHRAG108) || defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE) ||   \
-	defined(HAVE_STORM) || defined(HAVE_OPENRISC) || defined(HAVE_ADM5120) || defined(HAVE_TW6600) || defined(HAVE_CA8) || \
-	defined(HAVE_IPQ6018) || defined(HAVE_EROUTER) || defined(HAVE_REALTEK)
+#if defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) ||    \
+	defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_VENICE) || defined(HAVE_RT2880) || defined(HAVE_LS2) ||       \
+	defined(HAVE_LS5) || defined(HAVE_SOLO51) || defined(HAVE_WHRAG108) || defined(HAVE_PB42) || defined(HAVE_LSX) ||         \
+	defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_OPENRISC) || defined(HAVE_ADM5120) || defined(HAVE_TW6600) || \
+	defined(HAVE_CA8) || defined(HAVE_IPQ6018) || defined(HAVE_EROUTER) || defined(HAVE_REALTEK)
 			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_XSCALE
@@ -1813,7 +1813,7 @@ void start_lan(void)
 		strcpy(mac, nvram_safe_get("et0macaddr"));
 		break;
 	}
-#elif defined(HAVE_VENTANA)
+#elif defined(HAVE_VENTANA) || defined(HAVE_VENICE)
 	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 wlan0 wlan1 wlan2 wlan3 wlan4 wlan5 wlan6");
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		PORTSETUPWAN("");
@@ -2160,12 +2160,12 @@ void start_lan(void)
 			if (nvram_match("wan_ifname", name))
 				continue;
 #if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_LAGUNA) && !defined(HAVE_VENTANA) && \
-	!defined(HAVE_NEWPORT) && !defined(HAVE_MAGICBOX) && !defined(HAVE_RB600) && !defined(HAVE_FONERA) &&                    \
-	!defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) &&       \
-	!defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) &&   \
-	!defined(HAVE_OPENRISC) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880) && !defined(HAVE_SOLO51) &&                   \
-	!defined(HAVE_EROUTER) && !defined(HAVE_IPQ806X) && !defined(HAVE_R9000) && !defined(HAVE_IPQ6018) &&                    \
-	!defined(HAVE_REALTEK)
+	!defined(HAVE_NEWPORT) && !defined(HAVE_MAGICBOX) && !defined(HAVE_VENICE) && !defined(HAVE_RB600) &&                    \
+	!defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) &&    \
+	!defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) &&     \
+	!defined(HAVE_STORM) && !defined(HAVE_OPENRISC) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880) &&                    \
+	!defined(HAVE_SOLO51) && !defined(HAVE_EROUTER) && !defined(HAVE_IPQ806X) && !defined(HAVE_R9000) &&                     \
+	!defined(HAVE_IPQ6018) && !defined(HAVE_REALTEK)
 			if (!strcmp(name, "eth2")) {
 				strcpy(realname, "wlan0");
 			} else
@@ -2627,6 +2627,9 @@ void start_lan(void)
 	#define HAVE_RB500
 #endif
 #ifdef HAVE_VENTANA
+	#define HAVE_RB500
+#endif
+#ifdef HAVE_VENICE
 	#define HAVE_RB500
 #endif
 #ifdef HAVE_IPQ6018

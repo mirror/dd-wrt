@@ -3296,6 +3296,9 @@ void configure_wifi(void) // madwifi implementation for atheros based
 #ifdef HAVE_VENTANA
 	nvram_set("wl0_hwaddr", get_hwaddr("wlan0", eabuf));
 #endif
+#ifdef HAVE_VENICE
+	nvram_set("wl0_hwaddr", get_hwaddr("wlan0", eabuf));
+#endif
 #ifdef HAVE_IPQ6018
 	nvram_set("wl0_hwaddr", get_hwaddr("wlan0", eabuf));
 #endif

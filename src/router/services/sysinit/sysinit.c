@@ -1119,7 +1119,7 @@ void start_restore_defaults(void)
 	default:
 		generic = generic_all;
 	}
-#elif HAVE_VENTANA
+#elif defined(HAVE_VENTANA) || defined(HAVE_VENICE)
 	struct nvram_param generic[] = { { "lan_ifname", "br0" },
 					 { "lan_ifnames", "eth0 eth1 wlan0 wlan1 wlan2 wlan3" },
 					 { "wan_ifname", "eth0" },
@@ -1956,7 +1956,7 @@ void start_restore_defaults(void)
 	linux_overrides = generic;
 	int brand = getRouterBrand();
 #elif defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_XSCALE) || defined(HAVE_X86) ||      \
-	defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_IPQ6018) ||                    \
+	defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_VENICE) || defined(HAVE_IPQ6018) ||                    \
 	defined(HAVE_REALTEK) || defined(HAVE_NORTHSTAR) || defined(HAVE_RB600) || defined(HAVE_NEWPORT) ||                    \
 	defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) || \
 	defined(HAVE_LS5) || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) ||      \
@@ -2146,7 +2146,7 @@ void start_restore_defaults(void)
 	 * Restore defaults 
 	 */
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018) || defined(HAVE_REALTEK) || defined(HAVE_XSCALE) ||      \
-	defined(HAVE_X86) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_NORTHSTAR) || \
+	defined(HAVE_X86) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_VENICE) || defined(HAVE_NORTHSTAR) || \
 	defined(HAVE_RB600) || defined(HAVE_IPQ6018) || defined(HAVE_REALTEK) || defined(HAVE_NEWPORT) ||                          \
 	defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) ||     \
 	defined(HAVE_LS5) || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) ||          \
