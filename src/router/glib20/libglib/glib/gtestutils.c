@@ -196,30 +196,6 @@
  */
 
 /**
- * GTestSubprocessFlags:
- * @G_TEST_SUBPROCESS_DEFAULT: Default behaviour. Since: 2.74
- * @G_TEST_SUBPROCESS_INHERIT_STDIN: If this flag is given, the child
- *   process will inherit the parent's stdin. Otherwise, the child's
- *   stdin is redirected to `/dev/null`.
- * @G_TEST_SUBPROCESS_INHERIT_STDOUT: If this flag is given, the child
- *   process will inherit the parent's stdout. Otherwise, the child's
- *   stdout will not be visible, but it will be captured to allow
- *   later tests with [func@GLib.test_trap_assert_stdout].
- * @G_TEST_SUBPROCESS_INHERIT_STDERR: If this flag is given, the child
- *   process will inherit the parent's stderr. Otherwise, the child's
- *   stderr will not be visible, but it will be captured to allow
- *   later tests with [func@GLib.test_trap_assert_stderr].
- * @G_TEST_SUBPROCESS_INHERIT_DESCRIPTORS: If this flag is given, the
- *   child process will inherit the parent’s open file descriptors.
- *
- * Flags to pass to [func@GLib.test_trap_subprocess] to control input and output.
- *
- * Note that in contrast with [func@GLib.test_trap_fork], the default
- * behavior of [func@GLib.test_trap_subprocess] is to not show stdout
- * and stderr.
- */
-
-/**
  * g_test_trap_assert_passed:
  *
  * Assert that the last test subprocess passed.
@@ -807,7 +783,17 @@ g_test_print_handler_full (const gchar *string,
 
   if (G_LIKELY (use_tap_format) && strchr (string, '\n') != NULL)
     {
-      static gboolean last_had_final_newline = TRUE;
+      static GPrivate last_had_newline_key = G_PRIVATE_INIT (g_free);
+      gboolean *last_had_final_newline = g_private_get (&last_had_newline_key);
+
+      if G_UNLIKELY (last_had_final_newline == NULL)
+        {
+          last_had_final_newline = g_new0 (gboolean, 1);
+          *last_had_final_newline = TRUE;
+          g_private_set (&last_had_newline_key, last_had_final_newline);
+          g_ignore_leak (last_had_final_newline);
+        }
+
       GString *output = g_string_new_len (NULL, strlen (string) + 2);
       const char *line = string;
 
@@ -815,7 +801,8 @@ g_test_print_handler_full (const gchar *string,
         {
           const char *next = strchr (line, '\n');
 
-          if (last_had_final_newline && (next || *line != '\0'))
+          if ((next || *line != '\0') &&
+              *last_had_final_newline)
             {
               for (unsigned l = 0; l < subtest_level; ++l)
                 g_string_append (output, TAP_SUBTEST_PREFIX);
@@ -832,7 +819,7 @@ g_test_print_handler_full (const gchar *string,
           else
             {
               g_string_append (output, line);
-              last_had_final_newline = (*line == '\0');
+              *last_had_final_newline = (*line == '\0');
             }
 
           line = next;
@@ -4678,7 +4665,7 @@ g_test_build_filename_va (GTestFileType  file_type,
  *
  * The data file should either have been distributed with the module
  * containing the test ([enum@GLib.TestFileType.dist] or built as part of the
- * buildcsystem of that module ([enum@GLib.TestFileType.built]).
+ * build system of that module ([enum@GLib.TestFileType.built]).
  *
  * In order for this function to work in srcdir != builddir situations,
  * the `G_TEST_SRCDIR` and `G_TEST_BUILDDIR` environment variables need

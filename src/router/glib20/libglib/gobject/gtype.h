@@ -1070,7 +1070,6 @@ typedef enum    /*< skip >*/
 } G_GNUC_FLAG_ENUM GTypeFundamentalFlags;
 /**
  * GTypeFlags:
- * @G_TYPE_FLAG_NONE: No special flags. Since: 2.74
  * @G_TYPE_FLAG_ABSTRACT: Indicates an abstract type. No instances can be
  *  created for an abstract type
  * @G_TYPE_FLAG_VALUE_ABSTRACT: Indicates an abstract value type, i.e. a type
@@ -1086,6 +1085,13 @@ typedef enum    /*< skip >*/
  */
 typedef enum    /*< skip >*/
 {
+  /**
+   * G_TYPE_FLAG_NONE:
+   *
+   * No special flags.
+   *
+   * Since: 2.74
+   */
   G_TYPE_FLAG_NONE GOBJECT_AVAILABLE_ENUMERATOR_IN_2_74 = 0,
   G_TYPE_FLAG_ABSTRACT = (1 << 4),
   G_TYPE_FLAG_VALUE_ABSTRACT = (1 << 5),
@@ -2289,7 +2295,7 @@ static void     type_name##_class_intern_init (gpointer klass) \
 static void     type_name##_init              (TypeName        *self); \
 static void     type_name##_class_init        (TypeName##Class *klass); \
 static GType    type_name##_get_type_once     (void); \
-static gpointer type_name##_parent_class = NULL; \
+G_GNUC_UNUSED static gpointer type_name##_parent_class = NULL; \
 static gint     TypeName##_private_offset; \
 \
 _G_DEFINE_TYPE_EXTENDED_CLASS_INIT(TypeName, type_name) \
@@ -2675,34 +2681,34 @@ const gchar *    g_type_name_from_class         (GTypeClass	*g_class);
 #define _G_TYPE_CIFT(ip, ft)            (g_type_check_instance_is_fundamentally_a ((GTypeInstance*) ip, ft))
 #ifdef	__GNUC__
 #  define _G_TYPE_CIT(ip, gt)             (G_GNUC_EXTENSION ({ \
-  GTypeInstance *__inst = (GTypeInstance*) ip; GType __t = gt; gboolean __r; \
-  if (!__inst) \
-    __r = FALSE; \
-  else if (__inst->g_class && __inst->g_class->g_type == __t) \
-    __r = TRUE; \
+  GTypeInstance *_inst = (GTypeInstance*) ip; GType _t = gt; gboolean _r; \
+  if (!_inst) \
+    _r = FALSE; \
+  else if (_inst->g_class && _inst->g_class->g_type == _t) \
+    _r = TRUE; \
   else \
-    __r = g_type_check_instance_is_a (__inst, __t); \
-  __r; \
+    _r = g_type_check_instance_is_a (_inst, _t); \
+  _r; \
 }))
 #  define _G_TYPE_CCT(cp, gt)             (G_GNUC_EXTENSION ({ \
-  GTypeClass *__class = (GTypeClass*) cp; GType __t = gt; gboolean __r; \
-  if (!__class) \
-    __r = FALSE; \
-  else if (__class->g_type == __t) \
-    __r = TRUE; \
+  GTypeClass *_class = (GTypeClass*) cp; GType _t = gt; gboolean _r; \
+  if (!_class) \
+    _r = FALSE; \
+  else if (_class->g_type == _t) \
+    _r = TRUE; \
   else \
-    __r = g_type_check_class_is_a (__class, __t); \
-  __r; \
+    _r = g_type_check_class_is_a (_class, _t); \
+  _r; \
 }))
 #  define _G_TYPE_CVH(vl, gt)             (G_GNUC_EXTENSION ({ \
-  const GValue *__val = (const GValue*) vl; GType __t = gt; gboolean __r; \
-  if (!__val) \
-    __r = FALSE; \
-  else if (__val->g_type == __t)		\
-    __r = TRUE; \
+  const GValue *_val = (const GValue*) vl; GType _t = gt; gboolean _r; \
+  if (!_val) \
+    _r = FALSE; \
+  else if (_val->g_type == _t)		\
+    _r = TRUE; \
   else \
-    __r = g_type_check_value_holds (__val, __t); \
-  __r; \
+    _r = g_type_check_value_holds (_val, _t); \
+  _r; \
 }))
 #else  /* !__GNUC__ */
 #  define _G_TYPE_CIT(ip, gt)             (g_type_check_instance_is_a ((GTypeInstance*) ip, gt))

@@ -104,14 +104,6 @@
 
   <maintainer>
     <foaf:Person>
-      <foaf:name>Jonathan Matthew</foaf:name>
-      <foaf:mbox rdf:resource="mailto:jonathan@d14n.org"/>
-      <gnome:userid>jmatthew</gnome:userid>
-    </foaf:Person>
-  </maintainer>
-
-  <maintainer>
-    <foaf:Person>
       <foaf:name>Ting-Wei Lan</foaf:name>
       <foaf:mbox rdf:resource="mailto:lantw@src.gnome.org"/>
       <gnome:userid>lantw</gnome:userid>
@@ -178,7 +170,7 @@
     <foaf:Person>
       <foaf:name>Luca Bacci</foaf:name>
       <foaf:mbox rdf:resource="mailto:luca.bacci982@gmail.com"/>
-      <gnome:userid>lb90</gnome:userid>
+      <gnome:userid>lbacci</gnome:userid>
     </foaf:Person>
   </maintainer>
 
