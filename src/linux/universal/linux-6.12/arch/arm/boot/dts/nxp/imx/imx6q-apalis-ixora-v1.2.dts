@@ -24,6 +24,10 @@
 		i2c2 = &i2c2;
 		rtc0 = &rtc_i2c;
 		rtc1 = &snvs_rtc;
+		led-boot = &led_boot;
+		led-failsafe = &led_failsafe;
+		led-running = &led_running;
+		led-upgrade = &led_upgrade;
 	};
 
 	chosen {
@@ -36,24 +40,35 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_leds_ixora>;
 
-		led4-green {
-			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		led_running: led4-green {
+			gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>;
 			label = "LED_4_GREEN";
 		};
 
-		led4-red {
-			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+		led_upgrade: led4-red {
+			gpios = <&gpio1 21 GPIO_ACTIVE_HIGH>;
 			label = "LED_4_RED";
 		};
 
-		led5-green {
+		led_boot: led5-green {
 			gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
 			label = "LED_5_GREEN";
 		};
 
-		led5-red {
+		led_failsafe: led5-red {
 			gpios = <&gpio2 2 GPIO_ACTIVE_HIGH>;
 			label = "LED_5_RED";
+		};
+	};
+
+	gpio-keys {
+		pinctrl-0 = <&pinctrl_gpio_keys &pinctrl_switch3_ixora>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 16 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <10>;
 		};
 	};
 
@@ -257,6 +272,12 @@
 			MX6QDL_PAD_SD2_DAT3__GPIO1_IO12 0x1b0b0
 			MX6QDL_PAD_NANDF_D1__GPIO2_IO01 0x1b0b0
 			MX6QDL_PAD_NANDF_D2__GPIO2_IO02 0x1b0b0
+		>;
+	};
+
+	pinctrl_switch3_ixora: switch3ixora {
+		fsl,pins = <
+			MX6QDL_PAD_SD1_DAT0__GPIO1_IO16 0x1b0b0
 		>;
 	};
 
