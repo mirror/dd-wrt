@@ -58,7 +58,7 @@
 
 extern void dd_debug(int target, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_VENICE) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
 extern int debug_ready(void);
 #else
 	#define debug_ready() (1)
