@@ -1244,6 +1244,10 @@ ifeq ($(CONFIG_IPQ6018),y)
 	install ldd.sh $(INSTALLDIR)/usr/sbin
 	install update-prepare.mmc $(INSTALLDIR)/usr/sbin	
 endif
+ifeq ($(CONFIG_VENICE),y)
+	install ldd.sh $(INSTALLDIR)/usr/sbin
+	install update-prepare.mmc $(INSTALLDIR)/usr/sbin	
+endif
 ifeq ($(CONFIG_NEWPORT),y)
 	install update-prepare.sh $(INSTALLDIR)/usr/sbin	
 	install -D update-after-pivot.sh.newport $(INSTALLDIR)/usr/sbin/update-after-pivot.sh

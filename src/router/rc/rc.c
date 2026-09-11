@@ -101,6 +101,8 @@
 	#include "hdd.c"
 #elif defined(HAVE_X86)
 	#include "mmc.c"
+#elif defined(HAVE_VENICE)
+	#include "mmc.c"
 #elif defined(HAVE_EROUTER)
 	#include "mmc.c"
 #elif defined(HAVE_IPQ95XX)

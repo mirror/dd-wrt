@@ -365,7 +365,7 @@ rewrite:;
 		goto fail;
 	}
 
-#if defined(HAVE_X86) || defined(HAVE_EROUTER)
+#if defined(HAVE_X86) || defined(HAVE_EROUTER) || defined(HAVE_VENICE)
 	char disk[32];
 	char *d = getdisc();
 	eval("hdparm", "-W", "0", d);
