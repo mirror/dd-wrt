@@ -118,9 +118,6 @@ void start_sysinit(void)
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
 	}
-	char *eth1addr = getUEnv("eth1addr");
-	if (eth1addr)
-		set_hwaddr("eth1", eth1addr);
 
 	eval("ifconfig", "eth0", "promisc");
 	eval("ifconfig", "eth1", "promisc");

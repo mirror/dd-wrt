@@ -45,7 +45,7 @@
 #include <utils.h>
 #include <byteswap.h>
 
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_VENICE) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
 
 int debug_ready(void)
 {
@@ -1278,7 +1278,7 @@ static unsigned short get_le_short(void *from)
 	return ((unsigned short)(p[1]) << 8) + (unsigned short)p[0];
 }
 
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_VENICE) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
 static unsigned int get_le_long(void *from)
 {
 	unsigned char *p = from;

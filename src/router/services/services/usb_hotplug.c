@@ -536,7 +536,7 @@ retry:;
 			if (mounted[i])
 				continue;
 
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_VENICE) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 			char *check = getdisc();
 			if (!strncmp(entry->d_name, check, 5)) {
 				fprintf(stderr, "skip %s, since its the system drive\n", check);
