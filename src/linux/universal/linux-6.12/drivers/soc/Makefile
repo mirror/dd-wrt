@@ -26,6 +26,7 @@ obj-y				+= nuvoton/
 obj-y				+= pxa/
 obj-y				+= amlogic/
 obj-y				+= qcom/
+obj-$(CONFIG_REALTEK_OTTO_TABLE)	+= realtek/
 obj-y				+= renesas/
 obj-y				+= rockchip/
 obj-$(CONFIG_SOC_SAMSUNG)	+= samsung/

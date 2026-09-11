@@ -310,6 +310,11 @@
 				#pcs-cells = <1>;
 			};
 		};
+
+		table {
+			compatible = "realtek,rtl9301-table", "realtek,otto-table";
+		};
+
 		soc_thermal: thermal {
 			compatible = "realtek,rtl9300-thermal";
 			#thermal-sensor-cells = <0>;
