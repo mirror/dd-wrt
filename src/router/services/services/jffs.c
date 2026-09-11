@@ -33,6 +33,9 @@ int is_mtd_mounted(const char *dev);
 
 void stop_jffs2(void)
 {
+	#ifdef HAVE_VENICE
+	return;
+	#endif
 	#if defined(HAVE_R9000)
 	int mtd = getMTD("plex");
 	#else
@@ -58,6 +61,9 @@ void start_jffs2(void)
 	int ax89 = 0;
 	int f2fs = 0;
 	char *f2fspart;
+	#ifdef HAVE_VENICE
+	return;
+	#endif
 	#if defined(HAVE_R9000)
 	int mtd = getMTD("plex");
 	#else
