@@ -83,8 +83,8 @@ void start_sysinit(void)
 	/*
 	 * Setup console 
 	 */
-	eval("mount", "-o", "remount,rw", "/");
-	eval("mkdir", "-p", "/usr/local/nvram");
+//	eval("mount", "-o", "remount,rw", "/");
+//	eval("mkdir", "-p", "/usr/local/nvram");
 
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
 

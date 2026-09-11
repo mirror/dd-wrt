@@ -173,7 +173,7 @@ void start_devinit(void)
 	mkdir("/dev/misc", 0700);
 	mknod("/dev/misc/gpio", S_IFCHR | 0644, makedev(125, 0));
 #endif
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_VENICE) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 	fprintf(stderr, "waiting for hotplug\n");
 	char s_dev[64];
 	char *s_disc = getdisc();
@@ -329,7 +329,7 @@ void start_devinit(void)
 	}
 
 #endif
-#if defined(HAVE_RB600) || defined(HAVE_NEWPORT) && !defined(HAVE_WDR4900)
+#if defined(HAVE_RB600) || defined(HAVE_NEWPORT) || defined(HAVE_VENICE) && !defined(HAVE_WDR4900)
 	//recover nvram if available
 	char dev[64];
 	FILE *in = fopen64("/usr/local/nvram/nvram.bin", "rb");
