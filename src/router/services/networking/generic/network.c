@@ -1814,7 +1814,16 @@ void start_lan(void)
 		break;
 	}
 #elif defined(HAVE_VENTANA) || defined(HAVE_VENICE)
-	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 wlan0 wlan1 wlan2 wlan3 wlan4 wlan5 wlan6");
+	switch (getRouterBrand()) {
+	case ROUTER_BOARD_VENICE:
+		nvram_setz(lan_ifnames, "eth0 eth1 wlan0 wlan1 wlan2 wlan3 wlan4 wlan5 wlan6");
+		break;
+	case ROUTER_BOARD_VENICE_GW7400:
+		nvram_setz(lan_ifnames, "eth0 lan1 lan2 lan3 lan4 wlan0 wlan1 wlan2 wlan3 wlan4 wlan5 wlan6");
+		break;
+	default:
+		nvram_setz(lan_ifnames, "eth0 eth1 wlan0 wlan1 wlan2 wlan3 wlan4 wlan5 wlan6");
+	}
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		PORTSETUPWAN("");
 	} else {

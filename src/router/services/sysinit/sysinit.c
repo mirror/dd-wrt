@@ -1120,13 +1120,32 @@ void start_restore_defaults(void)
 		generic = generic_all;
 	}
 #elif defined(HAVE_VENTANA) || defined(HAVE_VENICE)
-	struct nvram_param generic[] = { { "lan_ifname", "br0" },
+	struct nvram_param *generic = NULL;
+	struct nvram_param generic_gw7xxx[] = { { "lan_ifname", "br0" },
 					 { "lan_ifnames", "eth0 eth1 wlan0 wlan1 wlan2 wlan3" },
 					 { "wan_ifname", "eth0" },
 					 { "wan_ifname2", "eth0" },
 					 { "wan_ifnames", "eth0" },
 					 { "wan_default", "eth0" },
 					 { 0, 0 } };
+	struct nvram_param generic_gw74xx[] = { { "lan_ifname", "br0" },
+					 { "lan_ifnames", "eth0 lan1 lan2 lan3 lan4 wlan0 wlan1 wlan2 wlan3" },
+					 { "wan_ifname", "eth0" },
+					 { "wan_ifname2", "eth0" },
+					 { "wan_ifnames", "eth0" },
+					 { "wan_default", "eth0" },
+					 { 0, 0 } };
+	int wrt_brand = getRouterBrand();
+	switch (wrt_brand) {
+	case ROUTER_BOARD_VENICE:
+		generic = generic_gw7xxx;
+		break;
+	case ROUTER_BOARD_VENICE_GW7400:
+		generic = generic_gw74xx;
+		break;
+	default:
+		generic = generic_gw7xxx;
+	}
 #elif HAVE_NORTHSTAR
 	struct nvram_param generic[] = { { "lan_ifname", "br0" },
 					 { "lan_ifnames", "vlan1 vlan2 eth1 eth2" },
