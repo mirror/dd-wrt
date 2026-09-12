@@ -962,48 +962,58 @@ int internal_getRouterBrand()
 	}
 	return ROUTER_BOARD_GW2388;
 #elif HAVE_VENICE
-	FILE *fp = fopen("/sys/firmware/devicetree/base/model", "rb");
-	if (!fp) {
-		fprintf(stderr, "error opening device tree\n");
-		setRouter("Realtek Generic Switch");
-		return ROUTER_REALTEK_GENERIC;
+	char *filename = "/sys/bus/i2c/devices/1-0052/eeprom"; /* bank2=0x100 kernel 3.0 */
+	FILE *file = fopen(filename, "rb");
+	if (!file) {
+		setRouter("Gateworks NewPort GW7XXX");
+	} else {
+		char gwid[9];
+		fseek(file, 0x30, SEEK_SET);
+		fread(&gwid[0], 9, 1, file);
+		fclose(file);
+		if (!strncmp(gwid, "GW7100", 6)) {
+			setRouter("Gateworks Newport GW7100");
+			return ROUTER_BOARD_VENICE;
+		} else if (!strncmp(gwid, "GW7120", 6)) {
+			setRouter("Gateworks Newport GW7120");
+			return ROUTER_BOARD_VENICE;
+		} else if (!strncmp(gwid, "GW7200", 6)) {
+			setRouter("Gateworks Newport GW7200");
+			return ROUTER_BOARD_VENICE;
+		} else if (!strncmp(gwid, "GW7220", 6)) {
+			setRouter("Gateworks Newport GW7220");
+			return ROUTER_BOARD_VENICE;
+		} else if (!strncmp(gwid, "GW7300", 6)) {
+			setRouter("Gateworks Newport GW7300");
+			return ROUTER_BOARD_VENICE;
+		} else if (!strncmp(gwid, "GW7320", 6)) {
+			setRouter("Gateworks Newport GW7320");
+			return ROUTER_BOARD_VENICE;
+		} else if (!strncmp(gwid, "GW7400", 6)) {
+			setRouter("Gateworks Newport GW7400");
+			return ROUTER_BOARD_VENICE;
+		} else if (!strncmp(gwid, "GW7420", 6)) {
+			setRouter("Gateworks Newport GW7420");
+			return ROUTER_BOARD_VENICE;
+		} else if (!strncmp(gwid, "GW7901", 6)) {
+			setRouter("Gateworks Newport GW7901");
+			return ROUTER_BOARD_VENICE;
+		} else if (!strncmp(gwid, "GW7902", 6)) {
+			setRouter("Gateworks Newport GW7902");
+			return ROUTER_BOARD_VENICE;
+		} else if (!strncmp(gwid, "GW7903", 6)) {
+			setRouter("Gateworks Newport GW7903");
+			return ROUTER_BOARD_VENICE;
+		} else if (!strncmp(gwid, "GW7904", 6)) {
+			setRouter("Gateworks Newport GW7904");
+			return ROUTER_BOARD_VENICE;
+		} else if (!strncmp(gwid, "GW7906", 6)) {
+			setRouter("Gateworks Newport GW7906");
+			return ROUTER_BOARD_VENICE;
+		} else
+			setRouter("Gateworks Newport GW7XXX");
 	}
-	char vendorstr[32];
-	char modelstr[32];
-	char version[32];
-	fscanf(fp, "%s %s %s", &vendorstr[0], &modelstr[0], &version[0]);
-	fclose(fp);
-	if (!strcmp(version,"GW71xx-2x"))
-		setRouter("Gateworks Venice GW71xx-2x");
-	else if (!strcmp(version,"GW71xx-0x"))
-		setRouter("Gateworks Venice GW71xx-0x");
-	else if (!strcmp(version,"GW72xx-2x"))
-		setRouter("Gateworks Venice GW72xx-2x");
-	else if (!strcmp(version,"GW72xx-0x"))
-		setRouter("Gateworks Venice GW72xx-0x");
-	else if (!strcmp(version,"GW73xx-2x"))
-		setRouter("Gateworks Venice GW73xx-2x");
-	else if (!strcmp(version,"GW73xx-0x"))
-		setRouter("Gateworks Venice GW73xx-0x");
-	else if (!strcmp(version,"GW74xx"))
-		setRouter("Gateworks Venice GW74xx");
-	else if (!strcmp(version,"GW75xx-2x"))
-		setRouter("Gateworks Venice GW75xx-2x");
-	else if (!strcmp(version,"GW75xx-0x"))
-		setRouter("Gateworks Venice GW75xx-0x");
-	else if (!strcmp(version,"GW82xx-2x"))
-		setRouter("Gateworks Venice GW82xx-2x");
-	else if (!strcmp(version,"GW7901"))
-		setRouter("Gateworks Venice GW7901");
-	else if (!strcmp(version,"GW7902"))
-		setRouter("Gateworks Venice GW7902");
-	else if (!strcmp(version,"GW7903"))
-		setRouter("Gateworks Venice GW7903");
-	else if (!strcmp(version,"GW7905"))
-		setRouter("Gateworks Venice GW7905");
-	else
-		setRouter("Gateworks Venice GW7XXX"); //todo. exact board detection
-	return ROUTER_BOARD_VENICE;
+	return ROUTER_BOARD_GW2388;
 #elif HAVE_VENTANA
 	char *filename = "/sys/devices/soc0/soc.0/2100000.aips-bus/21a0000.i2c/i2c-0/0-0051/eeprom"; /* bank2=0x100 kernel 3.0 */
 	FILE *file = fopen(filename, "rb");
