@@ -1122,22 +1122,25 @@ void start_restore_defaults(void)
 #elif defined(HAVE_VENTANA) || defined(HAVE_VENICE)
 	struct nvram_param *generic = NULL;
 	struct nvram_param generic_gw7xxx[] = { { "lan_ifname", "br0" },
-					 { "lan_ifnames", "eth0 eth1 wlan0 wlan1 wlan2 wlan3" },
-					 { "wan_ifname", "eth0" },
-					 { "wan_ifname2", "eth0" },
-					 { "wan_ifnames", "eth0" },
-					 { "wan_default", "eth0" },
-					 { 0, 0 } };
+						{ "lan_ifnames", "eth0 eth1 wlan0 wlan1 wlan2 wlan3" },
+						{ "wan_ifname", "eth0" },
+						{ "wan_ifname2", "eth0" },
+						{ "wan_ifnames", "eth0" },
+						{ "wan_default", "eth0" },
+						{ 0, 0 } };
 	struct nvram_param generic_gw74xx[] = { { "lan_ifname", "br0" },
-					 { "lan_ifnames", "eth0 lan1 lan2 lan3 lan4 wlan0 wlan1 wlan2 wlan3" },
-					 { "wan_ifname", "eth0" },
-					 { "wan_ifname2", "eth0" },
-					 { "wan_ifnames", "eth0" },
-					 { "wan_default", "eth0" },
-					 { 0, 0 } };
+						{ "lan_ifnames", "eth0 lan1 lan2 lan3 lan4 wlan0 wlan1 wlan2 wlan3" },
+						{ "wan_ifname", "eth0" },
+						{ "wan_ifname2", "eth0" },
+						{ "wan_ifnames", "eth0" },
+						{ "wan_default", "eth0" },
+						{ 0, 0 } };
 	int wrt_brand = getRouterBrand();
 	switch (wrt_brand) {
 	case ROUTER_BOARD_VENICE:
+		generic = generic_gw7xxx;
+		break;
+	case ROUTER_BOARD_GW2388: // we reuse this for ventana
 		generic = generic_gw7xxx;
 		break;
 	case ROUTER_BOARD_VENICE_GW7400:
@@ -1974,13 +1977,13 @@ void start_restore_defaults(void)
 #ifdef HAVE_RB500
 	linux_overrides = generic;
 	int brand = getRouterBrand();
-#elif defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_XSCALE) || defined(HAVE_X86) ||      \
-	defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_VENICE) || defined(HAVE_IPQ6018) ||                    \
-	defined(HAVE_REALTEK) || defined(HAVE_NORTHSTAR) || defined(HAVE_RB600) || defined(HAVE_NEWPORT) ||                    \
-	defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) || \
-	defined(HAVE_LS5) || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) ||      \
-	defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8) || \
-	defined(HAVE_OCTEON)
+#elif defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_XSCALE) || defined(HAVE_X86) ||          \
+	defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_VENICE) ||                         \
+	defined(HAVE_IPQ6018) || defined(HAVE_REALTEK) || defined(HAVE_NORTHSTAR) || defined(HAVE_RB600) ||                        \
+	defined(HAVE_NEWPORT) || defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || \
+	defined(HAVE_LS2) || defined(HAVE_LS5) || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) ||          \
+	defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) || defined(HAVE_STORM) || defined(HAVE_ADM5120) ||     \
+	defined(HAVE_CA8) || defined(HAVE_OCTEON)
 
 	int brand = getRouterBrand();
 	linux_overrides = generic;
@@ -2165,12 +2168,12 @@ void start_restore_defaults(void)
 	 * Restore defaults 
 	 */
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ6018) || defined(HAVE_REALTEK) || defined(HAVE_XSCALE) ||      \
-	defined(HAVE_X86) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_VENICE) || defined(HAVE_NORTHSTAR) || \
-	defined(HAVE_RB600) || defined(HAVE_IPQ6018) || defined(HAVE_REALTEK) || defined(HAVE_NEWPORT) ||                          \
-	defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || defined(HAVE_LS2) ||     \
-	defined(HAVE_LS5) || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LSX) ||          \
-	defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_CA8) ||     \
-	defined(HAVE_80211AC) || defined(HAVE_OCTEON)
+	defined(HAVE_X86) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_VENICE) ||    \
+	defined(HAVE_NORTHSTAR) || defined(HAVE_RB600) || defined(HAVE_IPQ6018) || defined(HAVE_REALTEK) ||                        \
+	defined(HAVE_NEWPORT) || defined(HAVE_GATEWORX) || defined(HAVE_FONERA) || defined(HAVE_SOLO51) || defined(HAVE_RT2880) || \
+	defined(HAVE_LS2) || defined(HAVE_LS5) || defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_PB42) ||          \
+	defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_OPENRISC) || defined(HAVE_STORM) || defined(HAVE_ADM5120) ||     \
+	defined(HAVE_CA8) || defined(HAVE_80211AC) || defined(HAVE_OCTEON)
 	if (restore_defaults) {
 		nvram_clear();
 	}
