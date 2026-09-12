@@ -154,7 +154,7 @@ void start_sysinit(void)
 	if (!strncmp(board, "Gateworks Ventana GW553", 23))
 		eval("gsp_updater", "-f", "/etc/gsc_553x_v52.txt", "-r", "52");
 
-	writestr("ondemand", "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
+	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
 
 	return;
 }

@@ -127,10 +127,10 @@ void start_sysinit(void)
 	stime(&tm);
 	nvram_set("wl0_ifname", "wlan0");
 	eval("hwclock", "-s", "-u");
-	eval("i2cset", "-f", "-y", "0", "0x20", "0", "0x0");
+	eval("i2cset", "-f", "-y", "0", "0x20", "0", "0x80");
 	eval("i2cset", "-f", "-y", "0", "0x20", "11", "0x10");
 	char *board = nvram_safe_get("DD_BOARD");
-	if (!strncmp(board, "Gateworks Ventana GW54", 22))
+/*	if (!strncmp(board, "Gateworks Ventana GW54", 22))
 		eval("gsp_updater", "-f", "/etc/gsc_54xx_v52.txt", "-r", "52");
 
 	if (!strncmp(board, "Gateworks Ventana GW53", 22))
@@ -150,8 +150,9 @@ void start_sysinit(void)
 
 	if (!strncmp(board, "Gateworks Ventana GW553", 23))
 		eval("gsp_updater", "-f", "/etc/gsc_553x_v52.txt", "-r", "52");
+	*/
 
-	writestr("ondemand", "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
+	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
 
 	return;
 }
