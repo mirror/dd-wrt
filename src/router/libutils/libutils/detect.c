@@ -991,10 +991,10 @@ int internal_getRouterBrand()
 			return ROUTER_BOARD_VENICE;
 		} else if (!strncmp(gwid, "GW7400", 6)) {
 			setRouter("Gateworks Venice GW7400");
-			return ROUTER_BOARD_VENICE;
+			return ROUTER_BOARD_VENICE_GW7400;
 		} else if (!strncmp(gwid, "GW7420", 6)) {
 			setRouter("Gateworks Venice GW7420");
-			return ROUTER_BOARD_VENICE;
+			return ROUTER_BOARD_VENICE_GW7400;
 		} else if (!strncmp(gwid, "GW7901", 6)) {
 			setRouter("Gateworks Venice GW7901");
 			return ROUTER_BOARD_VENICE;

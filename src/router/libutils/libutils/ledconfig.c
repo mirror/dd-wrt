@@ -439,6 +439,7 @@ static void getledconfig(struct ledconfig *cfg)
 	#endif
 		break;
 	case ROUTER_BOARD_VENICE:
+	case ROUTER_BOARD_VENICE_GW7400:
 		cfg->power_gpio = GPIO_LOW | 0x66;
 		cfg->diag_gpio = 0x6F;
 		cfg->connected_gpio = 0x66;

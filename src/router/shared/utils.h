@@ -888,6 +888,8 @@
 
 #define ROUTER_BOARD_VENICE 0x1300ff
 
+#define ROUTER_BOARD_VENICE_GW7400 0x1310ff
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
