@@ -357,17 +357,21 @@ endif
 	$(foreach dtbo,$(DEVICE_DTS_OVERLAY), cp $(DTS_DIR)/freescale/$(dtbo).dtbo aarch64-uclibc/gateworks_venice.boot/$(dtbo).dtbo;)
 	cp $(LINUXDIR)/arch/arm64/boot/Image aarch64-uclibc/gateworks_venice.boot/Image
 	cp aarch64-uclibc/boot/gateworks_venice-boot.scr aarch64-uclibc/gateworks_venice.boot/boot.scr
-	tools/make_ext4fs/make_ext4fs -J -L kernel -l 16M \
+	tools/make_ext4fs/make_ext4fs -J -L kernel -l 32M \
 		aarch64-uclibc/gateworks_venice.bootimg aarch64-uclibc/gateworks_venice.boot
 
 	SIGNATURE="92a710ef" \
 	PARTOFFSET="16M" \
 	PADDING=1 \
 	./tools/imx/gen_image_generic.sh \
-	aarch64-uclibc/gateworks_venice.img 16 \
+	aarch64-uclibc/gateworks_venice.img 32 \
 	aarch64-uclibc/gateworks_venice.boot 384 \
 	aarch64-uclibc/root.fs 256
+	rm -f aarch64-uclibc/gateworks_venice.img.gz
 	gzip -9 aarch64-uclibc/gateworks_venice.img
+
+	./tools/qcom/mmcimage "Gateworks Venice" kernel aarch64-uclibc/gateworks_venice.bootimg rootfs $(TOP)/$(ARCH)-uclibc/root.fs $(TOP)/$(ARCH)-uclibc/venice-webupgrade.img
+	-./tools/trx_n -m 500000000 -o $(ARCH)-uclibc/venice-webflash.bin $(TOP)/$(ARCH)-uclibc/venice-webupgrade.img
 
 
 inst:
@@ -394,6 +398,7 @@ inst:
 	aarch64-uclibc/gateworks_venice.boot 384 \
 	aarch64-uclibc/root.fs 256
 	gzip -9 aarch64-uclibc/gateworks_venice.img
+
 
 include rules/all.mk
 
