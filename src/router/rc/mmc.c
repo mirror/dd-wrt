@@ -326,25 +326,6 @@ rewrite:;
 	count = off = 0;
 	nvram_seti("flash_active", 1);
 
-	/* 
-	 * Examine TRX/CHK header 
-	 */
-
-	if ((fp = fopen(path, "r"))) {
-		count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
-	} else {
-		return -1;
-	}
-	trx.magic = STORE32_LE(trx.magic);
-	trx.len = STORE32_LE(trx.len);
-	trx.crc32 = STORE32_LE(trx.crc32);
-
-	// count = http_get (path, (char *) &trx, sizeof (struct trx_header), 0);
-	if (count < sizeof(struct trx_header)) {
-		dd_logerror("%s: File is too small (%d bytes)", path, count);
-		goto fail;
-	}
-	sysinfo(&info);
 #if defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X) || defined(HAVE_R6800) || defined(HAVE_IPQ6018)
 	#if defined(HAVE_R9000)
 	int mtddev = getMTD("plex");
@@ -360,10 +341,6 @@ rewrite:;
 		eval("ubidetach", "-p", devdev, "-f");
 	}
 #endif
-	if (trx.magic != TRX_MAGIC || trx.len < sizeof(struct trx_header)) {
-		dd_logerror("flash", "%s: Bad trx header", path);
-		goto fail;
-	}
 
 #if defined(HAVE_X86) || defined(HAVE_EROUTER) || defined(HAVE_VENICE)
 	char disk[32];
@@ -441,6 +418,32 @@ rewrite:;
 	fseeko(f_rootfs, 0, SEEK_END);
 	off_t rootfslen = ftello(f_rootfs);
 	rewind(f_rootfs);
+
+
+	/* 
+	 * Examine TRX/CHK header 
+	 */
+
+	if ((fp = fopen(path, "r"))) {
+		count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
+	} else {
+		return -1;
+	}
+	trx.magic = STORE32_LE(trx.magic);
+	trx.len = STORE32_LE(trx.len);
+	trx.crc32 = STORE32_LE(trx.crc32);
+
+	// count = http_get (path, (char *) &trx, sizeof (struct trx_header), 0);
+	if (count < sizeof(struct trx_header)) {
+		dd_logerror("%s: File is too small (%d bytes)", path, count);
+		goto fail;
+	}
+	sysinfo(&info);
+	if (trx.magic != TRX_MAGIC || trx.len < sizeof(struct trx_header)) {
+		dd_logerror("flash", "%s: Bad trx header", path);
+		goto fail;
+	}
+
 
 	if (STORE32_LE(trx.flag_version) & TRX_NO_HEADER)
 		trx.len -= sizeof(struct trx_header);
