@@ -99,7 +99,7 @@ void start_smartdns(void)
 			fprintf(fp, "server 127.0.0.1:7053\n");
 		} else if (nvram_matchi("smartdns_use_dns", 0)) {
 			if (nvram_match("dns_adblock", "1")) {
-/*	#ifdef HAVE_USE_OPENSSL
+				/*	#ifdef HAVE_USE_OPENSSL
 				fprintf(fp,
 					"server-tls 188.34.161.210:853 -host-name root.hagezi.org -tls-host-verify root.hagezi.org\n");
 				fprintf(fp,
