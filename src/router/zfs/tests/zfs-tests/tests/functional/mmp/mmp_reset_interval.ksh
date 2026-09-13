@@ -1,8 +1,6 @@
 #!/bin/ksh -p
 # SPDX-License-Identifier: CDDL-1.0
 #
-# CDDL HEADER START
-#
 # This file and its contents are supplied under the terms of the
 # Common Development and Distribution License ("CDDL"), version 1.0.
 # You may only use this file in accordance with the terms of version
@@ -10,9 +8,7 @@
 #
 # A full copy of the text of the CDDL should have accompanied this
 # source.  A copy of the CDDL is also available via the Internet at
-# http://www.illumos.org/license/CDDL.
-#
-# CDDL HEADER END
+# https://opensource.org/license/CDDL-1.0.
 #
 
 #
@@ -43,7 +39,8 @@ verify_runnable "both"
 
 function cleanup
 {
-	datasetexists $TESTPOOL && destroy_pool $TESTPOOL
+	mmp_clear_suspended $TESTPOOL
+	poolexists $TESTPOOL && destroy_pool $TESTPOOL
 	log_must set_tunable64 MULTIHOST_INTERVAL $MMP_INTERVAL_DEFAULT
 	log_must set_tunable64 MULTIHOST_FAIL_INTERVALS \
 	    $MMP_FAIL_INTERVALS_DEFAULT
@@ -70,7 +67,7 @@ fi
 # 7. Verify mmp_write and mmp_fail are written
 log_note "Verify mmp_write and mmp_fail are written"
 for fails in $(seq $MMP_FAIL_INTERVALS_MIN $((MMP_FAIL_INTERVALS_MIN*2))); do
-	for interval in $(seq $MMP_INTERVAL_MIN 200 $MMP_INTERVAL_DEFAULT); do
+	for interval in $(seq $MMP_INTERVAL_TEST_MIN 200 $MMP_INTERVAL_DEFAULT); do
 		log_must set_tunable64 MULTIHOST_FAIL_INTERVALS $fails
 		log_must set_tunable64 MULTIHOST_INTERVAL $interval
 		sync_pool $TESTPOOL
@@ -91,7 +88,8 @@ done
 # 8. Repeatedly change MULTIHOST_INTERVAL and fail_intervals
 log_note "Repeatedly change MULTIHOST_INTERVAL and fail_intervals"
 for x in $(seq 3); do
-	typeset new_interval=$(( (RANDOM % 20 + 1) * $MMP_INTERVAL_MIN ))
+	typeset new_interval=$(( $MMP_INTERVAL_TEST_MIN + \
+	    (RANDOM % 16) * $MMP_INTERVAL_MIN ))
 	log_must set_tunable64 MULTIHOST_INTERVAL $new_interval
 	typeset action=$((RANDOM %10))
 	if [ $action -eq 0 ]; then
@@ -109,7 +107,7 @@ for x in $(seq 3); do
 		log_must zpool import -f $TESTPOOL
 	elif [ $action -eq 3 ]; then
 		log_must zpool export -F $TESTPOOL
-		log_must set_tunable64 MULTIHOST_INTERVAL $MMP_INTERVAL_MIN
+		log_must set_tunable64 MULTIHOST_INTERVAL $MMP_INTERVAL_TEST_MIN
 		log_must zpool import $TESTPOOL
 	elif [ $action -eq 4 ]; then
 		log_must set_tunable64 MULTIHOST_FAIL_INTERVALS \

@@ -1,23 +1,13 @@
 // SPDX-License-Identifier: CDDL-1.0
 /*
- * CDDL HEADER START
+ * This file and its contents are supplied under the terms of the
+ * Common Development and Distribution License ("CDDL"), version 1.0.
+ * You may only use this file in accordance with the terms of version
+ * 1.0 of the CDDL.
  *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or https://opensource.org/licenses/CDDL-1.0.
- * See the License for the specific language governing permissions
- * and limitations under the License.
- *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
+ * A full copy of the text of the CDDL should have accompanied this
+ * source.  A copy of the CDDL is also available via the Internet at
+ * https://opensource.org/license/CDDL-1.0.
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
@@ -45,7 +35,6 @@
 #include <sys/dsl_deleg.h>
 #include <sys/dmu_impl.h>
 #include <sys/zvol.h>
-#include <sys/zcp.h>
 #include <sys/dsl_deadlist.h>
 #include <sys/zthr.h>
 #include <sys/spa_impl.h>
@@ -58,8 +47,18 @@ dsl_destroy_snapshot_check_impl(dsl_dataset_t *ds, boolean_t defer)
 	if (!ds->ds_is_snapshot)
 		return (SET_ERROR(EINVAL));
 
-	if (dsl_dataset_long_held(ds))
-		return (SET_ERROR(EBUSY));
+	if (dsl_dataset_long_held(ds)) {
+		/*
+		 * A mounted snapshot can be marked for deferred destruction
+		 * and is destroyed when it is unmounted, the same way a held
+		 * one is destroyed when the last hold is released.  Every
+		 * other long hold belongs to an operation that is on its way
+		 * out already, a send or a diff say, so there is nothing to
+		 * defer to and the caller is asked to come back later.
+		 */
+		if (!defer || !dsl_dataset_has_owner(ds))
+			return (SET_ERROR(EBUSY));
+	}
 
 	/*
 	 * Only allow deferred destroy on pools that support it.
@@ -317,11 +316,11 @@ dsl_destroy_snapshot_sync_impl(dsl_dataset_t *ds, boolean_t defer, dmu_tx_t *tx)
 	rrw_enter(&ds->ds_bp_rwlock, RW_READER, FTAG);
 	ASSERT3U(BP_GET_BIRTH(&dsl_dataset_phys(ds)->ds_bp), <=, tx->tx_txg);
 	rrw_exit(&ds->ds_bp_rwlock, FTAG);
-	ASSERT(zfs_refcount_is_zero(&ds->ds_longholds));
 
 	if (defer &&
 	    (ds->ds_userrefs > 0 ||
-	    dsl_dataset_phys(ds)->ds_num_children > 1)) {
+	    dsl_dataset_phys(ds)->ds_num_children > 1 ||
+	    dsl_dataset_long_held(ds))) {
 		ASSERT(spa_version(dp->dp_spa) >= SPA_VERSION_USERREFS);
 		dmu_buf_will_dirty(ds->ds_dbuf, tx);
 		dsl_dataset_phys(ds)->ds_flags |= DS_FLAG_DEFER_DESTROY;
@@ -329,9 +328,18 @@ dsl_destroy_snapshot_sync_impl(dsl_dataset_t *ds, boolean_t defer, dmu_tx_t *tx)
 			spa_history_log_internal_ds(ds, "defer_destroy", tx,
 			    " ");
 		}
+		/*
+		 * Where the long hold is what stopped us, whatever is holding
+		 * it asks for the same sweep when it lets go.  Ask for one
+		 * here too, in case it has already done so and read the mark
+		 * before this txg put it there.
+		 */
+		if (dsl_dataset_long_held(ds))
+			spa_async_request(dp->dp_spa, SPA_ASYNC_DEFER_DESTROY);
 		return;
 	}
 
+	ASSERT(zfs_refcount_is_zero(&ds->ds_longholds));
 	ASSERT3U(dsl_dataset_phys(ds)->ds_num_children, <=, 1);
 
 	if (zfs_snapshot_history_enabled) {
@@ -606,87 +614,31 @@ dsl_destroy_snapshots_nvl(nvlist_t *snaps, boolean_t defer,
 	if (nvlist_next_nvpair(snaps, NULL) == NULL)
 		return (0);
 
-	/*
-	 * lzc_destroy_snaps() is documented to take an nvlist whose
-	 * values "don't matter".  We need to convert that nvlist to
-	 * one that we know can be converted to LUA.
-	 */
-	nvlist_t *snaps_normalized = fnvlist_alloc();
+	const char *pool = nvpair_name(nvlist_next_nvpair(snaps, NULL));
+
 	for (nvpair_t *pair = nvlist_next_nvpair(snaps, NULL);
 	    pair != NULL; pair = nvlist_next_nvpair(snaps, pair)) {
-		fnvlist_add_boolean_value(snaps_normalized,
-		    nvpair_name(pair), B_TRUE);
-	}
+		dsl_destroy_snapshot_arg_t ddsa = {
+			.ddsa_name = nvpair_name(pair),
+			.ddsa_defer = defer
+		};
 
-	nvlist_t *arg = fnvlist_alloc();
-	fnvlist_add_nvlist(arg, "snaps", snaps_normalized);
-	fnvlist_free(snaps_normalized);
-	fnvlist_add_boolean_value(arg, "defer", defer);
+		int error = dsl_sync_task(pool, dsl_destroy_snapshot_check,
+		    dsl_destroy_snapshot_sync, &ddsa, 0,
+		    ZFS_SPACE_CHECK_DESTROY);
 
-	nvlist_t *wrapper = fnvlist_alloc();
-	fnvlist_add_nvlist(wrapper, ZCP_ARG_ARGLIST, arg);
-	fnvlist_free(arg);
-
-	const char *program =
-	    "arg = ...\n"
-	    "snaps = arg['snaps']\n"
-	    "defer = arg['defer']\n"
-	    "errors = { }\n"
-	    "has_errors = false\n"
-	    "for snap, v in pairs(snaps) do\n"
-	    "    errno = zfs.check.destroy{snap, defer=defer}\n"
-	    "    zfs.debug('snap: ' .. snap .. ' errno: ' .. errno)\n"
-	    "    if errno == ENOENT then\n"
-	    "        snaps[snap] = nil\n"
-	    "    elseif errno ~= 0 then\n"
-	    "        errors[snap] = errno\n"
-	    "        has_errors = true\n"
-	    "    end\n"
-	    "end\n"
-	    "if has_errors then\n"
-	    "    return errors\n"
-	    "end\n"
-	    "for snap, v in pairs(snaps) do\n"
-	    "    errno = zfs.sync.destroy{snap, defer=defer}\n"
-	    "    assert(errno == 0)\n"
-	    "end\n"
-	    "return { }\n";
-
-	nvlist_t *result = fnvlist_alloc();
-	int error = zcp_eval(nvpair_name(nvlist_next_nvpair(snaps, NULL)),
-	    program,
-	    B_TRUE,
-	    0,
-	    zfs_lua_max_memlimit,
-	    fnvlist_lookup_nvpair(wrapper, ZCP_ARG_ARGLIST), result);
-	if (error != 0) {
-		const char *errorstr = NULL;
-		(void) nvlist_lookup_string(result, ZCP_RET_ERROR, &errorstr);
-		if (errorstr != NULL) {
-			zfs_dbgmsg("%s", errorstr);
+		/*
+		 * lzc_destroy_snaps() is documented to fill the errlist with
+		 * int32 values.
+		 */
+		if (error != 0) {
+			fnvlist_add_int32(errlist, ddsa.ddsa_name,
+			    (int32_t)error);
+			return (error);
 		}
-		fnvlist_free(wrapper);
-		fnvlist_free(result);
-		return (error);
 	}
-	fnvlist_free(wrapper);
 
-	/*
-	 * lzc_destroy_snaps() is documented to fill the errlist with
-	 * int32 values, so we need to convert the int64 values that are
-	 * returned from LUA.
-	 */
-	int rv = 0;
-	nvlist_t *errlist_raw = fnvlist_lookup_nvlist(result, ZCP_RET_RETURN);
-	for (nvpair_t *pair = nvlist_next_nvpair(errlist_raw, NULL);
-	    pair != NULL; pair = nvlist_next_nvpair(errlist_raw, pair)) {
-		int32_t val = (int32_t)fnvpair_value_int64(pair);
-		if (rv == 0)
-			rv = val;
-		fnvlist_add_int32(errlist, nvpair_name(pair), val);
-	}
-	fnvlist_free(result);
-	return (rv);
+	return (0);
 }
 
 int
@@ -701,6 +653,103 @@ dsl_destroy_snapshot(const char *name, boolean_t defer)
 	fnvlist_free(errlist);
 	fnvlist_free(nvl);
 	return (error);
+}
+
+static int
+dsl_destroy_snapshot_deferred_check(void *arg, dmu_tx_t *tx)
+{
+	uint64_t dsobj = *(uint64_t *)arg;
+	dsl_pool_t *dp = dmu_tx_pool(tx);
+	dsl_dataset_t *ds;
+	int error;
+
+	error = dsl_dataset_hold_obj(dp, dsobj, FTAG, &ds);
+	if (error != 0)
+		return (SET_ERROR(ENOENT));
+
+	/*
+	 * The mark is the whole of this destroy's authority and the object is
+	 * where it was left, so a snapshot that no longer carries it, or an
+	 * object that has come back as something else, is not ours to touch.
+	 */
+	if (!ds->ds_is_snapshot || !DS_IS_DEFER_DESTROY(ds))
+		error = SET_ERROR(ENOENT);
+	else
+		error = dsl_destroy_snapshot_check_impl(ds, B_FALSE);
+
+	dsl_dataset_rele(ds, FTAG);
+	return (error);
+}
+
+static void
+dsl_destroy_snapshot_deferred_sync(void *arg, dmu_tx_t *tx)
+{
+	uint64_t dsobj = *(uint64_t *)arg;
+	dsl_pool_t *dp = dmu_tx_pool(tx);
+	char name[ZFS_MAX_DATASET_NAME_LEN];
+	dsl_dataset_t *ds;
+
+	VERIFY0(dsl_dataset_hold_obj(dp, dsobj, FTAG, &ds));
+	dsl_dataset_name(ds, name);
+	dsl_destroy_snapshot_sync_impl(ds, B_FALSE, tx);
+	zvol_remove_minors(dp->dp_spa, name, B_TRUE);
+	dsl_dataset_rele(ds, FTAG);
+}
+
+static int
+dsl_destroy_snapshot_deferred_one(const char *dsname, void *arg)
+{
+	(void) arg;
+	dsl_pool_t *dp;
+	dsl_dataset_t *ds;
+	uint64_t dsobj = 0;
+
+	if (dsl_pool_hold(dsname, FTAG, &dp) != 0)
+		return (0);
+	if (dsl_dataset_hold(dp, dsname, FTAG, &ds) == 0) {
+		if (ds->ds_is_snapshot && DS_IS_DEFER_DESTROY(ds) &&
+		    dsl_destroy_snapshot_check_impl(ds, B_FALSE) == 0)
+			dsobj = ds->ds_object;
+		dsl_dataset_rele(ds, FTAG);
+	}
+	dsl_pool_rele(dp, FTAG);
+
+	/*
+	 * The sync task keys off the object rather than the name it was found
+	 * under, so that a snapshot destroyed and recreated under the same
+	 * name in the meantime is not mistaken for this one.
+	 */
+	if (dsobj != 0) {
+		int error = dsl_sync_task(dsname,
+		    dsl_destroy_snapshot_deferred_check,
+		    dsl_destroy_snapshot_deferred_sync, &dsobj, 0,
+		    ZFS_SPACE_CHECK_DESTROY);
+		/*
+		 * ENOENT is the snapshot having gone by another route, or
+		 * having lost the mark, both of which are ordinary.  Anything
+		 * else leaves the mark in place for the next sweep, and is
+		 * worth a note for whoever wonders where the snapshot went.
+		 */
+		if (error != 0 && error != ENOENT) {
+			zfs_dbgmsg("deferred destroy of %s (obj %llu) failed, "
+			    "error %d", dsname, (u_longlong_t)dsobj, error);
+		}
+	}
+
+	return (0);
+}
+
+/*
+ * Destroy every snapshot in the pool that is marked for deferred destruction
+ * and has nothing keeping it alive any more.  Runs on the async thread when a
+ * mount lets go of one, and once at import for anything a crash or an export
+ * left behind.
+ */
+void
+dsl_destroy_snapshot_deferred(const char *poolname)
+{
+	(void) dmu_objset_find(poolname, dsl_destroy_snapshot_deferred_one,
+	    NULL, DS_FIND_CHILDREN | DS_FIND_SNAPSHOTS);
 }
 
 struct killarg {

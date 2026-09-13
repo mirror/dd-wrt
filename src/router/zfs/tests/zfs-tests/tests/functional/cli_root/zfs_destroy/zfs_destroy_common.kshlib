@@ -1,23 +1,13 @@
 # SPDX-License-Identifier: CDDL-1.0
 #
-# CDDL HEADER START
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
 #
-# The contents of this file are subject to the terms of the
-# Common Development and Distribution License (the "License").
-# You may not use this file except in compliance with the License.
-#
-# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
-# or https://opensource.org/licenses/CDDL-1.0.
-# See the License for the specific language governing permissions
-# and limitations under the License.
-#
-# When distributing Covered Code, include this CDDL HEADER in each
-# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
-# If applicable, add the following below this CDDL HEADER, with the
-# fields enclosed by brackets "[]" replaced with your own identifying
-# information: Portions Copyright [yyyy] [name of copyright owner]
-#
-# CDDL HEADER END
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# https://opensource.org/license/CDDL-1.0.
 #
 
 #
@@ -88,6 +78,46 @@ function setup_testenv #[dtst]
 			block_device_wait
 		fi
 	fi
+}
+
+# Kill a list of mkbusy pids, wait for them to go away, then verify no
+# mkbusy is left behind at all.
+#
+# mkbusy daemonizes, so the caller is not its parent and cannot wait(2)
+# for it. kill(2) only queues the signal: the target still has to be
+# scheduled to take it, and then lingers as a zombie until init reaps
+# it. It shows up in a pgrep scan the whole time, so checking once
+# immediately after the kill is racy. Poll for each pid instead, then
+# run the leak check once the pids we killed are known to be gone.
+#
+# kill -0 still succeeds on a zombie, so the poll below waits for the
+# reap, which is the point at which pgrep stops matching the pid.
+#
+# $1   pidlist, as produced by mkbusy and accumulated by the caller
+function kill_mkbusy # pidlist
+{
+	typeset pid
+	typeset -i i
+
+	# Word-split the caller's list, so that a list which is empty or
+	# all whitespace leaves nothing to kill.
+	set -- $1
+
+	if (( $# > 0 )); then
+		log_must kill -TERM "$@"
+
+		for pid in "$@"; do
+			for (( i = 0; i < 50; i++ )); do
+				kill -0 $pid 2>/dev/null || break
+				sleep 0.1
+			done
+			kill -0 $pid 2>/dev/null && log_fail \
+			    "mkbusy pid $pid still present after 5s:" \
+			    "$(pgrep -fl mkbusy)"
+		done
+	fi
+
+	log_mustnot pgrep -fl mkbusy
 }
 
 # Clean up the testing environment

@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: CDDL-1.0
 /*
- * CDDL HEADER START
- *
  * This file and its contents are supplied under the terms of the
  * Common Development and Distribution License ("CDDL"), version 1.0.
  * You may only use this file in accordance with the terms of version
@@ -9,9 +7,7 @@
  *
  * A full copy of the text of the CDDL should have accompanied this
  * source.  A copy of the CDDL is also available via the Internet at
- * http://www.illumos.org/license/CDDL.
- *
- * CDDL HEADER END
+ * https://opensource.org/license/CDDL-1.0.
  */
 /*
  * Copyright (c) 2013, 2018 by Delphix. All rights reserved.
@@ -22,6 +18,7 @@
 
 #include <sys/zfs_context.h>
 #include <sys/zfs_refcount.h>
+#include <sys/dmu_tx.h>
 #include <sys/dsl_dataset.h>
 #include <sys/dsl_pool.h>
 
@@ -119,6 +116,12 @@ typedef struct dsl_bookmark_create_redacted_arg {
 	const void	*dbcra_tag;
 } dsl_bookmark_create_redacted_arg_t;
 
+typedef struct dsl_bookmark_destroy_arg {
+	nvlist_t *dbda_bmarks;
+	nvlist_t *dbda_success;
+	nvlist_t *dbda_errors;
+} dsl_bookmark_destroy_arg_t;
+
 int dsl_bookmark_create(nvlist_t *, nvlist_t *);
 int dsl_bookmark_create_nvl_validate(nvlist_t *);
 int dsl_bookmark_create_check(void *arg, dmu_tx_t *tx);
@@ -129,6 +132,8 @@ int dsl_get_bookmarks(const char *, nvlist_t *, nvlist_t *);
 int dsl_get_bookmarks_impl(dsl_dataset_t *, nvlist_t *, nvlist_t *);
 int dsl_get_bookmark_props(const char *, const char *, nvlist_t *);
 int dsl_bookmark_destroy(nvlist_t *, nvlist_t *);
+int dsl_bookmark_destroy_check(void *, dmu_tx_t *);
+void dsl_bookmark_destroy_sync(void *, dmu_tx_t *);
 int dsl_bookmark_lookup(struct dsl_pool *, const char *,
     struct dsl_dataset *, zfs_bookmark_phys_t *);
 int dsl_bookmark_lookup_impl(dsl_dataset_t *, const char *,

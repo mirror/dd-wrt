@@ -7,7 +7,7 @@
  *
  * A full copy of the text of the CDDL should have accompanied this
  * source.  A copy of the CDDL is also available via the Internet at
- * http://www.illumos.org/license/CDDL.
+ * https://opensource.org/license/CDDL-1.0.
  */
 
 /*
@@ -24,6 +24,7 @@
 #include <sys/zfs_debug.h>
 
 #include "munit.h"
+#include "unit.h"
 
 /*
  * SET_ERROR() expands to __set_error() in debug builds. It's an
@@ -82,4 +83,63 @@ cmn_err(int ce, const char *fmt, ...)
 		munit_logf_ex(MUNIT_LOG_INFO, NULL, 0, "%s", buf);
 		break;
 	}
+}
+
+/*
+ * Define the guts of _unit_check_*() (see unit.h). Applies the wanted
+ * comparison op, and if it fails, calls munit_errorf_ex() to log and
+ * abort the test.
+ */
+#define	_UNIT_CHECK_DEFINE(name, type, fmt)				\
+void									\
+_unit_check_##name(const char *file, int line,				\
+    const char *astr, const char *bstr,					\
+    const char *opstr, _unit_check_op_t op, type a, type b)		\
+{									\
+	boolean_t ok;							\
+	switch (op) {							\
+	case _UNIT_CHECK_OP_EQ: ok = (a == b); break;			\
+	case _UNIT_CHECK_OP_NE: ok = (a != b); break;			\
+	case _UNIT_CHECK_OP_LE: ok = (a <= b); break;			\
+	case _UNIT_CHECK_OP_GE: ok = (a >= b); break;			\
+	case _UNIT_CHECK_OP_LT: ok = (a < b);  break;			\
+	case _UNIT_CHECK_OP_GT: ok = (a > b);  break;			\
+	default:	 ok = B_FALSE;	break;				\
+	}								\
+	if (!ok) {							\
+		munit_errorf_ex(file, line,				\
+		    "assertion failed: %s %s %s (%" fmt " %s %" fmt ")",\
+		    astr, opstr, bstr, a, opstr, b);			\
+	}								\
+}
+
+_UNIT_CHECK_DEFINE(int8, int8_t, PRIi8)
+_UNIT_CHECK_DEFINE(uint8, uint8_t, PRIu8)
+_UNIT_CHECK_DEFINE(int16, int16_t, PRIi16)
+_UNIT_CHECK_DEFINE(uint16, uint16_t, PRIu16)
+_UNIT_CHECK_DEFINE(int32, int32_t, PRIi32)
+_UNIT_CHECK_DEFINE(uint32, uint32_t, PRIu32)
+_UNIT_CHECK_DEFINE(int64, int64_t, PRIi64)
+_UNIT_CHECK_DEFINE(uint64, uint64_t, PRIu64)
+_UNIT_CHECK_DEFINE(double, double, "g")
+
+#undef _UNIT_CHECK_DEFINE
+
+/* helpers to generate useful random data */
+uint64_t
+unit_rand_uint64(void)
+{
+	uint64_t v =
+	    (((uint64_t)munit_rand_uint32()) << 32) |
+	    ((uint64_t)munit_rand_uint32());
+	return (v);
+}
+
+char *
+unit_rand_str(char *buf, size_t bufsz)
+{
+	for (int i = 0; i < bufsz-1; i++)
+		buf[i] = munit_rand_int_range('a', 'z');
+	buf[bufsz-1] = '\0';
+	return (buf);
 }

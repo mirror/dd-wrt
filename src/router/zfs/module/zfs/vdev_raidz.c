@@ -1,23 +1,13 @@
 // SPDX-License-Identifier: CDDL-1.0
 /*
- * CDDL HEADER START
+ * This file and its contents are supplied under the terms of the
+ * Common Development and Distribution License ("CDDL"), version 1.0.
+ * You may only use this file in accordance with the terms of version
+ * 1.0 of the CDDL.
  *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or https://opensource.org/licenses/CDDL-1.0.
- * See the License for the specific language governing permissions
- * and limitations under the License.
- *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
+ * A full copy of the text of the CDDL should have accompanied this
+ * source.  A copy of the CDDL is also available via the Internet at
+ * https://opensource.org/license/CDDL-1.0.
  */
 
 /*
@@ -419,7 +409,16 @@ static int zfs_scrub_partial_writes = 1;
 static void
 vdev_raidz_row_free(raidz_row_t *rr)
 {
-	for (int c = 0; c < rr->rr_cols; c++) {
+	abd_t *dabd = rr->rr_col[rr->rr_firstdatacol].rc_abd;
+	for (int c = 0; c < rr->rr_firstdatacol; c++) {
+		raidz_col_t *rc = &rr->rr_col[c];
+
+		if (rc->rc_size != 0 && rc->rc_abd != dabd)
+			abd_free(rc->rc_abd);
+		if (rc->rc_orig_data != NULL)
+			abd_free(rc->rc_orig_data);
+	}
+	for (int c = rr->rr_firstdatacol; c < rr->rr_cols; c++) {
 		raidz_col_t *rc = &rr->rr_col[c];
 
 		if (rc->rc_size != 0)
@@ -532,6 +531,22 @@ vdev_raidz_map_alloc_write(zio_t *zio, raidz_map_t *rm, uint64_t ashift)
 	 */
 	int skipped = rr->rr_scols - rr->rr_cols;
 
+	/*
+	 * When there is only a single data column the parity is a copy of
+	 * it, so point all parity columns at the data ABD directly to avoid
+	 * allocating buffers and computing parity.
+	 */
+	if (rr->rr_cols == rr->rr_firstdatacol + 1) {
+		ASSERT0(nwrapped);
+		ASSERT0(rm->rm_nskip);
+		raidz_col_t *dc = &rr->rr_col[rr->rr_firstdatacol];
+		dc->rc_abd = abd_get_offset_struct(&dc->rc_abdstruct,
+		    zio->io_abd, 0, dc->rc_size);
+		for (c = 0; c < rr->rr_firstdatacol; c++)
+			rr->rr_col[c].rc_abd = dc->rc_abd;
+		return;
+	}
+
 	/* Allocate buffers for the parity columns */
 	for (c = 0; c < rr->rr_firstdatacol; c++) {
 		raidz_col_t *rc = &rr->rr_col[c];
@@ -546,12 +561,13 @@ vdev_raidz_map_alloc_write(zio_t *zio, raidz_map_t *rm, uint64_t ashift)
 		 * VDEV queue locks (vq_lock).
 		 */
 		if (c < nwrapped) {
-			rc->rc_abd = abd_alloc_linear(
+			rc->rc_abd = abd_alloc_linear_struct(&rc->rc_abdstruct,
 			    rc->rc_size + (1ULL << ashift), B_FALSE);
 			abd_zero_off(rc->rc_abd, rc->rc_size, 1ULL << ashift);
 			skipped++;
 		} else {
-			rc->rc_abd = abd_alloc_linear(rc->rc_size, B_FALSE);
+			rc->rc_abd = abd_alloc_linear_struct(&rc->rc_abdstruct,
+			    rc->rc_size, B_FALSE);
 		}
 	}
 
@@ -599,9 +615,11 @@ vdev_raidz_map_alloc_read(zio_t *zio, raidz_map_t *rm)
 	ASSERT3U(rm->rm_nrows, ==, 1);
 
 	/* Allocate buffers for the parity columns */
-	for (c = 0; c < rr->rr_firstdatacol; c++)
-		rr->rr_col[c].rc_abd =
-		    abd_alloc_linear(rr->rr_col[c].rc_size, B_FALSE);
+	for (c = 0; c < rr->rr_firstdatacol; c++) {
+		raidz_col_t *rc = &rr->rr_col[c];
+		rc->rc_abd = abd_alloc_linear_struct(&rc->rc_abdstruct,
+		    rc->rc_size, B_FALSE);
+	}
 
 	for (uint64_t off = 0; c < rr->rr_cols; c++) {
 		raidz_col_t *rc = &rr->rr_col[c];
@@ -1046,8 +1064,8 @@ vdev_raidz_map_alloc_expanded(zio_t *zio,
 				continue;
 
 			prc->rc_abd =
-			    abd_alloc_linear(rm->rm_phys_col[i].rc_size,
-			    B_FALSE);
+			    abd_alloc_linear_struct(&prc->rc_abdstruct,
+			    prc->rc_size, B_FALSE);
 		}
 
 		/*
@@ -1075,8 +1093,8 @@ vdev_raidz_map_alloc_expanded(zio_t *zio,
 			for (int c = 0; c < rr->rr_firstdatacol; c++) {
 				raidz_col_t *rc = &rr->rr_col[c];
 				rc->rc_abd =
-				    abd_alloc_linear(rc->rc_size,
-				    B_TRUE);
+				    abd_alloc_linear_struct(&rc->rc_abdstruct,
+				    rc->rc_size, B_TRUE);
 			}
 		}
 	}
@@ -1271,6 +1289,13 @@ vdev_raidz_generate_parity_row(raidz_map_t *rm, raidz_row_t *rr)
 		 */
 		return;
 	}
+
+	/*
+	 * Single data column: parity is the data itself.
+	 */
+	if (rr->rr_col[VDEV_RAIDZ_P].rc_abd ==
+	    rr->rr_col[rr->rr_firstdatacol].rc_abd)
+		return;
 
 	/* Generate using the new math implementation */
 	if (vdev_raidz_math_generate(rm, rr) != RAIDZ_ORIGINAL_IMPL)
@@ -2175,7 +2200,7 @@ vdev_raidz_reconstruct_row(raidz_map_t *rm, raidz_row_t *rr,
 
 static int
 vdev_raidz_open(vdev_t *vd, uint64_t *asize, uint64_t *max_asize,
-    uint64_t *logical_ashift, uint64_t *physical_ashift)
+    uint64_t *logical_ashift, uint64_t *physical_ashift, cred_t *cr)
 {
 	vdev_raidz_t *vdrz = vd->vdev_tsd;
 	uint64_t nparity = vdrz->vd_nparity;
@@ -2191,7 +2216,7 @@ vdev_raidz_open(vdev_t *vd, uint64_t *asize, uint64_t *max_asize,
 		return (SET_ERROR(EINVAL));
 	}
 
-	vdev_open_children(vd);
+	vdev_open_children(vd, cr);
 
 	for (c = 0; c < vd->vdev_children; c++) {
 		vdev_t *cvd = vd->vdev_child[c];
@@ -2728,6 +2753,8 @@ vdev_raidz_io_start(zio_t *zio)
 
 	zio->io_vsd = rm;
 	zio->io_vsd_ops = &vdev_raidz_vsd_ops;
+	zio_batch_create(zio);
+
 	if (zio->io_type == ZIO_TYPE_WRITE) {
 		for (int i = 0; i < rm->rm_nrows; i++) {
 			vdev_raidz_io_start_write(zio, rm->rm_row[i]);
@@ -2741,7 +2768,7 @@ vdev_raidz_io_start(zio_t *zio)
 		vdev_raidz_io_start_read(zio, rm);
 	}
 
-	zio_execute(zio);
+	zio_execute(zio_batch_rele(zio));
 }
 
 /*
@@ -3118,6 +3145,7 @@ vdev_raidz_io_done_verified(zio_t *zio, raidz_row_t *rr)
 	zio_flag_t add_flags = 0;
 
 	ASSERT3U(zio->io_type, ==, ZIO_TYPE_READ);
+	ASSERT0(zio->io_error);
 
 	for (int c = 0; c < rr->rr_cols; c++) {
 		raidz_col_t *rc = &rr->rr_col[c];
@@ -3143,12 +3171,19 @@ vdev_raidz_io_done_verified(zio_t *zio, raidz_row_t *rr)
 	 * reconstruction, confirm that the other parity disks produced
 	 * correct data.
 	 *
-	 * Note that we also regenerate parity when resilvering so we
-	 * can write it out to failed devices later.
+	 * We also regenerate parity to write it back to any failed parity
+	 * columns.  However, if all available parity was consumed by
+	 * reconstruction (parity_verify is false), regenerating parity is
+	 * a mathematical identity -- the result is guaranteed to equal the
+	 * input that was used for reconstruction, whether correct or
+	 * corrupted.  In that case the only reason to regenerate is to
+	 * write back a failed parity column, so skip regeneration when no
+	 * parity column failed or the pool is read-only.
 	 */
 	boolean_t parity_verify = (parity_errors + parity_untried) <
 	    (rr->rr_firstdatacol - data_errors);
-	if (parity_verify || (zio->io_flags & ZIO_FLAG_RESILVER)) {
+	if (parity_verify || (parity_errors > 0 &&
+	    spa_writeable(zio->io_spa))) {
 		int n = raidz_parity_verify(zio, rr);
 		/*
 		 * In, Reed-Solomon encoding, if we have ndata+1 columns and
@@ -3173,7 +3208,7 @@ vdev_raidz_io_done_verified(zio_t *zio, raidz_row_t *rr)
 		unexpected_errors += n;
 	}
 
-	if (zio->io_error == 0 && spa_writeable(zio->io_spa) &&
+	if (spa_writeable(zio->io_spa) &&
 	    (unexpected_errors > 0 || (zio->io_flags & ZIO_FLAG_RESILVER))) {
 		/*
 		 * Use the good data we have in hand to repair damaged children.
@@ -3226,7 +3261,7 @@ vdev_raidz_io_done_verified(zio_t *zio, raidz_row_t *rr)
 	 * necessary, but since expansion is paused during scrub/resilver, at
 	 * most a single row will have a shadow location.
 	 */
-	if (zio->io_error == 0 && spa_writeable(zio->io_spa) &&
+	if (spa_writeable(zio->io_spa) &&
 	    (zio->io_flags & (ZIO_FLAG_RESILVER | ZIO_FLAG_SCRUB))) {
 		for (int c = 0; c < rr->rr_cols; c++) {
 			raidz_col_t *rc = &rr->rr_col[c];
@@ -4709,7 +4744,7 @@ io_error_exit:
 	 */
 	RAIDZ_REFLOW_SET(&spa->spa_ubsync, RRSS_SCRATCH_VALID, logical_size);
 	spa->spa_ubsync.ub_timestamp++;
-	ASSERT0(vdev_uberblock_sync_list(&spa->spa_root_vdev, 1,
+	ASSERT0(vdev_uberblock_sync_list(spa, &spa->spa_root_vdev, 1,
 	    &spa->spa_ubsync, ZIO_FLAG_CONFIG_WRITER));
 	if (spa_multihost(spa))
 		mmp_update_uberblock(spa, &spa->spa_ubsync);
@@ -4771,7 +4806,7 @@ overwrite:
 	RAIDZ_REFLOW_SET(&spa->spa_ubsync, RRSS_SCRATCH_INVALID_SYNCED,
 	    logical_size);
 	spa->spa_ubsync.ub_timestamp++;
-	ASSERT0(vdev_uberblock_sync_list(&spa->spa_root_vdev, 1,
+	ASSERT0(vdev_uberblock_sync_list(spa, &spa->spa_root_vdev, 1,
 	    &spa->spa_ubsync, ZIO_FLAG_CONFIG_WRITER));
 	if (spa_multihost(spa))
 		mmp_update_uberblock(spa, &spa->spa_ubsync);
@@ -4872,7 +4907,7 @@ vdev_raidz_reflow_copy_scratch(spa_t *spa)
 	RAIDZ_REFLOW_SET(&spa->spa_ubsync,
 	    RRSS_SCRATCH_INVALID_SYNCED_ON_IMPORT, logical_size);
 	spa->spa_ubsync.ub_timestamp++;
-	VERIFY0(vdev_uberblock_sync_list(&spa->spa_root_vdev, 1,
+	VERIFY0(vdev_uberblock_sync_list(spa, &spa->spa_root_vdev, 1,
 	    &spa->spa_ubsync, ZIO_FLAG_CONFIG_WRITER));
 	if (spa_multihost(spa))
 		mmp_update_uberblock(spa, &spa->spa_ubsync);
@@ -5205,7 +5240,6 @@ vdev_raidz_attach_sync(void *arg, dmu_tx_t *tx)
 	vdrz->vn_vre.vre_offset = 0;
 	vdrz->vn_vre.vre_failed_offset = UINT64_MAX;
 	spa->spa_raidz_expand = &vdrz->vn_vre;
-	zthr_wakeup(spa->spa_raidz_expand_zthr);
 
 	/*
 	 * Dirty the config so that ZPOOL_CONFIG_RAIDZ_EXPANDING will get

@@ -1,23 +1,13 @@
 // SPDX-License-Identifier: CDDL-1.0
 /*
- * CDDL HEADER START
+ * This file and its contents are supplied under the terms of the
+ * Common Development and Distribution License ("CDDL"), version 1.0.
+ * You may only use this file in accordance with the terms of version
+ * 1.0 of the CDDL.
  *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or https://opensource.org/licenses/CDDL-1.0.
- * See the License for the specific language governing permissions
- * and limitations under the License.
- *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
+ * A full copy of the text of the CDDL should have accompanied this
+ * source.  A copy of the CDDL is also available via the Internet at
+ * https://opensource.org/license/CDDL-1.0.
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
@@ -100,11 +90,12 @@ struct zfsvfs {
 	int		z_norm;		/* normalization flags */
 	boolean_t	z_relatime;	/* enable relatime mount option */
 	boolean_t	z_unmounted;	/* unmounted */
+	boolean_t	z_use_hold;	/* held via dmu_objset_hold */
 	rrmlock_t	z_teardown_lock;
 	krwlock_t	z_teardown_inactive_lock;
 	list_t		z_all_znodes;	/* all znodes in the fs */
 	unsigned long	z_rollback_time; /* last online rollback time */
-	unsigned long	z_snap_defer_time; /* last snapshot unmount deferral */
+	uint64_t	z_snap_atime;	/* last snapshot access time */
 	kmutex_t	z_znodes_lock;	/* lock for z_all_znodes */
 	arc_prune_t	*z_arc_prune;	/* called by ARC to prune caches */
 	struct inode	*z_ctldir;	/* .zfs directory inode */
@@ -237,6 +228,7 @@ extern int zfs_end_fs(zfsvfs_t *zfsvfs, struct dsl_dataset *ds);
 extern void zfs_exit_fs(zfsvfs_t *zfsvfs);
 extern int zfs_set_version(zfsvfs_t *zfsvfs, uint64_t newvers);
 extern int zfsvfs_create(const char *name, boolean_t readony, zfsvfs_t **zfvp);
+extern int zfsvfs_create_hold(const char *name, zfsvfs_t **zfvp);
 extern int zfsvfs_create_impl(zfsvfs_t **zfvp, zfsvfs_t *zfsvfs, objset_t *os);
 extern void zfsvfs_free(zfsvfs_t *zfsvfs);
 extern int zfs_check_global_label(const char *dsname, const char *hexsl);

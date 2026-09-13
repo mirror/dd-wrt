@@ -1,24 +1,14 @@
 #!/bin/ksh -p
 # SPDX-License-Identifier: CDDL-1.0
 #
-# CDDL HEADER START
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
 #
-# The contents of this file are subject to the terms of the
-# Common Development and Distribution License (the "License").
-# You may not use this file except in compliance with the License.
-#
-# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
-# or http://www.opensolaris.org/os/licensing.
-# See the License for the specific language governing permissions
-# and limitations under the License.
-#
-# When distributing Covered Code, include this CDDL HEADER in each
-# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
-# If applicable, add the following below this CDDL HEADER, with the
-# fields enclosed by brackets "[]" replaced with your own identifying
-# information: Portions Copyright [yyyy] [name of copyright owner]
-#
-# CDDL HEADER END
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# https://opensource.org/license/CDDL-1.0.
 #
 
 #
@@ -66,19 +56,6 @@ function cleanup
 	log_must set_tunable32 EMBEDDED_SLOG_MIN_MS $embedded_slog_min_ms
 	log_must set_tunable64 RAIDZ_EXPAND_MAX_REFLOW_BYTES 0
 	log_must set_tunable32 SCRUB_AFTER_EXPAND $original_scrub_after_expand
-}
-
-function wait_expand_paused
-{
-	oldcopied='0'
-	newcopied='1'
-	while [[ $oldcopied != $newcopied ]]; do
-		oldcopied=$newcopied
-		sleep 1
-		newcopied=$(zpool status $TESTPOOL | \
-		    grep 'copied out of' | \
-		    awk '{print $1}')
-	done
 }
 
 log_onexit cleanup
@@ -152,7 +129,7 @@ for disk in ${disks[$(($nparity+2))..$devs]}; do
 	log_must zpool attach $pool ${raid}-0 $disk
 	devices="$devices $disk"
 
-	wait_expand_paused
+	wait_raidz_expand_paused $pool
 
 	for (( i=0; i<2; i++ )); do
 		test_replace $pool "$devices" $nparity
@@ -162,7 +139,7 @@ for disk in ${disks[$(($nparity+2))..$devs]}; do
 		    reflow_size) / 4))
 		log_must set_tunable64 RAIDZ_EXPAND_MAX_REFLOW_BYTES $pause
 
-		wait_expand_paused
+		wait_raidz_expand_paused $pool
 	done
 
 	# Set pause past largest possible value for this pool

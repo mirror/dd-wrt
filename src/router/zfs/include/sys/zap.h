@@ -1,23 +1,13 @@
 // SPDX-License-Identifier: CDDL-1.0
 /*
- * CDDL HEADER START
+ * This file and its contents are supplied under the terms of the
+ * Common Development and Distribution License ("CDDL"), version 1.0.
+ * You may only use this file in accordance with the terms of version
+ * 1.0 of the CDDL.
  *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or https://opensource.org/licenses/CDDL-1.0.
- * See the License for the specific language governing permissions
- * and limitations under the License.
- *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
+ * A full copy of the text of the CDDL should have accompanied this
+ * source.  A copy of the CDDL is also available via the Internet at
+ * https://opensource.org/license/CDDL-1.0.
  */
 
 /*
@@ -259,6 +249,7 @@ int zap_lookup_length_uint64_by_dnode(dnode_t *dn, const uint64_t *key,
  * exist, 0 if it does. This is like zap_lookup(), but may be more efficient.
  */
 int zap_contains(objset_t *os, uint64_t zapobj, const char *name);
+int zap_contains_by_dnode(dnode_t *dn, const char *name);
 
 /*
  * Prefetch the blocks within the ZAP where the given key is stored. The
@@ -309,6 +300,8 @@ int zap_add_uint64_by_dnode(dnode_t *dn, const uint64_t *key,
  */
 int zap_update(objset_t *os, uint64_t zapobj, const char *name,
     int integer_size, uint64_t num_integers, const void *val, dmu_tx_t *tx);
+int zap_update_by_dnode(dnode_t *dn, const char *name, int integer_size,
+    uint64_t num_integers, const void *val, dmu_tx_t *tx);
 
 /* Update by uint64_t[] key. */
 int zap_update_uint64(objset_t *os, uint64_t zapobj, const uint64_t *key,
@@ -327,6 +320,8 @@ int zap_update_uint64_by_dnode(dnode_t *dn, const uint64_t *key,
  */
 int zap_length(objset_t *os, uint64_t zapobj, const char *name,
     uint64_t *integer_size, uint64_t *num_integers);
+int zap_length_by_dnode(dnode_t *dn, const char *name,
+    uint64_t *integer_size, uint64_t *num_integers);
 
 /* Attribute length by uint64_t[] key. */
 int zap_length_uint64(objset_t *os, uint64_t zapobj, const uint64_t *key,
@@ -343,6 +338,8 @@ int zap_length_uint64_by_dnode(dnode_t *dn, const uint64_t *key,
 int zap_remove(objset_t *os, uint64_t zapobj, const char *name, dmu_tx_t *tx);
 int zap_remove_by_dnode(dnode_t *dn, const char *name, dmu_tx_t *tx);
 int zap_remove_norm(objset_t *os, uint64_t zapobj, const char *name,
+    matchtype_t mt, dmu_tx_t *tx);
+int zap_remove_norm_by_dnode(dnode_t *dn, const char *name,
     matchtype_t mt, dmu_tx_t *tx);
 
 /* Remove by uint64_t[] key. */
@@ -365,6 +362,8 @@ int zap_count_by_dnode(dnode_t *dn, uint64_t *count);
  */
 int zap_increment(objset_t *os, uint64_t obj, const char *name, int64_t delta,
     dmu_tx_t *tx);
+int zap_increment_by_dnode(dnode_t *dn, const char *name, int64_t delta,
+    dmu_tx_t *tx);
 
 /*
  * Returns (in name) the name of the entry whose (value & mask)
@@ -374,21 +373,8 @@ int zap_increment(objset_t *os, uint64_t obj, const char *name, int64_t delta,
  */
 int zap_value_search(objset_t *os, uint64_t zapobj,
     uint64_t value, uint64_t mask, char *name, uint64_t namelen);
-
-/*
- * Transfer all the entries from fromobj into intoobj.  Only works on
- * int_size=8 num_integers=1 values.  Fails if there are any duplicated
- * entries.
- */
-int zap_join(objset_t *os, uint64_t fromobj, uint64_t intoobj, dmu_tx_t *tx);
-
-/* Same as zap_join, but set the values to 'value'. */
-int zap_join_key(objset_t *os, uint64_t fromobj, uint64_t intoobj,
-    uint64_t value, dmu_tx_t *tx);
-
-/* Same as zap_join, but add together any duplicated entries. */
-int zap_join_increment(objset_t *os, uint64_t fromobj, uint64_t intoobj,
-    dmu_tx_t *tx);
+int zap_value_search_by_dnode(dnode_t *dn,
+    uint64_t value, uint64_t mask, char *name, uint64_t namelen);
 
 /*
  * Manipulate entries where the name + value are the "same" (the name is
@@ -397,8 +383,10 @@ int zap_join_increment(objset_t *os, uint64_t fromobj, uint64_t intoobj,
 int zap_add_int(objset_t *os, uint64_t obj, uint64_t value, dmu_tx_t *tx);
 int zap_remove_int(objset_t *os, uint64_t obj, uint64_t value, dmu_tx_t *tx);
 int zap_lookup_int(objset_t *os, uint64_t obj, uint64_t value);
-int zap_increment_int(objset_t *os, uint64_t obj, uint64_t key, int64_t delta,
-    dmu_tx_t *tx);
+
+int zap_add_int_by_dnode(dnode_t *dn, uint64_t value, dmu_tx_t *tx);
+int zap_remove_int_by_dnode(dnode_t *dn, uint64_t value, dmu_tx_t *tx);
+int zap_lookup_int_by_dnode(dnode_t *dn, uint64_t value);
 
 /* Here the key is an int and the value is a different int. */
 int zap_add_int_key(objset_t *os, uint64_t obj,
@@ -406,6 +394,13 @@ int zap_add_int_key(objset_t *os, uint64_t obj,
 int zap_update_int_key(objset_t *os, uint64_t obj,
     uint64_t key, uint64_t value, dmu_tx_t *tx);
 int zap_lookup_int_key(objset_t *os, uint64_t obj,
+    uint64_t key, uint64_t *valuep);
+
+int zap_add_int_key_by_dnode(dnode_t *dn,
+    uint64_t key, uint64_t value, dmu_tx_t *tx);
+int zap_update_int_key_by_dnode(dnode_t *dn,
+    uint64_t key, uint64_t value, dmu_tx_t *tx);
+int zap_lookup_int_key_by_dnode(dnode_t *dn,
     uint64_t key, uint64_t *valuep);
 
 /*
@@ -438,16 +433,20 @@ void zap_attribute_free(zap_attribute_t *attrp);
 
 struct zap;
 struct zap_leaf;
+
 typedef struct zap_cursor {
 	/* This structure is opaque! */
-	objset_t *zc_objset;
 	struct zap *zc_zap;
 	struct zap_leaf *zc_leaf;
-	uint64_t zc_zapobj;
-	uint64_t zc_serialized;
 	uint64_t zc_hash;
 	uint32_t zc_cd;
 	boolean_t zc_prefetch;
+	/*
+	 * Legacy fields to main source compat with Lustre, which accesses
+	 * them directly. Not to be used in new code!
+	 */
+	objset_t *zc_objset;
+	uint64_t zc_zapobj;
 } zap_cursor_t;
 
 /*
@@ -455,15 +454,17 @@ typedef struct zap_cursor {
  * The entire zapobj will be prefetched. You must call zap_cursor_fini the
  * cursor when you are done with it.
  */
-void zap_cursor_init(zap_cursor_t *zc, objset_t *os, uint64_t zapobj);
+int zap_cursor_init(zap_cursor_t *zc, objset_t *os, uint64_t zapobj);
+int zap_cursor_init_by_dnode(zap_cursor_t *zc, dnode_t *dn);
 void zap_cursor_fini(zap_cursor_t *zc);
 
 /*
  * Initialize a cursor at the beginning, but request that we not prefetch
  * the entire ZAP object.
  */
-void zap_cursor_init_noprefetch(zap_cursor_t *zc, objset_t *os,
+int zap_cursor_init_noprefetch(zap_cursor_t *zc, objset_t *os,
     uint64_t zapobj);
+int zap_cursor_init_noprefetch_by_dnode(zap_cursor_t *zc, dnode_t *dn);
 
 /*
  * Initialize a zap cursor pointing to the position recorded by
@@ -472,8 +473,10 @@ void zap_cursor_init_noprefetch(zap_cursor_t *zc, objset_t *os,
  * zapobj (ie.  zap_cursor_init_serialized(..., 0) is equivalent to
  * zap_cursor_init(...).)
  */
-void zap_cursor_init_serialized(zap_cursor_t *zc, objset_t *os,
+int zap_cursor_init_serialized(zap_cursor_t *zc, objset_t *os,
     uint64_t zapobj, uint64_t serialized);
+int zap_cursor_init_serialized_by_dnode(zap_cursor_t *zc, dnode_t *dn,
+    uint64_t serialized);
 
 /*
  * Get the attribute currently pointed to by the cursor.  Returns
@@ -585,6 +588,7 @@ typedef struct zap_stats {
  * know what you're doing.
  */
 int zap_get_stats(objset_t *os, uint64_t zapobj, zap_stats_t *zs);
+int zap_get_stats_by_dnode(dnode_t *dn, zap_stats_t *zs);
 
 /* ZAP subsystem setup/teardown */
 void zap_init(void);

@@ -1,23 +1,13 @@
 // SPDX-License-Identifier: CDDL-1.0
 /*
- * CDDL HEADER START
+ * This file and its contents are supplied under the terms of the
+ * Common Development and Distribution License ("CDDL"), version 1.0.
+ * You may only use this file in accordance with the terms of version
+ * 1.0 of the CDDL.
  *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or https://opensource.org/licenses/CDDL-1.0.
- * See the License for the specific language governing permissions
- * and limitations under the License.
- *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
+ * A full copy of the text of the CDDL should have accompanied this
+ * source.  A copy of the CDDL is also available via the Internet at
+ * https://opensource.org/license/CDDL-1.0.
  */
 
 /*
@@ -354,12 +344,24 @@ zap_lookup_uint64_by_dnode(dnode_t *dn, const uint64_t *key,
 /* zap_contains */
 
 int
-zap_contains(objset_t *os, uint64_t zapobj, const char *name)
+zap_contains_by_dnode(dnode_t *dn, const char *name)
 {
-	int err = zap_lookup_norm(os, zapobj, name, 0,
+	int err = zap_lookup_norm_by_dnode(dn, name, 0,
 	    0, NULL, 0, NULL, 0, NULL);
 	if (err == EOVERFLOW || err == EINVAL)
 		err = 0; /* found, but skipped reading the value */
+	return (err);
+}
+
+int
+zap_contains(objset_t *os, uint64_t zapobj, const char *name)
+{
+	dnode_t *dn;
+	int err = dnode_hold(os, zapobj, FTAG, &dn);
+	if (err != 0)
+		return (err);
+	err = zap_contains_by_dnode(dn, name);
+	dnode_rele(dn, FTAG);
 	return (err);
 }
 
@@ -550,7 +552,7 @@ zap_add_uint64(objset_t *os, uint64_t zapobj, const uint64_t *key,
 
 /* zap_update */
 
-static int
+int
 zap_update_by_dnode(dnode_t *dn, const char *name, int integer_size,
     uint64_t num_integers, const void *val, dmu_tx_t *tx)
 {
@@ -647,7 +649,7 @@ zap_update_uint64(objset_t *os, uint64_t zapobj, const uint64_t *key,
 
 /* zap_length */
 
-static int
+int
 zap_length_by_dnode(dnode_t *dn, const char *name, uint64_t *integer_size,
     uint64_t *num_integers)
 {
@@ -732,7 +734,7 @@ zap_length_uint64(objset_t *os, uint64_t zapobj, const uint64_t *key,
 
 /* zap_remove */
 
-static int
+int
 zap_remove_norm_by_dnode(dnode_t *dn, const char *name, matchtype_t mt,
     dmu_tx_t *tx)
 {
@@ -860,7 +862,7 @@ zap_count(objset_t *os, uint64_t zapobj, uint64_t *count)
 /* zap_increment */
 
 int
-zap_increment(objset_t *os, uint64_t obj, const char *name, int64_t delta,
+zap_increment_by_dnode(dnode_t *dn, const char *name, int64_t delta,
     dmu_tx_t *tx)
 {
 	uint64_t value = 0;
@@ -868,163 +870,117 @@ zap_increment(objset_t *os, uint64_t obj, const char *name, int64_t delta,
 	if (delta == 0)
 		return (0);
 
-	int err = zap_lookup(os, obj, name, 8, 1, &value);
+	int err = zap_lookup_by_dnode(dn, name, 8, 1, &value);
 	if (err != 0 && err != ENOENT)
 		return (err);
 	value += delta;
 	if (value == 0)
-		err = zap_remove(os, obj, name, tx);
+		err = zap_remove_by_dnode(dn, name, tx);
 	else
-		err = zap_update(os, obj, name, 8, 1, &value, tx);
+		err = zap_update_by_dnode(dn, name, 8, 1, &value, tx);
+	return (err);
+}
+
+int
+zap_increment(objset_t *os, uint64_t zapobj, const char *name, int64_t delta,
+    dmu_tx_t *tx)
+{
+	dnode_t *dn;
+	int err = dnode_hold(os, zapobj, FTAG, &dn);
+	if (err != 0)
+		return (err);
+	err = zap_increment_by_dnode(dn, name, delta, tx);
+	dnode_rele(dn, FTAG);
 	return (err);
 }
 
 /* zap_value_search */
 
-int
-zap_value_search(objset_t *os, uint64_t zapobj, uint64_t value, uint64_t mask,
+static int
+zap_value_search_impl(zap_cursor_t *zc, uint64_t value, uint64_t mask,
     char *name, uint64_t namelen)
 {
-	zap_cursor_t zc;
 	int err;
 
 	if (mask == 0)
 		mask = -1ULL;
 
 	zap_attribute_t *za = zap_attribute_long_alloc();
-	for (zap_cursor_init(&zc, os, zapobj);
-	    (err = zap_cursor_retrieve(&zc, za)) == 0;
-	    zap_cursor_advance(&zc)) {
+	for (; (err = zap_cursor_retrieve(zc, za)) == 0;
+	    zap_cursor_advance(zc)) {
 		if ((za->za_first_integer & mask) == (value & mask)) {
 			if (strlcpy(name, za->za_name, namelen) >= namelen)
 				err = SET_ERROR(ENAMETOOLONG);
 			break;
 		}
 	}
-	zap_cursor_fini(&zc);
-	zap_attribute_free(za);
-	return (err);
-}
-
-/* zap_join */
-
-int
-zap_join(objset_t *os, uint64_t fromobj, uint64_t intoobj, dmu_tx_t *tx)
-{
-	zap_cursor_t zc;
-	int err = 0;
-
-	zap_attribute_t *za = zap_attribute_long_alloc();
-	for (zap_cursor_init(&zc, os, fromobj);
-	    zap_cursor_retrieve(&zc, za) == 0;
-	    (void) zap_cursor_advance(&zc)) {
-		if (za->za_integer_length != 8 || za->za_num_integers != 1) {
-			err = SET_ERROR(EINVAL);
-			break;
-		}
-		err = zap_add(os, intoobj, za->za_name,
-		    8, 1, &za->za_first_integer, tx);
-		if (err != 0)
-			break;
-	}
-	zap_cursor_fini(&zc);
+	zap_cursor_fini(zc);
 	zap_attribute_free(za);
 	return (err);
 }
 
 int
-zap_join_key(objset_t *os, uint64_t fromobj, uint64_t intoobj,
-    uint64_t value, dmu_tx_t *tx)
+zap_value_search(objset_t *os, uint64_t zapobj, uint64_t value, uint64_t mask,
+    char *name, uint64_t namelen)
 {
 	zap_cursor_t zc;
-	int err = 0;
-
-	zap_attribute_t *za = zap_attribute_long_alloc();
-	for (zap_cursor_init(&zc, os, fromobj);
-	    zap_cursor_retrieve(&zc, za) == 0;
-	    (void) zap_cursor_advance(&zc)) {
-		if (za->za_integer_length != 8 || za->za_num_integers != 1) {
-			err = SET_ERROR(EINVAL);
-			break;
-		}
-		err = zap_add(os, intoobj, za->za_name,
-		    8, 1, &value, tx);
-		if (err != 0)
-			break;
-	}
-	zap_cursor_fini(&zc);
-	zap_attribute_free(za);
-	return (err);
+	zap_cursor_init(&zc, os, zapobj);
+	return (zap_value_search_impl(&zc, value, mask, name, namelen));
 }
 
 int
-zap_join_increment(objset_t *os, uint64_t fromobj, uint64_t intoobj,
-    dmu_tx_t *tx)
+zap_value_search_by_dnode(dnode_t *dn, uint64_t value, uint64_t mask,
+    char *name, uint64_t namelen)
 {
 	zap_cursor_t zc;
-	int err = 0;
-
-	zap_attribute_t *za = zap_attribute_long_alloc();
-	for (zap_cursor_init(&zc, os, fromobj);
-	    zap_cursor_retrieve(&zc, za) == 0;
-	    (void) zap_cursor_advance(&zc)) {
-		uint64_t delta = 0;
-
-		if (za->za_integer_length != 8 || za->za_num_integers != 1) {
-			err = SET_ERROR(EINVAL);
-			break;
-		}
-
-		err = zap_lookup(os, intoobj, za->za_name, 8, 1, &delta);
-		if (err != 0 && err != ENOENT)
-			break;
-		delta += za->za_first_integer;
-		err = zap_update(os, intoobj, za->za_name, 8, 1, &delta, tx);
-		if (err != 0)
-			break;
-	}
-	zap_cursor_fini(&zc);
-	zap_attribute_free(za);
-	return (err);
+	zap_cursor_init_by_dnode(&zc, dn);
+	return (zap_value_search_impl(&zc, value, mask, name, namelen));
 }
 
 /* zap_*_int */
 
+#define	FORMAT_INT_KEY(name, value)	\
+	char name[20];			\
+	(void) snprintf(name, sizeof (name), "%llx", (longlong_t)value);
+
 int
 zap_add_int(objset_t *os, uint64_t obj, uint64_t value, dmu_tx_t *tx)
 {
-	char name[20];
-
-	(void) snprintf(name, sizeof (name), "%llx", (longlong_t)value);
+	FORMAT_INT_KEY(name, value);
 	return (zap_add(os, obj, name, 8, 1, &value, tx));
+}
+int
+zap_add_int_by_dnode(dnode_t *dn, uint64_t value, dmu_tx_t *tx)
+{
+	FORMAT_INT_KEY(name, value);
+	return (zap_add_by_dnode(dn, name, 8, 1, &value, tx));
 }
 
 int
 zap_remove_int(objset_t *os, uint64_t obj, uint64_t value, dmu_tx_t *tx)
 {
-	char name[20];
-
-	(void) snprintf(name, sizeof (name), "%llx", (longlong_t)value);
+	FORMAT_INT_KEY(name, value);
 	return (zap_remove(os, obj, name, tx));
+}
+int
+zap_remove_int_by_dnode(dnode_t *dn, uint64_t value, dmu_tx_t *tx)
+{
+	FORMAT_INT_KEY(name, value);
+	return (zap_remove_by_dnode(dn, name, tx));
 }
 
 int
 zap_lookup_int(objset_t *os, uint64_t obj, uint64_t value)
 {
-	char name[20];
-
-	(void) snprintf(name, sizeof (name), "%llx", (longlong_t)value);
+	FORMAT_INT_KEY(name, value);
 	return (zap_lookup(os, obj, name, 8, 1, &value));
 }
 
 int
-zap_increment_int(objset_t *os, uint64_t obj, uint64_t key, int64_t delta,
-    dmu_tx_t *tx)
+zap_lookup_int_by_dnode(dnode_t *dn, uint64_t value)
 {
-	char name[20];
-
-	(void) snprintf(name, sizeof (name), "%llx", (longlong_t)key);
-	return (zap_increment(os, obj, name, delta, tx));
+	FORMAT_INT_KEY(name, value);
+	return (zap_lookup_by_dnode(dn, name, 8, 1, &value));
 }
 
 /* zap_*_int_key */
@@ -1033,80 +989,147 @@ int
 zap_add_int_key(objset_t *os, uint64_t obj,
     uint64_t key, uint64_t value, dmu_tx_t *tx)
 {
-	char name[20];
-
-	(void) snprintf(name, sizeof (name), "%llx", (longlong_t)key);
+	FORMAT_INT_KEY(name, key);
 	return (zap_add(os, obj, name, 8, 1, &value, tx));
+}
+int
+zap_add_int_key_by_dnode(dnode_t *dn,
+    uint64_t key, uint64_t value, dmu_tx_t *tx)
+{
+	FORMAT_INT_KEY(name, key);
+	return (zap_add_by_dnode(dn, name, 8, 1, &value, tx));
 }
 
 int
 zap_update_int_key(objset_t *os, uint64_t obj,
     uint64_t key, uint64_t value, dmu_tx_t *tx)
 {
-	char name[20];
-
-	(void) snprintf(name, sizeof (name), "%llx", (longlong_t)key);
+	FORMAT_INT_KEY(name, key);
 	return (zap_update(os, obj, name, 8, 1, &value, tx));
+}
+int
+zap_update_int_key_by_dnode(dnode_t *dn,
+    uint64_t key, uint64_t value, dmu_tx_t *tx)
+{
+	FORMAT_INT_KEY(name, key);
+	return (zap_update_by_dnode(dn, name, 8, 1, &value, tx));
 }
 
 int
 zap_lookup_int_key(objset_t *os, uint64_t obj, uint64_t key, uint64_t *valuep)
 {
-	char name[20];
-
-	(void) snprintf(name, sizeof (name), "%llx", (longlong_t)key);
+	FORMAT_INT_KEY(name, key);
 	return (zap_lookup(os, obj, name, 8, 1, valuep));
+}
+int
+zap_lookup_int_key_by_dnode(dnode_t *dn, uint64_t key, uint64_t *valuep)
+{
+	FORMAT_INT_KEY(name, key);
+	return (zap_lookup_by_dnode(dn, name, 8, 1, valuep));
 }
 
 /* zap_cursor */
 
-static void
-zap_cursor_init_impl(zap_cursor_t *zc, objset_t *os, uint64_t zapobj,
+static int
+zap_cursor_init_by_dnode_impl(zap_cursor_t *zc, dnode_t *dn,
     uint64_t serialized, boolean_t prefetch)
 {
-	zc->zc_objset = os;
 	zc->zc_zap = NULL;
 	zc->zc_leaf = NULL;
-	zc->zc_zapobj = zapobj;
-	zc->zc_serialized = serialized;
-	zc->zc_hash = 0;
-	zc->zc_cd = 0;
+
+	int err = zap_lock_by_dnode(dn, NULL, RW_READER, TRUE, FALSE,
+	    zc, &zc->zc_zap);
+	if (err != 0)
+		return (err);
+
 	zc->zc_prefetch = prefetch;
+	zc->zc_objset = dn->dn_objset;
+	zc->zc_zapobj = dn->dn_object;
+
+	int hb = zap_hashbits(zc->zc_zap);
+	zc->zc_hash = serialized << (64 - hb);
+	zc->zc_cd = serialized >> hb;
+	if (zc->zc_cd >= zap_maxcd(zc->zc_zap)) /* corrupt serialized */
+		zc->zc_cd = 0;
+
+	/*
+	 * Drop ZAP read lock, but keep the hold, so the holds on the
+	 * underlying dnode and header dbuf are maintained.
+	 */
+	rw_exit(&zc->zc_zap->zap_rwlock);
+
+	return (0);
 }
 
-void
+static int
+zap_cursor_init_impl(zap_cursor_t *zc, objset_t *os, uint64_t zapobj,
+    uint64_t serialized, uint32_t prefetch)
+{
+	dnode_t *dn = NULL;
+	int err = dnode_hold(os, zapobj, FTAG, &dn);
+	if (err != 0) {
+		zc->zc_zap = NULL;
+		zc->zc_leaf = NULL;
+		return (err);
+	}
+
+	err = zap_cursor_init_by_dnode_impl(zc, dn, serialized, prefetch);
+
+	dnode_rele(dn, FTAG);
+
+	return (err);
+}
+
+int
 zap_cursor_init(zap_cursor_t *zc, objset_t *os, uint64_t zapobj)
 {
-	zap_cursor_init_impl(zc, os, zapobj, 0, B_TRUE);
+	return (zap_cursor_init_impl(zc, os, zapobj, 0, B_TRUE));
 }
 
-void
+int
+zap_cursor_init_by_dnode(zap_cursor_t *zc, dnode_t *dn)
+{
+	return (zap_cursor_init_by_dnode_impl(zc, dn, 0, B_TRUE));
+}
+
+int
 zap_cursor_init_noprefetch(zap_cursor_t *zc, objset_t *os, uint64_t zapobj)
 {
-	zap_cursor_init_impl(zc, os, zapobj, 0, B_FALSE);
+	return (zap_cursor_init_impl(zc, os, zapobj, 0, B_FALSE));
 }
 
-void
+int
+zap_cursor_init_noprefetch_by_dnode(zap_cursor_t *zc, dnode_t *dn)
+{
+	return (zap_cursor_init_by_dnode_impl(zc, dn, 0, B_FALSE));
+}
+
+int
 zap_cursor_init_serialized(zap_cursor_t *zc, objset_t *os, uint64_t zapobj,
     uint64_t serialized)
 {
-	zap_cursor_init_impl(zc, os, zapobj, serialized, B_TRUE);
+	return (zap_cursor_init_impl(zc, os, zapobj, serialized, B_TRUE));
+}
+
+int
+zap_cursor_init_serialized_by_dnode(zap_cursor_t *zc, dnode_t *dn,
+    uint64_t serialized)
+{
+	return (zap_cursor_init_by_dnode_impl(zc, dn, serialized, B_TRUE));
 }
 
 void
 zap_cursor_fini(zap_cursor_t *zc)
 {
-	if (zc->zc_zap) {
-		rw_enter(&zc->zc_zap->zap_rwlock, RW_READER);
-		zap_unlock(zc->zc_zap, NULL);
-		zc->zc_zap = NULL;
-	}
 	if (zc->zc_leaf) {
 		rw_enter(&zc->zc_leaf->l_rwlock, RW_READER);
 		zap_put_leaf(zc->zc_leaf);
-		zc->zc_leaf = NULL;
 	}
-	zc->zc_objset = NULL;
+	if (zc->zc_zap) {
+		rw_enter(&zc->zc_zap->zap_rwlock, RW_READER);
+		zap_unlock(zc->zc_zap, zc);
+	}
+	memset(zc, 0, sizeof (zap_cursor_t));
 }
 
 int
@@ -1114,30 +1137,15 @@ zap_cursor_retrieve(zap_cursor_t *zc, zap_attribute_t *za)
 {
 	int err;
 
+	if (zc->zc_zap == NULL)
+		/* zap_cursor_init failed, cursor is invalid */
+		return (SET_ERROR(EIO));
+
 	if (zc->zc_hash == -1ULL)
 		return (SET_ERROR(ENOENT));
 
-	if (zc->zc_zap == NULL) {
-		int hb;
-		err = zap_lock(zc->zc_objset, zc->zc_zapobj, NULL,
-		    RW_READER, TRUE, FALSE, NULL, &zc->zc_zap);
-		if (err != 0)
-			return (err);
+	rw_enter(&zc->zc_zap->zap_rwlock, RW_READER);
 
-		/*
-		 * To support zap_cursor_init_serialized, advance, retrieve,
-		 * we must add to the existing zc_cd, which may already
-		 * be 1 due to the zap_cursor_advance.
-		 */
-		ASSERT0(zc->zc_hash);
-		hb = zap_hashbits(zc->zc_zap);
-		zc->zc_hash = zc->zc_serialized << (64 - hb);
-		zc->zc_cd += zc->zc_serialized >> hb;
-		if (zc->zc_cd >= zap_maxcd(zc->zc_zap)) /* corrupt serialized */
-			zc->zc_cd = 0;
-	} else {
-		rw_enter(&zc->zc_zap->zap_rwlock, RW_READER);
-	}
 	if (!zc->zc_zap->zap_ismicro) {
 		err = fzap_cursor_retrieve(zc->zc_zap, zc, za);
 	} else {
@@ -1172,6 +1180,7 @@ zap_cursor_retrieve(zap_cursor_t *zc, zap_attribute_t *za)
 			err = SET_ERROR(ENOENT);
 		}
 	}
+
 	rw_exit(&zc->zc_zap->zap_rwlock);
 	return (err);
 }
@@ -1187,10 +1196,9 @@ zap_cursor_advance(zap_cursor_t *zc)
 uint64_t
 zap_cursor_serialize(zap_cursor_t *zc)
 {
-	if (zc->zc_hash == -1ULL)
+	if (zc->zc_zap == NULL || zc->zc_hash == -1ULL)
 		return (-1ULL);
-	if (zc->zc_zap == NULL)
-		return (zc->zc_serialized);
+
 	ASSERT0((zc->zc_hash & zap_maxcd(zc->zc_zap)));
 	ASSERT(zc->zc_cd < zap_maxcd(zc->zc_zap));
 
@@ -1208,7 +1216,7 @@ zap_cursor_serialize(zap_cursor_t *zc)
 
 /* zap_get_stats */
 
-static int
+int
 zap_get_stats_by_dnode(dnode_t *dn, zap_stats_t *zs)
 {
 	zap_t *zap;
@@ -1280,12 +1288,9 @@ EXPORT_SYMBOL(zap_remove_uint64_by_dnode);
 EXPORT_SYMBOL(zap_count);
 EXPORT_SYMBOL(zap_count_by_dnode);
 EXPORT_SYMBOL(zap_value_search);
-EXPORT_SYMBOL(zap_join);
-EXPORT_SYMBOL(zap_join_increment);
 EXPORT_SYMBOL(zap_add_int);
 EXPORT_SYMBOL(zap_remove_int);
 EXPORT_SYMBOL(zap_lookup_int);
-EXPORT_SYMBOL(zap_increment_int);
 EXPORT_SYMBOL(zap_add_int_key);
 EXPORT_SYMBOL(zap_lookup_int_key);
 EXPORT_SYMBOL(zap_increment);

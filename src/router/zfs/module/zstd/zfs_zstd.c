@@ -275,6 +275,8 @@ void __asan_poison_memory_region(void const volatile *addr, size_t size) {};
 
 /* User space. */
 #if defined(ADDRESS_SANITIZER) && !defined(_KERNEL)
+void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
+void __asan_poison_memory_region(void const volatile *addr, size_t size);
 #define	ZSTD_ASAN_POISON(p, n)   __asan_poison_memory_region((p), (n))
 #define	ZSTD_ASAN_UNPOISON(p, n) __asan_unpoison_memory_region((p), (n))
 #else
@@ -692,6 +694,15 @@ zfs_zstd_decompress_level_buf(void *s_start, void *d_start, size_t s_len,
 	 * and non-zero on failure (decompression function returned negative.
 	 */
 	if (ZSTD_isError(result)) {
+		ZSTDSTAT_BUMP(zstd_stat_dec_fail);
+		return (1);
+	}
+
+	/*
+	 * An OpenZFS compressed block must expand to exactly d_len bytes.
+	 * ZSTD_decompressDCtx returns the decompressed size on success.
+	 */
+	if (result != d_len) {
 		ZSTDSTAT_BUMP(zstd_stat_dec_fail);
 		return (1);
 	}

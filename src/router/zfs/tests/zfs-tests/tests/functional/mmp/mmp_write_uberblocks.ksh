@@ -1,8 +1,6 @@
 #!/bin/ksh -p
 # SPDX-License-Identifier: CDDL-1.0
 #
-# CDDL HEADER START
-#
 # This file and its contents are supplied under the terms of the
 # Common Development and Distribution License ("CDDL"), version 1.0.
 # You may only use this file in accordance with the terms of version
@@ -10,9 +8,7 @@
 #
 # A full copy of the text of the CDDL should have accompanied this
 # source.  A copy of the CDDL is also available via the Internet at
-# http://www.illumos.org/license/CDDL.
-#
-# CDDL HEADER END
+# https://opensource.org/license/CDDL-1.0.
 #
 
 #
@@ -38,7 +34,8 @@ verify_runnable "both"
 function cleanup
 {
 	zinject -c all
-	datasetexists $TESTPOOL && destroy_pool $TESTPOOL
+	mmp_clear_suspended $TESTPOOL
+	poolexists $TESTPOOL && destroy_pool $TESTPOOL
 	log_must mmp_clear_hostid
 }
 
@@ -48,7 +45,7 @@ log_onexit cleanup
 log_must mmp_set_hostid $HOSTID1
 log_must zpool create -f $TESTPOOL mirror $DISKS
 log_must zpool set multihost=on $TESTPOOL
-log_must zinject -d ${DISK[0]} -e io -T write -f 50 $TESTPOOL -L uber
+log_must zinject -d ${DISK[0]} -e io -T write -f 50 -L uber $TESTPOOL
 clear_mmp_history
 uber_count=$(count_mmp_writes $TESTPOOL 3)
 

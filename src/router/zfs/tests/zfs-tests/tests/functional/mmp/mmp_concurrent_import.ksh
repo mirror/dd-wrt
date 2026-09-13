@@ -1,8 +1,6 @@
 #!/bin/ksh -p
 # SPDX-License-Identifier: CDDL-1.0
 #
-# CDDL HEADER START
-#
 # This file and its contents are supplied under the terms of the
 # Common Development and Distribution License ("CDDL"), version 1.0.
 # You may only use this file in accordance with the terms of version
@@ -10,9 +8,7 @@
 #
 # A full copy of the text of the CDDL should have accompanied this
 # source.  A copy of the CDDL is also available via the Internet at
-# http://www.illumos.org/license/CDDL.
-#
-# CDDL HEADER END
+# https://opensource.org/license/CDDL-1.0.
 #
 
 #
@@ -53,13 +49,17 @@ function cleanup
 
 # Verify that pool was imported by at most one of the zhack processes.
 # Check both the return code and expected import message.
-function verify_zhack
+#
+# The pids are passed in rather than looked up with pgrep: a zhack which
+# has not reached its exec() yet, or which has already exited, is not
+# found by pgrep, and this would then return while it still holds the
+# pool imported.
+function verify_zhack # <pid>...
 {
 	IMPORT_COUNT=0
 	IMPORT_MSGS=0
 
-	ZHACKPIDS=$(pgrep zhack)
-	for pid in $ZHACKPIDS; do
+	for pid in "$@"; do
 		wait $pid
 		STATUS=$?
 		if [[ $STATUS -eq 0 ]]; then
@@ -93,16 +93,18 @@ log_assert "multihost=on concurrent imports"
 log_onexit cleanup
 
 # 1. Create a multihost enabled pool with HOSTID1
-mmp_pool_create_simple $MMP_POOL $MMP_DIR
+mmp_pool_create_simple $MMP_POOL $MMP_DIR enriched
 log_must zpool export -F $MMP_POOL
 
 # 2. zhack imports: $HOSTID1 (matching) and $HOSTID1 (matching)
 # Activity check required because the pool was exported with -F above, the
 # claim phase will detect the double import despite matching hostids.
 log_note "zhack import with $HOSTID1 (matching) and $HOSTID1 (matching)"
-log_must eval "ZFS_HOSTID=$HOSTID1 zhack $OPTS >$MMP_ZHACK_LOG.1 2>&1 &"
-log_must eval "ZFS_HOSTID=$HOSTID1 zhack $OPTS >$MMP_ZHACK_LOG.2 2>&1 &"
-log_must verify_zhack
+ZFS_HOSTID=$HOSTID1 zhack $OPTS >$MMP_ZHACK_LOG.1 2>&1 &
+pid1=$!
+ZFS_HOSTID=$HOSTID1 zhack $OPTS >$MMP_ZHACK_LOG.2 2>&1 &
+pid2=$!
+log_must verify_zhack $pid1 $pid2
 
 mmp_clear_hostid
 mmp_set_hostid $HOSTID1
@@ -113,9 +115,11 @@ log_must zpool export $MMP_POOL
 # Activity check skipped for HOSTID1 it is expected to import successfully.
 # zhack with HOSTID2 will run the activity check and detect the active pool.
 log_note "zhack import with $HOSTID1 (matching) and $HOSTID2 (different)"
-log_must eval "ZFS_HOSTID=$HOSTID1 zhack $OPTS >$MMP_ZHACK_LOG.1 2>&1 &"
-log_must eval "ZFS_HOSTID=$HOSTID2 zhack $OPTS >$MMP_ZHACK_LOG.2 2>&1 &"
-log_must verify_zhack
+ZFS_HOSTID=$HOSTID1 zhack $OPTS >$MMP_ZHACK_LOG.1 2>&1 &
+pid1=$!
+ZFS_HOSTID=$HOSTID2 zhack $OPTS >$MMP_ZHACK_LOG.2 2>&1 &
+pid2=$!
+log_must verify_zhack $pid1 $pid2
 
 mmp_clear_hostid
 mmp_set_hostid $HOSTID3
@@ -126,8 +130,10 @@ log_must zpool export $MMP_POOL
 # Both zhacks will run the activity checks, depending on the exact timing
 # one may succeed and the other fail, or both may fail.
 log_note "zhack import with $HOSTID1 (different) and $HOSTID2 (different)"
-log_must eval "ZFS_HOSTID=$HOSTID1 zhack $OPTS >$MMP_ZHACK_LOG.1 2>&1 &"
-log_must eval "ZFS_HOSTID=$HOSTID2 zhack $OPTS >$MMP_ZHACK_LOG.2 2>&1 &"
-log_must verify_zhack
+ZFS_HOSTID=$HOSTID1 zhack $OPTS >$MMP_ZHACK_LOG.1 2>&1 &
+pid1=$!
+ZFS_HOSTID=$HOSTID2 zhack $OPTS >$MMP_ZHACK_LOG.2 2>&1 &
+pid2=$!
+log_must verify_zhack $pid1 $pid2
 
 log_pass "multihost=on concurrent imports"

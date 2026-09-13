@@ -1,24 +1,14 @@
 #!/bin/ksh -p
 # SPDX-License-Identifier: CDDL-1.0
 #
-# CDDL HEADER START
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
 #
-# The contents of this file are subject to the terms of the
-# Common Development and Distribution License (the "License").
-# You may not use this file except in compliance with the License.
-#
-# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
-# or https://opensource.org/licenses/CDDL-1.0.
-# See the License for the specific language governing permissions
-# and limitations under the License.
-#
-# When distributing Covered Code, include this CDDL HEADER in each
-# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
-# If applicable, add the following below this CDDL HEADER, with the
-# fields enclosed by brackets "[]" replaced with your own identifying
-# information: Portions Copyright [yyyy] [name of copyright owner]
-#
-# CDDL HEADER END
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# https://opensource.org/license/CDDL-1.0.
 #
 
 #
@@ -59,11 +49,6 @@
 #
 
 verify_runnable "global"
-
-# See issue: https://github.com/openzfs/zfs/issues/6839
-if ! is_illumos; then
-	log_unsupported "Test case may be slow"
-fi
 
 set -A vdevs "" "mirror" "raidz" "draid"
 
@@ -149,7 +134,7 @@ CWD=$PWD
 log_must cd $DEVICE_DIR
 log_must tar cf $DEVICE_DIR/$DEVICE_ARCHIVE ${DEVICE_FILE}*
 
-read -r checksum1 < <(cksum $MYTESTFILE)
+read -r checksum1 _ < <(cksum $MYTESTFILE)
 
 typeset -i i=0
 typeset -i j=0

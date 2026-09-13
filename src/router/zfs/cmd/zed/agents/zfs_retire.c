@@ -1,23 +1,13 @@
 // SPDX-License-Identifier: CDDL-1.0
 /*
- * CDDL HEADER START
+ * This file and its contents are supplied under the terms of the
+ * Common Development and Distribution License ("CDDL"), version 1.0.
+ * You may only use this file in accordance with the terms of version
+ * 1.0 of the CDDL.
  *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or https://opensource.org/licenses/CDDL-1.0.
- * See the License for the specific language governing permissions
- * and limitations under the License.
- *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
+ * A full copy of the text of the CDDL should have accompanied this
+ * source.  A copy of the CDDL is also available via the Internet at
+ * https://opensource.org/license/CDDL-1.0.
  */
 /*
  * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
@@ -351,6 +341,60 @@ is_draid_fdomain_failure(fmd_hdl_t *hdl, libzfs_handle_t *zhdl,
 }
 
 /*
+ * Returns B_TRUE if spare 'a' should be tried before spare 'b' when
+ * replacing a failed vdev with the given characteristics.
+ *
+ * Ordering criteria (most to least significant):
+ *  1. Distributed spare matching the failed vdev's dRAID is preferred
+ *     most (distributed spares rebuild faster than traditional spares).
+ *     Regular spares (no TOP_GUID) come next.  Non-matching distributed
+ *     spares are tried last, as the kernel will reject them anyway.
+ *  2. Matching rotational is preferred over mismatching.
+ *  3. Large enough is preferred over too small.
+ *  4. Smaller size is preferred over bigger (best fit).
+ */
+static boolean_t
+spare_is_preferred(nvlist_t *a, nvlist_t *b, boolean_t have_rotational,
+    uint64_t vdev_rotational, uint64_t vdev_size, uint64_t top_guid)
+{
+	uint64_t a_top = 0, b_top = 0;
+	(void) nvlist_lookup_uint64(a, ZPOOL_CONFIG_TOP_GUID, &a_top);
+	(void) nvlist_lookup_uint64(b, ZPOOL_CONFIG_TOP_GUID, &b_top);
+	int a_pri = (a_top == 0) ? 1 :
+	    (a_top == top_guid || top_guid == 0) ? 2 : 0;
+	int b_pri = (b_top == 0) ? 1 :
+	    (b_top == top_guid || top_guid == 0) ? 2 : 0;
+	if (a_pri != b_pri)
+		return (a_pri > b_pri);
+
+	if (have_rotational) {
+		uint64_t a_rotational = 0, b_rotational = 0;
+		(void) nvlist_lookup_uint64(a, ZPOOL_CONFIG_VDEV_ROTATIONAL,
+		    &a_rotational);
+		(void) nvlist_lookup_uint64(b, ZPOOL_CONFIG_VDEV_ROTATIONAL,
+		    &b_rotational);
+		if ((a_rotational == vdev_rotational) !=
+		    (b_rotational == vdev_rotational))
+			return (a_rotational == vdev_rotational);
+	}
+
+	vdev_stat_t *vs;
+	unsigned int c;
+	uint64_t a_size = 0, b_size = 0;
+	if (nvlist_lookup_uint64_array(a, ZPOOL_CONFIG_VDEV_STATS,
+	    (uint64_t **)&vs, &c) == 0)
+		a_size = vs->vs_rsize;
+	if (nvlist_lookup_uint64_array(b, ZPOOL_CONFIG_VDEV_STATS,
+	    (uint64_t **)&vs, &c) == 0)
+		b_size = vs->vs_rsize;
+	boolean_t a_ok = (a_size >= vdev_size);
+	boolean_t b_ok = (b_size >= vdev_size);
+	if (a_ok != b_ok)
+		return (a_ok);
+	return (a_size < b_size);
+}
+
+/*
  * Given a vdev, attempt to replace it with every known spare until one
  * succeeds or we run out of devices to try.
  * Return whether we were successful or not in replacing the device.
@@ -364,6 +408,10 @@ replace_with_spare(fmd_hdl_t *hdl, zpool_handle_t *zhp, nvlist_t *vdev)
 	char *dev_name;
 	zprop_source_t source;
 	int ashift;
+	uint64_t vdev_rotational = 0, vdev_size = 0, top_guid = 0;
+	boolean_t have_vdev_rotational;
+	vdev_stat_t *vs;
+	unsigned int c;
 
 	config = zpool_get_config(zhp, NULL);
 	if (nvlist_lookup_nvlist(config, ZPOOL_CONFIG_VDEV_TREE,
@@ -376,6 +424,35 @@ replace_with_spare(fmd_hdl_t *hdl, zpool_handle_t *zhp, nvlist_t *vdev)
 	if (nvlist_lookup_nvlist_array(nvroot, ZPOOL_CONFIG_SPARES,
 	    &spares, &nspares) != 0)
 		return (B_FALSE);
+
+	/*
+	 * Collect the failed vdev's parameters for optimal replacement.
+	 */
+	have_vdev_rotational = (nvlist_lookup_uint64(vdev,
+	    ZPOOL_CONFIG_VDEV_ROTATIONAL, &vdev_rotational) == 0);
+	if (nvlist_lookup_uint64_array(vdev, ZPOOL_CONFIG_VDEV_STATS,
+	    (uint64_t **)&vs, &c) == 0)
+		vdev_size = vs->vs_rsize;
+	(void) nvlist_lookup_uint64(vdev, ZPOOL_CONFIG_TOP_GUID, &top_guid);
+
+	/*
+	 * Build a sorted index array over the spares, so that better
+	 * candicates are tried first.
+	 */
+	uint_t order[nspares];
+	for (s = 0; s < nspares; s++)
+		order[s] = s;
+	for (s = 1; s < nspares; s++) {
+		uint_t key = order[s];
+		int j = (int)s - 1;
+		while (j >= 0 && spare_is_preferred(spares[key],
+		    spares[order[j]], have_vdev_rotational, vdev_rotational,
+		    vdev_size, top_guid)) {
+			order[j + 1] = order[j];
+			j--;
+		}
+		order[j + 1] = key;
+	}
 
 	/*
 	 * lookup "ashift" pool property, we may need it for the replacement
@@ -394,25 +471,26 @@ replace_with_spare(fmd_hdl_t *hdl, zpool_handle_t *zhp, nvlist_t *vdev)
 	 * replace it.
 	 */
 	for (s = 0; s < nspares; s++) {
+		nvlist_t *spare = spares[order[s]];
 		boolean_t rebuild = B_FALSE;
 		const char *spare_name, *type;
 
-		if (nvlist_lookup_string(spares[s], ZPOOL_CONFIG_PATH,
+		if (nvlist_lookup_string(spare, ZPOOL_CONFIG_PATH,
 		    &spare_name) != 0)
 			continue;
 
 		/* prefer sequential resilvering for distributed spares */
-		if ((nvlist_lookup_string(spares[s], ZPOOL_CONFIG_TYPE,
+		if ((nvlist_lookup_string(spare, ZPOOL_CONFIG_TYPE,
 		    &type) == 0) && strcmp(type, VDEV_TYPE_DRAID_SPARE) == 0)
 			rebuild = B_TRUE;
 
 		/* if set, add the "ashift" pool property to the spare nvlist */
 		if (source != ZPROP_SRC_DEFAULT)
-			(void) nvlist_add_uint64(spares[s],
+			(void) nvlist_add_uint64(spare,
 			    ZPOOL_CONFIG_ASHIFT, ashift);
 
 		(void) nvlist_add_nvlist_array(replacement,
-		    ZPOOL_CONFIG_CHILDREN, (const nvlist_t **)&spares[s], 1);
+		    ZPOOL_CONFIG_CHILDREN, (const nvlist_t **)&spare, 1);
 
 		fmd_hdl_debug(hdl, "zpool_vdev_replace '%s' with spare '%s'",
 		    dev_name, zfs_basename(spare_name));

@@ -1,23 +1,13 @@
 // SPDX-License-Identifier: CDDL-1.0
 /*
- * CDDL HEADER START
+ * This file and its contents are supplied under the terms of the
+ * Common Development and Distribution License ("CDDL"), version 1.0.
+ * You may only use this file in accordance with the terms of version
+ * 1.0 of the CDDL.
  *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or https://opensource.org/licenses/CDDL-1.0.
- * See the License for the specific language governing permissions
- * and limitations under the License.
- *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
+ * A full copy of the text of the CDDL should have accompanied this
+ * source.  A copy of the CDDL is also available via the Internet at
+ * https://opensource.org/license/CDDL-1.0.
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
@@ -82,11 +72,11 @@ int zfs_metaslab_sm_blksz_with_log = (1 << 17);
 
 /*
  * The in-core space map representation is more compact than its on-disk form.
- * The zfs_condense_pct determines how much more compact the in-core
+ * The zfs_metaslab_condense_pct determines how much more compact the in-core
  * space map representation must be before we compact it on-disk.
  * Values should be greater than or equal to 100.
  */
-uint_t zfs_condense_pct = 200;
+uint_t zfs_metaslab_condense_pct = 200;
 
 /*
  * Condensing a metaslab is not guaranteed to actually reduce the amount of
@@ -265,11 +255,11 @@ static int zfs_metaslab_segment_weight_enabled = B_TRUE;
  */
 static int zfs_metaslab_switch_threshold = 2;
 
+#ifdef METASLAB_TRACE
 /*
- * Internal switch to enable/disable the metaslab allocation tracing
- * facility.
+ * Switch to enable/disable the metaslab allocation tracing facility.
  */
-static const boolean_t metaslab_trace_enabled = B_FALSE;
+static int metaslab_trace_enabled = B_FALSE;
 
 /*
  * Maximum entries that the metaslab allocation tracing facility will keep
@@ -279,7 +269,8 @@ static const boolean_t metaslab_trace_enabled = B_FALSE;
  * to every exceed this value. In debug mode, the system will panic if this
  * limit is ever reached allowing for further investigation.
  */
-static const uint64_t metaslab_trace_max_entries = 5000;
+static uint64_t metaslab_trace_max_entries = 5000;
+#endif
 
 /*
  * Maximum number of metaslabs per group that can be disabled
@@ -356,7 +347,9 @@ static unsigned int metaslab_idx_func(multilist_t *, void *);
 static void metaslab_evict(metaslab_t *, uint64_t);
 static void metaslab_rt_add(zfs_range_tree_t *rt, zfs_range_seg_t *rs,
     void *arg);
+#ifdef METASLAB_TRACE
 kmem_cache_t *metaslab_alloc_trace_cache;
+#endif
 
 typedef struct metaslab_stats {
 	kstat_named_t metaslabstat_trace_over_limit;
@@ -391,10 +384,12 @@ static kstat_t *metaslab_ksp;
 void
 metaslab_stat_init(void)
 {
+#ifdef METASLAB_TRACE
 	ASSERT0P(metaslab_alloc_trace_cache);
 	metaslab_alloc_trace_cache = kmem_cache_create(
 	    "metaslab_alloc_trace_cache", sizeof (metaslab_alloc_trace_t),
 	    0, NULL, NULL, NULL, NULL, NULL, 0);
+#endif
 	metaslab_ksp = kstat_create("zfs", 0, "metaslab_stats",
 	    "misc", KSTAT_TYPE_NAMED, sizeof (metaslab_stats) /
 	    sizeof (kstat_named_t), KSTAT_FLAG_VIRTUAL);
@@ -412,8 +407,10 @@ metaslab_stat_fini(void)
 		metaslab_ksp = NULL;
 	}
 
+#ifdef METASLAB_TRACE
 	kmem_cache_destroy(metaslab_alloc_trace_cache);
 	metaslab_alloc_trace_cache = NULL;
+#endif
 }
 
 /*
@@ -2854,6 +2851,9 @@ metaslab_set_selected_txg(metaslab_t *msp, uint64_t txg)
 {
 	ASSERT(MUTEX_HELD(&msp->ms_lock));
 	metaslab_class_t *mc = msp->ms_group->mg_class;
+	if (msp->ms_selected_txg == txg &&
+	    multilist_link_active(&msp->ms_class_txg_node))
+		return;
 	multilist_sublist_t *mls =
 	    multilist_sublist_lock_obj(&mc->mc_metaslab_txg_list, msp);
 	if (multilist_link_active(&msp->ms_class_txg_node))
@@ -3826,8 +3826,8 @@ metaslab_group_preload(metaslab_group_t *mg)
  *    increase as a result of writing out the free space range tree.
  *
  * 2. Condense if the on on-disk space map representation is at least
- *    zfs_condense_pct/100 times the size of the optimal representation
- *    (i.e. zfs_condense_pct = 110 and in-core = 1MB, optimal = 1.1MB).
+ *    zfs_metaslab_condense_pct/100 times the size of the optimal representation
+ *    (i.e. zfs_metaslab_condense_pct = 110 and in-core = 1MB, optimal = 1.1MB).
  *
  * 3. Do not condense if the on-disk size of the space map does not actually
  *    decrease.
@@ -3863,7 +3863,8 @@ metaslab_should_condense(metaslab_t *msp)
 	uint64_t optimal_size = space_map_estimate_optimal_size(sm,
 	    msp->ms_allocatable, SM_NO_VDEVID);
 
-	return (object_size >= (optimal_size * zfs_condense_pct / 100) &&
+	return (object_size >=
+	    (optimal_size * zfs_metaslab_condense_pct / 100) &&
 	    object_size > zfs_metaslab_condense_block_threshold * record_size);
 }
 
@@ -4044,6 +4045,8 @@ metaslab_unflushed_add(metaslab_t *msp, dmu_tx_t *tx)
 
 	spa_log_sm_increment_current_mscount(spa);
 	spa_log_summary_add_flushed_metaslab(spa, B_TRUE);
+
+	spa_log_sm_increment_unflushed_metaslabs(spa);
 }
 
 void
@@ -4077,6 +4080,11 @@ metaslab_unflushed_bump(metaslab_t *msp, dmu_tx_t *tx, boolean_t dirty)
 	spa_log_summary_decrement_mscount(spa, ms_prev_flushed_txg,
 	    ms_prev_flushed_dirty);
 	spa_log_summary_add_flushed_metaslab(spa, dirty);
+
+	if (ms_prev_flushed_dirty && !dirty)
+		spa_log_sm_decrement_unflushed_metaslabs(spa);
+	else if (!ms_prev_flushed_dirty && dirty)
+		spa_log_sm_increment_unflushed_metaslabs(spa);
 
 	/* cleanup obsolete logs if any */
 	spa_cleanup_old_sm_logs(spa, tx);
@@ -4732,10 +4740,13 @@ metaslab_is_unique(metaslab_t *msp, dva_t *dva)
  * Add an allocation trace element to the allocation tracing list.
  */
 static void
-metaslab_trace_add(zio_alloc_list_t *zal, metaslab_group_t *mg,
-    metaslab_t *msp, uint64_t psize, uint32_t dva_id, uint64_t offset,
-    int allocator)
+metaslab_trace_add(zio_alloc_list_t *zal __maybe_unused,
+    metaslab_group_t *mg __maybe_unused,
+    metaslab_t *msp __maybe_unused, uint64_t psize __maybe_unused,
+    uint32_t dva_id __maybe_unused, uint64_t offset __maybe_unused,
+    int allocator __maybe_unused)
 {
+#ifdef METASLAB_TRACE
 	metaslab_alloc_trace_t *mat;
 
 	if (!metaslab_trace_enabled)
@@ -4781,8 +4792,10 @@ metaslab_trace_add(zio_alloc_list_t *zal, metaslab_group_t *mg,
 	zal->zal_size++;
 
 	ASSERT3U(zal->zal_size, <=, metaslab_trace_max_entries);
+#endif
 }
 
+#ifdef METASLAB_TRACE
 void
 metaslab_trace_move(zio_alloc_list_t *old, zio_alloc_list_t *new)
 {
@@ -4810,6 +4823,7 @@ metaslab_trace_fini(zio_alloc_list_t *zal)
 	list_destroy(&zal->zal_list);
 	zal->zal_size = 0;
 }
+#endif
 
 /*
  * ==========================================================================
@@ -6027,7 +6041,6 @@ metaslab_alloc_range(spa_t *spa, metaslab_class_t *mc, uint64_t psize,
 	ASSERT(ndvas > 0 && ndvas <= spa_max_replication(spa));
 	ASSERT0(BP_GET_NDVAS(bp));
 	ASSERT(hintbp == NULL || ndvas <= BP_GET_NDVAS(hintbp));
-	ASSERT3P(zal, !=, NULL);
 
 	uint64_t smallest_psize = UINT64_MAX;
 	for (int d = 0; d < ndvas; d++) {
@@ -6442,6 +6455,14 @@ ZFS_MODULE_PARAM(zfs_metaslab, metaslab_, df_max_search, UINT, ZMOD_RW,
 ZFS_MODULE_PARAM(zfs_metaslab, metaslab_, df_use_largest_segment, INT, ZMOD_RW,
 	"When looking in size tree, use largest segment instead of exact fit");
 
+ZFS_MODULE_PARAM(zfs_metaslab, metaslab_, df_alloc_threshold, U64, ZMOD_RW,
+	"Minimum size which forces the dynamic allocator to change its "
+	"allocation strategy");
+
+ZFS_MODULE_PARAM(zfs_metaslab, metaslab_, df_free_pct, UINT, ZMOD_RW,
+	"The minimum free space, in percent, to continue allocations in a "
+	"first-fit fashion");
+
 ZFS_MODULE_PARAM(zfs_metaslab, zfs_metaslab_, max_size_cache_sec, U64,
 	ZMOD_RW, "How long to trust the cached max chunk size of a metaslab");
 
@@ -6454,6 +6475,26 @@ ZFS_MODULE_PARAM(zfs_metaslab, zfs_metaslab_, try_hard_before_gang, INT,
 ZFS_MODULE_PARAM(zfs_metaslab, zfs_metaslab_, find_max_tries, UINT, ZMOD_RW,
 	"Normally only consider this many of the best metaslabs in each vdev");
 
+ZFS_MODULE_PARAM(zfs_metaslab, zfs_metaslab_, sm_blksz_no_log, INT, ZMOD_RW,
+	"Block size for space map in pools with log space map disabled.  "
+	"Power of 2 greater than 4096.");
+
+ZFS_MODULE_PARAM(zfs_metaslab, zfs_metaslab_, sm_blksz_with_log, INT, ZMOD_RW,
+	"Block size for space map in pools with log space map enabled.  "
+	"Power of 2 greater than 4096.");
+
 ZFS_MODULE_PARAM_CALL(zfs, zfs_, active_allocator,
 	param_set_active_allocator, param_get_charp, ZMOD_RW,
 	"SPA active allocator");
+
+ZFS_MODULE_PARAM(zfs_metaslab, zfs_metaslab_, condense_pct, UINT, ZMOD_RW,
+	"Condense on-disk spacemap when it is more than this many percents "
+	"of in-memory counterpart");
+
+#ifdef METASLAB_TRACE
+ZFS_MODULE_PARAM(zfs_metaslab, metaslab_, trace_enabled, INT, ZMOD_RW,
+	"Enable metaslab allocation tracing");
+
+ZFS_MODULE_PARAM(zfs_metaslab, metaslab_, trace_max_entries, U64, ZMOD_RW,
+	"Maximum entries for metaslab allocation tracing");
+#endif

@@ -39,6 +39,18 @@ dnl # (If INVARIANTS is detected, we need to force DEBUG, or strange panics
 dnl # can ensue.)
 dnl #
 AC_DEFUN([ZFS_AC_DEBUG], [
+	dnl #
+	dnl # In the Linux kernel copy-builtin build, assertion/debug support
+	dnl # is selected by CONFIG_ZFS_DEBUG (Kconfig).
+	dnl #
+	AH_BOTTOM([
+#ifdef CONFIG_ZFS
+#undef ZFS_DEBUG
+#ifdef CONFIG_ZFS_DEBUG
+#define ZFS_DEBUG 1
+#endif
+#endif])
+
 	AC_MSG_CHECKING([whether assertion support will be enabled])
 	AC_ARG_ENABLE([debug],
 		[AS_HELP_STRING([--enable-debug],
@@ -206,6 +218,21 @@ AC_DEFUN([ZFS_AC_DEBUG_INVARIANTS], [
 	AC_MSG_RESULT([$enable_invariants])
 ])
 
+AC_DEFUN([ZFS_AC_METASLAB_TRACING], [
+	AC_MSG_CHECKING([whether metaslab tracing is enabled])
+	AC_ARG_ENABLE([metaslab-tracing],
+		[AS_HELP_STRING([--enable-metaslab-tracing],
+		[Enable metaslab tracing @<:@default=no@:>@])],
+		[],
+		[enable_metaslab_tracing=no])
+
+	AS_IF([test "x$enable_metaslab_tracing" = xyes], [
+		AC_DEFINE(METASLAB_TRACE, 1, [metaslab tracing enabled])
+	])
+
+	AC_MSG_RESULT([$enable_metaslab_tracing])
+])
+
 dnl # Disabled by default. If enabled allows a configured "turn objtools
 dnl # warnings into errors" (CONFIG_OBJTOOL_WERROR) behavior to take effect.
 dnl # If disabled, objtool warnings are never turned into errors. It can't
@@ -276,6 +303,7 @@ AC_DEFUN([ZFS_AC_CONFIG_ALWAYS], [
 	ZFS_AC_CONFIG_ALWAYS_CPPCHECK
 	ZFS_AC_CONFIG_ALWAYS_SHELLCHECK
 	ZFS_AC_CONFIG_ALWAYS_PARALLEL
+	ZFS_AC_CONFIG_ALWAYS_ZCP
 ])
 
 AC_DEFUN([ZFS_AC_CONFIG], [

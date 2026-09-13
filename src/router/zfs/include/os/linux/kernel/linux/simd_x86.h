@@ -1,23 +1,13 @@
 // SPDX-License-Identifier: CDDL-1.0
 /*
- * CDDL HEADER START
+ * This file and its contents are supplied under the terms of the
+ * Common Development and Distribution License ("CDDL"), version 1.0.
+ * You may only use this file in accordance with the terms of version
+ * 1.0 of the CDDL.
  *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or https://opensource.org/licenses/CDDL-1.0.
- * See the License for the specific language governing permissions
- * and limitations under the License.
- *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
+ * A full copy of the text of the CDDL should have accompanied this
+ * source.  A copy of the CDDL is also available via the Internet at
+ * https://opensource.org/license/CDDL-1.0.
  */
 /*
  * Copyright (C) 2016 Gvozden Neskovic <neskovic@compeng.uni-frankfurt.de>.
@@ -316,24 +306,24 @@ kfpu_begin(void)
 	 */
 	uint8_t *state = zfs_kfpu_fpregs[smp_processor_id()];
 #if HAVE_SIMD(XSAVES)
-	if (static_cpu_has(X86_FEATURE_XSAVES)) {
+	if (cpu_feature_enabled(X86_FEATURE_XSAVES)) {
 		kfpu_do_xsave("xsaves", state, ~XFEATURE_MASK_XTILE);
 		return;
 	}
 #endif
 #if HAVE_SIMD(XSAVEOPT)
-	if (static_cpu_has(X86_FEATURE_XSAVEOPT)) {
+	if (cpu_feature_enabled(X86_FEATURE_XSAVEOPT)) {
 		kfpu_do_xsave("xsaveopt", state, ~XFEATURE_MASK_XTILE);
 		return;
 	}
 #endif
 #if HAVE_SIMD(XSAVE)
-	if (static_cpu_has(X86_FEATURE_XSAVE)) {
+	if (cpu_feature_enabled(X86_FEATURE_XSAVE)) {
 		kfpu_do_xsave("xsave", state, ~XFEATURE_MASK_XTILE);
 		return;
 	}
 #endif
-	if (static_cpu_has(X86_FEATURE_FXSR)) {
+	if (cpu_feature_enabled(X86_FEATURE_FXSR)) {
 		kfpu_save_fxsr(state);
 	} else {
 		kfpu_save_fsave(state);
@@ -381,18 +371,18 @@ kfpu_end(void)
 {
 	uint8_t  *state = zfs_kfpu_fpregs[smp_processor_id()];
 #if HAVE_SIMD(XSAVES)
-	if (static_cpu_has(X86_FEATURE_XSAVES)) {
+	if (cpu_feature_enabled(X86_FEATURE_XSAVES)) {
 		kfpu_do_xrstor("xrstors", state, ~XFEATURE_MASK_XTILE);
 		goto out;
 	}
 #endif
 #if HAVE_SIMD(XSAVE)
-	if (static_cpu_has(X86_FEATURE_XSAVE)) {
+	if (cpu_feature_enabled(X86_FEATURE_XSAVE)) {
 		kfpu_do_xrstor("xrstor", state, ~XFEATURE_MASK_XTILE);
 		goto out;
 	}
 #endif
-	if (static_cpu_has(X86_FEATURE_FXSR)) {
+	if (cpu_feature_enabled(X86_FEATURE_FXSR)) {
 		kfpu_restore_fxsr(state);
 	} else {
 		kfpu_restore_fsave(state);

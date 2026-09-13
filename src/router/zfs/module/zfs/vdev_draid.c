@@ -1,23 +1,13 @@
 // SPDX-License-Identifier: CDDL-1.0
 /*
- * CDDL HEADER START
+ * This file and its contents are supplied under the terms of the
+ * Common Development and Distribution License ("CDDL"), version 1.0.
+ * You may only use this file in accordance with the terms of version
+ * 1.0 of the CDDL.
  *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or https://opensource.org/licenses/CDDL-1.0.
- * See the License for the specific language governing permissions
- * and limitations under the License.
- *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
+ * A full copy of the text of the CDDL should have accompanied this
+ * source.  A copy of the CDDL is also available via the Internet at
+ * https://opensource.org/license/CDDL-1.0.
  */
 /*
  * Copyright (c) 2018 Intel Corporation.
@@ -798,7 +788,8 @@ vdev_draid_map_alloc_write(zio_t *zio, uint64_t abd_offset, raidz_row_t *rr)
 		if (rc->rc_size == 0) {
 			/* empty data column (small write), add a skip sector */
 			ASSERT3U(skip_size, ==, parity_size);
-			rc->rc_abd = abd_get_zeros(skip_size);
+			rc->rc_abd = abd_get_zeros_struct(&rc->rc_abdstruct,
+			    skip_size);
 		} else if (rc->rc_size == parity_size) {
 			/* this is a "big column" */
 			rc->rc_abd = abd_get_offset_struct(&rc->rc_abdstruct,
@@ -806,7 +797,7 @@ vdev_draid_map_alloc_write(zio_t *zio, uint64_t abd_offset, raidz_row_t *rr)
 		} else {
 			/* short data column, add a skip sector */
 			ASSERT3U(rc->rc_size + skip_size, ==, parity_size);
-			rc->rc_abd = abd_alloc_gang();
+			rc->rc_abd = abd_alloc_gang_struct(&rc->rc_abdstruct);
 			abd_gang_add(rc->rc_abd, abd_get_offset_size(
 			    zio->io_abd, abd_off, rc->rc_size), B_TRUE);
 			abd_gang_add(rc->rc_abd, abd_get_zeros(skip_size),
@@ -863,7 +854,7 @@ vdev_draid_map_alloc_scrub(zio_t *zio, uint64_t abd_offset, raidz_row_t *rr)
 			/* short data column, add a skip sector */
 			ASSERT3U(rc->rc_size + skip_size, ==, parity_size);
 			ASSERT3U(rr->rr_nempty, !=, 0);
-			rc->rc_abd = abd_alloc_gang();
+			rc->rc_abd = abd_alloc_gang_struct(&rc->rc_abdstruct);
 			abd_gang_add(rc->rc_abd, abd_get_offset_size(
 			    zio->io_abd, abd_off, rc->rc_size), B_TRUE);
 			abd_gang_add(rc->rc_abd, abd_get_offset_size(
@@ -1240,7 +1231,8 @@ vdev_draid_map_alloc_row(zio_t *zio, raidz_row_t **rrp, uint64_t io_offset,
 	/* Allocate buffers for the parity columns */
 	for (uint64_t c = 0; c < rr->rr_firstdatacol; c++) {
 		raidz_col_t *rc = &rr->rr_col[c];
-		rc->rc_abd = abd_alloc_linear(rc->rc_size, B_FALSE);
+		rc->rc_abd = abd_alloc_linear_struct(&rc->rc_abdstruct,
+		    rc->rc_size, B_FALSE);
 	}
 
 	/*
@@ -1692,7 +1684,7 @@ vdev_draid_open_children(vdev_t *vd)
  */
 static int
 vdev_draid_open(vdev_t *vd, uint64_t *asize, uint64_t *max_asize,
-    uint64_t *logical_ashift, uint64_t *physical_ashift)
+    uint64_t *logical_ashift, uint64_t *physical_ashift, cred_t *cr)
 {
 	vdev_draid_config_t *vdc =  vd->vdev_tsd;
 	uint64_t nparity = vdc->vdc_nparity;
@@ -1709,8 +1701,8 @@ vdev_draid_open(vdev_t *vd, uint64_t *asize, uint64_t *max_asize,
 	 * ordering is important to ensure the distributed spares calculate
 	 * the correct psize in the event that the dRAID vdevs were expanded.
 	 */
-	vdev_open_children_subset(vd, vdev_draid_open_children);
-	vdev_open_children_subset(vd, vdev_draid_open_spares);
+	vdev_open_children_subset(vd, cr, vdev_draid_open_children);
+	vdev_open_children_subset(vd, cr, vdev_draid_open_spares);
 
 	/*
 	 * Verify enough of the children are available to continue.
@@ -2264,6 +2256,7 @@ vdev_draid_io_start(zio_t *zio)
 	raidz_map_t *rm = vdev_draid_map_alloc(zio);
 	zio->io_vsd = rm;
 	zio->io_vsd_ops = &vdev_raidz_vsd_ops;
+	zio_batch_create(zio);
 
 	if (zio->io_type == ZIO_TYPE_WRITE) {
 		for (int i = 0; i < rm->rm_nrows; i++) {
@@ -2277,7 +2270,7 @@ vdev_draid_io_start(zio_t *zio)
 		}
 	}
 
-	zio_execute(zio);
+	zio_execute(zio_batch_rele(zio));
 }
 
 /*
@@ -2728,8 +2721,9 @@ vdev_draid_spare_close(vdev_t *vd)
  */
 static int
 vdev_draid_spare_open(vdev_t *vd, uint64_t *psize, uint64_t *max_psize,
-    uint64_t *logical_ashift, uint64_t *physical_ashift)
+    uint64_t *logical_ashift, uint64_t *physical_ashift, cred_t *cr)
 {
+	(void) cr;
 	vdev_draid_spare_t *vds = vd->vdev_tsd;
 	vdev_t *rvd = vd->vdev_spa->spa_root_vdev;
 	uint64_t asize, max_asize;

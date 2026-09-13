@@ -1,8 +1,6 @@
 #!/bin/ksh -p
 # SPDX-License-Identifier: CDDL-1.0
 #
-# CDDL HEADER START
-#
 # This file and its contents are supplied under the terms of the
 # Common Development and Distribution License ("CDDL"), version 1.0.
 # You may only use this file in accordance with the terms of version
@@ -10,9 +8,7 @@
 #
 # A full copy of the text of the CDDL should have accompanied this
 # source.  A copy of the CDDL is also available via the Internet at
-# http://www.illumos.org/license/CDDL.
-#
-# CDDL HEADER END
+# https://opensource.org/license/CDDL-1.0.
 #
 # Copyright (c) 2020 Lawrence Livermore National Security, LLC.
 
@@ -43,7 +39,7 @@ default_mirror_setup_noexit $DISKS
 
 sync_all_pools
 
-set -A bad_flags a b c   e   g h i j k l   n o p q r s t u v w x y   \
+set -A bad_flags a b c   e   g h i j k l   n o p q r s t u w x y   \
                    B C D E F G H I J K L M N O P Q R S T U V W X Y Z \
                  0 1 2 3 4 5 6 7 8 9 _ - + % . , :
 

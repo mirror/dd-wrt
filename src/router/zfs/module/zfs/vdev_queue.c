@@ -1,23 +1,13 @@
 // SPDX-License-Identifier: CDDL-1.0
 /*
- * CDDL HEADER START
+ * This file and its contents are supplied under the terms of the
+ * Common Development and Distribution License ("CDDL"), version 1.0.
+ * You may only use this file in accordance with the terms of version
+ * 1.0 of the CDDL.
  *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or https://opensource.org/licenses/CDDL-1.0.
- * See the License for the specific language governing permissions
- * and limitations under the License.
- *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
+ * A full copy of the text of the CDDL should have accompanied this
+ * source.  A copy of the CDDL is also available via the Internet at
+ * https://opensource.org/license/CDDL-1.0.
  */
 /*
  * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
@@ -879,7 +869,7 @@ again:
 	return (zio);
 }
 
-static boolean_t
+boolean_t
 vdev_should_queue_io(zio_t *zio)
 {
 	vdev_t *vd = zio->io_vd;
@@ -956,8 +946,18 @@ vdev_queue_io(zio_t *zio)
 
 	if (!vdev_should_queue_io(zio)) {
 		zio->io_queue_state = ZIO_QS_NONE;
+		zio->io_flags |= ZIO_FLAG_BYPASSED_QUEUE;
 		return (zio);
 	}
+
+	/*
+	 * A zio holding a queue slot can not be part of a completion batch,
+	 * since the slot would then be released only once the whole batch is
+	 * complete.
+	 */
+	zio_t *batch = zio_batch_leave(zio);
+	if (batch != NULL)
+		zio_execute(batch);
 
 	mutex_enter(&vq->vq_lock);
 	vdev_queue_io_add(vq, zio);
@@ -987,9 +987,19 @@ vdev_queue_io_done(zio_t *zio)
 	zio_t *dio, *nio;
 	zio_link_t *zl = NULL;
 
-	hrtime_t now = gethrtime();
-	vq->vq_io_complete_ts = now;
-	vq->vq_io_delta_ts = zio->io_delta = now - zio->io_timestamp;
+	/*
+	 * io_delta is already set if this zio's completion was deferred, so
+	 * that the service time excludes however long it waited.  Batched
+	 * completions are not processed in arrival order, so the resulting
+	 * completion time may predate what vq_io_complete_ts holds.
+	 */
+	if (zio->io_delta == 0)
+		zio->io_delta = gethrtime() - zio->io_timestamp;
+	hrtime_t now = zio->io_timestamp + zio->io_delta;
+	if (now > vq->vq_io_complete_ts) {
+		vq->vq_io_complete_ts = now;
+		vq->vq_io_delta_ts = zio->io_delta;
+	}
 
 	if (zio->io_queue_state == ZIO_QS_NONE)
 		return;

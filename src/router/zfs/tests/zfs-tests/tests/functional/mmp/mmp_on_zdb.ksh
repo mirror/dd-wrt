@@ -9,7 +9,7 @@
 #
 # A full copy of the text of the CDDL should have accompanied this
 # source.  A copy of the CDDL is also available via the Internet at
-# http://www.illumos.org/license/CDDL.
+# https://opensource.org/license/CDDL-1.0.
 #
 
 #
@@ -38,7 +38,8 @@
 
 function cleanup
 {
-	datasetexists $TESTPOOL && destroy_pool $TESTPOOL
+	mmp_clear_suspended $TESTPOOL
+	poolexists $TESTPOOL && destroy_pool $TESTPOOL
 	for DISK in $DISKS; do
 		zpool labelclear -f $DEV_RDSKDIR/$DISK
 	done

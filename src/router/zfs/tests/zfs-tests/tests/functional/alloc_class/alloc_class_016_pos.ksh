@@ -9,7 +9,7 @@
 #
 # A full copy of the text of the CDDL should have accompanied this
 # source.  A copy of the CDDL is also available via the Internet at
-# http://www.illumos.org/license/CDDL.
+# https://opensource.org/license/CDDL-1.0.
 #
 
 . $STF_SUITE/tests/functional/alloc_class/alloc_class.kshlib
@@ -41,6 +41,10 @@ log_must zfs create -V 100M -b 32K -o special_small_blocks=32K \
 block_device_wait "$ZVOL_DEVDIR/$TESTPOOL/$TESTVOL"
 log_must dd if=/dev/urandom of=$ZVOL_DEVDIR/$TESTPOOL/$TESTVOL bs=1M count=10
 
+# Closing the zvol makes udev rescan it, and while it does the pool cannot
+# be destroyed.  Let that settle before the destroy below.
+block_device_wait "$ZVOL_DEVDIR/$TESTPOOL/$TESTVOL"
+
 sync_pool $TESTPOOL
 zpool list -v $TESTPOOL
 
@@ -56,5 +60,5 @@ then
 	log_fail "$allocated on special vdev $CLASS_DISK0, but expecting 20M"
 fi
 
-log_must zpool destroy -f "$TESTPOOL"
+log_must_busy zpool destroy -f "$TESTPOOL"
 log_pass $claim

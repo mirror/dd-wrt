@@ -7,7 +7,7 @@
 #
 # A full copy of the text of the CDDL should have accompanied this
 # source.  A copy of the CDDL is also available via the Internet at
-# http://www.illumos.org/license/CDDL.
+# https://opensource.org/license/CDDL-1.0.
 #
 # This run file contains a subset of functional tests which exercise
 # as much functionality as possible while still executing relatively
@@ -74,7 +74,8 @@ tests = ['tst.args_to_lua', 'tst.divide_by_zero', 'tst.exists', 'tst.encryption'
 tags = ['functional', 'channel_program', 'lua_core']
 
 [tests/functional/channel_program/synctask_core]
-tests = ['tst.destroy_fs', 'tst.destroy_snap', 'tst.get_count_and_limit',
+tests = ['tst.destroy_fs', 'tst.destroy_snap',
+    'tst.destroy_bookmark', 'tst.get_count_and_limit',
     'tst.get_index_props', 'tst.get_mountpoint', 'tst.get_neg',
     'tst.get_number_props', 'tst.get_string_props', 'tst.get_type',
     'tst.get_userquota', 'tst.get_written', 'tst.inherit', 'tst.list_bookmarks',
@@ -263,6 +264,10 @@ tags = ['functional', 'cli_root', 'zpool_attach']
 [tests/functional/cli_root/zpool_clear]
 tests = ['zpool_clear_002_neg']
 tags = ['functional', 'cli_root', 'zpool_clear']
+
+[tests/functional/cli_root/zpool_condense]
+tests = ['zpool_condense_neg', 'zpool_condense_basic']
+tags = ['functional', 'cli_root', 'zpool_condense']
 
 [tests/functional/cli_root/zpool_create]
 tests = ['zpool_create_001_pos', 'zpool_create_002_pos',
@@ -546,7 +551,7 @@ tags = ['functional', 'reservation']
 tests = ['recv_dedup', 'recv_dedup_encrypted_zvol', 'rsend_001_pos',
     'rsend_002_pos', 'rsend_003_pos', 'rsend_009_pos', 'rsend_010_pos',
     'rsend_011_pos', 'rsend_016_neg', 'rsend-exclude_001_pos',
-    'rsend-exclude_002_pos', 'send-c_volume', 'send-c_zstreamdump',
+    'rsend-exclude_002_pos', 'send-c_volume',
     'send-c_recv_dedup', 'send-L_toggle', 'send_encrypted_hierarchy',
     'send_encrypted_props', 'send_encrypted_freeobjects',
     'send_encrypted_truncated_files', 'send_freeobjects', 'send_holds',
@@ -562,6 +567,10 @@ tags = ['functional', 'scrub_mirror']
 tests = ['slog_008_neg', 'slog_009_neg', 'slog_010_neg']
 tags = ['functional', 'slog']
 
+[tests/functional/snapdir]
+tests = ['snapdir_mount_parallel']
+tags = ['functional', 'snapdir']
+
 [tests/functional/snapshot]
 tests = ['clone_001_pos', 'rollback_001_pos', 'rollback_002_pos',
     'snapshot_001_pos', 'snapshot_002_pos', 'snapshot_003_pos',
@@ -569,7 +578,7 @@ tests = ['clone_001_pos', 'rollback_001_pos', 'rollback_002_pos',
     'snapshot_007_pos', 'snapshot_008_pos', 'snapshot_009_pos',
     'snapshot_010_pos', 'snapshot_011_pos', 'snapshot_012_pos',
     'snapshot_013_pos', 'snapshot_014_pos', 'snapshot_017_pos',
-    'snapshot_018_pos', 'snapshot_019_pos']
+    'snapshot_018_pos']
 tags = ['functional', 'snapshot']
 
 [tests/functional/snapused]
@@ -613,6 +622,11 @@ tests = ['xattr_001_pos', 'xattr_002_neg', 'xattr_003_neg', 'xattr_004_pos',
     'xattr_005_pos', 'xattr_006_pos', 'xattr_007_neg',
     'xattr_011_pos', 'xattr_013_pos', 'xattr_014_pos', 'xattr_compat']
 tags = ['functional', 'xattr']
+
+[tests/functional/zstream]
+tests = ['zstream_dump_001_pos', 'zstream_dump_002_pos',
+    'zstream_redup_001_pos']
+tags = ['functional', 'zstream']
 
 [tests/functional/zvol/zvol_ENOSPC]
 tests = ['zvol_ENOSPC_001_pos']

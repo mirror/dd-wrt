@@ -7,7 +7,7 @@
  *
  * A full copy of the text of the CDDL should have accompanied this
  * source.  A copy of the CDDL is also available via the Internet at
- * http://www.illumos.org/license/CDDL.
+ * https://opensource.org/license/CDDL-1.0.
  */
 
 /*
@@ -39,6 +39,9 @@ size_t mock_dnode_block_count(mock_dnode_t *mdn);
 
 /* Returns a pointer to the data under the given block id. */
 const void *mock_dnode_block_data(mock_dnode_t *mdn, uint64_t blkid);
+
+/* Returns the current dnode ref (hold) count. */
+uint64_t mock_dnode_refcount(mock_dnode_t *mdn);
 
 /* Create/destroy a mock transaction handle. */
 mock_dmu_tx_t *mock_tx_create(void);

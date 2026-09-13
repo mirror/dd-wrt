@@ -8,7 +8,7 @@
 #
 # A full copy of the text of the CDDL should have accompanied this
 # source.  A copy of the CDDL is also available via the Internet at
-# http://www.illumos.org/license/CDDL.
+# https://opensource.org/license/CDDL-1.0.
 #
 
 #
@@ -89,7 +89,24 @@ do
 	typeset conf=${poolconfs[$i]}
 	setup_mirror $conf
 	log_mustnot zpool split $TESTPOOL $TESTPOOL2 ${baddevs[$i]}
-	log_must zpool split -R $altroot $TESTPOOL $TESTPOOL2 ${gooddevs[$i]}
+
+	# Force creating DTL objects on vdevs
+	typeset dtldev=${gooddevs[$i]%% *}
+	typeset mntpnt=$(get_prop mountpoint $TESTPOOL)
+	log_must zpool offline $TESTPOOL $dtldev
+	log_must dd if=/dev/zero of=$mntpnt/dtlfile bs=1k count=1
+	log_must zpool online $TESTPOOL $dtldev
+	sync_pool $TESTPOOL true
+
+	log_must zpool split -R $altroot -o cachefile=/etc/zfs/zpool.cache \
+	    $TESTPOOL $TESTPOOL2 ${gooddevs[$i]}
+	sync_pool $TESTPOOL true
+	sync_pool $TESTPOOL2 true
+
+	# check space maps
+	log_must zdb -MC $TESTPOOL
+	log_must zdb -MC $TESTPOOL2
+
 	# Verify "good" devices ended up in the new pool
 	log_must poolexists $TESTPOOL2
 	for filedev in ${gooddevs[$i]}; do

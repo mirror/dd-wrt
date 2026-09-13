@@ -1,23 +1,13 @@
 // SPDX-License-Identifier: CDDL-1.0
 /*
- * CDDL HEADER START
+ * This file and its contents are supplied under the terms of the
+ * Common Development and Distribution License ("CDDL"), version 1.0.
+ * You may only use this file in accordance with the terms of version
+ * 1.0 of the CDDL.
  *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or https://opensource.org/licenses/CDDL-1.0.
- * See the License for the specific language governing permissions
- * and limitations under the License.
- *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
+ * A full copy of the text of the CDDL should have accompanied this
+ * source.  A copy of the CDDL is also available via the Internet at
+ * https://opensource.org/license/CDDL-1.0.
  */
 
 /*
@@ -70,6 +60,12 @@ blk_queue_set_write_cache(struct request_queue *q, bool on)
  *      Only controls if the operator is allowed to change _WC. Initial version
  *      buggy; aliased to QUEUE_FLAG_FUA, so unuseable.
  * 6.6.10, 6.7: QUEUE_FLAG_HW_WC fixed.
+ * 6.11: Both flags removed. BLK_FEAT_WRITE_CACHE in queue_limits.features is
+ *       the driver-set equivalent of _HW_WC, while the operator's override
+ *       lives separately in BLK_FLAG_WRITE_CACHE_DISABLED. We deliberately
+ *       ignore the override (ie don't use bdev_write_cache()): we only sample
+ *       this at vdev open, so if the operator later re-enabled the cache we
+ *       would never flush again.
  *
  * Older than 4.10 we just assume write cache, and let the normal flush fail
  * detection apply.
@@ -77,7 +73,10 @@ blk_queue_set_write_cache(struct request_queue *q, bool on)
 static inline boolean_t
 zfs_bdev_has_write_cache(struct block_device *bdev)
 {
-#if defined(QUEUE_FLAG_HW_WC) && QUEUE_FLAG_HW_WC != QUEUE_FLAG_FUA
+#if defined(HAVE_BLKDEV_QUEUE_LIMITS_FEATURES)
+	return (!!(bdev_get_queue(bdev)->limits.features &
+	    BLK_FEAT_WRITE_CACHE));
+#elif defined(QUEUE_FLAG_HW_WC) && QUEUE_FLAG_HW_WC != QUEUE_FLAG_FUA
 	return (test_bit(QUEUE_FLAG_HW_WC, &bdev_get_queue(bdev)->queue_flags));
 #elif defined(QUEUE_FLAG_WC)
 	return (test_bit(QUEUE_FLAG_WC, &bdev_get_queue(bdev)->queue_flags));
@@ -104,7 +103,11 @@ blk_queue_set_read_ahead(struct request_queue *q, unsigned long ra_pages)
 #define	BIO_BI_SECTOR(bio)	(bio)->bi_iter.bi_sector
 #define	BIO_BI_SIZE(bio)	(bio)->bi_iter.bi_size
 #define	BIO_BI_IDX(bio)		(bio)->bi_iter.bi_idx
+#ifdef HAVE_BVEC_ITER_OFFSET
+#define	BIO_BI_SKIP(bio)	(bio)->bi_iter.bi_offset
+#else
 #define	BIO_BI_SKIP(bio)	(bio)->bi_iter.bi_bvec_done
+#endif
 #define	bio_for_each_segment4(bv, bvp, b, i)	\
 	bio_for_each_segment((bv), (b), (i))
 typedef struct bvec_iter bvec_iterator_t;

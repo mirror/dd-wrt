@@ -1,23 +1,13 @@
 // SPDX-License-Identifier: CDDL-1.0
 /*
- * CDDL HEADER START
+ * This file and its contents are supplied under the terms of the
+ * Common Development and Distribution License ("CDDL"), version 1.0.
+ * You may only use this file in accordance with the terms of version
+ * 1.0 of the CDDL.
  *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or https://opensource.org/licenses/CDDL-1.0.
- * See the License for the specific language governing permissions
- * and limitations under the License.
- *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
+ * A full copy of the text of the CDDL should have accompanied this
+ * source.  A copy of the CDDL is also available via the Internet at
+ * https://opensource.org/license/CDDL-1.0.
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
@@ -424,12 +414,22 @@ dsl_dataset_user_release_check_one(dsl_dataset_user_release_arg_t *ddura,
 	if (DS_IS_DEFER_DESTROY(ds) &&
 	    dsl_dataset_phys(ds)->ds_num_children == 1 &&
 	    ds->ds_userrefs == numholds) {
-		/* we need to destroy the snapshot as well */
-		if (dsl_dataset_long_held(ds)) {
+		/*
+		 * We need to destroy the snapshot as well, unless something
+		 * else is still holding it open.  An owner - a mount, or an
+		 * open snapshot zvol - ends at dsl_dataset_disown(), which
+		 * asks for the sweep that finishes the job, so the release
+		 * can go through and leave the mark where it is rather than
+		 * hand the caller a hold they cannot get rid of.  Every other
+		 * long hold has no such hook, and failing the release is what
+		 * gets the snapshot destroyed on the next try.
+		 */
+		if (!dsl_dataset_long_held(ds)) {
+			fnvlist_add_boolean(ddura->ddura_todelete, snapname);
+		} else if (!dsl_dataset_has_owner(ds)) {
 			fnvlist_free(holds_found);
 			return (SET_ERROR(EBUSY));
 		}
-		fnvlist_add_boolean(ddura->ddura_todelete, snapname);
 	}
 
 	if (numholds != 0) {

@@ -1,23 +1,13 @@
 // SPDX-License-Identifier: CDDL-1.0
 /*
- * CDDL HEADER START
+ * This file and its contents are supplied under the terms of the
+ * Common Development and Distribution License ("CDDL"), version 1.0.
+ * You may only use this file in accordance with the terms of version
+ * 1.0 of the CDDL.
  *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or https://opensource.org/licenses/CDDL-1.0.
- * See the License for the specific language governing permissions
- * and limitations under the License.
- *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
+ * A full copy of the text of the CDDL should have accompanied this
+ * source.  A copy of the CDDL is also available via the Internet at
+ * https://opensource.org/license/CDDL-1.0.
  */
 
 /*
@@ -26,6 +16,7 @@
  * Copyright (c) 2014 Integros [integros.com]
  * Copyright 2017 Nexenta Systems, Inc.
  * Copyright (c) 2025, Klara, Inc.
+ * Copyright (c) 2026, TrueNAS.
  */
 
 /* Portions Copyright 2007 Jeremy Teo */
@@ -324,7 +315,7 @@ zfs_ioctl_setxattr(vnode_t *vp, zfsxattr_t *fsx, cred_t *cr)
 	XVA_SET_REQ(&xva, XAT_PROJID);
 	xoap->xoa_projid = fsx->fsx_projid;
 
-	err = zfs_setattr(zp, (vattr_t *)&xva, 0, cr, NULL);
+	err = zfs_setattr(zp, (vattr_t *)&xva, 0, cr);
 
 	return (err);
 }
@@ -814,10 +805,9 @@ zfs_lookup(vnode_t *dvp, const char *nm, vnode_t **vpp,
 		 */
 		if (flags & LOOKUP_NAMED_ATTR)
 			error = zfs_zaccess(zp, ACE_EXECUTE, V_NAMEDATTR,
-			    B_FALSE, cr, NULL);
+			    B_FALSE, cr);
 		else
-			error = zfs_zaccess(zp, ACE_EXECUTE, 0, B_FALSE, cr,
-			    NULL);
+			error = zfs_zaccess(zp, ACE_EXECUTE, 0, B_FALSE, cr);
 		if (error) {
 			vrele(ZTOV(zp));
 		}
@@ -836,8 +826,7 @@ zfs_lookup(vnode_t *dvp, const char *nm, vnode_t **vpp,
 			cnp->cn_flags &= ~NOEXECCHECK;
 		} else
 #endif
-		if ((error = zfs_zaccess(zdp, ACE_EXECUTE, 0, B_FALSE, cr,
-		    NULL))) {
+		if ((error = zfs_zaccess(zdp, ACE_EXECUTE, 0, B_FALSE, cr))) {
 			zfs_exit(zfsvfs, FTAG);
 			return (error);
 		}
@@ -1025,7 +1014,6 @@ is_nametoolong(zfsvfs_t *zfsvfs, const char *name)
  *		flag	- large file flag [UNUSED].
  *		ct	- caller context
  *		vsecp	- ACL to be set
- *		mnt_ns	- Unused on FreeBSD
  *
  *	OUT:	vpp	- vnode of created or trunc'd entry.
  *
@@ -1037,7 +1025,7 @@ is_nametoolong(zfsvfs_t *zfsvfs, const char *name)
  */
 int
 zfs_create(znode_t *dzp, const char *name, vattr_t *vap, int excl, int mode,
-    znode_t **zpp, cred_t *cr, int flag, vsecattr_t *vsecp, zidmap_t *mnt_ns)
+    znode_t **zpp, cred_t *cr, int flag, vsecattr_t *vsecp)
 {
 	(void) excl, (void) mode, (void) flag;
 	znode_t		*zp;
@@ -1100,7 +1088,7 @@ zfs_create(znode_t *dzp, const char *name, vattr_t *vap, int excl, int mode,
 	 * Create a new file object and update the directory
 	 * to reference it.
 	 */
-	if ((error = zfs_zaccess(dzp, ACE_ADD_FILE, 0, B_FALSE, cr, mnt_ns))) {
+	if ((error = zfs_zaccess(dzp, ACE_ADD_FILE, 0, B_FALSE, cr))) {
 		goto out;
 	}
 
@@ -1116,11 +1104,10 @@ zfs_create(znode_t *dzp, const char *name, vattr_t *vap, int excl, int mode,
 	}
 
 	if ((error = zfs_acl_ids_create(dzp, 0, vap,
-	    cr, vsecp, &acl_ids, NULL)) != 0)
+	    cr, vsecp, &acl_ids)) != 0)
 		goto out;
 
-	if (S_ISREG(vap->va_mode) || S_ISDIR(vap->va_mode))
-		projid = zfs_inherit_projid(dzp);
+	projid = zfs_inherit_projid(dzp);
 	if (zfs_acl_ids_overquota(zfsvfs, &acl_ids, projid)) {
 		zfs_acl_ids_free(&acl_ids);
 		error = SET_ERROR(EDQUOT);
@@ -1138,7 +1125,7 @@ zfs_create(znode_t *dzp, const char *name, vattr_t *vap, int excl, int mode,
 	if (fuid_dirtied)
 		zfs_fuid_txhold(zfsvfs, tx);
 	dmu_tx_hold_zap(tx, dzp->z_id, TRUE, name);
-	dmu_tx_hold_sa(tx, dzp->z_sa_hdl, B_FALSE);
+	dmu_tx_hold_sa(tx, dzp->z_sa_hdl, ZFS_SEQ_MAY_GROW(dzp));
 	if (!zfsvfs->z_use_sa &&
 	    acl_ids.z_aclp->z_acl_bytes > ZFS_ACE_SPACE) {
 		dmu_tx_hold_write(tx, DMU_NEW_OBJECT,
@@ -1237,7 +1224,7 @@ zfs_remove_(vnode_t *dvp, vnode_t *vp, const char *name, cred_t *cr)
 	xattr_obj = 0;
 	xzp = NULL;
 
-	if ((error = zfs_zaccess_delete(dzp, zp, cr, NULL))) {
+	if ((error = zfs_zaccess_delete(dzp, zp, cr))) {
 		goto out;
 	}
 
@@ -1269,7 +1256,8 @@ zfs_remove_(vnode_t *dvp, vnode_t *vp, const char *name, cred_t *cr)
 	 */
 	tx = dmu_tx_create(zfsvfs->z_os);
 	dmu_tx_hold_zap(tx, dzp->z_id, FALSE, name);
-	dmu_tx_hold_sa(tx, zp->z_sa_hdl, B_FALSE);
+	dmu_tx_hold_sa(tx, zp->z_sa_hdl, ZFS_SEQ_MAY_GROW(zp));
+	dmu_tx_hold_sa(tx, dzp->z_sa_hdl, ZFS_SEQ_MAY_GROW(dzp));
 	zfs_sa_upgrade_txholds(tx, zp);
 	zfs_sa_upgrade_txholds(tx, dzp);
 
@@ -1392,7 +1380,6 @@ zfs_remove(znode_t *dzp, const char *name, cred_t *cr, int flags)
  *		ct	- caller context
  *		flags	- case flags
  *		vsecp	- ACL to be set
- *		mnt_ns	- Unused on FreeBSD
  *
  *	OUT:	vpp	- vnode of created directory.
  *
@@ -1404,7 +1391,7 @@ zfs_remove(znode_t *dzp, const char *name, cred_t *cr, int flags)
  */
 int
 zfs_mkdir(znode_t *dzp, const char *dirname, vattr_t *vap, znode_t **zpp,
-    cred_t *cr, int flags, vsecattr_t *vsecp, zidmap_t *mnt_ns)
+    cred_t *cr, int flags, vsecattr_t *vsecp)
 {
 	(void) flags, (void) vsecp;
 	znode_t		*zp;
@@ -1456,7 +1443,7 @@ zfs_mkdir(znode_t *dzp, const char *dirname, vattr_t *vap, znode_t **zpp,
 	}
 
 	if ((error = zfs_acl_ids_create(dzp, 0, vap, cr,
-	    NULL, &acl_ids, NULL)) != 0) {
+	    NULL, &acl_ids)) != 0) {
 		zfs_exit(zfsvfs, FTAG);
 		return (error);
 	}
@@ -1477,8 +1464,7 @@ zfs_mkdir(znode_t *dzp, const char *dirname, vattr_t *vap, znode_t **zpp,
 	}
 	ASSERT0P(zp);
 
-	if ((error = zfs_zaccess(dzp, ACE_ADD_SUBDIRECTORY, 0, B_FALSE, cr,
-	    mnt_ns))) {
+	if ((error = zfs_zaccess(dzp, ACE_ADD_SUBDIRECTORY, 0, B_FALSE, cr))) {
 		zfs_acl_ids_free(&acl_ids);
 		zfs_exit(zfsvfs, FTAG);
 		return (error);
@@ -1497,6 +1483,7 @@ zfs_mkdir(znode_t *dzp, const char *dirname, vattr_t *vap, znode_t **zpp,
 	tx = dmu_tx_create(zfsvfs->z_os);
 	dmu_tx_hold_zap(tx, dzp->z_id, TRUE, dirname);
 	dmu_tx_hold_zap(tx, DMU_NEW_OBJECT, FALSE, NULL);
+	dmu_tx_hold_sa(tx, dzp->z_sa_hdl, ZFS_SEQ_MAY_GROW(dzp));
 	fuid_dirtied = zfsvfs->z_fuid_dirty;
 	if (fuid_dirtied)
 		zfs_fuid_txhold(zfsvfs, tx);
@@ -1592,7 +1579,7 @@ zfs_rmdir_(vnode_t *dvp, vnode_t *vp, const char *name, cred_t *cr)
 	zilog = zfsvfs->z_log;
 
 
-	if ((error = zfs_zaccess_delete(dzp, zp, cr, NULL))) {
+	if ((error = zfs_zaccess_delete(dzp, zp, cr))) {
 		goto out;
 	}
 
@@ -1605,7 +1592,8 @@ zfs_rmdir_(vnode_t *dvp, vnode_t *vp, const char *name, cred_t *cr)
 
 	tx = dmu_tx_create(zfsvfs->z_os);
 	dmu_tx_hold_zap(tx, dzp->z_id, FALSE, name);
-	dmu_tx_hold_sa(tx, zp->z_sa_hdl, B_FALSE);
+	dmu_tx_hold_sa(tx, zp->z_sa_hdl, ZFS_SEQ_MAY_GROW(zp));
+	dmu_tx_hold_sa(tx, dzp->z_sa_hdl, ZFS_SEQ_MAY_GROW(dzp));
 	dmu_tx_hold_zap(tx, zfsvfs->z_unlinkedobj, FALSE, NULL);
 	zfs_sa_upgrade_txholds(tx, zp);
 	zfs_sa_upgrade_txholds(tx, dzp);
@@ -1986,7 +1974,7 @@ zfs_getattr(vnode_t *vp, vattr_t *vap, int flags, cred_t *cr)
 	if (!(zp->z_pflags & ZFS_ACL_TRIVIAL) &&
 	    (vap->va_uid != crgetuid(cr))) {
 		if ((error = zfs_zaccess(zp, ACE_READ_ATTRIBUTES, 0,
-		    skipaclchk, cr, NULL))) {
+		    skipaclchk, cr))) {
 			zfs_exit(zfsvfs, FTAG);
 			return (error);
 		}
@@ -2012,7 +2000,7 @@ zfs_getattr(vnode_t *vp, vattr_t *vap, int flags, cred_t *cr)
 		vap->va_rdev = NODEV;
 	vap->va_gen = zp->z_gen;
 	vap->va_flags = 0;	/* FreeBSD: Reset chflags(2) flags. */
-	vap->va_filerev = zp->z_seq;
+	vap->va_filerev = atomic_load_64(&zp->z_seq);
 
 	/*
 	 * Add in any requested optional attributes and the create time.
@@ -2282,7 +2270,6 @@ next:
  *		flags	- ATTR_UTIME set if non-default time values provided.
  *			- ATTR_NOACLCHECK (CIFS context only).
  *		cr	- credentials of caller.
- *		mnt_ns	- Unused on FreeBSD
  *
  *	RETURN:	0 on success, error code on failure.
  *
@@ -2290,7 +2277,7 @@ next:
  *	vp - ctime updated, mtime updated if size changed.
  */
 int
-zfs_setattr(znode_t *zp, vattr_t *vap, int flags, cred_t *cr, zidmap_t *mnt_ns)
+zfs_setattr(znode_t *zp, vattr_t *vap, int flags, cred_t *cr)
 {
 	vnode_t		*vp = ZTOV(zp);
 	zfsvfs_t	*zfsvfs = zp->z_zfsvfs;
@@ -2318,7 +2305,7 @@ zfs_setattr(znode_t *zp, vattr_t *vap, int flags, cred_t *cr, zidmap_t *mnt_ns)
 	boolean_t skipaclchk = (flags & ATTR_NOACLCHECK) ? B_TRUE : B_FALSE;
 	boolean_t	fuid_dirtied = B_FALSE;
 	boolean_t	handle_eadir = B_FALSE;
-	sa_bulk_attr_t	bulk[7], xattr_bulk[7];
+	sa_bulk_attr_t	bulk[9], xattr_bulk[6];
 	int		count = 0, xattr_count = 0;
 
 	if (mask == 0)
@@ -2463,7 +2450,7 @@ zfs_setattr(znode_t *zp, vattr_t *vap, int flags, cred_t *cr, zidmap_t *mnt_ns)
 	    XVA_ISSET_REQ(xvap, XAT_CREATETIME) ||
 	    XVA_ISSET_REQ(xvap, XAT_SYSTEM)))) {
 		need_policy = zfs_zaccess(zp, ACE_WRITE_ATTRIBUTES, 0,
-		    skipaclchk, cr, mnt_ns);
+		    skipaclchk, cr);
 	}
 
 	if (mask & (AT_UID|AT_GID)) {
@@ -2500,7 +2487,7 @@ zfs_setattr(znode_t *zp, vattr_t *vap, int flags, cred_t *cr, zidmap_t *mnt_ns)
 		    ((idmask == AT_UID) && take_owner) ||
 		    ((idmask == AT_GID) && take_group)) {
 			if (zfs_zaccess(zp, ACE_WRITE_OWNER, 0,
-			    skipaclchk, cr, mnt_ns) == 0) {
+			    skipaclchk, cr) == 0) {
 				/*
 				 * Remove setuid/setgid for non-privileged users
 				 */
@@ -2609,8 +2596,7 @@ zfs_setattr(znode_t *zp, vattr_t *vap, int flags, cred_t *cr, zidmap_t *mnt_ns)
 	}
 
 	if (mask & AT_MODE) {
-		if (zfs_zaccess(zp, ACE_WRITE_ACL, 0, skipaclchk, cr,
-		    mnt_ns) == 0) {
+		if (zfs_zaccess(zp, ACE_WRITE_ACL, 0, skipaclchk, cr) == 0) {
 			err = secpolicy_setid_setsticky_clear(vp, vap,
 			    &oldva, cr);
 			if (err) {
@@ -2758,14 +2744,15 @@ zfs_setattr(znode_t *zp, vattr_t *vap, int flags, cred_t *cr, zidmap_t *mnt_ns)
 		if (((mask & AT_XVATTR) &&
 		    XVA_ISSET_REQ(xvap, XAT_AV_SCANSTAMP)) ||
 		    (projid != ZFS_INVALID_PROJID &&
-		    !(zp->z_pflags & ZFS_PROJID)))
+		    !(zp->z_pflags & ZFS_PROJID)) ||
+		    !zp->z_has_seq)
 			dmu_tx_hold_sa(tx, zp->z_sa_hdl, B_TRUE);
 		else
 			dmu_tx_hold_sa(tx, zp->z_sa_hdl, B_FALSE);
 	}
 
 	if (attrzp) {
-		dmu_tx_hold_sa(tx, attrzp->z_sa_hdl, B_FALSE);
+		dmu_tx_hold_sa(tx, attrzp->z_sa_hdl, ZFS_SEQ_MAY_GROW(attrzp));
 	}
 
 	fuid_dirtied = zfsvfs->z_fuid_dirty;
@@ -2908,16 +2895,19 @@ zfs_setattr(znode_t *zp, vattr_t *vap, int flags, cred_t *cr, zidmap_t *mnt_ns)
 		SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_CTIME(zfsvfs), NULL,
 		    &ctime, sizeof (ctime));
 		zfs_tstamp_update_setup(zp, CONTENT_MODIFIED, mtime, ctime);
+		ZFS_PERSIST_SEQ(zp, bulk, count);
 	} else if (mask != 0) {
 		SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_CTIME(zfsvfs), NULL,
 		    &ctime, sizeof (ctime));
 		zfs_tstamp_update_setup(zp, STATE_CHANGED, mtime, ctime);
+		ZFS_PERSIST_SEQ(zp, bulk, count);
 		if (attrzp) {
 			SA_ADD_BULK_ATTR(xattr_bulk, xattr_count,
 			    SA_ZPL_CTIME(zfsvfs), NULL,
 			    &ctime, sizeof (ctime));
 			zfs_tstamp_update_setup(attrzp, STATE_CHANGED,
 			    mtime, ctime);
+			ZFS_PERSIST_SEQ(attrzp, xattr_bulk, xattr_count);
 		}
 	}
 
@@ -2978,6 +2968,7 @@ zfs_setattr(znode_t *zp, vattr_t *vap, int flags, cred_t *cr, zidmap_t *mnt_ns)
 	}
 out:
 	if (err == 0 && attrzp) {
+		ASSERT3S(xattr_count, <=, ARRAY_SIZE(xattr_bulk));
 		err2 = sa_bulk_update(attrzp->z_sa_hdl, xattr_bulk,
 		    xattr_count, tx);
 		ASSERT0(err2);
@@ -2996,6 +2987,7 @@ out:
 		if (attrzp)
 			vput(ZTOV(attrzp));
 	} else {
+		ASSERT3S(count, <=, ARRAY_SIZE(bulk));
 		err2 = sa_bulk_update(zp->z_sa_hdl, bulk, count, tx);
 		dmu_tx_commit(tx);
 		if (attrzp) {
@@ -3385,8 +3377,16 @@ zfs_do_rename_impl(vnode_t *sdvp, vnode_t **svpp, struct componentname *scnp,
 	 * not only the project ID, but also the ZFS_PROJINHERIT flag. Under
 	 * such case, we only allow renames into our tree when the project
 	 * IDs are the same.
+	 *
+	 * A rename within a single directory leaves the object exactly where
+	 * it already is, so it cannot move it between projects and is always
+	 * allowed.  Objects created before symlinks and other non-regular
+	 * files began inheriting a project ID carry none of their own, and
+	 * would otherwise not be renameable within the very directory that
+	 * holds them -- which breaks "ln -sfn", implemented as
+	 * create-under-a-temporary-name-then-rename.
 	 */
-	if (tdzp->z_pflags & ZFS_PROJINHERIT &&
+	if (sdzp != tdzp && tdzp->z_pflags & ZFS_PROJINHERIT &&
 	    tdzp->z_projid != szp->z_projid) {
 		error = SET_ERROR(EXDEV);
 		goto out;
@@ -3398,7 +3398,7 @@ zfs_do_rename_impl(vnode_t *sdvp, vnode_t **svpp, struct componentname *scnp,
 	 * Note that if target and source are the same, this can be
 	 * done in a single check.
 	 */
-	if ((error = zfs_zaccess_rename(sdzp, szp, tdzp, tzp, cr, NULL)))
+	if ((error = zfs_zaccess_rename(sdzp, szp, tdzp, tzp, cr)))
 		goto out;
 
 	if ((*svpp)->v_type == VDIR) {
@@ -3464,16 +3464,16 @@ zfs_do_rename_impl(vnode_t *sdvp, vnode_t **svpp, struct componentname *scnp,
 	}
 
 	tx = dmu_tx_create(zfsvfs->z_os);
-	dmu_tx_hold_sa(tx, szp->z_sa_hdl, B_FALSE);
-	dmu_tx_hold_sa(tx, sdzp->z_sa_hdl, B_FALSE);
+	dmu_tx_hold_sa(tx, szp->z_sa_hdl, ZFS_SEQ_MAY_GROW(szp));
+	dmu_tx_hold_sa(tx, sdzp->z_sa_hdl, ZFS_SEQ_MAY_GROW(sdzp));
 	dmu_tx_hold_zap(tx, sdzp->z_id, FALSE, snm);
 	dmu_tx_hold_zap(tx, tdzp->z_id, TRUE, tnm);
 	if (sdzp != tdzp) {
-		dmu_tx_hold_sa(tx, tdzp->z_sa_hdl, B_FALSE);
+		dmu_tx_hold_sa(tx, tdzp->z_sa_hdl, ZFS_SEQ_MAY_GROW(tdzp));
 		zfs_sa_upgrade_txholds(tx, tdzp);
 	}
 	if (tzp) {
-		dmu_tx_hold_sa(tx, tzp->z_sa_hdl, B_FALSE);
+		dmu_tx_hold_sa(tx, tzp->z_sa_hdl, ZFS_SEQ_MAY_GROW(tzp));
 		zfs_sa_upgrade_txholds(tx, tzp);
 	}
 
@@ -3544,7 +3544,7 @@ out:
 
 int
 zfs_rename(znode_t *sdzp, const char *sname, znode_t *tdzp, const char *tname,
-    cred_t *cr, int flags, uint64_t rflags, vattr_t *wo_vap, zidmap_t *mnt_ns)
+    cred_t *cr, int flags, uint64_t rflags, vattr_t *wo_vap)
 {
 	struct componentname scn, tcn;
 	vnode_t *sdvp, *tdvp;
@@ -3595,7 +3595,6 @@ fail:
  *		cr	- credentials of caller.
  *		ct	- caller context
  *		flags	- case flags
- *		mnt_ns	- Unused on FreeBSD
  *
  *	RETURN:	0 on success, error code on failure.
  *
@@ -3604,7 +3603,7 @@ fail:
  */
 int
 zfs_symlink(znode_t *dzp, const char *name, vattr_t *vap,
-    const char *link, znode_t **zpp, cred_t *cr, int flags, zidmap_t *mnt_ns)
+    const char *link, znode_t **zpp, cred_t *cr, int flags)
 {
 	(void) flags;
 	znode_t		*zp;
@@ -3638,7 +3637,7 @@ zfs_symlink(znode_t *dzp, const char *name, vattr_t *vap,
 	}
 
 	if ((error = zfs_acl_ids_create(dzp, 0,
-	    vap, cr, NULL, &acl_ids, NULL)) != 0) {
+	    vap, cr, NULL, &acl_ids)) != 0) {
 		zfs_exit(zfsvfs, FTAG);
 		return (error);
 	}
@@ -3653,13 +3652,13 @@ zfs_symlink(znode_t *dzp, const char *name, vattr_t *vap,
 		return (error);
 	}
 
-	if ((error = zfs_zaccess(dzp, ACE_ADD_FILE, 0, B_FALSE, cr, mnt_ns))) {
+	if ((error = zfs_zaccess(dzp, ACE_ADD_FILE, 0, B_FALSE, cr))) {
 		zfs_acl_ids_free(&acl_ids);
 		zfs_exit(zfsvfs, FTAG);
 		return (error);
 	}
 
-	if (zfs_acl_ids_overquota(zfsvfs, &acl_ids, ZFS_DEFAULT_PROJID)) {
+	if (zfs_acl_ids_overquota(zfsvfs, &acl_ids, zfs_inherit_projid(dzp))) {
 		zfs_acl_ids_free(&acl_ids);
 		zfs_exit(zfsvfs, FTAG);
 		return (SET_ERROR(EDQUOT));
@@ -3672,7 +3671,7 @@ zfs_symlink(znode_t *dzp, const char *name, vattr_t *vap,
 	dmu_tx_hold_zap(tx, dzp->z_id, TRUE, name);
 	dmu_tx_hold_sa_create(tx, acl_ids.z_aclp->z_acl_bytes +
 	    ZFS_SA_BASE_ATTR_SIZE + len);
-	dmu_tx_hold_sa(tx, dzp->z_sa_hdl, B_FALSE);
+	dmu_tx_hold_sa(tx, dzp->z_sa_hdl, ZFS_SEQ_MAY_GROW(dzp));
 	if (!zfsvfs->z_use_sa && acl_ids.z_aclp->z_acl_bytes > ZFS_ACE_SPACE) {
 		dmu_tx_hold_write(tx, DMU_NEW_OBJECT, 0,
 		    acl_ids.z_aclp->z_acl_bytes);
@@ -3879,7 +3878,7 @@ zfs_link(znode_t *tdzp, znode_t *szp, const char *name, cred_t *cr,
 		return (SET_ERROR(EPERM));
 	}
 
-	if ((error = zfs_zaccess(tdzp, ACE_ADD_FILE, 0, B_FALSE, cr, NULL))) {
+	if ((error = zfs_zaccess(tdzp, ACE_ADD_FILE, 0, B_FALSE, cr))) {
 		zfs_exit(zfsvfs, FTAG);
 		return (error);
 	}
@@ -3894,7 +3893,8 @@ zfs_link(znode_t *tdzp, znode_t *szp, const char *name, cred_t *cr,
 	}
 
 	tx = dmu_tx_create(zfsvfs->z_os);
-	dmu_tx_hold_sa(tx, szp->z_sa_hdl, B_FALSE);
+	dmu_tx_hold_sa(tx, szp->z_sa_hdl, ZFS_SEQ_MAY_GROW(szp));
+	dmu_tx_hold_sa(tx, tdzp->z_sa_hdl, ZFS_SEQ_MAY_GROW(tdzp));
 	dmu_tx_hold_zap(tx, tdzp->z_id, TRUE, name);
 	zfs_sa_upgrade_txholds(tx, szp);
 	zfs_sa_upgrade_txholds(tx, tdzp);
@@ -3980,7 +3980,7 @@ zfs_space(znode_t *zp, int cmd, flock64_t *bfp, int flag,
 	 * On Linux we can get here through truncate_range() which
 	 * operates directly on inodes, so we need to check access rights.
 	 */
-	if ((error = zfs_zaccess(zp, ACE_WRITE_DATA, 0, B_FALSE, cr, NULL))) {
+	if ((error = zfs_zaccess(zp, ACE_WRITE_DATA, 0, B_FALSE, cr))) {
 		zfs_exit(zfsvfs, FTAG);
 		return (error);
 	}
@@ -4458,7 +4458,7 @@ zfs_putpages(struct vnode *vp, vm_page_t *ma, size_t len, int flags,
 	tx = dmu_tx_create(zfsvfs->z_os);
 	dmu_tx_hold_write(tx, zp->z_id, off, len);
 
-	dmu_tx_hold_sa(tx, zp->z_sa_hdl, B_FALSE);
+	dmu_tx_hold_sa(tx, zp->z_sa_hdl, ZFS_SEQ_MAY_GROW(zp));
 	zfs_sa_upgrade_txholds(tx, zp);
 	err = dmu_tx_assign(tx, DMU_TX_WAIT);
 	if (err != 0) {
@@ -4482,7 +4482,7 @@ zfs_putpages(struct vnode *vp, vm_page_t *ma, size_t len, int flags,
 
 	if (err == 0) {
 		uint64_t mtime[2], ctime[2];
-		sa_bulk_attr_t bulk[3];
+		sa_bulk_attr_t bulk[4];
 		int count = 0;
 
 		SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_MTIME(zfsvfs), NULL,
@@ -4492,6 +4492,8 @@ zfs_putpages(struct vnode *vp, vm_page_t *ma, size_t len, int flags,
 		SA_ADD_BULK_ATTR(bulk, count, SA_ZPL_FLAGS(zfsvfs), NULL,
 		    &zp->z_pflags, 8);
 		zfs_tstamp_update_setup(zp, CONTENT_MODIFIED, mtime, ctime);
+		ZFS_PERSIST_SEQ(zp, bulk, count);
+		ASSERT3S(count, <=, ARRAY_SIZE(bulk));
 		err = sa_bulk_update(zp->z_sa_hdl, bulk, count, tx);
 		ASSERT0(err);
 
@@ -5132,7 +5134,7 @@ zfs_freebsd_create(struct vop_create_args *ap)
 
 	if (rc == 0)
 		rc = zfs_create(VTOZ(dvp), cnp->cn_nameptr, vap, 0, mode,
-		    &zp, cnp->cn_cred, 0 /* flag */, NULL /* vsecattr */, NULL);
+		    &zp, cnp->cn_cred, 0 /* flag */, NULL /* vsecattr */);
 #if __FreeBSD_version >= 1500040
 	if (xvp != NULL)
 		vput(xvp);
@@ -5203,7 +5205,7 @@ zfs_freebsd_mkdir(struct vop_mkdir_args *ap)
 	*ap->a_vpp = NULL;
 
 	rc = zfs_mkdir(VTOZ(ap->a_dvp), ap->a_cnp->cn_nameptr, vap, &zp,
-	    ap->a_cnp->cn_cred, 0, NULL, NULL);
+	    ap->a_cnp->cn_cred, 0, NULL);
 
 	if (rc == 0)
 		*ap->a_vpp = ZTOV(zp);
@@ -5484,7 +5486,7 @@ zfs_freebsd_setattr(struct vop_setattr_args *ap)
 		xvap.xva_vattr.va_mask |= AT_XVATTR;
 		XVA_SET_REQ(&xvap, XAT_CREATETIME);
 	}
-	return (zfs_setattr(VTOZ(vp), (vattr_t *)&xvap, 0, cred, NULL));
+	return (zfs_setattr(VTOZ(vp), (vattr_t *)&xvap, 0, cred));
 }
 
 #ifndef _SYS_SYSPROTO_H_
@@ -5562,7 +5564,7 @@ zfs_freebsd_symlink(struct vop_symlink_args *ap)
 	*ap->a_vpp = NULL;
 
 	rc = zfs_symlink(VTOZ(ap->a_dvp), cnp->cn_nameptr, vap,
-	    ap->a_target, &zp, cnp->cn_cred, 0 /* flags */, NULL);
+	    ap->a_target, &zp, cnp->cn_cred, 0 /* flags */);
 	if (rc == 0) {
 		*ap->a_vpp = ZTOV(zp);
 		ASSERT_VOP_ELOCKED(ZTOV(zp), __func__);
@@ -5751,7 +5753,8 @@ zfs_freebsd_pathconf(struct vop_pathconf_args *ap)
 {
 	ulong_t val;
 	int error;
-#if defined(_PC_CLONE_BLKSIZE) || defined(_PC_CASE_INSENSITIVE)
+#if defined(_PC_CLONE_BLKSIZE) || defined(_PC_CASE_INSENSITIVE) || \
+	defined(_PC_HAS_HIDDENSYSTEM)
 	zfsvfs_t *zfsvfs;
 #endif
 
@@ -5797,7 +5800,11 @@ zfs_freebsd_pathconf(struct vop_pathconf_args *ap)
 #endif
 #ifdef _PC_HAS_HIDDENSYSTEM
 	case _PC_HAS_HIDDENSYSTEM:
-		*ap->a_retval = 1;
+		zfsvfs = (zfsvfs_t *)ap->a_vp->v_mount->mnt_data;
+		if (zfsvfs->z_use_fuids == B_TRUE)
+			*ap->a_retval = 1;
+		else
+			*ap->a_retval = 0;
 		return (0);
 #endif
 #ifdef _PC_CLONE_BLKSIZE
@@ -6016,7 +6023,7 @@ zfs_getextattr_impl(struct vop_getextattr_args *ap, boolean_t compat)
 	error = ENOENT;
 	if (zfsvfs->z_use_sa && zp->z_is_sa)
 		error = zfs_getextattr_sa(ap, attrname);
-	if (error == ENOENT)
+	if (error == ENOENT && !zp->z_xattr_dir_absent)
 		error = zfs_getextattr_dir(ap, attrname);
 	return (error);
 }
@@ -6745,7 +6752,7 @@ zfs_freebsd_advise(struct vop_advise_args *ap)
 		 * is a larger sequential access pattern, perhaps dmu_zfetch
 		 * will detect it.
 		 */
-		dmu_prefetch(os, zp->z_id, 0, start, len,
+		dmu_prefetch_user(os, zp->z_id, 0, start, len,
 		    ZIO_PRIORITY_ASYNC_READ);
 		break;
 	case POSIX_FADV_DONTNEED:
