@@ -290,8 +290,6 @@ int whetstone(double& flops, double& cpu_time, double min_cpu_time) {
     return 0;
 }
 
-#ifdef ANDROID
-#if defined(ANDROID_NEON) || defined(ANDROID_VFP)
+#if defined(ANDROID) && (defined(ANDROID_NEON) || defined(ANDROID_VFP))
   }
-#endif // namespace closure
 #endif

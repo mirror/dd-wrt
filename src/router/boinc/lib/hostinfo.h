@@ -93,6 +93,9 @@ public:
     DOCKER_TYPE docker_type;
     char docker_compose_version[256];
     DOCKER_TYPE docker_compose_type;
+#ifdef __APPLE__
+    bool podman_inited;     // podman VM is running
+#endif
 #endif
 
     char product_name[256];       // manufacturer and/or model of system
@@ -123,7 +126,8 @@ public:
 
     bool host_is_running_on_batteries();
     long user_idle_time(bool check_all_logins);
-        // seconds since last user interaction
+        // seconds since last user interaction,
+        // or a large number (USER_IDLE_TIME_INF) if we have no info
     int get_host_info(bool init);
     int get_cpu_info();
     int get_cpu_count();

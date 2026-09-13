@@ -1665,19 +1665,35 @@ int HOST_INFO::get_host_info(bool init) {
     get_os_information(
         os_name, sizeof(os_name), os_version, sizeof(os_version)
     );
+
 #ifdef _WIN64
-    OSVERSIONINFOEX osvi;
-    if (get_OSVERSIONINFO(osvi) && osvi.dwMajorVersion >= 10) {
-        retval = get_wsl_information(wsl_distros);
-        if (retval) {
-            msg_printf(0, MSG_INTERNAL_ERROR,
-                "get_wsl_information(): %s", boincerror(retval)
-            );
+    // apparently if WSL is not present, querying for it pops up an alert.
+    // Avoid this if WSL disabled in config
+    //
+    wsl_distros.clear();
+    if (!cc_config.dont_use_wsl) {
+        OSVERSIONINFOEX osvi;
+        if (get_OSVERSIONINFO(osvi) && osvi.dwMajorVersion >= 10) {
+            retval = get_wsl_information(wsl_distros);
+            if (retval) {
+                msg_printf(0, MSG_INTERNAL_ERROR,
+                    "get_wsl_information(): %s", boincerror(retval)
+                );
+            }
         }
     }
 #endif
 
+    // this must follow get_wsl_information()
+    //
     get_virtualbox_version();
+
+    // if Docker/Podman present, vbox won't work.
+    // The scheduler looks for 'unusable' - don't change
+    //
+    if (strlen(virtualbox_version) && wsl_distros.find_docker()) {
+        safe_strcat(virtualbox_version, " (unusable - Podman/Docker present)");
+    }
 
     get_processor_info(
         p_vendor, sizeof(p_vendor),

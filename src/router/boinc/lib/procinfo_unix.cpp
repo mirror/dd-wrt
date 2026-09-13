@@ -89,7 +89,7 @@ struct PROC_STAT {
     int itrealvalue;
     unsigned long starttime;
     unsigned long vsize;
-    int rss;
+    long rss;
     unsigned long rlim;
     unsigned long startcode;
     unsigned long endcode;
@@ -118,7 +118,7 @@ int PROC_STAT::parse(char* buf) {
         "%lu %lu %lu %lu %lu %lu %lu "
         "%d %d %d %d %d %d "
         "%lu %lu "
-        "%d "
+        "%ld "
         "%lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu "
         "%d %d",
         &pid,
@@ -169,7 +169,9 @@ int PROC_STAT::parse(char* buf) {
     return 1;
 }
 
-// build table of all processes in system
+// build a map pid=>descriptor of all processes in system.
+// set descriptor.is_boinc_app if the proc is the calling proc
+// or its command contains 'boinc'
 //
 int procinfo_setup(PROC_MAP& pm) {
     DIR *dir;
@@ -257,8 +259,8 @@ int procinfo_setup(PROC_MAP& pm) {
         p.is_boinc_app = (p.id == pid || strcasestr(p.command, "boinc"));
         p.is_low_priority = (ps.priority == 39);
             // Internally Linux stores the process priority as nice + 20
-            // as -ve values are error codes. Thus this generally gives
-            // a process priority range of 39..0
+            // as negative values are error codes.
+            // This gives a process priority range of 39..0
         pm.insert(std::pair<int, PROCINFO>(p.id, p));
 #endif
     }

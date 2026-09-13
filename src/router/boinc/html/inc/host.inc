@@ -23,8 +23,7 @@ require_once("../inc/user.inc");
 
 function link_to_results($host) {
     if (!$host) return tra("No host");
-    $config = get_config();
-    if (!parse_bool($config, "show_results")) return tra("Unavailable");
+    if (!project_config_bool("show_results")) return tra("Unavailable");
     $nresults = host_nresults($host);
     if (!$nresults) return "0";
     return "<a href=results.php?hostid=$host->id>$nresults</a>";
@@ -81,7 +80,6 @@ function cross_project_links($host) {
 // and the logged in user (so show some extra fields)
 //
 function show_host($host, $user, $ipprivate) {
-    $config = get_config();
     start_table();
     row1(tra("Computer information"));
     $anonymous = false;
@@ -177,7 +175,7 @@ function show_host($host, $user, $ipprivate) {
         row2(tra("Application details"),
             "<a href=host_app_versions.php?hostid=$host->id>".tra("Show")."</a>"
         );
-        $show_results = parse_bool($config, "show_results");
+        $show_results = project_config_bool("show_results");
         if ($show_results) {
             $nresults = host_nresults($host);
             if ($nresults) {
@@ -267,30 +265,40 @@ function host_nresults($host) {
 }
 
 function vbox_desc($misc) {
-    if (empty($misc->vbox)) return '---';
+    if (!isset($misc->vbox)) return '---';
     $v = $misc->vbox;
-    return sprintf(
-        'Virtualbox %s<br>HW acceleration: %s<br>Enabled: %s',
-        $v->version,
-        $v->hw_accel?'yes':'no',
-        $v->hw_accel_enabled?'yes':'no'
-    );
+    $x = sprintf('Virtualbox %s', htmlspecialchars($v->version));
+    if (isset($v->hw_accel)) {
+        $x .= sprintf('<br>HW acceleration: %s', $v->hw_accel?'yes':'no');
+    }
+    if (isset($v->hw_accel_enabled)) {
+        $x .= sprintf('<br>Enabled: %s', $v->hw_accel_enabled?'yes':'no');
+    }
+    return $x;
 }
 
 function docker_desc($misc) {
-    if (empty($misc->docker)) return '---';
+    if (!isset($misc->docker)) return '---';
     $d = $misc->docker;
     $x = sprintf('%s version %s',
         $d->type==1?"Docker":"Podman",
-        $d->version
+        htmlspecialchars($d->version)
     );
-    if (!empty($d->wsl_distro)) {
-        $x .= sprintf(
-            '<br>WSL distro: %s ver %d',
-            $d->wsl_distro, $d->boinc_buda_runner_version
-        );
+    if (isset($d->wsl_distro)) {
+        if (empty($d->boinc_buda_runner_version)) {
+            $x .= sprintf(
+                '<br>WSL distro: %s',
+                htmlspecialchars($d->wsl_distro)
+            );
+        } else {
+            $x .= sprintf(
+                '<br>WSL distro: %s ver %d',
+                htmlspecialchars($d->wsl_distro),
+                $d->boinc_buda_runner_version
+            );
+        }
     }
-    if (!empty($misc->config)) {
+    if (isset($misc->config)) {
         $c = $misc->config;
         if (!empty($c->dont_use_wsl)) {
             $x .= "<br>Config: don't use WSL";
@@ -302,22 +310,27 @@ function docker_desc($misc) {
     return $x;
 }
 
-
 // return a human-readable version of the GPU info
 //
 function gpu_desc($misc) {
     if (empty($misc->gpus)) return '---';
     $gpus = [];
     foreach ($misc->gpus as $g) {
-        $x = sprintf(
-            '%d %s; %dMB RAM',
-            $g->count, $g->model, $g->ram_mb
-        );
+        if (empty($g->count)) $g->count = 1;
+        $x = sprintf('%d %s', $g->count, $g->model);
+        if (!empty($g->ram_mb)) {
+            $x .= sprintf('; %s RAM', size_string($g->ram_mb*MEGA));
+        }
         if (!empty($g->driver_version)) {
-            $x .= "; Driver: $g->driver_version";
+            $x .= sprintf('; Driver: %s',
+                htmlspecialchars($g->driver_version)
+            );
         }
         if (!empty($g->opencl_version)) {
-            $x .= "; OpenCL: $g->opencl_version";
+            $x .= sprintf('; OpenCL: %d.%d',
+                $g->opencl_version/100,
+                $g->opencl_version%100
+            );
         }
         $gpus[] = $x;
     }
@@ -327,12 +340,14 @@ function gpu_desc($misc) {
 // Given the same string as above, return the BOINC version
 //
 function boinc_version($misc) {
-    if (empty($misc->client_version)) {
+    if (!isset($misc->client_version)) {
         return '---';
     }
-    $x = $misc->client_version;
+    $x = htmlspecialchars($misc->client_version);
     if (!empty($misc->client_brand)) {
-        $x .= " ($misc->client_brand)";
+        $x .= sprintf(' (%s)',
+            htmlspecialchars($misc->client_brand)
+        );
     }
     return $x;
 }
