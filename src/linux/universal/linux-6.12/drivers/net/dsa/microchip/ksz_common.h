@@ -176,6 +176,7 @@ struct ksz_device {
 	bool synclko_disable;
 	bool wakeup_source;
 	bool pme_active_high;
+	bool single_led_mode;		/* Enable Single LED Mode */
 
 	struct vlan_table *vlan_cache;
 
@@ -242,6 +243,9 @@ enum ksz_regs {
 	REG_SW_PME_CTRL,
 	REG_PORT_PME_STATUS,
 	REG_PORT_PME_CTRL,
+	P_PHY_MMD_SETUP,
+	P_PHY_MMD_DATA,
+	P_PHY_DIGITAL_DEBUG_3,
 };
 
 enum ksz_masks {

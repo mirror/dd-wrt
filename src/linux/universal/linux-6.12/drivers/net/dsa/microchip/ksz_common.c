@@ -2744,6 +2744,7 @@ static int ksz_phy_write16(struct dsa_switch *ds, int addr, int reg, u16 val)
 static u32 ksz_get_phy_flags(struct dsa_switch *ds, int port)
 {
 	struct ksz_device *dev = ds->priv;
+	u32 flags = 0;
 
 	switch (dev->chip_id) {
 	case KSZ88X3_CHIP_ID:
@@ -2755,32 +2756,30 @@ static u32 ksz_get_phy_flags(struct dsa_switch *ds, int port)
 			return MICREL_KSZ8_P1_ERRATA;
 		break;
 	case KSZ8567_CHIP_ID:
-		/* KSZ8567R Errata DS80000752C Module 4 */
+		flags |= MICREL_NO_EEE; /* KSZ8567R Errata DS80000752C Module 4 */
+		break;
 	case KSZ8765_CHIP_ID:
 	case KSZ8794_CHIP_ID:
 	case KSZ8795_CHIP_ID:
-		/* KSZ879x/KSZ877x/KSZ876x Errata DS80000687C Module 2 */
+		flags |= MICREL_NO_EEE; /* KSZ879x/KSZ877x/KSZ876x Errata DS80000687C Module 2 */
+		break;
 	case KSZ9477_CHIP_ID:
-		/* KSZ9477S Errata DS80000754A Module 4 */
+		flags |= MICREL_NO_EEE; /* KSZ9477S Errata DS80000754A Module 4 */
+		flags |= MICREL_KSZ9_LED_ERRATA; /* KSZ9477S Errata DS80000754F: Module 19 */
+		break;
 	case KSZ9567_CHIP_ID:
-		/* KSZ9567S Errata DS80000756A Module 4 */
+		flags |= MICREL_NO_EEE; /* KSZ9567S Errata DS80000756A Module 4 */
+		break;
 	case KSZ9896_CHIP_ID:
-		/* KSZ9896C Errata DS80000757A Module 3 */
+		flags |= MICREL_NO_EEE; /* KSZ9896C Errata DS80000757A Module 3 */
+		break;
 	case KSZ9897_CHIP_ID:
-		/* KSZ9897R Errata DS80000758C Module 4 */
-		/* Energy Efficient Ethernet (EEE) feature select must be manually disabled
-		 *   The EEE feature is enabled by default, but it is not fully
-		 *   operational. It must be manually disabled through register
-		 *   controls. If not disabled, the PHY ports can auto-negotiate
-		 *   to enable EEE, and this feature can cause link drops when
-		 *   linked to another device supporting EEE.
-		 *
-		 * The same item appears in the errata for all switches above.
-		 */
-		return MICREL_NO_EEE;
+		flags |= MICREL_NO_EEE; /* KSZ9897R Errata DS80000758C Module 4 */
+		flags |= MICREL_KSZ9_LED_ERRATA; /* KSZ9897S Errata DS80000759F: Module 18 */
+		break;
 	}
 
-	return 0;
+	return flags;
 }
 
 static void ksz_phylink_mac_link_down(struct phylink_config *config,
@@ -2966,6 +2965,22 @@ static int ksz_port_setup(struct dsa_switch *ds, int port)
 	 */
 
 	return ksz_dcb_init_port(dev, port);
+}
+
+static void ksz_enable_single_led_mode(struct ksz_device *dev, int port,
+				       struct phy_device *phydev)
+{
+	ksz_phy_write16(dev->ds, port, MII_MMD_CTRL, 0x0002);
+	ksz_phy_write16(dev->ds, port,  MII_MMD_DATA, 0x0000);
+	ksz_phy_write16(dev->ds, port, MII_MMD_CTRL, MII_MMD_CTRL_NOINCR | 0x02);
+	ksz_phy_write16(dev->ds, port,  MII_MMD_DATA, 0x0010); /* set bit 4 */
+	/* KSZ9477 errata requires writing 0xfa00 to Debug Register 3
+	 * to enable Single-LED mode.
+	 */
+	if (phydev->dev_flags & MICREL_KSZ9_LED_ERRATA)
+		ksz_phy_write16(dev->ds, port, 0x1e, 0xfa00);
+
+	dev_info(dev->dev, "port-%d: single-led mode enabled.\n", port);
 }
 
 void ksz_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
@@ -3494,6 +3509,9 @@ static void ksz9477_phylink_mac_link_up(struct phylink_config *config,
 	struct ksz_device *dev = dp->ds->priv;
 	int port = dp->index;
 	struct ksz_port *p;
+
+	if (dev->single_led_mode && port != dev->cpu_port)
+		ksz_enable_single_led_mode(dev, port, phydev);
 
 	p = &dev->ports[port];
 
@@ -4898,6 +4916,8 @@ int ksz_switch_register(struct ksz_device *dev)
 							   "wakeup-source");
 		dev->pme_active_high = of_property_read_bool(dev->dev->of_node,
 							     "microchip,pme-active-high");
+		dev->single_led_mode = of_property_read_bool(dev->dev->of_node,
+							     "microchip,single-led-mode");
 	}
 
 	ret = dsa_register_switch(dev->ds);

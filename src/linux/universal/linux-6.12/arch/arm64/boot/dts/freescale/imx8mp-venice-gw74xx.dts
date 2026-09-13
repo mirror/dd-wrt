@@ -514,6 +514,7 @@
 		pinctrl-0 = <&pinctrl_ksz>;
 		interrupt-parent = <&gpio4>;
 		interrupts = <29 IRQ_TYPE_EDGE_FALLING>;
+		microchip,single-led-mode;
 
 		ports {
 			#address-cells = <1>;
