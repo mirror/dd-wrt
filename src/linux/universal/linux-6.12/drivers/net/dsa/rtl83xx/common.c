@@ -17,6 +17,7 @@
 
 #include "l3.h"
 #include "rtl-otto.h"
+#include "tc.h"
 
 int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
 {
@@ -659,7 +660,7 @@ int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_next
 		entry = priv->r->read_l2_entry_using_hash(key, i, &e);
 
 		if (!e.valid || ((entry & 0x0fffffffffffffffULL) == seed)) {
-			idx = i > 3 ? ((key >> 14) & 0xffff) | i >> 1
+			idx = i > 3 ? ((key >> 14) & 0xffff) | (i & 3)
 					: ((key << 2) | i) & 0xffff;
 			break;
 		}
