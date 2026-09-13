@@ -37,6 +37,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <time.h>
+#include <sys/types.h>
 
 int
 main(int argc, char **argv)
