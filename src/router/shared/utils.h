@@ -1671,6 +1671,7 @@ static inline int getmaxvaps(const char *prefix)
 #endif
 
 int registered_has_subquarter(void);
+int registered_has_cap(int mask);
 
 extern char *get3GDeviceVendor(void);
 
