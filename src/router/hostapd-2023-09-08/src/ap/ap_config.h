@@ -959,6 +959,7 @@ struct hostapd_bss_config {
 	/* The AP's MLD MAC address within the AP MLD */
 	u8 mld_addr[ETH_ALEN];
 #endif /* CONFIG_IEEE80211BE */
+	int beacon_tx_mode;
 };
 
 /**

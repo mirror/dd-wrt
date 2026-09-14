@@ -1326,6 +1326,13 @@ struct wpa_driver_associate_params {
 	 * mld_params - MLD association parameters
 	 */
 	struct wpa_driver_mld_params mld_params;
+
+	/**
+	 * Beacon Tx mode - To configure STAGGERED or BURST mode
+	 * 1 = STAGGERED beacon tx mode
+	 * 2 = BURST beacon tx mode
+	 */
+	int beacon_tx_mode;
 };
 
 enum hide_ssid {
@@ -1791,6 +1798,14 @@ struct wpa_driver_ap_params {
 	 * mld_link_id - Link id for MLD BSS's
 	 */
 	u8 mld_link_id;
+
+	/**
+	 * Beacon Tx mode - To configure STAGGERED or BURST mode
+	 * 1 = STAGGERED beacon tx mode
+	 * 2 = BURST beacon tx mode
+	 */
+	int beacon_tx_mode;
+
 };
 
 struct wpa_driver_mesh_bss_params {
@@ -1830,6 +1845,7 @@ struct wpa_driver_mesh_join_params {
 	unsigned int flags;
 	bool handle_dfs;
 	int mcast_rate;
+	int beacon_tx_mode;
 };
 
 struct wpa_driver_set_key_params {

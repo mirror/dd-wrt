@@ -676,6 +676,7 @@ int wpa_supplicant_join_mesh(struct wpa_supplicant *wpa_s,
 		params->dtim_period = ssid->dtim_period;
 	else if (wpa_s->conf->dtim_period > 0)
 		params->dtim_period = wpa_s->conf->dtim_period;
+	params->beacon_tx_mode = ssid->beacon_tx_mode;
 	params->conf.max_peer_links = wpa_s->conf->max_peer_links;
 	if (ssid->mesh_rssi_threshold < DEFAULT_MESH_RSSI_THRESHOLD) {
 		params->conf.rssi_threshold = ssid->mesh_rssi_threshold;

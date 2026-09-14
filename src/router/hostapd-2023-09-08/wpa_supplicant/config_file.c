@@ -899,6 +899,7 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
 	INT(disable_eht);
 	INT(enable_4addr_mode);
 	INT(smps);
+	INT(beacon_tx_mode);
 
 #undef STR
 #undef INT
