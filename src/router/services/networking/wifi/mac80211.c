@@ -2355,13 +2355,14 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	}
 	// fprintf (fp, "jumpstart_p1=1\n");
 
+#ifdef HAVE_WPA3
 	if (is_ath10k(ifname) || is_ath11k(ifname)) {
 		if (nvram_nmatch("1", "%s_beacon_tx_mode", ifname))
 			fprintf(fp, "beacon_tx_mode=2\n"); // burst mode
 		else
 			fprintf(fp, "beacon_tx_mode=1\n"); // staggered mode
 	}
-
+#endif
 	MAC80211DEBUG();
 	/* low signal drop */
 	if (!is_morse_micro(ifname)) {
@@ -2802,12 +2803,14 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 		//                      fprintf(fp, "user_mpm=1\n");
 		fprintf(fp, "network={\n");
 
+#ifdef HAVE_WPA3
 		if (is_ath10k(prefix) || is_ath11k(prefix)) {
 			if (nvram_nmatch("1", "%s_beacon_tx_mode", prefix))
 				fprintf(fp, "\tbeacon_tx_mode=2\n"); // burst mode
 			else
 				fprintf(fp, "\tbeacon_tx_mode=1\n"); // staggered mode
 		}
+#endif
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		char *channelbw = nvram_nget("%s_channelbw", prefix);
 		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") &&
@@ -3039,12 +3042,14 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		char *channelbw = nvram_nget("%s_channelbw", prefix);
 		fprintf(fp, "network={\n");
+#ifdef HAVE_WPA3
 		if (is_ath10k(prefix) || is_ath11k(prefix)) {
 			if (nvram_nmatch("1", "%s_beacon_tx_mode", prefix))
 				fprintf(fp, "\tbeacon_tx_mode=2\n"); // burst mode
 			else
 				fprintf(fp, "\tbeacon_tx_mode=1\n"); // staggered mode
 		}
+#endif
 
 		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") &&
 		    strcmp(netmode, "ax6-only") && strcmp(netmode, "ax5-only") && strcmp(netmode, "be-only") &&
