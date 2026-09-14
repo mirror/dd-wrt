@@ -9,6 +9,7 @@ curl-bearssl-clean:
 
 curl-bearssl-configure:
 	$(MAKE) -C bearssl clean
+	-$(MAKE) -C bearssl/curl/build_static clean
 	$(MAKE) -C bearssl
 	cd bearssl/curl && autoreconf -fi
 	mkdir -p bearssl/curl/build_static
