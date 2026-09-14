@@ -36,7 +36,7 @@ EJ_VISIBLE void ej_show_status_gpio_output(webs_t wp, int argc, char_t **argv)
 {
 	char *var;
 	const char *next;
-	const *rgpio, *gpio_name;
+	const char *rgpio, *gpio_name;
 	char nvgpio[32], gpio_new_name[32];
 
 	char *gpios = nvram_safe_get("gpio_outputs");
