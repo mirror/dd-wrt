@@ -1,1 +1,0 @@
-win.o: win.c
