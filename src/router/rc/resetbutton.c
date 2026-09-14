@@ -167,7 +167,7 @@ static int getbuttonstate()
 #elif defined(HAVE_VENICE)
 static int getbuttonstate()
 {
-	return 0;
+	return !get_gpio(514);
 }
 #elif defined(HAVE_E200)
 static int getbuttonstate()
