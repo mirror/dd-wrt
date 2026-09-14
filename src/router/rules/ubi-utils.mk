@@ -14,7 +14,7 @@ ubi-utils-configure: zlib
 		AR_FLAGS="\"cru $(LTOPLUGIN)\"" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
-ubi-utils: zlib
+ubi-utils: zlib zstd
 	$(MAKE) -C util-linux
 	$(MAKE) -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
