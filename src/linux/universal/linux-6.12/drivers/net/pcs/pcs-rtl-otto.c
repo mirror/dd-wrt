@@ -27,10 +27,6 @@
 #define RTPCS_SPEED_2500			5
 #define RTPCS_SPEED_5000			6
 
-/* USXGMII-AN opcodes. RTK variant unused but kept for documentation */
-#define RTPCS_USXGMII_AN_OPC_STD		0x03
-#define RTPCS_USXGMII_AN_OPC_RTK		0xaa
-
 #define RTPCS_838X_CPU_PORT			28
 #define RTPCS_838X_SERDES_CNT			6
 #define RTPCS_838X_MAC_LINK_DUP_STS		0xa19c
@@ -102,7 +98,7 @@
 #define RTPCS_93XX_SDS_USXGMII_SUBMODE_5GDX	0x04
 #define RTPCS_93XX_SDS_USXGMII_SUBMODE_2_5GSX	0x05
 
-/* Registers of the internal SerDes of the 9310 */
+/* RTL931x switch-core registers controlling the SerDes */
 #define RTPCS_931X_MAC_GROUP0_1_CTRL		(0x13a4)
 #define RTPCS_931X_MAC_GROUP2_3_CTRL		(0x13a8)
 #define RTPCS_931X_MAC_GROUP4_CTRL		(0x13ac)
@@ -118,6 +114,8 @@
 #define RTPCS_931X_SDS_PRE_AMP_MASK		GENMASK(4, 0)
 #define RTPCS_931X_SDS_MAIN_AMP_MASK		GENMASK(9, 5)
 #define RTPCS_931X_SDS_POST_AMP_MASK		GENMASK(14, 10)
+
+/* Paged SerDes registers */
 
 /*
  * A SerDes has a register space separated into several pages. Each page
@@ -169,34 +167,115 @@ enum rtpcs_page {
 #define DIGI_1(page)	((page) + 0x40)
 #define DIGI_2(page)	((page) + 0x80)
 
-/* TGR_PRO_0, reg 0x0d */
-#define RTL93XX_LINKDW_SEL		BIT(6)
-#define RTL93XX_LINKDW_SEL_DAC		0x0
-#define RTL93XX_LINKDW_SEL_NON_DAC	BIT(6)
+/* PAGE_SDS */
 
-/* ANA_MISC, reg 0x00 */
-#define RTL93XX_FRC_CMU_EN_MASK		GENMASK(11, 10)
-#define RTL93XX_FRC_CMU_EN_UNFORCED	FIELD_PREP(RTL93XX_FRC_CMU_EN_MASK, 0x0)
-#define RTL93XX_FRC_CMU_EN_FORCE_OFF	FIELD_PREP(RTL93XX_FRC_CMU_EN_MASK, 0x1)
-#define RTL93XX_FRC_CMU_EN_FORCE_ON	FIELD_PREP(RTL93XX_FRC_CMU_EN_MASK, 0x3)
-#define RTL93XX_FRC_PDOWN_MASK		GENMASK(7, 6)
-#define RTL93XX_FRC_PDOWN_DOWN		FIELD_PREP(RTL93XX_FRC_PDOWN_MASK, 0x3)
-#define RTL93XX_FRC_PDOWN_UNFORCED	FIELD_PREP(RTL93XX_FRC_PDOWN_MASK, 0x0)
-#define RTL93XX_FRC_RX_EN_MASK		GENMASK(5, 4)
-#define RTL93XX_FRC_RX_EN_ON		FIELD_PREP(RTL93XX_FRC_RX_EN_MASK, 0x3)
-#define RTL93XX_FRC_RX_EN_OFF		FIELD_PREP(RTL93XX_FRC_RX_EN_MASK, 0x1)
-#define RTL93XX_FRC_V2ANALOG_MASK	GENMASK(1, 0)
-#define RTL93XX_FRC_V2ANALOG_UNFORCED	FIELD_PREP(RTL93XX_FRC_V2ANALOG_MASK, 0x0)
-#define RTL93XX_FRC_V2ANALOG_FORCE_OFF	FIELD_PREP(RTL93XX_FRC_V2ANALOG_MASK, 0x1)
+#define SDS_REG00			0x00
+#define  RTL838X_SDS_EN_RX		BIT(1)
+#define  RTL838X_SDS_EN_TX		BIT(0)
 
-/* DIGI_1(WDIG), reg 0x01 */
+/* PAGE_SDS_EXT */
+
+#define SDS_EXT_REG03			0x03
+#define  RTL838X_REG_CML_SEL		BIT(1)
+
+/* PAGE_TGR_PRO_0 */
+
+#define TGR_PRO_0_REG00			0x00
+
+#define TGR_PRO_0_REG03			0x03
+#define  RTL93XX_CFG_EEE_EN		BIT(15)
+
+#define TGR_PRO_0_REG13			0x0d
+#define  RTL93XX_CFG_LINKDW_SEL		BIT(6)
+#define   RTL93XX_CFG_LINKDW_SEL_DAC	0x0
+#define   RTL93XX_CFG_LINKDW_SEL_NON_DAC	RTL93XX_CFG_LINKDW_SEL
+
+#define TGR_PRO_0_REG14			0x0e
+#define  RTL93XX_USXG_AN_ENABLE		BIT(10)
+
+#define TGR_PRO_0_REG18			0x12
+#define  RTL93XX_CFG_AM_INSERT_PD	GENMASK(15, 0)
+
+#define TGR_PRO_0_REG19			0x13
+#define  RTL93XX_CFG_AM0_M1		GENMASK(15, 8)
+#define  RTL93XX_CFG_AM0_M0		GENMASK(7, 0)
+
+#define TGR_PRO_0_REG20			0x14
+#define  RTL93XX_CFG_AM1_M0		GENMASK(15, 8)
+#define  RTL93XX_CFG_AM0_M2		GENMASK(7, 0)
+
+#define TGR_PRO_0_REG21			0x15
+#define  RTL93XX_CFG_AM1_M2		GENMASK(15, 8)
+#define  RTL93XX_CFG_AM1_M1		GENMASK(7, 0)
+
+#define TGR_PRO_0_REG22			0x16
+#define  RTL93XX_CFG_AM2_M1		GENMASK(15, 8)
+#define  RTL93XX_CFG_AM2_M0		GENMASK(7, 0)
+
+#define TGR_PRO_0_REG23			0x17
+#define  RTL93XX_CFG_AM3_M0		GENMASK(15, 8)
+#define  RTL93XX_CFG_AM2_M2		GENMASK(7, 0)
+
+#define TGR_PRO_0_REG24			0x18
+#define  RTL93XX_CFG_AM3_M2		GENMASK(15, 8)
+#define  RTL93XX_CFG_AM3_M1		GENMASK(7, 0)
+
+#define TGR_PRO_0_REG29			0x1d
+#define  RTL93XX_SW_AM_PD		BIT(11)
+#define  RTL93XX_USXG_INTF_CH3_RX	BIT(10)
+
+/* PAGE_TGR_PRO_1 */
+
+#define TGR_PRO_1_REG06			0x06
+#define  RTL93XX_CFG_QHSG_TXCFG_MAC_CH0	GENMASK(15, 0)
+
+#define TGR_PRO_1_REG08			0x08
+#define  RTL93XX_CFG_QHSG_TXCFG_MAC_CH1	GENMASK(15, 0)
+
+#define TGR_PRO_1_REG10			0x0a
+#define  RTL93XX_CFG_QHSG_TXCFG_MAC_CH2	GENMASK(15, 0)
+
+#define TGR_PRO_1_REG12			0x0c
+#define  RTL93XX_CFG_QHSG_TXCFG_MAC_CH3	GENMASK(15, 0)
+
+#define TGR_PRO_1_REG16			0x10
+#define  RTL93XX_CFG_QHSG_AN_OPC	GENMASK(7, 0)
+#define   RTL93XX_CFG_QHSG_AN_OPC_STD	0x03
+#define   RTL93XX_CFG_QHSG_AN_OPC_RTK	0xaa
+
+#define TGR_PRO_1_REG17			0x11
+#define  RTL93XX_CFG_QHSG_AN_EN_CH3	BIT(3)
+#define  RTL93XX_CFG_QHSG_AN_EN_CH2	BIT(2)
+#define  RTL93XX_CFG_QHSG_AN_EN_CH1	BIT(1)
+#define  RTL93XX_CFG_QHSG_AN_EN_CH0	BIT(0)
+
+/* PAGE_WDIG */
+
+#define WDIG_REG01			0x01
 /*
- * Gates a digital clock inside the SerDes. The exact block is unknown — it
+ * Gates a digital clock inside the SerDes. The exact block is unknown; it
  * appears to be used by all modes except USXGMII and 10GBASE-R. The bit name
  * is inherited from an earlier SerDes generation and has not been verified
  * on RTL931x. GLI could mean "GMII Line Interface" or "Gigabit Line Interface".
  */
-#define RTL931X_STOP_GLI_CLK		BIT(0)
+#define  RTL931X_STOP_GLI_CLK		BIT(0) /* Only used on DIGI_1(). */
+
+/* PAGE_ANA_MISC */
+
+#define ANA_MISC_REG00			0x00
+#define  RTL93XX_FRC_CMU_EN		GENMASK(11, 10)
+#define   RTL93XX_FRC_CMU_EN_UNFORCED	FIELD_PREP(RTL93XX_FRC_CMU_EN, 0x0)
+#define   RTL93XX_FRC_CMU_EN_FORCE_OFF	FIELD_PREP(RTL93XX_FRC_CMU_EN, 0x1)
+#define   RTL93XX_FRC_CMU_EN_FORCE_ON	FIELD_PREP(RTL93XX_FRC_CMU_EN, 0x3)
+#define  RTL93XX_FRC_PDOWN		GENMASK(7, 6)
+#define   RTL93XX_FRC_PDOWN_FORCE_DOWN	FIELD_PREP(RTL93XX_FRC_PDOWN, 0x3)
+#define   RTL93XX_FRC_PDOWN_UNFORCED	FIELD_PREP(RTL93XX_FRC_PDOWN, 0x0)
+#define  RTL93XX_FRC_RX_EN		GENMASK(5, 4)
+#define   RTL93XX_FRC_RX_EN_FORCE_ON	FIELD_PREP(RTL93XX_FRC_RX_EN, 0x3)
+#define   RTL93XX_FRC_RX_EN_FORCE_OFF	FIELD_PREP(RTL93XX_FRC_RX_EN, 0x1)
+#define  RTL93XX_FRC_V2ANALOG		GENMASK(1, 0)
+#define   RTL93XX_FRC_V2ANALOG_UNFORCED	FIELD_PREP(RTL93XX_FRC_V2ANALOG, 0x0)
+#define   RTL93XX_FRC_V2ANALOG_FORCE_OFF	FIELD_PREP(RTL93XX_FRC_V2ANALOG, 0x1)
 
 enum rtpcs_sds_type {
 	RTPCS_SDS_TYPE_UNKNOWN,
@@ -698,9 +777,9 @@ static int rtpcs_generic_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int 
 		}
 	}
 
-	bmcr = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? 1 : 0;
+	bmcr = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? BMCR_ANENABLE : 0;
 
-	ret = rtpcs_sds_write_bits(sds, phy_page, MII_BMCR, 12, 12, bmcr);
+	ret = rtpcs_sds_write_mask(sds, phy_page, MII_BMCR, BMCR_ANENABLE, bmcr);
 	if (ret < 0)
 		return ret;
 
@@ -709,7 +788,8 @@ static int rtpcs_generic_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int 
 
 static void rtpcs_generic_sds_restart_autoneg(struct rtpcs_serdes *sds)
 {
-	rtpcs_sds_write_bits(sds, sds->ctrl->cfg->phy_page, MII_BMCR, 9, 9, 0x1);
+	rtpcs_sds_write_mask(sds, sds->ctrl->cfg->phy_page, MII_BMCR,
+			     BMCR_ANRESTART, BMCR_ANRESTART);
 }
 
 static int rtpcs_sds_select_pll_speed(enum rtpcs_sds_mode hw_mode, enum rtpcs_sds_pll_speed *speed)
@@ -898,13 +978,12 @@ static int rtpcs_838x_sds_deactivate(struct rtpcs_serdes *sds)
 	if (ret)
 		return ret;
 
-	/* EN_RX | EN_TX */
-	ret = rtpcs_sds_write_bits(sds, PAGE_SDS, 0, 1, 0, 0x0);
+	ret = rtpcs_sds_write_mask(sds, PAGE_SDS, SDS_REG00,
+				   RTL838X_SDS_EN_RX | RTL838X_SDS_EN_TX, 0);
 	if (ret)
 		return ret;
 
-	/* CFG_FIB_PDOWN / BMCR_PDOWN */
-	return rtpcs_sds_write_bits(sds, PAGE_FIB, MII_BMCR, 11, 11, 0x1);
+	return rtpcs_sds_write_mask(sds, PAGE_FIB, MII_BMCR, BMCR_PDOWN, BMCR_PDOWN);
 }
 
 static int rtpcs_838x_sds_activate(struct rtpcs_serdes *sds)
@@ -913,13 +992,13 @@ static int rtpcs_838x_sds_activate(struct rtpcs_serdes *sds)
 
 	rtpcs_838x_sds_reset(sds);
 
-	/* CFG_FIB_PDOWN / BMCR_PDOWN */
-	ret = rtpcs_sds_write_bits(sds, PAGE_FIB, MII_BMCR, 11, 11, 0x0);
+	ret = rtpcs_sds_write_mask(sds, PAGE_FIB, MII_BMCR, BMCR_PDOWN, 0);
 	if (ret)
 		return ret;
 
-	/* EN_RX | EN_TX */
-	ret = rtpcs_sds_write_bits(sds, PAGE_SDS, 0, 1, 0, 0x3);
+	ret = rtpcs_sds_write_mask(sds, PAGE_SDS, SDS_REG00,
+				   RTL838X_SDS_EN_RX | RTL838X_SDS_EN_TX,
+				   RTL838X_SDS_EN_RX | RTL838X_SDS_EN_TX);
 	if (ret)
 		return ret;
 
@@ -1002,7 +1081,8 @@ static int rtpcs_838x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 
 		/* CKREFBUF_S0S1 */
 		regmap_write_bits(ctrl->map, RTPCS_838X_PLL_CML_CTRL, 0xf, 0xf);
-		rtpcs_sds_write_bits(sds, PAGE_SDS_EXT, 0x3, 1, 1, 0x1); /* REG_CML_SEL */
+		rtpcs_sds_write_mask(sds, PAGE_SDS_EXT, SDS_EXT_REG03,
+				     RTL838X_REG_CML_SEL, RTL838X_REG_CML_SEL);
 	}
 
 	rtpcs_sds_write(sds, PAGE_SDS_EXT, 0x9, 0x8e64);
@@ -1331,7 +1411,7 @@ static bool rtpcs_93xx_sds_10gr_link_up(struct rtpcs_serdes *sds)
 static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg_mode,
 				      const unsigned long *advertising)
 {
-	u16 en_val;
+	u16 an_en, en_val;
 
 	switch (sds->hw_mode) {
 	case RTPCS_SDS_MODE_XSGMII:
@@ -1345,7 +1425,10 @@ static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg
 		 *
 		 * forced USXGMII link not supported yet, always activate USXGMII-AN
 		 */
-		return rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_1, 0x11, 3, 0, 0xf);
+		an_en = RTL93XX_CFG_QHSG_AN_EN_CH0 | RTL93XX_CFG_QHSG_AN_EN_CH1 |
+			RTL93XX_CFG_QHSG_AN_EN_CH2 | RTL93XX_CFG_QHSG_AN_EN_CH3;
+		return rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_1, TGR_PRO_1_REG17,
+					    an_en, an_en);
 
 	default:
 		return rtpcs_generic_sds_set_autoneg(sds, neg_mode, advertising);
@@ -1360,31 +1443,47 @@ static void rtpcs_93xx_sds_usxgmii_config(struct rtpcs_serdes *sds)
 	 */
 
 	/* undocumented; part of USXGMII patch sequences in the SDK */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x00, 0x0000);
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x0D, 0x0F00);
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x1D, 0x0600);
+	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG00, 0x0000);
+	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG13, 0x0F00);
+	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG29, 0x0600);
 
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x06, 0x1401); /* QHSG_TXCFG_MAC_CH0 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x08, 0x1401); /* QHSG_TXCFG_MAC_CH1 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x0a, 0x1401); /* QHSG_TXCFG_MAC_CH2 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_1, 0x0c, 0x1401); /* QHSG_TXCFG_MAC_CH3 */
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_1, TGR_PRO_1_REG06,
+			     RTL93XX_CFG_QHSG_TXCFG_MAC_CH0, 0x1401);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_1, TGR_PRO_1_REG08,
+			     RTL93XX_CFG_QHSG_TXCFG_MAC_CH1, 0x1401);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_1, TGR_PRO_1_REG10,
+			     RTL93XX_CFG_QHSG_TXCFG_MAC_CH2, 0x1401);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_1, TGR_PRO_1_REG12,
+			     RTL93XX_CFG_QHSG_TXCFG_MAC_CH3, 0x1401);
 
 	/* USXGMII AN mode */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_1, 0x10, 7, 0, RTPCS_USXGMII_AN_OPC_STD); /* QHSG_AN_OPC */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x12, 15, 0, 0xa4); /* am_period */
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_1, TGR_PRO_1_REG16, RTL93XX_CFG_QHSG_AN_OPC,
+			     RTL93XX_CFG_QHSG_AN_OPC_STD);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG18, RTL93XX_CFG_AM_INSERT_PD,
+			     0xa4);
 
 	/* clear alignment markers */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x13, 0x0000); /* AM0_M1 | AM0_M0 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x14, 0x0000); /* AM1_M0 | AM0_M2 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x15, 0x0000); /* AM1_M2 | AM1_M1 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x16, 0x0000); /* AM2_M1 | AM2_M0 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x17, 0x0000); /* AM3_M0 | AM2_M2 */
-	rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x18, 0x0000); /* AM3_M2 | AM3_M1 */
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG19,
+			     RTL93XX_CFG_AM0_M1 | RTL93XX_CFG_AM0_M0, 0x0);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG20,
+			     RTL93XX_CFG_AM1_M0 | RTL93XX_CFG_AM0_M2, 0x0);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG21,
+			     RTL93XX_CFG_AM1_M2 | RTL93XX_CFG_AM1_M1, 0x0);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG22,
+			     RTL93XX_CFG_AM2_M1 | RTL93XX_CFG_AM2_M0, 0x0);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG23,
+			     RTL93XX_CFG_AM3_M0 | RTL93XX_CFG_AM2_M2, 0x0);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG24,
+			     RTL93XX_CFG_AM3_M2 | RTL93XX_CFG_AM3_M1, 0x0);
 
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0xe, 10, 10, 0x1);  /* an_table */
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x1d, 11, 10, 0x1); /* sync_bit */
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG14, RTL93XX_USXG_AN_ENABLE,
+			     RTL93XX_USXG_AN_ENABLE);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG29,
+			     RTL93XX_SW_AM_PD | RTL93XX_USXG_INTF_CH3_RX,
+			     RTL93XX_USXG_INTF_CH3_RX);
 
-	rtpcs_sds_write_bits(sds, PAGE_TGR_PRO_0, 0x03, 15, 15, 0x1); /* EEE_EN */
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG03, RTL93XX_CFG_EEE_EN,
+			     RTL93XX_CFG_EEE_EN);
 }
 
 static int rtpcs_93xx_init(struct rtpcs_ctrl *ctrl)
@@ -1919,11 +2018,11 @@ static void rtpcs_930x_sds_set_power(struct rtpcs_serdes *sds, bool on)
 {
 	int power_down, rx_enable;
 
-	power_down = on ? RTL93XX_FRC_PDOWN_UNFORCED : RTL93XX_FRC_PDOWN_DOWN;
-	rx_enable = on ? RTL93XX_FRC_RX_EN_ON : RTL93XX_FRC_RX_EN_OFF;
+	power_down = on ? RTL93XX_FRC_PDOWN_UNFORCED : RTL93XX_FRC_PDOWN_FORCE_DOWN;
+	rx_enable = on ? RTL93XX_FRC_RX_EN_FORCE_ON : RTL93XX_FRC_RX_EN_FORCE_OFF;
 
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x00,
-			     RTL93XX_FRC_PDOWN_MASK | RTL93XX_FRC_RX_EN_MASK,
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00,
+			     RTL93XX_FRC_PDOWN | RTL93XX_FRC_RX_EN,
 			     power_down | rx_enable);
 }
 
@@ -2085,12 +2184,12 @@ static int rtpcs_930x_sds_deactivate(struct rtpcs_serdes *sds)
 		return ret;
 
 	/* Power down the 1G PHY block. */
-	ret = rtpcs_sds_write_bits(sds, PAGE_FIB, MII_BMCR, 11, 11, 1); /* BMCR_PDOWN */
+	ret = rtpcs_sds_write_mask(sds, PAGE_FIB, MII_BMCR, BMCR_PDOWN, BMCR_PDOWN);
 	if (ret)
 		return ret;
 
 	/* Power down the 10G PHY block. */
-	return rtpcs_sds_write_bits(sds, PAGE_TGR_STD_0, MII_BMCR, 11, 11, 1); /* BMCR_PDOWN */
+	return rtpcs_sds_write_mask(sds, PAGE_TGR_STD_0, MII_BMCR, BMCR_PDOWN, BMCR_PDOWN);
 }
 
 static int rtpcs_930x_sds_activate(struct rtpcs_serdes *sds)
@@ -2107,12 +2206,12 @@ static int rtpcs_930x_sds_activate(struct rtpcs_serdes *sds)
 		return ret;
 
 	/* Power up the 1G PHY block. */
-	ret = rtpcs_sds_write_bits(sds, PAGE_FIB, MII_BMCR, 11, 11, 0); /* BMCR_PDOWN */
+	ret = rtpcs_sds_write_mask(sds, PAGE_FIB, MII_BMCR, BMCR_PDOWN, 0);
 	if (ret)
 		return ret;
 
 	/* Power up the 10G PHY block. */
-	return rtpcs_sds_write_bits(sds, PAGE_TGR_STD_0, MII_BMCR, 11, 11, 0); /* BMCR_PDOWN */
+	return rtpcs_sds_write_mask(sds, PAGE_TGR_STD_0, MII_BMCR, BMCR_PDOWN, 0);
 }
 
 static int rtpcs_930x_sds_tx_config(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode,
@@ -2975,7 +3074,7 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 		break;
 
 	case RTPCS_SDS_MODE_10GBASER:
-		rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x0D, 0x0F00);
+		rtpcs_sds_write(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG13, 0x0F00);
 		rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x00, 0x0000);
 		rtpcs_sds_write(sds, PAGE_TGR_PRO_0, 0x01, 0xC800);
 
@@ -3449,13 +3548,13 @@ static int rtpcs_931x_sds_deactivate(struct rtpcs_serdes *sds)
 {
 	int ret;
 
-	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0,
-				   RTL93XX_FRC_PDOWN_MASK | RTL93XX_FRC_RX_EN_MASK,
-				   RTL93XX_FRC_PDOWN_DOWN | RTL93XX_FRC_RX_EN_OFF);
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00,
+				   RTL93XX_FRC_PDOWN | RTL93XX_FRC_RX_EN,
+				   RTL93XX_FRC_PDOWN_FORCE_DOWN | RTL93XX_FRC_RX_EN_FORCE_OFF);
 	if (ret)
 		return ret;
 
-	ret = rtpcs_sds_write_mask(sds, DIGI_1(PAGE_WDIG), 0x1, RTL931X_STOP_GLI_CLK,
+	ret = rtpcs_sds_write_mask(sds, DIGI_1(PAGE_WDIG), WDIG_REG01, RTL931X_STOP_GLI_CLK,
 				   RTL931X_STOP_GLI_CLK);
 	if (ret)
 		return ret;
@@ -3473,14 +3572,15 @@ static int rtpcs_931x_sds_activate(struct rtpcs_serdes *sds)
 
 	if (sds->hw_mode != RTPCS_SDS_MODE_USXGMII &&
 	    sds->hw_mode != RTPCS_SDS_MODE_10GBASER) {
-		ret = rtpcs_sds_write_mask(sds, DIGI_1(PAGE_WDIG), 0x1, RTL931X_STOP_GLI_CLK, 0x0);
+		ret = rtpcs_sds_write_mask(sds, DIGI_1(PAGE_WDIG), WDIG_REG01,
+					   RTL931X_STOP_GLI_CLK, 0x0);
 		if (ret)
 			return ret;
 	}
 
-	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0,
-				   RTL93XX_FRC_PDOWN_MASK | RTL93XX_FRC_RX_EN_MASK,
-				   RTL93XX_FRC_PDOWN_UNFORCED | RTL93XX_FRC_RX_EN_ON);
+	ret = rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00,
+				   RTL93XX_FRC_PDOWN | RTL93XX_FRC_RX_EN,
+				   RTL93XX_FRC_PDOWN_UNFORCED | RTL93XX_FRC_RX_EN_FORCE_ON);
 	if (ret)
 		return ret;
 
@@ -3507,12 +3607,12 @@ static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
 		return;
 
 	rtpcs_931x_sds_10g_ana_pre(sds);
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_RX_EN_MASK,
-			     RTL93XX_FRC_RX_EN_OFF);
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_RX_EN,
+			     RTL93XX_FRC_RX_EN_FORCE_OFF);
 
 	rtpcs_931x_sds_10g_ana_post(sds);
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_RX_EN_MASK,
-			     RTL93XX_FRC_RX_EN_ON);
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_RX_EN,
+			     RTL93XX_FRC_RX_EN_FORCE_ON);
 	msleep(50);
 }
 
@@ -3862,9 +3962,9 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	/* SDK: media none behavior - baseline applied regardless of attachment */
 	rtpcs_931x_sds_10g_ana_pre(sds);
 
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_CMU_EN_MASK,
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
 			     RTL93XX_FRC_CMU_EN_FORCE_ON);
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_V2ANALOG_MASK,
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_V2ANALOG,
 			     RTL93XX_FRC_V2ANALOG_FORCE_OFF);
 
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xf, 5, 0, 0x4);
@@ -3879,10 +3979,10 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 		  hw_mode == RTPCS_SDS_MODE_XSGMII ||
 		  hw_mode == RTPCS_SDS_MODE_USXGMII);
 
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_CMU_EN_MASK,
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
 			     RTL93XX_FRC_CMU_EN_UNFORCED);
 	rtpcs_sds_write_bits(sds, PAGE_ANA_5G0, 0x7, 15, 15, is_dac ? 0x1 : 0x0);
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_CMU_EN_MASK,
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
 			     RTL93XX_FRC_CMU_EN_FORCE_ON);
 
 	switch (attachment) {
@@ -3916,19 +4016,19 @@ static int rtpcs_931x_sds_config_attachment(struct rtpcs_serdes *sds,
 	if (ret)
 		return ret;
 
-	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, 0xd, RTL93XX_LINKDW_SEL,
-			     is_dac ? RTL93XX_LINKDW_SEL_DAC : RTL93XX_LINKDW_SEL_NON_DAC);
+	rtpcs_sds_write_mask(sds, PAGE_TGR_PRO_0, TGR_PRO_0_REG13, RTL93XX_CFG_LINKDW_SEL,
+			     is_dac ? RTL93XX_CFG_LINKDW_SEL_DAC : RTL93XX_CFG_LINKDW_SEL_NON_DAC);
 
 	if (is_10g)
 		rtpcs_931x_sds_10g_ana_post(sds);
 
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_V2ANALOG_MASK,
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_V2ANALOG,
 			     RTL93XX_FRC_V2ANALOG_UNFORCED);
 	rtpcs_sds_write_bits(sds, PAGE_ANA_5G0, 0x12, 7, 6, 0x3);
 
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_CMU_EN_MASK,
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
 			     RTL93XX_FRC_CMU_EN_FORCE_OFF);
-	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, 0x0, RTL93XX_FRC_CMU_EN_MASK,
+	rtpcs_sds_write_mask(sds, PAGE_ANA_MISC, ANA_MISC_REG00, RTL93XX_FRC_CMU_EN,
 			     RTL93XX_FRC_CMU_EN_FORCE_ON);
 
 	/* clear pending SerDes RX idle interrupt flag */
@@ -3975,10 +4075,8 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_1000BASEX:
 		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_FIB_EXT), 0x13, 15, 14, 0);
 
-		/* BMCR_SPEED1000 */
-		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_FIB), MII_BMCR, 6, 6, 1);
-		/* BMCR_SPEED100 */
-		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_FIB), MII_BMCR, 13, 13, 0);
+		rtpcs_sds_write_mask(sds, DIGI_1(PAGE_FIB), MII_BMCR,
+				     BMCR_SPEED1000 | BMCR_SPEED100, BMCR_SPEED1000);
 		/* EN_LINK_FIB1G */
 		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_SDS), 0x4, 2, 2, 1);
 		break;
