@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (C) 2021-2022 Intel Corporation
+ * Copyright (C) 2021-2024 Intel Corporation
+ * Copyright (C) 2026 Intel Corporation
  */
 
 #include <linux/etherdevice.h>
@@ -53,7 +54,6 @@ bool iwl_mei_is_connected(void)
 }
 EXPORT_SYMBOL_GPL(iwl_mei_is_connected);
 
-#define SAP_VERSION	3
 #define SAP_CONTROL_BLOCK_ID 0x21504153 /* SAP! in ASCII */
 
 struct iwl_sap_q_ctrl_blk {
@@ -105,16 +105,19 @@ struct iwl_sap_shared_mem_ctrl_blk {
 
 #define SAP_H2M_DATA_Q_SZ	48256
 #define SAP_M2H_DATA_Q_SZ	24128
-#define SAP_H2M_NOTIF_Q_SZ	2240
+#define SAP_H2M_NOTIF_Q_SZ_VER3	2240
+#define SAP_H2M_NOTIF_Q_SZ_VER4	32768
 #define SAP_M2H_NOTIF_Q_SZ	62720
 
-#define _IWL_MEI_SAP_SHARED_MEM_SZ \
+#define _IWL_MEI_SAP_SHARED_MEM_SZ_VER3 \
 	(sizeof(struct iwl_sap_shared_mem_ctrl_blk) + \
-	 SAP_H2M_DATA_Q_SZ + SAP_H2M_NOTIF_Q_SZ + \
+	 SAP_H2M_DATA_Q_SZ + SAP_H2M_NOTIF_Q_SZ_VER3 + \
 	 SAP_M2H_DATA_Q_SZ + SAP_M2H_NOTIF_Q_SZ + 4)
 
-#define IWL_MEI_SAP_SHARED_MEM_SZ \
-	(roundup(_IWL_MEI_SAP_SHARED_MEM_SZ, PAGE_SIZE))
+#define _IWL_MEI_SAP_SHARED_MEM_SZ_VER4 \
+	(sizeof(struct iwl_sap_shared_mem_ctrl_blk) + \
+	 SAP_H2M_DATA_Q_SZ + SAP_H2M_NOTIF_Q_SZ_VER4 + \
+	 SAP_M2H_DATA_Q_SZ + SAP_M2H_NOTIF_Q_SZ + 4)
 
 struct iwl_mei_shared_mem_ptrs {
 	struct iwl_sap_shared_mem_ctrl_blk *ctrl;
@@ -194,6 +197,7 @@ struct iwl_mei {
  * @mac_address: interface MAC address.
  * @nvm_address: NVM MAC address.
  * @priv: A pointer to iwlwifi.
+ * @sap_version: The SAP version to use. enum iwl_mei_sap_version.
  *
  * This used to cache the configurations coming from iwlwifi's way. The data
  * is cached here so that we can buffer the configuration even if we don't have
@@ -208,6 +212,7 @@ struct iwl_mei_cache {
 	u16 mcc;
 	u8 mac_address[6];
 	u8 nvm_address[6];
+	enum iwl_mei_sap_version sap_version;
 	void *priv;
 };
 
@@ -226,14 +231,17 @@ static void iwl_mei_free_shared_mem(struct mei_cl_device *cldev)
 
 #define HBM_DMA_BUF_ID_WLAN 1
 
-static int iwl_mei_alloc_shared_mem(struct mei_cl_device *cldev)
+static int iwl_mei_alloc_mem_for_version(struct mei_cl_device *cldev,
+					 enum iwl_mei_sap_version version)
 {
 	struct iwl_mei *mei = mei_cldev_get_drvdata(cldev);
 	struct iwl_mei_shared_mem_ptrs *mem = &mei->shared_mem;
+	u32 mem_size = roundup(version == IWL_MEI_SAP_VERSION_4 ?
+			       _IWL_MEI_SAP_SHARED_MEM_SZ_VER4 :
+			       _IWL_MEI_SAP_SHARED_MEM_SZ_VER3, PAGE_SIZE);
 
-	mem->ctrl = mei_cldev_dma_map(cldev, HBM_DMA_BUF_ID_WLAN,
-				       IWL_MEI_SAP_SHARED_MEM_SZ);
-
+	iwl_mei_cache.sap_version = version;
+	mem->ctrl = mei_cldev_dma_map(cldev, HBM_DMA_BUF_ID_WLAN, mem_size);
 	if (IS_ERR(mem->ctrl)) {
 		int ret = PTR_ERR(mem->ctrl);
 
@@ -242,9 +250,28 @@ static int iwl_mei_alloc_shared_mem(struct mei_cl_device *cldev)
 		return ret;
 	}
 
-	memset(mem->ctrl, 0, IWL_MEI_SAP_SHARED_MEM_SZ);
+	memset(mem->ctrl, 0, mem_size);
 
 	return 0;
+}
+
+static int iwl_mei_alloc_shared_mem(struct mei_cl_device *cldev)
+{
+	int ret;
+
+	/*
+	 * SAP version 4 uses a larger Host to MEI notif queue.
+	 * Since it is unknown at this stage which SAP version is used by the
+	 * CSME firmware on this platform, try to allocate the version 4 first.
+	 * If the CSME firmware uses version 3, this allocation is expected to
+	 * fail because the CSME firmware allocated less memory for our driver.
+	 */
+	ret = iwl_mei_alloc_mem_for_version(cldev, IWL_MEI_SAP_VERSION_4);
+	if (ret)
+		ret = iwl_mei_alloc_mem_for_version(cldev,
+						    IWL_MEI_SAP_VERSION_3);
+
+	return ret;
 }
 
 static void iwl_mei_init_shared_mem(struct iwl_mei *mei)
@@ -265,7 +292,9 @@ static void iwl_mei_init_shared_mem(struct iwl_mei *mei)
 	h2m->q_ctrl_blk[SAP_QUEUE_IDX_DATA].size =
 		cpu_to_le32(SAP_H2M_DATA_Q_SZ);
 	h2m->q_ctrl_blk[SAP_QUEUE_IDX_NOTIF].size =
-		cpu_to_le32(SAP_H2M_NOTIF_Q_SZ);
+		iwl_mei_cache.sap_version == IWL_MEI_SAP_VERSION_3 ?
+		cpu_to_le32(SAP_H2M_NOTIF_Q_SZ_VER3) :
+		cpu_to_le32(SAP_H2M_NOTIF_Q_SZ_VER4);
 	m2h->q_ctrl_blk[SAP_QUEUE_IDX_DATA].size =
 		cpu_to_le32(SAP_M2H_DATA_Q_SZ);
 	m2h->q_ctrl_blk[SAP_QUEUE_IDX_NOTIF].size =
@@ -417,7 +446,7 @@ static int iwl_mei_send_sap_msg_payload(struct mei_cl_device *cldev,
 	notif_q = &dir->q_ctrl_blk[SAP_QUEUE_IDX_NOTIF];
 	q_head = mei->shared_mem.q_head[SAP_DIRECTION_HOST_TO_ME][SAP_QUEUE_IDX_NOTIF];
 	q_sz = mei->shared_mem.q_size[SAP_DIRECTION_HOST_TO_ME][SAP_QUEUE_IDX_NOTIF];
-	ret = iwl_mei_write_cyclic_buf(q_head, notif_q, q_head, hdr, q_sz);
+	ret = iwl_mei_write_cyclic_buf(cldev, notif_q, q_head, hdr, q_sz);
 
 	if (ret < 0)
 		return ret;
@@ -635,7 +664,7 @@ iwl_mei_handle_rx_start_ok(struct mei_cl_device *cldev,
 		return;
 	}
 
-	if (rsp->supported_version != SAP_VERSION) {
+	if (rsp->supported_version != iwl_mei_cache.sap_version) {
 		dev_err(&cldev->dev,
 			"didn't get the expected version: got %d\n",
 			rsp->supported_version);
@@ -1090,6 +1119,11 @@ static void iwl_mei_handle_sap_rx_cmd(struct mei_cl_device *cldev,
 		iwl_mei_read_from_q(q_head, q_sz, &rd, wr, hdr, sizeof(*hdr));
 		valid_rx_sz -= sizeof(*hdr);
 		len = le16_to_cpu(hdr->len);
+		if (len + sizeof(*hdr) > PAGE_SIZE) {
+			dev_err(&cldev->dev,
+				"SAP message is too big: %u\n", len);
+			break;
+		}
 
 		if (valid_rx_sz < len)
 			break;
@@ -1252,7 +1286,7 @@ static int iwl_mei_send_start(struct mei_cl_device *cldev)
 		.hdr.type = cpu_to_le32(SAP_ME_MSG_START),
 		.hdr.seq_num = cpu_to_le32(atomic_inc_return(&mei->seq_no)),
 		.hdr.len = cpu_to_le32(sizeof(msg)),
-		.supported_versions[0] = SAP_VERSION,
+		.supported_versions[0] = iwl_mei_cache.sap_version,
 		.init_data_seq_num = cpu_to_le16(0x100),
 		.init_notif_seq_num = cpu_to_le16(0x800),
 	};
@@ -1437,7 +1471,7 @@ void iwl_mei_host_associated(const struct iwl_mei_conn_info *conn_info,
 
 	mei = mei_cldev_get_drvdata(iwl_mei_global_cldev);
 
-	if (!mei && !mei->amt_enabled)
+	if (!mei || !mei->amt_enabled)
 		goto out;
 
 	iwl_mei_send_sap_msg_payload(mei->cldev, &msg.hdr);
@@ -1466,7 +1500,7 @@ void iwl_mei_host_disassociated(void)
 
 	mei = mei_cldev_get_drvdata(iwl_mei_global_cldev);
 
-	if (!mei && !mei->amt_enabled)
+	if (!mei || !mei->amt_enabled)
 		goto out;
 
 	iwl_mei_send_sap_msg_payload(mei->cldev, &msg.hdr);
@@ -1502,7 +1536,7 @@ void iwl_mei_set_rfkill_state(bool hw_rfkill, bool sw_rfkill)
 
 	mei = mei_cldev_get_drvdata(iwl_mei_global_cldev);
 
-	if (!mei && !mei->amt_enabled)
+	if (!mei || !mei->amt_enabled)
 		goto out;
 
 	iwl_mei_send_sap_msg_payload(mei->cldev, &msg.hdr);
@@ -1531,7 +1565,7 @@ void iwl_mei_set_nic_info(const u8 *mac_address, const u8 *nvm_address)
 
 	mei = mei_cldev_get_drvdata(iwl_mei_global_cldev);
 
-	if (!mei && !mei->amt_enabled)
+	if (!mei || !mei->amt_enabled)
 		goto out;
 
 	iwl_mei_send_sap_msg_payload(mei->cldev, &msg.hdr);
@@ -1559,7 +1593,7 @@ void iwl_mei_set_country_code(u16 mcc)
 
 	mei = mei_cldev_get_drvdata(iwl_mei_global_cldev);
 
-	if (!mei && !mei->amt_enabled)
+	if (!mei || !mei->amt_enabled)
 		goto out;
 
 	iwl_mei_send_sap_msg_payload(mei->cldev, &msg.hdr);
@@ -1585,7 +1619,7 @@ void iwl_mei_set_power_limit(const __le16 *power_limit)
 
 	mei = mei_cldev_get_drvdata(iwl_mei_global_cldev);
 
-	if (!mei && !mei->amt_enabled)
+	if (!mei || !mei->amt_enabled)
 		goto out;
 
 	memcpy(msg.sar_chain_info_table, power_limit, sizeof(msg.sar_chain_info_table));

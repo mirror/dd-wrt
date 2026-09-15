@@ -361,8 +361,7 @@ static void serial_cleanup(struct tty_struct *tty)
 	module_put(owner);
 }
 
-static int serial_write(struct tty_struct *tty, const unsigned char *buf,
-								int count)
+static int serial_write(struct tty_struct *tty, const u8 *buf, int count)
 {
 	struct usb_serial_port *port = tty->driver_data;
 	int retval = -ENODEV;
@@ -707,14 +706,12 @@ static const struct usb_device_id *match_dynamic_id(struct usb_interface *intf,
 {
 	struct usb_dynid *dynid;
 
-	spin_lock(&drv->dynids.lock);
+	guard(mutex)(&usb_dynids_lock);
 	list_for_each_entry(dynid, &drv->dynids.list, node) {
 		if (usb_match_one_id(intf, &dynid->id)) {
-			spin_unlock(&drv->dynids.lock);
 			return &dynid->id;
 		}
 	}
-	spin_unlock(&drv->dynids.lock);
 	return NULL;
 }
 
@@ -1517,7 +1514,7 @@ int usb_serial_register_drivers(struct usb_serial_driver *const serial_drivers[]
 
 	/* Now set udriver's id_table and look for matches */
 	udriver->id_table = id_table;
-	rc = driver_attach(&udriver->drvwrap.driver);
+	rc = driver_attach(&udriver->driver);
 	return 0;
 
 err_deregister_drivers:

@@ -904,11 +904,9 @@ static unsigned int hvsi_chars_in_buffer(struct tty_struct *tty)
 	return hp->n_outbuf;
 }
 
-static int hvsi_write(struct tty_struct *tty,
-		     const unsigned char *buf, int count)
+static int hvsi_write(struct tty_struct *tty, const u8 *source, int count)
 {
 	struct hvsi_struct *hp = tty->driver_data;
-	const char *source = buf;
 	unsigned long flags;
 	int total = 0;
 	int origcount = count;

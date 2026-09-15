@@ -87,9 +87,9 @@ static void metric_event_delete(struct rblist *rblist __maybe_unused,
 	struct metric_expr *expr, *tmp;
 
 	list_for_each_entry_safe(expr, tmp, &me->head, nd) {
-		free((char *)expr->metric_name);
-		free(expr->metric_refs);
-		free(expr->metric_events);
+		zfree(&expr->metric_name);
+		zfree(&expr->metric_refs);
+		zfree(&expr->metric_events);
 		free(expr);
 	}
 
@@ -184,9 +184,9 @@ static void metric__free(struct metric *m)
 	if (!m)
 		return;
 
-	free(m->metric_refs);
+	zfree(&m->metric_refs);
 	expr__ctx_free(m->pctx);
-	free((char *)m->modifier);
+	zfree(&m->modifier);
 	evlist__delete(m->evlist);
 	free(m);
 }
@@ -723,7 +723,7 @@ static int decode_all_metric_ids(struct evlist *perf_evlist, const char *modifie
 		if (strstr(ev->name, "metric-id=")) {
 			bool has_slash = false;
 
-			free(ev->name);
+			zfree(&ev->name);
 			for (cur = strchr(sb.buf, '@') ; cur; cur = strchr(++cur, '@')) {
 				*cur = '/';
 				has_slash = true;
@@ -1776,8 +1776,10 @@ int metricgroup__copy_metric_events(struct evlist *evlist, struct cgroup *cgrp,
 
 			new_expr->metric_expr = old_expr->metric_expr;
 			new_expr->metric_name = strdup(old_expr->metric_name);
-			if (!new_expr->metric_name)
+			if (!new_expr->metric_name) {
+				free(new_expr);
 				return -ENOMEM;
+			}
 
 			new_expr->metric_unit = old_expr->metric_unit;
 			new_expr->runtime = old_expr->runtime;
@@ -1789,6 +1791,7 @@ int metricgroup__copy_metric_events(struct evlist *evlist, struct cgroup *cgrp,
 				alloc_size = sizeof(*new_expr->metric_refs);
 				new_expr->metric_refs = calloc(nr + 1, alloc_size);
 				if (!new_expr->metric_refs) {
+					zfree(&new_expr->metric_name);
 					free(new_expr);
 					return -ENOMEM;
 				}
@@ -1805,7 +1808,8 @@ int metricgroup__copy_metric_events(struct evlist *evlist, struct cgroup *cgrp,
 			alloc_size = sizeof(*new_expr->metric_events);
 			new_expr->metric_events = calloc(nr + 1, alloc_size);
 			if (!new_expr->metric_events) {
-				free(new_expr->metric_refs);
+				zfree(&new_expr->metric_name);
+				zfree(&new_expr->metric_refs);
 				free(new_expr);
 				return -ENOMEM;
 			}
@@ -1815,8 +1819,9 @@ int metricgroup__copy_metric_events(struct evlist *evlist, struct cgroup *cgrp,
 				evsel = old_expr->metric_events[idx];
 				evsel = evlist__find_evsel(evlist, evsel->core.idx);
 				if (evsel == NULL) {
-					free(new_expr->metric_events);
-					free(new_expr->metric_refs);
+					zfree(&new_expr->metric_name);
+					zfree(&new_expr->metric_events);
+					zfree(&new_expr->metric_refs);
 					free(new_expr);
 					return -EINVAL;
 				}
