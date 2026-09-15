@@ -3,6 +3,7 @@
 
 #include <linux/etherdevice.h>
 #include <linux/timekeeping.h>
+#include "coredump.h"
 #include "mt7915.h"
 #include "../dma.h"
 #include "mac.h"
@@ -1260,7 +1261,7 @@ mt7915_wait_reset_state(struct mt7915_dev *dev, u32 state)
 	bool ret;
 
 	ret = wait_event_timeout(dev->reset_wait,
-				 (READ_ONCE(dev->reset_state) & state),
+				 (READ_ONCE(dev->recovery.state) & state),
 				 MT7915_RESET_TIMEOUT);
 
 	WARN(!ret, "Timeout waiting for MCU reset state %x\n", state);
@@ -1301,73 +1302,6 @@ mt7915_update_beacons(struct mt7915_dev *dev)
 		mt7915_update_vif_beacon, mphy_ext->hw);
 }
 
-static void
-mt7915_dma_reset(struct mt7915_dev *dev)
-{
-	struct mt76_phy *mphy_ext = dev->mt76.phys[MT_BAND1];
-	u32 hif1_ofs = MT_WFDMA0_PCIE1(0) - MT_WFDMA0(0);
-	int i;
-
-	mt76_clear(dev, MT_WFDMA0_GLO_CFG,
-		   MT_WFDMA0_GLO_CFG_TX_DMA_EN |
-		   MT_WFDMA0_GLO_CFG_RX_DMA_EN);
-
-	if (is_mt7915(&dev->mt76))
-		mt76_clear(dev, MT_WFDMA1_GLO_CFG,
-			   MT_WFDMA1_GLO_CFG_TX_DMA_EN |
-			   MT_WFDMA1_GLO_CFG_RX_DMA_EN);
-	if (dev->hif2) {
-		mt76_clear(dev, MT_WFDMA0_GLO_CFG + hif1_ofs,
-			   MT_WFDMA0_GLO_CFG_TX_DMA_EN |
-			   MT_WFDMA0_GLO_CFG_RX_DMA_EN);
-
-		if (is_mt7915(&dev->mt76))
-			mt76_clear(dev, MT_WFDMA1_GLO_CFG + hif1_ofs,
-				   MT_WFDMA1_GLO_CFG_TX_DMA_EN |
-				   MT_WFDMA1_GLO_CFG_RX_DMA_EN);
-	}
-
-	usleep_range(1000, 2000);
-
-	for (i = 0; i < __MT_TXQ_MAX; i++) {
-		mt76_queue_tx_cleanup(dev, dev->mphy.q_tx[i], true);
-		if (mphy_ext)
-			mt76_queue_tx_cleanup(dev, mphy_ext->q_tx[i], true);
-	}
-
-	for (i = 0; i < __MT_MCUQ_MAX; i++)
-		mt76_queue_tx_cleanup(dev, dev->mt76.q_mcu[i], true);
-
-	mt76_for_each_q_rx(&dev->mt76, i)
-		mt76_queue_rx_reset(dev, i);
-
-	mt76_tx_status_check(&dev->mt76, true);
-
-	/* re-init prefetch settings after reset */
-	mt7915_dma_prefetch(dev);
-
-	mt76_set(dev, MT_WFDMA0_GLO_CFG,
-		 MT_WFDMA0_GLO_CFG_TX_DMA_EN | MT_WFDMA0_GLO_CFG_RX_DMA_EN);
-	if (is_mt7915(&dev->mt76))
-		mt76_set(dev, MT_WFDMA1_GLO_CFG,
-			 MT_WFDMA1_GLO_CFG_TX_DMA_EN |
-			 MT_WFDMA1_GLO_CFG_RX_DMA_EN |
-			 MT_WFDMA1_GLO_CFG_OMIT_TX_INFO |
-			 MT_WFDMA1_GLO_CFG_OMIT_RX_INFO);
-	if (dev->hif2) {
-		mt76_set(dev, MT_WFDMA0_GLO_CFG + hif1_ofs,
-			 MT_WFDMA0_GLO_CFG_TX_DMA_EN |
-			 MT_WFDMA0_GLO_CFG_RX_DMA_EN);
-
-		if (is_mt7915(&dev->mt76))
-			mt76_set(dev, MT_WFDMA1_GLO_CFG + hif1_ofs,
-				 MT_WFDMA1_GLO_CFG_TX_DMA_EN |
-				 MT_WFDMA1_GLO_CFG_RX_DMA_EN |
-				 MT_WFDMA1_GLO_CFG_OMIT_TX_INFO |
-				 MT_WFDMA1_GLO_CFG_OMIT_RX_INFO);
-	}
-}
-
 void mt7915_tx_token_put(struct mt7915_dev *dev)
 {
 	struct mt76_txwi_cache *txwi;
@@ -1382,6 +1316,168 @@ void mt7915_tx_token_put(struct mt7915_dev *dev)
 	idr_destroy(&dev->mt76.token);
 }
 
+static int
+mt7915_mac_restart(struct mt7915_dev *dev)
+{
+	struct mt7915_phy *phy2;
+	struct mt76_phy *ext_phy;
+	struct mt76_dev *mdev = &dev->mt76;
+	int i, ret;
+
+	ext_phy = dev->mt76.phys[MT_BAND1];
+	phy2 = ext_phy ? ext_phy->priv : NULL;
+
+	if (dev->hif2) {
+		mt76_wr(dev, MT_INT1_MASK_CSR, 0x0);
+		mt76_wr(dev, MT_INT1_SOURCE_CSR, ~0);
+	}
+
+	if (dev_is_pci(mdev->dev)) {
+		mt76_wr(dev, MT_PCIE_MAC_INT_ENABLE, 0x0);
+		if (dev->hif2)
+			mt76_wr(dev, MT_PCIE1_MAC_INT_ENABLE, 0x0);
+	}
+
+	set_bit(MT76_RESET, &dev->mphy.state);
+	set_bit(MT76_MCU_RESET, &dev->mphy.state);
+	wake_up(&dev->mt76.mcu.wait);
+	if (ext_phy) {
+		set_bit(MT76_RESET, &ext_phy->state);
+		set_bit(MT76_MCU_RESET, &ext_phy->state);
+	}
+
+	/* lock/unlock all queues to ensure that no tx is pending */
+	mt76_txq_schedule_all(&dev->mphy);
+	if (ext_phy)
+		mt76_txq_schedule_all(ext_phy);
+
+	/* disable all tx/rx napi */
+	mt76_worker_disable(&dev->mt76.tx_worker);
+	mt76_for_each_q_rx(mdev, i) {
+		if (mdev->q_rx[i].ndesc)
+			napi_disable(&dev->mt76.napi[i]);
+	}
+	napi_disable(&dev->mt76.tx_napi);
+
+	/* token reinit */
+	mt7915_tx_token_put(dev);
+	idr_init(&dev->mt76.token);
+
+	mt7915_dma_reset(dev, true);
+
+	local_bh_disable();
+	mt76_for_each_q_rx(mdev, i) {
+		if (mdev->q_rx[i].ndesc) {
+			napi_enable(&dev->mt76.napi[i]);
+			napi_schedule(&dev->mt76.napi[i]);
+		}
+	}
+	local_bh_enable();
+	clear_bit(MT76_MCU_RESET, &dev->mphy.state);
+	clear_bit(MT76_STATE_MCU_RUNNING, &dev->mphy.state);
+
+	mt76_wr(dev, MT_INT_MASK_CSR, dev->mt76.mmio.irqmask);
+	mt76_wr(dev, MT_INT_SOURCE_CSR, ~0);
+
+	if (dev->hif2) {
+		mt76_wr(dev, MT_INT1_MASK_CSR, dev->mt76.mmio.irqmask);
+		mt76_wr(dev, MT_INT1_SOURCE_CSR, ~0);
+	}
+	if (dev_is_pci(mdev->dev)) {
+		mt76_wr(dev, MT_PCIE_MAC_INT_ENABLE, 0xff);
+		if (dev->hif2)
+			mt76_wr(dev, MT_PCIE1_MAC_INT_ENABLE, 0xff);
+	}
+
+	/* load firmware */
+	ret = mt7915_mcu_init_firmware(dev);
+	if (ret)
+		goto out;
+
+	/* set the necessary init items */
+	ret = mt7915_mcu_set_eeprom(dev);
+	if (ret)
+		goto out;
+
+	mt7915_mac_init(dev);
+	mt7915_init_txpower(dev, &dev->mphy.sband_2g.sband);
+	mt7915_init_txpower(dev, &dev->mphy.sband_5g.sband);
+	ret = mt7915_txbf_init(dev);
+
+	if (test_bit(MT76_STATE_RUNNING, &dev->mphy.state)) {
+		ret = mt7915_run(dev->mphy.hw);
+		if (ret)
+			goto out;
+	}
+
+	if (ext_phy && test_bit(MT76_STATE_RUNNING, &ext_phy->state)) {
+		ret = mt7915_run(ext_phy->hw);
+		if (ret)
+			goto out;
+	}
+
+out:
+	/* reset done */
+	clear_bit(MT76_RESET, &dev->mphy.state);
+	if (phy2)
+		clear_bit(MT76_RESET, &phy2->mt76->state);
+
+	local_bh_disable();
+	napi_enable(&dev->mt76.tx_napi);
+	napi_schedule(&dev->mt76.tx_napi);
+	local_bh_enable();
+
+	mt76_worker_enable(&dev->mt76.tx_worker);
+
+	return ret;
+}
+
+static void
+mt7915_mac_full_reset(struct mt7915_dev *dev)
+{
+	struct mt76_phy *ext_phy;
+	int i;
+
+	ext_phy = dev->mt76.phys[MT_BAND1];
+
+	dev->recovery.hw_full_reset = true;
+
+	wake_up(&dev->mt76.mcu.wait);
+	ieee80211_stop_queues(mt76_hw(dev));
+	if (ext_phy)
+		ieee80211_stop_queues(ext_phy->hw);
+
+	cancel_delayed_work_sync(&dev->mphy.mac_work);
+	if (ext_phy)
+		cancel_delayed_work_sync(&ext_phy->mac_work);
+
+	mutex_lock(&dev->mt76.mutex);
+	for (i = 0; i < 10; i++) {
+		if (!mt7915_mac_restart(dev))
+			break;
+	}
+	mutex_unlock(&dev->mt76.mutex);
+
+	if (i == 10)
+		dev_err(dev->mt76.dev, "chip full reset failed\n");
+
+	ieee80211_restart_hw(mt76_hw(dev));
+	if (ext_phy)
+		ieee80211_restart_hw(ext_phy->hw);
+
+	ieee80211_wake_queues(mt76_hw(dev));
+	if (ext_phy)
+		ieee80211_wake_queues(ext_phy->hw);
+
+	dev->recovery.hw_full_reset = false;
+	ieee80211_queue_delayed_work(mt76_hw(dev), &dev->mphy.mac_work,
+				     MT7915_WATCHDOG_TIME);
+	if (ext_phy)
+		ieee80211_queue_delayed_work(ext_phy->hw,
+					     &ext_phy->mac_work,
+					     MT7915_WATCHDOG_TIME);
+}
+
 /* system error recovery */
 void mt7915_mac_reset_work(struct work_struct *work)
 {
@@ -1394,7 +1490,33 @@ void mt7915_mac_reset_work(struct work_struct *work)
 	ext_phy = dev->mt76.phys[MT_BAND1];
 	phy2 = ext_phy ? ext_phy->priv : NULL;
 
-	if (!(READ_ONCE(dev->reset_state) & MT_MCU_CMD_STOP_DMA))
+	/* chip full reset */
+	if (dev->recovery.restart) {
+		/* disable WA/WM WDT */
+		mt76_clear(dev, MT_WFDMA0_MCU_HOST_INT_ENA,
+			   MT_MCU_CMD_WDT_MASK);
+
+		if (READ_ONCE(dev->recovery.state) & MT_MCU_CMD_WA_WDT)
+			dev->recovery.wa_reset_count++;
+		else
+			dev->recovery.wm_reset_count++;
+
+		mt7915_mac_full_reset(dev);
+
+		/* enable mcu irq */
+		mt7915_irq_enable(dev, MT_INT_MCU_CMD);
+		mt7915_irq_disable(dev, 0);
+
+		/* enable WA/WM WDT */
+		mt76_set(dev, MT_WFDMA0_MCU_HOST_INT_ENA, MT_MCU_CMD_WDT_MASK);
+
+		dev->recovery.state = MT_MCU_CMD_NORMAL_STATE;
+		dev->recovery.restart = false;
+		return;
+	}
+
+	/* chip partial reset */
+	if (!(READ_ONCE(dev->recovery.state) & MT_MCU_CMD_STOP_DMA))
 		return;
 
 	ieee80211_stop_queues(mt76_hw(dev));
@@ -1421,7 +1543,7 @@ void mt7915_mac_reset_work(struct work_struct *work)
 	mt76_wr(dev, MT_MCU_INT_EVENT, MT_MCU_INT_EVENT_DMA_STOPPED);
 
 	if (mt7915_wait_reset_state(dev, MT_MCU_CMD_RESET_DONE)) {
-		mt7915_dma_reset(dev);
+		mt7915_dma_reset(dev, false);
 
 		mt7915_tx_token_put(dev);
 		idr_init(&dev->mt76.token);
@@ -1468,6 +1590,100 @@ void mt7915_mac_reset_work(struct work_struct *work)
 		ieee80211_queue_delayed_work(ext_phy->hw,
 					     &phy2->mt76->mac_work,
 					     MT7915_WATCHDOG_TIME);
+}
+
+/* firmware coredump */
+void mt7915_mac_dump_work(struct work_struct *work)
+{
+	const struct mt7915_mem_region *mem_region;
+	struct mt7915_crash_data *crash_data;
+	struct mt7915_dev *dev;
+	struct mt7915_mem_hdr *hdr;
+	size_t buf_len;
+	int i;
+	u32 num;
+	u8 *buf;
+
+	dev = container_of(work, struct mt7915_dev, dump_work);
+
+	mutex_lock(&dev->dump_mutex);
+
+	crash_data = mt7915_coredump_new(dev);
+	if (!crash_data) {
+		mutex_unlock(&dev->dump_mutex);
+		goto skip_coredump;
+	}
+
+	mem_region = mt7915_coredump_get_mem_layout(dev, &num);
+	if (!mem_region || !crash_data->memdump_buf_len) {
+		mutex_unlock(&dev->dump_mutex);
+		goto skip_memdump;
+	}
+
+	buf = crash_data->memdump_buf;
+	buf_len = crash_data->memdump_buf_len;
+
+	/* dumping memory content... */
+	memset(buf, 0, buf_len);
+	for (i = 0; i < num; i++) {
+		if (mem_region->len > buf_len) {
+			dev_warn(dev->mt76.dev, "%s len %lu is too large\n",
+				 mem_region->name,
+				 (unsigned long)mem_region->len);
+			break;
+		}
+
+		/* reserve space for the header */
+		hdr = (void *)buf;
+		buf += sizeof(*hdr);
+		buf_len -= sizeof(*hdr);
+
+		mt7915_memcpy_fromio(dev, buf, mem_region->start,
+				     mem_region->len);
+
+		hdr->start = mem_region->start;
+		hdr->len = mem_region->len;
+
+		if (!mem_region->len)
+			/* note: the header remains, just with zero length */
+			break;
+
+		buf += mem_region->len;
+		buf_len -= mem_region->len;
+
+		mem_region++;
+	}
+
+	mutex_unlock(&dev->dump_mutex);
+
+skip_memdump:
+	mt7915_coredump_submit(dev);
+skip_coredump:
+	queue_work(dev->mt76.wq, &dev->reset_work);
+}
+
+void mt7915_reset(struct mt7915_dev *dev)
+{
+	if (!dev->recovery.hw_init_done)
+		return;
+
+	if (dev->recovery.hw_full_reset)
+		return;
+
+	/* wm/wa exception: do full recovery */
+	if (READ_ONCE(dev->recovery.state) & MT_MCU_CMD_WDT_MASK) {
+		dev->recovery.restart = true;
+		dev_info(dev->mt76.dev,
+			 "%s indicated firmware crash, attempting recovery\n",
+			 wiphy_name(dev->mt76.hw->wiphy));
+
+		mt7915_irq_disable(dev, MT_INT_MCU_CMD);
+		queue_work(dev->mt76.wq, &dev->dump_work);
+		return;
+	}
+
+	queue_work(dev->mt76.wq, &dev->reset_work);
+	wake_up(&dev->reset_wait);
 }
 
 void mt7915_mac_update_stats(struct mt7915_phy *phy)
@@ -2125,8 +2341,10 @@ void mt7915_mac_add_twt_setup(struct ieee80211_hw *hw,
 	}
 	flow->tsf = le64_to_cpu(twt_agrt->twt);
 
-	if (mt7915_mcu_twt_agrt_update(dev, msta->vif, flow, MCU_TWT_AGRT_ADD))
+	if (mt7915_mcu_twt_agrt_update(dev, msta->vif, flow, MCU_TWT_AGRT_ADD)) {
+		list_del(&flow->list);
 		goto unlock;
+	}
 
 	setup_cmd = TWT_SETUP_CMD_ACCEPT;
 	dev->twt.table_mask |= BIT(table_id);

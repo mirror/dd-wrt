@@ -114,6 +114,7 @@ struct nullb_device {
 	bool zoned; /* if device is zoned */
 	bool virt_boundary; /* virtual boundary on/off for the device */
 	bool no_sched; /* no IO scheduler for the device */
+	bool shared_tags; /* share tag set between devices for blk-mq */
 	bool shared_tag_bitmap; /* use hostwide shared tags */
 };
 
@@ -151,6 +152,8 @@ blk_status_t null_process_zoned_cmd(struct nullb_cmd *cmd, enum req_op op,
 				    sector_t sector, sector_t nr_sectors);
 size_t null_zone_valid_read_len(struct nullb *nullb,
 				sector_t sector, unsigned int len);
+ssize_t zone_cond_store(struct nullb_device *dev, const char *page,
+			size_t count, enum blk_zone_cond cond);
 #else
 static inline int null_init_zoned_dev(struct nullb_device *dev,
 				      struct request_queue *q)
@@ -173,6 +176,12 @@ static inline size_t null_zone_valid_read_len(struct nullb *nullb,
 					      unsigned int len)
 {
 	return len;
+}
+static inline ssize_t zone_cond_store(struct nullb_device *dev,
+				      const char *page, size_t count,
+				      enum blk_zone_cond cond)
+{
+	return -EOPNOTSUPP;
 }
 #define null_report_zones	NULL
 #endif /* CONFIG_BLK_DEV_ZONED */

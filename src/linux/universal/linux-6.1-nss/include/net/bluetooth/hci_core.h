@@ -34,6 +34,7 @@
 #include <net/bluetooth/hci.h>
 #include <net/bluetooth/hci_sync.h>
 #include <net/bluetooth/hci_sock.h>
+#include <net/bluetooth/coredump.h>
 
 /* HCI priority */
 #define HCI_PRIO_MAX	7
@@ -569,6 +570,8 @@ struct hci_dev {
 	const char		*fw_info;
 	struct dentry		*debugfs;
 
+	struct hci_devcoredump	dump;
+
 	struct device		dev;
 
 	struct rfkill		*rfkill;
@@ -871,9 +874,9 @@ static inline void hci_discovery_filter_clear(struct hci_dev *hdev)
 	hdev->discovery.result_filtering = false;
 	hdev->discovery.report_invalid_rssi = true;
 	hdev->discovery.rssi = HCI_RSSI_INVALID;
-	hdev->discovery.uuid_count = 0;
 
 	spin_lock(&hdev->discovery.lock);
+	hdev->discovery.uuid_count = 0;
 	kfree(hdev->discovery.uuids);
 	hdev->discovery.uuids = NULL;
 	spin_unlock(&hdev->discovery.lock);
@@ -1515,6 +1518,15 @@ static inline void hci_set_aosp_capable(struct hci_dev *hdev)
 {
 #if IS_ENABLED(CONFIG_BT_AOSPEXT)
 	hdev->aosp_capable = true;
+#endif
+}
+
+static inline void hci_devcd_setup(struct hci_dev *hdev)
+{
+#ifdef CONFIG_DEV_COREDUMP
+	INIT_WORK(&hdev->dump.dump_rx, hci_devcd_rx);
+	INIT_DELAYED_WORK(&hdev->dump.dump_timeout, hci_devcd_timeout);
+	skb_queue_head_init(&hdev->dump.dump_q);
 #endif
 }
 

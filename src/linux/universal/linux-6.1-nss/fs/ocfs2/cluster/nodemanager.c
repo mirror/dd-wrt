@@ -325,6 +325,7 @@ static ssize_t o2nm_node_local_store(struct config_item *item, const char *page,
 	struct o2nm_node *node = to_o2nm_node(item);
 	struct o2nm_cluster *cluster;
 	unsigned long tmp;
+	bool starting = false;
 	char *p = (char *)page;
 	ssize_t ret;
 
@@ -361,6 +362,7 @@ static ssize_t o2nm_node_local_store(struct config_item *item, const char *page,
 		ret = o2net_start_listening(node);
 		if (ret)
 			goto out;
+		starting = true;
 	}
 
 	if (!tmp && cluster->cl_has_local &&
@@ -373,6 +375,8 @@ static ssize_t o2nm_node_local_store(struct config_item *item, const char *page,
 	if (node->nd_local) {
 		cluster->cl_has_local = tmp;
 		cluster->cl_local_node = node->nd_num;
+		if (starting)
+			o2net_complete_start_listening(node);
 	}
 
 	ret = count;
@@ -774,6 +778,12 @@ static inline void o2nm_unlock_subsystem(void)
 int o2nm_depend_item(struct config_item *item)
 {
 	return configfs_depend_item(&o2nm_cluster_group.cs_subsys, item);
+}
+
+int o2nm_depend_item_unlocked(struct config_item *item)
+{
+	return configfs_depend_item_unlocked(&o2nm_cluster_group.cs_subsys,
+					     item);
 }
 
 void o2nm_undepend_item(struct config_item *item)

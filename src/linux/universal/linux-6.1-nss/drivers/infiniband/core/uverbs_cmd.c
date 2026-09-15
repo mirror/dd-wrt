@@ -46,6 +46,7 @@
 
 #include "uverbs.h"
 #include "core_priv.h"
+#include "restrack.h"
 
 /*
  * Copy a response to userspace. If the provided 'resp' is larger than the
@@ -813,6 +814,10 @@ static int ib_uverbs_rereg_mr(struct uverbs_attr_bundle *attrs)
 			ret = PTR_ERR(new_pd);
 			goto put_uobjs;
 		}
+		if (new_pd == orig_pd) {
+			uobj_put_obj_read(new_pd);
+			cmd.flags &= ~IB_MR_REREG_PD;
+		}
 	} else {
 		new_pd = mr->pd;
 	}
@@ -858,9 +863,10 @@ static int ib_uverbs_rereg_mr(struct uverbs_attr_bundle *attrs)
 		mr = new_mr;
 	} else {
 		if (cmd.flags & IB_MR_REREG_PD) {
-			atomic_dec(&orig_pd->usecnt);
-			mr->pd = new_pd;
 			atomic_inc(&new_pd->usecnt);
+			WRITE_ONCE(mr->pd, new_pd);
+			rdma_restrack_sync(&mr->res);
+			atomic_dec(&orig_pd->usecnt);
 		}
 		if (cmd.flags & IB_MR_REREG_TRANS) {
 			mr->iova = cmd.hca_va;
@@ -1859,7 +1865,8 @@ static int modify_qp(struct uverbs_attr_bundle *attrs,
 	if (cmd->base.attr_mask & IB_QP_PATH_MIG_STATE)
 		attr->path_mig_state = cmd->base.path_mig_state;
 	if (cmd->base.attr_mask & IB_QP_QKEY) {
-		if (cmd->base.qkey & IB_QP_SET_QKEY && !capable(CAP_NET_RAW)) {
+		if (cmd->base.qkey & IB_QP_SET_QKEY &&
+		    !rdma_nl_get_privileged_qkey()) {
 			ret = -EPERM;
 			goto release_qp;
 		}

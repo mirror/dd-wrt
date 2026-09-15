@@ -774,7 +774,7 @@ void ubi_remove_av(struct ubi_attach_info *ai, struct ubi_ainf_volume *av)
 static int early_erase_peb(struct ubi_device *ubi,
 			   const struct ubi_attach_info *ai, int pnum, int ec)
 {
-	int err;
+	int err, torture = 0;
 	struct ubi_ec_hdr *ec_hdr;
 
 	if ((long long)ec >= UBI_MAX_ERASECOUNTER) {
@@ -793,7 +793,7 @@ static int early_erase_peb(struct ubi_device *ubi,
 
 	ec_hdr->ec = cpu_to_be64(ec);
 
-	err = ubi_io_sync_erase(ubi, pnum, 0);
+	err = ubi_io_sync_erase(ubi, pnum, &torture);
 	if (err < 0)
 		goto out_free;
 
