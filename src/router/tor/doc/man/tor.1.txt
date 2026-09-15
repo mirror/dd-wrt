@@ -3378,6 +3378,14 @@ on the public Tor network.
     (default), the flag "shared-rand-participate" is added to the authority
     vote indicating participation in the protocol. (Default: 1)
 
+[[AuthDirSupport048Clients]] **AuthDirSupport048Clients** **0**|**1**::
+    Authoritative directory only.
+    If true, we do not accept any router descriptors or generate any
+    consensuses that would confuse clients running 0.4.8 and earlier.
+    If false, 0.4.8 clients will get a somewhat degraded view of the network,
+    but will generally continue working.
+    (Default: 0)
+
 [[AuthDirTestEd25519LinkKeys]] **AuthDirTestEd25519LinkKeys**  **0**|**1**::
     Authoritative directories only. If this option is set to 0, then we treat
     relays as "Running" if their RSA key is correct when we probe them,
@@ -3476,7 +3484,7 @@ on the public Tor network.
 [[MinimalAcceptedServerVersion]] **MinimalAcceptedServerVersion** __STRING__::
    STRING is the oldest Tor version accepted by the directory authority for
    relays and bridge. Any older version will be rejected.
-   (Default: 0.4.7.0-alpha-dev)
+   (Default: 0.4.9.1-alpha)
 
 [[V3AuthDistDelay]] **V3AuthDistDelay** __N__ **seconds**|**minutes**|**hours**::
     V3 authoritative directories only. Configures the server's preferred  delay

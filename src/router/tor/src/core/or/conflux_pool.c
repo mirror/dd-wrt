@@ -1459,6 +1459,10 @@ conflux_get_circ_for_conn(const entry_connection_t *conn, time_t now,
       continue;
     }
 
+    /* The stream will be carried by every leg of this set, and every leg
+     * holds the same isolation state so the check above on the first leg
+     * answers for the whole set. */
+
     /* Found a circuit that works. */
     return ocirc;
   } DIGEST256MAP_FOREACH_END;

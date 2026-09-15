@@ -32,6 +32,10 @@ void reset_bandwidth_test(void);
 int circuit_enough_testing_circs(void);
 
 void circuit_has_opened(origin_circuit_t *circ);
+void circuit_reset_isolation(origin_circuit_t *circ);
+void circuit_sync_isolation(origin_circuit_t *circ);
+void circuit_copy_isolation(origin_circuit_t *dst,
+                           const origin_circuit_t *src);
 void circuit_try_attaching_streams(origin_circuit_t *circ);
 void circuit_build_failed(origin_circuit_t *circ);
 

@@ -999,6 +999,8 @@ addressmap_get_virtual_address(int type)
 const char *
 addressmap_register_virtual_address(int type, char *new_address)
 {
+  char *new_mapping = NULL;
+
   char **addrp;
   virtaddress_entry_t *vent;
   int vent_needs_to_be_added = 0;
@@ -1038,13 +1040,17 @@ addressmap_register_virtual_address(int type, char *new_address)
     }
   }
 
-  tor_free(*addrp);
-  *addrp = addressmap_get_virtual_address(type);
-  if (!*addrp) {
-    tor_free(vent);
+  new_mapping = addressmap_get_virtual_address(type);
+  if (! new_mapping) {
+    if (vent_needs_to_be_added)
+      tor_free(vent);
     tor_free(new_address);
     return NULL;
   }
+
+  tor_free(*addrp);
+  *addrp = new_mapping;
+
   log_info(LD_APP, "Registering map from %s to %s", *addrp, new_address);
   if (vent_needs_to_be_added)
     strmap_set(virtaddress_reversemap, new_address, vent);

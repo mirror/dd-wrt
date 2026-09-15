@@ -1342,6 +1342,15 @@ circuit_clear_cpath(origin_circuit_t *circ)
   cpath_free(cpath);
 
   circ->cpath = NULL;
+  /* This will ensure that we don't accept any more authenticated
+   * SENDMEs on this circuit if we have already registered a hop,
+   * since an origin circuit never receives a relay cell from
+   * a NULL layer.
+   *
+   * In practice this funciton is only called from tests and form
+   * circuit_free_, so there's no actual risk of confusion.
+   */
+  circ->base_.sendme_digest_hop = NULL;
 }
 
 /** Release all storage held by circuits. */

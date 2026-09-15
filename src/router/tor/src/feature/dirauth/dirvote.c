@@ -830,6 +830,11 @@ compute_consensus_method(smartlist_t *votes)
 static int
 consensus_method_is_supported(int method)
 {
+  if (get_options()->AuthDirSupport048Clients &&
+      method >= MIN_METHOD_TO_PERMIT_ABSENT_TAP_KEYS) {
+    return 0;
+  }
+
   return (method >= MIN_SUPPORTED_CONSENSUS_METHOD) &&
     (method <= MAX_SUPPORTED_CONSENSUS_METHOD);
 }
@@ -3920,12 +3925,16 @@ dirvote_create_microdescriptor(const routerinfo_t *ri, int consensus_method)
   crypto_pk_t *rsa_pubkey = router_get_rsa_onion_pkey(ri->tap_onion_pkey,
                                                       ri->tap_onion_pkey_len);
   if (!rsa_pubkey) {
-    /* We do not yet support creating MDs for relays without TAP onion keys. */
-    goto done;
+    if (consensus_method < MIN_METHOD_TO_PERMIT_ABSENT_TAP_KEYS) {
+      /* This method does not support generating MDs without TAP keys. */
+      goto done;
+    }
+    key = tor_strdup("");
+  } else {
+    if (crypto_pk_write_public_key_to_string(rsa_pubkey, &key, &keylen)<0)
+      goto done;
   }
 
-  if (crypto_pk_write_public_key_to_string(rsa_pubkey, &key, &keylen)<0)
-    goto done;
   summary = policy_summarize(ri->exit_policy, AF_INET);
   if (ri->declared_family)
     family = smartlist_join_strings(ri->declared_family, " ", 0, NULL);
@@ -4049,6 +4058,8 @@ static const struct consensus_method_range_t {
   {MIN_SUPPORTED_CONSENSUS_METHOD,
    MIN_METHOD_FOR_FAMILY_IDS - 1},
   {MIN_METHOD_FOR_FAMILY_IDS,
+   MIN_METHOD_TO_PERMIT_ABSENT_TAP_KEYS - 1},
+  { MIN_METHOD_TO_PERMIT_ABSENT_TAP_KEYS,
    MAX_SUPPORTED_CONSENSUS_METHOD},
   {-1, -1}
 };
@@ -4077,6 +4088,9 @@ dirvote_format_all_microdesc_vote_lines(const routerinfo_t *ri, time_t now,
   for (cmr = microdesc_consensus_methods;
        cmr->low != -1 && cmr->high != -1;
        cmr++) {
+    if (! consensus_method_is_supported(cmr->low)) {
+      continue;
+    }
     microdesc_t *md = dirvote_create_microdescriptor(ri, cmr->low);
     if (md) {
       microdesc_vote_line_t *e =

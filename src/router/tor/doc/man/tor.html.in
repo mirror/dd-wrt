@@ -5926,6 +5926,19 @@ AuthDirHasIPv6Connectivity 1.)</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="AuthDirSupport048Clients"></a> <strong>AuthDirSupport048Clients</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    Authoritative directory only.
+    If true, we do not accept any router descriptors or generate any
+    consensuses that would confuse clients running 0.4.8 and earlier.
+    If false, 0.4.8 clients will get a somewhat degraded view of the network,
+    but will generally continue working.
+    (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="AuthDirTestEd25519LinkKeys"></a> <strong>AuthDirTestEd25519LinkKeys</strong>  <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
@@ -6112,7 +6125,7 @@ AuthDirHasIPv6Connectivity 1.)</code></pre>
 <p>
    STRING is the oldest Tor version accepted by the directory authority for
    relays and bridge. Any older version will be rejected.
-   (Default: 0.4.7.0-alpha-dev)
+   (Default: 0.4.9.1-alpha)
 </p>
 </dd>
 <dt class="hdlist1">

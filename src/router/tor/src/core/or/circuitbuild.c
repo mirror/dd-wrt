@@ -879,8 +879,7 @@ circuit_pick_create_handshake(uint8_t *cell_type_out,
   *cell_type_out = CELL_CREATE2;
   /* Only use ntor v3 with exits that support congestion control,
    * and only when it is enabled. */
-  if (ei->exit_supports_congestion_control &&
-      congestion_control_enabled())
+  if (ei->use_congestion_control)
     *handshake_type_out = ONION_HANDSHAKE_TYPE_NTOR_V3;
   else if (ei->enable_cgo)
     *handshake_type_out = ONION_HANDSHAKE_TYPE_NTOR_V3;
@@ -1387,6 +1386,10 @@ circuit_truncated(origin_circuit_t *circ, int reason)
 
     layer->next = victim->next;
     cpath_free(victim);
+    /* NOTE: If we were ever to reinstate this code, we should
+     * ensure that `victim` is not the sendme_digest_hop,
+     * or clear sendme_digest_hop if it is.
+     */
   }
 
   log_info(LD_CIRC, "finished");
@@ -2732,12 +2735,12 @@ client_circ_negotiation_message(const extend_info_t *ei,
 
   trn_extension_t *ext = trn_extension_new();
 
-  if (ei->exit_supports_congestion_control &&
-      congestion_control_enabled()) {
+  if (ei->use_congestion_control) {
     if (congestion_control_build_ext_request(ext) < 0) {
       goto err;
     }
     cc_enabled = true;
+    params_out->cc_requested = true;
   }
 
   if (cc_enabled && ei->enable_cgo) {

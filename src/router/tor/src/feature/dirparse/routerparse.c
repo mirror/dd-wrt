@@ -280,6 +280,10 @@ router_parse_list_from_string(const char **s, const char *eos,
   while (1) {
     char raw_digest[DIGEST_LEN];
     int have_raw_digest = 0;
+    // True if raw_digest covers the whole input that we pass to
+    // X_parse_entry_from_string (up to the signature), and so
+    // we can trust `dl_again`.
+    bool digest_covers_whole_input = false;
     int dl_again = 0;
     if (find_start_of_next_router_or_extrainfo(s, eos, &have_extrainfo) < 0)
       break;
@@ -298,6 +302,7 @@ router_parse_list_from_string(const char **s, const char *eos,
     if (have_extrainfo && want_extrainfo) {
       routerlist_t *rl = router_get_routerlist();
       have_raw_digest = router_get_extrainfo_hash(*s, end-*s, raw_digest) == 0;
+      digest_covers_whole_input = fast_memeqstart(*s, end-*s, "extra-info ");
       extrainfo = extrainfo_parse_entry_from_string(*s, end,
                                        saved_location != SAVED_IN_CACHE,
                                        rl->identity_map, &dl_again);
@@ -307,6 +312,7 @@ router_parse_list_from_string(const char **s, const char *eos,
       }
     } else if (!have_extrainfo && !want_extrainfo) {
       have_raw_digest = router_get_router_hash(*s, end-*s, raw_digest) == 0;
+      digest_covers_whole_input = fast_memeqstart(*s, end-*s, "router ");
       router = router_parse_entry_from_string(*s, end,
                                               saved_location != SAVED_IN_CACHE,
                                               allow_annotations,
@@ -319,7 +325,8 @@ router_parse_list_from_string(const char **s, const char *eos,
         elt = router;
       }
     }
-    if (! elt && ! dl_again && have_raw_digest && invalid_digests_out) {
+    if (! elt && ! dl_again && have_raw_digest && digest_covers_whole_input &&
+        invalid_digests_out) {
       smartlist_add(invalid_digests_out, tor_memdup(raw_digest, DIGEST_LEN));
     }
     if (!elt) {

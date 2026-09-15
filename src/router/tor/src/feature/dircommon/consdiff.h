@@ -85,7 +85,8 @@ STATIC void set_changed(bitarray_t *changed1, bitarray_t *changed2,
                         const smartlist_slice_t *slice2);
 STATIC int consensus_split_lines(smartlist_t *out,
                                  const char *s, size_t len,
-                                 struct memarea_t *area);
+                                 struct memarea_t *area,
+                                 size_t max_lines);
 STATIC void smartlist_add_linecpy(smartlist_t *lst, struct memarea_t *area,
                                   const char *s);
 STATIC int lines_eq(const cdline_t *a, const cdline_t *b);

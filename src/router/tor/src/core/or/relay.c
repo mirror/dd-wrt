@@ -2872,10 +2872,15 @@ uint64_t oom_stats_n_bytes_removed_cell = 0;
 uint64_t oom_stats_n_bytes_removed_geoip = 0;
 uint64_t oom_stats_n_bytes_removed_hsdir = 0;
 
+/** If true, the mainloop needs to run cell_queues_reclaim_memory(). */
+bool mainloop_must_free_memory = false;
+
 /** Check whether we've got too much space used for cells.  If so,
- * call the OOM handler and return 1.  Otherwise, return 0. */
-STATIC int
-cell_queues_check_size(void)
+ * then schedle the OOM handler (if reclaim_immediately is true) or
+ * free the memory (if reclaim_immediately is false) and return 1.
+ * Otherwise, return 0. */
+static int
+cell_queues_check_reclaim_impl(bool reclaim_immediately)
 {
   size_t removed = 0;
   time_t now = time(NULL);
@@ -2892,9 +2897,26 @@ cell_queues_check_size(void)
   alloc += dns_cache_total;
   const size_t conflux_total = conflux_get_total_bytes_allocation();
   alloc += conflux_total;
+
   if (alloc >= get_options()->MaxMemInQueues_low_threshold) {
     last_time_under_memory_pressure = approx_time();
-    if (alloc >= get_options()->MaxMemInQueues) {
+
+    if (alloc >= get_options()->MaxMemInQueues && ! reclaim_immediately) {
+      /* Note that we're breaking the mainloop because we are OOM. */
+      mainloop_must_free_memory = true;
+
+      /* We stop invoking any more pending callbacks after this one,
+       * since we want to reclaim free memory immediately.
+       *
+       * We do not use a post-loop callback since that would wait
+       * for many other callbacks, which could themselves allocate more
+       * memory.
+       */
+      tor_libevent_exit_loop_after_callback(tor_libevent_get_base());
+      return 1;
+    } else if (alloc >= get_options()->MaxMemInQueues && reclaim_immediately) {
+      /* We are reclaiming the memory _now_ */
+
       /* Note this overload down */
       rep_hist_note_overload(OVERLOAD_GENERAL);
 
@@ -2942,6 +2964,30 @@ cell_queues_check_size(void)
     }
   }
   return 0;
+}
+
+/**
+ * Check whether we are out of ram; if so, schedule an OOM scan, and
+ * return 1.  Otherwise return 0.
+ */
+STATIC int
+cell_queues_check_size(void)
+{
+  return cell_queues_check_reclaim_impl(false);
+}
+
+/**
+ * Assuming we are out of ram,
+ * try to reclaim memory until we are below our threshold.
+ *
+ * Note that this function tends to free circuits, conflux join points,
+ * and other structures.  Do not call it while holding live references
+ * to such objects. */
+void
+cell_queues_reclaim_memory(void)
+{
+  cell_queues_check_reclaim_impl(true);
+  mainloop_must_free_memory = false;
 }
 
 /** Return true if we've been under memory pressure in the last

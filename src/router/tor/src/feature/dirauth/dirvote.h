@@ -53,7 +53,7 @@
 #define MIN_SUPPORTED_CONSENSUS_METHOD 32
 
 /** The highest consensus method that we currently support. */
-#define MAX_SUPPORTED_CONSENSUS_METHOD 35
+#define MAX_SUPPORTED_CONSENSUS_METHOD 36
 
 /**
  * Lowest consensus method for which we suppress the published time in
@@ -72,6 +72,13 @@
  * in microdescs.
  */
 #define MIN_METHOD_FOR_FAMILY_IDS 35
+
+/**
+ * Lowest supported consensus method for which we will generate
+ * microdescriptors without TAP keys when the corresponding router
+ * descriptors have no TAP keys.
+ */
+#define MIN_METHOD_TO_PERMIT_ABSENT_TAP_KEYS 36
 
 /** Default bandwidth to clip unmeasured bandwidths to using method >=
  * MIN_METHOD_TO_CLIP_UNMEASURED_BW.  (This is not a consensus method; do not

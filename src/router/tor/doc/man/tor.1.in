@@ -2,12 +2,12 @@
 .\"     Title: tor
 .\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 06/25/2026
+.\"      Date: 09/08/2026
 .\"    Manual: Tor Manual
 .\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TOR" "1" "06/25/2026" "Tor" "Tor Manual"
+.TH "TOR" "1" "09/08/2026" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -3206,6 +3206,11 @@ Authoritative directories only\&. These options contain a comma\-separated list 
 Authoritative directories only\&. Switch for the shared random protocol\&. If zero, the authority won\(cqt participate in the protocol\&. If non\-zero (default), the flag "shared\-rand\-participate" is added to the authority vote indicating participation in the protocol\&. (Default: 1)
 .RE
 .PP
+\fBAuthDirSupport048Clients\fR \fB0\fR|\fB1\fR
+.RS 4
+Authoritative directory only\&. If true, we do not accept any router descriptors or generate any consensuses that would confuse clients running 0\&.4\&.8 and earlier\&. If false, 0\&.4\&.8 clients will get a somewhat degraded view of the network, but will generally continue working\&. (Default: 0)
+.RE
+.PP
 \fBAuthDirTestEd25519LinkKeys\fR \fB0\fR|\fB1\fR
 .RS 4
 Authoritative directories only\&. If this option is set to 0, then we treat relays as "Running" if their RSA key is correct when we probe them, regardless of their Ed25519 key\&. We should only ever set this option to 0 if there is some major bug in Ed25519 link authentication that causes us to label all the relays as not Running\&. (Default: 1)
@@ -3305,7 +3310,7 @@ should be set too\&.
 .PP
 \fBMinimalAcceptedServerVersion\fR \fISTRING\fR
 .RS 4
-STRING is the oldest Tor version accepted by the directory authority for relays and bridge\&. Any older version will be rejected\&. (Default: 0\&.4\&.7\&.0\-alpha\-dev)
+STRING is the oldest Tor version accepted by the directory authority for relays and bridge\&. Any older version will be rejected\&. (Default: 0\&.4\&.9\&.1\-alpha)
 .RE
 .PP
 \fBV3AuthDistDelay\fR \fIN\fR \fBseconds\fR|\fBminutes\fR|\fBhours\fR

@@ -112,6 +112,7 @@
 #include "app/config/or_state_st.h"
 #include "feature/nodelist/routerinfo_st.h"
 #include "core/or/socks_request_st.h"
+#include "core/or/relay.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -2492,6 +2493,14 @@ run_main_loop_once(void)
    * of these happens, then run all the appropriate callbacks. */
   loop_result = tor_libevent_run_event_loop(tor_libevent_get_base(),
                                             called_loop_once);
+
+  if (mainloop_must_free_memory) {
+    /* Note that calling event_base_loopbreak() can set the return value
+     * to -1, so we need to clear it in this case. :/
+     */
+    cell_queues_reclaim_memory();
+    loop_result = 0;
+  }
 
   if (get_options()->MainloopStats) {
     /* Update our main loop counters. */
