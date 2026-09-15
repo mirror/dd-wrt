@@ -669,7 +669,7 @@ static int otto_l3_port_dev_lower_find(struct net_device *dev, struct otto_l3_ct
 	struct netdev_nested_priv _priv;
 
 	data.ctrl = ctrl;
-	data.port = 0;
+	data.port = -EINVAL;
 	_priv.data = (void *)&data;
 
 	netdev_walk_all_lower_dev(dev, otto_l3_port_lower_walk, &_priv);
@@ -867,8 +867,6 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 		dev_dbg(ctrl->dev, "%s: Setting up fwding: ip %pI4, GW mac %016llx\n",
 			__func__, &ip_addr, mac);
 
-		/* Reads the ROUTING table entry associated with the route */
-		ctrl->cfg->route_read(ctrl, r->id, r);
 		dev_dbg(ctrl->dev, "Route with id %d to %pI4 / %d\n",
 			r->id, &r->dst_ip, r->prefix_len);
 
@@ -969,6 +967,29 @@ static int otto_l3_port_ipv4_resolve(struct otto_l3_ctrl *ctrl,
 	return err;
 }
 
+/* The hardware search keys on the masked destination, so a shorter prefix that
+ * covers the same address answers as well. The SDK reads the entry back and
+ * compares it with the route it asked for before touching it.
+ */
+static bool otto_l3_route_is_at(struct otto_l3_ctrl *ctrl, int id, struct otto_l3_route *r)
+{
+	struct otto_l3_route entry;
+
+	ctrl->cfg->route_read(ctrl, id, &entry);
+	if (!entry.attr.valid || entry.attr.type != r->attr.type ||
+	    entry.prefix_len != r->prefix_len)
+		return false;
+
+	switch (r->attr.type) {
+	case 0:
+		return entry.dst_ip == r->dst_ip;
+	case 2:
+		return ipv6_addr_equal(&entry.dst_ip6, &r->dst_ip6);
+	}
+
+	return false;
+}
+
 static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
 	int id;
@@ -990,13 +1011,28 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 	} else {
 		/* If there is a HW representation of the route, delete it */
 		if (ctrl->cfg->route_lookup_hw) {
-			id = ctrl->cfg->route_lookup_hw(ctrl, r);
+			/* The route was written at its own id; ask the hardware
+			 * only when it is not there.
+			 */
+			if (otto_l3_route_is_at(ctrl, r->id, r)) {
+				id = r->id;
+			} else {
+				id = ctrl->cfg->route_lookup_hw(ctrl, r);
+				if (id >= 0 && !otto_l3_route_is_at(ctrl, id, r)) {
+					dev_err(ctrl->dev,
+						"prefix route %pI4/%d: row %d holds another route\n",
+						&r->dst_ip, r->prefix_len, id);
+					id = -1;
+				}
+			}
+
 			if (id >= 0) {
 				dev_dbg(ctrl->dev, "Got id for prefix route: %d\n", id);
 				r->attr.valid = false;
 				ctrl->cfg->route_write(ctrl, id, r);
 			} else {
-				dev_err(ctrl->dev, "Prefix route was not in hardware\n");
+				dev_err(ctrl->dev, "prefix route %pI4/%d was not in hardware\n",
+					&r->dst_ip, r->prefix_len);
 			}
 		}
 		clear_bit(r->id, ctrl->route_use_bm);
@@ -1013,6 +1049,12 @@ static struct otto_l3_route *otto_l3_host_route_alloc(struct otto_l3_ctrl *ctrl,
 	mutex_lock(ctrl->lock);
 
 	idx = find_first_zero_bit(ctrl->host_route_use_bm, MAX_HOST_ROUTES);
+	if (idx >= MAX_HOST_ROUTES) {
+		dev_err(ctrl->dev, "host route table full, %d entries in use\n",
+			MAX_HOST_ROUTES);
+		mutex_unlock(ctrl->lock);
+		return NULL;
+	}
 	dev_dbg(ctrl->dev, "id: %d, ip %pI4\n", idx, &ip);
 
 	r = kzalloc(sizeof(*r), GFP_KERNEL);
@@ -1057,6 +1099,12 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl, u32 
 	mutex_lock(ctrl->lock);
 
 	idx = find_first_zero_bit(ctrl->route_use_bm, MAX_ROUTES);
+	if (idx >= MAX_ROUTES) {
+		dev_err(ctrl->dev, "prefix route table full, %d entries in use\n",
+			MAX_ROUTES);
+		mutex_unlock(ctrl->lock);
+		return NULL;
+	}
 	dev_dbg(ctrl->dev, "id: %d, ip %pI4\n", idx, &ip);
 
 	r = kzalloc(sizeof(*r), GFP_KERNEL);
@@ -1161,7 +1209,7 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 		if (route->nh.if_id < 0)
 			goto out_free_rmac;
 
-		if (!nh->fib_nh_gw4) {
+		if (!nh->fib_nh_gw4 && route->is_host_route) {
 			int slot;
 
 			route->nh.mac = mac;
@@ -1170,7 +1218,10 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 			route->attr.action = ROUTE_ACT_TRAP2CPU;
 			route->attr.type = 0;
 
-			slot = ctrl->cfg->find_slot(ctrl, route, false);
+			slot = ctrl->cfg->find_slot(ctrl, route, true);
+			if (slot < 0)
+				slot = ctrl->cfg->find_slot(ctrl, route, false);
+
 			if (slot < 0) {
 				dev_err(ctrl->dev, "no slot for host route %pI4\n",
 					&route->dst_ip);
@@ -1201,6 +1252,7 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	struct fib_nh *nh = fib_info_nh(info->fi, 0);
 	struct rhlist_head *tmp, *list;
 	struct otto_l3_route *route;
+	bool found = false;
 
 	if (otto_l3_fib_check_v4(ctrl, info, FIB_EVENT_ENTRY_DEL))
 		return 0;
@@ -1216,10 +1268,17 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 		if (route->dst_ip == info->dst && route->prefix_len == info->dst_len) {
 			dev_info(ctrl->dev, "found a route with id %d, nh-id %d\n",
 				 route->id, route->nh.id);
+			found = true;
 			break;
 		}
 	}
 	rcu_read_unlock();
+
+	if (!found) {
+		dev_err(ctrl->dev, "no route %pI4/%d via %pI4\n",
+			&info->dst, info->dst_len, &nh->fib_nh_gw4);
+		return -ENOENT;
+	}
 
 	rtl83xx_l2_nexthop_rm(priv, &route->nh);
 
