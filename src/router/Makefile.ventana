@@ -155,6 +155,7 @@ kernelsource:
 	cd $(LINUXDIR)/../ && ./patch $(KERNELVERSION)
 
 include kernel-features.mk
+include common.mk
 
 kernel:
 	# Also build kernel
@@ -163,94 +164,8 @@ kernel:
 	$(kernelfeatures)
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 
-	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
-	fi
-	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
-	fi
-
-	rm -rf $(TARGETDIR)/lib/modules
-	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
-
-	-$(MAKE) -f Makefile.ventana ath9k
-	-$(MAKE) -f Makefile.ventana ath9k-install
-	-$(MAKE) -f Makefile.ventana libutils
-	-$(MAKE) -f Makefile.ventana madwifi
-	-$(MAKE) -f Makefile.ventana madwifi-install
-	-$(MAKE) -f Makefile.ventana batman-adv
-	-$(MAKE) -f Makefile.ventana batman-adv-install
-	-$(MAKE) -f Makefile.ventana ndpi-netfilter
-	-$(MAKE) -f Makefile.ventana ndpi-netfilter-install
-ifeq ($(CONFIG_NTFS3G),y)
-	-$(MAKE) -f Makefile.ventana ntfs3
-	-$(MAKE) -f Makefile.ventana ntfs3-install
-endif
-ifeq ($(CONFIG_ZFS),y)
-	-$(MAKE) -f Makefile.ventana zfs
-	-$(MAKE) -f Makefile.ventana zfs-install
-endif
-ifeq ($(CONFIG_IPV6),y)
-	-$(MAKE) -f Makefile.ventana nat46
-	-$(MAKE) -f Makefile.ventana nat46-install
-endif
-ifeq ($(CONFIG_OPENVPN),y)
-	-$(MAKE) -f Makefile.ventana openvpn-dco
-	-$(MAKE) -f Makefile.ventana openvpn-dco-install
-endif
-ifeq ($(CONFIG_SMBD),y)
-	-$(MAKE) -f Makefile.ventana smbd
-	-$(MAKE) -f Makefile.ventana smbd-install
-endif
-ifeq ($(CONFIG_WIREGUARD),y)
-	-$(MAKE) -f Makefile.ventana wireguard
-	-$(MAKE) -f Makefile.ventana wireguard-install
-endif
-ifeq ($(CONFIG_I2C_GPIO_CUSTOM),y)
-	-$(MAKE) -f Makefile.ventana i2c-custom-gpio
-	-$(MAKE) -f Makefile.ventana i2c-custom-gpio-install
-endif
-ifeq ($(CONFIG_CAKE),y)
-	-$(MAKE) -f Makefile.ventana cake
-	-$(MAKE) -f Makefile.ventana cake-install
-	-$(MAKE) -f Makefile.ventana fq_codel_fast
-	-$(MAKE) -f Makefile.ventana fq_codel_fast-install
-endif
-	-$(MAKE) -f Makefile.ventana uniwip-gpio
-	-$(MAKE) -f Makefile.ventana uniwip-gpio-install
-
-	find $(ARCH)-uclibc/install $(ARCH)-uclibc/target  -name \*.ko | \
-		xargs $(ARCH)-linux-nm | \
-		awk '$$1 == "U" { print $$2 } ' | \
-		sort -u > $(LINUXDIR)/mod_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' R __ksymtab' | sed -e 's,........ R __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
-	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
-	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
-	( \
-		echo '#define SYMTAB_KEEP \'; \
-		cat $(LINUXDIR)/sym_include.txt | \
-			awk '{print "KEEP(*(___ksymtab+" $$$$1 ")) \\" }'; \
-		echo; \
-		echo '#define SYMTAB_KEEP_GPL \'; \
-		cat $(LINUXDIR)/sym_include.txt | \
-			awk '{print "KEEP(*(___ksymtab_gpl+" $$$$1 ")) \\" }'; \
-		echo; \
-		echo '#define SYMTAB_DISCARD \'; \
-		cat $(LINUXDIR)/sym_exclude.txt | \
-			awk '{print "*(___ksymtab+" $$$$1 ") \\" }'; \
-		echo; \
-		echo '#define SYMTAB_DISCARD_GPL \'; \
-		cat $(LINUXDIR)/sym_exclude.txt | \
-			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
-		echo; \
-	) > $(LINUXDIR)/symtab.h
-	rm -f $(LINUXDIR)/vmlinux
-	$(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
-
-include common.mk
+	$(MAKE) -f Makefile.ventana kernel-relink-prep MAKEEXT=ventana KBUILD_TARGETS="zImage dtbs" ARCH=arm
+	$(MAKE) -f Makefile.ventana kernel-relink MAKEEXT=ventana KBUILD_TARGETS="zImage dtbs" ARCH=arm
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
@@ -324,27 +239,36 @@ endif
 	mkdir $(TARGETDIR)/boot
 	mkimage -A arm -O linux -T kernel -C none -a 0x10008000 -e 0x10008000 -n 'DD-WRT' -d $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/uImage
 	cp $(ARCH)-uclibc/uImage $(TARGETDIR)/boot 
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw560x.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw5903.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw5904.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw551x.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw552x.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw553x.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw54xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw53xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw52xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw51xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw560x.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw5903.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw5904.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw551x.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw552x.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw553x.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw54xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw53xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw52xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw51xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw5400-a.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6q-gw560x.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6q-gw5903.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6q-gw5904.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6q-gw5907.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6q-gw5910.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6q-gw5912.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6q-gw5913.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6q-gw551x.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6q-gw552x.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6q-gw553x.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6q-gw54xx.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6q-gw5400-a.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6q-gw53xx.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6q-gw52xx.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6q-gw51xx.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6dl-gw560x.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6dl-gw5903.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6dl-gw5904.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6dl-gw5907.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6dl-gw5910.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6dl-gw5912.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6dl-gw5913.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6dl-gw551x.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6dl-gw552x.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6dl-gw553x.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6dl-gw54xx.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6dl-gw53xx.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6dl-gw52xx.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6dl-gw51xx.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/nxp/imx/imx6q-gw5400-a.dtb $(TARGETDIR)/boot
 #	-cp tools/imx6q-gw54xx.dtb $(TARGETDIR)/boot
 #	-cp tools/imx6q-gw5400-a.dtb $(TARGETDIR)/boot
 	mkfs.ubifs -F -m 2048 -e 124KiB -c 1912 -x favor_lzo -X 10 -o $(ARCH)-uclibc/root.ubifs -d $(TARGETDIR)
