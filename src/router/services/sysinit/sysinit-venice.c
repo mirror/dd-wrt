@@ -130,26 +130,42 @@ void start_sysinit(void)
 	eval("i2cset", "-f", "-y", "0", "0x20", "0", "0x80");
 	eval("i2cset", "-f", "-y", "0", "0x20", "11", "0x10");
 	char *board = nvram_safe_get("DD_BOARD");
-/*	if (!strncmp(board, "Gateworks Ventana GW54", 22))
-		eval("gsp_updater", "-f", "/etc/gsc_54xx_v52.txt", "-r", "52");
+/*	if (!strncmp(board, "Gateworks Venice GW74", 21))
+		eval("gsp_updater", "-f", "/etc/gsc_7400_v67.txt", "-r", "67");
 
-	if (!strncmp(board, "Gateworks Ventana GW53", 22))
-		eval("gsp_updater", "-f", "/etc/gsc_53xx_v52.txt", "-r", "52");
+	if (!strncmp(board, "Gateworks Venice GW7100", 23))
+		eval("gsp_updater", "-f", "/etc/gsc_7000_v67.txt", "-r", "67");
 
-	if (!strncmp(board, "Gateworks Ventana GW52", 22))
-		eval("gsp_updater", "-f", "/etc/gsc_52xx_v52.txt", "-r", "52");
+	if (!strncmp(board, "Gateworks Venice GW7120", 23))
+		eval("gsp_updater", "-f", "/etc/gsc_7020_v67.txt", "-r", "67");
 
-	if (!strncmp(board, "Gateworks Ventana GW51", 22))
-		eval("gsp_updater", "-f", "/etc/gsc_51xx_v52.txt", "-r", "52");
+	if (!strncmp(board, "Gateworks Venice GW7200", 23))
+		eval("gsp_updater", "-f", "/etc/gsc_7000_v67.txt", "-r", "67");
 
-	if (!strncmp(board, "Gateworks Ventana GW551", 23))
-		eval("gsp_updater", "-f", "/etc/gsc_551x_v52.txt", "-r", "52");
+	if (!strncmp(board, "Gateworks Venice GW7220", 23))
+		eval("gsp_updater", "-f", "/etc/gsc_7020_v67.txt", "-r", "67");
 
-	if (!strncmp(board, "Gateworks Ventana GW552", 23))
-		eval("gsp_updater", "-f", "/etc/gsc_552x_v52.txt", "-r", "52");
+	if (!strncmp(board, "Gateworks Venice GW7300", 23))
+		eval("gsp_updater", "-f", "/etc/gsc_7000_v67.txt", "-r", "67");
 
-	if (!strncmp(board, "Gateworks Ventana GW553", 23))
-		eval("gsp_updater", "-f", "/etc/gsc_553x_v52.txt", "-r", "52");
+	if (!strncmp(board, "Gateworks Venice GW7320", 23))
+		eval("gsp_updater", "-f", "/etc/gsc_7020_v67.txt", "-r", "67");
+
+	if (!strncmp(board, "Gateworks Venice GW7901", 23))
+		eval("gsp_updater", "-f", "/etc/gsc_7901_v67.txt", "-r", "67");
+
+	if (!strncmp(board, "Gateworks Venice GW7902", 23))
+		eval("gsp_updater", "-f", "/etc/gsc_7902_v67.txt", "-r", "67");
+
+	if (!strncmp(board, "Gateworks Venice GW7903", 23))
+		eval("gsp_updater", "-f", "/etc/gsc_7903_v67.txt", "-r", "67");
+
+	if (!strncmp(board, "Gateworks Venice GW7904", 23))
+		eval("gsp_updater", "-f", "/etc/gsc_7904_v67.txt", "-r", "67");
+
+	if (!strncmp(board, "Gateworks Venice GW7906", 23))
+		eval("gsp_updater", "-f", "/etc/gsc_7906_v67.txt", "-r", "67");
+
 	*/
 
 	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "ondemand");
