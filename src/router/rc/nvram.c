@@ -125,10 +125,10 @@ static int nvram_main(int argc, char **argv)
 					fprintf(stderr, "can't write %s\n", *argv);
 					free(buf);
 					return 1;
-				} else {
-					fprintf(stderr, "missing filename\n\n");
-					nvram_usage();
 				}
+			} else {
+				fprintf(stderr, "missing filename\n\n");
+				nvram_usage();
 			}
 		} else if (!strncmp(*argv, "--force", 7)) {
 			force = 1;
