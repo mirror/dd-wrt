@@ -86,6 +86,9 @@ endif
 ifeq ($(CONFIG_NEWPORT),y)
 CFLAGS += -DHAVE_NEWPORT
 endif
+ifeq ($(CONFIG_VENICE),y)
+CFLAGS += -DHAVE_VENICE
+endif
 ifeq ($(CONFIG_ALPINE),y)
 CFLAGS += -DHAVE_ALPINE
 endif
