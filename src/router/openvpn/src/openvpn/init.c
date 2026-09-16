@@ -2640,15 +2640,6 @@ do_deferred_options(struct context *c, const unsigned int found, const bool is_u
         }
     }
 
-    if (found & OPT_P_SOCKFLAGS)
-    {
-        msg(D_PUSH, "OPTIONS IMPORT: --socket-flags option modified");
-        for (int i = 0; i < c->c1.link_sockets_num; i++)
-        {
-            link_socket_update_flags(c->c2.link_sockets[i], c->options.sockflags);
-        }
-    }
-
     if (found & OPT_P_PERSIST)
     {
         msg(D_PUSH, "OPTIONS IMPORT: --persist options modified");
@@ -3340,7 +3331,7 @@ do_init_crypto_tls(struct context *c, const unsigned int flags)
 
     /* should we not xmit any packets until we get an initial
      * response from client? */
-    if (to.server && c->mode == CM_CHILD_TCP)
+    if (to.server && (c->mode == CM_CHILD_TCP || (c->mode == CM_P2P && options->ce.proto == PROTO_TCP_SERVER)))
     {
         to.xmit_hold = true;
     }
