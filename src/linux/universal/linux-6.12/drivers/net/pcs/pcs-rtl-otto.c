@@ -3045,6 +3045,7 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 		rtpcs_sds_write(sds, PAGE_ANA_10G_EXT, 0x14, 0xE008);
 		break;
 
+	case RTPCS_SDS_MODE_HISGMII:
 	case RTPCS_SDS_MODE_2500BASEX:
 		ret = rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_ana_3g,
 					     ARRAY_SIZE(rtpcs_930x_sds_cfg_ana_3g));
@@ -4257,6 +4258,7 @@ static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 	mutex_lock(&ctrl->lock);
 	switch (sds->hw_mode) {
 	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_HISGMII:
 	case RTPCS_SDS_MODE_1000BASEX:
 	case RTPCS_SDS_MODE_2500BASEX:
 		rtpcs_pcs_get_state_c37(sds, neg_mode, state);
