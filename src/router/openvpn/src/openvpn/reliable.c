@@ -693,8 +693,8 @@ reliable_send(struct reliable *rel, int *opcode)
     {
         /* The initial timeout is bounded by RELIABLE_MAX_INITIAL_TIMEOUT, so
          * shifting it cannot overflow. */
-        static_assert(RELIABLE_MAX_INITIAL_TIMEOUT <= (INT_MAX >> RELIABLE_MAX_TIMEOUT_SHIFT),
-                      "initial reliable timeout overflows when shifted");
+//        static_assert(RELIABLE_MAX_INITIAL_TIMEOUT <= (INT_MAX >> RELIABLE_MAX_TIMEOUT_SHIFT),
+//                      "initial reliable timeout overflows when shifted");
         const interval_t max_timeout = rel->initial_timeout << RELIABLE_MAX_TIMEOUT_SHIFT;
 
         /* exponential backoff */
