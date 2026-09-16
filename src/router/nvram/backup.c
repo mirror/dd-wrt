@@ -470,7 +470,7 @@ int nvram_restore(char *filename, int force, int keepsettings)
 				value[l] = 0;
 				//                              if (!strcmp(name, "nvram_ver"))
 				//                                      nvram_ver = value;
-				char *routername = getRouterName();
+				char *routername = nvram_safe_get("DD_BOARD");
 #if defined(HAVE_NEWPORT) || defined(HAVE_VENTANA) || defined(HAVE_LAGUNA) || defined(HAVE_VENICE)
 				if (!strncmp(routername, "Gateworks Newport GW61", 22) &&
 				    !strncmp(value, "Gateworks Newport GW61", 22))
