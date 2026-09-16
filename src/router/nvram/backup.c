@@ -508,23 +508,23 @@ int nvram_restore(char *filename, int force, int keepsettings)
 				if (!strncmp(routername, "Gateworks Ventana GW79", 22) &&
 				    !strncmp(value, "Gateworks Ventana GW79", 22))
 					goto success;
-				if (!strncmp(routername, "Gateworks Venice GW71", 22) &&
-				    !strncmp(value, "Gateworks Venice GW71", 22))
+				if (!strncmp(routername, "Gateworks Venice GW71", 21) &&
+				    !strncmp(value, "Gateworks Venice GW71", 21))
 					goto success;
-				if (!strncmp(routername, "Gateworks Venice GW72", 22) &&
-				    !strncmp(value, "Gateworks Venice GW72", 22))
+				if (!strncmp(routername, "Gateworks Venice GW72", 21) &&
+				    !strncmp(value, "Gateworks Venice GW72", 21))
 					goto success;
-				if (!strncmp(routername, "Gateworks Venice GW73", 22) &&
-				    !strncmp(value, "Gateworks Venice GW73", 22))
+				if (!strncmp(routername, "Gateworks Venice GW73", 21) &&
+				    !strncmp(value, "Gateworks Venice GW73", 21))
 					goto success;
-				if (!strncmp(routername, "Gateworks Venice GW74", 22) &&
-				    !strncmp(value, "Gateworks Venice GW74", 22))
+				if (!strncmp(routername, "Gateworks Venice GW74", 21) &&
+				    !strncmp(value, "Gateworks Venice GW74", 21))
 					goto success;
-				if (!strncmp(routername, "Gateworks Venice GW75", 22) &&
-				    !strncmp(value, "Gateworks Venice GW75", 22))
+				if (!strncmp(routername, "Gateworks Venice GW75", 21) &&
+				    !strncmp(value, "Gateworks Venice GW75", 21))
 					goto success;
-				if (!strncmp(routername, "Gateworks Venice GW79", 22) &&
-				    !strncmp(value, "Gateworks Venice GW79", 22))
+				if (!strncmp(routername, "Gateworks Venice GW79", 21) &&
+				    !strncmp(value, "Gateworks Venice GW79", 21))
 					goto success;
 				if (!strncmp(routername, "Gateworks Laguna GW23", 21) &&
 				    !strncmp(value, "Gateworks Laguna GW23", 21))
@@ -533,7 +533,7 @@ int nvram_restore(char *filename, int force, int keepsettings)
 				if (!c && !strcmp(name, "DD_BOARD")) {
 					fprintf(stdout, "backup is for board %s, board is %s\n", value, routername);
 #ifndef HAVE_X86
-					if (!nvram_match(name, value)) {
+					if (!nvram_match(name, routername)) {
 						if (!force) {
 							fprintf(stderr, "incompatible backup file!\n");
 							fclose(fp);
