@@ -1408,7 +1408,7 @@ static void __init ubi_auto_attach(void)
 
 	mutex_lock(&ubi_devices_mutex);
 	pr_notice("UBI: auto-attach mtd%d\n", mtd->index);
-	err = ubi_attach_mtd_dev(mtd, UBI_DEV_NUM_AUTO, 0, 0, false);
+	err = ubi_attach_mtd_dev(mtd, UBI_DEV_NUM_AUTO, 0, 0, false, false);
 	mutex_unlock(&ubi_devices_mutex);
 	if (err < 0) {
 		pr_err("UBI error: cannot attach mtd%d\n", mtd->index);
