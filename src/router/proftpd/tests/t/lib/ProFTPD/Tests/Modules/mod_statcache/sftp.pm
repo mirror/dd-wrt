@@ -169,7 +169,7 @@ sub statcache_sftp_stat_file {
         my ($err_code, $err_name, $err_str) = $ssh2->error();
         die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
       }
- 
+
       my $sftp = $ssh2->sftp();
       unless ($sftp) {
         my ($err_code, $err_name, $err_str) = $ssh2->error();
@@ -446,7 +446,7 @@ sub statcache_sftp_stat_dir {
         my ($err_code, $err_name, $err_str) = $ssh2->error();
         die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
       }
- 
+
       my $sftp = $ssh2->sftp();
       unless ($sftp) {
         my ($err_code, $err_name, $err_str) = $ssh2->error();
@@ -704,7 +704,7 @@ sub statcache_sftp_upload_file {
         my ($err_code, $err_name, $err_str) = $ssh2->error();
         die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
       }
- 
+
       my $sftp = $ssh2->sftp();
       unless ($sftp) {
         my ($err_code, $err_name, $err_str) = $ssh2->error();

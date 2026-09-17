@@ -28,7 +28,7 @@
 int sftp_misc_chown_file(pool *p, pr_fh_t *fh) {
   struct stat st;
   int res, xerrno;
- 
+
   if (fh == NULL) {
     errno = EINVAL;
     return -1;

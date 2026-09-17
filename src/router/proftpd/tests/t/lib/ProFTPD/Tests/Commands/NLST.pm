@@ -67,6 +67,11 @@ my $TESTS = {
     test_class => [qw(bug forking)],
   },
 
+  nlst_ok_glob_limited_dir => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
   nlst_fails_login_required => {
     order => ++$order,
     test_class => [qw(forking)],
@@ -1304,6 +1309,151 @@ sub nlst_ok_glob_dir_with_recursion_bug4084 {
         'cmds.passwd' => 1,
         'cmds.conf' => 1,
         'test.d/test.dat' => 1,
+      };
+
+      my $ok = 1;
+      my $mismatch;
+      foreach my $name (keys(%$res)) {
+        unless (defined($expected->{$name})) {
+          $mismatch = $name;
+          $ok = 0;
+          last;
+        }
+      }
+
+      unless ($ok) {
+        die("Unexpected name '$mismatch' appeared in NLST data")
+      }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+
+  $self->assert_child_ok($pid);
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub nlst_ok_glob_limited_dir {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
+
+  my $sub_dir = File::Spec->rel2abs("$tmpdir/test.d");
+  mkpath($sub_dir);
+
+  my $sub_file = File::Spec->rel2abs("$sub_dir/test.dat");
+  if (open(my $fh, "> $sub_file")) {
+    close($fh);
+
+  } else {
+    die("Can't open $sub_file: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    my $config_dir = $sub_dir;
+
+    if ($^O eq 'darwin') {
+      # MacOSX-specific hack
+      $config_dir = '/private' . $config_dir;
+    }
+
+    print $fh <<EOC;
+<Directory $config_dir>
+  <Limit NLST>
+    DenyAll
+  </Limit>
+</Directory>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $conn = $client->nlst_raw("*");
+      unless ($conn) {
+        die("NLST failed: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf;
+      $conn->read($buf, 8192, 25);
+      eval { $conn->close() };
+
+      $client->quit();
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# data:\n$buf";
+      }
+
+      my $res = {};
+      my $names = [split(/\n/, $buf)];
+      foreach my $name (@$names) {
+        $res->{$name} = 1;
+      }
+
+      my $expected = {
+        'cmds.pid' => 1,
+        'cmds.scoreboard' => 1,
+        'cmds.scoreboard.lck' => 1,
+        'cmds.group' => 1,
+        'cmds.passwd' => 1,
+        'cmds.conf' => 1,
       };
 
       my $ok = 1;

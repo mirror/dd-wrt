@@ -29,7 +29,7 @@
  * Configuration:
  *   DisplayReadme <file-or-pattern>
  *
- * "DisplayReadme Readme" will tell the user when "Readme" on the current 
+ * "DisplayReadme Readme" will tell the user when "Readme" on the current
  * working directory was last changed.  When the current working directory is
  * changed (i.e. CWD, CDUP, etc), mod_readme will search for Readme again
  * in that directory and also display its last changing dates if found.
@@ -41,7 +41,7 @@
 
 static void readme_add_path(pool *p, const char *path) {
   struct stat st;
-  
+
   if (pr_fsio_stat(path, &st) == 0) {
     int days = 0;
     time_t now;
@@ -73,7 +73,7 @@ static void readme_add_path(pool *p, const char *path) {
 #else
       pr_snprintf(time_str, sizeof(time_str)-1, "%.26s", ctime(&st.st_mtime));
 #endif /* HAVE_CTIME_R */
-    
+
       ptr = strchr(time_str, '\n');
       if (ptr != NULL) {
         *ptr = '\0';
@@ -104,7 +104,7 @@ static void readme_add_path(pool *p, const char *path) {
 static void readme_add_pattern(pool *p, const char *pattern) {
   glob_t g;
   int a;
-  
+
   a = pr_fs_glob(pattern, 0, NULL, &g);
   if (!a) {
     char **path;
@@ -129,7 +129,7 @@ static void readme_add_pattern(pool *p, const char *pattern) {
     pr_log_debug(DEBUG3, MOD_README_VERSION
       ": unknown error during globbing of '%s'", pattern);
   }
- 
+
   pr_fs_globfree(&g);
 }
 
@@ -138,16 +138,16 @@ static void readme_add_pattern(pool *p, const char *pattern) {
 
 MODRET readme_post_cmd(cmd_rec *cmd) {
   config_rec *c;
-  
+
   c = find_config(CURRENT_CONF, CONF_PARAM, "DisplayReadme", FALSE);
-  while (c) {
+  while (c != NULL) {
     char *path;
 
     path = c->argv[0];
-    
+
     pr_log_debug(DEBUG5, "Checking for display pattern %s", path);
     readme_add_pattern(cmd->tmp_pool, path);
-    
+
     c = find_config_next(c, c->next, CONF_PARAM, "DisplayReadme",FALSE);
   }
 
@@ -160,16 +160,16 @@ MODRET readme_post_cmd(cmd_rec *cmd) {
 /* usage: DisplayReadme path|pattern */
 MODRET set_displayreadme(cmd_rec *cmd) {
   config_rec *c;
-  
+
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
-  
+
   if (cmd->argc != 2) {
     CONF_ERROR(cmd, "syntax: DisplayReadme <filename-or-pattern>");
   }
-  
+
   c = add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
   c->flags |= CF_MERGEDOWN;
-  
+
   pr_log_debug(DEBUG5, "Added pattern %s to readme list",
     (char *) cmd->argv[1]);
   return PR_HANDLED(cmd);

@@ -73,6 +73,7 @@ The <code>mod_core</code> module handles most of the core FTP commands.
   <li><a href="#RegexOptions">RegexOptions</a>
   <li><a href="#ScoreboardFile">ScoreboardFile</a>
   <li><a href="#ScoreboardMutex">ScoreboardMutex</a>
+  <li><a href="#ScoreboardOptions">ScoreboardOptions</a>
   <li><a href="#ScoreboardScrub">ScoreboardScrub</a>
   <li><a href="#ServerAdmin">ServerAdmin</a>
   <li><a href="#ServerAlias">ServerAlias</a>
@@ -1048,10 +1049,8 @@ to the client), then set the optional second parameter to <em>on</em> or
 
 <p>
 If the <em>filename</em> is relative, it is looked for in the directory that
-the user has changed into.  Note that for anonymous ftp logins,
-<em>filename</em> <b>must</b> reside within the <code>chroot()</code>ed
-directory.  If <em>filename</em> cannot be found or accessed, no error occurs
-and nothing is logged or displayed to the client.
+the user has changed into.  If <em>filename</em> cannot be found or accessed,
+no error occurs and nothing is displayed to the client.
 
 <p>
 See the <a href="../howto/DisplayFiles.html">Display files</a> howto for
@@ -1075,7 +1074,7 @@ text file that will be displayed to the user when they initially connect,
 <i>before</i> they login.  The <em>filename</em> can be either relative or
 absolute.  In the case of a relative filename, the file is searched for
 starting in the home directory of the <code>User</code> as which the server is
-running.  As this can lead confusion, absolute pathnames are <i>highly
+running.  As this can lead to confusion, absolute pathnames are <i>highly
 recommended</i>.  If <em>filename</em> cannot be found or accessed, no error
 occurs and nothing is logged or displayed to the client.
 
@@ -1105,7 +1104,7 @@ searched for starting in the home directory of the logged-in user.  <b>Note</b>:
 if the session is restricted via <code>chroot</code>, either by the
 <code>DefaultRoot</code> directive or because its an
 <code>&lt;Anonymous&gt;</code> login, then <em>filename</em> must reside
-within the <code>chroot()</code> directory.  As this can lead confusion,
+within the <code>chroot()</code> directory.  As this can lead to confusion,
 absolute pathnames are <i>highly recommended</i>.  If <em>filename</em> cannot
 be found or accessed, no error occurs and nothing is logged or displayed to
 the client.
@@ -1530,12 +1529,23 @@ See also: <a href="#Define"><code>Define</code></a>
 <p>
 The <code>&lt;IfModule&gt;</code> and <code>&lt;/IfModule&gt;</code> define
 a <i>conditional</i> configuration section.  The directives appearing within
-that section are processed only if the <em>module-name</em> , used by
+that section are processed only if the <em>module-name</em>, used by
 <code>&lt;IfModule&gt;</code>, is present/loaded.  Otherwise, everything within
 the configuration section is skipped.
 
 <p>
-Example:
+The optional <em>!</em> character prefix to the <em>module-name</em> indicates
+that the section should be included if the named module is <b>not</b>
+present/loaded.
+
+<p>
+An <code>&lt;IfModule&gt;</code> section is <b>not</b> a separate
+configuration context like <code>&lt;VirtualHost&gt;</code> or
+<code>&lt;Directory&gt;</code>.  It is a condition, a way of telling the
+parse to include (or to skip) the enclosed section.
+
+<p>
+Examples:
 <pre>
   &lt;IfModule mod_load.c&gt;
     MaxLoad 10 "Access denied, server too busy"
@@ -2238,6 +2248,40 @@ the <code>ScoreboardMutex</code> be located in the same directory as the
 
 <p>
 <hr>
+<h3><a name="ScoreboardOptions">ScoreboardOptions</a></h3>
+<strong>Syntax:</strong> ScoreboardOptions <em>opt1 ...</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.3.9rc1 and later
+
+<p>
+The <code>ScoreboardOptions</code> directive is used to configure various
+optional behavior of the <a href="../howto/ScoreboardFile.html">scoreboard</a>.
+
+<p>
+Example:
+<pre>
+  ScoreboardOptions AllowMissingEntry
+</pre>
+
+<p>
+The currently implemented options are:
+<ul>
+  <li><code>AllowMissingEntry</code><br>
+    <p>
+    Under high load, it may not be possible to acquire an entry in the
+    <code>ScoreboardFile</code> due to high contention.  Clients will
+    be disconnected when this happens, unless this option is specified.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.9rc1</code>.
+  </li>
+</ul>
+
+<p>
+<hr>
 <h3><a name="ScoreboardScrub">ScoreboardScrub</a></h3>
 <strong>Syntax:</strong> ScoreboardScrub <em>on|off|secs</em><br>
 <strong>Default:</strong> ScoreboardScrub on<br>
@@ -2753,14 +2797,14 @@ See also: <a href="#SyslogFacility"><code>SyslogFacility</code></a>,
 <hr>
 <h3><a name="TCPBacklog">TCPBacklog</a></h3>
 <strong>Syntax:</strong> TCPBacklog <em>backlog-size</em><br>
-<strong>Default:</strong> 5<br>
+<strong>Default:</strong> <em>system</em><br>
 <strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_core<br>
 <strong>Compatibility:</strong> 0.99.0 and later
 
 <p>
-The <code>TCPBacklog</code> directive controls the TCP connection queue
-size for listening sockets; this directive only applies to <code>proftpd</code>
+The <code>TCPBacklog</code> directive controls the TCP connection queue size
+for listening sockets; this directive only applies to <code>proftpd</code>
 when it is configured with "<code>ServerType standalone</code>".  It has
 <b>no effect</b> if "<code>ServerType inetd</code>" is configured.
 
@@ -2863,7 +2907,7 @@ closure.  This delay is necessary for properly handling some FTP clients.
 If the client aborts a transfer and there is a long delay, this lingering close
 is the most likely culprit.  So if you encounter this delay, set
 <code>TimeoutLinger</code> to a low number to remove the delay.  The maximum
-allowed <em>seconds</em> is 65535 (108 minutes).
+allowed <em>seconds</em> is 65535 (18 hours).
 
 <p>
 For the curious, here are the full details: some FTP clients will close their
@@ -3341,7 +3385,7 @@ The solution is to use remove use of the deprecated
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2022 The ProFTPD Project<br>
+&copy; Copyright 2000-2023 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

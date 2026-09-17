@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -743,12 +743,20 @@ MODRET pw_auth(cmd_rec *cmd) {
       max > (time_t) 0 &&
       inact > (time_t) 0) {
     if (now > (lstchg + max + inact)) {
+      pr_trace_msg("auth", 7, "password last changed for user '%s' on %s + "
+        "maximum time between password changes (%lu secs) + "
+        "inactivity time after expiration (%lu secs) = %s, "
+        "rejecting authorization with AGEPWD", name, pr_strtime(lstchg),
+        (unsigned long) max, (unsigned long) inact,
+        pr_strtime(lstchg + max + inact));
       return PR_ERROR_INT(cmd, PR_AUTH_AGEPWD);
     }
   }
 
   if (expire > (time_t) 0 &&
       now > expire) {
+    pr_trace_msg("auth", 7, "password expired for user '%s' expired on %s, "
+      "rejecting authorization with DISABLEDPWD", name, pr_strtime(now));
     return PR_ERROR_INT(cmd, PR_AUTH_DISABLEDPWD);
   }
 
@@ -1655,15 +1663,15 @@ static int auth_unix_sess_init(void) {
     auth_unix_sess_reinit_ev, NULL);
 
   c = find_config(main_server->conf, CONF_PARAM, "AuthUnixOptions", FALSE);
-  if (c) {
+  if (c != NULL) {
     auth_unix_opts = *((unsigned long *) c->argv[0]);
   }
 
   c = find_config(main_server->conf, CONF_PARAM, "PersistentPasswd", FALSE);
-  if (c) {
+  if (c != NULL) {
     unix_persistent_passwd = *((int *) c->argv[0]);
   }
- 
+
   return 0;
 }
 

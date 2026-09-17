@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2017-2020 The ProFTPD Project team
+ * Copyright (c) 2017-2026 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -236,6 +236,10 @@ const char *pr_jot_get_logfmt_id_name(unsigned char logfmt_id) {
       name = "NOTE_VAR";
       break;
 
+    case LOGFMT_META_VAR_VAR:
+      name = "VAR_VAR";
+      break;
+
     case LOGFMT_META_XFER_STATUS:
       name = "XFER_STATUS";
       break;
@@ -282,6 +286,10 @@ const char *pr_jot_get_logfmt_id_name(unsigned char logfmt_id) {
 
     case LOGFMT_META_XFER_PORT:
       name = "XFER_PORT";
+      break;
+
+    case LOGFMT_META_XFER_SPEED:
+      name = "XFER_SPEED";
       break;
 
     case LOGFMT_META_XFER_TYPE:
@@ -411,12 +419,16 @@ pr_table_t *pr_jot_get_logfmt2json(pool *p) {
     PR_JSON_TYPE_STRING);
   add_json_info(p, map, LOGFMT_META_NOTE_VAR, PR_JOT_LOGFMT_NOTE_KEY,
     PR_JSON_TYPE_STRING);
+  add_json_info(p, map, LOGFMT_META_VAR_VAR, PR_JOT_LOGFMT_VAR_KEY,
+    PR_JSON_TYPE_STRING);
   add_json_info(p, map, LOGFMT_META_XFER_STATUS, PR_JOT_LOGFMT_XFER_STATUS_KEY,
     PR_JSON_TYPE_STRING);
   add_json_info(p, map, LOGFMT_META_XFER_FAILURE,
     PR_JOT_LOGFMT_XFER_FAILURE_KEY, PR_JSON_TYPE_STRING);
   add_json_info(p, map, LOGFMT_META_XFER_PORT, PR_JOT_LOGFMT_XFER_PORT_KEY,
     PR_JSON_TYPE_NUMBER);
+  add_json_info(p, map, LOGFMT_META_XFER_SPEED, PR_JOT_LOGFMT_XFER_SPEED_KEY,
+    PR_JSON_TYPE_STRING);
   add_json_info(p, map, LOGFMT_META_XFER_TYPE, PR_JOT_LOGFMT_XFER_TYPE_KEY,
     PR_JSON_TYPE_STRING);
   add_json_info(p, map, LOGFMT_META_MICROSECS, PR_JOT_LOGFMT_MICROSECS_KEY,
@@ -868,6 +880,24 @@ static const char *get_meta_filename(cmd_rec *cmd) {
     }
   }
 
+  /* If we're in the PRE_CMD phase, then the filename can't be filled in
+   * with the above techniques.
+   */
+  if (session.curr_phase == PRE_CMD &&
+      filename == NULL) {
+    char *decoded_path;
+
+    decoded_path = pr_fs_decode_path(p, cmd->arg);
+    filename = dir_abs_path(p, decoded_path, TRUE);
+  }
+
+  /* Use the realpath FSIO function as well, in case of mod_vroot usage
+   * (Issue #1808).
+   */
+  if (filename != NULL) {
+    filename = pr_fsio_realpath(p, filename);
+  }
+
   return filename;
 }
 
@@ -948,6 +978,17 @@ static const char *get_meta_transfer_path(cmd_rec *cmd) {
         pr_cmd_cmp(cmd, PR_CMD_XRMD_ID) == 0) {
       transfer_path = dir_best_path(p, pr_fs_decode_path(p, cmd->arg));
     }
+  }
+
+  /* If we're in the PRE_CMD phase, then the filename can't be filled in
+   * with the above techniques.
+   */
+  if (session.curr_phase == PRE_CMD &&
+      transfer_path == NULL) {
+    char *decoded_path;
+
+    decoded_path = pr_fs_decode_path(p, cmd->arg);
+    transfer_path = dir_best_path(p, decoded_path);
   }
 
   return transfer_path;
@@ -1062,6 +1103,51 @@ static int get_meta_transfer_port(cmd_rec *cmd) {
   }
 
   return transfer_port;
+}
+
+static const char *get_meta_transfer_speed(cmd_rec *cmd) {
+  const off_t *size_note = NULL;
+  uint64_t start_ms = 0, end_ms = 0;
+  double file_size = 0.0, xfer_ms = 0.0, xfer_speed = 0.0;
+  char text[64];
+
+  if (is_data_xfer_cmd(cmd) != TRUE) {
+    return NULL;
+  }
+
+  size_note = pr_table_get(cmd->notes, "mod_xfer.file-size", NULL);
+  if (size_note == NULL) {
+    return NULL;
+  }
+
+  if (session.xfer.p == NULL ||
+      (session.xfer.start_time.tv_sec == 0 &&
+       session.xfer.start_time.tv_usec == 0)) {
+    return NULL;
+  }
+
+  file_size = (double) *size_note;
+
+  pr_timeval2millis(&(session.xfer.start_time), &start_ms);
+  pr_gettimeofday_millis(&end_ms);
+
+  xfer_ms = end_ms - start_ms;
+
+  if (xfer_ms <= 0.0) {
+    xfer_ms = 0.1;
+  }
+
+  if (file_size > (off_t) 0) {
+    xfer_speed = ((file_size / 1024) / (xfer_ms / 1000));
+
+  } else {
+    xfer_speed = 0.0;
+  }
+
+  memset(text, '\0', sizeof(text));
+  pr_snprintf(text, sizeof(text)-1, "%.2fKB/s", xfer_speed);
+
+  return pstrdup(cmd->pool, text);
 }
 
 static const char *get_meta_transfer_type(cmd_rec *cmd) {
@@ -1505,7 +1591,9 @@ static int resolve_logfmt_id(pool *p, unsigned char logfmt_id,
          * logging purposes.
          */
         for (ch = cmd->argv[1]; *ch; ch++) {
-          *ch = toupper((int) *ch);
+          if (PR_ISALPHA((int) *ch)) {
+            *ch = toupper((int) *ch);
+          }
         }
 
         len = pr_snprintf(buf, sizeof(buf)-1, "%s %s", (char *) cmd->argv[0],
@@ -1788,6 +1876,36 @@ static int resolve_logfmt_id(pool *p, unsigned char logfmt_id,
       break;
     }
 
+    case LOGFMT_META_VAR_VAR: {
+      if (logfmt_data != NULL) {
+        char *key;
+        const char *var = NULL;
+
+        pr_trace_msg(trace_channel, 19,
+          "resolving VAR_VAR using var key '%s'", logfmt_data);
+
+        /* Note that the Var API is particular about its lookup keys; it
+         * expects the enclosing "%{...}" to be present.  Fun.
+         */
+        key = pstrcat(p, "%{", logfmt_data, "}", NULL);
+
+        var = pr_var_get(key);
+        if (var != NULL) {
+          char *field_name;
+
+          field_name = pstrcat(p, PR_JOT_LOGFMT_VAR_KEY, var, NULL);
+          res = (on_meta)(p, ctx, logfmt_id, field_name, var);
+
+        } else {
+          pr_trace_msg(trace_channel, 7, "error resolving VAR_VAR '%s': %s",
+            logfmt_data, strerror(errno));
+          res = (on_default)(p, ctx, logfmt_id);
+        }
+      }
+
+      break;
+    }
+
     case LOGFMT_META_XFER_STATUS: {
       const char *transfer_status;
 
@@ -1852,6 +1970,20 @@ static int resolve_logfmt_id(pool *p, unsigned char logfmt_id,
 
         xfer_port = (double) transfer_port;
         res = (on_meta)(p, ctx, logfmt_id, NULL, &xfer_port);
+
+      } else {
+        res = (on_default)(p, ctx, logfmt_id);
+      }
+
+      break;
+    }
+
+    case LOGFMT_META_XFER_SPEED: {
+      const char *transfer_speed;
+
+      transfer_speed = get_meta_transfer_speed(cmd);
+      if (transfer_speed != NULL) {
+        res = (on_meta)(p, ctx, logfmt_id, NULL, transfer_speed);
 
       } else {
         res = (on_default)(p, ctx, logfmt_id);
@@ -1965,6 +2097,7 @@ static int resolve_meta(pool *p, unsigned char **logfmt, pr_jot_ctx_t *ctx,
     case LOGFMT_META_CUSTOM:
     case LOGFMT_META_ENV_VAR:
     case LOGFMT_META_NOTE_VAR:
+    case LOGFMT_META_VAR_VAR:
     case LOGFMT_META_TIME: {
       if (*(ptr + 1) == LOGFMT_META_START &&
           *(ptr + 2) == LOGFMT_META_ARG) {
@@ -2023,6 +2156,10 @@ static int is_jottable_class(cmd_rec *cmd, int included_classes,
        * internally generated, and thus have special treatment.
        */
 
+      pr_trace_msg(trace_channel, 25,
+        "checking if '%s', with unknown command ID, is jottable",
+        (char *) cmd->argv[0]);
+
       if ((cmd->cmd_class & CL_CONNECT) ||
           (cmd->cmd_class & CL_DISCONNECT)) {
         if (cmd->cmd_class & included_classes) {
@@ -2041,6 +2178,10 @@ static int is_jottable_class(cmd_rec *cmd, int included_classes,
     }
 
   } else {
+    pr_trace_msg(trace_channel, 25,
+      "checking if '%s', with unknown command classes, is jottable",
+      (char *) cmd->argv[0]);
+
     /* If the logging class of this command is unknown (defaults to zero),
      * AND this filter logs ALL events, it is jottable.
      */
@@ -2070,18 +2211,19 @@ static int is_jottable(pool *p, cmd_rec *cmd, pr_jot_filters_t *filters) {
   int jottable = FALSE;
 
   if (filters == NULL) {
-    return TRUE;
+    jottable = TRUE;
   }
 
-  jottable = is_jottable_class(cmd, filters->included_classes,
-    filters->excluded_classes);
-  if (jottable == TRUE) {
-    return TRUE;
+  if (jottable == FALSE) {
+    jottable = is_jottable_class(cmd, filters->included_classes,
+      filters->excluded_classes);
   }
 
-  if (filters->cmd_ids != NULL) {
-    jottable = is_jottable_cmd(cmd, filters->cmd_ids->elts,
-      filters->cmd_ids->nelts);
+  if (jottable == FALSE) {
+    if (filters->cmd_ids != NULL) {
+      jottable = is_jottable_cmd(cmd, filters->cmd_ids->elts,
+        filters->cmd_ids->nelts);
+    }
   }
 
   return jottable;
@@ -2517,6 +2659,22 @@ static int parse_long_id(const char *text, unsigned char *logfmt_id,
     }
   }
 
+  if (strncmp(text, "{var:", 5) == 0) {
+    char *ptr;
+
+    ptr = strchr(text + 5, '}');
+    if (ptr != NULL) {
+      *logfmt_id = LOGFMT_META_VAR_VAR;
+      *logfmt_data = text + 5;
+      *logfmt_datalen = (ptr - text) - 5;
+
+      /* Advance 6 for the leading '{var:', and one more for the
+       * trailing '}' character.
+       */
+      return (6 + *logfmt_datalen);
+    }
+  }
+
   if (strncmp(text, "{protocol}", 10) == 0) {
     *logfmt_id = LOGFMT_META_PROTOCOL;
     return 10;
@@ -2556,6 +2714,11 @@ static int parse_long_id(const char *text, unsigned char *logfmt_id,
   if (strncmp(text, "{transfer-port}", 15) == 0) {
     *logfmt_id = LOGFMT_META_XFER_PORT;
     return 15;
+  }
+
+  if (strncmp(text, "{transfer-speed}", 16) == 0) {
+    *logfmt_id = LOGFMT_META_XFER_SPEED;
+    return 16;
   }
 
   if (strncmp(text, "{transfer-status}", 17) == 0) {
@@ -2813,6 +2976,7 @@ static int scan_meta(pool *p, unsigned char **logfmt, pr_jot_ctx_t *ctx,
     case LOGFMT_META_CUSTOM:
     case LOGFMT_META_ENV_VAR:
     case LOGFMT_META_NOTE_VAR:
+    case LOGFMT_META_VAR_VAR:
     case LOGFMT_META_TIME: {
       if (*(ptr + 1) == LOGFMT_META_START &&
           *(ptr + 2) == LOGFMT_META_ARG) {

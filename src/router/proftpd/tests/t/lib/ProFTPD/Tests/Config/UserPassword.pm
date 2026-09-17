@@ -47,7 +47,7 @@ sub userpassword_ok {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -67,7 +67,7 @@ sub userpassword_ok {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $user_pass_cleartext = 'R@lly';
@@ -154,7 +154,7 @@ sub userpassword_anon_ok {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
- 
+
   my ($config_user, $config_group) = config_get_identity();
 
   my $anon_dir = File::Spec->rel2abs($tmpdir);
@@ -175,7 +175,7 @@ sub userpassword_anon_ok {
   }
 
   auth_user_write($auth_user_file, $config_user, 'foo', $uid, $gid, '/tmp',
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $config_group, $gid, $config_user);
 
   my $user_pass_cleartext = 'test';

@@ -2,7 +2,7 @@
  * ProFTPD: mod_quotatab_ldap -- a mod_quotatab sub-module for obtaining
  *                               quota information from an LDAP directory.
  *
- * Copyright (c) 2002-2014 TJ Saunders
+ * Copyright (c) 2002-2025 TJ Saunders
  * Copyright (c) 2002-3 John Morrissey
  *
  * This program is free software; you can redistribute it and/or modify
@@ -65,17 +65,19 @@ static unsigned char ldaptab_lookup(quota_table_t *ldaptab, void *ptr,
   ldap_cmd = pr_cmd_alloc(tmp_pool, 1, name);
   ldap_res = pr_module_call(ldap_cmdtab->m, ldap_cmdtab->handler, ldap_cmd);
 
-  destroy_pool(tmp_pool);
-
   /* Check the results. */
   if (!ldap_res || MODRET_ISERROR(ldap_res)) {
     quotatab_log("error performing LDAP search");
+
+    destroy_pool(tmp_pool);
     return FALSE;
   }
 
   ldap_data = (array_header *) ldap_res->data;
   if (ldap_data->nelts != 9) {
     quotatab_log("LDAP search returned wrong number of elements");
+
+    destroy_pool(tmp_pool);
     return FALSE;
   }
 
@@ -89,7 +91,7 @@ static unsigned char ldaptab_lookup(quota_table_t *ldaptab, void *ptr,
    *  files_{in,out,xfer}_avail
    */
 
-  memmove(limit->name, values[0], strlen(values[0]) + 1);
+  sstrncpy(limit->name, values[0], sizeof(limit->name)-1);
   limit->quota_type = USER_QUOTA;
 
   if (!strcasecmp(values[1], "false"))
@@ -109,6 +111,7 @@ static unsigned char ldaptab_lookup(quota_table_t *ldaptab, void *ptr,
   limit->files_out_avail  = atoi(values[7]);
   limit->files_xfer_avail = atoi(values[8]);
 
+  destroy_pool(tmp_pool);
   return TRUE;
 }
 

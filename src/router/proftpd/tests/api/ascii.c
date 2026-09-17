@@ -38,7 +38,7 @@ static void tear_down(void) {
   if (p) {
     destroy_pool(p);
     p = NULL;
-  } 
+  }
 }
 
 START_TEST (ascii_ftp_from_crlf_test) {
@@ -113,7 +113,7 @@ START_TEST (ascii_ftp_from_crlf_test) {
 
   /* Handle an input buffer with several CRLFs. */
   pr_ascii_ftp_reset();
-  src = "he\r\nl\r\nlo"; 
+  src = "he\r\nl\r\nlo";
   src_len = 9;
   dst = pcalloc(p, src_len + 1);
   dst_len = 0;
@@ -249,7 +249,7 @@ START_TEST (ascii_ftp_to_crlf_test) {
   dst_len = 0;
   res = pr_ascii_ftp_to_crlf(p, src, src_len, &dst, &dst_len);
   ck_assert_msg(res == 0, "Failed to handle input buffer with CRs, no LFs");
-  expected = src; 
+  expected = src;
   expected_len = src_len;
   ck_assert_msg(dst_len == expected_len,
     "Expected output buffer length %lu, got %lu", (unsigned long) expected_len,

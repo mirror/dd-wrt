@@ -47,9 +47,11 @@ sub maxtransfersperhost_retr {
     PidFile => $setup->{pid_file},
     ScoreboardFile => $setup->{scoreboard_file},
     SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'xfer:30',
 
     AuthUserFile => $setup->{auth_user_file},
-    AuthGroupFile => $setup->{auth_group_file}, 
+    AuthGroupFile => $setup->{auth_group_file},
     AuthOrder => 'mod_auth_file.c',
 
     MaxTransfersPerHost => "RETR $max_transfers",
@@ -98,9 +100,7 @@ sub maxtransfersperhost_retr {
       my $resp_code = $client2->response_code();
       my $resp_msg = $client2->response_msg();
 
-      my $expected;
-
-      $expected = 451;
+      my $expected = 451;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -111,7 +111,6 @@ sub maxtransfersperhost_retr {
       $client1->quit();
       $client2->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -148,9 +147,11 @@ sub maxtransfersperhost_retr_custom_message {
     PidFile => $setup->{pid_file},
     ScoreboardFile => $setup->{scoreboard_file},
     SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'xfer:30',
 
     AuthUserFile => $setup->{auth_user_file},
-    AuthGroupFile => $setup->{auth_group_file}, 
+    AuthGroupFile => $setup->{auth_group_file},
     AuthOrder => 'mod_auth_file.c',
 
     MaxTransfersPerHost => "RETR $max_transfers \"Too many transfers from your host\"",
@@ -199,9 +200,7 @@ sub maxtransfersperhost_retr_custom_message {
       my $resp_code = $client2->response_code();
       my $resp_msg = $client2->response_msg();
 
-      my $expected;
-
-      $expected = 451;
+      my $expected = 451;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -212,7 +211,6 @@ sub maxtransfersperhost_retr_custom_message {
       $client1->quit();
       $client2->quit();
     };
-
     if ($@) {
       $ex = $@;
     }

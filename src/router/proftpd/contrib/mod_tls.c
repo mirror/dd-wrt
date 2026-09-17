@@ -2,7 +2,7 @@
  * mod_tls - An RFC2228 SSL/TLS module for ProFTPD
  *
  * Copyright (c) 2000-2002 Peter 'Luna' Runestig <peter@runestig.com>
- * Copyright (c) 2002-2022 TJ Saunders <tj@castaglia.org>
+ * Copyright (c) 2002-2026 TJ Saunders <tj@castaglia.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modifi-
@@ -42,7 +42,12 @@
 # include "mod_ctrls.h"
 #endif
 
-/* Define if you have the LibreSSL library.  */
+/* Define if you have the LibreSSL library.
+ *
+ * Note that in LibreSSL-3.5.0, the structs became opaque, as they are in
+ * OpenSSL-1.1.0, and thus these version-dependent macros became more
+ * complex.
+ */
 #if defined(LIBRESSL_VERSION_NUMBER)
 # define HAVE_LIBRESSL	1
 #endif
@@ -64,7 +69,9 @@
 #include <openssl/pkcs12.h>
 #include <openssl/rand.h>
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
-# include <openssl/engine.h>
+# ifdef PR_USE_OPENSSL_ENGINE
+#  include <openssl/engine.h>
+# endif /* PR_USE_OPENSSL_ENGINE */
 # ifdef PR_USE_OPENSSL_OCSP
 #  include <openssl/ocsp.h>
 # endif /* PR_USE_OPENSSL_OCSP */
@@ -100,8 +107,8 @@ static DH *get_dh(BIGNUM *p, BIGNUM *g) {
     return NULL;
   }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(HAVE_LIBRESSL)
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
   if (DH_set0_pqg(dh, p, NULL, g) != 1) {
     pr_trace_msg(trace_channel, 3, "error setting DH p/q parameters: %s",
       ERR_error_string(ERR_get_error(), NULL));
@@ -111,7 +118,7 @@ static DH *get_dh(BIGNUM *p, BIGNUM *g) {
 #else
   dh->p = p;
   dh->g = g;
-#endif /* OpenSSL 1.1.x and later */
+#endif /* OpenSSL 1.1.x/LibreSSL-3.5.x and later */
 
   return dh;
 }
@@ -120,14 +127,14 @@ static X509 *read_cert(FILE *fh, SSL_CTX *ctx) {
   pem_password_cb *cb;
   void *cb_data;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(HAVE_LIBRESSL)
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
   cb = SSL_CTX_get_default_passwd_cb(ctx);
   cb_data = SSL_CTX_get_default_passwd_cb_userdata(ctx);
 #else
   cb = ctx->default_passwd_callback;
   cb_data = ctx->default_passwd_callback_userdata;
-#endif /* OpenSSL-1.1.x and later */
+#endif /* OpenSSL-1.1.x/LibreSSL-3.5.x and later */
 
   return PEM_read_X509(fh, NULL, cb, cb_data);
 }
@@ -553,9 +560,10 @@ static unsigned int tls_npkeys = 0;
 #define TLS_DEFAULT_NEXT_PROTO		"ftp"
 
 /* Module variables */
-#if OPENSSL_VERSION_NUMBER > 0x000907000L
+#if OPENSSL_VERSION_NUMBER > 0x000907000L && \
+    defined(PR_USE_OPENSSL_ENGINE)
 static const char *tls_crypto_device = NULL;
-#endif
+#endif /* PR_USE_OPENSSL_ENGINE */
 static unsigned char tls_engine = FALSE;
 static unsigned long tls_flags = 0UL, tls_opts = 0UL;
 static pool *tls_pool = NULL;
@@ -680,7 +688,7 @@ static char *tls_dsa_cert_file = NULL, *tls_dsa_key_file = NULL;
 static char *tls_pkcs12_file = NULL;
 static char *tls_rsa_cert_file = NULL, *tls_rsa_key_file = NULL;
 static char *tls_rand_file = NULL;
-#if !defined(OPENSSL_NO_TLSEXT) && \
+#if !defined(OPENSSL_NO_TLSEXT) && !defined(HAVE_LIBRESSL) && \
     OPENSSL_VERSION_NUMBER >= 0x10002000L
 static char *tls_serverinfo_file = NULL;
 #endif /* OPENSSL_NO_TLSEXT */
@@ -746,7 +754,6 @@ static size_t tls_data_ticket_appdatasz = 0, tls_data_ticket_appdata_len = 0;
 /* OpenSSL variables */
 static SSL *ctrl_ssl = NULL;
 static SSL_CTX *ssl_ctx = NULL;
-static X509_STORE *tls_crl_store = NULL;
 static array_header *tls_tmp_dhs = NULL;
 static RSA *tls_tmp_rsa = NULL;
 
@@ -787,12 +794,12 @@ static int tls_ssl_set_all(server_rec *, SSL *);
 static int tls_openlog(void);
 static int tls_seed_prng(void);
 static int tls_sess_init(void);
-static void tls_setup_environ(pool *, SSL *);
-static void tls_setup_notes(pool *, SSL *);
-static int tls_verify_cb(int, X509_STORE_CTX *);
-static int tls_verify_crl(int, X509_STORE_CTX *);
-static int tls_verify_ocsp(int, X509_STORE_CTX *);
-static char *tls_x509_name_oneline(X509_NAME *);
+static void tls_setup_environ(pool *p, SSL *ssl);
+static void tls_setup_notes(pool *p, SSL *ssl);
+static int tls_verify_cb(int ok, X509_STORE_CTX *ctx);
+static int tls_verify_crl(int ok, X509_STORE_CTX *ctx);
+static int tls_verify_ocsp(int ok, X509_STORE_CTX *ctx);
+static char *tls_x509_name_oneline(const X509_NAME *x509_name);
 
 static int tls_readmore(int);
 static int tls_writemore(int);
@@ -1044,7 +1051,9 @@ static void tls_reset_state(void) {
 # endif /* TLS1_3_VERSION */
   tls_crl_file = NULL;
   tls_crl_path = NULL;
+# if defined(PR_USE_OPENSSL_ENGINE)
   tls_crypto_device = NULL;
+# endif /* PR_USE_OPENSSL_ENGINE */
   tls_dsa_cert_file = NULL;
   tls_dsa_key_file = NULL;
   tls_ec_cert_file = NULL;
@@ -1081,7 +1090,6 @@ static void tls_reset_state(void) {
   tls_data_rd_nstrm = NULL;
   tls_data_wr_nstrm = NULL;
 
-  tls_crl_store = NULL;
   tls_tmp_dhs = NULL;
   tls_tmp_rsa = NULL;
 
@@ -1554,6 +1562,10 @@ static struct tls_label tls_ciphersuite_labels[] = {
   { 0xC077, "TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384" },
   { 0xC07A, "TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256" },
   { 0xC07B, "TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384" },
+  { 0xC07C, "TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256" },
+  { 0xC07D, "TLS_DHE_RSA_WITH_CAMELLIA_256_GCM_SHA384" },
+  { 0xC07E, "TLS_DH_RSA_WITH_CAMELLIA_128_GCM_SHA256" },
+  { 0xC07F, "TLS_DH_RSA_WITH_CAMELLIA_256_GCM_SHA384" },
   { 0xC086, "TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256" },
   { 0xC087, "TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_GCM_SHA384" },
   { 0xC08A, "TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256" },
@@ -2619,7 +2631,7 @@ static int tls_cert_match_dns_san(pool *p, X509 *cert, const char *dns_name) {
       }
 
       GENERAL_NAME_free(alt_name);
- 
+
       if (matched == 1) {
         break;
       }
@@ -2702,7 +2714,7 @@ static int tls_cert_match_ip_san(pool *p, X509 *cert, const char *ipstr) {
             pr_trace_msg(trace_channel, 8,
               "found cert iPAddress SAN matching '%s'", ipstr);
             matched = 1;
- 
+
           } else {
             if (san_datalen == 16) {
               /* We need to handle the case where the iPAddress SAN might
@@ -2728,7 +2740,7 @@ static int tls_cert_match_ip_san(pool *p, X509 *cert, const char *ipstr) {
       }
 
       GENERAL_NAME_free(alt_name);
- 
+
       if (matched == 1) {
         break;
       }
@@ -2740,12 +2752,11 @@ static int tls_cert_match_ip_san(pool *p, X509 *cert, const char *ipstr) {
   return matched;
 }
 
-static int tls_cert_match_cn(pool *p, X509 *cert, const char *name,
-    int allow_wildcards) {
-  int matched = 0, idx = -1;
-  X509_NAME *subj_name = NULL;
-  X509_NAME_ENTRY *cn_entry = NULL;
-  ASN1_STRING *cn_asn1 = NULL;
+static char *tls_get_cert_cn(pool *p, X509 *cert) {
+  int idx = -1;
+  const X509_NAME *subj_name = NULL;
+  const X509_NAME_ENTRY *cn_entry = NULL;
+  const ASN1_STRING *cn_asn1 = NULL;
   char *cn_str = NULL;
   size_t cn_len = 0;
 
@@ -2754,36 +2765,29 @@ static int tls_cert_match_cn(pool *p, X509 *cert, const char *name,
    */
   subj_name = X509_get_subject_name(cert);
   if (subj_name == NULL) {
-    pr_trace_msg(trace_channel, 12,
-      "unable to check certificate CommonName against '%s': "
-      "unable to get Subject", name);
-    return 0;
+    errno = ENOENT;
+    return NULL;
   }
 
   idx = X509_NAME_get_index_by_NID(subj_name, NID_commonName, -1);
   if (idx < 0) {
-    pr_trace_msg(trace_channel, 12,
-      "unable to check certificate CommonName against '%s': "
-      "no CommoName attribute found", name);
-    return 0;
+    errno = ENOENT;
+    return NULL;
   }
 
   cn_entry = X509_NAME_get_entry(subj_name, idx);
   if (cn_entry == NULL) {
-    pr_trace_msg(trace_channel, 12,
-      "unable to check certificate CommonName against '%s': "
-      "error obtaining CommoName attribute found: %s", name, tls_get_errors());
-    return 0;
+    errno = ENOENT;
+    return NULL;
   }
 
   /* Convert the CN field to a string, by way of an ASN1 object. */
   cn_asn1 = X509_NAME_ENTRY_get_data(cn_entry);
   if (cn_asn1 == NULL) {
     pr_trace_msg(trace_channel, 12,
-      "unable to check certificate CommonName against '%s': "
-      "error converting CommoName attribute to ASN.1: %s", name,
-      tls_get_errors());
-    return 0;
+      "error converting CommoName attribute to ASN.1: %s", tls_get_errors());
+    errno = EPERM;
+    return NULL;
   }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
@@ -2807,6 +2811,20 @@ static int tls_cert_match_cn(pool *p, X509 *cert, const char *name,
     tls_log("suspicious CommonName value: '%s'",
       get_printable_subjaltname(p, (const char *) cn_str,
         ASN1_STRING_length(cn_asn1)));
+    errno = EPERM;
+    return NULL;
+  }
+
+  return pstrdup(p, cn_str);
+}
+
+static int tls_cert_match_cn(pool *p, X509 *cert, const char *name,
+    int allow_wildcards) {
+  int matched = 0;
+  char *cert_cn = NULL;
+
+  cert_cn = tls_get_cert_cn(p, cert);
+  if (cert_cn == NULL) {
     return 0;
   }
 
@@ -2815,16 +2833,16 @@ static int tls_cert_match_cn(pool *p, X509 *cert, const char *name,
    * the case-insensitivity won't hurt anything.  In fact, it's needed for
    * e.g. IPv6 addresses.
    */
-  if (strncasecmp(name, cn_str, cn_len + 1) == 0) {
+  if (strcasecmp(name, cert_cn) == 0) {
     matched = 1;
   }
 
   if (matched == 0 &&
-      allow_wildcards) {
+      allow_wildcards == TRUE) {
 
     /* XXX Implement wildcard checking. */
   }
- 
+
   return matched;
 }
 
@@ -2958,7 +2976,7 @@ static int tls_check_server_cert(SSL *ssl, conn_t *conn) {
     return -1;
   }
 
-  /* XXX If using OpenSSL-1.0.2/1.1.0, we might be able to use: 
+  /* XXX If using OpenSSL-1.0.2/1.1.0, we might be able to use:
    * X509_match_host() and X509_match_ip()/X509_match_ip_asc().
    */
 
@@ -3375,7 +3393,7 @@ static int tls_exec_passphrase_provider(server_rec *s, char *buf, int buflen,
   }
 
   if (sigaction(SIGQUIT, &sa_quit, NULL) < 0) {
-    return -1; 
+    return -1;
   }
 
   if (sigprocmask(SIG_SETMASK, &set_save, NULL) < 0) {
@@ -3405,7 +3423,7 @@ static int tls_passphrase_cb(char *buf, int buflen, int rwflag, void *d) {
 
     /* Similar to Apache's mod_ssl, we want to be nice, and display an
      * informative message to the proftpd admin, telling them for what
-     * server they are being requested to provide a passphrase.  
+     * server they are being requested to provide a passphrase.
      */
 
     if (need_banner) {
@@ -3558,7 +3576,7 @@ static int tls_get_pkcs12_passwd(server_rec *s, FILE *fp, const char *prompt,
             break;
           }
         }
- 
+
         fprintf(stderr, "\nWrong password for this PKCS12 file.  Please try again.\n");
       }
     } else {
@@ -3583,7 +3601,7 @@ static int tls_get_pkcs12_passwd(server_rec *s, FILE *fp, const char *prompt,
    *
    * It looks like OpenSSL's pkcs12 command-line tool does not allow
    * passphrase-protected keys to be written into a PKCS12 structure;
-   * the key is decrypted first (hence, probably, the password protection 
+   * the key is decrypted first (hence, probably, the password protection
    * for the entire PKCS12 structure).  Can the same be assumed to be true
    * for PKCS12 files created via other applications?
    *
@@ -4030,13 +4048,13 @@ static int tls_renegotiate_timeout_cb(CALLBACK_FRAME) {
     int ctrl_renegotiated = FALSE;
 
     switch (SSL_version(ctrl_ssl)) {
-# if defined(TLS1_3_VERSION)
+# if defined(TLS1_3_VERSION) && !defined(HAVE_LIBRESSL)
       case TLS1_3_VERSION:
         if (SSL_get_key_update_type(ctrl_ssl) == SSL_KEY_UPDATE_NONE) {
           ctrl_renegotiated = TRUE;
         }
         break;
-# endif /* TLS1_3_VERSION */
+# endif /* TLS1_3_VERSION and no LibreSSL */
 
       default:
         if (SSL_renegotiate_pending(ctrl_ssl) == 0) {
@@ -4066,13 +4084,13 @@ static int tls_renegotiate_timeout_cb(CALLBACK_FRAME) {
 
     ssl = (SSL *) pr_table_get(tls_data_wr_nstrm->notes, TLS_NETIO_NOTE, NULL);
     switch (SSL_version(ssl)) {
-# if defined(TLS1_3_VERSION)
+# if defined(TLS1_3_VERSION) && !defined(HAVE_LIBRESSL)
       case TLS1_3_VERSION:
         if (SSL_get_key_update_type(ssl) == SSL_KEY_UPDATE_NONE) {
           data_renegotiated = TRUE;
         }
         break;
-# endif /* TLS1_3_VERSION */
+# endif /* TLS1_3_VERSION and no LibreSSL */
 
       default:
         if (SSL_renegotiate_pending(ssl) == 0) {
@@ -4106,7 +4124,7 @@ static int tls_ctrl_renegotiate_cb(CALLBACK_FRAME) {
 
   if (tls_flags & TLS_SESS_ON_CTRL) {
     switch (SSL_version(ctrl_ssl)) {
-#if defined(TLS1_3_VERSION)
+#if defined(TLS1_3_VERSION) && !defined(HAVE_LIBRESSL)
       /* If we're a TLSv1.3 session, use SSL_key_update() to request new
        * session keys; TLSv1.3 does not support renegotiations.
        */
@@ -4128,7 +4146,7 @@ static int tls_ctrl_renegotiate_cb(CALLBACK_FRAME) {
         }
       }
       break;
-#endif /* TLS1_3_VERSION */
+#endif /* TLS1_3_VERSION and no LibreSSL */
 
       default: {
 #if OPENSSL_VERSION_NUMBER >= 0x009080cfL
@@ -4533,12 +4551,12 @@ static int tls_sni_cb(SSL *ssl, int *alert_desc, void *user_data) {
         ctx = SSL_get_SSL_CTX(ssl);
         ctx_options = SSL_CTX_get_options(ctx);
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(HAVE_LIBRESSL)
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
         sess_version = SSL_SESSION_get_protocol_version(sess);
 #else
         sess_version = sess->ssl_version;
-#endif /* OpenSSL 1.1.x and later */
+#endif /* OpenSSL 1.1.x/LibreSSL-3.5.x and later */
 
         switch (sess_version) {
           case SSL3_VERSION:
@@ -4665,7 +4683,7 @@ static void tls_tlsext_cb(SSL *ssl, int server, int type,
         "[tls.tlsext] TLS %s extension \"%s\" (ID %d, %d %s)%.*s",
         server ? "server" : "client", extension_name, type,
         tlsext_datalen, tlsext_datalen != 1 ? "bytes" : "byte",
-        (int) ext_infolen, ext_info);
+        (int) ext_infolen, ext_info != NULL ? ext_info : "");
 
       if (bio != NULL) {
         BIO_free(bio);
@@ -4791,7 +4809,7 @@ static void tls_tlsext_cb(SSL *ssl, int server, int type,
         "[tls.tlsext] TLS %s extension \"%s\" (ID %d, %d %s)%.*s",
         server ? "server" : "client", extension_name, type,
         tlsext_datalen, tlsext_datalen != 1 ? "bytes" : "byte",
-        (int) ext_infolen, ext_info);
+        (int) ext_infolen, ext_info != NULL ? ext_info : "");
 
       if (bio != NULL) {
         BIO_free(bio);
@@ -4904,7 +4922,7 @@ static void tls_tlsext_cb(SSL *ssl, int server, int type,
         "[tls.tlsext] TLS %s extension \"%s\" (ID %d, %d %s)%.*s",
         server ? "server" : "client", extension_name, type,
         tlsext_datalen, tlsext_datalen != 1 ? "bytes" : "byte",
-        (int) ext_infolen, ext_info);
+        (int) ext_infolen, ext_info != NULL ? ext_info : "");
 
       if (bio != NULL) {
         BIO_free(bio);
@@ -4959,7 +4977,7 @@ static void tls_tlsext_cb(SSL *ssl, int server, int type,
         "[tls.tlsext] TLS %s extension \"%s\" (ID %d, %d %s)%.*s",
         server ? "server" : "client", extension_name, type,
         tlsext_datalen, tlsext_datalen != 1 ? "bytes" : "byte",
-        (int) ext_infolen, ext_info);
+        (int) ext_infolen, ext_info != NULL ? ext_info : "");
 
       if (bio != NULL) {
         BIO_free(bio);
@@ -5717,7 +5735,7 @@ static OCSP_RESPONSE *ocsp_request_response(pool *p, X509 *cert, SSL *ssl,
 }
 
 #if OPENSSL_VERSION_NUMBER < 0x10002000L || \
-    defined(HAVE_LIBRESSL)
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER < 0x3050000L)
 /* We need to provide our own backport of the ASN1_TIME_diff() function. */
 static time_t ASN1_TIME_seconds(const ASN1_TIME *a) {
   static const int min[9] = { 0, 0, 1, 1, 0, 0, 0, 0, 0 };
@@ -6162,7 +6180,7 @@ static int ocsp_add_cached_response(pool *p, const char *fingerprint,
   return res;
 }
 
-static int tls_feature_cmp(ASN1_STRING *str, void *feat_data,
+static int tls_feature_cmp(const ASN1_STRING *str, void *feat_data,
     size_t feat_datasz) {
   int is_feat = FALSE, res;
   ASN1_STRING *feat;
@@ -6188,8 +6206,8 @@ static int tls_cert_must_staple(X509 *cert, int *v2) {
   register int i;
   int ext_count = 0, must_staple = FALSE;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(HAVE_LIBRESSL)
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
   ext_count = X509_get_ext_count(cert);
 #else
   X509_CINF *ci;
@@ -6202,19 +6220,19 @@ static int tls_cert_must_staple(X509 *cert, int *v2) {
 
   exts = ci->extensions;
   ext_count = sk_X509_EXTENSION_num(exts);
-#endif /* Before OpenSSL-1.1.0, or libressl */
+#endif /* OpenSSL-1.1.x/LibreSSL-3.5.x or later */
 
   for (i = 0; i < ext_count; i++) {
     char buf[1024];
-    X509_EXTENSION *ext;
-    ASN1_OBJECT *obj;
+    const X509_EXTENSION *ext;
+    const ASN1_OBJECT *obj;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(HAVE_LIBRESSL)
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
     ext = X509_get_ext(cert, i);
 #else
     ext = sk_X509_EXTENSION_value(exts, i);
-#endif /* Before OpenSSL-1.1.0, or libressl */
+#endif /* OpenSSL-1.1.x/LibreSSL-3.5.x or later */
 
     obj = X509_EXTENSION_get_object(ext);
     memset(buf, '\0', sizeof(buf));
@@ -6223,14 +6241,14 @@ static int tls_cert_must_staple(X509 *cert, int *v2) {
     /* Double-check that the OID is that of the "TLS Feature" extension. */
     if (strcmp(buf, TLS_X509V3_TLS_FEAT_OID_TEXT) == 0) {
       char status_request[] = TLS_X509V3_TLS_FEAT_STATUS_REQUEST;
-      ASN1_OCTET_STRING *value;
+      const ASN1_OCTET_STRING *value;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(HAVE_LIBRESSL)
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
       value = X509_EXTENSION_get_data(ext);
 #else
       value = ext->value;
-#endif /* Before OpenSSL-1.1.0, or libressl */
+#endif /* OpenSSL-1.1.x/LibreSSL-3.5.x or later */
 
       /* Is the value of this extension the "status_request" value? */
       must_staple = tls_feature_cmp(value, status_request, 5);
@@ -7146,7 +7164,7 @@ static EC_KEY *tls_ecdh_cb(SSL *ssl, int is_export, int keylen) {
 
 #if defined(PR_USE_OPENSSL_ALPN)
 static int tls_alpn_select_cb(SSL *ssl,
-    const unsigned char **selected_proto, unsigned char *selected_protolen, 
+    const unsigned char **selected_proto, unsigned char *selected_protolen,
     const unsigned char *advertised_proto, unsigned int advertised_protolen,
     void *user_data) {
   register unsigned int i;
@@ -7157,7 +7175,7 @@ static int tls_alpn_select_cb(SSL *ssl,
     "ALPN protocols advertised by client:");
   for (i = 0; i < advertised_protolen; i++) {
     pr_trace_msg(trace_channel, 9,
-      " %*s", advertised_proto[i], &(advertised_proto[i+1])); 
+      " %.*s", advertised_proto[i], &(advertised_proto[i+1]));
     i += advertised_proto[i] + 1;
   }
 
@@ -7732,8 +7750,9 @@ static int tls_accept(conn_t *conn, unsigned char on_data) {
 
   if (res < 1) {
     const char *msg = "unable to accept TLS connection";
-    int errcode = SSL_get_error(ssl, res);
+    int errcode;
 
+    errcode = SSL_get_error(ssl, res);
     pr_signals_handle();
 
     if (tls_handshake_timed_out) {
@@ -7766,8 +7785,10 @@ static int tls_accept(conn_t *conn, unsigned char on_data) {
         break;
 
       case SSL_ERROR_SYSCALL: {
+        int xerrcode;
+
         /* Check to see if the OpenSSL error queue has info about this. */
-        int xerrcode = ERR_get_error();
+        xerrcode = ERR_peek_error();
 
         if (xerrcode == 0) {
           /* The OpenSSL error queue doesn't have any more info, so we'll
@@ -7889,7 +7910,7 @@ static int tls_accept(conn_t *conn, unsigned char on_data) {
             break;
           }
 
-#if defined(SSL_R_VERSION_TOO_LOW)
+#if defined(SSL_R_VERSION_TOO_LOW) && !defined(HAVE_LIBRESSL)
           case SSL_R_VERSION_TOO_LOW: {
             int client_version;
 
@@ -7999,7 +8020,7 @@ static int tls_accept(conn_t *conn, unsigned char on_data) {
     if (npn != NULL &&
         npn_len > 0) {
       pr_trace_msg(trace_channel, 9,
-        "negotiated NPN '%*s'", npn_len, npn);
+        "negotiated NPN '%.*s'", npn_len, npn);
 
     } else {
       pr_trace_msg(trace_channel, 9, "%s", "no NPN negotiated");
@@ -8017,7 +8038,7 @@ static int tls_accept(conn_t *conn, unsigned char on_data) {
     if (alpn != NULL &&
         alpn_len > 0) {
       pr_trace_msg(trace_channel, 9,
-        "selected ALPN '%*s'", alpn_len, alpn);
+        "selected ALPN '%.*s'", alpn_len, alpn);
     } else {
       pr_trace_msg(trace_channel, 9, "%s", "no ALPN selected");
     }
@@ -8521,7 +8542,7 @@ static int tls_connect(conn_t *conn) {
 
   /* Disable TCP_NODELAY, now that the handshake is done. */
   (void) pr_inet_set_proto_nodelay(conn->pool, conn, 0);
- 
+
   /* Disable the handshake timer. */
   pr_timer_remove(tls_handshake_timer_id, &tls_module);
 
@@ -8597,16 +8618,13 @@ static void tls_cleanup(int flags) {
 
 #if OPENSSL_VERSION_NUMBER > 0x000907000L && \
     OPENSSL_VERSION_NUMBER < 0x10100000L
+# if defined(PR_USE_OPENSSL_ENGINE)
   if (tls_crypto_device != NULL) {
     ENGINE_cleanup();
     tls_crypto_device = NULL;
   }
+# endif /* PR_USE_OPENSSL_ENGINE */
 #endif
-
-  if (tls_crl_store != NULL) {
-    X509_STORE_free(tls_crl_store);
-    tls_crl_store = NULL;
-  }
 
   if (ssl_ctx != NULL) {
     SSL_CTX_free(ssl_ctx);
@@ -8856,8 +8874,8 @@ static void tls_end_sess(SSL *ssl, conn_t *conn, int flags) {
 
     /* 'close_notify' not already sent; send it now. */
     pr_trace_msg(trace_channel, 17,
-      "shutting down TLS session, 'close_notify' not already sent; "
-      "sending now");
+      "shutting down %s TLS session, 'close_notify' not already sent; "
+      "sending now", ssl == ctrl_ssl ? "control" : "data");
     lineno = __LINE__ + 1;
     res = SSL_shutdown(ssl);
   }
@@ -8873,8 +8891,8 @@ static void tls_end_sess(SSL *ssl, conn_t *conn, int flags) {
         int is_ssl_data = FALSE, xerrno;
 
         pr_trace_msg(trace_channel, 17,
-          "shutting down TLS session, 'close_notify' not received; "
-          "peeking at next data");
+          "shutting down %s TLS session, 'close_notify' not received; "
+          "peeking at next data", ssl == ctrl_ssl ? "control" : "data");
 
         /* This where we need to peek at the next data, to see whether we
          * dealing with a well-behaved FTPS client, which will be sending
@@ -8911,8 +8929,9 @@ static void tls_end_sess(SSL *ssl, conn_t *conn, int flags) {
         xerrno = errno;
 
         pr_trace_msg(trace_channel, 17,
-          "shutting down TLS session, 'close_notify' not received; "
-          "SSL_shutdown() returned %d", res);
+          "shutting down %s TLS session, 'close_notify' not received; "
+          "SSL_shutdown() returned %d", ssl == ctrl_ssl ? "control" : "data",
+          res);
 
         errno = xerrno;
       }
@@ -9053,10 +9072,54 @@ static void tls_end_sess(SSL *ssl, conn_t *conn, int flags) {
     session.total_raw_out += bwritten;
   }
 
+  if (ssl != ctrl_ssl &&
+      ctrl_ssl != NULL &&
+      SSL_get_session(ssl) == SSL_get_session(ctrl_ssl)) {
+    /* Uh-oh; our two SSL objects are pointing at the same SSL_SESSION object.
+     * This can happen when the SSL_SESSION is resumed, enabled by session
+     * caching.  Which is normally a Good Thing.
+     *
+     * But Issue#1963 happens when that SSL_SESSION object is freed twice:
+     * once via SSL_free() on this SSL, and again on SSL_free() for the
+     * other SSL.  Yuck.
+     *
+     * So we manually handle the situation by clearing the duplicate
+     * SSL_SESSION pointer from the data SSL.  Why the data SSL, and not the
+     * control SSL?  We could be handling multiple concurrent data transfers,
+     * and/or the client may reuse the session again on a subsequent data
+     * transfer.
+     *
+     * Note that older OpenSSL versions used two different SSL_SESSION objects,
+     * hence why we have not seen this occur frequently in the past.  (Or it
+     * was not reported.)  And for TLSv1.3 resumed sessions, the SSL_SESSION
+     * objects are different, hence no double-free.
+     */
+    pr_trace_msg(trace_channel, 29,
+      "data SSL %p being ended has same SSL_SESSION %p as control SSL, "
+      "clearing the data SSL pointer manually (see Issue #1963)", ssl,
+      SSL_get_session(ssl));
+    if (SSL_set_session(ssl, NULL) != 1) {
+      pr_trace_msg(trace_channel, 29,
+        "error setting NULL session on SSL %p: %s", ssl, tls_get_errors());
+    }
+
+    /* Note that, per findings in Issue #2056, we also need to manually
+     * increment the refcount of the ctrl_ssl session, lest we still
+     * inadvertently corrupt the OpenSSL internal session cache state.
+     * Sigh.
+     */
+    if (SSL_SESSION_up_ref(SSL_get_session(ctrl_ssl)) != 1) {
+      pr_trace_msg(trace_channel, 29,
+        "error incrementing session refcount on SSL %p: %s", ctrl_ssl,
+        tls_get_errors());
+    }
+  }
+
   SSL_free(ssl);
 
   if (res >= 0) {
-    pr_trace_msg(trace_channel, 17, "TLS session cleanly shut down");
+    pr_trace_msg(trace_channel, 17, "%s TLS session cleanly shut down",
+      ssl == ctrl_ssl ? "control" : "data");
   }
 }
 
@@ -9305,14 +9368,14 @@ static int tls_dotlogin_allow(const char *user) {
 
     pr_signals_handle();
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(HAVE_LIBRESSL)
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
     X509_get0_signature(&client_sig, NULL, client_cert);
     X509_get0_signature(&file_sig, NULL, file_cert);
 #else
     client_sig = client_cert->signature;
     file_sig = file_cert->signature;
-#endif /* OpenSSL-1.1.x and later */
+#endif /* OpenSSL-1.1.x/LibreSSL-3.5.x and later */
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
     if (!ASN1_STRING_cmp(client_sig, file_sig)) {
@@ -9386,14 +9449,14 @@ static int tls_cert_to_user(const char *user_name, const char *field_name) {
   }
 
   if (strcmp(field_name, "CommonName") == 0) {
-    X509_NAME *name;
+    const X509_NAME *name;
     int pos = -1;
 
     name = X509_get_subject_name(client_cert);
 
     while (TRUE) {
-      X509_NAME_ENTRY *entry;
-      ASN1_STRING *data;
+      const X509_NAME_ENTRY *entry;
+      const ASN1_STRING *data;
       int data_len;
       const unsigned char *data_str = NULL;
 
@@ -9462,7 +9525,7 @@ static int tls_cert_to_user(const char *user_name, const char *field_name) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
     !defined(HAVE_LIBRESSL)
           data_str = ASN1_STRING_get0_data(name->d.ia5);
-#else 
+#else
           data_str = ASN1_STRING_data(name->d.ia5);
 #endif /* OpenSSL 1.1.x and later */
 
@@ -9504,8 +9567,8 @@ static int tls_cert_to_user(const char *user_name, const char *field_name) {
       register int i;
 
       for (i = 0; i < nexts; i++) {
-        X509_EXTENSION *ext = NULL;
-        ASN1_OBJECT *asn_object = NULL;
+        const X509_EXTENSION *ext = NULL;
+        const ASN1_OBJECT *asn_object = NULL;
         char oid[PR_TUNABLE_PATH_MAX];
 
         pr_signals_handle();
@@ -9517,7 +9580,7 @@ static int tls_cert_to_user(const char *user_name, const char *field_name) {
         memset(oid, '\0', sizeof(oid));
         if (OBJ_obj2txt(oid, sizeof(oid)-1, asn_object, 1) > 0) {
           if (strcmp(oid, field_name) == 0) {
-            ASN1_OCTET_STRING *asn_data = NULL;
+            const ASN1_OCTET_STRING *asn_data = NULL;
             const unsigned char *asn_datastr = NULL;
             int asn_datalen;
 
@@ -9526,7 +9589,7 @@ static int tls_cert_to_user(const char *user_name, const char *field_name) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
     !defined(HAVE_LIBRESSL)
             asn_datastr = ASN1_STRING_get0_data(asn_data);
-#else     
+#else
             asn_datastr = ASN1_STRING_data(asn_data);
 #endif /* OpenSSL 1.1.x and later */
 
@@ -9814,7 +9877,8 @@ static void tls_setup_cert_ext_environ(const char *env_prefix, X509 *cert) {
  *   email                   Email         NID_pkcs9_emailAddress
  */
 
-static void tls_setup_cert_dn_environ(const char *env_prefix, X509_NAME *name) {
+static void tls_setup_cert_dn_environ(const char *env_prefix,
+    const X509_NAME *name) {
   register int i;
   int nentries;
   char *k, *v;
@@ -9826,7 +9890,7 @@ static void tls_setup_cert_dn_environ(const char *env_prefix, X509_NAME *name) {
 #endif /* OpenSSL-1.1.x and later */
 
   for (i = 0; i < nentries; i++) {
-    X509_NAME_ENTRY *entry;
+    const X509_NAME_ENTRY *entry;
     const unsigned char *entry_data;
     int nid, entry_len;
 
@@ -9942,8 +10006,8 @@ static void tls_setup_cert_environ(pool *p, const char *env_prefix,
   if (tls_opts & TLS_OPT_STD_ENV_VARS) {
     char buf[80] = {'\0'};
     ASN1_INTEGER *serial = X509_get_serialNumber(cert);
-    const X509_ALGOR *algo;
-    X509_PUBKEY *pubkey;
+    const X509_ALGOR *algo = NULL;
+    const X509_PUBKEY *pubkey = NULL;
 
     memset(buf, '\0', sizeof(buf));
     pr_snprintf(buf, sizeof(buf) - 1, "%lu", X509_get_version(cert) + 1);
@@ -9953,7 +10017,7 @@ static void tls_setup_cert_environ(pool *p, const char *env_prefix,
     v = pstrdup(p, buf);
     pr_env_set(p, k, v);
 
-    if (serial->length < 4) {
+    if (ASN1_STRING_length(serial) < 4) {
       memset(buf, '\0', sizeof(buf));
       pr_snprintf(buf, sizeof(buf) - 1, "%lu", ASN1_INTEGER_get(serial));
       buf[sizeof(buf)-1] = '\0';
@@ -10019,12 +10083,12 @@ static void tls_setup_cert_environ(pool *p, const char *env_prefix,
     BIO_free(bio);
 
     bio = BIO_new(BIO_s_mem());
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(HAVE_LIBRESSL)
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
     X509_get0_signature(NULL, &algo, cert);
 #else
     algo = cert->cert_info->signature;
-#endif /* OpenSSL-1.1.x and later */
+#endif /* OpenSSL-1.1.x/LibreSSL-3.5.x and later */
     i2a_ASN1_OBJECT(bio, algo->algorithm);
     datalen = BIO_get_mem_data(bio, &data);
     data[datalen] = '\0';
@@ -10036,13 +10100,14 @@ static void tls_setup_cert_environ(pool *p, const char *env_prefix,
     BIO_free(bio);
 
     bio = BIO_new(BIO_s_mem());
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
     pubkey = X509_get_X509_PUBKEY(cert);
     X509_PUBKEY_get0_param(NULL, NULL, NULL, (X509_ALGOR **) &algo, pubkey);
 #else
     pubkey = cert->cert_info->key;
     algo = pubkey->algor;
-#endif /* OpenSSL-1.1.x and later */
+#endif /* OpenSSL-1.1.x/LibreSSL-3.5.x and later */
     i2a_ASN1_OBJECT(bio, algo->algorithm);
     datalen = BIO_get_mem_data(bio, &data);
     data[datalen] = '\0';
@@ -10112,7 +10177,7 @@ static void tls_setup_environ(pool *p, SSL *ssl) {
 
     /* Process the TLS cipher-related environ variables. */
     cipher = (SSL_CIPHER *) SSL_get_current_cipher(ssl);
-    if (cipher) {
+    if (cipher != NULL) {
       char buf[10] = {'\0'};
       int cipher_bits_used = 0, cipher_bits_possible = 0;
 
@@ -10158,7 +10223,7 @@ static void tls_setup_environ(pool *p, SSL *ssl) {
   }
 
   sk_cert_chain = SSL_get_peer_cert_chain(ssl);
-  if (sk_cert_chain) {
+  if (sk_cert_chain != NULL) {
     register int i;
     char *data = NULL;
     long datalen = 0;
@@ -10209,6 +10274,7 @@ static void tls_setup_environ(pool *p, SSL *ssl) {
 }
 
 static void tls_setup_notes(pool *p, SSL *ssl) {
+  X509 *client_cert = NULL;
   SSL_CIPHER *cipher = NULL;
   const char *sni = NULL;
 
@@ -10221,20 +10287,66 @@ static void tls_setup_notes(pool *p, SSL *ssl) {
   if (cipher != NULL) {
     (void) pr_table_add_dup(session.notes, "TLS_CIPHER",
       SSL_CIPHER_get_name(cipher), 0);
+  }
 
-    sni = pr_table_get(session.notes, "mod_tls.sni", NULL);
-    if (sni != NULL) {
-      (void) pr_table_add_dup(session.notes, "TLS_SERVER_NAME", sni, 0);
+  sni = pr_table_get(session.notes, "mod_tls.sni", NULL);
+  if (sni != NULL) {
+    (void) pr_table_add_dup(session.notes, "TLS_SERVER_NAME", sni, 0);
+  }
+
+  client_cert = SSL_get_peer_certificate(ssl);
+  if (client_cert != NULL) {
+    const X509_ALGOR *algo = NULL;
+    const X509_PUBKEY *pubkey = NULL;
+    BIO *bio = NULL;
+    char *data = NULL;
+    long datalen = 0;
+
+    /* Client cert CN */
+    data = tls_get_cert_cn(p, client_cert);
+    if (data != NULL) {
+      (void) pr_table_add_dup(session.notes, "TLS_CLIENT_S_DN_CN", data, 0);
     }
 
-    (void) pr_table_add_dup(session.notes, "TLS_LIBRARY_VERSIONS",
-      OPENSSL_VERSION_TEXT, 0);
+    /* Client cert key algo */
+    bio = BIO_new(BIO_s_mem());
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    pubkey = X509_get_X509_PUBKEY(client_cert);
+    X509_PUBKEY_get0_param(NULL, NULL, NULL, (X509_ALGOR **) &algo, pubkey);
+#else
+    pubkey = client_cert->cert_info->key;
+    algo = pubkey->algor;
+#endif /* OpenSSL-1.1.x and later */
+    i2a_ASN1_OBJECT(bio, algo->algorithm);
+    datalen = BIO_get_mem_data(bio, &data);
+    data[datalen] = '\0';
+
+    (void) pr_table_add_dup(session.notes, "TLS_CLIENT_A_KEY", data, 0);
+    BIO_free(bio);
+
+    /* Client cert signature algorithm. */
+    bio = BIO_new(BIO_s_mem());
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
+    X509_get0_signature(NULL, &algo, client_cert);
+#else
+    algo = client_cert->cert_info->signature;
+#endif /* OpenSSL-1.1.x/Libre-3.5.x and later */
+    i2a_ASN1_OBJECT(bio, algo->algorithm);
+    datalen = BIO_get_mem_data(bio, &data);
+    data[datalen] = '\0';
+
+    (void) pr_table_add_dup(session.notes, "TLS_CLIENT_A_SIG", data, 0);
+    BIO_free(bio);
   }
+
+  (void) pr_table_add_dup(session.notes, "TLS_LIBRARY_VERSION",
+    OPENSSL_VERSION_TEXT, 0);
 }
 
 static int tls_verify_cb(int ok, X509_STORE_CTX *ctx) {
   config_rec *c;
-  int verify_err = 0;
+  int verify_error = 0;
 
   /* We can configure the server to skip the peer's cert verification */
   if (!(tls_flags & TLS_SESS_VERIFY_CLIENT_REQUIRED) &&
@@ -10251,29 +10363,6 @@ static int tls_verify_cb(int ok, X509_STORE_CTX *ctx) {
 
       if (strcasecmp(mech, "crl") == 0) {
         ok = tls_verify_crl(ok, ctx);
-        if (!ok) {
-          int crl_verify_err = 0;
-
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-          crl_verify_err = X509_STORE_CTX_get_error(ctx);
-#else
-          crl_verify_err = ctx->error;
-#endif /* OpenSSL-1.1.x and later */
-
-         /* If we use the wrong public key to verify the CRL (as for an empty
-          * CRL, or a CRL signed by a different CA/key than the offered cert),
-          * then this could fail in an expected manner (Bug #4468).
-          */
-          if (crl_verify_err == X509_V_ERR_CRL_SIGNATURE_FAILURE) {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-            X509_STORE_CTX_set_error(ctx, 0);
-#else
-            ctx->error = 0;
-#endif /* OpenSSL-1.1.x and later */
-            ok = 1;
-          }
-        }
-
         if (!ok) {
           break;
         }
@@ -10292,28 +10381,6 @@ static int tls_verify_cb(int ok, X509_STORE_CTX *ctx) {
      * any AIA attributes (i.e. no use of OCSP).
      */
     ok = tls_verify_crl(ok, ctx);
-    if (!ok) {
-      int crl_verify_err = 0;
-
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-      crl_verify_err = X509_STORE_CTX_get_error(ctx);
-#else
-      crl_verify_err = ctx->error;
-#endif /* OpenSSL-1.1.x and later */
-
-     /* If we use the wrong public key to verify the CRL (as for an empty
-      * CRL, or a CRL signed by a different CA/key than the offered cert),
-      * then this could fail in an expected manner (Bug #4468).
-      */
-      if (crl_verify_err == X509_V_ERR_CRL_SIGNATURE_FAILURE) {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-        X509_STORE_CTX_set_error(ctx, 0);
-#else
-        ctx->error = 0;
-#endif /* OpenSSL-1.1.x and later */
-        ok = 1;
-      }
-    }
   }
 
   if (!ok) {
@@ -10324,12 +10391,13 @@ static int tls_verify_cb(int ok, X509_STORE_CTX *ctx) {
     depth = X509_STORE_CTX_get_error_depth(ctx);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-    verify_err = X509_STORE_CTX_get_error(ctx);
+    verify_error = X509_STORE_CTX_get_error(ctx);
 #else
-    verify_err = ctx->error;
+    verify_error = ctx->error;
 #endif /* OpenSSL-1.1.x and later */
 
-    tls_log("error: unable to verify certificate at depth %d", depth);
+    tls_log("error: unable to verify certificate at depth %d: %s", depth,
+      X509_verify_cert_error_string(verify_error));
     tls_log("error: cert subject: %s", tls_x509_name_oneline(
       X509_get_subject_name(cert)));
     tls_log("error: cert issuer: %s", tls_x509_name_oneline(
@@ -10337,6 +10405,10 @@ static int tls_verify_cb(int ok, X509_STORE_CTX *ctx) {
 
     /* Catch a too long certificate chain here. */
     if (depth > tls_verify_depth) {
+      /* Note that by setting this error, we are effectively overriding
+       * the previous verification error; this could become the value of
+       * the subsequent ctx_error.
+       */
       X509_STORE_CTX_set_error(ctx, X509_V_ERR_CERT_CHAIN_TOO_LONG);
     }
 
@@ -10347,37 +10419,19 @@ static int tls_verify_cb(int ok, X509_STORE_CTX *ctx) {
 #endif /* OpenSSL-1.1.x and later */
 
     switch (ctx_error) {
+      case X509_V_ERR_APPLICATION_VERIFICATION:
       case X509_V_ERR_CERT_CHAIN_TOO_LONG:
       case X509_V_ERR_CERT_HAS_EXPIRED:
       case X509_V_ERR_CERT_REVOKED:
       case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+      case X509_V_ERR_INVALID_PURPOSE:
       case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
       case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
       case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
-      case X509_V_ERR_APPLICATION_VERIFICATION:
         tls_log("client certificate failed verification: %s",
           X509_verify_cert_error_string(ctx_error));
         ok = 0;
         break;
-
-      case X509_V_ERR_INVALID_PURPOSE: {
-        register int i;
-        int count;
-
-        tls_log("client certificate failed verification: %s",
-          X509_verify_cert_error_string(ctx_error));
-
-        count = X509_PURPOSE_get_count();
-        for (i = 0; i < count; i++) {
-          X509_PURPOSE *purp;
-
-          purp = X509_PURPOSE_get0(i);
-          tls_log("  purpose #%d: %s", i+1, X509_PURPOSE_get0_name(purp));
-        }
-
-        ok = 0;
-        break;
-      }
 
       default:
         tls_log("error verifying client certificate: [%d] %s",
@@ -10391,109 +10445,79 @@ static int tls_verify_cb(int ok, X509_STORE_CTX *ctx) {
     pr_event_generate("mod_tls.verify-client", NULL);
 
   } else {
-    pr_event_generate("mod_tls.verify-client-failed", &verify_err);
+    pr_event_generate("mod_tls.verify-client-failed", &verify_error);
   }
 
   return ok;
 }
 
-/* This routine is (very much!) based on the work by Ralf S. Engelschall
- * <rse@engelshall.com>.  Comments by Ralf.
- */
 static int tls_verify_crl(int ok, X509_STORE_CTX *ctx) {
-  register int i = 0;
-  X509_NAME *subject = NULL, *issuer = NULL;
+  register unsigned int i = 0;
+  const X509_NAME *subject = NULL, *issuer = NULL;
   X509 *xs = NULL;
   STACK_OF(X509_CRL) *crls = NULL;
-  X509_STORE_CTX *store_ctx = NULL;
-  int n, res;
+  int res, verify_error;
 
-  /* Unless a revocation store for CRLs was created we cannot do any
-   * CRL-based verification, of course.
-   */
-  if (tls_crl_store == NULL) {
-    return ok;
-  }
-
-  tls_log("%s",
-    "CRL store present, checking client certificate against configured CRLs");
-
-  /* Determine certificate ingredients in advance. */
+  verify_error = X509_STORE_CTX_get_error(ctx);
   xs = X509_STORE_CTX_get_current_cert(ctx);
-
   subject = X509_get_subject_name(xs);
-  pr_trace_msg(trace_channel, 15,
-    "verifying cert: subject = '%s'", tls_x509_name_oneline(subject));
-
   issuer = X509_get_issuer_name(xs);
+
   pr_trace_msg(trace_channel, 15,
-    "verifying cert: issuer = '%s'", tls_x509_name_oneline(issuer));
-
-  /* OpenSSL provides the general mechanism to deal with CRLs but does not
-   * use them automatically when verifying certificates, so we do it
-   * explicitly here. We will check the CRL for the currently checked
-   * certificate, if there is such a CRL in the store.
-   *
-   * We come through this procedure for each certificate in the certificate
-   * chain, starting with the root-CA's certificate. At each step we've to
-   * both verify the signature on the CRL (to make sure it's a valid CRL)
-   * and its revocation list (to make sure the current certificate isn't
-   * revoked).  But because to check the signature on the CRL we need the
-   * public key of the issuing CA certificate (which was already processed
-   * one round before), we've a little problem. But we can both solve it and
-   * at the same time optimize the processing by using the following
-   * verification scheme (idea and code snippets borrowed from the GLOBUS
-   * project):
-   *
-   * 1. We'll check the signature of a CRL in each step when we find a CRL
-   *    through the _subject_ name of the current certificate. This CRL
-   *    itself will be needed the first time in the next round, of course.
-   *    But we do the signature processing one round before this where the
-   *    public key of the CA is available.
-   *
-   * 2. We'll check the revocation list of a CRL in each step when
-   *    we find a CRL through the _issuer_ name of the current certificate.
-   *    This CRLs signature was then already verified one round before.
-   *
-   * This verification scheme allows a CA to revoke its own certificate as
-   * well, of course.
-   */
-
-  /* Try to retrieve a CRL corresponding to the _subject_ of
-   * the current certificate in order to verify its integrity.
-   */
-  store_ctx = X509_STORE_CTX_new();
-#if OPENSSL_VERSION_NUMBER > 0x000907000L
-  if (X509_STORE_CTX_init(store_ctx, tls_crl_store, NULL, NULL) <= 0) {
-    tls_log("error initializing CRL store context: %s", tls_get_errors());
-    X509_STORE_CTX_free(store_ctx);
-    return ok;
-  }
-#else
-  X509_STORE_CTX_init(store_ctx, tls_crl_store, NULL, NULL);
-#endif
+    "verifying cert: subject = '%s', issuer = '%s', error = %s (ok = %d)",
+    tls_x509_name_oneline(subject), tls_x509_name_oneline(issuer),
+    X509_verify_cert_error_string(verify_error), ok);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
     !defined(HAVE_LIBRESSL)
-  crls = X509_STORE_CTX_get1_crls(store_ctx, issuer);
+  crls = X509_STORE_CTX_get1_crls(ctx, issuer);
 #elif OPENSSL_VERSION_NUMBER >= 0x10000000L && \
       !defined(HAVE_LIBRESSL)
-  crls = X509_STORE_get1_crls(store_ctx, issuer);
+  crls = X509_STORE_get1_crls(ctx, issuer);
 #else
   /* Your OpenSSL is before 1.0.0.  You really need to upgrade. */
   crls = NULL;
 #endif /* OpenSSL-1.1.x and later */
+
   if (crls != NULL) {
-    for (i = 0; i < sk_X509_CRL_num(crls); i++) {
+    unsigned int crl_count;
+    X509_OBJECT *obj = NULL;
+    EVP_PKEY *pkey;
+
+    obj = X509_STORE_CTX_get_obj_by_subject(ctx, X509_LU_X509, issuer);
+    if (obj == NULL) {
+      pr_trace_msg(trace_channel, 1,
+        "error getting CRL issuer '%s' certificate: %s",
+        tls_x509_name_oneline(issuer), tls_get_errors());
+      X509_STORE_CTX_set_error(ctx, X509_V_ERR_UNABLE_TO_GET_CRL);
+      sk_X509_CRL_free(crls);
+      return FALSE;
+    }
+
+    pkey = X509_get_pubkey(X509_OBJECT_get0_X509(obj));
+    X509_OBJECT_free(obj);
+
+    if (pkey == NULL) {
+      pr_trace_msg(trace_channel, 1,
+        "error getting CRL issuer '%s' public key: %s",
+        tls_x509_name_oneline(issuer), tls_get_errors());
+      X509_STORE_CTX_set_error(ctx, X509_V_ERR_CRL_SIGNATURE_FAILURE);
+      sk_X509_CRL_free(crls);
+      return FALSE;
+    }
+
+    crl_count = sk_X509_CRL_num(crls);
+    for (i = 0; i < crl_count; i++) {
       X509_CRL *crl = NULL;
-      EVP_PKEY *pubkey;
+      X509_NAME *crl_issuer = NULL;
       char buf[512];
       int len;
       BIO *b = BIO_new(BIO_s_mem());
 
       crl = sk_X509_CRL_value(crls, i);
-      BIO_printf(b, "CA CRL: Issuer: ");
-      X509_NAME_print(b, issuer, 0);
+      BIO_printf(b, "Issuer: ");
+      crl_issuer = X509_CRL_get_issuer(crl);
+      X509_NAME_print(b, crl_issuer, 0);
 
       BIO_printf(b, ", lastUpdate: ");
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
@@ -10516,27 +10540,46 @@ static int tls_verify_crl(int ok, X509_STORE_CTX *ctx) {
       buf[len] = '\0';
 
       BIO_free(b);
-      tls_log("%s", buf);
+      tls_log("CRL: %s", buf);
 
-      pubkey = X509_get_pubkey(xs);
-
-      /* Verify the signature on this CRL */
-      res = X509_CRL_verify(crl, pubkey);
-      if (pubkey != NULL) {
-        EVP_PKEY_free(pubkey);
-      }
-
+      /* Verify the signature on this CRL using the public key from the issuer
+       * of the CRL.
+       */
+      res = X509_CRL_verify(crl, pkey);
       if (res <= 0) {
         tls_log("invalid signature on CRL: %s", tls_get_errors());
 
         X509_STORE_CTX_set_error(ctx, X509_V_ERR_CRL_SIGNATURE_FAILURE);
         sk_X509_CRL_free(crls);
-        X509_STORE_CTX_cleanup(store_ctx);
-        X509_STORE_CTX_free(store_ctx);
         return FALSE;
       }
 
-      /* Check date of CRL to make sure it's not expired */
+      /* Check the last update of the CRL to make sure it's valid. */
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+      res = X509_cmp_current_time(X509_CRL_get0_lastUpdate(crl));
+#else
+      res = X509_cmp_current_time(X509_CRL_get_lastUpdate(crl));
+#endif /* OpenSSL 1.1.x and later */
+      if (res == 0) {
+        tls_log("CRL has invalid lastUpdate field: %s", tls_get_errors());
+
+        X509_STORE_CTX_set_error(ctx,
+          X509_V_ERR_ERROR_IN_CRL_LAST_UPDATE_FIELD);
+        sk_X509_CRL_free(crls);
+        return FALSE;
+      }
+
+      if (res > 0) {
+        tls_log("%s", "CRL is not yet valid, ignoring all certificates until "
+          "an updated CRL is obtained");
+
+        X509_STORE_CTX_set_error(ctx, X509_V_ERR_CRL_NOT_YET_VALID);
+        sk_X509_CRL_free(crls);
+        return TRUE;
+      }
+
+      /* Check next update of CRL to make sure it's not expired. */
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
     !defined(HAVE_LIBRESSL)
       res = X509_cmp_current_time(X509_CRL_get0_nextUpdate(crl));
@@ -10545,13 +10588,20 @@ static int tls_verify_crl(int ok, X509_STORE_CTX *ctx) {
 #endif /* OpenSSL 1.1.x and later */
 
       if (res == 0) {
+        tls_log("CRL has invalid lastUpdate field: %s", tls_get_errors());
+
+        X509_STORE_CTX_set_error(ctx,
+          X509_V_ERR_ERROR_IN_CRL_LAST_UPDATE_FIELD);
+        sk_X509_CRL_free(crls);
+        return FALSE;
+      }
+
+      if (res == 0) {
         tls_log("CRL has invalid nextUpdate field: %s", tls_get_errors());
 
         X509_STORE_CTX_set_error(ctx,
           X509_V_ERR_ERROR_IN_CRL_NEXT_UPDATE_FIELD);
         sk_X509_CRL_free(crls);
-        X509_STORE_CTX_cleanup(store_ctx);
-        X509_STORE_CTX_free(store_ctx);
         return FALSE;
       }
 
@@ -10565,8 +10615,6 @@ static int tls_verify_crl(int ok, X509_STORE_CTX *ctx) {
 
         X509_STORE_CTX_set_error(ctx, X509_V_ERR_CRL_HAS_EXPIRED);
         sk_X509_CRL_free(crls);
-        X509_STORE_CTX_cleanup(store_ctx);
-        X509_STORE_CTX_free(store_ctx);
         return FALSE;
       }
     }
@@ -10575,65 +10623,6 @@ static int tls_verify_crl(int ok, X509_STORE_CTX *ctx) {
     crls = NULL;
   }
 
-  /* Try to retrieve a CRL corresponding to the _issuer_ of
-   * the current certificate in order to check for revocation.
-   */
-
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(HAVE_LIBRESSL)
-  crls = X509_STORE_CTX_get1_crls(store_ctx, subject);
-#elif OPENSSL_VERSION_NUMBER >= 0x10000000L && \
-      !defined(HAVE_LIBRESSL)
-  crls = X509_STORE_get1_crls(store_ctx, subject);
-#else
-  /* Your OpenSSL is before 1.0.0.  You really need to upgrade. */
-  crls = NULL;
-#endif /* OpenSSL-1.1.x and later */
-  if (crls != NULL) {
-    for (i = 0; i < sk_X509_CRL_num(crls); i++) {
-      register int j;
-      X509_CRL *crl;
-
-      crl = sk_X509_CRL_value(crls, i);
-
-      /* Check if the current certificate is revoked by this CRL */
-      n = sk_X509_REVOKED_num(X509_CRL_get_REVOKED(crl));
-      for (j = 0; j < n; j++) {
-        X509_REVOKED *revoked;
-        const ASN1_INTEGER *sn;
-
-        revoked = sk_X509_REVOKED_value(X509_CRL_get_REVOKED(crl), j);
-        if (revoked == NULL) {
-          continue;
-        }
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(HAVE_LIBRESSL)
-        sn = X509_REVOKED_get0_serialNumber(revoked);
-#else
-        sn = revoked->serialNumber;
-#endif /* OpenSSL-1.1.x and later */
-
-        if (ASN1_INTEGER_cmp(sn, X509_get_serialNumber(xs)) == 0) {
-          long serial = ASN1_INTEGER_get(sn);
-          char *cp = tls_x509_name_oneline(issuer);
-
-          tls_log("certificate with serial number %ld (0x%lX) revoked per CRL "
-            "from issuer '%s'", serial, serial, cp ? cp : "(ERROR)");
-
-          X509_STORE_CTX_set_error(ctx, X509_V_ERR_CERT_REVOKED);
-          sk_X509_CRL_free(crls);
-          X509_STORE_CTX_cleanup(store_ctx);
-          X509_STORE_CTX_free(store_ctx);
-          return FALSE;
-        }
-      }
-    }
-
-    sk_X509_CRL_free(crls);
-  }
-
-  X509_STORE_CTX_cleanup(store_ctx);
-  X509_STORE_CTX_free(store_ctx);
   return ok;
 }
 
@@ -10642,7 +10631,7 @@ static int tls_verify_ocsp_url(X509_STORE_CTX *ctx, X509 *cert,
     const char *url) {
   BIO *conn;
   X509 *issuing_cert = NULL;
-  X509_NAME *subj = NULL;
+  const X509_NAME *subj = NULL;
   X509_STORE *store = NULL;
   const char *subj_name;
   char *host = NULL, *port = NULL, *uri = NULL;
@@ -10872,12 +10861,12 @@ static int tls_verify_ocsp_url(X509_STORE_CTX *ctx, X509 *cert,
     return FALSE;
   }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(HAVE_LIBRESSL)
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
   store = X509_STORE_CTX_get0_store(ctx);
 #else
   store = ctx->ctx;
-#endif /* OpenSSL-1.1.x and later */
+#endif /* OpenSSL-1.1.x/LibreSSL-3.5.x and later */
   res = OCSP_basic_verify(basic_resp, NULL, store, 0);
   if (res != 1) {
     tls_log("error verifying basic response from OCSP responder at '%s': %s",
@@ -11060,8 +11049,14 @@ static int tls_verify_ocsp(int ok, X509_STORE_CTX *ctx) {
         ocsp_urls = make_array(tmp_pool, 1, sizeof(char *));
       }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
       *((char **) push_array(ocsp_urls)) = pstrdup(tmp_pool,
-        (char *) desc->location->d.uniformResourceIdentifier->data);
+        (char *) ASN1_STRING_get0_data(desc->location->d.uniformResourceIdentifier));
+#else
+      *((char **) push_array(ocsp_urls)) = pstrdup(tmp_pool,
+        (char *) ASN1_STRING_data(desc->location->d.uniformResourceIdentifier));
+#endif /* OpenSSL 1.1.x and later */
     }
   }
 
@@ -11129,7 +11124,7 @@ static ssize_t tls_write(SSL *ssl, const void *buf, size_t len) {
   return count;
 }
 
-static char *tls_x509_name_oneline(X509_NAME *x509_name) {
+static char *tls_x509_name_oneline(const X509_NAME *x509_name) {
   static char buf[1024] = {'\0'};
 
   /* If we are using OpenSSL 0.9.6 or newer, we want to use
@@ -11616,7 +11611,7 @@ static int tls_ocsp_cache_status(pr_ctrls_t *ctrl, int flags) {
 /* Controls
  */
 
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
 static int tls_handle_sesscache_clear(pr_ctrls_t *ctrl, int reqargc,
     char **reqargv) {
   int res;
@@ -11625,15 +11620,13 @@ static int tls_handle_sesscache_clear(pr_ctrls_t *ctrl, int reqargc,
   if (res < 0) {
     pr_ctrls_add_response(ctrl,
       "tls sesscache: error clearing session cache: %s", strerror(errno));
-
-  } else {
-    pr_ctrls_add_response(ctrl, "tls sesscache: cleared %d %s from '%s' "
-      "session cache", res, res != 1 ? "sessions" : "session",
-      tls_sess_cache->cache_name);
-    res = 0;
+    return PR_CTRLS_STATUS_INTERNAL_ERROR;
   }
 
-  return res;
+  pr_ctrls_add_response(ctrl, "tls sesscache: cleared %d %s from '%s' "
+    "session cache", res, res != 1 ? "sessions" : "session",
+    tls_sess_cache->cache_name);
+  return PR_CTRLS_STATUS_OK;
 }
 
 static int tls_handle_sesscache_info(pr_ctrls_t *ctrl, int reqargc,
@@ -11652,7 +11645,7 @@ static int tls_handle_sesscache_info(pr_ctrls_t *ctrl, int reqargc,
       case '?':
         pr_ctrls_add_response(ctrl,
           "tls sesscache: unsupported parameter: '%s'", reqargv[1]);
-        return -1;
+        return PR_CTRLS_STATUS_WRONG_PARAMETERS;
     }
   }
 
@@ -11661,12 +11654,10 @@ static int tls_handle_sesscache_info(pr_ctrls_t *ctrl, int reqargc,
     pr_ctrls_add_response(ctrl,
       "tls sesscache: error obtaining session cache status: %s",
       strerror(errno));
-
-  } else {
-    res = 0;
+    return PR_CTRLS_STATUS_INTERNAL_ERROR;
   }
 
-  return res;
+  return PR_CTRLS_STATUS_OK;
 }
 
 static int tls_handle_sesscache_remove(pr_ctrls_t *ctrl, int reqargc,
@@ -11677,14 +11668,12 @@ static int tls_handle_sesscache_remove(pr_ctrls_t *ctrl, int reqargc,
   if (res < 0) {
     pr_ctrls_add_response(ctrl,
       "tls sesscache: error removing session cache: %s", strerror(errno));
-
-  } else {
-    pr_ctrls_add_response(ctrl, "tls sesscache: removed '%s' session cache",
-      tls_sess_cache->cache_name);
-    res = 0;
+    return PR_CTRLS_STATUS_INTERNAL_ERROR;
   }
 
-  return res;
+  pr_ctrls_add_response(ctrl, "tls sesscache: removed '%s' session cache",
+    tls_sess_cache->cache_name);
+  return PR_CTRLS_STATUS_OK;
 }
 
 static int tls_handle_sesscache(pr_ctrls_t *ctrl, int reqargc, char **reqargv) {
@@ -11693,32 +11682,32 @@ static int tls_handle_sesscache(pr_ctrls_t *ctrl, int reqargc, char **reqargv) {
   if (reqargc == 0 ||
       reqargv == NULL) {
     pr_ctrls_add_response(ctrl, "tls sesscache: missing required parameters");
-    return -1;
+    return PR_CTRLS_STATUS_WRONG_PARAMETERS;
   }
 
-  if (strncmp(reqargv[0], "info", 5) == 0) {
+  if (strcmp(reqargv[0], "info") == 0) {
     /* Check the ACLs. */
-    if (!pr_ctrls_check_acl(ctrl, tls_acttab, "info")) {
+    if (pr_ctrls_check_acl(ctrl, tls_acttab, "info") != TRUE) {
       pr_ctrls_add_response(ctrl, "access denied");
-      return -1;
+      return PR_CTRLS_STATUS_ACCESS_DENIED;
     }
 
     return tls_handle_sesscache_info(ctrl, reqargc, reqargv);
 
-  } else if (strncmp(reqargv[0], "clear", 6) == 0) {
+  } else if (strcmp(reqargv[0], "clear") == 0) {
     /* Check the ACLs. */
-    if (!pr_ctrls_check_acl(ctrl, tls_acttab, "clear")) {
+    if (pr_ctrls_check_acl(ctrl, tls_acttab, "clear") != TRUE) {
       pr_ctrls_add_response(ctrl, "access denied");
-      return -1;
+      return PR_CTRLS_STATUS_ACCESS_DENIED;
     }
 
     return tls_handle_sesscache_clear(ctrl, reqargc, reqargv);
 
-  } else if (strncmp(reqargv[0], "remove", 7) == 0) {
+  } else if (strcmp(reqargv[0], "remove") == 0) {
     /* Check the ACLs. */
-    if (!pr_ctrls_check_acl(ctrl, tls_acttab, "remove")) {
+    if (pr_ctrls_check_acl(ctrl, tls_acttab, "remove") != TRUE) {
       pr_ctrls_add_response(ctrl, "access denied");
-      return -1;
+      return PR_CTRLS_STATUS_ACCESS_DENIED;
     }
 
     return tls_handle_sesscache_remove(ctrl, reqargc, reqargv);
@@ -11726,7 +11715,7 @@ static int tls_handle_sesscache(pr_ctrls_t *ctrl, int reqargc, char **reqargv) {
 
   pr_ctrls_add_response(ctrl, "tls sesscache: unknown sesscache action: '%s'",
     reqargv[0]);
-  return -1;
+  return PR_CTRLS_STATUS_UNSUPPORTED_OPERATION;
 }
 
 static int tls_handle_ocspcache_info(pr_ctrls_t *ctrl, int reqargc,
@@ -11741,7 +11730,7 @@ static int tls_handle_ocspcache_info(pr_ctrls_t *ctrl, int reqargc,
       case '?':
         pr_ctrls_add_response(ctrl,
           "tls ocspcache: unsupported parameter: '%s'", reqargv[1]);
-        return -1;
+        return PR_CTRLS_STATUS_WRONG_PARAMETERS;
     }
   }
 
@@ -11750,12 +11739,10 @@ static int tls_handle_ocspcache_info(pr_ctrls_t *ctrl, int reqargc,
     pr_ctrls_add_response(ctrl,
       "tls ocspcache: error obtaining OCSP cache status: %s",
       strerror(errno));
-
-  } else {
-    res = 0;
+    return PR_CTRLS_STATUS_INTERNAL_ERROR;
   }
 
-  return res;
+  return PR_CTRLS_STATUS_OK;
 }
 
 static int tls_handle_ocspcache_clear(pr_ctrls_t *ctrl, int reqargc,
@@ -11766,15 +11753,13 @@ static int tls_handle_ocspcache_clear(pr_ctrls_t *ctrl, int reqargc,
   if (res < 0) {
     pr_ctrls_add_response(ctrl,
       "tls ocspcache: error clearing OCSP cache: %s", strerror(errno));
-
-  } else {
-    pr_ctrls_add_response(ctrl, "tls ocspcache: cleared %d %s from '%s' "
-      "OCSP cache", res, res != 1 ? "responses" : "response",
-      tls_ocsp_cache->cache_name);
-    res = 0;
+    return PR_CTRLS_STATUS_INTERNAL_ERROR;
   }
 
-  return res;
+  pr_ctrls_add_response(ctrl, "tls ocspcache: cleared %d %s from '%s' "
+    "OCSP cache", res, res != 1 ? "responses" : "response",
+    tls_ocsp_cache->cache_name);
+  return PR_CTRLS_STATUS_OK;
 }
 
 static int tls_handle_ocspcache_remove(pr_ctrls_t *ctrl, int reqargc,
@@ -11785,14 +11770,12 @@ static int tls_handle_ocspcache_remove(pr_ctrls_t *ctrl, int reqargc,
   if (res < 0) {
     pr_ctrls_add_response(ctrl,
       "tls ocspcache: error removing OCSP cache: %s", strerror(errno));
-
-  } else {
-    pr_ctrls_add_response(ctrl, "tls sesscache: removed '%s' OCSP cache",
-      tls_ocsp_cache->cache_name);
-    res = 0;
+    return PR_CTRLS_STATUS_INTERNAL_ERROR;
   }
 
-  return res;
+  pr_ctrls_add_response(ctrl, "tls sesscache: removed '%s' OCSP cache",
+    tls_ocsp_cache->cache_name);
+  return PR_CTRLS_STATUS_OK;
 }
 
 static int tls_handle_ocspcache(pr_ctrls_t *ctrl, int reqargc, char **reqargv) {
@@ -11800,32 +11783,32 @@ static int tls_handle_ocspcache(pr_ctrls_t *ctrl, int reqargc, char **reqargv) {
   if (reqargc == 0 ||
       reqargv == NULL) {
     pr_ctrls_add_response(ctrl, "tls ocspcache: missing required parameters");
-    return -1;
+    return PR_CTRLS_STATUS_WRONG_PARAMETERS;
   }
 
-  if (strncmp(reqargv[0], "info", 5) == 0) {
+  if (strcmp(reqargv[0], "info") == 0) {
     /* Check the ACLs. */
-    if (!pr_ctrls_check_acl(ctrl, tls_acttab, "info")) {
+    if (pr_ctrls_check_acl(ctrl, tls_acttab, "info") != TRUE) {
       pr_ctrls_add_response(ctrl, "access denied");
-      return -1;
+      return PR_CTRLS_STATUS_ACCESS_DENIED;
     }
 
     return tls_handle_ocspcache_info(ctrl, reqargc, reqargv);
 
-  } else if (strncmp(reqargv[0], "clear", 6) == 0) {
+  } else if (strcmp(reqargv[0], "clear") == 0) {
     /* Check the ACLs. */
-    if (!pr_ctrls_check_acl(ctrl, tls_acttab, "clear")) {
+    if (pr_ctrls_check_acl(ctrl, tls_acttab, "clear") != TRUE) {
       pr_ctrls_add_response(ctrl, "access denied");
-      return -1;
+      return PR_CTRLS_STATUS_ACCESS_DENIED;
     }
 
     return tls_handle_ocspcache_clear(ctrl, reqargc, reqargv);
 
-  } else if (strncmp(reqargv[0], "remove", 7) == 0) {
+  } else if (strcmp(reqargv[0], "remove") == 0) {
     /* Check the ACLs. */
-    if (!pr_ctrls_check_acl(ctrl, tls_acttab, "remove")) {
+    if (pr_ctrls_check_acl(ctrl, tls_acttab, "remove") != TRUE) {
       pr_ctrls_add_response(ctrl, "access denied");
-      return -1;
+      return PR_CTRLS_STATUS_ACCESS_DENIED;
     }
 
     return tls_handle_ocspcache_remove(ctrl, reqargc, reqargv);
@@ -11833,7 +11816,7 @@ static int tls_handle_ocspcache(pr_ctrls_t *ctrl, int reqargc, char **reqargv) {
 
   pr_ctrls_add_response(ctrl, "tls ocspcache: unknown ocspcache action: '%s'",
     reqargv[0]);
-  return -1;
+  return PR_CTRLS_STATUS_UNSUPPORTED_OPERATION;
 }
 
 /* Our main ftpdctl action handler */
@@ -11842,34 +11825,34 @@ static int tls_handle_tls(pr_ctrls_t *ctrl, int reqargc, char **reqargv) {
   /* Sanity check */
   if (reqargc == 0 ||
       reqargv == NULL) {
-    pr_ctrls_add_response(ctrl, "tls: missing required parameters");
-    return -1;
+    pr_ctrls_add_response(ctrl, "missing required parameters");
+    return PR_CTRLS_STATUS_WRONG_PARAMETERS;
   }
 
-  if (strncmp(reqargv[0], "sesscache", 10) == 0) {
+  if (strcmp(reqargv[0], "sesscache") == 0) {
     /* Check the ACLs. */
-    if (!pr_ctrls_check_acl(ctrl, tls_acttab, "sesscache")) {
+    if (pr_ctrls_check_acl(ctrl, tls_acttab, "sesscache") != TRUE) {
       pr_ctrls_add_response(ctrl, "access denied");
-      return -1;
+      return PR_CTRLS_STATUS_ACCESS_DENIED;
     }
 
     return tls_handle_sesscache(ctrl, --reqargc, ++reqargv);
   }
 
-  if (strncmp(reqargv[0], "ocspcache", 10) == 0) {
+  if (strcmp(reqargv[0], "ocspcache") == 0) {
     /* Check the ACLs. */
-    if (!pr_ctrls_check_acl(ctrl, tls_acttab, "ocspcache")) {
+    if (pr_ctrls_check_acl(ctrl, tls_acttab, "ocspcache") != TRUE) {
       pr_ctrls_add_response(ctrl, "access denied");
-      return -1;
+      return PR_CTRLS_STATUS_ACCESS_DENIED;
     }
 
     return tls_handle_ocspcache(ctrl, --reqargc, ++reqargv);
   }
 
-  pr_ctrls_add_response(ctrl, "tls: unknown tls action: '%s'", reqargv[0]);
-  return -1;
+  pr_ctrls_add_response(ctrl, "unknown tls action: '%s'", reqargv[0]);
+  return PR_CTRLS_STATUS_UNSUPPORTED_OPERATION;
 }
-#endif
+#endif /* PR_USE_CTRLS */
 
 /* TLSSessionCache callbacks
  */
@@ -12345,7 +12328,7 @@ static void tls_data_renegotiate(SSL *ssl) {
       tls_data_renegotiate_current >= tls_data_renegotiate_limit) {
 
     switch (SSL_version(ssl)) {
-# if defined(TLS1_3_VERSION)
+# if defined(TLS1_3_VERSION) && !defined(HAVE_LIBRESSL)
       /* If we're a TLSv1.3 session, use SSL_key_update() to request new
        * session keys; TLSv1.3 does not support renegotiations.
        */
@@ -12368,7 +12351,7 @@ static void tls_data_renegotiate(SSL *ssl) {
         }
       }
       break;
-# endif /* TLS1_3_VERSION */
+# endif /* TLS1_3_VERSION and no LibreSSL */
 
       default: {
         tls_flags |= TLS_SESS_DATA_RENEGOTIATING;
@@ -13018,7 +13001,9 @@ MODRET tls_auth(cmd_rec *cmd) {
   /* Convert the parameter to upper case */
   mode = cmd->argv[1];
   for (i = 0; i < strlen(mode); i++) {
-    mode[i] = toupper(mode[i]);
+    if (PR_ISALPHA((int) mode[i])) {
+      mode[i] = toupper(mode[i]);
+    }
   }
 
   if (strncmp(mode, "TLS", 4) == 0 ||
@@ -13375,37 +13360,106 @@ MODRET tls_post_pass(cmd_rec *cmd) {
 
     if (protocols_config != NULL) {
       register unsigned int i;
-      int allow_ftps = FALSE;
+      int allow_sess = FALSE;
       array_header *protocols;
       char **elts;
 
       protocols = protocols_config->argv[0];
       elts = protocols->elts;
 
-      /* We only want to check for 'ftps' in the configured Protocols list
-       * if the RFC2228 mechanism is "TLS".
-       */
-      if (session.rfc2228_mech != NULL &&
-          strncmp(session.rfc2228_mech, "TLS", 4) == 0) {
-        for (i = 0; i < protocols->nelts; i++) {
-          char *proto;
+      for (i = 0; i < protocols->nelts; i++) {
+        char *proto;
 
-          proto = elts[i];
-          if (proto != NULL) {
-            if (strncasecmp(proto, "ftps", 5) == 0) {
-              allow_ftps = TRUE;
+        proto = elts[i];
+        if (proto != NULL) {
+          /* We only want to check for 'ftps' in the configured Protocols list
+           * if the RFC2228 mechanism is "TLS".
+           */
+
+          if (strcasecmp(proto, "ftp") == 0) {
+            if (session.rfc2228_mech == NULL ||
+                strcmp(session.rfc2228_mech, "TLS") != 0) {
+              allow_sess = TRUE;
+              break;
+            }
+          }
+
+          if (strcasecmp(proto, "ftps") == 0) {
+            if (session.rfc2228_mech != NULL &&
+                strcmp(session.rfc2228_mech, "TLS") == 0) {
+              allow_sess = TRUE;
               break;
             }
           }
         }
       }
 
-      if (allow_ftps == FALSE) {
-        tls_log("ftps protocol denied by Protocols config");
+      if (allow_sess == FALSE) {
+        tls_log("%s protocol denied by Protocols config",
+          pr_session_get_protocol(0));
         pr_response_send(R_530, "%s", _("Login incorrect."));
         pr_session_disconnect(&tls_module, PR_SESS_DISCONNECT_CONFIG_ACL,
           "Denied by Protocols setting");
       }
+    }
+  }
+
+  return PR_DECLINED(cmd);
+}
+
+MODRET tls_post_user(cmd_rec *cmd) {
+  const void *ifsess_note;
+  config_rec *c;
+
+  if (tls_engine == FALSE) {
+    return PR_DECLINED(cmd);
+  }
+
+  /* Look for a session note, stashed by mod_ifsession when its
+   * PerUnauthenticatedUser option is set.  That is our cue to honor any
+   * <IfUser>/<IfGroup> TLSRequired settings for this user.
+   */
+  ifsess_note = pr_table_get(session.notes,
+    "mod_ifsession.per-unauthenticated-user", NULL);
+  if (ifsess_note == NULL) {
+    return PR_DECLINED(cmd);
+  }
+
+  c = find_config(main_server->conf, CONF_PARAM, "TLSOptions", FALSE);
+  while (c != NULL) {
+    unsigned long opts = 0;
+
+    pr_signals_handle();
+
+    opts = *((unsigned long *) c->argv[0]);
+    tls_opts |= opts;
+
+    c = find_config_next(c, c->next, CONF_PARAM, "TLSOptions", FALSE);
+  }
+
+  if (!(tls_opts & TLS_OPT_ALLOW_PER_USER)) {
+    return PR_DECLINED(cmd);
+  }
+
+  c = find_config(main_server->conf, CONF_PARAM, "TLSRequired", FALSE);
+  if (c != NULL) {
+    tls_required_on_ctrl = *((int *) c->argv[0]);
+    tls_required_on_data = *((int *) c->argv[1]);
+    tls_required_on_auth = *((int *) c->argv[2]);
+
+    /* We cannot return PR_ERROR for the USER command at this point, since
+     * this is a POST_CMD handler.  Instead, we will simply check the
+     * TLSRequired policy, and if the current session does not make the
+     * cut, well, then the session gets cut.
+     */
+    if ((tls_required_on_ctrl == 1 ||
+         tls_required_on_auth == 1) &&
+        (!(tls_flags & TLS_SESS_ON_CTRL))) {
+      tls_log("SSL/TLS required but absent on control channel, "
+        "disconnecting");
+      pr_response_send(R_530, "%s", _("Login incorrect."));
+      pr_session_disconnect(&tls_module, PR_SESS_DISCONNECT_CONFIG_ACL,
+        "TLSRequired");
     }
   }
 
@@ -13847,12 +13901,36 @@ MODRET set_tlsciphersuite(cmd_rec *cmd) {
   if (cmd->argc-1 == 1) {
     ciphersuite = cmd->argv[1];
 
+    /* Currently, OpenSSL ciphersuite names for TLSv1.3 all use underscores;
+     * ciphersuite names for TLSv1.2 and older do NOT use underscores.
+     *
+     * So if we see an underscore in the configured ciphersuites here, we
+     * know that the optional protocol parameter has NOT been used, and that
+     * a TLSv1.3 ciphersuite is being configured -- and that this situation
+     * will be silently ignored by OpenSSL.
+     */
+    if (strchr(ciphersuite, '_') != NULL) {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
+        "use of TLSv1.3 ciphersuite in '", ciphersuite,
+        "' requires protocol parameter; use 'TLSCipherSuite TLSv1.3 ",
+        ciphersuite, "'", NULL));
+    }
+
   } else if (cmd->argc-1 == 2) {
     char *protocol_text;
 
     protocol_text = cmd->argv[1];
     if (strcasecmp(protocol_text, "TLSv1.3") == 0) {
       protocol = TLS_PROTO_TLS_V1_3;
+
+    } else if (strcasecmp(protocol_text, "TLSv1.2") == 0) {
+      protocol = TLS_PROTO_TLS_V1_2;
+
+    } else if (strcasecmp(protocol_text, "TLSv1.1") == 0) {
+      protocol = TLS_PROTO_TLS_V1_1;
+
+    } else if (strcasecmp(protocol_text, "TLSv1.0") == 0) {
+      protocol = TLS_PROTO_TLS_V1;
 
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
@@ -13907,31 +13985,35 @@ MODRET set_tlsciphersuite(cmd_rec *cmd) {
   c->argv[1] = palloc(c->pool, sizeof(int));
   *((int *) c->argv[1]) = protocol;
 
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
+
   return PR_HANDLED(cmd);
 }
 
 /* usage: TLSControlsACLs actions|all allow|deny user|group list */
 MODRET set_tlsctrlsacls(cmd_rec *cmd) {
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
   char *bad_action = NULL, **actions = NULL;
 
   CHECK_ARGS(cmd, 4);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  /* We can cheat here, and use the ctrls_parse_acl() routine to
-   * separate the given string...
-   */
-  actions = ctrls_parse_acl(cmd->tmp_pool, cmd->argv[1]);
+  actions = pr_ctrls_parse_acl(cmd->tmp_pool, cmd->argv[1]);
 
   /* Check the second parameter to make sure it is "allow" or "deny" */
-  if (strncmp(cmd->argv[2], "allow", 6) != 0 &&
-      strncmp(cmd->argv[2], "deny", 5) != 0) {
+  if (strcmp(cmd->argv[2], "allow") != 0 &&
+      strcmp(cmd->argv[2], "deny") != 0) {
     CONF_ERROR(cmd, "second parameter must be 'allow' or 'deny'");
   }
 
   /* Check the third parameter to make sure it is "user" or "group" */
-  if (strncmp(cmd->argv[3], "user", 5) != 0 &&
-      strncmp(cmd->argv[3], "group", 6) != 0) {
+  if (strcmp(cmd->argv[3], "user") != 0 &&
+      strcmp(cmd->argv[3], "group") != 0) {
     CONF_ERROR(cmd, "third parameter must be 'user' or 'group'");
   }
 
@@ -14441,6 +14523,13 @@ MODRET set_tlsoptions(cmd_rec *cmd) {
 
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned long));
   *((unsigned long *) c->argv[0]) = opts;
+
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
 
   return PR_HANDLED(cmd);
 }
@@ -15705,13 +15794,13 @@ static void tls_exit_ev(const void *event_data, void *user_data) {
    * and thus we have a read-only copy.
    */
 
-  if (tls_ctrl_netio) {
+  if (tls_ctrl_netio != NULL) {
     pr_unregister_netio(PR_NETIO_STRM_CTRL);
     destroy_pool(tls_ctrl_netio->pool);
     tls_ctrl_netio = NULL;
   }
 
-  if (tls_data_netio) {
+  if (tls_data_netio != NULL) {
     pr_unregister_netio(PR_NETIO_STRM_DATA);
     destroy_pool(tls_data_netio->pool);
     tls_data_netio = NULL;
@@ -15722,7 +15811,6 @@ static void tls_exit_ev(const void *event_data, void *user_data) {
   }
 
   tls_closelog();
-  return;
 }
 
 static void tls_timeout_ev(const void *event_data, void *user_data) {
@@ -16433,7 +16521,7 @@ static void tls_lookup_stapling(server_rec *s) {
   } else {
     /* Reset to default. */
     tls_stapling_responder = NULL;
-  } 
+  }
 
   c = find_config(s->conf, CONF_PARAM, "TLSStaplingTimeout", FALSE);
   if (c != NULL) {
@@ -16550,23 +16638,14 @@ static void tls_lookup_all(server_rec *s) {
    */
   tls_dsa_cert_file = get_param_ptr(s->conf, "TLSDSACertificateFile", FALSE);
   tls_dsa_key_file = get_param_ptr(s->conf, "TLSDSACertificateKeyFile", FALSE);
-  if (tls_dsa_key_file == NULL) {
-    tls_dsa_key_file = tls_dsa_cert_file;
-  }
 
   tls_ec_cert_file = get_param_ptr(s->conf, "TLSECCertificateFile", FALSE);
   tls_ec_key_file = get_param_ptr(s->conf, "TLSECCertificateKeyFile", FALSE);
-  if (tls_ec_key_file == NULL) {
-    tls_ec_key_file = tls_ec_cert_file;
-  }
 
   tls_pkcs12_file = get_param_ptr(s->conf, "TLSPKCS12File", FALSE);
 
   tls_rsa_cert_file = get_param_ptr(s->conf, "TLSRSACertificateFile", FALSE);
   tls_rsa_key_file = get_param_ptr(s->conf, "TLSRSACertificateKeyFile", FALSE);
-  if (tls_rsa_key_file == NULL) {
-    tls_rsa_key_file = tls_rsa_cert_file;
-  }
 
   /* TLSCipherSuite */
   c = find_config(s->conf, CONF_PARAM, "TLSCipherSuite", FALSE);
@@ -17050,12 +17129,18 @@ static int tls_ssl_set_session_id_context(server_rec *s, SSL *ssl) {
 
 static char *get_sess_id_text(BIO *bio, const unsigned char *id,
     unsigned int idsz) {
-  register unsigned int i;
   char *data = NULL;
   long datalen;
 
-  for (i = 0; i < idsz; i++) {
-    BIO_printf(bio, "%02x", id[i]);
+  if (idsz > 0) {
+    register unsigned int i;
+
+    for (i = 0; i < idsz; i++) {
+      BIO_printf(bio, "%02x", id[i]);
+    }
+
+  } else {
+    BIO_printf(bio, "%s", "NONE");
   }
 
   datalen = BIO_get_mem_data(bio, &data);
@@ -17487,6 +17572,7 @@ static int tls_ctx_set_dsa_cert(SSL_CTX *ctx, X509 **dsa_cert) {
   X509 *cert;
   FILE *fh = NULL;
   int res, xerrno;
+  const char *key_file = NULL;
 
   if (tls_dsa_cert_file == NULL) {
     return 0;
@@ -17503,10 +17589,16 @@ static int tls_ctx_set_dsa_cert(SSL_CTX *ctx, X509 **dsa_cert) {
     return -1;
   }
 
-  /* As the file may contain sensitive data, we do not want it lingering
-   * around in stdio buffers.
+  /* Assume that if no separate TLSDSACertificateKeyFile was configured (or
+   * that if the configured TLSDSACertificateKeyFile is to the same path as
+   * the TLSDSACertificateFile), that the cert and key are in the same file.
+   * In that case, the file contains sensitive data, and we do not want it
+   * lingering around in stdio buffers.
    */
-  (void) setvbuf(fh, NULL, _IONBF, 0);
+  if (tls_dsa_key_file == NULL ||
+      strcmp(tls_dsa_cert_file, tls_dsa_key_file) == 0) {
+    (void) setvbuf(fh, NULL, _IONBF, 0);
+  }
 
   cert = read_cert(fh, ctx);
   if (cert == NULL) {
@@ -17536,29 +17628,33 @@ static int tls_ctx_set_dsa_cert(SSL_CTX *ctx, X509 **dsa_cert) {
   pr_trace_msg(trace_channel, 19, "loaded DSA server certificate from '%s'",
     tls_dsa_cert_file);
 
-  if (tls_dsa_key_file != NULL) {
-    if (tls_pkey) {
-      tls_pkey->flags |= TLS_PKEY_USE_DSA;
-      tls_pkey->flags &= ~(TLS_PKEY_USE_RSA|TLS_PKEY_USE_EC);
-    }
+  key_file = tls_dsa_key_file;
+  if (key_file == NULL) {
+    /* Assume the private key is in the cert file. */
+    key_file = tls_dsa_cert_file;
+  }
 
-    res = SSL_CTX_use_PrivateKey_file(ctx, tls_dsa_key_file, X509_FILETYPE_PEM);
-    if (res <= 0) {
-      PRIVS_RELINQUISH
+  if (tls_pkey != NULL) {
+    tls_pkey->flags |= TLS_PKEY_USE_DSA;
+    tls_pkey->flags &= ~(TLS_PKEY_USE_RSA|TLS_PKEY_USE_EC);
+  }
 
-      tls_log("error loading TLSDSACertificateKeyFile '%s': %s",
-        tls_dsa_key_file, tls_get_errors());
-      return -1;
-    }
+  res = SSL_CTX_use_PrivateKey_file(ctx, key_file, X509_FILETYPE_PEM);
+  if (res <= 0) {
+    PRIVS_RELINQUISH
 
-    res = SSL_CTX_check_private_key(ctx);
-    if (res != 1) {
-      PRIVS_RELINQUISH
+    tls_log("error loading TLSDSACertificateKeyFile '%s': %s", key_file,
+      tls_get_errors());
+    return -1;
+  }
 
-      tls_log("error checking key from TLSDSACertificateKeyFile '%s': %s",
-        tls_dsa_key_file, tls_get_errors());
-      return -1;
-    }
+  res = SSL_CTX_check_private_key(ctx);
+  if (res != 1) {
+    PRIVS_RELINQUISH
+
+    tls_log("error checking key from TLSDSACertificateKeyFile '%s': %s",
+      key_file, tls_get_errors());
+    return -1;
   }
   PRIVS_RELINQUISH
 
@@ -17570,6 +17666,7 @@ static int tls_ctx_set_ec_cert(SSL_CTX *ctx, X509 **ec_cert) {
   X509 *cert;
   FILE *fh = NULL;
   int res, xerrno;
+  const char *key_file = NULL;
 
   if (tls_ec_cert_file == NULL) {
     return 0;
@@ -17586,10 +17683,16 @@ static int tls_ctx_set_ec_cert(SSL_CTX *ctx, X509 **ec_cert) {
     return -1;
   }
 
-  /* As the file may contain sensitive data, we do not want it lingering
-   * around in stdio buffers.
+  /* Assume that if no separate TLSECCertificateKeyFile was configured (or
+   * that if the configured TLSECCertificateKeyFile is to the same path as
+   * the TLSECCertificateFile), that the cert and key are in the same file.
+   * In that case, the file contains sensitive data, and we do not want it
+   * lingering around in stdio buffers.
    */
-  (void) setvbuf(fh, NULL, _IONBF, 0);
+  if (tls_ec_key_file == NULL ||
+      strcmp(tls_ec_cert_file, tls_ec_key_file) == 0) {
+    (void) setvbuf(fh, NULL, _IONBF, 0);
+  }
 
   cert = read_cert(fh, ctx);
   if (cert == NULL) {
@@ -17619,29 +17722,33 @@ static int tls_ctx_set_ec_cert(SSL_CTX *ctx, X509 **ec_cert) {
   pr_trace_msg(trace_channel, 19, "loaded EC server certificate from '%s'",
     tls_ec_cert_file);
 
-  if (tls_ec_key_file != NULL) {
-    if (tls_pkey) {
-      tls_pkey->flags |= TLS_PKEY_USE_EC;
-      tls_pkey->flags &= ~(TLS_PKEY_USE_RSA|TLS_PKEY_USE_DSA);
-    }
+  key_file = tls_ec_key_file;
+  if (key_file == NULL) {
+    /* Assume the private key is in the cert file. */
+    key_file = tls_ec_cert_file;
+  }
 
-    res = SSL_CTX_use_PrivateKey_file(ctx, tls_ec_key_file, X509_FILETYPE_PEM);
-    if (res <= 0) {
-      PRIVS_RELINQUISH
+  if (tls_pkey != NULL) {
+    tls_pkey->flags |= TLS_PKEY_USE_EC;
+    tls_pkey->flags &= ~(TLS_PKEY_USE_RSA|TLS_PKEY_USE_DSA);
+  }
 
-      tls_log("error loading TLSECCertificateKeyFile '%s': %s",
-        tls_ec_key_file, tls_get_errors());
-      return -1;
-    }
+  res = SSL_CTX_use_PrivateKey_file(ctx, key_file, X509_FILETYPE_PEM);
+  if (res <= 0) {
+    PRIVS_RELINQUISH
 
-    res = SSL_CTX_check_private_key(ctx);
-    if (res != 1) {
-      PRIVS_RELINQUISH
+    tls_log("error loading TLSECCertificateKeyFile '%s': %s", key_file,
+      tls_get_errors());
+    return -1;
+  }
 
-      tls_log("error checking key from TLSECCertificateKeyFile '%s': %s",
-        tls_ec_key_file, tls_get_errors());
-      return -1;
-    }
+  res = SSL_CTX_check_private_key(ctx);
+  if (res != 1) {
+    PRIVS_RELINQUISH
+
+    tls_log("error checking key from TLSECCertificateKeyFile '%s': %s",
+      key_file, tls_get_errors());
+    return -1;
   }
 
   PRIVS_RELINQUISH
@@ -17848,6 +17955,7 @@ static int tls_ctx_set_rsa_cert(SSL_CTX *ctx, X509 **rsa_cert) {
   X509 *cert;
   FILE *fh = NULL;
   int res, xerrno;
+  const char *key_file = NULL;
 
   if (tls_rsa_cert_file == NULL) {
     return 0;
@@ -17865,10 +17973,16 @@ static int tls_ctx_set_rsa_cert(SSL_CTX *ctx, X509 **rsa_cert) {
     return -1;
   }
 
-  /* As the file may contain sensitive data, we do not want it lingering
-   * around in stdio buffers.
+  /* Assume that if no separate TLSRSACertificateKeyFile was configured (or
+   * that if the configured TLSRSACertificateKeyFile is to the same path as
+   * the TLSRSACertificateFile), that the cert and key are in the same file.
+   * In that case, the file contains sensitive data, and we do not want it
+   * lingering around in stdio buffers.
    */
-  (void) setvbuf(fh, NULL, _IONBF, 0);
+  if (tls_rsa_key_file == NULL ||
+      strcmp(tls_rsa_cert_file, tls_rsa_key_file) == 0) {
+    (void) setvbuf(fh, NULL, _IONBF, 0);
+  }
 
   cert = read_cert(fh, ctx);
   if (cert == NULL) {
@@ -17900,43 +18014,45 @@ static int tls_ctx_set_rsa_cert(SSL_CTX *ctx, X509 **rsa_cert) {
   pr_trace_msg(trace_channel, 19, "loaded RSA server certificate from '%s'",
     tls_rsa_cert_file);
 
-  if (tls_rsa_key_file != NULL) {
-    if (tls_pkey) {
-      tls_pkey->flags |= TLS_PKEY_USE_RSA;
-      tls_pkey->flags &= ~(TLS_PKEY_USE_DSA|TLS_PKEY_USE_EC);
-    }
+  key_file = tls_rsa_key_file;
+  if (key_file == NULL) {
+    /* Assume the private key is in the cert file. */
+    key_file = tls_rsa_cert_file;
+  }
 
-    res = SSL_CTX_use_PrivateKey_file(ctx, tls_rsa_key_file, X509_FILETYPE_PEM);
-    if (res <= 0) {
-      const char *errors;
+  if (tls_pkey != NULL) {
+    tls_pkey->flags |= TLS_PKEY_USE_RSA;
+    tls_pkey->flags &= ~(TLS_PKEY_USE_DSA|TLS_PKEY_USE_EC);
+  }
 
-      PRIVS_RELINQUISH
-      errors = tls_get_errors();
+  res = SSL_CTX_use_PrivateKey_file(ctx, key_file, X509_FILETYPE_PEM);
+  if (res <= 0) {
+    const char *errors;
 
-      pr_trace_msg(trace_channel, 3,
-        "error loading TLSRSACertificateKeyFile '%s': %s", tls_rsa_key_file,
-        errors);
-      pr_log_pri(PR_LOG_NOTICE, MOD_TLS_VERSION
-        ": error loading TLSRSACertificateKeyFile '%s': %s", tls_rsa_key_file,
-        errors);
-      return -1;
-    }
+    PRIVS_RELINQUISH
+    errors = tls_get_errors();
 
-    res = SSL_CTX_check_private_key(ctx);
-    if (res != 1) {
-      const char *errors;
+    pr_trace_msg(trace_channel, 3,
+      "error loading TLSRSACertificateKeyFile '%s': %s", key_file, errors);
+    pr_log_pri(PR_LOG_NOTICE, MOD_TLS_VERSION
+      ": error loading TLSRSACertificateKeyFile '%s': %s", key_file, errors);
+    return -1;
+  }
 
-      PRIVS_RELINQUISH
-      errors = tls_get_errors();
+  res = SSL_CTX_check_private_key(ctx);
+  if (res != 1) {
+    const char *errors;
 
-      pr_trace_msg(trace_channel, 3,
-        "error checking key from TLSRSACertificateKeyFile '%s': %s",
-        tls_rsa_key_file, errors);
-      pr_log_pri(PR_LOG_NOTICE, MOD_TLS_VERSION
-        ": error checking key from TLSRSACertificateKeyFile '%s': %s",
-        tls_rsa_key_file, errors);
-      return -1;
-    }
+    PRIVS_RELINQUISH
+    errors = tls_get_errors();
+
+    pr_trace_msg(trace_channel, 3,
+      "error checking key from TLSRSACertificateKeyFile '%s': %s", key_file,
+      errors);
+    pr_log_pri(PR_LOG_NOTICE, MOD_TLS_VERSION
+      ": error checking key from TLSRSACertificateKeyFile '%s': %s", key_file,
+      errors);
+    return -1;
   }
   PRIVS_RELINQUISH
 
@@ -18071,22 +18187,21 @@ static int tls_ctx_set_ciphers(SSL_CTX *ctx) {
 }
 
 static int tls_ctx_set_crls(SSL_CTX *ctx) {
+  X509_STORE *store;
+
   if (tls_crl_file == NULL &&
       tls_crl_path == NULL) {
     return 0;
   }
 
-  /* Set up the CRL. */
-  tls_crl_store = X509_STORE_new();
-  if (tls_crl_store == NULL) {
-    tls_log("error creating CRL store: %s", tls_get_errors());
+  store = SSL_CTX_get_cert_store(ctx);
+  if (store == NULL) {
+    tls_log("error getting SSL_CTX store: %s", tls_get_errors());
     return -1;
   }
 
   PRIVS_ROOT
-  if (X509_STORE_load_locations(tls_crl_store, tls_crl_file,
-      tls_crl_path) != 1) {
-
+  if (X509_STORE_load_locations(store, tls_crl_file, tls_crl_path) != 1) {
     if (tls_crl_file != NULL &&
         tls_crl_path == NULL) {
       tls_log("error loading TLSCARevocationFile '%s': %s", tls_crl_file,
@@ -18105,6 +18220,19 @@ static int tls_ctx_set_crls(SSL_CTX *ctx) {
   }
 
   PRIVS_RELINQUISH
+
+  if (tls_crl_file != NULL) {
+    pr_trace_msg(trace_channel, 19, "using CRL file '%s'", tls_crl_file);
+  }
+
+  if (tls_crl_path != NULL) {
+    pr_trace_msg(trace_channel, 19, "using CRL directory '%s'", tls_crl_path);
+  }
+
+  /* Make sure we enable CRL checking, now that we've loaded them. */
+  X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
+  X509_STORE_set_purpose(store, X509_PURPOSE_SSL_CLIENT);
+
   return 0;
 }
 
@@ -18866,9 +18994,10 @@ static int tls_sess_init(void) {
   /* Handle any requested crypto accelerators/drivers. */
   c = find_config(main_server->conf, CONF_PARAM, "TLSCryptoDevice", FALSE);
   if (c != NULL) {
+# if defined(PR_USE_OPENSSL_ENGINE)
     tls_crypto_device = (const char *) c->argv[0];
 
-    if (strncasecmp(tls_crypto_device, "ALL", 4) == 0) {
+    if (strcasecmp(tls_crypto_device, "ALL") == 0) {
       /* Load all ENGINE implementations bundled with OpenSSL. */
       ENGINE_load_builtin_engines();
       ENGINE_register_all_complete();
@@ -18925,6 +19054,9 @@ static int tls_sess_init(void) {
         tls_crypto_device = NULL;
       }
     }
+# else
+    tls_log("%s", "TLSCryptoDevice not supported by OpenSSL");
+# endif /* PR_USE_OPENSSL_ENGINE */
   }
 #endif
 
@@ -19007,16 +19139,15 @@ static int tls_sess_init(void) {
   return 0;
 }
 
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
 static ctrls_acttab_t tls_acttab[] = {
   { "clear", NULL, NULL, NULL },
   { "info", NULL, NULL, NULL },
   { "ocspcache", NULL, NULL, NULL },
   { "sesscache", NULL, NULL, NULL },
- 
+
   { NULL, NULL, NULL, NULL }
 };
-
 #endif /* PR_USE_CTRLS */
 
 /* Module API tables
@@ -19025,8 +19156,8 @@ static ctrls_acttab_t tls_acttab[] = {
 static conftable tls_conftab[] = {
   { "TLSCACertificateFile",	set_tlscacertfile,	NULL },
   { "TLSCACertificatePath",	set_tlscacertpath,	NULL },
-  { "TLSCARevocationFile",      set_tlscacrlfile,       NULL }, 
-  { "TLSCARevocationPath",      set_tlscacrlpath,       NULL }, 
+  { "TLSCARevocationFile",      set_tlscacrlfile,       NULL },
+  { "TLSCARevocationPath",      set_tlscacrlpath,       NULL },
   { "TLSCertificateChainFile",	set_tlscertchain,	NULL },
   { "TLSCipherSuite",		set_tlsciphersuite,	NULL },
   { "TLSControlsACLs",		set_tlsctrlsacls,	NULL },
@@ -19078,6 +19209,7 @@ static cmdtable tls_cmdtab[] = {
   { CMD,	C_PROT,	G_NONE,	tls_prot,	FALSE,	FALSE,	CL_SEC },
   { CMD,	"SSCN",	G_NONE,	tls_sscn,	TRUE,	FALSE,	CL_SEC },
   { POST_CMD,	C_PASS,	G_NONE,	tls_post_pass,	FALSE,	FALSE },
+  { POST_CMD,	C_USER,	G_NONE,	tls_post_user,	FALSE,	FALSE },
   { POST_CMD,	C_AUTH,	G_NONE,	tls_post_auth,	FALSE,	FALSE },
   { LOG_CMD,	C_AUTH,	G_NONE,	tls_log_auth,	FALSE,	FALSE },
   { LOG_CMD_ERR,C_AUTH,	G_NONE,	tls_log_auth,	FALSE,	FALSE },

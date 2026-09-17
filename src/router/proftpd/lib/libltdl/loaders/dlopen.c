@@ -195,7 +195,16 @@ vm_open (lt_user_data LT__UNUSED loader_data, const char *filename,
 
   if (!module)
     {
+      /* NOTE: In ProFTPD, we are deliberately commenting out this call;
+       * see:
+       *   https://bug-libtool.gnu.narkive.com/eWFGvX8k/misleading-error-message-from-lt-dlopen
+       *   https://github.com/Castaglia/proftpd-mod_proxy/issues/267
+       *
+       * for why.
+       */
+      /*
       DL__SETERROR (CANNOT_OPEN);
+      */
     }
 
   return module;

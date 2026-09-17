@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2022 The ProFTPD Project
+ * Copyright (c) 2001-2024 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -479,6 +479,15 @@ static int sys_fsync(pr_fh_t *fh, int fd) {
   return res;
 }
 
+static const char *sys_realpath(pr_fs_t *fs, pool *p, const char *path) {
+  (void) fs;
+
+  /* The default implementation does NOT use the realpath(3) function, and
+   * instead is a pass-through.
+   */
+  return pstrdup(p, path);
+}
+
 static ssize_t sys_getxattr(pool *p, pr_fs_t *fs, const char *path,
     const char *name, void *val, size_t valsz) {
   ssize_t res = -1;
@@ -699,11 +708,11 @@ static ssize_t unix_flistxattr(int fd, char *namelist, size_t len) {
 
 static int sys_listxattr(pool *p, pr_fs_t *fs, const char *path,
     array_header **names) {
-  ssize_t res;
+  ssize_t res = 0;
   char *namelist = NULL;
   size_t len = 0;
 
-#ifdef PR_USE_XATTR
+#if defined(PR_USE_XATTR)
   /* We need to handle the different formats of namelists that listxattr et al
    * can provide.  On *BSDs, the namelist buffer uses length prefixes and no
    * terminating NULs; on Linux/Mac, the namelist buffer uses ONLY
@@ -720,12 +729,26 @@ static int sys_listxattr(pool *p, pr_fs_t *fs, const char *path,
     return -1;
   }
 
+  if (res == 0) {
+    /* No extended attributes found. */
+    pr_trace_msg(trace_channel, 15, "listxattr: found 0 xattr names for '%s'",
+      path);
+    return 0;
+  }
+
   len = res;
   namelist = palloc(p, len);
 
   res = unix_listxattr(path, namelist, len);
   if (res < 0) {
     return -1;
+  }
+
+  if (res == 0) {
+    /* No extended attributes found. */
+    pr_trace_msg(trace_channel, 15, "listxattr: found 0 xattr names for '%s'",
+      path);
+    return 0;
   }
 
   *names = parse_xattr_namelist(p, namelist, len);
@@ -765,11 +788,18 @@ static int sys_llistxattr(pool *p, pr_fs_t *fs, const char *path,
   char *namelist = NULL;
   size_t len = 0;
 
-#ifdef PR_USE_XATTR
+#if defined(PR_USE_XATTR)
   /* See sys_listxattr for a description of why we use this approach. */
   res = unix_llistxattr(path, NULL, 0);
   if (res < 0) {
     return -1;
+  }
+
+  if (res == 0) {
+    /* No extended attributes found. */
+    pr_trace_msg(trace_channel, 15, "llistxattr: found 0 xattr names for '%s'",
+      path);
+    return 0;
   }
 
   len = res;
@@ -778,6 +808,13 @@ static int sys_llistxattr(pool *p, pr_fs_t *fs, const char *path,
   res = unix_llistxattr(path, namelist, len);
   if (res < 0) {
     return -1;
+  }
+
+  if (res == 0) {
+    /* No extended attributes found. */
+    pr_trace_msg(trace_channel, 15, "llistxattr: found 0 xattr names for '%s'",
+      path);
+    return 0;
   }
 
   *names = parse_xattr_namelist(p, namelist, len);
@@ -816,11 +853,18 @@ static int sys_flistxattr(pool *p, pr_fh_t *fh, int fd, array_header **names) {
   char *namelist = NULL;
   size_t len = 0;
 
-#ifdef PR_USE_XATTR
+#if defined(PR_USE_XATTR)
   /* See sys_listxattr for a description of why we use this approach. */
   res = unix_flistxattr(fd, NULL, 0);
   if (res < 0) {
     return -1;
+  }
+
+  if (res == 0) {
+    /* No extended attributes found. */
+    pr_trace_msg(trace_channel, 15, "flistxattr: found 0 xattr names for '%s'",
+      fh->fh_path);
+    return 0;
   }
 
   len = res;
@@ -829,6 +873,13 @@ static int sys_flistxattr(pool *p, pr_fh_t *fh, int fd, array_header **names) {
   res = unix_flistxattr(fd, namelist, len);
   if (res < 0) {
     return -1;
+  }
+
+  if (res == 0) {
+    /* No extended attributes found. */
+    pr_trace_msg(trace_channel, 15, "flistxattr: found 0 xattr names for '%s'",
+      fh->fh_path);
+    return 0;
   }
 
   *names = parse_xattr_namelist(p, namelist, len);
@@ -2089,7 +2140,7 @@ int pr_fs_copy_file2(const char *src, const char *dst, int flags,
       aclent_t *acls;
 
       acls = malloc(sizeof(aclent_t) * nents);
-      if (!acls) { 
+      if (acls == NULL) {
         pr_log_pri(PR_LOG_ALERT, "Out of memory!");
         exit(1);
       }
@@ -2184,7 +2235,8 @@ int pr_fs_copy_file(const char *src, const char *dst) {
   return pr_fs_copy_file2(src, dst, 0, NULL);
 }
 
-pr_fs_t *pr_register_fs(pool *p, const char *name, const char *path) {
+pr_fs_t *pr_register_fs2(pool *p, const char *name, const char *path,
+    int flags) {
   pr_fs_t *fs = NULL;
   int xerrno = 0;
 
@@ -2200,26 +2252,82 @@ pr_fs_t *pr_register_fs(pool *p, const char *name, const char *path) {
   fs = pr_create_fs(p, name);
   xerrno = errno;
 
-  if (fs != NULL) {
-    if (pr_insert_fs(fs, path) == FALSE) {
-      xerrno = errno;
-
-      pr_trace_msg(trace_channel, 4, "error inserting FS '%s' at path '%s'",
-        name, path);
-
-      destroy_pool(fs->fs_pool);
-
-      errno = xerrno;
-      return NULL;
-    }
-
-  } else {
+  if (fs == NULL) {
     pr_trace_msg(trace_channel, 6, "error creating FS '%s': %s", name,
       strerror(errno));
+    errno = xerrno;
+    return NULL;
   }
 
-  errno = xerrno;
+  if (flags & PR_FSIO_REGISTER_FL_INHERIT_HANDLERS) {
+    pr_fs_t *curr_fs = NULL;
+    int match = FALSE;
+
+    /* Note that we need to be aware of other modules' FS handlers, such
+     * as mod_vroot (see Issue #1764, #1780).
+     */
+    curr_fs = pr_get_fs(path, &match);
+    if (curr_fs != NULL) {
+      fs->fs_name = pstrcat(fs->fs_pool, name, "+", curr_fs->fs_name, NULL);
+
+      /* Inherit all of the current FS handlers.  This makes it easy to
+       * preserve the functionality desired by all previously registered
+       * handlers.
+       */
+      fs->stat = curr_fs->stat;
+      fs->fstat = curr_fs->fstat;
+      fs->lstat = curr_fs->lstat;
+      fs->rename = curr_fs->rename;
+      fs->unlink = curr_fs->unlink;
+      fs->open = curr_fs->open;
+      fs->close = curr_fs->close;
+      fs->read = curr_fs->read;
+      fs->pread = curr_fs->pread;
+      fs->write = curr_fs->write;
+      fs->pwrite = curr_fs->pwrite;
+      fs->lseek = curr_fs->lseek;
+      fs->link = curr_fs->link;
+      fs->readlink = curr_fs->readlink;
+      fs->symlink = curr_fs->symlink;
+      fs->ftruncate = curr_fs->ftruncate;
+      fs->truncate = curr_fs->truncate;
+      fs->chmod = curr_fs->chmod;
+      fs->fchmod = curr_fs->fchmod;
+      fs->chown = curr_fs->chown;
+      fs->fchown = curr_fs->fchown;
+      fs->lchown = curr_fs->lchown;
+      fs->access = curr_fs->access;
+      fs->faccess = curr_fs->faccess;
+      fs->utimes = curr_fs->utimes;
+      fs->futimes = curr_fs->futimes;
+      fs->fsync = curr_fs->fsync;
+
+      fs->chdir = curr_fs->chdir;
+      fs->chroot = curr_fs->chroot;
+      fs->opendir = curr_fs->opendir;
+      fs->closedir = curr_fs->closedir;
+      fs->readdir = curr_fs->readdir;
+      fs->mkdir = curr_fs->mkdir;
+      fs->rmdir = curr_fs->rmdir;
+    }
+  }
+
+  if (pr_insert_fs(fs, path) == FALSE) {
+    xerrno = errno;
+
+    pr_trace_msg(trace_channel, 4, "error inserting FS '%s' at path '%s'",
+      name, path);
+
+    destroy_pool(fs->fs_pool);
+    errno = xerrno;
+    return NULL;
+  }
+
   return fs;
+}
+
+pr_fs_t *pr_register_fs(pool *p, const char *name, const char *path) {
+  return pr_register_fs2(p, name, path, PR_FSIO_REGISTER_FL_INHERIT_HANDLERS);
 }
 
 pr_fs_t *pr_create_fs(pool *p, const char *name) {
@@ -2241,6 +2349,7 @@ pr_fs_t *pr_create_fs(pool *p, const char *name) {
   fs->fs_pool = fs_pool;
   fs->fs_next = fs->fs_prev = NULL;
   fs->fs_name = pstrdup(fs->fs_pool, name);
+  fs->fs_original_name = fs->fs_name;
   fs->fs_next = root_fs;
   fs->allow_xdev_link = TRUE;
   fs->allow_xdev_rename = TRUE;
@@ -2309,7 +2418,7 @@ int pr_insert_fs(pr_fs_t *fs, const char *path) {
         /* An entry for this path already exists.  Make sure the FS being
          * mounted is not the same as the one already present.
          */
-        if (strcmp(fsi->fs_name, fs->fs_name) == 0) {
+        if (strcmp(fsi->fs_original_name, fs->fs_original_name) == 0) {
           pr_log_pri(PR_LOG_NOTICE,
             "error: duplicate fs paths not allowed: '%s'", cleaned_path);
           errno = EEXIST;
@@ -2367,9 +2476,9 @@ pr_fs_t *pr_unmount_fs(const char *path, const char *name) {
     fsi = fs_objs[i];
 
     if (strcmp(fsi->fs_path, path) == 0 &&
-        (name ? strcmp(fsi->fs_name, name) == 0 : TRUE)) {
+        (name ? strcmp(fsi->fs_original_name, name) == 0 : TRUE)) {
 
-      /* Exact match -- remove this FS.  If there is an FS underneath, pop 
+      /* Exact match -- remove this FS.  If there is an FS underneath, pop
        * the top FS off the stack.  Otherwise, allocate a new map.  Then
        * iterate through the old map, pushing all other FSs into the new map.
        * Destroy the old map.  Move the new map into place.
@@ -2419,11 +2528,11 @@ pr_fs_t *pr_unmount_fs(const char *path, const char *name) {
       }
 
       /* "Pop" this FS off the stack. */
-      if (fsi->fs_next) {
+      if (fsi->fs_next != NULL) {
         fsi->fs_next->fs_prev = NULL;
       }
       fs_objs[i] = fsi->fs_next;
-      fsi->fs_next = fsi->fs_prev = NULL; 
+      fsi->fs_next = fsi->fs_prev = NULL;
 
       chk_fs_map = TRUE;
       return fsi;
@@ -2615,7 +2724,7 @@ int pr_fs_dircat(char *buf, int buflen, const char *dir1, const char *dir2) {
 
   if ((dir1len + dir2len + 1) >= PR_TUNABLE_PATH_MAX) {
     errno = ENAMETOOLONG;
-    buf[0] = '\0';  
+    buf[0] = '\0';
     return -1;
   }
 
@@ -2712,6 +2821,14 @@ int pr_fs_interpolate(const char *path, char *buf, size_t buflen) {
       sstrncpy(buf, session.chroot_path, buflen);
       return 1;
     }
+
+    /* If we are not chrooted, but we DO know the home directory of the
+     * current user, then interpolation is easy.
+     */
+    if (session.user_homedir != NULL) {
+      sstrncpy(buf, session.user_homedir, buflen);
+      return 1;
+    }
   }
 
   ptr = strchr(path, '/');
@@ -2760,37 +2877,44 @@ int pr_fs_interpolate(const char *path, char *buf, size_t buflen) {
   }
 
   if (user[0] != '\0') {
-    struct passwd *pw = NULL;
-    pool *p = NULL;
+    if (session.user != NULL &&
+        strcmp(user, session.user) == 0 &&
+        session.user_homedir != NULL) {
+      sstrncpy(buf, session.user_homedir, buflen);
 
-    /* We need to look up the info for the given username, and add it
-     * into the buffer.
-     *
-     * The permanent pool is used here, rather than session.pool, as path
-     * interpolation can occur during startup parsing, when session.pool does
-     * not exist.  It does not really matter, since the allocated sub pool
-     * is destroyed shortly.
-     */
-    p = make_sub_pool(permanent_pool);
-    pr_pool_tag(p, "pr_fs_interpolate() pool");
+    } else {
+      struct passwd *pw = NULL;
+      pool *p = NULL;
 
-    pw = pr_auth_getpwnam(p, user);
-    if (pw == NULL) {
+      /* We need to look up the info for the given username, and add it
+       * into the buffer.
+       *
+       * The permanent pool is used here, rather than session.pool, as path
+       * interpolation can occur during startup parsing, when session.pool does
+       * not exist.  It does not really matter, since the allocated sub pool
+       * is destroyed shortly.
+       */
+      p = make_sub_pool(permanent_pool);
+      pr_pool_tag(p, "pr_fs_interpolate() pool");
+
+      pw = pr_auth_getpwnam(p, user);
+      if (pw == NULL) {
+        destroy_pool(p);
+        errno = ENOENT;
+        return -1;
+      }
+
+      sstrncpy(buf, pw->pw_dir, buflen);
+
+      /* Done with pw, which means we can destroy the temporary pool now. */
       destroy_pool(p);
-      errno = ENOENT;
-      return -1;
     }
-
-    sstrncpy(buf, pw->pw_dir, buflen);
-
-    /* Done with pw, which means we can destroy the temporary pool now. */
-    destroy_pool(p);
 
   } else {
     /* We're chrooted. */
     sstrncpy(buf, "/", buflen);
   }
- 
+
   currlen = strlen(buf);
 
   if (ptr != NULL &&
@@ -2802,7 +2926,7 @@ int pr_fs_interpolate(const char *path, char *buf, size_t buflen) {
   if (ptr != NULL) {
     sstrncpy(&buf[currlen], ptr, buflen - currlen);
   }
- 
+
   return 1;
 }
 
@@ -3311,16 +3435,16 @@ void pr_fs_clean_path(const char *path, char *buf, size_t buflen) {
   pr_fs_clean_path2(path, buf, buflen, PR_FSIO_CLEAN_PATH_FL_MAKE_ABS_PATH);
 }
 
-int pr_fs_use_encoding(int bool) {
+int pr_fs_use_encoding(int do_encode) {
   int curr_setting = use_encoding;
 
-  if (bool != TRUE &&
-      bool != FALSE) {
+  if (do_encode != TRUE &&
+      do_encode != FALSE) {
     errno = EINVAL;
     return -1;
   }
 
-  use_encoding = bool;
+  use_encoding = do_encode;
   return curr_setting;
 }
 
@@ -3363,7 +3487,7 @@ char *pr_fs_decode_path2(pool *p, const char *path, int flags) {
 
       pr_trace_msg("encode", 14, "unable to decode path (raw bytes): %s",
         raw_path);
-    } 
+    }
 
     if (flags & FSIO_DECODE_FL_TELL_ERRORS) {
       unsigned long policy;
@@ -3423,10 +3547,10 @@ char *pr_fs_encode_path(pool *p, const char *path) {
 
     if (pr_trace_get_level("encode") >= 14) {
       /* Write out the path we tried (and failed) to encode, in hex. */
-      register unsigned int i; 
+      register unsigned int i;
       unsigned char *raw_path;
       size_t pathlen, raw_pathlen;
-      
+
       pathlen = strlen(path);
       raw_pathlen = (pathlen * 8) + 1;
       raw_path = pcalloc(p, raw_pathlen + 1);
@@ -3438,7 +3562,7 @@ char *pr_fs_encode_path(pool *p, const char *path) {
 
       pr_trace_msg("encode", 14, "unable to encode path (raw bytes): %s",
         raw_path);
-    } 
+    }
 
     /* Note: At present, we do NOT return null here to callers; we assume
      * that all local names, being encoded for the remote client, are OK.
@@ -3763,7 +3887,6 @@ int pr_fsio_chdir_canon(const char *path, int hidesymlink) {
   pr_trace_msg(trace_channel, 8, "using %s chdir() for path '%s'", fs->fs_name,
     path);
   res = (fs->chdir)(fs, resbuf);
-
   if (res == 0) {
     /* chdir succeeded, so we set fs_cwd for future references. */
      fs_cwd = fs;
@@ -3914,7 +4037,7 @@ void *pr_fsio_opendir(const char *path) {
 static pr_fs_t *find_opendir(void *dir, int closing) {
   pr_fs_t *fs = NULL;
 
-  if (fsopendir_list) {
+  if (fsopendir_list != NULL) {
     fsopendir_t *fsod;
 
     for (fsod = fsopendir_list; fsod; fsod = fsod->next) {
@@ -3924,13 +4047,13 @@ static pr_fs_t *find_opendir(void *dir, int closing) {
         break;
       }
     }
-   
+
     if (closing && fsod) {
-      if (fsod->prev) {
+      if (fsod->prev != NULL) {
         fsod->prev->next = fsod->next;
       }
- 
-      if (fsod->next) {
+
+      if (fsod->next != NULL) {
         fsod->next->prev = fsod->prev;
       }
 
@@ -4056,7 +4179,7 @@ int pr_fsio_mkdir(const char *path, mode_t mode) {
   res = (fs->mkdir)(fs, path, mode);
   xerrno = errno;
 
-  if (res == 0) {
+  if (res == 0 || xerrno == EEXIST) {
     pr_fs_clear_cache2(path);
   }
 
@@ -4129,7 +4252,7 @@ int pr_fsio_set_use_mkdtemp(int value) {
 
 /* Directory-specific "safe" chmod(2) which attempts to avoid/mitigate
  * symlink attacks.
- * 
+ *
  * To do this, we first open a file descriptor on the given path, using
  * O_NOFOLLOW to avoid symlinks.  If the fd is not to a directory, it's
  * an error.  Then we use fchmod(2) to set the perms.  There is still a
@@ -4184,7 +4307,7 @@ static int schmod_dir(pool *p, const char *path, mode_t perms, int use_root) {
     xerrno = ENOTDIR;
 
     (void) close(fd);
-  
+
     pr_trace_msg(trace_channel, 3,
       "schmod: unable to use path '%s': %s", path, strerror(xerrno));
 
@@ -4441,7 +4564,7 @@ int pr_fsio_smkdir(pool *p, const char *path, mode_t mode, uid_t uid,
     pr_trace_msg(trace_channel, 1,
       "mkdir(2) failed to create directory '%s' with perms %04o: %s", path,
       mode, strerror(xerrno));
-        
+
     errno = xerrno;
     return -1;
   }
@@ -4577,7 +4700,7 @@ int pr_fsio_smkdir(pool *p, const char *path, mode_t mode, uid_t uid,
         xerrno = EEXIST;
       }
 #endif /* ENOTEMPTY */
- 
+
       errno = xerrno;
       return -1;
     }
@@ -5486,7 +5609,7 @@ int pr_fsio_truncate(const char *path, off_t len) {
   if (res == 0) {
     pr_fs_clear_cache2(path);
   }
-  
+
   return res;
 }
 
@@ -5962,6 +6085,35 @@ int pr_fsio_fsync(pr_fh_t *fh) {
   if (res == 0) {
     pr_fs_clear_cache2(fh->fh_path);
   }
+
+  return res;
+}
+
+const char *pr_fsio_realpath(pool *p, const char *path) {
+  const char *res;
+  pr_fs_t *fs;
+
+  if (p == NULL ||
+      path == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  fs = lookup_file_fs(path, NULL, FSIO_FILE_REALPATH);
+  if (fs == NULL) {
+    return NULL;
+  }
+
+  /* Find the first non-NULL custom realpath handler.  If there are none,
+   * use the system realpath
+   */
+  while (fs && fs->fs_next && !fs->realpath) {
+    fs = fs->fs_next;
+  }
+
+  pr_trace_msg(trace_channel, 8, "using %s realpath() for path '%s'",
+    fs->fs_name, path);
+  res = (fs->realpath)(fs, p, path);
 
   return res;
 }
@@ -6647,7 +6799,7 @@ char *pr_fsio_getline(char *buf, size_t buflen, pr_fh_t *fh,
           char *bufp;
 
           inlen -= 2;
-      
+
           /* Watch for commented lines when handling line continuations.
            * Advance past any leading whitespace, to see if the first
            * non-whitespace character is the comment character.
@@ -6658,7 +6810,7 @@ char *pr_fsio_getline(char *buf, size_t buflen, pr_fh_t *fh,
           if (*bufp == '#') {
             continue;
           }
- 
+
         } else {
           return start;
         }
@@ -6747,12 +6899,12 @@ void pr_fs_close_extra_fds(void) {
  */
 int pr_fs_get_usable_fd(int fd) {
   register int i;
-  int fdi, dup_fds[FSIO_MAX_DUPFDS], n; 
+  int fdi, dup_fds[FSIO_MAX_DUPFDS], n;
 
   if (fd > STDERR_FILENO) {
     return fd;
   }
- 
+
   memset(dup_fds, -1, sizeof(dup_fds));
   i = 0;
   n = -1;
@@ -7387,6 +7539,7 @@ int init_fs(void) {
   root_fs->utimes = sys_utimes;
   root_fs->futimes = sys_futimes;
   root_fs->fsync = sys_fsync;
+  root_fs->realpath = sys_realpath;
 
   root_fs->getxattr = sys_getxattr;
   root_fs->lgetxattr = sys_lgetxattr;

@@ -133,9 +133,11 @@ supported values for the <em>event</em> parameter are:
   <li>USER
   <li>PASS
   <li>FailedLogin
+  <li>Connect
 </ul>
 The <em>delay-ms</em> parameter can be a number (in which case the units are
-assumed to be milliseconds), or using a suffix.
+assumed to be milliseconds), or using a suffix.  In addition, the <em>delay-ms</em> parameter can provide a <i>range</i>, from minium to maximum (but only
+for <code>Connect</code> events currently).
 
 <p>
 To help illustrate the usage of <code>DelayOnEvent</code>, here are some
@@ -150,6 +152,16 @@ on failed logins</i>, you might use:
   DelayOnEvent FailedLogin 5s
 </pre>
 which adds a delay of 5 seconds after the login has failed.
+
+<p>
+And to inject delays at connect time, to "spread out" the processing of
+many connections that occur with a short span of time, you can use:
+<pre>
+  DelayOnEvent Connect 100-3000ms
+</pre>
+to inject a minimum 100ms delay to the start of a session, with a randomly
+selected additional <em>jitter</em> delay for a maximum possible delay of
+3000ms (3 sec).
 
 <p>
 <hr>
@@ -322,7 +334,7 @@ The <code>mod_delay</code> module is compiled by default.
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2004-2017 The ProFTPD Project<br>
+&copy; Copyright 2004-2023 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 

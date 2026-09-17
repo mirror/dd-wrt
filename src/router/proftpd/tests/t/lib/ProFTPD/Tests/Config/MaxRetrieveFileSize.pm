@@ -60,7 +60,7 @@ sub maxretrievefilesize_ok {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
@@ -193,7 +193,7 @@ sub maxretrievefilesize_exceeded {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }

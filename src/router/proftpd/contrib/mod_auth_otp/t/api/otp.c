@@ -40,14 +40,14 @@ static void tear_down(void) {
     destroy_pool(p);
     p = NULL;
     permanent_pool = NULL;
-  } 
+  }
 }
 
 START_TEST (hotp_test) {
   register unsigned int i;
   int res;
 
-  /* These values are taken from RFC 4226, Appendix D. */  
+  /* These values are taken from RFC 4226, Appendix D. */
   const char *key = "12345678901234567890";
   size_t key_len = strlen((char *) key);
   struct kat {
@@ -91,7 +91,7 @@ START_TEST (totp_sha1_test) {
   register unsigned int i;
   int res;
 
-  /* These values are taken from RFC 6238, Appendix B. */  
+  /* These values are taken from RFC 6238, Appendix B. */
   const char *key = "12345678901234567890";
   size_t key_len = strlen(key);
   struct kat {
@@ -138,7 +138,7 @@ START_TEST (totp_sha256_test) {
 
   /* These values are taken from RFC 6238, Appendix B.  Note that the key
    * for SHA256 needs to be longer.
-   */  
+   */
   const char *key = "12345678901234567890123456789012";
   size_t key_len = strlen(key);
   struct kat {
@@ -186,7 +186,7 @@ START_TEST (totp_sha512_test) {
 
   /* These values are taken from RFC 6238, Appendix B.  Note that the key
    * for SHA512 needs to be longer.
-   */  
+   */
   const char *key = "1234567890123456789012345678901234567890123456789012345678901234";
   size_t key_len = strlen(key);
   struct kat {

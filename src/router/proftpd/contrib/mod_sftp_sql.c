@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_sftp_sql -- SQL backend module for retrieving authorized keys
- * Copyright (c) 2008-2022 TJ Saunders
+ * Copyright (c) 2008-2024 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,6 +39,9 @@ module sftp_sql_module;
 struct sqlstore_key {
   const char *subject;
 
+  /* Optional headers */
+  pr_table_t *headers;
+
   /* Key data */
   unsigned char *key_data;
   uint32_t key_datalen;
@@ -50,7 +53,7 @@ struct sqlstore_data {
 
 static const char *sqlstore_user = NULL;
 
-static const char *trace_channel = "ssh2";
+static const char *trace_channel = "sftp.sql";
 
 static cmd_rec *sqlstore_cmd_create(pool *parent_pool, unsigned int argc, ...) {
   register unsigned int i = 0;
@@ -93,7 +96,8 @@ static char *sqlstore_getline(pool *p, char **blob, size_t *bloblen) {
     return NULL;
   }
 
-  while (data != NULL && datalen > 0) {
+  while (data != NULL &&
+         datalen > 0) {
     char *ptr;
     size_t delimlen, linelen;
     int have_line_continuation = FALSE;
@@ -187,13 +191,28 @@ static char *sqlstore_getline(pool *p, char **blob, size_t *bloblen) {
       }
 
       /* Header value starts at 2 after the ':' (one for the mandatory
-       * space character.
+       * space character.  Make sure to check that we actually have text
+       * after the ':' character (see Issue #1529).
        */
-      header_valuelen = linelen - (header_taglen + 2);
-      if (header_valuelen > 1024) {
+      if (header_taglen + 2 < linelen) {
+        header_valuelen = linelen - (header_taglen + 2);
+        if (header_valuelen > 1024) {
+          (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+            "header value too long (%u) in retrieved SQL data for '%s'",
+            header_valuelen, sqlstore_user);
+          errno = EINVAL;
+          return NULL;
+        }
+
+      } else {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-          "header value too long (%u) in retrieved SQL data for '%s'",
-          header_valuelen, sqlstore_user);
+          "empty/missing '%.*s' header value, ignoring", (int) header_taglen,
+          line);
+
+        /* Make sure we advance past this line. */
+        *blob = data;
+        *bloblen = datalen;
+
         errno = EINVAL;
         return NULL;
       }
@@ -206,6 +225,15 @@ static char *sqlstore_getline(pool *p, char **blob, size_t *bloblen) {
   }
 
   return NULL;
+}
+
+static struct sqlstore_key *sqlstore_alloc_key(pool *p) {
+  struct sqlstore_key *key = NULL;
+
+  key = pcalloc(p, sizeof(struct sqlstore_key));
+  key->headers = pr_table_nalloc(p, 0, 1);
+
+  return key;
 }
 
 static struct sqlstore_key *sqlstore_get_key_raw(pool *p, char **blob,
@@ -268,7 +296,7 @@ static struct sqlstore_key *sqlstore_get_key_raw(pool *p, char **blob,
 
   if (data != NULL &&
       datalen > 0) {
-    key = pcalloc(p, sizeof(struct sqlstore_key));
+    key = sqlstore_alloc_key(p);
     key->key_data = pcalloc(p, datalen + 1);
     key->key_datalen = datalen;
     memcpy(key->key_data, data, datalen);
@@ -386,10 +414,27 @@ static struct sqlstore_key *sqlstore_get_key_rfc4716(pool *p, char **blob,
       break;
 
     } else {
-      if (key) {
-        if (strstr(line, ": ") != NULL) {
-          if (strncasecmp(line, "Subject: ", 9) == 0) {
-            key->subject = pstrdup(p, line + 9);
+      if (key != NULL) {
+        char *ptr;
+
+        ptr = strstr(line, ": ");
+        if (ptr != NULL) {
+          /* We have a header. */
+          char *tag, *text;
+
+          tag = pstrndup(p, line, ptr - line);
+          text = pstrdup(p, ptr + 2);
+          if (pr_table_add(key->headers, tag, text, 0) < 0) {
+            pr_trace_msg(trace_channel, 4,
+              "failed to add header '%s' to notes: %s", tag, strerror(errno));
+
+          } else {
+            pr_trace_msg(trace_channel, 22, "added header '%s: %s' to notes",
+              tag, text);
+          }
+
+          if (strcasecmp(tag, SFTP_KEYSTORE_HEADER_SUBJECT) == 0) {
+            key->subject = text;
           }
 
         } else {
@@ -447,12 +492,13 @@ static int sqlstore_verify_key_raw(pool *p, struct sqlstore_data *store_data,
     int nrow, char *col_data, size_t col_datalen, unsigned char *key_data,
     uint32_t key_datalen) {
   struct sqlstore_key *key;
-  int res;
+  int res, xerrno = EINVAL;
 
   key = sqlstore_get_key_raw(p, &col_data, &col_datalen);
   if (key == NULL) {
     pr_trace_msg(trace_channel, 10,
       "unable to parse data (row %u) as raw data", nrow+1);
+    errno = xerrno;
     return -1;
   }
 
@@ -465,26 +511,35 @@ static int sqlstore_verify_key_raw(pool *p, struct sqlstore_data *store_data,
       store_data->select_query, strerror(errno));
 
   } else if (res == FALSE) {
-    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+    pr_trace_msg(trace_channel, 3,
       "client-sent host key for '%s' does not match SQL data (row %u) from "
       "SQLNamedQuery '%s'", sqlstore_user, nrow+1, store_data->select_query);
     res = -1;
+
+    /* Use EPERM here to indicate that we have a well-formatted key that
+     * simply did not match the key presented by the client.
+     */
+    xerrno = EPERM;
 
   } else {
     res = 0;
   }
 
+  errno = xerrno;
   return res;
 }
 
 static int sqlstore_verify_key_rfc4716(pool *p,
     struct sqlstore_data *store_data, int nrow, char *col_data,
-    size_t col_datalen, unsigned char *key_data, uint32_t key_datalen) {
+    size_t col_datalen, unsigned char *key_data, uint32_t key_datalen,
+    pr_table_t *headers) {
   struct sqlstore_key *key;
-  int res;
+  int xerrno = EINVAL;
 
   key = sqlstore_get_key_rfc4716(p, &col_data, &col_datalen);
   while (key != NULL) {
+    int res;
+
     pr_signals_handle();
 
     res = sftp_keys_compare_keys(p, key_data, key_datalen, key->key_data,
@@ -498,22 +553,34 @@ static int sqlstore_verify_key_rfc4716(pool *p,
       continue;
 
     } else if (res == FALSE) {
-      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+      pr_trace_msg(trace_channel, 3,
         "client-sent key for '%s' does not match SQL data (row %u) from "
         "SQLNamedQuery '%s'", sqlstore_user, nrow+1, store_data->select_query);
+
+      /* Use EPERM here to indicate that we have a well-formatted key that
+       * simply did not match the key presented by the client.
+       */
+      xerrno = EPERM;
+
       key = sqlstore_get_key_rfc4716(p, &col_data, &col_datalen);
       continue;
+    }
+
+    if (pr_table_copy(headers, key->headers, 0) < 0) {
+      pr_trace_msg(trace_channel, 19, "error copying verify notes: %s",
+         strerror(errno));
     }
 
     return 0;
   }
 
+  errno = xerrno;
   return -1;
 }
 
 static int sqlstore_verify_host_key(sftp_keystore_t *store, pool *p,
     const char *user, const char *host_fqdn, const char *host_user,
-    unsigned char *key_data, uint32_t key_datalen) {
+    unsigned char *key_data, uint32_t key_datalen, pr_table_t *headers) {
   register unsigned int i;
   struct sqlstore_data *store_data;
   pool *tmp_pool;
@@ -587,7 +654,7 @@ static int sqlstore_verify_host_key(sftp_keystore_t *store, pool *p,
     col_datalen = strlen(values[i]);
 
     res = sqlstore_verify_key_rfc4716(p, store_data, i, col_data, col_datalen,
-      key_data, key_datalen);
+      key_data, key_datalen, headers);
     if (res == 0) {
       pr_trace_msg(trace_channel, 10, "found matching RFC4716 public key "
         "(row %u) for host '%s' using SQLNamedQuery '%s'", i+1, host_fqdn,
@@ -596,14 +663,21 @@ static int sqlstore_verify_host_key(sftp_keystore_t *store, pool *p,
       return 0;
     }
 
-    res = sqlstore_verify_key_raw(p, store_data, i, col_data, col_datalen,
-      key_data, key_datalen);
-    if (res == 0) {
-      pr_trace_msg(trace_channel, 10, "found matching public key (row %u) for "
-        "host '%s' using SQLNamedQuery '%s'", i+1, host_fqdn,
-        store_data->select_query);
-      destroy_pool(tmp_pool);
-      return 0;
+    /* If verification as an RFC 4716 key failed with EINVAL, assume it is
+     * because the key did not actually use the RFC 4716 format.  Otherwise,
+     * verification might have failed because of simple mismatching keys
+     * (wrong RSA key, or comparing RSA and EC keys).
+     */
+    if (errno == EINVAL) {
+      res = sqlstore_verify_key_raw(p, store_data, i, col_data, col_datalen,
+        key_data, key_datalen);
+      if (res == 0) {
+        pr_trace_msg(trace_channel, 10, "found matching public key (row %u) "
+          "for host '%s' using SQLNamedQuery '%s'", i+1, host_fqdn,
+          store_data->select_query);
+        destroy_pool(tmp_pool);
+        return 0;
+      }
     }
   }
 
@@ -613,7 +687,8 @@ static int sqlstore_verify_host_key(sftp_keystore_t *store, pool *p,
 }
 
 static int sqlstore_verify_user_key(sftp_keystore_t *store, pool *p,
-    const char *user, unsigned char *key_data, uint32_t key_datalen) {
+    const char *user, unsigned char *key_data, uint32_t key_datalen,
+    pr_table_t *headers) {
   register unsigned int i;
   struct sqlstore_data *store_data;
   pool *tmp_pool;
@@ -687,7 +762,7 @@ static int sqlstore_verify_user_key(sftp_keystore_t *store, pool *p,
     col_datalen = strlen(values[i]);
 
     res = sqlstore_verify_key_rfc4716(p, store_data, i, col_data, col_datalen,
-      key_data, key_datalen);
+      key_data, key_datalen, headers);
     if (res == 0) {
       pr_trace_msg(trace_channel, 10, "found matching RFC4716 public key "
         "(row %u) for user '%s' using SQLNamedQuery '%s'", i+1, user,
@@ -696,14 +771,21 @@ static int sqlstore_verify_user_key(sftp_keystore_t *store, pool *p,
       return 0;
     }
 
-    res = sqlstore_verify_key_raw(p, store_data, i, col_data, col_datalen,
-      key_data, key_datalen);
-    if (res == 0) {
-      pr_trace_msg(trace_channel, 10, "found matching public key (row %u) for "
-        "user '%s' using SQLNamedQuery '%s'", i+1, user,
-        store_data->select_query);
-      destroy_pool(tmp_pool);
-      return 0;
+    /* If verification as an RFC 4716 key failed with EINVAL, assume it is
+     * because the key did not actually use the RFC 4716 format.  Otherwise,
+     * verification might have failed because of simple mismatching keys
+     * (wrong RSA key, or comparing RSA and EC keys).
+     */
+    if (errno == EINVAL) {
+      res = sqlstore_verify_key_raw(p, store_data, i, col_data, col_datalen,
+        key_data, key_datalen);
+      if (res == 0) {
+        pr_trace_msg(trace_channel, 10, "found matching public key (row %u) "
+          "for user '%s' using SQLNamedQuery '%s'", i+1, user,
+          store_data->select_query);
+        destroy_pool(tmp_pool);
+        return 0;
+      }
     }
   }
 
@@ -808,7 +890,6 @@ static void sftpsql_mod_unload_ev(const void *event_data, void *user_data) {
  */
 
 static int sftpsql_init(void) {
-
   sftp_keystore_register_store("sql", sqlstore_open,
     SFTP_SSH2_HOST_KEY_STORE|SFTP_SSH2_USER_KEY_STORE);
 

@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_auth_otp
- * Copyright (c) 2015-2022 TJ Saunders
+ * Copyright (c) 2015-2025 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 
 /* mod_auth_otp option flags */
 #define AUTH_OTP_OPT_FTP_STANDARD_RESPONSE	0x001
-#define AUTH_OTP_OPT_REQUIRE_TABLE_ENTRY	0x002
+#define AUTH_OTP_OPT_OPTIONAL_TABLE_ENTRY	0x002
 #define AUTH_OTP_OPT_DISPLAY_VERIFICATION_CODE	0x004
 
 #define AUTH_OTP_VERIFICATION_CODE_PROMPT	"Verification code: "
@@ -161,7 +161,7 @@ static int auth_otp_kbdint_authenticate(sftp_kbdint_driver_t *driver,
       "no info for user '%s' found in AuthOTPTable, skipping "
       "SSH2 keyboard-interactive challenge", user);
 
-    if (auth_otp_opts & AUTH_OTP_OPT_REQUIRE_TABLE_ENTRY) {
+    if (!(auth_otp_opts & AUTH_OTP_OPT_OPTIONAL_TABLE_ENTRY)) {
       errno = xerrno;
       return -1;
     }
@@ -239,7 +239,7 @@ static int auth_otp_kbdint_close(sftp_kbdint_driver_t *driver) {
 
     dbh = NULL;
   }
-  
+
   if (driver->driver_pool != NULL) {
     destroy_pool(driver->driver_pool);
     driver->driver_pool = NULL;
@@ -416,7 +416,7 @@ static int handle_user_otp(pool *p, const char *user, const char *user_otp,
      */
 
     if (authoritative == TRUE) {
-      if (auth_otp_opts & AUTH_OTP_OPT_REQUIRE_TABLE_ENTRY) {
+      if (!(auth_otp_opts & AUTH_OTP_OPT_OPTIONAL_TABLE_ENTRY)) {
         (void) pr_log_writefile(auth_otp_logfd, MOD_AUTH_OTP_VERSION,
           "FAILED: user '%s' does not have entry in OTP tables", user);
         auth_otp_auth_code = PR_AUTH_NOPWD;
@@ -430,7 +430,7 @@ static int handle_user_otp(pool *p, const char *user, const char *user_otp,
   res = check_otp_code(p, user, user_otp, secret, secret_len, counter);
   if (res == 0) {
     pr_memscrub((char *) secret, secret_len);
-    
+
     (void) pr_log_writefile(auth_otp_logfd, MOD_AUTH_OTP_VERSION,
       "SUCCESS: user '%s' provided valid OTP code", user);
 
@@ -454,7 +454,7 @@ static int handle_user_otp(pool *p, const char *user, const char *user_otp,
    */
   pr_trace_msg(trace_channel, 3,
     "current counter check failed, checking one window behind");
- 
+
   switch (auth_otp_algo) {
     case AUTH_OTP_ALGO_TOTP_SHA1:
     case AUTH_OTP_ALGO_TOTP_SHA256:
@@ -474,7 +474,7 @@ static int handle_user_otp(pool *p, const char *user, const char *user_otp,
     pr_trace_msg(trace_channel, 3,
       "counter check SUCCEEDED for one counter window behind; client is "
       "out-of-sync");
- 
+
     (void) pr_log_writefile(auth_otp_logfd, MOD_AUTH_OTP_VERSION,
       "SUCCESS: user '%s' provided valid OTP code", user);
 
@@ -512,7 +512,7 @@ static int handle_user_otp(pool *p, const char *user, const char *user_otp,
     pr_trace_msg(trace_channel, 3,
       "counter check SUCCEEDED for one counter window ahead; client is "
       "out-of-sync");
- 
+
     (void) pr_log_writefile(auth_otp_logfd, MOD_AUTH_OTP_VERSION,
       "SUCCESS: user '%s' provided valid OTP code", user);
 
@@ -745,10 +745,15 @@ MODRET set_authotpoptions(cmd_rec *cmd) {
       opts |= AUTH_OTP_OPT_FTP_STANDARD_RESPONSE;
 
     } else if (strcmp(cmd->argv[i], "RequireTableEntry") == 0) {
-      opts |= AUTH_OTP_OPT_REQUIRE_TABLE_ENTRY;
+      /* This is the default; we keep this here for backward compatibility;
+       * see Issue #1562.
+       */
 
     } else if (strcmp(cmd->argv[i], "DisplayVerificationCode") == 0) {
       opts |= AUTH_OTP_OPT_DISPLAY_VERIFICATION_CODE;
+
+    } else if (strcmp(cmd->argv[i], "OptionalTableEntry") == 0) {
+      opts |= AUTH_OTP_OPT_OPTIONAL_TABLE_ENTRY;
 
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown AuthOTPOption: '",
@@ -758,6 +763,13 @@ MODRET set_authotpoptions(cmd_rec *cmd) {
 
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned long));
   *((unsigned long *) c->argv[0]) = opts;
+
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
 
   return PR_HANDLED(cmd);
 }
@@ -1015,7 +1027,7 @@ static int auth_otp_sess_init(void) {
 
       pr_signals_block();
       PRIVS_ROOT
-      res = pr_log_openfile(path, &auth_otp_logfd, 0600); 
+      res = pr_log_openfile(path, &auth_otp_logfd, 0600);
       xerrno = errno;
       PRIVS_RELINQUISH
       pr_signals_unblock();

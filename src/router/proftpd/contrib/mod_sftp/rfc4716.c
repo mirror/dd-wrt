@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp RFC4716 keystore
- * Copyright (c) 2008-2022 TJ Saunders
+ * Copyright (c) 2008-2023 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,10 +31,10 @@
 /* File-based keystore implementation */
 
 struct filestore_key {
-  /* Supported headers.  We don't really care about the Comment header
-   * at the moment.
-   */
   const char *subject;
+
+  /* Optional headers */
+  pr_table_t *headers;
 
   /* Key data */
   unsigned char *key_data;
@@ -82,7 +82,14 @@ static char *filestore_getline(sftp_keystore_t *store, pool *p) {
 
     linelen = strlen(linebuf);
     if (linelen >= 1) {
-      if (linebuf[linelen - 1] == '\r' ||
+
+      /* Check for the CRLF case first.  If those are not present, then we
+       * check for either CR or LF.  Doing the "CR or LF" check first prevents
+       * us from properly handling CRLFs, and thus lead to Issue #1904.
+       */
+
+      if (linelen >= 2 &&
+          linebuf[linelen - 2] == '\r' &&
           linebuf[linelen - 1] == '\n') {
         char *tmp;
         unsigned int header_taglen, header_valuelen;
@@ -90,6 +97,7 @@ static char *filestore_getline(sftp_keystore_t *store, pool *p) {
 
         store_data->lineno++;
 
+        linebuf[linelen - 2] = '\0';
         linebuf[linelen - 1] = '\0';
         line = pstrcat(p, line, linebuf, NULL);
 
@@ -101,7 +109,7 @@ static char *filestore_getline(sftp_keystore_t *store, pool *p) {
         tmp = strchr(line, ':');
         if (tmp == NULL) {
           return line;
-        } 
+        }
 
         /* We have a header.  Make sure the header tag is not longer than
          * the specified length of 64 bytes, and that the header value is
@@ -134,16 +142,14 @@ static char *filestore_getline(sftp_keystore_t *store, pool *p) {
 
         continue;
 
-      } else if (linelen >= 2 &&
-          linebuf[linelen - 2] == '\r' &&
-          linebuf[linelen - 1] == '\n') {
+      } else if (linebuf[linelen - 1] == '\r' ||
+                 linebuf[linelen - 1] == '\n') {
         char *tmp;
         unsigned int header_taglen, header_valuelen;
         int have_line_continuation = FALSE;
 
         store_data->lineno++;
 
-        linebuf[linelen - 2] = '\0';
         linebuf[linelen - 1] = '\0';
         line = pstrcat(p, line, linebuf, NULL);
 
@@ -155,7 +161,7 @@ static char *filestore_getline(sftp_keystore_t *store, pool *p) {
         tmp = strchr(line, ':');
         if (tmp == NULL) {
           return line;
-        } 
+        }
 
         /* We have a header.  Make sure the header tag is not longer than
          * the specified length of 64 bytes, and that the header value is
@@ -210,6 +216,15 @@ static char *filestore_getline(sftp_keystore_t *store, pool *p) {
   return NULL;
 }
 
+static struct filestore_key *filestore_alloc_key(pool *p) {
+  struct filestore_key *key = NULL;
+
+  key = pcalloc(p, sizeof(struct filestore_key));
+  key->headers = pr_table_nalloc(p, 0, 1);
+
+  return key;
+}
+
 static struct filestore_key *filestore_get_key(sftp_keystore_t *store,
     pool *p) {
   char *line;
@@ -239,7 +254,7 @@ static struct filestore_key *filestore_get_key(sftp_keystore_t *store,
     if (key == NULL &&
         strncmp(line, SFTP_SSH2_PUBKEY_BEGIN_MARKER,
         begin_markerlen + 1) == 0) {
-      key = pcalloc(p, sizeof(struct filestore_key));
+      key = filestore_alloc_key(p);
       bio = BIO_new(BIO_s_mem());
 
     } else if (key != NULL &&
@@ -315,9 +330,26 @@ static struct filestore_key *filestore_get_key(sftp_keystore_t *store,
 
     } else {
       if (key != NULL) {
-        if (strstr(line, ": ") != NULL) {
-          if (strncasecmp(line, "Subject: ", 9) == 0) {
-            key->subject = pstrdup(p, line + 9);
+        char *ptr;
+
+        ptr = strstr(line, ": ");
+        if (ptr != NULL) {
+          /* We have a header. */
+          char *tag, *text;
+
+          tag = pstrndup(p, line, ptr - line);
+          text = pstrdup(p, ptr + 2);
+          if (pr_table_add(key->headers, tag, text, 0) < 0) {
+            pr_trace_msg(trace_channel, 4,
+             "failed to add header '%s' to notes: %s", tag, strerror(errno));
+
+          } else {
+            pr_trace_msg(trace_channel, 22, "added header '%s: %s' to notes",
+              tag, text);
+          }
+
+          if (strcasecmp(tag, SFTP_KEYSTORE_HEADER_SUBJECT) == 0) {
+            key->subject = text;
           }
 
         } else {
@@ -343,7 +375,7 @@ static struct filestore_key *filestore_get_key(sftp_keystore_t *store,
 
 static int filestore_verify_host_key(sftp_keystore_t *store, pool *p,
     const char *user, const char *host_fqdn, const char *host_user,
-    unsigned char *key_data, uint32_t key_len) {
+    unsigned char *key_data, uint32_t key_len, pr_table_t *headers) {
   struct filestore_key *key = NULL;
   struct filestore_data *store_data = store->keystore_data;
   int res = -1;
@@ -386,6 +418,10 @@ static int filestore_verify_host_key(sftp_keystore_t *store, pool *p,
   if (res == 0) {
     pr_trace_msg(trace_channel, 10, "found matching public key for host '%s' "
       "in '%s'", host_fqdn, store_data->path);
+    if (pr_table_copy(headers, key->headers, 0) < 0) {
+      pr_trace_msg(trace_channel, 19, "error copying verify notes: %s",
+        strerror(errno));
+    }
   }
 
   if (pr_fsio_lseek(store_data->fh, 0, SEEK_SET) < 0) {
@@ -403,7 +439,8 @@ static int filestore_verify_host_key(sftp_keystore_t *store, pool *p,
 }
 
 static int filestore_verify_user_key(sftp_keystore_t *store, pool *p,
-    const char *user, unsigned char *key_data, uint32_t key_len) {
+    const char *user, unsigned char *key_data, uint32_t key_len,
+    pr_table_t *headers) {
   struct filestore_key *key = NULL;
   struct filestore_data *store_data = store->keystore_data;
   unsigned int count = 0;
@@ -468,6 +505,10 @@ static int filestore_verify_user_key(sftp_keystore_t *store, pool *p,
   if (res == 0) {
     pr_trace_msg(trace_channel, 10, "found matching public key for user '%s' "
       "in '%s'", user, store_data->path);
+    if (pr_table_copy(headers, key->headers, 0) < 0) {
+      pr_trace_msg(trace_channel, 19, "error copying verify notes: %s",
+        strerror(errno));
+    }
   }
 
   if (pr_fsio_lseek(store_data->fh, 0, SEEK_SET) < 0) {
@@ -586,7 +627,7 @@ static sftp_keystore_t *filestore_open(pool *parent_pool,
       break;
 
     case SFTP_SSH2_USER_KEY_STORE:
-      store->verify_user_key = filestore_verify_user_key; 
+      store->verify_user_key = filestore_verify_user_key;
       break;
   }
 

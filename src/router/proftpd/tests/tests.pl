@@ -58,6 +58,7 @@ if (scalar(@ARGV) > 0) {
     t/smtp.t
     t/ssh2.t
     t/logins.t
+    t/commands.t
     t/commands/user.t
     t/commands/pass.t
     t/commands/pwd.t
@@ -69,7 +70,7 @@ if (scalar(@ARGV) > 0) {
     t/commands/rmd.t
     t/commands/dele.t
     t/commands/mdtm.t
-    t/commands/size.t 
+    t/commands/size.t
     t/commands/mode.t
     t/commands/stru.t
     t/commands/allo.t
@@ -108,6 +109,7 @@ if (scalar(@ARGV) > 0) {
     t/config/allowfilter.t
     t/config/allowforeignaddress.t
     t/config/allowoverwrite.t
+    t/config/allowstorerestart.t
     t/config/anonrejectpasswords.t
     t/config/anonrequirepassword.t
     t/config/authaliasonly.t
@@ -128,7 +130,7 @@ if (scalar(@ARGV) > 0) {
     t/config/dirfakeuser.t
     t/config/displaychdir.t
     t/config/displayconnect.t
-    t/config/displayfiletransfer.t 
+    t/config/displayfiletransfer.t
     t/config/displaylogin.t
     t/config/displayquit.t
     t/config/envvars.t
@@ -193,6 +195,7 @@ if (scalar(@ARGV) > 0) {
     t/config/useftpusers.t
     t/config/useglobbing.t
     t/config/useralias.t
+    t/config/userdirroot.t
     t/config/userowner.t
     t/config/userpassword.t
     t/config/usesendfile.t
@@ -497,7 +500,12 @@ if (scalar(@ARGV) > 0) {
 
     't/modules/mod_tls_memcache.t' => {
       order => ++$order,
-      test_class => [qw(mod_tls_memcache)],
+      test_class => [qw(mod_memcache mod_tls_memcache)],
+    },
+
+    't/modules/mod_tls_redis.t' => {
+      order => ++$order,
+      test_class => [qw(mod_redis mod_tls_redis)],
     },
 
     't/modules/mod_tls_shmcache.t' => {

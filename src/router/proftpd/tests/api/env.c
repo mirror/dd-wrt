@@ -81,7 +81,7 @@ START_TEST (env_set_test) {
   const char *key = "PR_TEST_FOO", *value = "bar";
   char *v;
   int res;
- 
+
   res = pr_env_set(NULL, NULL, NULL);
   ck_assert_msg(res == -1, "Failed to handle null arguments");
   ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");

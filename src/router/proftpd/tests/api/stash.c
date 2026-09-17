@@ -40,7 +40,7 @@ static void tear_down(void) {
   if (p) {
     destroy_pool(p);
     p = permanent_pool = NULL;
-  } 
+  }
 }
 
 START_TEST (stash_add_symbol_test) {
@@ -48,7 +48,7 @@ START_TEST (stash_add_symbol_test) {
   conftable conftab;
   cmdtable cmdtab, hooktab;
   authtable authtab;
-  
+
   res = pr_stash_add_symbol(0, NULL);
   ck_assert_msg(res == -1, "Failed to handle null arguments");
   ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL, got %d (%s)",

@@ -52,7 +52,7 @@ sub useralias_ok {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -75,7 +75,7 @@ sub useralias_ok {
   my $alias = 'ftp';
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
@@ -162,7 +162,7 @@ sub useralias_anon_ok {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -171,7 +171,7 @@ sub useralias_anon_ok {
   my $gid = 500;
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $alias = 'anonymous';
@@ -266,7 +266,7 @@ sub useralias_with_at_symbol_ok {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -289,7 +289,7 @@ sub useralias_with_at_symbol_ok {
   my $alias = 'ftp@ftp.proftpd.org';
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {

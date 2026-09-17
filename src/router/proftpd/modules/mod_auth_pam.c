@@ -2,7 +2,7 @@
  * ProFTPD: mod_auth_pam -- Support for PAM-style authentication.
  * Copyright (c) 1998, 1999, 2000 Habeeb J. Dihu aka
  *   MacGyver <macgyver@tos.net>, All Rights Reserved.
- * Copyright 2000-2020 The ProFTPD Project
+ * Copyright 2000-2024 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -302,7 +302,7 @@ MODRET pam_auth(cmd_rec *cmd) {
   if (pam_pass_len > (PAM_MAX_MSG_SIZE + 1)) {
     pam_pass_len = PAM_MAX_MSG_SIZE + 1;
   }
- 
+
   pam_pass = malloc(pam_pass_len);
   if (pam_pass == NULL) {
     memset(pam_user, '\0', pam_user_len);
@@ -495,14 +495,11 @@ MODRET pam_auth(cmd_rec *cmd) {
     pr_trace_msg(trace_channel, 1,
       "pam_open_session() failed: %s", pam_strerror(pamh, res));
 
-    switch (res) {
-      case PAM_SESSION_ERR:
-        retval = PR_AUTH_INIT_ERROR;
-        break;
+    if (res == PAM_SESSION_ERR) {
+      retval = PR_AUTH_INIT_ERROR;
 
-      default:
-        retval = PR_AUTH_DISABLEDPWD;
-        break;
+    } else {
+      retval = PR_AUTH_DISABLEDPWD;
     }
 
     pr_log_pri(PR_LOG_NOTICE, MOD_AUTH_PAM_VERSION
@@ -602,19 +599,20 @@ MODRET pam_auth(cmd_rec *cmd) {
  */
 
 MODRET set_authpam(cmd_rec *cmd) {
-  int bool = -1;
+  int engine = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  engine = get_boolean(cmd, 1);
+  if (engine == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = bool;
+  *((unsigned char *) c->argv[0]) = engine;
 
   return PR_HANDLED(cmd);
 }

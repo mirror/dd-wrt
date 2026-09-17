@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp
- * Copyright (c) 2008-2022 TJ Saunders
+ * Copyright (c) 2008-2025 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -134,7 +134,7 @@ static int sftp_get_client_version(conn_t *conn) {
         buf[i] = '\0';
         continue;
       }
- 
+
       if (buf[i] == '\n') {
         buf[i] = '\0';
         break;
@@ -272,7 +272,7 @@ static void sftp_cmd_loop(server_rec *s, conn_t *conn) {
     /* If we are being optimistic, we can reduce the connection latency
      * by sending our KEXINIT message now; this will have the server version
      * string automatically prepended.
-     */  
+     */
     res = sftp_kex_send_first_kexinit();
   }
 
@@ -377,6 +377,13 @@ MODRET set_sftpacceptenv(cmd_rec *cmd) {
   }
   c->argv[0] = (void *) accepted_envs;
 
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
+
   return PR_HANDLED(cmd);
 }
 
@@ -449,6 +456,33 @@ MODRET set_sftpauthmeths(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
+/* usage: SFTPAuthPublicKeys list */
+MODRET set_sftpauthpublickeys(cmd_rec *cmd) {
+  register unsigned int i;
+  config_rec *c;
+
+  if (cmd->argc < 2) {
+    CONF_ERROR(cmd, "Wrong number of parameters");
+  }
+
+  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
+
+  for (i = 1; i < cmd->argc; i++) {
+    if (sftp_auth_publickey_isvalid(cmd->argv[i], NULL) < 0) {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
+        "unsupported auth public key algorithm: ", (char *) cmd->argv[i],
+        NULL));
+    }
+  }
+
+  c = add_config_param(cmd->argv[0], cmd->argc-1, NULL);
+  for (i = 1; i < cmd->argc; i++) {
+    c->argv[i-1] = pstrdup(c->pool, cmd->argv[i]);
+  }
+
+  return PR_HANDLED(cmd);
+}
+
 /* usage: SFTPAuthorized{Host,User}Keys store1 ... */
 MODRET set_sftpauthorizedkeys(cmd_rec *cmd) {
   register unsigned int i;
@@ -504,7 +538,6 @@ MODRET set_sftpauthorizedkeys(cmd_rec *cmd) {
 MODRET set_sftpciphers(cmd_rec *cmd) {
   register unsigned int i;
   config_rec *c;
-  xaset_t *set = NULL;
 
   if (cmd->argc < 2) {
     CONF_ERROR(cmd, "Wrong number of parameters");
@@ -519,13 +552,11 @@ MODRET set_sftpciphers(cmd_rec *cmd) {
     }
   }
 
-  set = cmd->server->conf;
-  c = create_config(set->pool, cmd->argv[0], cmd->argc-1);
+  c = add_config_param(cmd->argv[0], cmd->argc-1, NULL);
   for (i = 1; i < cmd->argc; i++) {
     c->argv[i-1] = pstrdup(c->pool, cmd->argv[i]);
   }
 
-  pr_config_add_config_to_set(set, c, 0);
   return PR_HANDLED(cmd);
 }
 
@@ -554,7 +585,7 @@ MODRET set_sftpclientalive(cmd_rec *cmd) {
   *((unsigned int *) c->argv[0]) = count;
   c->argv[1] = palloc(c->pool, sizeof(unsigned int));
   *((unsigned int *) c->argv[1]) = interval;
- 
+
   return PR_HANDLED(cmd);
 }
 
@@ -864,12 +895,19 @@ MODRET set_sftpclientmatch(cmd_rec *cmd) {
 
       digests = create_config(c->pool, "SFTPDigests", algos->nelts);
       for (j = 0; j < algos->nelts; j++) {
+        const EVP_MD *md;
         const char *algo;
+        int free_md = FALSE;
 
         algo = ((char **) algos->elts)[j];
-        if (sftp_crypto_get_digest(algo, NULL) == NULL) {
+        md = sftp_crypto_get_digest(algo, NULL, &free_md);
+        if (md == NULL) {
           CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
             "unsupported digest algorithm: ", algo, NULL));
+        }
+
+        if (free_md == TRUE) {
+          sftp_crypto_free_digest(md);
         }
 
         digests->argv[j] = pstrdup(digests->pool, algo);
@@ -1126,7 +1164,7 @@ MODRET set_sftpclientmatch(cmd_rec *cmd) {
       i++;
 
     } else if (strcmp(cmd->argv[i], "sftpUTF8ProtocolVersion") == 0) {
-#ifdef PR_USE_NLS
+#if defined(PR_USE_NLS)
       char *ptr = NULL;
       void *value;
       long protocol_version;
@@ -1165,6 +1203,13 @@ MODRET set_sftpclientmatch(cmd_rec *cmd) {
     }
   }
 
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
+
   return PR_HANDLED(cmd);
 
 #else /* no regular expression support at the moment */
@@ -1177,7 +1222,7 @@ MODRET set_sftpclientmatch(cmd_rec *cmd) {
 /* usage: SFTPCompression on|off|delayed */
 MODRET set_sftpcompression(cmd_rec *cmd) {
   config_rec *c;
-  int bool;
+  int use_compression = FALSE;
 
   if (cmd->argc != 2) {
     CONF_ERROR(cmd, "Wrong number of parameters");
@@ -1185,24 +1230,24 @@ MODRET set_sftpcompression(cmd_rec *cmd) {
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-#ifdef HAVE_ZLIB_H
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
-    if (strncasecmp(cmd->argv[1], "delayed", 8) != 0) {
+#if defined(HAVE_ZLIB_H)
+  use_compression = get_boolean(cmd, 1);
+  if (use_compression == -1) {
+    if (strcasecmp(cmd->argv[1], "delayed") != 0) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
         "unknown compression setting: ", cmd->argv[1], NULL));
     }
 
-    bool = 2;
+    use_compression = 2;
   }
 #else
   pr_log_debug(DEBUG0, MOD_SFTP_VERSION ": platform lacks zlib support, ignoring SFTPCompression");
-  bool = 0;
+  use_compression = 0;
 #endif /* !HAVE_ZLIB_H */
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(int));
-  *((int *) c->argv[0]) = bool;
+  *((int *) c->argv[0]) = use_compression;
 
   return PR_HANDLED(cmd);
 }
@@ -1239,7 +1284,6 @@ MODRET set_sftpdhparamfile(cmd_rec *cmd) {
 MODRET set_sftpdigests(cmd_rec *cmd) {
   register unsigned int i;
   config_rec *c;
-  xaset_t *set = NULL;
 
   if (cmd->argc < 2) {
     CONF_ERROR(cmd, "Wrong number of parameters");
@@ -1248,19 +1292,25 @@ MODRET set_sftpdigests(cmd_rec *cmd) {
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
   for (i = 1; i < cmd->argc; i++) {
-    if (sftp_crypto_get_digest(cmd->argv[i], NULL) == NULL) {
+    const EVP_MD *md;
+    int free_md = FALSE;
+
+    md = sftp_crypto_get_digest(cmd->argv[i], NULL, &free_md);
+    if (md == NULL) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
         "unsupported digest algorithm: ", cmd->argv[i], NULL));
     }
+
+    if (free_md == TRUE) {
+      sftp_crypto_free_digest(md);
+    }
   }
 
-  set = cmd->server->conf;
-  c = create_config(set->pool, cmd->argv[0], cmd->argc-1);
+  c = add_config_param(cmd->argv[0], cmd->argc-1, NULL);
   for (i = 1; i < cmd->argc; i++) {
     c->argv[i-1] = pstrdup(c->pool, cmd->argv[i]);
   }
 
-  pr_config_add_config_to_set(set, c, 0);
   return PR_HANDLED(cmd);
 }
 
@@ -1275,19 +1325,20 @@ MODRET set_sftpdisplaybanner(cmd_rec *cmd) {
 
 /* usage: SFTPEngine on|off */
 MODRET set_sftpengine(cmd_rec *cmd) {
-  int bool = 1;
+  int engine = 1;
   config_rec *c;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  engine = get_boolean(cmd, 1);
+  if (engine == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(int));
-  *((int *) c->argv[0]) = bool;
+  *((int *) c->argv[0]) = engine;
 
   return PR_HANDLED(cmd);
 }
@@ -1385,7 +1436,7 @@ MODRET set_sftpextensions(cmd_rec *cmd) {
       }
 
     } else if (strcasecmp(ext, "spaceAvailable") == 0) {
-#ifdef HAVE_SYS_STATVFS_H
+#if defined(HAVE_SYS_STATVFS_H)
       switch (action) {
         case '-':
           ext_flags &= ~SFTP_FXP_EXT_SPACE_AVAIL;
@@ -1401,7 +1452,7 @@ MODRET set_sftpextensions(cmd_rec *cmd) {
 #endif /* !HAVE_SYS_STATVFS_H */
 
     } else if (strcasecmp(ext, "statvfs") == 0) {
-#ifdef HAVE_SYS_STATVFS_H
+#if defined(HAVE_SYS_STATVFS_H)
       switch (action) {
         case '-':
           ext_flags &= ~SFTP_FXP_EXT_STATVFS;
@@ -1438,6 +1489,28 @@ MODRET set_sftpextensions(cmd_rec *cmd) {
           break;
       }
 
+    } else if (strcasecmp(ext, "limits") == 0) {
+      switch (action) {
+        case '-':
+          ext_flags &= ~SFTP_FXP_EXT_LIMITS;
+          break;
+
+        case '+':
+          ext_flags |= SFTP_FXP_EXT_LIMITS;
+          break;
+      }
+
+    } else if (strcasecmp(ext, "userGroupNames") == 0) {
+      switch (action) {
+        case '-':
+          ext_flags &= ~SFTP_FXP_EXT_USERGROUPNAMES;
+          break;
+
+        case '+':
+          ext_flags |= SFTP_FXP_EXT_USERGROUPNAMES;
+          break;
+      }
+
     } else if (strcasecmp(ext, "xattr") == 0) {
 #ifdef HAVE_SYS_XATTR_H
       switch (action) {
@@ -1457,7 +1530,7 @@ MODRET set_sftpextensions(cmd_rec *cmd) {
 
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unknown extension: '",
-        ext, "'", NULL)); 
+        ext, "'", NULL));
     }
   }
 
@@ -1553,7 +1626,6 @@ MODRET set_sftphostkey(cmd_rec *cmd) {
 MODRET set_sftphostkeys(cmd_rec *cmd) {
   register unsigned int i;
   config_rec *c;
-  xaset_t *set = NULL;
 
   if (cmd->argc < 2) {
     CONF_ERROR(cmd, "Wrong number of parameters");
@@ -1568,13 +1640,11 @@ MODRET set_sftphostkeys(cmd_rec *cmd) {
     }
   }
 
-  set = cmd->server->conf;
-  c = create_config(set->pool, cmd->argv[0], cmd->argc-1);
+  c = add_config_param(cmd->argv[0], cmd->argc-1, NULL);
   for (i = 1; i < cmd->argc; i++) {
     c->argv[i-1] = pstrdup(c->pool, cmd->argv[i]);
   }
 
-  pr_config_add_config_to_set(set, c, 0);
   return PR_HANDLED(cmd);
 }
 
@@ -1603,7 +1673,6 @@ MODRET set_sftpkeyblacklist(cmd_rec *cmd) {
 MODRET set_sftpkeyexchanges(cmd_rec *cmd) {
   register unsigned int i;
   config_rec *c;
-  xaset_t *set = NULL;
   char *exchanges = "";
 
   if (cmd->argc < 2) {
@@ -1619,15 +1688,13 @@ MODRET set_sftpkeyexchanges(cmd_rec *cmd) {
     }
   }
 
-  set = cmd->server->conf;
-  c = create_config(set->pool, cmd->argv[0], 1);
+  c = add_config_param(cmd->argv[0], 1, NULL);
   for (i = 1; i < cmd->argc; i++) {
     exchanges = pstrcat(c->pool, exchanges, *exchanges ? "," : "", cmd->argv[i],
       NULL);
   }
   c->argv[0] = exchanges;
 
-  pr_config_add_config_to_set(set, c, 0);
   return PR_HANDLED(cmd);
 }
 
@@ -1730,8 +1797,9 @@ MODRET set_sftpoptions(cmd_rec *cmd) {
   config_rec *c;
   unsigned long opts = 0UL;
 
-  if (cmd->argc-1 == 0)
+  if (cmd->argc-1 == 0) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
@@ -1763,7 +1831,7 @@ MODRET set_sftpoptions(cmd_rec *cmd) {
        * as per the comments in RFC4253, Section 5.1.
        */
       opts |= SFTP_OPT_PESSIMISTIC_KEXINIT;
- 
+
     } else if (strcmp(cmd->argv[i], "PessimisticKexinit") == 0) {
       opts |= SFTP_OPT_PESSIMISTIC_KEXINIT;
 
@@ -1798,6 +1866,15 @@ MODRET set_sftpoptions(cmd_rec *cmd) {
     } else if (strcmp(cmd->argv[i], "NoHostkeyRotation") == 0) {
       opts |= SFTP_OPT_NO_HOSTKEY_ROTATION;
 
+    } else if (strcmp(cmd->argv[i], "FIDOTouchRequired") == 0) {
+      opts |= SFTP_OPT_FIDO_TOUCH_REQUIRED;
+
+    } else if (strcmp(cmd->argv[i], "FIDOVerifyRequired") == 0) {
+      opts |= SFTP_OPT_FIDO_VERIFY_REQUIRED;
+
+    } else if (strcmp(cmd->argv[i], "NoStrictKex") == 0) {
+      opts |= SFTP_OPT_NO_STRICT_KEX;
+
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown SFTPOption '",
         cmd->argv[i], "'", NULL));
@@ -1807,6 +1884,13 @@ MODRET set_sftpoptions(cmd_rec *cmd) {
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned long));
   *((unsigned long *) c->argv[0]) = opts;
 
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
+
   return PR_HANDLED(cmd);
 }
 
@@ -1814,17 +1898,17 @@ MODRET set_sftpoptions(cmd_rec *cmd) {
 MODRET set_sftppassphraseprovider(cmd_rec *cmd) {
   struct stat st;
   char *path;
- 
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
   path = cmd->argv[1];
- 
+
   if (*path != '/') {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "must be a full path: '", path, "'",
       NULL));
   }
- 
+
   if (stat(path, &st) < 0) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error checking '", path, "': ",
       strerror(errno), NULL));
@@ -2511,6 +2595,7 @@ static int sftp_init(void) {
 #endif /* HAVE_OSSL_PROVIDER_LOAD_OPENSSL */
 
   sftp_keystore_init();
+  sftp_crypto_init();
   sftp_cipher_init();
   sftp_mac_init();
 
@@ -2611,11 +2696,11 @@ static int sftp_sess_init(void) {
        * discussion on the OpenSSL developer list:
        *
        *  "The internal FIPS logic uses the default RNG to see the FIPS RNG
-       *   as part of the self test process..." 
-       */ 
+       *   as part of the self test process..."
+       */
       RAND_set_rand_method(NULL);
 
-      if (!FIPS_mode_set(1)) { 
+      if (!FIPS_mode_set(1)) {
         const char *errstr;
 
         errstr = sftp_crypto_get_errors();
@@ -2910,6 +2995,7 @@ static int sftp_sess_init(void) {
 static conftable sftp_conftab[] = {
   { "SFTPAcceptEnv",		set_sftpacceptenv,		NULL },
   { "SFTPAuthMethods",		set_sftpauthmeths,		NULL },
+  { "SFTPAuthPublicKeys",	set_sftpauthpublickeys,		NULL },
   { "SFTPAuthorizedHostKeys",	set_sftpauthorizedkeys,		NULL },
   { "SFTPAuthorizedUserKeys",	set_sftpauthorizedkeys,		NULL },
   { "SFTPCiphers",		set_sftpciphers,		NULL },

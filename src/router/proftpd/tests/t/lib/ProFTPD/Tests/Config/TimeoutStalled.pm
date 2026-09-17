@@ -86,7 +86,7 @@ sub timeoutstalled_ok {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
@@ -219,7 +219,7 @@ sub timeoutstalled_exceeded_list {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
@@ -355,7 +355,7 @@ sub timeoutstalled_exceeded_nlst {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
@@ -491,7 +491,7 @@ sub timeoutstalled_exceeded_mlsd {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
@@ -627,7 +627,7 @@ sub timeoutstalled_exceeded_retr {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
@@ -763,7 +763,7 @@ sub timeoutstalled_exceeded_stor {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
@@ -899,7 +899,7 @@ sub timeoutstalled_exceeded_retr_usesendfile_on {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }

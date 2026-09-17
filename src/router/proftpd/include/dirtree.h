@@ -73,7 +73,7 @@ typedef struct server_struc {
   /* If the tcp_rcvbuf_override/tcp_sndbuf_override flags are true, then
    * the corresponding buffer lengths are to be configured as socket options
    * via setsockopt(2).
-   */ 
+   */
   int tcp_rcvbuf_len;
   unsigned char tcp_rcvbuf_override;
 
@@ -218,7 +218,11 @@ int pr_config_get_xfer_bufsz2(int);
 int pr_config_get_server_xfer_bufsz(int);
 
 config_rec *dir_match_path(pool *, char *);
-void build_dyn_config(pool *, const char *, struct stat *, unsigned char);
+
+void build_dyn_config(pool *p, const char *path, struct stat *st,
+  unsigned char recurse);
+void build_dyn_config2(pool *p, const char *path, struct stat *st);
+
 unsigned char dir_hide_file(const char *);
 int dir_check_full(pool *, cmd_rec *, const char *, const char *, int *);
 int dir_check_limits(cmd_rec *, config_rec *, const char *, int);

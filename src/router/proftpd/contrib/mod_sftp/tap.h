@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp traffic analysis protection
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,5 +62,8 @@ int sftp_tap_send_packet(void);
  * policy is hardcoded, and will override any configured TAP policy.
  */
 int sftp_tap_set_policy(const char *);
+
+/* Sets the configured TAP policy in motion. */
+void sftp_tap_start_policy(void);
 
 #endif /* MOD_SFTP_TAP_H */

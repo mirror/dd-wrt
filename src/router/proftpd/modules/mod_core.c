@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2022 The ProFTPD Project team
+ * Copyright (c) 2001-2026 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,6 +61,7 @@ static const char *trace_log = NULL;
 #endif /* PR_USE_TRACE */
 
 /* Necessary prototypes. */
+static void core_chroot_ev(const void *, void *);
 static void core_exit_ev(const void *, void *);
 static int core_sess_init(void);
 static void reset_server_auth_order(void);
@@ -128,17 +129,17 @@ static int core_idle_timeout_cb(CALLBACK_FRAME) {
   timeout = pr_data_get_timeout(PR_DATA_TIMEOUT_IDLE);
 
   /* We don't want to quit in the middle of a transfer */
-  if (session.sf_flags & SF_XFER) { 
+  if (session.sf_flags & SF_XFER) {
     pr_trace_msg("timer", 4,
       "TimeoutIdle (%d %s) reached, but data transfer in progress, ignoring",
-      timeout, timeout != 1 ? "seconds" : "second"); 
+      timeout, timeout != 1 ? "seconds" : "second");
 
     /* Restart the timer. */
-    return 1; 
+    return 1;
   }
- 
+
   pr_event_generate("core.timeout-idle", NULL);
- 
+
   pr_response_send_async(R_421,
     _("Idle timeout (%d seconds): closing control connection"), timeout);
 
@@ -672,17 +673,18 @@ MODRET set_serveradmin(cmd_rec *cmd) {
 
 /* usage: UseIPv6 on|off */
 MODRET set_useipv6(cmd_rec *cmd) {
-#ifdef PR_USE_IPV6
-  int bool = -1;
+#if defined(PR_USE_IPV6)
+  int use_ipv6 = -1;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  use_ipv6 = get_boolean(cmd, 1);
+  if (use_ipv6 == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
-  if (bool == 0) {
+  if (use_ipv6 == FALSE) {
     pr_log_debug(DEBUG2, "disabling runtime support for IPv6 connections");
     pr_netaddr_disable_ipv6();
 
@@ -698,17 +700,18 @@ MODRET set_useipv6(cmd_rec *cmd) {
 }
 
 MODRET set_usereversedns(cmd_rec *cmd) {
-  int bool = -1;
+  int use_reverse_dns = -1;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  use_reverse_dns = get_boolean(cmd, 1);
+  if (use_reverse_dns == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
-  ServerUseReverseDNS = bool;
-  pr_netaddr_set_reverse_dns(bool);
+  ServerUseReverseDNS = use_reverse_dns;
+  pr_netaddr_set_reverse_dns(use_reverse_dns);
 
   return PR_HANDLED(cmd);
 }
@@ -764,16 +767,46 @@ MODRET set_scoreboardmutex(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
+/* usage: ScoreboardOptions opt1 ... */
+MODRET set_scoreboardoptions(cmd_rec *cmd) {
+  register unsigned int i = 0;
+  config_rec *c = NULL;
+  unsigned long opts = 0UL;
+
+  if (cmd->argc-1 == 0) {
+    CONF_ERROR(cmd, "wrong number of parameters");
+  }
+
+  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
+
+  c = add_config_param(cmd->argv[0], 1, NULL);
+
+  for (i = 1; i < cmd->argc; i++) {
+    if (strcasecmp(cmd->argv[i], "AllowMissingEntry") == 0) {
+      opts |= PR_SCOREBOARD_OPT_ALLOW_MISSING_ENTRY;
+
+    } else {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown ScoreboardOption '",
+        cmd->argv[i], "'", NULL));
+    }
+  }
+
+  c->argv[0] = pcalloc(c->pool, sizeof(unsigned long));
+  *((unsigned long *) c->argv[0]) = opts;
+
+  return PR_HANDLED(cmd);
+}
+
 /* usage: ScoreboardScrub "on"|"off"|secs */
 MODRET set_scoreboardscrub(cmd_rec *cmd) {
-  int bool = -1, nsecs = 0;
+  int do_scrub = -1, nsecs = 0;
   config_rec *c;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
- 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
+
+  do_scrub = get_boolean(cmd, 1);
+  if (do_scrub == -1) {
     /* If this is the case, try handling the parameter as the number of
      * seconds, as the scrub frequency.
      */
@@ -793,7 +826,7 @@ MODRET set_scoreboardscrub(cmd_rec *cmd) {
   } else {
     c = add_config_param(cmd->argv[0], 1, NULL);
     c->argv[0] = pcalloc(c->pool, sizeof(int));
-    *((int *) c->argv[0]) = bool;
+    *((int *) c->argv[0]) = do_scrub;
   }
 
   return PR_HANDLED(cmd);
@@ -913,19 +946,19 @@ MODRET set_serverident(cmd_rec *cmd) {
 }
 
 MODRET set_defaultserver(cmd_rec *cmd) {
-  int bool = -1;
+  int default_server = -1;
   server_rec *s = NULL;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
+  default_server = get_boolean(cmd, 1);
+  if (default_server == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
   }
 
-  if (!bool) {
+  if (default_server == FALSE) {
     return PR_HANDLED(cmd);
   }
 
@@ -938,7 +971,7 @@ MODRET set_defaultserver(cmd_rec *cmd) {
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = bool;
+  *((unsigned char *) c->argv[0]) = default_server;
 
   return PR_HANDLED(cmd);
 }
@@ -1124,16 +1157,16 @@ MODRET set_timeoutlinger(cmd_rec *cmd) {
 }
 
 MODRET set_socketbindtight(cmd_rec *cmd) {
-  int bool = -1;
+  int bind_tight = -1;
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
+  bind_tight = get_boolean(cmd, 1);
+  if (bind_tight == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
   }
 
-  SocketBindTight = bool;
+  SocketBindTight = bind_tight;
   return PR_HANDLED(cmd);
 }
 
@@ -1219,7 +1252,7 @@ MODRET set_socketoptions(cmd_rec *cmd) {
             "badly formatted TCP keepalive spec '", cmd->argv[i+1], "'", NULL));
         }
 
-        *ptr2 = '\0'; 
+        *ptr2 = '\0';
         count = atoi(keepalive_spec);
 
         keepalive_spec = ptr2 + 1;
@@ -1313,42 +1346,29 @@ MODRET set_tcpbacklog(cmd_rec *cmd) {
 
   backlog = atoi(cmd->argv[1]);
 
-  if (backlog < 1 ||
-      backlog > 255) {
-    CONF_ERROR(cmd, "parameter must be a number between 1 and 255");
+  if (backlog < 1) {
+    CONF_ERROR(cmd, "parameter must be greater than zero");
   }
-
-#ifdef SOMAXCONN
-  if (backlog > SOMAXCONN) {
-    char str[32];
-
-    memset(str, '\0', sizeof(str));
-    pr_snprintf(str, sizeof(str)-1, "%u", (unsigned int) SOMAXCONN);
-
-    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
-      "parameter must be less than SOMAXCONN (", str, ")", NULL));
-  }
-#endif
 
   tcpBackLog = backlog;
   return PR_HANDLED(cmd);
 }
 
 MODRET set_tcpnodelay(cmd_rec *cmd) {
-  int bool = -1;
+  int no_delay = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
+  no_delay = get_boolean(cmd, 1);
+  if (no_delay == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
   }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = bool;
+  *((unsigned char *) c->argv[0]) = no_delay;
 
   return PR_HANDLED(cmd);
 }
@@ -1655,7 +1675,7 @@ MODRET set_trace(cmd_rec *cmd) {
 
     c = add_config_param(cmd->argv[0], 0);
     c->argc = cmd->argc - idx;
-    c->argv = pcalloc(c->pool, ((c->argc + 1) * sizeof(void *))); 
+    c->argv = pcalloc(c->pool, ((c->argc + 1) * sizeof(void *)));
 
     for (i = idx; i < cmd->argc; i++) {
       char *ptr;
@@ -1851,7 +1871,7 @@ MODRET set_unsetenv(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  add_config_param_str(cmd->argv[0], 1, cmd->argv[1]); 
+  add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
 
   /* In addition, if this is the "server config" context, unset the
    * environment variable now.  If there was a <Daemon> context, that would
@@ -2066,20 +2086,20 @@ MODRET set_syslogfacility(cmd_rec *cmd) {
 }
 
 MODRET set_timesgmt(cmd_rec *cmd) {
-  int bool = -1;
+  int times_gmt = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
+  times_gmt = get_boolean(cmd, 1);
+  if (times_gmt == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
   }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = bool;
+  *((unsigned char *) c->argv[0]) = times_gmt;
 
   c->flags |= CF_MERGEDOWN;
   return PR_HANDLED(cmd);
@@ -2258,22 +2278,22 @@ MODRET set_pathdenyfilter(cmd_rec *cmd) {
 
 /* usage: AllowForeignAddress on|off|class */
 MODRET set_allowforeignaddress(cmd_rec *cmd) {
-  int bool = -1;
+  int allow_foreign_addr = -1;
   config_rec *c = NULL;
   char *class_name = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
+  allow_foreign_addr = get_boolean(cmd, 1);
+  if (allow_foreign_addr == -1) {
     /* Not a boolean?  Assume it's a <Class> name, then. */
     class_name = cmd->argv[1];
   }
 
   c = add_config_param(cmd->argv[0], 2, NULL, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(int));
-  *((int *) c->argv[0]) = bool;
+  *((int *) c->argv[0]) = allow_foreign_addr;
   c->argv[1] = pstrdup(c->pool, class_name);
 
   c->flags |= CF_MERGEDOWN;
@@ -2470,7 +2490,7 @@ MODRET set_hidefiles(cmd_rec *cmd) {
     int res;
 
     pre = pr_regexp_alloc(&core_module);
-  
+
     res = pr_regexp_compile(pre, ptr, REG_EXTENDED|REG_NOSUB);
     if (res != 0) {
       char errstr[200] = {'\0'};
@@ -2573,20 +2593,20 @@ MODRET set_hidefiles(cmd_rec *cmd) {
 }
 
 MODRET set_hidenoaccess(cmd_rec *cmd) {
-  int bool = -1;
+  int hide_no_access = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ANON|CONF_DIR);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
+  hide_no_access = get_boolean(cmd, 1);
+  if (hide_no_access == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
   }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = bool;
+  *((unsigned char *) c->argv[0]) = hide_no_access;
   c->flags |= CF_MERGEDOWN;
 
   return PR_HANDLED(cmd);
@@ -2663,7 +2683,7 @@ MODRET add_userowner(cmd_rec *cmd) {
 }
 
 MODRET set_allowoverride(cmd_rec *cmd) {
-  int bool = -1;
+  int allow_override = -1;
   config_rec *c = NULL;
   unsigned int precedence = 0;
 
@@ -2682,8 +2702,8 @@ MODRET set_allowoverride(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON|CONF_DIR);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
+  allow_override = get_boolean(cmd, 1);
+  if (allow_override == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
   }
 
@@ -2706,7 +2726,7 @@ MODRET set_allowoverride(cmd_rec *cmd) {
 
   c = add_config_param(cmd->argv[0], 2, NULL, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(int));
-  *((int *) c->argv[0]) = bool;
+  *((int *) c->argv[0]) = allow_override;
   c->argv[1] = pcalloc(c->pool, sizeof(unsigned int));
   *((unsigned int *) c->argv[1]) = precedence;
   c->flags |= CF_MERGEDOWN_MULTI;
@@ -2789,6 +2809,8 @@ MODRET end_anonymous(cmd_rec *cmd) {
 }
 
 MODRET add_class(cmd_rec *cmd) {
+  config_rec *c;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_GLOBAL);
 
@@ -2797,15 +2819,25 @@ MODRET add_class(cmd_rec *cmd) {
       cmd->argv[1], ">: ", strerror(errno), NULL));
   }
 
+  c = pr_parser_config_ctxt_open("Class");
+  c->config_type = CONF_CLASS;
+
   return PR_HANDLED(cmd);
 }
 
 MODRET end_class(cmd_rec *cmd) {
+  int empty_ctx = FALSE;
+
   if (cmd->argc > 1) {
     CONF_ERROR(cmd, "wrong number of parameters");
   }
 
   CHECK_CONF(cmd, CONF_CLASS);
+
+  pr_parser_config_ctxt_close(&empty_ctx);
+  if (empty_ctx == TRUE) {
+    pr_log_debug(DEBUG3, "%s: ignoring empty section", (char *) cmd->argv[0]);
+  }
 
   if (pr_class_close() < 0) {
     pr_log_pri(PR_LOG_WARNING, "warning: empty <Class> definition");
@@ -2899,7 +2931,7 @@ MODRET add_limit(cmd_rec *cmd) {
       have_cdup = TRUE;
 
     } else if (strcasecmp(elts[i], C_XCUP) == 0) {
-      have_xcup = TRUE; 
+      have_xcup = TRUE;
 
     } else if (strcasecmp(elts[i], C_MKD) == 0) {
       have_mkd = TRUE;
@@ -3003,7 +3035,7 @@ MODRET set_allowdenyusergroupclass(cmd_rec *cmd) {
   unsigned int argc;
   int eval_type;
   array_header *acl = NULL;
- 
+
   CHECK_CONF(cmd, CONF_LIMIT);
 
   if (cmd->argc < 2) {
@@ -3173,7 +3205,7 @@ MODRET set_allowdeny(cmd_rec *cmd) {
         acl = pr_netacl_create(c->pool, ent);
         if (acl == NULL) {
           CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "bad ACL definition '",
-            ent, "': ", strerror(errno), NULL));     
+            ent, "': ", strerror(errno), NULL));
         }
 
         pr_trace_msg("netacl", 9, "'%s' parsed into netacl '%s'", ent,
@@ -3276,20 +3308,20 @@ MODRET end_limit(cmd_rec *cmd) {
 }
 
 MODRET set_ignorehidden(cmd_rec *cmd) {
-  int bool = -1;
+  int ignore_hidden = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_LIMIT);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
+  ignore_hidden = get_boolean(cmd, 1);
+  if (ignore_hidden == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
   }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = bool;
+  *((unsigned char *) c->argv[0]) = ignore_hidden;
 
   return PR_HANDLED(cmd);
 }
@@ -3297,7 +3329,7 @@ MODRET set_ignorehidden(cmd_rec *cmd) {
 /* usage: DisplayChdir path [on|off] */
 MODRET set_displaychdir(cmd_rec *cmd) {
   config_rec *c = NULL;
-  int bool = FALSE;
+  int display_once = FALSE;
 
   if (cmd->argc-1 < 1 ||
       cmd->argc-1 > 2) {
@@ -3307,16 +3339,19 @@ MODRET set_displaychdir(cmd_rec *cmd) {
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON|CONF_DIR);
 
   if (cmd->argc-1 == 2) {
-    bool = get_boolean(cmd, 2);
-    if (bool < 0) {
+    display_once = get_boolean(cmd, 2);
+    if (display_once < 0) {
       CONF_ERROR(cmd, "expected Boolean parameter");
     }
   }
 
-  c = add_config_param(cmd->argv[0], 2, NULL, NULL);
+  /* Note that we allocate one extra slot, for a possible fh, as for
+   * absolute paths in a chrooted session (Issue #1688).
+   */
+  c = add_config_param(cmd->argv[0], 3, NULL, NULL, NULL);
   c->argv[0] = pstrdup(c->pool, cmd->argv[1]);
   c->argv[1] = pcalloc(c->pool, sizeof(int));
-  *((int *) c->argv[1]) = bool;
+  *((int *) c->argv[1]) = display_once;
 
   c->flags |= CF_MERGEDOWN;
   return PR_HANDLED(cmd);
@@ -3926,21 +3961,21 @@ MODRET core_pasv(cmd_rec *cmd) {
    */
   pr_response_add(R_227, "Entering Passive Mode (%s,%u,%u).", addrstr,
     (port >> 8) & 255, port & 255);
- 
+
   return PR_HANDLED(cmd);
 }
 
 MODRET core_port(cmd_rec *cmd) {
   const pr_netaddr_t *listen_addr = NULL, *port_addr = NULL;
   char *port_info;
-#ifdef PR_USE_IPV6
+#if defined(PR_USE_IPV6)
   char buf[INET6_ADDRSTRLEN] = {'\0'};
 #else
   char buf[INET_ADDRSTRLEN] = {'\0'};
 #endif /* PR_USE_IPV6 */
   unsigned int h1, h2, h3, h4, p1, p2;
   unsigned short port;
-  int allow_foreign_addr = FALSE, *root_revoke = NULL;
+  int *root_revoke = NULL, res;
   config_rec *c;
   const char *proto;
 
@@ -4013,7 +4048,7 @@ MODRET core_port(cmd_rec *cmd) {
   }
   port = ((p1 << 8) | p2);
 
-#ifdef PR_USE_IPV6
+#if defined(PR_USE_IPV6)
   if (pr_netaddr_use_ipv6()) {
     if (pr_netaddr_get_family(session.c->remote_addr) == AF_INET6) {
       pr_snprintf(buf, sizeof(buf), "::ffff:%u.%u.%u.%u", h1, h2, h3, h4);
@@ -4031,7 +4066,7 @@ MODRET core_port(cmd_rec *cmd) {
     PR_NETADDR_GET_ADDR_FL_EXCL_CACHE);
   if (port_addr == NULL) {
     pr_log_debug(DEBUG1, "error getting sockaddr for '%s': %s", buf,
-      strerror(errno)); 
+      strerror(errno));
     pr_response_add_err(R_501, _("Illegal PORT command"));
 
     pr_cmd_set_errno(cmd, EPERM);
@@ -4070,7 +4105,7 @@ MODRET core_port(cmd_rec *cmd) {
       }
     }
   }
- 
+
   if (pr_netaddr_is_rfc1918(listen_addr) != TRUE &&
       pr_netaddr_is_rfc1918(session.c->remote_addr) != TRUE &&
       pr_netaddr_is_rfc1918(port_addr) == TRUE) {
@@ -4091,45 +4126,12 @@ MODRET core_port(cmd_rec *cmd) {
    */
 
   c = find_config(TOPLEVEL_CONF, CONF_PARAM, "AllowForeignAddress", FALSE);
-  if (c != NULL) {
-    int allowed;
-
-    allowed = *((int *) c->argv[0]);
-    switch (allowed) {
-      case TRUE:
-        allow_foreign_addr = TRUE;
-        break;
-
-      case FALSE:
-        break;
-
-      default: {
-        char *class_name;
-        const pr_class_t *cls;
-
-        class_name = c->argv[1];
-        cls = pr_class_find(class_name);
-        if (cls != NULL) {
-          if (pr_class_satisfied(cmd->tmp_pool, cls, port_addr) == TRUE) {
-            allow_foreign_addr = TRUE;
-
-          } else {
-            pr_log_debug(DEBUG8, "<Class> '%s' not satisfied by foreign "
-              "address '%s'", class_name, pr_netaddr_get_ipstr(port_addr));
-          }
-
-        } else {
-          pr_log_debug(DEBUG8, "<Class> '%s' not found for filtering "
-            "AllowForeignAddress", class_name);
-        }
-      }
-    }
-  }
-
-  if (allow_foreign_addr == FALSE) {
+  res = pr_inet_allowforeignaddress(cmd->tmp_pool, port_addr,
+    session.c->remote_addr, c);
+  if (res != 1) {
     const pr_netaddr_t *remote_addr = session.c->remote_addr;
 
-#ifdef PR_USE_IPV6
+#if defined(PR_USE_IPV6)
     if (pr_netaddr_use_ipv6()) {
       /* We can only compare the PORT-given address against the remote client
        * address if the remote client address is an IPv4-mapped IPv6 address.
@@ -4147,15 +4149,13 @@ MODRET core_port(cmd_rec *cmd) {
     }
 #endif /* PR_USE_IPV6 */
 
-    if (pr_netaddr_cmp(port_addr, remote_addr) != 0) {
-      pr_log_pri(PR_LOG_WARNING, "Refused PORT %s (address mismatch)",
-        cmd->arg);
-      pr_response_add_err(R_500, _("Illegal PORT command"));
+    pr_log_pri(PR_LOG_WARNING, "Refused PORT %s (address mismatch)",
+      cmd->arg);
+    pr_response_add_err(R_500, _("Illegal PORT command"));
 
-      pr_cmd_set_errno(cmd, EPERM);
-      errno = EPERM;
-      return PR_ERROR(cmd);
-    }
+    pr_cmd_set_errno(cmd, EPERM);
+    errno = EPERM;
+    return PR_ERROR(cmd);
   }
 
   /* Additionally, make sure that the port number used is a "high numbered"
@@ -4194,9 +4194,9 @@ MODRET core_port(cmd_rec *cmd) {
 MODRET core_eprt(cmd_rec *cmd) {
   const pr_netaddr_t *listen_addr = NULL;
   pr_netaddr_t na;
-  int family = 0;
+  int family = 0, res;
   unsigned short port = 0;
-  int allow_foreign_addr = FALSE, *root_revoke = NULL;
+  int *root_revoke = NULL;
   char delim = '\0', *argstr = pstrdup(cmd->tmp_pool, cmd->argv[1]);
   char *tmp = NULL;
   config_rec *c;
@@ -4265,14 +4265,15 @@ MODRET core_eprt(cmd_rec *cmd) {
     case 1:
       break;
 
-#ifdef PR_USE_IPV6
+#if defined(PR_USE_IPV6)
     case 2:
-      if (pr_netaddr_use_ipv6())
+      if (pr_netaddr_use_ipv6()) {
         break;
+      }
 #endif /* PR_USE_IPV6 */
 
     default:
-#ifdef PR_USE_IPV6
+#if defined(PR_USE_IPV6)
       if (pr_netaddr_use_ipv6()) {
         pr_response_add_err(R_522,
           _("Network protocol not supported, use (1,2)"));
@@ -4324,8 +4325,6 @@ MODRET core_eprt(cmd_rec *cmd) {
    * by pr_inet_pton().
    */
   *tmp = '\0';
-
-  memset(&na, 0, sizeof(na));
 
   /* Use pr_inet_pton() to translate the address string into the address
    * value.
@@ -4449,51 +4448,16 @@ MODRET core_eprt(cmd_rec *cmd) {
    */
 
   c = find_config(TOPLEVEL_CONF, CONF_PARAM, "AllowForeignAddress", FALSE);
-  if (c != NULL) {
-    int allowed;
+  res = pr_inet_allowforeignaddress(cmd->tmp_pool, &na,
+    session.c->remote_addr, c);
+  if (res != 1 || !port) {
+    pr_log_pri(PR_LOG_WARNING, "Refused EPRT %s (address mismatch)",
+      cmd->arg);
+    pr_response_add_err(R_500, _("Illegal EPRT command"));
 
-    allowed = *((int *) c->argv[0]);
-    switch (allowed) {
-      case TRUE:
-        allow_foreign_addr = TRUE;
-        break;
-
-      case FALSE:
-        break;
-
-      default: {
-        char *class_name;
-        const pr_class_t *cls;
-
-        class_name = c->argv[1];
-        cls = pr_class_find(class_name);
-        if (cls != NULL) {
-          if (pr_class_satisfied(cmd->tmp_pool, cls, &na) == TRUE) {
-            allow_foreign_addr = TRUE;
-
-          } else {
-            pr_log_debug(DEBUG8, "<Class> '%s' not satisfied by foreign "
-              "address '%s'", class_name, pr_netaddr_get_ipstr(&na));
-          }
-
-        } else {
-          pr_log_debug(DEBUG8, "<Class> '%s' not found for filtering "
-            "AllowForeignAddress", class_name);
-        }
-      }
-    }
-  }
-
-  if (allow_foreign_addr == FALSE) {
-    if (pr_netaddr_cmp(&na, session.c->remote_addr) != 0 || !port) {
-      pr_log_pri(PR_LOG_WARNING, "Refused EPRT %s (address mismatch)",
-        cmd->arg);
-      pr_response_add_err(R_500, _("Illegal EPRT command"));
-
-      pr_cmd_set_errno(cmd, EPERM);
-      errno = EPERM;
-      return PR_ERROR(cmd);
-    }
+    pr_cmd_set_errno(cmd, EPERM);
+    errno = EPERM;
+    return PR_ERROR(cmd);
   }
 
   /* Additionally, make sure that the port number used is a "high numbered"
@@ -4532,7 +4496,7 @@ MODRET core_eprt(cmd_rec *cmd) {
   session.sf_flags &= (SF_ALL^SF_PASSIVE);
 
   /* If we already have a data connection open, kill it. */
-  if (session.d) {
+  if (session.d != NULL) {
     pr_inet_close(session.d->pool, session.d);
     session.d = NULL;
   }
@@ -4596,9 +4560,8 @@ MODRET core_epsv(cmd_rec *cmd) {
       errno = EINVAL;
       return PR_ERROR(cmd);
     }
- 
-  } else {
 
+  } else {
     switch (pr_netaddr_get_family(session.c->local_addr)) {
       case AF_INET:
         family = 1;
@@ -4786,7 +4749,9 @@ MODRET core_help(cmd_rec *cmd) {
     char *cp;
 
     for (cp = cmd->argv[1]; *cp; cp++) {
-      *cp = toupper((int) *cp);
+      if (PR_ISALPHA((int) *cp)) {
+        *cp = toupper((int) *cp);
+      }
     }
 
     if (strcasecmp(cmd->argv[1], C_SITE) == 0) {
@@ -5215,13 +5180,16 @@ MODRET core_post_host(cmd_rec *cmd) {
     /* Restore the original ProcessTitles setting. */
     pr_proctitle_set_static_str(NULL);
 
+    /* Unregister any event listeners. */
+    pr_event_unregister(&core_module, "core.chroot", core_chroot_ev);
+
     res = core_sess_init();
     if (res < 0) {
       pr_session_disconnect(&core_module,
         PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
     }
   }
-  
+
   return PR_DECLINED(cmd);
 }
 
@@ -5492,7 +5460,7 @@ MODRET core_chdir(cmd_rec *cmd, char *ndir) {
     if (use_cdpath == FALSE &&
         pr_fsio_chdir_canon(ndir, 1) < 0) {
       use_cdpath = TRUE;
-    }            
+    }
 
     if (use_cdpath == TRUE) {
       for (cdpath = find_config(main_server->conf, CONF_PARAM, "CDPath", TRUE);
@@ -5534,7 +5502,7 @@ MODRET core_chdir(cmd_rec *cmd, char *ndir) {
     PR_SCORE_CWD, session.cwd,
     NULL);
 
-  if (session.dir_config) {
+  if (session.dir_config != NULL) {
     c = find_config(session.dir_config->subset, CONF_PARAM, "DisplayChdir",
       FALSE);
   }
@@ -5551,17 +5519,20 @@ MODRET core_chdir(cmd_rec *cmd, char *ndir) {
 
   if (c != NULL) {
     time_t prev = 0;
+    int display_once = FALSE, display_now = FALSE, res = -1;
+    char *display_file = NULL;
+    pr_fh_t *display_fh = NULL;
 
-    char *display = c->argv[0];
-    int bool = *((int *) c->argv[1]);
+    display_file = c->argv[0];
+    display_once = *((int *) c->argv[1]);
+    display_fh = c->argv[2];
 
-    if (bool) {
-   
+    if (display_once == TRUE) {
       /* XXX Get rid of this CONF_USERDATA instance; it's the only
        * occurrence of it in the source.  Use the session.notes table instead.
-       */ 
+       */
       c = find_config(cmd->server->conf, CONF_USERDATA, session.cwd, FALSE);
-      if (!c) {
+      if (c == NULL) {
         time(&prev);
         c = pr_config_add_set(&cmd->server->conf, session.cwd, 0);
         c->config_type = CONF_USERDATA;
@@ -5579,13 +5550,39 @@ MODRET core_chdir(cmd_rec *cmd, char *ndir) {
       }
     }
 
-    if (pr_fsio_stat(display, &st) != -1 &&
-        !S_ISDIR(st.st_mode) &&
-        (bool ? st.st_mtime > prev : TRUE)) {
+    if (display_fh != NULL) {
+      res = pr_fsio_fstat(display_fh, &st);
+      if (res < 0) {
+        pr_log_debug(DEBUG3, "DisplayChdir: error checking '%s': %s",
+          display_fh->fh_path, strerror(errno));
+      }
 
-      if (pr_display_file(display, session.cwd, R_250, 0) < 0) {
-        pr_log_debug(DEBUG3, "error displaying '%s': %s", display,
-          strerror(errno));
+    } else {
+      res = pr_fsio_stat(display_file, &st);
+      if (res < 0) {
+        pr_log_debug(DEBUG3, "DisplayChdir: error checking '%s': %s",
+          display_file, strerror(errno));
+      }
+    }
+
+    if (res == 0 &&
+        !S_ISDIR(st.st_mode) &&
+        (display_once ? st.st_mtime > prev : TRUE)) {
+      display_now = TRUE;
+    }
+
+    if (display_now == TRUE) {
+      if (display_fh != NULL) {
+        if (pr_display_fh(display_fh, session.cwd, R_250, 0) < 0) {
+          pr_log_debug(DEBUG3, "DisplayChdir: error displaying '%s': %s",
+            display_fh->fh_path, strerror(errno));
+        }
+
+      } else {
+        if (pr_display_file(display_file, session.cwd, R_250, 0) < 0) {
+          pr_log_debug(DEBUG3, "DisplayChdir: error displaying '%s': %s",
+           display_file, strerror(errno));
+        }
       }
     }
   }
@@ -5630,8 +5627,8 @@ MODRET core_rmd(cmd_rec *cmd) {
 
       pr_cmd_set_errno(cmd, EPERM);
       errno = EPERM;
-      return PR_ERROR(cmd); 
- 
+      return PR_ERROR(cmd);
+
     case PR_FILTER_ERR_FAILS_DENY_FILTER:
       pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathDenyFilter",
         (char *) cmd->argv[0], dir);
@@ -5745,8 +5742,8 @@ MODRET core_mkd(cmd_rec *cmd) {
 
       pr_cmd_set_errno(cmd, EPERM);
       errno = EPERM;
-      return PR_ERROR(cmd); 
- 
+      return PR_ERROR(cmd);
+
     case PR_FILTER_ERR_FAILS_DENY_FILTER:
       pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathDenyFilter",
         (char *) cmd->argv[0], dir);
@@ -5780,8 +5777,9 @@ MODRET core_mkd(cmd_rec *cmd) {
     return PR_ERROR(cmd);
   }
 
-  if (pr_fsio_smkdir(cmd->tmp_pool, dir, 0777, session.fsuid,
-      session.fsgid) < 0) {
+  res = pr_fsio_smkdir(cmd->tmp_pool, dir, 0777, session.fsuid, session.fsgid);
+  if (res < 0 &&
+      errno != EEXIST) {
     int xerrno = errno;
 
     (void) pr_trace_msg("fileperms", 1, "%s, user '%s' (UID %s, GID %s): "
@@ -5790,7 +5788,7 @@ MODRET core_mkd(cmd_rec *cmd) {
       pr_gid2str(cmd->tmp_pool, session.gid), dir, strerror(xerrno));
 
     pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
- 
+
     pr_cmd_set_errno(cmd, xerrno);
     errno = xerrno;
     return PR_ERROR(cmd);
@@ -6006,8 +6004,8 @@ MODRET core_dele(cmd_rec *cmd) {
 
       pr_cmd_set_errno(cmd, EPERM);
       errno = EPERM;
-      return PR_ERROR(cmd); 
- 
+      return PR_ERROR(cmd);
+
     case PR_FILTER_ERR_FAILS_DENY_FILTER:
       pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathDenyFilter",
         (char *) cmd->argv[0], path);
@@ -6090,7 +6088,7 @@ MODRET core_dele(cmd_rec *cmd) {
     return PR_ERROR(cmd);
   }
 #endif /* !EISDIR */
- 
+
   res = pr_fsio_unlink_with_error(cmd->pool, path, &err);
   if (res < 0) {
     int xerrno = errno;
@@ -6145,8 +6143,8 @@ MODRET core_rnto(cmd_rec *cmd) {
 
   CHECK_CMD_MIN_ARGS(cmd, 2);
 
-  if (!session.xfer.path) {
-    if (session.xfer.p) {
+  if (session.xfer.path == NULL) {
+    if (session.xfer.p != NULL) {
       destroy_pool(session.xfer.p);
       memset(&session.xfer, '\0', sizeof(session.xfer));
     }
@@ -6187,8 +6185,8 @@ MODRET core_rnto(cmd_rec *cmd) {
 
       pr_cmd_set_errno(cmd, EPERM);
       errno = EPERM;
-      return PR_ERROR(cmd); 
- 
+      return PR_ERROR(cmd);
+
     case PR_FILTER_ERR_FAILS_DENY_FILTER:
       pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathDenyFilter",
         (char *) cmd->argv[0], path);
@@ -6355,6 +6353,7 @@ MODRET core_rnto_cleanup(cmd_rec *cmd) {
 
 MODRET core_rnfr(cmd_rec *cmd) {
   int res;
+  const char *abs_path;
   char *decoded_path, *path;
 
   CHECK_CMD_MIN_ARGS(cmd, 2);
@@ -6388,8 +6387,8 @@ MODRET core_rnfr(cmd_rec *cmd) {
 
       pr_cmd_set_errno(cmd, EPERM);
       errno = EPERM;
-      return PR_ERROR(cmd); 
- 
+      return PR_ERROR(cmd);
+
     case PR_FILTER_ERR_FAILS_DENY_FILTER:
       pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathDenyFilter",
         (char *) cmd->argv[0], path);
@@ -6400,8 +6399,13 @@ MODRET core_rnfr(cmd_rec *cmd) {
       return PR_ERROR(cmd);
   }
 
+  abs_path = dir_abs_path(cmd->tmp_pool, path, FALSE);
+
   /* Allow renaming a symlink, even a dangling one. */
   path = dir_canonical_path(cmd->tmp_pool, path);
+  if (abs_path == NULL) {
+    abs_path = path;
+  }
 
   if (path == NULL ||
       !dir_check(cmd->tmp_pool, cmd, cmd->group, path, NULL) ||
@@ -6416,7 +6420,7 @@ MODRET core_rnfr(cmd_rec *cmd) {
   }
 
   /* We store the path in session.xfer.path */
-  if (session.xfer.p) {
+  if (session.xfer.p != NULL) {
     destroy_pool(session.xfer.p);
     memset(&session.xfer, '\0', sizeof(session.xfer));
   }
@@ -6426,8 +6430,11 @@ MODRET core_rnfr(cmd_rec *cmd) {
 
   session.xfer.path = pstrdup(session.xfer.p, path);
 
+  /* Make sure we store the absolute path for LogFormat %w (Issue #1808). */
+  abs_path = pr_fsio_realpath(session.xfer.p, abs_path);
+
   pr_table_add(session.notes, "mod_core.rnfr-path",
-    pstrdup(session.xfer.p, session.xfer.path), 0);
+    pstrdup(session.xfer.p, abs_path), 0);
 
   pr_response_add(R_350,
     _("File or directory exists, ready for destination name"));
@@ -6704,20 +6711,20 @@ MODRET core_post_pass(cmd_rec *cmd) {
  */
 
 MODRET set_deferwelcome(cmd_rec *cmd) {
-  int bool = -1;
+  int defer_welcome = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
+  defer_welcome = get_boolean(cmd, 1);
+  if (defer_welcome == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
   }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = bool;
+  *((unsigned char *) c->argv[0]) = defer_welcome;
 
   return PR_HANDLED(cmd);
 }
@@ -6757,6 +6764,37 @@ static const char *core_get_xfer_bytes_str(void *data, size_t datasz) {
 
 /* Event handlers
  */
+
+static void core_chroot_ev(const void *event_data, void *user_data) {
+  config_rec *c;
+
+  /* Look for any configured DisplayChdir directives that use absolute
+   * paths, and open filehandles on them prior to the chroot (Issue #1688).
+   */
+
+  c = find_config(main_server->conf, CONF_PARAM, "DisplayChdir", FALSE);
+  while (c != NULL) {
+    const char *path;
+
+    pr_signals_handle();
+
+    path = c->argv[0];
+    if (path[0] == '/') {
+      pr_fh_t *fh;
+
+      fh = pr_fsio_open(path, O_RDONLY);
+      if (fh == NULL) {
+        pr_log_debug(DEBUG6, "unable to open DisplayChdir file '%s': %s",
+          path, strerror(errno));
+
+      } else {
+        c->argv[2] = fh;
+      }
+    }
+
+    c = find_config_next(c, c->next, CONF_PARAM, "DisplayChdir", FALSE);
+  }
+}
 
 static void core_connected_ev(const void *event_data, void *user_data) {
   session_set_connected();
@@ -7090,7 +7128,7 @@ static int core_sess_init(void) {
     timeout = (long) *((int *) c->argv[0]);
     pr_data_set_linger(timeout);
   }
- 
+
   /* Check for a configured DebugLevel. */
   debug_level = get_param_ptr(main_server->conf, "DebugLevel", FALSE);
   if (debug_level != NULL) {
@@ -7164,7 +7202,7 @@ static int core_sess_init(void) {
 
   set_server_auth_order();
 
-#ifdef PR_USE_TRACE
+#if defined(PR_USE_TRACE)
   /* Handle any session-specific Trace settings. */
   c = find_config(main_server->conf, CONF_PARAM, "Trace", FALSE);
   if (c != NULL) {
@@ -7237,7 +7275,7 @@ static int core_sess_init(void) {
 
   /* Set some Variable entries for Display files. */
 
-  if (pr_var_set(session.pool, "%{bytes_xfer}", 
+  if (pr_var_set(session.pool, "%{bytes_xfer}",
       "Number of bytes transferred in this transfer", PR_VAR_TYPE_FUNC,
       (void *) core_get_xfer_bytes_str, &session.xfer.total_bytes,
       sizeof(off_t *)) < 0) {
@@ -7253,7 +7291,7 @@ static int core_sess_init(void) {
       strerror(errno));
   }
 
-  if (pr_var_set(session.pool, "%{total_bytes_out}", 
+  if (pr_var_set(session.pool, "%{total_bytes_out}",
       "Number of bytes downloaded during a session", PR_VAR_TYPE_FUNC,
       (void *) core_get_sess_bytes_str, &session.total_bytes_out,
       sizeof(off_t *)) < 0) {
@@ -7261,7 +7299,7 @@ static int core_sess_init(void) {
       strerror(errno));
   }
 
-  if (pr_var_set(session.pool, "%{total_bytes_xfer}", 
+  if (pr_var_set(session.pool, "%{total_bytes_xfer}",
       "Number of bytes transferred during a session", PR_VAR_TYPE_FUNC,
       (void *) core_get_sess_bytes_str, &session.total_bytes,
       sizeof(off_t *)) < 0) {
@@ -7269,7 +7307,7 @@ static int core_sess_init(void) {
       strerror(errno));
   }
 
-  if (pr_var_set(session.pool, "%{total_files_in}", 
+  if (pr_var_set(session.pool, "%{total_files_in}",
       "Number of files uploaded during a session", PR_VAR_TYPE_FUNC,
       (void *) core_get_sess_files_str, &session.total_files_in,
       sizeof(unsigned int *)) < 0) {
@@ -7277,7 +7315,7 @@ static int core_sess_init(void) {
       strerror(errno));
   }
 
-  if (pr_var_set(session.pool, "%{total_files_out}", 
+  if (pr_var_set(session.pool, "%{total_files_out}",
       "Number of files downloaded during a session", PR_VAR_TYPE_FUNC,
       (void *) core_get_sess_files_str, &session.total_files_out,
       sizeof(unsigned int *)) < 0) {
@@ -7285,13 +7323,16 @@ static int core_sess_init(void) {
       strerror(errno));
   }
 
-  if (pr_var_set(session.pool, "%{total_files_xfer}", 
+  if (pr_var_set(session.pool, "%{total_files_xfer}",
       "Number of files transferred during a session", PR_VAR_TYPE_FUNC,
       (void *) core_get_sess_files_str, &session.total_files_xfer,
       sizeof(unsigned int *)) < 0) {
     pr_log_debug(DEBUG6, "error setting %%{total_files_xfer} variable: %s",
       strerror(errno));
   }
+
+  /* Register our event listeners. */
+  pr_event_register(&core_module, "core.chroot", core_chroot_ev, NULL);
 
   /* Look for a DisplayQuit file which has an absolute path.  If we
    * find one, open a filehandle, such that that file can be displayed
@@ -7330,9 +7371,9 @@ static int core_sess_init(void) {
 
   /* Check for any ProcessTitles setting. */
   c = find_config(main_server->conf, CONF_PARAM, "ProcessTitles", FALSE);
-  if (c) {
+  if (c != NULL) {
     char *verbosity;
- 
+
     verbosity = c->argv[0];
     if (strcasecmp(verbosity, "terse") == 0) {
       pr_proctitle_set_static_str("proftpd: processing connection");
@@ -7416,6 +7457,7 @@ static conftable core_conftab[] = {
   { "Satisfy",			set_satisfy,			NULL },
   { "ScoreboardFile",		set_scoreboardfile,		NULL },
   { "ScoreboardMutex",		set_scoreboardmutex,		NULL },
+  { "ScoreboardOptions",	set_scoreboardoptions,		NULL },
   { "ScoreboardScrub",		set_scoreboardscrub,		NULL },
   { "ServerAdmin",		set_serveradmin,		NULL },
   { "ServerAlias",		set_serveralias,		NULL },

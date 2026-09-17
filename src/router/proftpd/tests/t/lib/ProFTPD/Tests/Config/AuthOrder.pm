@@ -78,7 +78,7 @@ sub authorder_unix_only {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
@@ -199,7 +199,7 @@ sub authorder_unix_authoritative {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
@@ -321,7 +321,7 @@ sub authorder_file_authoritative {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
@@ -427,7 +427,7 @@ sub authorder_pam_authoritative {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {

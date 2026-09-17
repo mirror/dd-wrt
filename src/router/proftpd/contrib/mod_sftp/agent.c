@@ -278,8 +278,8 @@ int sftp_agent_get_keys(pool *p, const char *agent_path,
   (void) close(fd);
 
   /* Read the response from the agent. */
- 
-  resp_status = sftp_msg_read_byte(p, &resp, &resplen); 
+
+  resp_status = sftp_msg_read_byte(p, &resp, &resplen);
   if (agent_failure(resp_status) == TRUE) {
     pr_trace_msg(trace_channel, 5,
       "SSH agent at '%s' indicated failure (%d) for identities request",
@@ -324,7 +324,7 @@ int sftp_agent_get_keys(pool *p, const char *agent_path,
 
     key->key_data = key_data;
     key->key_datalen = key_datalen;
-    key->agent_path = pstrdup(p, agent_path); 
+    key->agent_path = pstrdup(p, agent_path);
 
     *((struct agent_key **) push_array(key_list)) = key;
   }
@@ -381,8 +381,8 @@ const unsigned char *sftp_agent_sign_data(pool *p, const char *agent_path,
   (void) close(fd);
 
   /* Read the response from the agent. */
- 
-  resp_status = sftp_msg_read_byte(p, &resp, &resplen); 
+
+  resp_status = sftp_msg_read_byte(p, &resp, &resplen);
   if (agent_failure(resp_status) == TRUE) {
     pr_trace_msg(trace_channel, 5,
       "SSH agent at '%s' indicated failure (%d) for data signing request",
@@ -402,5 +402,5 @@ const unsigned char *sftp_agent_sign_data(pool *p, const char *agent_path,
   *sig_datalen = sftp_msg_read_int(p, &resp, &resplen);
   sig_data = sftp_msg_read_data(p, &resp, &resplen, *sig_datalen);
 
-  return sig_data; 
+  return sig_data;
 }

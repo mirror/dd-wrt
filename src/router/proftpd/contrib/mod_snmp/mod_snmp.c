@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp
- * Copyright (c) 2008-2021 TJ Saunders
+ * Copyright (c) 2008-2025 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -350,7 +350,7 @@ static int snmp_limits_allow(xaset_t *set, struct snmp_packet *pkt) {
     }
 
     argc = c->argc;
-    argv = (char **) c->argv;     
+    argv = (char **) c->argv;
 
     for (; argc; argc--, argv++) {
       if (strncasecmp(*argv, "SNMP", 5) == 0) {
@@ -602,7 +602,7 @@ static int snmp_agent_handle_get(struct snmp_packet *pkt) {
     return 0;
   }
 
-  for (iter_var = pkt->req_pdu->varlist; iter_var; iter_var = iter_var->next) { 
+  for (iter_var = pkt->req_pdu->varlist; iter_var; iter_var = iter_var->next) {
     struct snmp_mib *mib = NULL;
     struct snmp_var *resp_var = NULL;
     int32_t mib_int = -1;
@@ -661,7 +661,7 @@ static int snmp_agent_handle_get(struct snmp_packet *pkt) {
     /* A response variable may be have generated above, e.g. when the MIB
      * not known/supported.
      */
-    if (resp_var == NULL) { 
+    if (resp_var == NULL) {
       res = snmp_db_get_value(pkt->pool, mib->db_field, &mib_int, &mib_str,
         &mib_strlen);
 
@@ -719,7 +719,7 @@ static int snmp_agent_handle_getnext(struct snmp_packet *pkt) {
 
   max_idx = snmp_mib_get_max_idx();
 
-  for (iter_var = pkt->req_pdu->varlist; iter_var; iter_var = iter_var->next) { 
+  for (iter_var = pkt->req_pdu->varlist; iter_var; iter_var = iter_var->next) {
     struct snmp_mib *mib = NULL;
     struct snmp_var *resp_var = NULL;
     int mib_idx = -1, next_idx = -1, lacks_instance_id = FALSE;
@@ -878,7 +878,7 @@ static int snmp_agent_handle_getnext(struct snmp_packet *pkt) {
         snmp_pdu_get_request_type_desc(pkt->req_pdu->request_type),
         snmp_asn1_get_oidstr(iter_var->pool, mib->mib_oid, mib->mib_oidlen),
         mib->mib_name);
- 
+
       res = snmp_db_get_value(pkt->pool, mib->db_field, &mib_int, &mib_str,
         &mib_strlen);
 
@@ -959,7 +959,7 @@ static int snmp_agent_handle_getbulk(struct snmp_packet *pkt) {
    */
   for (i = 0, iter_var = pkt->req_pdu->varlist;
        i < pkt->req_pdu->non_repeaters && iter_var != NULL;
-       i++, iter_var = iter_var->next) { 
+       i++, iter_var = iter_var->next) {
     struct snmp_mib *mib = NULL;
     struct snmp_var *resp_var = NULL;
     int mib_idx = -1, lacks_instance_id = FALSE;
@@ -1049,7 +1049,7 @@ static int snmp_agent_handle_getbulk(struct snmp_packet *pkt) {
         snmp_pdu_get_request_type_desc(pkt->req_pdu->request_type),
         snmp_asn1_get_oidstr(iter_var->pool, mib->mib_oid, mib->mib_oidlen),
         mib->mib_name);
- 
+
       res = snmp_db_get_value(pkt->pool, mib->db_field, &mib_int, &mib_str,
         &mib_strlen);
 
@@ -1313,7 +1313,7 @@ static int snmp_agent_handle_request(struct snmp_packet *pkt) {
       break;
 
     default:
-      errno = EINVAL; 
+      errno = EINVAL;
       res = -1;
   }
 
@@ -1326,7 +1326,7 @@ static int snmp_agent_handle_packet(int sockfd, pr_netaddr_t *agent_addr) {
   socklen_t from_sockaddrlen;
   pr_netaddr_t from_addr;
   struct snmp_packet *pkt = NULL;
-  
+
   pkt = snmp_packet_create(snmp_pool);
 
   from_sockaddrlen = sizeof(struct sockaddr_in);
@@ -1356,7 +1356,7 @@ static int snmp_agent_handle_packet(int sockfd, pr_netaddr_t *agent_addr) {
   pr_trace_msg(trace_channel, 3,
     "read %d UDP bytes from %s#%u", nbytes,
     pr_netaddr_get_ipstr(pkt->remote_addr),
-    ntohs(pr_netaddr_get_port(pkt->remote_addr))); 
+    ntohs(pr_netaddr_get_port(pkt->remote_addr)));
 
   res = snmp_db_incr_value(pkt->pool, SNMP_DB_SNMP_F_PKTS_RECVD_TOTAL, 1);
   if (res < 0) {
@@ -1532,7 +1532,7 @@ static void snmp_agent_loop(array_header *sockfds, array_header *addrs) {
 
     FD_ZERO(&listen_fds);
 
-    fds = sockfds->elts; 
+    fds = sockfds->elts;
     agent_addrs = addrs->elts;
 
     for (i = 0; i < sockfds->nelts; i++) {
@@ -1569,7 +1569,7 @@ static void snmp_agent_loop(array_header *sockfds, array_header *addrs) {
             (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
               "error handling SNMP packet: %s", strerror(errno));
           }
-        } 
+        }
       }
     }
   }
@@ -1660,7 +1660,7 @@ static pid_t snmp_agent_start(const char *tables_dir, int agent_type,
       int xerrno = errno;
 
       PRIVS_RELINQUISH
- 
+
       (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
         "unable to chroot to SNMPTables/empty/ directory '%s': %s",
         agent_chroot, strerror(xerrno));
@@ -1754,7 +1754,7 @@ static void snmp_agent_stop(pid_t agent_pid) {
       errno == ESRCH) {
     return;
   }
-  
+
   res = kill(agent_pid, SIGTERM);
   if (res < 0) {
     int xerrno = errno;
@@ -1934,7 +1934,7 @@ MODRET set_snmpagent(cmd_rec *cmd) {
   c->argv[0] = palloc(c->pool, sizeof(int));
   *((int *) c->argv[0]) = agent_type;
   c->argv[1] = agent_addrs;
- 
+
   return PR_HANDLED(cmd);
 }
 
@@ -1969,19 +1969,20 @@ MODRET set_snmpenable(cmd_rec *cmd) {
 
 /* usage: SNMPEngine on|off */
 MODRET set_snmpengine(cmd_rec *cmd) {
-  int bool = 1;
+  int engine = 1;
   config_rec *c;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  engine = get_boolean(cmd, 1);
+  if (engine == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(int));
-  *((int *) c->argv[0]) = bool;
+  *((int *) c->argv[0]) = engine;
 
   return PR_HANDLED(cmd);
 }
@@ -2048,7 +2049,7 @@ MODRET set_snmpnotify(cmd_rec *cmd) {
       CONF_ERROR(cmd, "port must be between 1-65535");
     }
   }
- 
+
   c = add_config_param(cmd->argv[0], 1, NULL);
 
   notify_addr = pr_netaddr_get_addr(c->pool, cmd->argv[1], NULL);
@@ -2059,6 +2060,13 @@ MODRET set_snmpnotify(cmd_rec *cmd) {
 
   pr_netaddr_set_port((pr_netaddr_t *) notify_addr, htons(notify_port));
   c->argv[0] = (void *) notify_addr;
+
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
 
   return PR_HANDLED(cmd);
 }
@@ -2088,7 +2096,7 @@ MODRET set_snmpoptions(cmd_rec *cmd) {
    *
    * Default SNMPProtocol would then be "1-3".
    */
- 
+
   c = add_config_param(cmd->argv[0], 1, NULL);
 
   for (i = 1; i < cmd->argc; i++) {
@@ -2103,7 +2111,14 @@ MODRET set_snmpoptions(cmd_rec *cmd) {
 
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned long));
   *((unsigned long *) c->argv[0]) = opts;
- 
+
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
+
   return PR_HANDLED(cmd);
 }
 
@@ -2112,11 +2127,11 @@ MODRET set_snmptables(cmd_rec *cmd) {
   int res;
   struct stat st;
   char *path;
- 
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  path = cmd->argv[1]; 
+  path = cmd->argv[1];
   if (*path != '/') {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "must be a full path: '", path, "'",
       NULL));
@@ -2371,7 +2386,7 @@ MODRET snmp_err_list(cmd_rec *cmd) {
 }
 
 MODRET snmp_log_pass(cmd_rec *cmd) {
-  const char *proto; 
+  const char *proto;
   int res;
 
   if (snmp_engine == FALSE) {
@@ -2549,7 +2564,7 @@ MODRET snmp_log_retr(cmd_rec *cmd) {
     /* We also need to increment the KB download count.  We know the number
      * of bytes downloaded as an off_t here, but we only store the number of KB
      * in the mod_snmp db tables.
-     * 
+     *
      * We could just increment by xfer_bytes / 1024, but that would mean that
      * several small files of say 999 bytes could be downloaded, and the KB
      * count would not be incremented.
@@ -2593,7 +2608,7 @@ MODRET snmp_log_retr(cmd_rec *cmd) {
     /* We also need to increment the KB download count.  We know the number
      * of bytes downloaded as an off_t here, but we only store the number of KB
      * in the mod_snmp db tables.
-     * 
+     *
      * We could just increment by xfer_bytes / 1024, but that would mean that
      * several small files of say 999 bytes could be downloaded, and the KB
      * count would not be incremented.
@@ -2637,7 +2652,7 @@ MODRET snmp_log_retr(cmd_rec *cmd) {
     /* We also need to increment the KB download count.  We know the number
      * of bytes downloaded as an off_t here, but we only store the number of KB
      * in the mod_snmp db tables.
-     * 
+     *
      * We could just increment by xfer_bytes / 1024, but that would mean that
      * several small files of say 999 bytes could be downloaded, and the KB
      * count would not be incremented.
@@ -2681,7 +2696,7 @@ MODRET snmp_log_retr(cmd_rec *cmd) {
     /* We also need to increment the KB download count.  We know the number
      * of bytes downloaded as an off_t here, but we only store the number of KB
      * in the mod_snmp db tables.
-     * 
+     *
      * We could just increment by xfer_bytes / 1024, but that would mean that
      * several small files of say 999 bytes could be downloaded, and the KB
      * count would not be incremented.
@@ -2872,7 +2887,7 @@ MODRET snmp_log_stor(cmd_rec *cmd) {
     /* We also need to increment the KB upload count.  We know the number
      * of bytes downloaded as an off_t here, but we only store the number of KB
      * in the mod_snmp db tables.
-     * 
+     *
      * We could just increment by xfer_bytes / 1024, but that would mean that
      * several small files of say 999 bytes could be uploaded, and the KB
      * count would not be incremented.
@@ -2916,7 +2931,7 @@ MODRET snmp_log_stor(cmd_rec *cmd) {
     /* We also need to increment the KB upload count.  We know the number
      * of bytes downloaded as an off_t here, but we only store the number of KB
      * in the mod_snmp db tables.
-     * 
+     *
      * We could just increment by xfer_bytes / 1024, but that would mean that
      * several small files of say 999 bytes could be uploaded, and the KB
      * count would not be incremented.
@@ -2960,7 +2975,7 @@ MODRET snmp_log_stor(cmd_rec *cmd) {
     /* We also need to increment the KB upload count.  We know the number
      * of bytes downloaded as an off_t here, but we only store the number of KB
      * in the mod_snmp db tables.
-     * 
+     *
      * We could just increment by xfer_bytes / 1024, but that would mean that
      * several small files of say 999 bytes could be uploaded, and the KB
      * count would not be incremented.
@@ -3004,7 +3019,7 @@ MODRET snmp_log_stor(cmd_rec *cmd) {
     /* We also need to increment the KB upload count.  We know the number
      * of bytes downloaded as an off_t here, but we only store the number of KB
      * in the mod_snmp db tables.
-     * 
+     *
      * We could just increment by xfer_bytes / 1024, but that would mean that
      * several small files of say 999 bytes could be uploaded, and the KB
      * count would not be incremented.
@@ -3212,7 +3227,7 @@ static void ev_incr_value(unsigned int field_id, const char *field_str,
   if (p == NULL) {
     p = snmp_pool;
   }
- 
+
   res = snmp_db_incr_value(p, field_id, incr);
   if (res < 0) {
     (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
@@ -3280,15 +3295,15 @@ static void snmp_auth_code_ev(const void *event_data, void *user_data) {
 
       break;
   }
- 
+
   if (auth_code >= 0) {
-    ev_incr_value(field_id, "login total", 1); 
+    ev_incr_value(field_id, "login total", 1);
 
     /* We only send notifications for failed authentications. */
     return;
 
   } else {
-    ev_incr_value(field_id, "login failure total", 1); 
+    ev_incr_value(field_id, "login failure total", 1);
   }
 
   if (notify_id > 0 &&
@@ -3314,7 +3329,7 @@ static void snmp_cmd_invalid_ev(const void *event_data, void *user_data) {
   if (snmp_engine == FALSE) {
     return;
   }
-  
+
   ev_incr_value(SNMP_DB_FTP_SESS_F_CMD_INVALID_TOTAL,
     "ftp.connections.commandInvalidTotal", 1);
 }
@@ -3379,7 +3394,7 @@ static void snmp_max_inst_ev(const void *event_data, void *user_data) {
 
   ev_incr_value(SNMP_DB_DAEMON_F_MAXINST_TOTAL,
     "daemon.maxInstancesLimitTotal", 1);
-  
+
   if (snmp_notifys != NULL) {
     register unsigned int i;
     pr_netaddr_t **dst_addrs;
@@ -3693,7 +3708,7 @@ static void snmp_tls_ctrl_handshake_err_ev(const void *event_data,
   if (snmp_engine == FALSE) {
     return;
   }
-  
+
   ev_incr_value(SNMP_DB_FTPS_SESS_F_CTRL_HANDSHAKE_ERR_TOTAL,
     "ftps.tlsSessions.ctrlHandshakeFailedTotal", 1);
 }
@@ -3703,7 +3718,7 @@ static void snmp_tls_data_handshake_err_ev(const void *event_data,
   if (snmp_engine == FALSE) {
     return;
   }
-  
+
   ev_incr_value(SNMP_DB_FTPS_SESS_F_DATA_HANDSHAKE_ERR_TOTAL,
     "ftps.tlsSessions.dataHandshakeFailedTotal", 1);
 }
@@ -3711,7 +3726,7 @@ static void snmp_tls_data_handshake_err_ev(const void *event_data,
 static void snmp_tls_verify_client_ev(const void *event_data, void *user_data) {
   if (snmp_engine == FALSE) {
     return;
-  } 
+  }
 
   ev_incr_value(SNMP_DB_FTPS_SESS_F_VERIFY_CLIENT_TOTAL,
     "ftps.tlsSessions.verifyClientTotal", 1);
@@ -4064,8 +4079,8 @@ static int snmp_init(void) {
 #endif
 
 #ifdef HAVE_RANDOM
-  /* Seed the random(3) generator. */ 
-  srandom((unsigned int) (time(NULL) * getpid())); 
+  /* Seed the random(3) generator. */
+  srandom((unsigned int) (time(NULL) * getpid()));
 #endif /* HAVE_RANDOM */
 
   return 0;
@@ -4203,8 +4218,8 @@ static int snmp_sess_init(void) {
   }
 
 #ifdef HAVE_RANDOM
-  /* Reseed the random(3) generator. */ 
-  srandom((unsigned int) (time(NULL) * getpid())); 
+  /* Reseed the random(3) generator. */
+  srandom((unsigned int) (time(NULL) * getpid()));
 #endif /* HAVE_RANDOM */
 
   c = find_config(main_server->conf, CONF_PARAM, "SNMPNotify", FALSE);

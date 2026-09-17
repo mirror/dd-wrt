@@ -140,7 +140,7 @@ int pr_event_register(module *m, const char *event,
          * be invoked last.
          *
          * Before that, though, check for duplicate registration/subscription.
-         */ 
+         */
         while (evhi) {
           pr_signals_handle();
 
@@ -160,8 +160,8 @@ int pr_event_register(module *m, const char *event,
         }
 
         if (evh->module != NULL) {
-          if (evl->handlers->next != NULL) {
-            evl->handlers->next->prev = evh;
+          if (evl->handlers != NULL) {
+            evl->handlers->prev = evh;
           }
 
           evh->next = evl->handlers;
@@ -189,7 +189,7 @@ int pr_event_register(module *m, const char *event,
   evl->pool = evl_pool;
   evl->event = pstrdup(evl->pool, event);
   evl->event_len = strlen(evl->event);
-  evl->handlers = evh; 
+  evl->handlers = evh;
   evl->next = events;
 
   events = evl;
@@ -238,7 +238,7 @@ int pr_event_unregister(module *m, const char *event,
       for (evh = evl->handlers; evh;) {
 
         if ((m == NULL || evh->module == m) &&
-            (cb == NULL || evh->cb == cb)) { 
+            (cb == NULL || evh->cb == cb)) {
           struct event_handler *tmp = evh->next;
 
           if (evh->next) {
@@ -256,7 +256,7 @@ int pr_event_unregister(module *m, const char *event,
           evh->module = NULL;
           evh = tmp;
           unregistered = TRUE;
-  
+
         } else {
           evh = evh->next;
         }
@@ -301,7 +301,7 @@ int pr_event_listening(const char *event) {
       if (evl->handlers == NULL) {
         return 0;
       }
- 
+
       for (evh = evl->handlers; evh; evh = evh->next) {
         count++;
       }
@@ -310,7 +310,7 @@ int pr_event_listening(const char *event) {
     }
   }
 
-  return count; 
+  return count;
 }
 
 void pr_event_generate(const char *event, const void *event_data) {
@@ -335,7 +335,7 @@ void pr_event_generate(const char *event, const void *event_data) {
   /* Lookup callbacks for this event. */
   for (evl = use_cache ? curr_evl : events; evl; evl = evl->next) {
 
-    if (strncmp(evl->event, event, evl->event_len + 1) == 0) {  
+    if (strncmp(evl->event, event, evl->event_len + 1) == 0) {
       struct event_handler *evh;
 
       /* If there are no registered callbacks for this event, be done. */
@@ -401,7 +401,7 @@ void pr_event_dump(void (*dumpf)(const char *, ...)) {
     if (evl->handlers == NULL) {
       dumpf("No handlers registered for '%s'", evl->event);
 
-    } else { 
+    } else {
       struct event_handler *evh;
 
       dumpf("Registered for '%s':", evl->event);

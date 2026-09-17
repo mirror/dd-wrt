@@ -292,7 +292,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   lastdir TEXT
 );

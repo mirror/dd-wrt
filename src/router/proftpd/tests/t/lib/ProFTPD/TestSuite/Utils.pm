@@ -198,7 +198,7 @@ sub auth_user_write {
   if ($existed) {
     # Get current permissions
     $prev_mode = (stat($user_file))[2];
- 
+
     # Set needed permissions
     unless (chmod(0666, $user_file)) {
       croak("Can't set perms on $user_file: $!");
@@ -690,7 +690,7 @@ sub config_write {
           }
 
           print $fh "</Global>\n";
- 
+
         } else {
           print $fh "$k $v\n";
         }
@@ -808,7 +808,7 @@ sub feature_have_feature_enabled {
         # Special-case hack for FIPS-enabled OpenSSL
         if ($feature =~ /OpenSSL/i) {
           if ($line =~ /\(FIPS enabled\)/) {
-            push(@$feat_list, "OpenSSL_FIPS");             
+            push(@$feat_list, "OpenSSL_FIPS");
           }
         }
       }
@@ -1118,7 +1118,7 @@ sub test_append_logfile {
   my $log_file = shift;
   my $ex = shift;
 
-  my ($infh, $outfh); 
+  my ($infh, $outfh);
 
   my $out_file = File::Spec->rel2abs('tests.log');
 
@@ -1439,7 +1439,7 @@ sub testsuite_get_runnable_tests {
   if (scalar(@$runnables) > 0) {
     $runnables = [sort { $tests->{$a}->{order} <=> $tests->{$b}->{order} } @$runnables];
 
-  } else { 
+  } else {
     $runnables = [qw(testsuite_empty_test)];
   }
 

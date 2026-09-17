@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sql_odbc -- Support for connecting to databases via ODBC
  * Copyright (c) 2003-2020 TJ Saunders
- *  
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -124,7 +124,7 @@ static void *sqlodbc_add_conn(pool *p, char *name, db_conn_t *conn) {
 
 static int sqlodbc_timer_cb(CALLBACK_FRAME) {
   register unsigned int i = 0;
- 
+
   for (i = 0; i < conn_cache->nelts; i++) {
     conn_entry_t *entry = ((conn_entry_t **) conn_cache->elts)[i];
 
@@ -357,7 +357,7 @@ static modret_t *sqlodbc_get_error(cmd_rec *cmd, SQLSMALLINT handle_type,
     pr_signals_handle();
 
     sql_log(DEBUG_FUNC, "odbc error: [%d] %s", odbc_errno, errstr);
-    
+
     res = SQLGetDiagRec(handle_type, handle, recno++, state, &odbc_errno,
       errstr, sizeof(errstr), &errlen);
   }
@@ -377,8 +377,9 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
   SQLSMALLINT ncols;
   SQLRETURN res;
 
-  if (!conn) 
+  if (!conn) {
     return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION, "badly formed request");
+  }
 
   sd = (sql_data_t *) pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
 
@@ -436,7 +437,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
           if (SQLDescribeCol(conn->sth, i, col_name, sizeof(col_name),
               &col_namelen, &col_type, &col_size, &col_digits,
               &col_nullable) == SQL_SUCCESS) {
-            SQLSMALLINT col_ctype; 
+            SQLSMALLINT col_ctype;
 
             /* mod_sql expects to handle all returned data elements as strings
              * (even though it converts some to numbers), so we need to
@@ -531,7 +532,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
                 *((char **) push_array(dh)) = pstrdup(cmd->tmp_pool, buf);
                 break;
               }
- 
+
               case SQL_SMALLINT: {
                 char buf[64];
                 short col_cval;
@@ -801,7 +802,7 @@ MODRET sqlodbc_open(cmd_rec *cmd) {
   if (cmd->argc < 1) {
     sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_open");
     return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION, "badly formed request");
-  }    
+  }
 
   /* Get the named connection. */
   entry = sqlodbc_get_conn(cmd->argv[0]);
@@ -809,7 +810,7 @@ MODRET sqlodbc_open(cmd_rec *cmd) {
     sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_open");
     return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION,
       pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
-  } 
+  }
 
   conn = (db_conn_t *) entry->data;
 
@@ -976,9 +977,9 @@ MODRET sqlodbc_open(cmd_rec *cmd) {
        * (as per Bug#3290).  To do this, we re-bump the connection count.
        */
       entry->nconn++;
-    } 
- 
-  } else if (entry->ttl > 0) { 
+    }
+
+  } else if (entry->ttl > 0) {
     /* Set up our timer, if necessary. */
 
     entry->timer = pr_timer_add(entry->ttl, -1, &sql_odbc_module,
@@ -1074,14 +1075,14 @@ MODRET sqlodbc_close(cmd_rec *cmd) {
   sql_log(DEBUG_INFO, "'%s' connection count is now %u", entry->name,
     entry->nconn);
   sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_close");
-  
+
   return PR_HANDLED(cmd);
 }
 
 MODRET sqlodbc_def_conn(cmd_rec *cmd) {
   char *name = NULL;
   conn_entry_t *entry = NULL;
-  db_conn_t *conn = NULL; 
+  db_conn_t *conn = NULL;
 
   sql_log(DEBUG_FUNC, "%s", "entering \todbc cmd_defineconnection");
 
@@ -1124,7 +1125,7 @@ MODRET sqlodbc_def_conn(cmd_rec *cmd) {
     entry->ttl = (int) strtol(cmd->argv[4], (char **) NULL, 10);
     if (entry->ttl >= 1) {
       pr_sql_conn_policy = SQL_CONN_POLICY_TIMER;
- 
+
     } else {
       entry->ttl = 0;
     }
@@ -1162,7 +1163,7 @@ MODRET sqlodbc_select(cmd_rec *cmd) {
     return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION,
       pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   }
- 
+
   conn = (db_conn_t *) entry->data;
 
   mr = sqlodbc_open(cmd);
@@ -1204,19 +1205,20 @@ MODRET sqlodbc_select(cmd_rec *cmd) {
       register unsigned int i = 0;
 
       /* Handle the optional arguments -- they're rare, so in this case
-       * we'll play with the already constructed query string, but in 
-       * general we should probably take optional arguments into account 
+       * we'll play with the already constructed query string, but in
+       * general we should probably take optional arguments into account
        * and put the query string together later once we know what they are.
        */
-    
+
       for (i = 5; i < cmd->argc; i++) {
         if (cmd->argv[i] &&
-            strcasecmp("DISTINCT", cmd->argv[i]) == 0)
+            strcasecmp("DISTINCT", cmd->argv[i]) == 0) {
           query = pstrcat(cmd->tmp_pool, "DISTINCT ", query, NULL);
+        }
       }
     }
 
-    query = pstrcat(cmd->tmp_pool, "SELECT ", query, NULL);    
+    query = pstrcat(cmd->tmp_pool, "SELECT ", query, NULL);
   }
 
   /* Log the query string */
@@ -1280,7 +1282,7 @@ MODRET sqlodbc_select(cmd_rec *cmd) {
 
     sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_select");
     return mr;
-  }    
+  }
 
   /* Close the connection, return the data. */
   close_cmd = pr_cmd_alloc(cmd->tmp_pool, 1, entry->name);
@@ -1542,27 +1544,27 @@ MODRET sqlodbc_query(cmd_rec *cmd) {
    */
   if (SQLPrepare(conn->sth, (SQLCHAR *) query, strlen(query)) != SQL_SUCCESS) {
     mr = sqlodbc_get_error(cmd, SQL_HANDLE_STMT, conn->sth);
-    
+
     close_cmd = pr_cmd_alloc(cmd->tmp_pool, 1, entry->name);
     sqlodbc_close(close_cmd);
     destroy_pool(close_cmd->pool);
-  
+
     sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_query");
     return mr;
   }
-    
+
   switch (SQLExecute(conn->sth)) {
     case SQL_SUCCESS:
     case SQL_SUCCESS_WITH_INFO:
       break;
 
-    default: 
+    default:
       mr = sqlodbc_get_error(cmd, SQL_HANDLE_STMT, conn->sth);
 
-      close_cmd = pr_cmd_alloc(cmd->tmp_pool, 1, entry->name); 
+      close_cmd = pr_cmd_alloc(cmd->tmp_pool, 1, entry->name);
       sqlodbc_close(close_cmd);
       destroy_pool(close_cmd->pool);
-  
+
       sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_query");
       return mr;
   }
@@ -1580,8 +1582,8 @@ MODRET sqlodbc_query(cmd_rec *cmd) {
     destroy_pool(close_cmd->pool);
 
     return mr;
-  }   
-  
+  }
+
   /* Close the connection, return the data. */
   close_cmd = pr_cmd_alloc(cmd->tmp_pool, 1, entry->name);
   sqlodbc_close(close_cmd);
@@ -1625,8 +1627,8 @@ MODRET sqlodbc_quote(cmd_rec *cmd) {
   }
 
   unescaped = cmd->argv[1];
-  escaped = (char *) pcalloc(cmd->tmp_pool, sizeof(char) * 
-			      (strlen(unescaped) * 2) + 1);
+  escaped = (char *) pcalloc(cmd->tmp_pool, sizeof(char) *
+    (strlen(unescaped) * 2) + 1);
 
   sqlodbc_escape_string(escaped, unescaped, strlen(unescaped));
 
@@ -1670,7 +1672,7 @@ MODRET sqlodbc_identify(cmd_rec *cmd) {
   sd->data[1] = MOD_SQL_API_V1;
 
   return mod_create_data(cmd, (void *) sd);
-}  
+}
 
 /* mod_sql-specific command dispatch/handler table */
 static cmdtable sqlodbc_cmdtable[] = {

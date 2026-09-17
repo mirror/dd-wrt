@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -113,6 +113,8 @@ typedef struct {
   gid_t fsgid;				/* Saved file GID */
 
   const char *user, *group;		/* Username/groupname after login */
+  const char *user_homedir;             /* Home directory of user before chroot
+                                         */
   uid_t login_uid;                      /* UID after login, but before
                                          * session.uid is changed
                                          */

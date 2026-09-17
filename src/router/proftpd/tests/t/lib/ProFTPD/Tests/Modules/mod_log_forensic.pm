@@ -159,12 +159,12 @@ sub forensic_failed_login {
       if ($line =~ /^\-\-\-\-\-BEGIN FAILED LOGIN FORENSICS\-\-\-\-\-/) {
         $begin_ok = 1;
         next;
-      } 
+      }
 
       if ($begin_ok and
           $line =~ /^\-\-\-\-\-END FAILED LOGIN FORENSICS\-\-\-\-\-/) {
         $end_ok = 1;
-        last; 
+        last;
       }
     }
 

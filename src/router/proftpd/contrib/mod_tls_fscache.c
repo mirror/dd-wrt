@@ -319,7 +319,7 @@ static int ocsp_cache_add(tls_ocsp_cache_t *cache, const char *fingerprint,
   } else {
     pr_trace_msg(trace_channel, 15, "renamed '%s' to '%s' (%d bytes)", tmpl,
       path, resp_derlen);
-  } 
+  }
 
   destroy_pool(tmp_pool);
   errno = xerrno;
@@ -337,7 +337,7 @@ static OCSP_RESPONSE *ocsp_cache_get(tls_ocsp_cache_t *cache,
   pr_fh_t *fh;
 
   pr_trace_msg(trace_channel, 9, "getting OCSP response from fscache cache %p",
-    cache); 
+    cache);
 
   cache_dir = cache->cache_data;
   tmp_pool = make_sub_pool(cache->cache_pool);
@@ -458,7 +458,7 @@ static int ocsp_cache_clear(tls_ocsp_cache_t *cache) {
   DIR *dirh;
   struct dirent *dent;
 
-  pr_trace_msg(trace_channel, 9, "clearing fscache cache %p", cache); 
+  pr_trace_msg(trace_channel, 9, "clearing fscache cache %p", cache);
 
   cache_dir = cache->cache_data;
 
@@ -555,7 +555,7 @@ static int ocsp_cache_status(tls_ocsp_cache_t *cache,
   DIR *dirh;
   struct dirent *dent;
 
-  pr_trace_msg(trace_channel, 9, "checking fscache cache %p", cache); 
+  pr_trace_msg(trace_channel, 9, "checking fscache cache %p", cache);
 
   /* XXX TODO:
    *  If flags says "SHOW RESPONSES", print out the PEM versions of the

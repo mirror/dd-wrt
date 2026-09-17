@@ -24,12 +24,13 @@
 
 #include "mod_sftp.h"
 
+#include "ssh2.h"
 #include "msg.h"
 #include "packet.h"
 #include "crypto.h"
 #include "compress.h"
 
-#ifdef HAVE_ZLIB_H
+#if defined(HAVE_ZLIB_H)
 #include <zlib.h>
 
 static const char *trace_channel = "ssh2";
@@ -87,7 +88,7 @@ static void switch_read_compress(int flags) {
   /* First we can free up the read stream, kept from rekeying. */
   if (comp->use_zlib == flags &&
       comp->stream_ready) {
-  
+
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "done decompressing data: decompressed %" PR_LU " bytes to %" PR_LU
       " bytes of data (%.2f)", (pr_off_t) stream->total_in,
@@ -110,16 +111,16 @@ static void switch_read_compress(int flags) {
 }
 
 static void switch_write_compress(int flags) {
-  struct sftp_compress *comp; 
+  struct sftp_compress *comp;
   z_stream *stream;
- 
+
   comp = &(write_compresses[write_comp_idx]);
   stream = &(write_streams[write_comp_idx]);
- 
+
   /* First we can free up the write stream, kept from rekeying. */
   if (comp->use_zlib == flags &&
       comp->stream_ready) {
- 
+
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "done compressing data: compressed %" PR_LU " bytes to %" PR_LU
       " bytes of data (%.2f)", (pr_off_t) stream->total_in,
@@ -278,6 +279,16 @@ int sftp_compress_read_data(struct ssh2_packet *pkt) {
               new_sz *= 2;
             }
 
+            if (new_sz > SFTP_MAX_PACKET_LEN) {
+              (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+                "decompression error: inflated payload size (%lu bytes) "
+                "exceeds %lu byte maximum", (unsigned long) new_sz,
+                (unsigned long) SFTP_MAX_PACKET_LEN);
+              destroy_pool(sub_pool);
+              errno = EIO;
+              return -1;
+            }
+
             pr_trace_msg(trace_channel, 20,
               "allocating larger payload size (%lu bytes) for "
               "inflated data (%lu bytes) plus existing payload %lu bytes",
@@ -357,7 +368,7 @@ int sftp_compress_set_write_algo(const char *algo) {
 
   if (write_compresses[idx].stream_ready) {
     /* If we have an existing stream, it means that we are currently
-     * rekeying. 
+     * rekeying.
      */
     idx = get_next_write_index();
   }

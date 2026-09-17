@@ -159,6 +159,10 @@ char *strchr(),*strrchr();
 # include <netinet/ip.h>
 #endif
 
+#if defined(ip_len) && defined(_AIX)
+# undef ip_len
+#endif
+
 #ifdef HAVE_NETINET_TCP_H
 # include <netinet/tcp.h>
 #endif

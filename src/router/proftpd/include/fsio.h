@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2021 The ProFTPD Project
+ * Copyright (c) 2001-2024 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -78,6 +78,7 @@
 #define FSIO_FILE_LREMOVEXATTR	0x1000000
 #define FSIO_FILE_SETXATTR	0x2000000
 #define FSIO_FILE_LSETXATTR	0x4000000
+#define FSIO_FILE_REALPATH	0x8000000
 
 /* Macro that defines the most common file ops */
 #define FSIO_FILE_COMMON	(FSIO_FILE_OPEN|FSIO_FILE_READ|FSIO_FILE_WRITE|\
@@ -112,8 +113,14 @@ struct fs_rec {
    */
   pr_fs_t *fs_next, *fs_prev;
 
-  /* Descriptive tag for this fs object */
+  /* Descriptive tag for this FS object */
   char *fs_name;
+
+  /* Original name for this FS object.  When FS handlers are inherited,
+   * the name of the FS will be automatically updated to contain the
+   * combined names, which changes things.
+   */
+  char *fs_original_name;
 
   char *fs_path;
 
@@ -151,6 +158,8 @@ struct fs_rec {
   int (*utimes)(pr_fs_t *, const char *, struct timeval *);
   int (*futimes)(pr_fh_t *, int, struct timeval *);
   int (*fsync)(pr_fh_t *, int);
+
+  const char *(*realpath)(pr_fs_t *, pool *p, const char *);
 
   /* Extended attribute support */
   ssize_t (*getxattr)(pool *, pr_fs_t *, const char *, const char *, void *,
@@ -281,6 +290,8 @@ int pr_fsio_futimes(pr_fh_t *, struct timeval *);
 int pr_fsio_fsync(pr_fh_t *fh);
 off_t pr_fsio_lseek(pr_fh_t *, off_t, int);
 
+const char *pr_fsio_realpath(pool *p, const char *path);
+
 /* Extended attribute support */
 ssize_t pr_fsio_getxattr(pool *p, const char *, const char *, void *, size_t);
 ssize_t pr_fsio_lgetxattr(pool *, const char *, const char *, void *, size_t);
@@ -355,6 +366,9 @@ int pr_fsio_puts(const char *, pr_fh_t *);
 int pr_fsio_set_block(pr_fh_t *);
 
 pr_fs_t *pr_register_fs(pool *, const char *, const char *);
+pr_fs_t *pr_register_fs2(pool *, const char *, const char *, int);
+#define PR_FSIO_REGISTER_FL_INHERIT_HANDLERS	0x00001
+
 pr_fs_t *pr_create_fs(pool *, const char *);
 pr_fs_t *pr_get_fs(const char *, int *);
 int pr_insert_fs(pr_fs_t *, const char *);
@@ -413,7 +427,7 @@ char *pr_fs_decode_path(pool *, const char *);
  * flags can be used, for example, to request that if there are errors during
  * the decoding, the function NOT hide/mask them, as is done by default, but
  * convey them to the caller for handling at a higher code layer.
- */ 
+ */
 char *pr_fs_decode_path2(pool *, const char *, int);
 #define FSIO_DECODE_FL_TELL_ERRORS		0x001
 

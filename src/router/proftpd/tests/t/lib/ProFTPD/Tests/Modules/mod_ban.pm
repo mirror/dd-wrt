@@ -135,8 +135,8 @@ sub server_open_fds {
         $count++;
       }
     }
- 
-    closedir($dirh); 
+
+    closedir($dirh);
     return $count;
 
   } else {
@@ -462,7 +462,7 @@ sub ban_message {
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
-  
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -571,7 +571,7 @@ sub ban_message {
       }
 
       my $conn_ex = ProFTPD::TestSuite::FTP::get_connect_exception();
-      
+
       $expected = "Go away 127.0.0.1 ((none)), or I shall taunt you ((none)) a second time!";
       $self->assert($expected eq $conn_ex,
         test_msg("Expected '$expected', got '$conn_ex'"));
@@ -630,7 +630,7 @@ sub ban_ifclass_engine_on {
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
-  
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -821,7 +821,7 @@ sub ban_ifclass_engine_off {
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
-  
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -990,7 +990,7 @@ sub ban_max_logins_exceeded_bug3281 {
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
-  
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -1284,7 +1284,7 @@ sub ban_engine_vhost_bug3355 {
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
-  
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -1336,7 +1336,7 @@ sub ban_engine_vhost_bug3355 {
 
   my ($port, $config_user, $config_group) = config_write($config_file, $config);
   my $vhost_port = $port + 21;
- 
+
   if (open(my $fh, ">> $config_file")) {
     print $fh <<EOC;
 <VirtualHost 127.0.0.1>
@@ -1358,7 +1358,7 @@ EOC
   } else {
     die("Can't open $config_file: $!");
   }
- 
+
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
   # to the parent.
@@ -1476,7 +1476,7 @@ sub ban_unhandled_cmd {
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
-  
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -1547,10 +1547,10 @@ sub ban_unhandled_cmd {
       unless ($@) {
           die("FOO command succeeded unexpectedly");
       }
-   
+
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
- 
+
       my $expected;
 
       $expected = 500;
@@ -1565,10 +1565,10 @@ sub ban_unhandled_cmd {
       unless ($@) {
           die("BAR command succeeded unexpectedly");
       }
-   
+
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
- 
+
       $expected = 500;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
@@ -1585,9 +1585,9 @@ sub ban_unhandled_cmd {
       unless ($@) {
           die("BAZ command succeeded unexpectedly");
       }
-   
+
       $resp_code = $client->response_code();
- 
+
       $expected = 000;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
@@ -1658,7 +1658,7 @@ sub ban_on_event_client_connect_rate {
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
-  
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -1826,7 +1826,7 @@ sub ban_sighup_bug3751 {
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
-  
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -1939,7 +1939,7 @@ sub ban_on_event_tlshandshake {
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
-  
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {

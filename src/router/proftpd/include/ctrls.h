@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2020 The ProFTPD Project team
- *  
+ * Copyright (c) 2001-2023 The ProFTPD Project team
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -91,7 +91,7 @@ typedef struct ctrls_obj {
 
   /* Control "action" */
   const char *ctrls_action;
- 
+
   /* Control trigger time.  If 0, triggers immediately */
   time_t ctrls_when;
 
@@ -123,9 +123,9 @@ typedef struct ctrls_obj {
 
 } pr_ctrls_t;
 
-#define PR_CTRLS_REQUESTED		0x00001
-#define PR_CTRLS_HANDLED		0x00002
-#define PR_CTRLS_PENDING		0x00004
+#define PR_CTRLS_FL_REQUESTED		0x00001
+#define PR_CTRLS_FL_HANDLED		0x00002
+#define PR_CTRLS_FL_PENDING		0x00004
 
 #define PR_CTRLS_ACT_SOLITARY		0x00010
 #define PR_CTRLS_ACT_DISABLED		0x00020
@@ -135,6 +135,22 @@ typedef struct ctrls_obj {
 #define CTRLS_GET_DESC			9
 
 /* Controls API */
+
+/* Control action exit status values */
+
+/* Note: For internal use only */
+#define PR_CTRLS_STATUS_PENDING			1
+#define PR_CTRLS_STATUS_OK			0
+/* Note: Used for backward compatibility */
+#define PR_CTRLS_STATUS_GENERIC_ERROR		-1
+#define PR_CTRLS_STATUS_ACCESS_DENIED		-2
+#define PR_CTRLS_STATUS_WRONG_PARAMETERS 	-3
+/* Example: "no such server/address", "unknown module" */
+#define PR_CTRLS_STATUS_SUBJECT_NOT_FOUND 	-4
+#define PR_CTRLS_STATUS_OPERATION_DENIED	-5
+#define PR_CTRLS_STATUS_OPERATION_IGNORED	-6
+#define PR_CTRLS_STATUS_UNSUPPORTED_OPERATION	-7
+#define PR_CTRLS_STATUS_INTERNAL_ERROR		-8
 
 /* Register a control handler for the given action with the Controls layer,
  * to be available to requesting clients.  Returns the ID of the registered
@@ -168,7 +184,7 @@ int pr_ctrls_add_response(pr_ctrls_t *ctrl, const char *fmt, ...)
        ;
 #endif
 
-/* Meant for use in opening a client control socket, by ftpdctl and core 
+/* Meant for use in opening a client control socket, by ftpdctl and core
  * routines.  Connects to the control socket, and returns the socket descriptor
  * opened, or -1 if there was an error.
  */
@@ -186,31 +202,21 @@ int pr_ctrls_copy_resps(pr_ctrls_t *src_ctrl, pr_ctrls_t *dest_ctrl);
  */
 int pr_ctrls_flush_response(pr_ctrls_t *ctrl);
 
-/* Parses the given string into the argc, argv pointers, creating inputs
- * suitable for passing to pr_ctrls_send_msg().  The argv array of strings
- * is allocated from the given pool.  Provided as a utility function.
- * Returns -1 on error, 0 if successful.
- */
-int pr_ctrls_parse_msg(pool *msg_pool, char *msg, unsigned int *msgargc,
-  char ***msgargv);
-
 /* Reads a client control request from the given client.  Returns -1 with errno
  * set to EOF if there is nothing to read from the client socket, or errno set
  * to the appropriate error for other problems. Returns 0 on success.
  */
 int pr_ctrls_recv_request(pr_ctrls_cl_t *cl);
+int pr_ctrls_send_request(pool *p, int fd, const char *action,
+  unsigned int argc, char **argv);
 
-/* respargv can be NULL, as when the client does not care to know the
- * response messages, just that a response was successfully received.
- * Returns respargc, or -1 if there was an error.
+/* argv can be NULL, as when the client does not care to know the response
+ * messages, just that a response was successfully received.  Returns argc,
+ * or -1 if there was an error.
  */
-int pr_ctrls_recv_response(pool *resp_pool, int ctrls_sockfd, int *status,
-  char ***respargv);
-
-/* Useful for core routines that themselves want to send a control message
- */
-int pr_ctrls_send_msg(int sockfd, int msgstatus, unsigned int msgargc,
-  char **msgargv);
+int pr_ctrls_recv_response(pool *p, int fd, int *status, char ***argv);
+int pr_ctrls_send_response(pool *p, int fd, int status, unsigned int argc,
+  char **argv);
 
 /* Determine whether the given socket mode is for a Unix domain socket.
  * Returns zero if true, -1 otherwise.

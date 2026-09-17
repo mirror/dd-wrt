@@ -126,6 +126,7 @@ questions, concerns, or suggestions regarding this module.
 <ul>
   <li><a href="#SFTPAcceptEnv">SFTPAcceptEnv</a>
   <li><a href="#SFTPAuthMethods">SFTPAuthMethods</a>
+  <li><a href="#SFTPAuthPublicKeys">SFTPAuthPublicKeys</a>
   <li><a href="#SFTPAuthorizedHostKeys">SFTPAuthorizedHostKeys</a>
   <li><a href="#SFTPAuthorizedUserKeys">SFTPAuthorizedUserKeys</a>
   <li><a href="#SFTPCiphers">SFTPCiphers</a>
@@ -246,6 +247,38 @@ RSA and a DSA public key, or multiple different RSA/DSA keys) using:
 
 <p>
 <hr>
+<h3><a name="SFTPAuthPublicKeys">SFTPAuthPublicKeys</a></h3>
+<strong>Syntax:</strong> SFTPAuthPublicKeys <em>algo1 ...</em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_sftp<br>
+<strong>Compatibility:</strong> 1.3.9rc3 and later
+
+<p>
+The <code>SFTPAuthPublicKeys</code> directive is used to specify the list of
+public key algorithms that <code>mod_sftp</code> allows during authentication.
+The current list of supported public key algorithms is:
+<ul>
+  <li>ssh-dss
+  <li>ssh-rsa
+  <li>rsa-sha2-256
+  <li>rsa-sha2-512
+  <li>ecdsa-sha2-nistp256
+  <li>ecdsa-sha2-nistp384
+  <li>ecdsa-sha2-nistp521
+  <li>sk-ecdsa-sha2-nistp256@openssh.com
+  <li>ssh-ed25519 (<i>requires Sodium</i>)
+  <li>sk-ssh-ed25519@openssh.com (<i>requires Sodium</i>)
+  <li>ssh-ed448 (<i>requires OpenSSL 1.1.1 or later</i>)
+</ul>
+By default, all of the above public key algorithms are allowed.
+
+<p>
+In general, there is no need to use this directive unless specific public key
+algorithms must be used (or avoided).
+
+<p>
+<hr>
 <h3><a name="SFTPAuthorizedHostKeys">SFTPAuthorizedHostKeys</a></h3>
 <strong>Syntax:</strong> SFTPAuthorizedHostKeys <em>store1 ...</em><br>
 <strong>Default:</strong> <em>None</em><br>
@@ -302,7 +335,7 @@ Example:
 RFC4716 format (see the <a href="#UsageRFC4716Format">Usage</a> section).
 This is done using OpenSSH's <code>ssh-keygen</code> tool:
 <pre>
-  $ ssh-keygen -e -f ~/.ssh/id_rsa.pub
+  $ ssh-keygen -e -f ~/.ssh/id_rsa.pub -m RFC4716
 </pre>
 The output from this command can then be added to the
 <code>SFTPAuthorizedUserKeys</code> file.
@@ -331,6 +364,7 @@ The <code>SFTPCiphers</code> directive is used to specify the list of
 cipher algorithms that <code>mod_sftp</code> should use.  The current list
 of supported cipher algorithms is, in the default order of preference:
 <ul>
+  <li>chacha20-poly1305@openssh.com
   <li>aes256-ctr
   <li>aes192-ctr
   <li>aes128-ctr
@@ -392,6 +426,7 @@ For comparison, the cipher algorithms used by OpenSSH by default are:
   <li>aes256-ctr
   <li>aes128-gcm@openssh.com
   <li>aes256-gcm@openssh.com
+  <li>chacha20-poly1305@openssh.com
 </ul>
 Thus if you wanted to configure <code>mod_sftp</code> to present the same
 cipher algorithms as OpenSSH, you would use:
@@ -399,7 +434,8 @@ cipher algorithms as OpenSSH, you would use:
   # Make mod_sftp present the same ciphers as OpenSSH
   SFTPCiphers aes128-cbc 3des-cbc blowfish-cbc cast128-cbc arcfour128 \
               arcfour256 aes192-cbc aes256-cbc aes128-ctr aes192-ctr aes256-ctr \
-              aes128-gcm@openssh.com aes256-gcm@openssh.com
+              aes128-gcm@openssh.com aes256-gcm@openssh.com \
+              chacha20-poly1305@openssh.com
 </pre>
 
 <p>
@@ -785,9 +821,11 @@ The extension names used for the <code>SFTPExtensions</code> directive are:
   <li>fsync
   <li>hardlink
   <li>homeDirectory
+  <li>limits
   <li>posixRename
   <li>spaceAvailable
   <li>statvfs
+  <li>userGroupNames
   <li>vendorID
   <li>versionSelect
   <li>xattr
@@ -907,8 +945,8 @@ The <code>SFTPHostKeys</code> directive is used to specify the list of host
 key algorithms that <code>mod_sftp</code> should use.  The current list
 of supported host key algorithms is:
 <ul>
-  <li>ssh-ed448
-  <li>ssh-ed25519
+  <li>ssh-ed25519 (<i>requires Sodium</i>)
+  <li>ssh-ed448 (<i>requires OpenSSL 1.1.1 or later</i>)
   <li>ecdsa-sha2-nistp256
   <li>ecdsa-sha2-nistp384
   <li>ecdsa-sha2-nistp521
@@ -1129,6 +1167,46 @@ The currently implemented options are:
   </li>
 
   <p>
+  <li><code>FIDOTouchRequired</code><br>
+    <p>
+    When a FIDO security key is used for authentication, <code>mod_sftp</code>
+    will require that the signature prove user presence, usually via touching
+    the authenticator.  A security key which does not prove user presence
+    will be rejected.  Note that this option only applies to the FIDO
+    authenticator algorithms "ecdsa-sk" and "ed25519-sk".
+
+    <p>
+    However, the <code>SFTPAuthorizedHostKeys</code>/
+    <code>SFTPAuthorizedUserKeys</code> entries for such FIDO keys
+    <em>can</em> indicate that proof of user presence is <b>not</b> required
+    for a given key.  There are cases where this is useful.
+
+    <p>
+    This option should be used by site administrators who always want to
+    require proof of user presence for FIDO keys, <em>regardless</em> of
+    any per-key overrides configured elsewhere.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.9rc1</code>.
+  </li>
+
+  <p>
+  <li><code>FIDOVerifyRequired</code><br>
+    <p>
+    When a FIDO security key is used for authentication, <code>mod_sftp</code>
+    does not require that the signature prove user <em>verification</em>,
+    such as via PIN or biometrics.  Use this option to require such
+    user verification for all security keys; a security key which does not
+    prove user verification will be rejected.  Note that this option only
+    applies to the FIDO authenticator algorithms "ecdsa-sk" and "ed25519-sk".
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.9rc1</code>.
+  </li>
+
+  <p>
   <li><code>IgnoreFIFOs</code>
     <p>
     By default, <code>mod_sftp</code> allows uploading and downloading of FIFOs,
@@ -1309,6 +1387,19 @@ The currently implemented options are:
     <p>
     <b>Note</b> that this option first appeared in
     <code>proftpd-1.3.8rc3</code>.
+  </li>
+
+  <p>
+  <li><code>NoStrictKex</code><br>
+    <p>
+    By default, <code>mod_sftp</code> will honor/support the OpenSSH
+    "strict KEX" mode extension, "kex-strict-c-v00@openssh.com" and
+    "kex-strict-s-v00@openssh.com".  Use this option to disable support for
+    these custom OpenSSH extensions.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.9rc2</code>.
   </li>
 
   <p>
@@ -1692,6 +1783,106 @@ What about the <code>READ</code> and <code>WRITE</code> command groups?
   </li>
 </ul>
 
+<p><a name="ExtendedLogClasses">
+Here is table of the supported <a href="../modules/mod_log.html#ExtendedLog"><code>ExtendedLog</code></a> directive <em>command classes</em> for SFTP sessions:
+<p>
+<table border=1 summary="Command Classes">
+  <tr>
+    <td><b>Command Class</b></td>
+    <td><b>SSH, SFTP Requests</b></td>
+  </tr>
+
+  <tr>
+    <td><code>ALL</code></td>
+    <td>All requests <i>except</i> the <code>EXIT</code> pseudo-command (<i>default</i>)</td>
+  </tr>
+
+  <tr>
+    <td><code>NONE</code></td>
+    <td>No requests</td>
+  </tr>
+
+  <tr>
+    <td><code>AUTH</code></td>
+    <td>Authentication requests: <code>USERAUTH_REQUEST</code></td>
+  </tr>
+
+  <tr>
+    <td><code>INFO</code></td>
+    <td>Informational commands: <code>EXT_INFO</code>
+      (SSH extension negotiation), <code>REALPATH</code></td>
+  </tr>
+
+  <tr>
+    <td><code>DIRS</code></td>
+    <td>Directory commands: <code>MKDIR</code>, <code>OPENDIR</code>,
+      <code>READDIR</code>, <code>REALPATH</code>, <code>RMDIR</code></td>
+  </tr>
+
+  <tr>
+    <td><code>READ</code></td>
+    <td>File reading: <code>CLOSE</code>, <code>FSTAT</code>,
+      <code>LSTAT</code>, <code>OPEN</code>, <code>READ</code>,
+      <code>READLINK</code>, <code>STAT</code></td>
+  </tr>
+
+  <tr>
+    <td><code>WRITE</code></td>
+    <td>File/directory writing or creation: <code>CLOSE</code>,
+      <code>FSETSTAT</code>, <code>LINK</code>, <code>LOCK</code>,
+      <code>MKDIR</code>, <code>OPEN</code>, <code>REMOVE</code>,
+      <code>RENAME</code>, <code>RMDIR</code>, <code>SETSTAT</code>,
+      <code>SYMLINK</code>, <code>WRITE</code>, <code>UNLOCK</code></td>
+  </tr>
+
+  <tr>
+    <td><code>MISC</code></td>
+    <td>Miscellaneous commands: <code>EXTENDED</code>, <code>FSYNC</code>,
+      <code>HARDLINK</code>, <code>HOMEDIR</code>, <code>INIT</code>,
+      <code>RENAME</code>, <code>SERVICE_REQUEST</code></td>
+  </tr>
+
+  <tr>
+    <td><code>SEC</code></td>
+    <td>SSH security requests: <code>DH_GEX_INIT</code>,
+      <code>DH_GEX_REQUEST</code>, <code>DH_INIT</code>, <code>ECDH_INIT</code>,
+      <code>KEXINIT</code>, <code>KEXRSA_SECRET</code>,
+      <code>NEWKEYS</code></td>
+  </tr>
+
+  <tr>
+    <td><code>SSH</code></td>
+    <td>SSH protocol requests: <code>CHANNEL_CLOSE</code>,
+      <code>CHANNEL_EOF</code>, <code>CHANNEL_OPEN</code>,
+      <code>CHANNEL_REQUEST</code>, <code>CHANNEL_WINDOW_ADJUST</code>,
+      <code>DH_GEX_INIT</code>, <code>DH_GEX_REQUEST</code>,
+      <code>DH_INIT</code>, <code>ECDH_INIT</code>, <code>EXT_INFO</code>,
+      <code>KEXINIT</code>, <code>KEXRSA_SECRET</code>, <code>NEWKEYS</code>,
+      <code>SERVICE_REQUEST</code>, <code>USERAUTH_REQUEST</code></td>
+  </tr>
+
+  <tr>
+    <td><code>SFTP</code></td>
+    <td>SFTP protocol requests: <code>CLOSE</code>, <code>EXTENDED</code>,
+      <code>FSETSTAT</code>, <code>FSTAT</code>, <code>FSYNC</code>,
+      <code>HARDLINK</code>, <code>HOMEDIR</code>, <code>INIT</code>,
+      <code>LINK</code>, <code>LOCK</code>, <code>LSTAT</code>,
+      <code>MKDIR</code>, <code>OPEN</code>, <code>OPENDIR</code>,
+      <code>READ</code>, <code>READDIR</code>, <code>READLINK</code>,
+      <code>REALPATH</code>, <code>REMOVE</code>, <code>RENAME</code>,
+      <code>RMDIR</code>, <code>SETSTAT</code>, <code>STAT</code>,
+      <code>SYMLINK</code>, <code>WRITE</code>, <code>UNLOCK</code></td>
+  </tr>
+
+  <tr>
+    <td><code>EXIT</code></td>
+    <td>Logs the configured <code>LogFormat</code> at session exit.<br>
+        <b>NOTE</b>: <code>EXIT</code> is <b>not</b> part of the
+        <code>ALL</code> command class, in order to preserve
+        backward-compatible <code>ALL</code> behavior.</td>
+  </tr>
+</table>
+
 <p><a name="EnvironmentVariables">
 <b>Environment Variables</b><br>
 The <code>mod_sftp</code> module will set the following environment
@@ -1709,6 +1900,8 @@ values), once the client has successfully exchanged keys with
   <li><code>SFTP_CLIENT_CIPHER_ALGO</code>
   <li><code>SFTP_CLIENT_COMPRESSION_ALGO</code>
   <li><code>SFTP_CLIENT_MAC_ALGO</code>
+  <li><code>SFTP_KEX_ALGO</code>
+  <li><code>SFTP_HOST_KEY_ALGO</code>
   <li><code>SFTP_SERVER_CIPHER_ALGO</code>
   <li><code>SFTP_SERVER_COMPRESSION_ALGO</code>
   <li><code>SFTP_SERVER_MAC_ALGO</code>
@@ -1748,10 +1941,49 @@ This means that if you wish to use your OpenSSH public keys with the
 format to the RFC4716 format.  Fortunately, this is supported by
 OpenSSH's <code>ssh-keygen</code> utility, <i>e.g.</i>:
 <pre>
-  $ ssh-keygen -e -f ~/.ssh/id_rsa.pub
+  $ ssh-keygen -e -f ~/.ssh/id_rsa.pub -m RFC4716
 </pre>
 The output from this command can be added to the
 <code>SFTPAuthorizedUserKeys</code> used by <code>mod_sftp</code>.
+
+<p>
+Now that <code>mod_sftp</code> supports FIDO security keys, it is possible
+to configure policy requirements for a given key, using the RFC4716 format.
+For example, you might generate a FIDO security key using OpenSSH that does
+not require touching the authenticator, using <i>e.g.</i>:
+<pre>
+  $ ssh-keygen -t edcsa-sk -O no-touch-required -f ./id_ecdsa_sk
+</pre>
+You then export that public key to the RFC 4716 format, for use by
+<code>mod_sftp</code>:
+<pre>
+  $ ssh-keygen -e -f ./id_ecdsa_sk.pub -m RFC4716
+  ---- BEGIN SSH2 PUBLIC KEY ----
+  Comment: "256-bit ECDSA-SK, converted by ... from OpenSSH"
+  AAAAInNrLWVjZHNhLXNoYTItbmlzdHAyNTZAb3BlbnNzaC5jb20AAAAIbmlzdHAyNTYAAA
+  ...
+  ---- END SSH2 PUBLIC KEY ----
+</pre>
+Now you can manually add more headers, underneath <code>Comment:</code>,
+to indicate whether this key requires proof of user presence ("touch required"),
+and/or proof of user verification ("verify required").  How?  Using the
+custom <code>X-FIDO-Touch-Required</code> and
+<code>X-FIDO-Verify-Required</code> headers supported by <code>mod_sftp</code>:
+</pre>
+  ---- BEGIN SSH2 PUBLIC KEY ----
+  Comment: "256-bit ECDSA-SK, converted by ... from OpenSSH"
+  x-fido-touch-required: false
+  AAAAInNrLWVjZHNhLXNoYTItbmlzdHAyNTZAb3BlbnNzaC5jb20AAAAIbmlzdHAyNTYAAA
+  ...
+  ---- END SSH2 PUBLIC KEY ----
+</pre>
+The values for these headers are expected to be Boolean values.
+
+<p>
+These <code>X-FIDO-Touch-Required</code>, <code>X-FIDO-Verify-Required</code>
+headers are handled in a case-insensitive manner, per RFC.  These headers are
+only applied to keys that use the FIDO authenticator algorithms "ecdsa-sk" and
+"ed25519-sk", and are ignored for other keys.
 
 <p>
 <b>Note</b> that the RFC4716 format is <b>not</b> to be used with the
@@ -2321,7 +2553,7 @@ is wrong.  Make sure that you convert your OpenSSH-generated keys to RFC 4716
 format using <code>ssh-keygen</code>, <em>before</em> adding it to your
 <code>authorized_keys</code> file, using something like this:
 <pre>
-  $ ssh-keygen -e -f ~/.ssh/id_rsa.pub >> authorized_keys
+  $ ssh-keygen -e -f ~/.ssh/id_rsa.pub -m RFC4716 >> authorized_keys
 </pre>
 See the <a href="#UsageRFC4716Format">Usage</a> documentation for more
 information.
@@ -2843,7 +3075,7 @@ deal with this issue, then, you can hopefully upgrade to ProFTPD 1.3.6 or later,
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2008-2022 TJ Saunders<br>
+&copy; Copyright 2008-2024 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

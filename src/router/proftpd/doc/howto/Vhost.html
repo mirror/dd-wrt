@@ -243,9 +243,30 @@ addresses/DNS names:
 </pre>
 
 <p>
+<font color=red>Question</font>: If I want to use many virtual hosts, do I
+need to use a different port for each virtual host, or can the same port be
+reused?<br>
+<font color=blue>Answer</font>: The short answer is yes, it is possible to
+have many virtual hosts on the same IP address and port.
+
+<p>
+However, doing so requires support from clients to work as you expect.
+Specifically, it requires that FTP clients send the <code>HOST</code> command
+(defined in
+<a href="https://datatracker.ietf.org/doc/html/rfc7151">RFC 7151</a>), and not
+all FTP clients do so.  This command is equivalent to HTTP's <code>Host</code>
+header, but it is newer, and so not every FTP client implementation has been
+updated to use it.  Without that <code>HOST</code> command, ProFTPD only has
+the IP address/port combination from a client TCP connection to use for
+determining which virtual host to use, and if there are many virtual hosts
+(differentiated only by <em>name</em>) using the same IP address and port,
+then ProFTPD cannot tell which specific virtual host to use.  It will not work
+as you expect, for clients that do not use the <code>HOST</code> command.
+
+<p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2017 The ProFTPD Project<br>
+&copy; Copyright 2017-2023 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

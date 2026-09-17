@@ -156,7 +156,7 @@ int sftp_auth_password(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     case PR_AUTH_OK:
       break;
 
-    case PR_AUTH_NOPWD:  
+    case PR_AUTH_NOPWD:
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "password authentication for user '%s' failed: No such user", user);
       pr_log_auth(PR_LOG_NOTICE, "USER %s (Login failed): No such user found",

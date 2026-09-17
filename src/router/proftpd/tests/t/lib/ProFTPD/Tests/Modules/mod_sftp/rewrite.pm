@@ -864,7 +864,7 @@ sub sftp_rewrite_lstat {
         my ($err_code, $err_name, $err_str) = $ssh2->error();
         die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
       }
-     
+
       my $attrs = $sftp->stat('test link', 0);
       unless ($attrs) {
         my ($err_code, $err_name) = $sftp->error();
@@ -1045,11 +1045,11 @@ sub sftp_rewrite_setstat {
         my ($err_code, $err_name, $err_str) = $ssh2->error();
         die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
       }
-     
+
       my $res = $sftp->setstat('test file.txt',
         atime => 0,
         mtime => 0,
-      ); 
+      );
       unless ($res) {
         my ($err_code, $err_name) = $sftp->error();
         die("FXP_SETSTAT failed: [$err_name] ($err_code)");
@@ -1405,7 +1405,7 @@ sub sftp_rewrite_realpath_backslashes_bug4017 {
 
       my $munged = $test_file;
       $munged =~ s/\//\\/g;
-      
+
       my $resolved = $sftp->realpath($munged);
       unless ($resolved) {
         my ($err_code, $err_name) = $sftp->error();

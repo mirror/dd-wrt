@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2022 The ProFTPD Project team
+ * Copyright (c) 2001-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -371,8 +371,8 @@ int pr_define_add(const char *definition, int survive_restarts) {
     pr_pool_tag(defines_perm_pool, "Permanent Defines Pool");
   }
 
-  if (!defines_perm_list) {
-    defines_perm_list = make_array(defines_perm_pool, 0, sizeof(char *)); 
+  if (defines_perm_list == NULL) {
+    defines_perm_list = make_array(defines_perm_pool, 0, sizeof(char *));
   }
 
   *((char **) push_array(defines_perm_list)) =
@@ -745,7 +745,7 @@ static int dir_check_op(pool *p, xaset_t *set, int op, const char *path,
               if (file_gid == group_ids[i]) {
                 if (!inverted) {
                   pr_trace_msg("hiding", 8,
-                    "hiding file '%s' because of HideGroup %s", path, 
+                    "hiding file '%s' because of HideGroup %s", path,
                     hide_group);
                   res = FALSE;
                 }
@@ -1474,20 +1474,20 @@ int dir_check_limits(cmd_rec *cmd, config_rec *c, const char *cmd_name,
 
 /* Manage .ftpaccess dynamic directory sections
  *
- * build_dyn_config() is called to check for and then handle .ftpaccess 
+ * build_dyn_config() is called to check for and then handle .ftpaccess
  * files.  It determines:
  *
  *   - whether an .ftpaccess file exists in a directory
  *   - whether an existing .ftpaccess section for that file exists
  *   - whether a new .ftpaccess section needs to be constructed
- *   - whether an existing .ftpaccess section needs rebuilding 
- *         as its corresponding .ftpaccess file has been modified   
+ *   - whether an existing .ftpaccess section needs rebuilding
+ *         as its corresponding .ftpaccess file has been modified
  *   - whether an existing .ftpaccess section must now be removed
  *         as its corresponding .ftpaccess file has disappeared
  *
  * The routine must check for .ftpaccess files in each directory that is
- * a component of the path argument.  The input path may be for either a 
- * directory or file, and that may or may not already exist.  
+ * a component of the path argument.  The input path may be for either a
+ * directory or file, and that may or may not already exist.
  *
  * build_dyn_config() may be called with a path to:
  *
@@ -1496,7 +1496,7 @@ int dir_check_limits(cmd_rec *cmd, config_rec *c, const char *cmd_name,
  *   - a proposed directory         - start check in containing dir
  *   - a proposed file              - start check in containing dir
  *
- * As in 1.3.3b code, the key is that for path "/a/b/c", one of either 
+ * As in 1.3.3b code, the key is that for path "/a/b/c", one of either
  * "/a/b/c" or "/a/b" is an existing directory, or we MUST give up as we
  * cannot even start scanning for .ftpaccess files without a valid starting
  * directory.
@@ -1509,10 +1509,10 @@ void build_dyn_config(pool *p, const char *_path, struct stat *stp,
   int isfile, removed = 0;
   char *ptr = NULL;
 
-  /* Need three path strings: 
+  /* Need three path strings:
    *
    *  curr_dir_path: current relative directory path, for tracking our
-   *                 progress as we scan upwards 
+   *                 progress as we scan upwards
    *
    *  ftpaccess_path: current relative file path to the .ftpaccess file for
    *                  which to check.
@@ -1575,12 +1575,12 @@ void build_dyn_config(pool *p, const char *_path, struct stat *stp,
      *
      * The check for a string length greater than 1 character skips the
      * "/" case effectively.
-     */ 
+     */
 
     if (curr_dir_pathlen > 1 &&
       *(curr_dir_path + curr_dir_pathlen - 1) == '/') {
       *(curr_dir_path + curr_dir_pathlen - 1) = '\0';
-      curr_dir_pathlen--;  
+      curr_dir_pathlen--;
     }
 
     ftpaccess_path = pdircat(p, curr_dir_path, ".ftpaccess", NULL);
@@ -1761,6 +1761,10 @@ void build_dyn_config(pool *p, const char *_path, struct stat *stp,
   }
 }
 
+void build_dyn_config2(pool *p, const char *path, struct stat *st) {
+  build_dyn_config(p, path, st, TRUE);
+}
+
 /* dir_check_full() fully recurses the path passed
  * returns 1 if operation is allowed on current path,
  * or 0 if not.
@@ -1810,7 +1814,7 @@ int dir_check_full(pool *pp, cmd_rec *cmd, const char *group, const char *path,
     memset(&st, '\0', sizeof(st));
   }
 
-  build_dyn_config(p, path, &st, TRUE);
+  build_dyn_config2(p, path, &st);
 
   /* Check to see if this path is hidden by HideFiles. */
   regex_hidden = dir_hide_file(path);
@@ -1942,11 +1946,32 @@ int dir_check_full(pool *pp, cmd_rec *cmd, const char *group, const char *path,
   return res;
 }
 
+/* Returns TRUE if the given ancestor path is indeed an ancestor, by path
+ * prefix, of the path, FALSE otherwise.
+ */
+static int is_ancestor_path(const char *ancestor_path, const char *path) {
+  size_t ancestor_pathlen, pathlen;
+
+  ancestor_pathlen = strlen(ancestor_path);
+  pathlen = strlen(path);
+
+  /* By definition, a path than is an ancestor is shorter. */
+  if (ancestor_pathlen >= pathlen) {
+    return FALSE;
+  }
+
+  if (strncmp(ancestor_path, path, ancestor_pathlen) == 0 &&
+      path[ancestor_pathlen] == '/') {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
 /* dir_check() checks the current dir configuration against the path,
  * if it matches (partially), a search is done only in the subconfig,
- * otherwise handed off to dir_check_full
+ * otherwise handed off to dir_check_full().
  */
-
 int dir_check(pool *pp, cmd_rec *cmd, const char *group, const char *path,
     int *hidden) {
   char *fullpath, *owner;
@@ -1975,7 +2000,7 @@ int dir_check(pool *pp, cmd_rec *cmd, const char *group, const char *path,
         (session.anon_config ? session.anon_config : NULL));
 
   if (c == NULL ||
-      strncmp(c->name, fullpath, strlen(c->name)) != 0) {
+      is_ancestor_path(c->name, fullpath) != TRUE) {
     destroy_pool(p);
     return dir_check_full(pp, cmd, group, path, hidden);
   }
@@ -1986,7 +2011,7 @@ int dir_check(pool *pp, cmd_rec *cmd, const char *group, const char *path,
     memset(&st, 0, sizeof(st));
   }
 
-  build_dyn_config(p, path, &st, FALSE);
+  build_dyn_config2(p, path, &st);
 
   /* Check to see if this path is hidden by HideFiles. */
   regex_hidden = dir_hide_file(path);
@@ -2427,6 +2452,10 @@ static void copy_recur(xaset_t **set, pool *p, config_rec *c,
   }
 
   newconf = pr_config_add_set(set, c->name, 0);
+  if (newconf == NULL) {
+    return;
+  }
+
   newconf->config_type = c->config_type;
   newconf->flags = c->flags;
   newconf->parent = new_parent;
@@ -2447,7 +2476,7 @@ static void copy_recur(xaset_t **set, pool *p, config_rec *c,
     }
   }
 
-  if (c->subset) {
+  if (c->subset != NULL) {
     for (c = (config_rec *) c->subset->xas_list; c; c = c->next) {
       pr_signals_handle();
       copy_recur(&newconf->subset, p, c, newconf);
@@ -2524,7 +2553,7 @@ void fixup_dirs(server_rec *s, int flags) {
 
     return;
   }
- 
+
   reorder_dirs(s->conf, flags);
 
   /* Merge mergeable configuration items down. */
@@ -2569,7 +2598,7 @@ int fixup_servers(xaset_t *list) {
 
       s->ServerAddress = pr_netaddr_get_localaddr_str(s->pool);
       s->addr = pr_netaddr_get_addr(s->pool, s->ServerAddress, &addrs);
-     
+
       if (addrs != NULL) {
         register unsigned int i;
         pr_netaddr_t **elts = addrs->elts;
@@ -2598,7 +2627,7 @@ int fixup_servers(xaset_t *list) {
           }
         }
       }
- 
+
     } else {
       int flags = PR_NETADDR_GET_ADDR_FL_INCL_DEVICE;
 
@@ -2609,16 +2638,37 @@ int fixup_servers(xaset_t *list) {
     }
 
     if (s->addr == NULL) {
-      pr_log_pri(PR_LOG_WARNING,
-        "warning: unable to determine IP address of '%s'", s->ServerAddress);
+      int destroy_server = TRUE;
 
+      /* We now consider it a fatal error if we cannot resolve the IP address
+       * for the default/implicit "server config" virtual host (Issue #1746).
+       * Unless this virtual host has been disabled via "Port 0".
+       */
       if (s == main_server) {
-        main_server = NULL;
+        if (s->ServerPort > 0) {
+          pr_log_pri(PR_LOG_WARNING,
+            "fatal: unable to determine IP address of '%s' for '%s'; "
+            "consider using DefaultAddress to explicitly set the IP address",
+            s->ServerAddress, s->ServerName);
+          pr_session_end(0);
+        }
+
+        /* Many modules assume that the `main_server` variable is non-NULL
+         * at e.g. postparse time.  Thus in this special case, we will preserve
+         * this pointer, and NOT destroy its pool.
+         */
+        destroy_server = FALSE;
       }
 
+      pr_log_pri(PR_LOG_WARNING,
+        "warning: unable to determine IP address of '%s'", s->ServerAddress);
       xaset_remove(list, (xasetmember_t *) s);
-      destroy_pool(s->pool);
-      s->pool = NULL;
+
+      if (destroy_server == TRUE) {
+        destroy_pool(s->pool);
+        s->pool = NULL;
+      }
+
       continue;
     }
 
@@ -2706,7 +2756,7 @@ static void set_tcp_bufsz(server_rec *s) {
   socklen_t optlen = 0;
   struct protoent *p = NULL;
 
-#ifdef HAVE_SETPROTOENT
+#if defined(HAVE_SETPROTOENT)
   setprotoent(FALSE);
 #endif
 
@@ -2715,18 +2765,18 @@ static void set_tcp_bufsz(server_rec *s) {
     proto = p->p_proto;
   }
 
-#ifdef HAVE_ENDPROTOENT
+#if defined(HAVE_ENDPROTOENT)
   endprotoent();
 #endif
 
   if (p == NULL) {
-#ifndef PR_TUNABLE_RCVBUFSZ
+#if !defined(PR_TUNABLE_RCVBUFSZ)
     s->tcp_rcvbuf_len = tcp_rcvbufsz = PR_TUNABLE_DEFAULT_RCVBUFSZ;
 #else
     s->tcp_rcvbuf_len = tcp_rcvbufsz = PR_TUNABLE_RCVBUFSZ;
 #endif /* PR_TUNABLE_RCVBUFSZ */
 
-#ifndef PR_TUNABLE_SNDBUFSZ
+#if !defined(PR_TUNABLE_SNDBUFSZ)
     s->tcp_sndbuf_len = tcp_sndbufsz = PR_TUNABLE_DEFAULT_SNDBUFSZ;
 #else
     s->tcp_sndbuf_len = tcp_sndbufsz = PR_TUNABLE_SNDBUFSZ;
@@ -2735,11 +2785,11 @@ static void set_tcp_bufsz(server_rec *s) {
     pr_log_debug(DEBUG3, "getprotobyname error for 'tcp': %s", strerror(errno));
     pr_log_debug(DEBUG4, "using default TCP receive/send buffer sizes");
 
-#ifndef PR_TUNABLE_XFER_BUFFER_SIZE
-    /* Choose the smaller of the two TCP buffer sizes as the overall transfer
+#if !defined(PR_TUNABLE_XFER_BUFFER_SIZE)
+    /* Choose the larger of the two TCP buffer sizes as the overall transfer
      * size (for use by the data transfer layer).
      */
-     xfer_bufsz = tcp_sndbufsz < tcp_rcvbufsz ? tcp_sndbufsz : tcp_rcvbufsz;
+    xfer_bufsz = tcp_rcvbufsz > tcp_sndbufsz ? tcp_rcvbufsz : tcp_sndbufsz;
 #else
     xfer_bufsz = PR_TUNABLE_XFER_BUFFER_SIZE;
 #endif /* PR_TUNABLE_XFER_BUFFER_SIZE */
@@ -2758,7 +2808,7 @@ static void set_tcp_bufsz(server_rec *s) {
     return;
   }
 
-#ifndef PR_TUNABLE_RCVBUFSZ
+#if !defined(PR_TUNABLE_RCVBUFSZ)
   /* Determine the optimal size of the TCP receive buffer. */
   optlen = sizeof(tcp_rcvbufsz);
   if (getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (void *) &tcp_rcvbufsz,
@@ -2770,6 +2820,13 @@ static void set_tcp_bufsz(server_rec *s) {
       tcp_rcvbufsz);
 
   } else {
+    /* Since we want to optimize for network data transfers, we ideally want
+     * large buffers.  So enforce a minimum buffer size that we like.
+     */
+    if (tcp_rcvbufsz < PR_TUNABLE_DEFAULT_RCVBUFSZ) {
+      tcp_rcvbufsz = PR_TUNABLE_DEFAULT_RCVBUFSZ;
+    }
+
     pr_log_debug(DEBUG5, "using TCP receive buffer size of %d bytes",
       tcp_rcvbufsz);
     s->tcp_rcvbuf_len = tcp_rcvbufsz;
@@ -2781,18 +2838,25 @@ static void set_tcp_bufsz(server_rec *s) {
     tcp_rcvbufsz);
 #endif /* PR_TUNABLE_RCVBUFSZ */
 
-#ifndef PR_TUNABLE_SNDBUFSZ
+#if !defined(PR_TUNABLE_SNDBUFSZ)
   /* Determine the optimal size of the TCP send buffer. */
   optlen = sizeof(tcp_sndbufsz);
   if (getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (void *) &tcp_sndbufsz,
       &optlen) < 0) {
     s->tcp_sndbuf_len = tcp_sndbufsz = PR_TUNABLE_DEFAULT_SNDBUFSZ;
-    
+
     pr_log_debug(DEBUG3, "getsockopt error for SO_SNDBUF: %s", strerror(errno));
     pr_log_debug(DEBUG4, "using default TCP send buffer size of %d bytes",
       tcp_sndbufsz);
-  
+
   } else {
+    /* Since we want to optimize for network data transfers, we ideally want
+     * large buffers.  So enforce a minimum buffer size that we like.
+     */
+    if (tcp_sndbufsz < PR_TUNABLE_DEFAULT_SNDBUFSZ) {
+      tcp_sndbufsz = PR_TUNABLE_DEFAULT_SNDBUFSZ;
+    }
+
     pr_log_debug(DEBUG5, "using TCP send buffer size of %d bytes",
       tcp_sndbufsz);
     s->tcp_sndbuf_len = tcp_sndbufsz;
@@ -2804,10 +2868,10 @@ static void set_tcp_bufsz(server_rec *s) {
     tcp_sndbufsz);
 #endif /* PR_TUNABLE_SNDBUFSZ */
 
-  /* Choose the smaller of the two TCP buffer sizes as the overall transfer
+  /* Choose the larger of the two TCP buffer sizes as the overall transfer
    * size (for use by the data transfer layer).
    */
-   xfer_bufsz = tcp_sndbufsz < tcp_rcvbufsz ? tcp_sndbufsz : tcp_rcvbufsz;
+  xfer_bufsz = tcp_rcvbufsz > tcp_sndbufsz ? tcp_rcvbufsz : tcp_sndbufsz;
 
   (void) close(sockfd);
 }
@@ -2875,11 +2939,17 @@ void init_dirtree(void) {
 /* These functions are used by modules to help parse configuration. */
 
 unsigned char check_context(cmd_rec *cmd, int allowed) {
-  int ctxt = (cmd->config && cmd->config->config_type != CONF_PARAM ?
-     cmd->config->config_type : cmd->server->config_type ?
-     cmd->server->config_type : CONF_ROOT);
+  int ctx;
 
-  if (ctxt & allowed) {
+  if (cmd == NULL) {
+    return FALSE;
+  }
+
+  ctx = (cmd->config && cmd->config->config_type != CONF_PARAM ?
+    cmd->config->config_type : cmd->server->config_type ?
+    cmd->server->config_type : CONF_ROOT);
+
+  if (ctx & allowed) {
     return TRUE;
   }
 
@@ -2889,36 +2959,50 @@ unsigned char check_context(cmd_rec *cmd, int allowed) {
 
 char *get_context_name(cmd_rec *cmd) {
   static char cbuf[20];
+  char *ctx_name = NULL;
 
-  if (!cmd->config || cmd->config->config_type == CONF_PARAM) {
+  if (cmd->config == NULL ||
+      cmd->config->config_type == CONF_PARAM) {
     if (cmd->server->config_type == CONF_VIRTUAL) {
-      return "<VirtualHost>";
-    }
+      ctx_name = "<VirtualHost>";
 
-    return "server config";
+    } else {
+      ctx_name = "server config";
+    }
+  }
+
+  if (ctx_name != NULL) {
+    return ctx_name;
   }
 
   switch (cmd->config->config_type) {
     case CONF_DIR:
-      return "<Directory>";
+      ctx_name = "<Directory>";
+      break;
 
     case CONF_ANON:
-      return "<Anonymous>";
+      ctx_name = "<Anonymous>";
+      break;
 
     case CONF_CLASS:
-      return "<Class>";
+      ctx_name = "<Class>";
+      break;
 
     case CONF_LIMIT:
-      return "<Limit>";
+      ctx_name = "<Limit>";
+      break;
 
     case CONF_DYNDIR:
-      return ".ftpaccess";
+      ctx_name = ".ftpaccess";
+      break;
 
     case CONF_GLOBAL:
-      return "<Global>";
+      ctx_name = "<Global>";
+      break;
 
     case CONF_USERDATA:
-      return "user data";
+      ctx_name = "user data";
+      break;
 
     default:
       /* XXX should dispatch to modules here, to allow them to create and
@@ -2926,8 +3010,10 @@ char *get_context_name(cmd_rec *cmd) {
        */
       memset(cbuf, '\0', sizeof(cbuf));
       pr_snprintf(cbuf, sizeof(cbuf), "%d", cmd->config->config_type);
-      return cbuf;
+      ctx_name = cbuf;
   }
+
+  return ctx_name;
 }
 
 int get_boolean(cmd_rec *cmd, int av) {

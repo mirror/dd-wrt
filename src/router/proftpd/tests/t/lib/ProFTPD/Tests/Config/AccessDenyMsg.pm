@@ -52,7 +52,7 @@ sub accessdenymsg_ok {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -72,7 +72,7 @@ sub accessdenymsg_ok {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $access_deny_msg = '"Care to try again?"';
@@ -173,7 +173,7 @@ sub accessdenymsg_var_u_ok {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -193,7 +193,7 @@ sub accessdenymsg_var_u_ok {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $access_deny_msg = '"Care to try again, %u?"';
@@ -294,7 +294,7 @@ sub accessdenymsg_limit_user {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -314,7 +314,7 @@ sub accessdenymsg_limit_user {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $access_deny_msg = '"Care to try again?"';

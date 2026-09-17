@@ -120,17 +120,15 @@ sub chmod_octal_ok {
       $client->site('CHMOD', '444', 'test.txt');
 
       my $resp_code = $client->response_code();
-      my $resp_msg = $client->response_msg(); 
+      my $resp_msg = $client->response_msg();
 
-      my $expected;
-
-      $expected = 200;
+      my $expected = 200;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = 'SITE CHMOD command successful';
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       my $file_mode = sprintf("%lo", (stat($test_file))[2] & 07777);
       $expected = '444';
@@ -274,7 +272,7 @@ EOC
       }
 
       my $resp_code = $client->response_code();
-      my $resp_msg = $client->response_msg(); 
+      my $resp_msg = $client->response_msg();
 
       my $expected;
 

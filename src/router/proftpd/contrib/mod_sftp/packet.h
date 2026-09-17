@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp packet IO
- * Copyright (c) 2008-2021 TJ Saunders
+ * Copyright (c) 2008-2023 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -116,6 +116,13 @@ void sftp_ssh2_packet_handle_unimplemented(struct ssh2_packet *);
 int sftp_ssh2_packet_rekey_reset(void);
 int sftp_ssh2_packet_rekey_set_seqno(uint32_t);
 int sftp_ssh2_packet_rekey_set_size(off_t);
+
+/* These are used for implementing the "strict KEX" mitigations of the Terrapin
+ * attack (Issue 1760).
+ */
+uint32_t sftp_ssh2_packet_get_client_seqno(void);
+void sftp_ssh2_packet_reset_client_seqno(void);
+void sftp_ssh2_packet_reset_server_seqno(void);
 
 int sftp_ssh2_packet_send_version(void);
 int sftp_ssh2_packet_set_poll_timeout(int);

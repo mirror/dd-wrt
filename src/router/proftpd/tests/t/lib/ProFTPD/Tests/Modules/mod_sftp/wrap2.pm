@@ -235,7 +235,7 @@ sub sftp_wrap2_file_login {
         my ($err_code, $err_name, $err_str) = $ssh2->error();
         die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
       }
-      
+
       $sftp = undef;
       $ssh2->disconnect();
     };
@@ -440,7 +440,7 @@ EOS
         my ($err_code, $err_name, $err_str) = $ssh2->error();
         die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
       }
-      
+
       $sftp = undef;
       $ssh2->disconnect();
     };
@@ -555,7 +555,7 @@ sub sftp_wrap2_deny_msg_on_connect_bug3670 {
   # sess_init() callback triggers first, it will disconnect the session
   # (and generate the event) before mod_sftp's sess_init() callback has had
   # a chance to set the "SSH2" bit for the session, then mod_sftp won't
-  # properly send the WrapDenyMsg to the SSH2 client. 
+  # properly send the WrapDenyMsg to the SSH2 client.
 
   my $config = {
     PidFile => $pid_file,

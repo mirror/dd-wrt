@@ -77,7 +77,7 @@ sub abrt_daemon_ok {
   my $ex;
 
   # Start server
-  server_start($config_file); 
+  server_start($config_file);
 
   # Allow a short interval between startup and shutdown
   sleep(1);

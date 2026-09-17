@@ -1,7 +1,7 @@
 /*
  * mod_log_forensic - a buffering log module for aiding in server behavior
  *                    forensic analysis
- * Copyright (c) 2011-2017 TJ Saunders
+ * Copyright (c) 2011-2024 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,6 +41,11 @@ static pool *forensic_pool = NULL;
 static int forensic_engine = FALSE;
 static int forensic_logfd = -1;
 
+/* NOTE: We do NOT use trace logging within this module.  Why not?  Doing
+ * so creates a recursive loop, due to the default log listener for
+ * trace logging events.
+ */
+
 /* Criteria for flushing out the "forensic" logs. */
 #define FORENSIC_CRIT_FAILED_LOGIN		0x00001
 #define FORENSIC_CRIT_MODULE_CONFIG		0x00002
@@ -54,36 +59,14 @@ static unsigned long forensic_criteria = FORENSIC_CRIT_DEFAULT;
 /* Use a ring buffer for the cached/buffered log messages; the index pointing
  * to where to stash the next message then moves around the ring.
  *
- * Overwritten messages will be allocated of a module-specific pool.  To
- * prevent this pool from growing unboundedly, we need to clear/destroy it
- * periodically.  But doing this without having to re-copy all of the
- * buffered log lines could be expensive.
- *
- * Instead, what if we use subpools, for every 1/10th of the ring.  When
- * the last message for a subpool is purged/overwritten, that subpool can
- * be destroyed without effecting any existing message in the ring.
+ * Messages in the ring will each have their own pool, allocated out of
+ * a module-specific ring pool.  Whenever a message is overwritten/replaced
+ * in the ring, its message-specific pool is destroyed.
  */
-
 #define FORENSIC_DEFAULT_NMSGS		1024
-
-/* Regardless of the configured ForensicLogBufferSize, this defines the
- * number of messages per sub-pool.
- *
- * Why 256 messages per sub-pool?
- *
- *  80 chars (avg) per message * 256 messages = 20 KB
- *
- * This means that a given sub-pool will hold roughly 20 KB.  Which means
- * that 20 KB + ring max size is the largest memory that mod_log_forensic
- * should hold, before releasing a sub-pool back to the Pool API.
- */
-
-#define FORENSIC_DEFAULT_MSGS_PER_POOL		256
-static unsigned int forensic_msgs_per_pool = FORENSIC_DEFAULT_MSGS_PER_POOL;
 
 struct forensic_msg {
   pool *fm_pool;
-  unsigned int fm_pool_msgno;
 
   unsigned int fm_log_type;
   int fm_log_level;
@@ -95,8 +78,7 @@ static struct forensic_msg **forensic_msgs = NULL;
 static unsigned int forensic_nmsgs = FORENSIC_DEFAULT_NMSGS;
 static unsigned int forensic_msg_idx = 0;
 
-static pool *forensic_subpool = NULL;
-static unsigned int forensic_subpool_msgno = 1;
+static pool *forensic_ring_pool = NULL;
 
 #define FORENSIC_MAX_LEVELS	50
 static const char *forensic_log_levels[] = {
@@ -113,33 +95,29 @@ static int forensic_sess_init(void);
 static void forensic_add_msg(unsigned int log_type, int log_level,
     const char *log_msg, size_t log_msglen) {
   struct forensic_msg *fm;
-  pool *sub_pool;
   char *fm_msg;
+  pool *msg_pool;
 
   /* Get the message that's currently in the ring where we want add our new
    * one.
    */
   fm = forensic_msgs[forensic_msg_idx];
-  if (fm) {
-    /* If this message is the last one of it subpool, destroy that pool. */
-    if (fm->fm_pool_msgno == forensic_msgs_per_pool) {
-      destroy_pool(fm->fm_pool);
-    }
-
+  if (fm != NULL) {
+    destroy_pool(fm->fm_pool);
     forensic_msgs[forensic_msg_idx] = NULL;
   }
 
   /* Add this message into the ring. */
-  sub_pool = pr_pool_create_sz(forensic_subpool, 128);
-  fm = pcalloc(sub_pool, sizeof(struct forensic_msg)); 
-  fm->fm_pool = sub_pool;
-  fm->fm_pool_msgno = forensic_subpool_msgno;
+  msg_pool = pr_pool_create_sz(forensic_ring_pool, 128);
+  pr_pool_tag(msg_pool, "Forensic Msg Pool");
+  fm = pcalloc(msg_pool, sizeof(struct forensic_msg));
+  fm->fm_pool = msg_pool;
   fm->fm_log_type = log_type;
   fm->fm_log_level = log_level;
 
   fm_msg = palloc(fm->fm_pool, log_msglen + 1);
   memcpy(fm_msg, log_msg, log_msglen);
-  fm_msg[log_msglen] = '\0';   
+  fm_msg[log_msglen] = '\0';
 
   fm->fm_msg = fm_msg;
   fm->fm_msglen = log_msglen;
@@ -150,15 +128,6 @@ static void forensic_add_msg(unsigned int log_type, int log_level,
   if (forensic_msg_idx == forensic_nmsgs) {
     /* Wrap around */
     forensic_msg_idx = 0;
-  }
-
-  if (forensic_subpool_msgno == forensic_msgs_per_pool) {
-    /* Time to create a new subpool */
-    forensic_subpool = pr_pool_create_sz(forensic_pool, 256);
-    forensic_subpool_msgno = 1;
-
-  } else {
-    forensic_subpool_msgno++;
   }
 }
 
@@ -172,7 +141,7 @@ static const char *forensic_get_begin_marker(unsigned int criterion,
       break;
 
     case FORENSIC_CRIT_MODULE_CONFIG:
-      marker = "-----BEGIN MODULE CONFIG FORENSICS-----\n"; 
+      marker = "-----BEGIN MODULE CONFIG FORENSICS-----\n";
       break;
 
     case FORENSIC_CRIT_UNTIMELY_DEATH:
@@ -199,7 +168,7 @@ static const char *forensic_get_end_marker(unsigned int criterion,
     case FORENSIC_CRIT_MODULE_CONFIG:
       marker = "-----END MODULE CONFIG FORENSICS-----\n";
       break;
-    
+
     case FORENSIC_CRIT_UNTIMELY_DEATH:
       marker = "-----END UNTIMELY DEATH FORENSICS-----\n";
       break;
@@ -437,7 +406,7 @@ static void forensic_write_metadata(void) {
     iov[niov].iov_base = total_bytes_in_str;
     iov[niov].iov_len = res;
     niov++;
-  } 
+  }
 
   /* Total bytes out */
   iov[niov].iov_base = "Total-Bytes-Out: ";
@@ -614,10 +583,7 @@ static void forensic_write_msgs(unsigned int criterion) {
         res = write(forensic_logfd, "\n", 1);
       }
 
-      if (fm->fm_pool_msgno == forensic_msgs_per_pool) {
-        destroy_pool(fm->fm_pool);
-      }
-
+      destroy_pool(fm->fm_pool);
       forensic_msgs[i] = NULL;
     }
 
@@ -655,7 +621,7 @@ MODRET set_forensiclogbuffersize(cmd_rec *cmd) {
   if (count == 0) {
     CONF_ERROR(cmd, "size must be greater than zero");
   }
- 
+
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = palloc(c->pool, sizeof(unsigned int));
   *((unsigned int *) c->argv[0]) = count;
@@ -768,19 +734,19 @@ MODRET set_forensiclogcriteria(cmd_rec *cmd) {
 /* usage: ForensicLogEngine on|off */
 MODRET set_forensiclogengine(cmd_rec *cmd) {
   config_rec *c;
-  int bool;
+  int engine;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
+  engine = get_boolean(cmd, 1);
+  if (engine == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
   }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = palloc(c->pool, sizeof(int));
-  *((int *) c->argv[0]) = bool;
+  *((int *) c->argv[0]) = engine;
 
   return PR_HANDLED(cmd);
 }
@@ -876,12 +842,10 @@ static void forensic_sess_reinit_ev(const void *event_data, void *user_data) {
   forensic_nmsgs = FORENSIC_DEFAULT_NMSGS;
   forensic_msg_idx = 0;
 
-  if (forensic_subpool != NULL) {
-    destroy_pool(forensic_subpool);
-    forensic_subpool = NULL;
+  if (forensic_ring_pool != NULL) {
+    destroy_pool(forensic_ring_pool);
+    forensic_ring_pool = NULL;
   }
-
-  forensic_subpool_msgno = 1;
 
   res = forensic_sess_init();
   if (res < 0) {
@@ -970,7 +934,7 @@ static int forensic_sess_init(void) {
 
   /* Are there any log types for which we shouldn't be listening? */
   c = find_config(main_server->conf, CONF_PARAM, "ForensicLogCapture", FALSE);
-  if (c) {
+  if (c != NULL) {
     unspec_listen = *((int *) c->argv[0]);
     xferlog_listen = *((int *) c->argv[1]);
     syslog_listen = *((int *) c->argv[2]);
@@ -981,7 +945,7 @@ static int forensic_sess_init(void) {
 
   /* What criteria are we to use for logging our captured log messages */
   c = find_config(main_server->conf, CONF_PARAM, "ForensicLogCriteria", FALSE);
-  if (c) {
+  if (c != NULL) {
     forensic_criteria = *((unsigned long *) c->argv[0]);
   }
 
@@ -992,17 +956,14 @@ static int forensic_sess_init(void) {
 
   c = find_config(main_server->conf, CONF_PARAM, "ForensicLogBufferSize",
     FALSE);
-  if (c) {
+  if (c != NULL) {
     forensic_nmsgs = *((unsigned int *) c->argv[0]);
-
-    if (forensic_nmsgs < forensic_msgs_per_pool) {
-      forensic_msgs_per_pool = forensic_nmsgs;
-    }
   }
 
   forensic_msgs = pcalloc(forensic_pool,
     sizeof(struct forensic_msg) * forensic_nmsgs);
-  forensic_subpool = pr_pool_create_sz(forensic_pool, 256);
+  forensic_ring_pool = pr_pool_create_sz(forensic_pool, 256);
+  pr_pool_tag(forensic_ring_pool, "Forensic Ring Pool");
 
   /* We register our event listeners as the last thing we do. */
 
@@ -1012,32 +973,32 @@ static int forensic_sess_init(void) {
       NULL);
   }
 
-  if (unspec_listen) {
+  if (unspec_listen == TRUE) {
     pr_event_register(&log_forensic_module, "core.log.unspec", forensic_log_ev,
       NULL);
   }
 
-  if (xferlog_listen) {
+  if (xferlog_listen == TRUE) {
     pr_event_register(&log_forensic_module, "core.log.xferlog", forensic_log_ev,
       NULL);
   }
 
-  if (syslog_listen) {
+  if (syslog_listen == TRUE) {
     pr_event_register(&log_forensic_module, "core.log.syslog", forensic_log_ev,
       NULL);
   }
 
-  if (systemlog_listen) {
+  if (systemlog_listen == TRUE) {
     pr_event_register(&log_forensic_module, "core.log.systemlog",
       forensic_log_ev, NULL);
   }
 
-  if (extlog_listen) {
+  if (extlog_listen == TRUE) {
     pr_event_register(&log_forensic_module, "core.log.extlog", forensic_log_ev,
       NULL);
   }
 
-  if (tracelog_listen) {
+  if (tracelog_listen == TRUE) {
     pr_event_register(&log_forensic_module, "core.log.tracelog",
       forensic_log_ev, NULL);
   }

@@ -399,7 +399,7 @@ sub list_dir {
     my ($err_code, $err_name, $err_str) = $ssh2->error();
     die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
   }
- 
+
   my $sftp = $ssh2->sftp();
   unless ($sftp) {
     my ($err_code, $err_name, $err_str) = $ssh2->error();
@@ -419,7 +419,7 @@ sub list_dir {
     $res->{$file->{name}} = $file;
     $file = $dir->read();
   }
- 
+
   # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
   $dir = undef;
 
@@ -449,7 +449,7 @@ sub download_file {
     my ($err_code, $err_name, $err_str) = $ssh2->error();
     die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
   }
- 
+
   my $sftp = $ssh2->sftp();
   unless ($sftp) {
     my ($err_code, $err_name, $err_str) = $ssh2->error();
@@ -501,7 +501,7 @@ sub upload_file {
     my ($err_code, $err_name, $err_str) = $ssh2->error();
     die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
   }
- 
+
   my $sftp = $ssh2->sftp();
   unless ($sftp) {
     my ($err_code, $err_name, $err_str) = $ssh2->error();
@@ -514,7 +514,7 @@ sub upload_file {
     die("Can't open $file_path: [$err_name] ($err_code)");
   }
 
-  for (my $i = 0; $i < 1024; $i++) { 
+  for (my $i = 0; $i < 1024; $i++) {
     my $buf = ("A" x $file_kb_len);
     print $fh $buf;
   }
@@ -670,7 +670,7 @@ sub snmp_sftp_v1_get_sess_counts {
       unless ($ssh2->auth_password($user, $passwd)) {
         my ($err_code, $err_name, $err_str) = $ssh2->error();
         die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
-      } 
+      }
 
       # Then, get the session counts again.  Since we've logged in, but NOT
       # yet requested the SFTP service, the counts should still be zero.

@@ -57,7 +57,7 @@ sub userowner_file {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -81,9 +81,9 @@ sub userowner_file {
   my $owner_uid = 1000;
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_user_write($auth_user_file, $owner, "none", $owner_uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
@@ -201,7 +201,7 @@ sub userowner_dir {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -225,9 +225,9 @@ sub userowner_dir {
   my $owner_uid = 1000;
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_user_write($auth_user_file, $owner, "none", $owner_uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $test_dir = File::Spec->rel2abs("$tmpdir/test.d");
@@ -344,7 +344,7 @@ sub userowner_failed_norootprivs {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $owner = 'proftpd2';
   my $owner_uid = 1000;
 
@@ -381,9 +381,9 @@ sub userowner_failed_norootprivs {
   my ($uid, $gid) = (getpwnam($config_user))[2,3];
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_user_write($auth_user_file, $owner, "none", $owner_uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
@@ -490,7 +490,7 @@ sub userowner_anon_mkd {
   }
 
   auth_user_write($auth_user_file, $config_user, 'foo', $uid, $gid, '/tmp',
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $config_group, $gid, $config_user);
 
   my $test_dir = File::Spec->rel2abs("$anon_dir/test.d");

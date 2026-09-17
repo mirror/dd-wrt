@@ -937,6 +937,9 @@ EOS
 
         # Assumes default table names, column names
         AuthOTPTable => 'sql:/get-user-hotp/update-user-hotp',
+
+        # Table entries are now required by default, per Issue #1562
+        AuthOTPOptions => 'OptionalTableEntry',
       },
 
       'mod_sftp.c' => [
@@ -1742,6 +1745,9 @@ EOS
 
         # Assumes default table names, column names
         AuthOTPTable => 'sql:/get-user-totp/update-user-totp',
+
+        # Table entries are now required by default, per Issue #1562
+        AuthOTPOptions => 'OptionalTableEntry',
       },
 
       'mod_sftp.c' => [
@@ -3101,6 +3107,9 @@ EOS
 
         # Assumes default table names, column names
         AuthOTPTable => 'sql:/get-user-totp/update-user-totp',
+
+        # Table entries are now required by default, per Issue #1562
+        AuthOTPOptions => 'OptionalTableEntry',
       },
 
       'mod_sftp.c' => [
@@ -3257,6 +3266,9 @@ EOS
 
         # Assumes default table names, column names
         AuthOTPTable => 'sql:/get-user-totp/update-user-totp',
+
+        # Table entries are now required by default, per Issue #1562
+        AuthOTPOptions => 'OptionalTableEntry',
       },
 
       'mod_sftp.c' => [

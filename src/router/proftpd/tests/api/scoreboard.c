@@ -66,7 +66,7 @@ static void tear_down(void) {
   if (p) {
     destroy_pool(p);
     p = permanent_pool = NULL;
-  } 
+  }
 }
 
 START_TEST (scoreboard_get_test) {
@@ -176,7 +176,7 @@ START_TEST (scoreboard_set_test) {
 
   path = pr_get_scoreboard();
   ck_assert_msg(path != NULL, "Failed to get scoreboard path: %s",
-    strerror(errno));  
+    strerror(errno));
   ck_assert_msg(strcmp("/tmp/prt-scoreboard/bar", path) == 0,
     "Expected '%s', got '%s'", "/tmp/prt-scoreboard/bar", path);
 
@@ -193,11 +193,12 @@ START_TEST (scoreboard_set_mutex_test) {
   ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_set_scoreboard_mutex("/tmp");
-  ck_assert_msg(res == 0, "Failed to set scoreboard mutex: %s", strerror(errno));
+  ck_assert_msg(res == 0, "Failed to set scoreboard mutex: %s",
+    strerror(errno));
 
   path = pr_get_scoreboard_mutex();
   ck_assert_msg(path != NULL, "Failed to get scoreboard mutex path: %s",
-    strerror(errno));  
+    strerror(errno));
   ck_assert_msg(strcmp("/tmp", path) == 0,
     "Expected '%s', got '%s'", "/tmp", path);
 }
@@ -925,8 +926,8 @@ START_TEST (scoreboard_entry_update_test) {
   val = "cwd";
   res = pr_scoreboard_entry_update(pid, PR_SCORE_CWD, val, NULL);
   ck_assert_msg(res == 0, "Failed to update PR_SCORE_CWD: %s", strerror(errno));
- 
-  val = pr_scoreboard_entry_get(PR_SCORE_CWD); 
+
+  val = pr_scoreboard_entry_get(PR_SCORE_CWD);
   ck_assert_msg(val != NULL, "Failed to get entry PR_SCORE_CWD: %s",
     strerror(errno));
   ck_assert_msg(strcmp(val, "cwd") == 0, "Expected 'cwd', got '%s'", val);
@@ -975,7 +976,7 @@ START_TEST (scoreboard_entry_update_test) {
   res = pr_scoreboard_entry_update(pid, PR_SCORE_SERVER_LABEL, val, NULL);
   ck_assert_msg(res == 0, "Failed to update PR_SCORE_SERVER_LABEL: %s",
     strerror(errno));
- 
+
   now = 1;
   res = pr_scoreboard_entry_update(pid, PR_SCORE_BEGIN_IDLE, now, NULL);
   ck_assert_msg(res == 0, "Failed to update PR_SCORE_BEGIN_IDLE: %s",
@@ -1109,7 +1110,7 @@ START_TEST (scoreboard_disabled_test) {
   };
   const char *path;
 
-  for (path = paths[i]; path != NULL; path = paths[i++]) { 
+  for (path = paths[i]; path != NULL; path = paths[i++]) {
     int res;
     const char *field, *ok;
     pid_t scoreboard_pid;

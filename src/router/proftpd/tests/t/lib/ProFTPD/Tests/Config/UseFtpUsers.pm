@@ -86,7 +86,7 @@ sub get_user {
     return "unknown";
 
   } else {
-    return (keys(%$users))[0]; 
+    return (keys(%$users))[0];
   }
 }
 
@@ -114,7 +114,7 @@ sub useftpusers_off_unlisted_user {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
@@ -219,7 +219,7 @@ sub useftpusers_off_listed_user {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
@@ -324,7 +324,7 @@ sub useftpusers_on_unlisted_user {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
@@ -429,7 +429,7 @@ sub useftpusers_on_listed_user {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }

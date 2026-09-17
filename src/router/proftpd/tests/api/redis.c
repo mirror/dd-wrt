@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2017-2021 The ProFTPD Project team
+ * Copyright (c) 2017-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -118,9 +118,7 @@ START_TEST (redis_conn_new_test) {
   res = pr_redis_conn_destroy(redis);
   ck_assert_msg(res == TRUE, "Failed to close redis: %s", strerror(errno));
 
-  if (getenv("CI") == NULL &&
-      getenv("CIRRUS_CLONE_DEPTH") == NULL &&
-      getenv("TRAVIS") == NULL) {
+  if (getenv("CI") == NULL) {
     /* Now deliberately set the wrong server and port. */
     redis_set_server("127.1.2.3", redis_port, 0UL, NULL, NULL);
 
@@ -737,9 +735,7 @@ START_TEST (redis_sentinel_conn_new_test) {
 
   sentinels = make_array(p, 0, sizeof(pr_netaddr_t *));
 
-  if (getenv("CI") != NULL ||
-      getenv("CIRRUS_CLONE_DEPTH") != NULL ||
-      getenv("TRAVIS") != NULL) {
+  if (getenv("CI") != NULL) {
     /* Treat the local Redis server as a Sentinel. */
     addr = pr_netaddr_get_addr(p, "127.0.0.1", NULL);
     pr_netaddr_set_port2((pr_netaddr_t *) addr, 6379);

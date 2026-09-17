@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sql_passwd -- Various SQL password handlers
- * Copyright (c) 2009-2021 TJ Saunders
- *  
+ * Copyright (c) 2009-2025 TJ Saunders
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -31,7 +31,7 @@
 
 #define MOD_SQL_PASSWD_VERSION		"mod_sql_passwd/1.2"
 
-#ifdef PR_USE_SODIUM
+#if defined(PR_USE_SODIUM)
 # include <sodium.h>
 /* Use/support Argon2, if libsodium is new enough. */
 # if SODIUM_LIBRARY_VERSION_MAJOR > 9 || \
@@ -102,14 +102,14 @@ static int sql_passwd_pbkdf2_len = -1;
 #define SQL_PASSWD_ERR_PBKDF2_BAD_ROUNDS		-3
 #define SQL_PASSWD_ERR_PBKDF2_BAD_LENGTH		-4
 
-#ifdef PR_USE_SODIUM
+#if defined(PR_USE_SODIUM)
 /* For Scrypt */
 # define SQL_PASSWD_SCRYPT_DEFAULT_HASH_SIZE	32U
 # define SQL_PASSWD_SCRYPT_DEFAULT_SALT_SIZE	32U
 static unsigned int sql_passwd_scrypt_hash_len = SQL_PASSWD_SCRYPT_DEFAULT_HASH_SIZE;
 
 /* For Argon2 */
-# ifdef USE_SODIUM_ARGON2
+# if defined(USE_SODIUM_ARGON2)
 #  define SQL_PASSWD_ARGON2_DEFAULT_HASH_SIZE	32U
 #  define SQL_PASSWD_ARGON2_DEFAULT_SALT_SIZE	16U
 static unsigned int sql_passwd_argon2_hash_len = SQL_PASSWD_ARGON2_DEFAULT_HASH_SIZE;
@@ -127,11 +127,11 @@ static cmd_rec *sql_passwd_cmd_create(pool *parent_pool,
   pool *cmd_pool = NULL;
   cmd_rec *cmd = NULL;
   va_list argp;
- 
+
   cmd_pool = make_sub_pool(parent_pool);
   cmd = (cmd_rec *) pcalloc(cmd_pool, sizeof(cmd_rec));
   cmd->pool = cmd_pool;
- 
+
   cmd->argc = argc;
   cmd->argv = pcalloc(cmd->pool, argc * sizeof(void *));
 
@@ -141,7 +141,7 @@ static cmd_rec *sql_passwd_cmd_create(pool *parent_pool,
   va_start(argp, argc);
   for (i = 0; i < argc; i++) {
     cmd->argv[i] = va_arg(argp, char *);
-  } 
+  }
   va_end(argp);
 
   return cmd;
@@ -504,7 +504,7 @@ static modret_t *sql_passwd_auth(cmd_rec *cmd, const char *plaintext,
   const EVP_MD *md;
   unsigned char *hash = NULL, *data = NULL, *prefix = NULL, *suffix = NULL;
   size_t data_len = 0, prefix_len = 0, suffix_len = 0;
-  unsigned int hash_len = 0;
+  unsigned int cmp_len = 0, copytext_len = 0, hash_len = 0;
 
   /* Temporary copy of the ciphertext string */
   char *copytext;
@@ -516,6 +516,13 @@ static modret_t *sql_passwd_auth(cmd_rec *cmd, const char *plaintext,
     sql_log(DEBUG_WARN, MOD_SQL_PASSWD_VERSION
       ": SQLPasswordEngine disabled; unable to handle %s SQLAuthType", digest);
     return PR_ERROR_INT(cmd, PR_AUTH_ERROR);
+  }
+
+  /* Reject stored empty password fields (Issue #2275). */
+  if (*ciphertext == '\0') {
+    sql_log(DEBUG_WARN, MOD_SQL_PASSWD_VERSION
+      ": ignoring empty password field");
+    return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
   }
 
   md = EVP_get_digestbyname(digest);
@@ -656,7 +663,7 @@ static modret_t *sql_passwd_auth(cmd_rec *cmd, const char *plaintext,
         suffix_len = strlen((char *) suffix);
       }
 
-      pr_trace_msg(trace_channel, 9, 
+      pr_trace_msg(trace_channel, 9,
         "appending %lu bytes of %s-hashed file salt data",
         (unsigned long) suffix_len, digest);
     }
@@ -687,7 +694,7 @@ static modret_t *sql_passwd_auth(cmd_rec *cmd, const char *plaintext,
         suffix_len = strlen((char *) suffix);
       }
 
-      pr_trace_msg(trace_channel, 9, 
+      pr_trace_msg(trace_channel, 9,
         "appending %lu bytes of %s-hashed user salt data",
         (unsigned long) suffix_len, digest);
     }
@@ -717,7 +724,7 @@ static modret_t *sql_passwd_auth(cmd_rec *cmd, const char *plaintext,
     register unsigned int i;
     unsigned long nrounds = sql_passwd_nrounds - 1;
 
-    pr_trace_msg(trace_channel, 9, 
+    pr_trace_msg(trace_channel, 9,
       "transforming the data for another %lu %s", nrounds,
       nrounds != 1 ? "rounds" : "round");
 
@@ -734,7 +741,14 @@ static modret_t *sql_passwd_auth(cmd_rec *cmd, const char *plaintext,
     }
   }
 
-  if (timingsafe_bcmp(encodedtext, copytext, strlen(copytext)) == 0) {
+  /* Use the longer of the two texts for comparison length. */
+  cmp_len = strlen(encodedtext);
+  copytext_len = strlen(copytext);
+  if (copytext_len > cmp_len) {
+    cmp_len = copytext_len;
+  }
+
+  if (timingsafe_bcmp(encodedtext, copytext, cmp_len) == 0) {
     return PR_HANDLED(cmd);
   }
 
@@ -749,7 +763,7 @@ static modret_t *sql_passwd_auth(cmd_rec *cmd, const char *plaintext,
 static modret_t *sql_passwd_bcrypt(cmd_rec *cmd, const char *plaintext,
     const char *ciphertext) {
   char *hashed;
-  size_t hashed_len = 0;
+  size_t ciphertext_len = 0, cmp_len = 0, hashed_len = 0;
 
   if (sql_passwd_engine == FALSE) {
     pr_log_pri(PR_LOG_INFO, MOD_SQL_PASSWD_VERSION
@@ -757,6 +771,13 @@ static modret_t *sql_passwd_bcrypt(cmd_rec *cmd, const char *plaintext,
     sql_log(DEBUG_WARN, MOD_SQL_PASSWD_VERSION
       ": SQLPasswordEngine disabled; unable to handle bcrypt SQLAuthType");
     return PR_ERROR_INT(cmd, PR_AUTH_ERROR);
+  }
+
+  /* Reject stored empty password fields (Issue #2275). */
+  if (*ciphertext == '\0') {
+    sql_log(DEBUG_WARN, MOD_SQL_PASSWD_VERSION
+      ": ignoring empty password field");
+    return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
   }
 
   /* OpenSSL does not implement the bcrypt algorithm, so we handle it
@@ -769,7 +790,14 @@ static modret_t *sql_passwd_bcrypt(cmd_rec *cmd, const char *plaintext,
     return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
   }
 
-  if (timingsafe_bcmp(hashed, ciphertext, strlen(ciphertext)) == 0) {
+  /* Use the longer of the two texts for comparison length. */
+  cmp_len = strlen(hashed);
+  ciphertext_len = strlen(ciphertext);
+  if (ciphertext_len > cmp_len) {
+    cmp_len = ciphertext_len;
+  }
+
+  if (timingsafe_bcmp(hashed, ciphertext, cmp_len) == 0) {
     return PR_HANDLED(cmd);
   }
 
@@ -805,7 +833,7 @@ static modret_t *sql_passwd_pbkdf2(cmd_rec *cmd, const char *plaintext,
   unsigned char *derived_key;
   const char *encodedtext;
   char *pbkdf2_salt = NULL;
-  size_t pbkdf2_salt_len = 0;
+  size_t ciphertext_len = 0, cmp_len = 0, pbkdf2_salt_len = 0;
   int res;
 
   if (sql_passwd_engine == FALSE) {
@@ -814,6 +842,13 @@ static modret_t *sql_passwd_pbkdf2(cmd_rec *cmd, const char *plaintext,
     sql_log(DEBUG_WARN, MOD_SQL_PASSWD_VERSION
       ": SQLPasswordEngine disabled; unable to handle PBKDF2 SQLAuthType");
     return PR_ERROR_INT(cmd, PR_AUTH_ERROR);
+  }
+
+  /* Reject stored empty password fields (Issue #2275). */
+  if (*ciphertext == '\0') {
+    sql_log(DEBUG_WARN, MOD_SQL_PASSWD_VERSION
+      ": ignoring empty password field");
+    return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
   }
 
   if (sql_passwd_pbkdf2_digest == NULL) {
@@ -871,7 +906,14 @@ static modret_t *sql_passwd_pbkdf2(cmd_rec *cmd, const char *plaintext,
     return PR_ERROR_INT(cmd, PR_AUTH_ERROR);
   }
 
-  if (timingsafe_bcmp(encodedtext, ciphertext, strlen(ciphertext)) == 0) {
+  /* Use the longer of the two texts for comparison length. */
+  cmp_len = strlen(encodedtext);
+  ciphertext_len = strlen(ciphertext);
+  if (ciphertext_len > cmp_len) {
+    cmp_len = ciphertext_len;
+  }
+
+  if (timingsafe_bcmp(encodedtext, ciphertext, cmp_len) == 0) {
     return PR_HANDLED(cmd);
   }
 
@@ -883,7 +925,7 @@ static modret_t *sql_passwd_pbkdf2(cmd_rec *cmd, const char *plaintext,
   return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
 }
 
-#ifdef PR_USE_SODIUM
+#if defined(PR_USE_SODIUM)
 static modret_t *sql_passwd_scrypt(cmd_rec *cmd, const char *plaintext,
     const char *ciphertext) {
   int res;
@@ -891,6 +933,7 @@ static modret_t *sql_passwd_scrypt(cmd_rec *cmd, const char *plaintext,
   unsigned int hash_len = 0;
   const char *encodedtext;
   const unsigned char *scrypt_salt;
+  size_t ciphertext_len = 0, cmp_len = 0;
   size_t ops_limit, mem_limit, plaintext_len, scrypt_salt_len;
 
   if (sql_passwd_engine == FALSE) {
@@ -899,6 +942,13 @@ static modret_t *sql_passwd_scrypt(cmd_rec *cmd, const char *plaintext,
     sql_log(DEBUG_WARN, MOD_SQL_PASSWD_VERSION
       ": SQLPasswordEngine disabled; unable to handle scrypt SQLAuthType");
     return PR_ERROR_INT(cmd, PR_AUTH_ERROR);
+  }
+
+  /* Reject stored empty password fields (Issue #2275). */
+  if (*ciphertext == '\0') {
+    sql_log(DEBUG_WARN, MOD_SQL_PASSWD_VERSION
+      ": ignoring empty password field");
+    return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
   }
 
   /* scrypt requires a salt; if no salt is configured, it is an error. */
@@ -964,7 +1014,14 @@ static modret_t *sql_passwd_scrypt(cmd_rec *cmd, const char *plaintext,
     return PR_ERROR_INT(cmd, PR_AUTH_ERROR);
   }
 
-  if (timingsafe_bcmp(encodedtext, ciphertext, strlen(ciphertext)) == 0) {
+  /* Use the longer of the two texts for comparison length. */
+  cmp_len = strlen(encodedtext);
+  ciphertext_len = strlen(ciphertext);
+  if (ciphertext_len > cmp_len) {
+    cmp_len = ciphertext_len;
+  }
+
+  if (timingsafe_bcmp(encodedtext, ciphertext, cmp_len) == 0) {
     return PR_HANDLED(cmd);
   }
 
@@ -984,6 +1041,7 @@ static modret_t *sql_passwd_argon2(cmd_rec *cmd, const char *plaintext,
   unsigned int hash_len = 0;
   const char *encodedtext;
   const unsigned char *argon2_salt;
+  size_t ciphertext_len = 0, cmp_len = 0;
   size_t ops_limit, mem_limit, plaintext_len, argon2_salt_len;
 
   if (sql_passwd_engine == FALSE) {
@@ -992,6 +1050,13 @@ static modret_t *sql_passwd_argon2(cmd_rec *cmd, const char *plaintext,
     sql_log(DEBUG_WARN, MOD_SQL_PASSWD_VERSION
       ": SQLPasswordEngine disabled; unable to handle argon2 SQLAuthType");
     return PR_ERROR_INT(cmd, PR_AUTH_ERROR);
+  }
+
+  /* Reject stored empty password fields (Issue #2275). */
+  if (*ciphertext == '\0') {
+    sql_log(DEBUG_WARN, MOD_SQL_PASSWD_VERSION
+      ": ignoring empty password field");
+    return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
   }
 
   /* argon2 requires a salt; if no salt is configured, it is an error. */
@@ -1059,7 +1124,14 @@ static modret_t *sql_passwd_argon2(cmd_rec *cmd, const char *plaintext,
     return PR_ERROR_INT(cmd, PR_AUTH_ERROR);
   }
 
-  if (timingsafe_bcmp(encodedtext, ciphertext, strlen(ciphertext)) == 0) {
+  /* Use the longer of the two texts for comparison length. */
+  cmp_len = strlen(encodedtext);
+  ciphertext_len = strlen(ciphertext);
+  if (ciphertext_len > cmp_len) {
+    cmp_len = ciphertext_len;
+  }
+
+  if (timingsafe_bcmp(encodedtext, ciphertext, cmp_len) == 0) {
     return PR_HANDLED(cmd);
   }
 
@@ -1090,7 +1162,7 @@ static void sql_passwd_mod_unload_ev(const void *event_data, void *user_data) {
     sql_unregister_authtype("sha256");
     sql_unregister_authtype("sha512");
     sql_unregister_authtype("pbkdf2");
-# ifdef PR_USE_SODIUM
+# if defined(PR_USE_SODIUM)
     sql_unregister_authtype("argon2");
     sql_unregister_authtype("scrypt");
 # endif /* PR_USE_SODIUM */
@@ -1132,7 +1204,7 @@ MODRET sql_passwd_pre_pass(cmd_rec *cmd) {
 
       key = c->argv[0];
 
-      ptr = key + 5; 
+      ptr = key + 5;
       named_query = pstrcat(cmd->tmp_pool, "SQLNamedQuery_", ptr, NULL);
 
       c = find_config(main_server->conf, CONF_PARAM, named_query, FALSE);
@@ -1293,9 +1365,9 @@ MODRET sql_passwd_pre_pass(cmd_rec *cmd) {
 
       values = sql_data->elts;
 
-      /* Note: this ASSUMES that the value coming from the database is a 
+      /* Note: this ASSUMES that the value coming from the database is a
        * string.
-       */ 
+       */
       value_len = strlen(values[0]);
 
       sql_passwd_user_salt = sql_passwd_decode(session.pool,
@@ -1323,7 +1395,7 @@ MODRET sql_passwd_pre_pass(cmd_rec *cmd) {
 
 /* usage: SQLPasswordArgon2 len */
 MODRET set_sqlpasswdargon2(cmd_rec *cmd) {
-#ifdef USE_SODIUM_ARGON2
+#if defined(USE_SODIUM_ARGON2)
   config_rec *c;
   int len;
 
@@ -1395,7 +1467,7 @@ MODRET set_sqlpasswdencoding(cmd_rec *cmd) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unsupported encoding '",
       cmd->argv[1], "' configured", NULL));
   }
- 
+
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
   *((unsigned int *) c->argv[0]) = encoding;
@@ -1405,19 +1477,20 @@ MODRET set_sqlpasswdencoding(cmd_rec *cmd) {
 
 /* usage: SQLPasswordEngine on|off */
 MODRET set_sqlpasswdengine(cmd_rec *cmd) {
-  int bool = -1;
+  int engine = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  engine = get_boolean(cmd, 1);
+  if (engine == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(int));
-  *((int *) c->argv[0]) = bool;
+  *((int *) c->argv[0]) = engine;
 
   return PR_HANDLED(cmd);
 }
@@ -1458,6 +1531,13 @@ MODRET set_sqlpasswdoptions(cmd_rec *cmd) {
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = palloc(c->pool, sizeof(unsigned long));
   *((unsigned long *) c->argv[0]) = opts;
+
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
 
   return PR_HANDLED(cmd);
 }
@@ -1566,7 +1646,7 @@ MODRET set_sqlpasswdsaltfile(cmd_rec *cmd) {
     if (strcasecmp(cmd->argv[i], "Append") == 0) {
       flags &= ~SQL_PASSWD_SALT_FL_PREPEND;
       flags |= SQL_PASSWD_SALT_FL_APPEND;
- 
+
     } else if (strcasecmp(cmd->argv[i], "Prepend") == 0) {
       flags &= ~SQL_PASSWD_SALT_FL_APPEND;
       flags |= SQL_PASSWD_SALT_FL_PREPEND;
@@ -1587,7 +1667,7 @@ MODRET set_sqlpasswdsaltfile(cmd_rec *cmd) {
 
 /* usage: SQLPasswordScrypt len */
 MODRET set_sqlpasswdscrypt(cmd_rec *cmd) {
-#ifdef PR_USE_SODIUM
+#if defined(PR_USE_SODIUM)
   config_rec *c;
   int len;
 
@@ -1631,7 +1711,7 @@ MODRET set_sqlpasswdusersalt(cmd_rec *cmd) {
     if (strcasecmp(cmd->argv[i], "Append") == 0) {
       flags &= ~SQL_PASSWD_SALT_FL_PREPEND;
       flags |= SQL_PASSWD_SALT_FL_APPEND;
- 
+
     } else if (strcasecmp(cmd->argv[i], "Prepend") == 0) {
       flags &= ~SQL_PASSWD_SALT_FL_APPEND;
       flags |= SQL_PASSWD_SALT_FL_PREPEND;
@@ -1673,9 +1753,9 @@ static void sql_passwd_sess_reinit_ev(const void *event_data, void *user_data) {
   sql_passwd_opts = 0UL;
   sql_passwd_nrounds = 1;
 
-#ifdef PR_USE_SODIUM
+#if defined(PR_USE_SODIUM)
   sql_passwd_scrypt_hash_len = SQL_PASSWD_SCRYPT_DEFAULT_HASH_SIZE;
-# ifdef USE_SODIUM_ARGON2
+# if defined(USE_SODIUM_ARGON2)
   sql_passwd_argon2_hash_len = SQL_PASSWD_ARGON2_DEFAULT_HASH_SIZE;
 # endif /* USE_SODIUM_ARGON2 */
 #endif /* PR_USE_SODIUM */
@@ -1701,7 +1781,7 @@ static int sql_passwd_init(void) {
     sql_passwd_mod_unload_ev, NULL);
 #endif /* PR_SHARED_MODULE */
 
-#ifdef PR_USE_SODIUM
+#if defined(PR_USE_SODIUM)
   if (sodium_init() < 0) {
     pr_log_pri(PR_LOG_NOTICE, MOD_SQL_PASSWD_VERSION
       ": error initializing libsodium");
@@ -1769,7 +1849,7 @@ static int sql_passwd_init(void) {
       ": registered 'pbkdf2' SQLAuthType handler");
   }
 
-#ifdef PR_USE_SODIUM
+#if defined(PR_USE_SODIUM)
   if (sql_register_authtype("scrypt", sql_passwd_scrypt) < 0) {
     pr_log_pri(PR_LOG_WARNING, MOD_SQL_PASSWD_VERSION
       ": unable to register 'scrypt' SQLAuthType handler: %s", strerror(errno));
@@ -1863,7 +1943,7 @@ static int sql_passwd_sess_init(void) {
          */
         char buf[512];
         ssize_t nread;
-  
+
         /* Set this descriptor for blocking. */
         flags = fcntl(fd, F_GETFL);
         if (fcntl(fd, F_SETFL, flags & (U32BITS^O_NONBLOCK)) < 0) {
@@ -1871,7 +1951,7 @@ static int sql_passwd_sess_init(void) {
             ": error setting blocking mode on SQLPasswordSaltFile '%s': %s",
             path, strerror(errno));
         }
- 
+
         nread = read(fd, buf, sizeof(buf));
         while (nread > 0) {
           pr_signals_handle();
@@ -1944,13 +2024,13 @@ static int sql_passwd_sess_init(void) {
     }
   }
 
-#ifdef PR_USE_SODIUM
+#if defined(PR_USE_SODIUM)
   c = find_config(main_server->conf, CONF_PARAM, "SQLPasswordScrypt", FALSE);
   if (c != NULL) {
     sql_passwd_scrypt_hash_len = *((unsigned int *) c->argv[0]);
   }
 
-# ifdef USE_SODIUM_ARGON2
+# if defined(USE_SODIUM_ARGON2)
   c = find_config(main_server->conf, CONF_PARAM, "SQLPasswordArgon2", FALSE);
   if (c != NULL) {
     sql_passwd_argon2_hash_len = *((unsigned int *) c->argv[0]);

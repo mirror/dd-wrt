@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2022 The ProFTPD Project team
+ * Copyright (c) 2001-2025 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -266,7 +266,6 @@ char *dir_interpolate(pool *p, const char *path) {
 
   if (*path == '~') {
     char *ptr, *user;
-    struct passwd *pw;
 
     user = pstrdup(p, path + 1);
     ptr = strchr(user, '/');
@@ -274,17 +273,26 @@ char *dir_interpolate(pool *p, const char *path) {
       *ptr++ = '\0';
     }
 
-    if (!*user) {
+    if (user[0] == '\0') {
       user = (char *) session.user;
     }
 
-    pw = pr_auth_getpwnam(p, user);
-    if (pw == NULL) {
-      errno = ENOENT;
-      return NULL;
-    }
+    if (session.user != NULL &&
+        strcmp(user, session.user) == 0 &&
+        session.user_homedir != NULL) {
+      res = pdircat(p, session.user_homedir, ptr, NULL);
 
-    res = pdircat(p, pw->pw_dir, ptr, NULL);
+    } else {
+      struct passwd *pw;
+
+      pw = pr_auth_getpwnam(p, user);
+      if (pw == NULL) {
+        errno = ENOENT;
+        return NULL;
+      }
+
+      res = pdircat(p, pw->pw_dir, ptr, NULL);
+    }
 
   } else {
     res = pstrdup(p, path);
@@ -661,11 +669,11 @@ char *dir_abs_path(pool *p, const char *path, int interpolate) {
       if (strncmp(path, session.chroot_path,
           strlen(session.chroot_path)) != 0) {
         res = pdircat(p, session.chroot_path, path, NULL);
- 
+
       } else {
         res = pstrdup(p, path);
       }
- 
+
     } else {
       res = pstrdup(p, path);
     }
@@ -987,7 +995,7 @@ void pr_memscrub(void *ptr, size_t ptrlen) {
    */
   OPENSSL_cleanse(ptr, ptrlen);
 
-#else 
+#else
   unsigned char *p;
   size_t loop;
 
@@ -1014,11 +1022,13 @@ void pr_getopt_reset(void) {
 #if defined(FREEBSD4) || defined(FREEBSD5) || defined(FREEBSD6) || \
     defined(FREEBSD7) || defined(FREEBSD8) || defined(FREEBSD9) || \
     defined(FREEBSD10) || defined(FREEBSD11) || defined(FREEBSD12) || \
-    defined(FREEBSD13) || \
+    defined(FREEBSD13) || defined(FREEBSD14) || \
     defined(DARWIN7) || defined(DARWIN8) || defined(DARWIN9) || \
     defined(DARWIN10) || defined(DARWIN11) || defined(DARWIN12) || \
     defined(DARWIN13) || defined(DARWIN14) || defined(DARWIN15) || \
-    defined(DARWIN16) || defined(DARWIN17) || defined(DARWIN18)
+    defined(DARWIN16) || defined(DARWIN17) || defined(DARWIN18) || \
+    defined(DARWIN19) || defined(DARWIN20) || defined(DARWIN21) || \
+    defined(DARWIN22) || defined(DARWIN23)
   optreset = 1;
   opterr = 1;
   optind = 1;

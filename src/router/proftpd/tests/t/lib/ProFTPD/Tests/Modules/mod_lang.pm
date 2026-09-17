@@ -1663,7 +1663,7 @@ sub lang_opts_utf8_useencoding_off {
 
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
- 
+
       $expected = 451;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
@@ -1915,7 +1915,7 @@ sub lang_opts_utf8_useencoding_charsets_strict {
 
       # Make sure the OPTS UTF8 command does not appear in the FEAT listing;
       # see Bug#3737.
-      $client->feat(); 
+      $client->feat();
       my $resp_code = $client->response_code();
       my $resp_msgs = $client->response_msgs();
 
@@ -2070,7 +2070,7 @@ sub lang_opts_utf8_useencoding_charsets_strict_with_utf8 {
 
       # Make sure the OPTS UTF8 command does not appear in the FEAT listing;
       # see Bug#3737.
-      $client->feat(); 
+      $client->feat();
       my $resp_code = $client->response_code();
       my $resp_msgs = $client->response_msgs();
 
@@ -2380,7 +2380,7 @@ sub lang_useencoding_latin1_utf8 {
 
       my $name = "üöä";
 
-      my $conn = $client->stor_raw($name); 
+      my $conn = $client->stor_raw($name);
       unless ($conn) {
         die("STOR $name failed: " . $client->response_code() . " " .
           $client->response_msg());
@@ -2518,7 +2518,7 @@ sub lang_useencoding_utf8_latin1 {
 
       my $name = "Grafik-Zentrumäüu.png";
 
-      my $conn = $client->stor_raw($name); 
+      my $conn = $client->stor_raw($name);
       unless ($conn) {
         die("STOR $name failed: " . $client->response_code() . " " .
           $client->response_msg());
@@ -2650,7 +2650,7 @@ sub lang_opts_utf8_prefer_server_encoding_bug4125 {
 
       # Make sure the OPTS UTF8 command does not appear in the FEAT listing;
       # see Bug#3737.
-      $client->feat(); 
+      $client->feat();
       my $resp_code = $client->response_code();
       my $resp_msgs = $client->response_msgs();
 
@@ -2806,7 +2806,7 @@ sub lang_opts_utf8_useencoding_charsets_prefer_server_encoding_bug4125 {
 
       # Make sure the OPTS UTF8 command does not appear in the FEAT listing;
       # see Bug#3737.
-      $client->feat(); 
+      $client->feat();
       my $resp_code = $client->response_code();
       my $resp_msgs = $client->response_msgs();
 
@@ -2971,14 +2971,14 @@ sub lang_useencoding_ascii_utf8_require_valid_encoding_bug4125 {
 
       my $name = "üöä";
 
-      my $conn = $client->stor_raw($name); 
+      my $conn = $client->stor_raw($name);
       if ($conn) {
         die("STORE $name succeeded unexpectedly");
       }
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
- 
+
       $client->quit();
 
       my $expected = 550;

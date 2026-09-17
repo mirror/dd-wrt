@@ -8,8 +8,8 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2016 The ProFTPD Project team
- *  
+ * Copyright (c) 2001-2024 The ProFTPD Project team
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -126,7 +126,7 @@ MODRET sample_xfoo(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-/* Configuration handlers 
+/* Configuration handlers
  */
 
 /* This sample configuration directive handler will get called
@@ -135,7 +135,7 @@ MODRET sample_xfoo(cmd_rec *cmd) {
  */
 
 MODRET set_foobardirective(cmd_rec *cmd) {
-  int bool = 1;
+  int foo_bar = 1;
   config_rec *c = NULL;
 
   /* The CHECK_ARGS macro checks the number of arguments passed to the
@@ -154,8 +154,8 @@ MODRET set_foobardirective(cmd_rec *cmd) {
   CHECK_CONF(cmd, CONF_ANON|CONF_LIMIT);
 
   /* Get the Boolean value of the first directive parameter. */
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
+  foo_bar = get_boolean(cmd, 1);
+  if (foo_bar == -1) {
 
     /* The get_boolean() function returns -1 if the parameter was not a
      * recognized Boolean parameter.
@@ -175,7 +175,7 @@ MODRET set_foobardirective(cmd_rec *cmd) {
    * that space.
    */
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = bool;
+  *((unsigned char *) c->argv[0]) = foo_bar;
 
   /* By adding the CF_MERGEDOWN flag to the parameter we just created
    * we are telling proftpd that this parameter should be copied and
@@ -272,7 +272,7 @@ static conftable sample_conftab[] = {
  *
  * third  : command "group" (used for access control via Limit directives),
  *          this can be either G_DIRS (for commands related to directory
- *          listing), G_READ (for commands related to reading files), 
+ *          listing), G_READ (for commands related to reading files),
  *          G_WRITE (for commands related to file writing), or the
  *          special G_NONE for those commands against which the
  *          special <Limit READ|WRITE|DIRS> will not be applied.

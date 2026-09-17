@@ -308,7 +308,12 @@ If the SSL library supports TLSv1.3 (<i>e.g.</i> OpenSSL-1.1.1 and later), the
 <em>protocol specifier</em> "TLSv1.3" can be used to configure the cipher
 suites for that protocol:
 <pre>
-  # Configure TLSv1.3 ciphersuites
+  TLSProtocol TLSv1.2 TLSv1.3
+
+  # Configure ciphersuites for TLSv1.2 and older protocols
+  TLSCipherSuite TLSv1.2 ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:...
+
+  # Configure TLSv1.3 ciphersuites separately
   TLSCipherSuite TLSv1.3 TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256
 </pre>
 
@@ -2346,6 +2351,31 @@ does not recognize/support one of the ciphers that you configured in your
 does not pinpoint <i>which</i> is the offending ciphersuite; experimenting
 with your cipher list will reveal which ones are problematic.
 
+<p><a name="TLSRequiredNoPassword">
+<font color=red>Question</font>: I want to require TLS for most users, but not
+all of them.  When TLS is required for a user, and they have not performed
+the TLS handshake, I want to prevent them from sending their password in
+plaintext.  Is this possible?<br>
+<font color=blue>Answer</font>: Yes, this is possible with the
+<code>mod_ifsession</code> module:
+<pre>
+  &lt;IfModule mod_tls.c&gt;
+    TLSEngine on
+    ...
+    TLSRequired on
+    TLSOptions AllowPerUser
+  &lt;/IfModule&gt;
+
+  &lt;IfModule mod_ifsession.c&gt;
+    # This is required for this use case
+    IfSessionOptions PerUnauthenticatedUser
+
+    &lt;IfUser ftp&gt;
+      TLSRequired off
+    &lt;/IfUser&gt;
+  &lt;/IfModule&gt;
+</pre>
+
 <p>
 <hr>
 <h2><a name="Installation">Installation</a></h2>
@@ -2378,7 +2408,7 @@ in your <code>configure</code> command, <i>e.g.</i>:
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2002-2022 TJ Saunders<br>
+&copy; Copyright 2002-2023 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

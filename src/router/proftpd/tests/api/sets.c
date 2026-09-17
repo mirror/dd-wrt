@@ -124,7 +124,7 @@ START_TEST (set_insert_test) {
   xaset_t *set;
   struct test_item *item1, *item2;
   xasetmember_t *member;
- 
+
   res = xaset_insert(NULL, NULL);
   ck_assert_msg(res == -1, "Failed to handle null arguments");
   ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
@@ -229,7 +229,7 @@ START_TEST (set_insert_sort_test) {
   xaset_t *set;
   struct test_item *item1, *item2, *item3;
   xasetmember_t *member;
- 
+
   res = xaset_insert_sort(NULL, NULL, FALSE);
   ck_assert_msg(res == -1, "Failed to handle null arguments");
   ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
@@ -382,7 +382,7 @@ START_TEST (set_remove_test) {
   member = set->xas_list;
   ck_assert_msg(member == (xasetmember_t *) item1,
     "Expected head of list to be item1 (%p), got %p", item1, member);
-  
+
   res = xaset_remove(set, (xasetmember_t *) item1);
   ck_assert_msg(res == 0, "Failed to remove item1 from set: %s",
     strerror(errno));

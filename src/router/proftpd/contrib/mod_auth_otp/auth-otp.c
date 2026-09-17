@@ -269,7 +269,7 @@ int main(int argc, char **argv) {
   OpenSSL_add_all_algorithms();
 #endif /* prior to OpenSSL-1.1.x */
 
-  secret = generate_secret(auth_otp_pool);  
+  secret = generate_secret(auth_otp_pool);
   if (secret == NULL) {
     return 1;
   }

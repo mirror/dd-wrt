@@ -141,7 +141,7 @@ sub ratio_bug3600 {
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
-      ($resp_code, $resp_msg) = $client->syst(); 
+      ($resp_code, $resp_msg) = $client->syst();
 
       $expected = 215;
       $self->assert($expected == $resp_code,

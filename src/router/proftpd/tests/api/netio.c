@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2022 The ProFTPD Project team
+ * Copyright (c) 2008-2025 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,7 +64,7 @@ static int open_tmpfile(void) {
 
   tmp_path = "/tmp/netio-test.dat";
   fd = open(tmp_path, O_RDWR|O_CREAT, 0666);
-  ck_assert_msg(fd >= 0, "Failed to open '%s': %s", tmp_path, strerror(errno));  
+  ck_assert_msg(fd >= 0, "Failed to open '%s': %s", tmp_path, strerror(errno));
   tmp_fd = fd;
 
   return fd;
@@ -544,7 +544,7 @@ START_TEST (netio_telnet_gets_telnet_bare_will_test) {
 
   ck_assert_msg(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
-  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
+  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%.*s', got '%.*s'",
     7, cmd, 7, buf);
   ck_assert_msg(buf[7] == (char) TELNET_WILL, "Expected WILL at index 7, got %d",
     buf[7]);
@@ -586,7 +586,7 @@ START_TEST (netio_telnet_gets_telnet_will_multi_read_test) {
 
   ck_assert_msg(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
-  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
+  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%.*s', got '%.*s'",
     7, cmd, 7, buf);
 
   /* Fill up the input stream's buffer with the rest of the Telnet WILL
@@ -707,7 +707,7 @@ START_TEST (netio_telnet_gets_telnet_bare_wont_test) {
 
   ck_assert_msg(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
-  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
+  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%.*s', got '%.*s'",
     7, cmd, 7, buf);
   ck_assert_msg(buf[7] == (char) TELNET_WONT, "Expected WONT at index 7, got %d",
     buf[7]);
@@ -800,7 +800,7 @@ START_TEST (netio_telnet_gets_telnet_bare_do_test) {
 
   ck_assert_msg(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
-  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
+  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%.*s', got '%.*s'",
     7, cmd, 7, buf);
   ck_assert_msg(buf[7] == (char) TELNET_DO, "Expected DO at index 7, got %d",
     buf[7]);
@@ -893,7 +893,7 @@ START_TEST (netio_telnet_gets_telnet_bare_dont_test) {
 
   ck_assert_msg(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
-  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
+  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%.*s', got '%.*s'",
     7, cmd, 7, buf);
   ck_assert_msg(buf[7] == (char) TELNET_DONT, "Expected DONT at index 7, got %d",
     buf[7]);
@@ -966,7 +966,7 @@ START_TEST (netio_telnet_gets_telnet_bare_ip_test) {
 
   ck_assert_msg(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
-  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
+  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%.*s', got '%.*s'",
     7, cmd, 7, buf);
   ck_assert_msg(buf[7] == (char) TELNET_IP, "Expected IP at index 7, got %d",
     buf[7]);
@@ -1037,7 +1037,7 @@ START_TEST (netio_telnet_gets_telnet_bare_dm_test) {
 
   ck_assert_msg(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
-  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
+  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%.*s', got '%.*s'",
     7, cmd, 7, buf);
   ck_assert_msg(buf[7] == (char) TELNET_DM, "Expected DM at index 7, got %d",
     buf[7]);
@@ -1074,7 +1074,7 @@ START_TEST (netio_telnet_gets_telnet_single_iac_test) {
 
   ck_assert_msg(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
-  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
+  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%.*s', got '%.*s'",
     7, cmd, 7, buf);
   ck_assert_msg(buf[7] == (char) TELNET_IAC, "Expected IAC at index 7, got %d",
     buf[7]);
@@ -1144,7 +1144,7 @@ START_TEST (netio_telnet_gets_bug3697_test) {
 
   ck_assert_msg(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
-  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
+  ck_assert_msg(strncmp(buf, cmd, 7) == 0, "Expected string '%.*s', got '%.*s'",
     7, cmd, 7, buf);
   ck_assert_msg(buf[7] == (char) TELNET_IAC, "Expected IAC at index 7, got %d",
     buf[7]);
@@ -2213,7 +2213,7 @@ START_TEST (netio_poll_interval_test) {
   ck_assert_msg(nstrm != NULL, "Failed to open ctrl stream on fd %d: %s", fd,
     strerror(errno));
 
-  pr_netio_set_poll_interval(nstrm, interval); 
+  pr_netio_set_poll_interval(nstrm, interval);
   ck_assert_msg(nstrm->strm_interval == interval,
     "Expected stream interval %u, got %u", interval, nstrm->strm_interval);
   ck_assert_msg(nstrm->strm_flags & PR_NETIO_SESS_INTR,

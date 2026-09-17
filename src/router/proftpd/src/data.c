@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2022 The ProFTPD Project team
+ * Copyright (c) 2001-2026 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -314,7 +314,7 @@ static int data_active_open(const char *reason, off_t size) {
     pr_inet_set_socket_opts2(session.d->pool, session.d,
       (main_server->tcp_rcvbuf_override ? main_server->tcp_rcvbuf_len : 0), 0,
       main_server->tcp_keepalive, 1);
-    
+
   } else {
     pr_inet_set_socket_opts2(session.d->pool, session.d,
       0, (main_server->tcp_sndbuf_override ? main_server->tcp_sndbuf_len : 0),
@@ -456,7 +456,7 @@ void pr_data_clear_xfer_pool(void) {
   xfer_type = session.xfer.xfer_type;
 
   memset(&session.xfer, 0, sizeof(session.xfer));
-  session.xfer.xfer_type = xfer_type;  
+  session.xfer.xfer_type = xfer_type;
 }
 
 void pr_data_reset(void) {
@@ -469,13 +469,18 @@ void pr_data_reset(void) {
   }
 
   session.d = NULL;
-  session.sf_flags &= (SF_ALL^(SF_ABORT|SF_POST_ABORT|SF_XFER|SF_PASSIVE|SF_ASCII_OVERRIDE|SF_EPSV_ALL));
+
+  /* Note that we deliberately omit the SF_EPSV_ALL flag from here.  Once that
+   * session flag has been requested/set, it persists for the rest of the
+   * session, regardless of data transfer successs or failure (Issue #2255).
+   */
+  session.sf_flags &= (SF_ALL^(SF_ABORT|SF_POST_ABORT|SF_XFER|SF_PASSIVE|SF_ASCII_OVERRIDE));
 }
 
 int pr_data_ignore_ascii(int ignore_ascii) {
   int res;
 
-  if (ignore_ascii != TRUE && 
+  if (ignore_ascii != TRUE &&
       ignore_ascii != FALSE) {
     errno = EINVAL;
     return -1;
@@ -1080,7 +1085,9 @@ static void poll_ctrl(void) {
       char *ch;
 
       for (ch = cmd->argv[0]; *ch; ch++) {
-        *ch = toupper((int) *ch);
+        if (PR_ISALPHA((int) *ch)) {
+          *ch = toupper((int) *ch);
+        }
       }
 
       cmd->cmd_id = pr_cmd_get_id(cmd->argv[0]);
@@ -1167,7 +1174,7 @@ static void poll_ctrl(void) {
         title_len = pr_proctitle_get(NULL, 0);
         if (title_len > 0) {
           title_buf = pcalloc(cmd->pool, title_len + 1);
-          pr_proctitle_get(title_buf, title_len + 1); 
+          pr_proctitle_get(title_buf, title_len + 1);
         }
 
         curr_cmd = session.curr_cmd;
@@ -1249,7 +1256,7 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
     pr_trace_msg(trace_channel, 1,
       "data connection is null prior to data transfer (possibly from "
       "aborted transfer), returning '%s' error", strerror(xerrno));
-    pr_log_debug(DEBUG5, 
+    pr_log_debug(DEBUG5,
       "data connection is null prior to data transfer (possibly from "
        "aborted transfer), returning '%s' error", strerror(xerrno));
 
@@ -1280,7 +1287,7 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
           session.xfer.bufsize - buflen, 1);
         while (len < 0) {
           int xerrno = errno;
- 
+
           if (xerrno == EAGAIN || xerrno == EINTR) {
             /* Since our socket is in non-blocking mode, read(2) can return
              * EAGAIN if there is no data yet for us.  Handle this by
@@ -1288,7 +1295,7 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
              */
             errno = EINTR;
             pr_signals_handle();
-            
+
             len = pr_netio_read(session.d->instrm, buf + buflen,
               session.xfer.bufsize - buflen, 1);
             continue;
@@ -1411,7 +1418,7 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
            */
           errno = EINTR;
           pr_signals_handle();
-           
+
           len = pr_netio_read(session.d->instrm, cl_buf, cl_size, 1);
           continue;
         }
@@ -1444,16 +1451,16 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
         }
 
         total += len;
-      } 
+      }
     }
 
   } else { /* PR_NETIO_IO_WR */
-  
+
     while (cl_size) {
       int bwrote = 0;
       int buflen = cl_size;
       unsigned int xferbuflen;
-      char *xfer_buf = NULL;
+      char *xferbuf = NULL, *ascii_buf = NULL;
 
       pr_signals_handle();
 
@@ -1461,10 +1468,8 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
         buflen = pr_config_get_server_xfer_bufsz(PR_NETIO_IO_WR);
       }
 
+      xferbuf = cl_buf;
       xferbuflen = buflen;
-
-      /* Fill up our internal buffer. */
-      memcpy(session.xfer.buf, cl_buf, buflen);
 
       /* We use ASCII translation if:
        *
@@ -1482,6 +1487,9 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
           pr_pool_tag(tmp_pool, "ASCII download");
         }
 
+        /* Fill up our internal buffer. */
+        memcpy(session.xfer.buf, cl_buf, buflen);
+
         /* Scan the internal buffer, looking for LFs with no preceding CRs.
          * Add CRs (and expand the internal buffer) as necessary. xferbuflen
          * will be adjusted so that it contains the length of data in
@@ -1494,34 +1502,36 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
             strerror(errno));
 
         } else {
-          xfer_buf = session.xfer.buf;
+          ascii_buf = session.xfer.buf;
           session.xfer.buf = out;
           session.xfer.buflen = xferbuflen = outlen;
         }
+
+        xferbuf = session.xfer.buf;
       }
 
-      bwrote = pr_netio_write(session.d->outstrm, session.xfer.buf, xferbuflen);
+      bwrote = pr_netio_write(session.d->outstrm, xferbuf, xferbuflen);
       while (bwrote < 0) {
         int xerrno = errno;
 
-        if (xerrno == EAGAIN || xerrno == EINTR) {
-          /* Since our socket is in non-blocking mode, write(2) can return
+        if (xerrno == EAGAIN ||
+            xerrno == EINTR) {
+          /* Since our socket may be in non-blocking mode, write(2) can return
            * EAGAIN if there is not enough from for our data yet.  Handle
            * this by delaying temporarily, then trying again.
            */
           errno = EINTR;
           pr_signals_handle();
-             
-          bwrote = pr_netio_write(session.d->outstrm, session.xfer.buf,
-            xferbuflen);
+
+          bwrote = pr_netio_write(session.d->outstrm, xferbuf, xferbuflen);
           continue;
         }
 
         destroy_pool(tmp_pool);
-        if (xfer_buf != NULL) {
+        if (ascii_buf != NULL) {
           /* Free up the malloc'd memory. */
           free(session.xfer.buf);
-          session.xfer.buf = xfer_buf;
+          session.xfer.buf = ascii_buf;
         }
 
         errno = xerrno;
@@ -1556,12 +1566,12 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
         total += buflen;
       }
 
-      if (xfer_buf != NULL) {
+      if (ascii_buf != NULL) {
         /* Yes, we are using malloc et al here, rather than the memory pools.
          * See Bug#4352 for details.
          */
         free(session.xfer.buf);
-        session.xfer.buf = xfer_buf;
+        session.xfer.buf = ascii_buf;
       }
     }
 

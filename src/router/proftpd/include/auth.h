@@ -97,7 +97,7 @@ gid_t pr_auth_name2gid(pool *, const char *);
 int pr_auth_getgroups(pool *, const char *, array_header **, array_header **);
 int pr_auth_requires_pass(pool *, const char *);
 
-/* This is a convenience function used by mod_auth as part of the 
+/* This is a convenience function used by mod_auth as part of the
  * authentication process.  Given a user name, retrieve the <Anonymous>
  * configuration for that user.  If the user name is not be handled as
  * an anonymous login, NULL is returned.

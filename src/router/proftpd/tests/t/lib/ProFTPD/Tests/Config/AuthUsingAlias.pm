@@ -47,7 +47,7 @@ sub authusingalias_on {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -69,9 +69,9 @@ sub authusingalias_on {
   my $alias = 'ftp';
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_user_write($auth_user_file, $alias, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, "$user,$alias");
 
   my $config = {
@@ -174,7 +174,7 @@ sub authusingalias_off {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -196,7 +196,7 @@ sub authusingalias_off {
   my $alias = 'ftp';
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, "$user,$alias");
 
   my $config = {

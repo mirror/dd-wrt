@@ -1,5 +1,5 @@
 /*
- * ProFTPD - mod_snmp uptime 
+ * ProFTPD - mod_snmp uptime
  * Copyright (c) 2012-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify

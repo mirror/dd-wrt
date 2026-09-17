@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp key mgmt (keys)
- * Copyright (c) 2008-2022 TJ Saunders
+ * Copyright (c) 2008-2023 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,21 @@ enum sftp_key_type_e {
   SFTP_KEY_ED25519,
   SFTP_KEY_ED448,
   SFTP_KEY_RSA_SHA256,
-  SFTP_KEY_RSA_SHA512
+  SFTP_KEY_RSA_SHA512,
+
+  /* OpenSSH security keys */
+  SFTP_KEY_ECDSA_256_SK,
+  SFTP_KEY_ED25519_SK
+};
+
+/* Details learned during verification of signed data, such as for
+ * Security Keys (SK).
+ */
+struct sftp_verify_details {
+  int is_security_key;
+  const char *sk_application;
+  uint32_t sk_counter;
+  unsigned char sk_flags;
 };
 
 /* Returns a string of colon-separated lowercase hex characters, representing
@@ -51,6 +65,10 @@ const char *sftp_keys_get_fingerprint(pool *, unsigned char *, uint32_t, int);
 #define SFTP_KEYS_FP_DIGEST_MD5		1
 #define SFTP_KEYS_FP_DIGEST_SHA1	2
 #define SFTP_KEYS_FP_DIGEST_SHA256	3
+
+/* Security Key flags */
+#define SFTP_KEYS_SK_USER_PRESENCE_REQUIRED	0x001
+#define SFTP_KEYS_SK_USER_VERIFICATION_REQUIRED	0x004
 
 void sftp_keys_free(void);
 int sftp_keys_get_hostkey(pool *p, const char *);
@@ -67,7 +85,9 @@ int sftp_keys_verify_pubkey_type(pool *, unsigned char *, uint32_t,
   enum sftp_key_type_e);
 int sftp_keys_verify_signed_data(pool *, const char *,
   unsigned char *, uint32_t, unsigned char *, uint32_t,
-  unsigned char *, size_t);
+  unsigned char *, size_t, struct sftp_verify_details *);
+int sftp_keys_permit_key(pool *, const char *, const char *,
+  struct sftp_verify_details *, pr_table_t *);
 
 /* Sets minimum key sizes. */
 int sftp_keys_set_key_limits(int rsa_min, int dsa_min, int ec_min);
@@ -87,5 +107,4 @@ int sftp_keys_have_ecdsa_hostkey(pool *, int **);
 int sftp_keys_have_ed25519_hostkey(void);
 int sftp_keys_have_ed448_hostkey(void);
 int sftp_keys_have_rsa_hostkey(void);
-
 #endif /* MOD_SFTP_KEYS_H */

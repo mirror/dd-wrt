@@ -165,7 +165,7 @@ EOF
   } else {
     die("Can't open $ftpaccess_file: $!");
   }
-  
+
   my $test_files = [qw(1.txt 2.txt 3.txt 4.txt foo.txt)];
 
   foreach my $test_file (@$test_files) {
@@ -477,7 +477,7 @@ EOF
   } else {
     die("Can't open $ftpaccess_file: $!");
   }
-  
+
   my $test_files = [qw(1.txt 2.txt 3.txt 4.txt foo.txt)];
 
   foreach my $test_file (@$test_files) {
@@ -663,7 +663,7 @@ EOF
   } else {
     die("Can't open $ftpaccess_file: $!");
   }
-  
+
   my $test_files = [qw(1.txt 2.txt 3.txt 4.txt foo.txt)];
 
   foreach my $test_file (@$test_files) {
@@ -838,7 +838,7 @@ EOF
   } else {
     die("Can't open $ftpaccess_file: $!");
   }
-  
+
   my $test_files = [qw(1.txt 2.txt 3.txt 4.txt foo.txt)];
 
   foreach my $test_file (@$test_files) {
@@ -3127,7 +3127,7 @@ EOF
   } else {
     die("Can't open $ftpaccess_file: $!");
   }
-  
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -3261,7 +3261,7 @@ EOF
   } else {
     die("Can't open $ftpaccess_file: $!");
   }
-  
+
   my $test_files = [qw(1.txt 2.txt 3.txt 4.txt foo.txt)];
 
   foreach my $test_file (@$test_files) {
@@ -3621,7 +3621,7 @@ sub hidefiles_stat {
   } else {
     die("Can't open $test_file: $!");
   }
- 
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -3910,7 +3910,7 @@ sub hidefiles_list_symlink_bug3924 {
     AuthGroupFile => $auth_group_file,
     AuthOrder => 'mod_auth_file.c',
 
-    Directory => { 
+    Directory => {
       '/' => {
         HideFiles => 'foobar',
       },
@@ -4091,7 +4091,7 @@ sub hidefiles_mlsd_symlink_bug3924 {
     AuthGroupFile => $auth_group_file,
     AuthOrder => 'mod_auth_file.c',
 
-    Directory => { 
+    Directory => {
       '/' => {
         HideFiles => 'foobar',
       },

@@ -110,7 +110,7 @@ Examples:
   GeoIPDenyFilter Continent (NA|SA)
 </pre>
 The following more complex configuration demonstrates what can be done using
-SQL querires:
+SQL queries:
 <pre>
   &lt;IfModule mod_sql.c&gt;
     ...
@@ -498,10 +498,33 @@ to be matched.  Thus you can use:
 MaxMind tables are configured via <code>GeoIPTable</code>.  You can find
 the free IPv6 country and city "legacy" files; see this MaxMind <a href="https://www.maxmind.com/en/ipv6-information-and-faq">IPv6 FAQ</a> for details.
 
+<p><a name="GeoIPPerUser">
+<font color=red>Question</font>: Is it possible to configure <code>mod_geoip</code> to block connections from a geographic region <i>for a specific user</i>?<br>
+<font color=blue>Answer</font>: Yes, in conjunction with the <a href="./mod_ifsession.html"><code>mod_ifsession</code></a> module.
+
+<p>
+To do this, you would configure <code>mod_geoip</code> as normal, and then
+have an <code>&lt;IfUser&gt;</code> section like so:
+<pre>
+  &lt;IfModule mod_geoip.c&gt;
+    GeoIPEngine on
+    GeoIPLog /var/log/proftpd/geoip.log
+    GeoIPTable /usr/share/GeoIP/GeoLite2-Country.mmdb
+    GeoIPPolicy allow,deny
+  &lt;/IfModule&gt;
+
+  &lt;IfModule mod_ifsession.c&gt;
+    &lt;IfUser baduser&gt;
+      GeoIPDenyFilter CountryCode CZ
+    &lt;/IfUser&gt;
+  &lt;/IfModule&gt;
+</pre>
+The <code>mod_geoip</code> modules checks the <a href="#GeoIPAllowFilter"><code>GeoIPAllowFilter</code></a> and <a href="#GeoIPDenyFilter"><code>GeoIPDenyFilter</code></a> directives that are in effect, after a client authenticates.
+
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2010-2016 TJ Saunders<br>
+&copy; Copyright 2010-2023 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

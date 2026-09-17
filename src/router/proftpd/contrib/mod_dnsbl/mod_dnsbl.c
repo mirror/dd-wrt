@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_dnsbl -- a module for checking DNSBL (DNS Black Lists)
  *                       servers before allowing a connection
- * Copyright (c) 2007-2020 TJ Saunders
+ * Copyright (c) 2007-2024 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ static const char *reverse_ip_addr(pool *p, const char *ip_addr) {
 
   res = pcalloc(p, addrlen);
   addr2 = pstrdup(p, ip_addr);
- 
+
   tmp = strrchr(addr2, '.');
   sstrcat(res, tmp+1, addrlen);
   sstrcat(res, ".", addrlen);
@@ -234,9 +234,9 @@ static int dnsbl_reject_conn(void) {
      */
     case DNSBL_POLICY_ALLOW_DENY: {
       c = find_config(main_server->conf, CONF_PARAM, "DNSBLDomain", FALSE);
-      while (c) {
+      while (c != NULL) {
         const char *domain;
-    
+
         pr_signals_handle();
 
         domain = c->argv[0];
@@ -274,11 +274,11 @@ static int dnsbl_reject_conn(void) {
           reject_conn = FALSE;
           break;
         }
-    
-        c = find_config_next(c, c->next, CONF_PARAM, "DNSBLDomain", FALSE);
-      } 
 
-      break; 
+        c = find_config_next(c, c->next, CONF_PARAM, "DNSBLDomain", FALSE);
+      }
+
+      break;
     }
   }
 
@@ -315,19 +315,20 @@ MODRET set_dnsbldomain(cmd_rec *cmd) {
 
 /* usage: DNSBLEngine on|off */
 MODRET set_dnsblengine(cmd_rec *cmd) {
-  int bool;
+  int engine;
   config_rec *c;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  engine = get_boolean(cmd, 1);
+  if (engine == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
-  *((unsigned int *) c->argv[0]) = bool;
+  *((unsigned int *) c->argv[0]) = engine;
 
   return PR_HANDLED(cmd);
 }
@@ -355,7 +356,7 @@ MODRET set_dnsblpolicy(cmd_rec *cmd) {
 
   if (strcasecmp(cmd->argv[1], "allow,deny") == 0) {
     policy = DNSBL_POLICY_ALLOW_DENY;
-  
+
   } else if (strcasecmp(cmd->argv[1], "deny,allow") == 0) {
     policy = DNSBL_POLICY_DENY_ALLOW;
 

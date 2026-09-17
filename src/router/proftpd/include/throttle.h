@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2008-2016 The ProFTPD Project team
+ * Copyright (c) 2008-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,6 @@
 
 int pr_throttle_have_rate(void);
 void pr_throttle_init(cmd_rec *);
-void pr_throttle_pause(off_t, int);
+void pr_throttle_pause(off_t, int, off_t);
 
 #endif /* PR_THROTTLE_H */

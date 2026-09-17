@@ -45,7 +45,7 @@ static void tear_down(void) {
     destroy_pool(p);
     p = NULL;
     permanent_pool = NULL;
-  } 
+  }
 }
 
 /* Helper functions */
@@ -160,7 +160,7 @@ END_TEST
 
 START_TEST (var_exists_test) {
   int res;
-  const char *key; 
+  const char *key;
 
   (void) var_free();
 

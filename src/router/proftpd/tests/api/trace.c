@@ -47,11 +47,10 @@ static void tear_down(void) {
   if (p) {
     destroy_pool(p);
     p = permanent_pool = NULL;
-  } 
+  }
 }
 
-#ifdef PR_USE_TRACE
-
+#if defined(PR_USE_TRACE)
 START_TEST (trace_set_levels_test) {
   int min_level, max_level, res;
   const char *channel;
@@ -70,7 +69,7 @@ START_TEST (trace_set_levels_test) {
     errno, strerror(errno));
 
   min_level = 1;
-  max_level = 2; 
+  max_level = 2;
   res = pr_trace_set_levels(channel, min_level, max_level);
   ck_assert_msg(res == 0, "Failed to handle valid channel and levels: %s",
     strerror(errno));
@@ -412,7 +411,7 @@ Suite *tests_get_trace_suite(void) {
 
   tcase_add_checked_fixture(testcase, set_up, tear_down);
 
-#ifdef PR_USE_TRACE
+#if defined(PR_USE_TRACE)
   tcase_add_test(testcase, trace_set_levels_test);
   tcase_add_test(testcase, trace_get_table_test);
   tcase_add_test(testcase, trace_get_max_level_test);

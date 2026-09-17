@@ -197,7 +197,7 @@ static int sqltab_create(quota_table_t *sqltab, void *ptr) {
       strerror(errno));
     destroy_pool(tmp_pool);
     return -1;
-  } 
+  }
 
   destroy_pool(tmp_pool);
   return 0;
@@ -278,7 +278,7 @@ static unsigned char sqltab_lookup(quota_table_t *sqltab, void *ptr,
     }
 
     /* Process each element returned. */
-    memmove(tally->name, values[0], sizeof(tally->name));
+    sstrncpy(tally->name, values[0], sizeof(tally->name)-1);
 
     if (strcasecmp(values[1], "user") == 0) {
       tally->quota_type = USER_QUOTA;
@@ -378,7 +378,7 @@ static unsigned char sqltab_lookup(quota_table_t *sqltab, void *ptr,
     }
 
     /* Process each element returned. */
-    memmove(limit->name, values[0], sizeof(limit->name));
+    sstrncpy(limit->name, values[0], sizeof(limit->name)-1);
 
     if (strcasecmp(values[1], "user") == 0) {
       limit->quota_type = USER_QUOTA;

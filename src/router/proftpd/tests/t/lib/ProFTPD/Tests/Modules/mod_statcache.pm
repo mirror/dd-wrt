@@ -1045,7 +1045,7 @@ sub statcache_dir_chrooted {
       $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
       ($resp_code, $resp_msg) = $client->mlst('test.d');
-    
+
       $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
@@ -1283,7 +1283,7 @@ sub statcache_rel_symlink_file {
       $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
       ($resp_code, $resp_msg) = $client->mlst('test.lnk');
-    
+
       $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
@@ -1530,7 +1530,7 @@ sub statcache_rel_symlink_file_chrooted {
       $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
       ($resp_code, $resp_msg) = $client->mlst('test.lnk');
-    
+
       $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
@@ -1765,7 +1765,7 @@ sub statcache_rel_symlink_dir {
       $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
       ($resp_code, $resp_msg) = $client->mlst('test.lnk');
-    
+
       $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
@@ -2004,7 +2004,7 @@ sub statcache_rel_symlink_dir_chrooted {
       $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
       ($resp_code, $resp_msg) = $client->mlst('test.lnk');
-    
+
       $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));

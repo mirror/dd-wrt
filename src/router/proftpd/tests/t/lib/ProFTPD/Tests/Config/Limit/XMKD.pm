@@ -96,8 +96,8 @@ sub mkd_allowed {
   my $gid = 500;
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/foo");
- 
   # Make sure that, if we're running as root, that the home directory has
+
   # permissions/privs set for the account we create
   if ($< == 0) {
     unless (chmod(0755, $home_dir)) {
@@ -108,7 +108,7 @@ sub mkd_allowed {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);

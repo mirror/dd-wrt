@@ -46,7 +46,7 @@ void pr_ascii_ftp_reset(void);
  * the given `out' buffer, converting any CRLF sequences found into LF
  * sequences.  The amount of data written into the `out' buffer is returned
  * via the `outlen' argument.
- * 
+ *
  * Returns the number of "carry over" CRs on success, and -1 on error, setting
  * errno appropriately.
  */

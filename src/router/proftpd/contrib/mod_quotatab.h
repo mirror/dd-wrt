@@ -129,7 +129,7 @@ typedef enum {
  * more interested in the deltas, rather than in the current tallies.
  */
 typedef struct {
- 
+
   /* Deltas of bytes tallies. */
   double bytes_in_delta;
   double bytes_out_delta;
@@ -139,7 +139,7 @@ typedef struct {
   int files_in_delta;
   int files_out_delta;
   int files_xfer_delta;
- 
+
 } quota_deltas_t;
 
 typedef struct table_obj {

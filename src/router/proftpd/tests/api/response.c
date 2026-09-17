@@ -111,7 +111,7 @@ START_TEST (response_add_test) {
   ck_assert_msg(last_resp_code != NULL, "Last response code unexpectedly null");
   ck_assert_msg(strcmp(last_resp_code, resp_code) == 0,
     "Expected response code '%s', got '%s'", resp_code, last_resp_code);
-  
+
   ck_assert_msg(last_resp_msg != NULL, "Last response message unexpectedly null");
   ck_assert_msg(strcmp(last_resp_msg, resp_msg) == 0,
     "Expected response message '%s', got '%s'", resp_msg, last_resp_msg);

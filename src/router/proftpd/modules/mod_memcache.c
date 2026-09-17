@@ -438,7 +438,7 @@ static int mcache_sess_init(void) {
   if (c) {
     memcached_server_st *memcache_servers;
 
-    memcache_servers = c->argv[0]; 
+    memcache_servers = c->argv[0];
     memcache_set_servers(memcache_servers);
   }
 
@@ -496,7 +496,7 @@ static conftable memcache_conftab[] = {
   { "MemcacheReplicas",		set_memcachereplicas,		NULL },
   { "MemcacheServers",		set_memcacheservers,		NULL },
   { "MemcacheTimeouts",		set_memcachetimeouts,		NULL },
- 
+
   { NULL }
 };
 

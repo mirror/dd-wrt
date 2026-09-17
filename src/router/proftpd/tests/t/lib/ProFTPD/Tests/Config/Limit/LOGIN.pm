@@ -71,7 +71,7 @@ sub login_limit_ip_glob_range_bug3484 {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -203,7 +203,7 @@ sub login_limit_allowgroup_backslash {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -323,7 +323,7 @@ sub login_limit_multiple_sections {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);

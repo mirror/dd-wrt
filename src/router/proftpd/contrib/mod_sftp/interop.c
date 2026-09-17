@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp interoperability
- * Copyright (c) 2008-2022 TJ Saunders
+ * Copyright (c) 2008-2024 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +45,8 @@ static unsigned int default_flags =
   SFTP_SSH2_FEAT_SERVICE_IN_PUBKEY_SIG |
   SFTP_SSH2_FEAT_HAVE_PUBKEY_ALGO_IN_DSA_SIG |
   SFTP_SSH2_FEAT_NO_DATA_WHILE_REKEYING |
-  SFTP_SSH2_FEAT_HOSTKEYS;
+  SFTP_SSH2_FEAT_HOSTKEYS |
+  SFTP_SSH2_FEAT_USE_FULL_FXP_LIMITS;
 
 struct sftp_version_pattern {
   const char *pattern;
@@ -70,6 +71,10 @@ static struct sftp_version_pattern known_versions[] = {
     "^OpenSSH_2\\.5\\.1.*|"
     "^OpenSSH_2\\.5\\.2.*|"
     "^OpenSSH_2\\.5\\.3.*",	SFTP_SSH2_FEAT_REKEYING,		NULL },
+
+  { "^OpenSSH_8\\..*|"
+    "^OpenSSH_9\\.0.*|"
+    "^OpenSSH_9\\.1.*",		SFTP_SSH2_FEAT_USE_FULL_FXP_LIMITS,	NULL },
 
   { "^OpenSSH.*",		0,					NULL },
 
@@ -110,12 +115,12 @@ static struct sftp_version_pattern known_versions[] = {
   { "^2\\.0\\.11.*|"
     "^2\\.0\\.12.*",		SFTP_SSH2_FEAT_HAVE_PUBKEY_ALGO_IN_DSA_SIG|
 				SFTP_SSH2_FEAT_SERVICE_IN_PUBKEY_SIG|
-    				SFTP_SSH2_FEAT_HAVE_PUBKEY_ALGO| 
+    				SFTP_SSH2_FEAT_HAVE_PUBKEY_ALGO|
 				SFTP_SSH2_FEAT_MAC_LEN,			NULL },
 
   { "^2\\.0\\..*",		SFTP_SSH2_FEAT_HAVE_PUBKEY_ALGO_IN_DSA_SIG|
 				SFTP_SSH2_FEAT_SERVICE_IN_PUBKEY_SIG|
-    				SFTP_SSH2_FEAT_HAVE_PUBKEY_ALGO| 
+    				SFTP_SSH2_FEAT_HAVE_PUBKEY_ALGO|
 				SFTP_SSH2_FEAT_CIPHER_USE_K|
 				SFTP_SSH2_FEAT_MAC_LEN,			NULL },
 
@@ -325,7 +330,7 @@ int sftp_interop_handle_version(pool *p, const char *client_version) {
 
         sftp_channel_set_max_windowsz(window_size);
       }
-      
+
       v = pr_table_get(tab, "channelPacketSize", NULL);
       if (v != NULL) {
         uint32_t packet_size;
@@ -351,7 +356,7 @@ int sftp_interop_handle_version(pool *p, const char *client_version) {
 
         if (pessimistic_newkeys) {
           default_flags |= SFTP_SSH2_FEAT_PESSIMISTIC_NEWKEYS;
-        } 
+        }
       }
 
       v = pr_table_get(tab, "sftpCiphers", NULL);
@@ -445,7 +450,7 @@ int sftp_interop_handle_version(pool *p, const char *client_version) {
       (void) pr_table_empty(tab);
       (void) pr_table_free(tab);
       c->argv[2] = NULL;
- 
+
     } else {
       pr_trace_msg(trace_channel, 18,
         "client version '%s' did not match SFTPClientMatch regex '%s'", version,

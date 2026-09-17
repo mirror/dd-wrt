@@ -1,8 +1,8 @@
 /*
  * ProFTPD: mod_sql_mysql -- Support for connecting to MySQL databases.
  * Copyright (c) 2001 Andrew Houghton
- * Copyright (c) 2004-2022 TJ Saunders
- *  
+ * Copyright (c) 2004-2025 TJ Saunders
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -31,17 +31,17 @@
  * mod_sql_mysql is the reference backend module for mod_sql. As such,
  * it's very, very over-commented.
  *
- * COPYRIGHT NOTICE:  
- * 
- * The section of the copyright notice above that refers to OpenSSL *must* 
- * be present in every backend module.  Without that exemption the backend 
- * module cannot legally be compiled into ProFTPD, even if the backend 
+ * COPYRIGHT NOTICE:
+ *
+ * The section of the copyright notice above that refers to OpenSSL *must*
+ * be present in every backend module.  Without that exemption the backend
+ * module cannot legally be compiled into ProFTPD, even if the backend
  * module makes no use of OpenSSL.
  *
  * FUNCTIONS IN THIS CODE:
  *
  * Backend modules are only called into via the functions listed in
- * sql_cmdtable (see the end of this file).  All other functions are 
+ * sql_cmdtable (see the end of this file).  All other functions are
  * internal.
  *
  * For stylistic reasons, it's requested that backend authors maintain the
@@ -55,10 +55,10 @@
  *
  * Backend modules need to handle named connections.  A named connection
  * is the complete specification of how to access a database coupled with
- * a unique (to the session) descriptive name.  Every call mod_sql makes 
- * into a backend is directed at a particular named connection.  
- * mod_sql_mysql includes a set of simplistic cache functions to keep an 
- * internal map of names to connections -- other backends should feel free 
+ * a unique (to the session) descriptive name.  Every call mod_sql makes
+ * into a backend is directed at a particular named connection.
+ * mod_sql_mysql includes a set of simplistic cache functions to keep an
+ * internal map of names to connections -- other backends should feel free
  * to handle this however they want.
  *
  * OPEN/CLOSE SEMANTICS & CONNECTION COUNTING:
@@ -72,14 +72,14 @@
  *     period of time has elapsed with no activity
  *
  * mod_sql enforces this choice by requiring that backends:
- *  1) wrap each call in an open/close bracket (so if a connection isn't 
+ *  1) wrap each call in an open/close bracket (so if a connection isn't
  *     currently open, it will be opened for the call and closed afterwards)
  *  2) properly do connection counting to ensure that a connection is not
  *     re-opened unnecessarily, and not closed too early.
  *
  * In simple terms: if an administrator chooses the "one connection for the
  * life of the process" policy, mod_sql will send an initial cmd_open call
- * for that connection at the start of the client session, and a final 
+ * for that connection at the start of the client session, and a final
  * cmd_close call when the session ends.  If an administrator chooses the
  * "per-call" connection policy, the initial cmd_open and final cmd_close
  * calls will not be made.  If an administrator chooses the "timeout"
@@ -88,7 +88,7 @@
  *
  * CONNECTION TIMERS
  *
- * Backends are required to handle connection timers; when a connection is 
+ * Backends are required to handle connection timers; when a connection is
  * defined via cmd_defineconnection, a time value (in seconds) will be sent
  * with the definition.  Given the complexity of the semantics, it's
  * recommended that backend authors simply copy the timer handling code from
@@ -96,29 +96,29 @@
  * module; read the code for more information.
  *
  * ERROR HANDLING AND LOGGING:
- * 
- * Proper error handling is required of backend modules -- the modret_t 
+ *
+ * Proper error handling is required of backend modules -- the modret_t
  * structure passed back to mod_sql should have the error fields correctly
  * filled.  mod_sql handles backend errors by logging them then closing the
  * connection and the session.  Therefore, it's not necessary for backends
  * to log errors which will be passed back to mod_sql, but they should log
- * any errors or useful information which will not be returned in the 
+ * any errors or useful information which will not be returned in the
  * modret_t.  If an error is transient -- if there's any way for the backend
  * module to handle an error intelligently -- it should do so.  mod_sql
  * will always handle backend errors by ending the client session.
- * 
+ *
  * Good debug logging is encouraged -- major functions (the functions that
- * mod_sql calls directly) should be wrapped in 'entering' and 'exiting' 
+ * mod_sql calls directly) should be wrapped in 'entering' and 'exiting'
  * DEBUG_FUNC level output, the text of SQL queries should be visible with
  * DEBUG_INFO level output, and any errors should be visible with DEBUG_WARN
- * level output.  
+ * level output.
  *
  * Check the code if this makes no sense.
  *
  * COMMENTS / QUESTIONS:
- * 
+ *
  * Backend module writers are encouraged to read through all comments in this
- * file.  If anything is unclear, please contact the author.  
+ * file.  If anything is unclear, please contact the author.
  */
 
 /* Internal define used for debug and logging.  All backends are encouraged
@@ -151,10 +151,10 @@ void my_make_scrambled_password_323(char *to, const char *from, size_t fromlen);
 MODRET cmd_close(cmd_rec *cmd);
 module sql_mysql_module;
 
-/* 
- * db_conn_struct: an internal struct to hold connection information. This 
- *  connection information is backend-specific; the members here reflect 
- *  the information MySQL needs for connections.  
+/*
+ * db_conn_struct: an internal struct to hold connection information. This
+ *  connection information is backend-specific; the members here reflect
+ *  the information MySQL needs for connections.
  *
  *  Other backends are expected to make whatever changes are necessary.
  */
@@ -181,9 +181,9 @@ struct db_conn_struct {
 typedef struct db_conn_struct db_conn_t;
 
 /*
- * This struct is a wrapper for whatever backend data is needed to access 
- * the database, and supports named connections, connection counting, and 
- * timer handling.  In most cases it should be enough for backend authors 
+ * This struct is a wrapper for whatever backend data is needed to access
+ * the database, and supports named connections, connection counting, and
+ * timer handling.  In most cases it should be enough for backend authors
  * to change db_conn_t and leave this struct alone.
  */
 
@@ -239,7 +239,7 @@ static conn_entry_t *sql_get_connection(const char *conn_name) {
  *  simply use an array header to hold them.  We don't allow duplicate
  *  connection names.
  *
- * Returns: NULL if the insertion was unsuccessful, a pointer to the 
+ * Returns: NULL if the insertion was unsuccessful, a pointer to the
  *  conn_entry_t that was created if successful.
  */
 static void *sql_add_connection(pool *p, const char *name, db_conn_t *conn) {
@@ -277,7 +277,7 @@ static void sql_check_cmd(cmd_rec *cmd, char *msg) {
     sql_log(DEBUG_WARN, "'%s' was passed an invalid cmd_rec (internal bug); "
       "shutting down", msg);
     pr_session_end(0);
-  }    
+  }
 
   return;
 }
@@ -287,7 +287,7 @@ static void sql_check_cmd(cmd_rec *cmd, char *msg) {
  */
 static int sql_timer_cb(CALLBACK_FRAME) {
   register unsigned int i;
- 
+
   for (i = 0; i < conn_cache->nelts; i++) {
     conn_entry_t *entry = NULL;
 
@@ -325,7 +325,7 @@ static modret_t *build_error(cmd_rec *cmd, db_conn_t *conn) {
 
 /* build_data: both cmd_select and cmd_procedure potentially
  *  return data to mod_sql; this function builds a modret to return
- *  that data.  This is MySQL specific; other backends may choose 
+ *  that data.  This is MySQL specific; other backends may choose
  *  to do things differently.
  */
 static modret_t *build_data(cmd_rec *cmd, db_conn_t *conn) {
@@ -352,19 +352,20 @@ static modret_t *build_data(cmd_rec *cmd, db_conn_t *conn) {
   if (!result) {
     return build_error(cmd, conn);
   }
-  
+
   sd = (sql_data_t *) pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
   sd->rnum = (unsigned long) mysql_num_rows(result);
   sd->fnum = (unsigned long) mysql_num_fields(result);
   cnt = sd->rnum * sd->fnum;
 
   data = (char **) pcalloc(cmd->tmp_pool, sizeof(char *) * (cnt + 1));
-  
+
   while ((row = mysql_fetch_row(result))) {
-    for (cnt = 0; cnt < sd->fnum; cnt++)
+    for (cnt = 0; cnt < sd->fnum; cnt++) {
       data[i++] = pstrdup(cmd->tmp_pool, row[cnt]);
+    }
   }
-  
+
   /* At this point either we finished correctly or an error occurred in the
    * fetch.  Do the right thing.
    */
@@ -407,7 +408,7 @@ static modret_t *build_data(cmd_rec *cmd, db_conn_t *conn) {
  *
  * Notes:
  *  mod_sql depends on these semantics -- a backend should not open
- *  a connection unless mod_sql requests it, nor close one unless 
+ *  a connection unless mod_sql requests it, nor close one unless
  *  mod_sql requests it.  Connection counting is *REQUIRED* for complete
  *  compatibility; a connection should not be closed unless the count
  *  reaches 0, and ideally will not need to be re-opened for counts > 1.
@@ -430,14 +431,14 @@ MODRET cmd_open(cmd_rec *cmd) {
   if (cmd->argc < 1) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tmysql cmd_open");
     return PR_ERROR_MSG(cmd, MOD_SQL_MYSQL_VERSION, "badly formed request");
-  }    
+  }
 
   entry = sql_get_connection(cmd->argv[0]);
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tmysql cmd_open");
     return PR_ERROR_MSG(cmd, MOD_SQL_MYSQL_VERSION,
       pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
-  } 
+  }
 
   conn = (db_conn_t *) entry->data;
 
@@ -491,16 +492,19 @@ MODRET cmd_open(cmd_rec *cmd) {
     mysql_options(conn->mysql, MYSQL_READ_DEFAULT_GROUP, "client");
   }
 
-#if MYSQL_VERSION_ID >= 50013
+#if MYSQL_VERSION_ID >= 50013 && \
+    MYSQL_VERSION_ID < 80034
   /* The MYSQL_OPT_RECONNECT option appeared in MySQL 5.0.13, according to
    *
    *  http://dev.mysql.com/doc/refman/5.0/en/auto-reconnect.html
+   *
+   * And in MySQL 8.0.34, it was deprecated.
    */
   if (!(pr_sql_opts & SQL_OPT_NO_RECONNECT)) {
 #if MYSQL_VERSION_ID >= 80000
-    bool reconnect = true;
+    char reconnect = true;
 #else
-    my_bool reconnect = TRUE;
+    char reconnect = TRUE;
 #endif
     mysql_options(conn->mysql, MYSQL_OPT_RECONNECT, &reconnect);
   }
@@ -513,7 +517,31 @@ MODRET cmd_open(cmd_rec *cmd) {
   client_flags |= CLIENT_MULTI_RESULTS;
 #endif
 
-#if defined(HAVE_MYSQL_MYSQL_SSL_SET)
+#if MYSQL_VERSION_ID >= 80035
+  /* Per the MySQL docs, the `mysql_ssl_set` function was deprecated in
+   * MySQL 8.0.35, to be replaced by equivalent options for `mysql_options`.
+   */
+  if (conn->ssl_ca_file != NULL) {
+    mysql_options(conn->mysql, MYSQL_OPT_SSL_CA, conn->ssl_ca_file);
+  }
+
+  if (conn->ssl_ca_dir != NULL) {
+    mysql_options(conn->mysql, MYSQL_OPT_SSL_CAPATH, conn->ssl_ca_dir);
+  }
+
+  if (conn->ssl_cert_file != NULL) {
+    mysql_options(conn->mysql, MYSQL_OPT_SSL_CERT, conn->ssl_cert_file);
+  }
+
+  if (conn->ssl_ciphers != NULL) {
+    mysql_options(conn->mysql, MYSQL_OPT_SSL_CIPHER, conn->ssl_ciphers);
+  }
+
+  if (conn->ssl_key_file != NULL) {
+    mysql_options(conn->mysql, MYSQL_OPT_SSL_KEY, conn->ssl_key_file);
+  }
+
+#elif defined(HAVE_MYSQL_MYSQL_SSL_SET)
   /* Per the MySQL docs, this function always returns success.  Errors are
    * reported when we actually attempt to connect.
    *
@@ -681,9 +709,9 @@ MODRET cmd_open(cmd_rec *cmd) {
        * (as per Bug#3290).  To do this, we re-bump the connection count.
        */
       entry->connections++;
-    } 
- 
-  } else if (entry->ttl > 0) { 
+    }
+
+  } else if (entry->ttl > 0) {
     /* Set up our timer if necessary */
 
     entry->timer = pr_timer_add(entry->ttl, -1, &sql_mysql_module,
@@ -723,11 +751,11 @@ MODRET cmd_open(cmd_rec *cmd) {
  *
  * Notes:
  *  mod_sql depends on these semantics -- a backend should not open
- *  a connection unless mod_sql requests it, nor close one unless 
+ *  a connection unless mod_sql requests it, nor close one unless
  *  mod_sql requests it.  Connection counting is *REQUIRED* for complete
  *  compatibility; a connection should not be closed unless the count
  *  reaches 0, and should not need to be re-opened for counts > 1.
- * 
+ *
  *  If argv[1] exists and is not NULL, the connection should be immediately
  *  closed and the connection count should be reset to 0.
  */
@@ -786,7 +814,7 @@ MODRET cmd_close(cmd_rec *cmd) {
   sql_log(DEBUG_INFO, "connection '%s' count is now %d", entry->name,
     entry->connections);
   sql_log(DEBUG_FUNC, "%s", "exiting \tmysql cmd_close");
-  
+
   return PR_HANDLED(cmd);
 }
 
@@ -813,8 +841,8 @@ MODRET cmd_close(cmd_rec *cmd) {
  *
  * Notes:
  *  time-to-live is the length of time to allow a connection to remain unused;
- *  once that amount of time has passed, a connection should be closed and 
- *  it's connection count should be reduced to 0.  If ttl is 0, or ttl is not 
+ *  once that amount of time has passed, a connection should be closed and
+ *  it's connection count should be reduced to 0.  If ttl is 0, or ttl is not
  *  a number or ttl is negative, the connection will be assumed to have no
  *  associated timer.
  */
@@ -824,7 +852,7 @@ MODRET cmd_defineconnection(cmd_rec *cmd) {
   const char *ssl_cert_file = NULL, *ssl_key_file = NULL, *ssl_ca_file = NULL;
   const char *ssl_ca_dir = NULL, *ssl_ciphers = NULL;
   conn_entry_t *entry = NULL;
-  db_conn_t *conn = NULL; 
+  db_conn_t *conn = NULL;
 
   sql_log(DEBUG_FUNC, "%s", "entering \tmysql cmd_defineconnection");
 
@@ -960,7 +988,7 @@ MODRET cmd_defineconnection(cmd_rec *cmd) {
     entry->ttl = (int) strtol(cmd->argv[4], (char **) NULL, 10);
     if (entry->ttl >= 1) {
       pr_sql_conn_policy = SQL_CONN_POLICY_TIMER;
- 
+
     } else {
       entry->ttl = 0;
     }
@@ -1044,30 +1072,30 @@ static modret_t *cmd_exit(cmd_rec *cmd) {
  *  structure which is used to return the result data.
  *
  * cmd_select takes either exactly two inputs, or more than two.  If only
- *  two inputs are given, the second is a monolithic query string.  See 
+ *  two inputs are given, the second is a monolithic query string.  See
  *  the examples below.
  *
  * Inputs:
  *  cmd->argv[0]: connection name
- *  cmd->argv[1]: table 
+ *  cmd->argv[1]: table
  *  cmd->argv[2]: select string
  * Optional:
- *  cmd->argv[3]: where clause 
+ *  cmd->argv[3]: where clause
  *  cmd->argv[4]: requested number of return rows (LIMIT)
- *  
+ *
  *  etc.        : other options, such as "GROUP BY", "ORDER BY",
- *                and "DISTINCT" will start at cmd->arg[5].  All 
+ *                and "DISTINCT" will start at cmd->arg[5].  All
  *                backends MUST support 'DISTINCT', the other
- *                arguments are optional (but encouraged).         
+ *                arguments are optional (but encouraged).
  *
  * Returns:
- *  either a properly filled error modret_t if the select failed, or a 
+ *  either a properly filled error modret_t if the select failed, or a
  *  modret_t with the result data filled in.
  *
  * Example:
  *  These are example queries that would be executed for MySQL; other
  *  backends will have different SQL syntax.
- *  
+ *
  *  argv[] = "default","user","userid, count", "userid='aah'","2"
  *  query  = "SELECT userid, count FROM user WHERE userid='aah' LIMIT 2"
  *
@@ -1107,7 +1135,7 @@ MODRET cmd_select(cmd_rec *cmd) {
     return PR_ERROR_MSG(cmd, MOD_SQL_MYSQL_VERSION,
       pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   }
- 
+
   conn = (db_conn_t *) entry->data;
 
   cmr = cmd_open(cmd);
@@ -1141,8 +1169,8 @@ MODRET cmd_select(cmd_rec *cmd) {
       register unsigned int i;
 
       /* Handle the optional arguments -- they're rare, so in this case
-       * we'll play with the already constructed query string, but in 
-       * general we should probably take optional arguments into account 
+       * we'll play with the already constructed query string, but in
+       * general we should probably take optional arguments into account
        * and put the query string together later once we know what they are.
        */
       for (i = 5; i < cmd->argc; i++) {
@@ -1191,7 +1219,7 @@ MODRET cmd_select(cmd_rec *cmd) {
   close_cmd = sql_make_cmd(cmd->tmp_pool, 1, entry->name);
   cmd_close(close_cmd);
   SQL_FREE_CMD(close_cmd);
- 
+
   sql_log(DEBUG_FUNC, "%s", "exiting \tmysql cmd_select");
   return dmr;
 }
@@ -1201,7 +1229,7 @@ MODRET cmd_select(cmd_rec *cmd) {
  *  based on the inputs.
  *
  * cmd_insert takes either exactly two inputs, or exactly four.  If only
- *  two inputs are given, the second is a monolithic query string.  See 
+ *  two inputs are given, the second is a monolithic query string.  See
  *  the examples below.
  *
  * Inputs:
@@ -1211,13 +1239,13 @@ MODRET cmd_select(cmd_rec *cmd) {
  *  cmd->argv[3]: value string
  *
  * Returns:
- *  either a properly filled error modret_t if the insert failed, or a 
+ *  either a properly filled error modret_t if the insert failed, or a
  *  simple non-error modret_t.
  *
  * Example:
  *  These are example queries that would be executed for MySQL; other
  *  backends will have different SQL syntax.
- *  
+ *
  *  argv[] = "default","log","userid, date, count", "'aah', now(), 2"
  *  query  = "INSERT INTO log (userid, date, count) VALUES ('aah', now(), 2)"
  *
@@ -1302,7 +1330,7 @@ MODRET cmd_insert(cmd_rec *cmd) {
  *  based on the inputs.
  *
  * cmd_update takes either exactly two, three, or four inputs.  If only
- *  two inputs are given, the second is a monolithic query string.  See 
+ *  two inputs are given, the second is a monolithic query string.  See
  *  the examples below.
  *
  * Inputs:
@@ -1313,19 +1341,19 @@ MODRET cmd_insert(cmd_rec *cmd) {
  *  cmd->argv[3]: where string
  *
  * Returns:
- *  either a properly filled error modret_t if the update failed, or a 
- *  simple non-error modret_t. *  
+ *  either a properly filled error modret_t if the update failed, or a
+ *  simple non-error modret_t.
  *
  * Example:
  *  These are example queries that would be executed for MySQL; other
  *  backends will have different SQL syntax.
- *  
+ *
  *  argv[] = "default","user","count=count+1", "userid='joesmith'"
  *  query  = "UPDATE user SET count=count+1 WHERE userid='joesmith'"
  *
  * Notes:
- *  argv[3] is optional -- it may be NULL, or it may not exist at all.  
- *  make sure this is handled correctly. 
+ *  argv[3] is optional -- it may be NULL, or it may not exist at all.
+ *  make sure this is handled correctly.
  */
 MODRET cmd_update(cmd_rec *cmd) {
   conn_entry_t *entry = NULL;
@@ -1451,7 +1479,7 @@ MODRET cmd_procedure(cmd_rec *cmd) {
  *
  * Example:
  *  None.  The query should be passed directly to the backend database.
- *  
+ *
  * Notes:
  *  None.
  */
@@ -1497,11 +1525,11 @@ MODRET cmd_query(cmd_rec *cmd) {
    */
   if (mysql_real_query(conn->mysql, query, strlen(query)) != 0) {
     dmr = build_error(cmd, conn);
-    
+
     close_cmd = sql_make_cmd(cmd->tmp_pool, 1, entry->name);
     cmd_close(close_cmd);
     SQL_FREE_CMD(close_cmd);
-    
+
     sql_log(DEBUG_FUNC, "%s", "exiting \tmysql cmd_query");
     return dmr;
   }
@@ -1519,7 +1547,7 @@ MODRET cmd_query(cmd_rec *cmd) {
   } else {
     dmr = PR_HANDLED(cmd);
   }
-  
+
   /* close the connection, return the data. */
   close_cmd = sql_make_cmd(cmd->tmp_pool, 1, entry->name);
   cmd_close(close_cmd);
@@ -1531,16 +1559,16 @@ MODRET cmd_query(cmd_rec *cmd) {
 
 /*
  * cmd_escapestring: certain strings sent to a database should be properly
- *  escaped -- for instance, quotes need to be escaped to insure that 
+ *  escaped -- for instance, quotes need to be escaped to insure that
  *  a query string is properly formatted.  cmd_escapestring does whatever
- *  is necessary to escape the special characters in a string. 
+ *  is necessary to escape the special characters in a string.
  *
  * Inputs:
  *  cmd->argv[0]: connection name
  *  cmd->argv[1]: string to escape
  *
  * Returns:
- *  this command CANNOT fail.  The return string is null-terminated and 
+ *  this command CANNOT fail.  The return string is null-terminated and
  *  stored in the data field of the modret_t structure.
  *
  * Notes:
@@ -1809,7 +1837,7 @@ static modret_t *sql_mysql_password(cmd_rec *cmd, const char *plaintext,
 #if defined(HAVE_MYSQL_MAKE_SCRAMBLED_PASSWORD_323)
   if (success == FALSE) {
     memset(scrambled, '\0', sizeof(scrambled));
- 
+
     sql_log(DEBUG_FUNC, "%s",
       "checking again using deprecated legacy MySQL password algorithm (make_scrambled_password_323 function)");
     sql_log(DEBUG_FUNC, "%s",
@@ -1831,9 +1859,9 @@ static modret_t *sql_mysql_password(cmd_rec *cmd, const char *plaintext,
 }
 
 /*
- * cmd_identify: returns API information and an identification string for 
- *  the backend handler.  mod_sql will call this at initialization and 
- *  display the identification string.  The API version information is 
+ * cmd_identify: returns API information and an identification string for
+ *  the backend handler.  mod_sql will call this at initialization and
+ *  display the identification string.  The API version information is
  *  used by mod_sql to identify available command handlers.
  *
  * Inputs:
@@ -1865,7 +1893,7 @@ MODRET cmd_identify(cmd_rec * cmd) {
   sd->data[1] = MOD_SQL_API_V1;
 
   return mod_create_data(cmd, (void *) sd);
-}  
+}
 
 /*
  * cmd_prepare: prepares this mod_sql_mysql module for running.

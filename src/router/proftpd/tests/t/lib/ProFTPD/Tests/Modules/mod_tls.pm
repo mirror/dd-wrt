@@ -55,6 +55,11 @@ my $TESTS = {
     test_class => [qw(bug forking)],
   },
 
+  tls_crl_file_multiple_cas_crls_issue1960 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
   tls_login_with_sni_issue850 => {
     order => ++$order,
     test_class => [qw(forking)],
@@ -131,6 +136,11 @@ my $TESTS = {
   },
 
   tls_list_no_session_reuse => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_list_with_session_reuse => {
     order => ++$order,
     test_class => [qw(forking)],
   },
@@ -227,6 +237,16 @@ my $TESTS = {
   },
 
   tls_opts_allow_per_user_nosessionreuserequired_ifsess_login_issue1175 => {
+    order => ++$order,
+    test_class => [qw(bug forking mod_ifsession)],
+  },
+
+  tls_opts_allow_per_user_tlsrequired_off_ifsess_protocols_issue1679 => {
+    order => ++$order,
+    test_class => [qw(bug forking mod_ifsession)],
+  },
+
+  tls_opts_allow_per_user_tlsrequired_on_ifsess_no_tls_issue1640 => {
     order => ++$order,
     test_class => [qw(bug forking mod_ifsession)],
   },
@@ -1431,6 +1451,124 @@ sub tls_crl_file_other_ca_bug4468 {
   # Stop server
   server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_crl_file_multiple_cas_crls_issue1960 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $server_cert = File::Spec->rel2abs('t/etc/modules/mod_tls/crl-intermediate-server.pem');
+  my $client_cert = File::Spec->rel2abs('t/etc/modules/mod_tls/crl-intermediate-client.pem');
+  my $ca_cert = File::Spec->rel2abs('t/etc/modules/mod_tls/crl-intermediate-cas.pem');
+  my $crl_file = File::Spec->rel2abs('t/etc/modules/mod_tls/crl-intermediate-crls.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'tls:30',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSRSACertificateFile => $server_cert,
+        TLSCACertificateFile => $ca_cert,
+
+        # Verifying clients via CRLs only works when verification is
+        # explicitly enabled.
+        TLSCARevocationFile => $crl_file,
+        TLSVerifyClient => 'on',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $client;
+
+      # IO::Socket::SSL options
+      my $ssl_opts = {
+        SSL_use_cert => 1,
+        SSL_cert_file => $client_cert,
+        SSL_key_file => $client_cert,
+        SSL_ca_file => $ca_cert,
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+
+        # Disable verification of the CN in the server cert
+        SSL_verifycn_scheme => 'none',
+      };
+
+      $client = Net::FTPSSL->new('127.0.0.1',
+        Croak => 1,
+        Encryption => 'E',
+        Port => $port,
+        SSL_Client_Certificate => $ssl_opts,
+      );
+      if ($client) {
+        die("TLS handshake with revoked client cert succeeded unexpectedly");
+      }
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    $self->assert(qr/certificate revoked/, $ex,
+      test_msg("Did not see expected 'certificate revoked' error"));
+    $ex = undef;
+  }
 
   test_cleanup($setup->{log_file}, $ex);
 }
@@ -3795,49 +3933,19 @@ sub tls_login_before_auth_without_opt_allow_per_user_issue1533 {
 sub tls_list_no_session_reuse {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/tls.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/tls.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/tls.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/tls.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/tls.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  my $setup = test_setup($tmpdir, 'tls');
 
   my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
   my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -3846,7 +3954,7 @@ sub tls_list_no_session_reuse {
 
       'mod_tls.c' => {
         TLSEngine => 'on',
-        TLSLog => $log_file,
+        TLSLog => $setup->{log_file},
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -3854,7 +3962,8 @@ sub tls_list_no_session_reuse {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -3882,14 +3991,14 @@ sub tls_list_no_session_reuse {
         Croak => 1,
       );
 
-      unless ($client->login($user, $passwd)) {
+      unless ($client->login($setup->{user}, $setup->{passwd})) {
         die("Can't login: " . $client->last_message());
       }
 
       # Since we are requiring SSL session reuse for data transfers,
       # and this client is not using SSL session resumption, I expect
       # this data transfer to fail.
-      eval { 
+      eval {
         my $res = $client->list('.');
         if ($res) {
           die("LIST succeeded unexpectedly");
@@ -3903,9 +4012,8 @@ sub tls_list_no_session_reuse {
       my $resp = $client->message();
       my $expected = '425 Unable to build data connection: Operation not permitted';
       $self->assert($expected eq $resp,
-        test_msg("Expected '$expected', got '$resp'"));
+        test_msg("Expected response '$expected', got '$resp'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -3914,7 +4022,7 @@ sub tls_list_no_session_reuse {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -3924,18 +4032,117 @@ sub tls_list_no_session_reuse {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
+}
 
-    die($ex);
+sub tls_list_with_session_reuse {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
   }
 
-  unlink($log_file);
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $client = Net::FTPSSL->new('127.0.0.1',
+        Encryption => 'E',
+        Port => $port,
+        Croak => 1,
+        ReuseSession => 1,
+      );
+
+      unless ($client->login($setup->{user}, $setup->{passwd})) {
+        die("Can't login: " . $client->last_message());
+      }
+
+      # Since we are requiring SSL session reuse for data transfers,
+      # and this client IS using SSL session resumption, I expect
+      # these data transfers to succeed.
+      for (my $i = 0; $i < 3; $i++) {
+        my $res = $client->list('.');
+        unless ($res) {
+          die("LIST failed unexpectedly");
+        }
+
+        my $resp = $client->message();
+        my $expected = '226 Transfer complete';
+        $self->assert($expected eq $resp,
+          test_msg("Expected response '$expected', got '$resp'"));
+      }
+
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub tls_list_with_no_session_reuse_required_opt {
@@ -5380,9 +5587,9 @@ sub tls_opts_std_env_vars_client_vars {
         my $issuer_dn = $2;
 
         $self->assert(length($subj_dn) > 0,
-          test_msg("Expected subject DN, got '$subj_dn'"));      
+          test_msg("Expected subject DN, got '$subj_dn'"));
         $self->assert(length($issuer_dn) > 0,
-          test_msg("Expected issuer DN, got '$issuer_dn'"));      
+          test_msg("Expected issuer DN, got '$issuer_dn'"));
 
         $ok = 1;
         last;
@@ -5509,7 +5716,7 @@ sub tls_opts_ipaddr_required_ipv4 {
         );
       };
 
-      unless ($@) { 
+      unless ($@) {
         die("Connection to server succeeded unexpectedly");
       }
 
@@ -5665,7 +5872,7 @@ sub tls_opts_ipaddr_required_ipv6 {
         );
       };
 
-      unless ($@) { 
+      unless ($@) {
         die("Connection to server succeeded unexpectedly");
       }
 
@@ -6153,6 +6360,257 @@ EOC
   }
 
   unlink($log_file);
+}
+
+sub tls_opts_allow_per_user_tlsrequired_off_ifsess_protocols_issue1679 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    Protocols => 'ftp ftps',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+        TLSOptions => 'AllowPerUser',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<IfUser $setup->{user}>
+  TLSRequired off
+</IfUser>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+
+      my $expected = 230;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "User $setup->{user} logged in";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_opts_allow_per_user_tlsrequired_on_ifsess_no_tls_issue1640 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+        TLSOptions => 'AllowPerUser',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+# This is required
+IfSessionOptions PerUnauthenticatedUser
+
+<IfUser !$setup->{user}>
+  TLSRequired off
+</IfUser>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      eval { $client->user($setup->{user}) };
+      unless ($@) {
+        die("USER succeeded unexpectedly");
+      }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+
+      my $expected = 530;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "Login incorrect.";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  eval {
+    if (open(my $fh, "< $setup->{log_file}")) {
+      my $ok = 1;
+
+      while (my $line = <$fh>) {
+        chomp($line);
+
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "# $line\n";
+        }
+
+        if ($line =~ /dispatching PRE_CMD.*PASS/) {
+          $ok = 0;
+          last;
+        }
+      }
+      close($fh);
+      $self->assert($ok, test_msg("Saw PASS command unexpectedly"));
+
+    } else {
+      die("Can't read $setup->{log_file}: $!");
+    }
+  };
+  if ($@) {
+    $ex = $@ unless $ex;
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub tls_opts_allow_per_user_tlsrequired_ctrl_user_login_bug3325 {
@@ -6871,7 +7329,7 @@ sub tls_rest_2gb_last_byte {
   unless (open($tmp_fh, "> $tmp_file")) {
     die("Can't open $tmp_file: $!");
   }
- 
+
   my $config = {
     PidFile => $pid_file,
     ScoreboardFile => $scoreboard_file,
@@ -7083,7 +7541,7 @@ sub tls_rest_4gb_last_byte {
   unless (open($tmp_fh, "> $tmp_file")) {
     die("Can't open $tmp_file: $!");
   }
- 
+
   my $config = {
     PidFile => $pid_file,
     ScoreboardFile => $scoreboard_file,
@@ -8254,7 +8712,7 @@ sub tls_opts_commonname_required_bug3512 {
         );
       };
 
-      unless ($@) { 
+      unless ($@) {
         eval { $client->login($user, $passwd) };
         unless ($@) {
           die("Login succeeded unexpectedly");
@@ -8420,7 +8878,7 @@ sub tls_opts_dns_name_required {
         );
       };
 
-      unless ($@) { 
+      unless ($@) {
         eval { $client->login($user, $passwd) };
         unless ($@) {
           die("Login succeeded unexpectedly");
@@ -8586,7 +9044,7 @@ sub tls_opts_ip_addr_dns_name_cn_required {
         );
       };
 
-      unless ($@) { 
+      unless ($@) {
         eval { $client->login($user, $passwd) };
         unless ($@) {
           die("Login succeeded unexpectedly");
@@ -8751,7 +9209,7 @@ sub tls_site_chmod_ok {
 
       unless ($client->site("CHMOD 777 test.txt")) {
         die("SITE CHMOD failed: " . $client->last_message());
-      } 
+      }
 
       my $resp = $client->last_message();
 
@@ -10606,7 +11064,7 @@ sub tls_client_cert_verify_failed_selfsigned_cert_only_bug3742 {
         #
         #  error:14094418:SSL routines:SSL3_READ_BYTES:tlsv1 alert unknown ca
 
-        unless ($@) { 
+        unless ($@) {
           die("Successfully connected to FTPS server unexpectedly");
         }
 
@@ -10721,7 +11179,7 @@ sub tls_client_cert_verify_failed_selfsigned_cert_in_chain_bug3742 {
       close($infh);
 
       print $outfh $data;
-    
+
     } else {
       die("Can't read $cert: $!");
     }
@@ -10805,7 +11263,7 @@ sub tls_client_cert_verify_failed_selfsigned_cert_in_chain_bug3742 {
         #
         #  error:14094418:SSL routines:SSL3_READ_BYTES:tlsv1 alert unknown ca
 
-        unless ($@) { 
+        unless ($@) {
           die("Successfully connected to FTPS server unexpectedly");
         }
 
@@ -10890,7 +11348,7 @@ sub tls_client_cert_verify_ok_server_selfsigned_cert_in_chain_bug3742 {
       close($infh);
 
       print $outfh $data;
-    
+
     } else {
       die("Can't read $cert: $!");
     }
@@ -13616,8 +14074,8 @@ sub tls_sscn_toggle_bug3955 {
 
       } else {
         $resp_code = $client->quot('SSCN', 'ON');
-      } 
-      
+      }
+
       unless ($resp_code == 2) {
         die("SSCN failed: " . $client->last_message());
       }

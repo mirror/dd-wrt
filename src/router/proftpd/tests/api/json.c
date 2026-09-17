@@ -340,7 +340,7 @@ START_TEST (json_object_remove_test) {
   res = pr_json_object_remove(json, key);
   ck_assert_msg(res == 0, "Failed to remove existing key '%s': %s", key,
     strerror(errno));
-  
+
   res = pr_json_object_count(json);
   ck_assert_msg(res == 2, "Expected count 2, got %d", res);
 
@@ -362,13 +362,13 @@ START_TEST(json_object_get_bool_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_get_bool(p, NULL, NULL, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_object_alloc(p);
 
   mark_point();
@@ -376,7 +376,7 @@ START_TEST(json_object_get_bool_test) {
   ck_assert_msg(res < 0, "Failed to handle null key");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
- 
+
   key = "foo";
 
   mark_point();
@@ -384,13 +384,13 @@ START_TEST(json_object_get_bool_test) {
   ck_assert_msg(res < 0, "Failed to handle null val");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_get_bool(p, json, key, &val);
   ck_assert_msg(res < 0, "Failed to handle nonexistent key '%s'", key);
   ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
- 
+
   (void) pr_json_object_free(json);
 
   text = "{\"foo\":1,\"bar\":true}";
@@ -403,13 +403,13 @@ START_TEST(json_object_get_bool_test) {
     strerror(errno), errno);
 
   key = "bar";
- 
+
   mark_point();
   res = pr_json_object_get_bool(p, json, key, &val);
   ck_assert_msg(res == 0, "Failed to handle existing key '%s': %s", key,
     strerror(errno));
   ck_assert_msg(val == TRUE, "Expected TRUE, got %d", val);
- 
+
   (void) pr_json_object_free(json);
 }
 END_TEST
@@ -424,13 +424,13 @@ START_TEST(json_object_set_bool_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_set_bool(p, NULL, NULL, 0);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_object_alloc(p);
 
   mark_point();
@@ -438,22 +438,22 @@ START_TEST(json_object_set_bool_test) {
   ck_assert_msg(res < 0, "Failed to handle null key");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
- 
+
   key = "foo";
 
   mark_point();
   res = pr_json_object_set_bool(p, json, key, val);
   ck_assert_msg(res == 0, "Failed to set key '%s' to %d: %s", key, val,
     strerror(errno));
- 
+
   val = FALSE;
- 
+
   mark_point();
   res = pr_json_object_get_bool(p, json, key, &val);
   ck_assert_msg(res == 0, "Failed to handle existing key '%s': %s", key,
     strerror(errno));
   ck_assert_msg(val == TRUE, "Expected TRUE, got %d", val);
- 
+
   (void) pr_json_object_free(json);
 }
 END_TEST
@@ -468,13 +468,13 @@ START_TEST(json_object_get_null_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_get_null(p, NULL, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_object_alloc(p);
 
   mark_point();
@@ -482,7 +482,7 @@ START_TEST(json_object_get_null_test) {
   ck_assert_msg(res < 0, "Failed to handle null key");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
- 
+
   key = "foo";
 
   mark_point();
@@ -490,7 +490,7 @@ START_TEST(json_object_get_null_test) {
   ck_assert_msg(res < 0, "Failed to handle nonexistent key '%s'", key);
   ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
- 
+
   (void) pr_json_object_free(json);
 
   text = "{\"foo\":1,\"bar\":null}";
@@ -503,12 +503,12 @@ START_TEST(json_object_get_null_test) {
     strerror(errno), errno);
 
   key = "bar";
- 
+
   mark_point();
   res = pr_json_object_get_null(p, json, key);
   ck_assert_msg(res == 0, "Failed to handle existing key '%s': %s", key,
     strerror(errno));
- 
+
   (void) pr_json_object_free(json);
 }
 END_TEST
@@ -523,13 +523,13 @@ START_TEST(json_object_set_null_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_set_null(p, NULL, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_object_alloc(p);
 
   mark_point();
@@ -537,18 +537,18 @@ START_TEST(json_object_set_null_test) {
   ck_assert_msg(res < 0, "Failed to handle null key");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
- 
+
   key = "foo";
 
   mark_point();
   res = pr_json_object_set_null(p, json, key);
   ck_assert_msg(res == 0, "Failed to set key '%s': %s", key, strerror(errno));
- 
+
   mark_point();
   res = pr_json_object_get_null(p, json, key);
   ck_assert_msg(res == 0, "Failed to handle existing key '%s': %s", key,
     strerror(errno));
- 
+
   (void) pr_json_object_free(json);
 }
 END_TEST
@@ -564,13 +564,13 @@ START_TEST(json_object_get_number_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_get_number(p, NULL, NULL, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_object_alloc(p);
 
   mark_point();
@@ -578,7 +578,7 @@ START_TEST(json_object_get_number_test) {
   ck_assert_msg(res < 0, "Failed to handle null key");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
- 
+
   key = "foo";
 
   mark_point();
@@ -586,13 +586,13 @@ START_TEST(json_object_get_number_test) {
   ck_assert_msg(res < 0, "Failed to handle null val");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_get_number(p, json, key, &val);
   ck_assert_msg(res < 0, "Failed to handle nonexistent key '%s'", key);
   ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
- 
+
   (void) pr_json_object_free(json);
 
   text = "{\"foo\":false,\"bar\":7}";
@@ -605,13 +605,13 @@ START_TEST(json_object_get_number_test) {
     strerror(errno), errno);
 
   key = "bar";
- 
+
   mark_point();
   res = pr_json_object_get_number(p, json, key, &val);
   ck_assert_msg(res == 0, "Failed to handle existing key '%s': %s", key,
     strerror(errno));
   ck_assert_msg(fabs(val) == fabs((double) 7.0), "Expected 7, got %e", val);
- 
+
   (void) pr_json_object_free(json);
 }
 END_TEST
@@ -627,13 +627,13 @@ START_TEST(json_object_set_number_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_set_number(p, NULL, NULL, 0);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_object_alloc(p);
 
   mark_point();
@@ -641,22 +641,22 @@ START_TEST(json_object_set_number_test) {
   ck_assert_msg(res < 0, "Failed to handle null key");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
- 
+
   key = "foo";
 
   mark_point();
   res = pr_json_object_set_number(p, json, key, val);
   ck_assert_msg(res == 0, "Failed to set key '%s' to %f: %s", key, val,
     strerror(errno));
- 
+
   val = 3;
- 
+
   mark_point();
   res = pr_json_object_get_number(p, json, key, &val);
   ck_assert_msg(res == 0, "Failed to handle existing key '%s': %s", key,
     strerror(errno));
   ck_assert_msg(fabs(val) == fabs((double) 7.0), "Expected 7, got %e", val);
- 
+
   (void) pr_json_object_free(json);
 }
 END_TEST
@@ -671,13 +671,13 @@ START_TEST(json_object_get_string_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_get_string(p, NULL, NULL, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_object_alloc(p);
 
   mark_point();
@@ -685,7 +685,7 @@ START_TEST(json_object_get_string_test) {
   ck_assert_msg(res < 0, "Failed to handle null key");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
- 
+
   key = "foo";
 
   mark_point();
@@ -693,13 +693,13 @@ START_TEST(json_object_get_string_test) {
   ck_assert_msg(res < 0, "Failed to handle null val");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_get_string(p, json, key, (char **) &val);
   ck_assert_msg(res < 0, "Failed to handle nonexistent key '%s'", key);
   ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
- 
+
   (void) pr_json_object_free(json);
 
   text = "{\"foo\":false,\"bar\":\"baz\"}";
@@ -712,13 +712,13 @@ START_TEST(json_object_get_string_test) {
     strerror(errno), errno);
 
   key = "bar";
- 
+
   mark_point();
   res = pr_json_object_get_string(p, json, key, (char **) &val);
   ck_assert_msg(res == 0, "Failed to handle existing key '%s': %s", key,
     strerror(errno));
   ck_assert_msg(strcmp(val, "baz") == 0, "Expected 'baz', got '%s'", val);
- 
+
   (void) pr_json_object_free(json);
 
   text = "{\"foo\":\"\"}";
@@ -746,13 +746,13 @@ START_TEST(json_object_set_string_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_set_string(p, NULL, NULL, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_object_alloc(p);
 
   mark_point();
@@ -760,9 +760,9 @@ START_TEST(json_object_set_string_test) {
   ck_assert_msg(res < 0, "Failed to handle null key");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
- 
+
   key = "foo";
- 
+
   mark_point();
   res = pr_json_object_set_string(p, json, key, NULL);
   ck_assert_msg(res < 0, "Failed to handle null val");
@@ -775,16 +775,16 @@ START_TEST(json_object_set_string_test) {
   res = pr_json_object_set_string(p, json, key, val);
   ck_assert_msg(res == 0, "Failed to set key '%s' to '%s': %s", key, val,
     strerror(errno));
- 
+
   val = "glarg";
- 
+
   mark_point();
   res = pr_json_object_get_string(p, json, key, (char **) &val);
   ck_assert_msg(res == 0, "Failed to handle existing key '%s': %s", key,
     strerror(errno));
   ck_assert_msg(strcmp(val, "Hello, World!") == 0,
     "Expected 'Hello, World!', got '%s'", val);
- 
+
   (void) pr_json_object_free(json);
 }
 END_TEST
@@ -801,13 +801,13 @@ START_TEST(json_object_get_array_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_get_array(p, NULL, NULL, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_object_alloc(p);
 
   mark_point();
@@ -815,7 +815,7 @@ START_TEST(json_object_get_array_test) {
   ck_assert_msg(res < 0, "Failed to handle null key");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
- 
+
   key = "foo";
 
   mark_point();
@@ -823,13 +823,13 @@ START_TEST(json_object_get_array_test) {
   ck_assert_msg(res < 0, "Failed to handle null val");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_get_array(p, json, key, &val);
   ck_assert_msg(res < 0, "Failed to handle nonexistent key '%s'", key);
   ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
- 
+
   (void) pr_json_object_free(json);
 
   text = "{\"foo\":false,\"bar\":[\"baz\"]}";
@@ -843,7 +843,7 @@ START_TEST(json_object_get_array_test) {
 
   key = "bar";
   val = NULL;
- 
+
   mark_point();
   res = pr_json_object_get_array(p, json, key, &val);
   ck_assert_msg(res == 0, "Failed to handle existing key '%s': %s", key,
@@ -874,13 +874,13 @@ START_TEST(json_object_set_array_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_set_array(p, NULL, NULL, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_object_alloc(p);
 
   mark_point();
@@ -888,7 +888,7 @@ START_TEST(json_object_set_array_test) {
   ck_assert_msg(res < 0, "Failed to handle null key");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
- 
+
   key = "foo";
 
   mark_point();
@@ -906,7 +906,7 @@ START_TEST(json_object_set_array_test) {
     strerror(errno));
 
   val = NULL;
- 
+
   mark_point();
   res = pr_json_object_get_array(p, json, key, &val);
   ck_assert_msg(res == 0, "Failed to handle existing key '%s': %s", key,
@@ -914,7 +914,7 @@ START_TEST(json_object_set_array_test) {
   ck_assert_msg(val != NULL, "Expected array, got null");
 
   mark_point();
-  (void) pr_json_array_free(val); 
+  (void) pr_json_array_free(val);
   (void) pr_json_object_free(json);
 }
 END_TEST
@@ -930,13 +930,13 @@ START_TEST(json_object_get_object_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_get_object(p, NULL, NULL, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_object_alloc(p);
 
   mark_point();
@@ -944,7 +944,7 @@ START_TEST(json_object_get_object_test) {
   ck_assert_msg(res < 0, "Failed to handle null key");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
- 
+
   key = "foo";
 
   mark_point();
@@ -952,13 +952,13 @@ START_TEST(json_object_get_object_test) {
   ck_assert_msg(res < 0, "Failed to handle null val");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_get_object(p, json, key, &val);
   ck_assert_msg(res < 0, "Failed to handle nonexistent key '%s'", key);
   ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
- 
+
   (void) pr_json_object_free(json);
 
   text = "{\"foo\":false,\"bar\":{\"baz\":null}}";
@@ -972,7 +972,7 @@ START_TEST(json_object_get_object_test) {
 
   key = "bar";
   val = NULL;
- 
+
   mark_point();
   res = pr_json_object_get_object(p, json, key, &val);
   ck_assert_msg(res == 0, "Failed to handle existing key '%s': %s", key,
@@ -1002,13 +1002,13 @@ START_TEST(json_object_set_object_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_object_set_object(p, NULL, NULL, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_object_alloc(p);
 
   mark_point();
@@ -1016,7 +1016,7 @@ START_TEST(json_object_set_object_test) {
   ck_assert_msg(res < 0, "Failed to handle null key");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
- 
+
   key = "foo";
 
   mark_point();
@@ -1034,7 +1034,7 @@ START_TEST(json_object_set_object_test) {
     strerror(errno));
 
   val = NULL;
- 
+
   mark_point();
   res = pr_json_object_get_object(p, json, key, &val);
   ck_assert_msg(res == 0, "Failed to handle existing key '%s': %s", key,
@@ -1042,7 +1042,7 @@ START_TEST(json_object_set_object_test) {
   ck_assert_msg(val != NULL, "Expected object, got null");
 
   mark_point();
-  (void) pr_json_object_free(val); 
+  (void) pr_json_object_free(val);
   (void) pr_json_object_free(json);
 }
 END_TEST
@@ -1313,7 +1313,7 @@ START_TEST(json_array_remove_test) {
   res = pr_json_array_remove(json, idx);
   ck_assert_msg(res == 0, "Failed to remove existing index %u: %s", idx,
     strerror(errno));
-  
+
   res = pr_json_array_count(json);
   ck_assert_msg(res == 5, "Expected count 5, got %d", res);
 
@@ -1336,13 +1336,13 @@ START_TEST(json_array_get_bool_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_array_get_bool(p, NULL, 0, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_array_alloc(p);
 
   mark_point();
@@ -1350,15 +1350,15 @@ START_TEST(json_array_get_bool_test) {
   ck_assert_msg(res < 0, "Failed to handle null val");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
- 
+
   idx = 0;
- 
+
   mark_point();
   res = pr_json_array_get_bool(p, json, idx, &val);
   ck_assert_msg(res < 0, "Failed to handle nonexistent index %u", idx);
   ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
- 
+
   (void) pr_json_array_free(json);
 
   text = "[\"foo\",2,\"bar\",true]";
@@ -1377,7 +1377,7 @@ START_TEST(json_array_get_bool_test) {
   ck_assert_msg(res == 0, "Failed to handle existing index %u: %s", idx,
     strerror(errno));
   ck_assert_msg(val == TRUE, "Expected TRUE, got %d", val);
- 
+
   (void) pr_json_array_free(json);
 }
 END_TEST
@@ -1391,27 +1391,27 @@ START_TEST(json_array_append_bool_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_array_append_bool(p, NULL, 0);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_array_alloc(p);
 
   mark_point();
   res = pr_json_array_append_bool(p, json, val);
   ck_assert_msg(res == 0, "Failed to append val %d: %s", val, strerror(errno));
- 
+
   val = FALSE;
- 
+
   mark_point();
   res = pr_json_array_get_bool(p, json, 0, &val);
   ck_assert_msg(res == 0, "Failed to handle existing index 0: %s",
     strerror(errno));
   ck_assert_msg(val == TRUE, "Expected TRUE, got %d", val);
- 
+
   (void) pr_json_array_free(json);
 }
 END_TEST
@@ -1427,23 +1427,23 @@ START_TEST(json_array_get_null_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_array_get_null(p, NULL, 0);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_array_alloc(p);
 
   idx = 1;
- 
+
   mark_point();
   res = pr_json_array_get_null(p, json, idx);
   ck_assert_msg(res < 0, "Failed to handle nonexistent index %u", idx);
   ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
- 
+
   (void) pr_json_array_free(json);
 
   text = "[\"foo\",2,\"bar\",null]";
@@ -1461,7 +1461,7 @@ START_TEST(json_array_get_null_test) {
   res = pr_json_array_get_null(p, json, idx);
   ck_assert_msg(res == 0, "Failed to handle existing index %u: %s", idx,
     strerror(errno));
- 
+
   (void) pr_json_array_free(json);
 }
 END_TEST
@@ -1475,24 +1475,24 @@ START_TEST(json_array_append_null_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_array_append_null(p, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_array_alloc(p);
 
   mark_point();
   res = pr_json_array_append_null(p, json);
   ck_assert_msg(res == 0, "Failed to append null vall: %s", strerror(errno));
- 
+
   mark_point();
   res = pr_json_array_get_null(p, json, 0);
   ck_assert_msg(res == 0, "Failed to handle existing index 0: %s",
     strerror(errno));
- 
+
   (void) pr_json_array_free(json);
 }
 END_TEST
@@ -1509,13 +1509,13 @@ START_TEST(json_array_get_number_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_array_get_number(p, NULL, 0, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_array_alloc(p);
 
   mark_point();
@@ -1523,15 +1523,15 @@ START_TEST(json_array_get_number_test) {
   ck_assert_msg(res < 0, "Failed to handle null val");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
- 
+
   idx = 3;
- 
+
   mark_point();
   res = pr_json_array_get_number(p, json, idx, &val);
   ck_assert_msg(res < 0, "Failed to handle nonexistent index %u", idx);
   ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
- 
+
   (void) pr_json_array_free(json);
 
   text = "[\"foo\",2,\"bar\",true]";
@@ -1550,7 +1550,7 @@ START_TEST(json_array_get_number_test) {
   ck_assert_msg(res == 0, "Failed to handle existing index %u: %s", idx,
     strerror(errno));
   ck_assert_msg(fabs(val) == fabs((double) 2.0), "Expected 2, got '%e'", val);
- 
+
   (void) pr_json_array_free(json);
 }
 END_TEST
@@ -1565,27 +1565,27 @@ START_TEST(json_array_append_number_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_array_append_number(p, NULL, 0);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_array_alloc(p);
 
   mark_point();
   res = pr_json_array_append_number(p, json, val);
   ck_assert_msg(res == 0, "Failed to append val %e: %s", val, strerror(errno));
- 
+
   val = 2;
- 
+
   mark_point();
   res = pr_json_array_get_number(p, json, 0, &val);
   ck_assert_msg(res == 0, "Failed to handle existing index 0: %s",
     strerror(errno));
   ck_assert_msg(fabs(val) == fabs((double) 7.0), "Expected 7, got %e", val);
- 
+
   (void) pr_json_array_free(json);
 }
 END_TEST
@@ -1601,13 +1601,13 @@ START_TEST(json_array_get_string_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_array_get_string(p, NULL, 0, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_array_alloc(p);
 
   mark_point();
@@ -1615,15 +1615,15 @@ START_TEST(json_array_get_string_test) {
   ck_assert_msg(res < 0, "Failed to handle null val");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
- 
+
   idx = 3;
- 
+
   mark_point();
   res = pr_json_array_get_string(p, json, idx, (char **) &val);
   ck_assert_msg(res < 0, "Failed to handle nonexistent index %u", idx);
   ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
- 
+
   (void) pr_json_array_free(json);
 
   text = "[\"foo\",2,\"bar\",true]";
@@ -1642,7 +1642,7 @@ START_TEST(json_array_get_string_test) {
   ck_assert_msg(res == 0, "Failed to handle existing index %u: %s", idx,
     strerror(errno));
   ck_assert_msg(strcmp(val, "foo") == 0, "Expected 'foo', got '%s'", val);
- 
+
   (void) pr_json_array_free(json);
 }
 END_TEST
@@ -1657,13 +1657,13 @@ START_TEST(json_array_append_string_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_array_append_string(p, NULL, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_array_alloc(p);
 
   mark_point();
@@ -1671,21 +1671,22 @@ START_TEST(json_array_append_string_test) {
   ck_assert_msg(res < 0, "Failed to handle null val");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
- 
+
   val = "foo!";
- 
+
   mark_point();
   res = pr_json_array_append_string(p, json, val);
-  ck_assert_msg(res == 0, "Failed to append val '%s': %s", val, strerror(errno));
- 
+  ck_assert_msg(res == 0, "Failed to append val '%s': %s", val,
+    strerror(errno));
+
   val = NULL;
- 
+
   mark_point();
   res = pr_json_array_get_string(p, json, 0, (char **) &val);
   ck_assert_msg(res == 0, "Failed to handle existing index 0: %s",
     strerror(errno));
   ck_assert_msg(strcmp(val, "foo!") == 0, "Expected 'foo!', got '%s'", val);
- 
+
   (void) pr_json_array_free(json);
 }
 END_TEST
@@ -1702,13 +1703,13 @@ START_TEST(json_array_get_array_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_array_get_array(p, NULL, 0, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_array_alloc(p);
 
   mark_point();
@@ -1718,13 +1719,13 @@ START_TEST(json_array_get_array_test) {
     strerror(errno), errno);
 
   idx = 0;
- 
+
   mark_point();
   res = pr_json_array_get_array(p, json, idx, &val);
   ck_assert_msg(res < 0, "Failed to handle nonexistent index %u", idx);
   ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
- 
+
   (void) pr_json_array_free(json);
 
   text = "[\"foo\",false,\"bar\",[\"baz\"]]";
@@ -1738,7 +1739,7 @@ START_TEST(json_array_get_array_test) {
 
   idx = 3;
   val = NULL;
- 
+
   mark_point();
   res = pr_json_array_get_array(p, json, idx, &val);
   ck_assert_msg(res == 0, "Failed to handle existing index %u: %s", idx,
@@ -1769,13 +1770,13 @@ START_TEST(json_array_append_array_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_array_append_array(p, NULL, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_array_alloc(p);
 
   mark_point();
@@ -1793,7 +1794,7 @@ START_TEST(json_array_append_array_test) {
 
   val = NULL;
   idx = 0;
- 
+
   mark_point();
   res = pr_json_array_get_array(p, json, idx, &val);
   ck_assert_msg(res == 0, "Failed to handle existing index %u: %s", idx,
@@ -1801,7 +1802,7 @@ START_TEST(json_array_append_array_test) {
   ck_assert_msg(val != NULL, "Expected array, got null");
 
   mark_point();
-  (void) pr_json_array_free(val); 
+  (void) pr_json_array_free(val);
   (void) pr_json_array_free(json);
 }
 END_TEST
@@ -1819,13 +1820,13 @@ START_TEST(json_array_get_object_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_array_get_object(p, NULL, 0, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_array_alloc(p);
 
   mark_point();
@@ -1835,13 +1836,13 @@ START_TEST(json_array_get_object_test) {
     strerror(errno), errno);
 
   idx = 0;
- 
+
   mark_point();
   res = pr_json_array_get_object(p, json, idx, &val);
   ck_assert_msg(res < 0, "Failed to handle nonexistent index %u", idx);
   ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
- 
+
   (void) pr_json_array_free(json);
 
   text = "[\"foo\",false,\"bar\",{}]";
@@ -1855,7 +1856,7 @@ START_TEST(json_array_get_object_test) {
 
   idx = 3;
   val = NULL;
- 
+
   mark_point();
   res = pr_json_array_get_object(p, json, idx, &val);
   ck_assert_msg(res == 0, "Failed to handle existing index %u: %s", idx,
@@ -1887,13 +1888,13 @@ START_TEST(json_array_append_object_test) {
   ck_assert_msg(res < 0, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   mark_point();
   res = pr_json_array_append_object(p, NULL, NULL);
   ck_assert_msg(res < 0, "Failed to handle null json");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
-  
+
   json = pr_json_array_alloc(p);
 
   mark_point();
@@ -1919,7 +1920,7 @@ START_TEST(json_array_append_object_test) {
   ck_assert_msg(val != NULL, "Expected object, got null");
 
   mark_point();
-  (void) pr_json_object_free(val); 
+  (void) pr_json_object_free(val);
   (void) pr_json_array_free(json);
 }
 END_TEST

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2008-2021 The ProFTPD Project team
+ * Copyright (c) 2008-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -137,6 +137,7 @@ const char *pr_gid2str(pool *, gid_t);
 #define PR_STR_FL_PRESERVE_COMMENTS		0x0001
 #define PR_STR_FL_PRESERVE_WHITESPACE		0x0002
 #define PR_STR_FL_IGNORE_CASE			0x0004
+#define PR_STR_FL_IGNORE_QUOTES			0x0008
 
 char *pr_str_get_token(char **, char *);
 char *pr_str_get_token2(char **, char *, size_t *);

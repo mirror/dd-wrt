@@ -107,7 +107,7 @@ sub shaper_sighup {
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
-  
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -158,7 +158,7 @@ sub shaper_sighup {
 
   # Finally, stop the server
   server_stop($pid_file);
- 
+
   unlink($log_file);
 }
 
@@ -183,7 +183,7 @@ sub shaper_queue_dos {
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
-  
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -315,7 +315,7 @@ sub shaper_resumed_download_bug3928 {
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
-  
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -405,7 +405,7 @@ sub shaper_resumed_download_bug3928 {
       while ($conn->read($tmp, 32768, 15)) {
         $buf .= $tmp;
       }
- 
+
       eval { $conn->close() };
 
       my $resp_code = $client->response_code();
@@ -468,7 +468,7 @@ sub shaper_sighup_shaperlog_bug4077 {
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
-  
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -543,7 +543,7 @@ sub shaper_sighup_shaperlog_bug4077 {
   my $expected_nfds = $orig_nfds-1;
   $self->assert($expected_nfds == $restart_nfds,
     test_msg("Expected $expected_nfds open fds, found $restart_nfds"));
- 
+
   unlink($log_file);
 }
 

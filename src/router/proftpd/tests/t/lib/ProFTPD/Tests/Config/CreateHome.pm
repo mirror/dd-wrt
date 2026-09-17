@@ -78,7 +78,7 @@ sub createhome_ok {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs("$tmpdir/foo/bar");
@@ -86,7 +86,7 @@ sub createhome_ok {
   my $gid = 500;
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $config = {
@@ -183,7 +183,7 @@ sub createhome_dirmode_ok {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs("$tmpdir/foo/bar");
@@ -191,7 +191,7 @@ sub createhome_dirmode_ok {
   my $gid = 500;
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $config = {
@@ -301,7 +301,7 @@ sub createhome_explicit_parent_owner_ok {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs("$tmpdir/foo/bar");
@@ -311,7 +311,7 @@ sub createhome_explicit_parent_owner_ok {
   my $explicit_guid = 250;
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $config = {
@@ -408,7 +408,7 @@ sub createhome_user_parent_owner_ok {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs("$tmpdir/foo/bar");
@@ -416,7 +416,7 @@ sub createhome_user_parent_owner_ok {
   my $gid = 500;
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $config = {
@@ -515,7 +515,7 @@ sub createhome_skel_ok {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs("$tmpdir/foo/bar");
@@ -553,7 +553,7 @@ sub createhome_skel_ok {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $config = {
@@ -650,7 +650,7 @@ sub createhome_homegid_bug3503 {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs("$tmpdir/foo/bar");
@@ -658,7 +658,7 @@ sub createhome_homegid_bug3503 {
   my $gid = 500;
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $home_gid = 777;
@@ -758,7 +758,7 @@ sub createhome_dirmode_uid_gid_ok {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -769,7 +769,7 @@ sub createhome_dirmode_uid_gid_ok {
   my $explicit_guid = 250;
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   # Trying to debug:
@@ -885,7 +885,7 @@ sub createhome_dirmode_uid_gid_norootprivs_bug3813 {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -896,7 +896,7 @@ sub createhome_dirmode_uid_gid_norootprivs_bug3813 {
   my $explicit_guid = 250;
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {

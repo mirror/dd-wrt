@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_wrap2 -- tcpwrappers-like access control
- * Copyright (c) 2000-2021 TJ Saunders
+ * Copyright (c) 2000-2025 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 
 #include "mod_wrap2.h"
 
-#ifdef WRAP2_USE_NIS
+#if defined(WRAP2_USE_NIS)
 #include <rpc/rpc.h>
 #include <rpcsvc/ypclnt.h>
 #endif /* WRAP2_USE_NIS */
@@ -353,7 +353,7 @@ static char *wrap2_get_hostname(wrap2_host_t *host) {
         sizeof(host->name));
 
       /* If the retrieved hostname ends in a trailing period, trim it off. */
-      namelen = strlen(host->name); 
+      namelen = strlen(host->name);
       if (host->name[namelen-1] == '.') {
         host->name[namelen-1] = '\0';
       }
@@ -362,12 +362,16 @@ static char *wrap2_get_hostname(wrap2_host_t *host) {
       remote_addr->na_have_dnsstr = TRUE;
 
     } else {
+      /* In order to probe the current UseReverseDNS value, we had to enable
+       * earlier.  Make sure we restore that previous value.
+       */
+      pr_netaddr_set_reverse_dns(reverse_dns);
+
       wrap2_log("'UseReverseDNS off' in effect, NOT resolving %s to DNS name "
         "for comparison", pr_netaddr_get_ipstr(session.c->remote_addr));
 
       sstrncpy(host->name, pr_netaddr_get_dnsstr(session.c->remote_addr),
         sizeof(host->name));
-      pr_netaddr_set_reverse_dns(reverse_dns);
     }
   }
 
@@ -518,7 +522,7 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
    */
 
   if (tok[0] == '@') {
-#ifdef WRAP2_USE_NIS
+#if defined(WRAP2_USE_NIS)
     /* netgroup: look it up. */
     static char *mydomain = NULL;
 
@@ -529,7 +533,7 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
 #else
     wrap2_log("warning: '%s': NIS support is not enabled", tok);
     return FALSE;
-#endif
+#endif /* WRAP2_USE_NIS */
 
   } else if (strcasecmp(tok, "ALL") == 0) {
     /* Matches everything */
@@ -554,7 +558,7 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
 
   } else if (tok[(len = strlen(tok)) - 1] == '.') {
     const char *ip_str;
- 
+
     /* Prefix */
 
     ip_str = wrap2_get_hostaddr(host);
@@ -608,7 +612,7 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
 
     return FALSE;
 
-#ifdef PR_USE_IPV6 
+#if defined(PR_USE_IPV6)
   } else if (pr_netaddr_use_ipv6() &&
              *tok == '[') {
     char *cp;
@@ -893,7 +897,7 @@ static unsigned char wrap2_match_list(array_header *list, wrap2_conn_t *conn,
         token = wrap2_skip_whitespace(tokens[j]);
         if (strcasecmp(token, "EXCEPT") == 0) {
           return (wrap2_match_list(list, conn, match_token, j+1) == 0);
-        } 
+        }
       }
 
       return TRUE;
@@ -903,7 +907,7 @@ static unsigned char wrap2_match_list(array_header *list, wrap2_conn_t *conn,
   return FALSE;
 }
 
-#ifdef WRAP2_USE_OPTIONS
+#if defined(WRAP2_USE_OPTIONS)
 
 #define WRAP2_WHITESPACE		" \t\r\n"
 
@@ -1009,7 +1013,8 @@ static int wrap2_opt_nice(char *val) {
   if (val != 0) {
     niceness = (int) strtol(val, &tmp, 10);
 
-    if (niceness < 0 || (tmp && *tmp)) {
+    if (niceness < 0 ||
+        (tmp && *tmp)) {
       wrap2_log("bad nice value: '%s'", val);
       return 0;
     }
@@ -1071,7 +1076,7 @@ static int wrap2_handle_opts(array_header *options, wrap2_conn_t *conn) {
     /* Separate the option into name and value parts. For backwards
      * compatibility we ignore exactly one '=' between name and value.
      */
-    curropt = wrap2_opt_trim_string(curr_opt);
+    curr_opt = wrap2_opt_trim_string(curr_opt);
 
     if (*(value = curr_opt + strcspn(curr_opt, "=" WRAP2_WHITESPACE))) {
       if (*value != '=') {
@@ -1085,8 +1090,9 @@ static int wrap2_handle_opts(array_header *options, wrap2_conn_t *conn) {
       }
     }
 
-    if (*value == '\0')
+    if (*value == '\0') {
       value = NULL;
+    }
 
     key = curr_opt;
 
@@ -1109,17 +1115,20 @@ static int wrap2_handle_opts(array_header *options, wrap2_conn_t *conn) {
       continue;
     }
 
-    if (!value && WRAP2_OPT_NEEDS_VAL(opt)) {
+    if (value == NULL &&
+        WRAP2_OPT_NEEDS_VAL(opt)) {
       wrap2_log("option '%s' requires value", key);
       continue;
     }
 
-    if (value && !WRAP2_OPT_ALLOWS_VAL(opt)) {
+    if (value != NULL &&
+        !WRAP2_OPT_ALLOWS_VAL(opt)) {
       wrap2_log("option '%s' requires no value", key);
       continue;
     }
 
-    if (next_opt && WRAP2_OPT_NEEDS_LAST(opt)) {
+    if (next_opt != NULL &&
+        WRAP2_OPT_NEEDS_LAST(opt)) {
       wrap2_log("option '%s' must be the last option in the list", key);
       continue;
     }
@@ -1194,7 +1203,7 @@ static int wrap2_match_table(wrap2_table_t *tab, wrap2_conn_t *conn) {
     return 0;
   }
 
-#ifdef WRAP2_USE_OPTIONS
+#if defined(WRAP2_USE_OPTIONS)
   res = wrap2_handle_opts(options_list, conn);
   if (res == WRAP2_OPT_ALLOW) {
     return WRAP2_TAB_ALLOW;
@@ -1203,7 +1212,7 @@ static int wrap2_match_table(wrap2_table_t *tab, wrap2_conn_t *conn) {
   if (res == WRAP2_OPT_DENY) {
     return WRAP2_TAB_DENY;
   }
-#endif
+#endif /* WRAP2_USE_OPTIONS */
 
   return WRAP2_TAB_MATCH;
 }
@@ -1263,7 +1272,7 @@ static unsigned char wrap2_allow_access(wrap2_conn_t *conn) {
     if (res == WRAP2_TAB_DENY ||
         res == WRAP2_TAB_MATCH) {
       wrap2_allow_table = wrap2_deny_table = NULL;
-      return FALSE; 
+      return FALSE;
     }
 
   } else {
@@ -1607,6 +1616,13 @@ MODRET set_wrapoptions(cmd_rec *cmd) {
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned long));
   *((unsigned long *) c->argv[0]) = opts;
 
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
+
   return PR_HANDLED(cmd);
 }
 
@@ -1625,7 +1641,7 @@ MODRET set_wraptables(cmd_rec *cmd) {
   register unsigned int i = 0;
   unsigned char have_registration = FALSE;
   config_rec *c = NULL;
-  
+
   CHECK_ARGS(cmd, 2);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
 
@@ -1712,7 +1728,7 @@ MODRET set_wrapusertables(cmd_rec *cmd) {
 
   /* The tables are the first two parameters */
   *argv++ = pstrdup(c->pool, cmd->argv[2]);
-  *argv++ = pstrdup(c->pool, cmd->argv[3]); 
+  *argv++ = pstrdup(c->pool, cmd->argv[3]);
 
   /* Now populate the user-expression names */
   if (argc && acl) {
@@ -1794,10 +1810,10 @@ MODRET wrap2_pre_pass(cmd_rec *cmd) {
   /* Search first for user-specific access tables.  Multiple WrapUserTables
    * directives are allowed.
    */
-  
+
   c = find_config(wrap2_ctxt ? wrap2_ctxt->subset : main_server->conf,
     CONF_PARAM, "WrapUserTables", FALSE);
-  while (c) {
+  while (c != NULL) {
     array_header *user_array;
 
     pr_signals_handle();
@@ -1826,7 +1842,7 @@ MODRET wrap2_pre_pass(cmd_rec *cmd) {
 
   /* Next, search for group-specific access tables.  Multiple WrapGroupTables
    * directives are allowed.
-   */ 
+   */
   if (!have_tables) {
     c = find_config(wrap2_ctxt ? wrap2_ctxt->subset : main_server->conf,
       CONF_PARAM, "WrapGroupTables", FALSE);
@@ -1952,15 +1968,16 @@ MODRET wrap2_post_pass(cmd_rec *cmd) {
 }
 
 MODRET wrap2_post_pass_err(cmd_rec *cmd) {
-  if (!wrap2_engine)
+  if (wrap2_engine == FALSE) {
     return PR_DECLINED(cmd);
+  }
 
   /* Clear the values from the session struct as well, specifically
    * session.user.  Failure to do so caused Bug#3727.
    */
   session.user = NULL;
   session.group = NULL;
-   
+
   wrap2_ctxt = NULL;
   wrap2_allow_table = NULL;
   wrap2_deny_table = NULL;

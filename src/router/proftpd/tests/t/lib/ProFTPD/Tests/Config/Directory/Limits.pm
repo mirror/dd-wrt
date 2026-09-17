@@ -142,7 +142,7 @@ sub limits_with_glob_then_nonglob_dirs_for_same_path {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -302,7 +302,7 @@ sub limits_with_nonglob_then_glob_dirs_for_same_path {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -462,7 +462,7 @@ sub limits_with_glob_denied_delete_bug3146 {
   } else {
     die("Can't open $test_file: $!");
   }
- 
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -474,7 +474,7 @@ sub limits_with_glob_denied_delete_bug3146 {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -630,7 +630,7 @@ sub limits_without_glob_denied_delete_bug3146 {
   } else {
     die("Can't open $test_file: $!");
   }
- 
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -642,7 +642,7 @@ sub limits_without_glob_denied_delete_bug3146 {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -800,7 +800,7 @@ sub limits_commands_comma_space_delimited_deferred_paths_bug3147 {
       die("Can't set owner of $home_dir, $sub_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -965,7 +965,7 @@ sub limits_commands_comma_delimited_deferred_paths_bug3147 {
       die("Can't set owner of $home_dir, $sub_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -1130,7 +1130,7 @@ sub limits_commands_no_commas_deferred_paths_bug3147 {
       die("Can't set owner of $home_dir, $sub_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -1291,7 +1291,7 @@ sub limits_rename_dir_ok_write_denied {
       die("Can't set owner of $home_dir, $sub_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -1450,7 +1450,7 @@ sub limits_rename_dir_failed_rnfr_denied {
       die("Can't set owner of $home_dir, $sub_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -1607,7 +1607,7 @@ sub limits_one_char_dir_bug3337 {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -1808,7 +1808,7 @@ sub limits_symlink_dir_bug3166 {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -1984,7 +1984,7 @@ sub limits_anon_dir_abs_path_bug3283 {
       die("Can't set owner of $anon_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, '/tmp',
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -2145,7 +2145,7 @@ sub limits_with_multi_globs_denied_delete {
   } else {
     die("Can't open $test_file: $!");
   }
- 
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -2157,7 +2157,7 @@ sub limits_with_multi_globs_denied_delete {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -2304,7 +2304,7 @@ sub limits_retr_bug3915 {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -2460,7 +2460,7 @@ sub limits_retr_bug3915_chrooted {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -2634,7 +2634,7 @@ sub limits_stor_with_multiple_groups_chrooted {
     }
 
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);

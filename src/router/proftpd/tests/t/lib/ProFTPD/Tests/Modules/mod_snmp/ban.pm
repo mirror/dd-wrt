@@ -370,7 +370,7 @@ sub snmp_ban_v1_get_conn_info {
   $self->handle_sigchld();
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
-    eval { 
+    eval {
       # Give the server time to start up
       sleep(1);
 
@@ -495,7 +495,7 @@ sub snmp_ban_v1_get_conn_info {
         test_msg("Expected class banned total $expected, got $class_banned"));
 
     };
- 
+
     if ($@) {
       $ex = $@;
     }
@@ -630,7 +630,7 @@ sub snmp_ban_v1_get_ban_info {
   $self->handle_sigchld();
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
-    eval { 
+    eval {
       # Give the server time to start up
       sleep(1);
 
@@ -723,7 +723,7 @@ sub snmp_ban_v1_get_ban_info {
 
       # Now wait for the ban to expire, then try again (and check stats)
       sleep($ban_expiry_secs + 2);
-      
+
       $client1 = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client1->login($user, $passwd);
       $client1->quit();
@@ -763,7 +763,7 @@ sub snmp_ban_v1_get_ban_info {
       $self->assert($ban_info->{class_ban_total} == $expected,
         test_msg("Expected class ban total $expected, got $ban_info->{class_ban_total}"));
     };
- 
+
     if ($@) {
       $ex = $@;
     }

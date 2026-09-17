@@ -134,7 +134,7 @@ sub rlimitchroot_on {
       $expected = 550;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
- 
+
       $expected = '/etc: Permission denied';
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
@@ -146,7 +146,7 @@ sub rlimitchroot_on {
 
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
- 
+
       $expected = 550;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
@@ -166,7 +166,7 @@ sub rlimitchroot_on {
       $expected = 550;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
- 
+
       $expected = '/lib: Permission denied';
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
@@ -178,7 +178,7 @@ sub rlimitchroot_on {
 
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
- 
+
       $expected = 550;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
@@ -395,7 +395,7 @@ sub rlimitchroot_off {
       $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
- 
+
       $expected = 'RMD command successful';
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
@@ -547,7 +547,7 @@ EOC
       $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
- 
+
       $expected = 'RMD command successful';
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));

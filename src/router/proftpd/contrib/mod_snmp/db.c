@@ -362,7 +362,7 @@ static struct snmp_field_info snmp_fields[] = {
     sizeof(uint32_t), "BAN_BANS_F_CLASS_BAN_COUNT" },
   { SNMP_DB_BAN_BANS_F_CLASS_BAN_TOTAL, SNMP_DB_ID_BAN, 44,
     sizeof(uint32_t), "BAN_BANS_F_CLASS_BAN_TOTAL" },
-  
+
   { 0, -1, 0, 0 }
 };
 
@@ -396,7 +396,7 @@ static struct snmp_db_info snmp_dbs[] = {
    * for a total of 16 bytes.
    */
   { SNMP_DB_ID_TIMEOUTS, -1, "timeouts.dat", NULL, NULL, 16 },
- 
+
   /* The size of the ftp table is calculated as:
    *
    *  3 session fields        x 4 bytes = 12 bytes
@@ -1088,9 +1088,9 @@ int snmp_db_get_value(pool *p, unsigned int field, int32_t *int_value,
         errno = ENOENT;
         return -1;
       }
-    
+
       *str_value = (char *) orig_user;
-      *str_valuelen = strlen(*str_value);  
+      *str_valuelen = strlen(*str_value);
 
       pr_trace_msg(trace_channel, 19,
         "read value '%s' for field %s", *str_value,
@@ -1102,7 +1102,7 @@ int snmp_db_get_value(pool *p, unsigned int field, int32_t *int_value,
       const char *proto;
 
       proto = pr_session_get_protocol(0);
-   
+
       *str_value = (char *) proto;
       *str_valuelen = strlen(*str_value);
 
@@ -1245,7 +1245,7 @@ int snmp_db_incr_value(pool *p, unsigned int field, int32_t incr) {
   res = msync(field_data, field_len, MS_SYNC);
   if (res < 0) {
     pr_trace_msg(trace_channel, 1, "msync(2) error for field %s (%d): %s",
-      snmp_db_get_fieldstr(p, field), field, strerror(errno));  
+      snmp_db_get_fieldstr(p, field), field, strerror(errno));
   }
 #endif
 

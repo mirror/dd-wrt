@@ -1500,7 +1500,7 @@ sub cwd_symlinks_traversing_bug3297 {
   } else {
     die("Can't open $sub_dir4/test.txt: $!");
   }
- 
+
   if ($< == 0) {
     unless (chmod(0755, $sub_dir1, $sub_dir2, $sub_dir3, $sub_dir4)) {
       die("Can't set perms on $sub_dir1 to 0755: $!");
@@ -1575,11 +1575,11 @@ sub cwd_symlinks_traversing_bug3297 {
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       ($resp_code, $resp_msg) = $client->cwd('archive');
-    
+
       $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
-    
+
       $expected = "CWD command successful";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
@@ -1685,7 +1685,7 @@ sub cwd_symlinks_oneshot_bug3297 {
   } else {
     die("Can't open $sub_dir4/test.txt: $!");
   }
- 
+
   if ($< == 0) {
     unless (chmod(0755, $sub_dir1, $sub_dir2, $sub_dir3, $sub_dir4)) {
       die("Can't set perms on $sub_dir1 to 0755: $!");
@@ -1878,7 +1878,7 @@ sub cwd_tilde_ok {
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/0");
   mkpath($sub_dir);
-  
+
   if ($< == 0) {
     unless (chmod(0755, $sub_dir)) {
       die("Can't set perms on $sub_dir to 0755: $!");
@@ -1978,10 +1978,10 @@ sub cwd_tilde_user_ok {
   my $home_dir2 = File::Spec->rel2abs("$tmpdir/1");
   my $uid2 = 501;
   my $gid2 = 501;
-  
+
   my $sub_dir = File::Spec->rel2abs("$tmpdir/0");
   mkpath($sub_dir);
-  
+
   if ($< == 0) {
     unless (chmod(0755, $sub_dir)) {
       die("Can't set perms on $sub_dir to 0755: $!");
@@ -2085,7 +2085,7 @@ sub cwd_tilde_chrooted_bug3785 {
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/0");
   mkpath($sub_dir);
-  
+
   if ($< == 0) {
     unless (chmod(0755, $sub_dir)) {
       die("Can't set perms on $sub_dir to 0755: $!");
@@ -2198,10 +2198,10 @@ sub cwd_tilde_user_chrooted_bug3785 {
   my $home_dir2 = File::Spec->rel2abs("$tmpdir/1");
   my $uid2 = 501;
   my $gid2 = 501;
-  
+
   my $sub_dir = File::Spec->rel2abs("$tmpdir/0");
   mkpath($sub_dir);
-  
+
   if ($< == 0) {
     unless (chmod(0755, $sub_dir)) {
       die("Can't set perms on $sub_dir to 0755: $!");

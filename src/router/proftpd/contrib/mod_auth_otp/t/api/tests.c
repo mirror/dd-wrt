@@ -37,14 +37,16 @@ static struct testsuite_info suites[] = {
   { NULL, NULL }
 };
 
-static Suite *tests_get_suite(const char *suite) { 
-  if (strcmp(suite, "base32") == 0) { 
+static Suite *tests_get_suite(const char *suite) {
+  if (strcmp(suite, "base32") == 0) {
     return tests_get_base32_suite();
+  }
 
-  } else if (strcmp(suite, "hotp") == 0) { 
+  if (strcmp(suite, "hotp") == 0) {
     return tests_get_hotp_suite();
+  }
 
-  } else if (strcmp(suite, "totp") == 0) { 
+  if (strcmp(suite, "totp") == 0) {
     return tests_get_totp_suite();
   }
 

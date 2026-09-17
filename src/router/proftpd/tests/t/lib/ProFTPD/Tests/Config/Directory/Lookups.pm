@@ -164,7 +164,7 @@ sub dir_lookup_wide_layout_abs_paths {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
@@ -358,7 +358,7 @@ sub dir_lookup_deep_layout_abs_paths {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
@@ -551,7 +551,7 @@ sub dir_lookup_wide_layout_rel_paths {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
@@ -745,7 +745,7 @@ sub dir_lookup_deep_layout_rel_paths {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
@@ -940,7 +940,7 @@ sub dir_lookup_many_files_hidefiles_bug3526 {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);

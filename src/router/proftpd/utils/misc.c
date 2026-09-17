@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,15 +56,17 @@ char *util_scan_config(const char *config_path, const char *directive) {
   char buf[PR_TUNABLE_BUFFER_SIZE] = {'\0'};
   char *cp, *value = NULL;
 
-  if (!config_path || !directive) {
+  if (config_path == NULL ||
+      directive == NULL) {
     errno = EINVAL;
     return NULL;
   }
 
   fp = fopen(config_path, "r");
-  if (fp == NULL)
+  if (fp == NULL) {
     return NULL;
-  
+  }
+
   while (!value && fgets(buf, sizeof(buf) - 1, fp)) {
     size_t len = strlen(buf);
 
@@ -75,13 +77,15 @@ char *util_scan_config(const char *config_path, const char *directive) {
     for (cp = buf; *cp && PR_ISSPACE(*cp); cp++);
 
     if (*cp == '#' ||
-        !*cp)
+        !*cp) {
       continue;
+    }
 
     len = strlen(directive);
 
-    if (strncasecmp(cp, directive, len) != 0)
+    if (strncasecmp(cp, directive, len) != 0) {
       continue;
+    }
 
     /* Found it! */
     cp += len;
@@ -121,6 +125,5 @@ char *util_scan_config(const char *config_path, const char *directive) {
   }
 
   fclose(fp);
-
   return value ? strdup(value) : NULL;
 }

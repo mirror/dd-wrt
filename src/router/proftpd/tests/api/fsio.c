@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2021 The ProFTPD Project team
+ * Copyright (c) 2008-2024 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -836,9 +836,7 @@ START_TEST (fsio_sys_access_dir_test) {
   ck_assert_msg(res == 0, "Failed to check for write access on directory: %s",
     strerror(errno));
 
-  if (getenv("CI") == NULL &&
-      getenv("CIRRUS_CLONE_DEPTH") == NULL &&
-      getenv("TRAVIS") == NULL) {
+  if (getenv("CI") == NULL) {
     uid_t other_uid;
     gid_t other_gid;
 
@@ -1388,7 +1386,7 @@ START_TEST (fsio_sys_utimes_chroot_guard_test) {
 
   res = pr_fsio_guard_chroot(TRUE);
   ck_assert_msg(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
- 
+
   res = pr_fsio_utimes("/etc/foo.bar.baz", (struct timeval *) &tvs);
   ck_assert_msg(res < 0, "Set times on /etc/foo.bar.baz unexpectedly");
   ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
@@ -1408,7 +1406,7 @@ START_TEST (fsio_sys_futimes_test) {
   int res;
   struct timeval tvs[3];
   pr_fh_t *fh;
-  
+
   memset(tvs, 0, sizeof(tvs));
 
   res = pr_fsio_futimes(NULL, NULL);
@@ -1455,6 +1453,28 @@ START_TEST (fsio_sys_fsync_test) {
 
   (void) pr_fsio_close(fh);
   (void) pr_fsio_unlink(fsio_test_path);
+}
+END_TEST
+
+START_TEST (fsio_sys_realpath_test) {
+  const char *res;
+
+  mark_point();
+  res = pr_fsio_realpath(NULL, NULL);
+  ck_assert_msg(res == NULL, "Failed to handle null pool");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  mark_point();
+  res = pr_fsio_realpath(p, NULL);
+  ck_assert_msg(res == NULL, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  mark_point();
+  res = pr_fsio_realpath(p, "/tmp");
+  ck_assert_msg(res != NULL, "Failed to resolve path '/tmp': %s",
+    strerror(errno));
 }
 END_TEST
 
@@ -2100,7 +2120,7 @@ START_TEST (fsio_sys_mkdir_chroot_guard_test) {
 
   res = pr_fsio_guard_chroot(TRUE);
   ck_assert_msg(res == FALSE, "Expected FALSE (%d), got %d", FALSE, res);
-  
+
   res = pr_fsio_mkdir("/etc/foo.bar.baz.d", mode);
   ck_assert_msg(res < 0, "Created /etc/foo.bar.baz.d unexpectedly");
   ck_assert_msg(errno == EACCES, "Expected EACCES (%d), got %s %d", EACCES,
@@ -2226,7 +2246,7 @@ START_TEST (fsio_sys_opendir_test) {
   res = pr_fsio_opendir(NULL);
   ck_assert_msg(res == NULL, "Failed to handle null arguments");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
-    strerror(errno), errno); 
+    strerror(errno), errno);
 
   mark_point();
   path = "/etc/hosts";
@@ -3201,7 +3221,8 @@ START_TEST (fsio_statcache_clear_cache_test) {
   ck_assert_msg(res == expected, "Expected %d, got %d", expected, res);
 
   res = pr_fs_setcwd(cwd);
-  ck_assert_msg(res == 0, "Failed to set cwd to '%s': %s", cwd, strerror(errno)); 
+  ck_assert_msg(res == 0, "Failed to set cwd to '%s': %s", cwd,
+    strerror(errno));
 
   free(cwd);
 }
@@ -3489,7 +3510,37 @@ START_TEST (fs_register_fs_test) {
   fs = pr_register_fs(p, "testsuite", "/testsuite");
   ck_assert_msg(fs != NULL, "Failed to register FS: %s", strerror(errno));
 
-  fs2 = pr_register_fs(p, "testsuite", "/testsuite");
+  fs2 = pr_register_fs2(p, "testsuite", "/testsuite", 0);
+  ck_assert_msg(fs2 == NULL, "Failed to handle duplicate names");
+  ck_assert_msg(errno == EEXIST, "Expected EEXIST (%d), got %s (%d)", EEXIST,
+    strerror(errno), errno);
+
+  (void) pr_remove_fs("/testsuite");
+}
+END_TEST
+
+START_TEST (fs_register_fs2_test) {
+  pr_fs_t *fs, *fs2;
+
+  fs = pr_register_fs2(NULL, NULL, NULL, 0);
+  ck_assert_msg(fs == NULL, "Failed to handle null arguments");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  fs = pr_register_fs2(p, NULL, NULL, 0);
+  ck_assert_msg(fs == NULL, "Failed to handle null name");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  fs = pr_register_fs2(p, "testsuite", NULL, 0);
+  ck_assert_msg(fs == NULL, "Failed to handle null path");
+  ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  fs = pr_register_fs2(p, "testsuite", "/testsuite", 0);
+  ck_assert_msg(fs != NULL, "Failed to register FS: %s", strerror(errno));
+
+  fs2 = pr_register_fs2(p, "testsuite", "/testsuite", 0);
   ck_assert_msg(fs2 == NULL, "Failed to handle duplicate names");
   ck_assert_msg(errno == EEXIST, "Expected EEXIST (%d), got %s (%d)", EEXIST,
     strerror(errno), errno);
@@ -3772,17 +3823,17 @@ START_TEST (fs_dircat_test) {
   ok = b;
   res = pr_fs_dircat(buf, sizeof(buf)-1, a, b);
   ck_assert_msg(res == 0, "Failed to concatenate abs-path path second dir");
-  ck_assert_msg(strcmp(buf, ok) == 0, "Expected concatenated dir '%s', got '%s'",
-    ok, buf);
- 
+  ck_assert_msg(strcmp(buf, ok) == 0,
+    "Expected concatenated dir '%s', got '%s'", ok, buf);
+
   a = "foo";
   b = "bar";
   ok = "foo/bar";
   res = pr_fs_dircat(buf, sizeof(buf)-1, a, b);
   ck_assert_msg(res == 0, "Failed to concatenate two normal paths");
-  ck_assert_msg(strcmp(buf, ok) == 0, "Expected concatenated dir '%s', got '%s'",
-    ok, buf);
- 
+  ck_assert_msg(strcmp(buf, ok) == 0,
+    "Expected concatenated dir '%s', got '%s'", ok, buf);
+
   a = "foo/";
   b = "bar";
   ok = "foo/bar";
@@ -3982,61 +4033,92 @@ START_TEST (fs_interpolate_test) {
 
   memset(buf, '\0', sizeof(buf));
 
+  mark_point();
   res = pr_fs_interpolate(NULL, NULL, 0);
   ck_assert_msg(res < 0, "Failed to handle null arguments");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
+  mark_point();
   path = "/tmp";
   res = pr_fs_interpolate(path, NULL, 0);
   ck_assert_msg(res < 0, "Failed to handle null buffer");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
+  mark_point();
   res = pr_fs_interpolate(path, buf, 0);
   ck_assert_msg(res < 0, "Failed to handle zero buffer length");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
+  mark_point();
   res = pr_fs_interpolate(path, buf, sizeof(buf)-1);
   ck_assert_msg(res == 1, "Failed to interpolate path '%s': %s", path,
     strerror(errno));
   ck_assert_msg(strcmp(buf, path) == 0, "Expected '%s', got '%s'", path, buf);
 
+  mark_point();
   path = "~/foo/bar/baz/quzz/quzz.d";
   res = pr_fs_interpolate(path, buf, sizeof(buf)-1);
   ck_assert_msg(res == 1, "Failed to interpolate path '%s': %s", path,
     strerror(errno));
-  ck_assert_msg(strcmp(buf, path+1) == 0, "Expected '%s', got '%s'", path+1, buf);
+  ck_assert_msg(strcmp(buf, path+1) == 0, "Expected '%s', got '%s'",
+    path + 1, buf);
 
+  mark_point();
   path = "~";
   res = pr_fs_interpolate(path, buf, sizeof(buf)-1);
   ck_assert_msg(res == 1, "Failed to interpolate path '%s': %s", path,
     strerror(errno));
   ck_assert_msg(strcmp(buf, "/") == 0, "Expected '/', got '%s'", buf);
 
+  mark_point();
   session.chroot_path = "/tmp";
   res = pr_fs_interpolate(path, buf, sizeof(buf)-1);
   ck_assert_msg(res == 1, "Failed to interpolate path '%s': %s", path,
     strerror(errno));
-  ck_assert_msg(strcmp(buf, session.chroot_path) == 0, "Expected '%s', got '%s'",
-    session.chroot_path, buf);
+  ck_assert_msg(strcmp(buf, session.chroot_path) == 0,
+    "Expected '%s', got '%s'", session.chroot_path, buf);
 
   session.chroot_path = NULL;
 
+  mark_point();
+  session.user_homedir = "/foo";
+  res = pr_fs_interpolate(path, buf, sizeof(buf)-1);
+  ck_assert_msg(res == 1, "Failed to interpolate path '%s': %s", path,
+    strerror(errno));
+  ck_assert_msg(strcmp(buf, session.user_homedir) == 0,
+    "Expected '%s', got '%s'", session.user_homedir, buf);
+
+  session.user_homedir = NULL;
+
+  mark_point();
   path = "~foo.bar.baz.quzz";
   res = pr_fs_interpolate(path, buf, sizeof(buf)-1);
   ck_assert_msg(res < 0, "Interpolated '%s' unexpectedly", path);
   ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
+  mark_point();
   session.user = "testsuite";
   path = "~/tmp.d/test.d/foo.d/bar.d";
   res = pr_fs_interpolate(path, buf, sizeof(buf)-1);
   ck_assert_msg(res < 0, "Interpolated '%s' unexpectedly", path);
   ck_assert_msg(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
+
+  mark_point();
+  session.user_homedir = "/cached";
+  path = "~/tmp.d/test.d/foo.d/bar.d";
+  res = pr_fs_interpolate(path, buf, sizeof(buf)-1);
+  ck_assert_msg(res == 1, "Failed to interpolate path '%s': %s", path,
+    strerror(errno));
+  ck_assert_msg(strcmp(buf, "/cached/tmp.d/test.d/foo.d/bar.d") == 0,
+    "Expected '/cached/tmp.d/test.d/foo.d/bar.d', got '%s'", buf);
+
   session.user = NULL;
+  session.user_homedir = NULL;
 }
 END_TEST
 
@@ -5176,6 +5258,8 @@ Suite *tests_get_fsio_suite(void) {
   tcase_add_test(testcase, fsio_sys_futimes_test);
   tcase_add_test(testcase, fsio_sys_fsync_test);
 
+  tcase_add_test(testcase, fsio_sys_realpath_test);
+
   /* Extended attribute tests */
   tcase_add_test(testcase, fsio_sys_getxattr_test);
   tcase_add_test(testcase, fsio_sys_lgetxattr_test);
@@ -5233,6 +5317,7 @@ Suite *tests_get_fsio_suite(void) {
   tcase_add_test(testcase, fs_unmount_fs_test);
   tcase_add_test(testcase, fs_remove_fs_test);
   tcase_add_test(testcase, fs_register_fs_test);
+  tcase_add_test(testcase, fs_register_fs2_test);
   tcase_add_test(testcase, fs_unregister_fs_test);
   tcase_add_test(testcase, fs_resolve_fs_map_test);
 #if defined(PR_USE_DEVEL)

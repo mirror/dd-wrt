@@ -46,6 +46,11 @@ my $TESTS = {
     test_class => [qw(forking)],
   },
 
+  include_bad_config_issue1721 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
 };
 
 sub new {
@@ -974,6 +979,58 @@ EOC
   # Stop server
   server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub include_bad_config_issue1721 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'config');
+
+  my $include_config = File::Spec->rel2abs("$tmpdir/include.conf");
+  if (open(my $fh, "> $include_config")) {
+    print $fh <<EOC;
+Foo bar baz
+EOC
+
+    unless (close($fh)) {
+      die("Can't write $include_config: $!");
+    }
+
+  } else {
+    die("Can't open $include_config: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    AllowOverwrite => 'on',
+    AllowStoreRestart => 'on',
+    DefaultChdir => '~',
+
+    Include => $include_config,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my $ex;
+
+  eval { server_start($setup->{config_file}, $setup->{pid_file}) };
+  unless ($@) {
+    server_stop($setup->{pid_file});
+    $ex = "Server started up unexpectedly";
+  }
 
   test_cleanup($setup->{log_file}, $ex);
 }

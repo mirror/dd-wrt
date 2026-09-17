@@ -491,7 +491,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$setup->{user}', '$passwd', $setup->{uid}, $setup->{gid}, '$setup->{home_dir}', '/bin/bash');
@@ -575,7 +575,7 @@ EOS
 
       my $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -641,7 +641,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -725,7 +725,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -802,7 +802,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -886,7 +886,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -962,7 +962,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -1046,7 +1046,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -1122,7 +1122,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -1206,7 +1206,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -1283,7 +1283,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -1367,7 +1367,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -1443,7 +1443,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -1530,7 +1530,7 @@ EOS
 
       $expected = 530;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code")); 
+        test_msg("Expected $expected, got $resp_code"));
 
       $expected = "Login incorrect.";
       $self->assert($expected eq $resp_msg,
@@ -1607,7 +1607,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -1705,7 +1705,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -1783,7 +1783,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -1884,7 +1884,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -1962,7 +1962,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -2060,7 +2060,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -2136,7 +2136,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -2220,7 +2220,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -2296,7 +2296,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -2380,7 +2380,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -2457,7 +2457,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -2541,7 +2541,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -2617,7 +2617,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -2701,7 +2701,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -2777,7 +2777,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -2861,7 +2861,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -2938,7 +2938,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -3022,7 +3022,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -3098,7 +3098,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -3183,7 +3183,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -3260,7 +3260,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -3352,7 +3352,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -3434,7 +3434,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$db_passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -3531,7 +3531,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -3611,7 +3611,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$db_passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -3701,7 +3701,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -3784,7 +3784,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$db_passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -3880,7 +3880,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -3964,7 +3964,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$db_passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -4063,7 +4063,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -4143,7 +4143,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$db_passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -4231,7 +4231,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -4312,7 +4312,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$db_passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -4407,7 +4407,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -4489,7 +4489,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$db_passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -4586,7 +4586,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -4668,7 +4668,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$db_passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -4763,7 +4763,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -4850,7 +4850,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -4951,7 +4951,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -5034,7 +5034,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -5135,7 +5135,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -5218,7 +5218,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -5319,7 +5319,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -5392,7 +5392,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -5493,7 +5493,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -5580,7 +5580,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -5690,7 +5690,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -5768,7 +5768,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -5877,7 +5877,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -5955,7 +5955,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -6048,7 +6048,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -6126,7 +6126,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -6219,7 +6219,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -6297,7 +6297,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -6390,7 +6390,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -6469,7 +6469,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -6568,7 +6568,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -6647,7 +6647,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -6746,7 +6746,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -6825,7 +6825,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -6924,7 +6924,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],

@@ -294,7 +294,7 @@ CREATE TABLE ftpusers (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   lastdir TEXT
 );
@@ -410,7 +410,7 @@ EOI
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],

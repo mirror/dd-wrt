@@ -1,5 +1,5 @@
 dnl ProFTPD - mod_sftp
-dnl Copyright (c) 2012-2022 TJ Saunders <tj@castaglia.org>
+dnl Copyright (c) 2012-2023 TJ Saunders <tj@castaglia.org>
 dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -270,6 +270,28 @@ AC_TRY_LINK(
   [
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAVE_EVP_AES_256_GCM_OPENSSL, 1, [OpenSSL supports EVP_aes_256_gcm])
+    LIBS="$saved_libs"
+  ],
+  [
+    AC_MSG_RESULT(no)
+    LIBS="$saved_libs"
+  ]
+)
+
+AC_MSG_CHECKING([whether OpenSSL supports EVP_chacha20])
+LIBS="-lcrypto $LIBS"
+
+AC_TRY_LINK(
+  [
+    #include <openssl/evp.h>
+  ],
+  [
+    EVP_CIPHER *cipher;
+    cipher = EVP_chacha20();
+  ],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_EVP_CHACHA20_OPENSSL, 1, [OpenSSL supports EVP_chacha20])
     LIBS="$saved_libs"
   ],
   [

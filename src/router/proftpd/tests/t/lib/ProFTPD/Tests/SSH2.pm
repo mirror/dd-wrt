@@ -95,7 +95,7 @@ sub ssh2_session {
         print STDERR "# Sending request: $req";
       }
       $client->print($req);
-      $client->flush(); 
+      $client->flush();
 
       my $resp = <$client>;
       if ($ENV{TEST_VEROBSE}) {

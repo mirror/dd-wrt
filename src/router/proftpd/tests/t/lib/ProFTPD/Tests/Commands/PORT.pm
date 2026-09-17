@@ -1202,7 +1202,7 @@ EOC
   } else {
     die("Can't open $config_file: $!");
   }
- 
+
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
   # to the parent.

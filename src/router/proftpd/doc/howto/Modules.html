@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>ProFTPD Modules</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center><h2><b>ProFTPD Modules</b></h2></center>
+<hr>
+
+<p>
+<b>Modules</b>
+ProFTPD uses APIs and a build system capable of including plugins, or
+<em>modules</em>, to enable new functionality or to enhance existing behavior.
+
+<p>
+<b>Default Modules</b>
+The following modules are <i>always</i> included in a ProFTPD build.  The
+source code for these modules resides in the <code>modules/</code> directory.
+
+<p>
+<table border= summary="Default Modules">
+  <tr>
+    <td><b>&nbsp;Module&nbsp;</b></td>
+    <td><b>&nbsp;Description&nbsp;</b></td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_auth</code>&nbsp;</td>
+    <td>&nbsp;Implements FTP authentication commands: <code>USER</code>, <code>PASS</code>, <code>ACCT</code>, <code>REIN</code>&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_auth_file</code>&nbsp;</td>
+    <td>&nbsp;Implements file-based authentication&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_auth_unix</code>&nbsp;</td>
+    <td>&nbsp;Implements traditional Unix-based authentication&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_core</code>&nbsp;</td>
+    <td>&nbsp;Implements most of the main FTP commands&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_delay</code>&nbsp;</td>
+    <td>&nbsp;Implements algorithms to protect against information leaks via timing attacks&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_facts</code>&nbsp;</td>
+    <td>&nbsp;Implements modern FTP commands for directory listing&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_log</code>&nbsp;</td>
+    <td>&nbsp;Implements main ProFTPD logging&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_ls</code>&nbsp;</td>
+    <td>&nbsp;Implements legacy FTP commands for directory listing&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_site</code>&nbsp;</td>
+    <td>&nbsp;Implements FTP <code>SITE</code> commands&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_xfer</code>&nbsp;</td>
+    <td>&nbsp;Implements FTP file transfer commands: <code>STOR</code>, <code>RETR</code>, <code>APPE</code>, <code>REST</code>, <code>ABOR</code>, <code>TYPE</code>, <code>STRU</code>, <code>MODE</code>, <code>ALLO</code>, <code>SMNT</code>, <code>STOU</code>&nbsp;</td>
+  </tr>
+</table>
+
+<p>
+<b>Conditional Modules</b>
+These modules will be automatically included by the build system, <i>if</i>
+it detects OS/platform support for them:
+
+<p>
+<table border= summary="Conditional Modules">
+  <tr>
+    <td><b>&nbsp;Module&nbsp;</b></td>
+    <td><b>&nbsp;Description&nbsp;</b></td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_auth_pam</code>&nbsp;</td>
+    <td>&nbsp;Interfaces with the PAM library; see the <a href="./Authentication.html">authentication howto</a> for details&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_cap</code>&nbsp;</td>
+    <td>&nbsp;Interfaces with Linux capabilities; see the <a href="../modules/mod_cap.html">module docs</a> for more information&nbsp;</td>
+  </tr>
+</table>
+
+<p>
+<b>Special Modules</b>
+Some modules require <em>special</em> build system support, and thus will
+be included in the build only when requested using special command-line
+options to the <code>configure</code> command:
+
+<p>
+<table border= summary="Special Modules">
+  <tr>
+    <td><b>&nbsp;Module&nbsp;</b></td>
+    <td><b>&nbsp;Configure Option&nbsp;</b></td>
+    <td><b>&nbsp;Description&nbsp;</b></td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_ctrls</code>&nbsp;</td>
+    <td>&nbsp;<code>--enable-ctrls&nbsp;</td>
+    <td>&nbsp;Enables <a href="./Controls.html">Controls</a> functionality&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_dso</code>&nbsp;</td>
+    <td>&nbsp;<code>--enable-dso&nbsp;</td>
+    <td>&nbsp;Enables <a href="./DSO.html">dynamically loadable module</a> functionality&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_facl</code>&nbsp;</td>
+    <td>&nbsp;<code>--enable-facl&nbsp;</td>
+    <td>&nbsp;Enables support for POSIX filesystem ACLs; see the <a href="../modules/mod_facl.html">module docs</a> for more information&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_lang</code>&nbsp;</td>
+    <td>&nbsp;<code>--enable-nls&nbsp;</td>
+    <td>&nbsp;Enables Natural Language System (NLS) support; see the <a href="../modules/mod_lang.html">module docs</a> for details&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_memcache</code>&nbsp;</td>
+    <td>&nbsp;<code>--enable-memcache&nbsp;</td>
+    <td>&nbsp;Enables Memcache support; see the <a href="../modules/mod_memcache.html">module docs</a> for details&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_redis</code>&nbsp;</td>
+    <td>&nbsp;<code>--enable-redis&nbsp;</td>
+    <td>&nbsp;Enables Redis support; see the <a href="../modules/mod_redis.html">module docs</a> for details&nbsp;</td>
+  </tr>
+</table>
+
+<p>
+<b>Contributed Modules</b>
+And finally, there are the <em>contributed</em> modules.  These are modules
+that were contributed to the ProFTPD Project over the years, developed by the
+ProFTPD community at large for their various use cases.  Many of these became
+so popular with the community that the ProFTPD Project decided to include (or
+"bundle") these contributed modules as part of the source distribution, to
+help ensure that these popular modules would continue to be maintained
+alongside the core engine code.
+
+The source code for these modules resides in the <code>contrib/</code>
+directory.
+
+<p>
+<table border= summary="Contrib Modules">
+  <tr>
+    <td><b>&nbsp;Module&nbsp;</b></td>
+    <td><b>&nbsp;Description&nbsp;</b></td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_ban</code>&nbsp;</td>
+    <td>&nbsp;Supports dynamic blocklisting of clients; see <a href="../contrib/mod_ban.html">module doc</a> for details&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_ctrls_admin</code>&nbsp;</td>
+    <td>&nbsp;Common <code>ftpdctl</code> actions; see <a href="../contrib/mod_ctrls_admin.html">module doc</a> for more info&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_dynmasq</code>&nbsp;</td>
+    <td>&nbsp;Automatically update configuration for DynDNS-using servers; see <a href="../contrib/mod_dynmasq.html">module doc</a> to learn more&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_exec</code>&nbsp;</td>
+    <td>&nbsp;Execute scripts based on session events; see <a href="../contrib/mod_exec.html">module doc</a> to learn more&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_geoip</code>&nbsp;</td>
+    <td>&nbsp;Supports blocking clients by geo information; see <a href="../contrib/mod_geoip.html">module doc</a> for info&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_ifsession</code>&nbsp;</td>
+    <td>&nbsp;Conditional configurations applied per-user/group/class; see <a href="../contrib/mod_ifsession.html">module doc</a> for details&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_ldap</code>&nbsp;</td>
+    <td>&nbsp;Support authentication using LDAP; see <a href="../contrib/mod_ldap.html">module doc</a> for details&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_log_forensic</code>&nbsp;</td>
+    <td>&nbsp;Log details only under specific criteria; see <a href="../contrib/mod_log_forensic.html">module doc</a> to learn more&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_geoip</code>&nbsp;</td>
+    <td>&nbsp;Reject clients if the system load is too high; see <a href="../contrib/mod_load.html">module doc</a> for info&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_qos</code>&nbsp;</td>
+    <td>&nbsp;Set TCP Quality Of Service (TCP) bits; see <a href="../contrib/mod_qos.html">module doc</a> for details&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_quotatab</code>&nbsp;</td>
+    <td>&nbsp;User/group/class-specific quotas; see <a href="../contrib/mod_quotatab.html">module doc</a> for more information&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_radius</code>&nbsp;</td>
+    <td>&nbsp;Support authentication using RADIUS; see <a href="../contrib/mod_radius.html">module doc</a> for details&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_ratio</code>&nbsp;</td>
+    <td>&nbsp;Per-user upload/download ratios; see <a href="../contrib/mod_ratio.html">module doc</a>&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_readme</code>&nbsp;</td>
+    <td>&nbsp;Display "readme" files to clients; see <a href="../contrib/mod_readme.html">module doc</a> for more&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_rewrite</code>&nbsp;</td>
+    <td>&nbsp;Dynamically rewrite commands on-the-flly; see <a href="../howto/Rewrite.html">howto doc</a> for details&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_sftp</code>&nbsp;</td>
+    <td>&nbsp;Implements SFTP; see <a href="../contrib/mod_sftp.html">module doc</a> for details&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_sftp_pam</code>&nbsp;</td>
+    <td>&nbsp;Implements SSH and PAM authentication; see <a href="../contrib/mod_sftp_pam.html">module doc</a> for details&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_sftp_sql</code>&nbsp;</td>
+    <td>&nbsp;Retreive SSH public keys from SQL databases; see <a href="../contrib/mod_sftp_pam.html">module doc</a> for info&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_shaper</code>&nbsp;</td>
+    <td>&nbsp;Throttling of data transfers across the entire server; see <a href="../contrib/mod_shaper.html">module doc</a> for details&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_site_misc</code>&nbsp;</td>
+    <td>&nbsp;Miscellaneous <code>SITE</code> commands; see <a href="../contrib/mod_ctrls_admin.html">module doc</a> to learn more&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_sql</code>&nbsp;</td>
+    <td>&nbsp;Support authentication using SQL databases; see <a href="../howto/SQL.html">howto doc</a> for instructions&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_tls</code>&nbsp;</td>
+    <td>&nbsp;Implements FTP over TLS (FTPS); see <a href="../contrib/mod_tls.html">module doc</a> for more&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_tls_fscache</code>&nbsp;</td>
+    <td>&nbsp;Enable TLS caching via filesystem; see <a href="../contrib/mod_tls_fscache.html">module doc</a> for more&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_tls_memcache</code>&nbsp;</td>
+    <td>&nbsp;Enable TLS caching via Memcache; see <a href="../contrib/mod_tls_memcache.html">module doc</a> for more&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_tls_redis</code>&nbsp;</td>
+    <td>&nbsp;Enable TLS caching via Redis; see <a href="../contrib/mod_tls_redis.html">module doc</a> for more&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_tls_shmcache</code>&nbsp;</td>
+    <td>&nbsp;Enable TLS caching via Shared Memory; see <a href="../contrib/mod_tls_shmcache.html">module doc</a> for details&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_unique_id</code>&nbsp;</td>
+    <td>&nbsp;Generate a guaranteed unique ID for each session; see <a href="../contrib/mod_unique_id.html">module doc</a> for more&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_wrap</code>&nbsp;</td>
+    <td>&nbsp;Use popular <code>tcp_wrappers</code> for client ACLs; see <a href="../contrib/mod_wrap.html">module doc</a> for details&nbsp;</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>mod_wrap2</code>&nbsp;</td>
+    <td>&nbsp;Enhanced support for client ACLs; see <a href="../contrib/mod_wrap2.html">module doc</a> for details&nbsp;</td>
+  </tr>
+</table>
+
+<p>
+<b>Third-Party Modules</b>
+As mentioned above, ProFTPD's APIs and build system support modules, even
+those that are not included as part of the project source distribution.  You
+will find ProFTPD modules, in source form, in various other sites and projects
+around the Internet.  This is precisely why ProFTPD allows for such plugins;
+the ProFTPD Project wants to support and encourage the community at large
+to develop for their needs, and to enable development and creativity!

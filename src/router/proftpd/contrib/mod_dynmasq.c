@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_dynmasq -- a module for dynamically updating MasqueradeAddress
  *                         configurations, as when DynDNS names are used
- * Copyright (c) 2004-2016 TJ Saunders
+ * Copyright (c) 2004-2023 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -91,7 +91,7 @@ static void dynmasq_refresh(void) {
           pr_log_debug(DEBUG2, MOD_DYNMASQ_VERSION
             ": MasqueradeAddress '%s' has not changed addresses", masq_addr);
         }
- 
+
       } else {
         pr_log_pri(PR_LOG_INFO, MOD_DYNMASQ_VERSION
           ": unable to resolve '%s', keeping previous address", masq_addr);
@@ -102,12 +102,13 @@ static void dynmasq_refresh(void) {
   return;
 }
 
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
 static int dynmasq_handle_refresh(pr_ctrls_t *ctrl, int reqargc,
     char **reqargv) {
   dynmasq_refresh();
+
   pr_ctrls_add_response(ctrl, "dynmasq: refreshed");
-  return 0;
+  return PR_CTRLS_STATUS_OK;
 }
 
 static int dynmasq_handle_dynmasq(pr_ctrls_t *ctrl, int reqargc,
@@ -115,24 +116,23 @@ static int dynmasq_handle_dynmasq(pr_ctrls_t *ctrl, int reqargc,
   /* Sanity check */
   if (reqargc == 0 ||
       reqargv == NULL) {
-    pr_ctrls_add_response(ctrl, "dynmasq: missing required parameters");
-    return -1;
+    pr_ctrls_add_response(ctrl, "missing required parameters");
+    return PR_CTRLS_STATUS_WRONG_PARAMETERS;
   }
 
   if (strcmp(reqargv[0], "refresh") == 0) {
 
     /* Check the ACLs. */
-    if (!pr_ctrls_check_acl(ctrl, dynmasq_acttab, "refresh")) {
+    if (pr_ctrls_check_acl(ctrl, dynmasq_acttab, "refresh") != TRUE) {
       pr_ctrls_add_response(ctrl, "access denied");
-      return -1;
+      return PR_CTRLS_STATUS_ACCESS_DENIED;
     }
 
     return dynmasq_handle_refresh(ctrl, --reqargc, ++reqargv);
   }
 
-  pr_ctrls_add_response(ctrl, "dynmasq: unknown dynmasq action: '%s'",
-    reqargv[0]);
-  return -1;
+  pr_ctrls_add_response(ctrl, "unknown dynmasq action: '%s'", reqargv[0]);
+  return PR_CTRLS_STATUS_UNSUPPORTED_OPERATION;
 }
 #endif /* PR_USE_CTRLS */
 
@@ -147,10 +147,7 @@ MODRET set_dynmasqctrlsacls(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 4);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  /* We can cheat here, and use the ctrls_parse_acl() routine to
-   * separate the given string...
-   */
-  actions = ctrls_parse_acl(cmd->tmp_pool, cmd->argv[1]);
+  actions = pr_ctrls_parse_acl(cmd->tmp_pool, cmd->argv[1]);
 
   /* Check the second parameter to make sure it is "allow" or "deny" */
   if (strcmp(cmd->argv[2], "allow") != 0 &&

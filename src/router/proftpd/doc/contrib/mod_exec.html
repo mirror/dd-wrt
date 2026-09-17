@@ -152,26 +152,10 @@ information leakage.  The given <i>key</i> parameter will be uppercased,
 to follow the convention for environment variable keys.
 
 <p>
-The <i>value</i> parameter may be any arbitrary string which may contain
-any of the following variables, which will be substituted with the
-corresponding value before the script is executed:
-<ul>
-  <li><b>%A</b> - anonymous login password
-  <li><b>%a</b> - client's IP address
-  <li><b>%b</b> - bytes transferred
-  <li><b>%C</b> - current working directory
-  <li><b>%c</b> - connection class
-  <li><b>%F</b> - transferred file as seen by client
-  <li><b>%f</b> - full transferred file path
-  <li><b>%g</b> - name of primary group of local user
-  <li><b>%h</b> - client's DNS name
-  <li><b>%m</b> - FTP command (e.g. RETR, STOR, etc)
-  <li><b>%r</b> - full FTP command
-  <li><b>%U</b> - original username sent by client
-  <li><b>%u</b> - name of local user
-  <li><b>%v</b> - name of server handling session
-  <li><b>%w</b> - RNFR path ("whence" a rename comes, <i>i.e.</i> the source path)
-</ul>
+The <i>value</i> parameter may be any arbitrary string which may contain any
+of the normal <a href="../modules/mod_log.html#LogFormat"><code>LogFormat</code></a> variables.
+
+<p>
 The <i>value</i> parameter may be also be &quot;-&quot;, which indicates that
 the current value of the environment variable of name <i>key</i> should be
 used (<i>e.g.</i> PATH).  If there is no environment of name <i>key</i> when
@@ -654,7 +638,7 @@ are executed by interpreters; you can see these in the very first line of the
 script, <i>e.g.</i>:
 <pre>
 #!/bin/bash
-</code>
+</pre>
 or:
 <pre>
 #!/usr/bin/env python
@@ -666,7 +650,7 @@ valid.  Hence the "No such file or directory" error.  This also explains why
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2022 TJ Saunders<br>
+&copy; Copyright 2000-2023 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

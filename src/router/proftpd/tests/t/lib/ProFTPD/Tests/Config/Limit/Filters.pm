@@ -66,7 +66,7 @@ sub filter_dele_allow_bug2067 {
   } else {
     die("Can't open $test_file: $!");
   }
- 
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -78,7 +78,7 @@ sub filter_dele_allow_bug2067 {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
@@ -195,7 +195,7 @@ sub filter_dele_deny_bug2067 {
   } else {
     die("Can't open $test_file: $!");
   }
- 
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -207,7 +207,7 @@ sub filter_dele_deny_bug2067 {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
@@ -334,7 +334,7 @@ sub filter_stor_allow_bug2067 {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);

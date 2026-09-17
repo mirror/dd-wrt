@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2022 The ProFTPD Project team
+ * Copyright (c) 2001-2025 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -265,7 +265,7 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
     defined(FREEBSD4) || defined(FREEBSD5) || defined(FREEBSD6) || \
     defined(FREEBSD7) || defined(FREEBSD8) || defined(FREEBSD9) || \
     defined(FREEBSD10) || defined(FREEBSD11) || defined(FREEBSD12) || \
-    defined(FREEBSD13) || \
+    defined(FREEBSD13) || defined(FREEBSD14) || \
     defined(__OpenBSD__) || defined(__NetBSD__) || \
     defined(DARWIN6) || defined(DARWIN7) || defined(DARWIN8) || \
     defined(DARWIN9) || defined(DARWIN10) || defined(DARWIN11) || \
@@ -293,7 +293,7 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
     defined(FREEBSD4) || defined(FREEBSD5) || defined(FREEBSD6) || \
     defined(FREEBSD7) || defined(FREEBSD8) || defined(FREEBSD9) || \
     defined(FREEBSD10) || defined(FREEBSD11) || defined(FREEBSD12) || \
-    defined(FREEBSD13) || \
+    defined(FREEBSD13) || defined(FREEBSD14) || \
     defined(__OpenBSD__) || defined(__NetBSD__) || \
     defined(DARWIN6) || defined(DARWIN7) || defined(DARWIN8) || \
     defined(DARWIN9) || defined(DARWIN10) || defined(DARWIN11) || \
@@ -611,8 +611,8 @@ conn_t *pr_inet_create_conn_portrange(pool *p, const pr_netaddr_t *bind_addr,
   }
 
   /* Make sure the temporary inet work pool exists. */
-  if (!inet_pool) {
-    inet_pool = make_sub_pool(permanent_pool); 
+  if (inet_pool == NULL) {
+    inet_pool = make_sub_pool(permanent_pool);
     pr_pool_tag(inet_pool, "Inet Pool");
   }
 
@@ -764,7 +764,7 @@ int pr_inet_set_proto_cork(int sockfd, int cork) {
 
 #if defined(TCP_CORK)
   res = setsockopt(sockfd, tcp_level, TCP_CORK, (void *) &cork, sizeof(cork));
-  
+
 #elif defined(TCP_NOPUSH)
   res = setsockopt(sockfd, tcp_level, TCP_NOPUSH, (void *) &cork, sizeof(cork));
 #endif
@@ -1516,6 +1516,67 @@ int pr_inet_connect_nowait(pool *p, conn_t *c, const pr_netaddr_t *addr,
   return 1;
 }
 
+/* For implementing the AllowForeignAddress policy, we will be comparing
+ * the proposed address (what the client presents in e.g. FTP EPRT/PORT
+ * commands, or peer address to which clients connect for FTP passive
+ * transfers) with the actual address of the client.
+ */
+int pr_inet_allowforeignaddress(pool *p, const pr_netaddr_t *proposed_addr,
+    const pr_netaddr_t *actual_addr, config_rec *c) {
+  int allow_foreign_address = FALSE;
+
+  if (p == NULL ||
+      proposed_addr == NULL ||
+      actual_addr == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (c != NULL) {
+    int allowed;
+
+    allowed = *((int *) c->argv[0]);
+    switch (allowed) {
+      case TRUE:
+        allow_foreign_address = TRUE;
+        break;
+
+      case FALSE:
+        allow_foreign_address = FALSE;
+        break;
+
+      default: {
+        char *class_name;
+        const pr_class_t *cls;
+
+        class_name = c->argv[1];
+        cls = pr_class_find(class_name);
+        if (cls != NULL) {
+          if (pr_class_satisfied(p, cls, proposed_addr) == TRUE) {
+            allow_foreign_address = TRUE;
+
+          } else {
+            pr_log_debug(DEBUG8, "<Class> '%s' not satisfied by foreign "
+              "address '%s'", class_name, pr_netaddr_get_ipstr(proposed_addr));
+          }
+
+        } else {
+          pr_log_debug(DEBUG8, "<Class> '%s' not found for filtering "
+            "AllowForeignAddress", class_name);
+        }
+      }
+    }
+  }
+
+  if (allow_foreign_address == FALSE) {
+    if (pr_netaddr_cmp(proposed_addr, actual_addr) != 0) {
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
 /* Accepts a new connection, returning immediately with -1 if no connection is
  * available.  If a connection is accepted, creating a new conn_t and potential
  * resolving is deferred, and a normal socket fd is returned for the new
@@ -1587,7 +1648,7 @@ int pr_inet_accept_nowait(pool *p, conn_t *c) {
 conn_t *pr_inet_accept(pool *p, conn_t *d, conn_t *c, int rfd, int wfd,
     unsigned char resolve) {
   config_rec *allow_foreign_addr_config = NULL;
-  conn_t *res = NULL;
+  conn_t *conn = NULL;
   int fd = -1;
   pr_netaddr_t na;
   socklen_t nalen;
@@ -1614,6 +1675,8 @@ conn_t *pr_inet_accept(pool *p, conn_t *d, conn_t *c, int rfd, int wfd,
    */
 
   while (TRUE) {
+    int res;
+
     pr_signals_handle();
 
     fd = accept(d->listen_fd, pr_netaddr_get_sockaddr(&na), &nalen);
@@ -1627,90 +1690,45 @@ conn_t *pr_inet_accept(pool *p, conn_t *d, conn_t *c, int rfd, int wfd,
       break;
     }
 
-    if (allow_foreign_addr_config != NULL) {
-      int allowed;
+    if (getpeername(fd, pr_netaddr_get_sockaddr(&na), &nalen) < 0) {
+      int xerrno = errno;
 
-      allowed = *((int *) allow_foreign_addr_config->argv[0]);
-      if (allowed != TRUE) {
-        /* If foreign addresses (i.e. IP addresses that do not match the
-         * control connection's remote IP address) are not allowed, we
-         * need to see just what our remote address IS.
-         */
+      /* If getpeername(2) fails, should we still allow this connection?
+       * Caution (and the AllowForeignAddress setting) say "no".
+       */
+      pr_log_pri(PR_LOG_DEBUG, "rejecting passive connection; "
+        "failed to get address of remote peer: %s", strerror(xerrno));
+      (void) close(fd);
 
-        if (getpeername(fd, pr_netaddr_get_sockaddr(&na), &nalen) < 0) {
-          /* If getpeername(2) fails, should we still allow this connection?
-           * Caution (and the AllowForeignAddress setting) say "no".
-           */
-          pr_log_pri(PR_LOG_DEBUG, "rejecting passive connection; "
-            "failed to get address of remote peer: %s", strerror(errno));
-          (void) close(fd);
-          continue;
-        }
+      d->mode = CM_ERROR;
+      d->xerrno = xerrno;
 
-        if (allowed == FALSE) {
-          if (pr_netaddr_cmp(&na, c->remote_addr) != 0) {
-            pr_log_pri(PR_LOG_NOTICE, "SECURITY VIOLATION: Passive connection "
-              "from foreign IP address %s rejected (does not match client "
-              "IP address %s).", pr_netaddr_get_ipstr(&na),
-              pr_netaddr_get_ipstr(c->remote_addr));
+      return NULL;
+    }
 
-            (void) close(fd);
-            d->mode = CM_ERROR;
-            d->xerrno = EACCES;
+    res = pr_inet_allowforeignaddress(p, &na, c->remote_addr,
+      allow_foreign_addr_config);
+    if (res != 1) {
+      pr_log_pri(PR_LOG_NOTICE, "SECURITY VIOLATION: Passive connection "
+        "from foreign IP address %s rejected (does not match client IP "
+        "address %s).", pr_netaddr_get_ipstr(&na),
+        pr_netaddr_get_ipstr(c->remote_addr));
 
-            return NULL;
-          }
+      (void) close(fd);
+      d->mode = CM_ERROR;
+      d->xerrno = EACCES;
 
-        } else {
-          char *class_name;
-
-          /* Check the data connection remote address against BOTH the
-           * control connection remote address AND the configured <Class>.
-           */
-          class_name = allow_foreign_addr_config->argv[1];
-
-          if (pr_netaddr_cmp(&na, c->remote_addr) != 0) {
-            const pr_class_t *cls;
-
-            cls = pr_class_find(class_name);
-            if (cls != NULL) {
-              if (pr_class_satisfied(p, cls, &na) != TRUE) {
-                pr_log_debug(DEBUG8, "<Class> '%s' not satisfied by foreign "
-                  "address '%s'", class_name, pr_netaddr_get_ipstr(&na));
-
-                pr_log_pri(PR_LOG_NOTICE,
-                  "SECURITY VIOLATION: Passive connection from foreign IP "
-                  "address %s rejected (does not match <Class %s>).",
-                  pr_netaddr_get_ipstr(&na), class_name);
-
-                (void) close(fd);
-                d->mode = CM_ERROR;
-                d->xerrno = EACCES;
-                return NULL;
-              }
-
-            } else {
-              pr_log_debug(DEBUG8, "<Class> '%s' not found for filtering "
-                "AllowForeignAddress", class_name);
-            }
-
-          } else {
-            pr_log_debug(DEBUG9, "Passive connection from IP address '%s' "
-              "matches control connection address; skipping <Class> '%s'",
-              pr_netaddr_get_ipstr(&na), class_name);
-          }
-        }
-      }
+      return NULL;
     }
 
     d->mode = CM_OPEN;
-    res = pr_inet_openrw(p, d, NULL, PR_NETIO_STRM_DATA, fd, rfd, wfd,
+    conn = pr_inet_openrw(p, d, NULL, PR_NETIO_STRM_DATA, fd, rfd, wfd,
       resolve);
 
     break;
   }
 
-  return res;
+  return conn;
 }
 
 int pr_inet_get_conn_info(conn_t *c, int fd) {
@@ -1891,7 +1909,7 @@ conn_t *pr_inet_openrw(pool *p, conn_t *c, const pr_netaddr_t *addr,
 
       pr_trace_msg(trace_channel, 3,
         "error getting IP address for client: %s", strerror(xerrno));
- 
+
       errno = xerrno;
       return NULL;
     }
@@ -1967,7 +1985,7 @@ conn_t *pr_inet_openrw(pool *p, conn_t *c, const pr_netaddr_t *addr,
       continue;
     }
 
-    pr_log_pri(PR_LOG_WARNING, "error calling ioctl(RPROTDIS): %s", 
+    pr_log_pri(PR_LOG_WARNING, "error calling ioctl(RPROTDIS): %s",
       strerror(errno));
     break;
   }
@@ -2015,14 +2033,14 @@ void init_inet(void) {
    * headers.
    */
 #ifndef _AIX
-  pr = getprotobyname("ip"); 
+  pr = getprotobyname("ip");
   if (pr != NULL) {
     ip_proto = pr->p_proto;
   }
 #endif /* AIX */
 
-#ifdef PR_USE_IPV6
-  pr = getprotobyname("ipv6"); 
+#if defined(PR_USE_IPV6)
+  pr = getprotobyname("ipv6");
   if (pr != NULL) {
     ipv6_proto = pr->p_proto;
   }

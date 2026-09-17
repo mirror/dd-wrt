@@ -342,7 +342,7 @@ static int mcache_ping_servers(pr_memcache_t *mcache) {
       pr_trace_msg(trace_channel, 17, "server %s:%d is alive",
         memcached_server_name(server), memcached_server_port(server));
 
-       alive_server_list = memcached_server_list_append(alive_server_list,    
+       alive_server_list = memcached_server_list_append(alive_server_list,
          memcached_server_name(server), memcached_server_port(server), &res);
        if (alive_server_list == NULL) {
          pr_trace_msg(trace_channel, 1,
@@ -369,7 +369,7 @@ static int mcache_ping_servers(pr_memcache_t *mcache) {
         count, count != 1 ? "servers" : "server",
         memcached_strerror(mcache->mc, res));
       memcached_free(clone);
- 
+
       errno = EPERM;
       return -1;
 
@@ -409,7 +409,7 @@ static int mcache_stat_servers(pr_memcache_t *mcache) {
 
       /* Log some of the stats about the memcached servers to which we just
        * connected.
-       */  
+       */
 
       for (i = 0; stat_keys[i] != NULL; i++) {
         char *info;
@@ -509,7 +509,7 @@ pr_memcache_t *pr_memcache_conn_new(pool *p, module *m, unsigned long flags,
     return NULL;
   }
 
-  res = memcached_server_push(mc, configured_server_list); 
+  res = memcached_server_push(mc, configured_server_list);
   if (res != MEMCACHED_SUCCESS) {
     unsigned int count;
 
@@ -545,7 +545,7 @@ pr_memcache_t *pr_memcache_conn_new(pool *p, module *m, unsigned long flags,
     destroy_pool(mcache->pool);
 
     errno = xerrno;
-    return NULL;    
+    return NULL;
   }
 
   /* Check that all of the configured servers are alive and usable. */
@@ -556,7 +556,7 @@ pr_memcache_t *pr_memcache_conn_new(pool *p, module *m, unsigned long flags,
     destroy_pool(mcache->pool);
 
     errno = xerrno;
-    return NULL;    
+    return NULL;
   }
 
   /* Make sure we are connected to the configured servers by querying
@@ -569,7 +569,7 @@ pr_memcache_t *pr_memcache_conn_new(pool *p, module *m, unsigned long flags,
     destroy_pool(mcache->pool);
 
     errno = xerrno;
-    return NULL;    
+    return NULL;
   }
 
   if (sess_mcache == NULL) {
@@ -720,7 +720,7 @@ int pr_memcache_add(pr_memcache_t *mcache, module *m, const char *key,
   }
 
   res = pr_memcache_kadd(mcache, m, key, strlen(key), value, valuesz, expires,
-    flags); 
+    flags);
   if (res < 0) {
     int xerrno = errno;
 
@@ -811,7 +811,7 @@ char *pr_memcache_get_str(pr_memcache_t *mcache, module *m, const char *key,
     pr_trace_msg(trace_channel, 2,
       "error getting data for key '%s': %s", key, strerror(xerrno));
 
-    errno = xerrno; 
+    errno = xerrno;
     return NULL;
   }
 
@@ -840,7 +840,7 @@ int pr_memcache_incr(pr_memcache_t *mcache, module *m, const char *key,
     pr_trace_msg(trace_channel, 2,
       "error incrementing key '%s' by %lu: %s", key,
       (unsigned long) incr, strerror(xerrno));
- 
+
     errno = xerrno;
     return -1;
   }
@@ -959,7 +959,7 @@ int pr_memcache_kadd(pr_memcache_t *mcache, module *m, const char *key,
   }
 
   mcache_set_module_namespace(mcache, m);
-  res = memcached_add(mcache->mc, key, keysz, value, valuesz, expires, flags); 
+  res = memcached_add(mcache->mc, key, keysz, value, valuesz, expires, flags);
   mcache_set_module_namespace(mcache, NULL);
 
   switch (res) {

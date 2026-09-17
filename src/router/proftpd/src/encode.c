@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006-2015 The ProFTPD Project team
+ * Copyright (c) 2006-2026 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 
 #include "conf.h"
 
-#ifdef PR_USE_NLS
+#if defined(PR_USE_NLS)
 
 #ifdef HAVE_ICONV_H
 # include <iconv.h>
@@ -49,7 +49,7 @@ static const char *trace_channel = "encode";
 
 static int str_convert(iconv_t conv, const char *inbuf, size_t *inbuflen,
     char *outbuf, size_t *outbuflen) {
-# ifdef HAVE_ICONV
+# if defined(HAVE_ICONV)
 
   /* Reset the state machine before each conversion. */
   (void) iconv(conv, NULL, NULL, NULL, NULL);
@@ -59,12 +59,14 @@ static int str_convert(iconv_t conv, const char *inbuf, size_t *inbuflen,
 
     pr_signals_handle();
 
-    /* Solaris/FreeBSD's iconv(3) takes a const char ** for the input buffer,
-     * whereas Linux/Mac OSX iconv(3) use char ** for the input buffer.
+    /* Solaris/FreeBSD's iconv(3) takes a const char ** for the input buffer
+     * (depending on version), whereas Linux/Mac OSX/GNU iconv(3) use char **
+     * for the input buffer.
      */
 #if defined(LINUX) || defined(DARWIN6) || defined(DARWIN7) || \
     defined(DARWIN8) || defined(DARWIN9) || defined(DARWIN10) || \
-    defined(DARWIN11) || defined(DARWIN12)
+    defined(DARWIN11) || defined(DARWIN12) || defined(FREEBSD14) || \
+    defined(GNU)
 
     nconv = iconv(conv, (char **) &inbuf, inbuflen, &outbuf, outbuflen);
 #else
@@ -187,7 +189,7 @@ int encode_init(void) {
       errno = xerrno;
       return -1;
     }
- 
+
     decode_conv = iconv_open(local_charset, encoding);
     if (decode_conv == (iconv_t) -1) {
       int xerrno = errno;

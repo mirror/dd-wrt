@@ -2541,7 +2541,7 @@ sub digest_xcrc {
 
       my $expected;
 
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -2679,7 +2679,7 @@ sub digest_xcrc_abs_symlink {
       my ($resp_code, $resp_msg) = $client->quote('XCRC', $path);
       $client->quit();
 
-      my $expected = 250;
+      my $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -2818,7 +2818,7 @@ sub digest_xcrc_abs_symlink_chrooted_bug4219 {
       my ($resp_code, $resp_msg) = $client->quote('XCRC', $path);
       $client->quit();
 
-      my $expected = 250;
+      my $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -2959,7 +2959,7 @@ sub digest_xcrc_rel_symlink {
       my ($resp_code, $resp_msg) = $client->quote('XCRC', $path);
       $client->quit();
 
-      my $expected = 250;
+      my $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -3102,7 +3102,7 @@ sub digest_xcrc_rel_symlink_chrooted_bug4219 {
       my ($resp_code, $resp_msg) = $client->quote('XCRC', $path);
       $client->quit();
 
-      my $expected = 250;
+      my $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -3243,7 +3243,7 @@ sub digest_xcrc_2gb {
 
       my $expected;
 
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -3573,7 +3573,7 @@ sub digest_xmd5 {
 
       my $expected;
 
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -3686,7 +3686,7 @@ sub digest_xsha {
 
       my $expected;
 
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -3799,7 +3799,7 @@ sub digest_xsha1 {
 
       my $expected;
 
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -3913,7 +3913,7 @@ sub digest_xsha256 {
 
       my $expected;
 
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -4027,7 +4027,7 @@ sub digest_xsha512 {
 
       my $expected;
 
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -4218,7 +4218,7 @@ EOC
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       ($resp_code, $resp_msg) = $client->quote('XSHA1', 'test.txt');
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -4339,7 +4339,7 @@ sub digest_path_offset_length {
 
       my $expected;
 
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -4452,7 +4452,7 @@ sub digest_path_with_spaces {
 
       my $expected;
 
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -4572,7 +4572,7 @@ sub digest_path_with_spaces_offset_length {
 
       my $expected;
 
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -4691,7 +4691,7 @@ sub digest_caching {
 
       my $expected;
 
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -4805,7 +4805,7 @@ sub digest_caching_max_size {
       # caching of results.  After each command, we "touch" the file to
       # change its mtime, meaning a new cache entry.
       my ($resp_code, $resp_msg) = $client->quote('XCRC', 'test.txt');
-      my $expected = 250;
+      my $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -4821,7 +4821,7 @@ sub digest_caching_max_size {
       }
 
       ($resp_code, $resp_msg) = $client->quote('XCRC', 'test.txt');
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -4977,7 +4977,7 @@ sub digest_caching_max_age_same_file {
       # We deliberately do this multiple times, to test the in-memory
       # caching of results.
       my ($resp_code, $resp_msg) = $client->quote('XCRC', 'test.txt');
-      my $expected = 250;
+      my $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -4986,7 +4986,7 @@ sub digest_caching_max_age_same_file {
         test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       ($resp_code, $resp_msg) = $client->quote('XCRC', 'test.txt');
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -4999,7 +4999,7 @@ sub digest_caching_max_age_same_file {
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
 
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -5012,7 +5012,7 @@ sub digest_caching_max_age_same_file {
 
       $client->quit();
 
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -5148,7 +5148,7 @@ sub digest_caching_max_age_different_file {
       # We deliberately do this multiple times, to test the in-memory
       # caching of results.
       my ($resp_code, $resp_msg) = $client->quote('XCRC', 'test1.txt');
-      my $expected = 250;
+      my $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -5183,7 +5183,7 @@ sub digest_caching_max_age_different_file {
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
 
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -5196,7 +5196,7 @@ sub digest_caching_max_age_different_file {
 
       $client->quit();
 
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -6905,7 +6905,7 @@ sub digest_config_algorithms {
 
       ($resp_code, $resp_msg) = $client->quote('XSHA256', 'test.txt');
 
-      $expected = 250;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 

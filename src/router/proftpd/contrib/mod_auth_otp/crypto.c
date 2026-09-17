@@ -111,6 +111,6 @@ int auth_otp_hmac(const EVP_MD *md, const unsigned char *key, size_t key_len,
     errno = EPERM;
     return -1;
   }
- 
+
   return 0;
 }

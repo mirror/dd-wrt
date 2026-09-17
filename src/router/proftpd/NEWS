@@ -15,6 +15,217 @@
   where `N' is the issue number.
 -----------------------------------------------------------------------------
 
+1.3.9d - Released 14-Aug-2026
+--------------------------------
+- Issue 2242 - SSH channel open request from authenticated client with max
+  packet size of zero leads to infinite loop.
+- Issue 2255 - Aborted/failed data transfers incorrectly clear any "EPSV ALL"
+  state.
+- Issue 2265 - Possible use-after-free issue via FTP STAT command using -C
+  option.
+- Issue 2272 - Passive FTP data transfers do not honor AllowForeignAddress
+  policy properly.
+- Issue 2275 - Empty password fields should be rejected by the mod_sql_passwd
+  module.
+- Issue 2279 - Empty password fields should be rejected by the mod_auth_file
+  module.
+- Issue 2282 - .ftpaccess file policy bypass possible in certain configurations.
+
+1.3.9c - Released 07-Jul-2026
+--------------------------------
+- Issue 2135 - ExecEnviron values not passed due to regression since 1.3.8.d.
+- Issue 2146 - Stack buffer overflow in MLSD/MLST handling for long path names.
+- Issue 2158 - MaxTransfersPerUser no longer enforces configured limits.
+- Issue 2163 - AdminControlsACLs for config, get actions not honored as they
+  should be.
+- Issue 2166 - Memcached/Redis-cached JSON TLS session/OCSP entries decoded
+  into fixed buffers without bounds checking.
+- Issue 2173 - RewriteMap unescape builtin use causes one-byte out-of-bounds
+  write, fails to reject illegal characters.
+- Issue 2188 - SQL group name lookup concatenates client-provided group names
+  without escaping.
+- Issue 2190 - Authenticated SFTP sessions can overflow the SFTP packet buffer.
+- Issue 2210 - Default Controls socket ACLs unintentionally allow all users
+  access for sending Controls requests.
+
+1.3.9b - Released 02-Jun-2026
+--------------------------------
+- Issue 2057 - SQL Injection in mod_wrap2_sql via reverse DNS
+  hostname (CVE-2026-44331).
+- Issue 2056 - Incomplete fix for session management with OpenSSL 3.2.x or
+  later, when using TLSv1.2 or earlier.  This complements the fix for
+  Issue #1963.
+- Issue 2098 - Hard quota limits on uploads do not cause SFTP WRITE requests
+  to fail as expected.
+- Issue 2102 - SSH payload length underflow calculation for ETM/ChaChaPoly
+  algorithms in mod_sftp.
+- Issue 2104 - SSH packet with empty payload triggers null pointer dereference
+  in mod_sftp.
+- Issue 2106 - Bad DSA signatures can lead to out-of-bounds read of heap memory
+  in mod_sftp.
+- Issue 2108 - Mismatched RSA/DSA algorithm signatures can lead to null
+  dereference in mod_sftp.
+- Issue 2115 - SFTP request payload length underflow calculation in mod_sftp.
+- Issue 2120 - Several modules fail to build using OpenSSL 4.0.
+
+1.3.9a - Released 27-Apr-2026
+--------------------------------
+- Issue 1886 - SCP transfers fail for files with spaces in their names.
+- Issue 1898 - LDAPDefaultGID ignored since 1.3.9.
+- Bug 4512 - Compilation of mod_wrap2 fails when the --enable-wrapper-options
+  configure option is used.
+- Issue 1904 - mod_sftp fails to parse authorized user/host public keys with
+  CRLF line endings.
+- Issue 1896 - Uploads using MODE Z sometimes result in corrupted files or
+  broken transfers.
+- Issue 1911 - Remove usage of the deprecated MySQL_OPT_RECONNECT option for
+  newer MySQL versions.
+- Issue 340 - Update usage of MySQL API for SSL/TLS connections to server.
+- Issue 1959 - mod_sftp leaks file descriptor when reading SFTPHostKey file.
+- Issue 1964 - Large/slow SCP downloads could be unnecessarily truncated by
+  TimeoutStalled.
+- Issue 1960 - Handling of CRLs in mod_tls is incorrect, leading to confusing
+  errors.
+- Issue 1963 - Resumed SSL_SESSION management in mod_tls leads to memory
+  growth, infinite loop using newer OpenSSL versions.
+- Issue 1984 - mod_quotatab_ldap interactions can lead to segfault due to
+  stale pointer.
+- Issue 2003 - RNTO before authentication leads to out-of-order response codes.
+- Issue 2009 - MaxLoginAttemptsFromUser event never triggers in mod_ban for
+  SFTP sessions.
+- Issue 2019 - Using toupper(3) on non-ASCII FTP command bytes may cause
+  remote DoS.
+- Issue 2020 - Out-of-bounds single byte read when FTP command input buffer
+  starts with LF.
+- Issue 2030 - FTP command LIST/NLST -B can cause buffer overflow when listing
+  certain crafted filenames.
+- Issue 2043 - Memory exhaustion with mod_log_forensic when downloading very
+  large files via SFTP.
+- Issue 2046 - Setting process groups during authentication crashes when using
+  mod_radius and <IfGroup>.
+- Issue 2052 - SQL injection possible via mod_sql because of is_escaped_text()
+  logic error (CVE-2026-42167).
+
+1.3.9 - Released 14-Mar-2025
+--------------------------------
+- Issue 1855 - Use of HideNoAccess for SFTP sessions can lead to segfault
+  and/or unexpected behavior.
+- Bug 4511 - Added Polish translation.
+- Issue 1876 - SFTP channel allocations can lead to high memory utilization
+  over time.
+- Issue 1878 - Update libtool.m4 for better MacOSX support.
+
+1.3.9rc3 - Released 11-Dec-2024
+--------------------------------
+- Issue 1785 - Bad handling of lack of extended attributes leads to SFTP out of
+  memory error.
+- Issue 1780 - Using mod_facl and mod_vroot at same time causes unexpected
+  permissions issues.
+- Issue 1529 - mod_sftp_sql logs "header value too long" due to unexpected key
+  header text.
+- Issue 1792 - SFTP statvfs extension fails when mod_vroot is in use.
+- Issue 1798 - Implement limits@openssh.com SFTP extension.
+- Issue 1806 - Implement SFTPAuthPublicKeys directive for configuring the list
+  of public key algorithms allowed for authentication.
+- Issue 1819 - Stack trace changing to directory with DisplayChdir file using
+  %F variable on a large filesystem.
+- Issue 1836 - Remove inherited supplemental groups when started with root
+  privileges.
+- Issue 1839 - SSH ECDSA host key algorithms not being used as expected despite
+  configuring appropriate key.
+- Issue 1840 - RADIUS Message-Authenticator verification failed with ProFTPD
+  mod_radius.
+- Issue 1830 - Supplemental group inheritance grants unintended access to
+  GID 0 due to lack of supplemental groups from mod_sql.
+
+1.3.9rc2 - Released 19-Dec-2023
+--------------------------------
+- Issue 1730 - 1.3.9rc1 mod_sftp fails to compile if EVP_chacha20 is
+  unavailable, as when using older OpenSSL versions.
+- Issue 1746 - Error resolving DNS name for implicit "server config" vhost
+  leads to DelayTable not being found.
+- Issue 1749 - Log message for exceeding quota does not include the
+  user/group/class quota type.
+- Issue 1756 - Build system fails for specific module names.
+- Issue 1760 - mod_sftp is affected by "Terrapin" Prefix Truncation Attacks in
+  SSH Specification (CVE-2023-48795).
+- Issue 1770 - Using FTPS after upgrading from 1.3.8a to 1.3.8b leads to crash.
+- Issue 1775 - Add support for logging SFTP ciphers/algorithms in SQL databases.
+- Issue 1764 - Using mod_quotatab hard limits in combination with mod_vroot
+  causes inaccessible files.
+
+1.3.9rc1 - Released 08-Oct-2023
+--------------------------------
+- Bug 4494 - mod_tls build fails for OpenSSL before 1.1.x.
+- Issue 1570 - mod_sftp should advertise standard extensions for protocol
+  version 3.
+- Issue 1569 - mod_sftp "check-file" extension uses wrong block size when
+  offset and length are specified.
+- Issue 379 - Use JSON for Controls protocol messages.
+- Issue 1114 - Provide richer exit status values for ftpdctl for better
+  scripting.
+- Issue 1581 - mod_sftp fails to handle SFTP requests to truncate files to
+  zero size.
+- Issue 1584 - mod_sftp improperly handles SFTP WRITE requests for files opened
+  for appending.
+- Bug 4495 - Enforce requirement of preceding RewriteCondition for RewriteRule
+  directives to avoid confusion.
+- Issue 1568 - Build-time detection of Linux POSIX ACL support broken since
+  1.3.8rc2.
+- Issue 1590 - Unable to load mod_rewrite as a dynamic module due to
+  incomplete/missing library linker flags.
+- Issue 1597 - <Class> section is allowed to be in <Global>, but From directive
+  is not.
+- Issue 535 - Implement LogFormat variable for data transfer average speed.
+- Issue 1596 - Optimize per-connection file I/O when reading SFTPHostKey from
+  disk.
+- Issue 1610 - ProFTPD does not detect FIPS when using OpenSSL 3.x built with
+  FIPS support.
+- Issue 1617 - ExtendedLog SSH, SFTP classes not working as expected.
+- Issue 1623 - Reduce latency due to signal handling in the daemon process.
+- Issue 1626 - SSH key exchange requests should be classifed into the "SEC"
+  ExtendedLog class.
+- Issue 1630 - Update mod_exec to use the Jot API for resolving variables.
+- Issue 1636 - Use system TCP backlog value by default.
+- Issue 1639 - Gracefully handle directory creation requests when the directory
+  already exists.
+- Issue 1646 - mod_sftp does not handle multiple concurrent open file
+  handles/transfers well for logging.
+- Issue 1661 - Remove asynchronous FTP responses emitted while computing digest
+  values.
+- Issue 1679 - "TLSRequired off" plus Protocols directive causes mod_tls to
+  terminate the session abruptly.
+- Issue 1640 - Support terminating connection after USER command when TLS is
+  required.
+- Issue 1676 - Support OPTS commands for querying configured policy for resumed
+  uploads, downloads.
+- Issue 1686 - MaxStoreFileSize for single user not properly honored for SFTP
+  uploads.
+- Issue 1689 - mod_tls fails to compile against OpenSSL 3.0.8 due to missing
+  ENGINE_METHOD_ flags.
+- Issue 1688 - DisplayChdir using absolute path should work properly with
+  DefaultRoot.
+- Issue 1659 - Unknown named connection error when using different SQL backends.
+- Issue 1697 - mod_sql is not properly closing all named backend connections on
+  session exit.
+- Issue 1700 - Clients should be disconnected when unable to be added to the
+  ScoreboardFile.
+- Issue 1701 - Support injecting random delay when clients connect via
+  DelayOnEvent.
+- Issue 1694 - SSH key exchanges fail unexpectedly with "unable to write X
+  bytes of raw data" errors due to small ProFTPD buffer.
+- Issue 1118 - Support OpenSSH FIDO security keys in mod_sftp.
+- Issue 1678 - High session memory usage caused by SFTP outgoing data buffering.
+- Issue 1683 - Out-of-bounds buffer read when handling FTP commands.
+- Issue 1716 - Support obtaining default UID/GID values for AD directories in
+  mod_ldap.
+- Issue 1712 - SFTP algorithm settings in <Global> section not being used.
+- Issue 1433 - Update upload progress in scoreboard when throttling.
+- Issue 1721 - Null pointer reference encountered for FTPS connection due to
+  config parser ignoring Include file problem.
+- Issue 456 - Support the chacha20-poly1305@openssh.com SSH cipher.
+- Issue 1562 - mod_auth_otp should require per-user OTP entries by default.
+
 1.3.8 - Released 04-Dec-2022
 --------------------------------
 - Issue 1488 - 1.3.8rc4 failing to build mod_sftp with OpenSSL 1.1.0 due to

@@ -3248,7 +3248,7 @@ sub wrap2_file_user_plus_global_tables {
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
- 
+
       my $expected;
 
       $expected = 530;
@@ -3609,7 +3609,7 @@ sub wrap2_sftp_extlog_user_bug3727 {
   my $ex;
 
   # Ignore SIGPIPE
-  local $SIG{PIPE} = sub { }; 
+  local $SIG{PIPE} = sub { };
 
   # Fork child
   $self->handle_sigchld();

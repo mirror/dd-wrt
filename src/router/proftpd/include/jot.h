@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2020 The ProFTPD Project team
+ * Copyright (c) 2020-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,6 +76,7 @@
 #define PR_JOT_LOGFMT_TIME_KEY		"local_time"
 #define PR_JOT_LOGFMT_UID_KEY		"uid"
 #define PR_JOT_LOGFMT_USER_KEY		"user"
+#define PR_JOT_LOGFMT_VAR_KEY		"VAR:"
 #define PR_JOT_LOGFMT_VERSION_KEY	"server_version"
 #define PR_JOT_LOGFMT_VHOST_IP_KEY	"server_ip"
 #define PR_JOT_LOGFMT_XFER_MS_KEY	"transfer_millis"
@@ -84,6 +85,7 @@
 #define PR_JOT_LOGFMT_XFER_STATUS_KEY	"transfer_status"
 #define PR_JOT_LOGFMT_XFER_TYPE_KEY	"transfer_type"
 #define PR_JOT_LOGFMT_XFER_PORT_KEY	"transfer_port"
+#define PR_JOT_LOGFMT_XFER_SPEED_KEY	"transfer_speed"
 
 /* This opaque structure is used for tracking filters for events. */
 typedef struct jot_filters_rec pr_jot_filters_t;

@@ -205,7 +205,7 @@ int snmp_msg_write(pool *p, unsigned char **buf, size_t *buflen,
 
   asn1_type = (SNMP_ASN1_TYPE_SEQUENCE|SNMP_ASN1_CONSTRUCT);
   asn1_len = (*buf - msg_hdr_end);
-  
+
   pr_trace_msg(trace_channel, 18,
     "updating SNMP message header to have length %u", asn1_len);
 

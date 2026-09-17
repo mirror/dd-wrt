@@ -86,7 +86,7 @@ sub anon_limit_write {
       die("Can't set owner of $anon_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $config_user, 'test', $uid, $gid, '/tmp',
     '/bin/bash');
   auth_group_write($auth_group_file, $config_group, $gid, $config_user);
@@ -247,7 +247,7 @@ sub anon_limit_write_changing_dirs {
       die("Can't set owner of $anon_dir, $sub_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $config_user, 'test', $uid, $gid, '/tmp',
     '/bin/bash');
   auth_group_write($auth_group_file, $config_group, $gid, $config_user);
@@ -439,7 +439,7 @@ EOC
   } else {
     die("Can't open $anon_dir/.ftpaccess: $!");
   }
- 
+
   auth_user_write($auth_user_file, $config_user, 'test', $uid, $gid, '/tmp',
     '/bin/bash');
   auth_group_write($auth_group_file, $config_group, $gid, $config_user);
@@ -635,7 +635,7 @@ sub anon_limit_login_dns_name {
       die("Can't set owner of $anon_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $config_user, 'test', $uid, $gid, '/tmp',
     '/bin/bash');
   auth_group_write($auth_group_file, $config_group, $gid, $config_user);
@@ -780,7 +780,7 @@ sub anon_limit_write_allow_stor_using_abs_path {
       die("Can't set owner of $anon_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $config_user, 'test', $uid, $gid, '/tmp',
     '/bin/bash');
   auth_group_write($auth_group_file, $config_group, $gid, $config_user);
@@ -947,7 +947,7 @@ sub anon_limit_write_allow_stor_using_rel_path {
       die("Can't set owner of $anon_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $config_user, 'test', $uid, $gid, '/tmp',
     '/bin/bash');
   auth_group_write($auth_group_file, $config_group, $gid, $config_user);

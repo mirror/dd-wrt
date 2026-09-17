@@ -556,7 +556,7 @@ sub snmp_start_existing_dirs {
 
   # First, start the server
   server_start($config_file);
-  
+
   # ...then stop the server.  This means mod_snmp will have created all
   # the necessary directories, etc.
   sleep(2);

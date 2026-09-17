@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2015 The ProFTPD Project team
+ * Copyright (c) 2001-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -101,6 +101,9 @@ typedef struct {
 
 /* Scoreboard mode */
 #define PR_SCOREBOARD_MODE		0644
+
+/* Scoreboard option flags */
+#define PR_SCOREBOARD_OPT_ALLOW_MISSING_ENTRY	0x0001
 
 /* Scoreboard update tags */
 #define PR_SCORE_USER		1

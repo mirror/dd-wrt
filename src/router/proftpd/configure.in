@@ -1,7 +1,7 @@
 dnl ProFTPD - FTP server daemon
 dnl Copyright (c) 1997, 1998 Public Flood Software
 dnl Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
-dnl Copyright (c) 2001-2022 The ProFTPD Project team
+dnl Copyright (c) 2001-2024 The ProFTPD Project team
 dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -1476,18 +1476,42 @@ AC_ARG_ENABLE(transfer-buffer-size,
   ])
 
 dnl Checks for libraries.  Yes, this is the hard way, but it's necessary.
+AC_CHECK_HEADERS(stddef.h crypt.h netdb.h arpa/inet.h sys/socket.h)
+
 AC_CACHE_CHECK(for standalone crypt,pr_cv_lib_standalone_crypt,
-  AC_TRY_LINK(,[crypt();],
-  	pr_cv_lib_standalone_crypt="yes", pr_cv_lib_standalone_crypt="no" ))
+  AC_TRY_LINK(
+    [
+      #if HAVE_STDDEF_H
+      # include <stddef.h>
+      #endif
+      #if HAVE_CRYPT_H
+      # include <crypt.h>
+      #endif
+    ],
+    [
+      crypt(NULL, NULL);
+    ],
+    pr_cv_lib_standalone_crypt="yes", pr_cv_lib_standalone_crypt="no" ))
 
 if test "$pr_cv_lib_standalone_crypt" = "no"; then
   AC_CHECK_LIB(crypt, crypt)
 fi
 
 AC_CACHE_CHECK(for standalone gethostbyname,pr_cv_lib_standalone_gethost,
-  AC_TRY_LINK(,[gethostbyname();],
-  	pr_cv_lib_standalone_gethost="yes",
-	pr_cv_lib_standalone_gethost="no" ))
+  AC_TRY_LINK(
+    [
+      #if HAVE_STDDEF_H
+      # include <stddef.h>
+      #endif
+      #if HAVE_NETDB_H
+      # include <netdb.h>
+      #endif
+    ],
+    [
+      gethostbyname(NULL);
+    ],
+    pr_cv_lib_standalone_gethost="yes",
+    pr_cv_lib_standalone_gethost="no" ))
 
 if test "$pr_cv_lib_standalone_gethost" = "no"; then
   AC_CHECK_LIB(resolv, gethostbyname)
@@ -1495,25 +1519,57 @@ if test "$pr_cv_lib_standalone_gethost" = "no"; then
 fi
 
 AC_CACHE_CHECK(for standalone inet_aton,pr_cv_lib_standalone_aton,
-  AC_TRY_LINK(,[inet_aton();],
-  	pr_cv_lib_standalone_aton="yes",
-	pr_cv_lib_standalone_aton="no" ))
+  AC_TRY_LINK(
+    [
+      #if HAVE_STDDEF_H
+      # include <stddef.h>
+      #endif
+      #if HAVE_ARPA_INET_H
+      # include <arpa/inet.h>
+      #endif
+    ],
+    [
+      inet_aton(NULL, NULL);
+    ],
+    pr_cv_lib_standalone_aton="yes",
+    pr_cv_lib_standalone_aton="no" ))
 
 if test "$pr_cv_lib_standalone_aton" = "no"; then
   AC_CHECK_LIB(bind, inet_aton)
 fi
 
 AC_CACHE_CHECK(for standalone nsl functions,pr_cv_lib_standalone_nsl,[
-  AC_TRY_LINK(,[gethostent();],
-  pr_cv_lib_standalone_nsl="yes", pr_cv_lib_standalone_nsl="no") ])
+  AC_TRY_LINK(
+    [
+      #if HAVE_NETDB_H
+      # include <netdb.h>
+      #endif
+    ],
+    [
+      gethostent();
+    ],
+    pr_cv_lib_standalone_nsl="yes",
+    pr_cv_lib_standalone_nsl="no") ])
 
 if test "$pr_cv_lib_standalone_nsl" = "no"; then
   AC_CHECK_LIB(nsl, gethostent)
 fi
 
 AC_CACHE_CHECK(for standalone socket functions,pr_cv_lib_standalone_sockets,
-  AC_TRY_LINK(,[bind();],
-  pr_cv_lib_standalone_sockets="yes", pr_cv_lib_standalone_sockets="no"))
+  AC_TRY_LINK(
+    [
+      #if HAVE_STDDEF_H
+      # include <stddef.h>
+      #endif
+      #if HAVE_SYS_SOCKET_H
+      # include <sys/socket.h>
+      #endif
+    ],
+    [
+      bind(0, NULL, 0);
+    ],
+    pr_cv_lib_standalone_sockets="yes",
+    pr_cv_lib_standalone_sockets="no"))
 
 if test "$pr_cv_lib_standalone_sockets" = "no"; then
   AC_CHECK_LIB(socket, bind)
@@ -1638,7 +1694,7 @@ dnl Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS(fcntl.h signal.h linux/prctl.h sys/ioctl.h sys/prctl.h sys/resource.h sys/time.h junistd.h memory.h)
+AC_CHECK_HEADERS(dlfcn.h fcntl.h signal.h linux/prctl.h sys/ioctl.h sys/prctl.h sys/resource.h sys/time.h junistd.h memory.h)
 if test x"$force_shadow" != xno ; then
   AC_CHECK_HEADERS(shadow.h,
     [ if test "$use_shadow" = "" && test -f /etc/shadow ; then
@@ -2044,7 +2100,7 @@ AC_TRY_LINK(
   ],
   [ 
     size_t res, in_len = 0, out_len = 0;
-    const char *in = NULL;
+    char *in = NULL;
     char *out = NULL;
     res = iconv((iconv_t)-1, &in, &in_len, &out, &out_len);
   ],
@@ -2058,7 +2114,9 @@ AC_TRY_LINK(
 )
 
 AC_MSG_CHECKING([for idn2_to_ascii_8z])
-AC_TRY_COMPILE(
+old_libs=$LIBS
+LIBS="-lidn2 $LIBS"
+AC_TRY_LINK(
   [
     #include <sys/types.h>
     #ifdef HAVE_IDN2_H
@@ -2075,14 +2133,19 @@ AC_TRY_COMPILE(
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAVE_IDN2_TO_ASCII_8Z, 1, [Define if you have idn2_to_ascii_8z])
     MAIN_LIBS="$MAIN_LIBS -lidn2"
+    ac_orig_libs="$ac_orig_libs -lidn2"
+    SHARED_MODULE_LIBS="$SHARED_MODULE_LIBS -lidn2"
   ],
   [
     AC_MSG_RESULT(no)
+    LIBS=$old_libs
   ]
 )
 
 AC_MSG_CHECKING([for idna_to_ascii_8z])
-AC_TRY_COMPILE(
+old_libs=$LIBS
+LIBS="-lidn $LIBS"
+AC_TRY_LINK(
   [
     #include <sys/types.h>
     #ifdef HAVE_IDNA_H
@@ -2099,9 +2162,12 @@ AC_TRY_COMPILE(
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAVE_IDNA_TO_ASCII_8Z, 1, [Define if you have idna_to_ascii_8z])
     MAIN_LIBS="$MAIN_LIBS -lidn"
+    ac_orig_libs="$ac_orig_libs -lidn"
+    SHARED_MODULE_LIBS="$SHARED_MODULE_LIBS -lidn"
   ],
   [
     AC_MSG_RESULT(no)
+    LIBS=$old_libs
   ]
 )
 
@@ -2371,8 +2437,8 @@ AC_CACHE_CHECK(
   if test "$pr_cv_func_facl" = "none"; then
     old_ldflags=$LDFLAGS
     old_libs=$LIBS
-    new_ldflags=`echo "$LDFLAGS" | sed -e 's/-L\$(top_srcdir)\/lib//g'`
-    LDFLAGS="$new_ldflags"
+    new_ldflags=`echo "$LDFLAGS" | sed -e 's/-Wl\.*\/lib //g'`
+    LDFLAGS="-L\$(top_builddir)/lib $new_ldflags"
     LIBS="-lacl $LIBS"
     AC_TRY_LINK(
       [ #include <sys/types.h>
@@ -3118,6 +3184,65 @@ AC_TRY_RUN(
   AC_MSG_RESULT(cross-compiling); AC_DEFINE(HAVE_LU, 1, [Define if you have %lu support])
 )
 
+dnl Run a small test program to see if the host's listen(2) function can
+dnl handle a negative backlog (Issue #1636).
+AC_MSG_CHECKING([whether listen supports negative backlog]);
+AC_TRY_RUN(
+  [
+    #include <errno.h>
+    #include <stdio.h>
+    #ifdef HAVE_STDLIB_H
+    # include <stdlib.h>
+    #endif
+    #ifdef HAVE_STRING_H
+    # include <string.h>
+    #endif
+    #ifdef HAVE_UNISTD_H
+    # include <unistd.h>
+    #endif
+    #ifdef HAVE_NETDB_H
+    # include <netdb.h>
+    #endif
+    #ifdef HAVE_SYS_SOCKET_H
+    # include <sys/socket.h>
+    #endif
+    int main(int argc, char *argv[]) {
+      struct protoent *pe;
+      int backlog = -1, proto = -1, fd, res;
+
+      pe = getprotobyname("tcp");
+      if (pe != NULL) {
+        proto = pe->p_proto;
+      }
+
+      fd = socket(AF_INET, SOCK_STREAM, proto);
+      if (fd < 0) {
+        fprintf(stderr, "error creating socket: %s\n", strerror(errno));
+        return 1;
+      }
+
+      res = listen(fd, backlog);
+      if (res < 0) {
+        fprintf(stderr, "error listening on socket: %s\n", strerror(errno));
+        return 1;
+      }
+
+      (void) close(fd);
+      return 0;
+    }
+  ],
+  [
+    AC_MSG_RESULT(yes);
+    AC_DEFINE(LISTEN_NEGATIVE_BACKLOG, 1, [Define if you have negative backlog support])
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ],
+  [
+    AC_MSG_RESULT(cross-compiling)
+  ]
+)
+
 dnl Module handling.
 ac_shared_module_dirs=
 ac_static_module_dirs=
@@ -3126,12 +3251,13 @@ dnl Remove any modules in the shared module list from the core and static
 dnl module lists
 for amodule in $ac_shared_modules; do
   module=`echo "$amodule" | sed -e 's/\.la//g'`.o;
+  modulename=`echo "$amodule" | sed -e 's/\.la$//'`;
 
-  ac_core_modules=`echo "$ac_core_modules" | sed -e "s/$module//g"`;
-  ac_build_core_modules=`echo "$ac_build_core_modules" | sed -e "s/modules\/$module//g"`;
+  ac_core_modules=`echo "$ac_core_modules" | sed -e "s/$modulename\.o//g"`;
+  ac_build_core_modules=`echo "$ac_build_core_modules" | sed -e "s/modules\/$modulename\.o//g"`;
 
-  ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$module//g"`;
-  ac_build_static_modules=`echo "$ac_build_static_modules" | sed -e "s/modules\/$module//g"`;
+  ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$modulename\.o//g"`;
+  ac_build_static_modules=`echo "$ac_build_static_modules" | sed -e "s/modules\/$modulename\.o//g"`;
 done
 
 GLUE_MODULE_OBJS="$ac_core_modules $ac_static_modules"
@@ -3482,7 +3608,7 @@ if test x"$pr_use_openssl" = xyes; then
   AC_DEFINE(PR_USE_OPENSSL, 1, [Define if using OpenSSL support.])
   ac_build_addl_libs="$ac_build_addl_libs -lssl -lcrypto"
 
-  AC_MSG_CHECKING([whether OpenSSL is compiled with FIPS support])
+  AC_MSG_CHECKING([whether OpenSSL 1.x is compiled with FIPS support])
   saved_libs="$LIBS"
   LIBS="$LIBS -lcrypto"
 
@@ -3500,7 +3626,7 @@ if test x"$pr_use_openssl" = xyes; then
     ],
     AC_MSG_RESULT(yes); AC_DEFINE(PR_USE_OPENSSL_FIPS, 1, [Define if your OpenSSL supports FIPS]),
     AC_MSG_RESULT(no),
-    AC_MSG_RESULT(unknown)
+    AC_MSG_RESULT(cross-compiling)
   )
   LIBS="$saved_libs"
 
@@ -3568,6 +3694,27 @@ if test x"$pr_use_openssl" = xyes; then
     ]
   )
 
+  AC_MSG_CHECKING([whether OpenSSL has BIO_s_secmem support])
+  saved_libs="$LIBS"
+  LIBS="-lcrypto $LIBS"
+
+  AC_TRY_LINK(
+    [
+      #include <openssl/bio.h>
+    ],
+    [
+      BIO *bio = BIO_s_secmem();
+    ],
+    [
+      AC_MSG_RESULT(yes)
+      AC_DEFINE(PR_USE_OPENSSL_BIO_SECMEM, 1, [Define if your OpenSSL supports BIO_s_secmem])
+    ],
+    [
+      AC_MSG_RESULT(no)
+    ]
+  )
+  LIBS="$saved_libs"
+
   AC_MSG_CHECKING([whether OpenSSL has complete ECC support])
   saved_libs="$LIBS"
   LIBS="-lcrypto $LIBS"
@@ -3591,6 +3738,27 @@ if test x"$pr_use_openssl" = xyes; then
     [
       AC_MSG_RESULT(yes)
       AC_DEFINE(PR_USE_OPENSSL_ECC, 1, [Define if your OpenSSL supports ECC])
+    ],
+    [
+      AC_MSG_RESULT(no)
+    ]
+  )
+  LIBS="$saved_libs"
+
+  AC_MSG_CHECKING([whether OpenSSL has ENGINE support])
+  saved_libs="$LIBS"
+  LIBS="-lcrypto $LIBS"
+
+  AC_TRY_LINK(
+    [
+      #include <openssl/engine.h>
+    ],
+    [
+      (void) ENGINE_set_default(NULL, 0);
+    ],
+    [
+      AC_MSG_RESULT(yes)
+      AC_DEFINE(PR_USE_OPENSSL_ENGINE, 1, [Define if your OpenSSL supports the ENGINE API])
     ],
     [
       AC_MSG_RESULT(no)
@@ -3701,6 +3869,69 @@ if test x"$pr_use_openssl" = xyes; then
     ],
     [
       AC_MSG_RESULT(no)
+    ]
+  )
+  LIBS="$saved_libs"
+
+  AC_MSG_CHECKING([whether OpenSSL has OSSL_PROVIDER_load support])
+  saved_libs="$LIBS"
+  LIBS="-lcrypto $LIBS"
+
+  AC_TRY_LINK(
+    [
+      #include <openssl/provider.h>
+    ],
+    [
+      OSSL_PROVIDER *provider;
+      provider = OSSL_PROVIDER_load(NULL, "default");
+    ],
+    [
+      AC_MSG_RESULT(yes)
+      AC_DEFINE(PR_USE_OPENSSL_OSSL_PROVIDER_LOAD, 1, [OpenSSL supports OSSL_PROVIDER_load])
+      LIBS="$saved_libs"
+    ],
+    [
+      AC_MSG_RESULT(no)
+      LIBS="$saved_libs"
+    ]
+  )
+  LIBS="$saved_libs"
+
+  AC_MSG_CHECKING([whether OpenSSL 3.x has FIPS support])
+  saved_libs="$LIBS"
+  LIBS="-lcrypto $LIBS"
+
+  AC_TRY_RUN(
+    [
+      #include <openssl/err.h>
+      #if defined(PR_USE_OPENSSL_OSSL_PROVIDER_LOAD)
+      # include <openssl/provider.h>
+      #endif
+      int main(int argc, char **argv) {
+        #if defined(PR_USE_OPENSSL_OSSL_PROVIDER_LOAD)
+        OSSL_PROVIDER *provider;
+        ERR_load_crypto_strings();
+        provider = OSSL_PROVIDER_load(NULL, "fips");
+        if (provider == NULL) {
+          fprintf(stdout, "Failed to load FIPS provider\n");
+          ERR_print_errors_fp(stdout);
+          exit(1);
+        }
+        exit(0);
+        #else
+        exit(1);
+        #endif
+      }
+    ],
+    [
+      AC_MSG_RESULT(yes)
+      AC_DEFINE(PR_USE_OPENSSL_FIPS, 1, [OpenSSL 3.x supports FIPS])
+    ],
+    [
+      AC_MSG_RESULT(no)
+    ],
+    [
+      AC_MSG_RESULT(cross-compiling)
     ]
   )
   LIBS="$saved_libs"
@@ -3960,33 +4191,39 @@ fi
 
 for module in $ac_shared_modules ; do
   moduledir=`echo "$module" | sed -e 's/\.la$//'`;
+  modulename=`echo "$module" | sed -e 's/\.la$//'`;
+  src=`echo "$module" | sed -e 's/\.o$//'`.c;
+  srcinc=`echo "$module" | sed -e 's/\.o$//'`.h;
 
   if test -f $srcdir/modules/$src -o -f $srcdir/contrib/$src; then
     continue
 
   elif test -d $srcdir/modules/$moduledir; then
     ac_shared_module_dirs="$ac_shared_module_dirs modules/$moduledir";
-    ac_shared_modules=`echo "$ac_shared_modules" | sed -e "s/$module//"`
+    ac_shared_modules=`echo "$ac_shared_modules" | sed -e "s/$modulename\.la//"`
 
   elif test -d $srcdir/contrib/$moduledir; then
     ac_shared_module_dirs="$ac_shared_module_dirs contrib/$moduledir";
-    ac_shared_modules=`echo "$ac_shared_modules" | sed -e "s/$module//"`
+    ac_shared_modules=`echo "$ac_shared_modules" | sed -e "s/$modulename\.la//"`
   fi
 done
 
 for module in $ac_static_modules ; do
   moduledir=`echo "$module" | sed -e 's/\.o$//'`;
+  modulename=`echo "$module" | sed -e 's/\.o$//'`;
+  src=`echo "$module" | sed -e 's/\.o$//'`.c;
+  srcinc=`echo "$module" | sed -e 's/\.o$//'`.h;
 
   if test -f $srcdir/modules/$src -o -f $srcdir/contrib/$src; then
     continue
 
   elif test -d $srcdir/modules/$moduledir; then
     ac_static_module_dirs="$ac_static_module_dirs modules/$moduledir";
-    ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$module//"`
+    ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$modulename\.o//"`
 
   elif test -d $srcdir/contrib/$moduledir; then
     ac_static_module_dirs="$ac_static_module_dirs contrib/$moduledir";
-    ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$module//"`
+    ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$modulename\.o//"`
 
     addonlibs=""
     src=`echo "$module" | sed -e 's/\.o$//'`.c;
@@ -4022,8 +4259,8 @@ for module in $ac_static_modules ; do
         AC_MSG_ERROR([specified archive '$thearch' does not match expected module archive name '$moduledir.a' -- aborting])
       fi
 
-      ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$module//g"`
-      ac_build_static_modules=`echo "$ac_build_static_modules" | sed -e "s/modules\/$module//g"`
+      ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$modulename\.o//g"`
+      ac_build_static_modules=`echo "$ac_build_static_modules" | sed -e "s/modules\/$modulename\.o//g"`
       ac_build_static_module_archives="$ac_build_static_module_archives contrib/$moduledir/$thearch"
     done
 

@@ -144,7 +144,7 @@ sub ftpwho_ok {
   }
 
   my $ex;
- 
+
   # Fork child
   $self->handle_sigchld();
   defined(my $pid = fork()) or die("Can't fork: $!");
@@ -291,7 +291,7 @@ sub ftpwho_verbose_ok {
   }
 
   my $ex;
- 
+
   # Fork child
   $self->handle_sigchld();
   defined(my $pid = fork()) or die("Can't fork: $!");
@@ -447,7 +447,7 @@ sub ftpwho_bug3714 {
   }
 
   my $ex;
- 
+
   # Fork child
   $self->handle_sigchld();
   defined(my $pid = fork()) or die("Can't fork: $!");
@@ -462,7 +462,7 @@ sub ftpwho_bug3714 {
         die("RETR $config_file failed: " . $client->response_code() . " " .
           $client->response_msg());
       }
- 
+
       # Before we stop the server, use ftpwho to read the scoreboard
       ftpwho($scoreboard_file, '', $ftpwho_file);
 

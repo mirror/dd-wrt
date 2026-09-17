@@ -41,7 +41,7 @@ static void tear_down(void) {
     destroy_pool(p);
     p = NULL;
     permanent_pool = NULL;
-  } 
+  }
 }
 
 /* Tests */

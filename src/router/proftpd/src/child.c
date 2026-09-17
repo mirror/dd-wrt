@@ -53,7 +53,7 @@ int child_add(pid_t pid, int fd) {
   pr_pool_tag(p, "child session pool");
 
   ch = pcalloc(p, sizeof(pr_child_t));
-  ch->ch_pool = p;  
+  ch->ch_pool = p;
   ch->ch_pid = pid;
   time(&ch->ch_when);
   ch->ch_pipefd = fd;

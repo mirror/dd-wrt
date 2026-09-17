@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp interoperability
- * Copyright (c) 2008-2021 TJ Saunders
+ * Copyright (c) 2008-2024 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -82,6 +82,11 @@
 /* For clients that support the OpenSSH "hostkeys-00@openssh.com" extensions.
  */
 #define SFTP_SSH2_FEAT_HOSTKEYS				0x0800
+
+/* For clients that support the OpenSSH "limits@openssh.com" extension yet
+ * cannot handle the full mod_sftp lengths.
+ */
+#define SFTP_SSH2_FEAT_USE_FULL_FXP_LIMITS		0x1000
 
 /* For scanners. */
 #define SFTP_SSH2_FEAT_SCANNER				0xfffe

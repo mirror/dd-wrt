@@ -131,7 +131,7 @@ sub ftpcount_ok {
   }
 
   my $ex;
- 
+
   # Fork child
   $self->handle_sigchld();
   defined(my $pid = fork()) or die("Can't fork: $!");

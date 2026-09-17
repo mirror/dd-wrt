@@ -68,7 +68,7 @@ static void lang_feat_add(pool *p) {
     register unsigned int i;
     char **langs;
     size_t feat_strlen = 0;
- 
+
     langs = lang_list->elts;
     for (i = 0; i < lang_list->nelts; i++) {
       char *lang_dup, *tmp;
@@ -93,7 +93,7 @@ static void lang_feat_add(pool *p) {
 
       feat_str = pstrcat(p, feat_str, ";", NULL);
     }
- 
+
     feat_strlen = strlen(feat_str);
 
     /* Trim the trailing semicolon. */
@@ -135,7 +135,7 @@ static const char *lang_bind_domain(void) {
 #ifdef HAVE_LIBINTL_H
   pr_log_debug(DEBUG9, MOD_LANG_VERSION
     ": binding to text domain 'proftpd' using locale path '%s'", lang_path);
-  res = bindtextdomain("proftpd", lang_path); 
+  res = bindtextdomain("proftpd", lang_path);
   if (res == NULL) {
     pr_log_pri(PR_LOG_NOTICE, MOD_LANG_VERSION
       ": unable to bind to text domain 'proftpd' using locale path '%s': %s",
@@ -248,7 +248,7 @@ static int lang_supported(pool *p, const char *lang) {
 
   if (lang_aliases != NULL) {
     const void *v;
-    
+
     /* Check to see if the given lang has an alias that has been determined
      * to be acceptable.
      */
@@ -747,7 +747,7 @@ MODRET lang_utf8(cmd_rec *cmd) {
         pr_cmd_set_errno(cmd, EPERM);
         errno = EPERM;
         return PR_ERROR(cmd);
-      } 
+      }
 
       pr_log_debug(DEBUG5, MOD_LANG_VERSION
         ": enabling use of UTF8 encoding as per client's request");
@@ -1025,7 +1025,7 @@ static int lang_sess_init(void) {
 
     if (lang_list->nelts == 0) {
       *((char **) push_array(lang_list)) = pstrdup(lang_pool, lang_curr);
-    } 
+    }
   }
 
   c = find_config(main_server->conf, CONF_PARAM, "LangOptions", FALSE);
@@ -1058,7 +1058,7 @@ static int lang_sess_init(void) {
 
   /* If the PreferServerEncoding LangOption is not set, OR if the encoding
    * configured explicitly requests UTF8 from the client, then we can list
-   * UTF8 in the FEAT response. 
+   * UTF8 in the FEAT response.
    */
   if (!(lang_opts & LANG_OPT_PREFER_SERVER_ENCODING) ||
       utf8_client_encoding == TRUE) {

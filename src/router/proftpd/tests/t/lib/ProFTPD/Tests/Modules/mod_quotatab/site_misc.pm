@@ -237,7 +237,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('mkdir', 'foo/bar/baz');
- 
+
       my $expected;
 
       $expected = 200;
@@ -460,7 +460,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('mkdir', 'foo/bar/baz');
- 
+
       my $expected;
 
       $expected = 200;
@@ -683,7 +683,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('mkdir', 'foo/bar/baz');
- 
+
       my $expected;
 
       $expected = 200;
@@ -906,7 +906,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('mkdir', 'foo/bar/baz');
- 
+
       my $expected;
 
       $expected = 200;
@@ -1135,7 +1135,7 @@ EOS
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
- 
+
       my $expected;
 
       $expected = 550;
@@ -1370,7 +1370,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('mkdir', 'foo/bar/baz');
- 
+
       my $expected;
 
       $expected = 200;
@@ -1599,7 +1599,7 @@ EOS
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
- 
+
       my $expected;
 
       $expected = 550;
@@ -1821,7 +1821,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('rmdir', 'foo/bar/baz');
- 
+
       my $expected;
 
       $expected = 200;
@@ -2048,7 +2048,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('rmdir', 'foo');
- 
+
       my $expected;
 
       $expected = 200;

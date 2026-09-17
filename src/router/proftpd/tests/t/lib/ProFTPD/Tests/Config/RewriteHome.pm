@@ -127,7 +127,7 @@ sub rewritehome_ok {
       $expected = 257;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
-  
+
       $expected = "\"$home_dir\" is the current directory";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
@@ -367,7 +367,7 @@ sub rewritehome_chroot_bug3348 {
       $expected = 257;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
-  
+
       $expected = "\"/\" is the current directory";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));

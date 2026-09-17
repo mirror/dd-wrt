@@ -134,7 +134,7 @@ sub masqaddr_pasv {
       my $resp_addr = $1;
 
       $expected = $masq_addr;
-      $expected =~ s/\./,/g; 
+      $expected =~ s/\./,/g;
 
       $self->assert($expected eq $resp_addr,
         test_msg("Expected PASV address '$expected', got '$resp_addr'"));

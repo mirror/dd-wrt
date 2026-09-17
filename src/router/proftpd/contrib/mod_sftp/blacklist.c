@@ -257,7 +257,7 @@ int sftp_blacklist_reject_key(pool *p, unsigned char *key_data,
     /* SHA1 digests are 20 bytes (40 bytes when hex-encoded). */
     hex_maxlen = 40;
 
-  } else { 
+  } else {
 #endif /* OPENSSL_FIPS */
     digest_name = "MD5";
     fp = sftp_keys_get_fingerprint(p, key_data, key_datalen,
@@ -313,10 +313,11 @@ int sftp_blacklist_reject_key(pool *p, unsigned char *key_data,
   res = check_fp(fd, hex);
   close(fd);
 
-  if (res == 1)
+  if (res == 1) {
     return TRUE;
+  }
 
-  return FALSE;  
+  return FALSE;
 }
 
 int sftp_blacklist_set_file(const char *path) {

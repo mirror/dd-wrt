@@ -104,7 +104,7 @@ sub usesendfile_on_ascii {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -124,7 +124,7 @@ sub usesendfile_on_ascii {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $test_file = File::Spec->rel2abs($config_file);
@@ -253,7 +253,7 @@ sub usesendfile_off_ascii {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -273,7 +273,7 @@ sub usesendfile_off_ascii {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $test_file = File::Spec->rel2abs($config_file);
@@ -402,7 +402,7 @@ sub usesendfile_on_binary {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -422,7 +422,7 @@ sub usesendfile_on_binary {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $test_file = File::Spec->rel2abs($config_file);
@@ -552,7 +552,7 @@ sub usesendfile_off_binary {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -572,7 +572,7 @@ sub usesendfile_off_binary {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $test_file = File::Spec->rel2abs($config_file);
@@ -702,7 +702,7 @@ sub usesendfile_on_binary_dir_bug3310 {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -722,7 +722,7 @@ sub usesendfile_on_binary_dir_bug3310 {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/foo");
@@ -906,7 +906,7 @@ sub usesendfile_off_binary_dir_bug3310 {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -926,7 +926,7 @@ sub usesendfile_off_binary_dir_bug3310 {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/foo");
@@ -1110,7 +1110,7 @@ sub usesendfile_on_binary_ftpaccess_bug3310 {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -1130,7 +1130,7 @@ sub usesendfile_on_binary_ftpaccess_bug3310 {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/foo");
@@ -1324,7 +1324,7 @@ sub usesendfile_off_binary_ftpaccess_bug3310 {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -1344,7 +1344,7 @@ sub usesendfile_off_binary_ftpaccess_bug3310 {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/foo");
@@ -1537,7 +1537,7 @@ sub usesendfile_len_binary_dir_bug3310 {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -1557,7 +1557,7 @@ sub usesendfile_len_binary_dir_bug3310 {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/foo");
@@ -1751,7 +1751,7 @@ sub usesendfile_len_binary_ftpaccess_bug3310 {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -1771,7 +1771,7 @@ sub usesendfile_len_binary_ftpaccess_bug3310 {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/foo");
@@ -1974,7 +1974,7 @@ sub usesendfile_len_ascii_ftpaccess_bug3310 {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -1994,7 +1994,7 @@ sub usesendfile_len_ascii_ftpaccess_bug3310 {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/foo");
@@ -2187,7 +2187,7 @@ sub usesendfile_pct_binary_dir_bug3310 {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -2207,7 +2207,7 @@ sub usesendfile_pct_binary_dir_bug3310 {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/foo");
@@ -2401,7 +2401,7 @@ sub usesendfile_pct_binary_ftpaccess_bug3310 {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -2421,7 +2421,7 @@ sub usesendfile_pct_binary_ftpaccess_bug3310 {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/foo");

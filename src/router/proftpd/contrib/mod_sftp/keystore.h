@@ -33,8 +33,8 @@ int sftp_keystore_free(void);
 
 int sftp_keystore_supports_store(const char *, unsigned int);
 int sftp_keystore_verify_host_key(pool *, const char *, const char *,
-  const char *, unsigned char *, uint32_t);
+  const char *, unsigned char *, uint32_t, pr_table_t *);
 int sftp_keystore_verify_user_key(pool *, const char *, unsigned char *,
-  uint32_t);
+  uint32_t, pr_table_t *);
 
 #endif /* MOD_SFTP_KEYSTORE_H */

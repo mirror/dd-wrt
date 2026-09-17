@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2021 The ProFTPD Project team
+ * Copyright (c) 2003-2025 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -95,7 +95,7 @@ static array_header *netaddr_dnscache_get(pool *p, const char *ip_str) {
 }
 
 static void netaddr_dnscache_set(const char *ip_str, const char *dns_name) {
-  if (netaddr_dnstab) {
+  if (netaddr_dnstab != NULL) {
     void *v = NULL;
     array_header *res = NULL;
     int add_list = FALSE;
@@ -127,7 +127,7 @@ static void netaddr_dnscache_set(const char *ip_str, const char *dns_name) {
     *((char **) push_array(res)) = pstrdup(netaddr_pool, dns_name);
     v = res;
 
-    if (add_list) { 
+    if (add_list == TRUE) {
       if (pr_table_add(netaddr_dnstab, pstrdup(netaddr_pool, ip_str), v,
           sizeof(array_header *)) < 0) {
         pr_trace_msg(trace_channel, 3,
@@ -493,7 +493,7 @@ pr_netaddr_t *pr_netaddr_dup(pool *p, const pr_netaddr_t *na) {
     return NULL;
   }
 
-  pr_netaddr_set_sockaddr(dup_na, pr_netaddr_get_sockaddr(na));  
+  pr_netaddr_set_sockaddr(dup_na, pr_netaddr_get_sockaddr(na));
 
   if (na->na_have_ipstr) {
     sstrncpy(dup_na->na_ipstr, na->na_ipstr, sizeof(dup_na->na_ipstr));
@@ -638,7 +638,8 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
               "unable to resolve '%s' to an IPv6 address: %s", name,
               pr_gai_strerror(res));
 
-            if (res == EAI_NONAME) {
+            if (res == EAI_NODATA ||
+                res == EAI_NONAME) {
               xerrno = ENOENT;
 # if defined(EAFNOSUPPORT)
             } else if (res == EAI_FAMILY) {
@@ -660,7 +661,8 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
         pr_trace_msg(trace_channel, 1, "IPv4 getaddrinfo '%s' error: %s",
           name, errstr);
 
-        if (res == EAI_NONAME) {
+        if (res == EAI_NODATA ||
+            res == EAI_NONAME) {
           xerrno = ENOENT;
 # if defined(EAFNOSUPPORT)
         } else if (res == EAI_FAMILY) {
@@ -679,7 +681,8 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
 #else
       pr_trace_msg(trace_channel, 1, "IPv4 getaddrinfo '%s' error: %s",
         name, pr_gai_strerror(res));
-      if (res == EAI_NONAME) {
+      if (res == EAI_NODATA ||
+          res == EAI_NONAME) {
         xerrno = ENOENT;
 # if defined(EAFNOSUPPORT)
       } else if (res == EAI_FAMILY) {
@@ -784,7 +787,7 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
           name, pr_gai_strerror(res));
 
       } else {
-        pr_trace_msg(trace_channel, 1, 
+        pr_trace_msg(trace_channel, 1,
           "IPv6 getaddrinfo '%s' system error: [%d] %s", name,
           xerrno, strerror(xerrno));
       }
@@ -1070,13 +1073,13 @@ size_t pr_netaddr_get_sockaddr_len(const pr_netaddr_t *na) {
   switch (pr_netaddr_get_family(na)) {
     case AF_INET:
       return sizeof(struct sockaddr_in);
- 
-#ifdef PR_USE_IPV6
+
+#if defined(PR_USE_IPV6)
     case AF_INET6:
       if (use_ipv6 == TRUE) {
         return sizeof(struct sockaddr_in6);
       }
-#endif /* PR_USE_IPV6 */   
+#endif /* PR_USE_IPV6 */
   }
 
   errno = EPERM;
@@ -1626,14 +1629,14 @@ int pr_netaddr_fnmatch(const pr_netaddr_t *na, const char *pattern, int flags) {
 }
 
 const char *pr_netaddr_get_ipstr(const pr_netaddr_t *na) {
-#ifdef PR_USE_IPV6
+#if defined(PR_USE_IPV6)
   char buf[INET6_ADDRSTRLEN];
 #else
   char buf[INET_ADDRSTRLEN];
 #endif /* PR_USE_IPV6 */
   int res = 0, xerrno;
   pr_netaddr_t *addr;
-  
+
   if (na == NULL) {
     errno = EINVAL;
     return NULL;
@@ -1884,10 +1887,10 @@ static int netaddr_get_dnsstr_gethostbyname(const pr_netaddr_t *na,
               break;
             }
           }
-        } 
+        }
         break;
 
-# ifdef PR_USE_IPV6
+# if defined(PR_USE_IPV6)
       case AF_INET6:
         if (use_ipv6 && family == AF_INET6) {
           for (checkaddr = hent->h_addr_list; *checkaddr; ++checkaddr) {
@@ -1907,7 +1910,7 @@ static int netaddr_get_dnsstr_gethostbyname(const pr_netaddr_t *na,
               break;
             }
           }
-        } 
+        }
         break;
 # endif /* PR_USE_IPV6 */
     }
@@ -2156,11 +2159,11 @@ int pr_netaddr_is_loopback(const pr_netaddr_t *na) {
 }
 
 /* RFC 1918 addresses:
- * 
+ *
  * 10.0.0.0 - 10.255.255.255 (10.0.0.0/8, 24-bit block)
  * 172.16.0.0 - 172.31.255.255 (172.16.0.0/12, 20-bit block)
  * 192.168.0.0 - 192.168.255.255 (192.168.0.0/16, 16-bit block)
- * 
+ *
  */
 
 static int is_10_xxx_addr(uint32_t addrno) {

@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_quotatab_file -- a mod_quotatab sub-module for managing quota
  *                               data via file-based tables
- * Copyright (c) 2002-2016 TJ Saunders
+ * Copyright (c) 2002-2024 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,9 +41,14 @@
 
 module quotatab_file_module;
 
+static const char *trace_channel = "quotatab.file";
+
 static int filetab_close(quota_table_t *filetab) {
-  int res = close(filetab->tab_handle);
+  int res;
+
+  res = close(filetab->tab_handle);
   filetab->tab_handle = -1;
+
   return res;
 }
 
@@ -98,11 +103,14 @@ static int filetab_create(quota_table_t *filetab, void *ptr) {
   }
 
   if (res > 0) {
-
     /* Rewind to the start of the entry. */
     if (lseek(filetab->tab_handle, current_pos, SEEK_SET) < 0) {
+      int xerrno = errno;
+
       quotatab_log("error rewinding to start of tally entry: %s",
-        strerror(errno));
+        strerror(xerrno));
+
+      errno = xerrno;
       return -1;
     }
 
@@ -125,7 +133,9 @@ static unsigned char filetab_lookup(quota_table_t *filetab, void *ptr,
    * skipping the magic header value of the table.
    */
   if (lseek(filetab->tab_handle, (off_t) sizeof(unsigned int), SEEK_SET) < 0) {
-    quotatab_log("error seeking past table header: %s", strerror(errno));
+    int xerrno = errno;
+
+    quotatab_log("error seeking past table header: %s", strerror(xerrno));
     return FALSE;
   }
 
@@ -141,9 +151,8 @@ static unsigned char filetab_lookup(quota_table_t *filetab, void *ptr,
        * worry about the name.
        */
       if (quota_type == tally->quota_type) {
-
         /* Match names if need be */
-        if (name &&
+        if (name != NULL &&
             strcmp(name, tally->name) == 0) {
           return TRUE;
         }
@@ -169,7 +178,7 @@ static unsigned char filetab_lookup(quota_table_t *filetab, void *ptr,
       pr_signals_handle();
 
       if (quota_type == limit->quota_type) {
-        if (name &&
+        if (name != NULL &&
             strcmp(name, limit->name) == 0) {
           return TRUE;
         }
@@ -192,10 +201,10 @@ static unsigned char filetab_lookup(quota_table_t *filetab, void *ptr,
 static int filetab_read(quota_table_t *filetab, void *ptr) {
   int res = -1;
   struct iovec quotav[10];
+  off_t current_pos;
 
   /* Mark the current file position. */
-  off_t current_pos = lseek(filetab->tab_handle, (off_t) 0, SEEK_CUR);
-
+  current_pos = lseek(filetab->tab_handle, (off_t) 0, SEEK_CUR);
   if (current_pos < 0) {
     return - 1;
   }
@@ -244,11 +253,14 @@ static int filetab_read(quota_table_t *filetab, void *ptr) {
     }
 
     if (res > 0) {
-
       /* Always rewind after reading a record. */
       if (lseek(filetab->tab_handle, current_pos, SEEK_SET) < 0) {
+        int xerrno = errno;
+
         quotatab_log("error rewinding to start of tally entry: %s",
-          strerror(errno));
+          strerror(xerrno));
+
+        errno = xerrno;
         return -1;
       }
 
@@ -303,11 +315,14 @@ static int filetab_read(quota_table_t *filetab, void *ptr) {
     }
 
     if (res > 0) {
-
       /* Always rewind after reading a record. */
       if (lseek(filetab->tab_handle, current_pos, SEEK_SET) < 0) {
+        int xerrno = errno;
+
         quotatab_log("error rewinding to start of limit entry: %s",
-          strerror(errno));
+          strerror(xerrno));
+
+        errno = xerrno;
         return -1;
       }
 
@@ -350,10 +365,10 @@ static int filetab_write(quota_table_t *filetab, void *ptr) {
   int res = -1;
   struct iovec quotav[8];
   quota_tally_t *tally = ptr;
+  off_t current_pos;
 
   /* Mark the current file position. */
-  off_t current_pos = lseek(filetab->tab_handle, (off_t) 0, SEEK_CUR);
-
+  current_pos = lseek(filetab->tab_handle, (off_t) 0, SEEK_CUR);
   if (current_pos < 0) {
     return -1;
   }
@@ -397,11 +412,14 @@ static int filetab_write(quota_table_t *filetab, void *ptr) {
   }
 
   if (res > 0) {
-
     /* Rewind to the start of the entry. */
     if (lseek(filetab->tab_handle, current_pos, SEEK_SET) < 0) {
+      int xerrno = errno;
+
       quotatab_log("error rewinding to start of tally entry: %s",
-        strerror(errno));
+        strerror(xerrno));
+
+      errno = xerrno;
       return -1;
     }
 
@@ -442,7 +460,6 @@ static quota_table_t *filetab_open(pool *parent_pool,
   tab->tab_type = tab_type;
 
   if (tab->tab_type == TYPE_TALLY) {
-
     /* File-based tally table magic number */
     tab->tab_magic = 0x07644;
 
@@ -456,13 +473,19 @@ static quota_table_t *filetab_open(pool *parent_pool,
     tab->tab_lock.l_len = tab->tab_quotalen;
 
     /* Open the table handle */
-    if ((tab->tab_handle = open(srcinfo, O_RDWR)) < 0) {
+    tab->tab_handle = open(srcinfo, O_RDWR);
+    if (tab->tab_handle < 0) {
+      int xerrno = errno;
+
+      pr_trace_msg(trace_channel, 7, "error opening tally table '%s': %s",
+        srcinfo, strerror(xerrno));
+
       destroy_pool(tab->tab_pool);
+      errno = xerrno;
       return NULL;
     }
 
   } else if (tab->tab_type == TYPE_LIMIT) {
-
     /* File-based limit table magic number */
     tab->tab_magic = 0x07626;
 
@@ -475,8 +498,15 @@ static quota_table_t *filetab_open(pool *parent_pool,
     tab->tab_lock.l_len = tab->tab_quotalen;
 
     /* Open the table handle */
-    if ((tab->tab_handle = open(srcinfo, O_RDONLY)) < 0) {
+    tab->tab_handle = open(srcinfo, O_RDONLY);
+    if (tab->tab_handle < 0) {
+      int xerrno = errno;
+
+      pr_trace_msg(trace_channel, 7, "error opening limit table '%s': %s",
+        srcinfo, strerror(xerrno));
+
       destroy_pool(tab->tab_pool);
+      errno = xerrno;
       return NULL;
     }
   }

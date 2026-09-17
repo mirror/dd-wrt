@@ -6436,7 +6436,7 @@ EOS
       # available file upload slots.
       my $conn = $client->stor_raw('test.txt');
       if ($conn) {
-        die("STOR test.txt succeeded unexpectedly"); 
+        die("STOR test.txt succeeded unexpectedly");
       }
 
       my $resp_code = $client->response_code();

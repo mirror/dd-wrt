@@ -467,6 +467,16 @@ my $TESTS = {
     order => ++$order,
     test_class => [qw(forking bug mod_tls)],
   },
+
+  sql_user_info_no_suppl_groups_issue1830 => {
+    order => ++$order,
+    test_class => [qw(forking bug rootprivs)],
+  },
+
+  sql_site_chgrp_sql_injection_issue2188 => {
+    order => ++$order,
+    test_class => [qw(forking bug)],
+  },
 };
 
 sub new {
@@ -521,7 +531,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   lastdir TEXT
 );
@@ -658,7 +668,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 
@@ -812,7 +822,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
@@ -947,7 +957,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
@@ -1084,7 +1094,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
@@ -1220,7 +1230,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   allowed TEXT
 );
@@ -1355,7 +1365,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   allowed_ip TEXT
 );
@@ -1497,7 +1507,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -1644,7 +1654,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   host TEXT
 );
@@ -2129,7 +2139,7 @@ CREATE TABLE ftpusers (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO ftpusers (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -2210,7 +2220,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -2291,7 +2301,7 @@ CREATE TABLE ftpusers (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   lastdir TEXT
 );
@@ -2378,7 +2388,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -2463,7 +2473,7 @@ CREATE TABLE ftpusers (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   lastdir TEXT
 );
@@ -2549,7 +2559,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -2618,7 +2628,7 @@ CREATE TABLE ftpusers (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   lastdir TEXT
 );
@@ -2708,7 +2718,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -2777,7 +2787,7 @@ CREATE TABLE ftpusers (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   lastdir TEXT
 );
@@ -2868,7 +2878,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -2949,7 +2959,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -3034,7 +3044,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -3115,7 +3125,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -3201,7 +3211,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -3282,7 +3292,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -3369,7 +3379,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -3818,7 +3828,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   lastdir TEXT
 );
@@ -3898,7 +3908,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -3967,7 +3977,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   lastdir TEXT
 );
@@ -4047,7 +4057,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -4440,7 +4450,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   lastdir TEXT
 );
@@ -4528,7 +4538,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -6622,7 +6632,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   lastdir TEXT
 );
@@ -6781,7 +6791,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   lastdir TEXT
 );
@@ -6871,7 +6881,7 @@ EOS
 
       my $expected = 230;
       $self->assert($expected == $resp_code,
-        "Expected response code $expected, got $resp_code"); 
+        "Expected response code $expected, got $resp_code");
 
       $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
@@ -6891,7 +6901,7 @@ EOS
 
       $expected = 226;
       $self->assert($expected == $resp_code,
-        "Expected response code $expected, got $resp_code"); 
+        "Expected response code $expected, got $resp_code");
 
       my $resp_msgs = $client->response_msgs();
       my $nmsgs = scalar(@$resp_msgs);
@@ -6970,7 +6980,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 EOU
@@ -7182,7 +7192,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -8244,7 +8254,7 @@ CREATE TABLE ftpusers (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   lastdir TEXT
 );
@@ -8365,7 +8375,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -8475,7 +8485,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -8585,7 +8595,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -11992,7 +12002,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   secure_only INTEGER
 );
@@ -12096,7 +12106,7 @@ EOS
       my $nmsgs = scalar(@$resp_msgs);
 
       my $expected = 4;
-      $self->assert($expected == $nmsgs, "Expected $expected, got $nmsgs"); 
+      $self->assert($expected == $nmsgs, "Expected $expected, got $nmsgs");
 
       $expected = "Login incorrect.";
       $self->assert($expected eq $resp_msgs->[0],
@@ -13401,7 +13411,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -13578,7 +13588,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   primary_key INTEGER
 );
@@ -13757,7 +13767,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -13922,7 +13932,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$setup->{user}', '$setup->{passwd}', $setup->{uid}, $setup->{gid}, '$setup->{home_dir}', '/bin/bash');
@@ -14346,7 +14356,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -14500,7 +14510,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -14570,7 +14580,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT
 );
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
@@ -14649,7 +14659,7 @@ EOS
 
       $expected = 1;
       $self->assert($expected == $nmsgs,
-        test_msg("Expected $expected, got $nmsgs")); 
+        test_msg("Expected $expected, got $nmsgs"));
 
       $expected = "User proftpd logged in";
       $self->assert($expected eq $resp_msgs->[0],
@@ -15760,6 +15770,349 @@ EOC
   # Stop server
   server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub sql_user_info_no_suppl_groups_issue1830 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'sqlite');
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT,
+  shell TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$setup->{user}', '$setup->{passwd}', $setup->{uid}, $setup->{gid}, '$setup->{home_dir}', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('$setup->{group}', $setup->{gid}, '$setup->{user}');
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+  build_db($cmd, $db_script);
+
+  # Make sure that, if we're running as root, the database file has
+  # the permissions/privs set for use by proftpd
+  if ($< == 0) {
+    unless (chmod(0666, $db_file)) {
+      die("Can't set perms on $db_file to 0666: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'auth:20 sql:20',
+
+    # Required for logging the expected message
+    DebugLevel => 5,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sql.c' => {
+        AuthOrder => 'mod_sql.c',
+
+        SQLAuthenticate => 'users',
+        SQLAuthTypes => 'plaintext',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $setup->{log_file},
+
+        # Set these, so that our lower UID/GID will be used
+        SQLMinUserUID => 100,
+        SQLMinUserGID => 100,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      sleep(2);
+
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $resp_msgs = $client->response_msgs();
+      my $nmsgs = scalar(@$resp_msgs);
+
+      my $expected = 1;
+      $self->assert($expected == $nmsgs,
+        test_msg("Expected $expected, got $nmsgs"));
+
+      $expected = "User $setup->{user} logged in";
+      $self->assert($expected eq $resp_msgs->[0],
+        test_msg("Expected response '$expected', got '$resp_msgs->[0]'"));
+
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  eval {
+    if (open(my $fh, "< $setup->{log_file}")) {
+      my $ok = 0;
+
+      while (my $line = <$fh>) {
+        chomp($line);
+
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "# $line\n";
+        }
+
+        if ($line =~ /no supplemental groups found for user '$setup->{user}', using primary group/) {
+          $ok = 1;
+          last;
+        }
+      }
+
+      close($fh);
+
+      $self->assert($ok, test_msg("Did not see expected log message"));
+
+    } else {
+      die("Can't read $setup->{log_file}: $!");
+    }
+  };
+  if ($@) {
+    $ex = $@ unless $ex;
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub sql_site_chgrp_sql_injection_issue2188 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'sqlite');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.dat");
+  if (open(my $fh, "> $test_file")) {
+    close($fh);
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT,
+  shell TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$setup->{user}', '$setup->{passwd}', $setup->{uid}, $setup->{gid}, '$setup->{home_dir}', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('$setup->{group}', $setup->{gid}, '$setup->{user}');
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+  build_db($cmd, $db_script);
+
+  # Make sure that, if we're running as root, the database file has
+  # the permissions/privs set for use by proftpd
+  if ($< == 0) {
+    unless (chmod(0666, $db_file)) {
+      die("Can't set perms on $db_file to 0666: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'sql:20',
+
+    # Needed to generate the expected log message for verification
+    DebugLevel => 9,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'plaintext',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $setup->{log_file},
+        AuthOrder => 'mod_sql.c',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $bad_group = "');INSERT||UNION%%SELECT%%999|--'";
+      eval { $client->site('CHGRP', $bad_group, 'test.dat') };
+      unless ($@) {
+        die("SITE CHGRP succeeded unexpectedly");
+      }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+
+      my $expected = 550;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "test.dat: Invalid argument";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  eval {
+    if (open(my $fh, "< $setup->{log_file}")) {
+      my $ok = 0;
+
+      while (my $line = <$fh>) {
+        chomp($line);
+
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "# $line\n";
+        }
+
+        if ($line =~ /Unable to resolve group name/) {
+          $ok = 1;
+          last;
+        }
+      }
+
+      close($fh);
+      $self->assert($ok, test_msg("Did not see expected log message"));
+
+    } else {
+      die("Can't read $setup->{log_file}: $!");
+    }
+  };
+  if ($@) {
+    $ex = $@;
+  }
 
   test_cleanup($setup->{log_file}, $ex);
 }

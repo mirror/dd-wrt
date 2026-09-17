@@ -2360,7 +2360,7 @@ sub appe_fails_eperm {
     unless (chmod(0755, $sub_dir)) {
       die("Can't set perms on $sub_dir to 0755: $!");
     }
-  
+
     unless (chown($setup->{uid}, $setup->{gid}, $sub_dir)) {
       die("Can't set owner of $sub_dir to $setup->{uid}/$setup->{gid}: $!");
     }

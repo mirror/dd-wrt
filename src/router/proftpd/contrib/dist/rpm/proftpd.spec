@@ -53,15 +53,15 @@
 # RHEL5 and clones don't have suitably recent versions of pcre/libmemcached
 # so use --with rhel5 to inhibit those features when using --with everything
 
-%global proftpd_version			1.3.8
+%global proftpd_version			1.3.9d
 
 # rc_version should be incremented for each RC release, and reset back to 1
 # AFTER each stable release.
-%global rc_version			5
+%global rc_version			1
 
 # release_version should be incremented for each maint release, and reset back
 # to 1 BEFORE starting new release cycle.
-%global release_version			1
+%global release_version			5
 
 %if %(echo %{proftpd_version} | grep rc >/dev/null 2>&1 && echo 1 || echo 0)
 %global rpm_version %(echo %{proftpd_version} | sed -e 's/rc.*//')
@@ -73,7 +73,7 @@
 
 %global usecvsversion             	0%{?_with_cvs:1}
 
-%global proftpd_cvs_version_main	1.3.8
+%global proftpd_cvs_version_main	1.3.9
 %global proftpd_cvs_version_date  	20150527
 
 # Spec default assumes that a gzipped tarball is used, since nightly CVS builds,
@@ -84,7 +84,7 @@
 
 # Handle optional functionality
 #
-# --with everything (for all optional functionality)
+# --with everything (for all optional functionality EXCEPT mod_wrap)
 # --with rhel5 inhibits features not available on RHEL5 and clones
 # --with rhel6 inhibits features not available on RHEL6 and clones
 %if 0%{?_with_everything:1}
@@ -102,7 +102,11 @@
 %global _with_postgresql 1
 %global _with_ssl 1
 %global _with_sodium 1
+#
+# --with wrap (for mod_wrap)
+%if 0%{?_with_wrap:1}
 %global _with_wrap 1
+%endif
 %endif
 #
 # --with geoip (for mod_geoip)
@@ -590,7 +594,7 @@ rm -rf %{_builddir}/%{name}-%{version}
 %config(noreplace) %{_sysconfdir}/xinetd.d/proftpd
 %config(noreplace) %{_sysconfdir}/PROFTPD-MIB.txt
 
-%doc COPYING CREDITS ChangeLog NEWS README.md RELEASE_NOTES README.modules
+%doc COPYING CREDITS ChangeLog NEWS README.md RELEASE_NOTES
 %doc contrib/README.contrib contrib/README.ratio
 %doc contrib/dist/systemd/README.systemd
 %doc doc/* sample-configurations/
@@ -604,7 +608,7 @@ rm -rf %{_builddir}/%{name}-%{version}
 
 %if 0%{?_with_ldap:1}
 %files ldap
-%doc README.LDAP contrib/mod_quotatab_ldap.ldif contrib/mod_quotatab_ldap.schema
+%doc contrib/mod_quotatab_ldap.ldif contrib/mod_quotatab_ldap.schema
 %{_libexecdir}/proftpd/mod_ldap.so
 %{_libexecdir}/proftpd/mod_quotatab_ldap.so
 %endif

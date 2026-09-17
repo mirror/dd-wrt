@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2020 The ProFTPD Project team
+ * Copyright (c) 2009-2022 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,13 +65,11 @@ static unsigned int root_privs = 0;
 static unsigned int user_privs = 0;
 
 static void privs_log_error(const char *msg, int xerrno) {
-  switch (xerrno) {
-    case EPERM:
-      pr_log_debug(DEBUG2, "%s: %s", msg, strerror(xerrno));
-      break;
+  if (xerrno == EPERM) {
+    pr_log_debug(DEBUG2, "%s: %s", msg, strerror(xerrno));
 
-    default:
-      pr_log_pri(PR_LOG_ERR, "%s: %s", msg, strerror(xerrno));
+  } else {
+    pr_log_pri(PR_LOG_ERR, "%s: %s", msg, strerror(xerrno));
   }
 }
 

@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2020 The ProFTPD Project team
+ * Copyright (c) 2001-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,12 +32,12 @@ extern module *loaded_modules;
 
 /* Currently running module */
 module *curr_module = NULL;
-  
+
 /* Used to track the priority for loaded modules. */
 static unsigned int curr_module_pri = 0;
 
 static const char *trace_channel = "module";
-  
+
 modret_t *pr_module_call(module *m, modret_t *(*func)(cmd_rec *),
     cmd_rec *cmd) {
   modret_t *res;
@@ -133,8 +133,9 @@ int modules_session_init(void) {
       if (m->sess_init() < 0) {
         int xerrno = errno;
 
-        pr_log_pri(PR_LOG_WARNING, "mod_%s.c: error initializing session: %s",
-          m->name, strerror(xerrno));
+        pr_log_pri(PR_LOG_WARNING,
+          "mod_%s.c: error initializing session (%s), check module logs "
+          "for details", m->name, strerror(xerrno));
 
         errno = xerrno;
         return -1;
@@ -230,7 +231,7 @@ void modules_list2(int (*listf)(const char *, ...), int flags) {
         if (version != NULL) {
           listf("  %s\n", version);
 
-        } else {  
+        } else {
           listf("  mod_%s.c\n", m->name);
         }
 
@@ -402,7 +403,7 @@ int pr_module_unload(module *m) {
   if (pr_module_get(buf) == NULL) {
     errno = ENOENT;
     return -1;
-  } 
+  }
 
   /* Generate an event. */
   pr_event_generate("core.module-unload", buf);

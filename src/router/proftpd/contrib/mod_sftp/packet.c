@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp packet IO
- * Copyright (c) 2008-2022 TJ Saunders
+ * Copyright (c) 2008-2024 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -89,11 +89,26 @@ static unsigned int client_alive_interval = 0;
 static const char *trace_channel = "ssh2";
 static const char *timing_channel = "timing";
 
+/* This is admittedly an arbitrary upper limit on the number of EXT_INFO
+ * extensions we will handle.
+ *
+ * draft-ssh-ext-info-05 currently defines five:
+ *
+ *  server-sig-algs
+ *  no-flow-control
+ *  accept-channels
+ *  elevation
+ *  delay-compression
+ *
+ * And some implementations, like OpenSSH, will have their own namespaced
+ * extensions.
+ */
+#define MAX_EXT_INFO_COUNT	32
 #define MAX_POLL_TIMEOUTS	3
 
 static int packet_poll(int sockfd, int io) {
   fd_set rfds, wfds;
-  struct timeval tv;
+  struct timeval tv, *tvp = NULL;
   int res, timeout, using_client_alive = FALSE;
   unsigned int ntimeouts = 0;
 
@@ -106,7 +121,7 @@ static int packet_poll(int sockfd, int io) {
      */
 
     if (client_alive_interval > 0 &&
-        (!(sftp_sess_state & SFTP_SESS_STATE_REKEYING) && 
+        (!(sftp_sess_state & SFTP_SESS_STATE_REKEYING) &&
          (sftp_sess_state & SFTP_SESS_STATE_HAVE_AUTH))) {
       timeout = client_alive_interval;
       using_client_alive = TRUE;
@@ -122,10 +137,28 @@ static int packet_poll(int sockfd, int io) {
   tv.tv_sec = timeout;
   tv.tv_usec = 0;
 
-  pr_trace_msg(trace_channel, 19,
-    "waiting for max of %lu secs while polling socket %d for %s "
-    "using select(2)", (unsigned long) tv.tv_sec, sockfd,
-    io == SFTP_PACKET_IO_RD ? "reading" : "writing");
+  if (timeout > 0) {
+    tvp = &tv;
+
+    pr_trace_msg(trace_channel, 19,
+      "waiting for max of %lu secs while polling socket %d for %s "
+      "using select(2)", (unsigned long) tv.tv_sec, sockfd,
+      io == SFTP_PACKET_IO_RD ? "reading" : "writing");
+
+  } else {
+    /* If TimeoutIdle was explicitly set to zero, then block indefinitely
+     * until more data arrives, per the documentation for a zero TimeoutIdle
+     * value (Issue #1985).
+     */
+    tvp = NULL;
+
+    pr_trace_msg(trace_channel, 19,
+      "waiting indefinitely while polling socket %d for %s using select(2)",
+      sockfd, io == SFTP_PACKET_IO_RD ? "reading" : "writing");
+  }
+
+  /* Clear any possibly stale pointers. */
+  session.curr_cmd_rec = NULL;
 
   while (1) {
     pr_signals_handle();
@@ -136,13 +169,13 @@ static int packet_poll(int sockfd, int io) {
     switch (io) {
       case SFTP_PACKET_IO_RD: {
         FD_SET(sockfd, &rfds);
-        res = select(sockfd + 1, &rfds, NULL, NULL, &tv);
+        res = select(sockfd + 1, &rfds, NULL, NULL, tvp);
         break;
       }
 
       case SFTP_PACKET_IO_WR: {
         FD_SET(sockfd, &wfds);
-        res = select(sockfd + 1, NULL, &wfds, NULL, &tv);
+        res = select(sockfd + 1, NULL, &wfds, NULL, tvp);
         break;
       }
 
@@ -182,7 +215,7 @@ static int packet_poll(int sockfd, int io) {
         return -1;
       }
 
-      if (using_client_alive) {
+      if (using_client_alive == TRUE) {
         is_client_alive();
 
       } else {
@@ -451,7 +484,7 @@ static void is_client_alive(void) {
   if (++client_alive_count > client_alive_max) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "SFTPClientAlive threshold (max %u checks, %u sec interval) reached, "
-      "disconnecting client", client_alive_max, client_alive_interval);    
+      "disconnecting client", client_alive_max, client_alive_interval);
 
     /* XXX Generate an event for this? */
 
@@ -468,7 +501,7 @@ static void is_client_alive(void) {
   bufsz = buflen = 64;
   ptr = buf = palloc(tmp_pool, bufsz);
 
-  count = sftp_channel_opened(&channel_id);  
+  count = sftp_channel_opened(&channel_id);
   if (count > 0) {
     sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_MSG_CHANNEL_REQUEST);
     sftp_msg_write_int(&buf, &buflen, channel_id);
@@ -528,7 +561,7 @@ static void read_packet_discard(int sockfd) {
 
 static int read_packet_len(int sockfd, struct ssh2_packet *pkt,
     unsigned char *buf, size_t *offset, size_t *buflen, size_t bufsz,
-    int etm_mac) {
+    int etm_mac, int chachapoly) {
   uint32_t packet_len = 0, len = 0;
   size_t readsz;
   int res;
@@ -546,7 +579,8 @@ static int read_packet_len(int sockfd, struct ssh2_packet *pkt,
      * ETM mode, read enough to include the AAD.  For ETM modes, leave the
      * first block for later.
      */
-    if (etm_mac == TRUE) {
+    if (etm_mac == TRUE ||
+        chachapoly == TRUE) {
       readsz = pkt->aad_len;
 
     } else {
@@ -560,15 +594,12 @@ static int read_packet_len(int sockfd, struct ssh2_packet *pkt,
   }
 
   len = res;
-  if (sftp_cipher_read_data(pkt, buf, readsz, &ptr, &len) < 0) {
+  res = sftp_cipher_read_packet_len(pkt, buf, readsz, &ptr, &len, &packet_len);
+  if (res < 0) {
     return -1;
   }
 
-  memmove(&packet_len, ptr, sizeof(uint32_t));
-  pkt->packet_len = ntohl(packet_len);
-
-  ptr += sizeof(uint32_t);
-  len -= sizeof(uint32_t);
+  pkt->packet_len = packet_len;
 
   /* Copy the remaining unencrypted bytes from the block into the given
    * buffer.
@@ -604,7 +635,7 @@ static int read_packet_padding_len(int sockfd, struct ssh2_packet *pkt,
 
 static int read_packet_payload(int sockfd, struct ssh2_packet *pkt,
     unsigned char *buf, size_t *offset, size_t *buflen, size_t bufsz,
-    int etm_mac) {
+    int etm_mac, int chachapoly) {
   unsigned char *ptr = NULL;
   int res;
   uint32_t payload_len = pkt->payload_len, padding_len = 0, auth_len = 0,
@@ -617,7 +648,8 @@ static int read_packet_payload(int sockfd, struct ssh2_packet *pkt,
    * decrypt it, to find the padding.
    *
    * For ETM, we only want to find the payload and padding AFTER we've read
-   * the entire (encrypted) payload, MAC'd it, THEN decrypt it.
+   * the entire (encrypted) payload, MAC'd it, THEN decrypt it.  Similarly
+   * for ChaChaPoly.
    */
 
   if (pkt->padding_len > 0) {
@@ -627,7 +659,7 @@ static int read_packet_payload(int sockfd, struct ssh2_packet *pkt,
   auth_len = sftp_cipher_get_read_auth_size();
 
   if (payload_len + padding_len + auth_len == 0 &&
-      etm_mac == FALSE) {
+      etm_mac == FALSE && chachapoly == FALSE) {
     return 0;
   }
 
@@ -649,7 +681,7 @@ static int read_packet_payload(int sockfd, struct ssh2_packet *pkt,
       return -1;
     }
 
-    pkt->payload = pcalloc(pkt->pool, payload_len);
+    pkt->payload = palloc(pkt->pool, payload_len);
   }
 
   /* If there's data in the buffer we received, it's probably already part
@@ -679,7 +711,7 @@ static int read_packet_payload(int sockfd, struct ssh2_packet *pkt,
    * modes.
    */
   if (padding_len > 0) {
-    pkt->padding = pcalloc(pkt->pool, padding_len);
+    pkt->padding = palloc(pkt->pool, padding_len);
   }
 
   /* If there's data in the buffer we received, it's probably already part
@@ -705,7 +737,8 @@ static int read_packet_payload(int sockfd, struct ssh2_packet *pkt,
     }
   }
 
-  if (etm_mac == TRUE) {
+  if (etm_mac == TRUE ||
+      chachapoly == TRUE) {
     data_len = pkt->packet_len;
 
   } else {
@@ -732,10 +765,11 @@ static int read_packet_payload(int sockfd, struct ssh2_packet *pkt,
   len = res;
 
   /* For ETM modes, we do NOT want to decrypt the data yet; we need to read/
-   * compare MACs first.
+   * compare MACs first.  Similarly for ChaChaPoly.
    */
 
-  if (etm_mac == TRUE) {
+  if (etm_mac == TRUE ||
+      chachapoly == TRUE) {
     *buflen = res;
 
   } else {
@@ -769,7 +803,7 @@ static int read_packet_mac(int sockfd, struct ssh2_packet *pkt,
     return res;
   }
 
-  pkt->mac = pcalloc(pkt->pool, pkt->mac_len);
+  pkt->mac = palloc(pkt->pool, pkt->mac_len);
   memmove(pkt->mac, buf, res);
 
   return 0;
@@ -782,7 +816,7 @@ struct ssh2_packet *sftp_ssh2_packet_create(pool *p) {
   tmp_pool = make_sub_pool(p);
   pr_pool_tag(tmp_pool, "SSH2 packet pool");
 
-  pkt = pcalloc(tmp_pool, sizeof(struct ssh2_packet));
+  pkt = palloc(tmp_pool, sizeof(struct ssh2_packet));
   pkt->pool = tmp_pool;
   pkt->m = &sftp_module;
   pkt->packet_len = 0;
@@ -791,6 +825,9 @@ struct ssh2_packet *sftp_ssh2_packet_create(pool *p) {
   pkt->padding_len = 0;
   pkt->aad = NULL;
   pkt->aad_len = 0;
+  pkt->mac = NULL;
+  pkt->mac_len = 0;
+  pkt->seqno = 0;
 
   return pkt;
 }
@@ -953,7 +990,7 @@ int sftp_ssh2_packet_set_client_alive(unsigned int max, unsigned int interval) {
 int sftp_ssh2_packet_read(int sockfd, struct ssh2_packet *pkt) {
   unsigned char buf[SFTP_MAX_PACKET_LEN];
   size_t buflen, bufsz = SFTP_MAX_PACKET_LEN, offset = 0, auth_len = 0;
-  int etm_mac = FALSE;
+  int chachapoly = FALSE, etm_mac = FALSE;
 
   pr_session_set_idle();
 
@@ -961,6 +998,9 @@ int sftp_ssh2_packet_read(int sockfd, struct ssh2_packet *pkt) {
   if (auth_len > 0) {
     /* Authenticated encryption ciphers do not encrypt the packet length,
      * and instead use it as Additional Authenticated Data (AAD).
+     *
+     * Note that OpenSSH's ChaCha/Poly cipher does encrypt the packet length,
+     * and uses it as AAD.
      */
     pkt->aad_len = sizeof(uint32_t);
   }
@@ -973,6 +1013,11 @@ int sftp_ssh2_packet_read(int sockfd, struct ssh2_packet *pkt) {
     pkt->aad_len = sizeof(uint32_t);
   }
 
+  /* OpenSSH's ChaChaPoly acts like an ETM cipher as well. */
+  chachapoly = sftp_cipher_is_read_chachapoly();
+
+  pkt->seqno = packet_client_seqno;
+
   while (TRUE) {
     uint32_t encrypted_datasz, req_blocksz;
     int res;
@@ -984,10 +1029,9 @@ int sftp_ssh2_packet_read(int sockfd, struct ssh2_packet *pkt) {
      */
 
     buflen = 0;
-    memset(buf, 0, sizeof(buf));
 
     if (read_packet_len(sockfd, pkt, buf, &offset, &buflen, bufsz,
-        etm_mac) < 0) {
+        etm_mac, chachapoly) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "no data to be read from socket %d", sockfd);
       return -1;
@@ -1004,13 +1048,14 @@ int sftp_ssh2_packet_read(int sockfd, struct ssh2_packet *pkt) {
      * we do NOT check that the packet length is sane here; we have to
      * wait until the MAC check succeeds.
      */
- 
+
     /* Note: Checking for the RFC4253-recommended minimum packet length
      * of 16 bytes causes KEX to fail (the NEWKEYS packet is 12 bytes).
      * Thus that particular check is omitted.
      */
 
-    if (etm_mac == FALSE) {
+    if (etm_mac == FALSE &&
+        chachapoly == FALSE) {
       if (read_packet_padding_len(sockfd, pkt, buf, &offset, &buflen,
           bufsz) < 0) {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1023,40 +1068,45 @@ int sftp_ssh2_packet_read(int sockfd, struct ssh2_packet *pkt) {
         (unsigned int) pkt->padding_len);
 
       pkt->payload_len = (pkt->packet_len - pkt->padding_len - 1);
+      pr_trace_msg(trace_channel, 20, "SSH2 packet payload len = %lu bytes",
+        (unsigned long) pkt->payload_len);
     }
-
-    pr_trace_msg(trace_channel, 20, "SSH2 packet payload len = %lu bytes",
-      (unsigned long) pkt->payload_len);
 
     /* Read both payload and padding, since we may need to have both before
      * decrypting the data.
      */
     if (read_packet_payload(sockfd, pkt, buf, &offset, &buflen, bufsz,
-        etm_mac) < 0) {
+        etm_mac, chachapoly) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "unable to read payload from socket %d", sockfd);
       read_packet_discard(sockfd);
       return -1;
     }
 
-    pkt->mac_len = sftp_mac_get_block_size();
+    if (chachapoly == TRUE) {
+      /* The custom authentication tag for ChaChaPoly is 16 bytes. */
+      pkt->mac_len = 16;
+
+    } else {
+      pkt->mac_len = sftp_mac_get_block_size();
+    }
+
     pr_trace_msg(trace_channel, 20, "SSH2 packet MAC len = %lu bytes",
       (unsigned long) pkt->mac_len);
 
-    if (etm_mac == TRUE) {
+    if (etm_mac == TRUE ||
+        chachapoly == TRUE) {
       unsigned char *buf2;
       size_t buflen2, bufsz2;
 
       bufsz2 = buflen2 = pkt->mac_len;
-      buf2 = pcalloc(pkt->pool, bufsz2);
+      buf2 = palloc(pkt->pool, bufsz2);
 
       /* The MAC routines assume the presence of the necessary data in
        * pkt->payload, so we temporarily put our encrypted packet data there.
        */
       pkt->payload = buf;
       pkt->payload_len = buflen;
-
-      pkt->seqno = packet_client_seqno;
 
       if (read_packet_mac(sockfd, pkt, buf2) < 0) {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1081,7 +1131,7 @@ int sftp_ssh2_packet_read(int sockfd, struct ssh2_packet *pkt) {
        * packet from read_packet_payload().
        */
       bufsz2 = buflen2 = SFTP_MAX_PACKET_LEN;
-      buf2 = pcalloc(pkt->pool, bufsz2);
+      buf2 = palloc(pkt->pool, bufsz2);
 
       if (sftp_cipher_read_data(pkt, buf, buflen, &buf2,
           (uint32_t *) &buflen2) < 0) {
@@ -1101,26 +1151,34 @@ int sftp_ssh2_packet_read(int sockfd, struct ssh2_packet *pkt) {
       pr_trace_msg(trace_channel, 20, "SSH2 packet padding len = %u bytes",
         (unsigned int) pkt->padding_len);
 
+      if (pkt->packet_len < (pkt->padding_len + 1)) {
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "illegal padding length (%u bytes) exceeds packet length "
+          "(%lu bytes)", (unsigned int) pkt->padding_len,
+          (unsigned long) pkt->packet_len);
+        read_packet_discard(sockfd);
+        return -1;
+      }
+
       pkt->payload_len = (pkt->packet_len - pkt->padding_len - 1);
+      pr_trace_msg(trace_channel, 20, "SSH2 packet payload len = %lu bytes",
+        (unsigned long) pkt->payload_len);
+
       if (pkt->payload_len > 0) {
-        pkt->payload = pcalloc(pkt->pool, pkt->payload_len);
+        pkt->payload = palloc(pkt->pool, pkt->payload_len);
         memmove(pkt->payload, buf2 + offset, pkt->payload_len);
       }
 
-      pkt->padding = pcalloc(pkt->pool, pkt->padding_len);
+      pkt->padding = palloc(pkt->pool, pkt->padding_len);
       memmove(pkt->padding, buf2 + offset + pkt->payload_len, pkt->padding_len);
 
     } else {
-      memset(buf, 0, sizeof(buf));
-
       if (read_packet_mac(sockfd, pkt, buf) < 0) {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
           "unable to read MAC from socket %d", sockfd);
         read_packet_discard(sockfd);
         return -1;
       }
-
-      pkt->seqno = packet_client_seqno;
 
       if (sftp_mac_read_data(pkt) < 0) {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1192,7 +1250,9 @@ int sftp_ssh2_packet_read(int sockfd, struct ssh2_packet *pkt) {
     req_blocksz = MAX(8, sftp_cipher_get_read_block_size());
     encrypted_datasz = pkt->packet_len + sizeof(uint32_t);
 
-    /* If AAD bytes are present, they are not encrypted. */
+    /* If AAD bytes are present, they are not encrypted (except for
+     * ChaCha20).
+     */
     if (pkt->aad_len > 0) {
       encrypted_datasz -= pkt->aad_len;
     }
@@ -1305,6 +1365,8 @@ static int write_packet_padding(struct ssh2_packet *pkt) {
     pkt->padding_len += blocksz;
   }
 
+  pr_trace_msg(trace_channel, 20, "adding %u bytes of padding",
+    pkt->padding_len);
   pkt->padding = palloc(pkt->pool, pkt->padding_len);
 
   /* Fill the padding with pseudo-random data. */
@@ -1343,6 +1405,9 @@ int sftp_ssh2_packet_send(int sockfd, struct ssh2_packet *pkt) {
   if (auth_len > 0) {
     /* Authenticated encryption ciphers do not encrypt the packet length,
      * and instead use it as Additional Authenticated Data (AAD).
+     *
+     * The OpenSSH ChaChaPoly cipher does encrypt the packet length, on the
+     * other hand, and use a separate AAD.
      */
     pkt->aad_len = sizeof(uint32_t);
     pkt->aad = NULL;
@@ -1396,7 +1461,6 @@ int sftp_ssh2_packet_send(int sockfd, struct ssh2_packet *pkt) {
 
   pkt->seqno = packet_server_seqno;
 
-  memset(buf, 0, sizeof(buf));
   buflen = bufsz;
 
   if (etm_mac == TRUE) {
@@ -1754,6 +1818,14 @@ void sftp_ssh2_packet_handle_ext_info(struct ssh2_packet *pkt) {
   pr_trace_msg(trace_channel, 9, "client sent EXT_INFO with %lu %s",
     (unsigned long) ext_count, ext_count != 1 ? "extensions" : "extension");
 
+  if (ext_count > MAX_EXT_INFO_COUNT) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "client sent too many EXT_INFO extensions (%lu, max %lu), ignoring",
+      (unsigned long) ext_count, (unsigned long) MAX_EXT_INFO_COUNT);
+    destroy_pool(pkt->pool);
+    return;
+  }
+
   for (i = 0; i < ext_count; i++) {
     char *ext_name = NULL;
     uint32_t ext_datalen = 0;
@@ -1762,7 +1834,7 @@ void sftp_ssh2_packet_handle_ext_info(struct ssh2_packet *pkt) {
       &pkt->payload_len);
     ext_datalen = sftp_msg_read_int(pkt->pool, &pkt->payload,
       &pkt->payload_len);
-    (void) sftp_msg_read_data(pkt->pool, &pkt->payload,
+    (void) sftp_msg_read_data_direct(pkt->pool, &pkt->payload,
       &pkt->payload_len, ext_datalen);
 
     pr_trace_msg(trace_channel, 9,
@@ -1814,7 +1886,7 @@ static int handle_ssh2_packet(void *data) {
    * sftp_sess_state flags; this is intentional, and is the way that
    * the protocol is supposed to work.
    */
-  
+
   switch (msg_type) {
     case SFTP_SSH2_MSG_DEBUG:
       sftp_ssh2_packet_handle_debug(pkt);
@@ -1863,7 +1935,7 @@ static int handle_ssh2_packet(void *data) {
             "Time before first SSH key exchange: %lu ms", elapsed_ms);
         }
       }
- 
+
       sftp_sess_state |= SFTP_SESS_STATE_REKEYING;
 
       /* Clear any current "have KEX" state. */
@@ -1907,13 +1979,13 @@ static int handle_ssh2_packet(void *data) {
           !(sftp_sess_state & SFTP_SESS_STATE_HAVE_EXT_INFO)) {
         sftp_ssh2_packet_handle_ext_info(pkt);
         sftp_sess_state |= SFTP_SESS_STATE_HAVE_EXT_INFO;
-        break;
 
       } else {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
           "unable to handle %s (%d) message: wrong message order",
           sftp_ssh2_packet_get_msg_type_desc(msg_type), msg_type);
       }
+      break;
 
     case SFTP_SSH2_MSG_SERVICE_REQUEST:
       if (sftp_sess_state & SFTP_SESS_STATE_HAVE_KEX) {
@@ -1922,13 +1994,13 @@ static int handle_ssh2_packet(void *data) {
         }
 
         sftp_sess_state |= SFTP_SESS_STATE_HAVE_SERVICE;
-        break;
 
       } else {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
           "unable to handle %s (%d) message: Key exchange required",
           sftp_ssh2_packet_get_msg_type_desc(msg_type), msg_type);
       }
+      break;
 
     case SFTP_SSH2_MSG_USER_AUTH_REQUEST:
       if (sftp_sess_state & SFTP_SESS_STATE_HAVE_SERVICE) {
@@ -1954,13 +2026,12 @@ static int handle_ssh2_packet(void *data) {
           }
         }
 
-        break;
-
       } else {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
           "unable to handle %s (%d) message: Service request required",
           sftp_ssh2_packet_get_msg_type_desc(msg_type), msg_type);
       }
+      break;
 
     case SFTP_SSH2_MSG_CHANNEL_OPEN:
     case SFTP_SSH2_MSG_CHANNEL_REQUEST:
@@ -1973,13 +2044,12 @@ static int handle_ssh2_packet(void *data) {
           SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
         }
 
-        break;
-
       } else {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
           "unable to handle %s (%d) message: User authentication required",
           sftp_ssh2_packet_get_msg_type_desc(msg_type), msg_type);
       }
+      break;
 
     default:
       handle_unknown_msg(pkt, msg_type);
@@ -2001,6 +2071,13 @@ int sftp_ssh2_packet_process(pool *p) {
   pr_response_clear(&resp_list);
   pr_response_clear(&resp_err_list);
   pr_response_set_pool(pkt->pool);
+
+  if (pkt->payload_len == 0 ||
+      pkt->payload == NULL) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "received illegal packet with no payload, disconnecting");
+    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
+  }
 
   /* If a custom handler rejects this packet with ENOSYS, it means we need
    * to fall back to handling it ourselves.  Our own handler never returns
@@ -2061,6 +2138,18 @@ int sftp_ssh2_packet_rekey_set_seqno(uint32_t seqno) {
 int sftp_ssh2_packet_rekey_set_size(off_t size) {
   rekey_size = size;
   return 0;
+}
+
+uint32_t sftp_ssh2_packet_get_client_seqno(void) {
+  return packet_client_seqno;
+}
+
+void sftp_ssh2_packet_reset_client_seqno(void) {
+  packet_client_seqno = 0;
+}
+
+void sftp_ssh2_packet_reset_server_seqno(void) {
+  packet_server_seqno = 0;
 }
 
 int sftp_ssh2_packet_send_version(void) {

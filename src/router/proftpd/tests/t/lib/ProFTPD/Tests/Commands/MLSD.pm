@@ -2520,7 +2520,7 @@ sub mlsd_symlink_showsymlinks_on_chrooted_bug4219 {
 
       # Since ShowSymlinks is on, the type for test.lnk should indicate that
       # it's a symlink
-      $expected = 'OS.unix=symlink'; 
+      $expected = 'OS.unix=symlink';
       $got = $res->{'test.lnk'}->{type};
       $self->assert(qr/$expected/i, $got,
         test_msg("Expected '$expected', got '$got'"));

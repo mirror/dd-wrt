@@ -232,6 +232,10 @@ The default value is <em>"crypt"</em>.
 <p>
 The <code>LDAPDefaultGID</code> directive sets the default GID to be used
 for users when no <code>gidNumber</code> attribute is found for that user.
+If the <em>gid</em> parameter is "Auto", then the system
+<code>getpwnam(3)</code> function will be used to "automatically" determine
+the GID value for this user.  This "automatic" functionality is useful for
+<i>e.g.</i> Microsoft AD domains in combination with <code>sssd</code>.
 
 <p>
 This directive is useful primarily in virtual user environments common in
@@ -270,6 +274,10 @@ parameter is formatted the same way as the <code>ftpQuota</code> LDAP attribute.
 <p>
 The <code>LDAPDefaultUID</code> directive sets the default UID to be used
 for users when no <code>uidNumber</code> attribute is found for that user.
+If the <em>uid</em> parameter is "Auto", then the system
+<code>getpwnam(3)</code> function will be used to "automatically" determine
+the UID value for this user.  This "automatic" functionality is useful for
+<i>e.g.</i> Microsoft AD domains in combination with <code>sssd</code>.
 
 <p>
 This directive is useful primarily in virtual user environments common in
@@ -280,10 +288,6 @@ This allows one to have a large number of users in an LDAP directory without
 automatically assign those users a single UID.
 
 <p>
-See also: <a href="#LDAPDefaultGID"><code>LDAPDefaultGID</code></a>
-
-DoAuth
-<p>
 By default, the search filter template used is:
 <pre>
   (&amp;(uid=%v)(objectclass=posixAccount))
@@ -293,7 +297,7 @@ The <em>uid</em> for the the search filter is taken from the
 in versions of <code>mod_ldap</code> 2.7 and later.
 
 <p>
-See also: <a href="#LDAPAttr"><code>LDAPAttr</code></a>
+See also: <a href="#LDAPAttr"><code>LDAPAttr</code></a>, <a href="#LDAPDefaultGID"><code>LDAPDefaultGID</code></a>
 
 <p>
 <hr>
@@ -964,7 +968,7 @@ as <code>mod_ifsession</code>, are present in your <code>proftpd</code> build.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2013-2021 TJ Saunders<br>
+&copy; Copyright 2013-2023 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

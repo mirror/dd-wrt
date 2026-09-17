@@ -409,7 +409,7 @@ size_t pr_regexp_error(int errcode, const pr_regex_t *pre, char *buf,
 #elif defined(PR_USE_PCRE)
   if (pre->pcre_errstr != NULL) {
     sstrncpy(buf, pre->pcre_errstr, bufsz);
-    return strlen(pre->pcre_errstr) + 1; 
+    return strlen(pre->pcre_errstr) + 1;
   }
 #endif /* PR_USE_PCRE */
 
@@ -537,12 +537,22 @@ static int regexp_exec_pcre2(pr_regex_t *pre, const char *text,
     register uint32_t i;
     PCRE2_SIZE *ovector = NULL;
 
-    pr_trace_msg(trace_channel, 9,
-      "PCRE2 regex '%s' captured %lu groups in subject '%s'",
-      pr_regexp_get_pattern(pre), (unsigned long) ovector_count, text);
+    /* Make sure the caller provided enough matches for the captured groups. */
+    if (ovector_count <= nmatches) {
+      pr_trace_msg(trace_channel, 9,
+        "PCRE2 regex '%s' captured %lu groups in subject '%s'",
+        pr_regexp_get_pattern(pre), (unsigned long) ovector_count, text);
+
+    } else {
+      pr_trace_msg(trace_channel, 9,
+        "PCRE2 regex '%s' captured %lu groups in subject '%s', but %lu %s "
+        "provided", pr_regexp_get_pattern(pre),
+        (unsigned long) ovector_count, text, (unsigned long) nmatches,
+        nmatches != 1 ? "matches" : "match");
+      ovector_count = nmatches;
+    }
 
     ovector = pcre2_get_ovector_pointer(match_data);
-
     for (i = 0; i < ovector_count; i++) {
       matches[i].rm_so = ovector[i * 2];
       matches[i].rm_eo = ovector[(i * 2) + 1];

@@ -57,7 +57,7 @@ int pr_filter_allow_path(xaset_t *set, const char *path) {
     res = pr_regexp_exec(pre, path, 0, NULL, 0, 0, 0);
     if (res == 0) {
       return PR_FILTER_ERR_FAILS_DENY_FILTER;
-    } 
+    }
 
     pr_trace_msg(trace_channel, 8, "'%s' allowed by PathDenyFilter '%s'", path,
       pr_regexp_get_pattern(pre));

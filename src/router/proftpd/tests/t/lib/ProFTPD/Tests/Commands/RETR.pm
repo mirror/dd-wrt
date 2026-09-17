@@ -5,6 +5,7 @@ use base qw(ProFTPD::TestSuite::Child);
 use strict;
 
 use Cwd;
+use Digest::MD5;
 use File::Path qw(mkpath);
 use File::Spec;
 use IO::Handle;
@@ -17,7 +18,7 @@ $| = 1;
 my $order = 0;
 
 my $TESTS = {
-  retr_ok_raw_active => {
+  retr_ok_raw_active_binary => {
     order => ++$order,
     test_class => [qw(forking)],
   },
@@ -33,6 +34,16 @@ my $TESTS = {
   },
 
   retr_ok_file => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  retr_ok_largefile_ascii => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  retr_ok_largefile_binary => {
     order => ++$order,
     test_class => [qw(forking)],
   },
@@ -147,7 +158,7 @@ sub list_tests {
   return testsuite_get_runnable_tests($TESTS);
 }
 
-sub retr_ok_raw_active {
+sub retr_ok_raw_active_binary {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
   my $setup = test_setup($tmpdir, 'cmds');
@@ -173,6 +184,28 @@ sub retr_ok_raw_active {
   my ($port, $config_user, $config_group) = config_write($setup->{config_file},
     $config);
 
+  # Calculate the MD5 checksum of this file, for comparison with the
+  # downloaded file.
+  my $test_file_md5;
+
+  my $md5_file = $test_file;
+  if ($^O eq 'darwin') {
+    # MacOSX-specific hack
+    $md5_file = '/private' . $test_file;
+  }
+
+  if (open(my $fh, "< $md5_file")) {
+    binmode($fh);
+
+    my $ctx = Digest::MD5->new();
+    $ctx->addfile($fh);
+    $test_file_md5 = $ctx->hexdigest();
+    close($fh);
+
+  } else {
+    die("Can't read $md5_file: $!");
+  }
+
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
   # to the parent.
@@ -190,6 +223,7 @@ sub retr_ok_raw_active {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 1, 1);
       $client->login($setup->{user}, $setup->{passwd});
+      $client->type('binary');
 
       my $conn = $client->retr_raw($test_file);
       unless ($conn) {
@@ -197,17 +231,23 @@ sub retr_ok_raw_active {
           $client->response_msg());
       }
 
+      my $ctx = Digest::MD5->new();
       my $buf;
       $conn->read($buf, 8192, 30);
       eval { $conn->close() };
+
+      $ctx->add($buf);
 
       my ($resp_code, $resp_msg);
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
 
       $self->assert_transfer_ok($resp_code, $resp_msg);
-    };
 
+      my $md5 = $ctx->hexdigest();
+      $self->assert($md5 eq $test_file_md5,
+        test_msg("Expected MD5 $test_file_md5, got $md5"));
+    };
     if ($@) {
       $ex = $@;
     }
@@ -227,7 +267,6 @@ sub retr_ok_raw_active {
 
   # Stop server
   server_stop($setup->{pid_file});
-
   $self->assert_child_ok($pid);
 
   test_cleanup($setup->{log_file}, $ex);
@@ -500,7 +539,242 @@ sub retr_ok_file {
 
   # Stop server
   server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
 
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub retr_ok_largefile_ascii {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/foo");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "AbCd\r\nEfGh\r\n\r\n" x 20480;
+
+    unless (close($fh)) {
+      die("Unable to write $test_file: $!");
+    }
+
+  } else {
+    die("Unable to open $test_file: $!");
+  }
+
+  my $ctx = Digest::MD5->new();
+  $ctx->add("AbCd\nEfGh\n\n" x 20480);
+  my $test_file_md5 = $ctx->hexdigest();
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+      $client->type('ascii');
+
+      my $conn = $client->retr_raw($test_file);
+      unless ($conn) {
+        die("RETR failed: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $ctx = Digest::MD5->new();
+      my $buf;
+      my $tmp;
+      while ($conn->read($tmp, 8192, 30)) {
+        $ctx->add($tmp);
+        $buf .= $tmp;
+      }
+      my $size = $conn->bytes_read();
+      eval { $conn->close() };
+
+      $client->quit();
+
+      my $expected = -s $test_file;
+      $self->assert($expected == $size,
+        test_msg("Expected file size $expected, got $size"));
+
+      my $md5 = $ctx->hexdigest();
+      $self->assert($md5 eq $test_file_md5,
+        test_msg("Expected file MD5 $test_file_md5, got $md5"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub retr_ok_largefile_binary {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/foo");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "AbCd\r\nEfGh\r\n\r\n" x 20480;
+
+    unless (close($fh)) {
+      die("Unable to write $test_file: $!");
+    }
+
+  } else {
+    die("Unable to open $test_file: $!");
+  }
+
+  # Calculate the MD5 checksum of this file, for comparison with the
+  # downloaded file.
+  my $test_file_md5;
+
+  my $md5_file = $test_file;
+  if ($^O eq 'darwin') {
+    # MacOSX-specific hack
+    $md5_file = '/private' . $test_file;
+  }
+
+  if (open(my $fh, "< $md5_file")) {
+    binmode($fh);
+
+    my $ctx = Digest::MD5->new();
+    $ctx->addfile($fh);
+    $test_file_md5 = $ctx->hexdigest();
+    close($fh);
+
+  } else {
+    die("Can't read $md5_file: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+      $client->type('binary');
+
+      my $conn = $client->retr_raw($test_file);
+      unless ($conn) {
+        die("RETR failed: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $ctx = Digest::MD5->new();
+      my $buf;
+      my $tmp;
+      while ($conn->read($tmp, 8192, 30)) {
+        $ctx->add($tmp);
+        $buf .= $tmp;
+      }
+      my $size = $conn->bytes_read();
+      eval { $conn->close() };
+
+      $client->quit();
+
+      my $expected = -s $test_file;
+      $self->assert($expected == $size,
+        test_msg("Expected file size $expected, got $size"));
+
+      my $md5 = $ctx->hexdigest();
+      $self->assert($md5 eq $test_file_md5,
+        test_msg("Expected file MD5 $test_file_md5, got $md5"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
   test_cleanup($setup->{log_file}, $ex);
@@ -523,6 +797,33 @@ sub retr_ok_ascii_file_bug4237 {
     die("Unable to open $test_file: $!");
   }
 
+  # Calculate the MD5 checksum of these files, for comparison with the
+  # downloaded files.
+  #
+  # These are going to be "fun", since we are downloading these files in
+  # ASCII mode, which means that the data received by the client will not
+  # necessarily be the bytes on disk as written, due to ASCII translation.
+
+  my $test_file_md5;
+
+  my $md5_file = $test_file;
+  if ($^O eq 'darwin') {
+    # MacOSX-specific hack
+    $md5_file = '/private' . $test_file;
+  }
+
+  if (open(my $fh, "< $md5_file")) {
+    binmode($fh);
+
+    my $ctx = Digest::MD5->new();
+    $ctx->addfile($fh);
+    $test_file_md5 = $ctx->hexdigest();
+    close($fh);
+
+  } else {
+    die("Can't read $md5_file: $!");
+  }
+
   my $test_file2 = File::Spec->rel2abs("$tmpdir/test2.dat");
   if (open(my $fh, "> $test_file2")) {
     print $fh "\n" x 32768;
@@ -533,6 +834,25 @@ sub retr_ok_ascii_file_bug4237 {
 
   } else {
     die("Unable to open $test_file2: $!");
+  }
+
+  my $test_file2_md5;
+  $md5_file = $test_file2;
+  if ($^O eq 'darwin') {
+    # MacOSX-specific hack
+    $md5_file = '/private' . $test_file2;
+  }
+
+  if (open(my $fh, "< $md5_file")) {
+    binmode($fh);
+
+    my $ctx = Digest::MD5->new();
+    $ctx->addfile($fh);
+    $test_file2_md5 = $ctx->hexdigest();
+    close($fh);
+
+  } else {
+    die("Can't read $md5_file: $!");
   }
 
   my $test_file3 = File::Spec->rel2abs("$tmpdir/test3.dat");
@@ -546,6 +866,13 @@ sub retr_ok_ascii_file_bug4237 {
   } else {
     die("Unable to open $test_file3: $!");
   }
+
+  # Since File #3 is full of CRLF, and since we will be downloading these
+  # files in ASCII mode, which translates CRLF -> LF, and since File #2
+  # is already a file (of the same size!) full of only LF, we should then
+  # expect that the MD5 digest of data downloaded for File #3 to be the
+  # same as for File #2.  Nice.
+  my $test_file3_md5 = $test_file2_md5;
 
   my $config = {
     PidFile => $setup->{pid_file},
@@ -592,9 +919,11 @@ sub retr_ok_ascii_file_bug4237 {
           $client->response_msg());
       }
 
+      my $ctx = Digest::MD5->new();
       my $buf = '';
       my $tmp;
       while ($conn->read($tmp, 8192, 25)) {
+        $ctx->add($tmp);
         $buf .= $tmp;
       }
       eval { $conn->close() };
@@ -602,7 +931,11 @@ sub retr_ok_ascii_file_bug4237 {
       my $size = length($buf);
       my $expected = -s $test_file;
       $self->assert($expected == $size,
-        test_msg("Expected size $expected, got $size"));
+        test_msg("Expected file #1 size $expected, got $size"));
+
+      my $md5 = $ctx->hexdigest();
+      $self->assert($md5 eq $test_file_md5,
+        test_msg("Expected file #1 MD5 $test_file_md5, got $md5"));
 
       # Download a file of all LFs
       $conn = $client->retr_raw($test_file2);
@@ -611,8 +944,10 @@ sub retr_ok_ascii_file_bug4237 {
           $client->response_msg());
       }
 
+      $ctx = Digest::MD5->new();
       $buf = '';
       while ($conn->read($tmp, 8192, 25)) {
+        $ctx->add($tmp);
         $buf .= $tmp;
       }
       eval { $conn->close() };
@@ -620,7 +955,11 @@ sub retr_ok_ascii_file_bug4237 {
       $size = length($buf);
       $expected = -s $test_file2;
       $self->assert($expected == $size,
-        test_msg("Expected size $expected, got $size"));
+        test_msg("Expected file #2 size $expected, got $size"));
+
+      $md5 = $ctx->hexdigest();
+      $self->assert($md5 eq $test_file2_md5,
+        test_msg("Expected file #2 MD5 $test_file2_md5, got $md5"));
 
       # Download a file of all CRLF pairs
       $conn = $client->retr_raw($test_file3);
@@ -629,8 +968,10 @@ sub retr_ok_ascii_file_bug4237 {
           $client->response_msg());
       }
 
+      $ctx = Digest::MD5->new();
       $buf = '';
       while ($conn->read($tmp, 8192, 25)) {
+        $ctx->add($tmp);
         $buf .= $tmp;
       }
       eval { $conn->close() };
@@ -644,11 +985,14 @@ sub retr_ok_ascii_file_bug4237 {
       # half the original file size.
       $expected = (-s $test_file3) / 2;
       $self->assert($expected == $size,
-        test_msg("Expected size $expected, got $size"));
+        test_msg("Expected file #3 size $expected, got $size"));
+
+      $md5 = $ctx->hexdigest();
+      $self->assert($md5 eq $test_file3_md5,
+        test_msg("Expected file #3 MD5 $test_file3_md5, got $md5"));
 
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -2556,7 +2900,7 @@ sub retr_bug3496 {
     AuthGroupFile => $setup->{auth_group_file},
     AuthOrder => 'mod_auth_file.c',
 
-    MaxInstances => 1,
+    MaxInstances => 2,
 
     IfModules => {
       'mod_delay.c' => {
@@ -2585,9 +2929,9 @@ sub retr_bug3496 {
     eval {
       # When run too quickly with the other tests, this test can fail.  So
       # pause a little here.
-      sleep(1);
+      sleep(3);
 
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 1, 1);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 1, 3);
       $client->login($setup->{user}, $setup->{passwd});
 
       my $conn = $client->retr_raw($test_file);
@@ -2602,7 +2946,6 @@ sub retr_bug3496 {
       my $client2 = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 1, 1);
       $client2->login($setup->{user}, $setup->{passwd});
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -2622,7 +2965,6 @@ sub retr_bug3496 {
 
   # Stop server
   server_stop($setup->{pid_file});
-
   $self->assert_child_ok($pid);
 
   test_cleanup($setup->{log_file}, $ex);
@@ -2703,7 +3045,7 @@ sub retr_2nd_transfer_terminates_1st_transfer_bug4010 {
       my $expected = 450;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
- 
+
       $conn1->read($tmpbuf, 8192, 30);
       $buf1 .= $tmpbuf;
 

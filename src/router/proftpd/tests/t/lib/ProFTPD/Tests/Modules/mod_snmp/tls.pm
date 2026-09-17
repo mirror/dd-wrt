@@ -450,7 +450,7 @@ sub upload_file {
   }
 
   if (open(my $fh, "> $test_file")) {
-    my $buf = ("A" x ($file_kb_len * 1024)); 
+    my $buf = ("A" x ($file_kb_len * 1024));
     print $fh $buf;
 
     unless (close($fh)) {

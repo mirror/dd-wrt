@@ -18306,6 +18306,20 @@ _ACEOF
 fi
 
 
+for ac_header in stddef.h crypt.h netdb.h arpa/inet.h sys/socket.h
+do :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+
+done
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for standalone crypt" >&5
 $as_echo_n "checking for standalone crypt... " >&6; }
 if ${pr_cv_lib_standalone_crypt+:} false; then :
@@ -18314,10 +18328,19 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+      #if HAVE_STDDEF_H
+      # include <stddef.h>
+      #endif
+      #if HAVE_CRYPT_H
+      # include <crypt.h>
+      #endif
+
 int
 main ()
 {
-crypt();
+
+      crypt(NULL, NULL);
+
   ;
   return 0;
 }
@@ -18389,10 +18412,19 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+      #if HAVE_STDDEF_H
+      # include <stddef.h>
+      #endif
+      #if HAVE_NETDB_H
+      # include <netdb.h>
+      #endif
+
 int
 main ()
 {
-gethostbyname();
+
+      gethostbyname(NULL);
+
   ;
   return 0;
 }
@@ -18509,10 +18541,19 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+      #if HAVE_STDDEF_H
+      # include <stddef.h>
+      #endif
+      #if HAVE_ARPA_INET_H
+      # include <arpa/inet.h>
+      #endif
+
 int
 main ()
 {
-inet_aton();
+
+      inet_aton(NULL, NULL);
+
   ;
   return 0;
 }
@@ -18585,10 +18626,16 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+      #if HAVE_NETDB_H
+      # include <netdb.h>
+      #endif
+
 int
 main ()
 {
-gethostent();
+
+      gethostent();
+
   ;
   return 0;
 }
@@ -18660,10 +18707,19 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+      #if HAVE_STDDEF_H
+      # include <stddef.h>
+      #endif
+      #if HAVE_SYS_SOCKET_H
+      # include <sys/socket.h>
+      #endif
+
 int
 main ()
 {
-bind();
+
+      bind(0, NULL, 0);
+
   ;
   return 0;
 }
@@ -19385,7 +19441,7 @@ $as_echo "#define HAVE_SYS_WAIT_H 1" >>confdefs.h
 
 fi
 
-for ac_header in fcntl.h signal.h linux/prctl.h sys/ioctl.h sys/prctl.h sys/resource.h sys/time.h junistd.h memory.h
+for ac_header in dlfcn.h fcntl.h signal.h linux/prctl.h sys/ioctl.h sys/prctl.h sys/resource.h sys/time.h junistd.h memory.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -21420,7 +21476,7 @@ main ()
 {
 
     size_t res, in_len = 0, out_len = 0;
-    const char *in = NULL;
+    char *in = NULL;
     char *out = NULL;
     res = iconv((iconv_t)-1, &in, &in_len, &out, &out_len);
 
@@ -21448,6 +21504,8 @@ rm -f core conftest.err conftest.$ac_objext \
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for idn2_to_ascii_8z" >&5
 $as_echo_n "checking for idn2_to_ascii_8z... " >&6; }
+old_libs=$LIBS
+LIBS="-lidn2 $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -21469,7 +21527,7 @@ main ()
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -21477,18 +21535,24 @@ $as_echo "yes" >&6; }
 $as_echo "#define HAVE_IDN2_TO_ASCII_8Z 1" >>confdefs.h
 
     MAIN_LIBS="$MAIN_LIBS -lidn2"
+    ac_orig_libs="$ac_orig_libs -lidn2"
+    SHARED_MODULE_LIBS="$SHARED_MODULE_LIBS -lidn2"
 
 else
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+    LIBS=$old_libs
 
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for idna_to_ascii_8z" >&5
 $as_echo_n "checking for idna_to_ascii_8z... " >&6; }
+old_libs=$LIBS
+LIBS="-lidn $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -21510,7 +21574,7 @@ main ()
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -21518,15 +21582,19 @@ $as_echo "yes" >&6; }
 $as_echo "#define HAVE_IDNA_TO_ASCII_8Z 1" >>confdefs.h
 
     MAIN_LIBS="$MAIN_LIBS -lidn"
+    ac_orig_libs="$ac_orig_libs -lidn"
+    SHARED_MODULE_LIBS="$SHARED_MODULE_LIBS -lidn"
 
 else
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+    LIBS=$old_libs
 
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dirfd" >&5
 $as_echo_n "checking for dirfd... " >&6; }
@@ -22281,8 +22349,8 @@ rm -f core conftest.err conftest.$ac_objext \
     if test "$pr_cv_func_facl" = "none"; then
     old_ldflags=$LDFLAGS
     old_libs=$LIBS
-    new_ldflags=`echo "$LDFLAGS" | sed -e 's/-L\$(top_srcdir)\/lib//g'`
-    LDFLAGS="$new_ldflags"
+    new_ldflags=`echo "$LDFLAGS" | sed -e 's/-Wl\.*\/lib //g'`
+    LDFLAGS="-L\$(top_builddir)/lib $new_ldflags"
     LIBS="-lacl $LIBS"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -24074,17 +24142,92 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 fi
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether listen supports negative backlog" >&5
+$as_echo_n "checking whether listen supports negative backlog... " >&6; };
+if test "$cross_compiling" = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: cross-compiling" >&5
+$as_echo "cross-compiling" >&6; }
+
+
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <errno.h>
+    #include <stdio.h>
+    #ifdef HAVE_STDLIB_H
+    # include <stdlib.h>
+    #endif
+    #ifdef HAVE_STRING_H
+    # include <string.h>
+    #endif
+    #ifdef HAVE_UNISTD_H
+    # include <unistd.h>
+    #endif
+    #ifdef HAVE_NETDB_H
+    # include <netdb.h>
+    #endif
+    #ifdef HAVE_SYS_SOCKET_H
+    # include <sys/socket.h>
+    #endif
+    int main(int argc, char *argv[]) {
+      struct protoent *pe;
+      int backlog = -1, proto = -1, fd, res;
+
+      pe = getprotobyname("tcp");
+      if (pe != NULL) {
+        proto = pe->p_proto;
+      }
+
+      fd = socket(AF_INET, SOCK_STREAM, proto);
+      if (fd < 0) {
+        fprintf(stderr, "error creating socket: %s\n", strerror(errno));
+        return 1;
+      }
+
+      res = listen(fd, backlog);
+      if (res < 0) {
+        fprintf(stderr, "error listening on socket: %s\n", strerror(errno));
+        return 1;
+      }
+
+      (void) close(fd);
+      return 0;
+    }
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; };
+
+$as_echo "#define LISTEN_NEGATIVE_BACKLOG 1" >>confdefs.h
+
+
+else
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+
 ac_shared_module_dirs=
 ac_static_module_dirs=
 
 for amodule in $ac_shared_modules; do
   module=`echo "$amodule" | sed -e 's/\.la//g'`.o;
+  modulename=`echo "$amodule" | sed -e 's/\.la$//'`;
 
-  ac_core_modules=`echo "$ac_core_modules" | sed -e "s/$module//g"`;
-  ac_build_core_modules=`echo "$ac_build_core_modules" | sed -e "s/modules\/$module//g"`;
+  ac_core_modules=`echo "$ac_core_modules" | sed -e "s/$modulename\.o//g"`;
+  ac_build_core_modules=`echo "$ac_build_core_modules" | sed -e "s/modules\/$modulename\.o//g"`;
 
-  ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$module//g"`;
-  ac_build_static_modules=`echo "$ac_build_static_modules" | sed -e "s/modules\/$module//g"`;
+  ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$modulename\.o//g"`;
+  ac_build_static_modules=`echo "$ac_build_static_modules" | sed -e "s/modules\/$modulename\.o//g"`;
 done
 
 GLUE_MODULE_OBJS="$ac_core_modules $ac_static_modules"
@@ -24556,14 +24699,14 @@ $as_echo "#define PR_USE_OPENSSL 1" >>confdefs.h
 
   ac_build_addl_libs="$ac_build_addl_libs -lssl -lcrypto"
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL is compiled with FIPS support" >&5
-$as_echo_n "checking whether OpenSSL is compiled with FIPS support... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL 1.x is compiled with FIPS support" >&5
+$as_echo_n "checking whether OpenSSL 1.x is compiled with FIPS support... " >&6; }
   saved_libs="$LIBS"
   LIBS="$LIBS -lcrypto"
 
   if test "$cross_compiling" = yes; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
-$as_echo "unknown" >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: cross-compiling" >&5
+$as_echo "cross-compiling" >&6; }
 
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -24707,6 +24850,45 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL has BIO_s_secmem support" >&5
+$as_echo_n "checking whether OpenSSL has BIO_s_secmem support... " >&6; }
+  saved_libs="$LIBS"
+  LIBS="-lcrypto $LIBS"
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      #include <openssl/bio.h>
+
+int
+main ()
+{
+
+      BIO *bio = BIO_s_secmem();
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define PR_USE_OPENSSL_BIO_SECMEM 1" >>confdefs.h
+
+
+else
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  LIBS="$saved_libs"
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL has complete ECC support" >&5
 $as_echo_n "checking whether OpenSSL has complete ECC support... " >&6; }
   saved_libs="$LIBS"
@@ -24742,6 +24924,45 @@ if ac_fn_c_try_link "$LINENO"; then :
 $as_echo "yes" >&6; }
 
 $as_echo "#define PR_USE_OPENSSL_ECC 1" >>confdefs.h
+
+
+else
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  LIBS="$saved_libs"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL has ENGINE support" >&5
+$as_echo_n "checking whether OpenSSL has ENGINE support... " >&6; }
+  saved_libs="$LIBS"
+  LIBS="-lcrypto $LIBS"
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      #include <openssl/engine.h>
+
+int
+main ()
+{
+
+      (void) ENGINE_set_default(NULL, 0);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define PR_USE_OPENSSL_ENGINE 1" >>confdefs.h
 
 
 else
@@ -24932,6 +25153,104 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+  LIBS="$saved_libs"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL has OSSL_PROVIDER_load support" >&5
+$as_echo_n "checking whether OpenSSL has OSSL_PROVIDER_load support... " >&6; }
+  saved_libs="$LIBS"
+  LIBS="-lcrypto $LIBS"
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      #include <openssl/provider.h>
+
+int
+main ()
+{
+
+      OSSL_PROVIDER *provider;
+      provider = OSSL_PROVIDER_load(NULL, "default");
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define PR_USE_OPENSSL_OSSL_PROVIDER_LOAD 1" >>confdefs.h
+
+      LIBS="$saved_libs"
+
+else
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      LIBS="$saved_libs"
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  LIBS="$saved_libs"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL 3.x has FIPS support" >&5
+$as_echo_n "checking whether OpenSSL 3.x has FIPS support... " >&6; }
+  saved_libs="$LIBS"
+  LIBS="-lcrypto $LIBS"
+
+  if test "$cross_compiling" = yes; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: cross-compiling" >&5
+$as_echo "cross-compiling" >&6; }
+
+
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      #include <openssl/err.h>
+      #if defined(PR_USE_OPENSSL_OSSL_PROVIDER_LOAD)
+      # include <openssl/provider.h>
+      #endif
+      int main(int argc, char **argv) {
+        #if defined(PR_USE_OPENSSL_OSSL_PROVIDER_LOAD)
+        OSSL_PROVIDER *provider;
+        ERR_load_crypto_strings();
+        provider = OSSL_PROVIDER_load(NULL, "fips");
+        if (provider == NULL) {
+          fprintf(stdout, "Failed to load FIPS provider\n");
+          ERR_print_errors_fp(stdout);
+          exit(1);
+        }
+        exit(0);
+        #else
+        exit(1);
+        #endif
+      }
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define PR_USE_OPENSSL_FIPS 1" >>confdefs.h
+
+
+else
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
   LIBS="$saved_libs"
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL has SSL num tickets support" >&5
@@ -25368,33 +25687,39 @@ fi
 
 for module in $ac_shared_modules ; do
   moduledir=`echo "$module" | sed -e 's/\.la$//'`;
+  modulename=`echo "$module" | sed -e 's/\.la$//'`;
+  src=`echo "$module" | sed -e 's/\.o$//'`.c;
+  srcinc=`echo "$module" | sed -e 's/\.o$//'`.h;
 
   if test -f $srcdir/modules/$src -o -f $srcdir/contrib/$src; then
     continue
 
   elif test -d $srcdir/modules/$moduledir; then
     ac_shared_module_dirs="$ac_shared_module_dirs modules/$moduledir";
-    ac_shared_modules=`echo "$ac_shared_modules" | sed -e "s/$module//"`
+    ac_shared_modules=`echo "$ac_shared_modules" | sed -e "s/$modulename\.la//"`
 
   elif test -d $srcdir/contrib/$moduledir; then
     ac_shared_module_dirs="$ac_shared_module_dirs contrib/$moduledir";
-    ac_shared_modules=`echo "$ac_shared_modules" | sed -e "s/$module//"`
+    ac_shared_modules=`echo "$ac_shared_modules" | sed -e "s/$modulename\.la//"`
   fi
 done
 
 for module in $ac_static_modules ; do
   moduledir=`echo "$module" | sed -e 's/\.o$//'`;
+  modulename=`echo "$module" | sed -e 's/\.o$//'`;
+  src=`echo "$module" | sed -e 's/\.o$//'`.c;
+  srcinc=`echo "$module" | sed -e 's/\.o$//'`.h;
 
   if test -f $srcdir/modules/$src -o -f $srcdir/contrib/$src; then
     continue
 
   elif test -d $srcdir/modules/$moduledir; then
     ac_static_module_dirs="$ac_static_module_dirs modules/$moduledir";
-    ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$module//"`
+    ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$modulename\.o//"`
 
   elif test -d $srcdir/contrib/$moduledir; then
     ac_static_module_dirs="$ac_static_module_dirs contrib/$moduledir";
-    ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$module//"`
+    ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$modulename\.o//"`
 
     addonlibs=""
     src=`echo "$module" | sed -e 's/\.o$//'`.c;
@@ -25428,8 +25753,8 @@ for module in $ac_static_modules ; do
         as_fn_error $? "specified archive '$thearch' does not match expected module archive name '$moduledir.a' -- aborting" "$LINENO" 5
       fi
 
-      ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$module//g"`
-      ac_build_static_modules=`echo "$ac_build_static_modules" | sed -e "s/modules\/$module//g"`
+      ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$modulename\.o//g"`
+      ac_build_static_modules=`echo "$ac_build_static_modules" | sed -e "s/modules\/$modulename\.o//g"`
       ac_build_static_module_archives="$ac_build_static_module_archives contrib/$moduledir/$thearch"
     done
 

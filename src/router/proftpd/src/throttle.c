@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2008-2020 The ProFTPD Project team
+ * Copyright (c) 2008-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -209,7 +209,7 @@ void pr_throttle_init(cmd_rec *cmd) {
   }
 }
 
-void pr_throttle_pause(off_t xferlen, int xfer_ending) {
+void pr_throttle_pause(off_t xferlen, int update_scoreboard, off_t xfer_done) {
   long ideal = 0, elapsed = 0;
   off_t orig_xferlen = xferlen;
 
@@ -224,11 +224,12 @@ void pr_throttle_pause(off_t xferlen, int xfer_ending) {
   if (!have_xfer_rate) {
     xfer_rate_scoreboard_updates++;
 
-    if (xfer_ending ||
+    if (update_scoreboard == TRUE ||
         xfer_rate_scoreboard_updates % PR_TUNABLE_XFER_SCOREBOARD_UPDATES == 0) {
       /* Update the scoreboard. */
       pr_scoreboard_entry_update(session.pid,
         PR_SCORE_XFER_LEN, orig_xferlen,
+        PR_SCORE_XFER_DONE, xfer_done,
         PR_SCORE_XFER_ELAPSED, (unsigned long) elapsed,
         NULL);
 
@@ -255,10 +256,11 @@ void pr_throttle_pause(off_t xferlen, int xfer_ending) {
        * update the scoreboard -- no throttling needed.
        */
 
-      if (xfer_ending ||
+      if (update_scoreboard == TRUE ||
           xfer_rate_scoreboard_updates % PR_TUNABLE_XFER_SCOREBOARD_UPDATES == 0) {
         pr_scoreboard_entry_update(session.pid,
           PR_SCORE_XFER_LEN, orig_xferlen,
+          PR_SCORE_XFER_DONE, xfer_done,
           PR_SCORE_XFER_ELAPSED, (unsigned long) elapsed,
           NULL);
 
@@ -314,6 +316,7 @@ void pr_throttle_pause(off_t xferlen, int xfer_ending) {
     /* Update the scoreboard. */
     pr_scoreboard_entry_update(session.pid,
       PR_SCORE_XFER_LEN, orig_xferlen,
+      PR_SCORE_XFER_DONE, xfer_done,
       PR_SCORE_XFER_ELAPSED, (unsigned long) ideal,
       NULL);
 
@@ -321,6 +324,7 @@ void pr_throttle_pause(off_t xferlen, int xfer_ending) {
     /* Update the scoreboard. */
     pr_scoreboard_entry_update(session.pid,
       PR_SCORE_XFER_LEN, orig_xferlen,
+      PR_SCORE_XFER_DONE, xfer_done,
       PR_SCORE_XFER_ELAPSED, (unsigned long) elapsed,
       NULL);
   }

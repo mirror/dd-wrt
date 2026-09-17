@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_radius -- a module for RADIUS authentication and accounting
- * Copyright (c) 2001-2022 TJ Saunders
+ * Copyright (c) 2001-2025 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -206,6 +206,7 @@ static struct passwd radius_passwd;
 static unsigned char radius_have_group_info = FALSE;
 static char *radius_prime_group_name = NULL;
 static unsigned int radius_addl_group_count = 0;
+static unsigned int radius_getgroups_count = 0;
 static char **radius_addl_group_names = NULL;
 static char *radius_addl_group_names_str = NULL;
 static gid_t *radius_addl_group_ids = NULL;
@@ -414,7 +415,7 @@ static int radius_parse_var(char *var, int *attr_id, char **attr_default) {
     /* Empty string; nothing to do. */
     return 0;
   }
-  
+
   tmp_pool = make_sub_pool(radius_pool);
   var_cpy = pstrdup(tmp_pool, var);
 
@@ -452,7 +453,7 @@ static int radius_parse_var(char *var, int *attr_id, char **attr_default) {
   return 0;
 }
 
-static unsigned char radius_parse_gids_str(pool *p, char *gids_str, 
+static unsigned char radius_parse_gids_str(pool *p, char *gids_str,
     gid_t **gids, unsigned int *ngids) {
   char *val = NULL;
   array_header *group_ids = make_array(p, 0, sizeof(gid_t));
@@ -1356,7 +1357,7 @@ static void radius_process_group_info(config_rec *c) {
 
     radius_parse_var(param, &radius_addl_group_names_attr_id,
       &radius_addl_group_names_str);
-  
+
     /* Now, parse the default value provided. */
     if (!radius_parse_groups_str(c->pool, radius_addl_group_names_str,
         &groups, &ngroups)) {
@@ -1742,7 +1743,7 @@ static void radius_process_user_info(config_rec *c) {
 
   /* Process the shell string. */
   param = (char *) c->argv[3];
-  
+
   if (RADIUS_IS_VAR(param) == TRUE) {
     radius_parse_var(param, &radius_shell_attr_id, &radius_passwd.pw_shell);
 
@@ -1776,6 +1777,7 @@ static void radius_reset(void) {
   radius_have_group_info = FALSE;
   radius_prime_group_name = NULL;
   radius_addl_group_count = 0;
+  radius_getgroups_count = 0;
   radius_addl_group_names = NULL;
   radius_addl_group_names_str = NULL;
   radius_addl_group_ids = NULL;
@@ -2255,7 +2257,7 @@ static int radius_verify_auth_mac(radius_packet_t *pkt, const char *pkt_type,
 
     attrib_len = RADIUS_ATTRIB_LEN(attrib);
     if (attrib_len != expected_len) {
-#ifdef PR_USE_OPENSSL
+#if defined(PR_USE_OPENSSL)
       const EVP_MD *md;
       unsigned char digest[EVP_MAX_MD_SIZE], replied[EVP_MAX_MD_SIZE];
       unsigned int digest_len = 0;
@@ -2264,10 +2266,27 @@ static int radius_verify_auth_mac(radius_packet_t *pkt, const char *pkt_type,
        * comparison with what we will calculate.
        */
       memset(replied, '\0', sizeof(replied));
+
+      /* Make sure that the given attribute length does not exceed our
+       * allocated buffer size.  Well-formed MAC attribute lengths should
+       * not encounter this case, given the use of MD5; excessively long
+       * MACs would fail verification anyway, truncation or not.
+       */
+      if (attrib_len > sizeof(replied)) {
+        pr_trace_msg(trace_channel, 3,
+          "Message-Authenticator attribute length (%u) exceeded max expected "
+          "length (%u), truncating", (unsigned int) attrib_len,
+          (unsigned int) sizeof(replied));
+        attrib_len = sizeof(replied);
+      }
+
       memcpy(replied, attrib->data, attrib_len);
 
-      /* Next, zero out the value so that we can calculate it ourselves. */
-      memset(attrib->data, '\0', attrib_len);
+      /* Next, zero out the value so that we can calculate it ourselves.
+       *
+       * Note that we only want to zero out the first 16 bytes, per RFC 2869.
+       */
+      memset(attrib->data, '\0', expected_len);
 
       memset(digest, '\0', sizeof(digest));
       md = EVP_md5();
@@ -2371,7 +2390,7 @@ static void radius_add_passwd(radius_packet_t *packet, unsigned char type,
 
   /* XOR the results. */
   radius_xor(pwhash, calculated, RADIUS_PASSWD_LEN);
-  
+
   /* For each step through: e[i] = p[i] ^ MD5(secret + e[i-1]) */
   for (i = 1; i < (pwlen >> 4); i++) {
 
@@ -2390,7 +2409,7 @@ static void radius_add_passwd(radius_packet_t *packet, unsigned char type,
   if (type == RADIUS_OLD_PASSWORD) {
     attrib = radius_get_attrib(packet, RADIUS_OLD_PASSWORD);
   }
- 
+
   if (attrib == NULL) {
     radius_add_attrib(packet, type, pwhash, pwlen);
 
@@ -2432,9 +2451,9 @@ static void radius_get_rnd_digest(radius_packet_t *packet) {
    */
   gettimeofday(&tv, &tz);
 
-  /* Add in some (possibly) hard to guess information. */      
+  /* Add in some (possibly) hard to guess information. */
   tv.tv_sec ^= (long) (getpid() * getppid());
-      
+
   /* Use MD5 to obtain (hopefully) cryptographically strong pseudo-random
    * numbers
    */
@@ -2458,7 +2477,8 @@ static radius_attrib_t *radius_get_next_attrib(radius_packet_t *packet,
   radius_attrib_t *attrib = NULL;
   unsigned int len;
 
-  if (packet_len == NULL) {
+  if (packet_len == NULL ||
+      *packet_len == 0) {
     len = ntohs(packet->length) - RADIUS_HEADER_LEN;
 
   } else {
@@ -2486,6 +2506,11 @@ static radius_attrib_t *radius_get_next_attrib(radius_packet_t *packet,
 
     /* Examine the next attribute in the packet. */
     attrib = (radius_attrib_t *) ((char *) attrib + attrib->length);
+  }
+
+  if (attrib == prev_attrib) {
+    /* No next attribute of this type found. */
+    return NULL;
   }
 
   if (packet_len != NULL) {
@@ -2574,8 +2599,8 @@ static void radius_build_packet(radius_packet_t *packet,
 
   /* Set the ID for the packet. */
   packet->id = packet->digest[0];
- 
-  /* Add the user attribute. */ 
+
+  /* Add the user attribute. */
   userlen = strlen((const char *) user);
   radius_add_attrib(packet, RADIUS_USER_NAME, user, userlen);
 
@@ -2683,14 +2708,14 @@ static void radius_build_packet(radius_packet_t *packet,
   radius_add_attrib(packet, RADIUS_NAS_PORT, (unsigned char *) &nas_port,
     sizeof(int));
 
-  /* Add a NAS port type attribute. */ 
+  /* Add a NAS port type attribute. */
   radius_add_attrib(packet, RADIUS_NAS_PORT_TYPE,
     (unsigned char *) &nas_port_type, sizeof(int));
 
   /* Add the calling station ID attribute (this is the IP of the connecting
    * client).
    */
-  caller_id = (char *) pr_netaddr_get_ipstr(pr_netaddr_get_sess_remote_addr()); 
+  caller_id = (char *) pr_netaddr_get_ipstr(pr_netaddr_get_sess_remote_addr());
 
   radius_add_attrib(packet, RADIUS_CALLING_STATION_ID,
     (const unsigned char *) caller_id, strlen(caller_id));
@@ -2720,7 +2745,7 @@ static radius_server_t *radius_make_server(pool *parent_pool) {
   server->timeout = DEFAULT_RADIUS_TIMEOUT;
   server->next = NULL;
 
-  return server; 
+  return server;
 }
 
 static int radius_open_socket(void) {
@@ -3141,7 +3166,7 @@ static int radius_stop_accting(void) {
     acct_status = htonl(RADIUS_ACCT_STATUS_STOP);
     radius_add_attrib(request, RADIUS_ACCT_STATUS_TYPE,
       (unsigned char *) &acct_status, sizeof(int));
- 
+
     radius_add_attrib(request, RADIUS_ACCT_SESSION_ID,
       (const unsigned char *) pid_str, pid_len);
 
@@ -3247,7 +3272,7 @@ static int radius_stop_accting(void) {
 }
 
 /* Verify the response packet from the server. */
-static int radius_verify_packet(radius_packet_t *req_packet, 
+static int radius_verify_packet(radius_packet_t *req_packet,
     radius_packet_t *resp_packet, const unsigned char *secret,
     size_t secret_len) {
   MD5_CTX ctx;
@@ -3316,11 +3341,11 @@ MODRET radius_auth(cmd_rec *cmd) {
   /* This authentication check has already been performed; I just need
    * to report the results of that check now.
    */
-  if (radius_auth_ok) {
+  if (radius_auth_ok == TRUE) {
     session.auth_mech = "mod_radius.c";
     return PR_HANDLED(cmd);
 
-  } else if (radius_auth_reject) {
+  } else if (radius_auth_reject == TRUE) {
     return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
   }
 
@@ -3406,10 +3431,10 @@ MODRET radius_getgroups(cmd_rec *cmd) {
      * getgroups() caller.
      */
     if (radius_have_user_info) {
-      radius_addl_group_count++;
+      radius_getgroups_count = radius_addl_group_count + 1;
     }
 
-    return mod_create_data(cmd, (void *) &radius_addl_group_count);
+    return mod_create_data(cmd, (void *) &radius_getgroups_count);
   }
 
   return PR_DECLINED(cmd);
@@ -3848,8 +3873,8 @@ MODRET set_radiusauthserver(cmd_rec *cmd) {
     if (pr_str_get_duration(cmd->argv[3], &timeout) < 0) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error parsing timeout value '",
         cmd->argv[1], "': ", strerror(errno), NULL));
-    } 
-    
+    }
+
     radius_server->timeout = timeout;
   }
 
@@ -3982,8 +4007,9 @@ MODRET set_radiusoptions(cmd_rec *cmd) {
   register unsigned int i = 0;
   unsigned long opts = 0UL;
 
-  if (cmd->argc-1 == 0)
+  if (cmd->argc-1 == 0) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
@@ -4013,6 +4039,13 @@ MODRET set_radiusoptions(cmd_rec *cmd) {
 
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned long));
   *((unsigned long *) c->argv[0]) = opts;
+
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
 
   return PR_HANDLED(cmd);
 }
@@ -4142,9 +4175,10 @@ MODRET set_radiususerinfo(cmd_rec *cmd) {
 
     /* Make sure it's a number, at least. */
     (void) strtoul(cmd->argv[2], &endp, 10);
-    if (endp && *endp)
+    if (endp && *endp) {
       CONF_ERROR(cmd, "invalid GID parameter: not a number");
-  } 
+    }
+  }
 
   if (!radius_have_var(cmd->argv[3])) {
     char *path;

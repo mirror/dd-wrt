@@ -239,7 +239,7 @@ pr_scoreboard_entry_t *util_scoreboard_entry_read(void) {
       if (res < 0 &&
           errno == EINTR) {
         continue;
- 
+
       } else {
         unlock_scoreboard();
 

@@ -333,11 +333,11 @@ MODRET handle_getgroups(cmd_rec *cmd) {
     return PR_DECLINED(cmd);
   }
 
-  if (gids) { 
+  if (gids != NULL) {
     *((gid_t *) push_array(gids)) = PR_TEST_AUTH_GID;
   }
 
-  if (names) {
+  if (names != NULL) {
     *((char **) push_array(names)) = pstrdup(p, PR_TEST_AUTH_NAME);
   }
 
@@ -493,7 +493,7 @@ START_TEST (auth_setpwent_test) {
   ck_assert_msg(setpwent_count == 0, "Expected call count 0, got %u",
     setpwent_count);
   mark_point();
-  
+
   /* Load the appropriate AUTH symbol, and call it. */
 
   memset(&authtab, 0, sizeof(authtab));
@@ -521,7 +521,7 @@ START_TEST (auth_endpwent_test) {
   ck_assert_msg(endpwent_count == 0, "Expected call count 0, got %u",
     endpwent_count);
   mark_point();
-  
+
   /* Load the appropriate AUTH symbol, and call it. */
 
   memset(&authtab, 0, sizeof(authtab));
@@ -558,7 +558,7 @@ START_TEST (auth_getpwent_test) {
   ck_assert_msg(getpwent_count == 0, "Expected call count 0, got %u",
     getpwent_count);
   mark_point();
-  
+
   /* Load the appropriate AUTH symbol, and call it. */
 
   memset(&authtab, 0, sizeof(authtab));
@@ -609,7 +609,7 @@ START_TEST (auth_getpwnam_test) {
   ck_assert_msg(getpwnam_count == 0, "Expected call count 0, got %u",
     getpwnam_count);
   mark_point();
-  
+
   /* Load the appropriate AUTH symbol, and call it. */
 
   memset(&authtab, 0, sizeof(authtab));
@@ -674,7 +674,7 @@ START_TEST (auth_getpwuid_test) {
   ck_assert_msg(getpwuid_count == 0, "Expected call count 0, got %u",
     getpwuid_count);
   mark_point();
-  
+
   /* Load the appropriate AUTH symbol, and call it. */
 
   memset(&authtab, 0, sizeof(authtab));
@@ -734,7 +734,7 @@ START_TEST (auth_name2uid_test) {
   ck_assert_msg(name2uid_count == 0, "Expected call count 0, got %u",
     name2uid_count);
   mark_point();
-  
+
   /* Load the appropriate AUTH symbol, and call it. */
 
   memset(&authtab, 0, sizeof(authtab));
@@ -769,7 +769,7 @@ END_TEST
 
 START_TEST (auth_uid2name_test) {
   int res;
-  const char *name; 
+  const char *name;
   authtable authtab;
   char *sym_name = "uid2name";
 
@@ -789,7 +789,7 @@ START_TEST (auth_uid2name_test) {
   ck_assert_msg(uid2name_count == 0, "Expected call count 0, got %u",
     uid2name_count);
   mark_point();
-  
+
   /* Load the appropriate AUTH symbol, and call it. */
 
   memset(&authtab, 0, sizeof(authtab));
@@ -822,7 +822,7 @@ START_TEST (auth_setgrent_test) {
   ck_assert_msg(setgrent_count == 0, "Expected call count 0, got %u",
     setgrent_count);
   mark_point();
-  
+
   /* Load the appropriate AUTH symbol, and call it. */
 
   memset(&authtab, 0, sizeof(authtab));
@@ -850,7 +850,7 @@ START_TEST (auth_endgrent_test) {
   ck_assert_msg(endgrent_count == 0, "Expected call count 0, got %u",
     endgrent_count);
   mark_point();
-  
+
   /* Load the appropriate AUTH symbol, and call it. */
 
   memset(&authtab, 0, sizeof(authtab));
@@ -885,7 +885,7 @@ START_TEST (auth_getgrent_test) {
   ck_assert_msg(getgrent_count == 0, "Expected call count 0, got %u",
     getgrent_count);
   mark_point();
-  
+
   /* Load the appropriate AUTH symbol, and call it. */
 
   memset(&authtab, 0, sizeof(authtab));
@@ -929,7 +929,7 @@ START_TEST (auth_getgrnam_test) {
   ck_assert_msg(getgrnam_count == 0, "Expected call count 0, got %u",
     getgrnam_count);
   mark_point();
-  
+
   /* Load the appropriate AUTH symbol, and call it. */
 
   memset(&authtab, 0, sizeof(authtab));
@@ -982,7 +982,7 @@ START_TEST (auth_getgrgid_test) {
   ck_assert_msg(getgrgid_count == 0, "Expected call count 0, got %u",
     getgrgid_count);
   mark_point();
-  
+
   /* Load the appropriate AUTH symbol, and call it. */
 
   memset(&authtab, 0, sizeof(authtab));
@@ -1037,7 +1037,7 @@ START_TEST (auth_name2gid_test) {
   ck_assert_msg(name2gid_count == 0, "Expected call count 0, got %u",
     name2gid_count);
   mark_point();
-  
+
   /* Load the appropriate AUTH symbol, and call it. */
 
   memset(&authtab, 0, sizeof(authtab));
@@ -1072,7 +1072,7 @@ END_TEST
 
 START_TEST (auth_gid2name_test) {
   int res;
-  const char *name; 
+  const char *name;
   authtable authtab;
   char *sym_name = "gid2name";
 
@@ -1092,7 +1092,7 @@ START_TEST (auth_gid2name_test) {
   ck_assert_msg(gid2name_count == 0, "Expected call count 0, got %u",
     gid2name_count);
   mark_point();
-  
+
   /* Load the appropriate AUTH symbol, and call it. */
 
   memset(&authtab, 0, sizeof(authtab));
@@ -1132,7 +1132,7 @@ START_TEST (auth_getgroups_test) {
   ck_assert_msg(getgroups_count == 0, "Expected call count 0, got %u",
     getgroups_count);
   mark_point();
-  
+
   /* Load the appropriate AUTH symbol, and call it. */
 
   memset(&authtab, 0, sizeof(authtab));
@@ -1162,7 +1162,7 @@ END_TEST
 
 START_TEST (auth_cache_uid2name_test) {
   int res;
-  const char *name; 
+  const char *name;
   authtable authtab;
   char *sym_name = "uid2name";
 
@@ -1200,7 +1200,7 @@ END_TEST
 
 START_TEST (auth_cache_gid2name_test) {
   int res;
-  const char *name; 
+  const char *name;
   authtable authtab;
   char *sym_name = "gid2name";
 
@@ -1238,7 +1238,7 @@ END_TEST
 
 START_TEST (auth_cache_uid2name_failed_test) {
   int res;
-  const char *name; 
+  const char *name;
   authtable authtab;
   char *sym_name = "uid2name";
 
@@ -1276,7 +1276,7 @@ END_TEST
 
 START_TEST (auth_cache_gid2name_failed_test) {
   int res;
-  const char *name; 
+  const char *name;
   authtable authtab;
   char *sym_name = "gid2name";
 
@@ -2104,7 +2104,7 @@ START_TEST (auth_get_home_test) {
   home = "/testsuite";
   res = pr_auth_get_home(p, home);
   ck_assert_msg(res != NULL, "Failed to get home: %s", strerror(errno));
-  ck_assert_msg(strcmp(home, res) == 0, "Expected '%s', got '%s'", home, res);  
+  ck_assert_msg(strcmp(home, res) == 0, "Expected '%s', got '%s'", home, res);
 
   /* RewriteHome off */
   mark_point();

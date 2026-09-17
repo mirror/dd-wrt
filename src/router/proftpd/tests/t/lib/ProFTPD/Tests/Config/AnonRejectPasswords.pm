@@ -141,7 +141,7 @@ sub anon_reject_passwords_ok {
       $expected = 'Login incorrect.';
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
-   
+
       $client->quit();
     };
 
@@ -275,7 +275,7 @@ sub anon_reject_passwords_flags_nocase {
       $expected = 'Login incorrect.';
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
-   
+
       $client->quit();
     };
 
@@ -411,7 +411,7 @@ sub anon_reject_passwords_not_and_flags_nocase {
       $expected = 'Login incorrect.';
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
-   
+
       $client->quit();
     };
 

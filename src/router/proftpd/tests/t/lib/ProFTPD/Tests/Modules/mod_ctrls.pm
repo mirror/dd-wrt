@@ -25,6 +25,11 @@ my $TESTS = {
     test_class => [qw(forking)],
   },
 
+  ctrls_lsctrl_access_denied_issue1114 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
   ctrls_sighup_bug3756 => {
     order => ++$order,
     test_class => [qw(bug forking os_linux)],
@@ -59,14 +64,21 @@ sub ftpdctl {
     $ftpdctl_bin = '../ftpdctl';
   }
 
-  my $cmd = "$ftpdctl_bin -s $sock_file $ctrl_cmd";
+  my $verbosity = '';
+  if ($ENV{TEST_VERBOSE}) {
+    $verbosity = '-v';
+  }
+
+  my $cmd = "$ftpdctl_bin -s $sock_file $verbosity $ctrl_cmd";
 
   if ($ENV{TEST_VERBOSE}) {
     print STDERR "Executing ftpdctl: $cmd\n";
   }
 
   my @lines = `$cmd`;
-  return \@lines;
+  my $exit_status = $? >> 8;
+
+  return ($exit_status, \@lines);
 }
 
 sub get_server_pid {
@@ -112,12 +124,7 @@ sub server_open_fds {
 sub ctrls_lsctrl_ok {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/ctrls.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/ctrls.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/ctrls.scoreboard");
-
-  my $log_file = test_get_logfile();
+  my $setup = test_setup($tmpdir, 'ctrls');
 
   my $ctrls_sock = File::Spec->rel2abs("$tmpdir/ctrls.sock");
 
@@ -125,16 +132,16 @@ sub ctrls_lsctrl_ok {
   my $poll_interval = 2;
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
     Trace => 'ctrls:20 event:10',
 
     IfModules => {
       'mod_ctrls.c' => {
         ControlsEngine => 'on',
-        ControlsLog => $log_file,
+        ControlsLog => $setup->{log_file},
         ControlsSocket => $ctrls_sock,
         ControlsACLs => "all allow user *",
         ControlsSocketACL => "allow user *",
@@ -147,20 +154,32 @@ sub ctrls_lsctrl_ok {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   my $ex;
 
   # Start server
-  server_start($config_file);
-  sleep(1);
+  server_start($setup->{config_file});
+  sleep(2);
 
   eval {
-    my $lines = ftpdctl($ctrls_sock, 'lsctrl', $poll_interval);
+    my ($exit_status, $lines) = ftpdctl($ctrls_sock, 'lsctrl', $poll_interval);
+    if ($ENV{TEST_VERBOSE}) {
+      print STDERR "# ftpdctl: (exit status $exit_status)\n";
+      foreach my $line (@$lines) {
+        chomp($line);
+        print STDERR "#  $line\n";
+      }
+    }
+
+    my $expected = 0;
+    $self->assert($exit_status == $expected,
+      test_msg("Expected exit status $expected, got $exit_status"));
+
     $lines = [grep { /mod_ctrls\.c/ } @$lines];
 
-    my $expected = 4;
-
+    $expected = 4;
     my $matches = scalar(@$lines);
     $self->assert($expected == $matches,
       test_msg("Expected $expected, got $matches"));
@@ -175,67 +194,39 @@ sub ctrls_lsctrl_ok {
     $expected = 'help insctrl lsctrl rmctrl ';
     $self->assert($expected eq $actions,
       test_msg("Expected '$expected', got '$actions'"));
-  }; 
-
+  };
   if ($@) {
     $ex = $@;
   }
 
-  server_stop($pid_file);
-
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  server_stop($setup->{pid_file});
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub ctrls_lsctrl_system_user_ok {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/ctrls.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/ctrls.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/ctrls.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/ctrls.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/ctrls.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  my $setup = test_setup($tmpdir, 'ctrls');
 
   my $ctrls_sock = File::Spec->rel2abs("$tmpdir/ctrls.sock");
 
   my ($sys_user, $sys_group) = config_get_identity();
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
     Trace => 'DEFAULT:10',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
     AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_ctrls.c' => {
         ControlsEngine => 'on',
-        ControlsLog => $log_file,
+        ControlsLog => $setup->{log_file},
         ControlsSocket => $ctrls_sock,
         ControlsACLs => "all allow user root,$sys_user",
         ControlsSocketACL => "allow user root,$sys_user",
@@ -247,21 +238,32 @@ sub ctrls_lsctrl_system_user_ok {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   my $ex;
 
   # Start server
-  server_start($config_file);
-
+  server_start($setup->{config_file});
   sleep(1);
 
   eval {
-    my $lines = ftpdctl($ctrls_sock, 'lsctrl');
+    my ($exit_status, $lines) = ftpdctl($ctrls_sock, 'lsctrl');
+    if ($ENV{TEST_VERBOSE}) {
+      print STDERR "# ftpdctl: (exit status $exit_status)\n";
+      foreach my $line (@$lines) {
+        chomp($line);
+        print STDERR "#  $line\n";
+      }
+    }
+
+    my $expected = 0;
+    $self->assert($exit_status == $expected,
+      test_msg("Expected exit status $expected, got $exit_status"));
+
     $lines = [grep { /mod_ctrls\.c/ } @$lines];
 
-    my $expected = 4;
-
+    $expected = 4;
     my $matches = scalar(@$lines);
     $self->assert($expected == $matches,
       test_msg("Expected $expected, got $matches"));
@@ -276,22 +278,95 @@ sub ctrls_lsctrl_system_user_ok {
     $expected = 'help insctrl lsctrl rmctrl ';
     $self->assert($expected eq $actions,
       test_msg("Expected '$expected', got '$actions'"));
-  }; 
-
+  };
   if ($@) {
     $ex = $@;
   }
 
-  server_stop($pid_file);
+  server_stop($setup->{pid_file});
+  test_cleanup($setup->{log_file}, $ex);
+}
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
+sub ctrls_lsctrl_access_denied_issue1114 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'ctrls');
 
-    die($ex);
+  my $ctrls_sock = File::Spec->rel2abs("$tmpdir/ctrls.sock");
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'DEFAULT:10',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    IfModules => {
+      'mod_ctrls.c' => {
+        ControlsEngine => 'on',
+        ControlsLog => $setup->{log_file},
+        ControlsSocket => $ctrls_sock,
+        ControlsACLs => 'all deny user *',
+        ControlsSocketACL => 'deny user *',
+      },
+
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $ex;
+
+  # Start server
+  server_start($setup->{config_file});
+  sleep(1);
+
+  eval {
+    my ($exit_status, $lines) = ftpdctl($ctrls_sock, 'lsctrl');
+    if ($ENV{TEST_VERBOSE}) {
+      print STDERR "# ftpdctl: (exit status $exit_status)\n";
+      foreach my $line (@$lines) {
+        chomp($line);
+        print STDERR "#  $line\n";
+      }
+    }
+
+    my $expected = 2;
+    $self->assert($exit_status == $expected,
+      test_msg("Expected exit status $expected, got $exit_status"));
+
+    $lines = [grep { /access/ } @$lines];
+
+    $expected = 1;
+    my $matches = scalar(@$lines);
+    $self->assert($expected == $matches,
+      test_msg("Expected line count $expected, got $matches"));
+
+    my $actions = '';
+    foreach my $line (@$lines) {
+      if ($line =~ /^ftpdctl: (.*?)$/) {
+        $actions .= "$1";
+      }
+    }
+
+    $expected = 'access denied';
+    $self->assert($expected eq $actions,
+      test_msg("Expected '$expected', got '$actions'"));
+  };
+  if ($@) {
+    $ex = $@;
   }
 
-  unlink($log_file);
+  server_stop($setup->{pid_file});
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub ctrls_sighup_bug3756 {
@@ -370,8 +445,7 @@ sub ctrls_sighup_bug3756 {
 
     $self->assert($orig_nfds == $restart_nfds,
       test_msg("Expected $orig_nfds open fds, found $restart_nfds"));
-  }; 
-
+  };
   if ($@) {
     $ex = $@;
   }

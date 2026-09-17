@@ -109,9 +109,9 @@ BUILD_STATIC_MODULE_OBJS=@BUILD_STATIC_MODULE_OBJS@ modules/module_glue.o lib/pr
 FTPCOUNT_OBJS=ftpcount.o scoreboard.o misc.o
 BUILD_FTPCOUNT_OBJS=utils/ftpcount.o utils/scoreboard.o utils/misc.o
 
-FTPDCTL_OBJS=ftpdctl.o pool.o netaddr.o log.o ctrls.o
-BUILD_FTPDCTL_OBJS=src/ftpdctl.o src/pool.o src/str.o src/netaddr.o src/log.o \
-  src/ctrls.o lib/prbase.a
+FTPDCTL_OBJS=ftpdctl.o pool.o str.o netaddr.o json.o log.o ctrls.o
+BUILD_FTPDCTL_OBJS=src/ftpdctl.o src/pool.o src/str.o src/netaddr.o src/json.o \
+  src/log.o src/ctrls.o lib/prbase.a
 
 FTPSCRUB_OBJS=ftpscrub.o scoreboard.o misc.o
 BUILD_FTPSCRUB_OBJS=utils/ftpscrub.o utils/scoreboard.o utils/misc.o

@@ -65,7 +65,7 @@ sub ftpaccess_retr_bug2038 {
 
   my $fh;
 
-  # Write a .ftpaccess file in the sub dir which denies all access 
+  # Write a .ftpaccess file in the sub dir which denies all access
   my $ftpaccess_file = File::Spec->rel2abs("$tmpdir/foo/.ftpaccess");
   if (open($fh, "> $ftpaccess_file")) {
     print $fh <<EOF;
@@ -106,7 +106,7 @@ EOF
       die("Can't set owner of $home_dir, $sub_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
@@ -283,7 +283,7 @@ sub ftpaccess_anon_retr_bug2038 {
 
   my $fh;
 
-  # Write a .ftpaccess file in the sub dir which denies all access 
+  # Write a .ftpaccess file in the sub dir which denies all access
   my $ftpaccess_file = File::Spec->rel2abs("$tmpdir/foo/.ftpaccess");
   if (open($fh, "> $ftpaccess_file")) {
     print $fh <<EOF;
@@ -498,7 +498,7 @@ sub ftpaccess_anon_retr_bug2461 {
 
   my $fh;
 
-  # Write a .ftpaccess file in the sub dir which denies all access 
+  # Write a .ftpaccess file in the sub dir which denies all access
   my $ftpaccess_file = File::Spec->rel2abs("$tmpdir/.ftpaccess");
   if (open($fh, "> $ftpaccess_file")) {
     print $fh <<EOF;

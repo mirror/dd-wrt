@@ -4,7 +4,7 @@
  * Copyright (c) 1998-1999 Johnie Ingram.
  * Copyright (c) 2001 Andrew Houghton
  * Copyright (c) 2002-2015 The ProFTPD Project
- *  
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -56,7 +56,7 @@ typedef struct sql_data_struct sql_data_t;
 
 #define SQL_FREE_CMD(c)       destroy_pool((c)->pool)
 
-/* 
+/*
  * These macros are for backends to create basic internal error messages
  */
 
@@ -78,7 +78,7 @@ typedef struct sql_data_struct sql_data_t;
  */
 #define MOD_SQL_API_V1 "mod_sql_api_v1"
 
-/* MOD_SQL_API_V2: MOD_SQL_API_V1 && guarantees to correctly implement 
+/* MOD_SQL_API_V2: MOD_SQL_API_V1 && guarantees to correctly implement
  *  cmd_procedure.
  */
 #define MOD_SQL_API_V2 "mod_sql_api_v2"

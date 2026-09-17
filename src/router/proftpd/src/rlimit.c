@@ -49,7 +49,7 @@ static int get_rlimit(int resource, rlim_t *current, rlim_t *max) {
   if (current != NULL) {
     *current = rlim.rlim_cur;
   }
-  
+
   if (max != NULL) {
     *max = rlim.rlim_max;
   }

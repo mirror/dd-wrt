@@ -126,7 +126,7 @@ int pr_netacl_match(const pr_netacl_t *acl, const pr_netaddr_t *addr) {
         }
       }
       break;
- 
+
     case PR_NETACL_TYPE_DNSMATCH:
       pr_trace_msg(trace_channel, 10,
         "checking addr '%s' against DNS name rule '%s'",

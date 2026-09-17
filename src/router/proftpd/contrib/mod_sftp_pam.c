@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sftp_pam -- a module which provides an SSH2
  *                          "keyboard-interactive" driver using PAM
- * Copyright (c) 2008-2022 TJ Saunders
+ * Copyright (c) 2008-2025 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -83,8 +83,8 @@
 #ifndef SOLARIS2
 # define PR_PAM_CONST   const
 #else
-# define PR_PAM_CONST 
-#endif 
+# define PR_PAM_CONST
+#endif
 
 #define SFTP_PAM_OPT_NO_TTY		0x001
 #define SFTP_PAM_OPT_NO_INFO_MSGS	0x002
@@ -217,14 +217,14 @@ static int sftppam_converse(int nmsgs, PR_PAM_CONST struct pam_message **msgs,
         pr_trace_msg(trace_channel, 9,
           "received PAM_PROMPT_ECHO_ON message '%s', responding with '%s'",
           SFTP_PAM_MSG_MEMBER(msgs, i, msg), recvd_responses[i]);
-        res[i].resp = strdup(recvd_responses[i]); 
+        res[i].resp = strdup(recvd_responses[i]);
         break;
 
       case PAM_PROMPT_ECHO_OFF:
         pr_trace_msg(trace_channel, 9,
           "received PAM_PROMPT_ECHO_OFF message '%s', responding with text",
           SFTP_PAM_MSG_MEMBER(msgs, i, msg));
-        res[i].resp = strdup(recvd_responses[i]); 
+        res[i].resp = strdup(recvd_responses[i]);
         break;
 
       case PAM_TEXT_INFO:
@@ -335,7 +335,7 @@ static int sftppam_driver_open(sftp_kbdint_driver_t *driver, const char *user) {
 
     c = find_config_next(c, c->next, CONF_PARAM, "SFTPPAMOptions", FALSE);
   }
- 
+
 #ifdef SOLARIS2
   /* For Solaris environments, the TTY environment will always be set,
    * in order to workaround a bug (Solaris Bug ID 4250887) where
@@ -345,7 +345,7 @@ static int sftppam_driver_open(sftp_kbdint_driver_t *driver, const char *user) {
    */
   sftppam_opts &= ~SFTP_PAM_OPT_NO_TTY;
 #endif /* SOLARIS2 */
- 
+
   pr_signals_block();
   PRIVS_ROOT
 
@@ -498,9 +498,9 @@ static int sftppam_driver_authenticate(sftp_kbdint_driver_t *driver,
     errno = EPERM;
     return -1;
   }
- 
+
   res = pam_open_session(sftppam_pamh, 0);
-  if (res != PAM_SUCCESS) { 
+  if (res != PAM_SUCCESS) {
     sftppam_auth_code = PR_AUTH_DISABLEDPWD;
 
     pr_trace_msg(trace_channel, 1,
@@ -629,8 +629,9 @@ MODRET set_sftppamoptions(cmd_rec *cmd) {
   register unsigned int i = 0;
   unsigned long opts = 0UL;
 
-  if (cmd->argc-1 == 0)
+  if (cmd->argc-1 == 0) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
@@ -654,6 +655,13 @@ MODRET set_sftppamoptions(cmd_rec *cmd) {
 
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned long));
   *((unsigned long *) c->argv[0]) = opts;
+
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
 
   return PR_HANDLED(cmd);
 }

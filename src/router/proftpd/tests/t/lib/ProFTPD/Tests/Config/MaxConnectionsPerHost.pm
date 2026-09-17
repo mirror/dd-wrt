@@ -62,7 +62,7 @@ sub maxconnsperhost_one_multi_conns {
     SystemLog => $log_file,
 
     AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file, 
+    AuthGroupFile => $auth_group_file,
     AuthOrder => 'mod_auth_file.c',
 
     MaxConnectionsPerHost => $max_conns_per_host,

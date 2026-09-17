@@ -978,17 +978,18 @@ MODRET set_maxload(cmd_rec *cmd) {
   c = add_config_param(cmd->argv[0], cmd->argc-1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(double));
 
-  if (loadval < 0.0)
+  if (loadval < 0.0) {
     c->argv[0] = NULL;
 
-  else
+  } else {
     *((double *) c->argv[0]) = loadval;
+  }
 
   if (cmd->argc-1 == 2) {
     c->argv[1] = pcalloc(c->pool, sizeof(char *));
     c->argv[1] = pstrdup(c->pool, cmd->argv[2]);
   }
- 
+
   return PR_HANDLED(cmd);
 }
 

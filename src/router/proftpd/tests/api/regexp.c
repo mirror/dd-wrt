@@ -110,8 +110,8 @@ START_TEST (regexp_compile_test) {
     strerror(errno), errno);
 
   pattern = "[=foo";
-  res = pr_regexp_compile(pre, pattern, 0); 
-  ck_assert_msg(res != 0, "Successfully compiled pattern unexpectedly"); 
+  res = pr_regexp_compile(pre, pattern, 0);
+  ck_assert_msg(res != 0, "Successfully compiled pattern unexpectedly");
 
   errstrlen = pr_regexp_error(1, NULL, NULL, 0);
   ck_assert_msg(errstrlen == 0, "Failed to handle null arguments");
@@ -445,6 +445,58 @@ START_TEST (regexp_capture_pcre2_test) {
   pr_regexp_free(NULL, pre);
 }
 END_TEST
+
+START_TEST (regexp_capture_pcre2_not_enough_matches_test) {
+  register unsigned int i;
+  pr_regex_t *pre = NULL;
+  int captured = FALSE, res;
+  char *pattern, *str;
+  size_t nmatches;
+  regmatch_t *matches;
+
+  pre = pr_regexp_alloc(NULL);
+
+  mark_point();
+  pattern = "((.*):(.*))";
+  res = pr_regexp_compile(pre, pattern, 0);
+  ck_assert_msg(res == 0, "Failed to compile regex pattern '%s'", pattern);
+
+  nmatches = 1;
+  matches = pcalloc(p, sizeof(regmatch_t) * nmatches);
+
+  mark_point();
+  str = "foo:bar";
+  res = pr_regexp_exec(pre, str, nmatches, matches, 0, 0, 0);
+  ck_assert_msg(res == 0, "Failed to match string");
+
+  mark_point();
+  for (i = 0; i < nmatches; i++) {
+    int match_len;
+    const char *match_text;
+
+    if (matches[i].rm_so == -1 ||
+        matches[i].rm_eo == -1) {
+      break;
+    }
+
+    match_text = &(str[matches[i].rm_so]);
+    match_len = matches[i].rm_eo - matches[i].rm_so;
+
+    ck_assert_msg(strcmp(match_text, str) == 0,
+      "Expected matched text '%s', got '%s' (i = %u)", str, match_text, i);
+    ck_assert_msg(match_len == 7,
+      "Expected match text len 7, got %d (i = %u)", match_len, i);
+
+    captured = TRUE;
+  }
+
+  mark_point();
+  ck_assert_msg(captured == TRUE,
+    "PCRE2 regex failed to capture expected groups");
+
+  pr_regexp_free(NULL, pre);
+}
+END_TEST
 #endif /* PR_USE_PCRE2 */
 
 START_TEST (regexp_cleanup_test) {
@@ -550,6 +602,7 @@ Suite *tests_get_regexp_suite(void) {
 #endif /* PR_USE_PCRE */
 #if defined(PR_USE_PCRE2)
   tcase_add_test(testcase, regexp_capture_pcre2_test);
+  tcase_add_test(testcase, regexp_capture_pcre2_not_enough_matches_test);
 #endif /* PR_USE_PCRE */
   tcase_add_test(testcase, regexp_get_pattern_test);
   tcase_add_test(testcase, regexp_set_limits_test);

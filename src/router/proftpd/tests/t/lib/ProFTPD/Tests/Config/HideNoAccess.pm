@@ -69,7 +69,7 @@ sub hidenoaccess_ok {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $test_dir = File::Spec->rel2abs("$tmpdir/testdir");
@@ -243,7 +243,7 @@ sub hidenoaccess_with_directory_glob {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   for (my $i = 1; $i < 6; $i++) {

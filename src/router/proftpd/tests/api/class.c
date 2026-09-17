@@ -40,14 +40,22 @@ static void set_up(void) {
 
   init_class();
   init_netaddr();
+
+  if (getenv("TEST_VERBOSE") != NULL) {
+    pr_trace_set_levels("class", 1, 20);
+  }
 }
 
 static void tear_down(void) {
-  if (p) {
+  if (getenv("TEST_VERBOSE") != NULL) {
+    pr_trace_set_levels("class", 0, 0);
+  }
+
+  if (p != NULL) {
     destroy_pool(p);
-    p = NULL;
-    permanent_pool = NULL;
-  } 
+    main_server = NULL;
+    p = permanent_pool = NULL;
+  }
 }
 
 /* Tests */

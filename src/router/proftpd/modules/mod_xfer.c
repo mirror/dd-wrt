@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2022 The ProFTPD Project team
+ * Copyright (c) 2001-2026 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -265,13 +265,20 @@ static char *get_cmd_from_list(char **list) {
 
 static int xfer_check_limit(cmd_rec *cmd) {
   config_rec *c = NULL;
-  const char *client_addr = pr_netaddr_get_ipstr(session.c->remote_addr);
-  char server_addr[128];
+  const char *client_addr, *server_addr;
+  char server_addr_buf[128];
 
-  memset(server_addr, '\0', sizeof(server_addr));
-  pr_snprintf(server_addr, sizeof(server_addr)-1, "%s:%d",
-    pr_netaddr_get_ipstr(main_server->addr), main_server->ServerPort);
-  server_addr[sizeof(server_addr)-1] = '\0';
+  server_addr = pr_netaddr_get_ipstr(main_server->addr);
+  if (strcmp(server_addr, "0.0.0.0") == 0) {
+    server_addr = pr_netaddr_get_ipstr(session.c->local_addr);
+  }
+
+  memset(server_addr_buf, '\0', sizeof(server_addr_buf));
+  pr_snprintf(server_addr_buf, sizeof(server_addr_buf)-1, "%s:%d", server_addr,
+    main_server->ServerPort);
+  server_addr_buf[sizeof(server_addr_buf)-1] = '\0';
+
+  client_addr = pr_netaddr_get_ipstr(session.c->remote_addr);
 
   c = find_config(CURRENT_CONF, CONF_PARAM, "MaxTransfersPerHost", FALSE);
   while (c != NULL) {
@@ -312,10 +319,10 @@ static int xfer_check_limit(cmd_rec *cmd) {
       /* Scoreboard entry must match local server address and remote client
        * address to be counted.
        */
-      if (strcmp(score->sce_server_addr, server_addr) != 0) {
+      if (strcmp(score->sce_server_addr, server_addr_buf) != 0) {
         pr_trace_msg(trace_channel, 25,
           "MaxTransfersPerHost: server address '%s' does not match '%s', "
-          "skipping", server_addr, score->sce_server_addr);
+          "skipping", server_addr_buf, score->sce_server_addr);
         continue;
       }
 
@@ -403,10 +410,10 @@ static int xfer_check_limit(cmd_rec *cmd) {
     while ((score = pr_scoreboard_entry_read()) != NULL) {
       pr_signals_handle();
 
-      if (strcmp(score->sce_server_addr, server_addr) != 0) {
+      if (strcmp(score->sce_server_addr, server_addr_buf) != 0) {
         pr_trace_msg(trace_channel, 25,
           "MaxTransfersPerUser: server address '%s' does not match '%s', "
-          "skipping", server_addr, score->sce_server_addr);
+          "skipping", server_addr_buf, score->sce_server_addr);
         continue;
       }
 
@@ -417,7 +424,7 @@ static int xfer_check_limit(cmd_rec *cmd) {
         continue;
       }
 
-      if (strcmp(score->sce_cmd, xfer_cmd) == 0) {
+      if (strcmp(score->sce_cmd, xfer_cmd) != 0) {
         pr_trace_msg(trace_channel, 25,
           "MaxTransfersPerUser: command '%s' does not match '%s', skipping",
           xfer_cmd, score->sce_cmd);
@@ -604,7 +611,7 @@ static int transmit_sendfile(off_t data_len, off_t *data_offset,
       } else if (pr_throttle_have_rate()) {
         pr_log_debug(DEBUG10, "declining use of sendfile due to TransferRate "
           "restrictions");
-    
+
       } else if (session.sf_flags & (SF_ASCII|SF_ASCII_OVERRIDE)) {
         pr_log_debug(DEBUG10, "declining use of sendfile for ASCII data");
 
@@ -845,41 +852,43 @@ static void stor_chown(pool *p) {
         pr_log_debug(DEBUG0,
           "'%s' stat(2) error during root chmod: %s", xfer_path,
           strerror(errno));
-      }
-
-      /* The chmod happens after the chown because chown will remove
-       * the S{U,G}ID bits on some files (namely, directories); the subsequent
-       * chmod is used to restore those dropped bits.  This makes it
-       * necessary to use root privs when doing the chmod as well (at least
-       * in the case of chown'ing the file via root privs) in order to ensure
-       * that the mode can be set (a file might be being "given away", and if
-       * root privs aren't used, the chmod() will fail because the old owner/
-       * session user doesn't have the necessary privileges to do so).
-       */
-      xerrno = 0;
-      PRIVS_ROOT
-      res = pr_fsio_chmod_with_error(p, xfer_path, st.st_mode, &err);
-      xerrno = errno;
-      PRIVS_RELINQUISH
-
-      if (res < 0) {
-        pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 5);
-        pr_error_set_why(err, pstrcat(p, "restore SUID/SGID on '", xfer_path,
-          "'", NULL));
-
-        if (err != NULL) {
-          pr_log_debug(DEBUG0, "%s", pr_error_strerror(err, 0));
-          pr_error_destroy(err);
-          err = NULL;
-
-        } else {
-          pr_log_debug(DEBUG0, "root chmod(%s) to %04o failed: %s", xfer_path,
-            (unsigned int) st.st_mode, strerror(xerrno));
-        }
 
       } else {
-        pr_log_debug(DEBUG2, "root chmod(%s) to %04o successful", xfer_path,
-          (unsigned int) st.st_mode);
+        /* The chmod happens after the chown because chown will remove
+         * the S{U,G}ID bits on some files (namely, directories); the subsequent
+         * chmod is used to restore those dropped bits.  This makes it
+         * necessary to use root privs when doing the chmod as well (at least
+         * in the case of chown'ing the file via root privs) in order to ensure
+         * that the mode can be set (a file might be being "given away", and if
+         * root privs aren't used, the chmod() will fail because the old owner/
+         * session user doesn't have the necessary privileges to do so).
+         */
+        xerrno = 0;
+
+        PRIVS_ROOT
+        res = pr_fsio_chmod_with_error(p, xfer_path, st.st_mode, &err);
+        xerrno = errno;
+        PRIVS_RELINQUISH
+
+        if (res < 0) {
+          pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 5);
+          pr_error_set_why(err, pstrcat(p, "restore SUID/SGID on '", xfer_path,
+            "'", NULL));
+
+          if (err != NULL) {
+            pr_log_debug(DEBUG0, "%s", pr_error_strerror(err, 0));
+            pr_error_destroy(err);
+            err = NULL;
+
+          } else {
+            pr_log_debug(DEBUG0, "root chmod(%s) to %04o failed: %s", xfer_path,
+              (unsigned int) st.st_mode, strerror(xerrno));
+          }
+
+        } else {
+          pr_log_debug(DEBUG2, "root chmod(%s) to %04o successful", xfer_path,
+            (unsigned int) st.st_mode);
+        }
       }
     }
 
@@ -936,33 +945,35 @@ static void stor_chown(pool *p) {
         pr_log_debug(DEBUG0,
           "'%s' stat(2) error during %schmod: %s", xfer_path,
           use_root_privs ? "root " : "", strerror(errno));
-      }
 
-      if (use_root_privs) {
-        PRIVS_ROOT
-      }
+      } else {
 
-      res = pr_fsio_chmod_with_error(p, xfer_path, st.st_mode, &err);
-      xerrno = errno;
+        if (use_root_privs) {
+          PRIVS_ROOT
+        }
 
-      if (use_root_privs) {
-        PRIVS_RELINQUISH
-      }
+        res = pr_fsio_chmod_with_error(p, xfer_path, st.st_mode, &err);
+        xerrno = errno;
 
-      if (res < 0) {
-        pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 8);
-        pr_error_set_why(err, pstrcat(p, "restore SUID/SGID of '", xfer_path,
-          "'", NULL));
+        if (use_root_privs) {
+          PRIVS_RELINQUISH
+        }
 
-        if (err != NULL) {
-          pr_log_debug(DEBUG0, "%s", pr_error_strerror(err, 0));
-          pr_error_destroy(err);
-          err = NULL;
+        if (res < 0) {
+          pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 8);
+          pr_error_set_why(err, pstrcat(p, "restore SUID/SGID of '", xfer_path,
+            "'", NULL));
 
-        } else {
-          pr_log_debug(DEBUG0, "%schmod(%s) to %04o failed: %s",
-            use_root_privs ? "root " : "", xfer_path, (unsigned int) st.st_mode,
-            strerror(xerrno));
+          if (err != NULL) {
+            pr_log_debug(DEBUG0, "%s", pr_error_strerror(err, 0));
+            pr_error_destroy(err);
+            err = NULL;
+
+          } else {
+            pr_log_debug(DEBUG0, "%schmod(%s) to %04o failed: %s",
+              use_root_privs ? "root " : "", xfer_path,
+              (unsigned int) st.st_mode, strerror(xerrno));
+          }
         }
       }
     }
@@ -1018,7 +1029,7 @@ static void stor_abort(pool *p) {
         pr_log_pri(PR_LOG_NOTICE, "notice: error closing '%s': %s", fh_path,
           strerror(xerrno));
       }
- 
+
       errno = xerrno;
     }
 
@@ -1058,7 +1069,7 @@ static void stor_abort(pool *p) {
 
           pr_error_destroy(err);
           err = NULL;
-        } 
+        }
       }
     }
 
@@ -1154,7 +1165,7 @@ static int stor_complete(pool *p) {
 
           pr_error_destroy(err);
           err = NULL;
-        } 
+        }
       }
     }
 
@@ -1307,6 +1318,83 @@ static int get_hidden_store_path(cmd_rec *cmd, const char *path,
 
   session.xfer.xfer_type = STOR_HIDDEN;
   return 0;
+}
+
+MODRET xfer_opts_rest(cmd_rec *cmd) {
+  register unsigned int i;
+  char *method, *xfer_cmd;
+  unsigned char *authenticated;
+
+  authenticated = get_param_ptr(cmd->server->conf, "authenticated", FALSE);
+  if (authenticated == NULL ||
+      *authenticated == FALSE) {
+    pr_response_add_err(R_501, _("Please login with USER and PASS"));
+
+    pr_cmd_set_errno(cmd, EPERM);
+    errno = EPERM;
+    return PR_ERROR(cmd);
+  }
+
+  method = pstrdup(cmd->tmp_pool, cmd->argv[0]);
+
+  /* Convert underscores to spaces in the method name, for prettier logging. */
+  for (i = 0; method[i]; i++) {
+    if (method[i] == '_') {
+      method[i] = ' ';
+    }
+  }
+
+  if (cmd->argc != 2) {
+    pr_response_add_err(R_501, _("'%s' not understood"), method);
+
+    pr_cmd_set_errno(cmd, EINVAL);
+    errno = EINVAL;
+    return PR_ERROR(cmd);
+  }
+
+  xfer_cmd = cmd->argv[1];
+  if (strcasecmp(xfer_cmd, C_RETR) == 0) {
+    unsigned char *allow_restart = NULL;
+
+    /* Do we allow resumed downloads? */
+    allow_restart = get_param_ptr(main_server->conf, "AllowRetrieveRestart",
+      FALSE);
+    if (allow_restart == NULL ||
+        *allow_restart == TRUE) {
+      pr_response_add(R_200, "%s", _("REST RETR allowed"));
+      return PR_HANDLED(cmd);
+    }
+
+    pr_response_add_err(R_451, "%s", _("REST RETR not allowed"));
+    pr_cmd_set_errno(cmd, EPERM);
+    errno = EPERM;
+    return PR_ERROR(cmd);
+  }
+
+  if (strcasecmp(xfer_cmd, C_STOR) == 0) {
+    unsigned char *allow_restart = NULL;
+
+    /* Do we allow resumed uploads? */
+    allow_restart = get_param_ptr(main_server->conf, "AllowStoreRestart",
+      FALSE);
+    if (allow_restart != NULL &&
+        *allow_restart == TRUE) {
+      pr_response_add(R_200, "%s", _("REST STOR allowed"));
+      return PR_HANDLED(cmd);
+    }
+
+    pr_response_add_err(R_451, "%s", _("REST STOR not allowed"));
+    pr_cmd_set_errno(cmd, EPERM);
+    errno = EPERM;
+    return PR_ERROR(cmd);
+  }
+
+  /* Otherwise, it's an OPTS REST query we do not support. */
+  pr_response_add_err(R_501, _("'%s' not understood"), method);
+
+  pr_cmd_set_errno(cmd, EINVAL);
+  errno = EINVAL;
+  return PR_ERROR(cmd);
 }
 
 MODRET xfer_post_prot(cmd_rec *cmd) {
@@ -1468,12 +1556,21 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
   }
 
   if (is_file == FALSE) {
-    pr_response_add_err(R_550, _("%s: Not a regular file"), cmd->arg);
+    const char *proto;
 
-    /* Deliberately use EISDIR for anything non-file (e.g. directories). */
-    pr_cmd_set_errno(cmd, EISDIR);
-    errno = EISDIR;
-    return PR_ERROR(cmd);
+    /* Check for upload requests for non-files -- but not if the client is
+     * using SFTP/SCP.
+     */
+    proto = pr_session_get_protocol(0);
+    if (strcmp(proto, "sftp") != 0 &&
+        strcmp(proto, "scp") != 0) {
+      pr_response_add_err(R_550, _("%s: Not a regular file"), cmd->arg);
+
+      /* Deliberately use EISDIR for anything non-file (e.g. directories). */
+      pr_cmd_set_errno(cmd, EISDIR);
+      errno = EISDIR;
+      return PR_ERROR(cmd);
+    }
   }
 
   /* If restarting, check permissions on this directory, if
@@ -1486,6 +1583,8 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
       (session.xfer.xfer_type == STOR_APPEND)) &&
      (!allow_restart || *allow_restart == FALSE)) {
 
+    pr_log_debug(DEBUG6, "AllowStoreRestart denied permission for %s",
+      cmd->arg);
     pr_response_add_err(R_451, _("%s: Append/Restart not permitted, try again"),
       cmd->arg);
     session.restart_pos = 0L;
@@ -2200,7 +2299,7 @@ MODRET xfer_stor(cmd_rec *cmd) {
     }
 
     /* If no throttling is configured, this does nothing. */
-    pr_throttle_pause(nbytes_stored, FALSE);
+    pr_throttle_pause(nbytes_stored, FALSE, nbytes_stored);
 
     if (session.range_len > 0) {
       if (nbytes_stored == upload_len) {
@@ -2230,7 +2329,7 @@ MODRET xfer_stor(cmd_rec *cmd) {
     pr_data_abort(0, FALSE);
 
     pr_cmd_set_errno(cmd, EIO);
-    errno = EIO; 
+    errno = EIO;
     return PR_ERROR(cmd);
   }
 
@@ -2270,7 +2369,7 @@ MODRET xfer_stor(cmd_rec *cmd) {
   }
 
   /* If no throttling is configured, this does nothing. */
-  pr_throttle_pause(nbytes_stored, TRUE);
+  pr_throttle_pause(nbytes_stored, TRUE, nbytes_stored);
 
   if (stor_complete(cmd->pool) < 0) {
     xerrno = errno;
@@ -2418,7 +2517,7 @@ MODRET xfer_rest(cmd_rec *cmd) {
     pr_cmd_set_errno(cmd, EPERM);
     errno = EPERM;
     return PR_ERROR(cmd);
-  } 
+  }
 
   session.restart_pos = pos;
 
@@ -2627,12 +2726,21 @@ MODRET xfer_pre_retr(cmd_rec *cmd) {
       && !S_ISFIFO(fmode)
 #endif
      ) {
-    pr_response_add_err(R_550, _("%s: Not a regular file"), cmd->arg);
+    const char *proto;
 
-    /* Deliberately use EISDIR for anything non-file (e.g. directories). */
-    pr_cmd_set_errno(cmd, EISDIR);
-    errno = EISDIR;
-    return PR_ERROR(cmd);
+    /* Check for download requests for non-files -- but not if the client is
+     * using SFTP/SCP.
+     */
+    proto = pr_session_get_protocol(0);
+    if (strcmp(proto, "sftp") != 0 &&
+        strcmp(proto, "scp") != 0) {
+      pr_response_add_err(R_550, _("%s: Not a regular file"), cmd->arg);
+
+      /* Deliberately use EISDIR for anything non-file (e.g. directories). */
+      pr_cmd_set_errno(cmd, EISDIR);
+      errno = EISDIR;
+      return PR_ERROR(cmd);
+    }
   }
 
   /* If restart is on, check to see if AllowRestartRetrieve is off, in
@@ -2946,6 +3054,8 @@ MODRET xfer_retr(cmd_rec *cmd) {
   }
 
   while (nbytes_sent != download_len) {
+    int update_scoreboard = FALSE;
+
     pr_signals_handle();
 
     if (XFER_ABORTED) {
@@ -3011,9 +3121,7 @@ MODRET xfer_retr(cmd_rec *cmd) {
     if ((nbytes_sent / cnt_steps) != cnt_next) {
       cnt_next = nbytes_sent / cnt_steps;
 
-      pr_scoreboard_entry_update(session.pid,
-        PR_SCORE_XFER_DONE, nbytes_sent,
-        NULL);
+      update_scoreboard = TRUE;
     }
 
     /* If no throttling is configured, this simply updates the scoreboard.
@@ -3022,7 +3130,7 @@ MODRET xfer_retr(cmd_rec *cmd) {
      * former does not.  (When handling STOR, this is not an issue: different
      * end-of-loop conditions).
      */
-    pr_throttle_pause(session.xfer.total_bytes, FALSE);
+    pr_throttle_pause(session.xfer.total_bytes, update_scoreboard, nbytes_sent);
   }
 
   if (XFER_ABORTED) {
@@ -3040,7 +3148,7 @@ MODRET xfer_retr(cmd_rec *cmd) {
    * former does not.  (When handling STOR, this is not an issue: different
    * end-of-loop conditions).
    */
-  pr_throttle_pause(session.xfer.total_bytes, TRUE);
+  pr_throttle_pause(session.xfer.total_bytes, TRUE, nbytes_sent);
 
   retr_complete(cmd->pool);
   xfer_displayfile();
@@ -3096,7 +3204,9 @@ MODRET xfer_type(cmd_rec *cmd) {
   }
 
   type = pstrdup(cmd->tmp_pool, cmd->argv[1]);
-  type[0] = toupper((int) type[0]);
+  if (PR_ISALPHA((int) type[0])) {
+    type[0] = toupper((int) type[0]);
+  }
 
   if (strcmp(type, "A") == 0 ||
       (cmd->argc == 3 &&
@@ -3152,7 +3262,9 @@ MODRET xfer_stru(cmd_rec *cmd) {
   }
 
   stru = cmd->argv[1];
-  stru[0] = toupper((int) stru[0]);
+  if (PR_ISALPHA((int) stru[0])) {
+    stru[0] = toupper((int) stru[0]);
+  }
 
   switch ((int) stru[0]) {
     case 'F':
@@ -3206,7 +3318,9 @@ MODRET xfer_mode(cmd_rec *cmd) {
   }
 
   mode = cmd->argv[1];
-  mode[0] = toupper((int) mode[0]);
+  if (PR_ISALPHA((int) mode[0])) {
+    mode[0] = toupper((int) mode[0]);
+  }
 
   switch ((int) mode[0]) {
     case 'S':
@@ -3501,40 +3615,42 @@ MODRET xfer_post_pass(cmd_rec *cmd) {
  */
 
 MODRET set_allowoverwrite(cmd_rec *cmd) {
-  int bool = -1;
+  int allow_overwrite = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON|
     CONF_DIR|CONF_DYNDIR);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
-    CONF_ERROR(cmd, "expected boolean parameter");
+  allow_overwrite = get_boolean(cmd, 1);
+  if (allow_overwrite == -1) {
+    CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = (unsigned char) bool;
+  *((unsigned char *) c->argv[0]) = (unsigned char) allow_overwrite;
   c->flags |= CF_MERGEDOWN;
 
   return PR_HANDLED(cmd);
 }
 
 MODRET set_allowrestart(cmd_rec *cmd) {
-  int bool = -1;
+  int allow_restart = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON|
     CONF_DIR|CONF_DYNDIR);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
-    CONF_ERROR(cmd, "expected boolean parameter");
+  allow_restart = get_boolean(cmd, 1);
+  if (allow_restart == -1) {
+    CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = bool;
+  *((unsigned char *) c->argv[0]) = allow_restart;
   c->flags |= CF_MERGEDOWN;
 
   return PR_HANDLED(cmd);
@@ -3558,20 +3674,21 @@ MODRET set_defaulttransfermode(cmd_rec *cmd) {
 }
 
 MODRET set_deleteabortedstores(cmd_rec *cmd) {
-  int bool = -1;
+  int delete_aborted_stores = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON|
     CONF_DIR|CONF_DYNDIR);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  delete_aborted_stores = get_boolean(cmd, 1);
+  if (delete_aborted_stores == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = bool;
+  *((unsigned char *) c->argv[0]) = delete_aborted_stores;
   c->flags |= CF_MERGEDOWN;
 
   return PR_HANDLED(cmd);
@@ -4112,7 +4229,7 @@ MODRET set_transferrate(cmd_rec *cmd) {
 
 /* usage: UseSendfile on|off|"len units"|percentage"%" */
 MODRET set_usesendfile(cmd_rec *cmd) {
-  int bool = -1;
+  int do_sendfile = -1;
   off_t sendfile_len = 0;
   float sendfile_pct = -1.0;
   config_rec *c;
@@ -4123,8 +4240,8 @@ MODRET set_usesendfile(cmd_rec *cmd) {
     /* Is the given parameter a boolean, or a percentage?  Try parsing it a
      * boolean first.
      */
-    bool = get_boolean(cmd, 1);
-    if (bool == -1) {
+    do_sendfile = get_boolean(cmd, 1);
+    if (do_sendfile == -1) {
       char *arg;
       size_t arglen;
 
@@ -4134,12 +4251,12 @@ MODRET set_usesendfile(cmd_rec *cmd) {
       if (arglen > 1 &&
           arg[arglen-1] == '%') {
         char *ptr = NULL;
-  
+
         arg[arglen-1] = '\0';
 
-#ifdef HAVE_STRTOF
+#if defined(HAVE_STRTOF)
         sendfile_pct = strtof(arg, &ptr);
-#elif HAVE_STRTOD
+#elif defined(HAVE_STRTOD)
         sendfile_pct = strtod(arg, &ptr);
 #else
         sendfile_pct = atof(arg);
@@ -4151,7 +4268,7 @@ MODRET set_usesendfile(cmd_rec *cmd) {
         }
 
         sendfile_pct /= 100.0;
-        bool = TRUE;
+        do_sendfile = TRUE;
 
       } else {
         CONF_ERROR(cmd, "expected Boolean parameter");
@@ -4167,15 +4284,15 @@ MODRET set_usesendfile(cmd_rec *cmd) {
     }
 
     sendfile_len = nbytes;
-    bool = TRUE;
-  
+    do_sendfile = TRUE;
+
   } else {
     CONF_ERROR(cmd, "wrong number of parameters");
   }
 
   c = add_config_param(cmd->argv[0], 3, NULL, NULL, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = bool;
+  *((unsigned char *) c->argv[0]) = do_sendfile;
   c->argv[1] = pcalloc(c->pool, sizeof(off_t));
   *((off_t *) c->argv[1]) = sendfile_len;
   c->argv[2] = pcalloc(c->pool, sizeof(float));
@@ -4194,7 +4311,7 @@ static void xfer_exit_ev(const void *event_data, void *user_data) {
      /* An upload is occurring... */
     pr_trace_msg(trace_channel, 6, "session exiting, aborting upload");
     stor_abort(session.pool);
-  
+
   } else if (retr_fh != NULL) {
     /* A download is occurring... */
     pr_trace_msg(trace_channel, 6, "session exiting, aborting download");
@@ -4441,6 +4558,7 @@ static cmdtable xfer_cmdtab[] = {
   { LOG_CMD_ERR, C_APPE,G_NONE,  xfer_err_cleanup,  FALSE,  FALSE },
   { CMD,     C_ABOR,	G_NONE,	 xfer_abor,	TRUE,	TRUE,  CL_MISC  },
   { LOG_CMD, C_ABOR,	G_NONE,	 xfer_log_abor,	TRUE,	TRUE,  CL_MISC  },
+  { CMD,     C_OPTS "_REST", G_NONE, xfer_opts_rest, FALSE, FALSE },
   { CMD,     C_REST,	G_NONE,	 xfer_rest,	TRUE,	FALSE, CL_MISC  },
   { CMD,     C_RANG,	G_NONE,	 xfer_rang,	TRUE,	FALSE, CL_MISC  },
   { POST_CMD,C_PROT,	G_NONE,  xfer_post_prot,	FALSE,	FALSE },

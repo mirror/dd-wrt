@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2022 The ProFTPD Project team
+ * Copyright (c) 2001-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,9 +47,14 @@
 /* "Backlog" is the number of connections that can be received at one
  * burst before the kernel rejects.  This can be configured by the
  * "tcpBackLog" configuration directive, this value is just the default.
+ * If a backlog value of -1 is supported, it means "use system/kernel default".
  */
 #ifndef PR_TUNABLE_DEFAULT_BACKLOG
-# define PR_TUNABLE_DEFAULT_BACKLOG	128
+# ifdef LISTEN_NEGATIVE_BACKLOG
+#   define PR_TUNABLE_DEFAULT_BACKLOG	-1
+# else
+#   define PR_TUNABLE_DEFAULT_BACKLOG	128
+# endif /* LISTEN_NEGATIVE_BACKLOG */
 #endif /* PR_TUNABLE_DEFAULT_BACKLOG */
 
 /* The default TCP send/receive buffer sizes, should explicit sizes not
@@ -65,11 +70,11 @@
  */
 
 #ifndef PR_TUNABLE_DEFAULT_RCVBUFSZ
-# define PR_TUNABLE_DEFAULT_RCVBUFSZ	8192
+# define PR_TUNABLE_DEFAULT_RCVBUFSZ	65536
 #endif /* PR_TUNABLE_DEFAULT_RCVBUFSZ */
 
 #ifndef PR_TUNABLE_DEFAULT_SNDBUFSZ
-# define PR_TUNABLE_DEFAULT_SNDBUFSZ	8192
+# define PR_TUNABLE_DEFAULT_SNDBUFSZ	65536
 #endif /* PR_TUNABLE_DEFAULT_SNDBUFSZ */
 
 /* Default internal buffer size used for data transfers and other
@@ -110,7 +115,7 @@
 #endif
 
 /* Maximum path length.  GNU HURD (and some others) do not define
- * MAXPATHLEN.  POSIX' PATH_MAX is mandated to be at least 256 
+ * MAXPATHLEN.  POSIX' PATH_MAX is mandated to be at least 256
  * (according to some), so 1K, in the absence of MAXPATHLEN, should be
  * a reasonable default.
  */
@@ -236,9 +241,9 @@
 /* Define the time to delay, in seconds, after a system call has been
  * interrupted (errno is EINTR) before retrying that call.
  *
- * The default behavior is delay 0.2 secs between retries.
+ * The default behavior is delay 0.1 secs between retries.
  */
-# define PR_TUNABLE_EINTR_RETRY_INTERVAL	0.2
+# define PR_TUNABLE_EINTR_RETRY_INTERVAL	0.1
 #endif
 
 #ifndef PR_TUNABLE_XFER_LOG_MODE

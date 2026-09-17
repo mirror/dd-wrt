@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2021 The ProFTPD Project team
+ * Copyright (c) 2001-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -209,7 +209,7 @@ static JsonNode *get_conns_json(void) {
       json_append_member(conn, "transfer_bytes",
         json_mknumber((double) score->sce_xfer_done));
     }
- 
+
     if (score->sce_xfer_elapsed > 0) {
       json_append_member(conn, "transfer_duration_ms",
         json_mknumber(((double) (score->sce_xfer_elapsed * 1000L))));

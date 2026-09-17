@@ -240,7 +240,7 @@ sub pass_fails_no_user {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-     
+
       my ($resp_code, $resp_msg);
       eval { ($resp_code, $resp_msg) = $client->pass($passwd) };
       unless ($@) {

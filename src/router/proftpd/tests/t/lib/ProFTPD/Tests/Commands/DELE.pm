@@ -40,12 +40,12 @@ my $TESTS = {
   dele_symlink_ok => {
     order => ++$order,
     test_class => [qw(forking)],
-  }, 
+  },
 
   dele_symlink_bug3754 => {
     order => ++$order,
     test_class => [qw(bug forking)],
-  }, 
+  },
 
 };
 

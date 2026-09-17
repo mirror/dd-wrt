@@ -152,7 +152,7 @@ pr_json_object_t *pr_json_object_alloc(pool *p) {
     return NULL;
   }
 
-  json = alloc_object(p); 
+  json = alloc_object(p);
   json->object = json_mkobject();
 
   return json;
@@ -323,7 +323,7 @@ static int get_val_from_node(pool *p, JsonNode *node, JsonTag tag, void *val) {
 
     case JSON_NUMBER:
       *((double *) val) = node->number_;
-      break; 
+      break;
 
     case JSON_ARRAY: {
       pr_json_array_t *array;

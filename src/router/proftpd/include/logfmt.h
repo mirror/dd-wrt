@@ -1,6 +1,6 @@
 /*
  * ProFTPD: LogFormat
- * Copyright (c) 2013-2020 TJ Saunders
+ * Copyright (c) 2013-2023 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -88,6 +88,8 @@
 #define LOGFMT_META_CONNECT		52
 #define LOGFMT_META_DISCONNECT		53
 #define LOGFMT_META_XFER_PORT		54
+#define LOGFMT_META_XFER_SPEED		55
+#define LOGFMT_META_VAR_VAR		56
 
 #define LOGFMT_META_CUSTOM		253
 #define LOGFMT_META_ARG_END		254

@@ -258,7 +258,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('CPFR', 'foo.txt');
- 
+
       my $expected;
 
       $expected = 350;
@@ -270,7 +270,7 @@ EOS
         test_msg("Expected '$expected', got '$resp_msg'"));
 
       ($resp_code, $resp_msg) = $client->site('CPTO', 'bar.txt');
-      
+
       $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
@@ -501,7 +501,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('CPFR', 'foo.txt');
- 
+
       my $expected;
 
       $expected = 350;
@@ -513,7 +513,7 @@ EOS
         test_msg("Expected '$expected', got '$resp_msg'"));
 
       ($resp_code, $resp_msg) = $client->site('CPTO', 'bar.txt');
-      
+
       $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
@@ -744,7 +744,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('CPFR', 'foo.txt');
- 
+
       my $expected;
 
       $expected = 350;
@@ -756,7 +756,7 @@ EOS
         test_msg("Expected '$expected', got '$resp_msg'"));
 
       ($resp_code, $resp_msg) = $client->site('CPTO', 'bar.txt');
-      
+
       $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
@@ -994,7 +994,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('CPFR', 'foo.txt');
- 
+
       my $expected;
 
       $expected = 350;
@@ -1006,7 +1006,7 @@ EOS
         test_msg("Expected '$expected', got '$resp_msg'"));
 
       ($resp_code, $resp_msg) = $client->site('CPTO', 'bar.txt');
-      
+
       $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
@@ -1240,7 +1240,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('CPFR', 'foo.txt');
- 
+
       my $expected;
 
       $expected = 350;
@@ -1258,7 +1258,7 @@ EOS
 
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
-      
+
       $expected = 552;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
@@ -1505,7 +1505,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('CPFR', 'src.d');
- 
+
       my $expected;
 
       $expected = 350;
@@ -1517,7 +1517,7 @@ EOS
         test_msg("Expected '$expected', got '$resp_msg'"));
 
       ($resp_code, $resp_msg) = $client->site('CPTO', 'dst.d');
-      
+
       $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
@@ -1764,7 +1764,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('CPFR', 'src.d');
- 
+
       my $expected;
 
       $expected = 350;
@@ -1776,7 +1776,7 @@ EOS
         test_msg("Expected '$expected', got '$resp_msg'"));
 
       ($resp_code, $resp_msg) = $client->site('CPTO', 'dst.d');
-      
+
       $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
@@ -2039,7 +2039,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('CPFR', 'src.d');
- 
+
       my $expected;
 
       $expected = 350;
@@ -2051,7 +2051,7 @@ EOS
         test_msg("Expected '$expected', got '$resp_msg'"));
 
       ($resp_code, $resp_msg) = $client->site('CPTO', 'dst.d');
-      
+
       $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
@@ -2298,7 +2298,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('CPFR', 'src.d');
- 
+
       my $expected;
 
       $expected = 350;
@@ -2579,7 +2579,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('CPFR', 'src.d');
- 
+
       my $expected;
 
       $expected = 350;
@@ -2843,7 +2843,7 @@ EOS
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->site('CPFR', 'src.d');
- 
+
       my $expected;
 
       $expected = 350;
@@ -2857,7 +2857,7 @@ EOS
       $client->site('CPTO', 'dst.d');
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg(0);
-      
+
       $expected = 250;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));

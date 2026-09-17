@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2022 The ProFTPD Project team
+ * Copyright (c) 2001-2026 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -85,7 +85,7 @@ int nodaemon = 0;
 
 static int no_forking = FALSE;
 static int quiet = 0;
-static int shutting_down = 0;
+static int shutting_down = FALSE;
 static int syntax_check = 0;
 
 /* Command handling */
@@ -101,7 +101,7 @@ static int semaphore_fds(fd_set *rfd, int maxfd) {
     pr_child_t *ch;
 
     for (ch = child_get(NULL); ch; ch = child_get(ch)) {
-      pr_signals_handle();
+      pr_signals_handle_without_delay();
 
       if (ch->ch_pipefd != -1) {
         FD_SET(ch->ch_pipefd, rfd);
@@ -272,7 +272,7 @@ static int _dispatch(cmd_rec *cmd, int cmd_type, int validate, char *match) {
     session.curr_phase = cmd_type;
 
     if (c->cmd_type == cmd_type) {
-      if (c->group) {
+      if (c->group != NULL) {
         cmd->group = pstrdup(cmd->pool, c->group);
       }
 
@@ -296,7 +296,7 @@ static int _dispatch(cmd_rec *cmd, int cmd_type, int validate, char *match) {
       if (cmd_type == CMD) {
 
         /* The client has successfully authenticated... */
-        if (session.user) {
+        if (session.user != NULL) {
           char *args = NULL;
 
           /* Be defensive, and check whether cmdargstrlen has a value.
@@ -388,7 +388,7 @@ static int _dispatch(cmd_rec *cmd, int cmd_type, int validate, char *match) {
            * This will allow the cmd_rec to continue to be dispatched to
            * the other interested handlers (Bug#3633).
            */
-          if (cmd_type == LOG_CMD || 
+          if (cmd_type == LOG_CMD ||
               cmd_type == LOG_CMD_ERR) {
             success = 0;
           }
@@ -589,7 +589,7 @@ int pr_cmd_read(cmd_rec **res) {
         cmd->is_ftp = TRUE;
         cmd->protocol = "FTP";
       }
-    } 
+    }
   }
 
   return 0;
@@ -657,7 +657,9 @@ int pr_cmd_dispatch_phase(cmd_rec *cmd, int phase, int flags) {
   pr_response_set_pool(cmd->pool);
 
   for (cp = cmd->argv[0]; *cp; cp++) {
-    *cp = toupper((int) *cp);
+    if (PR_ISALPHA((int) *cp)) {
+      *cp = toupper((int) *cp);
+    }
   }
 
   if (cmd->cmd_class == 0) {
@@ -821,14 +823,35 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags) {
     return NULL;
   }
 
+  /* By default, pr_str_get_word will handle quotes and backslashes for
+   * escaping characters.  This can produce words which are shorter, use
+   * fewer bytes than the corresponding input buffer.
+   *
+   * In this particular situation, we use the length of this initial word
+   * for determining the length of the remaining buffer bytes, assumed to
+   * contain the FTP command arguments.  If this initial word is thus
+   * unexpectedly "shorter", due to nonconformant FTP text, it can lead
+   * the subsequent buffer scan, looking for CRNUL sequencees, to access
+   * unexpected memory addresses (Issue #1683).
+   *
+   * Thus for this particular situation, we tell the function to ignore/skip
+   * such quote/backslash semantics, and treat them as any other character
+   * using the IGNORE_QUOTES flag.
+   */
+
   ptr = buf;
-  wrd = pr_str_get_word(&ptr, str_flags);
+  wrd = pr_str_get_word(&ptr, str_flags|PR_STR_FL_IGNORE_QUOTES);
   if (wrd == NULL) {
     /* Nothing there...bail out. */
     pr_trace_msg("ctrl", 5, "command '%s' is empty, ignoring", buf);
     errno = ENOENT;
     return NULL;
   }
+
+  /* Note that this first word is the FTP command.  This is why we make
+   * use of the ptr buffer, which advances through the input buffer as
+   * we read words from the buffer.
+   */
 
   subpool = make_sub_pool(p);
   pr_pool_tag(subpool, "make_ftp_cmd pool");
@@ -856,6 +879,7 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags) {
   arg_len = buflen - strlen(wrd);
   arg = pcalloc(cmd->pool, arg_len + 1);
 
+  /* Remember that ptr here is advanced past the first word. */
   for (i = 0, j = 0; i < arg_len; i++) {
     pr_signals_handle();
     if (i > 1 &&
@@ -864,14 +888,13 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags) {
 
       /* Strip out the NUL by simply not copying it into the new buffer. */
       have_crnul = TRUE;
+
     } else {
       arg[j++] = ptr[i];
     }
   }
 
-  cmd->arg = arg;
-
-  if (have_crnul) {
+  if (have_crnul == TRUE) {
     char *dup_arg;
 
     /* Now make a copy of the stripped argument; this is what we need to
@@ -881,6 +904,11 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags) {
     ptr = dup_arg;
   }
 
+  cmd->arg = arg;
+
+  /* Now we can read the remamining words, as command arguments, from the
+   * input buffer.
+   */
   while ((wrd = pr_str_get_word(&ptr, str_flags)) != NULL) {
     pr_signals_handle();
     *((char **) push_array(tarr)) = pstrdup(cmd->pool, wrd);
@@ -902,7 +930,7 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags) {
 static void cmd_loop(server_rec *server, conn_t *c) {
 
   while (TRUE) {
-    int res = 0; 
+    int res = 0;
     cmd_rec *cmd = NULL;
 
     pr_signals_handle();
@@ -940,7 +968,7 @@ static void cmd_loop(server_rec *server, conn_t *c) {
         pr_session_disconnect(NULL, PR_SESS_DISCONNECT_BAD_PROTOCOL,
           cmd->protocol);
       }
- 
+
       pr_cmd_dispatch(cmd);
       destroy_pool(cmd->pool);
       session.curr_cmd = NULL;
@@ -1384,7 +1412,7 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
   pr_netaddr_set_sess_addrs();
 
   /* Check and see if we are shutting down. */
-  if (shutting_down) {
+  if (shutting_down == TRUE) {
     time_t now;
 
     time(&now);
@@ -1555,20 +1583,20 @@ static void disc_children(void) {
 }
 
 static void daemon_loop(void) {
+  static int running = 0;
   fd_set listenfds;
   conn_t *listen_conn;
   int i, err_count = 0, fd, xerrno = 0;
   unsigned long nconnects = 0UL;
   time_t last_error;
   struct timeval tv;
-  static int running = 0;
 
   pr_proctitle_set("(accepting connections)");
 
   time(&last_error);
 
   while (TRUE) {
-    int maxfd;
+    int maxfd, res;
 
     run_schedule();
 
@@ -1579,27 +1607,24 @@ static void daemon_loop(void) {
     maxfd = semaphore_fds(&listenfds, maxfd);
 
     /* Check for ftp shutdown message file */
-    switch (check_shutmsg(permanent_pool, PR_SHUTMSG_PATH, &shut, &deny,
-        &disc, shutmsg, sizeof(shutmsg))) {
-      case 1:
-        if (!shutting_down) {
-          disc_children();
-        }
-        shutting_down = TRUE;
-        break;
+    res = check_shutmsg(permanent_pool, PR_SHUTMSG_PATH, &shut, &deny, &disc,
+      shutmsg, sizeof(shutmsg));
+    if (res == 1) {
+      if (shutting_down == FALSE) {
+        disc_children();
+      }
+      shutting_down = TRUE;
 
-      default:
-        shutting_down = FALSE;
-        deny = disc = (time_t) 0;
-        break;
+    } else {
+      shutting_down = FALSE;
+      deny = disc = (time_t) 0;
     }
 
-    if (shutting_down) {
+    if (shutting_down == TRUE) {
       tv.tv_sec = 5L;
       tv.tv_usec = 0L;
 
     } else {
-
       tv.tv_sec = PR_TUNABLE_SELECT_TIMEOUT;
       tv.tv_usec = 0L;
     }
@@ -1608,7 +1633,8 @@ static void daemon_loop(void) {
      * AND shutting_down (a flag signalling the present of /etc/shutmsg) are
      * true, then log an error stating this -- but don't stop the server.
      */
-    if (shutting_down && !running) {
+    if (shutting_down == TRUE &&
+        !running) {
 
       /* Check the value of the deny time_t struct w/ the current time.
        * If the deny time has passed, log that all incoming connections
@@ -1642,14 +1668,12 @@ static void daemon_loop(void) {
     xerrno = errno = 0;
 
     PR_DEVEL_CLOCK(i = select(maxfd + 1, &listenfds, NULL, NULL, &tv));
-    if (i < 0) {
-      xerrno = errno;
-    }
+    xerrno = errno;
 
-    if (i == -1 &&
+    if (i < 0 &&
         xerrno == EINTR) {
       errno = xerrno;
-      pr_signals_handle();
+      pr_signals_handle_without_delay();
 
       /* We handled our signal; clear errno. */
       xerrno = errno = 0;
@@ -1728,7 +1752,7 @@ static void daemon_loop(void) {
       }
     }
 
-    pr_signals_handle();
+    pr_signals_handle_without_delay();
 
     if (i < 0) {
       continue;
@@ -1748,7 +1772,7 @@ static void daemon_loop(void) {
       if (ServerMaxInstances > 0 &&
           child_count() >= ServerMaxInstances) {
         pr_event_generate("core.max-instances", NULL);
-        
+
         pr_log_pri(PR_LOG_WARNING,
           "MaxInstances (%lu) reached, new connection denied",
           ServerMaxInstances);
@@ -2715,7 +2739,7 @@ int main(int argc, char *argv[], char **envp) {
 
   if (show_version >= 2) {
     printf("ProFTPD Version: %s", PROFTPD_VERSION_TEXT " " PR_STATUS "\n");
-    printf("  Scoreboard Version: %08x\n", PR_SCOREBOARD_VERSION); 
+    printf("  Scoreboard Version: %08x\n", PR_SCOREBOARD_VERSION);
     printf("  Built: %s\n\n", BUILD_STAMP);
 
     modules_list2(NULL, PR_MODULES_LIST_FL_SHOW_VERSION);
@@ -2741,11 +2765,16 @@ int main(int argc, char *argv[], char **envp) {
 
     daemon_uid = (uid != NULL ? *uid : PR_ROOT_UID);
     daemon_gid = (gid != NULL ? *gid : PR_ROOT_GID);
-  }
 
-  if (daemon_uid != PR_ROOT_UID) {
-    pr_log_debug(DEBUG9, "ignoring supplemental groups for non-root UID %lu",
-      (unsigned long) daemon_uid);
+    daemon_gids = make_array(permanent_pool, 2, sizeof(gid_t));
+    *((gid_t *) push_array(daemon_gids)) = daemon_gid;
+
+    if (set_groups(permanent_pool, daemon_gid, daemon_gids) < 0) {
+      if (errno != ENOSYS) {
+        pr_log_pri(PR_LOG_WARNING, "unable to set daemon groups: %s",
+          strerror(errno));
+      }
+    }
   }
 
   /* After configuration is complete, make sure that passwd, group

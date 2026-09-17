@@ -701,6 +701,10 @@ single rewriting rule. The order of definition of these rules is important,
 because this order is used when applying the rules at run-time.
 
 <p>
+<b>Note</b> that each <code>RewriteRule</code> <b>must</b> be preceded by
+one (or more) <code>RewriteCondition</code> directive.
+
+<p>
 <em>Pattern</em> can be POSIX regular expression which gets applied to the
 current FTP command argument(s).
 
@@ -933,7 +937,7 @@ only, and should be removed from any production configuration.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2017 TJ Saunders<br>
+&copy; Copyright 2000-2023 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

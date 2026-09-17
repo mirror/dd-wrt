@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2022 The ProFTPD Project team
+ * Copyright (c) 2001-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,7 +49,9 @@ static unsigned char scoreboard_read_locked = FALSE;
 static unsigned char scoreboard_write_locked = FALSE;
 
 /* Max number of attempts for lock requests */
-#define SCOREBOARD_MAX_LOCK_ATTEMPTS	10
+#if !defined(SCOREBOARD_MAX_LOCK_ATTEMPTS)
+# define SCOREBOARD_MAX_LOCK_ATTEMPTS	10
+#endif
 
 static const char *trace_channel = "scoreboard";
 
@@ -794,8 +796,8 @@ int pr_set_scoreboard(const char *path) {
   /* For best operability, automatically set the ScoreboardMutex file to
    * be the same as the ScoreboardFile with a ".lck" suffix.
    */
-  sstrncpy(scoreboard_mutex, path, sizeof(scoreboard_file));
-  strncat(scoreboard_mutex, ".lck", sizeof(scoreboard_mutex)-strlen(path)-1);
+  sstrncpy(scoreboard_mutex, path, sizeof(scoreboard_mutex));
+  sstrcat(scoreboard_mutex, ".lck", sizeof(scoreboard_mutex));
 
   return 0;
 }
@@ -966,7 +968,7 @@ pr_scoreboard_entry_t *pr_scoreboard_entry_read(void) {
     /* Do not proceed if we cannot lock the scoreboard. */
     res = rlock_scoreboard();
     if (res < 0) {
-      return NULL; 
+      return NULL;
     }
   }
 
@@ -1378,8 +1380,8 @@ static int scoreboard_valid_pid(pid_t pid, pid_t curr_pgrp) {
 
   if (ServerType == SERVER_STANDALONE &&
       curr_pgrp > 0) {
-#ifdef HAVE_GETPGID
-    if (getpgid(pid) != curr_pgrp) { 
+#if defined(HAVE_GETPGID)
+    if (getpgid(pid) != curr_pgrp) {
       pr_trace_msg(trace_channel, 1, "scoreboard entry PID %lu process group "
         "does not match current process group, removing entry",
         (unsigned long) pid);
@@ -1432,12 +1434,12 @@ int pr_scoreboard_scrub(void) {
     return -1;
   }
 
-#ifdef HAVE_GETPGRP
+#if defined(HAVE_GETPGRP)
   curr_pgrp = getpgrp();
 #elif HAVE_GETPGID
   curr_pgrp = getpgid(0);
 #endif /* !HAVE_GETPGRP and !HAVE_GETPGID */
- 
+
   /* Skip past the scoreboard header. */
   curr_offset = lseek(fd, (off_t) sizeof(pr_scoreboard_header_t), SEEK_SET);
   if (curr_offset < 0) {
@@ -1451,7 +1453,7 @@ int pr_scoreboard_scrub(void) {
   }
 
   entry_lock.l_start = curr_offset;
- 
+
   PRIVS_ROOT
 
   while (TRUE) {

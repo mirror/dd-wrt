@@ -66,7 +66,7 @@ static void tear_down(void) {
     destroy_pool(p);
     p = NULL;
     permanent_pool = NULL;
-  } 
+  }
 }
 
 START_TEST (base32_encode_test) {

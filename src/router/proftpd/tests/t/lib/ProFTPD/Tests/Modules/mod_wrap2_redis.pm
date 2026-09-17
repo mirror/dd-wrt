@@ -1578,7 +1578,7 @@ sub wrap2_redis_deny_list_ipv6_netmask_bug3606 {
       );
       unless ($client) {
         die("Can't connect to ::1: $!");
-      } 
+      }
 
       # Read the banner
       my $banner = <$client>;
@@ -1593,7 +1593,7 @@ sub wrap2_redis_deny_list_ipv6_netmask_bug3606 {
 
       my $expected = "331 Password required for $setup->{user}\r\n";
       $self->assert($expected eq $resp, "Expected '$expected', got '$resp'");
- 
+
       # Send the PASS command
       $cmd = "PASS $setup->{passwd}\r\n";
       $client->print($cmd);
@@ -1604,7 +1604,7 @@ sub wrap2_redis_deny_list_ipv6_netmask_bug3606 {
 
       $expected = "530 Access denied\r\n";
       $self->assert($expected eq $resp, "Expected '$expected', got '$resp'");
- 
+
       $client->close();
     };
 
@@ -1647,7 +1647,7 @@ sub wrap2_redis_deny_list_ipv6_netmask_bug3606 {
     );
     unless ($client) {
       die("Can't connect to ::1: $!");
-    } 
+    }
 
     # Read the banner
     my $banner = <$client>;
@@ -1662,7 +1662,7 @@ sub wrap2_redis_deny_list_ipv6_netmask_bug3606 {
 
     my $expected = "331 Password required for $setup->{user}\r\n";
     $self->assert($expected eq $resp, "Expected '$expected', got '$resp'");
- 
+
     # Send the PASS command
     $cmd = "PASS $setup->{passwd}\r\n";
     $client->print($cmd);
@@ -1673,7 +1673,7 @@ sub wrap2_redis_deny_list_ipv6_netmask_bug3606 {
 
     $expected = "530 Access denied\r\n";
     $self->assert($expected eq $resp, "Expected '$expected', got '$resp'");
- 
+
     $client->close();
   };
 
@@ -2357,7 +2357,7 @@ sub wrap2_bug3341 {
       }
 
       my $resp_code = $client->response_code();
-      my $resp_msg = $client->response_msg(); 
+      my $resp_msg = $client->response_msg();
 
       my $expected;
 
@@ -2376,7 +2376,7 @@ sub wrap2_bug3341 {
       }
 
       $resp_code = $client->response_code();
-      $resp_msg = $client->response_msg(); 
+      $resp_msg = $client->response_msg();
 
       $expected = 530;
       $self->assert($expected == $resp_code,
@@ -2686,7 +2686,7 @@ sub wrap2_allow_msg_anon_bug3538 {
       $setup->{home_dir} => {
         User => $test_user,
         Group => $test_group,
-        UserAlias => "anonymous $test_user", 
+        UserAlias => "anonymous $test_user",
         RequireValidShell => 'off',
       },
     },

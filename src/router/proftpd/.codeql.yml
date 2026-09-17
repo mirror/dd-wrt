@@ -1,0 +1,19 @@
+---
+query-filters:
+  - exclude:
+      id: 3rdparty
+  - exclude:
+      # See: https://codeql.github.com/codeql-query-help/cpp/cpp-commented-out-code/
+      id: cpp/commented-out-code
+  - exclude:
+      # See: https://codeql.github.com/codeql-query-help/cpp/cpp-guarded-free/
+      id: cpp/guarded-free
+  - exclude:
+      # See: https://codeql.github.com/codeql-query-help/cpp/cpp-long-switch/
+      id: cpp/long-switch
+  - exclude:
+      # See: https://codeql.github.com/codeql-query-help/cpp/cpp-loop-variable-changed/
+      id: cpp/loop-variable-changed
+  - exclude:
+      # See: https://codeql.github.com/codeql-query-help/cpp/cpp-poorly-documented-function/
+      id: cpp/poorly-documented-function

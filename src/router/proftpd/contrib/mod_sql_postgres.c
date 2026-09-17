@@ -2,7 +2,7 @@
  * ProFTPD: mod_sql_postgres -- Support for connecting to Postgres databases.
  * Copyright (c) 2001 Andrew Houghton
  * Copyright (c) 2004-2022 TJ Saunders
- *  
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -67,16 +67,16 @@ static const char *get_postgres_encoding(const char *encoding);
 
 static const char *trace_channel = "sql.postgres";
 
-/* 
+/*
  * timer-handling code adds the need for a couple of forward declarations
  */
 MODRET cmd_close(cmd_rec *cmd);
 module sql_postgres_module;
 
-/* 
- * db_conn_struct: an internal struct to hold connection information. This 
- *  connection information is backend-specific; the members here reflect 
- *  the information Postgres needs for connections.  
+/*
+ * db_conn_struct: an internal struct to hold connection information. This
+ *  connection information is backend-specific; the members here reflect
+ *  the information Postgres needs for connections.
  */
 struct db_conn_struct {
 
@@ -101,8 +101,8 @@ struct db_conn_struct {
 typedef struct db_conn_struct db_conn_t;
 
 /* This struct is a wrapper for whatever backend data is needed to access
- * the database, and supports named connections, connection counting, and 
- * timer handling.  
+ * the database, and supports named connections, connection counting, and
+ * timer handling.
  */
 struct conn_entry_struct {
   const char *name;
@@ -153,7 +153,7 @@ static conn_entry_t *sql_get_connection(const char *conn_name) {
  *  simply use an array header to hold them.  We don't allow duplicate
  *  connection names.
  *
- * Returns: NULL if the insertion was unsuccessful, a pointer to the 
+ * Returns: NULL if the insertion was unsuccessful, a pointer to the
  *  conn_entry_t that was created if successful.
  */
 static void *sql_add_connection(pool *p, const char *name, db_conn_t *conn) {
@@ -165,7 +165,7 @@ static void *sql_add_connection(pool *p, const char *name, db_conn_t *conn) {
     errno = EINVAL;
     return NULL;
   }
-  
+
   if (sql_get_connection(name) != NULL) {
     errno = EEXIST;
     return NULL;
@@ -191,7 +191,7 @@ static void sql_check_cmd(cmd_rec *cmd, char *msg) {
     sql_log(DEBUG_WARN, "'%s' was passed an invalid cmd_rec (internal bug); "
       "shutting down", msg);
     pr_session_end(0);
-  }    
+  }
 
   return;
 }
@@ -236,7 +236,7 @@ static modret_t *build_error(cmd_rec *cmd, db_conn_t *conn) {
 
 /* build_data: both cmd_select and cmd_procedure potentially
  *  return data to mod_sql; this function builds a modret to return
- *  that data.  This is Postgres specific; other backends may choose 
+ *  that data.  This is Postgres specific; other backends may choose
  *  to do things differently.
  */
 static modret_t *build_data(cmd_rec *cmd, db_conn_t *conn) {
@@ -365,7 +365,7 @@ static const char *get_postgres_encoding(const char *encoding) {
  *
  * Notes:
  *  mod_sql depends on these semantics -- a backend should not open
- *  a connection unless mod_sql requests it, nor close one unless 
+ *  a connection unless mod_sql requests it, nor close one unless
  *  mod_sql requests it.  Connection counting is *REQUIRED* for complete
  *  compatibility; a connection should not be closed unless the count
  *  reaches 0, and ideally will not need to be re-opened for counts > 1.
@@ -385,21 +385,21 @@ MODRET cmd_open(cmd_rec *cmd) {
   if (cmd->argc < 1) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_open");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION, "badly formed request");
-  }    
+  }
 
   entry = sql_get_connection(cmd->argv[0]);
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_open");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION,
       pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
-  } 
+  }
 
   conn = (db_conn_t *) entry->data;
 
-  /* if we're already open (connections > 0) increment connections 
-   * reset our timer if we have one, and return HANDLED 
+  /* if we're already open (connections > 0) increment connections
+   * reset our timer if we have one, and return HANDLED
    */
-  if (entry->connections > 0) { 
+  if (entry->connections > 0) {
     if (PQstatus(conn->postgres) == CONNECTION_OK) {
       entry->connections++;
 
@@ -548,9 +548,9 @@ MODRET cmd_open(cmd_rec *cmd) {
        * (as per Bug#3290).  To do this, we re-bump the connection count.
        */
       entry->connections++;
-    } 
- 
-  } else if (entry->ttl > 0) { 
+    }
+
+  } else if (entry->ttl > 0) {
     /* Set up our timer if necessary */
 
     entry->timer = pr_timer_add(entry->ttl, -1, &sql_postgres_module,
@@ -590,11 +590,11 @@ MODRET cmd_open(cmd_rec *cmd) {
  *
  * Notes:
  *  mod_sql depends on these semantics -- a backend should not open
- *  a connection unless mod_sql requests it, nor close one unless 
+ *  a connection unless mod_sql requests it, nor close one unless
  *  mod_sql requests it.  Connection counting is *REQUIRED* for complete
  *  compatibility; a connection should not be closed unless the count
  *  reaches 0, and should not need to be re-opened for counts > 1.
- * 
+ *
  *  If argv[1] exists and is not NULL, the connection should be immediately
  *  closed and the connection count should be reset to 0.
  */
@@ -654,7 +654,7 @@ MODRET cmd_close(cmd_rec *cmd) {
   sql_log(DEBUG_INFO, "connection '%s' count is now %d", entry->name,
     entry->connections);
   sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_close");
-  
+
   return PR_HANDLED(cmd);
 }
 
@@ -681,8 +681,8 @@ MODRET cmd_close(cmd_rec *cmd) {
  *
  * Notes:
  *  time-to-live is the length of time to allow a connection to remain unused;
- *  once that amount of time has passed, a connection should be closed and 
- *  it's connection count should be reduced to 0.  If ttl is 0, or ttl is not 
+ *  once that amount of time has passed, a connection should be closed and
+ *  it's connection count should be reduced to 0.  If ttl is 0, or ttl is not
  *  a number or ttl is negative, the connection will be assumed to have no
  *  associated timer.
  */
@@ -692,7 +692,7 @@ MODRET cmd_defineconnection(cmd_rec *cmd) {
   const char *ssl_cert_file = NULL, *ssl_key_file = NULL, *ssl_ca_file = NULL;
   const char *ssl_ciphers = NULL;
   conn_entry_t *entry = NULL;
-  db_conn_t *conn = NULL; 
+  db_conn_t *conn = NULL;
 
   sql_log(DEBUG_FUNC, "%s", "entering \tpostgres cmd_defineconnection");
 
@@ -710,7 +710,7 @@ MODRET cmd_defineconnection(cmd_rec *cmd) {
       "been properly initialized.  Please make sure your --with-modules "
       "configure option lists mod_sql *before* mod_sql_postgres, and "
       "recompile.");
-      
+
     sql_log(DEBUG_FUNC, "%s", "The mod_sql_postgres module has not been "
       "properly initialized.  Please make sure your --with-modules configure "
       "option lists mod_sql *before* mod_sql_postgres, and recompile.");
@@ -839,7 +839,7 @@ MODRET cmd_defineconnection(cmd_rec *cmd) {
     entry->ttl = (int) strtol(cmd->argv[4], (char **) NULL, 10);
     if (entry->ttl >= 1) {
       pr_sql_conn_policy = SQL_CONN_POLICY_TIMER;
- 
+
     } else {
       entry->ttl = 0;
     }
@@ -909,30 +909,30 @@ static modret_t *cmd_exit(cmd_rec *cmd) {
  *  structure which is used to return the result data.
  *
  * cmd_select takes either exactly two inputs, or more than two.  If only
- *  two inputs are given, the second is a monolithic query string.  See 
+ *  two inputs are given, the second is a monolithic query string.  See
  *  the examples below.
  *
  * Inputs:
  *  cmd->argv[0]: connection name
- *  cmd->argv[1]: table 
+ *  cmd->argv[1]: table
  *  cmd->argv[2]: select string
  * Optional:
- *  cmd->argv[3]: where clause 
+ *  cmd->argv[3]: where clause
  *  cmd->argv[4]: requested number of return rows (LIMIT)
- *  
+ *
  *  etc.        : other options, such as "GROUP BY", "ORDER BY",
- *                and "DISTINCT" will start at cmd->arg[5].  All 
+ *                and "DISTINCT" will start at cmd->arg[5].  All
  *                backends MUST support 'DISTINCT', the other
- *                arguments are optional (but encouraged).         
+ *                arguments are optional (but encouraged).
  *
  * Returns:
- *  either a properly filled error modret_t if the select failed, or a 
+ *  either a properly filled error modret_t if the select failed, or a
  *  modret_t with the result data filled in.
  *
  * Example:
  *  These are example queries that would be executed for Postgres; other
  *  backends will have different SQL syntax.
- *  
+ *
  *  argv[] = "default","user","userid, count", "userid='aah'","2"
  *  query  = "SELECT userid, count FROM user WHERE userid='aah' LIMIT 2"
  *
@@ -972,7 +972,7 @@ MODRET cmd_select(cmd_rec *cmd) {
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION,
       pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   }
-  
+
   conn = (db_conn_t *) entry->data;
 
   cmr = cmd_open(cmd);
@@ -1001,13 +1001,13 @@ MODRET cmd_select(cmd_rec *cmd) {
       register unsigned int i;
 
       /* Handle the optional arguments -- they're rare, so in this case
-       * we'll play with the already constructed query string, but in 
-       * general we should probably take optional arguments into account 
+       * we'll play with the already constructed query string, but in
+       * general we should probably take optional arguments into account
        * and put the query string together later once we know what they are.
        */
-    
+
       for (i = 5; i < cmd->argc; i++) {
-	if (cmd->argv[i] != NULL &&
+        if (cmd->argv[i] != NULL &&
             strcasecmp("DISTINCT", cmd->argv[i]) == 0) {
 	  query = pstrcat(cmd->tmp_pool, "DISTINCT ", query, NULL);
 	}
@@ -1054,7 +1054,7 @@ MODRET cmd_select(cmd_rec *cmd) {
     SQL_FREE_CMD(close_cmd);
 
     return dmr;
-  }    
+  }
 
   /* close the connection, return the data. */
   close_cmd = sql_make_cmd(cmd->tmp_pool, 1, entry->name);
@@ -1070,7 +1070,7 @@ MODRET cmd_select(cmd_rec *cmd) {
  *  based on the inputs.
  *
  * cmd_insert takes either exactly two inputs, or exactly four.  If only
- *  two inputs are given, the second is a monolithic query string.  See 
+ *  two inputs are given, the second is a monolithic query string.  See
  *  the examples below.
  *
  * Inputs:
@@ -1080,13 +1080,13 @@ MODRET cmd_select(cmd_rec *cmd) {
  *  cmd->argv[3]: value string
  *
  * Returns:
- *  either a properly filled error modret_t if the insert failed, or a 
+ *  either a properly filled error modret_t if the insert failed, or a
  *  simple non-error modret_t.
  *
  * Example:
  *  These are example queries that would be executed for Postgres; other
  *  backends will have different SQL syntax.
- *  
+ *
  *  argv[] = "default","log","userid, date, count", "'aah', now(), 2"
  *  query  = "INSERT INTO log (userid, date, count) VALUES ('aah', now(), 2)"
  *
@@ -1175,7 +1175,7 @@ MODRET cmd_insert(cmd_rec *cmd) {
  *  based on the inputs.
  *
  * cmd_update takes either exactly two, three, or four inputs.  If only
- *  two inputs are given, the second is a monolithic query string.  See 
+ *  two inputs are given, the second is a monolithic query string.  See
  *  the examples below.
  *
  * Inputs:
@@ -1186,19 +1186,19 @@ MODRET cmd_insert(cmd_rec *cmd) {
  *  cmd->argv[3]: where string
  *
  * Returns:
- *  either a properly filled error modret_t if the update failed, or a 
- *  simple non-error modret_t. *  
+ *  either a properly filled error modret_t if the update failed, or a
+ *  simple non-error modret_t.
  *
  * Example:
  *  These are example queries that would be executed for Postgres; other
  *  backends will have different SQL syntax.
- *  
+ *
  *  argv[] = "default","user","count=count+1", "userid='joesmith'"
  *  query  = "UPDATE user SET count=count+1 WHERE userid='joesmith'"
  *
  * Notes:
- *  argv[3] is optional -- it may be NULL, or it may not exist at all.  
- *  make sure this is handled correctly. 
+ *  argv[3] is optional -- it may be NULL, or it may not exist at all.
+ *  make sure this is handled correctly.
  */
 MODRET cmd_update(cmd_rec *cmd) {
   conn_entry_t *entry = NULL;
@@ -1328,7 +1328,7 @@ MODRET cmd_procedure(cmd_rec *cmd) {
  *
  * Example:
  *  None.  The query should be passed directly to the backend database.
- *  
+ *
  * Notes:
  *  None.
  */
@@ -1415,16 +1415,16 @@ MODRET cmd_query(cmd_rec *cmd) {
 
 /*
  * cmd_escapestring: certain strings sent to a database should be properly
- *  escaped -- for instance, quotes need to be escaped to insure that 
+ *  escaped -- for instance, quotes need to be escaped to insure that
  *  a query string is properly formatted.  cmd_escapestring does whatever
- *  is necessary to escape the special characters in a string. 
+ *  is necessary to escape the special characters in a string.
  *
  * Inputs:
  *  cmd->argv[0]: connection name
  *  cmd->argv[1]: string to escape
  *
  * Returns:
- *  this command CANNOT fail.  The return string is null-terminated and 
+ *  this command CANNOT fail.  The return string is null-terminated and
  *  stored in the data field of the modret_t structure.
  *
  * Notes:
@@ -1500,9 +1500,9 @@ MODRET cmd_escapestring(cmd_rec *cmd) {
 }
 
 /*
- * cmd_identify: returns API information and an identification string for 
- *  the backend handler.  mod_sql will call this at initialization and 
- *  display the identification string.  The API version information is 
+ * cmd_identify: returns API information and an identification string for
+ *  the backend handler.  mod_sql will call this at initialization and
+ *  display the identification string.  The API version information is
  *  used by mod_sql to identify available command handlers.
  *
  * Inputs:
@@ -1534,7 +1534,7 @@ MODRET cmd_identify(cmd_rec *cmd) {
   sd->data[1] = MOD_SQL_API_V1;
 
   return mod_create_data(cmd, (void *) sd);
-}  
+}
 
 MODRET cmd_prepare(cmd_rec *cmd) {
   if (cmd->argc != 1) {

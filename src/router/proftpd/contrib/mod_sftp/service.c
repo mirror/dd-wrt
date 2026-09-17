@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp services
- * Copyright (c) 2008-2021 TJ Saunders
+ * Copyright (c) 2008-2023 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@ static int read_service_req(struct ssh2_packet *pkt, char **service) {
     pstrdup(pkt->pool, service_name));
   cmd->arg = service_name;
   cmd->cmd_class = CL_MISC|CL_SSH;
+  cmd->cmd_id = SFTP_CMD_ID;
 
   if (strcmp(service_name, "ssh-userauth") == 0 ||
       strcmp(service_name, "ssh-connection") == 0) {

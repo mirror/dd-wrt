@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp traffic analysis protection
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2023 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -149,7 +149,6 @@ static void set_policy_chance(struct sftp_tap_policy *policy) {
 }
 
 static void set_policy_timer(struct sftp_tap_policy *policy) {
-
   /* Start a timer which checks the last times we received and sent packets.
    * From there, we may want to inject a TAP message, depending on the
    * policy.
@@ -176,6 +175,16 @@ int sftp_tap_have_policy(const char *policy) {
 int sftp_tap_send_packet(void) {
   int rnd;
   unsigned int chance;
+
+  /* Due to chances of violating client-side "strict KEX" Terrapin
+   * mitigations, we will not send packets if we are in the middle of a KEX.
+   */
+  if (!(sftp_sess_state & SFTP_SESS_STATE_HAVE_KEX) ||
+      (sftp_sess_state & SFTP_SESS_STATE_REKEYING)) {
+    pr_trace_msg(trace_channel, 11,
+      "unwilling to send TAP packet during KEX");
+    return 0;
+  }
 
   if (!sftp_interop_supports_feature(SFTP_SSH2_FEAT_IGNORE_MSG)) {
     pr_trace_msg(trace_channel, 3,
@@ -205,7 +214,7 @@ int sftp_tap_send_packet(void) {
     struct ssh2_packet *pkt;
     unsigned int max_datalen = 8192;
 
-    if (curr_policy.max_datalen) {
+    if (curr_policy.max_datalen > 0) {
       max_datalen = curr_policy.max_datalen;
     }
 
@@ -239,22 +248,22 @@ int sftp_tap_send_packet(void) {
 
     destroy_pool(pkt->pool);
   }
- 
+
   return 0;
 }
 
 int sftp_tap_set_policy(const char *policy) {
   register unsigned int i;
 
-  if (tap_pool) {
+  if (tap_pool != NULL) {
 
     /* Special case: IFF the existing policy is 'none' AND the given
      * policy is 'rogaway', just return.  The 'none' policy must have been
      * explicitly configured, and it should override the automatic use of
      * the 'rogaway' policy.
      */
-    if (strncmp(curr_policy.policy, "none", 5) == 0 &&
-        strncasecmp(policy, "rogaway", 8) == 0) {
+    if (strcasecmp(curr_policy.policy, "none") == 0 &&
+        strcasecmp(policy, "rogaway") == 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "'none' traffic policy explicitly configured, ignoring '%s' policy",
         policy);
@@ -278,11 +287,14 @@ int sftp_tap_set_policy(const char *policy) {
     if (strcasecmp(tap_policies[i].policy, policy) == 0) {
       copy_policy(&curr_policy, &(tap_policies[i]));
       set_policy_chance(&curr_policy);
-      set_policy_timer(&curr_policy);
       return 0;
     }
   }
 
   errno = ENOENT;
   return -1;
+}
+
+void sftp_tap_start_policy(void) {
+  set_policy_timer(&curr_policy);
 }

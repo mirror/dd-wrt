@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp message format
- * Copyright (c) 2008-2022 TJ Saunders
+ * Copyright (c) 2008-2024 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,7 +84,7 @@ unsigned char sftp_msg_read_byte(pool *p, unsigned char **buf,
 }
 
 uint32_t sftp_msg_read_bool2(pool *p, unsigned char **buf, uint32_t *buflen,
-    int *bool) {
+    int *b) {
   unsigned char byte = 0;
   uint32_t len;
 
@@ -95,21 +95,21 @@ uint32_t sftp_msg_read_bool2(pool *p, unsigned char **buf, uint32_t *buflen,
     return 0;
   }
 
-  *bool = byte;
+  *b = byte;
   return len;
 }
 
 int sftp_msg_read_bool(pool *p, unsigned char **buf, uint32_t *buflen) {
-  int bool = 0;
+  int b = 0;
   uint32_t len;
 
-  len = sftp_msg_read_bool2(p, buf, buflen, &bool);
+  len = sftp_msg_read_bool2(p, buf, buflen, &b);
   if (len == 0) {
     pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
-  if (bool == 0) {
+  if (b == FALSE) {
     return FALSE;
   }
 
@@ -117,6 +117,22 @@ int sftp_msg_read_bool(pool *p, unsigned char **buf, uint32_t *buflen) {
 }
 
 uint32_t sftp_msg_read_data2(pool *p, unsigned char **buf,
+    uint32_t *buflen, size_t datalen, unsigned char **data) {
+  uint32_t len;
+  unsigned char *ptr = NULL;
+
+  len = sftp_msg_read_data2_direct(p, buf, buflen, datalen, &ptr);
+  if (len == 0) {
+    return 0;
+  }
+
+  *data = palloc(p, datalen);
+  memcpy(*data, ptr, datalen);
+
+  return datalen;
+}
+
+uint32_t sftp_msg_read_data2_direct(pool *p, unsigned char **buf,
     uint32_t *buflen, size_t datalen, unsigned char **data) {
   if (datalen == 0) {
     return 0;
@@ -129,9 +145,7 @@ uint32_t sftp_msg_read_data2(pool *p, unsigned char **buf,
     return 0;
   }
 
-  *data = palloc(p, datalen);
-
-  memcpy(*data, *buf, datalen);
+  *data = *buf;
   (*buf) += datalen;
   (*buflen) -= datalen;
 
@@ -149,6 +163,28 @@ unsigned char *sftp_msg_read_data(pool *p, unsigned char **buf,
   }
 
   len = sftp_msg_read_data2(p, buf, buflen, datalen, &data);
+  if (len == 0) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "message format error: unable to read %lu bytes of raw data "
+      "(buflen = %lu)", (unsigned long) datalen, (unsigned long) *buflen);
+    pr_log_stacktrace(sftp_logfd, MOD_SFTP_VERSION);
+    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
+  }
+
+  return data;
+}
+
+unsigned char *sftp_msg_read_data_direct(pool *p, unsigned char **buf,
+    uint32_t *buflen, size_t datalen) {
+  unsigned char *data = NULL;
+  uint32_t len;
+
+  if (datalen == 0) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  len = sftp_msg_read_data2_direct(p, buf, buflen, datalen, &data);
   if (len == 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to read %lu bytes of raw data "
@@ -251,10 +287,10 @@ uint32_t sftp_msg_read_mpint2(pool *p, unsigned char **buf, uint32_t *buflen,
     return 0;
   }
 
-  if (len > (1024 * 16)) {
+  if (mpint_len > (1024 * 16)) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "message format error: unable to handle mpint of %lu bytes",
-      (unsigned long) len);
+      (unsigned long) mpint_len);
     return 0;
   }
 
@@ -473,8 +509,8 @@ uint32_t sftp_msg_write_byte(unsigned char **buf, uint32_t *buflen,
 }
 
 uint32_t sftp_msg_write_bool(unsigned char **buf, uint32_t *buflen,
-    unsigned char bool) {
-  return sftp_msg_write_byte(buf, buflen, bool == 0 ? 0 : 1);
+    unsigned char b) {
+  return sftp_msg_write_byte(buf, buflen, b == 0 ? 0 : 1);
 }
 
 uint32_t sftp_msg_write_data(unsigned char **buf, uint32_t *buflen,

@@ -171,6 +171,12 @@ conn_t *pr_inet_openrw(pool *, conn_t *, const pr_netaddr_t *, int, int, int,
 int pr_inet_generate_socket_event(const char *, server_rec *,
   const pr_netaddr_t *, int);
 
+/* Returns 1 if the remote address is explicitly allowed, 0 if the remote
+ * address is explicitly denied, and -1 on error.
+ */
+int pr_inet_allowforeignaddress(pool *p, const pr_netaddr_t *proposed_addr,
+  const pr_netaddr_t *actual_addr, config_rec *c);
+
 void init_inet(void);
 
 #endif /* PR_INET_H */

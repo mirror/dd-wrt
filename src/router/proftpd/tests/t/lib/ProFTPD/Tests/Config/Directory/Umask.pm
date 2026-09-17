@@ -76,7 +76,7 @@ sub umask_root_dir_bug2677 {
 
   my $test_dir = File::Spec->rel2abs("$tmpdir/foo/testdir");
   my $test_file = File::Spec->rel2abs("$tmpdir/foo/test.txt");
- 
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -88,7 +88,7 @@ sub umask_root_dir_bug2677 {
       die("Can't set owner of $home_dir, $sub_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -255,7 +255,7 @@ sub umask_server_config_bug2677 {
 
   my $test_dir = File::Spec->rel2abs("$tmpdir/foo/testdir");
   my $test_file = File::Spec->rel2abs("$tmpdir/foo/test.txt");
- 
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -267,7 +267,7 @@ sub umask_server_config_bug2677 {
       die("Can't set owner of $home_dir, $sub_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -433,7 +433,7 @@ sub umask_glob_subdirs {
   mkpath($sub_dir1);
   my $test_dir1 = File::Spec->rel2abs("$tmpdir/subdir/foo/testdir");
   my $test_file1 = File::Spec->rel2abs("$tmpdir/subdir/foo/test.txt");
- 
+
   my $sub_dir2 = File::Spec->rel2abs("$tmpdir/otherdir/foo");
   mkpath($sub_dir2);
   my $test_dir2 = File::Spec->rel2abs("$tmpdir/otherdir/foo/testdir");
@@ -450,7 +450,7 @@ sub umask_glob_subdirs {
       die("Can't set owner of $home_dir, $sub_dir1, $sub_dir2 to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -641,7 +641,7 @@ sub umask_glob_dir_bug3491 {
   my $sub_dir1 = File::Spec->rel2abs("$tmpdir/subdir");
   mkpath($sub_dir1);
   my $test_dir1 = File::Spec->rel2abs("$tmpdir/subdir/foo");
- 
+
   my $sub_dir2 = File::Spec->rel2abs("$tmpdir/otherdir/deeperdir");
   mkpath($sub_dir2);
   my $test_dir2 = File::Spec->rel2abs("$tmpdir/otherdir/deeperdir/foo");
@@ -659,7 +659,7 @@ sub umask_glob_dir_bug3491 {
       die("Can't set owner of $home_dir, $sub_dir1, $sub_dir2 to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -821,7 +821,7 @@ sub umask_no_glob_dir_bug3491 {
   my $sub_dir1 = File::Spec->rel2abs("$tmpdir/subdir");
   mkpath($sub_dir1);
   my $test_dir1 = File::Spec->rel2abs("$tmpdir/subdir/foo");
- 
+
   my $sub_dir2 = File::Spec->rel2abs("$tmpdir/otherdir/deeperdir");
   mkpath($sub_dir2);
   my $test_dir2 = File::Spec->rel2abs("$tmpdir/otherdir/deeperdir/foo");
@@ -839,7 +839,7 @@ sub umask_no_glob_dir_bug3491 {
       die("Can't set owner of $home_dir, $sub_dir1, $sub_dir2 to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);

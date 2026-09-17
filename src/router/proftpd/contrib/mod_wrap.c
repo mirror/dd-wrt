@@ -227,7 +227,7 @@ static config_rec *wrap_resolve_user(pool *p, const char **user) {
         strcmp(conf->argv[0], *user) == 0) {
       is_alias = TRUE;
       break;
-    } 
+    }
 
   } while ((conf = find_config_next(conf, conf->next, CONF_PARAM,
     "UserAlias", TRUE)) != NULL);
@@ -798,7 +798,7 @@ MODRET wrap_handle_request(cmd_rec *cmd) {
 
   /* Next, search for group-specific access files.  Multiple
    * TCPGroupAccessFiles directives are allowed.
-   */ 
+   */
   if (!access_conf && (access_conf = find_config(conf ? conf->subset :
         CURRENT_CONF, CONF_PARAM, "TCPGroupAccessFiles", FALSE)) != NULL) {
     unsigned char matched = FALSE;
@@ -877,8 +877,9 @@ MODRET wrap_handle_request(cmd_rec *cmd) {
         ": configured TCPDenyFile %s is unusable", hosts_deny_table);
       hosts_deny_table = NULL;
 
-    } else 
+    } else {
       hosts_deny_table = deny_real_table;
+    }
   }
 
   /* Make sure that _both_ allow and deny TCPAccessFiles are present.

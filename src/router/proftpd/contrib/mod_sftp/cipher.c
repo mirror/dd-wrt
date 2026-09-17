@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp ciphers
- * Copyright (c) 2008-2022 TJ Saunders
+ * Copyright (c) 2008-2024 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,10 +30,12 @@
 #include "cipher.h"
 #include "session.h"
 #include "interop.h"
+#include "poly1305.h"
 
 struct sftp_cipher {
   pool *pool;
   const char *algo;
+  unsigned int algo_type;
   const EVP_CIPHER *cipher;
 
   unsigned char *iv;
@@ -46,6 +48,10 @@ struct sftp_cipher {
   size_t discard_len;
 };
 
+#define SFTP_CIPHER_ALGO_NONE	1
+#define SFTP_CIPHER_ALGO_GCM	2
+#define SFTP_CIPHER_ALGO_CHACHA	3
+
 /* We need to keep the old ciphers around, so that we can handle N
  * arbitrary packets to/from the client using the old keys, as during rekeying.
  * Thus we have two read cipher contexts, two write cipher contexts.
@@ -53,16 +59,24 @@ struct sftp_cipher {
  */
 
 static struct sftp_cipher read_ciphers[2] = {
-  { NULL, NULL, NULL, NULL, 0, NULL, 0, 0, 0 },
-  { NULL, NULL, NULL, NULL, 0, NULL, 0, 0, 0 }
+  { NULL, NULL, 0, NULL, NULL, 0, NULL, 0, 0, 0 },
+  { NULL, NULL, 0, NULL, NULL, 0, NULL, 0, 0, 0 }
 };
 static EVP_CIPHER_CTX *read_ctxs[2];
+#if defined(HAVE_EVP_CHACHA20_OPENSSL) && \
+   !defined(HAVE_BROKEN_CHACHA20)
+static EVP_CIPHER_CTX *read_header_ctxs[2] = { NULL, NULL };
+#endif /* HAVE_EVP_CHACHA20_OPENSSL and !HAVE_BROKEN_CHACHA20 */
 
 static struct sftp_cipher write_ciphers[2] = {
-  { NULL, NULL, NULL, NULL, 0, NULL, 0, 0, 0 },
-  { NULL, NULL, NULL, NULL, 0, NULL, 0, 0, 0 }
+  { NULL, NULL, 0, NULL, NULL, 0, NULL, 0, 0, 0 },
+  { NULL, NULL, 0, NULL, NULL, 0, NULL, 0, 0, 0 }
 };
 static EVP_CIPHER_CTX *write_ctxs[2];
+#if defined(HAVE_EVP_CHACHA20_OPENSSL) && \
+   !defined(HAVE_BROKEN_CHACHA20)
+static EVP_CIPHER_CTX *write_header_ctxs[2] = { NULL, NULL };
+#endif /* HAVE_EVP_CHACHA20_OPENSSL and !HAVE_BROKEN_CHACHA20 */
 
 #define SFTP_CIPHER_DEFAULT_BLOCK_SZ		8
 
@@ -113,7 +127,7 @@ static void switch_read_cipher(void) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error clearing cipher context: %s", sftp_crypto_get_errors());
     }
- 
+
     read_blockszs[read_cipher_idx] = SFTP_CIPHER_DEFAULT_BLOCK_SZ;
 
     /* Now we can switch the index. */
@@ -172,6 +186,27 @@ static void clear_cipher(struct sftp_cipher *cipher) {
   cipher->algo = NULL;
 }
 
+static unsigned int get_algo_type(const char *algo) {
+  unsigned int algo_type = 0;
+  const char *gcm_suffix = "-gcm@openssh.com";
+
+  if (strcmp(algo, "none") == 0) {
+    algo_type = SFTP_CIPHER_ALGO_NONE;
+
+  } else if (pr_strnrstr(algo, strlen(algo), gcm_suffix,
+      strlen(gcm_suffix), 0) == TRUE) {
+    algo_type = SFTP_CIPHER_ALGO_GCM;
+
+#if defined(HAVE_EVP_CHACHA20_OPENSSL) && \
+   !defined(HAVE_BROKEN_CHACHA20)
+  } else if (strcmp(algo, "chacha20-poly1305@openssh.com") == 0) {
+    algo_type = SFTP_CIPHER_ALGO_CHACHA;
+#endif /* HAVE_EVP_CHACHA20_OPENSSL and !HAVE_BROKEN_CHACHA20 */
+  }
+
+  return algo_type;
+}
+
 static int set_cipher_iv(struct sftp_cipher *cipher, const EVP_MD *hash,
     const unsigned char *k, uint32_t klen, const char *h, uint32_t hlen,
     char *letter, const unsigned char *id, uint32_t id_len) {
@@ -180,7 +215,7 @@ static int set_cipher_iv(struct sftp_cipher *cipher, const EVP_MD *hash,
   size_t cipher_iv_len = 0, iv_sz = 0;
   uint32_t iv_len = 0;
 
-  if (strcmp(cipher->algo, "none") == 0) {
+  if (cipher->algo_type == SFTP_CIPHER_ALGO_NONE) {
     cipher->iv = iv;
     cipher->iv_len = iv_len;
 
@@ -281,7 +316,7 @@ static int set_cipher_key(struct sftp_cipher *cipher, const EVP_MD *hash,
   size_t key_sz = 0;
   uint32_t key_len = 0;
 
-  if (strcmp(cipher->algo, "none") == 0) {
+  if (cipher->algo_type == SFTP_CIPHER_ALGO_NONE) {
     cipher->key = key;
     cipher->key_len = key_len;
 
@@ -341,8 +376,9 @@ static int set_cipher_key(struct sftp_cipher *cipher, const EVP_MD *hash,
 
   EVP_MD_CTX_destroy(ctx);
 
-  pr_trace_msg(trace_channel, 19, "hashed data to produce key (%lu bytes)",
-    (unsigned long) key_len);
+  pr_trace_msg(trace_channel, 19,
+    "hashed data to produce key (%lu of %lu bytes)", (unsigned long) key_len,
+    (unsigned long) key_sz);
 
   /* If we need more, keep hashing, as per RFC, until we have enough
    * material.
@@ -364,6 +400,7 @@ static int set_cipher_key(struct sftp_cipher *cipher, const EVP_MD *hash,
   }
 
   cipher->key = key;
+
   return 0;
 }
 
@@ -410,6 +447,53 @@ static int set_cipher_discarded(struct sftp_cipher *cipher,
 
   return 0;
 }
+
+#if defined(HAVE_EVP_CHACHA20_OPENSSL) && \
+   !defined(HAVE_BROKEN_CHACHA20)
+/* Note that the given poly_key buffer MUST be POLY1305_KEYLEN in size. */
+static int compute_chachapoly_key(struct ssh2_packet *pkt,
+    EVP_CIPHER_CTX *pctx, unsigned char *poly_key) {
+  unsigned char seqnobuf[16], *ptr;
+  uint32_t len;
+
+  /* Initialize our IV for the ChaCha cipher. */
+  memset(seqnobuf, 0, sizeof(seqnobuf));
+  ptr = seqnobuf + 8;
+  len = 8;
+  sftp_msg_write_long(&ptr, &len, pkt->seqno);
+
+  if (EVP_CipherInit(pctx, NULL, NULL, seqnobuf, 1) != 1) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error initializing ChaChaPoly cipher for encryption: %s",
+      sftp_crypto_get_errors());
+    return -1;
+  }
+
+  memset(poly_key, 0, POLY1305_KEYLEN);
+  if (EVP_Cipher(pctx, poly_key, poly_key, POLY1305_KEYLEN) < 0) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error computing ChaChaPoly packet key: %s", sftp_crypto_get_errors());
+    return -1;
+  }
+
+  return 0;
+}
+#endif /* HAVE_EVP_CHACHA20_OPENSSL and !HAVE_BROKEN_CHACHA20 */
+
+#if !defined(HAVE_TIMINGSAFE_BCMP) && \
+    defined(HAVE_EVP_CHACHA20_OPENSSL) && \
+    !defined(HAVE_BROKEN_CHACHA20)
+static int timingsafe_bcmp(const void *b1, const void *b2, size_t n) {
+  const unsigned char *p1 = b1, *p2 = b2;
+  int ret = 0;
+
+  for (; n > 0; n--) {
+    ret |= *p1++ ^ *p2++;
+  }
+
+  return (ret != 0);
+}
+#endif /* HAVE_TIMINGSAFE_BCMP and HAVE_EVP_CHACHA20_OPENSSL and !HAVE_BROKEN_CHACHA20 */
 
 /* These accessors to get the authenticated data length for the read, write
  * ciphers are used during packet IO, and thus do not return the AAD lengths
@@ -470,9 +554,18 @@ void sftp_cipher_set_write_block_size(size_t blocksz) {
   }
 }
 
+int sftp_cipher_is_read_chachapoly(void) {
+  if (read_ciphers[read_cipher_idx].key != NULL &&
+      read_ciphers[read_cipher_idx].algo_type == SFTP_CIPHER_ALGO_CHACHA) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
 const char *sftp_cipher_get_read_algo(void) {
   if (read_ciphers[read_cipher_idx].key != NULL ||
-      strcmp(read_ciphers[read_cipher_idx].algo, "none") == 0) {
+      read_ciphers[read_cipher_idx].algo_type == SFTP_CIPHER_ALGO_NONE) {
     return read_ciphers[read_cipher_idx].algo;
   }
 
@@ -483,7 +576,7 @@ int sftp_cipher_set_read_algo(const char *algo) {
   unsigned int idx = read_cipher_idx;
   size_t key_len = 0, auth_len = 0, discard_len = 0;
 
-  if (read_ciphers[idx].key) {
+  if (read_ciphers[idx].key != NULL) {
     /* If we have an existing key, it means that we are currently rekeying. */
     idx = get_next_read_index();
   }
@@ -523,10 +616,12 @@ int sftp_cipher_set_read_algo(const char *algo) {
   read_ciphers[idx].pool = make_sub_pool(sftp_pool);
   pr_pool_tag(read_ciphers[idx].pool, "SFTP cipher read pool");
   read_ciphers[idx].algo = pstrdup(read_ciphers[idx].pool, algo);
+  read_ciphers[idx].algo_type = get_algo_type(algo);
 
   read_ciphers[idx].key_len = (uint32_t) key_len;
   read_ciphers[idx].auth_len = (uint32_t) auth_len;
   read_ciphers[idx].discard_len = discard_len;
+
   return 0;
 }
 
@@ -538,12 +633,18 @@ int sftp_cipher_set_read_key(pool *p, const EVP_MD *hash,
   uint32_t id_len;
   int key_len, auth_len;
   struct sftp_cipher *cipher;
-  EVP_CIPHER_CTX *pctx;
+  EVP_CIPHER_CTX *pctx, *hpctx = NULL;
 
   switch_read_cipher();
 
   cipher = &(read_ciphers[read_cipher_idx]);
   pctx = read_ctxs[read_cipher_idx];
+  if (cipher->algo_type == SFTP_CIPHER_ALGO_CHACHA) {
+#if defined(HAVE_EVP_CHACHA20_OPENSSL) && \
+   !defined(HAVE_BROKEN_CHACHA20)
+    hpctx = read_header_ctxs[read_cipher_idx];
+#endif /* HAVE_EVP_CHACHA20_OPENSSL and !HAVE_BROKEN_CHACHA20 */
+  }
 
   id_len = sftp_session_get_id(&id);
 
@@ -573,8 +674,14 @@ int sftp_cipher_set_read_key(pool *p, const EVP_MD *hash,
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || \
     defined(HAVE_LIBRESSL)
   EVP_CIPHER_CTX_init(pctx);
+  if (hpctx != NULL) {
+    EVP_CIPHER_CTX_init(hpctx);
+  }
 #else
   EVP_CIPHER_CTX_reset(pctx);
+  if (hpctx != NULL) {
+    EVP_CIPHER_CTX_reset(hpctx);
+  }
 #endif /* prior to OpenSSL-1.1.0 */
 
 #if defined(PR_USE_OPENSSL_EVP_CIPHERINIT_EX)
@@ -589,26 +696,45 @@ int sftp_cipher_set_read_key(pool *p, const EVP_MD *hash,
     return -1;
   }
 
-  auth_len = (int) cipher->auth_len;
-  if (auth_len > 0) {
-#if defined(EVP_CTRL_GCM_SET_IV_FIXED)
-    if (EVP_CIPHER_CTX_ctrl(pctx, EVP_CTRL_GCM_SET_IV_FIXED, -1,
-        cipher->iv) != 1) {
+  if (hpctx != NULL) {
+#if defined(PR_USE_OPENSSL_EVP_CIPHERINIT_EX)
+    if (EVP_CipherInit_ex(hpctx, cipher->cipher, NULL, NULL, NULL, 0) != 1) {
+#else
+    if (EVP_CipherInit(hpctx, cipher->cipher, NULL, NULL, 0) != 1) {
+#endif /* PR_USE_OPENSSL_EVP_CIPHERINIT_EX */
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "error configuring %s cipher for decryption: %s", cipher->algo,
+        "error initializing %s cipher for header decryption: %s", cipher->algo,
         sftp_crypto_get_errors());
       return -1;
     }
-#endif /* EVP_CTRL_GCM_SET_IV_FIXED */
+  }
 
-    pr_trace_msg(trace_channel, 19,
-      "set auth length (%d) for %s cipher for decryption", auth_len,
-      cipher->algo);
+  auth_len = (int) cipher->auth_len;
+  if (auth_len > 0) {
+    if (cipher->algo_type == SFTP_CIPHER_ALGO_GCM) {
+#if defined(EVP_CTRL_GCM_SET_IV_FIXED)
+      if (EVP_CIPHER_CTX_ctrl(pctx, EVP_CTRL_GCM_SET_IV_FIXED, -1,
+          cipher->iv) != 1) {
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "error configuring %s cipher for decryption: %s", cipher->algo,
+          sftp_crypto_get_errors());
+        return -1;
+      }
+#endif /* EVP_CTRL_GCM_SET_IV_FIXED */
+      pr_trace_msg(trace_channel, 19,
+        "set auth length (%d) for %s cipher for decryption", auth_len,
+        cipher->algo);
+    }
   }
 
   /* Next, set the key length. */
   key_len = (int) cipher->key_len;
-  if (key_len > 0) {
+  if (key_len > 0 &&
+      cipher->algo_type != SFTP_CIPHER_ALGO_CHACHA) {
+
+    /* Skip setting our custom key length for ChaCha20, since the custom
+     * key length is used for two different ChaCha20 cipher instances.
+     */
     if (EVP_CIPHER_CTX_set_key_length(pctx, key_len) != 1) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error setting key length (%d bytes) for %s cipher for decryption: %s",
@@ -630,6 +756,22 @@ int sftp_cipher_set_read_key(pool *p, const EVP_MD *hash,
       "error re-initializing %s cipher for decryption: %s", cipher->algo,
       sftp_crypto_get_errors());
     return -1;
+  }
+
+  if (hpctx != NULL) {
+    /* The ChaChaPoly header instance uses the "second half" of the computed
+     * session key, per OpenSSH spec.
+     */
+#if defined(PR_USE_OPENSSL_EVP_CIPHERINIT_EX)
+    if (EVP_CipherInit_ex(hpctx, NULL, NULL, cipher->key + 32, NULL, -1) != 1) {
+#else
+    if (EVP_CipherInit(hpctx, NULL, cipher->key + 32, NULL, -1) != 1) {
+#endif /* PR_USE_OPENSSL_EVP_CIPHERINIT_EX */
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error re-initializing %s cipher for header decryption: %s",
+        cipher->algo, sftp_crypto_get_errors());
+      return -1;
+    }
   }
 
   if (set_cipher_discarded(cipher, pctx) < 0) {
@@ -659,34 +801,46 @@ int sftp_cipher_set_read_key(pool *p, const EVP_MD *hash,
 
 int sftp_cipher_read_data(struct ssh2_packet *pkt, unsigned char *data,
     uint32_t data_len, unsigned char **buf, uint32_t *buflen) {
+  int res;
   struct sftp_cipher *cipher;
   EVP_CIPHER_CTX *pctx;
   size_t auth_len = 0, read_blocksz;
   uint32_t output_buflen;
+  unsigned char *ptr = NULL, *buf2 = NULL;
+#if defined(HAVE_EVP_CHACHA20_OPENSSL) && \
+   !defined(HAVE_BROKEN_CHACHA20)
+  unsigned char chachapoly_key[POLY1305_KEYLEN];
+#endif /* HAVE_EVP_CHACHA20_OPENSSL and !HAVE_BROKEN_CHACHA20 */
 
   cipher = &(read_ciphers[read_cipher_idx]);
+
+  if (cipher->key == NULL) {
+    /* We haven't finished NEWKEYS yet, so our cipher isn't keyed. */
+
+    *buf = data;
+    *buflen = data_len;
+    return 0;
+  }
+
   pctx = read_ctxs[read_cipher_idx];
   read_blocksz = read_blockszs[read_cipher_idx];
   auth_len = sftp_cipher_get_read_auth_size();
   output_buflen = *buflen;
 
-  if (cipher->key != NULL) {
-    int res;
-    unsigned char *ptr = NULL, *buf2 = NULL;
+  if (*buf == NULL) {
+    size_t bufsz;
 
-    if (*buf == NULL) {
-      size_t bufsz;
+    /* Allocate a buffer that's large enough. */
+    bufsz = (data_len + read_blocksz - 1);
+    ptr = buf2 = palloc(pkt->pool, bufsz);
 
-      /* Allocate a buffer that's large enough. */
-      bufsz = (data_len + read_blocksz - 1);
-      ptr = buf2 = pcalloc(pkt->pool, bufsz);
+  } else {
+    ptr = buf2 = *buf;
+  }
 
-    } else {
-      ptr = buf2 = *buf;
-    }
-
-    if (pkt->packet_len == 0) {
-      if (auth_len > 0) {
+  if (pkt->packet_len == 0) {
+    if (auth_len > 0) {
+      if (cipher->algo_type == SFTP_CIPHER_ALGO_GCM) {
 #if defined(EVP_CTRL_GCM_IV_GEN)
         unsigned char prev_iv[1];
 
@@ -700,22 +854,24 @@ int sftp_cipher_read_data(struct ssh2_packet *pkt, unsigned char *data,
         }
 #endif
       }
+    }
 
-      if (pkt->aad_len > 0 &&
-          pkt->aad == NULL) {
-        pkt->aad = pcalloc(pkt->pool, pkt->aad_len);
-        memcpy(pkt->aad, data, pkt->aad_len);
-        memcpy(ptr, data, pkt->aad_len);
+    if (pkt->aad_len > 0 &&
+        pkt->aad == NULL) {
+      pkt->aad = palloc(pkt->pool, pkt->aad_len);
+      memcpy(pkt->aad, data, pkt->aad_len);
+      memcpy(ptr, data, pkt->aad_len);
 
-        /* Save room at the start of the output buffer `ptr` for the AAD
-         * bytes.
-         */
-        buf2 += pkt->aad_len;
-        data += pkt->aad_len;
-        data_len -= pkt->aad_len;
-        output_buflen -= pkt->aad_len;
+      /* Save room at the start of the output buffer `ptr` for the AAD
+       * bytes.
+       */
+      buf2 += pkt->aad_len;
+      data += pkt->aad_len;
+      data_len -= pkt->aad_len;
+      output_buflen -= pkt->aad_len;
 
-        if (auth_len > 0) {
+      if (auth_len > 0) {
+        if (cipher->algo_type != SFTP_CIPHER_ALGO_CHACHA) {
           if (EVP_Cipher(pctx, NULL, pkt->aad, pkt->aad_len) < 0) {
             (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
               "error setting %s AAD data for client: %s", cipher->algo,
@@ -726,25 +882,27 @@ int sftp_cipher_read_data(struct ssh2_packet *pkt, unsigned char *data,
         }
       }
     }
+  }
 
-    if (output_buflen % read_blocksz != 0) {
-      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "bad input length for decryption (%u bytes, %lu AAD bytes, "
-        "%u block size)", output_buflen, (unsigned long) pkt->aad_len,
-        (unsigned int) read_blocksz);
-      return -1;
-    }
+  if (output_buflen % read_blocksz != 0) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "bad input length for decryption (%u bytes, %lu AAD bytes, "
+      "%u block size)", output_buflen, (unsigned long) pkt->aad_len,
+      (unsigned int) read_blocksz);
+    return -1;
+  }
 
-    if (pkt->packet_len > 0 &&
-        auth_len > 0) {
-      unsigned char *tag_data = NULL;
-      uint32_t tag_datalen = auth_len;
+  if (pkt->packet_len > 0 &&
+      auth_len > 0) {
+    unsigned char *tag_data = NULL;
+    uint32_t tag_datalen = auth_len;
 
-      /* The authentication tag appears after the unencrypted AAD bytes, and
-       * the encrypted payload bytes.
-       */
-      tag_data = data + (data_len - auth_len);
+    /* The authentication tag appears after the unencrypted AAD bytes, and
+     * the encrypted payload bytes.
+     */
+    tag_data = data + (data_len - auth_len);
 
+    if (cipher->algo_type == SFTP_CIPHER_ALGO_GCM) {
 #if defined(EVP_CTRL_GCM_GET_TAG)
       if (EVP_CIPHER_CTX_ctrl(pctx, EVP_CTRL_GCM_SET_TAG, tag_datalen,
           tag_data) != 1) {
@@ -755,53 +913,196 @@ int sftp_cipher_read_data(struct ssh2_packet *pkt, unsigned char *data,
         return -1;
       }
 #endif
-
       data_len -= auth_len;
-    }
 
-    res = EVP_Cipher(pctx, buf2, data, data_len);
-    if (res < 0) {
+    } else if (cipher->algo_type == SFTP_CIPHER_ALGO_CHACHA) {
+#if defined(HAVE_EVP_CHACHA20_OPENSSL) && \
+   !defined(HAVE_BROKEN_CHACHA20)
+      unsigned char chachapoly_tag[POLY1305_TAGLEN];
+      pool *tag_pool;
+      unsigned char *tag_buf;
+      size_t tag_bufsz;
+
+      if (compute_chachapoly_key(pkt, pctx, chachapoly_key) < 0) {
+        return -1;
+      }
+
+      /* Here we want to compute our Poly1305 tag over the combination
+       * of the encrypted packet length (pkt->aad) and the encrypted
+       * payload (buf).
+       *
+       * Thus we need to assemble that here.
+       */
+
+      tag_pool = make_sub_pool(pkt->pool);
+      tag_bufsz = pkt->aad_len + data_len;
+      tag_buf = palloc(tag_pool, tag_bufsz);
+
+      memcpy(tag_buf, pkt->aad, pkt->aad_len);
+      memcpy(tag_buf + pkt->aad_len, data, data_len);
+
+      poly1305_auth(chachapoly_tag, tag_buf, tag_bufsz, chachapoly_key);
+      destroy_pool(tag_pool);
+
+      /* Our ChaChaPoly tag is stored as the MAC, NOT in the given network
+       * data (which is just the payload).
+       */
+      if (timingsafe_bcmp(chachapoly_tag, pkt->mac,
+          sizeof(chachapoly_tag)) != 0) {
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "error verifying %s authentication tag from client: "
+          "Mismatched tags", cipher->algo);
+        errno = EIO;
+        return -1;
+      }
+#endif /* HAVE_EVP_CHACHA20_OPENSSL and !HAVE_BROKEN_CHACHA20 */
+    }
+  }
+
+  if (cipher->algo_type == SFTP_CIPHER_ALGO_CHACHA) {
+    unsigned char seqnobuf[16], *ptr;
+    uint32_t len;
+
+    memset(seqnobuf, 0, sizeof(seqnobuf));
+    seqnobuf[0] = 1;
+
+    ptr = seqnobuf + 8;
+    len = 8;
+    sftp_msg_write_long(&ptr, &len, pkt->seqno);
+
+    if (EVP_CipherInit(pctx, NULL, NULL, seqnobuf, 1) != 1) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "error decrypting %s data from client: %s", cipher->algo,
+        "error initializing %s cipher for encryption: %s", cipher->algo,
         sftp_crypto_get_errors());
       return -1;
     }
+  }
 
-    if (pkt->packet_len > 0) {
-      *buflen = data_len;
+  res = EVP_Cipher(pctx, buf2, data, data_len);
+  if (res < 0) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error decrypting %s data from client: %s", cipher->algo,
+      sftp_crypto_get_errors());
+    return -1;
+  }
 
-    } else {
-      /* If we don't know the packet length yet, it means we need to allow for
-       * the processing of the AAD bytes.
-       */
-      *buflen = pkt->aad_len + data_len;
-    }
+  if (pkt->packet_len > 0) {
+    *buflen = data_len;
 
-    *buf = ptr;
+  } else {
+    /* If we don't know the packet length yet, it means we need to allow for
+     * the processing of the AAD bytes.
+     */
+    *buflen = pkt->aad_len + data_len;
+  }
 
-    if (pkt->packet_len > 0 &&
-        auth_len > 0) {
-      /* Verify the authentication tag, but only if we have the full packet. */
+  *buf = ptr;
+
+  if (pkt->packet_len > 0 &&
+      auth_len > 0) {
+    /* Verify the authentication tag, but only if we have the full packet. */
+    if (cipher->algo_type != SFTP_CIPHER_ALGO_CHACHA) {
       if (EVP_Cipher(pctx, NULL, NULL, 0) < 0) {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-          "error verifying %s authentication tag for client: %s", cipher->algo,
-          sftp_crypto_get_errors());
+          "error verifying %s authentication tag for client: %s",
+          cipher->algo, sftp_crypto_get_errors());
         errno = EIO;
         return -1;
       }
     }
+  }
+
+  return 0;
+}
+
+int sftp_cipher_read_packet_len(struct ssh2_packet *pkt, unsigned char *data,
+    uint32_t data_len, unsigned char **buf, uint32_t *buflen,
+    uint32_t *packet_len) {
+  int res;
+  struct sftp_cipher *cipher;
+  uint32_t pkt_len = 0;
+
+  cipher = &(read_ciphers[read_cipher_idx]);
+
+  if (cipher->key == NULL) {
+    /* We haven't finished NEWKEYS setup yet, so packet length is in
+     * plaintext.
+     */
+
+    *buf = data;
+    *buflen = data_len;
+
+    memmove(&pkt_len, *buf, sizeof(uint32_t));
+    *packet_len = ntohl(pkt_len);
+
+    *buf += sizeof(uint32_t);
+    *buflen -= sizeof(uint32_t);
 
     return 0;
   }
 
-  *buf = data;
-  *buflen = data_len;
+  if (cipher->algo_type == SFTP_CIPHER_ALGO_CHACHA) {
+#if defined(HAVE_EVP_CHACHA20_OPENSSL) && \
+   !defined(HAVE_BROKEN_CHACHA20)
+    unsigned char seqnobuf[16], *ptr;
+    uint32_t len;
+    EVP_CIPHER_CTX *hpctx;
+
+    hpctx = read_header_ctxs[read_cipher_idx];
+
+    /* Initialize our IV for the ChaChaPoly header. Note that the packet
+     * sequence number must be encoded according to the SSH spec.
+     */
+    memset(seqnobuf, 0, sizeof(seqnobuf));
+    ptr = seqnobuf + 8;
+    len = 8;
+    sftp_msg_write_long(&ptr, &len, pkt->seqno);
+
+    if (EVP_CipherInit(hpctx, NULL, NULL, seqnobuf, 0) != 1) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error initializing %s cipher for packet length decryption: %s",
+        cipher->algo, sftp_crypto_get_errors());
+      return -1;
+    }
+
+    if (EVP_Cipher(hpctx, (unsigned char *) &pkt_len, data,
+        sizeof(pkt_len)) < 0) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error decrypting %s packet length from client: %s", cipher->algo,
+        sftp_crypto_get_errors());
+      return -1;
+    }
+
+    /* We need to save these encrypted header bytes for later. */
+    pkt->aad = palloc(pkt->pool, pkt->aad_len);
+    memcpy(pkt->aad, data, pkt->aad_len);
+
+    *packet_len = ntohl(pkt_len);
+
+    /* No leftover network bytes for later processing; we used them all. */
+    *buf = NULL;
+    *buflen = 0;
+
+    return 0;
+#endif /* HAVE_EVP_CHACHA20_OPENSSL and !HAVE_BROKEN_CHACHA20 */
+  }
+
+  res = sftp_cipher_read_data(pkt, data, data_len, buf, buflen);
+  if (res < 0) {
+    return -1;
+  }
+
+  memmove(&pkt_len, *buf, sizeof(uint32_t));
+  *packet_len = ntohl(pkt_len);
+
+  *buf += sizeof(uint32_t);
+  *buflen -= sizeof(uint32_t);
   return 0;
 }
 
 const char *sftp_cipher_get_write_algo(void) {
   if (write_ciphers[write_cipher_idx].key != NULL ||
-      strcmp(write_ciphers[write_cipher_idx].algo, "none") == 0) {
+      write_ciphers[write_cipher_idx].algo_type == SFTP_CIPHER_ALGO_NONE) {
     return write_ciphers[write_cipher_idx].algo;
   }
 
@@ -812,7 +1113,7 @@ int sftp_cipher_set_write_algo(const char *algo) {
   unsigned int idx = write_cipher_idx;
   size_t key_len = 0, auth_len = 0, discard_len = 0;
 
-  if (write_ciphers[idx].key) {
+  if (write_ciphers[idx].key != NULL) {
     /* If we have an existing key, it means that we are currently rekeying. */
     idx = get_next_write_index();
   }
@@ -852,10 +1153,12 @@ int sftp_cipher_set_write_algo(const char *algo) {
   write_ciphers[idx].pool = make_sub_pool(sftp_pool);
   pr_pool_tag(write_ciphers[idx].pool, "SFTP cipher write pool");
   write_ciphers[idx].algo = pstrdup(write_ciphers[idx].pool, algo);
+  write_ciphers[idx].algo_type = get_algo_type(algo);
 
   write_ciphers[idx].key_len = (uint32_t) key_len;
   write_ciphers[idx].auth_len = (uint32_t) auth_len;
   write_ciphers[idx].discard_len = discard_len;
+
   return 0;
 }
 
@@ -867,12 +1170,18 @@ int sftp_cipher_set_write_key(pool *p, const EVP_MD *hash,
   uint32_t id_len;
   int key_len, auth_len;
   struct sftp_cipher *cipher;
-  EVP_CIPHER_CTX *pctx;
+  EVP_CIPHER_CTX *pctx, *hpctx = NULL;
 
   switch_write_cipher();
 
   cipher = &(write_ciphers[write_cipher_idx]);
   pctx = write_ctxs[write_cipher_idx];
+  if (cipher->algo_type == SFTP_CIPHER_ALGO_CHACHA) {
+#if defined(HAVE_EVP_CHACHA20_OPENSSL) && \
+   !defined(HAVE_BROKEN_CHACHA20)
+    hpctx = write_header_ctxs[write_cipher_idx];
+#endif /* HAVE_EVP_CHACHA20_OPENSSL and !HAVE_BROKEN_CHACHA20 */
+  }
 
   id_len = sftp_session_get_id(&id);
 
@@ -902,8 +1211,14 @@ int sftp_cipher_set_write_key(pool *p, const EVP_MD *hash,
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || \
     defined(HAVE_LIBRESSL)
   EVP_CIPHER_CTX_init(pctx);
+  if (hpctx != NULL) {
+    EVP_CIPHER_CTX_init(hpctx);
+  }
 #else
   EVP_CIPHER_CTX_reset(pctx);
+  if (hpctx != NULL) {
+    EVP_CIPHER_CTX_reset(hpctx);
+  }
 #endif
 
 #if defined(PR_USE_OPENSSL_EVP_CIPHERINIT_EX)
@@ -918,26 +1233,47 @@ int sftp_cipher_set_write_key(pool *p, const EVP_MD *hash,
     return -1;
   }
 
-  auth_len = (int) cipher->auth_len;
-  if (auth_len > 0) {
-#if defined(EVP_CTRL_GCM_SET_IV_FIXED)
-    if (EVP_CIPHER_CTX_ctrl(pctx, EVP_CTRL_GCM_SET_IV_FIXED, -1,
-        cipher->iv) != 1) {
+  if (hpctx != NULL) {
+#if defined(PR_USE_OPENSSL_EVP_CIPHERINIT_EX)
+    if (EVP_CipherInit_ex(hpctx, cipher->cipher, NULL, NULL, NULL, 1) != 1) {
+#else
+    if (EVP_CipherInit(hpctx, cipher->cipher, NULL, NULL, 1) != 1) {
+#endif /* PR_USE_OPENSSL_EVP_CIPHERINIT_EX */
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "error configuring %s cipher for encryption: %s", cipher->algo,
+        "error initializing %s cipher for header encryption: %s", cipher->algo,
         sftp_crypto_get_errors());
       return -1;
     }
+  }
+
+  auth_len = (int) cipher->auth_len;
+  if (auth_len > 0) {
+    if (cipher->algo_type == SFTP_CIPHER_ALGO_GCM) {
+#if defined(EVP_CTRL_GCM_SET_IV_FIXED)
+      if (EVP_CIPHER_CTX_ctrl(pctx, EVP_CTRL_GCM_SET_IV_FIXED, -1,
+          cipher->iv) != 1) {
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "error configuring %s cipher for encryption: %s", cipher->algo,
+          sftp_crypto_get_errors());
+        return -1;
+      }
 #endif /* EVP_CTRL_GCM_SET_IV_FIXED */
 
-    pr_trace_msg(trace_channel, 19,
-      "set auth length (%d) for %s cipher for encryption", auth_len,
-      cipher->algo);
+      pr_trace_msg(trace_channel, 19,
+        "set auth length (%d) for %s cipher for encryption", auth_len,
+        cipher->algo);
+    }
   }
 
   /* Next, set the key length. */
   key_len = (int) cipher->key_len;
-  if (key_len > 0) {
+  if (key_len > 0 &&
+      cipher->algo_type != SFTP_CIPHER_ALGO_CHACHA) {
+
+    /* Skip setting our custom key length for ChaCha20, since the custom
+     * key length is used for two different ChaCha20 cipher instances.
+     */
+
     if (EVP_CIPHER_CTX_set_key_length(pctx, key_len) != 1) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error setting key length (%d bytes) for %s cipher for decryption: %s",
@@ -959,6 +1295,19 @@ int sftp_cipher_set_write_key(pool *p, const EVP_MD *hash,
       "error re-initializing %s cipher for encryption: %s", cipher->algo,
       sftp_crypto_get_errors());
     return -1;
+  }
+
+  if (hpctx != NULL) {
+#if defined(PR_USE_OPENSSL_EVP_CIPHERINIT_EX)
+    if (EVP_CipherInit_ex(hpctx, NULL, NULL, cipher->key + 32, NULL, -1) != 1) {
+#else
+    if (EVP_CipherInit(hpctx, NULL, cipher->key + 32, NULL, -1) != 1) {
+#endif /* PR_USE_OPENSSL_EVP_CIPHERINIT_EX */
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error re-initializing %s cipher for header encryption: %s",
+        cipher->algo, sftp_crypto_get_errors());
+      return -1;
+    }
   }
 
   if (set_cipher_discarded(cipher, pctx) < 0) {
@@ -988,36 +1337,46 @@ int sftp_cipher_set_write_key(pool *p, const EVP_MD *hash,
 
 int sftp_cipher_write_data(struct ssh2_packet *pkt, unsigned char *buf,
     size_t *buflen) {
+  int res;
   struct sftp_cipher *cipher;
   EVP_CIPHER_CTX *pctx;
   size_t auth_len = 0;
+#if defined(HAVE_EVP_CHACHA20_OPENSSL) && \
+   !defined(HAVE_BROKEN_CHACHA20)
+  unsigned char chachapoly_key[POLY1305_KEYLEN];
+#endif /* HAVE_EVP_CHACHA20_OPENSSL and !HAVE_BROKEN_CHACHA20 */
+  unsigned char *data, *ptr;
+  uint32_t datalen, datasz;
 
   cipher = &(write_ciphers[write_cipher_idx]);
   pctx = write_ctxs[write_cipher_idx];
   auth_len = sftp_cipher_get_write_auth_size();
 
-  if (cipher->key != NULL) {
-    int res;
-    unsigned char *data, *ptr;
-    uint32_t datalen, datasz;
+  if (cipher->key == NULL) {
+    *buflen = 0;
+    return 0;
+  }
 
-    /* Always leave a little extra room in the buffer. */
-    datasz = sizeof(uint32_t) + pkt->packet_len + 64;
+  /* Always leave a little extra room in the buffer. */
+  datasz = sizeof(uint32_t) + pkt->packet_len + 64;
 
-    if (pkt->aad_len > 0) {
-      /* Packet length is not encrypted for authentication encryption, or
-       * Encrypt-Then-MAC modes.
-       */
+  if (pkt->aad_len > 0) {
+    /* Packet length is not encrypted for authentication encryption, or
+     * Encrypt-Then-MAC modes.  However, it IS encrypted for ChaChaPoly.
+     */
+    if (cipher->algo_type != SFTP_CIPHER_ALGO_CHACHA) {
       datasz -= pkt->aad_len;
-
-      /* And, for ETM modes, we may need a little more space. */
-      datasz += sftp_cipher_get_write_block_size();
     }
 
-    datalen = datasz;
-    ptr = data = palloc(pkt->pool, datasz);
+    /* And, for ETM modes, we may need a little more space. */
+    datasz += sftp_cipher_get_write_block_size();
+  }
 
-    if (auth_len > 0) {
+  datalen = datasz;
+  ptr = data = palloc(pkt->pool, datasz);
+
+  if (auth_len > 0) {
+    if (cipher->algo_type == SFTP_CIPHER_ALGO_GCM) {
 #if defined(EVP_CTRL_GCM_IV_GEN)
       unsigned char prev_iv[1];
 
@@ -1030,17 +1389,56 @@ int sftp_cipher_write_data(struct ssh2_packet *pkt, unsigned char *buf,
         return -1;
       }
 #endif
+    } else if (cipher->algo_type == SFTP_CIPHER_ALGO_CHACHA) {
+#if defined(HAVE_EVP_CHACHA20_OPENSSL) && \
+   !defined(HAVE_BROKEN_CHACHA20)
+      if (compute_chachapoly_key(pkt, pctx, chachapoly_key) < 0) {
+        return -1;
+      }
+#endif /* HAVE_EVP_CHACHA20_OPENSSL and !HAVE_BROKEN_CHACHA20 */
     }
+  }
 
-    if (pkt->aad_len > 0 &&
-        pkt->aad == NULL) {
-      uint32_t packet_len;
+  if (pkt->aad_len > 0 &&
+      pkt->aad == NULL) {
+    uint32_t packet_len;
 
-      packet_len = htonl(pkt->packet_len);
-      pkt->aad = pcalloc(pkt->pool, pkt->aad_len);
-      memcpy(pkt->aad, &packet_len, pkt->aad_len);
+    packet_len = htonl(pkt->packet_len);
+    pkt->aad = palloc(pkt->pool, pkt->aad_len);
+    memcpy(pkt->aad, &packet_len, pkt->aad_len);
 
-      if (auth_len > 0) {
+    if (auth_len > 0) {
+      if (cipher->algo_type == SFTP_CIPHER_ALGO_CHACHA) {
+#if defined(HAVE_EVP_CHACHA20_OPENSSL) && \
+   !defined(HAVE_BROKEN_CHACHA20)
+        unsigned char seqnobuf[16], *ptr;
+        uint32_t len;
+        EVP_CIPHER_CTX *hpctx;
+
+        hpctx = write_header_ctxs[write_cipher_idx];
+
+        memset(seqnobuf, 0, sizeof(seqnobuf));
+        ptr = seqnobuf + 8;
+        len = 8;
+        sftp_msg_write_long(&ptr, &len, pkt->seqno);
+
+        if (EVP_CipherInit(hpctx, NULL, NULL, seqnobuf, 1) != 1) {
+          (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+            "error initializing %s cipher for packet length encryption: %s",
+            cipher->algo, sftp_crypto_get_errors());
+          return -1;
+        }
+
+        if (EVP_Cipher(hpctx, pkt->aad, (unsigned char *) &packet_len,
+            pkt->aad_len) < 0) {
+          (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+            "error encrypting %s packet length for client: %s", cipher->algo,
+            sftp_crypto_get_errors());
+          return -1;
+        }
+#endif /* HAVE_EVP_CHACHA20_OPENSSL and !HAVE_BROKEN_CHACHA20 */
+
+      } else {
         if (EVP_Cipher(pctx, NULL, pkt->aad, pkt->aad_len) < 0) {
           (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
             "error setting %s AAD (%lu bytes) for client: %s", cipher->algo,
@@ -1049,25 +1447,45 @@ int sftp_cipher_write_data(struct ssh2_packet *pkt, unsigned char *buf,
           return -1;
         }
       }
-
-    } else {
-      sftp_msg_write_int(&data, &datalen, pkt->packet_len);
     }
 
-    sftp_msg_write_byte(&data, &datalen, pkt->padding_len);
-    sftp_msg_write_data(&data, &datalen, pkt->payload, pkt->payload_len, FALSE);
-    sftp_msg_write_data(&data, &datalen, pkt->padding, pkt->padding_len, FALSE);
+  } else {
+    sftp_msg_write_int(&data, &datalen, pkt->packet_len);
+  }
 
-    res = EVP_Cipher(pctx, buf, ptr, (datasz - datalen));
-    if (res < 0) {
+  sftp_msg_write_byte(&data, &datalen, pkt->padding_len);
+  sftp_msg_write_data(&data, &datalen, pkt->payload, pkt->payload_len, FALSE);
+  sftp_msg_write_data(&data, &datalen, pkt->padding, pkt->padding_len, FALSE);
+
+  if (cipher->algo_type == SFTP_CIPHER_ALGO_CHACHA) {
+    unsigned char seqnobuf[16], *ptr;
+    uint32_t len;
+
+    memset(seqnobuf, 0, sizeof(seqnobuf));
+    seqnobuf[0] = 1;
+
+    ptr = seqnobuf + 8;
+    len = 8;
+    sftp_msg_write_long(&ptr, &len, pkt->seqno);
+
+    if (EVP_CipherInit(pctx, NULL, NULL, seqnobuf, 1) != 1) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "error encrypting %s data for client: %s", cipher->algo,
+        "error initializing %s cipher for encryption: %s", cipher->algo,
         sftp_crypto_get_errors());
-      errno = EIO;
       return -1;
     }
+  }
 
-    *buflen = (datasz - datalen);
+  res = EVP_Cipher(pctx, buf, ptr, (datasz - datalen));
+  if (res < 0) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error encrypting %s data for client: %s", cipher->algo,
+      sftp_crypto_get_errors());
+    errno = EIO;
+    return -1;
+  }
+
+  *buflen = (datasz - datalen);
 
 #ifdef SFTP_DEBUG_PACKET
 {
@@ -1087,21 +1505,24 @@ int sftp_cipher_write_data(struct ssh2_packet *pkt, unsigned char *buf,
 }
 #endif
 
-    if (auth_len > 0) {
-      unsigned char *tag_data = NULL;
-      uint32_t tag_datalen = 0;
+  if (auth_len > 0) {
+    unsigned char *tag_data = NULL;
+    uint32_t tag_datalen = 0;
 
+    if (cipher->algo_type != SFTP_CIPHER_ALGO_CHACHA) {
       if (EVP_Cipher(pctx, NULL, NULL, 0) < 0) {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-          "error generating %s authentication tag for client: %s", cipher->algo,
-          sftp_crypto_get_errors());
+          "error generating %s authentication tag for client: %s",
+          cipher->algo, sftp_crypto_get_errors());
         errno = EIO;
         return -1;
       }
+    }
 
-      tag_datalen = auth_len;
-      tag_data = pcalloc(pkt->pool, tag_datalen);
+    tag_datalen = auth_len;
+    tag_data = palloc(pkt->pool, tag_datalen);
 
+    if (cipher->algo_type == SFTP_CIPHER_ALGO_GCM) {
 #if defined(EVP_CTRL_GCM_GET_TAG)
       if (EVP_CIPHER_CTX_ctrl(pctx, EVP_CTRL_GCM_GET_TAG, tag_datalen,
           tag_data) != 1) {
@@ -1112,15 +1533,36 @@ int sftp_cipher_write_data(struct ssh2_packet *pkt, unsigned char *buf,
         return -1;
       }
 #endif
+    } else if (cipher->algo_type == SFTP_CIPHER_ALGO_CHACHA) {
+#if defined(HAVE_EVP_CHACHA20_OPENSSL) && \
+   !defined(HAVE_BROKEN_CHACHA20)
+      pool *tag_pool;
+      unsigned char *tag_buf;
+      size_t tag_bufsz;
 
-      pkt->mac_len = tag_datalen;
-      pkt->mac = tag_data;
+      /* Here we want to compute our Poly1305 tag over the combination
+       * of the encrypted packet length (pkt->aad) and the encrypted
+       * payload (buf).
+       *
+       * Thus we need to assemble that here.
+       */
+
+      tag_pool = make_sub_pool(pkt->pool);
+      tag_bufsz = pkt->aad_len + *buflen;
+      tag_buf = palloc(tag_pool, tag_bufsz);
+
+      memcpy(tag_buf, pkt->aad, pkt->aad_len);
+      memcpy(tag_buf + pkt->aad_len, buf, *buflen);
+
+      poly1305_auth(tag_data, tag_buf, tag_bufsz, chachapoly_key);
+      destroy_pool(tag_pool);
+#endif /* HAVE_EVP_CHACHA20_OPENSSL and !HAVE_BROKEN_CHACHA20 */
     }
 
-    return 0;
+    pkt->mac_len = tag_datalen;
+    pkt->mac = tag_data;
   }
 
-  *buflen = 0;
   return 0;
 }
 
@@ -1144,16 +1586,61 @@ int sftp_cipher_init(void) {
   read_ctxs[1] = EVP_CIPHER_CTX_new();
   write_ctxs[0] = EVP_CIPHER_CTX_new();
   write_ctxs[1] = EVP_CIPHER_CTX_new();
+# if defined(HAVE_EVP_CHACHA20_OPENSSL) && \
+    !defined(HAVE_BROKEN_CHACHA20)
+  read_header_ctxs[0] = EVP_CIPHER_CTX_new();
+  read_header_ctxs[1] = EVP_CIPHER_CTX_new();
+  write_header_ctxs[0] = EVP_CIPHER_CTX_new();
+  write_header_ctxs[1] = EVP_CIPHER_CTX_new();
+# endif /* HAVE_EVP_CHACHA20_OPENSSL and !HAVE_BROKEN_CHACHA20 */
 #endif /* OpenSSL-1.0.0 and later */
   return 0;
 }
 
 int sftp_cipher_free(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x1000000fL
-  EVP_CIPHER_CTX_free(read_ctxs[0]);
-  EVP_CIPHER_CTX_free(read_ctxs[1]);
-  EVP_CIPHER_CTX_free(write_ctxs[0]);
-  EVP_CIPHER_CTX_free(write_ctxs[1]);
+  if (read_ctxs[0] != NULL) {
+    EVP_CIPHER_CTX_free(read_ctxs[0]);
+    read_ctxs[0] = NULL;
+  }
+
+  if (read_ctxs[1] != NULL) {
+    EVP_CIPHER_CTX_free(read_ctxs[1]);
+    read_ctxs[1] = NULL;
+  }
+
+  if (write_ctxs[0] != NULL) {
+    EVP_CIPHER_CTX_free(write_ctxs[0]);
+    write_ctxs[0] = NULL;
+  }
+
+  if (write_ctxs[1] != NULL) {
+    EVP_CIPHER_CTX_free(write_ctxs[1]);
+    write_ctxs[1] = NULL;
+  }
+
+# if defined(HAVE_EVP_CHACHA20_OPENSSL) && \
+    !defined(HAVE_BROKEN_CHACHA20)
+  if (read_header_ctxs[0] != NULL) {
+    EVP_CIPHER_CTX_free(read_header_ctxs[0]);
+    read_header_ctxs[0] = NULL;
+  }
+
+  if (read_header_ctxs[1] != NULL) {
+    EVP_CIPHER_CTX_free(read_header_ctxs[1]);
+    read_header_ctxs[1] = NULL;
+  }
+
+  if (write_header_ctxs[0] != NULL) {
+    EVP_CIPHER_CTX_free(write_header_ctxs[0]);
+    write_header_ctxs[0] = NULL;
+  }
+
+  if (write_header_ctxs[1] != NULL) {
+    EVP_CIPHER_CTX_free(write_header_ctxs[1]);
+    write_header_ctxs[1] = NULL;
+  }
+# endif /* HAVE_EVP_CHACHA20_OPENSSL and !HAVE_BROKEN_CHACHA20 */
 #endif /* OpenSSL-1.0.0 and later */
   return 0;
 }

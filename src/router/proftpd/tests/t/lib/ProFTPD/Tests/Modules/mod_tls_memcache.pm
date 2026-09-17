@@ -46,6 +46,10 @@ sub set_up {
 
   # Clear the memcached servers before each unit test
   my $memcached_servers = $ENV{MEMCACHED_SERVERS} ? $ENV{MEMCACHED_SERVERS} : "127.0.0.1:11211";
+  unless ($memcached_servers =~ /:/) {
+    $memcached_servers .= ':11211';
+  }
+
   $memcached_servers = [split(/,?\s+?/, $memcached_servers)];
 
   my $mc = Cache::Memcached->new({
@@ -113,6 +117,7 @@ sub tls_sess_cache_memcache {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -133,6 +138,9 @@ sub tls_sess_cache_memcache {
         TLSCACertificateFile => $ca_file,
         TLSVerifyClient => 'off',
         TLSOptions => 'EnableDiags',
+
+        # Necessary for session ID caching; TLSv1.3 uses session tickets
+        TLSProtocol => 'TLSv1.2',
       },
 
       'mod_tls_memcache.c' => {
@@ -168,8 +176,7 @@ sub tls_sess_cache_memcache {
       # XXX Some OpenSSL versions' of s_client do not support the 'ftp'
       # parameter for -starttls; in this case, point the openssl binary
       # to be used to a version which does support this.
-#      my $openssl = 'openssl';
-my $openssl = '/Users/tj/local/openssl-1.0.2d/bin/openssl';
+      my $openssl = 'openssl';
 
       my @cmd = (
         $openssl,
@@ -180,6 +187,10 @@ my $openssl = '/Users/tj/local/openssl-1.0.2d/bin/openssl';
         'ftp',
         '-sess_out',
         $sessid_file,
+        '-CAfile',
+        $ca_file,
+        '-noservername',
+        '-no_check_time',
       );
 
       my $tls_rh = IO::Handle->new();
@@ -244,6 +255,10 @@ my $openssl = '/Users/tj/local/openssl-1.0.2d/bin/openssl';
         'ftp',
         '-sess_in',
         $sessid_file,
+        '-CAfile',
+        $ca_file,
+        '-noservername',
+        '-no_check_time',
       );
 
       $tls_rh = IO::Handle->new();
@@ -301,7 +316,6 @@ my $openssl = '/Users/tj/local/openssl-1.0.2d/bin/openssl';
       $self->assert(qr/$expected/, $cipher_str,
         test_msg("Expected '$expected', got '$cipher_str'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -321,7 +335,6 @@ my $openssl = '/Users/tj/local/openssl-1.0.2d/bin/openssl';
 
   # Stop server
   server_stop($setup->{pid_file});
-
   $self->assert_child_ok($pid);
 
   test_cleanup($setup->{log_file}, $ex);
@@ -348,6 +361,7 @@ sub tls_sess_cache_memcache_json_bug4057 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -368,6 +382,9 @@ sub tls_sess_cache_memcache_json_bug4057 {
         TLSCACertificateFile => $ca_file,
         TLSVerifyClient => 'off',
         TLSOptions => 'EnableDiags',
+
+        # Necessary for session ID caching; TLSv1.3 uses session tickets
+        TLSProtocol => 'TLSv1.2',
       },
 
       'mod_tls_memcache.c' => {
@@ -403,8 +420,7 @@ sub tls_sess_cache_memcache_json_bug4057 {
       # XXX Some OpenSSL versions' of s_client do not support the 'ftp'
       # parameter for -starttls; in this case, point the openssl binary
       # to be used to a version which does support this.
-#      my $openssl = 'openssl';
-my $openssl = '/Users/tj/local/openssl-1.0.2d/bin/openssl';
+      my $openssl = 'openssl';
 
       my @cmd = (
         $openssl,
@@ -414,7 +430,11 @@ my $openssl = '/Users/tj/local/openssl-1.0.2d/bin/openssl';
         '-starttls',
         'ftp',
         '-sess_out',
-        $sessid_file, 
+        $sessid_file,
+        '-CAfile',
+        $ca_file,
+        '-noservername',
+        '-no_check_time',
       );
 
       my $tls_rh = IO::Handle->new();
@@ -478,7 +498,11 @@ my $openssl = '/Users/tj/local/openssl-1.0.2d/bin/openssl';
         '-starttls',
         'ftp',
         '-sess_in',
-        $sessid_file, 
+        $sessid_file,
+        '-CAfile',
+        $ca_file,
+        '-noservername',
+        '-no_check_time',
       );
 
       $tls_rh = IO::Handle->new();
@@ -536,7 +560,6 @@ my $openssl = '/Users/tj/local/openssl-1.0.2d/bin/openssl';
       $self->assert(qr/$expected/, $cipher_str,
         test_msg("Expected '$expected', got '$cipher_str'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -556,7 +579,6 @@ my $openssl = '/Users/tj/local/openssl-1.0.2d/bin/openssl';
 
   # Stop server
   server_stop($setup->{pid_file});
-
   $self->assert_child_ok($pid);
 
   test_cleanup($setup->{log_file}, $ex);
@@ -642,6 +664,7 @@ sub tls_stapling_on_memcache_bug4175 {
 
     AuthUserFile => $setup->{auth_user_file},
     AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
 
     IfModules => {
       'mod_delay.c' => {
@@ -713,7 +736,6 @@ sub tls_stapling_on_memcache_bug4175 {
       # Do it again, see if we actually read our our cached OCSP response
       starttls_ftp($port, $ssl_opts);
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -733,7 +755,6 @@ sub tls_stapling_on_memcache_bug4175 {
 
   # Stop server
   server_stop($setup->{pid_file});
-
   $self->assert_child_ok($pid);
 
   test_cleanup($setup->{log_file}, $ex);

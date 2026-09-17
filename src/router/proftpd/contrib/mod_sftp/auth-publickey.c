@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp 'publickey' user authentication
- * Copyright (c) 2008-2022 TJ Saunders
+ * Copyright (c) 2008-2024 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,11 +84,14 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     unsigned char **buf, uint32_t *buflen, int *send_userauth_fail) {
   int fp_algo_id = 0, have_signature, res;
   enum sftp_key_type_e pubkey_type;
+  struct sftp_verify_details *details = NULL;
+  pr_table_t *verify_notes = NULL;
   unsigned char *pubkey_data;
   char *pubkey_algo = NULL;
   const char *fp = NULL, *fp_algo = NULL;
   uint32_t pubkey_len;
   struct passwd *pw;
+  config_rec *c;
 
   if (pr_cmd_dispatch_phase(pass_cmd, PRE_CMD, 0) < 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -125,51 +128,8 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
   pr_trace_msg(trace_channel, 9, "client sent '%s' public key %s",
     pubkey_algo, have_signature ? "with signature" : "without signature");
 
-  if (strcmp(pubkey_algo, "ssh-rsa") == 0) {
-    pubkey_type = SFTP_KEY_RSA;
-
-#if defined(HAVE_SHA256_OPENSSL)
-  } else if (strcmp(pubkey_algo, "rsa-sha2-256") == 0) {
-    pubkey_type = SFTP_KEY_RSA_SHA256;
-#endif /* HAVE_SHA256_OPENSSL */
-
-#if defined(HAVE_SHA512_OPENSSL)
-  } else if (strcmp(pubkey_algo, "rsa-sha2-512") == 0) {
-    pubkey_type = SFTP_KEY_RSA_SHA512;
-#endif /* HAVE_SHA512_OPENSSL */
-
-  } else if (strcmp(pubkey_algo, "ssh-dss") == 0) {
-    pubkey_type = SFTP_KEY_DSA;
-
-#if defined(PR_USE_OPENSSL_ECC)
-  } else if (strcmp(pubkey_algo, "ecdsa-sha2-nistp256") == 0) {
-    pubkey_type = SFTP_KEY_ECDSA_256;
-
-  } else if (strcmp(pubkey_algo, "ecdsa-sha2-nistp384") == 0) {
-    pubkey_type = SFTP_KEY_ECDSA_384;
-
-  } else if (strcmp(pubkey_algo, "ecdsa-sha2-nistp521") == 0) {
-    pubkey_type = SFTP_KEY_ECDSA_521;
-#endif /* PR_USE_OPENSSL_ECC */
-
-#if defined(PR_USE_SODIUM)
-  } else if (strcmp(pubkey_algo, "ssh-ed25519") == 0) {
-    pubkey_type = SFTP_KEY_ED25519;
-#endif /* PR_USE_SODIUM */
-
-#if defined(HAVE_X448_OPENSSL)
-  } else if (strcmp(pubkey_algo, "ssh-ed448") == 0) {
-    pubkey_type = SFTP_KEY_ED448;
-#endif /* HAVE_X448_OPENSSL */
-
-  /* XXX This is where we would add support for X509 public keys, e.g.:
-   *
-   *  x509v3-ssh-dss
-   *  x509v3-ssh-rsa
-   *  x509v3-sign (older)
-   */
-
-  } else {
+  res = sftp_auth_publickey_isvalid(pubkey_algo, &pubkey_type);
+  if (res != TRUE) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "unsupported public key algorithm '%s' requested, rejecting request",
       pubkey_algo);
@@ -181,6 +141,37 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     *send_userauth_fail = TRUE;
     errno = EINVAL;
     return 0;
+  }
+
+  /* We know that the provided public key algorithm is known/valid.  Now we
+   * have to check whether that algorithm has been enabled/disabled by
+   * configuration (Issue #1806).
+   */
+  c = find_config(main_server->conf, CONF_PARAM, "SFTPAuthPublicKeys", FALSE);
+  if (c != NULL) {
+    register unsigned int i;
+    int algo_enabled = FALSE;
+
+    for (i = 0; i < c->argc; i++) {
+      if (strcmp(pubkey_algo, (const char *) c->argv[i]) == 0) {
+        algo_enabled = TRUE;
+        break;
+      }
+    }
+
+    if (algo_enabled == FALSE) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "public key algorithm '%s' disabled by SFTPAuthPublicKeys, "
+        "rejecting request", pubkey_algo);
+
+      pr_log_auth(PR_LOG_NOTICE,
+        "USER %s (Login failed): public key algorithm '%s' disabled by "
+        "SFTPAuthPublicKeys", user, pubkey_algo);
+
+      *send_userauth_fail = TRUE;
+      errno = EINVAL;
+      return 0;
+    }
   }
 
   res = sftp_keys_verify_pubkey_type(pkt->pool, pubkey_data, pubkey_len,
@@ -334,15 +325,16 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
 
     /* XXX Need to pass the pubkey_type here as well, so that the
      * verification routines can handle different databases of keys/certs.
-     * 
+     *
      * For X509v3 certs, we will want a way to enforce/restrict which
      * user names can be used with the provided cert.  Perhaps a database
      * mapping cert fingerprints to user names/UIDs?  Configurable callback
      * check (HOOK?), for modules to enforce.
      */
 
+    verify_notes = pr_table_nalloc(pkt->pool, 0, 1);
     if (sftp_keystore_verify_user_key(pkt->pool, user, pubkey_data,
-        pubkey_len) < 0) {
+        pubkey_len, verify_notes) < 0) {
       pr_log_auth(PR_LOG_NOTICE, "USER %s (Login failed): authentication "
         "via '%s' public key failed", user, pubkey_algo);
 
@@ -383,15 +375,30 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
 
     sftp_msg_write_data(&buf2, &buflen2, pubkey_data, pubkey_len, TRUE);
 
+    details = pcalloc(pkt->pool, sizeof(struct sftp_verify_details));
     if (sftp_keys_verify_signed_data(pkt->pool, pubkey_algo, pubkey_data,
         pubkey_len, signature_data, signature_len, (unsigned char *) ptr2,
-        (bufsz2 - buflen2)) < 0) {
+        (bufsz2 - buflen2), details) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "failed to verify '%s' signature on public key auth request for "
         "user '%s'", pubkey_algo, orig_user);
 
       pr_log_auth(PR_LOG_NOTICE, "USER %s (Login failed): signature "
         "verification of '%s' public key failed", user, pubkey_algo);
+
+      *send_userauth_fail = TRUE;
+      errno = EACCES;
+      return 0;
+    }
+
+    if (sftp_keys_permit_key(pkt->pool, pubkey_algo, orig_user, details,
+        verify_notes) < 0) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "unable to permit '%s' signature on public key auth request for "
+        "user '%s' due to security key policy", pubkey_algo, orig_user);
+
+      pr_log_auth(PR_LOG_NOTICE, "USER %s (Login failed): signature "
+        "validation of '%s' public key failed", user, pubkey_algo);
 
       *send_userauth_fail = TRUE;
       errno = EACCES;

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2022 The ProFTPD Project team
+ * Copyright (c) 2004-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -261,7 +261,7 @@ config_rec *pr_parser_config_ctxt_open(const char *name) {
     return NULL;
   }
 
-  if (parent) {
+  if (parent != NULL) {
     parent_pool = parent->pool;
     set = &parent->subset;
 
@@ -277,7 +277,7 @@ config_rec *pr_parser_config_ctxt_open(const char *name) {
    * parent server.  This keeps <Global> config recs from being freed
    * prematurely, and helps to avoid memory leaks.
    */
-  if (strncasecmp(name, "<Global>", 9) == 0) {
+  if (strcasecmp(name, "<Global>") == 0) {
     if (global_config_pool == NULL) {
       global_config_pool = make_sub_pool(permanent_pool);
       pr_pool_tag(global_config_pool, "<Global> Pool");
@@ -304,7 +304,7 @@ config_rec *pr_parser_config_ctxt_open(const char *name) {
   c->parent = parent;
   c->name = pstrdup(c->pool, name);
 
-  if (parent) {
+  if (parent != NULL) {
     if (parent->config_type == CONF_DYNDIR) {
       c->flags |= CF_DYNAMIC;
     }
@@ -442,7 +442,7 @@ int pr_parser_parse_file(pool *p, const char *path, config_rec *start,
    */
   if (st.st_mode & S_IWOTH) {
     pr_log_pri(PR_LOG_WARNING, "warning: config file '%s' is world-writable",
-     path); 
+     path);
   }
 
   fh->fh_iosz = st.st_blksize;
@@ -1287,7 +1287,8 @@ int parse_config_path2(pool *p, const char *path, unsigned int depth) {
     }
   }
 
-  pr_trace_msg(trace_channel, 3, "processing configuration directory '%s'", dup_path);
+  pr_trace_msg(trace_channel, 3, "processing configuration directory '%s'",
+    dup_path);
 
   dirh = pr_fsio_opendir(dup_path);
   if (dirh == NULL) {
@@ -1352,8 +1353,18 @@ int parse_config_path2(pool *p, const char *path, unsigned int depth) {
 
       if (res < 0) {
         pr_log_pri(PR_LOG_WARNING,
-          "error: unable to open parse file '%s': %s", file,
-          strerror(xerrno));
+          "error: unable to parse file '%s': %s", file, strerror(xerrno));
+        pr_log_pri(PR_LOG_WARNING, "%s",
+          "error: check `proftpd --configtest -d10` for details");
+
+        destroy_pool(tmp_pool);
+
+        /* Any error other than EINVAL is logged as a warning, but ignored,
+         * by the Include directive handler.  Thus we always return EINVAL
+         * here to halt further parsing (Issue #1721).
+         */
+        errno = EINVAL;
+        return -1;
       }
     }
   }

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2014-2020 The ProFTPD Project team
+ * Copyright (c) 2014-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -425,23 +425,25 @@ static void install_stacktrace_handler(void) {
  * signals received by the signal handlers, to avoid signal handler-based
  * race conditions.
  */
-void pr_signals_handle(void) {
+static void handle_signals(int delay_on_eintr) {
   table_handling_signal(TRUE);
 
-  if (errno == EINTR &&
-      PR_TUNABLE_EINTR_RETRY_INTERVAL > 0) {
-    struct timeval tv;
-    unsigned long interval_usecs = PR_TUNABLE_EINTR_RETRY_INTERVAL * 1000000;
+  if (errno == EINTR) {
+    if (delay_on_eintr == TRUE &&
+        PR_TUNABLE_EINTR_RETRY_INTERVAL > 0) {
+      struct timeval tv;
+      unsigned long interval_usecs = PR_TUNABLE_EINTR_RETRY_INTERVAL * 1000000;
 
-    tv.tv_sec = (interval_usecs / 1000000);
-    tv.tv_usec = (interval_usecs - (tv.tv_sec * 1000000));
+      tv.tv_sec = (interval_usecs / 1000000);
+      tv.tv_usec = (interval_usecs - (tv.tv_sec * 1000000));
 
-    pr_trace_msg(trace_channel, 18, "interrupted system call, "
-      "delaying for %lu %s, %lu %s",
-      (unsigned long) tv.tv_sec, tv.tv_sec != 1 ? "secs" : "sec",
-      (unsigned long) tv.tv_usec, tv.tv_usec != 1 ? "microsecs" : "microsec");
+      pr_trace_msg(trace_channel, 18, "interrupted system call, "
+        "delaying for %lu %s, %lu %s",
+        (unsigned long) tv.tv_sec, tv.tv_sec != 1 ? "secs" : "sec",
+        (unsigned long) tv.tv_usec, tv.tv_usec != 1 ? "microsecs" : "microsec");
 
-    pr_timer_usleep(interval_usecs);
+      pr_timer_usleep(interval_usecs);
+    }
 
     /* Clear the EINTR errno, now that we've dealt with it. */
     errno = 0;
@@ -525,6 +527,14 @@ void pr_signals_handle(void) {
   }
 
   table_handling_signal(FALSE);
+}
+
+void pr_signals_handle(void) {
+  handle_signals(TRUE);
+}
+
+void pr_signals_handle_without_delay(void) {
+  handle_signals(FALSE);
 }
 
 /* sig_restart occurs in the master daemon when manually "kill -HUP"

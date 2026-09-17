@@ -1865,7 +1865,7 @@ sub showsymlinks_on_mlsd_rel_symlinked_file {
 
       # Since ShowSymlinks is on, the type for test.lnk should indicate that
       # it's a symlink
-      $expected = 'OS.unix=symlink'; 
+      $expected = 'OS.unix=symlink';
       $got = $res->{'test.lnk'}->{type};
       $self->assert(qr/$expected/i, $got,
         test_msg("Expected '$expected', got '$got'"));
@@ -2148,7 +2148,7 @@ sub showsymlinks_on_mlsd_rel_symlinked_dir {
 
       # Since ShowSymlinks is on, the type for test.lnk should indicate that
       # it's a symlink
-      $expected = 'OS.unix=symlink'; 
+      $expected = 'OS.unix=symlink';
       $got = $res->{'test.lnk'}->{type};
       $self->assert(qr/$expected/i, $got,
         test_msg("Expected '$expected', got '$got'"));

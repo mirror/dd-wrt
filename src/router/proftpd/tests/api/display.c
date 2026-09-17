@@ -106,7 +106,7 @@ static int write_file(const char *path, const char **lines,
   }
 
   res = fclose(fh);
-  return res; 
+  return res;
 }
 
 /* Tests */

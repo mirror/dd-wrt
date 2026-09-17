@@ -121,20 +121,18 @@ sub chgrp_name_ok {
       $client->site('CHGRP', $file_group, 'test.txt');
 
       my $resp_code = $client->response_code();
-      my $resp_msg = $client->response_msg(); 
+      my $resp_msg = $client->response_msg();
 
-      my $expected;
-
-      $expected = 200;
+      my $expected = 200;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = 'SITE CHGRP command successful';
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $client->quit();
- 
+
       my $test_gid = (stat($test_file))[5];
       $expected = $file_gid;
       $self->assert($expected == $test_gid,

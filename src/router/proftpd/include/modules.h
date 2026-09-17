@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -82,7 +82,7 @@ typedef struct conftab_rec {
 #define CL_READ		0x0008  /* File reading commands (RETR) */
 #define CL_WRITE	0x0010  /* Writing commands (STOR, MKD, etc) */
 #define CL_MISC		0x0020  /* Miscellaneous (RNFR/RNTO, SITE, etc) */
-#define CL_SEC		0x0040  /* RFC2228 Security commands */
+#define CL_SEC		0x0040  /* RFC2228 Security commands, SSH key exchange */
 #define CL_CONNECT	0x0080  /* Session start */
 #define CL_DISCONNECT	0x0100  /* Session end */
 #define CL_SSH		0x0200  /* SSH requests */

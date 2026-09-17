@@ -78,7 +78,7 @@ static struct stash *sym_alloc(void) {
   pr_pool_tag(sub_pool, "symbol");
 
   sym = pcalloc(sub_pool, sizeof(struct stash));
-  sym->sym_pool = sub_pool; 
+  sym->sym_pool = sub_pool;
 
   return sym;
 }
@@ -136,7 +136,7 @@ static int sym_cmp(struct stash *s1, struct stash *s2) {
       if (s1->sym_module->priority > s2->sym_module->priority) {
         return -1;
       }
-    
+
       if (s1->sym_module->priority < s2->sym_module->priority) {
         return 1;
       }
@@ -894,10 +894,9 @@ void pr_stash_dump(void (*dumpf)(const char *, ...)) {
   nauth_syms = stash_dump_syms(auth_symbol_table, "AUTH", dumpf);
   nhook_syms = stash_dump_syms(hook_symbol_table, "HOOK", dumpf);
   nsyms = nconf_syms + ncmd_syms + nauth_syms + nhook_syms;
- 
+
   dumpf("stab: %u total symbols: %u CONF, %u CMD, %u AUTH, %u HOOK", nsyms,
     nconf_syms, ncmd_syms, nauth_syms, nhook_syms);
-
 #endif /* PR_USE_DEVEL */
 }
 
@@ -906,7 +905,7 @@ int init_stash(void) {
     destroy_pool(symbol_pool);
   }
 
-  symbol_pool = make_sub_pool(permanent_pool); 
+  symbol_pool = make_sub_pool(permanent_pool);
   pr_pool_tag(symbol_pool, "Stash Pool");
 
   memset(conf_symbol_table, '\0', sizeof(conf_symbol_table));

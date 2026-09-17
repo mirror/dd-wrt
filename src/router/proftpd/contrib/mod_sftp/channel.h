@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp channels
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2023 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,7 +53,9 @@ struct ssh2_channel {
   uint32_t remote_windowsz;
   uint32_t remote_max_packetsz;
 
-  struct ssh2_channel_databuf *outgoing;
+  struct ssh2_channel_databuf *incoming_head, *incoming_tail;
+  struct ssh2_channel_databuf *outgoing_head, *outgoing_tail;
+  unsigned long incoming_len, outgoing_len;
 
   int recvd_eof, sent_eof;
   int recvd_close, sent_close;

@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_ident -- a module for performing identd lookups [RFC1413]
- * Copyright (c) 2008-2016 The ProFTPD Project
+ * Copyright (c) 2008-2024 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,7 +66,7 @@ static char *ident_lookup(pool *p, conn_t *conn) {
 
   ident_nstrm = NULL;
   ident_timeout_triggered = FALSE;
-  
+
   ident_port = pr_inet_getservport(p, "ident", "tcp");
   if (ident_port == -1) {
     return NULL;
@@ -294,19 +294,20 @@ static char *ident_lookup(pool *p, conn_t *conn) {
 
 /* usage: IdentLookups on|off */
 MODRET set_identlookups(cmd_rec *cmd) {
-  int bool = -1;
+  int engine = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  engine = get_boolean(cmd, 1);
+  if (engine == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(int));
-  *((int *) c->argv[0]) = bool;
+  *((int *) c->argv[0]) = engine;
 
   return PR_HANDLED(cmd);
 }

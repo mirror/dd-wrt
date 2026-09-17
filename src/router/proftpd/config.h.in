@@ -186,6 +186,9 @@
 /* Define to `int' if <sys/types.h> doesn't define.  */
 #undef pid_t
 
+/* Define if the listen(2) system call accepts backlog value of -1. */
+#undef LISTEN_NEGATIVE_BACKLOG
+
 /* Define as the return type of signal handlers (int or void).  */
 #undef RETSIGTYPE
 
@@ -681,6 +684,9 @@
 /* Define if you have the <dirent.h> header file.  */
 #undef HAVE_DIRENT_H
 
+/* Define if you have the <dlfcn.h> header file.  */
+#undef HAVE_DLFCN_H
+
 /* Define if you have the <errno.h> header file.  */
 #undef HAVE_ERRNO_H
 
@@ -1145,6 +1151,9 @@
 /* Define if using OPENSSL_API_COMPAT.  */
 #undef PR_USE_OPENSSL_API_COMPAT
 
+/* Define if using OpenSSL has BIO_s_secmem().  */
+#undef PR_USE_OPENSSL_BIO_SECMEM
+
 /* Define if OpenSSL Elliptic Curve Cryptography (ECC) support, if available,
  * should be used.
  */
@@ -1153,6 +1162,9 @@
 /* Define if OpenSSL EVP_CipherInit_ex support, if available, should be used.
  */
 #undef PR_USE_OPENSSL_EVP_CIPHERINIT_EX
+
+/* Define if OpenSSL engine support, if available, should be used.  */
+#undef PR_USE_OPENSSL_ENGINE
 
 /* Define if OpenSSL support (with FIPS enabled), if available, should be
  * used.
@@ -1166,6 +1178,9 @@
 
 /* Define if OpenSSL OCSP support, if available, should be used.  */
 #undef PR_USE_OPENSSL_OCSP
+
+/* Define if OpenSSL OSSL_PROVIDER_load support, if available, should be used.  */
+#undef PR_USE_OPENSSL_OSSL_PROVIDER_LOAD
 
 /* Define if OpenSSL SSL num ticket support, if available, should be used.  */
 #undef PR_USE_OPENSSL_SSL_NUM_TICKETS

@@ -51,7 +51,7 @@ static void tear_down(void) {
   if (p) {
     destroy_pool(p);
     p = permanent_pool = NULL;
-  } 
+  }
 }
 
 START_TEST (config_init_config_test) {
@@ -154,12 +154,13 @@ START_TEST (config_add_config_param_test) {
   server_rec *s = NULL;
 
   s = pr_parser_server_ctxt_open("127.0.0.1");
-  ck_assert_msg(s != NULL, "Failed to open server context: %s", strerror(errno));
- 
+  ck_assert_msg(s != NULL, "Failed to open server context: %s",
+    strerror(errno));
+
   c = add_config_param(NULL, 0, NULL);
   ck_assert_msg(c == NULL, "Failed to handle null arguments");
   ck_assert_msg(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
-    strerror(errno), errno); 
+    strerror(errno), errno);
 
   name = "foo";
 

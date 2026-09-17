@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2022 The ProFTPD Project team
+ * Copyright (c) 2004-2024 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,15 +51,23 @@ static const char *trace_channel = "facl";
 #endif
 
 static int is_errno_eperm(int xerrno) {
-  if (xerrno == EPERM)
-    return 1;
+  if (xerrno == EPERM) {
+    return TRUE;
+  }
 
-#ifdef EOPNOTSUPP
-  if (xerrno == EOPNOTSUPP)
-    return 1;
+#if defined(ENOTSUP)
+  if (xerrno == ENOTSUP) {
+    return TRUE;
+  }
+#endif /* !ENOTSUP */
+
+#if defined(EOPNOTSUPP)
+  if (xerrno == EOPNOTSUPP) {
+    return TRUE;
+  }
 #endif /* !EOPNOTSUPP */
 
-  return 0;
+  return FALSE;
 }
 
 static int facl_access(pr_fs_t *fs, const char *path, int mode, uid_t uid,
@@ -918,7 +926,7 @@ static int check_solaris_facl(pool *p, const char *path, int mode, void *acl,
       }
       break;
 
-    default: 
+    default:
       if (have_mask_entry) {
         if ((ae.a_perm & mode) &&
             (acl_mask_entry.a_perm & mode)) {
@@ -974,6 +982,7 @@ static int check_facl(pool *p, const char *path, int mode, void *acl, int nents,
 
 static int facl_fsio_access(pr_fs_t *fs, const char *path, int mode,
     uid_t uid, gid_t gid, array_header *suppl_gids) {
+  const char *real_path = NULL;
   int nents = 0, res, xerrno;
   struct stat st;
   void *acls;
@@ -982,6 +991,14 @@ static int facl_fsio_access(pr_fs_t *fs, const char *path, int mode,
   pr_fs_clear_cache2(path);
   if (pr_fsio_stat(path, &st) < 0) {
     return -1;
+  }
+
+  tmp_pool = make_sub_pool(fs->fs_pool);
+  pr_pool_tag(tmp_pool, "mod_facl access(2) pool");
+
+  real_path = pr_fsio_realpath(tmp_pool, path);
+  if (real_path != NULL) {
+    path = real_path;
   }
 
   /* Look up the acl for this path. */
@@ -995,7 +1012,7 @@ static int facl_fsio_access(pr_fs_t *fs, const char *path, int mode,
     pr_trace_msg(trace_channel, 5, "unable to retrieve ACL for '%s': [%d] %s",
       path, xerrno, strerror(xerrno));
 
-    if (is_errno_eperm(xerrno)) {
+    if (is_errno_eperm(xerrno) == TRUE) {
       pr_trace_msg(trace_channel, 3, "ACL retrieval operation not supported "
         "for '%s', falling back to normal access check", path);
 
@@ -1004,13 +1021,16 @@ static int facl_fsio_access(pr_fs_t *fs, const char *path, int mode,
 
         pr_trace_msg(trace_channel, 6, "normal access check for '%s' "
           "failed: %s", path, strerror(xerrno));
+        destroy_pool(tmp_pool);
         errno = xerrno;
         return -1;
       }
 
+      destroy_pool(tmp_pool);
       return 0;
     }
 
+    destroy_pool(tmp_pool);
     errno = xerrno;
     return -1;
   }
@@ -1025,7 +1045,7 @@ static int facl_fsio_access(pr_fs_t *fs, const char *path, int mode,
       "unable to retrieve ACL count for '%s': [%d] %s", path, xerrno,
       strerror(xerrno));
 
-    if (is_errno_eperm(xerrno)) {
+    if (is_errno_eperm(xerrno) == TRUE) {
       pr_trace_msg(trace_channel, 3, "ACL retrieval operation not supported "
         "for '%s', falling back to normal access check", path);
 
@@ -1034,13 +1054,16 @@ static int facl_fsio_access(pr_fs_t *fs, const char *path, int mode,
 
         pr_trace_msg(trace_channel, 6, "normal access check for '%s' "
           "failed: %s", path, strerror(xerrno));
+        destroy_pool(tmp_pool);
         errno = xerrno;
         return -1;
       }
 
+      destroy_pool(tmp_pool);
       return 0;
     }
 
+    destroy_pool(tmp_pool);
     errno = xerrno;
     return -1;
   }
@@ -1048,25 +1071,17 @@ static int facl_fsio_access(pr_fs_t *fs, const char *path, int mode,
   pr_trace_msg(trace_channel, 10,
     "acl(2) returned %d ACL entries for path '%s'", nents, path);
 
-  if (tmp_pool == NULL) {
-    tmp_pool = make_sub_pool(fs->fs_pool);
-    pr_pool_tag(tmp_pool, "mod_facl access(2) pool");
-  }
-
   acls = pcalloc(tmp_pool, nents * sizeof(aclent_t));
 
   nents = acl(path, GETACL, nents, acls);
   if (nents < 0) {
     xerrno = errno;
 
-    destroy_pool(tmp_pool);
-    tmp_pool = NULL;
-
     pr_trace_msg(trace_channel, 5,
       "unable to retrieve ACL for '%s': [%d] %s", path, xerrno,
       strerror(xerrno));
 
-    if (is_errno_eperm(xerrno)) {
+    if (is_errno_eperm(xerrno) == TRUE) {
       pr_trace_msg(trace_channel, 3, "ACL retrieval operation not supported "
         "for '%s', falling back to normal access check", path);
 
@@ -1075,22 +1090,20 @@ static int facl_fsio_access(pr_fs_t *fs, const char *path, int mode,
 
         pr_trace_msg(trace_channel, 6, "normal access check for '%s' "
           "failed: %s", path, strerror(xerrno));
+        destroy_pool(tmp_pool);
         errno = xerrno;
         return -1;
       }
 
+      destroy_pool(tmp_pool);
       return 0;
     }
 
+    destroy_pool(tmp_pool);
     errno = xerrno;
     return -1;
   }
 # endif
-
-  if (tmp_pool == NULL) {
-    tmp_pool = make_sub_pool(fs->fs_pool);
-    pr_pool_tag(tmp_pool, "mod_facl access(2) pool");
-  }
 
   res = check_facl(tmp_pool, path, mode, acls, nents, &st, uid, gid,
     suppl_gids);
@@ -1109,6 +1122,7 @@ static int facl_fsio_access(pr_fs_t *fs, const char *path, int mode,
 
 static int facl_fsio_faccess(pr_fh_t *fh, int mode, uid_t uid, gid_t gid,
     array_header *suppl_gids) {
+  const char *real_path = NULL;
   int nents = 0, res, xerrno;
   struct stat st;
   void *acls;
@@ -1130,7 +1144,7 @@ static int facl_fsio_faccess(pr_fh_t *fh, int mode, uid_t uid, gid_t gid,
       "unable to retrieve ACL for '%s': [%d] %s", fh->fh_path, xerrno,
       strerror(xerrno));
 
-    if (is_errno_eperm(xerrno)) {
+    if (is_errno_eperm(xerrno) == TRUE) {
       pr_trace_msg(trace_channel, 3, "ACL retrieval operation not supported "
         "for '%s', falling back to normal access check", fh->fh_path);
 
@@ -1160,7 +1174,7 @@ static int facl_fsio_faccess(pr_fh_t *fh, int mode, uid_t uid, gid_t gid,
       "unable to retrieve ACL count for '%s': [%d] %s", fh->fh_path,
       xerrno, strerror(xerrno));
 
-    if (is_errno_eperm(xerrno)) {
+    if (is_errno_eperm(xerrno) == TRUE) {
       pr_trace_msg(trace_channel, 3, "ACL retrieval operation not supported "
         "for '%s', falling back to normal access check", fh->fh_path);
 
@@ -1198,7 +1212,7 @@ static int facl_fsio_faccess(pr_fh_t *fh, int mode, uid_t uid, gid_t gid,
       "unable to retrieve ACL for '%s': [%d] %s", fh->fh_path, xerrno,
       strerror(xerrno));
 
-    if (is_errno_eperm(xerrno)) {
+    if (is_errno_eperm(xerrno) == TRUE) {
       pr_trace_msg(trace_channel, 3, "ACL retrieval operation not supported "
         "for '%s', falling back to normal access check", fh->fh_path);
 
@@ -1224,7 +1238,12 @@ static int facl_fsio_faccess(pr_fh_t *fh, int mode, uid_t uid, gid_t gid,
     pr_pool_tag(tmp_pool, "mod_facl faccess(2) pool");
   }
 
-  res = check_facl(tmp_pool, fh->fh_path, mode, acls, nents, &st, uid, gid,
+  real_path = pr_fsio_realpath(tmp_pool, fh->fh_path);
+  if (real_path == NULL) {
+    real_path = fh->fh_path;
+  }
+
+  res = check_facl(tmp_pool, real_path, mode, acls, nents, &st, uid, gid,
     suppl_gids);
   xerrno = errno;
 

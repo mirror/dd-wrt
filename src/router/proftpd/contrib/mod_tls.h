@@ -38,7 +38,7 @@
 int tls_log(const char *, ...)
 #ifdef __GNUC__
        __attribute__ ((format (printf, 1, 2)));
-#else   
+#else
        ;
 #endif
 

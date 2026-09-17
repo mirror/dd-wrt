@@ -805,8 +805,8 @@ sub find_hiddenstore_files {
     die("Can't open directory '$path': $!");
   }
 
-  my $files  = [grep { /^$prefix/ && -f "$path/$_" } readdir($dirh)]; 
-  closedir($dirh); 
+  my $files  = [grep { /^$prefix/ && -f "$path/$_" } readdir($dirh)];
+  closedir($dirh);
 
   return $files;
 }

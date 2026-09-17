@@ -78,7 +78,7 @@ static struct testsuite_info suites[] = {
   { NULL, NULL }
 };
 
-static Suite *tests_get_suite(const char *suite) { 
+static Suite *tests_get_suite(const char *suite) {
   register unsigned int i;
 
   for (i = 0; suites[i].name != NULL; i++) {

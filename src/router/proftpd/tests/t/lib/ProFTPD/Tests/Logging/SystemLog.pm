@@ -338,7 +338,7 @@ sub systemlog_with_sysloglevel_crit {
           if ($line =~ /USER $user: Login successful/) {
             $saw_login = 1;
           }
-        } 
+        }
 
         if (!$saw_closed) {
           if ($line =~ /FTP session closed/) {

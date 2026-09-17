@@ -88,7 +88,7 @@ sub listoptions_opt_t {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -109,7 +109,7 @@ sub listoptions_opt_t {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   # Create three files, and use utime() to modify the last-mod time of
@@ -556,7 +556,7 @@ sub listoptions_opt_1_nlst_simple_glob {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -577,7 +577,7 @@ sub listoptions_opt_1_nlst_simple_glob {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $test_files = [qw(
@@ -731,7 +731,7 @@ sub listoptions_opt_1_nlst_complex_glob {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -752,7 +752,7 @@ sub listoptions_opt_1_nlst_complex_glob {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $test_files = [qw(
@@ -907,7 +907,7 @@ sub listoptions_listonly {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -928,7 +928,7 @@ sub listoptions_listonly {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $test_files = [qw(
@@ -1123,7 +1123,7 @@ sub listoptions_nlstonly {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -1144,7 +1144,7 @@ sub listoptions_nlstonly {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $test_files = [qw(
@@ -1490,7 +1490,7 @@ sub listoptions_maxfiles {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -1511,7 +1511,7 @@ sub listoptions_maxfiles {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   # For this test, we need to create MANY (i.e. 110K) files in the
@@ -1537,7 +1537,7 @@ sub listoptions_maxfiles {
       print STDOUT "# Created file $test_file\n";
     }
   }
- 
+
   $max_files = 100000;
   my $timeout = 900;
 

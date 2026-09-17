@@ -125,7 +125,7 @@ $ ls -l /home/astocker/proftpd.passwd
     print STDERR "Executing ftpasswd: $cmd\n";
   }
 
-  eval { 
+  eval {
     if (open(my $cmdh, "| $cmd")) {
       print $cmdh "$passwd1\n";
       unless (close($cmdh)) {
@@ -157,8 +157,8 @@ $ ls -l /home/astocker/proftpd.passwd
   my $gid2 = 501;
 
 =pod
-$ ftpasswd --passwd --name=test2@mail.com --uid=3000 
---gid=3000 --home=/home/test --shell=/bin/false 
+$ ftpasswd --passwd --name=test2@mail.com --uid=3000
+--gid=3000 --home=/home/test --shell=/bin/false
 --file=/home/astocker/proftpd.passwd
 ftpasswd: using alternate file: /home/astocker/proftpd.passwd
 ftpasswd: creating passwd entry for user test2@mail.com

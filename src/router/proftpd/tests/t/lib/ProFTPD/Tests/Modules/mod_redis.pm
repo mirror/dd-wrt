@@ -119,7 +119,7 @@ sub redis_list_delete {
   );
 
   $redis->del($key);
-  $redis->quit();  
+  $redis->quit();
   return 1;
 }
 

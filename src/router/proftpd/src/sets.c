@@ -166,7 +166,7 @@ int xaset_remove(xaset_t *set, xasetmember_t *member) {
 
   if (m == NULL) {
     errno = ENOENT;
-    return -1;  
+    return -1;
   }
 
   if (member->prev != NULL) {

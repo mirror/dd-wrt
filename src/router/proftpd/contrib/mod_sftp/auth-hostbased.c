@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp 'hostbased' user authentication
- * Copyright (c) 2008-2022 TJ Saunders
+ * Copyright (c) 2008-2023 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,6 +47,8 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
   const unsigned char *id;
   uint32_t buflen2, bufsz2, hostkey_datalen, id_len, signature_len;
   enum sftp_key_type_e pubkey_type;
+  struct sftp_verify_details *details = NULL;
+  pr_table_t *verify_notes = NULL;
   int fp_algo_id;
 
   if (pr_cmd_dispatch_phase(pass_cmd, PRE_CMD, 0) < 0) {
@@ -116,11 +118,17 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
 
   } else if (strcmp(hostkey_algo, "ecdsa-sha2-nistp521") == 0) {
     pubkey_type = SFTP_KEY_ECDSA_521;
+
+  } else if (strcmp(hostkey_algo, "sk-ecdsa-sha2-nistp256@openssh.com") == 0) {
+    pubkey_type = SFTP_KEY_ECDSA_256_SK;
 #endif /* PR_USE_OPENSSL_ECC */
 
 #if defined(PR_USE_SODIUM)
   } else if (strcmp(hostkey_algo, "ssh-ed25519") == 0) {
     pubkey_type = SFTP_KEY_ED25519;
+
+  } else if (strcmp(hostkey_algo, "sk-ssh-ed25519@openssh.com") == 0) {
+    pubkey_type = SFTP_KEY_ED25519_SK;
 #endif /* PR_USE_SODIUM */
 
 #if defined(HAVE_X448_OPENSSL)
@@ -236,8 +244,9 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
    * verify the request.  And if that succeeds, then we're done authenticating.
    */
 
+  verify_notes = pr_table_nalloc(pkt->pool, 0, 1);
   if (sftp_keystore_verify_host_key(pkt->pool, user, host_fqdn, host_user,
-      hostkey_data, hostkey_datalen) < 0) {
+      hostkey_data, hostkey_datalen, verify_notes) < 0) {
     pr_log_auth(PR_LOG_NOTICE, "USER %s (Login failed): authentication "
       "via '%s' host key failed", user, hostkey_algo);
 
@@ -271,15 +280,31 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
   sftp_msg_write_string(&buf2, &buflen2, host_fqdn);
   sftp_msg_write_string(&buf2, &buflen2, host_user_utf8);
 
+  details = pcalloc(pkt->pool, sizeof(struct sftp_verify_details));
   if (sftp_keys_verify_signed_data(pkt->pool, hostkey_algo, hostkey_data,
       hostkey_datalen, signature_data, signature_len, (unsigned char *) ptr2,
-      (bufsz2 - buflen2)) < 0) {
+      (bufsz2 - buflen2), details) < 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "failed to verify '%s' signature on hostbased auth request for "
       "user '%s', host %s", hostkey_algo, orig_user, host_fqdn);
 
     pr_log_auth(PR_LOG_NOTICE, "USER %s (Login failed): signature "
       "verification of '%s' host key failed", user, hostkey_algo);
+
+    *send_userauth_fail = TRUE;
+    errno = EACCES;
+    return 0;
+  }
+
+  if (sftp_keys_permit_key(pkt->pool, hostkey_algo, orig_user, details,
+      verify_notes) < 0) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "unable to permit '%s' signature on hostbased auth request for "
+      "user '%s', host %s due to security key policy", hostkey_algo, orig_user,
+      host_fqdn);
+
+    pr_log_auth(PR_LOG_NOTICE, "USER %s (Login failed): signature "
+      "validation of '%s' host key failed", user, hostkey_algo);
 
     *send_userauth_fail = TRUE;
     errno = EACCES;

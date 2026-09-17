@@ -151,7 +151,8 @@ This table shows the supported command classes:
   <tr>
     <td><code>SEC</code></td>
     <td>RFC2228-related security FTP commands: <code>AUTH</code>,
-      <code>CCC</code>, <code>PBSZ</code>, <code>PROT</code></td>
+      <code>CCC</code>, <code>PBSZ</code>, <code>PROT</code>.  <b>Note</b>:
+      this class also includes SSH key exchange commands.</td>
   </tr>
 
   <tr>
@@ -435,6 +436,11 @@ indicated when logging.
   </tr>
 
   <tr>
+    <td>&nbsp;<code>%{transfer-speed}</code>&nbsp;</td>
+    <td>Data transfer speed, in KB/s</td>
+  </tr>
+
+  <tr>
     <td>&nbsp;<code>%{transfer-status}</code>&nbsp;</td>
     <td>Status of data transfer: "success", "failed", "cancelled", "timeout", or "-"</td>
   </tr>
@@ -582,6 +588,12 @@ directive.
 A <em>path</em> value of "none" will disable logging for the entire daemon.
 
 <p>
+If you find that your ProFTPD installation appears to be ignoring your
+<code>SystemLog</code> configuration entirely, <em>and</em> your ProFTPD
+service is managed/run by <code>systemd</code>, then you may be encountering
+<a href="#SystemdNodaemon">this FAQ</a>.
+
+<p>
 <hr>
 <h2><a name="Installation">Installation</a></h2>
 The <code>mod_log</code> module is compiled by default.
@@ -594,7 +606,7 @@ The <code>mod_log</code> module is compiled by default.
 <p><a name="FAQ">
 <b>Frequently Asked Questions</b><br>
 
-<p>
+<p><a name="LogLevel">
 <font color=red>Question</font>: Why are successful logins no longer being
 logged, after upgrading to ProFTPD 1.3.6, even though I am using the
 <code>SystemLog</code> directive?<br>
@@ -618,7 +630,49 @@ For having successful logins logged once more, use the following in your
   SyslogLevel INFO
 </pre>
 
+<p><a name="SystemdNodaemon">
+<font color=red>Question</font>: I configured <a href="#SystemLog"><code>SystemLog</code></a> in my ProFTPD configuration, but ProFTPD still logs only to syslog.  What is missing?<br>
+<font color=blue>Answer</font>: The most common cause for this behavior is the
+use of <code>systemd</code> for running ProFTPD.  In particular, the <code>systemd</code> unit file for ProFTPD in some installations unexpectedly uses the
+<code>--nodaemon</code> command-line option, <i>e.g.</i>:
+<pre>
+# /usr/lib/systemd/system/proftpd.service
+...
+[Service]
+Type = simple
+Environment = PROFTPD_OPTIONS=
+EnvironmentFile = -/etc/sysconfig/proftpd
+ExecStartPre = /usr/sbin/proftpd --configtest
+ExecStart = /usr/sbin/proftpd --nodaemon $PROFTPD_OPTIONS
+ExecReload = /bin/kill -HUP $MAINPID
+PIDFile = /run/proftpd/proftpd.pid
+
+...
+</pre>
+When ProFTPD is started with the <code>-n/--nodaemon</code> command-line option,
+it will <em>only</em> log to stdout, and <b>not</b> to any configured log files.
+This configuration is useful, for example, when running ProFTPD in a Docker
+container.
+
 <p>
+A slightly different <code>systemd</code> unit file for ProFTPD will work just
+as well, <i>and</i> will honor the <code>SystemLog</code> configuration as
+expected:
+<pre>
+...
+[Service]
+Type = forking
+Environment = PROFTPD_OPTIONS=
+EnvironmentFile = -/etc/sysconfig/proftpd
+ExecStartPre = /usr/sbin/proftpd --configtest $PROFTPD_OPTIONS
+ExecStart = /usr/sbin/proftpd $PROFTPD_OPTIONS
+ExecReload = /bin/kill -HUP $MAINPID
+PIDFile = /run/proftpd/proftpd.pid
+
+...
+</pre>
+
+<p><a name="NoDNSNames">
 <font color=red>Question</font>: I have configured ProFTPD to use DNS names
 in my <code>proftpd.conf</code> using:
 <pre>
@@ -651,7 +705,7 @@ DNS name is <b>not used</b>, as that DNS name is considered "unreliable"; only
 resorts to logging just the client IP address for the <code>%h</code> variable,
 rather than the DNS name, in these situations.
 
-<p>
+<p><a name="LogDisconnectionReason">
 <font color=red>Question</font>: How can I get the reason a client was
 disconnected, for whatever reason, logged to my <code>ExtendedLog</code>?<br>
 <font color=blue>Answer</font>: You can use the <code>%E</code>
@@ -682,7 +736,7 @@ your log would have a line like:
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2002-2022 The ProFTPD Project<br>
+&copy; Copyright 2002-2024 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 

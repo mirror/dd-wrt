@@ -51,7 +51,7 @@ static void filetab_parse_table(wrap2_table_t *filetab) {
       wrap2_log("file '%s': missing newline or line too long (%u) at line %u",
         filetab->tab_name, (unsigned int) buflen, lineno);
       continue;
-    } 
+    }
 
     if (buf[0] == '#' || buf[strspn(buf, " \t\r\n")] == 0) {
       continue;
@@ -121,7 +121,7 @@ static void filetab_parse_table(wrap2_table_t *filetab) {
           ptr = wrap2_strsplit(res, ':');
 
           if (filetab_options_list == NULL) {
-            filetab_options_list = make_array(filetab->tab_pool, 0, 
+            filetab_options_list = make_array(filetab->tab_pool, 0,
               sizeof(char *));
           }
 
@@ -179,7 +179,7 @@ static void filetab_parse_table(wrap2_table_t *filetab) {
         *((char **) push_array(filetab_clients_list)) =
           pstrdup(filetab->tab_pool, res);
       }
- 
+
     } else {
       wrap2_log("file '%s': skipping irrevelant daemon/service ('%s') line %u",
         filetab->tab_name, service, lineno);
@@ -207,7 +207,7 @@ static array_header *filetab_fetch_clients_cb(wrap2_table_t *filetab,
 
   /* If this table/file has not yet been parsed, parse it. */
   if (*((unsigned char *) filetab->tab_data) == FALSE) {
-    filetab_parse_table(filetab);    
+    filetab_parse_table(filetab);
     *((unsigned char *) filetab->tab_data) = TRUE;
   }
 

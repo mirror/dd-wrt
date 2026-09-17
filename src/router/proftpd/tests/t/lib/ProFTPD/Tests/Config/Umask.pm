@@ -56,7 +56,7 @@ sub umask_new_dir_mode {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -77,7 +77,7 @@ sub umask_new_dir_mode {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $test_dir = File::Spec->rel2abs("$tmpdir/test.d");
@@ -189,7 +189,7 @@ sub umask_new_dir_mode_subdir {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -210,7 +210,7 @@ sub umask_new_dir_mode_subdir {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/sub.d");
@@ -268,7 +268,7 @@ sub umask_new_dir_mode_subdir {
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->cwd('sub.d');
-    
+
       my $expected;
 
       $expected = 250;
@@ -341,7 +341,7 @@ sub umask_new_dir_mode_subdir_userowner_groupowner {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -372,9 +372,9 @@ sub umask_new_dir_mode_subdir_userowner_groupowner {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_user_write($auth_user_file, $file_owner, $passwd, $file_owner_uid,
-    $file_owner_gid, $home_dir, '/bin/bash'); 
+    $file_owner_gid, $home_dir, '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
   auth_group_write($auth_group_file, $file_group, $file_owner_gid, $file_owner);
 
@@ -425,7 +425,7 @@ sub umask_new_dir_mode_subdir_userowner_groupowner {
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg) = $client->cwd('sub.d');
-    
+
       my $expected;
 
       $expected = 250;

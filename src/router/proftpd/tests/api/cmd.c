@@ -38,7 +38,7 @@ static void tear_down(void) {
   if (p) {
     destroy_pool(p);
     p = NULL;
-  } 
+  }
 }
 
 START_TEST (cmd_alloc_test) {
@@ -69,206 +69,206 @@ START_TEST (cmd_get_id_test) {
   res = pr_cmd_get_id("a");
   ck_assert_msg(res == -1, "Failed to handle unknown argument");
   ck_assert_msg(errno == ENOENT, "Failed to set errno to ENOENT");
-  
+
   res = pr_cmd_get_id(C_USER);
   ck_assert_msg(res == PR_CMD_USER_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_USER_ID, C_USER, res); 
+    PR_CMD_USER_ID, C_USER, res);
 
   res = pr_cmd_get_id(C_PASS);
   ck_assert_msg(res == PR_CMD_PASS_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_PASS_ID, C_PASS, res); 
+    PR_CMD_PASS_ID, C_PASS, res);
 
   res = pr_cmd_get_id(C_ACCT);
   ck_assert_msg(res == PR_CMD_ACCT_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_ACCT_ID, C_ACCT, res); 
+    PR_CMD_ACCT_ID, C_ACCT, res);
 
   res = pr_cmd_get_id(C_CWD);
   ck_assert_msg(res == PR_CMD_CWD_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_CWD_ID, C_CWD, res); 
+    PR_CMD_CWD_ID, C_CWD, res);
 
   res = pr_cmd_get_id(C_XCWD);
   ck_assert_msg(res == PR_CMD_XCWD_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_XCWD_ID, C_XCWD, res); 
+    PR_CMD_XCWD_ID, C_XCWD, res);
 
   res = pr_cmd_get_id(C_CDUP);
   ck_assert_msg(res == PR_CMD_CDUP_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_CDUP_ID, C_CDUP, res); 
+    PR_CMD_CDUP_ID, C_CDUP, res);
 
   res = pr_cmd_get_id(C_XCUP);
   ck_assert_msg(res == PR_CMD_XCUP_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_XCUP_ID, C_XCUP, res); 
+    PR_CMD_XCUP_ID, C_XCUP, res);
 
   res = pr_cmd_get_id(C_SMNT);
   ck_assert_msg(res == PR_CMD_SMNT_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_SMNT_ID, C_SMNT, res); 
+    PR_CMD_SMNT_ID, C_SMNT, res);
 
   res = pr_cmd_get_id(C_REIN);
   ck_assert_msg(res == PR_CMD_REIN_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_REIN_ID, C_REIN, res); 
+    PR_CMD_REIN_ID, C_REIN, res);
 
   res = pr_cmd_get_id(C_QUIT);
   ck_assert_msg(res == PR_CMD_QUIT_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_QUIT_ID, C_QUIT, res); 
+    PR_CMD_QUIT_ID, C_QUIT, res);
 
   res = pr_cmd_get_id(C_PORT);
   ck_assert_msg(res == PR_CMD_PORT_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_PORT_ID, C_PORT, res); 
+    PR_CMD_PORT_ID, C_PORT, res);
 
   res = pr_cmd_get_id(C_EPRT);
   ck_assert_msg(res == PR_CMD_EPRT_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_EPRT_ID, C_EPRT, res); 
+    PR_CMD_EPRT_ID, C_EPRT, res);
 
   res = pr_cmd_get_id(C_PASV);
   ck_assert_msg(res == PR_CMD_PASV_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_PASV_ID, C_PASV, res); 
+    PR_CMD_PASV_ID, C_PASV, res);
 
   res = pr_cmd_get_id(C_EPSV);
   ck_assert_msg(res == PR_CMD_EPSV_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_EPSV_ID, C_EPSV, res); 
+    PR_CMD_EPSV_ID, C_EPSV, res);
 
   res = pr_cmd_get_id(C_TYPE);
   ck_assert_msg(res == PR_CMD_TYPE_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_TYPE_ID, C_TYPE, res); 
+    PR_CMD_TYPE_ID, C_TYPE, res);
 
   res = pr_cmd_get_id(C_STRU);
   ck_assert_msg(res == PR_CMD_STRU_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_STRU_ID, C_STRU, res); 
+    PR_CMD_STRU_ID, C_STRU, res);
 
   res = pr_cmd_get_id(C_MODE);
   ck_assert_msg(res == PR_CMD_MODE_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_MODE_ID, C_MODE, res); 
+    PR_CMD_MODE_ID, C_MODE, res);
 
   res = pr_cmd_get_id(C_RETR);
   ck_assert_msg(res == PR_CMD_RETR_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_RETR_ID, C_RETR, res); 
+    PR_CMD_RETR_ID, C_RETR, res);
 
   res = pr_cmd_get_id(C_STOR);
   ck_assert_msg(res == PR_CMD_STOR_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_STOR_ID, C_STOR, res); 
+    PR_CMD_STOR_ID, C_STOR, res);
 
   res = pr_cmd_get_id(C_STOU);
   ck_assert_msg(res == PR_CMD_STOU_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_STOU_ID, C_STOU, res); 
+    PR_CMD_STOU_ID, C_STOU, res);
 
   res = pr_cmd_get_id(C_APPE);
   ck_assert_msg(res == PR_CMD_APPE_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_APPE_ID, C_APPE, res); 
+    PR_CMD_APPE_ID, C_APPE, res);
 
   res = pr_cmd_get_id(C_ALLO);
   ck_assert_msg(res == PR_CMD_ALLO_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_ALLO_ID, C_ALLO, res); 
+    PR_CMD_ALLO_ID, C_ALLO, res);
 
   res = pr_cmd_get_id(C_REST);
   ck_assert_msg(res == PR_CMD_REST_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_REST_ID, C_REST, res); 
+    PR_CMD_REST_ID, C_REST, res);
 
   res = pr_cmd_get_id(C_RNFR);
   ck_assert_msg(res == PR_CMD_RNFR_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_RNFR_ID, C_RNFR, res); 
+    PR_CMD_RNFR_ID, C_RNFR, res);
 
   res = pr_cmd_get_id(C_RNTO);
   ck_assert_msg(res == PR_CMD_RNTO_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_RNTO_ID, C_RNTO, res); 
+    PR_CMD_RNTO_ID, C_RNTO, res);
 
   res = pr_cmd_get_id(C_ABOR);
   ck_assert_msg(res == PR_CMD_ABOR_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_ABOR_ID, C_ABOR, res); 
+    PR_CMD_ABOR_ID, C_ABOR, res);
 
   res = pr_cmd_get_id(C_DELE);
   ck_assert_msg(res == PR_CMD_DELE_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_DELE_ID, C_DELE, res); 
+    PR_CMD_DELE_ID, C_DELE, res);
 
   res = pr_cmd_get_id(C_MDTM);
   ck_assert_msg(res == PR_CMD_MDTM_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_MDTM_ID, C_MDTM, res); 
+    PR_CMD_MDTM_ID, C_MDTM, res);
 
   res = pr_cmd_get_id(C_MDTM);
   ck_assert_msg(res == PR_CMD_MDTM_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_MDTM_ID, C_MDTM, res); 
+    PR_CMD_MDTM_ID, C_MDTM, res);
 
   res = pr_cmd_get_id(C_RMD);
   ck_assert_msg(res == PR_CMD_RMD_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_RMD_ID, C_RMD, res); 
+    PR_CMD_RMD_ID, C_RMD, res);
 
   res = pr_cmd_get_id(C_XRMD);
   ck_assert_msg(res == PR_CMD_XRMD_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_XRMD_ID, C_XRMD, res); 
+    PR_CMD_XRMD_ID, C_XRMD, res);
 
   res = pr_cmd_get_id(C_MKD);
   ck_assert_msg(res == PR_CMD_MKD_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_MKD_ID, C_MKD, res); 
+    PR_CMD_MKD_ID, C_MKD, res);
 
   res = pr_cmd_get_id(C_MLSD);
   ck_assert_msg(res == PR_CMD_MLSD_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_MLSD_ID, C_MLSD, res); 
+    PR_CMD_MLSD_ID, C_MLSD, res);
 
   res = pr_cmd_get_id(C_MLST);
   ck_assert_msg(res == PR_CMD_MLST_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_MLST_ID, C_MLST, res); 
+    PR_CMD_MLST_ID, C_MLST, res);
 
   res = pr_cmd_get_id(C_XMKD);
   ck_assert_msg(res == PR_CMD_XMKD_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_XMKD_ID, C_XMKD, res); 
+    PR_CMD_XMKD_ID, C_XMKD, res);
 
   res = pr_cmd_get_id(C_PWD);
   ck_assert_msg(res == PR_CMD_PWD_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_PWD_ID, C_PWD, res); 
+    PR_CMD_PWD_ID, C_PWD, res);
 
   res = pr_cmd_get_id(C_XPWD);
   ck_assert_msg(res == PR_CMD_XPWD_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_XPWD_ID, C_XPWD, res); 
+    PR_CMD_XPWD_ID, C_XPWD, res);
 
   res = pr_cmd_get_id(C_SIZE);
   ck_assert_msg(res == PR_CMD_SIZE_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_SIZE_ID, C_SIZE, res); 
+    PR_CMD_SIZE_ID, C_SIZE, res);
 
   res = pr_cmd_get_id(C_LIST);
   ck_assert_msg(res == PR_CMD_LIST_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_LIST_ID, C_LIST, res); 
+    PR_CMD_LIST_ID, C_LIST, res);
 
   res = pr_cmd_get_id(C_NLST);
   ck_assert_msg(res == PR_CMD_NLST_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_NLST_ID, C_NLST, res); 
+    PR_CMD_NLST_ID, C_NLST, res);
 
   res = pr_cmd_get_id(C_SITE);
   ck_assert_msg(res == PR_CMD_SITE_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_SITE_ID, C_SITE, res); 
+    PR_CMD_SITE_ID, C_SITE, res);
 
   res = pr_cmd_get_id(C_SYST);
   ck_assert_msg(res == PR_CMD_SYST_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_SYST_ID, C_SYST, res); 
+    PR_CMD_SYST_ID, C_SYST, res);
 
   res = pr_cmd_get_id(C_STAT);
   ck_assert_msg(res == PR_CMD_STAT_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_STAT_ID, C_STAT, res); 
+    PR_CMD_STAT_ID, C_STAT, res);
 
   res = pr_cmd_get_id(C_HELP);
   ck_assert_msg(res == PR_CMD_HELP_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_HELP_ID, C_HELP, res); 
+    PR_CMD_HELP_ID, C_HELP, res);
 
   res = pr_cmd_get_id(C_NOOP);
   ck_assert_msg(res == PR_CMD_NOOP_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_NOOP_ID, C_NOOP, res); 
+    PR_CMD_NOOP_ID, C_NOOP, res);
 
   res = pr_cmd_get_id(C_FEAT);
   ck_assert_msg(res == PR_CMD_FEAT_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_FEAT_ID, C_FEAT, res); 
+    PR_CMD_FEAT_ID, C_FEAT, res);
 
   res = pr_cmd_get_id(C_OPTS);
   ck_assert_msg(res == PR_CMD_OPTS_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_OPTS_ID, C_OPTS, res); 
+    PR_CMD_OPTS_ID, C_OPTS, res);
 
   res = pr_cmd_get_id(C_LANG);
   ck_assert_msg(res == PR_CMD_LANG_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_LANG_ID, C_LANG, res); 
+    PR_CMD_LANG_ID, C_LANG, res);
 
   res = pr_cmd_get_id(C_HOST);
   ck_assert_msg(res == PR_CMD_HOST_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_HOST_ID, C_HOST, res); 
+    PR_CMD_HOST_ID, C_HOST, res);
 
   res = pr_cmd_get_id(C_CLNT);
   ck_assert_msg(res == PR_CMD_CLNT_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_CLNT_ID, C_CLNT, res); 
+    PR_CMD_CLNT_ID, C_CLNT, res);
 
   res = pr_cmd_get_id(C_RANG);
   ck_assert_msg(res == PR_CMD_RANG_ID, "Expected cmd ID %d for '%s', got %d",
@@ -281,35 +281,35 @@ START_TEST (cmd_get_id_test) {
   /* RFC 2228 commands */
   res = pr_cmd_get_id(C_ADAT);
   ck_assert_msg(res == PR_CMD_ADAT_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_ADAT_ID, C_ADAT, res); 
+    PR_CMD_ADAT_ID, C_ADAT, res);
 
   res = pr_cmd_get_id(C_AUTH);
   ck_assert_msg(res == PR_CMD_AUTH_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_AUTH_ID, C_AUTH, res); 
+    PR_CMD_AUTH_ID, C_AUTH, res);
 
   res = pr_cmd_get_id(C_CCC);
   ck_assert_msg(res == PR_CMD_CCC_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_CCC_ID, C_CCC, res); 
+    PR_CMD_CCC_ID, C_CCC, res);
 
   res = pr_cmd_get_id(C_CONF);
   ck_assert_msg(res == PR_CMD_CONF_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_CONF_ID, C_CONF, res); 
+    PR_CMD_CONF_ID, C_CONF, res);
 
   res = pr_cmd_get_id(C_ENC);
   ck_assert_msg(res == PR_CMD_ENC_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_ENC_ID, C_ENC, res); 
+    PR_CMD_ENC_ID, C_ENC, res);
 
   res = pr_cmd_get_id(C_MIC);
   ck_assert_msg(res == PR_CMD_MIC_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_MIC_ID, C_MIC, res); 
+    PR_CMD_MIC_ID, C_MIC, res);
 
   res = pr_cmd_get_id(C_PBSZ);
   ck_assert_msg(res == PR_CMD_PBSZ_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_PBSZ_ID, C_PBSZ, res); 
+    PR_CMD_PBSZ_ID, C_PBSZ, res);
 
   res = pr_cmd_get_id(C_PROT);
   ck_assert_msg(res == PR_CMD_PROT_ID, "Expected cmd ID %d for '%s', got %d",
-    PR_CMD_PROT_ID, C_PROT, res); 
+    PR_CMD_PROT_ID, C_PROT, res);
 
   /* Make sure we handle lowercased, mixed-case commands as well. */
   res = pr_cmd_get_id("user");
@@ -328,12 +328,12 @@ START_TEST (cmd_cmp_test) {
 
   res = pr_cmd_cmp(NULL, 1);
   ck_assert_msg(res == -1, "Failed to handle null arguments");
-  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL"); 
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   cmd = pr_cmd_alloc(p, 1, "foo");
   res = pr_cmd_cmp(cmd, 0);
   ck_assert_msg(res == -1, "Failed to handle bad ID argument");
-  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL"); 
+  ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   res = pr_cmd_cmp(cmd, 1);
   ck_assert_msg(res == 1, "Failed to handle empty cmd_rec argument");
@@ -452,7 +452,7 @@ START_TEST (cmd_get_displayable_str_test) {
   cmd = pr_cmd_alloc(p, 3, "foo", "bar", "baz");
   cmd->arg = NULL;
   res = pr_cmd_get_displayable_str(cmd, NULL);
-  
+
   /* cmd->argv[0] is the command name; without that, it does not matter
    * what cmd->arg is.  Hence why if cmd->argv[0] is null, we expect the
    * empty string.

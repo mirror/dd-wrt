@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2014 The ProFTPD Project team
+ * Copyright (c) 2014-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,6 +32,14 @@
 void pr_signals_block(void);
 void pr_signals_unblock(void);
 void pr_signals_handle(void);
+
+/* When processing any signal interruptions, we add a little delay, to
+ * ensure that we do not spin tightly in a loop, spiking CPU usage.  However
+ * there are situations where such delay should NOT be added, as in the
+ * daemon process and connection acceptance.  Thus only in very specific
+ * situations should this "without delay" variant of signal handling be used.
+ */
+void pr_signals_handle_without_delay(void);
 
 /* Signal handling functions. */
 RETSIGTYPE pr_signals_handle_disconnect(int);

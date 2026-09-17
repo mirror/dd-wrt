@@ -64,7 +64,7 @@ sub rmd_unremovable_subdir {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
@@ -74,7 +74,7 @@ sub rmd_unremovable_subdir {
     $home_dir = '/private' . $home_dir;
     $sub_dir = '/private' . $sub_dir;
   }
- 
+
   my $config = {
     PidFile => $pid_file,
     ScoreboardFile => $scoreboard_file,

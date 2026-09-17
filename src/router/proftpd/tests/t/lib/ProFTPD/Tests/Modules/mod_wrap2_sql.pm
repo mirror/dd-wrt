@@ -2129,7 +2129,7 @@ EOS
       );
       unless ($client) {
         die("Can't connect to ::1: $!");
-      } 
+      }
 
       # Read the banner
       my $banner = <$client>;
@@ -2145,7 +2145,7 @@ EOS
       my $expected = "331 Password required for $user\r\n";
       $self->assert($expected eq $resp,
         test_msg("Expected '$expected', got '$resp'"));
- 
+
       # Send the PASS command
       $cmd = "PASS $passwd\r\n";
       $client->print($cmd);
@@ -2157,7 +2157,7 @@ EOS
       $expected = "530 Access denied\r\n";
       $self->assert($expected eq $resp,
         test_msg("Expected '$expected', got '$resp'"));
- 
+
       $client->close();
     };
 
@@ -2227,7 +2227,7 @@ EOS
       );
       unless ($client) {
         die("Can't connect to ::1: $!");
-      } 
+      }
 
       # Read the banner
       my $banner = <$client>;
@@ -2243,7 +2243,7 @@ EOS
       my $expected = "331 Password required for $user\r\n";
       $self->assert($expected eq $resp,
         test_msg("Expected '$expected', got '$resp'"));
- 
+
       # Send the PASS command
       $cmd = "PASS $passwd\r\n";
       $client->print($cmd);
@@ -2255,7 +2255,7 @@ EOS
       $expected = "530 Access denied\r\n";
       $self->assert($expected eq $resp,
         test_msg("Expected '$expected', got '$resp'"));
- 
+
       $client->close();
     };
 
@@ -3557,7 +3557,7 @@ EOS
       }
 
       my $resp_code = $client->response_code();
-      my $resp_msg = $client->response_msg(); 
+      my $resp_msg = $client->response_msg();
 
       my $expected;
 
@@ -3576,7 +3576,7 @@ EOS
       }
 
       $resp_code = $client->response_code();
-      $resp_msg = $client->response_msg(); 
+      $resp_msg = $client->response_msg();
 
       $expected = 530;
       $self->assert($expected == $resp_code,
@@ -4181,7 +4181,7 @@ EOS
       $home_dir => {
         User => $test_user,
         Group => $test_group,
-        UserAlias => "anonymous $test_user", 
+        UserAlias => "anonymous $test_user",
         RequireValidShell => 'off',
       },
     },

@@ -398,7 +398,7 @@ MODRET start_ifversion(cmd_rec *cmd) {
       version_str[strlen(version_str)-1] = '\0';
       version_str++;
 
-    case '~': 
+    case '~':
       /* Regular expression */
       matched = match_version(cmd->tmp_pool, version_str, &error);
       if (error != NULL) {
@@ -436,7 +436,7 @@ MODRET start_ifversion(cmd_rec *cmd) {
     default:
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unknown comparison operator '",
         op_str, "'", NULL));
-  } 
+  }
 
   if ((matched && !negated) ||
       (!matched && negated)) {

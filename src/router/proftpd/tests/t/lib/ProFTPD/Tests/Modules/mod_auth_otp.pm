@@ -566,8 +566,8 @@ EOS
       my $oath = Authen::OATH->new();
       my $nattempts = 5;
       my $ok = 0;
-    
-      for (my $i = 0; $i < $nattempts; $i++) { 
+
+      for (my $i = 0; $i < $nattempts; $i++) {
         my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
         # Calculate HOTP
@@ -676,6 +676,9 @@ EOS
 
         # Assumes default table names, column names
         AuthOTPTable => 'sql:/get-user-hotp/update-user-hotp',
+
+        # Table entries are now required by default, per Issue #1562
+        AuthOTPOptions => 'OptionalTableEntry',
       },
 
       'mod_sql.c' => [
@@ -763,7 +766,6 @@ EOS
 
   # Stop server
   server_stop($setup->{pid_file});
-
   $self->assert_child_ok($pid);
 
   test_cleanup($setup->{log_file}, $ex);
@@ -1160,7 +1162,7 @@ EOS
       sleep(2);
 
       my $oath = Authen::OATH->new();
-      my $nattempts = 3; 
+      my $nattempts = 3;
       my $now = time();
       my $ok = 0;
 
@@ -1282,6 +1284,9 @@ EOS
 
         # Assumes default table names, column names
         AuthOTPTable => 'sql:/get-user-totp/update-user-totp',
+
+        # Table entries are now required by default, per Issue #1562
+        AuthOTPOptions => 'OptionalTableEntry',
       },
 
       'mod_sql.c' => [
@@ -1369,7 +1374,6 @@ EOS
 
   # Stop server
   server_stop($setup->{pid_file});
-
   $self->assert_child_ok($pid);
 
   test_cleanup($setup->{log_file}, $ex);

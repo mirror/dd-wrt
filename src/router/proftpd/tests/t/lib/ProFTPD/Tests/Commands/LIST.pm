@@ -823,7 +823,7 @@ sub list_file_after_upload {
       if ($ENV{TEST_VERBOSE}) {
         print STDOUT "# Logged in, sending STOR\n";
       }
- 
+
       my $conn = $client->stor_raw('test.dat');
       unless ($conn) {
         die("STOR test.dat failed: " . $client->response_code() . " " .
@@ -833,7 +833,7 @@ sub list_file_after_upload {
       if ($ENV{TEST_VERBOSE}) {
         print STDOUT "# Data connection opened, writing data\n";
       }
- 
+
       my $start = [gettimeofday()];
       my $buf = "ABCD" x 10240;
       $conn->write($buf, length($buf), 30);
@@ -851,7 +851,7 @@ sub list_file_after_upload {
       if ($ENV{TEST_VERBOSE}) {
         print STDOUT "# File uploaded, sending LIST\n";
       }
- 
+
       $conn = $client->list_raw($test_file);
       unless ($conn) {
         die("LIST $test_file failed: " . $client->response_code() . " " .
@@ -1956,7 +1956,7 @@ sub list_fails_eperm {
 sub list_bug2821 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-  
+
   my $config_file = "$tmpdir/cmds.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
@@ -2132,7 +2132,7 @@ sub list_bug2821 {
 sub list_unsorted_buffering_bug4060 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-  
+
   my $config_file = "$tmpdir/cmds.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");

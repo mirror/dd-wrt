@@ -45,14 +45,14 @@ const char *snmp_smi_get_varstr(pool *p, unsigned char var_type) {
     case SNMP_SMI_OID:
       varstr = "OID";
       break;
- 
+
     case SNMP_SMI_NULL:
       varstr = "NULL";
-      break; 
+      break;
 
     case SNMP_SMI_IPADDR:
       varstr = "IPADDR";
-      break; 
+      break;
 
     case SNMP_SMI_COUNTER32:
       varstr = "COUNTER32";
@@ -130,7 +130,7 @@ struct snmp_var *snmp_smi_create_var(pool *p, oid_t *name, unsigned int namelen,
   struct snmp_var *var = NULL;
 
   switch (smi_type) {
-    case SNMP_SMI_INTEGER:  
+    case SNMP_SMI_INTEGER:
     case SNMP_SMI_COUNTER32:
     case SNMP_SMI_GAUGE32:
     case SNMP_SMI_TIMETICKS:

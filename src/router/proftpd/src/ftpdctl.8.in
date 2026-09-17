@@ -41,7 +41,33 @@ rather than the default Unix domain socket.  The default controls socket is
 Display informational messages while communicating with the
 .B proftpd
 daemon.
-.TP
+.PD
+.SH EXIT STATUS
+.PP
+The
+.B ftpdctl
+utility exits with one of the following values:
+.PP
+.RS
+.IP 0
+Requested action was successfully handled.
+.IP 1
+A generic error occurred handling the request.
+.IP 2
+The requesting user does not have permission to perform the action.
+.IP 3
+The request contains invalid/unknown parameters.
+.IP 4
+The subject/target of the requested action could not be found.
+.IP 5
+The requested action could not be handled.
+.IP 6
+The requested action/operation was ignored.
+.IP 7
+The requested action is not supported.
+.IP 8
+An internal error occurred while processing the requested action.
+.RE
 .PD
 .SH AUTHORS
 .PP

@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2022 The ProFTPD Project team
- *  
+ * Copyright (c) 2001-2023 The ProFTPD Project team
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -27,30 +27,26 @@
 #include "conf.h"
 #include "privs.h"
 
-#ifdef HAVE_UCRED_H
+#if defined(HAVE_UCRED_H)
 # include <ucred.h>
 #endif /* !HAVE_UCRED_H */
 
-#ifdef HAVE_SYS_UCRED_H
+#if defined(HAVE_SYS_UCRED_H)
 # include <sys/ucred.h>
 #endif /* !HAVE_SYS_UCRED_H */
 
-#ifdef HAVE_SYS_UIO_H
+#if defined(HAVE_SYS_UIO_H)
 # include <sys/uio.h>
 #endif /* !HAVE_SYS_UIO_H */
 
-#ifdef PR_USE_CTRLS
+#if defined(PR_USE_CTRLS)
 
 #include "mod_ctrls.h"
 
-/* Maximum number of request arguments. */
-#define CTRLS_MAX_NREQARGS	32
-
-/* Maximum number of response arguments. */
-#define CTRLS_MAX_NRESPARGS	1024
-
-/* Maximum length of a single request argument. */
-#define CTRLS_MAX_REQARGLEN	256
+#define CTRLS_REQ_ACTION_KEY	"action"
+#define CTRLS_REQ_ARGS_KEY	"args"
+#define CTRLS_RESP_STATUS_KEY	"status"
+#define CTRLS_RESP_RESPS_KEY	"responses"
 
 typedef struct ctrls_act_obj {
   struct ctrls_act_obj *prev, *next;
@@ -114,9 +110,11 @@ static pr_ctrls_t *ctrls_prepare(ctrls_action_t *act) {
 
 static ctrls_action_t *ctrls_action_new(void) {
   ctrls_action_t *act = NULL;
-  pool *sub_pool = make_sub_pool(ctrls_pool);
+  pool *sub_pool = NULL;
 
+  sub_pool = make_sub_pool(ctrls_pool);
   pr_pool_tag(sub_pool, "ctrls action subpool");
+
   act = pcalloc(sub_pool, sizeof(ctrls_action_t));
   act->pool = sub_pool;
 
@@ -145,7 +143,7 @@ pr_ctrls_t *pr_ctrls_alloc(void) {
      * to 1; this tells the Controls layer that it is "pending", not yet
      * handled.
      */
-    ctrl->ctrls_cb_retval = 1;
+    ctrl->ctrls_cb_retval = PR_CTRLS_STATUS_PENDING;
   }
 
   return ctrl;
@@ -179,7 +177,7 @@ int pr_ctrls_free(pr_ctrls_t *ctrl) {
   ctrl->ctrls_module = NULL;
   ctrl->ctrls_action = NULL;
   ctrl->ctrls_cb = NULL;
-  ctrl->ctrls_cb_retval = 1;
+  ctrl->ctrls_cb_retval = PR_CTRLS_STATUS_PENDING;
   ctrl->ctrls_flags = 0;
 
   if (ctrl->ctrls_tmp_pool != NULL) {
@@ -196,56 +194,6 @@ int pr_ctrls_free(pr_ctrls_t *ctrl) {
 
   pr_unblock_ctrls();
   return 0;
-}
-
-static char *ctrls_sep(char **str) {
-  char *ret = NULL, *dst = NULL;
-  unsigned char quoted = FALSE;
-
-  /* Sanity checks */
-  if (str == NULL ||
-      !*str ||
-      !**str) {
-    errno = EINVAL;
-    return NULL;
-  }
-
-  while (**str &&
-         PR_ISSPACE(**str)) {
-    (*str)++;
-  }
-
-  if (!**str) {
-    return NULL;
-  }
-
-  ret = dst = *str;
-
-  if (**str == '\"') {
-    quoted = TRUE;
-    (*str)++;
-  }
-
-  while (**str &&
-         (quoted ? (**str != '\"') : !PR_ISSPACE(**str))) {
-
-    if (**str == '\\' && quoted) {
-      /* Escaped char */
-      if (*((*str) + 1)) {
-        *dst = *(++(*str));
-      }
-    }
-
-    *dst++ = **str;
-    ++(*str);
-  }
-
-  if (**str) {
-    (*str)++;
-  }
-  *dst = '\0';
-
-  return ret;
 }
 
 int pr_ctrls_register(const module *mod, const char *action,
@@ -303,7 +251,7 @@ int pr_ctrls_register(const module *mod, const char *action,
     act->next = ctrls_action_list;
     ctrls_action_list->prev = act;
   }
-  
+
   ctrls_action_list = act;
 
   pr_unblock_ctrls();
@@ -341,10 +289,10 @@ int pr_ctrls_unregister(module *mod, const char *action) {
         mod ? mod->name : "(none)", act->action);
 
       /* Destroy this action. */
-      destroy_pool(act->pool); 
+      destroy_pool(act->pool);
     }
   }
-  
+
   pr_unblock_ctrls();
 
   if (have_action == FALSE) {
@@ -500,8 +448,9 @@ int pr_ctrls_flush_response(pr_ctrls_t *ctrl) {
       return -1;
     }
 
-    res = pr_ctrls_send_msg(ctrl->ctrls_cl->cl_fd, ctrl->ctrls_cb_retval,
-      ctrl->ctrls_cb_resps->nelts, (char **) ctrl->ctrls_cb_resps->elts);
+    res = pr_ctrls_send_response(ctrl->ctrls_tmp_pool, ctrl->ctrls_cl->cl_fd,
+      ctrl->ctrls_cb_retval, ctrl->ctrls_cb_resps->nelts,
+      (char **) ctrl->ctrls_cb_resps->elts);
     if (res < 0) {
       return -1;
     }
@@ -510,42 +459,138 @@ int pr_ctrls_flush_response(pr_ctrls_t *ctrl) {
   return 0;
 }
 
-int pr_ctrls_parse_msg(pool *msg_pool, char *msg, unsigned int *msgargc,
-    char ***msgargv) {
-  char *tmp = msg, *str = NULL;
-  array_header *msgs = NULL;
+static int ctrls_send_msg(pool *p, int fd, pr_json_object_t *json) {
+  uint32_t msglen;
+  int res, xerrno;
+  char *msg;
 
-  /* Sanity checks */
-  if (msg_pool == NULL ||
-      msgargc == NULL ||
-      msgargv == NULL) {
+  msg = pr_json_object_to_text(p, json, "");
+  if (msg == NULL) {
+    return -1;
+  }
+
+  msglen = strlen(msg);
+
+  /* No interruptions. */
+  pr_signals_block();
+
+  res = write(fd, &msglen, sizeof(uint32_t));
+  xerrno = errno;
+
+  if ((size_t) res != sizeof(uint32_t)) {
+    pr_signals_unblock();
+
+    errno = xerrno;
+    return -1;
+  }
+
+  while (TRUE) {
+    res = write(fd, msg, msglen);
+    xerrno = errno;
+
+    if ((size_t) res != msglen) {
+      if (xerrno == EAGAIN) {
+        continue;
+      }
+
+      pr_signals_unblock();
+
+      errno = xerrno;
+      return -1;
+    }
+
+    break;
+  }
+
+  pr_signals_unblock();
+  return 0;
+}
+
+int pr_ctrls_send_request(pool *p, int fd, const char *action,
+    unsigned int argc, char **argv) {
+  register unsigned int i;
+  pool *tmp_pool;
+  int res, xerrno;
+  pr_json_object_t *json;
+  pr_json_array_t *args;
+
+  if (p == NULL ||
+      fd < 0 ||
+      action == NULL) {
     errno = EINVAL;
     return -1;
   }
 
-  /* Allocate an array_header, and push each space-delimited string
-   * (respecting quotes and escapes) into the array.
-   */
- 
-  msgs = make_array(msg_pool, 0, sizeof(char *));
-
-  while ((str = ctrls_sep(&tmp)) != NULL) {
-    *((char **) push_array(msgs)) = pstrdup(msg_pool, str);
+  if (argc > 0 &&
+      argv == NULL) {
+    errno = EINVAL;
+    return -1;
   }
 
-  *msgargc = msgs->nelts;
-  *msgargv = (char **) msgs->elts;
+  tmp_pool = make_sub_pool(p);
+  pr_pool_tag(tmp_pool, "Controls API send_request pool");
 
-  return 0;
+  json = pr_json_object_alloc(tmp_pool);
+
+  res = pr_json_object_set_string(tmp_pool, json, CTRLS_REQ_ACTION_KEY, action);
+  xerrno = errno;
+
+  if (res < 0) {
+    pr_json_object_free(json);
+    destroy_pool(tmp_pool);
+
+    errno = xerrno;
+    return -1;
+  }
+
+  args = pr_json_array_alloc(tmp_pool);
+
+  for (i = 0; i < argc; i++) {
+    res = pr_json_array_append_string(tmp_pool, args, argv[i]);
+    xerrno = errno;
+
+    if (res < 0) {
+      pr_json_array_free(args);
+      pr_json_object_free(json);
+      destroy_pool(tmp_pool);
+
+      errno = xerrno;
+      return -1;
+    }
+  }
+
+  res = pr_json_object_set_array(tmp_pool, json, CTRLS_REQ_ARGS_KEY, args);
+  xerrno = errno;
+
+  if (res < 0) {
+    pr_json_array_free(args);
+    pr_json_object_free(json);
+    destroy_pool(tmp_pool);
+
+    errno = xerrno;
+    return -1;
+  }
+
+  res = ctrls_send_msg(tmp_pool, fd, json);
+  xerrno = errno;
+
+  pr_json_array_free(args);
+  pr_json_object_free(json);
+  destroy_pool(tmp_pool);
+
+  errno = xerrno;
+  return res;
 }
 
 int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
+  register int i = 0;
   pr_ctrls_t *ctrl = NULL, *next_ctrl = NULL;
-  char reqaction[128] = {'\0'}, *reqarg = NULL;
-  size_t reqargsz = 0;
-  unsigned int nreqargs = 0, reqarglen = 0;
-  int bread, status = 0;
-  register unsigned int i = 0;
+  pool *tmp_pool = NULL;
+  int nread, nreqargs = 0, res, xerrno;
+  uint32_t msglen;
+  char *msg = NULL, *reqaction = NULL;
+  pr_json_object_t *json = NULL;
+  pr_json_array_t *args = NULL;
 
   if (cl == NULL ||
       cl->cl_ctrls == NULL) {
@@ -561,16 +606,15 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
   /* No interruptions */
   pr_signals_block();
 
-  /* Read in the incoming number of args, including the action. */
+  /* Read in the size of the message, as JSON text. */
 
-  /* First, read the status (but ignore it).  This is necessary because
-   * the same function, pr_ctrls_send_msg(), is used to send requests
-   * as well as responses, and the status is a necessary part of a response.
-   */
-  bread = read(cl->cl_fd, &status, sizeof(int));
-  if (bread < 0) {
-    int xerrno = errno;
+  nread = read(cl->cl_fd, &msglen, sizeof(uint32_t));
+  xerrno = errno;
 
+  if (nread < 0) {
+    pr_trace_msg(trace_channel, 3,
+      "error reading %lu bytes of request message size: %s",
+      sizeof(msglen), strerror(xerrno));
     pr_signals_unblock();
 
     errno = xerrno;
@@ -578,20 +622,29 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
   }
 
   /* Watch for short reads. */
-  if (bread != sizeof(int)) {
+  if (nread != sizeof(uint32_t)) {
     (void) pr_trace_msg(trace_channel, 3,
-      "short read (%d of %u bytes) of status, unable to receive request",
-      bread, (unsigned int) sizeof(int));
+      "short read (%d of %u bytes) of message size, unable to receive request",
+      nread, (unsigned int) sizeof(uint32_t));
     pr_signals_unblock();
     errno = EPERM;
     return -1;
   }
- 
-  /* Read in the args, length first, then string. */
-  bread = read(cl->cl_fd, &nreqargs, sizeof(unsigned int));
-  if (bread < 0) {
-    int xerrno = errno;
 
+  tmp_pool = make_sub_pool(cl->cl_pool);
+  pr_pool_tag(tmp_pool, "Controls API recv_request pool");
+
+  /* Allocate one byte for the terminating NUL. */
+  msg = pcalloc(tmp_pool, msglen + 1);
+
+  nread = read(cl->cl_fd, msg, msglen);
+  xerrno = errno;
+
+  if (nread < 0) {
+    pr_trace_msg(trace_channel, 3,
+      "error reading %lu bytes of request message: %s",
+      (unsigned long) msglen, strerror(xerrno));
+    destroy_pool(tmp_pool);
     pr_signals_unblock();
 
     errno = xerrno;
@@ -599,80 +652,64 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
   }
 
   /* Watch for short reads. */
-  if (bread != sizeof(unsigned int)) {
+  if ((unsigned int) nread != msglen) {
     (void) pr_trace_msg(trace_channel, 3,
-      "short read (%d of %u bytes) of nreqargs, unable to receive request",
-      bread, (unsigned int) sizeof(unsigned int));
+      "short read (%d of %u bytes) of message text, unable to receive request",
+      nread, (unsigned int) msglen);
+    destroy_pool(tmp_pool);
     pr_signals_unblock();
     errno = EPERM;
     return -1;
   }
 
-  if (nreqargs > CTRLS_MAX_NREQARGS) {
+  json = pr_json_object_from_text(tmp_pool, msg);
+  xerrno = errno;
+
+  if (json == NULL) {
     (void) pr_trace_msg(trace_channel, 3,
-      "nreqargs (%u) exceeds max (%u), rejecting", nreqargs,
-      CTRLS_MAX_NREQARGS);
+      "read invalid JSON message text ('%.*s' [%lu bytes]), unable to "
+      "receive request: %s", (int) msglen, msg, (unsigned long) msglen,
+      strerror(xerrno));
+    destroy_pool(tmp_pool);
     pr_signals_unblock();
-    errno = ENOMEM;
+
+    errno = EINVAL;
     return -1;
   }
 
-  /* Next, read in the requested number of arguments.  The client sends
-   * the arguments in pairs: first the length of the argument, then the
-   * argument itself.  The first argument is the action, so get the first
-   * matching pr_ctrls_t (if present), and add the remaining arguments to it.
-   */
-  
-  bread = read(cl->cl_fd, &reqarglen, sizeof(unsigned int));
-  if (bread < 0) {
-    int xerrno = errno;
+  res = pr_json_object_get_string(tmp_pool, json, CTRLS_REQ_ACTION_KEY,
+    &reqaction);
+  xerrno = errno;
 
-    pr_signals_unblock();
-
-    errno = xerrno;
-    return -1;
-  }
-
-  /* Watch for short reads. */
-  if (bread != sizeof(unsigned int)) {
+  if (res < 0) {
     (void) pr_trace_msg(trace_channel, 3,
-      "short read (%d of %u bytes) of reqarglen, unable to receive request",
-      bread, (unsigned int) sizeof(unsigned int));
+      "unable to read message action (%s), unable to receive request",
+      strerror(xerrno));
+    pr_json_object_free(json);
+    destroy_pool(tmp_pool);
     pr_signals_unblock();
-    errno = EPERM;
+
+    errno = EINVAL;
     return -1;
   }
 
-  if (reqarglen >= sizeof(reqaction)) {
-    pr_signals_unblock();
-    errno = ENOMEM;
-    return -1;
-  }
+  res = pr_json_object_get_array(tmp_pool, json, CTRLS_REQ_ARGS_KEY, &args);
+  xerrno = errno;
 
-  memset(reqaction, '\0', sizeof(reqaction));
-
-  bread = read(cl->cl_fd, reqaction, reqarglen);
-  if (bread < 0) {
-    int xerrno = errno;
-
-    pr_signals_unblock();
-
-    errno = xerrno;
-    return -1;
-  }
-
-  /* Watch for short reads. */
-  if ((size_t) bread != reqarglen) {
+  if (res < 0) {
     (void) pr_trace_msg(trace_channel, 3,
-      "short read (%d of %u bytes) of reqaction, unable to receive request",
-      bread, reqarglen);
+      "unable to read message arguments (%s), unable to receive request",
+      strerror(xerrno));
+    pr_json_object_free(json);
+    destroy_pool(tmp_pool);
     pr_signals_unblock();
-    errno = EPERM;
+
+    errno = EINVAL;
     return -1;
   }
 
-  reqaction[sizeof(reqaction)-1] = '\0';
-  nreqargs--;
+  nreqargs = pr_json_array_count(args);
+  pr_trace_msg(trace_channel, 19, "received request argc: %u", nreqargs);
 
   /* Find a matching action object, and use it to populate a ctrl object,
    * preparing the ctrl object for dispatching to the action handlers.
@@ -681,6 +718,9 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
   if (ctrl == NULL) {
     (void) pr_trace_msg(trace_channel, 3,
       "unknown action requested '%s', unable to receive request", reqaction);
+    pr_json_array_free(args);
+    pr_json_object_free(json);
+    destroy_pool(tmp_pool);
     pr_signals_unblock();
 
     /* XXX This is where we could also add "did you mean" functionality. */
@@ -691,78 +731,36 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
   pr_trace_msg(trace_channel, 19, "known action '%s' requested", reqaction);
 
   for (i = 0; i < nreqargs; i++) {
-    memset(reqarg, '\0', reqargsz);
+    size_t reqarglen = 0;
+    char *reqarg = NULL;
 
-    bread = read(cl->cl_fd, &reqarglen, sizeof(unsigned int));
-    if (bread < 0) {
-      int xerrno = errno;
+    res = pr_json_array_get_string(tmp_pool, args, i, &reqarg);
+    xerrno = errno;
 
+    if (res < 0) {
+      (void) pr_trace_msg(trace_channel, 3,
+        "unable to read message argument #%u (%s), unable to receive request",
+        i+1, strerror(xerrno));
+      pr_json_array_free(args);
+      pr_json_object_free(json);
+      destroy_pool(tmp_pool);
       pr_signals_unblock();
 
-      errno = xerrno;
+      errno = EINVAL;
       return -1;
     }
 
-    /* Watch for short reads. */
-    if (bread != sizeof(unsigned int)) {
-      (void) pr_trace_msg(trace_channel, 3,
-        "short read (%d of %u bytes) of reqarglen (#%u), skipping",
-        bread, (unsigned int) sizeof(unsigned int), i+1);
-      continue;
-    }
+    reqarglen = strlen(reqarg);
+    res = pr_ctrls_add_arg(ctrl, reqarg, reqarglen);
+    xerrno = errno;
 
-    if (reqarglen == 0) {
-      /* Skip any zero-length arguments. */
-      pr_trace_msg(trace_channel, 9,
-        "zero-length reqarg (#%u), skipping", i+1);
-      continue;
-    }
-
-    if (reqarglen > CTRLS_MAX_REQARGLEN) {
-      (void) pr_trace_msg(trace_channel, 3,
-        "reqarglen (#%u) of %u bytes exceeds max (%u bytes), rejecting",
-        i+1, reqarglen, CTRLS_MAX_REQARGLEN);
-      pr_signals_unblock();
-      errno = ENOMEM;
-      return -1;
-    }
-
-    /* Make sure reqarg is large enough to handle the given argument.  If
-     * it is too small, allocate one of the necessary size.
-     */
-
-    if (reqargsz < reqarglen) {
-      reqargsz = reqarglen + 1;
-
-      if (ctrl->ctrls_tmp_pool == NULL) {
-        ctrl->ctrls_tmp_pool = make_sub_pool(ctrls_pool);
-        pr_pool_tag(ctrl->ctrls_tmp_pool, "ctrls tmp pool");
-      }
-
-      reqarg = pcalloc(ctrl->ctrls_tmp_pool, reqargsz);
-    }
-
-    bread = read(cl->cl_fd, reqarg, reqarglen);
-    if (bread < 0) {
-      int xerrno = errno;
-
-      pr_signals_unblock();
-
-      errno = xerrno;
-      return -1;
-    }
-
-    /* Watch for short reads. */
-    if ((size_t) bread != reqarglen) {
-      (void) pr_trace_msg(trace_channel, 3,
-        "short read (%d of %u bytes) of reqarg (#%u), skipping",
-        bread, reqarglen, i+1);
-      continue;
-    }
-
-    if (pr_ctrls_add_arg(ctrl, reqarg, reqarglen)) {
-      int xerrno = errno;
-
+    if (res < 0) {
+      pr_trace_msg(trace_channel, 3,
+        "error adding message argument #%u (%s): %s", i+1, reqarg,
+        strerror(xerrno));
+      pr_json_array_free(args);
+      pr_json_object_free(json);
+      destroy_pool(tmp_pool);
       pr_signals_unblock();
 
       errno = xerrno;
@@ -774,7 +772,7 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
   *((pr_ctrls_t **) push_array(cl->cl_ctrls)) = ctrl;
 
   /* Set the flag that this control is ready to go */
-  ctrl->ctrls_flags |= PR_CTRLS_REQUESTED;
+  ctrl->ctrls_flags |= PR_CTRLS_FL_REQUESTED;
   ctrl->ctrls_cl = cl;
 
   /* Copy the populated ctrl object args to ctrl objects for all other
@@ -788,28 +786,111 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
     /* Add this ctrl object to the client object. */
     *((pr_ctrls_t **) push_array(cl->cl_ctrls)) = next_ctrl;
 
-    /* Set the flag that this control is ready to go. */ 
-    next_ctrl->ctrls_flags |= PR_CTRLS_REQUESTED;
+    /* Set the flag that this control is ready to go. */
+    next_ctrl->ctrls_flags |= PR_CTRLS_FL_REQUESTED;
     next_ctrl->ctrls_cl = cl;
 
     next_ctrl = ctrls_lookup_next_action(NULL, TRUE);
   }
 
+  pr_json_array_free(args);
+  pr_json_object_free(json);
+  destroy_pool(tmp_pool);
   pr_signals_unblock();
+
   return 0;
 }
 
-int pr_ctrls_recv_response(pool *resp_pool, int ctrls_sockfd,
-    int *status, char ***respargv) {
-  register unsigned int i = 0;
+int pr_ctrls_send_response(pool *p, int fd, int status, unsigned int argc,
+    char **argv) {
+  register unsigned int i;
+  pool *tmp_pool;
   int res, xerrno;
+  pr_json_object_t *json;
+  pr_json_array_t *resps;
+
+  if (p == NULL ||
+      fd < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (argc > 0 &&
+      argv == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  tmp_pool = make_sub_pool(p);
+  pr_pool_tag(tmp_pool, "Controls API send_response pool");
+
+  json = pr_json_object_alloc(tmp_pool);
+
+  res = pr_json_object_set_number(tmp_pool, json, CTRLS_RESP_STATUS_KEY,
+    (double) status);
+  xerrno = errno;
+
+  if (res < 0) {
+    pr_json_object_free(json);
+    destroy_pool(tmp_pool);
+
+    errno = xerrno;
+    return -1;
+  }
+
+  resps = pr_json_array_alloc(tmp_pool);
+
+  for (i = 0; i < argc; i++) {
+    res = pr_json_array_append_string(tmp_pool, resps, argv[i]);
+    xerrno = errno;
+
+    if (res < 0) {
+      pr_json_array_free(resps);
+      pr_json_object_free(json);
+      destroy_pool(tmp_pool);
+
+      errno = xerrno;
+      return -1;
+    }
+  }
+
+  res = pr_json_object_set_array(tmp_pool, json, CTRLS_RESP_RESPS_KEY, resps);
+  xerrno = errno;
+
+  if (res < 0) {
+    pr_json_array_free(resps);
+    pr_json_object_free(json);
+    destroy_pool(tmp_pool);
+
+    errno = xerrno;
+    return -1;
+  }
+
+  res = ctrls_send_msg(tmp_pool, fd, json);
+  xerrno = errno;
+
+  pr_json_array_free(resps);
+  pr_json_object_free(json);
+  destroy_pool(tmp_pool);
+
+  errno = xerrno;
+  return res;
+}
+
+int pr_ctrls_recv_response(pool *p, int fd, int *status, char ***respargv) {
+  register int i = 0;
+  pool *tmp_pool;
+  int nread, res, respargc = 0, xerrno;
+  uint32_t msglen = 0;
+  char *msg = NULL;
+  pr_json_object_t *json = NULL;
+  pr_json_array_t *resps = NULL;
+  double dv;
   array_header *resparr = NULL;
-  unsigned int respargc = 0, resparglen = 0;
-  char response[PR_TUNABLE_BUFFER_SIZE] = {'\0'};
 
   /* Sanity checks */
-  if (resp_pool == NULL ||
-      ctrls_sockfd < 0 ||
+  if (p == NULL ||
+      fd < 0 ||
       status == NULL) {
     errno = EINVAL;
     return -1;
@@ -818,226 +899,150 @@ int pr_ctrls_recv_response(pool *resp_pool, int ctrls_sockfd,
   /* No interruptions. */
   pr_signals_block();
 
-  /* First, read the status, which is the return value of the control handler.
-   */
-  res = read(ctrls_sockfd, status, sizeof(int));
+  /* Read in the size of the message, as JSON text. */
+
+  nread = read(fd, &msglen, sizeof(uint32_t));
   xerrno = errno;
 
-  if ((size_t) res != sizeof(int)) {
+  if (nread != sizeof(uint32_t)) {
     pr_signals_unblock();
 
-    if (res < 0) {
+    if (nread < 0) {
       (void) pr_trace_msg(trace_channel, 3,
-        "error reading %u response status bytes: %s",
-        (unsigned int) sizeof(int), strerror(xerrno));
+        "error reading %u of response message size: %s",
+        (unsigned int) sizeof(uint32_t), strerror(xerrno));
       errno = xerrno;
       return -1;
     }
 
     (void) pr_trace_msg(trace_channel, 3,
-      "short read (%d of %u bytes) of response status, unable to receive "
-      "response", res, (unsigned int) sizeof(int));
+      "short read (%d of %u bytes) of response message, unable to receive "
+      "response", nread, (unsigned int) sizeof(uint32_t));
     errno = EPERM;
     return -1;
   }
 
+  tmp_pool = make_sub_pool(p);
+  pr_pool_tag(tmp_pool, "Controls API recv_response pool");
+
+  /* Allocate one byte for the terminating NUL. */
+  msg = pcalloc(tmp_pool, msglen + 1);
+  nread = read(fd, msg, msglen);
+  xerrno = errno;
+
+  if (nread < 0) {
+    pr_trace_msg(trace_channel, 3,
+      "error reading %lu bytes of response message: %s",
+      (unsigned long) msglen, strerror(xerrno));
+    destroy_pool(tmp_pool);
+    pr_signals_unblock();
+
+    errno = xerrno;
+    return -1;
+  }
+
+  /* Watch for short reads. */
+  if ((unsigned int) nread != msglen) {
+    (void) pr_trace_msg(trace_channel, 3,
+      "short read (%d of %u bytes) of message text, unable to receive response",
+      nread, (unsigned int) msglen);
+    destroy_pool(tmp_pool);
+    pr_signals_unblock();
+
+    errno = EPERM;
+    return -1;
+  }
+
+  json = pr_json_object_from_text(tmp_pool, msg);
+  xerrno = errno;
+
+  if (json == NULL) {
+    (void) pr_trace_msg(trace_channel, 3,
+      "read invalid JSON message text ('%.*s' [%lu bytes]), unable to "
+      "receive response: %s", (int) msglen, msg, (unsigned long) msglen,
+      strerror(xerrno));
+    destroy_pool(tmp_pool);
+    pr_signals_unblock();
+
+    errno = EINVAL;
+    return -1;
+  }
+
+  res = pr_json_object_get_number(tmp_pool, json, CTRLS_RESP_STATUS_KEY, &dv);
+  xerrno = errno;
+
+  if (res < 0) {
+    (void) pr_trace_msg(trace_channel, 3,
+      "unable to read response status (%s), unable to receive response",
+      strerror(xerrno));
+    pr_json_object_free(json);
+    destroy_pool(tmp_pool);
+    pr_signals_unblock();
+
+    errno = EINVAL;
+    return -1;
+  }
+
+  *status = (int) dv;
   pr_trace_msg(trace_channel, 19, "received response status: %d", *status);
 
-  /* Next, read the number of responses to be received */
-  res = read(ctrls_sockfd, &respargc, sizeof(unsigned int));
+  res = pr_json_object_get_array(tmp_pool, json, CTRLS_RESP_RESPS_KEY, &resps);
   xerrno = errno;
 
-  if ((size_t) res != sizeof(unsigned int)) {
+  if (res < 0) {
+    (void) pr_trace_msg(trace_channel, 3,
+      "unable to read message responses (%s), unable to receive response",
+      strerror(xerrno));
+    pr_json_object_free(json);
+    destroy_pool(tmp_pool);
     pr_signals_unblock();
+
+    errno = EINVAL;
+    return -1;
+  }
+
+  respargc = pr_json_array_count(resps);
+  pr_trace_msg(trace_channel, 19, "received response argc: %u", respargc);
+
+  resparr = make_array(p, 0, sizeof(char *));
+
+  /* Read each response, and add it to the array */
+  for (i = 0; i < respargc; i++) {
+    char *resp = NULL;
+
+    /* TODO: Handle other response types, such as arrays or objects, for
+     * more complex responses.  Think of an action that dumps the memory
+     * pools, for example.
+     */
+    res = pr_json_array_get_string(tmp_pool, resps, i, &resp);
+    xerrno = errno;
 
     if (res < 0) {
       (void) pr_trace_msg(trace_channel, 3,
-        "error reading %u response argc bytes: %s",
-        (unsigned int) sizeof(unsigned int), strerror(xerrno));
-      errno = xerrno;
-      return -1;
-    }
-
-    (void) pr_trace_msg(trace_channel, 3,
-      "short read (%d of %u bytes) of response arg count, unable to receive "
-      "response", res, (unsigned int) sizeof(unsigned int));
-    errno = EPERM;
-    return -1;
-  }
-
-  pr_trace_msg(trace_channel, 19, "received response argc: %u", respargc);
-
-  if (respargc > CTRLS_MAX_NRESPARGS) {
-    (void) pr_trace_msg(trace_channel, 3,
-      "respargc (%u) exceeds max (%u), rejecting", respargc,
-      CTRLS_MAX_NRESPARGS);
-    pr_signals_unblock();
-    errno = ENOMEM;
-    return -1;
-  }
-
-  resparr = make_array(resp_pool, 0, sizeof(char *));
-
-  /* Read each response, and add it to the array */ 
-  for (i = 0; i < respargc; i++) {
-    int bread = 0;
-
-    res = read(ctrls_sockfd, &resparglen, sizeof(unsigned int));
-    xerrno = errno;
-
-    if ((size_t) res != sizeof(unsigned int)) {
+        "unable to read message response #%u (%s), unable to receive response",
+        i+1, strerror(xerrno));
+      pr_json_array_free(resps);
+      pr_json_object_free(json);
+      destroy_pool(tmp_pool);
       pr_signals_unblock();
 
-      if (res < 0) {
-        (void) pr_trace_msg(trace_channel, 3,
-          "error reading %u response arglen bytes: %s",
-          (unsigned int) sizeof(unsigned int), strerror(xerrno));
-        errno = xerrno;
-        return -1;
-      }
-
-      (void) pr_trace_msg(trace_channel, 3,
-        "short read (%d of %u bytes) of resparglen (#%u)",
-        res, (unsigned int) sizeof(unsigned int), i+1);
-      errno = EPERM;
+      errno = EINVAL;
       return -1;
     }
 
-    /* Make sure resparglen is not too big */
-    if (resparglen >= sizeof(response)) {
-      (void) pr_trace_msg(trace_channel, 3,
-        "resparglen (#%u) of %u bytes exceeds max (%lu bytes), rejecting",
-        i+1, resparglen, (unsigned long) sizeof(response));
-      pr_signals_unblock();
-      errno = ENOMEM;
-      return -1;
-    }
-
-    memset(response, '\0', sizeof(response));
-
-    bread = read(ctrls_sockfd, response, resparglen);
-    xerrno = errno;
-
-    if ((unsigned int) bread != resparglen) {
-      pr_signals_unblock();
-
-      if (bread < 0) {
-        (void) pr_trace_msg(trace_channel, 3,
-          "error reading %u response arg bytes: %s",
-          (unsigned int) resparglen, strerror(xerrno));
-        errno = xerrno;
-        return -1;
-      }
-
-      (void) pr_trace_msg(trace_channel, 3,
-        "short read (%d of %u bytes) of resparg (#%u)",
-        bread, (unsigned int) resparglen, i+1);
-      errno = EPERM;
-      return -1;
-    }
-
-    /* Always make sure the buffer is zero-terminated */
-    response[sizeof(response)-1] = '\0';
-
-    *((char **) push_array(resparr)) = pstrdup(resp_pool, response);
+    *((char **) push_array(resparr)) = pstrdup(p, resp);
   }
 
   if (respargv != NULL) {
     *respargv = ((char **) resparr->elts);
   }
 
-  pr_signals_unblock(); 
-  return respargc;
-}
-
-int pr_ctrls_send_msg(int fd, int msg_status, unsigned int msgargc,
-    char **msgargv) {
-  int res, xerrno;
-  register unsigned int i = 0;
-  unsigned int msgarglen = 0;
-
-  /* Sanity checks */
-  if (fd < 0) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  if (msgargc < 1) {
-    return 0;
-  }
-
-  if (msgargv == NULL) {
-    return 0;
-  }
-
-  /* No interruptions */
-  pr_signals_block();
-
-  /* Send the message status first */
-  res = write(fd, &msg_status, sizeof(int));
-  xerrno = errno;
-
-  if ((size_t) res != sizeof(int)) {
-    pr_signals_unblock();
-
-    errno = xerrno;
-    return -1;
-  }
-
-  /* Send the strings, one argument at a time.  First, send the number
-   * of arguments to be sent; then send, for each argument, first the
-   * length of the argument string, then the argument itself.
-   */
-  res = write(fd, &msgargc, sizeof(unsigned int));
-  xerrno = errno;
-
-  if ((size_t) res != sizeof(unsigned int)) {
-    pr_signals_unblock();
-
-    errno = xerrno;
-    return -1;
-  }
-
-  for (i = 0; i < msgargc; i++) {
-    msgarglen = strlen(msgargv[i]);
-
-    while (TRUE) {
-      res = write(fd, &msgarglen, sizeof(unsigned int));
-      xerrno = errno;
-
-      if (res != sizeof(unsigned int)) {
-        if (errno == EAGAIN) {
-          continue;
-        }
-
-        pr_signals_unblock();
-        errno = xerrno;
-        return -1;
-      }
-
-      break;
-    }
-
-    while (TRUE) {
-      res = write(fd, msgargv[i], msgarglen);
-      xerrno = errno;
-
-      if ((size_t) res != msgarglen) {
-        if (errno == EAGAIN) {
-          continue;
-        }
-
-        pr_signals_unblock();
-        errno = xerrno;
-        return -1;
-      }
-
-      break;
-    }
-  }
-
+  pr_json_array_free(resps);
+  pr_json_object_free(json);
+  destroy_pool(tmp_pool);
   pr_signals_unblock();
-  return 0;
+
+  return respargc;
 }
 
 static pr_ctrls_t *ctrls_lookup_action(module *mod, const char *action,
@@ -1093,7 +1098,7 @@ int pr_get_registered_actions(pr_ctrls_t *ctrl, int flags) {
   }
 
   /* Are ctrls blocked? */
-  if (ctrls_blocked) {
+  if (ctrls_blocked == TRUE) {
     errno = EPERM;
     return -1;
   }
@@ -1154,13 +1159,14 @@ int pr_set_registered_actions(module *mod, const char *action,
   }
 
   /* Are ctrls blocked? */
-  if (ctrls_blocked) {
+  if (ctrls_blocked == TRUE) {
     errno = EPERM;
     return -1;
   }
 
   for (act = ctrls_action_list; act; act = act->next) {
-    if (skip_disabled && (act->flags & PR_CTRLS_ACT_DISABLED)) {
+    if (skip_disabled == TRUE &&
+        (act->flags & PR_CTRLS_ACT_DISABLED)) {
       continue;
     }
 
@@ -1520,23 +1526,28 @@ static int ctrls_get_creds_local(int fd, uid_t *uid, gid_t *gid,
 #if defined(HAVE_STRUCT_CMSGCRED)
     memcpy(&cred, CMSG_DATA(hdr), sizeof(struct cmsgcred));
 
-    if (uid)
+    if (uid != NULL) {
       *uid = cred.cmcred_uid;
+    }
 
-    if (gid)
+    if (gid != NULL) {
       *gid = cred.cmcred_gid;
+    }
 
-    if (pid)
+    if (pid != NULL) {
       *pid = cred.cmcred_pid;
+    }
 
 #elif defined(HAVE_STRUCT_SOCKCRED)
     memcpy(&cred, CMSG_DATA(hdr), sizeof(struct sockcred));
 
-    if (uid)
+    if (uid != NULL) {
       *uid = cred.sc_uid;
+    }
 
-    if (gid)
+    if (gid != NULL) {
       *gid = cred.sc_gid;
+    }
 #endif
 
     return 0;
@@ -1596,6 +1607,7 @@ static int ctrls_get_creds_basic(struct sockaddr_un *sock, int cl_fd,
   if (st.st_atime < stale_time ||
       st.st_ctime < stale_time ||
       st.st_mtime < stale_time) {
+    pool *tmp_pool;
     char *msg = "error: stale connection";
 
     pr_trace_msg(trace_channel, 3,
@@ -1626,11 +1638,14 @@ static int ctrls_get_creds_basic(struct sockaddr_un *sock, int cl_fd,
         "secs)", sock->sun_path, (unsigned long) age, max_age);
     }
 
-    if (pr_ctrls_send_msg(cl_fd, -1, 1, &msg) < 0) {
+    tmp_pool = make_sub_pool(permanent_pool);
+
+    if (pr_ctrls_send_response(tmp_pool, cl_fd, -1, 1, &msg) < 0) {
       pr_trace_msg(trace_channel, 2, "error sending message: %s",
         strerror(errno));
     }
 
+    destroy_pool(tmp_pool);
     (void) close(cl_fd);
 
     errno = ETIMEDOUT;
@@ -1763,7 +1778,7 @@ int pr_run_ctrls(module *mod, const char *action) {
   time_t now;
 
   /* Are ctrls blocked? */
-  if (ctrls_blocked) {
+  if (ctrls_blocked == TRUE) {
     errno = EPERM;
     return -1;
   }
@@ -1771,6 +1786,8 @@ int pr_run_ctrls(module *mod, const char *action) {
   now = time(NULL);
 
   for (ctrl = ctrls_active_list; ctrl; ctrl = ctrl->ctrls_next) {
+    int res;
+
     if (mod != NULL &&
         ctrl->ctrls_module != NULL &&
         ctrl->ctrls_module != mod) {
@@ -1797,7 +1814,7 @@ int pr_run_ctrls(module *mod, const char *action) {
     }
 
     /* Is it time to trigger this ctrl? */
-    if (!(ctrl->ctrls_flags & PR_CTRLS_REQUESTED)) {
+    if (!(ctrl->ctrls_flags & PR_CTRLS_FL_REQUESTED)) {
       pr_trace_msg(trace_channel, 19,
         "skipping ctrl due to missing CTRLS_REQUESTED flag");
       continue;
@@ -1807,7 +1824,7 @@ int pr_run_ctrls(module *mod, const char *action) {
       pr_trace_msg(trace_channel, 19,
         "skipping ctrl because it is still pending: now = %lu, ctrl when = %lu",
         (unsigned long) now, (unsigned long) ctrl->ctrls_when);
-      ctrl->ctrls_flags |= PR_CTRLS_PENDING;
+      ctrl->ctrls_flags |= PR_CTRLS_FL_PENDING;
       pr_ctrls_add_response(ctrl, "request pending");
       continue;
     }
@@ -1822,27 +1839,33 @@ int pr_run_ctrls(module *mod, const char *action) {
     }
 
     pr_unblock_ctrls();
-    ctrl->ctrls_cb_retval = ctrl->ctrls_cb(ctrl,
+    res = ctrl->ctrls_cb(ctrl,
       (ctrl->ctrls_cb_args ? ctrl->ctrls_cb_args->nelts : 0),
       (ctrl->ctrls_cb_args ? (char **) ctrl->ctrls_cb_args->elts : NULL));
     pr_block_ctrls();
 
     pr_trace_msg(trace_channel, 19,
-      "ran '%s' ctrl, callback value = %d", ctrl->ctrls_action,
-      ctrl->ctrls_cb_retval);
+      "ran '%s' ctrl, callback value = %d", ctrl->ctrls_action, res);
 
-    if (ctrl->ctrls_cb_retval < 1) {
-      ctrl->ctrls_flags &= ~PR_CTRLS_REQUESTED;
-      ctrl->ctrls_flags &= ~PR_CTRLS_PENDING;
-      ctrl->ctrls_flags |= PR_CTRLS_HANDLED;
+    if (res >= PR_CTRLS_STATUS_PENDING) {
+      pr_trace_msg(trace_channel, 1, "'%s' ctrl returned inappropriate "
+        "value %d, treating as GENERIC_ERROR (%d)", ctrl->ctrls_action, res,
+        PR_CTRLS_STATUS_GENERIC_ERROR);
+      res = PR_CTRLS_STATUS_GENERIC_ERROR;
     }
+
+    ctrl->ctrls_flags &= ~PR_CTRLS_FL_REQUESTED;
+    ctrl->ctrls_flags &= ~PR_CTRLS_FL_PENDING;
+    ctrl->ctrls_flags |= PR_CTRLS_FL_HANDLED;
+
+    ctrl->ctrls_cb_retval = res;
   }
 
   return 0;
 }
 
 int pr_ctrls_reset(void) {
-  pr_ctrls_t *ctrl = NULL;
+  pr_ctrls_t *ctrl = NULL, *next_ctrl = NULL;
 
   /* NOTE: need a clean_ctrls() or somesuch that will, after sending any
    * responses, iterate through the list and "free" any ctrls whose
@@ -1862,8 +1885,10 @@ int pr_ctrls_reset(void) {
    *                             -1  processed, error (reset)
    */
 
-  for (ctrl = ctrls_active_list; ctrl; ctrl = ctrl->ctrls_next) {
-    if (ctrl->ctrls_cb_retval < 1) {
+  for (ctrl = ctrls_active_list; ctrl; ctrl = next_ctrl) {
+    next_ctrl = ctrl->ctrls_next;
+
+    if (ctrl->ctrls_cb_retval < PR_CTRLS_STATUS_PENDING) {
       pr_ctrls_free(ctrl);
     }
   }

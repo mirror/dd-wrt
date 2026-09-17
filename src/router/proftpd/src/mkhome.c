@@ -137,7 +137,7 @@ static int create_path(pool *p, const char *path, const char *user,
         (*tmppath == '\0')) {
       create_dir(currpath, dst_uid, dst_gid, dst_mode);
 
-    } else { 
+    } else {
       create_dir(currpath, dir_uid, dir_gid, dir_mode);
     }
   }
@@ -187,7 +187,7 @@ static int copy_symlink(pool *p, const char *src_dir, const char *src_path,
       dst_path, pr_uid2str(p, uid), pr_gid2str(p, gid), strerror(errno));
   }
 
-  return 0; 
+  return 0;
 }
 
 /* srcdir is to be considered a "skeleton" directory, in the manner of

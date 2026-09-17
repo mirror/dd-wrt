@@ -727,7 +727,7 @@ static int sess_cache_open(tls_sess_cache_t *cache, char *info, long timeout) {
   if (ptr != NULL) {
     if (strncmp(ptr + 1, "size=", 5) == 0) {
       char *tmp = NULL;
-      long size; 
+      long size;
 
       size = strtol(ptr + 6, &tmp, 10);
       if (tmp && *tmp) {
@@ -749,7 +749,7 @@ static int sess_cache_open(tls_sess_cache_t *cache, char *info, long timeout) {
             "requested size (%lu bytes) smaller than minimum size "
             "(%lu bytes), ignoring", (unsigned long) size,
             (unsigned long) min_size);
-        
+
           /* Default size of 1.5M.  That should hold around 100 sessions. */
           requested_size = 1538 * 1024;
 
@@ -759,7 +759,7 @@ static int sess_cache_open(tls_sess_cache_t *cache, char *info, long timeout) {
       }
 
     } else {
-      pr_trace_msg(trace_channel, 1, 
+      pr_trace_msg(trace_channel, 1,
         "badly formatted size parameter '%s', ignoring", ptr + 1);
 
       /* Default size of 1.5M.  That should hold around 100 sessions. */
@@ -839,7 +839,7 @@ static int sess_cache_open(tls_sess_cache_t *cache, char *info, long timeout) {
 
     pr_fsio_close(sesscache_fh);
     sesscache_fh = NULL;
-    
+
     errno = EINVAL;
     return -1;
   }
@@ -853,11 +853,11 @@ static int sess_cache_open(tls_sess_cache_t *cache, char *info, long timeout) {
     int res;
 
     res = pr_fs_get_usable_fd(fd);
-    if (res < 0) { 
+    if (res < 0) {
       pr_log_debug(DEBUG0,
         "warning: unable to find good fd for shmcache fd %d: %s",
         fd, strerror(errno));
- 
+
     } else {
       close(fd);
       PR_FH_FD(sesscache_fh) = res;
@@ -867,7 +867,7 @@ static int sess_cache_open(tls_sess_cache_t *cache, char *info, long timeout) {
   pr_trace_msg(trace_channel, 9,
     "requested session cache file: %s (fd %d)", sesscache_fh->fh_path,
     PR_FH_FD(sesscache_fh));
-  pr_trace_msg(trace_channel, 9, 
+  pr_trace_msg(trace_channel, 9,
     "requested session cache size: %lu bytes", (unsigned long) requested_size);
 
   sesscache_data = sess_cache_get_shm(sesscache_fh, requested_size);
@@ -1380,7 +1380,7 @@ static int sess_cache_clear(tls_sess_cache_t *cache) {
 
   if (sesscache_sess_list != NULL) {
     struct sesscache_large_entry *entries;
-    
+
     entries = sesscache_sess_list->elts;
     for (i = 0; i < sesscache_sess_list->nelts; i++) {
       struct sesscache_large_entry *entry;
@@ -1406,7 +1406,7 @@ static int sess_cache_clear(tls_sess_cache_t *cache) {
     pr_memscrub((void *) entry->sess_data, entry->sess_datalen);
   }
 
-  res = sesscache_data->sd_listlen; 
+  res = sesscache_data->sd_listlen;
   sesscache_data->sd_listlen = 0;
 
   if (shmcache_lock_shm(sesscache_fh, F_UNLCK) < 0) {
@@ -1499,7 +1499,7 @@ static int sess_cache_status(tls_sess_cache_t *cache,
   } else {
     statusf(arg, "Unable to stat shared memory segment ID %d: %s",
       sesscache_shmid, strerror(xerrno));
-  } 
+  }
 
   statusf(arg, "%s", "");
   statusf(arg, "Max session cache size: %u", sesscache_data->sd_listsz);
@@ -1554,7 +1554,7 @@ static int sess_cache_status(tls_sess_cache_t *cache,
         int ssl_version;
 
         ptr = entry->sess_data;
-        sess = d2i_SSL_SESSION(NULL, &ptr, entry->sess_datalen); 
+        sess = d2i_SSL_SESSION(NULL, &ptr, entry->sess_datalen);
         if (sess == NULL) {
           pr_log_pri(PR_LOG_NOTICE, MOD_TLS_SHMCACHE_VERSION
             ": error retrieving session from session cache: %s",

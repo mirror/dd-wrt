@@ -109,7 +109,7 @@ static struct snmp_mib snmp_mibs[] = {
 
   /* Daemon MIBs */
   { { SNMP_MIB_DAEMON_OID_SOFTWARE, 0 },
-    SNMP_MIB_DAEMON_OIDLEN_SOFTWARE + 1, 
+    SNMP_MIB_DAEMON_OIDLEN_SOFTWARE + 1,
     SNMP_DB_DAEMON_F_SOFTWARE, TRUE, FALSE,
     SNMP_MIB_NAME_PREFIX "daemon.software",
     SNMP_MIB_NAME_PREFIX "daemon.software.0",
@@ -123,7 +123,7 @@ static struct snmp_mib snmp_mibs[] = {
     SNMP_SMI_STRING },
 
   { { SNMP_MIB_DAEMON_OID_ADMIN, 0 },
-    SNMP_MIB_DAEMON_OIDLEN_ADMIN + 1, 
+    SNMP_MIB_DAEMON_OIDLEN_ADMIN + 1,
     SNMP_DB_DAEMON_F_ADMIN, TRUE, FALSE,
     SNMP_MIB_NAME_PREFIX "daemon.admin",
     SNMP_MIB_NAME_PREFIX "daemon.admin.0",
@@ -165,14 +165,14 @@ static struct snmp_mib snmp_mibs[] = {
     SNMP_SMI_COUNTER32 },
 
   { { SNMP_MIB_DAEMON_OID_RESTART_COUNT, 0 },
-    SNMP_MIB_DAEMON_OIDLEN_RESTART_COUNT + 1, 
+    SNMP_MIB_DAEMON_OIDLEN_RESTART_COUNT + 1,
     SNMP_DB_DAEMON_F_RESTART_COUNT, TRUE, FALSE,
     SNMP_MIB_NAME_PREFIX "daemon.restartCount",
     SNMP_MIB_NAME_PREFIX "daemon.restartCount.0",
     SNMP_SMI_COUNTER32 },
 
   { { SNMP_MIB_DAEMON_OID_SEGFAULT_COUNT, 0 },
-    SNMP_MIB_DAEMON_OIDLEN_SEGFAULT_COUNT + 1, 
+    SNMP_MIB_DAEMON_OIDLEN_SEGFAULT_COUNT + 1,
     SNMP_DB_DAEMON_F_SEGFAULT_COUNT, TRUE, FALSE,
     SNMP_MIB_NAME_PREFIX "daemon.segfaultCount",
     SNMP_MIB_NAME_PREFIX "daemon.segfaultCount.0",
@@ -396,7 +396,7 @@ static struct snmp_mib snmp_mibs[] = {
 
   /* snmp MIBs */
   { { SNMP_MIB_SNMP_OID_PKTS_RECVD_TOTAL, 0 },
-    SNMP_MIB_SNMP_OIDLEN_PKTS_RECVD_TOTAL + 1, 
+    SNMP_MIB_SNMP_OIDLEN_PKTS_RECVD_TOTAL + 1,
     SNMP_DB_SNMP_F_PKTS_RECVD_TOTAL, TRUE, FALSE,
     SNMP_MIB_NAME_PREFIX "snmp.packetsReceivedTotal",
     SNMP_MIB_NAME_PREFIX "snmp.packetsReceivedTotal.0",
@@ -410,7 +410,7 @@ static struct snmp_mib snmp_mibs[] = {
     SNMP_SMI_COUNTER32 },
 
   { { SNMP_MIB_SNMP_OID_TRAPS_SENT_TOTAL, 0 },
-    SNMP_MIB_SNMP_OIDLEN_TRAPS_SENT_TOTAL + 1, 
+    SNMP_MIB_SNMP_OIDLEN_TRAPS_SENT_TOTAL + 1,
     SNMP_DB_SNMP_F_TRAPS_SENT_TOTAL, TRUE, FALSE,
     SNMP_MIB_NAME_PREFIX "snmp.trapsSentTotal",
     SNMP_MIB_NAME_PREFIX "snmp.trapsSentTotal.0",
@@ -1150,7 +1150,7 @@ struct snmp_mib *snmp_mib_get_by_oid(oid_t *mib_oid, unsigned int mib_oidlen,
     return NULL;
   }
 
-  return snmp_mib_get_by_idx(mib_idx); 
+  return snmp_mib_get_by_idx(mib_idx);
 }
 
 int snmp_mib_reset_counters(void) {

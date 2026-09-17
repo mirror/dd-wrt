@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2003-2020 The ProFTPD Project team
+ * Copyright (c) 2003-2024 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -160,7 +160,7 @@ static int lp_set_cap(void) {
       strerror(errno));
     return -1;
   }
- 
+
   return 0;
 }
 
@@ -169,20 +169,20 @@ static int lp_set_cap(void) {
 
 /* usage: CapabilitiesRootRevoke on|off */
 MODRET set_caprootrevoke(cmd_rec *cmd) {
-  int b = -1;
+  int caps_root_revoke = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  b = get_boolean(cmd, 1);
-  if (b == -1) {
+  caps_root_revoke = get_boolean(cmd, 1);
+  if (caps_root_revoke == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
   }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(int));
-  *((int *) c->argv[0]) = b;
+  *((int *) c->argv[0]) = caps_root_revoke;
 
   return PR_HANDLED(cmd);
 }
@@ -262,19 +262,20 @@ MODRET set_caps(cmd_rec *cmd) {
 }
 
 MODRET set_capengine(cmd_rec *cmd) {
-  int bool = -1;
+  int engine = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  engine = get_boolean(cmd, 1);
+  if (engine == -1) {
     CONF_ERROR(cmd, "expecting Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = bool;
+  *((unsigned char *) c->argv[0]) = engine;
 
   return PR_HANDLED(cmd);
 }
@@ -316,7 +317,7 @@ MODRET cap_post_pass(cmd_rec *cmd) {
 
     if (cap_flags & CAP_USE_DAC_OVERRIDE) {
       pr_log_debug(DEBUG3, MOD_CAP_VERSION
-        ": adding CAP_DAC_OVERRIDE capability"); 
+        ": adding CAP_DAC_OVERRIDE capability");
     }
 
     if (cap_flags & CAP_USE_DAC_READ_SEARCH) {

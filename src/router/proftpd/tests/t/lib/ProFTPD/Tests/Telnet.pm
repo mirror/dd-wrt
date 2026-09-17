@@ -31,6 +31,10 @@ my $TESTS = {
     test_class => [qw(bug forking)],
   },
 
+  telnet_nonascii_uppercase_issue2019 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
 };
 
 sub new {
@@ -165,7 +169,7 @@ sub telnet_iac_bug3521 {
         die("USER succeeded expectedly");
       }
 
-      my $ex = $client->errmsg();    
+      my $ex = $client->errmsg();
       unless ($ex =~ /^command\s+timed/) {
         die("Unexpected exception thrown: $ex");
       }
@@ -468,6 +472,101 @@ sub telnet_initial_crlf_issue1527 {
 
       $self->assert(qr/$expected/, $resp,
         test_msg("Expected response '$expected', got '$resp'"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub telnet_nonascii_uppercase_issue2019 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'telnet');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'command:20 netio:30',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::Telnet;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      sleep(1);
+
+      # To reproduce Issue#2019, we only need to connect to the server,
+      # then send non-ASCII bytes.
+
+      my $client = Net::Telnet->new(
+        Host => '127.0.0.1',
+        Port => $port,
+        Timeout => 3,
+        Errmode => 'return',
+      );
+
+      my $buf = "\xe3\xe3\xe3\r\n";
+
+      my $res = $client->cmd(
+        String => $buf,
+        Prompt => "/$setup->{user}/",
+      );
+
+      if ($res) {
+        die("USER succeeded expectedly");
+      }
+
+      my $ex = $client->errmsg();
+      unless ($ex =~ /^command\s+timed/) {
+        die("Unexpected exception thrown: $ex");
+      }
     };
     if ($@) {
       $ex = $@;

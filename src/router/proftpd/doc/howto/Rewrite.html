@@ -175,11 +175,14 @@ The following <code>mod_rewrite</code> configuration should do the trick:
     # Use the replaceall internal RewriteMap
     RewriteMap replace int:replaceall
 
+    # Every RewriteRule needs a condition.  Here, we want to apply our
+    # rule to every command.
+    RewriteCondition %m .*
     RewriteRule (.*) "${replace:!$1!\\\\!/}"
   &lt;/IfModule&gt;
 </pre>
 Yes, you will need the four consecutive backslashes there, in order to make it
-past proftpd's config file parser (which thinks backslashes are escape
+past ProFTPD's config file parser (which thinks backslashes are escape
 sequences) as well as the regular expression compiler.
 
 <p>
@@ -474,7 +477,7 @@ on disk, and the download will fail.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2020 The ProFTPD Project<br>
+&copy; Copyright 2020-2023 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

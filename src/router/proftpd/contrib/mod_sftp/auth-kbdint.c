@@ -186,7 +186,7 @@ int sftp_auth_kbdint(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
       /* Store the driver name for future checking. */
       *((char **) push_array(kbdint_drivers)) = pstrdup(sftp_pool,
         driver->driver_name);
-      break; 
+      break;
     }
 
     driver = sftp_kbdint_next_driver();

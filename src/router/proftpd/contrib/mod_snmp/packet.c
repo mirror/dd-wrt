@@ -58,7 +58,7 @@ int snmp_packet_write(pool *p, int sockfd, struct snmp_packet *pkt) {
 
   if (sockfd < 0) {
     errno = EINVAL;
-    return -1; 
+    return -1;
   }
 
   FD_ZERO(&writefds);

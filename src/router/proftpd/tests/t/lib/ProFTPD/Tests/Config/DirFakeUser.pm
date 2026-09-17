@@ -67,7 +67,7 @@ sub dirfakeuser_list {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -88,7 +88,7 @@ sub dirfakeuser_list {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $fake_user = 'foo';
@@ -242,7 +242,7 @@ sub dirfakeuser_mlsd_bug3604 {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -266,7 +266,7 @@ sub dirfakeuser_mlsd_bug3604 {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_user_write($auth_user_file, $fake_user, 'test', $fake_uid, $gid,
     $home_dir, '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
@@ -515,7 +515,7 @@ sub dirfakeuser_mlsd_bug3715 {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $group = 'ftpd';
@@ -538,7 +538,7 @@ sub dirfakeuser_mlsd_bug3715 {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {

@@ -42,7 +42,7 @@ static void tear_down(void) {
   if (p) {
     destroy_pool(p);
     p = permanent_pool = NULL;
-  } 
+  }
 }
 
 /* Helper functions */
@@ -206,7 +206,7 @@ START_TEST (event_generate_test) {
   pr_event_generate(NULL, NULL);
   ck_assert_msg(event_triggered == 0, "Expected triggered count %u, got %u",
     0, event_triggered);
-  
+
   pr_event_generate(event, NULL);
   ck_assert_msg(event_triggered == 0, "Expected triggered count %u, got %u",
     0, event_triggered);

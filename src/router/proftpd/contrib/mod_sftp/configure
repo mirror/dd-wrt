@@ -4022,6 +4022,46 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL supports EVP_chacha20" >&5
+$as_echo_n "checking whether OpenSSL supports EVP_chacha20... " >&6; }
+LIBS="-lcrypto $LIBS"
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <openssl/evp.h>
+
+int
+main ()
+{
+
+    EVP_CIPHER *cipher;
+    cipher = EVP_chacha20();
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_EVP_CHACHA20_OPENSSL 1" >>confdefs.h
+
+    LIBS="$saved_libs"
+
+else
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    LIBS="$saved_libs"
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether OpenSSL supports OSSL_PROVIDER_load" >&5
 $as_echo_n "checking whether OpenSSL supports OSSL_PROVIDER_load... " >&6; }
 LIBS="-lcrypto $LIBS"

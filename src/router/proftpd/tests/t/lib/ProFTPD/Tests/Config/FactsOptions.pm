@@ -183,7 +183,7 @@ sub factsoptions_use_slink_mlsd_rel_symlinked_file {
       # Since ShowSymlinks is on, the type for test.lnk should indicate that
       # it's a symlink.  And since the UseSlink FactOption is used, the
       # type should include the target path.
-      $expected = 'OS.unix=slink:(.*)?'; 
+      $expected = 'OS.unix=slink:(.*)?';
       $got = $res->{'test.lnk'}->{type};
       $self->assert(qr/$expected/i, $got,
         test_msg("Expected '$expected', got '$got'"));
@@ -328,7 +328,7 @@ sub factsoptions_use_slink_mlsd_rel_symlinked_dir {
       # Since ShowSymlinks is on, the type for test.lnk should indicate that
       # it's a symlink.  And since the UseSlink FactOption is used, the
       # type should include the target path.
-      $expected = 'OS.unix=slink:(.*)?'; 
+      $expected = 'OS.unix=slink:(.*)?';
       $got = $res->{'test.lnk'}->{type};
       $self->assert(qr/$expected/i, $got,
         test_msg("Expected '$expected', got '$got'"));

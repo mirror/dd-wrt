@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2022 The ProFTPD Project team
+ * Copyright (c) 2001-2025 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -370,24 +370,32 @@ MODRET set_extendedlog(cmd_rec *cmd) {
     c->argv[2] = pstrdup(log_pool, cmd->argv[3]);
   }
 
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
+
   return PR_HANDLED(cmd);
 }
 
 /* Syntax: AllowLogSymlinks <on|off> */
 MODRET set_allowlogsymlinks(cmd_rec *cmd) {
-  int bool = -1;
+  int allow_log_symlinks = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  allow_log_symlinks = get_boolean(cmd, 1);
+  if (allow_log_symlinks == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = bool;
+  *((unsigned char *) c->argv[0]) = allow_log_symlinks;
 
   return PR_HANDLED(cmd);
 }
@@ -638,6 +646,7 @@ static int resolve_on_meta(pool *p, pr_jot_ctx_t *jot_ctx,
       case LOGFMT_META_VHOST_IP:
       case LOGFMT_META_XFER_FAILURE:
       case LOGFMT_META_XFER_PATH:
+      case LOGFMT_META_XFER_SPEED:
       case LOGFMT_META_XFER_STATUS:
       case LOGFMT_META_XFER_TYPE:
       default:
@@ -690,6 +699,7 @@ static int resolve_on_default(pool *p, pr_jot_ctx_t *jot_ctx,
       case LOGFMT_META_XFER_MS:
       case LOGFMT_META_XFER_PATH:
       case LOGFMT_META_XFER_PORT:
+      case LOGFMT_META_XFER_SPEED:
       case LOGFMT_META_XFER_STATUS:
       case LOGFMT_META_XFER_TYPE:
         text = "-";
@@ -721,6 +731,10 @@ static int resolve_on_other(pool *p, pr_jot_ctx_t *jot_ctx,
 
   log = jot_ctx->log;
   if (log->buflen > 0) {
+    if (text_len > log->buflen) {
+      text_len = log->buflen;
+    }
+
     pr_trace_msg(trace_channel, 19, "appending text '%.*s' (%lu) to buffer",
       (int) text_len, text, (unsigned long) text_len);
     memcpy(log->buf, text, text_len);

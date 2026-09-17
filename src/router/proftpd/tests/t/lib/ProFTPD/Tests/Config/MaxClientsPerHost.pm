@@ -72,7 +72,7 @@ sub maxclientsperhost_one {
     SystemLog => $log_file,
 
     AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file, 
+    AuthGroupFile => $auth_group_file,
     AuthOrder => 'mod_auth_file.c',
 
     MaxClientsPerHost => $max_clients_per_host,

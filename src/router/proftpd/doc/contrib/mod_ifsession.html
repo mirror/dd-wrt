@@ -80,6 +80,7 @@ questions, concerns, or suggestions regarding this module.
   <li><a href="#IfAuthenticated">&lt;IfAuthenticated&gt;</a>
   <li><a href="#IfClass">&lt;IfClass&gt;</a>
   <li><a href="#IfGroup">&lt;IfGroup&gt;</a>
+  <li><a href="#IfSessionOptions">IfSessionOptions</a>
   <li><a href="#IfUser">&lt;IfUser&gt;</a>
 </ul>
 
@@ -194,6 +195,45 @@ Example:
 
 <p>
 See also: <a href="#IfClass">&lt;IfClass&gt;</a>, <a href="#IfUser">&lt;IfUser&gt;</a>
+
+<p>
+<hr>
+<h3><a name="IfSessionOptions">IfSessionOptions</a></h3>
+<strong>Syntax:</strong> IfSessionOptions <em>opt1 ...</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ifsession<br>
+<strong>Compatibility:</strong> 1.3.9rc1 and later
+
+<p>
+The <code>IfSessionOptions</code> directive is used to configure various
+optional behavior of <code>mod_ifsession</code>.
+
+<p>
+Example:
+<pre>
+  IfSessionOptions PerUnauthenticatedUser
+</pre>
+
+<p>
+The currently implemented options are:
+<ul>
+  <li><code>PerUnauthenticatedUser</code><br>
+    <p>
+    By default, <code>mod_ifsession</code> will only use the
+    <i>authenticated</i> identify of the remote client for conditional
+    configurations, <i>i.e.</i> after the client has successfully
+    authenticated.
+
+    <p>
+    However, some sites need to use different <i>authentication-related</i>
+    conditional configurations, which means using the <i>unauthenticated</i>
+    identity (usually the username requested).  For such cases, use this
+    option.  <b>Not recommended</b>, as such conditional configurations can
+    lead to timing differences, which can then be used to determine/test which
+    usernames are valid for the site.
+  </li>
+</ul>
 
 <p>
 <hr>
@@ -323,7 +363,7 @@ only, and should be removed from any production configuration.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2014 TJ Saunders<br>
+&copy; Copyright 2000-2023 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_shaper -- a module implementing daemon-wide rate throttling
  *                        via IPC
- * Copyright (c) 2004-2017 TJ Saunders
+ * Copyright (c) 2004-2024 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -486,7 +486,7 @@ static int shaper_rate_alter(unsigned int prio, long double downrate,
     *((unsigned int *) c->argv[3]) = prio;
 
     c->flags |= CF_MERGEDOWN_MULTI;
-  } 
+  }
 
   if (uprate > 0.0) {
     c = add_config_param_set(&main_server->conf, "TransferRate", 4, NULL,
@@ -767,7 +767,7 @@ static int shaper_table_init(pr_fh_t *fh) {
   if (lseek(fh->fh_fd, 0, SEEK_SET) < 0) {
     return -1;
   }
- 
+
   if (writev(fh->fh_fd, tab_iov, 6) < 0) {
     return -1;
   }
@@ -819,7 +819,7 @@ static int shaper_table_refresh(void) {
       "error reading ShaperTable header: %s", strerror(errno));
     return -1;
   }
- 
+
   /* For every session, read in its information and add it to the list.
    * For this, we need a pool for the session list.
    */
@@ -908,7 +908,7 @@ static void shaper_table_scrub(void) {
           "removed dead session (pid %u) from ShaperTable",
           (unsigned int) sess_list[i].sess_pid);
         send_tab = TRUE;
-      } 
+      }
 
     } else {
       struct shaper_sess *sess = push_array(new_sess_list);
@@ -999,10 +999,11 @@ static int shaper_table_send(void) {
       sess_list[i].sess_downrate, sess_list[i].sess_uprate);
 
     if (shaper_msg_send(sess_list[i].sess_pid, sess_list[i].sess_prio,
-        sess_list[i].sess_downrate, sess_list[i].sess_uprate) < 0) 
+        sess_list[i].sess_downrate, sess_list[i].sess_uprate) < 0) {
       (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
         "error sending msg to pid %u: %s",
         (unsigned int) sess_list[i].sess_pid, strerror(errno));
+    }
   }
 
   return 0;
@@ -1238,20 +1239,20 @@ static int shaper_handle_all(pr_ctrls_t *ctrl, int reqargc,
       reqargc > 14 ||
       reqargc % 2 != 0) {
     pr_ctrls_add_response(ctrl, "wrong number of parameters");
-    return -1;
+    return PR_CTRLS_STATUS_WRONG_PARAMETERS;
   }
 
   if (shaper_table_lock(LOCK_EX) < 0) {
     (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
       "error write-locking ShaperTable: %s", strerror(errno));
     pr_ctrls_add_response(ctrl, "error handling request");
-    return -1;
+    return PR_CTRLS_STATUS_INTERNAL_ERROR;
   }
 
   if (shaper_table_refresh() < 0) {
     shaper_table_lock(LOCK_UN);
     pr_ctrls_add_response(ctrl, "error handling request");
-    return -1;
+    return PR_CTRLS_STATUS_INTERNAL_ERROR;
   }
 
   for (i = 0; i < reqargc;) {
@@ -1416,25 +1417,25 @@ static int shaper_handle_all(pr_ctrls_t *ctrl, int reqargc,
     }
   }
 
-  if (!send_tab) {
+  if (send_tab == FALSE) {
     shaper_table_lock(LOCK_UN);
-    return -1;
+    return PR_CTRLS_STATUS_OPERATION_DENIED;
   }
 
   if (shaper_table_send() < 0) {
     shaper_table_lock(LOCK_UN);
     pr_ctrls_add_response(ctrl, "error handling request");
-    return -1;
+    return PR_CTRLS_STATUS_INTERNAL_ERROR;
   }
 
   if (shaper_table_flush() < 0) {
     shaper_table_lock(LOCK_UN);
     pr_ctrls_add_response(ctrl, "error handling request");
-    return -1;
+    return PR_CTRLS_STATUS_INTERNAL_ERROR;
   }
 
   shaper_table_lock(LOCK_UN);
-  return 0;
+  return PR_CTRLS_STATUS_OK;
 }
 
 /* usage: shaper info */
@@ -1450,7 +1451,7 @@ static int shaper_handle_info(pr_ctrls_t *ctrl, int reqargc,
     (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
       "unable to read-lock ShaperTable: %s", strerror(errno));
     pr_ctrls_add_response(ctrl, "error handling request");
-    return -1;
+    return PR_CTRLS_STATUS_INTERNAL_ERROR;
   }
 
   if (shaper_table_refresh() < 0) {
@@ -1460,7 +1461,7 @@ static int shaper_handle_info(pr_ctrls_t *ctrl, int reqargc,
     (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
       "error refreshing ShaperTable: %s", strerror(xerrno));
     pr_ctrls_add_response(ctrl, "error handling request");
-    return -1;
+    return PR_CTRLS_STATUS_INTERNAL_ERROR;
   }
 
   pr_ctrls_add_response(ctrl, "Overall Rates: %3.2Lf KB/s down, %3.2Lf KB/s up",
@@ -1480,7 +1481,7 @@ static int shaper_handle_info(pr_ctrls_t *ctrl, int reqargc,
       sess_list[i].sess_upincr);
   }
 
-  if (shaper_tab.nsessions) {
+  if (shaper_tab.nsessions > 0) {
     pr_ctrls_add_response(ctrl, "%-5s %8s %-14s %11s %-14s %11s",
       "PID", "Priority", "DShares", "DRate (KB/s)", "UShares", "URate (KB/s)");
     pr_ctrls_add_response(ctrl, "----- -------- -------------- ------------ -------------- ------------");
@@ -1508,7 +1509,7 @@ static int shaper_handle_info(pr_ctrls_t *ctrl, int reqargc,
   }
 
   shaper_table_lock(LOCK_UN);
-  return 0;
+  return PR_CTRLS_STATUS_OK;
 }
 
 /* usage: shaper sess class|host|user name [priority prio] [shares incr]
@@ -1524,7 +1525,7 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
       reqargc > 6 ||
       reqargc % 2 != 0) {
     pr_ctrls_add_response(ctrl, "wrong number of parameters");
-    return -1;
+    return PR_CTRLS_STATUS_WRONG_PARAMETERS;
   }
 
   for (i = 2; i < reqargc;) {
@@ -1533,7 +1534,7 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
       if (*reqargv[i+1] != '+' && *reqargv[i+1] != '-') {
         pr_ctrls_add_response(ctrl,
           "downshares (%s) must start with '+' or '-'", reqargv[i+1]);
-        return -1;
+        return PR_CTRLS_STATUS_WRONG_PARAMETERS;
       }
 
       downincr = atoi(reqargv[i+1]);
@@ -1570,7 +1571,7 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
       if (*reqargv[i+1] != '+' && *reqargv[i+1] != '-') {
         pr_ctrls_add_response(ctrl, "shares (%s) must start with '+' or '-'",
           reqargv[i+1]);
-        return -1;
+        return PR_CTRLS_STATUS_WRONG_PARAMETERS;
       }
 
       incr = atoi(reqargv[i+1]);
@@ -1594,7 +1595,7 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
       if (*reqargv[i+1] != '+' && *reqargv[i+1] != '-') {
         pr_ctrls_add_response(ctrl,
           "upshares (%s) must start with '+' or '-'", reqargv[i+1]);
-        return -1;
+        return PR_CTRLS_STATUS_WRONG_PARAMETERS;
       }
 
       upincr = atoi(reqargv[i+1]);
@@ -1620,8 +1621,9 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
     }
   }
 
-  if (!send_tab)
-    return -1;
+  if (send_tab == FALSE) {
+    return PR_CTRLS_STATUS_WRONG_PARAMETERS;
+  }
 
   /* Sessions that are not shaped (i.e. excluded from mod_shaper) cannot be
    * adjusted.  If exempted at login time, they cannot later be shaped.
@@ -1635,9 +1637,10 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
     pr_scoreboard_entry_t *score;
     const char *user = reqargv[1];
 
-    if (pr_rewind_scoreboard() < 0)
+    if (pr_rewind_scoreboard() < 0) {
       (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
         "error rewinding scoreboard: %s", strerror(errno));
+    }
 
     while ((score = pr_scoreboard_entry_read()) != NULL) {
       pr_signals_handle();
@@ -1651,8 +1654,9 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
           pr_ctrls_add_response(ctrl, "error adjusting pid %u: %s",
             (unsigned int) score->sce_pid, strerror(errno));
 
-        } else
+        } else {
           adjusted = TRUE;
+        }
       }
     }
 
@@ -1667,14 +1671,15 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
     if (na == NULL) {
       pr_ctrls_add_response(ctrl, "error resolving '%s': %s", reqargv[1],
         strerror(errno));
-      return -1;
+      return PR_CTRLS_STATUS_SUBJECT_NOT_FOUND;
     }
 
     addr = pr_netaddr_get_ipstr(na);
 
-    if (pr_rewind_scoreboard() < 0)
+    if (pr_rewind_scoreboard() < 0) {
       (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
         "error rewinding scoreboard: %s", strerror(errno));
+    }
 
     while ((score = pr_scoreboard_entry_read()) != NULL) {
       pr_signals_handle();
@@ -1700,9 +1705,10 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
     pr_scoreboard_entry_t *score;
     const char *class = reqargv[1];
 
-    if (pr_rewind_scoreboard() < 0)
+    if (pr_rewind_scoreboard() < 0) {
       (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
         "error rewinding scoreboard: %s", strerror(errno));
+    }
 
     while ((score = pr_scoreboard_entry_read()) != NULL) {
       pr_signals_handle();
@@ -1727,33 +1733,34 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
   } else {
     pr_ctrls_add_response(ctrl, "unknown shaper session target type: '%s'",
       reqargv[0]);
-    return -1;
+    return PR_CTRLS_STATUS_UNSUPPORTED_OPERATION;
   }
 
-  if (adjusted) {
+  if (adjusted == TRUE) {
     pr_ctrls_add_response(ctrl, "sessions adjusted");
   }
 
-  return 0;
+  return PR_CTRLS_STATUS_OK;
 }
 
 static int shaper_handle_shaper(pr_ctrls_t *ctrl, int reqargc,
     char **reqargv) {
 
   /* Sanity check */
-  if (reqargc == 0 || reqargv == NULL) {
-    pr_ctrls_add_response(ctrl, "shaper: missing required parameters");
-    return -1;
+  if (reqargc == 0 ||
+      reqargv == NULL) {
+    pr_ctrls_add_response(ctrl, "missing required parameters");
+    return PR_CTRLS_STATUS_WRONG_PARAMETERS;
   }
 
   if (strcmp(reqargv[0], "all") == 0) {
 
     /* Check the all ACL */
-    if (!ctrls_check_acl(ctrl, shaper_acttab, "all")) {
+    if (pr_ctrls_check_acl(ctrl, shaper_acttab, "all") != TRUE) {
 
       /* Access denied */
       pr_ctrls_add_response(ctrl, "access denied");
-      return -1;
+      return PR_CTRLS_STATUS_ACCESS_DENIED;
     }
 
     return shaper_handle_all(ctrl, --reqargc, ++reqargv);
@@ -1761,11 +1768,11 @@ static int shaper_handle_shaper(pr_ctrls_t *ctrl, int reqargc,
   } else if (strcmp(reqargv[0], "info") == 0) {
 
     /* Check the info ACL */
-    if (!ctrls_check_acl(ctrl, shaper_acttab, "info")) {
+    if (pr_ctrls_check_acl(ctrl, shaper_acttab, "info") != TRUE) {
 
       /* Access denied */
       pr_ctrls_add_response(ctrl, "access denied");
-      return -1;
+      return PR_CTRLS_STATUS_ACCESS_DENIED;
     }
 
     return shaper_handle_info(ctrl, --reqargc, ++reqargv);
@@ -1773,18 +1780,18 @@ static int shaper_handle_shaper(pr_ctrls_t *ctrl, int reqargc,
   } else if (strcmp(reqargv[0], "sess") == 0) {
 
     /* Check the sess ACL */
-    if (!ctrls_check_acl(ctrl, shaper_acttab, "sess")) {
+    if (pr_ctrls_check_acl(ctrl, shaper_acttab, "sess") != TRUE) {
 
       /* Access denied */
       pr_ctrls_add_response(ctrl, "access denied");
-      return -1;
+      return PR_CTRLS_STATUS_ACCESS_DENIED;
     }
 
     return shaper_handle_sess(ctrl, --reqargc, ++reqargv);
   }
 
   pr_ctrls_add_response(ctrl, "unknown shaper action: '%s'", reqargv[0]);
-  return -1;
+  return PR_CTRLS_STATUS_UNSUPPORTED_OPERATION;
 }
 
 /* Configuration handlers
@@ -1900,42 +1907,46 @@ MODRET set_shaperctrlsacls(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 4);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  actions = ctrls_parse_acl(cmd->tmp_pool, cmd->argv[1]);
+  actions = pr_ctrls_parse_acl(cmd->tmp_pool, cmd->argv[1]);
 
   /* Check the second parameter to make sure it is "allow" or "deny" */
   if (strcmp(cmd->argv[2], "allow") != 0 &&
-      strcmp(cmd->argv[2], "deny") != 0)
+      strcmp(cmd->argv[2], "deny") != 0) {
     CONF_ERROR(cmd, "second parameter must be 'allow' or 'deny'");
+  }
 
   /* Check the third parameter to make sure it is "user" or "group" */
   if (strcmp(cmd->argv[3], "user") != 0 &&
-      strcmp(cmd->argv[3], "group") != 0)
+      strcmp(cmd->argv[3], "group") != 0) {
     CONF_ERROR(cmd, "third parameter must be 'user' or 'group'");
+  }
 
-  bad_action = ctrls_set_module_acls(shaper_acttab, shaper_pool, actions,
+  bad_action = pr_ctrls_set_module_acls(shaper_acttab, shaper_pool, actions,
     cmd->argv[2], cmd->argv[3], cmd->argv[4]);
-  if (bad_action != NULL)
+  if (bad_action != NULL) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown shaper action: '",
       bad_action, "'", NULL));
+  }
 
   return PR_HANDLED(cmd);
 }
 
 /* usage: ShaperEngine on|off */
 MODRET set_shaperengine(cmd_rec *cmd) {
-  int bool;
+  int engine;
   config_rec *c;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  engine = get_boolean(cmd, 1);
+  if (engine == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
-  *((unsigned int *) c->argv[0]) = bool;
+  *((unsigned int *) c->argv[0]) = engine;
   c->flags |= CF_MERGEDOWN;
 
   return PR_HANDLED(cmd);
@@ -2259,7 +2270,7 @@ static void shaper_postparse_ev(const void *event_data, void *user_data) {
       pr_log_debug(DEBUG0, MOD_SHAPER_VERSION
         ": error using ShaperTable '%s': %s", shaper_tab_path,
         strerror(xerrno));
-      
+
       pr_fsio_close(fh);
       pr_session_disconnect(&shaper_module, PR_SESS_DISCONNECT_BAD_CONFIG,
         NULL);
@@ -2352,7 +2363,7 @@ static void shaper_restart_ev(const void *event_data, void *user_data) {
 
   for (i = 0; shaper_acttab[i].act_action; i++) {
     shaper_acttab[i].act_acl = pcalloc(shaper_pool, sizeof(ctrls_acl_t));
-    ctrls_init_acl(shaper_acttab[i].act_acl);
+    pr_ctrls_init_acl(shaper_acttab[i].act_acl);
   }
 
   if (shaper_scrub_timer_id != -1) {
@@ -2415,7 +2426,7 @@ static int shaper_init(void) {
 
     for (i = 0; shaper_acttab[i].act_action; i++) {
       shaper_acttab[i].act_acl = pcalloc(shaper_pool, sizeof(ctrls_acl_t));
-      ctrls_init_acl(shaper_acttab[i].act_acl);
+      pr_ctrls_init_acl(shaper_acttab[i].act_acl);
     }
   }
 

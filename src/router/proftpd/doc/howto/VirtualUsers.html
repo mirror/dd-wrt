@@ -63,6 +63,13 @@ of virtual user names.  When working with files created by virtual users, use
 those files.  You will then need to manually make sure those IDs are the
 correct ones for the file.
 
+<p>
+Remember that it is the Unix kernel, and <b>not ProFTPD</b>, which enforces
+the normal Unix access rules to files for a process such as a ProFTPD session
+process.  All that ProFTPD does is select the user and group IDs to set
+for the process, based on the authentication.  ProFTPD <b>never overrides</b>
+the normal Unix filesystem permissions.
+
 <p><a name="IDs"></a>
 <font color=red>Question</font>: Which IDs should I use for my virtual users?<br>
 <font color=blue>Answer</font>: It does not matter.  The only UID and GID
@@ -176,7 +183,7 @@ flexible, and more in line with ProFTPD's design philosophy.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2017 The ProFTPD Project<br>
+&copy; Copyright 2017-2023 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

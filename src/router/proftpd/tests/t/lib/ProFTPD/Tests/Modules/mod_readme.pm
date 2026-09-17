@@ -128,7 +128,7 @@ sub readme_login_path {
       $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
- 
+
       $resp_msg = $client->response_msg(2);
 
       $expected = "Please read the file (.*?)\/README";
@@ -231,7 +231,7 @@ sub readme_login_path_nonexistent {
       $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
- 
+
       $resp_msg = $client->response_msg(2);
       $self->assert(!defined($resp_msg),
         test_msg("Expected undefined, got '$resp_msg'"));
@@ -336,7 +336,7 @@ sub readme_login_pattern {
       $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
- 
+
       $resp_msg = $client->response_msg(2);
 
       $expected = "Please read the file README";
@@ -464,7 +464,7 @@ sub readme_cwd_pattern {
       $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
- 
+
       $resp_msg = $client->response_msg(2);
 
       $expected = "Please read the file README";
@@ -629,7 +629,7 @@ sub readme_cwd_pattern_multiple_matches {
       $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
- 
+
       $resp_msg = $client->response_msg(2);
 
       $expected = "Please read the file README";
@@ -798,7 +798,7 @@ sub readme_login_path_displaylogin_bug3605 {
       $expected = " User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
- 
+
       $resp_msg = $client->response_msg(8);
 
       $expected = "Please read the file (.*?)\/README";

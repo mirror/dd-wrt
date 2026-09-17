@@ -40,7 +40,7 @@ static void tear_down(void) {
   if (p) {
     destroy_pool(p);
     p = NULL;
-  } 
+  }
 }
 
 /* Helper functions */
@@ -60,7 +60,7 @@ static int do_cb(const void *key, size_t keysz, const void *value,
 static int do_with_remove_cb(const void *key, size_t keysz, const void *value,
     size_t valuesz, void *user_data) {
   pr_table_t *tab;
- 
+
   tab = user_data;
 
   if (*((const char *) value) == 'b') {
@@ -646,7 +646,7 @@ START_TEST (table_ctl_test) {
   ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
 
   tab = pr_table_alloc(p, 0);
- 
+
   mark_point();
   res = pr_table_ctl(tab, PR_TABLE_CTL_SET_ENT_INSERT, NULL);
   ck_assert_msg(res == 0, "Failed to set entry insert callback: %s",
@@ -687,12 +687,12 @@ START_TEST (table_ctl_test) {
   res = pr_table_ctl(tab, PR_TABLE_CTL_SET_NCHAINS, NULL);
   ck_assert_msg(res == -1, "Failed to handle SET_NCHAINS, null args");
   ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
-  
+
   res = pr_table_ctl(tab, PR_TABLE_CTL_SET_NCHAINS, &nchains);
   ck_assert_msg(res == -1, "Failed to handle SET_NCHAINS, zero args");
   ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
- 
-  nchains = 1; 
+
+  nchains = 1;
   res = pr_table_ctl(tab, PR_TABLE_CTL_SET_NCHAINS, &nchains);
   ck_assert_msg(res == 0, "Failed to handle SET_NCHAINS: %s", strerror(errno));
 

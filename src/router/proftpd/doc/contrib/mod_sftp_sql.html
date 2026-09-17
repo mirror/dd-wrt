@@ -163,9 +163,25 @@ could lead to unexpected parsing issues, which will be logged as:
 </pre>
 
 <p>
+<b>Logging</b><br>
+The <code>mod_sftp_sql</code> module supports different forms of logging.  For
+debugging purposes, the module also uses <a href="../howto/Tracing.html">trace logging</a>, via the module-specific log channels:
+<ul>
+  <li>sftp.sql
+</ul>
+Thus for trace logging, to aid in debugging, you would use the following in
+your <code>proftpd.conf</code>:
+<pre>
+  TraceLog /path/to/sftp-trace.log
+  Trace scp:20 sftp:20 sftp.sql:20 ssh2:20
+</pre>
+This trace logging can generate large files; it is intended for debugging
+use only, and should be removed from any production configuration.
+
+<p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2009-2017 TJ Saunders<br>
+&copy; Copyright 2009-2023 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

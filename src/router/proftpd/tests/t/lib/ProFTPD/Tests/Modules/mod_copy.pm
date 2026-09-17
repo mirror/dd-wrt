@@ -379,7 +379,7 @@ sub copy_file_no_login_bug4169 {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
       eval { $client->site('COPY', 'foo.txt', 'bar.txt') };
-      unless ($@) { 
+      unless ($@) {
         die("SITE COPY succeeded unexpectedly");
       }
 
@@ -645,7 +645,7 @@ sub copy_enoent {
       eval { $client->site('COPY', 'foo.txt', 'bar.txt') };
       unless ($@) {
         die("SITE COPY succeeded unexpectedly");
-      } 
+      }
 
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
@@ -1051,7 +1051,7 @@ EOC
       eval { $client->site('COPY', 'foo.txt', 'bar.txt') };
       unless ($@) {
         die("SITE COPY succeeded unexpectedly");
-      } 
+      }
 
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
@@ -1196,7 +1196,7 @@ sub copy_config_allowoverwrite {
       eval { $client->site('COPY', 'foo.txt', 'bar.txt') };
       unless ($@) {
         die("SITE COPY succeeded unexpectedly");
-      } 
+      }
 
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
@@ -1320,7 +1320,7 @@ sub copy_config_pathdenyfilter {
       eval { $client->site('COPY', 'foo.txt', 'bar.txt') };
       unless ($@) {
         die("SITE COPY succeeded unexpectedly");
-      } 
+      }
 
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
@@ -2860,7 +2860,7 @@ sub copy_cpfr_cpto_no_login_bug4169 {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
- 
+
       eval { $client->site('CPFR', 'foo.txt') };
       unless ($@) {
         die("SITE CPFR succeeded unexpectedly");

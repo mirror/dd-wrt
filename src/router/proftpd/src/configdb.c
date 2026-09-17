@@ -380,6 +380,10 @@ static config_rec *copy_config_from(const config_rec *src, config_rec *dst) {
   }
 
   c = pr_config_add_set(&dst->subset, src->name, 0);
+  if (c == NULL) {
+    return NULL;
+  }
+
   c->config_type = src->config_type;
   c->flags = src->flags;
   c->config_id = src->config_id;
@@ -396,7 +400,7 @@ static config_rec *copy_config_from(const config_rec *src, config_rec *dst) {
     *cargv++ = *sargv++;
   }
 
-  *cargv = NULL; 
+  *cargv = NULL;
   return c;
 }
 
@@ -466,7 +470,7 @@ void pr_config_merge_down(xaset_t *s, int dynamic) {
             if (merge) {
               (void) copy_config_from(c, dst);
             }
- 
+
           } else {
             /* No existing subset in dst; we can merge this one in. */
             (void) copy_config_from(c, dst);
@@ -700,7 +704,7 @@ void *get_param_ptr_next(const char *name, int recurse) {
   if (!last_param_ptr ||
       !last_param_ptr->next) {
     last_param_ptr = NULL;
-    errno = ENOENT; 
+    errno = ENOENT;
     return NULL;
   }
 

@@ -294,7 +294,7 @@ sub deflate_feat {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
       $client->feat();
- 
+
       my $resp_code = $client->response_code();
       my $resp_msgs = $client->response_msgs();
 
@@ -1314,7 +1314,7 @@ sub deflate_stor {
       }
 
       my $buf = "Ab" x 8192;
-      my $deflated = compress($buf); 
+      my $deflated = compress($buf);
       $conn->write($deflated, length($deflated));
       $conn->close();
 

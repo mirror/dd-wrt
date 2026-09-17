@@ -52,7 +52,7 @@ sub groupowner_ok {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $user = 'proftpd';
   my $passwd = 'test';
   my $home_dir = File::Spec->rel2abs($tmpdir);
@@ -75,7 +75,7 @@ sub groupowner_ok {
   my $owner_gid = 1000;
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
   auth_group_write($auth_group_file, $owner, $owner_gid, 'foo');
 
@@ -198,7 +198,7 @@ sub groupowner_failed_norootprivs {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $owner = 'proftpd2';
   my $owner_gid = 1000;
 
@@ -234,7 +234,7 @@ sub groupowner_failed_norootprivs {
   my ($uid, $gid) = (getpwnam($config_user))[2,3];
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
   auth_group_write($auth_group_file, $owner, $owner_gid, 'foo');
 
@@ -349,7 +349,7 @@ sub groupowner_ok_suppl_group_norootprivs {
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-  
+
   my $owner = 'proftpd2';
 
   my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
@@ -386,7 +386,7 @@ sub groupowner_ok_suppl_group_norootprivs {
   my $home_dir = File::Spec->rel2abs($tmpdir);
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
   auth_group_write($auth_group_file, $owner, $owner_gid, $user);
 

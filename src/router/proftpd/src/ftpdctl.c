@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2020 The ProFTPD Project team
- *  
+ * Copyright (c) 2001-2023 The ProFTPD Project team
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
   register int i = 0;
   unsigned char verbose = FALSE;
   const char *cmdopts = "hs:v";
-  char **respargv = NULL, *socket_file = PR_RUN_DIR "/proftpd.sock";
+  char *action, **respargv = NULL, *socket_file = PR_RUN_DIR "/proftpd.sock";
   int sockfd = -1, optc = 0, status = 0, respargc = 0;
   unsigned int reqargc = 0;
   pool *ctl_pool = NULL;
@@ -276,8 +276,11 @@ int main(int argc, char *argv[]) {
   reqargv = make_array(ctl_pool, 0, sizeof(char *));
 
   /* Process the command-line args into an array_header. */
+
+  action = argv[optind++];
+
   for (i = optind; i < argc; i++) {
-    if (verbose) {
+    if (verbose == TRUE) {
       fprintf(stdout, "%s: adding \"%s\" to reqargv\n", program, argv[i]);
     }
 
@@ -289,7 +292,7 @@ int main(int argc, char *argv[]) {
   *((char **) push_array(reqargv)) = NULL;
 
   /* Open a connection to the socket maintained by mod_ctrls. */
-  if (verbose) {
+  if (verbose == TRUE) {
     fprintf(stdout, "%s: contacting server using '%s'\n", program,
       socket_file);
   }
@@ -298,22 +301,29 @@ int main(int argc, char *argv[]) {
   if (sockfd < 0) {
     fprintf(stderr, "%s: error contacting server using '%s': %s\n", program,
       socket_file, strerror(errno));
+    destroy_pool(ctl_pool);
     exit(1);
   }
 
-  if (verbose) {
-    fprintf(stdout, "%s: sending control request\n", program);
+  if (verbose == TRUE) {
+    fprintf(stdout, "%s: sending '%s' control request (%u args)\n", program,
+      action, reqargc);
   }
 
-  if (pr_ctrls_send_msg(sockfd, 0, reqargc, (char **) reqargv->elts) < 0) {
+  if (pr_ctrls_send_request(ctl_pool, sockfd, action, reqargc,
+      (char **) reqargv->elts) < 0) {
     fprintf(stderr, "%s: error sending request: %s\n", program,
       strerror(errno));
+
+    (void) close(sockfd);
+    destroy_pool(ctl_pool);
+
     exit(1);
   }
 
   /* Read and display the responses. */
 
-  if (verbose) {
+  if (verbose == TRUE) {
     fprintf(stdout, "%s: receiving control response\n", program);
   }
 
@@ -327,7 +337,15 @@ int main(int argc, char *argv[]) {
   if (respargc < 0) {
     fprintf(stdout, "%s: error receiving response: %s\n", program,
       strerror(errno));
+
+    (void) close(sockfd);
+    destroy_pool(ctl_pool);
     exit(1);
+  }
+
+  if (verbose == TRUE) {
+    fprintf(stdout, "%s: received response status: %d\n", program,
+      status);
   }
 
   if (respargv != NULL) {
@@ -339,10 +357,13 @@ int main(int argc, char *argv[]) {
     fprintf(stdout, "%s: no response from server\n", program);
   }
 
+  (void) close(sockfd);
   destroy_pool(ctl_pool);
-  ctl_pool = NULL;
 
-  return 0;
+  /* Controls action status values are zero or negative, thus we need to
+   * convert them to appropriate Unix exit status values.
+   */
+  return (status * -1);
 }
 
 #else
@@ -353,5 +374,4 @@ int main(int argc, char *argv[]) {
   printf("  Please recompile proftpd using --enable-ctrls\n");
   return 1;
 }
-
 #endif /* PR_USE_CTRLS */

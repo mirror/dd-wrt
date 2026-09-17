@@ -151,7 +151,7 @@ sub sftp_pam_failed_login_attempts_bug3921 {
 
       'mod_sftp_pam.c' => {
         AuthOrder => 'mod_sftp_pam.c* mod_auth_unix.c',
-      }, 
+      },
     },
   };
 
@@ -291,7 +291,7 @@ CREATE TABLE users (
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
-  homedir TEXT, 
+  homedir TEXT,
   shell TEXT,
   lastdir TEXT
 );
@@ -361,7 +361,7 @@ EOS
 
       'mod_sftp_pam.c' => {
         AuthOrder => 'mod_sftp_pam.c* mod_sql.c',
-      }, 
+      },
 
       'mod_sql.c' => {
         SQLAuthTypes => 'plaintext',

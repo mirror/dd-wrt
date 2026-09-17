@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2020 The ProFTPD Project team
+ * Copyright (c) 2020-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@ static void set_up(void) {
   }
 
   init_fs();
+  (void) var_init();
 }
 
 static void tear_down(void) {
@@ -54,6 +55,8 @@ static void tear_down(void) {
   if (getenv("TEST_VERBOSE") != NULL) {
     pr_trace_set_levels("jot", 0, 0);
   }
+
+  (void) var_free();
 
   if (p != NULL) {
     destroy_pool(p);
@@ -594,6 +597,7 @@ START_TEST (jot_parse_logfmt_long_vars_test) {
     "%{transfer-failure}",
     "%{transfer-millisecs}",
     "%{transfer-port}",
+    "%{transfer-speed}",
     "%{transfer-status}",
     "%{transfer-type}",
     "%{uid}",
@@ -2271,6 +2275,75 @@ START_TEST (jot_resolve_logfmt_note_test) {
   pr_table_empty(session.notes);
   pr_table_free(session.notes);
   session.notes = NULL;
+}
+END_TEST
+
+START_TEST (jot_resolve_logfmt_var_test) {
+  int res;
+  cmd_rec *cmd;
+  unsigned char logfmt[9];
+  const char *key, *val;
+
+  cmd = pr_cmd_alloc(p, 1, pstrdup(p, "FOO"));
+  cmd->cmd_class = CL_MISC;
+  logfmt[0] = LOGFMT_META_START;
+  logfmt[1] = LOGFMT_META_VAR_VAR;
+  logfmt[2] = 0;
+
+  mark_point();
+  resolve_on_meta_count = resolve_on_default_count = resolve_on_other_count = 0;
+  res = pr_jot_resolve_logfmt(p, cmd, NULL, logfmt, NULL,
+    resolve_on_meta, resolve_on_default, resolve_on_other);
+  ck_assert_msg(res == 0, "Failed to handle logfmt: %s", strerror(errno));
+  ck_assert_msg(resolve_on_meta_count == 0,
+    "Expected on_meta count 0, got %u", resolve_on_meta_count);
+  ck_assert_msg(resolve_on_default_count == 0,
+    "Expected on_default count 0, got %u", resolve_on_default_count);
+  ck_assert_msg(resolve_on_other_count == 0,
+    "Expected on_other count 0, got %u", resolve_on_other_count);
+
+  mark_point();
+  resolve_on_meta_count = resolve_on_default_count = resolve_on_other_count = 0;
+  logfmt[0] = LOGFMT_META_START;
+  logfmt[1] = LOGFMT_META_VAR_VAR;
+  logfmt[2] = LOGFMT_META_START;
+  logfmt[3] = LOGFMT_META_ARG;
+  logfmt[4] = 'k';
+  logfmt[5] = 'e';
+  logfmt[6] = 'y';
+  logfmt[7] = LOGFMT_META_ARG_END;
+  logfmt[8] = 0;
+  res = pr_jot_resolve_logfmt(p, cmd, NULL, logfmt, NULL,
+    resolve_on_meta, resolve_on_default, resolve_on_other);
+  ck_assert_msg(res == 0, "Failed to handle logfmt: %s", strerror(errno));
+  ck_assert_msg(resolve_on_meta_count == 0,
+    "Expected on_meta count 0, got %u", resolve_on_meta_count);
+  ck_assert_msg(resolve_on_default_count == 1,
+    "Expected on_default count 1, got %u", resolve_on_default_count);
+  ck_assert_msg(resolve_on_other_count == 0,
+    "Expected on_other count 0, got %u", resolve_on_other_count);
+
+  mark_point();
+  resolve_on_meta_count = resolve_on_default_count = resolve_on_other_count = 0;
+  key = "%{key}";
+  val = "val";
+
+  res = pr_var_set(p, key, "Jot VAR test", PR_VAR_TYPE_STR, (void *) val,
+    NULL, 0);
+  ck_assert_msg(res == 0, "Failed to set variable: %s", strerror(errno));
+
+  res = pr_jot_resolve_logfmt(p, cmd, NULL, logfmt, NULL,
+    resolve_on_meta, resolve_on_default, resolve_on_other);
+  ck_assert_msg(res == 0, "Failed to handle logfmt: %s", strerror(errno));
+  ck_assert_msg(resolve_on_meta_count == 1,
+    "Expected on_meta count 1, got %u", resolve_on_meta_count);
+  ck_assert_msg(resolve_on_default_count == 0,
+    "Expected on_default count 0, got %u", resolve_on_default_count);
+  ck_assert_msg(resolve_on_other_count == 0,
+    "Expected on_other count 0, got %u", resolve_on_other_count);
+
+  res = pr_var_delete(key);
+  ck_assert_msg(res == 0, "Failed to delete variable: %s", strerror(errno));
 }
 END_TEST
 
@@ -5085,12 +5158,12 @@ START_TEST (jot_get_logfmt_id_name_test) {
     mark_point();
     res = pr_jot_get_logfmt_id_name(i);
     ck_assert_msg(res != NULL, "Failed to get name for LogFormat ID %u: %s",
-      i, strerror(errno)); 
+      i, strerror(errno));
   }
 
   res = pr_jot_get_logfmt_id_name(LOGFMT_META_CUSTOM);
   ck_assert_msg(res != NULL, "Failed to get name for LogFormat ID %u: %s",
-    LOGFMT_META_CUSTOM, strerror(errno)); 
+    LOGFMT_META_CUSTOM, strerror(errno));
 }
 END_TEST
 
@@ -5130,6 +5203,7 @@ Suite *tests_get_jot_suite(void) {
   tcase_add_test(testcase, jot_resolve_logfmt_file_size_test);
   tcase_add_test(testcase, jot_resolve_logfmt_env_var_test);
   tcase_add_test(testcase, jot_resolve_logfmt_note_test);
+  tcase_add_test(testcase, jot_resolve_logfmt_var_test);
   tcase_add_test(testcase, jot_resolve_logfmt_remote_port_test);
   tcase_add_test(testcase, jot_resolve_logfmt_rfc1413_ident_test);
   tcase_add_test(testcase, jot_resolve_logfmt_xfer_secs_test);

@@ -1,7 +1,7 @@
 /*
  * mod_ldap - LDAP password lookup module for ProFTPD
  * Copyright (c) 1999-2013, John Morrissey <jwm@horde.net>
- * Copyright (c) 2013-2021 The ProFTPD Project
+ * Copyright (c) 2013-2025 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -221,8 +221,10 @@ static struct timeval ldap_connecttimeout_tv;
 static struct timeval ldap_querytimeout_tv;
 #define PR_LDAP_QUERY_TIMEOUT_DEFAULT		5
 
+#define PR_LDAP_AUTO_DEFAULT_ID		-2
 static uid_t ldap_defaultuid = -1;
 static gid_t ldap_defaultgid = -1;
+
 static LDAP *ld = NULL;
 static array_header *cached_quota = NULL;
 static array_header *cached_ssh_pubkeys = NULL;
@@ -856,7 +858,30 @@ static struct passwd *pr_ldap_user_lookup(pool *p, char *filter_template,
           return NULL;
         }
 
-        pw->pw_uid = ldap_defaultuid;
+        if (ldap_defaultuid == (uid_t) PR_LDAP_AUTO_DEFAULT_ID) {
+          if (pw->pw_name != NULL) {
+            struct passwd *auto_pw;
+
+            auto_pw = getpwnam(pw->pw_name);
+            if (auto_pw != NULL) {
+              pw->pw_uid = auto_pw->pw_uid;
+
+            } else {
+              (void) pr_log_writefile(ldap_logfd, MOD_LDAP_VERSION,
+                "LDAPDefaultUID Auto in effect but failed automatic user "
+                "'%s' lookup: %s", pw->pw_name, strerror(errno));
+              return NULL;
+            }
+
+          } else {
+            (void) pr_log_writefile(ldap_logfd, MOD_LDAP_VERSION,
+              "LDAPDefaultUID Auto in effect but user name is missing");
+            return NULL;
+          }
+
+        } else {
+          pw->pw_uid = ldap_defaultuid;
+        }
         ++i;
 
         (void) pr_log_writefile(ldap_logfd, MOD_LDAP_VERSION,
@@ -875,7 +900,30 @@ static struct passwd *pr_ldap_user_lookup(pool *p, char *filter_template,
           return NULL;
         }
 
-        pw->pw_gid = ldap_defaultgid;
+        if (ldap_defaultgid == (gid_t) PR_LDAP_AUTO_DEFAULT_ID) {
+          if (pw->pw_name != NULL) {
+            struct passwd *auto_pw;
+
+            auto_pw = getpwnam(pw->pw_name);
+            if (auto_pw != NULL) {
+              pw->pw_gid = auto_pw->pw_gid;
+
+            } else {
+              (void) pr_log_writefile(ldap_logfd, MOD_LDAP_VERSION,
+                "LDAPDefaultGID Auto in effect but failed automatic user "
+                "'%s' lookup: %s", pw->pw_name, strerror(errno));
+              return NULL;
+            }
+
+          } else {
+            (void) pr_log_writefile(ldap_logfd, MOD_LDAP_VERSION,
+              "LDAPDefaultGID Auto in effect but user name is missing");
+            return NULL;
+          }
+
+        } else {
+          pw->pw_gid = ldap_defaultgid;
+        }
         ++i;
 
         (void) pr_log_writefile(ldap_logfd, MOD_LDAP_VERSION,
@@ -971,7 +1019,28 @@ static struct passwd *pr_ldap_user_lookup(pool *p, char *filter_template,
     } else if (strcasecmp(attrs[i], ldap_attr_uidnumber) == 0) {
       if (ldap_forcedefaultuid == TRUE &&
           ldap_defaultuid != (uid_t) -1) {
-        pw->pw_uid = ldap_defaultuid;
+
+        if (ldap_defaultuid == (uid_t) PR_LDAP_AUTO_DEFAULT_ID) {
+          struct passwd *auto_pw;
+
+          /* Note that we are deliberately bypassing our Auth API, and calling
+           * the system `getpwnam(3)` directly in order to "automatically"
+           * obtain the best UID.
+           */
+          auto_pw = getpwnam(pw->pw_name);
+          if (auto_pw != NULL) {
+            pw->pw_uid = auto_pw->pw_uid;
+
+          } else {
+            pr_trace_msg(trace_channel, 3,
+              "error automatically determining UID for user '%s': %s",
+              pw->pw_name, strerror(errno));
+            pw->pw_uid = ldap_defaultuid;
+          }
+
+        } else {
+          pw->pw_uid = ldap_defaultuid;
+        }
 
       } else {
         pw->pw_uid = (uid_t) strtoul(LDAP_VALUE(values, 0), NULL, 10);
@@ -980,7 +1049,28 @@ static struct passwd *pr_ldap_user_lookup(pool *p, char *filter_template,
     } else if (strcasecmp(attrs[i], ldap_attr_gidnumber) == 0) {
       if (ldap_forcedefaultgid == TRUE &&
           ldap_defaultgid != (gid_t) -1) {
-        pw->pw_gid = ldap_defaultgid;
+
+        if (ldap_defaultgid == (gid_t) PR_LDAP_AUTO_DEFAULT_ID) {
+          struct passwd *auto_pw;
+
+          /* Note that we are deliberately bypassing our Auth API, and calling
+           * the system `getpwnam(3)` directly in order to "automatically"
+           * obtain the best GID.
+           */
+          auto_pw = getpwnam(pw->pw_name);
+          if (auto_pw != NULL) {
+            pw->pw_gid = auto_pw->pw_gid;
+
+          } else {
+            pr_trace_msg(trace_channel, 3,
+              "error automatically determining primary GID for user '%s': %s",
+              pw->pw_name, strerror(errno));
+            pw->pw_gid = ldap_defaultgid;
+          }
+
+        } else {
+          pw->pw_gid = ldap_defaultgid;
+        }
 
       } else {
         pw->pw_gid = (gid_t) strtoul(LDAP_VALUE(values, 0), NULL, 10);
@@ -1138,7 +1228,11 @@ static struct group *pr_ldap_group_lookup(pool *p, char *filter_template,
 
     } else if (strcasecmp(attrs[i], ldap_attr_memberuid) == 0) {
       value_count = LDAP_COUNT_VALUES(values);
-      gr->gr_mem = (char **) palloc(session.pool, value_count * sizeof(char *));
+
+      /* Make sure we allocate enough memory for each member name, and one
+       * more for the terminating NULL.
+       */
+      gr->gr_mem = (char **) pcalloc(session.pool, (value_count + 1) * sizeof(char *));
 
       for (value_offset = 0; value_offset < value_count; ++value_offset) {
         gr->gr_mem[value_offset] =
@@ -1167,15 +1261,20 @@ static struct group *pr_ldap_group_lookup(pool *p, char *filter_template,
   return gr;
 }
 
+static void cached_quota_cleanup(void *event_data) {
+  cached_quota = NULL;
+}
+
 static void parse_quota(pool *p, const char *replace, char *str) {
   char **elts, *token;
 
   if (cached_quota == NULL) {
     cached_quota = make_array(p, 9, sizeof(char *));
+    register_cleanup2(p, NULL, cached_quota_cleanup);
   }
 
   elts = (char **) cached_quota->elts;
-  elts[0] = pstrdup(session.pool, replace);
+  elts[0] = pstrdup(p, replace);
   cached_quota->nelts = 1;
 
   (void) pr_log_writefile(ldap_logfd, MOD_LDAP_VERSION,
@@ -1183,7 +1282,7 @@ static void parse_quota(pool *p, const char *replace, char *str) {
 
   while ((token = strsep(&str, ","))) {
     pr_signals_handle();
-    *((char **) push_array(cached_quota)) = pstrdup(session.pool, token);
+    *((char **) push_array(cached_quota)) = pstrdup(p, token);
   }
 }
 
@@ -2594,6 +2693,13 @@ MODRET set_ldapserver(cmd_rec *cmd) {
     *((struct server_info **) push_array(infos)) = info;
   }
 
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
+
   return PR_HANDLED(cmd);
 }
 
@@ -2809,6 +2915,8 @@ MODRET set_ldapdefaultauthscheme(cmd_rec *cmd) {
 }
 
 MODRET set_ldapattr(cmd_rec *cmd) {
+  config_rec *c;
+
   CHECK_ARGS(cmd, 2);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
@@ -2826,7 +2934,15 @@ MODRET set_ldapattr(cmd_rec *cmd) {
       ": unknown attribute name: ", cmd->argv[1], NULL));
   }
 
-  add_config_param_str(cmd->argv[0], 2, cmd->argv[1], cmd->argv[2]);
+  c = add_config_param_str(cmd->argv[0], 2, cmd->argv[1], cmd->argv[2]);
+
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
+
   return PR_HANDLED(cmd);
 }
 
@@ -2842,11 +2958,23 @@ MODRET set_ldapusers(cmd_rec *cmd) {
 
   c = add_config_param(cmd->argv[0], cmd->argc - 1, NULL, NULL, NULL);
   c->argv[0] = pstrdup(c->pool, cmd->argv[1]);
+
   if (cmd->argc > 2) {
-    c->argv[1] = pstrdup(c->pool, cmd->argv[2]);
+    const char *filter;
+
+    filter = cmd->argv[2];
+    if (strcmp(filter, "") != 0) {
+      c->argv[1] = pstrdup(c->pool, filter);
+    }
   }
+
   if (cmd->argc > 3) {
-    c->argv[2] = pstrdup(c->pool, cmd->argv[3]);
+    const char *filter;
+
+    filter = cmd->argv[3];
+    if (strcmp(filter, "") != 0) {
+      c->argv[2] = pstrdup(c->pool, filter);
+    }
   }
 
   return PR_HANDLED(cmd);
@@ -2862,8 +2990,13 @@ MODRET set_ldapdefaultuid(cmd_rec *cmd) {
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(uid_t));
 
-  if (pr_str2uid(cmd->argv[1], &uid) < 0) {
-    CONF_ERROR(cmd, "LDAPDefaultUID: UID argument must be numeric");
+  if (strcasecmp(cmd->argv[1], "auto") == 0) {
+    uid = PR_LDAP_AUTO_DEFAULT_ID;
+
+  } else {
+    if (pr_str2uid(cmd->argv[1], &uid) < 0) {
+      CONF_ERROR(cmd, "LDAPDefaultUID: UID argument must be numeric");
+    }
   }
 
   *((uid_t *) c->argv[0]) = uid;
@@ -2880,8 +3013,13 @@ MODRET set_ldapdefaultgid(cmd_rec *cmd) {
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(gid_t));
 
-  if (pr_str2gid(cmd->argv[1], &gid) < 0) {
-    CONF_ERROR(cmd, "LDAPDefaultGID: GID argument must be numeric");
+  if (strcasecmp(cmd->argv[1], "auto") == 0) {
+    gid = PR_LDAP_AUTO_DEFAULT_ID;
+
+  } else {
+    if (pr_str2gid(cmd->argv[1], &gid) < 0) {
+      CONF_ERROR(cmd, "LDAPDefaultGID: GID argument must be numeric");
+    }
   }
 
   *((gid_t *) c->argv[0]) = gid;
@@ -2996,7 +3134,8 @@ MODRET set_ldapforcegenhdir(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-MODRET set_ldapgrouplookups(cmd_rec *cmd) {
+/* usage: LDAPGroups base-dn [name-filter-template [uid-filter-template [member-filter-template]]] */
+MODRET set_ldapgroups(cmd_rec *cmd) {
   config_rec *c;
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
@@ -3007,16 +3146,41 @@ MODRET set_ldapgrouplookups(cmd_rec *cmd) {
 
   c = add_config_param(cmd->argv[0], cmd->argc - 1, NULL);
   c->argv[0] = pstrdup(c->pool, cmd->argv[1]);
+
   if (cmd->argc > 2) {
-    c->argv[1] = pstrdup(c->pool, cmd->argv[2]);
+    const char *filter;
+
+    filter = cmd->argv[2];
+    if (strcmp(filter, "") != 0) {
+      c->argv[1] = pstrdup(c->pool, filter);
+
+    } else {
+      c->argv[1] = NULL;
+    }
   }
 
   if (cmd->argc > 3) {
-    c->argv[2] = pstrdup(c->pool, cmd->argv[3]);
+    const char *filter;
+
+    filter = cmd->argv[3];
+    if (strcmp(filter, "") != 0) {
+      c->argv[2] = pstrdup(c->pool, filter);
+
+    } else {
+      c->argv[2] = NULL;
+    }
   }
 
   if (cmd->argc > 4) {
-    c->argv[3] = pstrdup(c->pool, cmd->argv[4]);
+    const char *filter;
+
+    filter = cmd->argv[4];
+    if (strcmp(filter, "") != 0) {
+      c->argv[3] = pstrdup(c->pool, filter);
+
+    } else {
+      c->argv[3] = NULL;
+    }
   }
 
   return PR_HANDLED(cmd);
@@ -3466,19 +3630,33 @@ static int ldap_sess_init(void) {
 
   c = find_config(main_server->conf, CONF_PARAM, "LDAPUsers", FALSE);
   if (c != NULL) {
+    const char *filter;
+
     ldap_do_users = TRUE;
     ldap_user_basedn = pstrdup(ldap_pool, c->argv[0]);
 
+    filter = NULL;
     if (c->argc > 1) {
-      ldap_user_name_filter = pstrdup(ldap_pool, c->argv[1]);
+      filter = c->argv[1];
+    }
+
+    if (filter != NULL &&
+        strcmp(filter, "") != 0) {
+      ldap_user_name_filter = pstrdup(ldap_pool, filter);
 
     } else {
       ldap_user_name_filter = pstrcat(ldap_pool,
         "(&(", ldap_attr_uid, "=%v)(objectclass=posixAccount))", NULL);
     }
 
+    filter = NULL;
     if (c->argc > 2) {
-      ldap_user_uid_filter = pstrdup(ldap_pool, c->argv[2]);
+      filter = c->argv[2];
+    }
+
+    if (filter != NULL &&
+        strcmp(filter, "") != 0) {
+      ldap_user_uid_filter = pstrdup(ldap_pool, filter);
 
     } else {
       ldap_user_uid_filter = pstrcat(ldap_pool,
@@ -3530,27 +3708,47 @@ static int ldap_sess_init(void) {
 
   c = find_config(main_server->conf, CONF_PARAM, "LDAPGroups", FALSE);
   if (c != NULL) {
+    const char *filter;
+
     ldap_do_groups = TRUE;
     ldap_gid_basedn = pstrdup(ldap_pool, c->argv[0]);
 
+    filter = NULL;
     if (c->argc > 1) {
-      ldap_group_name_filter = pstrdup(ldap_pool, c->argv[1]);
+      filter = c->argv[1];
+    }
+
+    if (filter != NULL &&
+        strcmp(filter, "") != 0) {
+      ldap_group_name_filter = pstrdup(ldap_pool, filter);
 
     } else {
       ldap_group_name_filter = pstrcat(ldap_pool,
         "(&(", ldap_attr_cn, "=%v)(objectclass=posixGroup))", NULL);
     }
 
+    filter = NULL;
     if (c->argc > 2) {
-      ldap_group_gid_filter = pstrdup(ldap_pool, c->argv[2]);
+      filter = c->argv[2];
+    }
+
+    if (filter != NULL &&
+        strcmp(filter, "") != 0) {
+      ldap_group_gid_filter = pstrdup(ldap_pool, filter);
 
     } else {
       ldap_group_gid_filter = pstrcat(ldap_pool,
         "(&(", ldap_attr_gidnumber, "=%v)(objectclass=posixGroup))", NULL);
     }
 
+    filter = NULL;
     if (c->argc > 3) {
-      ldap_group_member_filter = pstrdup(ldap_pool, c->argv[3]);
+      filter = c->argv[3];
+    }
+
+    if (filter != NULL &&
+        strcmp(filter, "") != 0) {
+      ldap_group_member_filter = pstrdup(ldap_pool, filter);
 
     } else {
       ldap_group_member_filter = pstrcat(ldap_pool,
@@ -3628,7 +3826,7 @@ static conftable ldap_conftab[] = {
   { "LDAPGenerateHomedirPrefix",set_ldapgenhdirprefix,		NULL },
   { "LDAPGenerateHomedirPrefixNoUsername",
 				set_ldapgenhdirprefixnouname,	NULL },
-  { "LDAPGroups",		set_ldapgrouplookups,		NULL },
+  { "LDAPGroups",		set_ldapgroups,			NULL },
   { "LDAPLog",			set_ldaplog,			NULL },
   { "LDAPProtocolVersion",	set_ldapprotoversion,		NULL },
   { "LDAPQueryTimeout",		set_ldapquerytimeout,		NULL },

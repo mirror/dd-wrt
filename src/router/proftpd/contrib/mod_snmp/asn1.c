@@ -852,7 +852,7 @@ int snmp_asn1_write_uint(pool *p, unsigned char **buf, size_t *buflen,
   flags = SNMP_ASN1_FL_KNOWN_LEN;
 
   /* Truncate "unnecessary" bytes off of the most significant end of this
-   * 2's complement integer. 
+   * 2's complement integer.
    *
    * There should be no sequence of 9 consecutive 1's or 0's at the most
    * significant end of the integer.  The 1's case is taken care of below by
@@ -1002,7 +1002,7 @@ int snmp_asn1_write_oid(pool *p, unsigned char **buf, size_t *buflen,
     sub_id = (oid_ptr[0] * 40);
     asn1_oidlen = 2;
     oid_ptr++;
-    
+
   } else {
     /* Combine the first two values. */
 

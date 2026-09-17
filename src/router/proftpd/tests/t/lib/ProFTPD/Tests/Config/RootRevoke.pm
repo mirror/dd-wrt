@@ -254,7 +254,7 @@ sub rootrevoke_on_active_transfer_nonpriv_port {
       my $buf;
       $conn->read($buf, 8192, 25);
       eval { $conn->close() };
-      
+
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
 

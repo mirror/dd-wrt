@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp MACs
- * Copyright (c) 2008-2022 TJ Saunders
+ * Copyright (c) 2008-2024 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,8 +37,9 @@
 struct sftp_mac {
   pool *pool;
   const char *algo;
-  int algo_type;
+  unsigned int algo_type;
   int is_etm;
+  int free_digest;
 
   const EVP_MD *digest;
 
@@ -53,9 +54,10 @@ struct sftp_mac {
   uint32_t mac_len;
 };
 
-#define SFTP_MAC_ALGO_TYPE_HMAC		1
-#define SFTP_MAC_ALGO_TYPE_UMAC64	2
-#define SFTP_MAC_ALGO_TYPE_UMAC128	3
+#define SFTP_MAC_ALGO_TYPE_NONE		1
+#define SFTP_MAC_ALGO_TYPE_HMAC		2
+#define SFTP_MAC_ALGO_TYPE_UMAC64	3
+#define SFTP_MAC_ALGO_TYPE_UMAC128	4
 
 #define SFTP_MAC_FL_READ_MAC	1
 #define SFTP_MAC_FL_WRITE_MAC	2
@@ -67,15 +69,15 @@ struct sftp_mac {
  */
 
 static struct sftp_mac read_macs[] = {
-  { NULL, NULL, 0, FALSE, NULL, NULL, 0, 0, 0 },
-  { NULL, NULL, 0, FALSE, NULL, NULL, 0, 0, 0 }
+  { NULL, NULL, 0, FALSE, FALSE, NULL, NULL, 0, 0, 0 },
+  { NULL, NULL, 0, FALSE, FALSE, NULL, NULL, 0, 0, 0 }
 };
 static HMAC_CTX *hmac_read_ctxs[2];
 static struct umac_ctx *umac_read_ctxs[2];
 
 static struct sftp_mac write_macs[] = {
-  { NULL, NULL, 0, FALSE, NULL, NULL, 0, 0, 0 },
-  { NULL, NULL, 0, FALSE, NULL, NULL, 0, 0, 0 }
+  { NULL, NULL, 0, FALSE, FALSE, NULL, NULL, 0, 0, 0 },
+  { NULL, NULL, 0, FALSE, FALSE, NULL, NULL, 0, 0, 0 }
 };
 static HMAC_CTX *hmac_write_ctxs[2];
 static struct umac_ctx *umac_write_ctxs[2];
@@ -105,10 +107,10 @@ static unsigned int get_next_write_index(void) {
 
 static void switch_read_mac(void) {
   /* First we can clear the read MAC, kept from rekeying. */
-  if (read_macs[read_mac_idx].key) {
+  if (read_macs[read_mac_idx].key != NULL) {
     clear_mac(&(read_macs[read_mac_idx]));
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(HAVE_LIBRESSL)
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
     HMAC_CTX_reset(hmac_read_ctxs[read_mac_idx]);
 #elif OPENSSL_VERSION_NUMBER > 0x000907000L
     HMAC_CTX_cleanup(hmac_read_ctxs[read_mac_idx]);
@@ -122,7 +124,7 @@ static void switch_read_mac(void) {
       umac128_reset(umac_read_ctxs[read_mac_idx]);
     }
 
-    mac_blockszs[read_mac_idx] = 0; 
+    mac_blockszs[read_mac_idx] = 0;
 
     /* Now we can switch the index. */
     if (read_mac_idx == 1) {
@@ -136,10 +138,10 @@ static void switch_read_mac(void) {
 
 static void switch_write_mac(void) {
   /* First we can clear the write MAC, kept from rekeying. */
-  if (write_macs[write_mac_idx].key) {
+  if (write_macs[write_mac_idx].key != NULL) {
     clear_mac(&(write_macs[write_mac_idx]));
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(HAVE_LIBRESSL)
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
     HMAC_CTX_reset(hmac_write_ctxs[write_mac_idx]);
 #elif OPENSSL_VERSION_NUMBER > 0x000907000L
     HMAC_CTX_cleanup(hmac_write_ctxs[write_mac_idx]);
@@ -178,12 +180,12 @@ static void clear_mac(struct sftp_mac *mac) {
 
 static int init_mac(pool *p, struct sftp_mac *mac, HMAC_CTX *hmac_ctx,
     struct umac_ctx *umac_ctx) {
-  if (strcmp(mac->algo, "none") == 0) {
+  if (mac->algo_type == SFTP_MAC_ALGO_TYPE_NONE) {
     return 0;
   }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(HAVE_LIBRESSL)
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
   HMAC_CTX_reset(hmac_ctx);
 #elif OPENSSL_VERSION_NUMBER > 0x000907000L
   HMAC_CTX_init(hmac_ctx);
@@ -223,6 +225,27 @@ static int init_mac(pool *p, struct sftp_mac *mac, HMAC_CTX *hmac_ctx,
   return 0;
 }
 
+static unsigned int get_algo_type(const char *algo) {
+  unsigned int algo_type = 0;
+
+  if (strcmp(algo, "none") == 0) {
+    algo_type = SFTP_MAC_ALGO_TYPE_NONE;
+
+  } else if (strcmp(algo, "umac-64@openssh.com") == 0 ||
+             strcmp(algo, "umac-64-etm@openssh.com") == 0) {
+    algo_type = SFTP_MAC_ALGO_TYPE_UMAC64;
+
+  } else if (strcmp(algo, "umac-128@openssh.com") == 0 ||
+             strcmp(algo, "umac-128-etm@openssh.com") == 0) {
+    algo_type = SFTP_MAC_ALGO_TYPE_UMAC128;
+
+  } else {
+    algo_type = SFTP_MAC_ALGO_TYPE_HMAC;
+  }
+
+  return algo_type;
+}
+
 static int get_mac(struct ssh2_packet *pkt, struct sftp_mac *mac,
     HMAC_CTX *hmac_ctx, struct umac_ctx *umac_ctx, int etm_mac, int flags) {
   unsigned char *mac_data;
@@ -232,7 +255,7 @@ static int get_mac(struct ssh2_packet *pkt, struct sftp_mac *mac,
   if (mac->algo_type == SFTP_MAC_ALGO_TYPE_HMAC) {
     /* Always leave a little extra room in the buffer. */
     bufsz = (sizeof(uint32_t) * 2) + pkt->packet_len + 64;
-    mac_data = pcalloc(pkt->pool, EVP_MAX_MD_SIZE);
+    mac_data = palloc(pkt->pool, EVP_MAX_MD_SIZE);
 
     if (etm_mac == TRUE) {
       bufsz += sftp_mac_get_block_size();
@@ -300,7 +323,7 @@ static int get_mac(struct ssh2_packet *pkt, struct sftp_mac *mac,
 
     /* Always leave a little extra room in the buffer. */
     bufsz = sizeof(uint32_t) + pkt->packet_len + 64;
-    mac_data = pcalloc(pkt->pool, EVP_MAX_MD_SIZE);
+    mac_data = palloc(pkt->pool, EVP_MAX_MD_SIZE);
 
     if (etm_mac == TRUE) {
       bufsz += sftp_mac_get_block_size();
@@ -431,18 +454,18 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
     const unsigned char *k, uint32_t klen, const char *h, uint32_t hlen,
     char letter, const unsigned char *id, uint32_t id_len) {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || \
-    defined(HAVE_LIBRESSL)
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER < 0x3050000L)
   EVP_MD_CTX ctx;
-#endif /* prior to OpenSSL-1.1.0 */
+#endif /* prior to OpenSSL-1.1.0/LibreSSL-3.5.0 */
   EVP_MD_CTX *pctx;
   unsigned char *key = NULL;
   size_t key_sz;
   uint32_t key_len = 0;
 
   key_sz = sftp_crypto_get_size(EVP_MD_block_size(mac->digest),
-    EVP_MD_size(hash)); 
+    EVP_MD_size(hash));
   if (key_sz == 0) {
-    if (strcmp(mac->algo, "none") == 0) {
+    if (mac->algo_type == SFTP_MAC_ALGO_TYPE_NONE) {
       return 0;
     }
 
@@ -459,11 +482,11 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
   }
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || \
-    defined(HAVE_LIBRESSL)
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER < 0x3050000L)
   pctx = &ctx;
 #else
   pctx = EVP_MD_CTX_new();
-#endif /* prior to OpenSSL-1.1.0 */
+#endif /* prior to OpenSSL-1.1.0/LibreSSL-3.5.0 */
 
   /* In OpenSSL 0.9.6, many of the EVP_Digest* functions returned void, not
    * int.  Without these ugly OpenSSL version preprocessor checks, the
@@ -475,10 +498,10 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error initializing message digest: %s", sftp_crypto_get_errors());
     free(key);
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-     !defined(HAVE_LIBRESSL)
+# if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+     (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
     EVP_MD_CTX_free(pctx);
-# endif /* OpenSSL-1.1.0 and later */
+# endif /* OpenSSL-1.1.0/LibreSSL-3.5.0 and later */
     return -1;
   }
 #else
@@ -490,10 +513,10 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error updating message digest with K: %s", sftp_crypto_get_errors());
     free(key);
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-     !defined(HAVE_LIBRESSL)
+# if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+     (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
     EVP_MD_CTX_free(pctx);
-# endif /* OpenSSL-1.1.0 and later */
+# endif /* OpenSSL-1.1.0/LibreSSL-3.5.0 and later */
     return -1;
   }
 #else
@@ -505,10 +528,10 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error updating message digest with H: %s", sftp_crypto_get_errors());
     free(key);
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-     !defined(HAVE_LIBRESSL)
+# if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+     (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
     EVP_MD_CTX_free(pctx);
-# endif /* OpenSSL-1.1.0 and later */
+# endif /* OpenSSL-1.1.0/LibreSSL-3.5.0 and later */
     return -1;
   }
 #else
@@ -521,10 +544,10 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
       "error updating message digest with '%c': %s", letter,
       sftp_crypto_get_errors());
     free(key);
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-     !defined(HAVE_LIBRESSL)
+# if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+     (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
     EVP_MD_CTX_free(pctx);
-# endif /* OpenSSL-1.1.0 and later */
+# endif /* OpenSSL-1.1.0/LibreSSL-3.5.0 and later */
     return -1;
   }
 #else
@@ -536,10 +559,10 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error updating message digest with ID: %s", sftp_crypto_get_errors());
     free(key);
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-     !defined(HAVE_LIBRESSL)
+# if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+     (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
     EVP_MD_CTX_free(pctx);
-# endif /* OpenSSL-1.1.0 and later */
+# endif /* OpenSSL-1.1.0/LibreSSL-3.5.0 and later */
     return -1;
   }
 #else
@@ -552,10 +575,10 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
       "error finalizing message digest: %s", sftp_crypto_get_errors());
     pr_memscrub(key, key_sz);
     free(key);
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-     !defined(HAVE_LIBRESSL)
+# if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+     (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
     EVP_MD_CTX_free(pctx);
-# endif /* OpenSSL-1.1.0 and later */
+# endif /* OpenSSL-1.1.0/LibreSSL-3.5.0 and later */
     return -1;
   }
 #else
@@ -577,10 +600,10 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
         "error initializing message digest: %s", sftp_crypto_get_errors());
       pr_memscrub(key, key_sz);
       free(key);
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-     !defined(HAVE_LIBRESSL)
+# if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+     (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
       EVP_MD_CTX_free(pctx);
-# endif /* OpenSSL-1.1.0 and later */
+# endif /* OpenSSL-1.1.0/LibreSSL-3.5.0 and later */
       return -1;
     }
 #else
@@ -593,10 +616,10 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
         "error updating message digest with K: %s", sftp_crypto_get_errors());
       pr_memscrub(key, key_sz);
       free(key);
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-     !defined(HAVE_LIBRESSL)
+# if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+     (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
       EVP_MD_CTX_free(pctx);
-# endif /* OpenSSL-1.1.0 and later */
+# endif /* OpenSSL-1.1.0/LibreSSL-3.5.0 and later */
       return -1;
     }
 #else
@@ -609,10 +632,10 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
         "error updating message digest with H: %s", sftp_crypto_get_errors());
       pr_memscrub(key, key_sz);
       free(key);
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-     !defined(HAVE_LIBRESSL)
+# if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+     (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
       EVP_MD_CTX_free(pctx);
-# endif /* OpenSSL-1.1.0 and later */
+# endif /* OpenSSL-1.1.0/LibreSSL-3.5.0 and later */
       return -1;
     }
 #else
@@ -626,10 +649,10 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
         sftp_crypto_get_errors());
       pr_memscrub(key, key_sz);
       free(key);
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-     !defined(HAVE_LIBRESSL)
+# if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+     (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
       EVP_MD_CTX_free(pctx);
-# endif /* OpenSSL-1.1.0 and later */
+# endif /* OpenSSL-1.1.0/LibreSSL-3.5.0 and later */
       return -1;
     }
 #else
@@ -642,10 +665,10 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
         "error finalizing message digest: %s", sftp_crypto_get_errors());
       pr_memscrub(key, key_sz);
       free(key);
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-     !defined(HAVE_LIBRESSL)
+# if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+     (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
       EVP_MD_CTX_free(pctx);
-# endif /* OpenSSL-1.1.0 and later */
+# endif /* OpenSSL-1.1.0/LibreSSL-3.5.0 and later */
       return -1;
     }
 #else
@@ -658,10 +681,10 @@ static int set_mac_key(struct sftp_mac *mac, const EVP_MD *hash,
   mac->key = key;
   mac->keysz = key_sz;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(HAVE_LIBRESSL)
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
   EVP_MD_CTX_free(pctx);
-#endif /* OpenSSL-1.1.0 and later */
+#endif /* OpenSSL-1.1.0/LibreSSL-3.5.0 and later */
 
   if (mac->algo_type == SFTP_MAC_ALGO_TYPE_HMAC) {
     mac->key_len = EVP_MD_size(mac->digest);
@@ -691,7 +714,7 @@ void sftp_mac_set_block_size(size_t blocksz) {
 const char *sftp_mac_get_read_algo(void) {
   if (read_macs[read_mac_idx].key != NULL ||
       (read_macs[read_mac_idx].algo != NULL &&
-       strcmp(read_macs[read_mac_idx].algo, "none") == 0)) {
+       read_macs[read_mac_idx].algo_type == SFTP_MAC_ALGO_TYPE_NONE)) {
     return read_macs[read_mac_idx].algo;
   }
 
@@ -703,7 +726,7 @@ const char *sftp_mac_get_read_algo(void) {
 }
 
 int sftp_mac_is_read_etm(void) {
-  if (read_macs[read_mac_idx].key) {
+  if (read_macs[read_mac_idx].key != NULL) {
     return read_macs[read_mac_idx].is_etm;
   }
 
@@ -721,7 +744,7 @@ int sftp_mac_set_read_algo(const char *algo) {
     return 0;
   }
 
-  if (read_macs[idx].key) {
+  if (read_macs[idx].key != NULL) {
     /* If we have an existing key, it means that we are currently rekeying. */
     idx = get_next_read_index();
   }
@@ -732,16 +755,25 @@ int sftp_mac_set_read_algo(const char *algo) {
       case SFTP_MAC_ALGO_TYPE_UMAC64:
         umac_delete(umac_read_ctxs[idx]);
         umac_read_ctxs[idx] = NULL;
+        if (read_macs[idx].free_digest == TRUE) {
+          sftp_crypto_free_digest(read_macs[idx].digest);
+          read_macs[idx].digest = NULL;
+        }
         break;
 
       case SFTP_MAC_ALGO_TYPE_UMAC128:
         umac128_delete(umac_read_ctxs[idx]);
         umac_read_ctxs[idx] = NULL;
+        if (read_macs[idx].free_digest == TRUE) {
+          sftp_crypto_free_digest(read_macs[idx].digest);
+          read_macs[idx].digest = NULL;
+        }
         break;
     }
   }
 
-  read_macs[idx].digest = sftp_crypto_get_digest(algo, &mac_len);
+  read_macs[idx].digest = sftp_crypto_get_digest(algo, &mac_len,
+    &(read_macs[idx].free_digest));
   if (read_macs[idx].digest == NULL) {
     return -1;
   }
@@ -757,19 +789,13 @@ int sftp_mac_set_read_algo(const char *algo) {
   read_macs[idx].pool = make_sub_pool(sftp_pool);
   pr_pool_tag(read_macs[idx].pool, "SFTP MAC read pool");
   read_macs[idx].algo = pstrdup(read_macs[idx].pool, algo);
+  read_macs[idx].algo_type = get_algo_type(algo);
 
-  if (strcmp(read_macs[idx].algo, "umac-64@openssh.com") == 0 ||
-      strcmp(read_macs[idx].algo, "umac-64-etm@openssh.com") == 0) {
-    read_macs[idx].algo_type = SFTP_MAC_ALGO_TYPE_UMAC64;
+  if (read_macs[idx].algo_type == SFTP_MAC_ALGO_TYPE_UMAC64) {
     umac_read_ctxs[idx] = umac_alloc();
 
-  } else if (strcmp(read_macs[idx].algo, "umac-128@openssh.com") == 0 ||
-             strcmp(read_macs[idx].algo, "umac-128-etm@openssh.com") == 0) {
-    read_macs[idx].algo_type = SFTP_MAC_ALGO_TYPE_UMAC128;
+  } else if (read_macs[idx].algo_type == SFTP_MAC_ALGO_TYPE_UMAC128) {
     umac_read_ctxs[idx] = umac128_alloc();
-
-  } else {
-    read_macs[idx].algo_type = SFTP_MAC_ALGO_TYPE_HMAC;
   }
 
   read_macs[idx].mac_len = mac_len;
@@ -871,7 +897,7 @@ int sftp_mac_read_data(struct ssh2_packet *pkt) {
 const char *sftp_mac_get_write_algo(void) {
   if (write_macs[write_mac_idx].key != NULL ||
       (write_macs[write_mac_idx].algo != NULL &&
-       strcmp(write_macs[write_mac_idx].algo, "none") == 0)) {
+       write_macs[write_mac_idx].algo_type == SFTP_MAC_ALGO_TYPE_NONE)) {
     return write_macs[write_mac_idx].algo;
   }
 
@@ -883,7 +909,7 @@ const char *sftp_mac_get_write_algo(void) {
 }
 
 int sftp_mac_is_write_etm(void) {
-  if (write_macs[write_mac_idx].key) {
+  if (write_macs[write_mac_idx].key != NULL) {
     return write_macs[write_mac_idx].is_etm;
   }
 
@@ -901,7 +927,7 @@ int sftp_mac_set_write_algo(const char *algo) {
     return 0;
   }
 
-  if (write_macs[idx].key) {
+  if (write_macs[idx].key != NULL) {
     /* If we have an existing key, it means that we are currently rekeying. */
     idx = get_next_write_index();
   }
@@ -912,16 +938,25 @@ int sftp_mac_set_write_algo(const char *algo) {
       case SFTP_MAC_ALGO_TYPE_UMAC64:
         umac_delete(umac_write_ctxs[idx]);
         umac_write_ctxs[idx] = NULL;
+        if (write_macs[idx].free_digest == TRUE) {
+          sftp_crypto_free_digest(write_macs[idx].digest);
+          write_macs[idx].digest = NULL;
+        }
         break;
 
       case SFTP_MAC_ALGO_TYPE_UMAC128:
         umac128_delete(umac_write_ctxs[idx]);
         umac_write_ctxs[idx] = NULL;
+        if (write_macs[idx].free_digest == TRUE) {
+          sftp_crypto_free_digest(write_macs[idx].digest);
+          write_macs[idx].digest = NULL;
+        }
         break;
     }
   }
 
-  write_macs[idx].digest = sftp_crypto_get_digest(algo, &mac_len);
+  write_macs[idx].digest = sftp_crypto_get_digest(algo, &mac_len,
+    &(write_macs[idx].free_digest));
   if (write_macs[idx].digest == NULL) {
     return -1;
   }
@@ -937,19 +972,13 @@ int sftp_mac_set_write_algo(const char *algo) {
   write_macs[idx].pool = make_sub_pool(sftp_pool);
   pr_pool_tag(write_macs[idx].pool, "SFTP MAC write pool");
   write_macs[idx].algo = pstrdup(write_macs[idx].pool, algo);
+  write_macs[idx].algo_type = get_algo_type(algo);
 
-  if (strcmp(write_macs[idx].algo, "umac-64@openssh.com") == 0 ||
-      strcmp(write_macs[idx].algo, "umac-64-etm@openssh.com") == 0) {
-    write_macs[idx].algo_type = SFTP_MAC_ALGO_TYPE_UMAC64;
+  if (write_macs[idx].algo_type == SFTP_MAC_ALGO_TYPE_UMAC64) {
     umac_write_ctxs[idx] = umac_alloc();
 
-  } else if (strcmp(write_macs[idx].algo, "umac-128@openssh.com") == 0 ||
-             strcmp(write_macs[idx].algo, "umac-128-etm@openssh.com") == 0) {
-    write_macs[idx].algo_type = SFTP_MAC_ALGO_TYPE_UMAC128;
+  } else if (write_macs[idx].algo_type == SFTP_MAC_ALGO_TYPE_UMAC128) {
     umac_write_ctxs[idx] = umac128_alloc();
-
-  } else {
-    write_macs[idx].algo_type = SFTP_MAC_ALGO_TYPE_HMAC;
   }
 
   write_macs[idx].mac_len = mac_len;
@@ -1040,18 +1069,18 @@ int sftp_mac_write_data(struct ssh2_packet *pkt) {
 }
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || \
-    defined(HAVE_LIBRESSL)
-/* In older versions of OpenSSL, there was not a way to dynamically allocate
- * an HMAC_CTX object.  Thus we have these static objects for those
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER < 0x3050000L)
+/* In older versions of OpenSSL/LibreSSL, there was not a way to dynamically
+ * allocate an HMAC_CTX object.  Thus we have these static objects for those
  * older versions.
  */
 static HMAC_CTX read_ctx1, read_ctx2;
 static HMAC_CTX write_ctx1, write_ctx2;
-#endif /* prior to OpenSSL-1.1.0 */
+#endif /* prior to OpenSSL-1.1.0/LibreSSL-3.5.0 */
 
 int sftp_mac_init(void) {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || \
-    defined(HAVE_LIBRESSL)
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER < 0x3050000L)
   hmac_read_ctxs[0] = &read_ctx1;
   hmac_read_ctxs[1] = &read_ctx2;
   hmac_write_ctxs[0] = &write_ctx1;
@@ -1061,7 +1090,7 @@ int sftp_mac_init(void) {
   hmac_read_ctxs[1] = HMAC_CTX_new();
   hmac_write_ctxs[0] = HMAC_CTX_new();
   hmac_write_ctxs[1] = HMAC_CTX_new();
-#endif /* OpenSSL-1.1.0 and later */
+#endif /* OpenSSL-1.1.0/LibreSSL-3.5.0 and later */
 
   umac_read_ctxs[0] = NULL;
   umac_read_ctxs[1] = NULL;
@@ -1072,12 +1101,27 @@ int sftp_mac_init(void) {
 }
 
 int sftp_mac_free(void) {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
-    !defined(HAVE_LIBRESSL)
-  HMAC_CTX_free(hmac_read_ctxs[0]);
-  HMAC_CTX_free(hmac_read_ctxs[1]);
-  HMAC_CTX_free(hmac_write_ctxs[0]);
-  HMAC_CTX_free(hmac_write_ctxs[1]);
-#endif /* OpenSSL-1.1.0 and later */
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(HAVE_LIBRESSL)) || \
+    (defined(HAVE_LIBRESSL) && LIBRESSL_VERSION_NUMBER >= 0x3050000L)
+  if (hmac_read_ctxs[0] != NULL) {
+    HMAC_CTX_free(hmac_read_ctxs[0]);
+    hmac_read_ctxs[0] = NULL;
+  }
+
+  if (hmac_read_ctxs[1] != NULL) {
+    HMAC_CTX_free(hmac_read_ctxs[1]);
+    hmac_read_ctxs[1] = NULL;
+  }
+
+  if (hmac_write_ctxs[0] != NULL) {
+    HMAC_CTX_free(hmac_write_ctxs[0]);
+    hmac_write_ctxs[0] = NULL;
+  }
+
+  if (hmac_write_ctxs[1] != NULL) {
+    HMAC_CTX_free(hmac_write_ctxs[1]);
+    hmac_write_ctxs[1] = NULL;
+  }
+#endif /* OpenSSL-1.1.0/LibreSSL-3.5.0 and later */
   return 0;
 }

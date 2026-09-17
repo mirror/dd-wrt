@@ -99,7 +99,7 @@ sub hidegroup_explicit_group_list {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
@@ -277,7 +277,7 @@ sub hidegroup_explicit_group_nlst {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
@@ -455,7 +455,7 @@ sub hidegroup_explicit_group_mlsd {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
@@ -631,7 +631,7 @@ sub hidegroup_session_group {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
@@ -819,7 +819,7 @@ sub hidegroup_not_session_group {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
@@ -999,7 +999,7 @@ sub hidegroup_hidenoaccess_on_bug3530 {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
   auth_group_write($auth_group_file, 'daemon', 1);
 
@@ -1193,7 +1193,7 @@ sub hidegroup_hideuser_bug3530 {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_user_write($auth_user_file, 'daemon', 'x', 1, 1, '/', '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
   auth_group_write($auth_group_file, 'daemon', 1);
@@ -1385,7 +1385,7 @@ sub hidegroup_virtual_group_bug3934 {
   }
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash'); 
+    '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");

@@ -250,7 +250,7 @@ int pr_class_open(pool *p, const char *name) {
   cls->cls_name = pstrdup(cls->cls_pool, name);
   cls->cls_satisfy = PR_CLASS_SATISFY_ANY;
   cls->cls_notes = pr_table_nalloc(cls_pool, 0, 1);
- 
+
   /* Change the configuration context type. */
   main_server->config_type = CONF_CLASS;
 

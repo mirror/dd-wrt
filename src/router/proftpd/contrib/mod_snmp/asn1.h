@@ -48,7 +48,7 @@ typedef uint32_t oid_t;
 #define SNMP_ASN1_TYPE_SET		0x11
 
 /* ASN.1 Tag Class values */
-#define SNMP_ASN1_CLASS_UNIVERSAL	0x00    
+#define SNMP_ASN1_CLASS_UNIVERSAL	0x00
 #define SNMP_ASN1_CLASS_APPLICATION	0x40
 #define SNMP_ASN1_CLASS_CONTEXT		0x80
 #define SNMP_ASN1_CLASS_PRIVATE		0xc0

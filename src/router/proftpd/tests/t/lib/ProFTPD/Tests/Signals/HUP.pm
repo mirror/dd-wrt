@@ -290,7 +290,7 @@ EOC
   }
 
   # Start server
-  server_start($config_file); 
+  server_start($config_file);
 
   # Give the server some time to start up
   sleep(2);
@@ -426,7 +426,7 @@ sub hup_allowoverwrite_bug3740 {
     AuthOrder => 'mod_auth_file.c',
 
     AllowOverwrite => 'on',
- 
+
     IfModules => {
       'mod_delay.c' => {
         DelayEngine => 'off',
@@ -457,7 +457,7 @@ EOC
   }
 
   # Start server
-  server_start($config_file); 
+  server_start($config_file);
 
   my $nattempts = 10;
 

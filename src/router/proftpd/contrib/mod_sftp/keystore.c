@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp keystores
- * Copyright (c) 2008-2022 TJ Saunders
+ * Copyright (c) 2008-2023 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,6 +42,38 @@ static unsigned int keystore_nstores = 0;
 
 static const char *trace_channel = "ssh2";
 
+/* Iterate through any notes, normalizing any case-insensitive matches for
+ * the supported RFC4716 headers.
+ *
+ * Actually, we cheat and leave the existing entries alone.  Instead, we
+ * simply change the key comparator to a case-insensitive version.
+ */
+
+static int rfc4716_header_keycmp(const void *key1, size_t keysz1,
+    const void *key2, size_t keysz2) {
+  const char *k1, *k2;
+
+  if (keysz1 != keysz2) {
+    return keysz1 < keysz2 ? -1 : 1;
+  }
+
+  k1 = key1;
+  k2 = key2;
+
+  return strncmp(k1, k2, keysz1);
+}
+
+static void prepare_verify_notes(pr_table_t *notes) {
+  int res;
+
+  res = pr_table_ctl(notes, PR_TABLE_CTL_SET_KEY_CMP, rfc4716_header_keycmp);
+  if (res < 0) {
+    pr_trace_msg(trace_channel, 1,
+      "error setting case-insensitive comparator on notes: %s",
+      strerror(errno));
+  }
+}
+
 /* Keystore API internals */
 
 static struct sftp_keystore_store *keystore_get_store(const char *store_type,
@@ -72,7 +104,7 @@ int sftp_keystore_register_store(const char *store_type,
       store_open == NULL) {
     errno = EINVAL;
     return -1;
-  } 
+  }
 
   if (keystore_pool == NULL) {
     keystore_pool = make_sub_pool(permanent_pool);
@@ -125,7 +157,7 @@ int sftp_keystore_unregister_store(const char *store_type,
 
   store->prev = store->next = NULL;
   keystore_nstores--;
-  
+
   return 0;
 }
 
@@ -157,7 +189,7 @@ int sftp_keystore_supports_store(const char *store_type,
 
 int sftp_keystore_verify_host_key(pool *p, const char *user,
     const char *host_fqdn, const char *host_user, unsigned char *key_data,
-    uint32_t key_len) {
+    uint32_t key_len, pr_table_t *notes) {
   register unsigned int i;
   int res = -1;
   config_rec *c;
@@ -229,8 +261,9 @@ int sftp_keystore_verify_host_key(pool *p, const char *user,
         if (store->verify_host_key != NULL) {
           int xerrno;
 
+          prepare_verify_notes(notes);
           res = (store->verify_host_key)(store, p, user, host_fqdn, host_user,
-            key_data, key_len);
+            key_data, key_len, notes);
           xerrno = errno;
           (store->store_close)(store);
 
@@ -279,7 +312,7 @@ int sftp_keystore_verify_host_key(pool *p, const char *user,
 }
 
 int sftp_keystore_verify_user_key(pool *p, const char *user,
-    unsigned char *key_data, uint32_t key_len) {
+    unsigned char *key_data, uint32_t key_len, pr_table_t *notes) {
   register unsigned int i;
   int res = -1;
   config_rec *c;
@@ -342,7 +375,9 @@ int sftp_keystore_verify_user_key(pool *p, const char *user,
         if (store->verify_user_key != NULL) {
           int xerrno;
 
-          res = (store->verify_user_key)(store, p, user, key_data, key_len);
+          prepare_verify_notes(notes);
+          res = (store->verify_user_key)(store, p, user, key_data, key_len,
+            notes);
           xerrno = errno;
           (store->store_close)(store);
 

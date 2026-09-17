@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_redis -- a module for managing Redis data
- * Copyright (c) 2017-2021 The ProFTPD Project
+ * Copyright (c) 2017-2025 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -218,6 +218,7 @@ static int resolve_on_meta(pool *p, pr_jot_ctx_t *jot_ctx,
       case LOGFMT_META_VHOST_IP:
       case LOGFMT_META_XFER_FAILURE:
       case LOGFMT_META_XFER_PATH:
+      case LOGFMT_META_XFER_SPEED:
       case LOGFMT_META_XFER_STATUS:
       case LOGFMT_META_XFER_TYPE:
       default:
@@ -815,6 +816,13 @@ MODRET set_redisoptions(cmd_rec *cmd) {
 
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned long));
   *((unsigned long *) c->argv[0]) = opts;
+
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
 
   return PR_HANDLED(cmd);
 }
@@ -1559,7 +1567,7 @@ static conftable redis_conftab[] = {
   { "RedisSentinel",		set_redissentinel,	NULL },
   { "RedisServer",		set_redisserver,	NULL },
   { "RedisTimeouts",		set_redistimeouts,	NULL },
- 
+
   { NULL }
 };
 

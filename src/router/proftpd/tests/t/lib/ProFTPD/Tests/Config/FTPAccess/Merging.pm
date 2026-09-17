@@ -99,7 +99,7 @@ EOC
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
@@ -134,11 +134,11 @@ EOC
 EOD
     unless (close($fh)) {
       die("Can't write $config_file: $!");
-    } 
-      
+    }
+
   } else {
     die("Can't open $config_file: $!");
-  }   
+  }
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -309,7 +309,7 @@ EOC
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
@@ -344,11 +344,11 @@ EOC
 EOD
     unless (close($fh)) {
       die("Can't write $config_file: $!");
-    } 
-      
+    }
+
   } else {
     die("Can't open $config_file: $!");
-  }   
+  }
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -487,7 +487,7 @@ EOC
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
@@ -522,11 +522,11 @@ EOC
 EOD
     unless (close($fh)) {
       die("Can't write $config_file: $!");
-    } 
-      
+    }
+
   } else {
     die("Can't open $config_file: $!");
-  }   
+  }
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message

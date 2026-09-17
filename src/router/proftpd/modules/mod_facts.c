@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_facts -- a module for handling "facts" [RFC3659]
- * Copyright (c) 2007-2022 The ProFTPD Project
+ * Copyright (c) 2007-2025 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -79,6 +79,12 @@ struct mlinfo {
   const char *path;
   const char *real_path;
 };
+
+/* Allocate buffers large enough for long path names to appear twice, once
+ * as the symlink target for _e.g._ the UseSlink FactsOption, as well as
+ * additional facts.
+ */
+#define FACTS_MLINFO_BUFSZ	((PR_TUNABLE_PATH_MAX * 2) + 256)
 
 /* Necessary prototypes */
 static int facts_mlinfobuf_flush(void);
@@ -315,12 +321,24 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
       len = 0;
     }
 
+    if (len < 0) {
+      /* Buffer is full; ensure NUL termination. */
+      buf[bufsz-1] = '\0';
+      return bufsz-1;
+    }
+
     buflen += len;
     ptr = buf + buflen;
   }
 
   if (facts_opts & FACTS_OPT_SHOW_PERM) {
     len = pr_snprintf(ptr, bufsz - buflen, "perm=%s;", info->perm);
+    if (len < 0) {
+      /* Buffer is full; ensure NUL termination. */
+      buf[bufsz-1] = '\0';
+      return bufsz-1;
+    }
+
     buflen += len;
     ptr = buf + buflen;
   }
@@ -329,12 +347,24 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
       (facts_opts & FACTS_OPT_SHOW_SIZE)) {
     len = pr_snprintf(ptr, bufsz - buflen, "size=%" PR_LU ";",
       (pr_off_t) info->st.st_size);
+    if (len < 0) {
+      /* Buffer is full; ensure NUL termination. */
+      buf[bufsz-1] = '\0';
+      return bufsz-1;
+    }
+
     buflen += len;
     ptr = buf + buflen;
   }
 
   if (facts_opts & FACTS_OPT_SHOW_TYPE) {
     len = pr_snprintf(ptr, bufsz - buflen, "type=%s;", info->type);
+    if (len < 0) {
+      /* Buffer is full; ensure NUL termination. */
+      buf[bufsz-1] = '\0';
+      return bufsz-1;
+    }
+
     buflen += len;
     ptr = buf + buflen;
   }
@@ -342,6 +372,12 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
   if (facts_opts & FACTS_OPT_SHOW_UNIQUE) {
     len = pr_snprintf(ptr, bufsz - buflen, "unique=%lXU%lX;",
       (unsigned long) info->st.st_dev, (unsigned long) info->st.st_ino);
+    if (len < 0) {
+      /* Buffer is full; ensure NUL termination. */
+      buf[bufsz-1] = '\0';
+      return bufsz-1;
+    }
+
     buflen += len;
     ptr = buf + buflen;
   }
@@ -349,6 +385,12 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
   if (facts_opts & FACTS_OPT_SHOW_UNIX_GROUP) {
     len = pr_snprintf(ptr, bufsz - buflen, "UNIX.group=%s;",
       pr_gid2str(NULL, info->st.st_gid));
+    if (len < 0) {
+      /* Buffer is full; ensure NUL termination. */
+      buf[bufsz-1] = '\0';
+      return bufsz-1;
+    }
+
     buflen += len;
     ptr = buf + buflen;
   }
@@ -363,6 +405,12 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
       group = sreplace(info->pool, info->group, " ", "_", NULL);
 
       len = pr_snprintf(ptr, bufsz - buflen, "UNIX.groupname=%s;", group);
+      if (len < 0) {
+        /* Buffer is full; ensure NUL termination. */
+        buf[bufsz-1] = '\0';
+        return bufsz-1;
+      }
+
       buflen += len;
       ptr = buf + buflen;
     }
@@ -371,6 +419,12 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
   if (facts_opts & FACTS_OPT_SHOW_UNIX_MODE) {
     len = pr_snprintf(ptr, bufsz - buflen, "UNIX.mode=0%o;",
       (unsigned int) info->st.st_mode & 07777);
+    if (len < 0) {
+      /* Buffer is full; ensure NUL termination. */
+      buf[bufsz-1] = '\0';
+      return bufsz-1;
+    }
+
     buflen += len;
     ptr = buf + buflen;
   }
@@ -378,6 +432,12 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
   if (facts_opts & FACTS_OPT_SHOW_UNIX_OWNER) {
     len = pr_snprintf(ptr, bufsz - buflen, "UNIX.owner=%s;",
       pr_uid2str(NULL, info->st.st_uid));
+    if (len < 0) {
+      /* Buffer is full; ensure NUL termination. */
+      buf[bufsz-1] = '\0';
+      return bufsz-1;
+    }
+
     buflen += len;
     ptr = buf + buflen;
   }
@@ -392,6 +452,12 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
       user = sreplace(info->pool, info->user, " ", "_", NULL);
 
       len = pr_snprintf(ptr, bufsz - buflen, "UNIX.ownername=%s;", user);
+      if (len < 0) {
+        /* Buffer is full; ensure NUL termination. */
+        buf[bufsz-1] = '\0';
+        return bufsz-1;
+      }
+
       buflen += len;
       ptr = buf + buflen;
     }
@@ -404,6 +470,12 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
     if (mime_type != NULL) {
       len = pr_snprintf(ptr, bufsz - buflen, "media-type=%s;",
         mime_type);
+      if (len < 0) {
+        /* Buffer is full; ensure NUL termination. */
+        buf[bufsz-1] = '\0';
+        return bufsz-1;
+      }
+
       buflen += len;
       ptr = buf + buflen;
     }
@@ -417,7 +489,9 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
   }
 
   buf[bufsz-1] = '\0';
-  buflen += len;
+  if (len > 0) {
+    buflen += len;
+  }
 
   return buflen;
 }
@@ -458,9 +532,9 @@ static void facts_mlinfobuf_init(void) {
 }
 
 static int facts_mlinfobuf_add(struct mlinfo *info, int flags) {
-  char buf[PR_TUNABLE_BUFFER_SIZE];
+  char buf[FACTS_MLINFO_BUFSZ];
   size_t buflen;
- 
+
   buflen = facts_mlinfo_fmt(info, buf, sizeof(buf), flags);
 
   /* If this buffer will exceed the capacity of mlinfo_buf, then flush
@@ -552,7 +626,7 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
   info->tm = pr_gmtime(info->pool, &(info->st.st_mtime));
 
   if (!S_ISDIR(info->st.st_mode)) {
-#ifdef S_ISLNK
+#if defined(S_ISLNK)
     if (S_ISLNK(info->st.st_mode)) {
       struct stat target_st;
       const char *dst_path;
@@ -645,7 +719,7 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
             targetlen = pr_fsio_readlink(path, target, sizeof(target)-1);
           }
 
-          if (targetlen < 0) { 
+          if (targetlen < 0) {
             int xerrno = errno;
 
             pr_log_debug(DEBUG4, MOD_FACTS_VERSION
@@ -685,7 +759,7 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
     }
 #else
     info->type = "file";
-#endif
+#endif /* S_ISLNK */
 
     if (pr_fsio_access(path, R_OK, session.uid, session.gid,
         session.gids) == 0) {
@@ -756,7 +830,7 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
 }
 
 static void facts_mlinfo_add(struct mlinfo *info, int flags) {
-  char buf[PR_TUNABLE_BUFFER_SIZE];
+  char buf[FACTS_MLINFO_BUFSZ];
 
   (void) facts_mlinfo_fmt(info, buf, sizeof(buf), flags);
 
@@ -1533,7 +1607,7 @@ MODRET facts_mlsd(cmd_rec *cmd) {
 
   fake_mode = get_param_ptr(get_dir_ctxt(cmd->tmp_pool, (char *) best_path),
     "DirFakeMode", FALSE);
- 
+
   c = find_config(get_dir_ctxt(cmd->tmp_pool, (char *) best_path), CONF_PARAM,
     "DirFakeUser", FALSE);
   if (c != NULL) {
@@ -1621,9 +1695,9 @@ MODRET facts_mlsd(cmd_rec *cmd) {
 
     /* Check that the file can be listed. */
     abs_path = dir_realpath(cmd->tmp_pool, rel_path);
-    if (abs_path) {
+    if (abs_path != NULL) {
       res = dir_check(cmd->tmp_pool, cmd, cmd->group, abs_path, &hidden);
-      
+
     } else {
       abs_path = dir_canonical_path(cmd->tmp_pool, rel_path);
       if (abs_path == NULL) {
@@ -1994,19 +2068,20 @@ MODRET facts_opts_mlst(cmd_rec *cmd) {
 
 /* usage: FactsAdvertise on|off */
 MODRET set_factsadvertise(cmd_rec *cmd) {
-  int bool = -1;
+  int advertise_facts = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  advertise_facts = get_boolean(cmd, 1);
+  if (advertise_facts == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(int));
-  *((int *) c->argv[0]) = bool;
+  *((int *) c->argv[0]) = advertise_facts;
 
   return PR_HANDLED(cmd);
 }
@@ -2079,6 +2154,13 @@ MODRET set_factsoptions(cmd_rec *cmd) {
   c->argv[0] = palloc(c->pool, sizeof(unsigned long));
   *((unsigned long *) c->argv[0]) = opts;
 
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
+
   return PR_HANDLED(cmd);
 }
 
@@ -2146,7 +2228,7 @@ static int facts_sess_init(void) {
     unsigned long opts;
 
     pr_signals_handle();
-  
+
     opts = *((unsigned long *) c->argv[0]);
     facts_mlinfo_opts |= opts;
 

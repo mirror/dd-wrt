@@ -448,7 +448,7 @@ sub cmds_cwd_ok {
 
   my $sub_dir = File::Spec->rel2abs('tmp/foo');
   mkpath($sub_dir);
-  
+
   auth_user_write($auth_user_file, $user, $passwd, 500, 500, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', 500, $user);
@@ -823,7 +823,7 @@ sub cmds_xcwd_ok {
 
   my $sub_dir = File::Spec->rel2abs('tmp/foo');
   mkpath($sub_dir);
-  
+
   auth_user_write($auth_user_file, $user, $passwd, 500, 500, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', 500, $user);
@@ -1567,7 +1567,7 @@ sub cmds_mkd_ok {
   my $home_dir = File::Spec->rel2abs('tmp');
 
   my $sub_dir = File::Spec->rel2abs('tmp/foo');
-  
+
   auth_user_write($auth_user_file, $user, $passwd, 500, 500, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', 500, $user);
@@ -1687,7 +1687,7 @@ sub cmds_mkd_fails_enoent {
   my $home_dir = File::Spec->rel2abs('tmp');
 
   my $sub_dir = File::Spec->rel2abs('tmp/foo/bar');
-  
+
   auth_user_write($auth_user_file, $user, $passwd, 500, 500, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', 500, $user);
@@ -1810,7 +1810,7 @@ sub cmds_mkd_fails_eperm {
   my $home_dir = File::Spec->rel2abs('tmp');
 
   my $sub_dir = File::Spec->rel2abs('tmp/foo');
-  
+
   auth_user_write($auth_user_file, $user, $passwd, 500, 500, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', 500, $user);
@@ -1944,7 +1944,7 @@ sub cmds_xmkd_ok {
   my $home_dir = File::Spec->rel2abs('tmp');
 
   my $sub_dir = File::Spec->rel2abs('tmp/foo');
-  
+
   auth_user_write($auth_user_file, $user, $passwd, 500, 500, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', 500, $user);
@@ -2065,7 +2065,7 @@ sub cmds_rmd_ok {
 
   my $sub_dir = File::Spec->rel2abs('tmp/foo');
   mkpath($sub_dir);
-  
+
   auth_user_write($auth_user_file, $user, $passwd, 500, 500, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', 500, $user);
@@ -2185,7 +2185,7 @@ sub cmds_rmd_fails_enoent {
   my $home_dir = File::Spec->rel2abs('tmp');
 
   my $sub_dir = File::Spec->rel2abs('tmp/foo');
-  
+
   auth_user_write($auth_user_file, $user, $passwd, 500, 500, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', 500, $user);
@@ -2308,7 +2308,7 @@ sub cmds_rmd_fails_eperm {
   my $home_dir = File::Spec->rel2abs('tmp');
 
   my $sub_dir = File::Spec->rel2abs('tmp/foo');
-  
+
   auth_user_write($auth_user_file, $user, $passwd, 500, 500, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', 500, $user);
@@ -2443,7 +2443,7 @@ sub cmds_xrmd_ok {
 
   my $sub_dir = File::Spec->rel2abs('tmp/foo');
   mkpath($sub_dir);
-  
+
   auth_user_write($auth_user_file, $user, $passwd, 500, 500, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', 500, $user);
@@ -3399,7 +3399,7 @@ sub cmds_size_ok {
         print $writeh "done\n";
         die("Failed to TYPE: $err");
       }
-    
+
       my ($resp_code, $resp_msg);
       eval { ($resp_code, $resp_msg) = $client->size($test_file) };
       if ($@) {
@@ -3526,7 +3526,7 @@ sub cmds_size_fails_ascii {
         print $writeh "done\n";
         die("Failed to TYPE: $err");
       }
-    
+
       my ($resp_code, $resp_msg);
       eval { ($resp_code, $resp_msg) = $client->size($test_file) };
       unless ($@) {
@@ -3656,7 +3656,7 @@ sub cmds_size_fails_enoent {
         print $writeh "done\n";
         die("Failed to TYPE: $err");
       }
-    
+
       my ($resp_code, $resp_msg);
       eval { ($resp_code, $resp_msg) = $client->size($test_file) };
       unless ($@) {
@@ -3792,7 +3792,7 @@ sub cmds_size_fails_eperm {
         print $writeh "done\n";
         die("Failed to TYPE: $err");
       }
-    
+
       # Make it such that perms on the home dir do not allow reads
       my $perms = (stat($home_dir))[2];
       unless (chmod(0220, $home_dir)) {

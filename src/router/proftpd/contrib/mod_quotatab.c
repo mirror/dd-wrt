@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_quotatab -- a module for managing FTP byte/file quotas via
  *                          centralized tables
- * Copyright (c) 2001-2020 TJ Saunders
+ * Copyright (c) 2001-2025 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
 
 typedef struct regtab_obj {
   struct regtab_obj *prev, *next;
- 
+
   /* Table source type name */
   const char *regtab_name;
 
@@ -50,6 +50,8 @@ typedef struct regtab_obj {
 module quotatab_module;
 
 /* Quota objects for the current session */
+static quota_type_t sess_quota_type;
+
 quota_deltas_t quotatab_deltas;
 static quota_table_t *limit_tab = NULL;
 static quota_limit_t sess_limit;
@@ -66,7 +68,7 @@ static quota_regtab_t *quotatab_backends = NULL;
 static unsigned int quotatab_nbackends = 0;
 
 /* Logging data */
-static int quota_logfd = -1; 
+static int quota_logfd = -1;
 static char *quota_logname = NULL;
 
 static unsigned char allow_site_quota = TRUE;
@@ -80,7 +82,7 @@ static unsigned long have_quota_update = 0;
 #define QUOTA_HAVE_READ_UPDATE			10000
 #define QUOTA_HAVE_WRITE_UPDATE			20000
 
-#ifdef PR_USE_REGEX
+#if defined(PR_USE_REGEX)
 static pr_regex_t *quota_exclude_pre = NULL;
 static const char *quota_exclude_filter = NULL;
 #endif
@@ -203,6 +205,29 @@ static int get_quota_exceeded_errno(int default_errno, char **errstr) {
   }
 
   return res;
+}
+
+static const char *get_quota_type_text(quota_type_t quota_type) {
+  const char *text;
+
+  switch (quota_type) {
+    case USER_QUOTA:
+      text = "user";
+      break;
+
+    case GROUP_QUOTA:
+      text = "group";
+      break;
+
+    case CLASS_QUOTA:
+      text = "class";
+      break;
+
+    default:
+      text = "all";
+  }
+
+  return text;
 }
 
 /* Quota units routines */
@@ -577,7 +602,7 @@ static int quotatab_ignore_path(pool *p, const char *path) {
     return FALSE;
   }
 
-#ifdef PR_USE_REGEX
+#if defined(PR_USE_REGEX)
   if (quota_exclude_pre == NULL) {
     return FALSE;
   }
@@ -680,7 +705,7 @@ static int quotatab_scan_dir(pool *p, const char *path, uid_t uid,
             st.st_uid == uid) {
           *nbytes += st.st_size;
           *nfiles += 1;
-  
+
         } else if (gid != (gid_t) -1 &&
                    st.st_gid == gid) {
           *nbytes += st.st_size;
@@ -712,7 +737,7 @@ static int quotatab_scan_dir(pool *p, const char *path, uid_t uid,
     }
   }
 
-  pr_fsio_closedir(dirh); 
+  pr_fsio_closedir(dirh);
   return 0;
 }
 
@@ -956,7 +981,7 @@ unsigned char quotatab_lookup_default(quota_tabtype_t tab_type, void *ptr,
      *  files_{in,out,xfer}_avail
      */
 
-    memmove(limit->name, name, strlen(name) + 1);
+    sstrncpy(limit->name, name, sizeof(limit->name)-1);
     limit->quota_type = quota_type;
 
     limit->quota_per_session = pr_str_is_boolean(c->argv[1]);
@@ -1001,7 +1026,7 @@ unsigned char quotatab_lookup(quota_tabtype_t tab_type, void *ptr,
     }
 
     return tally_tab->tab_lookup(tally_tab, ptr, name, quota_type);
-  
+
   } else if (tab_type == TYPE_LIMIT) {
     int res;
 
@@ -1050,7 +1075,7 @@ static int quotatab_mutex_lock(int lock_type) {
 
     pr_trace_msg("lock", 3, "%s of QuotaLock fd %d failed: %s",
       lock_desc, quota_lockfd, strerror(xerrno));
-  
+
     if (xerrno == EACCES) {
       struct flock locker;
 
@@ -1103,8 +1128,8 @@ static int quotatab_rlock(quota_table_t *tab) {
 
     pr_trace_msg("lock", 9, "attempting to read-lock QuotaLock fd %d",
       quota_lockfd);
-   
-    while (tab->tab_rlock(tab) < 0) { 
+
+    while (tab->tab_rlock(tab) < 0) {
       int xerrno = errno;
 
       if (xerrno == EINTR) {
@@ -1341,7 +1366,7 @@ int quotatab_write(quota_tally_t *tally,
   /* Only update the tally if the value is not "unlimited". */
   if (sess_limit.files_in_avail != 0) {
 
-    /* Prevent underflows. As this is an unsigned data type, the 
+    /* Prevent underflows. As this is an unsigned data type, the
      * underflow check is not as straightforward as checking for a value
      * less than zero.
      */
@@ -1406,6 +1431,73 @@ int quotatab_write(quota_tally_t *tally,
  */
 
 static off_t copied_bytes = 0;
+
+static ssize_t quotatab_fsio_pwrite(pr_fh_t *fh, int fd, const void *buf,
+    size_t bufsz, off_t offset) {
+  ssize_t res;
+  off_t total_bytes;
+
+  res = pwrite(fd, buf, bufsz, offset);
+  if (res < 0) {
+    return res;
+  }
+
+  if (have_quota_update == 0) {
+    return res;
+  }
+
+  /* Check to see if we've exceeded our upload limit.  mod_xfer will
+   * have called pr_data_xfer(), which will have updated
+   * session.xfer.total_bytes, before calling pr_fsio_write(), so
+   * we do not have to worry about updated/changing session.xfer.total_bytes
+   * ourselves.
+   *
+   * Note that there is a race condition here: it is possible for the same
+   * user to be writing to the same file in chunks from multiple
+   * simultaneous connections.
+   */
+
+  /* If the client is copying a file (versus uploading a file), then we need
+   * to track the "total bytes" differently.
+   */
+  if (session.curr_cmd_id == PR_CMD_SITE_ID &&
+      (session.curr_cmd_rec->argc >= 2 &&
+       (strcasecmp(session.curr_cmd_rec->argv[1], "CPTO") == 0 ||
+        strcasecmp(session.curr_cmd_rec->argv[1], "COPY") == 0))) {
+    copied_bytes += res;
+    total_bytes = copied_bytes;
+
+  } else {
+    total_bytes = session.xfer.total_bytes;
+  }
+
+  if (sess_limit.bytes_in_avail > 0.0 &&
+      sess_tally.bytes_in_used + total_bytes > sess_limit.bytes_in_avail) {
+    int xerrno;
+    char *errstr = NULL;
+
+    xerrno = get_quota_exceeded_errno(EIO, &errstr);
+    quotatab_log("quotatab write(): limit exceeded, returning %s", errstr);
+
+    errno = xerrno;
+    return -1;
+  }
+
+  if (sess_limit.bytes_xfer_avail > 0.0 &&
+      sess_tally.bytes_xfer_used + total_bytes > sess_limit.bytes_xfer_avail) {
+    int xerrno;
+    char *errstr = NULL;
+
+    xerrno = get_quota_exceeded_errno(EIO, &errstr);
+    quotatab_log("quotatab write(): transfer limit exceeded, returning %s",
+      errstr);
+
+    errno = xerrno;
+    return -1;
+  }
+
+  return res;
+}
 
 static int quotatab_fsio_write(pr_fh_t *fh, int fd, const char *buf,
     size_t bufsz) {
@@ -1499,7 +1591,7 @@ MODRET set_quotadefault(cmd_rec *cmd) {
       strncasecmp(cmd->argv[1], "all", 4) != 0) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unknown quota type '",
       (char *) cmd->argv[1], "' configured", NULL));
-  } 
+  }
 
   c->argv[0] = pstrdup(c->pool, cmd->argv[1]);
 
@@ -1531,25 +1623,32 @@ MODRET set_quotadefault(cmd_rec *cmd) {
   c->argv[7] = pstrdup(c->pool, cmd->argv[8]);
   c->argv[8] = pstrdup(c->pool, cmd->argv[9]);
 
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
+
   return PR_HANDLED(cmd);
 }
 
 /* usage: QuotaDirectoryTally <on|off> */
 MODRET set_quotadirtally(cmd_rec *cmd) {
-  int b = -1;
+  int dir_tally = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  b = get_boolean(cmd, 1);
-  if (b == -1) {
-    CONF_ERROR(cmd, "expected boolean argument");
+  dir_tally = get_boolean(cmd, 1);
+  if (dir_tally == -1) {
+    CONF_ERROR(cmd, "expected Boolean parameter");
   }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = (unsigned char) b;
+  *((unsigned char *) c->argv[0]) = (unsigned char) dir_tally;
 
   return PR_HANDLED(cmd);
 }
@@ -1591,26 +1690,27 @@ MODRET set_quotadisplayunits(cmd_rec *cmd) {
 
 /* usage: QuotaEngine <on|off> */
 MODRET set_quotaengine(cmd_rec *cmd) {
-  int bool = -1;
+  int engine = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
-    CONF_ERROR(cmd, "expected boolean argument");
+  engine = get_boolean(cmd, 1);
+  if (engine == -1) {
+    CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = (unsigned char) bool;
+  *((unsigned char *) c->argv[0]) = (unsigned char) engine;
 
   return PR_HANDLED(cmd);
 }
 
 /* usage: QuotaExcludeFilter regex|"none" */
 MODRET set_quotaexcludefilter(cmd_rec *cmd) {
-#ifdef PR_USE_REGEX
+#if defined(PR_USE_REGEX)
   pr_regex_t *pre = NULL;
   config_rec *c;
   int res;
@@ -1681,8 +1781,9 @@ MODRET set_quotaoptions(cmd_rec *cmd) {
   register unsigned int i;
   unsigned long opts = 0UL;
 
-  if (cmd->argc-1 == 0)
+  if (cmd->argc-1 == 0) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
@@ -1701,24 +1802,32 @@ MODRET set_quotaoptions(cmd_rec *cmd) {
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned long));
   *((unsigned long *) c->argv[0]) = opts;
 
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
+
   return PR_HANDLED(cmd);
 }
 
 /* usage: QuotaShowQuotas <on|off> */
 MODRET set_quotashowquotas(cmd_rec *cmd) {
-  int bool = -1;
+  int show_quotas = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
-    CONF_ERROR(cmd, "expected boolean argument");
+  show_quotas = get_boolean(cmd, 1);
+  if (show_quotas == -1) {
+    CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = (unsigned char) bool;
+  *((unsigned char *) c->argv[0]) = (unsigned char) show_quotas;
 
   return PR_HANDLED(cmd);
 }
@@ -1734,7 +1843,7 @@ MODRET set_quotatable(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  /* Separate the parameter into the separate pieces.  The parameter is 
+  /* Separate the parameter into the separate pieces.  The parameter is
    * given as one string to enhance its similarity to URL syntax.
    */
   tmp = strchr(cmd->argv[1], ':');
@@ -1894,7 +2003,8 @@ MODRET quotatab_pre_appe(cmd_rec *cmd) {
       sess_tally.bytes_in_used >= sess_limit.bytes_in_avail) {
 
     /* Report the exceeding of the threshold. */
-    quotatab_log("%s denied: quota exceeded: used %s", (char *) cmd->argv[0],
+    quotatab_log("%s denied: %s quota exceeded: used %s",
+      get_quota_type_text(sess_quota_type), (char *) cmd->argv[0],
       DISPLAY_BYTES_IN(cmd));
     pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
       (char *) cmd->argv[0], DISPLAY_BYTES_IN(cmd));
@@ -1909,7 +2019,8 @@ MODRET quotatab_pre_appe(cmd_rec *cmd) {
       sess_tally.bytes_xfer_used >= sess_limit.bytes_xfer_avail) {
 
     /* Report the exceeding of the threshold. */
-    quotatab_log("%s denied: quota exceeded: used %s", (char *) cmd->argv[0],
+    quotatab_log("%s denied: %s quota exceeded: used %s",
+      get_quota_type_text(sess_quota_type), (char *) cmd->argv[0],
       DISPLAY_BYTES_XFER(cmd));
     pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
       (char *) cmd->argv[0], DISPLAY_BYTES_XFER(cmd));
@@ -1954,7 +2065,7 @@ MODRET quotatab_post_appe(cmd_rec *cmd) {
   }
 
   /* Check on the size of the appended-to file again, and use the difference
-   * in file size as the increment.  Make sure that no caching effects 
+   * in file size as the increment.  Make sure that no caching effects
    * mess with the stat.
    */
   pr_fs_clear_cache2(cmd->arg);
@@ -2064,7 +2175,7 @@ MODRET quotatab_post_appe_err(cmd_rec *cmd) {
   }
 
   /* Check on the size of the appended-to file again, and use the difference
-   * in file size as the increment.  Make sure that no caching effects 
+   * in file size as the increment.  Make sure that no caching effects
    * mess with the stat.
    */
   pr_fs_clear_cache2(cmd->arg);
@@ -2196,7 +2307,8 @@ MODRET quotatab_pre_copy(cmd_rec *cmd) {
       sess_tally.bytes_in_used >= sess_limit.bytes_in_avail) {
 
     /* Report the exceeding of the threshold. */
-    quotatab_log("%s denied: quota exceeded: used %s", (char *) cmd->argv[0],
+    quotatab_log("%s denied: %s quota exceeded: used %s",
+      get_quota_type_text(sess_quota_type), (char *) cmd->argv[0],
       DISPLAY_BYTES_IN(cmd));
     pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
       (char *) cmd->argv[0], DISPLAY_BYTES_IN(cmd));
@@ -2211,7 +2323,8 @@ MODRET quotatab_pre_copy(cmd_rec *cmd) {
              sess_tally.bytes_xfer_used >= sess_limit.bytes_xfer_avail) {
 
     /* Report the exceeding of the threshold. */
-    quotatab_log("%s denied: quota exceeded: used %s", (char *) cmd->argv[0],
+    quotatab_log("%s denied: %s quota exceeded: used %s",
+      get_quota_type_text(sess_quota_type), (char *) cmd->argv[0],
       DISPLAY_BYTES_XFER(cmd));
     pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
       (char *) cmd->argv[0], DISPLAY_BYTES_XFER(cmd));
@@ -2255,7 +2368,8 @@ MODRET quotatab_pre_copy(cmd_rec *cmd) {
         sess_tally.files_in_used >= sess_limit.files_in_avail) {
 
       /* Report the exceeding of the threshold. */
-      quotatab_log("%s denied: quota exceeded: used %s", (char *) cmd->argv[0],
+      quotatab_log("%s denied: %s quota exceeded: used %s",
+        get_quota_type_text(sess_quota_type), (char *) cmd->argv[0],
         DISPLAY_FILES_IN(cmd));
       pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
         (char *) cmd->argv[0], DISPLAY_FILES_IN(cmd));
@@ -2270,7 +2384,8 @@ MODRET quotatab_pre_copy(cmd_rec *cmd) {
                sess_tally.files_xfer_used >= sess_limit.files_xfer_avail) {
 
       /* Report the exceeding of the threshold. */
-      quotatab_log("%s denied: quota exceeded: used %s", (char *) cmd->argv[0],
+      quotatab_log("%s denied: %s quota exceeded: used %s",
+        get_quota_type_text(sess_quota_type), (char *) cmd->argv[0],
         DISPLAY_FILES_XFER(cmd));
       pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
         (char *) cmd->argv[0], DISPLAY_FILES_XFER(cmd));
@@ -2316,7 +2431,7 @@ MODRET quotatab_post_copy(cmd_rec *cmd) {
         /* If the destination file already existed, the number of bytes
          * copied is the current size less its previous size.  Unless its
          * current size is smaller than its previous size...
-         */ 
+         */
 
         if (st.st_size >= quotatab_disk_nbytes) {
           copy_bytes = st.st_size - quotatab_disk_nbytes;
@@ -2326,7 +2441,7 @@ MODRET quotatab_post_copy(cmd_rec *cmd) {
           dst_truncated = TRUE;
         }
       }
- 
+
     } else {
       if (!S_ISDIR(st.st_mode) ||
           (S_ISDIR(st.st_mode) && use_dirs == TRUE)) {
@@ -2530,8 +2645,9 @@ MODRET quotatab_pre_dele(cmd_rec *cmd) {
 MODRET quotatab_post_dele(cmd_rec *cmd) {
 
   /* sanity check */
-  if (!use_quotas)
-    return PR_DECLINED(cmd); 
+  if (use_quotas == FALSE) {
+    return PR_DECLINED(cmd);
+  }
 
   if (quotatab_ignore_path(cmd->tmp_pool, cmd->arg)) {
     quotatab_log("%s: path '%s' matched QuotaExcludeFilter '%s', ignoring",
@@ -2665,8 +2781,9 @@ MODRET quotatab_post_dele(cmd_rec *cmd) {
 MODRET quotatab_post_dele_err(cmd_rec *cmd) {
 
   /* sanity check */
-  if (!use_quotas)
-    return PR_DECLINED(cmd); 
+  if (use_quotas == FALSE) {
+    return PR_DECLINED(cmd);
+  }
 
   /* Clear the cached bytes. */
   quotatab_disk_nbytes = 0;
@@ -3148,9 +3265,23 @@ MODRET quotatab_post_pass(cmd_rec *cmd) {
      * return an error when reading/writing a file causes a limit to be reached.
      */
     if (sess_limit.quota_limit_type == HARD_LIMIT) {
-      pr_fs_t *fs = pr_register_fs(session.pool, "quotatab", "/");
-      if (fs) {
+      pr_fs_t *fs = NULL;
+
+      fs = pr_register_fs(session.pool, "quotatab", "/");
+      if (fs != NULL) {
         quotatab_log("quotatab fs registered");
+
+        /* Use all of the current FS handlers, EXCEPT for its write(2)
+         * callback.  That operation is the one we want to handle, in order
+         * to force a write failure if a quota is exceeded.
+         */
+
+        /* TODO: How to wrap the existing FS write/pwrite callbacks?
+         *
+         * For Issue #1764, this is not a problem due to the fact that
+         * mod_vroot does not override the system FS write callbacks.
+         */
+        fs->pwrite = quotatab_fsio_pwrite;
         fs->write = quotatab_fsio_write;
 
       } else {
@@ -3283,7 +3414,8 @@ MODRET quotatab_pre_retr(cmd_rec *cmd) {
       sess_tally.bytes_out_used >= sess_limit.bytes_out_avail) {
 
     /* Report the exceeding of the threshold. */
-    quotatab_log("%s denied: quota exceeded: used %s", (char *) cmd->argv[0],
+    quotatab_log("%s denied: %s quota exceeded: used %s",
+      get_quota_type_text(sess_quota_type), (char *) cmd->argv[0],
       DISPLAY_BYTES_OUT(cmd));
     pr_response_add_err(R_451, _("%s denied: quota exceeded: used %s"),
       (char *) cmd->argv[0], DISPLAY_BYTES_OUT(cmd));
@@ -3298,7 +3430,8 @@ MODRET quotatab_pre_retr(cmd_rec *cmd) {
       sess_tally.bytes_xfer_used >= sess_limit.bytes_xfer_avail) {
 
     /* Report the exceeding of the threshold. */
-    quotatab_log("%s denied: quota exceeded: used %s", (char *) cmd->argv[0],
+    quotatab_log("%s denied: %s quota exceeded: used %s",
+      get_quota_type_text(sess_quota_type), (char *) cmd->argv[0],
       DISPLAY_BYTES_XFER(cmd));
     pr_response_add_err(R_451, _("%s denied: quota exceeded: used %s"),
       (char *) cmd->argv[0], DISPLAY_BYTES_XFER(cmd));
@@ -3317,7 +3450,8 @@ MODRET quotatab_pre_retr(cmd_rec *cmd) {
       sess_tally.files_out_used >= sess_limit.files_out_avail) {
 
     /* Report the exceeding of the threshold. */
-    quotatab_log("%s denied: quota exceeded: used %s", (char *) cmd->argv[0],
+    quotatab_log("%s denied: %s quota exceeded: used %s",
+      get_quota_type_text(sess_quota_type), (char *) cmd->argv[0],
       DISPLAY_FILES_OUT(cmd));
     pr_response_add_err(R_451, _("%s denied: quota exceeded: used %s"),
       (char *) cmd->argv[0], DISPLAY_FILES_OUT(cmd));
@@ -3332,7 +3466,8 @@ MODRET quotatab_pre_retr(cmd_rec *cmd) {
       sess_tally.files_xfer_used >= sess_limit.files_xfer_avail) {
 
     /* Report the exceeding of the threshold. */
-    quotatab_log("%s: denied: quota exceeded: used %s", (char *) cmd->argv[0],
+    quotatab_log("%s: denied: %s quota exceeded: used %s",
+      get_quota_type_text(sess_quota_type), (char *) cmd->argv[0],
       DISPLAY_FILES_XFER(cmd));
     pr_response_add(R_451, _("%s denied: quota exceeded: used %s"),
       (char *) cmd->argv[0], DISPLAY_FILES_XFER(cmd));
@@ -3389,7 +3524,7 @@ MODRET quotatab_post_retr(cmd_rec *cmd) {
   /* Check quotas to see if files download or total quota has been reached.
    * Report this to user if so.
    */
-  if (sess_limit.files_out_avail != 0 && 
+  if (sess_limit.files_out_avail != 0 &&
       sess_tally.files_out_used >= sess_limit.files_out_avail) {
 
     /* Report the reaching of the threshold. */
@@ -3575,18 +3710,18 @@ MODRET quotatab_post_rnto(cmd_rec *cmd) {
   /* Clear the cached bytes/files. */
   quotatab_disk_nbytes = 0;
   quotatab_disk_nfiles = 0;
-  
+
   return PR_DECLINED(cmd);
 }
 
 MODRET quotatab_pre_stor(cmd_rec *cmd) {
   struct stat st;
- 
+
   have_aborted_transfer = FALSE;
   have_err_response = FALSE;
 
   /* Sanity check */
-  if (!use_quotas) {
+  if (use_quotas == FALSE) {
     return PR_DECLINED(cmd);
   }
 
@@ -3608,7 +3743,8 @@ MODRET quotatab_pre_stor(cmd_rec *cmd) {
       sess_tally.bytes_in_used >= sess_limit.bytes_in_avail) {
 
     /* Report the exceeding of the threshold. */
-    quotatab_log("%s denied: quota exceeded: used %s", (char *) cmd->argv[0],
+    quotatab_log("%s denied: %s quota exceeded: used %s",
+      get_quota_type_text(sess_quota_type), (char *) cmd->argv[0],
       DISPLAY_BYTES_IN(cmd));
     pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
       (char *) cmd->argv[0], DISPLAY_BYTES_IN(cmd));
@@ -3623,7 +3759,8 @@ MODRET quotatab_pre_stor(cmd_rec *cmd) {
       sess_tally.bytes_xfer_used >= sess_limit.bytes_xfer_avail) {
 
     /* Report the exceeding of the threshold. */
-    quotatab_log("%s denied: quota exceeded: used %s", (char *) cmd->argv[0],
+    quotatab_log("%s denied: %s quota exceeded: used %s",
+      get_quota_type_text(sess_quota_type), (char *) cmd->argv[0],
       DISPLAY_BYTES_XFER(cmd));
     pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
       (char *) cmd->argv[0], DISPLAY_BYTES_XFER(cmd));
@@ -3642,7 +3779,8 @@ MODRET quotatab_pre_stor(cmd_rec *cmd) {
       sess_tally.files_in_used >= sess_limit.files_in_avail) {
 
     /* Report the exceeding of the threshold. */
-    quotatab_log("%s denied: quota exceeded: used %s", (char *) cmd->argv[0],
+    quotatab_log("%s denied: %s quota exceeded: used %s",
+      get_quota_type_text(sess_quota_type), (char *) cmd->argv[0],
       DISPLAY_FILES_IN(cmd));
     pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
       (char *) cmd->argv[0], DISPLAY_FILES_IN(cmd));
@@ -3657,7 +3795,8 @@ MODRET quotatab_pre_stor(cmd_rec *cmd) {
       sess_tally.files_xfer_used >= sess_limit.files_xfer_avail) {
 
     /* Report the exceeding of the threshold. */
-    quotatab_log("%s denied: quota exceeded: used %s", (char *) cmd->argv[0],
+    quotatab_log("%s denied: %s quota exceeded: used %s",
+      get_quota_type_text(sess_quota_type), (char *) cmd->argv[0],
       DISPLAY_FILES_XFER(cmd));
     pr_response_add_err(R_552, _("%s denied: quota exceeded: used %s"),
       (char *) cmd->argv[0], DISPLAY_FILES_XFER(cmd));
@@ -3672,7 +3811,7 @@ MODRET quotatab_pre_stor(cmd_rec *cmd) {
   /* Briefly cache the size (in bytes) of the file being appended to, so that
    * if successful, the byte counts can be adjusted correctly.  If the
    * stat fails, it means that a new file is being uploaded, so set the
-   * disk_nbytes to be zero. 
+   * disk_nbytes to be zero.
    */
   pr_fs_clear_cache2(cmd->arg);
   if (pr_fsio_lstat(cmd->arg, &st) < 0) {
@@ -3779,7 +3918,7 @@ MODRET quotatab_post_stor(cmd_rec *cmd) {
       } else {
         QUOTATAB_TALLY_WRITE(-store_bytes, 0, -session.xfer.total_bytes,
           -1, 0, -1);
-        
+
         /* Report the removal of the file. */
         quotatab_log("%s: quota reached: '%s' removed", (char *) cmd->argv[0],
           cmd->arg);
@@ -3792,7 +3931,7 @@ MODRET quotatab_post_stor(cmd_rec *cmd) {
              sess_tally.bytes_xfer_used >= sess_limit.bytes_xfer_avail) {
 
     if (!have_err_response) {
-      /* Report the reaching of the threshold. */ 
+      /* Report the reaching of the threshold. */
       quotatab_log("%s: quota reached: used %s", (char *) cmd->argv[0],
         DISPLAY_BYTES_XFER(cmd));
       pr_response_add(R_DUP, _("%s: notice: quota reached: used %s"),
@@ -3880,7 +4019,7 @@ MODRET quotatab_post_stor_err(cmd_rec *cmd) {
   if (have_aborted_transfer ||
       (session.sf_flags & (SF_ABORT|SF_POST_ABORT))) {
     unsigned char *delete_stores;
-    
+
     delete_stores = get_param_ptr(CURRENT_CONF, "DeleteAbortedStores", FALSE);
     if (delete_stores != NULL &&
         *delete_stores == TRUE) {
@@ -3888,12 +4027,12 @@ MODRET quotatab_post_stor_err(cmd_rec *cmd) {
         "skipping tally update", (char *) cmd->argv[0]);
       have_quota_update = 0;
       return PR_DECLINED(cmd);
-    } 
-  } 
+    }
+  }
 
   if (store_bytes > 0) {
     /* Check on the size of the stored file again, and use the difference
-     * in file size as the increment.  Make sure that no caching effects 
+     * in file size as the increment.  Make sure that no caching effects
      * mess with the stat.
      */
     pr_fs_clear_cache2(cmd->arg);
@@ -4385,7 +4524,7 @@ static int quotatab_init(void) {
     quotatab_mod_unload_ev, NULL);
 #endif
   pr_event_register(&quotatab_module, "core.restart", quotatab_restart_ev,
-    NULL); 
+    NULL);
 
   return 0;
 }
@@ -4530,6 +4669,8 @@ static int quotatab_sess_init(void) {
     }
   }
 
+  memset(&sess_limit, 0, sizeof(sess_limit));
+  memset(&sess_tally, 0, sizeof(sess_tally));
   return 0;
 }
 

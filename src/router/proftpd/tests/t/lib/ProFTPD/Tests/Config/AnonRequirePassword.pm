@@ -265,7 +265,7 @@ sub anon_require_password_on {
       $expected = 'Login incorrect.';
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
-   
+
       # Now try again, using the password
       ($resp_code, $resp_msg) = $client->login($user, $passwd);
 

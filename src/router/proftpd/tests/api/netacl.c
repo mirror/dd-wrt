@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2022 The ProFTPD Project team
+ * Copyright (c) 2008-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ static void tear_down(void) {
   if (p) {
     destroy_pool(p);
     p = permanent_pool = NULL;
-  } 
+  }
 }
 
 /* Tests */
@@ -321,7 +321,7 @@ START_TEST (netacl_get_str_test) {
   acl_str = "None";
   acl = pr_netacl_create(p, acl_str);
   ck_assert_msg(acl != NULL, "Failed to create ACL: %s", strerror(errno));
- 
+
   ok = "none <none>";
   res = pr_netacl_get_str(p, acl);
   ck_assert_msg(res != NULL, "Failed to get ACL string: %s", strerror(errno));
@@ -644,8 +644,7 @@ START_TEST (netacl_match_test) {
   ck_assert_msg(addr != NULL, "Failed to get addr for '%s': %s", "localhost",
     strerror(errno));
 
-  if (getenv("CI") == NULL &&
-      getenv("TRAVIS") == NULL) {
+  if (getenv("CI") == NULL) {
     /* It's possible that the DNS name for 'localhost' that is used will
      * actually be 'localhost.localdomain', depending on the contents of
      * the host's /etc/hosts file.
@@ -761,11 +760,11 @@ START_TEST (netacl_match_test) {
   ck_assert_msg(res == 1, "Failed to positively match ACL to addr: %s",
     strerror(errno));
 
-  if (!have_localdomain) {
-    acl_str = pstrdup(p, "localhost");
+  if (have_localdomain == TRUE) {
+    acl_str = pstrdup(p, "localhost.localdomain");
 
   } else {
-    acl_str = pstrdup(p, "localhost.localdomain");
+    acl_str = pstrdup(p, "localhost");
   }
 
   acl = pr_netacl_create(p, acl_str);
@@ -773,17 +772,16 @@ START_TEST (netacl_match_test) {
     strerror(errno));
 
   res = pr_netacl_match(acl, addr);
-  if (getenv("CI") == NULL &&
-      getenv("TRAVIS") == NULL) {
+  if (getenv("CI") == NULL) {
     ck_assert_msg(res == 1, "Failed to positively match ACL to addr: %s",
       strerror(errno));
   }
 
-  if (!have_localdomain) {
-    acl_str = pstrdup(p, "!localhost");
+  if (have_localdomain == TRUE) {
+    acl_str = pstrdup(p, "!localhost.localdomain");
 
   } else {
-    acl_str = pstrdup(p, "!localhost.localdomain");
+    acl_str = pstrdup(p, "!localhost");
   }
 
   acl = pr_netacl_create(p, acl_str);
@@ -791,8 +789,7 @@ START_TEST (netacl_match_test) {
     strerror(errno));
 
   res = pr_netacl_match(acl, addr);
-  if (getenv("CI") == NULL &&
-      getenv("TRAVIS") == NULL) {
+  if (getenv("CI") == NULL) {
     ck_assert_msg(res == -1, "Failed to negatively match ACL to addr: %s",
       strerror(errno));
   }
@@ -806,11 +803,11 @@ START_TEST (netacl_match_test) {
   ck_assert_msg(res == 1, "Failed to positively match ACL to addr: %s",
     strerror(errno));
 
-  if (!have_localdomain) {
-    acl_str = pstrdup(p, "loc*st");
+  if (have_localdomain == TRUE) {
+    acl_str = pstrdup(p, "loc*st.loc*in");
 
   } else {
-    acl_str = pstrdup(p, "loc*st.loc*in");
+    acl_str = pstrdup(p, "loc*st");
   }
 
   acl = pr_netacl_create(p, acl_str);
@@ -818,17 +815,16 @@ START_TEST (netacl_match_test) {
     strerror(errno));
 
   res = pr_netacl_match(acl, addr);
-  if (getenv("CI") == NULL &&
-      getenv("TRAVIS") == NULL) {
+  if (getenv("CI") == NULL) {
     ck_assert_msg(res == 1, "Failed to positively match ACL to addr: %s",
       strerror(errno));
   }
 
-  if (!have_localdomain) {
-    acl_str = pstrdup(p, "!loc*st");
+  if (have_localdomain == TRUE) {
+    acl_str = pstrdup(p, "!loc*st.loc*in");
 
   } else {
-    acl_str = pstrdup(p, "!loc*st.loc*in");
+    acl_str = pstrdup(p, "!loc*st");
   }
 
   acl = pr_netacl_create(p, acl_str);
@@ -836,8 +832,7 @@ START_TEST (netacl_match_test) {
     strerror(errno));
 
   res = pr_netacl_match(acl, addr);
-  if (getenv("CI") == NULL &&
-      getenv("TRAVIS") == NULL) {
+  if (getenv("CI") == NULL) {
     ck_assert_msg(res == -1, "Failed to negatively match ACL to addr: %s",
       strerror(errno));
   }

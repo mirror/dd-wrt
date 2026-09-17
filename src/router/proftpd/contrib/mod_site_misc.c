@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_site_misc -- a module implementing miscellaneous SITE commands
- * Copyright (c) 2004-2020 The ProFTPD Project
+ * Copyright (c) 2004-2025 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -171,7 +171,7 @@ static int site_misc_create_path(pool *p, const char *path) {
     sub_pool = NULL;
     cmd = NULL;
   }
- 
+
   return 0;
 }
 
@@ -380,22 +380,22 @@ static int site_misc_parsetime(char *timestamp, size_t timestamp_len,
     errno = EINVAL;
     return -1;
   }
- 
+
   if (timestamp_len == 14) {
     have_secs = TRUE;
   }
-  
+
   ptr = timestamp;
   c = timestamp[4];
   timestamp[4] = '\0';
   *year = atoi(ptr);
-  timestamp[4] = c; 
+  timestamp[4] = c;
 
   ptr = &(timestamp[4]);
   c = timestamp[6];
   timestamp[6] = '\0';
   *month = atoi(ptr);
-  timestamp[6] = c; 
+  timestamp[6] = c;
 
   if (*month > 12) {
     pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
@@ -476,7 +476,7 @@ static time_t site_misc_mktime(unsigned int year, unsigned int month,
   char *tzname_dup[2];
 
   /* The mktime(3) function has a nasty habit of changing the tzname global
-   * variable as a side-effect.  This can cause problems, as when the process 
+   * variable as a side-effect.  This can cause problems, as when the process
    * has become chrooted, and mktime(3) sets/changes tzname wrong.  (For more
    * information on the tzname global variable, see the tzset(3) man page.)
    *
@@ -543,18 +543,19 @@ static time_t site_misc_mktime(unsigned int year, unsigned int month,
 /* usage: SiteMiscEngine on|off */
 MODRET set_sitemiscengine(cmd_rec *cmd) {
   config_rec *c;
-  int bool;
+  int engine;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  engine = get_boolean(cmd, 1);
+  if (engine == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
-  *((unsigned int *) c->argv[0]) = bool;
+  *((unsigned int *) c->argv[0]) = engine;
 
   return PR_HANDLED(cmd);
 }
@@ -763,7 +764,7 @@ MODRET site_misc_rmdir(cmd_rec *cmd) {
     pr_response_add(R_200, _("SITE %s command successful"),
       (char *) cmd->argv[1]);
     return PR_HANDLED(cmd);
-  } 
+  }
 
   if (strncasecmp(cmd->argv[1], "HELP", 5) == 0) {
     pr_response_add(R_214, "RMDIR <sp> path");
@@ -898,7 +899,7 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
      * I've seen symlink(2) happily link two names, neither of which exist
      * in the filesystem.
      */
-       
+
     pr_fs_clear_cache2(src);
     res = pr_fsio_stat(src, &st);
     if (res < 0) {
@@ -926,7 +927,7 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
     pr_response_add(R_200, _("SITE %s command successful"),
       (char *) cmd->argv[1]);
     return PR_HANDLED(cmd);
-  } 
+  }
 
   if (strncasecmp(cmd->argv[1], "HELP", 5) == 0) {
     pr_response_add(R_214, "SYMLINK <sp> source <sp> destination");
@@ -938,11 +939,22 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
 /* Handle: SITE UTIME mtime path-with-spaces */
 MODRET site_misc_utime_mtime(cmd_rec *cmd) {
   register unsigned int i;
+  unsigned char *authenticated;
   char *cmd_name, *decoded_path, *path = "";
   size_t timestamp_len;
   unsigned int year, month, day, hour, min, sec = 0;
   struct timeval tvs[2];
   struct stat st;
+
+  authenticated = get_param_ptr(cmd->server->conf, "authenticated", FALSE);
+  if (authenticated == NULL ||
+      *authenticated == FALSE) {
+    pr_response_add_err(R_501, _("Please login with USER and PASS"));
+
+    pr_cmd_set_errno(cmd, EPERM);
+    errno = EPERM;
+    return PR_ERROR(cmd);
+  }
 
   /* Accept both 'YYYYMMDDhhmm' and 'YYYYMMDDhhmmss' formats. */
   timestamp_len = strlen(cmd->argv[2]);
@@ -1052,7 +1064,7 @@ MODRET site_misc_utime_mtime(cmd_rec *cmd) {
     errno = xerrno;
     return PR_ERROR(cmd);
   }
- 
+
   pr_response_add(R_200, _("SITE %s command successful"),
     (char *) cmd->argv[1]);
   return PR_HANDLED(cmd);
@@ -1236,7 +1248,7 @@ MODRET site_misc_utime_atime_mtime_ctime(cmd_rec *cmd) {
     errno = xerrno;
     return PR_ERROR(cmd);
   }
- 
+
   pr_response_add(R_200, _("SITE %s command successful"),
     (char *) cmd->argv[1]);
   return PR_HANDLED(cmd);

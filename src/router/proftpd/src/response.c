@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2020 The ProFTPD Project team
- *  
+ * Copyright (c) 2001-2024 The ProFTPD Project team
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -55,15 +55,6 @@ static const char *trace_channel = "response";
   else \
     pr_netio_printf((strm), (fmt), (msg));
 
-#define RESPONSE_WRITE_STR_ASYNC(strm, fmt, msg) \
-  pr_trace_msg(trace_channel, 1, pstrcat(session.pool, "async: ", (fmt), NULL), \
-    (msg)); \
-  if (resp_handler_cb) \
-    pr_netio_printf_async((strm), "%s", resp_handler_cb(resp_pool, (fmt), \
-      (msg))); \
-  else \
-    pr_netio_printf_async((strm), (fmt), (msg));
-
 pool *pr_response_get_pool(void) {
   return resp_pool;
 }
@@ -91,7 +82,7 @@ void pr_response_set_pool(pool *p) {
 
   if (resp_last_response_msg != NULL) {
     const char *ptr;
-  
+
     ptr = resp_last_response_msg;
     resp_last_response_msg = pstrdup(p, ptr);
   }
@@ -126,10 +117,10 @@ void pr_response_register_handler(char *(*handler_cb)(pool *, const char *,
   resp_handler_cb = handler_cb;
 }
 
-int pr_response_block(int bool) {
-  if (bool == TRUE ||
-      bool == FALSE) {
-    resp_blocked = bool;
+int pr_response_block(int do_block) {
+  if (do_block == TRUE ||
+      do_block == FALSE) {
+    resp_blocked = do_block;
     return 0;
   }
 
@@ -233,9 +224,9 @@ void pr_response_add_err(const char *numeric, const char *fmt, ...) {
   va_start(msg, fmt);
   res = pr_vsnprintf(resp_buf, sizeof(resp_buf), fmt, msg);
   va_end(msg);
-  
+
   resp_buf[sizeof(resp_buf) - 1] = '\0';
-  
+
   resp = (pr_response_t *) pcalloc(resp_pool, sizeof(pr_response_t));
   resp->num = (numeric ? pstrdup(resp_pool, numeric) : NULL);
   resp->msg = pstrndup(resp_pool, resp_buf, res);
@@ -250,7 +241,7 @@ void pr_response_add_err(const char *numeric, const char *fmt, ...) {
 
   if (numeric != NULL) {
     pr_response_t *iter;
-    
+
     /* Handle the case where the first messages in the list may have R_DUP
      * for the numeric response code (i.e. NULL).  To do this, we scan the
      * list for the first non-null response code, and use that for any R_DUP
@@ -294,7 +285,7 @@ void pr_response_add(const char *numeric, const char *fmt, ...) {
   va_end(msg);
 
   resp_buf[sizeof(resp_buf) - 1] = '\0';
-  
+
   resp = (pr_response_t *) pcalloc(resp_pool, sizeof(pr_response_t));
   resp->num = (numeric ? pstrdup(resp_pool, numeric) : NULL);
   resp->msg = pstrndup(resp_pool, resp_buf, res);
@@ -309,7 +300,7 @@ void pr_response_add(const char *numeric, const char *fmt, ...) {
 
   if (numeric != NULL) {
     pr_response_t *iter;
-    
+
     /* Handle the case where the first messages in the list may have R_DUP
      * for the numeric response code (i.e. NULL).  To do this, we scan the
      * list for the first non-null response code, and use that for any R_DUP
@@ -356,20 +347,28 @@ void pr_response_send_async(const char *resp_numeric, const char *fmt, ...) {
 
   len = strlen(resp_numeric);
   sstrcat(buf + len, " ", sizeof(buf) - len);
-  
-  max_len = sizeof(buf) - len;
-  
+
+  max_len = sizeof(buf) - (len + 1);
+
   va_start(msg, fmt);
   res = pr_vsnprintf(buf + len + 1, max_len, fmt, msg);
   va_end(msg);
-  
+
   buf[sizeof(buf) - 1] = '\0';
 
   resp_last_response_code = pstrdup(resp_pool, resp_numeric);
   resp_last_response_msg = pstrdup(resp_pool, buf + len + 1);
 
-  sstrcat(buf + res, "\r\n", sizeof(buf));
-  RESPONSE_WRITE_STR_ASYNC(session.c->outstrm, "%s", buf)
+  sstrcat(buf + res, "\r\n", max_len - res);
+
+  pr_trace_msg(trace_channel, 1, "async: %s", buf);
+  if (resp_handler_cb != NULL) {
+    pr_netio_printf_async(session.c->outstrm, "%s",
+      resp_handler_cb(resp_pool, "%s", buf));
+
+  } else {
+    pr_netio_printf_async(session.c->outstrm, "%s", buf);
+  }
 }
 
 void pr_response_send(const char *resp_numeric, const char *fmt, ...) {
@@ -390,7 +389,7 @@ void pr_response_send(const char *resp_numeric, const char *fmt, ...) {
   va_start(msg, fmt);
   pr_vsnprintf(resp_buf, sizeof(resp_buf), fmt, msg);
   va_end(msg);
-  
+
   resp_buf[sizeof(resp_buf) - 1] = '\0';
 
   resp_last_response_code = pstrdup(resp_pool, resp_numeric);

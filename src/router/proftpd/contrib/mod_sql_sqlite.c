@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sql_sqlite -- Support for connecting to SQLite databases
  * Copyright (c) 2004-2022 TJ Saunders
- *  
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -126,7 +126,7 @@ static void *sql_sqlite_add_conn(pool *p, char *name, db_conn_t *conn) {
 
 static int sql_sqlite_timer_cb(CALLBACK_FRAME) {
   register unsigned int i = 0;
- 
+
   for (i = 0; i < conn_cache->nelts; i++) {
     conn_entry_t *entry;
 
@@ -314,7 +314,7 @@ MODRET sql_sqlite_open(cmd_rec *cmd) {
   if (cmd->argc < 1) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tsqlite cmd_open");
     return PR_ERROR_MSG(cmd, MOD_SQL_SQLITE_VERSION, "badly formed request");
-  }    
+  }
 
   /* Get the named connection. */
   entry = sql_sqlite_get_conn(cmd->argv[0]);
@@ -322,7 +322,7 @@ MODRET sql_sqlite_open(cmd_rec *cmd) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tsqlite cmd_open");
     return PR_ERROR_MSG(cmd, MOD_SQL_SQLITE_VERSION,
       pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
-  } 
+  }
 
   conn = (db_conn_t *) entry->data;
 
@@ -377,26 +377,24 @@ MODRET sql_sqlite_open(cmd_rec *cmd) {
   /* Make sure we handle contention here, just like any other statement
    * (Issue#385).
    */
-  while (res != SQLITE_OK) {
-    if (res == SQLITE_BUSY) {
-      struct timeval tv;
+  while (res == SQLITE_BUSY) {
+    struct timeval tv;
 
-      nretries++;
-      sql_log(DEBUG_FUNC, "attempt #%u, database busy, trying '%s' again",
-        nretries, stmt);
+    nretries++;
+    sql_log(DEBUG_FUNC, "attempt #%u, database busy, trying '%s' again",
+      nretries, stmt);
 
-      /* Sleep for short bit, then try again. */
-      tv.tv_sec = 0;
-      tv.tv_usec = 500000L;
+    /* Sleep for short bit, then try again. */
+    tv.tv_sec = 0;
+    tv.tv_usec = 500000L;
 
-      if (select(0, NULL, NULL, NULL, &tv) < 0) {
-        if (errno == EINTR) {
-          pr_signals_handle();
-        }
+    if (select(0, NULL, NULL, NULL, &tv) < 0) {
+      if (errno == EINTR) {
+        pr_signals_handle();
       }
-
-      res = sqlite3_exec(conn->dbh, stmt, NULL, NULL, NULL);
     }
+
+    res = sqlite3_exec(conn->dbh, stmt, NULL, NULL, NULL);
   }
 
   if (res != SQLITE_OK) {
@@ -502,7 +500,7 @@ MODRET sql_sqlite_close(cmd_rec *cmd) {
   sql_log(DEBUG_INFO, "'%s' connection count is now %u", entry->name,
     entry->nconn);
   sql_log(DEBUG_FUNC, "%s", "exiting \tsqlite cmd_close");
-  
+
   return PR_HANDLED(cmd);
 }
 
@@ -517,7 +515,7 @@ MODRET sql_sqlite_cleanup(cmd_rec *cmd) {
 MODRET sql_sqlite_def_conn(cmd_rec *cmd) {
   char *name = NULL;
   conn_entry_t *entry = NULL;
-  db_conn_t *conn = NULL; 
+  db_conn_t *conn = NULL;
 
   sql_log(DEBUG_FUNC, "%s", "entering \tsqlite cmd_defineconnection");
 
@@ -631,7 +629,7 @@ MODRET sql_sqlite_select(cmd_rec *cmd) {
     return PR_ERROR_MSG(cmd, MOD_SQL_SQLITE_VERSION,
       pstrcat(cmd->tmp_pool, "unknown named connection: ", cmd->argv[0], NULL));
   }
- 
+
   conn = (db_conn_t *) entry->data;
 
   mr = sql_sqlite_open(cmd);
@@ -657,15 +655,16 @@ MODRET sql_sqlite_select(cmd_rec *cmd) {
       register unsigned int i = 0;
 
       /* Handle the optional arguments -- they're rare, so in this case
-       * we'll play with the already constructed query string, but in 
-       * general we should probably take optional arguments into account 
+       * we'll play with the already constructed query string, but in
+       * general we should probably take optional arguments into account
        * and put the query string together later once we know what they are.
        */
-    
+
       for (i = 5; i < cmd->argc; i++) {
-	if (cmd->argv[i] &&
-            strcasecmp("DISTINCT", cmd->argv[i]) == 0)
+        if (cmd->argv[i] &&
+            strcasecmp("DISTINCT", cmd->argv[i]) == 0) {
 	  query = pstrcat(cmd->tmp_pool, "DISTINCT ", query, NULL);
+        }
       }
     }
 
@@ -707,7 +706,7 @@ MODRET sql_sqlite_select(cmd_rec *cmd) {
   }
 
   mr = sql_sqlite_get_data(cmd);
-  
+
   /* Close the connection, return the data. */
   close_cmd = pr_cmd_alloc(cmd->tmp_pool, 1, entry->name);
   sql_sqlite_close(close_cmd);
@@ -995,7 +994,7 @@ MODRET sql_sqlite_query(cmd_rec *cmd) {
   }
 
   mr = sql_sqlite_get_data(cmd);
-  
+
   /* Close the connection, return the data. */
   close_cmd = pr_cmd_alloc(cmd->tmp_pool, 1, entry->name);
   sql_sqlite_close(close_cmd);
@@ -1060,7 +1059,7 @@ MODRET sql_sqlite_identify(cmd_rec *cmd) {
   sd->data[1] = MOD_SQL_API_V1;
 
   return mod_create_data(cmd, (void *) sd);
-}  
+}
 
 static cmdtable sql_sqlite_cmdtable[] = {
   { CMD, "sql_close",		G_NONE, sql_sqlite_close,	FALSE, FALSE },

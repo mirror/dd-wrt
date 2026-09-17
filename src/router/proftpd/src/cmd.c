@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2022 The ProFTPD Project team
+ * Copyright (c) 2009-2026 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
  * the use of the following idiom to identify which command a given
  * cmd_rec is:
  *
- *  if (strcmp(cmd->argv[0], C_USER) == 0) 
+ *  if (strcmp(cmd->argv[0], C_USER) == 0)
  *
  * Rather than using strcmp(3) so freely, try to reduce the command to
  * a fixed ID (an index into the struct list); this ID can then be compared
@@ -61,7 +61,7 @@ static struct cmd_entry cmd_ids[] = {
   { C_PORT,	4 },	/* PR_CMD_PORT_ID (11) */
   { C_EPRT,	4 },	/* PR_CMD_EPRT_ID (12) */
   { C_PASV,	4 },	/* PR_CMD_PASV_ID (13) */
-  { C_EPSV,	4 },	/* PR_CMD_EPSV_ID (14) */ 
+  { C_EPSV,	4 },	/* PR_CMD_EPSV_ID (14) */
   { C_TYPE,	4 },	/* PR_CMD_TYPE_ID (15) */
   { C_STRU,	4 },	/* PR_CMD_STRU_ID (16) */
   { C_MODE,	4 },	/* PR_CMD_MODE_ID (17) */
@@ -157,10 +157,10 @@ cmd_rec *pr_cmd_alloc(pool *p, unsigned int argc, ...) {
     errno = EINVAL;
     return NULL;
   }
- 
-  newpool = make_sub_pool(p); 
+
+  newpool = make_sub_pool(p);
   pr_pool_tag(newpool, "cmd_rec pool");
- 
+
   cmd = pcalloc(newpool, sizeof(cmd_rec));
   cmd->argc = argc;
   cmd->stash_index = -1;
@@ -317,7 +317,7 @@ int pr_cmd_strcmp(cmd_rec *cmd, const char *cmd_name) {
   if (cmd->cmd_id > 0) {
     int res;
 
-    cmd_id = pr_cmd_get_id(cmd_name); 
+    cmd_id = pr_cmd_get_id(cmd_name);
 
     res = pr_cmd_cmp(cmd, cmd_id);
     if (res == 0) {
@@ -413,7 +413,10 @@ int pr_cmd_get_id(const char *cmd_name) {
     return -1;
   }
 
-  first_letter = toupper((int) cmd_name[0]);
+  first_letter = cmd_name[0];
+  if (PR_ISALPHA((int) first_letter)) {
+    first_letter = toupper((int) first_letter);
+  }
 
   for (i = 1; cmd_ids[i].cmd_name != NULL; i++) {
     if (cmd_ids[i].cmd_namelen != cmd_namelen) {

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2020 The ProFTPD Project team
+ * Copyright (c) 2004-2024 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ struct table_rec {
    *
    * For more information on attacks of this nature, see:
    *
-   *   http://www.cs.rice.edu/~scrosby/hash/CrosbyWallach_UsenixSec2003/   
+   *   http://www.cs.rice.edu/~scrosby/hash/CrosbyWallach_UsenixSec2003/
    */
   unsigned int seed;
 
@@ -133,7 +133,7 @@ static int key_cmp(const void *key1, size_t keysz1, const void *key2,
  * Here's a good article about this hashing algorithm, and about hashing
  * functions in general:
  *
- *  http://www.perl.com/pub/2002/10/01/hashes.html 
+ *  http://www.perl.com/pub/2002/10/01/hashes.html
  */
 static unsigned int key_hash(const void *key, size_t keysz) {
   unsigned int i = 0;
@@ -153,7 +153,7 @@ static unsigned int key_hash(const void *key, size_t keysz) {
     i = (i * 33) + c;
   }
 
-  return i; 
+  return i;
 }
 
 /* Default insertion is simply to add the given entry to the end of the
@@ -276,7 +276,7 @@ static void tab_entry_free(pr_table_t *tab, pr_table_entry_t *e) {
     }
 
     i->next = e;
- 
+
   } else {
     tab->free_ents = e;
   }
@@ -840,7 +840,7 @@ int pr_table_add_dup(pr_table_t *tab, const char *key_data,
 
   dup_data = pcalloc(tab->pool, value_datasz);
   memcpy(dup_data, value_data, value_datasz);
- 
+
   return pr_table_add(tab, key_data, dup_data, value_datasz);
 }
 
@@ -913,7 +913,7 @@ int pr_table_do(pr_table_t *tab, int (*cb)(const void *key_data,
 
       next_ent = ent->next;
 
-      if (!handling_signal) { 
+      if (!handling_signal) {
         pr_signals_handle();
       }
 
@@ -1001,7 +1001,7 @@ const void *pr_table_get(pr_table_t *tab, const char *key_data,
   }
 
   if (key_data) {
-    key_datasz = strlen(key_data) + 1;  
+    key_datasz = strlen(key_data) + 1;
   }
 
   return pr_table_kget(tab, key_data, key_datasz, value_datasz);
@@ -1150,7 +1150,7 @@ int pr_table_ctl(pr_table_t *tab, int cmd, void *arg) {
       }
 
       tab->nchains = new_nchains;
-      
+
       /* Note: by not freeing the memory of the previously allocated
        * chains, this constitutes a minor leak of the table's memory pool.
        */
@@ -1224,6 +1224,42 @@ float pr_table_load(pr_table_t *tab) {
   return load_factor;
 }
 
+static int tab_copy_cb(const void *key_data, size_t key_datasz,
+    const void *value_data, size_t value_datasz, void *user_data) {
+  int res;
+  pr_table_t *dst_tab;
+
+  dst_tab = user_data;
+
+  res = pr_table_kexists(dst_tab, key_data, key_datasz);
+  if (res > 0) {
+    res = pr_table_kset(dst_tab, key_data, key_datasz, value_data,
+      value_datasz);
+
+  } else {
+    res = pr_table_kadd(dst_tab, key_data, key_datasz, value_data,
+      value_datasz);
+  }
+
+  return res;
+}
+
+int pr_table_copy(pr_table_t *dst_tab, pr_table_t *src_tab, int flags) {
+  int res;
+
+  if (dst_tab == NULL ||
+      src_tab == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* Future flags may support a DEEP_COPY flag, which would use the
+   * dst_tab->pool.
+   */
+  res = pr_table_do(src_tab, tab_copy_cb, dst_tab, PR_TABLE_DO_FL_ALL);
+  return res;
+}
+
 void pr_table_dump(void (*dumpf)(const char *fmt, ...), pr_table_t *tab) {
   register unsigned int i;
 
@@ -1277,10 +1313,10 @@ void pr_table_dump(void (*dumpf)(const char *fmt, ...), pr_table_t *tab) {
   }
 }
 
-int table_handling_signal(int bool) {
-  if (bool == TRUE ||
-      bool == FALSE) {
-    handling_signal = bool;
+int table_handling_signal(int do_handle) {
+  if (do_handle == TRUE ||
+      do_handle == FALSE) {
+    handling_signal = do_handle;
     return 0;
   }
 

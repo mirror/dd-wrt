@@ -46,7 +46,7 @@ sub dele_bug2321 {
 
   # As per Bug#2321, the reproduction layout looks like:
   #
-  #  $root/web/ 
+  #  $root/web/
   #  $root/web/.ftpaccess
   #  $root/users/$user/
   #  $root/users/$user/web -> $root/web/
@@ -106,7 +106,7 @@ EOL
       die("Can't set owner of $home_dir, $web_dir to $uid/$gid: $!");
     }
   }
- 
+
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
   auth_group_write($auth_group_file, $group, $gid, $user);

@@ -17,7 +17,7 @@ MODULE_NAME=mod_auth_otp
 MODULE_OBJS=mod_auth_otp.o base32.o otp.o crypto.o db.o
 SHARED_MODULE_OBJS=mod_auth_otp.lo base32.lo otp.lo crypto.lo db.lo
 UTILS_LIBS=@UTILS_LIBS@
-UTILS_OBJS=base32.o otp.o crypto.o auth-otp.o
+UTILS_OBJS=utils/base32.o utils/otp.o utils/crypto.o auth-otp.o
 UTILS_API_OBJS=../../src/pool.o \
   ../../src/str.o \
   ../../lib/prbase.a
@@ -32,6 +32,10 @@ LDFLAGS=-L../../lib @LDFLAGS@
 
 .c.lo:
 	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CPPFLAGS) $(CFLAGS) $(SHARED_CFLAGS) -c $<
+
+utils/%.o: %.c
+	-mkdir -p utils/
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 shared: $(SHARED_MODULE_OBJS) auth-otp$(EXEEXT)
 	$(LIBTOOL) --mode=link --tag=CC $(CC) -o $(MODULE_NAME).la $(SHARED_MODULE_OBJS) -rpath $(LIBEXECDIR) $(LDFLAGS) $(SHARED_LDFLAGS) $(SHARED_MODULE_LIBS) `cat $(top_srcdir)/$(MODULE_NAME).c | grep '$$Libraries:' | sed -e 's/^.*\$$Libraries: \(.*\)\\$$/\1/'`
@@ -68,6 +72,7 @@ install-utils: $(DESTDIR)$(sbindir)
 clean:
 	$(LIBTOOL) --mode=clean $(RM) $(MODULE_NAME).a $(MODULE_NAME).la *.o *.lo .libs/*.o
 	-$(RM) auth-otp$(EXEEXT)
+	-$(RM) -r utils/
 
 distclean: clean
 	$(RM) Makefile t/Makefile $(MODULE_NAME).h config.status config.cache config.log *.gcda *.gcno

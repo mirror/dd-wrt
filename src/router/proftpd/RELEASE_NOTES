@@ -1,291 +1,200 @@
-                    1.3.8 Release Notes
+                    1.3.9 Release Notes
                   ------------------------
 
 This file contains a description of the major changes to ProFTPD for the
-1.3.8 release cycle, from the 1.3.8rc1 release to the 1.3.8 maintenance
+1.3.9 release cycle, from the 1.3.9rc1 release to the 1.3.9 maintenance
 releases.  More information on these changes can be found in the NEWS and
 ChangeLog files.
 
-1.3.8
-------
-
-  + Implement support for the CSID FTP command, from an IETF Draft.
-
-  + The mod_auth_otp module improperly allowed keyboard-interactive
-    authentication to succeed for users lacking OTP entries.
-
-
-  + Changed Directives
-
-    FSCachePolicy
-
-      The default value for FSCachePolicy is now "off".
-
-
-1.3.8rc4
+1.3.9d
 ---------
 
-  + Ensure that mod_sftp algorithms work properly when OpenSSL 3.x is used.
+  + Addressed possible use-after-free issue in FTP STAT command.
+
+  + Fixed handling of default AllowForeignAddress behavior for passive data
+    transfers.
+
+
+1.3.9c
+---------
+
+  + Fixed SFTP packet buffer overflow for authenticated sessions (Issue #2190).
+
+  + Fixed mod_exec regression with handling of ExecEnviron directives
+    (Issue #2135).
+
+
+1.3.9b
+---------
+
+  + Additional fixes for SQL injection (CVE-2026-42167), notably for handling
+    `%{env:...}` and `%{note:...}` variables.
+
+  + Updated modules to build against OpenSSL 4.x.
+
+
+1.3.9a
+---------
+
+  + Fix for SQL injection (CVE-2026-42167)
+
+
+1.3.9
+---------
+
+  + Fixed memory usage issue with SFTP channels.
+
+  + Added Polish translation.
+
+  + Updated bundled libtool.m4 for better MacOSX support.
+
+
+1.3.9rc3
+---------
+
+  + When started with root privileges, ProFTPD now drops all supplemental
+    group memberships, retaining only the UID/GID of the configured User/Group.
+
+  + Properly use all configured ECDSA SSH hostkeys, not just the first
+    configured ECSA SSH hostkey.
+
+  + Fixed issue with RADIUS authentication when using mod_radius and newer
+    FreeRADIUS, due to BlastRadius mitigation.
 
 
   + New Directives
 
-    SFTPHostKeys
+      SFTPAuthPublicKeys
 
-      This directive for the mod_sftp module can be used to specify
-      the list of SSH host key algorithms that will be presented to
-      clients; see doc/contrib/mod_sftp.html#SFTPHostKeys for more
-      information.
+        This directive can be used to enable support for only the specified
+        list of public key algorithms, as for key-based user authentication.
+        See doc/contrib/mod_sftp.html#SFTPAuthPublicKeys for more.
 
 
   + Changed Directives
 
-    SFTPClientMatch
-
-      The SFTPClientMatch directive has been expanded to allow setting
-      some SSH algorithms based on the matched client banner, including
-      encryption and signature algorithms.  See
-      doc/contrib/mod_sftp.html#SFTPClientMatch for details.
-
-    SFTPKeyExchanges
-
-      The mod_sftp module now supports the "curve448-sha512" key
-      exchange algorithm, and the SFTPKeyExchanges directive has been
-      updated accordingly.  See
-      doc/contrib/mod_sftp.html#SFTPKeyExchanges.
+      SFTPExtensions +limits
+        The mod_sftp module now implements the "limits@openssh.com" custom
+        SFTP extension, used by newer OpenSSH limitations for discovering
+        server-side limits, such as larger SFTP READ/WRITE buffer lengths.
+        See doc/contrib/mod_sftp.html#SFTPExtensions.
 
 
-1.3.8rc3
+1.3.9rc2
 ---------
 
-  + Improved consistency/support for name-based virtual hosts.
+  + Implemented SSH mitigations for the "Terrapin" SSH attack (CVE-2023-48795).
 
-  + Support for the AES-GCM ciphers "aes128-gcm@openssh.com" and
-    "aes256-gcm@openssh.com" have been added to mod_sftp.
+  + Fixed compiling of 3rd party modules whose names match very specific
+    regular expression patterns.
 
-  + Support SSH hostkey rotation via OpenSSH "hostkeys-00@openssh.com" and
-    "hostkeys-prove-00@openssh.com" extensions.
 
-  + Support for the "home-directory" SFTP extenssion.
+  + Changed Directives
 
-  + Support use of PCRE2, rather than PCRE, via the `--enable-pcre2` configure
-    option.
+      SFTPOptions NoStrictKex
+
+        By default, mod_sftp uses a "strict KEX" mode as a mitigation for the
+        "Terrapin" SSH attack (CVE-2023-48795).  Use of this strict mode
+        may unexpectedly cause interoperability issues; this new SFTPOption
+        can be used to disable this mode if necessary.  See
+        doc/contrib/mod_sftp.html#SFTPOptions for more.
+
+
+1.3.9rc1
+---------
+
+  + Clients are disconnected if there is an error adding them to the
+    ScoreboardFile.  Previously, such errors were logged, but the session
+    allowed to continue.
+
+  + Implemented the "chacha20-poly1305@openssh.com" SSH cipher algorithm.
+
+  + Implemented support for OpenSSH FIDO security keys in mod_sftp.
+
+  + The mod_auth_otp module now requires per-user entries in its tables
+    by default.  This is a change from previous versions, when such per-user
+    entries were optional.
 
 
   + New Directives
 
-    FactsDefault
+      IfSessionOptions PerUnauthenticatedUser
 
-      This directive can be used to explicitly configure the list of "facts"
-      returned, per path, in the MLSD/MLSD FTP responses.
-      See doc/modules/mod_facts.html#FactsDefault for more details.
+        The mod_ifsession module only applies its user/group-specific
+        configurations after the client has authenticated itself.  Some
+        sites, however, may wish for user-specific configurations to be
+        applied based on the unauthenticated username supplied by the client,
+        such as in cases where the conditional configuration in question will
+        affect the authentication process.  The new PerUnauthenticatedUser
+        IfSessionOption can be used to achieve this; see
+        doc/contrib/mod_ifsession.html#IfSessionOptions for more.
 
-    LDAPConnectTimeout
+      ScoreboardOptions AllowMissingEntry
 
-      When connecting to LDAP servers, use this directive to configure
-      a longer timeout, if necessary.  See
-      doc/contrib/mod_ldap.html#LDAPConnectTimeout for more information.
-
-
-  + Changed Directives
-
-    RegexOptions
-
-      With the additional support for the PCRE2 library, the RegexOptions
-      directive now supports explicitly selecting that as the regex "engine";
-      see doc/modules/mod_core.html#RegexOptions for details.
-
-    SFTPCiphers
-
-      The OpenSSH-specific AES GCM ciphers are now implemented; see
-      doc/contrib/mod_sftp.html#SFTPCiphers.
-
-    SFTPDigests
-
-      The OpenSSH-specific Encrypt-Then-MAC (ETM) digests are now supported;
-      see doc/contrib/mod_sftp.html#SFTPDigests.
-
-    SFTPExtensions homeDirectory
-
-      The `mod_sftp` module supports the SFTP extension for querying a
-      user's home directory (once the client has authenticated).  Use
-      the SFTPExtensions directive to disable support for this extension if
-      necessary.
-
-    SFTPOptions NoHostkeyRotation
-
-      The `mod_sftp` module now supports the OpenSSH-specific "hostkey"
-      extensions, for hostkey rotation.  Use this option to disable support
-      for those extensions where needed; see
-      doc/contrib/mod_sftp.html#SFTPOptions.
-
-    SocketOptions ReusePort
-
-      The SocketOptions directive now support configuring the `SO_REUSEPORT`
-      socket option, for cases where this is useful, such as specific
-      ProFTPD + Docker networking situations.
-
-    TransferOptions AllowSymlinkUpload
-
-      In past releases, ProFTPD allows uploads to symlinks; this was
-      inadvertently broken at some point.  Such uploading to symlinks is
-      possible once more, using this new TransferOption.
-      See doc/modules/mod_xfer.html#TransferOptions.
-
-
-1.3.8rc2
----------
-
-  + Fix memory disclosure to RADIUS servers by mod_radius (Issue #1284).
-
-  + PCRE expressions with capture groups were not being handled properly
-    (Issue #1300).
-
-  + Add support for the libidn2 library, over libidn, for e.g. mod_rewrite
-    mappings (Issue #1286).
+        Clients are now disconnected if they cannot be added to the
+        ScoreboardFile.  Some sites may require the previous behavior; use
+        this new AllowMissingEntry ScoreboardOption to do so.  See
+        doc/modules/mod_core.html#ScoreboardOptions for more information.
 
 
   + Changed Directives
 
-    RegexOptions Engine
+      AuthOTPOptions OptionalTableEntry
 
-      The RegexOptions directive now supports explicitly configuring which
-      regular expression "engine" to use, POSIX or PCRE.  Thus ProFTPD
-      installations with PCRE support enabled (via the --enable-pcre configure
-      option) can be told to treat all regular expressions as POSIX expressions
-      at run-time.
+        Now that the mod_auth_otp module requires an entry for each user,
+        sites may need to re-enable the previous opt-in behavior.  Use the
+        OptionalTableEntry AuthOTPOption for this.  Read
+        doc/contrib/mod_auth_otp.html#AuthOTPOptions for details.
 
-    TLSRenegotiate default behavior
+      DelayOnEvent Connect
 
-      The TLSRenegotiate directive configures when the mod_tls module requests
-      TLS renegotations on both control and data connections.  TLS
-      renegotiations, as a protocol feature, have a long and sordid history
-      of abuse; many TLS libraries/clients no longer implement them, or
-      disable support for renegotiation by default.  Thus mod_tls will no
-      longer request TLS renegotations by default now, either.
+        The DelayOnEvent directive can now be used to inject randomized
+        delays, "jitter", at the start of a session.  This can be used to
+        spread out the processing of a large number of connections that
+        occur at the same time, such as on a schedule/cron.  See
+        doc/modules/mod_delay.html#DelayOnEvent for details.
+
+      ExtendedLog SEC class
+
+        SSH key exchange requests are now classified as "security" related
+        messages, and thus are logged in ExtendedLog configurations that use
+        the SEC logging class.
+
+      LDAPDefaultGID, LDAPDefaultUID Auto
+
+        Retrieving the UID, GID to use for users configured in ActiveDirectory
+        domains, based on the default/expected attributes, is not always
+        possible.  In such cases, the new "Auto" value for the default UID,
+        GID to use by mod_ldap allows for retrieving the actual UID, GID
+        by system user lookup, which is handled for AD domains by the special
+        `sssd` program, for example.
+
+      LogFormat %{transfer-speed}
+
+        The LogFormat directive now supports a variable, %{transfer-speed},
+        for logging the average data transfer speed.
+
+      SFTPCiphers chacha20-poly1305@openssh.com
+
+        The mod_sftp module now implements OpenSSH's
+        "chacha20-poly1305@openssh.com" algorithm.
+
+      SFTPExtensions userGroupNames
+
+        The mod_sftp module supports the custom OpenSSH
+        "users-groups-by-id@openssh.com" SFTP extension, used to retrieve
+        the textual user/group names for given lists of UIDs, GIDs.
+
+      SFTPOptions FIDOTouchRequired FIDOVerifyRequired
+
+        OpenSSH FIDO security keys, such as Yubikeys, are now supported
+        for SSH authentication by the mod_sftp module.  These keys allow
+        for policies such as proof of user presence, and/or proof of user
+        verification.  These new SFTPOptions can be used to configure your
+        site policies for such keys; see doc/contrib/mod_sftp.html#SFTPOptions
+        for more information.
 
 
   + Developer Notes
 
-    The generated Make.rules file will now be installed alongside the
-    installed ProFTPD headers.  It contains build rules used by third-party
-    modules that use multiple source files.
-
-
-1.3.8rc1
----------
-
-  + Minimum DH parameter size for TLS has been raised from 1024 to 2048.
-
-  + Passive transfers fail unexpectedly due to use of SO_REUSEPORT socket
-    option (Issue #1171).
-
-  + Fixed occasional segfaults with FTPS data transfers using TLSv1.3, when
-    session tickets cannot be decrypted (Issue #1063).
-
-  + Fixed "Corrupted MAC on inptut" errors when SFTP uses the
-    umac-64@openssh.com digest (Issue #1111).
-
-  + Fixed memory use-after-free issue in mod_sftp which can cause unexpected
-    login/authentication issues.
-
-  + Fixed speed regression for logins, directory listings when AuthUserFile
-    is used.
-
-  + ftpasswd now generates SHA256 password hashes by default, rather than MD5.
-
-  * Set the `OPENSSL_API_COMPAT` API version compatibility macro.  We currently
-    set our OpenSSL API version to 1.0.0 and later; code which uses an OpenSSL
-    API earlier than 1.0.0 will cause the build to fail.  Use the new
-    `--disable-openssl-api-compat` configure option to disable use of this
-    macro.
-
-  + Fixed SQL syntax regression for some generated SQL statements
-    (Issue #1149).
-
-
-  + Deprecated Directives
-
-    MultilineRFC2228
-      This directive has caused many issues unexpectedly, particularly for
-      responses of the FEAT command, and is not necessary.
-
-
-  + New Directives
-
-    ListStyle
-      This directive is used to emit Windows-style directory listings, for
-      compatibility with certain FTP clients.  See
-      doc/modules/mod_ls.html#ListStyle for more information.
-
-    RedisLogFormatExtra
-      This directive supports adding custom key/values to the JSON logging
-      done by the RedisLogOnCommand, RedisLogOnEvent directives.  See
-      doc/modules/mod_redis.html#RedisLogFormatExtra for details.
-
-
-  + Changed Directives
-
-    AuthFileOptions SyntaxCheck
-      Syntax checks of configured AuthUserFile, AuthGroupFile can now be
-      performed, at startup time, via this option.  See
-      doc/modules/mod_auth_file.html#AuthFileOptions for more information.
-
-    BanOnEvent MaxLoginAttemptsFromUser
-      The mod_ban module now supports bans for a given user/IP address
-      combination; see Issue #1170 for details.
-
-    RedisSentinel
-      Support for using TLS when connecting to Redis Sentinels has been
-      implemented; see doc/modules/mod_redis.html#RedisSentinel for details.
-
-    RedisServer
-      Redis 6.x changed its AUTH command, due to the Redis ACL system, for
-      supporting multiple users.  Thus the `RedisServer` directive now takes
-      a username, as well as a password.  The Redis server version is auto-
-      detected; the configured username will be ignored for Redis servers
-      older than Redis 6.x.
-
-      Support for using TLS when connecting to Redis servers has been
-      implemented; see doc/modules/mod_redis.html#RedisServer for details.
-
-    TLSCipherSuite
-      TLSv1.3 ciphersuites have different names, and are configured differently
-      in OpenSSL.  To support configuration of TLSv1.3 ciphersuites, the
-      `TLSCipherSuite` directive takes an optional protocol specifier; see
-      the documentation for details.
-
-    TLSOptions
-      Support for the long-deprecated `NoCertRequest` TLSOption has been
-      removed.
-
-      AllowWeakSecurity TLSOption added, for cases where interacting with
-      "insecure" (by system OpenSSL policy) clients is required; see
-      doc/contrib/mod_tls.html#TLSOptions for more details.
-
-    Wrap2Tables
-      The mod_wrap2 module now supports including additional files for
-      its allow/deny tables; see Issue #1133.
-
-
-  + Developer Notes
-
-    The new `pr_pool_debug_memory2` function uses a visitor pattern to walk
-    the memory pools, and provides the pool data to the callback via
-    structure, allowing the callback to format/use the memory pool information
-    as needed, including emitting the data as JSON.
-
-    The "make install" target now will _only_ try to install existing
-    code/binaries, and will no longer attempt to recompile existing binaries.
-    That is, this sequence will no longer work:
-
-      $ ./configure
-      $ make install
-
-    Instead, the officially documented and supported sequence is now required:
-
-      $ ./configure
-      $ make
-      $ make install
-
-    This ensures that no unexpected recompilation occurs; see Issue #548.
+    Removed the unused `pr_ctrls_parse_msg` Controls API function.

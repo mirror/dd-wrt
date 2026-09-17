@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2013-2020 The ProFTPD Project team
+ * Copyright (c) 2013-2025 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -126,12 +126,19 @@ MODRET set_rlimitchroot(cmd_rec *cmd) {
   c->argv[0] = palloc(c->pool, sizeof(int));
   *((int *) c->argv[0]) = use_guard;
 
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
+
   return PR_HANDLED(cmd);
 }
 
 /* usage: RLimitCPU ["daemon"|"session"] soft-limit [hard-limit] */
 MODRET set_rlimitcpu(cmd_rec *cmd) {
-#ifdef RLIMIT_CPU
+#if defined(RLIMIT_CPU)
   config_rec *c = NULL;
   rlim_t current, max;
 
@@ -262,6 +269,13 @@ MODRET set_rlimitcpu(cmd_rec *cmd) {
     *((rlim_t *) c->argv[1]) = max;
   }
 
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
+
   return PR_HANDLED(cmd);
 #else
   CONF_ERROR(cmd, "RLimitCPU is not supported on this platform");
@@ -377,6 +391,13 @@ MODRET set_rlimitmemory(cmd_rec *cmd) {
     *((rlim_t *) c->argv[0]) = current;
     c->argv[1] = palloc(c->pool, sizeof(rlim_t));
     *((rlim_t *) c->argv[1]) = max;
+  }
+
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
   }
 
   return PR_HANDLED(cmd);
@@ -519,6 +540,13 @@ MODRET set_rlimitopenfiles(cmd_rec *cmd) {
     *((rlim_t *) c->argv[1]) = max;
   }
 
+  if (pr_module_exists("mod_ifsession.c")) {
+    /* These are needed in case this directive is used with mod_ifsession
+     * configuration.
+     */
+    c->flags |= CF_MULTI;
+  }
+
   return PR_HANDLED(cmd);
 #else
   CONF_ERROR(cmd, "RLimitOpenFiles is not supported on this platform");
@@ -598,7 +626,7 @@ static int rlimit_set_cpu(int scope) {
 
     pr_signals_handle();
 
-    if (scope == DAEMON_SCOPE) { 
+    if (scope == DAEMON_SCOPE) {
       /* Does this limit apply to the daemon? */
       if (c->argc == 3 &&
           strcasecmp(c->argv[0], "daemon") == 0) {
@@ -659,7 +687,7 @@ static int rlimit_set_files(int scope) {
 
     pr_signals_handle();
 
-    if (scope == DAEMON_SCOPE) { 
+    if (scope == DAEMON_SCOPE) {
       /* Does this limit apply to the daemon? */
       if (c->argc == 3 &&
           strcasecmp(c->argv[0], "daemon") == 0) {
@@ -720,7 +748,7 @@ static int rlimit_set_memory(int scope) {
 
     pr_signals_handle();
 
-    if (scope == DAEMON_SCOPE) { 
+    if (scope == DAEMON_SCOPE) {
       /* Does this limit apply to the daemon? */
       if (c->argc == 3 &&
           strcasecmp(c->argv[0], "daemon") == 0) {

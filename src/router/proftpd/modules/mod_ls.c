@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2022 The ProFTPD Project
+ * Copyright (c) 2001-2026 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -241,8 +241,8 @@ static int ls_perms_full(pool *p, cmd_rec *cmd, const char *path, int *hidden) {
   if (fullpath == NULL) {
     fullpath = pstrdup(p, path);
   }
- 
-  if (use_canon) {
+
+  if (use_canon == TRUE) {
     res = dir_check_canon(p, cmd, cmd->group, fullpath, hidden);
 
   } else {
@@ -360,7 +360,8 @@ static int sendline(int flags, char *fmt, ...) {
           errno != 0) {
         int xerrno = errno;
 
-        if (session.d != NULL) {
+        if (session.d != NULL &&
+            session.d->outstrm != NULL) {
           xerrno = PR_NETIO_ERRNO(session.d->outstrm);
         }
 
@@ -438,8 +439,7 @@ static void ls_done(cmd_rec *cmd) {
   }
 }
 
-static char units[6][2] = 
-  { "", "k", "M", "G", "T", "P" };
+static char units[6][2] = { "", "k", "M", "G", "T", "P" };
 
 static void ls_fmt_filesize(char *buf, size_t buflen, off_t sz) {
   if (!opt_h || sz < 1000) {
@@ -505,7 +505,7 @@ static int listfile(cmd_rec *cmd, pool *p, const char *resp_code,
         list_nfiles.max);
       list_nfiles.logged = TRUE;
     }
- 
+
     return 2;
   }
   list_nfiles.curr++;
@@ -522,7 +522,7 @@ static int listfile(cmd_rec *cmd, pool *p, const char *resp_code,
 
     display_name = pstrdup(p, name);
 
-#ifndef PR_USE_NLS
+#if !defined(PR_USE_NLS)
     if (opt_B) {
       register unsigned int j;
       size_t display_namelen, printable_namelen;
@@ -543,11 +543,22 @@ static int listfile(cmd_rec *cmd, pool *p, const char *resp_code,
         if (!PR_ISPRINT(display_name[i])) {
           register int k;
           int replace_len = 0;
-          char replace[32];
+          char replace[6];
 
           memset(replace, '\0', sizeof(replace));
+
+          /* Note that this assumes unsigned bytes, such that the max value
+           * is 255 (not -127), and thus the rendered text will always be
+           * four characters: a backslash, followed by three numeric characters.
+           * Make sure we allow snprintf(3) another byte for writing a
+           * terminating NUL as well.  This gives a total of 5 bytes for the
+           * rendered text.
+           *
+           * We use an explicit unsignedness cast avoid a byte for the minus
+           * character.
+           */
           replace_len = pr_snprintf(replace, sizeof(replace)-1, "\\%03o",
-            display_name[i]);
+            ((unsigned char) display_name[i]));
 
           for (k = 0; k < replace_len; k++) {
             printable_name[j++] = replace[k];
@@ -558,6 +569,7 @@ static int listfile(cmd_rec *cmd, pool *p, const char *resp_code,
         }
       }
 
+      printable_name[printable_namelen] = '\0';
       display_name = pstrdup(p, printable_name);
     }
 #endif /* PR_USE_NLS */
@@ -927,7 +939,15 @@ struct sort_filename {
 static struct filename *head = NULL;
 static struct filename *tail = NULL;
 static array_header *sort_arr = NULL;
-static pool *fpool = NULL;
+static pool *sort_pool = NULL;
+
+static void sort_cleanup(void *user_data) {
+  sort_pool = NULL;
+  sort_arr = NULL;
+  head = tail = NULL;
+  colwidth = 0;
+  filenames = 0;
+}
 
 static void addfile(cmd_rec *cmd, const char *name, const char *suffix,
     time_t sort_time, off_t size) {
@@ -949,23 +969,24 @@ static void addfile(cmd_rec *cmd, const char *name, const char *suffix,
     return;
   }
 
-  if (fpool == NULL) {
-    fpool = make_sub_pool(cmd->tmp_pool);
-    pr_pool_tag(fpool, "mod_ls addfile pool");
+  if (sort_pool == NULL) {
+    sort_pool = make_sub_pool(cmd->tmp_pool);
+    pr_pool_tag(sort_pool, "mod_ls sort pool");
+    register_cleanup2(sort_pool, NULL, sort_cleanup);
   }
 
   if (opt_S || opt_t) {
     struct sort_filename *s;
 
     if (sort_arr == NULL) {
-      sort_arr = make_array(fpool, 50, sizeof(struct sort_filename));
+      sort_arr = make_array(sort_pool, 50, sizeof(struct sort_filename));
     }
 
     s = (struct sort_filename *) push_array(sort_arr);
     s->sort_time = sort_time;
     s->size = size;
-    s->name = pstrdup(fpool, name);
-    s->suffix = pstrdup(fpool, suffix);
+    s->name = pstrdup(sort_pool, name);
+    s->suffix = pstrdup(sort_pool, suffix);
 
     return;
   }
@@ -975,8 +996,8 @@ static void addfile(cmd_rec *cmd, const char *name, const char *suffix,
     colwidth = l;
   }
 
-  p = (struct filename *) pcalloc(fpool, sizeof(struct filename));
-  p->line = pcalloc(fpool, l + 2);
+  p = (struct filename *) pcalloc(sort_pool, sizeof(struct filename));
+  p->line = pcalloc(sort_pool, l + 2);
   pr_snprintf(p->line, l + 1, "%s%s", name, suffix);
 
   if (tail) {
@@ -1091,17 +1112,15 @@ static int outputfiles(cmd_rec *cmd) {
       res = -1;
     }
 
-    destroy_pool(fpool);
-    fpool = NULL;
-    sort_arr = NULL;
-    head = tail = NULL;
-    colwidth = 0;
-    filenames = 0;
+    destroy_pool(sort_pool);
+    sort_pool = NULL;
 
     return res;
   }
 
-  tail->down = NULL;
+  if (tail != NULL) {
+    tail->down = NULL;
+  }
   tail = NULL;
   colwidth = (colwidth | 7) + 1;
   if (opt_l || !opt_C) {
@@ -1183,37 +1202,39 @@ static int outputfiles(cmd_rec *cmd) {
         pad[idx] = '\0';
       }
 
-      if (sendline(0, "%s%s", q->line, pad) < 0) {
-        return -1;
+      if (session.curr_cmd_id == PR_CMD_LIST_ID) {
+        res = sendline(0, "%s%s", q->line, pad);
+
+      } else {
+        pr_response_add(NULL, "%s%s", q->line, pad);
+        res = 0;
+      }
+
+      if (res < 0) {
+        break;
       }
 
       q = q->right;
     }
   }
 
-  if (sendline(LS_SENDLINE_FL_FLUSH, " ") < 0) {
-    res = -1;
+  if (session.curr_cmd_id != PR_CMD_STAT_ID) {
+    if (sendline(LS_SENDLINE_FL_FLUSH, " ") < 0) {
+      res = -1;
+    }
   }
 
-  destroy_pool(fpool);
-  fpool = NULL;
-  sort_arr = NULL;
-  head = tail = NULL;
-  colwidth = 0;
-  filenames = 0;
+  destroy_pool(sort_pool);
+  sort_pool = NULL;
 
   return res;
 }
 
 static void discard_output(void) {
-  if (fpool) {
-    destroy_pool(fpool);
+  if (sort_pool != NULL) {
+    destroy_pool(sort_pool);
+    sort_pool = NULL;
   }
-  fpool = NULL;
-
-  head = tail = NULL;
-  colwidth = 0;
-  filenames = 0;
 }
 
 static int dircmp(const void *a, const void *b) {
@@ -1341,7 +1362,7 @@ static int listdir(cmd_rec *cmd, pool *workp, const char *resp_code,
         list_ndepth.max - 1);
       list_ndepth.logged = TRUE;
     }
- 
+
     return 1;
   }
 
@@ -2042,7 +2063,7 @@ static int dolist(cmd_rec *cmd, const char *opt, const char *resp_code,
     } else {
       skiparg = FALSE;
 
-      if (use_globbing &&
+      if (use_globbing == TRUE &&
           pr_str_is_fnmatch(target)) {
         a = pr_fs_glob(target, glob_flags, NULL, &g);
         if (a == 0) {
@@ -2116,7 +2137,8 @@ static int dolist(cmd_rec *cmd, const char *opt, const char *resp_code,
 
             if (listfile(cmd, cmd->tmp_pool, resp_code, *path) < 0) {
               ls_terminate();
-              if (use_globbing && globbed) {
+              if (use_globbing == TRUE &&
+                  globbed == TRUE) {
                 pr_fs_globfree(&g);
               }
               return -1;
@@ -2134,7 +2156,8 @@ static int dolist(cmd_rec *cmd, const char *opt, const char *resp_code,
 
       if (outputfiles(cmd) < 0) {
         ls_terminate();
-        if (use_globbing && globbed) {
+        if (use_globbing == TRUE &&
+            globbed == TRUE) {
           pr_fs_globfree(&g);
         }
         return -1;
@@ -2186,7 +2209,8 @@ static int dolist(cmd_rec *cmd, const char *opt, const char *resp_code,
 
             if (res < 0) {
               ls_terminate();
-              if (use_globbing && globbed) {
+              if (use_globbing == TRUE &&
+                  globbed == TRUE) {
                 pr_fs_globfree(&g);
               }
               return -1;
@@ -2199,7 +2223,8 @@ static int dolist(cmd_rec *cmd, const char *opt, const char *resp_code,
 
         if (XFER_ABORTED) {
           discard_output();
-          if (use_globbing && globbed) {
+          if (use_globbing == TRUE &&
+              globbed == TRUE) {
             pr_fs_globfree(&g);
           }
           return -1;
@@ -2210,7 +2235,8 @@ static int dolist(cmd_rec *cmd, const char *opt, const char *resp_code,
 
       if (outputfiles(cmd) < 0) {
         ls_terminate();
-        if (use_globbing && globbed) {
+        if (use_globbing == TRUE &&
+            globbed == TRUE) {
           pr_fs_globfree(&g);
         }
         return -1;
@@ -2231,7 +2257,9 @@ static int dolist(cmd_rec *cmd, const char *opt, const char *resp_code,
       }
     }
 
-    if (!skiparg && use_globbing && globbed) {
+    if (!skiparg &&
+        use_globbing == TRUE &&
+        globbed == TRUE) {
       pr_fs_globfree(&g);
     }
 
@@ -2307,7 +2335,7 @@ static int nlstfile(cmd_rec *cmd, const char *file) {
 
   display_name = pstrdup(cmd->tmp_pool, file);
 
-#ifndef PR_USE_NLS
+#if !defined(PR_USE_NLS)
   if (opt_B) {
     register unsigned int i, j;
     size_t display_namelen, printable_namelen;
@@ -2328,11 +2356,22 @@ static int nlstfile(cmd_rec *cmd, const char *file) {
       if (!PR_ISPRINT(display_name[i])) {
         register int k;
         int replace_len = 0;
-        char replace[32];
+        char replace[6];
 
         memset(replace, '\0', sizeof(replace));
+
+        /* Note that this assumes unsigned bytes, such that the max value
+         * is 255 (not -127), and thus the rendered text will always be
+         * four characters: a backslash, followed by three numeric characters.
+         * Make sure we allow snprintf(3) another byte for writing a
+         * terminating NUL as well.  This gives a total of 5 bytes for the
+         * rendered text.
+         *
+         * We use an explicit unsignedness cast avoid a byte for the minus
+         * character.
+         */
         replace_len = pr_snprintf(replace, sizeof(replace)-1, "\\%03o",
-          display_name[i]);
+          ((unsigned char) display_name[i]));
 
         for (k = 0; k < replace_len; k++) {
           printable_name[j++] = replace[k];
@@ -2343,6 +2382,7 @@ static int nlstfile(cmd_rec *cmd, const char *file) {
       }
     }
 
+    printable_name[printable_namelen] = '\0';
     display_name = pstrdup(cmd->tmp_pool, printable_name);
   }
 #endif /* PR_USE_NLS */
@@ -2987,7 +3027,7 @@ MODRET ls_nlst(cmd_rec *cmd) {
     pr_signals_handle();
 
     flags = *((unsigned long *) c->argv[5]);
-    
+
     /* Make sure that this ListOptions can be applied to the NLST command.
      * If not, keep looking for other applicable ListOptions.
      */
@@ -3116,7 +3156,7 @@ MODRET ls_nlst(cmd_rec *cmd) {
   }
 
   /* If the target is a glob, get the listing of files/dirs to send. */
-  if (use_globbing &&
+  if (use_globbing == TRUE &&
       pr_str_is_fnmatch(target)) {
     glob_t g;
     char **path, *p;
@@ -3210,7 +3250,9 @@ MODRET ls_nlst(cmd_rec *cmd) {
 
     /* Iterate through each matching entry */
     path = g.gl_pathv;
-    while (path && *path && res >= 0) {
+    while (path != NULL &&
+           *path &&
+           res >= 0) {
       struct stat st;
 
       pr_signals_handle();
@@ -3228,11 +3270,18 @@ MODRET ls_nlst(cmd_rec *cmd) {
 
           } else {
             /*...otherwise, just list the name. */
-            res = nlstfile(cmd, p);
+            if (ls_perms(cmd->tmp_pool, cmd, p, &hidden)) {
+              /* Don't display hidden files. */
+              if (hidden) {
+                continue;
+              }
+
+              res = nlstfile(cmd, p);
+            }
           }
 
         } else if (S_ISREG(st.st_mode) &&
-            ls_perms(cmd->tmp_pool, cmd, p, &hidden)) {
+                   ls_perms(cmd->tmp_pool, cmd, p, &hidden)) {
           /* Don't display hidden files */
           if (hidden) {
             continue;
@@ -3253,7 +3302,7 @@ MODRET ls_nlst(cmd_rec *cmd) {
      * file, just list the file.
      */
     struct stat st;
-    
+
     /* Remove any trailing separators. */
     targetlen = strlen(target);
     while (targetlen >= 1 &&
@@ -3455,7 +3504,7 @@ MODRET ls_post_pass(cmd_rec *cmd) {
  */
 
 MODRET set_dirfakeusergroup(cmd_rec *cmd) {
-  int bool = -1;
+  int dir_fake_usergroup = -1;
   char *as = "ftp";
   config_rec *c = NULL;
 
@@ -3468,12 +3517,12 @@ MODRET set_dirfakeusergroup(cmd_rec *cmd) {
       " on|off [<id to display>]", NULL));
   }
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
-     CONF_ERROR(cmd, "expected boolean argument");
+  dir_fake_usergroup = get_boolean(cmd, 1);
+  if (dir_fake_usergroup == -1) {
+    CONF_ERROR(cmd, "expected Boolean argument");
   }
 
-  if (bool == TRUE) {
+  if (dir_fake_usergroup == TRUE) {
     /* Use the configured ID to display rather than the default "ftp". */
     if (cmd->argc > 2) {
       as = cmd->argv[2];
@@ -3525,7 +3574,7 @@ MODRET set_listoptions(cmd_rec *cmd) {
 
   c = add_config_param(cmd->argv[0], 6, NULL, NULL, NULL, NULL, NULL, NULL);
   c->flags |= CF_MERGEDOWN;
-  
+
   c->argv[0] = pstrdup(c->pool, cmd->argv[1]);
 
   /* The default "strict" setting. */
@@ -3546,7 +3595,7 @@ MODRET set_listoptions(cmd_rec *cmd) {
 
   /* The default flags */
   c->argv[5] = pcalloc(c->pool, sizeof(unsigned long));
- 
+
   /* Check for, and handle, optional arguments. */
   if (cmd->argc-1 >= 2) {
     register unsigned int i = 0;
@@ -3648,38 +3697,40 @@ MODRET set_liststyle(cmd_rec *cmd) {
 }
 
 MODRET set_showsymlinks(cmd_rec *cmd) {
-  int bool = -1;
+  int show_symlinks = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
 
-  if ((bool = get_boolean(cmd, 1)) == -1)
+  show_symlinks = get_boolean(cmd, 1);
+  if (show_symlinks == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = bool;
+  *((unsigned char *) c->argv[0]) = show_symlinks;
   c->flags |= CF_MERGEDOWN;
 
   return PR_HANDLED(cmd);
 }
 
 MODRET set_useglobbing(cmd_rec *cmd) {
-  int bool = -1;
+  int globbing = -1;
   config_rec *c = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
+  globbing = get_boolean(cmd, 1);
+  if (globbing == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
   }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned char));
-  *((unsigned char *) c->argv[0]) = bool;
+  *((unsigned char *) c->argv[0]) = globbing;
   c->flags |= CF_MERGEDOWN;
 
   return PR_HANDLED(cmd);

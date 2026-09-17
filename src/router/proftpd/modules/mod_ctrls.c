@@ -2,7 +2,7 @@
  * ProFTPD: mod_ctrls -- a module implementing the ftpdctl local socket
  *          server, as well as several utility functions for other Controls
  *          modules
- * Copyright (c) 2000-2022 TJ Saunders
+ * Copyright (c) 2000-2024 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -214,7 +214,7 @@ static pr_ctrls_cl_t *ctrls_add_cl(int cl_fd, uid_t cl_uid, gid_t cl_gid,
 
   pr_ctrls_log(MOD_CTRLS_VERSION,
     "accepted connection from %s/%s client", cl->cl_user, cl->cl_group);
- 
+
   return cl;
 }
 
@@ -251,35 +251,45 @@ static void ctrls_cls_read(void) {
 
   cl = cl_list;
   while (cl != NULL) {
+    int res, xerrno;
+
     pr_signals_handle();
 
-    if (pr_ctrls_recv_request(cl) < 0) {
+    res = pr_ctrls_recv_request(cl);
+    xerrno = errno;
 
-      if (errno == EOF) {
-        ;
- 
-      } else if (errno == EINVAL) {
+    if (res < 0) {
+      switch (xerrno) {
+        case EOF:
+          break;
 
-        /* Unsupported action requested */
-        if (cl->cl_flags == 0) {
-          cl->cl_flags = PR_CTRLS_CL_NOACTION;
-        }
+        case EINVAL:
+          /* Unsupported action requested */
+          if (cl->cl_flags == 0) {
+            cl->cl_flags = PR_CTRLS_CL_NOACTION;
+          }
 
-        pr_ctrls_log(MOD_CTRLS_VERSION,
-          "recvd from %s/%s client: (invalid action)", cl->cl_user,
-          cl->cl_group);
+          pr_ctrls_log(MOD_CTRLS_VERSION,
+            "recvd from %s/%s client: (invalid action)", cl->cl_user,
+            cl->cl_group);
+          break;
 
-      } else if (errno == EAGAIN ||
-                 errno == EWOULDBLOCK) {
+        case EAGAIN:
+#if defined(EAGAIN) && \
+    defined(EWOULDBLOCK) && \
+    EWOULDBLOCK != EAGAIN
+        case EWOULDBLOCK:
+#endif
+          /* Malicious/blocked client */
+          if (cl->cl_flags == 0) {
+            cl->cl_flags = PR_CTRLS_CL_BLOCKED;
+          }
+          break;
 
-        /* Malicious/blocked client */
-        if (cl->cl_flags == 0) {
-          cl->cl_flags = PR_CTRLS_CL_BLOCKED;
-        }
-
-      } else {
-        pr_ctrls_log(MOD_CTRLS_VERSION,
-          "error: unable to receive client request: %s", strerror(errno)); 
+        default:
+          pr_ctrls_log(MOD_CTRLS_VERSION,
+            "error: unable to receive client request: %s", strerror(errno));
+          break;
       }
 
     } else {
@@ -343,7 +353,8 @@ static int ctrls_cls_write(void) {
       char *msg = "access denied";
 
       /* ACL-denied access */
-      if (pr_ctrls_send_msg(cl->cl_fd, -1, 1, &msg) < 0) {
+      if (pr_ctrls_send_response(ctrls_pool, cl->cl_fd,
+          PR_CTRLS_STATUS_ACCESS_DENIED, 1, &msg) < 0) {
         pr_ctrls_log(MOD_CTRLS_VERSION,
           "error: unable to send response to %s/%s client: %s",
           cl->cl_user, cl->cl_group, strerror(errno));
@@ -357,7 +368,8 @@ static int ctrls_cls_write(void) {
       char *msg = "unsupported action requested";
 
       /* Unsupported action -- no matching controls */
-      if (pr_ctrls_send_msg(cl->cl_fd, -1, 1, &msg) < 0) {
+      if (pr_ctrls_send_response(ctrls_pool, cl->cl_fd,
+          PR_CTRLS_STATUS_UNSUPPORTED_OPERATION, 1, &msg) < 0) {
         pr_ctrls_log(MOD_CTRLS_VERSION,
           "error: unable to send response to %s/%s client: %s",
           cl->cl_user, cl->cl_group, strerror(errno));
@@ -370,7 +382,8 @@ static int ctrls_cls_write(void) {
     } else if (cl->cl_flags == PR_CTRLS_CL_BLOCKED) {
       char *msg = "blocked connection";
 
-      if (pr_ctrls_send_msg(cl->cl_fd, -1, 1, &msg) < 0) {
+      if (pr_ctrls_send_response(ctrls_pool, cl->cl_fd,
+          PR_CTRLS_STATUS_INTERNAL_ERROR, 1, &msg) < 0) {
         pr_ctrls_log(MOD_CTRLS_VERSION,
           "error: unable to send response to %s/%s client: %s",
           cl->cl_user, cl->cl_group, strerror(errno));
@@ -381,7 +394,6 @@ static int ctrls_cls_write(void) {
       }
 
     } else if (cl->cl_flags == PR_CTRLS_CL_HAVEREQ) {
-
       if (cl->cl_ctrls != NULL &&
           cl->cl_ctrls->nelts > 0) {
         register unsigned int i = 0;
@@ -393,8 +405,9 @@ static int ctrls_cls_write(void) {
           if ((ctrlv[i])->ctrls_cb_retval < 1) {
 
             /* Make sure the callback(s) added responses */
-            if ((ctrlv[i])->ctrls_cb_resps) {
-              if (pr_ctrls_send_msg(cl->cl_fd, (ctrlv[i])->ctrls_cb_retval,
+            if ((ctrlv[i])->ctrls_cb_resps != NULL) {
+              if (pr_ctrls_send_response(ctrls_pool, cl->cl_fd,
+                  (ctrlv[i])->ctrls_cb_retval,
                   (ctrlv[i])->ctrls_cb_resps->nelts,
                   (char **) (ctrlv[i])->ctrls_cb_resps->elts) < 0) {
                 pr_ctrls_log(MOD_CTRLS_VERSION,
@@ -631,9 +644,8 @@ static int ctrls_recv_cl_reqs(void) {
       errno = xerrno;
       return res;
     }
- 
-    if (FD_ISSET(ctrls_sockfd, &cl_rset)) {
 
+    if (FD_ISSET(ctrls_sockfd, &cl_rset)) {
       /* Make sure the ctrl socket is non-blocking */
       if (ctrls_setnonblock(ctrls_sockfd) < 0) {
         xerrno = errno;
@@ -689,7 +701,7 @@ static int ctrls_recv_cl_reqs(void) {
   /* Go through the client list */
   ctrls_cls_read();
 
-  return 0; 
+  return 0;
 }
 
 static int ctrls_send_cl_resps(void) {
@@ -790,24 +802,25 @@ static int ctrls_handle_help(pr_ctrls_t *ctrl, int reqargc,
 
   if (reqargc != 0) {
     pr_ctrls_add_response(ctrl, "wrong number of parameters");
-    return -1;
+    return PR_CTRLS_STATUS_WRONG_PARAMETERS;
   }
 
   if (pr_get_registered_actions(ctrl, CTRLS_GET_DESC) < 0) {
     pr_ctrls_add_response(ctrl, "unable to get actions: %s", strerror(errno));
-
-  } else {
-    /* Be nice, and sort the directives lexicographically */
-    qsort(ctrl->ctrls_cb_resps->elts, ctrl->ctrls_cb_resps->nelts,
-      sizeof(char *), respcmp);
+    return PR_CTRLS_STATUS_INTERNAL_ERROR;
   }
 
-  return 0;
+  /* Be nice, and sort the directives lexicographically */
+  qsort(ctrl->ctrls_cb_resps->elts, ctrl->ctrls_cb_resps->nelts,
+    sizeof(char *), respcmp);
+
+  return PR_CTRLS_STATUS_OK;
 }
 
 static int ctrls_handle_insctrl(pr_ctrls_t *ctrl, int reqargc,
     char **reqargv) {
   module *m = ANY_MODULE;
+  int res, xerrno;
 
   /* Enable a control into the registered controls list. This requires the
    * action and, optionally, the module of the control to be enabled.
@@ -818,13 +831,13 @@ static int ctrls_handle_insctrl(pr_ctrls_t *ctrl, int reqargc,
 
     /* Access denied */
     pr_ctrls_add_response(ctrl, "access denied");
-    return -1;
+    return PR_CTRLS_STATUS_ACCESS_DENIED;
   }
 
   if (reqargc < 1 ||
       reqargc > 2) {
     pr_ctrls_add_response(ctrl, "wrong number of parameters");
-    return -1;
+    return PR_CTRLS_STATUS_WRONG_PARAMETERS;
   }
 
   /* If the optional second parameter, a module name, is used, lookup
@@ -834,20 +847,22 @@ static int ctrls_handle_insctrl(pr_ctrls_t *ctrl, int reqargc,
     m = pr_module_get(reqargv[1]);
   }
 
-  if (pr_set_registered_actions(m, reqargv[0], FALSE, 0) < 0) {
-    if (errno == ENOENT) {
-      pr_ctrls_add_response(ctrl, "no such control: '%s'", reqargv[0]);
+  res = pr_set_registered_actions(m, reqargv[0], FALSE, 0);
+  xerrno = errno;
 
-    } else {
-      pr_ctrls_add_response(ctrl, "unable to enable '%s': %s", reqargv[0],
-        strerror(errno));
+  if (res < 0) {
+    if (xerrno == ENOENT) {
+      pr_ctrls_add_response(ctrl, "no such control: '%s'", reqargv[0]);
+      return PR_CTRLS_STATUS_SUBJECT_NOT_FOUND;
     }
 
-  } else {
-    pr_ctrls_add_response(ctrl, "'%s' control enabled", reqargv[0]);
+    pr_ctrls_add_response(ctrl, "unable to enable '%s': %s", reqargv[0],
+      strerror(errno));
+    return PR_CTRLS_STATUS_INTERNAL_ERROR;
   }
 
-  return 0;
+  pr_ctrls_add_response(ctrl, "'%s' control enabled", reqargv[0]);
+  return PR_CTRLS_STATUS_OK;
 }
 
 static int ctrls_handle_lsctrl(pr_ctrls_t *ctrl, int reqargc,
@@ -858,60 +873,61 @@ static int ctrls_handle_lsctrl(pr_ctrls_t *ctrl, int reqargc,
    */
 
   /* Check the lsctrl ACL */
-  if (!pr_ctrls_check_acl(ctrl, ctrls_acttab, "lsctrl")) {
+  if (pr_ctrls_check_acl(ctrl, ctrls_acttab, "lsctrl") != TRUE) {
 
     /* Access denied */
     pr_ctrls_add_response(ctrl, "access denied");
-    return -1;
+    return PR_CTRLS_STATUS_ACCESS_DENIED;
   }
 
   if (reqargc != 0) {
     pr_ctrls_add_response(ctrl, "wrong number of parameters");
-    return -1;
+    return PR_CTRLS_STATUS_WRONG_PARAMETERS;
   }
 
   if (pr_get_registered_actions(ctrl, CTRLS_GET_ACTION_ENABLED) < 0) {
     pr_ctrls_add_response(ctrl, "unable to get actions: %s", strerror(errno));
-
-  } else {
-    /* Be nice, and sort the actions lexicographically */
-    qsort(ctrl->ctrls_cb_resps->elts, ctrl->ctrls_cb_resps->nelts,
-      sizeof(char *), respcmp);
+    return PR_CTRLS_STATUS_INTERNAL_ERROR;
   }
 
-  return 0;
+  /* Be nice, and sort the actions lexicographically */
+  qsort(ctrl->ctrls_cb_resps->elts, ctrl->ctrls_cb_resps->nelts,
+    sizeof(char *), respcmp);
+
+  return PR_CTRLS_STATUS_OK;
 }
 
 static int ctrls_handle_rmctrl(pr_ctrls_t *ctrl, int reqargc,
     char **reqargv) {
   module *m = ANY_MODULE;
-  
+  int res, xerrno;
+
   /* Disable a control from the registered controls list. This requires the
    * action and, optionally, the module of the control to be removed.
    */
 
   /* Check the rmctrl ACL */
-  if (!pr_ctrls_check_acl(ctrl, ctrls_acttab, "rmctrl")) {
+  if (pr_ctrls_check_acl(ctrl, ctrls_acttab, "rmctrl") != TRUE) {
 
     /* Access denied */
     pr_ctrls_add_response(ctrl, "access denied");
-    return -1;
+    return PR_CTRLS_STATUS_ACCESS_DENIED;
   }
 
   if (reqargc < 1 ||
       reqargc > 2) {
     pr_ctrls_add_response(ctrl, "wrong number of parameters");
-    return -1;
+    return PR_CTRLS_STATUS_WRONG_PARAMETERS;
   }
 
   /* The three controls added by this module _cannot_ be removed (at least
    * not via this control handler).
    */
-  if (strncmp(reqargv[0], "insctrl", 8) == 0 ||
-      strncmp(reqargv[0], "lsctrl", 7) == 0 ||
-      strncmp(reqargv[0], "rmctrl", 7) == 0) {
+  if (strcmp(reqargv[0], "insctrl") == 0 ||
+      strcmp(reqargv[0], "lsctrl") == 0 ||
+      strcmp(reqargv[0], "rmctrl") == 0) {
     pr_ctrls_add_response(ctrl, "'%s' control cannot be removed", reqargv[0]);
-    return -1;
+    return PR_CTRLS_STATUS_OPERATION_DENIED;
   }
 
   /* If the optional second parameter, a module name, is used, lookup
@@ -921,37 +937,37 @@ static int ctrls_handle_rmctrl(pr_ctrls_t *ctrl, int reqargc,
     m = pr_module_get(reqargv[1]);
   }
 
-  if (pr_set_registered_actions(m, reqargv[0], FALSE,
-      PR_CTRLS_ACT_DISABLED) < 0) {
-    int xerrno = errno;
+  res = pr_set_registered_actions(m, reqargv[0], FALSE, PR_CTRLS_ACT_DISABLED);
+  xerrno = errno;
 
+  if (res < 0) {
     if (xerrno == ENOENT) {
       pr_ctrls_add_response(ctrl, "no such control: '%s'", reqargv[0]);
-
-    } else {
-      pr_ctrls_add_response(ctrl, "unable to disable '%s': %s", reqargv[0],
-        strerror(xerrno));
+      return PR_CTRLS_STATUS_SUBJECT_NOT_FOUND;
     }
 
-  } else {
-    if (strncmp(reqargv[0], "all", 4) != 0) {
-      pr_ctrls_add_response(ctrl, "'%s' control disabled", reqargv[0]);
-
-    } else {
-      /* If all actions have been disabled, stop listening on the local
-       * socket, and turn off this module's engine.
-       */
-      pr_ctrls_add_response(ctrl, "all controls disabled");
-      pr_ctrls_add_response(ctrl, "restart the daemon to re-enable controls");
-
-      (void) close(ctrls_sockfd);
-      ctrls_sockfd = -1;
-
-      ctrls_engine = FALSE;
-    }
+    pr_ctrls_add_response(ctrl, "unable to disable '%s': %s", reqargv[0],
+      strerror(xerrno));
+    return PR_CTRLS_STATUS_INTERNAL_ERROR;
   }
 
-  return 0;
+  if (strcmp(reqargv[0], "all") != 0) {
+    pr_ctrls_add_response(ctrl, "'%s' control disabled", reqargv[0]);
+
+  } else {
+    /* If all actions have been disabled, stop listening on the local
+     * socket, and turn off this module's engine.
+     */
+    pr_ctrls_add_response(ctrl, "all controls disabled");
+    pr_ctrls_add_response(ctrl, "restart the daemon to re-enable controls");
+
+    (void) close(ctrls_sockfd);
+    ctrls_sockfd = -1;
+
+    ctrls_engine = FALSE;
+  }
+
+  return PR_CTRLS_STATUS_OK;
 }
 
 /* Configuration handlers
@@ -971,20 +987,17 @@ MODRET set_ctrlsacls(cmd_rec *cmd) {
    * the list.  If not in the list, unregister that control.
    */
 
-  /* We can cheat here, and use the ctrls_parse_acl() routine to
-   * separate the given string...
-   */
-  actions = ctrls_parse_acl(cmd->tmp_pool, cmd->argv[1]);
+  actions = pr_ctrls_parse_acl(cmd->tmp_pool, cmd->argv[1]);
 
   /* Check the second parameter to make sure it is "allow" or "deny" */
-  if (strncmp(cmd->argv[2], "allow", 6) != 0 &&
-      strncmp(cmd->argv[2], "deny", 5) != 0) {
+  if (strcmp(cmd->argv[2], "allow") != 0 &&
+      strcmp(cmd->argv[2], "deny") != 0) {
     CONF_ERROR(cmd, "second parameter must be 'allow' or 'deny'");
   }
 
   /* Check the third parameter to make sure it is "user" or "group" */
-  if (strncmp(cmd->argv[3], "user", 5) != 0 &&
-      strncmp(cmd->argv[3], "group", 6) != 0) {
+  if (strcmp(cmd->argv[3], "user") != 0 &&
+      strcmp(cmd->argv[3], "group") != 0) {
     CONF_ERROR(cmd, "third parameter must be 'user' or 'group'");
   }
 
@@ -1015,17 +1028,17 @@ MODRET set_ctrlsauthfreshness(cmd_rec *cmd) {
 }
 
 MODRET set_ctrlsengine(cmd_rec *cmd) {
-  int bool = -1;
+  int engine = -1;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
+  engine = get_boolean(cmd, 1);
+  if (engine == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
   }
 
-  ctrls_engine = bool;
+  ctrls_engine = engine;
   return PR_HANDLED(cmd);
 }
 
@@ -1140,7 +1153,7 @@ MODRET set_ctrlssocketacl(cmd_rec *cmd) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
         "error configuring user socket ACL: ", strerror(errno), NULL));
     }
- 
+
   } else if (strcasecmp(cmd->argv[2], "group") == 0) {
     if (pr_ctrls_set_group_acl(ctrls_pool, &ctrls_sock_acl.acl_groups,
         cmd->argv[1], cmd->argv[3]) < 0) {
@@ -1298,7 +1311,7 @@ static void ctrls_restart_ev(const void *event_data, void *user_data) {
  */
 
 static int ctrls_init(void) {
-  register unsigned int i = 0; 
+  register unsigned int i = 0;
 
   /* Allocate the pool for this module's use */
   ctrls_pool = make_sub_pool(permanent_pool);
@@ -1320,8 +1333,7 @@ static int ctrls_init(void) {
   }
 
   /* Make certain the socket ACL is initialized. */
-  memset(&ctrls_sock_acl, '\0', sizeof(ctrls_acl_t));
-  ctrls_sock_acl.acl_users.allow = ctrls_sock_acl.acl_groups.allow = FALSE;
+  pr_ctrls_init_acl(&ctrls_sock_acl);
 
   pr_event_register(&ctrls_module, "core.restart", ctrls_restart_ev, NULL);
   pr_event_register(&ctrls_module, "core.shutdown", ctrls_shutdown_ev, NULL);
@@ -1341,16 +1353,16 @@ static int ctrls_sess_init(void) {
   /* Close the inherited socket */
   close(ctrls_sockfd);
   ctrls_sockfd = -1;
- 
+
   return 0;
 }
 
 static ctrls_acttab_t ctrls_acttab[] = {
   { "help",	"describe all registered controls", NULL,
     ctrls_handle_help },
-  { "insctrl",	"enable a disabled control", NULL, 
+  { "insctrl",	"enable a disabled control", NULL,
     ctrls_handle_insctrl },
-  { "lsctrl",	"list all registered controls", NULL, 
+  { "lsctrl",	"list all registered controls", NULL,
     ctrls_handle_lsctrl },
   { "rmctrl",	"disable a registered control", NULL,
     ctrls_handle_rmctrl },

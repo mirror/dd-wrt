@@ -66,7 +66,7 @@ sub get_shell {
   }
 
   if ($use_valid_shell) {
-    return (keys(%$shells))[0]; 
+    return (keys(%$shells))[0];
 
   } else {
     my $invalid_shells = [qw(/bin/foo /bin/false /bin/notavalidshell /bin/foobarbazquxxquzz)];
@@ -106,7 +106,7 @@ sub requirevalidshell_off_valid_shell {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
@@ -212,7 +212,7 @@ sub requirevalidshell_off_invalid_shell {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
@@ -318,7 +318,7 @@ sub requirevalidshell_on_valid_shell {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }
@@ -424,7 +424,7 @@ sub requirevalidshell_on_invalid_shell {
     unless (chmod(0755, $home_dir)) {
       die("Can't set perms on $home_dir to 0755: $!");
     }
-    
+
     unless (chown($uid, $gid, $home_dir)) {
       die("Can't set owner of $home_dir to $uid/$gid: $!");
     }

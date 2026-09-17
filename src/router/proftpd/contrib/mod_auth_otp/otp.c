@@ -64,7 +64,7 @@ static int otp(pool *p, const EVP_MD *md,
   truncated &= 0x7fffffff;
 
   /* Note the 6 zeroes here; this determines the number of digits in the
-   * generated code. 
+   * generated code.
    */
   *code = truncated % 1000000;
   return 0;

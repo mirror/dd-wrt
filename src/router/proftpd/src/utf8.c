@@ -26,7 +26,7 @@
 
 #include "conf.h"
 
-#ifdef PR_USE_NLS
+#if defined(PR_USE_NLS)
 
 #ifdef HAVE_ICONV_H
 # include <iconv.h>
@@ -36,13 +36,13 @@
 # include <langinfo.h>
 #endif
 
-#ifdef HAVE_ICONV_H
+#if defined(HAVE_ICONV_H)
 static iconv_t decode_conv = (iconv_t) -1;
 static iconv_t encode_conv = (iconv_t) -1;
 
 static int utf8_convert(iconv_t conv, char *inbuf, size_t *inbuflen,
     char *outbuf, size_t *outbuflen) {
-# ifdef HAVE_ICONV
+# if defined(HAVE_ICONV)
   char *start = inbuf;
 
   while (inbuflen > 0) {
@@ -71,7 +71,7 @@ static int utf8_convert(iconv_t conv, char *inbuf, size_t *inbuflen,
 #endif /* !HAVE_ICONV_H */
 
 int utf8_free(void) {
-# ifdef HAVE_ICONV
+# if defined(HAVE_ICONV)
   int res;
 
   /* Close the iconv handles. */
@@ -95,7 +95,7 @@ int utf8_free(void) {
 int utf8_init(void) {
   const char *local_charset;
 
-#ifdef HAVE_NL_LANGINFO
+#if defined(HAVE_NL_LANGINFO)
   /* Look up the current charset.  If there's a problem, default to
    * UCS-2.
    */
@@ -116,13 +116,13 @@ int utf8_init(void) {
     "conversion");
 #endif /* HAVE_NL_LANGINFO */
 
-# ifdef HAVE_ICONV
+# if defined(HAVE_ICONV)
   /* Get the iconv handles. */
   encode_conv = iconv_open("UTF-8", local_charset);
   if (encode_conv == (iconv_t) -1) {
     return -1;
   }
- 
+
   decode_conv = iconv_open(local_charset, "UTF-8");
   if (decode_conv == (iconv_t) -1) {
     return -1;
@@ -136,7 +136,7 @@ int utf8_init(void) {
 }
 
 char *pr_utf8_decode(pool *p, const char *in, size_t inlen, size_t *outlen) {
-#ifdef HAVE_ICONV_H
+#if defined(HAVE_ICONV_H)
   size_t inbuflen, outbuflen;
   char *inbuf, outbuf[PR_TUNABLE_PATH_MAX*2], *res = NULL;
 
@@ -174,7 +174,7 @@ char *pr_utf8_decode(pool *p, const char *in, size_t inlen, size_t *outlen) {
 }
 
 char *pr_utf8_encode(pool *p, const char *in, size_t inlen, size_t *outlen) {
-#ifdef HAVE_ICONV_H
+#if defined(HAVE_ICONV_H)
   size_t inbuflen, outbuflen;
   char *inbuf, outbuf[PR_TUNABLE_PATH_MAX*2], *res;
 
@@ -210,5 +210,4 @@ char *pr_utf8_encode(pool *p, const char *in, size_t inlen, size_t *outlen) {
   return pstrdup(p, in);
 #endif /* !HAVE_ICONV_H */
 }
-
 #endif /* PR_USE_NLS */

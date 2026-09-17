@@ -1847,7 +1847,7 @@ sub rang_stor_fails_too_little_data {
       my $buf = 'hel';
       $conn->write($buf, length($buf));
       eval { $conn->close() };
- 
+
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
       $client->quit();
@@ -1942,7 +1942,7 @@ sub rang_stor_fails_too_much_data {
       my $buf = 'Hello, World!\n';
       $conn->write($buf, length($buf));
       eval { $conn->close() };
- 
+
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg();
       $client->quit();

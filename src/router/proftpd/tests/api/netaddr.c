@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2021 The ProFTPD Project team
+ * Copyright (c) 2008-2023 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -85,7 +85,7 @@ START_TEST (netaddr_dup_test) {
 
   port = 7654;
   pr_netaddr_set_port2(addr, port);
-  
+
   res = pr_netaddr_dup(NULL, addr);
   ck_assert_msg(res == NULL, "Failed to handle null pool");
   ck_assert_msg(errno == EINVAL, "Failed to set errno to EINVAL");
@@ -422,8 +422,7 @@ START_TEST (netaddr_fnmatch_test) {
   ck_assert_msg(res == FALSE, "Expected FALSE, got %d", res);
 
   res = pr_netaddr_fnmatch(addr, "LOCAL*", flags);
-  if (getenv("CI") == NULL &&
-      getenv("TRAVIS") == NULL) {
+  if (getenv("CI") == NULL) {
     /* This test is sensitive the environment. */
     ck_assert_msg(res == TRUE, "Expected TRUE, got %d", res);
   }
@@ -885,8 +884,7 @@ START_TEST (netaddr_get_dnsstr_test) {
    * return either "localhost" or "localhost.localdomain".  Perhaps even
    * other variations, although these should be the most common.
    */
-  if (getenv("CI") == NULL &&
-      getenv("TRAVIS") == NULL) {
+  if (getenv("CI") == NULL) {
     /* This test is sensitive the environment. */
     ck_assert_msg(strcmp(res, "localhost") == 0 ||
                 strcmp(res, "localhost.localdomain") == 0,
@@ -1009,15 +1007,14 @@ START_TEST (netaddr_get_dnsstr_ipv6_test) {
    * return either "localhost" or "localhost.localdomain".  Perhaps even
    * other variations, although these should be the most common.
    */
-  if (getenv("CI") == NULL &&
-      getenv("TRAVIS") == NULL) {
+  if (getenv("CI") == NULL) {
     ck_assert_msg(strcmp(res, "localhost") == 0 ||
-                strcmp(res, "localhost.localdomain") == 0 ||
-                strcmp(res, "localhost6") == 0 ||
-                strcmp(res, "localhost6.localdomain") == 0 ||
-                strcmp(res, "ip6-localhost") == 0 ||
-                strcmp(res, "ip6-loopback") == 0 ||
-                strcmp(res, ip) == 0,
+                  strcmp(res, "localhost.localdomain") == 0 ||
+                  strcmp(res, "localhost6") == 0 ||
+                  strcmp(res, "localhost6.localdomain") == 0 ||
+                  strcmp(res, "ip6-localhost") == 0 ||
+                  strcmp(res, "ip6-loopback") == 0 ||
+                  strcmp(res, ip) == 0,
       "Expected '%s', got '%s'", "localhost, localhost.localdomain et al", res);
   }
 }

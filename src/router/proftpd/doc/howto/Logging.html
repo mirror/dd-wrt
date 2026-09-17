@@ -284,10 +284,30 @@ There are a variety of log analyzers available; these are just a few:
 On even a moderately busy server, the quantity of information stored in the log
 files is very large.  It will consequently be necessary to periodically rotate
 the log files by moving or deleting the existing logs. This cannot be done
-while the server is running, because the daemon will continue writing to the
-old log file as long as it holds the file open.  Instead, the server must be
-<a href="Stopping.html">restarted</a> after the log files are moved or deleted
-so that it will open new log files.
+while the processes are running, because the processes will continue writing to
+the old log file as long as they hold the file open.  Instead, the server must
+be <a href="Stopping.html">restarted</a> after the log files are moved or
+deleted so that the processes will open new log files.
+
+<p>
+The <code>SIGHUP</code> signal, for restarting ProFTPD, goes to the "master"
+daemon process, the process that is listening for new connections.  Whenever a
+new connection is received, the daemon process forks off a <i>separate new session process</i> which handles that connection, including logging for that
+session.
+
+<p>
+Part of handling of a session often involves handling the
+<code>DefaultRoot</code> directive, which uses the <code>chroot(2)</code>
+function to restrict the session process.  This means, in practice, that once
+the process is chrooted, it <b>cannot</b> re-open the configured log files
+anymore, as those log paths are not located within the restricted portion of
+the filesystem.
+
+<p>
+This means that any log rotation will need to handle the case where existing
+session processes continue writing to the old log files, until those sessions
+complete.  If one is using <code>logrotate</code>, for example, this means
+using the <code>copytruncate</code> and/or <code>delaycompress</code> settings.
 
 <p>
 Another way to perform log rotation is using <a href="#FIFOs">FIFOs</a> as
@@ -550,7 +570,7 @@ This should help many such log-parsing issues.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2017-2018 The ProFTPD Project<br>
+&copy; Copyright 2017-2024 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

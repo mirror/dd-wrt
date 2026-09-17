@@ -44,7 +44,7 @@ static void tear_down(void) {
     p = NULL;
     session.c = NULL;
     session.notes = NULL;
-  } 
+  }
 }
 
 START_TEST (random_next_range_10_test) {

@@ -167,10 +167,26 @@ The currently implemented options are:
   </li>
 
   <p>
+  <li><code>OptionalTableEntry</code><br>
+    <p>
+    If this option is used, then when <code>mod_auth_otp</code> requests
+    information for a user from the <code>AuthOTPTable</code> and no
+    information is found, it will allow other auth modules to handle the login
+    attempt, <b>even if <code>mod_auth_otp</code> is authoritative</b>.
+    This behavior allows for a seamless transition of your user base,
+    provisioning users with shared keys/secrets for their one-time passwords
+    as time allows.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.9rc1</code>.
+  </li>
+
+  <p>
   <li><code>RequireTableEntry</code><br>
     <p>
     When <code>mod_auth_otp</code> requests information for a user from the
-    <code>AuthOTPTable</code> and no information is found, it will normally
+    <code>AuthOTPTable</code> and no information is found, it <i>could</i>
     allow other auth modules to handle the login attempt, <b>even if
     <code>mod_auth_otp</code> is authoritative</b>.  This behavior allows
     for a seamless transition of your user base, provisioning users with
@@ -188,6 +204,11 @@ The currently implemented options are:
       AuthOrder mod_auth_otp.c* ...
       AuthOTPOptions RequireTableEntry StandardResponse
     </pre>
+
+    <p>
+    <b>Note</b> that as of ProFTPD 1.3.9rc1, this option is enabled by
+    default.  Use the <code>OptionalTableEntry</code> option to enable
+    the "opt in" behavior for supporting transitions.
   </li>
 </ul>
 
@@ -472,7 +493,7 @@ Then follow the usual steps:
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2015-2022 TJ Saunders<br>
+&copy; Copyright 2015-2023 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>
