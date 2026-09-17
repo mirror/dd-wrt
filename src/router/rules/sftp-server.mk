@@ -1,5 +1,5 @@
 sftp-server-configure:
-	cd openssh && ./configure \
+	cd openssh && autoreconf && ./configure \
 		--host=$(ARCH)-uclibc-linux \
 		--prefix=/usr \
 		--libdir=/usr/lib \
