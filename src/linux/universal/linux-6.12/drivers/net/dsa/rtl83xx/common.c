@@ -640,7 +640,7 @@ void rtldsa_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx)
  * Called from the L3 layer
  * The index in the L2 hash table is filled into nh->l2_id;
  */
-int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
+int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
 {
 	struct rtl838x_l2_entry e;
 	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
@@ -650,10 +650,6 @@ int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_next
 
 	pr_debug("%s searching for %08llx vid %d with key %d, seed: %016llx\n",
 		 __func__, nh->mac, nh->rvid, key, seed);
-
-	e.type = L2_UNICAST;
-	u64_to_ether_addr(nh->mac, &e.mac[0]);
-	e.port = nh->port;
 
 	/* Loop over all entries in the hash-bucket and over the second block on 93xx SoCs */
 	for (int i = 0; i < priv->r->l2_bucket_size; i++) {
@@ -682,15 +678,15 @@ int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_next
 		if (e.next_hop)
 			return 0;
 	} else {
+		/* The reader leaves the descriptor untouched on an invalid
+		 * entry, so what it holds here is either stack contents or a
+		 * neighbour read earlier in the loop.
+		 */
+		memset(&e, 0, sizeof(e));
+		e.type = L2_UNICAST;
 		e.valid = true;
 		e.is_static = true;
 		e.rvid = nh->rvid;
-		e.is_ip_mc = false;
-		e.is_ipv6_mc = false;
-		e.block_da = false;
-		e.block_sa = false;
-		e.suspended = false;
-		e.age = 0;			/* With port-ignore */
 		e.port = priv->r->port_ignore;
 		u64_to_ether_addr(nh->mac, &e.mac[0]);
 	}
@@ -707,17 +703,31 @@ int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_next
  * If it was static, the entire entry is removed, otherwise the nexthop bit is cleared
  * and we wait until the entry ages out
  */
-int rtl83xx_l2_nexthop_rm(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
+int rtldsa_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh)
 {
-	struct rtl838x_l2_entry e;
+	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
+	struct rtl838x_l2_entry e = {};
 	u32 key = nh->l2_id >> 2;
 	int i = nh->l2_id & 0x3;
-	u64 entry = entry = priv->r->read_l2_entry_using_hash(key, i, &e);
+	u64 entry = priv->r->read_l2_entry_using_hash(key, i, &e);
 
-	pr_debug("%s: id %d, key %d, index %d\n", __func__, nh->l2_id, key, i);
-	if (!e.valid) {
-		dev_err(priv->dev, "unknown nexthop, id %x\n", nh->l2_id);
-		return -1;
+	dev_dbg(priv->dev, "next hop %d sits at key %d, index %d\n", nh->l2_id, key, i);
+
+	/* The slot is addressed by the index the installer recorded, so ask the
+	 * entry whether it is still the one that was installed, comparing it on
+	 * the seed the installer searches by. Nothing counts the routes sharing
+	 * a next hop yet, so a sibling taken down first can get here.
+	 */
+	if (!e.valid || !e.next_hop) {
+		dev_err(priv->dev, "next hop %d is no longer one, leaving it alone\n",
+			nh->l2_id);
+		return -ESTALE;
+	}
+
+	if ((entry & 0x0fffffffffffffffULL) != seed) {
+		dev_err(priv->dev, "next hop %d now holds %pM, not removing it\n",
+			nh->l2_id, e.mac);
+		return -ESTALE;
 	}
 
 	if (e.is_static)
