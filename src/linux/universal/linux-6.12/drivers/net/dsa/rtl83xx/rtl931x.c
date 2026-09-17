@@ -1011,14 +1011,6 @@ static u64 rtldsa_931x_stat_port_table_read(int port, unsigned int mib_size,
 	return val[0];
 }
 
-/*
- * Configure per-port PHY ability source on RTL931x.
- * Copper ports with external PHYs use outband MDIO polling.
- * SFP ports with integrated PCS use the SerDes ability bus.
- */
-#define  RTLDSA_931X_PHY_ABLTY_OUTBAND_MDIO		0x0
-#define  RTLDSA_931X_PHY_ABLTY_SDS_ABLTY_BUS		0x2
-
 const struct rtldsa_config rtldsa_931x_cfg = {
 	.switch_ops = &rtldsa_93xx_switch_ops,
 	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
@@ -1070,6 +1062,8 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
 	.mac_link_sts = RTL931X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,
+	.mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |
+			    MAC_1000FD | MAC_2500FD | MAC_5000FD | MAC_10000FD,
 	.mac_max_len_reg = rtl931x_mac_max_len_reg,
 	.max_frame = RTL931X_MAX_FRAME,
 	.l2_port_new_salrn = rtl931x_l2_port_new_salrn,
