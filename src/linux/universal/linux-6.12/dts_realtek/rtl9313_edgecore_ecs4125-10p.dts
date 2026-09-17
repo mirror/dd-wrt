@@ -356,6 +356,7 @@
 &serdes12 { tx-polarity = <PHY_POL_INVERT>; };
 &serdes13 { tx-polarity = <PHY_POL_INVERT>; };
 */
+
 &uart1 {
 	status = "okay";
 };
