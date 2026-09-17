@@ -4098,6 +4098,7 @@ CONFIG_MSM_GCC_8660=y
 # CONFIG_SM_GCC_8250 is not set
 # CONFIG_SM_GCC_8350 is not set
 # CONFIG_SM_GCC_8450 is not set
+# CONFIG_SM_GCC_8550 is not set
 # CONFIG_SM_GPUCC_6350 is not set
 # CONFIG_SM_GPUCC_8150 is not set
 # CONFIG_SM_GPUCC_8250 is not set
