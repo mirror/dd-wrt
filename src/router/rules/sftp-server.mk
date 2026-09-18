@@ -22,6 +22,8 @@ sftp-server-configure:
 		--disable-strip \
 		--without-openssl \
 		--without-zlib \
+		--without-pie \
+		--without-stackprotect \
 		--without-kerberos5 \
 		--with-stackprotect \
 		--with-cflags-after="-fzero-call-used-regs=skip $(LTO) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections"
@@ -31,7 +33,7 @@ sftp-server-clean:
 	make -C openssh clean
 
 sftp-server: 
-	make -C openssh
+	make -C openssh sftp-server
 
 sftp-server-install:
 	install -D openssh/sftp-server $(INSTALLDIR)/sftp-server/usr/libexec/sftp-server	
