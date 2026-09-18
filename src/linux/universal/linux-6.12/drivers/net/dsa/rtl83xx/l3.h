@@ -77,6 +77,7 @@ struct otto_l3_route {
 	int prefix_len;			/* Network prefix len of the destination net */
 	bool is_host_route;
 	int id;				/* ID number of this route */
+	int row;			/* Row it occupies in the prefix route table */
 	struct rhlist_head linkage;
 	struct list_head list;		/* all routes, for lookups by destination */
 	u32 tb_id;			/* routing table the route came from */
@@ -104,6 +105,7 @@ struct otto_l3_config {
 	void (*get_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 *dmac_id, u16 *interface);
 	void (*set_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 dmac_id, u16 interface);
 	int (*route_lookup_hw)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt);
+	int (*route_rows_move)(struct otto_l3_ctrl *ctrl, int dst, int src, int count);
 	void (*route_read)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	void (*route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	int (*setup)(struct otto_l3_ctrl *ctrl);
