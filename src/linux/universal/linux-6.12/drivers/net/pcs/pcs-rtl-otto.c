@@ -726,8 +726,7 @@ static int rtpcs_sds_select_attachment(enum rtpcs_sds_mode hw_mode,
 //	case RTPCS_SDS_MODE_HISGMII:
 	case RTPCS_SDS_MODE_1000BASEX:
 	case RTPCS_SDS_MODE_2500BASEX:
-	case RTPCS_SDS_MODE_10GBASER:
-		*attachment = RTPCS_SDS_ATTACH_NONE;
+		*attachment = RTPCS_SDS_ATTACH_FIBER;
 		break;
 	default:
 		/*
