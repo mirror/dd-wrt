@@ -4257,10 +4257,12 @@ static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 	mutex_lock(&ctrl->lock);
 	switch (sds->hw_mode) {
 	case RTPCS_SDS_MODE_SGMII:
-	case RTPCS_SDS_MODE_HISGMII:
 	case RTPCS_SDS_MODE_1000BASEX:
 	case RTPCS_SDS_MODE_2500BASEX:
 		rtpcs_pcs_get_state_c37(sds, neg_mode, state);
+		break;
+	case RTPCS_SDS_MODE_HISGMII:
+		rtpcs_pcs_get_state_mac(link, state);
 		break;
 	default:
 		rtpcs_pcs_get_state_mac(link, state);
