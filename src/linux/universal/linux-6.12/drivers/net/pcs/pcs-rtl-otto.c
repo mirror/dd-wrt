@@ -3571,7 +3571,6 @@ static void rtpcs_931x_sds_10g_ana_post(struct rtpcs_serdes *sds)
 
 static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
 {
-	printk(KERN_INFO "%s: type %d\n", __func__, sds->type);
 	if (sds->type != RTPCS_SDS_TYPE_10G)
 		return;
 
