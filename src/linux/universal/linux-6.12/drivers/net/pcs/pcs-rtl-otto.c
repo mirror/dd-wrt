@@ -3595,7 +3595,7 @@ static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
  */
 static void rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
 {
-	dev_info(sds->ctrl->dev, "SerDes %u PHY-attached RX calibration...\n", sds->id);
+	dev_dbg(sds->ctrl->dev, "SerDes %u PHY-attached RX calibration...\n", sds->id);
 
 	rtpcs_931x_sds_rxeq_leq_set_coef(sds, 0);
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xd, 1, 0, 0x0);   /* undocumented */
@@ -3608,7 +3608,7 @@ static void rtpcs_931x_sds_rxcal_leq_adapt(struct rtpcs_serdes *sds)
 	rtpcs_931x_sds_rxeq_leq_set_adapt(sds, true);
 	msleep(100);
 
-	dev_info(sds->ctrl->dev, "SerDes %u LEQ = %#x\n", sds->id,
+	dev_dbg(sds->ctrl->dev, "SerDes %u LEQ = %#x\n", sds->id,
 		rtpcs_931x_sds_rxeq_leq_get_coef(sds));
 }
 
@@ -3634,7 +3634,7 @@ static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 	int i, samples = 0, symerr = -1;
 	bool link_up = false;
 
-	dev_info(dev, "SerDes %u fiber RX calibration...\n", sds->id);
+	dev_dbg(dev, "SerDes %u fiber RX calibration...\n", sds->id);
 	/* per-port calibration offset in the SDK, kept 0 here */
 	rtpcs_sds_write_bits(sds, PAGE_ANA_10G, 0xc, 14, 10, 0x0);
 
@@ -3666,7 +3666,7 @@ static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 		dev_warn(dev, "SerDes %u failed to read auto-adapted VTH\n", sds->id);
 	}
 
-	dev_info(dev, "SerDes %u VTH = %#x/%#x\n", sds->id, vth_p, vth_n);
+	dev_dbg(dev, "SerDes %u VTH = %#x/%#x\n", sds->id, vth_p, vth_n);
 
 	rtpcs_931x_sds_rxeq_tap_set_value(sds, 0, 31, 0);
 	rtpcs_931x_sds_rxeq_tap_set_adapt(sds, 0, false);
@@ -3700,7 +3700,7 @@ static void rtpcs_931x_sds_rxcal_fiber_adapt(struct rtpcs_serdes *sds)
 	}
 
 	if (link_up)
-		dev_info(dev, "SerDes %u fiber RX calibration: symErr still 0x%x after %d checks, link up anyway\n",
+		dev_dbg(dev, "SerDes %u fiber RX calibration: symErr still 0x%x after %d checks, link up anyway\n",
 			sds->id, symerr, i);
 	else
 		dev_warn(dev, "SerDes %u fiber RX calibration failed after %d symErr checks\n",
