@@ -312,8 +312,8 @@ void rtl839x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 	info->member_ports = u;
 	info->member_ports = (info->member_ports << 21) | ((v >> 11) & 0x1fffff);
 	info->profile_id = w >> 30 | ((v & 1) << 2);
-	info->hash_mc_fid = !!(w & BIT(2));
-	info->hash_uc_fid = !!(w & BIT(3));
+	info->hash_mc_fid = !!(v & BIT(1));
+	info->hash_uc_fid = !!(v & BIT(2));
 	info->fid = (v >> 3) & 0xff;
 
 	otto_table_read(RTL8390_TBL_UNTAG, vlan, &untag);
@@ -663,7 +663,7 @@ void rtl931x_vlan_tables_read(u32 vlan, struct rtldsa_vlan_info *info)
 	info->if_id = (x >> 20) & 0x3ff;
 	info->multicast_grp_mask = x & 0xffff;
 	if (y & BIT(31))
-		info->l2_tunnel_list_id = y >> 18;
+		info->l2_tunnel_list_id = (y >> 18) & 0x1fff;
 	else
 		info->l2_tunnel_list_id = -1;
 	pr_debug("%s read member %016llx, profile-id %d, uc %d, mc %d, intf-id %d\n", __func__,
@@ -685,7 +685,7 @@ void rtl931x_vlan_set_tagged(u32 vlan, struct rtldsa_vlan_info *info)
 	w |= info->fid & 0x7f;
 	x = info->hash_uc_fid ? BIT(31) : 0;
 	x |= info->hash_mc_fid ? BIT(30) : 0;
-	x |= info->if_id & 0x3ff << 20;
+	x |= ((u32)info->if_id & 0x3ff) << 20;
 	x |= (info->profile_id & 0xf) << 16;
 	x |= info->multicast_grp_mask & 0xffff;
 	if (info->l2_tunnel_list_id >= 0) {
@@ -771,31 +771,6 @@ void rtl931x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
 		sw_w32_mask(0xfff << 14, pvid << 14, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
 }
 
-static int rtldsa_vlan_prepare(struct dsa_switch *ds, int port,
-			       const struct switchdev_obj_port_vlan *vlan)
-{
-	struct rtldsa_vlan_info info;
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	priv->r->vlan_tables_read(0, &info);
-
-	pr_debug("VLAN 0: Member ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
-		 info.member_ports, info.untagged_ports, info.profile_id,
-		 info.hash_mc_fid, info.hash_uc_fid, info.fid);
-
-	priv->r->vlan_tables_read(1, &info);
-	pr_debug("VLAN 1: Member ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
-		 info.member_ports, info.untagged_ports, info.profile_id,
-		 info.hash_mc_fid, info.hash_uc_fid, info.fid);
-	priv->r->vlan_set_untagged(1, info.untagged_ports);
-	pr_debug("SET: Untagged ports, VLAN %d: %llx\n", 1, info.untagged_ports);
-
-	priv->r->vlan_set_tagged(1, &info);
-	pr_debug("SET: Member ports, VLAN %d: %llx\n", 1, info.member_ports);
-
-	return 0;
-}
-
 int rtldsa_vlan_filtering(struct dsa_switch *ds, int port,
 				 bool vlan_filtering,
 				 struct netlink_ext_ack *extack)
@@ -842,7 +817,6 @@ int rtldsa_vlan_add(struct dsa_switch *ds, int port,
 {
 	struct rtldsa_vlan_info info;
 	struct rtl838x_switch_priv *priv = ds->priv;
-	int err;
 
 	pr_debug("%s port %d, vid %d, flags %x\n",
 		 __func__, port, vlan->vid, vlan->flags);
@@ -855,10 +829,6 @@ int rtldsa_vlan_add(struct dsa_switch *ds, int port,
 		dev_err(priv->dev, "VLAN out of range: %d", vlan->vid);
 		return -ENOTSUPP;
 	}
-
-	err = rtldsa_vlan_prepare(ds, port, vlan);
-	if (err)
-		return err;
 
 	mutex_lock(&priv->reg_mutex);
 
@@ -889,8 +859,7 @@ int rtldsa_vlan_add(struct dsa_switch *ds, int port,
 	}
 
 	/* sanitize untagged_ports - must be a subset */
-	if (info.untagged_ports & ~info.member_ports)
-		info.untagged_ports = 0;
+	info.untagged_ports &= info.member_ports;
 
 	info.member_ports |= BIT_ULL(port);
 	if (vlan->flags & BRIDGE_VLAN_INFO_UNTAGGED)
@@ -978,26 +947,25 @@ int rtldsa_port_vlan_fast_age(struct dsa_switch *ds, int port, u16 vid)
 }
 
 int rtldsa_vlan_msti_set(struct dsa_switch *ds, struct dsa_bridge bridge,
-				const struct switchdev_vlan_msti *msti)
+			 const struct switchdev_vlan_msti *msti)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	struct rtldsa_vlan_info info;
 	u16 mst_slot_old;
 	int mst_slot;
 
-	priv->r->vlan_tables_read(msti->vid, &info);
-	mst_slot_old = info.fid;
+	scoped_guard(mutex, &priv->reg_mutex) {
+		priv->r->vlan_tables_read(msti->vid, &info);
+		mst_slot_old = info.fid;
 
-	/* find HW slot for MSTI */
-	mutex_lock(&priv->reg_mutex);
-	mst_slot = rtldsa_mst_replace(priv, msti->msti, mst_slot_old);
-	mutex_unlock(&priv->reg_mutex);
+		/* find HW slot for MSTI */
+		mst_slot = rtldsa_mst_replace(priv, msti->msti, mst_slot_old);
+		if (mst_slot < 0)
+			return mst_slot;
 
-	if (mst_slot < 0)
-		return mst_slot;
-
-	info.fid = mst_slot;
-	priv->r->vlan_set_tagged(msti->vid, &info);
+		info.fid = mst_slot;
+		priv->r->vlan_set_tagged(msti->vid, &info);
+	}
 
 	return 0;
 }
