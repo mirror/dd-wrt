@@ -67,7 +67,6 @@ struct rtl821x_shared_priv {
 	int ports;
 };
 
-/* TODO: for kernel 6.18 drop this function and use it from phy_package library instead */
 static void *phy_package_get_priv(struct phy_device *phydev)
 {
 	return phydev->shared->priv;

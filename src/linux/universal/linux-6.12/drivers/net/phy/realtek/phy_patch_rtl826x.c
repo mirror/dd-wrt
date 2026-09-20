@@ -70,7 +70,7 @@ static int rtl826x_phy_patch_wait(struct phy_device *phydev, u32 mmd_addr, u32 m
 	return 0;
 }
 
-static int rtl826x_phy_patch_sds_get(struct phy_device *phydev, u32 sds_page, u32 sds_reg)
+int rtl826x_phy_patch_sds_get(struct phy_device *phydev, u32 sds_page, u32 sds_reg)
 {
 	u32 sds_addr = 0x8000 + (sds_reg << 6) + sds_page;
 	int ret;
@@ -86,8 +86,8 @@ static int rtl826x_phy_patch_sds_get(struct phy_device *phydev, u32 sds_page, u3
 	return phy_read_mmd(phydev, MDIO_MMD_VEND1, 0x142);
 }
 
-static int rtl826x_phy_patch_sds_set(struct phy_device *phydev, u32 sds_page, u32 sds_reg,
-				     u32 data)
+int rtl826x_phy_patch_sds_set(struct phy_device *phydev, u32 sds_page, u32 sds_reg,
+			      u32 data)
 {
 	u32 sds_addr = 0x8800 + (sds_reg << 6) + sds_page;
 	int ret;
