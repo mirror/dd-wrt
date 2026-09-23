@@ -5600,7 +5600,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	snprintf(n, sizeof(n), "%s_distance", prefix);
 	char *distance = websGetVar(wp, n, NULL);
 	if (distance) {
-		nvram_nseti((int)get_length(atoi(distance)), "%s_distance", prefix);
+		nvram_nseti((int)set_length(atoi(distance)), "%s_distance", prefix);
 	}
 
 #ifdef HAVE_MADWIFI
