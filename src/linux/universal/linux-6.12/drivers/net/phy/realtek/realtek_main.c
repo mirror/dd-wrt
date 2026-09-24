@@ -21,6 +21,7 @@
 #include <linux/string_choices.h>
 #include <net/phy/realtek_phy.h>
 
+#include "../phylib.h"
 #include "realtek.h"
 
 #define RTL8201F_IER				0x13
@@ -298,8 +299,14 @@
 #define RTL826X_SDS_MAX_RESETS			20
 
 #define RTL826X_VEND1_PKG_MODEL			0x103
+#define   RTL826X_VEND1_PKG_MODEL_8251		0x8251
+#define   RTL826X_VEND1_PKG_MODEL_8254		0x8254
+#define   RTL826X_VEND1_PKG_MODEL_8261		0x8261
 #define RTL826X_VEND1_VERSION_ID		0x104
 #define   RTL826X_VEND1_VERSION_ID_VARIANT	GENMASK(2, 0)
+/* MODEL_CHAR_1ST/2ND encode "BE" (B=0x2, E=0x5) in bits 15:6 */
+#define   RTL826X_VEND1_VERSION_ID_MODEL	GENMASK(15, 6)
+#define   RTL826X_VEND1_VERSION_ID_MODEL_BE	0x1140
 
 #define RTL826X_VND2_INER			0xA424
 #define   RTL826X_VND2_INER_LINK_STATUS		BIT(4)
@@ -1629,10 +1636,10 @@ static int rtl822x_set_serdes_option_mode(struct phy_device *phydev, bool gen1)
 	__assign_bit(PHY_INTERFACE_MODE_SGMII, phydev->possible_interfaces,
 		     has_sgmii);
 
-    
+
 	__assign_bit(PHY_INTERFACE_MODE_HSGMII, phydev->possible_interfaces,
 		     has_hsgmii);
- 
+
 	if (!has_2500 && !has_sgmii && !has_hsgmii)
 		return 0;
 
@@ -2665,7 +2672,7 @@ static int rtl8251l_match_phy_device(struct phy_device *phydev,
 	if (data < 0)
 		return 0;
 
-	if (data != 0x8251)
+	if (data != RTL826X_VEND1_PKG_MODEL_8251)
 		return 0;
 
 	return 1;
@@ -2686,7 +2693,7 @@ static int rtl8254b_match_phy_device(struct phy_device *phydev,
 	if (data < 0)
 		return 0;
 
-	if (data != 0x8254)
+	if (data != RTL826X_VEND1_PKG_MODEL_8254)
 		return 0;
 
 	return 1;
@@ -2707,14 +2714,14 @@ static int rtl8261be_match_phy_device(struct phy_device *phydev,
 	if (data < 0)
 		return 0;
 
-	if (data == 0x8251)
+	if (data != RTL826X_VEND1_PKG_MODEL_8261)
 		return 0;
 
 	data = phy_read_mmd(phydev, MDIO_MMD_VEND1, RTL826X_VEND1_VERSION_ID);
 	if (data < 0)
 		return 0;
 
-	if ((data & 0xFFC0) != 0x1140)
+	if ((data & RTL826X_VEND1_VERSION_ID_MODEL) != RTL826X_VEND1_VERSION_ID_MODEL_BE)
 		return 0;
 
 	return 1;
@@ -2735,14 +2742,14 @@ static int rtl8261n_match_phy_device(struct phy_device *phydev,
 	if (data < 0)
 		return 0;
 
-	if (data == 0x8251)
+	if (data != RTL826X_VEND1_PKG_MODEL_8261)
 		return 0;
 
 	data = phy_read_mmd(phydev, MDIO_MMD_VEND1, RTL826X_VEND1_VERSION_ID);
 	if (data < 0)
 		return 0;
 
-	if ((data & 0xFFC0) == 0x1140)
+	if ((data & RTL826X_VEND1_VERSION_ID_MODEL) == RTL826X_VEND1_VERSION_ID_MODEL_BE)
 		return 0;
 
 	return 1;
@@ -2763,7 +2770,7 @@ static int rtl8264b_match_phy_device(struct phy_device *phydev,
 	if (data < 0)
 		return 0;
 
-	if (data == 0x8254)
+	if (data == RTL826X_VEND1_PKG_MODEL_8254)
 		return 0;
 
 	return 1;
@@ -3090,11 +3097,19 @@ static int rtl826x_probe(struct phy_device *phydev)
 	if (!priv->enable_pma_low_power)
 		phydev_warn(phydev, "PMA low-power suspend disabled\n");
 
+	/* Disable EEE due to link stability issues (incl. multi-G / rate-adapt) */
+//	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_100baseT_Full_BIT);
+//	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_1000baseT_Full_BIT);
+//	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_2500baseT_Full_BIT);
+//	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_5000baseT_Full_BIT);
+//	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_10000baseT_Full_BIT);
+
 	/* Disable EEE due to link stability issues */
 	phy_set_eee_broken(phydev, MDIO_EEE_100TX);
 	phy_set_eee_broken(phydev, MDIO_EEE_1000T);
-//	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_100baseT_Full_BIT);
-//	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_1000baseT_Full_BIT);
+	phy_set_eee_broken(phydev, MDIO_EEE_2_5GT);
+	phy_set_eee_broken(phydev, MDIO_EEE_5GT);
+	phy_set_eee_broken(phydev, MDIO_EEE_10GT);
 
 	ret = rtl826x_patch_db_init(phydev);
 	if (ret < 0)
@@ -3158,7 +3173,7 @@ static int rtl826x_config_init(struct phy_device *phydev)
 	if (ret < 0)
 		return ret;
 
-	/* toggle reset */
+	/* Soft-reset (MMD30.0x145); after release wait datasheet t7 SMI-ready */
 	ret = phy_set_bits_mmd(phydev, MDIO_MMD_VEND1, 0x145, BIT(0));
 	if (ret < 0)
 		return ret;
@@ -3174,7 +3189,7 @@ static int rtl826x_config_init(struct phy_device *phydev)
 		return ret;
 	}
 
-	msleep(30);
+	msleep(150);
 
 	ret = rtlgen_phy_patch(phydev);
 	if (ret) {
