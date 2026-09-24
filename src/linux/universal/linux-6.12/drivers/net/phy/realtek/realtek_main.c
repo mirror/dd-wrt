@@ -20,8 +20,6 @@
 #include <linux/crc32.h>
 #include <linux/string_choices.h>
 #include <net/phy/realtek_phy.h>
-
-#include "../phylib.h"
 #include "realtek.h"
 
 #define RTL8201F_IER				0x13
