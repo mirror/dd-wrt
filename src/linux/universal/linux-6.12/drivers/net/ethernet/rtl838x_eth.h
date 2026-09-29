@@ -188,14 +188,137 @@
 #define RTETH_93XX_TAG1_FWD_UCST_CPU		7
 #define RTETH_93XX_TAG1_FWD_BCST_CPU		8
 
-#define RTETH_93XX_TAG1_IGNORE_STP_MASK	GENMASK(2, 2)
+#define RTETH_93XX_TAG1_IGNORE_STP_MASK		GENMASK(2, 2)
 
-struct p_hdr;
-struct dsa_tag;
-struct rteth_ctrl;
-struct rteth_frag;
+#define RTETH_RING_OWN_HW			BIT(0)
+#define RTETH_RING_WRAP				BIT(1)
 
-struct rteth_config {
+#define RTETH_RX_RING_SIZE			128
+#define RTETH_RX_RINGS				2
+#define RTETH_TX_RING_SIZE			16
+#define RTETH_TX_RINGS				2
+#define RTETH_TX_TRIGGER(ctrl, ring)		((0x16 >> ring) & ctrl->cfg->tx_trigger_mask)
+
+#define RTETH_NOTIFY_EVENTS			10
+#define RTETH_NOTIFY_BLOCKS			10
+
+#define RTETH_RX_TRUNCATE_EN_93XX		BIT(6)
+#define RTETH_RX_TRUNCATE_EN_83XX		BIT(4)
+#define RTETH_TX_PAD_EN_838X			BIT(5)
+
+/* Ethernet header, two stacked VLAN tags (802.1ad QinQ) and FCS */
+#define RTETH_FRAME_OVERHEAD			(ETH_HLEN + 2 * VLAN_HLEN + ETH_FCS_LEN)
+/* Largest frame each family switches, as its datasheet and DSA rmon range have it */
+#define RTETH_838X_MAX_FRAME			10000
+#define RTETH_839X_MAX_FRAME			12288
+#define RTETH_930X_MAX_FRAME			12288
+#define RTETH_931X_MAX_FRAME			12288
+#define RTETH_SKB_FRAG_SIZE			1568
+#define RTETH_SKB_PAD				MAX(32, L1_CACHE_BYTES)
+#define RTETH_SKB_HEADROOM_FAST			(RTETH_SKB_PAD + NET_IP_ALIGN)
+#define RTETH_SKB_HEADROOM_SLOW			RTETH_SKB_PAD
+
+/* Define page pool that holds 2KB fragments in 4KB pages and has 8 safety pages */
+#define RTETH_PPOOL_FRAG_SIZE			2048
+#define RTETH_PPOOL_SIZE			(DIV_ROUND_UP(RTETH_RX_RING_SIZE, \
+						 PAGE_SIZE / RTETH_PPOOL_FRAG_SIZE) + 8)
+
+struct rteth_dsa_tag {
+	u8			reason;
+	u8			queue;
+	u16			port;
+	u8			l2_offloaded;
+	u8			prio;
+	bool			crc_error;
+};
+
+struct rteth_frag {
+	/* hardware header part as required by SoC */
+	dma_addr_t		dma;
+	u16			reserved;
+	u16			size;
+	u16			more:1;
+	u16			offset:15;
+	u16			len;
+	u16			cpu_tag[10];
+} __packed __aligned(1);
+
+/* SOC/driver shared coherent ring descriptors */
+struct rteth_rx_data {
+	dma_addr_t		ring[RTETH_RX_RING_SIZE];
+	struct rteth_frag	frag[RTETH_RX_RING_SIZE];
+};
+
+struct rteth_tx_data {
+	dma_addr_t		ring[RTETH_TX_RING_SIZE];
+	struct rteth_frag	frag[RTETH_TX_RING_SIZE];
+};
+
+/* driver-only ring descriptors */
+struct rteth_rx_info {
+	int			id;
+	int			slot;
+	struct rteth_ctrl	*ctrl;
+	struct napi_struct	napi;
+	struct page_pool	*pool;
+	struct sk_buff		*skb; /* unprocessed SKB from last receive loop */
+	struct page		*page[RTETH_RX_RING_SIZE];
+	unsigned int		offset[RTETH_RX_RING_SIZE];
+};
+
+struct rteth_tx_info {
+	unsigned int		send_count;  /* skbs handed to the hardware */
+	unsigned int		clean_count; /* skbs released after completion */
+	struct sk_buff		*skb[RTETH_TX_RING_SIZE];
+};
+
+struct n_event {
+	u32			type:2;
+	u32			fidVid:12;
+	u64			mac:48;
+	u32			slp:6;
+	u32			valid:1;
+	u32			reserved:27;
+} __packed __aligned(1);
+
+struct notify_block {
+	struct n_event		events[RTETH_NOTIFY_EVENTS];
+};
+
+struct notify_b {
+	struct notify_block	blocks[RTETH_NOTIFY_BLOCKS];
+	u32			reserved1[8];
+	u32			ring[RTETH_NOTIFY_BLOCKS];
+	u32			reserved2[8];
+};
+
+struct rteth_ctrl {
+	const struct rteth_cfg	*cfg;
+	struct regmap		*map;
+	struct net_device	*dev;
+	struct platform_device	*pdev;
+	void			*membase;
+	spinlock_t		lock;
+	struct mii_bus		*mii_bus;
+	struct phylink		*phylink;
+	struct phylink_config	phylink_config;
+	u32			lastEvent;
+	struct metadata_dst	*dsa_meta[RTETH_931X_CPU_PORT];
+	/* receive handling */
+	dma_addr_t		rx_dma;
+	spinlock_t		rx_lock;
+	struct rteth_rx_info	rx_info[RTETH_RX_RINGS];
+	struct rteth_rx_data	*rx_data;
+	bool			napi_enabled;
+	/* transmit handling */
+	dma_addr_t		tx_dma;
+	spinlock_t		tx_lock;
+	struct rteth_tx_info	tx_info[RTETH_TX_RINGS];
+	struct rteth_tx_data	*tx_data;
+	struct work_struct	reset_work;
+};
+
+struct rteth_cfg {
 	int cpu_port;
 	int max_mtu;
 	int rx_rings;
@@ -219,10 +342,10 @@ struct rteth_config {
 	int skb_headroom;
 	u32 mac_reg[RTETH_MAX_MAC_REGS];
 	int l2_tbl_flush_ctrl;
-	void (*confirm_and_disable_irqs)(struct rteth_ctrl *ctrl, unsigned long *rings, bool *l2);
+	void (*confirm_disable_irqs)(struct rteth_ctrl *ctrl, unsigned long *rings, bool *l2);
 	void (*enable_rx_irq)(struct rteth_ctrl *ctrl, int ring);
 	void (*create_tx_header)(struct rteth_frag *frag, unsigned int dest_port, int prio);
-	bool (*decode_tag)(struct rteth_frag *frag, struct dsa_tag *tag);
+	bool (*decode_tag)(struct rteth_frag *frag, struct rteth_dsa_tag *tag);
 	void (*hw_en_rxtx)(struct rteth_ctrl *ctrl);
 	void (*hw_init)(struct rteth_ctrl *ctrl);
 	void (*hw_stop)(struct rteth_ctrl *ctrl);
@@ -230,9 +353,10 @@ struct rteth_config {
 	int (*init_mac)(struct rteth_ctrl *ctrl);
 	void (*set_hol)(struct rteth_ctrl *ctrl);
 	void (*set_max_packet_length)(struct rteth_ctrl *ctrl, int len);
-	void (*setup_notify_ring_buffer)(struct rteth_ctrl *ctrl);
+	void (*setup_notify_buffer)(struct rteth_ctrl *ctrl);
 	void (*update_counter)(struct rteth_ctrl *ctrl, int ring, int released);
 	const struct net_device_ops *netdev_ops;
 };
+
 
 #endif /* _RTL838X_ETH_H */
