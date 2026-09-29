@@ -83,6 +83,7 @@
 
 #define RTPCS_93XX_SDS_MODE_SGMII		0x02
 #define RTPCS_93XX_SDS_MODE_1000BASEX		0x04
+#define RTPCS_93XX_SDS_MODE_100BASEX		0x05
 #define RTPCS_93XX_SDS_MODE_QSGMII		0x06
 #define RTPCS_93XX_SDS_MODE_USXGMII		0x0d
 #define RTPCS_93XX_SDS_MODE_XSGMII		0x10
@@ -798,6 +799,7 @@ static int rtpcs_sds_select_attachment(enum rtpcs_sds_mode hw_mode,
 	case RTPCS_SDS_MODE_OFF:
 		*attachment = RTPCS_SDS_ATTACH_NONE;
 		break;
+	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 	case RTPCS_SDS_MODE_2500BASEX:
 	case RTPCS_SDS_MODE_10GBASER:
@@ -823,7 +825,7 @@ static int rtpcs_generic_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int 
 					 const unsigned long *advertising)
 {
 	enum rtpcs_page phy_page = sds->ctrl->cfg->phy_page;
-	u16 bmcr, adv, adv_old;
+	u16 bmcr, adv, adv_old, speed;
 	bool changed = false;
 	int ret;
 
@@ -851,8 +853,22 @@ static int rtpcs_generic_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int 
 	}
 
 	bmcr = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? BMCR_ANENABLE : 0;
+	if (sds->hw_mode == RTPCS_SDS_MODE_100BASEX)
+		bmcr = 0;
 
 	ret = rtpcs_sds_write_mask(sds, phy_page, MII_BMCR, BMCR_ANENABLE, bmcr);
+	if (ret < 0)
+		return ret;
+
+	if (sds->hw_mode == RTPCS_SDS_MODE_100BASEX)
+		speed = BMCR_SPEED100;
+	else if (sds->hw_mode == RTPCS_SDS_MODE_1000BASEX && !bmcr)
+		speed = BMCR_SPEED1000;
+	else
+		return changed;
+
+	ret = rtpcs_sds_write_mask(sds, phy_page, MII_BMCR,
+				   BMCR_SPEED1000 | BMCR_SPEED100, speed);
 	if (ret < 0)
 		return ret;
 
@@ -868,6 +884,7 @@ static void rtpcs_generic_sds_restart_autoneg(struct rtpcs_serdes *sds)
 static int rtpcs_sds_select_pll_speed(enum rtpcs_sds_mode hw_mode, enum rtpcs_sds_pll_speed *speed)
 {
 	switch (hw_mode) {
+	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 	case RTPCS_SDS_MODE_SGMII:
 	case RTPCS_SDS_MODE_QSGMII:
@@ -1444,6 +1461,7 @@ static const s16 rtpcs_93xx_sds_hw_mode_vals[RTPCS_SDS_MODE_MAX] = {
 	[0 ... RTPCS_SDS_MODE_MAX - 1]		= -1,
 	[RTPCS_SDS_MODE_OFF]			= RTPCS_93XX_SDS_MODE_OFF,
 	[RTPCS_SDS_MODE_SGMII]			= RTPCS_93XX_SDS_MODE_SGMII,
+	[RTPCS_SDS_MODE_100BASEX]		= RTPCS_93XX_SDS_MODE_100BASEX,
 	[RTPCS_SDS_MODE_1000BASEX]		= RTPCS_93XX_SDS_MODE_1000BASEX,
 	[RTPCS_SDS_MODE_2500BASEX]		= RTPCS_93XX_SDS_MODE_2500BASEX,
 	[RTPCS_SDS_MODE_10GBASER]		= RTPCS_93XX_SDS_MODE_10GBASER,
@@ -1860,6 +1878,7 @@ static void rtpcs_93xx_sds_fill_caps(struct rtpcs_serdes *sds)
 		__set_bit(RTPCS_SDS_MODE_XSGMII, sds->supported_modes);
 		__set_bit(RTPCS_SDS_MODE_USXGMII, sds->supported_modes);
 
+		__set_bit(RTPCS_SDS_MODE_100BASEX, sds->supported_modes);
 		__set_bit(RTPCS_SDS_MODE_1000BASEX, sds->supported_modes);
 		__set_bit(RTPCS_SDS_MODE_2500BASEX, sds->supported_modes);
 		__set_bit(RTPCS_SDS_MODE_10GBASER, sds->supported_modes);
@@ -1874,6 +1893,7 @@ static int rtpcs_93xx_sds_get_cmu_page(enum rtpcs_sds_mode hw_mode)
 {
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 		return PAGE_ANA_1G2;
 	case RTPCS_SDS_MODE_2500BASEX:
@@ -3085,6 +3105,7 @@ static int rtpcs_930x_sds_config_hw_mode(struct rtpcs_serdes *sds, enum rtpcs_sd
 		return ret;
 
 	switch (hw_mode) {
+	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 	case RTPCS_SDS_MODE_SGMII:
 		ret = rtpcs_sds_apply_config(sds, rtpcs_930x_sds_cfg_ana_1g,
@@ -3293,6 +3314,7 @@ static int rtpcs_931x_sds_fiber_get_symerr(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_10GBASER:
 		symerr = rtpcs_sds_read_bits(sds, PAGE_TGR_STD_1, 0x1, 7, 0);
 		break;
+	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_SDS_EXT), 0x18, 2, 0, 0x0);
 
@@ -3323,6 +3345,7 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 		rtpcs_sds_xsg_write(sds, PAGE_SDS_EXT, 0x0, 0x0);
 		rtpcs_sds_xsg_write_bits(sds, PAGE_SDS_EXT, 0x1, 15, 8, 0x0);
 		break;
+	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_SDS_EXT), 0x18, 2, 0, 0x0);
 		rtpcs_sds_write_bits(sds, DIGI_1(PAGE_SDS_EXT), 0x3, 15, 8, 0x0);
@@ -4067,14 +4090,14 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_OFF:
 		break;
 
+	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 		rtpcs_sds_write_mask(sds, DIGI_1(PAGE_FIB_EXT), FIB_EXT_REG19,
 				     RTL931X_CFG_TX_MODE, 0);
-
-		rtpcs_sds_write_mask(sds, DIGI_1(PAGE_FIB), MII_BMCR,
-				     BMCR_SPEED1000 | BMCR_SPEED100, BMCR_SPEED1000);
 		rtpcs_sds_write_mask(sds, DIGI_1(PAGE_SDS), SDS_REG04,
-				     RTL931X_CFG_EN_LINK_FIB1G, RTL931X_CFG_EN_LINK_FIB1G);
+				     RTL931X_CFG_EN_LINK_FIB1G,
+				     hw_mode == RTPCS_SDS_MODE_1000BASEX ?
+				     RTL931X_CFG_EN_LINK_FIB1G : 0);
 		break;
 
 	case RTPCS_SDS_MODE_HISGMII:
@@ -4327,6 +4350,7 @@ static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 	mutex_lock(&ctrl->lock);
 	switch (sds->hw_mode) {
 	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_100BASEX:
 	case RTPCS_SDS_MODE_1000BASEX:
 	case RTPCS_SDS_MODE_2500BASEX:
 		rtpcs_pcs_get_state_c37(sds, neg_mode, state);
@@ -4362,7 +4386,8 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	enum rtpcs_sds_attachment attachment;
 	enum rtpcs_sds_usxgmii_submode submode;
 	enum rtpcs_sds_mode hw_mode;
-	int ret;
+	bool mode_changed;
+	int changed, ret;
 
 	ret = rtpcs_sds_select_hw_mode(sds, interface, &hw_mode, &submode);
 	if (ret < 0) {
@@ -4372,7 +4397,8 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	}
 
 	scoped_guard(mutex, &ctrl->lock) {
-		if (sds->hw_mode != hw_mode || sds->usxgmii_submode != submode) {
+		mode_changed = sds->hw_mode != hw_mode || sds->usxgmii_submode != submode;
+		if (mode_changed) {
 			ret = rtpcs_sds_config_polarity(sds, interface);
 			if (ret < 0) {
 				dev_err(ctrl->dev, "failed to configure polarity of SerDes %u\n",
@@ -4410,7 +4436,16 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			ret = sds->ops->activate(sds);
 			if (ret < 0)
 				return ret;
+		} else {
+			dev_dbg(ctrl->dev, "SerDes %u already in mode %s, no change\n",
+				sds->id, phy_modes(interface));
+		}
 
+		changed = sds->ops->set_autoneg(sds, neg_mode, advertising);
+		if (changed < 0)
+			return changed;
+
+		if (mode_changed) {
 			if (sds->ops->post_config) {
 				ret = sds->ops->post_config(sds, hw_mode);
 				if (ret < 0)
@@ -4421,14 +4456,10 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 
 			dev_info(ctrl->dev, "SerDes %u configured for %s mode\n",
 				 sds->id, phy_modes(interface));
-		} else
-			dev_dbg(ctrl->dev, "SerDes %u already in mode %s, no change\n",
-				 sds->id, phy_modes(interface));
-
-		ret = sds->ops->set_autoneg(sds, neg_mode, advertising);
+		}
 	}
 
-	return ret;
+	return changed;
 }
 
 static void rtpcs_mdio_bus_put(void *data)

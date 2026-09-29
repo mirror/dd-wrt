@@ -1151,6 +1151,8 @@ struct rtldsa_config {
 	u8 l2_bucket_size;
 	u16 n_mst;
 	u32 fib_entries;
+	enum otto_table_id l2_uc_tbl;
+	enum otto_table_id l2_cam_tbl;
 	int trk_ctrl;
 	int trk_hash_ctrl;
 	void (*stp_init)(void);
@@ -1410,7 +1412,8 @@ static inline struct rtldsa_l2_uc *rtldsa_l2_uc_lookup(struct rtl838x_switch_pri
 	return &priv->l2_uc_map[idx];
 }
 
-int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
+int rtldsa_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh,
+			  bool require_existing);
 int rtldsa_l2_nexthop_del(struct rtl838x_switch_priv *priv, struct otto_l3_nexthop *nh);
 
 #endif /* _RTL838X_H */

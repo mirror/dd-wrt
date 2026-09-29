@@ -990,17 +990,31 @@ static void otto_l3_route_compact(struct otto_l3_ctrl *ctrl, struct otto_l3_rout
 static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64 mac)
 {
 	struct rtl838x_switch_priv *priv = ctrl->priv;
-	struct rhlist_head *tmp, *list;
+	bool require_existing = ctrl->cfg->use_l3_tables;
 	struct otto_l3_route *r;
+	bool known;
 
+	/* The lookup runs in the section the rhashtable asks for and ends
+	 * there: on a kernel without preemptible RCU that section is
+	 * preempt_disable(), and every table op below it sleeps on a mutex.
+	 * Only whether the gateway is known leaves that section, so no
+	 * rhashtable pointer outlives it. The routes it would have walked are
+	 * the ones on the driver's own list with that gateway, and the work
+	 * queue that runs this is single threaded, which is what lets the rest
+	 * of the driver walk that list with no lock.
+	 */
 	rcu_read_lock();
-	list = rhltable_lookup(&ctrl->routes, &ip_addr, otto_l3_route_ht_params);
-	if (!list) {
-		rcu_read_unlock();
+	known = rhltable_lookup(&ctrl->routes, &ip_addr, otto_l3_route_ht_params);
+	rcu_read_unlock();
+	if (!known)
 		return -ENOENT;
-	}
 
-	rhl_for_each_entry_rcu(r, tmp, list, linkage) {
+	list_for_each_entry(r, &ctrl->routes_list, list) {
+		bool no_port;
+
+		if (r->gw_ip != ip_addr)
+			continue;
+
 		dev_dbg(ctrl->dev, "%s: Setting up fwding: ip %pI4, GW mac %016llx\n",
 			__func__, &ip_addr, mac);
 
@@ -1016,11 +1030,23 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 			ctrl->cfg->set_egress_mac(ctrl, r->id, mac);
 
 		/* Update ROUTING table: map gateway-mac and switch-mac id to route id */
-		if (!rtldsa_l2_nexthop_add(priv, &r->nh))
+		if (!rtldsa_l2_nexthop_add(priv, &r->nh, require_existing))
 			r->nh.l2_installed = true;
 
+		/* A next hop with no port delivers the frame twice, so where the
+		 * route entry can trap, let the CPU route it alone until an update
+		 * brings one, the way otto_l3_fib_add_v4() treats a host route
+		 * with no gateway. A family that routes through a PIE rule keeps
+		 * the rule it had.
+		 */
+		no_port = ctrl->cfg->use_l3_tables &&
+			  r->nh.port == priv->r->port_ignore;
+		if (no_port && r->attr.action != ROUTE_ACT_TRAP2CPU)
+			dev_info(ctrl->dev, "no port for %pI4, routing %pI4/%d in software\n",
+				 &ip_addr, &r->dst_ip, r->prefix_len);
+
 		r->attr.valid = true;
-		r->attr.action = ROUTE_ACT_FORWARD;
+		r->attr.action = no_port ? ROUTE_ACT_TRAP2CPU : ROUTE_ACT_FORWARD;
 		r->attr.type = ROUTE_TYPE_IP4UC;
 		r->attr.hit = false; /* Reset route-used indicator */
 
@@ -1078,7 +1104,6 @@ static int otto_l3_nexthop_update(struct otto_l3_ctrl *ctrl, __be32 ip_addr, u64
 			priv->r->pie_rule_write(priv, r->pr.id, &r->pr);
 		}
 	}
-	rcu_read_unlock();
 
 	return 0;
 }
@@ -1194,7 +1219,7 @@ static void otto_l3_route_remove(struct otto_l3_ctrl *ctrl, struct otto_l3_route
 		clear_bit(r->id - MAX_ROUTES, ctrl->host_route_use_bm);
 	} else {
 		/* If there is a HW representation of the route, delete it */
-		if (ctrl->cfg->route_lookup_hw) {
+		if (ctrl->cfg->route_lookup_hw && r->row >= FIRST_PREFIX_ROW) {
 			/* The route was written at the row we recorded, and a
 			 * route whose gateway never resolved has none. Ask the
 			 * hardware when it is not where we put it.
@@ -1378,14 +1403,62 @@ static int otto_l3_fib_check_v4(struct otto_l3_ctrl *ctrl,
 	return 0;
 }
 
+static void otto_l3_host_route_trap(struct otto_l3_ctrl *ctrl,
+				    struct fib_entry_notifier_info *info)
+{
+	struct otto_l3_route *route;
+	int slot;
+
+	route = otto_l3_host_route_alloc(ctrl, 0);
+	if (!route)
+		return;
+
+	route->dst_ip = info->dst;
+	route->prefix_len = info->dst_len;
+	route->tb_id = info->tb_id;
+	route->attr.valid = true;
+	route->attr.action = ROUTE_ACT_TRAP2CPU;
+	route->attr.type = ROUTE_TYPE_IP4UC;
+
+	slot = ctrl->cfg->find_slot(ctrl, route, true);
+	if (slot < 0)
+		slot = ctrl->cfg->find_slot(ctrl, route, false);
+
+	if (slot < 0) {
+		dev_err(ctrl->dev, "no slot for host route %pI4\n", &route->dst_ip);
+		return;
+	}
+
+	ctrl->cfg->host_route_write(ctrl, slot, route);
+}
+
 static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifier_info *info)
 {
-	struct net_device *ndev = fib_info_nh(info->fi, 0)->fib_nh_dev;
-	int vlan = is_vlan_dev(ndev) ? vlan_dev_vlan_id(ndev) : 0;
 	struct rtl838x_switch_priv *priv = ctrl->priv;
-	struct fib_nh *nh = fib_info_nh(info->fi, 0);
 	struct otto_l3_route *route;
-	int port;
+	struct net_device *ndev;
+	struct fib_nh *nh;
+	int port, vlan;
+
+	/* A route through a nexthop object is not offloaded and has no
+	 * nexthop array to read, but it can replace a route that is. An
+	 * offloaded shorter prefix would forward its traffic, so trap it where
+	 * the host table can hold it.
+	 */
+	if (info->fi->nh) {
+		dev_dbg(ctrl->dev, "route through a nexthop object, not offloaded\n");
+		route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst,
+					   NULL, info->dst_len);
+		if (route)
+			otto_l3_route_teardown(ctrl, route);
+		if (info->dst_len == 32 && ctrl->cfg->host_route_write)
+			otto_l3_host_route_trap(ctrl, info);
+		return 0;
+	}
+
+	nh = fib_info_nh(info->fi, 0);
+	ndev = nh->fib_nh_dev;
+	vlan = is_vlan_dev(ndev) ? vlan_dev_vlan_id(ndev) : 0;
 
 	if (otto_l3_fib_check_v4(ctrl, info, FIB_EVENT_ENTRY_ADD))
 		return 0;
@@ -1478,10 +1551,21 @@ out_free_rt:
 
 static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifier_info *info)
 {
-	struct fib_nh *nh = fib_info_nh(info->fi, 0);
 	struct rhlist_head *tmp, *list;
 	struct otto_l3_route *route;
 	bool found = false;
+	struct fib_nh *nh;
+
+	/* A route through a nexthop object holds at most a trap entry */
+	if (info->fi->nh) {
+		route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst,
+					   NULL, info->dst_len);
+		if (route)
+			otto_l3_route_teardown(ctrl, route);
+		return 0;
+	}
+
+	nh = fib_info_nh(info->fi, 0);
 
 	if (otto_l3_fib_check_v4(ctrl, info, FIB_EVENT_ENTRY_DEL))
 		return 0;
@@ -1652,7 +1736,7 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 	struct otto_l3_net_event_work *net_work;
 	struct neighbour *n = ptr;
 	struct net_device *dev;
-	int err, port;
+	int port;
 
 	switch (event) {
 	case NETEVENT_NEIGH_UPDATE:
@@ -1682,8 +1766,6 @@ static int otto_l3_netevent_notifier(struct notifier_block *this, unsigned long 
 		dev_dbg(ctrl->dev, "updating neighbour on port %d, mac %016llx\n",
 			port, net_work->mac);
 		queue_work(priv->wq, &net_work->work);
-		if (err)
-			netdev_warn(dev, "failed to handle neigh update (err %d)\n", err);
 		break;
 	}
 
