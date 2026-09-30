@@ -230,7 +230,7 @@ static bool rteth_93xx_decode_tag(struct rteth_frag *frag, struct rteth_dsa_tag 
 	t->queue = (frag->cpu_tag[2] >> 11) & 0x1f;
 	t->reason = frag->cpu_tag[7] & 0x3f;
 	t->crc_error = frag->cpu_tag[1] & BIT(6);
-	t->l2_offloaded = (t->reason >= 19 && t->reason <= 27) ? 0 : 1;
+	t->l2_offloaded = (t->reason >= 19 && t->reason <= 28) ? 0 : 1;
 
 	if (t->reason != 63)
 		pr_debug("%s: Reason %d, port %d, queue %d\n", __func__, t->reason, t->port, t->queue);
@@ -1005,7 +1005,10 @@ static void rteth_930x_set_rx_mode(struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
-	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
+	/* Trap all classes of RMA addresses (01-80-C2-00-00-{01..2F}) to the
+	 * CPU. On RTL93xx, 3 in an RMA action field traps to the master CPU,
+	 * which on a standalone switch is this one; unlike RTL838x, there is
+	 * no flood action for these addresses.
 	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
 	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00
 	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
@@ -1025,7 +1028,10 @@ static void rteth_931x_set_rx_mode(struct net_device *dev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
-	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
+	/* Trap all classes of RMA addresses (01-80-C2-00-00-{01..2F}) to the
+	 * CPU. On RTL93xx, 3 in an RMA action field traps to the master CPU,
+	 * which on a standalone switch is this one; unlike RTL838x, there is
+	 * no flood action for these addresses.
 	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
 	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00.
 	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
