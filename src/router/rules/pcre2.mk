@@ -1,6 +1,20 @@
+ifeq ($(ARCH),arm)
+PCRE2_JIT=--enable-jit
+endif
+ifeq ($(ARCH),aarch64)
+PCRE2_JIT=--enable-jit
+endif
+ifeq ($(ARCH),i386)
+PCRE2_JIT=--enable-jit
+endif
+ifeq ($(ARCH),x86_64)
+PCRE2_JIT=--enable-jit
+endif
+
+
 pcre2-configure:
 	cd pcre2 && autoreconf -fi
-	cd pcre2 && ./configure --host=$(ARCH)-linux-uclibc CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF" --prefix=/usr --disable-xmldoc --enable-utf8 --enable-unicode-properties --disable-pcretest-libreadline --libdir=$(TOP)/pcre2/.libs
+	cd pcre2 && ./configure --host=$(ARCH)-linux-uclibc $(PCRE2_JIT) CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF" --prefix=/usr --disable-xmldoc --enable-utf8 --enable-unicode-properties --disable-pcretest-libreadline --libdir=$(TOP)/pcre2/.libs
 	touch $(TOP)/pcre2/*   
 
 
