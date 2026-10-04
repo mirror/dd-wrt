@@ -10,7 +10,7 @@ RC=0
 7:PATTERN at the start of a line.
 8:In the middle of a line, PATTERN appears.
 10:This pattern is in lower case.
-623:Check up on PATTERN near the end.
+642:Check up on PATTERN near the end.
 RC=0
 ---------------------------- Test 4 ------------------------------
 4
@@ -19,7 +19,7 @@ RC=0
 ./testdata/grepinput:7:PATTERN at the start of a line.
 ./testdata/grepinput:8:In the middle of a line, PATTERN appears.
 ./testdata/grepinput:10:This pattern is in lower case.
-./testdata/grepinput:623:Check up on PATTERN near the end.
+./testdata/grepinput:642:Check up on PATTERN near the end.
 ./testdata/grepinputx:3:Here is the pattern again.
 ./testdata/grepinputx:5:Pattern
 ./testdata/grepinputx:42:This line contains pattern not on a line by itself.
@@ -28,7 +28,7 @@ RC=0
 7:PATTERN at the start of a line.
 8:In the middle of a line, PATTERN appears.
 10:This pattern is in lower case.
-623:Check up on PATTERN near the end.
+642:Check up on PATTERN near the end.
 3:Here is the pattern again.
 5:Pattern
 42:This line contains pattern not on a line by itself.
@@ -45,7 +45,7 @@ RC=0
 ---------------------------- Test 10 -----------------------------
 RC=1
 ---------------------------- Test 11 -----------------------------
-1:This is a second file of input for the pcregrep tests.
+1:This is a second file of input for the pcre2grep tests.
 2:
 4:
 5:Pattern
@@ -100,7 +100,7 @@ RC=0
 ./testdata/grepinputx:To pat or not to pat, that is the question.
 RC=0
 ---------------------------- Test 15 -----------------------------
-pcre2grep: Error in command-line regex at offset 4: quantifier does not follow a repeatable item
+pcre2grep: Error in command-line regex at offset 5: quantifier does not follow a repeatable item
 RC=2
 ---------------------------- Test 16 -----------------------------
 pcre2grep: Failed to open ./testdata/nonexistfile: No such file or directory
@@ -324,12 +324,12 @@ RC=0
 ./testdata/grepinput-9-
 ./testdata/grepinput:10:This pattern is in lower case.
 --
-./testdata/grepinput-620-PUT NEW DATA ABOVE THIS LINE.
-./testdata/grepinput-621-=============================
-./testdata/grepinput-622-
-./testdata/grepinput:623:Check up on PATTERN near the end.
+./testdata/grepinput-639-PUT NEW DATA ABOVE THIS LINE.
+./testdata/grepinput-640-=============================
+./testdata/grepinput-641-
+./testdata/grepinput:642:Check up on PATTERN near the end.
 --
-./testdata/grepinputx-1-This is a second file of input for the pcregrep tests.
+./testdata/grepinputx-1-This is a second file of input for the pcre2grep tests.
 ./testdata/grepinputx-2-
 ./testdata/grepinputx:3:Here is the pattern again.
 ./testdata/grepinputx-4-
@@ -349,8 +349,8 @@ RC=0
 ./testdata/grepinput-12-Here follows a whole lot of stuff that makes the file over 24KiB long.
 ./testdata/grepinput-13-
 --
-./testdata/grepinput:623:Check up on PATTERN near the end.
-./testdata/grepinput-624-This is the last line of this file.
+./testdata/grepinput:642:Check up on PATTERN near the end.
+./testdata/grepinput-643-This is the last line of this file.
 --
 ./testdata/grepinputx:3:Here is the pattern again.
 ./testdata/grepinputx-4-
@@ -425,6 +425,7 @@ RC=0
 595:before
 595:zero
 596:zero
+597:after
 597:zero
 RC=0
 ---------------------------- Test 45 ------------------------------
@@ -434,7 +435,13 @@ RC=0
 597:binary
 RC=0
 ---------------------------- Test 46 ------------------------------
+pcre2grep: Error in 1st command-line regex at offset 9: unmatched closing parenthesis
+RC=2
 pcre2grep: Error in 2nd command-line regex at offset 9: missing closing parenthesis
+RC=2
+pcre2grep: Error in 3rd command-line regex at offset 9: missing terminating ] for character class
+RC=2
+pcre2grep: Error in 4th command-line regex at offset 9: missing terminating ] for character class
 RC=2
 ---------------------------- Test 47 ------------------------------
 AB.VE
@@ -460,6 +467,7 @@ The word is cat in this line
 The caterpillar sat on the mat
 The snowcat is not an animal
 A buried feline in the syndicate
+trailing spaces 
 RC=0
 ---------------------------- Test 52 ------------------------------
 fox [1;31mjumps[0m
@@ -488,7 +496,10 @@ RC=0
 ./testdata/grepinput:456
 ./testdata/grepinput3:0
 ./testdata/grepinput8:0
+./testdata/grepinputBad8:0
+./testdata/grepinputBad8_Trail:0
 ./testdata/grepinputM:0
+./testdata/grepinputUN:0
 ./testdata/grepinputv:1
 ./testdata/grepinputx:0
 RC=0
@@ -550,7 +561,7 @@ RC=0
 pear
 RC=0
 ---------------------------- Test 69 -----------------------------
-1:This is a second file of input for the pcregrep tests.
+1:This is a second file of input for the pcre2grep tests.
 2:
 4:
 5:Pattern
@@ -717,6 +728,8 @@ RC=0
 ---------------------------- Test 96 -----------------------------
 ./testdata/grepinput3
 ./testdata/grepinput8
+./testdata/grepinputBad8
+./testdata/grepinputBad8_Trail
 ./testdata/grepinputx
 RC=0
 ---------------------------- Test 97 -----------------------------
@@ -828,7 +841,10 @@ RC=0
 testdata/grepinput:469
 testdata/grepinput3:0
 testdata/grepinput8:0
+testdata/grepinputBad8:0
+testdata/grepinputBad8_Trail:0
 testdata/grepinputM:2
+testdata/grepinputUN:0
 testdata/grepinputv:3
 testdata/grepinputx:6
 TOTAL:480
@@ -847,7 +863,10 @@ RC=0
 469
 0
 0
+0
+0
 2
+0
 3
 6
 480
@@ -855,6 +874,9 @@ RC=0
 ---------------------------- Test 118 -----------------------------
 testdata/grepinput3
 testdata/grepinput8
+testdata/grepinputBad8
+testdata/grepinputBad8_Trail
+testdata/grepinputUN
 RC=0
 ---------------------------- Test 119 -----------------------------
 123
@@ -871,6 +893,22 @@ RC=0
 ./testdata/grepinput:a binary zero:zeroa
 ./testdata/grepinput:the binary zero.:zerothe.
 RC=0
+./testdata/grepinput:the binary zero.:zerothe.
+./testdata/grepinput:a binary zero:zeroa
+./testdata/grepinput:the binary zero.:zerothe.
+RC=0
+the binary zero.:	
+RC=0
+pcre2grep: Error in output text at offset 2: decimal number expected
+RC=2
+pcre2grep: Error in output text at offset 3: no character after $
+RC=2
+pcre2grep: Error in output text at offset 8: too many hex digits
+RC=2
+pcre2grep: Error in output text at offset 5: missing closing brace
+RC=2
+pcre2grep: Error in output text at offset 7: code point greater than 0xff is invalid
+RC=2
 ---------------------------- Test 121 -----------------------------
 This line contains \E and (regex) *meta* [characters].
 RC=0
@@ -946,9 +984,13 @@ RC=0
 RC=0
 [1;31ma[0mb[1;31mc[0md
 RC=0
+[1;20ma[0mb[1;20mc[0md
+RC=0
 ---------------------------- Test 126 -----------------------------
 ABC XYZ
 RC=0
+pcre2grep: Error in regex in line 2 of testtemp1grep at offset 5: unmatched closing parenthesis
+RC=2
 ---------------------------- Test 127 -----------------------------
 pattern
 RC=0
@@ -978,5 +1020,331 @@ match 2:
  a
 RC=0
 ---------------------------- Test 133 -----------------------------
-=AB3CD5=
+match 1:
+ a
+match 2:
+ b
+---
+match 2:
+ b
+match 3:
+ c
+RC=0
+---------------------------- Test 134 -----------------------------
+(standard input):2:=AB3CD5=
+RC=0
+---------------------------- Test 135 -----------------------------
+./testdata/grepinputv@The word is cat in this line
+RC=0
+./testdata/grepinputv@./testdata/grepinputv@RC=0
+./testdata/grepinputv@This line contains \E and (regex) *meta* [characters].
+./testdata/grepinputv@The word is cat in this line
+./testdata/grepinputv@The caterpillar sat on the mat
+RC=0
+testdata/grepinputM 3:start end in between start
+end and following
+testdata/grepinputM 7:start end in between start
+end and following start
+end other stuff
+testdata/grepinputM 11:start end in between start
+
+end
+testdata/grepinputM 16:start end in between start
+end
+RC=0
+---------------------------- Test 136 -----------------------------
+pcre2grep: Malformed number "1MK" after -m
+Usage: pcre2grep [-AaBCcDdEeFfHhIilLMmNnOoPqrstuUVvwxZ] [long options] [pattern] [files]
+Type "pcre2grep --help" for more information and the long options.
+RC=2
+pcre2grep: Malformed number "1MK" after --max-count
+Usage: pcre2grep [-AaBCcDdEeFfHhIilLMmNnOoPqrstuUVvwxZ] [long options] [pattern] [files]
+Type "pcre2grep --help" for more information and the long options.
+RC=2
+---------------------------- Test 137 -----------------------------
+Last line
+has no newline
+RC=0
+---------------------------- Test 138 -----------------------------
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: pcre2_match() gave error -63 while matching this text:
+
+AbC
+
+pcre2grep: Too many errors - abandoned.
+pcre2grep: Error -46, -47, -53 or -63 means that a resource limit was exceeded.
+pcre2grep: Check your regex for nested unlimited loops.
+RC=2
+---------------------------- Test 139 -----------------------------
+fox jumps
+RC=0
+---------------------------- Test 140 -----------------------------
+The quick brown
+fox jumps
+RC=0
+---------------------------- Test 141 -----------------------------
+(standard input):This is a line from stdin.
+RC=0
+---------------------------- Test 142 -----------------------------
+pcre2grep: Failed to open /does/not/exist: No such file or directory
+RC=2
+---------------------------- Test 143 -----------------------------
+fox jumps
+The word is cat in this line
+The caterpillar sat on the mat
+The snowcat is not an animal
+A buried feline in the syndicate
+RC=0
+---------------------------- Test 144 -----------------------------
+pcre2grep: Failed to open /non/exist: No such file or directory
+RC=2
+---------------------------- Test 145 -----------------------------
+The quick brown
+fox jumps
+over the lazy dog.
+This time it jumps and jumps and jumps.
+This line contains \E and (regex) *meta* [characters].
+The word is cat in this line
+The caterpillar sat on the mat
+The snowcat is not an animal
+A buried feline in the syndicate
+trailing spaces 
+RC=0
+---------------------------- Test 146 -----------------------------
+(standard input):A123B
+RC=0
+A123B
+fox jumps
+RC=0
+Usage: pcre2grep [-AaBCcDdEeFfHhIilLMmNnOoPqrstuUVvwxZ] [long options] [pattern] [files]
+Type "pcre2grep --help" for more information and the long options.
+RC=2
+---------------------------- Test 147 -----------------------------
+pcre2grep: Failed to open -nonfile: No such file or directory
+RC=2
+C123D
+RC=0
+testtemp1grep:A123B
+-testtemp1grep:C123D
+RC=0
+A123B
+RC=0
+E123F
+RC=0
+---------------------------- Test 148 -----------------------------
+pcre2grep: Unknown option --nonexist
+Usage: pcre2grep [-AaBCcDdEeFfHhIilLMmNnOoPqrstuUVvwxZ] [long options] [pattern] [files]
+Type "pcre2grep --help" for more information and the long options.
+RC=2
+pcre2grep: Unknown option letter '-' in "-n-n-bad"
+Usage: pcre2grep [-AaBCcDdEeFfHhIilLMmNnOoPqrstuUVvwxZ] [long options] [pattern] [files]
+Type "pcre2grep --help" for more information and the long options.
+RC=2
+pcre2grep: Data missing after --context
+Usage: pcre2grep [-AaBCcDdEeFfHhIilLMmNnOoPqrstuUVvwxZ] [long options] [pattern] [files]
+Type "pcre2grep --help" for more information and the long options.
+RC=2
+pcre2grep: Cannot mix --only-matching, --output, --file-offsets and/or --line-offsets
+Usage: pcre2grep [-AaBCcDdEeFfHhIilLMmNnOoPqrstuUVvwxZ] [long options] [pattern] [files]
+Type "pcre2grep --help" for more information and the long options.
+RC=2
+pcre2grep: Unknown colour setting "badvalue"
+RC=2
+pcre2grep: Invalid newline specifier "badvalue"
+RC=2
+pcre2grep: Invalid value "badvalue" for -d
+RC=2
+pcre2grep: Invalid value "badvalue" for -D
+RC=2
+pcre2grep: --buffer-size must be greater than zero
+RC=2
+pcre2grep: Error in --exclude regex at offset 7: missing closing parenthesis
+RC=2
+pcre2grep: Failed to open /non/exist: No such file or directory
+RC=2
+pcre2grep: Failed to open /non/exist: No such file or directory
+RC=2
+pcre2grep: Failed to open /non/exist: No such file or directory
+RC=2
+---------------------------- Test 149 -----------------------------
+Binary file ./testdata/grepbinary matches
+RC=0
+pcre2grep: unknown value "wrong" for binary-files
+Usage: pcre2grep [-AaBCcDdEeFfHhIilLMmNnOoPqrstuUVvwxZ] [long options] [pattern] [files]
+Type "pcre2grep --help" for more information and the long options.
+RC=2
+---------------------------- Test 150 -----------------------------
+pcre2grep: Failed to set locale locale.bad (obtained from LC_CTYPE)
+RC=2
+---------------------------- Test 151 -----------------------------
+[1;31mThe[0m quick brown
+[1;31mThe wo[0mrd is cat in [1;31mthis[0m line
+[1;31mThe[0m caterpillar sat on the mat
+[1;31mThe[0m snowcat is not an animal
+RC=0
+---------------------------- Test 152 -----------------------------
+24:four
+25-five
+26-six
+27-seven
+++
+34:fourteen
+35-fifteen
+36-sixteen
+37-seventeen
+RC=0
+---------------------------- Test 153 -----------------------------
+24:four
+25-five
+26-six
+27-seven
+34:fourteen
+35-fifteen
+36-sixteen
+37-seventeen
+RC=0
+---------------------------- Test 154 -----------------------------
+RC=1
+---------------------------- Test 155 -----------------------------
+RC=1
+---------------------------- Test 156 -----------------------------
+The quick brown
+fox jumps
+over the lazy dog.
+This time it jumps and jumps and jumps.
+This line contains \E and (regex) *meta* [characters].
+The word is cat in this line
+The caterpillar sat on the mat
+The snowcat is not an animal
+A buried feline in the syndicate
+trailing spaces 
+RC=0
+---------------------------- Test 157 -----------------------------
+RC=0
+---------------------------- Test 158 -----------------------------
+trailing spaces 
+RC=0
+---------------------------- Test 159 -----------------------------
+trailing spaces 
+RC=0
+---------------------------- Test 160 -----------------------------
+622-bnm
+623-asd
+624-qwe
+625:ert
+626-tyu
+627-uio
+628-ggg
+629-asd
+630-dfg
+631-ghj
+632:jkl
+633-abx
+634-def
+635-ghi
+RC=0
+621-cvb
+622-bnm
+623-asd
+624-qwe
+625:ert
+626-tyu
+627-uio
+628-ggg
+629-asd
+630:dfg
+631-ghj
+632-jkl
+RC=0
+---------------------------- Test 161 -----------------------------
+foo
+RC=0
+foo
+RC=0
+1:1,3
+RC=0
+1,3
 RC=0

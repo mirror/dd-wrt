@@ -4,14 +4,28 @@
 #forbid_utf
 #newline_default lf any anycrlf
 
-/ab/
-\= Expect error message (too big char) and no match
-    A\x{123}B
-    A\o{443}B
-  
+#if !ebcdic
+
+/a\xc4\xa3b/
+    a\N{U+123}b
+\= Expect no match # error message (too big char)
+    a\x{0123}b
+    a\o{00443}b
+    a\443b
+
+/fd bf bf bf bf bf/I,hex
+\= Expect warning
+    \N{U+7fffffff}
+\= Expect no match # error message (too big char)
+    \x{7fffffff}
+
+#endif
+
 /\x{100}/I
 
 /\o{400}/I
+
+#if !ebcdic
 
 /  (?: [\040\t] |  \(
 (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  |  \( (?:  [^\\\x80-\xff\n\015()]  |  \\ [^\x80-\xff]  )* \)  )*
@@ -208,6 +222,8 @@
 \)  )*                       # optional trailing comment
 /Ix
 
+#endif
+
 /\h/I
 
 /\H/I
@@ -232,7 +248,11 @@
 
 /[\V]/B
 
+#if !ebcdic
+
 /[\x0a\V]/B
+
+#endif
 
 /\777/I
 
@@ -252,7 +272,11 @@
 
 /[\u0100-\u0200]/alt_bsux,allow_empty_class,match_unset_backref,dupnames
 
+#if !ebcdic
+
 /[^\x00-a]{12,}[^b-\xff]*/B
+
+#endif
 
 /[^\s]*\s* [^\W]+\W+ [^\d]*?\d0 [^\d\w]{4,6}?\w*A/B
 
@@ -262,5 +286,15 @@
 
 /(?i:A{1,}\6666666666)/
     A\x{1b6}6666666
+
+# Should cause an error
+/abc/substitute_extended,replace=>\777<
+    abc
+
+# Should cause an error
+/abc/substitute_extended,replace=>\o{012345}<
+    abc
+
+/i/turkish_casing
 
 # End of testinput9

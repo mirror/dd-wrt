@@ -7,15 +7,23 @@ ACLOCAL_AMFLAGS = -I m4
 
 AM_CPPFLAGS="-I$(srcdir)/src"
 
+## Set some variables to accumulate conditionally-set Automake targets.
+
+CLEAN_LOCAL_TARGETS=
+DISTCLEAN_LOCAL_TARGETS=
+PHONY_TARGETS=
+
 ## Specify the documentation files that are distributed.
 
 dist_doc_DATA = \
-  AUTHORS \
+  AUTHORS.md \
   COPYING \
   ChangeLog \
-  LICENCE \
+  LICENCE.md \
   NEWS \
   README \
+  SECURITY.md \
+  SUPPORT-LIFECYCLE.md \
   doc/pcre2.txt \
   doc/pcre2-config.txt \
   doc/pcre2grep.txt \
@@ -46,6 +54,7 @@ dist_html_DATA = \
   doc/html/pcre2_general_context_free.html \
   doc/html/pcre2_get_error_message.html \
   doc/html/pcre2_get_mark.html \
+  doc/html/pcre2_get_match_data_heapframes_size.html \
   doc/html/pcre2_get_match_data_size.html \
   doc/html/pcre2_get_ovector_count.html \
   doc/html/pcre2_get_ovector_pointer.html \
@@ -65,6 +74,7 @@ dist_html_DATA = \
   doc/html/pcre2_match_data_create.html \
   doc/html/pcre2_match_data_create_from_pattern.html \
   doc/html/pcre2_match_data_free.html \
+  doc/html/pcre2_next_match.html \
   doc/html/pcre2_pattern_convert.html \
   doc/html/pcre2_pattern_info.html \
   doc/html/pcre2_serialize_decode.html \
@@ -81,13 +91,17 @@ dist_html_DATA = \
   doc/html/pcre2_set_glob_separator.html \
   doc/html/pcre2_set_heap_limit.html \
   doc/html/pcre2_set_match_limit.html \
+  doc/html/pcre2_set_max_pattern_compiled_length.html \
   doc/html/pcre2_set_max_pattern_length.html \
+  doc/html/pcre2_set_max_varlookbehind.html \
   doc/html/pcre2_set_offset_limit.html \
+  doc/html/pcre2_set_optimize.html \
   doc/html/pcre2_set_newline.html \
   doc/html/pcre2_set_parens_nest_limit.html \
   doc/html/pcre2_set_recursion_limit.html \
   doc/html/pcre2_set_recursion_memory_management.html \
   doc/html/pcre2_set_substitute_callout.html \
+  doc/html/pcre2_set_substitute_case_callout.html \
   doc/html/pcre2_substitute.html \
   doc/html/pcre2_substring_copy_byname.html \
   doc/html/pcre2_substring_copy_bynumber.html \
@@ -142,6 +156,7 @@ dist_man_MANS = \
   doc/pcre2_general_context_free.3 \
   doc/pcre2_get_error_message.3 \
   doc/pcre2_get_mark.3 \
+  doc/pcre2_get_match_data_heapframes_size.3 \
   doc/pcre2_get_match_data_size.3 \
   doc/pcre2_get_ovector_count.3 \
   doc/pcre2_get_ovector_pointer.3 \
@@ -161,6 +176,7 @@ dist_man_MANS = \
   doc/pcre2_match_data_create.3 \
   doc/pcre2_match_data_create_from_pattern.3 \
   doc/pcre2_match_data_free.3 \
+  doc/pcre2_next_match.3 \
   doc/pcre2_pattern_convert.3 \
   doc/pcre2_pattern_info.3 \
   doc/pcre2_serialize_decode.3 \
@@ -177,13 +193,17 @@ dist_man_MANS = \
   doc/pcre2_set_glob_separator.3 \
   doc/pcre2_set_heap_limit.3 \
   doc/pcre2_set_match_limit.3 \
+  doc/pcre2_set_max_pattern_compiled_length.3 \
   doc/pcre2_set_max_pattern_length.3 \
+  doc/pcre2_set_max_varlookbehind.3 \
   doc/pcre2_set_offset_limit.3 \
+  doc/pcre2_set_optimize.3 \
   doc/pcre2_set_newline.3 \
   doc/pcre2_set_parens_nest_limit.3 \
   doc/pcre2_set_recursion_limit.3 \
   doc/pcre2_set_recursion_memory_management.3 \
   doc/pcre2_set_substitute_callout.3 \
+  doc/pcre2_set_substitute_case_callout.3 \
   doc/pcre2_substitute.3 \
   doc/pcre2_substring_copy_byname.3 \
   doc/pcre2_substring_copy_bynumber.3 \
@@ -224,6 +244,7 @@ lib_LTLIBRARIES =
 # TESTS is for binary unit tests, check_SCRIPTS for script-based tests
 
 TESTS =
+XFAIL_TESTS =
 check_SCRIPTS =
 dist_noinst_SCRIPTS =
 
@@ -234,9 +255,19 @@ bin_PROGRAMS =
 noinst_PROGRAMS =
 
 # Additional files to delete on 'make clean', 'make distclean',
-# and 'make maintainer-clean'.
+# and 'make maintainer-clean'. It turns out that the default is to delete only
+# those binaries that *this* configuration has created. If the configuration
+# has been changed, some binaries may not get automatically deleted. Therefore
+# we list them here.
 
-CLEANFILES =
+CLEANFILES = \
+  pcre2_dftables \
+  pcre2_jit_test \
+  pcre2fuzzcheck-8 \
+  pcre2fuzzcheck-16 \
+  pcre2fuzzcheck-32 \
+  pcre2demo
+
 DISTCLEANFILES = src/config.h.in~
 MAINTAINERCLEANFILES =
 
@@ -248,7 +279,10 @@ EXTRA_DIST =
 # These files contain additional m4 macros that are used by autoconf.
 
 EXTRA_DIST += \
-  m4/ax_pthread.m4 m4/pcre2_visibility.m4
+  m4/ax_pthread.m4 \
+  m4/pcre2_check_vscript.m4 \
+  m4/pcre2_visibility.m4 \
+  m4/pcre2_zos.m4
 
 # These files contain maintenance information
 
@@ -256,15 +290,48 @@ EXTRA_DIST += \
   NON-AUTOTOOLS-BUILD \
   HACKING
 
-# These files are used in the preparation of a release
+# These are patches containing backports for older versions of PCRE2
 
 EXTRA_DIST += \
-  PrepareRelease \
-  CheckMan \
-  CleanTxt \
-  Detrail \
-  132html \
-  doc/index.html.src
+  patches/pcre2-10.37-Remove-real-POSIX.patch \
+  patches/pcre2-10.39-Fix-incorrect-detection.patch \
+  patches/pcre2-10.40-A-Fixed-a-unicode.patch \
+  patches/pcre2-10.40-B-Fixed-an-issue-affecting.patch \
+  patches/pcre2-10.43-Avoid-LIMIT_HEAP-integer.patch \
+  patches/pcre2-10.43-Fix-heapframe-overflow.patch \
+  patches/pcre2-10.44-Fix-incorrect-compiling.patch \
+  patches/pcre2-10.44-Fix-locking-region.patch \
+  patches/pcre2-10.45-Memory-reports-only-compiled.patch \
+  patches/pcre2-10.47-Fix-for-callback.patch \
+  patches/pcre2-10.48-Check-JIT-mode-before-validation.patch \
+  patches/pcre2-10.48-Fix-DFA-workspace-overflows.patch \
+  patches/pcre2-10.48-Fix-JIT-STR_END.patch \
+  patches/pcre2-10.48-Fix-JIT-match-context-reuse.patch \
+  patches/pcre2-10.48-Fix-allocation-byte-sizing.patch \
+  patches/pcre2-10.48-Fix-character-list-generator.patch \
+  patches/pcre2-10.48-Fix-compiler-integer-overflows.patch \
+  patches/pcre2-10.48-Fix-invalid-UTF-backwards-scans.patch \
+  patches/pcre2-10.48-Fix-repeated-substitute-escapes.patch \
+  patches/pcre2-10.48-Fix-scan-prefix-repeat-reset.patch \
+  patches/pcre2-10.48-Keep-escape-error-offset-in-pattern.patch \
+  patches/pcre2-10.48-Write-serialization-padding.patch \
+  patches/pcre2-10.49-Fix-large-stack-allocation.patch
+
+# These are support files for building with Bazel or Zig
+
+EXTRA_DIST += \
+  BUILD.bazel \
+  MODULE.bazel \
+  build.zig \
+  build.zig.zon
+
+# These are support files for building under VMS
+
+EXTRA_DIST += \
+  vms/configure.com \
+  vms/openvms_readme.txt \
+  vms/pcre2.h_patch \
+  vms/stdint.h
 
 # These files are usable versions of pcre2.h and config.h that are distributed
 # for the benefit of people who are building PCRE2 manually, without the
@@ -289,9 +356,9 @@ src/pcre2.h.generic: src/pcre2.h.in configure.ac
 # running configure in a new directory, it complains. For this reason, we move
 # config.status out of the way while doing the default configuration. The
 # resulting config.h is munged by perl to put #ifdefs round any #defines for
-# macros with values, and to #undef all boolean macros such as HAVE_xxx and
-# SUPPORT_xxx. We also get rid of any gcc-specific visibility settings. Make
-# sure that PCRE2_EXP_DEFN is unset (in case it has visibility settings).
+# macros with values, and to #undef all boolean macros such as HAVE_xxx,
+# SUPPORT_xxx, and PCRE2_STATIC/PCRE2POSIX_SHARED. We also get rid of any
+# GCC-specific visibility settings.
 
 src/config.h.generic: configure.ac
 	rm -rf $@ _generic
@@ -301,15 +368,13 @@ src/config.h.generic: configure.ac
 	cs=$(srcdir)/config.status; test ! -f $$cs.aside || mv -f $$cs.aside $$cs
 	test -f _generic/src/config.h
 	perl -n \
-	  -e 'BEGIN{$$blank=0;}' \
-	  -e 'if(/PCRE2_EXP_DEFN/){print"/* #undef PCRE2_EXP_DEFN */\n";$$blank=0;next;}' \
-	  -e 'if(/to make a symbol visible/){next;}' \
-	  -e 'if(/__attribute__ \(\(visibility/){next;}' \
-	  -e 'if(/LT_OBJDIR/){print"/* This is ignored unless you are using libtool. */\n";}' \
-	  -e 'if(/^#define\s((?:HAVE|SUPPORT|STDC)_\w+)/){print"/* #undef $$1 */\n";$$blank=0;next;}' \
-	  -e 'if(/^#define\s(?!PACKAGE|VERSION)(\w+)/){print"#ifndef $$1\n$$_#endif\n";$$blank=0;next;}' \
-	  -e 'if(/^\s*$$/){print unless $$blank; $$blank=1;} else{print;$$blank=0;}' \
-	  _generic/src/config.h >$@
+		-e 'BEGIN{$$blank=0;}' \
+		-e 'if(/(.+?)\s*__attribute__ \(\(visibility/){print"$$1\n";$$blank=0;next;}' \
+		-e 'if(/LT_OBJDIR/){print"/* This is ignored unless you are using libtool. */\n";}' \
+		-e 'if(/^#define\s((?:HAVE|SUPPORT|STDC)_\w+|PCRE2_STATIC|PCRE2POSIX_SHARED)/){print"/* #undef $$1 */\n";$$blank=0;next;}' \
+		-e 'if(/^#define\s(?!PACKAGE|VERSION)(\w+)/){print"#ifndef $$1\n$$_#endif\n";$$blank=0;next;}' \
+		-e 'if(/^\s*$$/){print unless $$blank; $$blank=1;} else{print;$$blank=0;}' \
+		_generic/src/config.h >$@
 	rm -rf _generic
 
 MAINTAINERCLEANFILES += src/pcre2.h.generic src/config.h.generic
@@ -338,9 +403,21 @@ src/pcre2_chartables.c: pcre2_dftables$(EXEEXT)
 	rm -f $@
 	./pcre2_dftables$(EXEEXT) $@
 else
+if WITH_EBCDIC
+if WITH_EBCDIC_NL25
+src/pcre2_chartables.c: $(srcdir)/src/pcre2_chartables.c.ebcdic-1047-nl25
+	rm -f $@
+	$(LN_S) $(abs_srcdir)/src/pcre2_chartables.c.ebcdic-1047-nl25 $(abs_builddir)/src/pcre2_chartables.c
+else # WITH_EBCDIC_NL25
+src/pcre2_chartables.c: $(srcdir)/src/pcre2_chartables.c.ebcdic-1047-nl15
+	rm -f $@
+	$(LN_S) $(abs_srcdir)/src/pcre2_chartables.c.ebcdic-1047-nl15 $(abs_builddir)/src/pcre2_chartables.c
+endif # WITH_EBCDIC_NL25
+else # WITH_EBCDIC
 src/pcre2_chartables.c: $(srcdir)/src/pcre2_chartables.c.dist
 	rm -f $@
 	$(LN_S) $(abs_srcdir)/src/pcre2_chartables.c.dist $(abs_builddir)/src/pcre2_chartables.c
+endif # WITH_EBCDIC
 endif # WITH_REBUILD_CHARTABLES
 
 BUILT_SOURCES = src/pcre2_chartables.c
@@ -351,7 +428,11 @@ NODIST_SOURCES = src/pcre2_chartables.c
 
 COMMON_SOURCES = \
   src/pcre2_auto_possess.c \
+  src/pcre2_chkdint.c \
   src/pcre2_compile.c \
+  src/pcre2_compile.h \
+  src/pcre2_compile_cgroup.c \
+  src/pcre2_compile_class.c \
   src/pcre2_config.c \
   src/pcre2_context.c \
   src/pcre2_convert.c \
@@ -361,15 +442,19 @@ COMMON_SOURCES = \
   src/pcre2_find_bracket.c \
   src/pcre2_internal.h \
   src/pcre2_intmodedep.h \
+  src/pcre2_jit_char_inc.h \
   src/pcre2_jit_compile.c \
-  src/pcre2_jit_neon_inc.h \
+  src/pcre2_jit_match_inc.h \
+  src/pcre2_jit_misc_inc.h \
   src/pcre2_jit_simd_inc.h \
   src/pcre2_maketables.c \
   src/pcre2_match.c \
   src/pcre2_match_data.c \
+  src/pcre2_match_next.c \
   src/pcre2_newline.c \
   src/pcre2_ord2utf.c \
   src/pcre2_pattern_info.c \
+  src/pcre2_printint_inc.h \
   src/pcre2_script_run.c \
   src/pcre2_serialize.c \
   src/pcre2_string_utils.c \
@@ -379,6 +464,8 @@ COMMON_SOURCES = \
   src/pcre2_tables.c \
   src/pcre2_ucd.c \
   src/pcre2_ucp.h \
+  src/pcre2_ucptables_inc.h \
+  src/pcre2_util.h \
   src/pcre2_valid_utf.c \
   src/pcre2_xclass.c
 
@@ -427,42 +514,51 @@ endif # WITH_PCRE2_32
 # The pcre2_chartables.c.dist file is the default version of
 # pcre2_chartables.c, used unless --enable-rebuild-chartables is specified.
 
-EXTRA_DIST += src/pcre2_chartables.c.dist
+EXTRA_DIST += \
+  src/pcre2_chartables.c.dist \
+  src/pcre2_chartables.c.ebcdic-1047-nl15 \
+  src/pcre2_chartables.c.ebcdic-1047-nl25
 CLEANFILES += src/pcre2_chartables.c
 
 # The JIT compiler lives in a separate directory, but its files are #included
 # when pcre2_jit_compile.c is processed, so they must be distributed.
 
 EXTRA_DIST += \
-  src/sljit/sljitConfig.h \
-  src/sljit/sljitConfigInternal.h \
-  src/sljit/sljitExecAllocator.c \
-  src/sljit/sljitLir.c \
-  src/sljit/sljitLir.h \
-  src/sljit/sljitNativeARM_32.c \
-  src/sljit/sljitNativeARM_64.c \
-  src/sljit/sljitNativeARM_T2_32.c \
-  src/sljit/sljitNativeMIPS_32.c \
-  src/sljit/sljitNativeMIPS_64.c \
-  src/sljit/sljitNativeMIPS_common.c \
-  src/sljit/sljitNativePPC_32.c \
-  src/sljit/sljitNativePPC_64.c \
-  src/sljit/sljitNativePPC_common.c \
-  src/sljit/sljitNativeS390X.c \
-  src/sljit/sljitNativeSPARC_32.c \
-  src/sljit/sljitNativeSPARC_common.c \
-  src/sljit/sljitNativeX86_32.c \
-  src/sljit/sljitNativeX86_64.c \
-  src/sljit/sljitNativeX86_common.c \
-  src/sljit/sljitProtExecAllocator.c \
-  src/sljit/sljitUtils.c \
-  src/sljit/sljitWXExecAllocator.c
-
-# Some of the JIT sources are also in separate files that are #included.
-
-EXTRA_DIST += \
-  src/pcre2_jit_match.c \
-  src/pcre2_jit_misc.c
+  deps/sljit/LICENSE \
+  deps/sljit/README.md \
+  deps/sljit/sljit_src/sljitConfig.h \
+  deps/sljit/sljit_src/sljitConfigCPU.h \
+  deps/sljit/sljit_src/sljitConfigInternal.h \
+  deps/sljit/sljit_src/sljitLir.c \
+  deps/sljit/sljit_src/sljitLir.h \
+  deps/sljit/sljit_src/sljitNativeARM_32.c \
+  deps/sljit/sljit_src/sljitNativeARM_64.c \
+  deps/sljit/sljit_src/sljitNativeARM_T2_32.c \
+  deps/sljit/sljit_src/sljitNativeLOONGARCH_64.c \
+  deps/sljit/sljit_src/sljitNativeMIPS_32.c \
+  deps/sljit/sljit_src/sljitNativeMIPS_64.c \
+  deps/sljit/sljit_src/sljitNativeMIPS_common.c \
+  deps/sljit/sljit_src/sljitNativePPC_32.c \
+  deps/sljit/sljit_src/sljitNativePPC_64.c \
+  deps/sljit/sljit_src/sljitNativePPC_common.c \
+  deps/sljit/sljit_src/sljitNativeRISCV_32.c \
+  deps/sljit/sljit_src/sljitNativeRISCV_64.c \
+  deps/sljit/sljit_src/sljitNativeRISCV_common.c \
+  deps/sljit/sljit_src/sljitNativeS390X.c \
+  deps/sljit/sljit_src/sljitNativeX86_32.c \
+  deps/sljit/sljit_src/sljitNativeX86_64.c \
+  deps/sljit/sljit_src/sljitNativeX86_common.c \
+  deps/sljit/sljit_src/sljitSerialize.c \
+  deps/sljit/sljit_src/sljitUtils.c \
+  deps/sljit/sljit_src/allocator_src/sljitExecAllocatorApple.c \
+  deps/sljit/sljit_src/allocator_src/sljitExecAllocatorCore.c \
+  deps/sljit/sljit_src/allocator_src/sljitExecAllocatorFreeBSD.c \
+  deps/sljit/sljit_src/allocator_src/sljitExecAllocatorPosix.c \
+  deps/sljit/sljit_src/allocator_src/sljitExecAllocatorWindows.c \
+  deps/sljit/sljit_src/allocator_src/sljitProtExecAllocatorNetBSD.c \
+  deps/sljit/sljit_src/allocator_src/sljitProtExecAllocatorPosix.c \
+  deps/sljit/sljit_src/allocator_src/sljitWXExecAllocatorPosix.c \
+  deps/sljit/sljit_src/allocator_src/sljitWXExecAllocatorWindows.c
 
 if WITH_PCRE2_8
 libpcre2_8_la_LDFLAGS = $(EXTRA_LIBPCRE2_8_LDFLAGS)
@@ -504,7 +600,7 @@ if WITH_PCRE2_8
 lib_LTLIBRARIES += libpcre2-posix.la
 libpcre2_posix_la_SOURCES = src/pcre2posix.c
 libpcre2_posix_la_CFLAGS = \
-  -DPCRE2_CODE_UNIT_WIDTH=8 \
+  -DPCRE2_CODE_UNIT_WIDTH=8 @PCRE2POSIX_CFLAG@ \
   $(VISIBILITY_CFLAGS) $(AM_CFLAGS)
 libpcre2_posix_la_LDFLAGS = $(EXTRA_LIBPCRE2_POSIX_LDFLAGS)
 libpcre2_posix_la_LIBADD = libpcre2-8.la
@@ -525,29 +621,76 @@ if WITH_GCOV
 pcre2grep_CFLAGS += $(GCOV_CFLAGS)
 pcre2grep_LDADD += $(GCOV_LIBS)
 endif # WITH_GCOV
+endif # WITH_PCRE2_8
 
 ## If fuzzer support is enabled, build a non-distributed library containing the
 ## fuzzing function. Also build the standalone checking binary from the same
 ## source but using -DSTANDALONE.
 
 if WITH_FUZZ_SUPPORT
-noinst_LIBRARIES = .libs/libpcre2-fuzzsupport.a
+noinst_LIBRARIES =
+if WITH_PCRE2_8
+noinst_LIBRARIES += .libs/libpcre2-fuzzsupport.a
 _libs_libpcre2_fuzzsupport_a_SOURCES = src/pcre2_fuzzsupport.c
 _libs_libpcre2_fuzzsupport_a_CFLAGS = $(AM_CFLAGS)
 _libs_libpcre2_fuzzsupport_a_LIBADD =
 
-noinst_PROGRAMS += pcre2fuzzcheck
-pcre2fuzzcheck_SOURCES = src/pcre2_fuzzsupport.c
-pcre2fuzzcheck_CFLAGS = -DSTANDALONE $(AM_CFLAGS)
-pcre2fuzzcheck_LDADD = libpcre2-8.la
+noinst_PROGRAMS += pcre2fuzzcheck-8
+pcre2fuzzcheck_8_SOURCES = src/pcre2_fuzzsupport.c
+pcre2fuzzcheck_8_CFLAGS = -DSTANDALONE $(AM_CFLAGS)
+pcre2fuzzcheck_8_LDADD = libpcre2-8.la
 if WITH_GCOV
-pcre2fuzzcheck_CFLAGS += $(GCOV_CFLAGS)
-pcre2fuzzcheck_LDADD += $(GCOV_LIBS)
+pcre2fuzzcheck_8_CFLAGS += $(GCOV_CFLAGS)
+pcre2fuzzcheck_8_LDADD += $(GCOV_LIBS)
 endif # WITH_GCOV
-endif # WITH FUZZ_SUPPORT
 endif # WITH_PCRE2_8
 
+if WITH_PCRE2_16
+noinst_LIBRARIES += .libs/libpcre2-fuzzsupport-16.a
+_libs_libpcre2_fuzzsupport_16_a_SOURCES = src/pcre2_fuzzsupport.c
+_libs_libpcre2_fuzzsupport_16_a_CFLAGS = $(AM_CFLAGS) -DPCRE2_CODE_UNIT_WIDTH=16
+_libs_libpcre2_fuzzsupport_16_a_LIBADD =
+
+noinst_PROGRAMS += pcre2fuzzcheck-16
+pcre2fuzzcheck_16_SOURCES = src/pcre2_fuzzsupport.c
+pcre2fuzzcheck_16_CFLAGS = -DSTANDALONE $(AM_CFLAGS) -DPCRE2_CODE_UNIT_WIDTH=16
+pcre2fuzzcheck_16_LDADD = libpcre2-16.la
+if WITH_GCOV
+pcre2fuzzcheck_16_CFLAGS += $(GCOV_CFLAGS)
+pcre2fuzzcheck_16_LDADD += $(GCOV_LIBS)
+endif # WITH_GCOV
+endif # WITH_PCRE2_16
+
+if WITH_PCRE2_32
+noinst_LIBRARIES += .libs/libpcre2-fuzzsupport-32.a
+_libs_libpcre2_fuzzsupport_32_a_SOURCES = src/pcre2_fuzzsupport.c
+_libs_libpcre2_fuzzsupport_32_a_CFLAGS = $(AM_CFLAGS) -DPCRE2_CODE_UNIT_WIDTH=32
+_libs_libpcre2_fuzzsupport_32_a_LIBADD =
+
+noinst_PROGRAMS += pcre2fuzzcheck-32
+pcre2fuzzcheck_32_SOURCES = src/pcre2_fuzzsupport.c
+pcre2fuzzcheck_32_CFLAGS = -DSTANDALONE $(AM_CFLAGS) -DPCRE2_CODE_UNIT_WIDTH=32
+pcre2fuzzcheck_32_LDADD = libpcre2-32.la
+if WITH_GCOV
+pcre2fuzzcheck_32_CFLAGS += $(GCOV_CFLAGS)
+pcre2fuzzcheck_32_LDADD += $(GCOV_LIBS)
+endif # WITH_GCOV
+endif # WITH_PCRE2_32
+
+endif # WITH_FUZZ_SUPPORT
+
 ## -------- Testing ----------
+
+## If the 8-bit library is enabled, build the POSIX wrapper test program and
+## arrange for it to run.
+
+if WITH_PCRE2_8
+TESTS += pcre2posix_test
+noinst_PROGRAMS += pcre2posix_test
+pcre2posix_test_SOURCES = src/pcre2posix_test.c
+pcre2posix_test_CFLAGS = $(AM_CFLAGS) @PCRE2POSIX_CFLAG@
+pcre2posix_test_LDADD = libpcre2-posix.la libpcre2-8.la
+endif # WITH_PCRE2_8
 
 ## If JIT support is enabled, arrange for the JIT test program to run.
 
@@ -572,13 +715,10 @@ pcre2_jit_test_LDADD += $(GCOV_LIBS)
 endif # WITH_GCOV
 endif # WITH_JIT
 
-# Build the general pcre2test program. The file src/pcre2_printint.c is
-# #included by pcre2test as many times as needed, at different code unit
-# widths.
+# Build the general pcre2test program.
 
 bin_PROGRAMS += pcre2test
-EXTRA_DIST += src/pcre2_printint.c
-pcre2test_SOURCES = src/pcre2test.c
+pcre2test_SOURCES = src/pcre2test.c src/pcre2test_inc.h
 pcre2test_CFLAGS = $(AM_CFLAGS)
 pcre2test_LDADD = $(LIBREADLINE)
 
@@ -617,6 +757,9 @@ if WITH_PCRE2_8
 TESTS += RunGrepTest
 EXTRA_DIST += RunGrepTest.bat
 dist_noinst_SCRIPTS += RunGrepTest
+if WITH_EBCDIC
+XFAIL_TESTS += RunGrepTest
+endif # WITH_EBCDIC
 endif # WITH_PCRE2_8
 
 ## Distribute all the test data files
@@ -627,15 +770,26 @@ EXTRA_DIST += \
   testdata/grepinput \
   testdata/grepinput3 \
   testdata/grepinput8 \
+  testdata/grepinputBad8 \
+  testdata/grepinputBad8_Trail \
+  testdata/grepinputC.bz2 \
+  testdata/grepinputC.gz \
   testdata/grepinputM \
+  testdata/grepinputUN \
   testdata/grepinputv \
   testdata/grepinputx \
   testdata/greplist \
+  testdata/grepnot.bz2 \
   testdata/grepoutput \
   testdata/grepoutput8 \
   testdata/grepoutputC \
   testdata/grepoutputCN \
+  testdata/grepoutputCNU \
+  testdata/grepoutputCU \
+  testdata/grepoutputCbz2 \
+  testdata/grepoutputCgz \
   testdata/grepoutputN \
+  testdata/grepoutputUN \
   testdata/greppatN4 \
   testdata/testbtables \
   testdata/testinput1 \
@@ -663,7 +817,11 @@ EXTRA_DIST += \
   testdata/testinput23 \
   testdata/testinput24 \
   testdata/testinput25 \
-  testdata/testinputEBC \
+  testdata/testinput26 \
+  testdata/testinput27 \
+  testdata/testinput28 \
+  testdata/testinput29 \
+  testdata/testinputheap \
   testdata/testoutput1 \
   testdata/testoutput2 \
   testdata/testoutput3 \
@@ -674,10 +832,7 @@ EXTRA_DIST += \
   testdata/testoutput6 \
   testdata/testoutput7 \
   testdata/testoutput8-16-2 \
-  testdata/testoutput8-16-3 \
   testdata/testoutput8-16-4 \
-  testdata/testoutput8-32-2 \
-  testdata/testoutput8-32-3 \
   testdata/testoutput8-32-4 \
   testdata/testoutput8-8-2 \
   testdata/testoutput8-8-3 \
@@ -705,7 +860,13 @@ EXTRA_DIST += \
   testdata/testoutput23 \
   testdata/testoutput24 \
   testdata/testoutput25 \
-  testdata/testoutputEBC \
+  testdata/testoutput26 \
+  testdata/testoutput27 \
+  testdata/testoutput28 \
+  testdata/testoutput29 \
+  testdata/testoutputheap-16 \
+  testdata/testoutputheap-32 \
+  testdata/testoutputheap-8 \
   testdata/valgrind-jit.supp \
   testdata/wintestinput3 \
   testdata/wintestoutput3 \
@@ -715,24 +876,33 @@ EXTRA_DIST += \
 # they don't, add their working files to CLEANFILES.
 
 CLEANFILES += \
-        testSinput \
-        test3input \
-        test3output \
-        test3outputA \
-        test3outputB \
-        testtry \
-        teststdout \
-	teststderr \
-        teststderrgrep \
-        testtemp1grep \
-        testtemp2grep \
-        testtrygrep \
-        testNinputgrep
+  testSinput \
+  testSoutput \
+  test3input \
+  test3output \
+  test3outputA \
+  test3outputB \
+  testtry \
+  teststdout \
+  teststderr \
+  teststderrgrep \
+  testtemp1grep \
+  testtemp2grep \
+  testtrygrep \
+  testNinputgrep
+
+testoutput-clean:
+	-rm -rf testoutput8 testoutput8-jit testoutput8-dfa
+	-rm -rf testoutput16 testoutput16-jit testoutput16-dfa
+	-rm -rf testoutput32 testoutput32-jit testoutput32-dfa
+
+CLEAN_LOCAL_TARGETS += testoutput-clean
+PHONY_TARGETS += testoutput-clean
 
 ## ------------ End of testing -------------
 
 
-# PCRE2 demonstration program. Not built automatcally. The point is that the
+# PCRE2 demonstration program. Not built automatically. The point is that the
 # users should build it themselves. So just distribute the source.
 
 EXTRA_DIST += src/pcre2demo.c
@@ -754,6 +924,13 @@ endif
 if WITH_PCRE2_32
 pkgconfig_DATA += libpcre2-32.pc
 endif
+
+
+# Symbol version template files for use with GNU and Sun ld.
+
+EXTRA_DIST += \
+  src/libpcre2-8.sym.in src/libpcre2-16.sym.in src/libpcre2-32.sym.in \
+  src/libpcre2-posix.sym.in
 
 
 # gcov/lcov code coverage reporting
@@ -835,23 +1012,26 @@ coverage-clean: coverage-reset coverage-clean-report coverage-clean-data
 coverage-distclean: coverage-clean
 
 coverage: coverage-reset coverage-baseline coverage-check coverage-report
-clean-local: coverage-clean
-distclean-local: coverage-distclean
 
-.PHONY: coverage coverage-baseline coverage-check coverage-report coverage-reset coverage-clean-report coverage-clean-data coverage-clean coverage-distclean
-
-# Without coverage support, still arrange for 'make distclean' to get rid of
-# any coverage files that may have been left from a different configuration.
+CLEAN_LOCAL_TARGETS += coverage-clean
+DISTCLEAN_LOCAL_TARGETS += coverage-distclean
+PHONY_TARGETS += coverage coverage-baseline coverage-check coverage-report coverage-reset coverage-clean-report coverage-clean-data coverage-clean coverage-distclean
 
 else
 
 coverage:
 	@echo "Configuring with --enable-coverage is required to generate code coverage report."
 
+# Without coverage support, still arrange for 'make distclean' to get rid of
+# any coverage files that may have been left from a different configuration.
+
 DISTCLEANFILES += src/*.gcda src/*.gcno
 
-distclean-local:
+coverage-distclean:
 	rm -rf $(PACKAGE)-$(VERSION)-coverage*
+
+DISTCLEAN_LOCAL_TARGETS += coverage-distclean
+PHONY_TARGETS += coverage-distclean
 
 endif # WITH_GCOV
 
@@ -859,10 +1039,23 @@ endif # WITH_GCOV
 
 EXTRA_DIST += \
   cmake/COPYING-CMAKE-SCRIPTS \
-  cmake/FindPackageHandleStandardArgs.cmake \
-  cmake/FindReadline.cmake \
   cmake/FindEditline.cmake \
-  CMakeLists.txt \
-  config-cmake.h.in
+  cmake/FindReadline.cmake \
+  cmake/pcre2-config.cmake.in \
+  cmake/PCRE2CheckVscript.cmake \
+  cmake/PCRE2UseSystemExtensions.cmake \
+  cmake/PCRE2WarningAsError.cmake \
+  src/config-cmake.h.in \
+  CMakeLists.txt
+
+## Set the special make and Automake targets. We could very easily simply
+## redefine these targets to append prerequisites to them, rather than
+## collecting the prerequisites in variables. However, there is an annoying
+## Automake behaviour where it emits a warning if a target has prerequisites
+## appended in a conditional block.
+
+clean-local: $(CLEAN_LOCAL_TARGETS)
+distclean-local: $(DISTCLEAN_LOCAL_TARGETS)
+.PHONY: $(PHONY_TARGETS)
 
 ## end Makefile.am

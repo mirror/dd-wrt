@@ -1,4 +1,4 @@
-.TH PCRE2 3 "28 April 2021" "PCRE2 10.37"
+.TH PCRE2 3 "22 February 2025" "PCRE2 10.49"
 .SH NAME
 PCRE2 - Perl-compatible regular expressions (revised API)
 .SH INTRODUCTION
@@ -11,18 +11,19 @@ nearly two decades, the limitations of the original API were making development
 increasingly difficult. The new API is more extensible, and it was simplified
 by abolishing the separate "study" optimizing function; in PCRE2, patterns are
 automatically optimized where possible. Since forking from PCRE1, the code has
-been extensively refactored and new features introduced.
+been extensively refactored and new features introduced. The old library is now
+obsolete and is no longer maintained.
 .P
 As well as Perl-style regular expression patterns, some features that appeared
 in Python and the original PCRE before they appeared in Perl are available
-using the Python syntax. There is also some support for one or two .NET and
-Oniguruma syntax items, and there are options for requesting some minor changes
-that give better ECMAScript (aka JavaScript) compatibility.
+using the Python syntax. There is also support for some .NET and Oniguruma
+syntax items, and there are options for requesting minor changes that give
+better ECMAScript (JavaScript) compatibility.
 .P
 The source code for PCRE2 can be compiled to support strings of 8-bit, 16-bit,
 or 32-bit code units, which means that up to three separate libraries may be
-installed, one for each code unit size. The size of code unit is not related to
-the bit size of the underlying hardware. In a 64-bit environment that also
+installed, one for each code unit size. The size of a code unit is not related
+to the bit size of the underlying hardware. In a 64-bit environment that also
 supports 32-bit applications, versions of PCRE2 that are compiled in both
 64-bit and 32-bit modes may be needed.
 .P
@@ -86,7 +87,7 @@ found in the
 and
 .\" HTML <a href="NON-AUTOTOOLS-BUILD.txt">
 .\" </a>
-\fBNON-AUTOTOOLS_BUILD\fP
+\fBNON-AUTOTOOLS-BUILD\fP
 .\"
 files in the source distribution.
 .P
@@ -185,23 +186,26 @@ In the "man" and HTML formats, there is also a short page for each C library
 function, listing its arguments and results.
 .
 .
-.SH AUTHOR
+.SH AUTHORS
 .rs
 .sp
-.nf
-Philip Hazel
-University Computing Service
-Cambridge, England.
-.fi
+The current maintainers of PCRE2 are Nicholas Wilson and Zoltan Herczeg.
 .P
-Putting an actual email address here is a spam magnet. If you want to email me,
-use my two initials, followed by the two digits 10, at the domain cam.ac.uk.
+PCRE2 was written by Philip Hazel, of the University Computing Service,
+Cambridge, England. Many others have also contributed.
+.P
+To contact the maintainers, please use the GitHub issues tracker or PCRE2
+mailing list, as described at the project page:
+.\" HTML <a href="https://github.com/PCRE2Project/pcre2">
+.\" </a>
+https://github.com/PCRE2Project/pcre2
+.\"
 .
 .
 .SH REVISION
 .rs
 .sp
 .nf
-Last updated: 28 April 2021
+Last updated: 22 February 2025
 Copyright (c) 1997-2021 University of Cambridge.
 .fi

@@ -1,4 +1,4 @@
-.TH PCRE2SAMPLE 3 "02 February 2016" "PCRE2 10.22"
+.TH PCRE2SAMPLE 3 "28 February 2025" "PCRE2 10.49"
 .SH NAME
 PCRE2 - Perl-compatible regular expressions (revised API)
 .SH "PCRE2 SAMPLE PROGRAM"
@@ -11,7 +11,7 @@ distribution. A listing of this program is given in the
 \fBpcre2demo\fP
 .\"
 documentation. If you do not have a copy of the PCRE2 distribution, you can
-save this listing to re-create the contents of \fIpcre2demo.c\fP.
+save this listing to recreate the contents of \fIpcre2demo.c\fP.
 .P
 The demonstration program compiles the regular expression that is its
 first argument, and matches it against the subject string in its second
@@ -50,6 +50,7 @@ this:
 .sp
   ./pcre2demo 'cat|dog' 'the cat sat on the mat'
   ./pcre2demo -g 'cat|dog' 'the dog sat on the cat'
+  ./pcre2demo -i 'cat' 'the dog sat on the CAT'
 .sp
 Note that there is a much more comprehensive test program, called
 .\" HREF
@@ -85,7 +86,7 @@ need to add
 .sp
 .nf
 Philip Hazel
-University Computing Service
+Retired from University Computing Service
 Cambridge, England.
 .fi
 .
@@ -94,6 +95,6 @@ Cambridge, England.
 .rs
 .sp
 .nf
-Last updated: 02 February 2016
+Last updated: 28 February 2025
 Copyright (c) 1997-2016 University of Cambridge.
 .fi

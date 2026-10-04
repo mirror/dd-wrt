@@ -1,17 +1,15 @@
 # Modified from FindReadline.cmake (PH Feb 2012)
 
-if(EDITLINE_INCLUDE_DIR AND EDITLINE_LIBRARY AND NCURSES_LIBRARY)
-  set(EDITLINE_FOUND TRUE)
-else(EDITLINE_INCLUDE_DIR AND EDITLINE_LIBRARY AND NCURSES_LIBRARY)
-  FIND_PATH(EDITLINE_INCLUDE_DIR readline.h
-    /usr/include/editline
-    /usr/include/edit/readline  
-    /usr/include/readline
-  )
-  
-  FIND_LIBRARY(EDITLINE_LIBRARY NAMES edit)
-  include(FindPackageHandleStandardArgs)
-  FIND_PACKAGE_HANDLE_STANDARD_ARGS(Editline DEFAULT_MSG EDITLINE_INCLUDE_DIR EDITLINE_LIBRARY )
+find_path(EDITLINE_INCLUDE_DIR readline.h PATH_SUFFIXES editline edit/readline)
+mark_as_advanced(EDITLINE_INCLUDE_DIR)
 
-  MARK_AS_ADVANCED(EDITLINE_INCLUDE_DIR EDITLINE_LIBRARY)
-endif(EDITLINE_INCLUDE_DIR AND EDITLINE_LIBRARY AND NCURSES_LIBRARY)
+find_library(EDITLINE_LIBRARY NAMES edit)
+mark_as_advanced(EDITLINE_LIBRARY)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(Editline DEFAULT_MSG EDITLINE_LIBRARY EDITLINE_INCLUDE_DIR)
+
+if(Editline_FOUND)
+  set(EDITLINE_LIBRARIES "${EDITLINE_LIBRARY}")
+  set(EDITLINE_INCLUDE_DIRS "${EDITLINE_INCLUDE_DIR}")
+endif()

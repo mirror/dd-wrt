@@ -1,4 +1,4 @@
-.TH PCRE2_SET_RECURSION_MEMORY_MANAGEMENT 3 "25 March 2017" "PCRE2 10.30"
+.TH PCRE2_SET_RECURSION_MEMORY_MANAGEMENT 3 "23 January 2023" "PCRE2 10.49"
 .SH NAME
 PCRE2 - Perl-compatible regular expressions (revised API)
 .SH SYNOPSIS
@@ -9,7 +9,7 @@ PCRE2 - Perl-compatible regular expressions (revised API)
 .nf
 .B int pcre2_set_recursion_memory_management(
 .B "  pcre2_match_context *\fImcontext\fP,"
-.B "  void *(*\fIprivate_malloc\fP)(PCRE2_SIZE, void *),"
+.B "  void *(*\fIprivate_malloc\fP)(size_t, void *),"
 .B "  void (*\fIprivate_free\fP)(void *, void *), void *\fImemory_data\fP);"
 .fi
 .

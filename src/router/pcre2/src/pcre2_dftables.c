@@ -47,20 +47,23 @@ option can be used to select the current locale from the LC_ALL environment
 variable. By default, the tables are written in source form, but if -b is
 given, they are written in binary. */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+
 
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <locale.h>
 
+/* For pcre2_internal.h, pcre2_maketables.c, pcre2_tables.c */
+#define PCRE2_DFTABLES
+/* For pcre2_tables.c */
+#define PRIV(name) name
+
 #define PCRE2_CODE_UNIT_WIDTH 0   /* Must be set, but not relevant here */
 #include "pcre2_internal.h"
 
-#define PCRE2_DFTABLES            /* pcre2_maketables.c notices this */
 #include "pcre2_maketables.c"
+#include "pcre2_tables.c"
 
 
 static const char *classlist[] =
@@ -69,6 +72,23 @@ static const char *classlist[] =
   "word", "graph", "print", "punct", "cntrl"
   };
 
+static int identity(int c) { return c; }
+
+#ifdef EBCDIC
+static int ebcdic_to_unicode(int c)
+{
+if (c < 0 || c > 255) abort();
+
+return ebcdic_1047_to_ascii[c];
+}
+
+static int unicode_to_ebcdic(int c)
+{
+if (c < 0 || c > 255) abort();
+
+return ascii_to_ebcdic_1047[c];
+}
+#endif
 
 
 /*************************************************
@@ -82,6 +102,9 @@ usage(void)
   "Usage: pcre2_dftables [options] <output file>\n"
   "  -b    Write output in binary (default is source code)\n"
   "  -L    Use locale from LC_ALL (default is \"C\" locale)\n"
+#ifdef EBCDIC
+  "  -E    Use EBCDIC 1047 via locale C.UTF-8\n"
+#endif
   );
 }
 
@@ -98,8 +121,10 @@ int i;
 int nclass = 0;
 BOOL binary = FALSE;
 char *env = (char *)"C";
-const unsigned char *tables;
-const unsigned char *base_of_tables;
+const uint8_t *tables;
+const uint8_t *base_of_tables;
+int (*charfn_to)(int) = identity;
+int (*charfn_from)(int) = identity;
 
 /* Process options */
 
@@ -124,6 +149,24 @@ for (i = 1; i < argc; i++)
     env = getenv("LC_ALL");
     }
 
+#ifdef EBCDIC
+  else if (strcmp(arg, "-E") == 0)
+    {
+    if (setlocale(LC_ALL, "C.UTF-8") == NULL)
+      {
+      (void)fprintf(stderr, "pcre2_dftables: setlocale() failed\n");
+      return 1;
+      }
+#ifdef EBCDIC_NL25
+    env = "EBCDIC 1047 (NL 0x25)";
+#else
+    env = "EBCDIC 1047 (NL 0x15)";
+#endif
+    charfn_to = ebcdic_to_unicode;
+    charfn_from = unicode_to_ebcdic;
+    }
+#endif
+
   else if (strcmp(arg, "-b") == 0)
     binary = TRUE;
 
@@ -142,7 +185,7 @@ if (i != argc - 1)
 
 /* Make the tables */
 
-tables = maketables();
+tables = maketables(charfn_to, charfn_from);
 base_of_tables = tables;
 
 f = fopen(argv[i], "wb");
@@ -180,7 +223,8 @@ the very long string otherwise. */
   "/* This file was automatically written by the pcre2_dftables auxiliary\n"
   "program. It contains character tables that are used when no external\n"
   "tables are passed to PCRE2 by the application that calls it. The tables\n"
-  "are used only for characters whose code values are less than 256. */\n\n");
+  "are used only for characters whose code values are less than 256, and\n"
+  "only relevant if not in UCP mode. */\n\n");
 
 (void)fprintf(f,
   "/* This set of tables was written in the %s locale. */\n\n", env);
@@ -195,28 +239,7 @@ the very long string otherwise. */
   "pcre2_dftables manually with the -L option to build tables using the LC_ALL\n"
   "locale. */\n\n");
 
-/* Force config.h in z/OS */
-
-#if defined NATIVE_ZOS
 (void)fprintf(f,
-  "/* For z/OS, config.h is forced */\n"
-  "#ifndef HAVE_CONFIG_H\n"
-  "#define HAVE_CONFIG_H 1\n"
-  "#endif\n\n");
-#endif
-
-(void)fprintf(f,
-  "/* The following #include is present because without it gcc 4.x may remove\n"
-  "the array definition from the final binary if PCRE2 is built into a static\n"
-  "library and dead code stripping is activated. This leads to link errors.\n"
-  "Pulling in the header ensures that the array gets flagged as \"someone\n"
-  "outside this compilation unit might reference this\" and so it will always\n"
-  "be supplied to the linker. */\n\n");
-
-(void)fprintf(f,
-  "#ifdef HAVE_CONFIG_H\n"
-  "#include \"config.h\"\n"
-  "#endif\n\n"
   "#include \"pcre2_internal.h\"\n\n");
 
 (void)fprintf(f,
@@ -269,7 +292,7 @@ for (i = 0; i < cbit_length; i++)
   "  0x%02x   letter\n"
   "  0x%02x   lower case letter\n"
   "  0x%02x   decimal digit\n"
-  "  0x%02x   alphanumeric or '_'\n*/\n\n",
+  "  0x%02x   word (alphanumeric or '_')\n*/\n\n",
   ctype_space, ctype_letter, ctype_lcletter, ctype_digit, ctype_word);
 
 (void)fprintf(f, "  ");

@@ -12,26 +12,26 @@ This page is part of the PCRE2 HTML documentation. It was generated
 automatically from the original man page. If there is any nonsense in it,
 please consult the man page, in case the conversion went wrong.
 <br>
-<br><b>
+<h2>
 SYNOPSIS
-</b><br>
-<P>
+</h2>
+<p>
 <b>#include &#60;pcre2.h&#62;</b>
-</P>
-<P>
+</p>
+<p>
 <b>int pcre2_set_bsr(pcre2_compile_context *<i>ccontext</i>,</b>
 <b>  uint32_t <i>value</i>);</b>
-</P>
-<br><b>
+</p>
+<h2>
 DESCRIPTION
-</b><br>
-<P>
+</h2>
+<p>
 This function sets the convention for processing \R within a compile context.
 The second argument must be one of PCRE2_BSR_ANYCRLF or PCRE2_BSR_UNICODE. The
 result is zero for success or PCRE2_ERROR_BADDATA if the second argument is
 invalid.
-</P>
-<P>
+</p>
+<p>
 There is a complete description of the PCRE2 native API in the
 <a href="pcre2api.html"><b>pcre2api</b></a>
 page and a description of the POSIX API in the

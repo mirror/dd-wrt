@@ -7,7 +7,7 @@ and semantics are as close as possible to those of the Perl 5 language.
 
                        Written by Philip Hazel
      Original API code Copyright (c) 1997-2012 University of Cambridge
-          New API code Copyright (c) 2016-2021 University of Cambridge
+          New API code Copyright (c) 2016-2024 University of Cambridge
 
 -----------------------------------------------------------------------------
 Redistribution and use in source and binary forms, with or without
@@ -40,17 +40,22 @@ POSSIBILITY OF SUCH DAMAGE.
 
 
 /* This module is a wrapper that provides a POSIX API to the underlying PCRE2
-functions. The operative functions are called pcre2_regcomp(), etc., with
-wrappers that use the plain POSIX names. In addition, pcre2posix.h defines the
-POSIX names as macros for the pcre2_xxx functions, so any program that includes
-it and uses the POSIX names will call the base functions directly. This makes
-it easier for an application to be sure it gets the PCRE2 versions in the
-presence of other POSIX regex libraries. */
+functions. The functions are called pcre2_regcomp(), pcre2_regexec(), etc.
+pcre2posix.h defines the POSIX names as macros for the corresponding pcre2_xxx
+functions, so any program that includes it and uses the POSIX names will call
+the PCRE2 implementations instead. */
 
 
-#ifdef HAVE_CONFIG_H
+/* This module doesn't use pcre2_internal.h, because the pcre2posix dynamic
+library has an "internal" view of some macros, but is an "external" client of
+the pcre2-8 dynamic library. This is unusual, and justifies a (rare) direct
+inclusion of config.h. */
+
+#if defined HAVE_CONFIG_H && !defined PCRE2_CONFIG_H_IDEMPOTENT_GUARD
+#define PCRE2_CONFIG_H_IDEMPOTENT_GUARD
 #include "config.h"
 #endif
+
 
 
 /* Ensure that the PCRE2POSIX_EXP_xxx macros are set appropriately for
@@ -58,9 +63,24 @@ compiling these functions. This must come before including pcre2posix.h, where
 they are set for an application (using these functions) if they have not
 previously been set. */
 
-#if defined(_WIN32) && !defined(PCRE2_STATIC)
-#  define PCRE2POSIX_EXP_DECL extern __declspec(dllexport)
-#  define PCRE2POSIX_EXP_DEFN __declspec(dllexport)
+#if defined __cplusplus
+#error This project uses C99. C++ is not supported.
+#endif
+
+#ifndef PCRE2POSIX_EXP_DECL
+#  if defined(_WIN32) && defined(PCRE2POSIX_SHARED)
+#    define PCRE2POSIX_EXP_DECL  extern __declspec(dllexport)
+#  else
+#    define PCRE2POSIX_EXP_DECL  extern PCRE2_EXPORT
+#  endif
+#endif
+
+#ifndef PCRE2POSIX_EXP_DEFN
+#  if defined(_WIN32) && defined(PCRE2POSIX_SHARED)
+#    define PCRE2POSIX_EXP_DEFN  extern __declspec(dllexport)
+#  else
+#    define PCRE2POSIX_EXP_DEFN  extern PCRE2_EXPORT
+#  endif
 #endif
 
 /* Older versions of MSVC lack snprintf(). This define allows for
@@ -91,25 +111,20 @@ changed. This #define is a copy of the one in pcre2_internal.h. */
 
 #include "pcre2.h"
 #include "pcre2posix.h"
+#include "pcre2_util.h"
 
-/* When compiling with the MSVC compiler, it is sometimes necessary to include
-a "calling convention" before exported function names. (This is secondhand
-information; I know nothing about MSVC myself). For example, something like
+/* For pcre2_tables.c */
+#define PCRE2_PCRE2POSIX
+/* For pcre2_tables.c */
+#define PRIV(name) name
 
-  void __cdecl function(....)
-
-might be needed. In order to make this easy, all the exported functions have
-PCRE2_CALL_CONVENTION just before their names. It is rarely needed; if not
-set, we ensure here that it has no effect. */
-
-#ifndef PCRE2_CALL_CONVENTION
-#define PCRE2_CALL_CONVENTION
-#endif
+#include "pcre2_tables.c"
 
 /* Table to translate PCRE2 compile time error codes into POSIX error codes.
 Only a few PCRE2 errors with a value greater than 23 turn into special POSIX
 codes: most go to REG_BADPAT. The second table lists, in pairs, those that
-don't. */
+don't, even though some of them cannot currently be provoked from within the
+POSIX wrapper. */
 
 static const int eint1[] = {
   0,           /* No error */
@@ -148,6 +163,9 @@ static const int eint2[] = {
   37, REG_EESCAPE, /* PCRE2 does not support \L, \l, \N{name}, \U, or \u */
   56, REG_INVARG,  /* internal error: unknown newline setting */
   92, REG_INVARG,  /* invalid option bits with PCRE2_LITERAL */
+  98, REG_EESCAPE, /* missing digit after \0 in NO_BS0 mode */
+  99, REG_EESCAPE, /* \K in lookaround */
+ 102, REG_EESCAPE  /* \ddd octal > \377 in PYTHON_OCTAL mode */
 };
 
 /* Table of texts corresponding to POSIX error codes */
@@ -173,68 +191,6 @@ static const char *const pstring[] = {
   "match failed"                     /* NOMATCH    */
 };
 
-
-
-#if 0  /* REMOVE THIS CODE */
-
-The code below was created for 10.33 (see ChangeLog 10.33 #4) when the
-POSIX functions were given pcre2_... names instead of the traditional POSIX
-names. However, it has proved to be more troublesome than useful. There have
-been at least two cases where a program links with two others, one of which
-uses the POSIX library and the other uses the PCRE2 POSIX functions, thus
-causing two instances of the POSIX runctions to exist, leading to trouble. For
-10.37 this code is commented out. In due course it can be removed if there are
-no issues. The only small worry is the comment below about languages that do
-not include pcre2posix.h. If there are any such cases, they will have to use
-the PCRE2 names.
-
-
-/*************************************************
-*      Wrappers with traditional POSIX names     *
-*************************************************/
-
-/* Keep defining them to preseve the ABI for applications linked to the pcre2
-POSIX library before these names were changed into macros in pcre2posix.h.
-This also ensures that the POSIX names are callable from languages that do not
-include pcre2posix.h. It is vital to #undef the macro definitions from
-pcre2posix.h! */
-
-#undef regerror
-PCRE2POSIX_EXP_DECL size_t regerror(int, const regex_t *, char *, size_t);
-PCRE2POSIX_EXP_DEFN size_t PCRE2_CALL_CONVENTION
-regerror(int errcode, const regex_t *preg, char *errbuf, size_t errbuf_size)
-{
-return pcre2_regerror(errcode, preg, errbuf, errbuf_size);
-}
-
-#undef regfree
-PCRE2POSIX_EXP_DECL void regfree(regex_t *);
-PCRE2POSIX_EXP_DEFN void PCRE2_CALL_CONVENTION
-regfree(regex_t *preg)
-{
-pcre2_regfree(preg);
-}
-
-#undef regcomp
-PCRE2POSIX_EXP_DECL int regcomp(regex_t *, const char *, int);
-PCRE2POSIX_EXP_DEFN int PCRE2_CALL_CONVENTION
-regcomp(regex_t *preg, const char *pattern, int cflags)
-{
-return pcre2_regcomp(preg, pattern, cflags);
-}
-
-#undef regexec
-PCRE2POSIX_EXP_DECL int regexec(const regex_t *, const char *, size_t,
-  regmatch_t *, int);
-PCRE2POSIX_EXP_DEFN int PCRE2_CALL_CONVENTION
-regexec(const regex_t *preg, const char *string, size_t nmatch,
-  regmatch_t pmatch[], int eflags)
-{
-return pcre2_regexec(preg, string, nmatch, pmatch, eflags);
-}
-#endif
-
-
 /*************************************************
 *          Translate error code to string        *
 *************************************************/
@@ -243,23 +199,50 @@ PCRE2POSIX_EXP_DEFN size_t PCRE2_CALL_CONVENTION
 pcre2_regerror(int errcode, const regex_t *preg, char *errbuf,
   size_t errbuf_size)
 {
-int used;
 const char *message;
+char offset_buf[11+12]; /* big enough for " at offset -2147483648" */
+int snprintf_rc, have_offset = 0;
+PCRE2_SIZE i;
 
 message = (errcode <= 0 || errcode >= (int)(sizeof(pstring)/sizeof(char *)))?
   "unknown error code" : pstring[errcode];
 
-if (preg != NULL && (int)preg->re_erroffset != -1)
+if (preg != NULL && preg->re_erroffset != (size_t)(-1)
+    /* LCOV_EXCL_START - snprintf failures here are essentially unreachable */
+    && (snprintf_rc = snprintf(offset_buf, sizeof(offset_buf), " at offset %d",
+                               (int)preg->re_erroffset)) > 0
+    && snprintf_rc < (int)sizeof(offset_buf))
+    /* LCOV_EXCL_STOP */
   {
-  used = snprintf(errbuf, errbuf_size, "%s at offset %-6d", message,
-    (int)preg->re_erroffset);
-  }
-else
-  {
-  used = snprintf(errbuf, errbuf_size, "%s", message);
+  have_offset = 1;
+  offset_buf[sizeof(offset_buf) - 1] = 0; /* Paranoia for very old snprintf */
   }
 
-return used + 1;
+for (i = 0; *message != 0; i++, message++)
+  if (i + 1 < errbuf_size) errbuf[i] = *message;
+
+if (have_offset)
+  {
+  for (message = offset_buf; *message != 0; i++, message++)
+    if (i + 1 < errbuf_size) errbuf[i] = *message;
+  }
+
+#if defined EBCDIC && 'a' != 0x81
+/* If compiling for EBCDIC, but the compiler's string literals are not EBCDIC,
+then we are in the "force EBCDIC 1047" mode. I have chosen to add a few lines
+here to translate the error strings on the fly, rather than require the string
+literals above to be written out arduously using the "STR_XYZ" macros. */
+for (PCRE2_SIZE j = 0; j < i && j < errbuf_size; ++j)
+  errbuf[j] = PRIV(ascii_to_ebcdic_1047)[(uint8_t)errbuf[j]];
+#endif
+
+/* Terminate message, even if truncated. */
+
+if (errbuf_size > 0)
+  errbuf[(i < errbuf_size)? i : errbuf_size - 1] = 0;
+i++;
+
+return (int)i;
 }
 
 
@@ -299,6 +282,9 @@ PCRE2_SIZE patlen;
 int errorcode;
 int options = 0;
 int re_nsub = 0;
+
+preg->re_match_data = NULL;
+preg->re_pcre2_code = NULL;
 
 patlen = ((cflags & REG_PEND) != 0)? (PCRE2_SIZE)(preg->re_endp - pattern) :
   PCRE2_ZERO_TERMINATED;
@@ -341,7 +327,13 @@ preg->re_erroffset = (size_t)(-1);  /* No meaning after successful compile */
 
 if (preg->re_match_data == NULL)
   {
+  /* There is no facility for passing a custom allocator to the POSIX API, so
+  our test code cannot force a malloc failure here. If there were an API to
+  customize the default (global) PCRE2 allocator, we could test it. Since the
+  code is nonetheless reachable, I prefer not to exclude it from coverage
+  reporting. */
   pcre2_code_free(preg->re_pcre2_code);
+  preg->re_pcre2_code = NULL;
   return REG_ESPACE;
   }
 
@@ -366,6 +358,8 @@ pcre2_regexec(const regex_t *preg, const char *string, size_t nmatch,
 int rc, so, eo;
 int options = 0;
 pcre2_match_data *md = (pcre2_match_data *)preg->re_match_data;
+
+if (string == NULL) return REG_INVARG;
 
 if ((eflags & REG_NOTBOL) != 0) options |= PCRE2_NOTBOL;
 if ((eflags & REG_NOTEOL) != 0) options |= PCRE2_NOTEOL;
@@ -420,17 +414,24 @@ if (rc >= 0)
 if (rc <= PCRE2_ERROR_UTF8_ERR1 && rc >= PCRE2_ERROR_UTF8_ERR21)
   return REG_INVARG;
 
+/* Most of these are events that won't occur during testing, so exclude them
+from coverage. */
+
 switch(rc)
   {
-  default: return REG_ASSERT;
+  case PCRE2_ERROR_HEAPLIMIT: return REG_ESPACE;
+  case PCRE2_ERROR_NOMATCH: return REG_NOMATCH;
+
+  /* LCOV_EXCL_START */
   case PCRE2_ERROR_BADMODE: return REG_INVARG;
   case PCRE2_ERROR_BADMAGIC: return REG_INVARG;
   case PCRE2_ERROR_BADOPTION: return REG_INVARG;
   case PCRE2_ERROR_BADUTFOFFSET: return REG_INVARG;
   case PCRE2_ERROR_MATCHLIMIT: return REG_ESPACE;
-  case PCRE2_ERROR_NOMATCH: return REG_NOMATCH;
   case PCRE2_ERROR_NOMEMORY: return REG_ESPACE;
   case PCRE2_ERROR_NULL: return REG_INVARG;
+  default: return REG_ASSERT;
+  /* LCOV_EXCL_STOP */
   }
 }
 

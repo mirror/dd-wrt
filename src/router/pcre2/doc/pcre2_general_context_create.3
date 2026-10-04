@@ -1,4 +1,4 @@
-.TH PCRE2_GENERAL_CONTEXT_CREATE 3 "22 October 2014" "PCRE2 10.00"
+.TH PCRE2_GENERAL_CONTEXT_CREATE 3 "23 January 2023" "PCRE2 10.49"
 .SH NAME
 PCRE2 - Perl-compatible regular expressions (revised API)
 .SH SYNOPSIS
@@ -8,7 +8,7 @@ PCRE2 - Perl-compatible regular expressions (revised API)
 .PP
 .nf
 .B pcre2_general_context *pcre2_general_context_create(
-.B "  void *(*\fIprivate_malloc\fP)(PCRE2_SIZE, void *),"
+.B "  void *(*\fIprivate_malloc\fP)(size_t, void *),"
 .B "  void (*\fIprivate_free\fP)(void *, void *), void *\fImemory_data\fP);"
 .fi
 .

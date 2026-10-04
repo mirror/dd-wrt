@@ -31,7 +31,7 @@ Failed: error -26: UTF-16 error: isolated low surrogate at offset 2
     XX\x{dfff}\=no_utf_check
  0: X
     XX\x{110000}
-** Failed: character \x{110000} is greater than 0x10ffff and so cannot be converted to UTF-16
+** Failed: character \N{U+110000} is greater than 0x10ffff and therefore cannot be encoded as UTF-16
     XX\x{d800}\x{1234}
 Failed: error -25: UTF-16 error: invalid low surrogate at offset 2
           
@@ -118,6 +118,48 @@ No match
 /[^\x{120}]{2}/i,ucp
 \= Expect no match
     \x{121}\x{121}
+No match
+
+# ---------------------------------------------------- 
+
+# ---------------------------------------------------- 
+# Tests for handling 0xffffffff in caseless UCP mode. They only apply to 32-bit
+# mode; for the other widths they will fail.
+
+/k*\x{ffffffff}/caseless,ucp
+Failed: error 134 at offset 13: character code point value in \x{} or \o{} is too large
+        here: ...x{ffffffff |<--| }
+    \x{ffffffff}
+
+/k+\x{ffffffff}/caseless,ucp,no_start_optimize
+Failed: error 134 at offset 13: character code point value in \x{} or \o{} is too large
+        here: ...x{ffffffff |<--| }
+    K\x{ffffffff}
+\= Expect no match     
+    \x{ffffffff}\x{ffffffff}
+
+/k{2}\x{ffffffff}/caseless,ucp,no_start_optimize
+Failed: error 134 at offset 15: character code point value in \x{} or \o{} is too large
+        here: ...x{ffffffff |<--| }
+\= Expect no match
+    \x{ffffffff}\x{ffffffff}\x{ffffffff}
+
+/k\x{ffffffff}/caseless,ucp,no_start_optimize
+Failed: error 134 at offset 12: character code point value in \x{} or \o{} is too large
+        here: ...x{ffffffff |<--| }
+    K\x{ffffffff}
+\= Expect no match
+    \x{ffffffff}\x{ffffffff}\x{ffffffff}
+
+/k{2,}?Z/caseless,ucp,no_start_optimize,no_auto_possess
+\= Expect no match
+    Kk\x{ffffffff}\x{ffffffff}\x{ffffffff}Z
+** Character \x{ffffffff} is greater than 0xffff and UTF-16 mode is not enabled.
+** Truncation will probably give the wrong result.
+** Character \x{ffffffff} is greater than 0xffff and UTF-16 mode is not enabled.
+** Truncation will probably give the wrong result.
+** Character \x{ffffffff} is greater than 0xffff and UTF-16 mode is not enabled.
+** Truncation will probably give the wrong result.
 No match
 
 # ---------------------------------------------------- 

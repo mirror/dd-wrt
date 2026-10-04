@@ -12,20 +12,20 @@ This page is part of the PCRE2 HTML documentation. It was generated
 automatically from the original man page. If there is any nonsense in it,
 please consult the man page, in case the conversion went wrong.
 <br>
-<br><b>
+<h2>
 SYNOPSIS
-</b><br>
-<P>
+</h2>
+<p>
 <b>#include &#60;pcre2.h&#62;</b>
-</P>
-<P>
+</p>
+<p>
 <b>int pcre2_substring_list_get(pcre2_match_data *<i>match_data</i>,</b>
 <b>"  PCRE2_UCHAR ***<i>listptr</i>, PCRE2_SIZE **<i>lengthsptr</i>);</b>
-</P>
-<br><b>
+</p>
+<h2>
 DESCRIPTION
-</b><br>
-<P>
+</h2>
+<p>
 This is a convenience function for extracting all the captured substrings after
 a pattern match. It builds a list of pointers to the strings, and (optionally)
 a second list that contains their lengths (in code units), excluding a
@@ -44,8 +44,8 @@ A pointer to a list of pointers is put in the variable whose address is in
 not NULL, a matching list of lengths is created, and its address is placed in
 <i>lengthsptr</i>. The yield of the function is zero on success or
 PCRE2_ERROR_NOMEMORY if sufficient memory could not be obtained.
-</P>
-<P>
+</p>
+<p>
 There is a complete description of the PCRE2 native API in the
 <a href="pcre2api.html"><b>pcre2api</b></a>
 page and a description of the POSIX API in the

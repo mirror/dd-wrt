@@ -275,8 +275,12 @@
     aaa
     bbb 
 
+#if !ebcdic
+
 /[^\xff]((?1))/BI
     abcd
+
+#endif
 
 /(x(?1)){4}/
 
@@ -291,11 +295,29 @@
 /abc/
     abc
     abc\=no_jit 
-    
+
+/(*NO_JIT)abc/
+    abc
+
 /abc/jitfast
     abc
     abc\=no_jit 
-    
+
+/(*NO_JIT)abc/jitfast
+\= Expect error
+    abc
+
+# Do not leak a previously copied subject with jitfast (#920)
+
+/abc/jitfast
+    abc\=copy_matched_subject,no_jit
+    abc
+
+/abc/jitfast
+    abc\=copy_matched_subject
+    abc\=null_context
+    abc\=null_context,no_jit
+
 # ---- 
 
 /[aC]/mg,firstline,newline=lf
@@ -303,5 +325,42 @@
 
 /[aCz]/mg,firstline,newline=lf
     match\nmatch
+
+//jit
+    \=null_subject
+    
+/(.)(.)/jitfast,replace=$2+$1
+    ABCD
+
+/(...)-(...)/jitfast
+    abc-xyz\=get=2
+
+# Check the JIT sets all the correct match state for pcre2_substitute
+
+/abc/jitfast,replace=yy
+    zabcz
+    zabcz\=substitute_matched
+
+/abc/jitfast,replace=yy
+    zABCz
+    zABCz\=substitute_matched
+
+/abc/jitfast
+    ab\=replace=yy,partial_hard
+    ab\=replace=yy,partial_hard,substitute_matched
+
+/(?C1)abc/jitfast,replace=yy
+    zabcz\=callout_error=1
+    zabcz\=callout_error=1,substitute_matched
+
+# Check UTF validation when falling back from a partially-compiled JIT pattern
+# to the interpreter
+
+#if unicode
+
+/\b/B,utf,ucp,jit=1
+    \xff\x00\x00\=offset=2,ps
+
+#endif
 
 # End of testinput17

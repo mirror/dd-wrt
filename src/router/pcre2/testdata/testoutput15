@@ -6,19 +6,30 @@
 
 # (2) Other tests that must not be run with JIT.
 
+# These tests are first so that they don't inherit a large enough heap frame 
+# vector from a previous test.
+
+/(*LIMIT_HEAP=21)\[(a)]{60}/expand
+    \[a]{60}
+Failed: error -63: heap limit exceeded
+
+"(*LIMIT_HEAP=21)()((?))()()()()()()()()()()()()()()()()()()()()()()()(())()()()()()()()()()()()()()()()()()()()()()(())()()()()()()()()()()()()()"
+  xx
+Failed: error -63: heap limit exceeded
+
+# -----------------------------------------------------------------------
+
 /(a+)*zz/I
 Capture group count = 1
-Starting code units: a z 
+Starting code units: a z
 Last code unit = 'z'
 Subject length lower bound = 2
-  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaazzbbbbbb\=find_limits
-Minimum heap limit = 0
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaazzbbbbbb\=find_limits_noheap
 Minimum match limit = 7
 Minimum depth limit = 7
  0: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaazz
  1: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-  aaaaaaaaaaaaaz\=find_limits
-Minimum heap limit = 0
+  aaaaaaaaaaaaaz\=find_limits_noheap
 Minimum match limit = 20481
 Minimum depth limit = 30
 No match
@@ -27,70 +38,60 @@ No match
 Capture group count = 1
 May match empty string
 Subject length lower bound = 0
-   /* this is a C style comment */\=find_limits
-Minimum heap limit = 0
+   /* this is a C style comment */\=find_limits_noheap
 Minimum match limit = 64
 Minimum depth limit = 7
  0: /* this is a C style comment */
  1: /* this is a C style comment */
 
 /^(?>a)++/
-    aa\=find_limits
-Minimum heap limit = 0
+    aa\=find_limits_noheap
 Minimum match limit = 5
 Minimum depth limit = 3
  0: aa
-    aaaaaaaaa\=find_limits
-Minimum heap limit = 0
+    aaaaaaaaa\=find_limits_noheap
 Minimum match limit = 12
 Minimum depth limit = 3
  0: aaaaaaaaa
 
 /(a)(?1)++/
-    aa\=find_limits
-Minimum heap limit = 0
+    aa\=find_limits_noheap
 Minimum match limit = 7
 Minimum depth limit = 5
  0: aa
  1: a
-    aaaaaaaaa\=find_limits
-Minimum heap limit = 0
+    aaaaaaaaa\=find_limits_noheap
 Minimum match limit = 21
 Minimum depth limit = 5
  0: aaaaaaaaa
  1: a
 
 /a(?:.)*?a/ims
-    abbbbbbbbbbbbbbbbbbbbba\=find_limits
-Minimum heap limit = 0
+    abbbbbbbbbbbbbbbbbbbbba\=find_limits_noheap
 Minimum match limit = 24
 Minimum depth limit = 3
  0: abbbbbbbbbbbbbbbbbbbbba
 
 /a(?:.(*THEN))*?a/ims
-    abbbbbbbbbbbbbbbbbbbbba\=find_limits
-Minimum heap limit = 0
+    abbbbbbbbbbbbbbbbbbbbba\=find_limits_noheap
 Minimum match limit = 66
 Minimum depth limit = 45
  0: abbbbbbbbbbbbbbbbbbbbba
 
 /a(?:.(*THEN:ABC))*?a/ims
-    abbbbbbbbbbbbbbbbbbbbba\=find_limits
-Minimum heap limit = 0
+    abbbbbbbbbbbbbbbbbbbbba\=find_limits_noheap
 Minimum match limit = 66
 Minimum depth limit = 45
  0: abbbbbbbbbbbbbbbbbbbbba
 
 /^(?>a+)(?>b+)(?>c+)(?>d+)(?>e+)/
-     aabbccddee\=find_limits
-Minimum heap limit = 0
+     aabbccddee\=find_limits_noheap
 Minimum match limit = 7
 Minimum depth limit = 7
  0: aabbccddee
 
 /^(?>(a+))(?>(b+))(?>(c+))(?>(d+))(?>(e+))/
-     aabbccddee\=find_limits
-Minimum heap limit = 0
+     aabbccddee\=find_limits_noheap
 Minimum match limit = 12
 Minimum depth limit = 12
  0: aabbccddee
@@ -101,8 +102,7 @@ Minimum depth limit = 12
  5: ee
 
 /^(?>(a+))(?>b+)(?>(c+))(?>d+)(?>(e+))/
-     aabbccddee\=find_limits
-Minimum heap limit = 0
+     aabbccddee\=find_limits_noheap
 Minimum match limit = 10
 Minimum depth limit = 10
  0: aabbccddee
@@ -111,10 +111,12 @@ Minimum depth limit = 10
  3: ee
 
 /(*LIMIT_MATCH=12bc)abc/
-Failed: error 160 at offset 17: (*VERB) not recognized or malformed
+Failed: error 160 at offset 16: (*VERB) not recognized or malformed
+        here: ...T_MATCH=12 |<--| bc)abc
 
 /(*LIMIT_MATCH=4294967290)abc/
-Failed: error 160 at offset 24: (*VERB) not recognized or malformed
+Failed: error 160 at offset 23: (*VERB) not recognized or malformed
+        here: ...=429496729 |<--| 0)abc
 
 /(*LIMIT_DEPTH=4294967280)abc/I
 Capture group count = 0
@@ -139,7 +141,7 @@ Failed: error -53: matching depth limit exceeded
 /(*LIMIT_MATCH=3000)(a+)*zz/I
 Capture group count = 1
 Match limit = 3000
-Starting code units: a z 
+Starting code units: a z
 Last code unit = 'z'
 Subject length lower bound = 2
 \= Expect limit exceeded
@@ -152,7 +154,7 @@ Failed: error -47: match limit exceeded
 /(*LIMIT_MATCH=60000)(*LIMIT_MATCH=3000)(a+)*zz/I
 Capture group count = 1
 Match limit = 3000
-Starting code units: a z 
+Starting code units: a z
 Last code unit = 'z'
 Subject length lower bound = 2
 \= Expect limit exceeded
@@ -162,7 +164,7 @@ Failed: error -47: match limit exceeded
 /(*LIMIT_MATCH=60000)(a+)*zz/I
 Capture group count = 1
 Match limit = 60000
-Starting code units: a z 
+Starting code units: a z
 Last code unit = 'z'
 Subject length lower bound = 2
 \= Expect no match
@@ -175,7 +177,7 @@ Failed: error -47: match limit exceeded
 /(*LIMIT_DEPTH=10)(a+)*zz/I
 Capture group count = 1
 Depth limit = 10
-Starting code units: a z 
+Starting code units: a z
 Last code unit = 'z'
 Subject length lower bound = 2
 \= Expect limit exceeded
@@ -188,7 +190,7 @@ Failed: error -53: matching depth limit exceeded
 /(*LIMIT_DEPTH=10)(*LIMIT_DEPTH=1000)(a+)*zz/I
 Capture group count = 1
 Depth limit = 1000
-Starting code units: a z 
+Starting code units: a z
 Last code unit = 'z'
 Subject length lower bound = 2
 \= Expect no match
@@ -198,7 +200,7 @@ No match
 /(*LIMIT_DEPTH=1000)(a+)*zz/I
 Capture group count = 1
 Depth limit = 1000
-Starting code units: a z 
+Starting code units: a z
 Last code unit = 'z'
 Subject length lower bound = 2
 \= Expect no match
@@ -450,10 +452,12 @@ Failed: error -52: nested recursion at the same subject position
     bbb
 Failed: error -52: nested recursion at the same subject position
 
+#if !ebcdic
+
 /[^\xff]((?1))/BI
 ------------------------------------------------------------------
         Bra
-        [^\x{ff}]
+        [^\x{ff}] (not)
         CBra 1
         Recurse
         Ket
@@ -464,6 +468,8 @@ Capture group count = 1
 Subject length lower bound = 1
     abcd
 Failed: error -52: nested recursion at the same subject position
+
+#endif
 
 # These tests don't behave the same with JIT
 
@@ -477,8 +483,9 @@ Failed: error -52: nested recursion at the same subject position
 ------------------------------------------------------------------
 Capture group count = 0
 Options: no_auto_possess
-Starting code units: 0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P 
-  Q R S T U V W X Y Z _ a b c d e f g h i j k l m n o p q r s t u v w x y z 
+Optimizations: dotstar_anchor,start_optimize
+Starting code units: 0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P
+  Q R S T U V W X Y Z _ a b c d e f g h i j k l m n o p q r s t u v w x y z
 Subject length lower bound = 1
     abc\=callout_fail=1
 --->abc
@@ -501,8 +508,9 @@ No match
 Capture group count = 0
 Compile options: <none>
 Overall options: no_auto_possess
-Starting code units: 0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P 
-  Q R S T U V W X Y Z _ a b c d e f g h i j k l m n o p q r s t u v w x y z 
+Optimizations: dotstar_anchor,start_optimize
+Starting code units: 0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P
+  Q R S T U V W X Y Z _ a b c d e f g h i j k l m n o p q r s t u v w x y z
 Subject length lower bound = 1
     abc\=callout_fail=1
 --->abc
@@ -521,10 +529,6 @@ No match
  0: 
  1: 
 
-/(*LIMIT_HEAP=21)\[(a)]{60}/expand
-    \[a]{60}
-Failed: error -63: heap limit exceeded
-
 /b(?<!ax)(?!cx)/allusedtext
     abc
  0: abc
@@ -532,5 +536,13 @@ Failed: error -63: heap limit exceeded
     abcz
  0: abcz
     < >>
+
+# This test triggers the recursion limit in the interpreter, but completes in
+# JIT. It's in testinput2 with disable_recurse_loop_check to get it to work
+# in the interpreter.
+
+/(a(?1)z||(?1)++)$/
+    abcd
+Failed: error -52: nested recursion at the same subject position
 
 # End of testinput15

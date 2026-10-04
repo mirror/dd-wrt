@@ -1,4 +1,4 @@
-.TH PCRE2SERIALIZE 3 "27 June 2018" "PCRE2 10.32"
+.TH PCRE2SERIALIZE 3 "19 January 2024" "PCRE2 10.49"
 .SH NAME
 PCRE2 - Perl-compatible regular expressions (revised API)
 .SH "SAVING AND RE-USING PRECOMPILED PCRE2 PATTERNS"
@@ -6,11 +6,11 @@ PCRE2 - Perl-compatible regular expressions (revised API)
 .sp
 .nf
 .B int32_t pcre2_serialize_decode(pcre2_code **\fIcodes\fP,
-.B "  int32_t \fInumber_of_codes\fP, const uint32_t *\fIbytes\fP,"
+.B "  int32_t \fInumber_of_codes\fP, const uint8_t *\fIbytes\fP,"
 .B "  pcre2_general_context *\fIgcontext\fP);"
 .sp
-.B int32_t pcre2_serialize_encode(pcre2_code **\fIcodes\fP,
-.B "  int32_t \fInumber_of_codes\fP, uint32_t **\fIserialized_bytes\fP,"
+.B int32_t pcre2_serialize_encode(const pcre2_code **\fIcodes\fP,
+.B "  int32_t \fInumber_of_codes\fP, uint8_t **\fIserialized_bytes\fP,"
 .B "  PCRE2_SIZE *\fIserialized_size\fP, pcre2_general_context *\fIgcontext\fP);"
 .sp
 .B void pcre2_serialize_free(uint8_t *\fIbytes\fP);
@@ -75,13 +75,13 @@ being a pointer to a vector of pointers to compiled patterns, and the length of
 the vector. The third and fourth arguments point to variables which are set to
 point to the created byte stream and its length, respectively. The final
 argument is a pointer to a general context, which can be used to specify custom
-memory mangagement functions. If this argument is NULL, \fBmalloc()\fP is used
+memory management functions. If this argument is NULL, \fBmalloc()\fP is used
 to obtain memory for the byte stream. The yield of the function is the number
 of serialized patterns, or one of the following negative error codes:
 .sp
   PCRE2_ERROR_BADDATA      the number of patterns is zero or less
   PCRE2_ERROR_BADMAGIC     mismatch of id bytes in one of the patterns
-  PCRE2_ERROR_MEMORY       memory allocation failed
+  PCRE2_ERROR_NOMEMORY     memory allocation failed
   PCRE2_ERROR_MIXEDTABLES  the patterns do not all use the same tables
   PCRE2_ERROR_NULL         the 1st, 3rd, or 4th argument is NULL
 .sp
@@ -137,11 +137,10 @@ the compiled patterns in new memory blocks, setting pointers to them in a
 vector. The first two arguments are a pointer to a suitable vector and its
 length, and the third argument points to a byte stream. The final argument is a
 pointer to a general context, which can be used to specify custom memory
-mangagement functions for the decoded patterns. If this argument is NULL,
+management functions for the decoded patterns. If this argument is NULL,
 \fBmalloc()\fP and \fBfree()\fP are used. After deserialization, the byte
 stream is no longer needed and can be discarded.
 .sp
-  int32_t number_of_codes;
   pcre2_code *list_of_codes[2];
   uint8_t *bytes = <serialized data>;
   int32_t number_of_codes =
@@ -185,7 +184,7 @@ save/restore cycle. You can, however, process a restored pattern with
 .sp
 .nf
 Philip Hazel
-University Computing Service
+Retired from University Computing Service
 Cambridge, England.
 .fi
 .
@@ -194,6 +193,6 @@ Cambridge, England.
 .rs
 .sp
 .nf
-Last updated: 27 June 2018
+Last updated: 19 January 2024
 Copyright (c) 1997-2018 University of Cambridge.
 .fi

@@ -12,26 +12,26 @@ This page is part of the PCRE2 HTML documentation. It was generated
 automatically from the original man page. If there is any nonsense in it,
 please consult the man page, in case the conversion went wrong.
 <br>
-<br><b>
+<h2>
 SYNOPSIS
-</b><br>
-<P>
+</h2>
+<p>
 <b>#include &#60;pcre2.h&#62;</b>
-</P>
-<P>
+</p>
+<p>
 <b>void pcre2_converted_pattern_free(PCRE2_UCHAR *<i>converted_pattern</i>);</b>
-</P>
-<br><b>
+</p>
+<h2>
 DESCRIPTION
-</b><br>
-<P>
+</h2>
+<p>
 This function is part of an experimental set of pattern conversion functions.
 It frees the memory occupied by a converted pattern that was obtained by
 calling <b>pcre2_pattern_convert()</b> with arguments that caused it to place
 the converted pattern into newly obtained heap memory. If the argument is NULL,
 the function returns immediately without doing anything.
-</P>
-<P>
+</p>
+<p>
 The pattern conversion functions are described in the
 <a href="pcre2convert.html"><b>pcre2convert</b></a>
 documentation.
