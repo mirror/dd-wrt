@@ -606,25 +606,25 @@ iperf_set_mapped_v4(struct iperf_test *ipt, const int val)
     ipt->mapped_v4 = val;
 }
 
-void 
+void
 iperf_set_on_new_stream_callback(struct iperf_test* ipt, void (*callback)(struct iperf_stream *))
 {
         ipt->on_new_stream = callback;
 }
 
-void 
+void
 iperf_set_on_test_start_callback(struct iperf_test* ipt, void (*callback)(struct iperf_test *))
 {
         ipt->on_test_start = callback;
 }
 
-void 
+void
 iperf_set_on_test_connect_callback(struct iperf_test* ipt, void (*callback)(struct iperf_test *))
 {
         ipt->on_connect = callback;
 }
 
-void 
+void
 iperf_set_on_test_finish_callback(struct iperf_test* ipt, void (*callback)(struct iperf_test *))
 {
         ipt->on_test_finish = callback;
@@ -1171,9 +1171,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 #if defined(HAVE_DONT_FRAGMENT)
 	{"dont-fragment", no_argument, NULL, OPT_DONT_FRAGMENT},
 #endif /* HAVE_DONT_FRAGMENT */
-#if defined(HAVE_MSG_TRUNC)
 	{"skip-rx-copy", no_argument, NULL, OPT_SKIP_RX_COPY},
-#endif /* HAVE_MSG_TRUNC */
 #if defined(HAVE_SSL)
     {"username", required_argument, NULL, OPT_CLIENT_USERNAME},
     {"rsa-public-key-path", required_argument, NULL, OPT_CLIENT_RSA_PUBLIC_KEY},
@@ -1364,6 +1362,8 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 if (i_errno != 0) {
                     return -1;
                 }
+                // NOTE: rate is unsigned, can't be less than 0
+
 		rate_flag = 1;
 		client_flag = 1;
                 break;
@@ -1399,6 +1399,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 if (i_errno != 0) {
                     return -1;
                 }
+                // NOTE: bytes is unsigned, can't be less than 0
 		client_flag = 1;
                 break;
             case 'k':
@@ -1406,6 +1407,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 if (i_errno != 0) {
                     return -1;
                 }
+                // NOTE: blocks is unsigned, can't be less than 0
 		client_flag = 1;
                 break;
             case 'l':
@@ -1413,11 +1415,12 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 if (i_errno != 0) {
                     return -1;
                 }
+                // NOTE: blksize is unsigned, can't be less than 0
 		client_flag = 1;
                 break;
             case 'P':
                 test->num_streams = atoi(optarg);
-                if (test->num_streams > MAX_STREAMS) {
+                if (test->num_streams < 1 || test->num_streams > MAX_STREAMS) {
                     i_errno = IENUMSTREAMS;
                     return -1;
                 }
@@ -1447,7 +1450,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 if (i_errno != 0) {
                     return -1;
                 }
-                if (farg > (double) MAX_TCP_BUFFER) {
+                if (farg < 0 || farg > (double) MAX_TCP_BUFFER) {
                     i_errno = IEBUFSIZE;
                     return -1;
                 }
@@ -1489,7 +1492,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 break;
             case 'M':
                 test->settings->mss = atoi(optarg);
-                if (test->settings->mss > MAX_MSS) {
+                if (test->settings->mss < 0 || test->settings->mss > MAX_MSS) {
                     i_errno = IEMSS;
                     return -1;
                 }
@@ -1518,7 +1521,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 	    case OPT_DSCP:
                 test->settings->tos = parse_qos(optarg);
 		if(test->settings->tos < 0) {
-			i_errno = IEBADTOS;
+			i_errno = IEBADDSCP;
 			return -1;
 		}
 		client_flag = 1;
@@ -1556,10 +1559,6 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 		TAILQ_INSERT_TAIL(&test->xbind_addrs, xbe, link);
                 break;
             case 'Z':
-                if (!has_sendfile()) {
-                    i_errno = IENOSENDFILE;
-                    return -1;
-                }
                 test->zerocopy = 1;
 		client_flag = 1;
                 break;
@@ -1731,8 +1730,9 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 #if defined(HAVE_SO_MAX_PACING_RATE)
 		test->settings->fqrate = unit_atof_rate(optarg);
 		if (i_errno != 0) {
-			return -1;
+                    return -1;
 		}
+                // NOTE: fqrate is unsigned, can't be less than 0
 		client_flag = 1;
 #else /* HAVE_SO_MAX_PACING_RATE */
 		i_errno = IEUNIMP;
@@ -1774,23 +1774,25 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
             server_flag = 1;
 	    break;
 #endif /* HAVE_SSL */
-#if defined(HAVE_MSG_TRUNC)
-            case OPT_SKIP_RX_COPY:
+            case OPT_SKIP_RX_COPY: /* Allow the option even when `HAVE_MSG_TRUNC` is not defined, as server may support it */
                 test->settings->skip_rx_copy = 1;
                 client_flag = 1;
                 break;
-#endif /* HAVE_MSG_TRUNC */
 	    case OPT_PACING_TIMER:
 		test->settings->pacing_timer = unit_atoi(optarg);
 		if (i_errno != 0) {
-			return -1;
+                    return -1;
 		}
+                // NOTE: pacing_timer is an int and needs to be checked
+                if (test->settings->pacing_timer < 0){
+                    return -1;
+                }
 		client_flag = 1;
 		break;
 	    case OPT_CONNECT_TIMEOUT:
 		test->settings->connect_timeout = unit_atoi(optarg);
 		if (i_errno != 0) {
-			return -1;
+                    return -1;
 		}
 		client_flag = 1;
 		break;
@@ -1884,6 +1886,14 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
     } else if (test->role == 'c' && rcv_timeout_flag && test->mode == SENDER){
         i_errno = IERVRSONLYRCVTIMEOUT;
         return -1;
+     } else if (test->role == 'c' && test->zerocopy == 1 && test->mode != RECEIVER && !has_sendfile()) {
+            i_errno = IENOSENDFILE; // Zerocopy required for the Client but is not supported
+            return -1;
+#if !defined(HAVE_MSG_TRUNC)
+     } else if (test->role == 'c' && test->settings->skip_rx_copy == 1 && test->mode != RECEIVER) {
+            i_errno = IERVRSONLYSKIPRXCOPY;
+            return -1;
+#endif /* !HAVE_MSG_TRUNC */
     } else if (test->role == 's' && (server_rsa_private_key || test->server_authorized_users) &&
         !(server_rsa_private_key && test->server_authorized_users)) {
          i_errno = IESETSERVERAUTH;
@@ -2075,7 +2085,7 @@ iperf_check_throttle(struct iperf_stream *sp, struct iperf_time *nowP)
     uint64_t bits_per_second;
     int64_t missing_rate;
     uint64_t bits_sent;
-    
+
 #if defined(HAVE_CLOCK_NANOSLEEP) || defined(HAVE_NANOSLEEP)
     struct timespec nanosleep_time;
     int64_t time_to_green_light, delta_bits;
@@ -2262,7 +2272,7 @@ iperf_recv_mt(struct iperf_stream *sp)
 		i_errno = IESTREAMREAD;
 		return r;
 	    }
-            
+
             /* Collect statistics only if receive did not timeout (e.g. `Nread()` may timeout).
              * This is also important for `--rcv-timeout` to work properly.
              */
@@ -2531,6 +2541,7 @@ send_parameters(struct iperf_test *test)
     return r;
 }
 
+
 /*************************************************************/
 
 static int
@@ -2567,24 +2578,66 @@ get_parameters(struct iperf_test *test)
         }
         if ((j_p = iperf_cJSON_GetObjectItemType(j, "sctp", cJSON_True)) != NULL)
             set_protocol(test, Psctp);
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "omit", cJSON_Number)) != NULL)
-	    test->omit = j_p->valueint;
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "server_affinity", cJSON_Number)) != NULL)
-	    test->server_affinity = j_p->valueint;
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "time", cJSON_Number)) != NULL)
-	    test->duration = j_p->valueint;
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "omit", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0  || j_p->valueint > MAX_OMIT_TIME){
+                i_errno = IEOMIT;
+                r = -1;
+            } else {
+	        test->omit = j_p->valueint;
+            }
+        }
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "server_affinity", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0  || j_p->valueint > 1024) {
+                i_errno = IEAFFINITY;
+                r = -1;
+            } else {
+	        test->server_affinity = j_p->valueint;
+            }
+        }
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "time", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0  || j_p->valueint > MAX_TIME) {
+                i_errno = IEDURATION;
+                r = -1;
+            } else {
+	        test->duration = j_p->valueint;
+            }
+        }
         test->settings->bytes = 0;
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "num", cJSON_Number)) != NULL)
-	    test->settings->bytes = j_p->valueint;
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "num", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0){
+                i_errno = IERECVPARAMS;
+                r = -1;
+            } else {
+                test->settings->bytes = j_p->valueint;
+            }
+        }
         test->settings->blocks = 0;
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "blockcount", cJSON_Number)) != NULL)
-	    test->settings->blocks = j_p->valueint;
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "MSS", cJSON_Number)) != NULL)
-	    test->settings->mss = j_p->valueint;
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "blockcount", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0){
+                i_errno = IERECVPARAMS;
+                r = -1;
+            } else {
+	        test->settings->blocks = j_p->valueint;
+            }
+        }
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "MSS", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0  || j_p->valueint > MAX_MSS) {
+                i_errno = IEMSS;
+                r = -1;
+            } else {
+	        test->settings->mss = j_p->valueint;
+            }
+        }
 	if ((j_p = iperf_cJSON_GetObjectItemType(j, "nodelay", cJSON_True)) != NULL)
 	    test->no_delay = 1;
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "parallel", cJSON_Number)) != NULL)
-	    test->num_streams = j_p->valueint;
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "parallel", cJSON_Number)) != NULL){
+            if (j_p->valueint < 1  || j_p->valueint > MAX_STREAMS) {
+                i_errno = IENUMSTREAMS;
+                r = -1;
+            } else {
+	        test->num_streams = j_p->valueint;
+            }
+        }
 	if ((j_p = iperf_cJSON_GetObjectItemType(j, "reverse", cJSON_True)) != NULL)
 	    iperf_set_test_reverse(test, 1);
         if ((j_p = iperf_cJSON_GetObjectItemType(j, "bidirectional", cJSON_True)) != NULL)
@@ -2593,19 +2646,51 @@ get_parameters(struct iperf_test *test)
 	if ((j_p = iperf_cJSON_GetObjectItemType(j, "mptcp", cJSON_True)) != NULL)
 	    test->mptcp = 1;
 #endif
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "window", cJSON_Number)) != NULL)
-	    test->settings->socket_bufsize = j_p->valueint;
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "len", cJSON_Number)) != NULL)
-	    test->settings->blksize = j_p->valueint;
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "window", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0 || j_p->valueint > MAX_TCP_BUFFER){
+                i_errno = IEBUFSIZE;
+                r = -1;
+            }
+            else {
+	        test->settings->socket_bufsize = j_p->valueint;
+            }
+        }
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "len", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0){
+                i_errno = IEBLOCKSIZE;
+                r = -1;
+            } else {
+	        test->settings->blksize = j_p->valueint;
+            }
+        }
 
 	/* Accept UDP GSO/GRO settings provided by the client */
 	/* Always accept these fields to allow server to use GSO/GRO based on its own support */
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "gso", cJSON_Number)) != NULL)
-	    test->settings->gso = j_p->valueint;
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "gso_dg_size", cJSON_Number)) != NULL)
-	    test->settings->gso_dg_size = j_p->valueint;
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "gso_bf_size", cJSON_Number)) != NULL)
-	    test->settings->gso_bf_size = j_p->valueint;
+        // Should be TrueObject
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "gso", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0){
+                i_errno = IERECVPARAMS;
+                r = -1;
+            } else {
+                test->settings->gso = j_p->valueint;
+            }
+        }
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "gso_dg_size", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0){
+                i_errno = IERECVPARAMS;
+                r = -1;
+            } else {
+	        test->settings->gso_dg_size = j_p->valueint;
+            }
+        }
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "gso_bf_size", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0){
+                i_errno = IERECVPARAMS;
+                r = -1;
+            } else {
+	        test->settings->gso_bf_size = j_p->valueint;
+            }
+        }
 
 	/* Backward-compatibility: If client didn't send GSO params, derive from blksize. */
 	if (test->protocol->id == Pudp && test->settings->gso == 1 && test->settings->gso_dg_size == 0) {
@@ -2617,23 +2702,72 @@ get_parameters(struct iperf_test *test)
 	    }
 	}
 
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "gro", cJSON_Number)) != NULL)
-	    test->settings->gro = j_p->valueint;
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "gro_bf_size", cJSON_Number)) != NULL)
-	    test->settings->gro_bf_size = j_p->valueint;
-
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "bandwidth", cJSON_Number)) != NULL)
-	    test->settings->rate = j_p->valueint;
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "fqrate", cJSON_Number)) != NULL)
-	    test->settings->fqrate = j_p->valueint;
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "pacing_timer", cJSON_Number)) != NULL)
-	    test->settings->pacing_timer = j_p->valueint;
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "burst", cJSON_Number)) != NULL)
-	    test->settings->burst = j_p->valueint;
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "TOS", cJSON_Number)) != NULL)
-	    test->settings->tos = j_p->valueint;
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "flowlabel", cJSON_Number)) != NULL)
-	    test->settings->flowlabel = j_p->valueint;
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "gro", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0 || j_p->valueint > 1){
+                i_errno = IERECVPARAMS;
+                r = -1;
+            } else {
+	        test->settings->gro = j_p->valueint;
+            }
+        }
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "gro_bf_size", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0){
+                i_errno = IERECVPARAMS;
+                r = -1;
+            } else {
+	        test->settings->gro_bf_size = j_p->valueint;
+            }
+        }
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "bandwidth", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0){
+                i_errno = IERECVPARAMS;
+                r = -1;
+            } else {
+	        test->settings->rate = j_p->valueint;
+            }
+        }
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "fqrate", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0){
+                i_errno = IERECVPARAMS;
+                r = -1;
+            } else {
+	        test->settings->fqrate = j_p->valueint;
+            }
+        }
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "pacing_timer", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0){
+                i_errno = IERECVPARAMS;
+                r = -1;
+            } else {
+	        test->settings->pacing_timer = j_p->valueint;
+            }
+        }
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "burst", cJSON_Number)) != NULL){
+            if (j_p->valueint <= 0 || j_p->valueint > MAX_BURST){
+                i_errno = IEBURST;
+                r = -1;
+            } else {
+	        test->settings->burst = j_p->valueint;
+            }
+        }
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "TOS", cJSON_Number)) != NULL){
+            if (j_p->valueint < 0 || j_p->valueint > 255){
+                i_errno = IEBADTOS;
+                r = -1;
+            } else {
+	        test->settings->tos = j_p->valueint;
+            }
+        }
+#if defined(HAVE_FLOWLABEL)
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "flowlabel", cJSON_Number)) != NULL){
+            if (j_p->valueint < 1 || j_p->valueint > 0xfffff ){
+                i_errno = IESETFLOW;
+                r = -1;
+            } else {
+	        test->settings->flowlabel = j_p->valueint;
+            }
+        }
+#endif /* HAVE_FLOWLABEL */
 	if ((j_p = iperf_cJSON_GetObjectItemType(j, "title", cJSON_String)) != NULL)
 	    test->title = strdup(j_p->valuestring);
 	if ((j_p = iperf_cJSON_GetObjectItemType(j, "extra_data", cJSON_String)) != NULL)
@@ -2642,51 +2776,93 @@ get_parameters(struct iperf_test *test)
 	    test->congestion = strdup(j_p->valuestring);
 	if ((j_p = iperf_cJSON_GetObjectItemType(j, "congestion_used", cJSON_String)) != NULL)
 	    test->congestion_used = strdup(j_p->valuestring);
+        // Should be TrueObject
 	if ((j_p = iperf_cJSON_GetObjectItemType(j, "get_server_output", cJSON_Number)) != NULL)
 	    iperf_set_test_get_server_output(test, 1);
 	if ((j_p = iperf_cJSON_GetObjectItemType(j, "udp_counters_64bit", cJSON_Number)) != NULL)
 	    iperf_set_test_udp_counters_64bit(test, 1);
 	if ((j_p = iperf_cJSON_GetObjectItemType(j, "repeating_payload", cJSON_Number)) != NULL)
 	    test->repeating_payload = 1;
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "zerocopy", cJSON_Number)) != NULL)
-	    test->zerocopy = j_p->valueint;
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "zerocopy", cJSON_Number)) != NULL){
+            test->zerocopy = (j_p->valueint) ? 1: 0;
+        }
 #if defined(HAVE_DONT_FRAGMENT)
-	if ((j_p = iperf_cJSON_GetObjectItemType(j, "dont_fragment", cJSON_Number)) != NULL)
-	    test->settings->dont_fragment = j_p->valueint;
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "dont_fragment", cJSON_Number)) != NULL){
+            test->settings->dont_fragment = (j_p->valueint) ? 1: 0;
+        }
 #endif /* HAVE_DONT_FRAGMENT */
 #if defined(HAVE_SSL)
 	if ((j_p = iperf_cJSON_GetObjectItemType(j, "authtoken", cJSON_String)) != NULL)
         test->settings->authtoken = strdup(j_p->valuestring);
 #endif //HAVE_SSL
-	if ((j_p = cJSON_GetObjectItem(j, "skip_rx_copy")) != NULL)
-	    test->settings->skip_rx_copy = j_p->valueint;
+	if ((j_p = iperf_cJSON_GetObjectItemType(j, "skip_rx_copy", cJSON_Number)) != NULL){
+            test->settings->skip_rx_copy = (j_p->valueint) ? 1: 0;
+        }
 	if (test->mode && test->protocol->id == Ptcp && has_tcpinfo_retransmits())
 	    test->sender_has_retransmits = 1;
 	if (test->settings->rate)
 	    cJSON_AddNumberToObject(test->json_start, "target_bitrate", test->settings->rate);
+
 	cJSON_Delete(j);
 
-    /* Ensure that the client does not request to run longer than the server's configured max */
-    if ((test->max_server_duration > 0) && (((test->duration + test->omit) > test->max_server_duration) || (test->duration == 0))) {
-        i_errno = IEMAXSERVERTESTDURATIONEXCEEDED;
-        r = -1;
-    }
+        /* Check flag / role compatibility. */
+        if ((test->protocol->id != Pudp && test->settings->blksize <= 0)
+            || test->settings->blksize > MAX_BLOCKSIZE) {
+            i_errno = IEBLOCKSIZE;
+            return -1;
+        }
+        // Check that UDP blksize > Min && < Max
+        if (test->protocol->id == Pudp &&
+                (test->settings->blksize < MIN_UDP_BLOCKSIZE || test->settings->blksize > MAX_UDP_BLOCKSIZE)) {
+            i_errno = IEUDPBLOCKSIZE;
+            return -1;
+        }
+
+      if (test->protocol->id == Pudp && test->settings->gso) {
+          test->settings->gso_dg_size = test->settings->blksize;
+          /* use the multiple of datagram size for the best efficiency. */
+          if (test->settings->gso_dg_size > 0) {
+              test->settings->gso_bf_size = (test->settings->gso_bf_size / test->settings->gso_dg_size) * test->settings->gso_dg_size;
+          }
+       }
 
 
-    /* Ensure that total requested data rate is not above the server's limit */
-    iperf_size_t total_requested_rate = test->num_streams * test->settings->rate * (test->mode == BIDIRECTIONAL? 2 : 1);
-    if (test->settings->bitrate_limit && total_requested_rate > test->settings->bitrate_limit) {
-        i_errno = IETOTALRATE;
-        r = -1;
-    }
+        /* Ensure that the client does not request to run longer than the server's configured max */
+        if ((test->max_server_duration > 0) && (((test->duration + test->omit) > test->max_server_duration) || (test->duration == 0))) {
+            i_errno = IEMAXSERVERTESTDURATIONEXCEEDED;
+            r = -1;
+        }
 
-    total_requested_rate = test->num_streams * test->settings->fqrate * (test->mode == BIDIRECTIONAL? 2 : 1);
-    if (test->settings->bitrate_limit && total_requested_rate > test->settings->bitrate_limit) {
-        i_errno = IETOTALRATE;
-        r = -1;
-    }
 
-    }
+        /* Ensure that total requested data rate is not above the server's limit */
+        iperf_size_t total_requested_rate = test->num_streams * test->settings->rate * (test->mode == BIDIRECTIONAL? 2 : 1);
+        if (test->settings->bitrate_limit && total_requested_rate > test->settings->bitrate_limit) {
+            i_errno = IETOTALRATE;
+            r = -1;
+        }
+
+        total_requested_rate = test->num_streams * test->settings->fqrate * (test->mode == BIDIRECTIONAL? 2 : 1);
+        if (test->settings->bitrate_limit && total_requested_rate > test->settings->bitrate_limit) {
+            i_errno = IETOTALRATE;
+            r = -1;
+        }
+
+        /* Ensure a sending server supports zerocpy */
+        if (test->zerocopy == 1 && test->mode != RECEIVER && !has_sendfile()) {
+            i_errno = IENOSENDFILE; // Zerocopy required for the Server but is not supported
+            return -1;
+        }
+
+        /* Ensure a receiving server supports Skip Rx Copy in reverse/bidir modes */
+#if !defined(HAVE_MSG_TRUNC)
+        if (test->settings->skip_rx_copy == 1 && test->mode != RECEIVER) {
+            i_errno = IERVRSONLYSKIPRXCOPY;
+            return -1;
+        }
+#endif /* !HAVE_MSG_TRUNC */
+
+    } /* else */
+
     return r;
 }
 
@@ -4769,7 +4945,10 @@ iperf_free_stream(struct iperf_stream *sp)
 
     /* XXX: need to free interval list too! */
     munmap(sp->buffer, sp->test->settings->blksize);
-    close(sp->buffer_fd);
+    if (sp->buffer_fd >= 0) {
+        close(sp->buffer_fd);
+        sp->buffer_fd = -1;
+    }
     if (sp->diskfile_fd >= 0)
 	close(sp->diskfile_fd);
     for (irp = TAILQ_FIRST(&sp->result->interval_results); irp != NULL; irp = nirp) {
@@ -4815,7 +4994,7 @@ iperf_new_stream(struct iperf_test *test, int s, int sender)
     sp = (struct iperf_stream *) malloc(sizeof(struct iperf_stream));
     if (!sp) {
         i_errno = IECREATESTREAM;
-        return NULL;
+        goto err_exit;
     }
 
     memset(sp, 0, sizeof(struct iperf_stream));
@@ -4825,9 +5004,8 @@ iperf_new_stream(struct iperf_test *test, int s, int sender)
     sp->settings = test->settings;
     sp->result = (struct iperf_stream_result *) malloc(sizeof(struct iperf_stream_result));
     if (!sp->result) {
-        free(sp);
         i_errno = IECREATESTREAM;
-        return NULL;
+        goto err_exit_free_sp;
     }
 
     memset(sp->result, 0, sizeof(struct iperf_stream_result));
@@ -4837,15 +5015,11 @@ iperf_new_stream(struct iperf_test *test, int s, int sender)
     sp->buffer_fd = mkstemp(template);
     if (sp->buffer_fd == -1) {
         i_errno = IECREATESTREAM;
-        free(sp->result);
-        free(sp);
-        return NULL;
+        goto err_exit_free_result;
     }
     if (unlink(template) < 0) {
         i_errno = IECREATESTREAM;
-        free(sp->result);
-        free(sp);
-        return NULL;
+        goto err_exit_close_buffer;
     }
     size = test->settings->blksize;
     if (test->protocol->id == Pudp && test->settings->gso && (size < test->settings->gso_bf_size))
@@ -4856,16 +5030,12 @@ iperf_new_stream(struct iperf_test *test, int s, int sender)
         printf("Buffer %d bytes\n", size);
     if (ftruncate(sp->buffer_fd, size) < 0) {
         i_errno = IECREATESTREAM;
-        free(sp->result);
-        free(sp);
-        return NULL;
+        goto err_exit_close_buffer;
     }
     sp->buffer = (char *) mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, sp->buffer_fd, 0);
     if (sp->buffer == MAP_FAILED) {
         i_errno = IECREATESTREAM;
-        free(sp->result);
-        free(sp);
-        return NULL;
+        goto err_exit_close_buffer;
     }
     sp->pending_size = 0;
 
@@ -4876,18 +5046,15 @@ iperf_new_stream(struct iperf_test *test, int s, int sender)
     sp->rcv = test->protocol->recv;
 
     if (test->diskfile_name != (char*) 0) {
-	sp->diskfile_fd = open(test->diskfile_name, sender ? O_RDONLY : (O_WRONLY|O_CREAT|O_TRUNC), S_IRUSR|S_IWUSR);
-	if (sp->diskfile_fd == -1) {
-	    i_errno = IEFILE;
-            munmap(sp->buffer, sp->test->settings->blksize);
-            free(sp->result);
-            free(sp);
-	    return NULL;
-	}
+        sp->diskfile_fd = open(test->diskfile_name, sender ? O_RDONLY : (O_WRONLY|O_CREAT|O_TRUNC), S_IRUSR|S_IWUSR);
+        if (sp->diskfile_fd == -1) {
+            i_errno = IEFILE;
+            goto err_exit_munmap_buffer;
+        }
         sp->snd2 = sp->snd;
-	sp->snd = diskfile_send;
-	sp->rcv2 = sp->rcv;
-	sp->rcv = diskfile_recv;
+        sp->snd = diskfile_send;
+        sp->rcv2 = sp->rcv;
+        sp->rcv = diskfile_recv;
     } else
         sp->diskfile_fd = -1;
 
@@ -4902,15 +5069,27 @@ iperf_new_stream(struct iperf_test *test, int s, int sender)
     }
 
     if ((ret < 0) || (iperf_init_stream(sp, test) < 0)) {
-        close(sp->buffer_fd);
-        munmap(sp->buffer, sp->test->settings->blksize);
-        free(sp->result);
-        free(sp);
-        return NULL;
+        goto err_exit_close_diskfile;
     }
     iperf_add_stream(test, sp);
 
     return sp;
+
+err_exit_close_diskfile:
+    /* The file may not be open because it depends on user given -F option. */
+    if (sp->diskfile_fd >= 0) {
+        close(sp->diskfile_fd);
+    }
+err_exit_munmap_buffer:
+    munmap(sp->buffer, sp->test->settings->blksize);
+err_exit_close_buffer:
+    close(sp->buffer_fd);
+err_exit_free_result:
+    free(sp->result);
+err_exit_free_sp:
+    free(sp);
+err_exit:
+    return NULL;
 }
 
 /**************************************************************************/
@@ -5616,7 +5795,7 @@ iperf_set_control_keepalive(struct iperf_test *test)
                 return -1;
             }
         }
-   
+
         // Seems that at least in Windows WSL2, TCP keepalive retries full interval must be
         // smaller than the idle interval. Otherwise, the keepalive message is sent only once.
         if (test->settings->cntl_ka_keepidle) {
