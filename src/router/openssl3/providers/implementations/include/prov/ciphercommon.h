@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2019-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -364,6 +364,9 @@ PROV_CIPHER_HW_FN ossl_cipher_hw_chunked_ofb128;
     }
 
 struct ossl_cipher_get_ctx_param_list_st {
+#ifdef FIPS_MODULE
+    OSSL_PARAM *ind; /* FIPS indicator */
+#endif
     OSSL_PARAM *keylen; /* all ciphers */
     OSSL_PARAM *ivlen; /* all ciphers */
     OSSL_PARAM *pad; /* all ciphers */

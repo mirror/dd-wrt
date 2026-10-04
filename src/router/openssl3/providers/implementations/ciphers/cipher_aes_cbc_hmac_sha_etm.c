@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 2024-2026 The OpenSSL Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License 2.0 (the "License").  You may not use
  * this file except in compliance with the License.  You can obtain a copy
@@ -143,6 +143,11 @@ static int aes_get_ctx_params(void *vctx, OSSL_PARAM params[])
             return 0;
         }
     }
+#ifdef FIPS_MODULE
+    p = OSSL_PARAM_locate(params, OSSL_CIPHER_PARAM_FIPS_APPROVED_INDICATOR);
+    if (p != NULL && !OSSL_PARAM_set_int(p, 1))
+        return 0;
+#endif
     return 1;
 }
 
@@ -151,6 +156,9 @@ static const OSSL_PARAM cipher_aes_known_gettable_ctx_params[] = {
     OSSL_PARAM_size_t(OSSL_CIPHER_PARAM_IVLEN, NULL),
     OSSL_PARAM_octet_string(OSSL_CIPHER_PARAM_IV, NULL, 0),
     OSSL_PARAM_octet_string(OSSL_CIPHER_PARAM_UPDATED_IV, NULL, 0),
+#ifdef FIPS_MODULE
+    OSSL_PARAM_int(OSSL_CIPHER_PARAM_FIPS_APPROVED_INDICATOR, NULL),
+#endif
     OSSL_PARAM_END
 };
 

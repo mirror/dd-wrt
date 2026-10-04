@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2025 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2025-2026 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the Apache License 2.0 (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -174,10 +174,9 @@ foreach my $alg (@algs) {
         sprintf("create fake private key: %s", $alg));
     my $realfh = IO::File->new($real, "<:raw");
     my $fakefh = IO::File->new($fake, "<:raw");
-    local $/ = undef;
-    my $realder = <$realfh>;
+    my $realder = do { local $/; <$realfh> };
     $realfh->close();
-    my $fakeder = <$fakefh>;
+    my $fakeder = do { local $/; <$fakefh> };
     $fakefh->close();
     #
     # - 20 bytes PKCS8 fixed overhead,

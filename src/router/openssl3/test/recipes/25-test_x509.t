@@ -17,7 +17,7 @@ use File::Compare qw/compare_text/;
 
 setup("test_x509");
 
-plan tests => 151;
+plan tests => 152;
 
 # Prevent MSys2 filename munging for arguments that look like file paths but
 # aren't
@@ -545,7 +545,7 @@ my $in_key = srctop_file('test', 'certs', 'x509-check-key.pem');
 my $invextfile = srctop_file('test', 'invalid-x509.cnf');
 # Test that invalid extensions settings fail
 ok(!run(app(["openssl", "x509", "-req", "-in", $in_csr, "-signkey", $in_key,
-            "-out", "/dev/null", "-days", "3650" , "-extensions", "ext",
+            "-out", File::Spec->devnull(), "-days", "3650" , "-extensions", "ext",
             "-extfile", $invextfile])));
 
 # Tests for issue #16080 (fixed in 1.1.1o)
@@ -708,3 +708,19 @@ ok(!run(app(["openssl", "x509", "-multi", "-checkend",
 # Bad parse still returns non-zero
 ok(!run(app(["openssl", "x509", "-checkend", "60", "-in", $c_key])),
     "Bad parse with -checkend returns non-zero");
+
+# Regression test: with -multi, a failure on a later certificate must set
+# a failing exit status even after an earlier certificate succeeded, i.e.
+# the per-certificate success status must not leak into the final result.
+subtest "x509 -multi later failure is not masked by earlier success" => sub {
+    plan tests => 1;
+
+    # goodcn2-chain.pem holds two certificates without subjectAltName, so
+    # -checkhost falls back to the CN: "www.good.org" matches the first
+    # certificate ("CN=www.good.org") but not the second ("CN=Test NC CA 1")
+    my $chain = srctop_file(@certs, "goodcn2-chain.pem");
+
+    ok(!run(app(["openssl", "x509", "-multi", "-in", $chain, "-noout",
+                 "-checkhost", "www.good.org"])),
+       "-multi returns non-zero when a later certificate fails -checkhost");
+};
