@@ -580,9 +580,12 @@ static struct rtable *icmp_route_lookup(struct net *net, struct flowi4 *fl4,
 		 * LOCAL route with dst.output=ip_rt_bug, which must not
 		 * be used for output.
 		 */
-		if (!err && rt2 && rt2->rt_type == RTN_LOCAL) {
+//		if (!err && rt2 && rt2->rt_type == RTN_LOCAL)
 //			net_warn_ratelimited("detected local route for %pI4 during ICMP sending, src %pI4\n",
 //					     &fl4_dec.daddr, &fl4_dec.saddr);
+
+		if (!err && rt2 &&
+		    (rt2->rt_type == RTN_LOCAL || rt2->rt_type == RTN_UNREACHABLE)) {
 			dst_release(&rt2->dst);
 			err = -EINVAL;
 		}
