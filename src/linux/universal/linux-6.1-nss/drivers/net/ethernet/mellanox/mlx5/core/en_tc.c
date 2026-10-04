@@ -3692,6 +3692,7 @@ free_flow_post_acts(struct mlx5e_tc_flow *flow)
 {
 	struct mlx5_core_dev *counter_dev = get_flow_counter_dev(flow);
 	struct mlx5e_post_act *post_act = get_post_action(flow->priv);
+	struct mlx5_esw_flow_attr *esw_attr;
 	struct mlx5_flow_attr *attr, *tmp;
 	bool vf_tun;
 
@@ -3711,6 +3712,16 @@ free_flow_post_acts(struct mlx5e_tc_flow *flow)
 			mlx5e_mod_hdr_dealloc(&attr->parse_attr->mod_hdr_acts);
 			if (attr->modify_hdr)
 				mlx5_modify_header_dealloc(flow->priv->mdev, attr->modify_hdr);
+		}
+
+		if (mlx5e_is_eswitch_flow(flow)) {
+			esw_attr = attr->esw_attr;
+			if (esw_attr->int_port)
+				mlx5e_tc_int_port_put(mlx5e_get_int_port_priv(flow->priv),
+						      esw_attr->int_port);
+			if (esw_attr->dest_int_port)
+				mlx5e_tc_int_port_put(mlx5e_get_int_port_priv(flow->priv),
+						      esw_attr->dest_int_port);
 		}
 
 		list_del(&attr->list);

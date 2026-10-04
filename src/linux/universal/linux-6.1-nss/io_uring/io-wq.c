@@ -1221,6 +1221,7 @@ struct io_wq *io_wq_create(unsigned bounded, struct io_wq_data *data)
 	wq->task = get_task_struct(data->task);
 	atomic_set(&wq->worker_refs, 1);
 	init_completion(&wq->worker_done);
+	free_cpumask_var(allowed_mask);
 	return wq;
 err:
 	io_wq_put_hash(data->hash);

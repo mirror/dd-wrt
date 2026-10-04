@@ -134,7 +134,8 @@ struct held_lock {
 	unsigned int read:2;        /* see lock_acquire() comment */
 	unsigned int check:1;       /* see lock_acquire() comment */
 	unsigned int hardirqs_off:1;
-	unsigned int references:12;					/* 32 bits */
+	unsigned int sync:1;
+	unsigned int references:11;					/* 32 bits */
 	unsigned int pin_count;
 };
 
@@ -267,6 +268,10 @@ extern void lock_acquire(struct lockdep_map *lock, unsigned int subclass,
 			 struct lockdep_map *nest_lock, unsigned long ip);
 
 extern void lock_release(struct lockdep_map *lock, unsigned long ip);
+
+extern void lock_sync(struct lockdep_map *lock, unsigned int subclass,
+		      int read, int check, struct lockdep_map *nest_lock,
+		      unsigned long ip);
 
 /* lock_is_held_type() returns */
 #define LOCK_STATE_UNKNOWN	-1
@@ -442,6 +447,14 @@ extern int lockdep_is_held(const void *);
 
 #endif /* !LOCKDEP */
 
+#ifdef CONFIG_PROVE_LOCKING
+void lockdep_set_lock_cmp_fn(struct lockdep_map *, lock_cmp_fn, lock_print_fn);
+
+#define lock_set_cmp_fn(lock, ...)	lockdep_set_lock_cmp_fn(&(lock)->dep_map, __VA_ARGS__)
+#else
+#define lock_set_cmp_fn(lock, ...)	do { } while (0)
+#endif
+
 enum xhlock_context_t {
 	XHLOCK_HARD,
 	XHLOCK_SOFT,
@@ -568,6 +581,7 @@ do {									\
 #define lock_map_acquire_read(l)		lock_acquire_shared_recursive(l, 0, 0, NULL, _THIS_IP_)
 #define lock_map_acquire_tryread(l)		lock_acquire_shared_recursive(l, 0, 1, NULL, _THIS_IP_)
 #define lock_map_release(l)			lock_release(l, _THIS_IP_)
+#define lock_map_sync(l)			lock_sync(l, 0, 0, 1, NULL, _THIS_IP_)
 
 #ifdef CONFIG_PROVE_LOCKING
 # define might_lock(lock)						\

@@ -11,9 +11,6 @@
 #define UX500_MSP_I2S_H
 
 #include <linux/platform_device.h>
-#include <linux/platform_data/asoc-ux500-msp.h>
-
-#define MSP_INPUT_FREQ_APB 48000000
 
 /*** Stereo mode. Used for APB data accesses as 16 bits accesses (mono),
  *   32 bits accesses (stereo).
@@ -65,6 +62,7 @@ enum msp_direction {
 #define MSP_SRG		0x10
 #define MSP_FLR		0x14
 #define MSP_DMACR	0x18
+#define MSP_WMRK	0x1c
 
 #define MSP_IMSC	0x20
 #define MSP_RIS		0x24
@@ -149,8 +147,8 @@ enum msp_direction {
 #define RCKPOL_MASK		BIT(0)
 #define TCKPOL_MASK		BIT(0)
 #define SPICKM_MASK		(BIT(1) | BIT(0))
-#define MSP_RX_CLKPOL_BIT(n)     ((n & RCKPOL_MASK) << RCKPOL_SHIFT)
-#define MSP_TX_CLKPOL_BIT(n)     ((n & TCKPOL_MASK) << TCKPOL_SHIFT)
+#define MSP_RX_CLKPOL_BIT(n)     (((n) & RCKPOL_MASK) << RCKPOL_SHIFT)
+#define MSP_TX_CLKPOL_BIT(n)     (((n) & TCKPOL_MASK) << TCKPOL_SHIFT)
 
 #define P1ELEN_SHIFT		0
 #define P1FLEN_SHIFT		3
@@ -230,6 +228,10 @@ enum msp_direction {
 
 #define RDMAE_SHIFT		0
 #define TDMAE_SHIFT		1
+
+/* FIFO watermark register */
+#define MSP_WMRK_RX_4_ELEMENTS	BIT(0)
+#define MSP_WMRK_TX_4_ELEMENTS	BIT(3)
 
 /* Interrupt Register */
 #define RX_SERVICE_INT		BIT(0)
@@ -461,31 +463,27 @@ struct ux500_msp_config {
 	enum msp_data_size data_size;
 	unsigned int def_elem_len;
 	unsigned int iodelay;
-};
-
-struct ux500_msp_dma_params {
-	unsigned int data_size;
-	dma_addr_t tx_rx_addr;
-	struct stedma40_chan_cfg *dma_cfg;
+	bool clock_provider;
+	bool bclk_inverted;
 };
 
 struct ux500_msp {
 	int id;
 	void __iomem *registers;
 	struct device *dev;
-	struct ux500_msp_dma_params playback_dma_data;
-	struct ux500_msp_dma_params capture_dma_data;
+	dma_addr_t tx_rx_addr;
 	enum msp_state msp_state;
 	int def_elem_len;
 	unsigned int dir_busy;
+	unsigned int dir_running;
 	int loopback_enable;
 	unsigned int f_bitclk;
+	bool clock_provider;
+	struct ux500_msp_config config;
 };
 
-struct msp_i2s_platform_data;
 int ux500_msp_i2s_init_msp(struct platform_device *pdev,
-			struct ux500_msp **msp_p,
-			struct msp_i2s_platform_data *platform_data);
+			struct ux500_msp **msp_p);
 void ux500_msp_i2s_cleanup_msp(struct platform_device *pdev,
 			struct ux500_msp *msp);
 int ux500_msp_i2s_open(struct ux500_msp *msp, struct ux500_msp_config *config);
