@@ -1,0 +1,51 @@
+# Memory headroom thresholds for QCN9625 (Trestles) and QCN9589 (Rimini) firmware arenas.
+# Format: ARENA: THRESHOLD_BYTES
+# Lines starting with # are comments. Blank lines are ignored.
+#
+# Threshold = min_headroom_across_all_macs - margin
+#   On-chip  (HRAM, HCRAM, SRAM_AUX, CMEM):               margin = 2KB
+#   Remote/Pageable (HREMOTE, HCREMOTE, REMOTE, PAGEABLE): margin = 20KB
+#   MLO arenas: not checked (commented out)
+#
+# [single_mac]    - QCN9625
+# [dual_mac]      - QCN9625
+# [rimini]        - QCN9589
+#
+# SU history (update this when re-baselining any section):
+#   2026-08-26  WLAN.WBO.1.0-01411-QCAHKSWPL_SILICONZ-1
+
+[single_mac]
+HRAM: 34304
+HCRAM: 346880
+HREMOTE: 1743104
+HCREMOTE: 1299264
+REMOTE: 2978752
+SRAM_AUX: 434576
+PAGEABLE: 916480
+CMEM: 136128
+#MLO_SHMEM: 82240
+#MLO_H_SHMEM: 124544
+#MLO_HC_SHMEM: 530368
+
+[dual_mac]
+HRAM: 9696
+HCRAM: 21248
+HREMOTE: 1773120
+HCREMOTE: 1318592
+REMOTE: 2457152
+SRAM_AUX: 19408
+PAGEABLE: 1581696
+CMEM: 132352
+#MLO_SHMEM: 316032
+#MLO_H_SHMEM: 644352
+#MLO_HC_SHMEM: 32640
+
+[rimini]
+HRAM: 10208
+HCRAM: 160128
+HREMOTE: 2605056
+HCREMOTE: 1736512
+REMOTE: 4600128
+SRAM_AUX: 89744
+PAGEABLE: 1905344
+CMEM: 149440
