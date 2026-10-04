@@ -817,11 +817,6 @@ static void free_map_kv_btf(struct btf *btf)
 		btf__free(btf);
 }
 
-static void free_btf_vmlinux(void)
-{
-	btf__free(btf_vmlinux);
-}
-
 static int
 map_dump(int fd, struct bpf_map_info *info, json_writer_t *wtr,
 	 bool show_header)
