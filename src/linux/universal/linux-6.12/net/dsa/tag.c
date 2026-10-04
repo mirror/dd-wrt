@@ -70,6 +70,7 @@ static int dsa_switch_rcv(struct sk_buff *skb, struct net_device *dev,
 
 	if (md_dst && md_dst->type == METADATA_HW_PORT_MUX) {
 		unsigned int port = md_dst->u.port_info.port_id;
+		bool trapped = md_dst->u.port_info.trapped;
 
 		skb_dst_drop(skb);
 		if (!skb_has_extensions(skb))
@@ -77,7 +78,10 @@ static int dsa_switch_rcv(struct sk_buff *skb, struct net_device *dev,
 
 		skb->dev = dsa_conduit_find_user(dev, 0, port);
 		if (likely(skb->dev)) {
-			dsa_default_offload_fwd_mark(skb);
+			if (trapped)
+				skb->offload_fwd_mark = 0;
+			else
+				dsa_default_offload_fwd_mark(skb);
 			nskb = skb;
 		}
 	} else {

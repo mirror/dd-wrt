@@ -9,11 +9,61 @@
 
 #include "lag.h"
 #include "mirror.h"
+#include "mac.h"
+#include "l2.h"
 #include "rtl-otto.h"
 #include "stats.h"
 #include "tc.h"
 #include "vlan.h"
 #include "stp.h"
+
+/* Both length fields are 14 bits wide (hardware maximum 16383 bytes). */
+#define RTLDSA_MAC_MAX_LEN_FIELD		GENMASK(13, 0)
+/* Mask of both length fields, leaving the tag-inclusion bit (28) untouched. */
+#define RTLDSA_MAC_MAX_LEN_MASK \
+	(RTLDSA_MAC_MAX_LEN_FIELD | (RTLDSA_MAC_MAX_LEN_FIELD << 14))
+/* Encode @len into both the high-speed and the 10/100M length field. */
+#define RTLDSA_MAC_MAX_LEN_VAL(len) \
+	(((len) & RTLDSA_MAC_MAX_LEN_FIELD) | (((len) & RTLDSA_MAC_MAX_LEN_FIELD) << 14))
+
+/* MAC link state bits */
+#define RTL_SPEED_10				0
+#define RTL_SPEED_100				1
+#define RTL_SPEED_1000				2
+#define RTL_SPEED_2500				5
+#define RTL_SPEED_5000				6
+#define RTL_SPEED_10000				4
+
+#define RTL838X_NWAY_EN				BIT(2)
+#define RTL838X_DUPLEX_MODE			BIT(3)
+#define RTL838X_SPEED_SHIFT			(4)
+#define RTL838X_SPEED_MASK			(3 << RTL838X_SPEED_SHIFT)
+#define RTL838X_TX_PAUSE_EN			BIT(6)
+#define RTL838X_RX_PAUSE_EN			BIT(7)
+
+#define RTL839X_DUPLEX_MODE			BIT(2)
+#define RTL839X_SPEED_SHIFT			(3)
+#define RTL839X_SPEED_MASK			(3 << RTL839X_SPEED_SHIFT)
+#define RTL839X_TX_PAUSE_EN			BIT(5)
+#define RTL839X_RX_PAUSE_EN			BIT(6)
+
+#define RTL930X_DUPLEX_MODE			BIT(2)
+#define RTL930X_SPEED_SHIFT			(3)
+#define RTL930X_SPEED_MASK			(15 << RTL930X_SPEED_SHIFT)
+#define RTL930X_TX_PAUSE_EN			BIT(7)
+#define RTL930X_RX_PAUSE_EN			BIT(8)
+
+#define RTL930X_PORT_IGNORE 0x3f
+
+#define RTL931X_DUPLEX_MODE			BIT(2)
+#define RTL931X_SPEED_SHIFT			3
+#define RTL931X_SPEED_MASK			GENMASK(6, RTL931X_SPEED_SHIFT)
+#define RTL931X_MAC_FORCE_FC_EN			BIT(4)
+#define RTL931X_TX_PAUSE_EN			BIT(16)
+#define RTL931X_RX_PAUSE_EN			BIT(17)
+#define RTL931X_SMI_PHY_ABLTY_GET_SEL		(0x0CAC)
+
+
 
 /* Ethernet header, two stacked VLAN tags (802.1ad QinQ) and FCS */
 #define RTLDSA_FRAME_OVERHEAD		(ETH_HLEN + 2 * VLAN_HLEN + ETH_FCS_LEN)
@@ -107,7 +157,6 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	}
 	priv->r->traffic_set(priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
 
-
 	/* For standalone ports, forward packets even if a static fdb
 	 * entry for the source address exists on another port.
 	 */
@@ -165,7 +214,6 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 		}
 	}
 	priv->r->traffic_set(priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
-
 	priv->r->print_matrix();
 
 	rtldsa_stats_init(priv);

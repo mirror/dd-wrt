@@ -17,6 +17,11 @@ enum metadata_type {
 struct hw_port_info {
 	struct net_device *lower_dev;
 	u32 port_id;
+	/* RX: trapped to the CPU without hardware forwarding. Leave false
+	 * for the default DSA forwarding mark. Do not modify while this
+	 * metadata destination is referenced by packets.
+	 */
+	bool trapped;
 };
 
 struct macsec_info {
