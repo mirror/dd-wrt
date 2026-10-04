@@ -1504,10 +1504,23 @@ static struct otto_l3_route *otto_l3_route_find(struct otto_l3_ctrl *ctrl, u32 t
 	return NULL;
 }
 
+/* One source of the source-specific routes a trap row stands for */
+struct otto_l3_route_src {
+	struct list_head list;
+	struct in6_addr addr;
+	int plen;
+	unsigned int members;
+};
+
 static void otto_l3_route_free(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
 {
+	struct otto_l3_route_src *s, *tmp;
+
 	if (rhltable_remove(&ctrl->routes, &r->linkage, otto_l3_route_ht_params))
 		dev_warn(ctrl->dev, "Could not remove route\n");
+
+	list_for_each_entry_safe(s, tmp, &r->srcs, list)
+		kfree(s);
 
 	if (r->is_host_route)
 		clear_bit(r->id - MAX_ROUTES, ctrl->host_route_use_bm);
@@ -1629,6 +1642,7 @@ static struct otto_l3_route *otto_l3_host_route_alloc(struct otto_l3_ctrl *ctrl,
 	r->pr.id = -1; /* We still need to allocate a rule in HW */
 	r->pr.packet_cntr = -1;
 	r->is_host_route = true;
+	INIT_LIST_HEAD(&r->srcs);
 
 	err = rhltable_insert(&ctrl->routes, &r->linkage, otto_l3_route_ht_params);
 	if (err) {
@@ -1679,6 +1693,7 @@ static struct otto_l3_route *otto_l3_route_alloc(struct otto_l3_ctrl *ctrl,
 	r->pr.id = -1; /* We still need to allocate a rule in HW */
 	r->pr.packet_cntr = -1;
 	r->is_host_route = false;
+	INIT_LIST_HEAD(&r->srcs);
 
 	err = rhltable_insert(&ctrl->routes, &r->linkage, otto_l3_route_ht_params);
 	if (err) {
@@ -1756,6 +1771,81 @@ static void otto_l3_host_route_trap(struct otto_l3_ctrl *ctrl,
 	ctrl->cfg->host_route_write(ctrl, slot, route);
 }
 
+/* A route this driver leaves out still has to keep a shorter prefix in
+ * hardware from forwarding its traffic, so it gets an entry that traps: a /32
+ * in the host table, anything shorter a row of its own. The default route gets
+ * none, since its row would match every destination; the catch-all row traps
+ * what nothing else matches.
+ */
+static void otto_l3_fib_trap_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifier_info *info)
+{
+	struct otto_l3_route *route;
+	struct in6_addr gw;
+
+	if (!ctrl->cfg->use_l3_tables || !info->dst_len)
+		return;
+
+	if (info->dst_len == 32) {
+		otto_l3_host_route_trap(ctrl, info);
+		return;
+	}
+
+	ipv6_addr_set_v4mapped(0, &gw);
+	route = otto_l3_route_alloc(ctrl, &gw);
+	if (!route) {
+		dev_err(ctrl->dev, "no row to trap %pI4/%d\n", &info->dst, info->dst_len);
+		return;
+	}
+
+	route->dst_ip = info->dst;
+	route->prefix_len = info->dst_len;
+	route->tb_id = info->tb_id;
+	route->attr.type = ROUTE_TYPE_IP4UC;
+	route->attr.action = ROUTE_ACT_TRAP2CPU;
+	route->attr.valid = true;
+
+	route->row = otto_l3_route_place(ctrl, route);
+	if (route->row < FIRST_PREFIX_ROW) {
+		dev_err(ctrl->dev, "no row to trap %pI4/%d\n", &info->dst, info->dst_len);
+		otto_l3_route_teardown(ctrl, route);
+		return;
+	}
+
+	ctrl->cfg->route_write(ctrl, route->row, route);
+}
+
+static void otto_l3_route_trap_new(struct otto_l3_ctrl *ctrl, struct otto_l3_route *r)
+{
+	char dst[INET6_ADDRSTRLEN + sizeof("/128")];
+	int slot;
+
+	r->attr.valid = true;
+	r->attr.action = ROUTE_ACT_TRAP2CPU;
+
+	if (r->is_host_route) {
+		slot = ctrl->cfg->find_slot(ctrl, r, true);
+		if (slot < 0)
+			slot = ctrl->cfg->find_slot(ctrl, r, false);
+		if (slot < 0) {
+			dev_err(ctrl->dev, "no slot for host route %pI4\n", &r->dst_ip);
+			return;
+		}
+
+		ctrl->cfg->host_route_write(ctrl, slot, r);
+		return;
+	}
+
+	r->row = otto_l3_route_place(ctrl, r);
+	if (r->row < FIRST_PREFIX_ROW) {
+		r->row = -1;
+		dev_err(ctrl->dev, "no row for prefix route %s\n",
+			otto_l3_route_dst(r, dst, sizeof(dst)));
+		return;
+	}
+
+	ctrl->cfg->route_write(ctrl, r->row, r);
+}
+
 static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifier_info *info)
 {
 	struct rtl838x_switch_priv *priv = ctrl->priv;
@@ -1765,20 +1855,20 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	struct fib_nh *nh;
 	int port, vlan;
 
-	/* A route through a nexthop object has no nexthop array to read, and a
+	/* A route through a nexthop object has no nexthop array to read, a
 	 * blackhole, unreachable or prohibit route has no device behind its
-	 * nexthop. Neither is offloaded, but either can replace a route that
-	 * is. An offloaded shorter prefix would forward its traffic, so trap
-	 * it where the host table can hold it.
+	 * nexthop, and a route with a lightweight tunnel (seg6, MPLS) needs the
+	 * CPU to encapsulate what the hardware would forward bare. None is
+	 * offloaded, but any can replace a route that is.
 	 */
-	if (info->fi->nh || !fib_info_nh(info->fi, 0)->fib_nh_dev) {
-		dev_dbg(ctrl->dev, "route not offloaded: no device or a nexthop object\n");
+	if (info->fi->nh || !fib_info_nh(info->fi, 0)->fib_nh_dev ||
+	    fib_info_nh(info->fi, 0)->fib_nh_lws) {
+		dev_dbg(ctrl->dev, "route not offloaded: no device, nexthop object or tunnel\n");
 		route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst,
 					   NULL, info->dst_len);
 		if (route)
 			otto_l3_route_teardown(ctrl, route);
-		if (info->dst_len == 32 && ctrl->cfg->host_route_write)
-			otto_l3_host_route_trap(ctrl, info);
+		otto_l3_fib_trap_v4(ctrl, info);
 		return 0;
 	}
 
@@ -1802,9 +1892,13 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 		otto_l3_route_teardown(ctrl, route);
 	}
 
+	/* A route through a device outside the switch is the CPU's, and so is
+	 * an address of the box on such a device
+	 */
 	port = otto_l3_port_dev_lower_find(ndev, ctrl);
 	if (port < 0) {
 		dev_err(ctrl->dev, "lower interface %s not found\n", ndev->name);
+		otto_l3_fib_trap_v4(ctrl, info);
 		return -ENODEV;
 	}
 
@@ -1866,6 +1960,15 @@ static int otto_l3_fib_add_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 		}
 	}
 
+	/* Until the gateway answers, or for good where there is none, a shorter
+	 * prefix in hardware would forward this destination. The route takes
+	 * its entry now, trapping to the CPU, and otto_l3_route_update_hw()
+	 * turns it into a forwarding one once the gateway resolves. The next
+	 * hop index stays zero until then, as on any entry that only traps.
+	 */
+	if (ctrl->cfg->use_l3_tables && (nh->fib_nh_gw4 || !route->is_host_route))
+		otto_l3_route_trap_new(ctrl, route);
+
 	/* We need to resolve the mac address of the GW */
 	if (nh->fib_nh_gw4)
 		otto_l3_port_gw_resolve(ctrl, ndev, &arp_tbl, &gw);
@@ -1888,10 +1991,11 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 	struct in6_addr gw;
 	struct fib_nh *nh;
 
-	/* A route through a nexthop object or without a device holds at most a
-	 * trap entry
+	/* A route through a nexthop object, without a device or with a
+	 * lightweight tunnel holds at most a trap entry
 	 */
-	if (info->fi->nh || !fib_info_nh(info->fi, 0)->fib_nh_dev) {
+	if (info->fi->nh || !fib_info_nh(info->fi, 0)->fib_nh_dev ||
+	    fib_info_nh(info->fi, 0)->fib_nh_lws) {
 		route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst,
 					   NULL, info->dst_len);
 		if (route)
@@ -1903,6 +2007,17 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
 
 	if (otto_l3_fib_check_v4(ctrl, info, FIB_EVENT_ENTRY_DEL))
 		return 0;
+
+	/* The entry that traps for a route left out is keyed on no gateway,
+	 * whatever gateway the route itself names
+	 */
+	route = otto_l3_route_find(ctrl, info->tb_id, ROUTE_TYPE_IP4UC, info->dst, NULL,
+				   info->dst_len);
+	if (ctrl->cfg->use_l3_tables && route && !route->gw_ip.s6_addr32[3]) {
+		otto_l3_route_teardown(ctrl, route);
+		nh->fib_nh_flags &= ~RTNH_F_OFFLOAD;
+		return 0;
+	}
 
 	ipv6_addr_set_v4mapped(nh->fib_nh_gw4, &gw);
 
@@ -1944,18 +2059,22 @@ static int otto_l3_fib_del_v4(struct otto_l3_ctrl *ctrl, struct fib_entry_notifi
  * The IPv4 twin of this narrates every event at info level. IPv6 routes
  * arrive in numbers IPv4 ones do not - every router advertisement brings
  * some - so this one speaks at debug level instead.
+ *
+ * The members are the ones the notifier counted. The route's own sibling
+ * count is read later, and a member deleted in between has had it cleared,
+ * so it would pass for a route of its own.
  */
 static int otto_l3_fib_check_v6(struct otto_l3_ctrl *ctrl, struct fib6_info *rt,
-				unsigned int nsiblings)
+				unsigned int members)
 {
-	dev_dbg(ctrl->dev, "IPv6 route %pI6c/%d, type %d, flags %x, siblings %u\n",
+	dev_dbg(ctrl->dev, "IPv6 route %pI6c/%d, type %d, flags %x, members %u\n",
 		&rt->fib6_dst.addr, rt->fib6_dst.plen, rt->fib6_type,
-		rt->fib6_flags, nsiblings);
+		rt->fib6_flags, members);
 
 	if (rt->nh)
 		return -EOPNOTSUPP;
 
-	if (rt->fib6_src.plen || nsiblings || rt->fib6_nsiblings)
+	if (rt->fib6_src.plen || members > 1)
 		return -EOPNOTSUPP;
 
 	if (rt->fib6_type != RTN_UNICAST || rt->fib6_flags & RTF_REJECT)
@@ -1972,6 +2091,10 @@ static int otto_l3_fib_check_v6(struct otto_l3_ctrl *ctrl, struct fib6_info *rt,
 		return -EOPNOTSUPP;
 
 	if (rt->fib6_nh->fib_nh_gw_family != AF_INET6)
+		return -EOPNOTSUPP;
+
+	/* The hardware would forward bare what the tunnel has to encapsulate */
+	if (rt->fib6_nh->fib_nh_lws)
 		return -EOPNOTSUPP;
 
 	return 0;
@@ -2065,6 +2188,101 @@ static int otto_l3_fib_del_v6_local(struct otto_l3_ctrl *ctrl, struct fib6_info 
 	return 0;
 }
 
+static struct otto_l3_route_src *otto_l3_route_src_find(struct otto_l3_route *r,
+							 const struct rt6key *src)
+{
+	struct otto_l3_route_src *s;
+
+	list_for_each_entry(s, &r->srcs, list)
+		if (s->plen == src->plen && ipv6_addr_equal(&s->addr, &src->addr))
+			return s;
+
+	return NULL;
+}
+
+/* A source-specific route matches only the packets from its source, and the
+ * hardware matches on the destination alone, so the destination traps for as
+ * long as one of them remains. The trap row counts the members of each source
+ * apart, and those of the route without a source in its own members: each
+ * delete names one source, and only empties its own count.
+ */
+static int otto_l3_fib_add_v6_src(struct otto_l3_ctrl *ctrl, struct fib6_info *rt,
+				  unsigned int members)
+{
+	struct otto_l3_route_src *s;
+	struct otto_l3_route *route;
+	unsigned int plain = 0;
+	int err;
+
+	if (!rt->fib6_dst.plen || rt->fib6_type == RTN_MULTICAST)
+		return 0;
+
+	/* A row that forwards here is the route without a source, which the
+	 * trap row stands for from now on
+	 */
+	route = otto_l3_route_find(ctrl, rt->fib6_table->tb6_id, ROUTE_TYPE_IP6UC,
+				   0, &rt->fib6_dst.addr, rt->fib6_dst.plen);
+	if (route && !ipv6_addr_any(&route->gw_ip)) {
+		dev_info(ctrl->dev, "route %pI6c/%d is no longer offloaded\n",
+			 &rt->fib6_dst.addr, rt->fib6_dst.plen);
+		otto_l3_route_teardown(ctrl, route);
+		route = NULL;
+		plain = 1;
+	}
+
+	if (!route) {
+		err = otto_l3_fib_trap_v6(ctrl, rt, plain);
+		if (err)
+			return err;
+		route = otto_l3_route_find(ctrl, rt->fib6_table->tb6_id, ROUTE_TYPE_IP6UC,
+					   0, &rt->fib6_dst.addr, rt->fib6_dst.plen);
+		if (!route)
+			return -ENOENT;
+	}
+
+	s = otto_l3_route_src_find(route, &rt->fib6_src);
+	if (!s) {
+		s = kzalloc(sizeof(*s), GFP_KERNEL);
+		if (!s)
+			return -ENOMEM;
+		s->addr = rt->fib6_src.addr;
+		s->plen = rt->fib6_src.plen;
+		list_add_tail(&s->list, &route->srcs);
+	}
+	s->members = members;
+
+	return 0;
+}
+
+static int otto_l3_fib_del_v6_src(struct otto_l3_ctrl *ctrl, struct fib6_info *rt,
+				  unsigned int members)
+{
+	struct otto_l3_route_src *s;
+	struct otto_l3_route *route;
+
+	route = otto_l3_route_find(ctrl, rt->fib6_table->tb6_id, ROUTE_TYPE_IP6UC,
+				   0, &rt->fib6_dst.addr, rt->fib6_dst.plen);
+	if (!route || !ipv6_addr_any(&route->gw_ip))
+		return 0;
+
+	s = otto_l3_route_src_find(route, &rt->fib6_src);
+	if (!s)
+		return 0;
+
+	if (s->members > members) {
+		s->members -= members;
+		return 0;
+	}
+
+	list_del(&s->list);
+	kfree(s);
+
+	if (list_empty(&route->srcs) && !route->members)
+		otto_l3_route_teardown(ctrl, route);
+
+	return 0;
+}
+
 /* A destination with no row of its own misses the route lookup, and the miss
  * is a drop the hardware gives no way to change: the Realtek GPL SDK carries a
  * lookup miss action in the multicast route controls and in neither of the
@@ -2124,20 +2342,28 @@ static int otto_l3_fib_add_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notif
 	if (rt->fib6_type == RTN_LOCAL || rt->fib6_type == RTN_ANYCAST)
 		return otto_l3_fib_add_v6_local(ctrl, rt);
 
+	if (rt->fib6_src.plen)
+		return otto_l3_fib_add_v6_src(ctrl, rt, members);
+
 	/* Every add that reaches the driver arrives as a replace, and a replace
 	 * is the only word the kernel sends when the route that was programmed
 	 * for this destination goes away. Take that one out before deciding
 	 * anything about the one replacing it, or a route this driver will not
-	 * take keeps the old row forwarding.
+	 * take keeps the old row forwarding. A row that also stands for
+	 * source-specific routes stays, and traps for this one too.
 	 */
 	route = otto_l3_route_find(ctrl, rt->fib6_table->tb6_id, ROUTE_TYPE_IP6UC,
 				   0, &rt->fib6_dst.addr, rt->fib6_dst.plen);
+	if (route && !list_empty(&route->srcs)) {
+		route->members = members;
+		return 0;
+	}
 	if (route) {
 		dropped = !ipv6_addr_any(&route->gw_ip);
 		otto_l3_route_teardown(ctrl, route);
 	}
 
-	if (otto_l3_fib_check_v6(ctrl, rt, info->nsiblings))
+	if (otto_l3_fib_check_v6(ctrl, rt, members))
 		goto not_offloaded;
 
 	gw = &rt->fib6_nh->fib_nh_gw6;
@@ -2210,18 +2436,8 @@ not_offloaded:
 	 * routes it as the kernel does. The default route gets none: that row
 	 * would match every destination.
 	 */
-	if (rt->fib6_dst.plen && rt->fib6_type != RTN_MULTICAST) {
-		/* Source-specific routes to one prefix share its trap row, which
-		 * counts the members of one route only: a delete of any of them
-		 * can take the row from the others.
-		 */
-		if (rt->fib6_src.plen)
-			dev_err_ratelimited(ctrl->dev,
-					    "%pI6c/%d from %pI6c/%d: source-specific routes share one trap row\n",
-					    &rt->fib6_dst.addr, rt->fib6_dst.plen,
-					    &rt->fib6_src.addr, rt->fib6_src.plen);
+	if (rt->fib6_dst.plen && rt->fib6_type != RTN_MULTICAST)
 		return otto_l3_fib_trap_v6(ctrl, rt, members);
-	}
 
 	return 0;
 
@@ -2242,22 +2458,28 @@ static int otto_l3_fib_del_v6(struct otto_l3_ctrl *ctrl, struct fib6_entry_notif
 	if (rt->fib6_type == RTN_LOCAL || rt->fib6_type == RTN_ANYCAST)
 		return otto_l3_fib_del_v6_local(ctrl, rt);
 
+	if (rt->fib6_src.plen)
+		return otto_l3_fib_del_v6_src(ctrl, rt, members);
+
 	route = otto_l3_route_find(ctrl, rt->fib6_table->tb6_id, ROUTE_TYPE_IP6UC,
 				   0, &rt->fib6_dst.addr, rt->fib6_dst.plen);
 
 	/* A route left out of the offload holds at most the row trapping it.
 	 * A multipath route keeps that row until its last member is gone: a
-	 * delete names only the members that leave.
+	 * delete names only the members that leave. The row stays while it
+	 * also stands for source-specific routes.
 	 */
 	if (route && ipv6_addr_any(&route->gw_ip)) {
 		if (route->members > members)
 			route->members -= members;
+		else if (!list_empty(&route->srcs))
+			route->members = 0;
 		else
 			otto_l3_route_teardown(ctrl, route);
 		return 0;
 	}
 
-	if (otto_l3_fib_check_v6(ctrl, rt, info->nsiblings))
+	if (otto_l3_fib_check_v6(ctrl, rt, members))
 		return 0;
 
 	/* Several FIB entries can share a destination and differ only in their
@@ -3161,6 +3383,41 @@ void otto_l3_remove(struct rtl838x_switch_priv *priv)
 	}
 }
 
+struct otto_l3_flush_work {
+	struct work_struct work;
+	struct otto_l3_ctrl *ctrl;
+};
+
+static void otto_l3_fib_flush_work_do(struct work_struct *work)
+{
+	struct otto_l3_flush_work *fw = container_of(work, struct otto_l3_flush_work, work);
+	struct otto_l3_route *r, *tmp;
+
+	rtnl_lock();
+	list_for_each_entry_safe(r, tmp, &fw->ctrl->routes_list, list)
+		if (r->tb_id)
+			otto_l3_route_teardown(fw->ctrl, r);
+	rtnl_unlock();
+}
+
+/* A dump that raced a change to the FIB leaves programmed what it saw, and the
+ * events in between never arrived. The kernel unregisters the notifier, calls
+ * this and dumps again, so every route the last dump brought goes - all but
+ * the catch-all rows, which no table owns - once the work it queued has run.
+ * The teardown runs on the same single threaded queue, so nothing else walks
+ * the routes meanwhile.
+ */
+static void otto_l3_fib_dump_flush(struct notifier_block *nb)
+{
+	struct otto_l3_ctrl *ctrl = container_of(nb, struct otto_l3_ctrl, fib_nb);
+	struct otto_l3_flush_work fw = { .ctrl = ctrl };
+
+	INIT_WORK_ONSTACK(&fw.work, otto_l3_fib_flush_work_do);
+	queue_work(ctrl->priv->wq, &fw.work);
+	flush_work(&fw.work);
+	destroy_work_on_stack(&fw.work);
+}
+
 int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 {
 	const struct of_device_id *match;
@@ -3213,11 +3470,10 @@ int otto_l3_probe(struct device *dev, struct rtl838x_switch_priv *priv)
 
 	/*
 	 * Register Forwarding Information Base notifier to offload routes where possible. Only
-	 * FIBs pointing to our own netdevs are programmed into the device, so no need to pass a
-	 * callback.
+	 * FIBs pointing to our own netdevs are programmed into the device.
 	 */
 	ctrl->fib_nb.notifier_call = otto_l3_fib_notifier;
-	err = register_fib_notifier(&init_net, &ctrl->fib_nb, NULL, NULL);
+	err = register_fib_notifier(&init_net, &ctrl->fib_nb, otto_l3_fib_dump_flush, NULL);
 	if (err) {
 		ctrl->fib_nb.notifier_call = NULL;
 		otto_l3_remove(priv);
