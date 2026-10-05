@@ -558,6 +558,7 @@ ifeq ($(CONFIG_ATH12K),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/IPQ5424
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCN9589
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCN9625
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCN9625_V2
 ifeq ($(CONFIG_IPQ95XX),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCC2072
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/WCN7850
@@ -565,6 +566,7 @@ ifeq ($(CONFIG_IPQ95XX),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/IPQ5424
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCN9589
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCN9625
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCN9625_V2
 endif
 endif
 ifeq ($(CONFIG_IPQ95XX),y)
@@ -576,6 +578,7 @@ ifeq ($(CONFIG_IPQ95XX),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/IPQ5424
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCN9589
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCN9625
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath12k/QCN9625_V2
 endif
 ifeq ($(CONFIG_IPQ6018),y)
 ifeq ($(CONFIG_IPQ95XX),y)
