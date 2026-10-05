@@ -1689,9 +1689,8 @@ circuit_has_opened(origin_circuit_t *circ)
       connection_ap_attach_pending(1);
       /* This isn't a call to circuit_try_attaching_streams because a
        * circuit in _C_ESTABLISH_REND state isn't connected to its
-       * hidden service yet, thus we can't attach streams to it yet,
-       * thus circuit_try_attaching_streams would always clear the
-       * circuit's isolation state.  circuit_try_attaching_streams is
+       * hidden service yet, thus we can't attach streams to it yet.
+       * circuit_try_attaching_streams is
        * called later, when the rend circ enters _C_REND_JOINED
        * state. */
       break;
@@ -1826,7 +1825,13 @@ circuit_try_clearing_isolation_state(origin_circuit_t *circ)
       circ->isolation_values_set &&
       /* It's not legal to clear a circuit's isolation info if it's ever had
        * streams attached */
-      !circ->isolation_any_streams_attached) {
+      !circ->isolation_any_streams_attached &&
+      /* We must not clear isolation settings on an onion service related
+       * circuit, since the circumstances of launching that circuit are
+       * themselves identifying. We don't want to let some new unrelated
+       * stream reuse this circuit and let the onion service or the
+       * HSDir link the two isolation contexts. */
+      !circuit_purpose_is_hidden_service(TO_CIRCUIT(circ)->purpose)) {
     /* If we have any isolation information set on this circuit, and
      * we didn't manage to attach any streams to it, then we can
      * and should clear it and try again. */
@@ -1888,11 +1893,12 @@ circuit_build_failed(origin_circuit_t *circ)
               TO_CIRCUIT(circ)->n_circ_id, circ->global_identifier,
               circuit_purpose_to_string(TO_CIRCUIT(circ)->purpose));
 
-    /* If the path failed on an RP, retry it. */
+    /* If the path failed on an RP, note it. The retry itself was already
+     * launched by hs_service_circuit_cleanup_on_close() when this circuit
+     * was marked for close; see hs_circ_retry_service_rendezvous_point(). */
     if (TO_CIRCUIT(circ)->purpose == CIRCUIT_PURPOSE_S_CONNECT_REND) {
       hs_metrics_failed_rdv(&circ->hs_ident->identity_pk,
                             HS_METRICS_ERR_RDV_PATH);
-      hs_circ_retry_service_rendezvous_point(circ);
     }
 
     /* In all other cases, just bail. The rest is just failure accounting
@@ -1945,13 +1951,6 @@ circuit_build_failed(origin_circuit_t *circ)
                TO_CIRCUIT(circ)->n_circ_id, circ->global_identifier);
     }
     if (!already_marked) {
-      /*
-       * If we have guard state (new guard API) and our path selection
-       * code actually chose a full path, then blame the failure of this
-       * circuit on the guard.
-       */
-      if (circ->guard_state)
-        entry_guard_failed(&circ->guard_state);
       /* if there are any one-hop streams waiting on this circuit, fail
        * them now so they can retry elsewhere. */
       connection_ap_fail_onehop(n_chan_ident, circ->build_state);
@@ -2006,7 +2005,10 @@ circuit_build_failed(origin_circuit_t *circ)
 
       hs_metrics_failed_rdv(&circ->hs_ident->identity_pk,
                             HS_METRICS_ERR_RDV_RP_CONN_FAILURE);
-      hs_circ_retry_service_rendezvous_point(circ);
+      /* No retry from here: hs_service_circuit_cleanup_on_close() already
+       * relaunched this rendezvous circuit when it was marked for close,
+       * and doing it again would build a second circuit carrying the same
+       * rendezvous cookie and key material. */
       break;
     /* default:
      * This won't happen in normal operation, but might happen if the
@@ -2188,15 +2190,43 @@ circuit_should_cannibalize_to_build(uint8_t purpose_to_build,
  *  - CIRCLAUNCH_IS_V3_RP: the last hop must support v3 onion service
  *                         rendezvous.
  *
+ * The given <b>extend_info</b> for a multi-hop circuit must contain a usable
+ * ntor onion key. One-hop circuits are exempt because they can use CREATE_FAST
+ * when bootstrapping or connecting to a relay without a descriptor.
+ *
  * Return the newly allocated circuit on success, or NULL on failure. */
+static origin_circuit_t *
+circuit_launch_by_extend_info_with_guard(uint8_t purpose,
+    extend_info_t *extend_info, int flags,
+    const circuit_guard_state_t *guard_state);
+
 origin_circuit_t *
 circuit_launch_by_extend_info(uint8_t purpose,
+                            extend_info_t *extend_info, int flags)
+{
+  return circuit_launch_by_extend_info_with_guard(purpose, extend_info,
+                                                 flags, NULL);
+}
+
+static origin_circuit_t *
+circuit_launch_by_extend_info_with_guard(uint8_t purpose,
                               extend_info_t *extend_info,
-                              int flags)
+                              int flags,
+                              const circuit_guard_state_t *guard_state)
 {
   origin_circuit_t *circ;
   int onehop_tunnel = (flags & CIRCLAUNCH_ONEHOP_TUNNEL) != 0;
   int have_path = have_enough_path_info(! (flags & CIRCLAUNCH_IS_INTERNAL) );
+
+  /* We don't support TAP anymore so we must have a valid Ntor key. */
+  if (extend_info != NULL && !onehop_tunnel &&
+      !extend_info_supports_ntor(extend_info)) {
+    log_fn(LOG_PROTOCOL_WARN, LD_CIRC,
+           "Refusing to launch a multi-hop circuit to %s without "
+           "a usable ntor onion key.",
+           safe_str_client(extend_info_describe(extend_info)));
+    return NULL;
+  }
 
   /* Keep some stats about our attempts to launch HS rendezvous circuits */
   if (purpose == CIRCUIT_PURPOSE_S_CONNECT_REND) {
@@ -2301,7 +2331,8 @@ circuit_launch_by_extend_info(uint8_t purpose,
 
   /* try a circ. if it fails, circuit_mark_for_close will increment
    * n_circuit_failures */
-  return circuit_establish_circuit(purpose, extend_info, flags);
+  return circuit_establish_circuit_with_guard(purpose, extend_info, flags,
+                                              guard_state);
 }
 
 /** Record another failure at opening a general circuit. When we have
@@ -2334,7 +2365,7 @@ circuit_reset_failure_count(int timeout)
  *
  * Write the found or in-progress or launched circ into *circp.
  */
-static int
+STATIC int
 circuit_get_open_circ_or_launch(entry_connection_t *conn,
                                 uint8_t desired_circuit_purpose,
                                 origin_circuit_t **circp)
@@ -2625,8 +2656,15 @@ circuit_get_open_circ_or_launch(entry_connection_t *conn,
         log_info(LD_GENERAL, "Getting rendezvous circuit to v3 service!");
       }
 
-      circ = circuit_launch_by_extend_info(new_circ_purpose, extend_info,
-                                           flags);
+      /* The linked directory owns this state across AP attachment. The launch
+       * below borrows it synchronously; a new channel acquires its own handle.
+       * Reusing a pending circuit or channel never adopts this association. */
+      connection_t *linked = ENTRY_TO_CONN(conn)->linked_conn;
+      const circuit_guard_state_t *guard_state =
+        want_onehop && linked && linked->type == CONN_TYPE_DIR ?
+        TO_DIR_CONN(linked)->guard_state : NULL;
+      circ = circuit_launch_by_extend_info_with_guard(new_circ_purpose,
+                                    extend_info, flags, guard_state);
     }
 
     extend_info_free(extend_info);

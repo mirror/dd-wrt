@@ -883,6 +883,7 @@ handle_control_extendcircuit(control_connection_t *conn,
 }
 
 static const control_cmd_syntax_t setcircuitpurpose_syntax = {
+  .min_args=1,
   .max_args=1,
   .accept_keywords=true,
 };

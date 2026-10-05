@@ -1108,7 +1108,8 @@ config_free_all(void)
 const char *
 safe_str_client_opts(const or_options_t *options, const char *address)
 {
-  tor_assert(address);
+  if (!address)
+    return "[null]";
   if (!options) {
     options = get_options();
   }
@@ -1129,7 +1130,8 @@ safe_str_client_opts(const or_options_t *options, const char *address)
 const char *
 safe_str_opts(const or_options_t *options, const char *address)
 {
-  tor_assert(address);
+  if (!address)
+    return "[null]";
   if (!options) {
     options = get_options();
   }

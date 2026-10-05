@@ -23,6 +23,7 @@
 #include "feature/dirclient/dirclient.h"
 #include "feature/dircommon/directory.h"
 #include "feature/hs_common/shared_random_client.h"
+#include "feature/hs_common/replaycache.h"
 #include "feature/keymgt/loadkey.h"
 #include "feature/nodelist/describe.h"
 #include "feature/nodelist/microdesc.h"
@@ -2514,6 +2515,13 @@ intro_point_should_expire(const hs_service_intro_point_t *ip,
   tor_assert(ip);
 
   if (ip->introduce2_count >= ip->introduce2_max) {
+    goto expired;
+  }
+
+  /* Our INTRODUCE2 replay cache has reached the maximum number of INTRODUCE2
+   * we can accept for this intro point. Rotate it so we can clear it and avoid
+   * filling memory with replays. */
+  if (replay_cache_count(ip->replay_cache) >= ip->introduce2_max) {
     goto expired;
   }
 

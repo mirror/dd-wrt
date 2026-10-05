@@ -1174,7 +1174,7 @@ directory_info_has_arrived(time_t now, int from_cache, int suppress_logs)
 /** Perform regular maintenance tasks for a single connection.  This
  * function gets run once per second per connection by run_scheduled_events.
  */
-static void
+STATIC void
 run_connection_housekeeping(int i, time_t now)
 {
   cell_t cell;
@@ -1255,7 +1255,7 @@ run_connection_housekeeping(int i, time_t now)
       /* We never managed to actually get this connection open and happy. */
       log_info(LD_OR,"Expiring non-open OR connection to fd %d (%s:%d).",
                (int)conn->s, fmt_and_decorate_addr(&conn->addr), conn->port);
-      connection_or_close_normally(TO_OR_CONN(conn), 0);
+      connection_or_close_for_error(or_conn, 0);
     }
   } else if (we_are_hibernating() &&
              ! have_any_circuits &&

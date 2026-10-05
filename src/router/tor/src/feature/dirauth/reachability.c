@@ -157,7 +157,7 @@ dirserv_single_reachability_test(time_t now, routerinfo_t *router)
             router->ipv4_orport);
   chan = channel_tls_connect(&router->ipv4_addr, router->ipv4_orport,
                              router->cache_info.identity_digest,
-                             ed_id_key);
+                             ed_id_key, NULL, false);
   if (chan) command_setup_channel(chan);
 
   /* Possible IPv6. */
@@ -170,7 +170,7 @@ dirserv_single_reachability_test(time_t now, routerinfo_t *router)
              router->ipv6_orport);
     chan = channel_tls_connect(&router->ipv6_addr, router->ipv6_orport,
                                router->cache_info.identity_digest,
-                               ed_id_key);
+                               ed_id_key, NULL, false);
     if (chan) command_setup_channel(chan);
   }
 }

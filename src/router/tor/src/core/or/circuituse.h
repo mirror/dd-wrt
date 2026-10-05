@@ -109,6 +109,8 @@ STATIC int needs_hs_client_circuits(time_t now,
 
 STATIC int needs_circuits_for_build(int num);
 
+STATIC int circuit_get_open_circ_or_launch(entry_connection_t *conn,
+    uint8_t desired_circuit_purpose, origin_circuit_t **circp);
 STATIC origin_circuit_t *circuit_get_best(const entry_connection_t *conn,
                                           int must_be_open,
                                           uint8_t purpose,

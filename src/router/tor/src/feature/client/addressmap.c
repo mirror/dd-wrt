@@ -145,11 +145,11 @@ addressmap_virtaddress_remove(const char *address, addressmap_entry_t *ent)
       strmap_get(virtaddress_reversemap, ent->new_address);
     /*log_fn(LOG_NOTICE,"remove reverse mapping for %s",ent->new_address);*/
     if (ve) {
-      if (!strcmp(address, ve->ipv4_address))
+      if (!strcmp_opt(address, ve->ipv4_address))
         tor_free(ve->ipv4_address);
-      if (!strcmp(address, ve->ipv6_address))
+      if (!strcmp_opt(address, ve->ipv6_address))
         tor_free(ve->ipv6_address);
-      if (!strcmp(address, ve->hostname_address))
+      if (!strcmp_opt(address, ve->hostname_address))
         tor_free(ve->hostname_address);
       if (!ve->ipv4_address && !ve->ipv6_address && !ve->hostname_address) {
         tor_free(ve);
@@ -772,9 +772,21 @@ client_dns_set_reverse_addressmap(entry_connection_t *for_conn,
   char *s = NULL;
   {
     tor_addr_t tmp_addr;
-    sa_family_t f = tor_addr_parse(&tmp_addr, address);
-    if ((f == AF_INET && ! for_conn->entry_cfg.cache_ipv4_answers) ||
-        (f == AF_INET6 && ! for_conn->entry_cfg.cache_ipv6_answers))
+    if (tor_addr_parse_PTR_name(&tmp_addr, address, AF_UNSPEC, true) <= 0)
+      return;
+    bool cacheable;
+    switch (tor_addr_family(&tmp_addr)) {
+      case AF_INET:
+        cacheable = for_conn->entry_cfg.cache_ipv4_answers;
+        break;
+      case AF_INET6:
+        cacheable = for_conn->entry_cfg.cache_ipv6_answers;
+        break;
+      default:
+        cacheable = false;
+        break;
+    }
+    if (! cacheable)
       return;
   }
   tor_asprintf(&s, "REVERSE[%s]", address);
@@ -1138,8 +1150,8 @@ addressmap_get_mappings(smartlist_t *sl, time_t min_expires,
      val = val_;
      if (val->expires >= min_expires && val->expires <= max_expires) {
        if (!sl) {
-         iter = strmap_iter_next_rmv(addressmap,iter);
          addressmap_ent_remove(key, val);
+         iter = strmap_iter_next_rmv(addressmap,iter);
          continue;
        } else if (val->new_address) {
          const char *src_wc = val->src_wildcard ? "*." : "";

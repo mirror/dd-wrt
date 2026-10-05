@@ -87,6 +87,8 @@
 #include "trunnel/congestion_control.h"
 #include "trunnel/subproto_request.h"
 
+static int circuit_handle_first_hop_with_guard(origin_circuit_t *circ,
+                                  const circuit_guard_state_t *guard_state);
 static int circuit_send_first_onion_skin(origin_circuit_t *circ);
 static int circuit_build_no_more_hops(origin_circuit_t *circ);
 static int circuit_send_intermediate_onion_skin(origin_circuit_t *circ,
@@ -102,7 +104,9 @@ static const node_t *choose_good_middle_server(const origin_circuit_t *,
  * callbacks.
  */
 MOCK_IMPL(channel_t *,
-channel_connect_for_circuit,(const extend_info_t *ei))
+channel_connect_for_circuit,(const extend_info_t *ei,
+                            const struct circuit_guard_state_t *guard_state,
+                            bool for_origin_circ))
 {
   channel_t *chan;
 
@@ -112,7 +116,8 @@ channel_connect_for_circuit,(const extend_info_t *ei))
   const char *id_digest = ei->identity_digest;
   const ed25519_public_key_t *ed_id = &ei->ed_identity;
 
-  chan = channel_connect(&orport->addr, orport->port, id_digest, ed_id);
+  chan = channel_connect(&orport->addr, orport->port, id_digest, ed_id,
+                         guard_state, for_origin_circ);
   if (chan) command_setup_channel(chan);
 
   return chan;
@@ -478,6 +483,14 @@ origin_circuit_init(uint8_t purpose, int flags)
 origin_circuit_t *
 circuit_establish_circuit(uint8_t purpose, extend_info_t *exit_ei, int flags)
 {
+  return circuit_establish_circuit_with_guard(purpose, exit_ei, flags, NULL);
+}
+
+origin_circuit_t *
+circuit_establish_circuit_with_guard(uint8_t purpose, extend_info_t *exit_ei,
+                                   int flags,
+                                   const circuit_guard_state_t *guard_state)
+{
   origin_circuit_t *circ;
   int err_reason = 0;
 
@@ -491,7 +504,8 @@ circuit_establish_circuit(uint8_t purpose, extend_info_t *exit_ei, int flags)
 
   circuit_event_status(circ, CIRC_EVENT_LAUNCHED, 0);
 
-  if ((err_reason = circuit_handle_first_hop(circ)) < 0) {
+  err_reason = circuit_handle_first_hop_with_guard(circ, guard_state);
+  if (err_reason < 0) {
     circuit_mark_for_close(TO_CIRCUIT(circ), -err_reason);
     return NULL;
   }
@@ -582,6 +596,13 @@ circuit_chan_publish(const origin_circuit_t *circ, const channel_t *chan)
 int
 circuit_handle_first_hop(origin_circuit_t *circ)
 {
+  return circuit_handle_first_hop_with_guard(circ, NULL);
+}
+
+static int
+circuit_handle_first_hop_with_guard(origin_circuit_t *circ,
+                                  const circuit_guard_state_t *guard_state)
+{
   crypt_path_t *firsthop;
   channel_t *n_chan;
   int err_reason = 0;
@@ -629,7 +650,9 @@ circuit_handle_first_hop(origin_circuit_t *circ)
     circ->base_.n_hop = extend_info_dup(firsthop->extend_info);
 
     if (should_launch) {
-      n_chan = channel_connect_for_circuit(firsthop->extend_info);
+      n_chan = channel_connect_for_circuit(firsthop->extend_info,
+                              guard_state ? guard_state : circ->guard_state,
+                              true);
       if (!n_chan) { /* connect failed, forget the whole thing */
         log_info(LD_CIRC,"connect to firsthop failed. Closing.");
         return -END_CIRC_REASON_CONNECTFAILED;
@@ -670,8 +693,8 @@ circuit_handle_first_hop(origin_circuit_t *circ)
  *
  * Status is 1 if connect succeeded, or 0 if connect failed.
  */
-void
-circuit_n_chan_done(channel_t *chan, int status)
+MOCK_IMPL(void,
+circuit_n_chan_done,(channel_t *chan, int status))
 {
   smartlist_t *pending_circs;
   int err_reason = 0;
