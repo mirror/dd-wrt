@@ -126,12 +126,17 @@ struct otto_l3_ctrl {
 	struct rtl838x_switch_priv *priv;
 	struct notifier_block fib_nb;
 	struct notifier_block ne_nb;
+	struct delayed_work resync_work;
+	unsigned int resync_delay;
+	bool resync_wanted;
 	struct rhltable routes;
 	struct list_head routes_list;
 	unsigned long route_use_bm[MAX_ROUTES / 32];
 	unsigned long host_route_use_bm[MAX_HOST_ROUTES / 32];
 	struct otto_l3_intf interfaces[MAX_SMACS];
 	bool prefix_rows_stale;	/* a move failed, the rows are not where we say */
+	bool v4_fwd_off;	/* policy rules keep IPv4 forwarding in software */
+	bool v6_fwd_off;	/* policy rules keep IPv6 forwarding in software */
 	struct mutex *lock; /* protect register access */
 };
 
