@@ -155,7 +155,7 @@
 				label = "nvram";
 				reg = <0x012ce000 0x20000>;
 			};
-			partition@2d0000 {
+			partition@12d0000 {
 				label = "kernel2";
 				reg = <0x012d0000 0xd30000>;
 			};
