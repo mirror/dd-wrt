@@ -229,6 +229,7 @@ static void mcu_no_response(struct uloop_timeout *t)
 	while (!list_empty(&mcu->pending_cmds)) {
 		cmd = list_first_entry(&mcu->pending_cmds, struct cmd, list);
 		list_del(&cmd->list);
+		free(cmd);
 	}
 
 	ULOG_ERR("No response from PoE controller. Trying a reset\n");
@@ -1325,10 +1326,16 @@ static int ubus_poe_manage_cb(struct ubus_context *ctx, struct ubus_object *obj,
 	port_name = blobmsg_get_string(tb[0]);
 	for (i = 0; i < cfg->port_count; i++) {
 		port = &cfg->ports[i];
-		if (!port->enable || strcmp(port_name, port->name))
-			continue;
-		return poe_cmd_port_enable(mcu, i, blobmsg_get_bool(tb[1]));
+		if (port->enable && !strcmp(port_name, port->name))
+			break;
 	}
+
+	if (i == cfg->port_count)
+		return UBUS_STATUS_OK;
+
+	if (poe_cmd_port_enable(mcu, i, blobmsg_get_bool(tb[1])) < 0)
+		return UBUS_STATUS_SYSTEM_ERROR;
+
 	return UBUS_STATUS_INVALID_ARGUMENT;
 }
 
