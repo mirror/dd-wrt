@@ -542,6 +542,11 @@ static char *prot_short_str[NDPI_MAX_NUM_STATIC_BITMAP+1] = {
 	"yggdrasil",
 	"nebula",
 	"discord_call",
+	"freefire",
+	"kik",
+	"character_ai",
+	"duckduckgo",
+	"peacock",
 	NULL,
 };
 
