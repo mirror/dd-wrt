@@ -1222,18 +1222,18 @@ struct cfg_param {
   int locked;
 };
 
-  void ndpi_reconcile_msteams_call_udp(struct ndpi_flow_struct *flow);
-  void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC   void ndpi_reconcile_msteams_call_udp(struct ndpi_flow_struct *flow);
+NDPI_STATIC   void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_str,
 				struct ndpi_flow_core_struct *core,
 				struct ndpi_flow_metadata_struct *metadata);
-  int ndpi_init_packet(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC   int ndpi_init_packet(struct ndpi_detection_module_struct *ndpi_str,
 		       struct ndpi_flow_core_struct *core,
 		       struct ndpi_flow_metadata_struct *metadata,
 		       const u_int64_t current_time_ms,
 		       const unsigned char *packet_data,
 		       unsigned short packetlen,
 		       struct ndpi_flow_input_info *input_info);
-  ndpi_protocol ndpi_create_public_results(struct ndpi_detection_module_struct *ndpi_str,
+NDPI_STATIC   ndpi_protocol ndpi_create_public_results(struct ndpi_detection_module_struct *ndpi_str,
 					   const struct ndpi_flow_core_struct *core);
     
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION

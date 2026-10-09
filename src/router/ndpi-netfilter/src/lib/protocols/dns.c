@@ -1236,7 +1236,7 @@ static void search_dns_tcp_udp(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* *********************************************** */
 
-bool ndpi_search_dns_tcp_udp_internal(struct ndpi_detection_module_struct *ndpi_struct,
+static bool ndpi_search_dns_tcp_udp_internal(struct ndpi_detection_module_struct *ndpi_struct,
 				      struct ndpi_flow_struct *flow,
 				      struct ndpi_flow_metadata_struct *metadata,
 				      struct ndpi_flow_struct_dns_metadata *dns) {
@@ -1312,7 +1312,7 @@ bool ndpi_search_dns_tcp_udp_internal(struct ndpi_detection_module_struct *ndpi_
 
 /* *********************************************** */
 
-void ndpi_search_dns_tcp_udp(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_dns_tcp_udp(struct ndpi_detection_module_struct *ndpi_struct,
 			     struct ndpi_flow_struct *flow) {
   (void)ndpi_search_dns_tcp_udp_internal(ndpi_struct, flow,
 					 &flow->metadata, &flow->metadata.protos.dns);

@@ -314,7 +314,7 @@ extern "C" {
    * @par core  = the core struct which dynamic allocated members should be deallocated
    *
    */
-  void ndpi_free_flow_core_data(struct ndpi_flow_core_struct *core);
+  NDPI_STATIC void ndpi_free_flow_core_data(struct ndpi_flow_core_struct *core);
 
   /**
    * Frees the dynamic memory allocated members in the specified flow core struct
@@ -323,7 +323,7 @@ extern "C" {
    * @par core  = the core struct and its dynamic allocated members that should be deallocated
    *
    */
-  void ndpi_free_flow_core(struct ndpi_flow_core_struct *core);
+  NDPI_STATIC void ndpi_free_flow_core(struct ndpi_flow_core_struct *core);
 
   /**
    * Dynamically load protocol plugins
