@@ -299,6 +299,7 @@ struct bgp_dest *bgp_safi_node_lookup(struct bgp_table *table, safi_t safi,
 		}
 
 		table = bgp_dest_get_bgp_table_info(pdest);
+		bgp_dest_unlock_node(pdest);
 	}
 
 	dest = bgp_node_lookup(table, p);
@@ -1539,11 +1540,9 @@ int bgp_path_info_cmp(struct bgp *bgp, struct bgp_path_info *new,
 	     new_sub_sort == BGP_PEER_EBGP_OAD)) {
 		*reason = bgp_path_selection_peer;
 		if (debug)
-			zlog_debug("%s: %s loses to %s due to %s peer < eBGP peer",
-				   pfx_buf, new_buf, exist_buf,
-				   (exist_sub_sort == BGP_PEER_EBGP_OAD)
-					   ? "eBGP-OAD"
-					   : "iBGP");
+			zlog_debug("%s: %s loses to %s due to %s peer < eBGP peer", pfx_buf,
+				   new_buf, exist_buf,
+				   (new_sub_sort == BGP_PEER_EBGP_OAD) ? "eBGP-OAD" : "iBGP");
 		if (!CHECK_FLAG(bgp->flags, BGP_FLAG_PEERTYPE_MULTIPATH_RELAX))
 			return 0;
 		peer_sort_ret = 0;
@@ -8727,11 +8726,11 @@ void bgp_static_update(struct bgp *bgp, const struct prefix *p,
 	/* Aggregate address increment. */
 	bgp_aggregate_increment(bgp, p, new, afi, safi);
 
-	/* route_node_get lock */
-	bgp_dest_unlock_node(dest);
-
 	/* Process change. */
 	bgp_process(bgp, dest, new, afi, safi);
+
+	/* route_node_get lock */
+	bgp_dest_unlock_node(dest);
 
 	if (SAFI_UNICAST == safi &&
 	    (bgp->inst_type == BGP_INSTANCE_TYPE_VRF ||
@@ -17517,7 +17516,7 @@ static int peer_adj_routes(struct vty *vty, struct peer *peer, afi_t afi, safi_t
 	if (use_json) {
 		if (type == bgp_show_adj_route_advertised || type == bgp_show_adj_route_received) {
 			if (header1) {
-				int version = table ? table->version : 0;
+				int version = table->version;
 
 				vty_out(vty, "\"bgpTableVersion\":%d", version);
 				vty_out(vty, ",\"bgpLocalRouterId\":\"%pI4\"", &bgp->router_id);

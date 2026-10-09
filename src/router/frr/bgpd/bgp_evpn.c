@@ -7779,7 +7779,7 @@ int bgp_evpn_local_vni_add(struct bgp *bgp, vni_t vni,
 	/* Tunnel is newly active.
 	 * Add TIP to tip_hash of the EVPN underlay instance (bgp_get_evpn()).
 	 */
-	if (bgp_tip_add(bgp, originator_ip))
+	if (bgp_tip_add(bgp, originator_ip) && bgp_evpn)
 		/* The originator_ip was not already present in the
 		 * bgp martian next-hop table as a tunnel-ip, so we
 		 * need to go back and filter routes matching the new
@@ -7935,11 +7935,11 @@ void bgp_evpn_init(struct bgp *bgp)
 		bgp->evpn_info->dad_freeze_time = 0;
 		/* Initialize zebra vxlan */
 		bgp_zebra_dup_addr_detection(bgp);
-		/* Enable PIP feature by default for bgp vrf instance */
+
 		if (bgp->inst_type == BGP_INSTANCE_TYPE_VRF) {
 			struct bgp *bgp_default;
 
-			bgp->evpn_info->advertise_pip = true;
+			bgp->evpn_info->advertise_pip = DFLT_BGP_EVPN_ADVERTISE_PIP;
 			bgp_default = bgp_get_default();
 			if (bgp_default) {
 				SET_IPADDR_V4(&bgp->evpn_info->pip_ip);

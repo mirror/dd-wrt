@@ -993,8 +993,13 @@ static int zapi_nexthop_srv6_cmp(const struct zapi_nexthop *next1,
 {
 	int ret = 0;
 
-	ret = memcmp(&next1->seg6_segs, &next2->seg6_segs,
-		     sizeof(struct in6_addr));
+	if (next1->seg_num > next2->seg_num)
+		return 1;
+
+	if (next1->seg_num < next2->seg_num)
+		return -1;
+
+	ret = memcmp(next1->seg6_segs, next2->seg6_segs, next1->seg_num * sizeof(struct in6_addr));
 	if (ret != 0)
 		return ret;
 
@@ -2387,7 +2392,7 @@ bool zapi_srv6_sid_notify_decode(struct stream *s, struct srv6_sid_ctx *ctx,
 		}
 	} else if (len > 0) {
 		/* Advance the stream */
-		stream_forward_getp(s, len);
+		STREAM_FORWARD_GETP(s, len);
 	}
 
 	return true;

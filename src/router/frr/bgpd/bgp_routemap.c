@@ -3461,8 +3461,12 @@ route_set_ecommunity_lb(void *rule, const struct prefix *prefix, void *object)
 	if (!peer || !peer->bgp)
 		return RMAP_ERROR;
 
-	/* Build link bandwidth extended community */
-	as = (peer->bgp->as > BGP_AS_MAX) ? BGP_AS_TRANS : peer->bgp->as;
+	/* Build link bandwidth extended community. The 2-byte (classic)
+	 * encoding below falls back to BGP_AS_TRANS for a 4-byte AS; the
+	 * extended (4-byte) encoding has no such limit and must use the
+	 * real AS.
+	 */
+	as = peer->bgp->as;
 	if (rels->lb_type == RMAP_ECOMM_LB_SET_VALUE) {
 		bw_bytes = (rels->bw * 1000 * 1000) / 8;
 	} else if (rels->lb_type == RMAP_ECOMM_LB_SET_CUMUL) {
@@ -3500,6 +3504,7 @@ route_set_ecommunity_lb(void *rule, const struct prefix *prefix, void *object)
 		} else {
 			ecom_lb.size = 1;
 			ecom_lb.unit_size = IPV6_ECOMMUNITY_SIZE;
+			ecom_lb.disable_ieee_floating = false;
 			ecom_lb.val = (uint8_t *)lb_eval.val;
 			new_ecom = ecommunity_dup(&ecom_lb);
 		}
@@ -3508,19 +3513,24 @@ route_set_ecommunity_lb(void *rule, const struct prefix *prefix, void *object)
 	} else {
 		struct ecommunity_val lb_eval;
 
-		encode_lb_extcomm(as, bw_bytes, rels->non_trans, &lb_eval,
+		encode_lb_extcomm(as > BGP_AS_MAX ? BGP_AS_TRANS : as, bw_bytes,
+				  rels->non_trans, &lb_eval,
 				  CHECK_FLAG(peer->flags,
 					     PEER_FLAG_DISABLE_LINK_BW_ENCODING_IEEE));
 
 		old_ecom = bgp_attr_get_ecommunity(path->attr);
 		if (old_ecom) {
 			new_ecom = ecommunity_dup(old_ecom);
+			new_ecom->disable_ieee_floating =
+				CHECK_FLAG(peer->flags, PEER_FLAG_DISABLE_LINK_BW_ENCODING_IEEE);
 			ecommunity_add_val(new_ecom, &lb_eval, true, true);
 			if (!old_ecom->refcnt)
 				ecommunity_free(&old_ecom);
 		} else {
 			ecom_lb.size = 1;
 			ecom_lb.unit_size = ECOMMUNITY_SIZE;
+			ecom_lb.disable_ieee_floating =
+				CHECK_FLAG(peer->flags, PEER_FLAG_DISABLE_LINK_BW_ENCODING_IEEE);
 			ecom_lb.val = (uint8_t *)lb_eval.val;
 			new_ecom = ecommunity_dup(&ecom_lb);
 		}
@@ -3767,18 +3777,25 @@ route_set_aggregator_as(void *rule, const struct prefix *prefix, void *object)
 static void *route_set_aggregator_as_compile(const char *arg)
 {
 	struct aggregator *aggregator;
-	char as[10];
+	char as[ASN_STRING_MAX_SIZE];
 	char address[20];
 	int ret;
 
 	aggregator =
 		XCALLOC(MTYPE_ROUTE_MAP_COMPILED, sizeof(struct aggregator));
-	if (sscanf(arg, "%s %s", as, address) != 2) {
+	/* Bound the conversions to the buffer sizes (size - 1) to avoid
+	 * overflowing the stack buffers above.
+	 */
+	if (sscanf(arg, "%11s %19s", as, address) != 2) {
 		XFREE(MTYPE_ROUTE_MAP_COMPILED, aggregator);
 		return NULL;
 	}
 
-	aggregator->as = strtoul(as, NULL, 10);
+	if (!asn_str2asn(as, &aggregator->as)) {
+		XFREE(MTYPE_ROUTE_MAP_COMPILED, aggregator);
+		return NULL;
+	}
+
 	ret = inet_aton(address, &aggregator->address);
 	if (ret == 0) {
 		XFREE(MTYPE_ROUTE_MAP_COMPILED, aggregator);

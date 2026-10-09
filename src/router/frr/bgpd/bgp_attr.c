@@ -1916,6 +1916,7 @@ bgp_attr_malformed(struct bgp_attr_parser_args *args, uint8_t subcode,
 	case BGP_ATTR_ATOMIC_AGGREGATE:
 	case BGP_ATTR_PREFIX_SID:
 	case BGP_ATTR_NHC:
+	case BGP_ATTR_LINK_STATE:
 		return BGP_ATTR_PARSE_PROCEED;
 
 	/* Core attributes, particularly ones which may influence route
@@ -3432,8 +3433,7 @@ static enum bgp_attr_parse_ret bgp_attr_srv6_service_data(struct bgp_attr_parser
 		flog_err(EC_BGP_ATTR_LEN,
 			 "Malformed SRv6 Service Data Sub-Sub-TLV attribute - insufficient data (need %zu for attribute header, have %zu in parent TLV, %zu remaining in UPDATE)",
 			 headersz, remaining, STREAM_READABLE(connection->curr));
-		return bgp_attr_malformed(args, BGP_NOTIFY_UPDATE_ATTR_LENG_ERR,
-					  args->total);
+		return BGP_ATTR_PARSE_WITHDRAW;
 	}
 
 	type = stream_getc(connection->curr);
@@ -3444,8 +3444,7 @@ static enum bgp_attr_parse_ret bgp_attr_srv6_service_data(struct bgp_attr_parser
 		flog_err(EC_BGP_ATTR_LEN,
 			 "Malformed SRv6 Service Data Sub-Sub-TLV attribute - insufficient data (need %hu for attribute data, have %zu in parent TLV, %zu remaining in UPDATE)",
 			 length, remaining, STREAM_READABLE(connection->curr));
-		return bgp_attr_malformed(args, BGP_NOTIFY_UPDATE_ATTR_LENG_ERR,
-					  args->total);
+		return BGP_ATTR_PARSE_WITHDRAW;
 	}
 
 	if (type == BGP_PREFIX_SID_SRV6_L3_SERVICE_SID_STRUCTURE) {
@@ -3453,9 +3452,7 @@ static enum bgp_attr_parse_ret bgp_attr_srv6_service_data(struct bgp_attr_parser
 			flog_err(EC_BGP_ATTR_LEN,
 				 "Malformed SRv6 Service Data Sub-Sub-TLV attribute - invalid length %hu (expected %u)",
 				 length, BGP_PREFIX_SID_SRV6_L3_SERVICE_SID_STRUCTURE_LENGTH);
-			return bgp_attr_malformed(
-				args, BGP_NOTIFY_UPDATE_ATTR_LENG_ERR,
-				args->total);
+			return BGP_ATTR_PARSE_WITHDRAW;
 		}
 
 		loc_block_len = stream_getc(connection->curr);
@@ -3472,8 +3469,7 @@ static enum bgp_attr_parse_ret bgp_attr_srv6_service_data(struct bgp_attr_parser
 			flog_err(EC_BGP_ATTR_LEN,
 				 "Malformed SRv6 Service Data Sub-Sub-TLV attribute - invalid transposition data (len=%u, offset=%u)",
 				 transposition_len, transposition_offset);
-			return bgp_attr_malformed(args, BGP_NOTIFY_UPDATE_ATTR_LENG_ERR,
-						  args->total);
+			return BGP_ATTR_PARSE_WITHDRAW;
 		}
 
 		/* Log SRv6 Service Data Sub-Sub-TLV */
@@ -3526,8 +3522,7 @@ static enum bgp_attr_parse_ret bgp_attr_srv6_service(struct bgp_attr_parser_args
 		flog_err(EC_BGP_ATTR_LEN,
 			 "Malformed SRv6 Service Sub-TLV attribute - insufficient data (need %zu for attribute header, have %zu in parent TLV, %zu remaining in UPDATE)",
 			 headersz, remaining, STREAM_READABLE(connection->curr));
-		return bgp_attr_malformed(args, BGP_NOTIFY_UPDATE_ATTR_LENG_ERR,
-					  args->total);
+		return BGP_ATTR_PARSE_WITHDRAW;
 	}
 
 	type = stream_getc(connection->curr);
@@ -3538,8 +3533,7 @@ static enum bgp_attr_parse_ret bgp_attr_srv6_service(struct bgp_attr_parser_args
 		flog_err(EC_BGP_ATTR_LEN,
 			 "Malformed SRv6 Service Sub-TLV attribute - insufficient data (need %hu for attribute data, have %zu in parent TLV, %zu remaining in UPDATE)",
 			 length, remaining, STREAM_READABLE(connection->curr));
-		return bgp_attr_malformed(args, BGP_NOTIFY_UPDATE_ATTR_LENG_ERR,
-					  args->total);
+		return BGP_ATTR_PARSE_WITHDRAW;
 	}
 
 	if (type == BGP_PREFIX_SID_SRV6_L3_SERVICE_SID_INFO) {
@@ -3550,8 +3544,7 @@ static enum bgp_attr_parse_ret bgp_attr_srv6_service(struct bgp_attr_parser_args
 			flog_err(EC_BGP_ATTR_LEN,
 				 "Malformed SRv6 Service Sub-TLV attribute - declared length %u is less than minimum %d",
 				 length, BGP_PREFIX_SID_SRV6_L3_SERVICE_SID_INFO_LENGTH);
-			return bgp_attr_malformed(args, BGP_NOTIFY_UPDATE_ATTR_LENG_ERR,
-						  args->total);
+			return BGP_ATTR_PARSE_WITHDRAW;
 		}
 
 		start = stream_get_getp(connection->curr);
@@ -3652,6 +3645,13 @@ bgp_attr_psid_sub(uint8_t type, uint16_t length,
 		flog_err(EC_BGP_ATTR_LEN,
 			 "Prefix SID specifies length %hu, but only %zu bytes remain", length,
 			 STREAM_READABLE(connection->curr));
+
+		/* RFC 9252 requires malformed SRv6 Service TLVs, Sub-TLVs,
+		 * and Sub-Sub-TLVs to be handled as treat-as-withdraw.
+		 */
+		if (type == BGP_PREFIX_SID_SRV6_L3_SERVICE)
+			return BGP_ATTR_PARSE_WITHDRAW;
+
 		return bgp_attr_malformed(args, BGP_NOTIFY_UPDATE_ATTR_LENG_ERR,
 					  args->total);
 	}
@@ -3788,9 +3788,7 @@ bgp_attr_psid_sub(uint8_t type, uint16_t length,
 			flog_err(
 				EC_BGP_ATTR_LEN,
 				"Prefix SID SRV6 L3 Service not enough data left, it must be at least 1 byte");
-			return bgp_attr_malformed(
-				args, BGP_NOTIFY_UPDATE_ATTR_LENG_ERR,
-				args->total);
+			return BGP_ATTR_PARSE_WITHDRAW;
 		}
 
 		start = stream_get_getp(connection->curr);
@@ -3835,7 +3833,9 @@ enum bgp_attr_parse_ret bgp_attr_prefix_sid(struct bgp_attr_parser_args *args)
 	uint8_t type;
 	uint16_t length;
 	size_t headersz = sizeof(type) + sizeof(length);
+	size_t tlv_total_len;
 	size_t psid_parsed_length = 0;
+	bool srv6_l3_service_tlv_seen = false;
 
 	if (peer->discard_attrs[args->type] || peer->withdraw_attrs[args->type])
 		goto prefix_sid_ignore;
@@ -3852,33 +3852,45 @@ enum bgp_attr_parse_ret bgp_attr_prefix_sid(struct bgp_attr_parser_args *args)
 
 		type = stream_getc(connection->curr);
 		length = stream_getw(connection->curr);
+		tlv_total_len = headersz + length;
 
-		if (((size_t)length + headersz + psid_parsed_length > (size_t)args->length) ||
+		if ((tlv_total_len + psid_parsed_length > (size_t)args->length) ||
 		    STREAM_READABLE(connection->curr) < length) {
 			flog_err(EC_BGP_ATTR_LEN,
 				 "Malformed Prefix SID attribute - insufficient data (need %hu for attribute body, have %zu remaining in UPDATE)",
 				 length, STREAM_READABLE(connection->curr));
+
+			/* RFC 9252 requires malformed SRv6 Service TLVs,
+			 * Sub-TLVs, and Sub-Sub-TLVs to be handled as
+			 * treat-as-withdraw.
+			 */
+			if (type == BGP_PREFIX_SID_SRV6_L3_SERVICE)
+				return BGP_ATTR_PARSE_WITHDRAW;
+
 			return bgp_attr_malformed(args,
 						  BGP_NOTIFY_UPDATE_ATTR_LENG_ERR,
 						  args->total);
+		}
+
+		psid_parsed_length += tlv_total_len;
+
+		if (type == BGP_PREFIX_SID_SRV6_L3_SERVICE) {
+			if (srv6_l3_service_tlv_seen) {
+				/*
+				 * RFC 9252 Section 7: ignore all but the first
+				 * SRv6 L3 Service TLV instance.
+				 */
+				stream_forward_getp(connection->curr, length);
+				continue;
+			}
+
+			srv6_l3_service_tlv_seen = true;
 		}
 
 		ret = bgp_attr_psid_sub(type, length, args);
 
 		if (ret != BGP_ATTR_PARSE_PROCEED)
 			return ret;
-
-		psid_parsed_length += length + headersz;
-
-		if (psid_parsed_length > args->length) {
-			flog_err(
-				EC_BGP_ATTR_LEN,
-				"Malformed Prefix SID attribute - TLV overflow by attribute (need %zu for TLV length, have %zu overflowed in UPDATE)",
-				length + headersz, psid_parsed_length - (length + headersz));
-			return bgp_attr_malformed(
-				args, BGP_NOTIFY_UPDATE_ATTR_LENG_ERR,
-				args->total);
-		}
 	}
 
 	bgp_attr_set(attr, BGP_ATTR_PREFIX_SID);
@@ -4109,7 +4121,7 @@ static int bgp_attr_nhc(struct bgp_attr_parser_args *args)
 	 * ~                Characteristic Value (variable)                ~
 	 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 	 */
-	while (length && STREAM_READABLE(s) >= BGP_NHC_TLV_MIN_LEN) {
+	while (length >= BGP_NHC_TLV_MIN_LEN) {
 		struct bgp_nhc_tlv *found;
 
 		tlv_code = stream_getw(s);
@@ -4184,6 +4196,15 @@ static int bgp_attr_nhc(struct bgp_attr_parser_args *args)
 		length -= tlv_length + BGP_NHC_TLV_MIN_LEN;
 	}
 
+	/* post-TLVs processing sanity check to avoid session reset */
+	if (length != 0) {
+		zlog_err("%pBP rcvd BGP NHC with %d trailing byte(s), smaller than a TLV header",
+			 peer, length);
+		bgp_nhc_free(nhc);
+		bgp_attr_set_nhc(attr, NULL);
+		return bgp_attr_malformed(args, BGP_NOTIFY_UPDATE_OPT_ATTR_ERR, args->total);
+	}
+
 	/*
 	 * draft-ietf-idr-nhc: if the next hop has no global part (i.e. it
 	 * is a link-local address), the sender MUST include a BGPID TLV to
@@ -4250,6 +4271,7 @@ static enum bgp_attr_parse_ret bgp_attr_ls(struct bgp_attr_parser_args *args)
 	struct peer_connection *const connection = args->connection;
 	struct peer *const peer = connection->peer;
 	struct attr *const attr = args->attr;
+	const size_t attr_startp = stream_get_getp(connection->curr);
 	int ret;
 	struct bgp_ls_attr *ls_attr;
 
@@ -4261,12 +4283,10 @@ static enum bgp_attr_parse_ret bgp_attr_ls(struct bgp_attr_parser_args *args)
 	ret = bgp_ls_parse_attr(connection->curr, args->length, ls_attr);
 	if (ret != 0) {
 		bgp_ls_attr_free(ls_attr);
-		/*
-		 * RFC 9552 §5.1 + RFC 7606 §5.4: a malformed BGP-LS TLV
-		 * requires NLRI discard (treat-as-withdraw) while the BGP
-		 * session itself continues.
-		 */
-		return BGP_ATTR_PARSE_WITHDRAW;
+		flog_warn(EC_BGP_LS_PACKET, "%s: malformed BGP-LS Attribute, discarding attribute",
+			  peer->host);
+		stream_set_getp(connection->curr, attr_startp + args->length);
+		return BGP_ATTR_PARSE_PROCEED;
 	}
 
 	bgp_attr_set_ls_attr(attr, bgp_ls_attr_intern(ls_attr));
