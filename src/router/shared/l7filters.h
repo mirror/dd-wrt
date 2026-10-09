@@ -113,6 +113,7 @@ static l7filters filters_list[] = {
 	{ "capwap", NDPI_ONLY, 0, NULL },
 	{ "cassandra", NDPI_ONLY, 0, NULL },
 	{ "ceph", NDPI_ONLY, 0, NULL },
+	{ "character_ai", NDPI_ONLY, 0, NULL },
 	{ "checkmk", NDPI_ONLY, 0, NULL },
 #endif
 	{ "chikka", L7_ONLY, 0, NULL },
@@ -195,6 +196,7 @@ static l7filters filters_list[] = {
 	{ "drda", NDPI_ONLY, 0, NULL },
 	{ "dropbox", NDPI_ONLY, 0, NULL },
 	{ "dtls", NDPI_ONLY, 0, NULL },
+	{ "duckduckgo", NDPI_ONLY, 0, NULL },
 	{ "eaq", NDPI_ONLY, 0, NULL },
 	{ "easyweather", NDPI_ONLY, 0, NULL },
 	{ "ebay", NDPI_ONLY, 0, NULL },
@@ -233,6 +235,7 @@ static l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{ "flute", NDPI_ONLY, 0, NULL },
 	{ "forticlient", NDPI_ONLY, 0, NULL },
+	{ "freefire", NDPI_ONLY, 0, NULL },
 #endif
 	{ "freegate_dns", L7_ONLY, 0, NULL },
 	{ "freegate_http", L7_ONLY, 0, NULL },
@@ -411,6 +414,7 @@ static l7filters filters_list[] = {
 	{ "kcp", PDPI_ONLY, 0, NULL },
 	{ "kerberos", NDPI_ONLY, 0, NULL },
 	{ "kick", NDPI_ONLY, 0, NULL },
+	{ "kik", NDPI_ONLY, 0, NULL },
 	{ "kismet", NDPI_ONLY, 0, NULL },
 	{ "known proto on non std port", NDPI_RISK, 5, "all" },
 	{ "knxnet_ip", NDPI_ONLY, 0, NULL },
@@ -551,6 +555,7 @@ static l7filters filters_list[] = {
 	{ "pcanywhere", L7_ONLY, 0, NULL },
 	{ "pdf", L7_ONLY, 0, NULL },
 #ifdef HAVE_OPENDPI
+	{ "peacock", L7_ONLY, 0, NULL },
 //      { "periodic flow", NDPI_RISK, 48, NULL }, /* unused */
 #endif
 	{ "perl", L7_ONLY, 0, NULL },
