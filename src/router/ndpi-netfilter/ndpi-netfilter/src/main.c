@@ -1504,7 +1504,7 @@ static int check_guessed_protocol(struct nf_ct_ext_ndpi *ct_ndpi,ndpi_protocol *
 				flow->core.confidence,
 				flow->core.guessed_protocol_id_by_ip,
 				flow->core.guessed_protocol_id,
-				dissector_bitmask_is_set(&flow->core.excluded_dissectors_bitmask,
+				ndpi_dissector_bitmask_is_set(&flow->core.excluded_dissectors_bitmask,
 					flow->core.guessed_protocol_id) != 0 ? "excluded":""
 				);
 	if(ct_ndpi->confidence >= NDPI_CONFIDENCE_DPI_CACHE) return 0;
@@ -1512,7 +1512,7 @@ static int check_guessed_protocol(struct nf_ct_ext_ndpi *ct_ndpi,ndpi_protocol *
 	if(proto->proto.app_protocol != NDPI_PROTOCOL_UNKNOWN) return 0;
 
 	if(flow->core.guessed_protocol_id != NDPI_PROTOCOL_UNKNOWN &&
-	   dissector_bitmask_is_set(&flow->core.excluded_dissectors_bitmask,
+	   ndpi_dissector_bitmask_is_set(&flow->core.excluded_dissectors_bitmask,
 						flow->core.guessed_protocol_id) == 0) {
 		proto->proto.app_protocol = flow->core.guessed_protocol_id;
 		if(_DBG_TRACE_GUESSED)

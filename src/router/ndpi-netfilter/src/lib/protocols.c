@@ -537,3 +537,5 @@
 #undef NDPI_CURRENT_PROTO
 #include "protocols/nebula.c"
 #undef NDPI_CURRENT_PROTO
+#include "protocols/freefire.c"
+#undef NDPI_CURRENT_PROTO

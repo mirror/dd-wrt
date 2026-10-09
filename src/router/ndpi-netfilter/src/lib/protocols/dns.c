@@ -950,7 +950,7 @@ static int dns_tcp_process(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* *********************************************** */
 
-static int keep_extra_dissection(struct ndpi_flow_struct_dns_metadata *dns)
+static int dns_keep_extra_dissection(struct ndpi_flow_struct_dns_metadata *dns)
 {
   /* As a general rule, we wait for a valid response
      (in the ideal world, we want to process the request/response pair) */
@@ -963,20 +963,20 @@ static int search_dns_again(struct ndpi_detection_module_struct *ndpi_struct, st
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
   if(packet->tcp_retransmission || packet->payload_packet_len == 0) {
-    return keep_extra_dissection(&flow->metadata.protos.dns);
+    return dns_keep_extra_dissection(&flow->metadata.protos.dns);
   }
 
   if(packet->tcp != NULL) {
     if(dns_tcp_process(ndpi_struct, flow, &flow->metadata.protos.dns) < 0) {
       return 0; /* Something is seriously wrong: stop here */
     }
-    return keep_extra_dissection(&flow->metadata.protos.dns);
+    return dns_keep_extra_dissection(&flow->metadata.protos.dns);
   }
 
   /* possibly dissect the DNS reply */
   search_dns_tcp_udp(ndpi_struct, flow, &flow->metadata.protos.dns);
 
-  return keep_extra_dissection( &flow->metadata.protos.dns);
+  return dns_keep_extra_dissection( &flow->metadata.protos.dns);
 }
 
 /* *********************************************** */
@@ -1202,7 +1202,7 @@ static void search_dns_tcp_udp(struct ndpi_detection_module_struct *ndpi_struct,
      core->detected_protocol_stack[0] != NDPI_PROTOCOL_LLMNR &&
      core->detected_protocol_stack[1] != NDPI_PROTOCOL_LLMNR) {
 
-    if(keep_extra_dissection(dns)) {
+    if(dns_keep_extra_dissection(dns)) {
       NDPI_LOG_DBG(ndpi_struct, "Enabling extra dissection\n");
       core->max_extra_packets_to_check = ndpi_struct->cfg.dns_max_packets_extra_dissection;
       core->extra_packets_func = search_dns_again;

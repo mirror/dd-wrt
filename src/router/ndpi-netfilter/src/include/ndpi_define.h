@@ -27,7 +27,7 @@
  * The #define below is used for apps that dynamically link with nDPI to make
  * sure that datastructures and in sync across versions
  */
-#define NDPI_API_VERSION 15728
+#define NDPI_API_VERSION 17595
 
 /*
   gcc -E -dM - < /dev/null |grep ENDIAN
@@ -66,7 +66,7 @@
 #endif/* __KERNEL__ */
 
 
-#if defined(__LITTLE_ENDIAN) && __BYTE_ORDER == __LITTLE_ENDIAN
+#if __BYTE_ORDER == __LITTLE_ENDIAN
 #ifndef __LITTLE_ENDIAN__
 #define __LITTLE_ENDIAN__
 #endif
@@ -104,7 +104,8 @@
 
 #define MAX_DEFAULT_PORTS                                        5
 
-#define NDPI_EXCLUDE_DISSECTOR(mod,flow) exclude_dissector(mod, flow, mod->current_dissector_idx, __FILE__, __func__, __LINE__)
+#define NDPI_EXCLUDE_DISSECTOR(mod,flow) exclude_dissector(mod, &flow->core, mod->current_dissector_idx, __FILE__, __func__, __LINE__)
+#define NDPI_EXCLUDE_CORE_DISSECTOR(mod,core) exclude_dissector(mod, core, mod->current_dissector_idx, __FILE__, __func__, __LINE__)
 
 /**
  * macro for getting the string len of a static string
@@ -147,20 +148,38 @@
 
 #define NDPI_ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
 
-/* the get_uXX will return raw network packet bytes !! */
-#define get_u_int8_t(X,O)   (*(u_int8_t  *)((&(((u_int8_t *)X)[O]))))
-#define get_u_int16_t(X,O)  (*(u_int16_t *)((&(((u_int8_t *)X)[O]))))
-#define get_u_int32_t(X,O)  (*(u_int32_t *)((&(((u_int8_t *)X)[O]))))
-#if defined(__arm__)
-static inline uint64_t get_u_int64_t(const uint8_t* X, int O)
+/* The get_uXX helpers return raw network packet bytes. */
+#ifndef NDPI_CFFI_PREPROCESSING
+//#include <stdint.h>
+//#include <string.h>
+
+#define get_u_int8_t(X,O)   (((const uint8_t *)(X))[O])
+
+static inline uint16_t ndpi_get_u_int16_t(const void *X, int O)
 {
-  uint64_t tmp;
-  memcpy(&tmp, X + O, sizeof(tmp));
-  return tmp;
+  uint16_t value;
+  memcpy(&value, ((const uint8_t *)X) + O, sizeof(value));
+  return value;
 }
-#else
-#define get_u_int64_t(X,O)  (*(u_int64_t *)((&(((u_int8_t *)X)[O]))))
-#endif // __arm__
+
+static inline uint32_t ndpi_get_u_int32_t(const void *X, int O)
+{
+  uint32_t value;
+  memcpy(&value, ((const uint8_t *)X) + O, sizeof(value));
+  return value;
+}
+
+static inline uint64_t ndpi_get_u_int64_t(const void *X, int O)
+{
+  uint64_t value;
+  memcpy(&value, ((const uint8_t *)X) + O, sizeof(value));
+  return value;
+}
+
+#define get_u_int16_t(X,O)  ndpi_get_u_int16_t((X), (O))
+#define get_u_int32_t(X,O)  ndpi_get_u_int32_t((X), (O))
+#define get_u_int64_t(X,O)  ndpi_get_u_int64_t((X), (O))
+#endif /* NDPI_CFFI_PREPROCESSING */
 
 /* new definitions to get little endian from network bytes */
 #define get_ul8(X,O) get_u_int8_t(X,O)
@@ -192,11 +211,11 @@ static inline uint64_t get_u_int64_t(const uint8_t* X, int O)
 
 #endif /* WIN32 */
 
-#define NDPI_MAJOR                              4
-#define NDPI_MINOR                              15
+#define NDPI_MAJOR                              6
+#define NDPI_MINOR                              1
 #define NDPI_PATCH                              0
 
-#define NDPI_MAX_DNS_REQUESTS                   48
+#define NDPI_MAX_DNS_REQUESTS                   75
 #define NDPI_MIN_NUM_STUN_DETECTION             8
 
 /* IMPORTANT: order according to its severity */
@@ -206,26 +225,57 @@ static inline uint64_t get_u_int64_t(const uint8_t* X, int O)
 
 #define NDPI_OPTIMAL_HLL_NUM_BUCKETS           16
 
-#define TLS_HANDLE_SIGNATURE_ALGORITMS 1
-
 #ifdef __APPLE__
 
 #include <libkern/OSByteOrder.h>
 
-#define htobe16(x) OSSwapHostToBigInt16(x)
-#define htole16(x) OSSwapHostToLittleInt16(x)
-#define be16toh(x) OSSwapBigToHostInt16(x)
-#define le16toh(x) OSSwapLittleToHostInt16(x)
+#ifndef htobe16
+#   define htobe16(x) OSSwapHostToBigInt16(x)
+#endif
 
-#define htobe32(x) OSSwapHostToBigInt32(x)
-#define htole32(x) OSSwapHostToLittleInt32(x)
-#define be32toh(x) OSSwapBigToHostInt32(x)
-#define le32toh(x) OSSwapLittleToHostInt32(x)
+#ifndef htole16
+#   define htole16(x) OSSwapHostToLittleInt16(x)
+#endif
 
-#define htobe64(x) OSSwapHostToBigInt64(x)
-#define htole64(x) OSSwapHostToLittleInt64(x)
-#define be64toh(x) OSSwapBigToHostInt64(x)
-#define le64toh(x) OSSwapLittleToHostInt64(x)
+#ifndef be16toh
+#   define be16toh(x) OSSwapBigToHostInt16(x)
+#endif
+
+#ifndef le16toh
+#   define le16toh(x) OSSwapLittleToHostInt16(x)
+#endif
+
+#ifndef htobe32
+#   define htobe32(x) OSSwapHostToBigInt32(x)
+#endif
+
+#ifndef htole32
+#   define htole32(x) OSSwapHostToLittleInt32(x)
+#endif
+
+#ifndef be32toh
+#   define be32toh(x) OSSwapBigToHostInt32(x)
+#endif
+
+#ifndef le32toh
+#   define le32toh(x) OSSwapLittleToHostInt32(x)
+#endif
+
+#ifndef htobe64
+#   define htobe64(x) OSSwapHostToBigInt64(x)
+#endif
+
+#ifndef htole64
+#   define htole64(x) OSSwapHostToLittleInt64(x)
+#endif
+
+#ifndef be64toh
+#   define be64toh(x) OSSwapBigToHostInt64(x)
+#endif
+
+#ifndef le64toh
+#   define le64toh(x) OSSwapLittleToHostInt64(x)
+#endif
 
 #endif /* __APPLE__ */
 

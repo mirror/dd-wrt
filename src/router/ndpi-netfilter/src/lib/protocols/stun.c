@@ -696,7 +696,7 @@ int is_stun(struct ndpi_detection_module_struct *ndpi_struct,
 
 /* ***************************************************** */
 
-static int keep_extra_dissection(struct ndpi_detection_module_struct *ndpi_struct,
+static int stun_keep_extra_dissection(struct ndpi_detection_module_struct *ndpi_struct,
                                  struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
@@ -841,7 +841,7 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
      * same msg split across multiple segments */
 
   if(packet->payload_packet_len <= 1)
-    return keep_extra_dissection(ndpi_struct, flow);
+    return stun_keep_extra_dissection(ndpi_struct, flow);
 
   first_byte = packet->payload[0];
   msg_type = ntohs(*((u_int16_t *)&packet->payload[0]));
@@ -1074,7 +1074,7 @@ static int stun_search_again(struct ndpi_detection_module_struct *ndpi_struct,
       NDPI_LOG_DBG(ndpi_struct, "QUIC other range. Unexpected\n");
     }
   }
-  return keep_extra_dissection(ndpi_struct, flow);
+  return stun_keep_extra_dissection(ndpi_struct, flow);
 }
 
 /* ************************************************************ */
@@ -1103,12 +1103,12 @@ static int stun_telegram_search_again(struct ndpi_detection_module_struct *ndpi_
 
   if(packet->payload_packet_len <= 28) {
     NDPI_LOG_DBG(ndpi_struct, "Malformed custom Telegram packet (too short)\n");
-    return keep_extra_dissection(ndpi_struct, flow);
+    return stun_keep_extra_dissection(ndpi_struct, flow);
   }
 
   if(memcmp(&packet->payload[16], pattern, sizeof(pattern)) == 0) {
     NDPI_LOG_DBG(ndpi_struct, "Custom/Unknown Telegram packet\n");
-    return keep_extra_dissection(ndpi_struct, flow);
+    return stun_keep_extra_dissection(ndpi_struct, flow);
   }
 
   /* It should be STUN/DTLS/RTP */
@@ -1117,7 +1117,7 @@ static int stun_telegram_search_again(struct ndpi_detection_module_struct *ndpi_
   if(24 + length > packet->payload_packet_len) {
     NDPI_LOG_DBG(ndpi_struct, "Malformed custom Telegram packet (too long: %d %d)\n",
                  length, packet->payload_packet_len);
-    return keep_extra_dissection(ndpi_struct, flow);
+    return stun_keep_extra_dissection(ndpi_struct, flow);
   }
 
   orig_payload = packet->payload;
@@ -1130,7 +1130,7 @@ static int stun_telegram_search_again(struct ndpi_detection_module_struct *ndpi_
   packet->payload = orig_payload;
   packet->payload_packet_len = orig_payload_length;
 
-  return keep_extra_dissection(ndpi_struct, flow);
+  return stun_keep_extra_dissection(ndpi_struct, flow);
 }
 
 /* ************************************************************ */
@@ -1267,7 +1267,7 @@ void switch_extra_dissection_to_stun(struct ndpi_detection_module_struct *ndpi_s
 				     int std_callback)
 {
   if(!flow->core.extra_packets_func) {
-    if(keep_extra_dissection(ndpi_struct, flow)) {
+    if(stun_keep_extra_dissection(ndpi_struct, flow)) {
       NDPI_LOG_DBG(ndpi_struct, "Enabling extra dissection\n");
       flow->core.max_extra_packets_to_check = ndpi_struct->cfg.stun_max_packets_extra_dissection;
       if(std_callback)
