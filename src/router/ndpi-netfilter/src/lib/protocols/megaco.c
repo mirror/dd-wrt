@@ -42,7 +42,7 @@ static void ndpi_search_megaco(struct ndpi_detection_module_struct *ndpi_struct,
         packet->payload[5] == 'O' && packet->payload[6] == '/' &&
         packet->payload[7] == '1' && packet->payload[8] == ' ' && packet->payload[9] == '[')) {
       NDPI_LOG_INFO(ndpi_struct, "found MEGACO\n");
-      ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_MEGACO, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+      ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_MEGACO, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
       return;
     } 
   }
@@ -56,5 +56,6 @@ void init_megaco_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("Megaco", ndpi_struct,
                      ndpi_search_megaco,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
+                      DISSECTOR_LICENSE_LGPL,
                       1, NDPI_PROTOCOL_MEGACO);
 }

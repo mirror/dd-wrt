@@ -104,7 +104,8 @@
 
 #define MAX_DEFAULT_PORTS                                        5
 
-#define NDPI_EXCLUDE_DISSECTOR(mod,flow) exclude_dissector(mod, flow, mod->current_dissector_idx, __FILE__, __func__, __LINE__)
+#define NDPI_EXCLUDE_DISSECTOR(mod,flow) exclude_dissector(mod, &flow->core, mod->current_dissector_idx, __FILE__, __func__, __LINE__)
+#define NDPI_EXCLUDE_CORE_DISSECTOR(mod,core) exclude_dissector(mod, core, mod->current_dissector_idx, __FILE__, __func__, __LINE__)
 
 /**
  * macro for getting the string len of a static string
@@ -147,20 +148,38 @@
 
 #define NDPI_ARRAY_LENGTH(array) (sizeof(array) / sizeof((array)[0]))
 
-/* the get_uXX will return raw network packet bytes !! */
-#define get_u_int8_t(X,O)   (*(u_int8_t  *)((&(((u_int8_t *)X)[O]))))
-#define get_u_int16_t(X,O)  (*(u_int16_t *)((&(((u_int8_t *)X)[O]))))
-#define get_u_int32_t(X,O)  (*(u_int32_t *)((&(((u_int8_t *)X)[O]))))
-#if defined(__arm__)
-static inline uint64_t get_u_int64_t(const uint8_t* X, int O)
+/* The get_uXX helpers return raw network packet bytes. */
+#ifndef NDPI_CFFI_PREPROCESSING
+#include <stdint.h>
+#include <string.h>
+
+#define get_u_int8_t(X,O)   (((const uint8_t *)(X))[O])
+
+static inline uint16_t ndpi_get_u_int16_t(const void *X, int O)
 {
-  uint64_t tmp;
-  memcpy(&tmp, X + O, sizeof(tmp));
-  return tmp;
+  uint16_t value;
+  memcpy(&value, ((const uint8_t *)X) + O, sizeof(value));
+  return value;
 }
-#else
-#define get_u_int64_t(X,O)  (*(u_int64_t *)((&(((u_int8_t *)X)[O]))))
-#endif // __arm__
+
+static inline uint32_t ndpi_get_u_int32_t(const void *X, int O)
+{
+  uint32_t value;
+  memcpy(&value, ((const uint8_t *)X) + O, sizeof(value));
+  return value;
+}
+
+static inline uint64_t ndpi_get_u_int64_t(const void *X, int O)
+{
+  uint64_t value;
+  memcpy(&value, ((const uint8_t *)X) + O, sizeof(value));
+  return value;
+}
+
+#define get_u_int16_t(X,O)  ndpi_get_u_int16_t((X), (O))
+#define get_u_int32_t(X,O)  ndpi_get_u_int32_t((X), (O))
+#define get_u_int64_t(X,O)  ndpi_get_u_int64_t((X), (O))
+#endif /* NDPI_CFFI_PREPROCESSING */
 
 /* new definitions to get little endian from network bytes */
 #define get_ul8(X,O) get_u_int8_t(X,O)
@@ -196,7 +215,7 @@ static inline uint64_t get_u_int64_t(const uint8_t* X, int O)
 #define NDPI_MINOR                              @NDPI_MINOR@
 #define NDPI_PATCH                              @NDPI_PATCH@
 
-#define NDPI_MAX_DNS_REQUESTS                   48
+#define NDPI_MAX_DNS_REQUESTS                   75
 #define NDPI_MIN_NUM_STUN_DETECTION             8
 
 /* IMPORTANT: order according to its severity */

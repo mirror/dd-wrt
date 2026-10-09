@@ -33,9 +33,9 @@ static void ndpi_int_nomachine_add_connection(struct ndpi_detection_module_struc
                                               struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found NoMachine\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_NOMACHINE,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_NOMACHINE,
                              NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
-  ndpi_set_risk(ndpi_struct, flow, NDPI_DESKTOP_OR_FILE_SHARING_SESSION, "Found NoMachine");
+  ndpi_set_risk(ndpi_struct, &flow->core, NDPI_DESKTOP_OR_FILE_SHARING_SESSION, "Found NoMachine");
 }
 
 static void ndpi_search_nomachine(struct ndpi_detection_module_struct *ndpi_struct,
@@ -74,5 +74,6 @@ void init_nomachine_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("NoMachine", ndpi_struct,
                      ndpi_search_nomachine,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_NOMACHINE);
 }

@@ -33,7 +33,7 @@ static void ndpi_int_gaijin_add_connection(struct ndpi_detection_module_struct *
                                            struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found Gaijin Entertainment\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_GAIJIN,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_GAIJIN,
                              NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
@@ -71,5 +71,6 @@ void init_gaijin_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("GaijinEntertainment", ndpi_struct,
                      ndpi_search_gaijin,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_GAIJIN);
 }

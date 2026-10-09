@@ -27,7 +27,7 @@
 static void ndpi_int_teamspeak_add_connection(struct ndpi_detection_module_struct
                                               *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TEAMSPEAK, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_TEAMSPEAK, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 
@@ -85,7 +85,7 @@ static void ndpi_search_teamspeak(struct ndpi_detection_module_struct *ndpi_stru
   return;
 
 ts3_license_weblist:
-  if (flow->packet_counter == 3)
+  if (flow->core.packet_counter == 3)
   {
     NDPI_LOG_INFO(ndpi_struct, "found TEAMSPEAK license/weblist\n");
     ndpi_int_teamspeak_add_connection(ndpi_struct, flow);
@@ -98,6 +98,7 @@ void init_teamspeak_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("TeamSpeak", ndpi_struct,
                      ndpi_search_teamspeak,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_TEAMSPEAK);
 }
 

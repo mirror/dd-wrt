@@ -55,7 +55,7 @@ static void ndpi_int_ldp_add_connection(struct ndpi_detection_module_struct *ndp
                                         struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found LDP\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_LDP,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_LDP,
                              NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
@@ -119,5 +119,6 @@ void init_ldp_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("LDP", ndpi_struct,
                      ndpi_search_ldp,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                      DISSECTOR_LICENSE_LGPL,
                       1, NDPI_PROTOCOL_LDP);
 }

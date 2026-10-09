@@ -35,7 +35,7 @@ static void ndpi_int_cod_mobile_add_connection(struct ndpi_detection_module_stru
                                                struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found Call of Duty: Mobile\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_COD_MOBILE,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_COD_MOBILE,
                              NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
@@ -65,7 +65,7 @@ static void ndpi_search_cod_mobile(struct ndpi_detection_module_struct *ndpi_str
      }
   }
 
-  if (flow->packet_counter >= 4) {
+  if (flow->core.packet_counter >= 4) {
     NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
   }
 }
@@ -75,5 +75,6 @@ void init_cod_mobile_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("CoD_Mobile", ndpi_struct,
                      ndpi_search_cod_mobile,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_COD_MOBILE);
 }

@@ -46,7 +46,7 @@ static void ndpi_search_bitcoin(struct ndpi_detection_module_struct *ndpi_struct
         case TEST_3_NET_MAGIC:
         case SIG_NET_MAGIC:
         case NAME_COIN_NET_MAGIC:
-          ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_BITCOIN, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+          ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_BITCOIN, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
           NDPI_LOG_INFO(ndpi_struct, "found BITCOIN\n");
           return;
       }
@@ -62,6 +62,7 @@ void init_bitcoin_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("Bitcoin", ndpi_struct,
                      ndpi_search_bitcoin,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_BITCOIN);
 }
 

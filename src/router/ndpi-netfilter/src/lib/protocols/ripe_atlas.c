@@ -33,7 +33,7 @@ static void ndpi_int_ripe_atlas_add_connection(struct ndpi_detection_module_stru
                                                struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_DBG(ndpi_struct, "found (Magellan) Ripe Atlas Tool\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_RIPE_ATLAS,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_RIPE_ATLAS,
                              NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
@@ -64,5 +64,6 @@ void init_ripe_atlas_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("RipeAtlas", ndpi_struct,
                      ndpi_search_ripe_atlas,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_RIPE_ATLAS);
 }

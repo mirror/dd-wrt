@@ -33,7 +33,7 @@ static void ndpi_int_paltalk_add_connection(struct ndpi_detection_module_struct 
                                             struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found Paltalk\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_PALTALK, NDPI_PROTOCOL_UNKNOWN,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_PALTALK, NDPI_PROTOCOL_UNKNOWN,
                              NDPI_CONFIDENCE_DPI);
 }
 
@@ -65,5 +65,6 @@ void init_paltalk_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("Paltalk", ndpi_struct,
                      ndpi_search_paltalk,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_PALTALK);
 }

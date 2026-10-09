@@ -33,7 +33,7 @@ static void ndpi_int_valve_sdr_add_connection(struct ndpi_detection_module_struc
                                               struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found Steam Datagram Relay\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_VALVE_SDR,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_VALVE_SDR,
                              NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
@@ -62,5 +62,6 @@ void init_valve_sdr_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("SteamDatagramRelay", ndpi_struct,
                      ndpi_search_valve_sdr,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_VALVE_SDR);
 }

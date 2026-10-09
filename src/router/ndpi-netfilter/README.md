@@ -5,7 +5,8 @@
 
 ## What is nDPI ?
 
-nDPI® is an open source LGPLv3 library for deep-packet inspection.
+nDPI® is an open source LGPLv3 library for deep-packet inspection. Some dissectors are released
+under a dual-license: please refer to README.license.md for more information.
 
 A generic FAQ about nDPI is available [here](https://github.com/ntop/nDPI/blob/dev/doc/FAQ.rst)
 
@@ -114,10 +115,6 @@ You can use nDPI to selectively block selected Internet traffic by embedding it 
 - [Network Traffic Classification for Cybersecurity and Monitoring](https://fosdem.org/2022/schedule/event/using_ndpi_to_efficiently_classify_network_traffic/) [FOSDEM, 2022]
 - [Using nDPI for Monitoring and Security](https://archive.fosdem.org/2021/schedule/event/nemondpi/) [FOSDEM, 2021]
 - [Knowing the Unknown: How to Monitor and Troubleshoot an Unfamiliar Network](https://www.ntop.org/wp-content/uploads/2017/06/nDPI_Sharkfest_2017.pdf) [SharkFest, 2017]
-
-
-
-
 
 ### nDPI-Related Projects
 

@@ -30,7 +30,7 @@ static void ndpi_int_ultrasurf_add_connection(struct ndpi_detection_module_struc
                                               struct ndpi_flow_struct * const flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found UltraSurf\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core,
                              NDPI_PROTOCOL_ULTRASURF,
                              NDPI_PROTOCOL_UNKNOWN,
                              NDPI_CONFIDENCE_DPI);
@@ -63,5 +63,6 @@ void init_ultrasurf_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("UltraSurf", ndpi_struct,
                      ndpi_search_ultrasurf,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_ULTRASURF);
 }

@@ -208,7 +208,8 @@ extern "C" {
    * @return  the initialized detection module
    *
    */
-  NDPI_STATIC struct ndpi_detection_module_struct *ndpi_init_detection_module(struct ndpi_global_context *g_ctx);
+  NDPI_STATIC struct ndpi_detection_module_struct *ndpi_init_detection_module(struct ndpi_global_context *g_ctx,
+								  enum ndpi_license_type license_type);
 
   /**
    * Completes the initialization (2nd step)
@@ -306,6 +307,23 @@ extern "C" {
    */
   NDPI_STATIC void ndpi_add_user_proto_id_mapping(struct ndpi_detection_module_struct *ndpi_str,
                                       u_int16_t ndpi_proto_id, u_int16_t user_proto_id);
+
+  /**
+   * Frees the dynamic memory allocated members in the specified flow core struct
+   *
+   * @par core  = the core struct which dynamic allocated members should be deallocated
+   *
+   */
+  void ndpi_free_flow_core_data(struct ndpi_flow_core_struct *core);
+
+  /**
+   * Frees the dynamic memory allocated members in the specified flow core struct
+   * and the core struct itself.
+   *
+   * @par core  = the core struct and its dynamic allocated members that should be deallocated
+   *
+   */
+  void ndpi_free_flow_core(struct ndpi_flow_core_struct *core);
 
   /**
    * Dynamically load protocol plugins
@@ -448,7 +466,7 @@ extern "C" {
    * Check if the host passed match with a protocol
    *
    * @par    ndpi_struct         = the detection module
-   * @par    flow                = the flow where match the host
+   * @par    core                = the flow core where match the host
    * @par    string_to_match     = the string to match
    * @par    string_to_match_len = the length of the string
    * @par    ret_match           = completed returned match information
@@ -458,7 +476,7 @@ extern "C" {
    *
    */
   NDPI_STATIC u_int16_t ndpi_match_host_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
-					struct ndpi_flow_struct *flow,
+					struct ndpi_flow_core_struct *core,
 					char *string_to_match,
 					u_int string_to_match_len,
 					ndpi_protocol_match_result *ret_match,
@@ -1098,7 +1116,7 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
   NDPI_STATIC u_int ndpi_get_ndpi_detection_module_size(void);
 
   /* Simple helper to get current time, in sec */
-  NDPI_STATIC u_int32_t ndpi_get_current_time(struct ndpi_flow_struct *flow);
+  NDPI_STATIC u_int32_t ndpi_get_current_time(struct ndpi_flow_core_struct *core);
 
   /* LRU cache */
   NDPI_STATIC struct ndpi_lru_cache* ndpi_lru_cache_init(u_int32_t num_entries, u_int32_t ttl, int shared);
@@ -1124,7 +1142,7 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
 				    ndpi_protocol_breed_t *breed);
 
   NDPI_STATIC void ndpi_handle_risk_exceptions(struct ndpi_detection_module_struct *ndpi_str,
-				   struct ndpi_flow_struct *flow);
+				   struct ndpi_flow_core_struct *core);
 
   /* Utility functions to set ndpi malloc/free/print wrappers */
   NDPI_STATIC void set_ndpi_ticks_per_second(u_int32_t ticks_per_second);
@@ -1140,6 +1158,16 @@ NDPI_STATIC  int ndpi_load_tcp_fingerprint_file(struct ndpi_detection_module_str
 			    u_int16_t src_port, u_int16_t dst_port, u_int8_t icmp_type, u_int8_t icmp_code,
 			    u_char *hash_buf, u_int8_t hash_buf_len);
   NDPI_STATIC u_int8_t ndpi_is_safe_ssl_cipher(u_int32_t cipher);
+  NDPI_STATIC const char* ndpi_cipher2str(u_int32_t cipher, char unknown_cipher[8]);
+  NDPI_STATIC const char* ndpi_tls_extension2str(u_int16_t extension_id, char unknown_extn[8]);
+  NDPI_STATIC const char* ndpi_tls_elliptic_curve2str(u_int16_t curve_id, char unknown_curve[8]);
+  NDPI_STATIC const char* ndpi_tls_signature_algo2str(u_int16_t algo_id, char unknown_algo[8]);
+  NDPI_STATIC const char* ndpi_tls_supported_groups2str(u_int16_t group_id, char unknown_group[8]);
+  NDPI_STATIC const char* ndpi_tls_elliptic_curve_point_format2str(u_int16_t format_id, char unknown_group[8]);
+  NDPI_STATIC const char* ndpi_tls_key_share_group2str(u_int16_t group_id, char unknown_group[8]);
+  NDPI_STATIC const char* ndpi_tls_supported_version2str(u_int16_t version_id, char unknown_version[8]);
+
+  NDPI_STATIC const char* ndpi_tunnel2str(ndpi_packet_tunnel tt);
   NDPI_STATIC u_int16_t ndpi_guess_host_protocol_id(struct ndpi_detection_module_struct *ndpi_struct,
 					struct ndpi_flow_struct *flow);
   NDPI_STATIC int ndpi_has_human_readable_string(char *buffer, u_int buffer_size,
@@ -1247,9 +1275,13 @@ NDPI_STATIC  const char* ndpi_tls_supported_version2str(u_int16_t version_id, ch
 
   /* DGA */
   NDPI_STATIC int ndpi_check_dga_name(struct ndpi_detection_module_struct *ndpi_str,
-			  struct ndpi_flow_struct *flow,
+			  struct ndpi_flow_core_struct *core,
 			  char *name, u_int8_t is_hostname, u_int8_t check_subproto,
 			  u_int8_t flow_fully_classified);
+
+  /* URL-path DGA */
+  NDPI_STATIC int ndpi_check_dga_url_path(struct ndpi_detection_module_struct *ndpi_str,
+			      struct ndpi_flow_struct *flow, char *url);
 #ifndef __KERNEL__    
 
   /* Serializer (supports JSON, TLV, CSV) */
@@ -2130,7 +2162,7 @@ NDPI_STATIC  const char* ndpi_tls_supported_version2str(u_int16_t version_id, ch
 
   /* ******************************* */
 
-  NDPI_STATIC char* ndpi_get_flow_name(struct ndpi_flow_struct *flow);
+  NDPI_STATIC char* ndpi_get_flow_name(struct ndpi_flow_core_struct *flow);
 
   NDPI_STATIC int ndpi_hash_add_entry(ndpi_str_hash **h, char *key, u_int8_t key_len, u_int64_t value,
 			  char *extra_data /* Allocated by caller */);

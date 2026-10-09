@@ -52,7 +52,7 @@ static void ndpi_search_smb_tcp(struct ndpi_detection_module_struct *ndpi_struct
         if(memcmp(&packet->payload[4], smbv1, sizeof(smbv1)) == 0) {
           if(packet->payload[8] != 0x72) /* Skip Negotiate request */ {
             NDPI_LOG_INFO(ndpi_struct, "found SMBv1\n");
-            ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SMBV1, NDPI_PROTOCOL_NETBIOS, NDPI_CONFIDENCE_DPI);
+            ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_SMBV1, NDPI_PROTOCOL_NETBIOS, NDPI_CONFIDENCE_DPI);
 
 	    /*
 	      Before we complain let's check if this is a broadacast message
@@ -65,12 +65,12 @@ static void ndpi_search_smb_tcp(struct ndpi_detection_module_struct *ndpi_struct
 	    */
 
 	    if(packet->payload[8] != 0x25) /* Skip SMB command Trans */
-	      ndpi_set_risk(ndpi_struct, flow, NDPI_SMB_INSECURE_VERSION, "Found SMBv1");
+	      ndpi_set_risk(ndpi_struct, &flow->core, NDPI_SMB_INSECURE_VERSION, "Found SMBv1");
           }
           return;
         } else if(memcmp(&packet->payload[4], smbv2, sizeof(smbv2)) == 0) {
           NDPI_LOG_INFO(ndpi_struct, "found SMBv23\n");
-          ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SMBV23, NDPI_PROTOCOL_NETBIOS, NDPI_CONFIDENCE_DPI);
+          ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_SMBV23, NDPI_PROTOCOL_NETBIOS, NDPI_CONFIDENCE_DPI);
           return;
         }
       }
@@ -86,5 +86,6 @@ void init_smb_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("SMB", ndpi_struct,
                      ndpi_search_smb_tcp,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_SMBV23);
 }

@@ -29,7 +29,7 @@ static void ndpi_int_mudfish_add_connection(struct ndpi_detection_module_struct 
                                             struct ndpi_flow_struct * const flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found Mudfish\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core,
                              NDPI_PROTOCOL_MUDFISH,
                              NDPI_PROTOCOL_UNKNOWN,
                              NDPI_CONFIDENCE_DPI);
@@ -57,7 +57,7 @@ static void ndpi_search_mudfish(struct ndpi_detection_module_struct *ndpi_struct
     if (packet->payload_packet_len == 1 &&
         packet->payload[0] == 0x50)
     {
-      if (flow->packet_counter >= 2)
+      if (flow->core.packet_counter >= 2)
         ndpi_int_mudfish_add_connection(ndpi_struct, flow);
       return;
     }
@@ -93,5 +93,6 @@ void init_mudfish_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("Mudfish", ndpi_struct,
                      ndpi_search_mudfish,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_MUDFISH);
 }

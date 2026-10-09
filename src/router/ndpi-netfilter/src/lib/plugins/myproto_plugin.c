@@ -43,11 +43,11 @@ static u_int16_t myproto_id;
 
 static void ndpi_search_myproto(struct ndpi_detection_module_struct *ndpi_struct,
 				struct ndpi_flow_struct *flow) {
-  struct ndpi_packet_struct const * const packet = &ndpi_struct->packet;
+  struct ndpi_packet_struct const * const packet = ndpi_get_packet_struct(ndpi_struct);
 
   if(packet->payload_packet_len == NDPI_STATICSTRING_LEN("MyProto") &&
      memcmp(packet->payload, "MyProto", NDPI_STATICSTRING_LEN("MyProto")) == 0) {
-    ndpi_set_detected_protocol(ndpi_struct, flow, myproto_id,
+    ndpi_set_detected_protocol(ndpi_struct, &flow->core, myproto_id,
 			       NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
     NDPI_LOG_INFO(ndpi_struct, "Protocol %s found\n", NDPI_PROTOCOL_MYPROTO_NAME);
   } else {
@@ -86,6 +86,7 @@ static void myprotoInitFctn(struct ndpi_detection_module_struct *ndpi_struct) {
   ndpi_register_dissector(NDPI_PROTOCOL_MYPROTO_NAME, ndpi_struct,
                      ndpi_search_myproto,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, myproto_id);
 }
 

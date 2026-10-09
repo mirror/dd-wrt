@@ -33,7 +33,7 @@ static void ndpi_int_profinet_io_add_connection(struct ndpi_detection_module_str
                                                 struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found PROFINET/IO\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core,
                              NDPI_PROTOCOL_PROFINET_IO, NDPI_PROTOCOL_DCERPC,
                              NDPI_CONFIDENCE_DPI);
 }
@@ -46,7 +46,7 @@ static void ndpi_search_profinet_io(struct ndpi_detection_module_struct *ndpi_st
   NDPI_LOG_DBG(ndpi_struct, "searching PROFINET/IO\n");
 
   /* PROFINET/IO is based on connectionless DCE/RPC */
-  if ((flow->detected_protocol_stack[0] == NDPI_PROTOCOL_DCERPC) &&
+  if ((flow->core.detected_protocol_stack[0] == NDPI_PROTOCOL_DCERPC) &&
       (packet->payload_packet_len > 43))
   {
     u_int8_t byte_order = (packet->payload[4] >> 4) & 0xF;
@@ -80,5 +80,6 @@ void init_profinet_io_dissector(struct ndpi_detection_module_struct *ndpi_struct
   ndpi_register_dissector("PROFINET_IO", ndpi_struct,
                      ndpi_search_profinet_io,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_PROFINET_IO);
 }

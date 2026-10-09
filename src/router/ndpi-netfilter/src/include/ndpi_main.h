@@ -79,12 +79,13 @@ extern "C" {
 					 const u_int8_t ** l4ptr, u_int16_t * l4len,
 					 u_int8_t * nxt_hdr);
   
-  NDPI_STATIC void ndpi_set_risk(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
-                     ndpi_risk_enum r, char *risk_message);
-  NDPI_STATIC void ndpi_unset_risk(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow, ndpi_risk_enum r);
-  NDPI_STATIC int ndpi_isset_risk(struct ndpi_flow_struct *flow, ndpi_risk_enum r);
+  NDPI_STATIC void ndpi_set_risk(struct ndpi_detection_module_struct *ndpi_str,
+		     struct ndpi_flow_core_struct *coreo,
+                      ndpi_risk_enum r, char *risk_message);
+  NDPI_STATIC void ndpi_unset_risk(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_core_struct *core, ndpi_risk_enum r);
+  NDPI_STATIC int ndpi_isset_risk(struct ndpi_flow_core_struct *core, ndpi_risk_enum r);
   NDPI_STATIC int ndpi_is_printable_buffer(u_int8_t const * const buf, size_t len);
-  NDPI_STATIC int ndpi_normalize_printable_string(char * const str, size_t len);
+  NDPI_STATIC int ndpi_normalize_printable_string(char * const str, size_t len, char *invalid_character);
   NDPI_STATIC bool ndpi_is_valid_hostname(char * const str, size_t len);
 #define NDPI_ENTROPY_PLAINTEXT(entropy) (entropy < 4.941f)
 #define NDPI_ENTROPY_EXECUTABLE(entropy) (entropy >= 4.941f)

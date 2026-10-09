@@ -1154,7 +1154,7 @@ static void outlierUnitTest() {
 /* *********************************************** */
 
 static void loadStressTest() {
-  struct ndpi_detection_module_struct *ndpi_struct_shadow = ndpi_init_detection_module(NULL);
+  struct ndpi_detection_module_struct *ndpi_struct_shadow = ndpi_init_detection_module(NULL, NDPI_LICENSE_NOT_FOR_PROFIT_LGPL);
 
   if(ndpi_struct_shadow) {
     int i;
@@ -1289,7 +1289,7 @@ static void cryptDecryptUnitTest() {
 /* *********************************************** */
 
 static void encodeDomainsUnitTest(bool load_suffix_list) {
-  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
+  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL, NDPI_LICENSE_NOT_FOR_PROFIT_LGPL);
   const char *lists_path = "../lists/public_suffix_list.dat";
   char *lists_dir = "../lists";
   char *categories_path = "./categories.txt";
@@ -1345,7 +1345,7 @@ static void encodeDomainsUnitTest(bool load_suffix_list) {
 /* *********************************************** */
 
 static void domainsUnitTest() {
-  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
+  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL, NDPI_LICENSE_NOT_FOR_PROFIT_LGPL);
   const char *lists_path = "../lists/public_suffix_list.dat";
   struct stat st;
 
@@ -1381,7 +1381,7 @@ static void domainSearchUnitTest() {
   ndpi_domain_classify *sc = ndpi_domain_classify_alloc();
   char *domain = "ntop.org";
   u_int64_t class_id;
-  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
+  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL, NDPI_LICENSE_NOT_FOR_PROFIT_LGPL);
   u_int8_t trace = 0;
 
   assert(ndpi_str);
@@ -1415,7 +1415,7 @@ static void domainSearchUnitTest() {
 /* *********************************************** */
 
 static void domainSearchUnitTest2() {
-  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
+  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL, NDPI_LICENSE_NOT_FOR_PROFIT_LGPL);
   ndpi_domain_classify *c = ndpi_domain_classify_alloc();
   u_int64_t class_id = 9;
 
@@ -1867,7 +1867,7 @@ static void dgaUnitTest() {
     NULL
   };
   int debug = 0, i;
-  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL);
+  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL, NDPI_LICENSE_NOT_FOR_PROFIT_LGPL);
 
   assert(ndpi_str != NULL);
 
@@ -2438,6 +2438,35 @@ static void tlsBlocksUnitTest(void) {
   assert(num_blocks == 0);
 }
 
+/* *********************************************** */
+
+static void networkPtreeUnitTest() {
+  struct ndpi_detection_module_struct *ndpi_str = ndpi_init_detection_module(NULL, NDPI_LICENSE_NOT_FOR_PROFIT_LGPL);
+  /* from ndpi_content_match.c.inc */
+  const char *v4_addr = "178.248.208.1";    /* 178.248.208.0/21 -> OCS */
+  const char *v6_addr = "2606:4700:100::1"; /* 2606:4700:100::/48 -> CloudflareWarp */
+  ndpi_prefix_t prefix;
+  struct in_addr pin;
+  struct in6_addr pin6;
+
+  assert(ndpi_str);
+  assert(ndpi_finalize_initialization(ndpi_str) == 0);
+
+  assert(inet_pton(AF_INET, v4_addr, &pin) == 1);
+  assert(inet_pton(AF_INET6, v6_addr, &pin6) == 1);
+
+  /* A v6 prefix needs the maxbits of the v6 tree: 128 bits never fit in 32 */
+  assert(ndpi_fill_prefix_v6(&prefix, &pin6, 128, 32) == -1);
+  assert(ndpi_fill_prefix_v6(&prefix, &pin6, 128, 128) == 0);
+  assert(prefix.bitlen == 128);
+  assert(memcmp(&prefix.add.sin6, &pin6, sizeof(struct in6_addr)) == 0);
+
+  assert(ndpi_network_ptree_match(ndpi_str, &pin) == NDPI_PROTOCOL_OCS);
+  assert(ndpi_network_ptree6_match(ndpi_str, &pin6) == NDPI_PROTOCOL_CLOUDFLARE_WARP);
+
+  ndpi_exit_detection_module(ndpi_str);
+}
+
 void run_unit_tests() {
 
   checkRankingUnitTest(false);
@@ -2496,5 +2525,6 @@ void run_unit_tests() {
   cryptoUnitTest();
   hexDecodeUnitTest();
   tlsBlocksUnitTest();
+  networkPtreeUnitTest();
 
 }

@@ -35,7 +35,7 @@ static void ndpi_int_lustre_add_connection(struct ndpi_detection_module_struct *
                                            struct ndpi_flow_struct *flow) 
 {
   NDPI_LOG_INFO(ndpi_struct, "found Lustre\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_LUSTRE, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_LUSTRE, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 static void ndpi_search_lustre(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
@@ -82,5 +82,6 @@ void init_lustre_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("Lustre", ndpi_struct,
                      ndpi_search_lustre,
                      NDPI_SELECTION_BITMASK_PROTOCOL_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION, /* Ipv4 only; Lustre doesn't support IPv6 */
+                     DISSECTOR_LICENSE_LGPL,
                       1, NDPI_PROTOCOL_LUSTRE);
 }

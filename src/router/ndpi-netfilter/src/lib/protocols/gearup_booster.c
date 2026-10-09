@@ -29,7 +29,7 @@ static void ndpi_int_gearup_booster_add_connection(struct ndpi_detection_module_
                                                    struct ndpi_flow_struct * const flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found GearUP Booster\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core,
                              NDPI_PROTOCOL_GEARUP_BOOSTER,
                              NDPI_PROTOCOL_UNKNOWN,
                              NDPI_CONFIDENCE_DPI);
@@ -48,7 +48,7 @@ static void ndpi_search_gearup_booster(struct ndpi_detection_module_struct *ndpi
       return;
     }
 
-    if (flow->packet_counter <= 3) {
+    if (flow->core.packet_counter <= 3) {
       int32_t pdu_length = ntohl(get_u_int32_t(packet->payload, 0));
       if (pdu_length != packet->payload_packet_len - 4) {
         NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
@@ -59,7 +59,7 @@ static void ndpi_search_gearup_booster(struct ndpi_detection_module_struct *ndpi
       NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
       return;
     }
-    if (flow->packet_counter <= 2) {
+    if (flow->core.packet_counter <= 2) {
       if (packet->payload_packet_len > 128 ||
           packet->payload[5] != 0x01)
       {
@@ -74,7 +74,7 @@ static void ndpi_search_gearup_booster(struct ndpi_detection_module_struct *ndpi
         return;
       }
     }
-    if (flow->packet_counter >= 4) {
+    if (flow->core.packet_counter >= 4) {
       ndpi_int_gearup_booster_add_connection(ndpi_struct, flow);
     }
     return;
@@ -87,7 +87,7 @@ static void ndpi_search_gearup_booster(struct ndpi_detection_module_struct *ndpi
       return;
     }
 
-    if (flow->packet_counter == 1)
+    if (flow->core.packet_counter == 1)
     {
       if (packet->packet_direction != 0 || packet->udp->dest != htons(9999))
       {
@@ -127,6 +127,7 @@ void init_gearup_booster_dissector(struct ndpi_detection_module_struct *ndpi_str
   ndpi_register_dissector("GeaUP_Booster", ndpi_struct,
                      ndpi_search_gearup_booster,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_GEARUP_BOOSTER);
 }
 

@@ -473,8 +473,10 @@ int nflow_proc_open(struct inode *inode, struct file *file) {
         struct ndpi_net *n = pde_data(file_inode(file));
 
 	if(!ndpi_enable_flow) return -EINVAL;
-
-	mutex_lock(&n->rem_lock);
+	
+	while(test_and_set_bit_lock(0,&n->rem_lock)) {
+		msleep_interruptible(10);
+	}
 	n->acc_read_mode = 0;
 	if(!n->acc_wait) n->acc_wait = 60;
 	n->acc_last_op = 1;
@@ -491,7 +493,7 @@ int nflow_proc_close(struct inode *inode, struct file *file)
 		pr_info("%s:%s view %ld dumped %ld deleted %ld\n",
 			__func__,n->ns_name,n->cnt_view,n->cnt_out,n->cnt_del);
 	n->acc_gc = jiffies + n->acc_wait*HZ;
-	mutex_unlock(&n->rem_lock);
+	WRITE_ONCE(n->rem_lock,0);
         return 0;
 }
 

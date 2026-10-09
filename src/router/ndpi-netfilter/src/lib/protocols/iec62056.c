@@ -35,7 +35,7 @@ static void ndpi_int_iec62056_add_connection(struct ndpi_detection_module_struct
                                              struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found IEC62056\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core,
                              NDPI_PROTOCOL_IEC62056, NDPI_PROTOCOL_UNKNOWN,
                              NDPI_CONFIDENCE_DPI);
 }
@@ -66,5 +66,6 @@ void init_iec62056_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("IEC62056", ndpi_struct,
                      ndpi_search_iec62056,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_IEC62056);
 }

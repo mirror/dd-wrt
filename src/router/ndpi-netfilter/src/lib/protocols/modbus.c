@@ -32,17 +32,24 @@ static void ndpi_search_modbus_tcp(struct ndpi_detection_module_struct *ndpi_str
                             struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int16_t modbus_port = htons(502); // port used by modbus
+  u_int16_t modbus_alt_port = htons(1502); // port also used by modbus
+
   NDPI_LOG_DBG(ndpi_struct, "search Modbus\n");
 
+
   /* Check connection over TCP */
-    
+
   if(packet->tcp) {
-    /* The payload of Modbus-TCP segment must be at least 8 bytes (7 bytes of header application 
+    /* The payload of Modbus-TCP segment must be at least 8 bytes (7 bytes of header application
        packet plus 1 byte of minimum payload of application packet)
+
+       Note: Modbus is not restricted to port 502 in practice:
+       real deployments commonly run it on alternate ports (e.g. 1502) for gateways/simulators
+       or to avoid requiring privileges to bind <1024.
     */
     if((packet->payload_packet_len >= 8) 
-       &&((packet->tcp->dest == modbus_port) || (packet->tcp->source == modbus_port))) {
-      // Modbus uses the port 502		
+       && ((packet->tcp->dest == modbus_port) || (packet->tcp->source == modbus_port) ||
+           (packet->tcp->dest == modbus_alt_port) || (packet->tcp->source == modbus_alt_port))) {
       u_int16_t modbus_len = htons(*((u_int16_t*)&packet->payload[4]));
 
       // the fourth parameter of the payload is the length of the segment            
@@ -51,12 +58,12 @@ static void ndpi_search_modbus_tcp(struct ndpi_detection_module_struct *ndpi_str
 	/* Check Modbus function code. 0x5A (90) is reserved for UMAS protocol */
         if (packet->payload[7] == 0x5A) {
           NDPI_LOG_INFO(ndpi_struct, "found Schneider Electric UMAS\n");
-          ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_UMAS, NDPI_PROTOCOL_MODBUS, NDPI_CONFIDENCE_DPI);
+          ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_UMAS, NDPI_PROTOCOL_MODBUS, NDPI_CONFIDENCE_DPI);
           return;
         }
 
         NDPI_LOG_INFO(ndpi_struct, "found MODBUS\n");
-        ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_MODBUS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+        ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_MODBUS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
         return;
       }
     }
@@ -72,5 +79,6 @@ void init_modbus_dissector(struct ndpi_detection_module_struct *ndpi_struct) {
   ndpi_register_dissector("Modbus", ndpi_struct,
                      ndpi_search_modbus_tcp,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                      DISSECTOR_LICENSE_LGPL,
                       1, NDPI_PROTOCOL_MODBUS);
 }

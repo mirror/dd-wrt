@@ -36,7 +36,7 @@ struct amqp_header {
 
 static void ndpi_int_amqp_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
 					 struct ndpi_flow_struct *flow) {
-	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_AMQP, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+	ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_AMQP, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 static void ndpi_search_amqp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
@@ -68,7 +68,7 @@ static void ndpi_search_amqp(struct ndpi_detection_module_struct *ndpi_struct, s
 			}
 		}
 
-	if(flow->packet_counter > 5)
+	if(flow->core.packet_counter > 5)
 		NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
 }
 
@@ -77,6 +77,7 @@ void init_amqp_dissector(struct ndpi_detection_module_struct *ndpi_struct) {
   ndpi_register_dissector("AMQP", ndpi_struct,
                      ndpi_search_amqp,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_AMQP);
 }
 

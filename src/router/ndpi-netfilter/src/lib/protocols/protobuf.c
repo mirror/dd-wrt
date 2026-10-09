@@ -52,7 +52,7 @@ static void ndpi_int_protobuf_add_connection(struct ndpi_detection_module_struct
                                              struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found Protobuf\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_PROTOBUF, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_PROTOBUF, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 static enum protobuf_type
@@ -243,11 +243,11 @@ static void ndpi_search_protobuf(struct ndpi_detection_module_struct *ndpi_struc
 
   if ((protobuf_elements >= PROTOBUF_REQUIRED_ELEMENTS && protobuf_len_elements > 0 &&
        /* (On UDP) this packet might be also a RTP/RTCP one. Wait for the next one */
-       (flow->packet_counter > 1 || flow->l4_proto == IPPROTO_TCP || flow->rtp_stage == 0))
-      || (flow->packet_counter >= PROTOBUF_MIN_PACKETS && protobuf_elements >= PROTOBUF_MIN_ELEMENTS))
+       (flow->core.packet_counter > 1 || flow->core.l4_proto == IPPROTO_TCP || flow->metadata.rtp.rtp_stage == 0))
+      || (flow->core.packet_counter >= PROTOBUF_MIN_PACKETS && protobuf_elements >= PROTOBUF_MIN_ELEMENTS))
   {
 #ifdef DEBUG_PROTOBUF
-    printf("Protobuf found after %u packets.\n", flow->packet_counter);
+    printf("Protobuf found after %u packets.\n", flow->core.packet_counter);
 #endif
     ndpi_int_protobuf_add_connection(ndpi_struct, flow);
     return;
@@ -255,7 +255,7 @@ static void ndpi_search_protobuf(struct ndpi_detection_module_struct *ndpi_struc
 
   if (packet->payload_packet_len >= bytes_parsed
       && protobuf_elements > 0
-      && flow->packet_counter <= PROTOBUF_MAX_PACKETS)
+      && flow->core.packet_counter <= PROTOBUF_MAX_PACKETS)
   {
     return; // We probably need more packets to dissect.
   }
@@ -269,5 +269,6 @@ void init_protobuf_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("Protobuf", ndpi_struct,
                      ndpi_search_protobuf,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_PROTOBUF);
 }

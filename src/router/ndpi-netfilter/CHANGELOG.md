@@ -1,8 +1,9 @@
 # CHANGELOG
 
-#### nDPI 6.0 (Aug 2025)
+#### nDPI 6.0 (Aug 2026)
 
 ## Major Changes
+* Update nDPI Licensing Terms and Component Usage: for-profit vs not-for-profit applications. See: https://www.ntop.org/announcing-ndpi-dual-license-change/
 * Add detection of Slow Dos, SlowDoS 3WH and Slowloris attacks. See: https://www.ntop.org/slow-dos-detection-and-prevention/
 * More flexible and useful (nDPI-) fingerprints. See: https://www.ntop.org/is-ja4-now-obsolete/
 * Add USDT static tracing probes for zero-overhead runtime observability. See: https://www.ntop.org/observing-ndpi-from-the-inside-introducing-usdt-tracepoints/
@@ -26,6 +27,7 @@ Further information are available at https://github.com/ntop/nDPI/blob/dev/doc/p
 * Add Nebula
 * Add identification of Discord audio/video calls
 * Removed Zattoo
+* Add Free Fire
 * Add content-control categories: Search Engine, Children, Violence, Drugs, Weapons
 
 ## New algorithms
@@ -48,6 +50,8 @@ Further information are available at https://github.com/ntop/nDPI/blob/dev/doc/c
 * `tls,tls_blocks_show_timing`: Enable/disable usage of timing information in TLS block processing
 * `ssh,metadata.hassh_fingerprint`: Enable/disable computation and export of HASHH fingerprint for SSH flows
 * `ssh,metadata.ssh_data`: Enable/disable export of SSH key exchanges parameters and negotiated SSH key exchange method
+* `http.dga_url`: Enable/disable detection of DGA-like patterns in HTTP URL paths
+* `dns.custom_port`: Enable DNS detection on one additional user-selected TCP or UDP port
 
 
 ## Important improvements and bux fixes
@@ -71,6 +75,8 @@ Further information are available at https://github.com/ntop/nDPI/blob/dev/doc/c
 * Improve HBO Max/Max streaming detection in https://github.com/ntop/nDPI/pull/3193
 * activision: classify Warzone game session in https://github.com/ntop/nDPI/pull/3199
 * Fix DNS TCP reassembly for split segments in https://github.com/ntop/nDPI/pull/3201
+* Detect DGA-like patterns in HTTP URL paths in https://github.com/ntop/nDPI/pull/3228
+* DNS: support an opt-in custom detection port in https://github.com/ntop/nDPI/pull/3223
 
 ## New Contributors
 * @cmonroe made their first contribution in https://github.com/ntop/nDPI/pull/3075
@@ -81,6 +87,9 @@ Further information are available at https://github.com/ntop/nDPI/blob/dev/doc/c
 * @netcons made their first contribution in https://github.com/ntop/nDPI/pull/3187
 * @yalanmao made their first contribution in https://github.com/ntop/nDPI/pull/3202
 * @smtobs made their first contribution in https://github.com/ntop/nDPI/pull/3201
+* @shalseth made their first contribution in https://github.com/ntop/nDPI/pull/3225
+* @Dulend made their first contribution in https://github.com/ntop/nDPI/pull/3221
+* @RajaMuhammadAwais made their first contribution in https://github.com/ntop/nDPI/pull/3228
 
 **Full Changelog**: https://github.com/ntop/nDPI/compare/5.0...x
 

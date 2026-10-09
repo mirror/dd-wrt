@@ -35,7 +35,7 @@ static void ndpi_int_ieee_c37118_add_connection(struct ndpi_detection_module_str
                                             struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found IEEE C37.118\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core,
                              NDPI_PROTOCOL_IEEE_C37118, NDPI_PROTOCOL_UNKNOWN,
                              NDPI_CONFIDENCE_DPI);
 }
@@ -71,5 +71,6 @@ void init_ieee_c37118_dissector(struct ndpi_detection_module_struct *ndpi_struct
   ndpi_register_dissector("IEEE-C37118", ndpi_struct,
                      ndpi_search_ieee_c37118,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_IEEE_C37118);
 }

@@ -35,7 +35,7 @@ static void ndpi_int_c1222_add_connection(struct ndpi_detection_module_struct *n
                                           struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found ANSI C12.22\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core,
                              NDPI_PROTOCOL_C1222, NDPI_PROTOCOL_UNKNOWN,
                              NDPI_CONFIDENCE_DPI);
 }
@@ -48,7 +48,7 @@ static void ndpi_search_c1222(struct ndpi_detection_module_struct *ndpi_struct,
   NDPI_LOG_DBG(ndpi_struct, "search ANSI C12.22\n");
 
   if ((packet->payload_packet_len < 50) || (packet->payload[0] != 0x60) ||
-      ((u_int8_t)(packet->payload_packet_len-2) != packet->payload[1]))
+      (packet->payload_packet_len != (u_int16_t)packet->payload[1] + 2))
   {
     NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
     return;
@@ -67,5 +67,6 @@ void init_c1222_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("ANSI_C1222", ndpi_struct,
                      ndpi_search_c1222,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_C1222);
 }

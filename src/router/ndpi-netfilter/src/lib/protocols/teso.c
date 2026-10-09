@@ -35,7 +35,7 @@ static void ndpi_int_teso_add_connection(struct ndpi_detection_module_struct * c
                                          struct ndpi_flow_struct * const flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found TES Online\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TESO,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_TESO,
                              NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
@@ -83,5 +83,6 @@ void init_teso_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("TES_Online", ndpi_struct,
                      ndpi_search_teso,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_TESO);
 }

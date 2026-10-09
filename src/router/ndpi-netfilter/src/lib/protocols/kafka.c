@@ -33,7 +33,7 @@ static void ndpi_int_kafka_add_connection(struct ndpi_detection_module_struct *n
                                           struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found Apache Kafka\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_APACHE_KAFKA,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_APACHE_KAFKA,
                              NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
@@ -90,5 +90,6 @@ void init_kafka_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("Kafka", ndpi_struct,
                      ndpi_search_kafka,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                      DISSECTOR_LICENSE_LGPL,
                       1, NDPI_PROTOCOL_APACHE_KAFKA);
 }

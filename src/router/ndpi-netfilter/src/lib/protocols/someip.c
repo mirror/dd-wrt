@@ -76,7 +76,8 @@ static const u_int32_t MC_INTERFACE_VERSION = 0x01;
 static void ndpi_int_someip_add_connection (struct ndpi_detection_module_struct *ndpi_struct,
 					    struct ndpi_flow_struct *flow)
 {
-  ndpi_set_detected_protocol(ndpi_struct,flow,NDPI_PROTOCOL_SOMEIP,NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core,
+			     NDPI_PROTOCOL_SOMEIP,NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
   NDPI_LOG_INFO(ndpi_struct, "found SOME/IP\n");
 }
 
@@ -198,6 +199,7 @@ void init_someip_dissector (struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("SOME/IP", ndpi_struct,
                      ndpi_search_someip,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_SOMEIP);
 }
 

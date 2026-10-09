@@ -29,7 +29,7 @@
 #include "ndpi_private.h"
 
 static void ndpi_sonos_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SONOS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_SONOS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
   NDPI_LOG_INFO(ndpi_struct, "Found Sonos flow\n");
 }
 
@@ -66,5 +66,6 @@ void init_sonos_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("Sonos", ndpi_struct,
                      ndpi_search_sonos,
                      NDPI_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD, /* Only IPv4 UDP traffic is expected. */
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_SONOS);
 }

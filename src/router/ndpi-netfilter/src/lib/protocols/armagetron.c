@@ -33,7 +33,7 @@
 static void ndpi_int_armagetron_add_connection(struct ndpi_detection_module_struct *ndpi_struct,
 					       struct ndpi_flow_struct *flow)
 {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_ARMAGETRON, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_ARMAGETRON, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 static void ndpi_search_armagetron_udp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
@@ -76,5 +76,6 @@ void init_armagetron_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("Armagetron", ndpi_struct,
                      ndpi_search_armagetron_udp,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_ARMAGETRON);
 }

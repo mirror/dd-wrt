@@ -171,7 +171,7 @@ static void ndpi_search_netflow(struct ndpi_detection_module_struct *ndpi_struct
     if(((version == 1) && (when == 0))
        || ((when >= 946684800 /* 1/1/2000 */) && (when <= (u_int32_t)now))) {
       NDPI_LOG_INFO(ndpi_struct, "found netflow\n");
-      ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_NETFLOW, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+      ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_NETFLOW, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
       return;
     }
   } else
@@ -183,6 +183,7 @@ void init_netflow_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("NetFlow", ndpi_struct,
                      ndpi_search_netflow,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_NETFLOW);
 }
 

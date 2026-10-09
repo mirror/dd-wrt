@@ -94,81 +94,141 @@ static int ndpi_is_number(const char *str, u_int32_t str_len) {
  * Upon successful return, these functions return the number of characters printed (excluding the null byte used to terminate the string).
  */
 int ndpi_json_string_escape(const char *src, int src_len, char *dst, int dst_max_len) {
-  u_char c = 0;
-  int i, j = 0;
+  int i = 0;
+  int j = 0;
 
+  // We need at least 3 bytes for an empty JSON string: "" and '\0'
+  if (dst_max_len < 3) {
+    if (dst_max_len > 0) dst[0] = '\0';
+    return -1; // Buffer too small
+  }
+
+  // Reserve 2 bytes at the end for the closing quote and null terminator
+  int safe_max_len = dst_max_len - 2;
+
+  // Opening quote
   dst[j++] = '"';
 
-  for(i = 0; i < src_len && j < dst_max_len; i++) {
-
-    c = (u_char) src[i];
+  for (i = 0; i < src_len; i++) {
+    u_char c = (u_char)src[i];
 
     if (c <= 0x7E) {
-      // ASCII character (escape if required by JSON)
-      switch (c) {
-      case '\\':
-      case '"':
-      case '/':
+      // Handle characters requiring 2-byte escape sequences
+      if (c == '\\' || c == '"' || c == '/') {
+        if (j + 2 > safe_max_len) goto overflow;
         dst[j++] = '\\';
         dst[j++] = c;
-        break;
-      case '\b':
+      } else if (c == '\b') {
+        if (j + 2 > safe_max_len) goto overflow;
         dst[j++] = '\\';
         dst[j++] = 'b';
-        break;
-      case '\t':
+      } else if (c == '\t') {
+        if (j + 2 > safe_max_len) goto overflow;
         dst[j++] = '\\';
         dst[j++] = 't';
-        break;
-      case '\n':
+      } else if (c == '\n') {
+        if (j + 2 > safe_max_len) goto overflow;
         dst[j++] = '\\';
         dst[j++] = 'n';
-        break;
-      case '\f':
+      } else if (c == '\f') {
+        if (j + 2 > safe_max_len) goto overflow;
         dst[j++] = '\\';
         dst[j++] = 'f';
-        break;
-      case '\r':
+      } else if (c == '\r') {
+        if (j + 2 > safe_max_len) goto overflow;
         dst[j++] = '\\';
         dst[j++] = 'r';
-        break;
-      default:
-        if (c < 0x20 /* ' ' */)
-          ; // Other non-printable ASCII character (skip)
-        else
-          dst[j++] = c; // Printable ASCII character not requiring escape
+      } else if (c < 0x20) {
+        // Hex escape non-printable ASCII control characters (\u00XX)
+        if (j + 6 > safe_max_len) goto overflow;
+        dst[j++] = '\\';
+        dst[j++] = 'u';
+        dst[j++] = '0';
+        dst[j++] = '0';
+
+        // Quick hex conversion
+        char hex[] = "0123456789abcdef";
+        dst[j++] = hex[(c >> 4) & 0x0F];
+        dst[j++] = hex[c & 0x0F];
+      } else {
+        // Printable ASCII
+        if (j + 1 > safe_max_len) goto overflow;
+        dst[j++] = c;
+      }
+    } else if (c == 0x7F) {
+      // Escape DEL character
+      if (j + 6 > safe_max_len) goto overflow;
+      dst[j++] = '\\';
+      dst[j++] = 'u';
+      dst[j++] = '0';
+      dst[j++] = '0';
+      dst[j++] = '7';
+      dst[j++] = 'f';
+    } else {
+      // Multi-byte UTF-8 Validation & Copying
+      // Note: Length check must happen BEFORE accessing lookahead buffer indices
+
+      if ((c >= 0xC2 && c <= 0xDF) && (src_len - i >= 2)) {
+        u_char c1 = (u_char)src[i+1];
+        if (c1 >= 0x80 && c1 <= 0xBF) {
+          if (j + 2 > safe_max_len) goto overflow;
+          dst[j++] = c;
+          dst[j++] = (char)c1;
+          i += 1;
+          continue;
+        }
+      }
+      else if ((c >= 0xE0 && c <= 0xEF) && (src_len - i >= 3)) {
+        u_char c1 = (u_char)src[i+1];
+        u_char c2 = (u_char)src[i+2];
+        if ((c1 >= 0x80 && c1 <= 0xBF) && (c2 >= 0x80 && c2 <= 0xBF)) {
+          // Exclude overlongs and surrogates for strict JSON validity
+          if (!((c == 0xE0 && c1 < 0xA0) || (c == 0xED && c1 > 0x9F))) {
+            if (j + 3 > safe_max_len) goto overflow;
+            dst[j++] = c;
+            dst[j++] = (char)c1;
+            dst[j++] = (char)c2;
+            i += 2;
+            continue;
+          }
+        }
+      }
+      else if ((c >= 0xF0 && c <= 0xF4) && (src_len - i >= 4)) {
+        u_char c1 = (u_char)src[i+1];
+        u_char c2 = (u_char)src[i+2];
+        u_char c3 = (u_char)src[i+3];
+        if ((c1 >= 0x80 && c1 <= 0xBF) && (c2 >= 0x80 && c2 <= 0xBF) && (c3 >= 0x80 && c3 <= 0xBF)) {
+          // Exclude overlongs and out-of-range codepoints (> U+10FFFF)
+          if (!((c == 0xF0 && c1 < 0x90) || (c == 0xF4 && c1 > 0x8F))) {
+            if (j + 4 > safe_max_len) goto overflow;
+            dst[j++] = c;
+            dst[j++] = (char)c1;
+            dst[j++] = (char)c2;
+            dst[j++] = (char)c3;
+            i += 3;
+            continue;
+          }
+        }
       }
 
-    } else if (c == 0x7F) {
-      ; // Non-printable ASCII character (skip)
-    } else if ((c >= 0xC2 && c <= 0xDF) && (src_len - i) >= 2 && 
-               ((u_char) src[i+1] >= 0x80 && (u_char) src[i+1] <= 0xBF)) {
-      // 2-byte sequence (U+0080 to U+07FF)
-      dst[j++] = c;
-      dst[j++] = src[++i];
-    } else if ((c >= 0xE0 && c <= 0xEF) && (src_len - i) >= 3 &&
-               ((u_char) src[i+1] >= 0x80 && (u_char) src[i+1] <= 0xBF) &&
-               ((u_char) src[i+2] >= 0x80 && (u_char) src[i+2] <= 0xBF)) {
-      // 3-byte sequence (U+0800 to U+FFFF)
-      dst[j++] = c;
-      dst[j++] = src[++i];
-      dst[j++] = src[++i];
-    } else if ((c >= 0xF0 && c <= 0xF4) && (src_len - i) >= 4 &&
-               ((u_char) src[i+1] >= 0x80 && (u_char) src[i+1] <= 0xBF) &&
-               ((u_char) src[i+2] >= 0x80 && (u_char) src[i+2] <= 0xBF) &&
-               ((u_char) src[i+3] >= 0x80 && (u_char) src[i+3] <= 0xBF)) {
-      // 4-byte sequence (U+10000 to U+10FFiFF)
-      dst[j++] = c;
-      dst[j++] = src[++i];
-      dst[j++] = src[++i];
-      dst[j++] = src[++i];
+      // If it falls through here, it's an invalid UTF-8 byte.
+      // Replace it with the standard Unicode Replacement Character (U+FFFD) encoded in UTF-8
+      if (j + 3 > safe_max_len) goto overflow;
+      dst[j++] = (char)0xEF;
+      dst[j++] = (char)0xBF;
+      dst[j++] = (char)0xBD;
     }
   }
 
+  // Closing quote and direct sequence termination
   dst[j++] = '"';
-  dst[j+1] = '\0';
+  dst[j] = '\0';
+  return j;
 
-  return(j);
+overflow:
+  // Graceful failure or fallback termination on overflow
+  if (j < dst_max_len) dst[j] = '\0';
+  return -1;
 }
 
 /* ********************************** */
@@ -551,14 +611,14 @@ static inline void ndpi_deserialize_single_uint8(ndpi_private_deserializer *dese
 
 static inline void ndpi_deserialize_single_uint16(ndpi_private_deserializer *deserializer,
 						  u_int32_t offset, u_int16_t *s) {
-  *s = ntohs(*((u_int16_t *) &deserializer->buffer.data[offset]));
+  *s = ntohs(get_u_int16_t(deserializer->buffer.data, offset));
 }
 
 /* ********************************** */
 
 static inline void ndpi_deserialize_single_uint32(ndpi_private_deserializer *deserializer,
 						  u_int32_t offset, u_int32_t *s) {
-  *s = ntohl(*((u_int32_t *) &deserializer->buffer.data[offset]));
+  *s = ntohl(get_u_int32_t(deserializer->buffer.data, offset));
 }
 
 /* ********************************** */
@@ -572,28 +632,28 @@ static inline void ndpi_deserialize_single_int8(ndpi_private_deserializer *deser
 
 static inline void ndpi_deserialize_single_int16(ndpi_private_deserializer *deserializer,
 						 u_int32_t offset, int16_t *s) {
-  *s = ntohs(*((int16_t *) &deserializer->buffer.data[offset]));
+  *s = ntohs(get_u_int16_t(deserializer->buffer.data, offset));
 }
 
 /* ********************************** */
 
 static inline void ndpi_deserialize_single_int32(ndpi_private_deserializer *deserializer,
 						 u_int32_t offset, int32_t *s) {
-  *s = ntohl(*((int32_t *) &deserializer->buffer.data[offset]));
+  *s = ntohl(get_u_int32_t(deserializer->buffer.data, offset));
 }
 
 /* ********************************** */
 
 static inline void ndpi_deserialize_single_uint64(ndpi_private_deserializer *deserializer,
 						  u_int32_t offset, u_int64_t *s) {
-  *s = ndpi_ntohll(*(u_int64_t*)&deserializer->buffer.data[offset]);
+  *s = ndpi_ntohll(get_u_int64_t(deserializer->buffer.data, offset));
 }
 
 /* ********************************** */
 
 static inline void ndpi_deserialize_single_int64(ndpi_private_deserializer *deserializer,
 						 u_int32_t offset, int64_t *s) {
-  *s = ndpi_ntohll(*(int64_t*)&deserializer->buffer.data[offset]);
+  *s = ndpi_ntohll(get_u_int64_t(deserializer->buffer.data, offset));
 }
 
 /* ********************************** */
@@ -1522,7 +1582,7 @@ int ndpi_serialize_string_int32(ndpi_serializer *_serializer,
 
     if(buff_diff < needed) {
       if(ndpi_extend_serializer_buffer(&serializer->buffer, needed - buff_diff) < 0)
-	return(-1);     	
+	return(-1);
     }
 
     if(!(serializer->status.flags & NDPI_SERIALIZER_STATUS_HDR_DONE)) {
@@ -1538,9 +1598,9 @@ int ndpi_serialize_string_int32(ndpi_serializer *_serializer,
 
     if(rc < 0 || (u_int)rc >= buff_diff)
       return(-1);
-    
+
     serializer->status.buffer.size_used += rc;
-    
+
     return(0);
   } else
 #endif
@@ -1678,7 +1738,7 @@ int ndpi_serialize_binary_uint32(ndpi_serializer *_serializer,
     sizeof(u_int16_t) /* key len */ +
     klen /* key */ +
     sizeof(u_int32_t) + /* value (as int) */
-    20 /* value (as string, in case of CSV) */ + 
+    20 /* value (as string, in case of CSV) */ +
     16 /* extra overhead for JSON */;
 
   if(buff_diff < needed) {
@@ -2154,7 +2214,7 @@ int ndpi_serialize_string_string_len(ndpi_serializer *_serializer,
 int ndpi_serialize_string_string(ndpi_serializer *_serializer,
 				 const char *key, const char *_value) {
   const char *value = _value ? _value : "";
-  
+
   return(ndpi_serialize_string_string_len(_serializer, key, value, strlen(value)));
 }
 

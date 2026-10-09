@@ -358,3 +358,9 @@ This risk is triggered when a TCP connection is likely subject to slow DoS attac
 NDPI_NON_PQC
 ============
 This risk is triggered when an encrypted stream (e.g. TLS, QUIC, SSH, IPSEC) is not using post-quantum cryptography algorithms.
+
+.. _Risk 059:
+
+NDPI_AI_INFERENCE_TRAFFIC
+=========================
+This risk is triggered when TLS/HTTP traffic is likely to be used to access a self-hosted LLM based on applications with ac vLLM or llama.cpp

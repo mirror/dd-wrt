@@ -27,7 +27,7 @@
 
 static void ndpi_int_atg_add_connection(struct ndpi_detection_module_struct
 						*ndpi_struct, struct ndpi_flow_struct *flow) {
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_ATG,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_ATG,
 			     NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
@@ -59,5 +59,6 @@ void init_atg_dissector(struct ndpi_detection_module_struct *ndpi_struct) {
   ndpi_register_dissector("ATG", ndpi_struct,
                      ndpi_search_atg,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_ATG);
 }

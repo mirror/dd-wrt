@@ -62,7 +62,7 @@ static void ndpi_search_nats_tcp(struct ndpi_detection_module_struct *ndpi_struc
 		      packet->payload_packet_len) != NULL) {
 	NDPI_LOG_INFO(ndpi_struct, "found NATS\n");
 
-	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_NATS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+	ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_NATS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 	return;
       }
     }
@@ -77,5 +77,6 @@ void init_nats_dissector(struct ndpi_detection_module_struct *ndpi_struct) {
   ndpi_register_dissector("Nats", ndpi_struct,
                      ndpi_search_nats_tcp,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_NATS);
 }

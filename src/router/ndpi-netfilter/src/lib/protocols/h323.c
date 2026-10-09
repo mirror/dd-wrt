@@ -30,7 +30,7 @@ static void ndpi_int_h323_add_connection(struct ndpi_detection_module_struct *nd
                              struct ndpi_flow_struct *flow) 
 {
   NDPI_LOG_INFO(ndpi_struct, "found H323\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_H323,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_H323,
                              NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
@@ -76,5 +76,6 @@ void init_h323_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("H323", ndpi_struct,
                      ndpi_search_h323,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_H323);
 }

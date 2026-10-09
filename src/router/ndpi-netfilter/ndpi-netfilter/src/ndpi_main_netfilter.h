@@ -84,9 +84,9 @@ struct ndpi_net {
 	int		gc_index6;
 	int		labels_word;
 
+	unsigned long	rem_lock;	/* lock ndpi_delete_acct / ndpi_flow_read */
 	rwlock_t	ndpi_busy;	// ndpi in use
 	atomic_t	ndpi_ready;	// ndpi ready to work
-	struct mutex	rem_lock;	/* lock ndpi_delete_acct / ndpi_flow_read */
 	struct mutex	host_lock;	/* protect host_ac, hosts, hosts_tmp */
 
 	spinlock_t	ipq_lock;	/* for proto & patricia tree */

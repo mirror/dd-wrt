@@ -48,7 +48,7 @@ static void ndpi_check_vxlan(struct ndpi_detection_module_struct *ndpi_struct, s
       (vxlanhdr->groupPolicy == 0x0) &&
       (vxlanhdr->reserved == 0x0)) {
       NDPI_LOG_INFO(ndpi_struct, "found vxlan\n");
-      ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_VXLAN, NDPI_PROTOCOL_VXLAN, NDPI_CONFIDENCE_DPI);
+      ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_VXLAN, NDPI_PROTOCOL_VXLAN, NDPI_CONFIDENCE_DPI);
       return;
     }
   }
@@ -69,5 +69,6 @@ void init_vxlan_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("VXLAN", ndpi_struct,
                      ndpi_search_vxlan,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_VXLAN);
 }

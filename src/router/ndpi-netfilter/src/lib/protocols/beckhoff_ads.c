@@ -62,7 +62,7 @@ static void ndpi_int_beckhoff_ads_add_connection(struct ndpi_detection_module_st
                                                  struct ndpi_flow_struct * const flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found Beckhoff ADS\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core,
                              NDPI_PROTOCOL_BECKHOFF_ADS,
                              NDPI_PROTOCOL_UNKNOWN,
                              NDPI_CONFIDENCE_DPI);
@@ -77,6 +77,9 @@ static void ndpi_search_beckhoff_ads(struct ndpi_detection_module_struct *ndpi_s
 
   if (packet->payload_packet_len >= 38) {
     struct ams_tcp_hdr const * const ams_tcp = (struct ams_tcp_hdr *)packet->payload;
+    if (packet->payload_packet_len < sizeof(struct ams_tcp_hdr)) {
+      goto not_beckhoff_ads;
+    }
     u_int16_t ams_message_length = packet->payload_packet_len - sizeof(struct ams_tcp_hdr);
 
     if ((ams_tcp->reserved != 0) ||
@@ -85,6 +88,9 @@ static void ndpi_search_beckhoff_ads(struct ndpi_detection_module_struct *ndpi_s
       goto not_beckhoff_ads;
     }
 
+    if (ams_message_length < sizeof(struct ams_hdr)) {
+      goto not_beckhoff_ads;
+    }
     struct ams_hdr const * const ams = (struct ams_hdr *)&packet->payload[6];
     u_int16_t ams_data_len = ams_message_length - sizeof(struct ams_hdr);
 
@@ -117,5 +123,6 @@ void init_beckhoff_ads_dissector(struct ndpi_detection_module_struct *ndpi_struc
   ndpi_register_dissector("BeckhoffADS", ndpi_struct,
                      ndpi_search_beckhoff_ads,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_BECKHOFF_ADS);
 }

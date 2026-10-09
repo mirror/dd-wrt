@@ -30,7 +30,7 @@ static void ndpi_int_crynet_add_connection(struct ndpi_detection_module_struct *
                                            struct ndpi_flow_struct * const flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found CryNetwork\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core,
                              NDPI_PROTOCOL_CRYNET,
                              NDPI_PROTOCOL_UNKNOWN,
                              NDPI_CONFIDENCE_DPI);
@@ -45,7 +45,7 @@ static void ndpi_search_crynet(struct ndpi_detection_module_struct *ndpi_struct,
 
   if (packet->payload_packet_len <= 4)
   {
-    if (flow->packet_counter == 1 && ntohs(packet->udp->dest) != 61088) {
+    if (flow->core.packet_counter == 1 && ntohs(packet->udp->dest) != 61088) {
       NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
       return;
     }
@@ -59,7 +59,7 @@ static void ndpi_search_crynet(struct ndpi_detection_module_struct *ndpi_struct,
       }
     }
 
-    if (flow->packet_counter >= 10) {
+    if (flow->core.packet_counter >= 10) {
       ndpi_int_crynet_add_connection(ndpi_struct, flow);
       return;
     }
@@ -106,5 +106,6 @@ void init_crynet_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("CryNetwork", ndpi_struct,
                      ndpi_search_crynet,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_CRYNET);
 }

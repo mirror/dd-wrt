@@ -44,11 +44,11 @@ static void ndpi_search_whois_das(struct ndpi_detection_module_struct *ndpi_stru
         */
        ndpi_is_valid_hostname((char * const)&packet->payload[0], packet->payload_packet_len - 2)) {
 
-      ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_WHOIS_DAS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+      ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_WHOIS_DAS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 
       if((dport == 43) || (dport == 4343)) { /* Request */
         ndpi_hostname_sni_set(flow, &packet->payload[0], packet->payload_packet_len - 2, NDPI_HOSTNAME_NORM_ALL); /* Skip \r\n */
-        NDPI_LOG_INFO(ndpi_struct, "[WHOIS/DAS] %s\n", flow->host_server_name);
+        if(flow->core.host_server_name) NDPI_LOG_INFO(ndpi_struct, "[WHOIS/DAS] %s\n", flow->core.host_server_name);
       }
       return;
     }
@@ -63,5 +63,6 @@ void init_whois_das_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("Whois-DA", ndpi_struct,
                      ndpi_search_whois_das,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_WHOIS_DAS);
 }

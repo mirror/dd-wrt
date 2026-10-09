@@ -56,11 +56,11 @@ static void ndpi_check_radius(struct ndpi_detection_module_struct *ndpi_struct, 
        && (h->code <= 13)
        && (ntohs(h->len) == payload_len)) {
       NDPI_LOG_INFO(ndpi_struct, "Found radius\n");
-      ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_RADIUS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+      ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_RADIUS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
       return;
     }
   }
-  if(flow->packet_counter > 3)
+  if(flow->core.packet_counter > 3)
     NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
   return;
 }
@@ -78,5 +78,6 @@ void init_radius_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("Radius", ndpi_struct,
                      ndpi_search_radius,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_RADIUS);
 }

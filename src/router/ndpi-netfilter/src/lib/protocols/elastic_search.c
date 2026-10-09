@@ -31,7 +31,7 @@ static void ndpi_int_elasticsearch_add_connection(struct ndpi_detection_module_s
 {
   NDPI_LOG_INFO(ndpi_struct, "found elasticsearch\n");
 
-  ndpi_set_detected_protocol(ndpi_struct, flow,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core,
                              NDPI_PROTOCOL_ELASTICSEARCH,
                              NDPI_PROTOCOL_UNKNOWN,
                              NDPI_CONFIDENCE_DPI);
@@ -76,5 +76,6 @@ void init_elasticsearch_dissector(struct ndpi_detection_module_struct *ndpi_stru
   ndpi_register_dissector("Elasticsearch", ndpi_struct,
                      ndpi_search_elasticsearch,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_ELASTICSEARCH);
 }

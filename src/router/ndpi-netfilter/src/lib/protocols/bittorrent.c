@@ -120,7 +120,7 @@ static int search_bittorrent_again(struct ndpi_detection_module_struct *ndpi_str
   ndpi_search_bittorrent_hash(ndpi_struct, flow, -1);
   
   /* Possibly more processing */
-  return flow->extra_packets_func != NULL;
+  return flow->core.extra_packets_func != NULL;
 }
 
 /* *********************************************** */
@@ -719,7 +719,7 @@ static inline bool bt_old_pak(const uint8_t *payload, uint32_t len,
 	return true;
   }
   /* CSGO/DOTA conflict */
-  if(flow->packet_counter > 8 && ((v1_version & 0x0f) == 1)
+  if(flow->core.packet_counter > 8 && ((v1_version & 0x0f) == 1)
 		&& ((v1_version >> 4) < 5 /* ST_NUM_STATES */)
 		&& (v1_extension      < 3 /* EXT_NUM_EXT */)
 		&& (v1_window_size    < 32768 /* 32k */)) 
@@ -983,7 +983,7 @@ static void ndpi_search_bittorrent_hash(struct ndpi_detection_module_struct *ndp
     bt_hash = (const char*)&packet->payload[28];
   
   if(bt_hash && (packet->payload_packet_len >= (20 + (bt_hash-(const char*)packet->payload)))) {
-    memcpy(flow->protos.bittorrent.hash, bt_hash, 20);
+    memcpy(flow->metadata.protos.bittorrent.hash, bt_hash, 20);
     {
     char tmp_hash[42];
     int i;
@@ -1000,16 +1000,16 @@ u_int64_t make_bittorrent_host_key(struct ndpi_flow_struct *flow, int client, in
   u_int64_t key;
 
   /* network byte order */
-  if(flow->is_ipv6) {
+  if(flow->core.is_ipv6) {
     if(client)
-      key = (ndpi_quick_hash64((const char *)flow->c_address.v6, 16) << 16) | htons(ntohs(flow->c_port) + offset);
+      key = (ndpi_quick_hash64((const char *)flow->core.c_address.v6.u6_addr.u6_addr8, 16) << 16) | htons(ntohs(flow->core.c_port) + offset);
     else
-      key = (ndpi_quick_hash64((const char *)flow->s_address.v6, 16) << 16) | flow->s_port;
+      key = (ndpi_quick_hash64((const char *)flow->core.s_address.v6.u6_addr.u6_addr8, 16) << 16) | flow->core.s_port;
   } else {
     if(client)
-      key = ((u_int64_t)flow->c_address.v4 << 32) | htons(ntohs(flow->c_port) + offset);
+      key = ((u_int64_t)flow->core.c_address.v4 << 32) | htons(ntohs(flow->core.c_port) + offset);
     else
-      key = ((u_int64_t)flow->s_address.v4 << 32) | flow->s_port;
+      key = ((u_int64_t)flow->core.s_address.v4 << 32) | flow->core.s_port;
   }
 
   return key;
@@ -1021,22 +1021,21 @@ u_int64_t make_bittorrent_peers_key(struct ndpi_flow_struct *flow) {
   u_int64_t key;
 
   /* network byte order */
-  if(flow->is_ipv6)
-    key = (ndpi_quick_hash64((const char *)flow->c_address.v6, 16) << 32) | (ndpi_quick_hash64((const char *)flow->s_address.v6, 16) & 0xFFFFFFFF);
+  if(flow->core.is_ipv6)
+    key = (ndpi_quick_hash64((const char *)flow->core.c_address.v6.u6_addr.u6_addr8, 16) << 32)
+      | (ndpi_quick_hash64((const char *)flow->core.s_address.v6.u6_addr.u6_addr8, 16) & 0xFFFFFFFF);
   else
-    key = ((u_int64_t)flow->c_address.v4 << 32) | flow->s_address.v4;
+    key = ((u_int64_t)flow->core.c_address.v4 << 32) | flow->core.s_address.v4;
 
   return key;
 }
 
 /* *********************************************** */
 
-static void ndpi_add_connection_as_bittorrent(
-		struct ndpi_detection_module_struct *ndpi_struct,
-		struct ndpi_flow_struct *flow,
-		int bt_offset, int check_hash,
-		const u_int8_t confidence)
-{
+static void ndpi_add_connection_as_bittorrent(struct ndpi_detection_module_struct *ndpi_struct,
+					      struct ndpi_flow_struct *flow,
+					      int bt_offset, int check_hash,
+					      ndpi_confidence_t confidence) {
   int p1 = 0,p2 = 0;
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
 
@@ -1052,8 +1051,7 @@ static void ndpi_add_connection_as_bittorrent(
     ndpi_bt_add_peer_cache(ndpi_struct,packet,p1,p2);
   }
 
-  if(ndpi_struct->cfg.bittorrent_hash_enabled &&
-     check_hash)
+  if(ndpi_struct->cfg.bittorrent_hash_enabled && check_hash)
     ndpi_search_bittorrent_hash(ndpi_struct, flow, bt_offset);
 
   if(packet->iph) {
@@ -1068,10 +1066,10 @@ static void ndpi_add_connection_as_bittorrent(
 					    confidence);
   
   if(ndpi_struct->cfg.bittorrent_hash_enabled &&
-     flow->protos.bittorrent.hash[0] == '\0') {
+     flow->metadata.protos.bittorrent.hash[0] == '\0') {
     /* Don't use just 1 as in TCP DNS more packets could be returned (e.g. ACK). */
-    flow->max_extra_packets_to_check = 3;
-    flow->extra_packets_func = search_bittorrent_again;
+    flow->core.max_extra_packets_to_check = 3;
+    flow->core.extra_packets_func = search_bittorrent_again;
   }
 
 #ifndef __KERNEL__
@@ -1081,38 +1079,38 @@ static void ndpi_add_connection_as_bittorrent(
     key = make_bittorrent_peers_key(flow);
     key1 = make_bittorrent_host_key(flow, 1, 0), key2 = make_bittorrent_host_key(flow, 0, 0);
 
-    ndpi_lru_add_to_cache(ndpi_struct->bittorrent_cache, key1, NDPI_PROTOCOL_BITTORRENT, ndpi_get_current_time(flow));
-    ndpi_lru_add_to_cache(ndpi_struct->bittorrent_cache, key2, NDPI_PROTOCOL_BITTORRENT, ndpi_get_current_time(flow));
+    ndpi_lru_add_to_cache(ndpi_struct->bittorrent_cache, key1, NDPI_PROTOCOL_BITTORRENT, ndpi_get_current_time(&flow->core));
+    ndpi_lru_add_to_cache(ndpi_struct->bittorrent_cache, key2, NDPI_PROTOCOL_BITTORRENT, ndpi_get_current_time(&flow->core));
 
     /* Now add hosts as twins */
     ndpi_lru_add_to_cache(ndpi_struct->bittorrent_cache,
 			  key,
 			  NDPI_PROTOCOL_BITTORRENT,
-			  ndpi_get_current_time(flow));
+			  ndpi_get_current_time(&flow->core));
 
     /* Also add +2 ports of the sender in order to catch additional sockets open by the same client */
     for(i=0; i<2; i++) {
       key1 = make_bittorrent_host_key(flow, 1, 1 + i);
 
-      ndpi_lru_add_to_cache(ndpi_struct->bittorrent_cache, key1, NDPI_PROTOCOL_BITTORRENT, ndpi_get_current_time(flow));
+      ndpi_lru_add_to_cache(ndpi_struct->bittorrent_cache, key1, NDPI_PROTOCOL_BITTORRENT, ndpi_get_current_time(&flow->core));
     }
     
 #ifdef BITTORRENT_CACHE_DEBUG
     printf("[BitTorrent] [%s] *** ADDED ports %u / %u [0x%llx][0x%llx]\n",
-	   flow->l4_proto == IPPROTO_TCP ? "TCP" : "UDP",
-	   ntohs(flow->c_port), ntohs(flow->s_port),
+	   flow->core.l4_proto == IPPROTO_TCP ? "TCP" : "UDP",
+	   ntohs(flow->core.c_port), ntohs(flow->core.s_port),
 	   (long long unsigned int)key1, (long long unsigned int)key2);
 #endif
   }
 #endif // __KERNEL__
-  if(flow->protos.bittorrent.hash[0] == '\0') {
+  if(flow->metadata.protos.bittorrent.hash[0] == '\0') {
     /* Don't use just 1 as in TCP DNS more packets could be returned (e.g. ACK). */
 #ifndef __KERNEL__
-    flow->max_extra_packets_to_check = 3;
+    flow->core.max_extra_packets_to_check = 3;
 #else
-    flow->max_extra_packets_to_check = 255;
+    flow->core.max_extra_packets_to_check = 255;
 #endif
-    flow->extra_packets_func = search_bittorrent_again;
+    flow->core.extra_packets_func = search_bittorrent_again;
   }
 
 }
@@ -1212,7 +1210,8 @@ static u_int8_t ndpi_int_search_bittorrent_tcp_zero(struct ndpi_detection_module
   if(packet->payload_packet_len == 1 && packet->payload[0] == 0x13) {
     return 0;
   }
-  if(flow->packet_counter == 2 && packet->payload_packet_len > 20) {
+
+  if(flow->core.packet_counter == 2 && packet->payload_packet_len > 20) {
     if(memcmp(&packet->payload[0], BITTORRENT_PROTO_STRING, 19) == 0) {
       NDPI_LOG_INFO(ndpi_struct, "found BT: plain\n");
       ndpi_add_connection_as_bittorrent(ndpi_struct, flow, 19, 1, NDPI_CONFIDENCE_DPI);
@@ -1437,7 +1436,7 @@ static void ndpi_int_search_bittorrent_tcp(struct ndpi_detection_module_struct *
   if(ndpi_search_bittorrent_tcp_old(ndpi_struct,flow)) {
     if(packet->payload_packet_len > 48)
             ndpi_search_bittorrent_hash(ndpi_struct, flow, -1);
-    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI_CACHE);
+    ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_BITTORRENT, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI_CACHE);
     return;
   }
   if(packet->payload_packet_len == 0) {
@@ -1466,7 +1465,7 @@ static u_int8_t is_port(u_int16_t a, u_int16_t b, u_int16_t what) {
 
 static void ndpi_skip_bittorrent(struct ndpi_detection_module_struct *ndpi_struct,
 				 struct ndpi_flow_struct *flow) {
-  if(flow->detected_protocol_stack[0] == NDPI_PROTOCOL_BITTORRENT)
+  if(flow->core.detected_protocol_stack[0] == NDPI_PROTOCOL_BITTORRENT)
     return;
   if(search_into_bittorrent_cache(ndpi_struct, flow))
     ndpi_add_connection_as_bittorrent(ndpi_struct, flow, -1, 0, NDPI_CONFIDENCE_DPI_CACHE);
@@ -1510,14 +1509,14 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
 	   packet->payload_packet_len,
 	   htons(packet->tcp ? packet->tcp->source: packet->udp ? packet->udp->source:0),
 	   htons(packet->tcp ? packet->tcp->dest: packet->udp ? packet->udp->dest:0),
-	   packet->tcp_retransmission, flow->bittorrent_stage,
-	   flow->packet_counter,packet->packet_direction);
+	   packet->tcp_retransmission, flow->metadata.bittorrent_stage,
+	   flow->core.packet_counter,packet->packet_direction);
   	   if(bt_parse_debug)
 		   dump_hex((u_int8_t *)packet->payload,packet->payload_packet_len,128);
 #endif
 
 #ifndef __KERNEL__
-    if((flow->packet_counter == 0 /* Do the check once */) && ndpi_struct->bittorrent_cache) {
+    if((flow->core.packet_counter == 0 /* Do the check once */) && ndpi_struct->bittorrent_cache) {
       u_int32_t key = packet->udp ? (packet->iph->saddr + packet->udp->source) : (packet->iph->saddr + packet->tcp->source);
 	u_int16_t cached_proto;
 	u_int8_t found = 0;
@@ -1530,13 +1529,13 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
 #endif
 	
 	if(ndpi_lru_find_cache(ndpi_struct->bittorrent_cache, key,
-			       &cached_proto, 0, ndpi_get_current_time(flow)))
+			       &cached_proto, 0, ndpi_get_current_time(&flow->core)))
 	  found = 1;
 	else {
 	  key = packet->udp ? (packet->iph->daddr + packet->udp->dest) : (packet->iph->daddr + packet->tcp->dest);
 
 	  found = ndpi_lru_find_cache(ndpi_struct->bittorrent_cache, key,
-				&cached_proto, 0, ndpi_get_current_time(flow));
+				&cached_proto, 0, ndpi_get_current_time(&flow->core));
 	}
 
 	if(found)
@@ -1544,7 +1543,7 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
       }
 #endif
 
-  if(flow->detected_protocol_stack[0] != NDPI_PROTOCOL_BITTORRENT) {
+  if(flow->core.detected_protocol_stack[0] != NDPI_PROTOCOL_BITTORRENT) {
     if(packet->tcp != NULL) {
       ndpi_int_search_bittorrent_tcp(ndpi_struct, flow);
       /* if(flow->packet_counter > 8)
@@ -1565,7 +1564,7 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
 	      detect_type = bt_code_text[bt_code & 7];
 	      goto bittorrent_found;
       }
-      if(match_utp_query_reply((uint32_t *)packet->payload,&flow->bittorrent_seq,
+      if(match_utp_query_reply((uint32_t *)packet->payload,&flow->metadata.bittorrent_seq,
 			       packet->payload_packet_len,&utp_type)) {
 	      if(utp_type == 0xffff) {
 		        NDPI_EXCLUDE_DISSECTOR(ndpi_struct, flow);
@@ -1605,7 +1604,7 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
 	  if((rc = is_utpv1_pkt(packet->payload, packet->payload_packet_len)) > 0) {
 	    bt_proto = ndpi_strnstr((const char *)&packet->payload[20], BITTORRENT_PROTO_STRING, packet->payload_packet_len-20);
 	    /* DATA check is quite weak so in that case wait for multiple packets/confirmations */
-	    if(rc == 1 || bt_proto != NULL || (rc == 2 && flow->packet_counter > 2)) {
+	    if(rc == 1 || bt_proto != NULL || (rc == 2 && flow->core.packet_counter > 2)) {
 	      goto bittorrent_found;
 	    } else {
 	      return;
@@ -1635,9 +1634,9 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
 
 	}
 
-        flow->bittorrent_stage++;
+        flow->metadata.bittorrent_stage++;
 
-        if(flow->bittorrent_stage < 5) {
+        if(flow->metadata.bittorrent_stage < 5) {
             if( packet->payload_packet_len > 28 &&
   	      bdecode((const u_int8_t *)packet->payload,
   			packet->payload_packet_len, ndpi_struct,flow,&utp_type)) {
@@ -1656,7 +1655,7 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
   	}
 
   	if(ndpi_search_bittorrent_udp_old(ndpi_struct,flow))
-  		ndpi_set_detected_protocol(ndpi_struct, flow,
+  		ndpi_set_detected_protocol(ndpi_struct, &flow->core,
   					 NDPI_PROTOCOL_BITTORRENT,
   					 NDPI_PROTOCOL_UNKNOWN,NDPI_CONFIDENCE_DPI);
   	return;
@@ -1676,7 +1675,7 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
     return;
   }
 
-  if(flow->packet_counter > 5) { // 10 
+  if(flow->core.packet_counter > 5) { // 10 
       NDPI_LOG_DBG(ndpi_struct, "ndpi_skip_bittorrent2\n");
       ndpi_skip_bittorrent(ndpi_struct, flow);
   }
@@ -1740,5 +1739,6 @@ void init_bittorrent_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("BitTorrent", ndpi_struct,
                      ndpi_search_bittorrent,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_BITTORRENT);
 }

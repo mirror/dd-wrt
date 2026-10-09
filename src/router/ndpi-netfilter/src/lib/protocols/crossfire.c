@@ -33,7 +33,7 @@ static void ndpi_int_crossfire_add_connection(struct ndpi_detection_module_struc
                                               struct ndpi_flow_struct *flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found CrossFire\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_CROSSFIRE, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_CROSSFIRE, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
 }
 
 static void ndpi_search_crossfire_tcp_udp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
@@ -73,5 +73,6 @@ void init_crossfire_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("Crossfire", ndpi_struct,
                      ndpi_search_crossfire_tcp_udp,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_CROSSFIRE);
 }

@@ -55,6 +55,12 @@ typedef struct {
   u_int16_t protocol_id;
 } ndpi_tls_cert_name_match;
 
+/* License under which a single dissector is released */
+enum ndpi_dissector_license_type {
+  DISSECTOR_LICENSE_LGPL = 0,
+  DISSECTOR_LICENSE_NTOP_DUAL_LICENSE,
+};
+
 struct call_function_struct {
   char name[16];                /* Used only for logging/debugging */
   void (*func) (struct ndpi_detection_module_struct *, struct ndpi_flow_struct *flow);
@@ -64,6 +70,7 @@ struct call_function_struct {
   u_int16_t first_protocol_id;  /* ID of the first protocol registered with this dissector.
                                    It is used ONLY for logging, because logging configuration
                                    is (still) for protocol, not for dissector */
+  enum ndpi_dissector_license_type dissector_license_type;
 };
 
 typedef struct default_ports_tree_node {
@@ -194,7 +201,7 @@ struct ndpi_global_context {
     in ndpi_main.c
    */
   typedef enum  {
-    NDPI_NATIVE_TCP_FINGERPRINT = 0,
+    NDPI_NATIVE_TCP_FINGERPRINT = 0, /* README.tcp_fingerprint.md */
     NDPI_MUONFP_TCP_FINGERPRINT /* https://github.com/sundruid/muonfp */
   } ndpi_tcp_fingerprint_format;
 
@@ -349,9 +356,11 @@ struct ndpi_detection_module_config_struct {
   int dns_subclassification_enabled;
   int dns_parse_response_enabled;
   int dns_max_packets_extra_dissection;
+  int dns_custom_port;
 
   int http_parse_response_enabled;
   int http_subclassification_enabled;
+  int http_dga_url_enabled;
 
   int ookla_aggressiveness;
 
@@ -386,6 +395,8 @@ struct ndpi_detection_module_struct {
   u_int64_t current_ts;
   u_int8_t finalized:1, _notused:7;
   u_int8_t tls_certificate_expire_in_x_days;
+
+  enum ndpi_license_type license_type;
 
   void *user_data;
   char custom_category_labels[NUM_CUSTOM_CATEGORIES][CUSTOM_CATEGORY_LABEL_LEN];
@@ -499,10 +510,6 @@ struct ndpi_detection_module_struct {
 
   ndpi_proto_defaults_t *proto_defaults;
   u_int16_t proto_defaults_num_allocated;
-
-#ifdef CUSTOM_NDPI_PROTOCOLS
-  #include "../../../nDPI-custom/custom_ndpi_typedefs.h"
-#endif
 
 #ifndef __KERNEL__
 #ifdef HAVE_MAXMINDDB
@@ -700,12 +707,16 @@ struct ndpi_detection_module_struct {
 NDPI_STATIC int is_proto_enabled(struct ndpi_detection_module_struct *ndpi_str, int protoId);
 NDPI_STATIC int is_flowrisk_enabled(struct ndpi_detection_module_struct *ndpi_str, ndpi_risk_enum flowrisk_id);
 NDPI_STATIC void ndpi_register_dissector(char *dissector_name, struct ndpi_detection_module_struct *ndpi_str,
-                        void (*func)(struct ndpi_detection_module_struct *,
-                                     struct ndpi_flow_struct *flow),
-                        const NDPI_SELECTION_BITMASK_PROTOCOL_SIZE ndpi_selection_bitmask,
-                        int num_protocol_ids, ...);
-NDPI_STATIC void exclude_dissector(struct ndpi_detection_module_struct *ndpi_str, struct ndpi_flow_struct *flow,
-                       u_int16_t dissector_idx, const char *_file, const char *_func, int _line) ;
+			     void (*func)(struct ndpi_detection_module_struct *,
+					  struct ndpi_flow_struct *flow),
+			     const NDPI_SELECTION_BITMASK_PROTOCOL_SIZE ndpi_selection_bitmask,
+			     enum ndpi_dissector_license_type dissector_license_type,
+			     int num_protocol_ids, ...);
+NDPI_STATIC void exclude_dissector(struct ndpi_detection_module_struct *ndpi_str,
+		       struct ndpi_flow_core_struct *core,
+		       u_int16_t dissector_idx, const char *_file,
+		       const char *_func, int _line) ;
+
 
 /* Generic */
 
@@ -714,16 +725,17 @@ NDPI_STATIC char *strptime(const char *s, const char *format, struct tm *tm);
 NDPI_STATIC u_int8_t iph_is_valid_and_not_fragmented(struct ndpi_detection_module_struct *ndpi_str,
                                          const struct ndpi_iphdr *iph, const u_int16_t ipsize);
 
-NDPI_STATIC int current_pkt_from_client_to_server(struct ndpi_detection_module_struct *ndpi_str, const struct ndpi_flow_struct *flow);
-NDPI_STATIC int current_pkt_from_server_to_client(struct ndpi_detection_module_struct *ndpi_str, const struct ndpi_flow_struct *flow);
+NDPI_STATIC int current_pkt_from_client_to_server(struct ndpi_detection_module_struct *ndpi_str, const struct ndpi_flow_core_struct *core);
+NDPI_STATIC int current_pkt_from_server_to_client(struct ndpi_detection_module_struct *ndpi_str, const struct ndpi_flow_core_struct *core);
 
 NDPI_STATIC int ndpi_seen_flow_beginning(const struct ndpi_flow_struct *flow);
 
 NDPI_STATIC void ndpi_set_detected_protocol(struct ndpi_detection_module_struct *ndpi_struct,
-				struct ndpi_flow_struct *flow,
+				struct ndpi_flow_core_struct *core,
 				u_int16_t upper_detected_protocol,
 				u_int16_t lower_detected_protocol,
 				ndpi_confidence_t confidence);
+
 
 NDPI_STATIC void reset_detected_protocol(struct ndpi_flow_struct *flow);
 
@@ -736,8 +748,10 @@ NDPI_STATIC void change_category(struct ndpi_flow_struct *flow,
 		     ndpi_protocol_category_t protocol_category);
 
 
-NDPI_STATIC char *ndpi_hostname_sni_set(struct ndpi_flow_struct *flow, const u_int8_t *value, size_t value_len, int normalize);
-NDPI_STATIC char *ndpi_user_agent_set(struct ndpi_flow_struct *flow, const u_int8_t *value, size_t value_len);
+NDPI_STATIC char *ndpi_hostname_sni_set(struct ndpi_flow_struct *flow,
+			      const u_int8_t *value, size_t value_len, int normalize);
+NDPI_STATIC char *ndpi_user_agent_set(struct ndpi_flow_struct *flow, const u_int8_t *value,
+			  size_t value_len);
 
 NDPI_STATIC void ndpi_parse_packet_line_info(struct ndpi_detection_module_struct *ndpi_struct,
 					  struct ndpi_flow_struct *flow);
@@ -802,6 +816,8 @@ NDPI_STATIC ndpi_protocol_breed_t get_proto_breed(struct ndpi_detection_module_s
 NDPI_STATIC ndpi_protocol_category_t get_proto_category(struct ndpi_detection_module_struct *ndpi_str,
                                             ndpi_master_app_protocol proto);
 
+NDPI_STATIC u_int8_t ndpi_is_multi_or_broadcast(struct ndpi_flow_core_struct *core);
+
 /* TLS */
 NDPI_STATIC int processClientServerHello(struct ndpi_detection_module_struct *ndpi_struct,
                              struct ndpi_flow_struct *flow, uint32_t quic_version);
@@ -820,7 +836,7 @@ NDPI_STATIC void switch_extra_dissection_to_tls_obfuscated_heur(struct ndpi_dete
 NDPI_STATIC int ookla_search_into_cache(struct ndpi_detection_module_struct* ndpi_struct,
                             struct ndpi_flow_struct* flow);
 NDPI_STATIC void ookla_add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
-                        struct ndpi_flow_struct *flow);
+                        struct ndpi_flow_core_struct *core);
 
 /* SIGNAL */
 NDPI_STATIC int signal_search_into_cache(struct ndpi_detection_module_struct* ndpi_struct,
@@ -828,8 +844,17 @@ NDPI_STATIC int signal_search_into_cache(struct ndpi_detection_module_struct* nd
 NDPI_STATIC void signal_add_to_cache(struct ndpi_detection_module_struct *ndpi_struct,
                         struct ndpi_flow_struct *flow);
 
+/* DCERPC */
+struct ndpi_dcerpc_tcp_reasm {
+  u_int8_t *buf;
+  u_int16_t cur_len;
+  u_int16_t msg_len;
+  u_int32_t next_seq;
+};
+struct ndpi_dcerpc_tcp_reasm_state {
+  struct ndpi_dcerpc_tcp_reasm dir[2];
+};
 /* DNS */
-
 struct ndpi_dns_tcp_reasm {
   u_int8_t *buf;
   u_int16_t cur_len;
@@ -1138,6 +1163,7 @@ NDPI_STATIC void init_bfcp_dissector(struct ndpi_detection_module_struct *ndpi_s
 NDPI_STATIC void init_iqiyi_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_egd_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_cod_mobile_dissector(struct ndpi_detection_module_struct *ndpi_struct);
+NDPI_STATIC void init_freefire_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_zug_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_jrmi_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 NDPI_STATIC void init_ripe_atlas_dissector(struct ndpi_detection_module_struct *ndpi_struct);
@@ -1172,11 +1198,6 @@ NDPI_STATIC void init_meshtastic_dissector(struct ndpi_detection_module_struct *
 NDPI_STATIC void init_nebula_dissector(struct ndpi_detection_module_struct *ndpi_struct);
 
 
-#ifdef CUSTOM_NDPI_PROTOCOLS
-  #include "../../../nDPI-custom/custom_ndpi_private.h"
-#endif
-
-
 enum cfg_param_type {
   CFG_PARAM_ENABLE_DISABLE = 0,
   CFG_PARAM_INT,
@@ -1201,6 +1222,20 @@ struct cfg_param {
   int locked;
 };
 
+  void ndpi_reconcile_msteams_call_udp(struct ndpi_flow_struct *flow);
+  void ndpi_connection_tracking(struct ndpi_detection_module_struct *ndpi_str,
+				struct ndpi_flow_core_struct *core,
+				struct ndpi_flow_metadata_struct *metadata);
+  int ndpi_init_packet(struct ndpi_detection_module_struct *ndpi_str,
+		       struct ndpi_flow_core_struct *core,
+		       struct ndpi_flow_metadata_struct *metadata,
+		       const u_int64_t current_time_ms,
+		       const unsigned char *packet_data,
+		       unsigned short packetlen,
+		       struct ndpi_flow_input_info *input_info);
+  ndpi_protocol ndpi_create_public_results(struct ndpi_detection_module_struct *ndpi_str,
+					   const struct ndpi_flow_core_struct *core);
+    
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
 extern const struct cfg_param cfg_params[];
 #endif

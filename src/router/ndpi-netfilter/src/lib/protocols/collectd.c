@@ -62,7 +62,7 @@ static void ndpi_int_collectd_add_connection(struct ndpi_detection_module_struct
                                              struct ndpi_flow_struct * const flow)
 {
   NDPI_LOG_INFO(ndpi_struct, "found collectd\n");
-  ndpi_set_detected_protocol(ndpi_struct, flow,
+  ndpi_set_detected_protocol(ndpi_struct, &flow->core,
                              NDPI_PROTOCOL_COLLECTD,
                              NDPI_PROTOCOL_UNKNOWN,
                              NDPI_CONFIDENCE_DPI);
@@ -103,9 +103,10 @@ static int ndpi_int_collectd_check_type(u_int16_t block_type)
 
 static void ndpi_int_collectd_dissect_hostname(struct ndpi_flow_struct * const flow,
                                                struct ndpi_packet_struct const * const packet,
+                                               u_int16_t hostname_offset,
                                                u_int16_t block_length)
 {
-  ndpi_hostname_sni_set(flow, &packet->payload[4], block_length, NDPI_HOSTNAME_NORM_ALL);
+  ndpi_hostname_sni_set(flow, &packet->payload[hostname_offset], block_length, NDPI_HOSTNAME_NORM_ALL);
 }
 
 static int ndpi_int_collectd_dissect_username(struct ndpi_flow_struct * const flow,
@@ -120,9 +121,9 @@ static int ndpi_int_collectd_dissect_username(struct ndpi_flow_struct * const fl
     return 1;
   }
 
-  size_t sz_len = ndpi_min(sizeof(flow->protos.collectd.client_username) - 1, username_length);
-  memcpy(flow->protos.collectd.client_username, &packet->payload[6], sz_len);
-  flow->protos.collectd.client_username[sz_len] = '\0';
+  size_t sz_len = ndpi_min(sizeof(flow->metadata.protos.collectd.client_username) - 1, username_length);
+  memcpy(flow->metadata.protos.collectd.client_username, &packet->payload[6], sz_len);
+  flow->metadata.protos.collectd.client_username[sz_len] = '\0';
 
   return 0;
 }
@@ -133,7 +134,7 @@ static void ndpi_search_collectd(struct ndpi_detection_module_struct *ndpi_struc
   struct ndpi_packet_struct *packet = ndpi_get_packet_struct(ndpi_struct);
   u_int16_t num_blocks;
   u_int16_t block_offset = 0, block_type, block_length;
-  u_int16_t hostname_length = 0;
+  u_int16_t hostname_length = 0, hostname_offset = 4;
 
   NDPI_LOG_DBG(ndpi_struct, "search collectd\n");
 
@@ -158,7 +159,10 @@ static void ndpi_search_collectd(struct ndpi_detection_module_struct *ndpi_struc
          * the collectd protocol.
          */
         if(block_length > 4)
+        {
           hostname_length = block_length - 4; /* Ignore type and length fields */
+          hostname_offset = block_offset + 4;
+        }
       } else if (block_type == COLELCTD_TYPE_ENCR_AES256) {
         /*
          * The encrypted data block is a special case.
@@ -185,7 +189,7 @@ static void ndpi_search_collectd(struct ndpi_detection_module_struct *ndpi_struc
   }
 
   if (hostname_length > 0)
-    ndpi_int_collectd_dissect_hostname(flow, packet, hostname_length);
+    ndpi_int_collectd_dissect_hostname(flow, packet, hostname_offset, hostname_length);
 
   ndpi_int_collectd_add_connection(ndpi_struct, flow);
 }
@@ -195,5 +199,6 @@ void init_collectd_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("collectd", ndpi_struct,
                      ndpi_search_collectd,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_COLLECTD);
 }

@@ -183,6 +183,11 @@ typedef struct {
 } ndpi_address_port_list;
 
 // flow tracking
+struct ndpi_tcp_seq_range {
+  u_int64_t start;
+  u_int64_t end;
+};
+
 typedef struct ndpi_flow_info {
   u_int32_t flow_id;
   u_int32_t hashval;
@@ -211,6 +216,10 @@ typedef struct ndpi_flow_info {
   u_int64_t first_seen_ms, last_seen_ms;
   u_int64_t src2dst_bytes, dst2src_bytes;
   u_int64_t src2dst_goodput_bytes, dst2src_goodput_bytes;
+  struct ndpi_tcp_seq_range *goodput_ranges[2];
+  u_int32_t goodput_num_ranges[2], goodput_ranges_capacity[2];
+  u_int32_t goodput_base_seq[2];
+  u_int8_t goodput_base_seq_set[2];
   u_int32_t src2dst_packets, dst2src_packets;
   u_int32_t has_human_readeable_strings;
   char human_readeable_string_buffer[32];
@@ -306,7 +315,7 @@ typedef struct ndpi_flow_info {
       client_hassh[33], server_hassh[33], *server_names,
       *advertised_alpns, *negotiated_alpn, *tls_supported_versions,
       *tls_issuerDN, *tls_subjectDN,
-      ja3_server[33], ja4_client[37], *ja4_client_raw,
+      ja3_server[33], ja4_client[37], ja5_client[50], *ja4_client_raw,
       sha1_cert_fingerprint[20], ssh_key_exchange_method[24];
     u_int8_t sha1_cert_fingerprint_set;
     struct tls_heuristics browser_heuristics;
@@ -453,7 +462,8 @@ int ndpi_stats_init(ndpi_stats_t *s, uint32_t num_protocols);
 void ndpi_stats_reset(ndpi_stats_t *s);
 
 /* TODO: remove wrappers parameters and use ndpi global, when their initialization will be fixed... */
-struct ndpi_workflow * ndpi_workflow_init(const struct ndpi_workflow_prefs * prefs, pcap_t * pcap_handle, int do_init_flows_root, ndpi_serialization_format serialization_format, struct ndpi_global_context *g_ctx);
+struct ndpi_workflow * ndpi_workflow_init(const struct ndpi_workflow_prefs * prefs, pcap_t * pcap_handle, int do_init_flows_root, ndpi_serialization_format serialization_format, struct ndpi_global_context *g_ctx,
+                                          enum ndpi_license_type license_type);
 
 
 /* workflow main free function */

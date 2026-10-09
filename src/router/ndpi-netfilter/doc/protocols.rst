@@ -4453,3 +4453,57 @@ References: `Official site: <https://nebula.defined.net/docs/>`_, `Nebula Softwa
 Discoed Call protocol handles both audio and video calls within the Discord app.
 
 References: `Discord official site <https://discord.com/>`_
+
+
+.. _Proto_490:
+
+`NDPI_PROTOCOL_FREEFIRE`
+========================
+Free Fire is a popular battle royale game for iOS and Android developed by Garena.
+Gameplay typically uses UDP ports in the 10011-10015 range. Supplementary cleartext
+TCP control channels are commonly seen on ports 39698 and 39800.
+
+References: `Free Fire official site: <https://ff.garena.com/>`_
+
+
+.. _Proto_491:
+
+`NDPI_PROTOCOL_KIK`
+===================
+Kik Messenger is an instant messaging application for mobile devices.
+Traffic is detected via TLS Server Name Indication on kik.com and kikprod.net
+hostnames (e.g. login.kikprod.net, platform.kik.com).
+
+References: `Kik official site: <https://www.kik.com/>`_
+
+
+.. _Proto_492:
+
+`NDPI_PROTOCOL_CHARACTER_AI`
+============================
+CharacterAI is an AI chatbot platform. Traffic is detected via TLS/QUIC Server
+Name Indication on character.ai and characterai.io hostnames (e.g.
+user.api.character.ai, neo.character.ai, characterai.io).
+
+References: `CharacterAI official site: <https://character.ai>`_
+
+
+.. _Proto_493:
+
+`NDPI_PROTOCOL_DUCKDUCKGO`
+==========================
+DuckDuckGo is a privacy-oriented search engine. Traffic is detected via TLS/QUIC
+Server Name Indication on duckduckgo.com and duck.com hostnames.
+
+References: `DuckDuckGo official site: <https://duckduckgo.com/>`_
+
+
+.. _Proto_494:
+
+`NDPI_PROTOCOL_PEACOCK`
+=======================
+Peacock is NBCUniversal's video streaming service. Traffic is detected via
+TLS/QUIC Server Name Indication on peacocktv.com and peacocktvstore.com
+hostnames.
+
+References: `Peacock official site: <https://www.peacocktv.com/>`_

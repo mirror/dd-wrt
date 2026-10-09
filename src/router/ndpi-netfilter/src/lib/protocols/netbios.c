@@ -105,13 +105,14 @@ static void ndpi_int_netbios_add_connection(struct ndpi_detection_module_struct 
 		 (u_int)(packet->payload_packet_len - off), name, sizeof(name)-1) > 0) {
       ndpi_hostname_sni_set(flow, (const u_int8_t *)name, strlen((char *)name), NDPI_HOSTNAME_NORM_ALL);
 
-      ndpi_check_dga_name(ndpi_struct, flow, flow->host_server_name, 1, 1, 0);
+      if(flow->core.host_server_name)
+	ndpi_check_dga_name(ndpi_struct, &flow->core, flow->core.host_server_name, 1, 1, 0);
   }
 
   if(sub_protocol == NDPI_PROTOCOL_UNKNOWN)
-    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_NETBIOS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
+    ndpi_set_detected_protocol(ndpi_struct, &flow->core, NDPI_PROTOCOL_NETBIOS, NDPI_PROTOCOL_UNKNOWN, NDPI_CONFIDENCE_DPI);
   else
-    ndpi_set_detected_protocol(ndpi_struct, flow, sub_protocol, NDPI_PROTOCOL_NETBIOS, NDPI_CONFIDENCE_DPI);
+    ndpi_set_detected_protocol(ndpi_struct, &flow->core, sub_protocol, NDPI_PROTOCOL_NETBIOS, NDPI_CONFIDENCE_DPI);
 }
 
 /* ****************************************************************** */
@@ -420,5 +421,6 @@ void init_netbios_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("NETBIOS", ndpi_struct,
                      ndpi_search_netbios,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_NETBIOS);
 }

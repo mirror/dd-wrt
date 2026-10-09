@@ -59,9 +59,9 @@ static void ndpi_search_soap(struct ndpi_detection_module_struct *ndpi_struct,
     }
   }
 
-  if (flow->packet_counter > 3)
+  if (flow->core.packet_counter > 3)
   {
-    if (flow->l4.tcp.soap_stage == 1)
+    if (flow->metadata.l4.tcp.soap_stage == 1)
     {
       ndpi_int_soap_add_connection(ndpi_struct, flow);
     }
@@ -70,12 +70,12 @@ static void ndpi_search_soap(struct ndpi_detection_module_struct *ndpi_struct,
     }
   }
 
-  if (flow->l4.tcp.soap_stage == 0 &&
+  if (flow->metadata.l4.tcp.soap_stage == 0 &&
       packet->payload_packet_len >= 19)
   {
     if (strncmp((char*)packet->payload, "<?xml version=\"1.0\"", 19) == 0)
     {
-      flow->l4.tcp.soap_stage = 1;
+      flow->metadata.l4.tcp.soap_stage = 1;
     }
   }
 }
@@ -85,6 +85,7 @@ void init_soap_dissector(struct ndpi_detection_module_struct *ndpi_struct)
   ndpi_register_dissector("SOAP", ndpi_struct,
                      ndpi_search_soap,
                      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION,
+                     DISSECTOR_LICENSE_LGPL,
                      1, NDPI_PROTOCOL_SOAP);
 }
 
