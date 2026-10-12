@@ -385,36 +385,6 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		dev_dbg(dev, "%08x: %08x\n", 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
 }
 
-static u64 rtldsa_931x_stat_port_table_read(int port, unsigned int mib_size,
-					    unsigned int mib_offset, bool is_pvt)
-{
-	enum otto_table_id id;
-	int field_offset;
-	u32 val[2];
-
-	if (is_pvt) {
-		id = RTL9310_TBL_STAT_PORT_PRVTE_CNTR;
-		field_offset = 27;
-	} else {
-		id = RTL9310_TBL_STAT_PORT_MIB_CNTR;
-		field_offset = 52;
-	}
-
-	/* Counter fields are numbered down from the last data word of the
-	 * entry, so the high half of a 64 bit counter sits at the lower word
-	 * index.
-	 */
-	if (mib_size == 2) {
-		otto_table_offset_read(id, port, &val, field_offset - (mib_offset + 1));
-
-		return (u64)val[0] << 32 | val[1];
-	}
-
-	otto_table_offset_read(id, port, &val[0], field_offset - mib_offset);
-
-	return val[0];
-}
-
 const struct rtldsa_config rtldsa_931x_cfg = {
 	.switch_ops = &rtldsa_93xx_switch_ops,
 	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
@@ -435,11 +405,11 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.stat_port_rst = RTL931X_STAT_PORT_RST,
 	.stat_rst = RTL931X_STAT_RST,
 	.stat_port_std_mib = 0,  /* Not defined */
-	.mib_desc = &rtldsa_931x_mib_desc,
-	.stat_port_table_read = rtldsa_931x_stat_port_table_read,
-	.stat_counters_lock = rtldsa_counters_lock_table,
-	.stat_counters_unlock = rtldsa_counters_unlock_table,
-	.stat_counter_poll_interval = RTLDSA_COUNTERS_FAST_POLL_INTERVAL,
+	.mib_desc = &otto_stats_931x_mib_desc,
+	.stat_port_table_read = otto_stats_931x_port_table_read,
+	.stat_counters_lock = otto_stats_counters_lock_table,
+	.stat_counters_unlock = otto_stats_counters_unlock_table,
+	.stat_counter_poll_interval = OTTO_STATS_COUNTERS_FAST_POLL_INTERVAL,
 	.traffic_enable = rtl931x_traffic_enable,
 	.traffic_disable = rtl931x_traffic_disable,
 	.traffic_set = rtl931x_traffic_set,
@@ -475,8 +445,8 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.l2_port_new_salrn = otto_l2_931x_port_new_salrn,
 	.l2_port_new_sa_fwd = otto_l2_931x_port_new_sa_fwd,
 	.get_mirror_config = rtldsa_931x_get_mirror_config,
-	.port_rate_police_add = rtldsa_931x_port_rate_police_add,
-	.port_rate_police_del = rtldsa_931x_port_rate_police_del,
+	.port_rate_police_add = otto_tc_931x_port_rate_police_add,
+	.port_rate_police_del = otto_tc_931x_port_rate_police_del,
 	.print_matrix = rtldsa_931x_print_matrix,
 	.read_l2_entry_using_hash = otto_l2_931x_read_entry_using_hash,
 	.write_l2_entry_using_hash = otto_l2_931x_write_entry_using_hash,
@@ -486,7 +456,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.vlan_port_pvidmode_set = otto_vlan_931x_port_pvid_mode_set,
 	.vlan_port_pvid_set = otto_vlan_931x_port_pvid_set,
 	.fast_age = otto_l2_931x_fast_age,
-	.trk_mbr_ctr = rtldsa_931x_trk_mbr_ctr,
+	.trk_mbr_ctr = otto_lag_931x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL931X_RMA_BPDU_FLD_PMSK,
 	.set_vlan_igr_filter = rtl931x_set_igr_filter,
 	.set_vlan_egr_filter = rtl931x_set_egr_filter,
@@ -508,15 +478,15 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.qos_init = rtldsa_931x_qos_init,
 	.trk_ctrl = RTL931X_TRK_CTRL,
 	.trk_hash_ctrl = RTL931X_TRK_HASH_CTRL,
-	.prepare_lag_fdb = rtldsa_93xx_prepare_lag_fdb,
-	.lag_switch_init = rtldsa_93xx_lag_switch_init,
-	.lag_set_port_members = rtldsa_93xx_lag_set_port_members,
-	.lag_set_distribution_algorithm = rtldsa_93xx_lag_set_distribution_algorithm,
-	.lag_set_local_group_id = rtldsa_931x_lag_set_local_group_id,
-	.lag_write_data = rtldsa_931x_lag_write_data,
-	.lag_fill_data = rtldsa_931x_lag_fill_data,
-	.lag_set_local_port2group = rtldsa_931x_lag_set_local_port2group,
-	.lag_set_port2group = rtldsa_931x_lag_set_port2group,
-	.lag_sync_tables = rtldsa_931x_lag_sync_tables,
-	.lag_table = rtldsa_931x_lag_table,
+	.prepare_lag_fdb = otto_lag_93xx_prepare_fdb,
+	.lag_switch_init = otto_lag_93xx_switch_init,
+	.lag_set_port_members = otto_lag_93xx_set_port_members,
+	.lag_set_distribution_algorithm = otto_lag_93xx_set_distribution_algorithm,
+	.lag_set_local_group_id = otto_lag_931x_set_local_group_id,
+	.lag_write_data = otto_lag_931x_write_data,
+	.lag_fill_data = otto_lag_931x_fill_data,
+	.lag_set_local_port2group = otto_lag_931x_set_local_port2group,
+	.lag_set_port2group = otto_lag_931x_set_port2group,
+	.lag_sync_tables = otto_lag_931x_sync_tables,
+	.lag_table = otto_lag_931x_table,
 };

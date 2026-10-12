@@ -92,7 +92,7 @@ struct rtldsa_port {
 	int led_set;
 	enum rtldsa_flood_type flood_type;
 	int leds_on_this_port;
-	struct rtldsa_counter_state counters;
+	struct otto_stats_counter_state counters;
 	const struct dsa_port *dp;
 };
 
@@ -326,7 +326,7 @@ struct rtldsa_config {
 	void (*stat_init)(struct rtl838x_switch_priv *priv);
 	int stat_port_std_mib;
 	int stat_port_prv_mib;
-	const struct rtldsa_mib_desc *mib_desc;
+	const struct otto_stats_mib_desc *mib_desc;
 	u64 (*stat_port_table_read)(int port, unsigned int mib_size, unsigned int offset, bool is_pvt);
 	void (*stat_counters_lock)(struct rtl838x_switch_priv *priv, int port);
 	void (*stat_counters_unlock)(struct rtl838x_switch_priv *priv, int port);
@@ -337,7 +337,7 @@ struct rtldsa_config {
 	 * code.
 	 *
 	 * Any SoC family which requires stat_port_table_read must use the table
-	 * rtldsa_counters_(un)lock_table helpers. They are using a mutex for locking. The counters
+	 * otto_stats_counters_(un)lock_table helpers. They are using a mutex for locking. The counters
 	 * update is therefore not atomic.
 	 */
 	void (*stat_update_counters_atomically)(struct rtl838x_switch_priv *priv, int port);
@@ -373,8 +373,8 @@ struct rtldsa_config {
 	int trk_ctrl;
 	int trk_hash_ctrl;
 	void (*stp_init)(void);
-	void (*vlan_tables_read)(u32 vlan, struct rtldsa_vlan_info *info);
-	void (*vlan_set_tagged)(u32 vlan, struct rtldsa_vlan_info *info);
+	void (*vlan_tables_read)(u32 vlan, struct otto_vlan_info *info);
+	void (*vlan_set_tagged)(u32 vlan, struct otto_vlan_info *info);
 	void (*vlan_set_untagged)(u32 vlan, u64 portmask);
 	int (*vlan_profile_get)(int index, struct rtldsa_vlan_profile *profile);
 	void (*vlan_profile_dump)(struct rtl838x_switch_priv *priv, int index);
@@ -507,7 +507,7 @@ struct rtl838x_switch_priv {
 	/** @lag_primary: port of a LAG is primary (repesenting) and is added to
 	 * the port matrix
 	 */
-	u32 lag_primary[MAX_LAGS];
+	int lag_primary[MAX_LAGS];
 
 	/**
 	 * @lag_non_primary: Port (bit) is part of any LAG but not the
@@ -554,8 +554,6 @@ struct fdb_update_work {
 };
 
 void rtldsa_port_fast_age(struct dsa_switch *ds, int port);
-int rtldsa_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
-void rtldsa_packet_cntr_free(struct rtl838x_switch_priv *priv, int idx);
 int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_priv *priv);
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
 void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg);
@@ -610,22 +608,5 @@ extern struct rtl83xx_soc_info soc_info;
 
 void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv);
 void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv);
-
-void rtldsa_93xx_prepare_lag_fdb(struct rtl838x_l2_entry *e, int lag_group);
-
-int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
-			      bool must_exist, struct rtl838x_l2_entry *e);
-
-/* RTL931x hashes its second block into rows the fib_entries count does not
- * reach, so an index can fall outside the map and is simply not tracked.
- */
-static inline struct rtldsa_l2_uc *rtldsa_l2_uc_lookup(struct rtl838x_switch_priv *priv,
-						      int idx)
-{
-	if (idx < 0 || idx >= priv->r->fib_entries)
-		return NULL;
-
-	return &priv->l2_uc_map[idx];
-}
 
 #endif /* _RTL838X_H */

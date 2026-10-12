@@ -166,8 +166,8 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	}
 
 	priv->r->print_matrix();
-	rtldsa_stats_init(priv);
-	rtldsa_stats_init_counters(priv);
+	otto_stats_init(priv);
+	otto_stats_init_counters(priv);
 
 	rtldsa_83xx_mc_pmasks_setup(priv);
 	otto_vlan_setup(priv);
@@ -216,8 +216,8 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	priv->r->traffic_set(priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
 	priv->r->print_matrix();
 
-	rtldsa_stats_init(priv);
-	rtldsa_stats_init_counters(priv);
+	otto_stats_init(priv);
+	otto_stats_init_counters(priv);
 
 	otto_vlan_setup(priv);
 
@@ -235,7 +235,7 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	priv->r->pie_init(priv);
 
 	if (priv->r->pie_rule_id_is_log_counter) {
-		err = rtldsa_tc_init(priv);
+		err = otto_tc_init(priv);
 		if (err)
 			return err;
 	}
@@ -865,120 +865,6 @@ static void rtldsa_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 ma
 	u64_to_ether_addr(mac, e->mac);
 }
 
-static int rtldsa_l2_hash_index(u32 key, int slot)
-{
-	return slot > 3 ? ((key >> 14) & 0xffff) | (slot & 3) : ((key << 2) | slot) & 0xffff;
-}
-
-/* Uses the seed to identify a hash bucket in the L2 using the derived hash key and then loops
- * over the entries in the bucket until either a matching entry is found or an empty slot
- * Returns the filled in rtl838x_l2_entry and the index in the bucket when an entry was found
- * when an empty slot was found and must exist is false, the index of the slot is returned
- * when no slots are available returns -1
- */
-int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
-			      bool must_exist, struct rtl838x_l2_entry *e)
-{
-	u32 key = priv->r->l2_hash_key(priv, seed);
-	int free_slot = -1;
-	u64 entry;
-
-	pr_debug("%s: using key %x, for seed %016llx\n", __func__, key, seed);
-	/* Loop over all entries in the hash-bucket and over the second block on 93xx SoCs */
-	for (int i = 0; i < priv->r->l2_bucket_size; i++) {
-		entry = priv->r->read_l2_entry_using_hash(key, i, e);
-		pr_debug("valid %d, mac %016llx\n", e->valid, ether_addr_to_u64(&e->mac[0]));
-
-		/* Remember the first free slot, but keep looking: the address
-		 * may be sitting further down the bucket.
-		 */
-		if (!e->valid) {
-			if (free_slot < 0)
-				free_slot = i;
-			continue;
-		}
-
-		if ((entry & 0x0fffffffffffffffULL) == seed)
-			return rtldsa_l2_hash_index(key, i);
-	}
-
-	if (must_exist || free_slot < 0)
-		return -1;
-
-	/* The loop leaves the last entry it read here, valid bit included.
-	 * Reading the free slot back does not undo that on RTL930x and
-	 * RTL931x, whose readers return as soon as the valid bit is clear.
-	 */
-	memset(e, 0, sizeof(*e));
-
-	return rtldsa_l2_hash_index(key, free_slot);
-}
-
-/* Uses the seed to identify an entry in the CAM by looping over all its entries
- * Returns the filled in rtl838x_l2_entry and the index in the CAM when an entry was found
- * when an empty slot was found the index of the slot is returned
- * when no slots are available returns -1
- */
-static int rtldsa_find_l2_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
-				    bool must_exist, struct rtl838x_l2_entry *e)
-{
-	int idx = -1;
-	int cam_rows;
-	u64 entry;
-
-	cam_rows = otto_table_rows(priv->r->l2_cam_tbl);
-	if (cam_rows < 0)
-		return -1;
-
-	for (int i = 0; i < cam_rows; i++) {
-		entry = priv->r->read_cam(i, e);
-		if (!must_exist && !e->valid) {
-			if (idx < 0) /* First empty entry? */
-				idx = i;
-			break;
-		} else if ((entry & 0x0fffffffffffffffULL) == seed) {
-			pr_debug("Found entry in CAM\n");
-			idx = i;
-			break;
-		}
-	}
-
-	return idx;
-}
-
-/**
- * rtldsa_find_lag_group_from_port() - Find lag group of current port
- * @priv: private data of rtldsa switch
- * @port: port id of potential LAG member
- * Return: -ENOENT when port does not belong to any lag group, lag id otherwise
- */
-static int rtldsa_find_lag_group_from_port(struct rtl838x_switch_priv *priv, int port)
-{
-	if (!(priv->lagmembers & BIT_ULL(port)))
-		return -ENOENT;
-
-	/* port is a lag member */
-	for (int lag_group = 0; lag_group < MAX_LAGS; lag_group++) {
-		if (priv->lags_port_members[lag_group] & BIT_ULL(port))
-			return lag_group;
-	}
-
-	return -ENOENT;
-}
-
-/**
- * rtldsa_93xx_prepare_lag_fdb() - Prepare fdb entry for LAG
- * @e: L2 entry data
- * @lag_group: lag id of the trunk group
- */
-inline void rtldsa_93xx_prepare_lag_fdb(struct rtl838x_l2_entry *e, int lag_group)
-{
-	if (e && lag_group >= 0) {
-		e->is_trunk = true;
-		e->trunk = lag_group;
-	}
-}
-
 static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 			       const unsigned char *addr, u16 vid,
 			       const struct dsa_db db)
@@ -988,7 +874,7 @@ static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 	struct rtl838x_l2_entry e;
 	int err = 0, idx;
 	u64 seed = priv->r->l2_hash_seed(mac, vid);
-	int lag_group = rtldsa_find_lag_group_from_port(priv, port);
+	int lag_group = otto_lag_find_group_from_port(priv, port);
 
 	if (lag_group >= 0 && priv->r->prepare_lag_fdb) {
 		priv->r->prepare_lag_fdb(&e, lag_group);
@@ -1002,11 +888,11 @@ static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
-	idx = rtldsa_find_l2_hash_entry(priv, seed, false, &e);
+	idx = otto_l2_find_hash_entry(priv, seed, false, &e);
 
 	/* Found an existing or empty entry */
 	if (idx >= 0) {
-		struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, idx);
+		struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
 
 		if (m) {
 			/* A slot nobody had claimed carries whatever its last
@@ -1023,7 +909,7 @@ static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 	}
 
 	/* Hash buckets full, try CAM */
-	idx = rtldsa_find_l2_cam_entry(priv, seed, false, &e);
+	idx = otto_l2_find_cam_entry(priv, seed, false, &e);
 
 	if (idx >= 0) {
 		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
@@ -1048,7 +934,7 @@ static int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
 	struct rtl838x_l2_entry e;
 	int err = 0, idx;
 	u64 seed = priv->r->l2_hash_seed(mac, vid);
-	int lag_group = rtldsa_find_lag_group_from_port(priv, port);
+	int lag_group = otto_lag_find_group_from_port(priv, port);
 
 	if (lag_group >= 0 && priv->r->prepare_lag_fdb)
 		priv->r->prepare_lag_fdb(&e, lag_group);
@@ -1057,10 +943,10 @@ static int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
-	idx = rtldsa_find_l2_hash_entry(priv, seed, true, &e);
+	idx = otto_l2_find_hash_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
-		struct rtldsa_l2_uc *m = rtldsa_l2_uc_lookup(priv, idx);
+		struct rtldsa_l2_uc *m = otto_l2_uc_lookup(priv, idx);
 
 		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
 
@@ -1083,7 +969,7 @@ static int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
 	}
 
 	/* Check CAM for spillover from hash buckets */
-	idx = rtldsa_find_l2_cam_entry(priv, seed, true, &e);
+	idx = otto_l2_find_cam_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
 		e.valid = false;
@@ -1117,6 +1003,9 @@ static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 	for (int i = 0; i < uc_rows; i++) {
 		struct rtl838x_l2_entry e = {};
 
+		if (!((i + 1) % 64))
+			cond_resched();
+
 		priv->r->read_l2_entry_using_hash(i >> 2, i & 0x3, &e);
 
 		if (!e.valid || e.type != L2_UNICAST || e.is_trunk)
@@ -1124,9 +1013,6 @@ static int rtldsa_port_fdb_dump(struct dsa_switch *ds, int port,
 
 		if (e.port == port || e.port == RTL930X_PORT_IGNORE)
 			cb(e.mac, e.rvid, e.is_static, data);
-
-		if (!((i + 1) % 64))
-			cond_resched();
 	}
 
 	for (int i = 0; i < cam_rows; i++) {
@@ -1192,7 +1078,7 @@ static int rtldsa_83xx_port_mdb_add(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
-	idx = rtldsa_find_l2_hash_entry(priv, seed, false, &e);
+	idx = otto_l2_find_hash_entry(priv, seed, false, &e);
 
 	/* Found an existing or empty entry */
 	if (idx >= 0) {
@@ -1214,7 +1100,7 @@ static int rtldsa_83xx_port_mdb_add(struct dsa_switch *ds, int port,
 	}
 
 	/* Hash buckets full, try CAM */
-	idx = rtldsa_find_l2_cam_entry(priv, seed, false, &e);
+	idx = otto_l2_find_cam_entry(priv, seed, false, &e);
 
 	if (idx >= 0) {
 		if (e.valid) {
@@ -1278,7 +1164,7 @@ static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
-	idx = rtldsa_find_l2_hash_entry(priv, seed, true, &e);
+	idx = otto_l2_find_hash_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
 		pr_debug("Found entry index %d, key %d and bucket %d\n", idx, idx >> 2, idx & 3);
@@ -1291,7 +1177,7 @@ static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
 	}
 
 	/* Check CAM for spillover from hash buckets */
-	idx = rtldsa_find_l2_cam_entry(priv, seed, true, &e);
+	idx = otto_l2_find_cam_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
 		portmask = rtldsa_mc_group_del_port(priv, e.mc_portmask_index, port);
@@ -1419,144 +1305,6 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static bool rtldsa_83xx_lag_can_offload(struct dsa_switch *ds,
-					struct net_device *lag,
-					struct netdev_lag_upper_info *info)
-{
-	int id;
-
-	id = dsa_lag_id(ds->dst, lag);
-	if (id < 0 || id >= ds->num_lag_ids)
-		return false;
-
-	if (info->tx_type != NETDEV_LAG_TX_TYPE_HASH)
-		return false;
-
-	if (info->hash_type != NETDEV_LAG_HASH_L2 && info->hash_type != NETDEV_LAG_HASH_L23)
-		return false;
-
-	return true;
-}
-
-static int rtldsa_port_lag_change(struct dsa_switch *ds, int port)
-{
-	struct dsa_port *dp = dsa_to_port(ds, port);
-	struct rtl838x_switch_priv *priv = ds->priv;
-	int lag_group;
-	int ret;
-
-	if (!dp)
-		return -EINVAL;
-
-	lag_group = rtldsa_find_lag_group_from_port(priv, port);
-	if (lag_group < 0)
-		return lag_group;
-
-	if (priv->r->lag_set_port_members) {
-		/* Set same port members again, the function should check against
-		 * lag_tx_enabled and set egress ports accordingly.
-		 */
-		ret = priv->r->lag_set_port_members(priv, lag_group,
-						    priv->lags_port_members[lag_group],
-						    NULL);
-		if (ret)
-			return ret;
-	}
-
-	return 0;
-}
-
-static int rtldsa_port_lag_join(struct dsa_switch *ds,
-				int port,
-				struct dsa_lag lag,
-				struct netdev_lag_upper_info *info,
-				struct netlink_ext_ack *extack)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	int err = 0;
-	int group;
-
-	if (!rtldsa_83xx_lag_can_offload(ds, lag.dev, info))
-		return -EOPNOTSUPP;
-
-	mutex_lock(&priv->reg_mutex);
-
-	if (port >= priv->r->cpu_port) {
-		err = -EINVAL;
-		goto out;
-	}
-
-	group = dsa_lag_id(ds->dst, lag.dev);
-
-	pr_info("port_lag_join: group %d, port %d\n", group, port);
-
-	if (priv->lag_primary[group] == -1)
-		priv->lag_primary[group] = port;
-	else
-		priv->lag_non_primary |= BIT_ULL(port);
-
-	priv->lagmembers |= BIT_ULL(port);
-
-	pr_debug("lag_members = %llX\n", priv->lagmembers);
-	err = rtldsa_lag_add(priv->ds, group, port, info);
-	if (err) {
-		err = -EINVAL;
-		goto out;
-	}
-
-out:
-	mutex_unlock(&priv->reg_mutex);
-
-	return err;
-}
-
-static int rtldsa_port_lag_leave(struct dsa_switch *ds, int port,
-				 struct dsa_lag lag)
-{
-	int group, err;
-	struct rtl838x_switch_priv *priv = ds->priv;
-
-	mutex_lock(&priv->reg_mutex);
-
-	group = dsa_lag_id(ds->dst, lag.dev);
-	if (group == -1) {
-		pr_info("port_lag_leave: group %d not set\n", port);
-		err = -EINVAL;
-		goto out;
-	}
-
-	if (port >= priv->r->cpu_port) {
-		err = -EINVAL;
-		goto out;
-	}
-	pr_info("port_lag_del: group %d, port %d\n", group, port);
-	priv->lagmembers &= ~BIT_ULL(port);
-	priv->lag_non_primary &= ~BIT_ULL(port);
-	pr_debug("lag_members = %llX\n", priv->lagmembers);
-	err = rtldsa_lag_del(priv->ds, group, port);
-	if (err) {
-		err = -EINVAL;
-		goto out;
-	}
-
-	/* To re-elect primary interface, just remove the first interface in
-	 * this-group's interfaces from non-primary
-	 */
-	if (priv->lags_port_members[group]) {
-		priv->lag_primary[group] = fls64(priv->lags_port_members[group]);
-		priv->lag_non_primary &= ~BIT_ULL(priv->lag_primary[group]);
-	}
-
-	/* No need to update fdb entries since they make use of trunk_id for entry.
-	 * The primary interface is only calculated at time of
-	 * port_fdb_dump
-	 */
-
-out:
-	mutex_unlock(&priv->reg_mutex);
-	return 0;
-}
-
 const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops = {
 	.mac_config		= rtldsa_83xx_phylink_mac_config,
 	.mac_link_down		= rtldsa_phylink_mac_link_down,
@@ -1569,15 +1317,15 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 
 	.phylink_get_caps	= rtldsa_83xx_phylink_get_caps,
 
-	.get_strings		= rtldsa_get_strings,
-	.get_ethtool_stats	= rtldsa_get_ethtool_stats,
-	.get_sset_count		= rtldsa_get_sset_count,
-	.get_eth_phy_stats	= rtldsa_get_eth_phy_stats,
-	.get_eth_mac_stats	= rtldsa_get_eth_mac_stats,
-	.get_eth_ctrl_stats	= rtldsa_get_eth_ctrl_stats,
-	.get_rmon_stats		= rtldsa_get_rmon_stats,
-	.get_stats64		= rtldsa_get_stats64,
-	.get_pause_stats	= rtldsa_get_pause_stats,
+	.get_strings		= otto_stats_get_strings,
+	.get_ethtool_stats	= otto_stats_get_ethtool,
+	.get_sset_count		= otto_stats_get_sset_count,
+	.get_eth_phy_stats	= otto_stats_get_eth_phy,
+	.get_eth_mac_stats	= otto_stats_get_eth_mac,
+	.get_eth_ctrl_stats	= otto_stats_get_eth_ctrl,
+	.get_rmon_stats		= otto_stats_get_rmon,
+	.get_stats64		= otto_stats_get64,
+	.get_pause_stats	= otto_stats_get_pause,
 
 	.port_enable		= rtldsa_port_enable,
 	.port_disable		= rtldsa_port_disable,
@@ -1611,9 +1359,9 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_mirror_add	= rtldsa_port_mirror_add,
 	.port_mirror_del	= rtldsa_port_mirror_del,
 
-	.port_lag_change	= rtldsa_port_lag_change,
-	.port_lag_join		= rtldsa_port_lag_join,
-	.port_lag_leave		= rtldsa_port_lag_leave,
+	.port_lag_change	= otto_lag_port_change,
+	.port_lag_join		= otto_lag_port_join,
+	.port_lag_leave		= otto_lag_port_leave,
 
 	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
 	.port_bridge_flags	= rtldsa_port_bridge_flags,
@@ -1631,15 +1379,15 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 
 	.phylink_get_caps	= rtldsa_93xx_phylink_get_caps,
 
-	.get_strings		= rtldsa_get_strings,
-	.get_ethtool_stats	= rtldsa_get_ethtool_stats,
-	.get_sset_count		= rtldsa_get_sset_count,
-	.get_eth_phy_stats	= rtldsa_get_eth_phy_stats,
-	.get_eth_mac_stats	= rtldsa_get_eth_mac_stats,
-	.get_eth_ctrl_stats	= rtldsa_get_eth_ctrl_stats,
-	.get_rmon_stats		= rtldsa_get_rmon_stats,
-	.get_stats64		= rtldsa_get_stats64,
-	.get_pause_stats	= rtldsa_get_pause_stats,
+	.get_strings		= otto_stats_get_strings,
+	.get_ethtool_stats	= otto_stats_get_ethtool,
+	.get_sset_count		= otto_stats_get_sset_count,
+	.get_eth_phy_stats	= otto_stats_get_eth_phy,
+	.get_eth_mac_stats	= otto_stats_get_eth_mac,
+	.get_eth_ctrl_stats	= otto_stats_get_eth_ctrl,
+	.get_rmon_stats		= otto_stats_get_rmon,
+	.get_stats64		= otto_stats_get64,
+	.get_pause_stats	= otto_stats_get_pause,
 
 	.port_enable		= rtldsa_port_enable,
 	.port_disable		= rtldsa_port_disable,
@@ -1673,14 +1421,14 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_mirror_add	= rtldsa_port_mirror_add,
 	.port_mirror_del	= rtldsa_port_mirror_del,
 
-	.port_lag_change	= rtldsa_port_lag_change,
-	.port_lag_join		= rtldsa_port_lag_join,
-	.port_lag_leave		= rtldsa_port_lag_leave,
+	.port_lag_change	= otto_lag_port_change,
+	.port_lag_join		= otto_lag_port_join,
+	.port_lag_leave		= otto_lag_port_leave,
 
 	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
 	.port_bridge_flags	= rtldsa_port_bridge_flags,
 
-	.cls_flower_add		= rtldsa_cls_flower_add,
-	.cls_flower_del		= rtldsa_cls_flower_del,
-	.cls_flower_stats	= rtldsa_cls_flower_stats,
+	.cls_flower_add		= otto_tc_cls_flower_add,
+	.cls_flower_del		= otto_tc_cls_flower_del,
+	.cls_flower_stats	= otto_tc_cls_flower_stats,
 };
