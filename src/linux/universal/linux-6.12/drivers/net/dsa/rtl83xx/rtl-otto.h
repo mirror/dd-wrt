@@ -83,8 +83,8 @@ struct rtldsa_port {
 	bool enable:1;
 	bool phy:1;
 	bool isolated:1;
-	bool rate_police_egress:1;
-	bool rate_police_ingress:1;
+	unsigned long rate_police_egress;
+	unsigned long rate_police_ingress;
 	unsigned long cached_flags;
 	u64 pm;
 	u16 pvid;
@@ -111,7 +111,7 @@ enum l2_entry_type {
  */
 struct rtldsa_l2_uc {
 	bool fdb_ref:1;		/* written by an fdb handler */
-	u8 l3_refcount:7;	/* routes forwarding through it */
+	u16 l3_refcount:15;	/* routes forwarding through it */
 };
 
 struct rtl838x_l2_entry {

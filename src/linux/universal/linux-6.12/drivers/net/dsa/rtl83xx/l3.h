@@ -123,11 +123,22 @@ struct otto_l3_config {
 	 * need a PIE rule to match the destination and point at the next hop.
 	 */
 	bool use_l3_tables;
+	/* RTL839x: a route holds the source MAC entry of the device it goes
+	 * out of, which its DMAC entry names, and the source MAC entries are
+	 * also the MACs whose frames are routed. RTL930x reaches its source MAC
+	 * through the egress interface of a next hop instead.
+	 */
+	bool smac_per_route;
 	int (*find_slot)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt, bool must_exist);
 	void (*get_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
 	void (*set_egress_intf)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_intf *intf);
-	u64 (*get_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx);
-	int (*set_egress_mac)(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac);
+	/* Source MAC entries by their index: on RTL839x those of
+	 * ROUTING_SA_CTRL, on RTL930x the source MAC rows of the egress MAC
+	 * table
+	 */
+	int (*get_smac)(struct otto_l3_ctrl *ctrl, u32 idx, u64 *mac);
+	int (*set_smac)(struct otto_l3_ctrl *ctrl, u32 idx, u64 mac);
+	int (*get_dmac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_dmac *dmac);
 	int (*set_dmac)(struct otto_l3_ctrl *ctrl, u32 idx, const struct otto_l3_dmac *dmac);
 	void (*host_route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	void (*get_router_mac)(struct otto_l3_ctrl *ctrl, u32 idx, struct otto_l3_router_mac *m);
@@ -136,10 +147,12 @@ struct otto_l3_config {
 	void (*set_nexthop)(struct otto_l3_ctrl *ctrl, int idx, u16 dmac_id, u16 interface);
 	int (*route_lookup_hw)(struct otto_l3_ctrl *ctrl, struct otto_l3_route *rt);
 	int (*route_rows_move)(struct otto_l3_ctrl *ctrl, int dst, int src, int count);
-	/* RTL839x: one entry of the switch's own MACs, the source MACs it
-	 * routes with and the MACs it routes what arrives on
+	/* First prefix table row of the IPv6 entry in a slot, the slots counted
+	 * from the first IPv6 entry downwards, and the slot of an entry's first
+	 * row. Every family that moves prefix rows has them.
 	 */
-	void (*set_switch_mac)(struct otto_l3_ctrl *ctrl, int idx, u64 mac);
+	int (*v6_slot_to_row)(struct otto_l3_ctrl *ctrl, int slot);
+	int (*v6_row_to_slot)(struct otto_l3_ctrl *ctrl, int row);
 	void (*route_read)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	void (*route_write)(struct otto_l3_ctrl *ctrl, int idx, struct otto_l3_route *rt);
 	int (*setup)(struct otto_l3_ctrl *ctrl);
