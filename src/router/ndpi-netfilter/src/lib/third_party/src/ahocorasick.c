@@ -75,7 +75,7 @@ struct aho_dump_info {
 #endif
 };
 
-static void dump_node_header(AC_NODE_t * n, struct aho_dump_info *);
+// static void dump_node_header(AC_NODE_t * n, struct aho_dump_info *);
 
 static int ac_automata_global_debug = 0;
 
@@ -650,6 +650,7 @@ void ac_automata_release (AC_AUTOMATA_t * thiz, uint8_t free_pattern) {
     }
 }
 
+#if 0
 #ifndef __KERNEL__
 
 static void dump_node_header(AC_NODE_t * n, struct aho_dump_info *ai) {
@@ -725,6 +726,7 @@ static void dump_node_header(AC_NODE_t * n, struct aho_dump_info *ai) {
     }
     ai->memcnt += sizeof(n->outgoing) + edge_data_size(n->outgoing->max);
 }
+#endif
 #endif
 
 static AC_ERROR_t dump_node_common(AC_AUTOMATA_t * thiz,

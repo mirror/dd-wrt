@@ -8,6 +8,9 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
+#include <linux/netfilter/x_tables.h>
+#include <net/netfilter/nf_conntrack_ecache.h>
+
 #include "ndpi_config.h"
 #undef HAVE_HYPERSCAN
 #include "ndpi_main.h"

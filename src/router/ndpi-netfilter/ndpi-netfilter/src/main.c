@@ -47,20 +47,22 @@
 #endif
 #include <asm/percpu.h>
 
-#ifndef CONFIG_NF_CONNTRACK_CUSTOM
-#define CONFIG_NF_CONNTRACK_CUSTOM 0
-#endif
-
-
 #include <linux/netfilter/x_tables.h>
 #include <net/netfilter/nf_conntrack.h>
 #include <net/netfilter/nf_conntrack_extend.h>
+#include <net/netfilter/nf_conntrack_ecache.h>
 #include <net/netfilter/nf_nat.h>
 #include <linux/ktime.h>
 #include <linux/rcupdate.h>
 
+#include <linux/random.h>
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,12,0)
 #define IP_CT_UNTRACKED IP_CT_NUMBER
+#endif
+
+#ifndef CONFIG_NF_CONNTRACK_EVENTS
+#error NF_CONNTRACK_EVENTS not enabled
 #endif
 
 #define BT_ANNOUNCE
@@ -111,25 +113,7 @@ static char debug_name[]="debug";
 static char risk_name[]="risks";
 static char cfg_name[]="cfg";
 
-#ifdef CONFIG_NF_CONNTRACK_DESTROY_HOOK
-#define USE_NF_CONNTRACK_DESTROY_HOOK
-#elif LINUX_VERSION_CODE > KERNEL_VERSION(5,19,0)
-#ifndef USE_LIVEPATCH
-#define USE_LIVEPATCH
-#endif
-#endif
-
-#ifdef USE_LIVEPATCH
-#if IS_ENABLED(CONFIG_LIVEPATCH)
-#include <linux/livepatch.h>
-#include <linux/rculist_nulls.h>
-
-typedef void (*ndpi_conntrack_destroy_ptr) (struct nf_conntrack *);
-ndpi_conntrack_destroy_ptr __rcu nf_conntrack_destroy_cb;
-#else
-#error "CONFIG_LIVEPATCH not enabled"
-#endif
-#endif
+static  struct module *nfnl_mod = NULL;
 
 #if 1
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
@@ -187,19 +171,11 @@ static inline const struct net_device *xt_out(const struct xt_action_param *par)
 #define refcount_dec_and_test(a) atomic_sub_and_test((int) 1,(a))
 #endif
 
-// for testing only!
 // #define USE_CONNLABELS
 
-#if !defined(USE_CONNLABELS) && !defined(USE_NF_CONNTRACK_DESTROY_HOOK) && defined(CONFIG_NF_CONNTRACK_CUSTOM) && CONFIG_NF_CONNTRACK_CUSTOM > 0
-#define NF_CT_CUSTOM
-#else
-#ifndef USE_NF_CONNTRACK_DESTROY_HOOK
-#undef NF_CT_CUSTOM
 #include <net/netfilter/nf_conntrack_labels.h>
 #ifndef CONFIG_NF_CONNTRACK_LABELS
 #error NF_CONNTRACK_LABELS not defined
-#endif
-#endif
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,19,0)
@@ -522,10 +498,13 @@ static struct dbg_ipt_names dbg_ipt_names [] = {
 
 static int net_ns_id=0;
 static int ndpi_net_id;
+
 static inline struct ndpi_net *ndpi_pernet(struct net *net)
 {
 	        return net_generic(net, ndpi_net_id);
 }
+
+static void ndpi_nf_ct_event_onoff(struct net *net,int enable);
 
 /* detection */
 
@@ -717,20 +696,6 @@ static void fill_prefix_any(ndpi_prefix_t *p, union nf_inet_addr const *ip,int f
 	}
 #endif
 }
-
-#ifdef NF_CT_CUSTOM
-static inline void *nf_ct_ext_add_ndpi(struct nf_conn * ct)
-{
-  #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,12,0)
-	return nf_ct_ext_add(ct,nf_ct_ext_id_ndpi,GFP_ATOMIC);
-  #elif LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
-	return __nf_ct_ext_add_length(ct,nf_ct_ext_id_ndpi,
-		sizeof(struct nf_ct_ext_ndpi),GFP_ATOMIC);
-  #else
-	return __nf_ct_ext_add(ct,nf_ct_ext_id_ndpi,GFP_ATOMIC);
-  #endif
-}
-#endif
 
 static inline struct nf_ct_ext_ndpi *nf_ct_get_ext_ndpi(struct nf_ct_ext_labels *ext_l, unsigned short magic_ct) {
 	if(!ext_l) COUNTER(ndpi_p_ct_nolabel);
@@ -1668,17 +1633,6 @@ ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
                     untracked = !ct_label || !ct_label->magic || ct_label->magic != n->magic_ct;
                     break;
             }
-#ifdef NF_CT_CUSTOM
-	    if(!ct_label) {
-		if(nf_ct_is_confirmed(ct)) {
-			COUNTER(ndpi_p_ct_confirm);
-			break;
-		}
-		ct_label = nf_ct_ext_add_ndpi(ct);
-		if(ct_label)
-			ct_label->magic = 0;
-	    }
-#endif
 	    if(ct_label) {
 		if(!ct_label->magic) {
 			ct_ndpi = kmem_cache_zalloc (ct_info_cache, GFP_ATOMIC);
@@ -2102,10 +2056,10 @@ struct xt_ndpi_mtinfo *info = par->matchinfo;
 	}
 	info->empty = NDPI_BITMASK_IS_EMPTY(&info->flags);
 	if(info->inprogress) {
+		int proto;
 		struct ndpi_dissector_bitmask *ed;
 		struct ndpi_net *n = ndpi_pernet(par->net);
 		struct ndpi_detection_module_struct *ndpi_struct = n->ndpi_struct;
-		int proto;
 		if(info->empty) {
 		    pr_info("Missing protocols.\n");
 		    return -EINVAL;
@@ -2186,51 +2140,6 @@ struct ndpi_net *n = ndpi_pernet(par->net);
 	if(info->excluded_dissectors) kfree(info->excluded_dissectors);
 	atomic64_dec_return(&n->protocols_cnt[0]);
 }
-
-#ifdef NF_CT_CUSTOM
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0)
-
-static char *ndpi_proto_to_str(char *buf,size_t size,ndpi_protocol_nf *p,ndpi_mod_str_t *ndpi_str)
-{
-const char *t_app,*t_mast;
-buf[0] = '\0';
-t_app = ndpi_get_proto_by_id(ndpi_str,p->app_protocol);
-t_mast= ndpi_get_proto_by_id(ndpi_str,p->master_protocol);
-if(p->app_protocol && t_app)
-	strncpy(buf,t_app,size);
-if(p->master_protocol && t_mast) {
-	strncat(buf,",",size);
-	strncat(buf,t_mast,size);
-}
-return buf;
-}
-static unsigned int seq_print_ndpi(struct seq_file *s,
-					  const struct nf_conn *ct,
-					  int dir)
-{
-
-       struct nf_ct_ext_ndpi *ct_ndpi;
-       char res_str[64];
-       struct ndpi_net *n = NULL;
-       ndpi_mod_str_t *ndpi_str;
-       if(dir != IP_CT_DIR_REPLY) return 0;
-        n = ndpi_pernet(nf_ct_net(ct));
-	if (n == NULL) return 0;
-
-       ct_ndpi = nf_ct_ext_find_ndpi(ct, n->magic_ct);
-       ndpi_str = ndpi_pernet(nf_ct_net(ct))->ndpi_struct;
-       if(ct_ndpi && (ct_ndpi->proto.app_protocol || ct_ndpi->proto.master_protocol))
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,3,0)
-	    seq_printf(s,"ndpi=%s ",ndpi_proto_to_str(res_str,sizeof(res_str),&ct_ndpi->proto,ndpi_str));
-#else
-	    return seq_printf(s,"ndpi=%s ",
-			    ndpi_proto_to_str(res_str,sizeof(res_str),&ct_ndpi->proto,ndpi_str));
-#endif
-       return 0;
-}
-#endif
-#endif
 
 static u_int32_t ndpi_proto_markmask(struct ndpi_net *n, u_int32_t var,
 		const ndpi_protocol *proto, int mode, const struct xt_ndpi_tginfo *info)
@@ -3081,14 +2990,12 @@ static void __net_exit ndpi_net_exit(struct net *net)
 	/* wait for the ndpi library code to finish processing packets */
 	write_lock(&n->ndpi_busy);
 
-#ifndef NF_CT_CUSTOM
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
 	net->ct.label_words = n->labels_word;
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(6, 7, 0)
 	net->ct.labels_used--;
 #else
 	atomic_dec(&net->ct.labels_used);
-#endif
 #endif
 
 	write_unlock(&n->ndpi_busy);
@@ -3154,6 +3061,7 @@ static void __net_exit ndpi_net_exit(struct net *net)
 #endif
 		PROC_REMOVE(n->pde,net);
 	}
+	ndpi_nf_ct_event_onoff(net,0);
 }
 
 NDPI_STATIC int ndpi_stun_cache_enable=
@@ -3174,6 +3082,8 @@ static int __net_init ndpi_net_init(struct net *net)
 	snprintf(n->ns_name,sizeof(n->ns_name)-1,"ns%d",net_ns_id);
 
 	n->magic_ct = MAGIC_CT + net_ns_id;
+
+	ndpi_nf_ct_event_onoff(net,1);
 
 	rwlock_init(&n->ndpi_busy);
 	atomic_set(&n->ndpi_ready,0);
@@ -3398,7 +3308,7 @@ static int __net_init ndpi_net_init(struct net *net)
 		mod_timer(&n->gc, jiffies + HZ/2);
 #endif
 		n->acc_gc = jiffies;
-#ifndef NF_CT_CUSTOM
+
 		/* hack!!! */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0)
 		n->labels_word = ACCESS_ONCE(net->ct.label_words);
@@ -3407,7 +3317,6 @@ static int __net_init ndpi_net_init(struct net *net)
 		net->ct.labels_used++;
 #else
 		atomic_inc(&net->ct.labels_used);
-#endif
 #endif
 		if( ndpi_enable_flow &&
 		    nf_register_net_hooks(net, nf_nat_ipv4_ops,
@@ -3460,49 +3369,118 @@ static int __net_init ndpi_net_init(struct net *net)
 
 	return -ENOMEM;
 }
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
+static int
+ndpi_conntrack_exp_event (unsigned int events, const struct nf_exp_event *item) {
+        struct nf_ct_event_notifier __rcu *p;
+        struct nf_conntrack_expect *exp = item->exp;
+        struct net *net;
+        struct ndpi_net *n;
 
-#if !defined(USE_LIVEPATCH) && !defined(USE_NF_CONNTRACK_DESTROY_HOOK)
-static struct nf_ct_ext_type ndpi_extend = {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0)
-       .seq_print = seq_print_ndpi,
-#endif
-       .destroy   = nf_ndpi_free_flow,
-       .len    = sizeof(struct nf_ct_ext_labels),
-       .align  = __alignof__(uint32_t),
-       .id     = 0,
-};
-#elif !defined(USE_NF_CONNTRACK_DESTROY_HOOK)
+        net = nf_ct_exp_net(exp);
+        n = ndpi_pernet(net);
+        /* exec origin handler*/
+        rcu_read_lock();
+        p = rcu_dereference(n->nf_conntrack_event_cb_old);
+        if(p)
+                p->exp_event(events,item);
+        rcu_read_unlock();
+        return 0;
+}
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,17,0)
-#error "not implemented"
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(5,18,13)
-#include "livepatch/v5.18.1.c"
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(6,0,0)
-#include "livepatch/v5.18.13.c"
+
+static int
+ndpi_conntrack_event(unsigned int events, const struct nf_ct_event *item) {
+        struct nf_ct_event_notifier __rcu *p;
+        struct net *net;
+        struct nf_conn *ct = item->ct;
+        struct ndpi_net *n;
+
+        net = nf_ct_net(ct);
+        n = ndpi_pernet(net);
+        /* exec origin handler*/
+        rcu_read_lock();
+        p = rcu_dereference(n->nf_conntrack_event_cb_old);
+        if(p)
+                p->ct_event(events,item);
+        rcu_read_unlock();
+
+        if(nf_ct_l3num(ct) != AF_INET && nf_ct_l3num(ct) != AF_INET6) return 0;
+	if(events & (1 << IPCT_DESTROY)) {
+		nf_ndpi_free_flow (ct);
+	}
+        return 0;
+}
+
+// < 5.15
 #else
-#include "livepatch/v6.0.c"
+
+static int
+ndpi_conntrack_event(unsigned int events, struct nf_ct_event *item) {
+        struct nf_ct_event_notifier __rcu *p;
+        struct net *net;
+        struct nf_conn *ct = item->ct;
+        struct ndpi_net *n;
+
+        net = nf_ct_net(ct);
+        n = ndpi_pernet(net);
+        /* exec origin handler*/
+        rcu_read_lock();
+        p = rcu_dereference(n->nf_conntrack_event_cb_old);
+        if(p)
+                p->fcn(events,item);
+        rcu_read_unlock();
+
+        if(nf_ct_l3num(ct) != AF_INET && nf_ct_l3num(ct) != AF_INET6) return 0;
+	if(events & (1 << IPCT_DESTROY)) {
+		nf_ndpi_free_flow (ct);
+	}
+        return 0;
+}
 #endif
 
-static struct klp_func ndpi_funcs[] = {
-	{
-		.old_name = "nf_ct_destroy",
-		.new_func = ndpi_nf_ct_destroy,
-	}, { }
-};
+static void ndpi_nf_ct_event_onoff(struct net *net,int enable) {
 
-static struct klp_object ndpi_objs[] = {
-	{
-		.name = "nf_conntrack",
-		.funcs = ndpi_funcs,
-	}, { }
-};
+        struct nf_ct_event_notifier __rcu *p;
+        struct ndpi_net *n;
+                
+        n = ndpi_pernet(net);
 
-static struct klp_patch ndpi_patch = {
-	.mod = THIS_MODULE,
-	.objs = ndpi_objs,
-};
-
+        if(enable) {
+                rcu_read_lock();
+                p = rcu_dereference(net->ct.nf_conntrack_event_cb);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
+                n->ctnl_notifier.exp_event = ndpi_conntrack_exp_event; // p->exp_event;
+                n->ctnl_notifier.ct_event = ndpi_conntrack_event;
+#else
+                n->ctnl_notifier.fcn = ndpi_conntrack_event;
 #endif
+                n->sysctl_events = net->ct.sysctl_events;
+                rcu_assign_pointer(n->nf_conntrack_event_cb_old,p);
+                net->ct.sysctl_events = 1;
+                rcu_read_unlock();
+                rcu_assign_pointer(net->ct.nf_conntrack_event_cb,&n->ctnl_notifier);
+                synchronize_rcu();
+                pr_err("Enable events for ns %s\n",n->ns_name);
+        } else {
+                rcu_read_lock();
+                p = rcu_dereference(n->nf_conntrack_event_cb_old);
+                // FIXME net->ct.nf_conntrack_event_cb must be pointer to n->ctnl_notifier
+                rcu_assign_pointer(net->ct.nf_conntrack_event_cb,p);
+                rcu_assign_pointer(n->nf_conntrack_event_cb_old,NULL);
+                net->ct.sysctl_events = n->sysctl_events;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 15, 0)
+                n->ctnl_notifier.ct_event = NULL;
+                n->ctnl_notifier.exp_event = NULL;
+#else
+                n->ctnl_notifier.fcn = NULL;
+#endif
+                rcu_read_unlock();
+                synchronize_rcu();
+                pr_err("Disable events for ns %s\n",n->ns_name);
+        }
+}
+
 
 static struct pernet_operations ndpi_net_ops = {
         .init   = ndpi_net_init,
@@ -3532,6 +3510,18 @@ static void ndpi_conf_magic_ct(void) {
 	pr_info("Current MAGIC_CT value is %d\n", MAGIC_CT);
 }
 
+static int get_nf_conntrack_netlink(void) {
+	struct list_head *mod_list = &(THIS_MODULE->list);
+	struct module *mod;
+	list_for_each_entry(mod, mod_list, list) {
+		if(nfnl_mod) continue;
+		if (mod->state == MODULE_STATE_UNFORMED) continue;
+		if(!mod->name[0]) continue;
+		if(!strcmp(mod->name,"nf_conntrack_netlink"))
+			nfnl_mod = mod;
+	}
+	return nfnl_mod != NULL;
+}
 
 static int __init ndpi_mt_init(void)
 {
@@ -3564,29 +3554,16 @@ static int __init ndpi_mt_init(void)
 		return -EOPNOTSUPP;
 	}
 #endif
-#ifdef NF_CT_CUSTOM
-	ret = nf_ct_extend_custom_register(&ndpi_extend,0x4e445049); /* "NDPI" in hex */
-	if(ret < 0) {
-		pr_err("xt_ndpi: can't nf_ct_extend_register.\n");
-		return -EBUSY;
+	if(request_module("nf_conntrack_netlink") < 0) {
+		pr_err("xt_ndpi: nf_conntrack_netlink required!\n");
+		return -EOPNOTSUPP;
 	}
-	nf_ct_ext_id_ndpi = ndpi_extend.id;
-#elif defined(USE_NF_CONNTRACK_DESTROY_HOOK)
-	nf_ct_ext_id_ndpi = NF_CT_EXT_LABELS;
-	register_nf_ct_destroy_hook(&nf_ndpi_free_flow);
-#else
-#ifdef USE_LIVEPATCH
-	nf_ct_ext_id_ndpi = NF_CT_EXT_LABELS;
-#else
-	ndpi_extend.id = nf_ct_ext_id_ndpi = NF_CT_EXT_LABELS;
-	nf_ct_extend_unregister(&ndpi_extend);
-	ret = nf_ct_extend_register(&ndpi_extend);
-	if(ret < 0) {
-		pr_err("xt_ndpi: can't nf_ct_extend_register.\n");
-		return -EBUSY;
+
+	if(!get_nf_conntrack_netlink()) {
+		pr_err("xt_ndpi: nf_conntrack_netlink not loaded!\n");
+		return -EOPNOTSUPP;
 	}
-#endif
-#endif
+	nf_ct_ext_id_ndpi = NF_CT_EXT_LABELS;
 
 	ret = register_pernet_subsys(&ndpi_net_ops);
 	if (ret < 0) {
@@ -3658,11 +3635,7 @@ static int __init ndpi_mt_init(void)
 		"   flow_tcp_struct=%zu flow_udp_struct=%zu int_one_line_struct=%zu\n"
 		" ndpi_ip_addr_t=%zu ndpi_protocol=%zu nf_ct_ext_ndpi=%zu\n"
 		" flow_info=%zu spinlock_t=%zu "
-#ifndef NF_CT_CUSTOM
 		" NF_LABEL_ID %d\n",
-#else
-		" NF_EXT_ID %d\n",
-#endif
 		NDPI_GIT_RELEASE,
 		bt_hash_size, bt_hash_size ? bt_hash_tmo : 0, bt_log_size,
 		ndpi_size_hash_ip4p_node,
@@ -3677,12 +3650,10 @@ static int __init ndpi_mt_init(void)
 		sizeof(spinlock_t), nf_ct_ext_id_ndpi);
 	pr_info("xt_ndpi: MAX_PROTOCOLS %d\n", NDPI_MAX_NUM_STATIC_BITMAP);
 	pr_info("xt_ndpi: flow accounting %s\n",ndpi_enable_flow ? "ON":"OFF");
-#ifdef USE_LIVEPATCH
-	rcu_assign_pointer(nf_conntrack_destroy_cb,nf_ndpi_free_flow);
-	return klp_enable_patch(&ndpi_patch);
-#else
+
+	// disable unload nf_conntrack_netlink
+	__module_get(nfnl_mod);
 	return 0;
-#endif
 
 free_flow:
        	kmem_cache_destroy (osdpi_flow_cache);
@@ -3695,12 +3666,6 @@ unreg_match:
 unreg_pernet:
 	unregister_pernet_subsys(&ndpi_net_ops);
 unreg_ext:
-#if !defined(USE_LIVEPATCH) && !defined(USE_NF_CONNTRACK_DESTROY_HOOK)
-	nf_ct_extend_unregister(&ndpi_extend);
-#endif
-#if defined(USE_NF_CONNTRACK_DESTROY_HOOK)
-	unregister_nf_ct_destroy_hook();
-#endif
        	return ret;
 }
 
@@ -3710,13 +3675,7 @@ static void __exit ndpi_mt_exit(void)
 	xt_unregister_target(&ndpi_tg_reg);
 	xt_unregister_match(&ndpi_mt_reg);
 	unregister_pernet_subsys(&ndpi_net_ops);
-#if !defined(USE_LIVEPATCH) && !defined(USE_NF_CONNTRACK_DESTROY_HOOK)
-	nf_ct_extend_unregister(&ndpi_extend);
-#elif defined(USE_NF_CONNTRACK_DESTROY_HOOK)
-	unregister_nf_ct_destroy_hook();
-#else
-	rcu_assign_pointer(nf_conntrack_destroy_cb,NULL);
-#endif
+	if(nfnl_mod) module_put(nfnl_mod);
         kmem_cache_destroy (bt_port_cache);
         kmem_cache_destroy (osdpi_flow_cache);
         kmem_cache_destroy (ct_info_cache);
@@ -3725,9 +3684,6 @@ static void __exit ndpi_mt_exit(void)
 
 module_init(ndpi_mt_init);
 module_exit(ndpi_mt_exit);
-#ifdef USE_LIVEPATCH
-MODULE_INFO(livepatch, "Y");
-#endif
 
 #include "ndpi_strcol.c" 
 #include "ndpi_proc_parsers.c" 

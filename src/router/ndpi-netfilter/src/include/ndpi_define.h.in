@@ -150,8 +150,6 @@
 
 /* The get_uXX helpers return raw network packet bytes. */
 #ifndef NDPI_CFFI_PREPROCESSING
-#include <stdint.h>
-#include <string.h>
 
 #define get_u_int8_t(X,O)   (((const uint8_t *)(X))[O])
 

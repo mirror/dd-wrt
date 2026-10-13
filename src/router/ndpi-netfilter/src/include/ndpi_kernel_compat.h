@@ -11,6 +11,7 @@
 #include <linux/types.h>
 #include <linux/time.h>
 #include <linux/in6.h>
+#include <linux/random.h>
 #define UINT32_MAX	U32_MAX
 
 #ifndef MIN
