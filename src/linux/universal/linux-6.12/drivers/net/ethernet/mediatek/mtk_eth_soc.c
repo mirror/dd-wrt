@@ -5551,6 +5551,16 @@ static int mtk_probe(struct platform_device *pdev)
 err_unreg_netdev:
 	mtk_unreg_dev(eth);
 err_deinit_ppe:
+	/* A netdev opened while probe was still registering can have queued
+	 * the frame-engine reset worker, which takes rtnl and drives the
+	 * hardware; cancel it before anything below is torn down.
+	 */
+	cancel_work_sync(&eth->pending_work);
+	if (eth->dummy_dev) {
+		netif_napi_del(&eth->tx_napi);
+		netif_napi_del(&eth->rx_napi);
+		free_netdev(eth->dummy_dev);
+	}
 	mtk_ppe_deinit(eth);
 	mtk_mdio_cleanup(eth);
 err_free_dev:
