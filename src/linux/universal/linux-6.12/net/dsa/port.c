@@ -876,6 +876,17 @@ bool dsa_port_skip_vlan_configuration(struct dsa_port *dp)
 	return !ds->configure_vlan_while_not_filtering && !br_vlan_enabled(br);
 }
 
+int dsa_port_vlan_protocol(struct dsa_port *dp, u16 proto,
+			   struct netlink_ext_ack *extack)
+{
+	struct dsa_switch *ds = dp->ds;
+
+	if (!ds->ops->port_vlan_protocol)
+		return -EOPNOTSUPP;
+
+	return ds->ops->port_vlan_protocol(ds, dp->index, proto, extack);
+}
+
 int dsa_port_ageing_time(struct dsa_port *dp, clock_t ageing_clock)
 {
 	unsigned long ageing_jiffies = clock_t_to_jiffies(ageing_clock);

@@ -1063,6 +1063,8 @@ struct dsa_switch_ops {
 	int	(*port_vlan_filtering)(struct dsa_switch *ds, int port,
 				       bool vlan_filtering,
 				       struct netlink_ext_ack *extack);
+	int	(*port_vlan_protocol)(struct dsa_switch *ds, int port, u16 proto,
+				      struct netlink_ext_ack *extack);
 	int	(*port_vlan_add)(struct dsa_switch *ds, int port,
 				 const struct switchdev_obj_port_vlan *vlan,
 				 struct netlink_ext_ack *extack);
