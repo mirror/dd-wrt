@@ -30,6 +30,11 @@
 #undef printf
 #undef fprintf
 
+#ifndef __KERNEL__
+#include <stdint.h>
+#include <string.h>
+#endif
+
 #include "ndpi_typedefs.h"
 
 #ifdef NDPI_ENABLE_DEBUG_MESSAGES

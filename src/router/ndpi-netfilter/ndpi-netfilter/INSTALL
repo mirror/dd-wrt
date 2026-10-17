@@ -1,3 +1,7 @@
+There is a major memory leak in the new version of ndpi-netfilter.
+
+Please do not use it until the next commit appears!
+
 -----------------
 1. Kernel patches
 -----------------
@@ -98,7 +102,10 @@ BIG FAT WARNING!
 
 Do not discard all the unknown traffic. Tcp-syn packets are always treated as an
 unknown protocol.
+
 Use the "inprogress" option to determine when the protocol detection process ends.
+This option can only be used with protocols that have the dpi flag.
+See the file /proc/net/xt_ndpi/proto.
 
 Example of allowing several protocols:
 
@@ -212,7 +219,7 @@ to be moved to the 'mangle/FORWARD' and 'mangle/INPUT' chains.
 In case you want to stop using the nDPI kernel module, first remove every
 iptables rule for nDPI and then type (as root):
 
-        conntrack -F
+	conntrack -F
 	rmmod xt_ndpi
 
 --------------------
