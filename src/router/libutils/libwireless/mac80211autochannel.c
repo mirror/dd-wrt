@@ -995,7 +995,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 	while (acs) {
 		struct mac80211_ac *next = acs->next;
 		if (bw == 320 && acs->freq < 5925) {
-		    continue;
+			continue;
 		}
 		if (acs->quality > lastq) {
 			if (bw > 20) {
