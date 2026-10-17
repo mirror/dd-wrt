@@ -85,7 +85,7 @@ static int cansuperchannel(const char *prefix)
 	return (issuperchannel() && nvram_nmatch("0", "%s_regulatory", prefix) && nvram_nmatch("ddwrt", "%s_fwtype", prefix));
 }
 
-static const char *gethtmode(const char *prefix)
+static const char *gethtmode(int freq, const char *prefix)
 {
 	ENTER;
 	char *netmode = nvram_nget("%s_net_mode", prefix);
@@ -155,7 +155,10 @@ static const char *gethtmode(const char *prefix)
 			ht = "160MHz";
 			break;
 		case 320:
-			ht = "320MHz";
+			if (freq >= 5925)
+				ht = "320MHz";
+			else
+				ht = "160MHz";
 			break;
 		case 20:
 		case 10:
@@ -503,7 +506,7 @@ void configure_single_mac80211(int count)
 		char *freq = nvram_nget("%s_channel", dev);
 		sprintf(farg, "%d", atoi(freq) + (channeloffset * 5));
 
-		const char *htmode = gethtmode(dev);
+		const char *htmode = gethtmode(atoi(freq), dev);
 
 		if (has_6ghz(dev) && atoi(freq) >= 5925 && !strncmp(htmode, "HT4", 3)) {
 			int chan = ieee80211_mhz2ieee(dev, atoi(freq));
@@ -546,7 +549,7 @@ void configure_single_mac80211(int count)
 		isadhoc = 1;
 		char *freq = nvram_nget("%s_channel", dev);
 		eval("ifconfig", dev, "up");
-		const char *htmode = gethtmode(dev);
+		const char *htmode = gethtmode(atoi(freq), dev);
 		int iht, channeloffset;
 		get_channeloffset(dev, &iht, &channeloffset);
 		char farg[32];
@@ -1558,6 +1561,7 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 						break;
 					case 160:
 					case 320:
+						fprintf(fp, "he_oper_chwidth=2\n");
 						if (chan <= 29)
 							fprintf(fp, "he_oper_centr_freq_seg0_idx_freq=6025\n");
 						else if (chan <= 61)
@@ -1685,19 +1689,25 @@ void setupHostAP_generic_ath9k(const char *prefix, FILE *fp, int isrepeater, int
 
 					break;
 				case 320:
-					fprintf(fp, "eht_oper_chwidth=9\n");
-					if (chan <= 61)
-						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6105\n");
-					else if (chan <= 93)
-						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6265\n");
-					else if (chan <= 125)
-						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6425\n");
-					else if (chan <= 157)
-						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6585\n");
-					else if (chan <= 189)
-						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6745\n");
-					else if (chan <= 221)
-						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6905\n");
+					if (freq >= 5925) {
+						fprintf(fp, "eht_oper_chwidth=9\n");
+						if (chan <= 61)
+							fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6105\n");
+						else if (chan <= 93)
+							fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6265\n");
+						else if (chan <= 125)
+							fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6425\n");
+						else if (chan <= 157)
+							fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6585\n");
+						else if (chan <= 189)
+							fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6745\n");
+						else if (chan <= 221)
+							fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=6905\n");
+					} else {
+						fprintf(fp, "eht_oper_chwidth=2\n");
+						fprintf(fp, "eht_oper_centr_freq_seg0_idx_freq=%d\n",
+							freq + ((channeloffset * 5) * iht));
+					}
 					break;
 					//				case 8080:
 					//					fprintf(fp, "eht_oper_chwidth=3\n");
@@ -2355,14 +2365,14 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	}
 	// fprintf (fp, "jumpstart_p1=1\n");
 
-#ifdef HAVE_WPA3
+	#ifdef HAVE_WPA3
 	if (is_ath10k(ifname) || is_ath11k(ifname)) {
 		if (nvram_nmatch("1", "%s_beacon_tx_mode", ifname))
 			fprintf(fp, "beacon_tx_mode=2\n"); // burst mode
 		else
 			fprintf(fp, "beacon_tx_mode=1\n"); // staggered mode
 	}
-#endif
+	#endif
 	MAC80211DEBUG();
 	/* low signal drop */
 	if (!is_morse_micro(ifname)) {
@@ -2803,14 +2813,14 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 		//                      fprintf(fp, "user_mpm=1\n");
 		fprintf(fp, "network={\n");
 
-#ifdef HAVE_WPA3
+	#ifdef HAVE_WPA3
 		if (is_ath10k(prefix) || is_ath11k(prefix)) {
 			if (nvram_nmatch("1", "%s_beacon_tx_mode", prefix))
 				fprintf(fp, "\tbeacon_tx_mode=2\n"); // burst mode
 			else
 				fprintf(fp, "\tbeacon_tx_mode=1\n"); // staggered mode
 		}
-#endif
+	#endif
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		char *channelbw = nvram_nget("%s_channelbw", prefix);
 		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") &&
@@ -3042,14 +3052,14 @@ void setupSupplicant_ath9k(const char *prefix, char *ssidoverride, int isadhoc)
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		char *channelbw = nvram_nget("%s_channelbw", prefix);
 		fprintf(fp, "network={\n");
-#ifdef HAVE_WPA3
+	#ifdef HAVE_WPA3
 		if (is_ath10k(prefix) || is_ath11k(prefix)) {
 			if (nvram_nmatch("1", "%s_beacon_tx_mode", prefix))
 				fprintf(fp, "\tbeacon_tx_mode=2\n"); // burst mode
 			else
 				fprintf(fp, "\tbeacon_tx_mode=1\n"); // staggered mode
 		}
-#endif
+	#endif
 
 		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "ax-only") &&
 		    strcmp(netmode, "ax6-only") && strcmp(netmode, "ax5-only") && strcmp(netmode, "be-only") &&
