@@ -973,7 +973,6 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 				}
 				acs->quality /= 16;
 			}
-
 			break;
 		default:
 			acs = add_to_mac80211_ac(acs);
@@ -995,6 +994,9 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 	struct mac80211_ac *head = acs;
 	while (acs) {
 		struct mac80211_ac *next = acs->next;
+		if (bw == 320 && acs->freq < 5925) {
+		    continue;
+		}
 		if (acs->quality > lastq) {
 			if (bw > 20) {
 				if (!acs->ulu && !acs->lul && !acs->uul && !acs->llu && !acs->uuu && !acs->lll && !acs->ull &&
