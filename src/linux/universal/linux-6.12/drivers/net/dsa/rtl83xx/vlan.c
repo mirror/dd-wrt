@@ -88,6 +88,8 @@
 #define RTL839X_VLAN_PORT_TAG_STS_CTRL_IGR_P_OTAG_KEEP_MASK	GENMASK(1, 1)
 #define RTL839X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(0, 0)
 
+#define RTL839X_VLAN_PORT_OTAG_TPID_CMP_MSK(port)		(0x8048 + ((port) << 7))
+
 #define RTL930X_VLAN_PORT_TAG_STS_INTERNAL			0x0
 #define RTL930X_VLAN_PORT_TAG_STS_UNTAG				0x1
 #define RTL930X_VLAN_PORT_TAG_STS_TAGGED			0x2
@@ -133,6 +135,31 @@
 #define RTL931X_VLAN_PORT_TAG_ITPID_IDX_MASK			GENMASK(2, 1)
 #define RTL931X_VLAN_PORT_TAG_ITPID_KEEP_MASK			GENMASK(0, 0)
 
+#define RTLDSA_VLAN_PORT_AFT_ITAG_UNTAG		BIT(1)
+#define RTLDSA_VLAN_PORT_AFT_OTAG_UNTAG		BIT(3)
+#define RTLDSA_VLAN_PORT_AFT_ALL		GENMASK(3, 0)
+
+/*
+ * Every port is a member of VID 0 for the frames the CPU sends, see
+ * otto_vlan_setup(). A port without PVID in a VLAN-filtering bridge must not
+ * flood its untagged frames there, so it accepts only tagged ones, outer tagged
+ * ones as an 802.1ad port. Standalone ports can have VLAN filtering on.
+ */
+void otto_vlan_port_untagged_set(struct otto_dsa_priv *priv, int port)
+{
+	struct rtldsa_port *p = &priv->ports[port];
+	u32 aft = RTLDSA_VLAN_PORT_AFT_ALL;
+
+	if (!priv->r->vlan_port_aft || port == priv->r->cpu_port)
+		return;
+
+	if (p->bridged && p->vlan_filtering && !p->pvid)
+		aft &= ~(p->qinq ? RTLDSA_VLAN_PORT_AFT_OTAG_UNTAG :
+				   RTLDSA_VLAN_PORT_AFT_ITAG_UNTAG);
+
+	regmap_write(priv->map, priv->r->vlan_port_aft + (port << 2), aft);
+}
+
 static void otto_vlan_port_pvid_set(struct otto_dsa_priv *priv,
 				    int port, int pvid)
 {
@@ -145,6 +172,7 @@ static void otto_vlan_port_pvid_set(struct otto_dsa_priv *priv,
 					PBVLAN_MODE_UNTAG_AND_PRITAG);
 
 	priv->ports[port].pvid = pvid;
+	otto_vlan_port_untagged_set(priv, port);
 }
 
 /* Initialize all VLANS */
@@ -384,9 +412,9 @@ void otto_vlan_839x_set_untagged(u32 vlan, u64 portmask)
 void otto_vlan_839x_port_forward_on_inner(struct otto_dsa_priv *priv, int port, bool is_set)
 {
 	if (is_set)
-		rtl839x_mask_port_reg_be(BIT_ULL(port), 0ULL, RTL839X_VLAN_PORT_FWD);
+		rtl839x_mask_port_reg_le(BIT_ULL(port), 0ULL, RTL839X_VLAN_PORT_FWD);
 	else
-		rtl839x_mask_port_reg_be(0ULL, BIT_ULL(port), RTL839X_VLAN_PORT_FWD);
+		rtl839x_mask_port_reg_le(0ULL, BIT_ULL(port), RTL839X_VLAN_PORT_FWD);
 }
 
 int
@@ -477,6 +505,25 @@ void otto_vlan_839x_port_pvid_set(struct otto_dsa_priv *priv, int port, enum pbv
 	else
 		regmap_write_bits(priv->map, RTL839X_VLAN_PORT_PB_VLAN + (port << 2), 0xfff << 16,
 				  pvid << 16);
+}
+
+void otto_vlan_839x_port_qinq_set(struct otto_dsa_priv *priv, int port, bool enable)
+{
+	otto_vlan_839x_port_forward_on_inner(priv, port, !enable);
+	regmap_write(priv->map, RTL839X_VLAN_PORT_OTAG_TPID_CMP_MSK(port), enable ? BIT(0) : 0);
+
+	if (!enable) {
+		otto_vlan_839x_port_keep_tag_set(priv, port, false, true);
+		return;
+	}
+
+	regmap_write(priv->map, RTL839X_VLAN_PORT_TAG_STS_CTRL(port),
+		     FIELD_PREP(RTL839X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK,
+				RTL839X_VLAN_PORT_TAG_STS_TAGGED) |
+		     FIELD_PREP(RTL839X_VLAN_PORT_TAG_STS_CTRL_ITAG_STS_MASK,
+				RTL839X_VLAN_PORT_TAG_STS_UNTAG) |
+		     RTL839X_VLAN_PORT_TAG_STS_CTRL_EGR_P_ITAG_KEEP_MASK |
+		     RTL839X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK);
 }
 
 /* RTL930x VLAN operations */
@@ -904,6 +951,9 @@ int otto_vlan_port_filtering(struct dsa_switch *ds, int port,
 
 		priv->r->set_vlan_egr_filter(port, EGR_DISABLE);
 	}
+
+	priv->ports[port].vlan_filtering = vlan_filtering;
+	otto_vlan_port_untagged_set(priv, port);
 
 	/* Do we need to do something to the CPU-Port, too? */
 	mutex_unlock(&priv->reg_mutex);
