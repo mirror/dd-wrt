@@ -123,12 +123,10 @@
 #endif
 
 /* To get the version number only. */
-#ifdef WIN32
-#include "libdnet-stripped/include/dnet_winconfig.h"
-#else
-#include "libdnet-stripped/include/config.h"
+#include "dnet.h"
+#ifndef HAVE_DNET_LIB_VERSION
+#define dnet_lib_version() ("system")
 #endif
-#define DNET_VERSION VERSION
 
 #ifdef LINUX
 /* Check for Windows Subsystem for Linux (WSL) */
@@ -138,6 +136,9 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <cmath>
+#include <cerrno>
+#include <inttypes.h>
 
 /* global options */
 extern char *optarg;
@@ -508,6 +509,25 @@ static void test_file_name(const char *filename, const char *option) {
   }
 }
 
+static long parse_tval_msecs(const char *opt, const char *arg, long low, long high) {
+  char buf[256] = "";
+  long l = tval2msecs(arg);
+  if (l < low)
+    fatal("Bogus --%s argument specified, must be at least %ldms", opt, low);
+  if (l >= high && tval_unit(arg) == NULL) {
+    if (l > 1000 * 60 * 60)
+      Snprintf(buf, sizeof(buf), "%.1f hours", l / (1000.0 * 60 * 60));
+    else if (l > 1000 * 60)
+      Snprintf(buf, sizeof(buf), "%.1f minutes", l / (1000.0 * 60));
+    else if (l > 1000)
+      Snprintf(buf, sizeof(buf), "%.1f seconds", l / 1000.0);
+    fatal("Since April 2010, the default unit for --%s is seconds, so your time "
+        "of \"%s\" is %s. Use \"%sms\" for milliseconds.",
+        opt, arg, buf, arg);
+  }
+  return l;
+}
+
 void parse_options(int argc, char **argv) {
   char *p;
   int arg;
@@ -681,27 +701,15 @@ void parse_options(int argc, char **argv) {
             fatal("Bogus --max-os-tries argument specified, must be between 1 and 50 (inclusive)");
           o.setMaxOSTries(l);
         } else if (strcmp(long_options[option_index].name, "max-rtt-timeout") == 0) {
-          l = tval2msecs(optarg);
-          if (l < 5)
-            fatal("Bogus --max-rtt-timeout argument specified, must be at least 5ms");
-          if (l >= 50 * 1000 && tval_unit(optarg) == NULL)
-            fatal("Since April 2010, the default unit for --max-rtt-timeout is seconds, so your time of \"%s\" is %g seconds. Use \"%sms\" for %g milliseconds.", optarg, l / 1000.0, optarg, l / 1000.0);
+          l = parse_tval_msecs("max-rtt-timeout", optarg, 5, 50 * 1000);
           if (l < 20)
             error("WARNING: You specified a round-trip time timeout (%ld ms) that is EXTRAORDINARILY SMALL.  Accuracy may suffer.", l);
           delayed_options.pre_max_rtt_timeout = l;
         } else if (strcmp(long_options[option_index].name, "min-rtt-timeout") == 0) {
-          l = tval2msecs(optarg);
-          if (l < 0)
-            fatal("Bogus --min-rtt-timeout argument specified");
-          if (l >= 50 * 1000 && tval_unit(optarg) == NULL)
-            fatal("Since April 2010, the default unit for --min-rtt-timeout is seconds, so your time of \"%s\" is %g seconds. Use \"%sms\" for %g milliseconds.", optarg, l / 1000.0, optarg, l / 1000.0);
+          l = parse_tval_msecs("min-rtt-timeout", optarg, 0, 50 * 1000);
           delayed_options.pre_min_rtt_timeout = l;
         } else if (strcmp(long_options[option_index].name, "initial-rtt-timeout") == 0) {
-          l = tval2msecs(optarg);
-          if (l <= 0)
-            fatal("Bogus --initial-rtt-timeout argument specified.  Must be positive");
-          if (l >= 50 * 1000 && tval_unit(optarg) == NULL)
-            fatal("Since April 2010, the default unit for --initial-rtt-timeout is seconds, so your time of \"%s\" is %g seconds. Use \"%sms\" for %g milliseconds.", optarg, l / 1000.0, optarg, l / 1000.0);
+          l = parse_tval_msecs("initial-rtt-timeout", optarg, 1, 50 * 1000);
           delayed_options.pre_init_rtt_timeout = l;
         } else if (strcmp(long_options[option_index].name, "excludefile") == 0) {
           delayed_options.exclude_file = strdup(optarg);
@@ -737,12 +745,7 @@ void parse_options(int argc, char **argv) {
             error("Warning: Your --min-parallelism option is pretty high!  This can hurt reliability.");
           }
         } else if (strcmp(long_options[option_index].name, "host-timeout") == 0) {
-          l = tval2msecs(optarg);
-          if (l < 0)
-            fatal("Bogus --host-timeout argument specified");
-          // if (l == 0) this is the default "no timeout" value, overriding timing template
-          if (l >= 10000 * 1000 && tval_unit(optarg) == NULL)
-            fatal("Since April 2010, the default unit for --host-timeout is seconds, so your time of \"%s\" is %.1f hours. If this is what you want, use \"%ss\".", optarg, l / 1000.0 / 60 / 60, optarg);
+          l = parse_tval_msecs("host-timeout", optarg, 0, 10000 * 1000);
           delayed_options.pre_host_timeout = l;
         } else if (strcmp(long_options[option_index].name, "ttl") == 0) {
           delayed_options.raw_scan_options = true;
@@ -777,23 +780,14 @@ void parse_options(int argc, char **argv) {
         } else if (strcmp(long_options[option_index].name, "version-all") == 0) {
           o.version_intensity = 9;
         } else if (strcmp(long_options[option_index].name, "scan-delay") == 0) {
-          l = tval2msecs(optarg);
-          if (l < 0)
-            fatal("Bogus --scan-delay argument specified.");
-          // if (l == 0) this is the default "no delay" value, overriding timing template
-          if (l >= 100 * 1000 && tval_unit(optarg) == NULL)
-            fatal("Since April 2010, the default unit for --scan-delay is seconds, so your time of \"%s\" is %.1f minutes. Use \"%sms\" for %g milliseconds.", optarg, l / 1000.0 / 60, optarg, l / 1000.0);
+          l = parse_tval_msecs("scan-delay", optarg, 0, 100 * 1000);
           delayed_options.pre_scan_delay = l;
         } else if (strcmp(long_options[option_index].name, "defeat-rst-ratelimit") == 0) {
           o.defeat_rst_ratelimit = true;
         } else if (strcmp(long_options[option_index].name, "defeat-icmp-ratelimit") == 0) {
           o.defeat_icmp_ratelimit = true;
         } else if (strcmp(long_options[option_index].name, "max-scan-delay") == 0) {
-          l = tval2msecs(optarg);
-          if (l < 0)
-            fatal("Bogus --max-scan-delay argument specified.");
-          if (l >= 100 * 1000 && tval_unit(optarg) == NULL)
-            fatal("Since April 2010, the default unit for --max-scan-delay is seconds, so your time of \"%s\" is %.1f minutes. If this is what you want, use \"%ss\".", optarg, l / 1000.0 / 60, optarg);
+          l = parse_tval_msecs("max-scan-delay", optarg, 0, 100 * 1000);
           delayed_options.pre_max_scan_delay = l;
         } else if (strcmp(long_options[option_index].name, "max-retries") == 0) {
           delayed_options.pre_max_retries = atoi(optarg);
@@ -977,18 +971,20 @@ void parse_options(int argc, char **argv) {
             fatal("Data payload MTU must be >0 and multiple of 8");
         } else if (strcmp(long_options[option_index].name, "port-ratio") == 0) {
           char *ptr;
-          o.topportlevel = strtod(optarg, &ptr);
-          if (!ptr || o.topportlevel < 0 || o.topportlevel >= 1)
+          d = strtod(optarg, &ptr);
+          if (errno != 0 || !ptr || ptr == optarg || *ptr != '\0' || !std::isfinite(d) || d < 0 || d >= 1)
             fatal("--port-ratio should be between [0 and 1)");
+          o.topportlevel = d;
         } else if (strcmp(long_options[option_index].name, "exclude-ports") == 0) {
           if (o.exclude_portlist)
             fatal("Only 1 --exclude-ports option allowed, separate multiple ranges with commas.");
           o.exclude_portlist = strdup(optarg);
         } else if (strcmp(long_options[option_index].name, "top-ports") == 0) {
           char *ptr;
-          o.topportlevel = strtod(optarg, &ptr);
-          if (!ptr || o.topportlevel < 1 || ((double)((int)o.topportlevel)) != o.topportlevel)
-            fatal("--top-ports should be an integer 1 or greater");
+          l = strtol(optarg, &ptr, 10);
+          if (errno != 0 || !ptr || ptr == optarg || *ptr != '\0' || l < 1 || l > 65535)
+            fatal("--top-ports should be an integer between 1 and 65535");
+          o.topportlevel = l;
         } else if (strcmp(long_options[option_index].name, "ip-options") == 0) {
           delayed_options.raw_scan_options = true;
           o.ipoptions    = (u8*) safe_malloc(4 * 10 + 1);
@@ -1858,7 +1854,9 @@ void nmap_free_mem() {
   AllProbes::service_scan_free();
   traceroute_hop_cache_clear();
   nsock_set_default_engine(NULL);
+#ifndef NOLUA
   close_nse();
+#endif
 }
 
 int nmap_main(int argc, char *argv[]) {
@@ -2122,7 +2120,7 @@ int nmap_main(int argc, char *argv[]) {
   if (o.ping_group_sz < o.minHostGroupSz())
     o.ping_group_sz = o.minHostGroupSz();
   HostGroupState hstate(o.ping_group_sz, o.randomize_hosts,
-      o.generate_random_ips, o.max_ips_to_scan, argc, (const char **) argv);
+      o.generate_random_ips, o.max_ips_to_scan, exclude_group, argc, (const char **) argv);
 
   do {
     ideal_scan_group_sz = determineScanGroupSize(o.numhosts_scanned, &ports);
@@ -2575,7 +2573,7 @@ int gather_logfile_resumption_state(char *fname, int *myargc, char ***myargv) {
   /* Ensure the log file ends with a newline */
   filestr[filelen - 1] = '\n';
   if (munmap(filestr, filelen) != 0)
-    gh_perror("%s: error in munmap(%p, %ld)", __func__, filestr, filelen);
+    gh_perror("%s: error in munmap(%p, %" PRId64 ")", __func__, filestr, filelen);
 
   return 0;
 }
@@ -2879,9 +2877,9 @@ static void display_nmap_version() {
 #endif
 
 #ifdef DNET_INCLUDED
-  with.push_back(std::string("nmap-libdnet-") + DNET_VERSION);
+  with.push_back(std::string("nmap-libdnet-") + dnet_lib_version());
 #else
-  with.push_back(std::string("libdnet-") + DNET_VERSION);
+  with.push_back(std::string("libdnet-") + dnet_lib_version());
 #endif
 
 #if HAVE_IPV6

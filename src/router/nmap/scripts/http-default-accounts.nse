@@ -312,11 +312,7 @@ local function load_fingerprints(filename, catlist, namelist)
   assert(type(cached_fingerprints) == "nil", "Unexpected cached fingerprints")
 
   -- Try and find the file
-  -- If it isn't in Nmap's directories, take it as a direct path
-  filename_full = nmap.fetchfile('nselib/data/' .. filename)
-  if(not(filename_full)) then
-    filename_full = filename
-  end
+  filename_full = filename or nmap.fetchfile('nselib/data/http-default-accounts-fingerprints.lua')
 
   -- Load the file
   stdnse.debug(1, "Loading fingerprints: %s", filename_full)
@@ -483,7 +479,6 @@ end
 
 action = function(host, port)
   local fingerprint_filename = stdnse.get_script_args("http-default-accounts.fingerprintfile")
-                               or "http-default-accounts-fingerprints.lua"
   local catlist = stdnse.get_script_args("http-default-accounts.category")
   local namelist = stdnse.get_script_args("http-default-accounts.name")
   local basepath = stdnse.get_script_args("http-default-accounts.basepath") or "/"

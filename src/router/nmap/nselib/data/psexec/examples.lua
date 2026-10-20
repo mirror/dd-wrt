@@ -6,63 +6,62 @@
 overrides = {}
 overrides.timeout = 40
 
-modules = {}
-local mod
+modules = {
 
-mod = {}
-mod.upload           = false
-mod.name             = "Membership of 'administrators' from 'net localgroup administrators'"
-mod.program          = "net.exe"
-mod.args             = "localgroup administrators"
-table.insert(modules, mod)
+  {
+    upload           = false,
+    name             = "Membership of 'administrators' from 'net localgroup administrators'",
+    program          = "net.exe",
+    args             = "localgroup administrators",
+  },
 
-mod = {}
-mod.upload           = false
-mod.name             = "Example 2: Membership of 'administrators', cleaned"
-mod.program          = "net.exe"
-mod.args             = "localgroup administrators"
-mod.remove           = {"The command completed", "%-%-%-%-%-%-%-%-%-%-%-", "Members", "Alias name", "Comment"}
-mod.noblank          = true
-table.insert(modules, mod)
+  {
+    upload           = false,
+    name             = "Example 2: Membership of 'administrators', cleaned",
+    program          = "net.exe",
+    args             = "localgroup administrators",
+    remove           = {"The command completed", "%-%-%-%-%-%-%-%-%-%-%-", "Members", "Alias name", "Comment"},
+    noblank          = true,
+  },
 
-mod = {}
-mod.upload           = false
-mod.name             = "Example 3: IP Address and MAC Address"
-mod.program          = "ipconfig.exe"
-mod.args             = "/all"
-mod.maxtime          = 1
-mod.find             = {"IP Address", "Physical Address", "Ethernet adapter"}
-mod.replace          = {{"%. ", ""}, {"-", ":"}, {"Physical Address", "MAC Address"}}
-table.insert(modules, mod)
+  {
+    upload           = false,
+    name             = "Example 3: IP Address and MAC Address",
+    program          = "ipconfig.exe",
+    args             = "/all",
+    maxtime          = 1,
+    find             = {"IP Address", "Physical Address", "Ethernet adapter"},
+    replace          = {{"%. ", ""}, {"-", ":"}, {"Physical Address", "MAC Address"}},
+  },
 
-mod = {}
-mod.upload           = false
-mod.name             = "Example 4: Can the host ping our address?"
-mod.program          = "ping.exe"
-mod.args             = "$lhost"
-mod.remove           = {"statistics", "Packet", "Approximate", "Minimum"}
-mod.noblank          = true
-mod.env              = "SystemRoot=c:\\WINDOWS"
-table.insert(modules, mod)
+  {
+    upload           = false,
+    name             = "Example 4: Can the host ping our address?",
+    program          = "ping.exe",
+    args             = "$lhost",
+    remove           = {"statistics", "Packet", "Approximate", "Minimum"},
+    noblank          = true,
+    env              = "SystemRoot=c:\\WINDOWS",
+  },
 
-mod = {}
-mod.upload           = false
-mod.name             = "Example 5: Can the host ping $host?"
-mod.program          = "ping.exe"
-mod.args             = "$host"
-mod.remove           = {"statistics", "Packet", "Approximate", "Minimum"}
-mod.noblank          = true
-mod.env              = "SystemRoot=c:\\WINDOWS"
-mod.req_args         = {'host'}
-table.insert(modules, mod)
+  {
+    upload           = false,
+    name             = "Example 5: Can the host ping $host?",
+    program          = "ping.exe",
+    args             = "$host",
+    remove           = {"statistics", "Packet", "Approximate", "Minimum"},
+    noblank          = true,
+    env              = "SystemRoot=c:\\WINDOWS",
+    req_args         = {'host'},
+  },
 
-mod = {}
-mod.upload           = true
-mod.name             = "Example 6: FgDump"
-mod.program          = "fgdump.exe"
-mod.args             = "-c -l fgdump.log"
-mod.url              = "http://www.foofus.net/fizzgig/fgdump/"
-mod.tempfiles        = {"fgdump.log"}
-mod.outfile          = "127.0.0.1.pwdump"
-table.insert(modules, mod)
-
+  {
+    upload           = true,
+    name             = "Example 6: FgDump",
+    program          = "fgdump.exe",
+    args             = "-c -l fgdump.log",
+    url              = "http://www.foofus.net/fizzgig/fgdump/",
+    tempfiles        = {"fgdump.log"},
+    outfile          = "127.0.0.1.pwdump",
+  },
+}

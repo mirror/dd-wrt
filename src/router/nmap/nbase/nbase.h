@@ -521,6 +521,7 @@ u32 get_random_u32();
 u16 get_random_u16();
 u8 get_random_u8();
 u32 get_random_unique_u32();
+u16 get_random_unique_u16();
 
 /* Create a new socket inheritable by subprocesses. On non-Windows systems it's
    just a normal socket. */
@@ -553,13 +554,16 @@ char *executable_path(const char *argv0);
 /* A set of addresses. Used to match against allow/deny lists. */
 struct addrset;
 
-void nbase_set_log(void (*log_user_func)(const char *, ...),void (*log_debug_func)(const char *, ...));
+typedef void (*nbase_log_t) (const char *, ...) __attribute__((format(printf, 1, 2)));
+void nbase_set_log(nbase_log_t log_user_func, nbase_log_t log_debug_func);
 struct addrset *addrset_new();
 extern void addrset_free(struct addrset *set);
 extern void addrset_print(FILE *fp, const struct addrset *set);
 extern int addrset_add_spec(struct addrset *set, const char *spec, int af, int dns);
 extern int addrset_add_file(struct addrset *set, FILE *fd, int af, int dns);
+extern void addrset_update(struct addrset *set, const struct addrset *other);
 extern int addrset_contains(const struct addrset *set, const struct sockaddr *sa);
+extern int addrset_matches_all(const struct addrset *set, int af);
 
 /* We use bit vectors to represent what values are allowed in an IPv4 octet.
    Each vector is built up of an array of bitvector_t (any convenient integer

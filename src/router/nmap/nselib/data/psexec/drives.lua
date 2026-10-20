@@ -6,44 +6,42 @@
 overrides = {}
 --overrides.timeout = 40
 
-modules = {}
-local mod
+modules = {
+  {
+    upload           = false,
+    name             = "Drive type",
+    program          = "fsutil",
+    args             = "fsinfo drivetype $drive",
+    req_args         = {"drive"},
+    maxtime          = 1,
+  },
 
-mod = {}
-mod.upload           = false
-mod.name             = "Drive type"
-mod.program          = "fsutil"
-mod.args             = "fsinfo drivetype $drive"
-mod.req_args         = {"drive"}
-mod.maxtime          = 1
-table.insert(modules, mod)
+  {
+    upload           = false,
+    name             = "Drive info",
+    program          = "fsutil",
+    args             = "fsinfo ntfsinfo $drive",
+    req_args         = {"drive"},
+    replace          = {{" :",":"}},
+    maxtime          = 1,
+  },
 
-mod = {}
-mod.upload           = false
-mod.name             = "Drive info"
-mod.program          = "fsutil"
-mod.args             = "fsinfo ntfsinfo $drive"
-mod.req_args         = {"drive"}
-mod.replace          = {{" :",":"}}
-mod.maxtime          = 1
-table.insert(modules, mod)
+  {
+    upload           = false,
+    name             = "Drive type",
+    program          = "fsutil",
+    args             = "fsinfo statistics $drive",
+    req_args         = {"drive"},
+    replace          = {{" :",":"}},
+    maxtime          = 1,
+  },
 
-mod = {}
-mod.upload           = false
-mod.name             = "Drive type"
-mod.program          = "fsutil"
-mod.args             = "fsinfo statistics $drive"
-mod.req_args         = {"drive"}
-mod.replace          = {{" :",":"}}
-mod.maxtime          = 1
-table.insert(modules, mod)
-
-mod = {}
-mod.upload           = false
-mod.name             = "Drive quota"
-mod.program          = "fsutil"
-mod.args             = "quota query $drive"
-mod.req_args         = {"drive"}
-mod.maxtime          = 1
-table.insert(modules, mod)
-
+  {
+    upload           = false,
+    name             = "Drive quota",
+    program          = "fsutil",
+    args             = "quota query $drive",
+    req_args         = {"drive"},
+    maxtime          = 1,
+  },
+}

@@ -1,6 +1,178 @@
 #Nmap Changelog ($Id$); -*-text-*-
 
-Nmap 7.991 [2026-07-31]
+Nmap 7.992 [2026-10-07]
+
+o Upgraded included libraries:
+  - Source: libpcap 1.10.7, pcre2 10.49, lua 5.4.9, libdnet 1.18.2
+  - Binary installers: OpenSSL 3.5.9, Python 3.14.8
+
+o [Security][NSE] Karan Bamal of SentinelOne reported the following issues with
+  NSE scripts and libraries, which have all been fixed:
+  - afp.lua used a hardcoded DH private exponent, so that credentials passed
+    via command line could be decrypted from network traffic. The DHCAST128 UAM
+    is known to be cryptographically broken, and has been replaced in this
+    release with DHX2.
+  - Redirect to unverified URL in anyconnect.lua and upnp.lua
+  - Unbounded memory consumption in rpc.lua, drda.lua, eigrp.lua,
+    msrpctypes.lua, db2-das-info, and dns-zone-transfer
+  - Uninterruptible CPU usage (infinite loop) not subject to --script-timeout or
+    --host-timeout in rdp.lua, tn3270.lua, and ospf.lua
+  - Infinite loop waiting for errored coroutines in tftp.lua, effectively
+    mitigated by --script-timeout
+
+o [Security] Zach Hanley of Horizon3.ai, in collaboration with Claude and
+  Anthropic Research, reported three issues, which have all been fixed:
+  - Two distinct use-after-free bugs in massdns parallel DNS resolver.
+  - NSE uses the default seed for Lua's pseudorandom number generator, namely
+    the output of time() and the heap address of the Lua state. A brute-force
+    search based on math.random()-generated network traffic can reveal the ASLR
+    base address of the process.
+
+o [Security][NSE] In some non-standard builds (e.g. --without-openssl), NSE
+  scripts were attempting to load missing Lua modules from the current working
+  directory. Fixed by removing Lua's default package searchers, leaving only
+  the existing nselib file fetcher.
+
+o Added a libfuzzer-based framework for fuzzing internal functions of Nmap,
+  Ncat, and Nping. So far, 10 functions have been instrumented and 3 minor
+  issues have been fixed. [Daniel Miller]
+
+o [GH#3523] Fixed an rare false-positive case in TCP Connect scan (-sT) where a
+  failed connect() may leave SO_ERROR set to 0 even though an ICMP error has
+  been received and select() has indicated the socket.
+
+o [NSE] Introduced execution time and memory allocation limits for NSE scripts.
+  Script threads that run for more than 5 seconds without yielding (e.g.
+  calling a socket operation) will be killed. Memory allocations beyond 400MB
+  will throw an error. Specific limits may be changed in the future.
+
+o [NSE] Added 8 new scripts, for a total of 620 NSE scripts, all for auditing
+  DICOM (medical imaging) services:
+
+  + dicom-info fingerprints a DICOM SCP via A-ASSOCIATE, reporting its
+    Implementation Class UID and Version Name, accepted SOP classes and
+    transfer syntaxes, max PDU and protocol version; over TLS it also reports
+    the server certificate (key type/size, signature algorithm, with weak-
+    crypto and self-signed flags) and the mutual-TLS / client-certificate
+    posture. [Paulino Calderon]
+
+  + dicom-cfind-ls performs C-FIND queries to enumerate studies and series and
+    the patient-level metadata an archive returns, flagging unauthenticated
+    query access. [Paulino Calderon]
+
+  + dicom-cmove exercises C-MOVE to test whether stored studies can be
+    retrieved to an arbitrary destination AE. [Paulino Calderon]
+
+  + dicom-get retrieves instances over C-GET, performing SCP/SCU role
+    negotiation so the retrieval actually completes, and reports
+    unauthenticated read access. [Paulino Calderon]
+
+  + dicom-store-fuzzer fuzzes the C-STORE service with a corpus of malformed
+    datasets, classifying each response (accept, reject, timeout, reset,
+    corrupt) and running a periodic C-ECHO health check to detect crashes
+    mid-campaign. [Paulino Calderon]
+
+  + dicom-store-inject tests whether an archive accepts an unauthenticated
+    C-STORE by uploading a single clearly-synthetic Secondary Capture instance
+    (fake patient, "safe to delete" markers, UIDs under the 2.25 arc) and
+    reporting whether it was stored, refused, or the association was rejected;
+    it prints the stored UIDs for cleanup. [Paulino Calderon]
+
+  + dicom-web-enum enumerates DICOMweb (PS3.18) services over HTTP(S) --
+    QIDO-RS, WADO-RS and STOW-RS -- classifying each as open, authentication-
+    required or absent, reporting the study/patient metadata an unauthenticated
+    client can read and flagging an open STOW-RS store (image-injection)
+    surface. [Paulino Calderon]
+
+  + dicom-slowloris probes for DICOM association-pool exhaustion (a slowloris-
+    style DoS) in idle, C-ECHO keep-alive and partial-handshake modes,
+    measuring a latency baseline, requiring repeated confirmation before
+    declaring exhaustion, and reporting a graded verdict with recovery time.
+    [Paulino Calderon]
+
+o [Zenmap] Fixed crashes:
+  - [GH#3497] configparser.DuplicateSectionError in Profile Editor
+  - [GH#3431] KeyError: 'vl_6_logo'
+  - [GH#3420] sqlite3.DatabaseError: database disk image is malformed
+
+o [NSE] Expanded the dicom.lua library from a basic A-ASSOCIATE/C-ECHO helper
+  into a full DIMSE toolkit. It now supports C-STORE, C-FIND, C-GET and
+  C-MOVE; A-ASSOCIATE-RQ with multiple presentation contexts and SCP/SCU role
+  negotiation (so C-GET sub-operations work); command-set and dataset build/
+  parse in implicit and explicit VR; and DICOM-over-TLS transport (PS3.15,
+  port 2762) selectable with the dicom.tls script-arg. [Paulino Calderon]
+
+o [Ndiff][GH#3468] Fixed `make check-ndiff` to work with Python 3.12+ [gargamel778]
+
+o [NSE][GH#3492] vulners API queries for versions like 4.100 were being
+  truncated on the server, resulting in false positives. Fixed by encoding as
+  string. [huuyafwww]
+
+o [Ncat][GH#3489][GH#3498] Ncat in listen mode no longer sends termination
+  signals to its process group. Ncat inherits the group of whatever launched
+  it, so a SIGINT, SIGTERM, SIGHUP, or SIGQUIT could also terminate the
+  caller's shell or test harness. The signal is now forwarded to the children
+  Ncat started for connections when -k and cmdexec are both in effect. [MRX-72]
+
+o [Nsock][GH#3449] Nsock no longer calls fatal() when encountering a
+  pcap-related error. Instead, errors are propagated to the caller the same way
+  other socket errors are handled.
+
+o [GH#3438][GH#3511] Fixed warnings and crashes due to bind() failing on macOS
+  and FreeBSD, as well as Nping probe failures. Error messages similar to:
+  "mksock_bind_addr(): Bind to <IP>:0 failed (IOD #3): Invalid argument (22)"
+  [Daniel Miller, MRX-72]
+
+o [NSE] Added DHX2 authentication method to afp.lua [Daniel Miller]
+
+o [NSE][GH#3536] Function ipOps.isPrivate() was incorrectly treating all IPv4
+  addresses starting with 192.0.2x or 192.0.2xx as private. [Pasi Abe]
+
+o [NSE] Function ipOps.expand_ip() now strips off any leading zeros from IPv4
+  octets, returning "10.0.0.0", not "010.000.0.0", for input "010.000". This
+  also resolves a bug where "010" was not recognized as a private IP address.
+  [nnposter]
+
+o [NSE][GH#3494] Malformed TPKT header could have caused parser infinite loop
+  in library iec61850mms. Truncated data were silently ignored.
+  [Zasnit1, nnposter]
+
+o Prevent -iR from running forever if all addresses are excluded or if all
+  available addresses have been scanned with --unique. The underlying addrset
+  trie has been optimized for fast lookup and minimal memory use.
+
+o [NSE][GH#3447] IP options parsing by the packet library no longer crashes
+  on incomplete options. IP header data after EOOL are no longer parsed as
+  options. [Ibrahim AlJaafreh, nnposter]
+
+o [NSE][GH#3213] Rudimentary support for 802.1Q / 802.1ad VLAN tags [nnposter]
+  - NSE packet.Frame:new() parses VLAN tags and captures the result in list
+    frame.vlans. Each element is a table containing the expected fields:
+    TPID, CPC, DEI, and VID (all in lowercase).
+  - NSE packet.Frame:build_ether_frame() takes an an optional parameter
+    in the form of the list above to build 802.1Q / 802.1ad headers.
+
+o [NSE][GH#3456] Script http-config-backup was always failing. [h00die]
+
+o [NSE][GH#3440] The rsync library was not correctly parsing server responses
+  for protocol version 32. [h00die]
+
+o [NSE][GH#3307] Script iec61850-mms was never executed due to a flawed
+  portrule. [RyugaXhypeR]
+
+o [NSE] Scripts http-config-backup and rsync-list-modules now provide XML
+  output. [nnposter]
+
+o Fixed a fatal error in traceroute with -sO: "Unknown protocol _: QUITTING."
+
+o Made DNS TXID random, not sequential, in massdns.cc.
+
+o [NSE][GH#3430] Nmap now tolerates TLS targets that do not send close_notify.
+  [nnposter]
+
+Nmap 7.991 [2026-08-06]
+
+o Upgraded included OpenSSL to version 3.0.21 on all platforms.
 
 o Fixed a memory-consumption hang in Ncat's HTTP proxy code that affected both
   connect and listen modes, reported by kumama_nui.
@@ -916,7 +1088,7 @@ o [GH#2199] Updated Nmap's NPSL license to rewrite a poorly-worded clause
 o [NSE] Script smb2-vuln-uptime no longer reports false positives when the
   target does not provide its boot time. [nnposter]
 
-o [NSE][GH#2197] Client packets composed by the DHCP library will now
+o [NSE][GH#2197] Client packets composed by the dhcp library will now
   contain option 51 (IP address lease time) only when requested. [nnposter]
 
 o [NSE][GH#2192] XML decoding in library citrixxml no longer crashes when
@@ -926,7 +1098,7 @@ o [NSE][GH#2192] XML decoding in library citrixxml no longer crashes when
 o [NSE] Script mysql-audit now defaults to the bundled mysql-cis.audit for
   the audit rule base. [nnposter]
 
-o [NSE][GH#1473] It is now possible to control whether the SNMP library uses
+o [NSE][GH#1473] It is now possible to control whether the snmp library uses
   v1 (default) or v2c by setting script argument snmp.version. [nnposter]
 
 Nmap 7.91 [2020-10-09]
@@ -945,7 +1117,7 @@ o [GH#2139][Nsock][Windows] Demote the IOCP Nsock engine because of some known
 o [GH#2140][Nsock][Windows] Fix a crash in service scan due to a previously-unknown
   error being returned from the IOCP Nsock engine. [Daniel Miller]
 
-o [NSE][GH#2128] MySQL library was not properly parsing server responses,
+o [NSE][GH#2128] mysql library was not properly parsing server responses,
   resulting in script crashes. [nnposter]
 
 o [GH#2135] Silence the irrelevant warning, "Your ports include 'T:' but you
@@ -1105,10 +1277,10 @@ o [NSE][GH#2089] Eliminated false positives in script http-shellshock caused by
 o [NSE][GH#1473] SNMP scripts are now enabled on non-standard ports where SNMP
   has been detected [usd-markus, nnposter]
 
-o [NSE][GH#2084] MQTT library was using incorrect position when parsing
+o [NSE][GH#2084] mqtt library was using incorrect position when parsing
   received responses [tatulea]
 
-o [NSE][GH#2086] IPMI library was using incorrect position when parsing
+o [NSE][GH#2086] ipmi library was using incorrect position when parsing
   received responses [Star Salzman]
 
 o [NSE][GH#2086] Scripts ipmi-brute and deluge-rpc-brute were not capturing
@@ -1122,7 +1294,7 @@ o [GH#1622][GH#2068] Fix reverse-DNS handling of PTR records that are not lowerc
   Nmap was failing to identify reverse-DNS names when the DNS server delivered
   them like ".IN-ADDR.ARPA". [Lucas Nussbaum, Richard Schütz, Daniel Miller]
 
-o [NSE][GH#1999][GH#2005] IKE library was not properly populating the protocol
+o [NSE][GH#1999][GH#2005] ike library was not properly populating the protocol
   number in aggressive mode requests. [luc-x41]
 
 o [GH#1963] Added service fingerprinting for MySQL 8.x, Microsoft SQL
@@ -1169,7 +1341,7 @@ o [Windows] Add support for the new loopback behavior in Npcap 0.9983 and
   Npcap Loopback Adapter to be installed, which was a source of problems for
   some users.  [Daniel Miller]
 
-o [NSE] MS SQL library has improved version resolution, from service pack level
+o [NSE] mssql library has improved version resolution, from service pack level
   to individual cumulative updates [nnposter]
 
 o [NSE][GH#2077] With increased verbosity, script http-default-accounts now
@@ -1212,10 +1384,10 @@ o [NSE][GH#1876] XML output from script ssl-cert now includes RSA key modulus
 o [NSE][GH#1837] Nmap no longer crashes when SMB scripts, such as smb-ls, call
   smb.find_files [nnposter]
 
-o [NSE][GH#1802] The MongoDB library was causing errors when assembling protocol
+o [NSE][GH#1802] The mongodb library was causing errors when assembling protocol
   payloads. [nnposter]
 
-o [NSE][GH#1781][GH#1796] The RTSP library was not correctly generating request
+o [NSE][GH#1781][GH#1796] The rtsp library was not correctly generating request
   strings. [nnposter]
 
 o [NSE][GH#1706] VNC handshakes were failing with insert position out of bounds
@@ -1238,10 +1410,10 @@ o [NSE][GH#1476][GH#1707] A MS-SMB spec non-compliance in Samba was causing
   protocol negotiation to fail with data string too short error.
   [Clément Notin, nnposter]
 
-o [NSE][GH#1480][GH#1713][GH#1714] A bug in SMB library was causing scripts to
+o [NSE][GH#1480][GH#1713][GH#1714] A bug in smb library was causing scripts to
   fail with bad format argument error. [Ivan Ivanov]
 
-o [NSE][GH#1665] The HTTP library no longer crashes when code requests digest
+o [NSE][GH#1665] The http library no longer crashes when code requests digest
   authentication but the server does not provide the necessary authentication
   header. [nnposter]
 
@@ -1328,7 +1500,7 @@ o [NSE] Collected utility functions for manipulating and searching tables
 o [NSE] New knx.lua library holds common functions and definitions for
   communicating with KNX/Konnex devices. [Daniel Miller]
 
-o [NSE][GH#1571] The HTTP library now provides transparent support for gzip-
+o [NSE][GH#1571] The http library now provides transparent support for gzip-
   encoded response body. (See https://github.com/nmap/nmap/pull/1571 for an
   overview.) [nnposter]
 
@@ -1361,7 +1533,7 @@ o [NSE] Completely removed the bit.lua NSE library. All of its functions are
   (arithmetic shift) which has been moved to the bits.lua library. [Daniel
   Miller]
 
-o [NSE][GH#1571] The HTTP library is now enforcing a size limit on the
+o [NSE][GH#1571] The http library is now enforcing a size limit on the
   received response body. The default limit can be adjusted with a script
   argument, which applies to all scripts, and can be overridden case-by-case
   with an HTTP request option. (See https://github.com/nmap/nmap/pull/1571
@@ -1378,7 +1550,7 @@ o [NSE][GH#1614] Add TLS support to rdp-enum-encryption. Enables determining
   some NLA/CredSSP information collection. [Tom Sellers]
 
 o [NSE][GH#1611] Address two protocol parsing issues in rdp-enum-encryption
-  and the RDP nse library which broke scanning of Windows XP. Clarify
+  and the rdp library which broke scanning of Windows XP. Clarify
   protocol types [Tom Sellers]
 
 o [NSE][GH#1608] Script http-fileupload-exploiter failed to locate its
@@ -1543,9 +1715,8 @@ o [NSE][GH#1191] Add two common error strings that improve MySQL detection
 o [NSE][GH#1220] Fix bug in http-vuln-cve2006-3392 that prevented the script
   to generate the vulnerability report correctly. [rewardone]
 
-o [NSE][GH#1218] Fix bug related to screen rendering in NSE library
-  tn3270. This patch also improves the brute force script
-  tso-brute. [mainframed]
+o [NSE][GH#1218] Fix bug related to screen rendering in tn3270.lua. This patch
+  also improves the brute force script tso-brute. [mainframed]
 
 o [NSE][GH#1209] Fix SIP, SASL, and HTTP Digest authentication when the
   algorithm contains lowercase characters. [Jeswin Mathai]
@@ -1861,7 +2032,7 @@ o Updated the default ciphers list for Ncat and the secure ciphers list for
 o [NSE][GH#930] Fix ndmp-version and ndmp-fs-info when scanning Veritas Backup
   Exec Agent 15 or 16. [Andrew Orr]
 
-o [NSE][GH#943] Added new SMB2/3 library and related scripts. [Paulino Calderon]
+o [NSE][GH#943] Added SMB2/3 library (smb2.lua) and related scripts. [Paulino Calderon]
 
 o [NSE][GH#950] Added wildcard detection to dns-brute. Only hostnames that
   resolve to unique addresses will be listed. [Aaron Heesakkers]
@@ -2040,7 +2211,7 @@ o No longer allow ICMP Time Exceeded messages to mark a host as down during
   host discovery. Running traceroute at the same time as Nmap was causing
   interference. [David Fifield]
 
-o [NSE][GH#807] Fixed a JSON library issue that was causing long integers
+o [NSE][GH#807] Fixed a json library issue that was causing long integers
   to be expressed in the scientific/exponent notation. [nnposter]
 
 o [NSE] Fixed several potential hangs in NSE scripts that used
@@ -3525,7 +3696,7 @@ o [NSE] Fix some bugs which could cause snmp-ios-config and
   snmp-sysdescr scripts to crash
   (http://seclists.org/nmap-dev/2014/q2/120) [Patrik Karlsson]
 
-o [NSE] Improved performance of citrix.lua library when handling large XML
+o [NSE] Improved performance of citrixxml library when handling large XML
   responses containing application lists. [Tom Sellers]
 
 Nmap 6.45 [2014-04-11]
@@ -4016,7 +4187,7 @@ o Changed the --webxml XSL stylesheet to point to the new location of
   It still may not work in web browsers due to same origin policy (see
   http://seclists.org/nmap-dev/2013/q1/58). [David Fifield, Simon John]
 
-o [NSE] The vulnerability library can now preserve vulnerability information
+o [NSE] The vulns library can now preserve vulnerability information
   across multiple ports of the same host. The bug was reported by
   iphelix. [Djalal Harouni]
 
@@ -5142,22 +5313,22 @@ o [NSE] Added 43(!) NSE scripts, bringing the total up to 340.  They
     authorization mechanisms. [Patrik Karlsson]
 
 o [NSE] Added 14 new protocol libraries! They were all written by
-  Patrik Karlsson, except for the EAP library by Riccardo Cecolin:
-  + dhcp6 (Dynamic Host Configuration Protocol for IPv6)
-  + eap (Extensible Authentication Protocol)
-  + iax2 (Inter-Asterisk eXchange v2 VoIP protocol)
-  + membase (Couchbase Membase TAP protocol)
-  + natpmp (NAT Port Mapping Protocol)
-  + ndmp (Network Data Management Protocol)
-  + pppoe (Point-to-point protocol over Ethernet)
-  + redis (in-memory key-value data store)
-  + rpcap (WinPcap Remote Capture Deamon)
-  + rsync (remote file sync)
-  + socks (SOCKS 5 proxy protocol)
-  + sslcert (for collecting SSL certificates and storing them in the
+  Patrik Karlsson, except for the eap library by Riccardo Cecolin:
+  + dhcp6.lua (Dynamic Host Configuration Protocol for IPv6)
+  + eap.lua (Extensible Authentication Protocol)
+  + iax2.lua (Inter-Asterisk eXchange v2 VoIP protocol)
+  + membase.lua (Couchbase Membase TAP protocol)
+  + natpmp.lua (NAT Port Mapping Protocol)
+  + ndmp.lua (Network Data Management Protocol)
+  + pppoe.lua (Point-to-point protocol over Ethernet)
+  + redis.lua (in-memory key-value data store)
+  + rpcap.lua (WinPcap Remote Capture Deamon)
+  + rsync.lua (remote file sync)
+  + socks.lua (SOCKS 5 proxy protocol)
+  + sslcert.lua (for collecting SSL certificates and storing them in the
     host-based registry)
-  + versant (an object database)
-  + xdmcp (X Display Manager Control Protocol)
+  + versant.lua (an object database)
+  + xdmcp.lua (X Display Manager Control Protocol)
 
 o CPE (Common Platform Enumeration) OS classification is now supported
   for IPv6 OS detection. Previously it was only available for
@@ -5195,13 +5366,13 @@ o Split the nmap-update client into its own binary RPM to avoid the
   system isn't complete, but the source code is available in the Nmap
   tarball and source RPM. [David]
 
-o [NSE] Added authentication support to the MongoDB library and
+o [NSE] Added authentication support to the mongodb library and
   modified existing scripts to support it. [Patrik Karlsson]
 
 o [NSE] Added support to broadcast-listener for extracting address, native VLAN
   and management IP address from CDP packets. [Tom Sellers]
 
-o [NSE] Added RPC Call CALLIT to the RPC library and modified UDP sockets to be
+o [NSE] Added RPC Call CALLIT to the rpc library and modified UDP sockets to be
   unconnected in order to support broadcast. [Patrik Karlsson]
 
 o [NSE] Modified the ssl-cert and ssl-google-cert-catalog scripts to
@@ -5245,7 +5416,7 @@ o Fixed an assertion failure which could occur when connecting to an
   nsock_core.c:186: update_events: Assertion `(ev_inc & ev_dec) == 0' failed.
   Thanks to Ron for reporting the bug and testing. [Henri Doreau]
 
-o [NSE] Added support to the DNS library for the CHAOS class and NSID
+o [NSE] Added support to the dns library for the CHAOS class and NSID
   requests. [John Bond]
 
 o [NSE] Changed the dnsbl library to take a much faster threaded
@@ -5932,9 +6103,8 @@ o Nmap now defers options parsing until it has read through all the
 o [NSE] Added a new default credential list for Oracle databases and
   modified the oracle-brute script to make use of it. [Patrik]
 
-o [NSE] Our Packet library (packet.lua) now handles IPv6. This is used
-  by the new multicast IPv6 host discovery scripts
-  (targets-ipv6-*). [Weilin]
+o [NSE] Our packet library now handles IPv6. This is used by the new multicast
+  IPv6 host discovery scripts (targets-ipv6-*). [Weilin]
 
 o [NSE] Replaced xmpp.nse with an an overhauled version named
   xmpp-info.nse which brings many new features and fixes. [Vasiliy Kulikov]
@@ -5953,18 +6123,18 @@ o [NSE] Added 4 more protocol libraries. You can learn more about any
   of them at https://nmap.org/nsedoc/. Here are the new ones (authors
   listed in brackets):
 
-  + bittorrent supports the BitTorrent file sharing protocol [Gorjan
+  + bittorrent.lua supports the BitTorrent file sharing protocol [Gorjan
     Petrovski]
 
-  + cvs includes support for the Concurrent Versions System (CVS)
+  + cvs.lua includes support for the Concurrent Versions System (CVS)
     [Patrik Karlsson]
 
-  + sasl provides common code for "Simple Authentication and Security
+  + sasl.lua provides common code for "Simple Authentication and Security
     Layer" to services supporting it. The algorithms supported by the
     library are: PLAIN, CRAM-MD5, DIGEST-MD5 and NTLM. [Djalal
     Harouni, Patrik Karlsson]
 
-  + xmpp handles XMPP (Jabber) IM servers [Patrik Karlsson]
+  + xmpp.lua handles XMPP (Jabber) IM servers [Patrik Karlsson]
 
 o [NSE] Removed the mac-geolocation script, which relied on a Google
   database to determine strikingly accurate GPS coordinates for
@@ -5990,10 +6160,10 @@ o Relaxed the XML DTD to allow validation of files where the verbosity
   (used when tcpwrapped) or any other number between 0 and 10
   legal. [Daniel Miller]
 
-o [NSE] Fixed authentication problems in the TNS library that would prevent
+o [NSE] Fixed authentication problems in the tns library that would prevent
   authentication from working against Oracle 11.2.0.2.0 XE [Chris Woodbury]
 
-o [NSE] Added basic query support to the Oracle TNS library so that scripts
+o [NSE] Added basic query support to the Oracle tns library so that scripts
   can now make SQL queries against database servers.  Also improved
   support for 64-bit database servers and improved the documentation. [Patrik]
 
@@ -6051,7 +6221,7 @@ o Consolidated a bunch of duplicate code between Ncat's listen
   (ncat_listen.c) and broker (ncat_broker.c) modes to ease
   maintenance. [Shinnok]
 
-o Added a 'nostore' nse argument to the brute force library which
+o Added a 'nostore' nse argument to the brute library which
   prevents the brute force authentication cracking scripts from
   storing found credentials in the creds library (they will still be
   printed in script output).
@@ -6068,7 +6238,7 @@ o [Ncat] Ncat no longer blocks while an ssl handshake is taking place
   [Shinnok]
 
 o [NSE] Updated SMTP and IMAP libraries to support authentication
-  using both plain-text and the SASL library. [Patrik]
+  using both plain-text and the sasl library. [Patrik]
 
 o [Zenmap] The Zenmap crash handler now instructs users to mail in
   crash information to nmap-dev rather than offering to create a
@@ -6418,7 +6588,7 @@ o [NSE] The host.bin_ip and host.bin_ip_src entries now also work with
 o [Ncat] Updated the ca-bundle.crt list of trusted certificate
   authority certificates. [David]
 
-o [NSE] Fixed a bug in the SMB Authentication library which could
+o [NSE] Fixed a bug in the smbauth library which could
   prevent concurrently running scripts with valid credentials from
   logging in. [Chris Woodbury]
 
@@ -7185,12 +7355,12 @@ o [NSE] Added nfs-ls.nse, which lists NFS exported files and their
   attributes. The nfs-acls and nfs-dirlist scripts were deleted
   because all their features are supported by this script. [Djalal]
 
-o [NSE] Add new DB2 library and two scripts
+o [NSE] Add new db2 library and two scripts
   - db2-brute.nse uses the unpwdb library to guess credentials for DB2
   - db2-info.nse re-write of Tom Sellers script to use the new library
   [Patrik]
 
-o [NSE] Added a library for Microsoft SQL Server and 7 new scripts. The new
+o [NSE] Added mssql library for Microsoft SQL Server and 7 new scripts. The new
   scripts are:
   - ms-sql-brute.nse uses the unpwdb library to guess credentials for MSSQL
   - ms-sql-config retrieves various configuration details from the server
@@ -7492,7 +7662,7 @@ o Sped up compilation by not building both shared and static libdnet
   libraries--we only use the static one. [David]
 
 o [NSE] Improved error handling and reporting and re-designed communication
-  class in RPC library with patch from Djalal Harouni. [Patrik]
+  class in rpc library with patch from Djalal Harouni. [Patrik]
 
 o Upgraded the included libpcap to version 1.1.1. [David]
 
@@ -7515,7 +7685,7 @@ o [NSE] Added script arguments "username" and "password" to ftp-bounce
 
 o [NSE] Added port number sorting to dns-service-discovery.nse. [Patrik]
 
-o [NSE] Added an snmpWalk() function to the SNMP library and updated
+o [NSE] Added an snmpWalk() function to the snmp library and updated
   scripts to use it.  [Patrik]
 
 o [NSE] Fixed this dns.lua error reported by Eugene Alexeev:
@@ -7539,7 +7709,7 @@ o [NSE] Correct global access errors in afp.lua reported by Patrick Donnelly
   [Patrik]
 
 o [NSE] Correct misspelled "Capabilities.IgnoreSpaceBeforeParanthesis"
-  name in the MySQL library. [Kris]
+  name in the mysql library. [Kris]
 
 o Cleaned up our Winpcap header file directory, and also updated to
   the latest files from the official developer pack
@@ -7594,7 +7764,7 @@ o An ALPHA TEST VERSION of Nping, a packet generator written by Luis
   and we hope to improve it greatly as a Summer of Code project this
   summer and then do an official release. See https://nmap.org/nping/.
 
-o [NSE] Added RPC library and three new NFS scripts. Modified the
+o [NSE] Added rpc library and three new NFS scripts. Modified the
   rpcinfo and nfs-showmount scripts to use the new library. The new
   scripts are:
   - nfs-acls shows the owner and directory mode of NFS exports
@@ -7636,7 +7806,7 @@ o [NSE] Added a new script, db2-das-info.nse, that connects to the IBM
   https://nmap.org/nsedoc/scripts/db2-das-info.html . [Patrik Karlsson,
   Tom Sellers]
 
-o [NSE] Added a new library for ASN.1 parsing and adapted the SNMP
+o [NSE] Added asn1.lua for ASN.1 parsing and adapted the snmp
   library to make use of it. Added 5 SNMP scripts that use the new
   libraries:
   - snmp-netstat shows listening and connected
@@ -7662,7 +7832,7 @@ o [NSE] Added http-vmware-path-vuln.nse, which checks for a critical
   (CVE-2009-3733). See
   https://nmap.org/nsedoc/scripts/http-vmware-path-vuln.html . [Ron]
 
-o [NSE] Added a new library for LDAP and three new scripts by Patrik:
+o [NSE] Added a new ldap library and three new scripts by Patrik:
   - ldap-brute uses the unpwdb library to guess credentials for LDAP
     (https://nmap.org/nsedoc/scripts/ldap-brute.html).
   - ldap-rootdse retrieves the LDAP root DSA-specific Entry (DSE)
@@ -7671,11 +7841,11 @@ o [NSE] Added a new library for LDAP and three new scripts by Patrik:
     all, or a number of pre-defined object types
     (https://nmap.org/nsedoc/scripts/ldap-search.html).
 
-o [NSE] Added a new library for PostgreSQL and the script pgsql-brute
+o [NSE] Added pgsql.lua for PostgreSQL and the script pgsql-brute
   that uses it to guess credentials. See
   https://nmap.org/nsedoc/scripts/pgsql-brute.html . [Patrik]
 
-o [NSE] Added 5 new MySQL NSE scripts and a MySQL library by Patrik Karlsson:
+o [NSE] Added 5 new MySQL NSE scripts and a mysql library by Patrik Karlsson:
   - mysql-brute uses the unpwdb library to guess credentials for MySQL
     (https://nmap.org/nsedoc/scripts/mysql-brute.html).
   - mysql-databases queries MySQL for a list of databases
@@ -7891,7 +8061,7 @@ o Fixed an assertion failure which could occur when connecting to an
   possibly have happened in other situations. Thanks to Brandon for
   reporting the bug and testing. [David]
 
-o Added the function bignum_add to the nse_openssl library to support
+o Added the function bignum_add to the openssl NSE library to support
   BIGNUM addition [Patrik]
 
 o The redistributable Visual C++ runtime components installer
@@ -8555,12 +8725,12 @@ o [Ncat] Now has configure-time ASCII art just like Nmap does:
           (     ____
            \_.=|____E
 
-o [NSE] Added HTTP pipelining support to the HTTP library and and to
+o [NSE] Added HTTP pipelining support to the http library and and to
   the http-enum, http-userdir-enum, and sql-injection.nse
   scripts. Pipelining can increase speed dramatically for scripts
   which make many requests.
 
-o [NSE] The HTTP library now caches responses from http.get or
+o [NSE] The http library now caches responses from http.get or
   http.head so that resources aren't requested multiple times during
   the same Nmap run even if several scripts request them. See
   http://seclists.org/nmap-dev/2009/q3/733. [Patrick]
@@ -8680,7 +8850,7 @@ o Removed IP ID matching in packet headers returned in ICMP errors.
   http://seclists.org/nmap-dev/2009/q2/580 for an example of host
   order affecting scan results due to this phenomenon. [David]
 
-o [NSE] The HTTP library now handles chunked transfer decoding more
+o [NSE] The http library now handles chunked transfer decoding more
   robustly. See http://seclists.org/nmap-dev/2009/q3/13 [David]
 
 o [NSE] Unexpected error messages from scripts now include the target
@@ -8786,7 +8956,7 @@ o Fixed an integer overflow in uptime calculation which could occur
   that was revealed by the bug. Toby Simmons reported the problem and
   helped with the fix.  [David]
 
-o [NSE] The HTTP library now supports HTTP cookies. [Joao Correa]
+o [NSE] The http library now supports HTTP cookies. [Joao Correa]
 
 o Fixed a compile error on NetBSD. It was
     tcpip.cc:2948: error: pointer of type 'void *' used in arithmetic
@@ -9132,7 +9302,7 @@ o Changed the default UDP ping (-PU) port from 31338 to 40125.  This
 
 o [NSE] Added the imap-capabilities script, which uses the CAPABILITY
   command to determine the capabilities of a target IMAP mail server.
-  A simple supporting IMAP library was added as well. See
+  A simple supporting imap library was added as well. See
   https://nmap.org/nsedoc/scripts/imap-capabilities.html . [Brandon]
 
 o [NSE] Brandon Enright from UCSD reports that, thanks to all the NSE
@@ -9450,7 +9620,7 @@ o [Ncat] Fix hostname resolution on BSD systems where a recently
   hint is provided. Patch originally provided by Hajimu Umemoto of
   FreeBSD. [Daniel Roethlisberger]
 
-o [NSE] Fixed bug in the DNS library which caused the error message
+o [NSE] Fixed bug in the dns library which caused the error message
   "nselib/dns.lua:54: 'for' limit must be a number". [Jah]
 
 o Fixed Solaris 10 compilation by renaming a yield structure which
@@ -9554,7 +9724,7 @@ o [NSE] The Nmap Script Engine core (C++) was rewritten in Lua for
 o [Zenmap] The "Cancel" button has been restored to the main screen.
   It will cancel the scan that is currently being displayed. [David]
 
-o Fixed an SMB library bug which could case a nil-pointer exception
+o Fixed an smb library bug which could case a nil-pointer exception
   when scanning broken SMB implementations. Reported by Steve
   Horejsi. [Ron]
 
@@ -10257,7 +10427,7 @@ o [NSE] Added banner.nse, a simple script which connects to open TCP
   ports and prints out anything sent in the first five seconds by the
   listening service. [Jah]
 
-o [NSE] Added a new OpenSSL library with functions for multiprecision
+o [NSE] Added a new openssl library with functions for multiprecision
   integer arithmetic, hashing, HMAC, symmetric encryption and
   symmetric decryption. [Sven]
 
@@ -10483,7 +10653,7 @@ o [Zenmap] The help function now properly converts the pathname of the
   WindowsError: [Error 2] The system cannot find the file specified:
   'file://C:\\Program Files\\Nmap\\zenmap\\share\\zenmap\\docs\\help.html'
 
-o [NSE] Fixed a number of small bugs in the Nmap library
+o [NSE] Fixed a number of small bugs in the nmap library
   (nse_nmaplib.cc), as described at
   http://seclists.org/nmap-dev/2008/q4/0663.html [Patrick]
 
@@ -10535,7 +10705,7 @@ o Fix compilation w/IPv6 support on Solaris by checking for inet_addr
   configure. [David]
 
 o Removed the nbase_md5.* and nbase_sha1.* files because our
-  new nse_openssl library includes that functionality. [David]
+  new openssl NSE library includes that functionality. [David]
 
 o The robots.txt NSE script is now silent when there are no
   interesting results, rather than printing that robots.txt "is empty
@@ -10802,7 +10972,7 @@ o Added a new NSE binlib library, which offers bin.pack() and
   https://nmap.org/book/nse-library.html#nse-binlib . [Philip
   Pickering]
 
-o Added a new NSE DNS library. See this thread:
+o Added a new NSE dns library. See this thread:
   http://seclists.org/nmap-dev/2008/q3/0310.html [Philip Pickering]
 
 o Added new NSE libraries for base64 encoding, SNMP, and POP3 mail
@@ -10811,11 +10981,11 @@ o Added new NSE libraries for base64 encoding, SNMP, and POP3 mail
 
 o Added NSE scripts popcapa (retrieves POP3 server capabilities) and
   brutePOP3 (brute force POP3 authentication cracker) which make use
-  of the new POP3 library. [Philip Pickering]
+  of the new pop3 library. [Philip Pickering]
 
 o Added the SNMPcommunitybrute NSE script, which is a brute force
   community string cracker. Also modified SNMPsysdescr to use the new
-  SNMP library. [Philip Pickering]
+  snmp library. [Philip Pickering]
 
 o Fixed the SMTPcommands script so that it can't return multiple
   values (which was causing problems). Thanks to Jah for tracking down
@@ -10823,7 +10993,7 @@ o Fixed the SMTPcommands script so that it can't return multiple
   NSE so it can handle misbehaving scripts like this without causing
   mysterious side effects.
 
-o Added a new NSE Unpwdb (username/password database) library for
+o Added a new NSE library, unpwdb.lua (username/password database) for
   easily obtaining usernames or passwords from a list.  The functions
   usernames() and passwords() return a closure which returns a new
   list entry with every call, or nil when the list is exhausted.  You
@@ -10980,7 +11150,7 @@ o Fixed a segmentation fault in Nsock which occurred when calling
   NUL-terminated string and Nsock should take the length itself) and
   the Nsock trace level was at least 2. [Kris]
 
-o The NSE Comm library now defaults to trying to read as many bytes as
+o The NSE comm library now defaults to trying to read as many bytes as
   are available rather than lines if neither the "bytes" nor "lines"
   options are given.  Thanks to Brandon for reporting a problem which
   he noticed in the dns-test-open-recursion script. [Kris]
@@ -11147,7 +11317,7 @@ o Added advanced search functionality to Zenmap so that you can locate
 o Nmap's special WinPcap installer now handles 64-bit Windows machines
   by installing the proper 64-bit npf.sys. [Rob Nicholls]
 
-o Added a new NSE Comm (common communication) library for common
+o Added a new NSE library, comm.lua, for common
   network discovery tasks such as banner-grabbing (get_banner()) and
   making a quick exchange of data (exchange()).  16 scripts were
   updated to use this library. [Kris]
@@ -11164,7 +11334,7 @@ o Added a new timing_level() function to NSE which reports the Nmap
   timing level from 0 to 5, as set by the Nmap -T option.  The default
   is 3. [Thomas Buchanan]
 
-o Update the HTTP library to use the new timing_level functionality to
+o Update the http library to use the new timing_level functionality to
   set connection and response timeouts. An error preventing the new
   timing_level feature from working was also fixed.  [Jah]
 
@@ -11364,7 +11534,7 @@ o A new "default" Nmap Scripting Engine category was added.  Only
   Previously, any scripts in the "safe" or "intrusive" categories were
   run.  21 scripts are now in this default category. [Kris]
 
-o The NSE HTTP library now uses the host name specified on the command
+o The NSE http library now uses the host name specified on the command
   line when making requests, which improves script scanning against
   web servers with virtual hosts. Thanks to Sven Klemm for the patch.
 
@@ -11534,7 +11704,7 @@ o Reformat Nmap COPYING file (e.g. remove C comment markers, reduce
   when presented by the Windows executable (NSIS) installer.  Thanks
   to Jah for the patch, which was modified slightly by Fyodor.
 
-o Added NSE Datafiles library which reads and parses Nmap's nmap-*
+o Added NSE datafiles library which reads and parses Nmap's nmap-*
   data files for scripts.  The functions (parse_protocols(),
   parse_rpc() and parse_services()) return tables with numbers
   (e.g. port numbers) indexing names (e.g. service names).  The
@@ -11719,11 +11889,11 @@ o Nmap now saves the target name (if any) specified on the command
   line, since this can differ from the reverse DNS results.  It can be
   particularly important when doing HTTP tests against virtual hosts.
   The data can be accessed from target->TargetName() from Nmap proper
-  and host.targetname from NSE scripts.  The NSE HTTP library now uses
+  and host.targetname from NSE scripts.  The NSE http library now uses
   this for the Host header.  Thanks to Sven Klemm for adding this
   useful feature.
 
-o Added NSE HTTP library which allows scripts to easily fetch URLs
+o Added NSE http library which allows scripts to easily fetch URLs
   with http.get_url() or create more complex requests with
   http.request().  There is also an http.get() function which takes
   components (hostname, port, and path) rather than a URL.  The
@@ -11749,7 +11919,7 @@ o A new NSE table library (tab.lua) allows scripts to deliver better
   formatted output.  The Zone transfer script (zoneTrans.nse) has been
   updated to use this new facility. [Eddie]
 
-o Rewrote HTTPpasswd.nse to use Sven's excellent HTTP library and to
+o Rewrote HTTPpasswd.nse to use Sven's excellent http library and to
   do some much-needed cleaning up. [Kris]
 
 o Added a new MsSQL version detection probe and a bunch of match lines
@@ -12615,9 +12785,9 @@ o Integrated version detection submissions.  The database has grown by
 o Added the NSE library (NSELib) which is a library of useful
   functions (which can be implemented in LUA or as loadable C/C++
   modules) for use by NSE scripts.  We already have libraries for bit
-  operations (bit), list operations (listop), URL fetching and
-  manipulation (url), activation rules (shortport), and miscellaneous
-  commonly useful functions (stdnse).  Stoiko added the underlying
+  operations (bit), list operations (listop.lua), URL fetching and
+  manipulation (url.lua), activation rules (shortport.lua), and miscellaneous
+  commonly useful functions (stdnse.lua).  Stoiko added the underlying
   functionality, though numerous people contributed to the library
   routines.
 

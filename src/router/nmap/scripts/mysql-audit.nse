@@ -102,7 +102,9 @@ local function loadAuditRulebase( filename )
     test = function(t) table.insert(rules, t) end;
   }, {__index = _G})
 
-  filename = nmap.fetchfile("nselib/data/" .. filename) or filename
+  if not filename then
+    filename = nmap.fetchfile("nselib/data/mysql-cis.audit")
+  end
   stdnse.debug(1, "Loading rules from: %s", filename)
   local file, err = loadfile(filename, "t", env)
 
@@ -121,7 +123,7 @@ action = function( host, port )
 
   local username = stdnse.get_script_args("mysql-audit.username")
   local password = stdnse.get_script_args("mysql-audit.password")
-  local filename = stdnse.get_script_args("mysql-audit.filename") or "mysql-cis.audit"
+  local filename = stdnse.get_script_args("mysql-audit.filename")
 
   if ( not(username) ) then
     return fail("No username was supplied (see mysql-audit.username)")

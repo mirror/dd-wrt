@@ -201,10 +201,7 @@ local function get_fingerprints(fingerprint_file, category)
   end
 
   -- Try and find the file; if it isn't in Nmap's directories, take it as a direct path
-  local filename_full = nmap.fetchfile('nselib/data/' .. fingerprint_file)
-  if(not(filename_full)) then
-    filename_full = fingerprint_file
-  end
+  local filename_full = fingerprint_file or nmap.fetchfile('nselib/data/http-fingerprints.lua')
 
   stdnse.debug1("Loading fingerprint database: %s", filename_full)
   local env = setmetatable({fingerprints = {}}, {__index = _G})
@@ -369,7 +366,7 @@ action = function(host, port)
   -- Read the script-args, keeping the old ones for reverse compatibility
   local basepath         = stdnse.get_script_args({'http-enum.basepath',        'path'})         or '/'
   local displayall       = stdnse.get_script_args({'http-enum.displayall',      'displayall'})   or false
-  local fingerprint_file = stdnse.get_script_args({'http-enum.fingerprintfile', 'fingerprints'}) or 'http-fingerprints.lua'
+  local fingerprint_file = stdnse.get_script_args({'http-enum.fingerprintfile', 'fingerprints'})
   local category         = stdnse.get_script_args('http-enum.category')
   --  local try_variations   = stdnse.get_script_args({'http-enum.tryvariations',   'variations'})   or false
   --  local limit            = tonumber(stdnse.get_script_args({'http-enum.limit', 'limit'})) or -1

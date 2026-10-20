@@ -284,6 +284,9 @@ const struct sockaddr_storage *Target::SourceSockAddr() const {
 void Target::setSourceSockAddr(const struct sockaddr_storage *ss, size_t ss_len) {
   assert(ss_len > 0 && ss_len <= sizeof(*ss));
   memcpy(&sourcesock, ss, ss_len);
+  if (ss_len == sizeof(*ss)) {
+    ss_len = sockaddr_get_len(ss);
+  }
   sourcesocklen = ss_len;
   GenerateSourceIPString();
 }

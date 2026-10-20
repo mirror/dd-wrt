@@ -170,9 +170,12 @@ const struct sockaddr_storage *NmapOps::SourceSockAddr() const {
 
 /* Note that it is OK to pass in a sockaddr_in or sockaddr_in6 casted
      to sockaddr_storage */
-void NmapOps::setSourceSockAddr(struct sockaddr_storage *ss, size_t ss_len) {
+void NmapOps::setSourceSockAddr(const struct sockaddr_storage *ss, size_t ss_len) {
   assert(ss_len > 0 && ss_len <= sizeof(*ss));
   memcpy(&sourcesock, ss, ss_len);
+  if (ss_len == sizeof(*ss)) {
+    ss_len = sockaddr_get_len(ss);
+  }
   sourcesocklen = ss_len;
 }
 

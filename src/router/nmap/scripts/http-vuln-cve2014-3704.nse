@@ -5,7 +5,7 @@ local string = require "string"
 local table = require "table"
 local url = require "url"
 local vulns = require "vulns"
-local openssl = require "openssl"
+local openssl = stdnse.silent_require "openssl"
 local rand = require "rand"
 
 description = [[
