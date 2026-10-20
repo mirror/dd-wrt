@@ -69,6 +69,7 @@ struct pdo_pgsql_stmt {
 	Oid *param_types;
 	int                     current_row;
 	bool is_prepared;
+	bool is_cursor_declared;
 	bool is_unbuffered;
 	bool is_running_unbuffered;
 };
