@@ -76,7 +76,7 @@ int main(void)
   wt.sizeleft = strlen(data);
 
   /* In Windows, this inits the Winsock stuff */
-  result = curl_global_init(CURL_GLOBAL_DEFAULT);
+  result = curl_global_init(CURL_GLOBAL_ALL);
   /* Check for errors */
   if(result != CURLE_OK) {
     fprintf(stderr, "curl_global_init() failed: %s\n",
@@ -102,13 +102,11 @@ int main(void)
     /* get verbose debug output please */
     curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
-    /*
-      If you use POST to an HTTP 1.1 server, you can send data without knowing
-      the size before starting the POST if you use chunked encoding. You
-      enable this by adding a header like "Transfer-Encoding: chunked" with
-      CURLOPT_HTTPHEADER. With HTTP 1.0 or without chunked transfer, you must
-      specify the size in the request.
-    */
+    /* If you use POST to an HTTP 1.1 server, you can send data without knowing
+       the size before starting the POST if you use chunked encoding. You
+       enable this by adding a header like "Transfer-Encoding: chunked" with
+       CURLOPT_HTTPHEADER. With HTTP 1.0 or without chunked transfer, you must
+       specify the size in the request. */
 #ifdef USE_CHUNKED
     {
       struct curl_slist *chunk = NULL;

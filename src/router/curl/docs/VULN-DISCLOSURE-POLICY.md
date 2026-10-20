@@ -183,6 +183,10 @@ trigger. Due to timing, platform requirements or the fact that options or
 protocols involved are rare etc. [Past
 example](https://curl.se/docs/CVE-2022-43552.html)
 
+Issues that are likely to be detected by basic testing are likely to not be
+considered more severe than **Low**. Users that do not test cannot be expected
+to have secure setups to begin with.
+
 ## Medium
 
 This is a security problem that is less hard than **Low** to exploit or
@@ -359,7 +363,7 @@ A *legacy dependency* is here defined as:
 - there are modern versions of equivalent or better functionality offered and
   in common use
 
-## weak algorithms required for functionality
+## Weak algorithms required for functionality
 
 curl supports several algorithms that are considered weak, like DES and MD5.
 These algorithms are still not curl security vulnerabilities or security

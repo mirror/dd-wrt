@@ -85,6 +85,8 @@ May: first Debian package.
 August: `ldap://` and `file://` support added. The curl website gets 1300
 visits weekly. Moved site to curl.haxx.nu.
 
+September: started using CVS for source code version control.
+
 September: Released curl 6.0. 15000 lines of code.
 
 December 28: added the project on Sourceforge and started using its services
@@ -173,6 +175,8 @@ December: full-fledged SSL for FTP is supported.
 
 January: curl 7.11.0 introduced large file support.
 
+March: added asynch name resolves using the c-ares library
+
 June: curl 7.12.0 introduced IDN support. 10 official web mirrors.
 
 This release bumped the major SONAME to 3 due to the removal of the
@@ -241,7 +245,7 @@ March: security vulnerability: libcurl Arbitrary File Access
 
 April: added CMake support
 
-August: security vulnerability: libcurl embedded zero in cert name
+August: security vulnerability: libcurl embedded zero byte in cert name
 
 December: Added support for IMAP, POP3 and SMTP
 
@@ -312,6 +316,8 @@ August: support for HTTP/2 server push
 September: started "everything curl". A separate stand-alone book documenting
 curl and related info in perhaps a more tutorial style rather than a
 reference,
+
+September: initial support for the Public Suffix List for cookies.
 
 December: Public Suffix List
 
@@ -497,3 +503,5 @@ December 15: the website served 78 TB over the last month.
 ## 2026
 
 April: removed support for RTMP
+
+September: removed support for SMB

@@ -38,7 +38,7 @@ static CURLcode test_unit1675(const char *arg)
       const char *in;
       const char *out;
     };
-    const struct ipv4_test tests[] = {
+    static const struct ipv4_test tests[] = {
       { "0x.0x.0x.0x", NULL }, /* invalid hex */
       { "0x.0x.0x", NULL }, /* invalid hex */
       { "0x.0x", NULL }, /* invalid hex */
@@ -146,7 +146,7 @@ static CURLcode test_unit1675(const char *arg)
       unsigned int query;
       const char *out;
     };
-    const struct urlencode_test tests[] = {
+    static const struct urlencode_test tests[] = {
       { "http://leave\x01/hello\x01world", FALSE, QUERY_NO,
         "http://leave\x01/hello%01world" },
       { "http://leave/hello\x01world", FALSE, QUERY_NO,
@@ -204,7 +204,7 @@ static CURLcode test_unit1675(const char *arg)
       const char *out_host;
       const char *out_zone;
     };
-    const struct ipv6_test tests[] = {
+    static const struct ipv6_test tests[] = {
       { "[::1]", "[::1]", NULL },
       { "[fe80::1%eth0]", "[fe80::1]", "eth0" },
       { "[fe80::1%25eth0]", "[fe80::1]", "eth0" },
@@ -227,14 +227,13 @@ static CURLcode test_unit1675(const char *arg)
                         uc ? "error" : hostname);
           fails++;
         }
-        if(!uc && tests[i].out_zone) {
-          if(!u.zoneid || strcmp(u.zoneid, tests[i].out_zone)) {
-            curl_mfprintf(stderr, "ipv6_parse('%s') zone failed:"
-                          " expected '%s', got '%s'\n",
-                          tests[i].in, tests[i].out_zone,
-                          u.zoneid ? u.zoneid : "(null)");
-            fails++;
-          }
+        if(!uc && tests[i].out_zone &&
+           (!u.zoneid || strcmp(u.zoneid, tests[i].out_zone))) {
+          curl_mfprintf(stderr, "ipv6_parse('%s') zone failed:"
+                        " expected '%s', got '%s'\n",
+                        tests[i].in, tests[i].out_zone,
+                        u.zoneid ? u.zoneid : "(null)");
+          fails++;
         }
       }
       else if(!uc) {
@@ -260,7 +259,7 @@ static CURLcode test_unit1675(const char *arg)
       const char *out_path;
       bool fine;
     };
-    const struct file_test tests[] = {
+    static const struct file_test tests[] = {
       { "file:///etc/hosts", "/etc/hosts", TRUE },
       { "file://localhost/etc/hosts", "/etc/hosts", TRUE },
       { "file://apple/etc/hosts", "/etc/hosts", FALSE },
@@ -317,7 +316,7 @@ static CURLcode test_unit1675(const char *arg)
       const char *path;
       bool expect_match;
     };
-    const struct origin_test tests[] = {
+    static const struct origin_test tests[] = {
       { "http://host:123/x", "http", "host", "123", "/y", TRUE },
       { "http://host:123/x", NULL, "host", "123", "/y", TRUE },
       { "http://host:123/x", NULL, NULL, NULL, "/y", TRUE },
@@ -395,7 +394,7 @@ loop_end:
       const char *options;
       size_t offset;
     };
-    const struct test tests[] = {
+    static const struct test tests[] = {
       { CURLUE_OK, "foo:bar@host", NULL, 0, "foo", "bar", "o", 8 },
       { CURLUE_OK, "foo:bar;abc@host", "imap", 0, "foo", "bar", "abc", 12 },
       { CURLUE_OK, "foo:bar;abc@host", NULL, 0, "foo", "bar;abc", "o", 12 },
@@ -437,6 +436,74 @@ loop_end:
       curlx_safefree(u.options);
     }
     abort_if(fails, "parse_hostname_login tests failed");
+  }
+
+  /* Test that CURLUPART_HOST normalizes legacy numeric IPv4 forms the
+     same way the full URL parser does */
+  {
+    int fails = 0;
+    unsigned int i;
+    struct host_test {
+      const char *host;
+      const char *out;
+    };
+    static const struct host_test tests[] = {
+      { "2130706433", "127.0.0.1" },
+      { "0177.1", "127.0.0.1" },
+      { "0x7f.1", "127.0.0.1" },
+      { "0xc0a80001", "192.168.0.1" },
+      { "127.0.0.1", "127.0.0.1" },
+      { "example.com", "example.com" },
+      { "0", "0.0.0.0" },
+      { "1", "0.0.0.1" },
+      { "7", "0.0.0.7" },
+      { "9", "0.0.0.9" },
+      { "00", "0.0.0.0" },
+    };
+
+    for(i = 0; i < CURL_ARRAYSIZE(tests); i++) {
+      CURLU *viaurl = curl_url();
+      CURLU *viahost = curl_url();
+      CURLUcode uc1, uc2;
+      char *urlbuf = curl_maprintf("http://%s/", tests[i].host);
+      char *gothost1 = NULL;
+      char *gothost2 = NULL;
+
+      if(!viaurl || !viahost || !urlbuf) {
+        curl_mfprintf(stderr, "%u: failed to allocate memory\n", i);
+        fails++;
+        goto host_loop_end;
+      }
+
+      uc1 = curl_url_set(viaurl, CURLUPART_URL, urlbuf, 0);
+      if(!uc1)
+        uc1 = curl_url_get(viaurl, CURLUPART_HOST, &gothost1, 0);
+
+      curl_url_set(viahost, CURLUPART_SCHEME, "http", 0);
+      uc2 = curl_url_set(viahost, CURLUPART_HOST, tests[i].host, 0);
+      if(!uc2)
+        uc2 = curl_url_get(viahost, CURLUPART_HOST, &gothost2, 0);
+
+      if(uc1 || uc2 ||
+         strcmp(gothost1, tests[i].out) ||
+         strcmp(gothost2, tests[i].out)) {
+        curl_mfprintf(stderr, "host '%s' mismatch: full-URL -> '%s' (%d), "
+                      "CURLUPART_HOST -> '%s' (%d), expected '%s'\n",
+                      tests[i].host,
+                      uc1 ? "error" : gothost1, (int)uc1,
+                      uc2 ? "error" : gothost2, (int)uc2,
+                      tests[i].out);
+        fails++;
+      }
+
+host_loop_end:
+      curl_free(gothost1);
+      curl_free(gothost2);
+      curl_free(urlbuf);
+      curl_url_cleanup(viaurl);
+      curl_url_cleanup(viahost);
+    }
+    abort_if(fails, "CURLUPART_HOST ipv4 normalization parity tests failed");
   }
 
   UNITTEST_END_SIMPLE

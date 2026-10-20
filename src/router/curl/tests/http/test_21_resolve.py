@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #***************************************************************************
 #                                  _   _ ____  _
 #  Project                     ___| | | |  _ \| |
@@ -26,11 +24,11 @@
 #
 import logging
 import os
+import re
 from datetime import timedelta
-from typing import Generator
 
 import pytest
-from testenv import CurlClient, Dnsd, Env, LocalClient
+from testenv import CurlClient, Env, LocalClient
 
 log = logging.getLogger(__name__)
 
@@ -39,19 +37,13 @@ log = logging.getLogger(__name__)
 @pytest.mark.skipif(condition=not Env.curl_has_feature('AsynchDNS'), reason="needs AsynchDNS")
 class TestResolve:
 
-    @pytest.fixture(scope='class')
-    def dnsd(self, env: Env) -> Generator[Dnsd, None, None]:
-        dnsd = Dnsd(env=env)
-        assert dnsd.initial_start()
-        yield dnsd
-        dnsd.stop()
-
     @pytest.fixture(autouse=True, scope='class')
-    def _class_scope(self, env, httpd):
+    @classmethod
+    def _class_scope(cls, env, httpd):
         indir = httpd.docs_dir
         env.make_data_file(indir=indir, fname="data-0k", fsize=0)
 
-    # use .invalid host name that should never resolv
+    # use .invalid hostname that should never resolv
     def test_21_01_resolv_invalid_one(self, env: Env, httpd, nghttpx):
         count = 1
         run_env = os.environ.copy()
@@ -62,33 +54,33 @@ class TestResolve:
         r.check_exit_code(6)
         r.check_stats(count=count, http_status=0, exitcode=6)
 
-    # use .invalid host name, one after the other
+    # use .invalid hostname, one after the other
     @pytest.mark.parametrize("delay_ms", [1, 50])
     def test_21_02_resolv_invalid_serial(self, env: Env, delay_ms, httpd, nghttpx):
         count = 10
         run_env = os.environ.copy()
         run_env['CURL_DBG_RESOLV_FAIL_DELAY'] = f'{delay_ms}'
         curl = CurlClient(env=env, run_env=run_env, force_resolv=False)
-        urls = [ f'https://test-{i}.http.curl.invalid/' for i in range(count)]
+        urls = [f'https://test-{i}.http.curl.invalid/' for i in range(count)]
         r = curl.http_download(urls=urls, with_stats=True)
         r.check_exit_code(6)
         r.check_stats(count=count, http_status=0, exitcode=6)
 
-    # use .invalid host name, parallel
+    # use .invalid hostname, parallel
     @pytest.mark.parametrize("delay_ms", [1, 50])
     def test_21_03_resolv_invalid_parallel(self, env: Env, delay_ms, httpd, nghttpx):
         count = 20
         run_env = os.environ.copy()
         run_env['CURL_DBG_RESOLV_FAIL_DELAY'] = f'{delay_ms}'
         curl = CurlClient(env=env, run_env=run_env, force_resolv=False)
-        urls = [ f'https://test-{i}.http.curl.invalid/' for i in range(count)]
+        urls = [f'https://test-{i}.http.curl.invalid/' for i in range(count)]
         r = curl.http_download(urls=urls, with_stats=True, extra_args=[
             '--parallel'
         ])
         r.check_exit_code(6)
         r.check_stats(count=count, http_status=0, exitcode=6)
 
-    # resolve first url with ipv6 only and fail that, resolve second
+    # resolve first URL with IPv6 only and fail that, resolve second
     # with ipv*, should succeed.
     def test_21_04_resolv_inv_v6(self, env: Env, httpd):
         count = 2
@@ -100,7 +92,7 @@ class TestResolve:
             pytest.skip(f'example client not built: {client.name}')
         dfiles = [client.download_file(i) for i in range(count)]
         self._clean_files(dfiles)
-        # let the first URL resolve via ipv6 only, which we force to fail
+        # let the first URL resolve via IPv6 only, which we force to fail
         r = client.run(args=[
             '-n', f'{count}', '-6', '-C', env.ca.cert_file, url
         ])
@@ -108,7 +100,7 @@ class TestResolve:
         assert not os.path.exists(dfiles[0])
         assert os.path.exists(dfiles[1])
 
-    # use .invalid host name, parallel, single resolve thread
+    # use .invalid hostname, parallel, single resolve thread
     @pytest.mark.skipif(condition=not Env.curl_resolv_threaded(), reason="no threaded resolver")
     def test_21_05_resolv_single_thread(self, env: Env, httpd, nghttpx):
         count = 10
@@ -117,7 +109,7 @@ class TestResolve:
         run_env['CURL_DBG_RESOLV_FAIL_DELAY'] = f'{delay_ms}'
         run_env['CURL_DBG_RESOLV_MAX_THREADS'] = '1'
         curl = CurlClient(env=env, run_env=run_env, force_resolv=False)
-        urls = [ f'https://test-{i}.http.curl.invalid/' for i in range(count)]
+        urls = [f'https://test-{i}.http.curl.invalid/' for i in range(count)]
         r = curl.http_download(urls=urls, with_stats=True, extra_args=[
             '--parallel', '-6'
         ])
@@ -125,76 +117,207 @@ class TestResolve:
         r.check_stats(count=count, http_status=0, exitcode=6)
         assert r.duration > timedelta(milliseconds=count * delay_ms), f'{r}'
 
-    # dnsd with no answers
-    @pytest.mark.skipif(condition=not Env.curl_override_dns(), reason="no DNS override")
-    def test_21_06_dnsd_empty(self, env: Env, httpd, dnsd):
-        dnsd.set_answers()
+    def dns_settings(self, dns_method, dnsd, path="/"):
+        xargs = []
         run_env = os.environ.copy()
-        run_env['CURL_DNS_SERVER'] = f'127.0.0.1:{dnsd.port}'
+        run_env['CURL_DEBUG'] = 'all'
+        if dns_method == 'DoH':
+            if not Env.curl_can_doh():
+                pytest.skip(reason="curl built without DoH")
+            xargs = ['--doh-insecure', '--doh-url', f'http://127.0.0.1:{dnsd.port}{path}']
+        else:
+            if not Env.curl_override_dns():
+                pytest.skip(reason="no DNS override")
+            run_env['CURL_DNS_SERVER'] = f'127.0.0.1:{dnsd.port}'
+            run_env['CURL_QUICK_EXIT'] = '1'
+        return run_env, xargs
+
+    # dnsd with no answers
+    @pytest.mark.parametrize("dns_method", ["DNS", "DoH"])
+    def test_21_06_dnsd_empty(self, env: Env, httpd, dnsd, dns_method):
+        dnsd.set_answers()
+        run_env, xargs = self.dns_settings(dns_method, dnsd)
         curl = CurlClient(env=env, run_env=run_env, force_resolv=False)
         url = 'https://test-dnsd.http.curl.invalid/'
-        r = curl.http_download(urls=[url], with_stats=True)
+        r = curl.http_download(urls=[url], with_stats=True, extra_args=xargs)
         r.check_exit_code(6)  # could not resolve host
         r.check_stats(count=1, http_status=0, exitcode=6)
 
     # dnsd with one answer for A
-    @pytest.mark.skipif(condition=not Env.curl_override_dns(), reason="no DNS override")
-    def test_21_07_dnsd_a(self, env: Env, httpd, dnsd):
+    @pytest.mark.parametrize("dns_method", ["DNS", "DoH"])
+    def test_21_07_dnsd_a(self, env: Env, httpd, dnsd, dns_method):
         dnsd.set_answers(addr_a=['127.0.0.1'])
-        run_env = os.environ.copy()
-        run_env['CURL_DNS_SERVER'] = f'127.0.0.1:{dnsd.port}'
+        run_env, xargs = self.dns_settings(dns_method, dnsd)
         curl = CurlClient(env=env, run_env=run_env, force_resolv=False)
         url = f'https://{env.authority_for(env.domain1, "http/1.1")}/data.json'
-        r = curl.http_download(urls=[url], with_stats=True)
+        r = curl.http_download(urls=[url], with_stats=True, extra_args=xargs)
         r.check_exit_code(0)
         r.check_stats(count=1, http_status=200, exitcode=0)
         assert r.stats[0]['remote_ip'] == '127.0.0.1'
 
     # dnsd with one answer for AAAA
-    @pytest.mark.skipif(condition=not Env.curl_override_dns(), reason="no DNS override")
     @pytest.mark.skipif(condition=not Env.curl_has_feature('IPv6'), reason="no IPv6")
-    def test_21_08_dnsd_aaaa(self, env: Env, httpd, dnsd):
+    @pytest.mark.parametrize("dns_method", ["DNS", "DoH"])
+    def test_21_08_dnsd_aaaa(self, env: Env, httpd, dnsd, dns_method):
         dnsd.set_answers(addr_aaaa=['[::1]'])
-        run_env = os.environ.copy()
-        run_env['CURL_DNS_SERVER'] = f'127.0.0.1:{dnsd.port}'
-        run_env['CURL_QUICK_EXIT'] = '1'
+        run_env, xargs = self.dns_settings(dns_method, dnsd)
         curl = CurlClient(env=env, run_env=run_env, force_resolv=False)
         url = f'https://{env.authority_for(env.domain1, "http/1.1")}/data.json'
-        r = curl.http_download(urls=[url], with_stats=True)
+        r = curl.http_download(urls=[url], with_stats=True, extra_args=xargs)
         r.check_exit_code(0)
         r.check_stats(count=1, http_status=200, exitcode=0)
         assert r.stats[0]['remote_ip'] == '::1'
 
     # dnsd with one answer for A, delayed one for AAAA
-    @pytest.mark.skipif(condition=not Env.curl_override_dns(), reason="no DNS override")
-    def test_21_09_dnsd_a_delay(self, env: Env, httpd, dnsd):
+    @pytest.mark.parametrize("dns_method", ["DNS", "DoH"])
+    def test_21_09_dnsd_a_delay(self, env: Env, httpd, dnsd, dns_method):
         dnsd.set_answers(addr_a=['127.0.0.1'], addr_aaaa=['[::1]'],
                          delay_aaaa_ms=env.test_timeout * 1000)
-        run_env = os.environ.copy()
-        run_env['CURL_DNS_SERVER'] = f'127.0.0.1:{dnsd.port}'
-        run_env['CURL_QUICK_EXIT'] = '1'
+        run_env, xargs = self.dns_settings(dns_method, dnsd)
         curl = CurlClient(env=env, run_env=run_env, force_resolv=False)
         url = f'https://{env.authority_for(env.domain1, "http/1.1")}/data.json'
-        r = curl.http_download(urls=[url], with_stats=True)
+        r = curl.http_download(urls=[url], with_stats=True, extra_args=xargs)
         r.check_exit_code(0)
         r.check_stats(count=1, http_status=200, exitcode=0)
         assert r.stats[0]['remote_ip'] == '127.0.0.1'
 
     # dnsd with one answer for AAAA, delayed one for A
-    @pytest.mark.skipif(condition=not Env.curl_override_dns(), reason="no DNS override")
     @pytest.mark.skipif(condition=not Env.curl_has_feature('IPv6'), reason="no IPv6")
-    def test_21_10_dnsd_aaaa_delay(self, env: Env, httpd, dnsd):
+    @pytest.mark.parametrize("dns_method", ["DNS", "DoH"])
+    def test_21_10_dnsd_aaaa_delay(self, env: Env, httpd, dnsd, dns_method):
         dnsd.set_answers(addr_a=['127.0.0.1'], addr_aaaa=['[::1]'],
                          delay_a_ms=env.test_timeout * 1000)
-        run_env = os.environ.copy()
-        run_env['CURL_DNS_SERVER'] = f'127.0.0.1:{dnsd.port}'
-        run_env['CURL_QUICK_EXIT'] = '1'
+        run_env, xargs = self.dns_settings(dns_method, dnsd)
         curl = CurlClient(env=env, run_env=run_env, force_resolv=False)
         url = f'https://{env.authority_for(env.domain1, "http/1.1")}/data.json'
-        r = curl.http_download(urls=[url], with_stats=True)
+        r = curl.http_download(urls=[url], with_stats=True, extra_args=xargs)
         r.check_exit_code(0)
         r.check_stats(count=1, http_status=200, exitcode=0)
         assert r.stats[0]['remote_ip'] == '::1'
+
+    # transient resolve failures must not be cached as negative
+    # entries: a second lookup of the same name tries again
+    @pytest.mark.skipif(condition=not Env.curl_resolv_threaded(), reason="no threaded resolver")
+    def test_21_11_resolv_transient_uncached(self, env: Env, httpd, nghttpx):
+        count = 2
+        delay_ms = 250
+        run_env = os.environ.copy()
+        run_env['CURL_DBG_RESOLV_FAIL_DELAY'] = f'{delay_ms}'
+        curl = CurlClient(env=env, run_env=run_env, force_resolv=False)
+        urls = [f'https://test-again.http.curl.invalid/?id={i}' for i in range(count)]
+        r = curl.http_download(urls=urls, with_stats=True)
+        r.check_exit_code(6)
+        r.check_stats(count=count, http_status=0, exitcode=6)
+        # not cached as negative: the second transfer resolved again
+        if env.curl_is_verbose():
+            assert not [t for t in r.trace_lines if 'Negative DNS entry' in t], f'{r}'
+        assert r.stats[1]['time_total'] > (delay_ms / 2) / 1000.0, f'{r.stats[1]}'
+
+    # a negative resolve answer is cached: a second lookup of the same
+    # name fails right away from the cache
+    @pytest.mark.skipif(condition=not Env.curl_resolv_threaded(), reason="no threaded resolver")
+    def test_21_12_resolv_negative_cached(self, env: Env, httpd, nghttpx):
+        count = 2
+        delay_ms = 250
+        run_env = os.environ.copy()
+        run_env['CURL_DBG_RESOLV_FAIL_DELAY'] = f'{delay_ms}'
+        run_env['CURL_DBG_RESOLV_FAIL_NEGATIVE'] = '1'
+        curl = CurlClient(env=env, run_env=run_env, force_resolv=False)
+        urls = [f'https://test-nxdomain.http.curl.invalid/?id={i}' for i in range(count)]
+        r = curl.http_download(urls=urls, with_stats=True)
+        r.check_exit_code(6)
+        r.check_stats(count=count, http_status=0, exitcode=6)
+        # the second transfer failed right away from the cache entry
+        if env.curl_is_verbose():
+            assert [t for t in r.trace_lines if 'Negative DNS entry' in t], f'{r}'
+        assert r.stats[1]['time_total'] < (delay_ms / 2) / 1000.0, f'{r.stats[1]}'
+
+    # dnsd giving NXDOMAIN for all families: the negative answer is
+    # cached and a second lookup of the same name uses the cache
+    @pytest.mark.parametrize("dns_method", ["DNS", "DoH"])
+    def test_21_13_dnsd_nxdomain_cached(self, env: Env, httpd, dnsd, dns_method):
+        count = 2
+        dnsd.set_answers(rcode_a=3, rcode_aaaa=3)
+        run_env, xargs = self.dns_settings(dns_method, dnsd)
+        curl = CurlClient(env=env, run_env=run_env, force_resolv=False)
+        urls = [f'https://test-nx.http.curl.invalid/?id={i}' for i in range(count)]
+        r = curl.http_download(urls=urls, with_stats=True, extra_args=xargs)
+        r.check_exit_code(6)
+        r.check_stats(count=count, http_status=0, exitcode=6)
+        if env.curl_is_verbose():
+            assert [t for t in r.trace_lines if 'Negative DNS entry' in t], f'{r}'
+
+    # dnsd failing one family with SERVFAIL: not an authoritative
+    # negative answer, a second lookup of the same name tries again
+    @pytest.mark.parametrize("dns_method", ["DNS", "DoH"])
+    def test_21_14_dnsd_servfail_uncached(self, env: Env, httpd, dnsd, dns_method):
+        count = 2
+        dnsd.set_answers(rcode_a=2, rcode_aaaa=3)
+        run_env, xargs = self.dns_settings(dns_method, dnsd)
+        curl = CurlClient(env=env, run_env=run_env, force_resolv=False)
+        urls = [f'https://test-sf.http.curl.invalid/?id={i}' for i in range(count)]
+        r = curl.http_download(urls=urls, with_stats=True, extra_args=xargs)
+        r.check_exit_code(6)
+        r.check_stats(count=count, http_status=0, exitcode=6)
+        if env.curl_is_verbose():
+            assert not [t for t in r.trace_lines if 'Negative DNS entry' in t], f'{r}'
+
+    # a resolve gets processed even when the first resolver thread
+    # starts fail, e.g. when the system temporarily refuses to spawn
+    # threads. The transfer must fail on the (debug-forced) lookup
+    # failure well before the resolve timeout.
+    @pytest.mark.skipif(condition=not Env.curl_resolv_threaded(), reason="no threaded resolver")
+    def test_21_15_resolv_thread_start_fails(self, env: Env, httpd, nghttpx):
+        run_env = os.environ.copy()
+        run_env['CURL_DBG_THRDPOOL_FAIL_STARTS'] = '3'
+        run_env['CURL_DBG_RESOLV_FAIL_DELAY'] = '10'
+        curl = CurlClient(env=env, run_env=run_env, force_resolv=False)
+        url = 'https://test-1.http.curl.invalid/'
+        r = curl.http_download(urls=[url], with_stats=True, extra_args=[
+            '--connect-timeout', '20'
+        ])
+        r.check_exit_code(6)
+        r.check_stats(count=1, http_status=0, exitcode=6)
+        assert r.duration < timedelta(seconds=20), f'{r}'
+
+    # dnsd with one answer for AAAA, delayed one for A
+    @pytest.mark.skipif(condition=not Env.curl_override_dns(), reason="no DNS override")
+    @pytest.mark.skipif(condition=not Env.curl_has_feature('IPv6'), reason="no IPv6")
+    @pytest.mark.skipif(condition=not Env.curl_resolv_threaded(), reason="no threaded resolver")
+    def test_21_16_dnsd_link_local(self, env: Env, httpd, dnsd):
+        dnsd.set_answers(addr_aaaa=['[fe80::1]'])
+        run_env = os.environ.copy()
+        run_env['CURL_DNS_SERVER'] = f'127.0.0.1:{dnsd.port}'
+        run_env['CURL_QUICK_EXIT'] = '1'
+        run_env['CURL_DEBUG'] = 'dns'
+        curl = CurlClient(env=env, run_env=run_env, force_resolv=False)
+        url = f'https://{env.authority_for(env.domain1, "http/1.1")}/data.json'
+        r = curl.http_download(urls=[url], with_stats=True, extra_args=[
+            '--connect-timeout', '1'
+        ])
+        # should fail with CURLE_OPERATION_TIMEOUT or COULDNT_CONNECT
+        assert r.exit_code in [7, 28], f'{r.dump_logs()}'
+        af_unspec_resolves = [
+            line for line in r.trace_lines
+            if re.match(r'.* \[DNS] re-queueing query .+ for AF_UNSPEC resolve', line)
+        ]
+        assert len(af_unspec_resolves) == 1, f'{r.dump_logs()}'
+        aaaa_resolves = [line for line in r.trace_lines if
+                         re.match(r'.* \* IPv6: fe80::1', line)]
+        assert len(aaaa_resolves) == 1, f'{r.dump_logs()}'
+
+    # dnsd+DoH, handling HTTP response failure
+    def test_21_17_dnsd_http_fails(self, env: Env, httpd, dnsd):
+        count = 2
+        dnsd.set_answers(rcode_a=2, rcode_aaaa=3)
+        run_env, xargs = self.dns_settings('DoH', dnsd, path='/notfound')
+        curl = CurlClient(env=env, run_env=run_env, force_resolv=False)
+        urls = [f'https://test-sf.http.curl.invalid/?id={i}' for i in range(count)]
+        r = curl.http_download(urls=urls, with_stats=True, extra_args=xargs)
+        r.check_exit_code(6)
+        r.check_stats(count=count, http_status=0, exitcode=6)
+        if env.curl_is_verbose():
+            assert not [t for t in r.trace_lines if 'Negative DNS entry' in t], f'{r}'
 
     def _clean_files(self, files):
         for file in files:

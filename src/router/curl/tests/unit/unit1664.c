@@ -41,7 +41,7 @@ static CURLcode test_unit1664(const char *arg)
 {
   UNITTEST_BEGIN(t1664_setup())
 
-  static const char *wordparse[] = {
+  static const char * const wordparse[] = {
     "word",
     "word ",
     " word ",
@@ -78,7 +78,7 @@ static CURLcode test_unit1664(const char *arg)
   }
 
   {
-    static const char *qwords[] = {
+    static const char * const qwords[] = {
       "\"word\"",
       "\"word",
       "word\"",
@@ -112,7 +112,7 @@ static CURLcode test_unit1664(const char *arg)
   }
 
   {
-    static const char *single[] = {
+    static const char * const single[] = {
       "a",
       "aa",
       "A",
@@ -133,7 +133,7 @@ static CURLcode test_unit1664(const char *arg)
   }
 
   {
-    static const char *single[] = {
+    static const char * const single[] = {
       "a",
       "aa",
       "A",
@@ -156,28 +156,7 @@ static CURLcode test_unit1664(const char *arg)
   }
 
   {
-    static const char *single[] = {
-      "a",
-      "aa",
-      "A",
-      "b",
-      "\\",
-      " ",
-      "",
-      NULL
-    };
-    curl_mprintf("curlx_str_single\n");
-    for(i = 0; single[i]; i++) {
-      const char *line = single[i];
-      const char *orgline = line;
-      int rc = curlx_str_single(&line, 'a');
-      curl_mprintf("%d: (\"%s\") %d, line %d\n",
-                   i, orgline, rc, (int)(line - orgline));
-    }
-  }
-
-  {
-    static const char *nums[] = {
+    static const char * const nums[] = {
       "1",
       "10000",
       "1234",
@@ -313,7 +292,7 @@ static CURLcode test_unit1664(const char *arg)
 
   {
     /* CURL_OFF_T is typically 9223372036854775807 */
-    static const char *nums[] = {
+    static const char * const nums[] = {
       "9223372036854775807", /* 2^63 -1 */
       "9223372036854775808", /* 2^63 */
       "18446744073709551615", /* 2^64 - 1 */
@@ -347,7 +326,7 @@ static CURLcode test_unit1664(const char *arg)
   }
 
   {
-    static const char *newl[] = {
+    static const char * const newl[] = {
       "a",
       "aa",
       "A",
@@ -367,12 +346,21 @@ static CURLcode test_unit1664(const char *arg)
       const char *orgline = line;
       int rc = curlx_str_newline(&line);
       curl_mprintf("%d: (%%%02x) %d, line %d\n",
-                   i, (unsigned int)*orgline, rc, (int)(line - orgline));
+/* Workaround for the expression erroneously returning the byte from the next
+   address for inputs \n, \r and \r\n. Thus returning NUL, NUL, \n instead of
+   the expected \n, \r, \r. */
+#if defined(_MSC_VER) && _MSC_VER >= 1923 && _MSC_VER <= 1934 && \
+  defined(_WIN64)
+                   i, (unsigned int)newl[i][0],
+#else
+                   i, (unsigned int)*orgline,
+#endif
+                   rc, (int)(line - orgline));
     }
   }
 
   {
-    static const char *nums[] = {
+    static const char * const nums[] = {
       "1",
       "1000",
       "1234",
@@ -399,7 +387,7 @@ static CURLcode test_unit1664(const char *arg)
   }
 
   {
-    static const char *nums[] = {
+    static const char * const nums[] = {
       "1",
       "1000",
       "1234",
@@ -427,7 +415,7 @@ static CURLcode test_unit1664(const char *arg)
 
   {
     /* CURL_OFF_T is typically 2^63-1 */
-    static const char *nums[] = {
+    static const char * const nums[] = {
       "777777777777777777777", /* 2^63 -1 */
       "1000000000000000000000", /* 2^63 */
       "111111111111111111111",
@@ -451,7 +439,7 @@ static CURLcode test_unit1664(const char *arg)
 
   {
     /* CURL_OFF_T is typically 2^63-1 */
-    static const char *nums[] = {
+    static const char * const nums[] = {
       "7FFFFFFFFFFFFFFF", /* 2^63 -1 */
       "8000000000000000", /* 2^63 */
       "1111111111111111",

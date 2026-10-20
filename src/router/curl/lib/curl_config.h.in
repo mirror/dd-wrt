@@ -26,7 +26,7 @@
 /* disable alt-svc */
 #undef CURL_DISABLE_ALTSVC
 
-/* to disable AWS sig support */
+/* to disable aws-sigv4 support */
 #undef CURL_DISABLE_AWS
 
 /* to disable basic authentication */
@@ -76,6 +76,9 @@
 
 /* to disable HTTP */
 #undef CURL_DISABLE_HTTP
+
+/* to disable HTTP Message Signatures support */
+#undef CURL_DISABLE_HTTPSIG
 
 /* disable HTTP authentication */
 #undef CURL_DISABLE_HTTP_AUTH
@@ -155,9 +158,6 @@
 /* enable NTLM support */
 #undef CURL_ENABLE_NTLM
 
-/* to enable SMB */
-#undef CURL_ENABLE_SMB
-
 /* Definition to make a library symbol externally visible. */
 #undef CURL_EXTERN_SYMBOL
 
@@ -230,6 +230,9 @@
 
 /* Define to 1 if you have the `eventfd' function. */
 #undef HAVE_EVENTFD
+
+/* Define to 1 if you have the `fchmod' function. */
+#undef HAVE_FCHMOD
 
 /* Define to 1 if you have the fcntl function. */
 #undef HAVE_FCNTL
@@ -315,9 +318,6 @@
 /* Define to 1 if you have a working gmtime_r function. */
 #undef HAVE_GMTIME_R
 
-/* if you have the function gnutls_srp_verifier */
-#undef HAVE_GNUTLS_SRP
-
 /* Define to 1 if you have the <gsasl.h> header file. */
 #undef HAVE_GSASL_H
 
@@ -333,8 +333,14 @@
 /* Define to 1 if you have the <gssapi/gssapi_krb5.h> header file. */
 #undef HAVE_GSSAPI_GSSAPI_KRB5_H
 
+/* if you have Apple GSS Framework */
+#undef HAVE_GSSAPPLE
+
 /* if you have GNU GSS */
 #undef HAVE_GSSGNU
+
+/* Define to 1 if you have the `gss_set_neg_mechs' function. */
+#undef HAVE_GSS_SET_NEG_MECHS
 
 /* Define to 1 if you have the <idn2.h> header file. */
 #undef HAVE_IDN2_H
@@ -344,12 +350,6 @@
 
 /* Define to 1 if you have the `if_nametoindex' function. */
 #undef HAVE_IF_NAMETOINDEX
-
-/* Define to 1 if you have an IPv6 capable working inet_ntop function. */
-#undef HAVE_INET_NTOP
-
-/* Define to 1 if you have an IPv6 capable working inet_pton function. */
-#undef HAVE_INET_PTON
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -454,6 +454,9 @@
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
 
+/* Define to 1 if you have the <netinet/ip.h> header file. */
+#undef HAVE_NETINET_IP_H
+
 /* Define to 1 if you have the <netinet/tcp.h> header file. */
 #undef HAVE_NETINET_TCP_H
 
@@ -489,10 +492,6 @@
 
 /* Define to 1 if you have the <openssl/rsa.h> header file. */
 #undef HAVE_OPENSSL_RSA_H
-
-/* if you have the functions SSL_CTX_set_srp_username and
-   SSL_CTX_set_srp_password */
-#undef HAVE_OPENSSL_SRP
 
 /* Define to 1 if you have the <openssl/ssl.h> header file. */
 #undef HAVE_OPENSSL_SSL_H
@@ -535,9 +534,6 @@
 
 /* Define to 1 if you have the `sched_yield' function. */
 #undef HAVE_SCHED_YIELD
-
-/* Define to 1 if you have the select function. */
-#undef HAVE_SELECT
 
 /* Define to 1 if you have the send function. */
 #undef HAVE_SEND
@@ -798,6 +794,9 @@
 /* if AmiSSL is in use */
 #undef USE_AMISSL
 
+/* to use Apple fast UDP (SYS_recvmsg_x, SYS_sendmsg_x) */
+#undef USE_APPLE_FAST_UDP
+
 /* if AppleIDN */
 #undef USE_APPLE_IDN
 
@@ -875,9 +874,6 @@
 
 /* if SSL session export support is available */
 #undef USE_SSLS_EXPORT
-
-/* Use TLS-SRP authentication */
-#undef USE_TLS_SRP
 
 /* Use Unix domain sockets */
 #undef USE_UNIX_SOCKETS

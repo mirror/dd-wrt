@@ -64,11 +64,36 @@ CMAKE_DIST =                                     \
   tests/cmake/test.cpp                           \
   tests/cmake/test.sh
 
-EXTRA_DIST = CHANGES.md COPYING RELEASE-NOTES Dockerfile .clang-tidy.yml .editorconfig $(CMAKE_DIST)
+EXTRA_DIST = \
+  .clang-tidy.yml \
+  .editorconfig \
+  CHANGES.md \
+  COPYING \
+  Dockerfile \
+  RELEASE-NOTES \
+  $(CMAKE_DIST)
 
 DISTCLEANFILES = buildinfo.txt
 
 bin_SCRIPTS = curl-config
+
+CURL_ETAGS_FILES = \
+  $(srcdir)/include/curl/curl.h \
+  $(srcdir)/include/curl/curlver.h \
+  $(srcdir)/include/curl/easy.h \
+  $(srcdir)/include/curl/header.h \
+  $(srcdir)/include/curl/mprintf.h \
+  $(srcdir)/include/curl/multi.h \
+  $(srcdir)/include/curl/options.h \
+  $(srcdir)/include/curl/stdcheaders.h \
+  $(srcdir)/include/curl/system.h \
+  $(srcdir)/include/curl/typecheck-gcc.h \
+  $(srcdir)/include/curl/urlapi.h \
+  $(srcdir)/include/curl/websockets.h
+
+ETAGS_ARGS = $(CURL_ETAGS_FILES)
+
+TAGS_DEPENDENCIES = $(CURL_ETAGS_FILES)
 
 SUBDIRS = lib docs src scripts
 DIST_SUBDIRS = $(SUBDIRS) projects include
@@ -88,6 +113,7 @@ dist-hook:
 check: test examples check-docs
 
 if CROSSCOMPILING
+test-quiet: test
 test-full: test
 test-nonflaky: test
 test-torture: test
@@ -102,7 +128,9 @@ test:
 
 else
 
-test:
+test: test-quiet
+
+test-quiet:
 	@(cd tests; $(MAKE) all quiet-test)
 
 test-full:

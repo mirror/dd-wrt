@@ -28,6 +28,12 @@ use warnings;
 
 use File::Basename;
 
+my @executable = (
+    '\.(pl|py|sh)$',
+    '^\.github/scripts/',
+    '^scripts/',
+);
+
 my @tabs = (
     '^m4/zz40-xc-ovr\.m4$',
     'Makefile\.(am|example)$',
@@ -50,16 +56,15 @@ my @double_empty_lines = (
 );
 
 my @longline = (
-    '\.github/workflows/windows\.yml$',
-    '^renovate\.json$',
+    '^\.github/renovate\.json$',
+    '^\.github/workflows/windows\.yml$',
     '^docs/DISTROS\.md$',
     '^projects/Windows/tmpl/.+\.vcxproj$',
-    '^tests/certs/srp-verifier-',
     '^tests/data/test',
 );
 
 my @non_ascii_allowed = (
-    '\xC3\xB6',  # UTF-8 for https://codepoints.net/U+00F6 LATIN SMALL LETTER O WITH DIAERESIS
+    '\xC3\xB6',  # UTF-8 for U+00F6 LATIN SMALL LETTER O WITH DIAERESIS
 );
 
 my $non_ascii_allowed = join(', ', @non_ascii_allowed);
@@ -85,10 +90,7 @@ sub fn_match {
 }
 
 sub eol_detect {
-    my ($content) = @_;
-
-    my $cr = () = $content =~ /\r/g;
-    my $lf = () = $content =~ /\n/g;
+    my ($cr, $lf) = @_;
 
     if($cr > 0 && $lf == 0) {
         return 'cr';
@@ -108,6 +110,7 @@ sub eol_detect {
 
 my $max_repeat_space = 79;
 my $max_line_len = 192;
+my $max_lines = 10000;
 my $max_path_len = 64;
 my $max_filename_len = 48;
 
@@ -118,6 +121,13 @@ while(my $filename = <$git_ls_files>) {
     chomp $filename;
 
     my @err = ();
+
+    if(!fn_match($filename, @executable)) {
+        my $mode = (stat($filename))[2];
+        if($mode & 0111) {
+            push @err, sprintf('file has executable bit(s) set: %o', $mode);
+        }
+    }
 
     if(length($filename) > $max_path_len) {
         push @err, sprintf('long (%d > %d) path', length($filename), $max_path_len);
@@ -141,7 +151,10 @@ while(my $filename = <$git_ls_files>) {
         push @err, 'content: has tab';
     }
 
-    my $eol = eol_detect($content);
+    my $cnt_cr = () = $content =~ /\r/g;
+    my $cnt_lf = () = $content =~ /\n/g;
+
+    my $eol = eol_detect($cnt_cr, $cnt_lf);
 
     if($eol eq '') {
         push @err, 'content: has mixed EOL types';
@@ -155,6 +168,13 @@ while(my $filename = <$git_ls_files>) {
     if($eol ne 'lf' && $content ne '' &&
        !fn_match($filename, @need_crlf)) {
         push @err, 'content: must use LF EOL for this file type';
+    }
+
+    if($cnt_cr > $max_lines) {
+        push @err, sprintf('content: too many lines (%d > %d)', $cnt_cr, $max_lines);
+    }
+    elsif($cnt_lf > $max_lines) {
+        push @err, sprintf('content: too many lines (%d > %d)', $cnt_lf, $max_lines);
     }
 
     if($content =~ /[ \t]\n/) {

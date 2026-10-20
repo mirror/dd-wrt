@@ -885,7 +885,7 @@ AC_DEFUN([CURL_CHECK_LIBS_CLOCK_GETTIME_MONOTONIC], [
 
     dnl only do runtime verification when not cross-compiling
     if test "$cross_compiling" != "yes" &&
-      test "$curl_func_clock_gettime" = "yes"; then
+       test "$curl_func_clock_gettime" = "yes"; then
       AC_MSG_CHECKING([if monotonic clock_gettime works])
       CURL_RUN_IFELSE([
         AC_LANG_PROGRAM([[
@@ -969,59 +969,6 @@ AC_DEFUN([CURL_CHECK_LIBS_CONNECT], [
       LIBS="$tst_connect_need_LIBS $tst_connect_save_LIBS"
       ;;
   esac
-])
-
-
-dnl CURL_CHECK_FUNC_SELECT
-dnl -------------------------------------------------
-dnl Test if the socket select() function is available.
-
-AC_DEFUN([CURL_CHECK_FUNC_SELECT], [
-  AC_REQUIRE([CURL_CHECK_STRUCT_TIMEVAL])
-  AC_REQUIRE([CURL_INCLUDES_BSDSOCKET])
-  AC_CHECK_HEADERS(sys/select.h)
-
-  AC_MSG_CHECKING([for select])
-  AC_LINK_IFELSE([
-    AC_LANG_PROGRAM([[
-      #undef inline
-      #ifdef _WIN32
-      #ifndef WIN32_LEAN_AND_MEAN
-      #define WIN32_LEAN_AND_MEAN
-      #endif
-      #include <winsock2.h>
-      #else
-      #include <sys/socket.h>
-      #include <sys/time.h>
-      #endif
-      #ifdef HAVE_SYS_TYPES_H
-      #include <sys/types.h>
-      #endif
-      #include <time.h>
-      #ifndef _WIN32
-      #ifdef HAVE_SYS_SELECT_H
-      #include <sys/select.h>
-      #elif defined(HAVE_UNISTD_H)
-      #include <unistd.h>
-      #endif
-      $curl_includes_bsdsocket
-      #endif
-    ]],[[
-      select(0, 0, 0, 0, 0);
-    ]])
-  ],[
-    AC_MSG_RESULT([yes])
-    curl_cv_select="yes"
-  ],[
-    AC_MSG_RESULT([no])
-    curl_cv_select="no"
-  ])
-
-  if test "$curl_cv_select" = "yes"; then
-    AC_DEFINE_UNQUOTED(HAVE_SELECT, 1,
-      [Define to 1 if you have the select function.])
-    curl_cv_func_select="yes"
-  fi
 ])
 
 
@@ -1571,7 +1518,7 @@ AC_DEFUN([CURL_SUPPORTS_BUILTIN_AVAILABLE], [
   AC_COMPILE_IFELSE([
     AC_LANG_PROGRAM([[
     ]],[[
-      if(__builtin_available(macOS 10.12, iOS 5.0, *)) {}
+      if(__builtin_available(macOS 10.12, iOS 5, *)) {}
     ]])
   ],[
     AC_MSG_RESULT([yes])

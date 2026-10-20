@@ -200,16 +200,65 @@ if test "$GNUTLS_ENABLED" = "1"; then
     LIBCURL_PC_REQUIRES_PRIVATE="$LIBCURL_PC_REQUIRES_PRIVATE nettle"
   fi
 
-  dnl ---
-  dnl We require GnuTLS with SRP support.
-  dnl
-  dnl In GnuTLS 3.8.0 (2023-02-10) and upper, this check always succeeds.
-  dnl Detecting actual TLS-SRP support needs poking the API at runtime.
-  dnl ---
-  AC_CHECK_LIB(gnutls, gnutls_srp_verifier,
-    [
-      AC_DEFINE(HAVE_GNUTLS_SRP, 1, [if you have the function gnutls_srp_verifier])
-      HAVE_GNUTLS_SRP=1
-    ])
+  USE_GNUTLS_HOGWEED=
+  dnl First check if we can detect either crypto library via transitive linking
+  AC_CHECK_LIB(gnutls, nettle_ed25519_sha512_sign, [ USE_GNUTLS_HOGWEED=1 ])
+
+  dnl If not, try linking directly to both of them to see if they are available
+  if test -z "$USE_GNUTLS_HOGWEED"; then
+
+    dnl this is with no particular path given
+    CURL_CHECK_PKGCONFIG(hogweed)
+
+    if test "$PKGCONFIG" != "no"; then
+      addlib=`$PKGCONFIG --libs-only-l hogweed`
+      addld=`$PKGCONFIG --libs-only-L hogweed`
+      addcflags=`$PKGCONFIG --cflags-only-I hogweed`
+      version=`$PKGCONFIG --modversion hogweed`
+      gtlslib=`echo $addld | $SED -e 's/^-L//'`
+
+      if test -n "$addlib"; then
+
+        CLEANLIBS="$LIBS"
+        CLEANCPPFLAGS="$CPPFLAGS"
+        CLEANLDFLAGS="$LDFLAGS"
+        CLEANLDFLAGSPC="$LDFLAGSPC"
+
+        LIBS="$addlib $LIBS"
+        LDFLAGS="$LDFLAGS $addld"
+        LDFLAGSPC="$LDFLAGSPC $addld"
+        if test "$addcflags" != "-I/usr/include"; then
+          CPPFLAGS="$CPPFLAGS $addcflags"
+        fi
+
+        AC_CHECK_LIB(hogweed, nettle_ed25519_sha512_sign,
+        [
+          USE_GNUTLS_HOGWEED=1
+        ],
+        [
+          LIBS="$CLEANLIBS"
+          CPPFLAGS="$CLEANCPPFLAGS"
+          LDFLAGS="$CLEANLDFLAGS"
+          LDFLAGSPC="$CLEANLDFLAGSPC"
+        ])
+
+        if test "$USE_GNUTLS_HOGWEED" = "1"; then
+          if test -z "$version"; then
+            version="unknown"
+          fi
+          AC_MSG_NOTICE([detected hogweed version $version])
+        fi
+      fi
+    fi
+    if test -z "$USE_GNUTLS_HOGWEED"; then
+      AC_MSG_ERROR([GnuTLS found, but hogweed was not found])
+    fi
+  else
+    LIBS="-lhogweed $LIBS"
+  fi
+
+  if test "$USE_GNUTLS_HOGWEED" = "1"; then
+    LIBCURL_PC_REQUIRES_PRIVATE="$LIBCURL_PC_REQUIRES_PRIVATE hogweed"
+  fi
 fi
 ])

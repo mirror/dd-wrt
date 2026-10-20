@@ -2,18 +2,15 @@
 <testcase>
 <info>
 <keywords>
-unittest
 curl_msnprintf
+libtest
 </keywords>
 </info>
 
 # Client-side
 <client>
-<features>
-unittest
-</features>
 <name>
-curl_msnprintf unit tests
+curl_msnprintf tests
 </name>
 </client>
 

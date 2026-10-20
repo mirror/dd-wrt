@@ -19,12 +19,6 @@ document](https://curl.se/docs/knownbugs.html) are subject for fixing.
 
 # libcurl
 
-## Consult `%APPDATA%` also for `.netrc`
-
-`%APPDATA%\.netrc` is not considered when running on Windows. Should it not?
-
-See [curl issue 4016](https://github.com/curl/curl/issues/4016)
-
 ## `struct lifreq`
 
 Use `struct lifreq` and `SIOCGLIFADDR` instead of `struct ifreq` and
@@ -57,7 +51,7 @@ to share data in more powerful ways.
 ## updated DNS server while running
 
 If `/etc/resolv.conf` gets updated while a program using libcurl is running, it
-is may cause name resolves to fail unless `res_init()` is called. We should
+may cause name resolves to fail unless `res_init()` is called. We should
 consider calling `res_init()` + retry once unconditionally on all name resolve
 failures to mitigate against this. Firefox works like that. Note that Windows
 does not have `res_init()` or an alternative.
@@ -176,9 +170,15 @@ Make sure we do not ever loop because of non-blocking sockets returning
 - TELNET transfers
 - GSSAPI authentication for FTP transfers
 - The "DONE" operation (post transfer protocol-specific actions) for the
-protocols SFTP, SMTP, FTP. Fixing `multi_done()` for this is a worthy task.
+protocols SFTP, SCP, SMTP, IMAP, FTP. Fixing `multi_done()` for this is a
+worthy task.
+- The protocol disconnect handlers for FTP, IMAP, POP3, SMTP, SCP and SFTP,
+when a connection is closed instead of kept for reuse.
 - `curl_multi_remove_handle()` for any of the above.
 - Calling `curl_ws_send()` from a callback
+
+Several of these are also documented in the BLOCKING section
+of [`libcurl-multi`](https://curl.se/libcurl/c/libcurl-multi.html).
 
 ## Better support for same name resolves
 
@@ -269,7 +269,7 @@ This is not detailed in any FTP specification.
 
 ## Passive transfer could try other IP addresses
 
-When doing FTP operations through a proxy at localhost, the reported spotted
+When doing FTP operations through a proxy at localhost, the reporter spotted
 that curl only tried to connect once to the proxy, while it had multiple
 addresses and a failed connect on one address should make it try the next.
 
@@ -284,8 +284,8 @@ See [curl issue 1508](https://github.com/curl/curl/issues/1508)
 
 When curl receives a body response from a CONNECT request to a proxy, it
 always reads and ignores it. It would make some users happy if curl instead
-optionally would be able to make that responsible available. Via a new
-callback? Through some other means?
+optionally would be able to make that response available. Via a new callback?
+Through some other means?
 
 See [curl issue 9513](https://github.com/curl/curl/issues/9513)
 
@@ -431,37 +431,18 @@ LDAPS not possible with macOS and Windows with Certificate-Based Authentication
 
 [curl issue 9641](https://github.com/curl/curl/issues/9641)
 
-# SMB
+# WebSocket
 
-## Support modern versions
+## Support text frames with command line tool
 
-curl only supports version 1, which barely anyone is using anymore.
+libcurl defaults to using binary WebSocket frames, which makes some servers
+not work as they require text. We should make it possible to tell the tool to
+use text frames.
 
-## File listing support
+[curl issue 21997](https://github.com/curl/curl/issues/21997)
 
-Add support for listing the contents of an SMB share. The output should
-probably be the same as/similar to FTP.
-
-## Honor file timestamps
-
-The timestamp of the transferred file should reflect that of the original
-file.
-
-## Use NTLMv2
-
-Currently the SMB authentication uses NTLMv1.
-
-## Create remote directories
-
-Support for creating remote directories when uploading a file to a directory
-that does not exist on the server, like `--ftp-create-dirs`.
-
-# FILE
-
-## Directory listing on non-POSIX
-
-Listing the contents of a directory accessed with FILE only works on platforms
-with `opendir()`. Support could be added for more systems, like Windows.
+An abandoned attempt to add support for this exists in [PR
+22093](https://github.com/curl/curl/pull/22093).
 
 # TLS
 
@@ -474,42 +455,11 @@ the communicating parties.
 
 [curl issue 5081](https://github.com/curl/curl/issues/5081)
 
-## TLS channel binding
-
-TLS 1.2 and 1.3 provide the ability to extract some secret data from the TLS
-connection and use it in the client request (usually in some sort of
-authentication) to ensure that the data sent is bound to the specific TLS
-connection and cannot be successfully intercepted by a proxy. This
-functionality can be used in a standard authentication mechanism such as
-GSS-API or SCRAM, or in custom approaches like custom HTTP Authentication
-headers.
-
-For TLS 1.2, the binding type is usually `tls-unique`, and for TLS 1.3 it is
-`tls-exporter`.
-
-- https://datatracker.ietf.org/doc/html/rfc5929
-- https://datatracker.ietf.org/doc/html/rfc9266
-- [curl issue 9226](https://github.com/curl/curl/issues/9226)
-
 ## Defeat TLS fingerprinting
 
 By changing the order of TLS extensions provided in the TLS handshake, it is
 sometimes possible to circumvent TLS fingerprinting by servers. The TLS
 extension order is of course not the only way to fingerprint a client.
-
-## Consider OCSP stapling by default
-
-Treat a negative response a reason for aborting the connection. Since OCSP
-stapling is presumed to get used much less in the future when Let's Encrypt
-drops the OCSP support, the benefit of this might however be limited.
-
-[curl issue 15483](https://github.com/curl/curl/issues/15483)
-
-## Provide callback for cert verification
-
-OpenSSL supports a callback for customized verification of the peer
-certificate, but this does not seem to be exposed in the libcurl APIs. Could
-it be? There is so much that could be done if it were.
 
 ## Less memory massaging with Schannel
 
@@ -589,6 +539,10 @@ extra processing overhead.
 The feature matrix at https://curl.se/libcurl/c/tls-options.html shows which
 features are supported by which TLS backends, and thus also where there are
 feature gaps.
+
+## ECH for QUIC
+
+curl's support for ECH is currently limited to TCP only.
 
 # Proxy
 
@@ -737,10 +691,10 @@ RFC 6266 documents how UTF-8 names can be passed to a client in the
 
 [curl issue 1888](https://github.com/curl/curl/issues/1888)
 
-## Option to make `-Z` merge lined based outputs on stdout
+## Option to make `-Z` merge line-based outputs on stdout
 
-When a user requests multiple lined based files using `-Z` and sends them to
-stdout, curl does not *merge* and send complete lines fine but may send
+When a user requests multiple line-based files using `-Z` and sends them to
+stdout, curl does not *merge* and send complete lines but may send
 partial lines from several sources.
 
 [curl issue 5175](https://github.com/curl/curl/issues/5175)
@@ -775,7 +729,7 @@ backed up from those that are either not ready or have not changed.
 
 Downloads in progress are neither ready to be backed up, nor should they be
 opened by a different process. Only after a download has been completed it is
-sensible to include it in any integer snapshot or backup of the system.
+sensible to include it in any incremental snapshot or backup of the system.
 
 See [curl issue 3354](https://github.com/curl/curl/issues/3354)
 
@@ -837,7 +791,7 @@ one, which then could make curl decide to rather retry the transfer on that
 URL only instead of the original operation to the original URL.
 
 Perhaps extra emphasized if the original transfer is a large POST that
-redirects to a separate GET, and that GET is what gets the 529
+redirects to a separate GET, and that GET is what gets the 429
 
 See [curl issue 5462](https://github.com/curl/curl/issues/5462)
 
@@ -965,13 +919,6 @@ http operations (for which we have test servers).
 Make the test suite work on more platforms. OpenBSD and macOS. Remove fork()s
 and it should become even more portable.
 
-## write an SMB test server to replace impacket
-
-This would allow us to run SMB tests on more platforms and do better and more
-covering tests.
-
-See [curl issue 15697](https://github.com/curl/curl/issues/15697)
-
 ## Use the RFC 6265 test suite
 
 A test suite made for HTTP cookies (RFC 6265) by Adam Barth [is
@@ -997,8 +944,6 @@ See [curl issue 4477](https://github.com/curl/curl/issues/4477)
 
 The rate-limiting logic is done in the PERFORMING state in multi.c but MQTT is
 not (yet) implemented to use that.
-
-## Support MQTTS
 
 ## Handle network blocks
 

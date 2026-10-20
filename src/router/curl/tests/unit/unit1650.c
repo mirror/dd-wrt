@@ -22,7 +22,7 @@
  *
  ***************************************************************************/
 #include "unitcheck.h"
-#include "doh.h"
+#include "vdns/doh.h"
 
 static CURLcode test_unit1650(const char *arg)
 {
@@ -54,8 +54,10 @@ static CURLcode test_unit1650(const char *arg)
   };
 
   static const struct dohrequest req[] = {
-    {"test.host.name", CURL_DNS_TYPE_A, DNS_Q1, sizeof(DNS_Q1)-1, DOH_OK },
-    {"test.host.name", CURL_DNS_TYPE_AAAA, DNS_Q2, sizeof(DNS_Q2)-1, DOH_OK },
+    {"test.host.name",
+     CURL_DNS_TYPE_A, DNS_Q1, CURL_CSTRLEN(DNS_Q1), DOH_OK },
+    {"test.host.name",
+     CURL_DNS_TYPE_AAAA, DNS_Q2, CURL_CSTRLEN(DNS_Q2), DOH_OK },
     {"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
      ".host.name",
      CURL_DNS_TYPE_AAAA, NULL, 0, DOH_DNS_BAD_LABEL }
@@ -86,6 +88,8 @@ static CURLcode test_unit1650(const char *arg)
    CURL_DNS_TYPE_A, DOH_DNS_BAD_ID, NULL },
   {"\x00\x00\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01", 12,
    CURL_DNS_TYPE_A, DOH_DNS_BAD_RCODE, NULL },
+  {"\x00\x00\x00\x03\x00\x01\x00\x01\x00\x01\x00\x01", 12,
+   CURL_DNS_TYPE_A, DOH_DNS_NXDOMAIN, NULL },
   {"\x00\x00\x01\x00\x00\x01\x00\x01\x00\x00\x00\x00\x03\x66\x6f\x6f", 16,
    CURL_DNS_TYPE_A, DOH_DNS_OUT_OF_RANGE, NULL },
   {"\x00\x00\x01\x00\x00\x01\x00\x01\x00\x00\x00\x00\x03\x66\x6f\x6f\x00", 17,
@@ -102,7 +106,7 @@ static CURLcode test_unit1650(const char *arg)
    "\x6c\x04\x63\x75\x72\x6c\x00\x00\x05\x00\x01\xc0\x0c\x00\x05\x00"
    "\x01\x00\x00\x00\x37\x00\x11\x08\x61\x6e\x79\x77\x68\x65\x72\x65"
    "\x06\x72\x65\x61\x6c\x6c\x79\x00", 56,
-   CURL_DNS_TYPE_A, DOH_OK, "anywhere.really (55)"},
+   CURL_DNS_TYPE_A, DOH_OK, NULL},
 
   {DNS_FOO_EXAMPLE_COM, 49, CURL_DNS_TYPE_A, DOH_OK, "127.0.0.1 (55)"},
 
@@ -117,7 +121,7 @@ static CURLcode test_unit1650(const char *arg)
    "\x6c\x04\x63\x75\x72\x6c\x00\x00\x05\x00\x01\xc0\x0c\x00\x05\x00"
    "\x01\x00\x00\x00\x37\x00"
    "\x07\x03\x61\x6e\x79\xc0\x27\x00", 46,
-   CURL_DNS_TYPE_A, DOH_DNS_LABEL_LOOP, NULL},
+   CURL_DNS_TYPE_A, DOH_OK, NULL},
 
   /* packet with NSCOUNT == 1 */
   {"\x00\x00\x01\x00\x00\x01\x00\x01\x00\x01\x00\x00\x04\x61\x61\x61"
@@ -215,13 +219,6 @@ static CURLcode test_unit1650(const char *arg)
         ptr++;
       }
     }
-    for(u = 0; u < d.numcname; u++) {
-      size_t o;
-      curl_msnprintf(ptr, len, "%s ", curlx_dyn_ptr(&d.cname[u]));
-      o = strlen(ptr);
-      len -= o;
-      ptr += o;
-    }
     curl_msnprintf(ptr, len, "(%u)", d.ttl);
     de_cleanup(&d);
     if(resp[i].out && strcmp((const char *)buffer, resp[i].out)) {
@@ -232,8 +229,38 @@ static CURLcode test_unit1650(const char *arg)
     }
   }
 
+#ifdef USE_HTTPSRR
+  {
+    unsigned char httpsrr[] = {
+      0x00, 0x00, 0x81, 0x80, 0x00, 0x00, 0x00, 0x01,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x41, 0x00,
+      0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00,
+      0x00, 0x00
+    };
+
+    for(i = 0; i <= 3; i++) {
+      struct dohentry d;
+      DOHcode rc;
+      DOHcode expected = i < 3 ? DOH_DNS_RDATA_LEN : DOH_OK;
+      httpsrr[22] = (unsigned char)i;
+      de_init(&d);
+      rc = doh_resp_decode(httpsrr, sizeof(httpsrr) - 3 + i,
+                           CURL_DNS_TYPE_HTTPS, &d);
+      if(rc != expected) {
+        curl_mfprintf(stderr,
+                      "HTTPS RR length %zu: Expected return code %d got %d\n",
+                      i, (int)expected, (int)rc);
+        abort_if(rc != expected, "return code");
+      }
+      fail_unless(d.numhttps_rrs == (i == 3 ? 1 : 0),
+                  "unexpected number of HTTPS RRs");
+      de_cleanup(&d);
+    }
+  }
+#endif
+
   /* pass all sizes into the decoder until full */
-  for(i = 0; i < sizeof(full49) - 1; i++) {
+  for(i = 0; i < CURL_CSTRLEN(full49); i++) {
     struct dohentry d;
     DOHcode rc;
     memset(&d, 0, sizeof(d));
@@ -265,8 +292,8 @@ static CURLcode test_unit1650(const char *arg)
     struct dohentry d;
     struct dohaddr *a;
     memset(&d, 0, sizeof(d));
-    rc = doh_resp_decode((const unsigned char *)full49,
-                         sizeof(full49) - 1, CURL_DNS_TYPE_A, &d);
+    rc = doh_resp_decode((const unsigned char *)full49, CURL_CSTRLEN(full49),
+                         CURL_DNS_TYPE_A, &d);
     fail_if(d.numaddr != 1, "missing address");
     a = &d.addr[0];
     p = &a->ip.v4[0];
@@ -277,7 +304,6 @@ static CURLcode test_unit1650(const char *arg)
                     (int)rc);
       abort_if(rc || strcmp((const char *)buffer, "127.0.0.1"), "bad address");
     }
-    fail_if(d.numcname, "bad cname counter");
   }
 #endif
 

@@ -323,18 +323,24 @@ static CURLcode ftp_pl_insert_finfo(struct Curl_easy *data,
     compare = Curl_fnmatch;
 
   /* filter pattern-corresponding filenames */
-  Curl_set_in_callback(data, TRUE);
-  if(compare(data->set.fnmatch_data, wc->pattern, finfo->filename) == 0) {
-    /* discard symlink which is containing multiple " -> " */
-    if((finfo->filetype == CURLFILETYPE_SYMLINK) && finfo->strings.target &&
-       (strstr(finfo->strings.target, " -> "))) {
+  if(strchr(finfo->filename, '/'))
+    add = FALSE;
+  else {
+    /* a real file name cannot contain a slash */
+    struct Curl_mapi_guard guard;
+    CURL_CBAPI_START(&guard, data, easy_fnmatch_data);
+    if(compare(data->set.fnmatch_data, wc->pattern, finfo->filename) == 0) {
+      /* discard symlink which is containing multiple " -> " */
+      if((finfo->filetype == CURLFILETYPE_SYMLINK) && finfo->strings.target &&
+         strstr(finfo->strings.target, " -> ")) {
+        add = FALSE;
+      }
+    }
+    else {
       add = FALSE;
     }
+    CURL_CBAPI_END(&guard);
   }
-  else {
-    add = FALSE;
-  }
-  Curl_set_in_callback(data, FALSE);
 
   if(add) {
     Curl_llist_append(llist, finfo, &infop->list);
@@ -1007,6 +1013,16 @@ static CURLcode parse_winnt(struct Curl_easy *data,
   }
 
   return CURLE_OK;
+}
+
+/* returns TRUE if in wildcard listing mode */
+bool Curl_ftp_listmode(struct Curl_easy *data)
+{
+  if(data->state.wildcardmatch) {
+    struct WildcardData * const wildcard = data->wildcard;
+    return wildcard && (wildcard->state == CURLWC_MATCHING);
+  }
+  return FALSE;
 }
 
 size_t Curl_ftp_parselist(char *buffer, size_t size, size_t nmemb,

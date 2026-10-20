@@ -137,8 +137,7 @@ CURLcode Curl_http_follow(struct Curl_easy *data, const char *newurl,
    will always be unconditionally sent and thus it may not be larger than can
    always be afforded to send twice.
 
-   It must not be greater than 64K to work on VMS.
-*/
+   It must not be greater than 64K to work on VMS. */
 #ifndef MAX_INITIAL_POST_SIZE
 #define MAX_INITIAL_POST_SIZE (64 * 1024)
 #endif
@@ -198,7 +197,7 @@ CURLcode Curl_http_output_auth(struct Curl_easy *data,
                                bool is_connect);
 
 /* Decode HTTP status code string. */
-CURLcode Curl_http_decode_status(int *pstatus, const char *s, size_t len);
+CURLcode Curl_http_decode_status(int32_t *pstatus, const char *s, size_t len);
 
 /**
  * All about a core HTTP request, excluding body and trailers

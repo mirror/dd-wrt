@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #***************************************************************************
 #                                  _   _ ____  _
 #  Project                     ___| | | |  _ \| |
@@ -29,9 +27,10 @@ import os
 import socket
 import subprocess
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
+from . import CurlClient
 from .env import Env
 from .ports import alloc_ports_and_do
 
@@ -52,6 +51,7 @@ class Dnsd:
         self._dnsd_dir = os.path.join(env.gen_dir, self.name)
         self._log_dir = self._dnsd_dir
         self._lock_dir = os.path.join(self._dnsd_dir, 'lock')
+        self._tmp_dir = os.path.join(self._dnsd_dir, 'tmp')
         self._log_file = os.path.join(self._log_dir, 'dnsd.log')
         self._conf_file = os.path.join(self._log_dir, 'dnsd.cmd')
         self._pid_file = os.path.join(self._log_dir, 'dnsd.pid')
@@ -89,12 +89,14 @@ class Dnsd:
         return True
 
     def stop(self, wait_dead=True):
+        result = True
         if self._process:
             self._process.terminate()
             self._process.wait(timeout=2)
             self._process = None
+            result = self.wait_dead(timeout=timedelta(seconds=Env.SERVER_TIMEOUT))
         self.close_log()
-        return True
+        return result
 
     def restart(self):
         self.stop()
@@ -102,6 +104,7 @@ class Dnsd:
 
     def initial_start(self):
         self._mkpath(self._lock_dir)
+        self._mkpath(self._tmp_dir)
 
         def startup(ports: Dict[str, int]) -> bool:
             self._port = ports[self._port_skey]
@@ -128,16 +131,30 @@ class Dnsd:
             '--logfile', f'{self._log_file}',
             '--pidfile', f'{self._pid_file}',
         ]
-        self._error_fd = open(self._error_log, 'a')
+        self._error_fd = open(self._error_log, 'a')  # noqa: SIM115
         self._process = subprocess.Popen(args=args, stderr=self._error_fd)
         if self._process.returncode is not None:
             return False
         return self.wait_live(timeout=timedelta(seconds=Env.SERVER_TIMEOUT))
 
+    def wait_dead(self, timeout: timedelta):
+        curl = CurlClient(env=self.env, run_dir=self._tmp_dir)
+        try_until = datetime.now(timezone.utc) + timeout
+        while datetime.now(timezone.utc) < try_until:
+            r = curl.http_get(url=f'http://127.0.0.1:{self._port}/')
+            if r.exit_code != 0:
+                return True
+            time.sleep(.1)
+        log.debug(f"Server still responding after {timeout}")
+        return False
+
     def wait_live(self, timeout: timedelta):
-        try_until = datetime.now() + timeout
-        while datetime.now() < try_until:
-            if os.path.exists(self._log_file):
+        curl = CurlClient(env=self.env, run_dir=self._tmp_dir,
+                          timeout=timeout.total_seconds())
+        try_until = datetime.now(timezone.utc) + timeout
+        while datetime.now(timezone.utc) < try_until:
+            r = curl.http_get(url=f'http://127.0.0.1:{self._port}/')
+            if r.exit_code == 0:
                 return True
             time.sleep(.1)
         log.error(f"Server still not responding after {timeout}")
@@ -156,7 +173,9 @@ class Dnsd:
                     https: Optional[List[str]] = None,
                     delay_a_ms: int = 0,
                     delay_aaaa_ms: int = 0,
-                    delay_https_ms: int = 0):
+                    delay_https_ms: int = 0,
+                    rcode_a: int = 0,
+                    rcode_aaaa: int = 0):
         conf = []
         if addr_a:
             conf.extend([f'A: {addr}' for addr in addr_a])
@@ -170,6 +189,10 @@ class Dnsd:
             conf.append(f'Delay-AAAA: {delay_aaaa_ms}')
         if delay_https_ms:
             conf.append(f'Delay-HTTPS: {delay_https_ms}')
+        if rcode_a:
+            conf.append(f'Rcode-A: {rcode_a}')
+        if rcode_aaaa:
+            conf.append(f'Rcode-AAAA: {rcode_aaaa}')
         conf.append('\n')
         with open(self._conf_file, 'w') as fd:
             fd.write("\n".join(conf))

@@ -148,15 +148,15 @@ static int my_progress_d_cb(void *userdata,
     if(result) {
       curl_mfprintf(stderr, "[t-%zu] info CURLINFO_TLS_SSL_PTR failed: %d\n",
                     t->idx, (int)result);
-      assert(0);
+      DEBUGASSERT(0);
     }
     else {
       switch(tls->backend) {
 #ifdef USE_OPENSSL
       case CURLSSLBACKEND_OPENSSL: {
         const char *version = SSL_get_version((SSL *)tls->internals);
-        assert(version);
-        assert(strcmp(version, "unknown"));
+        DEBUGASSERT(version);
+        DEBUGASSERT(strcmp(version, "unknown"));
         curl_mfprintf(stderr, "[t-%zu] info OpenSSL using %s\n",
                       t->idx, version);
         break;
@@ -165,8 +165,8 @@ static int my_progress_d_cb(void *userdata,
 #ifdef USE_WOLFSSL
       case CURLSSLBACKEND_WOLFSSL: {
         const char *version = wolfSSL_get_version((WOLFSSL *)tls->internals);
-        assert(version);
-        assert(strcmp(version, "unknown"));
+        DEBUGASSERT(version);
+        DEBUGASSERT(strcmp(version, "unknown"));
         curl_mfprintf(stderr, "[t-%zu] info wolfSSL using %s\n",
                       t->idx, version);
         break;
@@ -176,7 +176,7 @@ static int my_progress_d_cb(void *userdata,
       case CURLSSLBACKEND_GNUTLS: {
         gnutls_protocol_t v = gnutls_protocol_get_version(
           (gnutls_session_t)tls->internals);
-        assert(v);
+        DEBUGASSERT(v);
         curl_mfprintf(stderr, "[t-%zu] info GnuTLS using %s\n",
                       t->idx, gnutls_protocol_get_name(v));
         break;
@@ -186,8 +186,8 @@ static int my_progress_d_cb(void *userdata,
       case CURLSSLBACKEND_MBEDTLS: {
         const char *version =
           mbedtls_ssl_get_version((mbedtls_ssl_context *)tls->internals);
-        assert(version);
-        assert(strcmp(version, "unknown"));
+        DEBUGASSERT(version);
+        DEBUGASSERT(strcmp(version, "unknown"));
         curl_mfprintf(stderr, "[t-%zu] info mbedTLS using %s\n",
                       t->idx, version);
         break;
@@ -197,7 +197,7 @@ static int my_progress_d_cb(void *userdata,
       case CURLSSLBACKEND_RUSTLS: {
         int v = rustls_connection_get_protocol_version(
           (struct rustls_connection *)tls->internals);
-        assert(v);
+        DEBUGASSERT(v);
         curl_mfprintf(stderr, "[t-%zu] info rustls TLS version 0x%x\n",
                       t->idx, (unsigned int)v);
         break;
@@ -211,7 +211,7 @@ static int my_progress_d_cb(void *userdata,
         sspi_status = QueryContextAttributes(ctxt_handle,
                                              SECPKG_ATTR_CONNECTION_INFO,
                                              &info);
-        assert(sspi_status == SEC_E_OK);
+        DEBUGASSERT(sspi_status == SEC_E_OK);
         (void)sspi_status;
         curl_mfprintf(stderr, "[t-%zu] info Schannel TLS version 0x%08lx\n",
                       t->idx, (unsigned long)info.dwProtocol);
@@ -285,9 +285,10 @@ static void usage_hx_download(const char *msg)
     "  -M number  max concurrent connections to a host\n"
     "  -P number  pause transfer after `number` response bytes\n"
     "  -r <host>:<port>:<addr>  resolve information\n"
+    "  -S         share connections between easy handles\n"
     "  -T number  max concurrent connections total\n"
     "  -V http_version (http/1.1, h2, h3) http version to use\n"
-    "  -6 use ipv6 for resolving the FIRST URL\n"
+    "  -6 use IPv6 for resolving the FIRST URL\n"
   );
 }
 
@@ -314,13 +315,14 @@ static CURLcode test_cli_hx_download(const char *URL)
   size_t max_host_conns = 0;
   size_t max_total_conns = 0;
   int fresh_connect = 0;
+  int share_connect = 0;
   char *cafile = NULL;
   bool first_ipv6 = FALSE;
   CURLcode result = CURLE_OK;
 
   (void)URL;
 
-  while((ch = cgetopt(test_argc, test_argv, "aefhm:n:xA:C:F:M:P:r:T:V:6"))
+  while((ch = cgetopt(test_argc, test_argv, "aefhm:n:xA:C:F:M:P:r:ST:V:6"))
         != -1) {
     const char *opt = coptarg;
     curl_off_t num;
@@ -372,6 +374,9 @@ static CURLcode test_cli_hx_download(const char *URL)
     case 'r':
       curlx_free(resolve);
       resolve = curlx_strdup(coptarg);
+      break;
+    case 'S':
+      share_connect = 1;
       break;
     case 'T':
       if(!curlx_str_number(&opt, &num, LONG_MAX))
@@ -430,9 +435,8 @@ static CURLcode test_cli_hx_download(const char *URL)
   curl_share_setopt(share, CURLSHOPT_SHARE, CURL_LOCK_DATA_COOKIE);
   curl_share_setopt(share, CURLSHOPT_SHARE, CURL_LOCK_DATA_DNS);
   curl_share_setopt(share, CURLSHOPT_SHARE, CURL_LOCK_DATA_SSL_SESSION);
-#if 0
-  curl_share_setopt(share, CURLSHOPT_SHARE, CURL_LOCK_DATA_CONNECT);
-#endif
+  if(share_connect)
+    curl_share_setopt(share, CURLSHOPT_SHARE, CURL_LOCK_DATA_CONNECT);
   curl_share_setopt(share, CURLSHOPT_SHARE, CURL_LOCK_DATA_PSL);
   curl_share_setopt(share, CURLSHOPT_SHARE, CURL_LOCK_DATA_HSTS);
 
@@ -588,7 +592,7 @@ cleanup:
       if(t->result)
         result = t->result;
       else /* on success we expect SSL to have been checked */
-        assert(t->checked_ssl);
+        DEBUGASSERT(t->checked_ssl);
     }
     curlx_free(transfer_d);
   }

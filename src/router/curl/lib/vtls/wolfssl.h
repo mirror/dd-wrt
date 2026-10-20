@@ -73,9 +73,6 @@ CURLcode Curl_wssl_ctx_init(struct wssl_ctx *wctx,
                             void *ssl_user_data,
                             Curl_wssl_init_session_reuse_cb *sess_reuse_cb);
 
-/* Is a resolved HTTPS-RR needed for initializing wolfSSL? */
-bool Curl_wssl_need_httpsrr(struct Curl_easy *data);
-
 CURLcode Curl_wssl_setup_x509_store(struct Curl_cfilter *cf,
                                     struct Curl_easy *data,
                                     struct wssl_ctx *wssl);
@@ -88,7 +85,8 @@ CURLcode Curl_wssl_cache_session(struct Curl_cfilter *cf,
                                  int ietf_tls_id,
                                  const char *alpn,
                                  unsigned char *quic_tp,
-                                 size_t quic_tp_len);
+                                 size_t quic_tp_len,
+                                 struct Curl_ssl_session **pscs);
 #endif
 
 CURLcode Curl_wssl_verify_pinned(struct Curl_cfilter *cf,

@@ -40,7 +40,7 @@
 #ifdef USE_MBEDTLS
 #include <mbedtls/version.h>
 #if MBEDTLS_VERSION_NUMBER < 0x03020000
-#error "mbedTLS 3.2.0 or later required"
+#error "mbedTLS 3.2.0 or greater required"
 #endif
 #include <psa/crypto_config.h>
 #endif
@@ -68,33 +68,43 @@ static void my_md5_final(unsigned char *digest, void *ctx)
 #if NETTLE_VERSION_MAJOR >= 4
   md5_digest(ctx, digest);
 #else
-  md5_digest(ctx, 16, digest);
+  md5_digest(ctx, MD5_DIGEST_LEN, digest);
 #endif
 }
 
-#elif defined(USE_OPENSSL) && \
-  !defined(OPENSSL_NO_MD5) && !defined(OPENSSL_NO_DEPRECATED_3_0)
-#include <openssl/md5.h>
+#elif defined(USE_OPENSSL) && !defined(OPENSSL_NO_MD5)
+#include <openssl/evp.h>
 
-typedef MD5_CTX my_md5_ctx;
+typedef EVP_MD_CTX *my_md5_ctx;
 
-static CURLcode my_md5_init(void *ctx)
+static CURLcode my_md5_init(void *in)
 {
-  if(!MD5_Init(ctx))
+  EVP_MD_CTX **ctx = (EVP_MD_CTX **)in;
+  *ctx = EVP_MD_CTX_new();
+  if(!*ctx)
     return CURLE_OUT_OF_MEMORY;
 
+  if(!EVP_DigestInit_ex(*ctx, EVP_md5(), NULL)) {
+    EVP_MD_CTX_free(*ctx);
+    *ctx = NULL;
+    return CURLE_FAILED_INIT;
+  }
   return CURLE_OK;
 }
 
-static void my_md5_update(void *ctx,
+static void my_md5_update(void *in,
                           const unsigned char *input, unsigned int len)
 {
-  (void)MD5_Update(ctx, input, len);
+  EVP_MD_CTX **ctx = (EVP_MD_CTX **)in;
+  (void)EVP_DigestUpdate(*ctx, input, len);
 }
 
-static void my_md5_final(unsigned char *digest, void *ctx)
+static void my_md5_final(unsigned char *digest, void *in)
 {
-  (void)MD5_Final(digest, ctx);
+  EVP_MD_CTX **ctx = (EVP_MD_CTX **)in;
+  (void)EVP_DigestFinal_ex(*ctx, digest, NULL);
+  EVP_MD_CTX_free(*ctx);
+  *ctx = NULL;
 }
 
 #elif defined(USE_WOLFSSL) && !defined(NO_MD5)
@@ -128,8 +138,9 @@ typedef psa_hash_operation_t my_md5_ctx;
 
 static CURLcode my_md5_init(void *ctx)
 {
-  memset(ctx, 0, sizeof(my_md5_ctx));
-  if(psa_hash_setup(ctx, PSA_ALG_MD5) != PSA_SUCCESS)
+  psa_hash_operation_t *pctx = (psa_hash_operation_t *)ctx;
+  *pctx = psa_hash_operation_init();
+  if(psa_hash_setup(pctx, PSA_ALG_MD5) != PSA_SUCCESS)
     return CURLE_OUT_OF_MEMORY;
   return CURLE_OK;
 }
@@ -143,17 +154,17 @@ static void my_md5_update(void *ctx,
 static void my_md5_final(unsigned char *digest, void *ctx)
 {
   size_t actual_length;
-  (void)psa_hash_finish(ctx, digest, 16, &actual_length);
+  (void)psa_hash_finish(ctx, digest, MD5_DIGEST_LEN, &actual_length);
 }
 
 #elif (defined(__MAC_OS_X_VERSION_MAX_ALLOWED) && \
-              (__MAC_OS_X_VERSION_MAX_ALLOWED >= 1040) && \
+               __MAC_OS_X_VERSION_MAX_ALLOWED >= 1040 && \
        defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && \
-              (__MAC_OS_X_VERSION_MIN_REQUIRED < 101500)) || \
+               __MAC_OS_X_VERSION_MIN_REQUIRED < 101500) || \
       (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && \
-              (__IPHONE_OS_VERSION_MAX_ALLOWED >= 20000) && \
+               __IPHONE_OS_VERSION_MAX_ALLOWED >= 20000 && \
        defined(__IPHONE_OS_VERSION_MIN_REQUIRED) && \
-              (__IPHONE_OS_VERSION_MIN_REQUIRED < 130000))
+               __IPHONE_OS_VERSION_MIN_REQUIRED < 130000)
 #include <CommonCrypto/CommonDigest.h>
 
 /* For Apple operating systems: CommonCrypto has the functions we need.
@@ -166,9 +177,7 @@ static void my_md5_final(unsigned char *digest, void *ctx)
 
 static CURLcode my_md5_init(void *ctx)
 {
-  if(!CC_MD5_Init(ctx))
-    return CURLE_OUT_OF_MEMORY;
-
+  (void)CC_MD5_Init(ctx);  /* always returns 1 */
   return CURLE_OK;
 }
 
@@ -220,7 +229,7 @@ static void my_md5_final(unsigned char *digest, void *in)
   my_md5_ctx *ctx = (my_md5_ctx *)in;
   unsigned long length = 0;
   CryptGetHashParam(ctx->hHash, HP_HASHVAL, NULL, &length, 0);
-  if(length == 16)
+  if(length == MD5_DIGEST_LEN)
     CryptGetHashParam(ctx->hHash, HP_HASHVAL, digest, &length, 0);
   if(ctx->hHash)
     CryptDestroyHash(ctx->hHash);
@@ -529,7 +538,7 @@ const struct HMAC_params Curl_HMAC_MD5 = {
   my_md5_final,       /* Hash computation end function. */
   sizeof(my_md5_ctx), /* Size of hash context structure. */
   64,                 /* Maximum key length. */
-  16                  /* Result size. */
+  MD5_DIGEST_LEN      /* Result size. */
 };
 
 const struct MD5_params Curl_DIGEST_MD5 = {
@@ -537,7 +546,7 @@ const struct MD5_params Curl_DIGEST_MD5 = {
   my_md5_update,      /* Digest update function */
   my_md5_final,       /* Digest computation end function */
   sizeof(my_md5_ctx), /* Size of digest context struct */
-  16                  /* Result size */
+  MD5_DIGEST_LEN      /* Result size */
 };
 
 /*

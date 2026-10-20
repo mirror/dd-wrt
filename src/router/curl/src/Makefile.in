@@ -194,7 +194,7 @@ am__libcurltool_la_SOURCES_DIST = config2setopts.c slist_wc.c \
 	tool_vms.h tool_writeout.h tool_writeout_json.h tool_xattr.h \
 	var.h toolx/tool_time.h ../lib/curlx/base64.c \
 	../lib/curlx/basename.c ../lib/curlx/dynbuf.c \
-	../lib/curlx/fopen.c ../lib/curlx/multibyte.c \
+	../lib/curlx/win32-fopen.c ../lib/curlx/multibyte.c \
 	../lib/curlx/nonblock.c ../lib/curlx/strcopy.c \
 	../lib/curlx/strdup.c ../lib/curlx/strerr.c \
 	../lib/curlx/strparse.c ../lib/curlx/timediff.c \
@@ -202,7 +202,7 @@ am__libcurltool_la_SOURCES_DIST = config2setopts.c slist_wc.c \
 	../lib/curlx/wait.c ../lib/curlx/warnless.c \
 	../lib/curlx/winapi.c ../lib/curl_setup.h \
 	../lib/curlx/base64.h ../lib/curlx/basename.h \
-	../lib/curlx/dynbuf.h ../lib/curlx/fopen.h \
+	../lib/curlx/dynbuf.h ../lib/curlx/win32-fopen.h \
 	../lib/curlx/multibyte.h ../lib/curlx/nonblock.h \
 	../lib/curlx/strcopy.h ../lib/curlx/strdup.h \
 	../lib/curlx/strerr.h ../lib/curlx/strparse.h \
@@ -240,7 +240,7 @@ am__objects_4 = $(am__objects_3)
 am__objects_5 = ../lib/curlx/libcurltool_la-base64.lo \
 	../lib/curlx/libcurltool_la-basename.lo \
 	../lib/curlx/libcurltool_la-dynbuf.lo \
-	../lib/curlx/libcurltool_la-fopen.lo \
+	../lib/curlx/libcurltool_la-win32-fopen.lo \
 	../lib/curlx/libcurltool_la-multibyte.lo \
 	../lib/curlx/libcurltool_la-nonblock.lo \
 	../lib/curlx/libcurltool_la-strcopy.lo \
@@ -296,7 +296,7 @@ am__curl_SOURCES_DIST = config2setopts.c slist_wc.c terminal.c \
 	tool_writeout_json.h tool_xattr.h var.h toolx/tool_time.h \
 	tool_hugehelp.c tool_ca_embed.c tool_hugehelp.h \
 	../lib/curlx/base64.c ../lib/curlx/basename.c \
-	../lib/curlx/dynbuf.c ../lib/curlx/fopen.c \
+	../lib/curlx/dynbuf.c ../lib/curlx/win32-fopen.c \
 	../lib/curlx/multibyte.c ../lib/curlx/nonblock.c \
 	../lib/curlx/strcopy.c ../lib/curlx/strdup.c \
 	../lib/curlx/strerr.c ../lib/curlx/strparse.c \
@@ -305,7 +305,7 @@ am__curl_SOURCES_DIST = config2setopts.c slist_wc.c terminal.c \
 	../lib/curlx/warnless.c ../lib/curlx/winapi.c \
 	../lib/curl_setup.h ../lib/curlx/base64.h \
 	../lib/curlx/basename.h ../lib/curlx/dynbuf.h \
-	../lib/curlx/fopen.h ../lib/curlx/multibyte.h \
+	../lib/curlx/win32-fopen.h ../lib/curlx/multibyte.h \
 	../lib/curlx/nonblock.h ../lib/curlx/strcopy.h \
 	../lib/curlx/strdup.h ../lib/curlx/strerr.h \
 	../lib/curlx/strparse.h ../lib/curlx/timediff.h \
@@ -340,7 +340,7 @@ am__objects_12 = $(am__objects_10) $(am__objects_11)
 am__objects_13 = ../lib/curlx/curl-base64.$(OBJEXT) \
 	../lib/curlx/curl-basename.$(OBJEXT) \
 	../lib/curlx/curl-dynbuf.$(OBJEXT) \
-	../lib/curlx/curl-fopen.$(OBJEXT) \
+	../lib/curlx/curl-win32-fopen.$(OBJEXT) \
 	../lib/curlx/curl-multibyte.$(OBJEXT) \
 	../lib/curlx/curl-nonblock.$(OBJEXT) \
 	../lib/curlx/curl-strcopy.$(OBJEXT) \
@@ -388,7 +388,6 @@ am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ../lib/curlx/$(DEPDIR)/curl-base64.Po \
 	../lib/curlx/$(DEPDIR)/curl-basename.Po \
 	../lib/curlx/$(DEPDIR)/curl-dynbuf.Po \
-	../lib/curlx/$(DEPDIR)/curl-fopen.Po \
 	../lib/curlx/$(DEPDIR)/curl-multibyte.Po \
 	../lib/curlx/$(DEPDIR)/curl-nonblock.Po \
 	../lib/curlx/$(DEPDIR)/curl-strcopy.Po \
@@ -400,11 +399,11 @@ am__depfiles_remade = ../lib/curlx/$(DEPDIR)/curl-base64.Po \
 	../lib/curlx/$(DEPDIR)/curl-version_win32.Po \
 	../lib/curlx/$(DEPDIR)/curl-wait.Po \
 	../lib/curlx/$(DEPDIR)/curl-warnless.Po \
+	../lib/curlx/$(DEPDIR)/curl-win32-fopen.Po \
 	../lib/curlx/$(DEPDIR)/curl-winapi.Po \
 	../lib/curlx/$(DEPDIR)/libcurltool_la-base64.Plo \
 	../lib/curlx/$(DEPDIR)/libcurltool_la-basename.Plo \
 	../lib/curlx/$(DEPDIR)/libcurltool_la-dynbuf.Plo \
-	../lib/curlx/$(DEPDIR)/libcurltool_la-fopen.Plo \
 	../lib/curlx/$(DEPDIR)/libcurltool_la-multibyte.Plo \
 	../lib/curlx/$(DEPDIR)/libcurltool_la-nonblock.Plo \
 	../lib/curlx/$(DEPDIR)/libcurltool_la-strcopy.Plo \
@@ -416,6 +415,7 @@ am__depfiles_remade = ../lib/curlx/$(DEPDIR)/curl-base64.Po \
 	../lib/curlx/$(DEPDIR)/libcurltool_la-version_win32.Plo \
 	../lib/curlx/$(DEPDIR)/libcurltool_la-wait.Plo \
 	../lib/curlx/$(DEPDIR)/libcurltool_la-warnless.Plo \
+	../lib/curlx/$(DEPDIR)/libcurltool_la-win32-fopen.Plo \
 	../lib/curlx/$(DEPDIR)/libcurltool_la-winapi.Plo \
 	./$(DEPDIR)/curl-config2setopts.Po \
 	./$(DEPDIR)/curl-curltool_unity.Po \
@@ -579,6 +579,7 @@ CURL_CPP = @CURL_CPP@
 CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX = @CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX@
 CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME = @CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME@
 CURL_NETWORK_AND_TIME_LIBS = @CURL_NETWORK_AND_TIME_LIBS@
+CURL_PACKAGE_MAINTAINER = @CURL_PACKAGE_MAINTAINER@
 CYGPATH_W = @CYGPATH_W@
 DANTED = @DANTED@
 DEFS = @DEFS@
@@ -750,7 +751,7 @@ CURLX_CFILES = \
   ../lib/curlx/base64.c \
   ../lib/curlx/basename.c \
   ../lib/curlx/dynbuf.c \
-  ../lib/curlx/fopen.c \
+  ../lib/curlx/win32-fopen.c \
   ../lib/curlx/multibyte.c \
   ../lib/curlx/nonblock.c \
   ../lib/curlx/strcopy.c \
@@ -769,7 +770,7 @@ CURLX_HFILES = \
   ../lib/curlx/base64.h \
   ../lib/curlx/basename.h \
   ../lib/curlx/dynbuf.h \
-  ../lib/curlx/fopen.h \
+  ../lib/curlx/win32-fopen.h \
   ../lib/curlx/multibyte.h \
   ../lib/curlx/nonblock.h \
   ../lib/curlx/strcopy.h \
@@ -1064,7 +1065,8 @@ toolx/libcurltool_la-tool_time.lo: toolx/$(am__dirstamp) \
 	../lib/curlx/$(DEPDIR)/$(am__dirstamp)
 ../lib/curlx/libcurltool_la-dynbuf.lo: ../lib/curlx/$(am__dirstamp) \
 	../lib/curlx/$(DEPDIR)/$(am__dirstamp)
-../lib/curlx/libcurltool_la-fopen.lo: ../lib/curlx/$(am__dirstamp) \
+../lib/curlx/libcurltool_la-win32-fopen.lo:  \
+	../lib/curlx/$(am__dirstamp) \
 	../lib/curlx/$(DEPDIR)/$(am__dirstamp)
 ../lib/curlx/libcurltool_la-multibyte.lo:  \
 	../lib/curlx/$(am__dirstamp) \
@@ -1103,7 +1105,7 @@ toolx/curl-tool_time.$(OBJEXT): toolx/$(am__dirstamp) \
 	../lib/curlx/$(DEPDIR)/$(am__dirstamp)
 ../lib/curlx/curl-dynbuf.$(OBJEXT): ../lib/curlx/$(am__dirstamp) \
 	../lib/curlx/$(DEPDIR)/$(am__dirstamp)
-../lib/curlx/curl-fopen.$(OBJEXT): ../lib/curlx/$(am__dirstamp) \
+../lib/curlx/curl-win32-fopen.$(OBJEXT): ../lib/curlx/$(am__dirstamp) \
 	../lib/curlx/$(DEPDIR)/$(am__dirstamp)
 ../lib/curlx/curl-multibyte.$(OBJEXT): ../lib/curlx/$(am__dirstamp) \
 	../lib/curlx/$(DEPDIR)/$(am__dirstamp)
@@ -1152,7 +1154,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/curl-base64.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/curl-basename.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/curl-dynbuf.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/curl-fopen.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/curl-multibyte.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/curl-nonblock.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/curl-strcopy.Po@am__quote@ # am--include-marker
@@ -1164,11 +1165,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/curl-version_win32.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/curl-wait.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/curl-warnless.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/curl-win32-fopen.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/curl-winapi.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/libcurltool_la-base64.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/libcurltool_la-basename.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/libcurltool_la-dynbuf.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/libcurltool_la-fopen.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/libcurltool_la-multibyte.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/libcurltool_la-nonblock.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/libcurltool_la-strcopy.Plo@am__quote@ # am--include-marker
@@ -1180,6 +1181,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/libcurltool_la-version_win32.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/libcurltool_la-wait.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/libcurltool_la-warnless.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/libcurltool_la-win32-fopen.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@../lib/curlx/$(DEPDIR)/libcurltool_la-winapi.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/curl-config2setopts.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/curl-curltool_unity.Po@am__quote@ # am--include-marker
@@ -1616,12 +1618,12 @@ toolx/libcurltool_la-tool_time.lo: toolx/tool_time.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurltool_la_CPPFLAGS) $(CPPFLAGS) $(libcurltool_la_CFLAGS) $(CFLAGS) -c -o ../lib/curlx/libcurltool_la-dynbuf.lo `test -f '../lib/curlx/dynbuf.c' || echo '$(srcdir)/'`../lib/curlx/dynbuf.c
 
-../lib/curlx/libcurltool_la-fopen.lo: ../lib/curlx/fopen.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurltool_la_CPPFLAGS) $(CPPFLAGS) $(libcurltool_la_CFLAGS) $(CFLAGS) -MT ../lib/curlx/libcurltool_la-fopen.lo -MD -MP -MF ../lib/curlx/$(DEPDIR)/libcurltool_la-fopen.Tpo -c -o ../lib/curlx/libcurltool_la-fopen.lo `test -f '../lib/curlx/fopen.c' || echo '$(srcdir)/'`../lib/curlx/fopen.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ../lib/curlx/$(DEPDIR)/libcurltool_la-fopen.Tpo ../lib/curlx/$(DEPDIR)/libcurltool_la-fopen.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../lib/curlx/fopen.c' object='../lib/curlx/libcurltool_la-fopen.lo' libtool=yes @AMDEPBACKSLASH@
+../lib/curlx/libcurltool_la-win32-fopen.lo: ../lib/curlx/win32-fopen.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurltool_la_CPPFLAGS) $(CPPFLAGS) $(libcurltool_la_CFLAGS) $(CFLAGS) -MT ../lib/curlx/libcurltool_la-win32-fopen.lo -MD -MP -MF ../lib/curlx/$(DEPDIR)/libcurltool_la-win32-fopen.Tpo -c -o ../lib/curlx/libcurltool_la-win32-fopen.lo `test -f '../lib/curlx/win32-fopen.c' || echo '$(srcdir)/'`../lib/curlx/win32-fopen.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ../lib/curlx/$(DEPDIR)/libcurltool_la-win32-fopen.Tpo ../lib/curlx/$(DEPDIR)/libcurltool_la-win32-fopen.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../lib/curlx/win32-fopen.c' object='../lib/curlx/libcurltool_la-win32-fopen.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurltool_la_CPPFLAGS) $(CPPFLAGS) $(libcurltool_la_CFLAGS) $(CFLAGS) -c -o ../lib/curlx/libcurltool_la-fopen.lo `test -f '../lib/curlx/fopen.c' || echo '$(srcdir)/'`../lib/curlx/fopen.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurltool_la_CPPFLAGS) $(CPPFLAGS) $(libcurltool_la_CFLAGS) $(CFLAGS) -c -o ../lib/curlx/libcurltool_la-win32-fopen.lo `test -f '../lib/curlx/win32-fopen.c' || echo '$(srcdir)/'`../lib/curlx/win32-fopen.c
 
 ../lib/curlx/libcurltool_la-multibyte.lo: ../lib/curlx/multibyte.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcurltool_la_CPPFLAGS) $(CPPFLAGS) $(libcurltool_la_CFLAGS) $(CFLAGS) -MT ../lib/curlx/libcurltool_la-multibyte.lo -MD -MP -MF ../lib/curlx/$(DEPDIR)/libcurltool_la-multibyte.Tpo -c -o ../lib/curlx/libcurltool_la-multibyte.lo `test -f '../lib/curlx/multibyte.c' || echo '$(srcdir)/'`../lib/curlx/multibyte.c
@@ -2372,19 +2374,19 @@ curl-tool_ca_embed.obj: tool_ca_embed.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(curl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ../lib/curlx/curl-dynbuf.obj `if test -f '../lib/curlx/dynbuf.c'; then $(CYGPATH_W) '../lib/curlx/dynbuf.c'; else $(CYGPATH_W) '$(srcdir)/../lib/curlx/dynbuf.c'; fi`
 
-../lib/curlx/curl-fopen.o: ../lib/curlx/fopen.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(curl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ../lib/curlx/curl-fopen.o -MD -MP -MF ../lib/curlx/$(DEPDIR)/curl-fopen.Tpo -c -o ../lib/curlx/curl-fopen.o `test -f '../lib/curlx/fopen.c' || echo '$(srcdir)/'`../lib/curlx/fopen.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ../lib/curlx/$(DEPDIR)/curl-fopen.Tpo ../lib/curlx/$(DEPDIR)/curl-fopen.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../lib/curlx/fopen.c' object='../lib/curlx/curl-fopen.o' libtool=no @AMDEPBACKSLASH@
+../lib/curlx/curl-win32-fopen.o: ../lib/curlx/win32-fopen.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(curl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ../lib/curlx/curl-win32-fopen.o -MD -MP -MF ../lib/curlx/$(DEPDIR)/curl-win32-fopen.Tpo -c -o ../lib/curlx/curl-win32-fopen.o `test -f '../lib/curlx/win32-fopen.c' || echo '$(srcdir)/'`../lib/curlx/win32-fopen.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ../lib/curlx/$(DEPDIR)/curl-win32-fopen.Tpo ../lib/curlx/$(DEPDIR)/curl-win32-fopen.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../lib/curlx/win32-fopen.c' object='../lib/curlx/curl-win32-fopen.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(curl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ../lib/curlx/curl-fopen.o `test -f '../lib/curlx/fopen.c' || echo '$(srcdir)/'`../lib/curlx/fopen.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(curl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ../lib/curlx/curl-win32-fopen.o `test -f '../lib/curlx/win32-fopen.c' || echo '$(srcdir)/'`../lib/curlx/win32-fopen.c
 
-../lib/curlx/curl-fopen.obj: ../lib/curlx/fopen.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(curl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ../lib/curlx/curl-fopen.obj -MD -MP -MF ../lib/curlx/$(DEPDIR)/curl-fopen.Tpo -c -o ../lib/curlx/curl-fopen.obj `if test -f '../lib/curlx/fopen.c'; then $(CYGPATH_W) '../lib/curlx/fopen.c'; else $(CYGPATH_W) '$(srcdir)/../lib/curlx/fopen.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ../lib/curlx/$(DEPDIR)/curl-fopen.Tpo ../lib/curlx/$(DEPDIR)/curl-fopen.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../lib/curlx/fopen.c' object='../lib/curlx/curl-fopen.obj' libtool=no @AMDEPBACKSLASH@
+../lib/curlx/curl-win32-fopen.obj: ../lib/curlx/win32-fopen.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(curl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ../lib/curlx/curl-win32-fopen.obj -MD -MP -MF ../lib/curlx/$(DEPDIR)/curl-win32-fopen.Tpo -c -o ../lib/curlx/curl-win32-fopen.obj `if test -f '../lib/curlx/win32-fopen.c'; then $(CYGPATH_W) '../lib/curlx/win32-fopen.c'; else $(CYGPATH_W) '$(srcdir)/../lib/curlx/win32-fopen.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ../lib/curlx/$(DEPDIR)/curl-win32-fopen.Tpo ../lib/curlx/$(DEPDIR)/curl-win32-fopen.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='../lib/curlx/win32-fopen.c' object='../lib/curlx/curl-win32-fopen.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(curl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ../lib/curlx/curl-fopen.obj `if test -f '../lib/curlx/fopen.c'; then $(CYGPATH_W) '../lib/curlx/fopen.c'; else $(CYGPATH_W) '$(srcdir)/../lib/curlx/fopen.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(curl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ../lib/curlx/curl-win32-fopen.obj `if test -f '../lib/curlx/win32-fopen.c'; then $(CYGPATH_W) '../lib/curlx/win32-fopen.c'; else $(CYGPATH_W) '$(srcdir)/../lib/curlx/win32-fopen.c'; fi`
 
 ../lib/curlx/curl-multibyte.o: ../lib/curlx/multibyte.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(curl_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ../lib/curlx/curl-multibyte.o -MD -MP -MF ../lib/curlx/$(DEPDIR)/curl-multibyte.Tpo -c -o ../lib/curlx/curl-multibyte.o `test -f '../lib/curlx/multibyte.c' || echo '$(srcdir)/'`../lib/curlx/multibyte.c
@@ -2716,7 +2718,6 @@ distclean: distclean-am
 		-rm -f ../lib/curlx/$(DEPDIR)/curl-base64.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-basename.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-dynbuf.Po
-	-rm -f ../lib/curlx/$(DEPDIR)/curl-fopen.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-multibyte.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-nonblock.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-strcopy.Po
@@ -2728,11 +2729,11 @@ distclean: distclean-am
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-version_win32.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-wait.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-warnless.Po
+	-rm -f ../lib/curlx/$(DEPDIR)/curl-win32-fopen.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-winapi.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-base64.Plo
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-basename.Plo
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-dynbuf.Plo
-	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-fopen.Plo
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-multibyte.Plo
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-nonblock.Plo
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-strcopy.Plo
@@ -2744,6 +2745,7 @@ distclean: distclean-am
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-version_win32.Plo
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-wait.Plo
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-warnless.Plo
+	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-win32-fopen.Plo
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-winapi.Plo
 	-rm -f ./$(DEPDIR)/curl-config2setopts.Po
 	-rm -f ./$(DEPDIR)/curl-curltool_unity.Po
@@ -2882,7 +2884,6 @@ maintainer-clean: maintainer-clean-am
 		-rm -f ../lib/curlx/$(DEPDIR)/curl-base64.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-basename.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-dynbuf.Po
-	-rm -f ../lib/curlx/$(DEPDIR)/curl-fopen.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-multibyte.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-nonblock.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-strcopy.Po
@@ -2894,11 +2895,11 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-version_win32.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-wait.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-warnless.Po
+	-rm -f ../lib/curlx/$(DEPDIR)/curl-win32-fopen.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/curl-winapi.Po
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-base64.Plo
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-basename.Plo
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-dynbuf.Plo
-	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-fopen.Plo
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-multibyte.Plo
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-nonblock.Plo
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-strcopy.Plo
@@ -2910,6 +2911,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-version_win32.Plo
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-wait.Plo
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-warnless.Plo
+	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-win32-fopen.Plo
 	-rm -f ../lib/curlx/$(DEPDIR)/libcurltool_la-winapi.Plo
 	-rm -f ./$(DEPDIR)/curl-config2setopts.Po
 	-rm -f ./$(DEPDIR)/curl-curltool_unity.Po

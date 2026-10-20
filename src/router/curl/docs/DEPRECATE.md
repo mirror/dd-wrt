@@ -12,20 +12,6 @@ email the
 as soon as possible and explain to us why this is a problem for you and
 how your use case cannot be satisfied properly using a workaround.
 
-## TLS-SRP Authentication
-
-Transport Layer Security Secure Remote Password is a TLS feature that does not
-work with TLS 1.3 or QUIC and is virtually unused by curl users and in
-general.
-
-TLS-SRP support gets removed in August 2026.
-
-## drop SMB support
-
-The SMB protocol has weak security and is rarely used these days.
-
-SMB support gets removed in September 2026.
-
 ## drop NTLM support
 
 The NTLM authentication method has weak security and is rarely used these
@@ -55,6 +41,28 @@ future curl versions when built without TLS support. For example Digest.
 
 Local crypto gets removed in October 2026.
 
+## HTTP/2 Server Push
+
+This protocol feature has been deprecated in specifications, by major browsers,
+and in server implementations. It was never supported by the curl command line
+tool, only by libcurl.
+
+We estimate that barely any libcurl users still use this feature.
+
+HTTP/2 Server Push gets removed in March 2027.
+
+## Common Name support in TLS certificates for OpenSSL
+
+The Common Name, (`CN`) field is deprecated since RFC 2818. It was downgraded
+to a SHOULD in RFC 6125 and finally removed in RFC 9525. Browsers have not
+supported this field since 2012.
+
+In the release after 8.23.0 curl removes support for this field in code we
+control - which primarily means in the OpenSSL (and forks) backend. The other
+TLS libraries provide their own functions for verification.
+
+Pending PR: https://github.com/curl/curl/pull/22845
+
 ## Past removals
 
 - axTLS (removed in 7.63.0)
@@ -83,3 +91,5 @@ Local crypto gets removed in October 2026.
 - SMB (became opt-in in 8.20.0)
 - NTLM (became opt-in in 8.20.0)
 - c-ares < 1.16.0 (removed in 8.20.0)
+- TLS-SRP (removed in 8.22.0)
+- SMB support (removed in 8.23.0)

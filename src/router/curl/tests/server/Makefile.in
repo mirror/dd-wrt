@@ -148,8 +148,8 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__EXEEXT_1 = servers$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-servers_SOURCES = servers.c
-servers_OBJECTS = servers.$(OBJEXT)
+nodist_servers_OBJECTS = $(BUNDLE).$(OBJEXT)
+servers_OBJECTS = $(nodist_servers_OBJECTS)
 servers_LDADD = $(LDADD)
 servers_DEPENDENCIES =
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -171,7 +171,7 @@ am__v_at_1 =
 DEFAULT_INCLUDES = 
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/servers.Po
+am__depfiles_remade = ./$(DEPDIR)/$(BUNDLE).Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -191,8 +191,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = servers.c
-DIST_SOURCES = servers.c
+SOURCES = $(nodist_servers_SOURCES)
+DIST_SOURCES =
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -249,6 +249,7 @@ CURL_CPP = @CURL_CPP@
 CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX = @CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX@
 CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME = @CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME@
 CURL_NETWORK_AND_TIME_LIBS = @CURL_NETWORK_AND_TIME_LIBS@
+CURL_PACKAGE_MAINTAINER = @CURL_PACKAGE_MAINTAINER@
 CYGPATH_W = @CYGPATH_W@
 DANTED = @DANTED@
 DEFS = @DEFS@
@@ -441,7 +442,7 @@ UTILS_C = getpart.c util.c
 UTILS_H = 
 CURLX_C = \
   ../../lib/curlx/base64.c \
-  ../../lib/curlx/fopen.c \
+  ../../lib/curlx/win32-fopen.c \
   ../../lib/curlx/inet_ntop.c \
   ../../lib/curlx/inet_pton.c \
   ../../lib/curlx/multibyte.c \
@@ -474,6 +475,7 @@ TESTS_C = \
 
 # Get BUNDLE, FIRST_C, FIRST_H, UTILS_C, UTILS_H, CURLX_C, TOOLX_C, TESTS_C variables
 EXTRA_DIST = CMakeLists.txt .checksrc $(FIRST_C) $(FIRST_H) $(UTILS_C) $(UTILS_H) $(TESTS_C)
+nodist_servers_SOURCES = $(BUNDLE).c
 LDADD = @CURL_NETWORK_AND_TIME_LIBS@
 CLEANFILES = $(BUNDLE).c
 CHECKSRC = $(CS_$(V))
@@ -534,7 +536,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/servers.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/$(BUNDLE).Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -698,7 +700,7 @@ clean-am: clean-generic clean-libtool clean-local clean-noinstPROGRAMS \
 	mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/servers.Po
+		-rm -f ./$(DEPDIR)/$(BUNDLE).Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -744,7 +746,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/servers.Po
+		-rm -f ./$(DEPDIR)/$(BUNDLE).Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

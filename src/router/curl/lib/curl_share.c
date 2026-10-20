@@ -34,8 +34,11 @@
 
 static void share_destroy(struct Curl_share *share)
 {
+  if(!share)
+    return;
+
   if(share->specifier & (1 << CURL_LOCK_DATA_CONNECT)) {
-    Curl_cpool_destroy(&share->cpool);
+    Curl_cpool_destroy(&share->cpool, share->admin);
   }
 
   Curl_dnscache_destroy(&share->dnscache);
@@ -61,7 +64,7 @@ static void share_destroy(struct Curl_share *share)
 #ifdef USE_MUTEX
   Curl_mutex_destroy(&share->lock);
 #endif
-  share->magic = 0;
+  curlx_memzero(share, sizeof(*share));
   curlx_free(share);
 }
 
@@ -97,11 +100,11 @@ static uint32_t share_ref_inc(struct Curl_share *share)
   uint32_t n;
 #ifdef USE_MUTEX
   Curl_mutex_acquire(&share->lock);
-  n = ++(share->ref_count);
+  n = ++share->ref_count;
   share->has_been_shared = TRUE;
   Curl_mutex_release(&share->lock);
 #else
-  n = ++(share->ref_count);
+  n = ++share->ref_count;
   share->has_been_shared = TRUE;
 #endif
   return n;
@@ -113,10 +116,10 @@ static uint32_t share_ref_dec(struct Curl_share *share)
 #ifdef USE_MUTEX
   Curl_mutex_acquire(&share->lock);
   DEBUGASSERT(share->ref_count);
-  n = --(share->ref_count);
+  n = --share->ref_count;
   Curl_mutex_release(&share->lock);
 #else
-  n = --(share->ref_count);
+  n = --share->ref_count;
 #endif
   return n;
 }
@@ -261,7 +264,7 @@ CURLSHcode curl_share_setopt(CURLSH *sh, CURLSHoption option, ...)
     case CURL_LOCK_DATA_CONNECT:
       /* It is safe to set this option several times on a share. */
       if(!share->cpool.initialized) {
-        Curl_cpool_init(&share->cpool, share->admin, share, 103);
+        Curl_cpool_init(&share->cpool, share, 103);
       }
       break;
 
@@ -368,36 +371,45 @@ CURLSHcode curl_share_cleanup(CURLSH *sh)
   return CURLSHE_OK;
 }
 
-CURLSHcode Curl_share_lock(struct Curl_easy *data, curl_lock_data type,
-                           curl_lock_access accesstype)
+CURLSHcode Curl_share_lock_share(struct Curl_share *share,
+                                 struct Curl_easy *data,
+                                 curl_lock_data type,
+                                 curl_lock_access accesstype)
 {
-  struct Curl_share *share = data->share;
-
   if(!share)
     return CURLSHE_INVALID;
 
-  if(share->specifier & (unsigned int)(1 << type)) {
-    if(share->lockfunc) /* only call this if set! */
-      share->lockfunc(data, type, accesstype, share->clientdata);
-  }
+  if(share->specifier & (unsigned int)(1 << type) &&
+     share->lockfunc) /* only call this if set! */
+    share->lockfunc(data, type, accesstype, share->clientdata);
   /* else if we do not share this, pretend successful lock */
+
+  return CURLSHE_OK;
+}
+
+CURLSHcode Curl_share_lock(struct Curl_easy *data, curl_lock_data type,
+                           curl_lock_access accesstype)
+{
+  return Curl_share_lock_share(data->share, data, type, accesstype);
+}
+
+CURLSHcode Curl_share_unlock_share(struct Curl_share *share,
+                                   struct Curl_easy *data,
+                                   curl_lock_data type)
+{
+  if(!share)
+    return CURLSHE_INVALID;
+
+  if(share->specifier & (unsigned int)(1 << type) &&
+     share->unlockfunc) /* only call this if set! */
+    share->unlockfunc(data, type, share->clientdata);
 
   return CURLSHE_OK;
 }
 
 CURLSHcode Curl_share_unlock(struct Curl_easy *data, curl_lock_data type)
 {
-  struct Curl_share *share = data->share;
-
-  if(!share)
-    return CURLSHE_INVALID;
-
-  if(share->specifier & (unsigned int)(1 << type)) {
-    if(share->unlockfunc) /* only call this if set! */
-      share->unlockfunc(data, type, share->clientdata);
-  }
-
-  return CURLSHE_OK;
+  return Curl_share_unlock_share(data->share, data, type);
 }
 
 CURLcode Curl_share_easy_unlink(struct Curl_easy *data)
@@ -407,9 +419,14 @@ CURLcode Curl_share_easy_unlink(struct Curl_easy *data)
   if(share) {
     bool locked = share_lock_acquire(share, data);
 
-    /* If data has a connection from this share, detach it. */
-    if(data->conn && (share->specifier & (1 << CURL_LOCK_DATA_CONNECT)))
-      Curl_detach_connection(data);
+    /* If share caches connections, detach any existing connection and
+     * forget its identifier. */
+    if((share->specifier & (1 << CURL_LOCK_DATA_CONNECT))) {
+      if(data->conn)
+        Curl_detach_connection(data);
+      data->state.last_conn_id = -1;
+      data->state.last_cpid = UINT32_MAX;
+    }
 
 #if !defined(CURL_DISABLE_HTTP) && !defined(CURL_DISABLE_COOKIES)
     if(share->cookies == data->cookies)
@@ -440,6 +457,12 @@ CURLcode Curl_share_easy_link(struct Curl_easy *data,
 
   if(share) {
     bool locked = share_lock_acquire(share, data);
+
+    /* Forget identifiers from the previously used connection cache. */
+    if((share->specifier & (1 << CURL_LOCK_DATA_CONNECT))) {
+      data->state.last_conn_id = -1;
+      data->state.last_cpid = UINT32_MAX;
+    }
 
     share_ref_inc(share);
     data->share = share;

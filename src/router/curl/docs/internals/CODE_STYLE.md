@@ -104,7 +104,7 @@ if(!x)
 For functions the opening brace should be on a separate line:
 
 ```c
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
   return 1;
 }
@@ -206,6 +206,17 @@ ptr = &address;
 contents = *pointer;
 complement = ~bits;
 empty = (!*string) ? TRUE : FALSE;
+```
+
+## No space following typecasts
+
+As far as possible, we write code to avoid typecasts. When we do use them, We
+write typecasts "glued" to the following expression, with no space after the
+closing parenthesis:
+
+```c
+int value = (int)foobar;
+char *ptr = (char *)random_func();
 ```
 
 ## No parentheses for return values
@@ -348,10 +359,12 @@ This is the full list of functions generally banned.
     _wfopen
     _wfreopen
     _wopen
+    abort
     accept
     accept4
     access
     aprintf
+    assert
     atoi
     atol
     calloc
@@ -370,6 +383,8 @@ This is the full list of functions generally banned.
     getaddrinfo
     gets
     gmtime
+    inet_ntop
+    inet_pton
     llseek
     LoadLibrary
     LoadLibraryA

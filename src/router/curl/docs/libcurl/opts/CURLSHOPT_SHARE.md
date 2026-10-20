@@ -35,6 +35,9 @@ CURLSHOPT_SHARE(3) multiple times with different data arguments to have
 the share object share multiple types of data. Unset a type again by setting
 CURLSHOPT_UNSHARE(3).
 
+Do not add types to a shared object that is being in use. Add them only
+between transfers.
+
 If any of the data is to be shared in multiple threads then mutex callbacks
 must be set as well. See CURLSHOPT_LOCKFUNC(3) and CURLSHOPT_UNLOCKFUNC(3).
 
@@ -75,6 +78,11 @@ in different threads using a shared connection.
 
 Note that when you use the multi interface, all easy handles added to the same
 multi handle share the connection cache by default without using this option.
+
+Connection limits set with CURLMOPT_MAX_HOST_CONNECTIONS(3) and
+CURLMOPT_MAX_TOTAL_CONNECTIONS(3) also apply to transfers using a shared
+connection cache. Each transfer applies the limits of the multi handle it
+runs on to the shared cache.
 
 ## CURL_LOCK_DATA_PSL
 

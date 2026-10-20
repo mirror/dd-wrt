@@ -69,9 +69,8 @@ static struct tool_mime *tool_mime_new_data(struct tool_mime *parent,
 }
 
 /*
-** unsigned size_t to signed curl_off_t
-*/
-
+ * unsigned size_t to signed curl_off_t
+ */
 #define CURL_MASK_UCOFFT  ((unsigned CURL_TYPEOF_CURL_OFF_T)~0)
 #define CURL_MASK_SCOFFT  (CURL_MASK_UCOFFT >> 1)
 
@@ -241,10 +240,8 @@ static int tool_mime_stdin_seek(void *instream, curl_off_t offset, int whence)
   }
   if(offset < 0)
     return CURL_SEEKFUNC_CANTSEEK;
-  if(!sip->data) {
-    if(curlx_fseek(stdin, offset + sip->origin, SEEK_SET))
-      return CURL_SEEKFUNC_CANTSEEK;
-  }
+  if(!sip->data && curlx_fseek(stdin, offset + sip->origin, SEEK_SET))
+    return CURL_SEEKFUNC_CANTSEEK;
   sip->curpos = offset;
   return CURL_SEEKFUNC_OK;
 }
@@ -383,15 +380,13 @@ static char *get_param_word(char **str, char **end_pos, char endchar)
   if(*ptr == '"') {
     ++ptr;
     while(*ptr) {
-      if(*ptr == '\\') {
-        if(ptr[1] == '\\' || ptr[1] == '"') {
-          /* remember the first escape position */
-          if(!escape)
-            escape = ptr;
-          /* skip escape of back-slash or double-quote */
-          ptr += 2;
-          continue;
-        }
+      if(*ptr == '\\' && (ptr[1] == '\\' || ptr[1] == '"')) {
+        /* remember the first escape position */
+        if(!escape)
+          escape = ptr;
+        /* skip escape of back-slash or double-quote */
+        ptr += 2;
+        continue;
       }
       if(*ptr == '"') {
         bool trailing_data = FALSE;
@@ -510,7 +505,7 @@ static void param_type(char **ptr, char **ptype, char **endct, char *sep)
 {
   char *p = *ptr;
   size_t tlen;
-  for(p += sizeof("type=") - 1; ISBLANK(*p); p++)
+  for(p += CURL_CSTRLEN("type="); ISBLANK(*p); p++)
     ;
   /* set type pointer */
   *ptype = p;
@@ -534,7 +529,7 @@ static void param_filename(char **ptr, char **endct, char **pfilename,
     **endct = '\0';
     *endct = NULL;
   }
-  for(p += sizeof("filename=") - 1; ISBLANK(*p); p++)
+  for(p += CURL_CSTRLEN("filename="); ISBLANK(*p); p++)
     ;
   tp = p;
   *pfilename = get_param_word(&p, &endpos, endchar);
@@ -558,7 +553,7 @@ static int param_headers(char **ptr, char **endct,
     **endct = '\0';
     *endct = NULL;
   }
-  p += sizeof("headers=") - 1;
+  p += CURL_CSTRLEN("headers=");
   if(*p == '@' || *p == '<') {
     char *hdrfile;
     FILE *fp;
@@ -624,7 +619,7 @@ static void param_encoder(char **ptr, char **endct, char **pencoder,
     **endct = '\0';
     *endct = NULL;
   }
-  for(p += sizeof("encoder=") - 1; ISBLANK(*p); p++)
+  for(p += CURL_CSTRLEN("encoder="); ISBLANK(*p); p++)
     ;
   tp = p;
   *pencoder = get_param_word(&p, &endpos, endchar);

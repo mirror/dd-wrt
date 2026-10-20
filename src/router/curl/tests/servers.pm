@@ -96,7 +96,6 @@ use sshhelp qw(
     find_sshd
     find_ssh
     find_sftp
-    find_httptlssrv
     sshversioninfo
     );
 
@@ -125,7 +124,6 @@ my $sshderror;     # for socks server, ssh daemon version error
 my %doesntrun;     # servers that do not work, identified by pidfile
 my %PORT = (nolisten => 47); # port we use for a local non-listening service
 my $server_response_maxtime = 13;
-my $httptlssrv = find_httptlssrv();
 my %run;           # running server
 my %runcert;       # cert file currently in use by an SSL running server
 my $CLIENTIP = "127.0.0.1";  # address which curl uses for incoming connections
@@ -177,11 +175,11 @@ sub checkcmd {
 # return the port number
 #
 sub getfreeport {
-    my ($ipnum) = @_;
+    my ($ipnum, $reuse) = @_;
     my $server = IO::Socket->new(LocalPort => 0,
                                  Domain => $ipnum == 6 ? AF_INET6 : AF_INET,
                                  Type      => SOCK_STREAM,
-                                 Reuse     => 1,
+                                 Reuse     => $reuse,
                                  Listen    => 10 )
         or die "Could not create tcp server socket: $@\n";
 
@@ -236,8 +234,8 @@ sub init_serverpidfile_hash {
             }
         }
     }
-    for my $proto (('tftp', 'sftp', 'socks', 'ssh', 'rtsp', 'httptls',
-                    'dict', 'smb', 'smbs', 'telnet', 'mqtt', 'mqtts',
+    for my $proto (('tftp', 'sftp', 'socks', 'ssh', 'rtsp',
+                    'dict', 'telnet', 'mqtt', 'mqtts',
                     'https-mtls', 'dns')) {
         for my $ipvnum ((4, 6)) {
             for my $idnum ((1, 2)) {
@@ -301,10 +299,6 @@ sub serverfortest {
             my $server = "${1}";
             my $lnrest = "${2}";
             my $tlsext;
-            if($server =~ /^(httptls)(\+)(ext|srp)(\d*)(-ipv6|)$/) {
-                $server = "${1}${4}${5}";
-                $tlsext = uc("TLS-${3}");
-            }
 
             my @lprotocols = @protocols;
 
@@ -340,7 +334,7 @@ sub startnew {
 
     if(not defined $child) {
         logmsg "startnew: fork() failure detected\n";
-        return (-1,-1);
+        return (-1, -1);
     }
 
     if(0 == $child) {
@@ -372,7 +366,7 @@ sub startnew {
         Time::HiRes::sleep($timeout);
         if(checkdied($child)) {
             logmsg "startnew: child process has failed to start\n" if($verbose);
-            return (-1,-1);
+            return (-1, -1);
         }
     }
 
@@ -390,7 +384,7 @@ sub startnew {
             logmsg "startnew: child process has died, server might start up\n"
                 if($verbose);
             # We cannot abort waiting for the server with a
-            # return (-1,-1);
+            # return (-1, -1);
             # because the server might have forked and could still start
             # up normally. Instead, reduce the amount of time we remain
             # waiting.
@@ -790,88 +784,6 @@ sub verifysftp {
 }
 
 #######################################################################
-# Verify that the non-stunnel HTTP TLS extensions capable server that runs
-# on $ip, $port is our server.  This also implies that we can speak with it,
-# as there might be occasions when the server runs fine but we cannot talk
-# to it ("Failed to connect to ::1: Cannot assign requested address")
-#
-sub verifyhttptls {
-    my ($proto, $ipvnum, $idnum, $ip, $port) = @_;
-    my $server = servername_id($proto, $ipvnum, $idnum);
-    my $pidfile = server_pidfilename("$LOGDIR/$PIDDIR", $proto, $ipvnum,
-                                     $idnum);
-
-    my $verifyout = "$LOGDIR/".
-        servername_canon($proto, $ipvnum, $idnum) .'_verify.out';
-    unlink($verifyout) if(-f $verifyout);
-
-    my $verifylog = "$LOGDIR/".
-        servername_canon($proto, $ipvnum, $idnum) .'_verify.log';
-    unlink($verifylog) if(-f $verifylog);
-
-    my $flags = "--max-time $server_response_maxtime ";
-    $flags .= "--output $verifyout ";
-    $flags .= "--verbose ";
-    $flags .= "--globoff ";
-    $flags .= "--insecure ";
-    $flags .= "--tlsauthtype SRP ";
-    $flags .= "--tlsuser jsmith ";
-    $flags .= "--tlspassword abc ";
-    if($proxy_address) {
-        $flags .= getexternalproxyflags();
-    }
-    $flags .= "\"https://$ip:$port/verifiedserver\"";
-
-    my $cmd = exerunner() . "$VCURL $flags 2>$verifylog";
-
-    # verify if our/any server is running on this port
-    logmsg "RUN: $cmd\n" if($verbose);
-    my $res = runclient($cmd);
-
-    $res >>= 8; # rotate the result
-    if($res & 128) {
-        logmsg "RUN: curl command died with a coredump\n";
-        return -1;
-    }
-
-    if($res && $verbose) {
-        logmsg "RUN: curl command returned $res\n";
-        if(open(my $file, "<", $verifylog)) {
-            while(my $string = <$file>) {
-                logmsg "RUN: $string" if($string !~ /^([ \t]*)$/);
-            }
-            close($file);
-        }
-    }
-
-    my $data;
-    if(open(my $file, "<", $verifyout)) {
-        while(my $string = <$file>) {
-            $data .= $string;
-        }
-        close($file);
-    }
-
-    my $pid = 0;
-    if($data && ($data =~ /(GNUTLS|GnuTLS)/) && ($pid = processexists($pidfile))) {
-        if($pid < 0) {
-            logmsg "RUN: $server server has died after starting up\n";
-        }
-        return $pid;
-    }
-    elsif($res == 6) {
-        # curl: (6) Could not resolve hostname '::1'
-        logmsg "RUN: failed to resolve host (https://$ip:$port/verifiedserver)\n";
-        return -1;
-    }
-    elsif($data || ($res && ($res != 7))) {
-        logmsg "RUN: Unknown server on our $server port: $port ($res)\n";
-        return -1;
-    }
-    return $pid;
-}
-
-#######################################################################
 # For verifying mqtt and socks
 #
 sub verifypid {
@@ -882,66 +794,6 @@ sub verifypid {
     if($pid < 0) {
         logmsg "RUN: $proto server has died\n";
     }
-    return $pid;
-}
-
-#######################################################################
-# Verify that the server that runs on $ip, $port is our server.  This also
-# implies that we can speak with it, as there might be occasions when the
-# server runs fine but we cannot talk to it ("Failed to connect to ::1: Cannot
-# assign requested address")
-#
-sub verifysmb {
-    my ($proto, $ipvnum, $idnum, $ip, $port) = @_;
-    my $server = servername_id($proto, $ipvnum, $idnum);
-    my $time = time();
-    my $extra = "";
-
-    my $verifylog = "$LOGDIR/".
-        servername_canon($proto, $ipvnum, $idnum) .'_verify.log';
-    unlink($verifylog) if(-f $verifylog);
-
-    my $flags = "--max-time $server_response_maxtime ";
-    $flags .= "--silent ";
-    $flags .= "--verbose ";
-    $flags .= "--globoff ";
-    $flags .= "-u 'curltest:curltest' ";
-    $flags .= $extra;
-    $flags .= "\"$proto://$ip:$port/SERVER/verifiedserver\"";
-
-    my $cmd = exerunner() . "$VCURL $flags 2>$verifylog";
-
-    # check if this is our server running on this port:
-    logmsg "RUN: $cmd\n" if($verbose);
-    my @data = runclientoutput($cmd);
-
-    my $res = $? >> 8; # rotate the result
-    if($res & 128) {
-        logmsg "RUN: curl command died with a coredump\n";
-        return -1;
-    }
-
-    my $pid = 0;
-    foreach my $line (@data) {
-        if($line =~ /WE ROOLZ: (\d+)/) {
-            # this is our test server with a known pid!
-            $pid = 0+$1;
-            last;
-        }
-    }
-    if($pid <= 0 && @data && $data[0]) {
-        # this is not a known server
-        logmsg "RUN: Unknown server on our $server port: $port\n";
-        return 0;
-    }
-    # we can/should use the time it took to verify the server as a measure
-    # on how fast/slow this host is.
-    my $took = int(0.5+time()-$time);
-
-    if($verbose) {
-        logmsg "RUN: Verifying our test $server server took $took seconds\n";
-    }
-
     return $pid;
 }
 
@@ -1012,10 +864,9 @@ sub verifytelnet {
 # particular can take a long time to start if it needs to generate
 # keys on a slow or loaded host.
 #
-# For convenience, test harness uses 'https' and 'httptls' literals
+# For convenience, test harness uses 'https' literal
 # as values for 'proto' variable in order to differentiate different
-# servers. 'https' literal is used for stunnel based https test servers,
-# and 'httptls' is used for non-stunnel https test servers.
+# servers. 'https' literal is used for stunnel based https test servers.
 #
 
 my %protofunc = ('http' => \&verifyhttp,
@@ -1038,9 +889,7 @@ my %protofunc = ('http' => \&verifyhttp,
                  'socks' => \&verifypid,
                  'socks5unix' => \&verifypid,
                  'gopher' => \&verifyhttp,
-                 'httptls' => \&verifyhttptls,
                  'dict' => \&verifyftp,
-                 'smb' => \&verifysmb,
                  'telnet' => \&verifytelnet);
 
 #######################################################################
@@ -1195,8 +1044,8 @@ sub runhttp2server {
     $flags .= "--connect $HOSTIP:" . protoport("http") . " ";
     $flags .= $verbose_flag if($debugprotocol);
 
-    my $port = getfreeport($ipvnum);
-    my $port2 = getfreeport($ipvnum);
+    my $port = getfreeport($ipvnum, 0);
+    my $port2 = getfreeport($ipvnum, 0);
     my $aflags = "--port $port --port2 $port2 $flags";
     my $cmd = "$exe $aflags";
     my ($http2pid, $pid2) = startnew($cmd, $pidfile, 15, 0);
@@ -1257,7 +1106,7 @@ sub runhttp3server {
     $flags .= "--cert \"$cert\" " if($cert);
     $flags .= $verbose_flag if($debugprotocol);
 
-    my $port = getfreeport($ipvnum);
+    my $port = getfreeport($ipvnum, 0);
     my $aflags = "--port $port $flags";
     my $cmd = "$exe $aflags";
     my ($http3pid, $pid3) = startnew($cmd, $pidfile, 15, 0);
@@ -1341,7 +1190,7 @@ sub runhttpsserver {
         $flags .= "--connect " . protoport("httpproxy");
     }
 
-    my $port = getfreeport($ipvnum);
+    my $port = getfreeport($ipvnum, 1);
     my $options = "$flags --accept $port";
     my $cmd = "$perl " . shell_quote("$srcdir/secureserver.pl") . " " . $options;
     my ($httpspid, $pid2) = startnew($cmd, $pidfile, 15, 0);
@@ -1365,66 +1214,6 @@ sub runhttpsserver {
     $runcert{$server} = $certfile;
 
     return (0+!$httpspid, $httpspid, $pid2, $port);
-}
-
-#######################################################################
-# start the non-stunnel HTTP TLS extensions capable server
-#
-sub runhttptlsserver {
-    my ($verb, $ipv6) = @_;
-    my $proto = "httptls";
-    my $ip = ($ipv6 && ($ipv6 =~ /6$/)) ? $HOST6IP : $HOSTIP;
-    my $ipvnum = ($ipv6 && ($ipv6 =~ /6$/)) ? 6 : 4;
-    my $idnum = 1;
-
-    if(!$httptlssrv) {
-        return (4, 0, 0);
-    }
-
-    my $server = servername_id($proto, $ipvnum, $idnum);
-
-    my $pidfile = $serverpidfile{$server};
-
-    # do not retry if the server does not work
-    if($doesntrun{$pidfile}) {
-        return (2, 0, 0, 0);
-    }
-
-    my $pid = processexists($pidfile);
-    if($pid > 0) {
-        stopserver($server, $pid);
-    }
-    unlink($pidfile) if(-f $pidfile);
-
-    my $srvrname = servername_str($proto, $ipvnum, $idnum);
-    my $logfile = server_logfilename($LOGDIR, $proto, $ipvnum, $idnum);
-
-    my $flags = "";
-    $flags .= "--http ";
-    $flags .= "--debug 1 " if($debugprotocol);
-    $flags .= "--priority NORMAL:+SRP ";
-    $flags .= "--srppasswd $srcdir/certs/srp-verifier-db ";
-    $flags .= "--srppasswdconf $srcdir/certs/srp-verifier-conf";
-
-    my $port = getfreeport($ipvnum);
-    my $allflags = "--port $port $flags";
-    my $cmd = "$httptlssrv $allflags > $logfile 2>&1";
-    my ($httptlspid, $pid2) = startnew($cmd, $pidfile, 10, 1);
-
-    if($httptlspid <= 0 || !pidexists($httptlspid)) {
-        # it is NOT alive
-        stopserver($server, $pid2);
-        $doesntrun{$pidfile} = 1;
-        $httptlspid = $pid2 = 0;
-        logmsg "RUN: failed to start the $srvrname server\n";
-        return (3, 0, 0, 0);
-    }
-    $doesntrun{$pidfile} = 0;
-
-    if($verb) {
-        logmsg "RUN: $srvrname server PID $httptlspid port $port\n";
-    }
-    return (0+!$httptlspid, $httptlspid, $pid2, $port);
 }
 
 #######################################################################
@@ -1544,7 +1333,7 @@ sub runsecureserver {
     $flags .= "--stunnel \"$stunnel\" --srcdir \"$srcdir\" ";
     $flags .= "--connect $clearport";
 
-    my $port = getfreeport($ipvnum);
+    my $port = getfreeport($ipvnum, 1);
     my $options = "$flags --accept $port";
 
     my $cmd = "$perl " . shell_quote("$srcdir/secureserver.pl") . " " . $options;
@@ -1821,7 +1610,7 @@ sub runsshserver {
 
     my $sshd = find_sshd();
     if($sshd) {
-        ($sshdid,$sshdvernum,$sshdverstr,$sshderror) = sshversioninfo($sshd);
+        ($sshdid, $sshdvernum, $sshdverstr, $sshderror) = sshversioninfo($sshd);
         logmsg $sshderror if($sshderror);
     }
 
@@ -1847,7 +1636,7 @@ sub runsshserver {
     }
 
     my @tports;
-    my $port = getfreeport($ipvnum);
+    my $port = getfreeport($ipvnum, 1);
 
     push @tports, $port;
 
@@ -2101,7 +1890,7 @@ sub rundictserver {
     $flags .= "--srcdir \"$srcdir\" ";
     $flags .= "--host $HOSTIP";
 
-    my $port = getfreeport($ipvnum);
+    my $port = getfreeport($ipvnum, 1);
     my $aflags = "--port $port $flags";
     my $cmd = "$srcdir/dictserver.py $aflags";
     my ($dictpid, $pid2) = startnew($cmd, $pidfile, 15, 0);
@@ -2121,67 +1910,6 @@ sub rundictserver {
     }
 
     return (0+!$dictpid, $dictpid, $pid2, $port);
-}
-
-#######################################################################
-# start the SMB server
-#
-sub runsmbserver {
-    my ($verb, $alt) = @_;
-    my $proto = "smb";
-    my $ip = $HOSTIP;
-    my $ipvnum = 4;
-    my $idnum = 1;
-
-    if($alt eq "ipv6") {
-        # No IPv6
-    }
-
-    my $server = servername_id($proto, $ipvnum, $idnum);
-
-    my $pidfile = $serverpidfile{$server};
-
-    # do not retry if the server does not work
-    if($doesntrun{$pidfile}) {
-        return (2, 0, 0, 0);
-    }
-
-    my $pid = processexists($pidfile);
-    if($pid > 0) {
-        stopserver($server, $pid);
-    }
-    unlink($pidfile) if(-f $pidfile);
-
-    my $srvrname = servername_str($proto, $ipvnum, $idnum);
-    my $logfile = server_logfilename($LOGDIR, $proto, $ipvnum, $idnum);
-
-    my $flags = "";
-    $flags .= "--verbose 1 " if($debugprotocol);
-    $flags .= "--pidfile \"$pidfile\" --logfile \"$logfile\" ";
-    $flags .= "--id $idnum " if($idnum > 1);
-    $flags .= "--srcdir \"$srcdir\" ";
-    $flags .= "--host $HOSTIP";
-
-    my $port = getfreeport($ipvnum);
-    my $aflags = "--port $port $flags";
-    my $cmd = "$srcdir/smbserver.py $aflags";
-    my ($smbpid, $pid2) = startnew($cmd, $pidfile, 15, 0);
-
-    if($smbpid <= 0 || !pidexists($smbpid)) {
-        # it is NOT alive
-        stopserver($server, $pid2);
-        $doesntrun{$pidfile} = 1;
-        $smbpid = $pid2 = 0;
-        logmsg "RUN: failed to start the $srvrname server\n";
-        return (3, 0, 0, 0);
-    }
-    $doesntrun{$pidfile} = 0;
-
-    if($verb) {
-        logmsg "RUN: $srvrname server PID $smbpid port $port\n";
-    }
-
-    return (0+!$smbpid, $smbpid, $pid2, $port);
 }
 
 #######################################################################
@@ -2222,7 +1950,7 @@ sub runnegtelnetserver {
     $flags .= "--id $idnum " if($idnum > 1);
     $flags .= "--srcdir \"$srcdir\"";
 
-    my $port = getfreeport($ipvnum);
+    my $port = getfreeport($ipvnum, 1);
     my $aflags = "--port $port $flags";
     my $cmd = "$srcdir/negtelnetserver.py $aflags";
     my ($ntelpid, $pid2) = startnew($cmd, $pidfile, 15, 0);
@@ -2366,27 +2094,6 @@ sub responsive_dns_server {
         # if IPv6, use a different setup
         $ipvnum = 6;
         $port = protoport('dns6');
-        $ip = $HOST6IP;
-    }
-
-    return &responsiveserver($proto, $ipvnum, $idnum, $ip, $port);
-}
-
-#######################################################################
-# Single shot non-stunnel HTTP TLS extensions capable server
-# responsiveness test. This should only be used to verify that a
-# server present in %run hash is still functional
-#
-sub responsive_httptls_server {
-    my ($verb, $ipv6) = @_;
-    my $ipvnum = ($ipv6 && ($ipv6 =~ /6$/)) ? 6 : 4;
-    my $proto = "httptls";
-    my $port = protoport($proto);
-    my $ip = $HOSTIP;
-    my $idnum = 1;
-
-    if($ipvnum == 6) {
-        $port = protoport("httptls6");
         $ip = $HOST6IP;
     }
 
@@ -2831,50 +2538,6 @@ sub startservers {
                 $run{'https-proxy'} = "$pid $pid2";
             }
         }
-        elsif($what eq "httptls") {
-            if(!$httptlssrv) {
-                # for now, we cannot run http TLS-EXT tests without gnutls-serv
-                return ("no gnutls-serv (with SRP support)", 4);
-            }
-            if($run{'httptls'} &&
-               !responsive_httptls_server($verbose, "IPv4")) {
-                if(stopserver('httptls')) {
-                    return ("failed stopping unresponsive HTTPTLS server", 3);
-                }
-            }
-            if(!$run{'httptls'}) {
-                ($serr, $pid, $pid2, $PORT{'httptls'}) =
-                    runhttptlsserver($verbose, "IPv4");
-                if($pid <= 0) {
-                    return ("failed starting HTTPTLS server (gnutls-serv)", $serr);
-                }
-                logmsg sprintf("* pid httptls => %d %d\n", $pid, $pid2)
-                    if($verbose);
-                $run{'httptls'} = "$pid $pid2";
-            }
-        }
-        elsif($what eq "httptls-ipv6") {
-            if(!$httptlssrv) {
-                # for now, we cannot run http TLS-EXT tests without gnutls-serv
-                return ("no gnutls-serv", 4);
-            }
-            if($run{'httptls-ipv6'} &&
-               !responsive_httptls_server($verbose, "ipv6")) {
-                if(stopserver('httptls-ipv6')) {
-                    return ("failed stopping unresponsive HTTPTLS-IPv6 server", 3);
-                }
-            }
-            if(!$run{'httptls-ipv6'}) {
-                ($serr, $pid, $pid2, $PORT{"httptls6"}) =
-                    runhttptlsserver($verbose, "ipv6");
-                if($pid <= 0) {
-                    return ("failed starting HTTPTLS-IPv6 server (gnutls-serv)", $serr);
-                }
-                logmsg sprintf("* pid httptls-ipv6 => %d %d\n", $pid, $pid2)
-                    if($verbose);
-                $run{'httptls-ipv6'} = "$pid $pid2";
-            }
-        }
         elsif($what eq "dns") {
             if($run{'dns'} &&
                !responsive_dns_server("", $verbose)) {
@@ -3032,17 +2695,6 @@ sub startservers {
                 $run{'dict'} = "$pid $pid2";
             }
         }
-        elsif($what eq "smb") {
-            if(!$run{'smb'}) {
-                ($serr, $pid, $pid2, $PORT{"smb"}) = runsmbserver($verbose, "");
-                if($pid <= 0) {
-                    return ("failed starting SMB server", $serr);
-                }
-                logmsg sprintf ("* pid SMB => %d %d\n", $pid, $pid2)
-                    if($verbose);
-                $run{'smb'} = "$pid $pid2";
-            }
-        }
         elsif($what eq "telnet") {
             if(!$run{'telnet'}) {
                 ($serr, $pid, $pid2, $PORT{"telnet"}) =
@@ -3137,7 +2789,7 @@ sub subvariables {
                        'FTP', 'FTP6', 'FTPS',
                        'GOPHER', 'GOPHER6', 'GOPHERS',
                        'HTTP', 'HTTP6', 'HTTPS', 'HTTPS-MTLS',
-                       'HTTPSPROXY', 'HTTPTLS', 'HTTPTLS6',
+                       'HTTPSPROXY',
                        'HTTP2', 'HTTP2TLS',
                        'HTTP3',
                        'IMAP', 'IMAP6', 'IMAPS',
@@ -3145,7 +2797,6 @@ sub subvariables {
                        'NOLISTEN',
                        'POP3', 'POP36', 'POP3S',
                        'RTSP', 'RTSP6',
-                       'SMB', 'SMBS',
                        'SMTP', 'SMTP6', 'SMTPS',
                        'SOCKS',
                        'SSH',

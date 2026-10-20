@@ -2,32 +2,49 @@
 <testcase>
 <info>
 <keywords>
-HTTPS
-TLS-SRP
+etags
 </keywords>
 </info>
+
+# Server-side
+<reply>
+<data crlf="headers">
+HTTP/1.1 200 OK
+ETag: "remote"
+Content-Length: 0
+
+</data>
+</reply>
 
 # Client-side
 <client>
 <server>
-httptls+srp
+http
 </server>
-<features>
-TLS-SRP
-</features>
 <name>
-TLS-SRP with bad username and password
+--etag-save to stdout append to file
 </name>
-<command>
---insecure --tlsauthtype SRP --tlsuser baduser --tlspassword badpass https://%HOSTIP:%HTTPTLSPORT
+<command option="no-stdout">
+http://%HOSTIP:%HTTPPORT/%TESTNUMBER --etag-save - >> %LOGDIR/out%TESTNUMBER
 </command>
+
+<file name="%LOGDIR/out%TESTNUMBER">
+initial content
+</file>
 </client>
 
 # Verify data after the test has been "shot"
 <verify>
-<errorcode>
-35
-</errorcode>
-</verify>
+<protocol crlf="headers">
+GET /%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
 
+</protocol>
+<file name="%LOGDIR/out%TESTNUMBER">
+initial content
+"remote"
+</file>
+</verify>
 </testcase>

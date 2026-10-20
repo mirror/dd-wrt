@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #***************************************************************************
 #                                  _   _ ____  _
 #  Project                     ___| | | |  _ \| |
@@ -37,7 +35,8 @@ log = logging.getLogger(__name__)
 class TestShutdown:
 
     @pytest.fixture(autouse=True, scope='class')
-    def _class_scope(self, env, httpd):
+    @classmethod
+    def _class_scope(cls, env, httpd):
         indir = httpd.docs_dir
         env.make_data_file(indir=indir, fname="data-10k", fsize=10 * 1024)
         env.make_data_file(indir=indir, fname="data-100k", fsize=100 * 1024)
@@ -185,7 +184,8 @@ class TestShutdown:
     # run connection pressure, many small transfers, not reusing connections,
     # limited total
     @pytest.mark.parametrize("proto", ['http/1.1'])
-    def test_19_07_shutdown_by_curl(self, env: Env, httpd, proto):
+    @pytest.mark.parametrize("share_connect", [False, True])
+    def test_19_07_shutdown_by_curl(self, env: Env, httpd, proto, share_connect):
         if not env.curl_is_debug():
             pytest.skip('only works for curl debug builds')
         count = 500
@@ -197,17 +197,50 @@ class TestShutdown:
         })
         if not client.exists():
             pytest.skip(f'example client not built: {client.name}')
+        extra_args = ['-S'] if share_connect else []  # share connections
         r = client.run(args=[
              '-n', f'{count}',  # that many transfers
              '-C', env.ca.cert_file,
              '-f',  # forbid conn reuse
              '-m', '10',  # max parallel
              '-T', '5',  # max total conns at a time
-             '-V', proto,
-             url
-        ])
+        ] + extra_args + ['-V', proto, url])
         r.check_exit_code(0)
         shutdowns = [line for line in r.trace_lines
                      if re.match(r'.*SHUTDOWN] shutdown, done=1', line)]
         # we see less clean shutdowns as total limit forces early closes
         assert len(shutdowns) < count, f'{shutdowns}'
+
+    # Strictly event-based transfers, no connection reuse. Connections
+    # whose graceful shutdown cannot finish right away must have their
+    # socket stay registered with the application's socket callback,
+    # or they never make progress and leak until multi cleanup.
+    @pytest.mark.parametrize("proto", ['http/1.1'])
+    def test_19_08_event_shutdown_watched(self, env: Env, httpd, proto):
+        if not env.curl_is_debug():
+            pytest.skip('only works for curl debug builds')
+        count = 5
+        docname = 'data.json'
+        url = f'https://localhost:{env.https_port}/{docname}'
+        client = LocalClient(name='cli_ev_download', env=env, run_env={
+            # make socket receives block often, so the TLS shutdown
+            # cannot finish on its first attempt
+            'CURL_DBG_SOCK_RBLOCK': '90',
+            'CURL_DEBUG': 'ssl,multi'
+        })
+        if not client.exists():
+            pytest.skip(f'example client not built: {client.name}')
+        r = client.run(args=[
+            '-n', f'{count}', '-C', env.ca.cert_file, url
+        ])
+        r.check_exit_code(0)
+        m = None
+        for line in r.stderr.splitlines():
+            m = re.match(r'.*\[ev] final: watched=(\d+) socks_left=(\d+)', line)
+            if m:
+                break
+        assert m, f'no client event summary found: {r.stderr}'
+        # shutdown sockets were watched after transfers finished and
+        # all shutdowns finished within the event loop
+        assert int(m.group(1)) > 0, f'{r.stderr}'
+        assert int(m.group(2)) == 0, f'{r.stderr}'

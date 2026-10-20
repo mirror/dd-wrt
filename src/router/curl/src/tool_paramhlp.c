@@ -64,8 +64,7 @@ struct getout *new_getout(struct OperationConfig *config)
 
    countcrlf TRUE - return number of bytes from the start that are ONLY CR or
    LF or NULL.
-
-*/
+ */
 static size_t memcrlf(char *orig,
                       bool countcrlf, /* TRUE if we count CRLF, FALSE
                                          if we count non-CRLF */
@@ -298,7 +297,7 @@ ParameterError secs2ms(long *val, const char *str)
 {
   curl_off_t secs;
   long ms = 0;
-  const unsigned int digs[] = {
+  static const unsigned int digs[] = {
     1,
     10,
     100,
@@ -483,7 +482,8 @@ ParameterError proto2num(const char * const *val, char **ostr, const char *str)
            if no protocols are allowed */
         if(action == set)
           protoset[0] = NULL;
-        warnf("unrecognized protocol '%s'", buffer);
+        errorf("unrecognized protocol '%s'", buffer);
+        return PARAM_BAD_USE;
       }
     }
     if(next)

@@ -34,7 +34,7 @@
 #include "multihandle.h" /* for ENABLE_WAKEUP */
 #include "tool_xattr.h" /* for USE_XATTR */
 #include "curl_sha512_256.h" /* for CURL_HAVE_SHA512_256 */
-#include "asyn.h" /* for USE_RESOLV_ARES, USE_RESOLV_THREADED */
+#include "vdns/asyn.h" /* for USE_RESOLV_ARES, USE_RESOLV_THREADED */
 #include "fake_addrinfo.h" /* for USE_FAKE_GETADDRINFO */
 
 #include <stdio.h>
@@ -43,7 +43,7 @@
 #include <openssl/opensslconf.h> /* for OPENSSL_NO_OCSP */
 #endif
 
-static const char *disabled[] = {
+static const char * const disabled[] = {
   "bindlocal: "
 #ifdef CURL_DISABLE_BINDLOCAL
   "OFF"
@@ -90,6 +90,13 @@ static const char *disabled[] = {
   ,
   "aws: "
 #ifdef CURL_DISABLE_AWS
+  "OFF"
+#else
+  "ON"
+#endif
+  ,
+  "httpsig: "
+#ifdef CURL_DISABLE_HTTPSIG
   "OFF"
 #else
   "ON"
@@ -217,9 +224,10 @@ static const char *disabled[] = {
   ,
 
   "win32-ca-searchpath: "
-#if !defined(_WIN32) ||                                                 \
-  (defined(CURL_WINDOWS_UWP) ||                                         \
-   defined(CURL_DISABLE_CA_SEARCH) || defined(CURL_CA_SEARCH_SAFE))
+#if !defined(_WIN32) ||               \
+  (defined(CURL_WINDOWS_UWP) ||       \
+   defined(CURL_DISABLE_CA_SEARCH) || \
+   defined(CURL_CA_SEARCH_SAFE))
   "OFF"
 #else
   "ON"
@@ -263,12 +271,9 @@ static const char *disabled[] = {
 #endif
 };
 
-int main(int argc, const char **argv)
+int main(void)
 {
   size_t i;
-
-  (void)argc;
-  (void)argv;
 
   for(i = 0; i < CURL_ARRAYSIZE(disabled); i++)
     puts(disabled[i]);

@@ -174,6 +174,11 @@ a multi handle is destroyed. This implicitly triggers for easy handles
 that are run via easy_perform. The value of the environment variable
 gives the shutdown timeout in milliseconds.
 
+## `CURL_DBG_HE_AAAA_AWAIT_MS`
+
+Overrides the time delaying a connect for AAAA resolve results to arrive
+before continuing with Happy Eyeballing.
+
 ## `CURL_DBG_RESOLV_MAX_THREADS`
 
 Overrides the maximum number of threads for resolver.
@@ -185,11 +190,22 @@ Makes ever threaded resolve experience an initial delay in milliseconds.
 ## `CURL_DBG_RESOLV_FAIL_DELAY`
 
 With a threaded resolver, delay each lookup by the given milliseconds
-and give a negative answer.
+and fail it, as if a transient resolver failure happened.
+
+## `CURL_DBG_RESOLV_FAIL_NEGATIVE`
+
+With a threaded resolver, make a lookup failing via
+`CURL_DBG_RESOLV_FAIL_DELAY` count as an authoritative negative answer,
+eligible for negative DNS caching, instead of a transient failure.
 
 ## `CURL_DBG_RESOLV_FAIL_IPV6`
 
 Make libcurl fail a resolve for IPv6 only.
+
+## `CURL_DBG_THRDPOOL_FAIL_STARTS`
+
+Fail this many thread starts in a thread pool, as if the system
+refused to spawn more threads. Read when the pool is created.
 
 ## `CURL_QUICK_EXIT`
 
@@ -204,3 +220,15 @@ answer to arrive before starting any connect attempt.
 
 When passing `--ssl-reqd`, clear it for the first URL in a curl command.
 This allows testing of connection reuse in mixed `STARTTLS` needs.
+
+## `CURL_DBG_SUPPRESS_CONNECT_HDS`
+
+Existence of this variable suppresses the collection of CONNECT headers.
+
+## `CURL_DBG_MAX_TOTAL_CONNECTIONS`
+
+Set the `max_total_connections` for a `multi` handle.
+
+## `CURL_DBG_FTP_WILDCARD`
+
+Simulate CURLOPT_WILDCARDMATCH being set.

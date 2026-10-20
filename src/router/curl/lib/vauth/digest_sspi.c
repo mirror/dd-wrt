@@ -34,6 +34,7 @@
 #include "curlx/multibyte.h"
 #include "curl_trc.h"
 #include "curlx/strdup.h"
+#include "curlx/strparse.h"
 #include "strcase.h"
 #include "strerror.h"
 
@@ -54,7 +55,7 @@ bool Curl_auth_is_digest_supported(void)
   /* Query the security package for Digest */
   status =
     Curl_pSecFn->QuerySecurityPackageInfo(
-                                   (TCHAR *)CURL_UNCONST(TEXT(SP_NAME_DIGEST)),
+                                   CURL_UNCONST(TEXT(SP_NAME_DIGEST)),
                                    &SecurityPackage);
 
   /* Release the package buffer as it is not required anymore */
@@ -95,8 +96,8 @@ CURLcode Curl_auth_create_digest_md5_message(struct Curl_easy *data,
   CredHandle credentials;
   CtxtHandle context;
   PSecPkgInfo SecurityPackage;
-  SEC_WINNT_AUTH_IDENTITY identity;
-  SEC_WINNT_AUTH_IDENTITY *p_identity;
+  SEC_WINNT_AUTH_IDENTITY_EX identity;
+  SEC_WINNT_AUTH_IDENTITY_EX *p_identity;
   SecBuffer chlg_buf;
   SecBuffer resp_buf;
   SecBufferDesc chlg_desc;
@@ -115,7 +116,7 @@ CURLcode Curl_auth_create_digest_md5_message(struct Curl_easy *data,
   /* Query the security package for DigestSSP */
   status =
     Curl_pSecFn->QuerySecurityPackageInfo(
-                                   (TCHAR *)CURL_UNCONST(TEXT(SP_NAME_DIGEST)),
+                                   CURL_UNCONST(TEXT(SP_NAME_DIGEST)),
                                    &SecurityPackage);
   if(status != SEC_E_OK) {
     failf(data, "SSPI: could not get auth info");
@@ -158,7 +159,7 @@ CURLcode Curl_auth_create_digest_md5_message(struct Curl_easy *data,
 
   /* Acquire our credentials handle */
   status = Curl_pSecFn->AcquireCredentialsHandle(NULL,
-                                   (TCHAR *)CURL_UNCONST(TEXT(SP_NAME_DIGEST)),
+                                   CURL_UNCONST(TEXT(SP_NAME_DIGEST)),
                                    SECPKG_CRED_OUTBOUND, NULL,
                                    p_identity, NULL, NULL,
                                    &credentials, NULL);
@@ -243,23 +244,22 @@ CURLcode Curl_auth_create_digest_md5_message(struct Curl_easy *data,
  * Returns CURLE_OK on success.
  */
 CURLcode Curl_override_sspi_http_realm(const char *chlg,
-                                       SEC_WINNT_AUTH_IDENTITY *identity)
+                                       SEC_WINNT_AUTH_IDENTITY_EX *identity)
 {
   xcharp_u domain, dup_domain;
 
   /* If domain is blank or unset, check challenge message for realm */
   if(!identity->Domain || !identity->DomainLength) {
     for(;;) {
-      char value[DIGEST_MAX_VALUE_LENGTH];
+      struct Curl_str value;
       char content[DIGEST_MAX_CONTENT_LENGTH];
 
       /* Pass all additional spaces here */
-      while(*chlg && ISBLANK(*chlg))
-        chlg++;
+      curlx_str_passblanks(&chlg);
 
       /* Extract a value=content pair */
-      if(Curl_auth_digest_get_pair(chlg, value, content, &chlg)) {
-        if(curl_strequal(value, "realm")) {
+      if(Curl_auth_digest_get_pair(chlg, &value, content, &chlg)) {
+        if(curlx_str_casecompare(&value, "realm")) {
 
           /* Setup identity's domain and length */
           domain.tchar_ptr = curlx_convert_UTF8_to_tchar(content);
@@ -287,12 +287,10 @@ CURLcode Curl_override_sspi_http_realm(const char *chlg,
         break; /* We are done here */
 
       /* Pass all additional spaces here */
-      while(*chlg && ISBLANK(*chlg))
-        chlg++;
+      curlx_str_passblanks(&chlg);
 
       /* Allow the list to be comma-separated */
-      if(',' == *chlg)
-        chlg++;
+      (void)curlx_str_single(&chlg, ',');
     }
   }
 
@@ -325,16 +323,16 @@ CURLcode Curl_auth_decode_digest_http_message(const char *chlg,
 
     /* Check for the 'stale' directive */
     for(;;) {
-      char value[DIGEST_MAX_VALUE_LENGTH];
+      struct Curl_str value;
       char content[DIGEST_MAX_CONTENT_LENGTH];
 
       while(*p && ISBLANK(*p))
         p++;
 
-      if(!Curl_auth_digest_get_pair(p, value, content, &p))
+      if(!Curl_auth_digest_get_pair(p, &value, content, &p))
         break;
 
-      if(curl_strequal(value, "stale") &&
+      if(curlx_str_casecompare(&value, "stale") &&
          curl_strequal(content, "true")) {
         stale = TRUE;
         break;
@@ -402,7 +400,7 @@ CURLcode Curl_auth_create_digest_http_message(struct Curl_easy *data,
   /* Query the security package for DigestSSP */
   status =
     Curl_pSecFn->QuerySecurityPackageInfo(
-                                   (TCHAR *)CURL_UNCONST(TEXT(SP_NAME_DIGEST)),
+                                   CURL_UNCONST(TEXT(SP_NAME_DIGEST)),
                                    &SecurityPackage);
   if(status != SEC_E_OK) {
     failf(data, "SSPI: could not get auth info");
@@ -465,8 +463,8 @@ CURLcode Curl_auth_create_digest_http_message(struct Curl_easy *data,
 
   if(!digest->http_context) {
     CredHandle credentials;
-    SEC_WINNT_AUTH_IDENTITY identity;
-    SEC_WINNT_AUTH_IDENTITY *p_identity;
+    SEC_WINNT_AUTH_IDENTITY_EX identity;
+    SEC_WINNT_AUTH_IDENTITY_EX *p_identity;
     SecBuffer resp_buf;
     SecBufferDesc resp_desc;
     unsigned long attrs;
@@ -502,7 +500,7 @@ CURLcode Curl_auth_create_digest_http_message(struct Curl_easy *data,
 
     /* Acquire our credentials handle */
     status = Curl_pSecFn->AcquireCredentialsHandle(NULL,
-                                   (TCHAR *)CURL_UNCONST(TEXT(SP_NAME_DIGEST)),
+                                   CURL_UNCONST(TEXT(SP_NAME_DIGEST)),
                                    SECPKG_CRED_OUTBOUND, NULL,
                                    p_identity, NULL, NULL,
                                    &credentials, NULL);

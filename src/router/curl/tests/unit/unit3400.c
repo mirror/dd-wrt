@@ -56,13 +56,13 @@ static void check_capsule_hdr(size_t payload_len,
 
 static void test_capsule_encap_udp_hdr_boundaries(void)
 {
-  const unsigned char p0[] = { 0x00, 0x01, 0x00 };
-  const unsigned char p62[] = { 0x00, 0x3F, 0x00 };
-  const unsigned char p63[] = { 0x00, 0x40, 0x40, 0x00 };
-  const unsigned char p64[] = { 0x00, 0x40, 0x41, 0x00 };
-  const unsigned char p16382[] = { 0x00, 0x7F, 0xFF, 0x00 };
-  const unsigned char p16383[] = { 0x00, 0x80, 0x00, 0x40, 0x00, 0x00 };
-  const unsigned char p16384[] = { 0x00, 0x80, 0x00, 0x40, 0x01, 0x00 };
+  static const unsigned char p0[] = { 0x00, 0x01, 0x00 };
+  static const unsigned char p62[] = { 0x00, 0x3F, 0x00 };
+  static const unsigned char p63[] = { 0x00, 0x40, 0x40, 0x00 };
+  static const unsigned char p64[] = { 0x00, 0x40, 0x41, 0x00 };
+  static const unsigned char p16382[] = { 0x00, 0x7F, 0xFF, 0x00 };
+  static const unsigned char p16383[] = { 0x00, 0x80, 0x00, 0x40, 0x00, 0x00 };
+  static const unsigned char p16384[] = { 0x00, 0x80, 0x00, 0x40, 0x01, 0x00 };
 
   check_capsule_hdr(0, p0, sizeof(p0));
   check_capsule_hdr(62, p62, sizeof(p62));
@@ -139,7 +139,7 @@ static void test_capsule_sequential_decode(void)
   CURLcode err;
   size_t nread;
   /* Two back-to-back 3-byte UDP capsules */
-  const unsigned char two_caps[] = {
+  static const unsigned char two_caps[] = {
     0x00, 0x04, 0x00, 0x11, 0x22, 0x33,   /* capsule 1: [0x11,0x22,0x33] */
     0x00, 0x04, 0x00, 0xAA, 0xBB, 0xCC    /* capsule 2: [0xAA,0xBB,0xCC] */
   };
@@ -186,13 +186,15 @@ static void test_capsule_decode_paths(void)
   unsigned char out[8];
   CURLcode err = CURLE_OK;
   size_t nread;
-  const unsigned char invalid_type[] = { 0x01 };
-  const unsigned char partial_len[] = { 0x00, 0x40 };
-  const unsigned char invalid_context[] = { 0x00, 0x01, 0x01 };
-  const unsigned char invalid_caps_len[] = { 0x00, 0x00, 0x00 };
-  const unsigned char partial_payload[] = { 0x00, 0x04, 0x00, 0x11, 0x22 };
-  const unsigned char payload_3b[] = { 0x00, 0x04, 0x00, 0x11, 0x22, 0x33 };
-  const unsigned char payload_empty[] = { 0x00, 0x01, 0x00 };
+  static const unsigned char invalid_type[] = { 0x01 };
+  static const unsigned char partial_len[] = { 0x00, 0x40 };
+  static const unsigned char invalid_context[] = { 0x00, 0x01, 0x01 };
+  static const unsigned char invalid_caps_len[] = { 0x00, 0x00, 0x00 };
+  static const unsigned char partial_payload[] = { 0x00, 0x04, 0x00, 0x11,
+                                                   0x22 };
+  static const unsigned char payload_3b[] = { 0x00, 0x04, 0x00,
+                                              0x11, 0x22, 0x33 };
+  static const unsigned char payload_empty[] = { 0x00, 0x01, 0x00 };
 
   Curl_bufq_init2(&q, 32, 4, BUFQ_OPT_NONE);
 
@@ -239,6 +241,41 @@ static void test_capsule_decode_paths(void)
 
   Curl_bufq_free(&q);
 }
+
+static void test_capsule_full_buffer_reject(void)
+{
+  /* A capsule whose payload can never fit the bounded bufq must fail
+     instead of asking for more data forever. */
+  struct bufq q;
+  unsigned char out[256];
+  unsigned char cap[128];
+  CURLcode err = CURLE_OK;
+  size_t nread;
+  /* type 0x00, length 201 as a 2-byte varint, context 0x00 */
+  static const unsigned char hdr[] = { 0x00, 0x40, 0xC9, 0x00 };
+
+  Curl_bufq_init2(&q, 32, 4, BUFQ_OPT_NONE);
+
+  memset(cap, 0x5A, sizeof(cap));
+  memcpy(cap, hdr, sizeof(hdr));
+
+  /* the queue can still grow, so wait for the rest */
+  queue_bytes(&q, cap, 64);
+  nread = Curl_capsule_process_udp_raw(NULL, NULL, &q, out, sizeof(out), &err);
+  fail_unless(err == CURLE_AGAIN, "partial capsule should return AGAIN");
+  fail_unless(nread == 0, "partial capsule should read zero bytes");
+
+  /* the queue is full and the capsule is still short, it never completes */
+  queue_bytes(&q, cap + 64, sizeof(cap) - 64);
+  fail_unless(Curl_bufq_is_full(&q), "queue should be full");
+  nread = Curl_capsule_process_udp_raw(NULL, NULL, &q, out, sizeof(out), &err);
+  fail_unless(err == CURLE_RECV_ERROR,
+              "unbufferable capsule should return RECV_ERROR");
+  fail_unless(nread == 0, "unbufferable capsule should read zero bytes");
+
+  Curl_bufq_free(&q);
+}
+
 #endif /* USE_NGTCP2 && !CURL_DISABLE_PROXY && !CURL_DISABLE_HTTP */
 
 static CURLcode test_unit3400(const char *arg)
@@ -255,6 +292,7 @@ static CURLcode test_unit3400(const char *arg)
   test_capsule_encode_decode_roundtrip();
   test_capsule_decode_paths();
   test_capsule_sequential_decode();
+  test_capsule_full_buffer_reject();
 #endif
 
   UNITTEST_END_SIMPLE

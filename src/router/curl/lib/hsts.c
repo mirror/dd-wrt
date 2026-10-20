@@ -43,6 +43,8 @@
 #define MAX_HSTS_DATELEN 17
 #define UNLIMITED        "unlimited"
 
+#define CAP_HSTS_MAX_AGE (2*365*24*3600) /* two years cap */
+
 #if defined(DEBUGBUILD) || defined(UNITTESTS)
 /* to play well with debug builds, we can *set* a fixed time this will
    return */
@@ -223,53 +225,55 @@ CURLcode Curl_hsts_parse(struct hsts *h, const char *hostname,
     return CURLE_OK;
 
   do {
-    curlx_str_passblanks(&p);
-    if(curl_strnequal("max-age", p, 7)) {
-      bool quoted = FALSE;
-      int rc;
+    struct Curl_str word;
+    struct Curl_str val = { 0 };
+    int rc;
+    bool assign = FALSE;
 
+    do {
+      curlx_str_passblanks(&p);
+      if(*p == ';')
+        p++;
+      else
+        break;
+    } while(1);
+    if(curlx_str_cspn(&p, &word, ";=\r\n \t"))
+      break;
+
+    curlx_str_passblanks(&p);
+    if(!curlx_str_single(&p, '=')) {
+      assign = TRUE;
+      curlx_str_passblanks(&p);
+
+      if(*p == '\"') {
+        if(curlx_str_quotedword(&p, &val, MAX_HSTS_LINE))
+          break;
+      }
+      else {
+        if(curlx_str_cspn(&p, &val, ", ;\r\n"))
+          break;
+      }
+    }
+
+    if(assign && curlx_str_casecompare(&word, "max-age")) {
+      const char *vp = curlx_str(&val);
       if(gotma)
         return CURLE_BAD_FUNCTION_ARGUMENT;
-
-      p += 7;
-      curlx_str_passblanks(&p);
-      if(curlx_str_single(&p, '='))
-        return CURLE_BAD_FUNCTION_ARGUMENT;
-      curlx_str_passblanks(&p);
-
-      if(!curlx_str_single(&p, '\"'))
-        quoted = TRUE;
-
-      rc = curlx_str_number(&p, &expires, TIME_T_MAX);
+      rc = curlx_str_number(&vp, &expires, CAP_HSTS_MAX_AGE);
       if(rc == STRE_OVERFLOW)
-        expires = CURL_OFF_T_MAX;
+        expires = CAP_HSTS_MAX_AGE;
       else if(rc)
         /* invalid max-age */
         return CURLE_BAD_FUNCTION_ARGUMENT;
 
-      if(quoted) {
-        if(*p != '\"')
-          return CURLE_BAD_FUNCTION_ARGUMENT;
-        p++;
-      }
       gotma = TRUE;
     }
-    else if(curl_strnequal("includesubdomains", p, 17)) {
+    else if(curlx_str_casecompare(&word, "includesubdomains")) {
       if(gotinc)
         return CURLE_BAD_FUNCTION_ARGUMENT;
       subdomains = TRUE;
-      p += 17;
       gotinc = TRUE;
     }
-    else {
-      /* unknown directive, do a lame attempt to skip */
-      while(*p && (*p != ';'))
-        p++;
-    }
-
-    curlx_str_passblanks(&p);
-    if(*p == ';')
-      p++;
   } while(*p);
 
   if(!gotma)
@@ -342,22 +346,21 @@ static CURLcode hsts_push(struct Curl_easy *data,
 /*
  * Write this single hsts entry to a single output line
  */
-static CURLcode hsts_out(struct stsentry *sts, FILE *fp)
+static void hsts_out(struct stsentry *sts, FILE *fp)
 {
   struct tm stamp;
   if(sts->expires != TIME_T_MAX) {
     CURLcode result = curlx_gmtime((time_t)sts->expires, &stamp);
-    if(result)
-      return result;
-    curl_mfprintf(fp, "%s%s \"%d%02d%02d %02d:%02d:%02d\"\n",
-                  sts->includeSubDomains ? "." : "", sts->host,
-                  stamp.tm_year + 1900, stamp.tm_mon + 1, stamp.tm_mday,
-                  stamp.tm_hour, stamp.tm_min, stamp.tm_sec);
+    if(!result)
+      /* skip the entry if the date function fails */
+      curl_mfprintf(fp, "%s%s \"%d%02d%02d %02d:%02d:%02d\"\n",
+                    sts->includeSubDomains ? "." : "", sts->host,
+                    stamp.tm_year + 1900, stamp.tm_mon + 1, stamp.tm_mday,
+                    stamp.tm_hour, stamp.tm_min, stamp.tm_sec);
   }
   else
     curl_mfprintf(fp, "%s%s \"%s\"\n",
                   sts->includeSubDomains ? "." : "", sts->host, UNLIMITED);
-  return CURLE_OK;
 }
 
 /*
@@ -392,9 +395,7 @@ CURLcode Curl_hsts_save(struct Curl_easy *data, struct hsts *h,
     for(e = Curl_llist_head(&h->list); e; e = n) {
       struct stsentry *sts = Curl_node_elem(e);
       n = Curl_node_next(e);
-      result = hsts_out(sts, out);
-      if(result)
-        break;
+      hsts_out(sts, out);
     }
     curlx_fclose(out);
     if(!result && tempstore && curlx_rename(tempstore, file))
@@ -461,7 +462,7 @@ static CURLcode hsts_add_host_expire(struct hsts *h,
 
   if(hostlen) {
     /* only add it if not already present */
-    e = hsts_check(h, host, hostlen, subdomain);
+    e = hsts_check(h, host, hostlen, FALSE);
     if(!e)
       result = hsts_create(h, host, hostlen, subdomain, expires);
     /* 'host' is not necessarily null-terminated */

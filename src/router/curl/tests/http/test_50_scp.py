@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #***************************************************************************
 #                                  _   _ ____  _
 #  Project                     ___| | | |  _ \| |
@@ -40,7 +38,8 @@ log = logging.getLogger(__name__)
 class TestScp:
 
     @pytest.fixture(autouse=True, scope='class')
-    def _class_scope(self, env, sshd):
+    @classmethod
+    def _class_scope(cls, env, sshd):
         env.make_data_file(indir=sshd.home_dir, fname="data-10k", fsize=10 * 1024)
         env.make_data_file(indir=sshd.home_dir, fname="data-10m", fsize=10 * 1024 * 1024)
         env.make_data_file(indir=env.gen_dir, fname="data-10k", fsize=10 * 1024)

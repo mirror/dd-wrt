@@ -2,32 +2,34 @@
 <testcase>
 <info>
 <keywords>
-HTTPS
-TLS-SRP
+--proto
 </keywords>
 </info>
 
-# Client-side
 <client>
-<server>
-httptls+srp
-</server>
 <features>
-TLS-SRP
+http
 </features>
 <name>
-TLS-SRP with bad password
+--proto with multiple modifiers
 </name>
 <command>
---insecure --tlsauthtype SRP --tlsuser jsmith --tlspassword badpass https://%HOSTIP:%HTTPTLSPORT
+http://localhost/wont-get-this --proto +-http
 </command>
 </client>
 
-# Verify data after the test has been "shot"
 <verify>
 <errorcode>
-35
+2
 </errorcode>
+<stderr mode="text">
+curl: unrecognized protocol '-http'
+curl: option --proto: is badly used here
+%if manual
+curl: try 'curl --help' or 'curl --manual' for more information
+%else
+curl: try 'curl --help' for more information
+%endif
+</stderr>
 </verify>
-
 </testcase>

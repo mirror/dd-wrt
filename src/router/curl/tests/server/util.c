@@ -33,6 +33,10 @@
 #include <share.h>
 #endif
 
+#if defined(CURL_WINDOWS_UWP) && !defined(CURL_DEBUG_NO_WIN32_WND)
+#define CURL_DEBUG_NO_WIN32_WND
+#endif
+
 void loghex(const unsigned char *buffer, ssize_t len)
 {
   char data[12000];
@@ -120,8 +124,7 @@ static void win32_cleanup(void)
   WSACleanup();
 #endif
 
-  /* flush buffers of all streams regardless of their mode */
-  _flushall();
+  _flushall();  /* flush buffers of all streams regardless of their mode */
 }
 
 int win32_init(void)
@@ -129,30 +132,16 @@ int win32_init(void)
   curlx_now_init();
 #ifdef USE_WINSOCK
   {
-    WORD wVersionRequested;
-    WSADATA wsaData;
-    int err;
-    char buffer[STRERROR_LEN];
-
-    wVersionRequested = MAKEWORD(2, 2);
-    err = WSAStartup(wVersionRequested, &wsaData);
-    if(err) {
+    WSADATA wsa;
+    if(WSAStartup(MAKEWORD(2, 2), &wsa)) {
+      char buffer[STRERROR_LEN];
       curlx_strerror(SOCKERRNO, buffer, sizeof(buffer));
       fprintf(stderr, "Winsock init failed: %s\n", buffer);
       logmsg("Error initializing Winsock -- aborting");
       return 1;
     }
-
-    if(LOBYTE(wsaData.wVersion) != LOBYTE(wVersionRequested) ||
-       HIBYTE(wsaData.wVersion) != HIBYTE(wVersionRequested)) {
-      WSACleanup();
-      curlx_strerror(SOCKERRNO, buffer, sizeof(buffer));
-      fprintf(stderr, "Winsock init failed: %s\n", buffer);
-      logmsg("No suitable winsock.dll found -- aborting");
-      return 1;
-    }
   }
-#endif /* USE_WINSOCK */
+#endif
   atexit(win32_cleanup);
   return 0;
 }
@@ -322,45 +311,40 @@ storerequest_cleanup:
            errno, curlx_strerror(errno, errbuf, sizeof(errbuf)));
 }
 
+static bool initiate_exit(int signum)  /* keep signal-safe */
+{
+  if(got_exit_signal == 0) {
+    got_exit_signal = 1;
+    exit_signal = signum;
+  }
+#ifdef _WIN32
+  if(!exit_event)
+    return FALSE;
+  (void)SetEvent(exit_event);
+#endif
+  return TRUE;
+}
+
+#ifndef _WIN32
+
 /* vars used to keep around previous signal handlers */
 
 typedef void (*SIGHANDLER_T)(int);
 
-#if defined(_MSC_VER) && (_MSC_VER <= 1700)
-/* Workaround for warning C4306:
-   'type cast' : conversion from 'int' to 'void (__cdecl *)(int)' */
-#undef SIG_ERR
-#define SIG_ERR  ((SIGHANDLER_T)(size_t)-1)
-#endif
-
 #ifdef SIGHUP
 static SIGHANDLER_T old_sighup_handler  = SIG_ERR;
 #endif
-
 #ifdef SIGPIPE
 static SIGHANDLER_T old_sigpipe_handler = SIG_ERR;
 #endif
-
 #ifdef SIGALRM
 static SIGHANDLER_T old_sigalrm_handler = SIG_ERR;
 #endif
-
 #ifdef SIGINT
 static SIGHANDLER_T old_sigint_handler  = SIG_ERR;
 #endif
-
 #ifdef SIGTERM
 static SIGHANDLER_T old_sigterm_handler = SIG_ERR;
-#endif
-
-#if defined(SIGBREAK) && defined(_WIN32)
-static SIGHANDLER_T old_sigbreak_handler = SIG_ERR;
-#endif
-
-#if defined(_WIN32) && !defined(CURL_WINDOWS_UWP)
-static DWORD thread_main_id = 0;
-static HANDLE thread_main_window = NULL;
-static HWND hidden_main_window = NULL;
 #endif
 
 /* signal handler that is triggered to indicate that the program
@@ -370,109 +354,99 @@ static HWND hidden_main_window = NULL;
  *
  * Only call signal-safe functions from the signal handler, as required by
  * the POSIX specification:
- *   https://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html
- * Hence, do not call 'logmsg()', and instead use 'open/write/close' to
- * log errors.
+ *   https://pubs.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html#tag_02_04_03
+ *   https://iafisher.com/2026/08/restart
+ *   https://iafisher.com/2026/08/safe-signals
+ *   https://lwn.net/Articles/414618/
  */
-/* suppress warnings seen in configurations where 'write()' has the attribute
-   'warn_unused_result', which is not silenced by casting to '(void)'. */
-#if defined(CURL_HAVE_DIAG) && !defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-result" /* GCC 4.5+ */
-#endif
-static void exit_signal_handler(int signum)
+static void exit_signal_handler(int signum)  /* keep signal-safe */
 {
   int old_errno = errno;
-  if(!serverlogfile) {
-    static const char msg[] = "exit_signal_handler: serverlogfile not set\n";
-    (void)write(STDERR_FILENO, msg, sizeof(msg) - 1);
-  }
-  else {
-    int fd = -1;
-#ifdef _WIN32
-    if(!_sopen_s(&fd, serverlogfile, _O_WRONLY | _O_CREAT | _O_APPEND,
-                 _SH_DENYNO, _S_IREAD | _S_IWRITE) &&
-       fd != -1) {
-#else
-    /* !checksrc! disable BANNEDFUNC 1 */
-    fd = open(serverlogfile, O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-    if(fd != -1) {
-#endif
-      static const char msg[] = "exit_signal_handler: called\n";
-      (void)write(fd, msg, sizeof(msg) - 1);
-      curlx_close(fd);
-    }
-    else {
-      static const char msg[] = "exit_signal_handler: failed opening ";
-      (void)write(STDERR_FILENO, msg, sizeof(msg) - 1);
-      (void)write(STDERR_FILENO, serverlogfile, strlen(serverlogfile));
-      (void)write(STDERR_FILENO, "\n", 1);
-    }
-  }
-  if(got_exit_signal == 0) {
-    got_exit_signal = 1;
-    exit_signal = signum;
-#ifdef _WIN32
-    if(exit_event)
-      (void)SetEvent(exit_event);
-#endif
-  }
+  exit_msg = "exit_signal_handler(): triggered";
+  (void)initiate_exit(signum);
+#if !(defined(HAVE_SIGACTION) && defined(SA_RESTART))
   (void)signal(signum, exit_signal_handler);
+#endif
   errno = old_errno;
 }
-#if defined(CURL_HAVE_DIAG) && !defined(__clang__)
-#pragma GCC diagnostic pop
+
+static SIGHANDLER_T set_signal(int signum, SIGHANDLER_T handler, int norestart)
+{
+#if defined(HAVE_SIGACTION) && defined(SA_RESTART)
+  struct sigaction sa, oldsa;
+
+  memset(&sa, 0, sizeof(sa));
+  sa.sa_handler = handler;
+  sigemptyset(&sa.sa_mask);
+  sigaddset(&sa.sa_mask, signum);
+  sa.sa_flags = norestart ? 0 : SA_RESTART;
+
+  if(sigaction(signum, &sa, &oldsa))
+    return SIG_ERR;
+
+  return oldsa.sa_handler;
+#else
+  SIGHANDLER_T oldhdlr = signal(signum, handler);
+
+#ifdef HAVE_SIGINTERRUPT
+  if(oldhdlr != SIG_ERR)
+    siginterrupt(signum, norestart);
+#else
+  (void)norestart;
 #endif
 
-#ifdef _WIN32
-/* CTRL event handler for Windows Console applications to simulate
- * SIGINT, SIGTERM and SIGBREAK on CTRL events and trigger signal handler.
+  return oldhdlr;
+#endif
+}
+
+#else /* _WIN32 */
+
+/* CTRL event handler for Windows Console applications to handle exit events.
  *
  * Background information from MSDN:
- * SIGINT is not supported for any Win32 application. When a CTRL+C
- * interrupt occurs, Win32 operating systems generate a new thread
- * to specifically handle that interrupt. This can cause a single-thread
+ * When a CTRL+C interrupt occurs, Win32 operating systems generate a new
+ * thread to specifically handle that interrupt. This can cause a single-thread
  * application, such as one in UNIX, to become multi-threaded and cause
  * unexpected behavior.
- * [...]
- * The SIGKILL and SIGTERM signals are not generated under Windows.
- * They are included for ANSI compatibility. Therefore, you can set
- * signal handlers for these signals by using signal, and you can also
- * explicitly generate these signals by calling raise. Source:
- * https://learn.microsoft.com/cpp/c-runtime-library/reference/signal
  */
-static BOOL WINAPI ctrl_event_handler(DWORD dwCtrlType)
+static BOOL WINAPI ctrl_event_handler(DWORD dwCtrlType)  /* keep signal-safe */
 {
+  static const char msgU[] = "ctrl_event_handler(): unhandled\n";
+  static const char msgH[] = "ctrl_event_handler(): handled\n";
+  static const char msgF[] = "ctrl_event_handler(): failed to handle\n";
+  HANDLE out = GetStdHandle(STD_ERROR_HANDLE);
+  DWORD dwWritten;
   int signum = 0;
-  logmsg("ctrl_event_handler: %lu", dwCtrlType);
   switch(dwCtrlType) {
-#ifdef SIGINT
   case CTRL_C_EVENT:
     signum = SIGINT;
     break;
-#endif
-#ifdef SIGTERM
   case CTRL_CLOSE_EVENT:
     signum = SIGTERM;
     break;
-#endif
-#ifdef SIGBREAK
   case CTRL_BREAK_EVENT:
     signum = SIGBREAK;
     break;
-#endif
   default:
+    WriteFile(out, msgU, CURL_CSTRLEN(msgU), &dwWritten, NULL);
+    exit_msg = msgU;
     return FALSE;
   }
-  if(signum) {
-    logmsg("ctrl_event_handler: %lu -> %d", dwCtrlType, signum);
-    raise(signum);
+  if(!initiate_exit(signum)) {
+    WriteFile(out, msgF, CURL_CSTRLEN(msgF), &dwWritten, NULL);
+    exit_msg = msgF;
+    return FALSE;
   }
+  WriteFile(out, msgH, CURL_CSTRLEN(msgH), &dwWritten, NULL);
+  exit_msg = msgH;
   return TRUE;
 }
-#endif
 
-#if defined(_WIN32) && !defined(CURL_WINDOWS_UWP)
+#ifndef CURL_DEBUG_NO_WIN32_WND
+static DWORD thread_main_id = 0;
+static HANDLE thread_main_window = NULL;
+static HWND hidden_main_window = NULL;
+
 /* Window message handler for Windows applications to add support
  * for graceful process termination via taskkill (without /f) which
  * sends WM_CLOSE to all Windows of a process (even hidden ones).
@@ -483,43 +457,41 @@ static BOOL WINAPI ctrl_event_handler(DWORD dwCtrlType)
 static LRESULT CALLBACK main_window_proc(HWND hwnd, UINT uMsg,
                                          WPARAM wParam, LPARAM lParam)
 {
-  int signum = 0;
   if(hwnd == hidden_main_window) {
     switch(uMsg) {
-#ifdef SIGTERM
-    case WM_CLOSE:
-      signum = SIGTERM;
+    case WM_CLOSE: {
+      static const char msg[] = "main_window_proc(): WM_CLOSE -> SIGTERM\n";
+      DWORD dwWritten;
+      WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, CURL_CSTRLEN(msg),
+                &dwWritten, NULL);
+      exit_msg = msg;
+      initiate_exit(SIGTERM);
       break;
-#endif
+    }
     case WM_DESTROY:
       PostQuitMessage(0);
       break;
     }
-    if(signum) {
-      logmsg("main_window_proc: %u -> %d", uMsg, signum);
-      raise(signum);
-    }
   }
   return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
-/* Window message queue loop for hidden main window, details see above.
- */
+
+/* Window message queue loop for hidden main window, details see above. */
 static DWORD WINAPI main_window_loop(void *lpParameter)
 {
   WNDCLASS wc;
   BOOL ret;
   MSG msg;
-  DWORD err;
-  char buffer[WINAPI_ERROR_LEN];
+  DWORD dwWritten;
 
   ZeroMemory(&wc, sizeof(wc));
   wc.lpfnWndProc = (WNDPROC)main_window_proc;
   wc.hInstance = (HINSTANCE)lpParameter;
   wc.lpszClassName = TEXT("MainWClass");
   if(!RegisterClass(&wc)) {
-    err = GetLastError();
-    curlx_winapi_strerror(err, buffer, sizeof(buffer));
-    fprintf(stderr, "RegisterClass failed: %s\n", buffer);
+    static const char str[] = "RegisterClass() failed\n";
+    WriteFile(GetStdHandle(STD_ERROR_HANDLE), str, CURL_CSTRLEN(str),
+              &dwWritten, NULL);
     return (DWORD)-1;
   }
 
@@ -531,18 +503,18 @@ static DWORD WINAPI main_window_loop(void *lpParameter)
                                       (HWND)NULL, (HMENU)NULL,
                                       wc.hInstance, NULL);
   if(!hidden_main_window) {
-    err = GetLastError();
-    curlx_winapi_strerror(err, buffer, sizeof(buffer));
-    fprintf(stderr, "CreateWindowEx failed: (0x%08lx) - %s\n", err, buffer);
+    static const char str[] = "CreateWindowEx() failed\n";
+    WriteFile(GetStdHandle(STD_ERROR_HANDLE), str, CURL_CSTRLEN(str),
+              &dwWritten, NULL);
     return (DWORD)-1;
   }
 
   do {
     ret = GetMessage(&msg, NULL, 0, 0);
     if(ret == -1) {
-      err = GetLastError();
-      curlx_winapi_strerror(err, buffer, sizeof(buffer));
-      fprintf(stderr, "GetMessage failed: (0x%08lx) - %s\n", err, buffer);
+      static const char str[] = "GetMessage() failed\n";
+      WriteFile(GetStdHandle(STD_ERROR_HANDLE), str, CURL_CSTRLEN(str),
+                &dwWritten, NULL);
       return (DWORD)-1;
     }
     else if(ret) {
@@ -558,58 +530,25 @@ static DWORD WINAPI main_window_loop(void *lpParameter)
   hidden_main_window = NULL;
   return (DWORD)msg.wParam;
 }
-#endif
-
-static SIGHANDLER_T set_signal(int signum, SIGHANDLER_T handler,
-                               bool restartable)
-{
-#if defined(HAVE_SIGACTION) && defined(SA_RESTART)
-  struct sigaction sa, oldsa;
-
-  memset(&sa, 0, sizeof(sa));
-  sa.sa_handler = handler;
-  sigemptyset(&sa.sa_mask);
-  sigaddset(&sa.sa_mask, signum);
-  sa.sa_flags = restartable ? SA_RESTART : 0;
-
-  if(sigaction(signum, &sa, &oldsa))
-    return SIG_ERR;
-
-  return oldsa.sa_handler;
-#else
-  SIGHANDLER_T oldhdlr = signal(signum, handler);
-
-#ifdef HAVE_SIGINTERRUPT
-  if(oldhdlr != SIG_ERR)
-    siginterrupt(signum, (int)restartable);
-#else
-  (void)restartable;
-#endif
-
-  return oldhdlr;
-#endif
-}
+#endif /* !CURL_DEBUG_NO_WIN32_WND */
+#endif /* !_WIN32 */
 
 void install_signal_handlers(bool keep_sigalrm)
 {
   char errbuf[STRERROR_LEN];
   (void)errbuf;
-#ifdef _WIN32
-  /* setup Windows exit event before any signal can trigger */
-  exit_event = CreateEvent(NULL, TRUE, FALSE, NULL);
-  if(!exit_event)
-    logmsg("cannot create exit event");
-#endif
+  (void)keep_sigalrm;
+#ifndef _WIN32
 #ifdef SIGHUP
   /* ignore SIGHUP signal */
-  old_sighup_handler = set_signal(SIGHUP, SIG_IGN, FALSE);
+  old_sighup_handler = set_signal(SIGHUP, SIG_IGN, 0);
   if(old_sighup_handler == SIG_ERR)
     logmsg("cannot install SIGHUP handler: (%d) %s",
            errno, curlx_strerror(errno, errbuf, sizeof(errbuf)));
 #endif
 #ifdef SIGPIPE
   /* ignore SIGPIPE signal */
-  old_sigpipe_handler = set_signal(SIGPIPE, SIG_IGN, FALSE);
+  old_sigpipe_handler = set_signal(SIGPIPE, SIG_IGN, 0);
   if(old_sigpipe_handler == SIG_ERR)
     logmsg("cannot install SIGPIPE handler: (%d) %s",
            errno, curlx_strerror(errno, errbuf, sizeof(errbuf)));
@@ -617,81 +556,72 @@ void install_signal_handlers(bool keep_sigalrm)
 #ifdef SIGALRM
   if(!keep_sigalrm) {
     /* ignore SIGALRM signal */
-    old_sigalrm_handler = set_signal(SIGALRM, SIG_IGN, FALSE);
+    old_sigalrm_handler = set_signal(SIGALRM, SIG_IGN, 0);
     if(old_sigalrm_handler == SIG_ERR)
       logmsg("cannot install SIGALRM handler: (%d) %s",
              errno, curlx_strerror(errno, errbuf, sizeof(errbuf)));
   }
-#else
-  (void)keep_sigalrm;
 #endif
 #ifdef SIGINT
   /* handle SIGINT signal with our exit_signal_handler */
-  old_sigint_handler = set_signal(SIGINT, exit_signal_handler, TRUE);
+  old_sigint_handler = set_signal(SIGINT, exit_signal_handler, 1);
   if(old_sigint_handler == SIG_ERR)
     logmsg("cannot install SIGINT handler: (%d) %s",
            errno, curlx_strerror(errno, errbuf, sizeof(errbuf)));
 #endif
 #ifdef SIGTERM
   /* handle SIGTERM signal with our exit_signal_handler */
-  old_sigterm_handler = set_signal(SIGTERM, exit_signal_handler, TRUE);
+  old_sigterm_handler = set_signal(SIGTERM, exit_signal_handler, 1);
   if(old_sigterm_handler == SIG_ERR)
     logmsg("cannot install SIGTERM handler: (%d) %s",
            errno, curlx_strerror(errno, errbuf, sizeof(errbuf)));
 #endif
-#if defined(SIGBREAK) && defined(_WIN32)
-  /* handle SIGBREAK signal with our exit_signal_handler */
-  old_sigbreak_handler = set_signal(SIGBREAK, exit_signal_handler, TRUE);
-  if(old_sigbreak_handler == SIG_ERR)
-    logmsg("cannot install SIGBREAK handler: (%d) %s",
-           errno, curlx_strerror(errno, errbuf, sizeof(errbuf)));
-#endif
-#ifdef _WIN32
+#else /* _WIN32 */
+  /* setup Windows exit event before any signal can trigger */
+  exit_event = CreateEvent(NULL, TRUE, FALSE, NULL);
+  if(!exit_event)
+    logmsg("cannot create exit event");
   if(!SetConsoleCtrlHandler(ctrl_event_handler, TRUE))
     logmsg("cannot install CTRL event handler");
 
-#ifndef CURL_WINDOWS_UWP
+#ifndef CURL_DEBUG_NO_WIN32_WND
   thread_main_window = CreateThread(NULL, 0, &main_window_loop,
                                     GetModuleHandle(NULL), 0, &thread_main_id);
   if(!thread_main_window || !thread_main_id)
     logmsg("cannot start main window loop");
 #endif
-#endif
+#endif /* !_WIN32 */
 }
 
 void restore_signal_handlers(bool keep_sigalrm)
 {
+  (void)keep_sigalrm;
+#ifndef _WIN32
 #ifdef SIGHUP
-  if(SIG_ERR != old_sighup_handler)
-    (void)set_signal(SIGHUP, old_sighup_handler, FALSE);
+  if(old_sighup_handler != SIG_ERR)
+    (void)set_signal(SIGHUP, old_sighup_handler, 0);
 #endif
 #ifdef SIGPIPE
-  if(SIG_ERR != old_sigpipe_handler)
-    (void)set_signal(SIGPIPE, old_sigpipe_handler, FALSE);
+  if(old_sigpipe_handler != SIG_ERR)
+    (void)set_signal(SIGPIPE, old_sigpipe_handler, 0);
 #endif
 #ifdef SIGALRM
   if(!keep_sigalrm) {
-    if(SIG_ERR != old_sigalrm_handler)
-      (void)set_signal(SIGALRM, old_sigalrm_handler, FALSE);
+    if(old_sigalrm_handler != SIG_ERR)
+      (void)set_signal(SIGALRM, old_sigalrm_handler, 0);
   }
-#else
-  (void)keep_sigalrm;
 #endif
 #ifdef SIGINT
-  if(SIG_ERR != old_sigint_handler)
-    (void)set_signal(SIGINT, old_sigint_handler, FALSE);
+  if(old_sigint_handler != SIG_ERR)
+    (void)set_signal(SIGINT, old_sigint_handler, 0);
 #endif
 #ifdef SIGTERM
-  if(SIG_ERR != old_sigterm_handler)
-    (void)set_signal(SIGTERM, old_sigterm_handler, FALSE);
+  if(old_sigterm_handler != SIG_ERR)
+    (void)set_signal(SIGTERM, old_sigterm_handler, 0);
 #endif
-#if defined(SIGBREAK) && defined(_WIN32)
-  if(SIG_ERR != old_sigbreak_handler)
-    (void)set_signal(SIGBREAK, old_sigbreak_handler, FALSE);
-#endif
-#ifdef _WIN32
+#else /* _WIN32 */
   (void)SetConsoleCtrlHandler(ctrl_event_handler, FALSE);
-#ifndef CURL_WINDOWS_UWP
+#ifndef CURL_DEBUG_NO_WIN32_WND
   if(thread_main_window && thread_main_id) {
     if(PostThreadMessage(thread_main_id, WM_APP, 0, 0)) {
       if(WaitForSingleObjectEx(thread_main_window, INFINITE, TRUE)) {
@@ -702,13 +632,10 @@ void restore_signal_handlers(bool keep_sigalrm)
       }
     }
   }
-  if(exit_event) {
-    if(CloseHandle(exit_event)) {
-      exit_event = NULL;
-    }
-  }
 #endif
-#endif
+  if(exit_event && CloseHandle(exit_event))
+    exit_event = NULL;
+#endif /* !_WIN32 */
 }
 
 #ifdef USE_UNIX_SOCKETS
@@ -784,7 +711,7 @@ int bind_unix_socket(curl_socket_t sock, const char *unix_socket,
 #endif
 
 curl_socket_t sockdaemon(curl_socket_t sock,
-                         unsigned short *listenport,
+                         uint16_t *listenport,
                          const char *unix_socket,
                          bool bind_only)
 {
@@ -950,4 +877,342 @@ curl_socket_t sockdaemon(curl_socket_t sock,
   }
 
   return sock;
+}
+
+int open_udp_sock(curl_socket_t *psock, uint16_t *pport)
+{
+  srvr_sockaddr_union_t me;
+  curl_socket_t sock = CURL_SOCKET_BAD;
+  uint16_t port = *pport;
+  int sockerr, flag, rc;
+  char errbuf[STRERROR_LEN];
+  int result = 0;
+
+  sock = socket(socket_domain, SOCK_DGRAM, 0);
+
+  if(sock == CURL_SOCKET_BAD) {
+    sockerr = SOCKERRNO;
+    logmsg("Error creating socket (%d) %s",
+           sockerr, curlx_strerror(sockerr, errbuf, sizeof(errbuf)));
+    result = 1;
+    goto out;
+  }
+
+  flag = 1;
+  if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void *)&flag, sizeof(flag))) {
+    sockerr = SOCKERRNO;
+    logmsg("setsockopt(SO_REUSEADDR) failed with error (%d) %s",
+           sockerr, curlx_strerror(sockerr, errbuf, sizeof(errbuf)));
+    result = 1;
+    goto out;
+  }
+
+#ifdef USE_IPV6
+  if(socket_domain == AF_INET6) {
+    memset(&me.sa6, 0, sizeof(me.sa6));
+    me.sa6.sin6_family = AF_INET6;
+    me.sa6.sin6_addr = in6addr_any;
+    me.sa6.sin6_port = htons(port);
+    rc = bind(sock, &me.sa, sizeof(me.sa6));
+  }
+  else
+#endif
+  {
+    memset(&me.sa4, 0, sizeof(me.sa4));
+    me.sa4.sin_family = AF_INET;
+    me.sa4.sin_addr.s_addr = INADDR_ANY;
+    me.sa4.sin_port = htons(port);
+    rc = bind(sock, &me.sa, sizeof(me.sa4));
+  }
+  if(rc) {
+    sockerr = SOCKERRNO;
+    logmsg("Error binding socket on port %hu (%d) %s", port,
+           sockerr, curlx_strerror(sockerr, errbuf, sizeof(errbuf)));
+    result = 1;
+    goto out;
+  }
+
+  if(!port) {
+    /* The system was supposed to choose a port number, figure out which
+       port we actually got and update the listener port value with it. */
+    curl_socklen_t la_size;
+    srvr_sockaddr_union_t localaddr;
+    memset(&localaddr, 0, sizeof(localaddr));
+#ifdef USE_IPV6
+    if(socket_domain == AF_INET6)
+      la_size = sizeof(localaddr.sa6);
+    else
+#endif
+      la_size = sizeof(localaddr.sa4);
+    if(getsockname(sock, &localaddr.sa, &la_size) < 0) {
+      sockerr = SOCKERRNO;
+      logmsg("getsockname() failed with error (%d) %s",
+             sockerr, curlx_strerror(sockerr, errbuf, sizeof(errbuf)));
+      result = 1;
+      goto out;
+    }
+    switch(localaddr.sa.sa_family) {
+    case AF_INET:
+      port = ntohs(localaddr.sa4.sin_port);
+      break;
+#ifdef USE_IPV6
+    case AF_INET6:
+      port = ntohs(localaddr.sa6.sin6_port);
+      break;
+#endif
+    default:
+      break;
+    }
+    if(!port) {
+      /* Real failure, listener port shall not be zero beyond this point. */
+      logmsg("Apparently getsockname() succeeded, with listener port zero.");
+      logmsg("A valid reason for this failure is a binary built without");
+      logmsg("proper network library linkage. This might not be the only");
+      logmsg("reason, but double check it before anything else.");
+      result = 2;
+      goto out;
+    }
+  }
+
+out:
+  if(result) {
+    if(sock != CURL_SOCKET_BAD)
+      sclose(sock);
+    sock = CURL_SOCKET_BAD;
+    port = 0;
+  }
+  *psock = sock;
+  *pport = port;
+  return result;
+}
+
+bool socket_domain_is_ip(void)
+{
+  switch(socket_domain) {
+  case AF_INET:
+#ifdef USE_IPV6
+  case AF_INET6:
+#endif
+    return TRUE;
+  default:
+    /* case AF_UNIX: */
+    return FALSE;
+  }
+}
+
+int open_stream_sock(curl_socket_t *psock, uint16_t *pport)
+{
+  srvr_sockaddr_union_t me;
+  char errbuf[STRERROR_LEN];
+  int flag, sockerr, rc = 0;
+  curl_socket_t sock = CURL_SOCKET_BAD;
+  uint16_t port = *pport;
+  int result = 0;
+
+  sock = socket(socket_domain, SOCK_STREAM, 0);
+
+  if(sock == CURL_SOCKET_BAD) {
+    sockerr = SOCKERRNO;
+    logmsg("Error creating socket (%d) %s",
+           sockerr, curlx_strerror(sockerr, errbuf, sizeof(errbuf)));
+    result = 1;
+    goto out;
+  }
+
+#if defined(_WIN32) && defined(USE_UNIX_SOCKETS)
+  if(socket_domain != AF_UNIX) {
+#endif
+    flag = 1;
+    if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+                  (void *)&flag, sizeof(flag))) {
+      sockerr = SOCKERRNO;
+      logmsg("setsockopt(SO_REUSEADDR) failed with error (%d) %s",
+             sockerr, curlx_strerror(sockerr, errbuf, sizeof(errbuf)));
+      result = 1;
+      goto out;
+    }
+#if defined(_WIN32) && defined(USE_UNIX_SOCKETS)
+  }
+#endif
+  if(curlx_nonblock(sock, TRUE)) {
+    sockerr = SOCKERRNO;
+    logmsg("curlx_nonblock failed with error (%d) %s",
+           sockerr, curlx_strerror(sockerr, errbuf, sizeof(errbuf)));
+    result = 1;
+    goto out;
+  }
+
+  switch(socket_domain) {
+  case AF_INET:
+    memset(&me.sa4, 0, sizeof(me.sa4));
+    me.sa4.sin_family = AF_INET;
+    me.sa4.sin_addr.s_addr = INADDR_ANY;
+    me.sa4.sin_port = htons(port);
+    rc = bind(sock, &me.sa, sizeof(me.sa4));
+    break;
+#ifdef USE_IPV6
+  case AF_INET6:
+    memset(&me.sa6, 0, sizeof(me.sa6));
+    me.sa6.sin6_family = AF_INET6;
+    me.sa6.sin6_addr = in6addr_any;
+    me.sa6.sin6_port = htons(port);
+    rc = bind(sock, &me.sa, sizeof(me.sa6));
+    break;
+#endif /* USE_IPV6 */
+#ifdef USE_UNIX_SOCKETS
+  case AF_UNIX:
+    rc = bind_unix_socket(sock, server_unix_socket, &me.sau);
+#endif /* USE_UNIX_SOCKETS */
+  }
+  if(rc) {
+    sockerr = SOCKERRNO;
+#ifdef USE_UNIX_SOCKETS
+    if(socket_domain == AF_UNIX)
+      logmsg("Error binding socket on path %s (%d) %s", server_unix_socket,
+             sockerr, curlx_strerror(sockerr, errbuf, sizeof(errbuf)));
+    else
+#endif
+      logmsg("Error binding socket on port %hu (%d) %s", port,
+             sockerr, curlx_strerror(sockerr, errbuf, sizeof(errbuf)));
+    result = 1;
+    goto out;
+  }
+
+  if(!port) {
+    /* The system was supposed to choose a port number, figure out which
+       port we actually got and update the listener port value with it. */
+    curl_socklen_t la_size;
+    srvr_sockaddr_union_t localaddr;
+    memset(&localaddr, 0, sizeof(localaddr));
+#ifdef USE_IPV6
+    if(socket_domain == AF_INET6)
+      la_size = sizeof(localaddr.sa6);
+    else
+#endif
+      la_size = sizeof(localaddr.sa4);
+    if(getsockname(sock, &localaddr.sa, &la_size) < 0) {
+      sockerr = SOCKERRNO;
+      logmsg("getsockname() failed with error (%d) %s",
+             sockerr, curlx_strerror(sockerr, errbuf, sizeof(errbuf)));
+      result = 1;
+      goto out;
+    }
+
+    switch(localaddr.sa.sa_family) {
+    case AF_INET:
+      port = ntohs(localaddr.sa4.sin_port);
+      break;
+#ifdef USE_IPV6
+    case AF_INET6:
+      port = ntohs(localaddr.sa6.sin6_port);
+      break;
+#endif
+    default:
+      break;
+    }
+    if(!port) {
+      /* Real failure, listener port shall not be zero beyond this point. */
+      logmsg("Apparently getsockname() succeeded, with listener port zero.");
+      logmsg("A valid reason for this failure is a binary built without");
+      logmsg("proper network library linkage. This might not be the only");
+      logmsg("reason, but double check it before anything else.");
+      result = 1;
+      goto out;
+    }
+  }
+out:
+  if(result) {
+    if(sock != CURL_SOCKET_BAD)
+      sclose(sock);
+    sock = CURL_SOCKET_BAD;
+    port = 0;
+  }
+  *psock = sock;
+  *pport = port;
+  return result;
+}
+
+/* returns a socket handle, or 0 if there are no more waiting sockets,
+   or < 0 if there was an error */
+curl_socket_t accept_connection(curl_socket_t listen_sock)
+{
+  curl_socket_t msgsock = CURL_SOCKET_BAD;
+  int sockerr;
+  char errbuf[STRERROR_LEN];
+  int flag = 1;
+
+  msgsock = accept(listen_sock, NULL, NULL);
+
+  if(got_exit_signal) {
+    if(msgsock != CURL_SOCKET_BAD)
+      sclose(msgsock);
+    return CURL_SOCKET_BAD;
+  }
+
+  if(msgsock == CURL_SOCKET_BAD) {
+    sockerr = SOCKERRNO;
+    if(SOCK_EAGAIN(sockerr)) {
+      /* nothing to accept */
+      return 0;
+    }
+    logmsg("MAJOR ERROR, accept() failed with error (%d) %s",
+           sockerr, curlx_strerror(sockerr, errbuf, sizeof(errbuf)));
+    return CURL_SOCKET_BAD;
+  }
+
+  if(curlx_nonblock(msgsock, TRUE)) {
+    sockerr = SOCKERRNO;
+    logmsg("curlx_nonblock failed with error (%d) %s",
+           sockerr, curlx_strerror(sockerr, errbuf, sizeof(errbuf)));
+    sclose(msgsock);
+    return CURL_SOCKET_BAD;
+  }
+
+#if defined(_WIN32) && defined(USE_UNIX_SOCKETS)
+  if(socket_domain != AF_UNIX) {
+#endif
+    if(setsockopt(msgsock, SOL_SOCKET, SO_KEEPALIVE,
+                  (void *)&flag, sizeof(flag))) {
+      sockerr = SOCKERRNO;
+      logmsg("setsockopt(SO_KEEPALIVE) failed with error (%d) %s",
+             sockerr, curlx_strerror(sockerr, errbuf, sizeof(errbuf)));
+      sclose(msgsock);
+      return CURL_SOCKET_BAD;
+    }
+#if defined(_WIN32) && defined(USE_UNIX_SOCKETS)
+  }
+#endif
+
+  /*
+   * As soon as this server accepts a connection from the test harness it
+   * must set the server logs advisor read lock to indicate that server
+   * logs should not be read until this lock is removed by this server.
+   */
+
+  if(!serverlogslocked)
+    set_advisor_read_lock(loglockfile);
+  serverlogslocked += 1;
+
+  logmsg("====> Client connect");
+
+#if defined(TCP_NODELAY) && defined(CURL_TCP_NODELAY_SUPPORTED)
+  if(socket_domain_is_ip()) {
+    /*
+     * Disable the Nagle algorithm to make it easier to send out a large
+     * response in many small segments to torture the clients more.
+     */
+    if(setsockopt(msgsock, IPPROTO_TCP, TCP_NODELAY,
+                  (void *)&flag, sizeof(flag)))
+      logmsg("====> TCP_NODELAY failed");
+  }
+#endif
+
+  return msgsock;
+}
+
+bool curlx_str_case_equal(const struct Curl_str *s1,
+                          const struct Curl_str *s2)
+{
+  return ((s1->len == s2->len) &&
+          !CURL_STRNICMP(s1->str, s2->str, s1->len));
 }

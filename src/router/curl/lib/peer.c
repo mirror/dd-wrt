@@ -74,6 +74,7 @@
 #include "peer.h"
 #include "urldata.h"
 #include "url.h"
+#include "urlapi-int.h"
 #include "vtls/vtls.h"
 
 struct peer_parse {
@@ -150,13 +151,13 @@ static CURLcode peer_create(struct peer_parse *pp,
     if(!peer->scopeid) {
       const char *p = peer->zoneid;
       curl_off_t scope;
-      if(!curlx_str_number(&p, &scope, UINT_MAX)) {
+      if(!curlx_str_number(&p, &scope, UINT_MAX) && !*p) {
         /* A plain number, use it directly as a scope id. */
         peer->scopeid = (uint32_t)scope;
       }
 #ifdef HAVE_IF_NAMETOINDEX
       else {
-        /* Zone identifier is not numeric */
+        /* Zone identifier is not fully numeric */
         unsigned int idx = 0;
         idx = if_nametoindex(peer->zoneid);
         if(idx) {
@@ -332,9 +333,18 @@ static bool peer_same_hostname(struct Curl_peer *p1, struct Curl_peer *p2)
   return (p1->unix_socket == p2->unix_socket) &&
          (p1->abstract_uds == p2->abstract_uds) &&
          (p1->ipv6 == p2->ipv6) &&
-         (p1->unix_socket ?
-          !strcmp(p1->hostname, p2->hostname) :
-          curl_strequal(p1->hostname, p2->hostname));
+         /* unix_socket paths are case-sensitive, hostnames are not.
+          * Do strcmp() first on both, since we do a lot of matches
+          * on the same names and platform strcmp is way faster. */
+         (!strcmp(p1->hostname, p2->hostname) ||
+          (!p1->unix_socket &&
+           curl_strequal(p1->hostname, p2->hostname)));
+}
+
+static bool peer_same_zoneid(const char *z1, const char *z2)
+{
+  return (z1 == z2) ||
+         (z1 && z2 && !strcmp(z1, z2));
 }
 
 bool Curl_peer_same_destination(struct Curl_peer *p1, struct Curl_peer *p2)
@@ -344,37 +354,34 @@ bool Curl_peer_same_destination(struct Curl_peer *p1, struct Curl_peer *p2)
           (p1->port == p2->port) &&
           peer_same_hostname(p1, p2) &&
           (p1->scopeid == p2->scopeid) &&
-          (p1->scopeid || curl_strequal(p1->zoneid, p2->zoneid)));
+          (p1->scopeid || peer_same_zoneid(p1->zoneid, p2->zoneid)));
 }
 
 CURLcode Curl_peer_from_url(CURLU *uh, struct Curl_easy *data,
                             uint16_t port_override,
                             uint32_t scopeid_override,
-                            struct urlpieces *up,
                             struct Curl_peer **ppeer)
 {
   struct peer_parse pp;
-  char *zoneid = NULL;
+  char *zoneid = NULL, *scheme = NULL, *hostname = NULL;
   CURLUcode uc;
   CURLcode result;
 
   Curl_peer_unlink(ppeer);
   memset(&pp, 0, sizeof(pp));
 
-  curlx_safefree(up->scheme);
-  uc = curl_url_get(uh, CURLUPART_SCHEME, &up->scheme, 0);
+  uc = curl_url_get(uh, CURLUPART_SCHEME, &scheme, 0);
   if(uc)
     return Curl_uc_to_curlcode(uc);
-  pp.scheme = Curl_get_scheme(up->scheme);
+  pp.scheme = Curl_get_scheme(scheme);
   if(!pp.scheme) {
-    failf(data, "Protocol \"%s\" not supported%s", up->scheme,
+    failf(data, "Protocol \"%s\" not supported%s", scheme,
           data->state.this_is_a_follow ? " (in redirect)" : "");
     result = CURLE_UNSUPPORTED_PROTOCOL;
     goto out;
   }
 
-  curlx_safefree(up->hostname);
-  uc = curl_url_get(uh, CURLUPART_HOST, &up->hostname, 0);
+  uc = curl_url_get(uh, CURLUPART_HOST, &hostname, 0);
   if(uc) {
     if((uc == CURLUE_NO_HOST) && (pp.scheme->flags & PROTOPT_NONETWORK))
       ; /* acceptable */
@@ -383,13 +390,13 @@ CURLcode Curl_peer_from_url(CURLU *uh, struct Curl_easy *data,
       goto out;
     }
   }
-  else if(strlen(up->hostname) > MAX_URL_LEN) {
+  else if(strlen(hostname) > MAX_URL_LEN) {
     failf(data, "Too long hostname (maximum is %d)", MAX_URL_LEN);
     result = CURLE_URL_MALFORMAT;
     goto out;
   }
 
-  pp.host_user.str = up->hostname ? up->hostname : "";
+  pp.host_user.str = hostname ? hostname : "";
   pp.host_user.len = strlen(pp.host_user.str);
   if(pp.host_user.len) {
     result = peer_parse_host(data, &pp, FALSE);
@@ -399,7 +406,6 @@ CURLcode Curl_peer_from_url(CURLU *uh, struct Curl_easy *data,
   else
     pp.host = pp.host_user;
 
-  curlx_safefree(up->port);
   if(port_override) {
     /* if set, we use this instead of the port possibly given in the URL */
     char portbuf[16];
@@ -413,7 +419,7 @@ CURLcode Curl_peer_from_url(CURLU *uh, struct Curl_easy *data,
       pp.port = port_override;
   }
   else {
-    uc = curl_url_get(uh, CURLUPART_PORT, &up->port, CURLU_DEFAULT_PORT);
+    uc = Curl_url_get_port(uh, &pp.port);
     if(uc) {
       if(uc == CURLUE_OUT_OF_MEMORY) {
         result = CURLE_OUT_OF_MEMORY;
@@ -424,13 +430,6 @@ CURLcode Curl_peer_from_url(CURLU *uh, struct Curl_easy *data,
         goto out;
       }
       /* no port ok when not a network scheme */
-    }
-    else {
-      const char *p = up->port;
-      curl_off_t offt;
-      if(curlx_str_number(&p, &offt, 0xffff))
-        return CURLE_URL_MALFORMAT;
-      pp.port = (uint16_t)offt;
     }
   }
 
@@ -456,6 +455,8 @@ CURLcode Curl_peer_from_url(CURLU *uh, struct Curl_easy *data,
 
 out:
   peer_parse_clear(&pp);
+  curlx_free(scheme);
+  curlx_free(hostname);
   curlx_free(zoneid);
   return result;
 }
@@ -469,6 +470,7 @@ CURLcode Curl_peer_from_connect_to(struct Curl_easy *data,
 {
   struct peer_parse pp;
   const char *portstr = NULL;
+  bool port_switch = FALSE;
   CURLcode result;
 
   Curl_peer_unlink(ppeer);
@@ -499,6 +501,7 @@ CURLcode Curl_peer_from_connect_to(struct Curl_easy *data,
   }
 
   if(!pp.host_user.len) { /* no hostname found, only port switch */
+    port_switch = TRUE;
     pp.host_user.str = dest->user_hostname;
     pp.host_user.len = strlen(dest->user_hostname);
   }
@@ -506,6 +509,8 @@ CURLcode Curl_peer_from_connect_to(struct Curl_easy *data,
   result = peer_parse_host(data, &pp, FALSE);
   if(result)
     goto out;
+  /* On a port switch, ipv6 must stay the same */
+  DEBUGASSERT(!port_switch || ((bool)pp.ipv6 == (bool)dest->ipv6));
 
   if(portstr && portstr[1]) {
     const char *p = portstr + 1;
@@ -527,6 +532,13 @@ CURLcode Curl_peer_from_connect_to(struct Curl_easy *data,
     goto out;
   }
 #endif
+  if(pp.ipv6 && port_switch) {
+    if(dest->zoneid) {
+      pp.zoneid.str = dest->zoneid;
+      pp.zoneid.len = strlen(dest->zoneid);
+    }
+    pp.scopeid = dest->scopeid;
+  }
 
   result = peer_create(&pp, ppeer);
   CURL_TRC_M(data, "connect-to peer_create2 -> %d", (int)result);

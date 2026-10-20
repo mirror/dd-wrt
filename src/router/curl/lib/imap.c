@@ -57,7 +57,6 @@
 #include "curlx/dynbuf.h"
 #include "sendf.h"
 #include "curl_trc.h"
-#include "hostip.h"
 #include "progress.h"
 #include "transfer.h"
 #include "escape.h"
@@ -613,6 +612,7 @@ static CURLcode imap_perform_login(struct Curl_easy *data,
                       passwd ? passwd : "");
 
   curlx_free(user);
+  curlx_strzero(passwd);
   curlx_free(passwd);
 
   if(!result)
@@ -641,7 +641,8 @@ static CURLcode imap_perform_authenticate(struct Curl_easy *data,
     return CURLE_FAILED_INIT;
   if(ir) {
     /* Send the AUTHENTICATE command with the initial response */
-    result = imap_sendf(data, imapc, "AUTHENTICATE %s %s", mech, ir);
+    result = imap_sendf(data, imapc, "AUTHENTICATE %s %s",
+                        mech, *ir ? ir : "=");
   }
   else {
     /* Send the AUTHENTICATE command */
@@ -876,16 +877,12 @@ static CURLcode imap_perform_append(struct Curl_easy *data,
     result = Curl_mime_prepare_headers(data, postp, NULL,
                                        NULL, MIMESTRATEGY_MAIL);
 
-    if(!result)
-      if(!Curl_checkheaders(data, STRCONST("Mime-Version")))
-        result = Curl_mime_add_header(&postp->curlheaders,
-                                      "Mime-Version: 1.0");
-
+    if(!result && !Curl_checkheaders(data, STRCONST("Mime-Version")))
+      result = Curl_mime_add_header(&postp->curlheaders, "Mime-Version: 1.0");
     if(!result)
       result = Curl_creader_set_mime(data, postp);
     if(result)
       return result;
-    data->state.infilesize = Curl_creader_client_length(data);
   }
   else
 #endif
@@ -895,9 +892,15 @@ static CURLcode imap_perform_append(struct Curl_easy *data,
       return result;
   }
 
-  /* Check we know the size of the upload */
+  /* Check we know the size of the upload. This takes all readers
+   * into account. Especially crlf conversions which make the size
+   * unpredictable, e.g. -1. */
+  data->state.infilesize = Curl_creader_total_length(data);
   if(data->state.infilesize < 0) {
-    failf(data, "Cannot APPEND with unknown input file size");
+    if(data->set.crlf)
+      failf(data, "Cannot APPEND with CRLF conversion making size unknown");
+    else
+      failf(data, "Cannot APPEND with unknown input file size");
     return CURLE_UPLOAD_FAILED;
   }
 
@@ -925,12 +928,11 @@ static CURLcode imap_perform_append(struct Curl_easy *data,
     }
 
     for(i = 0; ulflag[i].bit; i++) {
-      if(data->set.upload_flags & ulflag[i].bit) {
-        if((curlx_dyn_len(&flags) > 2 && curlx_dyn_add(&flags, " ")) ||
-           curlx_dyn_add(&flags, "\\") ||
-           curlx_dyn_add(&flags, ulflag[i].flag))
-          goto cleanup;
-      }
+      if(data->set.upload_flags & ulflag[i].bit &&
+         ((curlx_dyn_len(&flags) > 2 && curlx_dyn_add(&flags, " ")) ||
+          curlx_dyn_add(&flags, "\\") ||
+          curlx_dyn_add(&flags, ulflag[i].flag)))
+        goto cleanup;
     }
 
     if(curlx_dyn_add(&flags, ")"))
@@ -1204,11 +1206,10 @@ static bool is_custom_fetch_listing(struct IMAP *imap)
     const char *p = imap->custom_params;
     return is_custom_fetch_listing_match(p);
   }
-  else if(curl_strequal(imap->custom, "UID") && imap->custom_params) {
-    if(curl_strnequal(imap->custom_params, " FETCH ", 7)) {
-      const char *p = imap->custom_params + 6;
-      return is_custom_fetch_listing_match(p);
-    }
+  else if(curl_strequal(imap->custom, "UID") && imap->custom_params &&
+          curl_strnequal(imap->custom_params, " FETCH ", 7)) {
+    const char *p = imap->custom_params + 6;
+    return is_custom_fetch_listing_match(p);
   }
   return FALSE;
 }
@@ -1270,7 +1271,7 @@ static CURLcode imap_state_listsearch_resp(struct Curl_easy *data,
           pp->nfinal = 0; /* done */
 
           /* Limit chunk to the literal size */
-          if(chunk > (size_t)size)
+          if((curl_off_t)chunk > size)
             chunk = (size_t)size;
 
           if(chunk) {
@@ -1356,7 +1357,7 @@ static CURLcode imap_state_select_resp(struct Curl_easy *data,
     size_t len = curlx_dyn_len(&imapc->pp.recvbuf);
     if((len >= 18) && checkprefix("OK [UIDVALIDITY ", &line[2])) {
       curl_off_t value;
-      const char *p = &line[2] + strlen("OK [UIDVALIDITY ");
+      const char *p = &line[2] + CURL_CSTRLEN("OK [UIDVALIDITY ");
       if(!curlx_str_number(&p, &value, UINT_MAX)) {
         imapc->mb_uidvalidity = (unsigned int)value;
         imapc->mb_uidvalidity_set = TRUE;
@@ -1438,7 +1439,7 @@ static CURLcode imap_state_fetch_resp(struct Curl_easy *data,
       curlx_dyn_tail(&pp->recvbuf, chunk);
       pp->nfinal = 0; /* done */
 
-      if(chunk > (size_t)size)
+      if((curl_off_t)chunk > size)
         /* The conversion from curl_off_t to size_t is always fine here */
         chunk = (size_t)size;
 
@@ -1922,7 +1923,7 @@ static CURLcode imap_parse_custom_request(struct Curl_easy *data,
                                           struct IMAP *imap)
 {
   CURLcode result = CURLE_OK;
-  const char *custom = data->set.str[STRING_CUSTOMREQUEST];
+  const char *custom = CURL_EASY_STR(data, STRING_CUSTOMREQUEST);
 
   if(custom) {
     /* URL decode the custom request */
@@ -2001,15 +2002,14 @@ static CURLcode imap_done(struct Curl_easy *data, CURLcode status,
   struct imap_conn *imapc = Curl_conn_meta_get(conn, CURL_META_IMAP_CONN);
   struct IMAP *imap = Curl_meta_get(data, CURL_META_IMAP_EASY);
 
-  (void)premature;
-
   if(!imapc)
     return CURLE_FAILED_INIT;
   if(!imap)
     return CURLE_OK;
 
-  if(status) {
-    connclose(conn, "IMAP done with bad status"); /* marked for closure */
+  if(status || premature) {
+    CURL_TRC_M(data, "IMAP done, not finalizing transfer");
+    connclose(conn); /* marked for closure */
     result = status;         /* use the already set error code */
   }
   else if(!data->set.connect_only &&
@@ -2069,7 +2069,9 @@ static CURLcode imap_perform(struct Curl_easy *data, bool *connected,
   /* Determine if the requested mailbox (with the same UIDVALIDITY if set)
      has already been selected on this connection */
   if(imap->mailbox && imapc->mailbox &&
-     curl_strequal(imap->mailbox, imapc->mailbox) &&
+     (!strcmp(imap->mailbox, imapc->mailbox) ||
+      (curl_strequal(imap->mailbox, "INBOX") &&
+       curl_strequal(imapc->mailbox, "INBOX"))) &&
      (!imap->uidvalidity_set || !imapc->mb_uidvalidity_set ||
       (imap->uidvalidity == imapc->mb_uidvalidity)))
     selected = TRUE;
@@ -2199,17 +2201,16 @@ static CURLcode imap_disconnect(struct Curl_easy *data,
 {
   struct imap_conn *imapc = Curl_conn_meta_get(conn, CURL_META_IMAP_CONN);
 
-  if(imapc) {
-    /* We cannot send quit unconditionally. If this connection is stale or
-       bad in any way (pingpong has pending data to send),
-       sending quit and waiting around here will make the
-       disconnect wait in vain and cause more problems than we need to. */
-    if(!dead_connection && conn->bits.protoconnstart &&
-       !Curl_pp_needs_flush(data, &imapc->pp)) {
-      if(!imap_perform_logout(data, imapc))
-        (void)imap_block_statemach(data, imapc, TRUE); /* ignore errors */
-    }
-  }
+  if(imapc &&
+     /* We cannot send quit unconditionally. If this connection is stale or
+        bad in any way (pingpong has pending data to send),
+        sending quit and waiting around here will make the
+        disconnect wait in vain and cause more problems than we need to. */
+     !dead_connection && conn->bits.protoconnstart &&
+     !Curl_pp_needs_flush(data, &imapc->pp) &&
+     !imap_perform_logout(data, imapc))
+    (void)imap_block_statemach(data, imapc, TRUE); /* ignore errors */
+
   return CURLE_OK;
 }
 
@@ -2234,7 +2235,7 @@ static CURLcode imap_doing(struct Curl_easy *data, bool *dophase_done)
   return result;
 }
 
-static void imap_easy_dtor(void *key, size_t klen, void *entry)
+static void imap_easy_dtor(const void *key, size_t klen, void *entry)
 {
   struct IMAP *imap = entry;
   (void)key;
@@ -2243,7 +2244,7 @@ static void imap_easy_dtor(void *key, size_t klen, void *entry)
   curlx_free(imap);
 }
 
-static void imap_conn_dtor(void *key, size_t klen, void *entry)
+static void imap_conn_dtor(const void *key, size_t klen, void *entry)
 {
   struct imap_conn *imapc = entry;
   (void)key;

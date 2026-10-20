@@ -49,7 +49,7 @@ static bool test1667(const struct test_1667 *spec, size_t i,
   /* setup private struct for this invoke */
   elem.tag = spec->tag;
   elem.header = NULL;
-  elem.beg = spec->asn1;
+  elem.beg = (const uint8_t *)spec->asn1;
   elem.end = elem.beg + spec->size;
   elem.eclass = 0;
   elem.constructed = 0;
@@ -103,18 +103,17 @@ static CURLcode test_unit1667(const char *arg)
     { 31, "abcde", 5, "", CURLE_BAD_FUNCTION_ARGUMENT },
     { 99, "abcde", 5, "", CURLE_BAD_FUNCTION_ARGUMENT },
 
-    /*
-      (many different) strings:
+    /* (many different) strings:
 
-      CURL_ASN1_UTF8_STRING
-      CURL_ASN1_NUMERIC_STRING
-      CURL_ASN1_PRINTABLE_STRING
-      CURL_ASN1_TELETEX_STRING
-      CURL_ASN1_IA5_STRING
-      CURL_ASN1_VISIBLE_STRING
-      CURL_ASN1_UNIVERSAL_STRING
-      CURL_ASN1_BMP_STRING
-    */
+       CURL_ASN1_UTF8_STRING
+       CURL_ASN1_NUMERIC_STRING
+       CURL_ASN1_PRINTABLE_STRING
+       CURL_ASN1_TELETEX_STRING
+       CURL_ASN1_IA5_STRING
+       CURL_ASN1_VISIBLE_STRING
+       CURL_ASN1_UNIVERSAL_STRING
+       CURL_ASN1_BMP_STRING
+     */
     { CURL_ASN1_UTF8_STRING, "abcde", 5, "abcde", CURLE_OK },
     /* a with ring, a with umlaut, o with umlaut in UTF-8 encoding */
     { CURL_ASN1_UTF8_STRING, "\xc3\xa5\xc3\xa4\xc3\xb6", 6,

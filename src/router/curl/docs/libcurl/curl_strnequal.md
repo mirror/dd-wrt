@@ -47,9 +47,9 @@ string comparison functions. This function works on all platforms.
 # EXAMPLE
 
 ~~~c
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
-  const char *name = "compare";
+  static const char *name = "compare";
   if(curl_strnequal(name, argv[1], 5))
     printf("Name and input matches in the 5 first bytes\n");
 }

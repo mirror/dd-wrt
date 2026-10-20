@@ -49,7 +49,6 @@
 #include "urldata.h"
 #include "connect.h"
 #include "cfilters.h"
-#include "cf-dns.h"
 #include "cf-ip-happy.h"
 #include "curl_addrinfo.h"
 #include "curl_trc.h"
@@ -57,6 +56,7 @@
 #include "progress.h"
 #include "select.h"
 #include "sockaddr.h"
+#include "vdns/cf-dns.h"
 #include "vquic/vquic.h" /* for quic cfilters */
 
 
@@ -165,7 +165,6 @@ struct cf_ip_attempt {
   struct Curl_sockaddr_ex addr;
   struct Curl_cfilter *cf;           /* current sub-cfilter connecting */
   cf_ip_connect_create *cf_create;
-  struct curltime started;           /* start of current attempt */
   CURLcode result;
   int ai_family;
   uint8_t transport_peer;
@@ -268,6 +267,7 @@ static CURLcode cf_ip_attempt_connect(struct cf_ip_attempt *a,
 
 struct cf_ip_ballers {
   struct cf_ip_attempt *running;
+  struct cf_ip_attempt **running_tail;  /* &running or &(last->next) */
   struct cf_ip_attempt *winner;
   struct cf_ai_iter addr_iter;
 #ifdef USE_IPV6
@@ -277,13 +277,14 @@ struct cf_ip_ballers {
   struct Curl_peer *peer;
   struct Curl_peer *tunnel_peer;
   cf_ip_connect_create *cf_create;   /* for creating cf */
-  struct curltime started;
   struct curltime last_attempt_started;
   timediff_t attempt_delay_ms;
+  CURLcode last_dead_result;  /* result of last discarded hard failure */
   int last_attempt_ai_family;
   uint32_t max_concurrent;
   uint8_t transport_peer;
   uint8_t tunnel_transport;
+  BIT(had_dead);              /* a hard failure was discarded */
 };
 
 static CURLcode cf_ip_attempt_restart(struct cf_ip_attempt *a,
@@ -324,6 +325,7 @@ static void cf_ip_ballers_clear(struct Curl_easy *data,
     bs->running = a->next;
     cf_ip_attempt_free(a, data);
   }
+  bs->running_tail = &bs->running;
   cf_ip_attempt_free(bs->winner, data);
   bs->winner = NULL;
   Curl_peer_unlink(&bs->origin);
@@ -342,6 +344,7 @@ static CURLcode cf_ip_ballers_init(struct cf_ip_ballers *bs,
                                    uint32_t max_concurrent)
 {
   memset(bs, 0, sizeof(*bs));
+  bs->running_tail = &bs->running;
   bs->cf_create = get_cf_create(transport_peer, !!tunnel_peer);
   if(!bs->cf_create) {
     failf(data, "unsupported transport type %u%s",
@@ -377,6 +380,8 @@ static void cf_ip_ballers_prune(struct cf_ip_ballers *bs,
     a = *panchor;
     if(!a->result && !a->connected) {
       *panchor = a->next;
+      if(!a->next)
+        bs->running_tail = panchor;
       a->next = NULL;
       cf_ip_attempt_free(a, data);
       --ongoing;
@@ -399,17 +404,24 @@ static CURLcode cf_ip_ballers_run(struct cf_ip_ballers *bs,
   bool do_more;
   timediff_t next_expire_ms;
   uint32_t inconclusive, ongoing;
+  const struct curltime *pnow = NULL;
   VERBOSE(int i);
 
   if(bs->winner)
     return CURLE_OK;
 
 evaluate:
+  if(Curl_timeleft_now_ms(data, Curl_pgrs_now(data)) < 0) {
+    failf(data, "Connection timeout after %" FMT_OFF_T " ms",
+          Curl_pgrs_since_ms(data, NULL, TIMER_STARTSINGLE));
+    return CURLE_OPERATION_TIMEDOUT;
+  }
+
   ongoing = inconclusive = 0;
 
   /* check if a running baller connects now */
   VERBOSE(i = -1);
-  for(panchor = &bs->running; *panchor; panchor = &((*panchor)->next)) {
+  for(panchor = &bs->running; *panchor;) {
     VERBOSE(++i);
     a = *panchor;
     a->result = cf_ip_attempt_connect(a, data, connected);
@@ -426,22 +438,35 @@ evaluate:
           bs->running = a->next;
           cf_ip_attempt_free(a, data);
         }
+        bs->running_tail = &bs->running;
         return CURLE_OK;
       }
       /* still running */
       ++ongoing;
+      panchor = &(*panchor)->next;
     }
-    else if(a->inconclusive) /* failed, but inconclusive */
+    else if(a->inconclusive) { /* failed, but inconclusive */
       ++inconclusive;
+      panchor = &(*panchor)->next;
+    }
+    else {
+      /* hard failure, discard right away */
+      *panchor = a->next;
+      if(!a->next)
+        bs->running_tail = panchor;
+      a->next = NULL;
+      bs->last_dead_result = a->result;
+      bs->had_dead = TRUE;
+      cf_ip_attempt_free(a, data);
+    }
   }
   if(bs->running)
     CURL_TRC_CF(data, cf, "checked connect attempts: "
                 "%u ongoing, %u inconclusive", ongoing, inconclusive);
 
   /* no attempt connected yet, start another one? */
+  pnow = Curl_pgrs_now(data);
   if(!ongoing) {
-    if(!bs->started.tv_sec && !bs->started.tv_usec)
-      bs->started = *Curl_pgrs_now(data);
     do_more = TRUE;
   }
   else {
@@ -451,7 +476,7 @@ evaluate:
       more_possible = cf_ai_iter_has_more(&bs->ipv6_iter, data);
 #endif
     do_more = more_possible &&
-      (curlx_ptimediff_ms(Curl_pgrs_now(data), &bs->last_attempt_started) >=
+      (curlx_ptimediff_ms(pnow, &bs->last_attempt_started) >=
        bs->attempt_delay_ms);
     if(do_more)
       CURL_TRC_CF(data, cf, "happy eyeballs timeout expired, "
@@ -507,11 +532,10 @@ evaluate:
       DEBUGASSERT(a);
 
       /* append to running list */
-      panchor = &bs->running;
-      while(*panchor)
-        panchor = &((*panchor)->next);
-      *panchor = a;
-      bs->last_attempt_started = *Curl_pgrs_now(data);
+      *bs->running_tail = a;
+      a->next = NULL;
+      bs->running_tail = &a->next;
+      bs->last_attempt_started = *pnow;
       bs->last_attempt_ai_family = ai_family;
       /* and run everything again */
       goto evaluate;
@@ -520,7 +544,7 @@ evaluate:
       /* tried all addresses, no success but some where inconclusive.
        * Let's restart the inconclusive ones. */
       timediff_t since_ms =
-        curlx_ptimediff_ms(Curl_pgrs_now(data), &bs->last_attempt_started);
+        curlx_ptimediff_ms(pnow, &bs->last_attempt_started);
       timediff_t delay_ms = bs->attempt_delay_ms - since_ms;
       if(delay_ms <= 0) {
         CURL_TRC_CF(data, cf, "all attempts inconclusive, restarting one");
@@ -533,7 +557,7 @@ evaluate:
           CURL_TRC_CF(data, cf, "restarted baller %d -> %d", i, (int)result);
           if(result) /* serious failure */
             goto out;
-          bs->last_attempt_started = *Curl_pgrs_now(data);
+          bs->last_attempt_started = *pnow;
           goto evaluate;
         }
         DEBUGASSERT(0); /* should not come here */
@@ -542,7 +566,7 @@ evaluate:
         /* let's wait some more before restarting */
         infof(data, "connect attempts inconclusive, retrying "
                     "in %" FMT_TIMEDIFF_T "ms", delay_ms);
-        Curl_expire(data, delay_ms, EXPIRE_HAPPY_EYEBALLS);
+        Curl_expire_set(data, EXPIRE_HAPPY_EYEBALLS, delay_ms, pnow);
       }
       /* attempt timeout for restart has not expired yet */
       goto out;
@@ -550,13 +574,8 @@ evaluate:
     else if(!ongoing && dns_resolved) {
       /* no more addresses, no inconclusive attempts */
       CURL_TRC_CF(data, cf, "no more attempts to try");
-      result = CURLE_COULDNT_CONNECT;
-      VERBOSE(i = 0);
-      for(a = bs->running; a; a = a->next) {
-        CURL_TRC_CF(data, cf, "baller %d: result=%d", i, (int)a->result);
-        if(a->result)
-          result = a->result;
-      }
+      DEBUGASSERT(!bs->running);
+      result = bs->had_dead ? bs->last_dead_result : CURLE_COULDNT_CONNECT;
     }
   }
 
@@ -565,11 +584,11 @@ out:
     bool more_possible;
 
     /* when do we need to be called again? */
-    next_expire_ms = Curl_timeleft_ms(data);
+    pnow = Curl_pgrs_now(data);
+    next_expire_ms = Curl_timeleft_now_ms(data, pnow);
     if(next_expire_ms < 0) {
       failf(data, "Connection timeout after %" FMT_OFF_T " ms",
-            curlx_ptimediff_ms(Curl_pgrs_now(data),
-                               &data->progress.t_startsingle));
+            Curl_pgrs_since_ms(data, NULL, TIMER_STARTSINGLE));
       return CURLE_OPERATION_TIMEDOUT;
     }
 
@@ -580,8 +599,8 @@ out:
 #endif
     if(more_possible) {
       timediff_t expire_ms, elapsed_ms;
-      elapsed_ms =
-        curlx_ptimediff_ms(Curl_pgrs_now(data), &bs->last_attempt_started);
+
+      elapsed_ms = curlx_ptimediff_ms(pnow, &bs->last_attempt_started);
       expire_ms = CURLMAX(bs->attempt_delay_ms - elapsed_ms, 0);
       next_expire_ms = CURLMIN(next_expire_ms, expire_ms);
       if(next_expire_ms <= 0) {
@@ -590,7 +609,7 @@ out:
       }
       CURL_TRC_CF(data, cf, "next HAPPY_EYEBALLS timeout in %" FMT_TIMEDIFF_T
                   "ms", next_expire_ms);
-      Curl_expire(data, next_expire_ms, EXPIRE_HAPPY_EYEBALLS);
+      Curl_expire_set(data, EXPIRE_HAPPY_EYEBALLS, next_expire_ms, pnow);
     }
   }
   return result;
@@ -646,24 +665,6 @@ static bool cf_ip_ballers_pending(struct cf_ip_ballers *bs,
   return FALSE;
 }
 
-static struct curltime cf_ip_ballers_max_time(struct cf_ip_ballers *bs,
-                                              struct Curl_easy *data,
-                                              int query)
-{
-  struct curltime t, tmax;
-  struct cf_ip_attempt *a;
-
-  memset(&tmax, 0, sizeof(tmax));
-  for(a = bs->running; a; a = a->next) {
-    memset(&t, 0, sizeof(t));
-    if(a->cf && !a->cf->cft->query(a->cf, data, query, NULL, &t)) {
-      if((t.tv_sec || t.tv_usec) && curlx_ptimediff_us(&t, &tmax) > 0)
-        tmax = t;
-    }
-  }
-  return tmax;
-}
-
 static int cf_ip_ballers_min_reply_ms(struct cf_ip_ballers *bs,
                                       struct Curl_easy *data)
 {
@@ -672,10 +673,9 @@ static int cf_ip_ballers_min_reply_ms(struct cf_ip_ballers *bs,
 
   for(a = bs->running; a; a = a->next) {
     if(a->cf && !a->cf->cft->query(a->cf, data, CF_QUERY_CONNECT_REPLY_MS,
-                                   &breply_ms, NULL)) {
-      if(breply_ms >= 0 && (reply_ms < 0 || breply_ms < reply_ms))
-        reply_ms = breply_ms;
-    }
+                                   &breply_ms, NULL) &&
+       breply_ms >= 0 && (reply_ms < 0 || breply_ms < reply_ms))
+      reply_ms = breply_ms;
   }
   return reply_ms;
 }
@@ -690,7 +690,6 @@ struct cf_ip_happy_ctx {
   cf_ip_connect_create *cf_create;
   cf_connect_state state;
   struct cf_ip_ballers ballers;
-  struct curltime started;
   BIT(dns_resolved);
 };
 
@@ -741,8 +740,7 @@ static CURLcode is_connected(struct Curl_cfilter *cf,
           proxy_peer ? "over proxy " : "",
           proxy_peer ? proxy_peer->hostname : "",
           proxy_peer ? " " : "",
-          curlx_ptimediff_ms(Curl_pgrs_now(data),
-                             &data->progress.t_startsingle),
+          Curl_pgrs_since_ms(data, NULL, TIMER_STARTSINGLE),
           curl_easy_strerror(result));
 
 #ifdef SOCKETIMEDOUT
@@ -783,7 +781,6 @@ static CURLcode cf_ip_happy_init(struct Curl_cfilter *cf,
 
   CURL_TRC_CF(data, cf, "init ip ballers for transport %u",
               ctx->ballers.transport_peer);
-  ctx->started = *Curl_pgrs_now(data);
   return CURLE_OK;
 }
 
@@ -857,7 +854,8 @@ static CURLcode cf_ip_happy_connect(struct Curl_cfilter *cf,
   *done = FALSE;
 
   if(!ctx->dns_resolved) {
-    result = Curl_conn_dns_result(cf->conn, cf->sockindex, ctx->ballers.peer);
+    result = Curl_conn_dns_addr_result(cf->conn, cf->sockindex,
+                                       ctx->ballers.peer);
     if(!result)
       ctx->dns_resolved = TRUE;
     else if(result == CURLE_AGAIN) {
@@ -888,10 +886,6 @@ static CURLcode cf_ip_happy_connect(struct Curl_cfilter *cf,
       cf->connected = TRUE;
       cf->next = ctx->ballers.winner->cf;
       ctx->ballers.winner->cf = NULL;
-      cf_ip_happy_ctx_clear(ctx, data);
-      Curl_expire_done(data, EXPIRE_HAPPY_EYEBALLS);
-      /* whatever errors were reported by ballers, clear our errorbuf */
-      Curl_reset_fail(data);
 
       if(cf->conn->scheme->protocol & PROTO_FAMILY_SSH)
         Curl_pgrsTime(data, TIMER_APPCONNECT); /* we are connected already */
@@ -900,13 +894,16 @@ static CURLcode cf_ip_happy_connect(struct Curl_cfilter *cf,
         struct ip_quadruple ipquad;
         bool is_ipv6;
         if(!Curl_conn_cf_get_ip_info(cf->next, data, &is_ipv6, &ipquad)) {
-          const char *host;
-          Curl_conn_get_current_host(data, cf->sockindex, &host, NULL);
           CURL_TRC_CF(data, cf, "Connected to %s (%s) port %u",
-                      host, ipquad.remote_ip, ipquad.remote_port);
+                      ctx->ballers.peer->hostname,
+                      ipquad.remote_ip, ipquad.remote_port);
         }
       }
 #endif
+      cf_ip_happy_ctx_clear(ctx, data);
+      Curl_expire_clear(data, EXPIRE_HAPPY_EYEBALLS);
+      /* whatever errors were reported by ballers, clear our errorbuf */
+      Curl_reset_fail(data);
       data->info.numconnects++; /* to track the # of connections made */
     }
     break;
@@ -940,18 +937,6 @@ static CURLcode cf_ip_happy_query(struct Curl_cfilter *cf,
     case CF_QUERY_CONNECT_REPLY_MS: {
       *pres1 = cf_ip_ballers_min_reply_ms(&ctx->ballers, data);
       CURL_TRC_CF(data, cf, "query connect reply: %dms", *pres1);
-      return CURLE_OK;
-    }
-    case CF_QUERY_TIMER_CONNECT: {
-      struct curltime *when = pres2;
-      *when = cf_ip_ballers_max_time(&ctx->ballers, data,
-                                     CF_QUERY_TIMER_CONNECT);
-      return CURLE_OK;
-    }
-    case CF_QUERY_TIMER_APPCONNECT: {
-      struct curltime *when = pres2;
-      *when = cf_ip_ballers_max_time(&ctx->ballers, data,
-                                     CF_QUERY_TIMER_APPCONNECT);
       return CURLE_OK;
     }
     default:
@@ -1031,13 +1016,13 @@ out:
   return result;
 }
 
-CURLcode cf_ip_happy_insert_after(struct Curl_cfilter *cf_at,
-                                  struct Curl_easy *data,
-                                  struct Curl_peer *origin,
-                                  struct Curl_peer *peer,
-                                  uint8_t transport_peer,
-                                  struct Curl_peer *tunnel_peer,
-                                  uint8_t tunnel_transport)
+CURLcode Curl_cf_ip_happy_insert_after(struct Curl_cfilter *cf_at,
+                                       struct Curl_easy *data,
+                                       struct Curl_peer *origin,
+                                       struct Curl_peer *peer,
+                                       uint8_t transport_peer,
+                                       struct Curl_peer *tunnel_peer,
+                                       uint8_t tunnel_transport)
 {
   struct Curl_cfilter *cf;
   CURLcode result;

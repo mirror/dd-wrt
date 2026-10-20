@@ -27,10 +27,6 @@
 # per line.
 # Lines starting with '#' letters are treated as comments.
 #
-# Uses SRP to "a server not supporting it" but modern stunnel versions
-# silently accept it and remain happy
-323
-#
 594
 836
 882
@@ -67,3 +63,6 @@
 2047
 %endif
 %endif
+# We can't close down the TLS connection nicely enough to make this work
+# reliably
+4656

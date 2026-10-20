@@ -37,6 +37,10 @@ extra network round-trip. Set the actual name and password with the
 CURLOPT_USERPWD(3) option or with the CURLOPT_USERNAME(3) and the
 CURLOPT_PASSWORD(3) options.
 
+Custom `Authorization:` headers set with CURLOPT_HTTPHEADER(3) may interfere
+with and cause unintended side-effects if combined with authentication set
+with CURLOPT_HTTPAUTH(3).
+
 For authentication with a proxy, see CURLOPT_PROXYAUTH(3).
 
 ## CURLAUTH_BASIC
@@ -118,6 +122,11 @@ single auth algorithm is acceptable.
 provides AWS V4 signature authentication on HTTPS header
 see CURLOPT_AWS_SIGV4(3).
 
+## CURLAUTH_HTTPSIG
+
+provides RFC 9421 HTTP Message Signatures on outgoing requests,
+see CURLOPT_HTTPSIG_ALGORITHM(3).
+
 # DEFAULT
 
 CURLAUTH_BASIC
@@ -157,6 +166,8 @@ CURLAUTH_BEARER was added in 7.61.0
 CURLAUTH_AWS_SIGV4 was added in 7.74.0
 
 CURLAUTH_DIGEST_IE does nothing since 8.21.0
+
+CURLAUTH_HTTPSIG was added in 8.22.0
 
 # %AVAILABILITY%
 

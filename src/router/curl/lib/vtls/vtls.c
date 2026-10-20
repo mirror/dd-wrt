@@ -36,13 +36,9 @@
 
    "SSL/TLS Strong Encryption: An Introduction"
    https://httpd.apache.org/docs/2.0/ssl/ssl_intro.html
-*/
+ */
 
 #include "curl_setup.h"
-
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
 
 #include "urldata.h"
 #include "cfilters.h"
@@ -64,13 +60,14 @@
 #include "strcase.h"
 #include "url.h"
 #include "progress.h"
-#include "curlx/fopen.h"
+#include "curlx/win32-fopen.h"
 #include "curl_sha256.h"
 #include "curlx/base64.h"
 #include "curlx/inet_pton.h"
 #include "connect.h"
 #include "select.h"
 #include "setopt.h"
+#include "vdns/cf-dns.h"
 #include "curlx/strdup.h"
 #include "curlx/strcopy.h"
 
@@ -163,22 +160,23 @@ int Curl_ssl_init(void)
   return 1;
 }
 
-static bool ssl_prefs_check(struct Curl_easy *data)
+static bool ssl_prefs_check(struct Curl_cfilter *cf,
+                            struct Curl_easy *data)
 {
+  struct ssl_filter_config *conn_config = Curl_ssl_cf_get_filter_config(cf);
   /* check for CURLOPT_SSLVERSION invalid parameter value */
-  const unsigned char sslver = data->set.ssl.primary.version;
-  if(sslver >= CURL_SSLVERSION_LAST) {
+  if(conn_config->version >= CURL_SSLVERSION_LAST) {
     failf(data, "Unrecognized parameter value passed via CURLOPT_SSLVERSION");
     return FALSE;
   }
 
-  switch(data->set.ssl.primary.version_max) {
+  switch(conn_config->version_max) {
   case CURL_SSLVERSION_MAX_NONE:
   case CURL_SSLVERSION_MAX_DEFAULT:
     break;
 
   default:
-    if((data->set.ssl.primary.version_max >> 16) < sslver) {
+    if((conn_config->version_max >> 16) < conn_config->version) {
       failf(data, "CURL_SSLVERSION_MAX incompatible with CURL_SSLVERSION");
       return FALSE;
     }
@@ -218,7 +216,7 @@ static void cf_ctx_free(struct ssl_connect_data *ctx)
   }
 }
 
-CURLcode Curl_ssl_get_channel_binding(struct Curl_easy *data, int sockindex,
+CURLcode Curl_ssl_get_channel_binding(struct Curl_easy *data, int8_t sockindex,
                                       struct dynbuf *binding)
 {
   if(Curl_ssl->get_channel_binding)
@@ -486,8 +484,8 @@ CURLcode Curl_pin_peer_pubkey(struct Curl_easy *data,
 
     pinned_hash = pinnedpubkey;
     while(pinned_hash &&
-          !strncmp(pinned_hash, "sha256//", (sizeof("sha256//") - 1))) {
-      pinned_hash = pinned_hash + (sizeof("sha256//") - 1);
+          !strncmp(pinned_hash, "sha256//", CURL_CSTRLEN("sha256//"))) {
+      pinned_hash = pinned_hash + CURL_CSTRLEN("sha256//");
       end_pos = strchr(pinned_hash, ';');
       pinned_hash_len = end_pos ?
                         (size_t)(end_pos - pinned_hash) : strlen(pinned_hash);
@@ -544,7 +542,7 @@ CURLcode Curl_pin_peer_pubkey(struct Curl_easy *data,
     do {
       char buffer[1024];
       size_t want = left > sizeof(buffer) ? sizeof(buffer) : left;
-      if(want != fread(buffer, 1, want, fp))
+      if(fread(buffer, 1, want, fp) != want)
         goto end;
       if(curlx_dyn_addn(&buf, buffer, want))
         goto end;
@@ -877,19 +875,6 @@ void Curl_ssl_peer_cleanup(struct ssl_peer *peer)
   peer->type = CURL_SSL_PEER_DNS;
 }
 
-static void cf_close(struct Curl_cfilter *cf, struct Curl_easy *data)
-{
-  struct ssl_connect_data *connssl = cf->ctx;
-  if(connssl) {
-    connssl->ssl_impl->close(cf, data);
-    connssl->state = ssl_connection_none;
-    connssl->connecting_state = ssl_connect_1;
-    connssl->prefs_checked = FALSE;
-    Curl_ssl_peer_cleanup(&connssl->peer);
-  }
-  cf->connected = FALSE;
-}
-
 static ssl_peer_type get_peer_type(const char *hostname)
 {
   if(hostname && hostname[0]) {
@@ -912,7 +897,7 @@ static ssl_peer_type get_peer_type(const char *hostname)
 CURLcode Curl_ssl_peer_init(struct ssl_peer *ssl_peer,
                             struct Curl_peer *origin,
                             struct Curl_peer *peer,
-                            struct ssl_primary_config *sslc,
+                            struct ssl_filter_config *sslc,
                             const char *tls_id,
                             uint8_t transport)
 {
@@ -957,13 +942,18 @@ out:
 
 static void ssl_cf_destroy(struct Curl_cfilter *cf, struct Curl_easy *data)
 {
-  struct cf_call_data save;
-
-  CF_DATA_SAVE(save, cf, data);
-  cf_close(cf, data);
-  CF_DATA_RESTORE(cf, save);
-  cf_ctx_free(cf->ctx);
-  cf->ctx = NULL;
+  struct ssl_connect_data *connssl = cf->ctx;
+  if(connssl) {
+    connssl->ssl_impl->close(cf, data);
+    connssl->state = ssl_connection_none;
+    connssl->connecting_state = ssl_connect_1;
+    connssl->prefs_checked = FALSE;
+    Curl_ssl_peer_cleanup(&connssl->peer);
+    Curl_ssl_session_destroy(connssl->session);
+    cf_ctx_free(connssl);
+    cf->ctx = NULL;
+  }
+  cf->connected = FALSE;
 }
 
 static CURLcode ssl_cf_connect(struct Curl_cfilter *cf,
@@ -997,7 +987,7 @@ static CURLcode ssl_cf_connect(struct Curl_cfilter *cf,
   *done = FALSE;
 
   if(!connssl->prefs_checked) {
-    if(!ssl_prefs_check(data)) {
+    if(!ssl_prefs_check(cf, data)) {
       result = CURLE_SSL_CONNECT_ERROR;
       goto out;
     }
@@ -1075,7 +1065,10 @@ static CURLcode ssl_cf_connect_deferred(struct Curl_cfilter *cf,
   result = ssl_cf_connect(cf, data, done);
 
   if(!result && *done) {
-    Curl_pgrsTimeWas(data, TIMER_APPCONNECT, connssl->handshake_done);
+    if(!connssl->stats_reported && (cf->cft == &Curl_cft_ssl)) {
+      Curl_pgrsTimeWas(data, TIMER_APPCONNECT, connssl->handshake_done);
+      connssl->stats_reported = TRUE;
+    }
     switch(connssl->earlydata_state) {
     case ssl_earlydata_none:
       break;
@@ -1243,12 +1236,6 @@ static CURLcode ssl_cf_query(struct Curl_cfilter *cf,
   struct ssl_connect_data *connssl = cf->ctx;
 
   switch(query) {
-  case CF_QUERY_TIMER_APPCONNECT: {
-    struct curltime *when = pres2;
-    if(cf->connected && !Curl_ssl_cf_is_proxy(cf))
-      *when = connssl->handshake_done;
-    return CURLE_OK;
-  }
   case CF_QUERY_SSL_INFO:
   case CF_QUERY_SSL_CTX_INFO:
     if(!Curl_ssl_cf_is_proxy(cf)) {
@@ -1296,6 +1283,14 @@ static CURLcode ssl_cf_cntrl(struct Curl_cfilter *cf,
         cf->conn->httpversion_seen = 20;
       else if(!strcmp("h3", connssl->negotiated.alpn))
         cf->conn->httpversion_seen = 30;
+    }
+    break;
+  case CF_CTRL_REPORT_STATS:
+    if(cf->connected && !connssl->stats_reported &&
+       (cf->cft == &Curl_cft_ssl) &&
+       (connssl->handshake_done.tv_sec || connssl->handshake_done.tv_usec)) {
+      Curl_pgrsTimeWas(data, TIMER_APPCONNECT, connssl->handshake_done);
+      connssl->stats_reported = TRUE;
     }
     break;
   }
@@ -1389,7 +1384,7 @@ out:
 static CURLcode cf_ssl_peer_init(struct Curl_cfilter *cf,
                                  struct Curl_peer *origin,
                                  struct Curl_peer *peer,
-                                 struct ssl_primary_config *sslc)
+                                 struct ssl_filter_config *sslc)
 {
   struct ssl_connect_data *connssl = cf->ctx;
   char tls_id[80];
@@ -1401,7 +1396,7 @@ static CURLcode cf_ssl_peer_init(struct Curl_cfilter *cf,
 CURLcode Curl_ssl_cfilter_add(struct Curl_easy *data,
                               struct Curl_peer *origin,
                               struct connectdata *conn,
-                              int sockindex)
+                              int8_t sockindex)
 {
   struct Curl_cfilter *cf;
   struct Curl_peer *peer = (sockindex == SECONDARYSOCKET) ?
@@ -1429,8 +1424,17 @@ CURLcode Curl_cf_ssl_insert_after(struct Curl_cfilter *cf_at,
   result = cf_ssl_create(&cf, data, cf_at->conn);
   if(!result)
     result = cf_ssl_peer_init(cf, origin, peer, &cf_at->conn->ssl_config);
-  if(!result)
+  if(!result) {
     Curl_conn_cf_insert_after(cf_at, cf);
+#if defined(USE_HTTPSRR) && defined(USE_ECH)
+    /* When using ECH, kick off the HTTPS-RR resolve */
+    if((origin->scheme->family == CURLPROTO_HTTP) &&
+       Curl_ssl_need_httpsrr(cf)) {
+      result = Curl_conn_dns_add_https_resolve(data, cf->conn, cf->sockindex,
+                                               origin);
+    }
+#endif /* USE_HTTPSRR && USE_ECH */
+  }
   else if(cf)
     Curl_conn_cf_discard_chain(&cf, data);
   return result;
@@ -1496,6 +1500,30 @@ bool Curl_ssl_supports(struct Curl_easy *data, unsigned int ssl_option)
   return (Curl_ssl->supports & ssl_option);
 }
 
+#ifdef USE_ECH
+bool Curl_ssl_ech_enabled(struct Curl_cfilter *cf)
+{
+  if(Curl_ssl->supports & SSLSUPP_ECH) {
+    struct ssl_filter_config *conn_config = Curl_ssl_cf_get_filter_config(cf);
+    return !!conn_config->ech;
+  }
+  return FALSE;
+}
+
+bool Curl_ssl_need_httpsrr(struct Curl_cfilter *cf)
+{
+  if(Curl_ssl->supports & SSLSUPP_ECH) {
+    struct ssl_filter_config *conn_config = Curl_ssl_cf_get_filter_config(cf);
+    if(!conn_config->ech)
+      return FALSE;
+    if((conn_config->ech == CURLECH_GREASE) || conn_config->ech_config)
+      return FALSE;
+    return TRUE;
+  }
+  return FALSE;
+}
+#endif
+
 static CURLcode vtls_shutdown_blocking(struct Curl_cfilter *cf,
                                        struct Curl_easy *data,
                                        bool send_shutdown, bool *done)
@@ -1514,7 +1542,7 @@ static CURLcode vtls_shutdown_blocking(struct Curl_cfilter *cf,
 
   *done = FALSE;
   while(!result && !*done && loop--) {
-    timeout_ms = Curl_shutdown_timeleft(data, cf->conn, cf->sockindex);
+    timeout_ms = Curl_cshutdn_timeleft_ms(data, cf->conn, cf->sockindex);
 
     if(timeout_ms < 0) {
       /* no need to continue if time is already up */
@@ -1551,7 +1579,7 @@ out:
 }
 
 CURLcode Curl_ssl_cfilter_remove(struct Curl_easy *data,
-                                 int sockindex, bool send_shutdown)
+                                 int8_t sockindex, bool send_shutdown)
 {
   struct Curl_cfilter *cf, *head;
   CURLcode result = CURLE_OK;
@@ -1561,9 +1589,9 @@ CURLcode Curl_ssl_cfilter_remove(struct Curl_easy *data,
     if(cf->cft == &Curl_cft_ssl) {
       bool done;
       CURL_TRC_CF(data, cf, "shutdown and remove SSL, start");
-      Curl_shutdown_start(data, sockindex, 0);
+      Curl_cshutdn_start_timer(data, sockindex, 0);
       result = vtls_shutdown_blocking(cf, data, send_shutdown, &done);
-      Curl_shutdown_clear(data, sockindex);
+      Curl_cshutdn_clear_timer(data, sockindex);
       if(!result && !done) /* blocking failed? */
         result = CURLE_SSL_SHUTDOWN_FAILED;
       Curl_conn_cf_discard(&cf, data);
@@ -1580,8 +1608,9 @@ bool Curl_ssl_cf_is_proxy(struct Curl_cfilter *cf)
   return (cf->cft->flags & CF_TYPE_SSL) && (cf->cft->flags & CF_TYPE_PROXY);
 }
 
-struct ssl_config_data *Curl_ssl_cf_get_config(struct Curl_cfilter *cf,
-                                               struct Curl_easy *data)
+struct ssl_easy_config *
+Curl_ssl_cf_get_easy_config(struct Curl_cfilter *cf,
+                            struct Curl_easy *data)
 {
 #ifdef CURL_DISABLE_PROXY
   (void)cf;
@@ -1591,8 +1620,8 @@ struct ssl_config_data *Curl_ssl_cf_get_config(struct Curl_cfilter *cf,
 #endif
 }
 
-struct ssl_primary_config *Curl_ssl_cf_get_primary_config(
-  struct Curl_cfilter *cf)
+struct ssl_filter_config *
+Curl_ssl_cf_get_filter_config(struct Curl_cfilter *cf)
 {
 #ifdef CURL_DISABLE_PROXY
   return &cf->conn->ssl_config;
@@ -1774,6 +1803,32 @@ CURLcode Curl_on_session_reuse(struct Curl_cfilter *cf,
     *do_early_data = !result;
   }
   return result;
+}
+
+struct Curl_ssl_session *Curl_ssl_get_cf_session(struct Curl_easy *data,
+                                                 const struct Curl_cftype *cft,
+                                                 int8_t sockindex)
+{
+  if(data->conn &&
+#ifndef CURL_DISABLE_PROXY
+     ((cft == &Curl_cft_ssl) || (cft == &Curl_cft_ssl_proxy))) {
+#else
+     (cft == &Curl_cft_ssl)) {
+#endif
+    struct Curl_cfilter *cf1 = data->conn->cfilter[sockindex];
+    for(; cf1; cf1 = cf1->next) {
+      /* A tunneling proxy does not offer end2end encryption, even if
+       * it does SSL itself (e.g. QUIC H3 proxy) */
+      if(cf1->cft == cft)
+        break;
+    }
+    if(cf1) {
+      struct ssl_connect_data *connssl = cf1->ctx;
+      if(connssl)
+        return connssl->session;
+    }
+  }
+  return NULL;
 }
 
 #endif /* USE_SSL */

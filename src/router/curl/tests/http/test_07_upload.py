@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #***************************************************************************
 #                                  _   _ ____  _
 #  Project                     ___| | | |  _ \| |
@@ -29,6 +27,7 @@ import filecmp
 import logging
 import os
 import re
+import string
 import sys
 from typing import List, Union
 
@@ -41,7 +40,8 @@ log = logging.getLogger(__name__)
 class TestUpload:
 
     @pytest.fixture(autouse=True, scope='class')
-    def _class_scope(self, env, httpd, nghttpx):
+    @classmethod
+    def _class_scope(cls, env, httpd, nghttpx):
         env.make_data_file(indir=env.gen_dir, fname="data-10k", fsize=10 * 1024)
         env.make_data_file(indir=env.gen_dir, fname="data-63k", fsize=63 * 1024)
         env.make_data_file(indir=env.gen_dir, fname="data-64k", fsize=64 * 1024)
@@ -52,7 +52,7 @@ class TestUpload:
     # upload small data, check that this is what was echoed
     @pytest.mark.parametrize("proto", Env.http_protos())
     def test_07_01_upload_1_small(self, env: Env, httpd, nghttpx, proto):
-        data = '0123456789'
+        data = string.digits
         curl = CurlClient(env=env)
         url = f'https://{env.authority_for(env.domain1, proto)}/curltest/echo?id=[0-0]'
         r = curl.http_upload(urls=[url], data=data, alpn_proto=proto)
@@ -78,7 +78,7 @@ class TestUpload:
     @pytest.mark.parametrize("proto", Env.http_protos())
     def test_07_10_upload_sequential(self, env: Env, httpd, nghttpx, proto):
         count = 20
-        data = '0123456789'
+        data = string.digits
         curl = CurlClient(env=env)
         url = f'https://{env.authority_for(env.domain1, proto)}/curltest/echo?id=[0-{count-1}]'
         r = curl.http_upload(urls=[url], data=data, alpn_proto=proto)
@@ -93,7 +93,7 @@ class TestUpload:
     def test_07_11_upload_parallel(self, env: Env, httpd, nghttpx, proto):
         # limit since we use a separate connection in h1
         count = 20
-        data = '0123456789'
+        data = string.digits
         curl = CurlClient(env=env)
         url = f'https://{env.authority_for(env.domain1, proto)}/curltest/echo?id=[0-{count-1}]'
         r = curl.http_upload(urls=[url], data=data, alpn_proto=proto,
@@ -200,7 +200,7 @@ class TestUpload:
     def test_07_20_upload_parallel(self, env: Env, httpd, nghttpx, proto):
         # limit since we use a separate connection in h1
         count = 10
-        data = '0123456789'
+        data = string.digits
         curl = CurlClient(env=env)
         url = f'https://{env.authority_for(env.domain1, proto)}/curltest/echo?id=[0-{count-1}]'
         r = curl.http_upload(urls=[url], data=data, alpn_proto=proto,
@@ -374,7 +374,7 @@ class TestUpload:
     def test_07_36_upload_30x(self, env: Env, httpd, nghttpx, redir, proto):
         if proto == 'h3' and env.curl_uses_ossl_quic():
             pytest.skip("OpenSSL's own QUIC is flaky here")
-        data = '0123456789' * 10
+        data = string.digits * 10
         curl = CurlClient(env=env)
         url = f'https://{env.authority_for(env.domain1, proto)}/curltest/echo{redir}?id=[0-0]'
         r = curl.http_upload(urls=[url], data=data, alpn_proto=proto, extra_args=[
@@ -390,7 +390,7 @@ class TestUpload:
     def test_07_37_upload_307(self, env: Env, httpd, nghttpx, proto):
         if proto == 'h3' and env.curl_uses_ossl_quic():
             pytest.skip("OpenSSL's own QUIC is flaky here")
-        data = '0123456789' * 10
+        data = string.digits * 10
         curl = CurlClient(env=env)
         url = f'https://{env.authority_for(env.domain1, proto)}/curltest/echo307?id=[0-0]'
         r = curl.http_upload(urls=[url], data=data, alpn_proto=proto, extra_args=[
@@ -549,7 +549,7 @@ class TestUpload:
         ])
         r.check_exit_code(0)
         results = [int(m.group(1)) for line in r.trace_lines
-                     if (m := re.match(r'.* FINISHED, result=(\d+), response=(\d+)', line))]
+                   if (m := re.match(r'.* FINISHED, result=(\d+), response=(\d+)', line))]
         httpcodes = [int(m.group(2)) for line in r.trace_lines
                      if (m := re.match(r'.* FINISHED, result=(\d+), response=(\d+)', line))]
         if httpcode == 308:
@@ -568,8 +568,8 @@ class TestUpload:
         url = f'https://{env.authority_for(env.domain1, proto)}/curltest/put?id=[0-0]'
         r = curl.http_put(urls=[url], fdata=fdata, alpn_proto=proto,
                           with_headers=True, extra_args=[
-            '--limit-rate', f'{speed_limit}'
-        ])
+                              '--limit-rate', f'{speed_limit}'
+                          ])
         r.check_response(count=count, http_status=200)
         assert r.responses[0]['header']['received-length'] == f'{up_len}', f'{r.responses[0]}'
         up_speed = r.stats[0]['speed_upload']
@@ -585,8 +585,8 @@ class TestUpload:
         url = f'https://{env.authority_for(env.domain1, proto)}/curltest/echo?id=[0-0]'
         r = curl.http_upload(urls=[url], data=f'@{fdata}', alpn_proto=proto,
                              with_headers=True, extra_args=[
-            '--limit-rate', f'{speed_limit}'
-        ])
+                                 '--limit-rate', f'{speed_limit}'
+                             ])
         r.check_response(count=count, http_status=200)
         up_speed = r.stats[0]['speed_upload']
         assert up_speed <= (speed_limit * 1.1), f'{r.stats[0]}'
@@ -656,7 +656,7 @@ class TestUpload:
         r.check_exit_code(0)
 
     # nghttpx is the only server we have that supports TLS early data
-    @pytest.mark.skipif(condition=not Env.have_nghttpx(), reason="no nghttpx")
+    @pytest.mark.skipif(condition=not Env.have_h3_server(), reason="no QUIC in nghttpx")
     @pytest.mark.parametrize("proto,upload_size", [
         pytest.param('http/1.1', 100, id='h1-small-body'),
         pytest.param('http/1.1', 10 * 1024, id='h1-medium-body'),

@@ -255,6 +255,7 @@ CURL_CPP = @CURL_CPP@
 CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX = @CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX@
 CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME = @CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME@
 CURL_NETWORK_AND_TIME_LIBS = @CURL_NETWORK_AND_TIME_LIBS@
+CURL_PACKAGE_MAINTAINER = @CURL_PACKAGE_MAINTAINER@
 CYGPATH_W = @CYGPATH_W@
 DANTED = @DANTED@
 DEFS = @DEFS@
@@ -437,16 +438,15 @@ EXTRA_DIST = \
   nghttpx.conf       \
   pathhelp.pm        \
   processhelp.pm     \
-  requirements.txt   \
   rtspserver.pl      \
   runner.pm          \
   runtests.pl        \
   secureserver.pl    \
   serverhelp.pm      \
   servers.pm         \
-  smbserver.py       \
   sshhelp.pm         \
   sshserver.pl       \
+  test-linter.pl     \
   testcurl.pl        \
   testutil.pm        \
   tftpserver.pl      \
@@ -463,7 +463,7 @@ EXTRA_DIST = \
 @BUILD_UNITTESTS_TRUE@BUILD_UNIT = unit tunit
 @BUILD_UNITTESTS_FALSE@DIST_UNIT = unit tunit
 @BUILD_UNITTESTS_TRUE@DIST_UNIT = 
-SUBDIRS = certs data server libtest http $(BUILD_UNIT)
+SUBDIRS = certs data perf server libtest http $(BUILD_UNIT)
 DIST_SUBDIRS = $(SUBDIRS) $(DIST_UNIT)
 PERLFLAGS = -I$(srcdir)
 CLEANFILES = .http.pid .https.pid .ftp.pid .ftps.pid
@@ -472,6 +472,7 @@ TEST_COMMON = $(am__append_1)
 @CROSSCOMPILING_TRUE@TEST = @echo "NOTICE: we cannot run the tests when cross-compiling!"
 @CROSSCOMPILING_FALSE@PYTEST = pytest
 @CROSSCOMPILING_TRUE@PYTEST = $(TEST)
+@CROSSCOMPILING_FALSE@TEST_A = -a
 @CROSSCOMPILING_FALSE@TEST_Q = -a -s
 @CROSSCOMPILING_FALSE@TEST_AM = -a -am
 @CROSSCOMPILING_FALSE@TEST_F = -a -p -r
@@ -806,13 +807,14 @@ curl:
 
 # make sure that PERL is pointing to an executable
 perlcheck:
-	@if ! test -x "@PERL@"; then echo "No perl!"; exit 2; fi
+	@if ! test -x "@PERL@"; then echo 'No perl!'; exit 2; fi
 
 build-certs: perlcheck
 	(cd certs && $(MAKE))
 
 # alias for 'test' to match CMake, where 'test' is a reserved target
-tests: test
+tests: perlcheck all
+	$(TEST) $(TEST_A) $(TFLAGS)
 
 test: perlcheck all
 	$(TEST) $(TFLAGS)
@@ -845,14 +847,15 @@ ci-pytest: all
 
 checksrc:
 	(cd libtest && $(MAKE) checksrc)
-	(cd unit && $(MAKE) checksrc)
-	(cd tunit && $(MAKE) checksrc)
+	(cd perf && $(MAKE) checksrc)
 	(cd server && $(MAKE) checksrc)
+	(cd tunit && $(MAKE) checksrc)
+	(cd unit && $(MAKE) checksrc)
 
-all-local: $(MANFILES) build-certs
+all-local: build-certs
 
 distclean:
-	rm -f $(MANFILES)
+	rm -f $(CLEANFILES)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -2,9 +2,9 @@
 <testcase>
 <info>
 <keywords>
-unittest
 urlapi
 url
+libtest
 </keywords>
 </info>
 
@@ -20,16 +20,12 @@ http
 pop3
 smtp
 imap
-ldap
 dict
 ftp
 </features>
 <name>
 URL API
 </name>
-<tool>
-lib%TESTNUMBER
-</tool>
 </client>
 
 <verify>
@@ -37,7 +33,7 @@ lib%TESTNUMBER
 success
 </stdout>
 <limits>
-Allocations: 3350
+Allocations: 3650
 </limits>
 </verify>
 </testcase>

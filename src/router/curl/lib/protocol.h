@@ -45,8 +45,6 @@ struct easy_pollset;
 #define PORT_IMAPS  993
 #define PORT_POP3   110
 #define PORT_POP3S  995
-#define PORT_SMB    445
-#define PORT_SMBS   445
 #define PORT_SMTP   25
 #define PORT_SMTPS  465 /* sometimes called SSMTP */
 #define PORT_RTSP   554
@@ -85,7 +83,6 @@ typedef curl_off_t curl_prot_t;
                            CURLPROTO_WSS)
 #define PROTO_FAMILY_FTP  (CURLPROTO_FTP | CURLPROTO_FTPS)
 #define PROTO_FAMILY_POP3 (CURLPROTO_POP3 | CURLPROTO_POP3S)
-#define PROTO_FAMILY_SMB  (CURLPROTO_SMB | CURLPROTO_SMBS)
 #define PROTO_FAMILY_SMTP (CURLPROTO_SMTP | CURLPROTO_SMTPS)
 #define PROTO_FAMILY_SSH  (CURLPROTO_SCP | CURLPROTO_SFTP)
 
@@ -209,8 +206,7 @@ struct Curl_protocol {
 #define PROTOPT_CLOSEACTION (1 << 2) /* need action before socket close */
 /* some protocols will have to call the underlying functions without regard to
    what exact state the socket signals. IE even if the socket says "readable",
-   the send function might need to be called while uploading, or vice versa.
-*/
+   the send function might need to be called while uploading, or vice versa. */
 #define PROTOPT_DIRLOCK (1 << 3)
 #define PROTOPT_NONETWORK (1 << 4) /* protocol does not use the network! */
 #define PROTOPT_NEEDSPWD (1 << 5)  /* needs a password, and if none is set it
@@ -279,8 +275,6 @@ extern const struct Curl_scheme Curl_scheme_pop3s;
 extern const struct Curl_scheme Curl_scheme_rtsp;
 extern const struct Curl_scheme Curl_scheme_scp;
 extern const struct Curl_scheme Curl_scheme_sftp;
-extern const struct Curl_scheme Curl_scheme_smb;
-extern const struct Curl_scheme Curl_scheme_smbs;
 extern const struct Curl_scheme Curl_scheme_smtp;
 extern const struct Curl_scheme Curl_scheme_smtps;
 extern const struct Curl_scheme Curl_scheme_socks;

@@ -51,6 +51,7 @@ static const struct category_descriptors categories[] = {
   { "http", "HTTP and HTTPS protocol", CURLHELP_HTTP },
   { "imap", "IMAP protocol", CURLHELP_IMAP },
   { "ldap", "LDAP protocol", CURLHELP_LDAP },
+  { "mqtt", "MQTT protocol", CURLHELP_MQTT },
   { "output", "File system output", CURLHELP_OUTPUT },
   { "pop3", "POP3 protocol", CURLHELP_POP3 },
   { "post", "HTTP POST specific", CURLHELP_POST },
@@ -268,7 +269,7 @@ void tool_help(const char *category)
            option */
         a = NULL;
     }
-    else if(!category[2])
+    else if(category[1] && !category[2])
       a = findshortopt(category[1]);
     if(!a) {
       curl_mfprintf(tool_stderr, "Incorrect option name to show help for,"

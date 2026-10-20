@@ -64,8 +64,6 @@ BEGIN {
         $gdbxwin
         $shallow
         $tortalloc
-        $valgrind_logfile
-        $valgrind_tool
     );
 
     # these are for debugging only
@@ -115,8 +113,6 @@ use memanalyzer;
 # Global variables set elsewhere but used only by this package
 # These may only be set *before* runner_init is called
 our $DBGCURL = $CURL; #"../src/.libs/curl";  # alternative for debugging
-our $valgrind_logfile = "--log-file";  # the option name for valgrind >=3
-our $valgrind_tool = "--tool=memcheck";
 our $gdb = checktestcmd("gdb");
 our $gdbthis = 0;  # run test case with debugger (gdb or lldb)
 our $gdbxwin;      # use windowed gdb when using gdb
@@ -486,7 +482,7 @@ sub torture {
         logmsg " $count functions to make fail\n";
     }
 
-    for (@torture_tests) {
+    for(@torture_tests) {
         my $limit = $_;
         my $fail;
         my $dumped_core;
@@ -655,8 +651,8 @@ sub singletest_preprocess {
     }
     close($fulltesth) or die "Failure writing test file";
 
-    # in case the process changed the file, reload it
-    loadtest("$LOGDIR/test${testnum}");
+    # in case the process changed the file, force a reload
+    loadtest("$LOGDIR/test${testnum}", 0, 1);
 }
 
 #######################################################################
@@ -665,7 +661,7 @@ sub singletest_setenv {
     my @setenv = getpart("client", "setenv");
     foreach my $s (@setenv) {
         chomp $s;
-        if($s =~ /([^=]*)(.*)/) {
+        if($s !~ /^#/ && $s =~ /([^=]*)(.*)/) {
             my ($var, $content) = ($1, $2);
             # remember current setting, to restore it once test runs
             $oldenv{$var} = $ENV{$var} ? $ENV{$var} : 'notset';
@@ -772,7 +768,7 @@ sub singletest_prepare {
             my @ldparts = split(/\//, $LOGDIR);
             my $nparts = @ldparts;
             my @parts = split(/\//, $path);
-            if(join("/", @parts[0..$nparts-1]) eq $LOGDIR) {
+            if(join("/", @parts[0..$nparts - 1]) eq $LOGDIR) {
                 # the file is in $LOGDIR/
                 my $d = shift @parts;
                 for(@parts) {
@@ -862,7 +858,10 @@ sub singletest_run {
         $tool = $CMDLINE;
         $disablevalgrind = 1;
     }
-    elsif(!$tool && !$keywords{"unittest"}) {
+    elsif(!$tool &&
+          !$keywords{"unittest"} &&
+          !$keywords{"tunittest"} &&
+          !$keywords{"libtest"}) {
         # run curl, add suitable command line options
         my $inc = "";
         if((!$cmdhash{'option'}) || ($cmdhash{'option'} !~ /no-include/)) {
@@ -907,8 +906,17 @@ sub singletest_run {
             $tool_name = "unit$testnum";
             $tool = $tool_name . exe_ext('TOOL');
         }
+        # Default the tool to a libtest with the same number as the test
+        elsif($keywords{"libtest"} && !$tool) {
+            $tool_name = "lib$testnum";
+            $tool = $tool_name . exe_ext('TOOL');
+        }
+        elsif($keywords{"tunittest"} && !$tool) {
+            $tool_name = "tool$testnum";
+            $tool = $tool_name . exe_ext('TOOL');
+        }
 
-        if($tool =~ /^lib/) {
+        if($tool =~ /^(lib|cli_)/) {
             $tool = "libtests" . exe_ext('TOOL');
             $CMDLINE = $LIBDIR . $tool;
         }
@@ -982,17 +990,21 @@ sub singletest_run {
 
     if(use_valgrind() && !$disablevalgrind) {
         my $valgrindcmd = "$valgrind ";
-        $valgrindcmd .= "$valgrind_tool " if($valgrind_tool);
+        $valgrindcmd .= "--tool=memcheck ";  # valgrind 2.1.x+
         $valgrindcmd .= "--quiet --leak-check=yes ";
         $valgrindcmd .= "--suppressions=$srcdir/valgrind.supp ";
         # $valgrindcmd .= "--gen-suppressions=all ";
         $valgrindcmd .= "--num-callers=16 ";
-        $valgrindcmd .= "${valgrind_logfile}=$LOGDIR/valgrind$testnum";
+        $valgrindcmd .= "--log-file=$LOGDIR/valgrind$testnum";  # valgrind >=3
         $CMDLINE = "$valgrindcmd $CMDLINE";
     }
 
-    $CMDLINE .= "$cmdargs > " . stdoutfilename($LOGDIR, $testnum) .
-                " 2> " . stderrfilename($LOGDIR, $testnum);
+    my $redirstdout = "> " . stdoutfilename($LOGDIR, $testnum);
+    if($cmdhash{'option'} && ($cmdhash{'option'} =~ /no-stdout/)) {
+        $redirstdout = "";
+    }
+    $CMDLINE .= "$cmdargs $redirstdout".
+        " 2> " . stderrfilename($LOGDIR, $testnum);
 
     if($verbose) {
         logmsg "$CMDLINE\n";

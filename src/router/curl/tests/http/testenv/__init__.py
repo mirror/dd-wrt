@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #***************************************************************************
 #                                  _   _ ____  _
 #  Project                     ___| | | |  _ \| |
@@ -23,7 +21,7 @@
 # SPDX-License-Identifier: curl
 #
 ###########################################################################
-# ruff: noqa: F401, E402
+# ruff: noqa: F401
 import pytest
 
 pytest.register_assert_rewrite("testenv.env", "testenv.curl", "testenv.caddy",
@@ -38,7 +36,8 @@ from .client import LocalClient
 from .dante import Dante
 from .dnsd import Dnsd
 from .env import Env
+from .h2o import H2oProxy, H2oServer
 from .httpd import Httpd
-from .nghttpx import Nghttpx, NghttpxFwd, NghttpxQuic
+from .nghttpx import Nghttpx, NghttpxFwd, NghttpxQuic, NghttpxTcp
 from .sshd import Sshd
 from .vsftpd import VsFTPD

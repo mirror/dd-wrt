@@ -174,7 +174,6 @@ dnl initialize all the info variables
         curl_zstd_msg="no       (--with-zstd)"
          curl_gss_msg="no       (--with-gssapi)"
        curl_gsasl_msg="no       (--with-gsasl)"
-     curl_tls_srp_msg="no       (--enable-tls-srp)"
          curl_res_msg="blocking (--enable-ares / --enable-threaded-resolver)"
         curl_ipv6_msg="no       (--enable-ipv6)"
 curl_unix_sockets_msg="no       (--enable-unix-sockets)"
@@ -1059,23 +1058,6 @@ AS_HELP_STRING([--disable-imap],[Disable IMAP support]),
     AC_MSG_RESULT(yes)
 )
 
-AC_MSG_CHECKING([whether to support smb])
-AC_ARG_ENABLE(smb,
-AS_HELP_STRING([--enable-smb],[Enable SMB support])
-AS_HELP_STRING([--disable-smb],[Disable SMB support]),
-[ case "$enableval" in
-  yes)
-    AC_MSG_RESULT(yes)
-    AC_DEFINE(CURL_ENABLE_SMB, 1, [to enable SMB])
-    CURL_ENABLE_SMB=1
-    ;;
-  *)
-    AC_MSG_RESULT(no)
-    ;;
-  esac ],
-    AC_MSG_RESULT(no)
-)
-
 AC_MSG_CHECKING([whether to support smtp])
 AC_ARG_ENABLE(smtp,
 AS_HELP_STRING([--enable-smtp],[Enable SMTP support])
@@ -1278,7 +1260,7 @@ if test "$HAVE_GETHOSTBYNAME" != "1"; then
   )
 fi
 
-if test "$HAVE_GETHOSTBYNAME" != "1"; then
+if test "$HAVE_GETHOSTBYNAME" != "1" && test -n "$WATT_ROOT"; then
   dnl gethostbyname in the watt lib?
   clean_CPPFLAGS=$CPPFLAGS
   clean_LDFLAGS=$LDFLAGS
@@ -1641,7 +1623,7 @@ if test "x$OPT_BROTLI" != "xno"; then
 
   if test "x$OPT_BROTLI" != "xoff" &&
      test "$HAVE_BROTLI" != "1"; then
-    AC_MSG_ERROR([BROTLI libs and/or directories were not found where specified!])
+    AC_MSG_ERROR([BROTLI libs and/or directories were not found!])
   fi
 
   if test "$HAVE_BROTLI" = "1"; then
@@ -1842,7 +1824,7 @@ dnl **********************************************************************
 
 AC_MSG_CHECKING([if argv can be written to])
 CURL_RUN_IFELSE([[
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
 #ifdef _WIN32
   /* on Windows, writing to the argv does not hide the argument in
@@ -1914,6 +1896,27 @@ AC_ARG_WITH(gssapi,
   ]
 )
 
+want_gss_apple="no"
+if test "$curl_cv_apple" = "yes"; then
+  AC_MSG_CHECKING([whether to use Apple GSS Framework for GSS-API])
+  AC_ARG_ENABLE(gssapi-apple,
+AS_HELP_STRING([--enable-gssapi-apple],[Enable Apple GSS Framework (experimental)])
+AS_HELP_STRING([--disable-gssapi-apple],[Disable Apple GSS Framework (experimental) (default)]), [
+  case "$enableval" in
+    yes)
+      want_gss="yes"
+      want_gss_apple="yes"
+      AC_MSG_RESULT([yes])
+      ;;
+    *)
+      AC_MSG_RESULT([no])
+      ;;
+    esac
+  ],
+    AC_MSG_RESULT([no])
+  )
+fi
+
 : ${KRB5CONFIG:="$GSSAPI_ROOT/bin/krb5-config"}
 
 save_CPPFLAGS="$CPPFLAGS"
@@ -1921,130 +1924,146 @@ AC_MSG_CHECKING([if GSS-API support is requested])
 if test "$want_gss" = "yes"; then
   AC_MSG_RESULT(yes)
 
-  if test "$GSSAPI_ROOT" != "/usr"; then
-    CURL_CHECK_PKGCONFIG(mit-krb5-gssapi, $GSSAPI_ROOT/lib/pkgconfig)
+  if test "$want_gss_apple" = "yes"; then
+    AC_CHECK_HEADER(GSS/gssapi.h, [
+      AC_DEFINE(HAVE_GSSAPPLE, 1, [if you have Apple GSS Framework])
+    ],[
+      AC_MSG_ERROR([--enable-gssapi-apple was specified, but GSS/gssapi.h was not found])
+    ])
   else
-    CURL_CHECK_PKGCONFIG(mit-krb5-gssapi)
-  fi
-  if test -z "$GSSAPI_INCS"; then
-    if test -n "$host_alias" && test -f "$GSSAPI_ROOT/bin/$host_alias-krb5-config"; then
-      GSSAPI_INCS=`$GSSAPI_ROOT/bin/$host_alias-krb5-config --cflags gssapi`
-    elif test "$PKGCONFIG" != "no"; then
-      GSSAPI_INCS=`$PKGCONFIG --cflags mit-krb5-gssapi`
-    elif test -f "$KRB5CONFIG"; then
-      GSSAPI_INCS=`$KRB5CONFIG --cflags gssapi`
-    elif test "$GSSAPI_ROOT" != "yes"; then
-      GSSAPI_INCS="-I$GSSAPI_ROOT/include"
+    if test "$GSSAPI_ROOT" != "/usr"; then
+      CURL_CHECK_PKGCONFIG(mit-krb5-gssapi, $GSSAPI_ROOT/lib/pkgconfig)
+    else
+      CURL_CHECK_PKGCONFIG(mit-krb5-gssapi)
     fi
-  fi
-
-  CPPFLAGS="$CPPFLAGS $GSSAPI_INCS"
-
-  AC_CHECK_HEADER(gss.h,
-    [
-      dnl found in the given dirs
-      AC_DEFINE(HAVE_GSSGNU, 1, [if you have GNU GSS])
-      gnu_gss=yes
-    ],
-    [
-      dnl not found, check for MIT
-      AC_CHECK_HEADERS(
-        [gssapi/gssapi.h gssapi/gssapi_generic.h gssapi/gssapi_krb5.h],
-        [],
-        [not_mit=1])
-      if test "$not_mit" = "1"; then
-        dnl MIT not found
-        AC_MSG_ERROR([MIT or GNU GSS library required, but not found])
+    if test -z "$GSSAPI_INCS"; then
+      if test -n "$host_alias" && test -f "$GSSAPI_ROOT/bin/$host_alias-krb5-config"; then
+        GSSAPI_INCS=`$GSSAPI_ROOT/bin/$host_alias-krb5-config --cflags gssapi`
+      elif test "$PKGCONFIG" != "no"; then
+        GSSAPI_INCS=`$PKGCONFIG --cflags mit-krb5-gssapi`
+      elif test -f "$KRB5CONFIG"; then
+        GSSAPI_INCS=`$KRB5CONFIG --cflags gssapi`
+      elif test "$GSSAPI_ROOT" != "yes"; then
+        GSSAPI_INCS="-I$GSSAPI_ROOT/include"
       fi
-    ]
-  )
+    fi
+
+    CPPFLAGS="$CPPFLAGS $GSSAPI_INCS"
+
+    AC_CHECK_HEADER(gss.h,
+      [
+        dnl found in the given dirs
+        AC_DEFINE(HAVE_GSSGNU, 1, [if you have GNU GSS])
+        gnu_gss=yes
+      ],
+      [
+        dnl not found, check for MIT
+        AC_CHECK_HEADERS(
+          [gssapi/gssapi.h gssapi/gssapi_generic.h gssapi/gssapi_krb5.h],
+          [],
+          [not_mit=1])
+        if test "$not_mit" = "1"; then
+          dnl MIT not found
+          AC_MSG_ERROR([MIT or GNU GSS library required, but not found])
+        fi
+      ]
+    )
+  fi
 else
   AC_MSG_RESULT(no)
 fi
 if test "$want_gss" = "yes"; then
   AC_DEFINE(HAVE_GSSAPI, 1, [if you have GSS-API libraries])
   HAVE_GSSAPI=1
-  curl_gss_msg="enabled (MIT Kerberos)"
-  link_pkgconfig=''
 
-  if test -n "$gnu_gss"; then
-    curl_gss_msg="enabled (GNU GSS)"
-    LDFLAGS="$LDFLAGS $GSSAPI_LIB_DIR"
-    LDFLAGSPC="$LDFLAGSPC $GSSAPI_LIB_DIR"
-    LIBS="-lgss $LIBS"
-    link_pkgconfig=1
-  elif test -z "$GSSAPI_LIB_DIR"; then
-    if test "$curl_cv_apple" = "yes"; then
-      LIBS="-lgssapi_krb5 -lresolv $LIBS"
-    else
-      if test "$GSSAPI_ROOT" != "/usr"; then
-        CURL_CHECK_PKGCONFIG(mit-krb5-gssapi, $GSSAPI_ROOT/lib/pkgconfig)
-      else
-        CURL_CHECK_PKGCONFIG(mit-krb5-gssapi)
-      fi
-      if test -n "$host_alias" && test -f "$GSSAPI_ROOT/bin/$host_alias-krb5-config"; then
-        dnl krb5-config does not have --libs-only-L or similar, put everything
-        dnl into LIBS
-        gss_libs=`$GSSAPI_ROOT/bin/$host_alias-krb5-config --libs gssapi`
-        LIBS="$gss_libs $LIBS"
-      elif test "$PKGCONFIG" != "no"; then
-        gss_libs=`$PKGCONFIG --libs mit-krb5-gssapi`
-        LIBS="$gss_libs $LIBS"
-        link_pkgconfig=1
-      elif test -f "$KRB5CONFIG"; then
-        dnl krb5-config does not have --libs-only-L or similar, put everything
-        dnl into LIBS
-        gss_libs=`$KRB5CONFIG --libs gssapi`
-        LIBS="$gss_libs $LIBS"
-        link_pkgconfig=1
-      else
-        case $host in
-          *-hp-hpux*)
-            gss_libname="gss"
-            ;;
-          *)
-            gss_libname="gssapi"
-            ;;
-        esac
+  if test "$want_gss_apple" = "yes"; then
+    curl_gss_msg="enabled (Apple GSS)"
+    GSS_LDFLAGS='-framework GSS'
+    LDFLAGS="$LDFLAGS $GSS_LDFLAGS"
+    LDFLAGSPC="$LDFLAGSPC $GSS_LDFLAGS"
+  else
+    curl_gss_msg="enabled (MIT Kerberos)"
+    link_pkgconfig=''
 
-        if test "$GSSAPI_ROOT" != "yes"; then
-          LDFLAGS="$LDFLAGS -L$GSSAPI_ROOT/lib$libsuff"
-          LDFLAGSPC="$LDFLAGSPC -L$GSSAPI_ROOT/lib$libsuff"
-          LIBS="-l$gss_libname $LIBS"
+    if test -n "$gnu_gss"; then
+      curl_gss_msg="enabled (GNU GSS)"
+      LDFLAGS="$LDFLAGS $GSSAPI_LIB_DIR"
+      LDFLAGSPC="$LDFLAGSPC $GSSAPI_LIB_DIR"
+      LIBS="-lgss $LIBS"
+      link_pkgconfig=1
+    elif test -z "$GSSAPI_LIB_DIR"; then
+      if test "$curl_cv_apple" = "yes"; then
+        LIBS="-lgssapi_krb5 -lresolv $LIBS"
+      else
+        if test "$GSSAPI_ROOT" != "/usr"; then
+          CURL_CHECK_PKGCONFIG(mit-krb5-gssapi, $GSSAPI_ROOT/lib/pkgconfig)
         else
-          LIBS="-l$gss_libname $LIBS"
+          CURL_CHECK_PKGCONFIG(mit-krb5-gssapi)
+        fi
+        if test -n "$host_alias" && test -f "$GSSAPI_ROOT/bin/$host_alias-krb5-config"; then
+          dnl krb5-config does not have --libs-only-L or similar, put everything
+          dnl into LIBS
+          gss_libs=`$GSSAPI_ROOT/bin/$host_alias-krb5-config --libs gssapi`
+          LIBS="$gss_libs $LIBS"
+        elif test "$PKGCONFIG" != "no"; then
+          gss_libs=`$PKGCONFIG --libs mit-krb5-gssapi`
+          LIBS="$gss_libs $LIBS"
+          link_pkgconfig=1
+        elif test -f "$KRB5CONFIG"; then
+          dnl krb5-config does not have --libs-only-L or similar, put everything
+          dnl into LIBS
+          gss_libs=`$KRB5CONFIG --libs gssapi`
+          LIBS="$gss_libs $LIBS"
+          link_pkgconfig=1
+        else
+          case $host in
+            *-hp-hpux*)
+              gss_libname="gss"
+              ;;
+            *)
+              gss_libname="gssapi"
+              ;;
+          esac
+
+          if test "$GSSAPI_ROOT" != "yes"; then
+            LDFLAGS="$LDFLAGS -L$GSSAPI_ROOT/lib$libsuff"
+            LDFLAGSPC="$LDFLAGSPC -L$GSSAPI_ROOT/lib$libsuff"
+            LIBS="-l$gss_libname $LIBS"
+          else
+            LIBS="-l$gss_libname $LIBS"
+          fi
         fi
       fi
-    fi
-    gss_version=""
-    if test -n "$host_alias" && test -f "$GSSAPI_ROOT/bin/$host_alias-krb5-config"; then
-      gss_version=`$GSSAPI_ROOT/bin/$host_alias-krb5-config --version | $SED 's/Kerberos 5 release //'`
-    elif test "$PKGCONFIG" != "no"; then
-      gss_version=`$PKGCONFIG --modversion mit-krb5-gssapi`
-    elif test -f "$KRB5CONFIG"; then
-      gss_version=`$KRB5CONFIG --version | $SED 's/Kerberos 5 release //'`
-    fi
-    if test -n "$gss_version"; then
-      AC_MSG_NOTICE([GSS-API MIT Kerberos version detected: $gss_version])
-      AC_DEFINE_UNQUOTED([CURL_KRB5_VERSION], ["$gss_version"], [MIT Kerberos version])
-    fi
-  else
-    LDFLAGS="$LDFLAGS $GSSAPI_LIB_DIR"
-    LDFLAGSPC="$LDFLAGSPC $GSSAPI_LIB_DIR"
-    case $host in
-      *-hp-hpux*)
-        LIBS="-lgss $LIBS"
-        ;;
-      *)
-        LIBS="-lgssapi $LIBS"
-        ;;
-    esac
-  fi
-  if test -n "$link_pkgconfig"; then
-    if test -n "$gnu_gss"; then
-      LIBCURL_PC_REQUIRES_PRIVATE="$LIBCURL_PC_REQUIRES_PRIVATE gss"
+      gss_version=""
+      if test -n "$host_alias" && test -f "$GSSAPI_ROOT/bin/$host_alias-krb5-config"; then
+        gss_version=`$GSSAPI_ROOT/bin/$host_alias-krb5-config --version | $SED 's/Kerberos 5 release //'`
+      elif test "$PKGCONFIG" != "no"; then
+        gss_version=`$PKGCONFIG --modversion mit-krb5-gssapi`
+      elif test -f "$KRB5CONFIG"; then
+        gss_version=`$KRB5CONFIG --version | $SED 's/Kerberos 5 release //'`
+      fi
+      if test -n "$gss_version"; then
+        AC_MSG_NOTICE([GSS-API MIT Kerberos version detected: $gss_version])
+        AC_DEFINE_UNQUOTED([CURL_KRB5_VERSION], ["$gss_version"], [MIT Kerberos version])
+      fi
     else
-      LIBCURL_PC_REQUIRES_PRIVATE="$LIBCURL_PC_REQUIRES_PRIVATE mit-krb5-gssapi"
+      LDFLAGS="$LDFLAGS $GSSAPI_LIB_DIR"
+      LDFLAGSPC="$LDFLAGSPC $GSSAPI_LIB_DIR"
+      case $host in
+        *-hp-hpux*)
+          LIBS="-lgss $LIBS"
+          ;;
+        *)
+          LIBS="-lgssapi $LIBS"
+          ;;
+      esac
+    fi
+    if test -n "$link_pkgconfig"; then
+      if test -n "$gnu_gss"; then
+        LIBCURL_PC_REQUIRES_PRIVATE="$LIBCURL_PC_REQUIRES_PRIVATE gss"
+      else
+        LIBCURL_PC_REQUIRES_PRIVATE="$LIBCURL_PC_REQUIRES_PRIVATE mit-krb5-gssapi"
+      fi
     fi
   fi
 else
@@ -2061,6 +2080,7 @@ if test "$want_gss" = "yes"; then
     AC_MSG_RESULT([no])
     AC_MSG_ERROR([--with-gssapi was specified, but a GSS-API library was not found.])
   ])
+  AC_CHECK_FUNCS([gss_set_neg_mechs])
 fi
 
 build_libstubgss=no
@@ -2116,7 +2136,7 @@ fi
 
 case "x$SSL_DISABLED$OPENSSL_ENABLED$GNUTLS_ENABLED$MBEDTLS_ENABLED$WOLFSSL_ENABLED$SCHANNEL_ENABLED$RUSTLS_ENABLED" in
   x)
-    AC_MSG_ERROR([TLS not detected, you will not be able to use HTTPS, FTPS, NTLM and more.
+    AC_MSG_ERROR([TLS not detected, cannot build with HTTPS, FTPS, NTLM and more.
 Use --with-openssl, --with-gnutls, --with-wolfssl, --with-mbedtls, --with-schannel, --with-amissl or --with-rustls to address this.])
     ;;
   x1)
@@ -2318,7 +2338,7 @@ if test "x$OPT_LIBPSL" != "xno"; then
   )
 
   if test "$USE_LIBPSL" != "1"; then
-    AC_MSG_ERROR([libpsl libs and/or directories were not found where specified!])
+    AC_MSG_ERROR([libpsl libs and/or directories were not found!])
   fi
 fi
 AM_CONDITIONAL([USE_LIBPSL], [test "$curl_psl_msg" = "enabled"])
@@ -2458,7 +2478,7 @@ if test "x$OPT_LIBSSH2" != "xno"; then
   CPPFLAGS="$CPPFLAGS $CPP_SSH2"
   LIBS="$LIB_SSH2 $LIBS"
 
-  dnl check for function added in libssh2 v1.9.0
+  dnl check for function added in libssh2 1.9.0
   AC_CHECK_LIB(ssh2, libssh2_agent_get_identity_path)
 
   AC_CHECK_HEADER(libssh2.h,
@@ -2469,7 +2489,7 @@ if test "x$OPT_LIBSSH2" != "xno"; then
 
   if test "x$OPT_LIBSSH2" != "xoff" &&
      test "$USE_LIBSSH2" != "1"; then
-    AC_MSG_ERROR([libssh2 libs and/or directories were not found where specified!])
+    AC_MSG_ERROR([libssh2 libs and/or directories were not found!])
   fi
 
   if test "$USE_LIBSSH2" = "1"; then
@@ -2545,7 +2565,7 @@ elif test "x$OPT_LIBSSH" != "xno"; then
 
   if test "x$OPT_LIBSSH" != "xoff" &&
      test "$USE_LIBSSH" != "1"; then
-    AC_MSG_ERROR([libssh libs and/or directories were not found where specified!])
+    AC_MSG_ERROR([libssh libs and/or directories were not found!])
   fi
 
   if test "$USE_LIBSSH" = "1"; then
@@ -2634,6 +2654,9 @@ if test "$CURL_DISABLE_LDAP" != "1" && test "$want_ldap" != "no"; then
   CURL_CHECK_HEADER_LBER
   CURL_CHECK_HEADER_LDAP
   CURL_CHECK_HEADER_LDAP_SSL
+
+  dnl Default to failure; AC_CHECK_LIB success paths set this to yes.
+  ldap_lib_ok="no"
 
   if test -z "$LDAPLIBNAME"; then
     if test "$curl_cv_native_windows" = "yes" && test "$curl_cv_winuwp" != "yes"; then
@@ -2774,7 +2797,7 @@ AS_HELP_STRING([--disable-versioned-symbols], [Disable versioned symbols in shar
   *)
     AC_MSG_RESULT(yes)
     AC_MSG_CHECKING([if libraries can be versioned])
-    GLD=`$LD --help < /dev/null 2>/dev/null | grep version-script`
+    GLD=`$LD --help < /dev/null 2>/dev/null | $GREP version-script`
     if test -z "$GLD"; then
       AC_MSG_RESULT(no)
       AC_MSG_WARN([You need an ld version supporting the --version-script option])
@@ -2811,6 +2834,28 @@ AC_SUBST([CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX], ["$versioned_symbols_flavor"])
 AC_SUBST([CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME], ["4"])  dnl Keep in sync with VERSIONCHANGE - VERSIONDEL in lib/Makefile.soname
 AM_CONDITIONAL([CURL_LT_SHLIB_USE_VERSIONED_SYMBOLS],
   [test "$versioned_symbols" = "yes"])
+
+dnl ---------------------------
+dnl check Apple fast UDP option
+dnl ---------------------------
+
+if test "$curl_cv_apple" = "yes"; then
+  AC_MSG_CHECKING([whether to use Apple fast UDP])
+  AC_ARG_ENABLE(apple-fast-udp,
+AS_HELP_STRING([--enable-apple-fast-udp],[Enable using Apple fast UDP (experimental)])
+AS_HELP_STRING([--disable-apple-fast-udp],[Disable using Apple fast UDP (experimental) (default)]),
+  [ case "$enableval" in
+    yes)
+      AC_MSG_RESULT([yes])
+      AC_DEFINE(USE_APPLE_FAST_UDP, 1, [to use Apple fast UDP (SYS_recvmsg_x, SYS_sendmsg_x)])
+      ;;
+    *)
+      AC_MSG_RESULT([no])
+      ;;
+    esac ],
+      AC_MSG_RESULT([no])
+  )
+fi
 
 dnl ----------------------------
 dnl check Windows Unicode option
@@ -3775,7 +3820,7 @@ if test "$want_quiche" != "no"; then
     AC_CHECK_LIB(quiche, quiche_conn_send_ack_eliciting,
       [
         AC_CHECK_HEADERS(quiche.h,
-          experimental="$experimental Quiche"
+          experimental="$experimental quiche"
           AC_MSG_NOTICE([HTTP3 support is experimental])
           curl_h3_msg="enabled (quiche)"
           AC_DEFINE(USE_QUICHE, 1, [if quiche is in use])
@@ -3973,6 +4018,7 @@ AC_CHECK_HEADERS(
   linux/tcp.h \
   netinet/tcp.h \
   netinet/udp.h \
+  netinet/ip.h \
   netdb.h \
   sys/sockio.h \
   sys/param.h \
@@ -4094,28 +4140,26 @@ case $host_os in
     ;;
   *)
     AC_MSG_CHECKING([if time_t is unsigned])
-    CURL_RUN_IFELSE(
-      [
-      #include <time.h>
-      int main(void) {
-        time_t t = -1;
-        return t < 0;
-      }
-      ],[
+    AC_COMPILE_IFELSE([
+      AC_LANG_SOURCE([[
+        #include <time.h>
+        static int time_t_is_unsigned[((time_t)-1 > 0) ? 1 : -1];
+        int main(void)
+        {
+          (void)time_t_is_unsigned;
+          return 0;
+        }
+      ]])
+    ],[
       AC_MSG_RESULT([yes])
       AC_DEFINE(HAVE_TIME_T_UNSIGNED, 1, [Define this if time_t is unsigned])
     ],[
-      AC_MSG_RESULT([no])
-    ],[
-      dnl cross-compiling, most systems are signed
       AC_MSG_RESULT([no])
     ])
     ;;
 esac
 
 TYPE_SOCKADDR_STORAGE
-
-CURL_CHECK_FUNC_SELECT
 
 CURL_CHECK_FUNC_RECV
 CURL_CHECK_FUNC_SEND
@@ -4165,7 +4209,6 @@ AC_CHECK_FUNCS([\
   getpwuid \
   getpwuid_r \
   getrlimit \
-  gettimeofday \
   mach_absolute_time \
   pipe \
   poll \
@@ -4178,9 +4221,10 @@ AC_CHECK_FUNCS([\
 ])
 
 if test "$curl_cv_apple" != "yes"; then
-  dnl Apple platforms do not offer pipe2(), but the iPhone Simulator-specific
+  dnl Apple SDK <27 do not offer pipe2(), but the iPhone Simulator-specific
   dnl /usr/lib/system/libsystem_sim_kernel.dylib exports it. To avoid false
   dnl detection, omit this feature check for Apple targets.
+  dnl For 27+, detection is done in-source.
   AC_CHECK_FUNCS([\
     pipe2 \
   ])
@@ -4188,12 +4232,12 @@ fi
 
 if test "$curl_cv_native_windows" != "yes"; then
   AC_CHECK_FUNCS([\
+    fchmod \
+    gettimeofday \
     if_nametoindex \
     realpath \
     sched_yield \
   ])
-  CURL_CHECK_FUNC_INET_NTOP
-  CURL_CHECK_FUNC_INET_PTON
   CURL_CHECK_FUNC_STRCASECMP
   CURL_CHECK_FUNC_STRCMPI
   CURL_CHECK_FUNC_STRICMP
@@ -4321,11 +4365,13 @@ elif test "$USE_ARES" = "1"; then
   curl_res_msg="c-ares"
 fi
 
-AC_CHECK_HEADER(dirent.h,
-  [ AC_DEFINE(HAVE_DIRENT_H, 1, [if you have <dirent.h>])
-    AC_CHECK_FUNC(opendir, AC_DEFINE(HAVE_OPENDIR, 1, [if you have opendir]) )
-  ]
-)
+if test "$curl_cv_native_windows" != "yes"; then
+  AC_CHECK_HEADER(dirent.h,
+    [ AC_DEFINE(HAVE_DIRENT_H, 1, [if you have <dirent.h>])
+      AC_CHECK_FUNC(opendir, AC_DEFINE(HAVE_OPENDIR, 1, [if you have opendir]) )
+    ]
+  )
+fi
 
 CURL_CONVERT_INCLUDE_TO_ISYSTEM
 
@@ -4510,16 +4556,16 @@ AS_HELP_STRING([--disable-negotiate-auth],[Disable negotiate authentication]),
 )
 
 dnl ************************************************************
-dnl disable aws
+dnl disable aws-sigv4
 dnl
-AC_MSG_CHECKING([whether to enable aws sig methods])
+AC_MSG_CHECKING([whether to enable aws-sigv4 methods])
 AC_ARG_ENABLE(aws,
-AS_HELP_STRING([--enable-aws],[Enable AWS sig support (default)])
-AS_HELP_STRING([--disable-aws],[Disable AWS sig support]),
+AS_HELP_STRING([--enable-aws],[Enable aws-sigv4 support (default)])
+AS_HELP_STRING([--disable-aws],[Disable aws-sigv4 support]),
 [ case "$enableval" in
   no)
     AC_MSG_RESULT(no)
-    AC_DEFINE(CURL_DISABLE_AWS, 1, [to disable AWS sig support])
+    AC_DEFINE(CURL_DISABLE_AWS, 1, [to disable aws-sigv4 support])
     ;;
   *)
     AC_MSG_RESULT(yes)
@@ -4527,6 +4573,35 @@ AS_HELP_STRING([--disable-aws],[Disable AWS sig support]),
   esac ],
     AC_MSG_RESULT(yes)
 )
+
+dnl ************************************************************
+dnl disable httpsig (RFC 9421)
+dnl
+AC_MSG_CHECKING([whether to enable HTTP Message Signatures (RFC 9421)])
+AC_ARG_ENABLE(httpsig,
+AS_HELP_STRING([--enable-httpsig],[Enable HTTP Message Signatures support (experimental)])
+AS_HELP_STRING([--disable-httpsig],[Disable HTTP Message Signatures support (experimental) (default)]),
+[ case "$enableval" in
+  no)
+    AC_MSG_RESULT(no)
+    want_httpsig="no"
+    ;;
+  *)
+    AC_MSG_RESULT(yes)
+    want_httpsig="yes"
+    ;;
+  esac ],
+    AC_MSG_RESULT(no)
+    want_httpsig="no"
+)
+
+if test "$want_httpsig" = "yes" && test "$GNUTLS_ENABLED" != "1" && test "$OPENSSL_ENABLED" != "1" && test "$WOLFSSL_ENABLED" != "1"; then
+  AC_MSG_WARN([HTTPSIG requires GnuTLS, OpenSSL or wolfSSL. HTTPSIG support disabled.])
+  want_httpsig="no"
+fi
+if test "$want_httpsig" != "yes"; then
+  AC_DEFINE(CURL_DISABLE_HTTPSIG, 1, [to disable HTTP Message Signatures support])
+fi
 
 dnl ************************************************************
 dnl disable NTLM support
@@ -4547,33 +4622,6 @@ AS_HELP_STRING([--disable-ntlm],[Disable NTLM support]),
   esac ],
     AC_MSG_RESULT(no)
 )
-
-dnl ************************************************************
-dnl disable TLS-SRP authentication
-dnl
-AC_MSG_CHECKING([whether to enable TLS-SRP authentication])
-AC_ARG_ENABLE(tls-srp,
-AS_HELP_STRING([--enable-tls-srp],[Enable TLS-SRP authentication])
-AS_HELP_STRING([--disable-tls-srp],[Disable TLS-SRP authentication]),
-[ case "$enableval" in
-  no)
-    AC_MSG_RESULT(no)
-    want_tls_srp=no
-    ;;
-  *)
-    AC_MSG_RESULT(yes)
-    want_tls_srp=yes
-    ;;
-  esac ],
-    AC_MSG_RESULT(yes)
-    want_tls_srp=yes
-)
-
-if test "$want_tls_srp" = "yes" && (test "$HAVE_GNUTLS_SRP" = "1" || test "$HAVE_OPENSSL_SRP" = "1"); then
-  AC_DEFINE(USE_TLS_SRP, 1, [Use TLS-SRP authentication])
-  USE_TLS_SRP=1
-  curl_tls_srp_msg="enabled"
-fi
 
 dnl ************************************************************
 dnl disable Unix domain sockets support
@@ -5148,6 +5196,7 @@ dnl Merge pkg-config private fields into public ones when static-only
 if test "$enable_shared" = "no"; then
   LIBCURL_PC_REQUIRES=$LIBCURL_PC_REQUIRES_PRIVATE
   LIBCURL_PC_LIBS=$LIBCURL_PC_LIBS_PRIVATE
+  LIBCURL_PC_REQUIRES_PRIVATE=
 else
   LIBCURL_PC_REQUIRES=
   LIBCURL_PC_LIBS=
@@ -5155,7 +5204,12 @@ fi
 AC_SUBST(LIBCURL_PC_REQUIRES)
 AC_SUBST(LIBCURL_PC_LIBS)
 
-rm $compilersh
+if test -n "$CURL_CI"; then
+  CURL_PACKAGE_MAINTAINER=https://curl.se/
+  AC_SUBST(CURL_PACKAGE_MAINTAINER)
+fi
+
+rm "$compilersh"
 
 dnl
 dnl For keeping supported features and protocols also in pkg-config file
@@ -5243,10 +5297,6 @@ if test "$CURL_ENABLE_NTLM" = "1"; then
   fi
 fi
 
-if test "$USE_TLS_SRP" = "1"; then
-  SUPPORT_FEATURES="$SUPPORT_FEATURES TLS-SRP"
-fi
-
 if test "$USE_NGHTTP2" = "1"; then
   SUPPORT_FEATURES="$SUPPORT_FEATURES HTTP2"
 fi
@@ -5272,7 +5322,6 @@ if test "$CURL_DISABLE_HTTP" != "1"; then
        test "$GNUTLS_ENABLED" = "1" ||
        test "$RUSTLS_ENABLED" = "1" ||
        test "$SCHANNEL_ENABLED" = "1" ||
-       test "$GNUTLS_ENABLED" = "1" ||
        test "$MBEDTLS_ENABLED" = "1"; then
       SUPPORT_FEATURES="$SUPPORT_FEATURES HTTPS-proxy"
       AC_MSG_RESULT([yes])
@@ -5305,6 +5354,11 @@ fi
 
 if test "$want_httpsrr" != "no"; then
   SUPPORT_FEATURES="$SUPPORT_FEATURES HTTPSRR"
+fi
+
+if test "$want_httpsig" = "yes"; then
+  SUPPORT_FEATURES="$SUPPORT_FEATURES HTTPSIG"
+  experimental="$experimental HTTPSIG"
 fi
 
 if test "$SSLS_EXPORT_ENABLED" = "1"; then
@@ -5407,12 +5461,6 @@ if test "$CURL_DISABLE_IMAP" != "1"; then
     SUPPORT_PROTOCOLS="$SUPPORT_PROTOCOLS IMAPS"
   fi
 fi
-if test "$CURL_ENABLE_SMB" = "1" && test "$use_curl_ntlm_core" = "yes"; then
-  SUPPORT_PROTOCOLS="$SUPPORT_PROTOCOLS SMB"
-  if test "$SSL_ENABLED" = "1"; then
-    SUPPORT_PROTOCOLS="$SUPPORT_PROTOCOLS SMBS"
-  fi
-fi
 if test "$CURL_DISABLE_SMTP" != "1"; then
   SUPPORT_PROTOCOLS="$SUPPORT_PROTOCOLS SMTP"
   if test "$SSL_ENABLED" = "1"; then
@@ -5487,17 +5535,21 @@ AC_CONFIG_FILES([\
   tests/configurehelp.pm \
   tests/certs/Makefile \
   tests/data/Makefile \
-  tests/server/Makefile \
-  tests/libtest/Makefile \
-  tests/unit/Makefile \
-  tests/tunit/Makefile \
   tests/http/config.ini \
   tests/http/Makefile \
+  tests/libtest/Makefile \
+  tests/perf/Makefile \
+  tests/server/Makefile \
+  tests/tunit/Makefile \
+  tests/unit/Makefile \
   projects/Makefile \
-  projects/vms/Makefile \
-  libcurl.pc
+  projects/vms/Makefile
 ])
 AC_CONFIG_FILES([curl-config], [chmod +x curl-config])
+AC_CONFIG_FILES([libcurl.pc], [
+  dnl strip trailing spaces, duplicate spaces after colon, empty properties
+  "$SED" -e 's/ *$//g' -e 's/^Libs\.private:  */Libs.private: /' -e '/^@<:@A-Za-z.@:>@*:$/d' libcurl.pc > libcurl.pc.tmp && mv libcurl.pc.tmp libcurl.pc
+], [SED="$SED"])
 AC_OUTPUT
 
 SUPPORT_PROTOCOLS_LOWER=`echo "$SUPPORT_PROTOCOLS" | tr A-Z a-z`
@@ -5522,7 +5574,6 @@ AC_MSG_NOTICE([Configured to build curl/libcurl:
   zstd:             ${curl_zstd_msg}
   GSS-API:          ${curl_gss_msg}
   GSASL:            ${curl_gsasl_msg}
-  TLS-SRP:          ${curl_tls_srp_msg}
   resolver:         ${curl_res_msg}
   IPv6:             ${curl_ipv6_msg}
   Unix sockets:     ${curl_unix_sockets_msg}
@@ -5558,6 +5609,10 @@ AC_MSG_NOTICE([Configured to build curl/libcurl:
   Protocols:        ${SUPPORT_PROTOCOLS_LOWER}
   Features:         ${SUPPORT_FEATURES}
 ])
+
+if test "$want_debug" = "yes"; then
+  AC_MSG_WARN([This curl build is Debug-enabled and insecure, do not use in production.])
+fi
 
 if test -n "$experimental"; then
   for a in $experimental; do

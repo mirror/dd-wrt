@@ -30,16 +30,15 @@
 #include "rand.h"
 #include "curl_fopen.h"
 
-/*
-  The dirslash() function breaks a null-terminated pathname string into
-  directory and filename components then returns the directory component up
-  to, *AND INCLUDING*, a final '/'. If there is no directory in the path,
-  this instead returns a "" string.
+/* The dirslash() function breaks a null-terminated pathname string into
+   directory and filename components then returns the directory component up
+   to, *AND INCLUDING*, a final '/'. If there is no directory in the path,
+   this instead returns a "" string.
 
-  This function returns a pointer to malloc'ed memory.
+   This function returns a pointer to malloc'ed memory.
 
-  The input path to this function is expected to have a filename part.
-*/
+   The input path to this function is expected to have a filename part.
+ */
 
 #ifdef _WIN32
 #define PATHSEP   "\\"
@@ -103,13 +102,6 @@ CURLcode Curl_fopen(struct Curl_easy *data, const char *filename,
     return CURLE_OK;
   }
   curlx_fclose(*fh);
-#ifdef HAVE_GETEUID
-  /* If the existing file is not owned by the user, do not inherit
-   * its permissions at the temp file created below. The permissions
-   * might be unsuitable for holding user private data. */
-  if(sb.st_uid != geteuid())
-    sb.st_mode = 0;
-#endif
 #endif /* !_WIN32 */
   *fh = NULL;
 
@@ -134,16 +126,24 @@ CURLcode Curl_fopen(struct Curl_easy *data, const char *filename,
 #ifdef _WIN32
   fd = curlx_open(tempstore, _O_WRONLY | _O_CREAT | _O_EXCL,
                   _S_IREAD | _S_IWRITE);
-#elif (defined(ANDROID) || defined(__ANDROID__)) && \
-  (defined(__i386__) || defined(__arm__))
-  fd = curlx_open(tempstore, O_WRONLY | O_CREAT | O_EXCL,
-                  (mode_t)(S_IRUSR | S_IWUSR | sb.st_mode));
 #else
   fd = curlx_open(tempstore, O_WRONLY | O_CREAT | O_EXCL,
-                  S_IRUSR | S_IWUSR | sb.st_mode);
+                  (mode_t)(S_IRUSR | S_IWUSR | 0600));
 #endif
   if(fd == -1)
     goto fail;
+
+#ifdef HAVE_FCHMOD
+  {
+    curlx_struct_stat nsb;
+    if((curlx_fstat(fd, &nsb) != -1) &&
+       (nsb.st_uid == sb.st_uid) && (nsb.st_gid == sb.st_gid)) {
+      /* if the user and group are the same, clone the original mode */
+      if(fchmod(fd, (mode_t)sb.st_mode) == -1)
+        goto fail;
+    }
+  }
+#endif
 
   *fh = curlx_fdopen(fd, FOPEN_WRITETEXT);
   if(!*fh)

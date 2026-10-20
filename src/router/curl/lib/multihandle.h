@@ -23,27 +23,23 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
+#include "api.h"
 #include "llist.h"
 #include "hash.h"
 #include "conncache.h"
 #include "cshutdn.h"
-#include "dnscache.h"
 #include "multi_ev.h"
 #include "multi_ntfy.h"
 #include "psl.h"
 #include "socketpair.h"
+#include "splay.h"
 #include "uint-bset.h"
 #include "uint-spbset.h"
 #include "uint-table.h"
+#include "vdns/dnscache.h"
 
 struct connectdata;
 struct Curl_easy;
-
-struct Curl_message {
-  struct Curl_llist_node list;
-  /* the 'CURLMsg' is the part that is visible to the external user */
-  struct CURLMsg extmsg;
-};
 
 /* NOTE: if you add a state here, add the name to the statenames[] array
  * in curl_trc.c as well!
@@ -73,29 +69,45 @@ typedef enum {
 #if !defined(CURL_DISABLE_SOCKETPAIR) && !defined(USE_WINSOCK)
 #define ENABLE_WAKEUP
 #endif
+#if !defined(CURL_DISABLE_SOCKETPAIR) && \
+    defined(USE_RESOLV_THREADED) && \
+    !defined(USE_WINSOCK)
+#define ENABLE_INTERNAL_WAKEUP
+#endif
 
 /* value for MAXIMUM CONCURRENT STREAMS upper limit */
 #define INITIAL_MAX_CONCURRENT_STREAMS ((1U << 31) - 1)
 
+struct Curl_fixed_buf {
+  size_t len;      /* the allocated data length */
+  char data[1];   /* the actual buffer */
+};
+
 /* This is the struct known as CURLM on the outside */
 struct Curl_multi {
-  /* First a simple identifier to easier detect if a user mix up
-     this multi handle with an easy handle. Set this to CURL_MULTI_HANDLE. */
-  unsigned int magic;
-
-  unsigned int xfers_alive; /* amount of added transfers that have
-                               not yet reached COMPLETE state */
-  unsigned int xfers_really_alive; /* amount of added transfers that have
-                               passed INIT state but are not COMPLETE yet */
+  /* First a simple identifier to more easily detect if a user mixes up
+     this multi handle with an easy handle.
+     Set this to CURLMULTI_MAGIC_NUMBER. */
+  uint32_t magic;
+  uint32_t xfers_alive; /* amount of added transfers that have
+                           not yet reached COMPLETE state */
+  uint32_t xfers_really_alive; /* amount of added transfers that have
+                                  passed INIT state but are not COMPLETE yet */
+  uint32_t max_concurrent_streams;
   curl_off_t xfers_total_ever; /* total of added transfers, ever. */
+
   struct uint32_tbl xfers; /* transfers added to this multi */
-  /* Each transfer's mid may be present in at most one of these */
+  /* A transfer's mid may be present in at most one of
+   * process/pending/msgsent. The dirty set may overlap with process. */
   struct uint32_bset process; /* transfer being processed */
   struct uint32_bset dirty; /* transfer to be run NOW, e.g. ASAP. */
   struct uint32_bset pending; /* transfers in waiting (conn limit etc.) */
-  struct uint32_bset msgsent; /* transfers done with message for application */
+  struct uint32_bset msgsent; /* transfers with unread application messages */
 
-  struct Curl_llist msglist; /* a list of messages from completed transfers */
+  struct Curl_mapi_stack callstack; /* multi api calls ongoing */
+
+  /* expiration times for all attached easy handles */
+  struct Curl_timeouts timeouts;
 
   struct Curl_easy *admin; /* internal easy handle for admin operations.
                               gets assigned `mid` 0 on multi init */
@@ -119,21 +131,9 @@ struct Curl_multi {
   struct PslCache psl;
 #endif
 
-  /* current time for transfers running in this multi handle */
-  struct curltime now;
-  /* timetree points to the splay-tree of time nodes to figure out expire
-     times of all currently set timers */
-  struct Curl_tree *timetree;
-
-  /* buffer used for transfer data, lazy initialized */
-  char *xfer_buf; /* the actual buffer */
-  size_t xfer_buf_len;      /* the allocated length */
-  /* buffer used for upload data, lazy initialized */
-  char *xfer_ulbuf; /* the actual buffer */
-  size_t xfer_ulbuf_len;      /* the allocated length */
-  /* buffer used for socket I/O operations, lazy initialized */
-  char *xfer_sockbuf; /* the actual buffer */
-  size_t xfer_sockbuf_len; /* the allocated length */
+  struct Curl_fixed_buf *xfer_buf; /* transfer downloads, lazy */
+  struct Curl_fixed_buf *xfer_ulbuf; /* transfer uploads, lazy */
+  struct Curl_fixed_buf *xfer_sockbuf; /* transfer socket I/O, lazy */
 
   /* multi event related things */
   struct curl_multi_ev ev;
@@ -151,16 +151,11 @@ struct Curl_multi {
   struct cshutdn cshutdn; /* connection shutdown handling */
   struct cpool cpool;     /* connection pool (bundles) */
 
-  size_t max_host_connections; /* if >0, a fixed limit of the maximum number
-                                  of connections per host */
-  size_t max_total_connections; /* if >0, a fixed limit of the maximum number
-                                   of connections in total */
+  timediff_t last_expire_offset_us; /* times offset of last expiry */
 
   /* timer callback and user data pointer for the *socket() API */
   curl_multi_timer_callback timer_cb;
   void *timer_userp;
-  long last_timeout_ms;        /* the last timeout value set via timer_cb */
-  struct curltime last_expire_ts; /* timestamp of last expiry */
 
 #ifdef USE_WINSOCK
   WSAEVENT wsa_event; /* Winsock event used for waits */
@@ -168,27 +163,32 @@ struct Curl_multi {
 #ifdef ENABLE_WAKEUP
   curl_socket_t wakeup_pair[2]; /* eventfd()/pipe()/socketpair() used for
                                    wakeup 0 is used for read, 1 is used
-                                   for write */
+                                   for write. Used by curl_multi_wakeup() */
 #endif
-  unsigned int max_concurrent_streams;
-  unsigned int maxconnects; /* if >0, a fixed limit of the maximum number of
+#ifdef ENABLE_INTERNAL_WAKEUP
+  curl_socket_t wakeup_internal[2]; /* eventfd()/pipe()/socketpair() used for
+                                   wakeup 0 is used for read, 1 is used
+                                   for write. Used for internal wakeups,
+                                   e.g. threaded resolver. */
+#endif
+  uint32_t max_host_connections; /* if >0, a fixed limit of the maximum number
+                                  of connections per host */
+  uint32_t max_total_connections; /* if >0, a fixed limit of the maximum number
+                                   of connections in total */
+  uint32_t maxconnects; /* if >0, a fixed limit of the maximum number of
                                entries we are allowed to grow the connection
                                cache to */
-#ifdef DEBUGBUILD
-  unsigned int now_access_count;
-#endif
   uint32_t last_pending_mid; /* mid of last pending transfer rescheduled */
   uint32_t last_resolv_id; /* id of the last DNS resolve operation */
   BIT(ipv6_works);
   BIT(multiplexing);           /* multiplexing wanted */
   BIT(recheckstate);           /* see Curl_multi_connchanged */
-  BIT(in_callback);            /* true while executing a callback */
-  BIT(in_ntfy_callback);       /* true while dispatching notifications */
 #ifdef USE_OPENSSL
   BIT(ssl_seeded);
 #endif
   BIT(dead); /* a callback returned error, everything needs to crash and
                 burn */
+  BIT(last_timeout_set);      /* last timer callback value was nonnegative */
   BIT(xfer_buf_borrowed);      /* xfer_buf is currently being borrowed */
   BIT(xfer_ulbuf_borrowed);    /* xfer_ulbuf is currently being borrowed */
   BIT(xfer_sockbuf_borrowed);  /* xfer_sockbuf is currently being borrowed */

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #***************************************************************************
 #                                  _   _ ____  _
 #  Project                     ___| | | |  _ \| |
@@ -34,7 +32,7 @@ import socket
 import subprocess
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict
 
 import pytest
@@ -44,19 +42,25 @@ from testenv.ports import alloc_ports_and_do
 log = logging.getLogger(__name__)
 
 
-@pytest.mark.skipif(condition=not Env.curl_has_protocol('ws'),
-                    reason='curl lacks ws protocol support')
-class TestWebsockets:
+class WsServer:
 
-    PORT_SPECS = {
-        'ws': socket.SOCK_STREAM,
-    }
+    def __init__(self, name, env, cmd):
+        self.name = name
+        self.env = env
+        self.run_dir = os.path.join(env.gen_dir, self.name)
+        self.err_file = os.path.join(self.run_dir, 'stderr')
+        self._rmrf(self.run_dir)
+        self._mkpath(self.run_dir)
+        self.cmd = cmd
+        self.wsproc = None
+        self.cerr = None
+        self.port = 0
 
     def check_alive(self, env, port, timeout=Env.SERVER_TIMEOUT):
         curl = CurlClient(env=env)
         url = f'http://localhost:{port}/'
-        end = datetime.now() + timedelta(seconds=timeout)
-        while datetime.now() < end:
+        end = datetime.now(timezone.utc) + timedelta(seconds=timeout)
+        while datetime.now(timezone.utc) < end:
             r = curl.http_download(urls=[url])
             if r.exit_code == 0:
                 return True
@@ -71,42 +75,64 @@ class TestWebsockets:
         if os.path.exists(path):
             shutil.rmtree(path)
 
-    @pytest.fixture(autouse=True, scope='class')
-    def ws_echo(self, env):
-        self.run_dir = os.path.join(env.gen_dir, 'ws_echo_server')
-        err_file = os.path.join(self.run_dir, 'stderr')
-        self._rmrf(self.run_dir)
-        self._mkpath(self.run_dir)
-        self.cmd = os.path.join(env.project_dir,
-                                'tests/http/testenv/ws_echo_server.py')
-        self.wsproc = None
-        self.cerr = None
+    def startup(self):
 
         def startup(ports: Dict[str, int]) -> bool:
-            wargs = [self.cmd, '--port', str(ports['ws'])]
+            self.port = ports[self.name]
+            wargs = [self.cmd, '--port', str(self.port)]
             log.info(f'start_ {wargs}')
             self.wsproc = subprocess.Popen(args=wargs,
                                            cwd=self.run_dir,
                                            stderr=self.cerr,
                                            stdout=self.cerr)
-            if self.check_alive(env, ports['ws']):
-                env.update_ports(ports)
+            if self.check_alive(self.env, self.port):
+                self.env.update_ports(ports)
                 return True
             log.error(f'not alive {wargs}')
             self.wsproc.terminate()
             self.wsproc = None
             return False
 
-        with open(err_file, 'w') as self.cerr:
-            assert alloc_ports_and_do(TestWebsockets.PORT_SPECS, startup,
-                                      env.gen_root, max_tries=3)
-            assert self.wsproc
-            yield
-            self.wsproc.terminate()
+        self.cerr = open(self.err_file, 'w')  # noqa: SIM115
+        port_spec = {
+            self.name: socket.SOCK_STREAM
+        }
+        assert alloc_ports_and_do(port_spec, startup,
+                                  self.env.gen_root, max_tries=3)
+        assert self.wsproc
+
+    def shutdown(self):
+        self.wsproc.terminate()
+        self.cerr.close()
+
+
+@pytest.mark.skipif(condition=not Env.curl_has_protocol('ws'),
+                    reason='curl lacks ws protocol support')
+class TestWebsockets:
+
+    @pytest.fixture(autouse=True, scope='class')
+    @classmethod
+    def ws_echo(cls, env):
+        cmd = os.path.join(env.project_dir,
+                           'tests/http/testenv/ws_echo_server.py')
+        server = WsServer('ws_echo', env, cmd)
+        server.startup()
+        yield server
+        server.shutdown()
+
+    @pytest.fixture(autouse=True, scope='class')
+    @classmethod
+    def ws_4frames(cls, env):
+        cmd = os.path.join(env.project_dir,
+                           'tests/http/testenv/ws_4frames_server.py')
+        server = WsServer('ws_4frames', env, cmd)
+        server.startup()
+        yield server
+        server.shutdown()
 
     def test_20_01_basic(self, env: Env, ws_echo):
         curl = CurlClient(env=env)
-        url = f'http://localhost:{env.ws_port}/'
+        url = f'http://localhost:{ws_echo.port}/'
         r = curl.http_download(urls=[url])
         r.check_response(http_status=426)
 
@@ -115,7 +141,7 @@ class TestWebsockets:
         client = LocalClient(env=env, name='cli_ws_pingpong')
         if not client.exists():
             pytest.skip(f'example client not built: {client.name}')
-        url = f'ws://localhost:{env.ws_port}/'
+        url = f'ws://localhost:{ws_echo.port}/'
         r = client.run(args=[url, payload])
         r.check_exit_code(0)
 
@@ -125,7 +151,7 @@ class TestWebsockets:
         client = LocalClient(env=env, name='cli_ws_pingpong')
         if not client.exists():
             pytest.skip(f'example client not built: {client.name}')
-        url = f'ws://localhost:{env.ws_port}/'
+        url = f'ws://localhost:{ws_echo.port}/'
         r = client.run(args=[url, payload])
         r.check_exit_code(100)  # CURLE_TOO_LARGE
 
@@ -137,7 +163,7 @@ class TestWebsockets:
         client = LocalClient(env=env, name='cli_ws_data')
         if not client.exists():
             pytest.skip(f'example client not built: {client.name}')
-        url = f'ws://localhost:{env.ws_port}/'
+        url = f'ws://localhost:{ws_echo.port}/'
         r = client.run(args=[f'-{model}', '-m', str(1), '-M', str(10), url])
         r.check_exit_code(0)
 
@@ -149,7 +175,7 @@ class TestWebsockets:
         client = LocalClient(env=env, name='cli_ws_data')
         if not client.exists():
             pytest.skip(f'example client not built: {client.name}')
-        url = f'ws://localhost:{env.ws_port}/'
+        url = f'ws://localhost:{ws_echo.port}/'
         r = client.run(args=[f'-{model}', '-m', str(120), '-M', str(130), url])
         r.check_exit_code(0)
 
@@ -161,7 +187,7 @@ class TestWebsockets:
         client = LocalClient(env=env, name='cli_ws_data')
         if not client.exists():
             pytest.skip(f'example client not built: {client.name}')
-        url = f'ws://localhost:{env.ws_port}/'
+        url = f'ws://localhost:{ws_echo.port}/'
         r = client.run(args=[f'-{model}', '-m', str(65535 - 5), '-M', str(65535 + 5), url])
         r.check_exit_code(0)
 
@@ -175,7 +201,7 @@ class TestWebsockets:
         client = LocalClient(env=env, name='cli_ws_data', run_env=run_env)
         if not client.exists():
             pytest.skip(f'example client not built: {client.name}')
-        url = f'ws://localhost:{env.ws_port}/'
+        url = f'ws://localhost:{ws_echo.port}/'
         r = client.run(args=[f'-{model}', '-m', str(65535 - 5), '-M', str(65535 + 5), url])
         r.check_exit_code(0)
 
@@ -191,7 +217,7 @@ class TestWebsockets:
         client = LocalClient(env=env, name='cli_ws_data', run_env=run_env)
         if not client.exists():
             pytest.skip(f'example client not built: {client.name}')
-        url = f'ws://localhost:{env.ws_port}/'
+        url = f'ws://localhost:{ws_echo.port}/'
         count = 10
         large = 20000
         r = client.run(args=[f'-{model}', '-c', str(count), '-m', str(large), url])
@@ -205,16 +231,16 @@ class TestWebsockets:
         client = LocalClient(env=env, name='cli_ws_data')
         if not client.exists():
             pytest.skip(f'example client not built: {client.name}')
-        url = f'ws://localhost:{env.ws_port}/'
+        url = f'ws://localhost:{ws_echo.port}/'
         count = 10
         large = 0
         r = client.run(args=[f'-{model}', '-c', str(count), '-m', str(large), url])
         r.check_exit_code(0)
 
-    # use ws:// url with HTTP proxy, check that it tunnels automatically
+    # use ws:// URL with HTTP proxy, check that it tunnels automatically
     def test_20_10_proxy_http(self, env: Env, httpd, ws_echo):
         curl = CurlClient(env=env)
-        url = f'ws://127.0.0.1:{env.ws_port}/'
+        url = f'ws://127.0.0.1:{ws_echo.port}/'
         xargs = curl.get_proxy_args(proxys=False)
         xargs.extend([
             '--max-time', '2'
@@ -222,7 +248,7 @@ class TestWebsockets:
         r = curl.http_download(urls=[url], alpn_proto='http/1.1', with_stats=True,
                                extra_args=xargs)
         # The CONNECT through the proxy fails as it does not allow it
-        r.check_exit_code(7) # CURLE_COULDNT_CONNECT
+        r.check_exit_code(7)  # CURLE_COULDNT_CONNECT
         assert r.stats[0]['http_connect'] == 403, f'{r}'
 
     def test_20_11_crazy_pings(self, env: Env):
@@ -249,12 +275,11 @@ class TestWebsockets:
                         hashlib.sha1(k + b"258EAFA5-E914-47DA-95CA-C5AB0DC85B11").digest()
                     ).decode()
                     c.sendall(
-                        (
-                            "HTTP/1.1 101 Switching Protocols\r\n"
-                            "Upgrade: websocket\r\n"
-                            "Connection: Upgrade\r\n"
-                            f"Sec-WebSocket-Accept: {a}\r\n\r\n"
-                        ).encode()
+                        "HTTP/1.1 101 Switching Protocols\r\n"
+                        "Upgrade: websocket\r\n"
+                        "Connection: Upgrade\r\n"
+                        f"Sec-WebSocket-Accept: {a}\r\n\r\n"
+                        .encode()
                     )
 
                     f = b"\x89\x00" * 65536  # PING frames, many
@@ -272,7 +297,10 @@ class TestWebsockets:
             except OSError as e:
                 st["err"] = e
 
-        curl = CurlClient(env=env)
+        run_env = os.environ.copy()
+        if 'CURL_DEBUG' in run_env:
+            del run_env['CURL_DEBUG']
+        curl = CurlClient(env=env, run_env=run_env)
         send_rounds = 2
         threading.Thread(target=srv, daemon=True).start()
         while "p" not in st and "err" not in st:
@@ -284,7 +312,7 @@ class TestWebsockets:
                                with_profile=True)
         assert r.exit_code in [55, 56], f'{r.dump_logs()}'  # SEND/RECV_ERROR
         assert r.profile, f'{r}'
-        rss1 = r.profile.stats['rss'] / (1024 * 1024)
+        rss1 = r.profile.stats['rss-max'] / (1024 * 1024)
 
         st.clear()
         send_rounds = 10
@@ -298,5 +326,35 @@ class TestWebsockets:
                                with_profile=True)
         assert r.exit_code in [55, 56], f'{r.dump_logs()}'  # SEND/RECV_ERROR
         assert r.profile, f'{r}'
-        rss2 = r.profile.stats['rss'] / (1024 * 1024)
-        assert (rss1 * 1.1) >= rss2, 'bad memory increase'
+        rss2 = r.profile.stats['rss-max'] / (1024 * 1024)
+        assert (rss1 * 1.23) > rss2, 'bad memory increase'
+
+    # test small frames delivery when pausing
+    def test_20_12_pause_frames_small(self, env: Env, ws_4frames):
+        payload = 127 * "x"
+        client = LocalClient(env=env, name='cli_ws_pause')
+        if not client.exists():
+            pytest.skip(f'example client not built: {client.name}')
+        url = f'ws://localhost:{ws_4frames.port}/small'
+        r = client.run(args=[url, payload])
+        r.check_exit_code(0)
+
+    # test small frames delivery when pausing
+    def test_20_13_pause_frames_large(self, env: Env, ws_4frames):
+        payload = 127 * "x"
+        client = LocalClient(env=env, name='cli_ws_pause')
+        if not client.exists():
+            pytest.skip(f'example client not built: {client.name}')
+        url = f'ws://localhost:{ws_4frames.port}/large'
+        r = client.run(args=[url, payload])
+        r.check_exit_code(0)
+
+    # test handling of write callback errors
+    def test_20_14_write_err(self, env: Env, ws_4frames):
+        payload = 127 * "x"
+        client = LocalClient(env=env, name='cli_ws_write_err')
+        if not client.exists():
+            pytest.skip(f'example client not built: {client.name}')
+        url = f'ws://localhost:{ws_4frames.port}/small'
+        r = client.run(args=[url, payload])
+        r.check_exit_code(0)

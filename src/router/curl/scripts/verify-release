@@ -39,14 +39,14 @@ tarball="${1:-}"
 
 if [ -z "$tarball" ]; then
   echo "Provide a curl release tarball name as argument"
-  exit
+  exit 1
 fi
 
 i="$(find . -maxdepth 1 -type d -name 'curl-*' | wc -l)"
 
 if test "$i" -gt 1; then
   echo "multiple curl-* entries found, disambiguate please"
-  exit
+  exit 1
 fi
 
 # check if this is in a git clone directory
@@ -63,9 +63,9 @@ mkdir -p _tarballs
 rm -rf _tarballs/*
 
 # checksum the original tarball to compare with later
-sha256sum "$tarball" >_tarballs/checksum
+sha256sum -- "$tarball" >_tarballs/checksum
 
-# extract version number from file name
+# extract version number from filename
 tarver=$(echo "$tarball" | sed 's/curl-\([0-9.]*\)\..*/\1/')
 
 # extract the version from the official header file
@@ -85,7 +85,7 @@ if test "$withgit" = 0; then
   tar xf "$tarball"
 
   # move away the original tarball
-  mv "$tarball" "_tarballs/orig-$tarball"
+  mv -- "$tarball" "_tarballs/orig-$tarball"
 
   pwd=$(pwd)
   cd "curl-$curlver"
@@ -101,7 +101,7 @@ else
   echo "*** Use git tag $tag"
 
   # move away the original tarball
-  mv "$tarball" "_tarballs/orig-$tarball"
+  mv -- "$tarball" "_tarballs/orig-$tarball"
 
   prevtag=$(git symbolic-ref -q --short HEAD || git rev-parse HEAD)
   git checkout -f "$tag"
@@ -115,7 +115,7 @@ else
     mv "$f" _tarballs/
   done
 fi
-cd "_tarballs"
+cd _tarballs
 
 # compare the new tarball against the original
 sha256sum -c checksum

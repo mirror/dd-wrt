@@ -2,37 +2,18 @@
 <testcase>
 <info>
 <keywords>
-SMB
+mprintf
+libtest
 </keywords>
 </info>
 
-# Server-side
-<reply>
-<data nocheck="yes">
-Basic SMB test complete
-</data>
-</reply>
-
 # Client-side
 <client>
-<server>
-smb
-</server>
 <features>
-smb
+win32
 </features>
 <name>
-Basic SMB request
+mprintf %I length modifier unit tests
 </name>
-<command>
--u 'curltest:curltest' smb://%HOSTIP:%SMBPORT/TESTS/%TESTNUMBER
-</command>
 </client>
-
-# Verify data after the test has been "shot"
-<verify>
-<stdout>
-Basic SMB test complete
-</stdout>
-</verify>
 </testcase>

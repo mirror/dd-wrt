@@ -46,7 +46,7 @@ For the full list of CMake build configuration variables see
 ### Build system generator selection
 
 You can override CMake's default by using `-G <generator-name>`. For example
-on Windows with multiple build systems if you have MinGW-w64 then you could use
+on Windows with multiple build systems if you have mingw-w64 then you could use
 `-G "MinGW Makefiles"`.
 [List of generator names](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html).
 
@@ -203,6 +203,7 @@ target_link_libraries(my_target PRIVATE CURL::libcurl)
 - `CURL_COMPLETION_FISH_DIR`:               Custom fish completion install directory.
 - `CURL_COMPLETION_ZSH`:                    Install zsh completions. Default: `OFF`
 - `CURL_COMPLETION_ZSH_DIR`:                Custom zsh completion install directory.
+- `CURL_DEBUG_GLOBAL_MEM`:                  Debug `curl_global_init_mem`. Default: `OFF`
 - `CURL_DEFAULT_SSL_BACKEND`:               Override default TLS backend in MultiSSL builds.
                                             Accepted values in order of default priority:
                                             `wolfssl`, `gnutls`, `mbedtls`, `openssl`, `schannel`, `rustls`
@@ -220,11 +221,13 @@ target_link_libraries(my_target PRIVATE CURL::libcurl)
 - `CURL_TARGET_WINDOWS_VERSION`:            Minimum target Windows version as hex string, e.g. `0x0a00` for Windows 10.
 - `CURL_WERROR`:                            Turn compiler warnings into errors. Default: `OFF`
 - `ENABLE_CURL_MANUAL`:                     Build the man page for curl and enable its `-M`/`--manual` option. Default: `ON`
-- `ENABLE_DEBUG`:                           Enable curl debug features (for developing curl itself). Default: `OFF`
+- `ENABLE_DEBUG`:                           Enable curl debug features (for developing curl). Default: `OFF`
+                                            This also requires Debug configuration enabled/selected at the same time,
+                                            via `CMAKE_BUILD_TYPE=Debug`, or `--config Debug` for multi-config generators.
 - `IMPORT_LIB_SUFFIX`:                      Import library suffix. Default: `_imp` for MSVC-like toolchains, otherwise empty.
 - `LIBCURL_OUTPUT_NAME`:                    Basename of the curl library. Default: `libcurl`
 - `PICKY_COMPILER`:                         Enable picky compiler options. Default: `ON`
-- `SHARE_LIB_OBJECT`:                       Build shared and static libcurl in a single pass (requires CMake 3.12 or newer). Default: `ON` for Windows
+- `SHARE_LIB_OBJECT`:                       Build shared and static libcurl in a single pass. Default: `ON` for Windows
 - `STATIC_LIB_SUFFIX`:                      Static library suffix. Default: (empty)
 
 ## Root CA options
@@ -241,8 +244,8 @@ target_link_libraries(my_target PRIVATE CURL::libcurl)
 
 ## Enabling features
 
+- `CURL_ENABLE_APPLE_FAST_UDP`:             Use Apple fast UDP (experimental). Default: `OFF`
 - `CURL_ENABLE_NTLM`:                       Enable NTLM support. Default: `OFF`
-- `CURL_ENABLE_SMB`:                        Enable SMB. Default: `OFF`
 - `CURL_ENABLE_SSL`:                        Enable SSL support. Default: `ON`
 - `CURL_WINDOWS_SSPI`:                      Enable SSPI on Windows. Default: =`CURL_USE_SCHANNEL`
 - `ENABLE_IPV6`:                            Enable IPv6 support. Default: `ON` if target supports IPv6.
@@ -278,6 +281,7 @@ target_link_libraries(my_target PRIVATE CURL::libcurl)
 - `CURL_DISABLE_HSTS`:                      Disable HSTS support. Default: `OFF`
 - `CURL_DISABLE_HTTP`:                      Disable HTTP. Default: `OFF`
 - `CURL_DISABLE_HTTP_AUTH`:                 Disable all HTTP authentication methods. Default: `OFF`
+- `CURL_DISABLE_HTTPSIG`:                   Disable HTTP Message Signatures (RFC 9421) (experimental). Default: `ON`
 - `CURL_DISABLE_IMAP`:                      Disable IMAP. Default: `OFF`
 - `CURL_DISABLE_INSTALL`:                   Disable installation targets. Default: `OFF`
 - `CURL_DISABLE_IPFS`:                      Disable IPFS. Default: `OFF`
@@ -299,13 +303,11 @@ target_link_libraries(my_target PRIVATE CURL::libcurl)
 - `CURL_DISABLE_SHUFFLE_DNS`:               Disable shuffle DNS feature. Default: `OFF`
 - `CURL_DISABLE_SMTP`:                      Disable SMTP. Default: `OFF`
 - `CURL_DISABLE_SOCKETPAIR`:                Disable use of socketpair for curl_multi_poll(). Default: `OFF`
-- `CURL_DISABLE_SRP`:                       Disable TLS-SRP support. Default: `OFF`
 - `CURL_DISABLE_TELNET`:                    Disable Telnet. Default: `OFF`
 - `CURL_DISABLE_TFTP`:                      Disable TFTP. Default: `OFF`
 - `CURL_DISABLE_TYPECHECK`:                 Disable curl_easy_setopt()/curl_easy_getinfo() type checking. Default: `OFF`
 - `CURL_DISABLE_VERBOSE_STRINGS`:           Disable verbose strings. Default: `OFF`
 - `CURL_DISABLE_WEBSOCKETS`:                Disable WebSocket. Default: `OFF`
-- `HTTP_ONLY`:                              Disable all protocols except HTTP (This overrides all `CURL_DISABLE_*` options). Default: `OFF`
 
 ## Environment
 
@@ -332,7 +334,7 @@ Details via CMake
 - `CMAKE_INSTALL_BINDIR`                    (see CMake)
 - `CMAKE_INSTALL_INCLUDEDIR`                (see CMake)
 - `CMAKE_INSTALL_LIBDIR`                    (see CMake)
-- `CMAKE_INSTALL_PREFIX`                    (see CMake)
+- `CMAKE_INSTALL_PREFIX`                    (see CMake) (in CMake 3.29+ also supported as environment)
 - `CMAKE_STATIC_LIBRARY_SUFFIX`             (see CMake)
 - `CMAKE_UNITY_BUILD_BATCH_SIZE`:           Set the number of sources in a "unity" unit. Default: `0` (all)
 - `CMAKE_UNITY_BUILD`:                      Enable "unity" (aka "jumbo") builds. Default: `OFF`
@@ -346,6 +348,7 @@ Details via CMake
 - `CURL_BROTLI`:                            Use brotli (`ON`, `OFF` or `AUTO`). Default: `AUTO`
 - `CURL_USE_CMAKECONFIG`:                   Enable detecting dependencies via CMake Config.
                                             Default: `ON` for MSVC (except under vcpkg), if not cross-compiling. (experimental)
+- `CURL_GSS_FLAVOR`:                        Set preferred GSSAPI implementation (`Apple`). Default: MIT, then GNU (experimental)
 - `CURL_USE_GNUTLS`:                        Enable GnuTLS for SSL/TLS. Default: `OFF`
 - `CURL_USE_GSASL`:                         Use libgsasl. Default: `OFF`
 - `CURL_USE_GSSAPI`:                        Use GSSAPI implementation. Default: `OFF`
@@ -372,7 +375,7 @@ Details via CMake
 
 ## Dependency options (via CMake)
 
-- `OPENSSL_ROOT_DIR`:                       Absolute path to the root installation of OpenSSL (and forks).
+- `OPENSSL_ROOT_DIR`:                       Absolute path to the installation root of OpenSSL (and forks).
 - `OPENSSL_INCLUDE_DIR`:                    Absolute path to OpenSSL include directory.
 - `OPENSSL_SSL_LIBRARY`:                    Absolute path to `ssl` library.
                                             With MSVC, CMake uses variables `SSL_EAY_DEBUG`/`SSL_EAY_RELEASE` instead.
@@ -381,7 +384,8 @@ Details via CMake
 - `OPENSSL_USE_STATIC_LIBS`:                Look for static OpenSSL libraries.
 - `ZLIB_INCLUDE_DIR`:                       Absolute path to zlib include directory.
 - `ZLIB_LIBRARY`:                           Absolute path to `zlib` library.
-- `ZLIB_USE_STATIC_LIBS`:                   Look for static `zlib` library (requires CMake v3.24).
+- `ZLIB_ROOT`:                              Absolute path to the installation root of zlib.
+- `ZLIB_USE_STATIC_LIBS`:                   Look for static `zlib` library (requires CMake 3.24+).
 - `<PackageName>_DIR`:                      Absolute path to `<PackageName>` CMake Config directory where `*.cmake` files reside.
                                             Used when `CURL_USE_CMAKECONFIG` is enabled.
                                             `<PackageName>` may be:
@@ -410,7 +414,7 @@ Details via CMake
 - `DL_LIBRARY`:                             Absolute path to `dl` library. (for Rustls)
 - `GNUTLS_INCLUDE_DIR`:                     Absolute path to GnuTLS include directory.
 - `GNUTLS_LIBRARY`:                         Absolute path to `gnutls` library.
-- `GSS_ROOT_DIR`:                           Absolute path to the root installation of GSS. (also supported as environment)
+- `GSS_ROOT_DIR`:                           Absolute path to the installation root of GSS. (also supported as environment)
 - `LDAP_INCLUDE_DIR`:                       Absolute path to LDAP include directory.
 - `LDAP_LIBRARY`:                           Absolute path to `ldap` library.
 - `LDAP_LBER_LIBRARY`:                      Absolute path to `lber` library.
@@ -452,13 +456,14 @@ Details via CMake
 - `NGTCP2_CRYPTO_WOLFSSL_LIBRARY`:          Absolute path to `ngtcp2_crypto_wolfssl` library.
 - `NGTCP2_USE_STATIC_LIBS`:                 Configure for static ngtcp2 libraries. (experimental)
 - `NETTLE_INCLUDE_DIR`:                     Absolute path to nettle include directory.
+- `NETTLE_HOGWEED_LIBRARY`:                 Absolute path to `hogweed` library.
 - `NETTLE_LIBRARY`:                         Absolute path to `nettle` library.
 - `PTHREAD_LIBRARY`:                        Absolute path to `pthread` library. (for Rustls)
 - `QUICHE_INCLUDE_DIR`:                     Absolute path to quiche include directory.
 - `QUICHE_LIBRARY`:                         Absolute path to `quiche` library.
 - `RUSTLS_INCLUDE_DIR`:                     Absolute path to Rustls include directory.
 - `RUSTLS_LIBRARY`:                         Absolute path to `rustls` library.
-- `WATT_ROOT`:                              Absolute path to the root installation of Watt-32.
+- `WATT_ROOT`:                              Absolute path to the installation root of Watt-32.
 - `WOLFSSL_INCLUDE_DIR`:                    Absolute path to wolfSSL include directory.
 - `WOLFSSL_LIBRARY`:                        Absolute path to `wolfssl` library.
 - `ZSTD_INCLUDE_DIR`:                       Absolute path to zstd include directory.
@@ -467,7 +472,7 @@ Details via CMake
 
 Examples:
 
-- `-DLIBPSL_INCLUDE_DIR=/path/to/libpl/include`,
+- `-DLIBPSL_INCLUDE_DIR=/path/to/libpsl/include`,
   which directory contains `libpsl.h`.
   No ending slash or backslash is necessary.
 
@@ -514,13 +519,13 @@ the parent project, ideally in the "extra" find package redirect file:
 Available variables:
 
 - `HAVE_DES_ECB_ENCRYPT`:                   `DES_ecb_encrypt` present in OpenSSL (or fork).
-- `HAVE_GNUTLS_SRP`:                        `gnutls_srp_verifier` present in GnuTLS.
+- `HAVE_GSS_SET_NEG_MECHS`:                 `gss_set_neg_mechs` present in GSS-API library.
 - `HAVE_LDAP_INIT_FD`:                      `ldap_init_fd` present in LDAP library.
 - `HAVE_LDAP_URL_PARSE`:                    `ldap_url_parse` present in LDAP library.
 - `HAVE_MBEDTLS_DES_CRYPT_ECB`:             `mbedtls_des_crypt_ecb` present in mbedTLS <4.
-- `HAVE_OPENSSL_SRP`:                       `SSL_CTX_set_srp_username` present in OpenSSL (or fork).
 - `HAVE_QUICHE_CONN_SET_QLOG_FD`:           `quiche_conn_set_qlog_fd` present in quiche.
-- `HAVE_RUSTLS_SUPPORTED_HPKE`:             `rustls_supported_hpke` present in Rustls (unused if Rustls is detected via `pkg-config`).
+- `HAVE_RUSTLS_SUPPORTED_HPKE`:             `rustls_supported_hpke` present in Rustls
+                                            (unused if Rustls is detected via `pkg-config`).
 - `HAVE_SSL_SET0_WBIO`:                     `SSL_set0_wbio` present in OpenSSL (or fork).
 - `HAVE_SSL_SET1_ECH_CONFIG_LIST`:          `SSL_set1_ech_config_list` present in OpenSSL (or fork).
 - `HAVE_SSL_SET_QUIC_TLS_CBS`:              `SSL_set_quic_tls_cbs` in OpenSSL.
@@ -542,27 +547,37 @@ Note: These variables are internal and subject to change.
 
 ## Useful build targets
 
-- `testdeps`:               Build test dependencies (test binaries, test certificates).
-                            Test certificates: `build-certs` (clean with `clean-certs`)
-- `tests`:                  Run tests (`runtests.pl`). Customize via the `TFLAGS` environment variable, e.g. `TFLAGS=1621`.
-                            Other flavors: `test-am`, `test-ci`, `test-event`, `test-full`, `test-nonflaky`, `test-quiet`, `test-torture`
+- `testdeps`:               Build test dependencies (test binaries,
+                            test certificates).
+                            Test certificates: `build-certs`
+                            (clean with `clean-certs`)
+- `tests`:                  Run tests (`runtests.pl`). Customize via the `TFLAGS`
+                            environment variable, e.g. `TFLAGS=1621`.
+                            Other flavors: `test-am`, `test-ci`, `test-event`,
+                            `test-full`, `test-nonflaky`, `test-quiet`,
+                            `test-torture`
 - `tt`:                     Build test binaries (servers, tools).
-                            Individual targets: `curlinfo`, `libtests`, `servers`, `tunits`, `units`
+                            Individual targets: `curlinfo`, `libtests`,
+                            `servers`, `tunits`, `units`
 - `curl-pytest`:            Run tests (pytest).
                             Other flavor: `curl-test-ci`
 - `curl-examples`:          Build examples
                             Individual targets: `curl-example-<name>`,
                             where <name> is the .c filename without extension.
-- `curl-examples-build`:    Build examples quickly but without the ability to run them. (for build tests)
+- `curl-examples-build`:    Build examples quickly but without the ability
+                            to run them. (for build tests)
 - `curl-man`:               Build man pages. (built by default unless disabled)
 - `curl`:                   Build curl tool.
 - `curl_uninstall`:         Uninstall curl.
-- `curl-completion-fish`:   Build shell completions for fish. (built by default if enabled)
-- `curl-completion-zsh`:    Build shell completions for zsh. (built by default if enabled)
+- `curl-completion-fish`:   Build shell completions for fish.
+                            (built by default if enabled)
+- `curl-completion-zsh`:    Build shell completions for zsh.
+                            (built by default if enabled)
 - `curl-ca-bundle`:         Build the CA bundle via `scripts/mk-ca-bundle.pl`.
 - `curl-ca-firefox`:        Build the CA bundle via `scripts/firefox-db2pem.sh`.
 - `curl-lint`:              Run lint checks.
-- `curl-listcats`:          Generate help category constants for `src/tool_help.h` from documentation.
+- `curl-listcats`:          Generate help category constants for
+                            `src/tool_help.h` from documentation.
 - `curl-listhelp`:          Generate `src/tool_listhelp.c` from documentation.
 - `curl-optiontable`:       Generate `lib/easyoptions.c` from documentation.
 
@@ -573,7 +588,7 @@ We recommend using CMake to build curl with MSVC.
 The project build files reside in project/Windows/VC\* for VS2010, VS2012 and
 VS2013.
 
-These CMake Visual Studio generators require CMake v3.24 or older. You can
+These CMake Visual Studio generators require CMake 3.24 or older. You can
 download them from <https://cmake.org/files/v3.24/>.
 
 You can also use `-G "NMake Makefiles"`, which is supported by all CMake

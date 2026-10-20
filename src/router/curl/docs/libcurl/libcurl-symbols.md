@@ -126,7 +126,10 @@ Introduced in 7.8. See curl_global_init(3).
 Introduced in 7.8. See curl_global_init(3).
 
 ## CURL_GLOBAL_WIN32
-Introduced in 7.8.1. See curl_global_init(3).
+Introduced in 7.8.1. Deprecated since 8.23.0.
+
+## CURL_GLOBAL_WINSOCK
+Introduced in 8.23.0. See curl_global_init(3).
 
 ## CURL_HAS_DECLSPEC_ATTRIBUTE
 Introduced in 8.13.0.
@@ -447,10 +450,10 @@ Introduced in 7.9.7. See CURLOPT_TIMECONDITION(3).
 Introduced in 7.9.7. See CURLOPT_TIMECONDITION(3).
 
 ## CURL_TLSAUTH_NONE
-Introduced in 7.21.4.
+Introduced in 7.21.4. Deprecated since 8.22.0.
 
 ## CURL_TLSAUTH_SRP
-Introduced in 7.21.4.
+Introduced in 7.21.4. Deprecated since 8.22.0.
 
 ## CURL_TRAILERFUNC_ABORT
 Introduced in 7.64.0. See CURLOPT_TRAILERFUNCTION(3).
@@ -546,7 +549,7 @@ Introduced in 7.13.2. See curl_version_info(3).
 Introduced in 7.84.0. See curl_version_info(3).
 
 ## CURL_VERSION_TLSAUTH_SRP
-Introduced in 7.21.4. See curl_version_info(3).
+Introduced in 7.21.4. Deprecated since 8.22.0.
 
 ## CURL_VERSION_UNICODE
 Introduced in 7.72.0. See curl_version_info(3).
@@ -598,6 +601,9 @@ Introduced in 7.10.6. See CURLOPT_HTTPAUTH(3).
 
 ## CURLAUTH_AWS_SIGV4
 Introduced in 7.75.0. See CURLOPT_HTTPAUTH(3).
+
+## CURLAUTH_HTTPSIG
+Introduced in 8.22.0. See CURLOPT_HTTPAUTH(3).
 
 ## CURLAUTH_BASIC
 Introduced in 7.10.6. See CURLOPT_HTTPAUTH(3).
@@ -1252,6 +1258,15 @@ Introduced in 7.74.0. See CURLOPT_HSTS_CTRL(3).
 
 ## CURLHSTS_READONLYFILE
 Introduced in 7.74.0. See CURLOPT_HSTS_CTRL(3).
+
+## CURLHTTPSIG_ED25519
+Introduced in 8.22.0.
+
+## CURLHTTPSIG_HMAC_SHA256
+Introduced in 8.22.0.
+
+## CURLHTTPSIG_NONE
+Introduced in 8.22.0.
 
 ## CURLINFO_ACTIVESOCKET
 Introduced in 7.45.0.
@@ -2084,6 +2099,18 @@ Introduced in 7.3. See CURLOPT_HTTPPROXYTUNNEL(3).
 ## CURLOPT_HTTPREQUEST
 Introduced in 7.1. Last used in 7.15.5.
 
+## CURLOPT_HTTPSIG_ALGORITHM
+Introduced in 8.22.0. See CURLOPT_HTTPSIG_ALGORITHM(3).
+
+## CURLOPT_HTTPSIG_HEADERS
+Introduced in 8.22.0. See CURLOPT_HTTPSIG_HEADERS(3).
+
+## CURLOPT_HTTPSIG_KEY
+Introduced in 8.22.0. See CURLOPT_HTTPSIG_KEY(3).
+
+## CURLOPT_HTTPSIG_KEYID
+Introduced in 8.22.0. See CURLOPT_HTTPSIG_KEYID(3).
+
 ## CURLOPT_IGNORE_CONTENT_LENGTH
 Introduced in 7.14.1. See CURLOPT_IGNORE_CONTENT_LENGTH(3).
 
@@ -2367,13 +2394,13 @@ Introduced in 7.52.0. See CURLOPT_PROXY_SSLVERSION(3).
 Introduced in 7.61.0. See CURLOPT_PROXY_TLS13_CIPHERS(3).
 
 ## CURLOPT_PROXY_TLSAUTH_PASSWORD
-Introduced in 7.52.0. See CURLOPT_PROXY_TLSAUTH_PASSWORD(3).
+Introduced in 7.52.0. Deprecated since 8.22.0.
 
 ## CURLOPT_PROXY_TLSAUTH_TYPE
-Introduced in 7.52.0. See CURLOPT_PROXY_TLSAUTH_TYPE(3).
+Introduced in 7.52.0. Deprecated since 8.22.0.
 
 ## CURLOPT_PROXY_TLSAUTH_USERNAME
-Introduced in 7.52.0. See CURLOPT_PROXY_TLSAUTH_USERNAME(3).
+Introduced in 7.52.0. Deprecated since 8.22.0.
 
 ## CURLOPT_PROXY_TRANSFER_MODE
 Introduced in 7.18.0. See CURLOPT_PROXY_TRANSFER_MODE(3).
@@ -2697,13 +2724,13 @@ Introduced in 7.59.0. See CURLOPT_TIMEVALUE_LARGE(3).
 Introduced in 7.61.0. See CURLOPT_TLS13_CIPHERS(3).
 
 ## CURLOPT_TLSAUTH_PASSWORD
-Introduced in 7.21.4. See CURLOPT_TLSAUTH_PASSWORD(3).
+Introduced in 7.21.4. Deprecated since 8.22.0.
 
 ## CURLOPT_TLSAUTH_TYPE
-Introduced in 7.21.4. See CURLOPT_TLSAUTH_TYPE(3).
+Introduced in 7.21.4. Deprecated since 8.22.0.
 
 ## CURLOPT_TLSAUTH_USERNAME
-Introduced in 7.21.4. See CURLOPT_TLSAUTH_USERNAME(3).
+Introduced in 7.21.4. Deprecated since 8.22.0.
 
 ## CURLOPT_TRAILERDATA
 Introduced in 7.64.0. See CURLOPT_TRAILERDATA(3).
@@ -2943,10 +2970,10 @@ Introduced in 7.19.4. See CURLINFO_PROTOCOL(3).
 Introduced in 7.19.4. See CURLINFO_PROTOCOL(3).
 
 ## CURLPROTO_SMB
-Introduced in 7.40.0. See CURLINFO_PROTOCOL(3).
+Introduced in 7.40.0. Deprecated since 8.23.0.
 
 ## CURLPROTO_SMBS
-Introduced in 7.40.0. See CURLINFO_PROTOCOL(3).
+Introduced in 7.40.0. Deprecated since 8.23.0.
 
 ## CURLPROTO_SMTP
 Introduced in 7.20.0. See CURLINFO_PROTOCOL(3).
@@ -3307,6 +3334,9 @@ Introduced in 7.62.0. See curl_url_get(3).
 
 ## CURLU_URLENCODE
 Introduced in 7.62.0. See curl_url_get(3).
+
+## CURLUE_BACKSLASH
+Introduced in 8.22.0. See libcurl-errors(3).
 
 ## CURLUE_BAD_FILE_URL
 Introduced in 7.81.0. See libcurl-errors(3).

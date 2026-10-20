@@ -149,8 +149,8 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__EXEEXT_1 = tunits$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-tunits_SOURCES = tunits.c
-tunits_OBJECTS = tunits.$(OBJEXT)
+@BUILD_UNITTESTS_TRUE@nodist_tunits_OBJECTS = $(BUNDLE).$(OBJEXT)
+tunits_OBJECTS = $(nodist_tunits_OBJECTS)
 tunits_LDADD = $(LDADD)
 @BUILD_UNITTESTS_TRUE@tunits_DEPENDENCIES =  \
 @BUILD_UNITTESTS_TRUE@	$(top_builddir)/src/libcurltool.la \
@@ -174,7 +174,7 @@ am__v_at_1 =
 DEFAULT_INCLUDES = 
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/tunits.Po
+am__depfiles_remade = ./$(DEPDIR)/$(BUNDLE).Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -194,8 +194,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = tunits.c
-DIST_SOURCES = tunits.c
+SOURCES = $(nodist_tunits_SOURCES)
+DIST_SOURCES =
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -252,6 +252,7 @@ CURL_CPP = @CURL_CPP@
 CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX = @CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX@
 CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME = @CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME@
 CURL_NETWORK_AND_TIME_LIBS = @CURL_NETWORK_AND_TIME_LIBS@
+CURL_PACKAGE_MAINTAINER = @CURL_PACKAGE_MAINTAINER@
 CYGPATH_W = @CYGPATH_W@
 DANTED = @DANTED@
 DEFS = @DEFS@
@@ -447,6 +448,7 @@ TESTS_C = \
 
 # Get BUNDLE, FIRST_C, TESTS_C variables
 EXTRA_DIST = CMakeLists.txt README.md $(TESTS_C)
+@BUILD_UNITTESTS_TRUE@nodist_tunits_SOURCES = $(BUNDLE).c
 @BUILD_UNITTESTS_TRUE@LDADD = $(top_builddir)/src/libcurltool.la $(top_builddir)/lib/libcurl.la
 @BUILD_UNITTESTS_TRUE@CLEANFILES = $(BUNDLE).c
 CHECKSRC = $(CS_$(V))
@@ -507,7 +509,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tunits.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/$(BUNDLE).Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -671,7 +673,7 @@ clean-am: clean-generic clean-libtool clean-local clean-noinstPROGRAMS \
 	mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/tunits.Po
+		-rm -f ./$(DEPDIR)/$(BUNDLE).Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -717,7 +719,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/tunits.Po
+		-rm -f ./$(DEPDIR)/$(BUNDLE).Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

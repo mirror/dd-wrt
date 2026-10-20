@@ -77,12 +77,6 @@ struct OperationConfig {
   char *dns_ipv6_addr; /* dot notation */
   char *userpwd;
   char *login_options;
-  char *tls_username;
-  char *tls_password;
-  char *tls_authtype;
-  char *proxy_tls_username;
-  char *proxy_tls_password;
-  char *proxy_tls_authtype;
   char *proxyuserpwd;
   char *proxy;
   char *noproxy;
@@ -159,6 +153,10 @@ struct OperationConfig {
   char *unix_socket_path;         /* path to Unix domain socket */
   char *haproxy_clientip;         /* client IP for HAProxy protocol */
   char *aws_sigv4;
+  char *httpsig_algorithm;
+  char *httpsig_headers;
+  char *httpsig_key;
+  char *httpsig_keyid;
   char *ech;                      /* Config set by --ech keywords */
   char *ech_config;               /* Config set by "--ech esl:" option */
   char *ech_public;               /* Config set by "--ech pn:" option */

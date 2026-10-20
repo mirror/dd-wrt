@@ -23,19 +23,18 @@
  ***************************************************************************/
 #include "first.h"
 
-/*
-  Based on a bug report recipe by Rene Bernhardt in
-  https://curl.se/mail/lib-2011-10/0323.html
+/* Based on a bug report recipe by Rene Bernhardt in
+   https://curl.se/mail/lib-2011-10/0323.html
 
-  It is reproducible by the following steps:
+   It is reproducible by the following steps:
 
-  - Use a proxy that offers NTLM and Negotiate
-    (CURLOPT_PROXY and CURLOPT_PROXYPORT)
-  - Tell libcurl NOT to use Negotiate
-    curl_easy_setopt(CURLOPT_PROXYAUTH,
-                     CURLAUTH_BASIC | CURLAUTH_DIGEST | CURLAUTH_NTLM)
-  - Start the request
-*/
+   - Use a proxy that offers NTLM and Negotiate
+     (CURLOPT_PROXY and CURLOPT_PROXYPORT)
+   - Tell libcurl NOT to use Negotiate
+     curl_easy_setopt(CURLOPT_PROXYAUTH,
+                      CURLAUTH_BASIC | CURLAUTH_DIGEST | CURLAUTH_NTLM)
+   - Start the request
+ */
 
 static CURLcode test_lib590(const char *URL)
 {
@@ -71,7 +70,7 @@ static CURLcode test_lib590(const char *URL)
     goto test_cleanup;
 
   result = curl_easy_getinfo(curl, CURLINFO_PROXYAUTH_USED, &usedauth);
-  if(CURLAUTH_NTLM != usedauth) {
+  if(usedauth != CURLAUTH_NTLM) {
     curl_mprintf("CURLINFO_PROXYAUTH_USED did not say NTLM\n");
   }
 

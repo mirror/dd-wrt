@@ -4,7 +4,7 @@
 <keywords>
 multi
 HTTP
-flaky
+libtest
 </keywords>
 </info>
 
@@ -35,9 +35,6 @@ wakeup
 <server>
 http
 </server>
-<tool>
-lib%TESTNUMBER
-</tool>
 <name>
 checking curl_multi_waitfds functionality
 </name>

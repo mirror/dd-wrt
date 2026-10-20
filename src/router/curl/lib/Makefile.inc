@@ -27,7 +27,7 @@ LIB_CURLX_CFILES =      \
   curlx/base64.c        \
   curlx/basename.c      \
   curlx/dynbuf.c        \
-  curlx/fopen.c         \
+  curlx/win32-fopen.c   \
   curlx/inet_ntop.c     \
   curlx/inet_pton.c     \
   curlx/multibyte.c     \
@@ -48,7 +48,7 @@ LIB_CURLX_HFILES =      \
   curlx/base64.h        \
   curlx/basename.h      \
   curlx/dynbuf.h        \
-  curlx/fopen.h         \
+  curlx/win32-fopen.h   \
   curlx/inet_ntop.h     \
   curlx/inet_pton.h     \
   curlx/multibyte.h     \
@@ -83,6 +83,26 @@ LIB_VAUTH_CFILES =      \
 LIB_VAUTH_HFILES =      \
   vauth/digest.h        \
   vauth/vauth.h
+
+LIB_VDNS_CFILES =           \
+  vdns/asyn-ares.c          \
+  vdns/asyn-base.c          \
+  vdns/asyn-thrdd.c         \
+  vdns/cf-dns.c             \
+  vdns/dnscache.c           \
+  vdns/doh.c                \
+  vdns/hostip.c             \
+  vdns/hostip4.c            \
+  vdns/hostip6.c            \
+  vdns/httpsrr.c
+
+LIB_VDNS_HFILES =           \
+  vdns/asyn.h               \
+  vdns/cf-dns.h             \
+  vdns/dnscache.h           \
+  vdns/doh.h                \
+  vdns/hostip.h             \
+  vdns/httpsrr.h
 
 LIB_VTLS_CFILES =           \
   vtls/apple.c              \
@@ -154,12 +174,9 @@ LIB_VSSH_HFILES =    \
 LIB_CFILES =         \
   altsvc.c           \
   amigaos.c          \
-  asyn-ares.c        \
-  asyn-base.c        \
-  asyn-thrdd.c       \
+  api.c              \
   bufq.c             \
   bufref.c           \
-  cf-dns.c           \
   cf-h1-proxy.c      \
   cf-h2-proxy.c      \
   cf-haproxy.c       \
@@ -194,8 +211,6 @@ LIB_CFILES =         \
   cw-out.c           \
   cw-pause.c         \
   dict.c             \
-  dnscache.c         \
-  doh.c              \
   dynhds.c           \
   easy.c             \
   easygetopt.c       \
@@ -213,20 +228,18 @@ LIB_CFILES =         \
   hash.c             \
   headers.c          \
   hmac.c             \
-  hostip.c           \
-  hostip4.c          \
-  hostip6.c          \
   hsts.c             \
   http.c             \
   http1.c            \
   http2.c            \
   http_aws_sigv4.c   \
+  http_httpsig.c     \
+  curl_ed25519.c     \
   http_chunks.c      \
   http_digest.c      \
   http_negotiate.c   \
   http_ntlm.c        \
   http_proxy.c       \
-  httpsrr.c          \
   idn.c              \
   if2ip.c            \
   imap.c             \
@@ -252,6 +265,7 @@ LIB_CFILES =         \
   protocol.c         \
   proxy.c            \
   psl.c              \
+  ptrarray.c         \
   rand.c             \
   ratelimit.c        \
   request.c          \
@@ -261,7 +275,6 @@ LIB_CFILES =         \
   setopt.c           \
   sha256.c           \
   slist.c            \
-  smb.c              \
   smtp.c             \
   socketpair.c       \
   socks.c            \
@@ -271,14 +284,14 @@ LIB_CFILES =         \
   strcase.c          \
   strequal.c         \
   strerror.c         \
-  system_win32.c     \
   telnet.c           \
   tftp.c             \
   thrdpool.c         \
   thrdqueue.c        \
   transfer.c         \
+  u8_strset.c        \
+  u32_ptrset.c       \
   uint-bset.c        \
-  uint-hash.c        \
   uint-spbset.c      \
   uint-table.c       \
   url.c              \
@@ -289,11 +302,10 @@ LIB_CFILES =         \
 LIB_HFILES =         \
   altsvc.h           \
   amigaos.h          \
+  api.h              \
   arpa_telnet.h      \
-  asyn.h             \
   bufq.h             \
   bufref.h           \
-  cf-dns.h           \
   cf-h1-proxy.h      \
   cf-h2-proxy.h      \
   cf-haproxy.h       \
@@ -336,8 +348,6 @@ LIB_HFILES =         \
   cw-out.h           \
   cw-pause.h         \
   dict.h             \
-  dnscache.h         \
-  doh.h              \
   dynhds.h           \
   easy_lock.h        \
   easyif.h           \
@@ -355,18 +365,18 @@ LIB_HFILES =         \
   gopher.h           \
   hash.h             \
   headers.h          \
-  hostip.h           \
   hsts.h             \
   http.h             \
   http1.h            \
   http2.h            \
   http_aws_sigv4.h   \
+  http_httpsig.h     \
+  curl_ed25519.h     \
   http_chunks.h      \
   http_digest.h      \
   http_negotiate.h   \
   http_ntlm.h        \
   http_proxy.h       \
-  httpsrr.h          \
   idn.h              \
   if2ip.h            \
   imap.h             \
@@ -387,6 +397,7 @@ LIB_HFILES =         \
   protocol.h         \
   proxy.h            \
   psl.h              \
+  ptrarray.h         \
   rand.h             \
   ratelimit.h        \
   request.h          \
@@ -399,7 +410,6 @@ LIB_HFILES =         \
   setup-win32.h      \
   sigpipe.h          \
   slist.h            \
-  smb.h              \
   smtp.h             \
   sockaddr.h         \
   socketpair.h       \
@@ -407,14 +417,14 @@ LIB_HFILES =         \
   splay.h            \
   strcase.h          \
   strerror.h         \
-  system_win32.h     \
   telnet.h           \
   tftp.h             \
   thrdpool.h         \
   thrdqueue.h        \
   transfer.h         \
+  u8_strset.h        \
+  u32_ptrset.h       \
   uint-bset.h        \
-  uint-hash.h        \
   uint-spbset.h      \
   uint-table.h       \
   url.h              \
@@ -424,7 +434,9 @@ LIB_HFILES =         \
 
 LIB_RCFILES = libcurl.rc
 
-CSOURCES = $(LIB_CFILES) $(LIB_VAUTH_CFILES) $(LIB_VTLS_CFILES) \
-  $(LIB_VQUIC_CFILES) $(LIB_VSSH_CFILES) $(LIB_CURLX_CFILES)
-HHEADERS = $(LIB_HFILES) $(LIB_VAUTH_HFILES) $(LIB_VTLS_HFILES) \
-  $(LIB_VQUIC_HFILES) $(LIB_VSSH_HFILES) $(LIB_CURLX_HFILES)
+CSOURCES = $(LIB_CFILES) $(LIB_VAUTH_CFILES) $(LIB_VDNS_CFILES) \
+  $(LIB_VTLS_CFILES) $(LIB_VQUIC_CFILES) $(LIB_VSSH_CFILES) \
+  $(LIB_CURLX_CFILES)
+HHEADERS = $(LIB_HFILES) $(LIB_VAUTH_HFILES) $(LIB_VDNS_HFILES) \
+  $(LIB_VTLS_HFILES) $(LIB_VQUIC_HFILES) $(LIB_VSSH_HFILES) \
+  $(LIB_CURLX_HFILES)

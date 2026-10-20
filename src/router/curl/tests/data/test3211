@@ -4,6 +4,9 @@
 <keywords>
 unittest
 uint_bset
+u8_strset
+u32_ptrset
+ptrarray
 </keywords>
 </info>
 
@@ -13,7 +16,7 @@ uint_bset
 unittest
 </features>
 <name>
-uint_bset unit tests
+uint_bset, u8_strset, u32_ptrset and ptrarray unit tests
 </name>
 </client>
 </testcase>

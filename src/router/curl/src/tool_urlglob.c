@@ -425,8 +425,7 @@ static CURLcode add_glob(struct URLGlob *glob, size_t pos)
 }
 
 /* returns the named glob pattern (case sensitively) if it exists, otherwise
-   NULL
-*/
+   NULL */
 static struct URLPattern *glob_find_name(struct URLGlob *glob,
                                          struct Curl_str *name)
 {
@@ -544,7 +543,13 @@ static CURLcode glob_parse(struct URLGlob *glob, const char *pattern,
 
 bool glob_inuse(struct URLGlob *glob)
 {
-  return glob->palloc ? TRUE : FALSE;
+  /* Both parsed patterns and a literal URL make the glob active. */
+  return (glob->palloc || glob->literal) ? TRUE : FALSE;
+}
+
+bool glob_is_literal(const struct URLGlob *glob)
+{
+  return glob->literal;
 }
 
 /* a glob error has been confirmed, this outputs details about it to the set
@@ -579,6 +584,12 @@ CURLcode glob_url(struct URLGlob *glob, const char *url, curl_off_t *urlnum,
 
   memset(glob, 0, sizeof(struct URLGlob));
   curlx_dyn_init(&glob->buf, MAX_CONFIG_LINE_LENGTH);
+  if(!strpbrk(url, "{}[]")) {
+    /* no glob syntax: use the URL as-is instead of parsing a copy of it */
+    glob->literal = TRUE;
+    *urlnum = 1;
+    return CURLE_OK;
+  }
   glob->pattern = curlx_malloc(2 * sizeof(struct URLPattern));
   if(!glob->pattern)
     return CURLE_OUT_OF_MEMORY;
@@ -599,11 +610,13 @@ void glob_cleanup(struct URLGlob *glob)
 {
   size_t i;
 
+  glob->literal = FALSE;
+  glob->beenhere = 0;
   if(glob->pattern) {
     for(i = 0; i < glob->pnum; i++) {
       DEBUGASSERT(glob->pattern[i].type);
       if((glob->pattern[i].type == GLOB_SET) &&
-         (glob->pattern[i].c.set.elem)) {
+         glob->pattern[i].c.set.elem) {
         curl_off_t elem;
         for(elem = 0; elem < glob->pattern[i].c.set.size; elem++)
           curlx_safefree(glob->pattern[i].c.set.elem[elem]);
@@ -623,6 +636,7 @@ CURLcode glob_next_url(char **globbed, struct URLGlob *glob)
   size_t i;
 
   *globbed = NULL;
+  DEBUGASSERT(!glob->literal);
   curlx_dyn_reset(&glob->buf);
 
   if(!glob->beenhere)
@@ -637,7 +651,7 @@ CURLcode glob_next_url(char **globbed, struct URLGlob *glob)
       pat = &glob->pattern[glob->pnum - 1 - i];
       switch(pat->type) {
       case GLOB_SET:
-        if((pat->c.set.elem) && (++pat->c.set.idx == pat->c.set.size)) {
+        if(pat->c.set.elem && (++pat->c.set.idx == pat->c.set.size)) {
           pat->c.set.idx = 0;
           carry = TRUE;
         }
@@ -670,10 +684,9 @@ CURLcode glob_next_url(char **globbed, struct URLGlob *glob)
     pat = &glob->pattern[i];
     switch(pat->type) {
     case GLOB_SET:
-      if(pat->c.set.elem) {
-        if(curlx_dyn_add(&glob->buf, pat->c.set.elem[pat->c.set.idx]))
-          return CURLE_OUT_OF_MEMORY;
-      }
+      if(pat->c.set.elem &&
+         curlx_dyn_add(&glob->buf, pat->c.set.elem[pat->c.set.idx]))
+        return CURLE_OUT_OF_MEMORY;
       break;
     case GLOB_ASCII: {
       char letter = (char)pat->c.ascii.letter;

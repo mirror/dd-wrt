@@ -149,8 +149,8 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__EXEEXT_1 = units$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-units_SOURCES = units.c
-units_OBJECTS = units.$(OBJEXT)
+@BUILD_UNITTESTS_TRUE@nodist_units_OBJECTS = $(BUNDLE).$(OBJEXT)
+units_OBJECTS = $(nodist_units_OBJECTS)
 units_LDADD = $(LDADD)
 @BUILD_UNITTESTS_TRUE@units_DEPENDENCIES =  \
 @BUILD_UNITTESTS_TRUE@	$(top_builddir)/lib/libcurlu.la
@@ -173,7 +173,7 @@ am__v_at_1 =
 DEFAULT_INCLUDES = 
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/units.Po
+am__depfiles_remade = ./$(DEPDIR)/$(BUNDLE).Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -193,8 +193,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = units.c
-DIST_SOURCES = units.c
+SOURCES = $(nodist_units_SOURCES)
+DIST_SOURCES =
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -251,6 +251,7 @@ CURL_CPP = @CURL_CPP@
 CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX = @CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX@
 CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME = @CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME@
 CURL_NETWORK_AND_TIME_LIBS = @CURL_NETWORK_AND_TIME_LIBS@
+CURL_PACKAGE_MAINTAINER = @CURL_PACKAGE_MAINTAINER@
 CYGPATH_W = @CYGPATH_W@
 DANTED = @DANTED@
 DEFS = @DEFS@
@@ -437,29 +438,92 @@ FIRST_C = ../libtest/first.c
 
 # All unit test programs
 TESTS_C = \
-  unit1300.c            unit1302.c unit1303.c unit1304.c unit1305.c \
-  unit1307.c            unit1309.c \
-  unit1323.c unit1330.c \
-  unit1395.c unit1396.c unit1397.c unit1398.c unit1399.c \
-  unit1600.c unit1601.c unit1602.c unit1603.c            unit1605.c unit1606.c \
-  unit1607.c unit1608.c unit1609.c unit1610.c unit1611.c unit1612.c unit1614.c \
-  unit1615.c unit1616.c                                  unit1620.c \
-  unit1625.c unit1626.c unit1627.c \
+  unit1300.c \
+  unit1302.c \
+  unit1303.c \
+  unit1304.c \
+  unit1305.c \
+  unit1307.c \
+  unit1309.c \
+  unit1323.c \
+  unit1330.c \
+  unit1395.c \
+  unit1397.c \
+  unit1399.c \
+  unit1600.c \
+  unit1601.c \
+  unit1602.c \
+  unit1603.c \
+  unit1606.c \
+  unit1607.c \
+  unit1608.c \
+  unit1610.c \
+  unit1611.c \
+  unit1612.c \
+  unit1614.c \
+  unit1615.c \
+  unit1620.c \
+  unit1625.c \
+  unit1626.c \
+  unit1627.c \
   unit1636.c \
-  unit1650.c unit1651.c unit1652.c unit1653.c unit1654.c unit1655.c unit1656.c \
-  unit1657.c unit1658.c            unit1660.c unit1661.c unit1663.c unit1664.c \
-             unit1666.c unit1667.c unit1668.c unit1669.c \
-  unit1674.c unit1675.c unit1676.c \
-  unit1979.c unit1980.c \
+  unit1650.c \
+  unit1651.c \
+  unit1652.c \
+  unit1653.c \
+  unit1654.c \
+  unit1655.c \
+  unit1656.c \
+  unit1657.c \
+  unit1658.c \
+  unit1660.c \
+  unit1661.c \
+  unit1663.c \
+  unit1664.c \
+  unit1666.c \
+  unit1667.c \
+  unit1668.c \
+  unit1669.c \
+  unit1674.c \
+  unit1675.c \
+  unit1676.c \
+  unit1693.c \
+  unit1961.c \
+  unit1979.c \
+  unit1980.c \
   unit2413.c \
-  unit2600.c unit2601.c unit2602.c unit2603.c unit2604.c unit2605.c \
-  unit3200.c                                             unit3205.c \
-  unit3211.c unit3212.c unit3213.c unit3214.c            unit3216.c unit3219.c \
-  unit3300.c unit3301.c unit3302.c unit3303.c unit3304.c unit3400.c
+  unit2600.c \
+  unit2601.c \
+  unit2602.c \
+  unit2603.c \
+  unit2604.c \
+  unit2605.c \
+  unit2606.c \
+  unit3200.c \
+  unit3205.c \
+  unit3211.c \
+  unit3212.c \
+  unit3213.c \
+  unit3214.c \
+  unit3216.c \
+  unit3219.c \
+  unit3227.c \
+  unit3230.c \
+  unit3271.c \
+  unit3300.c \
+  unit3301.c \
+  unit3302.c \
+  unit3303.c \
+  unit3304.c \
+  unit3306.c \
+  unit3400.c \
+  unit4781.c \
+  unit4782.c
 
 
 # Get BUNDLE, FIRST_C, TESTS_C variables
 EXTRA_DIST = CMakeLists.txt README.md $(TESTS_C)
+@BUILD_UNITTESTS_TRUE@nodist_units_SOURCES = $(BUNDLE).c
 @BUILD_UNITTESTS_TRUE@LDADD = $(top_builddir)/lib/libcurlu.la
 @BUILD_UNITTESTS_TRUE@CLEANFILES = $(BUNDLE).c
 CHECKSRC = $(CS_$(V))
@@ -520,7 +584,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/units.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/$(BUNDLE).Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -684,7 +748,7 @@ clean-am: clean-generic clean-libtool clean-local clean-noinstPROGRAMS \
 	mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/units.Po
+		-rm -f ./$(DEPDIR)/$(BUNDLE).Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -730,7 +794,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/units.Po
+		-rm -f ./$(DEPDIR)/$(BUNDLE).Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

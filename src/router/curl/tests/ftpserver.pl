@@ -180,9 +180,9 @@ my $ftptargetdir = "";
 # that they are closely related and relationship is a bit awkward.
 #
 my $datasockf_state = 'STOPPED'; # see datasockf_state() sub
-my $datasockf_mode = 'none';     # ['none','active','passive']
-my $datasockf_runs = 'no';       # ['no','yes']
-my $datasockf_conn = 'no';       # ['no','yes']
+my $datasockf_mode = 'none';     # ['none', 'active', 'passive']
+my $datasockf_runs = 'no';       # ['no', 'yes']
+my $datasockf_conn = 'no';       # ['no', 'yes']
 
 #**********************************************************************
 # global vars used for signal handling
@@ -330,7 +330,7 @@ sub read_mainsockf {
         $timeout = $sockfilt_timeout + ($nbytes >> 12);
     }
     if(eXsysread($FH, $scalar, $nbytes, $timeout) != $nbytes) {
-        my ($fcaller, $lcaller) = (caller)[1,2];
+        my ($fcaller, $lcaller) = (caller)[1, 2];
         logmsg "Error: read_mainsockf() failure at $fcaller " .
                "line $lcaller. Due to eXsysread() failure\n";
         return 0;
@@ -354,7 +354,7 @@ sub read_datasockf {
         $timeout = $sockfilt_timeout + ($nbytes >> 12);
     }
     if(eXsysread($FH, $scalar, $nbytes, $timeout) != $nbytes) {
-        my ($fcaller, $lcaller) = (caller)[1,2];
+        my ($fcaller, $lcaller) = (caller)[1, 2];
         logmsg "Error: read_datasockf() failure at $fcaller " .
                "line $lcaller. Due to eXsysread() failure\n";
         return 0;
@@ -373,7 +373,7 @@ sub sysread_or_die {
     $result = sysread($$FH, $$scalar, $length);
 
     if(not defined $result) {
-        ($fcaller, $lcaller) = (caller)[1,2];
+        ($fcaller, $lcaller) = (caller)[1, 2];
         logmsg "Failed to read input\n";
         logmsg "Error: $srvrname server, sysread error: $!\n";
         logmsg "Exited from sysread_or_die() at $fcaller " .
@@ -388,7 +388,7 @@ sub sysread_or_die {
         exit;
     }
     elsif($result == 0) {
-        ($fcaller, $lcaller) = (caller)[1,2];
+        ($fcaller, $lcaller) = (caller)[1, 2];
         logmsg "Failed to read input\n";
         logmsg "Error: $srvrname server, read zero\n";
         logmsg "Exited from sysread_or_die() at $fcaller " .
@@ -442,7 +442,7 @@ sub getreplydata {
     my $testpart = "";
 
     $num =~ s/^([^0-9]*)//;
-    if($num > 10000) {
+    if($num && $num > 10000) {
        $testpart = $num % 10000;
     }
 
@@ -520,7 +520,7 @@ sub senddata {
         }
         else {
             # pause between each byte
-            for (split(//,$l)) {
+            for(split(//, $l)) {
                 sockfiltsecondary $_;
                 Time::HiRes::sleep($datadelay);
             }
@@ -1252,7 +1252,7 @@ sub FETCH_imap {
             @data = getreplydata($selected);
         }
 
-        for (@data) {
+        for(@data) {
             $size += length($_);
         }
 
@@ -2115,6 +2115,7 @@ sub LIST_ftp {
         my @ftpdir = ftp_contentlist($ftptargetdir);
         # old hard-coded style
         for(@ftpdir) {
+            logmsg "LIST: $_";
             senddata $_;
         }
     }
@@ -2574,8 +2575,8 @@ sub PASV_ftp {
         sendcontrol sprintf("229 Entering Passive Mode (|||%d|)\r\n", $pasvport);
     }
 
-    logmsg "Client has been notified that DATA conn ".
-           "will be accepted on port $pasvport\n";
+    logmsg "Client has been notified that upcoming DATA connection ".
+           "is awaited on port $pasvport\n";
 
     if($nodataconn) {
         my $str = nodataconn_str();
@@ -2765,7 +2766,7 @@ sub datasockf_state {
     }
     elsif($state eq 'PASSIVE_NODATACONN') {
         # Data sockfilter bound port without listening,
-        # client will not be able to establish data connection.
+        # client is unable to establish data connection.
         $datasockf_state = $state;
         $datasockf_mode = 'passive';
         $datasockf_runs = 'yes';
@@ -2884,7 +2885,7 @@ sub customize {
             $retrnosize = 1;
         }
         elsif($_ =~ /RETRSIZE (\d+)/) {
-            $retrsize= $1;
+            $retrsize = $1;
             logmsg "FTPD: instructed to use RETRSIZE = $1\n";
         }
         elsif($_ =~ /PASVBADIP/) {
@@ -3142,7 +3143,8 @@ while(1) {
     $| = 1;
 
     &customize(); # read test control instructions
-    loadtest("$logdir/test$testno");
+    # force a reload, a test retry may have regenerated the file
+    loadtest("$logdir/test$testno", 0, 1);
 
     my $welcome = $commandreply{"welcome"};
     if(!$welcome) {

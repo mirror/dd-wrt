@@ -227,6 +227,7 @@ CURL_CPP = @CURL_CPP@
 CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX = @CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX@
 CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME = @CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME@
 CURL_NETWORK_AND_TIME_LIBS = @CURL_NETWORK_AND_TIME_LIBS@
+CURL_PACKAGE_MAINTAINER = @CURL_PACKAGE_MAINTAINER@
 CYGPATH_W = @CYGPATH_W@
 DANTED = @DANTED@
 DEFS = @DEFS@
@@ -365,11 +366,12 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 EXTRA_DIST = coverage.sh completion.pl firefox-db2pem.sh checksrc.pl          \
-  checksrc-all.pl mk-ca-bundle.pl mk-unity.pl schemetable.c cd2nroff nroff2cd \
+  checksrc-all.pl mk-ca-bundle.pl mk-unity.pl cd2nroff nroff2cd               \
   cdall cd2cd managen dmaketgz maketgz release-tools.sh verify-release        \
-  cmakelint.sh mdlinkcheck CMakeLists.txt perlcheck.sh pythonlint.sh          \
-  spacecheck.pl randdisable wcurl top-complexity extract-unit-protos          \
-  .checksrc badwords badwords-all badwords.txt top-length
+  cmakelint.sh cmakeopts.sh mdlinkcheck CMakeLists.txt perlcheck.sh           \
+  pythonlint.sh spacecheck.pl randdisable wcurl top-complexity                \
+  extract-unit-protos .checksrc badwords badwords-all badwords.txt top-length \
+  testnum
 
 dist_bin_SCRIPTS = wcurl
 @USE_ZSH_COMPLETION_TRUE@ZSH_COMPLETION_FUNCTION_FILENAME = _curl

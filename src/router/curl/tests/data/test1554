@@ -5,6 +5,7 @@
 HTTP
 HTTP GET
 shared connections
+libtest
 </keywords>
 </info>
 
@@ -28,19 +29,13 @@ run 1: foobar and so on fun!
 [- Mutex unlock CONNECT
 -] Mutex lock CONNECT
 [- Mutex unlock CONNECT
--] Mutex lock CONNECT
-[- Mutex unlock CONNECT
 run 1: foobar and so on fun!
 -] Mutex lock CONNECT
 [- Mutex unlock CONNECT
--] Mutex lock CONNECT
-[- Mutex unlock CONNECT
 -] Mutex lock SHARE
 [- Mutex unlock SHARE
 -] Mutex lock SHARE
 [- Mutex unlock SHARE
--] Mutex lock CONNECT
-[- Mutex unlock CONNECT
 -] Mutex lock CONNECT
 [- Mutex unlock CONNECT
 -] Mutex lock CONNECT
@@ -48,14 +43,10 @@ run 1: foobar and so on fun!
 run 1: foobar and so on fun!
 -] Mutex lock CONNECT
 [- Mutex unlock CONNECT
--] Mutex lock CONNECT
-[- Mutex unlock CONNECT
 -] Mutex lock SHARE
 [- Mutex unlock SHARE
 -] Mutex lock SHARE
 [- Mutex unlock SHARE
--] Mutex lock CONNECT
-[- Mutex unlock CONNECT
 -] Mutex lock CONNECT
 [- Mutex unlock CONNECT
 -] Mutex lock CONNECT
@@ -63,12 +54,12 @@ run 1: foobar and so on fun!
 run 1: foobar and so on fun!
 -] Mutex lock CONNECT
 [- Mutex unlock CONNECT
+-] Mutex lock SHARE
+[- Mutex unlock SHARE
+-] Mutex lock SHARE
+[- Mutex unlock SHARE
 -] Mutex lock CONNECT
 [- Mutex unlock CONNECT
--] Mutex lock SHARE
-[- Mutex unlock SHARE
--] Mutex lock SHARE
-[- Mutex unlock SHARE
 </datacheck>
 </reply>
 
@@ -80,9 +71,6 @@ http
 <name>
 HTTP with shared connection cache
 </name>
-<tool>
-lib%TESTNUMBER
-</tool>
 <command>
 http://%HOSTIP:%HTTPPORT/%TESTNUMBER
 </command>

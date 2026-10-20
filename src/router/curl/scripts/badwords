@@ -149,7 +149,7 @@ sub sourcecode {
     my $flags = 0;
     my @lines;
     my $line;
-    open(F, "<$f");
+    open(F, "<", $f);
     while(<F>) {
         my $l = $_;
         ($state, $flags, $line) = srcline($state, $flags, $l);
@@ -175,7 +175,7 @@ my %wl;
 my @w;
 my @exact;
 my $file = shift @ARGV;
-open(CONFIG, "<$file") or die "Cannot open '$file': $!";
+open(CONFIG, "<", $file) or die "Cannot open '$file': $!";
 while(<CONFIG>) {
     chomp;
     if($_ =~ /^#/) {
@@ -261,7 +261,7 @@ sub highlight {
 sub document {
     my ($f) = @_;
     my @lines;
-    open(F, "<$f");
+    open(F, "<", $f);
     while(<F>) {
         push @lines, $_;
     }
@@ -318,7 +318,7 @@ sub file {
 }
 
 my @filemasks = @ARGV;
-open(my $git_ls_files, '-|', 'git', 'ls-files', '--', ":!:$file", @filemasks) or die "Failed running git ls-files: $!";
+open(my $git_ls_files, '-|', 'git', 'ls-files', '--end-of-options', ":!:$file", @filemasks) or die "Failed running git ls-files: $!";
 my @files;
 while(my $each = <$git_ls_files>) {
     chomp $each;

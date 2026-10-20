@@ -2,54 +2,58 @@
 <testcase>
 <info>
 <keywords>
-HTTPS
-HTTP GET
-TLS-SRP
+HTTP
+cookies
 </keywords>
 </info>
 
 # Server-side
 <reply>
-<data nocheck="yes">
-%includetext %SRCDIR/data/data%TESTNUMBER.html%
+<data crlf="headers">
+HTTP/1.1 200 OK
+Date: Tue, 09 Nov 2010 14:49:00 GMT
+Server: test-server/fake
+Last-Modified: Tue, 13 Jun 2000 12:10:00 GMT
+ETag: "21025-dc7-39462498"
+Accept-Ranges: bytes
+Content-Length: 6
+Connection: something-close, close-something, close
+Content-Type: text/html
+Funny-head: yesyes
+
+-foo-
 </data>
 </reply>
 
 # Client-side
 <client>
-<server>
-httptls+srp
-</server>
 <features>
-TLS-SRP
+cookies
+PSL
 </features>
+<server>
+http
+</server>
 <name>
-simple TLS-SRP HTTPS GET, check user in response
+Load cookies from file for localhost
 </name>
 <command>
---insecure --tlsauthtype SRP --tlsuser jsmith --tlspassword abc -A curl-test-suite https://%HOSTIP:%HTTPTLSPORT
+http://localhost:%HTTPPORT/%TESTNUMBER -b %LOGDIR/cookies.txt --resolve localhost:%HTTPPORT:%HOSTIP
 </command>
+<file name="%LOGDIR/cookies.txt">
+localhost%TABTRUE%TAB/%TABFALSE%TAB0%TABgood%TABallowed
+</file>
 </client>
 
 # Verify data after the test has been "shot"
 <verify>
-<file name="%LOGDIR/curl%TESTNUMBER.out" crlf="headers">
-HTTP/1.0 200 OK
-Content-type: text/html
-
-FINE
-User-Agent: curl-test-suite
+<protocol crlf="headers">
+GET /%TESTNUMBER HTTP/1.1
+Host: localhost:%HTTPPORT
+User-Agent: curl/%VERSION
 Accept: */*
+Cookie: good=allowed
 
-</file>
-<stripfile>
-s/^%LTp%GTConnected as user 'jsmith'.*/FINE/
-s/Protocol version:.*[0-9]//
-s/GNUTLS/GnuTLS/
-s/(AES[-_])\d\d\d([-_]CBC)/$1NNN$2/
-s/^%LT.*\n//
-s/^\n//
-</stripfile>
+</protocol>
 </verify>
-
 </testcase>

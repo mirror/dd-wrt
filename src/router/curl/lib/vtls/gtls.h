@@ -31,19 +31,11 @@
 
 #include "curlx/timeval.h"
 
-#ifdef HAVE_GNUTLS_SRP
-/* the function exists */
-#ifdef USE_TLS_SRP
-/* the functionality is not disabled */
-#define USE_GNUTLS_SRP
-#endif
-#endif
-
 struct Curl_easy;
 struct Curl_cfilter;
 struct alpn_spec;
-struct ssl_primary_config;
-struct ssl_config_data;
+struct ssl_filter_config;
+struct ssl_easy_config;
 struct ssl_peer;
 struct ssl_connect_data;
 struct Curl_ssl_session;
@@ -64,9 +56,6 @@ void Curl_gtls_shared_creds_free(struct gtls_shared_creds **pcreds);
 struct gtls_ctx {
   gnutls_session_t session;
   struct gtls_shared_creds *shared_creds;
-#ifdef USE_GNUTLS_SRP
-  gnutls_srp_client_credentials_t srp_client_cred;
-#endif
   CURLcode io_result; /* result of last IO cfilter operation */
   BIT(sent_shutdown);
 };
@@ -100,12 +89,13 @@ CURLcode Curl_gtls_client_trust_setup(struct Curl_cfilter *cf,
 CURLcode Curl_gtls_verifyserver(struct Curl_cfilter *cf,
                                 struct Curl_easy *data,
                                 gnutls_session_t session,
-                                struct ssl_primary_config *config,
-                                struct ssl_config_data *ssl_config,
+                                struct ssl_filter_config *config,
+                                struct ssl_easy_config *ssl_config,
                                 struct ssl_peer *peer,
                                 const char *pinned_key);
 
-/* Extract TLS session and place in cache, if configured. */
+/* Extract TLS session and place in cache, if configured. Return
+ * a copy of the session if desired. */
 CURLcode Curl_gtls_cache_session(struct Curl_cfilter *cf,
                                  struct Curl_easy *data,
                                  const char *ssl_peer_key,
@@ -113,7 +103,8 @@ CURLcode Curl_gtls_cache_session(struct Curl_cfilter *cf,
                                  curl_off_t valid_until,
                                  const char *alpn,
                                  unsigned char *quic_tp,
-                                 size_t quic_tp_len);
+                                 size_t quic_tp_len,
+                                 struct Curl_ssl_session **psession);
 
 /* Report properties of a successful handshake */
 void Curl_gtls_report_handshake(struct Curl_easy *data, struct gtls_ctx *gctx);

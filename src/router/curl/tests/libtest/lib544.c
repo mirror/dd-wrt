@@ -63,7 +63,7 @@ static CURLcode test_lib544(const char *URL)
   easy_setopt(curl, CURLOPT_HEADER, 1L); /* include header */
 
   /* Update the original data to detect non-copy. */
-  curlx_strcopy(teststring, sizeof(teststring), "FAIL", strlen("FAIL"));
+  curlx_strcopy(teststring, sizeof(teststring), "FAIL", CURL_CSTRLEN("FAIL"));
 
   {
     CURL *curl2;
@@ -73,7 +73,7 @@ static CURLcode test_lib544(const char *URL)
     curl = curl2;
   }
 
-  /* Now, this is a POST request with binary 0 embedded in POST data. */
+  /* Now, this is a POST request with NUL byte embedded in POST data. */
   result = curl_easy_perform(curl);
 
 test_cleanup:

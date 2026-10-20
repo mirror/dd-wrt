@@ -36,13 +36,9 @@
 
    "SSL/TLS Strong Encryption: An Introduction"
    https://httpd.apache.org/docs/2.0/ssl/ssl_intro.html
-*/
+ */
 
 #include "curl_setup.h"
-
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
 
 #include "urldata.h"
 #include "setopt.h"
@@ -101,7 +97,7 @@ static bool blobcmp(struct curl_blob *first, struct curl_blob *second)
   return !memcmp(first->data, second->data, first->len); /* same data */
 }
 
-void Curl_ssl_config_init(struct ssl_primary_config *sslc)
+void Curl_ssl_config_init(struct ssl_easy_config *sslc)
 {
   /*
    * libcurl 7.10 introduced SSL verification *by default*! This needs to be
@@ -112,7 +108,7 @@ void Curl_ssl_config_init(struct ssl_primary_config *sslc)
   sslc->cache_session = TRUE; /* caching by default */
 }
 
-void Curl_ssl_config_cleanup(struct ssl_primary_config *sslc)
+void Curl_ssl_config_cleanup(struct ssl_filter_config *sslc)
 {
   if(sslc->deep_copy) {
     curlx_safefree(sslc->CApath);
@@ -133,25 +129,32 @@ void Curl_ssl_config_cleanup(struct ssl_primary_config *sslc)
     curlx_safefree(sslc->key);
     curlx_safefree(sslc->key_type);
     curlx_safefree(sslc->key_passwd);
-#ifdef USE_TLS_SRP
-    curlx_safefree(sslc->username);
-    curlx_safefree(sslc->password);
+#ifdef USE_ECH
+    curlx_safefree(sslc->ech_config);
+    curlx_safefree(sslc->ech_public);
 #endif
     sslc->deep_copy = FALSE;
   }
 }
 
 static bool match_ssl_primary_config(struct Curl_easy *data,
-                                     struct ssl_primary_config *c1,
-                                     struct ssl_primary_config *c2)
+                                     struct ssl_filter_config *c1,
+                                     struct ssl_filter_config *c2)
 {
   (void)data;
   if((c1->version == c2->version) &&
      (c1->version_max == c2->version_max) &&
      (c1->ssl_options == c2->ssl_options) &&
+     (c1->native_ca_store == c2->native_ca_store) &&
      (c1->verifypeer == c2->verifypeer) &&
      (c1->verifyhost == c2->verifyhost) &&
      (c1->verifystatus == c2->verifystatus) &&
+     (c1->auto_client_cert == c2->auto_client_cert) &&
+#ifdef USE_ECH
+     (c1->ech == c2->ech) &&
+     Curl_safecmp(c1->ech_config, c2->ech_config) &&
+     Curl_safecmp(c1->ech_public, c2->ech_public) &&
+#endif
      blobcmp(c1->cert_blob, c2->cert_blob) &&
      blobcmp(c1->ca_info_blob, c2->ca_info_blob) &&
      blobcmp(c1->issuercert_blob, c2->issuercert_blob) &&
@@ -160,10 +163,6 @@ static bool match_ssl_primary_config(struct Curl_easy *data,
      Curl_safecmp(c1->CAfile, c2->CAfile) &&
      Curl_safecmp(c1->issuercert, c2->issuercert) &&
      Curl_safecmp(c1->clientcert, c2->clientcert) &&
-#ifdef USE_TLS_SRP
-     !Curl_timestrcmp(c1->username, c2->username) &&
-     !Curl_timestrcmp(c1->password, c2->password) &&
-#endif
      curl_strequal(c1->cipher_list, c2->cipher_list) &&
      curl_strequal(c1->cipher_list13, c2->cipher_list13) &&
      curl_strequal(c1->curves, c2->curves) &&
@@ -180,22 +179,23 @@ static bool match_ssl_primary_config(struct Curl_easy *data,
 }
 
 bool Curl_ssl_conn_config_match(struct Curl_easy *data,
+                                struct ssl_filter_config *conn_config,
                                 struct connectdata *candidate,
                                 bool proxy)
 {
 #ifndef CURL_DISABLE_PROXY
   if(proxy)
-    return match_ssl_primary_config(data, &data->set.proxy_ssl.primary,
+    return match_ssl_primary_config(data, conn_config,
                                     &candidate->proxy_ssl_config);
 #else
   (void)proxy;
 #endif
-  return match_ssl_primary_config(data, &data->set.ssl.primary,
+  return match_ssl_primary_config(data, conn_config,
                                   &candidate->ssl_config);
 }
 
-static bool clone_ssl_primary_config(struct ssl_primary_config *source,
-                                     struct ssl_primary_config *dest)
+static bool clone_ssl_primary_config(struct ssl_filter_config *source,
+                                     struct ssl_filter_config *dest)
 {
   DEBUGASSERT(!dest->deep_copy);
   dest->deep_copy = TRUE;
@@ -204,8 +204,15 @@ static bool clone_ssl_primary_config(struct ssl_primary_config *source,
   dest->verifypeer = source->verifypeer;
   dest->verifyhost = source->verifyhost;
   dest->verifystatus = source->verifystatus;
-  dest->cache_session = source->cache_session;
   dest->ssl_options = source->ssl_options;
+  dest->native_ca_store = source->native_ca_store;
+  dest->cache_session = source->cache_session;
+  dest->auto_client_cert = source->auto_client_cert;
+  dest->earlydata = source->earlydata;
+  dest->enable_beast = source->enable_beast;
+  dest->no_partialchain = source->no_partialchain;
+  dest->no_revoke = source->no_revoke;
+  dest->revoke_best_effort = source->revoke_best_effort;
 
   CLONE_BLOB(cert_blob);
   CLONE_BLOB(ca_info_blob);
@@ -219,178 +226,218 @@ static bool clone_ssl_primary_config(struct ssl_primary_config *source,
   CLONE_STRING(curves);
   CLONE_STRING(signature_algorithms);
   CLONE_STRING(CRLfile);
-  /* SSL credentials: client certificate, SRP auth */
+  /* SSL credentials: client certificate */
   CLONE_STRING(clientcert);
   CLONE_STRING(cert_type);
   CLONE_STRING(key);
   CLONE_STRING(key_type);
   CLONE_STRING(key_passwd);
   CLONE_BLOB(key_blob);
-#ifdef USE_TLS_SRP
-  CLONE_STRING(username);
-  CLONE_STRING(password);
+#ifdef USE_ECH
+  dest->ech = source->ech;
+  CLONE_STRING(ech_config);
+  CLONE_STRING(ech_public);
 #endif
-
   return TRUE;
 }
 
-static void ssl_easy_config_compl_options(struct Curl_peer *origin,
-                                          struct Curl_peer *initial_origin,
-                                          struct ssl_config_data *sslc)
+static void
+ssl_easy_config_compl_options(struct Curl_peer *origin,
+                              struct Curl_peer *initial_origin,
+                              struct ssl_easy_config *sslc,
+                              struct ssl_filter_config *primary)
 {
-  uint8_t options = sslc->primary.ssl_options;
+  uint8_t options = sslc->ssl_options;
   /* If set via CURLOPT_(PROXY_)SSL_OPTIONS, we definitely use it.
    * If not, we switch it on for supported backends if no custom
    * CA settings exist. */
-  sslc->native_ca_store = !!(options & CURLSSLOPT_NATIVE_CA);
-  sslc->enable_beast = !!(options & CURLSSLOPT_ALLOW_BEAST);
-  sslc->no_partialchain = !!(options & CURLSSLOPT_NO_PARTIALCHAIN);
-  sslc->no_revoke = !!(options & CURLSSLOPT_NO_REVOKE);
-  sslc->revoke_best_effort = !!(options & CURLSSLOPT_REVOKE_BEST_EFFORT);
-  sslc->earlydata = !!(options & CURLSSLOPT_EARLYDATA);
-
-  sslc->auto_client_cert = Curl_peer_equal(origin, initial_origin) &&
-                           !!(options & CURLSSLOPT_AUTO_CLIENT_CERT);
+  primary->native_ca_store = !!(options & CURLSSLOPT_NATIVE_CA);
+  primary->earlydata = !!(options & CURLSSLOPT_EARLYDATA);
+  primary->auto_client_cert =
+    Curl_peer_equal(origin, initial_origin) &&
+    !!(options & CURLSSLOPT_AUTO_CLIENT_CERT);
+  primary->enable_beast = !!(options & CURLSSLOPT_ALLOW_BEAST);
+  primary->no_partialchain = !!(options & CURLSSLOPT_NO_PARTIALCHAIN);
+  primary->no_revoke = !!(options & CURLSSLOPT_NO_REVOKE);
+  primary->revoke_best_effort = !!(options & CURLSSLOPT_REVOKE_BEST_EFFORT);
 }
 
-CURLcode Curl_ssl_easy_config_complete(struct Curl_easy *data,
-                                       struct Curl_peer *origin)
+static char *ssl_easy_steal(struct Curl_easy *data, enum dupstring id)
 {
-  struct ssl_config_data *sslc = &data->set.ssl;
+  /* For connection matching, we borrow string references from data
+   * THIS IS NOT REALLY NICE. */
+  return CURL_UNCONST(CURL_EASY_STR(data, id));
+}
+
+CURLcode Curl_ssl_filter_config_tmp_init(
+  struct Curl_easy *data, struct Curl_peer *origin,
+  struct ssl_filter_config *ssl_origin,
+  struct ssl_filter_config *ssl_proxy)
+{
+  struct ssl_easy_config *sslc = &data->set.ssl;
 #if defined(CURL_CA_PATH) || defined(CURL_CA_BUNDLE)
-  struct UserDefined *set = &data->set;
   CURLcode result;
 #endif
 
-  ssl_easy_config_compl_options(origin, data->state.initial_origin, sslc);
+  ssl_easy_config_compl_options(origin, data->state.initial_origin, sslc,
+                                ssl_origin);
 
   if(Curl_ssl_backend() != CURLSSLBACKEND_SCHANNEL) {
 #if defined(USE_APPLE_SECTRUST) || defined(CURL_CA_NATIVE)
     if(!sslc->custom_capath && !sslc->custom_cafile && !sslc->custom_cablob)
-      sslc->native_ca_store = TRUE;
+      ssl_origin->native_ca_store = TRUE;
 #endif
 #ifdef CURL_CA_PATH
-    if(!sslc->custom_capath && !set->str[STRING_SSL_CAPATH]) {
-      result = Curl_setstropt(&set->str[STRING_SSL_CAPATH], CURL_CA_PATH);
+    if(!sslc->custom_capath && !CURL_EASY_STR(data, STRING_SSL_CAPATH)) {
+      result = Curl_setstropt(data, STRING_SSL_CAPATH, CURL_CA_PATH);
       if(result)
         return result;
     }
 #endif
 #ifdef CURL_CA_BUNDLE
-    if(!sslc->custom_cafile && !set->str[STRING_SSL_CAFILE]) {
-      result = Curl_setstropt(&set->str[STRING_SSL_CAFILE], CURL_CA_BUNDLE);
+    if(!sslc->custom_cafile && !CURL_EASY_STR(data, STRING_SSL_CAFILE)) {
+      result = Curl_setstropt(data, STRING_SSL_CAFILE, CURL_CA_BUNDLE);
       if(result)
         return result;
     }
 #endif
   }
-  sslc->primary.CAfile = data->set.str[STRING_SSL_CAFILE];
-  sslc->primary.CRLfile = data->set.str[STRING_SSL_CRLFILE];
-  sslc->primary.CApath = data->set.str[STRING_SSL_CAPATH];
-  sslc->primary.cipher_list = data->set.str[STRING_SSL_CIPHER_LIST];
-  sslc->primary.cipher_list13 = data->set.str[STRING_SSL_CIPHER13_LIST];
-  sslc->primary.signature_algorithms =
-    data->set.str[STRING_SSL_SIGNATURE_ALGORITHMS];
-  sslc->primary.ca_info_blob = data->set.blobs[BLOB_CAINFO];
-  sslc->primary.curves = data->set.str[STRING_SSL_EC_CURVES];
+
+  ssl_origin->version = sslc->version;
+  ssl_origin->version_max = sslc->version_max;
+  ssl_origin->verifypeer = sslc->verifypeer;
+  ssl_origin->verifyhost = sslc->verifyhost;
+  ssl_origin->verifystatus = sslc->verifystatus;
+  ssl_origin->cache_session = sslc->cache_session;
+  ssl_origin->ssl_options = sslc->ssl_options;
+  ssl_origin->CAfile = ssl_easy_steal(data, STRING_SSL_CAFILE);
+  ssl_origin->CRLfile = ssl_easy_steal(data, STRING_SSL_CRLFILE);
+  ssl_origin->CApath = ssl_easy_steal(data, STRING_SSL_CAPATH);
+  ssl_origin->cipher_list = ssl_easy_steal(data, STRING_SSL_CIPHER_LIST);
+  ssl_origin->cipher_list13 = ssl_easy_steal(data, STRING_SSL_CIPHER13_LIST);
+  ssl_origin->signature_algorithms =
+    ssl_easy_steal(data, STRING_SSL_SIGNATURE_ALGORITHMS);
+  ssl_origin->ca_info_blob = data->set.blobs[BLOB_CAINFO];
+  ssl_origin->curves = ssl_easy_steal(data, STRING_SSL_EC_CURVES);
   /* Maybe these should not be used for another origin. But for
    * backwards compatibility, keep them in. */
-  sslc->primary.issuercert = data->set.str[STRING_SSL_ISSUERCERT];
-  sslc->primary.issuercert_blob = data->set.blobs[BLOB_SSL_ISSUERCERT];
+  ssl_origin->issuercert = ssl_easy_steal(data, STRING_SSL_ISSUERCERT);
+  ssl_origin->issuercert_blob = data->set.blobs[BLOB_SSL_ISSUERCERT];
 
   if(Curl_peer_equal(data->state.initial_origin, origin)) {
-    sslc->primary.pinned_key = data->set.str[STRING_SSL_PINNEDPUBLICKEY];
-    sslc->primary.cert_blob = data->set.blobs[BLOB_CERT];
-    sslc->primary.cert_type = data->set.str[STRING_CERT_TYPE];
-    sslc->primary.key = data->set.str[STRING_KEY];
-    sslc->primary.key_type = data->set.str[STRING_KEY_TYPE];
-    sslc->primary.key_passwd = data->set.str[STRING_KEY_PASSWD];
-    sslc->primary.clientcert = data->set.str[STRING_CERT];
-    sslc->primary.key_blob = data->set.blobs[BLOB_KEY];
-#ifdef USE_TLS_SRP
-    sslc->primary.username = data->set.str[STRING_TLSAUTH_USERNAME];
-    sslc->primary.password = data->set.str[STRING_TLSAUTH_PASSWORD];
+    ssl_origin->pinned_key =
+      ssl_easy_steal(data, STRING_SSL_PINNEDPUBLICKEY);
+    ssl_origin->cert_blob = data->set.blobs[BLOB_CERT];
+    ssl_origin->cert_type = ssl_easy_steal(data, STRING_CERT_TYPE);
+    ssl_origin->key = ssl_easy_steal(data, STRING_KEY);
+    ssl_origin->key_type = ssl_easy_steal(data, STRING_KEY_TYPE);
+    ssl_origin->key_passwd = ssl_easy_steal(data, STRING_KEY_PASSWD);
+    ssl_origin->clientcert = ssl_easy_steal(data, STRING_CERT);
+    ssl_origin->key_blob = data->set.blobs[BLOB_KEY];
+#ifdef USE_ECH
+    ssl_origin->ech = data->set.ssl.ech;
+    ssl_origin->ech_config = ssl_easy_steal(data, STRING_ECH_CONFIG);
+    ssl_origin->ech_public = ssl_easy_steal(data, STRING_ECH_PUBLIC);
 #endif
   }
   else {
-    sslc->primary.pinned_key = NULL;
-    sslc->primary.cert_blob = NULL;
-    sslc->primary.cert_type = NULL;
-    sslc->primary.key = NULL;
-    sslc->primary.key_type = NULL;
-    sslc->primary.key_passwd = NULL;
-    sslc->primary.clientcert = NULL;
-    sslc->primary.key_blob = NULL;
-#ifdef USE_TLS_SRP
-    sslc->primary.username = NULL;
-    sslc->primary.password = NULL;
+    ssl_origin->pinned_key = NULL;
+    ssl_origin->cert_blob = NULL;
+    ssl_origin->cert_type = NULL;
+    ssl_origin->key = NULL;
+    ssl_origin->key_type = NULL;
+    ssl_origin->key_passwd = NULL;
+    ssl_origin->clientcert = NULL;
+    ssl_origin->key_blob = NULL;
+#ifdef USE_ECH
+    ssl_origin->ech = 0;
+    ssl_origin->ech_config = NULL;
+    ssl_origin->ech_public = NULL;
 #endif
   }
 
 #ifndef CURL_DISABLE_PROXY
   sslc = &data->set.proxy_ssl;
-  /* no initial origin for proxy, it is not changed for redirects */
-  ssl_easy_config_compl_options(NULL, NULL, sslc);
 
-  if(Curl_ssl_backend() != CURLSSLBACKEND_SCHANNEL) {
+  ssl_easy_config_compl_options(NULL, NULL, sslc, ssl_proxy);
+  if((Curl_ssl_backend() != CURLSSLBACKEND_SCHANNEL)) {
+    /* no initial origin for proxy, it is not changed for redirects */
 #if defined(USE_APPLE_SECTRUST) || defined(CURL_CA_NATIVE)
     if(!sslc->custom_capath && !sslc->custom_cafile && !sslc->custom_cablob)
-      sslc->native_ca_store = TRUE;
+      ssl_proxy->native_ca_store = TRUE;
 #endif
 #ifdef CURL_CA_PATH
-    if(!sslc->custom_capath && !set->str[STRING_SSL_CAPATH_PROXY]) {
-      result = Curl_setstropt(&set->str[STRING_SSL_CAPATH_PROXY],
-                              CURL_CA_PATH);
+    if(!sslc->custom_capath &&
+       !CURL_EASY_STR(data, STRING_SSL_CAPATH_PROXY)) {
+      result = Curl_setstropt(data, STRING_SSL_CAPATH_PROXY, CURL_CA_PATH);
       if(result)
         return result;
     }
 #endif
 #ifdef CURL_CA_BUNDLE
-    if(!sslc->custom_cafile && !set->str[STRING_SSL_CAFILE_PROXY]) {
-      result = Curl_setstropt(&set->str[STRING_SSL_CAFILE_PROXY],
-                              CURL_CA_BUNDLE);
+    if(!sslc->custom_cafile &&
+       !CURL_EASY_STR(data, STRING_SSL_CAFILE_PROXY)) {
+      result = Curl_setstropt(data, STRING_SSL_CAFILE_PROXY, CURL_CA_BUNDLE);
       if(result)
         return result;
     }
 #endif
   }
-  sslc->primary.CAfile = data->set.str[STRING_SSL_CAFILE_PROXY];
-  sslc->primary.CApath = data->set.str[STRING_SSL_CAPATH_PROXY];
-  sslc->primary.cipher_list = data->set.str[STRING_SSL_CIPHER_LIST_PROXY];
-  sslc->primary.cipher_list13 = data->set.str[STRING_SSL_CIPHER13_LIST_PROXY];
-  sslc->primary.pinned_key = data->set.str[STRING_SSL_PINNEDPUBLICKEY_PROXY];
-  sslc->primary.cert_blob = data->set.blobs[BLOB_CERT_PROXY];
-  sslc->primary.ca_info_blob = data->set.blobs[BLOB_CAINFO_PROXY];
-  sslc->primary.issuercert = data->set.str[STRING_SSL_ISSUERCERT_PROXY];
-  sslc->primary.issuercert_blob = data->set.blobs[BLOB_SSL_ISSUERCERT_PROXY];
-  sslc->primary.CRLfile = data->set.str[STRING_SSL_CRLFILE_PROXY];
-  sslc->primary.cert_type = data->set.str[STRING_CERT_TYPE_PROXY];
-  sslc->primary.key = data->set.str[STRING_KEY_PROXY];
-  sslc->primary.key_type = data->set.str[STRING_KEY_TYPE_PROXY];
-  sslc->primary.key_passwd = data->set.str[STRING_KEY_PASSWD_PROXY];
-  sslc->primary.clientcert = data->set.str[STRING_CERT_PROXY];
-  sslc->primary.key_blob = data->set.blobs[BLOB_KEY_PROXY];
-#ifdef USE_TLS_SRP
-  sslc->primary.username = data->set.str[STRING_TLSAUTH_USERNAME_PROXY];
-  sslc->primary.password = data->set.str[STRING_TLSAUTH_PASSWORD_PROXY];
+
+  ssl_proxy->version = sslc->version;
+  ssl_proxy->version_max = sslc->version_max;
+  ssl_proxy->verifypeer = sslc->verifypeer;
+  ssl_proxy->verifyhost = sslc->verifyhost;
+  ssl_proxy->verifystatus = sslc->verifystatus;
+  ssl_proxy->cache_session = sslc->cache_session;
+  ssl_proxy->ssl_options = sslc->ssl_options;
+  ssl_proxy->CAfile = ssl_easy_steal(data, STRING_SSL_CAFILE_PROXY);
+  ssl_proxy->CApath = ssl_easy_steal(data, STRING_SSL_CAPATH_PROXY);
+  ssl_proxy->cipher_list =
+    ssl_easy_steal(data, STRING_SSL_CIPHER_LIST_PROXY);
+  ssl_proxy->cipher_list13 =
+    ssl_easy_steal(data, STRING_SSL_CIPHER13_LIST_PROXY);
+  ssl_proxy->pinned_key =
+    ssl_easy_steal(data, STRING_SSL_PINNEDPUBLICKEY_PROXY);
+  ssl_proxy->cert_blob = data->set.blobs[BLOB_CERT_PROXY];
+  ssl_proxy->ca_info_blob = data->set.blobs[BLOB_CAINFO_PROXY];
+  ssl_proxy->issuercert = ssl_easy_steal(data, STRING_SSL_ISSUERCERT_PROXY);
+  ssl_proxy->issuercert_blob = data->set.blobs[BLOB_SSL_ISSUERCERT_PROXY];
+  ssl_proxy->CRLfile = ssl_easy_steal(data, STRING_SSL_CRLFILE_PROXY);
+  ssl_proxy->cert_type = ssl_easy_steal(data, STRING_CERT_TYPE_PROXY);
+  ssl_proxy->key = ssl_easy_steal(data, STRING_KEY_PROXY);
+  ssl_proxy->key_type = ssl_easy_steal(data, STRING_KEY_TYPE_PROXY);
+  ssl_proxy->key_passwd = ssl_easy_steal(data, STRING_KEY_PASSWD_PROXY);
+  ssl_proxy->clientcert = ssl_easy_steal(data, STRING_CERT_PROXY);
+  ssl_proxy->key_blob = data->set.blobs[BLOB_KEY_PROXY];
+#ifdef USE_ECH
+  /* Not configurable via a CURLOPT_* */
+  ssl_proxy->ech = 0;
+  ssl_proxy->ech_config = NULL;
+  ssl_proxy->ech_public = NULL;
 #endif
+#else
+  (void)ssl_proxy;
 #endif /* CURL_DISABLE_PROXY */
 
   return CURLE_OK;
 }
 
-CURLcode Curl_ssl_conn_config_init(struct Curl_easy *data,
-                                   struct connectdata *conn)
+CURLcode Curl_ssl_conn_config_clone(struct ssl_filter_config *ssl_config,
+                                    struct ssl_filter_config *proxy_ssl_config,
+                                    struct connectdata *conn)
 {
   /* Clone "primary" SSL configurations from the easy handle to
    * the connection. They are used for connection cache matching and
    * probably outlive the easy handle */
-  if(!clone_ssl_primary_config(&data->set.ssl.primary, &conn->ssl_config))
+  if(!clone_ssl_primary_config(ssl_config, &conn->ssl_config))
     return CURLE_OUT_OF_MEMORY;
 #ifndef CURL_DISABLE_PROXY
-  if(!clone_ssl_primary_config(&data->set.proxy_ssl.primary,
-                               &conn->proxy_ssl_config))
+  if(proxy_ssl_config &&
+     !clone_ssl_primary_config(proxy_ssl_config, &conn->proxy_ssl_config))
     return CURLE_OUT_OF_MEMORY;
+#else
+  (void)proxy_ssl_config;
 #endif
   return CURLE_OK;
 }
@@ -407,17 +454,21 @@ void Curl_ssl_conn_config_update(struct Curl_easy *data, bool for_proxy)
 {
   /* May be called on an easy that has no connection yet */
   if(data->conn) {
-    struct ssl_primary_config *src, *dest;
+    struct ssl_easy_config *src;
+    struct ssl_filter_config *dest;
 #ifndef CURL_DISABLE_PROXY
-    src = for_proxy ? &data->set.proxy_ssl.primary : &data->set.ssl.primary;
+    src = for_proxy ? &data->set.proxy_ssl : &data->set.ssl;
     dest = for_proxy ? &data->conn->proxy_ssl_config : &data->conn->ssl_config;
 #else
     (void)for_proxy;
-    src = &data->set.ssl.primary;
+    src = &data->set.ssl;
     dest = &data->conn->ssl_config;
 #endif
     dest->verifyhost = src->verifyhost;
     dest->verifypeer = src->verifypeer;
     dest->verifystatus = src->verifystatus;
+#ifdef USE_ECH
+    dest->ech = src->ech;
+#endif
   }
 }

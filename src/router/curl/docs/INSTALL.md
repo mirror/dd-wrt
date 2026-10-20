@@ -13,6 +13,24 @@ document does not describe how to install curl or libcurl using such a binary
 package. This document describes how to compile, build and install curl and
 libcurl from [source code](https://curl.se/download.html).
 
+## Building from source
+
+You can use autotools or CMake to build curl from source. They work equally
+well and have close to feature parity.
+
+autotools' advantages are wide portability and the Unix philosophy, while
+CMake typically has faster configuration and build times, and supports MSVC.
+
+Option defaults and dependency detection details may differ.
+
+With both build tools, some features require Perl, and the pytest test suite
+requires Python.
+
+You can find live examples for both tools and many build cases in curl's CI
+scripts: `.github/workflows/*.yml`, `.circleci/*.yml` and `appveyor.*` (in the
+Git repository only). For CMake-specific instructions, see
+[INSTALL-CMAKE.md](https://github.com/curl/curl/blob/master/docs/INSTALL-CMAKE.md).
+
 ## Building using vcpkg
 
 You can download and install curl and libcurl using
@@ -128,8 +146,8 @@ Building statically is not for the faint of heart.
 
 ## Debug
 
-If you are a curl developer and use gcc, you might want to enable more debug
-options with the `--enable-debug` option.
+If you are a curl developer and use gcc, you might want to enable curl debug
+features (for developing curl) with the `--enable-debug` option.
 
 curl can be built to use a whole range of libraries to provide various useful
 services, and configure tries to auto-detect a decent default. If you want to
@@ -161,7 +179,7 @@ runtime when curl starts up.
 
 ### Selecting TLS Trust Anchors Defaults
 
-Verifying a server certificate established a chain of trust that needs to
+Verifying a server certificate establishes a chain of trust that needs to
 start somewhere. Those "root" certificates make the set of Trust Anchors.
 
 While the build system tries to find good defaults on the platform you
@@ -206,8 +224,8 @@ Building for Windows Vista/Server 2008 is required as a minimum.
 
 You can build curl with:
 
-- Microsoft Visual Studio 2010 v10.0 or later (`_MSC_VER >= 1600`)
-- MinGW-w64 3.0 or later (`__MINGW64_VERSION_MAJOR >= 3`)
+- Microsoft Visual Studio 2010 10.0 or greater (`_MSC_VER >= 1600`)
+- mingw-w64 3.0 or greater (`__MINGW64_VERSION_MAJOR >= 3`)
 
 ## Building Windows DLLs and C runtime (CRT) linkage issues
 
@@ -293,17 +311,17 @@ curl from the source code:
 > [!Note]
 > If an error occurs during the installation, then try:
 
-- Use `cmake` to configure and/or build
-- Use `ninja` to build (***much** faster*)
+- Using `cmake` to configure and/or build
+- Using `ninja` to build (much faster)
 - Reinstalling the required Cygwin packages from the list above without
   passing `-I` to `setup-x86_64`
-- Temporarily move Cygwin to the top of your path
-- Install all of the Cygwin build packages using
+- Temporarily moving Cygwin to the top of your path
+- Installing all of the Cygwin build packages using
   `setup-x86_64 --build-depends curl`
 
 ## MS-DOS
 
-You can use either autotools or cmake:
+You can use either autotools or CMake:
 
 ```sh
 ./configure \
@@ -334,7 +352,7 @@ cmake . \
 
 Notes:
 
-- Requires DJGPP 2.04 or upper.
+- Requires DJGPP 2.04 or greater.
 
 - Compile Watt-32 (and OpenSSL) with the same version of DJGPP. Otherwise
   things go wrong because things like FS-extensions and `errno` values have
@@ -342,7 +360,7 @@ Notes:
 
 ## AmigaOS
 
-You can use either autotools or cmake:
+You can use either autotools or CMake:
 
 ```sh
 ./configure \
@@ -486,8 +504,8 @@ install `libssl.a` and `libcrypto.a` to `$TOOLCHAIN/sysroot/usr/lib` and copy
 for Android using OpenSSL like this:
 
 ```sh
-# For BoringSSL/OpenSSL. In general, you need to the SSL/TLS layer's transitive
-# dependencies if you are linking statically.
+# For AWS-LC/BoringSSL/OpenSSL. In general, you need to the SSL/TLS layer's
+# transitive dependencies if you are linking statically.
 LIBS='-lssl -lcrypto -lc++'
 ./configure --host aarch64-linux-android --with-pic --disable-shared --with-openssl="$TOOLCHAIN/sysroot/usr"
 ```
@@ -548,10 +566,10 @@ export CC=ppc_405-gcc
 export NM=ppc_405-nm
 
 ./configure \
-  --target=powerpc-hardhat-linux
-  --host=powerpc-hardhat-linux
-  --build=i586-pc-linux-gnu
-  --prefix=/opt/hardhat/devkit/ppc/405/target/usr/local
+  --target=powerpc-hardhat-linux \
+  --host=powerpc-hardhat-linux \
+  --build=i586-pc-linux-gnu \
+  --prefix=/opt/hardhat/devkit/ppc/405/target/usr/local \
   --exec-prefix=/usr/local
 ```
 
@@ -616,7 +634,6 @@ disabling support for some features (run `./configure --help` to see them all):
 - `--disable-proxy` (HTTP and SOCKS proxies)
 - `--disable-socketpair` (socketpair for asynchronous name resolving)
 - `--disable-threaded-resolver` (threaded name resolver)
-- `--disable-tls-srp` (Secure Remote Password authentication for TLS)
 - `--disable-unix-sockets` (Unix sockets)
 - `--disable-verbose` (eliminates debugging strings and error code strings)
 - `--disable-versioned-symbols` (versioned symbols)

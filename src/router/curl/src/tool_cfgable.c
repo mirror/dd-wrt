@@ -81,12 +81,6 @@ static void free_config_fields(struct OperationConfig *config)
   curlx_safefree(config->range);
 
   curlx_safefree(config->userpwd);
-  curlx_safefree(config->tls_username);
-  curlx_safefree(config->tls_password);
-  curlx_safefree(config->tls_authtype);
-  curlx_safefree(config->proxy_tls_username);
-  curlx_safefree(config->proxy_tls_password);
-  curlx_safefree(config->proxy_tls_authtype);
   curlx_safefree(config->proxyuserpwd);
   curlx_safefree(config->proxy);
 
@@ -145,7 +139,9 @@ static void free_config_fields(struct OperationConfig *config)
   curlx_safefree(config->proxy_key);
   curlx_safefree(config->key_type);
   curlx_safefree(config->proxy_key_type);
+  curlx_strzero(config->key_passwd);
   curlx_safefree(config->key_passwd);
+  curlx_strzero(config->proxy_key_passwd);
   curlx_safefree(config->proxy_key_passwd);
   curlx_safefree(config->pubkey);
   curlx_safefree(config->hostpubmd5);
@@ -158,6 +154,7 @@ static void free_config_fields(struct OperationConfig *config)
   curlx_safefree(config->request_target);
   curlx_safefree(config->customrequest);
   curlx_safefree(config->krblevel);
+  curlx_strzero(config->oauth_bearer);
   curlx_safefree(config->oauth_bearer);
   curlx_safefree(config->sasl_authzid);
   curlx_safefree(config->unix_socket_path);
@@ -187,6 +184,10 @@ static void free_config_fields(struct OperationConfig *config)
   curlx_safefree(config->ftp_account);
   curlx_safefree(config->ftp_alternative_to_user);
   curlx_safefree(config->aws_sigv4);
+  curlx_safefree(config->httpsig_algorithm);
+  curlx_safefree(config->httpsig_headers);
+  curlx_safefree(config->httpsig_key);
+  curlx_safefree(config->httpsig_keyid);
   curlx_safefree(config->ech);
   curlx_safefree(config->ech_config);
   curlx_safefree(config->ech_public);
@@ -326,7 +327,8 @@ CURLcode globalconf_init(void)
   if(global->first) {
     /* Perform the libcurl initialization */
 #ifdef CURL_DEBUG_GLOBAL_MEM
-    result = curl_global_init_mem(CURL_GLOBAL_ALL, custom_malloc, custom_free,
+    result = curl_global_init_mem(CURL_GLOBAL_DEFAULT,
+                                  custom_malloc, custom_free,
                                   custom_realloc, custom_strdup,
                                   custom_calloc);
 #else

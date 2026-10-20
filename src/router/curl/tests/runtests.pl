@@ -130,6 +130,7 @@ my $args;           # command-line arguments
 
 my $uname_release = qx(uname -r);
 my $is_wsl = $uname_release =~ /Microsoft$/;
+my $uname_release_ver = $uname_release =~ /^(\d+)\.(\d+)\.(\d+)/ ? $1 * 10000 + $2 * 100 + $3 : 0;
 
 my $http_ipv6;      # set if HTTP server has IPv6 support
 my $http_unix;      # set if HTTP server has Unix sockets support
@@ -173,6 +174,7 @@ my %singletest_state;  # current state of singletest() by runner ID
 my %singletest_logs;   # log messages while in singletest array ref by runner
 my $singletest_bufferedrunner; # runner ID which is buffering logs
 my %runnerids;         # runner IDs by number
+my %runnernums;        # runner numbers by IDs (inverted %runnerids)
 my @runnersidle;       # runner IDs idle and ready to execute a test
 my %countforrunner;    # test count by runner ID
 my %runnersrunning;    # tests currently running by runner ID
@@ -269,11 +271,8 @@ sub catch_usr1 {
     print scalar(%runnersrunning) . " busy test runner(s) of " . scalar(keys %runnerids) . "\r\n";
     foreach my $rid (sort(keys(%runnersrunning))) {
         my $runnernum = "unknown";
-        foreach my $rnum (keys %runnerids) {
-            if($runnerids{$rnum} == $rid) {
-                $runnernum = $rnum;
-                last;
-            }
+        if(exists $runnernums{$rid}) {
+            $runnernum = $runnernums{$rid};
         }
         print "Runner $runnernum (id $rid) running test $runnersrunning{$rid} in state $singletest_state{$rid}\r\n";
     }
@@ -558,7 +557,7 @@ sub checksystemfeatures {
             $curl = $_;
             $CURLVERSION = $1;
             $CURLVERNUM = $CURLVERSION;
-            $CURLVERNUM =~ s/^([0-9.]+)(.*)/$1/; # leading dots and numbers
+            $CURLVERNUM =~ s/^([0-9.]+)(.*)/$1/; # leading digits and dots
             $curl =~ s/^(.*)(libcurl.*)/$1/g or die "Failure determining curl binary version";
 
             $libcurl = $2;
@@ -570,6 +569,11 @@ sub checksystemfeatures {
             }
             if($curl =~ /cygwin|msys/i) {
                 $feature{"cygwin"} = 1;
+            }
+            # Assume set but empty environment variables are supported, except
+            # by MSYS2 <3.4.2 (2022-12-16) processes starting non-Cygwin ones.
+            if(($^O ne 'cygwin' && $^O ne 'msys') || $curl =~ /cygwin|msys/i || $uname_release_ver >= 30605) {
+                $feature{"blank-env"} = 1;
             }
             if($libcurl =~ /\sschannel\b/i) {
                 $feature{"Schannel"} = 1;
@@ -589,6 +593,9 @@ sub checksystemfeatures {
             elsif($libcurl =~ /\swolfssl\b/i) {
                 $feature{"wolfssl"} = 1;
                 $feature{"SSLpinning"} = 1;
+                if($libcurl =~ /\swolfssl\/5\.9\.2\b/i) {
+                    $feature{"wolfssl-5.9.2"} = 1;
+                }
             }
             elsif($libcurl =~ /\s(AWS-LC|BoringSSL)\b/i) {
                 # OpenSSL compatible API
@@ -697,8 +704,6 @@ sub checksystemfeatures {
             $feature{"Kerberos"} = $feat =~ /Kerberos/i;
             # SPNEGO enabled
             $feature{"SPNEGO"} = $feat =~ /SPNEGO/i;
-            # TLS-SRP enabled
-            $feature{"TLS-SRP"} = $feat =~ /TLS-SRP/i;
             # PSL enabled
             $feature{"PSL"} = $feat =~ /PSL/i;
             # alt-svc enabled
@@ -732,33 +737,13 @@ sub checksystemfeatures {
                 # 'https-proxy' is used as "server" so consider it a protocol
                 push @protocols, 'https-proxy';
             }
+            $feature{"SSLS-EXPORT"} = $feat =~ /SSLS-EXPORT/;
             # Unicode support
             $feature{"Unicode"} = $feat =~ /Unicode/i;
             # Thread-safe init
             $feature{"threadsafe"} = $feat =~ /threadsafe/i;
             $feature{"HTTPSRR"} = $feat =~ /HTTPSRR/;
             $feature{"ECH"} = $feat =~ /ECH/;
-        }
-        #
-        # Test harness currently uses a non-stunnel server in order to
-        # run HTTP TLS-SRP tests required when curl is built with https
-        # protocol support and TLS-SRP feature enabled. For convenience
-        # 'httptls' may be included in the test harness protocols array
-        # to differentiate this from classic stunnel based 'https' test
-        # harness server.
-        #
-        if($feature{"TLS-SRP"}) {
-            my $add_httptls;
-            for(@protocols) {
-                if($_ =~ /^https(-ipv6|)$/) {
-                    $add_httptls = 1;
-                    last;
-                }
-            }
-            if($add_httptls && (! grep /^httptls$/, @protocols)) {
-                push @protocols, 'httptls';
-                push @protocols, 'httptls-ipv6';
-            }
         }
     }
 
@@ -983,8 +968,13 @@ sub citest_starttest {
     my $testnum = $_[0];
 
     # get the name of the test early
-    my $testname= (getpart("client", "name"))[0];
+    my $testname = (getpart("client", "name"))[0];
     chomp $testname;
+
+    if(length($testname) > 70) {
+        logmsg "ERROR: test $testnum has a too long name, wider than 70 columns\n";
+        return 1;
+    }
 
     # create test result in CI services
     if(azure_check_environment() && $AZURE_RUN_ID) {
@@ -993,6 +983,7 @@ sub citest_starttest {
     elsif(appveyor_check_environment()) {
         appveyor_create_test_result($ACURL, $testnum, $testname);
     }
+    return 0;
 }
 
 # Submit the test case result with the CI runner
@@ -1054,11 +1045,8 @@ sub getrunnerlogdir {
     if($jobs <= 1) {
         return $LOGDIR;
     }
-    # TODO: speed up this O(n) operation
-    for my $runnernum (keys %runnerids) {
-        if($runnerid eq $runnerids{$runnernum}) {
-            return "$LOGDIR/$runnernum";
-        }
+    if(exists $runnernums{$runnerid}) {
+        return "$LOGDIR/$runnernums{$runnerid}";
     }
     die "Internal error: runner ID $runnerid not found";
 }
@@ -1231,10 +1219,10 @@ sub singletest_count {
     }
 
     # At this point we have committed to run this test
-    logmsg sprintf("test %04d...", $testnum) if(!$automakestyle);
+    logmsg sprintf("test %04d ", $testnum) if(!$automakestyle);
 
     # name of the test
-    my $testname= (getpart("client", "name"))[0];
+    my $testname = (getpart("client", "name"))[0];
     chomp $testname;
     logmsg "[$testname]\n" if(!$short);
 
@@ -1280,7 +1268,7 @@ sub singletest_check {
     my $ok = "";
     my $res;
     chomp $errorcode;
-    my $testname= (getpart("client", "name"))[0];
+    my $testname = (getpart("client", "name"))[0];
     chomp $testname;
 
     # what parts to cut off from stdout/stderr
@@ -1391,10 +1379,6 @@ sub singletest_check {
                 s/\r//;
                 s/\n/ /;
             }
-            my $v = join(@validstderr, "");
-            my $a = join(@actual, "");
-            @validstderr = $v;
-            @actual = $a;
         }
 
         if($hash{'nonewline'}) {
@@ -1429,7 +1413,7 @@ sub singletest_check {
     my @strippart = getpart("verify", "strippart");
 
     # this is the valid protocol blurb curl should generate
-    my @protocol= getpart("verify", "protocol");
+    my @protocol = getpart("verify", "protocol");
     if(@protocol) {
         # Verify the sent request
         my @out = loadarray("$logdir/$SERVERIN");
@@ -1447,7 +1431,7 @@ sub singletest_check {
             # strip off all lines that match the patterns from both arrays
             chomp $_;
             @out = striparray( $_, \@out);
-            @protocol= striparray( $_, \@protocol);
+            @protocol = striparray( $_, \@protocol);
         }
 
         for my $strip (@strippart) {
@@ -1479,7 +1463,6 @@ sub singletest_check {
         if($res) {
             return -1;
         }
-
         $ok .= "p";
     }
     else {
@@ -1617,7 +1600,7 @@ sub singletest_check {
             # strip off all lines that match the patterns from both arrays
             chomp $_;
             @out = striparray( $_, \@out);
-            @proxyprot= striparray( $_, \@proxyprot);
+            @proxyprot = striparray( $_, \@proxyprot);
         }
 
         for my $strip (@strippart) {
@@ -1640,7 +1623,6 @@ sub singletest_check {
         if($res) {
             return -1;
         }
-
         $ok .= "P";
     }
     else {
@@ -1951,8 +1933,8 @@ sub singletest_check {
 sub singletest_success {
     my ($testnum, $count, $total, $errorreturncode) = @_;
 
-    my $sofar= time()-$start;
-    my $esttotal = $sofar/$count * $total;
+    my $sofar = time() - $start;
+    my $esttotal = $sofar / $count * $total;
     my $estleft = $esttotal - $sofar;
     my $timeleft = sprintf("remaining: %02d:%02d",
                      $estleft / 60,
@@ -1965,7 +1947,7 @@ sub singletest_success {
                        $count, $total, $timeleft, $took, $duration);
     }
     else {
-        my $testname= (getpart("client", "name"))[0];
+        my $testname = (getpart("client", "name"))[0];
         chomp $testname;
         logmsg "PASS: $testnum - $testname\n";
     }
@@ -2025,7 +2007,9 @@ sub singletest {
 
         ###################################################################
         # Register the test case with the CI environment
-        citest_starttest($testnum);
+        if(citest_starttest($testnum)) {
+            return (-1, 0);
+        }
 
         if(runnerac_test_preprocess($runnerid, $testnum)) {
             logmsg "ERROR: runner $runnerid seems to have died\n";
@@ -2335,8 +2319,10 @@ sub createrunners {
         my $dir = getrunnernumlogdir($runnernum);
         cleardir($dir);
         mkdir($dir, 0777);
-        $runnerids{$runnernum} = runner_init($dir, $jobs);
-        runnerready($runnerids{$runnernum});
+        my $id = runner_init($dir, $jobs);
+        $runnerids{$runnernum} = $id;
+        $runnernums{$id} = $runnernum;
+        runnerready($id);
     }
 }
 
@@ -2363,9 +2349,13 @@ if(@ARGV && $ARGV[-1] eq '$TFLAGS') {
 
 $args = join(' ', @ARGV);
 
+my $mintotalany = 0;
+
 $valgrind = checktestcmd("valgrind");
 my $number = 0;
 my $fromnum = -1;
+my $useshares;
+my $usepart;
 my @testthis;
 while(@ARGV) {
     if($ARGV[0] eq "-v") {
@@ -2459,6 +2449,7 @@ while(@ARGV) {
     elsif($ARGV[0] =~ /--min=(\d+)/) {
         my ($num) = ($1);
         $mintotal = $num;
+        $mintotalany = 1;
     }
     elsif($ARGV[0] eq "-n") {
         # no valgrind
@@ -2479,6 +2470,14 @@ while(@ARGV) {
 
         if($xtra =~ s/(\d+)$//) {
             $tortalloc = $1;
+        }
+    }
+    elsif($ARGV[0] =~ /^--subset=(\d+)\/(\d+)$/) {
+        # split all tests into $2 parts.
+        # this invoke then runs the part number $1 (0-indexed)
+        ($usepart, $useshares) = ($1, $2);
+        if($useshares < 1 || $usepart >= $useshares) {
+            die "illegal subset specified";
         }
     }
     elsif($ARGV[0] =~ /--shallow=(\d+)/) {
@@ -2538,6 +2537,10 @@ while(@ARGV) {
         if($xtra =~ s/(\d+)$//) {
             $jobs = $1;
         }
+    }
+    elsif($ARGV[0] eq "-k") {  # delete this check after December 2026
+        print "Option -k became always-on in 7.65.2 (2019) and now a no-op. Delete it to continue.\n";
+        exit 1;
     }
     elsif($ARGV[0] eq "-r") {
         # run time statistics needs Time::HiRes
@@ -2693,14 +2696,6 @@ if($valgrind) {
         undef $valgrind;
     } else {
 
-        # since valgrind 2.1.x, '--tool' option is mandatory
-        # use it, if it is supported by the version installed on the system
-        # (this happened in 2003, so we could probably do not need to care about
-        # that old version any longer and delete this check)
-        runclient("valgrind --help 2>&1 | grep -- --tool >$dev_null 2>&1");
-        if(($? >> 8)) {
-            $valgrind_tool = "";
-        }
         open(my $curlh, "<", $CURL);
         my $l = <$curlh>;
         if($l =~ /^\#\!/) {
@@ -2708,20 +2703,6 @@ if($valgrind) {
             $valgrind = "../libtool --mode=execute $valgrind";
         }
         close($curlh);
-
-        # valgrind 3 renamed the --logfile option to --log-file!!!
-        # (this happened in 2005, so we could probably do not need to care about
-        # that old version any longer and delete this check)
-        my $ver = join(' ', runclientoutput("valgrind --version"));
-        # cut off all but digits and dots
-        $ver =~ s/[^0-9.]//g;
-
-        if($ver =~ /^(\d+)/) {
-            $ver = $1;
-            if($ver < 3) {
-                $valgrind_logfile = "--logfile";
-            }
-        }
     }
 }
 
@@ -2758,8 +2739,13 @@ if(!$jobs) {
     setlogfunc(\&logmsg);
 }
 
-if(!$mintotal && $ENV{"CURL_TEST_MIN"}) {
+if(!$mintotalany && $ENV{"CURL_TEST_MIN"}) {
     $mintotal = $ENV{"CURL_TEST_MIN"};
+    if($useshares) {
+        $mintotal /= $useshares;
+        # add safety margin to avoid potential underruns
+        $mintotal = $mintotal - 30 < 1 ? 1 : $mintotal - 30;
+    }
 }
 
 #######################################################################
@@ -2774,7 +2760,7 @@ if(!$listonly) {
 # Output information about the curl build
 #
 if(!$listonly && $buildinfo) {
-    if(open(my $fd, "<", "../buildinfo.txt")) {
+    if(open(my $fd, "<", '../buildinfo.txt')) {
         while(my $line = <$fd>) {
             chomp $line;
             if($line && $line !~ /^#/) {
@@ -2906,6 +2892,25 @@ if($scrambleorder) {
         $TESTCASES = join(" ", @all);
     }
     $TESTCASES = join(" ", @rand);
+}
+
+if($useshares) {
+    my @a = grep { length($_) } split(/ +/, $TESTCASES);
+    my $n = scalar(@a);
+
+    if($useshares < 1 || $usepart >= $useshares) {
+        die "illegal subset specified";
+    }
+
+    my $start = int(($n * $usepart) / $useshares);
+    my $end = int(($n * ($usepart + 1)) / $useshares); # one past last index
+    my $run = $end - $start;
+
+    printf STDERR "Subset: 1/%u of the tests (run %u tests out of %u). Part %u\n",
+        $useshares, $run, $n, $usepart;
+
+    my @s = $run ? @a[$start .. $end - 1] : ();
+    $TESTCASES = join(" ", @s);
 }
 
 # Display the contents of the given file.  Line endings are canonicalized

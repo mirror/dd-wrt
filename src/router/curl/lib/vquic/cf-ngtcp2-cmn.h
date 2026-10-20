@@ -58,7 +58,7 @@
 #include <nghttp3/nghttp3.h>
 
 #include "http1.h"
-#include "uint-hash.h"
+#include "u32_ptrset.h"
 #include "vtls/vtls.h"
 #include "vquic/vquic_int.h"
 #include "vquic/vquic-tls.h"
@@ -83,16 +83,18 @@ struct cf_quic_ctx;
 #if H3_STREAM_CHUNK_SIZE < NGTCP2_MAX_UDP_PAYLOAD_SIZE
 #error H3_STREAM_CHUNK_SIZE smaller than NGTCP2_MAX_UDP_PAYLOAD_SIZE
 #endif
-/* The pool keeps spares around and half of a full stream window
- * seems good. More does not seem to improve performance.
+/* The pool keeps spares around for all streams.
  * The benefit of the pool is that stream buffers do not keep
  * spares. Memory consumption goes down when streams run empty,
  * have a large upload done, etc. */
-#define H3_STREAM_POOL_SPARES      2
+#define H3_STREAM_POOL_SPARES      5
 /* The max amount of un-acked upload data we keep around per stream */
-#define H3_STREAM_SEND_BUFFER_MAX      (10 * 1024 * 1024)
+#define H3_STREAM_SEND_BUFFER_MAX      (10 * H3_STREAM_CHUNK_SIZE)
 #define H3_STREAM_SEND_CHUNKS \
   (H3_STREAM_SEND_BUFFER_MAX / H3_STREAM_CHUNK_SIZE)
+/* How much data we initially want to buffer un-acked */
+#define H3_STREAM_SEND_BUF_INITIAL     (32 * 1024)
+
 #define QUIC_TUNNEL_INGRESS_PKT_LIMIT 1000
 
 
@@ -126,7 +128,7 @@ struct cf_ngtcp2_ctx {
   struct curltime handshake_at;     /* time connect handshake finished */
   struct bufc_pool stream_bufcp;    /* chunk pool for streams */
   struct dynbuf scratch;            /* temp buffer for header construction */
-  struct uint_hash streams;         /* hash data->mid to h3_stream_ctx */
+  struct u32_ptrset streams;        /* set of data->mid + h3_stream_ctx */
   uint64_t used_bidi_streams;       /* bidi streams we have opened */
   uint64_t max_bidi_streams;        /* max bidi streams we can open */
   size_t earlydata_max;             /* max amount of early data supported by
@@ -142,6 +144,7 @@ struct cf_ngtcp2_ctx {
   BIT(use_earlydata);               /* Using 0RTT data */
   BIT(earlydata_accepted);          /* 0RTT was accepted by server */
   BIT(shutdown_started);            /* queued shutdown packets */
+  BIT(stats_reported);              /* connect statistics reported */
 };
 
 /* How to access `call_data` from a cf_ngtcp2 filter */
@@ -151,7 +154,7 @@ struct cf_ngtcp2_ctx {
 CURLcode Curl_cf_ngtcp2_ctx_init(struct cf_ngtcp2_ctx *ctx,
                                  struct Curl_peer *origin,
                                  struct Curl_peer *peer,
-                                 struct ssl_primary_config *sslc,
+                                 struct ssl_filter_config *sslc,
                                  cf_ngtcp2_init_h3_conn *init_h3_conn_cb);
 void Curl_cf_ngtcp2_ctx_cleanup(struct cf_ngtcp2_ctx *ctx);
 void Curl_cf_ngtcp2_cmn_err_set(struct Curl_cfilter *cf,
@@ -162,16 +165,18 @@ void Curl_cf_ngtcp2_cmn_err_set(struct Curl_cfilter *cf,
  */
 struct h3_stream_ctx {
   int64_t id;                   /* HTTP/3 stream identifier */
+  curl_off_t xfer_id;           /* `id` of transfer owning this stream */
   struct bufq sendbuf;          /* h3 request body */
   struct h1_req_parser h1;      /* h1 request parsing */
-  size_t sendbuf_len_in_flight; /* sendbuf amount "in flight" */
   uint64_t error3;              /* HTTP/3 stream error code */
   curl_off_t upload_left;       /* number of request bytes left to upload */
   curl_off_t rx_total;          /* total number of bytes received */
   uint64_t rx_offset;           /* current receive offset */
   uint64_t rx_offset_max;       /* allowed receive offset */
-  uint64_t window_size_max;     /* max flow control window set for stream */
-  int status_code;              /* HTTP status code */
+  size_t tx_in_flight_size;     /* sendbuf data "in flight" */
+  size_t tx_in_flight_ideal;    /* ideal amount of un-acked send data */
+  uint32_t mid;                 /* `mid` of transfer owning this stream */
+  int32_t status_code;              /* HTTP status code */
   CURLcode xfer_result;         /* result from xfer_resp_write(_hd) */
   BIT(resp_hds_complete);       /* we have a complete, final response */
   BIT(closed);                  /* TRUE on stream close */
@@ -199,6 +204,7 @@ void Curl_cf_ngtcp2_cmn_conn_close(struct Curl_cfilter *cf,
 struct cf_ngtcp2_io_ctx {
   struct Curl_cfilter *cf;
   struct Curl_easy *data;
+  struct curltime now;
   ngtcp2_tstamp ts;
   ngtcp2_path_storage ps;
 };
@@ -207,7 +213,7 @@ void Curl_cf_ngtcp2_io_ctx_init(struct cf_ngtcp2_io_ctx *io_ctx,
                                 struct Curl_cfilter *cf,
                                 struct Curl_easy *data);
 void Curl_cf_ngtcp2_io_ctx_update_time(struct Curl_easy *data,
-                                       struct cf_ngtcp2_io_ctx *pktx,
+                                       struct cf_ngtcp2_io_ctx *io_ctx,
                                        struct Curl_cfilter *cf);
 
 CURLcode Curl_cf_ngtcp2_progress_egress(struct Curl_cfilter *cf,
@@ -223,7 +229,8 @@ CURLcode Curl_cf_ngtcp2_cmn_set_expiry(struct Curl_cfilter *cf,
                                        struct cf_ngtcp2_io_ctx *pktx);
 
 CURLcode Curl_cf_ngtcp2_h3_stream_setup(struct Curl_cfilter *cf,
-                                        struct Curl_easy *data);
+                                        struct Curl_easy *data,
+                                        struct h3_stream_ctx **pstream);
 void Curl_cf_ngtcp2_h3_stream_close(struct Curl_cfilter *cf,
                                     struct Curl_easy *data,
                                     struct h3_stream_ctx *stream);
@@ -233,6 +240,18 @@ void Curl_cf_ngtcp2_h3_stream_done(struct Curl_cfilter *cf,
 bool Curl_cf_ngtcp2_cmn_conn_is_alive(struct Curl_cfilter *cf,
                                       struct Curl_easy *data,
                                       bool *input_pending);
+
+CURLcode Curl_cf_ngtcp2_cmn_query(struct Curl_cfilter *cf,
+                                  struct Curl_easy *data,
+                                  int query, int *pres1, void *pres2);
+
+CURLcode Curl_cf_ngtcp2_cmn_cntrl(struct Curl_cfilter *cf,
+                                  struct Curl_easy *data,
+                                  int event, int arg1, void *arg2);
+
+struct Curl_easy *Curl_cf_ngtcp2_get_xfer(struct Curl_cfilter *cf,
+                                          void *stream_user_data,
+                                          struct h3_stream_ctx **pstream);
 
 #endif /* !CURL_DISABLE_HTTP && USE_NGTCP2 && USE_NGHTTP3 */
 

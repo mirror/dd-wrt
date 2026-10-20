@@ -147,6 +147,7 @@ static int t758_curlSocketCallback(CURL *curl, curl_socket_t s, int action,
                                    void *userp, void *socketp)
 {
   struct t758_ReadWriteSockets *sockets = userp;
+  CURLcode result;
 
   (void)curl;
   (void)socketp;
@@ -155,6 +156,14 @@ static int t758_curlSocketCallback(CURL *curl, curl_socket_t s, int action,
   t758_msg("-> CURLMOPT_SOCKETFUNCTION");
   if(t758_ctx.socket_calls == t758_ctx.max_socket_calls) {
     t758_msg("<- CURLMOPT_SOCKETFUNCTION returns error");
+    return -1;
+  }
+
+  /* Pause is forbidden in this callback. This also returns
+     CURLE_BAD_FUNCTION_ARGUMENT before the connection has been setup. */
+  result = curl_easy_pause(curl, CURLPAUSE_ALL);
+  if(!result) {
+    t758_msg("<- curl_easy_pause should return error!");
     return -1;
   }
 
@@ -446,12 +455,11 @@ static CURLcode t758_one(const char *URL, int timer_fail_at,
     }
 
     if(timeout.tv_sec != (time_t)-1 &&
-       t758_getMicroSecondTimeout(&timeout) == 0) {
-      /* curl's timer has elapsed. */
-      if(t758_saction(multi, CURL_SOCKET_TIMEOUT, 0, "timeout")) {
-        result = TEST_ERR_BAD_TIMEOUT;
-        goto test_cleanup;
-      }
+       t758_getMicroSecondTimeout(&timeout) == 0 &&
+       /* curl's timer has elapsed. */
+       t758_saction(multi, CURL_SOCKET_TIMEOUT, 0, "timeout")) {
+      result = TEST_ERR_BAD_TIMEOUT;
+      goto test_cleanup;
     }
 
     abort_on_test_timeout();

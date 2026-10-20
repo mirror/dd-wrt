@@ -328,15 +328,13 @@ static int curltest_tweak_handler(request_rec *r)
         }
         else if(!strcmp("chunk_size", arg)) {
           chunk_size = (int)apr_atoi64(val);
-          if(chunk_size >= 0) {
-            if(chunk_size > sizeof(buffer)) {
-              ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
-                            "chunk_size %zu too large", chunk_size);
-              ap_die(HTTP_BAD_REQUEST, r);
-              return OK;
-            }
-            continue;
+          if(chunk_size > sizeof(buffer)) {
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r,
+                          "chunk_size %zu too large", chunk_size);
+            ap_die(HTTP_BAD_REQUEST, r);
+            return OK;
           }
+          continue;
         }
         else if(!strcmp("id", arg)) {
           /* an id for repeated requests with curl's URL globbing */
@@ -396,8 +394,7 @@ static int curltest_tweak_handler(request_rec *r)
         continue;
       }
       ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "query parameter not "
-                    "understood: '%s' in %s",
-                    arg, r->args);
+                    "understood: '%s' in %s", arg, r->args);
       ap_die(HTTP_BAD_REQUEST, r);
       return OK;
     }
@@ -406,7 +403,10 @@ static int curltest_tweak_handler(request_rec *r)
   ap_log_rerror(APLOG_MARK, APLOG_TRACE1, 0, r, "error_handler: processing "
                 "request, %s", r->args? r->args : "(no args)");
   r->status = http_status;
-  r->clength = with_cl ? (chunks * chunk_size) : -1;
+  if(with_cl)
+    r->clength = (apr_off_t)chunks * chunk_size;
+  else
+    r->clength = -1;
   r->chunked = (r->proto_num >= HTTP_VERSION(1, 1)) && !with_cl;
   apr_table_setn(r->headers_out, "request-id", request_id);
   if(r->clength >= 0) {
@@ -418,7 +418,7 @@ static int curltest_tweak_handler(request_rec *r)
   /* Discourage content-encodings */
   apr_table_unset(r->headers_out, "Content-Encoding");
   if(x_hd_len > 0) {
-    int i, hd_len = (16 * 1024);
+    int hd_len = (16 * 1024);
     int n = (x_hd_len / hd_len);
     char *hd_val = apr_palloc(r->pool, hd_len);
     memset(hd_val, 'X', hd_len);
@@ -497,7 +497,7 @@ cleanup:
     r->connection->keepalive = AP_CONN_CLOSE;
   }
   ap_log_rerror(APLOG_MARK, APLOG_TRACE1, rv, r,
-                "error_handler: request cleanup, r->status=%d, aborted=%d, "
+                "error_handler: request cleanup, r->status=%d, aborted=%u, "
                 "close=%d", r->status, c->aborted, close_conn);
   if(rv == APR_SUCCESS) {
     return OK;
@@ -573,8 +573,7 @@ static int curltest_put_handler(request_rec *r)
         }
       }
       ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "query parameter not "
-                    "understood: '%s' in %s",
-                    arg, r->args);
+                    "understood: '%s' in %s", arg, r->args);
       ap_die(HTTP_BAD_REQUEST, r);
       return OK;
     }
@@ -759,8 +758,7 @@ static int curltest_sslinfo_handler(request_rec *r)
         continue;
       }
       ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "query parameter not "
-                    "understood: '%s' in %s",
-                    arg, r->args);
+                    "understood: '%s' in %s", arg, r->args);
       ap_die(HTTP_BAD_REQUEST, r);
       return OK;
     }
@@ -833,7 +831,7 @@ struct curltest_limit_rec {
 };
 
 static struct curltest_limit_rec limitrec = {
-  0, 5, 0, 2
+  0, 5, 0, 2, NULL
 };
 
 static int curltest_limit_handler(request_rec *r)
@@ -868,8 +866,7 @@ static int curltest_limit_handler(request_rec *r)
         }
       }
       ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, "query parameter not "
-                    "understood: '%s' in %s",
-                    arg, r->args);
+                    "understood: '%s' in %s", arg, r->args);
       ap_die(HTTP_BAD_REQUEST, r);
       return OK;
     }
@@ -911,7 +908,7 @@ static int curltest_limit_handler(request_rec *r)
   apr_table_setn(r->subprocess_env, "no-gzip", "1");
 
   if(denied) {
-    char *v = apr_psprintf(r->pool, "%d", limitrec.duration_sec);
+    char *v = apr_psprintf(r->pool, "%ld", limitrec.duration_sec);
     apr_table_set(r->headers_out, "Retry-After", v);
   }
 
@@ -952,8 +949,7 @@ static int curltest_post_config(apr_pool_t *p, apr_pool_t *plog,
                                 apr_pool_t *ptemp, server_rec *s)
 {
   void *data = NULL;
-  const char *key = "mod_curltest_init_counter";
-  apr_status_t rv;
+  static const char *key = "mod_curltest_init_counter";
 
   (void)p;
   (void)plog;

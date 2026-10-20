@@ -93,10 +93,9 @@ if test "x$OPT_OPENSSL" != "xno"; then
         fi
       fi
 
-      if test "$PKGTEST" != "yes"; then
-        if test ! -f "$PREFIX_OPENSSL/include/openssl/ssl.h"; then
-          AC_MSG_ERROR([$PREFIX_OPENSSL is a bad --with-openssl prefix!])
-        fi
+      if test "$PKGTEST" != "yes" &&
+         test ! -f "$PREFIX_OPENSSL/include/openssl/ssl.h"; then
+        AC_MSG_ERROR([$PREFIX_OPENSSL is a bad --with-openssl prefix!])
       fi
 
       dnl in case pkg-config comes up empty, use what we got
@@ -220,7 +219,7 @@ if test "x$OPT_OPENSSL" != "xno"; then
 
     if test "$OPENSSL_ENABLED" != "1"; then
       LIBS="$CLEANLIBS"
-      AC_MSG_ERROR([OpenSSL libs and/or directories were not found where specified!])
+      AC_MSG_ERROR([OpenSSL libs and/or directories were not found!])
     fi
   fi
 
@@ -266,8 +265,9 @@ if test "x$OPT_OPENSSL" != "xno"; then
       AC_LANG_PROGRAM([[
         #include <openssl/opensslv.h>
       ]],[[
-        int dummy = LIBRESSL_VERSION_NUMBER;
-        (void)dummy;
+        #ifndef LIBRESSL_VERSION_NUMBER
+        #error not LibreSSL
+        #endif
       ]])
     ],[
       AC_MSG_RESULT([yes])
@@ -278,7 +278,7 @@ if test "x$OPT_OPENSSL" != "xno"; then
     ])
 
     if test "$ssl_msg" = 'OpenSSL'; then
-      AC_MSG_CHECKING([for OpenSSL >= v3])
+      AC_MSG_CHECKING([for OpenSSL >= 3])
       AC_COMPILE_IFELSE([
         AC_LANG_PROGRAM([[
           #include <openssl/opensslv.h>
@@ -290,7 +290,7 @@ if test "x$OPT_OPENSSL" != "xno"; then
           #endif
         ]])
       ],[],[
-        AC_MSG_ERROR([OpenSSL 3.0.0 or upper required.])
+        AC_MSG_ERROR([OpenSSL 3.0.0 or greater required.])
       ])
     fi
   fi
@@ -353,28 +353,6 @@ if test "$OPENSSL_ENABLED" = "1"; then
     AC_MSG_RESULT([yes])
     AC_DEFINE(HAVE_DES_ECB_ENCRYPT, 1, [if you have the function DES_ecb_encrypt])
     HAVE_DES_ECB_ENCRYPT=1
-  ],[
-    AC_MSG_RESULT([no])
-  ])
-
-  dnl ---
-  dnl We require OpenSSL with SRP support.
-  dnl ---
-  AC_MSG_CHECKING([for SRP support in OpenSSL])
-  AC_LINK_IFELSE([
-    AC_LANG_PROGRAM([[
-      #ifndef OPENSSL_SUPPRESS_DEPRECATED
-      #define OPENSSL_SUPPRESS_DEPRECATED
-      #endif
-      #include <openssl/ssl.h>
-    ]],[[
-      SSL_CTX_set_srp_username(NULL, NULL);
-      SSL_CTX_set_srp_password(NULL, NULL);
-    ]])
-  ],[
-    AC_MSG_RESULT([yes])
-    AC_DEFINE(HAVE_OPENSSL_SRP, 1, [if you have the functions SSL_CTX_set_srp_username and SSL_CTX_set_srp_password])
-    HAVE_OPENSSL_SRP=1
   ],[
     AC_MSG_RESULT([no])
   ])

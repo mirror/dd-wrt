@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# ***************************************************************************
+#***************************************************************************
 #                                  _   _ ____  _
 #  Project                     ___| | | |  _ \| |
 #                             / __| | | | |_) | |
@@ -430,6 +428,7 @@ class TestH3Proxy:
 
     @MARK_NEEDS_PROXY_HTTP3
     @MARK_NEEDS_H2O
+    @pytest.mark.skipif(condition=not Env.have_h2_curl(), reason="curl without h2")
     def test_60_09_parallel_downloads(self, env: Env, h2o_server, h2o_proxy):
         _require_available(h2o_server=h2o_server, h2o_proxy=h2o_proxy)
         env.make_data_file(indir=h2o_server.docs_dir, fname="download-1m", fsize=1 * 1024 * 1024)
@@ -439,7 +438,7 @@ class TestH3Proxy:
         proxy_args = _h2o_proxy_args(env, h2o_proxy, "h3", tunnel=True)
         proxy_args.extend(["--parallel", "--parallel-max", f"{count}"])
         r = curl.http_download(
-            urls=[urln], alpn_proto="http/1.1", with_stats=True, extra_args=proxy_args
+            urls=[urln], alpn_proto="h2", with_stats=True, extra_args=proxy_args
         )
         r.check_response(count=count, http_status=200)
 
@@ -552,7 +551,7 @@ class TestH3Proxy:
     #    _require_available(h2o_proxy=h2o_proxy)
     #    curl = CurlClient(env=env, timeout=15)
     #    url = f"https://localhost:{h2o_proxy.port}/data.json"
-    #    # ipv6 0100::/64 is supposed to go into the void (rfc6666)
+    #    # IPv6 0100::/64 is supposed to go into the void (rfc6666)
     #    xargs = [
     #        '--proxy', 'https://xxx.invalid/',
     #        '--resolve', 'xxx.invalid:443:0100::1,0100::2,0100::3',

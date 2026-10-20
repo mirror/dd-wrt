@@ -23,13 +23,13 @@
 ###########################################################################
 AUTOMAKE_OPTIONS = foreign
 
-# Get CERTCONFIG_CA, CERTCONFIGS, GENERATEDCERTS, SRPFILES variables
+# Get CERTCONFIG_CA, CERTCONFIGS, GENERATEDCERTS variables
 include Makefile.inc
 
-EXTRA_DIST = $(CERTCONFIG_CA) $(CERTCONFIGS) $(SRPFILES) CMakeLists.txt \
+EXTRA_DIST = $(CERTCONFIG_CA) $(CERTCONFIGS) CMakeLists.txt \
   genserv.pl
 
-DISTCLEANFILES = $(GENERATEDCERTS)
+CLEANFILES = $(GENERATEDCERTS)
 
 all-am: test-ca.cacert
 

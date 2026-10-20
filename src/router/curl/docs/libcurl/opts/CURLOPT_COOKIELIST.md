@@ -47,6 +47,18 @@ future transfers to that server, likely not what you intended. To address
 these issues set a domain in `Set-Cookie` (doing that includes subdomains) or
 much better: use the Netscape file format.
 
+Cookies added through this API bypass automatic Public Suffix List (PSL)
+checking because the handle's internal PSL engine has not yet been initialized
+when the call is made. Under normal transfer operations, PSL validation
+prevents cookies from being set on broad or shared domains - such as `.com`,
+`.co.uk`, or `.github.io` - which would otherwise create security
+vulnerabilities by allowing unrelated subdomains to access sensitive cookie
+data. Because the library skips this safety check during manual cookie
+insertion, the caller assumes full responsibility for domain validation.
+Applications using this interface must independently verify that the target
+domain attribute represents a valid host and does not match a public suffix
+before injecting the cookie into the handle.
+
 Additionally, there are commands available that perform actions if you pass in
 these exact strings:
 
@@ -64,7 +76,9 @@ writes all known cookies to the file specified by CURLOPT_COOKIEJAR(3)
 
 ## `RELOAD`
 
-loads all cookies from the files specified by CURLOPT_COOKIEFILE(3)
+loads all cookies from the files specified by CURLOPT_COOKIEFILE(3). If
+CURLOPT_COOKIESESSION(3) is enabled before this reload, it is applied to this
+load operation as well and all session cookies are discarded.
 
 # DEFAULT
 
@@ -100,17 +114,15 @@ int main(void)
        before a transfer is performed. Cookies in the list that have the same
        hostname, path and name as in my_cookie are skipped. That is because
        libcurl has already imported my_cookie and it is considered a "live"
-       cookie. A live cookie is not replaced by one read from a file.
-    */
+       cookie. A live cookie is not replaced by one read from a file. */
     curl_easy_setopt(curl, CURLOPT_COOKIEFILE, "cookies.txt");  /* import */
 
     /* Cookies are exported after curl_easy_cleanup is called. The server
        may have added, deleted or modified cookies by then. The cookies that
-       were skipped on import are not exported.
-    */
+       were skipped on import are not exported. */
     curl_easy_setopt(curl, CURLOPT_COOKIEJAR, "cookies.txt");  /* export */
 
-    result = curl_easy_perform(curl); /* cookies imported from cookies.txt */
+    result = curl_easy_perform(curl);  /* cookies imported from cookies.txt */
 
     curl_easy_cleanup(curl);  /* cookies exported to cookies.txt */
   }

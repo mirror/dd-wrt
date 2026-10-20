@@ -46,6 +46,15 @@
 #endif
 #endif
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef CURL_HAVE_DIAG
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+
 #define BUFSZ 256
 
 struct unsshort_st {
@@ -1047,6 +1056,54 @@ static int test_weird_arguments(void)
   return errors;
 }
 
+static int double_check(void)
+{
+  const long double val = 1.234567890123456789L;
+  int mismatches = 0;
+  unsigned int i;
+  struct dbcheck {
+    const char *fmt;
+    const char *prefix; /* starts with this */
+    const char *suffix; /* ends with this */
+  };
+  /* because floats are annoying beasts, different libc's produce different
+     outputs so we cannot compare exact output, only prefix + suffix */
+  struct dbcheck c[] = {
+    { "%.17Lf", /* "1.23456789012345669" */
+      "1.23456789012345", "", },
+/* VS2013 and earlier CRT vsnprintf() return slightly different results */
+#if !defined(_MSC_VER) || (_MSC_VER >= 1900)
+    { "%.17Le", /* "1.23456789012345669e+00" */
+      "1.234567890123456", "e+00" },
+    { "%.17LE", /* "1.23456789012345669E+00" */
+      "1.234567890123456", "E+00" },
+#endif
+    { "%.17Lg", /* "1.2345678901234567" */
+      "1.234567890123456", "" },
+    { "%.17LG", /* "1.2345678901234567" */
+      "1.234567890123456", ""}
+  };
+  for(i = 0; i < CURL_ARRAYSIZE(c); i++) {
+    char curl_out[128];
+    size_t len =
+      curl_msnprintf(curl_out, sizeof(curl_out), c[i].fmt, val);
+    if(strncmp(curl_out, c[i].prefix, strlen(c[i].prefix))) {
+      curl_mprintf("MISMATCH (prefix): %s curl=%s libc=%s\n",
+                   c[i].fmt, curl_out, c[i].prefix);
+      mismatches++;
+    }
+    if((len < strlen(c[i].suffix) ||
+        strncmp(curl_out + len - strlen(c[i].suffix),
+               c[i].suffix, strlen(c[i].suffix)))) {
+      curl_mprintf("MISMATCH (suffix): %s curl=%s libc=%s\n",
+                   c[i].fmt, curl_out, c[i].suffix);
+      mismatches++;
+    }
+  }
+  curl_mfprintf(stderr, "mismatches=%d/%zu\n", mismatches, CURL_ARRAYSIZE(c));
+  return mismatches;
+}
+
 /* DBL_MAX value from Linux */
 #define MAXIMIZE (-1.7976931348623157081452E+308)
 
@@ -1056,6 +1113,12 @@ static int test_float_formatting(void)
   char buf[512]; /* larger than max float size */
   curl_msnprintf(buf, sizeof(buf), "%f", 9.0);
   errors += string_check(buf, "9.000000");
+
+/* VS2013 and earlier CRT vsnprintf() does not support this mask */
+#if !defined(_MSC_VER) || (_MSC_VER >= 1900)
+  curl_msnprintf(buf, sizeof(buf), "%F", 9.0);
+  errors += string_check(buf, "9.000000");
+#endif
 
   curl_msnprintf(buf, sizeof(buf), "%.1f", 9.1);
   errors += string_check(buf, "9.1");
@@ -1165,6 +1228,8 @@ static int test_float_formatting(void)
   curl_msnprintf(buf, 6, "%f", MAXIMIZE);
   errors += strlen_check(buf, 5);
 
+  errors += double_check();
+
   if(!errors)
     curl_mprintf("All float strings tests OK!\n");
   else
@@ -1219,22 +1284,104 @@ static int test_return_codes(void)
   if(rc != 5)
     return 1;
 
-  /* returns the length excluding the nul byte */
+  /* returns the length excluding the NUL byte */
   rc = curl_msnprintf(buf, 5, "%d", 99999);
   if(rc != 4)
     return 1;
 
-  /* returns the length excluding the nul byte */
+  /* returns the length excluding the NUL byte */
   rc = curl_msnprintf(buf, 5, "%s", "helloooooooo");
   if(rc != 4)
     return 1;
 
-  /* returns the length excluding the nul byte */
+  /* returns the length excluding the NUL byte */
   rc = curl_msnprintf(buf, 6, "%s", "helloooooooo");
   if(rc != 5)
     return 1;
 
   return 0;
+}
+
+/*
+  Basic verification of the vararg versions of the printf functions:
+
+  - curl_mvfprintf
+  - curl_mvprintf
+  - curl_mvsnprintf
+  - curl_mvsprintf
+  - curl_mvaprintf
+ */
+static int var557(int expected_len, const char *format, ...)
+{
+  va_list arg;
+  int len;
+  int errors = 1;
+  char buffer[80];
+  char *ptr;
+  va_start(arg, format);
+
+  len = curl_mvfprintf(stderr, format, arg);
+  if(len != expected_len) {
+    curl_mfprintf(stderr, "curl_mvfprintf: expected length %d but got %d\n",
+                  expected_len, len);
+    goto error;
+  }
+
+  va_end(arg);
+  va_start(arg, format);
+  /* this unfortunately writes to stdout but we can't prevent it */
+  len = curl_mvprintf(format, arg);
+  if(len != expected_len) {
+    curl_mfprintf(stderr, "curl_mvprintf: expected length %d but got %d\n",
+                  expected_len, len);
+    goto error;
+  }
+
+  va_end(arg);
+  va_start(arg, format);
+  len = curl_mvsnprintf(buffer, sizeof(buffer), format, arg);
+  if(len != expected_len) {
+    curl_mfprintf(stderr, "curl_mvsnprintf: expected length %d but got %d\n",
+                  expected_len, len);
+    goto error;
+  }
+
+  va_end(arg);
+  va_start(arg, format);
+  /* no buffer size, but we know it fits */
+  len = curl_mvsprintf(buffer, format, arg);
+  if(len != expected_len) {
+    curl_mfprintf(stderr, "curl_mvsprintf: expected length %d but got %d\n",
+                  expected_len, len);
+    goto error;
+  }
+
+  va_end(arg);
+  va_start(arg, format);
+  ptr = curl_mvaprintf(format, arg);
+  len = ptr ? (int)strlen(ptr) : 0;
+  curl_free(ptr);
+  if(len != expected_len) {
+    curl_mfprintf(stderr, "curl_mvaprintf: expected length %d but got %d\n",
+                  expected_len, len);
+    goto error;
+  }
+
+  errors = 0; /* success */
+error:
+  va_end(arg);
+  if(!errors)
+    curl_mprintf("All v-functions test OK!\n");
+  else
+    curl_mprintf("The v-functions test failed!\n");
+  return errors;
+}
+
+static int test_vversions(void)
+{
+  int rc = var557(51, "testing %s and %d is %s and %ld\n",
+                  "a string", -443, "super fun", (long)9876543);
+  return rc;
 }
 
 static CURLcode test_lib557(const char *URL)
@@ -1263,6 +1410,7 @@ static CURLcode test_lib557(const char *URL)
   errors += test_float_formatting();
   errors += test_oct_hex_formatting();
   errors += test_return_codes();
+  errors += test_vversions();
 
   if(errors)
     return TEST_ERR_MAJOR_BAD;
@@ -1272,4 +1420,7 @@ static CURLcode test_lib557(const char *URL)
 
 #ifdef CURL_HAVE_DIAG
 #pragma GCC diagnostic pop
+#endif
+#ifdef __clang__
+#pragma clang diagnostic pop
 #endif

@@ -73,7 +73,7 @@ static ParameterError getstrn(char **str, const char *val,
 }
 
 /* this array MUST be alphasorted based on the 'lname' */
-static const struct LongShort aliases[]= {
+static const struct LongShort aliases[] = {
   {"abstract-unix-socket",       ARG_FILE, ' ', C_ABSTRACT_UNIX_SOCKET},
   {"alpn",                       ARG_BOOL|ARG_NO|ARG_TLS, ' ', C_ALPN},
   {"alt-svc",                    ARG_STRG, ' ', C_ALT_SVC},
@@ -170,6 +170,12 @@ static const struct LongShort aliases[]= {
   {"http2-prior-knowledge",      ARG_NONE, ' ', C_HTTP2_PRIOR_KNOWLEDGE},
   {"http3",                      ARG_NONE|ARG_TLS, ' ', C_HTTP3},
   {"http3-only",                 ARG_NONE|ARG_TLS, ' ', C_HTTP3_ONLY},
+#ifndef CURL_DISABLE_HTTPSIG
+  {"httpsig-algo",               ARG_STRG, ' ', C_HTTPSIG_ALGORITHM},
+  {"httpsig-headers",            ARG_STRG, ' ', C_HTTPSIG_HEADERS},
+  {"httpsig-key",                ARG_FILE|ARG_CLEAR, ' ', C_HTTPSIG_KEY},
+  {"httpsig-keyid",              ARG_STRG, ' ', C_HTTPSIG_KEYID},
+#endif
   {"ignore-content-length",      ARG_BOOL, ' ', C_IGNORE_CONTENT_LENGTH},
   {"include",                    ARG_BOOL, ' ', C_INCLUDE},
   {"insecure",                   ARG_BOOL, 'k', C_INSECURE},
@@ -264,9 +270,11 @@ static const struct LongShort aliases[]= {
   {"proxy-ssl-auto-client-cert", ARG_BOOL|ARG_TLS, ' ',
    C_PROXY_SSL_AUTO_CLIENT_CERT},
   {"proxy-tls13-ciphers",        ARG_STRG|ARG_TLS, ' ', C_PROXY_TLS13_CIPHERS},
-  {"proxy-tlsauthtype",          ARG_STRG|ARG_TLS, ' ', C_PROXY_TLSAUTHTYPE},
-  {"proxy-tlspassword",  ARG_STRG|ARG_TLS|ARG_CLEAR, ' ', C_PROXY_TLSPASSWORD},
-  {"proxy-tlsuser",          ARG_STRG|ARG_TLS|ARG_CLEAR, ' ', C_PROXY_TLSUSER},
+  {"proxy-tlsauthtype",   ARG_STRG|ARG_TLS|ARG_DEPR, ' ', C_PROXY_TLSAUTHTYPE},
+  {"proxy-tlspassword",          ARG_STRG|ARG_TLS|ARG_CLEAR|ARG_DEPR, ' ',
+   C_PROXY_TLSPASSWORD},
+  {"proxy-tlsuser",              ARG_STRG|ARG_TLS|ARG_CLEAR|ARG_DEPR, ' ',
+   C_PROXY_TLSUSER},
   {"proxy-tlsv1",                ARG_NONE|ARG_TLS, ' ', C_PROXY_TLSV1},
   {"proxy-user",                 ARG_STRG|ARG_CLEAR, 'U', C_PROXY_USER},
   {"proxy1.0",                   ARG_STRG, ' ', C_PROXY1_0},
@@ -338,9 +346,9 @@ static const struct LongShort aliases[]= {
   {"tls-earlydata",              ARG_BOOL|ARG_TLS, ' ', C_TLS_EARLYDATA},
   {"tls-max",                    ARG_STRG|ARG_TLS, ' ', C_TLS_MAX},
   {"tls13-ciphers",              ARG_STRG|ARG_TLS, ' ', C_TLS13_CIPHERS},
-  {"tlsauthtype",                ARG_STRG|ARG_TLS, ' ', C_TLSAUTHTYPE},
-  {"tlspassword",              ARG_STRG|ARG_TLS|ARG_CLEAR, ' ', C_TLSPASSWORD},
-  {"tlsuser",                    ARG_STRG|ARG_TLS|ARG_CLEAR, ' ', C_TLSUSER},
+  {"tlsauthtype",               ARG_STRG|ARG_TLS|ARG_DEPR, ' ', C_TLSAUTHTYPE},
+  {"tlspassword",     ARG_STRG|ARG_TLS|ARG_CLEAR|ARG_DEPR, ' ', C_TLSPASSWORD},
+  {"tlsuser",             ARG_STRG|ARG_TLS|ARG_CLEAR|ARG_DEPR, ' ', C_TLSUSER},
   {"tlsv1",                      ARG_NONE|ARG_TLS, '1', C_TLSV1},
   {"tlsv1.0",                    ARG_NONE|ARG_TLS, ' ', C_TLSV1_0},
   {"tlsv1.1",                    ARG_NONE|ARG_TLS, ' ', C_TLSV1_1},
@@ -993,12 +1001,10 @@ static ParameterError set_data(cmdline_t cmd,
   if(cmd == C_JSON)
     config->jsoned = TRUE;
 
-  if(curlx_dyn_len(&config->postdata)) {
-    /* skip separator append for --json */
-    if(!err && (cmd != C_JSON) &&
-       curlx_dyn_addn(&config->postdata, "&", 1))
-      err = PARAM_NO_MEM;
-  }
+  /* skip separator append for --json */
+  if(curlx_dyn_len(&config->postdata) && !err && (cmd != C_JSON) &&
+     curlx_dyn_addn(&config->postdata, "&", 1))
+    err = PARAM_NO_MEM;
 
   if(!err && curlx_dyn_addn(&config->postdata, postdata, size))
     err = PARAM_NO_MEM;
@@ -1717,8 +1723,7 @@ static ParameterError parse_upload_flags(struct OperationConfig *config,
 }
 
 /* if 'toggle' is TRUE, set the 'bits' in 'modify'.
-   if 'toggle' is FALSE, clear the 'bits' in 'modify'
-*/
+   if 'toggle' is FALSE, clear the 'bits' in 'modify' */
 static void togglebit(bool toggle, unsigned long *modify, unsigned long bits)
 {
   if(toggle)
@@ -2138,12 +2143,13 @@ static ParameterError opt_bool(struct OperationConfig *config,
   case C_HEAD: /* --head */
     config->no_body = toggle;
     config->show_headers = toggle;
-    if(SetHTTPrequest((config->no_body) ? TOOL_HTTPREQ_HEAD :
+    if(SetHTTPrequest(config->no_body ? TOOL_HTTPREQ_HEAD :
                       TOOL_HTTPREQ_GET, &config->httpreq))
       return PARAM_BAD_USE;
     break;
   case C_REMOTE_HEADER_NAME: /* --remote-header-name */
     config->content_disposition = toggle;
+    config->suppress_connect_headers = toggle;
     break;
   case C_INSECURE: /* --insecure */
     config->insecure_ok = toggle;
@@ -2362,6 +2368,12 @@ static ParameterError opt_file(struct OperationConfig *config,
   case C_UPLOAD_FILE: /* --upload-file */
     err = parse_upload_file(config, nextarg);
     break;
+  case C_HTTPSIG_KEY: /* --httpsig-key */
+    if(!feature_httpsig)
+      err = PARAM_LIBCURL_DOESNT_SUPPORT;
+    else
+      err = getstr(&config->httpsig_key, nextarg, DENY_BLANK);
+    break;
   }
   return err;
 }
@@ -2475,7 +2487,7 @@ static ParameterError opt_string(struct OperationConfig *config,
 {
   ParameterError err = PARAM_OK;
   curl_off_t value;
-  static const char *redir_protos[] = {
+  static const char * const redir_protos[] = {
     "http",
     "https",
     "ftp",
@@ -2555,6 +2567,26 @@ static ParameterError opt_string(struct OperationConfig *config,
   case C_AWS_SIGV4: /* --aws-sigv4 */
     config->authtype |= CURLAUTH_AWS_SIGV4;
     err = getstr(&config->aws_sigv4, nextarg, ALLOW_BLANK);
+    break;
+  case C_HTTPSIG_ALGORITHM: /* --httpsig-algo */
+    if(!feature_httpsig)
+      err = PARAM_LIBCURL_DOESNT_SUPPORT;
+    else {
+      config->authtype |= CURLAUTH_HTTPSIG;
+      err = getstr(&config->httpsig_algorithm, nextarg, DENY_BLANK);
+    }
+    break;
+  case C_HTTPSIG_KEYID: /* --httpsig-keyid */
+    if(!feature_httpsig)
+      err = PARAM_LIBCURL_DOESNT_SUPPORT;
+    else
+      err = getstr(&config->httpsig_keyid, nextarg, DENY_BLANK);
+    break;
+  case C_HTTPSIG_HEADERS: /* --httpsig-headers */
+    if(!feature_httpsig)
+      err = PARAM_LIBCURL_DOESNT_SUPPORT;
+    else
+      err = getstr(&config->httpsig_headers, nextarg, DENY_BLANK);
     break;
   case C_INTERFACE: /* --interface */
     /* interface */
@@ -2660,6 +2692,7 @@ static ParameterError opt_string(struct OperationConfig *config,
     err = getstr(&config->sasl_authzid, nextarg, DENY_BLANK);
     break;
   case C_PROXY_SERVICE_NAME: /* --proxy-service-name */
+  case C_SOCKS5_GSSAPI_SERVICE: /* --socks5-gssapi-service */
     err = getstr(&config->proxy_service_name, nextarg, DENY_BLANK);
     break;
   case C_SERVICE_NAME: /* --service-name */
@@ -2779,62 +2812,17 @@ static ParameterError opt_string(struct OperationConfig *config,
     break;
   case C_HOSTPUBMD5: /* --hostpubmd5 */
     err = getstr(&config->hostpubmd5, nextarg, DENY_BLANK);
-    if(!err) {
-      if(!config->hostpubmd5 || strlen(config->hostpubmd5) != 32)
-        err = PARAM_BAD_USE;
-    }
+    if(!err && (!config->hostpubmd5 || strlen(config->hostpubmd5) != 32))
+      err = PARAM_BAD_USE;
     break;
   case C_HOSTPUBSHA256: /* --hostpubsha256 */
     err = getstr(&config->hostpubsha256, nextarg, DENY_BLANK);
-    break;
-  case C_TLSUSER: /* --tlsuser */
-    if(!feature_tls_srp)
-      err = PARAM_LIBCURL_DOESNT_SUPPORT;
-    else
-      err = getstr(&config->tls_username, nextarg, DENY_BLANK);
-    break;
-  case C_TLSPASSWORD: /* --tlspassword */
-    if(!feature_tls_srp)
-      err = PARAM_LIBCURL_DOESNT_SUPPORT;
-    else
-      err = getstr(&config->tls_password, nextarg, ALLOW_BLANK);
-    break;
-  case C_TLSAUTHTYPE: /* --tlsauthtype */
-    if(!feature_tls_srp)
-      err = PARAM_LIBCURL_DOESNT_SUPPORT;
-    else {
-      err = getstr(&config->tls_authtype, nextarg, DENY_BLANK);
-      if(!err && config->tls_authtype && strcmp(config->tls_authtype, "SRP"))
-        err = PARAM_LIBCURL_DOESNT_SUPPORT; /* only support TLS-SRP */
-    }
     break;
   case C_PINNEDPUBKEY: /* --pinnedpubkey */
     err = getstr(&config->pinnedpubkey, nextarg, DENY_BLANK);
     break;
   case C_PROXY_PINNEDPUBKEY: /* --proxy-pinnedpubkey */
     err = getstr(&config->proxy_pinnedpubkey, nextarg, DENY_BLANK);
-    break;
-  case C_PROXY_TLSUSER: /* --proxy-tlsuser */
-    if(!feature_tls_srp)
-      err = PARAM_LIBCURL_DOESNT_SUPPORT;
-    else
-      err = getstr(&config->proxy_tls_username, nextarg, ALLOW_BLANK);
-    break;
-  case C_PROXY_TLSPASSWORD: /* --proxy-tlspassword */
-    if(!feature_tls_srp)
-      err = PARAM_LIBCURL_DOESNT_SUPPORT;
-    else
-      err = getstr(&config->proxy_tls_password, nextarg, DENY_BLANK);
-    break;
-  case C_PROXY_TLSAUTHTYPE: /* --proxy-tlsauthtype */
-    if(!feature_tls_srp)
-      err = PARAM_LIBCURL_DOESNT_SUPPORT;
-    else {
-      err = getstr(&config->proxy_tls_authtype, nextarg, DENY_BLANK);
-      if(!err && config->proxy_tls_authtype &&
-         strcmp(config->proxy_tls_authtype, "SRP"))
-        err = PARAM_LIBCURL_DOESNT_SUPPORT; /* only support TLS-SRP */
-    }
     break;
   case C_PROXY_CERT_TYPE: /* --proxy-cert-type */
     err = getstr(&config->proxy_cert_type, nextarg, DENY_BLANK);
@@ -3069,13 +3057,19 @@ ParameterError getparameter(const char *flag, /* f or -long-flag */
         *usedarg = consumearg; /* mark it as used */
       }
       if(a->desc & ARG_DEPR) {
+        if(a->desc & ARG_CLEAR)
+          cleanarg(CURL_UNCONST(nextarg));
         opt_depr(a);
         break;
       }
 
       if(has_leading_unicode((const unsigned char *)nextarg)) {
-        warnf("The argument '%s' starts with a Unicode character. "
-              "Maybe ASCII was intended?", nextarg);
+        if(a->desc & ARG_CLEAR)
+          warnf("The argument to --%s starts with a Unicode character. "
+                "Maybe ASCII was intended?", a->lname);
+        else
+          warnf("The argument '%s' starts with a Unicode character. "
+                "Maybe ASCII was intended?", nextarg);
       }
       switch(ARGTYPE(a->desc)) {
       case ARG_FILE:
@@ -3197,10 +3191,8 @@ ParameterError parse_args(int argc, argv_item_t argv[])
     }
   }
 
-  if(!err && config->content_disposition) {
-    if(config->resume_from_current)
-      err = PARAM_CONTDISP_RESUME_FROM;
-  }
+  if(!err && config->content_disposition && config->resume_from_current)
+    err = PARAM_CONTDISP_RESUME_FROM;
 
   if(err &&
      err != PARAM_HELP_REQUESTED &&

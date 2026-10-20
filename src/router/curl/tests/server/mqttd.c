@@ -166,9 +166,9 @@ static void logprotocol(mqttdir dir,
     optr += 2;
     left -= 2;
   }
-  fprintf(output, "%s %s %x %s\n",
+  fprintf(output, "%s %s %lx %s\n",
           dir == FROM_CLIENT ? "client" : "server",
-          prefix, (unsigned int)remlen, data);
+          prefix, (unsigned long)remlen, data);
 }
 
 /* return 0 on success */
@@ -178,8 +178,8 @@ static int connack(FILE *dump, curl_socket_t fd)
     MQTT_MSG_CONNACK, 0x02,
     0x00, 0x00
   };
-  ssize_t rc;
   const char *label = "CONNACK";
+  ssize_t rc;
 
   if(m_config.pingresp_as_connack) {
     /* Send a PINGRESP (0xD0) with remaining_length=2 and payload
@@ -260,8 +260,8 @@ static int disconnect(FILE *dump, curl_socket_t fd)
     MQTT_MSG_DISCONNECT, 0x00,
     0x00, 0x00 /* extra bytes for malformed variant */
   };
-  size_t pktlen = 2;
   const char *label = "DISCONNECT";
+  size_t pktlen = 2;
   ssize_t rc;
 
   if(m_config.disconnect_malformed) {
@@ -286,7 +286,7 @@ static int disconnect(FILE *dump, curl_socket_t fd)
 }
 
 /*
-  do
+   do
      encodedByte = X MOD 128
 
      X = X DIV 128
@@ -294,16 +294,13 @@ static int disconnect(FILE *dump, curl_socket_t fd)
      // if there are more data to encode, set the top bit of this byte
 
      if ( X > 0 )
-
         encodedByte = encodedByte OR 128
+     endif
 
-      endif
+     'output' encodedByte
 
-    'output' encodedByte
-
-  while ( X > 0 )
-
-*/
+   while ( X > 0 )
+ */
 
 /* return number of bytes used */
 static size_t encode_length(size_t packetlen,
@@ -416,6 +413,25 @@ static int publish(FILE *dump,
 
 static char topic[MAX_TOPIC_LENGTH + 1];
 
+static bool readall(curl_socket_t fd, unsigned char *buffer, size_t len)
+{
+  size_t nread = 0;
+
+  while(nread < len) {
+    ssize_t rc = sread(fd, buffer + nread, len - nread);
+    if(rc <= 0) {
+      if(rc < 0 && SOCKERRNO == SOCKEINTR && !got_exit_signal)
+        continue;
+      logmsg("READ %zd bytes [SHORT!]", rc);
+      return FALSE;
+    }
+    logmsg("READ %zd bytes", rc);
+    loghex(buffer + nread, rc);
+    nread += (size_t)rc;
+  }
+  return TRUE;
+}
+
 static bool fixedheader(curl_socket_t fd,
                         unsigned char *bytep,
                         size_t *remaining_lengthp,
@@ -424,23 +440,18 @@ static bool fixedheader(curl_socket_t fd,
   /* get the fixed header */
   unsigned char buffer[10];
 
-  /* get the first two bytes */
-  ssize_t rc = sread(fd, buffer, 2);
   size_t i;
-  if(rc < 2) {
-    logmsg("READ %zd bytes [SHORT!]", rc);
+
+  /* get the first two bytes */
+  if(!readall(fd, buffer, 2))
     return FALSE; /* fail */
-  }
-  logmsg("READ %zd bytes", rc);
-  loghex(buffer, rc);
   *bytep = buffer[0];
 
   /* if the length byte has the top bit set, get the next one too */
   i = 1;
   while(buffer[i] & 0x80) {
     i++;
-    rc = sread(fd, &buffer[i], 1);
-    if(rc != 1) {
+    if(!readall(fd, &buffer[i], 1)) {
       logmsg("Remaining Length broken");
       return FALSE;
     }
@@ -516,14 +527,10 @@ static curl_socket_t mqttit(curl_socket_t fd)
       buffer = newbuffer;
     }
 
-    if(remaining_length) {
-      /* reading variable header and payload into buffer */
-      rc = sread(fd, buffer, remaining_length);
-      if(rc > 0) {
-        logmsg("READ %zd bytes", rc);
-        loghex(buffer, rc);
-      }
-    }
+    /* Read the complete variable header and payload. */
+    if(!readall(fd, buffer, remaining_length))
+      goto end;
+    rc = (ssize_t)remaining_length;
 
     if(byte == MQTT_MSG_CONNECT) {
       logprotocol(FROM_CLIENT, "CONNECT", remaining_length, dump, buffer, rc);
@@ -641,8 +648,8 @@ static curl_socket_t mqttit(curl_socket_t fd)
         }
       }
       else {
-        const char *def = "this is random payload yes yes it is";
-        publish(dump, fd, packet_id, topic, def, strlen(def));
+        static const char def[] = "this is random payload yes yes it is";
+        publish(dump, fd, packet_id, topic, def, CURL_CSTRLEN(def));
       }
       disconnect(dump, fd);
     }
@@ -661,11 +668,9 @@ static curl_socket_t mqttit(curl_socket_t fd)
 #endif
       /* expect a disconnect here */
       /* get the request */
-      rc = sread(fd, &buffer[0], 2);
-
-      logmsg("READ %zd bytes [DISCONNECT]", rc);
-      loghex(buffer, rc);
-      logprotocol(FROM_CLIENT, "DISCONNECT", 0, dump, buffer, rc);
+      if(!readall(fd, buffer, 2))
+        goto end;
+      logprotocol(FROM_CLIENT, "DISCONNECT", 0, dump, buffer, 2);
       goto end;
     }
     else {
@@ -684,12 +689,10 @@ end:
   return CURL_SOCKET_BAD;
 }
 
-/*
-  sockfdp is a pointer to an established stream or CURL_SOCKET_BAD
+/* sockfdp is a pointer to an established stream or CURL_SOCKET_BAD
 
-  if sockfd is CURL_SOCKET_BAD, listendfd is a listening socket we must
-  accept()
-*/
+   if sockfd is CURL_SOCKET_BAD, listendfd is a listening socket we must
+   accept() */
 static bool mqttd_incoming(curl_socket_t listenfd)
 {
   fd_set fds_read;
@@ -819,17 +822,14 @@ static int test_mqttd(int argc, const char *argv[])
     }
     else if(!strcmp("--ipv6", argv[arg])) {
 #ifdef USE_IPV6
+      socket_type = "IPv6";
       socket_domain = AF_INET6;
-      ipv_inuse = "IPv6";
 #endif
       arg++;
     }
     else if(!strcmp("--ipv4", argv[arg])) {
-      /* for completeness, we support this option as well */
-#ifdef USE_IPV6
+      socket_type = "IPv4";
       socket_domain = AF_INET;
-      ipv_inuse = "IPv4";
-#endif
       arg++;
     }
     else if(!strcmp("--port", argv[arg])) {
@@ -840,7 +840,7 @@ static int test_mqttd(int argc, const char *argv[])
           fprintf(stderr, "mqttd: invalid --port argument (%s)\n", argv[arg]);
           return 0;
         }
-        server_port = (unsigned short)num;
+        server_port = (uint16_t)num;
         arg++;
       }
     }
@@ -860,7 +860,7 @@ static int test_mqttd(int argc, const char *argv[])
   }
 
   snprintf(loglockfile, sizeof(loglockfile), "%s/%s/mqtt-%s.lock",
-           logdir, SERVERLOGS_LOCKDIR, ipv_inuse);
+           logdir, SERVERLOGS_LOCKDIR, socket_type);
 
   CURL_BINMODE(stdin);
   CURL_BINMODE(stdout);
@@ -886,7 +886,7 @@ static int test_mqttd(int argc, const char *argv[])
     msgsock = CURL_SOCKET_BAD; /* no stream socket yet */
   }
 
-  logmsg("Running %s version", ipv_inuse);
+  logmsg("Running %s version", socket_type);
   logmsg("Listening on port %hu", server_port);
 
   wrotepidfile = write_pidfile(pidname);
@@ -918,16 +918,5 @@ mqttd_cleanup:
 
   restore_signal_handlers(FALSE);
 
-  if(got_exit_signal) {
-    logmsg("============> mqttd exits with signal (%d)", exit_signal);
-    /*
-     * To properly set the return status of the process we
-     * must raise the same signal SIGINT or SIGTERM that we
-     * caught and let the old handler take care of it.
-     */
-    raise(exit_signal);
-  }
-
-  logmsg("============> mqttd quits");
   return 0;
 }

@@ -85,7 +85,7 @@ static CURLcode test_unit1303(const char *arg)
     const char *comment;
   };
 
-  const struct timetest run[] = {
+  static const struct timetest run[] = {
     /* both timeouts set, not connecting */
     {BASE + 4, 0,      10000, 8000, FALSE, 6000, "6 seconds should be left"},
     {BASE + 4, 990000, 10000, 8000, FALSE, 5010, "5010 ms should be left"},
@@ -139,10 +139,10 @@ static CURLcode test_unit1303(const char *arg)
   };
 
   /* this is the pretended start time of the transfer */
-  easy->progress.t_startsingle.tv_sec = BASE;
-  easy->progress.t_startsingle.tv_usec = 0;
-  easy->progress.t_startop.tv_sec = BASE;
-  easy->progress.t_startop.tv_usec = 0;
+  easy->progress.start.tv_sec = BASE;
+  easy->progress.start.tv_usec = 0;
+  easy->progress.delta.startsingle_us = 0;
+  easy->progress.delta.startop_us = 0;
 
   for(i = 0; i < CURL_ARRAYSIZE(run); i++) {
     timediff_t timeout;

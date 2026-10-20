@@ -191,12 +191,17 @@ static int str_num_base(const char **linep, curl_off_t *nump, curl_off_t max,
     } while(valid_digit(*p, m));
   }
   else {
-    do {
-      int n = curlx_hexval(*p++);
-      if(num > ((max - n) / base))
-        return STRE_OVERFLOW;
-      num = (num * base) + n;
-    } while(valid_digit(*p, m));
+    curl_off_t cutoff = (max - (base - 1)) / base;
+    while(valid_digit(*p, m)) {
+      if(num <= cutoff)
+        num = (num * base) + curlx_hexval(*p++);
+      else {
+        int n = curlx_hexval(*p++);
+        if(num > ((max - n) / base))
+          return STRE_OVERFLOW;
+        num = (num * base) + n;
+      }
+    }
   }
   *nump = num;
   *linep = p;
@@ -263,7 +268,7 @@ int curlx_str_cmp(struct Curl_str *str, const char *check)
     size_t clen = strlen(check);
     return ((str->len == clen) && !strncmp(str->str, check, clen));
   }
-  return !!(str->len);
+  return !!str->len;
 }
 
 /* Trim off 'num' number of bytes from the beginning (left side) of the

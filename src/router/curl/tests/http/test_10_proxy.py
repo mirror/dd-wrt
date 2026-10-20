@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #***************************************************************************
 #                                  _   _ ____  _
 #  Project                     ___| | | |  _ \| |
@@ -39,7 +37,8 @@ log = logging.getLogger(__name__)
 class TestProxy:
 
     @pytest.fixture(autouse=True, scope='class')
-    def _class_scope(self, env, httpd, nghttpx_fwd):
+    @classmethod
+    def _class_scope(cls, env, httpd, nghttpx_fwd):
         push_dir = os.path.join(httpd.docs_dir, 'push')
         if not os.path.exists(push_dir):
             os.makedirs(push_dir)
@@ -392,9 +391,9 @@ class TestProxy:
             r.check_response(count=1, http_status=200,
                              protocol='HTTP/2' if proto == 'h2' else 'HTTP/1.1')
 
-    # download via http: ipv4 proxy (no tunnel) using IP address, IPv6 only
+    # download via http: IPv4 proxy (no tunnel) using IP address, IPv6 only
     @pytest.mark.skipif(condition=not Env.curl_has_feature('IPv6'),
-                        reason='no ipv6 support')
+                        reason='no IPv6 support')
     def test_10_15_proxy_ip_addr(self, env: Env, httpd):
         proto = 'http/1.1'
         curl = CurlClient(env=env, force_resolv=False)
@@ -406,9 +405,9 @@ class TestProxy:
         r.check_exit_code(0)
         r.check_response(count=1, http_status=200, protocol='HTTP/1.1')
 
-    # download via http: ipv6 proxy (no tunnel) using IP address, IPv4 only
+    # download via http: IPv6 proxy (no tunnel) using IP address, IPv4 only
     @pytest.mark.skipif(condition=not Env.curl_has_feature('IPv6'),
-                        reason='no ipv6 support')
+                        reason='no IPv6 support')
     def test_10_16_proxy_ip_addr(self, env: Env, httpd):
         proto = 'http/1.1'
         curl = CurlClient(env=env, force_resolv=False)

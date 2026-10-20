@@ -54,7 +54,7 @@ void Curl_llist_init(struct Curl_llist *l, Curl_llist_dtor dtor)
 }
 
 /*
- * Curl_llist_insert_next()
+ * llist_insert_next()
  *
  * Inserts a new list element after the given one 'e'. If the given existing
  * entry is NULL and the list already has elements, the new one will be
@@ -64,10 +64,13 @@ void Curl_llist_init(struct Curl_llist *l, Curl_llist_dtor dtor)
  *
  * @unittest 1300
  */
-void Curl_llist_insert_next(struct Curl_llist *list,
-                            struct Curl_llist_node *e, /* may be NULL */
-                            const void *p,
-                            struct Curl_llist_node *ne)
+UNITTEST void llist_insert_next(struct Curl_llist *list,
+                                struct Curl_llist_node *e, const void *p,
+                                struct Curl_llist_node *ne);
+UNITTEST void llist_insert_next(struct Curl_llist *list,
+                                struct Curl_llist_node *e, /* may be NULL */
+                                const void *p,
+                                struct Curl_llist_node *ne)
 {
   DEBUGASSERT(list);
   DEBUGASSERT(list->_init == LLISTINIT);
@@ -120,7 +123,7 @@ void Curl_llist_append(struct Curl_llist *list, const void *p,
   DEBUGASSERT(list);
   DEBUGASSERT(list->_init == LLISTINIT);
   DEBUGASSERT(ne);
-  Curl_llist_insert_next(list, list->_tail, p, ne);
+  llist_insert_next(list, list->_tail, p, ne);
 }
 
 void *Curl_node_take_elem(struct Curl_llist_node *e)
@@ -211,8 +214,7 @@ struct Curl_llist_node *Curl_llist_head(const struct Curl_llist *list)
 /* llist_tail() returns the last 'struct Curl_llist_node *', which might be
    NULL
 
-   @unittest 1300
-*/
+   @unittest 1300 */
 UNITTEST struct Curl_llist_node *llist_tail(const struct Curl_llist *list);
 UNITTEST struct Curl_llist_node *llist_tail(const struct Curl_llist *list)
 {
@@ -251,8 +253,7 @@ struct Curl_llist_node *Curl_node_next(const struct Curl_llist_node *n)
 /* llist_node_prev() returns the previous element in a list from a given
    Curl_llist_node
 
-   @unittest 1300
-*/
+   @unittest 1300 */
 UNITTEST struct Curl_llist_node *llist_node_prev(
   const struct Curl_llist_node *n);
 UNITTEST struct Curl_llist_node *llist_node_prev(

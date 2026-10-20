@@ -233,7 +233,7 @@ if((!$ver_major) || !defined($ver_minor)) {
     }
     exit 1;
 }
-$stunnel_version = (100*$ver_major) + $ver_minor;
+$stunnel_version = (100 * $ver_major) + $ver_minor;
 
 #***************************************************************************
 # Verify minimum stunnel required version
@@ -262,7 +262,7 @@ if($stunnel_version < 400) {
         $socketopt = "-O a:SO_REUSEADDR=1";
     }
     # TODO: we do not use $host_ip in this old version. I find
-    # no documentation how to. But maybe ipv6 is not available anyway?
+    # no documentation how to. But maybe IPv6 is not available anyway?
     $cmd  = "\"$stunnel\" -p $certfile -P $pidfile ";
     $cmd .= "-d $accept_port -r $target_port -f -D $loglevel ";
     $cmd .= ($socketopt) ? "$socketopt " : "";
@@ -337,7 +337,7 @@ if($stunnel_version >= 400) {
         print uc($proto) ." server (stunnel $ver_major.$ver_minor)\n";
         print "cmd: $cmd\n";
         print "stunnel config at $conffile:\n";
-        open (my $writtenconf, '<', $conffile) or die "$ssltext could not open the config file after writing\n";
+        open(my $writtenconf, '<', $conffile) or die "$ssltext could not open the config file after writing\n";
         print <$writtenconf>;
         print "\n";
         close ($writtenconf);

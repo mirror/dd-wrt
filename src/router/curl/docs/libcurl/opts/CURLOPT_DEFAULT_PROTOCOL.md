@@ -29,13 +29,13 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_DEFAULT_PROTOCOL,
 
 # DESCRIPTION
 
-This option tells libcurl to use *protocol* if the URL is missing a scheme
-name.
+This option tells libcurl to use *protocol* if the URL set with CURLOPT_URL(3)
+misses a scheme name.
 
 Use one of these protocol (scheme) names:
 
 dict, file, ftp, ftps, gopher, http, https, imap, imaps, ldap, ldaps, pop3,
-pop3s, rtsp, scp, sftp, smb, smbs, smtp, smtps, telnet, tftp
+pop3s, rtsp, scp, sftp, smtp, smtps, telnet, tftp
 
 An unknown or unsupported protocol causes error *CURLE_UNSUPPORTED_PROTOCOL*
 when libcurl parses a URL without a scheme. Parsing happens when
@@ -54,6 +54,8 @@ option.
 
 Using this option multiple times makes the last set string override the
 previous ones. Set it to NULL to disable its use again.
+
+This option does *not* adjust the scheme for URLs set with CURLOPT_CURLU(3).
 
 # DEFAULT
 

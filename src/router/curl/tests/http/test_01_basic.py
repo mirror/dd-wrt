@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #***************************************************************************
 #                                  _   _ ____  _
 #  Project                     ___| | | |  _ \| |
@@ -134,7 +132,7 @@ class TestBasic:
         r = curl.http_get(url=url, extra_args=['--http2-prior-knowledge'])
         r.check_exit_code(0)
         assert len(r.responses) == 1, f'{r.responses}'
-        assert r.response['status'] == 200, f'{r.responsw}'
+        assert r.response['status'] == 200, f'{r.response}'
         assert r.response['protocol'] == 'HTTP/2', f'{r.response}'
         assert r.json['server'] == env.domain1
 
@@ -215,7 +213,7 @@ class TestBasic:
             f'/curltest/tweak?x-hd={256 * 1024}'
         r = curl.http_get(url=url, alpn_proto=proto, extra_args=[])
         if proto == 'h2':
-            r.check_exit_code(16)  # CURLE_HTTP2
+            r.check_exit_code(56)  # CURLE_RECV_ERROR
         else:
             r.check_exit_code(0)   # 1.1 can do
 

@@ -8,6 +8,7 @@ LIST
 wildcardmatch
 ftplistparser
 flaky
+libtest
 </keywords>
 </info>
 
@@ -26,7 +27,7 @@ ftp
 lib574
 </tool>
 <name>
-FTP wildcard download - changed fnmatch, 2x perform (DOS LIST response)
+FTP wildcard download - changed fnmatch, 2x perform (DOS LIST)
 </name>
 <command>
 "ftp://%HOSTIP:%FTPPORT/fully_simulated/DOS/*.txt"

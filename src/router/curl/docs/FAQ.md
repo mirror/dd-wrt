@@ -22,7 +22,7 @@ The curl project produces two products:
 
 A client-side URL transfer library, supporting DICT, FILE, FTP, FTPS, GOPHER,
 GOPHERS, HTTP, HTTPS, IMAP, IMAPS, LDAP, LDAPS, MQTT, MQTTS, POP3, POP3S,
-RTSP, SCP, SFTP, SMB, SMBS, SMTP, SMTPS, TELNET, TFTP, WS and WSS.
+RTSP, SCP, SFTP, SMTP, SMTPS, TELNET, TFTP, WS and WSS.
 
 libcurl supports HTTPS certificates, HTTP POST, HTTP PUT, FTP uploading,
 Kerberos, SPNEGO, HTTP form based upload, proxies, cookies, user+password
@@ -339,8 +339,8 @@ files.
 
 ## How do I tell curl to resume a transfer?
 
-curl supports resumed transfers both ways on both FTP and HTTP. Try the `-C`
-option.
+curl supports resumed HTTP, FTP and SFTP downloads as well as resumed FTP and
+SFTP uploads. Try the `-C` option.
 
 ## Why does my posting using -F not work?
 
@@ -1230,9 +1230,9 @@ wildcard to download multiple files from an FTP directory.
 
 ## I want a different time-out
 
-Sometimes users realize that `CURLOPT_TIMEOUT` and `CURLOPT_CONNECTIMEOUT` are
-not sufficiently advanced or flexible to cover all the various use cases and
-scenarios applications end up with.
+Sometimes users realize that `CURLOPT_TIMEOUT` and `CURLOPT_CONNECTTIMEOUT`
+are not sufficiently advanced or flexible to cover all the various use cases
+and scenarios applications end up with.
 
 libcurl offers many more ways to time-out operations. A common alternative is
 to use the `CURLOPT_LOW_SPEED_LIMIT` and `CURLOPT_LOW_SPEED_TIME` options to

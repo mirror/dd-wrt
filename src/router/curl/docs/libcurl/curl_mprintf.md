@@ -269,7 +269,7 @@ A '%' symbol is written. No argument is converted.
 # EXAMPLE
 
 ~~~c
-const char *name = "John";
+static const char *name = "John";
 
 int main(void)
 {
@@ -288,3 +288,6 @@ a newly allocated string, or NULL if it failed.
 All other functions return the number of characters actually printed
 (excluding the null byte used to end output to strings). Note that this
 sometimes differ from how the POSIX versions of these functions work.
+
+Since libcurl 8.23.0 curl_mfprintf, curl_mprintf, curl_mvfprintf and
+curl_mvprintf return -1 when the output fails.

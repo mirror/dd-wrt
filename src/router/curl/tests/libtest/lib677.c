@@ -36,7 +36,7 @@ static CURLcode test_lib677(const char *URL)
   ssize_t pos = 0;
   CURLcode result = CURLE_OK;
 
-  global_init(CURL_GLOBAL_DEFAULT);
+  global_init(CURL_GLOBAL_ALL);
   multi_init(mcurl);
   easy_init(curl);
 
@@ -77,8 +77,8 @@ static CURLcode test_lib677(const char *URL)
 
       if(!state) {
         CURLcode ec;
-        ec = curl_easy_send(curl, testcmd + pos,
-                            sizeof(testcmd) - 1 - pos, &len);
+        ec = curl_easy_send(curl, testcmd + pos, CURL_CSTRLEN(testcmd) - pos,
+                            &len);
         if(ec == CURLE_AGAIN) {
           continue;
         }
@@ -92,7 +92,7 @@ static CURLcode test_lib677(const char *URL)
           pos += len;
         else
           pos = 0;
-        if(pos == sizeof(testcmd) - 1) {
+        if(pos == CURL_CSTRLEN(testcmd)) {
           state++;
           pos = 0;
         }

@@ -58,7 +58,6 @@
 
 #include "sendf.h"
 #include "curl_trc.h"
-#include "hostip.h"
 #include "progress.h"
 #include "transfer.h"
 #include "escape.h"
@@ -251,7 +250,7 @@ static CURLcode pop3_parse_custom_request(struct Curl_easy *data)
 {
   CURLcode result = CURLE_OK;
   struct POP3 *pop3 = Curl_meta_get(data, CURL_META_POP3_EASY);
-  const char *custom = data->set.str[STRING_CUSTOMREQUEST];
+  const char *custom = CURL_EASY_STR(data, STRING_CUSTOMREQUEST);
 
   if(!pop3)
     return CURLE_FAILED_INIT;
@@ -620,7 +619,8 @@ static CURLcode pop3_perform_auth(struct Curl_easy *data,
 
   if(ir) {                                  /* AUTH <mech> ...<crlf> */
     /* Send the AUTH command with the initial response */
-    result = Curl_pp_sendf(data, &pop3c->pp, "AUTH %s %s", mech, ir);
+    result = Curl_pp_sendf(data, &pop3c->pp, "AUTH %s %s",
+                           mech, *ir ? ir : "=");
   }
   else {
     /* Send the AUTH command */
@@ -697,9 +697,8 @@ static CURLcode pop3_perform_authentication(struct Curl_easy *data,
     /* Calculate the SASL login details */
     result = Curl_sasl_start(&pop3c->sasl, data, FALSE, &progress);
 
-    if(!result)
-      if(progress == SASL_INPROGRESS)
-        pop3_state(data, POP3_AUTH);
+    if(!result && progress == SASL_INPROGRESS)
+      pop3_state(data, POP3_AUTH);
   }
 
   if(!result && progress == SASL_IDLE) {
@@ -1406,7 +1405,7 @@ static const struct SASLproto saslpop3 = {
   pop3_continue_auth,   /* Send authentication continuation */
   pop3_cancel_auth,     /* Send authentication cancellation */
   pop3_get_message,     /* Get SASL response message */
-  255 - 8,              /* Max line len - strlen("AUTH ") - 1 space - crlf */
+  255 - 8,              /* Max line len - strlen("AUTH ") - 1 space - CRLF */
   '*',                  /* Code received when continuation is expected */
   '+',                  /* Code to receive upon authentication success */
   SASL_AUTH_DEFAULT,    /* Default mechanisms */
@@ -1477,7 +1476,8 @@ static CURLcode pop3_done(struct Curl_easy *data, CURLcode status,
     return CURLE_OK;
 
   if(status) {
-    connclose(data->conn, "POP3 done with bad status");
+    CURL_TRC_M(data, "POP3 done with bad status");
+    connclose(data->conn);
     result = status;         /* use the already set error code */
   }
 
@@ -1621,10 +1621,9 @@ static CURLcode pop3_disconnect(struct Curl_easy *data,
      disconnect wait in vain and cause more problems than we need to. */
 
   if(!dead_connection && conn->bits.protoconnstart &&
-     !Curl_pp_needs_flush(data, &pop3c->pp)) {
-    if(!pop3_perform_quit(data, conn))
-      (void)pop3_block_statemach(data, conn, TRUE); /* ignore errors on QUIT */
-  }
+     !Curl_pp_needs_flush(data, &pop3c->pp) &&
+     !pop3_perform_quit(data, conn))
+    (void)pop3_block_statemach(data, conn, TRUE); /* ignore errors on QUIT */
 
   /* Disconnect from the server */
   Curl_pp_disconnect(&pop3c->pp);
@@ -1651,7 +1650,7 @@ static CURLcode pop3_doing(struct Curl_easy *data, bool *dophase_done)
   return result;
 }
 
-static void pop3_easy_dtor(void *key, size_t klen, void *entry)
+static void pop3_easy_dtor(const void *key, size_t klen, void *entry)
 {
   struct POP3 *pop3 = entry;
   (void)key;
@@ -1663,7 +1662,7 @@ static void pop3_easy_dtor(void *key, size_t klen, void *entry)
   curlx_free(pop3);
 }
 
-static void pop3_conn_dtor(void *key, size_t klen, void *entry)
+static void pop3_conn_dtor(const void *key, size_t klen, void *entry)
 {
   struct pop3_conn *pop3c = entry;
   (void)key;

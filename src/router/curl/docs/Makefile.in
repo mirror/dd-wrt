@@ -286,6 +286,7 @@ CURL_CPP = @CURL_CPP@
 CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX = @CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX@
 CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME = @CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME@
 CURL_NETWORK_AND_TIME_LIBS = @CURL_NETWORK_AND_TIME_LIBS@
+CURL_PACKAGE_MAINTAINER = @CURL_PACKAGE_MAINTAINER@
 CYGPATH_W = @CYGPATH_W@
 DANTED = @DANTED@
 DEFS = @DEFS@
@@ -476,14 +477,15 @@ EXTRA_DIST = \
   BINDINGS.md                                    \
   BUG-BOUNTY.md                                  \
   BUGS.md                                        \
-  CIPHERS.md                                     \
   CIPHERS-TLS12.md                               \
+  CIPHERS.md                                     \
   CMakeLists.txt                                 \
   CODE_OF_CONDUCT.md                             \
   CODE_REVIEW.md                                 \
   CONTRIBUTE.md                                  \
   CURL-DISABLE.md                                \
   CURLDOWN.md                                    \
+  DEPENDENCIES.md                                \
   DEPRECATE.md                                   \
   DISTROS.md                                     \
   EARLY-RELEASE.md                               \
@@ -502,7 +504,6 @@ EXTRA_DIST = \
   INSTALL                                        \
   INSTALL-CMAKE.md                               \
   INSTALL.md                                     \
-  INTERNALS.md                                   \
   IPFS.md                                        \
   KNOWN_BUGS.md                                  \
   KNOWN_RISKS.md                                 \
@@ -511,15 +512,15 @@ EXTRA_DIST = \
   options-in-versions                            \
   README.md                                      \
   RELEASE-PROCEDURE.md                           \
-  RUSTLS.md                                      \
   ROADMAP.md                                     \
+  RUSTLS.md                                      \
   SECURITY-ADVISORY.md                           \
   SPONSORS.md                                    \
   SSL-PROBLEMS.md                                \
   SSLCERTS.md                                    \
   THANKS                                         \
-  TODO.md                                        \
   TheArtOfHttpScripting.md                       \
+  TODO.md                                        \
   URL-SYNTAX.md                                  \
   VERIFY.md                                      \
   VERSIONS.md                                    \

@@ -42,6 +42,10 @@ Disable support for the negotiate authentication methods.
 
 Disable **aws-sigv4** support.
 
+## `CURL_DISABLE_HTTPSIG`
+
+Disable RFC 9421 HTTP Message Signatures support.
+
 ## `CURL_DISABLE_CA_SEARCH`
 
 Disable unsafe CA bundle search in PATH on Windows.
@@ -156,10 +160,6 @@ Disable the SHA-512/256 hash algorithm.
 ## `CURL_DISABLE_SHUFFLE_DNS`
 
 Disable the shuffle DNS feature
-
-## `CURL_ENABLE_SMB`
-
-Enable the SMB(S) protocols
 
 ## `CURL_DISABLE_SMTP`
 

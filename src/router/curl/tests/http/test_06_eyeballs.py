@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #***************************************************************************
 #                                  _   _ ____  _
 #  Project                     ___| | | |  _ \| |
@@ -26,6 +24,8 @@
 #
 import logging
 import re
+import socket
+import threading
 
 import pytest
 from testenv import CurlClient, Env
@@ -70,6 +70,69 @@ class TestEyeballs:
         r.check_response(count=1, http_status=200)
         assert r.stats[0]['http_version'] == '1.1'
 
+    # download using HTTP/3 on a server that silently drops UDP: fallback on
+    # h2 at the soft timeout, since QUIC never sees any data
+    @pytest.mark.skipif(condition=not Env.have_h3(), reason="missing HTTP/3 support")
+    @pytest.mark.skipif(condition=not Env.curl_is_verbose(), reason="needs curl verbose strings")
+    def test_06_05_h3_silent_fallback_h2(self, env: Env, httpd, nghttpx):
+        curl = CurlClient(env=env)
+        urln = f'https://{env.domain1}:{env.https_only_tcp_port}/data.json'
+        # take the UDP port without reading it, so that packets are not refused
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.bind(('127.0.0.1', env.https_only_tcp_port))
+            r = curl.http_download(urls=[urln], extra_args=[
+                '--http3', '--happy-eyeballs-timeout-ms', '200',
+                '--trace-config', 'https-connect'
+            ])
+        r.check_response(count=1, http_status=200)
+        assert r.stats[0]['http_version'] == '2'
+        soft_timeouts = [line for line in r.trace_lines
+                         if re.match(r'.*h3 has not seen any data after 100ms', line)]
+        assert len(soft_timeouts) == 1, f'{r.dump_logs()}'
+
+    # download using HTTP/3 on a server that answers UDP with junk: QUIC has
+    # seen data, fallback on h2 at the hard timeout
+    @pytest.mark.skipif(condition=not Env.have_h3(), reason="missing HTTP/3 support")
+    @pytest.mark.skipif(condition=not Env.curl_uses_lib('ngtcp2'), reason="requires ngtcp2 packet handling")
+    @pytest.mark.skipif(condition=not Env.curl_is_verbose(), reason="needs curl verbose strings")
+    def test_06_06_h3_stalled_fallback_h2(self, env: Env, httpd, nghttpx):
+        curl = CurlClient(env=env)
+        urln = f'https://{env.domain1}:{env.https_only_tcp_port}/data.json'
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.bind(('127.0.0.1', env.https_only_tcp_port))
+            sock.settimeout(0.1)
+            done = threading.Event()
+
+            def answer_junk():
+                while not done.is_set():
+                    try:
+                        _, addr = sock.recvfrom(65536)
+                        sock.sendto(b'\0', addr)
+                    except socket.timeout:
+                        pass
+
+            t = threading.Thread(target=answer_junk)
+            t.start()
+            try:
+                r = curl.http_download(urls=[urln], extra_args=[
+                    '--http3', '--happy-eyeballs-timeout-ms', '200',
+                    '--trace-config', 'https-connect,timer'
+                ])
+            finally:
+                done.set()
+                t.join()
+        r.check_response(count=1, http_status=200)
+        assert r.stats[0]['http_version'] == '2'
+        hard_timeouts = [line for line in r.trace_lines
+                         if re.match(r'.*h3 inconclusive after 200', line)]
+        assert len(hard_timeouts) == 1, f'{r.dump_logs()}'
+        # the timer is set again for the hard timeout, QUIC does not wake us
+        # up before its retransmission after about one second
+        he_timers_set = [line for line in r.trace_lines
+                         if re.match(r'.*\[TIMER] \[ALPN_EYEBALLS] set for', line)]
+        assert len(he_timers_set) >= 2, f'{r.dump_logs()}'
+        assert r.stats[0]['time_connect'] < 0.8, f'{r.stats[0]}'
+
     # make a successful https: transfer and observer the timer stats
     def test_06_10_stats_success(self, env: Env, httpd, nghttpx):
         curl = CurlClient(env=env)
@@ -103,13 +166,22 @@ class TestEyeballs:
 
     # check timers when trying 3 unresponsive addresses
     @pytest.mark.skipif(condition=not Env.curl_has_feature('IPv6'),
-                        reason='curl lacks ipv6 support')
+                        reason='curl lacks IPv6 support')
     @pytest.mark.skipif(condition=not Env.curl_has_feature('AsynchDNS'),
                         reason='curl lacks async DNS support')
     @pytest.mark.skipif(condition=not Env.curl_is_verbose(), reason="needs curl verbose strings")
     def test_06_13_timers(self, env: Env):
         curl = CurlClient(env=env)
-        # ipv6 0100::/64 is supposed to go into the void (rfc6666)
+        # IPv6 0100::/64 is supposed to go into the void (rfc6666), but in
+        # some implementations, this is broken. Try to detect this
+        r = curl.http_download(urls=['https://xxx.invalid/'], extra_args=[
+            '--resolve', 'xxx.invalid:443:0100::1',
+            '--connect-timeout', '0.5',
+        ])
+        # this should error with CURLE_OPERATION_TIMEDOUT
+        if r.exit_code != 28:
+            pytest.skip('system does not blackhole 0100::/64')
+
         r = curl.http_download(urls=['https://xxx.invalid/'], extra_args=[
             '--resolve', 'xxx.invalid:443:0100::1,0100::2,0100::3',
             '--connect-timeout', '1',
@@ -120,20 +192,20 @@ class TestEyeballs:
         assert r.stats[0]['time_connect'] == 0     # no one connected
         # check that we indeed started attempts on all 3 addresses
         tcp_attempts = [line for line in r.trace_lines
-                         if re.match(r'.*Trying \[100::[123]]:443', line)]
+                        if re.match(r'.*Trying \[100::[123]]:443', line)]
         assert len(tcp_attempts) == 3, f'fond: {"".join(tcp_attempts)}\n{r.dump_logs()}'
         # if the 0100::/64 really goes into the void, we should see 2 HAPPY_EYEBALLS
         # timeouts being set here
         failed_attempts = [line for line in r.trace_lines
                            if re.match(r'.*checked connect attempts: 0 ongoing', line)]
-        if len(failed_attempts):
+        if failed_attempts:
             # github CI fails right away with "Network is unreachable", slackers...
             assert len(failed_attempts) == 3, f'found: {"".join(failed_attempts)}\n{r.dump_logs()}'
         else:
             # no immediately failed attempts, as should be
             he_timers_set = [line for line in r.trace_lines
                              if re.match(r'.*\[TIMER] \[HAPPY_EYEBALLS] set for', line)]
-            assert len(he_timers_set) == 2, f'found: {"".join(he_timers_set)}\n{r.dump_logs()}'
+            assert len(he_timers_set) >= 2, f'found: {"".join(he_timers_set)}\n{r.dump_logs()}'
 
     # download using HTTP/3 on missing server with alt-svc pointing there
     @pytest.mark.skipif(condition=not Env.have_h3(), reason="missing HTTP/3 support")

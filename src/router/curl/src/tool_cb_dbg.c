@@ -123,8 +123,8 @@ static void dump(const char *timebuf, const char *idsbuf, const char *text,
 #define TRC_IDS_FORMAT_IDS_2  "[%" CURL_FORMAT_CURL_OFF_T "-%" \
                                    CURL_FORMAT_CURL_OFF_T "] "
 /*
-** callback for CURLOPT_DEBUGFUNCTION
-*/
+ * callback for CURLOPT_DEBUGFUNCTION
+ */
 int tool_debug_cb(CURL *handle, curl_infotype type,
                   char *data, size_t size,
                   void *userdata)
@@ -225,18 +225,17 @@ int tool_debug_cb(CURL *handle, curl_infotype type,
     case CURLINFO_DATA_IN:
     case CURLINFO_SSL_DATA_IN:
     case CURLINFO_SSL_DATA_OUT:
-      if(!traced_data) {
-        /* if the data is output to a tty and we are sending this debug trace
-           to stderr or stdout, we do not display the alert about the data not
-           being shown as the data _is_ shown then not via this function */
-        if(!global->isatty ||
-           ((output != tool_stderr) && (output != stdout))) {
-          if(!newl)
-            log_line_start(output, timebuf, idsbuf, type);
-          curl_mfprintf(output, "[%zu bytes data]\n", size);
-          newl = FALSE;
-          traced_data = TRUE;
-        }
+      if(!traced_data &&
+         /* if the data is output to a tty and we are sending this debug trace
+            to stderr or stdout, we do not display the alert about the data not
+            being shown as the data _is_ shown then not via this function */
+         (!global->isatty ||
+          ((output != tool_stderr) && (output != stdout)))) {
+        if(!newl)
+          log_line_start(output, timebuf, idsbuf, type);
+        curl_mfprintf(output, "[%zu bytes data]\n", size);
+        newl = FALSE;
+        traced_data = TRUE;
       }
       break;
     default: /* nada */

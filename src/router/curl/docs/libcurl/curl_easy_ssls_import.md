@@ -44,11 +44,25 @@ Import of session tickets from other curl versions may fail due to changes
 in the handling of **shmac** or **sdata**. A session ticket which has
 already expired is silently discarded.
 
+The session key identifies origin and used TLS configurations. Configuration
+parameters identified by a file path are only matched to the path, not the
+file's content. It is the applications responsibility to handle updates to
+CA, CRL or key files, e.g. discarding previous sessions. Otherwise,
+imported sessions may establish trusted connections to servers that would fail
+to verify otherwise.
+
+Most TLS sessions handed out by servers have a short lifetime. If
+continued use of these sessions is acceptable can only be decided by
+the application. Also, TLS session that are tied to client authentication,
+e.g. a client certificate, are never exported by libcurl.
+
 # %PROTOCOLS%
 
 # EXAMPLE
 
 ~~~c
+extern unsigned char *shmac, *sdata;
+
 int main(void)
 {
   CURLSHcode sh;
@@ -62,7 +76,6 @@ int main(void)
 
   curl = curl_easy_init();
   if(curl) {
-    extern unsigned char *shmac, *sdata;
     size_t hlen = 4, slen = 5;
 
     curl_easy_setopt(curl, CURLOPT_SHARE, share);
