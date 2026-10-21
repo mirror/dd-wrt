@@ -439,7 +439,7 @@ static void etherip_tunnel_setup(struct net_device *dev)
 {
 	dev->netdev_ops		= &etherip_netdev_ops;
 	dev->priv_destructor      = etherip_dev_free;
-	dev->netns_local = true;
+	dev->netns_immutable = true;
 	dev->priv_flags		&= ~IFF_XMIT_DST_RELEASE;
 	dev->hard_header_len = LL_MAX_HEADER + sizeof(struct iphdr) + ETHERIP_HLEN;
 
