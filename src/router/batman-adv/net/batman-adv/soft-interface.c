@@ -1021,7 +1021,7 @@ static void batadv_softif_init_early(struct net_device *dev)
 	dev->features |= NETIF_F_LLTX;
 #else
 	dev->features |= NETIF_F_HW_VLAN_CTAG_FILTER;
-	dev->netns_local = true;
+	dev->netns_immutable = true;
 	dev->lltx = true;
 #endif
 	dev->priv_flags |= IFF_NO_QUEUE;
