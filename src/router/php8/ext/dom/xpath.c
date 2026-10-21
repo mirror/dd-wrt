@@ -164,6 +164,13 @@ static void dom_xpath_construct(INTERNAL_FUNCTION_PARAMETERS, zend_class_entry *
 		RETURN_THROWS();
 	}
 
+	dom_xpath_object *intern = Z_XPATHOBJ_P(ZEND_THIS);
+	if (UNEXPECTED(intern->evaluation_depth > 0)) {
+		zend_throw_error(NULL, "Cannot call %s::__construct() while an XPath evaluation is in progress",
+			ZSTR_VAL(Z_OBJCE_P(ZEND_THIS)->name));
+		RETURN_THROWS();
+	}
+
 	DOM_GET_OBJ(docp, doc, xmlDocPtr, docobj);
 
 	xmlXPathContextPtr ctx = xmlXPathNewContext(docp);
@@ -172,7 +179,6 @@ static void dom_xpath_construct(INTERNAL_FUNCTION_PARAMETERS, zend_class_entry *
 		RETURN_THROWS();
 	}
 
-	dom_xpath_object *intern = Z_XPATHOBJ_P(ZEND_THIS);
 	xmlXPathContextPtr oldctx = intern->dom.ptr;
 	if (oldctx != NULL) {
 		php_libxml_decrement_doc_ref((php_libxml_node_object *) &intern->dom);
@@ -316,6 +322,10 @@ static void php_xpath_eval(INTERNAL_FUNCTION_PARAMETERS, int type, bool modern) 
 		RETURN_THROWS();
 	}
 
+	xmlNodePtr old_node = ctxp->node;
+	xmlNsPtr *old_namespaces = ctxp->namespaces;
+	int old_nsNr = ctxp->nsNr;
+
 	ctxp->node = nodep;
 
 	php_dom_in_scope_ns in_scope_ns;
@@ -330,13 +340,15 @@ static void php_xpath_eval(INTERNAL_FUNCTION_PARAMETERS, int type, bool modern) 
 		ctxp->nsNr = in_scope_ns.count;
 	}
 
+	intern->evaluation_depth++;
 	xmlXPathObjectPtr xpathobjp = xmlXPathEvalExpression(BAD_CAST expr, ctxp);
-	ctxp->node = NULL;
+	intern->evaluation_depth--;
+	ctxp->node = old_node;
+	ctxp->namespaces = old_namespaces;
+	ctxp->nsNr = old_nsNr;
 
 	if (register_node_ns && nodep != NULL) {
 		php_dom_in_scope_ns_destroy(&in_scope_ns);
-		ctxp->namespaces = NULL;
-		ctxp->nsNr = 0;
 	}
 
 	if (! xpathobjp) {
@@ -367,7 +379,9 @@ static void php_xpath_eval(INTERNAL_FUNCTION_PARAMETERS, int type, bool modern) 
 
 			if (xpathobjp->type == XPATH_NODESET && NULL != (nodesetp = xpathobjp->nodesetval) && nodesetp->nodeNr) {
 				array_init_size(&retval, nodesetp->nodeNr);
-				zend_hash_real_init_packed(Z_ARRVAL_P(&retval));
+				if (zend_hash_real_finit_packed(Z_ARRVAL(retval), /* fallible */ true) != SUCCESS) {
+					goto oom_nodeset;
+				}
 				for (int i = 0; i < nodesetp->nodeNr; i++) {
 					xmlNodePtr node = nodesetp->nodeTab[i];
 					zval child;
@@ -398,6 +412,9 @@ static void php_xpath_eval(INTERNAL_FUNCTION_PARAMETERS, int type, bool modern) 
 						php_dom_create_object(node, &child, parent);
 					}
 					add_next_index_zval(&retval, &child);
+					if (ZEND_HAS_OOM()) {
+						goto oom_nodeset;
+					}
 				}
 				release_array = true;
 			} else {
@@ -412,6 +429,13 @@ static void php_xpath_eval(INTERNAL_FUNCTION_PARAMETERS, int type, bool modern) 
 			mapptr->release_array = release_array;
 			mapptr->handler = &php_dom_obj_map_nodeset;
 			break;
+
+oom_nodeset:
+			zval_ptr_dtor(&retval);
+			xmlXPathFreeObject(xpathobjp);
+			zval_ptr_dtor(return_value);
+			ZVAL_NULL(return_value);
+			RETURN_OOM();
 		}
 
 		case XPATH_BOOLEAN:
@@ -530,14 +554,20 @@ PHP_METHOD(DOMXPath, quote) {
 		RETURN_THROWS();
 	}
 	if (memchr(input, '\'', input_len) == NULL) {
-		zend_string *const output = zend_string_safe_alloc(1, input_len, 2, false);
+		zend_string *const output = zend_string_safe_falloc(1, input_len, 2, false, /* fallible */ true);
+		if (UNEXPECTED(!output)) {
+			RETURN_OOM();
+		}
 		ZSTR_VAL(output)[0] = '\'';
 		memcpy(ZSTR_VAL(output) + 1, input, input_len);
 		ZSTR_VAL(output)[input_len + 1] = '\'';
 		ZSTR_VAL(output)[input_len + 2] = '\0';
 		RETURN_NEW_STR(output);
 	} else if (memchr(input, '"', input_len) == NULL) {
-		zend_string *const output = zend_string_safe_alloc(1, input_len, 2, false);
+		zend_string *const output = zend_string_safe_falloc(1, input_len, 2, false, /* fallible */ true);
+		if (UNEXPECTED(!output)) {
+			RETURN_OOM();
+		}
 		ZSTR_VAL(output)[0] = '"';
 		memcpy(ZSTR_VAL(output) + 1, input, input_len);
 		ZSTR_VAL(output)[input_len + 1] = '"';
@@ -561,6 +591,10 @@ PHP_METHOD(DOMXPath, quote) {
 			smart_str_appendc(&output, quote_method);
 			ptr += bytes_until_quote;
 			smart_str_appendc(&output, ',');
+			if (ZEND_HAS_OOM()) {
+				smart_str_free(&output);
+				RETURN_OOM();
+			}
 		}
 		ZEND_ASSERT(ptr == end);
 		ZSTR_VAL(output.s)[ZSTR_LEN(output.s) - 1] = ')';

@@ -1885,6 +1885,7 @@ static int php_openssl_enable_crypto(php_stream *stream,
 				elapsed_time = php_openssl_subtract_timeval(cur_time, start_time);
 
 				if (php_openssl_compare_timeval( elapsed_time, *timeout) > 0) {
+					php_openssl_set_blocking(sslsock, blocked);
 					php_error_docref(NULL, E_WARNING, "SSL: Handshake timed out");
 					return -1;
 				}
@@ -2066,9 +2067,11 @@ static ssize_t php_openssl_sockop_io(int read, php_stream *stream, char *buf, si
 					retry = 1;
 				}
 
-				/* Also, on reads, we may get this condition on an EOF. We should check properly. */
 				if (read) {
-					stream->eof = (retry == 0 && errno != EAGAIN && !SSL_pending(sslsock->ssl_handle));
+					/* EOF unless the SSL layer just needs to wait. */
+					stream->eof = (retry == 0
+						&& err != SSL_ERROR_WANT_READ && err != SSL_ERROR_WANT_WRITE
+						&& !SSL_pending(sslsock->ssl_handle));
 				}
 
 				/* Don't loop indefinitely in non-blocking mode if no data is available */

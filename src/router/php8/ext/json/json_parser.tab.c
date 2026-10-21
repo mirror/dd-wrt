@@ -567,9 +567,9 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    79,    79,    90,    89,   107,   108,   116,   124,   128,
-     135,   146,   145,   163,   164,   172,   180,   184,   189,   197,
-     198,   202,   203,   204,   205,   206,   207,   208,   209,   210
+       0,    79,    79,    90,    89,   107,   108,   116,   126,   130,
+     139,   150,   149,   167,   168,   176,   186,   190,   199,   209,
+     210,   214,   215,   216,   217,   218,   219,   220,   221,   222
 };
 #endif
 
@@ -1265,14 +1265,18 @@ yyreduce:
 				if ((parser->scanner.options & PHP_JSON_OBJECT_AS_ARRAY) && parser->methods.object_create == php_json_parser_object_create) {
 					ZVAL_EMPTY_ARRAY(&(yyval.value));
 				} else {
-					parser->methods.object_create(parser, &(yyval.value));
+					if (UNEXPECTED(parser->methods.object_create(parser, &(yyval.value)) == FAILURE)) {
+						YYERROR;
+					}
 				}
 			}
     break;
 
   case 9: /* member: key ':' value  */
                         {
-				parser->methods.object_create(parser, &(yyval.value));
+				if (UNEXPECTED(parser->methods.object_create(parser, &(yyval.value)) == FAILURE)) {
+					YYERROR;
+				}
 				if (parser->methods.object_update(parser, &(yyval.value), Z_STR((yyvsp[-2].value)), &(yyvsp[0].value)) == FAILURE) {
 					YYERROR;
 				}
@@ -1319,21 +1323,29 @@ yyreduce:
 				if (parser->methods.array_create == php_json_parser_array_create) {
 					ZVAL_EMPTY_ARRAY(&(yyval.value));
 				} else {
-					parser->methods.array_create(parser, &(yyval.value));
+					if (UNEXPECTED(parser->methods.array_create(parser, &(yyval.value)) == FAILURE)) {
+						YYERROR;
+					}
 				}
 			}
     break;
 
   case 17: /* element: value  */
                         {
-				parser->methods.array_create(parser, &(yyval.value));
-				parser->methods.array_append(parser, &(yyval.value), &(yyvsp[0].value));
+				if (UNEXPECTED(parser->methods.array_create(parser, &(yyval.value)) == FAILURE)) {
+					YYERROR;
+				}
+				if (UNEXPECTED(parser->methods.array_append(parser, &(yyval.value), &(yyvsp[0].value)) == FAILURE)) {
+					YYERROR;
+				}
 			}
     break;
 
   case 18: /* element: element ',' value  */
                         {
-				parser->methods.array_append(parser, &(yyvsp[-2].value), &(yyvsp[0].value));
+				if (UNEXPECTED(parser->methods.array_append(parser, &(yyvsp[-2].value), &(yyvsp[0].value)) == FAILURE)) {
+					YYERROR;
+				}
 				ZVAL_COPY_VALUE(&(yyval.value), &(yyvsp[-2].value));
 			}
     break;
@@ -1535,22 +1547,34 @@ yyreturnlab:
 
 static int php_json_parser_array_create(php_json_parser *parser, zval *array)
 {
-	array_init(array);
+	if (UNEXPECTED(!array_finit(array))) {
+		ZEND_ASSERT(ZEND_HAS_OOM());
+		return FAILURE;
+	}
 	return SUCCESS;
 }
 
 static int php_json_parser_array_append(php_json_parser *parser, zval *array, zval *zvalue)
 {
-	zend_hash_next_index_insert(Z_ARRVAL_P(array), zvalue);
+	if (UNEXPECTED(zend_hash_next_index_finsert(Z_ARRVAL_P(array), zvalue) == HASH_NOMEM)) {
+		ZEND_ASSERT(ZEND_HAS_OOM());
+		return FAILURE;
+	}
 	return SUCCESS;
 }
 
 static int php_json_parser_object_create(php_json_parser *parser, zval *object)
 {
+	bool created;
+
 	if (parser->scanner.options & PHP_JSON_OBJECT_AS_ARRAY) {
-		array_init(object);
+		created = array_finit(object);
 	} else {
-		object_init(object);
+		created = object_finit(object);
+	}
+	if (UNEXPECTED(!created)) {
+		ZEND_ASSERT(ZEND_HAS_OOM());
+		return FAILURE;
 	}
 	return SUCCESS;
 }
@@ -1559,7 +1583,9 @@ static int php_json_parser_object_update(php_json_parser *parser, zval *object, 
 {
 	/* if JSON_OBJECT_AS_ARRAY is set */
 	if (Z_TYPE_P(object) == IS_ARRAY) {
-		zend_symtable_update(Z_ARRVAL_P(object), key, zvalue);
+		if (UNEXPECTED(zend_symtable_fupdate(Z_ARRVAL_P(object), key, zvalue) == HASH_NOMEM)) {
+			return FAILURE;
+		}
 	} else {
 		if (ZSTR_LEN(key) > 0 && ZSTR_VAL(key)[0] == '\0') {
 			parser->scanner.errcode = PHP_JSON_ERROR_INVALID_PROPERTY_NAME;
@@ -1570,6 +1596,9 @@ static int php_json_parser_object_update(php_json_parser *parser, zval *object, 
 		}
 		zend_std_write_property(Z_OBJ_P(object), key, zvalue, NULL);
 		Z_TRY_DELREF_P(zvalue);
+		if (ZEND_HAS_OOM()) {
+			return FAILURE;
+		}
 	}
 	zend_string_release_ex(key, 0);
 

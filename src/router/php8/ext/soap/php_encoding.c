@@ -978,7 +978,7 @@ static xmlNodePtr to_xml_hexbin(encodeTypePtr type, zval *data, int style, xmlNo
 		ZVAL_STR(&tmp, get_serialization_string_from_zval(data));
 		data = &tmp;
 	}
-	str = (unsigned char *) safe_emalloc(Z_STRLEN_P(data) * 2, sizeof(char), 1);
+	str = (unsigned char *) safe_emalloc(Z_STRLEN_P(data), 2, 1);
 
 	for (i = j = 0; i < Z_STRLEN_P(data); i++) {
 		str[j++] = hexconvtab[((unsigned char)Z_STRVAL_P(data)[i]) >> 4];
@@ -2292,13 +2292,15 @@ static xmlNodePtr to_xml_array(encodeTypePtr type, zval *data, int style, xmlNod
 				if (EG(exception)) {
 					goto iterator_done;
 				}
-				array_set_zval_key(Z_ARRVAL(array_copy), &key, val);
-				zval_ptr_dtor(val);
+				zend_result status = array_set_zval_key(Z_ARRVAL(array_copy), &key, val);
 				zval_ptr_dtor(&key);
+				if (status == FAILURE) {
+					goto iterator_done;
+				}
 			} else {
+				Z_TRY_ADDREF_P(val);
 				add_next_index_zval(&array_copy, val);
 			}
-			Z_TRY_ADDREF_P(val);
 
 			iter->funcs->move_forward(iter);
 			if (EG(exception)) {
@@ -2702,6 +2704,11 @@ static zval *to_zval_array(zval *ret, encodeTypePtr type, xmlNodePtr data)
 					ar = zend_hash_index_update(Z_ARRVAL_P(ar), pos[i], &tmpAr);
 				}
 				i++;
+				if (ZEND_HAS_OOM()) {
+					zval_ptr_dtor(ret);
+					ZVAL_NULL(ret);
+					goto ret;
+				}
 			}
 			zend_hash_index_update(Z_ARRVAL_P(ar), pos[i], &tmpVal);
 
@@ -2727,6 +2734,8 @@ static zval *to_zval_array(zval *ret, encodeTypePtr type, xmlNodePtr data)
 		}
 		trav = trav->next;
 	}
+
+ret:;
 	efree(dims);
 	efree(pos);
 	return ret;

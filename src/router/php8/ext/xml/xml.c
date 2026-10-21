@@ -624,6 +624,11 @@ static zval *xml_get_ctag(xml_parser *parser)
 	return NULL;
 }
 
+static zend_always_inline bool xml_handler_aborted(void)
+{
+	return EG(exception) != NULL || ZEND_HAS_OOM();
+}
+
 /* {{{ xml_startElementHandler() */
 void xml_startElementHandler(void *userData, const XML_Char *name, const XML_Char **attributes)
 {
@@ -632,6 +637,10 @@ void xml_startElementHandler(void *userData, const XML_Char *name, const XML_Cha
 	zend_string *att, *tag_name, *val;
 
 	if (!parser) {
+		return;
+	}
+
+	if (UNEXPECTED(xml_handler_aborted())) {
 		return;
 	}
 
@@ -657,6 +666,14 @@ void xml_startElementHandler(void *userData, const XML_Char *name, const XML_Cha
 			attributes += 2;
 
 			zend_string_release_ex(att, 0);
+
+			if (ZEND_HAS_OOM()) {
+				zend_string_release_ex(tag_name, false);
+				zval_ptr_dtor(&args[0]);
+				zval_ptr_dtor(&args[1]);
+				zval_ptr_dtor(&args[2]);
+				return;
+			}
 		}
 
 		zend_call_known_fcc(&parser->startElementHandler, /* retval */ NULL, /* param_count */ 3, args, /* named_params */ NULL);
@@ -699,6 +716,13 @@ void xml_startElementHandler(void *userData, const XML_Char *name, const XML_Cha
 				attributes += 2;
 
 				zend_string_release_ex(att, 0);
+
+				if (ZEND_HAS_OOM()) {
+					zend_string_release_ex(tag_name, false);
+					zval_ptr_dtor(&tag);
+					zval_ptr_dtor(&atr);
+					return;
+				}
 			}
 
 			if (atcnt) {
@@ -735,6 +759,10 @@ void xml_endElementHandler(void *userData, const XML_Char *name)
 	xml_parser *parser = (xml_parser *)userData;
 
 	if (!parser) {
+		return;
+	}
+	
+	if (UNEXPECTED(xml_handler_aborted())) {
 		return;
 	}
 
@@ -798,6 +826,10 @@ void xml_characterDataHandler(void *userData, const XML_Char *s, int len)
 	xml_parser *parser = (xml_parser *)userData;
 
 	if (!parser) {
+		return;
+	}
+
+	if (UNEXPECTED(xml_handler_aborted())) {
 		return;
 	}
 
@@ -1334,6 +1366,12 @@ PHP_FUNCTION(xml_set_element_handler)
 	}
 
 	set_handlers:
+	if (parser->isparsing) {
+		zend_release_fcall_info_cache(&start_fcc);
+		zend_release_fcall_info_cache(&end_fcc);
+		zend_throw_error(NULL, "Cannot change handlers while parsing");
+		RETURN_THROWS();
+	}
 	xml_set_handler(&parser->startElementHandler, &start_fcc);
 	xml_set_handler(&parser->endElementHandler, &end_fcc);
 	XML_SetElementHandler(parser->parser, xml_startElementHandler, xml_endElementHandler);
@@ -1387,6 +1425,11 @@ static void php_xml_set_handler_parse_callable(
 		php_xml_set_handler_parse_callable(INTERNAL_FUNCTION_PARAM_PASSTHRU, &parser, &handler_fcc); \
 		if (EG(exception)) { return; } \
 		ZEND_ASSERT(parser); \
+		if (parser->isparsing) { \
+			zend_release_fcall_info_cache(&handler_fcc); \
+			zend_throw_error(NULL, "Cannot change handlers while parsing"); \
+			RETURN_THROWS(); \
+		} \
 		xml_set_handler(&parser->parser_handler_name, &handler_fcc); \
 		parse_function(parser->parser, c_function); \
 		RETURN_TRUE; \

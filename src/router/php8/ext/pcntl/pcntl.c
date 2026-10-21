@@ -29,8 +29,10 @@
 
 #include "php.h"
 #include "ext/standard/info.h"
+#include "ext/standard/php_filestat.h"
 #include "php_signal.h"
 #include "php_ticks.h"
+#include "zend_exceptions.h"
 #include "zend_fibers.h"
 #include "main/php_main.h"
 
@@ -1367,6 +1369,9 @@ void pcntl_signal_dispatch(void)
 {
 	zval params[2], *handle, retval;
 	struct php_pcntl_pending_signal *queue, *next;
+	zend_object *old_exception;
+	const zend_op *old_opline_before_exception = NULL;
+	const zend_op *old_opline = NULL;
 	sigset_t mask;
 	sigset_t old_mask;
 
@@ -1394,8 +1399,24 @@ void pcntl_signal_dispatch(void)
 	PCNTL_G(head) = NULL; /* simple stores are atomic */
 	PCNTL_G(tail) = NULL;
 
+	/* Dispatching can happen with an exception pending, e.g. from the interrupt check that runs
+	 * right after an internal function threw. call_user_function() does nothing in that state,
+	 * so set the exception aside while the handlers run. The frame is left as found: depending
+	 * on the caller, the exception may not be registered on it yet, or may already be on its
+	 * way to a catch block, and the caller takes it from there once we return. */
+	old_exception = EG(exception);
+	if (old_exception) {
+		if (EG(current_execute_data)) {
+			old_opline = EG(current_execute_data)->opline;
+		}
+		old_opline_before_exception = EG(opline_before_exception);
+		EG(exception) = NULL;
+	}
+
 	/* Allocate */
 	while (queue) {
+		bool handler_threw = false;
+
 		if ((handle = zend_hash_index_find(&PCNTL_G(php_signal_table), queue->signo)) != NULL) {
 			if (Z_TYPE_P(handle) != IS_LONG) {
 				ZVAL_LONG(&params[0], queue->signo);
@@ -1412,9 +1433,7 @@ void pcntl_signal_dispatch(void)
 #ifdef HAVE_STRUCT_SIGINFO_T
 				zval_ptr_dtor(&params[1]);
 #endif
-				if (EG(exception)) {
-					break;
-				}
+				handler_threw = NULL != EG(exception);
 			}
 		}
 
@@ -1422,17 +1441,44 @@ void pcntl_signal_dispatch(void)
 		queue->next = PCNTL_G(spares);
 		PCNTL_G(spares) = queue;
 		queue = next;
+
+		/* No other handler can be called while the exception propagates */
+		if (handler_threw) {
+			break;
+		}
 	}
 
-	/* drain the remaining in case of exception thrown */
-	while (queue) {
-		next = queue->next;
-		queue->next = PCNTL_G(spares);
-		PCNTL_G(spares) = queue;
-		queue = next;
+	if (old_exception) {
+		if (EG(current_execute_data)) {
+			EG(current_execute_data)->opline = old_opline;
+		}
+		EG(opline_before_exception) = old_opline_before_exception;
+		if (EG(exception)) {
+			zend_exception_set_previous(EG(exception), old_exception);
+		} else {
+			EG(exception) = old_exception;
+		}
 	}
 
-	PCNTL_G(pending_signals) = false;
+	if (UNEXPECTED(queue)) {
+		/* Put back what the throwing handler did not get to, instead of dropping it, and ask
+		 * the engine to come back once the exception has been handled. Signals are still
+		 * blocked here, so PCNTL_G(head) cannot have been repopulated in the meantime. */
+		next = queue;
+
+		while (next->next) {
+			next = next->next;
+		}
+
+		PCNTL_G(head) = queue;
+		PCNTL_G(tail) = next;
+
+		if (PCNTL_G(async_signals)) {
+			zend_atomic_bool_store_ex(&EG(vm_interrupt), true);
+		}
+	} else {
+		PCNTL_G(pending_signals) = false;
+	}
 
 	/* Re-enable queue */
 	PCNTL_G(processing_signal_queue) = false;
@@ -1794,7 +1840,7 @@ PHP_FUNCTION(pcntl_setcpuaffinity)
 		}
 
 		if (cpu < 0 || cpu >= maxcpus) {
-			zend_argument_value_error(2, "cpu id must be between 0 and " ZEND_ULONG_FMT " (" ZEND_LONG_FMT ")", maxcpus, cpu);
+			zend_argument_value_error(2, "cpu id must be between 0 and " ZEND_LONG_FMT " (" ZEND_LONG_FMT ")", maxcpus - 1, cpu);
 			PCNTL_CPU_DESTROY(mask);
 			RETURN_THROWS();
 		}
@@ -1901,13 +1947,14 @@ PHP_FUNCTION(pcntl_getqos_class)
 
 PHP_FUNCTION(pcntl_setqos_class)
 {
-	zval *qos_obj;
+	zval *qos_obj = NULL;
 
-	ZEND_PARSE_PARAMETERS_START(1, 1)
+	ZEND_PARSE_PARAMETERS_START(0, 1)
+		Z_PARAM_OPTIONAL
 		Z_PARAM_OBJECT_OF_CLASS(qos_obj, QosClass_ce)
 	ZEND_PARSE_PARAMETERS_END();
 
-	qos_class_t qos_class = qos_zval_to_lval(qos_obj);
+	qos_class_t qos_class = qos_obj ? qos_zval_to_lval(qos_obj) : QOS_CLASS_DEFAULT;
 
 	if (UNEXPECTED(pthread_set_qos_class_self_np((qos_class_t)qos_class, 0) != 0))
 	{

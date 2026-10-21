@@ -76,7 +76,7 @@ static inline bool rewrite_name_to_position(pdo_stmt_t *stmt, struct pdo_bound_p
 			if (param->paramno >= 0) {
 				/* TODO Error? */
 				pdo_raise_impl_error(stmt->dbh, stmt, "IM001", "PDO refuses to handle repeating the same :named parameter for multiple positions with this driver, as it might be unsafe to do so.  Consider using a separate name for each parameter instead");
-				return -1;
+				return false;
 			}
 			param->paramno = position;
 			return 1;
@@ -88,6 +88,15 @@ static inline bool rewrite_name_to_position(pdo_stmt_t *stmt, struct pdo_bound_p
 	return 1;
 }
 /* }}} */
+
+static bool pdo_stmt_disallow_reentrant_param_event(pdo_stmt_t *stmt)
+{
+	if (UNEXPECTED(stmt->in_param_event)) {
+		zend_throw_error(NULL, "Cannot modify a PDOStatement while parameter hooks are running");
+		return false;
+	}
+	return true;
+}
 
 /* trigger callback hook for parameters */
 static bool dispatch_param_event(pdo_stmt_t *stmt, enum pdo_param_event event_type) /* {{{ */
@@ -104,6 +113,7 @@ static bool dispatch_param_event(pdo_stmt_t *stmt, enum pdo_param_event event_ty
 		return 1;
 	}
 
+	stmt->in_param_event = 1;
 	ht = stmt->bound_params;
 
 iterate:
@@ -121,6 +131,7 @@ iterate:
 		goto iterate;
 	}
 
+	stmt->in_param_event = 0;
 	return ret;
 }
 /* }}} */
@@ -283,10 +294,6 @@ static bool really_register_bound_param(struct pdo_bound_param_data *param, pdo_
 	param->stmt = stmt;
 	param->is_param = is_param;
 
-	if (Z_REFCOUNTED(param->driver_params)) {
-		Z_ADDREF(param->driver_params);
-	}
-
 	if (!is_param && param->name && stmt->columns) {
 		/* try to map the name to the column */
 		int i;
@@ -307,6 +314,7 @@ static bool really_register_bound_param(struct pdo_bound_param_data *param, pdo_
 			spprintf(&tmp, 0, "Did not find column name '%s' in the defined columns; it will not be bound", ZSTR_VAL(param->name));
 			pdo_raise_impl_error(stmt->dbh, stmt, "HY000", tmp);
 			efree(tmp);
+			return 0;
 		}
 	}
 
@@ -369,6 +377,7 @@ static bool really_register_bound_param(struct pdo_bound_param_data *param, pdo_
 			} else {
 				zend_hash_index_del(hash, pparam->paramno);
 			}
+			ZVAL_UNDEF(&param->driver_params);
 			/* param->parameter is freed by hash dtor */
 			ZVAL_UNDEF(&param->parameter);
 			return 0;
@@ -377,6 +386,29 @@ static bool really_register_bound_param(struct pdo_bound_param_data *param, pdo_
 	return 1;
 }
 /* }}} */
+
+static bool pdo_stmt_do_next_rowset(pdo_stmt_t *stmt);
+
+static void pdo_stmt_invalidate_result(pdo_stmt_t *stmt)
+{
+	if (stmt->methods->cursor_closer) {
+		stmt->methods->cursor_closer(stmt);
+	} else {
+		do {
+			while (stmt->methods->fetcher(stmt, PDO_FETCH_ORI_NEXT, 0))
+				;
+			if (!stmt->methods->next_rowset) {
+				break;
+			}
+
+			if (!pdo_stmt_do_next_rowset(stmt)) {
+				break;
+			}
+		} while (1);
+	}
+
+	stmt->executed = 0;
+}
 
 /* {{{ Execute a prepared statement, optionally binding parameters */
 PHP_METHOD(PDOStatement, execute)
@@ -390,6 +422,13 @@ PHP_METHOD(PDOStatement, execute)
 	ZEND_PARSE_PARAMETERS_END();
 
 	PHP_STMT_GET_OBJ;
+	if (!pdo_stmt_disallow_reentrant_param_event(stmt)) {
+		RETURN_THROWS();
+	}
+
+	if (stmt->executed) {
+		pdo_stmt_invalidate_result(stmt);
+	}
 	PDO_STMT_CLEAR_ERR();
 
 	if (input_params) {
@@ -1324,6 +1363,9 @@ static void register_bound_param(INTERNAL_FUNCTION_PARAMETERS, int is_param) /* 
 	ZEND_PARSE_PARAMETERS_END();
 
 	PHP_STMT_GET_OBJ;
+	if (!pdo_stmt_disallow_reentrant_param_event(stmt)) {
+		RETURN_THROWS();
+	}
 
 	param.param_type = (int) param_type;
 
@@ -1349,6 +1391,9 @@ static void register_bound_param(INTERNAL_FUNCTION_PARAMETERS, int is_param) /* 
 		if (!Z_ISUNDEF(param.parameter)) {
 			zval_ptr_dtor(&(param.parameter));
 		}
+		if (!Z_ISUNDEF(param.driver_params)) {
+			zval_ptr_dtor(&param.driver_params);
+		}
 
 		RETURN_FALSE;
 	}
@@ -1373,6 +1418,9 @@ PHP_METHOD(PDOStatement, bindValue)
 	ZEND_PARSE_PARAMETERS_END();
 
 	PHP_STMT_GET_OBJ;
+	if (!pdo_stmt_disallow_reentrant_param_event(stmt)) {
+		RETURN_THROWS();
+	}
 	param.param_type = (int) param_type;
 
 	if (param.name) {
@@ -1588,6 +1636,13 @@ PHP_METHOD(PDOStatement, getColumnMeta)
 		RETURN_FALSE;
 	}
 
+	if (stmt->columns == NULL || colno >= stmt->column_count) {
+		zval_ptr_dtor(return_value);
+		ZVAL_UNDEF(return_value);
+		pdo_raise_impl_error(stmt->dbh, stmt, "07009", "invalid column index");
+		RETURN_FALSE;
+	}
+
 	/* add stock items */
 	col = &stmt->columns[colno];
 	add_assoc_str(return_value, "name", zend_string_copy(col->name));
@@ -1623,20 +1678,21 @@ bool pdo_stmt_setup_fetch_mode(pdo_stmt_t *stmt, zend_long mode, uint32_t mode_a
 	uint32_t arg1_arg_num = mode_arg_num + 1;
 	uint32_t constructor_arg_num = mode_arg_num + 2;
 	uint32_t total_num_args = mode_arg_num + variadic_num_args;
-
-	pdo_stmt_free_default_fetch_mode(stmt);
-
-	stmt->default_fetch_type = stmt->dbh->default_fetch_type;
+	zend_long fetch_type = mode & ~PDO_FETCH_FLAGS;
+	zend_long fetch_column = 0;
+	zend_class_entry *fetch_class = NULL;
+	HashTable *fetch_ctor_args = NULL;
+	zend_object *fetch_into = NULL;
+	zend_object *old_into = NULL;
+	HashTable *old_ctor_args = NULL;
 
 	flags = mode & PDO_FETCH_FLAGS;
 
-	if (!pdo_verify_fetch_mode(stmt->default_fetch_type, mode, mode_arg_num, false)) {
+	if (!pdo_verify_fetch_mode(stmt->dbh->default_fetch_type, mode, mode_arg_num, false)) {
 		return false;
 	}
 
-	bool use_default = (mode & ~PDO_FETCH_FLAGS) == PDO_FETCH_USE_DEFAULT;
-
-	switch (mode & ~PDO_FETCH_FLAGS) {
+	switch (fetch_type) {
 		case PDO_FETCH_USE_DEFAULT:
 		case PDO_FETCH_LAZY:
 		case PDO_FETCH_ASSOC:
@@ -1671,7 +1727,7 @@ bool pdo_stmt_setup_fetch_mode(pdo_stmt_t *stmt, zend_long mode, uint32_t mode_a
 				zend_argument_value_error(arg1_arg_num, "must be greater than or equal to 0");
 				return false;
 			}
-			stmt->fetch.column = Z_LVAL(args[0]);
+			fetch_column = Z_LVAL(args[0]);
 			break;
 
 		case PDO_FETCH_CLASS: {
@@ -1723,11 +1779,10 @@ bool pdo_stmt_setup_fetch_mode(pdo_stmt_t *stmt, zend_long mode, uint32_t mode_a
 							zend_argument_value_error(3, "must be empty when class provided in argument #2 ($class) does not have a constructor");
 							return false;
 						}
-						GC_TRY_ADDREF(Z_ARRVAL(args[1]));
-						stmt->fetch.cls.ctor_args = Z_ARRVAL(args[1]);
+						fetch_ctor_args = Z_ARRVAL(args[1]);
 					}
 				}
-				stmt->fetch.cls.ce = cep;
+				fetch_class = cep;
 			}
 			break;
 		}
@@ -1744,16 +1799,50 @@ bool pdo_stmt_setup_fetch_mode(pdo_stmt_t *stmt, zend_long mode, uint32_t mode_a
 				return false;
 			}
 
-			GC_ADDREF(Z_OBJ(args[0]));
-			stmt->fetch.into = Z_OBJ(args[0]);
+			fetch_into = Z_OBJ(args[0]);
 			break;
 		default:
 			zend_argument_value_error(mode_arg_num, "must be one of the PDO::FETCH_* constants");
 			return false;
 	}
 
-	if (!use_default) {
+	if ((stmt->default_fetch_type & ~PDO_FETCH_FLAGS) == PDO_FETCH_INTO) {
+		old_into = stmt->fetch.into;
+	} else if ((stmt->default_fetch_type & ~PDO_FETCH_FLAGS) == PDO_FETCH_CLASS) {
+		old_ctor_args = stmt->fetch.cls.ctor_args;
+	}
+	memset(&stmt->fetch, 0, sizeof(stmt->fetch));
+
+	switch (fetch_type) {
+		case PDO_FETCH_COLUMN:
+			stmt->fetch.column = fetch_column;
+			break;
+		case PDO_FETCH_CLASS:
+			stmt->fetch.cls.ce = fetch_class;
+			if (fetch_ctor_args) {
+				GC_TRY_ADDREF(fetch_ctor_args);
+				stmt->fetch.cls.ctor_args = fetch_ctor_args;
+			}
+			break;
+		case PDO_FETCH_INTO:
+			GC_ADDREF(fetch_into);
+			stmt->fetch.into = fetch_into;
+			break;
+		default:
+			break;
+	}
+
+	if (fetch_type == PDO_FETCH_USE_DEFAULT) {
+		stmt->default_fetch_type = stmt->dbh->default_fetch_type;
+	} else {
 		stmt->default_fetch_type = mode;
+	}
+
+	if (old_into) {
+		OBJ_RELEASE(old_into);
+	}
+	if (old_ctor_args) {
+		zend_array_release(old_ctor_args);
 	}
 
 	return true;
@@ -1828,6 +1917,9 @@ PHP_METHOD(PDOStatement, closeCursor)
 	ZEND_PARSE_PARAMETERS_NONE();
 
 	PHP_STMT_GET_OBJ;
+	if (!pdo_stmt_disallow_reentrant_param_event(stmt)) {
+		RETURN_THROWS();
+	}
 	if (!stmt->methods->cursor_closer) {
 		/* emulate it by fetching and discarding rows */
 		do {
@@ -2002,6 +2094,22 @@ static HashTable *dbstmt_get_gc(zend_object *object, zval **gc_data, int *gc_cou
 		}
 	} else if (default_fetch_mode == PDO_FETCH_CLASS && stmt->fetch.cls.ctor_args != NULL) {
 		zend_get_gc_buffer_add_ht(gc_buffer, stmt->fetch.cls.ctor_args);
+	}
+	if (stmt->bound_params) {
+		zval *val;
+		ZEND_HASH_FOREACH_VAL(stmt->bound_params, val) {
+			struct pdo_bound_param_data *param = Z_PTR_P(val);
+			zend_get_gc_buffer_add_zval(gc_buffer, &param->parameter);
+			zend_get_gc_buffer_add_zval(gc_buffer, &param->driver_params);
+		} ZEND_HASH_FOREACH_END();
+	}
+	if (stmt->bound_columns) {
+		zval *val;
+		ZEND_HASH_FOREACH_VAL(stmt->bound_columns, val) {
+			struct pdo_bound_param_data *param = Z_PTR_P(val);
+			zend_get_gc_buffer_add_zval(gc_buffer, &param->parameter);
+			zend_get_gc_buffer_add_zval(gc_buffer, &param->driver_params);
+		} ZEND_HASH_FOREACH_END();
 	}
 	zend_get_gc_buffer_use(gc_buffer, gc_data, gc_count);
 

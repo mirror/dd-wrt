@@ -546,8 +546,6 @@ PHP_METHOD(UConverter, __construct) {
 		ZEND_ASSERT(EG(exception));
 		goto cleanup;
 	}
-	php_converter_resolve_callback(&objval->to_cache, Z_OBJ_P(ZEND_THIS), ZEND_STRL("toUCallback"));
-	php_converter_resolve_callback(&objval->from_cache, Z_OBJ_P(ZEND_THIS), ZEND_STRL("fromUCallback"));
 cleanup:
 	INTL_G(use_exceptions) = old_use_exception;
 	INTL_G(error_level) = old_error_level;
@@ -644,7 +642,10 @@ static zend_string* php_converter_do_convert(UConverter *dest_cnv,
 		THROW_UFAILURE(objval, error);
 		return NULL;
 	}
-	temp = safe_emalloc(sizeof(UChar), temp_len, sizeof(UChar));
+	temp = safe_femalloc(sizeof(UChar), temp_len, sizeof(UChar), /* fallible */ true);
+	if (!temp) {
+		return NULL;
+	}
 
 	/* Convert to intermediate UChar* array */
 	error = U_ZERO_ERROR;
@@ -664,7 +665,11 @@ static zend_string* php_converter_do_convert(UConverter *dest_cnv,
 		return NULL;
 	}
 
-	ret = zend_string_alloc(ret_len, 0);
+	ret = zend_string_falloc(ret_len, /* persistent */ false, /* fallible */ true);
+	if (!ret) {
+		efree(temp);
+		return NULL;
+	}
 
 	/* Convert to final encoding */
 	error = U_ZERO_ERROR;
@@ -916,6 +921,8 @@ static zend_object *php_converter_object_ctor(zend_class_entry *ce, php_converte
 	zend_object_std_init(&objval->obj, ce);
 	object_properties_init(&objval->obj, ce);
 	intl_error_init(&(objval->error));
+	php_converter_resolve_callback(&objval->to_cache, &objval->obj, ZEND_STRL("toUCallback"));
+	php_converter_resolve_callback(&objval->from_cache, &objval->obj, ZEND_STRL("fromUCallback"));
 
 	*pobjval = objval;
 

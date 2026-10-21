@@ -179,6 +179,20 @@ bool zend_lazy_object_decr_lazy_props(const zend_object *obj)
 	return info->lazy_properties_count == 0;
 }
 
+#if ZEND_DEBUG
+/* See zend_update_class_constants(). */
+static zend_always_inline bool zend_class_constants_are_updated(const zend_class_entry *ce) {
+	if (ce->ce_flags & ZEND_ACC_CONSTANTS_UPDATED) {
+		return true;
+	}
+	if (ZEND_MAP_PTR(ce->mutable_data)) {
+		const zend_class_mutable_data *mutable_data = ZEND_MAP_PTR_GET_IMM(ce->mutable_data);
+		return mutable_data && (mutable_data->ce_flags & ZEND_ACC_CONSTANTS_UPDATED);
+	}
+	return false;
+}
+#endif
+
 /**
  * Making objects lazy
  */
@@ -259,11 +273,9 @@ ZEND_API zend_object *zend_object_make_lazy(zend_object *obj,
 			return NULL;
 		}
 
-		if (UNEXPECTED(!(reflection_ce->ce_flags & ZEND_ACC_CONSTANTS_UPDATED))) {
-			if (UNEXPECTED(zend_update_class_constants(reflection_ce) != SUCCESS)) {
-				ZEND_ASSERT(EG(exception));
-				return NULL;
-			}
+		if (UNEXPECTED(zend_update_class_constants(reflection_ce) != SUCCESS)) {
+			ZEND_ASSERT(EG(exception));
+			return NULL;
 		}
 
 		obj = zend_objects_new(reflection_ce);
@@ -383,7 +395,9 @@ ZEND_API zend_object *zend_lazy_object_mark_as_initialized(zend_object *obj)
 
 	zend_class_entry *ce = obj->ce;
 
-	ZEND_ASSERT(ce->ce_flags & ZEND_ACC_CONSTANTS_UPDATED);
+#if ZEND_DEBUG
+	ZEND_ASSERT(zend_class_constants_are_updated(ce));
+#endif
 
 	zval *default_properties_table = CE_DEFAULT_PROPERTIES_TABLE(ce);
 	zval *properties_table = obj->properties_table;
@@ -579,7 +593,9 @@ ZEND_API zend_object *zend_lazy_object_init(zend_object *obj)
 
 	zend_class_entry *ce = obj->ce;
 
-	ZEND_ASSERT(ce->ce_flags & ZEND_ACC_CONSTANTS_UPDATED);
+#if ZEND_DEBUG
+	ZEND_ASSERT(zend_class_constants_are_updated(ce));
+#endif
 
 	if (zend_object_is_lazy_proxy(obj)) {
 		return zend_lazy_object_init_proxy(obj);
@@ -797,16 +813,28 @@ HashTable *zend_lazy_object_get_gc(zend_object *zobj, zval **table, int *n)
 	}
 	zend_get_gc_buffer_add_zval(gc_buffer, &info->u.initializer.zv);
 
-	/* Uninitialized lazy objects can not have dynamic properties, so we can
-	 * ignore zobj->properties. */
-	zval *prop = zobj->properties_table;
-	zval *end = prop + zobj->ce->default_properties_count;
-	for ( ; prop < end; prop++) {
-		zend_get_gc_buffer_add_zval(gc_buffer, prop);
+	/* Lazy objects may have a properties ht in two cases:
+	 * - After fetching debug infos
+	 * - After lazy init failed in zend_std_get_properties()
+	 *
+	 * In the latter case zobj->properties is an empty ht. We should ignore it,
+	 * otherwise we may mask references to the GC. In the former case we must
+	 * return it, otherwise the GC may traverse properties twice in case the ht
+	 * it a root by itself. */
+	zend_array *ht;
+	if (zobj->properties && zend_hash_num_elements(zobj->properties) > 0) {
+		ht = zobj->properties;
+	} else {
+		zval *prop = zobj->properties_table;
+		zval *end = prop + zobj->ce->default_properties_count;
+		for ( ; prop < end; prop++) {
+			zend_get_gc_buffer_add_zval(gc_buffer, prop);
+		}
+		ht = NULL;
 	}
 
 	zend_get_gc_buffer_use(gc_buffer, table, n);
-	return NULL;
+	return ht;
 }
 
 zend_property_info *zend_lazy_object_get_property_info_for_slot(zend_object *obj, zval *slot)

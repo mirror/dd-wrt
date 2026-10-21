@@ -173,6 +173,8 @@ static bool is_allocation_def(zend_op_array *op_array, zend_ssa *ssa, int def, i
 				 && !ce->destructor
 				 && !ce->__get
 				 && !ce->__set
+				 && !ce->__isset
+				 && !ce->num_hooked_props
 				 && !(ce->ce_flags & forbidden_flags)
 				 && (ce->ce_flags & ZEND_ACC_CONSTANTS_UPDATED)) {
 					return 1;
@@ -242,6 +244,8 @@ static bool is_local_def(zend_op_array *op_array, zend_ssa *ssa, int def, int va
 				 && !ce->destructor
 				 && !ce->__get
 				 && !ce->__set
+				 && !ce->__isset
+				 && !ce->num_hooked_props
 				 && !ce->parent) {
 					return 1;
 				}
@@ -300,8 +304,10 @@ static bool is_escape_use(zend_op_array *op_array, zend_ssa *ssa, int use, int v
 			case ZEND_ASSIGN_STATIC_PROP_OP:
 			case ZEND_ASSIGN_DIM:
 			case ZEND_ASSIGN_OBJ:
-			case ZEND_ASSIGN_OBJ_REF:
 				break;
+			case ZEND_ASSIGN_OBJ_REF:
+				/* The property may now alias a variable outside of the object. */
+				return true;
 			case ZEND_PRE_INC_OBJ:
 			case ZEND_PRE_DEC_OBJ:
 			case ZEND_POST_INC_OBJ:

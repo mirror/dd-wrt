@@ -118,7 +118,9 @@ PHP_FUNCTION(grapheme_strpos)
 		if (found) {
 			RETURN_LONG(found - haystack);
 		}
-		RETURN_FALSE;
+		if (grapheme_ascii_check((unsigned char *)needle, needle_len) >= 0) {
+			RETURN_FALSE;
+		}
 	}
 
 	/* do utf16 part of the strpos */
@@ -557,7 +559,9 @@ static void strstr_common_handler(INTERNAL_FUNCTION_PARAMETERS, int f_ignore_cas
 		Z_PARAM_PATH(locale, locale_len)
 	ZEND_PARSE_PARAMETERS_END();
 
-	if ( !f_ignore_case ) {
+	if ( !f_ignore_case
+			&& grapheme_ascii_check((unsigned char *)haystack, haystack_len) >= 0
+			&& grapheme_ascii_check((unsigned char *)needle, needle_len) >= 0 ) {
 
 		/* ASCII optimization: quick check to see if the string might be there */
 		found = php_memnstr(haystack, needle, needle_len, haystack + haystack_len);
@@ -567,15 +571,12 @@ static void strstr_common_handler(INTERNAL_FUNCTION_PARAMETERS, int f_ignore_cas
 			RETURN_FALSE;
 		}
 
-		/* if it is there, and if the haystack is ascii, we are all done */
-		if ( grapheme_ascii_check((unsigned char *)haystack, haystack_len) >= 0 ) {
-			size_t found_offset = found - haystack;
+		size_t found_offset = found - haystack;
 
-			if (part) {
-				RETURN_STRINGL(haystack, found_offset);
-			} else {
-				RETURN_STRINGL(found, haystack_len - found_offset);
-			}
+		if (part) {
+			RETURN_STRINGL(haystack, found_offset);
+		} else {
+			RETURN_STRINGL(found, haystack_len - found_offset);
 		}
 
 	}
@@ -902,6 +903,9 @@ PHP_FUNCTION(grapheme_str_split)
 		if (i == split_len - 1) {
 			if ( pos != UBRK_DONE ) {
 				add_next_index_stringl(return_value, pstr, pos - current);
+				if (ZEND_HAS_OOM()) {
+					goto oom;
+				}
 				end = pstr + pos - current;
 				i = 0;
 				pstr += pos - current;
@@ -918,6 +922,12 @@ PHP_FUNCTION(grapheme_str_split)
 
 	utext_close(ut);
 	ubrk_close(bi);
+	return;
+
+oom:
+	utext_close(ut);
+	ubrk_close(bi);
+	RETURN_OOM();
 }
 
 PHP_FUNCTION(grapheme_levenshtein)
@@ -981,6 +991,9 @@ PHP_FUNCTION(grapheme_levenshtein)
 
 	intl_convert_utf8_to_utf16(&ustring1, &ustring1_len, pstr1, ZSTR_LEN(string1), &ustatus);
 
+	if (ZEND_HAS_OOM()) {
+		goto out_ustring1;
+	}
 	if (U_FAILURE(ustatus)) {
 		intl_error_set_code(NULL, ustatus);
 
@@ -991,6 +1004,9 @@ PHP_FUNCTION(grapheme_levenshtein)
 
 	intl_convert_utf8_to_utf16(&ustring2, &ustring2_len, pstr2, ZSTR_LEN(string2), &ustatus);
 
+	if (ZEND_HAS_OOM()) {
+		goto out_ustring2;
+	}
 	if (U_FAILURE(ustatus)) {
 		intl_error_set_code(NULL, ustatus);
 
@@ -1063,8 +1079,15 @@ PHP_FUNCTION(grapheme_levenshtein)
 	}
 
 	zend_long *p1, *p2, *tmp;
-	p1 = safe_emalloc((size_t) strlen_2 + 1, sizeof(zend_long), 0);
-	p2 = safe_emalloc((size_t) strlen_2 + 1, sizeof(zend_long), 0);
+	p1 = safe_femalloc((size_t) strlen_2 + 1, sizeof(zend_long), 0, /* fallible */ true);
+	if (!p1) {
+		goto out_collator;
+	}
+	p2 = safe_femalloc((size_t) strlen_2 + 1, sizeof(zend_long), 0, /* fallible */ true);
+	if (!p2) {
+		efree(p1);
+		goto out_collator;
+	}
 
 	for (i2 = 0; i2 <= strlen_2; i2++) {
 		p1[i2] = i2 * cost_ins;

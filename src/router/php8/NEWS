@@ -1,5 +1,255 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+22 Oct 2026, PHP 8.5.12
+
+- Core:
+  . Fixed GHSA-w8hw-w9fx-j79w, GHSA-6wmf-4rv5-p3rp (Avoid state corruption via
+    bailout). (CVE-2026-109618, CVE-2026-109619) (Arnaud, ilutov, Jakub Zelenka,
+    ndossche, Nicolas Grekas)
+  . Fixed bug GH-23644 (Optimizer leaves a constant-vs-constant comparison
+    unfolded, crashing the VM in zval_undefined_cv). (ndossche)
+  . Fixed OSS-Fuzz 532353396 (assertion failure with static type). (Girgias)
+  . Fix GH-23662 (Avoid NAN warning in print_r()). (CodedByManish)
+  . Fix GH-21999: GC inconsistency with lazy object, var_dump(), and object
+    comparison. (Arnaud)
+  . Fixed OSS-Fuzz #536440507 (Immutable class incorrect assertion).
+    (ndossche)
+  . Fixed AVX being reported as supported when the OS has not enabled AVX
+    state. (Ilia Alshanetsky)
+  . Fixed GH-23980 (ZEND_ASSERT violation @ ZEND_INCLUDE_OR_EVAL). (ndossche)
+  . Fixed use-after-free when a dl()-loaded extension declares a frameless
+    function and a later request calls it. (Ilia Alshanetsky)
+  . Fixed System V shared memory emulation for Windows attaching segments past
+    the end of their mapping. (Ilia Alshanetsky)
+  . Fixed exception thrown by destructor during GC in a Fiber not being rethrown
+    into the frame that triggered the GC. (Nicolas Grekas)
+
+- BCMath:
+  . Fixed BcMath\Number results that truncate to zero keeping a negative sign
+    and comparing less than zero. (Ilia Alshanetsky)
+
+- BZ2:
+  . Fixed double close of the descriptor and use-after-free of the inner
+    stream when bzopen() is given a stream resource. (Jakub Zelenka)
+
+- CLI:
+  . Fix GH-22567 (Windows ZTS CLI SAPI should refresh its TSRMLS cache during
+    request activation). (matyhtf)
+  . Fixed bug GH-23764 (Built-in server leaks a file descriptor on every HEAD
+    request for a static file). (jakubskopal)
+  . Fixed crash in the built-in server when a client is reset before being
+    accepted. (David Carlier)
+  . Fixed the built-in server truncating an error page and leaking its
+    unsent part after a partial socket write. (Ilia Alshanetsky)
+
+- DOM:
+  . Fixed use-after-free when re-constructing a DOMXPath whose php:function
+    registrations are freed while still reachable from the cycle collector.
+    (Ilia Alshanetsky)
+  . Fixed Dom\HTMLDocument::getElementById() not finding ids of SVG and
+    MathML elements. (Ilia Alshanetsky)
+  . Fixed Dom\HTMLDocument giving attributes the namespace of their element
+    when a fragment is parsed with an xlink, xml or xmlns context element.
+    (Ilia Alshanetsky)
+  . Fixed bug GH-23887 (Dom\HTMLCollection::namedItem() assertion failure,
+    hang, or missed first element). (Lazizbek Ergashev)
+  . Fixed DOMXPath and Dom\XPath losing the context node and in-scope
+    namespaces of an evaluation after a php:function() callback evaluated
+    another expression on the same object. (Ilia Alshanetsky)
+
+- FFI:
+  . Fixed crashes with FFI callbacks created from __call() trampolines
+    and array callables whose object is released. (Ilia Alshanetsky)
+
+- FTP:
+  . Fixed bug GH-23619 (cryptic error on servers that don't support TLS
+    session resumption on data connection). (ndossche)
+
+- GD:
+  . Fixed undefined behavior with GD2 images with `INT_MAX`-sized chunks.
+    (DanielEScherzer, cmb)
+  . Fixed undefined behavior with GIFs with problematic LZW compression data.
+    (DanielEScherzer, vapier)
+
+- Intl:
+  . Fixed cloning IntlDateFormatter and MessageFormatter losing PHP-side state
+    such as dateType, timeType, calendar and the message pattern.
+    (Ilia Alshanetsky)
+  . Fixed a crash when converting with a cloned UConverter that uses
+    toUCallback/fromUCallback. (Ilia Alshanetsky)
+  . Fixed Collator attribute and strength methods not rejecting an
+    unconstructed Collator. (Ilia Alshanetsky)
+  . Fixed crash in intl_error_set_custom_msg() without an active call frame.
+    (David Carlier)
+  . Fixed grapheme_strstr() and grapheme_stristr() returning incorrect substrings
+    when supplementary characters precede the match. (Weilin Du)
+  . Fixed grapheme_strstr() and grapheme_strpos() missing canonically
+    equivalent matches, and grapheme searches reporting ICU errors for empty
+    haystacks. (Weilin Du)
+  . Fixed grapheme_strrpos() and grapheme_strripos() skipping overlapping matches
+    when using a negative offset. (Weilin Du)
+  . Fixed IntlDateFormatter::parse(), localtime() and parseToCalendar()
+    treating the offset as UTF-16 code units instead of bytes.
+    (Ilia Alshanetsky)
+
+- Lexbor:
+  . Merge patches lexbor/lexbor@8a14bc0 and lexbor/lexbor@f67ce4b, fixing a
+    heap buffer overflow in :lexbor-contains() parsing and buffer overflows
+    in malformed decode replay. (alexandre-daubois)
+  . Merge patches lexbor/lexbor@859f100, lexbor/lexbor@a36e09a,
+    lexbor/lexbor@b0f7412, lexbor/lexbor@1b215a8, lexbor/lexbor@385afff,
+    lexbor/lexbor@e6c068f, lexbor/lexbor@327a8b6, lexbor/lexbor@917742f and
+    lexbor/lexbor@e89c258, fixing dropped usernames containing an at sign,
+    uninitialized memory in IDNA buffer growth, the encoding of a space
+    before a query or fragment in an opaque path, a query or fragment lost
+    after a dot segment in a path, replacement file drive paths, the output
+    encoding used for percent-encoding, the URLSearchParams tail pointer and
+    fragment serialization without a query. (alexandre-daubois)
+
+- MBString:
+  . Fixed bug GH-23106 (mb_strpos() reads past the end of a haystack ending in
+    a truncated UTF-8 sequence). (Lazizbek Ergashev)
+  . Fixed mbstring functions emitting surrogates in UTF-8 output and flagging
+    it as valid UTF-8. (Nicolas Grekas)
+
+- MySQLi:
+  . Fix GH-22854: Fixed failed assertion when accessing mysqli property after
+    failed reconnection. (Kamil Tekiela)
+
+- MySQLnd:
+  . Fixed field_count not resetting on OK packet. (Kamil Tekiela)
+  . Fixed memory leak when closing a prepared statement after its connection
+    was killed. (Kamil Tekiela)
+
+- Opcache:
+  . Fixed OSS-Fuzz #546798343 (Heap-buffer-overflow in optimizer with
+    FCCs and inlining). (ndossche)
+  . Fixed bug GH-23693 (Tracing JIT produces wrong results for a guard on a
+    loop-invariant addition). (Ilia Alshanetsky)
+  . Fixed OSS-Fuzz #5674034779193344 (Read of uninitialized memory in
+    is_cacheable_stream_path()). (ndossche)
+  . Fix zend_analyze_calls() call_stack buffer overrun. (Mrmaxmeier)
+  . Fixed bug GH-23628 (Tracing JIT reads undefined property slots of lazy
+    proxy objects instead of forwarding to the real instance). (lisachenko)
+  . Fixed bug GH-23679 (Tracing JIT writes a parent private property into a
+    child's shadowing public property). (Ilia Alshanetsky)
+  . Fix multiple incorrect DCE due to unsound escape analysis. (ndossche,
+    arnaud-lb)
+  . Fixed bug GH-24063 (OPcache optimizer folds `$cond ? -0.0 : 0.0` into a
+    single `-0.0` constant). (lazerg)
+  . Fixed crash when a file cache is reused with a different set of
+    extensions declaring frameless functions. (Ilia Alshanetsky)
+  . Fixed bug GH-23991 (JIT generates invalid IR for multiple recursive calls).
+    (ndossche)
+  . Fix SCCP evaluation of isset()/empty() on dimension of non-escaping object.
+    (ndossche)
+  . Fixed bug GH-20890 (Segfault in zval_undefined_cv with non-simple property
+    hook with minimal tracing JIT). (ndossche)
+
+- OpenSSL:
+  . Fixed stream_socket_enable_crypto() leaving the socket non-blocking
+    after a handshake timeout. (Ilia Alshanetsky)
+  . Fixed feof() on a TLS stream staying false after a close_notify on Windows.
+    (Jakub Zelenka)
+
+- PCNTL:
+  . Fixed pcntl_signal_dispatch() dropping the queued signals when it runs while
+    an exception is pending. (nicolas-grekas)
+  . Fixed pcntl_signal_dispatch() dropping the signals queued behind a handler
+    that throws. (nicolas-grekas)
+  . Fixed bug GH-23986 (/proc/self paths resolve to the parent process after
+    pcntl_fork()). (Lazizbek Ergashev)
+
+- PDO:
+  . Fixed PDOStatement::getColumnMeta() reading out of bounds for an invalid
+    column index. (Ilia Alshanetsky)
+  . Fixed PDOStatement::bindColumn() registering a binding for a column name
+    that is not in the result set. (Ilia Alshanetsky)
+  . Fixed PDOStatement::execute() leaving the previous result available
+    after a failed execution. (Ilia Alshanetsky)
+  . Fixed a use-after-free when bindValue()/execute()/closeCursor() is called
+    from a bound parameter's __toString() during execute(). (Ilia Alshanetsky)
+  . Fixed bug GH-23962 (Destroying a persistent PDO instance rolls back a
+    transaction still in use by another instance). (Lazizbek Ergashev)
+  . Fixed PDO::setAttribute() installing a PDO::ATTR_STATEMENT_CLASS class
+    whose constructor arguments it rejects. (Ilia Alshanetsky)
+  . Fixed PDO::ATTR_STATEMENT_CLASS constructor_args type errors reporting
+    "array given" regardless of the value passed. (Ilia Alshanetsky)
+  . Fixed PDOStatement::bindParam() and bindColumn() leaking the driver
+    options value. (Ilia Alshanetsky)
+  . Fixed PDOStatement not reporting its bound parameters and columns to the
+    cycle collector. (Ilia Alshanetsky)
+  . Fixed PDOStatement::setFetchMode() not applying changes atomically.
+    (Ilia Alshanetsky)
+
+- PDO_DBLIB:
+  . Fixed bug GH-23741 (segfault after a failed query inside a PDO
+    transaction). Errors raised by beginTransaction(), commit(), rollBack()
+    and lastInsertId() are now reported instead of being dropped.
+    (Ilia Alshanetsky)
+
+- PDO_Firebird:
+  . Fixed bug GH-23758 (PDO_Firebird returns null for non-null empty BLOBs).
+    (Lazizbek Ergashev)
+
+- PGSQL:
+  . Fixed pg_lo_write() rejecting data containing null bytes. (Ilia Alshanetsky)
+  . Removed pg_service(), unavailable with any released libpq. (KentarouTakeda)
+
+- Readline:
+  . Fixed a heap over-read in the interactive shell prompt when cli.prompt is
+    set to an empty string. (Ilia Alshanetsky)
+
+- Reflection:
+  . Fixed bug GH-23842 (ReflectionProperty::skipLazyInitialization() copies
+    invalid constant defaults with OPcache). (DirkTrunkstar, Lazizbek Ergashev)
+
+- Session:
+  . Fixed session_start() continuing after a failed create_sid() when
+    session.use_strict_mode rejects the supplied ID. (Ilia Alshanetsky)
+  . Fixed exceptions from user-defined create_sid() handlers being replaced
+    by return-value validation errors. (Ilia Alshanetsky)
+
+- SimpleXML:
+  . Fixed reconstructing a SimpleXMLElement freeing a child element that
+    another variable still references. (Ilia Alshanetsky)
+
+- SOAP:
+  . Fixed bug GH-22895 (Heap use-after-free while encoding a Traversable with
+    an illegal key). (David Carlier)
+  . Fixed memory leak when load_wsdl_ex() failed to load. (DanielEScherzer)
+
+- SQLite:
+  . Fixed a crash when SQLite3::close() is called from a userland callback.
+    (Ilia Alshanetsky)
+
+- Standard:
+  . Fixed sha1_file() returning a digest for incomplete data after a stream
+    read failure. (Ilia Alshanetsky)
+  . Fixed iptcembed() corrupting JPEG headers when called recursively from an
+    output handler. (Ilia Alshanetsky)
+  . Fixed proc_open() leaking descriptor zero when descriptor setup fails.
+    (Ilia Alshanetsky)
+  . Fixed three Windows-only proc_open() defects: an uninitialized
+    PROCESS_INFORMATION, an indeterminate comspec pointer after a failed
+    lookup, and an unchecked CreateFileA() failure. (Ilia Alshanetsky)
+  . Fix persistent stream context lifetime during shutdown (Levi Morrison)
+  . Fix wordwrap() ignoring an existing break at the end of the string
+    (Nicolas Grekas)
+  . Fixed convert.quoted-printable-decode decoding lowercase hex digits to
+    the wrong byte. (Ilia Alshanetsky)
+  . Fixed chown() and lchown() failing to resolve user names in ZTS builds
+    when getpwnam_r() needs a larger buffer. (Ilia Alshanetsky)
+
+- Tidy:
+  . Fixed a use-after-free when a tidyNode is used after its document is
+    reparsed. (Ilia Alshanetsky)
+
+- Zlib:
+  . Fixed inflate_init() dropping the preset dictionary for raw streams with
+    a non-default window. (Ilia Alshanetsky)
+
+
 24 Sep 2026, PHP 8.5.11
 
 - BCMath:

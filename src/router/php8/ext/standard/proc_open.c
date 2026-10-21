@@ -35,7 +35,7 @@
 #include <fcntl.h>
 #endif
 
-#ifdef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR_NP
+#if defined(HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR_NP) || defined(HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR)
 /* Only defined on glibc >= 2.29, FreeBSD CURRENT, musl >= 1.1.24,
  * MacOS Catalina or later..
  * It should be possible to modify this so it is also
@@ -44,7 +44,24 @@
  * to be really buggy.
  */
 #include <spawn.h>
+#ifdef __APPLE__
+#include <AvailabilityMacros.h>
+#endif
 #define USE_POSIX_SPAWN
+
+/* The non-_np variant is in macOS 26 (and _np deprecated). On Apple, it has to be selected by the
+ * deployment target rather than the configure check: the link check passes whenever the SDK
+ * exports the symbol even if the running system is older, in which case the weakly linked
+ * reference resolves to NULL at runtime. */
+#if defined(__APPLE__) && MAC_OS_X_VERSION_MIN_REQUIRED >= 260000
+#define POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR posix_spawn_file_actions_addchdir
+#elif defined(__APPLE__)
+#define POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR posix_spawn_file_actions_addchdir_np
+#elif defined(HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR)
+#define POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR posix_spawn_file_actions_addchdir
+#else
+#define POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR posix_spawn_file_actions_addchdir_np
+#endif
 #endif
 
 /* This symbol is defined in ext/standard/config.m4.
@@ -691,7 +708,7 @@ static void init_startup_info(STARTUPINFOW *si, descriptorspec_item *descriptors
 
 static void init_process_info(PROCESS_INFORMATION *pi)
 {
-	memset(&pi, 0, sizeof(pi));
+	memset(pi, 0, sizeof(*pi));
 }
 
 /* on success, returns length of *comspec, which then needs to be efree'd by caller */
@@ -742,7 +759,7 @@ out:
 
 static zend_result convert_command_to_use_shell(wchar_t **cmdw, size_t cmdw_len)
 {
-	wchar_t *comspec;
+	wchar_t *comspec = NULL;
 	size_t len = find_comspec_nt(&comspec);
 	if (len == 0) {
 		php_error_docref(NULL, E_WARNING, "Command conversion failed");
@@ -827,7 +844,7 @@ static zend_result set_proc_descriptor_to_blackhole(descriptorspec_item *desc)
 #ifdef PHP_WIN32
 	desc->childend = CreateFileA("nul", GENERIC_READ | GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-	if (desc->childend == NULL) {
+	if (desc->childend == INVALID_HANDLE_VALUE) {
 		php_error_docref(NULL, E_WARNING, "Failed to open nul");
 		return FAILURE;
 	}
@@ -1170,8 +1187,9 @@ static void close_all_descriptors(descriptorspec_item *descriptors, int ndesc)
 {
 	for (int i = 0; i < ndesc; i++) {
 		close_descriptor(descriptors[i].childend);
-		if (descriptors[i].parentend)
+		if (descriptors[i].type != DESCRIPTOR_TYPE_STD) {
 			close_descriptor(descriptors[i].parentend);
+		}
 	}
 }
 
@@ -1392,9 +1410,9 @@ PHP_FUNCTION(proc_open)
 	}
 
 	if (cwd) {
-		r = posix_spawn_file_actions_addchdir_np(&factions, cwd);
+		r = POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR(&factions, cwd);
 		if (r != 0) {
-			php_error_docref(NULL, E_WARNING, "posix_spawn_file_actions_addchdir_np() failed: %s", strerror(r));
+			php_error_docref(NULL, E_WARNING, ZEND_TOSTR(POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR) "() failed: %s", strerror(r));
 		}
 	}
 
