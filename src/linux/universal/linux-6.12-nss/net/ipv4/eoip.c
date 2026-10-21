@@ -725,7 +725,7 @@ static void eoip_setup(struct net_device *dev)
 	dev->priv_destructor = eoip_dev_free;
 
 	dev->ifindex = 0;
-	dev->netns_local = true;
+	dev->netns_immutable = true;
 }
 
 static int eoip_newlink(struct net *src_net, struct net_device *dev,
