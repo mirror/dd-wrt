@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8855 | brainslayer | 2026-10-22 22:28:39 +0600 (Thu, 22 Oct 2026) | 1 line
+
+revert recent upstream patches. it breaks things. thanks AI
+------------------------------------------------------------------------
 r8854 | brainslayer | 2026-10-21 17:48:19 +0600 (Wed, 21 Oct 2026) | 1 line
 
 fix more kernel patch related errors
