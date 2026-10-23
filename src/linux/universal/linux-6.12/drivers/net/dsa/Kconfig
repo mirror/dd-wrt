@@ -100,6 +100,8 @@ source "drivers/net/dsa/realtek/Kconfig"
 
 source "drivers/net/dsa/rtl83xx/Kconfig"
 
+source "drivers/net/dsa/rtl960x/Kconfig"
+
 config NET_DSA_RZN1_A5PSW
 	tristate "Renesas RZ/N1 A5PSW Ethernet switch support"
 	depends on OF && ARCH_RZN1

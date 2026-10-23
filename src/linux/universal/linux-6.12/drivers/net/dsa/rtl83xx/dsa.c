@@ -1491,6 +1491,7 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
 	.port_bridge_flags	= rtldsa_port_bridge_flags,
 
+	.port_setup_tc		= otto_tc_port_setup_tc,
 	.cls_flower_add		= otto_tc_cls_flower_add,
 	.cls_flower_del		= otto_tc_cls_flower_del,
 	.cls_flower_stats	= otto_tc_cls_flower_stats,
