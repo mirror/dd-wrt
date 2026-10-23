@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8856 | brainslayer | 2026-10-23 12:37:38 +0600 (Fri, 23 Oct 2026) | 1 line
+
+for recent kernel patch
+------------------------------------------------------------------------
 r8855 | brainslayer | 2026-10-22 22:28:39 +0600 (Thu, 22 Oct 2026) | 1 line
 
 revert recent upstream patches. it breaks things. thanks AI
