@@ -1066,15 +1066,14 @@ qca8k_setup_mac_pwr_sel(struct qca8k_priv *priv)
 	u32 mask = 0;
 	int ret = 0;
 
-	/* SoC specific settings for ipq8064.
-	 * If more device require this consider adding
-	 * a dedicated binding.
+	/* SoC specific settings for ipq8064 and ipq8065, matching the
+	 * MAC_POWER_SEL values of the ar8327 initvals these boards use
+	 * with swconfig (0x6a545 on ipq8064, 0xaa545 on ipq8065).
+	 * ipq8065 boards are also compatible with qcom,ipq8064.
 	 */
-	if (of_machine_is_compatible("qcom,ipq8064"))
-		mask |= QCA8K_MAC_PWR_RGMII0_1_8V;
-
-	/* SoC specific settings for ipq8065 */
 	if (of_machine_is_compatible("qcom,ipq8065"))
+		mask |= QCA8K_MAC_PWR_RGMII0_1_8V;
+	else if (of_machine_is_compatible("qcom,ipq8064"))
 		mask |= QCA8K_MAC_PWR_RGMII1_1_8V;
 
 	if (mask) {
