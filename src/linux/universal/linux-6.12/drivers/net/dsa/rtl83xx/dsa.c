@@ -142,7 +142,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	 */
 	if (priv->r->set_static_move_action) {
 		for (int i = 0; i <= priv->r->cpu_port; i++)
-			priv->r->set_static_move_action(i, true);
+			priv->r->set_static_move_action(priv, i, true);
 	}
 
 	priv->r->print_matrix();
@@ -157,7 +157,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 
 	ds->configure_vlan_while_not_filtering = true;
 
-	priv->r->l2_learning_setup();
+	priv->r->l2_learning_setup(priv);
 
 	rtldsa_port_set_salrn(priv, priv->r->cpu_port, false);
 	ds->assisted_learning_on_cpu_port = true;
@@ -213,7 +213,7 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 
 	ds->configure_vlan_while_not_filtering = true;
 
-	priv->r->l2_learning_setup();
+	priv->r->l2_learning_setup(priv);
 
 	rtldsa_port_set_salrn(priv, priv->r->cpu_port, false);
 	ds->assisted_learning_on_cpu_port = true;
@@ -809,9 +809,7 @@ static int rtldsa_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
 {
 	struct otto_dsa_priv *priv = ds->priv;
 
-	priv->r->set_ageing_time(msec);
-
-	return 0;
+	return priv->r->set_ageing_time(priv, msec);
 }
 
 static void rtldsa_update_port_member(struct otto_dsa_priv *priv, int port,
@@ -887,7 +885,7 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 	rtldsa_update_port_member(priv, port, bridge.dev, true);
 
 	if (priv->r->set_static_move_action)
-		priv->r->set_static_move_action(port, false);
+		priv->r->set_static_move_action(priv, port, false);
 
 	/* Set to disabled in all MSTs, common code will take care of CIST */
 	rtldsa_port_non_cist_states_set(priv, port, BR_STATE_DISABLED);
@@ -916,7 +914,7 @@ static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa
 	otto_vlan_port_untagged_set(priv, port);
 
 	if (priv->r->set_static_move_action)
-		priv->r->set_static_move_action(port, true);
+		priv->r->set_static_move_action(priv, port, true);
 
 	/* Set to forwarding in all MSTs, common code will take care of CIST */
 	rtldsa_port_non_cist_states_set(priv, port, BR_STATE_FORWARDING);
@@ -1028,7 +1026,7 @@ static int rtldsa_port_fdb_add(struct dsa_switch *ds, int port,
 		}
 
 		rtldsa_setup_l2_uc_entry(&e, port, vid, mac);
-		priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
+		priv->r->write_l2_entry_using_hash(priv, idx >> 2, idx & 0x3, &e);
 		goto out;
 	}
 
@@ -1088,7 +1086,7 @@ static int rtldsa_port_fdb_del(struct dsa_switch *ds, int port,
 			e.valid = false;
 		}
 
-		priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
+		priv->r->write_l2_entry_using_hash(priv, idx >> 2, idx & 0x3, &e);
 		goto out;
 	}
 
@@ -1218,7 +1216,7 @@ static int rtldsa_83xx_port_mdb_add(struct dsa_switch *ds, int port,
 				goto out;
 			}
 			rtldsa_setup_l2_mc_entry(&e, vid, mac, mc_group);
-			priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
+			priv->r->write_l2_entry_using_hash(priv, idx >> 2, idx & 0x3, &e);
 		}
 		goto out;
 	}
@@ -1295,7 +1293,7 @@ static int rtldsa_port_mdb_del(struct dsa_switch *ds, int port,
 		portmask = rtldsa_mc_group_del_port(priv, e.mc_portmask_index, port);
 		if (!portmask) {
 			e.valid = false;
-			priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
+			priv->r->write_l2_entry_using_hash(priv, idx >> 2, idx & 0x3, &e);
 		}
 		goto out;
 	}
@@ -1396,7 +1394,7 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 				       RTLDSA_FLOOD_TYPE_DROP;
 
 	if (priv->r->enable_flood)
-		priv->r->enable_flood(port, priv->ports[port].flood_type);
+		priv->r->enable_flood(priv, port, priv->ports[port].flood_type);
 
 	/* Trap frames with an unknown source address on a locked port to the
 	 * CPU, so that an authenticator can inspect them and add an FDB entry.
@@ -1405,16 +1403,16 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 						       RTLDSA_FLOOD_TYPE_FORWARD;
 
 	if (priv->r->enable_l2_new_sa_fwd)
-		priv->r->enable_l2_new_sa_fwd(port, new_sa_fwd);
+		priv->r->enable_l2_new_sa_fwd(priv, port, new_sa_fwd);
 
 	if (priv->r->enable_learning)
-		priv->r->enable_learning(port, !!(cached_flags & BR_LEARNING));
+		priv->r->enable_learning(priv, port, !!(cached_flags & BR_LEARNING));
 
 	if (priv->r->enable_mcast_flood)
-		priv->r->enable_mcast_flood(port, !!(cached_flags & BR_MCAST_FLOOD));
+		priv->r->enable_mcast_flood(priv, port, !!(cached_flags & BR_MCAST_FLOOD));
 
 	if (priv->r->enable_bcast_flood)
-		priv->r->enable_bcast_flood(port, !!(cached_flags & BR_BCAST_FLOOD));
+		priv->r->enable_bcast_flood(priv, port, !!(cached_flags & BR_BCAST_FLOOD));
 
 	if (flags.mask & BR_ISOLATED) {
 		struct net_device *bridge_dev = dsa_port_bridge_dev_get(dp);
