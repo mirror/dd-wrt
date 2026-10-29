@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8877 | brainslayer | 2026-10-29 10:49:55 +0600 (Thu, 29 Oct 2026) | 1 line
+
+mwlwifi: fix uninitialised variables found by clang
+------------------------------------------------------------------------
 r8876 | brainslayer | 2026-10-29 10:49:07 +0600 (Thu, 29 Oct 2026) | 1 line
 
 mwlwifi: remove kernel version compatibility code
