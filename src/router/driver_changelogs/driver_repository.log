@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r8880 | brainslayer | 2026-10-29 10:58:59 +0600 (Thu, 29 Oct 2026) | 1 line
+
+mwlwifi: remove module parameters
+------------------------------------------------------------------------
+r8879 | brainslayer | 2026-10-29 10:55:12 +0600 (Thu, 29 Oct 2026) | 1 line
+
+mwlwifi: use BUILD_BUG_ON instead of checking size at runtime for pcie_tx_init_ndp
+------------------------------------------------------------------------
+r8878 | brainslayer | 2026-10-29 10:53:18 +0600 (Thu, 29 Oct 2026) | 1 line
+
+remove unused files
+------------------------------------------------------------------------
 r8877 | brainslayer | 2026-10-29 10:49:55 +0600 (Thu, 29 Oct 2026) | 1 line
 
 mwlwifi: fix uninitialised variables found by clang
