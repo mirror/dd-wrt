@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r8874 | brainslayer | 2026-10-29 10:44:52 +0600 (Thu, 29 Oct 2026) | 1 line
+
+mwlwifi: log beamforming MIMO control as a debug message
+------------------------------------------------------------------------
 r8873 | brainslayer | 2026-10-29 10:43:41 +0600 (Thu, 29 Oct 2026) | 1 line
 
 fix use after free
