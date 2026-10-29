@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r8861 | brainslayer | 2026-10-29 09:41:19 +0600 (Thu, 29 Oct 2026) | 1 line
+
+update new mwlwifi tree for testing and porting: remove old files
+------------------------------------------------------------------------
+r8860 | brainslayer | 2026-10-29 09:41:19 +0600 (Thu, 29 Oct 2026) | 1 line
+
+update new mwlwifi tree for testing and porting: add new files
+------------------------------------------------------------------------
 r8859 | brainslayer | 2026-10-28 19:02:44 +0600 (Wed, 28 Oct 2026) | 1 line
 
 merge latest fixes
