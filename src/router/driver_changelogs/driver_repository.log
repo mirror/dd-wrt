@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r8884 | brainslayer | 2026-10-29 11:12:38 +0600 (Thu, 29 Oct 2026) | 1 line
+
+remove pointless casts
+------------------------------------------------------------------------
+r8883 | brainslayer | 2026-10-29 11:09:41 +0600 (Thu, 29 Oct 2026) | 1 line
+
+mwlwifi: load per-board 8997 calibration files without warnings
+------------------------------------------------------------------------
+r8882 | brainslayer | 2026-10-29 11:07:39 +0600 (Thu, 29 Oct 2026) | 1 line
+
+mwlwifi: remove debugfs files that duplicate or bypass the stack
+------------------------------------------------------------------------
 r8881 | brainslayer | 2026-10-29 11:00:33 +0600 (Thu, 29 Oct 2026) | 1 line
 
 mwlwifi: remove nl80211 vendor commands
