@@ -909,17 +909,19 @@ router_parse_entry_from_string(const char *s, const char *end,
 
   {
     smartlist_t *family_cert_toks = find_all_by_keyword(tokens, K_FAMILY_CERT);
-    time_t family_expiration = TIME_MAX;
     int r = 0;
+    time_t family_expiration_time = TIME_MAX;
     if (family_cert_toks)  {
       r = check_family_certs(family_cert_toks,
                              &router->cache_info.signing_key_cert->signing_key,
                              &router->family_ids,
-                             &family_expiration);
+                             &family_expiration_time);
       smartlist_free(family_cert_toks);
     }
     if (r<0)
       goto err;
+    router->cert_expiration_time = MIN(family_expiration_time,
+                                       router->cert_expiration_time);
   }
 
   if (find_opt_by_keyword(tokens, K_CACHES_EXTRA_INFO))

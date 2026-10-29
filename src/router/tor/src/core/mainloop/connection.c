@@ -731,6 +731,8 @@ connection_init(time_t now, connection_t *conn, int type, int socket_family)
 
   conn->s = TOR_INVALID_SOCKET; /* give it a default of 'not used' */
   conn->conn_array_index = -1; /* also default to 'not used' */
+  conn->closeable_list_index = -1;
+  conn->active_linked_list_index = -1;
   conn->global_identifier = n_connections_allocated++;
 
   conn->type = type;
@@ -968,6 +970,10 @@ connection_free_,(connection_t *conn))
     return;
   tor_assert(!connection_is_on_closeable_list(conn));
   tor_assert(!connection_in_array(conn));
+  if (BUG(conn->active_linked_list_index != -1 || conn->active_on_link)) {
+    /* Do not leave a pointer to freed memory in the active linked list. */
+    connection_stop_reading_from_linked_conn(conn);
+  }
   /* Direct free can bypass normal closure. This releases the channel's guard
    * attribution handle before cleanup callbacks can report another error.
    * Destruction itself is not evidence of establishment failure; any eligible
@@ -2296,7 +2302,8 @@ connection_connect_sockaddr,(connection_t *conn,
   if (options->ConstrainedSockets)
     set_constrained_socket_buffers(s, (int)options->ConstrainedSockSize);
 
-  if (tor_connect_socket(s, sa, sa_len) == TOR_INVALID_SOCKET) {
+  const tor_socket_t connect_result = tor_connect_socket(s, sa, sa_len);
+  if (!SOCKET_OK(connect_result)) {
     int e = tor_socket_errno(s);
     if (!ERRNO_IS_CONN_EINPROGRESS(e)) {
       /* yuck. kill it. */

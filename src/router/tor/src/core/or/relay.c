@@ -2892,28 +2892,31 @@ uint64_t oom_stats_n_bytes_removed_hsdir = 0;
 /** If true, the mainloop needs to run cell_queues_reclaim_memory(). */
 bool mainloop_must_free_memory = false;
 
+/** Return the current total allocation. */
+static size_t
+get_total_allocation(void)
+{
+  size_t alloc = cell_queues_get_total_allocation();
+  alloc += half_streams_get_total_allocation();
+  alloc += buf_get_total_allocation();
+  alloc += tor_compress_get_total_allocation();
+  alloc += hs_cache_get_total_allocation();
+  alloc += geoip_client_cache_total_allocation();
+  alloc += dns_cache_total_allocation();
+  alloc += conflux_get_total_bytes_allocation();
+  return alloc;
+}
+
 /** Check whether we've got too much space used for cells.  If so,
- * then schedle the OOM handler (if reclaim_immediately is true) or
- * free the memory (if reclaim_immediately is false) and return 1.
+ * then schedule the OOM handler (if reclaim_immediately is false) or
+ * free the memory (if reclaim_immediately is true) and return 1.
  * Otherwise, return 0. */
 static int
 cell_queues_check_reclaim_impl(bool reclaim_immediately)
 {
   size_t removed = 0;
   time_t now = time(NULL);
-  size_t alloc = cell_queues_get_total_allocation();
-  alloc += half_streams_get_total_allocation();
-  alloc += buf_get_total_allocation();
-  alloc += tor_compress_get_total_allocation();
-  const size_t hs_cache_total = hs_cache_get_total_allocation();
-  alloc += hs_cache_total;
-  const size_t geoip_client_cache_total =
-    geoip_client_cache_total_allocation();
-  alloc += geoip_client_cache_total;
-  const size_t dns_cache_total = dns_cache_total_allocation();
-  alloc += dns_cache_total;
-  const size_t conflux_total = conflux_get_total_bytes_allocation();
-  alloc += conflux_total;
+  size_t alloc = get_total_allocation();
 
   if (alloc >= get_options()->MaxMemInQueues_low_threshold) {
     last_time_under_memory_pressure = approx_time();
@@ -2939,12 +2942,12 @@ cell_queues_check_reclaim_impl(bool reclaim_immediately)
 
       /* If we're spending over the configured limit on hidden service
        * descriptors, free them until we're down to 50% of the limit. */
+      const size_t hs_cache_total = hs_cache_get_total_allocation();
       if (hs_cache_total > hs_cache_get_max_bytes()) {
         const size_t bytes_to_remove =
           hs_cache_total - (size_t)(hs_cache_get_max_bytes() / 2);
         removed = hs_cache_handle_oom(bytes_to_remove);
         oom_stats_n_bytes_removed_hsdir += removed;
-        alloc -= removed;
         static ratelim_t hs_cache_oom_ratelim = RATELIM_INIT(600);
         log_fn_ratelim(&hs_cache_oom_ratelim, LOG_NOTICE, LD_REND,
                "HSDir cache exceeded limit "
@@ -2952,29 +2955,34 @@ cell_queues_check_reclaim_impl(bool reclaim_immediately)
                "Pruned %"TOR_PRIuSZ " bytes during cell_queues_check_size.",
                hs_cache_total, hs_cache_get_max_bytes(), removed);
       }
+      const size_t geoip_client_cache_total =
+        geoip_client_cache_total_allocation();
       if (geoip_client_cache_total > get_options()->MaxMemInQueues / 5) {
         const size_t bytes_to_remove =
           geoip_client_cache_total -
           (size_t)(get_options()->MaxMemInQueues / 10);
         removed = geoip_client_cache_handle_oom(now, bytes_to_remove);
         oom_stats_n_bytes_removed_geoip += removed;
-        alloc -= removed;
       }
+      const size_t dns_cache_total = dns_cache_total_allocation();
       if (dns_cache_total > get_options()->MaxMemInQueues / 5) {
         const size_t bytes_to_remove =
           dns_cache_total - (size_t)(get_options()->MaxMemInQueues / 10);
         removed = dns_cache_handle_oom(now, bytes_to_remove);
         oom_stats_n_bytes_removed_dns += removed;
-        alloc -= removed;
       }
       /* Like onion service above, try to go down to 10% if we are above 20% */
+      const size_t conflux_total = conflux_get_total_bytes_allocation();
       if (conflux_total > get_options()->MaxMemInQueues / 5) {
         const size_t bytes_to_remove =
           conflux_total - (size_t)(get_options()->MaxMemInQueues / 10);
         removed = conflux_handle_oom(bytes_to_remove);
         oom_stats_n_bytes_removed_cell += removed;
-        alloc -= removed;
       }
+      /* Cache cleanup can allocate memory too: expiring pending DNS
+       * resolutions can enqueue relay END cells. Recompute the total before
+       * deciding how much circuit memory to reclaim. */
+      alloc = get_total_allocation();
       removed = circuits_handle_oom(alloc);
       oom_stats_n_bytes_removed_cell += removed;
       return 1;
@@ -3003,8 +3011,13 @@ cell_queues_check_size(void)
 void
 cell_queues_reclaim_memory(void)
 {
-  cell_queues_check_reclaim_impl(true);
+  /* Consume the existing request before cleanup. Leave any new request for
+   * the main loop unless we have verified that it is satisfied. */
   mainloop_must_free_memory = false;
+  cell_queues_check_reclaim_impl(true);
+  if (get_total_allocation() < get_options()->MaxMemInQueues) {
+    mainloop_must_free_memory = false;
+  }
 }
 
 /** Return true if we've been under memory pressure in the last

@@ -53,7 +53,7 @@
 #define MIN_SUPPORTED_CONSENSUS_METHOD 32
 
 /** The highest consensus method that we currently support. */
-#define MAX_SUPPORTED_CONSENSUS_METHOD 36
+#define MAX_SUPPORTED_CONSENSUS_METHOD 37
 
 /**
  * Lowest consensus method for which we suppress the published time in
@@ -79,6 +79,19 @@
  * descriptors have no TAP keys.
  */
 #define MIN_METHOD_TO_PERMIT_ABSENT_TAP_KEYS 36
+
+/**
+ * Lowest supported consensus method for which we omit TAP keys from
+ * _all_ microdescriptors.
+ */
+#define MIN_METHOD_TO_OMIT_ALL_TAP_KEYS_AND_FAMILY_LISTS 37
+/**
+ * Lowest supported consensus method for which we omit family lists from
+ * _all_ microdescriptors.
+ *
+ * (This is the same as MIN_METHOD_TO_OMIT_ALL_TAP_KEYS.)
+ */
+#define MIN_METHOD_TO_OMIT_ALL_FAMILY_LISTS 37
 
 /** Default bandwidth to clip unmeasured bandwidths to using method >=
  * MIN_METHOD_TO_CLIP_UNMEASURED_BW.  (This is not a consensus method; do not

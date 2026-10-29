@@ -4020,6 +4020,17 @@ test_entry_guard_establishment_directory(void *arg)
   establishment_test_cleanup(dispatcher);
 }
 
+/* The channel/guard accounting test does not need cryptographic teardown. */
+static void
+mock_establishment_circuit_close(circuit_t *circ, int reason, int line,
+                                  const char *file)
+{
+  (void)circ;
+  (void)reason;
+  (void)line;
+  (void)file;
+}
+
 /* Exercise circuit/request failure accounting after an established link, not
  * just the finalizer's OPEN gate. The socket/TLS peer is simulated. */
 static void
@@ -4037,6 +4048,9 @@ test_entry_guard_establishment_postopen_circuit(void *arg)
   tor_addr_parse(&addr, "192.0.2.1");
   get_options_mutable()->NumPrimaryGuards = 1;
   get_options_mutable()->PathBiasDropGuards = 0;
+  get_options_mutable()->LearnCircuitBuildTimeout = 0;
+  get_options_mutable()->CircuitBuildTimeout = 60;
+  MOCK(circuit_mark_for_close_, mock_establishment_circuit_close);
   MOCK(connection_or_connect, establishment_connect);
   tt_int_op(entry_guard_pick_for_circuit(gs, GUARD_USAGE_TRAFFIC, NULL,
                                        &node, &state), OP_EQ, 0);
@@ -4046,7 +4060,7 @@ test_entry_guard_establishment_postopen_circuit(void *arg)
   const int n_sampled = smartlist_len(gs->sampled_entry_guards);
   ei = extend_info_new(NULL, g->identity, NULL, NULL,
                        &addr, 9001, NULL, false);
-  /* Repeated CREATE timeouts, then failures at a middle and at an exit. */
+  /* Generic cleanup before CREATE completes, then at a middle and exit. */
   for (int iteration = 0; iteration < 5; ++iteration) {
     tt_int_op(entry_guard_pick_for_circuit(gs, GUARD_USAGE_TRAFFIC, NULL,
                                          &node, &state), OP_EQ, 0);
@@ -4069,7 +4083,15 @@ test_entry_guard_establishment_postopen_circuit(void *arg)
       circ->cpath->next->state = CPATH_STATE_OPEN;
     circ->base_.n_chan = chan;
     circuit_build_failed(circ);
-    /* The CREATE case may discard this channel, but must retain the guard. */
+    /* Cleanup alone must retain both the channel and the guard. */
+    tt_int_op(chan->is_bad_for_new_circs, OP_EQ, 0);
+    /* An actual first-hop expiry retires the channel, but not the guard.
+     * Later-hop expiry must retain the channel as well. */
+    if (iteration < 3)
+      circ->cpath->state = CPATH_STATE_AWAITING_KEYS;
+    tor_gettimeofday(&circ->base_.timestamp_began);
+    circ->base_.timestamp_began.tv_sec -= 120;
+    circuit_expire_building();
     tt_int_op(chan->is_bad_for_new_circs, OP_EQ, iteration < 3);
     circ->base_.n_chan = NULL;
     circuit_free_(TO_CIRCUIT(circ));
@@ -4104,6 +4126,7 @@ test_entry_guard_establishment_postopen_circuit(void *arg)
   channel_free_all();
   extend_info_free(ei);
   UNMOCK(connection_or_connect);
+  UNMOCK(circuit_mark_for_close_);
   guard_selection_free(gs);
   establishment_test_cleanup(dispatcher);
 }
@@ -4895,9 +4918,10 @@ test_entry_guard_establishment_socket_completion(void *arg)
       tt_assert(SOCKET_OK(conn->base_.s));
       const tor_socket_t result = tor_connect_socket(conn->base_.s,
                                             (struct sockaddr *)&sa, len);
-      const int error = result == TOR_INVALID_SOCKET ?
+      const int socket_ok = SOCKET_OK(result);
+      const int error = !socket_ok ?
         tor_socket_errno(conn->base_.s) : 0;
-      if (result == TOR_INVALID_SOCKET && !ERRNO_IS_CONN_EINPROGRESS(error)) {
+      if (!socket_ok && !ERRNO_IS_CONN_EINPROGRESS(error)) {
         /* Some platforms refuse synchronously. SO_ERROR need not retain an
          * error already returned by connect(), so no completion is awaited.
          * The synchronous production launch path is covered separately. */

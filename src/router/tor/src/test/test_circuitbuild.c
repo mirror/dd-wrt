@@ -1679,6 +1679,7 @@ test_circuit_send_next_onion_skin(void *arg)
 {
   (void)arg;
   origin_circuit_t *origin_circ = NULL;
+  channel_t channel = { 0 };
   struct timeval circ_start_time;
   memset(&circ_start_time, 0, sizeof(circ_start_time));
 
@@ -1719,7 +1720,9 @@ test_circuit_send_next_onion_skin(void *arg)
   origin_circ->build_state->onehop_tunnel = 1;
   /* This is a direct connection */
   mock_circuit_deliver_create_cell_expect_direct = true;
+  origin_circ->base_.n_chan = &channel;
   tt_int_op(circuit_send_next_onion_skin(origin_circ), OP_EQ, 0);
+  origin_circ->base_.n_chan = NULL;
   /* The circuits are automatically freed by the circuitlist. */
 
   /* Try a direct connection, and succeed on a server */
@@ -1731,7 +1734,9 @@ test_circuit_send_next_onion_skin(void *arg)
   tt_ptr_op(origin_circ, OP_NE, NULL);
   origin_circ->build_state->onehop_tunnel = 1;
   mock_circuit_deliver_create_cell_expect_direct = true;
+  origin_circ->base_.n_chan = &channel;
   tt_int_op(circuit_send_next_onion_skin(origin_circ), OP_EQ, 0);
+  origin_circ->base_.n_chan = NULL;
 
   /* Start capturing bugs */
   setup_full_capture_of_logs(LOG_WARN);

@@ -1385,12 +1385,16 @@ consensus_diff_generate(const char *cons1, size_t cons1len,
 
 /** Given a consensus document and a diff, try to apply the diff to the
  * consensus.  On success return a newly allocated string containing the new
- * consensus.  On failure, return NULL. */
+ * consensus.  On failure, return NULL.
+ *
+ * If `enforce_length_maxima` is true, reject over-long diffs.
+ **/
 char *
 consensus_diff_apply(const char *consensus,
                      size_t consensus_len,
                      const char *diff,
-                     size_t diff_len)
+                     size_t diff_len,
+                     bool enforce_length_maxima)
 {
   consensus_digest_t d1;
   smartlist_t *lines1 = NULL, *lines2 = NULL;
@@ -1398,7 +1402,8 @@ consensus_diff_apply(const char *consensus,
   char *result = NULL;
   memarea_t *area = memarea_new();
 
-  if (diff_len >= 64*1024 && diff_len / 2 >= consensus_len) {
+  if (enforce_length_maxima &&
+      diff_len >= 64*1024 && diff_len / 2 >= consensus_len) {
     // We consider a diff too long if it is as least 64 KiB,
     // and it is at least twice as long as the consensus in bytes.
     log_warn(LD_GENERAL, "Consensus diff has too many bytes; "
@@ -1424,7 +1429,12 @@ consensus_diff_apply(const char *consensus,
   }
   // We also consider a diff too long if it is at least 1024 lines,
   // and it has at least three times as many lines as the consensus.
-  const size_t max_diff_lines = MAX(n_consensus_lines * 3, 1024);
+  size_t max_diff_lines;
+  if (enforce_length_maxima) {
+    max_diff_lines = MAX(n_consensus_lines * 3, 1024) - 1;
+  } else {
+    max_diff_lines = SIZE_MAX;
+  }
 
   if (consensus_split_lines(lines2, diff, diff_len, area, max_diff_lines) < 0)
     goto done;

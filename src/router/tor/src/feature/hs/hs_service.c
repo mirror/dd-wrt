@@ -4317,13 +4317,14 @@ hs_service_set_conn_addr_port(const origin_circuit_t *circ,
                       "hidden service %s.",
              TO_CONN(conn)->port, service->onion_address);
     if (service->config.allow_unknown_ports) {
-      /* Service explicitly allow connection to unknown ports so close right
-       * away because we do not care about port mapping. */
-      goto err_close;
+      /* Service explicitly allows connections to unknown ports: only this
+       * stream fails, the rendezvous circuit is kept
+       * (HiddenServiceAllowUnknownPorts 1). */
+      goto err_no_close;
     }
-    /* If the service didn't explicitly allow it, we do NOT close the circuit
-     * here to raise the bar in terms of performance for port mapping. */
-    goto err_no_close;
+    /* By default, close the whole rendezvous circuit so that probing the
+     * ports of a service costs one circuit per unknown port. */
+    goto err_close;
   }
 
   /* Success. */

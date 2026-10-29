@@ -1,3 +1,244 @@
+Changes in version 0.4.9.15 - 2026-10-28
+  This is another security release that includes new DoS defenses against large
+  volumes of directory requests received by relays. Another significant change
+  is that the HSDir flag is now sticky, meaning it persists across restarts.
+  This release primarily affects relays so please upgrade as soon as possible.
+
+  o Directory authority changes:
+    - Directory authorities now list the protocol capabilities
+      "RELAY_NEGOTIATE_SUBPROTO" and "RELAY_CRYPT_CGO" as required for
+      relays. This change will allow clients to assume that all relays
+      support Counter Galois Onion encryption, and use it even for
+      relays not currently listed in the consensus.
+    - Directory authorities now list the protocol capabilities
+      "DESC_NO_TAP" and "MICRODESC_NO_TAP" as required for clients and
+      relays. This changes will allow us to remove TAP keys from onion
+      desciptors and microdescriptors, saving a great deal of directory
+      bandwidth. Because of this change, Tor versions 0.4.8 and earlier
+      will no longer work on the network.
+
+  o Major features (directory authority):
+    - Directory authorities provide a new consensus method that omits
+      _all_ TAP keys and family lists from microdescriptors. This change
+      is not compatible with 0.4.8, but 0.4.8 is no longer supported. It
+      will save a great deal of directory bandwidth.
+
+  o Major bugfixes (directory authority):
+    - Correctly handle the middle-only flag at directory authorities, to
+      prevent it from getting clobbered by a newly created consensus.
+      This prevents flip-flopping of the middleonly flag. Fixes bug
+      41457; bugfix on 0.4.9.14.
+
+  o Minor features (denial of service mitigation):
+    - Directory caches can now rate limit BEGIN_DIR cells per circuit,
+      independently of the exit stream creation limit. This is
+      controlled by the new DoSBeginDirRateEnabled, DoSBeginDirRate,
+      DoSBeginDirBurst and DoSBeginDirDefenseType consensus parameters
+      and torrc options, enabled by default. Refusals are reported in
+      the heartbeat and in the
+      relay_dos_total{type="begindir_rate_rejected"} metric. Part of
+      ticket 41411.
+    - Directory caches can now refuse any BEGIN_DIR after the first one
+      on a circuit from an authenticated relay. This is controlled by
+      the new DoSBeginDirLimitEnabled consensus parameter, disabled by
+      default. Refusals are reported in the heartbeat and in the
+      relay_dos_total{type="begindir_rejected"} metric. Closes
+      ticket 41411.
+    - Onion service directories now accept at most one descriptor fetch
+      or upload per circuit from an authenticated relay, and close the
+      circuit on any later one. This holds even when the BEGIN_DIR per-
+      circuit limit is disabled.
+
+  o Minor features (directory authority):
+    - Directory authorities now assign the HSDir flag to a relay that
+      had it in a recent consensus even if its uptime is below
+      MinUptimeHidServDirectoryV2, so a restart no longer costs a relay
+      its HSDir flag for 96 hours. All other HSDir requirements still
+      apply. Fixes ticket 41175.
+
+  o Minor features (directory performance):
+    - Filter malformed directory request digests in linear time,
+      avoiding repeated list shifting when rejecting invalid entries.
+      Preserve digest ordering and the existing sorting and
+      deduplication behavior.
+    - Summarize invalid directory request digests and consensus diff
+      header digests once per parsing call, instead of logging each
+      rejected entry. Omit rejected digest strings from these
+      diagnostics and from invalid consensus diff URL diagnostics.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on October 28, 2026.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2026/10/28.
+
+  o Minor features (performance):
+    - Track connection membership in the active linked and closeable
+      lists using indices, and update those indices when removing
+      entries. Use the connection array index for membership checks and
+      clear it on removal. This avoids repeated global list scans during
+      activation and teardown. Report inconsistent indices nonfatally
+      and recover with a list search before modifying the list.
+
+  o Minor features (relay):
+    - Relays now use a separate circuit for each directory request, so
+      that directory caches can later limit relays to one BEGIN_DIR
+      per circuit.
+
+  o Minor bugfixes (conflux, control port):
+    - Refuse ATTACHSTREAM onto a conflux circuit that has not finished
+      linking. Such a leg is open but a stream that you attach to it
+      will be silently dropped from the circuit (with a BUG() warning)
+      when the set linked. Fixes bug 41454; bugfix on 0.4.8.1-alpha.
+
+  o Minor bugfixes (onion service, control port):
+    - Fix a memory leak of the parsed signing-key certificate and
+      superencrypted blob (roughly the size of the descriptor) on every
+      HSPOST control-port command. Fixes bug 41455; bugfix
+      on 0.3.3.1-alpha.
+
+  o Minor bugfixes (scheduling):
+    - Fix a bug in smartlist_pqueue_remove that could schedulers (for
+      circuits within a channel, and for channels on the internet
+      connection) to serve items in the wrong order, leading to
+      temporary starvation for higher-priority circuits. Fixes bug
+      41428; bugfix on 0.2.2.7-alpha.
+
+
+Changes in version 0.4.9.14 - 2026-10-07
+  Another week, another security release. This again contains major bugfixes
+  related to high severity issues. The fixes affect all Tor components: relay,
+  client, onion service and authority. We strongly recommend upgrading as soon
+  as possible.
+
+  o Major bugfixes (conflux, relay, security):
+    - Only accept a CONFLUX_LINK cell on a plain OR circuit, and refuse
+      to turn a (pending) conflux leg into an introduction or rendezvous
+      point. Previously a client could link a rendezvous-point circuit
+      into a conflux set and then, with a forged sequence number in the
+      LINK cell, make the relay tear the set down from inside the
+      rendezvous splice, triggering a fatal assertion in
+      assert_circuit_ok(). Also reject a LINK/LINKED cell whose
+      last_seqno_recv is above what we ever sent on the set. Fixes bug
+      41328; bugfix on 0.4.8.1-alpha.
+
+  o Major bugfixes (security):
+    - Correctly copy the MiddleOnly flag from routerstatuses to node
+      objects. Without this fix, the MiddleOnly flag was ignored on non-
+      authorities, and clients could use MiddleOnly relays for
+      inappropriate roles in onion service circuits. Fixes bug 41410;
+      bugfix on 0.4.8.15. Tracked as TROVE-2026-067.
+    - Treat a router descriptor as expired if any of its family
+      certificates has expired. Previously, we incorrectly ignored the
+      expiration time of the family certificate. Fixes bug 41413; bugfix
+      on 0.4.9.2-alpha. Tracked as TROVE-2026-062.
+
+  o Major bugfixes (circuit build timeout):
+    - Under certain conditions, the circuit build timeout history could
+      become filled with "abandoned" entries, which would block updating
+      the timeout as network conditions change. This could cause
+      connectivity failure if the timeout value became stuck at a
+      sufficiently low value. Missing first-hop timeout accounting could
+      also prevent the timeout from being reset, when these failures
+      happen at the first hop of the circuit. We've corrected the first-
+      hop accounting, and have fixed two sources of excessive abandoned
+      timeout entries, and added additional reset handling when the
+      timeout history becomes full of abandoned timeout measurements.
+      We've also added diagnostic log messages to help detect any
+      potential remaining cases of timeout miscounting and abandonment
+      accumulation. Fixes bug 41420; bugfix on 0.2.2.14-alpha.
+
+  o Major bugfixes (circuit, channel):
+    - Cancelling a circuit before its first hop completed would cause
+      Tor to stop using a working guard connection for new circuits and
+      abort unrelated pending directory requests. These cancellations
+      could also be triggered remotely, causing additional TLS
+      connections to the same guard that could aid traffic analysis. DoS
+      conditions and/or overly short circuit build timeouts could also
+      cause unnecessary connection replacement, at the exact time when
+      additional connection load would be most harmful. We've restricted
+      this recovery behavior to actual first-hop timeouts, allowing at
+      least the longer of the measurement timeout and the initial
+      timeout before replacing a stalled connection. These changes
+      preserve recovery from stalled connections without changing guard
+      reachability. Fixes bug 41412; bugfix on 0.1.1.10-alpha.
+
+  o Major bugfixes (directory authority):
+    - When enforcing AuthDirMaxServersPerAddr, only count relays that we
+      have found reachable at that address and stop resetting the uptime
+      history of relays over the limit. This is TROVE-2026-064. Fixes
+      bug 41405; bugfix on 0.2.4.10-alpha.
+
+  o Major bugfixes (onion service client):
+    - When an introduction point NACKs our INTRODUCE1 and we re-extend
+      the same circuit to another introduction point, update the
+      circuit's introduction point authentication key. Fixes bug 41437;
+      bugfix on 0.3.2.1-alpha.
+
+  o Major bugfixes (onion services):
+    - Fix the behavior of HiddenServiceAllowUnknownPorts, which aims to
+      slow down port-scanning on onion services. It was correct as
+      implemented in Tor 0.2.6.3-alpha (ticket 14084), but during the
+      transition to v3 onion services we accidentally inverted its
+      logic. Now onion services will resume closing the client's circuit
+      if it asks to connect to an unconfigured port. Fixes bug 41435;
+      bugfix on 0.3.2.1-alpha.
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on October 07, 2026.
+
+  o Minor features (geoip data):
+    - Update the geoip files to match the IPFire Location Database, as
+      retrieved on 2026/10/07.
+
+  o Minor bugfixes (client):
+    - Stop logging a misleading backtrace when the user uses
+      AutomapHostsOnResolve combined with a MapAddress line that maps to
+      a .exit address. Fixes bug 41418; bugfix on 0.3.2.1-alpha.
+
+  o Minor bugfixes (compilation):
+    - Only define the SYS_SECCOMP fallback when using libseccomp. This
+      avoids redefining a system provided macro in builds with
+      --disable-seccomp. Bugfix on 0.4.9.4-rc.
+
+  o Minor bugfixes (compression):
+    - Harden the lzma2 streaming implementation against some kinds of
+      infinite-loop denial of service attacks. This isn't actually a
+      security vulnerability in Tor, since we never use lzma2 in
+      streaming mode. Fixes bug 41324; bugfix on 0.3.1.1-alpha.
+
+  o Minor bugfixes (consensus diff):
+    - Reject consensus diffs at exactly the line-count threshold and
+      above. Previously, a diff with exactly the threshold number of
+      lines passed the limit check. Bugfix on 0.4.9.12.
+
+  o Minor bugfixes (directory authority):
+    - When the votes select an unsupported consensus method, fall back
+      to the newest method supported by the current configuration. This
+      fixes the issue that authorities with AuthDirSupport048Clients
+      enabled could still pick consensus method 36 if the method in the
+      votes was below. Bugfix on 0.4.9.12.
+
+  o Minor bugfixes (fuzzing):
+    - Fix a false positive from fuzzing code caused by an earlier
+      security fix for consensus-diff application. Fixes bug 41385;
+      bugfix on 0.4.9.12.
+
+  o Minor bugfixes (memory management):
+    - Preserve cleanup requests raised during reclamation while memory
+      remains over the limit, leaving further cleanup to the main loop.
+      Bugfix on 0.4.9.12.
+    - Recompute memory usage after cache cleanup so that relay END cells
+      queued while expiring pending DNS resolutions count toward circuit
+      memory reclamation. Bugfix on 0.3.5.1-alpha.
+
+  o Minor bugfixes (onion services):
+    - Stop memory-leaking an address string for every stream begin
+      request to an onion service unix domain socket ("unix:")
+      destination. Fixes bug 41434; bugfix on 0.2.6.3-alpha.
+
+
 Changes in version 0.4.9.13 - 2026-09-23
   This security release includes several high severity fixes, once again
   originating from the LLM report firehose. The fixes affect all Tor
@@ -56,10 +297,11 @@ Changes in version 0.4.9.13 - 2026-09-23
       a guard that was never contacted. This is trove TROVE-2026-030.
       Fixes bug 41360; bugfix on 0.4.9.1-alpha.
 
-  o Major bugfixes (relay, ):
+  o Major bugfixes (relay, assertion failure):
     - Remove circuits waiting for a channel from the pending channel
       list as soon as they are marked for close instead of waiting until
-      they are freed. Fixes bug 41393; bugfix on 0.2.8.1-alpha.
+      they are freed. This is TROVE-2026-057. Fixes bug 41393; bugfix on
+      0.2.8.1-alpha.
 
   o Major bugfixes (stream isolation):
     - When a client establishes a circuit to an onion service, but the

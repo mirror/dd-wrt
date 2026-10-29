@@ -15,7 +15,8 @@
 char *consensus_diff_generate(const char *cons1, size_t cons1len,
                               const char *cons2, size_t cons2len);
 char *consensus_diff_apply(const char *consensus, size_t consensus_len,
-                           const char *diff, size_t diff_len);
+                           const char *diff, size_t diff_len,
+                           bool enforce_length_maxima);
 
 int looks_like_a_consensus_diff(const char *document, size_t len);
 

@@ -88,9 +88,11 @@ dirserv_orconn_tls_done(const tor_addr_t *addr,
       if (tor_addr_family(addr) == AF_INET) {
         rep_hist_note_router_reachable(digest_rcvd, addr, or_port, now);
         node->last_reachable = now;
+        node->reached_ipv4_orport = 1;
       } else if (tor_addr_family(addr) == AF_INET6) {
         /* No rephist for IPv6.  */
         node->last_reachable6 = now;
+        node->reached_ipv6_orport = 1;
       }
     }
   }

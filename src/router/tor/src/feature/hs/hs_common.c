@@ -84,6 +84,8 @@ set_unix_port(edge_connection_t *conn, hs_port_config_t *p)
   conn->base_.socket_family = AF_UNIX;
   tor_addr_make_unspec(&conn->base_.addr);
   conn->base_.port = 1;
+  /* address is currently "(rendezvous)"; free it before we replace it */
+  tor_free(conn->base_.address);
   conn->base_.address = tor_strdup(p->unix_addr);
   return 0;
 }

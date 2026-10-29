@@ -443,6 +443,10 @@ struct channel_t {
    * If so, when? */
   ratelim_t last_warned_circ_ids_exhausted;
 
+  /** Successful origin first-hop handshakes on this channel. Used to avoid
+   * retiring a productive channel when another CREATE attempt expires. */
+  uint64_t first_hop_success_count;
+
   /** Channel timestamps for cell channels */
   time_t timestamp_client; /*(< Client used this, according to relay.c */
   time_t timestamp_recv; /**< Cell received from lower layer */
