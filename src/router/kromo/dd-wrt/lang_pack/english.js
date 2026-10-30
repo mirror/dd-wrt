@@ -2318,6 +2318,9 @@ service.antaira_agent_connect_url="Connect URL";
 service.antaira_agent_configuration_url="Configuration URL";
 service.antaira_agent_token=share.token;
 
+service.alarmserver="Alarmserver for Hikvision";
+service.alarmserver_cmd="Command to run on event";
+
 // ** eop-tunnel.asp **//
 var eoip=new Object();
 eoip.titl="Tunnels";
