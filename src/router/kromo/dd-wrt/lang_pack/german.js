@@ -2030,6 +2030,9 @@ service.transmission_whitelist="Erlaubte IPs";
 service.plex_legend="Medien Server";
 service.plex_srv="Plex Medien Server";
 
+service.alarmserver="Alarmserver für Hikvision Kameras";
+service.alarmserver_cmd="Befehl der bei Ereigniss ausgeführt werden soll";
+
 // ** eop-tunnel.asp **//
 eoip.titl="Tunnel";
 eoip.tunnel="Tunnel";
