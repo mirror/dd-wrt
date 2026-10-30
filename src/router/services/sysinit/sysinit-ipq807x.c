@@ -495,9 +495,26 @@ int is_wdssta(int count)
 int ath11k_crypto_disabled(void)
 {
 	int count;
+	const char *next;
+	char var[80];
+	char *vifs;
 	for (count = 0; count < 3; count++) {
+		char wifivifs[32];
+		char base[32];
+		sprintf(base, "wlan%d", count);
+		sprintf(wifivifs, "wlan%d_vifs", count);
+
 		if (nvram_nmatch("disabled", "wlan%d_akm", count))
 			return 1;
+		vifs = nvram_safe_get(wifivifs);
+		if (vifs != NULL && *vifs) {
+			foreach(var, vifs, next) {
+				if (nvram_nmatch("disabled", "%s_akm", var))
+					return 1;
+			}
+		
+		}
+
 	}
 	return 0;
 }
