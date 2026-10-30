@@ -785,7 +785,7 @@ ifneq ($(CONFIG_DIST),"micro")
 obj-y+=wrtbwmon 
 endif
 
-
+obj-y+=alarmserver
 obj-y+=configs
 obj-$(CONFIG_HTTPD) += httpd
 
