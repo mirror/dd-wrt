@@ -10,7 +10,7 @@ addEvent(window, "load", function() {
 	</head>
 	<body class="popup_bg">
 			<form>
-				<h2><% tran("log_in.h2"); %></h2>
+				<h2><% tran("log.blocklist"); %></h2>
 				<fieldset>
 				<legend><% tran("log.legend"); %></legend>
 				<table class="table">

@@ -842,6 +842,7 @@ log.lvl="Log Level";
 log.drop="Dropped";
 log.reject="Rejected";
 log.accept="Accepted";
+log.blocklist="Blocklist Log";
 
 // ** Log_incoming.asp **//
 var log_in=new Object();
