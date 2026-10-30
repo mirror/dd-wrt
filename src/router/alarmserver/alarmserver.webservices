@@ -1,7 +1,7 @@
 <fieldset>
 	<legend><script type="text/javascript">Capture(service.alarmserver)</script></legend>
 		<div class="setting">
-			<div class="label"><% tran("service.dns_smartdns_label"); %></div>
+			<div class="label"><% tran("freeradius.srv"); %></div>
 			<input class="spaceradio" type="radio" name="alarmserver" value="1" <% nvc("alarmserver", "1"); %> onclick="show_layer_ext(this, 'idalarmserver', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="alarmserver" value="0" <% nvc("alarmserver", "0"); %> onclick="show_layer_ext(this, 'idalarmserver', false)" /><% tran("share.disable"); %>
 		</div>
