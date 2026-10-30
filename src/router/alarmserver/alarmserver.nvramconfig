@@ -1,0 +1,2 @@
+ "alarmserver"   "Hikvision Alarmserver"   "NULL" "FALSE" "0"
+ "alarmserver_cmd"  "Command to run"  "NULL" "FALSE" "0"
