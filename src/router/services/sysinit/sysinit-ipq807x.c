@@ -492,6 +492,15 @@ int is_wdssta(int count)
 	return 0;
 }
 
+int ath11k_crypto_disabled(void)
+{
+	int count;
+	for (count = 0; count < 3; count++) {
+		if (nvram_nmatch("disabled", "wlan%d_akm", count))
+			return 1;
+	}
+	return 0;
+}
 int nss_disabled(int setcur)
 {
 	int count;
@@ -1894,7 +1903,9 @@ void start_wifi_drivers(void)
 			load_ath11k_internal(profile, 1, 0, frame_mode, "", 1);
 			break;
 		case ROUTER_FORTINET_FAP231F:
-			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode, "", 1);
+			load_ath11k_internal(profile, 0,
+					     !nvram_match("ath11k_nss", "0") && !nss_disabled(0) && !ath11k_crypto_disabled(),
+					     frame_mode, "", 1);
 			wait_for_wifi(2);
 			load_ath10k();
 			minif = 3;
@@ -1914,15 +1925,17 @@ void start_wifi_drivers(void)
 			   eval("ssdk_sh", "debug", "phy", "set", "8", "0x40070000", "0x3200"); */
 			//                      char *cert_region = get_deviceinfo_linksys("cert_region");
 			//                      if (!cert_region)
-			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode,
-					     cert_region, 0);
+			load_ath11k_internal(profile, 1,
+					     !nvram_match("ath11k_nss", "0") && !nss_disabled(0) && !ath11k_crypto_disabled(),
+					     frame_mode, cert_region, 0);
 			minif = 3;
 			break;
 		case ROUTER_LINKSYS_MX8500:
 			//                      char *cert_region = get_deviceinfo_linksys("cert_region");
 			//                      if (!cert_region)
-			load_ath11k_internal(profile, 1, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode,
-					     cert_region, 1);
+			load_ath11k_internal(profile, 1,
+					     !nvram_match("ath11k_nss", "0") && !nss_disabled(0) && !ath11k_crypto_disabled(),
+					     frame_mode, cert_region, 1);
 			minif = 3;
 			break;
 
@@ -1931,13 +1944,16 @@ void start_wifi_drivers(void)
 			wait_for_wifi(1);
 			//                      char *cert_region = get_deviceinfo_linksys("cert_region");
 			//                      if (!cert_region)
-			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode,
-					     cert_region, 1);
+			load_ath11k_internal(profile, 0,
+					     !nvram_match("ath11k_nss", "0") && !nss_disabled(0) && !ath11k_crypto_disabled(),
+					     frame_mode, cert_region, 1);
 			minif = 3;
 			break;
 
 		default:
-			load_ath11k_internal(profile, 0, !nvram_match("ath11k_nss", "0") && !nss_disabled(0), frame_mode, "", 1);
+			load_ath11k_internal(profile, 0,
+					     !nvram_match("ath11k_nss", "0") && !nss_disabled(0) && !ath11k_crypto_disabled(),
+					     frame_mode, "", 1);
 			break;
 		}
 		wait_for_wifi(minif);
