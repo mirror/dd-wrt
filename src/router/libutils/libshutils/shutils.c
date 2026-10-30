@@ -45,7 +45,8 @@
 #include <utils.h>
 #include <byteswap.h>
 
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_VENICE) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_VENICE) || \
+	(defined(HAVE_RB600) && !defined(HAVE_WDR4900)) //special treatment
 
 int debug_ready(void)
 {
@@ -1106,8 +1107,8 @@ u_int64_t freediskSpace(char *path)
 
 int jffs_mounted(void)
 {
-#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_RAMBUTAN) || defined(HAVE_OCTEON) || defined(HAVE_NEWPORT) || defined(HAVE_VENICE) || \
-	(defined(HAVE_RB600) && !defined(HAVE_WDR4900))
+#if defined(HAVE_X86) || defined(HAVE_VENTANA) || defined(HAVE_RAMBUTAN) || defined(HAVE_OCTEON) || defined(HAVE_NEWPORT) || \
+	defined(HAVE_VENICE) || (defined(HAVE_RB600) && !defined(HAVE_WDR4900))
 	return 1;
 #endif
 	int ret = nvram_matchi("jffs_mounted", 1);
@@ -1278,7 +1279,8 @@ static unsigned short get_le_short(void *from)
 	return ((unsigned short)(p[1]) << 8) + (unsigned short)p[0];
 }
 
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_VENICE) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_VENICE) || defined(HAVE_RB600) || \
+	defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
 static unsigned int get_le_long(void *from)
 {
 	unsigned char *p = from;
@@ -1425,8 +1427,8 @@ static void precommit(void)
 #if defined(HAVE_WZRHPG300NH) || defined(HAVE_WHRHPGN) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_DIR825) || \
 	defined(HAVE_TEW632BRP) || defined(HAVE_TG2521) || defined(HAVE_WR1043) || defined(HAVE_WRT400) ||      \
 	defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450) || defined(HAVE_DANUBE) || defined(HAVE_WR741) ||   \
-	defined(HAVE_NORTHSTAR) || defined(HAVE_DIR615I) || defined(HAVE_WDR4900) || defined(HAVE_VENTANA) || defined(HAVE_VENICE) ||   \
-	defined(HAVE_UBNTM) || defined(DHAVE_IPQ806X) || defined(DHAVE_IPQ6018)
+	defined(HAVE_NORTHSTAR) || defined(HAVE_DIR615I) || defined(HAVE_WDR4900) || defined(HAVE_VENTANA) ||   \
+	defined(HAVE_VENICE) || defined(HAVE_UBNTM) || defined(DHAVE_IPQ806X) || defined(DHAVE_IPQ6018)
 	eval("ledtool", "1");
 #elif HAVE_LSX
 	//nothing
@@ -1657,19 +1659,22 @@ static void dump_blocklist(void)
 static void mod_tarpit(const char *ip, int del)
 
 {
-	#ifdef HAVE_PORTSCAN
+	if (nvram_match("ignore_blocklist", "1"))
+		return;
+
 	char check[INET6_ADDRSTRLEN + 1];
 	int ipv6 = getipv4fromipv6(check, ip);
+
 	if (!ipv6)
 		eval(IPTABLES, del ? "-D" : "-I", "SECURITY", "-s", check, "-j", "DROP");
 	else
 		eval(IP6TABLES, del ? "-D" : "-I", "SECURITY", "-s", ip, "-j", "DROP");
 
+	#ifdef HAVE_PORTSCAN
 	if (!ipv6)
 		eval(IPTABLES, del ? "-D" : "-I", "SECURITY", "-p", "tcp", "-s", check, "-j", "TARPIT");
 	else
 		eval(IP6TABLES, del ? "-D" : "-I", "SECURITY", "-p", "tcp", "-s", ip, "-j", "TARPIT");
-
 	#endif
 }
 void init_blocklist(int recover)
@@ -2211,9 +2216,8 @@ char *getgptpartitionbyname_safe(char *retname, const char *dev, const char *nam
 	return NULL;
 }
 
-
 char *getgptpartitionbyname(const char *dev, const char *name)
 {
 	static char retname[128];
-	return getgptpartitionbyname_safe(retname, dev, name);;
+	return getgptpartitionbyname_safe(retname, dev, name);
 }
