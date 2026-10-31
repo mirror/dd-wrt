@@ -133,12 +133,17 @@ out_unlock:
 
 int etnaviv_sched_init(struct etnaviv_gpu *gpu)
 {
+	struct drm_sched_init_args args = {
+		.ops = &etnaviv_sched_ops,
+		.credit_limit = etnaviv_hw_jobs_limit,
+		.hang_limit = etnaviv_job_hang_limit,
+		.timeout = msecs_to_jiffies(500),
+		.name = dev_name(gpu->dev),
+		.dev = gpu->dev,
+	};
 	int ret;
 
-	ret = drm_sched_init(&gpu->sched, &etnaviv_sched_ops,
-			     etnaviv_hw_jobs_limit, etnaviv_job_hang_limit,
-			     msecs_to_jiffies(500), NULL, NULL,
-			     dev_name(gpu->dev), gpu->dev);
+	ret = drm_sched_init(&gpu->sched, &args);
 	if (ret)
 		return ret;
 

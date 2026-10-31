@@ -241,6 +241,7 @@ static void nilfs_copy_page(struct page *dst, struct page *src, int copy_dirty)
 int nilfs_copy_dirty_pages(struct address_space *dmap,
 			   struct address_space *smap)
 {
+	struct inode *smap_inode = smap->host;
 	struct pagevec pvec;
 	unsigned int i;
 	pgoff_t index = 0;
@@ -255,8 +256,19 @@ repeat:
 		struct page *page = pvec.pages[i], *dpage;
 
 		lock_page(page);
-		if (unlikely(!PageDirty(page)))
-			NILFS_PAGE_BUG(page, "inconsistent dirty state");
+		if (unlikely(!PageDirty(page))) {
+			if (WARN_ONCE(!sb_rdonly(smap_inode->i_sb),
+					"inconsistent dirty state\n"))
+				goto unlock_src_page;
+
+			/*
+			 * If the filesystem has been forced to read-only
+			 * due to metadata corruption.
+			 */
+			unlock_page(page);
+			err = -EROFS;
+			break;
+		}
 
 		dpage = grab_cache_page(dmap, page->index);
 		if (unlikely(!dpage)) {
@@ -274,6 +286,7 @@ repeat:
 
 		unlock_page(dpage);
 		put_page(dpage);
+unlock_src_page:
 		unlock_page(page);
 	}
 	pagevec_release(&pvec);

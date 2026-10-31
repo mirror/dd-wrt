@@ -253,7 +253,7 @@ static int zynqmp_dpsub_remove(struct platform_device *pdev)
 	struct zynqmp_dpsub *dpsub = platform_get_drvdata(pdev);
 	struct drm_device *drm = &dpsub->drm;
 
-	drm_dev_unregister(drm);
+	drm_dev_unplug(drm);
 	drm_atomic_helper_shutdown(drm);
 	drm_kms_helper_poll_fini(drm);
 

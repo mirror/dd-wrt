@@ -156,8 +156,10 @@ static void dpu_core_irq_callback_handler(struct dpu_kms *dpu_kms, int irq_idx)
 {
 	VERB("irq_idx=%d\n", irq_idx);
 
-	if (!dpu_kms->hw_intr->irq_tbl[irq_idx].cb)
+	if (!dpu_kms->hw_intr->irq_tbl[irq_idx].cb) {
 		DRM_ERROR("no registered cb, idx:%d\n", irq_idx);
+		return;
+	}
 
 	atomic_inc(&dpu_kms->hw_intr->irq_tbl[irq_idx].count);
 

@@ -777,6 +777,12 @@ int panfrost_job_init(struct panfrost_device *pfdev)
 {
 	struct panfrost_job_slot *js;
 	unsigned int nentries = 2;
+	struct drm_sched_init_args args = {
+		.ops = &panfrost_sched_ops,
+		.timeout = msecs_to_jiffies(JOB_TIMEOUT_MS),
+		.name = "pan_js",
+		.dev = pfdev->dev,
+	};
 	int ret, j;
 
 	/* All GPUs have two entries per queue, but without jobchain
@@ -811,15 +817,13 @@ int panfrost_job_init(struct panfrost_device *pfdev)
 	if (!pfdev->reset.wq)
 		return -ENOMEM;
 
+	args.credit_limit = nentries;
+	args.timeout_wq = pfdev->reset.wq;
+
 	for (j = 0; j < NUM_JOB_SLOTS; j++) {
 		js->queue[j].fence_context = dma_fence_context_alloc(1);
 
-		ret = drm_sched_init(&js->queue[j].sched,
-				     &panfrost_sched_ops,
-				     nentries, 0,
-				     msecs_to_jiffies(JOB_TIMEOUT_MS),
-				     pfdev->reset.wq,
-				     NULL, "pan_js", pfdev->dev);
+		ret = drm_sched_init(&js->queue[j].sched, &args);
 		if (ret) {
 			dev_err(pfdev->dev, "Failed to create scheduler: %d.", ret);
 			goto err_sched;

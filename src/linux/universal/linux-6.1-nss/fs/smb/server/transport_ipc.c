@@ -13,6 +13,7 @@
 #include <net/genetlink.h>
 #include <linux/socket.h>
 #include <linux/workqueue.h>
+#include <linux/overflow.h>
 
 #include "vfs_cache.h"
 #include "transport_ipc.h"
@@ -478,7 +479,9 @@ static int ipc_validate_msg(struct ipc_msg_table_entry *entry)
 	if (entry->type == KSMBD_EVENT_RPC_REQUEST) {
 		struct ksmbd_rpc_command *resp = entry->response;
 
-		msg_sz = sizeof(struct ksmbd_rpc_command) + resp->payload_sz;
+		if (check_add_overflow(sizeof(struct ksmbd_rpc_command),
+				       resp->payload_sz, &msg_sz))
+			return -EINVAL;
 	} else if (entry->type == KSMBD_EVENT_SPNEGO_AUTHEN_REQUEST) {
 		struct ksmbd_spnego_authen_response *resp = entry->response;
 

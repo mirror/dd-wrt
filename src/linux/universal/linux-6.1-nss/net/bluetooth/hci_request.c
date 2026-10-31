@@ -46,7 +46,7 @@ void hci_req_purge(struct hci_request *req)
 
 bool hci_req_status_pend(struct hci_dev *hdev)
 {
-	return hdev->req_status == HCI_REQ_PEND;
+	return READ_ONCE(hdev->req_status) == HCI_REQ_PEND;
 }
 
 static int req_run(struct hci_request *req, hci_req_complete_t complete,

@@ -404,7 +404,8 @@ enum kfd_queue_type  {
 	KFD_QUEUE_TYPE_SDMA,
 	KFD_QUEUE_TYPE_HIQ,
 	KFD_QUEUE_TYPE_DIQ,
-	KFD_QUEUE_TYPE_SDMA_XGMI
+	KFD_QUEUE_TYPE_SDMA_XGMI,
+	KFD_QUEUE_TYPE_MAX,
 };
 
 enum kfd_queue_format {
@@ -1048,6 +1049,7 @@ struct kfd_dev *kfd_device_by_id(uint32_t gpu_id);
 struct kfd_dev *kfd_device_by_pci_dev(const struct pci_dev *pdev);
 struct kfd_dev *kfd_device_by_adev(const struct amdgpu_device *adev);
 int kfd_topology_enum_kfd_devices(uint8_t idx, struct kfd_dev **kdev);
+uint32_t kfd_topology_get_num_devices(void);
 int kfd_numa_node_to_apic_id(int numa_node_id);
 void kfd_double_confirm_iommu_support(struct kfd_dev *gpu);
 

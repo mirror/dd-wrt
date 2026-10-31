@@ -2068,20 +2068,23 @@ void rdtgroup_kn_unlock(struct kernfs_node *kn)
 {
 	struct rdtgroup *rdtgrp = kernfs_to_rdtgroup(kn);
 
+	bool needs_free;
+
 	if (!rdtgrp)
 		return;
 
+	needs_free = atomic_dec_and_test(&rdtgrp->waitcount) &&
+		     (rdtgrp->flags & RDT_DELETED);
+
 	mutex_unlock(&rdtgroup_mutex);
 
-	if (atomic_dec_and_test(&rdtgrp->waitcount) &&
-	    (rdtgrp->flags & RDT_DELETED)) {
+	kernfs_unbreak_active_protection(kn);
+
+	if (needs_free) {
 		if (rdtgrp->mode == RDT_MODE_PSEUDO_LOCKSETUP ||
 		    rdtgrp->mode == RDT_MODE_PSEUDO_LOCKED)
 			rdtgroup_pseudo_lock_remove(rdtgrp);
-		kernfs_unbreak_active_protection(kn);
 		rdtgroup_remove(rdtgrp);
-	} else {
-		kernfs_unbreak_active_protection(kn);
 	}
 }
 

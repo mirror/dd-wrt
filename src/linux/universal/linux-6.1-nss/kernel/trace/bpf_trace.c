@@ -2565,7 +2565,7 @@ static void bpf_kprobe_multi_link_dealloc(struct bpf_link *link)
 
 static const struct bpf_link_ops bpf_kprobe_multi_link_lops = {
 	.release = bpf_kprobe_multi_link_release,
-	.dealloc = bpf_kprobe_multi_link_dealloc,
+	.dealloc_deferred = bpf_kprobe_multi_link_dealloc,
 };
 
 static void bpf_kprobe_multi_cookie_swap(void *a, void *b, int size, const void *priv)
@@ -2728,6 +2728,10 @@ int bpf_kprobe_multi_link_attach(const union bpf_attr *attr, struct bpf_prog *pr
 		return -EOPNOTSUPP;
 
 	if (prog->expected_attach_type != BPF_TRACE_KPROBE_MULTI)
+		return -EINVAL;
+
+	/* kprobe_multi is not allowed to be sleepable. */
+	if (prog->aux->sleepable)
 		return -EINVAL;
 
 	flags = attr->link_create.kprobe_multi.flags;

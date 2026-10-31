@@ -6345,6 +6345,11 @@ static int btf_check_func_arg_match(struct bpf_verifier_env *env,
 					}
 
 					kfunc_meta->r0_size = reg->var_off.value;
+					if (kfunc_meta->r0_size > U32_MAX) {
+						bpf_log(log, "R%d rdonly/rdwr_buf_size exceeds u32 max\n",
+							regno);
+						return -EINVAL;
+					}
 					ret = mark_chain_precision(env, regno);
 					if (ret)
 						return ret;

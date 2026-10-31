@@ -780,7 +780,7 @@ static int rxkad_issue_challenge(struct rxrpc_connection *conn)
 		return -EAGAIN;
 	}
 
-	conn->params.peer->last_tx_at = ktime_get_seconds();
+	rxrpc_peer_mark_tx(conn->params.peer);
 	trace_rxrpc_tx_packet(conn->debug_id, &whdr,
 			      rxrpc_tx_point_rxkad_challenge);
 	_leave(" = 0");
@@ -838,7 +838,7 @@ static int rxkad_send_response(struct rxrpc_connection *conn,
 		return -EAGAIN;
 	}
 
-	conn->params.peer->last_tx_at = ktime_get_seconds();
+	rxrpc_peer_mark_tx(conn->params.peer);
 	_leave(" = 0");
 	return 0;
 }
@@ -1311,6 +1311,7 @@ static int rxkad_verify_response(struct rxrpc_connection *conn,
 
 	kfree(ticket);
 	kfree(response);
+	key_put(server_key);
 	_leave(" = 0");
 	return 0;
 

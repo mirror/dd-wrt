@@ -54,6 +54,7 @@
 #define QT2_XMIT_FLUSH      0x05  /* no following info */
 #define QT2_CONTROL_ESCAPE  0xff  /* pass through previous 2 control bytes */
 
+#define  MIN_BAUD_RATE              50
 #define  MAX_BAUD_RATE              921600
 #define  DEFAULT_BAUD_RATE          9600
 
@@ -158,7 +159,7 @@ static inline int calc_baud_divisor(int baudrate)
 
 static inline int qt2_set_port_config(struct usb_device *dev,
 				      unsigned char port_number,
-				      u16 baudrate, u16 lcr)
+				      speed_t baudrate, u16 lcr)
 {
 	int divisor = calc_baud_divisor(baudrate);
 	u16 index = ((u16) (lcr << 8) | (u16) (port_number));
@@ -267,9 +268,9 @@ static void qt2_set_termios(struct tty_struct *tty,
 	struct usb_device *dev = port->serial->dev;
 	struct qt2_port_private *port_priv;
 	struct ktermios *termios = &tty->termios;
-	u16 baud;
 	unsigned int cflag = termios->c_cflag;
 	u16 new_lcr = 0;
+	speed_t baud;
 	int status;
 
 	port_priv = usb_get_serial_port_data(port);
@@ -286,6 +287,18 @@ static void qt2_set_termios(struct tty_struct *tty,
 	baud = tty_get_baud_rate(tty);
 	if (!baud)
 		baud = 9600;
+
+	if (baud < MIN_BAUD_RATE || baud > MAX_BAUD_RATE) {
+		if (old_termios)
+			baud = tty_termios_baud_rate(old_termios);
+		else
+			baud = clamp(baud, MIN_BAUD_RATE, MAX_BAUD_RATE);
+
+		tty_encode_baud_rate(tty, baud, baud);
+
+		if (!baud)
+			baud = 9600;
+	}
 
 	status = qt2_set_port_config(dev, port_priv->device_port, baud,
 				     new_lcr);
@@ -383,7 +396,7 @@ static int qt2_open(struct tty_struct *tty, struct usb_serial_port *port)
 	port_priv->device_port = (u8) device_port;
 
 	if (tty)
-		qt2_set_termios(tty, port, &tty->termios);
+		qt2_set_termios(tty, port, NULL);
 
 	return 0;
 
@@ -749,7 +762,7 @@ static int qt2_tiocmset(struct tty_struct *tty,
 	return update_mctrl(port_priv, set, clear);
 }
 
-static void qt2_break_ctl(struct tty_struct *tty, int break_state)
+static int qt2_break_ctl(struct tty_struct *tty, int break_state)
 {
 	struct usb_serial_port *port = tty->driver_data;
 	struct qt2_port_private *port_priv;
@@ -762,10 +775,14 @@ static void qt2_break_ctl(struct tty_struct *tty, int break_state)
 
 	status = qt2_control_msg(port->serial->dev, QT2_BREAK_CONTROL,
 				 val, port_priv->device_port);
-	if (status < 0)
+	if (status < 0) {
 		dev_warn(&port->dev,
 			 "%s - failed to send control message: %i\n", __func__,
 			 status);
+		return status;
+	}
+
+	return 0;
 }
 
 

@@ -5,6 +5,7 @@
 #include <linux/spinlock.h>
 #include <linux/types.h>
 #include <linux/pci.h>
+#include <linux/ism.h>
 #include <net/smc.h>
 #include <asm/pci_insn.h>
 
@@ -191,6 +192,7 @@ struct ism_sba {
 
 struct ism_dev {
 	spinlock_t lock;
+	spinlock_t cmd_lock; /* serializes cmds */
 	struct pci_dev *pdev;
 	struct smcd_dev *smcd;
 

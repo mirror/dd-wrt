@@ -2953,16 +2953,7 @@ static bool blk_mq_can_use_cached_rq(struct request *rq, struct blk_plug *plug,
 	if (op_is_flush(rq->cmd_flags) != op_is_flush(bio->bi_opf))
 		return false;
 
-	/*
-	 * If any qos ->throttle() end up blocking, we will have flushed the
-	 * plug and hence killed the cached_rq list as well. Pop this entry
-	 * before we throttle.
-	 */
 	plug->cached_rq = rq_list_next(rq);
-	rq_qos_throttle(rq->q, bio);
-
-	rq->cmd_flags = bio->bi_opf;
-	INIT_LIST_HEAD(&rq->queuelist);
 	return true;
 }
 
@@ -2994,20 +2985,23 @@ void blk_mq_submit_bio(struct bio *bio)
 		rq = rq_list_peek(&plug->cached_rq);
 		if (rq && rq->q != q)
 			rq = NULL;
+		if (rq && !blk_mq_can_use_cached_rq(rq, plug, bio))
+			rq = NULL;
 	}
 	if (rq) {
 		if (unlikely(bio_may_exceed_limits(bio, &q->limits))) {
 			bio = __bio_split_to_limits(bio, &q->limits, &nr_segs);
 			if (!bio)
-				return;
+				goto free_rq;
 		}
 		if (!bio_integrity_prep(bio))
-			return;
+			goto free_rq;
 		if (blk_mq_attempt_bio_merge(q, bio, nr_segs))
-			return;
-		if (blk_mq_can_use_cached_rq(rq, plug, bio))
-			goto done;
-		percpu_ref_get(&q->q_usage_counter);
+			goto free_rq;
+		rq_qos_throttle(q, bio);
+		rq->cmd_flags = bio->bi_opf;
+		INIT_LIST_HEAD(&rq->queuelist);
+		goto done;
 	} else {
 		if (unlikely(bio_queue_enter(bio)))
 			return;
@@ -3056,6 +3050,10 @@ done:
 	else
 		blk_mq_run_dispatch_ops(rq->q,
 				blk_mq_try_issue_directly(rq->mq_hctx, rq));
+	return;
+
+free_rq:
+	blk_mq_free_request(rq);
 }
 
 #ifdef CONFIG_BLK_MQ_STACKING

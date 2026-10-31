@@ -732,17 +732,7 @@ static bool msr_write_intercepted(struct kvm_vcpu *vcpu, u32 msr)
 	u32 offset;
 	u32 *msrpm;
 
-	/*
-	 * For non-nested case:
-	 * If the L01 MSR bitmap does not intercept the MSR, then we need to
-	 * save it.
-	 *
-	 * For nested case:
-	 * If the L02 MSR bitmap does not intercept the MSR, then we need to
-	 * save it.
-	 */
-	msrpm = is_guest_mode(vcpu) ? to_svm(vcpu)->nested.msrpm:
-				      to_svm(vcpu)->msrpm;
+	msrpm = __va(__sme_clr(to_svm(vcpu)->vmcb->control.msrpm_base_pa));
 
 	offset    = svm_msrpm_offset(msr);
 	bit_write = 2 * (msr & 0x0f) + 1;
@@ -920,8 +910,6 @@ void svm_copy_lbrs(struct vmcb *to_vmcb, struct vmcb *from_vmcb)
 	to_vmcb->save.br_to		= from_vmcb->save.br_to;
 	to_vmcb->save.last_excp_from	= from_vmcb->save.last_excp_from;
 	to_vmcb->save.last_excp_to	= from_vmcb->save.last_excp_to;
-
-	vmcb_mark_dirty(to_vmcb, VMCB_LBR);
 }
 
 static void svm_enable_lbrv(struct kvm_vcpu *vcpu)
@@ -935,8 +923,10 @@ static void svm_enable_lbrv(struct kvm_vcpu *vcpu)
 	set_msr_interception(vcpu, svm->msrpm, MSR_IA32_LASTINTTOIP, 1, 1);
 
 	/* Move the LBR msrs to the vmcb02 so that the guest can see them. */
-	if (is_guest_mode(vcpu))
+	if (is_guest_mode(vcpu)) {
 		svm_copy_lbrs(svm->vmcb, svm->vmcb01.ptr);
+		vmcb_mark_dirty(svm->vmcb, VMCB_LBR);
+	}
 }
 
 static void svm_disable_lbrv(struct kvm_vcpu *vcpu)
@@ -953,8 +943,10 @@ static void svm_disable_lbrv(struct kvm_vcpu *vcpu)
 	 * Move the LBR msrs back to the vmcb01 to avoid copying them
 	 * on nested guest entries.
 	 */
-	if (is_guest_mode(vcpu))
+	if (is_guest_mode(vcpu)) {
 		svm_copy_lbrs(svm->vmcb01.ptr, svm->vmcb);
+		vmcb_mark_dirty(svm->vmcb01.ptr, VMCB_LBR);
+	}
 }
 
 static int svm_get_lbr_msr(struct vcpu_svm *svm, u32 index)
@@ -2140,6 +2132,8 @@ static int shutdown_interception(struct kvm_vcpu *vcpu)
 	 * in response to shutdown.
 	 */
 	clear_page(svm->vmcb);
+	if (is_smm(vcpu))
+		kvm_smm_changed(vcpu, false);
 	kvm_vcpu_reset(vcpu, true);
 
 	kvm_run->exit_reason = KVM_EXIT_SHUTDOWN;

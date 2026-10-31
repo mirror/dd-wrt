@@ -280,6 +280,8 @@ void __sync_icache_dcache(pte_t pteval)
 		return;
 
 	page = pfn_to_page(pfn);
+	if (PageReserved(page))
+		return;
 	if (cache_is_vipt_aliasing())
 		mapping = page_mapping_file(page);
 	else

@@ -520,6 +520,7 @@ static int __sock_xmit(struct nbd_device *nbd, struct socket *sock, int send,
 	noreclaim_flag = memalloc_noreclaim_save();
 	do {
 		sock->sk->sk_allocation = GFP_NOIO | __GFP_MEMALLOC;
+		sock->sk->sk_use_task_frag = false;
 		msg.msg_flags = msg_flags | MSG_NOSIGNAL;
 
 		if (send)

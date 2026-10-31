@@ -1005,6 +1005,15 @@ static int evict_process_queues_cpsch(struct device_queue_manager *dqm,
 			}
 		}
 	}
+
+	/*
+	 * Heavy-weight TLB flush after MES removes queues to ensure
+	 * in-flight memory accesses complete before memory is freed/migrated.
+	 * HWS does this automatically, MES does not.
+	 */
+	if (dqm->dev->shared_resources.enable_mes && pdd->drm_file)
+		kfd_flush_tlb(pdd, TLB_FLUSH_HEAVYWEIGHT);
+
 	pdd->last_evict_timestamp = get_jiffies_64();
 	if (!dqm->dev->shared_resources.enable_mes)
 		retval = execute_queues_cpsch(dqm,
@@ -2435,6 +2444,11 @@ static void kfd_process_hw_exception(struct work_struct *work)
 	struct device_queue_manager *dqm = container_of(work,
 			struct device_queue_manager, hw_exception_work);
 	amdgpu_amdkfd_gpu_reset(dqm->dev->adev);
+}
+
+size_t mqd_size_from_queue_type(struct device_queue_manager *dqm, enum kfd_queue_type type)
+{
+	return dqm->mqd_mgrs[get_mqd_type_from_queue_type(type)]->mqd_size;
 }
 
 #if defined(CONFIG_DEBUG_FS)

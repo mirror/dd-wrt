@@ -124,6 +124,7 @@ static void free_rd_atomic_resources(struct rxe_qp *qp)
 		}
 		kfree(qp->resp.resources);
 		qp->resp.resources = NULL;
+		qp->resp.res = NULL;
 	}
 }
 
@@ -583,10 +584,18 @@ int rxe_qp_from_attr(struct rxe_qp *qp, struct ib_qp_attr *attr, int mask,
 		int max_dest_rd_atomic = attr->max_dest_rd_atomic ?
 			roundup_pow_of_two(attr->max_dest_rd_atomic) : 0;
 
+		/*
+		 * Not gated by IB_QP_STATE, so the responder task is live.
+		 * Quiesce resp.task like rxe_qp_reset() before swapping the
+		 * rd_atomic array, so rxe_responder() cannot race the free/
+		 * realloc.
+		 */
+		rxe_disable_task(&qp->resp.task);
 		free_rd_atomic_resources(qp);
 
 		qp->attr.max_dest_rd_atomic = max_dest_rd_atomic;
 		err = alloc_rd_atomic_resources(qp, max_dest_rd_atomic);
+		rxe_enable_task(&qp->resp.task);
 		if (err)
 			return err;
 	}

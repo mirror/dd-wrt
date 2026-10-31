@@ -983,7 +983,12 @@ struct page **io_pin_pages(unsigned long ubuf, unsigned long len, int *npages)
 	struct page **pages = NULL;
 	int i, pret, ret = -ENOMEM;
 
-	end = (ubuf + len + PAGE_SIZE - 1) >> PAGE_SHIFT;
+	if (check_add_overflow(ubuf, len, &end))
+		return ERR_PTR(-EOVERFLOW);
+	if (check_add_overflow(end, PAGE_SIZE - 1, &end))
+		return ERR_PTR(-EOVERFLOW);
+
+	end = end >> PAGE_SHIFT;
 	start = ubuf >> PAGE_SHIFT;
 	nr_pages = end - start;
 

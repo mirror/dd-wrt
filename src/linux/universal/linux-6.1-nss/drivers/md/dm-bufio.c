@@ -258,9 +258,11 @@ static void buffer_record_stack(struct dm_buffer *b)
 }
 #endif
 
-/*----------------------------------------------------------------
+/*
+ *----------------------------------------------------------------
  * A red/black tree acts as an index for all the buffers.
- *--------------------------------------------------------------*/
+ *----------------------------------------------------------------
+ */
 static struct dm_buffer *__find(struct dm_bufio_client *c, sector_t block)
 {
 	struct rb_node *n = c->buffer_tree.rb_node;
@@ -561,7 +563,8 @@ static void __relink_lru(struct dm_buffer *b, int dirty)
 	b->last_accessed = jiffies;
 }
 
-/*----------------------------------------------------------------
+/*
+ *--------------------------------------------------------------------------
  * Submit I/O on the buffer.
  *
  * Bio interface is faster but it has some problems:
@@ -577,7 +580,8 @@ static void __relink_lru(struct dm_buffer *b, int dirty)
  * rejects the bio because it is too large, use dm-io layer to do the I/O.
  * The dm-io layer splits the I/O into multiple requests, avoiding the above
  * shortcomings.
- *--------------------------------------------------------------*/
+ *--------------------------------------------------------------------------
+ */
 
 /*
  * dm-io completion routine. It just calls b->bio.bi_end_io, pretending
@@ -720,9 +724,11 @@ static void submit_io(struct dm_buffer *b, enum req_op op,
 		use_dmio(b, op, sector, n_sectors, offset);
 }
 
-/*----------------------------------------------------------------
+/*
+ *--------------------------------------------------------------
  * Writing dirty buffers
- *--------------------------------------------------------------*/
+ *--------------------------------------------------------------
+ */
 
 /*
  * The endio routine for write.
@@ -1003,9 +1009,11 @@ static void __check_watermark(struct dm_bufio_client *c,
 		__write_dirty_buffers_async(c, 1, write_list);
 }
 
-/*----------------------------------------------------------------
+/*
+ *--------------------------------------------------------------
  * Getting a buffer
- *--------------------------------------------------------------*/
+ *--------------------------------------------------------------
+ */
 
 static struct dm_buffer *__bufio_new(struct dm_bufio_client *c, sector_t block,
 				     enum new_flag nf, int *need_submit,
@@ -2080,9 +2088,11 @@ static void work_fn(struct work_struct *w)
 			   DM_BUFIO_WORK_TIMER_SECS * HZ);
 }
 
-/*----------------------------------------------------------------
+/*
+ *--------------------------------------------------------------
  * Module setup
- *--------------------------------------------------------------*/
+ *--------------------------------------------------------------
+ */
 
 /*
  * This is called only once for the whole dm_bufio module.

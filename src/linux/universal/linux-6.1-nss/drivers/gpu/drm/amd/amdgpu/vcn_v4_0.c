@@ -1696,7 +1696,7 @@ static int vcn_v4_0_dec_msg(struct amdgpu_cs_parser *p, struct amdgpu_job *job,
 
 		create = ptr + addr + offset - start;
 
-		/* H246, HEVC and VP9 can run on any instance */
+		/* H264, HEVC and VP9 can run on any instance */
 		if (create[0] == 0x7 || create[0] == 0x10 || create[0] == 0x11)
 			continue;
 
@@ -1710,37 +1710,58 @@ out:
 	return r;
 }
 
-#define RADEON_VCN_ENGINE_TYPE_DECODE                                 (0x00000003)
+#define RADEON_VCN_ENGINE_TYPE_ENCODE			(0x00000002)
+#define RADEON_VCN_ENGINE_TYPE_DECODE			(0x00000003)
+#define RADEON_VCN_ENGINE_INFO				(0x30000001)
+#define RENCODE_ENCODE_STANDARD_AV1			2
+#define RENCODE_IB_PARAM_SESSION_INIT			0x00000003
+
+/* return the offset in ib if id is found, -1 otherwise */
+static int vcn_v4_0_enc_find_ib_param(struct amdgpu_ib *ib, uint32_t id, int start)
+{
+	int i;
+	uint32_t len;
+
+	for (i = start; (len = amdgpu_ib_get_value(ib, i)) >= 8; i += len / 4) {
+		if (amdgpu_ib_get_value(ib, i + 1) == id)
+			return i;
+	}
+	return -1;
+}
 
 static int vcn_v4_0_ring_patch_cs_in_place(struct amdgpu_cs_parser *p,
 					   struct amdgpu_job *job,
 					   struct amdgpu_ib *ib)
 {
 	struct amdgpu_ring *ring = amdgpu_job_ring(job);
-	struct amdgpu_vcn_decode_buffer *decode_buffer;
-	uint64_t addr;
 	uint32_t val;
+	int idx = 0, sidx;
 
 	/* The first instance can decode anything */
 	if (!ring->me)
 		return 0;
 
-	/* unified queue ib header has 8 double words. */
-	if (ib->length_dw < 8)
-		return 0;
+	while ((idx = vcn_v4_0_enc_find_ib_param(ib, RADEON_VCN_ENGINE_INFO, idx)) >= 0) {
+		val = amdgpu_ib_get_value(ib, idx + 2); /* RADEON_VCN_ENGINE_TYPE */
+		if (val == RADEON_VCN_ENGINE_TYPE_DECODE) {
+			uint32_t valid_buf_flag = amdgpu_ib_get_value(ib, idx + 6);
+			uint64_t msg_buffer_addr;
 
-	val = amdgpu_ib_get_value(ib, 6); //RADEON_VCN_ENGINE_TYPE
-	if (val != RADEON_VCN_ENGINE_TYPE_DECODE)
-		return 0;
+			if (!(valid_buf_flag & 0x1))
+				return 0;
 
-	decode_buffer = (struct amdgpu_vcn_decode_buffer *)&ib->ptr[10];
-
-	if (!(decode_buffer->valid_buf_flag  & 0x1))
-		return 0;
-
-	addr = ((u64)decode_buffer->msg_buffer_address_hi) << 32 |
-		decode_buffer->msg_buffer_address_lo;
-	return vcn_v4_0_dec_msg(p, job, addr);
+			msg_buffer_addr = ((u64)amdgpu_ib_get_value(ib, idx + 7)) << 32 |
+				amdgpu_ib_get_value(ib, idx + 8);
+			return vcn_v4_0_dec_msg(p, job, msg_buffer_addr);
+		} else if (val == RADEON_VCN_ENGINE_TYPE_ENCODE) {
+			sidx = vcn_v4_0_enc_find_ib_param(ib, RENCODE_IB_PARAM_SESSION_INIT, idx);
+			if (sidx >= 0 &&
+			    amdgpu_ib_get_value(ib, sidx + 2) == RENCODE_ENCODE_STANDARD_AV1)
+				return vcn_v4_0_limit_sched(p, job);
+		}
+		idx += amdgpu_ib_get_value(ib, idx) / 4;
+	}
+	return 0;
 }
 
 static const struct amdgpu_ring_funcs vcn_v4_0_unified_ring_vm_funcs = {
@@ -1748,6 +1769,7 @@ static const struct amdgpu_ring_funcs vcn_v4_0_unified_ring_vm_funcs = {
 	.align_mask = 0x3f,
 	.nop = VCN_ENC_CMD_NO_OP,
 	.vmhub = AMDGPU_MMHUB_0,
+	.no_user_fence = true,
 	.get_rptr = vcn_v4_0_unified_ring_get_rptr,
 	.get_wptr = vcn_v4_0_unified_ring_get_wptr,
 	.set_wptr = vcn_v4_0_unified_ring_set_wptr,

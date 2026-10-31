@@ -471,6 +471,7 @@ gss_import_v2_context(const void *p, const void *end, struct krb5_ctx *ctx,
 	u64 seq_send64;
 	int keylen;
 	u32 time32;
+	int ret;
 
 	p = simple_get_bytes(p, end, &ctx->flags, sizeof(ctx->flags));
 	if (IS_ERR(p))
@@ -528,14 +529,24 @@ gss_import_v2_context(const void *p, const void *end, struct krb5_ctx *ctx,
 
 	switch (ctx->enctype) {
 	case ENCTYPE_DES3_CBC_RAW:
-		return context_derive_keys_des3(ctx, gfp_mask);
+		ret = context_derive_keys_des3(ctx, gfp_mask);
+		break;
 	case ENCTYPE_AES128_CTS_HMAC_SHA1_96:
 	case ENCTYPE_AES256_CTS_HMAC_SHA1_96:
-		return context_derive_keys_new(ctx, gfp_mask);
+		ret = context_derive_keys_new(ctx, gfp_mask);
+		break;
 	default:
-		return -EINVAL;
+		ret = -EINVAL;
+	}
+	if (ret) {
+		p = ERR_PTR(ret);
+		goto out_free;
 	}
 
+	return 0;
+
+out_free:
+	kfree(ctx->mech_used.data);
 out_err:
 	return PTR_ERR(p);
 }

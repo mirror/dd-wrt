@@ -86,7 +86,9 @@ static int sof_ipc4_trigger_pipelines(struct snd_soc_component *component,
 			if (ret < 0) {
 				dev_err(sdev->dev, "failed to pause pipeline %d\n",
 					swidget->pipeline_id);
-				return ret;
+				if (sdev->fw_state != SOF_FW_CRASHED ||
+				    state != SOF_IPC4_PIPE_RESET)
+					return ret;
 			}
 		}
 
@@ -100,7 +102,18 @@ static int sof_ipc4_trigger_pipelines(struct snd_soc_component *component,
 		if (ret < 0) {
 			dev_err(sdev->dev, "failed to set state %d for pipeline %d\n",
 				state, swidget->pipeline_id);
-			break;
+			/*
+			 * workaround: if the firmware is crashed while setting the
+			 * pipelines to reset state we must ignore the error code and
+			 * reset it to 0.
+			 * Since the firmware is crashed we will not send IPC messages
+			 * and we are going to see errors printed, but the state of the
+			 * widgets will be correct for the next boot.
+			 */
+			if (sdev->fw_state != SOF_FW_CRASHED || state != SOF_IPC4_PIPE_RESET)
+				break;
+
+			ret = 0;
 		}
 
 		pipeline->state = state;

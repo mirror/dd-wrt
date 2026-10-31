@@ -33,10 +33,12 @@ void asm_offsets(void)
 	OFFSET(TASK_THREAD_S10, task_struct, thread.s[10]);
 	OFFSET(TASK_THREAD_S11, task_struct, thread.s[11]);
 	OFFSET(TASK_TI_FLAGS, task_struct, thread_info.flags);
+	OFFSET(TASK_THREAD_STATUS, task_struct, thread.status);
 	OFFSET(TASK_TI_PREEMPT_COUNT, task_struct, thread_info.preempt_count);
 	OFFSET(TASK_TI_KERNEL_SP, task_struct, thread_info.kernel_sp);
 	OFFSET(TASK_TI_USER_SP, task_struct, thread_info.user_sp);
 
+	OFFSET(TASK_TI_CPU_NUM, task_struct, thread_info.cpu);
 	OFFSET(TASK_THREAD_F0,  task_struct, thread.fstate.f[0]);
 	OFFSET(TASK_THREAD_F1,  task_struct, thread.fstate.f[1]);
 	OFFSET(TASK_THREAD_F2,  task_struct, thread.fstate.f[2]);
@@ -328,6 +330,10 @@ void asm_offsets(void)
 	);
 	DEFINE(TASK_THREAD_S11_RA,
 		  offsetof(struct task_struct, thread.s[11])
+		- offsetof(struct task_struct, thread.ra)
+	);
+	DEFINE(TASK_THREAD_STATUS_RA,
+		  offsetof(struct task_struct, thread.status)
 		- offsetof(struct task_struct, thread.ra)
 	);
 

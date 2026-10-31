@@ -1697,6 +1697,10 @@ static int ublk_ctrl_add_dev(struct io_uring_cmd *cmd)
 	if (copy_from_user(&info, argp, sizeof(info)))
 		return -EFAULT;
 	ublk_dump_dev_info(&info);
+
+	if (info.queue_depth > UBLK_MAX_QUEUE_DEPTH)
+		return -EINVAL;
+
 	if (header->dev_id != info.dev_id) {
 		pr_warn("%s: dev id not match %u %u\n",
 			__func__, header->dev_id, info.dev_id);

@@ -51,4 +51,9 @@
 		struct { } __empty_ ## NAME; \
 		TYPE NAME[]; \
 	}
+
+#ifndef __counted_by
+#define __counted_by(m)
 #endif
+
+#endif /* _UAPI_LINUX_STDDEF_H */

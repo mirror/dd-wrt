@@ -49,7 +49,7 @@
 
 static struct svc_program	nlmsvc_program;
 
-const struct nlmsvc_binding	*nlmsvc_ops;
+const struct nlmsvc_binding __rcu *nlmsvc_ops;
 EXPORT_SYMBOL_GPL(nlmsvc_ops);
 
 static DEFINE_MUTEX(nlmsvc_mutex);
@@ -113,7 +113,7 @@ static void set_grace_period(struct net *net)
 
 static void restart_grace(void)
 {
-	if (nlmsvc_ops) {
+	if (rcu_access_pointer(nlmsvc_ops)) {
 		struct net *net = &init_net;
 		struct lockd_net *ln = net_generic(net, lockd_net_id);
 
@@ -175,7 +175,7 @@ lockd(void *vrqstp)
 		svc_process(rqstp);
 	}
 	flush_signals(current);
-	if (nlmsvc_ops)
+	if (rcu_access_pointer(nlmsvc_ops))
 		nlmsvc_invalidate_all();
 	nlm_shutdown_hosts();
 	cancel_delayed_work_sync(&ln->grace_period_end);

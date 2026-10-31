@@ -837,6 +837,7 @@ struct gfs2_sbd {
 	struct gfs2_holder sd_freeze_gh;
 	atomic_t sd_freeze_state;
 	struct mutex sd_freeze_mutex;
+	struct list_head sd_dead_glocks;
 
 	char sd_fsname[GFS2_FSNAME_LEN + 3 * sizeof(int) + 2];
 	char sd_table_name[GFS2_FSNAME_LEN];

@@ -122,11 +122,11 @@ struct dm_snapshot {
 	 * The merge operation failed if this flag is set.
 	 * Failure modes are handled as follows:
 	 * - I/O error reading the header
-	 *   	=> don't load the target; abort.
+	 *	=> don't load the target; abort.
 	 * - Header does not have "valid" flag set
-	 *   	=> use the origin; forget about the snapshot.
+	 *	=> use the origin; forget about the snapshot.
 	 * - I/O error when reading exceptions
-	 *   	=> don't load the target; abort.
+	 *	=> don't load the target; abort.
 	 *         (We can't use the intermediate origin state.)
 	 * - I/O error while merging
 	 *	=> stop merging; set merge_failed; process I/O normally.
@@ -1306,6 +1306,20 @@ static int snapshot_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 		goto bad_store;
 	}
 
+	/*
+	 * snapshot-merge requires the optional prepare_merge/commit_merge
+	 * callbacks; the transient exception store does not implement them.
+	 * The handover path checks this in __validate_exception_handover(),
+	 * but a directly constructed snapshot-merge never goes through it.
+	 */
+	if (dm_target_is_snapshot_merge(ti) &&
+	    (!s->store->type->prepare_merge ||
+	     !s->store->type->commit_merge)) {
+		ti->error = "Snapshot exception store does not support snapshot-merge.";
+		r = -EINVAL;
+		goto bad_hash_tables;
+	}
+
 	argv += args_used;
 	argc -= args_used;
 
@@ -2419,10 +2433,11 @@ static void snapshot_io_hints(struct dm_target *ti, struct queue_limits *limits)
 	}
 }
 
-/*-----------------------------------------------------------------
+/*
+ *---------------------------------------------------------------
  * Origin methods
- *---------------------------------------------------------------*/
-
+ *---------------------------------------------------------------
+ */
 /*
  * If no exceptions need creating, DM_MAPIO_REMAPPED is returned and any
  * supplied bio was ignored.  The caller may submit it immediately.

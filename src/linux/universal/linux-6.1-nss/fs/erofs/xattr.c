@@ -35,6 +35,7 @@ static int init_inode_xattrs(struct inode *inode)
 		return 0;
 	}
 
+	it.buf = __EROFS_BUF_INITIALIZER;
 	if (wait_on_bit_lock(&vi->flags, EROFS_I_BL_XATTR_BIT, TASK_KILLABLE))
 		return -ERESTARTSYS;
 
@@ -67,7 +68,6 @@ static int init_inode_xattrs(struct inode *inode)
 		goto out_unlock;
 	}
 
-	it.buf = __EROFS_BUF_INITIALIZER;
 	it.blkaddr = erofs_blknr(sb, erofs_iloc(inode) + vi->inode_isize);
 	it.ofs = erofs_blkoff(sb, erofs_iloc(inode) + vi->inode_isize);
 
@@ -83,7 +83,6 @@ static int init_inode_xattrs(struct inode *inode)
 	vi->xattr_shared_xattrs = kmalloc_array(vi->xattr_shared_count,
 						sizeof(uint), GFP_KERNEL);
 	if (!vi->xattr_shared_xattrs) {
-		erofs_put_metabuf(&it.buf);
 		ret = -ENOMEM;
 		goto out_unlock;
 	}
@@ -110,13 +109,13 @@ static int init_inode_xattrs(struct inode *inode)
 			le32_to_cpu(*(__le32 *)(it.kaddr + it.ofs));
 		it.ofs += sizeof(__le32);
 	}
-	erofs_put_metabuf(&it.buf);
 
 	/* paired with smp_mb() at the beginning of the function. */
 	smp_mb();
 	set_bit(EROFS_I_EA_INITED_BIT, &vi->flags);
 
 out_unlock:
+	erofs_put_metabuf(&it.buf);
 	clear_and_wake_up_bit(EROFS_I_BL_XATTR_BIT, &vi->flags);
 	return ret;
 }

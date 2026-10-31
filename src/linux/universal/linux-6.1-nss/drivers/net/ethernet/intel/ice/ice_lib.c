@@ -365,6 +365,7 @@ int ice_vsi_clear(struct ice_vsi *vsi)
 		pf->next_vsi = vsi->idx;
 
 	ice_vsi_free_arrays(vsi);
+	mutex_destroy(&vsi->xdp_state_lock);
 	mutex_unlock(&pf->sw_mutex);
 	devm_kfree(dev, vsi);
 
@@ -540,6 +541,8 @@ ice_vsi_alloc(struct ice_pf *pf, enum ice_vsi_type vsi_type,
 
 	if (vsi->type == ICE_VSI_CTRL && vf)
 		vf->ctrl_vsi_idx = vsi->idx;
+
+	mutex_init(&vsi->xdp_state_lock);
 	goto unlock_pf;
 
 err_rings:
@@ -3204,10 +3207,14 @@ int ice_vsi_rebuild(struct ice_vsi *vsi, bool init_vsi)
 
 	ice_vsi_init_vlan_ops(vsi);
 
+	mutex_lock(&vsi->xdp_state_lock);
+
 	coalesce = kcalloc(vsi->num_q_vectors,
 			   sizeof(struct ice_coalesce_stored), GFP_KERNEL);
-	if (!coalesce)
+	if (!coalesce) {
+		mutex_unlock(&vsi->xdp_state_lock);
 		return -ENOMEM;
+	}
 
 	prev_num_q_vectors = ice_vsi_rebuild_get_coalesce(vsi, coalesce);
 
@@ -3230,7 +3237,7 @@ int ice_vsi_rebuild(struct ice_vsi *vsi, bool init_vsi)
 		vsi->base_vector = 0;
 	}
 
-	if (ice_is_xdp_ena_vsi(vsi))
+	if (vsi->xdp_rings)
 		/* return value check can be skipped here, it always returns
 		 * 0 if reset is in progress
 		 */
@@ -3358,24 +3365,31 @@ int ice_vsi_rebuild(struct ice_vsi *vsi, bool init_vsi)
 			ret = -EIO;
 			goto err_vectors;
 		} else {
+			mutex_unlock(&vsi->xdp_state_lock);
 			return ice_schedule_reset(pf, ICE_RESET_PFR);
 		}
 	}
 	ice_vsi_rebuild_set_coalesce(vsi, coalesce, prev_num_q_vectors);
+	clear_bit(ICE_VSI_REBUILD_PENDING, vsi->state);
 	kfree(coalesce);
+	mutex_unlock(&vsi->xdp_state_lock);
 
 	return 0;
 
 err_vectors:
 	ice_vsi_free_q_vectors(vsi);
 err_rings:
+	mutex_unlock(&vsi->xdp_state_lock);
 	if (vsi->netdev) {
 		vsi->current_netdev_flags = 0;
 		unregister_netdev(vsi->netdev);
 		free_netdev(vsi->netdev);
 		vsi->netdev = NULL;
 	}
+	goto err_clear;
 err_vsi:
+	mutex_unlock(&vsi->xdp_state_lock);
+err_clear:
 	ice_vsi_clear(vsi);
 	set_bit(ICE_RESET_FAILED, pf->state);
 	kfree(coalesce);

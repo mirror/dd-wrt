@@ -1502,10 +1502,10 @@ out_destroy_workqueue:
 	priv->workqueue = NULL;
 out_uninit_drv:
 	iwl_uninit_drv(priv);
-out_free_eeprom_blob:
-	kfree(priv->eeprom_blob);
 out_free_eeprom:
 	kfree(priv->nvm_data);
+out_free_eeprom_blob:
+	kfree(priv->eeprom_blob);
 out_free_hw:
 	ieee80211_free_hw(priv->hw);
 out:

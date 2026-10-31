@@ -424,8 +424,8 @@ static int v9fs_vfs_mkdir_dotl(struct user_namespace *mnt_userns,
 				 err);
 			goto error;
 		}
-		v9fs_fid_add(dentry, &fid);
 		v9fs_set_create_acl(inode, fid, dacl, pacl);
+		v9fs_fid_add(dentry, &fid);
 		d_instantiate(dentry, inode);
 		err = 0;
 	} else {

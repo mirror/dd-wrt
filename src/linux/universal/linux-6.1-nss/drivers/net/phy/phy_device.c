@@ -1402,6 +1402,9 @@ int phy_sfp_probe(struct phy_device *phydev,
 
 		ret = sfp_bus_add_upstream(bus, phydev, ops);
 		sfp_bus_put(bus);
+
+		if (ret)
+			phydev->sfp_bus = NULL;
 	}
 	return ret;
 }
@@ -1515,6 +1518,9 @@ int phy_attach_direct(struct net_device *dev, struct phy_device *phydev,
 	phydev->state = PHY_READY;
 
 	phydev->interrupts = PHY_INTERRUPT_DISABLED;
+
+	if (!phy_drv_supports_irq(phydev->drv) && phy_interrupt_is_valid(phydev))
+		phydev->irq = PHY_POLL;
 
 	/* Port is set to PORT_TP by default and the actual PHY driver will set
 	 * it to different value depending on the PHY configuration. If we have
@@ -3246,6 +3252,9 @@ static int phy_probe(struct device *dev)
 	return 0;
 
 out:
+	sfp_bus_del_upstream(phydev->sfp_bus);
+	phydev->sfp_bus = NULL;
+
 	/* Re-assert the reset signal on error */
 	phy_device_reset(phydev, 1);
 

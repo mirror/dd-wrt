@@ -689,6 +689,7 @@ static int z_erofs_collector_begin(struct z_erofs_decompress_frontend *fe)
 {
 	struct erofs_map_blocks *map = &fe->map;
 	struct erofs_workgroup *grp = NULL;
+	void *ptr = NULL;
 	int ret;
 
 	DBG_BUGON(fe->pcl);
@@ -702,6 +703,19 @@ static int z_erofs_collector_begin(struct z_erofs_decompress_frontend *fe)
 	} else if ((map->m_pa & ~PAGE_MASK) + map->m_plen > PAGE_SIZE) {
 		DBG_BUGON(1);
 		return -EFSCORRUPTED;
+	}
+
+	if (map->m_flags & EROFS_MAP_META) {
+		ptr = erofs_read_metabuf(&map->buf, fe->inode->i_sb,
+					 erofs_blknr(fe->inode->i_sb, map->m_pa),
+					 EROFS_NO_KMAP);
+		if (IS_ERR(ptr)) {
+			ret = PTR_ERR(ptr);
+			erofs_err(fe->inode->i_sb,
+				  "failed to get inline page, err %d", ret);
+			return ret;
+		}
+		ptr = map->buf.page;
 	}
 
 	if (grp) {
@@ -719,6 +733,15 @@ static int z_erofs_collector_begin(struct z_erofs_decompress_frontend *fe)
 	}
 	z_erofs_bvec_iter_begin(&fe->biter, &fe->pcl->bvset,
 				Z_EROFS_INLINE_BVECS, fe->pcl->vcnt);
+	if (z_erofs_is_inline_pcluster(fe->pcl)) {
+		get_page(ptr);
+		WRITE_ONCE(fe->pcl->compressed_bvecs[0].page, ptr);
+		fe->pcl->pageofs_in = map->m_pa & ~PAGE_MASK;
+		fe->mode = Z_EROFS_PCLUSTER_FOLLOWED_NOINPLACE;
+	} else {
+		/* bind cache first when cached decompression is preferred */
+		z_erofs_bind_cache(fe);
+	}
 	/* since file-backed online pages are traversed in reverse order */
 	fe->icur = z_erofs_pclusterpages(fe->pcl);
 	return 0;
@@ -840,27 +863,6 @@ repeat:
 	if (err)
 		goto out;
 
-	if (z_erofs_is_inline_pcluster(fe->pcl)) {
-		void *mp;
-
-		mp = erofs_read_metabuf(&fe->map.buf, inode->i_sb,
-					erofs_blknr(inode->i_sb, map->m_pa),
-					EROFS_NO_KMAP);
-		if (IS_ERR(mp)) {
-			err = PTR_ERR(mp);
-			erofs_err(inode->i_sb,
-				  "failed to get inline page, err %d", err);
-			goto out;
-		}
-		get_page(fe->map.buf.page);
-		WRITE_ONCE(fe->pcl->compressed_bvecs[0].page,
-			   fe->map.buf.page);
-		fe->pcl->pageofs_in = map->m_pa & ~PAGE_MASK;
-		fe->mode = Z_EROFS_PCLUSTER_FOLLOWED_NOINPLACE;
-	} else {
-		/* bind cache first when cached decompression is preferred */
-		z_erofs_bind_cache(fe);
-	}
 hitted:
 	/*
 	 * Ensure the current partial page belongs to this submit chain rather
@@ -1281,10 +1283,10 @@ static void z_erofs_decompress_kickoff(struct z_erofs_decompressqueue *io,
 	if (atomic_add_return(bios, &io->pending_bios))
 		return;
 	if (z_erofs_in_atomic()) {
-		queue_work(z_erofs_workqueue, &io->u.work);
 		/* enable sync decompression for readahead */
 		if (sbi->opt.sync_decompress == EROFS_SYNC_DECOMPRESS_AUTO)
 			sbi->opt.sync_decompress = EROFS_SYNC_DECOMPRESS_FORCE_ON;
+		queue_work(z_erofs_workqueue, &io->u.work);
 		return;
 	}
 	gfp_flag = memalloc_noio_save();

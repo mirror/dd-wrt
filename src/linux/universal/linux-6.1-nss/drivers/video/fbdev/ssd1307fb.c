@@ -14,6 +14,7 @@
 #include <linux/module.h>
 #include <linux/property.h>
 #include <linux/pwm.h>
+#include <linux/spinlock.h>
 #include <linux/uaccess.h>
 #include <linux/regulator/consumer.h>
 
@@ -72,6 +73,13 @@ struct ssd1307fb_par {
 	struct i2c_client *client;
 	u32 height;
 	struct fb_info *info;
+	/* Pending damage, with exclusive x2/y2, protected by damage_lock. */
+	spinlock_t damage_lock;
+	bool damage_pending;
+	u32 damage_x1;
+	u32 damage_x2;
+	u32 damage_y1;
+	u32 damage_y2;
 	u8 lookup_table[4];
 	u32 page_offset;
 	u32 col_offset;
@@ -292,40 +300,6 @@ static int ssd1307fb_update_display(struct ssd1307fb_par *par)
 	return ssd1307fb_update_rect(par, 0, 0, par->width, par->height);
 }
 
-static ssize_t ssd1307fb_write(struct fb_info *info, const char __user *buf,
-		size_t count, loff_t *ppos)
-{
-	struct ssd1307fb_par *par = info->par;
-	unsigned long total_size;
-	unsigned long p = *ppos;
-	void *dst;
-	int ret;
-
-	total_size = info->fix.smem_len;
-
-	if (p > total_size)
-		return -EINVAL;
-
-	if (count + p > total_size)
-		count = total_size - p;
-
-	if (!count)
-		return -EINVAL;
-
-	dst = info->screen_buffer + p;
-
-	if (copy_from_user(dst, buf, count))
-		return -EFAULT;
-
-	ret = ssd1307fb_update_display(par);
-	if (ret < 0)
-		return ret;
-
-	*ppos += count;
-
-	return count;
-}
-
 static int ssd1307fb_blank(int blank_mode, struct fb_info *info)
 {
 	struct ssd1307fb_par *par = info->par;
@@ -336,44 +310,87 @@ static int ssd1307fb_blank(int blank_mode, struct fb_info *info)
 		return ssd1307fb_write_cmd(par->client, SSD1307FB_DISPLAY_ON);
 }
 
-static void ssd1307fb_fillrect(struct fb_info *info, const struct fb_fillrect *rect)
+static void ssd1307fb_schedule_damage(struct fb_info *info, u32 x, u32 y,
+				      u32 width, u32 height)
 {
 	struct ssd1307fb_par *par = info->par;
-	sys_fillrect(info, rect);
-	ssd1307fb_update_rect(par, rect->dx, rect->dy, rect->width,
-			      rect->height);
+	unsigned long flags;
+	u32 x2, y2;
+
+	if (!width || !height || x >= par->width || y >= par->height)
+		return;
+
+	x2 = x + min(width, par->width - x);
+	y2 = y + min(height, par->height - y);
+
+	spin_lock_irqsave(&par->damage_lock, flags);
+	if (par->damage_pending) {
+		par->damage_x1 = min(par->damage_x1, x);
+		par->damage_y1 = min(par->damage_y1, y);
+		par->damage_x2 = max(par->damage_x2, x2);
+		par->damage_y2 = max(par->damage_y2, y2);
+	} else {
+		par->damage_x1 = x;
+		par->damage_y1 = y;
+		par->damage_x2 = x2;
+		par->damage_y2 = y2;
+		par->damage_pending = true;
+	}
+	spin_unlock_irqrestore(&par->damage_lock, flags);
+
+	/* Advance an already-pending mmap update as well. */
+	mod_delayed_work(system_wq, &info->deferred_work, 0);
 }
 
-static void ssd1307fb_copyarea(struct fb_info *info, const struct fb_copyarea *area)
+static void ssd1307fb_defio_damage_range(struct fb_info *info, off_t off, size_t len)
 {
 	struct ssd1307fb_par *par = info->par;
-	sys_copyarea(info, area);
-	ssd1307fb_update_rect(par, area->dx, area->dy, area->width,
-			      area->height);
+
+	ssd1307fb_schedule_damage(info, 0, 0, par->width, par->height);
 }
 
-static void ssd1307fb_imageblit(struct fb_info *info, const struct fb_image *image)
+static void ssd1307fb_defio_damage_area(struct fb_info *info, u32 x, u32 y,
+					u32 width, u32 height)
 {
-	struct ssd1307fb_par *par = info->par;
-	sys_imageblit(info, image);
-	ssd1307fb_update_rect(par, image->dx, image->dy, image->width,
-			      image->height);
+	ssd1307fb_schedule_damage(info, x, y, width, height);
 }
+
+FB_GEN_DEFAULT_DEFERRED_SYS_OPS(ssd1307fb,
+				ssd1307fb_defio_damage_range,
+				ssd1307fb_defio_damage_area)
 
 static const struct fb_ops ssd1307fb_ops = {
 	.owner		= THIS_MODULE,
-	.fb_read	= fb_sys_read,
-	.fb_write	= ssd1307fb_write,
+	FB_DEFAULT_DEFERRED_OPS(ssd1307fb),
 	.fb_blank	= ssd1307fb_blank,
-	.fb_fillrect	= ssd1307fb_fillrect,
-	.fb_copyarea	= ssd1307fb_copyarea,
-	.fb_imageblit	= ssd1307fb_imageblit,
-	.fb_mmap	= fb_deferred_io_mmap,
 };
 
 static void ssd1307fb_deferred_io(struct fb_info *info, struct list_head *pagereflist)
 {
-	ssd1307fb_update_display(info->par);
+	struct ssd1307fb_par *par = info->par;
+	unsigned long flags;
+	u32 x, y, width, height;
+
+	spin_lock_irqsave(&par->damage_lock, flags);
+	if (!list_empty(pagereflist)) {
+		x = 0;
+		y = 0;
+		width = par->width;
+		height = par->height;
+		par->damage_pending = false;
+	} else if (par->damage_pending) {
+		x = par->damage_x1;
+		y = par->damage_y1;
+		width = par->damage_x2 - par->damage_x1;
+		height = par->damage_y2 - par->damage_y1;
+		par->damage_pending = false;
+	} else {
+		spin_unlock_irqrestore(&par->damage_lock, flags);
+		return;
+	}
+	spin_unlock_irqrestore(&par->damage_lock, flags);
+
+	ssd1307fb_update_rect(par, x, y, width, height);
 }
 
 static int ssd1307fb_init(struct ssd1307fb_par *par)
@@ -653,6 +670,7 @@ static int ssd1307fb_probe(struct i2c_client *client)
 	par = info->par;
 	par->info = info;
 	par->client = client;
+	spin_lock_init(&par->damage_lock);
 
 	par->device_info = device_get_match_data(dev);
 

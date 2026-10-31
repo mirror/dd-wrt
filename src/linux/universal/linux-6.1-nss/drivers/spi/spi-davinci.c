@@ -863,7 +863,7 @@ static int davinci_spi_probe(struct platform_device *pdev)
 	int ret = 0;
 	u32 spipc0;
 
-	master = spi_alloc_master(&pdev->dev, sizeof(struct davinci_spi));
+	master = devm_spi_alloc_master(&pdev->dev, sizeof(struct davinci_spi));
 	if (master == NULL) {
 		ret = -ENOMEM;
 		goto err;
@@ -1004,7 +1004,6 @@ free_dma:
 free_clk:
 	clk_disable_unprepare(dspi->clk);
 free_master:
-	spi_master_put(master);
 err:
 	return ret;
 }
@@ -1027,6 +1026,8 @@ static int davinci_spi_remove(struct platform_device *pdev)
 	dspi = spi_master_get_devdata(master);
 
 	spi_bitbang_stop(&dspi->bitbang);
+
+	devm_free_irq(&pdev->dev, dspi->irq, dspi);
 
 	clk_disable_unprepare(dspi->clk);
 

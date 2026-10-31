@@ -125,18 +125,18 @@ int mhi_ep_ring_add_element(struct mhi_ep_ring *ring, struct mhi_ring_element *e
 	}
 
 	old_offset = ring->rd_offset;
-	mhi_ep_ring_inc_index(ring);
 
 	dev_dbg(dev, "Adding an element to ring at offset (%zu)\n", ring->rd_offset);
-
-	/* Update rp in ring context */
-	rp = cpu_to_le64(ring->rd_offset * sizeof(*el) + ring->rbase);
-	memcpy_toio((void __iomem *) &ring->ring_ctx->generic.rp, &rp, sizeof(u64));
-
 	ret = mhi_cntrl->write_to_host(mhi_cntrl, el, ring->rbase + (old_offset * sizeof(*el)),
 				       sizeof(*el));
 	if (ret < 0)
 		return ret;
+
+	mhi_ep_ring_inc_index(ring);
+
+	/* Update rp in ring context */
+	rp = cpu_to_le64(ring->rd_offset * sizeof(*el) + ring->rbase);
+	memcpy_toio((void __iomem *) &ring->ring_ctx->generic.rp, &rp, sizeof(u64));
 
 	return 0;
 }

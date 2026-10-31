@@ -1508,6 +1508,10 @@ static void iwl_mvm_report_wakeup_reasons(struct iwl_mvm *mvm,
 		if (WARN_ON_ONCE(truncated < 0))
 			truncated = 0;
 
+		/* this would be a firmware bug */
+		if (WARN_ON_ONCE(pktsize < sizeof(*hdr)))
+			return;
+
 		if (ieee80211_is_data(hdr->frame_control)) {
 			int hdrlen = ieee80211_hdrlen(hdr->frame_control);
 			int ivlen = 0, icvlen = 4; /* also FCS */
@@ -1515,10 +1519,6 @@ static void iwl_mvm_report_wakeup_reasons(struct iwl_mvm *mvm,
 			pkt = alloc_skb(pktsize, GFP_KERNEL);
 			if (!pkt)
 				goto report;
-
-			skb_put_data(pkt, pktdata, hdrlen);
-			pktdata += hdrlen;
-			pktsize -= hdrlen;
 
 			if (ieee80211_has_protected(hdr->frame_control)) {
 				/*
@@ -1545,6 +1545,16 @@ static void iwl_mvm_report_wakeup_reasons(struct iwl_mvm *mvm,
 				truncated = 0;
 			}
 
+			if (pktsize <= hdrlen + ivlen + icvlen) {
+				IWL_WARN(mvm, "pktsize is too small %d\n",
+					 pktsize);
+				kfree_skb(pkt);
+				return;
+			}
+
+			skb_put_data(pkt, pktdata, hdrlen);
+			pktdata += hdrlen;
+			pktsize -= hdrlen;
 			pktsize -= ivlen + icvlen;
 			pktdata += ivlen;
 

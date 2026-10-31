@@ -15,6 +15,7 @@
 #include <linux/refcount.h>
 #include "compression.h"
 #include "ctree.h"
+#include "btrfs_inode.h"
 
 #define LZO_LEN	4
 
@@ -390,6 +391,17 @@ int lzo_decompress_bio(struct list_head *ws, struct compressed_bio *cb)
 			goto out;
 		}
 
+		/* The segment must not extend beyond the compressed input. */
+		if (unlikely(cur_in + seg_len > cb->compressed_len)) {
+			struct btrfs_inode *inode = BTRFS_I(cb->inode);
+
+			btrfs_err(fs_info,
+			"lzo segment overflows compressed input, root %llu inode %llu offset %llu cur_in %u len %u compressed len %u",
+				  inode->root->root_key.objectid, btrfs_ino(inode),
+				  cb->start, cur_in, seg_len, cb->compressed_len);
+			return -EUCLEAN;
+		}
+
 		/* Copy the compressed segment payload into workspace */
 		copy_compressed_segment(cb, workspace->cbuf, seg_len, &cur_in);
 
@@ -437,7 +449,7 @@ int lzo_decompress(struct list_head *ws, unsigned char *data_in,
 	char *kaddr;
 	unsigned long bytes;
 
-	if (srclen < LZO_LEN || srclen > max_segment_len + LZO_LEN * 2)
+	if (srclen <= LZO_LEN * 2 || srclen > max_segment_len + LZO_LEN * 2)
 		return -EUCLEAN;
 
 	in_len = read_compress_length(data_in);

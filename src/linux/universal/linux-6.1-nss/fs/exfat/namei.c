@@ -600,7 +600,7 @@ unlock:
 static int exfat_find(struct inode *dir, struct qstr *qname,
 		struct exfat_dir_entry *info)
 {
-	int ret, dentry, num_entries, count;
+	int ret, dentry, count;
 	struct exfat_chain cdir;
 	struct exfat_uni_name uni_name;
 	struct super_block *sb = dir->i_sb;
@@ -619,10 +619,6 @@ static int exfat_find(struct inode *dir, struct qstr *qname,
 	if (ret)
 		return ret;
 
-	num_entries = exfat_calc_num_entries(&uni_name);
-	if (num_entries < 0)
-		return num_entries;
-
 	/* check the validation of hint_stat and initialize it if required */
 	if (ei->version != (inode_peek_iversion_raw(dir) & 0xffffffff)) {
 		ei->hint_stat.clu = cdir.dir;
@@ -632,9 +628,7 @@ static int exfat_find(struct inode *dir, struct qstr *qname,
 	}
 
 	/* search the file name for directories */
-	dentry = exfat_find_dir_entry(sb, ei, &cdir, &uni_name,
-			num_entries, TYPE_ALL, &hint_opt);
-
+	dentry = exfat_find_dir_entry(sb, ei, &cdir, &uni_name, &hint_opt);
 	if (dentry < 0)
 		return dentry; /* -error value */
 
@@ -656,14 +650,19 @@ static int exfat_find(struct inode *dir, struct qstr *qname,
 	info->type = exfat_get_entry_type(ep);
 	info->attr = le16_to_cpu(ep->dentry.file.attr);
 	info->size = le64_to_cpu(ep2->dentry.stream.valid_size);
+
+	info->start_clu = le32_to_cpu(ep2->dentry.stream.start_clu);
+	if (!is_valid_cluster(sbi, info->start_clu) && info->size) {
+		exfat_warn(sb, "start_clu is invalid cluster(0x%x)",
+				info->start_clu);
+		info->size = 0;
+	}
+
 	if (info->size == 0) {
 		info->flags = ALLOC_NO_FAT_CHAIN;
 		info->start_clu = EXFAT_EOF_CLUSTER;
-	} else {
+	} else
 		info->flags = ep2->dentry.stream.flags;
-		info->start_clu =
-			le32_to_cpu(ep2->dentry.stream.start_clu);
-	}
 
 	exfat_get_entry_time(sbi, &info->crtime,
 			     ep->dentry.file.create_tz,
@@ -893,6 +892,7 @@ static int exfat_check_dir_empty(struct super_block *sb,
 {
 	int i, dentries_per_clu;
 	unsigned int type;
+	unsigned int clu_count = 0;
 	struct exfat_chain clu;
 	struct exfat_dentry *ep;
 	struct exfat_sb_info *sbi = EXFAT_SB(sb);
@@ -929,6 +929,10 @@ static int exfat_check_dir_empty(struct super_block *sb,
 		} else {
 			if (exfat_get_next_cluster(sb, &(clu.dir)))
 				return -EIO;
+
+			/* break if the cluster chain includes a loop */
+			if (unlikely(++clu_count > EXFAT_DATA_CLUSTER_COUNT(sbi)))
+				break;
 		}
 	}
 

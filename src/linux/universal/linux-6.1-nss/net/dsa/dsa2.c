@@ -1541,14 +1541,25 @@ static int dsa_port_parse_of(struct dsa_port *dp, struct device_node *dn)
 	if (ethernet) {
 		struct net_device *master;
 		const char *user_protocol;
+		int err;
 
+		rtnl_lock();
 		master = of_find_net_device_by_node(ethernet);
 		of_node_put(ethernet);
-		if (!master)
+		if (!master) {
+			rtnl_unlock();
 			return -EPROBE_DEFER;
+		}
+
+		netdev_hold(master, &dp->conduit_tracker, GFP_KERNEL);
+		put_device(&master->dev);
+		rtnl_unlock();
 
 		user_protocol = of_get_property(dn, "dsa-tag-protocol", NULL);
-		return dsa_port_parse_cpu(dp, master, user_protocol);
+		err = dsa_port_parse_cpu(dp, master, user_protocol);
+		if (err)
+			netdev_put(master, &dp->conduit_tracker);
+		return err;
 	}
 
 	if (link)
@@ -1668,14 +1679,23 @@ static int dsa_port_parse(struct dsa_port *dp, const char *name,
 {
 	if (!strcmp(name, "cpu")) {
 		struct net_device *master;
+		int err;
 
+		rtnl_lock();
 		master = dsa_dev_to_net_device(dev);
-		if (!master)
+		if (!master) {
+			rtnl_unlock();
 			return -EPROBE_DEFER;
+		}
 
+		netdev_hold(master, &dp->conduit_tracker, GFP_KERNEL);
 		dev_put(master);
+		rtnl_unlock();
 
-		return dsa_port_parse_cpu(dp, master, NULL);
+		err = dsa_port_parse_cpu(dp, master, NULL);
+		if (err)
+			netdev_put(master, &dp->conduit_tracker);
+		return err;
 	}
 
 	if (!strcmp(name, "dsa"))
@@ -1743,6 +1763,9 @@ static void dsa_switch_release_ports(struct dsa_switch *ds)
 	struct dsa_vlan *v, *n;
 
 	dsa_switch_for_each_port_safe(dp, next, ds) {
+		if (dsa_port_is_cpu(dp) && dp->master)
+			netdev_put(dp->master, &dp->conduit_tracker);
+
 		/* These are either entries that upper layers lost track of
 		 * (probably due to bugs), or installed through interfaces
 		 * where one does not necessarily have to remove them, like
@@ -1887,8 +1910,10 @@ void dsa_switch_shutdown(struct dsa_switch *ds)
 	/* Disconnect from further netdevice notifiers on the master,
 	 * since netdev_uses_dsa() will now return false.
 	 */
-	dsa_switch_for_each_cpu_port(dp, ds)
+	dsa_switch_for_each_cpu_port(dp, ds) {
 		dp->master->dsa_ptr = NULL;
+		netdev_put(dp->master, &dp->conduit_tracker);
+	}
 
 	rtnl_unlock();
 out:

@@ -298,8 +298,14 @@ static int mctp_frag_queue(struct mctp_sk_key *key, struct sk_buff *skb)
 		& MCTP_HDR_SEQ_MASK;
 
 	if (!key->reasm_head) {
-		key->reasm_head = skb;
-		key->reasm_tailp = &(skb_shinfo(skb)->frag_list);
+		/* Since we're manipulating the shared frag_list, ensure it isn't
+		 * shared with any other SKBs.
+		 */
+		key->reasm_head = skb_unshare(skb, GFP_ATOMIC);
+		if (!key->reasm_head)
+			return -ENOMEM;
+
+		key->reasm_tailp = &(skb_shinfo(key->reasm_head)->frag_list);
 		key->last_seq = this_seq;
 		return 0;
 	}
@@ -429,18 +435,26 @@ static int mctp_route_input(struct mctp_route *route, struct sk_buff *skb)
 			/* we can queue without the key lock here, as the
 			 * key isn't observable yet
 			 */
-			mctp_frag_queue(key, skb);
-
-			/* if the key_add fails, we've raced with another
-			 * SOM packet with the same src, dest and tag. There's
-			 * no way to distinguish future packets, so all we
-			 * can do is drop; we'll free the skb on exit from
-			 * this function.
-			 */
-			rc = mctp_key_add(key, msk);
-			if (!rc) {
-				trace_mctp_key_acquire(key);
+			rc = mctp_frag_queue(key, skb);
+			if (rc == -ENOMEM) {
+				/* skb_unshare() has already freed the skb */
 				skb = NULL;
+			} else if (!rc) {
+				/* reasm_head owns the (possibly copied) skb */
+				skb = NULL;
+
+				/* if the key_add fails, we've raced with
+				 * another SOM packet with the same src, dest
+				 * and tag. There's no way to distinguish
+				 * future packets, so all we can do is drop.
+				 */
+				rc = mctp_key_add(key, msk);
+				if (!rc) {
+					trace_mctp_key_acquire(key);
+				} else {
+					kfree_skb(key->reasm_head);
+					key->reasm_head = NULL;
+				}
 			}
 
 			/* we don't need to release key->lock on exit, so
@@ -459,7 +473,8 @@ static int mctp_route_input(struct mctp_route *route, struct sk_buff *skb)
 				key = NULL;
 			} else {
 				rc = mctp_frag_queue(key, skb);
-				if (!rc)
+				/* -ENOMEM: skb_unshare() already freed the skb */
+				if (!rc || rc == -ENOMEM)
 					skb = NULL;
 			}
 		}

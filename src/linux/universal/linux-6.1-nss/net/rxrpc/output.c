@@ -87,7 +87,7 @@ static size_t rxrpc_fill_out_ack(struct rxrpc_connection *conn,
 		return 0;
 
 	/* Barrier against rxrpc_input_data(). */
-	serial = call->ackr_serial;
+	serial = reason == RXRPC_ACK_DELAY ? 0 : call->ackr_serial;
 	hard_ack = READ_ONCE(call->rx_hard_ack);
 	top = smp_load_acquire(&call->rx_top);
 	*_hard_ack = hard_ack;
@@ -254,7 +254,7 @@ int rxrpc_send_ack_packet(struct rxrpc_call *call, bool ping,
 		rtt_slot = rxrpc_begin_rtt_probe(call, serial, rxrpc_rtt_tx_ping);
 
 	ret = kernel_sendmsg(conn->params.local->socket, &msg, iov, 2, len);
-	conn->params.peer->last_tx_at = ktime_get_seconds();
+	rxrpc_peer_mark_tx(conn->params.peer);
 	if (ret < 0)
 		trace_rxrpc_tx_fail(call->debug_id, serial, ret,
 				    rxrpc_tx_point_call_ack);
@@ -333,7 +333,7 @@ int rxrpc_send_abort_packet(struct rxrpc_call *call)
 
 	ret = kernel_sendmsg(conn->params.local->socket,
 			     &msg, iov, 1, sizeof(pkt));
-	conn->params.peer->last_tx_at = ktime_get_seconds();
+	rxrpc_peer_mark_tx(conn->params.peer);
 	if (ret < 0)
 		trace_rxrpc_tx_fail(call->debug_id, serial, ret,
 				    rxrpc_tx_point_call_abort);
@@ -449,7 +449,7 @@ int rxrpc_send_data_packet(struct rxrpc_call *call, struct sk_buff *skb,
 	 *     message and update the peer record
 	 */
 	ret = kernel_sendmsg(conn->params.local->socket, &msg, iov, 2, len);
-	conn->params.peer->last_tx_at = ktime_get_seconds();
+	rxrpc_peer_mark_tx(conn->params.peer);
 
 	up_read(&conn->params.local->defrag_sem);
 	if (ret < 0) {
@@ -525,7 +525,7 @@ send_fragmentable:
 				IP_PMTUDISC_DONT);
 		ret = kernel_sendmsg(conn->params.local->socket, &msg,
 				     iov, 2, len);
-		conn->params.peer->last_tx_at = ktime_get_seconds();
+		rxrpc_peer_mark_tx(conn->params.peer);
 
 		ip_sock_set_mtu_discover(conn->params.local->socket->sk,
 				IP_PMTUDISC_DO);
@@ -674,6 +674,6 @@ void rxrpc_send_keepalive(struct rxrpc_peer *peer)
 		trace_rxrpc_tx_packet(peer->debug_id, &whdr,
 				      rxrpc_tx_point_version_keepalive);
 
-	peer->last_tx_at = ktime_get_seconds();
+	rxrpc_peer_mark_tx(peer);
 	_leave("");
 }

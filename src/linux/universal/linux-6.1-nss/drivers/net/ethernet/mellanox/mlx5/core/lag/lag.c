@@ -796,9 +796,9 @@ void mlx5_disable_lag(struct mlx5_lag *ldev)
 
 	if (shared_fdb) {
 		if (!(dev0->priv.flags & MLX5_PRIV_FLAGS_DISABLE_ALL_ADEV))
-			mlx5_eswitch_reload_reps(dev0->priv.eswitch);
+			mlx5_eswitch_reload_ib_reps(dev0->priv.eswitch);
 		if (!(dev1->priv.flags & MLX5_PRIV_FLAGS_DISABLE_ALL_ADEV))
-			mlx5_eswitch_reload_reps(dev1->priv.eswitch);
+			mlx5_eswitch_reload_ib_reps(dev1->priv.eswitch);
 	}
 }
 
@@ -898,17 +898,17 @@ static void mlx5_do_bond(struct mlx5_lag *ldev)
 			dev0->priv.flags &= ~MLX5_PRIV_FLAGS_DISABLE_IB_ADEV;
 			mlx5_rescan_drivers_locked(dev0);
 
-			err = mlx5_eswitch_reload_reps(dev0->priv.eswitch);
+			err = mlx5_eswitch_reload_ib_reps(dev0->priv.eswitch);
 			if (!err)
-				err = mlx5_eswitch_reload_reps(dev1->priv.eswitch);
+				err = mlx5_eswitch_reload_ib_reps(dev1->priv.eswitch);
 
 			if (err) {
 				dev0->priv.flags |= MLX5_PRIV_FLAGS_DISABLE_IB_ADEV;
 				mlx5_rescan_drivers_locked(dev0);
 				mlx5_deactivate_lag(ldev);
 				mlx5_lag_add_devices(ldev);
-				mlx5_eswitch_reload_reps(dev0->priv.eswitch);
-				mlx5_eswitch_reload_reps(dev1->priv.eswitch);
+				mlx5_eswitch_reload_ib_reps(dev0->priv.eswitch);
+				mlx5_eswitch_reload_ib_reps(dev1->priv.eswitch);
 				mlx5_core_err(dev0, "Failed to enable lag\n");
 				return;
 			}

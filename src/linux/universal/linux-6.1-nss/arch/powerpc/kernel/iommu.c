@@ -685,7 +685,7 @@ static void iommu_table_clear(struct iommu_table *tbl)
 static void iommu_table_reserve_pages(struct iommu_table *tbl,
 		unsigned long res_start, unsigned long res_end)
 {
-	int i;
+	unsigned long i;
 
 	WARN_ON_ONCE(res_end < res_start);
 	/*

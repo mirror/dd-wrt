@@ -751,6 +751,8 @@ static int i3c_hci_probe(struct platform_device *pdev)
 	if (IS_ERR(hci->base_regs))
 		return PTR_ERR(hci->base_regs);
 
+	mutex_init(&hci->control_mutex);
+
 	platform_set_drvdata(pdev, hci);
 	/* temporary for dev_printk's, to be replaced in i3c_master_register */
 	hci->master.dev.init_name = dev_name(&pdev->dev);

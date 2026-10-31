@@ -142,7 +142,7 @@ static void rxrpc_conn_retransmit_call(struct rxrpc_connection *conn,
 	}
 
 	ret = kernel_sendmsg(conn->params.local->socket, &msg, iov, ioc, len);
-	conn->params.peer->last_tx_at = ktime_get_seconds();
+	rxrpc_peer_mark_tx(conn->params.peer);
 	if (ret < 0)
 		trace_rxrpc_tx_fail(chan->call_debug_id, serial, ret,
 				    rxrpc_tx_point_call_final_resend);
@@ -262,7 +262,7 @@ static int rxrpc_abort_connection(struct rxrpc_connection *conn,
 
 	trace_rxrpc_tx_packet(conn->debug_id, &whdr, rxrpc_tx_point_conn_abort);
 
-	conn->params.peer->last_tx_at = ktime_get_seconds();
+	rxrpc_peer_mark_tx(conn->params.peer);
 
 	_leave(" = 0");
 	return 0;
@@ -283,6 +283,34 @@ static void rxrpc_call_is_secure(struct rxrpc_call *call)
 		}
 		write_unlock_bh(&call->state_lock);
 	}
+}
+
+static int rxrpc_verify_response(struct rxrpc_connection *conn,
+				 struct sk_buff *skb,
+				 u32 *_abort_code)
+{
+	int ret;
+
+	if (skb_cloned(skb)) {
+		/* Copy the packet if shared so that we can do in-place
+		 * decryption.
+		 */
+		struct sk_buff *nskb = skb_copy(skb, GFP_NOFS);
+
+		if (nskb) {
+			rxrpc_new_skb(nskb, rxrpc_skb_unshared);
+			ret = conn->security->verify_response(conn, nskb, _abort_code);
+			rxrpc_free_skb(nskb, rxrpc_skb_freed);
+		} else {
+			/* OOM - Drop the packet. */
+			rxrpc_see_skb(skb, rxrpc_skb_unshared_nomem);
+			ret = -ENOMEM;
+		}
+	} else {
+		ret = conn->security->verify_response(conn, skb, _abort_code);
+	}
+
+	return ret;
 }
 
 /*
@@ -345,7 +373,7 @@ static int rxrpc_process_event(struct rxrpc_connection *conn,
 		}
 		spin_unlock_bh(&conn->state_lock);
 
-		ret = conn->security->verify_response(conn, skb, _abort_code);
+		ret = rxrpc_verify_response(conn, skb, _abort_code);
 		if (ret < 0)
 			return ret;
 

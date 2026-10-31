@@ -376,6 +376,7 @@ static struct ccwchain *ccwchain_alloc(struct channel_program *cp, int len)
 	chain->ch_len = len;
 
 	list_add_tail(&chain->next, &cp->ccwchain_list);
+	cp->ccwchain_count++;
 
 	return chain;
 }
@@ -477,6 +478,10 @@ static int ccwchain_handle_ccw(u32 cda, struct channel_program *cp)
 	len = ccwchain_calc_length(cda, cp);
 	if (len < 0)
 		return len;
+
+	/* Limit number of chains in a single channel program */
+	if (cp->ccwchain_count >= CCWCHAIN_COUNT_MAX)
+		return -EINVAL;
 
 	/* Need alloc a new chain for this one. */
 	chain = ccwchain_alloc(cp, len);
@@ -612,6 +617,13 @@ static int ccwchain_fetch_direct(struct ccwchain *chain,
 		if (ret)
 			goto out_unpin;
 
+		/* Unexpected mismatch from earlier read */
+		if (idaws[0] != iova) {
+			pa->pa_nr = 0;
+			ret = -EINVAL;
+			goto out_unpin;
+		}
+
 		/*
 		 * Copy guest IDAWs into page_array, in case the memory they
 		 * occupy is not contiguous.
@@ -709,6 +721,7 @@ int cp_init(struct channel_program *cp, union orb *orb)
 			vdev->dev,
 			"Prefetching channel program even though prefetch not specified in ORB");
 
+	cp->ccwchain_count = 0;
 	INIT_LIST_HEAD(&cp->ccwchain_list);
 	memcpy(&cp->orb, orb, sizeof(*orb));
 
