@@ -2620,11 +2620,23 @@ static void nvme_pci_alloc_tag_set(struct nvme_dev *dev)
 	dev->ctrl.tagset = set;
 }
 
-static void nvme_pci_update_nr_queues(struct nvme_dev *dev)
+static bool nvme_pci_update_nr_queues(struct nvme_dev *dev)
 {
+	/* Give up if we are racing with nvme_dev_disable() */
+	if (!mutex_trylock(&dev->shutdown_lock))
+		return false;
+
+	/* Check if nvme_dev_disable() has been executed already */
+	if (!dev->online_queues) {
+		mutex_unlock(&dev->shutdown_lock);
+		return false;
+	}
+
 	blk_mq_update_nr_hw_queues(&dev->tagset, dev->online_queues - 1);
 	/* free previously allocated queues that are no longer usable */
 	nvme_free_queues(dev, dev->online_queues);
+	mutex_unlock(&dev->shutdown_lock);
+	return true;
 }
 
 static int nvme_pci_enable(struct nvme_dev *dev)
@@ -2986,8 +2998,8 @@ static void nvme_reset_work(struct work_struct *work)
 		nvme_wait_freeze(&dev->ctrl);
 		if (!dev->ctrl.tagset)
 			nvme_pci_alloc_tag_set(dev);
-		else
-			nvme_pci_update_nr_queues(dev);
+		else if (!nvme_pci_update_nr_queues(dev))
+			goto out;
 		nvme_dbbuf_set(dev);
 		nvme_unfreeze(&dev->ctrl);
 	}

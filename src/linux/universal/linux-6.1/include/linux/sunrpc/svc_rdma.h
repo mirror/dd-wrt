@@ -138,6 +138,7 @@ struct svc_rdma_recv_ctxt {
 	bool			rc_temp;
 	u32			rc_byte_len;
 	unsigned int		rc_page_count;
+	unsigned int		rc_maxpages;
 	u32			rc_inv_rkey;
 	__be32			rc_msgtype;
 

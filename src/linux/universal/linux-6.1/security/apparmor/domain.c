@@ -1006,8 +1006,8 @@ static struct aa_label *build_change_hat(struct aa_profile *profile,
 	if (!hat) {
 		error = -ENOENT;
 		if (COMPLAIN_MODE(profile)) {
-			hat = aa_new_null_profile(profile, true, name,
-						  GFP_KERNEL);
+			hat = __aa_new_null_profile(profile, true, name,
+						   GFP_KERNEL);
 			if (!hat) {
 				info = "failed null profile create";
 				error = -ENOMEM;
@@ -1043,6 +1043,7 @@ static struct aa_label *change_hat(struct aa_label *label, const char *hats[],
 	bool sibling = false;
 	const char *name, *info = NULL;
 	int i, error;
+	bool needput = false;
 
 	AA_BUG(!label);
 	AA_BUG(!hats);
@@ -1055,7 +1056,6 @@ static struct aa_label *change_hat(struct aa_label *label, const char *hats[],
 	 * the profiles and label, we can rely on the namespaces being live
 	 * and avoid incrementing their refcounts while grabbing the lock.
 	 */
-	label = aa_get_label(label);
 	ns = labels_ns(label);
 
 retry:
@@ -1063,15 +1063,19 @@ retry:
 	if (label_is_stale(label)) {
 		new = aa_get_newest_label(label);
 		new_ns = labels_ns(new);
+
+		if (needput)
+			/* aa_put_label() is safe to call when under lock */
+			aa_put_label(label);
+		label = new;
+		needput = true;
+		/* check if replaced with label in parent ns, and lock there */
 		if (new_ns != ns) {
-			aa_put_label(new);
 			mutex_unlock(&ns->lock);
 			ns = new_ns;
-			label = new;
+			/* retry will bottom out at the root of the tree */
 			goto retry;
 		}
-		aa_put_label(label);
-		label = new;
 	}
 
 	if (PROFILE_IS_HAT(labels_profile(label)))
@@ -1082,7 +1086,8 @@ retry:
 		name = hats[i];
 		label_for_each_in_ns(it, labels_ns(label), label, profile) {
 			if (sibling && PROFILE_IS_HAT(profile)) {
-				root = aa_get_profile(profile->parent);
+				root = aa_get_profile(rcu_dereference_protected(profile->parent,
+						      mutex_is_locked(&ns->lock)));
 			} else if (!sibling && !PROFILE_IS_HAT(profile)) {
 				root = aa_get_profile(profile);
 			} else {	/* conflicting change type */
@@ -1142,6 +1147,8 @@ fail:
 		}
 	}
 	mutex_unlock(&ns->lock);
+	if (needput)
+		aa_put_label(label);
 	return ERR_PTR(error);
 
 build:
@@ -1154,6 +1161,8 @@ build:
 		goto fail;
 	} /* else if (IS_ERR) build_change_hat has logged error so return new */
 	mutex_unlock(&ns->lock);
+	if (needput)
+		aa_put_label(label);
 	return new;
 }
 
@@ -1463,7 +1472,7 @@ check:
 		}
 
 		/* full transition will be built in exec path */
-		error = aa_set_current_onexec(target, stack);
+		aa_set_current_onexec(target, stack);
 	}
 
 	goto audit;

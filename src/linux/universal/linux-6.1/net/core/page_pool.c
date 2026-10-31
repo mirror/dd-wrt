@@ -728,7 +728,8 @@ struct page *page_pool_alloc_frag(struct page_pool *pool,
 		    size > max_size))
 		return NULL;
 
-	size = ALIGN(size, dma_get_cache_alignment());
+	size = ALIGN(size, max_t(unsigned int, dma_get_cache_alignment(),
+				 __alignof__(struct skb_shared_info)));
 	*offset = pool->frag_offset;
 
 	if (page && *offset + size > max_size) {

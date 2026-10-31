@@ -34,10 +34,12 @@ struct dm_file {
 	volatile unsigned int global_event_nr;
 };
 
-/*-----------------------------------------------------------------
+/*
+ *---------------------------------------------------------------
  * The ioctl interface needs to be able to look up devices by
  * name or uuid.
- *---------------------------------------------------------------*/
+ *---------------------------------------------------------------
+ */
 struct hash_cell {
 	struct rb_node name_node;
 	struct rb_node uuid_node;
@@ -51,10 +53,10 @@ struct hash_cell {
 };
 
 struct vers_iter {
-    size_t param_size;
-    struct dm_target_versions *vers, *old_vers;
-    char *end;
-    uint32_t flags;
+	size_t param_size;
+	struct dm_target_versions *vers, *old_vers;
+	char *end;
+	uint32_t flags;
 };
 
 
@@ -78,9 +80,11 @@ static void dm_hash_exit(void)
 	dm_hash_remove_all(false, false, false);
 }
 
-/*-----------------------------------------------------------------
+/*
+ *---------------------------------------------------------------
  * Code for looking up a device by name
- *---------------------------------------------------------------*/
+ *---------------------------------------------------------------
+ */
 static struct hash_cell *__get_name_cell(const char *str)
 {
 	struct rb_node *n = name_rb_tree.rb_node;
@@ -203,9 +207,11 @@ static struct hash_cell *__get_dev_cell(uint64_t dev)
 	return hc;
 }
 
-/*-----------------------------------------------------------------
+/*
+ *---------------------------------------------------------------
  * Inserting, removing and renaming a device.
- *---------------------------------------------------------------*/
+ *---------------------------------------------------------------
+ */
 static struct hash_cell *alloc_cell(const char *name, const char *uuid,
 				    struct mapped_device *md)
 {
@@ -507,9 +513,11 @@ void dm_deferred_remove(void)
 	dm_hash_remove_all(true, false, true);
 }
 
-/*-----------------------------------------------------------------
+/*
+ *---------------------------------------------------------------
  * Implementation of the ioctl commands
- *---------------------------------------------------------------*/
+ *---------------------------------------------------------------
+ */
 /*
  * All the ioctl commands get dispatched to functions with this
  * prototype.
@@ -545,10 +553,16 @@ static void *get_result_buffer(struct dm_ioctl *param, size_t param_size,
 {
 	param->data_start = align_ptr(param + 1) - (void *) param;
 
-	if (param->data_start < param_size)
+	if (param->data_start < param_size) {
 		*len = param_size - param->data_start;
-	else
+	} else {
+		/*
+		 * The buffer can be as small as offsetof(*param, data), which
+		 * is less than sizeof(*param), so don't run off the end of it.
+		 */
 		*len = 0;
+		param->data_start = param_size;
+	}
 
 	return ((void *) param) + param->data_start;
 }
@@ -660,36 +674,34 @@ static int list_devices(struct file *filp, struct dm_ioctl *param, size_t param_
 
 static void list_version_get_needed(struct target_type *tt, void *needed_param)
 {
-    size_t *needed = needed_param;
+	size_t *needed = needed_param;
 
-    *needed += sizeof(struct dm_target_versions);
-    *needed += strlen(tt->name) + 1;
-    *needed += ALIGN_MASK;
+	*needed += sizeof(struct dm_target_versions);
+	*needed += strlen(tt->name) + 1;
+	*needed += ALIGN_MASK;
 }
 
 static void list_version_get_info(struct target_type *tt, void *param)
 {
-    struct vers_iter *info = param;
+	struct vers_iter *info = param;
 
-    /* Check space - it might have changed since the first iteration */
-    if ((char *)info->vers + sizeof(tt->version) + strlen(tt->name) + 1 >
-	info->end) {
+	/* Check space - it might have changed since the first iteration */
+	if ((char *)info->vers + sizeof(struct dm_target_versions) + strlen(tt->name) + 1 > info->end) {
+		info->flags = DM_BUFFER_FULL_FLAG;
+		return;
+	}
 
-	info->flags = DM_BUFFER_FULL_FLAG;
-	return;
-    }
+	if (info->old_vers)
+		info->old_vers->next = (uint32_t) ((void *)info->vers - (void *)info->old_vers);
 
-    if (info->old_vers)
-	info->old_vers->next = (uint32_t) ((void *)info->vers -
-					   (void *)info->old_vers);
-    info->vers->version[0] = tt->version[0];
-    info->vers->version[1] = tt->version[1];
-    info->vers->version[2] = tt->version[2];
-    info->vers->next = 0;
-    strcpy(info->vers->name, tt->name);
+	info->vers->version[0] = tt->version[0];
+	info->vers->version[1] = tt->version[1];
+	info->vers->version[2] = tt->version[2];
+	info->vers->next = 0;
+	strcpy(info->vers->name, tt->name);
 
-    info->old_vers = info->vers;
-    info->vers = align_ptr(((void *) ++info->vers) + strlen(tt->name) + 1);
+	info->old_vers = info->vers;
+	info->vers = align_ptr((void *)(info->vers + 1) + strlen(tt->name) + 1);
 }
 
 static int __list_versions(struct dm_ioctl *param, size_t param_size, const char *name)
@@ -1160,6 +1172,7 @@ static int do_resume(struct dm_ioctl *param)
 	/* Do we need to load a new map ? */
 	if (new_map) {
 		sector_t old_size, new_size;
+		fmode_t new_map_mode;
 
 		/* Suspend if it isn't already suspended */
 		if (param->flags & DM_SKIP_LOCKFS_FLAG)
@@ -1187,6 +1200,7 @@ static int do_resume(struct dm_ioctl *param)
 			}
 		}
 
+		new_map_mode = dm_table_get_mode(new_map);
 		old_size = dm_get_size(md);
 		old_map = dm_swap_table(md, new_map);
 		if (IS_ERR(old_map)) {
@@ -1199,7 +1213,7 @@ static int do_resume(struct dm_ioctl *param)
 		if (old_size && new_size && old_size != new_size)
 			need_resize_uevent = true;
 
-		if (dm_table_get_mode(new_map) & FMODE_WRITE)
+		if (new_map_mode & FMODE_WRITE)
 			set_disk_ro(dm_disk(md), 0);
 		else
 			set_disk_ro(dm_disk(md), 1);
@@ -1804,10 +1818,11 @@ static int target_message(struct file *filp, struct dm_ioctl *param, size_t para
 #define IOCTL_FLAGS_NO_PARAMS		1
 #define IOCTL_FLAGS_ISSUE_GLOBAL_EVENT	2
 
-/*-----------------------------------------------------------------
- * Implementation of open/close/ioctl on the special char
- * device.
- *---------------------------------------------------------------*/
+/*
+ *---------------------------------------------------------------
+ * Implementation of open/close/ioctl on the special char device.
+ *---------------------------------------------------------------
+ */
 static ioctl_fn lookup_ioctl(unsigned int cmd, int *ioctl_flags)
 {
 	static const struct {
@@ -2135,9 +2150,9 @@ static const struct file_operations _ctl_fops = {
 
 static struct miscdevice _dm_misc = {
 	.minor		= MAPPER_CTRL_MINOR,
-	.name  		= DM_NAME,
+	.name		= DM_NAME,
 	.nodename	= DM_DIR "/" DM_CONTROL_NODE,
-	.fops  		= &_ctl_fops
+	.fops		= &_ctl_fops
 };
 
 MODULE_ALIAS_MISCDEV(MAPPER_CTRL_MINOR);

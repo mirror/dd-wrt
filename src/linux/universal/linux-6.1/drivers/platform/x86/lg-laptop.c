@@ -71,6 +71,7 @@ static u32 inited;
 #define INIT_SPARSE_KEYMAP      0x80
 
 static int battery_limit_use_wmbb;
+static bool kbd_backlight_available;
 static struct led_classdev kbd_backlight;
 static enum led_brightness get_kbd_backlight_level(struct device *dev);
 
@@ -188,6 +189,7 @@ static void wmi_notify(u32 value, void *context)
 	union acpi_object *obj;
 	acpi_status status;
 	long data = (long)context;
+	unsigned int brightness;
 
 	pr_debug("event guid %li\n", data);
 	status = wmi_get_event_data(value, &response);
@@ -205,8 +207,11 @@ static void wmi_notify(u32 value, void *context)
 		struct key_entry *key;
 
 		if (eventcode == 0x10000000) {
-			led_classdev_notify_brightness_hw_changed(
-				&kbd_backlight, get_kbd_backlight_level(kbd_backlight.dev->parent));
+			if (kbd_backlight_available) {
+				brightness = get_kbd_backlight_level(kbd_backlight.dev->parent);
+				led_classdev_notify_brightness_hw_changed(&kbd_backlight,
+									  brightness);
+			}
 		} else {
 			key = sparse_keymap_entry_from_scancode(
 				wmi_input_dev, eventcode);
@@ -522,7 +527,7 @@ static DEVICE_ATTR_RW(fn_lock);
 static DEVICE_ATTR_RW(charge_control_end_threshold);
 static DEVICE_ATTR_RW(battery_care_limit);
 
-static int lg_battery_add(struct power_supply *battery)
+static int lg_battery_add(struct power_supply *battery, struct acpi_battery_hook *hook)
 {
 	if (device_create_file(&battery->dev,
 			       &dev_attr_charge_control_end_threshold))
@@ -531,7 +536,7 @@ static int lg_battery_add(struct power_supply *battery)
 	return 0;
 }
 
-static int lg_battery_remove(struct power_supply *battery)
+static int lg_battery_remove(struct power_supply *battery, struct acpi_battery_hook *hook)
 {
 	device_remove_file(&battery->dev,
 			   &dev_attr_charge_control_end_threshold);
@@ -725,7 +730,12 @@ static int acpi_add(struct acpi_device *device)
 		goto out_platform_device;
 
 	/* LEDs are optional */
-	led_classdev_register(&pf_device->dev, &kbd_backlight);
+	ret = led_classdev_register(&pf_device->dev, &kbd_backlight);
+	if (ret < 0)
+		kbd_backlight_available = false;
+	else
+		kbd_backlight_available = true;
+
 	led_classdev_register(&pf_device->dev, &tpad_led);
 
 	wmi_input_setup();
@@ -744,11 +754,13 @@ static int acpi_remove(struct acpi_device *device)
 {
 	sysfs_remove_group(&pf_device->dev.kobj, &dev_attribute_group);
 
+	battery_hook_unregister(&battery_hook);
+	wmi_input_destroy();
+
+	kbd_backlight_available = false;
 	led_classdev_unregister(&tpad_led);
 	led_classdev_unregister(&kbd_backlight);
 
-	battery_hook_unregister(&battery_hook);
-	wmi_input_destroy();
 	platform_device_unregister(pf_device);
 	pf_device = NULL;
 	platform_driver_unregister(&pf_driver);

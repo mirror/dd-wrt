@@ -64,14 +64,16 @@ void nft_lookup_eval(const struct nft_expr *expr,
 	const struct net *net = nft_net(pkt);
 	bool found;
 
-	found =	nft_set_do_lookup(net, set, &regs->data[priv->sreg], &ext) ^
-				  priv->invert;
+	found = nft_set_do_lookup(net, set, &regs->data[priv->sreg], &ext);
 	if (!found) {
 		ext = nft_set_catchall_lookup(net, set);
-		if (!ext) {
-			regs->verdict.code = NFT_BREAK;
-			return;
-		}
+		found = !!ext;
+	}
+
+	found ^= priv->invert;
+	if (!found) {
+		regs->verdict.code = NFT_BREAK;
+		return;
 	}
 
 	if (ext) {
@@ -179,7 +181,8 @@ static void nft_lookup_destroy(const struct nft_ctx *ctx,
 	nf_tables_destroy_set(ctx, priv->set);
 }
 
-static int nft_lookup_dump(struct sk_buff *skb, const struct nft_expr *expr)
+static int nft_lookup_dump(struct sk_buff *skb,
+			   const struct nft_expr *expr, bool reset)
 {
 	const struct nft_lookup *priv = nft_expr_priv(expr);
 	u32 flags = priv->invert ? NFT_LOOKUP_F_INV : 0;

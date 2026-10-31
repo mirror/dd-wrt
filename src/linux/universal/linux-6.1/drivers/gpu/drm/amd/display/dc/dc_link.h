@@ -285,6 +285,9 @@ const struct dc_link_status *dc_link_get_status(const struct dc_link *dc_link);
  */
 static inline struct dc_link *dc_get_link_at_index(struct dc *dc, uint32_t link_index)
 {
+	if (link_index >= ARRAY_SIZE(dc->links))
+		return NULL;
+
 	return dc->links[link_index];
 }
 

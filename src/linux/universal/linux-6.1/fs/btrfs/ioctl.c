@@ -696,6 +696,8 @@ static noinline int create_subvol(struct user_namespace *mnt_userns,
 	ret = btrfs_insert_root(trans, fs_info->tree_root, &key,
 				root_item);
 	if (ret) {
+		int ret2;
+
 		/*
 		 * Since we don't abort the transaction in this case, free the
 		 * tree block so that we don't leak space and leave the
@@ -706,7 +708,9 @@ static noinline int create_subvol(struct user_namespace *mnt_userns,
 		btrfs_tree_lock(leaf);
 		btrfs_clean_tree_block(leaf);
 		btrfs_tree_unlock(leaf);
-		btrfs_free_tree_block(trans, objectid, leaf, 0, 1);
+		ret2 = btrfs_free_tree_block(trans, objectid, leaf, 0, 1);
+		if (ret2 < 0)
+			btrfs_abort_transaction(trans, ret2);
 		free_extent_buffer(leaf);
 		goto out;
 	}
@@ -1626,26 +1630,21 @@ static_assert(IS_ALIGNED(CLUSTER_SIZE, PAGE_SIZE));
  *
  * - Extent bits are locked
  */
-static int defrag_one_locked_target(struct btrfs_inode *inode,
-				    struct defrag_target_range *target,
-				    struct page **pages, int nr_pages,
-				    struct extent_state **cached_state)
+static void defrag_one_locked_target(struct btrfs_inode *inode,
+				     struct defrag_target_range *target,
+				     struct page **pages, int nr_pages,
+				     struct extent_state **cached_state)
 {
 	struct btrfs_fs_info *fs_info = inode->root->fs_info;
-	struct extent_changeset *data_reserved = NULL;
 	const u64 start = target->start;
 	const u64 len = target->len;
 	unsigned long last_index = (start + len - 1) >> PAGE_SHIFT;
 	unsigned long start_index = start >> PAGE_SHIFT;
 	unsigned long first_index = page_index(pages[0]);
-	int ret = 0;
 	int i;
 
 	ASSERT(last_index - first_index + 1 <= nr_pages);
 
-	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, start, len);
-	if (ret < 0)
-		return ret;
 	clear_extent_bit(&inode->io_tree, start, start + len - 1,
 			 EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
 			 EXTENT_DEFRAG, cached_state);
@@ -1656,10 +1655,6 @@ static int defrag_one_locked_target(struct btrfs_inode *inode,
 		ClearPageChecked(pages[i]);
 		btrfs_page_clamp_set_dirty(fs_info, pages[i], start, len);
 	}
-	btrfs_delalloc_release_extents(inode, len);
-	extent_changeset_free(data_reserved);
-
-	return ret;
 }
 
 static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
@@ -1675,6 +1670,8 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
 	u64 last_index = (start + len - 1) >> PAGE_SHIFT;
 	u64 start_index = start >> PAGE_SHIFT;
 	unsigned int nr_pages = last_index - start_index + 1;
+	struct extent_changeset *data_reserved = NULL;
+	u64 last_defrag_end = start;
 	int ret = 0;
 	int i;
 
@@ -1684,6 +1681,22 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
 	pages = kcalloc(nr_pages, sizeof(struct page *), GFP_NOFS);
 	if (!pages)
 		return -ENOMEM;
+
+	/*
+	 * Reserve delalloc space before locking the range and before locking
+	 * and dirtying any pages - otherwise we could deadlock, for example
+	 * after defrag of one range we dirty pages and keep them locked when
+	 * we move to the next range, so reserving delalloc space right before
+	 * each range could trigger flushing of delalloc and deadlock on the
+	 * extent lock or trigger a transaction commit with flushoncommit, which
+	 * can either deadlock on the lock of a page made dirty in the previous
+	 * range or the extent lock.
+	 */
+	ret = btrfs_delalloc_reserve_space(inode, &data_reserved, start, len);
+	if (ret < 0) {
+		kfree(pages);
+		return ret;
+	}
 
 	/* Prepare all pages */
 	for (i = 0; i < nr_pages; i++) {
@@ -1715,10 +1728,11 @@ static int defrag_one_range(struct btrfs_inode *inode, u64 start, u32 len,
 		goto unlock_extent;
 
 	list_for_each_entry(entry, &target_list, list) {
-		ret = defrag_one_locked_target(inode, entry, pages, nr_pages,
-					       &cached_state);
-		if (ret < 0)
-			break;
+		defrag_one_locked_target(inode, entry, pages, nr_pages, &cached_state);
+		if (entry->start > last_defrag_end)
+			btrfs_delalloc_release_space(inode, data_reserved, last_defrag_end,
+						     entry->start - last_defrag_end, true);
+		last_defrag_end = entry->start + entry->len;
 	}
 
 	list_for_each_entry_safe(entry, tmp, &target_list, list) {
@@ -1737,6 +1751,12 @@ free_pages:
 		}
 	}
 	kfree(pages);
+	btrfs_delalloc_release_extents(inode, len);
+	if (last_defrag_end < start + len)
+		btrfs_delalloc_release_space(inode, data_reserved, last_defrag_end,
+					     start + len - last_defrag_end, true);
+	extent_changeset_free(data_reserved);
+
 	return ret;
 }
 
@@ -4663,7 +4683,8 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
 		goto drop_write;
 	}
 
-	trans = btrfs_join_transaction(root);
+	/* 2 BTRFS_QGROUP_RELATION_KEY items. */
+	trans = btrfs_start_transaction(root, 2);
 	if (IS_ERR(trans)) {
 		ret = PTR_ERR(trans);
 		goto out;
@@ -4725,7 +4746,11 @@ static long btrfs_ioctl_qgroup_create(struct file *file, void __user *arg)
 		goto out;
 	}
 
-	trans = btrfs_join_transaction(root);
+	/*
+	 * 1 BTRFS_QGROUP_INFO_KEY item.
+	 * 1 BTRFS_QGROUP_LIMIT_KEY item.
+	 */
+	trans = btrfs_start_transaction(root, 2);
 	if (IS_ERR(trans)) {
 		ret = PTR_ERR(trans);
 		goto out;
@@ -4771,7 +4796,8 @@ static long btrfs_ioctl_qgroup_limit(struct file *file, void __user *arg)
 		goto drop_write;
 	}
 
-	trans = btrfs_join_transaction(root);
+	/* 1 BTRFS_QGROUP_LIMIT_KEY item. */
+	trans = btrfs_start_transaction(root, 1);
 	if (IS_ERR(trans)) {
 		ret = PTR_ERR(trans);
 		goto out;

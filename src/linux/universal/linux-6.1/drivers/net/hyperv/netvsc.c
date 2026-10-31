@@ -156,15 +156,19 @@ static void free_netvsc_device(struct rcu_head *head)
 
 	kfree(nvdev->extension);
 
-	if (nvdev->recv_original_buf)
-		vfree(nvdev->recv_original_buf);
-	else
-		vfree(nvdev->recv_buf);
+	if (!nvdev->recv_buf_gpadl_handle.decrypted) {
+		if (nvdev->recv_original_buf)
+			vfree(nvdev->recv_original_buf);
+		else
+			vfree(nvdev->recv_buf);
+	}
 
-	if (nvdev->send_original_buf)
-		vfree(nvdev->send_original_buf);
-	else
-		vfree(nvdev->send_buf);
+	if (!nvdev->send_buf_gpadl_handle.decrypted) {
+		if (nvdev->send_original_buf)
+			vfree(nvdev->send_original_buf);
+		else
+			vfree(nvdev->send_buf);
+	}
 
 	bitmap_free(nvdev->send_section_map);
 

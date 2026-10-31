@@ -232,6 +232,9 @@ void cfg80211_stop_p2p_device(struct cfg80211_registered_device *rdev,
 	if (!wdev_running(wdev))
 		return;
 
+	wdev_lock(wdev);
+	cfg80211_pmsr_wdev_down(wdev);
+	wdev_unlock(wdev);
 	rdev_stop_p2p_device(rdev, wdev);
 	wdev->is_running = false;
 
@@ -256,6 +259,10 @@ void cfg80211_stop_nan(struct cfg80211_registered_device *rdev,
 
 	if (!wdev_running(wdev))
 		return;
+
+	wdev_lock(wdev);
+	cfg80211_pmsr_wdev_down(wdev);
+	wdev_unlock(wdev);
 
 	rdev_stop_nan(rdev, wdev);
 	wdev->is_running = false;
@@ -686,6 +693,24 @@ static int wiphy_verify_combinations(struct wiphy *wiphy)
 	return 0;
 }
 
+static bool wiphy_cipher_suites_valid(const struct wiphy *wiphy)
+{
+	int i, j;
+
+	if (wiphy->n_cipher_suites && !wiphy->cipher_suites)
+		return false;
+
+	for (i = 0; i < wiphy->n_cipher_suites; i++) {
+		for (j = 0; j < i; j++) {
+			if (wiphy->cipher_suites[i] ==
+			    wiphy->cipher_suites[j])
+				return false;
+		}
+	}
+
+	return true;
+}
+
 int wiphy_register(struct wiphy *wiphy)
 {
 	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wiphy);
@@ -816,6 +841,9 @@ int wiphy_register(struct wiphy *wiphy)
 	res = wiphy_verify_combinations(wiphy);
 	if (res)
 		return res;
+
+	if (!wiphy_cipher_suites_valid(wiphy))
+		return -EINVAL;
 
 	/* sanity check supported bands/channels */
 	for (band = 0; band < NUM_NL80211_BANDS; band++) {
@@ -1201,7 +1229,7 @@ static void _cfg80211_unregister_wdev(struct wireless_dev *wdev,
 	ASSERT_RTNL();
 	lockdep_assert_held(&rdev->wiphy.mtx);
 
-	flush_work(&wdev->pmsr_free_wk);
+	wiphy_work_flush(wdev->wiphy, &wdev->pmsr_free_wk);
 
 	nl80211_notify_iface(rdev, wdev, NL80211_CMD_DEL_INTERFACE);
 
@@ -1216,6 +1244,7 @@ static void _cfg80211_unregister_wdev(struct wireless_dev *wdev,
 	list_del_rcu(&wdev->list);
 	synchronize_net();
 	rdev->devlist_generation++;
+	wiphy_work_cancel(wdev->wiphy, &wdev->disconnect_wk);
 
 	cfg80211_mlme_purge_registrations(wdev);
 
@@ -1382,7 +1411,7 @@ void cfg80211_init_wdev(struct wireless_dev *wdev)
 	INIT_LIST_HEAD(&wdev->mgmt_registrations);
 	INIT_LIST_HEAD(&wdev->pmsr_list);
 	spin_lock_init(&wdev->pmsr_lock);
-	INIT_WORK(&wdev->pmsr_free_wk, cfg80211_pmsr_free_wk);
+	wiphy_work_init(&wdev->pmsr_free_wk, cfg80211_pmsr_free_wk);
 
 #ifdef CONFIG_CFG80211_WEXT
 	wdev->wext.default_key = -1;
@@ -1404,7 +1433,7 @@ void cfg80211_init_wdev(struct wireless_dev *wdev)
 	     wdev->iftype == NL80211_IFTYPE_ADHOC) && !wdev->use_4addr)
 		wdev->netdev->priv_flags |= IFF_DONT_BRIDGE;
 
-	INIT_WORK(&wdev->disconnect_wk, cfg80211_autodisconnect_wk);
+	wiphy_work_init(&wdev->disconnect_wk, cfg80211_autodisconnect_wk);
 }
 
 void cfg80211_register_wdev(struct cfg80211_registered_device *rdev,
@@ -1512,9 +1541,9 @@ static int cfg80211_netdev_notifier_call(struct notifier_block *nb,
 		wiphy_lock(&rdev->wiphy);
 		cfg80211_leave(rdev, wdev);
 		cfg80211_remove_links(wdev);
-		wiphy_unlock(&rdev->wiphy);
 		/* since we just did cfg80211_leave() nothing to do there */
-		cancel_work_sync(&wdev->disconnect_wk);
+		wiphy_work_cancel(wdev->wiphy, &wdev->disconnect_wk);
+		wiphy_unlock(&rdev->wiphy);
 		break;
 	case NETDEV_DOWN:
 		wiphy_lock(&rdev->wiphy);

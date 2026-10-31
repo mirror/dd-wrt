@@ -16,9 +16,11 @@
 
 #define DM_MSG_PREFIX "transient snapshot"
 
-/*-----------------------------------------------------------------
+/*
+ *---------------------------------------------------------------
  * Implementation of the store for non-persistent snapshots.
- *---------------------------------------------------------------*/
+ *---------------------------------------------------------------
+ */
 struct transient_c {
 	sector_t next_free;
 };
@@ -53,7 +55,7 @@ static int transient_prepare_exception(struct dm_exception_store *store,
 
 static void transient_commit_exception(struct dm_exception_store *store,
 				       struct dm_exception *e, int valid,
-				       void (*callback) (void *, int success),
+				       void (*callback)(void *, int success),
 				       void *callback_context)
 {
 	/* Just succeed */

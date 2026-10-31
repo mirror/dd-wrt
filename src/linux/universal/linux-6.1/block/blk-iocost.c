@@ -3003,9 +3003,20 @@ static void ioc_pd_init(struct blkg_policy_data *pd)
 	spin_unlock_irqrestore(&ioc->lock, flags);
 }
 
+static void iocg_release(struct rcu_head *rcu)
+{
+	struct blkg_policy_data *pd =
+		container_of(rcu, struct blkg_policy_data, rcu_head);
+	struct ioc_gq *iocg = pd_to_iocg(pd);
+
+	free_percpu(iocg->pcpu_stat);
+	kfree(iocg);
+}
+
 static void ioc_pd_free(struct blkg_policy_data *pd)
 {
 	struct ioc_gq *iocg = pd_to_iocg(pd);
+	struct blkcg_gq *blkg = pd_to_blkg(pd);
 	struct ioc *ioc = iocg->ioc;
 	unsigned long flags;
 
@@ -3027,8 +3038,14 @@ static void ioc_pd_free(struct blkg_policy_data *pd)
 
 		hrtimer_cancel(&iocg->waitq_timer);
 	}
-	free_percpu(iocg->pcpu_stat);
-	kfree(iocg);
+
+	/* off ->active_iocgs and timer gone, so nothing can re-arm the delay */
+	iocg->delay = 0;
+	iocg->indelay_since = 0;
+	if (blkg)
+		blkcg_clear_delay(blkg);
+
+	call_rcu(&pd->rcu_head, iocg_release);
 }
 
 static void ioc_pd_stat(struct blkg_policy_data *pd, struct seq_file *s)
@@ -3309,11 +3326,13 @@ static ssize_t ioc_qos_write(struct kernfs_open_file *of, char *input,
 	ioc_refresh_params(ioc, true);
 	spin_unlock_irq(&ioc->lock);
 
+	mutex_unlock(&bdev->bd_queue->rq_qos_mutex);
 	blkdev_put_no_open(bdev);
 	return nbytes;
 einval:
 	ret = -EINVAL;
 err:
+	mutex_unlock(&bdev->bd_queue->rq_qos_mutex);
 	blkdev_put_no_open(bdev);
 	return ret;
 }
@@ -3434,12 +3453,14 @@ static ssize_t ioc_cost_model_write(struct kernfs_open_file *of, char *input,
 	ioc_refresh_params(ioc, true);
 	spin_unlock_irq(&ioc->lock);
 
+	mutex_unlock(&bdev->bd_queue->rq_qos_mutex);
 	blkdev_put_no_open(bdev);
 	return nbytes;
 
 einval:
 	ret = -EINVAL;
 err:
+	mutex_unlock(&bdev->bd_queue->rq_qos_mutex);
 	blkdev_put_no_open(bdev);
 	return ret;
 }

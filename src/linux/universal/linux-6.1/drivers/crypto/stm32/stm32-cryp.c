@@ -4,6 +4,7 @@
  * Author: Fabien Dessenne <fabien.dessenne@st.com>
  */
 
+#include <linux/bottom_half.h>
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/interrupt.h>
@@ -249,7 +250,7 @@ static inline int stm32_cryp_wait_output(struct stm32_cryp *cryp)
 {
 	u32 status;
 
-	return readl_relaxed_poll_timeout(cryp->regs + CRYP_SR, status,
+	return readl_relaxed_poll_timeout_atomic(cryp->regs + CRYP_SR, status,
 			status & SR_OFNE, 10, 100000);
 }
 
@@ -1538,8 +1539,11 @@ static irqreturn_t stm32_cryp_irq_thread(int irq, void *arg)
 		it_mask &= ~IMSCR_OUT;
 	stm32_cryp_write(cryp, CRYP_IMSCR, it_mask);
 
-	if (!cryp->payload_in && !cryp->header_in && !cryp->payload_out)
+	if (!cryp->payload_in && !cryp->header_in && !cryp->payload_out) {
+		local_bh_disable();
 		stm32_cryp_finish_req(cryp, 0);
+		local_bh_enable();
+	}
 
 	return IRQ_HANDLED;
 }

@@ -121,6 +121,11 @@ static void gdlm_ast(void *arg)
 	struct gfs2_glock *gl = arg;
 	unsigned ret = gl->gl_state;
 
+	/* If the glock is dead, we only react to a dlm_unlock() reply. */
+	if (__lockref_is_dead(&gl->gl_lockref) &&
+	    gl->gl_lksb.sb_status != -DLM_EUNLOCK)
+		return;
+
 	gfs2_update_reply_times(gl);
 	BUG_ON(gl->gl_lksb.sb_flags & DLM_SBF_DEMOTED);
 
@@ -170,6 +175,9 @@ out:
 static void gdlm_bast(void *arg, int mode)
 {
 	struct gfs2_glock *gl = arg;
+
+	if (__lockref_is_dead(&gl->gl_lockref))
+		return;
 
 	switch (mode) {
 	case DLM_LOCK_EX:
@@ -291,6 +299,8 @@ static void gdlm_put_lock(struct gfs2_glock *gl)
 	struct lm_lockstruct *ls = &sdp->sd_lockstruct;
 	int error;
 
+	BUG_ON(!__lockref_is_dead(&gl->gl_lockref));
+
 	if (gl->gl_lksb.sb_lkid == 0) {
 		gfs2_glock_free(gl);
 		return;
@@ -305,7 +315,7 @@ static void gdlm_put_lock(struct gfs2_glock *gl)
 
 	if (test_bit(SDF_SKIP_DLM_UNLOCK, &sdp->sd_flags) &&
 	    !gl->gl_lksb.sb_lvbptr) {
-		gfs2_glock_free(gl);
+		gfs2_glock_free_later(gl);
 		return;
 	}
 

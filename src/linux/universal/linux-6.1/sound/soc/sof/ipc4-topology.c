@@ -515,7 +515,7 @@ static int sof_ipc4_widget_setup_comp_dai(struct snd_sof_widget *swidget)
 		}
 
 		list_for_each_entry(w, &sdev->widget_list, list) {
-			if (w->widget->sname &&
+			if (!WIDGET_IS_DAI(w->id) || !w->widget->sname ||
 			    strcmp(w->widget->sname, swidget->widget->sname))
 				continue;
 
@@ -1237,17 +1237,20 @@ sof_ipc4_prepare_copier_module(struct snd_sof_widget *swidget,
 			 */
 			i = 0;
 			list_for_each_entry(w, &sdev->widget_list, list) {
-				if (w->widget->sname &&
+				if (!WIDGET_IS_DAI(w->id) || !w->widget->sname ||
 				    strcmp(w->widget->sname, swidget->widget->sname))
 					continue;
 
 				dai = w->private;
 				alh_copier = (struct sof_ipc4_copier *)dai->private;
+				if (alh_copier->dai_type != SOF_DAI_INTEL_ALH)
+					continue;
 				alh_data = &alh_copier->data;
 				blob->alh_cfg.mapping[i].alh_id = alh_data->gtw_cfg.node_id;
 				blob->alh_cfg.mapping[i].channel_mask = ch_mask;
 				i++;
 			}
+			blob->alh_cfg.count = i;
 			if (blob->alh_cfg.count > 1) {
 				int group_id;
 

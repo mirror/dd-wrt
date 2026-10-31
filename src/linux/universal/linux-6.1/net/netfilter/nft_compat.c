@@ -332,7 +332,8 @@ static int nft_extension_dump_info(struct sk_buff *skb, int attr,
 	return 0;
 }
 
-static int nft_target_dump(struct sk_buff *skb, const struct nft_expr *expr)
+static int nft_target_dump(struct sk_buff *skb,
+			   const struct nft_expr *expr, bool reset)
 {
 	const struct xt_target *target = expr->ops->data;
 	void *info = nft_expr_priv(expr);
@@ -386,6 +387,22 @@ static int nft_target_validate(const struct nft_ctx *ctx,
 			return ret;
 	}
 	return 0;
+}
+
+static int nft_target_bridge_validate(const struct nft_ctx *ctx,
+				      const struct nft_expr *expr)
+{
+	struct xt_target *target = expr->ops->data;
+
+	/* Do not allow UNSPEC to stand-in for NFPROTO_BRIDGE
+	 * targets: they are incompatible.  ebtables targets return
+	 * EBT_ACCEPT, DROP and so on which are not compatible with
+	 * NF_ACCEPT, NF_DROP and so on.
+	 */
+	if (target->family != NFPROTO_BRIDGE)
+		return -ENOENT;
+
+	return nft_target_validate(ctx, expr);
 }
 
 static void __nft_match_eval(const struct nft_expr *expr,
@@ -596,12 +613,14 @@ nla_put_failure:
 	return -1;
 }
 
-static int nft_match_dump(struct sk_buff *skb, const struct nft_expr *expr)
+static int nft_match_dump(struct sk_buff *skb,
+			  const struct nft_expr *expr, bool reset)
 {
 	return __nft_match_dump(skb, expr, nft_expr_priv(expr));
 }
 
-static int nft_match_large_dump(struct sk_buff *skb, const struct nft_expr *e)
+static int nft_match_large_dump(struct sk_buff *skb,
+				const struct nft_expr *e, bool reset)
 {
 	struct nft_xt_match_priv *priv = nft_expr_priv(e);
 
@@ -913,14 +932,16 @@ nft_target_select_ops(const struct nft_ctx *ctx,
 	ops->init = nft_target_init;
 	ops->destroy = nft_target_destroy;
 	ops->dump = nft_target_dump;
-	ops->validate = nft_target_validate;
 	ops->data = target;
 	ops->reduce = NFT_REDUCE_READONLY;
 
-	if (family == NFPROTO_BRIDGE)
+	if (family == NFPROTO_BRIDGE) {
 		ops->eval = nft_target_eval_bridge;
-	else
+		ops->validate = nft_target_bridge_validate;
+	} else {
 		ops->eval = nft_target_eval_xt;
+		ops->validate = nft_target_validate;
+	}
 
 	return ops;
 err:

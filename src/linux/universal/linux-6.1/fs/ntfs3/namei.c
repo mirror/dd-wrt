@@ -250,7 +250,7 @@ static int ntfs_rename(struct user_namespace *mnt_userns, struct inode *dir,
 	struct ntfs_inode *ni = ntfs_i(inode);
 	struct inode *new_inode = d_inode(new_dentry);
 	struct NTFS_DE *de, *new_de;
-	bool is_same, is_bad;
+	bool is_same;
 	/*
 	 * de		- memory of PATH_MAX bytes:
 	 * [0-1024)	- original name (dentry->d_name)
@@ -314,12 +314,8 @@ static int ntfs_rename(struct user_namespace *mnt_userns, struct inode *dir,
 	ni_lock_dir(dir_ni);
 	ni_lock(ni);
 
-	is_bad = false;
-	err = ni_rename(dir_ni, new_dir_ni, ni, de, new_de, &is_bad);
-	if (is_bad) {
-		/* Restore after failed rename failed too. */
-		_ntfs_bad_inode(inode);
-	} else if (!err) {
+	err = ni_rename(dir_ni, new_dir_ni, ni, de, new_de);
+	if (!err) {
 		inode->i_ctime = dir->i_ctime = dir->i_mtime =
 			current_time(dir);
 		mark_inode_dirty(inode);

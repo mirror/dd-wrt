@@ -1266,6 +1266,17 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
 	alloc_hint = get_extent_allocation_hint(inode, start, num_bytes);
 
 	/*
+	 * We're not doing compressed IO, don't unlock the first page (which
+	 * the caller expects to stay locked), don't clear any dirty bits and
+	 * don't set any writeback bits.
+	 *
+	 * Do set the Ordered (Private2) bit so we know this page was properly
+	 * setup for writepage.
+	 */
+	page_ops = unlock ? PAGE_UNLOCK : 0;
+	page_ops |= PAGE_SET_ORDERED;
+
+	/*
 	 * Relocation relies on the relocated extents to have exactly the same
 	 * size as the original extents. Normally writeback for relocation data
 	 * extents follows a NOCOW path because relocation preallocates the
@@ -1335,21 +1346,6 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
 
 		btrfs_dec_block_group_reservations(fs_info, ins.objectid);
 
-		/*
-		 * We're not doing compressed IO, don't unlock the first page
-		 * (which the caller expects to stay locked), don't clear any
-		 * dirty bits and don't set any writeback bits
-		 *
-		 * Do set the Ordered (Private2) bit so we know this page was
-		 * properly setup for writepage.
-		 */
-		page_ops = unlock ? PAGE_UNLOCK : 0;
-		page_ops |= PAGE_SET_ORDERED;
-
-		extent_clear_unlock_delalloc(inode, start, start + ram_size - 1,
-					     locked_page,
-					     EXTENT_LOCKED | EXTENT_DELALLOC,
-					     page_ops);
 		if (num_bytes < cur_alloc_size)
 			num_bytes = 0;
 		else
@@ -1366,6 +1362,8 @@ static noinline int cow_file_range(struct btrfs_inode *inode,
 		if (ret)
 			goto out_unlock;
 	}
+	extent_clear_unlock_delalloc(inode, orig_start, end, locked_page,
+				     EXTENT_LOCKED | EXTENT_DELALLOC, page_ops);
 out:
 	return ret;
 
@@ -1380,10 +1378,15 @@ out_unlock:
 	 * caller to write out the successfully allocated region and retry.
 	 */
 	if (done_offset && ret == -EAGAIN) {
-		if (orig_start < start)
+		if (orig_start < start) {
+			extent_clear_unlock_delalloc(inode, orig_start, start - 1,
+						     locked_page,
+						     EXTENT_LOCKED | EXTENT_DELALLOC,
+						     page_ops);
 			*done_offset = start - 1;
-		else
+		} else {
 			*done_offset = start;
+		}
 		return ret;
 	} else if (ret == -EAGAIN) {
 		/* Convert to -ENOSPC since the caller cannot retry. */
@@ -1399,28 +1402,30 @@ out_unlock:
 	 * We process each region below.
 	 */
 
-	clear_bits = EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DELALLOC_NEW |
-		EXTENT_DEFRAG | EXTENT_CLEAR_META_RESV;
-	page_ops = PAGE_UNLOCK | PAGE_START_WRITEBACK | PAGE_END_WRITEBACK;
-
 	/*
 	 * For the range (1). We have already instantiated the ordered extents
 	 * for this region. They are cleaned up by
 	 * btrfs_cleanup_ordered_extents() in e.g,
-	 * btrfs_run_delalloc_range(). EXTENT_LOCKED | EXTENT_DELALLOC are
-	 * already cleared in the above loop. And, EXTENT_DELALLOC_NEW |
-	 * EXTENT_DEFRAG | EXTENT_CLEAR_META_RESV are handled by the cleanup
-	 * function.
+	 * btrfs_run_delalloc_range().
+	 * EXTENT_DELALLOC_NEW | EXTENT_DEFRAG | EXTENT_CLEAR_META_RESV
+	 * are also handled by the cleanup function.
 	 *
-	 * However, in case of unlock == 0, we still need to unlock the pages
-	 * (except @locked_page) to ensure all the pages are unlocked.
+	 * So here we only clear EXTENT_LOCKED and EXTENT_DELALLOC flag, and
+	 * finish the writeback of the involved folios, which will be never submitted.
 	 */
-	if (!unlock && orig_start < start) {
+	if (orig_start < start) {
+		clear_bits = EXTENT_LOCKED | EXTENT_DELALLOC;
+		page_ops = PAGE_UNLOCK | PAGE_START_WRITEBACK | PAGE_END_WRITEBACK;
+
 		if (!locked_page)
 			mapping_set_error(inode->vfs_inode.i_mapping, ret);
 		extent_clear_unlock_delalloc(inode, orig_start, start - 1,
-					     locked_page, 0, page_ops);
+					     locked_page, clear_bits, page_ops);
 	}
+
+	clear_bits = EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DELALLOC_NEW |
+		     EXTENT_DEFRAG | EXTENT_CLEAR_META_RESV;
+	page_ops = PAGE_UNLOCK | PAGE_START_WRITEBACK | PAGE_END_WRITEBACK;
 
 	/*
 	 * For the range (2). If we reserved an extent for our delalloc range
@@ -7690,15 +7695,22 @@ static int btrfs_get_blocks_direct_write(struct extent_map **map,
 					      len, orig_block_len,
 					      ram_bytes, type);
 		btrfs_dec_nocow_writers(bg);
-		if (type == BTRFS_ORDERED_PREALLOC) {
+		if (IS_ERR(em2)) {
+			ret = PTR_ERR(em2);
+			free_extent_map(em);
+			*map = NULL;
+			goto out;
+		}
+
+		/*
+		 * True NOCOW writes don't need to create a new extent map,
+		 * while PREALLOC writes must replace the existing one.
+		 */
+		if (em2) {
+			ASSERT(type == BTRFS_ORDERED_PREALLOC);
 			free_extent_map(em);
 			*map = em2;
 			em = em2;
-		}
-
-		if (IS_ERR(em2)) {
-			ret = PTR_ERR(em2);
-			goto out;
 		}
 
 		dio_data->nocow_done = true;

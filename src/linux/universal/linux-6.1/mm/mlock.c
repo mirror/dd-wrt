@@ -141,7 +141,7 @@ static struct lruvec *__munlock_page(struct page *page, struct lruvec *lruvec)
 
 munlock:
 	if (TestClearPageMlocked(page)) {
-		__mod_zone_page_state(page_zone(page), NR_MLOCK, -nr_pages);
+		mod_zone_page_state(page_zone(page), NR_MLOCK, -nr_pages);
 		if (isolated || !PageUnevictable(page))
 			__count_vm_events(UNEVICTABLE_PGMUNLOCKED, nr_pages);
 		else

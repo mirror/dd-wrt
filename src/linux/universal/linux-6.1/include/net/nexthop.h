@@ -97,7 +97,7 @@ struct nh_res_table {
 
 struct nh_grp_entry {
 	struct nexthop	*nh;
-	u8		weight;
+	u16		weight;
 
 	union {
 		struct {
@@ -173,14 +173,14 @@ struct nh_notifier_single_info {
 		__be32 ipv4;
 		struct in6_addr ipv6;
 	};
+	u32 id;
 	u8 is_reject:1,
 	   is_fdb:1,
 	   has_encap:1;
 };
 
 struct nh_notifier_grp_entry_info {
-	u8 weight;
-	u32 id;
+	u16 weight;
 	struct nh_notifier_single_info nh;
 };
 

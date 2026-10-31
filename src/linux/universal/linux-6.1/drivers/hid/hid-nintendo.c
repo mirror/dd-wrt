@@ -301,6 +301,7 @@ enum joycon_ctlr_state {
 	JOYCON_CTLR_STATE_INIT,
 	JOYCON_CTLR_STATE_READ,
 	JOYCON_CTLR_STATE_REMOVED,
+	JOYCON_CTLR_STATE_SUSPENDED,
 };
 
 /* Controller type received as part of device info */
@@ -1718,10 +1719,6 @@ static int joycon_input_create(struct joycon_ctlr *ctlr)
 	ctlr->rumble_msecs = jiffies_to_msecs(jiffies);
 #endif
 
-	ret = input_register_device(ctlr->input);
-	if (ret)
-		return ret;
-
 	/* configure the imu input device */
 	ctlr->imu_input = devm_input_allocate_device(&hdev->dev);
 	if (!ctlr->imu_input)
@@ -1769,6 +1766,10 @@ static int joycon_input_create(struct joycon_ctlr *ctlr)
 	__set_bit(INPUT_PROP_ACCELEROMETER, ctlr->imu_input->propbit);
 
 	ret = input_register_device(ctlr->imu_input);
+	if (ret)
+		return ret;
+
+	ret = input_register_device(ctlr->input);
 	if (ret)
 		return ret;
 
@@ -2341,12 +2342,44 @@ static void nintendo_hid_remove(struct hid_device *hdev)
 
 static int nintendo_hid_resume(struct hid_device *hdev)
 {
-	int ret = joycon_init(hdev);
+	struct joycon_ctlr *ctlr = hid_get_drvdata(hdev);
+	int ret;
 
+	hid_dbg(hdev, "resume\n");
+	if (hdev->bus != BUS_USB) {
+		hid_dbg(hdev, "no-op resume for bt ctlr\n");
+		ctlr->ctlr_state = JOYCON_CTLR_STATE_READ;
+		return 0;
+	}
+
+	ret = joycon_init(hdev);
 	if (ret)
-		hid_err(hdev, "Failed to restore controller after resume");
+		hid_err(hdev,
+			"Failed to restore controller after resume: %d\n",
+			ret);
+	else
+		ctlr->ctlr_state = JOYCON_CTLR_STATE_READ;
 
 	return ret;
+}
+
+static int nintendo_hid_suspend(struct hid_device *hdev, pm_message_t message)
+{
+	struct joycon_ctlr *ctlr = hid_get_drvdata(hdev);
+
+	hid_dbg(hdev, "suspend: %d\n", message.event);
+	/*
+	 * Avoid any blocking loops in suspend/resume transitions.
+	 *
+	 * joycon_enforce_subcmd_rate() can result in repeated retries if for
+	 * whatever reason the controller stops providing input reports.
+	 *
+	 * This has been observed with bluetooth controllers which lose
+	 * connectivity prior to suspend (but not long enough to result in
+	 * complete disconnection).
+	 */
+	ctlr->ctlr_state = JOYCON_CTLR_STATE_SUSPENDED;
+	return 0;
 }
 
 #endif
@@ -2375,6 +2408,7 @@ static struct hid_driver nintendo_hid_driver = {
 
 #ifdef CONFIG_PM
 	.resume		= nintendo_hid_resume,
+	.suspend	= nintendo_hid_suspend,
 #endif
 };
 module_hid_driver(nintendo_hid_driver);

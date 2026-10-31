@@ -1348,6 +1348,11 @@ group_extend_out:
 			goto mext_out;
 		}
 
+		if (file_inode(filp)->i_sb != file_inode(donor.file)->i_sb) {
+			err = -EXDEV;
+			goto mext_out;
+		}
+
 		if (ext4_has_feature_bigalloc(sb)) {
 			ext4_msg(sb, KERN_ERR,
 				 "Online defrag not supported with bigalloc");

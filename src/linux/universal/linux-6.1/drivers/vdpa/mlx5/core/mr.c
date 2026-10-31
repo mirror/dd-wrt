@@ -562,6 +562,9 @@ static int _mlx5_vdpa_create_dvq_mr(struct mlx5_vdpa_dev *mvdev,
 	if (mr->initialized)
 		return 0;
 
+	if (mlx5_vdpa_max_iotlb_entries < 2)
+		return -EINVAL;
+
 	if (iotlb)
 		err = create_user_mr(mvdev, iotlb);
 	else

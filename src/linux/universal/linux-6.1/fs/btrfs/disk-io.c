@@ -3798,6 +3798,10 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
 		}
 	}
 
+	/* If the fs has any rescue options, no transaction is allowed. */
+	if (btrfs_is_full_ro(fs_info))
+		set_bit(BTRFS_FS_STATE_ERROR, &fs_info->fs_state);
+
 	fs_info->fs_root = btrfs_get_fs_root(fs_info, BTRFS_FS_TREE_OBJECTID, true);
 	if (IS_ERR(fs_info->fs_root)) {
 		err = PTR_ERR(fs_info->fs_root);
@@ -5121,6 +5125,7 @@ static int btrfs_destroy_marked_extents(struct btrfs_fs_info *fs_info,
 			free_extent_buffer_stale(eb);
 		}
 	}
+	extent_io_tree_release(dirty_pages);
 
 	return ret;
 }

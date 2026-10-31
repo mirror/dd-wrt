@@ -21,10 +21,12 @@
 
 #define DM_PREFETCH_CHUNKS		12
 
-/*-----------------------------------------------------------------
+/*
+ *---------------------------------------------------------------
  * Persistent snapshots, by persistent we mean that the snapshot
  * will survive a reboot.
- *---------------------------------------------------------------*/
+ *---------------------------------------------------------------
+ */
 
 /*
  * We need to store a record of which parts of the origin have
@@ -693,7 +695,7 @@ static int persistent_prepare_exception(struct dm_exception_store *store,
 
 static void persistent_commit_exception(struct dm_exception_store *store,
 					struct dm_exception *e, int valid,
-					void (*callback) (void *, int success),
+					void (*callback)(void *, int success),
 					void *callback_context)
 {
 	unsigned int i;

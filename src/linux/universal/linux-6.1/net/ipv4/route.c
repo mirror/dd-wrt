@@ -1092,6 +1092,8 @@ static void __ip_rt_update_pmtu(struct rtable *rt, struct flowi4 *fl4, u32 mtu)
 
 			for (nhsel = 0; nhsel < fib_info_num_path(res.fi); nhsel++) {
 				nhc = fib_info_nhc(res.fi, nhsel);
+				if (!nhc)
+					break;
 				update_or_create_fnhe(nhc, fl4->daddr, 0, mtu, lock,
 						      jiffies + net->ipv4.ip_rt_mtu_expires);
 			}
@@ -1576,9 +1578,9 @@ void rt_add_uncached_list(struct rtable *rt)
 
 void rt_del_uncached_list(struct rtable *rt)
 {
-	if (!list_empty(&rt->rt_uncached)) {
-		struct uncached_list *ul = rt->rt_uncached_list;
+	struct uncached_list *ul = rt->rt_uncached_list;
 
+	if (ul) {
 		spin_lock_bh(&ul->lock);
 		list_del_init(&rt->rt_uncached);
 		spin_unlock_bh(&ul->lock);
@@ -1704,6 +1706,7 @@ struct rtable *rt_dst_alloc(struct net_device *dev,
 		rt->rt_gw_family = 0;
 		rt->rt_gw4 = 0;
 		INIT_LIST_HEAD(&rt->rt_uncached);
+		rt->rt_uncached_list = NULL;
 
 		rt->dst.output = ip_output;
 		if (flags & RTCF_LOCAL)
@@ -1735,6 +1738,7 @@ struct rtable *rt_dst_clone(struct net_device *dev, struct rtable *rt)
 		else if (rt->rt_gw_family == AF_INET6)
 			new_rt->rt_gw6 = rt->rt_gw6;
 		INIT_LIST_HEAD(&new_rt->rt_uncached);
+		new_rt->rt_uncached_list = NULL;
 
 		new_rt->dst.input = rt->dst.input;
 		new_rt->dst.output = rt->dst.output;
@@ -2926,6 +2930,7 @@ struct dst_entry *ipv4_blackhole_route(struct net *net, struct dst_entry *dst_or
 			rt->rt_gw6 = ort->rt_gw6;
 
 		INIT_LIST_HEAD(&rt->rt_uncached);
+		rt->rt_uncached_list = NULL;
 	}
 
 	dst_release(dst_orig);

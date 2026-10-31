@@ -756,6 +756,7 @@ static void damon_do_apply_schemes(struct damon_ctx *c,
 		unsigned long sz = damon_sz_region(r);
 		struct timespec64 begin, end;
 		unsigned long sz_applied = 0;
+		bool skip = false;
 
 		if (!s->wmarks.activated)
 			continue;
@@ -768,14 +769,11 @@ static void damon_do_apply_schemes(struct damon_ctx *c,
 		if (quota->charge_target_from) {
 			if (t != quota->charge_target_from)
 				continue;
-			if (r == damon_last_region(t)) {
-				quota->charge_target_from = NULL;
-				quota->charge_addr_from = 0;
-				continue;
-			}
 			if (quota->charge_addr_from &&
-					r->ar.end <= quota->charge_addr_from)
-				continue;
+					r->ar.end <= quota->charge_addr_from) {
+				skip = true;
+				goto clean_charge_from_skip;
+			}
 
 			if (quota->charge_addr_from && r->ar.start <
 					quota->charge_addr_from) {
@@ -783,17 +781,23 @@ static void damon_do_apply_schemes(struct damon_ctx *c,
 						r->ar.start, DAMON_MIN_REGION);
 				if (!sz) {
 					if (damon_sz_region(r) <=
-					    DAMON_MIN_REGION)
-						continue;
+					    DAMON_MIN_REGION) {
+						skip = true;
+						goto clean_charge_from_skip;
+					}
 					sz = DAMON_MIN_REGION;
 				}
 				damon_split_region_at(t, r, sz);
-				r = damon_next_region(r);
-				sz = damon_sz_region(r);
+				skip = true;
 			}
+		}
+clean_charge_from_skip:
+		if (r == damon_last_region(t)) {
 			quota->charge_target_from = NULL;
 			quota->charge_addr_from = 0;
 		}
+		if (skip)
+			continue;
 
 		if (!damos_valid_target(c, t, r, s))
 			continue;
@@ -858,7 +862,7 @@ static void damos_set_effective_quota(struct damos_quota *quota)
 static void kdamond_apply_schemes(struct damon_ctx *c)
 {
 	struct damon_target *t;
-	struct damon_region *r, *next_r;
+	struct damon_region *r;
 	struct damos *s;
 
 	damon_for_each_scheme(s, c) {
@@ -869,7 +873,7 @@ static void kdamond_apply_schemes(struct damon_ctx *c)
 		if (!s->wmarks.activated)
 			continue;
 
-		if (!quota->ms && !quota->sz)
+		if (!quota->esz && !quota->ms && !quota->sz)
 			continue;
 
 		/* New charge window starts */
@@ -912,7 +916,7 @@ static void kdamond_apply_schemes(struct damon_ctx *c)
 	}
 
 	damon_for_each_target(t, c) {
-		damon_for_each_region_safe(r, next_r, t)
+		damon_for_each_region(r, t)
 			damon_do_apply_schemes(c, t, r);
 	}
 }

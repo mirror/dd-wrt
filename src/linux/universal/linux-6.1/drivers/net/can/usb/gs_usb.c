@@ -251,6 +251,11 @@ struct canfd_quirk {
 	u8 quirk;
 } __packed;
 
+/* struct gs_host_frame::echo_id == GS_HOST_FRAME_ECHO_ID_RX indicates
+ * a regular RX'ed CAN frame
+ */
+#define GS_HOST_FRAME_ECHO_ID_RX 0xffffffff
+
 struct gs_host_frame {
 	struct_group(header,
 		u32 echo_id;
@@ -297,12 +302,6 @@ struct gs_can {
 	struct can_bittiming_const bt_const, data_bt_const;
 	unsigned int channel;	/* channel number */
 
-	/* time counter for hardware timestamps */
-	struct cyclecounter cc;
-	struct timecounter tc;
-	spinlock_t tc_lock; /* spinlock to guard access tc->cycle_last */
-	struct delayed_work timestamp;
-
 	u32 feature;
 	unsigned int hf_size_tx;
 
@@ -318,6 +317,13 @@ struct gs_can {
 struct gs_usb {
 	struct usb_anchor rx_submitted;
 	struct usb_device *udev;
+
+	/* time counter for hardware timestamps */
+	struct cyclecounter cc;
+	struct timecounter tc;
+	spinlock_t tc_lock; /* spinlock to guard access tc->cycle_last */
+	struct delayed_work timestamp;
+
 	unsigned int hf_size_rx;
 	u8 active_channels;
 	u8 channel_cnt;
@@ -387,16 +393,15 @@ static int gs_cmd_reset(struct gs_can *dev)
 				    GFP_KERNEL);
 }
 
-static inline int gs_usb_get_timestamp(const struct gs_can *dev,
+static inline int gs_usb_get_timestamp(const struct gs_usb *parent,
 				       u32 *timestamp_p)
 {
 	__le32 timestamp;
 	int rc;
 
-	rc = usb_control_msg_recv(interface_to_usbdev(dev->iface), 0,
-				  GS_USB_BREQ_TIMESTAMP,
+	rc = usb_control_msg_recv(parent->udev, 0, GS_USB_BREQ_TIMESTAMP,
 				  USB_DIR_IN | USB_TYPE_VENDOR | USB_RECIP_INTERFACE,
-				  dev->channel, 0,
+				  0, 0,
 				  &timestamp, sizeof(timestamp),
 				  USB_CTRL_GET_TIMEOUT,
 				  GFP_KERNEL);
@@ -410,20 +415,20 @@ static inline int gs_usb_get_timestamp(const struct gs_can *dev,
 
 static u64 gs_usb_timestamp_read(const struct cyclecounter *cc) __must_hold(&dev->tc_lock)
 {
-	struct gs_can *dev = container_of(cc, struct gs_can, cc);
+	struct gs_usb *parent = container_of(cc, struct gs_usb, cc);
 	u32 timestamp = 0;
 	int err;
 
-	lockdep_assert_held(&dev->tc_lock);
+	lockdep_assert_held(&parent->tc_lock);
 
 	/* drop lock for synchronous USB transfer */
-	spin_unlock_bh(&dev->tc_lock);
-	err = gs_usb_get_timestamp(dev, &timestamp);
-	spin_lock_bh(&dev->tc_lock);
+	spin_unlock_bh(&parent->tc_lock);
+	err = gs_usb_get_timestamp(parent, &timestamp);
+	spin_lock_bh(&parent->tc_lock);
 	if (err)
-		netdev_err(dev->netdev,
-			   "Error %d while reading timestamp. HW timestamps may be inaccurate.",
-			   err);
+		dev_err(&parent->udev->dev,
+			"Error %d while reading timestamp. HW timestamps may be inaccurate.",
+			err);
 
 	return timestamp;
 }
@@ -431,14 +436,14 @@ static u64 gs_usb_timestamp_read(const struct cyclecounter *cc) __must_hold(&dev
 static void gs_usb_timestamp_work(struct work_struct *work)
 {
 	struct delayed_work *delayed_work = to_delayed_work(work);
-	struct gs_can *dev;
+	struct gs_usb *parent;
 
-	dev = container_of(delayed_work, struct gs_can, timestamp);
-	spin_lock_bh(&dev->tc_lock);
-	timecounter_read(&dev->tc);
-	spin_unlock_bh(&dev->tc_lock);
+	parent = container_of(delayed_work, struct gs_usb, timestamp);
+	spin_lock_bh(&parent->tc_lock);
+	timecounter_read(&parent->tc);
+	spin_unlock_bh(&parent->tc_lock);
 
-	schedule_delayed_work(&dev->timestamp,
+	schedule_delayed_work(&parent->timestamp,
 			      GS_USB_TIMESTAMP_WORK_DELAY_SEC * HZ);
 }
 
@@ -446,37 +451,38 @@ static void gs_usb_skb_set_timestamp(struct gs_can *dev,
 				     struct sk_buff *skb, u32 timestamp)
 {
 	struct skb_shared_hwtstamps *hwtstamps = skb_hwtstamps(skb);
+	struct gs_usb *parent = dev->parent;
 	u64 ns;
 
-	spin_lock_bh(&dev->tc_lock);
-	ns = timecounter_cyc2time(&dev->tc, timestamp);
-	spin_unlock_bh(&dev->tc_lock);
+	spin_lock_bh(&parent->tc_lock);
+	ns = timecounter_cyc2time(&parent->tc, timestamp);
+	spin_unlock_bh(&parent->tc_lock);
 
 	hwtstamps->hwtstamp = ns_to_ktime(ns);
 }
 
-static void gs_usb_timestamp_init(struct gs_can *dev)
+static void gs_usb_timestamp_init(struct gs_usb *parent)
 {
-	struct cyclecounter *cc = &dev->cc;
+	struct cyclecounter *cc = &parent->cc;
 
 	cc->read = gs_usb_timestamp_read;
 	cc->mask = CYCLECOUNTER_MASK(32);
 	cc->shift = 32 - bits_per(NSEC_PER_SEC / GS_USB_TIMESTAMP_TIMER_HZ);
 	cc->mult = clocksource_hz2mult(GS_USB_TIMESTAMP_TIMER_HZ, cc->shift);
 
-	spin_lock_init(&dev->tc_lock);
-	spin_lock_bh(&dev->tc_lock);
-	timecounter_init(&dev->tc, &dev->cc, ktime_get_real_ns());
-	spin_unlock_bh(&dev->tc_lock);
+	spin_lock_init(&parent->tc_lock);
+	spin_lock_bh(&parent->tc_lock);
+	timecounter_init(&parent->tc, &parent->cc, ktime_get_real_ns());
+	spin_unlock_bh(&parent->tc_lock);
 
-	INIT_DELAYED_WORK(&dev->timestamp, gs_usb_timestamp_work);
-	schedule_delayed_work(&dev->timestamp,
+	INIT_DELAYED_WORK(&parent->timestamp, gs_usb_timestamp_work);
+	schedule_delayed_work(&parent->timestamp,
 			      GS_USB_TIMESTAMP_WORK_DELAY_SEC * HZ);
 }
 
-static void gs_usb_timestamp_stop(struct gs_can *dev)
+static void gs_usb_timestamp_stop(struct gs_usb *parent)
 {
-	cancel_delayed_work_sync(&dev->timestamp);
+	cancel_delayed_work_sync(&parent->timestamp);
 }
 
 static void gs_update_state(struct gs_can *dev, struct can_frame *cf)
@@ -522,6 +528,37 @@ static void gs_usb_set_timestamp(struct gs_can *dev, struct sk_buff *skb,
 	return;
 }
 
+static unsigned int
+gs_usb_get_minimum_rx_length(const struct gs_can *dev, const struct gs_host_frame *hf,
+			     unsigned int *data_length_p)
+{
+	unsigned int minimum_length, data_length = 0;
+
+	if (hf->flags & GS_CAN_FLAG_FD) {
+		if (hf->echo_id == GS_HOST_FRAME_ECHO_ID_RX)
+			data_length = can_fd_dlc2len(hf->can_dlc);
+
+		if (dev->feature & GS_CAN_FEATURE_HW_TIMESTAMP)
+			/* timestamp follows data field of max size */
+			minimum_length = struct_size(hf, canfd_ts, 1);
+		else
+			minimum_length = sizeof(hf->header) + data_length;
+	} else {
+		if (hf->echo_id == GS_HOST_FRAME_ECHO_ID_RX &&
+		    !(hf->can_id & cpu_to_le32(CAN_RTR_FLAG)))
+			data_length = can_cc_dlc2len(hf->can_dlc);
+
+		if (dev->feature & GS_CAN_FEATURE_HW_TIMESTAMP)
+			/* timestamp follows data field of max size */
+			minimum_length = struct_size(hf, classic_can_ts, 1);
+		else
+			minimum_length = sizeof(hf->header) + data_length;
+	}
+
+	*data_length_p = data_length;
+	return minimum_length;
+}
+
 static void gs_usb_receive_bulk_callback(struct urb *urb)
 {
 	struct gs_usb *parent = urb->context;
@@ -530,7 +567,7 @@ static void gs_usb_receive_bulk_callback(struct urb *urb)
 	int rc;
 	struct net_device_stats *stats;
 	struct gs_host_frame *hf = urb->transfer_buffer;
-	unsigned int minimum_length;
+	unsigned int minimum_length, data_length;
 	struct gs_tx_context *txc;
 	struct can_frame *cf;
 	struct canfd_frame *cfd;
@@ -570,20 +607,36 @@ static void gs_usb_receive_bulk_callback(struct urb *urb)
 	if (!netif_device_present(netdev))
 		return;
 
-	if (hf->echo_id == -1) { /* normal rx */
+	if (!netif_running(netdev))
+		goto resubmit_urb;
+
+	minimum_length = gs_usb_get_minimum_rx_length(dev, hf, &data_length);
+	if (urb->actual_length < minimum_length) {
+		stats->rx_errors++;
+		stats->rx_length_errors++;
+
+		if (net_ratelimit())
+			netdev_err(netdev,
+				   "short read (actual_length=%u, minimum_length=%u)\n",
+				   urb->actual_length, minimum_length);
+
+		goto resubmit_urb;
+	}
+
+	if (hf->echo_id == GS_HOST_FRAME_ECHO_ID_RX) { /* normal rx */
 		if (hf->flags & GS_CAN_FLAG_FD) {
 			skb = alloc_canfd_skb(dev->netdev, &cfd);
 			if (!skb)
 				goto resubmit_urb;
 
 			cfd->can_id = le32_to_cpu(hf->can_id);
-			cfd->len = can_fd_dlc2len(hf->can_dlc);
+			cfd->len = data_length;
 			if (hf->flags & GS_CAN_FLAG_BRS)
 				cfd->flags |= CANFD_BRS;
 			if (hf->flags & GS_CAN_FLAG_ESI)
 				cfd->flags |= CANFD_ESI;
 
-			memcpy(cfd->data, hf->canfd->data, cfd->len);
+			memcpy(cfd->data, hf->canfd->data, data_length);
 		} else {
 			skb = alloc_can_skb(dev->netdev, &cf);
 			if (!skb)
@@ -592,7 +645,7 @@ static void gs_usb_receive_bulk_callback(struct urb *urb)
 			cf->can_id = le32_to_cpu(hf->can_id);
 			can_frame_set_cc_len(cf, hf->can_dlc, dev->can.ctrlmode);
 
-			memcpy(cf->data, hf->classic_can->data, 8);
+			memcpy(cf->data, hf->classic_can->data, data_length);
 
 			/* ERROR frames tell us information about the controller */
 			if (le32_to_cpu(hf->can_id) & CAN_ERR_FLAG)
@@ -891,6 +944,9 @@ static int gs_can_open(struct net_device *netdev)
 	}
 
 	if (!parent->active_channels) {
+		if (dev->feature & GS_CAN_FEATURE_HW_TIMESTAMP)
+			gs_usb_timestamp_init(parent);
+
 		for (i = 0; i < GS_MAX_RX_URBS; i++) {
 			u8 *buf;
 
@@ -973,10 +1029,6 @@ static int gs_can_open(struct net_device *netdev)
 		}
 	}
 
-	/* start polling timestamp */
-	if (dev->feature & GS_CAN_FEATURE_HW_TIMESTAMP)
-		gs_usb_timestamp_init(dev);
-
 	/* finally start device */
 	dev->can.state = CAN_STATE_ERROR_ACTIVE;
 	dm.flags = cpu_to_le32(flags);
@@ -987,8 +1039,6 @@ static int gs_can_open(struct net_device *netdev)
 				  GFP_KERNEL);
 	if (rc) {
 		netdev_err(netdev, "Couldn't start device (err=%d)\n", rc);
-		if (dev->feature & GS_CAN_FEATURE_HW_TIMESTAMP)
-			gs_usb_timestamp_stop(dev);
 		dev->can.state = CAN_STATE_STOPPED;
 
 		goto out_usb_kill_anchored_urbs;
@@ -1005,8 +1055,12 @@ out_usb_unanchor_urb:
 out_usb_free_urb:
 	usb_free_urb(urb);
 out_usb_kill_anchored_urbs:
-	if (!parent->active_channels)
+	if (!parent->active_channels) {
 		usb_kill_anchored_urbs(&parent->rx_submitted);
+
+		if (dev->feature & GS_CAN_FEATURE_HW_TIMESTAMP)
+			gs_usb_timestamp_stop(parent);
+	}
 
 	close_candev(netdev);
 
@@ -1021,14 +1075,13 @@ static int gs_can_close(struct net_device *netdev)
 
 	netif_stop_queue(netdev);
 
-	/* stop polling timestamp */
-	if (dev->feature & GS_CAN_FEATURE_HW_TIMESTAMP)
-		gs_usb_timestamp_stop(dev);
-
 	/* Stop polling */
 	parent->active_channels--;
 	if (!parent->active_channels) {
 		usb_kill_anchored_urbs(&parent->rx_submitted);
+
+		if (dev->feature & GS_CAN_FEATURE_HW_TIMESTAMP)
+			gs_usb_timestamp_stop(parent);
 	}
 
 	/* Stop sending URBs */

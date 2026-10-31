@@ -507,7 +507,7 @@ struct aa_profile *aa_fqlookupn_profile(struct aa_label *base,
 }
 
 /**
- * aa_new_null_profile - create or find a null-X learning profile
+ * __aa_new_null_profile - create or find a null-X learning profile
  * @parent: profile that caused this profile to be created (NOT NULL)
  * @hat: true if the null- learning profile is a hat
  * @base: name to base the null profile off of
@@ -524,14 +524,15 @@ struct aa_profile *aa_fqlookupn_profile(struct aa_label *base,
  *
  * Returns: new refcounted profile else NULL on failure
  */
-struct aa_profile *aa_new_null_profile(struct aa_profile *parent, bool hat,
-				       const char *base, gfp_t gfp)
+struct aa_profile *__aa_new_null_profile(struct aa_profile *parent, bool hat,
+					 const char *base, gfp_t gfp)
 {
 	struct aa_profile *p, *profile;
 	const char *bname;
 	char *name = NULL;
 
 	AA_BUG(!parent);
+	AA_BUG(!mutex_is_locked(&parent->ns->lock));
 
 	if (base) {
 		name = kmalloc(strlen(parent->base.hname) + 8 + strlen(base),
@@ -572,7 +573,6 @@ name:
 	profile->file.dfa = aa_get_dfa(nulldfa);
 	profile->policy.dfa = aa_get_dfa(nulldfa);
 
-	mutex_lock_nested(&profile->ns->lock, profile->ns->level);
 	p = __find_child(&parent->base.profiles, bname);
 	if (p) {
 		aa_free_profile(profile);
@@ -580,7 +580,6 @@ name:
 	} else {
 		__add_profile(&parent->base.profiles, profile);
 	}
-	mutex_unlock(&profile->ns->lock);
 
 	/* refcount released by caller */
 out:
@@ -592,6 +591,18 @@ fail:
 	kfree(name);
 	aa_free_profile(profile);
 	return NULL;
+}
+
+struct aa_profile *aa_new_null_profile(struct aa_profile *parent, bool hat,
+				       const char *base, gfp_t gfp)
+{
+	struct aa_profile *profile;
+
+	mutex_lock_nested(&parent->ns->lock, parent->ns->level);
+	profile = __aa_new_null_profile(parent, hat, base, gfp);
+	mutex_unlock(&parent->ns->lock);
+
+	return profile;
 }
 
 /**

@@ -1001,11 +1001,21 @@ void smb2_deferred_work_close(struct work_struct *work)
 {
 	struct cifsFileInfo *cfile = container_of(work,
 			struct cifsFileInfo, deferred.work);
+	struct cifsInodeInfo *cinode = CIFS_I(d_inode(cfile->dentry));
 
-	spin_lock(&CIFS_I(d_inode(cfile->dentry))->deferred_lock);
+	spin_lock(&cinode->deferred_lock);
 	cifs_del_deferred_close(cfile);
 	cfile->deferred_close_scheduled = false;
-	spin_unlock(&CIFS_I(d_inode(cfile->dentry))->deferred_lock);
+	spin_unlock(&cinode->deferred_lock);
+	/*
+	 * Refresh time_last_write immediately before the actual server close
+	 * so the protection window is anchored to the real close time, not
+	 * the earlier userspace close time stored by cifs_close().
+	 */
+	if (OPEN_FMODE(cfile->f_flags) & FMODE_WRITE) {
+		/* Pairs with smp_load_acquire() in is_size_safe_to_change(). */
+		smp_store_release(&cinode->time_last_write, jiffies);
+	}
 	_cifsFileInfo_put(cfile, true, false);
 }
 
@@ -1021,6 +1031,10 @@ int cifs_close(struct inode *inode, struct file *file)
 	if (file->private_data != NULL) {
 		cfile = file->private_data;
 		file->private_data = NULL;
+		if (file->f_mode & FMODE_WRITE) {
+		/* Pairs with smp_load_acquire() in is_size_safe_to_change(). */
+			smp_store_release(&cinode->time_last_write, jiffies);
+		}
 		dclose = kmalloc(sizeof(struct cifs_deferred_close), GFP_KERNEL);
 		if ((cifs_sb->ctx->closetimeo && cinode->oplock == CIFS_CACHE_RHW_FLG)
 		    && cinode->lease_granted &&
@@ -1042,11 +1056,18 @@ int cifs_close(struct inode *inode, struct file *file)
 					cifsFileInfo_get(cfile);
 			} else {
 				/* Deferred close for files */
-				queue_delayed_work(deferredclose_wq,
-						&cfile->deferred, cifs_sb->ctx->closetimeo);
-				cfile->deferred_close_scheduled = true;
-				spin_unlock(&cinode->deferred_lock);
-				return 0;
+				/*
+				 * Each queued execution owns one reference.
+				 * If nothing was queued, the reference of
+				 * the closing file is dropped below.
+				 */
+				if (queue_delayed_work(deferredclose_wq,
+						       &cfile->deferred,
+						       cifs_sb->ctx->closetimeo)) {
+					cfile->deferred_close_scheduled = true;
+					spin_unlock(&cinode->deferred_lock);
+					return 0;
+				}
 			}
 			spin_unlock(&cinode->deferred_lock);
 			_cifsFileInfo_put(cfile, true, false);
@@ -5173,8 +5194,6 @@ void cifs_oplock_break(struct work_struct *work)
 	struct cifsFileInfo *cfile = container_of(work, struct cifsFileInfo,
 						  oplock_break);
 	struct inode *inode = d_inode(cfile->dentry);
-	struct super_block *sb = inode->i_sb;
-	struct cifs_sb_info *cifs_sb = CIFS_SB(sb);
 	struct cifsInodeInfo *cinode = CIFS_I(inode);
 	struct cifs_tcon *tcon;
 	struct TCP_Server_Info *server;
@@ -5187,8 +5206,8 @@ void cifs_oplock_break(struct work_struct *work)
 	wait_on_bit(&cinode->flags, CIFS_INODE_PENDING_WRITERS,
 			TASK_UNINTERRUPTIBLE);
 
-	tlink = cifs_sb_tlink(cifs_sb);
-	if (IS_ERR(tlink)) {
+	tlink = cifs_get_tlink(cfile->tlink);
+	if (IS_ERR_OR_NULL(tlink)) {
 		/* drop the reference taken when the break was queued */
 		_cifsFileInfo_put(cfile, false /* do not wait for ourself */, false);
 		goto out;

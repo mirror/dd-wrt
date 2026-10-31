@@ -452,7 +452,10 @@ out:
 	while (!cfg80211_chandef_usable(sdata->local->hw.wiphy, chandef,
 					tracking ? 0 :
 						   IEEE80211_CHAN_DISABLED)) {
-		if (WARN_ON(chandef->width == NL80211_CHAN_WIDTH_20_NOHT)) {
+		if (chandef->width == NL80211_CHAN_WIDTH_20_NOHT) {
+			sdata_info(sdata,
+				   "unusable channel (%d MHz) for connection\n",
+				   chandef->chan->center_freq);
 			ret = IEEE80211_CONN_DISABLE_HT |
 			      IEEE80211_CONN_DISABLE_VHT |
 			      IEEE80211_CONN_DISABLE_HE |
@@ -4023,6 +4026,7 @@ static bool ieee80211_assoc_config_link(struct ieee80211_link_data *link,
 	bool is_6ghz = cbss->channel->band == NL80211_BAND_6GHZ;
 	bool is_s1g = cbss->channel->band == NL80211_BAND_S1GHZ;
 	const struct cfg80211_bss_ies *bss_ies = NULL;
+	struct ieee802_11_elems *bss_elems = NULL;
 	struct ieee80211_supported_band *sband;
 	struct ieee802_11_elems *elems;
 	u16 capab_info;
@@ -4059,7 +4063,6 @@ static bool ieee80211_assoc_config_link(struct ieee80211_link_data *link,
 	     (!(link->u.mgd.conn_flags & IEEE80211_CONN_DISABLE_VHT) &&
 	      (!elems->vht_cap_elem || !elems->vht_operation)))) {
 		const struct cfg80211_bss_ies *ies;
-		struct ieee802_11_elems *bss_elems;
 
 		rcu_read_lock();
 		ies = rcu_dereference(cbss->ies);
@@ -4115,8 +4118,6 @@ static bool ieee80211_assoc_config_link(struct ieee80211_link_data *link,
 			sdata_info(sdata,
 				   "AP bug: VHT operation missing from AssocResp\n");
 		}
-
-		kfree(bss_elems);
 	}
 
 	/*
@@ -4343,6 +4344,7 @@ static bool ieee80211_assoc_config_link(struct ieee80211_link_data *link,
 	ret = true;
 out:
 	kfree(elems);
+	kfree(bss_elems);
 	kfree(bss_ies);
 	return ret;
 }

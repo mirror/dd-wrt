@@ -39,7 +39,7 @@ static int cp210x_tiocmget(struct tty_struct *);
 static int cp210x_tiocmset(struct tty_struct *, unsigned int, unsigned int);
 static int cp210x_tiocmset_port(struct usb_serial_port *port,
 		unsigned int, unsigned int);
-static void cp210x_break_ctl(struct tty_struct *, int);
+static int cp210x_break_ctl(struct tty_struct *, int);
 static int cp210x_attach(struct usb_serial *);
 static void cp210x_disconnect(struct usb_serial *);
 static void cp210x_release(struct usb_serial *);
@@ -223,6 +223,7 @@ static const struct usb_device_id id_table[] = {
 	{ USB_DEVICE(0x19CF, 0x3000) }, /* Parrot NMEA GPS Flight Recorder */
 	{ USB_DEVICE(0x1ADB, 0x0001) }, /* Schweitzer Engineering C662 Cable */
 	{ USB_DEVICE(0x1B1C, 0x1C00) }, /* Corsair USB Dongle */
+	{ USB_DEVICE(0x1B1C, 0x1C02) }, /* Corsair AX1500i Power Supply */
 	{ USB_DEVICE(0x1B93, 0x1013) }, /* Phoenix Contact UPS Device */
 	{ USB_DEVICE(0x1BA4, 0x0002) },	/* Silicon Labs 358x factory default */
 	{ USB_DEVICE(0x1BE3, 0x07A6) }, /* WAGO 750-923 USB Service Cable */
@@ -1429,7 +1430,7 @@ static int cp210x_tiocmget(struct tty_struct *tty)
 	return result;
 }
 
-static void cp210x_break_ctl(struct tty_struct *tty, int break_state)
+static int cp210x_break_ctl(struct tty_struct *tty, int break_state)
 {
 	struct usb_serial_port *port = tty->driver_data;
 	u16 state;
@@ -1438,9 +1439,11 @@ static void cp210x_break_ctl(struct tty_struct *tty, int break_state)
 		state = BREAK_OFF;
 	else
 		state = BREAK_ON;
+
 	dev_dbg(&port->dev, "%s - turning break %s\n", __func__,
 		state == BREAK_OFF ? "off" : "on");
-	cp210x_write_u16_reg(port, CP210X_SET_BREAK, state);
+
+	return cp210x_write_u16_reg(port, CP210X_SET_BREAK, state);
 }
 
 #ifdef CONFIG_GPIOLIB

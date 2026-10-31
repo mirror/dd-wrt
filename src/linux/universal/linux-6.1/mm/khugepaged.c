@@ -19,6 +19,7 @@
 #include <linux/page_table_check.h>
 #include <linux/swapops.h>
 #include <linux/shmem_fs.h>
+#include <linux/dax.h>
 
 #include <asm/tlb.h>
 #include <asm/pgalloc.h>
@@ -1787,6 +1788,8 @@ static int collapse_file(struct mm_struct *mm, unsigned long addr,
 	result = alloc_charge_hpage(&hpage, mm, cc);
 	if (result != SCAN_SUCCEED)
 		goto out;
+
+	mapping_set_update(&xas, mapping);
 
 	/*
 	 * Ensure we have slots for all the pages in the range.  This is

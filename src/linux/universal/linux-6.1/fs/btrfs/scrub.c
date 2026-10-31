@@ -851,8 +851,10 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root,
 	}
 	ret = paths_from_inode(inum, ipath);
 
-	if (ret < 0)
+	if (ret < 0) {
+		btrfs_put_root(local_root);
 		goto err;
+	}
 
 	/*
 	 * we deliberately ignore the bit ipath might have been too small to
@@ -3630,6 +3632,11 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
 
 	root = btrfs_extent_root(fs_info, bg->start);
 	csum_root = btrfs_csum_root(fs_info, bg->start);
+	if (unlikely(!root || !csum_root)) {
+		btrfs_err(fs_info, "no valid extent or csum root for scrub");
+		btrfs_free_path(path);
+		return -EUCLEAN;
+	}
 
 	/*
 	 * collect all data csums for the stripe to avoid seeking during

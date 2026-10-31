@@ -180,14 +180,14 @@ static void continue_after_commit(struct batcher *b, struct continuation *k)
  */
 static void issue_after_commit(struct batcher *b, struct bio *bio)
 {
-       bool commit_scheduled;
+	bool commit_scheduled;
 
-       spin_lock_irq(&b->lock);
-       commit_scheduled = b->commit_scheduled;
-       bio_list_add(&b->bios, bio);
-       spin_unlock_irq(&b->lock);
+	spin_lock_irq(&b->lock);
+	commit_scheduled = b->commit_scheduled;
+	bio_list_add(&b->bios, bio);
+	spin_unlock_irq(&b->lock);
 
-       if (commit_scheduled)
+	if (commit_scheduled)
 	       async_commit(b);
 }
 
@@ -338,8 +338,6 @@ struct cache {
 	struct list_head invalidation_requests;
 
 	sector_t migration_threshold;
-	wait_queue_head_t migration_wait;
-	atomic_t nr_allocated_migrations;
 
 	/*
 	 * The number of in flight migrations that are performing
@@ -395,7 +393,11 @@ struct cache {
 	bool loaded_mappings:1;
 	bool loaded_discards:1;
 
-	struct rw_semaphore background_work_lock;
+	/* background work management */
+	bool background_work_allowed;
+	unsigned background_work_nr;
+	spinlock_t background_work_lock;
+	wait_queue_head_t background_work_wait;
 
 	struct batcher committer;
 	struct work_struct commit_ws;
@@ -486,19 +488,13 @@ static struct dm_cache_migration *alloc_migration(struct cache *cache)
 	memset(mg, 0, sizeof(*mg));
 
 	mg->cache = cache;
-	atomic_inc(&cache->nr_allocated_migrations);
 
 	return mg;
 }
 
 static void free_migration(struct dm_cache_migration *mg)
 {
-	struct cache *cache = mg->cache;
-
-	if (atomic_dec_and_test(&cache->nr_allocated_migrations))
-		wake_up(&cache->migration_wait);
-
-	mempool_free(mg, &cache->migration_pool);
+	mempool_free(mg, &mg->cache->migration_pool);
 }
 
 /*----------------------------------------------------------------*/
@@ -530,9 +526,11 @@ static unsigned int lock_level(struct bio *bio)
 		READ_WRITE_LOCK_LEVEL;
 }
 
-/*----------------------------------------------------------------
+/*
+ *--------------------------------------------------------------
  * Per bio data
- *--------------------------------------------------------------*/
+ *--------------------------------------------------------------
+ */
 
 static struct per_bio_data *get_per_bio_data(struct bio *bio)
 {
@@ -714,9 +712,11 @@ static bool is_discarded_oblock(struct cache *cache, dm_oblock_t b)
 	return r;
 }
 
-/*----------------------------------------------------------------
+/*
+ * -------------------------------------------------------------
  * Remapping
- *--------------------------------------------------------------*/
+ *--------------------------------------------------------------
+ */
 static void remap_to_origin(struct cache *cache, struct bio *bio)
 {
 	bio_set_dev(bio, cache->origin_dev->bdev);
@@ -843,9 +843,11 @@ static void remap_to_origin_and_cache(struct cache *cache, struct bio *bio,
 	remap_to_cache(cache, bio, cblock);
 }
 
-/*----------------------------------------------------------------
+/*
+ *--------------------------------------------------------------
  * Failure modes
- *--------------------------------------------------------------*/
+ *--------------------------------------------------------------
+ */
 static enum cache_metadata_mode get_cache_mode(struct cache *cache)
 {
 	return cache->features.mode;
@@ -982,13 +984,14 @@ static void update_stats(struct cache_stats *stats, enum policy_operation op)
 	}
 }
 
-/*----------------------------------------------------------------
+/*
+ *---------------------------------------------------------------------
  * Migration processing
  *
  * Migration covers moving data from the origin device to the cache, or
  * vice versa.
- *--------------------------------------------------------------*/
-
+ *---------------------------------------------------------------------
+ */
 static void inc_io_migrations(struct cache *cache)
 {
 	atomic_inc(&cache->nr_io_migrations);
@@ -1022,34 +1025,39 @@ static void calc_discard_block_range(struct cache *cache, struct bio *bio,
 
 static void prevent_background_work(struct cache *cache)
 {
-	lockdep_off();
-	down_write(&cache->background_work_lock);
-	lockdep_on();
+	spin_lock_irq(&cache->background_work_lock);
+	cache->background_work_allowed = false;
+	wait_event_lock_irq(cache->background_work_wait,
+			    cache->background_work_nr == 0,
+			    cache->background_work_lock);
+	spin_unlock_irq(&cache->background_work_lock);
 }
 
 static void allow_background_work(struct cache *cache)
 {
-	lockdep_off();
-	up_write(&cache->background_work_lock);
-	lockdep_on();
+	spin_lock_irq(&cache->background_work_lock);
+	cache->background_work_allowed = true;
+	spin_unlock_irq(&cache->background_work_lock);
 }
 
 static bool background_work_begin(struct cache *cache)
 {
 	bool r;
 
-	lockdep_off();
-	r = down_read_trylock(&cache->background_work_lock);
-	lockdep_on();
-
+	spin_lock_irq(&cache->background_work_lock);
+	r = cache->background_work_allowed;
+	if (r)
+		cache->background_work_nr++;
+	spin_unlock_irq(&cache->background_work_lock);
 	return r;
 }
 
 static void background_work_end(struct cache *cache)
 {
-	lockdep_off();
-	up_read(&cache->background_work_lock);
-	lockdep_on();
+	spin_lock_irq(&cache->background_work_lock);
+	if (--cache->background_work_nr == 0)
+		wake_up(&cache->background_work_wait);
+	spin_unlock_irq(&cache->background_work_lock);
 }
 
 /*----------------------------------------------------------------*/
@@ -1443,14 +1451,19 @@ static int mg_start(struct cache *cache, struct policy_work *op, struct bio *bio
 	return mg_lock_writes(mg);
 }
 
-/*----------------------------------------------------------------
+/*
+ *--------------------------------------------------------------
  * invalidation processing
- *--------------------------------------------------------------*/
+ *--------------------------------------------------------------
+ */
 
 static void invalidate_complete(struct dm_cache_migration *mg, bool success)
 {
 	struct bio_list bios;
 	struct cache *cache = mg->cache;
+
+	if (success)
+		atomic_inc(&cache->stats.demotion);
 
 	bio_list_init(&bios);
 	if (mg->cell) {
@@ -1602,9 +1615,11 @@ static int invalidate_start(struct cache *cache, dm_cblock_t cblock,
 	return invalidate_lock(mg);
 }
 
-/*----------------------------------------------------------------
+/*
+ *--------------------------------------------------------------
  * bio processing
- *--------------------------------------------------------------*/
+ *--------------------------------------------------------------
+ */
 
 enum busy {
 	IDLE,
@@ -1721,7 +1736,6 @@ static int map_bio(struct cache *cache, struct bio *bio, dm_oblock_t block,
 		if (passthrough_mode(cache)) {
 			if (bio_data_dir(bio) == WRITE) {
 				bio_drop_shared_lock(cache, bio);
-				atomic_inc(&cache->stats.demotion);
 				invalidate_start(cache, cblock, block, bio);
 				return DM_MAPIO_SUBMITTED;
 			} else
@@ -1813,9 +1827,11 @@ static bool process_discard_bio(struct cache *cache, struct bio *bio)
 {
 	dm_dblock_t b, e;
 
-	// FIXME: do we need to lock the region?  Or can we just assume the
-	// user wont be so foolish as to issue discard concurrently with
-	// other IO?
+	/*
+	 * FIXME: do we need to lock the region?  Or can we just assume the
+	 * user wont be so foolish as to issue discard concurrently with
+	 * other IO?
+	 */
 	calc_discard_block_range(cache, bio, &b, &e);
 	while (b != e) {
 		set_discard(cache, b);
@@ -1862,10 +1878,11 @@ static void process_deferred_bios(struct work_struct *ws)
 		schedule_commit(&cache->committer);
 }
 
-/*----------------------------------------------------------------
+/*
+ *--------------------------------------------------------------
  * Main worker loop
- *--------------------------------------------------------------*/
-
+ *--------------------------------------------------------------
+ */
 static void requeue_deferred_bios(struct cache *cache)
 {
 	struct bio *bio;
@@ -1924,9 +1941,11 @@ static void check_migrations(struct work_struct *ws)
 	}
 }
 
-/*----------------------------------------------------------------
+/*
+ *--------------------------------------------------------------
  * Target methods
- *--------------------------------------------------------------*/
+ *--------------------------------------------------------------
+ */
 
 /*
  * This function gets called on the error paths of the constructor, so we
@@ -2499,9 +2518,7 @@ static int cache_create(struct cache_args *ca, struct cache **result)
 
 	spin_lock_init(&cache->lock);
 	bio_list_init(&cache->deferred_bios);
-	atomic_set(&cache->nr_allocated_migrations, 0);
 	atomic_set(&cache->nr_io_migrations, 0);
-	init_waitqueue_head(&cache->migration_wait);
 
 	r = -ENOMEM;
 	atomic_set(&cache->nr_dirty, 0);
@@ -2583,8 +2600,10 @@ static int cache_create(struct cache_args *ca, struct cache **result)
 		     issue_op, cache, cache->wq);
 	dm_iot_init(&cache->tracker);
 
-	init_rwsem(&cache->background_work_lock);
-	prevent_background_work(cache);
+	init_waitqueue_head(&cache->background_work_wait);
+	spin_lock_init(&cache->background_work_lock);
+	cache->background_work_allowed = false;
+	cache->background_work_nr = 0;
 
 	*result = cache;
 	return 0;

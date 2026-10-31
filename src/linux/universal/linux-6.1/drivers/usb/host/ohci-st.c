@@ -241,6 +241,7 @@ static int st_ohci_platform_remove(struct platform_device *dev)
 	int clk;
 
 	usb_remove_hcd(hcd);
+	device_wakeup_disable(hcd->self.controller);
 
 	if (pdata->power_off)
 		pdata->power_off(dev);

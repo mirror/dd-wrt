@@ -45,6 +45,8 @@ enum cs35l41_hda_gpio_function {
 	CS35l41_SYNC,
 };
 
+struct snd_kcontrol;
+
 struct cs35l41_hda {
 	struct device *dev;
 	struct regmap *regmap;
@@ -62,6 +64,8 @@ struct cs35l41_hda {
 	int speaker_id;
 	struct mutex fw_mutex;
 	struct work_struct fw_load_work;
+	struct snd_kcontrol *fw_type_ctl;
+	struct snd_kcontrol *fw_load_ctl;
 
 	struct regmap_irq_chip_data *irq_data;
 	bool firmware_running;

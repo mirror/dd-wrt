@@ -953,7 +953,7 @@ struct bfq_group {
 	char blkg_path[128];
 
 	/* reference counter (see comments in bfq_bic_update_cgroup) */
-	int ref;
+	atomic_t ref;
 	/* Is bfq_group still online? */
 	bool online;
 

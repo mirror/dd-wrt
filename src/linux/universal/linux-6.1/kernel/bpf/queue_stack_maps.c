@@ -103,8 +103,10 @@ static int __queue_map_get(struct bpf_map *map, void *value, bool delete)
 	void *ptr;
 
 	if (in_nmi()) {
-		if (!raw_spin_trylock_irqsave(&qs->lock, flags))
+		if (!raw_spin_trylock_irqsave(&qs->lock, flags)) {
+			memset(value, 0, qs->map.value_size);
 			return -EBUSY;
+		}
 	} else {
 		raw_spin_lock_irqsave(&qs->lock, flags);
 	}
@@ -138,8 +140,10 @@ static int __stack_map_get(struct bpf_map *map, void *value, bool delete)
 	u32 index;
 
 	if (in_nmi()) {
-		if (!raw_spin_trylock_irqsave(&qs->lock, flags))
+		if (!raw_spin_trylock_irqsave(&qs->lock, flags)) {
+			memset(value, 0, qs->map.value_size);
 			return -EBUSY;
+		}
 	} else {
 		raw_spin_lock_irqsave(&qs->lock, flags);
 	}

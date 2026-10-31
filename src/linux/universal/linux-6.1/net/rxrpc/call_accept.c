@@ -151,6 +151,11 @@ static int rxrpc_service_prealloc_one(struct rxrpc_sock *rx,
 
 id_in_use:
 	write_unlock(&rx->call_lock);
+	call->abort_code = RX_CALL_DEAD;
+	call->error = -EBADSLT;
+	call->completion = RXRPC_CALL_LOCAL_ERROR;
+	call->state = RXRPC_CALL_COMPLETE;
+	set_bit(RXRPC_CALL_RELEASED, &call->flags);
 	rxrpc_cleanup_call(call);
 	_leave(" = -EBADSLT");
 	return -EBADSLT;

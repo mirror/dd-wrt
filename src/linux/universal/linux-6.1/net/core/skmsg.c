@@ -1266,15 +1266,27 @@ out:
 
 static void sk_psock_verdict_data_ready(struct sock *sk)
 {
-	struct socket *sock = sk->sk_socket;
+	const struct proto_ops *ops = NULL;
+	struct sk_psock *psock;
+	struct socket *sock;
 	int copied;
 
-	if (unlikely(!sock || !sock->ops || !sock->ops->read_skb))
+	rcu_read_lock();
+	psock = sk_psock(sk);
+	if (psock && tls_sw_has_ctx_rx(sk)) {
+		psock->saved_data_ready(sk);
+		rcu_read_unlock();
 		return;
-	copied = sock->ops->read_skb(sk, sk_psock_verdict_recv);
-	if (copied >= 0) {
-		struct sk_psock *psock;
+	}
+	sock = READ_ONCE(sk->sk_socket);
+	if (likely(sock))
+		ops = READ_ONCE(sock->ops);
+	rcu_read_unlock();
+	if (!ops || !ops->read_skb)
+		return;
 
+	copied = ops->read_skb(sk, sk_psock_verdict_recv);
+	if (copied >= 0) {
 		rcu_read_lock();
 		psock = sk_psock(sk);
 		if (psock)

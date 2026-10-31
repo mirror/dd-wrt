@@ -274,7 +274,7 @@ static int fw_change(struct net *net, struct sk_buff *in_skb,
 		if (f->id != handle && handle)
 			return -EINVAL;
 
-		fnew = kzalloc(sizeof(struct fw_filter), GFP_KERNEL);
+		fnew = kzalloc(sizeof(struct fw_filter), GFP_KERNEL_ACCOUNT);
 		if (!fnew)
 			return -ENOBUFS;
 
@@ -328,7 +328,7 @@ static int fw_change(struct net *net, struct sk_buff *in_skb,
 		rcu_assign_pointer(tp->root, head);
 	}
 
-	f = kzalloc(sizeof(struct fw_filter), GFP_KERNEL);
+	f = kzalloc(sizeof(struct fw_filter), GFP_KERNEL_ACCOUNT);
 	if (f == NULL)
 		return -ENOBUFS;
 
