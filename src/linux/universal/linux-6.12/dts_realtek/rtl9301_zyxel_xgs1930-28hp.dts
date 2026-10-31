@@ -226,6 +226,8 @@
 	gpio1: gpio@0 {
 		compatible = "realtek,rtl8231";
 		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		gpio-controller;
 		#gpio-cells = <2>;
