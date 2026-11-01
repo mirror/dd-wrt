@@ -1,0 +1,26 @@
+{
+  "PO_RGN_LBL"                      : "Region",
+  "PO_RGN_AUTO"                     : "Autodetect",
+  "PO_RGN_US"                       : "United States",
+  "PO_RGN_GB"                       : "United Kingdom",
+  "PO_RGN_AU"                       : "Australia",
+  "PO_RGN_NL"                       : "The Netherlands",
+  "PO_RGN_FR"                       : "France",
+  "PO_RGN_DE"                       : "Germany",
+  "PO_RGN_CA"                       : "Canada",
+  "PO_RGN_DK"                       : "Denmark",
+  "PO_RGN_NO"                       : "Norway",
+  "PO_RGN_FI"                       : "Finland",
+  "PO_RGN_SE"                       : "Sweden",
+  "PO_RGN_FI"                       : "Finland",
+  "PO_RGN_BE"                       : "Belgium",
+  "PO_RGN_AT"                       : "Austria",
+  "PO_RGN_RU"                       : "Russia",
+  "PO_RGN_MX"                       : "Mexico",
+  "PO_RGN_BR"                       : "Brazil",
+  "PO_RGN_KO"                       : "Republic of Korea",
+  
+  "PO_BETA_LBL"                     : "Enable Developer Mode",
+
+
+}

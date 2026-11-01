@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<album>
+  <title>Dummy</title>
+  <musicbrainzalbumid>76df3287-6cda-33eb-8e9a-044b5e15ffdd</musicbrainzalbumid>
+  <musicbrainzreleasegroupid>1b022e01-4da6-387b-8658-8678046e4cef</musicbrainzreleasegroupid>
+  <artistdesc>Portishead</artistdesc>
+  <albumArtistCredits>
+    <artist>Portishead</artist>
+    <musicBrainzArtistID>8f6bd1e4-fbe1-4f50-aa9b-94c450ec0f11</musicBrainzArtistID>
+  </albumArtistCredits>
+  <genre>Electronic</genre>
+  <genre>Trip Hop</genre>
+  <style>Downtempo</style>
+  <mood>Melancholy</mood>
+  <review>Dummy is the debut studio album by English band Portishead, released on 22 August 1994.</review>
+  <label>Go! Beat</label>
+  <releasetype>album</releasetype>
+  <releasedate>1994-08-22</releasedate>
+  <year>1994</year>
+  <userrating>9</userrating>
+  <thumb aspect="thumb">https://coverartarchive.org/release/76df3287/front.jpg</thumb>
+</album>
+https://musicbrainz.org/release/76df3287-6cda-33eb-8e9a-044b5e15ffdd

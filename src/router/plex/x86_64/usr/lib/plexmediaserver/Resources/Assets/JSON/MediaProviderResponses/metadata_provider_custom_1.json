@@ -1,6 +1,6 @@
 {
   "MediaProvider": {
-    "identifier": "tv.plex.provider.metadata.custom.1",
+    "identifier": "tv.plex.agents.custom.1",
     "title": "Custom Metadata 1",
     "Feature": [
       {

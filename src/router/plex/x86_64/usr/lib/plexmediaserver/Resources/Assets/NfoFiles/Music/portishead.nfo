@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<artist>
+  <name>Portishead</name>
+  <sortname>Portishead</sortname>
+  <musicBrainzArtistID>8f6bd1e4-fbe1-4f50-aa9b-94c450ec0f11</musicBrainzArtistID>
+  <genre>Electronic</genre>
+  <genre>Trip Hop</genre>
+  <style>Downtempo</style>
+  <style>Experimental</style>
+  <mood>Melancholy</mood>
+  <mood>Brooding</mood>
+  <yearsactive>1991-present</yearsactive>
+  <biography>Portishead are an English band formed in 1991 in Bristol, named after the nearby town of the same name.</biography>
+  <disambiguation>Bristol trip hop group</disambiguation>
+  <formed>1991</formed>
+  <thumb aspect="thumb">https://assets.fanart.tv/fanart/music/portishead/artistthumb/portishead.jpg</thumb>
+  <fanart>
+    <thumb>https://assets.fanart.tv/fanart/music/portishead/artistbackground/portishead-bg.jpg</thumb>
+  </fanart>
+</artist>

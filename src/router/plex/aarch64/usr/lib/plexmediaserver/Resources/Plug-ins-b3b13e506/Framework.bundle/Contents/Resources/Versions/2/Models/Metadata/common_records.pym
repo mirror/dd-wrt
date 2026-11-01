@@ -1,0 +1,40 @@
+#
+#  Plex Extension Framework
+#  Copyright (C) 2008-2012 Plex, Inc. (James Clarke, Elan Feingold). All Rights Reserved.
+#
+
+
+class MetadataRecord(Template.Record):
+  require_key_and_rating_key = True
+
+
+class Person(Template.Record):
+  
+  role            = Template.String()
+  name            = Template.String()
+  photo           = Template.String()
+
+  # Interface settings
+  
+  xml_attr_name   = 'tag'
+
+class Review(Template.Record):
+  author = Template.String()
+  source = Template.String()
+  image = Template.String()
+  link = Template.String()
+  text = Template.String()
+
+
+class Chapter(Template.Record):
+  title = Template.String()
+  start_time_offset = Template.Integer()
+  end_time_offset = Template.Integer()
+
+class Concert(Template.Record):
+  title = Template.String()
+  venue = Template.String()
+  city = Template.String()
+  country = Template.String()
+  date = Template.String()
+  url = Template.String()
