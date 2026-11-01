@@ -129,8 +129,6 @@ target_sources(${TR_NAME}-mac
         NSDataAdditions.mm
         NSImageAdditions.h
         NSImageAdditions.mm
-        NSKeyedUnarchiverAdditions.h
-        NSKeyedUnarchiverAdditions.mm
         NSMutableArrayAdditions.h
         NSMutableArrayAdditions.mm
         NSStringAdditions.h
@@ -216,7 +214,6 @@ set(XIB_FILES
 set(RESOURCES
     Defaults.plist
     Credits.rtf
-    sparkle_dsa_pub.pem
     ../COPYING
     Images/TransmissionDocument.icns)
 source_group(Resources

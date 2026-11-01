@@ -15,6 +15,7 @@ target_sources(libtransmission-test
         buffer-test.cc
         clients-test.cc
         completion-test.cc
+        config-dir-lock-test.cc
         copy-test.cc
         crypto-test.cc
         dht-test.cc
@@ -38,6 +39,7 @@ target_sources(libtransmission-test
         quark-test.cc
         remove-test.cc
         rename-test.cc
+        resume-test.cc
         rpc-test.cc
         serializer-tests.cc
         session-test.cc
@@ -59,6 +61,7 @@ target_sources(libtransmission-test
         values-test.cc
         variant-test.cc
         watchdir-test.cc
+        web-test.cc
         web-utils-test.cc)
 
 set_property(

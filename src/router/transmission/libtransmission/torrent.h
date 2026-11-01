@@ -340,6 +340,11 @@ struct tr_torrent
         return completion_.has_piece(piece);
     }
 
+    [[nodiscard]] TR_CONSTEXPR20 bool is_piece_checked(tr_piece_index_t const piece) const
+    {
+        return checked_pieces_.test(piece);
+    }
+
     [[nodiscard]] TR_CONSTEXPR20 auto has_block(tr_block_index_t block) const
     {
         return completion_.has_block(block);
@@ -435,13 +440,7 @@ struct tr_torrent
 
     void set_file_priority(tr_file_index_t file, tr_priority_t priority)
     {
-        if (priority != file_priorities_.file_priority(file))
-        {
-            file_priorities_.set(file, priority);
-            priority_changed_.emit(this, &file, 1U, priority);
-            set_dirty();
-            mark_changed();
-        }
+        set_file_priorities(&file, 1U, priority);
     }
 
     /// LOCATION
@@ -1172,11 +1171,6 @@ private:
         }
 
         return n_secs;
-    }
-
-    [[nodiscard]] TR_CONSTEXPR20 bool is_piece_checked(tr_piece_index_t piece) const
-    {
-        return checked_pieces_.test(piece);
     }
 
     [[nodiscard]] bool check_piece(tr_piece_index_t piece) const;

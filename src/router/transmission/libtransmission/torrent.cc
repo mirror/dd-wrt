@@ -268,7 +268,9 @@ void tr_torrentUseSessionLimits(tr_torrent* const tor, bool const enabled)
 {
     tr_return_if_fail(tr_isTorrent(tor));
 
-    if (tor->bandwidth().honor_parent_limits(TR_UP, enabled) || tor->bandwidth().honor_parent_limits(TR_DOWN, enabled))
+    auto const changed_up = tor->bandwidth().honor_parent_limits(TR_UP, enabled);
+    auto const changed_down = tor->bandwidth().honor_parent_limits(TR_DOWN, enabled);
+    if (changed_up || changed_down)
     {
         tor->set_dirty();
     }
@@ -997,7 +999,9 @@ void tr_torrent::init(tr_ctor const& ctor)
     // assume the torrent is new
     bool const is_new_torrent = !tr_sys_path_exists(file_path);
 
-    if (is_new_torrent)
+    // The copy lands in the config dir, so leave it to the session that holds the dir.
+    // is_new_torrent still stands. It describes the torrent, not what this session may write.
+    if (is_new_torrent && session->mayWriteConfigDir())
     {
         auto error = tr_error{};
 
@@ -1725,7 +1729,8 @@ void tr_torrent::VerifyMediator::on_verify_done(bool const aborted)
 
 void tr_torrent::save_resume_file()
 {
-    if (!is_dirty())
+    // Resume files belong to the session that holds the config dir.
+    if (!is_dirty() || !session->mayWriteConfigDir())
     {
         return;
     }
@@ -1974,12 +1979,10 @@ tr_block_span_t tr_torrent::block_span_for_file(tr_file_index_t const file) cons
 
 void tr_torrent::set_file_priorities(tr_file_index_t const* files, tr_file_index_t file_count, tr_priority_t priority)
 {
-    if (std::any_of(
-            files,
-            files + file_count,
-            [this, priority](tr_file_index_t file) { return priority != file_priorities_.file_priority(file); }))
+    auto const lock = unique_lock();
+
+    if (file_priorities_.set(files, file_count, priority))
     {
-        file_priorities_.set(files, file_count, priority);
         priority_changed_.emit(this, files, file_count, priority);
         set_dirty();
         mark_changed();

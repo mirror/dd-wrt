@@ -7,7 +7,7 @@ if(POLICY CMP0114)
 endif()
 
 # Value should follow latest stable Xcode's RECOMMENDED_MACOSX_DEPLOYMENT_TARGET
-set(MACOS_SUPPORT_MINIMUM 11.0)
+set(MACOS_SUPPORT_MINIMUM 12.0)
 
 # The value of this variable should be set prior to the first project() command invocation.
 # See: https://cmake.org/cmake/help/latest/variable/CMAKE_OSX_DEPLOYMENT_TARGET.html
@@ -69,7 +69,6 @@ option(ENABLE_WERROR "Treat warnings as errors" OFF)
 option(ENABLE_NLS "Enable native language support" OFF)
 option(INSTALL_DOC "Build/install documentation" OFF)
 option(INSTALL_LIB "Install the library" OFF)
-tr_auto_option(ENABLE_DEPRECATED "Allow deprecated API use of upstream packages, e.g. GTK" AUTO)
 tr_auto_option(RUN_CLANG_TIDY "Run clang-tidy on the code" OFF)
 tr_auto_option(USE_SYSTEM_EVENT2 "Use system event2 library" AUTO)
 tr_auto_option(USE_SYSTEM_DEFLATE "Use system deflate library" AUTO)
@@ -95,7 +94,7 @@ set(TR_NAME ${PROJECT_NAME})
 # these should be the only five lines you need to change
 set(TR_VERSION_MAJOR "4")
 set(TR_VERSION_MINOR "1")
-set(TR_VERSION_PATCH "3")
+set(TR_VERSION_PATCH "4")
 set(TR_VERSION_BETA_NUMBER "") # empty string for not beta
 set(TR_VERSION_DEV FALSE)
 
@@ -250,14 +249,6 @@ find_package(Threads)
 find_package(PkgConfig QUIET)
 
 find_package(CURL ${CURL_MINIMUM} REQUIRED)
-
-if(ENABLE_DEPRECATED STREQUAL "AUTO")
-    if(DEFINED ENV{CI})
-        set(ENABLE_DEPRECATED OFF)
-    else()
-        set(ENABLE_DEPRECATED ON)
-    endif()
-endif()
 
 set(CRYPTO_PKG "")
 if(WITH_CRYPTO STREQUAL "AUTO" OR WITH_CRYPTO STREQUAL "ccrypto")
@@ -709,6 +700,12 @@ else()
         list(APPEND WARNING_CANDIDATES -Wformat-security)
     endif()
 
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 12.0)
+        # fix non-Transmission fmt+gcc
+        # https://github.com/fmtlib/fmt/commit/6870e4b06bbf0a0ddd98534a393a561261b3153c
+        list(REMOVE_ITEM WARNING_CANDIDATES -Wnull-dereference)
+    endif()
+
     set(CMAKE_REQUIRED_FLAGS)
 
     foreach(FLAG -Werror /WX)
@@ -803,6 +800,10 @@ if(RUN_CLANG_TIDY)
         set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY}")
     endif()
 endif()
+
+# This is GTK-specific, but is exposed in this top-level file so that
+# it can be shared by `gtk/` and by `tests/gtk/`.
+set(TR_GTK_APP_ID "com.transmissionbt.transmission" CACHE INTERNAL "the app id the client and its desktop file share")
 
 if(ENABLE_TESTS)
     enable_testing()

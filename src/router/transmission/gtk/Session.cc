@@ -83,6 +83,7 @@ public:
     void set_port_test_pending(bool pending, PortTestIpProtocol ip_protocol);
 
     void update();
+    void update_torrent(tr_torrent_id_t id);
     void torrents_added();
 
     void add_files(std::vector<Glib::RefPtr<Gio::File>> const& files, bool do_start, bool do_prompt, bool do_notify);
@@ -647,12 +648,7 @@ void Session::Impl::on_torrent_metadata_changed(tr_torrent* raw_torrent)
     Glib::signal_idle().connect(
         [this, core = get_core_ptr(), torrent_id = tr_torrentId(raw_torrent)]()
         {
-            /* update the torrent's collated name */
-            if (auto const& [torrent, position] = find_torrent_by_id(torrent_id); torrent)
-            {
-                torrent->update();
-            }
-
+            update_torrent(torrent_id);
             return false;
         });
 }
@@ -777,6 +773,10 @@ void Session::add_ctor(tr_ctor* ctor)
     bool const do_prompt = gtr_pref_flag_get(TR_KEY_show_options_window);
     core_apply_defaults(ctor);
     impl_->add_ctor(ctor, do_prompt, do_notify);
+
+    // This is a batch of one, so end it here.
+    // Otherwise what add_ctor() reported, usually a duplicate, never reaches the user.
+    torrents_added();
 }
 
 /***
@@ -817,6 +817,10 @@ void Session::Impl::add_file_async_callback(
                 fmt::arg("error", e.what()),
                 fmt::arg("error_code", e.code())));
     }
+
+    // add_from_url() returned, and ended its batch, long before this download finished.
+    // This late arrival needs a batch end of its own.
+    torrents_added();
 
     dec_busy();
 }
@@ -926,12 +930,9 @@ void Session::Impl::torrents_added()
     signal_add_error_.emit(ERR_NO_MORE_TORRENTS, {});
 }
 
-void Session::torrent_changed(tr_torrent_id_t id)
+void Session::torrent_changed(tr_torrent_id_t const id)
 {
-    if (auto const& [torrent, position] = impl_->find_torrent_by_id(id); torrent)
-    {
-        torrent->update();
-    }
+    impl_->update_torrent(id);
 }
 
 void Session::remove_torrent(tr_torrent_id_t id, bool delete_files)
@@ -1025,6 +1026,17 @@ void Session::Impl::update()
     if (changes.any())
     {
         signal_torrents_changed_.emit(torrent_ids, changes);
+    }
+}
+
+void Session::Impl::update_torrent(tr_torrent_id_t const id)
+{
+    if (auto const& [torrent, position] = find_torrent_by_id(id); torrent)
+    {
+        if (auto const changes = torrent->update(); changes.any())
+        {
+            signal_torrents_changed_.emit({ id }, changes);
+        }
     }
 }
 
@@ -1423,12 +1435,19 @@ void Session::open_folder(tr_torrent_id_t torrent_id) const
 
     if (tor != nullptr)
     {
-        bool const single = tr_torrentFileCount(tor) == 1;
         char const* currentDir = tr_torrentGetCurrentDir(tor);
 
-        if (single)
+        if (tr_torrentFileCount(tor) == 1)
         {
-            gtr_open_file(currentDir);
+            auto const subpath = std::string_view{ tr_torrentFile(tor, 0).name };
+            if (auto const slash = subpath.find('/'); slash != std::string_view::npos)
+            {
+                gtr_open_file(Glib::build_filename(currentDir, std::string{ subpath.substr(0, slash) }));
+            }
+            else
+            {
+                gtr_open_file(currentDir);
+            }
         }
         else
         {

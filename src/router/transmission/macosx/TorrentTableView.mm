@@ -8,7 +8,6 @@
 #import "Controller.h"
 #import "FileListNode.h"
 #import "InfoOptionsViewController.h"
-#import "NSKeyedUnarchiverAdditions.h"
 #import "NSStringAdditions.h"
 #import "Torrent.h"
 #import "TorrentCell.h"
@@ -89,11 +88,10 @@ static NSTimeInterval const kToggleProgressSeconds = 0.175;
         {
             _fCollapsedGroups = [NSKeyedUnarchiver unarchivedObjectOfClass:NSMutableIndexSet.class fromData:groupData error:nil];
         }
-        else if ((groupData = [_fDefaults dataForKey:@"CollapsedGroups"])) //handle old groups
+        else if ([_fDefaults objectForKey:@"CollapsedGroups"])
         {
-            _fCollapsedGroups = [[NSKeyedUnarchiver deprecatedUnarchiveObjectWithData:groupData] mutableCopy];
+            //ancient key that was read via unrestricted NSUnarchiver; discarded rather than read (GHSA-v7mp-fpv3-jf5r)
             [_fDefaults removeObjectForKey:@"CollapsedGroups"];
-            [self saveCollapsedGroups];
         }
         if (_fCollapsedGroups == nil)
         {
@@ -289,7 +287,7 @@ static NSTimeInterval const kToggleProgressSeconds = 0.175;
             if (error)
             {
                 NSRect frame = torrentCell.fIconView.frame;
-                NSImage* resultImage = [[NSImage alloc] initWithSize:NSMakeSize(frame.size.height, frame.size.width)];
+                NSImage* resultImage = [[NSImage alloc] initWithSize:frame.size];
                 [resultImage lockFocus];
 
                 // draw fileImage
