@@ -8,18 +8,21 @@
  * Copyright (c) 2004 Freescale Semiconductor, Inc.
  */
 #include <linux/bitops.h>
+#include <linux/crc32.h>
 #include <linux/ethtool_netlink.h>
+#include <linux/firmware.h>
 #include <linux/of.h>
 #include <linux/phy.h>
 #include <linux/phy/phy-common-props.h>
 #include <linux/pm_wakeirq.h>
 #include <linux/netdevice.h>
 #include <linux/module.h>
+#include <linux/property.h>
 #include <linux/delay.h>
 #include <linux/clk.h>
-#include <linux/crc32.h>
 #include <linux/string_choices.h>
 #include <net/phy/realtek_phy.h>
+
 #include "realtek.h"
 
 #define RTL8201F_IER				0x13
@@ -121,13 +124,17 @@
 #define RTL8211F_PHYSICAL_ADDR_WORD1		17
 #define RTL8211F_PHYSICAL_ADDR_WORD2		18
 
+#define RTL8261X_EXT_ADDR_REG			0xa436
+#define RTL8261X_EXT_DATA_REG			0xa438
+#define RTL_8261X_SUB_PHY_ID_ADDR		0x801d
+
 #define RTL822X_VND1_SERDES_OPTION			0x697a
 #define RTL822X_VND1_SERDES_OPTION_MODE_MASK		GENMASK(5, 0)
 #define RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII		0
 #define RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII_HSGMII	1
 #define RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX		2
 #define RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_HSGMII	3
-
+ 
 #define RTL822X_VND1_SERDES_CTRL3			0x7580
 #define RTL822X_VND1_SERDES_CTRL3_MODE_MASK		GENMASK(5, 0)
 #define RTL822X_VND1_SERDES_CTRL3_MODE_SGMII			0x02
@@ -142,6 +149,7 @@
 #define   RTL822X_VND1_SERDES_INBAND_DISABLE	0x71d0
 #define   RTL822X_VND1_SERDES_INBAND_ENABLE	0x70d0
 #define RTL822X_VND1_SERDES_DATA		0x7589
+#define RTL822X_VND1_SERDES_RDATA		0x758a
 
 #define RTL822X_VND2_TO_PAGE(reg)		((reg) >> 4)
 #define RTL822X_VND2_TO_PAGE_REG(reg)		(16 + (((reg) & GENMASK(3, 0)) >> 1))
@@ -158,12 +166,15 @@
 #define RTL822X_VND2_LCR_LINK_100		BIT(1)
 #define RTL822X_VND2_LCR_LINK_1000		BIT(2)
 #define RTL822X_VND2_LCR_LINK_2500		BIT(5)
+#define RTL822X_VND2_LCR_LINK_5000		BIT(6)
+#define RTL822X_VND2_LCR_LINK_10000		BIT(4)
 
 #define RTL822X_VND2_LCR6			0xd040
 #define RTL822X_VND2_LED_ACT(x)			BIT(x)
 
 #define RTL822X_VND2_LCR7			0xd044
 #define RTL822X_VND2_LED_POLAR(x)		BIT(x)
+#define RTL822X_VND2_LED_EN(x)			BIT((x) + 4)
 
 #define RTL8224_MII_RTCT			0x11
 #define RTL8224_MII_RTCT_ENABLE			BIT(0)
@@ -274,9 +285,87 @@
 #define RTL_8221B_VM_CG				0x001cc84a
 #define RTL_8251B				0x001cc862
 #define RTL_8261C				0x001cc890
+#define RTL_8261C_CG				0x001cc898
+#define RTL_8261CE_CG				0x001cc899
 #define RTL_8261N				0x001ccaf3
 #define RTL_8264				0x001ccaf2
 #define RTL_8264B				0x001cc813
+
+#define RTL8261C_CE_MODEL		0x00
+#define RTL8261D_MODEL			0x81
+#define RTL8261X_INT_AUTONEG_ERROR	BIT(0)
+#define RTL8261X_INT_PAGE_RECV		BIT(2)
+#define RTL8261X_INT_AUTONEG_DONE	BIT(3)
+#define RTL8261X_INT_LINK_CHG		BIT(4)
+#define RTL8261X_INT_PHY_REG_ACCESS	BIT(5)
+#define RTL8261X_INT_PME		BIT(7)
+#define RTL8261X_INT_ALDPS_CHG		BIT(9)
+#define RTL8261X_INT_JABBER		BIT(10)
+
+/* SerDes lane polarity, behind the VEND1 SerDes command window. This is not
+ * the global inversion bit that other Realtek 10G PHYs use; the bit
+ * assignment below has only been verified on an RTL8261CE reporting PHY ID
+ * 0x001cc899.
+ */
+#define RTL8261X_SERDES_POL_REG0	0x0000
+#define  RTL8261X_SERDES_POL_REG0_TX	BIT(8)
+#define  RTL8261X_SERDES_POL_REG0_RX	BIT(9)
+#define RTL8261X_SERDES_POL_REGC2	0x00c2
+#define  RTL8261X_SERDES_POL_REGC2_TX	BIT(14)
+#define  RTL8261X_SERDES_POL_REGC2_RX	BIT(13)
+
+#define RTL8261X_INT_MASK_DEFAULT	(RTL8261X_INT_AUTONEG_DONE | \
+					 RTL8261X_INT_LINK_CHG | \
+					 RTL8261X_INT_AUTONEG_ERROR | \
+					 RTL8261X_INT_JABBER)
+
+#define RTL8261X_INT_MASK_ALL		(RTL8261X_INT_AUTONEG_ERROR | \
+					 RTL8261X_INT_PAGE_RECV | \
+					 RTL8261X_INT_AUTONEG_DONE | \
+					 RTL8261X_INT_LINK_CHG | \
+					 RTL8261X_INT_PHY_REG_ACCESS | \
+					 RTL8261X_INT_PME | \
+					 RTL8261X_INT_ALDPS_CHG | \
+					 RTL8261X_INT_JABBER)
+
+#define FW_MAIN_MAGIC			0x52544C38
+#define FW_SUB_MAGIC_8261C		0x32363143
+#define RTL8261X_POLL_TIMEOUT_MS	100
+#define RTL8261X_MAX_MMD_DEV		31
+#define RTL8261X_LED_COUNT		4
+
+#define RTL8261C_CE_FW_NAME	"rtl_nic/rtl8261c.bin"
+MODULE_FIRMWARE(RTL8261C_CE_FW_NAME);
+
+enum rtl8261x_fw_op {
+	OP_WRITE = 0x00,	/* Write */
+	OP_POLL  = 0x02,	/* Polling */
+};
+
+struct rtl8261x_fw_header {
+	__le32 main_magic;	/* Main magic number */
+	__le32 sub_magic;	/* Sub magic number */
+	__le16 version_major;	/* Major version */
+	__le16 version_minor;	/* Minor version */
+	__le16 num_entries;	/* Number of entries */
+	__le16 reserved;	/* Reserved */
+	__le32 crc32;		/* CRC32 checksum */
+};
+
+struct rtl8261x_fw_entry {
+	__u8  type;		/* Operation type (OP_*) */
+	__u8  dev;		/* MMD device */
+	__le16 addr;		/* Register address */
+	__u8  msb;		/* MSB bit position */
+	__u8  lsb;		/* LSB bit position */
+	__le16 value;		/* Value to write/compare */
+	__le16 timeout_ms;	/* Poll timeout in milliseconds */
+	__u8  poll_set;		/* Poll until equal (1) or not equal (0) */
+	__u8  reserved;		/* Reserved */
+};
+
+#define FW_HEADER_SIZE		sizeof(struct rtl8261x_fw_header)
+#define FW_ENTRY_SIZE		sizeof(struct rtl8261x_fw_entry)
 
 /* RTL8211E and RTL8211F support up to three LEDs */
 #define RTL8211x_LED_COUNT			3
@@ -324,6 +413,16 @@ struct rtl821x_priv {
 	u16 iner;
 };
 
+struct rtl8261x_priv {
+	const char *fw_name;
+	bool fw_loaded;
+	/* LCR7's polarity bit doubles as the manual on/off level in
+	 * led_brightness_set(), so the configured polarity is kept here
+	 * to restore it whenever hardware control is set up again.
+	 */
+	u8 led_active_low;
+};
+
 struct rtl822x_priv {
 	bool enable_aldps;
 };
@@ -366,6 +465,458 @@ static int rtl821x_modify_ext_page(struct phy_device *phydev, u16 ext_page,
 	}
 
 	return phy_restore_page(phydev, oldpage, ret);
+}
+
+static int rtl8261x_probe(struct phy_device *phydev)
+{
+	struct device *dev = &phydev->mdio.dev;
+	struct rtl8261x_priv *priv;
+	int sub_phy_id, ret;
+
+	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
+
+	phydev->priv = priv;
+
+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, RTL8261X_EXT_ADDR_REG,
+			    RTL_8261X_SUB_PHY_ID_ADDR);
+	if (ret < 0)
+		return ret;
+
+	ret = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL8261X_EXT_DATA_REG);
+	if (ret < 0)
+		return ret;
+
+	sub_phy_id = (ret >> 8) & 0xff;
+
+	switch (sub_phy_id) {
+	case RTL8261C_CE_MODEL:
+		priv->fw_name = RTL8261C_CE_FW_NAME;
+		phydev_info(phydev, "RTL8261C detected (sub_id 0x%02x)\n", sub_phy_id);
+		break;
+
+	case RTL8261D_MODEL:
+		phydev_info(phydev, "RTL8261D detected (sub_id 0x%02x)\n", sub_phy_id);
+		break;
+
+	default:
+		phydev_warn(phydev, "Unknown sub_id 0x%02x, default behavior\n", sub_phy_id);
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+static int rtl8261x_get_features(struct phy_device *phydev)
+{
+	int ret;
+
+	ret = genphy_c45_pma_read_abilities(phydev);
+	if (ret)
+		return ret;
+	/*
+	 * Supplement Multi-Gig speeds that may not be automatically detected
+	 * RTL8261X supports 2.5G/5G in addition to standard 10G
+	 */
+	linkmode_set_bit(ETHTOOL_LINK_MODE_2500baseT_Full_BIT,
+			 phydev->supported);
+	linkmode_set_bit(ETHTOOL_LINK_MODE_5000baseT_Full_BIT,
+			 phydev->supported);
+
+	return 0;
+}
+
+static int rtl8261x_read_status(struct phy_device *phydev)
+{
+	int ret, val = 0;
+
+	if (phydev->autoneg == AUTONEG_ENABLE) {
+		ret = genphy_c45_aneg_done(phydev);
+		if (ret < 0)
+			return ret;
+
+		if (ret) {
+			val = phy_read_mmd(phydev, MDIO_MMD_VEND2,
+					   RTL822X_VND2_C22_REG(MII_STAT1000));
+			if (val < 0)
+				return val;
+		}
+	}
+
+	mii_stat1000_mod_linkmode_lpa_t(phydev->lp_advertising, val);
+
+	ret = genphy_c45_read_status(phydev);
+	if (ret < 0)
+		return ret;
+
+	return 0;
+}
+
+static int rtl8261x_verify_firmware(struct phy_device *phydev, const struct firmware *fw)
+{
+	const struct rtl8261x_fw_header *hdr;
+	u32 main_magic, sub_magic;
+	u32 calc_crc, file_crc;
+	size_t data_len;
+	u16 num_entries;
+
+	if (fw->size < FW_HEADER_SIZE) {
+		phydev_err(phydev, "Firmware too small: %zu bytes\n", fw->size);
+		return -EINVAL;
+	}
+
+	hdr = (const struct rtl8261x_fw_header *)fw->data;
+
+	main_magic = le32_to_cpu(hdr->main_magic);
+	if (main_magic != FW_MAIN_MAGIC) {
+		phydev_err(phydev, "Invalid firmware magic: 0x%08x\n", main_magic);
+		return -EINVAL;
+	}
+
+	sub_magic = le32_to_cpu(hdr->sub_magic);
+	if (sub_magic != FW_SUB_MAGIC_8261C) {
+		phydev_err(phydev, "Invalid sub magic: 0x%08x\n", sub_magic);
+		return -EINVAL;
+	}
+
+	num_entries = le16_to_cpu(hdr->num_entries);
+	data_len = num_entries * FW_ENTRY_SIZE;
+
+	if (fw->size != sizeof(*hdr) + data_len) {
+		phydev_err(phydev, "Firmware size mismatch\n");
+		return -EINVAL;
+	}
+
+	calc_crc = crc32(~0, fw->data + FW_HEADER_SIZE, data_len) ^ ~0;
+	file_crc = le32_to_cpu(hdr->crc32);
+
+	if (calc_crc != file_crc) {
+		phydev_err(phydev, "CRC32 mismatch: calculated=0x%08x file=0x%08x\n",
+			   calc_crc, file_crc);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int rtl8261x_fw_execute_entry(struct phy_device *phydev,
+				     const struct rtl8261x_fw_entry *entry)
+{
+	u16 addr, value, timeout_ms;
+	u8 dev, msb, lsb, poll_set;
+	u32 bits, expect_val;
+	int ret, val;
+
+	dev = entry->dev;
+	addr = le16_to_cpu(entry->addr);
+	msb = entry->msb;
+	lsb = entry->lsb;
+	value = le16_to_cpu(entry->value);
+	timeout_ms = le16_to_cpu(entry->timeout_ms);
+	poll_set = entry->poll_set;
+
+	if (timeout_ms == 0)
+		timeout_ms = RTL8261X_POLL_TIMEOUT_MS;
+
+	if (dev > RTL8261X_MAX_MMD_DEV) {
+		phydev_err(phydev, "invalid firmware MMD device: dev=%u\n", dev);
+		return -EINVAL;
+	}
+
+	if (msb > 15 || lsb > msb) {
+		phydev_err(phydev, "invalid firmware bits: msb=%u, lsb=%u\n", msb, lsb);
+		return -EINVAL;
+	}
+
+	switch (entry->type) {
+	case OP_WRITE:
+		ret = phy_modify_mmd(phydev, dev, addr,
+				     GENMASK(msb, lsb), (value << lsb) & GENMASK(msb, lsb));
+		if (ret)
+			return ret;
+		break;
+
+	case OP_POLL:
+		bits = GENMASK(msb, lsb);
+		expect_val = (value << lsb) & bits;
+
+		if (poll_set)
+			ret = phy_read_mmd_poll_timeout(phydev, dev, addr, val,
+							(val & bits) == expect_val,
+							1000, timeout_ms * 1000, false);
+		else
+			ret = phy_read_mmd_poll_timeout(phydev, dev, addr, val,
+							(val & bits) != expect_val,
+							1000, timeout_ms * 1000, false);
+		if (ret)
+			return ret;
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int rtl8261x_fw_load(struct phy_device *phydev)
+{
+	struct rtl8261x_priv *priv = phydev->priv;
+	const struct rtl8261x_fw_entry *entry;
+	const struct rtl8261x_fw_header *hdr;
+	const struct firmware *fw;
+	int ret, i;
+
+	if (!priv->fw_name)
+		return 0;
+
+	ret = request_firmware(&fw, priv->fw_name, &phydev->mdio.dev);
+	if (ret) {
+		phydev_err(phydev, "Failed to load firmware %s: %d\n", priv->fw_name, ret);
+		return ret;
+	}
+
+	ret = rtl8261x_verify_firmware(phydev, fw);
+	if (ret)
+		goto release_fw;
+
+	hdr = (const struct rtl8261x_fw_header *)fw->data;
+
+	entry = (const struct rtl8261x_fw_entry *)(fw->data + FW_HEADER_SIZE);
+	for (i = 0; i < le16_to_cpu(hdr->num_entries); i++, entry++) {
+		ret = rtl8261x_fw_execute_entry(phydev, entry);
+		if (ret) {
+			phydev_err(phydev, "Entry %d failed: %d\n", i, ret);
+			goto release_fw;
+		}
+	}
+
+	priv->fw_loaded = true;
+
+release_fw:
+	release_firmware(fw);
+	return ret;
+}
+
+static int rtl8261x_config_intr(struct phy_device *phydev)
+{
+	int ret;
+
+	if (phydev->interrupts == PHY_INTERRUPT_ENABLED) {
+		ret = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL8221B_VND2_INSR);
+		if (ret < 0)
+			return ret;
+
+		ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, RTL8221B_VND2_INER,
+				    RTL8261X_INT_MASK_DEFAULT);
+		if (ret < 0)
+			return ret;
+	} else {
+		ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, RTL8221B_VND2_INER, 0);
+		if (ret < 0)
+			return ret;
+
+		ret = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL8221B_VND2_INSR);
+		if (ret < 0)
+			return ret;
+	}
+
+	return 0;
+}
+
+static irqreturn_t rtl8261x_handle_interrupt(struct phy_device *phydev)
+{
+	int irq_status;
+
+	irq_status = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL8221B_VND2_INSR);
+	if (irq_status < 0) {
+		phy_error(phydev);
+		return IRQ_NONE;
+	}
+
+	if (!(irq_status & RTL8261X_INT_MASK_ALL))
+		return IRQ_NONE;
+
+	if (irq_status & (RTL8261X_INT_LINK_CHG | RTL8261X_INT_AUTONEG_DONE |
+	    RTL8261X_INT_AUTONEG_ERROR | RTL8261X_INT_JABBER))
+		phy_trigger_machine(phydev);
+
+	return IRQ_HANDLED;
+}
+
+static int rtl8261x_config_aneg(struct phy_device *phydev)
+{
+	u16 adv_1g = 0;
+	int ret;
+
+	ret = genphy_c45_config_aneg(phydev);
+	if (ret < 0)
+		return ret;
+
+	if (phydev->autoneg == AUTONEG_DISABLE)
+		return 0;
+
+	if (linkmode_test_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT,
+			      phydev->advertising))
+		adv_1g = ADVERTISE_1000FULL;
+	if (linkmode_test_bit(ETHTOOL_LINK_MODE_1000baseT_Half_BIT,
+			      phydev->advertising))
+		adv_1g |= ADVERTISE_1000HALF;
+
+	ret = phy_modify_mmd_changed(phydev, MDIO_MMD_VEND2,
+				     RTL822X_VND2_C22_REG(MII_CTRL1000),
+				     ADVERTISE_1000FULL | ADVERTISE_1000HALF,
+				     adv_1g);
+	if (ret < 0)
+		return ret;
+	if (ret > 0)
+		return genphy_c45_restart_aneg(phydev);
+
+	return 0;
+}
+
+static int rtl822x_serdes_wait(struct phy_device *phydev)
+{
+	int poll;
+
+	return phy_read_mmd_poll_timeout(phydev, MDIO_MMD_VEND1,
+					 RTL822X_VND1_SERDES_CMD, poll,
+					 !(poll & RTL822X_VND1_SERDES_CMD_BUSY),
+					 500, 100000, false);
+}
+
+static int rtl822x_serdes_read(struct phy_device *phydev, u16 reg)
+{
+	int ret;
+
+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, RTL822X_VND1_SERDES_ADDR, reg);
+	if (ret < 0)
+		return ret;
+
+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, RTL822X_VND1_SERDES_CMD,
+			    RTL822X_VND1_SERDES_CMD_BUSY);
+	if (ret < 0)
+		return ret;
+
+	ret = rtl822x_serdes_wait(phydev);
+	if (ret < 0)
+		return ret;
+
+	return phy_read_mmd(phydev, MDIO_MMD_VEND1, RTL822X_VND1_SERDES_RDATA);
+}
+
+static int rtl822x_serdes_write(struct phy_device *phydev, u16 reg, u16 val)
+{
+	int ret;
+
+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, RTL822X_VND1_SERDES_ADDR, reg);
+	if (ret < 0)
+		return ret;
+
+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, RTL822X_VND1_SERDES_DATA, val);
+	if (ret < 0)
+		return ret;
+
+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, RTL822X_VND1_SERDES_CMD,
+			    RTL822X_VND1_SERDES_CMD_WRITE |
+			    RTL822X_VND1_SERDES_CMD_BUSY);
+	if (ret < 0)
+		return ret;
+
+	return rtl822x_serdes_wait(phydev);
+}
+
+static int rtl822x_serdes_modify(struct phy_device *phydev, u16 reg,
+				 u16 mask, u16 set)
+{
+	int val;
+
+	val = rtl822x_serdes_read(phydev, reg);
+	if (val < 0)
+		return val;
+
+	if ((val & mask) == set)
+		return 0;
+
+	return rtl822x_serdes_write(phydev, reg, (val & ~mask) | set);
+}
+
+/* The host-side SerDes lanes are only inverted when the board says so.
+ * Lanes the firmware node does not describe are left as the boot loader
+ * and PHY firmware left them.
+ */
+static int rtl8261x_config_serdes_polarity(struct phy_device *phydev)
+{
+	bool tx_present, rx_present, tx_invert = false, rx_invert = false;
+	u16 reg0_mask = 0, reg0_set = 0, regc2_mask = 0, regc2_set = 0;
+	struct fwnode_handle *fwnode = dev_fwnode(&phydev->mdio.dev);
+	const char *mode = phy_modes(phydev->interface);
+	unsigned int pol;
+	int ret;
+
+	tx_present = fwnode_property_present(fwnode, "tx-polarity");
+	rx_present = fwnode_property_present(fwnode, "rx-polarity");
+	if (!tx_present && !rx_present)
+		return 0;
+
+	if (tx_present) {
+		ret = phy_get_manual_tx_polarity(fwnode, mode, &pol);
+		if (ret)
+			return ret;
+		tx_invert = pol == PHY_POL_INVERT;
+	}
+
+	if (rx_present) {
+		ret = phy_get_manual_rx_polarity(fwnode, mode, &pol);
+		if (ret)
+			return ret;
+		rx_invert = pol == PHY_POL_INVERT;
+	}
+
+	if (tx_present) {
+		reg0_mask |= RTL8261X_SERDES_POL_REG0_TX;
+		regc2_mask |= RTL8261X_SERDES_POL_REGC2_TX;
+		if (tx_invert) {
+			reg0_set |= RTL8261X_SERDES_POL_REG0_TX;
+			regc2_set |= RTL8261X_SERDES_POL_REGC2_TX;
+		}
+	}
+
+	if (rx_present) {
+		reg0_mask |= RTL8261X_SERDES_POL_REG0_RX;
+		regc2_mask |= RTL8261X_SERDES_POL_REGC2_RX;
+		if (rx_invert) {
+			reg0_set |= RTL8261X_SERDES_POL_REG0_RX;
+			regc2_set |= RTL8261X_SERDES_POL_REGC2_RX;
+		}
+	}
+
+	ret = rtl822x_serdes_modify(phydev, RTL8261X_SERDES_POL_REG0,
+				    reg0_mask, reg0_set);
+	if (ret < 0)
+		return ret;
+
+	return rtl822x_serdes_modify(phydev, RTL8261X_SERDES_POL_REGC2,
+				     regc2_mask, regc2_set);
+}
+
+static int rtl8261x_config_init(struct phy_device *phydev)
+{
+	struct rtl8261x_priv *priv = phydev->priv;
+	int ret;
+
+	/* The firmware parameters are preserved across IEEE soft resets and
+	 * suspend/resume cycles. Reloading is only necessary after a power
+	 * cycle or hard reset.
+	 */
+	if (priv->fw_name && !priv->fw_loaded) {
+		ret = rtl8261x_fw_load(phydev);
+		if (ret)
+			return ret;
+	}
+
+	return rtl8261x_config_serdes_polarity(phydev);
 }
 
 static int rtl821x_probe(struct phy_device *phydev)
@@ -1634,10 +2185,6 @@ static int rtl822x_set_serdes_option_mode(struct phy_device *phydev, bool gen1)
 	__assign_bit(PHY_INTERFACE_MODE_SGMII, phydev->possible_interfaces,
 		     has_sgmii);
 
-
-	__assign_bit(PHY_INTERFACE_MODE_HSGMII, phydev->possible_interfaces,
-		     has_hsgmii);
-
 	if (!has_2500 && !has_sgmii && !has_hsgmii)
 		return 0;
 
@@ -1648,9 +2195,8 @@ static int rtl822x_set_serdes_option_mode(struct phy_device *phydev, bool gen1)
 	} else {
 		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII;
 		phydev->rate_matching = RATE_MATCH_NONE;
-	}*/
-
-#if 1
+	}
+*/
 	/* determine SerDes option mode */
 	if (has_2500 && !has_sgmii && !has_hsgmii) {
 		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX;
@@ -1674,7 +2220,6 @@ static int rtl822x_set_serdes_option_mode(struct phy_device *phydev, bool gen1)
 		mode = RTL822X_VND1_SERDES_OPTION_MODE_2500BASEX_SGMII_HSGMII;
  		phydev->rate_matching = RATE_MATCH_NONE;
  	}
-#endif
 
 	/* the following sequence with magic numbers sets up the SerDes
 	 * option mode
@@ -1720,30 +2265,6 @@ static int rtl822x_config_init(struct phy_device *phydev)
 static int rtl822xb_config_init(struct phy_device *phydev)
 {
 	return rtl822x_set_serdes_option_mode(phydev, false);
-}
-
-static int rtl822x_serdes_write(struct phy_device *phydev, u16 reg, u16 val)
-{
-	int ret, poll;
-
-	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, RTL822X_VND1_SERDES_ADDR, reg);
-	if (ret < 0)
-		return ret;
-
-	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, RTL822X_VND1_SERDES_DATA, val);
-	if (ret < 0)
-		return ret;
-
-	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, RTL822X_VND1_SERDES_CMD,
-			    RTL822X_VND1_SERDES_CMD_WRITE |
-			    RTL822X_VND1_SERDES_CMD_BUSY);
-	if (ret < 0)
-		return ret;
-
-	return phy_read_mmd_poll_timeout(phydev, MDIO_MMD_VEND1,
-					 RTL822X_VND1_SERDES_CMD, poll,
-					 !(poll & RTL822X_VND1_SERDES_CMD_BUSY),
-					 500, 100000, false);
 }
 
 static int rtl822x_config_inband(struct phy_device *phydev, unsigned int modes)
@@ -2018,6 +2539,215 @@ static int rtl822xb_led_brightness_set(struct phy_device *phydev, u8 index,
 		return phy_clear_bits_mmd(phydev, MDIO_MMD_VEND2,
 					  RTL822X_VND2_LCR7,
 					  RTL822X_VND2_LED_POLAR(index));
+}
+
+static int rtl8261x_led_hw_is_supported(struct phy_device *phydev, u8 index,
+					unsigned long rules)
+{
+	const unsigned long act_mask = BIT(TRIGGER_NETDEV_RX) |
+				       BIT(TRIGGER_NETDEV_TX);
+	const unsigned long link_mask = BIT(TRIGGER_NETDEV_LINK) |
+					BIT(TRIGGER_NETDEV_LINK_10) |
+					BIT(TRIGGER_NETDEV_LINK_100) |
+					BIT(TRIGGER_NETDEV_LINK_1000) |
+					BIT(TRIGGER_NETDEV_LINK_2500) |
+					BIT(TRIGGER_NETDEV_LINK_5000) |
+					BIT(TRIGGER_NETDEV_LINK_10000);
+
+	if (index >= RTL8261X_LED_COUNT)
+		return -EINVAL;
+
+	/* Filter out any other unsupported triggers. */
+	if (rules & ~(link_mask | act_mask))
+		return -EOPNOTSUPP;
+
+	/* RX and TX are not differentiated, they are not possible
+	 * without combination with a link trigger.
+	 */
+	if ((rules & act_mask) && !(rules & link_mask))
+		return -EOPNOTSUPP;
+
+	return 0;
+}
+
+static int rtl8261x_led_hw_control_get(struct phy_device *phydev, u8 index,
+				       unsigned long *rules)
+{
+	const u16 all_links = RTL822X_VND2_LCR_LINK_10 |
+			      RTL822X_VND2_LCR_LINK_100 |
+			      RTL822X_VND2_LCR_LINK_1000 |
+			      RTL822X_VND2_LCR_LINK_2500 |
+			      RTL822X_VND2_LCR_LINK_5000 |
+			      RTL822X_VND2_LCR_LINK_10000;
+	int val;
+
+	if (index >= RTL8261X_LED_COUNT)
+		return -EINVAL;
+
+	val = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_LED(index));
+	if (val < 0)
+		return val;
+
+	if (val & RTL822X_VND2_LCR_LINK_10)
+		__set_bit(TRIGGER_NETDEV_LINK_10, rules);
+
+	if (val & RTL822X_VND2_LCR_LINK_100)
+		__set_bit(TRIGGER_NETDEV_LINK_100, rules);
+
+	if (val & RTL822X_VND2_LCR_LINK_1000)
+		__set_bit(TRIGGER_NETDEV_LINK_1000, rules);
+
+	if (val & RTL822X_VND2_LCR_LINK_2500)
+		__set_bit(TRIGGER_NETDEV_LINK_2500, rules);
+
+	if (val & RTL822X_VND2_LCR_LINK_5000)
+		__set_bit(TRIGGER_NETDEV_LINK_5000, rules);
+
+	if (val & RTL822X_VND2_LCR_LINK_10000)
+		__set_bit(TRIGGER_NETDEV_LINK_10000, rules);
+
+	if ((val & all_links) == all_links)
+		__set_bit(TRIGGER_NETDEV_LINK, rules);
+
+	val = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_LCR6);
+	if (val < 0)
+		return val;
+
+	if (val & RTL822X_VND2_LED_ACT(index)) {
+		__set_bit(TRIGGER_NETDEV_RX, rules);
+		__set_bit(TRIGGER_NETDEV_TX, rules);
+	}
+
+	return 0;
+}
+
+static int rtl8261x_led_hw_control_set(struct phy_device *phydev, u8 index,
+				       unsigned long rules)
+{
+	struct rtl8261x_priv *priv = phydev->priv;
+	u16 lcr7 = RTL822X_VND2_LED_EN(index);
+	u16 val = 0;
+	bool act;
+	int ret;
+
+	if (index >= RTL8261X_LED_COUNT)
+		return -EINVAL;
+
+	if (test_bit(TRIGGER_NETDEV_LINK, &rules) ||
+	    test_bit(TRIGGER_NETDEV_LINK_10, &rules))
+		val |= RTL822X_VND2_LCR_LINK_10;
+
+	if (test_bit(TRIGGER_NETDEV_LINK, &rules) ||
+	    test_bit(TRIGGER_NETDEV_LINK_100, &rules))
+		val |= RTL822X_VND2_LCR_LINK_100;
+
+	if (test_bit(TRIGGER_NETDEV_LINK, &rules) ||
+	    test_bit(TRIGGER_NETDEV_LINK_1000, &rules))
+		val |= RTL822X_VND2_LCR_LINK_1000;
+
+	if (test_bit(TRIGGER_NETDEV_LINK, &rules) ||
+	    test_bit(TRIGGER_NETDEV_LINK_2500, &rules))
+		val |= RTL822X_VND2_LCR_LINK_2500;
+
+	if (test_bit(TRIGGER_NETDEV_LINK, &rules) ||
+	    test_bit(TRIGGER_NETDEV_LINK_5000, &rules))
+		val |= RTL822X_VND2_LCR_LINK_5000;
+
+	if (test_bit(TRIGGER_NETDEV_LINK, &rules) ||
+	    test_bit(TRIGGER_NETDEV_LINK_10000, &rules))
+		val |= RTL822X_VND2_LCR_LINK_10000;
+
+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND2,
+			    RTL822X_VND2_LED(index), val);
+	if (ret < 0)
+		return ret;
+
+	act = test_bit(TRIGGER_NETDEV_RX, &rules) ||
+	      test_bit(TRIGGER_NETDEV_TX, &rules);
+
+	ret = phy_modify_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_LCR6,
+			     RTL822X_VND2_LED_ACT(index), act ?
+			     RTL822X_VND2_LED_ACT(index) : 0);
+	if (ret < 0)
+		return ret;
+
+	/* Enable the output and restore the configured polarity, which
+	 * led_brightness_set() may have used as a level.
+	 */
+	if (priv->led_active_low & BIT(index))
+		lcr7 |= RTL822X_VND2_LED_POLAR(index);
+
+	return phy_modify_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_LCR7,
+			      RTL822X_VND2_LED_EN(index) |
+			      RTL822X_VND2_LED_POLAR(index), lcr7);
+}
+
+static int rtl8261x_led_brightness_set(struct phy_device *phydev, u8 index,
+				       enum led_brightness value)
+{
+	struct rtl8261x_priv *priv = phydev->priv;
+	u16 lcr7 = RTL822X_VND2_LED_EN(index);
+	bool active_low, on;
+	int ret;
+
+	if (index >= RTL8261X_LED_COUNT)
+		return -EINVAL;
+
+	/* clear HW LED setup */
+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND2,
+			    RTL822X_VND2_LED(index), 0);
+	if (ret < 0)
+		return ret;
+
+	/* clear HW LED blink */
+	ret = phy_clear_bits_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_LCR6,
+				 RTL822X_VND2_LED_ACT(index));
+	if (ret < 0)
+		return ret;
+
+	/* With no link condition selected the output sits at its idle
+	 * level, so inverting the polarity turns the LED on.
+	 */
+	active_low = priv->led_active_low & BIT(index);
+	on = value != LED_OFF;
+	if (on != active_low)
+		lcr7 |= RTL822X_VND2_LED_POLAR(index);
+
+	return phy_modify_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_LCR7,
+			      RTL822X_VND2_LED_EN(index) |
+			      RTL822X_VND2_LED_POLAR(index), lcr7);
+}
+
+static int rtl8261x_led_polarity_set(struct phy_device *phydev, int index,
+				     unsigned long modes)
+{
+	struct rtl8261x_priv *priv = phydev->priv;
+	bool active_low = false;
+	u32 mode;
+
+	if (index >= RTL8261X_LED_COUNT)
+		return -EINVAL;
+
+	for_each_set_bit(mode, &modes, __PHY_LED_MODES_NUM) {
+		switch (mode) {
+		case PHY_LED_ACTIVE_LOW:
+			active_low = true;
+			break;
+		case PHY_LED_ACTIVE_HIGH:
+			break;
+		default:
+			return -EINVAL;
+		}
+	}
+
+	if (active_low)
+		priv->led_active_low |= BIT(index);
+	else
+		priv->led_active_low &= ~BIT(index);
+
+	return phy_modify_mmd(phydev, MDIO_MMD_VEND2, RTL822X_VND2_LCR7,
+			      RTL822X_VND2_LED_POLAR(index),
+			      active_low ? RTL822X_VND2_LED_POLAR(index) : 0);
 }
 
 static int rtl822xb_led_hw_is_supported(struct phy_device *phydev, u8 index,
@@ -2320,6 +3050,32 @@ exit:
 	return ret;
 }
 
+static int rtl8224_get_base_addr(struct phy_device *phydev, u32 *base_addr)
+{
+	struct device *dev = &phydev->mdio.dev;
+	struct device_node *np;
+	int ret;
+
+	*base_addr = phydev->mdio.addr & ~3;
+	np = of_get_parent(dev->of_node);
+	if (of_node_name_eq(np, "ethernet-phy-package")) {
+		ret = of_property_read_u32(np, "reg", base_addr);
+		of_node_put(np);
+		if (ret)
+			return dev_err_probe(dev, ret,
+					     "Missing or invalid PHY package reg\n");
+
+		if (phydev->mdio.addr < *base_addr ||
+		    phydev->mdio.addr - *base_addr >= 4)
+			return dev_err_probe(dev, -EINVAL,
+					     "PHY address outside RTL8224 package\n");
+	} else {
+		of_node_put(np);
+	}
+
+	return 0;
+}
+
 static int rtl8224_sds_read(struct phy_device *phydev, int page, u32 reg)
 {
 	int ret;
@@ -2380,9 +3136,9 @@ static int rtl8224_sds_modify(struct phy_device *phydev, int page, int reg, u32 
 	return 0;
 }
 
-static int rtl8224_serdes_config(struct phy_device *phydev)
+static int rtl8224_serdes_config(struct phy_device *phydev, u8 port_offset)
 {
-	if ((phydev->mdio.addr & 3) != 0)
+	if (port_offset != 0)
 		return 0;
 
 	/* Turn SerDes OFF */
@@ -2461,10 +3217,9 @@ static int rtl8224_serdes_config(struct phy_device *phydev)
 	return 0;
 }
 
-static int rtl8224_mdi_config_order(struct phy_device *phydev)
+static int rtl8224_mdi_config_order(struct phy_device *phydev, u8 port_offset)
 {
 	struct device_node *np = phydev->mdio.dev.of_node;
-	u8 port_offset = phydev->mdio.addr & 3;
 	u32 order = 0;
 	int ret;
 
@@ -2486,10 +3241,10 @@ static int rtl8224_mdi_config_order(struct phy_device *phydev)
 					  order ? BIT(port_offset) : 0);
 }
 
-static int rtl8224_mdi_config_polarity(struct phy_device *phydev)
+static int rtl8224_mdi_config_polarity(struct phy_device *phydev, u8 port_offset)
 {
 	struct device_node *np = phydev->mdio.dev.of_node;
-	u8 offset = (phydev->mdio.addr & 3) * 4;
+	u8 offset = port_offset * 4;
 	u32 polarity = 0;
 	int ret;
 
@@ -2513,24 +3268,37 @@ static int rtl8224_mdi_config_polarity(struct phy_device *phydev)
 
 static int rtl8224_config_init(struct phy_device *phydev)
 {
+	u32 base_addr;
+	u8 port_offset;
 	int ret;
 
-	ret = rtl8224_serdes_config(phydev);
+	ret = rtl8224_get_base_addr(phydev, &base_addr);
 	if (ret)
 		return ret;
 
-	ret = rtl8224_mdi_config_order(phydev);
+	port_offset = phydev->mdio.addr - base_addr;
+	ret = rtl8224_serdes_config(phydev, port_offset);
 	if (ret)
 		return ret;
 
-	return rtl8224_mdi_config_polarity(phydev);
+	ret = rtl8224_mdi_config_order(phydev, port_offset);
+	if (ret)
+		return ret;
+
+	return rtl8224_mdi_config_polarity(phydev, port_offset);
 }
 
 static int rtl8224_probe(struct phy_device *phydev)
 {
-	/* Chip exposes 4 ports, join all of them in the same package */
-	return devm_phy_package_join(&phydev->mdio.dev, phydev,
-				     phydev->mdio.addr & ~3, 0);
+	struct device *dev = &phydev->mdio.dev;
+	u32 base_addr;
+	int ret;
+
+	ret = rtl8224_get_base_addr(phydev, &base_addr);
+	if (ret)
+		return ret;
+
+	return devm_phy_package_join(dev, phydev, base_addr, 0);
 }
 
 static bool rtlgen_supports_2_5gbps(struct phy_device *phydev)
@@ -3096,11 +3864,12 @@ static int rtl826x_probe(struct phy_device *phydev)
 		phydev_warn(phydev, "PMA low-power suspend disabled\n");
 
 	/* Disable EEE due to link stability issues (incl. multi-G / rate-adapt) */
-//	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_100baseT_Full_BIT);
-//	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_1000baseT_Full_BIT);
-//	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_2500baseT_Full_BIT);
-//	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_5000baseT_Full_BIT);
-//	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_10000baseT_Full_BIT);
+/*	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_100baseT_Full_BIT);
+	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_1000baseT_Full_BIT);
+	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_2500baseT_Full_BIT);
+	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_5000baseT_Full_BIT);
+	phy_disable_eee_mode(phydev, ETHTOOL_LINK_MODE_10000baseT_Full_BIT);
+*/
 
 	/* Disable EEE due to link stability issues */
 	phy_set_eee_broken(phydev, MDIO_EEE_100TX);
@@ -3868,6 +4637,42 @@ static struct phy_driver realtek_drvs[] = {
 		.resume		= genphy_resume,
 		.read_mmd	= genphy_read_mmd_unsupported,
 		.write_mmd	= genphy_write_mmd_unsupported,
+	}, {
+		PHY_ID_MATCH_EXACT(RTL_8261C_CG),
+		.name			= "Realtek RTL8261C/D 10Gbps PHY",
+		.probe			= rtl8261x_probe,
+		.config_init		= rtl8261x_config_init,
+		.get_features		= rtl8261x_get_features,
+		.config_aneg		= rtl8261x_config_aneg,
+		.read_status		= rtl8261x_read_status,
+		.config_intr		= rtl8261x_config_intr,
+		.handle_interrupt	= rtl8261x_handle_interrupt,
+		.soft_reset		= genphy_c45_pma_soft_reset,
+		.suspend		= genphy_c45_pma_suspend,
+		.resume			= genphy_c45_pma_resume,
+		.led_brightness_set	= rtl8261x_led_brightness_set,
+		.led_hw_is_supported	= rtl8261x_led_hw_is_supported,
+		.led_hw_control_get	= rtl8261x_led_hw_control_get,
+		.led_hw_control_set	= rtl8261x_led_hw_control_set,
+		.led_polarity_set	= rtl8261x_led_polarity_set,
+	}, {
+		PHY_ID_MATCH_EXACT(RTL_8261CE_CG),
+		.name			= "Realtek RTL8261CE 10Gbps PHY",
+		.probe			= rtl8261x_probe,
+		.config_init		= rtl8261x_config_init,
+		.get_features		= rtl8261x_get_features,
+		.config_aneg		= rtl8261x_config_aneg,
+		.read_status		= rtl8261x_read_status,
+		.config_intr		= rtl8261x_config_intr,
+		.handle_interrupt	= rtl8261x_handle_interrupt,
+		.soft_reset		= genphy_c45_pma_soft_reset,
+		.suspend		= genphy_c45_pma_suspend,
+		.resume			= genphy_c45_pma_resume,
+		.led_brightness_set	= rtl8261x_led_brightness_set,
+		.led_hw_is_supported	= rtl8261x_led_hw_is_supported,
+		.led_hw_control_get	= rtl8261x_led_hw_control_get,
+		.led_hw_control_set	= rtl8261x_led_hw_control_set,
+		.led_polarity_set	= rtl8261x_led_polarity_set,
 	}, {
 		.name           = "RTL8251L 5Gbps PHY",
 		.config_init    = rtl826x_config_init,
