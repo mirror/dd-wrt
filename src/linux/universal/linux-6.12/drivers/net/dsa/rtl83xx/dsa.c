@@ -813,7 +813,7 @@ static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
 					struct netlink_ext_ack *extack)
 {
 	struct otto_dsa_priv *priv = ds->priv;
-	unsigned long features = BR_ISOLATED;
+	unsigned long features = BR_ISOLATED | BR_PORT_LOCKED;
 
 	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
 	if (priv->r->enable_learning)
@@ -821,9 +821,6 @@ static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
 
 	if (priv->r->enable_flood)
 		features |= BR_FLOOD;
-
-	if (priv->r->set_l2_new_sa_trap)
-		features |= BR_PORT_LOCKED;
 
 	if (priv->r->enable_mcast_flood)
 		features |= BR_MCAST_FLOOD;
@@ -885,8 +882,7 @@ static int rtldsa_port_bridge_flags(struct dsa_switch *ds, int port,
 	/* Trap frames with an unknown source address on a locked port to the
 	 * CPU, so that an authenticator can inspect them and add an FDB entry.
 	 */
-	if (priv->r->set_l2_new_sa_trap)
-		priv->r->set_l2_new_sa_trap(priv, port, !!(cached_flags & BR_PORT_LOCKED));
+	priv->r->set_l2_new_sa_trap(priv, port, !!(cached_flags & BR_PORT_LOCKED));
 
 	if (priv->r->enable_learning)
 		priv->r->enable_learning(priv, port, !!(cached_flags & BR_LEARNING));
@@ -914,7 +910,7 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.get_tag_protocol	= rtldsa_get_tag_protocol,
 	.setup			= rtldsa_83xx_setup,
 
-	.phylink_get_caps	= rtldsa_83xx_phylink_get_caps,
+	.phylink_get_caps	= otto_mac_phylink_get_caps,
 
 	.get_strings		= otto_stats_get_strings,
 	.get_ethtool_stats	= otto_stats_get_ethtool,
@@ -929,11 +925,11 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_enable		= rtldsa_port_enable,
 	.port_disable		= rtldsa_port_disable,
 
-	.port_change_mtu	= rtldsa_port_change_mtu,
-	.port_max_mtu		= rtldsa_port_max_mtu,
+	.port_change_mtu	= otto_mac_port_change_mtu,
+	.port_max_mtu		= otto_mac_port_max_mtu,
 
-	.support_eee		= rtldsa_support_eee,
-	.set_mac_eee		= rtldsa_set_mac_eee,
+	.support_eee		= otto_mac_support_eee,
+	.set_mac_eee		= otto_mac_set_eee,
 
 	.set_ageing_time	= rtldsa_set_ageing_time,
 	.port_bridge_join	= rtldsa_port_bridge_join,
@@ -976,7 +972,7 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.get_tag_protocol	= rtldsa_get_tag_protocol,
 	.setup			= rtldsa_93xx_setup,
 
-	.phylink_get_caps	= rtldsa_93xx_phylink_get_caps,
+	.phylink_get_caps	= otto_mac_phylink_get_caps,
 
 	.get_strings		= otto_stats_get_strings,
 	.get_ethtool_stats	= otto_stats_get_ethtool,
@@ -991,11 +987,11 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_enable		= rtldsa_port_enable,
 	.port_disable		= rtldsa_port_disable,
 
-	.port_change_mtu	= rtldsa_port_change_mtu,
-	.port_max_mtu		= rtldsa_port_max_mtu,
+	.port_change_mtu	= otto_mac_port_change_mtu,
+	.port_max_mtu		= otto_mac_port_max_mtu,
 
-	.support_eee		= rtldsa_support_eee,
-	.set_mac_eee		= rtldsa_set_mac_eee,
+	.support_eee		= otto_mac_support_eee,
+	.set_mac_eee		= otto_mac_set_eee,
 
 	.set_ageing_time	= rtldsa_set_ageing_time,
 	.port_bridge_join	= rtldsa_port_bridge_join,
