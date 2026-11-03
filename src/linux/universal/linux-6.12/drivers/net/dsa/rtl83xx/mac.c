@@ -443,7 +443,7 @@ static void otto_mac_93xx_phylink_config(struct phylink_config *config,
 
 	cfg = &priv->r->mac_force_mode;
 	force_dynamic_phy = !priv->ports[port].phy &&
-		(mode == MLO_AN_PHY || state->interface == PHY_INTERFACE_MODE_SGMII);
+		(mode == MLO_AN_PHY || state->interface == PHY_INTERFACE_MODE_SGMII || state->interface == PHY_INTERFACE_MODE_HSGMII);
 
 	/* Select PCS before dropping force mode to avoid a transient link down. */
 	if (!priv->ports[port].phy && phylink_autoneg_inband(mode) &&
@@ -497,7 +497,7 @@ static void otto_mac_93xx_phylink_link_down(struct phylink_config *config,
 
 	cfg = &priv->r->mac_force_mode;
 	force_dynamic_phy = !priv->ports[port].phy &&
-		(mode == MLO_AN_PHY || interface == PHY_INTERFACE_MODE_SGMII);
+		(mode == MLO_AN_PHY || interface == PHY_INTERFACE_MODE_SGMII || interface == PHY_INTERFACE_MODE_HSGMII);
 
 	/* Stop TX/RX to port */
 	regmap_update_bits(priv->map, priv->r->mac_port_ctrl(port), 0x3, 0);
@@ -608,11 +608,11 @@ static void otto_mac_93xx_phylink_link_up(struct phylink_config *config,
 	dynamic_phy = !priv->ports[port].phy && phydev;
 	force_dynamic_phy = dynamic_phy &&
 		(!phylink_autoneg_inband(mode) ||
-		 interface == PHY_INTERFACE_MODE_SGMII);
+		 interface == PHY_INTERFACE_MODE_SGMII || interface == PHY_INTERFACE_MODE_HSGMII);
 	keep_forced = dsa_port_is_cpu(dp) || mode == MLO_AN_FIXED ||
 		      force_dynamic_phy;
 	if (dynamic_phy &&
-	    (interface == PHY_INTERFACE_MODE_SGMII ||
+	    (interface == PHY_INTERFACE_MODE_SGMII || interface == PHY_INTERFACE_MODE_HSGMII ||
 	     interface == PHY_INTERFACE_MODE_USXGMII)) {
 		if (phydev->speed != SPEED_UNKNOWN)
 			speed = phydev->speed;
@@ -669,11 +669,13 @@ static void otto_mac_93xx_phylink_link_up(struct phylink_config *config,
 		     mcr & ~cfg->force_en_mask);
 	if (keep_forced)
 		regmap_write(priv->map, priv->r->mac_force_mode_ctrl(port), mcr);
+
 	/* Keep force mode active while switching hardware link sources. */
 	if (force_dynamic_phy)
+	if (force_dynamic_phy)
 		otto_mac_link_state_source_set(priv, port,
-					 RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
-					 interface);
+					       RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
+					       interface);
 
 restart:
 
