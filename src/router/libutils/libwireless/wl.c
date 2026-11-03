@@ -4026,12 +4026,14 @@ int getmaxvaps(const char *prefix)
 		return 16;
 	if (is_wil6210(prefix))
 		return 1;
+#ifdef HAVE_IWLWIFI
 	if (is_iwlwifi(prefix))
 		return 1;
 	if (is_iwl4965(prefix))
 		return 1;
 	if (is_iwl3945(prefix))
 		return 1;
+#endif
 	if (is_morse_micro(prefix))
 		return 2;
 	return 8; // default
