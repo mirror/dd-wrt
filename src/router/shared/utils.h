@@ -1588,6 +1588,7 @@ static inline int is_morse_micro(const char *prefix)
 
 #ifdef HAVE_ATH9K
 extern int is_ath9k(const char *prefix);
+extern int is_iwlwifi(const char *prefix);
 extern int is_mwifiex(const char *prefix);
 #else
 static inline int is_ath9k(const char *prefix)
@@ -1595,6 +1596,10 @@ static inline int is_ath9k(const char *prefix)
 	return 0;
 }
 static inline int is_mwifiex(const char *prefix)
+{
+	return 0;
+}
+static inline int is_iwlwifi(const char *prefix)
 {
 	return 0;
 }
