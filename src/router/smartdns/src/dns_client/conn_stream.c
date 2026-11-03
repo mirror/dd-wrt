@@ -92,6 +92,7 @@ void _dns_client_conn_server_streams_free(struct dns_server_info *server_info, s
 {
 	struct dns_conn_stream *stream = NULL;
 	struct dns_conn_stream *tmp = NULL;
+	LIST_HEAD(free_list);
 
 	pthread_mutex_lock(&server_info->lock);
 	list_for_each_entry_safe(stream, tmp, &server_info->conn_stream_list, server_list)
@@ -101,7 +102,7 @@ void _dns_client_conn_server_streams_free(struct dns_server_info *server_info, s
 			continue;
 		}
 
-		list_del_init(&stream->server_list);
+		list_move_tail(&stream->server_list, &free_list);
 		stream->server_info = NULL;
 #ifdef HAVE_OPENSSL
 		if (stream->quic_stream) {
@@ -111,6 +112,13 @@ void _dns_client_conn_server_streams_free(struct dns_server_info *server_info, s
 			SSL_free(stream->quic_stream);
 			stream->quic_stream = NULL;
 		}
+	}
+	pthread_mutex_unlock(&server_info->lock);
+ 
+	/* http2 stream close takes the http2 context mutex, never under server_info->lock */
+	list_for_each_entry_safe(stream, tmp, &free_list, server_list)
+	{
+		list_del_init(&stream->server_list);
 		if (stream->http2_stream) {
 			http2_stream_close(stream->http2_stream);
 			stream->http2_stream = NULL;
@@ -118,5 +126,4 @@ void _dns_client_conn_server_streams_free(struct dns_server_info *server_info, s
 #endif
 		_dns_client_conn_stream_put(stream);
 	}
-	pthread_mutex_unlock(&server_info->lock);
 }
