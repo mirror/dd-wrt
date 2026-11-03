@@ -2489,6 +2489,7 @@ static int rtpcs_930x_sds_set_mode(struct rtpcs_serdes *sds, enum rtpcs_sds_mode
 		break;
 
 	default:
+		ret = rtpcs_93xx_sds_set_mac_driven_mode(sds, hw_mode, submode);
 		break;
 	}
 	if (ret)
