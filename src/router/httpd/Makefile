@@ -826,6 +826,9 @@ endif
 ifeq ($(CONFIG_EOC1650),y)
 CFLAGS += -DHAVE_EOC1650
 endif
+ifeq ($(CONFIG_IWLWIFI),y)
+  CFLAGS += -DHAVE_IWLWIFI
+endif
 ifeq ($(CONFIG_ALLNETWRT),y)
 CFLAGS += -DHAVE_ALLNETWRT
 endif
