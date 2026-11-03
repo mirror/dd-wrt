@@ -2087,6 +2087,7 @@ static void rtpcs_93xx_sds_arm_linkmon(struct rtpcs_serdes *sds)
 	mod_delayed_work(system_wq, &sds->linkmon_work, msecs_to_jiffies(RTPCS_RXMON_POLL_MS));
 }
 
+
 static void rtpcs_93xx_rx_cali_work_handler(struct work_struct *work)
 {
 	struct rtpcs_serdes *sds;
@@ -2096,9 +2097,9 @@ static void rtpcs_93xx_rx_cali_work_handler(struct work_struct *work)
 
 	mutex_lock(&sds->ctrl->lock);
 	dev_dbg(sds->ctrl->dev,
-		"SerDes %u: RX calibration worker entered, mode=%u pending=%u\n",
-		sds->id, sds->hw_mode, sds->rxcal_pending);
-	if (!sds->rxcal_pending)
+		"SerDes %u: RX calibration worker entered, mode=%u phase=%u\n",
+		sds->id, sds->hw_mode, sds->rx_phase);
+	if (sds->rx_phase != RTPCS_RX_PHASE_CALIBRATION)
 		goto unlock;
 
 	ret = rtpcs_93xx_sds_rxcal_ready(sds);
