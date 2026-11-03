@@ -1582,7 +1582,7 @@ int has_vht80(const char *interface)
 }
 #endif
 
-#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
+#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || defined(HAVE_MVEBU)
 int _has_ac(const char *prefix)
 {
 	INITVALUECACHE();
