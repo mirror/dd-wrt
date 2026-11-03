@@ -239,7 +239,7 @@ int getRssi_11n(const char *ifname, unsigned char *mac);
 extern int mac80211_getassoclist(const char *name, unsigned char *list);
 
 extern int has_mimo(const char *prefix);
-#if defined(HAVE_ATH10K) || defined(HAVE_ATH11K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || defined(HAVE_MVEBU) || defined(HAVE_X86)
+#if defined(HAVE_ATH10K) || defined(HAVE_ATH11K) || defined(HAVE_ATH12K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || defined(HAVE_MVEBU) || defined(HAVE_X86)
 extern int _has_ac(const char *prefix);
 
 static inline int has_ac(const char *prefix)
