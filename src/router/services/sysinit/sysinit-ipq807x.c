@@ -60,6 +60,8 @@
 #include "devices/wireless.c"
 #include <services.h>
 
+static int wifi_devicecount = 3;
+
 #define sys_reboot()                           \
 	{                                      \
 		eval("sync");                  \
@@ -498,7 +500,7 @@ int ath11k_crypto_disabled(void)
 	const char *next;
 	char var[80];
 	char *vifs;
-	for (count = 0; count < 3; count++) {
+	for (count = 0; count < wifi_devicecount; count++) {
 		char wifivifs[32];
 		char base[32];
 		sprintf(base, "wlan%d", count);
@@ -1872,6 +1874,7 @@ void start_wifi_drivers(void)
 		case ROUTER_8DEVICES_KIWI:
 			//		case ROUTER_GLINET_AX1800:
 			profile = 1024;
+			wifi_devicecount = 2;
 			nvram_set("mem_profile", "1024");
 			break;
 		}
