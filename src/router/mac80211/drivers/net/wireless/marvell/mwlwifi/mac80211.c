@@ -537,6 +537,15 @@ static int mwl_mac80211_set_key(struct ieee80211_hw *hw,
 	mwl_vif = mwl_dev_get_vif(vif);
 	addr = sta ? sta->addr : vif->addr;
 
+	/* mac80211 does BIP in software. Don't tell the firmware anything
+	 * about the IGTK: an UPDATE_ENCRYPTION with ENCR_TYPE_DISABLE for
+	 * the BSS address would override the encryption type set for the
+	 * GTK, and break group addressed traffic.
+	 */
+	if (key->cipher == WLAN_CIPHER_SUITE_AES_CMAC)
+		return 1;
+
+
 	if (cmd_param == SET_KEY) {
 		switch (key->cipher) {
 		case WLAN_CIPHER_SUITE_WEP40:
