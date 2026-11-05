@@ -547,15 +547,28 @@ static int mwl_mac80211_set_key(struct ieee80211_hw *hw,
 			encr_type = ENCR_TYPE_CCMP;
 			if (priv->chip_type != MWL8964)
 				key->flags |= IEEE80211_KEY_FLAG_GENERATE_IV;
+			else
+				/* The 88W8964 firmware fills in the CCMP
+				 * header of data frames, but not of
+				 * protected management frames.
+				 */
+				key->flags |=
+					IEEE80211_KEY_FLAG_GENERATE_IV_MGMT;
 			break;
 		case WLAN_CIPHER_SUITE_CCMP_256:
 			encr_type = ENCR_TYPE_CCMP_256;
+			key->flags |=
+				IEEE80211_KEY_FLAG_GENERATE_IV_MGMT;
 			break;
 		case WLAN_CIPHER_SUITE_GCMP:
 			encr_type = ENCR_TYPE_GCMP;
+			key->flags |=
+				IEEE80211_KEY_FLAG_GENERATE_IV_MGMT;
 			break;
 		case WLAN_CIPHER_SUITE_GCMP_256:
 			encr_type = ENCR_TYPE_GCMP_256;
+			key->flags |=
+				IEEE80211_KEY_FLAG_GENERATE_IV_MGMT;
 			break;
 		case WLAN_CIPHER_SUITE_TKIP:
 			encr_type = ENCR_TYPE_TKIP;

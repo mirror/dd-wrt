@@ -369,10 +369,17 @@ static inline void pcie_rx_process_slow_data(struct mwl_priv *priv,
 			    is_multicast_ether_addr(wh->addr1) ||
 			    (ieee80211_is_mgmt(wh->frame_control) &&
 			    !is_multicast_ether_addr(wh->addr1))) {
-				if (!ieee80211_is_auth(wh->frame_control))
+				if (!ieee80211_is_mgmt(wh->frame_control))
 					status->flag |= RX_FLAG_IV_STRIPPED |
 							RX_FLAG_DECRYPTED |
 							RX_FLAG_MMIC_STRIPPED;
+				else if (!ieee80211_is_auth(wh->frame_control))
+					/* The firmware decrypts protected
+					 * management frames in place, but
+					 * leaves the CCMP header and MIC for
+					 * mac80211 to remove.
+					 */
+					status->flag |= RX_FLAG_DECRYPTED;
 			}
 		}
 

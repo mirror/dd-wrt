@@ -1320,7 +1320,7 @@ void cfg80211_init_wdev(struct wireless_dev *wdev)
 
 	if ((wdev->iftype == NL80211_IFTYPE_STATION ||
 	     wdev->iftype == NL80211_IFTYPE_P2P_CLIENT ||
-	     wdev->iftype == NL80211_IFTYPE_ADHOC) && !wdev->use_4addr)
+	     wdev->iftype == NL80211_IFTYPE_ADHOC) && (!wdev->use_4addr && !wdev->use_mtikwds))
 		wdev->netdev->priv_flags |= IFF_DONT_BRIDGE;
 
 	INIT_WORK(&wdev->disconnect_wk, cfg80211_autodisconnect_wk);
@@ -1505,7 +1505,7 @@ static int cfg80211_netdev_notifier_call(struct notifier_block *nb,
 		break;
 	case NETDEV_PRE_UP:
 		if (!cfg80211_iftype_allowed(wdev->wiphy, wdev->iftype,
-					     wdev->use_4addr, 0))
+					     wdev->use_4addr && wdev->use_mtikwds , 0))
 			return notifier_from_errno(-EOPNOTSUPP);
 
 		if (rfkill_blocked(rdev->wiphy.rfkill))

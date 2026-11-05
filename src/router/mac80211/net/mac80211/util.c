@@ -2029,7 +2029,7 @@ int ieee80211_build_preq_ies(struct ieee80211_sub_if_data *sdata, u8 *buffer,
 			"not enough space for mtik IE\n"))
 		return pos;
 
-	newpos = ieee80211_add_mtik_ie(buffer + pos, sdata ? (sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds) : 0);
+	newpos = ieee80211_add_mtik_ie(buffer + pos, sdata ? (sdata->wdev.use_mtikwds || sdata->wdev.use_4addr || sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds) : 0);
 	if (brcmlen)
 		newpos = ieee80211_add_brcm_ie(buffer + pos + sizeof(struct ieee80211_mtik_ie), sta_count(sdata));
 	
@@ -4723,7 +4723,9 @@ u8 *ieee80211_add_ddwrt_ie(u8 *frm)
 u8 *ieee80211_add_mtik_ie(u8 *frm, int wds)
 {
 	static const u_int8_t mtikoui[3] = { 0x00, 0x0c, 0x42 };
-	static const u_int8_t mtikver[4] = { 0x0, 0x66, 0x2, 0x3 }; //{ 0x1f, 0x66, 0x09, 0x10 } - 31, 102, 9, 2 aka 2.9.31
+//	static const u_int8_t mtikver[4] = { 0x1f, 0x66, 0x9, 0x2 }; //{ 0x1f, 0x66, 0x09, 0x10 } - 31, 102, 9, 2 aka 2.9.31
+//	static const u_int8_t mtikver[4] = { 0x05, 0x66, 0x26, 0x6 }; //{ 0x1f, 0x66, 0x09, 0x10 } - 05, 102, 38, 6
+	static const u_int8_t mtikver[4] = { 2, 0x66, 18, 7 }; //{ 0x1f, 0x66, 0x09, 0x10 } - 05, 102, 38, 6
 	struct ieee80211_mtik_ie_data* mtikie;
 
 

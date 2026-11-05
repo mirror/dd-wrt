@@ -797,7 +797,7 @@ static void wmi_evt_ready(struct wil6210_vif *vif, int id, void *d, int len)
 	if (len > offsetof(struct wmi_ready_event, max_assoc_sta) &&
 	    evt->max_assoc_sta > 0) {
 		fw_max_assoc_sta = evt->max_assoc_sta;
-		wil_dbg_wmi(wil, "fw reported max assoc sta %d\n",
+		wil_err(wil, "fw reported max assoc sta %d\n",
 			    fw_max_assoc_sta);
 
 		if (fw_max_assoc_sta > WIL6210_MAX_CID) {
@@ -809,7 +809,7 @@ static void wmi_evt_ready(struct wil6210_vif *vif, int id, void *d, int len)
 	}
 
 	wil->max_assoc_sta = min_t(uint, max_assoc_sta, fw_max_assoc_sta);
-	wil_dbg_wmi(wil, "setting max assoc sta to %d\n", wil->max_assoc_sta);
+	wil_err(wil, "setting max assoc sta to %d\n", wil->max_assoc_sta);
 
 	wil_set_recovery_state(wil, fw_recovery_idle);
 	set_bit(wil_status_fwready, wil->status);

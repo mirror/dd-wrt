@@ -10,6 +10,9 @@
 #include <linux/pci.h>
 #include <linux/rtnetlink.h>
 #include <linux/power_supply.h>
+#include <linux/thermal.h>
+#include <linux/hwmon.h>
+#include <linux/hwmon-sysfs.h>
 #include "wil6210.h"
 #include "wmi.h"
 #include "txrx.h"
@@ -1383,6 +1386,100 @@ static int temp_show(struct seq_file *s, void *data)
 }
 DEFINE_SHOW_ATTRIBUTE(temp);
 
+static ssize_t wil_thermal_show_temp_mac(struct device *dev,
+					struct device_attribute *attr,
+					char *buf)
+{
+	struct wil6210_priv *wil = dev_get_drvdata(dev);
+
+
+	int rc;
+
+	if (test_bit(WMI_FW_CAPABILITY_TEMPERATURE_ALL_RF,
+		     wil->fw_capabilities)) {
+		struct wmi_temp_sense_all_done_event sense_all_evt;
+
+		rc = wmi_get_all_temperatures(wil, &sense_all_evt);
+		if (rc) {
+			return 0;
+		}
+		return sprintf(buf, "%u\n", le32_to_cpu(sense_all_evt.baseband_t1000));
+	} else {
+		s32 t_m, t_r;
+
+		rc = wmi_get_temperature(wil, &t_m, &t_r);
+		if (rc) {
+			return 0;
+		}
+		/* display in millidegree celcius */
+		return sprintf(buf, "%u\n", t_m);
+	}
+
+
+}
+
+static ssize_t wil_thermal_show_temp_phy(struct device *dev,
+					struct device_attribute *attr,
+					char *buf)
+{
+	struct wil6210_priv *wil = dev_get_drvdata(dev);
+
+
+	int rc;
+
+	if (test_bit(WMI_FW_CAPABILITY_TEMPERATURE_ALL_RF,
+		     wil->fw_capabilities)) {
+		struct wmi_temp_sense_all_done_event sense_all_evt;
+
+		rc = wmi_get_all_temperatures(wil, &sense_all_evt);
+		if (rc) {
+			return 0;
+		}
+		return sprintf(buf, "%u\n", le32_to_cpu(sense_all_evt.rf_t1000[0]));
+	} else {
+		s32 t_m, t_r;
+
+		rc = wmi_get_temperature(wil, &t_m, &t_r);
+		if (rc) {
+			return 0;
+		}
+		/* display in millidegree celcius */
+		return sprintf(buf, "%u\n", t_r);
+	}
+
+}
+
+static SENSOR_DEVICE_ATTR(temp1_input, 0444, wil_thermal_show_temp_mac,
+			  NULL, 0);
+static SENSOR_DEVICE_ATTR(temp2_input, 0444, wil_thermal_show_temp_phy,
+			  NULL, 0);
+
+static struct attribute *brcmf_hwmon_attrs[] = {
+	&sensor_dev_attr_temp1_input.dev_attr.attr,
+	&sensor_dev_attr_temp2_input.dev_attr.attr,
+	NULL,
+};
+ATTRIBUTE_GROUPS(brcmf_hwmon);
+
+int wil_thermal_init(struct wil6210_priv *wil)
+{
+	struct wiphy *wiphy = wil->wiphy;
+	struct device *hwmon;
+	const char *name;
+
+	if (!IS_REACHABLE(CONFIG_HWMON))
+		return 0;
+
+	name = devm_kasprintf(&wiphy->dev, GFP_KERNEL, "wil6210_%s",
+			      wiphy_name(wiphy));
+	hwmon = devm_hwmon_device_register_with_groups(&wiphy->dev, name, wil,
+						       brcmf_hwmon_groups);
+	if (IS_ERR(hwmon))
+		return PTR_ERR(hwmon);
+
+	return 0;
+}
+
 /*---------freq------------*/
 static int freq_show(struct seq_file *s, void *data)
 {
@@ -2498,6 +2595,7 @@ int wil6210_debugfs_init(struct wil6210_priv *wil)
 	wil6210_debugfs_create_pseudo_ISR(wil, dbg);
 
 	wil6210_debugfs_create_ITR_CNT(wil, dbg);
+	wil_thermal_init(wil);
 
 	return 0;
 }

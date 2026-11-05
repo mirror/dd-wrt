@@ -371,7 +371,7 @@ void *wil_if_alloc(struct device *dev)
 
 	wil_dbg_misc(wil, "if_alloc\n");
 
-	vif = wil_vif_alloc(wil, "giwifi%d", NET_NAME_UNKNOWN,
+	vif = wil_vif_alloc(wil, "wlan%d", NET_NAME_UNKNOWN,
 			    NL80211_IFTYPE_STATION);
 	if (IS_ERR(vif)) {
 		dev_err(dev, "wil_vif_alloc failed\n");

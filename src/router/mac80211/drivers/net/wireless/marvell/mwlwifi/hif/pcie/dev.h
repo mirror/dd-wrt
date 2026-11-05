@@ -269,7 +269,10 @@ struct pcie_dma_data {
 #define MAX_RX_RING_SEND_SIZE  MAX_NUM_RX_DESC
 #define MAX_RX_RING_DONE_SIZE  MAX_NUM_RX_DESC
 #define DEFAULT_ACNT_RING_SIZE 0x10000
-#define MAX_AGGR_SIZE          1900
+/* The RX descriptors don't tell the firmware the buffer size, so this has
+ * to cover the largest frame it writes. The vendor driver uses 2700.
+ */
+#define MAX_AGGR_SIZE          2700
 #define TX_QUEUE_LIMIT         MAX_NUM_TX_DESC
 #define TX_WAKE_Q_THRESHOLD    (MAX_NUM_TX_DESC - 256)
 
@@ -787,6 +790,7 @@ static inline void pcie_tx_encapsulate_frame(struct mwl_priv *priv,
 					     struct sk_buff *skb,
 					     struct ieee80211_key_conf *k_conf)
 {
+	struct ieee80211_hdr *wh = (struct ieee80211_hdr *)skb->data;
 	int head_pad = 0;
 	int data_pad = 0;
 
@@ -800,7 +804,12 @@ static inline void pcie_tx_encapsulate_frame(struct mwl_priv *priv,
 	 */
 
 	if (k_conf) {
-		head_pad = k_conf->iv_len;
+		/* With IEEE80211_KEY_FLAG_GENERATE_IV_MGMT, mac80211 has
+		 * already inserted the CCMP header.
+		 */
+		if (!(ieee80211_is_mgmt(wh->frame_control) &&
+		      (k_conf->flags & IEEE80211_KEY_FLAG_GENERATE_IV_MGMT)))
+			head_pad = k_conf->iv_len;
 
 		switch (k_conf->cipher) {
 		case WLAN_CIPHER_SUITE_WEP40:

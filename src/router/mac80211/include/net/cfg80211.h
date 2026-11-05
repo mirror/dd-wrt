@@ -637,8 +637,8 @@ static inline void wiphy_read_of_freq_limits(struct wiphy *wiphy)
  */
 struct vif_params {
 	u32 flags;
-	int use_4addr;
-	int use_mtikwds;
+	s8 use_4addr;
+	s8 use_mtikwds;
 	u8 set_compr;
 	u8 use_compr; //0 off, 1 lzo, 2 lzma
 	u32 compr_threshold;
@@ -1256,6 +1256,7 @@ struct cfg80211_ap_settings {
 	struct cfg80211_fils_discovery fils_discovery;
 	struct cfg80211_unsol_bcast_probe_resp unsol_bcast_probe_resp;
 	struct cfg80211_mbssid_config mbssid_config;
+	enum nl80211_beacon_tx_mode beacon_tx_mode;
 };
 
 /**
@@ -2153,6 +2154,7 @@ struct mesh_setup {
 	struct cfg80211_bitrate_mask beacon_rate;
 	bool userspace_handles_dfs;
 	bool control_port_over_nl80211;
+	enum nl80211_beacon_tx_mode beacon_tx_mode;
 };
 
 /**

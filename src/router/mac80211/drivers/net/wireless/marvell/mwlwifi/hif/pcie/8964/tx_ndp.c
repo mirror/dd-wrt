@@ -41,6 +41,7 @@
 #define TX_CTRL_TYPE_DATA       BIT(0)
 #define TX_CTRL_EAPOL           BIT(1)
 #define TX_CTRL_TCP_ACK         BIT(2)
+#define TX_CTRL_MIC_ROOM        BIT(3)
 
 /* Transmission information to transmit a socket buffer.
  */
@@ -466,6 +467,10 @@ void pcie_tx_done_ndp(struct ieee80211_hw *hw)
 			dev_kfree_skb_any(skb);
 			goto bypass_ack;
 		} else {
+			if (tx_ctrl->flags & TX_CTRL_MIC_ROOM)
+				skb_trim(skb,
+					 skb->len - IEEE80211_CCMP_MIC_LEN);
+
 			/* Remove H/W dma header */
 			dma_data = (struct pcie_dma_data *)skb->data;
 
@@ -526,10 +531,12 @@ void pcie_tx_xmit_ndp(struct ieee80211_hw *hw,
 	bool eapol_frame = false;
 	bool start_ba_session = false;
 	struct pcie_tx_ctrl_ndp *tx_ctrl;
+	int mic_room = 0;
 
 	tx_info = IEEE80211_SKB_CB(skb);
 	k_conf = tx_info->control.hw_key;
-	mwl_vif = mwl_dev_get_vif(tx_info->control.vif);
+	mwl_vif = tx_info->control.vif ?
+		  mwl_dev_get_vif(tx_info->control.vif) : NULL;
 	index = skb_get_queue_mapping(skb);
 	sta = control->sta;
 	sta_info = sta ? mwl_dev_get_sta(sta) : NULL;
@@ -551,16 +558,31 @@ void pcie_tx_xmit_ndp(struct ieee80211_hw *hw,
 		mgmt = (struct ieee80211_mgmt *)skb->data;
 	}
 
+	/* The firmware builds the header of data frames itself, from the
+	 * queue they're sent on, so an injected data frame without a vif
+	 * can't be sent as it is.
+	 */
+	if (!mwl_vif && !mgmtframe) {
+		ieee80211_free_txskb(hw, skb);
+		return;
+	}
+
 	if (mgmtframe) {
 		u16 capab;
 
+		/* The body of a protected frame starts with its CCMP
+		 * header (or is encrypted). mac80211 queues ADDBA requests
+		 * on the right AC anyway.
+		 */
 		if (unlikely(ieee80211_is_action(wh->frame_control) &&
+			     !ieee80211_has_protected(wh->frame_control) &&
 			     mgmt->u.action.category == WLAN_CATEGORY_BACK &&
 			     mgmt->u.action.u.addba_req.action_code ==
 			     WLAN_ACTION_ADDBA_REQ)) {
 			capab = le16_to_cpu(mgmt->u.action.u.addba_req.capab);
 			tid = (capab & IEEE80211_ADDBA_PARAM_TID_MASK) >> 2;
-			index = utils_tid_to_ac(tid);
+			if (tid < IEEE80211_FIRST_TSPEC_TSID)
+				index = utils_tid_to_ac(tid);
 		}
 
 		if (ieee80211_is_probe_req(wh->frame_control) ||
@@ -568,7 +590,7 @@ void pcie_tx_xmit_ndp(struct ieee80211_hw *hw,
 			tx_que_priority = PROBE_RESPONSE_TXQNUM;
 		else {
 			if ((
-			    (mwl_vif->macid == SYSADPT_NUM_OF_AP) &&
+			    mwl_vif && (mwl_vif->macid == SYSADPT_NUM_OF_AP) &&
 			    (!ieee80211_has_protected(wh->frame_control) ||
 			    (ieee80211_has_protected(wh->frame_control) &&
 			    ieee80211_is_auth(wh->frame_control)))
@@ -602,6 +624,22 @@ void pcie_tx_xmit_ndp(struct ieee80211_hw *hw,
 		}
 
 		pcie_tx_encapsulate_frame(priv, skb, k_conf);
+		if (k_conf) {
+			switch(k_conf->cipher) {
+			case WLAN_CIPHER_SUITE_CCMP:
+				mic_room = IEEE80211_CCMP_MIC_LEN;
+			break;
+			case WLAN_CIPHER_SUITE_CCMP_256:
+				mic_room = IEEE80211_CCMP_256_MIC_LEN;
+			break;
+			case WLAN_CIPHER_SUITE_GCMP:
+			case WLAN_CIPHER_SUITE_GCMP_256:
+				mic_room = IEEE80211_GCMP_MIC_LEN;
+			break;
+			}
+		}
+
+
 	} else {
 		tid = qos & 0x7;
 		if (sta && sta->ht_cap.ht_supported && !eapol_frame &&
@@ -659,12 +697,27 @@ void pcie_tx_xmit_ndp(struct ieee80211_hw *hw,
 		}
 	}
 
+	if (mic_room) {
+		/* The firmware expects the length of a protected
+		 * management frame to include room for the MIC.
+		 */
+		if (skb_tailroom(skb) < mic_room &&
+		    pskb_expand_head(skb, 0, mic_room, GFP_ATOMIC)) {
+			ieee80211_free_txskb(hw, skb);
+			return;
+		}
+		skb_put_zero(skb, mic_room);
+		wh = &((struct pcie_dma_data *)skb->data)->wh;
+	}
+
 	index = SYSADPT_TX_WMM_QUEUES - index - 1;
 
 	tx_ctrl = (struct pcie_tx_ctrl_ndp *)tx_info->driver_data;
 	tx_ctrl->tx_que_priority = tx_que_priority;
 	tx_ctrl->hdrlen = ieee80211_hdrlen(wh->frame_control);
 	tx_ctrl->flags = 0;
+	if (mic_room)
+		tx_ctrl->flags |= TX_CTRL_MIC_ROOM;
 	tx_ctrl->qos = qos;
 	if (!mgmtframe)
 		tx_ctrl->flags |= TX_CTRL_TYPE_DATA;

@@ -40,6 +40,7 @@ int wil_set_capabilities(struct wil6210_priv *wil)
 	wil->wil_fw_name = ftm_mode ? WIL_FW_NAME_FTM_DEFAULT :
 			   WIL_FW_NAME_DEFAULT;
 	wil->chip_revision = chip_revision;
+	wil->use_enhanced_dma_hw = false;
 
 	switch (jtag_id) {
 	case JTAG_DEV_ID_SPARROW:
@@ -72,6 +73,9 @@ int wil_set_capabilities(struct wil6210_priv *wil)
 		}
 		wil->rgf_fw_assert_code_addr = SPARROW_RGF_FW_ASSERT_CODE;
 		wil->rgf_ucode_assert_code_addr = SPARROW_RGF_UCODE_ASSERT_CODE;
+		wil->use_enhanced_dma_hw = false;
+		wil->use_rx_hw_reordering = false;
+		wil->use_compressed_rx_status = false;
 		break;
 	case JTAG_DEV_ID_TALYN:
 		wil->hw_name = "Talyn-MA";
@@ -86,6 +90,9 @@ int wil_set_capabilities(struct wil6210_priv *wil)
 			      WIL_FW_NAME_TALYN;
 		if (wil_fw_verify_file_exists(wil, wil_fw_name))
 			wil->wil_fw_name = wil_fw_name;
+		wil->use_enhanced_dma_hw = false;
+		wil->use_rx_hw_reordering = false;
+		wil->use_compressed_rx_status = false;
 		break;
 	case JTAG_DEV_ID_TALYN_MB:
 		wil->hw_name = "Talyn-MB";

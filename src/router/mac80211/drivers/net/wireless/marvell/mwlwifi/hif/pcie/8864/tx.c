@@ -717,13 +717,19 @@ void pcie_8864_tx_xmit(struct ieee80211_hw *hw,
 	if (mgmtframe) {
 		u16 capab;
 
+		/* The body of a protected frame starts with its CCMP
+		 * header (or is encrypted). mac80211 queues ADDBA requests
+		 * on the right AC anyway.
+		 */
 		if (unlikely(ieee80211_is_action(wh->frame_control) &&
+			     !ieee80211_has_protected(wh->frame_control) &&
 			     mgmt->u.action.category == WLAN_CATEGORY_BACK &&
 			     mgmt->u.action.u.addba_req.action_code ==
 			     WLAN_ACTION_ADDBA_REQ)) {
 			capab = le16_to_cpu(mgmt->u.action.u.addba_req.capab);
 			tid = (capab & IEEE80211_ADDBA_PARAM_TID_MASK) >> 2;
-			index = utils_tid_to_ac(tid);
+			if (tid < IEEE80211_FIRST_TSPEC_TSID)
+				index = utils_tid_to_ac(tid);
 		}
 	}
 

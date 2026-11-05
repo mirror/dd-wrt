@@ -308,6 +308,8 @@ static int ieee80211_check_concurrent_iface(struct ieee80211_sub_if_data *sdata,
 	/* we hold the RTNL here so can safely walk the list */
 	list_for_each_entry(nsdata, &local->interfaces, list) {
 		if (nsdata != sdata && ieee80211_sdata_running(nsdata)) {
+			struct ieee80211_link_data *link;
+
 			/*
 			 * Only OCB and monitor mode may coexist
 			 */
@@ -334,6 +336,7 @@ static int ieee80211_check_concurrent_iface(struct ieee80211_sub_if_data *sdata,
 			 * will not add another interface while any channel
 			 * switch is active.
 			 */
+
 			if (nsdata->vif.csa_active)
 				return -EBUSY;
 
@@ -2326,6 +2329,8 @@ int ieee80211_if_add(struct ieee80211_local *local, const char *name,
 	/* initialise type-independent data */
 	sdata->wdev.wiphy = local->hw.wiphy;
 	sdata->local = local;
+	if (params->use_mtikwds > 0)
+		sdata->wdev.use_mtikwds = true;
 
 	ieee80211_init_frag_cache(&sdata->frags);
 
@@ -2371,8 +2376,9 @@ int ieee80211_if_add(struct ieee80211_local *local, const char *name,
 	ieee80211_setup_sdata(sdata, type);
 
 	if (ndev) {
-		ndev->ieee80211_ptr->use_4addr = params->use_4addr;
-		ndev->ieee80211_ptr->use_mtikwds = params->use_mtikwds;
+		ndev->ieee80211_ptr->use_4addr = params->use_4addr > 0;
+		if (params->use_mtikwds > 0)
+			ndev->ieee80211_ptr->use_mtikwds = params->use_mtikwds;
 #if IS_ENABLED(CPTCFG_MAC80211_COMPRESS)
 //			printk(KERN_INFO "%s:Set Compression to %s\n", ndev->name, params->use_compr ? "Enable" : "Disable");
 		if (params->set_compr) {
@@ -2381,8 +2387,8 @@ int ieee80211_if_add(struct ieee80211_local *local, const char *name,
 		}
 #endif
 		if (type == NL80211_IFTYPE_STATION) {
-			sdata->u.mgd.use_mtikwds = params->use_mtikwds;
-			sdata->u.mgd.use_4addr = params->use_4addr;
+			sdata->u.mgd.use_mtikwds = params->use_mtikwds > 0;
+			sdata->u.mgd.use_4addr = params->use_4addr > 0;
 		}
 
 		ndev->features |= local->hw.netdev_features;

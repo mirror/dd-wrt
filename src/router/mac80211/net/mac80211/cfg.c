@@ -190,8 +190,10 @@ static int ieee80211_change_iface(struct wiphy *wiphy,
 	ret = ieee80211_if_change_type(sdata, type);
 	if (ret)
 		return ret;
+	if (params->use_mtikwds > 0)
+		sdata->wdev.use_mtikwds = params->use_mtikwds;
 
-	if (type == NL80211_IFTYPE_AP_VLAN && params->use_4addr == 0) {
+	if (type == NL80211_IFTYPE_AP_VLAN && params->use_4addr == 0 && params->use_mtikwds == 0) {
 		RCU_INIT_POINTER(sdata->u.vlan.sta, NULL);
 		ieee80211_check_fast_rx_iface(sdata);
 	} else if (type == NL80211_IFTYPE_STATION && params->use_4addr >= 0) {
@@ -200,8 +202,8 @@ static int ieee80211_change_iface(struct wiphy *wiphy,
 		if (params->use_4addr == ifmgd->use_4addr)
 			return 0;
 
-		sdata->u.mgd.use_4addr = params->use_4addr;
-		sdata->u.mgd.use_mtikwds = params->use_mtikwds;
+		sdata->u.mgd.use_4addr = params->use_4addr > 0;
+		sdata->u.mgd.use_mtikwds = params->use_mtikwds > 0;
 		if (!ifmgd->associated)
 			return 0;
 
@@ -890,7 +892,7 @@ ieee80211_set_probe_resp(struct ieee80211_sub_if_data *sdata,
 
 	new->len = resp_len + sizeof(struct ieee80211_mtik_ie) + sizeof(struct ieee80211_brcm_ie);
 	memcpy(new->data, resp, resp_len);
-	ieee80211_add_mtik_ie(new->data + resp_len, sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds);
+	ieee80211_add_mtik_ie(new->data + resp_len, sdata->wdev.use_mtikwds || sdata->wdev.use_4addr || sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds);
 	ieee80211_add_brcm_ie(new->data + resp_len + sizeof(struct ieee80211_mtik_ie), sta_count(sdata));
 
 	if (csa)
@@ -1176,6 +1178,7 @@ static int ieee80211_start_ap(struct wiphy *wiphy, struct net_device *dev,
 
 	prev_beacon_int = sdata->vif.bss_conf.beacon_int;
 	sdata->vif.bss_conf.beacon_int = params->beacon_interval;
+	sdata->vif.bss_conf.beacon_tx_mode = params->beacon_tx_mode;
 
 	if (params->vht_cap) {
 		sdata->vif.bss_conf.vht_su_beamformer =
@@ -2244,6 +2247,7 @@ static int copy_mesh_setup(struct ieee80211_if_mesh *ifmsh,
 
 	sdata->vif.bss_conf.beacon_int = setup->beacon_interval;
 	sdata->vif.bss_conf.dtim_period = setup->dtim_period;
+	sdata->vif.bss_conf.beacon_tx_mode = setup->beacon_tx_mode;
 
 	sdata->beacon_rate_set = false;
 	if (wiphy_ext_feature_isset(sdata->local->hw.wiphy,

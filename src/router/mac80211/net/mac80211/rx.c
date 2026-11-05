@@ -3056,6 +3056,7 @@ ieee80211_rx_h_data(struct ieee80211_rx_data *rx)
 	__le16 fc = hdr->frame_control;
 	static ieee80211_rx_result res;
 	bool port_control;
+	u16 ethertype;
 	int err;
 
 	if (unlikely(!ieee80211_is_data(hdr->frame_control)))
@@ -3068,6 +3069,7 @@ ieee80211_rx_h_data(struct ieee80211_rx_data *rx)
 	 * Send unexpected-4addr-frame event to hostapd. For older versions,
 	 * also drop the frame to cooked monitor interfaces.
 	 */
+
 	if (ieee80211_has_a4(hdr->frame_control) &&
 	    sdata->vif.type == NL80211_IFTYPE_AP) {
 		if (rx->sta &&
@@ -3078,15 +3080,17 @@ ieee80211_rx_h_data(struct ieee80211_rx_data *rx)
 	}
 
 	err = __ieee80211_data_to_8023(rx, &port_control);
-	if (unlikely(err))
+	if (unlikely(err)) {
 		return RX_DROP_UNUSABLE;
+	}
 
 	res = ieee80211_rx_mesh_data(rx->sdata, rx->sta, rx->skb);
 	if (res != RX_CONTINUE)
 		return res;
 
-	if (!ieee80211_frame_allowed(rx, fc))
+	if (!ieee80211_frame_allowed(rx, fc)) {
 		return RX_DROP_MONITOR;
+	}
 
 	/* directly handle TDLS channel switch requests/responses */
 	if (unlikely(((struct ethhdr *)rx->skb->data)->h_proto ==

@@ -1131,6 +1131,10 @@ static void __sta_info_destroy_part2(struct sta_info *sta)
 		}
 	}
 
+	sinfo = kzalloc(sizeof(*sinfo), GFP_KERNEL);
+	if (sinfo)
+		sta_set_sinfo(sta, sinfo, true);
+
 	if (sta->uploaded) {
 		ret = drv_sta_state(local, sdata, sta, IEEE80211_STA_NONE,
 				    IEEE80211_STA_NOTEXIST);
@@ -1139,9 +1143,6 @@ static void __sta_info_destroy_part2(struct sta_info *sta)
 
 	sta_dbg(sdata, "Removed STA %pM\n", sta->sta.addr);
 
-	sinfo = kzalloc(sizeof(*sinfo), GFP_KERNEL);
-	if (sinfo)
-		sta_set_sinfo(sta, sinfo, true);
 	cfg80211_del_sta_sinfo(sdata->dev, sta->sta.addr, sinfo, GFP_KERNEL);
 	kfree(sinfo);
 
@@ -2015,6 +2016,8 @@ void ieee80211_sta_update_pending_airtime(struct ieee80211_local *local,
 int sta_info_move_state(struct sta_info *sta,
 			enum ieee80211_sta_state new_state)
 {
+	struct ieee80211_local *local = sta->local;
+
 	might_sleep();
 
 	if (sta->sta_state == new_state)
@@ -2087,6 +2090,24 @@ int sta_info_move_state(struct sta_info *sta,
 		} else if (sta->sta_state == IEEE80211_STA_AUTHORIZED) {
 			ieee80211_vif_dec_num_mcast(sta->sdata);
 			clear_bit(WLAN_STA_AUTHORIZED, &sta->_flags);
+
+			/*
+			 * If we have encryption offload, flush (station) queues
+			 * (after ensuring concurrent TX completed) so we won't
+			 * transmit anything later unencrypted if/when keys are
+			 * also removed, which might otherwise happen depending
+			 * on how the hardware offload works.
+			 */
+			if (local->ops->set_key) {
+				synchronize_net();
+				if (local->ops->flush_sta)
+					drv_flush_sta(local, sta->sdata, sta);
+				else
+					ieee80211_flush_queues(local,
+							       sta->sdata,
+							       false);
+			}
+
 			ieee80211_clear_fast_xmit(sta);
 			ieee80211_clear_fast_rx(sta);
 		}
@@ -2331,6 +2352,29 @@ static inline u64 sta_get_stats_bytes(struct ieee80211_sta_rx_stats *rxstats)
 #endif
 
 	return value;
+}
+
+static u32 sta_estimate_expected_throughput(struct sta_info *sta,
+					    struct station_info *sinfo)
+{
+	struct ieee80211_sub_if_data *sdata = sta->sdata;
+	struct ieee80211_local *local = sdata->local;
+	struct rate_info *ri = &sinfo->txrate;
+	struct ieee80211_hw *hw = &local->hw;
+	struct ieee80211_chanctx_conf *conf;
+	u32 duration;
+	u8 band = 0;
+
+	conf = rcu_dereference(sdata->vif.chanctx_conf);
+	if (conf)
+			band = conf->def.chan->band;
+
+	duration = ieee80211_rate_expected_tx_airtime(hw, NULL, ri, band, true, 1024);
+	duration += duration >> 4; /* add assumed packet error rate of ~6% */
+	if (!duration)
+		return 0;
+
+	return ((1024 * USEC_PER_SEC) / duration) * 8;
 }
 
 void sta_set_sinfo(struct sta_info *sta, struct station_info *sinfo,
@@ -2614,6 +2658,8 @@ void sta_set_sinfo(struct sta_info *sta, struct station_info *sinfo,
 		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_HT40INTOL);
 
 	thr = sta_get_expected_throughput(sta);
+	if (!thr && (sinfo->filled & BIT_ULL(NL80211_STA_INFO_TX_BITRATE)))
+	    thr = sta_estimate_expected_throughput(sta, sinfo);
 
 	if (thr != 0) {
 		sinfo->filled |= BIT_ULL(NL80211_STA_INFO_EXPECTED_THROUGHPUT);

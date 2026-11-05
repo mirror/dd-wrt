@@ -9,6 +9,7 @@
  */
 
 #define wil_err_fw(wil, fmt, arg...) wil_err(wil, "ERR[ FW ]" fmt, ##arg)
+#define wil_info_fw(wil, fmt, arg...) wil_info(wil, "INFO[ FW ]" fmt, ##arg)
 #define wil_dbg_fw(wil, fmt, arg...) wil_dbg(wil, "DBG[ FW ]" fmt, ##arg)
 #define wil_hex_dump_fw(prefix_str, prefix_type, rowsize,		\
 			groupsize, buf, len, ascii)			\
@@ -656,7 +657,7 @@ int wil_request_firmware(struct wil6210_priv *wil, const char *name,
 		wil_err_fw(wil, "Failed to load firmware %s rc %d\n", name, rc);
 		return rc;
 	}
-	wil_dbg_fw(wil, "Loading <%s>, %zu bytes\n", name, fw->size);
+	wil_info_fw(wil, "Loading <%s>, %zu bytes\n", name, fw->size);
 
 	/* re-initialize board info params */
 	wil->num_of_brd_entries = 0;

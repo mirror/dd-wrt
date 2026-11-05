@@ -806,6 +806,7 @@ static const struct nla_policy nl80211_policy[NUM_NL80211_ATTR] = {
 	[NL80211_ATTR_RADAR_BACKGROUND] = { .type = NLA_FLAG },
 	[NL80211_ATTR_AP_SETTINGS_FLAGS] = { .type = NLA_U32 },
 	[NL80211_ATTR_WIPHY_ANTENNA_GAIN] = { .type = NLA_U32 },
+	[NL80211_ATTR_BEACON_TX_MODE] = NLA_POLICY_RANGE(NLA_U32, 1, 2),
 	[NL80211_ATTR_TDMA_VERSION] = { .type = NLA_U8 },
 	[NL80211_ATTR_TDMA_NODES] = { .type = NLA_U8 },
 	[NL80211_ATTR_TDMA_BWMODE] = { .type = NLA_U8 },
@@ -4068,7 +4069,7 @@ static int nl80211_set_interface(struct sk_buff *skb, struct genl_info *info)
 		params.use_mtikwds = !!nla_get_u8(info->attrs[NL80211_ATTR_MTIKWDS]);
 		change = true;
 	} else {
-		params.use_mtikwds = 0;
+		params.use_mtikwds = -1;
 	}
 
 	err = nl80211_parse_mon_options(rdev, ntype, info, &params);
@@ -4082,9 +4083,12 @@ static int nl80211_set_interface(struct sk_buff *skb, struct genl_info *info)
 	else
 		err = 0;
 
+	if (!err && params.use_mtikwds != -1) {
+		dev->ieee80211_ptr->use_mtikwds = params.use_mtikwds;
+	}
+
 	if (!err && params.use_4addr != -1) {
 		dev->ieee80211_ptr->use_4addr = params.use_4addr;
-		dev->ieee80211_ptr->use_mtikwds = params.use_mtikwds;
 	}
 
 #if IS_ENABLED(CPTCFG_MAC80211_COMPRESS)
@@ -4150,15 +4154,17 @@ static int _nl80211_new_interface(struct sk_buff *skb, struct genl_info *info)
 		err = nl80211_valid_4addr(rdev, NULL, params.use_4addr, type);
 		if (err)
 			return err;
+	} else {
+		params.use_4addr = -1;
 	}
 
 	if (info->attrs[NL80211_ATTR_MTIKWDS]) {
 		params.use_mtikwds = !!nla_get_u8(info->attrs[NL80211_ATTR_MTIKWDS]);
 	} else {
-		params.use_mtikwds = 0;
+		params.use_mtikwds = -1;
 	}
 
-	if (!cfg80211_iftype_allowed(&rdev->wiphy, type, params.use_4addr, 0))
+	if (!cfg80211_iftype_allowed(&rdev->wiphy, type, params.use_4addr > 0 || params.use_mtikwds > 0, 0))
 		return -EOPNOTSUPP;
 
 	err = nl80211_parse_mon_options(rdev, type, info, &params);
@@ -5626,6 +5632,10 @@ static int nl80211_start_ap(struct sk_buff *skb, struct genl_info *info)
 		nla_get_u32(info->attrs[NL80211_ATTR_BEACON_INTERVAL]);
 	params.dtim_period =
 		nla_get_u32(info->attrs[NL80211_ATTR_DTIM_PERIOD]);
+
+	if (info->attrs[NL80211_ATTR_BEACON_TX_MODE])
+		params.beacon_tx_mode =
+			nla_get_u32(info->attrs[NL80211_ATTR_BEACON_TX_MODE]);
 
 	err = cfg80211_validate_beacon_int(rdev, dev->ieee80211_ptr->iftype,
 					   params.beacon_interval);
@@ -12255,6 +12265,10 @@ static int nl80211_join_mesh(struct sk_buff *skb, struct genl_info *info)
 		if (setup.dtim_period < 1 || setup.dtim_period > 100)
 			return -EINVAL;
 	}
+
+	if (info->attrs[NL80211_ATTR_BEACON_TX_MODE])
+		setup.beacon_tx_mode =
+			nla_get_u32(info->attrs[NL80211_ATTR_BEACON_TX_MODE]);
 
 	if (info->attrs[NL80211_ATTR_MESH_SETUP]) {
 		/* parse additional setup parameters if given */

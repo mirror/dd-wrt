@@ -494,6 +494,10 @@ static void mwl_fwcmd_parse_beacon(struct mwl_priv *priv,
 			beacon_info->ie_mde_len = (elen + 2);
 			beacon_info->ie_mde_ptr = (pos - 2);
 			break;
+		case WLAN_EID_RSNX:
+			beacon_info->ie_rsnx_len = (elen + 2);
+			beacon_info->ie_rsnx_ptr = (pos - 2);
+			break;
 		case WLAN_EID_HT_CAPABILITY:
 		case WLAN_EID_HT_OPERATION:
 		case WLAN_EID_OVERLAP_BSS_SCAN_PARAM:
@@ -629,52 +633,103 @@ static int mwl_fwcmd_set_ies(struct mwl_priv *priv, struct mwl_vif *mwl_vif)
 	       beacon->ie_meshid_len);
 	ie_list_len_proprietary = beacon->ie_meshid_len;
 
-	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
-	       beacon->ie_meshcfg_ptr, beacon->ie_meshcfg_len);
-	ie_list_len_proprietary += beacon->ie_meshcfg_len;
-
-	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
-	       beacon->ie_meshchsw_ptr, beacon->ie_meshchsw_len);
-	ie_list_len_proprietary += beacon->ie_meshchsw_len;
-
-	if (priv->chip_type == MWL8897) {
+	if (ie_list_len_proprietary + beacon->ie_meshcfg_len <=
+	    sizeof(pcmd->ie_list_proprietary)) {
 		memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
-		       beacon->ie_wmm_ptr, beacon->ie_wmm_len);
-		ie_list_len_proprietary += mwl_vif->beacon_info.ie_wmm_len;
+		       beacon->ie_meshcfg_ptr, beacon->ie_meshcfg_len);
+		ie_list_len_proprietary += beacon->ie_meshcfg_len;
 	}
 
-	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
-	       beacon->ie_mde_ptr, beacon->ie_mde_len);
-	ie_list_len_proprietary += mwl_vif->beacon_info.ie_mde_len;
+	if (ie_list_len_proprietary + beacon->ie_meshchsw_len <=
+	    sizeof(pcmd->ie_list_proprietary)) {
+		memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+		       beacon->ie_meshchsw_ptr, beacon->ie_meshchsw_len);
+		ie_list_len_proprietary += beacon->ie_meshchsw_len;
+	}
 
-	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
-	       beacon->ie_vendor_ptr, beacon->ie_vendor_len);
-	ie_list_len_proprietary += mwl_vif->beacon_info.ie_vendor_len;
+	if (priv->chip_type == MWL8897) {
+		if (ie_list_len_proprietary + beacon->ie_wmm_len <=
+		        sizeof(pcmd->ie_list_proprietary)) {
+			memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+			       beacon->ie_wmm_ptr, beacon->ie_wmm_len);
+			ie_list_len_proprietary += mwl_vif->beacon_info.ie_wmm_len;
+		}
+	}
+	/* The 88W8964 firmware cuts the RSN element from the BSS start
+	 * command of every BSS on the radio to the same length, so pass
+	 * it along with the other elements instead.
+	 */
+	if (priv->chip_type == MWL8964) {
+		if (ie_list_len_proprietary + beacon->ie_rsn48_len <=
+		        sizeof(pcmd->ie_list_proprietary)) {
+			memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+			       beacon->ie_rsn48_ptr, beacon->ie_rsn48_len);
+			ie_list_len_proprietary += mwl_vif->beacon_info.ie_rsn48_len;
+		}
+	}
+	
+	if (ie_list_len_proprietary + beacon->ie_mde_len <=
+	    sizeof(pcmd->ie_list_proprietary)) {
+		memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+		       beacon->ie_mde_ptr, beacon->ie_mde_len);
+		ie_list_len_proprietary += mwl_vif->beacon_info.ie_mde_len;
+	}
 
+	if (ie_list_len_proprietary + beacon->ie_rsnx_len <=
+	    sizeof(pcmd->ie_list_proprietary)) {
+		memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+		       beacon->ie_rsnx_ptr, beacon->ie_rsnx_len);
+		ie_list_len_proprietary += beacon->ie_rsnx_len;
+	}
 
-	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
-	       beacon->ie_neighbor_report_ptr, beacon->ie_neighbor_report_len);
-	ie_list_len_proprietary += mwl_vif->beacon_info.ie_neighbor_report_len;
+	if (ie_list_len_proprietary + beacon->ie_vendor_len <=
+	    sizeof(pcmd->ie_list_proprietary)) {
+		memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+		       beacon->ie_vendor_ptr, beacon->ie_vendor_len);
+		ie_list_len_proprietary += mwl_vif->beacon_info.ie_vendor_len;
+	}
 
-	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
-	       beacon->ie_fast_bss_transition_ptr, beacon->ie_fast_bss_transition_len);
-	ie_list_len_proprietary += mwl_vif->beacon_info.ie_fast_bss_transition_len;
-
-	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
-	       beacon->ie_measure_request_ptr, beacon->ie_measure_request_len);
-	ie_list_len_proprietary += mwl_vif->beacon_info.ie_measure_request_len;
-
-	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
-	       beacon->ie_measure_report_ptr, beacon->ie_measure_report_len);
-	ie_list_len_proprietary += mwl_vif->beacon_info.ie_measure_report_len;
-
-	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
-	       beacon->ie_erp_info_ptr, beacon->ie_erp_info_len);
-	ie_list_len_proprietary += mwl_vif->beacon_info.ie_erp_info_len;
-
-	memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
-	       beacon->ie_mmie_ptr, beacon->ie_mmie_len);
-	ie_list_len_proprietary += mwl_vif->beacon_info.ie_mmie_len;
+	if (ie_list_len_proprietary + beacon->ie_neighbor_report_len <=
+	    sizeof(pcmd->ie_list_proprietary)) {
+		memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+		       beacon->ie_neighbor_report_ptr, beacon->ie_neighbor_report_len);
+		ie_list_len_proprietary += mwl_vif->beacon_info.ie_neighbor_report_len;
+	}
+	
+	if (ie_list_len_proprietary + beacon->ie_fast_bss_transition_len <=
+	    sizeof(pcmd->ie_list_proprietary)) {
+		memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+		       beacon->ie_fast_bss_transition_ptr, beacon->ie_fast_bss_transition_len);
+		ie_list_len_proprietary += mwl_vif->beacon_info.ie_fast_bss_transition_len;
+	}
+	
+	if (ie_list_len_proprietary + beacon->ie_measure_request_len <=
+	    sizeof(pcmd->ie_list_proprietary)) {
+		memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+		       beacon->ie_measure_request_ptr, beacon->ie_measure_request_len);
+		ie_list_len_proprietary += mwl_vif->beacon_info.ie_measure_request_len;
+	}
+	
+	if (ie_list_len_proprietary + beacon->ie_measure_report_len <=
+	    sizeof(pcmd->ie_list_proprietary)) {
+		memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+		       beacon->ie_measure_report_ptr, beacon->ie_measure_report_len);
+		ie_list_len_proprietary += mwl_vif->beacon_info.ie_measure_report_len;
+	}
+	
+	if (ie_list_len_proprietary + beacon->ie_erp_info_len <=
+	    sizeof(pcmd->ie_list_proprietary)) {
+		memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+		       beacon->ie_erp_info_ptr, beacon->ie_erp_info_len);
+		ie_list_len_proprietary += mwl_vif->beacon_info.ie_erp_info_len;
+	}
+	if (ie_list_len_proprietary + beacon->ie_mmie_len <=
+	    sizeof(pcmd->ie_list_proprietary)) {
+		memcpy(pcmd->ie_list_proprietary + ie_list_len_proprietary,
+		       beacon->ie_mmie_ptr, beacon->ie_mmie_len);
+		ie_list_len_proprietary += mwl_vif->beacon_info.ie_mmie_len;
+	}
+	
 	
 	pcmd->ie_list_len_proprietary = cpu_to_le16(ie_list_len_proprietary);
 
@@ -712,7 +767,8 @@ static int mwl_fwcmd_set_ap_beacon(struct mwl_priv *priv,
 	if (mwl_vif->beacon_info.ie_rsn_len > sizeof(pcmd->start_cmd.rsn_ie))
 		goto ielenerr;
 
-	if (mwl_vif->beacon_info.ie_rsn48_len >
+	if (priv->chip_type != MWL8964 &&
+	    mwl_vif->beacon_info.ie_rsn48_len >
 	    sizeof(pcmd->start_cmd.rsn48_ie))
 		goto ielenerr;
 
@@ -747,8 +803,10 @@ static int mwl_fwcmd_set_ap_beacon(struct mwl_priv *priv,
 	memcpy(&pcmd->start_cmd.rsn_ie, mwl_vif->beacon_info.ie_rsn_ptr,
 	       mwl_vif->beacon_info.ie_rsn_len);
 
-	memcpy(&pcmd->start_cmd.rsn48_ie, mwl_vif->beacon_info.ie_rsn48_ptr,
-	       mwl_vif->beacon_info.ie_rsn48_len);
+	if (priv->chip_type != MWL8964)
+		memcpy(&pcmd->start_cmd.rsn48_ie,
+		       mwl_vif->beacon_info.ie_rsn48_ptr,
+		       mwl_vif->beacon_info.ie_rsn48_len);
 
 	memcpy(pcmd->start_cmd.b_rate_set, mwl_vif->beacon_info.b_rate_set,
 	       SYSADPT_MAX_DATA_RATES_G);

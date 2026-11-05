@@ -2674,7 +2674,7 @@ static struct sk_buff *ieee80211_build_hdr(struct ieee80211_sub_if_data *sdata,
 
 	switch (sdata->vif.type) {
 	case NL80211_IFTYPE_AP_VLAN:
-		if (sdata->wdev.use_4addr) {
+		if (sdata->wdev.use_4addr || sdata->wdev.use_mtikwds) {
 			fc |= cpu_to_le16(IEEE80211_FCTL_FROMDS | IEEE80211_FCTL_TODS);
 			/* RA TA DA SA */
 			memcpy(hdr.addr1, sta->sta.addr, ETH_ALEN);
@@ -2693,7 +2693,7 @@ static struct sk_buff *ieee80211_build_hdr(struct ieee80211_sub_if_data *sdata,
 			goto free;
 		}
 		band = chanctx_conf->def.chan->band;
-		if (sdata->wdev.use_4addr)
+		if (sdata->wdev.use_4addr || sdata->wdev.use_mtikwds)
 			break;
 		fallthrough;
 	case NL80211_IFTYPE_AP:
@@ -2710,6 +2710,20 @@ static struct sk_buff *ieee80211_build_hdr(struct ieee80211_sub_if_data *sdata,
 		memcpy(hdr.addr3, skb->data + ETH_ALEN, ETH_ALEN);
 		hdrlen = 24;
 		band = chanctx_conf->def.chan->band;
+
+		if (sta && sdata->wdev.use_mtikwds) {
+			fc |= cpu_to_le16(IEEE80211_FCTL_FROMDS |
+					  IEEE80211_FCTL_TODS);
+			/* RA TA DA SA */
+			memcpy(hdr.addr1, sta->sta.addr, ETH_ALEN);
+			memcpy(hdr.addr2, sdata->vif.addr, ETH_ALEN);
+			memcpy(hdr.addr3, skb->data, ETH_ALEN);
+			memcpy(hdr.addr4, skb->data + ETH_ALEN, ETH_ALEN);
+			hdrlen = 30;
+			authorized = test_sta_flag(sta, WLAN_STA_AUTHORIZED);
+			wme_sta = sta->sta.wme;
+		}
+
 		break;
 	case NL80211_IFTYPE_WDS:
 		fc |= cpu_to_le16(IEEE80211_FCTL_FROMDS | IEEE80211_FCTL_TODS);
@@ -2903,7 +2917,8 @@ static struct sk_buff *ieee80211_build_hdr(struct ieee80211_sub_if_data *sdata,
 	}
 
 	multicast = is_multicast_ether_addr(hdr.addr1);
-
+	if (sdata->wdev.use_mtikwds)
+		multicast = 0;
 	/* sta is always NULL for mesh */
 	if (sta) {
 		authorized = test_sta_flag(sta, WLAN_STA_AUTHORIZED);
@@ -3166,7 +3181,7 @@ void ieee80211_check_fast_xmit(struct sta_info *sta)
 		build.hdr_len = 24;
 		break;
 	case NL80211_IFTYPE_AP_VLAN:
-		if (sdata->wdev.use_4addr) {
+		if (sdata->wdev.use_4addr || sdata->wdev.use_mtikwds) {
 			fc |= cpu_to_le16(IEEE80211_FCTL_FROMDS |
 					  IEEE80211_FCTL_TODS);
 			/* RA TA DA SA */
@@ -3185,6 +3200,17 @@ void ieee80211_check_fast_xmit(struct sta_info *sta)
 		memcpy(hdr->addr2, sdata->vif.addr, ETH_ALEN);
 		build.sa_offs = offsetof(struct ieee80211_hdr, addr3);
 		build.hdr_len = 24;
+
+		if (sta && sdata->wdev.use_mtikwds) {
+			fc |= cpu_to_le16(IEEE80211_FCTL_FROMDS |
+					  IEEE80211_FCTL_TODS);
+			/* RA TA DA SA */
+			memcpy(hdr->addr1, sta->sta.addr, ETH_ALEN);
+			memcpy(hdr->addr2, sdata->vif.addr, ETH_ALEN);
+			build.da_offs = offsetof(struct ieee80211_hdr, addr3);
+			build.sa_offs = offsetof(struct ieee80211_hdr, addr4);
+			build.hdr_len = 30;
+		}
 		break;
 	default:
 		/* not handled on fast-xmit */
@@ -5384,7 +5410,7 @@ ieee80211_beacon_get_ap(struct ieee80211_hw *hw,
 	skb_reserve(skb, local->tx_headroom);
 	skb_put_data(skb, beacon->head, beacon->head_len);
 	ieee80211_add_brcm_ie(skb_put(skb, sizeof(struct ieee80211_brcm_ie)), sta_count(sdata));
-	ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds);
+	ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), sdata->wdev.use_mtikwds || sdata->wdev.use_4addr || sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds);
 
 	ieee80211_beacon_add_tim(sdata, &ap->ps, skb, is_template);
 
@@ -5461,11 +5487,15 @@ __ieee80211_beacon_get(struct ieee80211_hw *hw,
 		}
 
 		skb = dev_alloc_skb(local->tx_headroom + beacon->head_len +
+				    sizeof(struct ieee80211_brcm_ie) +
+				    sizeof(struct ieee80211_mtik_ie) +
 				    local->hw.extra_beacon_tailroom);
 		if (!skb)
 			goto out;
 		skb_reserve(skb, local->tx_headroom);
 		skb_put_data(skb, beacon->head, beacon->head_len);
+		ieee80211_add_brcm_ie(skb_put(skb, sizeof(struct ieee80211_brcm_ie)), sta_count(sdata));
+		ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)),sdata->wdev.use_mtikwds || sdata->wdev.use_4addr || sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds);
 
 		hdr = (struct ieee80211_hdr *) skb->data;
 		hdr->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT |
@@ -5498,12 +5528,16 @@ __ieee80211_beacon_get(struct ieee80211_hw *hw,
 		skb = dev_alloc_skb(local->tx_headroom +
 				    beacon->head_len +
 				    beacon->tail_len +
+				    sizeof(struct ieee80211_brcm_ie) +
+				    sizeof(struct ieee80211_mtik_ie) +
 				    256 +
 				    local->hw.extra_beacon_tailroom);
 		if (!skb)
 			goto out;
 		skb_reserve(skb, local->tx_headroom);
 		skb_put_data(skb, beacon->head, beacon->head_len);
+		ieee80211_add_brcm_ie(skb_put(skb, sizeof(struct ieee80211_brcm_ie)), sta_count(sdata));
+		ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)),sdata->wdev.use_mtikwds || sdata->wdev.use_4addr || sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds);
 		ieee80211_beacon_add_tim(sdata, &ifmsh->ps, skb, is_template);
 
 		if (offs) {
@@ -5599,7 +5633,7 @@ struct sk_buff *ieee80211_proberesp_get(struct ieee80211_hw *hw,
 
 	skb_put_data(skb, presp->data, presp->len);
 	ieee80211_add_brcm_ie(skb_put(skb, sizeof(struct ieee80211_brcm_ie)), sta_count(sdata));
-	ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds);
+	ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), sdata->wdev.use_mtikwds || sdata->wdev.use_4addr || sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds);
 
 	hdr = (struct ieee80211_hdr *) skb->data;
 	memset(hdr->addr1, 0, sizeof(hdr->addr1));
@@ -5661,7 +5695,7 @@ ieee80211_get_unsol_bcast_probe_resp_tmpl(struct ieee80211_hw *hw,
 		skb_reserve(skb, sdata->local->hw.extra_tx_headroom);
 		skb_put_data(skb, tmpl->data, tmpl->len);
 		ieee80211_add_brcm_ie(skb_put(skb, sizeof(struct ieee80211_brcm_ie)), sta_count(sdata));
-		ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds);
+		ieee80211_add_mtik_ie(skb_put(skb, sizeof(struct ieee80211_mtik_ie)), sdata->wdev.use_mtikwds || sdata->wdev.use_4addr || sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds);
 	}
 
 	rcu_read_unlock();

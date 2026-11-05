@@ -776,7 +776,7 @@ static void ieee80211_mgmt_mod_params(struct wiphy *wiphy, struct wireless_dev *
 		params->buf = kmalloc(params->len + extraie, GFP_KERNEL);
 		memcpy(params->buf, oldbuf, params->len);
 		ieee80211_add_brcm_ie(params->buf + params->len, sta_count(sdata));
-		ieee80211_add_mtik_ie(params->buf + params->len + sizeof(struct ieee80211_brcm_ie), sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds); /* todo, handle mtik wds flag? */
+		ieee80211_add_mtik_ie(params->buf + params->len + sizeof(struct ieee80211_brcm_ie), sdata->wdev.use_mtikwds || sdata->wdev.use_4addr || sdata->u.mgd.use_4addr || sdata->u.mgd.use_mtikwds); /* todo, handle mtik wds flag? */
 		params->len += extraie;
 	}
 }
