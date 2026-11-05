@@ -441,16 +441,17 @@ void pcie_tx_done_ndp(struct ieee80211_hw *hw)
 
 		index = le32_to_cpu(ptx_ring_done->user);
 		ptx_ring_done->user = 0;
+		/* Skip a bad entry rather than stall the ring on it. */
 		if (index >= MAX_TX_RING_SEND_SIZE) {
 			wiphy_err(hw->wiphy,
 				  "corruption for index of buffer\n");
-			break;
+			goto next;
 		}
 		skb = desc->tx_vbuflist[index];
 		if (!skb) {
 			wiphy_err(hw->wiphy,
 				  "buffer is NULL for tx done ring\n");
-			break;
+			goto next;
 		}
 		dma_unmap_single(&(pcie_priv->pdev)->dev,
 				 desc->pphys_tx_buflist[index],
@@ -496,9 +497,10 @@ void pcie_tx_done_ndp(struct ieee80211_hw *hw)
 		ieee80211_tx_status(hw, skb);
 
 bypass_ack:
+		desc->tx_desc_busy_cnt--;
+next:
 		if (++tx_done_tail >= MAX_TX_RING_DONE_SIZE)
 			tx_done_tail = 0;
-		desc->tx_desc_busy_cnt--;
 	}
 
 	writel(tx_done_tail, pcie_priv->iobase1 +
