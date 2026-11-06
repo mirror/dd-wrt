@@ -318,7 +318,7 @@ static void gs_usb_receive_bulk_callback(struct urb *urb)
 	if (hf->echo_id == -1) { /* normal rx */
 		skb = alloc_can_skb(dev->netdev, &cf);
 		if (!skb)
-			return;
+			goto resubmit_urb;
 
 		cf->can_id = hf->can_id;
 

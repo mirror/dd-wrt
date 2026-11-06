@@ -160,6 +160,7 @@ static int proc_tgid_net_getattr(struct vfsmount *mnt, struct dentry *dentry,
 const struct inode_operations proc_net_inode_operations = {
 	.lookup		= proc_tgid_net_lookup,
 	.getattr	= proc_tgid_net_getattr,
+	.setattr        = proc_setattr,
 };
 
 static int proc_tgid_net_readdir(struct file *file, struct dir_context *ctx)

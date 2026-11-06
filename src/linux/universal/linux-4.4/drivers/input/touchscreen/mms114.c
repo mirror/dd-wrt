@@ -150,7 +150,7 @@ static void mms114_process_mt(struct mms114_data *data, struct mms114_touch *tou
 	unsigned int x;
 	unsigned int y;
 
-	if (touch->id > MMS114_MAX_TOUCH) {
+	if (touch->id == 0 || touch->id > MMS114_MAX_TOUCH) {
 		dev_err(&client->dev, "Wrong touch id (%d)\n", touch->id);
 		return;
 	}
@@ -210,6 +210,12 @@ static irqreturn_t mms114_interrupt(int irq, void *dev_id)
 	packet_size = mms114_read_reg(data, MMS114_PACKET_SIZE);
 	if (packet_size <= 0)
 		goto out;
+
+	if (packet_size > sizeof(touch)) {
+		dev_err(&data->client->dev, "Invalid packet size %d (max %zu)\n",
+			packet_size, sizeof(touch));
+		goto out;
+	}
 
 	touch_size = packet_size / MMS114_PACKET_NUM;
 

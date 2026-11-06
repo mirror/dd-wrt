@@ -181,15 +181,36 @@ struct sock *bt_accept_dequeue(struct sock *parent, struct socket *newsock)
 
 	BT_DBG("parent %p", parent);
 
+restart:
 	list_for_each_safe(p, n, &bt_sk(parent)->accept_q) {
 		sk = (struct sock *) list_entry(p, struct bt_sock, accept_q);
 
+		/* The reference taken here keeps sk alive across
+		 * bt_accept_unlink() below.
+		 */
+		sock_hold(sk);
 		lock_sock(sk);
+
+		/* Check sk has not already been unlinked via
+		 * bt_accept_unlink() due to serialisation caused by sk locking
+		 */
+		if (!bt_sk(sk)->parent) {
+			BT_DBG("sk %p, already unlinked", sk);
+			release_sock(sk);
+			sock_put(sk);
+
+			/* Restart the loop as sk is no longer in the list
+			 * and also avoid a potential infinite loop because
+			 * list_for_each_safe() is not thread safe.
+			 */
+			goto restart;
+		}
 
 		/* FIXME: Is this check still needed */
 		if (sk->sk_state == BT_CLOSED) {
 			release_sock(sk);
 			bt_accept_unlink(sk);
+			sock_put(sk);
 			continue;
 		}
 
@@ -199,21 +220,19 @@ struct sock *bt_accept_dequeue(struct sock *parent, struct socket *newsock)
 			if (newsock)
 				sock_graft(sk, newsock);
 
-			/* Hand the caller a reference taken while sk is
-			 * still locked.  bt_accept_unlink() just dropped
-			 * the accept-queue reference; without this hold a
-			 * concurrent teardown (e.g. l2cap_conn_del() ->
-			 * l2cap_sock_kill()) could free sk between
-			 * release_sock() and the caller using it.  Every
-			 * caller drops this with sock_put() when done.
+			/* Hand the caller the reference taken at the top of
+			 * the loop; it keeps sk alive across
+			 * bt_accept_unlink() and any concurrent teardown
+			 * (e.g. l2cap_conn_del() -> l2cap_sock_kill()).
+			 * Every caller drops it with sock_put() when done.
 			 */
-			sock_hold(sk);
 
 			release_sock(sk);
 			return sk;
 		}
 
 		release_sock(sk);
+		sock_put(sk);
 	}
 
 	return NULL;

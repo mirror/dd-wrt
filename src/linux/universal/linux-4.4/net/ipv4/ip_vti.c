@@ -44,6 +44,7 @@
 #include <net/xfrm.h>
 #include <net/net_namespace.h>
 #include <net/netns/generic.h>
+#include <net/rtnetlink.h>
 
 static struct rtnl_link_ops vti_link_ops __read_mostly;
 
@@ -558,7 +559,11 @@ static int vti_newlink(struct net *src_net, struct net_device *dev,
 static int vti_changelink(struct net_device *dev, struct nlattr *tb[],
 			  struct nlattr *data[])
 {
+	struct ip_tunnel *t = netdev_priv(dev);
 	struct ip_tunnel_parm p;
+
+	if (!rtnl_dev_link_net_capable(dev, t->net))
+		return -EPERM;
 
 	vti_netlink_parms(data, &p);
 	return ip_tunnel_changelink(dev, tb, &p);

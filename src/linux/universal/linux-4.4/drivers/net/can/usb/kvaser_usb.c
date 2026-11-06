@@ -613,13 +613,22 @@ static int kvaser_usb_wait_msg(const struct kvaser_usb *dev, u8 id,
 				continue;
 			}
 
-			if (pos + tmp->len > actual_len) {
+			if (tmp->len < MSG_HEADER_LEN ||
+			    tmp->len > actual_len - pos) {
 				dev_err_ratelimited(dev->udev->dev.parent,
 						    "Format error\n");
 				break;
 			}
 
 			if (tmp->id == id) {
+				if (tmp->len > sizeof(*msg)) {
+					dev_err_ratelimited(dev->udev->dev.parent,
+							    "Received message %u too large (%u)\n",
+							    tmp->id, tmp->len);
+					err = -EIO;
+					goto end;
+				}
+
 				memcpy(msg, tmp, tmp->len);
 				goto end;
 			}
@@ -1381,7 +1390,8 @@ static void kvaser_usb_read_bulk_callback(struct urb *urb)
 			continue;
 		}
 
-		if (pos + msg->len > urb->actual_length) {
+		if (msg->len < MSG_HEADER_LEN ||
+		    msg->len > urb->actual_length - pos) {
 			dev_err_ratelimited(dev->udev->dev.parent,
 					    "Format error\n");
 			break;

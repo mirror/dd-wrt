@@ -85,8 +85,6 @@ struct inet6_ifaddr *ipv6_get_ifaddr(struct net *net,
 int __weak ipv6_dev_get_saddr(struct net *net, const struct net_device *dev,
 		       const struct in6_addr *daddr, unsigned int srcprefs,
 		       struct in6_addr *saddr);
-int __ipv6_get_lladdr(struct inet6_dev *idev, struct in6_addr *addr,
-		      u32 banned_flags);
 int ipv6_get_lladdr(struct net_device *dev, struct in6_addr *addr,
 		    u32 banned_flags);
 int ipv6_rcv_saddr_equal(const struct sock *sk, const struct sock *sk2);
@@ -284,8 +282,8 @@ static inline struct inet6_dev *in6_dev_get(const struct net_device *dev)
 
 	rcu_read_lock();
 	idev = rcu_dereference(dev->ip6_ptr);
-	if (idev)
-		atomic_inc(&idev->refcnt);
+	if (idev && !atomic_inc_not_zero(&idev->refcnt))
+		idev = NULL;
 	rcu_read_unlock();
 	return idev;
 }
@@ -313,6 +311,11 @@ static inline void __in6_dev_put(struct inet6_dev *idev)
 static inline void in6_dev_hold(struct inet6_dev *idev)
 {
 	atomic_inc(&idev->refcnt);
+}
+
+static inline bool in6_dev_hold_safe(struct inet6_dev *idev)
+{
+	return atomic_inc_not_zero(&idev->refcnt);
 }
 
 void inet6_ifa_finish_destroy(struct inet6_ifaddr *ifp);

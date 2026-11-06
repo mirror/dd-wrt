@@ -34,6 +34,15 @@ void ieee802154_nl_exit(void);
 		.dumpit	= _dump,			\
 	}
 
+#define IEEE802154_DUMP_PRIV(_cmd, _func, _dump)	\
+	{						\
+		.cmd	= _cmd,				\
+		.policy	= ieee802154_policy,		\
+		.doit	= _func,			\
+		.dumpit	= _dump,			\
+		.flags	= GENL_ADMIN_PERM,		\
+	}
+
 struct genl_info;
 
 struct sk_buff *ieee802154_nl_create(int flags, u8 req);

@@ -315,6 +315,9 @@ struct Vmxnet3_RxCompDescExt {
 #define VMXNET3_RCD_TUC_SHIFT	16
 #define VMXNET3_RCD_IPC_SHIFT	19
 
+/* fields in RxCompDesc we access via Vmxnet3_GenericDesc.dword[0] */
+#define VMXNET3_RCD_HDR_INNER_SHIFT	13
+
 /* fields in RxCompDesc we access via Vmxnet3_GenericDesc.qword[1] */
 #define VMXNET3_RCD_TYPE_SHIFT	56
 #define VMXNET3_RCD_GEN_SHIFT	63

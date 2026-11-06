@@ -144,7 +144,7 @@ int serial8250_rx_dma(struct uart_8250_port *p, unsigned int iir)
 		 * If RCVR FIFO trigger level was not reached, complete the
 		 * transfer and let 8250_core copy the remaining data.
 		 */
-		if (dma->rx_running) {
+		if (dma->rx_running && dma->rxchan) {
 			dmaengine_pause(dma->rxchan);
 			__dma_rx_complete(p);
 			dmaengine_terminate_all(dma->rxchan);
@@ -251,6 +251,7 @@ void serial8250_release_dma(struct uart_8250_port *p)
 
 	/* Release RX resources */
 	dmaengine_terminate_all(dma->rxchan);
+	dma->rx_running = 0;
 	dma_free_coherent(dma->rxchan->device->dev, dma->rx_size, dma->rx_buf,
 			  dma->rx_addr);
 	dma_release_channel(dma->rxchan);

@@ -3122,6 +3122,14 @@ static int btusb_probe(struct usb_interface *intf,
 
 	err = hci_register_dev(hdev);
 	if (err < 0) {
+		if (data->diag) {
+			usb_set_intfdata(data->diag, NULL);
+			usb_driver_release_interface(&btusb_driver, data->diag);
+		}
+		if (data->isoc) {
+			usb_set_intfdata(data->isoc, NULL);
+			usb_driver_release_interface(&btusb_driver, data->isoc);
+		}
 		hci_free_dev(hdev);
 		return err;
 	}

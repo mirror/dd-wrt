@@ -8548,6 +8548,11 @@ static void nfs41_free_stateid_done(struct rpc_task *task, void *calldata)
 
 static void nfs41_free_stateid_release(void *calldata)
 {
+	struct nfs_free_stateid_data *data = calldata;
+	struct nfs_client *clp = data->server->nfs_client;
+
+	nfs_sb_deactive(data->server->super);
+	nfs_put_client(clp);
 	kfree(calldata);
 }
 
@@ -8573,14 +8578,25 @@ static struct rpc_task *_nfs41_free_stateid(struct nfs_server *server,
 		.flags = RPC_TASK_ASYNC,
 	};
 	struct nfs_free_stateid_data *data;
+	struct nfs_client *clp = server->nfs_client;
+
+	if (!atomic_inc_not_zero(&clp->cl_count))
+		return ERR_PTR(-EIO);
+	if (!nfs_sb_active(server->super)) {
+		nfs_put_client(clp);
+		return ERR_PTR(-EIO);
+	}
 
 	nfs4_state_protect(server->nfs_client, NFS_SP4_MACH_CRED_STATEID,
 		&task_setup.rpc_client, &msg);
 
 	dprintk("NFS call  free_stateid %p\n", stateid);
 	data = kmalloc(sizeof(*data), GFP_NOFS);
-	if (!data)
+	if (!data) {
+		nfs_sb_deactive(server->super);
+		nfs_put_client(clp);
 		return ERR_PTR(-ENOMEM);
+	}
 	data->server = server;
 	nfs4_stateid_copy(&data->args.stateid, stateid);
 

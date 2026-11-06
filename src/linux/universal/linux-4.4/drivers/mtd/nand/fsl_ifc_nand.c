@@ -766,8 +766,15 @@ static int fsl_ifc_read_page(struct mtd_info *mtd, struct nand_chip *chip,
 	if (ctrl->nand_stat & IFC_NAND_EVTER_STAT_ECCER)
 		dev_err(priv->dev, "NAND Flash ECC Uncorrectable Error\n");
 
-	if (ctrl->nand_stat != IFC_NAND_EVTER_STAT_OPC)
+	if (!ctrl->nand_stat) {
 		mtd->ecc_stats.failed++;
+		return -ETIMEDOUT;
+	}
+
+	if (ctrl->nand_stat != IFC_NAND_EVTER_STAT_OPC) {
+		mtd->ecc_stats.failed++;
+		return -EIO;
+	}
 
 	return nctrl->max_bitflips;
 }

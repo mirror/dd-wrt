@@ -26,6 +26,20 @@ static int xt_nat_checkentry_v0(const struct xt_tgchk_param *par)
 	return 0;
 }
 
+static int xt_nat_checkentry(const struct xt_tgchk_param *par)
+{
+	switch (par->family) {
+	case NFPROTO_IPV4:
+	case NFPROTO_IPV6:
+	case NFPROTO_INET:
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static void xt_nat_convert_range(struct nf_nat_range *dst,
 				 const struct nf_nat_ipv4_range *src)
 {
@@ -129,6 +143,7 @@ static struct xt_target xt_nat_target_reg[] __read_mostly = {
 	{
 		.name		= "SNAT",
 		.revision	= 1,
+		.checkentry	= xt_nat_checkentry,
 		.target		= xt_snat_target_v1,
 		.targetsize	= sizeof(struct nf_nat_range),
 		.table		= "nat",
@@ -139,6 +154,7 @@ static struct xt_target xt_nat_target_reg[] __read_mostly = {
 	{
 		.name		= "DNAT",
 		.revision	= 1,
+		.checkentry	= xt_nat_checkentry,
 		.target		= xt_dnat_target_v1,
 		.targetsize	= sizeof(struct nf_nat_range),
 		.table		= "nat",

@@ -1089,6 +1089,7 @@ static void ad_rx_machine(struct lacpdu *lacpdu, struct port *port)
 			/* Fall Through */
 		case AD_RX_PORT_DISABLED:
 			port->sm_vars &= ~AD_PORT_MATCHED;
+			port->partner_oper.port_state &= ~AD_STATE_SYNCHRONIZATION;
 			break;
 		case AD_RX_LACP_DISABLED:
 			port->sm_vars &= ~AD_PORT_SELECTED;

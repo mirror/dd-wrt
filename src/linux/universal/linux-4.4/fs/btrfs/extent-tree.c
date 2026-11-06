@@ -10766,12 +10766,17 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
 
 	*trimmed = 0;
 
-	/* Discard not supported = nothing to do. */
-	if (!blk_queue_discard(bdev_get_queue(device->bdev)))
+	/*
+	 * The caller does not filter out missing devices, and a device that
+	 * was missing at mount and later rescanned has its missing flag
+	 * cleared while bdev is still NULL and writeable is still unset.
+	 * Skip those here.
+	 */
+	if (!device->writeable || !device->bdev)
 		return 0;
 
-	/* Not writeable = nothing to do. */
-	if (!device->writeable)
+	/* Discard not supported = nothing to do. */
+	if (!blk_queue_discard(bdev_get_queue(device->bdev)))
 		return 0;
 
 	/* No free space = nothing to do. */

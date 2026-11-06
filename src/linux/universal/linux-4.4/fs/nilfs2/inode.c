@@ -536,7 +536,7 @@ static int __nilfs_read_inode(struct super_block *sb,
 			inode, inode->i_mode,
 			huge_decode_dev(le64_to_cpu(raw_inode->i_device_code)));
 	} else {
-		nilfs_error(sb,
+		nilfs_error(sb, __func__,
 			    "invalid file type bits in mode 0%o for inode %lu",
 			    inode->i_mode, ino);
 		err = -EIO;

@@ -187,8 +187,9 @@ static int rtl8723b_parse_firmware(struct hci_dev *hdev, u16 lmp_subver,
 	}
 
 	BT_DBG("length=%x offset=%x index %d", patch_length, patch_offset, i);
-	min_size = patch_offset + patch_length;
-	if (fw->size < min_size)
+	if (patch_length < sizeof(epatch_info->fw_version) ||
+	    patch_offset > fw->size ||
+	    patch_length > fw->size - patch_offset)
 		return -EINVAL;
 
 	/* Copy the firmware into a new buffer and write the version at

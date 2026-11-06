@@ -801,6 +801,9 @@ static void tipc_sk_proto_rcv(struct tipc_sock *tsk, struct sk_buff *skb,
 			__skb_queue_tail(xmitq, skb);
 		return;
 	} else if (mtyp == CONN_ACK) {
+		if (tsk->sent_unacked < msg_msgcnt(hdr))
+			goto exit;
+
 		conn_cong = tsk_conn_cong(tsk);
 		tsk->sent_unacked -= msg_msgcnt(hdr);
 		if (conn_cong)

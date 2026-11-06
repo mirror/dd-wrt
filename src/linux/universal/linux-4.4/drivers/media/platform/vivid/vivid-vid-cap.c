@@ -403,6 +403,12 @@ void vivid_update_format_cap(struct vivid_dev *dev, bool keep_controls)
 	struct v4l2_bt_timings *bt = &dev->dv_timings_cap.bt;
 	unsigned size;
 
+	/*
+	 * This resets the format, so must never be called while vb2_is_busy().
+	 */
+	if (WARN_ON(vb2_is_busy(&dev->vb_vid_cap_q)))
+		return;
+
 	switch (dev->input_type[dev->input]) {
 	case WEBCAM:
 	default:

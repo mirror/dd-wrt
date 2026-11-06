@@ -1490,6 +1490,14 @@ int rtnl_nla_parse_ifla(struct nlattr **tb, const struct nlattr *head, int len)
 }
 EXPORT_SYMBOL(rtnl_nla_parse_ifla);
 
+bool rtnl_dev_link_net_capable(const struct net_device *dev,
+			       const struct net *link_net)
+{
+	return net_eq(link_net, dev_net(dev)) ||
+	       ns_capable(link_net->user_ns, CAP_NET_ADMIN);
+}
+EXPORT_SYMBOL_GPL(rtnl_dev_link_net_capable);
+
 struct net *rtnl_link_get_net(struct net *src_net, struct nlattr *tb[])
 {
 	struct net *net;

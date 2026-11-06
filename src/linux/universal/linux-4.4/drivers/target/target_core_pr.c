@@ -3307,9 +3307,6 @@ core_scsi3_emulate_pro_register_and_move(struct se_cmd *cmd, u64 res_key,
 		goto out;
 	}
 
-	transport_kunmap_data_sg(cmd);
-	buf = NULL;
-
 	pr_debug("SPC-3 PR [%s] Extracted initiator %s identifier: %s"
 		" %s\n", dest_tf_ops->get_fabric_name(), (iport_ptr != NULL) ?
 		"port" : "device", initiator_str, (iport_ptr != NULL) ?
@@ -3545,6 +3542,11 @@ after_iport_check:
 	transport_kunmap_data_sg(cmd);
 
 	core_scsi3_put_pr_reg(dest_pr_reg);
+	/*
+	 * iport_ptr aliases the PR-OUT parameter list mapped above, so the
+	 * buffer is unmapped only here on success (and at out: on error).
+	 */
+	transport_kunmap_data_sg(cmd);
 	return 0;
 out:
 	if (buf)

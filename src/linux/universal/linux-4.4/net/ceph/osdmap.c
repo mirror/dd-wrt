@@ -10,6 +10,7 @@
 #include <linux/ceph/decode.h>
 #include <linux/crush/hash.h>
 #include <linux/crush/mapper.h>
+#include <linux/overflow.h>
 
 char *ceph_osdmap_state_str(char *str, int len, int state)
 {
@@ -235,6 +236,10 @@ static struct crush_map *crush_decode(void *pbyval, void *end)
 		ceph_decode_need(p, end, 4*sizeof(u32), bad);
 		b->id = ceph_decode_32(p);
 		b->type = ceph_decode_16(p);
+		if (b->type == 0) {
+			err = -EINVAL;
+			goto bad;
+		}
 		b->alg = ceph_decode_8(p);
 		if (b->alg != alg) {
 			b->alg = 0;
@@ -1210,6 +1215,7 @@ static int decode_new_up_state_weight(void **p, void *end,
 	void *new_up_client;
 	void *new_state;
 	void *new_weight_end;
+	const u32 new_state_item_size = sizeof(u32) + sizeof(u8);
 	u32 len;
 
 	new_up_client = *p;
@@ -1220,7 +1226,8 @@ static int decode_new_up_state_weight(void **p, void *end,
 
 	new_state = *p;
 	ceph_decode_32_safe(p, end, len, e_inval);
-	len *= sizeof(u32) + sizeof(u8);
+	if (check_mul_overflow(len, new_state_item_size, &len))
+		goto e_inval;
 	ceph_decode_need(p, end, len, e_inval);
 	*p += len;
 
@@ -1754,9 +1761,10 @@ static int apply_temps(struct ceph_osdmap *osdmap,
 		temp_primary = *primary;
 	}
 
-	/* primary_temp? */
+	/* primary_temp? (shouldn't ever be a nonexistent or down OSD) */
 	pg = __lookup_pg_mapping(&osdmap->primary_temp, pgid);
-	if (pg)
+	if (pg && !WARN_ON_ONCE(ceph_osd_is_down(osdmap,
+						 pg->primary_temp.osd)))
 		temp_primary = pg->primary_temp.osd;
 
 	*primary = temp_primary;

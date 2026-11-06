@@ -291,13 +291,21 @@ int tb_drom_read_uid_only(struct tb_switch *sw, u64 *uid)
 	return 0;
 }
 
-static void tb_drom_parse_port_entry(struct tb_port *port,
+static int tb_drom_parse_port_entry(struct tb_port *port,
 		struct tb_drom_entry_port *entry)
 {
 	port->link_nr = entry->link_nr;
-	if (entry->has_dual_link_port)
+	if (entry->has_dual_link_port) {
+		if (entry->dual_link_port_nr > port->sw->config.max_port_number) {
+			tb_sw_warn(port->sw,
+				"port entry has invalid dual link port number %u\n",
+				entry->dual_link_port_nr);
+			return -EIO;
+		}
 		port->dual_link_port =
 				&port->sw->ports[entry->dual_link_port_nr];
+	}
+	return 0;
 }
 
 static int tb_drom_parse_entry(struct tb_switch *sw,
@@ -328,7 +336,9 @@ static int tb_drom_parse_entry(struct tb_switch *sw,
 				header->len, sizeof(struct tb_drom_entry_port));
 			return -EIO;
 		}
-		tb_drom_parse_port_entry(port, entry);
+		res = tb_drom_parse_port_entry(port, entry);
+		if (res)
+			return res;
 	}
 	return 0;
 }
@@ -343,6 +353,7 @@ static int tb_drom_parse_entries(struct tb_switch *sw)
 	struct tb_drom_header *header = (void *) sw->drom;
 	u16 pos = sizeof(*header);
 	u16 drom_size = header->data_len + TB_DROM_DATA_START;
+	int res;
 
 	while (pos < drom_size) {
 		struct tb_drom_entry_header *entry = (void *) (sw->drom + pos);
@@ -352,7 +363,9 @@ static int tb_drom_parse_entries(struct tb_switch *sw)
 			return -EIO;
 		}
 
-		tb_drom_parse_entry(sw, entry);
+		res = tb_drom_parse_entry(sw, entry);
+		if (res)
+			return res;
 
 		pos += entry->len;
 	}
