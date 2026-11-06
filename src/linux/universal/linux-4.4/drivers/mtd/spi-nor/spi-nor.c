@@ -917,6 +917,8 @@ static int sst_write(struct mtd_info *mtd, loff_t to, size_t len,
 	actual = to % 2;
 	/* Start write from odd address. */
 	if (actual) {
+		bool needs_write_enable = (len > 1);
+
 		nor->program_opcode = SPINOR_OP_BP;
 
 		/* write one byte. */
@@ -924,6 +926,17 @@ static int sst_write(struct mtd_info *mtd, loff_t to, size_t len,
 		ret = spi_nor_wait_till_ready(nor);
 		if (ret)
 			goto time_out;
+
+		/*
+		 * Byte program clears the write enable latch. If more
+		 * data needs to be written using the AAI sequence,
+		 * re-enable writes.
+		 */
+		if (needs_write_enable) {
+			ret = write_enable(nor);
+			if (ret)
+				goto time_out;
+		}
 	}
 	to += actual;
 

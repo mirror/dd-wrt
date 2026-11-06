@@ -1023,6 +1023,7 @@ struct batadv_tt_req_node {
 /**
  * struct batadv_tt_roam_node - roaming client data
  * @addr: mac address of the client in the roaming phase
+ * @vid: VLAN identifier
  * @counter: number of allowed roaming events per client within a single
  *  OGM interval (changes are committed with each OGM)
  * @first_time: timestamp used for purging stale roaming node entries
@@ -1030,6 +1031,7 @@ struct batadv_tt_req_node {
  */
 struct batadv_tt_roam_node {
 	u8 addr[ETH_ALEN];
+	u16 vid;
 	atomic_t counter;
 	unsigned long first_time;
 	struct list_head list;

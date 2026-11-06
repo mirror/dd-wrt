@@ -2843,6 +2843,7 @@ int sdhci_resume_host(struct sdhci_host *host)
 		host->pwr = 0;
 		host->clock = 0;
 		host->reinit_uhs = true;
+		sdhci_start_signal_voltage_switch(host->mmc, &host->mmc->ios);
 		sdhci_do_set_ios(host, &host->mmc->ios);
 	} else {
 		sdhci_init(host, (host->mmc->pm_flags & MMC_PM_KEEP_POWER));

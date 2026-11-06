@@ -1502,6 +1502,7 @@ static void thermal_release(struct device *dev)
 	if (!strncmp(dev_name(dev), "thermal_zone",
 		     sizeof("thermal_zone") - 1)) {
 		tz = to_thermal_zone(dev);
+		thermal_set_governor(tz, NULL);
 		kfree(tz);
 	} else if(!strncmp(dev_name(dev), "cooling_device",
 			sizeof("cooling_device") - 1)){
@@ -2133,7 +2134,6 @@ void thermal_zone_device_unregister(struct thermal_zone_device *tz)
 	device_remove_file(&tz->device, &dev_attr_policy);
 	device_remove_file(&tz->device, &dev_attr_available_policies);
 	remove_trip_attrs(tz);
-	thermal_set_governor(tz, NULL);
 
 	thermal_remove_hwmon_sysfs(tz);
 	release_idr(&thermal_tz_idr, &thermal_idr_lock, tz->id);

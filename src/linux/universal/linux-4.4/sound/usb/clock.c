@@ -372,6 +372,8 @@ static int set_sample_rate_v2(struct snd_usb_audio *chip, int iface,
 		return 0;
 
 	cs_desc = snd_usb_find_clock_source(chip->ctrl_intf, clock);
+	if (!cs_desc)
+		return -ENXIO;
 	writeable = uac2_control_is_writeable(cs_desc->bmControls, UAC2_CS_CONTROL_SAM_FREQ - 1);
 	if (writeable) {
 		data = cpu_to_le32(rate);

@@ -4184,7 +4184,7 @@ static long btrfs_ioctl_space_info(struct btrfs_root *root, void __user *arg)
 		return -ENOMEM;
 
 	space_args.total_spaces = 0;
-	dest = kmalloc(alloc_size, GFP_NOFS);
+	dest = kzalloc(alloc_size, GFP_NOFS);
 	if (!dest)
 		return -ENOMEM;
 	dest_orig = dest;
@@ -4243,7 +4243,8 @@ static long btrfs_ioctl_space_info(struct btrfs_root *root, void __user *arg)
 	user_dest = (struct btrfs_ioctl_space_info __user *)
 		(arg + sizeof(struct btrfs_ioctl_space_args));
 
-	if (copy_to_user(user_dest, dest_orig, alloc_size))
+	if (copy_to_user(user_dest, dest_orig,
+		 space_args.total_spaces * sizeof(*dest_orig)))
 		ret = -EFAULT;
 
 	kfree(dest_orig);

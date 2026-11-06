@@ -1262,7 +1262,7 @@ static int mxt_prepare_cfg_mem(struct mxt_data *data,
 			}
 			data_pos += offset;
 
-			if (i > mxt_obj_size(object))
+			if (i >= mxt_obj_size(object))
 				continue;
 
 			byte_offset = reg + i - cfg_start_ofs;

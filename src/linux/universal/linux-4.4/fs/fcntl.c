@@ -508,11 +508,11 @@ void send_sigio(struct fown_struct *fown, int fd, int band)
 	if (!pid)
 		goto out_unlock_fown;
 	
-	read_lock(&tasklist_lock);
+	rcu_read_lock();
 	do_each_pid_task(pid, type, p) {
 		send_sigio_to_task(p, fown, fd, band, group);
 	} while_each_pid_task(pid, type, p);
-	read_unlock(&tasklist_lock);
+	rcu_read_unlock();
  out_unlock_fown:
 	read_unlock(&fown->lock);
 }
@@ -546,11 +546,11 @@ int send_sigurg(struct fown_struct *fown)
 
 	ret = 1;
 	
-	read_lock(&tasklist_lock);
+	rcu_read_lock();
 	do_each_pid_task(pid, type, p) {
 		send_sigurg_to_task(p, fown, group);
 	} while_each_pid_task(pid, type, p);
-	read_unlock(&tasklist_lock);
+	rcu_read_unlock();
  out_unlock_fown:
 	read_unlock(&fown->lock);
 	return ret;
