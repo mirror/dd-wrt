@@ -2027,7 +2027,6 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 
 	msg = unl_genl_msg(local_unl, NL80211_CMD_GET_WIPHY, false);
 	if (!msg) {
-		unlock();
 		return NULL;
 	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
@@ -2036,7 +2035,6 @@ struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *i
 		return NULL;
 	}
 	if (!msg) {
-		unlock();
 		return NULL;
 	}
 
