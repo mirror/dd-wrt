@@ -239,12 +239,16 @@ int getRssi_11n(const char *ifname, unsigned char *mac);
 extern int mac80211_getassoclist(const char *name, unsigned char *list);
 
 extern int has_mimo(const char *prefix);
-#if defined(HAVE_ATH10K) || defined(HAVE_ATH11K) || defined(HAVE_ATH12K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || defined(HAVE_MVEBU)
+#if defined(HAVE_ATH10K) || defined(HAVE_ATH11K) || defined(HAVE_ATH12K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || \
+	defined(HAVE_MVEBU)
 extern int _has_ac(const char *prefix);
 
 static inline int has_ac(const char *prefix)
 {
-	return (is_ath10k(prefix) || is_ath11k(prefix) || is_ath12k(prefix) || is_brcmfmac(prefix) || is_mt7615(prefix) || is_mt7915(prefix) || is_mt7921(prefix) || is_mvebu(prefix) || is_iwlwifi(prefix)) && _has_ac(prefix);
+	return (is_ath10k(prefix) || is_ath11k(prefix) || is_ath12k(prefix) || is_brcmfmac(prefix) || is_mt7615(prefix) ||
+		is_mt76x0(prefix) || is_mt76x2(prefix) || is_mt7915(prefix) || is_mt7921(prefix) || is_mvebu(prefix) ||
+		is_iwlwifi(prefix)) &&
+	       _has_ac(prefix);
 }
 #else
 extern int has_ac(const char *prefix);
