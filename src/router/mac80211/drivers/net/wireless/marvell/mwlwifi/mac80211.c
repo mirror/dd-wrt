@@ -537,14 +537,20 @@ static int mwl_mac80211_set_key(struct ieee80211_hw *hw,
 	mwl_vif = mwl_dev_get_vif(vif);
 	addr = sta ? sta->addr : vif->addr;
 
-	/* mac80211 does BIP in software. Don't tell the firmware anything
-	 * about the IGTK: an UPDATE_ENCRYPTION with ENCR_TYPE_DISABLE for
-	 * the BSS address would override the encryption type set for the
-	 * GTK, and break group addressed traffic.
-	 */
-	if (key->cipher == WLAN_CIPHER_SUITE_AES_CMAC)
+	switch (key->cipher) {
+	case WLAN_CIPHER_SUITE_AES_CMAC:
+	case WLAN_CIPHER_SUITE_BIP_CMAC_256:
+	case WLAN_CIPHER_SUITE_BIP_GMAC_128:
+	case WLAN_CIPHER_SUITE_BIP_GMAC_256:
+		/* mac80211 does BIP in software. Don't tell the firmware
+		 * anything about the IGTK: an UPDATE_ENCRYPTION with
+		 * ENCR_TYPE_DISABLE for the BSS address would override the
+		 * encryption type set for the GTK.
+		 */
 		return 1;
-
+	default:
+		break;
+	}
 
 	if (cmd_param == SET_KEY) {
 		switch (key->cipher) {
@@ -553,31 +559,30 @@ static int mwl_mac80211_set_key(struct ieee80211_hw *hw,
 			encr_type = ENCR_TYPE_WEP;
 			break;
 		case WLAN_CIPHER_SUITE_CCMP:
-			encr_type = ENCR_TYPE_CCMP;
+		case WLAN_CIPHER_SUITE_CCMP_256:
+		case WLAN_CIPHER_SUITE_GCMP:
+		case WLAN_CIPHER_SUITE_GCMP_256:
+			/* Only the 88W8964 advertises the 256-bit and GCMP
+			 * ciphers.
+			 */
+			if (key->cipher == WLAN_CIPHER_SUITE_CCMP_256)
+				encr_type = ENCR_TYPE_CCMP_256;
+			else if (key->cipher == WLAN_CIPHER_SUITE_GCMP)
+				encr_type = ENCR_TYPE_GCMP;
+			else if (key->cipher == WLAN_CIPHER_SUITE_GCMP_256)
+				encr_type = ENCR_TYPE_GCMP_256;
+			else
+				encr_type = ENCR_TYPE_AES;
+
 			if (priv->chip_type != MWL8964)
 				key->flags |= IEEE80211_KEY_FLAG_GENERATE_IV;
 			else
-				/* The 88W8964 firmware fills in the CCMP
+				/* The 88W8964 firmware fills in the CCMP/GCMP
 				 * header of data frames, but not of
 				 * protected management frames.
 				 */
 				key->flags |=
 					IEEE80211_KEY_FLAG_GENERATE_IV_MGMT;
-			break;
-		case WLAN_CIPHER_SUITE_CCMP_256:
-			encr_type = ENCR_TYPE_CCMP_256;
-			key->flags |=
-				IEEE80211_KEY_FLAG_GENERATE_IV_MGMT;
-			break;
-		case WLAN_CIPHER_SUITE_GCMP:
-			encr_type = ENCR_TYPE_GCMP;
-			key->flags |=
-				IEEE80211_KEY_FLAG_GENERATE_IV_MGMT;
-			break;
-		case WLAN_CIPHER_SUITE_GCMP_256:
-			encr_type = ENCR_TYPE_GCMP_256;
-			key->flags |=
-				IEEE80211_KEY_FLAG_GENERATE_IV_MGMT;
 			break;
 		case WLAN_CIPHER_SUITE_TKIP:
 			encr_type = ENCR_TYPE_TKIP;
