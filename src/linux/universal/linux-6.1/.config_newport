@@ -1638,6 +1638,7 @@ CONFIG_CONNECTOR=m
 # CONFIG_ARM_SCMI_PROTOCOL is not set
 # end of ARM System Control and Management Interface Protocol
 
+# CONFIG_ARM_SDE_INTERFACE is not set
 # CONFIG_FIRMWARE_MEMMAP is not set
 # CONFIG_FW_CFG_SYSFS is not set
 # CONFIG_ARM_FFA_TRANSPORT is not set
@@ -3667,7 +3668,7 @@ CONFIG_ARM_ARCH_TIMER_EVTSTREAM=y
 #
 # Qualcomm SoC drivers
 #
-CONFIG_QCOM_QMI_HELPERS=y
+# CONFIG_QCOM_QMI_HELPERS is not set
 # end of Qualcomm SoC drivers
 
 # CONFIG_SOC_TI is not set
