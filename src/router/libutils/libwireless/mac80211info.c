@@ -3377,7 +3377,7 @@ int has_wdsap(const char *prefix)
 	return ret;
 }
 
-#ifdef HAVE_IPQ6018
+#if defined(HAVE_IPQ6018) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ806X) || defined(HAVE_WPA3) || defined(HAVE_VENICE) || defined(HAVE_X86)
 int has_apup(const char *prefix)
 {
 	return has_wdsap(prefix);
