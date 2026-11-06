@@ -572,7 +572,7 @@ static int mwl_mac80211_set_key(struct ieee80211_hw *hw,
 			else if (key->cipher == WLAN_CIPHER_SUITE_GCMP_256)
 				encr_type = ENCR_TYPE_GCMP_256;
 			else
-				encr_type = ENCR_TYPE_AES;
+				encr_type = ENCR_TYPE_CCMP;
 
 			if (priv->chip_type != MWL8964)
 				key->flags |= IEEE80211_KEY_FLAG_GENERATE_IV;
