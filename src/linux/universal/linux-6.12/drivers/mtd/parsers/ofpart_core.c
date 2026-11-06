@@ -67,8 +67,6 @@ static bool node_has_compatible(struct device_node *pp)
 
 static int mangled_rootblock;
 
-static int mangled_rootblock;
-
 static int parse_fixed_partitions(struct mtd_info *master,
 				  const struct mtd_partition **pparts,
 				  struct mtd_part_parser_data *data)
