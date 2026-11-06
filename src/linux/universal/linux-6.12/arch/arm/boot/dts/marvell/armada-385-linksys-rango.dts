@@ -63,20 +63,33 @@
 		gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		label = "rango:white:sata";
 	};
-
-	led-wlan_2g {
-		gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
-		label = "rango:white:wlan_2g";
-	};
-
-	led-wlan_5g {
-		gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
-		label = "rango:white:wlan_5g";
-	};
 };
 
 &gpio_leds_pins {
-	marvell,pins = "mpp21", "mpp45", "mpp46", "mpp56";
+	marvell,pins = "mpp21", "mpp56";
+};
+
+&pinctrl {
+	pcie_reset_pins: pcie-reset-pins {
+		/* mpp45: 2.4GHz card reset, mpp46: 5GHz card reset */
+		marvell,pins = "mpp45", "mpp46";
+		marvell,function = "gpio";
+	};
+};
+
+&pciec {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie_reset_pins>;
+};
+
+&pcie1 {
+	/* 5GHz card */
+	reset-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+};
+
+&pcie2 {
+	/* 2.4GHz card */
+	reset-gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
 };
 
 &nand {

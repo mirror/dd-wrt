@@ -1402,6 +1402,15 @@ static int mvebu_pcie_powerup(struct mvebu_pcie_port *port)
 		of_property_read_u32(port->dn, "reset-delay-us",
 				     &reset_udelay);
 
+		/*
+		 * The link-up check below is only meaningful once the link has
+		 * gone down: with a link trained by the bootloader it still
+		 * reads up right after PERST# is asserted, and the card would
+		 * be enumerated while it is still coming out of reset.
+		 */
+		for (i = 0; i < 100 && mvebu_pcie_link_up(port); i++)
+			msleep(1);
+
 		udelay(100);
 
 		gpiod_set_value_cansleep(port->reset_gpio, 0);
