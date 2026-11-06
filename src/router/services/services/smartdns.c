@@ -67,6 +67,8 @@ void start_smartdns(void)
 			fprintf(fp, "prefetch-domain yes\n");
 		if (nvram_matchi("smartdns_serve_expired", 1))
 			fprintf(fp, "serve-expired yes\n");
+		else
+			fprintf(fp, "serve-expired no\n");
 		//fprintf(fp, "log-size 64K\n");
 		fprintf(fp, "log-size 32K\n");
 		fprintf(fp, "log-num 1\n");

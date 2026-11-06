@@ -234,7 +234,7 @@ void deconfigure_single_mac80211(int count)
 {
 	ENTER;
 	int idx = mac80211_get_phy_idx(count);
-	fprintf(stderr, "ath9k deconfigure_single: phy%d wlan%d\n", idx, count);
+	fprintf(stderr, "mac80211: deconfigure_single: phy%d wlan%d\n", idx, count);
 	char wif[10];
 	sprintf(wif, "phy%d", idx);
 	sysprintf("rm -f /tmp/wifi/wlan%d_hostapd.conf", idx);
@@ -374,7 +374,7 @@ void configure_single_mac80211(int count)
 		vapcount = 0;
 	sprintf(wif, "phy%d", phy_idx);
 	sprintf(wifivifs, "wlan%d_vifs", count);
-	fprintf(stderr, "ath9k configure_single: phy%d wlan%d\n", phy_idx, count);
+	fprintf(stderr, "mac80211: configure_single: phy%d wlan%d\n", phy_idx, count);
 	sprintf(channel, "wlan%d_channel", count);
 	sprintf(sens, "wlan%d_distance", count);
 	sprintf(diversity, "wlan%d_diversity", count);
