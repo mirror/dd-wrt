@@ -18,11 +18,6 @@
 #include "vlan.h"
 #include "stp.h"
 
-/* L2 functionality */
-#define RTL838X_L2_CTRL_0			(0x3200)
-
-#define RTL838X_L2_TBL_FLUSH_CTRL		(0x3370)
-
 /* 802.1X */
 #define RTL838X_RMA_BPDU_FLD_PMSK		(0x4348)
 
@@ -142,13 +137,11 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.traffic_enable = rtl838x_traffic_enable,
 	.traffic_disable = rtl838x_traffic_disable,
 	.traffic_set = rtl838x_traffic_set,
-	.l2_ctrl_0 = RTL838X_L2_CTRL_0,
 	.l2_ctrl_1 = RTL838X_L2_CTRL_1,
 	.high_res_l2_age = true,
 	.self_mac_trap_ctrl = RTL838X_SPCL_TRAP_SWITCH_MAC_CTRL,
 	.l2_port_aging_out = RTL838X_L2_PORT_AGING_OUT,
 	.set_ageing_time = otto_l2_838x_set_ageing_time,
-	.l2_tbl_flush_ctrl = RTL838X_L2_TBL_FLUSH_CTRL,
 	.isr_glb_src = RTL838X_ISR_GLB_SRC,
 	.isr_port_link_sts_chg = RTL838X_ISR_PORT_LINK_STS_CHG,
 	.imr_port_link_sts_chg = RTL838X_IMR_PORT_LINK_STS_CHG,
