@@ -24,6 +24,12 @@ config MACH_MVEBU_V7
 	select MACH_MVEBU_ANY
 	select MVEBU_CLK_COREDIV
 
+config ARMADAXP
+	bool "Marvell ARMADA XP"
+	depends on ARCH_MULTI_V7
+	help
+	  compiles kernel exclusive for armadaxp.
+
 config MACH_ARMADA_370
 	bool "Marvell Armada 370 boards"
 	depends on ARCH_MULTI_V7

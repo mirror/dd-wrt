@@ -69,6 +69,14 @@ else
 arch-$(CONFIG_CPU_32v7)		:=-march=armv7-a
 CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
 endif
+ifeq ($(CONFIG_ARCH_MVEBU),y)
+ifeq ($(CONFIG_ARMADAXP),y)
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfpv3-d16
+else
+CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=neon
+endif
+endif
+
 arch-$(CONFIG_CPU_32v6)		:=-march=armv6
 # Only override the compiler option if ARMv6. The ARMv6K extensions are
 # always available in ARMv7
