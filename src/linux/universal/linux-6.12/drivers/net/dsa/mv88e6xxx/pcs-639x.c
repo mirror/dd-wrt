@@ -896,7 +896,7 @@ static void mv88e6393x_xg_pcs_get_state(struct phylink_pcs *pcs, unsigned int ne
 	int err;
 
 	if (state->interface != PHY_INTERFACE_MODE_USXGMII)
-		return mv88e639x_xg_pcs_get_state(pcs, state);
+		return mv88e639x_xg_pcs_get_state(pcs, neg_mode, state);
 
 	state->link = false;
 

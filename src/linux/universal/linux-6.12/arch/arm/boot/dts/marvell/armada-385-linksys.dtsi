@@ -14,16 +14,10 @@
 	compatible = "linksys,armada385", "marvell,armada385",
 		     "marvell,armada380";
 
-	aliases {
-		led-boot = &led_power;
-		led-failsafe = &led_power;
-		led-running = &led_power;
-		led-upgrade = &led_power;
-	};
-
 	chosen {
 		stdout-path = "serial0:115200n8";
 	};
+
 
 	memory {
 		device_type = "memory";
@@ -78,16 +72,28 @@
 		pinctrl-0 = <&gpio_leds_pins>;
 		pinctrl-names = "default";
 
-		led_power: led-power {
+		power {
 			gpios = <&gpio1 23 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 
-		led-sata {
+		sata {
 			gpios = <&gpio1 22 GPIO_ACTIVE_LOW>;
 			default-state = "off";
 			linux,default-trigger = "disk-activity";
 		};
+	};
+	
+	mvsw61xx {	
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "marvell,88e6176";
+		status = "okay";
+		reg = <0x10>;
+
+		mii-bus = <&mdio>;
+		cpu-port-0 = <5>;
+		cpu-port-1 = <6>;
 	};
 };
 
@@ -116,7 +122,7 @@
 };
 
 &eth2 {
-	status = "disabled";
+	status = "okay";
 	phy-mode = "sgmii";
 	buffer-manager = <&bm>;
 	bm,pool-long = <2>;
@@ -126,6 +132,7 @@
 		full-duplex;
 	};
 };
+
 
 &i2c0 {
 	pinctrl-names = "default";
@@ -165,42 +172,44 @@
 &mdio {
 	status = "okay";
 
-	ethernet-switch@0 {
+	switch@0 {
 		compatible = "marvell,mv88e6085";
+		#address-cells = <1>;
+		#size-cells = <0>;
 		reg = <0>;
 
-		ethernet-ports {
+		ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			ethernet-port@0 {
+			port@0 {
 				reg = <0>;
 				label = "lan4";
 			};
 
-			ethernet-port@1 {
+			port@1 {
 				reg = <1>;
 				label = "lan3";
 			};
 
-			ethernet-port@2 {
+			port@2 {
 				reg = <2>;
 				label = "lan2";
 			};
 
-			ethernet-port@3 {
+			port@3 {
 				reg = <3>;
 				label = "lan1";
 			};
 
-			ethernet-port@4 {
+			port@4 {
 				reg = <4>;
 				label = "wan";
 			};
 
-			ethernet-port@6 {
+			port@6 {
 				reg = <6>;
-				phy-mode = "sgmii";
+				label = "cpu";
 				ethernet = <&eth0>;
 
 				fixed-link {
