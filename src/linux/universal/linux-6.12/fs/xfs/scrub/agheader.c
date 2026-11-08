@@ -35,8 +35,7 @@ xchk_setup_agheader(
 /* Cross-reference with the other btrees. */
 STATIC void
 xchk_superblock_xref(
-	struct xfs_scrub	*sc,
-	struct xfs_buf		*bp)
+	struct xfs_scrub	*sc)
 {
 	struct xfs_mount	*mp = sc->mp;
 	xfs_agnumber_t		agno = sc->sm->sm_agno;
@@ -102,15 +101,11 @@ xchk_superblock(
 	struct xfs_dsb		*sb;
 	struct xfs_perag	*pag;
 	size_t			sblen;
-	xfs_agnumber_t		agno;
+	xfs_agnumber_t		agno = sc->sm->sm_agno;
 	uint32_t		v2_ok;
 	__be32			features_mask;
 	int			error;
 	__be16			vernum_mask;
-
-	agno = sc->sm->sm_agno;
-	if (agno == 0)
-		return 0;
 
 	/*
 	 * Grab an active reference to the perag structure.  If we can't get
@@ -120,6 +115,9 @@ xchk_superblock(
 	pag = xfs_perag_get(mp, agno);
 	if (!pag)
 		return -ENOENT;
+
+	if (agno == 0)
+		goto out_xref;
 
 	error = xfs_sb_read_secondary(mp, sc->tp, agno, &bp);
 	/*
@@ -381,7 +379,8 @@ xchk_superblock(
 	if (memchr_inv((char *)sb + sblen, 0, BBTOB(bp->b_length) - sblen))
 		xchk_block_set_corrupt(sc, bp);
 
-	xchk_superblock_xref(sc, bp);
+out_xref:
+	xchk_superblock_xref(sc);
 out_pag:
 	xfs_perag_put(pag);
 	return error;
