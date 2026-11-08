@@ -409,7 +409,7 @@ EJ_VISIBLE void ej_update_acktiming(webs_t wp, int argc, char_t **argv)
 			ack = rawack - 21; //fallback
 		}
 		distance = (300 * ack) / 2;
-	} else if (is_mac80211(ifname) || is_mvebu(ifname)) {
+	} else if (is_mac80211(ifname) || is_mwlwifi(ifname)) {
 		int coverage = mac80211_get_coverageclass(ifname);
 		ack = coverage * 3;
 		/* See handle_distance() for an explanation where the '450' comes from */
