@@ -1,0 +1,8 @@
+*.o
+*.cmd
+mwlwifi.ko
+mwlwifi.mod
+mwlwifi.mod.c
+modules.order
+Module.symvers
+.checkpatch-camelcase.git*

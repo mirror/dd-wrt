@@ -1,0 +1,9 @@
+ctrl_interface=/var/run/wpa_supplicant
+
+network={
+
+ssid="mwlwifi_ap_test"
+key_mgmt=WPA-PSK
+psk="12345678"
+
+}
