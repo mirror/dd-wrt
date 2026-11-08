@@ -240,7 +240,7 @@ extern int mac80211_getassoclist(const char *name, unsigned char *list);
 
 extern int has_mimo(const char *prefix);
 #if defined(HAVE_ATH10K) || defined(HAVE_ATH11K) || defined(HAVE_ATH12K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || \
-	defined(HAVE_MVEBU)
+	defined(HAVE_MVEBU) || defined(HAVE_MWLWIFI)
 extern int _has_ac(const char *prefix);
 
 static inline int has_ac(const char *prefix)
@@ -569,7 +569,7 @@ static inline int has_acktiming(const char *prefix)
 extern int has_acktiming(const char *prefix);
 	#endif
 
-	#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || defined(HAVE_MVEBU)
+	#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || defined(HAVE_MVEBU) || defined(HAVE_MWLWIFI)
 extern int has_vht160(const char *interface);
 extern int has_vht80(const char *interface);
 extern int has_vht80plus80(const char *interface);

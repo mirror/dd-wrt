@@ -1606,7 +1606,7 @@ static inline int is_mwifiex(const char *prefix)
 	return 0;
 }
 #endif
-#ifdef HAVE_MVEBU
+#if  defined(HAVE_MVEBU) || defined(HAVE_MWLWIFI)
 extern int is_mvebu(const char *prefix);
 #else
 static inline int is_mvebu(const char *prefix)
