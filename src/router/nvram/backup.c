@@ -305,6 +305,8 @@ static char *filter[] = { "ATEMODE",
 			  "wl1id",
 			  "wl2id",
 			  "ctf_fa_cap",
+			  "cpu_speed",
+			  "cpu_rating",
 			  NULL };
 
 static int nvram_critical_internal(char *name, int ommit)
