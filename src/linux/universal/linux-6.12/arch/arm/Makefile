@@ -69,6 +69,7 @@ else
 arch-$(CONFIG_CPU_32v7)		:=-march=armv7-a
 CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfp
 endif
+
 ifeq ($(CONFIG_ARCH_MVEBU),y)
 ifeq ($(CONFIG_ARMADAXP),y)
 CFLAGS_ABI	:=-mabi=aapcs-linux -mfpu=vfpv3-d16
