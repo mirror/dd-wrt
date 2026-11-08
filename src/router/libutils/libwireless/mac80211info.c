@@ -1182,7 +1182,7 @@ static char *mac80211_get_hecaps(const char *interface)
 	return capstring;
 }
 
-#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || defined(HAVE_MVEBU)
+#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || defined(HAVE_MVEBU) || defined(HAVE_MWLWIFI)
 char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int su_bf, int mu_bf)
 {
 	mac80211_init();
@@ -1295,7 +1295,7 @@ nla_put_failure:
 }
 #endif
 
-#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || defined(HAVE_MWLWIFI)
 int has_vht160(const char *interface)
 {
 	INITVALUECACHEi(interface);
@@ -1566,7 +1566,7 @@ int has_uapsd(const char *prefix)
 	return ret;
 }
 
-#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || defined(HAVE_MWLWIFI)
 int has_vht80(const char *interface)
 {
 	INITVALUECACHEi(interface);
@@ -1582,7 +1582,7 @@ int has_vht80(const char *interface)
 }
 #endif
 
-#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_ATH11K)  || defined(HAVE_ATH12K) || defined(HAVE_MT76) || defined(HAVE_MVEBU)
+#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) || defined(HAVE_ATH11K)  || defined(HAVE_ATH12K) || defined(HAVE_MT76) || defined(HAVE_MVEBU) || defined(HAVE_MWLWIFI)
 int _has_ac(const char *prefix)
 {
 	INITVALUECACHE();
@@ -1631,7 +1631,7 @@ int has_ad(const char *prefix)
 	return (is_wil6210(prefix));
 }
 #endif
-#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || defined(HAVE_MWLWIFI)
 int has_vht80plus80(const char *interface)
 {
 	INITVALUECACHEi(interface);
@@ -1647,7 +1647,7 @@ int has_vht80plus80(const char *interface)
 }
 #endif
 
-#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || defined(HAVE_MWLWIFI)
 int has_subeamforming(const char *interface)
 {
 	INITVALUECACHEi(interface);
@@ -1663,7 +1663,7 @@ int has_subeamforming(const char *interface)
 }
 #endif
 
-#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76)
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC) || defined(HAVE_MT76) || defined(HAVE_MWLWIFI)
 int has_mubeamforming(const char *interface)
 {
 	INITVALUECACHEi(interface);
@@ -1688,7 +1688,7 @@ int has_shortgi(const char *interface)
 		RETURNVALUE(1);
 	}
 	free(htcaps);
-#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_MWLWIFI)
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "SHORT-GI")) {
 		ret = 1;
@@ -3377,7 +3377,7 @@ int has_wdsap(const char *prefix)
 	return ret;
 }
 
-#if defined(HAVE_IPQ6018) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ806X) || defined(HAVE_WPA3) || defined(HAVE_VENICE) || defined(HAVE_X86)
+#if defined(HAVE_IPQ6018) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_IPQ806X) || defined(HAVE_WPA3) || defined(HAVE_VENICE) || defined(HAVE_X86) || defined(HAVE_MWLWIFI)
 int has_apup(const char *prefix)
 {
 	return has_wdsap(prefix);

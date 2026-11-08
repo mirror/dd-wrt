@@ -221,7 +221,7 @@ int has_2ghz(const char *prefix)
 {
 	INITVALUECACHE();
 	#ifdef HAVE_MVEBU
-	if (is_wrt3200() && is_mvebu(prefix) && !strncmp(prefix, "wlan0", 5)) {
+	if (is_wrt3200() && is_mwlwifi(prefix) && !strncmp(prefix, "wlan0", 5)) {
 		RETURNVALUE(0);
 	}
 	#endif
@@ -1408,7 +1408,7 @@ int do80211priv(const char *ifname, int op, void *data, size_t len)
 
 long long wifi_getrate(char *ifname)
 {
-	if (is_mac80211(ifname) && !is_mvebu(ifname)) {
+	if (is_mac80211(ifname) && !is_mwlwifi(ifname)) {
 		char physical[32];
 		bzero(physical, sizeof(physical));
 		strncpy(physical, ifname, 5);
@@ -3936,7 +3936,7 @@ IS_DRIVER(iwl4965, "pci:iwl4965", "iwl4965");
 IS_DRIVER(iwl3945, "pci:iwl3945", "iwl3945");
 #endif
 #if defined(HAVE_MVEBU) || defined(HAVE_MWLWIFI)
-IS_DRIVER(mvebu, "pci:mwlwifi", "mwlwifi");
+IS_DRIVER(mwlwifi, "pci:mwlwifi", "mwlwifi");
 #endif
 #ifdef HAVE_ATH10K
 IS_DRIVER(ath10k, "pci:ath10k_pci", "ath10k");
@@ -4022,7 +4022,7 @@ int getmaxvaps(const char *prefix)
 		return 8;
 	if (is_brcmfmac(prefix))
 		return 4;
-	if (is_mvebu(prefix))
+	if (is_mwlwifi(prefix))
 		return 16;
 	if (is_wil6210(prefix))
 		return 1;
