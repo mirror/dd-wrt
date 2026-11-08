@@ -1607,9 +1607,9 @@ static inline int is_mwifiex(const char *prefix)
 }
 #endif
 #if  defined(HAVE_MVEBU) || defined(HAVE_MWLWIFI)
-extern int is_mvebu(const char *prefix);
+extern int is_mwlwifi(const char *prefix);
 #else
-static inline int is_mvebu(const char *prefix)
+static inline int is_mwlwifi(const char *prefix)
 {
 	return 0;
 }

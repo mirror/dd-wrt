@@ -246,7 +246,7 @@ extern int _has_ac(const char *prefix);
 static inline int has_ac(const char *prefix)
 {
 	return (is_ath10k(prefix) || is_ath11k(prefix) || is_ath12k(prefix) || is_brcmfmac(prefix) || is_mt7615(prefix) ||
-		is_mt76x0(prefix) || is_mt76x2(prefix) || is_mt7915(prefix) || is_mt7921(prefix) || is_mvebu(prefix) ||
+		is_mt76x0(prefix) || is_mt76x2(prefix) || is_mt7915(prefix) || is_mt7921(prefix) || is_mwlwifi(prefix) ||
 		is_iwlwifi(prefix)) &&
 	       _has_ac(prefix);
 }
