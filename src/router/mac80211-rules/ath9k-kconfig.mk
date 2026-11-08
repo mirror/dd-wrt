@@ -171,6 +171,11 @@ ifeq ($(CONFIG_MVEBU),y)
   CPTCFG_MWIFIEX_SDIO=y
   CPTCFG_MWLWIFI=y
 endif
+ifeq ($(CONFIG_MWLWIFI),y)
+  CPTCFG_MWIFIEX=y
+  CPTCFG_MWIFIEX_SDIO=y
+  CPTCFG_MWLWIFI=y
+endif
 ifeq ($(CONFIG_MAC80211_RTLWIFI),y)
   CPTCFG_WLAN_VENDOR_REALTEK=y
 endif
@@ -223,6 +228,9 @@ ifeq ($(CONFIG_IPQ6018),y)
 IW_FLAGS+= IW_FULL=y
 endif
 ifeq ($(CONFIG_MVEBU),y)
+IW_FLAGS+= IW_FULL=y
+endif
+ifeq ($(CONFIG_MWLWIFI),y)
 IW_FLAGS+= IW_FULL=y
 endif
 ifeq ($(CONFIG_ALPINE),y)
@@ -722,6 +730,17 @@ endif
 endif
 endif
 ifeq ($(CONFIG_MVEBU),y)
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/mwlwifi
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/mrvl
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/mvebu
+	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mwlwifi/bin/firmware/*.bin $(INSTALLDIR)/ath9k/lib/firmware/mwlwifi
+	-cp -av $(MAC80211_PATH)/drivers/net/wireless/marvell/mwlwifi/bin/firmware/*.bin $(INSTALLDIR)/ath9k/lib/firmware/mwlwifi
+	-cp -av $(MAC80211_PATH)/drivers/bluetooth/firmware/*.bin $(INSTALLDIR)/ath9k/lib/firmware/mrvl
+	rm -f $(INSTALLDIR)/ath9k/lib/modules/$(KERNELRELEASE)/ath*
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmare/ath10k
+	rm -rf $(INSTALLDIR)/ath9k/lib/ath10k
+endif
+ifeq ($(CONFIG_MWLWIFI),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/mwlwifi
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/mrvl
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/mvebu
