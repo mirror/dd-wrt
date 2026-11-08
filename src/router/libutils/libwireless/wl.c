@@ -3935,7 +3935,7 @@ IS_DRIVER(iwlwifi, "pci:iwlwifi", "iwlwifi");
 IS_DRIVER(iwl4965, "pci:iwl4965", "iwl4965");
 IS_DRIVER(iwl3945, "pci:iwl3945", "iwl3945");
 #endif
-#ifdef HAVE_MVEBU
+#if defined(HAVE_MVEBU) || defined(HAVE_MWLWIFI)
 IS_DRIVER(mvebu, "pci:mwlwifi", "mwlwifi");
 #endif
 #ifdef HAVE_ATH10K
