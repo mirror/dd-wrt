@@ -434,6 +434,20 @@ int load_ath5k(void)
 	return 0;
 }
 
+int load_mwlwifi(void)
+{
+	dd_loginfo("sysinit", "load MWLWIFI Driver");
+	insmod("mwlwifi");
+	insmod("mwifiex");
+	insmod("mwifiex_sdio.ko");
+	if (!detectchange(NULL)) {
+		rmmod("mwifiex_sdio");
+		rmmod("mwifiex");
+		rmmod("mwlwifi");
+	}
+	return 0;
+}
+
 int load_ath9k(void)
 {
 	dd_loginfo("sysinit", "load ATH9K 802.11n Driver");
@@ -495,6 +509,7 @@ int load_madwifi(void)
 #define RADIO_IWLWIFI 0x80
 #define RADIO_ATH11K 0x100
 #define RADIO_ATH12K 0x200
+#define RADIO_MWLWIFI 0x400
 
 static int detect_wireless_devices(int mask)
 {
@@ -672,6 +687,12 @@ static int detect_wireless_devices(int mask)
 		#ifdef HAVE_IWLWIFI
 	if ((mask & RADIO_IWLWIFI)) {
 		load_iwlwifi();
+	}
+		#endif
+
+		#ifdef HAVE_MWLWIFI
+	if ((mask & RADIO_MWLWIFI)) {
+		load_mwlwifi();
 	}
 		#endif
 

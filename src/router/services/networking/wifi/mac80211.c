@@ -602,7 +602,7 @@ void configure_single_mac80211(int count)
 
 	eval("iw", "phy", wif, "set", "distance", dist);
 	#ifdef HAVE_ATH10K
-	//      if (is_ath10k(dev) && !is_mvebu(dev)) { // evil hack for QCA
+	//      if (is_ath10k(dev) && !is_mwlwifi(dev)) { // evil hack for QCA
 	//              set_ath10kdistance(dev, distance);
 	//      }
 	#endif
