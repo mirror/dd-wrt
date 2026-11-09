@@ -195,6 +195,17 @@ static void do_pagehead(webs_t wp, int argc, char_t **argv, int pwc) // Eko
 		}
 		websWrite(wp, "</script>");
 	}
+
+	websWrite(wp, "<script type=\"text/javascript\">");
+	websWrite(wp, "console.log(\"is running ...\");");
+	websWrite(wp, "   for (var i = 0; i < logoff_timer_events.length; i++) {");
+	websWrite(wp, "      window.addEventListener(logoff_timer_events[i], function(e) {");
+	websWrite(wp, "         auto_logoff_timer_reset(%s);", nvram_safe_get("autologoff_interval"));
+	websWrite(wp, "      });");
+	websWrite(wp, "   auto_logoff_timer_reset(%s);", nvram_safe_get("autologoff_interval"));
+	websWrite(wp, "}");
+	websWrite(wp, "</script>;");
+
 	time_t t = time(NULL);
 	struct tm *local = localtime(&t);
 	if (local->tm_mon == 11 && local->tm_mday >= 24 && local->tm_mday <= 31 && local->tm_year > 100)

@@ -1618,3 +1618,70 @@ function stickControl(status) {
 		}
 	}
 }
+
+var logoff_timer = null;
+var logoff_timer_interval = 0;
+var logoff_timer_seconds = 0;
+var logoff_timer_events = ['load', 'mousemove', 'mousedown', 'touchstart', 'click', 'keydown'];
+
+function auto_logoff_logoff()
+{
+	var userAgent = navigator.userAgent.toLowerCase();
+	var xhr_object = null;
+
+	if (userAgent.indexOf("msie") != -1 || userAgent.indexOf("trident") != -1) {
+		document.execCommand("ClearAuthenticationCache", false);
+	}
+
+	if (window.XMLHttpRequest) {
+		xhr_object = new XMLHttpRequest();
+	} else if (window.ActiveXObject) {
+		xhr_object = new ActiveXObject("Microsoft.XMLHTTP");
+	} else {
+		console.log("Your browser doesn't support XMLHTTPREQUEST");
+		return;
+	}
+
+	var port = document.location.port !== "" ? ":" + document.location.port : "";
+	var url = document.location.protocol + "//" + document.location.hostname + port + "/index.asp";
+
+	xhr_object.open("GET", url, false, "logout", (new Date()).getTime().toString());
+	xhr_object.send("");
+}
+
+function auto_logoff_logout()
+{
+	clearInterval(logoff_timer);
+	auto_logoff_logoff();
+
+	if (window.location.pathname != "/" && window.location.pathname != "/Info.htm")
+	{
+		if (document.location.port != "") {
+			document.location = document.location.protocol + '//' + document.location.hostname + ':' + document.location.port + '/'; 
+		} else {
+			document.location = document.location.protocol + '//' + document.location.hostname + '/'; 
+		}
+	}
+}
+
+function auto_logoff_timer_increment()
+{
+	logoff_timer_seconds++;
+
+	if (logoff_timer_interval == 0) 
+		return;
+
+	if (logoff_timer_seconds >= logoff_timer_interval)
+		auto_logoff_logout();
+}
+
+function auto_logoff_timer_reset(interval)
+{
+	if (!interval) interval = 0;
+
+	clearInterval(logoff_timer);
+	logoff_timer_seconds = 0;
+	logoff_timer_interval = interval;
+
+	logoff_timer = setInterval(auto_logoff_timer_increment, 1000);
+}

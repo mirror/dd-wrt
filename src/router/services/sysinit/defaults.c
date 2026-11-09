@@ -149,6 +149,7 @@ struct nvram_param srouter_defaults[] = {
 #endif
 	{ "refresh_time", "3" },	/* GUI Auto-Refresh interval */
 	{ "auth_limit", "180" },	/* GUI auth limit ask if no config change in 180s ask for auth again */
+	{ "autologoff_interval", "600"},/* GUI auto logoff interval in seconds, 0 disables logoff /*
 	{ "log_level", "0" },	/* Bitmask 0:off 1:denied 2:accepted */
 
 #ifdef HAVE_UPNP
