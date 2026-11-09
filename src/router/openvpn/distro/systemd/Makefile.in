@@ -165,6 +165,7 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(docdir)" "$(DESTDIR)$(systemdunitdir)" \
 	"$(DESTDIR)$(tmpfilesdir)"
 DATA = $(dist_doc_DATA) $(systemdunit_DATA) $(tmpfiles_DATA)
+am__extra_recursive_targets = build-tests-recursive
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 am__DIST_COMMON = $(srcdir)/Makefile.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -494,6 +495,7 @@ uninstall-tmpfilesDATA:
 	@list='$(tmpfiles_DATA)'; test -n "$(tmpfilesdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(tmpfilesdir)'; $(am__uninstall_files_from_dir)
+build-tests-local: 
 tags TAGS:
 
 ctags CTAGS:
@@ -573,6 +575,10 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 @ENABLE_SYSTEMD_FALSE@install-data-hook:
+build-tests: build-tests-am
+
+build-tests-am: build-tests-local
+
 clean: clean-am
 
 clean-am: clean-generic clean-libtool mostlyclean-am
@@ -644,20 +650,20 @@ uninstall-am: uninstall-dist_docDATA uninstall-systemdunitDATA \
 
 .MAKE: install-am install-data-am install-strip
 
-.PHONY: all all-am check check-am clean clean-generic clean-libtool \
-	cscopelist-am ctags-am distclean distclean-generic \
-	distclean-libtool distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am \
-	install-data-hook install-dist_docDATA install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip install-systemdunitDATA install-tmpfilesDATA \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am tags-am uninstall \
-	uninstall-am uninstall-dist_docDATA uninstall-systemdunitDATA \
-	uninstall-tmpfilesDATA
+.PHONY: all all-am build-tests-am build-tests-local check check-am \
+	clean clean-generic clean-libtool cscopelist-am ctags-am \
+	distclean distclean-generic distclean-libtool distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-data-hook \
+	install-dist_docDATA install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip install-systemdunitDATA \
+	install-tmpfilesDATA installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags-am uninstall uninstall-am uninstall-dist_docDATA \
+	uninstall-systemdunitDATA uninstall-tmpfilesDATA
 
 .PRECIOUS: Makefile
 

@@ -199,6 +199,7 @@ am__can_run_installinfo = \
   esac
 am__dist_doc_DATA_DIST = README.down-root
 DATA = $(dist_doc_DATA)
+am__extra_recursive_targets = build-tests-recursive
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -577,6 +578,7 @@ uninstall-dist_docDATA:
 	@list='$(dist_doc_DATA)'; test -n "$(docdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(docdir)'; $(am__uninstall_files_from_dir)
+build-tests-local: 
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -700,6 +702,10 @@ maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+build-tests: build-tests-am
+
+build-tests-am: build-tests-local
+
 clean: clean-am
 
 clean-am: clean-generic clean-libtool clean-pluginLTLIBRARIES \
@@ -773,12 +779,13 @@ uninstall-am: uninstall-dist_docDATA uninstall-pluginLTLIBRARIES
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS TAGS all all-am am--depfiles check check-am clean \
-	clean-generic clean-libtool clean-pluginLTLIBRARIES \
-	cscopelist-am ctags ctags-am distclean distclean-compile \
-	distclean-generic distclean-libtool distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dist_docDATA install-dvi \
+.PHONY: CTAGS GTAGS TAGS all all-am am--depfiles build-tests-am \
+	build-tests-local check check-am clean clean-generic \
+	clean-libtool clean-pluginLTLIBRARIES cscopelist-am ctags \
+	ctags-am distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dist_docDATA install-dvi \
 	install-dvi-am install-exec install-exec-am install-html \
 	install-html-am install-info install-info-am install-man \
 	install-pdf install-pdf-am install-pluginLTLIBRARIES \

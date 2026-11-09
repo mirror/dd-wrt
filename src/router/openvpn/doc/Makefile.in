@@ -212,6 +212,7 @@ am__recursive_targets = \
   $(am__extra_recursive_targets)
 AM_RECURSIVE_TARGETS = $(am__recursive_targets:-recursive=) TAGS CTAGS \
 	distdir distdir-am
+am__extra_recursive_targets = build-tests-recursive
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -725,6 +726,7 @@ $(am__recursive_targets):
 	if test "$$dot_seen" = "no"; then \
 	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
 	fi; test -z "$$fail"
+build-tests-local: 
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -891,6 +893,10 @@ maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+build-tests: build-tests-recursive
+
+build-tests-am: build-tests-local
+
 clean: clean-recursive
 
 clean-am: clean-generic clean-libtool mostlyclean-am
@@ -963,22 +969,22 @@ uninstall-man: uninstall-man5 uninstall-man8
 
 .MAKE: $(am__recursive_targets) install-am install-strip
 
-.PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am check \
-	check-am clean clean-generic clean-libtool cscopelist-am ctags \
-	ctags-am dist-hook distclean distclean-generic \
-	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dist_docDATA install-dist_htmlDATA \
-	install-dvi install-dvi-am install-exec install-exec-am \
-	install-html install-html-am install-info install-info-am \
-	install-man install-man5 install-man8 install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs installdirs-am \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am uninstall-dist_docDATA \
-	uninstall-dist_htmlDATA uninstall-man uninstall-man5 \
-	uninstall-man8
+.PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am \
+	build-tests-am build-tests-local check check-am clean \
+	clean-generic clean-libtool cscopelist-am ctags ctags-am \
+	dist-hook distclean distclean-generic distclean-libtool \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am \
+	install-dist_docDATA install-dist_htmlDATA install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
+	install-man5 install-man8 install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
+	uninstall-am uninstall-dist_docDATA uninstall-dist_htmlDATA \
+	uninstall-man uninstall-man5 uninstall-man8
 
 .PRECIOUS: Makefile
 

@@ -192,6 +192,7 @@ am__can_run_installinfo = \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
 DATA = $(noinst_DATA)
+am__extra_recursive_targets = build-tests-recursive
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -668,6 +669,7 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
+build-tests-local: 
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -797,6 +799,10 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+build-tests: build-tests-am
+
+build-tests-am: build-tests-local
+
 clean: clean-am
 
 clean-am: clean-generic clean-libtool clean-sbinPROGRAMS \
@@ -878,9 +884,10 @@ uninstall-am: uninstall-sbinPROGRAMS
 
 .MAKE: all check install install-am install-exec install-strip
 
-.PHONY: CTAGS GTAGS TAGS all all-am am--depfiles check check-am clean \
-	clean-generic clean-libtool clean-sbinPROGRAMS cscopelist-am \
-	ctags ctags-am distclean distclean-compile distclean-generic \
+.PHONY: CTAGS GTAGS TAGS all all-am am--depfiles build-tests-am \
+	build-tests-local check check-am clean clean-generic \
+	clean-libtool clean-sbinPROGRAMS cscopelist-am ctags ctags-am \
+	distclean distclean-compile distclean-generic \
 	distclean-libtool distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
 	install-data-am install-dvi install-dvi-am install-exec \
