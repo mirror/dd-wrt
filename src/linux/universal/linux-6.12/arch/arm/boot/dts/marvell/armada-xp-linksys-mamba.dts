@@ -22,7 +22,7 @@
 #include "armada-xp-mv78230.dtsi"
 
 / {
-	model = "Linksys WRT1900AC v1";
+	model = "Linksys WRT1900AC";
 	compatible = "linksys,wrt1900ac-v1", "linksys,mamba",
 		     "marvell,armadaxp-mv78230", "marvell,armadaxp",
 		     "marvell,armada-370-xp";
