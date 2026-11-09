@@ -197,7 +197,6 @@ static void do_pagehead(webs_t wp, int argc, char_t **argv, int pwc) // Eko
 	}
 
 	websWrite(wp, "<script type=\"text/javascript\">");
-	websWrite(wp, "console.log(\"is running ...\");");
 	websWrite(wp, "   for (var i = 0; i < logoff_timer_events.length; i++) {");
 	websWrite(wp, "      window.addEventListener(logoff_timer_events[i], function(e) {");
 	websWrite(wp, "         auto_logoff_timer_reset(%s);", nvram_safe_get("autologoff_interval"));

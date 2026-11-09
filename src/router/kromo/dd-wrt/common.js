@@ -1677,7 +1677,7 @@ function auto_logoff_timer_increment()
 
 function auto_logoff_timer_reset(interval)
 {
-	if (!interval) interval = 0;
+	if (typeof interval == 'undefined') interval = 0;
 
 	clearInterval(logoff_timer);
 	logoff_timer_seconds = 0;
