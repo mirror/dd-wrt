@@ -1,10 +1,28 @@
 #Nmap Changelog ($Id$); -*-text-*-
 
-Nmap 7.992 [2026-10-07]
+Nmap 7.993 [2026-10-23]
+
+o [NSE][GH#3557] Fixed a regression which prevented most scripts in the version
+  category from running.
+
+o [Windows] Upgraded the included version of Npcap from 1.89 to 1.90, resolving
+  an issue that prevented most installations on Windows older than Windows 10.
+  See https://npcap.com/changelog
+
+o [Ncat] Updated Ncat's ca-bundle.crt.
+
+o [Zenmap][GH#3561] Fix Zenmap's handling of multiple osclass elements in Nmap
+  XML. Previously, each subsequent osclass in a host would overwrite the
+  previous osclass. [Derek Martin]
+
+Nmap 7.992 [2026-10-15]
 
 o Upgraded included libraries:
   - Source: libpcap 1.10.7, pcre2 10.49, lua 5.4.9, libdnet 1.18.2
   - Binary installers: OpenSSL 3.5.9, Python 3.14.8
+
+o [Windows] Upgraded the included version of Npcap from 1.88 to 1.89, resolving
+  one crash and upgrading to libpcap 1.10.7. See https://npcap.com/changelog
 
 o [Security][NSE] Karan Bamal of SentinelOne reported the following issues with
   NSE scripts and libraries, which have all been fixed:
@@ -173,6 +191,9 @@ o [NSE][GH#3430] Nmap now tolerates TLS targets that do not send close_notify.
 Nmap 7.991 [2026-08-06]
 
 o Upgraded included OpenSSL to version 3.0.21 on all platforms.
+
+o [Windows] Upgraded the included version of Npcap from 1.87 to 1.88, resolving
+  some stability-related issues. See https://npcap.com/changelog
 
 o Fixed a memory-consumption hang in Ncat's HTTP proxy code that affected both
   connect and listen modes, reported by kumama_nui.
