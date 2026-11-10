@@ -92,7 +92,7 @@ struct list_head active_contexts_list;
  *
  * \section gettingstarted Getting Started
  *
- * To begin reading the API documentation, start with the Modules page which
+ * To begin reading the API documentation, start with the Topics page which
  * links to the different categories of libusb's functionality.
  *
  * One decision you will have to make is whether to use the synchronous
@@ -382,6 +382,8 @@ if (cfg != desired)
   * - libusb_detach_kernel_driver()
   * - libusb_dev_mem_alloc()
   * - libusb_dev_mem_free()
+  * - libusb_endpoint_set_raw_io()
+  * - libusb_endpoint_supports_raw_io()
   * - libusb_error_name()
   * - libusb_event_handler_active()
   * - libusb_event_handling_ok()
@@ -404,6 +406,7 @@ if (cfg != desired)
   * - libusb_free_usb_2_0_extension_descriptor()
   * - libusb_get_active_config_descriptor()
   * - libusb_get_bos_descriptor()
+  * - libusb_get_session_data()
   * - libusb_get_bus_number()
   * - libusb_get_config_descriptor()
   * - libusb_get_config_descriptor_by_value()
@@ -415,10 +418,12 @@ if (cfg != desired)
   * - libusb_get_device_descriptor()
   * - libusb_get_device_list()
   * - libusb_get_device_speed()
+  * - libusb_get_device_string()
   * - libusb_get_iso_packet_buffer()
   * - libusb_get_iso_packet_buffer_simple()
   * - libusb_get_max_alt_packet_size()
   * - libusb_get_max_iso_packet_size()
+  * - libusb_get_max_raw_io_transfer_size()
   * - libusb_get_max_packet_size()
   * - libusb_get_next_timeout()
   * - libusb_get_parent()
@@ -499,6 +504,7 @@ if (cfg != desired)
   * - \ref libusb_capability
   * - \ref libusb_class_code
   * - \ref libusb_descriptor_type
+  * - \ref libusb_device_string_type
   * - \ref libusb_endpoint_direction
   * - \ref libusb_endpoint_transfer_type
   * - \ref libusb_error
@@ -722,26 +728,33 @@ struct libusb_device *usbi_alloc_device(struct libusb_context *ctx,
 	dev->session_data = session_id;
 	dev->speed = LIBUSB_SPEED_UNKNOWN;
 
-	if (!libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG))
-		usbi_connect_device(dev);
+	/* Note: the device is NOT added to ctx->usb_devs here. The caller
+	 * (backend) must call usbi_connect_device() after fully initializing
+	 * the device's private data. This prevents a concurrent
+	 * usbi_get_device_by_session_id() from finding a half-initialized
+	 * device. */
 
 	return dev;
 }
 
-void usbi_connect_device(struct libusb_device *dev)
+void usbi_attach_device(struct libusb_device *dev)
 {
 	struct libusb_context *ctx = DEVICE_CTX(dev);
 
 	usbi_atomic_store(&dev->attached, 1);
 
-	usbi_mutex_lock(&dev->ctx->usb_devs_lock);
-	list_add(&dev->list, &dev->ctx->usb_devs);
-	usbi_mutex_unlock(&dev->ctx->usb_devs_lock);
-
-	usbi_hotplug_notification(ctx, dev, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED);
+	usbi_mutex_lock(&ctx->usb_devs_lock);
+	list_add(&dev->list, &ctx->usb_devs);
+	usbi_mutex_unlock(&ctx->usb_devs_lock);
 }
 
-void usbi_disconnect_device(struct libusb_device *dev)
+void usbi_connect_device(struct libusb_device *dev)
+{
+	usbi_attach_device(dev);
+	usbi_hotplug_notification(DEVICE_CTX(dev), dev, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED);
+}
+
+void usbi_detach_device(struct libusb_device *dev)
 {
 	struct libusb_context *ctx = DEVICE_CTX(dev);
 
@@ -750,8 +763,12 @@ void usbi_disconnect_device(struct libusb_device *dev)
 	usbi_mutex_lock(&ctx->usb_devs_lock);
 	list_del(&dev->list);
 	usbi_mutex_unlock(&ctx->usb_devs_lock);
+}
 
-	usbi_hotplug_notification(ctx, dev, LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT);
+void usbi_disconnect_device(struct libusb_device *dev)
+{
+	usbi_detach_device(dev);
+	usbi_hotplug_notification(DEVICE_CTX(dev), dev, LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT);
 }
 
 /* Perform some final sanity checks on a newly discovered device. If this
@@ -906,6 +923,26 @@ void API_EXPORTED libusb_free_device_list(libusb_device **list,
 }
 
 /** \ingroup libusb_dev
+ * Returns the backend-specific identifier of the underlying system device tree
+ * node. Can be used to find the corresponding system device and directly query
+ * it (or access it otherwise) when and if necessary.
+ *
+ * Relevant backends:
+ * - Darwin: IOKit `sessionID`
+ * - Windows WinUSB: `DEVINST`
+ * - Linux, BSD: `busnum << 8 | devnum`
+ *
+ * Since version 1.0.30, \ref LIBUSB_API_VERSION >= 0x0100010C
+ *
+ * \param dev a device (must not be null)
+ * \returns the backend-specific device identifier
+ */
+unsigned long API_EXPORTED libusb_get_session_data(libusb_device *dev)
+{
+    return dev->session_data;
+}
+
+/** \ingroup libusb_dev
  * Get the number of the bus that a device is connected to.
  * \param dev a device
  * \returns the bus number
@@ -954,7 +991,7 @@ int API_EXPORTED libusb_get_port_numbers(libusb_device *dev,
 	if (port_numbers_len <= 0)
 		return LIBUSB_ERROR_INVALID_PARAM;
 
-	// HCDs can be listed as devices with port #0
+	/* HCDs can be listed as devices with port #0 */
 	while((dev) && (dev->port_number != 0)) {
 		if (--i < 0) {
 			usbi_warn(ctx, "port numbers array is too small");
@@ -964,7 +1001,7 @@ int API_EXPORTED libusb_get_port_numbers(libusb_device *dev,
 		dev = dev->parent_dev;
 	}
 	if (i < port_numbers_len)
-		memmove(port_numbers, &port_numbers[i], port_numbers_len - i);
+		memmove(port_numbers, &port_numbers[i], (size_t)(port_numbers_len - i));
 	return port_numbers_len - i;
 }
 
@@ -1014,7 +1051,7 @@ uint8_t API_EXPORTED libusb_get_device_address(libusb_device *dev)
  */
 int API_EXPORTED libusb_get_device_speed(libusb_device *dev)
 {
-	return dev->speed;
+	return (int)(dev->speed);
 }
 
 static const struct libusb_endpoint_descriptor *find_endpoint(
@@ -1276,6 +1313,7 @@ libusb_device * LIBUSB_CALL libusb_ref_device(libusb_device *dev)
 
 	refcnt = usbi_atomic_inc(&dev->refcnt);
 	assert(refcnt >= 2);
+	UNUSED(refcnt);
 
 	return dev;
 }
@@ -1292,8 +1330,27 @@ void API_EXPORTED libusb_unref_device(libusb_device *dev)
 	if (!dev)
 		return;
 
-	refcnt = usbi_atomic_dec(&dev->refcnt);
-	assert(refcnt >= 0);
+	if (!libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG)) {
+		/* Non-hotplug path: the decrement and conditional list removal
+		 * must be atomic with respect to usbi_get_device_by_session_id(),
+		 * which searches the list and refs the device under the same lock.
+		 * Without this, a concurrent search could find a device whose
+		 * refcnt has already reached zero and hit the assert in
+		 * libusb_ref_device(). */
+		struct libusb_context *ctx = DEVICE_CTX(dev);
+
+		usbi_mutex_lock(&ctx->usb_devs_lock);
+		refcnt = usbi_atomic_dec(&dev->refcnt);
+		assert(refcnt >= 0);
+		if (refcnt == 0 && usbi_atomic_load(&dev->attached)) {
+			list_del(&dev->list);
+			usbi_atomic_store(&dev->attached, 0);
+		}
+		usbi_mutex_unlock(&ctx->usb_devs_lock);
+	} else {
+		refcnt = usbi_atomic_dec(&dev->refcnt);
+		assert(refcnt >= 0);
+	}
 
 	if (refcnt == 0) {
 		usbi_dbg(DEVICE_CTX(dev), "destroy device %d.%d", dev->bus_number, dev->device_address);
@@ -1303,9 +1360,8 @@ void API_EXPORTED libusb_unref_device(libusb_device *dev)
 		if (usbi_backend.destroy_device)
 			usbi_backend.destroy_device(dev);
 
-		if (!libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG)) {
-			/* backend does not support hotplug */
-			usbi_disconnect_device(dev);
+		for (int idx = 0; idx < LIBUSB_DEVICE_STRING_COUNT; ++idx) {
+			free(dev->device_strings_utf8[idx]);
 		}
 
 		free(dev);
@@ -2204,6 +2260,111 @@ int API_EXPORTED libusb_set_auto_detach_kernel_driver(
 	return LIBUSB_SUCCESS;
 }
 
+/** \ingroup libusb_dev
+ * Check if the endpoint supports RAW_IO.
+ * \param dev_handle a device handle
+ * \param endpoint the endpoint to check
+ *
+ * \returns 1 if the endpoint supports RAW_IO
+ * \returns 0 if the endpoint does not support RAW_IO
+ * \returns a LIBUSB_ERROR code on failure
+ *
+ * Only endpoints using the WinUSB driver support RAW_IO,
+ * for all other backends/drivers this function will return 0.
+ *
+ * Fails if the interface the endpoint belongs to isn't claimed,
+ * \see libusb_claim_interface().
+ *
+ * \see libusb_endpoint_set_raw_io()
+ *
+ * Since version 1.0.30, \ref LIBUSB_API_VERSION >= 0x0100010C
+ */
+int API_EXPORTED libusb_endpoint_supports_raw_io(libusb_device_handle* dev_handle,
+	uint8_t endpoint)
+{
+	if (usbi_backend.endpoint_supports_raw_io == NULL)
+	{
+		return 0;
+	}
+
+	// If the `endpoint_supports_raw_io` function is present, these two should be too:
+	assert(usbi_backend.endpoint_set_raw_io != NULL);
+	assert(usbi_backend.get_max_raw_io_transfer_size != NULL);
+
+	return usbi_backend.endpoint_supports_raw_io(dev_handle, endpoint);
+}
+
+/** \ingroup libusb_dev
+ * Enable/disable RAW_IO for an endpoint on an open device.
+ *
+ * Only endpoints using the WinUSB driver support RAW_IO,
+ * for all other backends/drivers this function will return an error code.
+ *
+ * Using RAW_IO can greatly improve USB throughput by directly passing
+ * transfer requests to the underlying USB driver instead of queuing them
+ * in WinUSB. This can be particularly useful for high-throughput devices
+ * like cameras or oscilloscopes.
+ *
+ * Transfers submitted to the endpoint while RAW_IO is enabled will fail unless
+ * they adhere to the following rules :
+ * - The buffer length must be a multiple of the maximum endpoint packet size
+ *   \see libusb_get_max_packet_size.
+ * - The buffer length must be less than or equal to the value returned by
+ *   \ref libusb_get_max_raw_io_transfer_size.
+ *
+ * This option should not be changed when any transfer is in progress on
+ * the specified endpoint.
+ *
+ * Fails if the interface the endpoint belongs to isn't claimed,
+ * \see libusb_claim_interface().
+ *
+ * \param dev_handle a device handle
+ * \param endpoint the endpoint to set RAW_IO for
+ * \param enable 1 to enable RAW_IO, 0 to disable it
+ *
+ * \returns \ref LIBUSB_SUCCESS on success
+ * \returns \ref LIBUSB_ERROR_NOT_SUPPORTED if the backend does not support RAW_IO.
+ * \returns another LIBUSB_ERROR code on other failure
+ *
+ * \see libusb_endpoint_supports_raw_io()
+ * \see https://learn.microsoft.com/en-us/windows-hardware/drivers/usbcon/winusb-functions-for-pipe-policy-modification
+ *
+ * Since version 1.0.30, \ref LIBUSB_API_VERSION >= 0x0100010C
+ */
+int API_EXPORTED libusb_endpoint_set_raw_io(libusb_device_handle* dev_handle,
+	uint8_t endpoint, int enable)
+{
+	if (!usbi_backend.endpoint_set_raw_io)
+		return LIBUSB_ERROR_NOT_SUPPORTED;
+
+	return usbi_backend.endpoint_set_raw_io(dev_handle, endpoint, enable);
+}
+
+/** \ingroup libusb_dev
+ * Retrieve the maximum transfer size in bytes supported for WinUSB RAW_IO
+ * for an inbound bulk or interrupt endpoint on an open device.
+ *
+ * Returns a maximum transfer size in bytes, or a negative error code.
+ * If the backend does not support WinUSB RAW_IO, returns
+ * \ref LIBUSB_ERROR_NOT_SUPPORTED.
+ *
+ * Fails if the interface the endpoint belongs to isn't claimed,
+ * \see libusb_claim_interface().
+ *
+ * \see libusb_endpoint_set_raw_io()
+ *
+ * Since version 1.0.30, \ref LIBUSB_API_VERSION >= 0x0100010C
+ */
+int API_EXPORTED libusb_get_max_raw_io_transfer_size(
+	libusb_device_handle *dev_handle, uint8_t endpoint)
+{
+	if (!usbi_backend.get_max_raw_io_transfer_size)
+		return LIBUSB_ERROR_NOT_SUPPORTED;
+
+	return usbi_backend.get_max_raw_io_transfer_size(
+		dev_handle, endpoint);
+}
+
 /** \ingroup libusb_lib
  * Deprecated. Use libusb_set_option() or libusb_init_context() instead,
  * with the \ref LIBUSB_OPTION_LOG_LEVEL option.
@@ -2380,14 +2541,12 @@ int API_EXPORTEDV libusb_set_option(libusb_context *ctx,
  */
 static enum libusb_log_level get_env_debug_level(void)
 {
+	enum libusb_log_level level = LIBUSB_LOG_LEVEL_NONE;
 	const char *dbg = getenv("LIBUSB_DEBUG");
-	enum libusb_log_level level;
 	if (dbg) {
-		int dbg_level = atoi(dbg);
+		long dbg_level = strtol(dbg, NULL, 10);
 		dbg_level = CLAMP(dbg_level, LIBUSB_LOG_LEVEL_NONE, LIBUSB_LOG_LEVEL_DEBUG);
 		level = (enum libusb_log_level)dbg_level;
-	} else {
-		level = LIBUSB_LOG_LEVEL_NONE;
 	}
 	return level;
 }
@@ -2456,7 +2615,7 @@ int API_EXPORTED libusb_init_context(libusb_context **ctx, const struct libusb_i
 		_ctx->debug = get_env_debug_level();
 		_ctx->debug_fixed = 1;
 	} else if (default_context_options[LIBUSB_OPTION_LOG_LEVEL].is_set) {
-		_ctx->debug = default_context_options[LIBUSB_OPTION_LOG_LEVEL].arg.ival;
+		_ctx->debug = (enum libusb_log_level)default_context_options[LIBUSB_OPTION_LOG_LEVEL].arg.ival;
 	}
 #endif
 
@@ -2809,7 +2968,7 @@ static void log_v(struct libusb_context *ctx, enum libusb_log_level level,
 		TIMESPEC_SUB(&timestamp, &timestamp_origin, &timestamp);
 
 		header_len = snprintf(buf, sizeof(buf),
-			"[%2ld.%06ld] [%08x] libusb: %s [%s] ",
+			"[%2ld.%06ld] [%08lx] libusb: %s [%s] ",
 			(long)timestamp.tv_sec, (long)(timestamp.tv_nsec / 1000L), usbi_get_tid(), prefix, function);
 	} else {
 		header_len = snprintf(buf, sizeof(buf),

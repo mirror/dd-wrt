@@ -200,6 +200,8 @@ obsd_get_device_list(struct libusb_context * ctx,
 					libusb_unref_device(dev);
 					continue;
 				}
+
+				usbi_connect_device(dev);
 			}
 
 			ddd = discovered_devs_append(*discdevs, dev);
@@ -495,9 +497,9 @@ _errno_to_libusb(int err)
 		return LIBUSB_ERROR_NO_MEM;
 	case ETIMEDOUT:
 		return LIBUSB_ERROR_TIMEOUT;
+	default:
+		return LIBUSB_ERROR_OTHER;
 	}
-
-	return LIBUSB_ERROR_OTHER;
 }
 
 int

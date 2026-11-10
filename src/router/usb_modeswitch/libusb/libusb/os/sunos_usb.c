@@ -86,7 +86,7 @@ static int sunos_get_link(di_devlink_t devlink, void *arg)
 	const char *p;
 	const char *q;
 
-	if (larg->path) {
+	if (link_arg->path) {
 		char *content = (char *)di_devlink_content(devlink);
 		char *start = strstr(content, "/devices/");
 		start += strlen("/devices");
@@ -94,8 +94,8 @@ static int sunos_get_link(di_devlink_t devlink, void *arg)
 
 		/* line content must have minor node */
 		if (start == NULL ||
-		    strncmp(start, larg->path, larg->len) != 0 ||
-		    start[larg->len] != ':')
+		    strncmp(start, link_arg->path, link_arg->len) != 0 ||
+		    start[link_arg->len] != ':')
 			return (DI_WALK_CONTINUE);
 	}
 
@@ -103,7 +103,7 @@ static int sunos_get_link(di_devlink_t devlink, void *arg)
 	q = strrchr(p, '/');
 	usbi_dbg(NULL, "%s", q);
 
-	*(larg->linkpp) = strndup(p, strlen(p) - strlen(q));
+	*(link_arg->linkpp) = strndup(p, strlen(p) - strlen(q));
 
 	return (DI_WALK_TERMINATE);
 }
@@ -171,7 +171,7 @@ sunos_usb_ioctl(struct libusb_device *dev, int cmd)
 
 	nvlist_alloc(&nvlist, NV_UNIQUE_NAME_TYPE, KM_NOSLEEP);
 	nvlist_add_int32(nvlist, "port", dev->port_number);
-	//find the hub path
+	/* find the hub path */
 	snprintf(path_arg, sizeof(path_arg), "/devices%s:hubd", hubpath);
 	usbi_dbg(DEVICE_CTX(dev), "ioctl hub path: %s", path_arg);
 
@@ -627,6 +627,8 @@ sunos_add_devices(di_devlink_t link, void *arg)
 				usbi_dbg(NULL, "sanitize failed: ");
 				return (DI_WALK_TERMINATE);
 			}
+
+			usbi_connect_device(dev);
 		} else {
 			devpriv = usbi_get_device_priv(dev);
 			usbi_dbg(NULL, "Dev %s exists", devpriv->ugenpath);

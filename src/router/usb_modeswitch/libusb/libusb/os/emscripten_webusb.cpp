@@ -538,17 +538,36 @@ private:
 		auto configurations_len = dev->device_descriptor.bNumConfigurations;
 		configurations.reserve(configurations_len);
 		for (uint8_t j = 0; j < configurations_len; j++) {
-			// Note: requesting more than (platform-specific limit) bytes
-			// here will cause the transfer to fail, see
-			// https://crbug.com/1489414. Use the most common limit of 4096
-			// bytes for now.
-			constexpr uint16_t MAX_CTRL_BUFFER_LENGTH = 4096;
-			auto result = co_await_try(
-				requestDescriptor(LIBUSB_DT_CONFIG, j, MAX_CTRL_BUFFER_LENGTH));
-			if (auto error = getTransferStatus(result)) {
+			// Read descriptor header first to discover target length.
+			auto config_header_result = co_await_try(
+				requestDescriptor(LIBUSB_DT_CONFIG, j, LIBUSB_DT_CONFIG_SIZE));
+			if (auto error = getTransferStatus(config_header_result)) {
 				co_return error;
 			}
-			auto configVal = result["data"];
+			union usbi_config_desc_buf config_header = {};
+			copyFromDataView(config_header.buf, config_header_result["data"]);
+			if (config_header.desc.bDescriptorType != LIBUSB_DT_CONFIG ||
+				config_header.desc.bLength < LIBUSB_DT_CONFIG_SIZE) {
+				co_return LIBUSB_ERROR_IO;
+			}
+
+			auto config_total_length =
+				libusb_le16_to_cpu(config_header.desc.wTotalLength);
+			if (config_total_length < LIBUSB_DT_CONFIG_SIZE) {
+				co_return LIBUSB_ERROR_IO;
+			}
+
+			auto config_result = co_await_try(
+				requestDescriptor(LIBUSB_DT_CONFIG, j, config_total_length));
+			if (auto error = getTransferStatus(config_result)) {
+				co_return error;
+			}
+
+			auto configVal = config_result["data"];
+			if (configVal["byteLength"].as<size_t>() < config_total_length) {
+				co_return LIBUSB_ERROR_IO;
+			}
+
 			auto configLen = configVal["byteLength"].as<size_t>();
 			auto& config = configurations.emplace_back(
 				(usbi_configuration_descriptor*)::operator new(configLen));
@@ -586,12 +605,17 @@ unsigned long getDeviceSessionId(val& web_usb_device) {
 }
 
 val getDeviceList(libusb_context* ctx, discovered_devs** devs) {
+	// Check if browser supports USB
+	val navigator_usb = val::global("navigator")["usb"];
+	if (navigator_usb == val::undefined()) {
+		co_return (int) LIBUSB_ERROR_NOT_SUPPORTED;
+	}
 	// C++ equivalent of `await navigator.usb.getDevices()`. Note: at this point
 	// we must already have some devices exposed - caller must have called
 	// `await navigator.usb.requestDevice(...)` in response to user interaction
 	// before going to LibUSB. Otherwise this list will be empty.
 	auto web_usb_devices =
-		co_await_try(val::global("navigator")["usb"].call<val>("getDevices"));
+		co_await_try(navigator_usb.call<val>("getDevices"));
 	for (auto&& web_usb_device : web_usb_devices) {
 		auto session_id = getDeviceSessionId(web_usb_device);
 
@@ -618,6 +642,8 @@ val getDeviceList(libusb_context* ctx, discovered_devs** devs) {
 			// This can wrap around but it's the best approximation of a stable
 			// device address and port number we can provide.
 			dev->device_address = dev->port_number = (uint8_t)session_id;
+
+			usbi_connect_device(dev);
 		}
 		*devs = discovered_devs_append(*devs, dev);
 		libusb_unref_device(dev);
@@ -701,7 +727,7 @@ int em_get_config_descriptor_by_value(libusb_device* dev,
 }
 
 int em_set_configuration(libusb_device_handle* dev_handle, int config) {
-	return WebUsbDevicePtr(dev_handle)->awaitOnMain("setConfiguration", config);
+	return WebUsbDevicePtr(dev_handle)->awaitOnMain("selectConfiguration", config);
 }
 
 int em_claim_interface(libusb_device_handle* handle, uint8_t iface) {
@@ -844,7 +870,7 @@ int em_handle_transfer_completion(usbi_transfer* itransfer) {
 #pragma clang diagnostic ignored "-Wmissing-field-initializers"
 extern "C" const usbi_os_backend usbi_backend = {
 	.name = "Emscripten + WebUSB backend",
-	.caps = LIBUSB_CAP_HAS_CAPABILITY,
+	.caps = 0,
 	.get_device_list = em_get_device_list,
 	.open = em_open,
 	.close = em_close,
