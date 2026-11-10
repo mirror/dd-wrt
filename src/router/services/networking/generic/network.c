@@ -3189,7 +3189,7 @@ void run_wan(int status)
 		get3GControlDevice();
 		char *controldevice = nvram_safe_get("3gcontrol");
 		int timeout = 5;
-		char wsel[16];
+		char wsel[16] = { 0 };
 		char wsbuf[30] = { 0 };
 
 		// #if defined(HAVE_CAMBRIA) || defined(HAVE_LAGUNA)
