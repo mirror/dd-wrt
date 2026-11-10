@@ -872,9 +872,9 @@ static struct DEVICES devicelist[] = {
 	{ 0x12d1, 0x14d2, option, 2, 0, 2 | QMI, NULL, "Huawei E173/E177" }, //
 	//      {0x12d1, 0x14db, none, 0, 0, 0 | ETH, NULL,  "Huawei E353"},      //
 	//      {0x12d1, 0x14dc, none, 0, 0, 0 | ETH, NULL,  "Huawei E303"},      //
-	{ 0x12d1, 0x14fe, none, 0, 0, 2, &modeswitch_huawei_std, "Huawei E352,E353" }, //
+	{ 0x12d1, 0x14fe, none, 1, 1, 2, &modeswitch_huawei_std, "Huawei E352,E353" }, //
 	{ 0x12d1, 0x1505, none, 0, 0, 2, &modeswitch_huawei_std, "Huawei E398" }, //
-	{ 0x12d1, 0x1506, option, 2, 0, 2, NULL, "Huawei E367/E398" }, // can not be QMI flagged!
+	{ 0x12d1, 0x1506, option, 1, 1, 2, NULL, "Huawei E367/E398" }, // can not be QMI flagged!
 	{ 0x12d1, 0x150a, option, 2, 0, 2 | QMI, NULL, "Huawei E398" }, //
 	{ 0x12d1, 0x150c, option, 1, 2, 2 | QMI, NULL, "Huawei E367" }, //
 	{ 0x12d1, 0x150f, option, 0, 0, 2 | QMI, NULL, "Huawei E367" }, //
