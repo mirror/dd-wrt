@@ -323,6 +323,7 @@ struct nvram_param srouter_defaults[] = {
 	 * WAN H/W parameters 
 	 */
 	{ "wan_dial", "0" },
+	{ "wan_roaming", "0" },
 	{ "wan_ifname", "" },	/* WAN interface name */
 	{ "wan_ifname2", "" },	/* WAN interface name */
 #ifdef HAVE_REALTEK
