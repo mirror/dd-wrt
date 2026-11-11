@@ -34,7 +34,7 @@ opengt
  if $env("COMGTNM") = "4" let $a="AT!SELRAT=4"
 # FORCE LTE
  if $env("COMGTNM") = "6" let $a="AT!SELRAT=6"
- if $a = "" goto unkownmode
+ if $a = "" goto unknownmode
  send "at!scdftprof=1^m"
  waitfor 5 "OK","ERR","ERROR"
  send $a
@@ -91,7 +91,7 @@ opengt
  if $env("COMGTNM") = "3" let $a="AT_OPSYS=3"
 # Prefer 2G
  if $env("COMGTNM") = "4" let $a="AT_OPSYS=2"
- if $a = "" goto unkownmode
+ if $a = "" goto unknownmode
  send $a
  send "^m"
  waitfor 5 "OK","ERR","ERROR"
