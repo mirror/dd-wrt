@@ -56,7 +56,7 @@ CONFIG_DEFAULT_PROGRAMMER_ARGS ?=
 # The user can provide CPP, C and LDFLAGS and the Makefile will extend these
 override CPPFLAGS := $(CPPFLAGS)
 override CFLAGS   := $(CFLAGS)
-override LDFLAGS  := $(LDFLAGS) -L$(TOP)/pciutils/lib -L$(TOP)/libudev/src/libudev/.libs -L$(TOP)/usb_modeswitch/libusb/libusb/.libs
+override LDFLAGS  := $(LDFLAGS) -L$(TOP)/pciutils/lib -L$(TOP)/libudev/src/libudev/.libs -L$(TOP)/usb_modeswitch/libusb/libusb/.libs -L$(TOP)/zlib
 
 # If your compiler spits out excessive warnings, run make WARNERROR=no
 # You shouldn't have to change this flag.
