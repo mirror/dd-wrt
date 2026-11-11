@@ -15,6 +15,7 @@ sftp-server-configure:
 		--disable-wtmpx \
 		--without-bsd-auth \
 		--without-pam \
+		--without-hardening \
 		--without-bsd-out \
 		--without-libedit \
 		--without-ldns \
@@ -26,7 +27,7 @@ sftp-server-configure:
 		--without-stackprotect \
 		--without-kerberos5 \
 		--with-stackprotect \
-		--with-cflags-after="-fzero-call-used-regs=skip $(LTO) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections"
+		--with-cflags-after="$(LTO) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 
 sftp-server-clean:
