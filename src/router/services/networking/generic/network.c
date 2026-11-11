@@ -3435,7 +3435,7 @@ void run_wan(int status)
 					"export COMGNMVARIANT=%s;export COMGTNM=%d;comgt -d %s -s /etc/comgt/netmode.comgt >/tmp/comgt-netmode.out",
 					nvram_safe_get("3gnmvariant"), netmode, controldevice);
 				printf("3g setting netmode with variant %s to mode %d\n", nvram_safe_get("3gnmvariant"), netmode);
-					sysprintf("comgt -d %s -s /etc/comgt/cgatt.comgt\n", controldevice);
+				sysprintf("comgt -d %s -s /etc/comgt/cgatt.comgt\n", controldevice);
 			}
 			// Wait for device to attach to the provider network
 			int retcgatt = 0;
