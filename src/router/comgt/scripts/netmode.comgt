@@ -66,6 +66,7 @@ opengt
  send "^m"
  waitfor 5 "OK","ERR","ERROR"
 
+# may bring up errors on sticks without lte support, but we can ignore that
 # Auto 4G/3G/2G
  if $env("COMGTNM") = "0" let $a="AT\^SYSCFGEX=\"00\",3FFFFFFF,1,2,7FFFFFFFFFFFFFFF,,"
 # Force 3G
