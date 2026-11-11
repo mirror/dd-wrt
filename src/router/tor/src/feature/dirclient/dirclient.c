@@ -2054,9 +2054,16 @@ connection_dir_client_reached_eof(dir_connection_t *conn)
     total_dl[conn->base_.purpose][bootstrapped] += received_bytes;
   }
 
+  size_t max_bodylen = MAX_DIR_DL_SIZE;
+  if (authdir_mode_v3(get_options())) {
+    /* Let dir auth fetches be twice as big, to allow for the fact that
+     * 9 votes can exceed 16mbytes even compressed. This is just a
+     * bandaid; see bug 41471. */
+    max_bodylen *= 2;
+  }
   switch (connection_fetch_from_buf_http(TO_CONN(conn),
                               &headers, MAX_HEADERS_SIZE,
-                              &body, &body_len, MAX_DIR_DL_SIZE,
+                              &body, &body_len, max_bodylen,
                               allow_partial)) {
     case -1: /* overflow */
       log_warn(LD_PROTOCOL,

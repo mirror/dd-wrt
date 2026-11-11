@@ -3912,6 +3912,40 @@ dirvote_get_vote(const char *fp, int flags)
   return NULL;
 }
 
+/** "Dummy" TAP public key to use with newer consensus methods.
+
+    Due to surprising bugs (#41466, #41467),
+    we can't actually remove the TAP key yet.  But they aren't
+    used for anything except v2 onion services, which no longer exist.
+    So instead we give every relay the same TAP key,
+    in order to improve md compressibility.
+
+    To prove that ther eis nothing up my sleeve, here is the
+    corresponding private key.
+
+-----BEGIN RSA PRIVATE KEY-----
+MIICXgIBAAKBgQCkGdZJqPF9h/XSXgIhpptjotFzFWCl6xTJxvYN2J6E1jtZ69N5
+ST75zCV4+IccfVwRypMK+Gxtink/LpsU1Xdq/yzlMZILv9J4s2grOLQarGrh+oS/
+NbV0otL8WIUe1b7beCt4nb5TL8w4rfpfC7Hk+H6Ks9gwwADjtp6Mui4wrwIDAQAB
+AoGBAI1tfxNouQf5P1EYmDmsP0u1rVHD4NHeMsJb6P+x65yMjgZHirCDAfWDjeAe
+QUO6frkOn3/a7ofRygE8B4gDGbEKAlY+D6QbTicOGuzv4HIapGDyA8uWMG/p5ZR4
+7iCOwrClx4adAseUQYkcQZMicgtBB34LHX+8gHyEA6qRtNSxAkEAzirJgV2QoJBV
+UBit18r3cfGn9voVNs3xgYmbSJmSq81BTGp9jPZ1RCa8+W8Jlh65bXSg7W0yZTOF
+5erh90wA3QJBAMvEE4vYsuAoKCMBMSq3AAZUlqLz1ghi1GwE+WdLF9ulJu/FYmuc
+9djSoQRduOsmRo0stU4X6Rat0PRaXeBNOPsCQQCMJvolP336KSRV9vD3KbtdcnJE
+q22QfCAZd3pguEXFFRu23w3KriC527vLtXhG3Uwg5JAh14HS2lvEGRDUFI7hAkBF
+Ffm6lIIxVewl0iWlYd50RwG7xghvV3LGHPmid+di5R/Kc5Xm/pSsKt3E6THlKFkL
+THk8PQceVVhfQLRLdGM5AkEAsG4VW/rqLRB22Dsv23ReiCqi9S95aLgRExCk/LR/
+PcBG6JLzkBUzziksA0c9olarFXdwFbPU0YR+DtyHutunxQ==
+-----END RSA PRIVATE KEY-----
+*/
+static const char DUMMY_TAP_PUBKEY[] =
+"-----BEGIN RSA PUBLIC KEY-----\n"
+"MIGJAoGBAKQZ1kmo8X2H9dJeAiGmm2Oi0XMVYKXrFMnG9g3YnoTWO1nr03lJPvnM\n"
+"JXj4hxx9XBHKkwr4bG2KeT8umxTVd2r/LOUxkgu/0nizaCs4tBqsauH6hL81tXSi\n"
+"0vxYhR7Vvtt4K3idvlMvzDit+l8LseT4foqz2DDAAOO2noy6LjCvAgMBAAE=\n"
+"-----END RSA PUBLIC KEY-----\n";
+
 /** Construct and return a new microdescriptor from a routerinfo <b>ri</b>
  * according to <b>consensus_method</b>.
  **/
@@ -3926,10 +3960,18 @@ dirvote_create_microdescriptor(const routerinfo_t *ri, int consensus_method)
   char *output = NULL;
   crypto_pk_t *rsa_pubkey = router_get_rsa_onion_pkey(ri->tap_onion_pkey,
                                                       ri->tap_onion_pkey_len);
-  bool omit_tap_and_fam_list =
+  bool omit_fam_list =
     consensus_method >= MIN_METHOD_TO_OMIT_ALL_TAP_KEYS_AND_FAMILY_LISTS;
+  bool omit_tap_key =
+    consensus_method == MIN_METHOD_TO_OMIT_ALL_TAP_KEYS_AND_FAMILY_LISTS;
+  bool dummy_tap_key =
+    consensus_method >= MIN_METHOD_TO_USE_DUMMY_TAP_KEYS;
 
-  if (!rsa_pubkey || omit_tap_and_fam_list) {
+  if (omit_tap_key) {
+    key = tor_strdup("");
+  } else if (dummy_tap_key) {
+    key = tor_strdup(DUMMY_TAP_PUBKEY);
+  } else if (!rsa_pubkey) {
     if (consensus_method < MIN_METHOD_TO_PERMIT_ABSENT_TAP_KEYS) {
       /* This method does not support generating MDs without TAP keys. */
       goto done;
@@ -3941,7 +3983,7 @@ dirvote_create_microdescriptor(const routerinfo_t *ri, int consensus_method)
   }
 
   summary = policy_summarize(ri->exit_policy, AF_INET);
-  if (ri->declared_family && !omit_tap_and_fam_list)
+  if (ri->declared_family && !omit_fam_list)
     family = smartlist_join_strings(ri->declared_family, " ", 0, NULL);
 
   smartlist_add_asprintf(chunks, "onion-key\n%s", key);
@@ -4067,6 +4109,8 @@ static const struct consensus_method_range_t {
   { MIN_METHOD_TO_PERMIT_ABSENT_TAP_KEYS,
     MIN_METHOD_TO_OMIT_ALL_TAP_KEYS_AND_FAMILY_LISTS - 1},
   { MIN_METHOD_TO_OMIT_ALL_TAP_KEYS_AND_FAMILY_LISTS,
+    MIN_METHOD_TO_USE_DUMMY_TAP_KEYS - 1},
+  { MIN_METHOD_TO_USE_DUMMY_TAP_KEYS,
     MAX_SUPPORTED_CONSENSUS_METHOD},
   {-1, -1}
 };

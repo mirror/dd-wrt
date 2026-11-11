@@ -2,6 +2,30 @@ This document summarizes new features and bugfixes in each stable
 release of Tor. If you want to see more detailed descriptions of the
 changes in each development snapshot, see the ChangeLog file.
 
+Changes in version 0.4.9.16 - 2026-11-04
+  This is an emergency release affecting only directory authorities. It
+  includes fixes to address the thundering herd caused by the new required
+  protover values introduced in the previous release.
+
+  o Major features (authority):
+    - Work around a bug where old clients did not, in fact, correctly
+      handle unparseable microdescriptors in the way that we had hoped
+      that they would. We triggered this bug by omitting TAP keys from
+      microdescriptors. To solve this issue, instead of omitting TAP
+      keys, we replace them with a dummy TAP key. (This is safe, because
+      nothing has used TAP since v2 onion services.)
+    - New consensus method 38 added for this TAP dummy key.
+    - Revert back the required protover version for both "Desc" and "Microdesc"
+      from 3 to 2 which is causing <= 0.4.8.x clients to exit(1).
+
+  o Minor features (fallbackdir):
+    - Regenerate fallback directories generated on November 04, 2026.
+
+  o Minor bugfixes (dirauth):
+    - Let dir auth fetches be twice as big, to allow for the fact that 9
+      votes can exceed 16MB even compressed. Part of 41471; bugfix
+      on 0.3.5.1-alpha.
+
 Changes in version 0.4.9.15 - 2026-10-28
   This is another security release that includes new DoS defenses against large
   volumes of directory requests received by relays. Another significant change
@@ -20,6 +44,13 @@ Changes in version 0.4.9.15 - 2026-10-28
       desciptors and microdescriptors, saving a great deal of directory
       bandwidth. Because of this change, Tor versions 0.4.8 and earlier
       will no longer work on the network.
+
+  o Major bugfixes (clients):
+    - When an exit relay refuses a stream because it's hibernating or
+      out of file descriptors, clients would mark that relay as unsuitable
+      for exiting until the next restart. Now forgive the relay when
+      the next consensus arrives, which goes with the fix we already
+      made in ticket 7582. Fixes bug 41450; bugfix on 0.2.3.1-alpha.
 
   o Major features (directory authority):
     - Directory authorities provide a new consensus method that omits
@@ -108,6 +139,21 @@ Changes in version 0.4.9.15 - 2026-10-28
       connection) to serve items in the wrong order, leading to
       temporary starvation for higher-priority circuits. Fixes bug
       41428; bugfix on 0.2.2.7-alpha.
+
+  o Minor bugfixes (security):
+    - Fix a bug that a minority of directory authorities could use
+      to prevent a valid consensus from being generated.
+      Fixes bug 41456; bugfix on 0.2.1.5-alpha.
+      Tracked as TROVE-2026-072.
+
+  o Minor bugfixes (relay, channel padding):
+    - Clamp the netflow padding timeouts a peer negotiates with
+      PADDING_NEGOTIATE to the consensus maximum (60 seconds). Previously
+      a client could ask for up to 65.5 seconds, which the padding
+      scheduler then mistook for a clock jump once per second for
+      as long as the connection stayed idle, emitting an unthrottled
+      "Bug:" warning and a padding cell each time. Fixes bug 41441;
+      bugfix on 0.3.1.1-alpha.
 
 
 Changes in version 0.4.9.14 - 2026-10-07
