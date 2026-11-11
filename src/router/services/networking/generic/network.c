@@ -2184,7 +2184,7 @@ void start_lan(void)
 			// set proper mtu
 			if (!ifexists(realname))
 				continue;
-			/*
+				/*
 			 * Set the logical bridge address to that of the first interface 
 			 */
 
@@ -3424,18 +3424,22 @@ void run_wan(int status)
 						nvram_seti("3gnetmodetoggle", 1);
 					}
 				}
-				if (netmode == 0 || netmode == 6) {
-					printf("3g setting netmode with variant %s to mode %d\n", nvram_safe_get("3gnmvariant"), 4);
+				if (strlen(controldevice)) {
+					if (netmode == 0 || netmode == 6) {
+						fprintf(stdout, "3g setting netmode with variant %s to mode %d\n",
+							nvram_safe_get("3gnmvariant"), 4);
+						sysprintf(
+							"export COMGNMVARIANT=%s;export COMGTNM=%d;comgt -d %s -s /etc/comgt/netmode.comgt >/tmp/comgt-netmode.out",
+							nvram_safe_get("3gnmvariant"), 4, controldevice);
+						eval("comgt", "-d", controldevice, "-s", "/etc/comgt/cgatt.comgt");
+					}
 					sysprintf(
 						"export COMGNMVARIANT=%s;export COMGTNM=%d;comgt -d %s -s /etc/comgt/netmode.comgt >/tmp/comgt-netmode.out",
-						nvram_safe_get("3gnmvariant"), 4, controldevice);
-					sysprintf("comgt -d %s -s /etc/comgt/cgatt.comgt\n", controldevice);
+						nvram_safe_get("3gnmvariant"), netmode, controldevice);
+					fprintf(stdout, "3g setting netmode with variant %s to mode %d\n",
+						nvram_safe_get("3gnmvariant"), netmode);
+					eval("comgt", "-d", controldevice, "-s", "/etc/comgt/cgatt.comgt");
 				}
-				sysprintf(
-					"export COMGNMVARIANT=%s;export COMGTNM=%d;comgt -d %s -s /etc/comgt/netmode.comgt >/tmp/comgt-netmode.out",
-					nvram_safe_get("3gnmvariant"), netmode, controldevice);
-				printf("3g setting netmode with variant %s to mode %d\n", nvram_safe_get("3gnmvariant"), netmode);
-				sysprintf("comgt -d %s -s /etc/comgt/cgatt.comgt\n", controldevice);
 			}
 			// Wait for device to attach to the provider network
 			int retcgatt = 0;
@@ -4843,7 +4847,7 @@ static void apply_rules(char *method, char *pbr)
 		GETENTRYBYIDX_DEL(sport, word, 13, ":");
 		GETENTRYBYIDX_DEL(dport, word, 14, ":");
 		GETENTRYBYIDX_DEL(oif, word, 15, ":");
-		if (not)
+		if (not )
 			sprintf(cmd, "%s %s", cmd, "not");
 		if (from_en && from)
 			sprintf(cmd, "%s from %s", cmd, from);
