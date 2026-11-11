@@ -3483,6 +3483,13 @@ void run_wan(int status)
 					fprintf(fp, "pap-secrets /tmp/ppp/pap-secrets\n");
 				}
 
+	#ifdef HAVE_IPV6
+				if (nvram_matchi("ipv6_enable", 1)) {
+					fprintf(fp, "+ipv6\n");
+					if (nvram_matchi("ppp_demand", 1))
+						fprintf(fp, "ipv6 ,::123\n");
+				}
+	#endif
 				fprintf(fp, "defaultroute\n");
 				fprintf(fp, "usepeerdns\n");
 				fprintf(fp, "noipdefault\n");
