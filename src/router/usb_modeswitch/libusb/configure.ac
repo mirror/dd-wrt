@@ -220,7 +220,6 @@ linux)
 		], [])
 	else
 		AC_CHECK_HEADERS([asm/types.h])
-		AC_CHECK_HEADER([linux/netlink.h], [], [AC_MSG_ERROR([Linux netlink header not found])])
 		AC_CHECK_HEADER([sys/socket.h], [], [AC_MSG_ERROR([Linux socket header not found])])
 	fi
 	;;
