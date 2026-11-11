@@ -37,6 +37,7 @@
  "wan_wins"  "WAN WINS Server"  "MERGEIPADDRS"   "FALSE" "3"   
  "http_username"  "Router Username"  "NAME"  "63"  "TRUE" "3"   
  "http_passwd"  "Router Password"  "PASSWORD"  "63"  "TRUE"  "2"   
+ "autologoff_interval" "Auto-Logoff" "NULL" "TRUE" "0"
  "upnp_enable"  "UPnP"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"  
  "web_wl_filter"  "Wireless Access Web"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"  
  "http_enable"  "HTTP Server"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"  
