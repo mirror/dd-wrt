@@ -48,12 +48,6 @@ opengt
 #Huawei info from http://xob.kapsi.fi/~joneskoo/huawei.txt
  :variant2
  print "Variant #2 Huawei\n"
-#by default the syscfgex config might be wrong. so reset to default auto mode before configuring target
- let $a="AT\^SYSCFGEX=\"00\",3FFFFFFF,1,2,7FFFFFFFFFFFFFFF,,"
- send $a
- send "^m"
- waitfor 5 "OK","ERR","ERROR"
-#ignore any error
 
 # Auto 3G/2G
  if $env("COMGTNM") = "0" let $a="AT\^SYSCFG=2,0,3FFFFFFF,2,4"
@@ -67,14 +61,30 @@ opengt
  if $env("COMGTNM") = "4" let $a="AT\^SYSCFG=2,1,3FFFFFFF,2,4"
 # Force 4G
  if $env("COMGTNM") = "6" let $a="AT\^SYSCFGEX=\"03\",3FFFFFFF,1,2,7FFFFFFFFFFFFFFF,,"
- if $a = "" goto unknownmode
+
  send $a
  send "^m"
  waitfor 5 "OK","ERR","ERROR"
- if % = 0 goto continue
- if % = 1 goto senderror
- if % = 2 goto senderror
+
+# Auto 4G/3G/2G
+ if $env("COMGTNM") = "0" let $a="AT\^SYSCFGEX=\"00\",3FFFFFFF,1,2,7FFFFFFFFFFFFFFF,,"
+# Force 3G
+ if $env("COMGTNM") = "1" let $a="AT\^SYSCFGEX=\"02\",3FFFFFFF,1,2,7FFFFFFFFFFFFFFF,,"
+# Force 2G
+ if $env("COMGTNM") = "1" let $a="AT\^SYSCFGEX=\"01\",3FFFFFFF,1,2,7FFFFFFFFFFFFFFF,,"
+# Prefer 3G
+ if $env("COMGTNM") = "1" let $a="AT\^SYSCFGEX=\"020301\",3FFFFFFF,1,2,7FFFFFFFFFFFFFFF,,"
+# Prefer 2G
+ if $env("COMGTNM") = "1" let $a="AT\^SYSCFGEX=\"010302\",3FFFFFFF,1,2,7FFFFFFFFFFFFFFF,,"
+# Prefer 4G
+ if $env("COMGTNM") = "1" let $a="AT\^SYSCFGEX=\"030201\",3FFFFFFF,1,2,7FFFFFFFFFFFFFFF,,"
+
+ send $a
+ send "^m"
+ waitfor 5 "OK","ERR","ERROR"
+
  goto continue
+
 
 #Option info from http://www.wireless.att.com/answer-center/main.jsp?t=solutionTab&ft=searchTab&ps=solutionPanels&locale=en_US&_dyncharset=UTF-8&solutionId=58148&isSrch=Yes
  :variant3
