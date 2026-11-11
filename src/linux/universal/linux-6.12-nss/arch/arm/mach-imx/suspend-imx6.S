@@ -3,7 +3,6 @@
  * Copyright 2014 Freescale Semiconductor, Inc.
  */
 
-#include <linux/cfi_types.h>
 #include <linux/linkage.h>
 #include <asm/assembler.h>
 #include <asm/asm-offsets.h>
@@ -149,8 +148,7 @@
 
 	.endm
 
-/* fncpy() requires an 8-byte-aligned entry; see arch/arm/include/asm/fncpy.h */
-SYM_TYPED_FUNC_START_ALIGNED(imx6_suspend, 8)
+ENTRY(imx6_suspend)
 	ldr	r1, [r0, #PM_INFO_PBASE_OFFSET]
 	ldr	r2, [r0, #PM_INFO_RESUME_ADDR_OFFSET]
 	ldr	r3, [r0, #PM_INFO_DDR_TYPE_OFFSET]
@@ -331,4 +329,4 @@ resume:
 	resume_mmdc
 
 	ret	lr
-SYM_FUNC_END(imx6_suspend)
+ENDPROC(imx6_suspend)
