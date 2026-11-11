@@ -1443,6 +1443,7 @@ management.remote_allowanyip="Allow any Remote IP";
 management.remote_ip="Allowed Remote IP Range";
 management.web_legend="Web Access";
 management.web_refresh="Auto Refresh";
+management.web_logoff_interval="Auto Logoff Interval";
 management.web_authlimit="Reauthentication Limit";
 management.web_sysinfo="Enable Info Site";
 management.web_sysinfopass="Info Site Password Protection";

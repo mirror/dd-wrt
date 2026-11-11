@@ -34,6 +34,10 @@
 			<div class="label"><% tran("management.web_refresh"); %></div>
 			<input class="num" name="refresh_time" size="2" maxlength="2" value="<% nvram_get("refresh_time"); %>" />&nbsp;<% tran("share.seconds"); %>
 		</div>
+		<div class="setting">
+			<div class="label"><% tran("management.web_logoff_interval"); %></div>
+			<input class="num" name="autologoff_interval" size="3" maxlength="3" value="<% nvram_get("autologoff_interval"); %>" />&nbsp;<% tran("share.seconds"); %>
+		</div>
 	<!--	<div class="setting">
 			<div class="label"><% tran("management.web_authlimit"); %></div>
 			<input class="num" name="auth_limit" size="3" maxlength="3" value="<% nvram_get("auth_limit"); %>" />&nbsp;<% tran("share.seconds"); %>
