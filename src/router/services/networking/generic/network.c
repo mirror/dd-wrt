@@ -2184,7 +2184,7 @@ void start_lan(void)
 			// set proper mtu
 			if (!ifexists(realname))
 				continue;
-			/*
+				/*
 			 * Set the logical bridge address to that of the first interface 
 			 */
 
@@ -3431,6 +3431,11 @@ void run_wan(int status)
 						nvram_safe_get("3gnmvariant"), 4, controldevice);
 					sysprintf("comgt -d %s -s /etc/comgt/cgatt.comgt\n", controldevice);
 				}
+				// turn on auto mode before switching to final mode since huawei uses a different command for lte config
+				sysprintf(
+					"export COMGNMVARIANT=%s;export COMGTNM=%d;comgt -d %s -s /etc/comgt/netmode.comgt >/tmp/comgt-netmode.out",
+					nvram_safe_get("3gnmvariant"), 0, controldevice);
+				sysprintf("comgt -d %s -s /etc/comgt/cgatt.comgt\n", controldevice);
 				sysprintf(
 					"export COMGNMVARIANT=%s;export COMGTNM=%d;comgt -d %s -s /etc/comgt/netmode.comgt >/tmp/comgt-netmode.out",
 					nvram_safe_get("3gnmvariant"), netmode, controldevice);
@@ -4842,7 +4847,7 @@ static void apply_rules(char *method, char *pbr)
 		GETENTRYBYIDX_DEL(sport, word, 13, ":");
 		GETENTRYBYIDX_DEL(dport, word, 14, ":");
 		GETENTRYBYIDX_DEL(oif, word, 15, ":");
-		if (not)
+		if (not )
 			sprintf(cmd, "%s %s", cmd, "not");
 		if (from_en && from)
 			sprintf(cmd, "%s from %s", cmd, from);
