@@ -48,6 +48,7 @@ opengt
 #Huawei info from http://xob.kapsi.fi/~joneskoo/huawei.txt
  :variant2
  print "Variant #2 Huawei\n"
+#by default the syscfgex config might be wrong. so reset to default auto mode before configuring target
  let $a="AT\^SYSCFGEX=\"00\",3FFFFFFF,1,2,7FFFFFFFFFFFFFFF,,"
  send $a
  send "^m"
