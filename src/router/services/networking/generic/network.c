@@ -2184,7 +2184,7 @@ void start_lan(void)
 			// set proper mtu
 			if (!ifexists(realname))
 				continue;
-				/*
+			/*
 			 * Set the logical bridge address to that of the first interface 
 			 */
 
@@ -4847,7 +4847,7 @@ static void apply_rules(char *method, char *pbr)
 		GETENTRYBYIDX_DEL(sport, word, 13, ":");
 		GETENTRYBYIDX_DEL(dport, word, 14, ":");
 		GETENTRYBYIDX_DEL(oif, word, 15, ":");
-		if (not )
+		if (not)
 			sprintf(cmd, "%s %s", cmd, "not");
 		if (from_en && from)
 			sprintf(cmd, "%s from %s", cmd, from);
