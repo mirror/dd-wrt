@@ -37,6 +37,7 @@ void start_httpd(void)
 	char *ssl_lan_port = NULL;
 	stop_httpd();
 	mkdir("/tmp/cert", 0700);
+	system("rm -f /tmp/cert/*");
 	eval("gencert.sh", "-d", "/tmp/cert");
 	update_timezone();
 	chdir("/www");
