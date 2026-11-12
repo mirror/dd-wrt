@@ -514,9 +514,7 @@ int ath11k_crypto_disabled(void)
 				if (nvram_nmatch("disabled", "%s_akm", var))
 					return 1;
 			}
-		
 		}
-
 	}
 	return 0;
 }
@@ -1891,13 +1889,10 @@ void start_wifi_drivers(void)
 				set_gpio(7, 1);
 			}
 			if (nvram_match("5g_split", "1")) {
-				load_ath12k_internal(profile, 0, 0,
-						     is_wdssta(0) || is_wdssta(1) ? 1 : nvram_default_geti("ath12k_frame_mode", 2),
-						     cert_region, 1);
+				load_ath12k_internal(profile, 0, 0, nvram_default_geti("ath12k_frame_mode", 2), cert_region, 1);
 				wait_for_wifi(2);
 			} else {
-				load_ath12k_internal(profile, 0, 0, is_wdssta(0) ? 1 : nvram_default_geti("ath12k_frame_mode", 2),
-						     cert_region, 1);
+				load_ath12k_internal(profile, 0, 0, nvram_default_geti("ath12k_frame_mode", 2), cert_region, 1);
 				wait_for_wifi(1);
 			}
 			if (nvram_match("5g_split", "1")) {
