@@ -508,6 +508,7 @@ ifneq ($(CONFIG_OPENSSL),y)
 obj-$(CONFIG_WPA3) += wolfssl
 endif
 obj-$(CONFIG_WOLFSSL) += wolfssl eccert
+obj-$(CONFIG_WOLFSSLMIN) += eccert
 obj-$(CONFIG_HOSTAPD2) += hostapd2
 ifeq ($(KERNELVERSION),6.1)
 obj-$(CONFIG_HOSTAPD2) += json-c libubox json-c ubus libnltiny usteer
