@@ -438,14 +438,16 @@ EJ_VISIBLE void ej_show_wl_mac(webs_t wp, int argc, char_t **argv)
 
 	sprintf(wifmac, "%s_hwaddr", nvram_safe_get("wifi_display"));
 	sprintf(mode, "%s_mode", nvram_safe_get("wifi_display"));
+	char *wifimac = nvram_safe_get(wifmac);
+	char *wanmac = nvram_safe_get("wan_hwaddr");
 	/*
 	 * In client mode the WAN MAC is the Wireless MAC 
 	 */
 
 	if (nvram_match(mode, "sta") || nvram_match(mode, "apsta"))
-		websWrite(wp, "%s", nvram_safe_get("wan_hwaddr"));
+		websWrite(wp, "%s", *wanmac ? wanmac : "00:00:00:00:00:00");
 	else
-		websWrite(wp, "%s", nvram_safe_get(wifmac));
+		websWrite(wp, "%s", *wifimac ? wifimac : "00:00:00:00:00:00");
 
 	return;
 }
@@ -456,8 +458,9 @@ EJ_VISIBLE void ej_show_wl_mac(webs_t wp, int argc, char_t **argv)
 
 	char *ifname = nvram_safe_get("wifi_display");
 	sprintf(wifmac, "%s_hwaddr", ifname);
+	char *wifimac = nvram_safe_get(wifmac);
 
-	websWrite(wp, "%s", nvram_safe_get(wifmac));
+	websWrite(wp, "%s", *wifimac ? wifimac : "00:00:00:00:00:00");
 	return;
 }
 #endif
