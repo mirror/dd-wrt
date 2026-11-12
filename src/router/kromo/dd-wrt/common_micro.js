@@ -1543,7 +1543,7 @@ function auto_logoff_logout()
 		}
 	}
 
-	if (typeof update != 'undefined')
+	if (typeof update == 'object' && typeof update.stop == 'function')
 		update.stop();
 
 	clearInterval(logoff_timer);
