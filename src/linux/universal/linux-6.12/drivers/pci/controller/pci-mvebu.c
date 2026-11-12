@@ -1397,30 +1397,14 @@ static int mvebu_pcie_powerup(struct mvebu_pcie_port *port)
 
 	if (port->reset_gpio) {
 		u32 reset_udelay = PCI_PM_D3COLD_WAIT * 1000;
-		unsigned int i;
 
 		of_property_read_u32(port->dn, "reset-delay-us",
 				     &reset_udelay);
 
-		/*
-		 * The link-up check below is only meaningful once the link has
-		 * gone down: with a link trained by the bootloader it still
-		 * reads up right after PERST# is asserted, and the card would
-		 * be enumerated while it is still coming out of reset.
-		 */
-		for (i = 0; i < 100 && mvebu_pcie_link_up(port); i++)
-			msleep(1);
-
 		udelay(100);
 
 		gpiod_set_value_cansleep(port->reset_gpio, 0);
-		for (i = 0; i < reset_udelay; i += 1000) {
-			if (mvebu_pcie_link_up(port))
-				break;
-			msleep(1);
-		}
-
-		printk("%s: reset completed in %dus\n", port->name, i);
+		msleep(reset_udelay / 1000);
 	}
 
 	return 0;
@@ -1537,16 +1521,15 @@ static int mvebu_pcie_probe(struct platform_device *pdev)
 		if (!child)
 			continue;
 
+		ret = mvebu_pcie_powerup(port);
+		if (ret < 0)
+			continue;
+
 		port->base = mvebu_pcie_map_registers(pdev, child, port);
 		if (IS_ERR(port->base)) {
 			dev_err(dev, "%s: cannot map registers\n", port->name);
 			port->base = NULL;
-			continue;
-		}
-
-		ret = mvebu_pcie_powerup(port);
-		if (ret < 0) {
-			port->base = NULL;
+			mvebu_pcie_powerdown(port);
 			continue;
 		}
 
