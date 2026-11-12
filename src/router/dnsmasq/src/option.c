@@ -4061,6 +4061,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	new->netid = NULL;
 	new->filter = NULL;
 	new->clid = NULL;
+	new->hostname = NULL
 #ifdef HAVE_DHCP6
 	new->addr6 = NULL;
 #endif
