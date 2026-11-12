@@ -35,7 +35,9 @@ eccert: eccert.c $(EC_SRC)
 install:
 	mkdir -p $(INSTALLDIR)/usr/sbin
 	cp -f eccert $(INSTALLDIR)/usr/sbin
-
+	cp -f gencert.sh $(INSTALLDIR)/usr/sbin
+	chmod 777 $(INSTALLDIR)/usr/sbin/gencert.sh
+	
 test: eccert
 	tests/check.sh ./eccert
 
