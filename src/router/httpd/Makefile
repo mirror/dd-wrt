@@ -1645,7 +1645,7 @@ vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src validate visua
 	@echo "[CC] $@"
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: generate httpd_static cert
+all: generate httpd_static
 
 generate:
 	@echo "[GENWWW] gen"
@@ -1673,7 +1673,9 @@ ifneq ($(CONFIG_LITE),y)
 #	install -D visuals.so $(INSTALLDIR)/usr/lib
 ifneq ($(CONFIG_NOSSL),y)
 	install -d $(INSTALLDIR)/etc
-	install *.pem $(INSTALLDIR)/etc
+	cd $(INSTALLDIR)/etc && ln -sf /tmp/cert/key.pem key.pem
+	cd $(INSTALLDIR)/etc && ln -sf /tmp/cert/cert.pem cert.pem
+#	install *.pem $(INSTALLDIR)/etc
 endif
 endif
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf httpd httpsclient
