@@ -203,7 +203,7 @@ static void do_pagehead(webs_t wp, int argc, char_t **argv, int pwc) // Eko
 	websWrite(wp, "      });");
 	websWrite(wp, "   auto_logoff_timer_reset(%s);", nvram_safe_get("autologoff_interval"));
 	websWrite(wp, "}");
-	websWrite(wp, "</script>;");
+	websWrite(wp, "</script>");
 
 	time_t t = time(NULL);
 	struct tm *local = localtime(&t);
