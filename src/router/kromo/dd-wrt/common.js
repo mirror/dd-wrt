@@ -1651,9 +1651,6 @@ function auto_logoff_logoff()
 
 function auto_logoff_logout()
 {
-	clearInterval(logoff_timer);
-	auto_logoff_logoff();
-
 	if (window.location.pathname != "/" && window.location.pathname != "/Info.htm")
 	{
 		if (document.location.port != "") {
@@ -1662,6 +1659,12 @@ function auto_logoff_logout()
 			document.location = document.location.protocol + '//' + document.location.hostname + '/'; 
 		}
 	}
+
+	if (typeof update != 'undefined')
+		update.stop();
+
+	clearInterval(logoff_timer);
+	auto_logoff_logoff();
 }
 
 function auto_logoff_timer_increment()
