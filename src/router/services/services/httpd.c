@@ -27,6 +27,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <services.h>
+#include <sys/stat.h>
 
 void start_httpd(void)
 {
