@@ -668,7 +668,6 @@ static void otto_mac_93xx_phylink_link_up(struct phylink_config *config,
 
 	/* Keep force mode active while switching hardware link sources. */
 	if (force_dynamic_phy)
-	if (force_dynamic_phy)
 		otto_mac_link_state_source_set(priv, port,
 					       RTLDSA_MAC_LINK_STATE_SOURCE_PHY,
 					       interface);
