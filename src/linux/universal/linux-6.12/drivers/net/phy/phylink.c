@@ -65,6 +65,8 @@ struct phylink {
 
 	/* The link configuration settings */
 	struct phylink_link_state link_config;
+	/* Physical media state, protected by state_mutex. */
+	struct phylink_media media;
 
 	/* List of available PCS */
 	struct list_head pcs_list;
@@ -1165,15 +1167,20 @@ static int phylink_pcs_enable(struct phylink_pcs *pcs)
 	return err;
 }
 
-static int phylink_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+static int phylink_pcs_config(struct phylink *pl, unsigned int neg_mode,
 			      const struct phylink_link_state *state,
 			      bool permit_pause_to_mac)
 {
-	if (!pcs)
+	struct phylink_pcs *pcs = pl->pcs;
+
+	lockdep_assert_held(&pl->state_mutex);
+
+	if (!pcs || (pl->media.type == PHYLINK_MEDIA_NONE && !pcs->media_teardown))
 		return 0;
 
 	return pcs->ops->pcs_config(pcs, neg_mode, state->interface,
-				    state->advertising, permit_pause_to_mac);
+				    state->advertising, permit_pause_to_mac,
+				    &pl->media);
 }
 
 static void phylink_pcs_link_up(struct phylink_pcs *pcs, unsigned int neg_mode,
@@ -1598,7 +1605,7 @@ static void phylink_major_config(struct phylink *pl, bool restart,
 	if (pl->pcs && pl->pcs->neg_mode)
 		neg_mode = pl->pcs_neg_mode;
 
-	err = phylink_pcs_config(pl->pcs, neg_mode, state,
+	err = phylink_pcs_config(pl, neg_mode, state,
 				 !!(pl->link_config.pause & MLO_PAUSE_AN));
 	if (err < 0) {
 		phylink_err(pl, "pcs_config failed: %pe\n", ERR_PTR(err));
@@ -1672,7 +1679,7 @@ static int phylink_change_inband_advert(struct phylink *pl)
 	 * restart negotiation if the pcs_config() helper indicates that
 	 * the programmed advertisement has changed.
 	 */
-	ret = phylink_pcs_config(pl->pcs, neg_mode, &pl->link_config,
+	ret = phylink_pcs_config(pl, neg_mode, &pl->link_config,
 				 !!(pl->link_config.pause & MLO_PAUSE_AN));
 	if (ret < 0)
 		return ret;
@@ -1852,6 +1859,9 @@ static void phylink_resolve(struct work_struct *w)
 	else
 		cur_link_state = pl->old_link_state;
 
+	/* Forced configuration also needs a complete state on early-down paths. */
+	link_state = pl->link_config;
+
 	if (pl->phylink_disable_state) {
 		pl->link_failed = false;
 		link_state.link = false;
@@ -2007,6 +2017,12 @@ static int phylink_register_sfp(struct phylink *pl,
 	}
 
 	pl->sfp_bus = bus;
+	if (bus) {
+		mutex_lock(&pl->state_mutex);
+		pl->media.type = PHYLINK_MEDIA_NONE;
+		pl->media.generation++;
+		mutex_unlock(&pl->state_mutex);
+	}
 
 	ret = sfp_bus_add_upstream(bus, pl, &sfp_phylink_ops);
 	sfp_bus_put(bus);
@@ -3710,6 +3726,33 @@ int phylink_speed_up(struct phylink *pl)
 }
 EXPORT_SYMBOL_GPL(phylink_speed_up);
 
+static bool phylink_link_is_up(struct phylink *pl)
+{
+	return pl->netdev ? netif_carrier_ok(pl->netdev) : pl->old_link_state;
+}
+
+static void phylink_sfp_clear_media(struct phylink *pl)
+{
+	int ret;
+
+	mutex_lock(&pl->state_mutex);
+	set_bit(PHYLINK_DISABLE_LINK, &pl->phylink_disable_state);
+	pl->media.type = PHYLINK_MEDIA_NONE;
+	pl->media.cable_len_m = 0;
+	pl->media.generation++;
+
+	/* Removal must reach the PCS even if the link never came up. */
+	if (phylink_link_is_up(pl)) {
+		phylink_link_down(pl);
+		pl->old_link_state = false;
+	}
+	ret = phylink_pcs_config(pl, pl->pcs_neg_mode, &pl->link_config,
+				 !!(pl->link_config.pause & MLO_PAUSE_AN));
+	if (ret < 0)
+		phylink_err(pl, "PCS media removal failed: %pe\n", ERR_PTR(ret));
+	mutex_unlock(&pl->state_mutex);
+}
+
 static void phylink_sfp_attach(void *upstream, struct sfp_bus *bus)
 {
 	struct phylink *pl = upstream;
@@ -3721,6 +3764,7 @@ static void phylink_sfp_detach(void *upstream, struct sfp_bus *bus)
 {
 	struct phylink *pl = upstream;
 
+	phylink_sfp_clear_media(pl);
 	pl->netdev->sfp_bus = NULL;
 }
 
@@ -3742,10 +3786,9 @@ static phy_interface_t phylink_choose_sfp_interface(struct phylink *pl,
 
 static void phylink_sfp_set_config(struct phylink *pl,
 				   unsigned long *supported,
-				   struct phylink_link_state *state)
+				   struct phylink_link_state *state, bool changed)
 {
 	u8 mode = MLO_AN_INBAND;
-	bool changed = false;
 
 	phylink_dbg(pl, "requesting link mode %s/%s with support %*pb\n",
 		    phylink_an_mode_str(mode), phy_modes(state->interface),
@@ -3827,7 +3870,7 @@ static int phylink_sfp_config_phy(struct phylink *pl, struct phy_device *phy)
 
 	pl->link_port = pl->sfp_port;
 
-	phylink_sfp_set_config(pl, support, &config);
+	phylink_sfp_set_config(pl, support, &config, false);
 
 	return 0;
 }
@@ -3920,7 +3963,8 @@ static int phylink_sfp_config_optical(struct phylink *pl)
 
 	pl->link_port = pl->sfp_port;
 
-	phylink_sfp_set_config(pl, pl->sfp_support, &config);
+	/* A replacement may need setup with exactly the same interface/profile. */
+	phylink_sfp_set_config(pl, pl->sfp_support, &config, true);
 
 	return 0;
 }
@@ -3929,6 +3973,7 @@ static int phylink_sfp_module_insert(void *upstream,
 				     const struct sfp_eeprom_id *id)
 {
 	struct phylink *pl = upstream;
+	int ret;
 
 	ASSERT_RTNL();
 
@@ -3937,12 +3982,32 @@ static int phylink_sfp_module_insert(void *upstream,
 	sfp_parse_support(pl->sfp_bus, id, pl->sfp_support, pl->sfp_interfaces);
 	pl->sfp_port = sfp_parse_port(pl->sfp_bus, id, pl->sfp_support);
 
+	mutex_lock(&pl->state_mutex);
+	pl->media.type = PHYLINK_MEDIA_OPTICAL;
+	pl->media.cable_len_m = 0;
+
+	if (pl->sfp_port == PORT_TP) {
+		pl->media.type = PHYLINK_MEDIA_PHY;
+	} else if (id->base.sfp_ct_active) {
+		pl->media.type = PHYLINK_MEDIA_CABLE_ACTIVE;
+	} else if (id->base.sfp_ct_passive) {
+		pl->media.type = PHYLINK_MEDIA_DAC_PASSIVE;
+		pl->media.cable_len_m =
+			id->base.link_len[SFP_LINK_LEN_COPPER_1M - SFP_LINK_LEN_SM_KM];
+	}
+	pl->media.generation++;
+	mutex_unlock(&pl->state_mutex);
+
 	/* If this module may have a PHY connecting later, defer until later */
 	pl->sfp_may_have_phy = sfp_may_have_phy(pl->sfp_bus, id);
 	if (pl->sfp_may_have_phy)
 		return 0;
 
-	return phylink_sfp_config_optical(pl);
+	ret = phylink_sfp_config_optical(pl);
+	/* A rejected insertion is not paired with module_remove() by SFP core. */
+	if (ret < 0)
+		phylink_sfp_clear_media(pl);
+	return ret;
 }
 
 static int phylink_sfp_module_start(void *upstream)
@@ -3967,6 +4032,8 @@ static int phylink_sfp_module_start(void *upstream)
 static void phylink_sfp_module_stop(void *upstream)
 {
 	struct phylink *pl = upstream;
+
+	phylink_sfp_clear_media(pl);
 
 	/* If this SFP module has a PHY, stop it. */
 	if (pl->phydev)

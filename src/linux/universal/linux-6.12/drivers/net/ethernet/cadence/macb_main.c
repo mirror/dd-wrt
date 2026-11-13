@@ -599,7 +599,7 @@ static int macb_usx_pcs_config(struct phylink_pcs *pcs,
 			       unsigned int neg_mode,
 			       phy_interface_t interface,
 			       const unsigned long *advertising,
-			       bool permit_pause_to_mac)
+			       bool permit_pause_to_mac, const struct phylink_media *media)
 {
 	struct macb *bp = container_of(pcs, struct macb, phylink_usx_pcs);
 
@@ -624,7 +624,7 @@ static int macb_pcs_config(struct phylink_pcs *pcs,
 			   unsigned int neg_mode,
 			   phy_interface_t interface,
 			   const unsigned long *advertising,
-			   bool permit_pause_to_mac)
+			   bool permit_pause_to_mac, const struct phylink_media *media)
 {
 	return 0;
 }

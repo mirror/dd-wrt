@@ -185,7 +185,8 @@ static void miic_converter_enable(struct miic *miic, int port, int enable)
 
 static int miic_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		       phy_interface_t interface,
-		       const unsigned long *advertising, bool permit)
+		       const unsigned long *advertising, bool permit,
+		       const struct phylink_media *media)
 {
 	struct miic_port *miic_port = phylink_pcs_to_miic_port(pcs);
 	struct miic *miic = miic_port->miic;

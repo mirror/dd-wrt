@@ -169,7 +169,8 @@ static int lynx_pcs_config_usxgmii(struct mdio_device *pcs,
 
 static int lynx_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			   phy_interface_t ifmode,
-			   const unsigned long *advertising, bool permit)
+			   const unsigned long *advertising, bool permit,
+			   const struct phylink_media *media)
 {
 	struct lynx_pcs *lynx = phylink_pcs_to_lynx(pcs);
 

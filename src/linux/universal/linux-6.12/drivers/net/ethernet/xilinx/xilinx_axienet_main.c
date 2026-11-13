@@ -2400,7 +2400,7 @@ static void axienet_pcs_an_restart(struct phylink_pcs *pcs)
 static int axienet_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			      phy_interface_t interface,
 			      const unsigned long *advertising,
-			      bool permit_pause_to_mac)
+			      bool permit_pause_to_mac, const struct phylink_media *media)
 {
 	struct mdio_device *pcs_phy = pcs_to_axienet_local(pcs)->pcs_phy;
 	struct net_device *ndev = pcs_to_axienet_local(pcs)->ndev;

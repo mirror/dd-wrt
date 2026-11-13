@@ -766,7 +766,7 @@ static void dtsec_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 static int dtsec_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			    phy_interface_t interface,
 			    const unsigned long *advertising,
-			    bool permit_pause_to_mac)
+			    bool permit_pause_to_mac, const struct phylink_media *media)
 {
 	struct fman_mac *dtsec = pcs_to_dtsec(pcs);
 

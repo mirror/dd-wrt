@@ -98,7 +98,7 @@ static void mv88e6185_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mo
 static int mv88e6185_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 				phy_interface_t interface,
 				const unsigned long *advertising,
-				bool permit_pause_to_mac)
+				bool permit_pause_to_mac, const struct phylink_media *media)
 {
 	return 0;
 }

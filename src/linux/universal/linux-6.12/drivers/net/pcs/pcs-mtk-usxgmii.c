@@ -120,7 +120,7 @@ static void mtk_usxgmii_reset(struct mtk_usxgmii_pcs *mpcs)
 static int mtk_usxgmii_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 				  phy_interface_t interface,
 				  const unsigned long *advertising,
-				  bool permit_pause_to_mac)
+				  bool permit_pause_to_mac, const struct phylink_media *media,const struct phylink_media *media)
 {
 	struct mtk_usxgmii_pcs *mpcs = pcs_to_mtk_usxgmii_pcs(pcs);
 	unsigned int an_ctrl = 0, link_timer = 0, xfi_mode = 0, adapt_mode = 0;
@@ -297,7 +297,7 @@ static void mtk_usxgmii_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_
 	/* Continuously repeat re-configuration sequence until link comes up */
 	if (!state->link) {
 		mtk_usxgmii_pcs_config(pcs, mpcs->neg_mode,
-				       state->interface, NULL, false);
+				       state->interface, NULL, false, NULL);
 		return;
 	}
 
@@ -321,7 +321,7 @@ static void mtk_usxgmii_pcs_link_up(struct phylink_pcs *pcs, unsigned int neg_mo
 	/* Reconfiguring USXGMII to ensure the quality of the RX signal
 	 * after the line side link up.
 	 */
-	mtk_usxgmii_pcs_config(pcs, neg_mode, interface, NULL, false);
+	mtk_usxgmii_pcs_config(pcs, neg_mode, interface, NULL, false, NULL);
 }
 
 static void mtk_usxgmii_pcs_disable(struct phylink_pcs *pcs)

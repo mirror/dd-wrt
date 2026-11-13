@@ -201,7 +201,7 @@ static int mtk_pcs_config_polarity(struct mtk_pcs_lynxi *mpcs,
 static int mtk_pcs_lynxi_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 				phy_interface_t interface,
 				const unsigned long *advertising,
-				bool permit_pause_to_mac)
+				bool permit_pause_to_mac, const struct phylink_media *media,const struct phylink_media *media)
 {
 	struct mtk_pcs_lynxi *mpcs = pcs_to_mtk_pcs_lynxi(pcs);
 	bool mode_changed = false, changed;

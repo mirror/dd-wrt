@@ -6253,7 +6253,7 @@ static void mvpp2_xlg_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mo
 static int mvpp2_xlg_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 				phy_interface_t interface,
 				const unsigned long *advertising,
-				bool permit_pause_to_mac)
+				bool permit_pause_to_mac, const struct phylink_media *media)
 {
 	return 0;
 }
@@ -6323,7 +6323,7 @@ static void mvpp2_gmac_pcs_get_state(struct phylink_pcs *pcs,
 static int mvpp2_gmac_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 				 phy_interface_t interface,
 				 const unsigned long *advertising,
-				 bool permit_pause_to_mac)
+				 bool permit_pause_to_mac, const struct phylink_media *media)
 {
 	struct mvpp2_port *port = mvpp2_pcs_gmac_to_port(pcs);
 	u32 mask, val, an, old_an, changed;

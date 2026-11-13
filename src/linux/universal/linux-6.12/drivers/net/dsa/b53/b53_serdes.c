@@ -68,7 +68,7 @@ static u16 b53_serdes_read(struct b53_device *dev, u8 lane,
 static int b53_serdes_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			     phy_interface_t interface,
 			     const unsigned long *advertising,
-			     bool permit_pause_to_mac)
+			     bool permit_pause_to_mac, const struct phylink_media *media)
 {
 	struct b53_device *dev = pcs_to_b53_pcs(pcs)->dev;
 	u8 lane = pcs_to_b53_pcs(pcs)->lane;

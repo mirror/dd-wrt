@@ -886,7 +886,7 @@ EXPORT_SYMBOL_GPL(xpcs_do_config);
 static int xpcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		       phy_interface_t interface,
 		       const unsigned long *advertising,
-		       bool permit_pause_to_mac)
+		       bool permit_pause_to_mac, const struct phylink_media *media)
 {
 	struct dw_xpcs *xpcs = phylink_pcs_to_xpcs(pcs);
 

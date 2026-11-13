@@ -298,7 +298,7 @@ static int mv88e639x_sgmii_pcs_config(struct phylink_pcs *pcs,
 				      unsigned int neg_mode,
 				      phy_interface_t interface,
 				      const unsigned long *advertising,
-				      bool permit_pause_to_mac)
+				      bool permit_pause_to_mac, const struct phylink_media *media)
 {
 	struct mv88e639x_pcs *mpcs = sgmii_pcs_to_mv88e639x_pcs(pcs);
 	u16 val, bmcr;
@@ -437,7 +437,7 @@ static int mv88e639x_xg_pcs_config(struct phylink_pcs *pcs,
 				   unsigned int neg_mode,
 				   phy_interface_t interface,
 				   const unsigned long *advertising,
-				   bool permit_pause_to_mac)
+				   bool permit_pause_to_mac, const struct phylink_media *media)
 {
 	return 0;
 }

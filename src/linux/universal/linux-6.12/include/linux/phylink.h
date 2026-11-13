@@ -405,6 +405,39 @@ void mac_link_up(struct phylink_config *config, struct phy_device *phy,
 struct phylink_pcs_ops;
 
 /**
+ * enum phylink_media_type - physical connection beyond the PCS
+ * @PHYLINK_MEDIA_UNSPEC: unspecified, retain the driver's non-SFP defaults
+ * @PHYLINK_MEDIA_NONE: no module attached
+ * @PHYLINK_MEDIA_OPTICAL: optical module
+ * @PHYLINK_MEDIA_DAC_PASSIVE: passive direct-attach copper cable
+ * @PHYLINK_MEDIA_CABLE_ACTIVE: active cable
+ * @PHYLINK_MEDIA_PHY: module with a twisted-pair PHY
+ */
+enum phylink_media_type {
+	PHYLINK_MEDIA_UNSPEC,
+	PHYLINK_MEDIA_NONE,
+	PHYLINK_MEDIA_OPTICAL,
+	PHYLINK_MEDIA_DAC_PASSIVE,
+	PHYLINK_MEDIA_CABLE_ACTIVE,
+	PHYLINK_MEDIA_PHY,
+};
+
+/**
+ * struct phylink_media - requested physical media configuration
+ * @type: physical connection type, independent of the host interface
+ * @cable_len_m: passive cable length in metres, zero if unknown
+ * @generation: attachment generation, changes even for same-profile replacement
+ *
+ * Owned by phylink and read-only during pcs_config(). Drivers must copy any
+ * information needed afterwards. Generation is local to the phylink instance.
+ */
+struct phylink_media {
+	enum phylink_media_type type;
+	unsigned int cable_len_m;
+	u64 generation;
+};
+
+/**
  * struct phylink_pcs - PHYLINK PCS instance
  * @supported_interfaces: describing which PHY_INTERFACE_MODE_xxx
  *                        are supported by this PCS.
@@ -430,6 +463,8 @@ struct phylink_pcs {
 	bool neg_mode;
 	bool poll;
 	bool rxc_always_on;
+	/** @media_teardown: accepts media-none configuration for attachment teardown */
+	bool media_teardown;
 
 	/* private: */
 	struct list_head list;
@@ -468,7 +503,8 @@ struct phylink_pcs_ops {
 	int (*pcs_config)(struct phylink_pcs *pcs, unsigned int neg_mode,
 			  phy_interface_t interface,
 			  const unsigned long *advertising,
-			  bool permit_pause_to_mac);
+			  bool permit_pause_to_mac,
+			  const struct phylink_media *media);
 	void (*pcs_an_restart)(struct phylink_pcs *pcs);
 	void (*pcs_link_up)(struct phylink_pcs *pcs, unsigned int neg_mode,
 			    phy_interface_t interface, int speed, int duplex);
@@ -542,6 +578,7 @@ void pcs_get_state(struct phylink_pcs *pcs,
  * @interface: interface mode to be used
  * @advertising: adertisement ethtool link mode mask
  * @permit_pause_to_mac: permit forwarding pause resolution to MAC
+ * @media: current physical media and attachment generation
  *
  * Configure the PCS for the operating mode, the interface mode, and set
  * the advertisement mask. @permit_pause_to_mac indicates whether the
@@ -563,7 +600,7 @@ void pcs_get_state(struct phylink_pcs *pcs,
  */
 int pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	       phy_interface_t interface, const unsigned long *advertising,
-	       bool permit_pause_to_mac);
+	       bool permit_pause_to_mac, const struct phylink_media *media);
 
 /**
  * pcs_an_restart() - restart 802.3z BaseX autonegotiation
