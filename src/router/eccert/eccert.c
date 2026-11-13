@@ -655,6 +655,7 @@ static void load_csr(const char *fn, const u8 **subj, size_t *sl, u8 pub[64],
 	static const u8 EXTREQ[] = {0x06,0x09,0x2a,0x86,0x48,0x86,0xf7,0x0d,0x01,0x09,0x0e};
 	static const u8 SAN[] = {0x06, 0x03, 0x55, 0x1d, 0x11};
 	static char txt[MAXBUF + 1]; static u8 der[MAXBUF];
+	int i;
 	readfile(fn, (u8 *)txt, sizeof txt - 1);
 	size_t n = pem_decode(txt, "CERTIFICATE REQUEST", der, 0);
 	if (!n) n = pem_decode(txt, "NEW CERTIFICATE REQUEST", der, 0);
@@ -690,7 +691,7 @@ static void load_csr(const char *fn, const u8 **subj, size_t *sl, u8 pub[64],
 	rd q = { sig.c + 1, sig.c + sig.len };
 	if (!r_expect(&q, &t, 0x30)) goto bad;
 	q = r_in(&t);
-	for (int i = 0; i < 2; i++) {
+	for (i = 0; i < 2; i++) {
 		if (!r_expect(&q, &x, 0x02)) goto bad;
 		const u8 *p = x.c; size_t l = x.len;
 		while (l > 32 && !*p) p++, l--;
@@ -846,9 +847,10 @@ static long num(const char *s)
 
 int main(int argc, char **argv)
 {
+	int i;
 	if (argc < 2) usage();
 	ec_init();
-	for (int i = 2; i < argc; i++) {
+	for (i = 2; i < argc; i++) {
 		const char *a = argv[i], *v = i + 1 < argc ? argv[i + 1] : 0;
 		const char **sp = !strcmp(a, "-out") ? &opt.out : !strcmp(a, "-key") ? &opt.key :
 			!strcmp(a, "-csr") ? &opt.csr : !strcmp(a, "-subj") ? &opt.subj :

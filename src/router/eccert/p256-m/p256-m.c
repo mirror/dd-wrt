@@ -68,8 +68,9 @@
  */
 static void u256_set32(uint32_t z[8], uint32_t x)
 {
+    unsigned i;
     z[0] = x;
-    for (unsigned i = 1; i < 8; i++) {
+    for (i = 1; i < 8; i++) {
         z[i] = 0;
     }
 }
@@ -88,8 +89,9 @@ static uint32_t u256_add(uint32_t z[8],
                          const uint32_t x[8], const uint32_t y[8])
 {
     uint32_t carry = 0;
+    unsigned i;
 
-    for (unsigned i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++) {
         uint64_t sum = (uint64_t) carry + x[i] + y[i];
         z[i] = (uint32_t) sum;
         carry = (uint32_t) (sum >> 32);
@@ -112,8 +114,9 @@ static uint32_t u256_sub(uint32_t z[8],
                          const uint32_t x[8], const uint32_t y[8])
 {
     uint32_t carry = 0;
+    unsigned i;
 
-    for (unsigned i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++) {
         uint64_t diff = (uint64_t) x[i] - y[i] - carry;
         z[i] = (uint32_t) diff;
         carry = -(uint32_t) (diff >> 32);
@@ -134,7 +137,9 @@ static uint32_t u256_sub(uint32_t z[8],
 static void u256_cmov(uint32_t z[8], const uint32_t x[8], uint32_t c)
 {
     const uint32_t x_mask = -c;
-    for (unsigned i = 0; i < 8; i++) {
+    unsigned i;
+
+    for (i = 0; i < 8; i++) {
         z[i] = (z[i] & ~x_mask) | (x[i] & x_mask);
     }
 }
@@ -149,7 +154,9 @@ static void u256_cmov(uint32_t z[8], const uint32_t x[8], uint32_t c)
 static uint32_t u256_diff(const uint32_t x[8], const uint32_t y[8])
 {
     uint32_t diff = 0;
-    for (unsigned i = 0; i < 8; i++) {
+    unsigned i;
+
+    for (i = 0; i < 8; i++) {
         diff |= x[i] ^ y[i];
     }
     return diff;
@@ -164,7 +171,9 @@ static uint32_t u256_diff(const uint32_t x[8], const uint32_t y[8])
 static uint32_t u256_diff0(const uint32_t x[8])
 {
     uint32_t diff = 0;
-    for (unsigned i = 0; i < 8; i++) {
+    unsigned i;
+
+    for (i = 0; i < 8; i++) {
         diff |= x[i];
     }
     return diff;
@@ -350,7 +359,7 @@ static uint64_t u32_muladd64(uint32_t x, uint32_t y, uint32_t z, uint32_t t)
 static uint32_t u288_muladd(uint32_t z[9], uint32_t x, const uint32_t y[8])
 {
     uint32_t carry = 0;
-
+    unsigned i;
 #define U288_MULADD_STEP(i) \
     do { \
         uint64_t prod = u32_muladd64(x, y[i], z[i], carry); \
@@ -368,7 +377,7 @@ static uint32_t u288_muladd(uint32_t z[9], uint32_t x, const uint32_t y[8])
     U288_MULADD_STEP(6);
     U288_MULADD_STEP(7);
 #else
-    for (unsigned i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++) {
         U288_MULADD_STEP(i);
     }
 #endif
@@ -392,7 +401,9 @@ static uint32_t u288_muladd(uint32_t z[9], uint32_t x, const uint32_t y[8])
  */
 static void u288_rshift32(uint32_t z[9], uint32_t c)
 {
-    for (unsigned i = 0; i < 8; i++) {
+    unsigned i;
+    
+    for (i = 0; i < 8; i++) {
         z[i] = z[i + 1];
     }
     z[8] = c;
@@ -406,8 +417,10 @@ static void u288_rshift32(uint32_t z[9], uint32_t c)
  */
 static void u256_from_bytes(uint32_t z[8], const uint8_t p[32])
 {
-    for (unsigned i = 0; i < 8; i++) {
-        unsigned j = 4 * (7 - i);
+    unsigned i, j;
+
+    for (i = 0; i < 8; i++) {
+        j = 4 * (7 - i);
         z[i] = ((uint32_t) p[j + 0] << 24) |
                ((uint32_t) p[j + 1] << 16) |
                ((uint32_t) p[j + 2] <<  8) |
@@ -424,8 +437,10 @@ static void u256_from_bytes(uint32_t z[8], const uint8_t p[32])
  */
 static void u256_to_bytes(uint8_t p[32], const uint32_t z[8])
 {
-    for (unsigned i = 0; i < 8; i++) {
-        unsigned j = 4 * (7 - i);
+    unsigned i,j;
+
+    for (i = 0; i < 8; i++) {
+        j = 4 * (7 - i);
         p[j + 0] = (uint8_t) (z[i] >> 24);
         p[j + 1] = (uint8_t) (z[i] >> 16);
         p[j + 2] = (uint8_t) (z[i] >>  8);
@@ -591,12 +606,13 @@ static void m256_mul(uint32_t z[8],
      */
     uint32_t m_prime = mod->ni;
     uint32_t a[9];
+    unsigned i;
 
-    for (unsigned i = 0; i < 9; i++) {
+    for (i = 0; i < 9; i++) {
         a[i] = 0;
     }
 
-    for (unsigned i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++) {
         /* the "mod 2^32" is implicit from the type */
         uint32_t u = (a[0] + x[i] * y[0]) * m_prime;
 
@@ -698,10 +714,10 @@ static void m256_inv(uint32_t z[8], const uint32_t x[8],
 
     m256_set32(z, 1, mod);
 
-    unsigned i = 0;
+    unsigned i = 0, j;
     uint32_t limb = mod->m[i] - 2;
     while (1) {
-        for (unsigned j = 0; j < 32; j++) {
+        for (j = 0; j < 32; j++) {
             if ((limb & 1) != 0) {
                 m256_mul(z, z, bitval, mod);
             }
@@ -823,6 +839,7 @@ static const uint32_t p256_gy[8] = { /* G_y * 2^256 mod p */
 static uint32_t point_check(const uint32_t x[8], const uint32_t y[8])
 {
     uint32_t lhs[8], rhs[8];
+    unsigned i;
 
     /* lhs = y^2 */
     m256_mul_p(lhs, y, y);
@@ -830,7 +847,7 @@ static uint32_t point_check(const uint32_t x[8], const uint32_t y[8])
     /* rhs = x^3 - 3x + b */
     m256_mul_p(rhs, x,   x);      /* x^2 */
     m256_mul_p(rhs, rhs, x);      /* x^3 */
-    for (unsigned i = 0; i < 3; i++)
+    for (i = 0; i < 3; i++)
         m256_sub_p(rhs, rhs, x);  /* x^3 - 3x */
     m256_add_p(rhs, rhs, p256_b); /* x^3 - 3x + b */
 
@@ -1058,6 +1075,8 @@ static void scalar_mult(uint32_t rx[8], uint32_t ry[8],
                         const uint32_t px[8], const uint32_t py[8],
                         const uint32_t s[8])
 {
+    unsigned i;
+
     /*
      * We use a signed binary ladder, see for example slides 10-14 of
      * http://ecc2015.math.u-bordeaux1.fr/documents/hamburg.pdf but with
@@ -1114,7 +1133,7 @@ static void scalar_mult(uint32_t rx[8], uint32_t ry[8],
      *      Otherwise, s_odd = n-2, and for this curve's value of n,
      *      we have b1 == 1, so sbit(b1) = 1 and 2 s_1 <= n-3.
      */
-    for (unsigned i = 255; i > 0; i--) {
+    for (i = 255; i > 0; i--) {
         uint32_t bit = (s_odd[i / 32] >> i % 32) & 1;
 
         /* set (px, py_use) = sbit(bit) P' = sbit(bit) * (-1)^negate P */
@@ -1297,13 +1316,15 @@ static void ecdsa_m256_mod_n(uint32_t x[8])
 static void ecdsa_m256_from_hash(uint32_t z[8],
                                  const uint8_t *h, size_t hlen)
 {
+    unsigned i;
+
     /* convert from h (big-endian) */
     /* hlen is public data so it's OK to branch on it */
     if (hlen < 32) {
         uint8_t p[32];
-        for (unsigned i = 0; i < 32; i++)
+        for (i = 0; i < 32; i++)
             p[i] = 0;
-        for (unsigned i = 0; i < hlen; i++)
+        for (i = 0; i < hlen; i++)
             p[32 - hlen + i] = h[i];
         u256_from_bytes(z, p);
     } else {
