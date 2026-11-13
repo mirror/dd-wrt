@@ -24,7 +24,7 @@ EC_SRC    = p256-m/p256-m.c
 EC_FLAGS  = -DECCERT_P256M -DMBEDTLS_PSA_P256M_DRIVER_ENABLED -Ip256-m -Ishim
 endif
 
-ALL_CFLAGS  = $(CFLAGS) $(LTO) $(EC_FLAGS) -ffunction-sections -fdata-sections \
+ALL_CFLAGS  = $(CFLAGS) $(MIPS16_OPT) $(LTO) $(EC_FLAGS) -ffunction-sections -fdata-sections \
               -fno-asynchronous-unwind-tables -fno-unwind-tables -fno-stack-protector -Wall
 ALL_LDFLAGS = $(LDFLAGS) -Wl,--gc-sections -Wl,--build-id=none -s
 
