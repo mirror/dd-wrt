@@ -140,7 +140,7 @@ static void check_fan(int brand)
 		break;
 	#ifdef HAVE_MVEBU
 	case ROUTER_WRT_1900AC:
-		setpwm(2, calcrpm_max(getsensor(0), nvram_default_geti("hwmon_temp_max", 51)));
+		setpwm(12, calcrpm_max(getsensor(0), nvram_default_geti("hwmon_temp_max", 51)));
 		break;
 	#endif
 	#ifdef HAVE_REALTEK
