@@ -23,8 +23,5 @@ clean:
 		clean
 
 install:
-	$(MAKE) -C "$(LINUXDIR)" \
-		$(MAKE_OPTS) \
-		INSTALL_MOD_PATH=$(INSTALLDIR) INSTALL_MOD_DIR= modules_install
-	rm -f $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/modules.*
+	install -v -m 644 -D src/i2c-gpio-custom.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/i2c-gpio-custom.ko
 
