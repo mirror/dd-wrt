@@ -41,10 +41,26 @@ static void print_file(webs_t wp, char *filename, int string)
 		return;
 	}
 	char name[128];
+	char unicode[128];
 	memset(name, 0, sizeof(name));
 	fread(name, sizeof(name), 1, in);
 	fclose(in);
-	websWrite(wp, "%s", name);
+	int i, c = 0, len = strlen(name);
+	for (i = 0; i < len; i++) {
+		if (c < (sizeof(unicode) - 1)) {
+			if (i < (len - 6) && c < (sizeof(unicode) - 1) && name[i] == '\\' && name[i + 1] == 'u') {
+				unicode[c++] = '&';
+				unicode[c++] = '#';
+				unicode[c++] = name[i + 2];
+				unicode[c++] = name[i + 3];
+				unicode[c++] = name[i + 4];
+				unicode[c++] = name[i + 5];
+			} else
+				unicode[c++] = name[i];
+		}
+	}
+	unicode[c++] = 0;
+	websWrite(wp, "%s", unicode);
 }
 EJ_VISIBLE void ej_speed_up(webs_t wp, int argc, char_t **argv)
 {
