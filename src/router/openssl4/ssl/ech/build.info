@@ -1,3 +1,0 @@
-$LIBSSL=../../libssl
-
-SOURCE[$LIBSSL]=ech_ssl_apis.c ech_store.c ech_internal.c ech_helper.c
