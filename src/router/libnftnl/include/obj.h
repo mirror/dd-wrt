@@ -83,6 +83,10 @@ struct nftnl_obj {
 		struct nftnl_obj_secmark {
 			char		ctx[NFT_SECMARK_CTX_MAXLEN];
 		} secmark;
+		struct nftnl_obj_connlimit {
+			uint32_t	count;
+			uint32_t	flags;
+		} connlimit;
 	} data;
 };
 
@@ -108,6 +112,7 @@ extern struct obj_ops obj_ops_limit;
 extern struct obj_ops obj_ops_synproxy;
 extern struct obj_ops obj_ops_tunnel;
 extern struct obj_ops obj_ops_secmark;
+extern struct obj_ops obj_ops_connlimit;
 
 #define nftnl_obj_data(obj) (void *)&obj->data
 

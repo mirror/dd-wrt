@@ -22,8 +22,9 @@ struct nftnl_expr_queue {
 	uint16_t		flags;
 };
 
-static int nftnl_expr_queue_set(struct nftnl_expr *e, uint16_t type,
-				    const void *data, uint32_t data_len)
+static int
+nftnl_expr_queue_set(struct nftnl_expr *e, uint16_t type,
+		     const void *data, uint32_t data_len, uint32_t byteorder)
 {
 	struct nftnl_expr_queue *queue = nftnl_expr_data(e);
 

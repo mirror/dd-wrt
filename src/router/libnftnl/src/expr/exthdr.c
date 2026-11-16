@@ -36,7 +36,7 @@ struct nftnl_expr_exthdr {
 
 static int
 nftnl_expr_exthdr_set(struct nftnl_expr *e, uint16_t type,
-			  const void *data, uint32_t data_len)
+		      const void *data, uint32_t data_len, uint32_t byteorder)
 {
 	struct nftnl_expr_exthdr *exthdr = nftnl_expr_data(e);
 

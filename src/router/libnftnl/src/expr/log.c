@@ -27,8 +27,9 @@ struct nftnl_expr_log {
 	const char		*prefix;
 };
 
-static int nftnl_expr_log_set(struct nftnl_expr *e, uint16_t type,
-				 const void *data, uint32_t data_len)
+static int
+nftnl_expr_log_set(struct nftnl_expr *e, uint16_t type,
+		   const void *data, uint32_t data_len, uint32_t byteorder)
 {
 	struct nftnl_expr_log *log = nftnl_expr_data(e);
 

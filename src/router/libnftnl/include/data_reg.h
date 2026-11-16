@@ -21,6 +21,8 @@ union nftnl_data_reg {
 	struct {
 		uint32_t	val[NFT_DATA_VALUE_MAXLEN / sizeof(uint32_t)];
 		uint32_t	len;
+		uint32_t	byteorder;
+		uint8_t		sizes[NFT_REG32_COUNT];
 	};
 	struct {
 		uint32_t	verdict;
@@ -35,6 +37,7 @@ int nftnl_data_reg_snprintf(char *buf, size_t size,
 struct nlattr;
 
 int nftnl_parse_data(union nftnl_data_reg *data, struct nlattr *attr, int *type);
-int nftnl_data_cpy(union nftnl_data_reg *dreg, const void *src, uint32_t len);
+int nftnl_data_cpy(union nftnl_data_reg *dreg, const void *src,
+		   uint32_t len, uint32_t byteorder, uint8_t *sizes);
 
 #endif

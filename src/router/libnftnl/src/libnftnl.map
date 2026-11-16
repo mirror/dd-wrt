@@ -399,3 +399,8 @@ nftnl_obj_tunnel_opts_foreach;
 nftnl_tunnel_opts_add;
 nftnl_tunnel_opts_free;
 } LIBNFTNL_17;
+
+LIBNFTNL_19 {
+  nftnl_expr_set_imm;
+  nftnl_set_elem_set_imm;
+} LIBNFTNL_18;

@@ -28,8 +28,9 @@ struct nftnl_expr_objref {
 	} set;
 };
 
-static int nftnl_expr_objref_set(struct nftnl_expr *e, uint16_t type,
-				 const void *data, uint32_t data_len)
+static int
+nftnl_expr_objref_set(struct nftnl_expr *e, uint16_t type,
+		      const void *data, uint32_t data_len, uint32_t byteorder)
 {
 	struct nftnl_expr_objref *objref = nftnl_expr_data(e);
 

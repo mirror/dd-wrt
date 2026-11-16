@@ -19,7 +19,7 @@ struct expr_ops {
 	struct attr_policy *attr_policy;
 	void	(*init)(const struct nftnl_expr *e);
 	void	(*free)(const struct nftnl_expr *e);
-	int	(*set)(struct nftnl_expr *e, uint16_t type, const void *data, uint32_t data_len);
+	int	(*set)(struct nftnl_expr *e, uint16_t type, const void *data, uint32_t data_len, uint32_t byteorder);
 	const void *(*get)(const struct nftnl_expr *e, uint16_t type, uint32_t *data_len);
 	int 	(*parse)(struct nftnl_expr *e, struct nlattr *attr);
 	void	(*build)(struct nlmsghdr *nlh, const struct nftnl_expr *e);

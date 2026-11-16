@@ -23,7 +23,7 @@ struct nftnl_expr_immediate {
 
 static int
 nftnl_expr_immediate_set(struct nftnl_expr *e, uint16_t type,
-			    const void *data, uint32_t data_len)
+			 const void *data, uint32_t data_len, uint32_t byteorder)
 {
 	struct nftnl_expr_immediate *imm = nftnl_expr_data(e);
 
@@ -32,7 +32,8 @@ nftnl_expr_immediate_set(struct nftnl_expr *e, uint16_t type,
 		memcpy(&imm->dreg, data, data_len);
 		break;
 	case NFTNL_EXPR_IMM_DATA:
-		return nftnl_data_cpy(&imm->data, data, data_len);
+		return nftnl_data_cpy(&imm->data, data,
+				      data_len, byteorder, NULL);
 	case NFTNL_EXPR_IMM_VERDICT:
 		memcpy(&imm->data.verdict, data, data_len);
 		break;
@@ -200,6 +201,9 @@ nftnl_expr_immediate_snprintf(char *buf, size_t remain,
 					      flags, DATA_CHAIN);
 		SNPRINTF_BUFFER_SIZE(ret, remain, offset);
 	}
+
+	ret = snprintf(buf + offset, remain, " ");
+	SNPRINTF_BUFFER_SIZE(ret, remain, offset);
 
 	return offset;
 }

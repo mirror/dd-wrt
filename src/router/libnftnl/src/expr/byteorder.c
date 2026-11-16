@@ -27,7 +27,7 @@ struct nftnl_expr_byteorder {
 
 static int
 nftnl_expr_byteorder_set(struct nftnl_expr *e, uint16_t type,
-			  const void *data, uint32_t data_len)
+			  const void *data, uint32_t data_len, uint32_t byteorderp)
 {
 	struct nftnl_expr_byteorder *byteorder = nftnl_expr_data(e);
 

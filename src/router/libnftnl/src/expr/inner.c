@@ -35,7 +35,7 @@ static void nftnl_expr_inner_free(const struct nftnl_expr *e)
 
 static int
 nftnl_expr_inner_set(struct nftnl_expr *e, uint16_t type,
-		     const void *data, uint32_t data_len)
+		     const void *data, uint32_t data_len, uint32_t byteorder)
 {
 	struct nftnl_expr_inner *inner = nftnl_expr_data(e);
 

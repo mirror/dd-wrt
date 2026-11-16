@@ -26,7 +26,7 @@ struct nftnl_expr_cmp {
 
 static int
 nftnl_expr_cmp_set(struct nftnl_expr *e, uint16_t type,
-		      const void *data, uint32_t data_len)
+		   const void *data, uint32_t data_len, uint32_t byteorder)
 {
 	struct nftnl_expr_cmp *cmp = nftnl_expr_data(e);
 
@@ -38,7 +38,8 @@ nftnl_expr_cmp_set(struct nftnl_expr *e, uint16_t type,
 		memcpy(&cmp->op, data, data_len);
 		break;
 	case NFTNL_EXPR_CMP_DATA:
-		return nftnl_data_cpy(&cmp->data, data, data_len);
+		return nftnl_data_cpy(&cmp->data, data,
+				      data_len, byteorder, NULL);
 	}
 	return 0;
 }
@@ -161,6 +162,9 @@ nftnl_expr_cmp_snprintf(char *buf, size_t remain,
 
 	ret = nftnl_data_reg_snprintf(buf + offset, remain, &cmp->data,
 				      0, DATA_VALUE);
+	SNPRINTF_BUFFER_SIZE(ret, remain, offset);
+
+	ret = snprintf(buf + offset, remain, " ");
 	SNPRINTF_BUFFER_SIZE(ret, remain, offset);
 
 	return offset;

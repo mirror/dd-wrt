@@ -360,45 +360,6 @@ uint64_t nftnl_set_get_u64(const struct nftnl_set *s, uint16_t attr)
 	return val ? *val : 0;
 }
 
-struct nftnl_set *nftnl_set_clone(const struct nftnl_set *set)
-{
-	struct nftnl_set *newset;
-	struct nftnl_set_elem *elem, *newelem;
-
-	newset = nftnl_set_alloc();
-	if (newset == NULL)
-		return NULL;
-
-	memcpy(newset, set, sizeof(*set));
-
-	if (set->flags & (1 << NFTNL_SET_TABLE)) {
-		newset->table = strdup(set->table);
-		if (!newset->table)
-			goto err;
-	}
-	if (set->flags & (1 << NFTNL_SET_NAME)) {
-		newset->name = strdup(set->name);
-		if (!newset->name)
-			goto err;
-	}
-
-	INIT_LIST_HEAD(&newset->element_list);
-	list_for_each_entry(elem, &set->element_list, head) {
-		newelem = nftnl_set_elem_clone(elem);
-		if (newelem == NULL)
-			goto err;
-
-		list_add_tail(&newelem->head, &newset->element_list);
-	}
-
-	newset->type = NULL;
-
-	return newset;
-err:
-	nftnl_set_free(newset);
-	return NULL;
-}
-
 static void nftnl_set_nlmsg_build_desc_size_payload(struct nlmsghdr *nlh,
 						    struct nftnl_set *s)
 {

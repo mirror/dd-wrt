@@ -20,20 +20,64 @@
 #include <libnftnl/rule.h>
 #include "internal.h"
 
+static bool big_endian_host(void)
+{
+	uint16_t v = 1;
+
+	return v == htons(v);
+}
+
+static int __reg_value_snprintf(char *buf, size_t remain,
+				uint8_t *data, size_t datalen,
+				bool reverse, const char *pfx)
+{
+	int offset = 0, ret, i, idx;
+	const char *sep = "";
+
+	for (i = 0; i < datalen; i++) {
+		if ((i % 4) == 0) {
+			ret = snprintf(buf + offset, remain, "%s%s", sep, pfx);
+			SNPRINTF_BUFFER_SIZE(ret, remain, offset);
+			sep = " ";
+		}
+		if (reverse)
+			idx = datalen - i - 1;
+		else
+			idx = i;
+
+		ret = snprintf(buf + offset, remain, "%.2x", data[idx]);
+		SNPRINTF_BUFFER_SIZE(ret, remain, offset);
+	}
+
+	return offset;
+}
+
 static int
 nftnl_data_reg_value_snprintf_default(char *buf, size_t remain,
 				      const union nftnl_data_reg *reg,
 				      uint32_t flags)
 {
+	uint32_t byteorder = big_endian_host() ? 0 : reg->byteorder;
 	const char *pfx = flags & DATA_F_NOPFX ? "" : "0x";
-	int offset = 0, ret, i;
+	int offset = 0, ret, i, pos = 0;
 
+	for (i = 0; i < array_size(reg->sizes); i++) {
+		int curlen = reg->sizes[i] ?: reg->len;
+		bool reverse = byteorder & (1 << i);
 
+		if (i > 0) {
+			ret = snprintf(buf + offset, remain, " . ");
+			SNPRINTF_BUFFER_SIZE(ret, remain, offset);
+		}
 
-	for (i = 0; i < div_round_up(reg->len, sizeof(uint32_t)); i++) {
-		ret = snprintf(buf + offset, remain,
-			       "%s%.8x ", pfx, reg->val[i]);
+		ret = __reg_value_snprintf(buf + offset, remain,
+					   (void *)&reg->val[pos],
+					   curlen, reverse, pfx);
 		SNPRINTF_BUFFER_SIZE(ret, remain, offset);
+
+		pos += div_round_up(curlen, sizeof(uint32_t));
+		if (pos >= reg->len / sizeof(uint32_t))
+			break;
 	}
 
 	return offset;
@@ -46,11 +90,11 @@ nftnl_data_reg_verdict_snprintf_def(char *buf, size_t size,
 {
 	int remain = size, offset = 0, ret = 0;
 
-	ret = snprintf(buf, size, "%s ", nftnl_verdict2str(reg->verdict));
+	ret = snprintf(buf, size, "%s", nftnl_verdict2str(reg->verdict));
 	SNPRINTF_BUFFER_SIZE(ret, remain, offset);
 
 	if (reg->chain != NULL) {
-		ret = snprintf(buf + offset, remain, "-> %s ", reg->chain);
+		ret = snprintf(buf + offset, remain, " -> %s", reg->chain);
 		SNPRINTF_BUFFER_SIZE(ret, remain, offset);
 	}
 
@@ -202,7 +246,8 @@ int nftnl_parse_data(union nftnl_data_reg *data, struct nlattr *attr, int *type)
 	return ret;
 }
 
-int nftnl_data_cpy(union nftnl_data_reg *dreg, const void *src, uint32_t len)
+int nftnl_data_cpy(union nftnl_data_reg *dreg, const void *src,
+		   uint32_t len, uint32_t byteorder, uint8_t *sizes)
 {
 	int ret = 0;
 
@@ -213,5 +258,10 @@ int nftnl_data_cpy(union nftnl_data_reg *dreg, const void *src, uint32_t len)
 
 	memcpy(dreg->val, src, len);
 	dreg->len = len;
+	dreg->byteorder = byteorder;
+	if (sizes)
+		memcpy(dreg->sizes, sizes, sizeof(dreg->sizes));
+	else
+		memset(dreg->sizes, 0, sizeof(dreg->sizes));
 	return ret;
 }

@@ -59,9 +59,9 @@ bool nftnl_expr_is_set(const struct nftnl_expr *expr, uint16_t type)
 	return expr->flags & (1 << type);
 }
 
-EXPORT_SYMBOL(nftnl_expr_set);
-int nftnl_expr_set(struct nftnl_expr *expr, uint16_t type,
-		   const void *data, uint32_t data_len)
+static int __nftnl_expr_set(struct nftnl_expr *expr, uint16_t type,
+			    const void *data, uint32_t data_len,
+			    uint32_t byteorder)
 {
 	switch(type) {
 	case NFTNL_EXPR_NAME:	/* cannot be modified */
@@ -77,11 +77,25 @@ int nftnl_expr_set(struct nftnl_expr *expr, uint16_t type,
 		    expr->ops->attr_policy[type].maxlen < data_len)
 			return -1;
 
-		if (expr->ops->set(expr, type, data, data_len) < 0)
+		if (expr->ops->set(expr, type, data, data_len, byteorder) < 0)
 			return -1;
 	}
 	expr->flags |= (1 << type);
 	return 0;
+}
+
+EXPORT_SYMBOL(nftnl_expr_set);
+int nftnl_expr_set(struct nftnl_expr *expr, uint16_t type,
+		   const void *data, uint32_t data_len)
+{
+	return __nftnl_expr_set(expr, type, data, data_len, 0);
+}
+
+EXPORT_SYMBOL(nftnl_expr_set_imm);
+int nftnl_expr_set_imm(struct nftnl_expr *expr, uint16_t type,
+		       const void *data, uint32_t data_len, uint32_t byteorder)
+{
+	return __nftnl_expr_set(expr, type, data, data_len, byteorder);
 }
 
 EXPORT_SYMBOL(nftnl_expr_set_u8);

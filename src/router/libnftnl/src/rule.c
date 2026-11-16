@@ -509,8 +509,8 @@ static int nftnl_rule_snprintf_default(char *buf, size_t remain,
 				       uint32_t type, uint32_t flags)
 {
 	struct nftnl_expr *expr;
-	int ret, offset = 0, i;
 	const char *sep = "";
+	int ret, offset = 0;
 
 	if (r->flags & (1 << NFTNL_RULE_FAMILY)) {
 		ret = snprintf(buf + offset, remain, "%s%s", sep,
@@ -573,21 +573,10 @@ static int nftnl_rule_snprintf_default(char *buf, size_t remain,
 	}
 
 	if (r->user.len) {
-		ret = snprintf(buf + offset, remain, "\n  userdata = { ");
+		ret = snprintf(buf + offset, remain,
+			       "\n  userdata len %d sum 0x%x",
+			       r->user.len, bytesum(r->user.data, r->user.len));
 		SNPRINTF_BUFFER_SIZE(ret, remain, offset);
-
-		for (i = 0; i < r->user.len; i++) {
-			char *c = r->user.data;
-
-			ret = snprintf(buf + offset, remain,
-				       isprint(c[i]) ? "%c" : "\\x%02hhx",
-				       c[i]);
-			SNPRINTF_BUFFER_SIZE(ret, remain, offset);
-		}
-
-		ret = snprintf(buf + offset, remain, " }");
-		SNPRINTF_BUFFER_SIZE(ret, remain, offset);
-
 	}
 
 	return offset;

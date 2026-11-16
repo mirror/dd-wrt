@@ -146,6 +146,12 @@ enum {
 	NFTNL_TUNNEL_GENEVE_DATA,
 };
 
+enum {
+	NFTNL_OBJ_CONNLIMIT_COUNT = NFTNL_OBJ_BASE,
+	NFTNL_OBJ_CONNLIMIT_FLAGS,
+	__NFTNL_OBJ_CONNLIMIT_MAX,
+};
+
 struct nftnl_tunnel_opt;
 struct nftnl_tunnel_opts;
 

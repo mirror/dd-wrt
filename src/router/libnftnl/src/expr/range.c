@@ -23,8 +23,9 @@ struct nftnl_expr_range {
 	enum nft_range_ops	op;
 };
 
-static int nftnl_expr_range_set(struct nftnl_expr *e, uint16_t type,
-				const void *data, uint32_t data_len)
+static int
+nftnl_expr_range_set(struct nftnl_expr *e, uint16_t type,
+		     const void *data, uint32_t data_len, uint32_t byteorder)
 {
 	struct nftnl_expr_range *range = nftnl_expr_data(e);
 
@@ -36,9 +37,11 @@ static int nftnl_expr_range_set(struct nftnl_expr *e, uint16_t type,
 		memcpy(&range->op, data, data_len);
 		break;
 	case NFTNL_EXPR_RANGE_FROM_DATA:
-		return nftnl_data_cpy(&range->data_from, data, data_len);
+		return nftnl_data_cpy(&range->data_from, data,
+				      data_len, byteorder, NULL);
 	case NFTNL_EXPR_RANGE_TO_DATA:
-		return nftnl_data_cpy(&range->data_to, data, data_len);
+		return nftnl_data_cpy(&range->data_to, data,
+				      data_len, byteorder, NULL);
 	}
 	return 0;
 }
@@ -176,8 +179,14 @@ static int nftnl_expr_range_snprintf(char *buf, size_t remain,
 				      0, DATA_VALUE);
 	SNPRINTF_BUFFER_SIZE(ret, remain, offset);
 
+	ret = snprintf(buf + offset, remain, " ");
+	SNPRINTF_BUFFER_SIZE(ret, remain, offset);
+
 	ret = nftnl_data_reg_snprintf(buf + offset, remain, &range->data_to,
 				      0, DATA_VALUE);
+	SNPRINTF_BUFFER_SIZE(ret, remain, offset);
+
+	ret = snprintf(buf + offset, remain, " ");
 	SNPRINTF_BUFFER_SIZE(ret, remain, offset);
 
 	return offset;

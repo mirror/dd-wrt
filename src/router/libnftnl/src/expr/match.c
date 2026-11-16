@@ -32,7 +32,7 @@ struct nftnl_expr_match {
 
 static int
 nftnl_expr_match_set(struct nftnl_expr *e, uint16_t type,
-			 const void *data, uint32_t data_len)
+		     const void *data, uint32_t data_len, uint32_t byteorder)
 {
 	struct nftnl_expr_match *mt = nftnl_expr_data(e);
 

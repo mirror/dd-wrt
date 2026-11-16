@@ -24,7 +24,7 @@ struct nftnl_expr_ng {
 
 static int
 nftnl_expr_ng_set(struct nftnl_expr *e, uint16_t type,
-		  const void *data, uint32_t data_len)
+		  const void *data, uint32_t data_len, uint32_t byteorder)
 {
 	struct nftnl_expr_ng *ng = nftnl_expr_data(e);
 

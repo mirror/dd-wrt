@@ -20,8 +20,9 @@ struct nftnl_expr_tunnel {
 	enum nft_registers	dreg;
 };
 
-static int nftnl_expr_tunnel_set(struct nftnl_expr *e, uint16_t type,
-				 const void *data, uint32_t data_len)
+static int
+nftnl_expr_tunnel_set(struct nftnl_expr *e, uint16_t type,
+		      const void *data, uint32_t data_len, uint32_t byteorder)
 {
 	struct nftnl_expr_tunnel *tunnel = nftnl_expr_data(e);
 

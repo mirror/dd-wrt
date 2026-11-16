@@ -149,7 +149,8 @@ am_libnftnl_la_OBJECTS = utils.lo batch.lo flowtable.lo common.lo \
 	expr/redir.lo expr/hash.lo expr/socket.lo expr/synproxy.lo \
 	expr/osf.lo expr/xfrm.lo obj/counter.lo obj/ct_helper.lo \
 	obj/quota.lo obj/tunnel.lo obj/limit.lo obj/synproxy.lo \
-	obj/ct_timeout.lo obj/secmark.lo obj/ct_expect.lo
+	obj/ct_timeout.lo obj/secmark.lo obj/ct_expect.lo \
+	obj/connlimit.lo
 libnftnl_la_OBJECTS = $(am_libnftnl_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -201,11 +202,12 @@ am__depfiles_remade = ./$(DEPDIR)/batch.Plo ./$(DEPDIR)/chain.Plo \
 	expr/$(DEPDIR)/rt.Plo expr/$(DEPDIR)/socket.Plo \
 	expr/$(DEPDIR)/synproxy.Plo expr/$(DEPDIR)/target.Plo \
 	expr/$(DEPDIR)/tproxy.Plo expr/$(DEPDIR)/tunnel.Plo \
-	expr/$(DEPDIR)/xfrm.Plo obj/$(DEPDIR)/counter.Plo \
-	obj/$(DEPDIR)/ct_expect.Plo obj/$(DEPDIR)/ct_helper.Plo \
-	obj/$(DEPDIR)/ct_timeout.Plo obj/$(DEPDIR)/limit.Plo \
-	obj/$(DEPDIR)/quota.Plo obj/$(DEPDIR)/secmark.Plo \
-	obj/$(DEPDIR)/synproxy.Plo obj/$(DEPDIR)/tunnel.Plo
+	expr/$(DEPDIR)/xfrm.Plo obj/$(DEPDIR)/connlimit.Plo \
+	obj/$(DEPDIR)/counter.Plo obj/$(DEPDIR)/ct_expect.Plo \
+	obj/$(DEPDIR)/ct_helper.Plo obj/$(DEPDIR)/ct_timeout.Plo \
+	obj/$(DEPDIR)/limit.Plo obj/$(DEPDIR)/quota.Plo \
+	obj/$(DEPDIR)/secmark.Plo obj/$(DEPDIR)/synproxy.Plo \
+	obj/$(DEPDIR)/tunnel.Plo
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -402,7 +404,7 @@ top_srcdir = @top_srcdir@
 # set age to 0.
 # </snippet>
 #
-LIBVERSION = 18:0:7
+LIBVERSION = 19:0:8
 AM_CPPFLAGS = ${regular_CPPFLAGS} -I${top_srcdir}/include ${LIBMNL_CFLAGS} ${LIBMXML_CFLAGS}
 AM_CFLAGS = ${regular_CFLAGS} ${GCC_FVISIBILITY_HIDDEN}
 lib_LTLIBRARIES = libnftnl.la
@@ -476,6 +478,7 @@ libnftnl_la_SOURCES = utils.c		\
 		      obj/ct_timeout.c 	\
 		      obj/secmark.c	\
 		      obj/ct_expect.c 	\
+		      obj/connlimit.c	\
 		      libnftnl.map
 
 all: all-am
@@ -607,6 +610,7 @@ obj/synproxy.lo: obj/$(am__dirstamp) obj/$(DEPDIR)/$(am__dirstamp)
 obj/ct_timeout.lo: obj/$(am__dirstamp) obj/$(DEPDIR)/$(am__dirstamp)
 obj/secmark.lo: obj/$(am__dirstamp) obj/$(DEPDIR)/$(am__dirstamp)
 obj/ct_expect.lo: obj/$(am__dirstamp) obj/$(DEPDIR)/$(am__dirstamp)
+obj/connlimit.lo: obj/$(am__dirstamp) obj/$(DEPDIR)/$(am__dirstamp)
 
 libnftnl.la: $(libnftnl_la_OBJECTS) $(libnftnl_la_DEPENDENCIES) $(EXTRA_libnftnl_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libnftnl_la_LINK) -rpath $(libdir) $(libnftnl_la_OBJECTS) $(libnftnl_la_LIBADD) $(LIBS)
@@ -678,6 +682,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@expr/$(DEPDIR)/tproxy.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@expr/$(DEPDIR)/tunnel.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@expr/$(DEPDIR)/xfrm.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@obj/$(DEPDIR)/connlimit.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@obj/$(DEPDIR)/counter.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@obj/$(DEPDIR)/ct_expect.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@obj/$(DEPDIR)/ct_helper.Plo@am__quote@ # am--include-marker
@@ -914,6 +919,7 @@ distclean: distclean-am
 	-rm -f expr/$(DEPDIR)/tproxy.Plo
 	-rm -f expr/$(DEPDIR)/tunnel.Plo
 	-rm -f expr/$(DEPDIR)/xfrm.Plo
+	-rm -f obj/$(DEPDIR)/connlimit.Plo
 	-rm -f obj/$(DEPDIR)/counter.Plo
 	-rm -f obj/$(DEPDIR)/ct_expect.Plo
 	-rm -f obj/$(DEPDIR)/ct_helper.Plo
@@ -1025,6 +1031,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f expr/$(DEPDIR)/tproxy.Plo
 	-rm -f expr/$(DEPDIR)/tunnel.Plo
 	-rm -f expr/$(DEPDIR)/xfrm.Plo
+	-rm -f obj/$(DEPDIR)/connlimit.Plo
 	-rm -f obj/$(DEPDIR)/counter.Plo
 	-rm -f obj/$(DEPDIR)/ct_expect.Plo
 	-rm -f obj/$(DEPDIR)/ct_helper.Plo

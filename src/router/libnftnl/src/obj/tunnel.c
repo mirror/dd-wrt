@@ -596,6 +596,11 @@ nftnl_obj_tunnel_parse_geneve(struct nftnl_tunnel_opts *opts, struct nlattr *att
 	if (tb[NFTA_TUNNEL_KEY_GENEVE_DATA]) {
 		uint32_t len = mnl_attr_get_payload_len(tb[NFTA_TUNNEL_KEY_GENEVE_DATA]);
 
+		if (len > NFTNL_TUNNEL_GENEVE_DATA_MAXLEN) {
+			free(opt);
+			return -1;
+		}
+
 		memcpy(opt->geneve.data,
 		       mnl_attr_get_payload(tb[NFTA_TUNNEL_KEY_GENEVE_DATA]),
 		       len);
@@ -861,9 +866,17 @@ static int nftnl_tunnel_opt_geneve_set(struct nftnl_tunnel_opt *opt, uint16_t ty
 {
 	switch(type) {
 	case NFTNL_TUNNEL_GENEVE_CLASS:
+		if (data_len != sizeof(uint16_t)) {
+			errno = EINVAL;
+			return -1;
+		}
 		memcpy(&opt->geneve.geneve_class, data, data_len);
 		break;
 	case NFTNL_TUNNEL_GENEVE_TYPE:
+		if (data_len != sizeof(uint8_t)) {
+			errno = EINVAL;
+			return -1;
+		}
 		memcpy(&opt->geneve.type, data, data_len);
 		break;
 	case NFTNL_TUNNEL_GENEVE_DATA:

@@ -91,4 +91,14 @@ char *nftnl_attr_get_ifname(const struct nlattr *attr);
 int nftnl_parse_str_attr(const struct nlattr *tb, int attr,
 			 const char **field, uint32_t *flags);
 
+static inline uint32_t bytesum(uint8_t *buf, size_t buflen)
+{
+	uint32_t ret = 0;
+
+	while (buflen--)
+		ret += buf[buflen];
+
+	return ret;
+}
+
 #endif

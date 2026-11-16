@@ -21,8 +21,9 @@ struct nftnl_expr_last {
 	uint32_t	set;
 };
 
-static int nftnl_expr_last_set(struct nftnl_expr *e, uint16_t type,
-				const void *data, uint32_t data_len)
+static int
+nftnl_expr_last_set(struct nftnl_expr *e, uint16_t type,
+		    const void *data, uint32_t data_len, uint32_t byteorder)
 {
 	struct nftnl_expr_last *last = nftnl_expr_data(e);
 
