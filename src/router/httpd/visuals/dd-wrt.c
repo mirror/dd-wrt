@@ -1877,7 +1877,8 @@ static void show_netmode(webs_t wp, char *prefix)
 					  "document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n",
 					  nvram_match(wl_net_mode, "n5-only") ? "selected=\\\"selected\\\"" : "");
 			}
-			if ((is_ath10k(prefix) || is_ath11k(prefix) || is_mwlwifi(prefix) || has_vht80(prefix)) && has_5ghz(prefix)) {
+			if ((is_ath10k(prefix) || is_ath11k(prefix) || is_mwlwifi(prefix) || has_vht80(prefix)) &&
+			    has_5ghz(prefix)) {
 				websWrite(
 					wp,
 					"document.write(\"<option value=\\\"acn-mixed\\\" %s>\" + wl_basic.acn + \"</option>\");\n",
@@ -5680,11 +5681,11 @@ static void internal_ej_show_wireless_single(webs_t wp, char *prefix)
 		showRadioDefaultOn(wp, "wl_adv.label18", wmm);
 	else
 		showRadio(wp, "wl_adv.label18", wmm);
-	
+
 	sprintf(wmm, "%s_ema", prefix);
 	if (is_mac80211(prefix) && has_ax(prefix))
 		showRadioDefaultOff(wp, "wl_basic.ema", wmm);
-	
+
 	#endif
 	// radar detection
 	#ifdef HAVE_MADWIFI
